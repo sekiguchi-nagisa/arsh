@@ -48,18 +48,13 @@ public:
 	bool isAssignableFrom(DSType *targetType);
 };
 
+
 /**
  * represent for parsed type.
  */
 class UnresolvedType : public DSType {
-private:
-	std::string typeName;
-
 public:
-	UnresolvedType(std::string typeName);
-	~UnresolvedType();
-
-	std::string getTypeName();
+	std::string getTypeName() = 0;
 
 	/**
 	 * return always false
@@ -76,21 +71,75 @@ public:
 	 */
 	int getFieldSize();
 
-	DSType *toType();	//TODO: add TypePool to parameter
+	DSType *toType() = 0;	//TODO: add TypePool to parameter
 };
+
+
+class UnresolvedClassType : public UnresolvedType {
+private:
+	std::string typeName;
+
+public:
+	UnresolvedClassType(std::string typeName);
+
+	std::string getTypeName();	// override
+	DSType *toType();	// override
+};
+
 
 class UnresolvedReifiedType : public UnresolvedType {
 private:
-	std::vector elementTypes;
+	UnresolvedType *templateType;
+	std::vector<UnresolvedType*> elementTypes;
 
 public:
-	UnresolvedReifiedType(std::string typeName);
+	UnresolvedReifiedType(UnresolvedType *templateType);
 	~UnresolvedReifiedType();
 
-	std::vector getElementTypes();
+	std::string getTypeName();	// override
+	void addElementType(UnresolvedType *type);
+	std::vector<UnresolvedType*> getElementTypes();
 	//TODO: add TypePool to parameter
 	DSType *toType();	// override
 };
+
+
+/**
+ * create reified type name
+ */
+std::string toReifiedTypeName(DSType *templateType, int elementSize, DSType **elementTypes);
+
+/**
+ * create function type name
+ */
+std::string toFunctionTypeName(DSType *returnType, int paramSize, DSType **paramTypes);
+
+
+class UnresolvedFuncType : public UnresolvedType {
+private:
+	/**
+	 * may be null, if has return type annotation (return void)
+	 */
+	UnresolvedType *returnType;
+
+	/**
+	 * may be empty vector, if has no parameter
+	 */
+	std::vector<UnresolvedType *> paramTypes;
+
+public:
+	UnresolvedFuncType();
+	~UnresolvedFuncType();
+
+	std::string getTypeName();	// override
+	void setReturnType(UnresolvedType *type);
+	UnresolvedType *getReturnType();
+	void addParamType(UnresolvedType *type);
+	std::vector<UnresolvedType*> getParamTypes();
+	//TODO: add TypePool to parameter
+	DSType *toType();	// override
+};
+
 
 class ClassType : public DSType {	//TODO: add field index map, read only bitmap
 private:
@@ -137,6 +186,7 @@ public:
 	int getFieldSize();	// override
 };
 
+
 class FunctionType : public DSType {
 private:
 	DSType *returnType;
@@ -168,8 +218,6 @@ public:
 	DSType *getSuperType();	// override
 	int getFieldSize();	// override
 };
-
-std::string toFunctionTypeName(DSType *returnType, int paramSize, DSType **paramTypes);
 
 
 #endif /* CORE_DSTYPE_H_ */

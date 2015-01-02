@@ -30,6 +30,7 @@ public:
 	DSObject **getFieldTable();
 };
 
+
 class Int64_Object : public DSObject {
 private:
 	long value;
@@ -39,6 +40,7 @@ public:
 
 	long getValue();
 };
+
 
 class Float_Object : public DSObject {
 private:
@@ -50,6 +52,7 @@ public:
 	double getValue();
 };
 
+
 class Boolean_Object : public DSObject {
 private:
 	bool value;
@@ -59,6 +62,7 @@ public:
 
 	bool getValue();
 };
+
 
 class String_Object : public DSObject {
 private:

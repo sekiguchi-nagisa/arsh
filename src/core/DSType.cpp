@@ -34,17 +34,6 @@ bool DSType::isAssignableFrom(DSType *targetType) {
 // ##     UnresolvedType     ##
 // ############################
 
-UnresolvedType::UnresolvedType(std::string typeName) :
-		typeName(typeName) {
-}
-
-UnresolvedType::~UnresolvedType(){
-}
-
-std::string UnresolvedType::getTypeName() {
-	return this->typeName;
-}
-
 bool UnresolvedType::isExtendable() {
 	return false;
 }
@@ -57,8 +46,21 @@ int UnresolvedType::getFieldSize() {
 	return 0;
 }
 
-DSType *UnresolvedType::toType() {
-	return 0;	//TODO: TypePool
+
+// #################################
+// ##     UnresolvedClassType     ##
+// #################################
+
+UnresolvedClassType::UnresolvedClassType(std::string typeName) :
+		typeName(typeName) {
+}
+
+std::string UnresolvedClassType::getTypeName() {
+	return this->typeName;
+}
+
+DSType *UnresolvedClassType::toType() {
+	return 0;	//TODO:
 }
 
 
@@ -66,18 +68,118 @@ DSType *UnresolvedType::toType() {
 // ##     UnresolvedReifiedType     ##
 // ###################################
 
-UnresolvedReifiedType::UnresolvedReifiedType(std::string typeName):
-	UnresolvedType(typeName) {
+UnresolvedReifiedType::UnresolvedReifiedType(UnresolvedType *templateType):
+	templateType(templateType), elementTypes(2) {
 }
 
 UnresolvedReifiedType::~UnresolvedReifiedType() {
+	delete this->templateType;
+	int size = this->elementTypes.size();
+	for(int i = 0; i < size; i++) {
+		delete this->elementTypes[i];
+	}
+	this->elementTypes.clear();
 }
 
-std::vector UnresolvedReifiedType::getElementTypes() {
+std::string UnresolvedReifiedType::getTypeName() {
+	int size = this->elementTypes.size();
+	DSType **types = new DSType*[size];
+	for(int i = 0; i < size; i++) {
+		types[i] = this->elementTypes[i];
+	}
+	return toReifiedTypeName(this->templateType, size, types);
+}
+
+void UnresolvedReifiedType::addElementType(UnresolvedType *type) {
+	this->elementTypes.push_back(type);
+}
+
+std::vector<UnresolvedType*> UnresolvedReifiedType::getElementTypes() {
 	return this->elementTypes;
 }
 
 DSType *UnresolvedReifiedType::toType() {
+	return 0;	//TODO:
+}
+
+
+std::string toReifiedTypeName(DSType *templateType, int elementSize, DSType **elementTypes) {
+	std::string reifiedTypeName = templateType->getTypeName() + "<";
+	for(int i = 0; i < elementSize; i++) {
+		if(i > 0) {
+			reifiedTypeName += ",";
+		}
+		reifiedTypeName += elementTypes[i]->getTypeName();
+	}
+	reifiedTypeName += ">";
+	return reifiedTypeName;
+}
+
+std::string toFunctionTypeName(DSType *returnType, int paramSize, DSType **paramTypes) {
+	std::string funcTypeName = "Func<" + returnType->getTypeName();
+	for(int i = 0; i < paramSize; i++) {
+		if(i == 0) {
+			funcTypeName += ",[";
+		}
+		if(i > 0) {
+			funcTypeName += ",";
+		}
+		funcTypeName += paramTypes[i]->getTypeName();
+		if(i == paramSize - 1) {
+			funcTypeName += "]";
+		}
+	}
+	funcTypeName += ">";
+	return funcTypeName;
+}
+
+
+// ################################
+// ##     UnresolvedFuncType     ##
+// ################################
+
+UnresolvedFuncType::UnresolvedFuncType():
+		returnType(0), paramTypes(2) {
+}
+
+UnresolvedFuncType::~UnresolvedFuncType() {
+	if(this->returnType != 0) {
+		delete this->returnType;
+	}
+	int size = this->paramTypes.size();
+	for(int i = 0; i < size; i++) {
+		delete this->paramTypes[i];
+	}
+	this->paramTypes.clear();
+}
+
+std::string UnresolvedFuncType::getTypeName() {	//TODO: complete Void type
+	int size = this->paramTypes.size();
+	DSType** types = new DSType*[size];
+	for(int i = 0; i < size; i++) {
+		types[i] = this->paramTypes[i];
+	}
+	return toFunctionTypeName(this->returnType, size, types);	//TODO: add null check for return type
+}
+
+void UnresolvedFuncType::setReturnType(UnresolvedType *type) {
+	this->returnType = type;
+}
+
+UnresolvedType *UnresolvedFuncType::getReturnType() {
+	return this->returnType;	//TODO: add null check
+}
+
+void UnresolvedFuncType::addParamType(UnresolvedType *type) {
+	this->paramTypes.push_back(type);
+}
+
+std::vector<UnresolvedType*> UnresolvedFuncType::getParamTypes() {
+	return this->paramTypes;
+}
+
+//TODO: add TypePool to parameter
+DSType *UnresolvedFuncType::toType() {
 	return 0;
 }
 
@@ -165,25 +267,4 @@ DSType *FunctionType::getSuperType() {
 
 int FunctionType::getFieldSize() {
 	return 0;
-}
-
-/**
- * create function type name
- */
-std::string toFunctionTypeName(DSType *returnType, int paramSize, DSType **paramTypes) {
-	std::string funcTypeName = "Func<" + returnType->getTypeName();
-	for(int i = 0; i < paramSize; i++) {
-		if(i == 0) {
-			funcTypeName += ",[";
-		}
-		if(i > 0) {
-			funcTypeName += ",";
-		}
-		funcTypeName += paramTypes[i]->getTypeName();
-		if(i == paramSize - 1) {
-			funcTypeName += "]";
-		}
-	}
-	funcTypeName += ">";
-	return funcTypeName;
 }
