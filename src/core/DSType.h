@@ -9,6 +9,7 @@
 #define CORE_DSTYPE_H_
 
 //#include <unordered_map>
+#include <vector>
 #include "CalleeHandle.h"
 
 class DSType {
@@ -45,6 +46,50 @@ public:
 	 * the super type of target type, return true.
 	 */
 	bool isAssignableFrom(DSType *targetType);
+};
+
+/**
+ * represent for parsed type.
+ */
+class UnresolvedType : public DSType {
+private:
+	std::string typeName;
+
+public:
+	UnresolvedType(std::string typeName);
+	~UnresolvedType();
+
+	std::string getTypeName();
+
+	/**
+	 * return always false
+	 */
+	bool isExtendable();
+
+	/**
+	 * return always null
+	 */
+	DSType *getSuperType();
+
+	/**
+	 * return always 0
+	 */
+	int getFieldSize();
+
+	DSType *toType();	//TODO: add TypePool to parameter
+};
+
+class UnresolvedReifiedType : public UnresolvedType {
+private:
+	std::vector elementTypes;
+
+public:
+	UnresolvedReifiedType(std::string typeName);
+	~UnresolvedReifiedType();
+
+	std::vector getElementTypes();
+	//TODO: add TypePool to parameter
+	DSType *toType();	// override
 };
 
 class ClassType : public DSType {	//TODO: add field index map, read only bitmap

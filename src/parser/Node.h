@@ -17,7 +17,7 @@ public:
 	virtual ~Node();
 
 	int getLineNum();
-	void accept(NodeVisitor *visitor) = 0;
+	int accept(NodeVisitor *visitor) = 0;
 };
 
 

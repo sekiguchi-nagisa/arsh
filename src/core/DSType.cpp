@@ -30,6 +30,58 @@ bool DSType::isAssignableFrom(DSType *targetType) {
 }
 
 
+// ############################
+// ##     UnresolvedType     ##
+// ############################
+
+UnresolvedType::UnresolvedType(std::string typeName) :
+		typeName(typeName) {
+}
+
+UnresolvedType::~UnresolvedType(){
+}
+
+std::string UnresolvedType::getTypeName() {
+	return this->typeName;
+}
+
+bool UnresolvedType::isExtendable() {
+	return false;
+}
+
+DSType *UnresolvedType::getSuperType() {
+	return 0;
+}
+
+int UnresolvedType::getFieldSize() {
+	return 0;
+}
+
+DSType *UnresolvedType::toType() {
+	return 0;	//TODO: TypePool
+}
+
+
+// ###################################
+// ##     UnresolvedReifiedType     ##
+// ###################################
+
+UnresolvedReifiedType::UnresolvedReifiedType(std::string typeName):
+	UnresolvedType(typeName) {
+}
+
+UnresolvedReifiedType::~UnresolvedReifiedType() {
+}
+
+std::vector UnresolvedReifiedType::getElementTypes() {
+	return this->elementTypes;
+}
+
+DSType *UnresolvedReifiedType::toType() {
+	return 0;
+}
+
+
 // #######################
 // ##     ClassType     ##
 // #######################
