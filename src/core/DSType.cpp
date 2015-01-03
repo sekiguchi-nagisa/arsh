@@ -189,7 +189,7 @@ DSType *UnresolvedFuncType::toType() {
 // #######################
 
 ClassType::ClassType(std::string className, bool extendable, DSType *superType):
-		className(className), extendable(extendable), superType(superType),
+		superType(superType), className(className), extendable(extendable),
 		constructorHandle(0), handleSize(0), handleTable(0) {
 }
 

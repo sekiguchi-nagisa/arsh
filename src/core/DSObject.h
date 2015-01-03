@@ -8,6 +8,8 @@
 #ifndef CORE_DSOBJECT_H_
 #define CORE_DSOBJECT_H_
 
+#include "DSType.h"
+
 class DSObject {
 protected:
 	/**

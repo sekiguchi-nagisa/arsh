@@ -6,6 +6,7 @@
  */
 
 #include "CalleeHandle.h"
+#include "DSType.h"
 
 // ##########################
 // ##     CalleeHandle     ##
@@ -40,7 +41,7 @@ FunctionHandle::FunctionHandle(FunctionType *funcType):
 }
 
 FunctionType *FunctionHandle::getFuncType() {
-	return this->getFieldType();
+	return dynamic_cast<FunctionType*>(this->getFieldType());
 }
 
 

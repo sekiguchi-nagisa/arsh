@@ -10,6 +10,7 @@
 
 //#include <unordered_map>
 #include <vector>
+#include <string>
 #include "CalleeHandle.h"
 
 struct DSType {

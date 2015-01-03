@@ -15,6 +15,7 @@ public:
 	virtual ~CalleeHandle();
 };
 
+struct DSType;
 
 class FieldHandle : public CalleeHandle {
 private:
@@ -26,6 +27,7 @@ public:
 	DSType *getFieldType();
 };
 
+class FunctionType;
 
 class FunctionHandle : public FieldHandle {	//TODO: named parameter, default parameter
 public:
