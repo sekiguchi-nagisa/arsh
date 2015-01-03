@@ -12,7 +12,7 @@
 #include <vector>
 #include "CalleeHandle.h"
 
-class DSType {
+struct DSType {
 public:
 	DSType();
 	virtual ~DSType();
@@ -20,23 +20,23 @@ public:
 	/**
 	 * string representation of this type
 	 */
-	std::string getTypeName() = 0;
+	virtual std::string getTypeName() = 0;
 
 	/**
 	 * if true, can extend this type
 	 */
-	bool isExtendable() = 0;
+	virtual bool isExtendable() = 0;
 
 	/**
 	 * get super type of this type.
 	 * return null, if has no super type.
 	 */
-	DSType *getSuperType() = 0;
+	virtual DSType *getSuperType() = 0;
 
 	/**
 	 * get size of field.
 	 */
-	int getFieldSize() = 0;
+	virtual int getFieldSize() = 0;
 
 	bool equals(DSType *targetType);
 
@@ -45,7 +45,7 @@ public:
 	 * if this type is equivalent to target type or
 	 * the super type of target type, return true.
 	 */
-	bool isAssignableFrom(DSType *targetType);
+	virtual bool isAssignableFrom(DSType *targetType);
 };
 
 
@@ -54,7 +54,7 @@ public:
  */
 class UnresolvedType : public DSType {
 public:
-	std::string getTypeName() = 0;
+	virtual std::string getTypeName() = 0;
 
 	/**
 	 * return always false
@@ -71,7 +71,7 @@ public:
 	 */
 	int getFieldSize();
 
-	DSType *toType() = 0;	//TODO: add TypePool to parameter
+	virtual DSType *toType() = 0;	//TODO: add TypePool to parameter
 };
 
 
