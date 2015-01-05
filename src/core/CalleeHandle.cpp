@@ -8,17 +8,6 @@
 #include "CalleeHandle.h"
 #include "DSType.h"
 
-// ##########################
-// ##     CalleeHandle     ##
-// ##########################
-
-CalleeHandle::CalleeHandle() {
-}
-
-CalleeHandle::~CalleeHandle() {
-}
-
-
 // #########################
 // ##     FieldHandle     ##
 // #########################

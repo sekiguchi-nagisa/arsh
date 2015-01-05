@@ -8,16 +8,9 @@
 #ifndef CORE_CALLEEHANDLE_H_
 #define CORE_CALLEEHANDLE_H_
 
-// base class of callee(field, function, constructor)
-class CalleeHandle {
-public:
-	CalleeHandle();
-	virtual ~CalleeHandle();
-};
+class DSType;
 
-struct DSType;
-
-class FieldHandle : public CalleeHandle {
+class FieldHandle {
 private:
 	DSType *fieldType;
 
@@ -37,7 +30,7 @@ public:
 };
 
 
-class ConstructorHandle : public CalleeHandle {	//TODO: named parameter. default parameter
+class ConstructorHandle {	//TODO: named parameter. default parameter
 private:
 	int paramSize;
 

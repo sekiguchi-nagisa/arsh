@@ -8,6 +8,8 @@
 #ifndef PARSER_NODEVISITOR_H_
 #define PARSER_NODEVISITOR_H_
 
+class Node;
+
 class NodeVisitor {
 public:
 	NodeVisitor();

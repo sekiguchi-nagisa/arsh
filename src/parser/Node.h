@@ -8,6 +8,8 @@
 #ifndef PARSER_NODE_H_
 #define PARSER_NODE_H_
 
+class NodeVisitor;
+
 class Node {
 protected:
 	int lineNum;
@@ -17,7 +19,7 @@ public:
 	virtual ~Node();
 
 	int getLineNum();
-	int accept(NodeVisitor *visitor) = 0;
+	virtual int accept(NodeVisitor *visitor) = 0;
 };
 
 

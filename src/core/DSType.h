@@ -13,7 +13,7 @@
 #include <string>
 #include "CalleeHandle.h"
 
-struct DSType {
+class DSType {
 public:
 	DSType();
 	virtual ~DSType();
