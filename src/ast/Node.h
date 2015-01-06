@@ -590,4 +590,59 @@ public:
 	int accept(NodeVisitor *visitor);	//override
 };
 
+
+class IfNode : public Node {
+private:
+	ExprNode *condNode;
+	BlockNode *thenNode;
+
+	/**
+	 * may be EmptyBlockNode
+	 */
+	BlockNode *elseNode;
+
+public:
+	IfNode(int lineNum, ExprNode *condNode, BlockNode *thenNode, BlockNode *elseNode);
+	~IfNode();
+
+	ExprNode *getCondNode();
+	BlockNode *getThenNode();
+	BlockNode *getElseNode();
+	int accept(NodeVisitor *visitor);	// override
+};
+
+
+class ReturnNode : public BlockEndNode {
+private:
+	/**
+	 * may be null, if has no return value
+	 */
+	ExprNode *exprNode;
+
+public:
+	ReturnNode(int lineNum, ExprNode *exprNode);
+	ReturnNode(int lineNum);
+	~ReturnNode();
+
+	/**
+	 * return null if has no return value
+	 */
+	ExprNode *getExprNode();
+	int accept(NodeVisitor *visitor);	// override
+};
+
+
+class ThrowNode : public BlockEndNode {
+private:
+	ExprNode *exprNode;
+
+public:
+	ThrowNode(int lineNum, ExprNode *exprNode);
+	~ThrowNode();
+
+	ExprNode *getExprNode();
+	int accept(NodeVisitor *visitor);	// override
+};
+
+
 #endif /* AST_NODE_H_ */

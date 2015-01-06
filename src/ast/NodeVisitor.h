@@ -40,6 +40,9 @@ class ImportEnvNode;
 class ForNode;
 class ForInNode;
 class WhileNode;
+class IfNode;
+class ReturnNode;
+class ThrowNode;
 
 
 class NodeVisitor {
@@ -77,6 +80,9 @@ public:
 	virtual int visitForNode            (ForNode             *node) = 0;
 	virtual int visitForInNode          (ForInNode           *node) = 0;
 	virtual int visitWhileNode          (WhileNode           *node) = 0;
+	virtual int visitIfNode             (IfNode              *node) = 0;
+	virtual int visitReturnNode         (ReturnNode          *node) = 0;
+	virtual int visitThrowNode          (ThrowNode           *node) = 0;
 };
 
 #endif /* AST_NODEVISITOR_H_ */

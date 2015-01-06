@@ -926,3 +926,83 @@ int WhileNode::accept(NodeVisitor *visitor) {
 	return visitor->visitWhileNode(this);
 }
 
+
+// ####################
+// ##     IfNode     ##
+// ####################
+
+IfNode::IfNode(int lineNum, ExprNode *condNode, BlockNode *thenNode, BlockNode *elseNode):
+		Node(lineNum), condNode(condNode), thenNode(thenNode), elseNode(elseNode) {
+}
+
+IfNode::~IfNode() {
+	delete this->condNode;
+	delete this->thenNode;
+	delete this->elseNode;
+}
+
+ExprNode *IfNode::getCondNode() {
+	return this->condNode;
+}
+
+BlockNode *IfNode::getThenNode() {
+	return this->thenNode;
+}
+
+BlockNode *IfNode::getElseNode() {
+	return this->elseNode;
+}
+
+int IfNode::accept(NodeVisitor *visitor) {
+	return visitor->visitIfNode(this);
+}
+
+
+// ########################
+// ##     ReturnNode     ##
+// ########################
+
+ReturnNode::ReturnNode(int lineNum, ExprNode *exprNode):
+		BlockEndNode(lineNum), exprNode(exprNode) {
+}
+
+ReturnNode::ReturnNode(int lineNum):
+		BlockEndNode(lineNum), exprNode(0) {
+}
+
+ReturnNode::~ReturnNode() {
+	if(this->exprNode != 0) {
+		delete this->exprNode;
+	}
+}
+
+ExprNode *ReturnNode::getExprNode() {
+	return this->exprNode;
+}
+
+int ReturnNode::accept(NodeVisitor *visitor) {
+	return visitor->visitReturnNode(this);
+}
+
+
+// #######################
+// ##     ThrowNode     ##
+// #######################
+
+ThrowNode::ThrowNode(int lineNum, ExprNode *exprNode):
+		BlockEndNode(lineNum), exprNode(exprNode) {
+}
+
+ThrowNode::~ThrowNode() {
+	delete this->exprNode;
+}
+
+ExprNode *ThrowNode::getExprNode() {
+	return this->exprNode;
+}
+
+int ThrowNode::accept(NodeVisitor *visitor) {
+	return visitor->visitThrowNode(this);
+}
+
+
