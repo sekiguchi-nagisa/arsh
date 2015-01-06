@@ -434,17 +434,17 @@ int InstanceOfNode::accept(NodeVisitor *visitor) {
 // #######################
 
 ApplyNode::ApplyNode(int lineNum, ExprNode *recvNode):
-		ExprNode(lineNum, 0), recvNode(recvNode), paramNodes() {
+		ExprNode(lineNum, 0), recvNode(recvNode), argNodes() {
 }
 
 ApplyNode::~ApplyNode() {
 	delete this->recvNode;
 
-	int size = this->paramNodes.size();
+	int size = this->argNodes.size();
 	for(int i = 0; i < size; i++) {
-		delete this->paramNodes[i];
+		delete this->argNodes[i];
 	}
-	this->paramNodes.clear();
+	this->argNodes.clear();
 }
 
 ExprNode *ApplyNode::getRecvNode() {
@@ -454,12 +454,12 @@ ExprNode *ApplyNode::getRecvNode() {
 /**
  * for parser
  */
-void ApplyNode::addParamNode(ExprNode *node) {
-	this->paramNodes.push_back(node);
+void ApplyNode::addArgNode(ExprNode *node) {
+	this->argNodes.push_back(node);
 }
 
-std::vector<ExprNode*> ApplyNode::getParamNodes() {
-	return this->paramNodes;
+std::vector<ExprNode*> ApplyNode::getArgNodes() {
+	return this->argNodes;
 }
 
 int ApplyNode::accept(NodeVisitor *visitor) {
@@ -472,23 +472,23 @@ int ApplyNode::accept(NodeVisitor *visitor) {
 // #################################
 
 ConstructorCallNode::ConstructorCallNode(int lineNum, UnresolvedType *type):
-		ExprNode(lineNum, type), paramNodes(), handle(0) {
+		ExprNode(lineNum, type), argNodes(), handle(0) {
 }
 
 ConstructorCallNode::~ConstructorCallNode() {
-	int size = this->paramNodes.size();
+	int size = this->argNodes.size();
 	for(int i = 0; i < size; i++) {
-		delete this->paramNodes[i];
+		delete this->argNodes[i];
 	}
-	this->paramNodes.clear();
+	this->argNodes.clear();
 }
 
-void ConstructorCallNode::addParamNode(ExprNode *node) {
-	this->paramNodes.push_back(node);
+void ConstructorCallNode::addArgNode(ExprNode *node) {
+	this->argNodes.push_back(node);
 }
 
-std::vector<ExprNode*> ConstructorCallNode::getParamNodes() {
-	return this->paramNodes;
+std::vector<ExprNode*> ConstructorCallNode::getArgNodes() {
+	return this->argNodes;
 }
 
 void ConstructorCallNode::setConstructorHandle(ConstructorHandle *handle) {
@@ -532,3 +532,147 @@ bool CondOpNode::isAndOp() {
 int CondOpNode::accept(NodeVisitor *visitor) {
 	return visitor->visitCondOpNode(this);
 }
+
+
+// #########################
+// ##     ProcessNode     ##
+// #########################
+
+ProcessNode::ProcessNode(int lineNum, std::string commandName):
+		ExprNode(lineNum, 0), commandName(commandName), argNodes() {
+}
+
+ProcessNode::~ProcessNode() {
+	int size = this->argNodes.size();
+	for(int i = 0; i < size; i++) {
+		delete this->argNodes[i];
+	}
+}
+
+std::string ProcessNode::getCommandName() {
+	return this->commandName;
+}
+
+void ProcessNode::addArgNode(ExprNode *node) {
+	this->argNodes.push_back(node);
+}
+
+std::vector<ExprNode*> ProcessNode::getArgNodes() {
+	return this->argNodes;
+}
+
+int ProcessNode::accept(NodeVisitor *visitor) {
+	return visitor->visitProcessNode(this);
+}
+
+
+// ##########################
+// ##     ArgumentNode     ##
+// ##########################
+
+ArgumentNode::ArgumentNode(int lineNum):
+	ExprNode(lineNum, 0), segmentNodes() {
+}
+
+ArgumentNode::~ArgumentNode() {
+	int size = this->segmentNodes.size();
+	for(int i = 0; i < size; i++) {
+		delete this->segmentNodes[i];
+	}
+	this->segmentNodes.clear();
+}
+
+void ArgumentNode::addSegmentNode(ExprNode *node) {
+	ArgumentNode *argNode = dynamic_cast<ArgumentNode*>(node);
+	if(argNode != 0) {
+		std::vector<ExprNode*> segmentNodes = argNode->getSegmentNodes();
+		int size = segmentNodes.size();
+		for(int i = 0; i < size; i++) {
+			this->segmentNodes.push_back(segmentNodes[i]);
+		}
+		segmentNodes.clear();
+		delete argNode;
+		return;
+	}
+	this->segmentNodes.push_back(node);
+}
+
+std::vector<ExprNode*> ArgumentNode::getSegmentNodes() {
+	return this->segmentNodes;
+}
+
+int ArgumentNode::accept(NodeVisitor *visitor) {
+	return visitor->visitArgumentNode(this);
+}
+
+
+// #############################
+// ##     SpecialCharNode     ##
+// #############################
+
+SpecialCharNode::SpecialCharNode(int lineNum):
+		ExprNode(lineNum, 0) {
+}
+
+SpecialCharNode::~SpecialCharNode() {
+}
+
+int SpecialCharNode::accept(NodeVisitor *visitor) {
+	return visitor->visitSpecialCharNode(this);
+}
+
+
+// ######################
+// ##     TaskNode     ##
+// ######################
+
+TaskNode::TaskNode():
+		ExprNode(0, 0), procNodes(), background(false) {
+}
+
+TaskNode::~TaskNode() {
+	int size = this->procNodes.size();
+	for(int i = 0; i < size; i++) {
+		delete this->procNodes[i];
+	}
+	this->procNodes.clear();
+}
+
+void TaskNode::addProcNodes(ProcessNode* node) {
+	this->procNodes.push_back(node);
+}
+
+std::vector<ProcessNode*> TaskNode::getProcNodes() {
+	return this->procNodes;
+}
+
+bool TaskNode::isBackground() {
+	return this->background;
+}
+
+int TaskNode::accept(NodeVisitor *visitor) {
+	return visitor->visitTaskNode(this);
+}
+
+
+// ###########################
+// ##     InnerTaskNode     ##
+// ###########################
+
+InnerTaskNode::InnerTaskNode(ExprNode *exprNode):
+		ExprNode(0, 0), exprNode(exprNode) {
+}
+
+InnerTaskNode::~InnerTaskNode() {
+	delete this->exprNode;
+}
+
+ExprNode *InnerTaskNode::getExprNode() {
+	return this->exprNode;
+}
+
+int InnerTaskNode::accept(NodeVisitor *visitor) {
+	return visitor->visitInnerTaskNode(this);
+}
+
+

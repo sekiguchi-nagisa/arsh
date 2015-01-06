@@ -25,6 +25,11 @@ class InstanceOfNode;
 class ApplyNode;
 class ConstructorCallNode;
 class CondOpNode;
+class ProcessNode;
+class ArgumentNode;
+class SpecialCharNode;
+class TaskNode;
+class InnerTaskNode;
 
 
 class NodeVisitor {
@@ -48,6 +53,11 @@ public:
 	virtual int visitApplyNode          (ApplyNode           *node) = 0;
 	virtual int visitConstructorCallNode(ConstructorCallNode *node) = 0;
 	virtual int visitCondOpNode         (CondOpNode          *node) = 0;
+	virtual int visitProcessNode        (ProcessNode         *node) = 0;
+	virtual int visitArgumentNode       (ArgumentNode        *node) = 0;
+	virtual int visitSpecialCharNode    (SpecialCharNode     *node) = 0;
+	virtual int visitTaskNode           (TaskNode            *node) = 0;
+	virtual int visitInnerTaskNode      (InnerTaskNode       *node) = 0;
 };
 
 #endif /* AST_NODEVISITOR_H_ */

@@ -284,7 +284,7 @@ public:
 class ApplyNode : public ExprNode {	//TODO: function handle, named parameter
 private:
 	ExprNode *recvNode;
-	std::vector<ExprNode*> paramNodes;
+	std::vector<ExprNode*> argNodes;
 
 public:
 	ApplyNode(int lineNum, ExprNode *recvNode);
@@ -295,24 +295,24 @@ public:
 	/**
 	 * for parser
 	 */
-	void addParamNode(ExprNode *node);
+	void addArgNode(ExprNode *node);
 
-	std::vector<ExprNode*> getParamNodes();
+	std::vector<ExprNode*> getArgNodes();
 	int accept(NodeVisitor *visitor);	// override
 };
 
 
 class ConstructorCallNode : public ExprNode {	//TODO: named parameter
 private:
-	std::vector<ExprNode*> paramNodes;
+	std::vector<ExprNode*> argNodes;
 	ConstructorHandle *handle;
 
 public:
 	ConstructorCallNode(int lineNum, UnresolvedType *type);
 	~ConstructorCallNode();
 
-	void addParamNode(ExprNode *node);
-	std::vector<ExprNode*> getParamNodes();
+	void addArgNode(ExprNode *node);
+	std::vector<ExprNode*> getArgNodes();
 	void setConstructorHandle(ConstructorHandle *handle);
 
 	/**
@@ -341,6 +341,76 @@ public:
 	ExprNode *getLeftNode();
 	ExprNode *getRightNode();
 	bool isAndOp();
+	int accept(NodeVisitor *visitor);	//override
+};
+
+
+class ProcessNode : public ExprNode {	//FIXME: redirect option, trace
+private:
+	std::string commandName;
+	std::vector<ExprNode*> argNodes;
+
+public:
+	ProcessNode(int lineNum, std::string commandName);
+	~ProcessNode();
+
+	std::string getCommandName();
+	void addArgNode(ExprNode *node);
+	std::vector<ExprNode*> getArgNodes();
+	int accept(NodeVisitor *visitor);	//override
+};
+
+/**
+ * for command(process) argument
+ */
+class ArgumentNode : public ExprNode {	//TODO: escape sequence
+private:
+	std::vector<ExprNode*> segmentNodes;
+
+public:
+	ArgumentNode(int lineNum);
+	~ArgumentNode();
+
+	void addSegmentNode(ExprNode *node);
+	std::vector<ExprNode*> getSegmentNodes();
+	int accept(NodeVisitor *visitor);	// override
+};
+
+
+class SpecialCharNode : public ExprNode {	//FIXME:
+public:
+	SpecialCharNode(int lineNum);
+	~SpecialCharNode();
+
+	int accept(NodeVisitor *visitor);	//override
+};
+
+
+class TaskNode : public ExprNode {	//TODO: background ...etc
+private:
+	std::vector<ProcessNode*> procNodes;
+	bool background;
+
+public:
+	TaskNode();
+	~TaskNode();
+
+	void addProcNodes(ProcessNode* node);
+	std::vector<ProcessNode*> getProcNodes();
+	bool isBackground();
+	int accept(NodeVisitor *visitor);	//override
+};
+
+
+class InnerTaskNode : public ExprNode {	//FIXME:
+private:
+	ExprNode *exprNode;
+
+public:
+	InnerTaskNode(ExprNode *exprNode);
+	~InnerTaskNode();
+
+	ExprNode *getExprNode();
 	int accept(NodeVisitor *visitor);	//override
 };
 
