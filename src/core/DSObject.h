@@ -73,7 +73,7 @@ private:
 public:
 	String_Object(DSType *type, std::string value);
 
-	std::string getValue();
+	const std::string &getValue();
 };
 
 

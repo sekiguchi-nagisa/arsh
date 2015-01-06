@@ -21,7 +21,7 @@ public:
 	/**
 	 * string representation of this type
 	 */
-	virtual std::string getTypeName() = 0;
+	virtual std::string getTypeName() = 0;	// must not reference value
 
 	/**
 	 * if true, can extend this type
@@ -99,7 +99,7 @@ public:
 
 	std::string getTypeName();	// override
 	void addElementType(UnresolvedType *type);
-	std::vector<UnresolvedType*> getElementTypes();
+	const std::vector<UnresolvedType*> &getElementTypes();
 	//TODO: add TypePool to parameter
 	DSType *toType();	// override
 };
@@ -136,7 +136,7 @@ public:
 	void setReturnType(UnresolvedType *type);
 	UnresolvedType *getReturnType();
 	void addParamType(UnresolvedType *type);
-	std::vector<UnresolvedType*> getParamTypes();
+	const std::vector<UnresolvedType*> &getParamTypes();
 	//TODO: add TypePool to parameter
 	DSType *toType();	// override
 };

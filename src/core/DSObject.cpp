@@ -85,6 +85,6 @@ String_Object::String_Object(DSType *type, std::string value):
 		DSObject(type), value(value) {
 }
 
-std::string String_Object::getValue() {
+const std::string &String_Object::getValue() {
 	return this->value;
 }

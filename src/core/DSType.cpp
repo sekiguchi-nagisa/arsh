@@ -94,7 +94,7 @@ void UnresolvedReifiedType::addElementType(UnresolvedType *type) {
 	this->elementTypes.push_back(type);
 }
 
-std::vector<UnresolvedType*> UnresolvedReifiedType::getElementTypes() {
+const std::vector<UnresolvedType*> &UnresolvedReifiedType::getElementTypes() {
 	return this->elementTypes;
 }
 
@@ -174,7 +174,7 @@ void UnresolvedFuncType::addParamType(UnresolvedType *type) {
 	this->paramTypes.push_back(type);
 }
 
-std::vector<UnresolvedType*> UnresolvedFuncType::getParamTypes() {
+const std::vector<UnresolvedType*> &UnresolvedFuncType::getParamTypes() {
 	return this->paramTypes;
 }
 

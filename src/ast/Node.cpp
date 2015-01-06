@@ -141,7 +141,7 @@ StringValueNode::StringValueNode(int lineNum, char *value, bool isSingleQuoteStr
 //		StringValueNode(lineNum, value, false) {
 //}
 
-std::string StringValueNode::getValue() {
+const std::string &StringValueNode::getValue() {
 	return this->value;
 }
 
@@ -170,7 +170,7 @@ void StringExprNode::addExprNode(ExprNode *node) {	//TODO:
 	this->nodes.push_back(node);
 }
 
-std::vector<ExprNode*> StringExprNode::getExprNodes() {
+const std::vector<ExprNode*> &StringExprNode::getExprNodes() {
 	return this->nodes;
 }
 
@@ -199,7 +199,7 @@ void ArrayNode::addExprNode(ExprNode *node) {
 	this->nodes.push_back(node);
 }
 
-std::vector<ExprNode*> ArrayNode::getExprNodes() {
+const std::vector<ExprNode*> &ArrayNode::getExprNodes() {
 	return this->nodes;
 }
 
@@ -231,11 +231,11 @@ void MapNode::addEntry(ExprNode *keyNode, ExprNode *valueNode) {
 	this->valueNodes.push_back(valueNode);
 }
 
-std::vector<ExprNode*> MapNode::getkeyNodes() {
+const std::vector<ExprNode*> &MapNode::getkeyNodes() {
 	return this->keyNodes;
 }
 
-std::vector<ExprNode*> MapNode::getValueNodes() {
+const std::vector<ExprNode*> &MapNode::getValueNodes() {
 	return this->valueNodes;
 }
 
@@ -290,7 +290,7 @@ SymbolNode::SymbolNode(int lineNum, std::string varName):
 		AssignableNode(lineNum), varName(varName), readOnly(false) {
 }
 
-std::string SymbolNode::getVarName() {
+const std::string &SymbolNode::getVarName() {
 	return this->varName;
 }
 
@@ -366,7 +366,7 @@ ExprNode *AccessNode::getRecvNode() {
 	return this->recvNode;
 }
 
-std::string AccessNode::getFieldName() {
+const std::string &AccessNode::getFieldName() {
 	return this->fieldName;
 }
 
@@ -458,7 +458,7 @@ void ApplyNode::addArgNode(ExprNode *node) {
 	this->argNodes.push_back(node);
 }
 
-std::vector<ExprNode*> ApplyNode::getArgNodes() {
+const std::vector<ExprNode*> &ApplyNode::getArgNodes() {
 	return this->argNodes;
 }
 
@@ -487,7 +487,7 @@ void ConstructorCallNode::addArgNode(ExprNode *node) {
 	this->argNodes.push_back(node);
 }
 
-std::vector<ExprNode*> ConstructorCallNode::getArgNodes() {
+const std::vector<ExprNode*> &ConstructorCallNode::getArgNodes() {
 	return this->argNodes;
 }
 
@@ -549,7 +549,7 @@ ProcessNode::~ProcessNode() {
 	}
 }
 
-std::string ProcessNode::getCommandName() {
+const std::string &ProcessNode::getCommandName() {
 	return this->commandName;
 }
 
@@ -557,7 +557,7 @@ void ProcessNode::addArgNode(ExprNode *node) {
 	this->argNodes.push_back(node);
 }
 
-std::vector<ExprNode*> ProcessNode::getArgNodes() {
+const std::vector<ExprNode*> &ProcessNode::getArgNodes() {
 	return this->argNodes;
 }
 
@@ -597,7 +597,7 @@ void ArgumentNode::addSegmentNode(ExprNode *node) {
 	this->segmentNodes.push_back(node);
 }
 
-std::vector<ExprNode*> ArgumentNode::getSegmentNodes() {
+const std::vector<ExprNode*> &ArgumentNode::getSegmentNodes() {
 	return this->segmentNodes;
 }
 
@@ -642,7 +642,7 @@ void TaskNode::addProcNodes(ProcessNode* node) {
 	this->procNodes.push_back(node);
 }
 
-std::vector<ProcessNode*> TaskNode::getProcNodes() {
+const std::vector<ProcessNode*> &TaskNode::getProcNodes() {
 	return this->procNodes;
 }
 

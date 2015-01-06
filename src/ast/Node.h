@@ -94,7 +94,7 @@ public:
 	 */
 	//StringValueNode(int lineNum, char *value);	//FIXME:
 
-	std::string getValue();
+	const std::string &getValue();
 	int accept(NodeVisitor *visitor);	// override
 };
 
@@ -108,7 +108,7 @@ public:
 	~StringExprNode();
 
 	void addExprNode(ExprNode *node);	//TODO:
-	std::vector<ExprNode*> getExprNodes();
+	const std::vector<ExprNode*> &getExprNodes();
 	int accept(NodeVisitor *visitor);	// override
 };
 
@@ -122,7 +122,7 @@ public:
 	~ArrayNode();
 
 	void addExprNode(ExprNode *node);
-	std::vector<ExprNode*> getExprNodes();
+	const std::vector<ExprNode*> &getExprNodes();
 	int accept(NodeVisitor *visitor);	//override
 };
 
@@ -137,8 +137,8 @@ public:
 	~MapNode();
 
 	void addEntry(ExprNode *keyNode, ExprNode *valueNode);
-	std::vector<ExprNode*> getkeyNodes();
-	std::vector<ExprNode*> getValueNodes();
+	const std::vector<ExprNode*> &getkeyNodes();
+	const std::vector<ExprNode*> &getValueNodes();
 	int accept(NodeVisitor *visitor);	// override
 };
 
@@ -178,7 +178,7 @@ private:
 public:
 	SymbolNode(int lineNum, std::string varName);
 
-	std::string getVarName();
+	const std::string &getVarName();
 	bool isReadOnly();	// override
 	int accept(NodeVisitor *visitor);	// override
 };
@@ -240,7 +240,7 @@ public:
 	~AccessNode();
 
 	ExprNode *getRecvNode();
-	std::string getFieldName();
+	const std::string &getFieldName();
 	void setFieldHandle(FieldHandle *handle);
 
 	/**
@@ -297,7 +297,7 @@ public:
 	 */
 	void addArgNode(ExprNode *node);
 
-	std::vector<ExprNode*> getArgNodes();
+	const std::vector<ExprNode*> &getArgNodes();
 	int accept(NodeVisitor *visitor);	// override
 };
 
@@ -312,7 +312,7 @@ public:
 	~ConstructorCallNode();
 
 	void addArgNode(ExprNode *node);
-	std::vector<ExprNode*> getArgNodes();
+	const std::vector<ExprNode*> &getArgNodes();
 	void setConstructorHandle(ConstructorHandle *handle);
 
 	/**
@@ -354,9 +354,9 @@ public:
 	ProcessNode(int lineNum, std::string commandName);
 	~ProcessNode();
 
-	std::string getCommandName();
+	const std::string &getCommandName();
 	void addArgNode(ExprNode *node);
-	std::vector<ExprNode*> getArgNodes();
+	const std::vector<ExprNode*> &getArgNodes();
 	int accept(NodeVisitor *visitor);	//override
 };
 
@@ -372,7 +372,7 @@ public:
 	~ArgumentNode();
 
 	void addSegmentNode(ExprNode *node);
-	std::vector<ExprNode*> getSegmentNodes();
+	const std::vector<ExprNode*> &getSegmentNodes();
 	int accept(NodeVisitor *visitor);	// override
 };
 
@@ -396,7 +396,7 @@ public:
 	~TaskNode();
 
 	void addProcNodes(ProcessNode* node);
-	std::vector<ProcessNode*> getProcNodes();
+	const std::vector<ProcessNode*> &getProcNodes();
 	bool isBackground();
 	int accept(NodeVisitor *visitor);	//override
 };
