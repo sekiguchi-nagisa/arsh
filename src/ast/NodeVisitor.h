@@ -37,6 +37,9 @@ class BreakNode;
 class ContinueNode;
 class ExportEnvNode;
 class ImportEnvNode;
+class ForNode;
+class ForInNode;
+class WhileNode;
 
 
 class NodeVisitor {
@@ -71,6 +74,9 @@ public:
 	virtual int visitContinueNode       (ContinueNode        *node) = 0;
 	virtual int visitExportEnvNode      (ExportEnvNode       *node) = 0;
 	virtual int visitImportEnvNode      (ImportEnvNode       *node) = 0;
+	virtual int visitForNode            (ForNode             *node) = 0;
+	virtual int visitForInNode          (ForInNode           *node) = 0;
+	virtual int visitWhileNode          (WhileNode           *node) = 0;
 };
 
 #endif /* AST_NODEVISITOR_H_ */

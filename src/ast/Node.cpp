@@ -802,3 +802,127 @@ int ImportEnvNode::accept(NodeVisitor *visitor) {
 	return visitor->visitImportEnvNode(this);
 }
 
+
+// ######################
+// ##     LoopNode     ##
+// ######################
+
+LoopNode::LoopNode(int lineNum):
+		Node(lineNum) {
+}
+
+
+// #####################
+// ##     ForNode     ##
+// #####################
+
+ForNode::ForNode(int lineNum, Node *initNode, Node *condNode, Node *iterNode, BlockNode *blockNode):
+		LoopNode(lineNum), initNode(initNode), condNode(condNode), iterNode(iterNode), blockNode(blockNode) {
+}
+
+ForNode::~ForNode() {
+	delete this->initNode;
+	delete this->condNode;
+	delete this->iterNode;
+	delete this->blockNode;
+}
+
+Node *ForNode::getInitNode() {
+	return this->initNode;
+}
+
+Node *ForNode::getCondNode() {
+	return this->condNode;
+}
+
+Node *ForNode::getIterNode() {
+	return this->iterNode;
+}
+
+BlockNode *ForNode::getBlockNode() {
+	return this->blockNode;
+}
+
+int ForNode::accept(NodeVisitor *visitor) {
+	return visitor->visitForNode(this);
+}
+
+
+// #######################
+// ##     ForInNode     ##
+// #######################
+
+ForInNode::ForInNode(int lineNum, std::string initName, ExprNode *exprNode, BlockNode *blockNode):
+		LoopNode(lineNum), initName(initName), exprNode(exprNode), blockNode(blockNode),
+		resetHandle(0), nextHandle(0), hasNextHandle(0) {
+}
+
+ForInNode::~ForInNode() {
+	delete this->exprNode;
+	delete this->blockNode;
+}
+
+const std::string &ForInNode::getInitName() {
+	return this->initName;
+}
+
+ExprNode *ForInNode::getExprNode() {
+	return this->exprNode;
+}
+
+BlockNode *ForInNode::getBlockNode() {
+	return this->blockNode;
+}
+
+void ForInNode::setIteratorHandle(FunctionHandle *resetHandle, FunctionHandle *nextHandle, FunctionHandle *hasNextHandle) {
+	this->resetHandle = resetHandle;
+	this->nextHandle = nextHandle;
+	this->hasNextHandle = hasNextHandle;
+}
+
+FunctionHandle *ForInNode::getResetHandle() {
+	return this->resetHandle;
+}
+
+FunctionHandle *ForInNode::getNextHandle() {
+	return this->nextHandle;
+}
+
+FunctionHandle *ForInNode::getHasNextHandle() {
+	return this->hasNextHandle;
+}
+
+int ForInNode::accept(NodeVisitor *visitor) {
+	return visitor->visitForInNode(this);
+}
+
+
+// #######################
+// ##     WhileNode     ##
+// #######################
+
+WhileNode::WhileNode(int lineNum, ExprNode *condNode, BlockNode *blockNode, bool asDoWhile):
+		LoopNode(lineNum), condNode(condNode), blockNode(blockNode), asDoWhile(asDoWhile){
+}
+
+WhileNode::~WhileNode() {
+	delete this->condNode;
+	delete this->blockNode;
+}
+
+ExprNode *WhileNode::getCondNode() {
+	return this->condNode;
+}
+
+BlockNode *WhileNode::getBlockNode() {
+	return this->blockNode;
+}
+
+bool WhileNode::isDoWhile() {
+	return this->asDoWhile;
+}
+
+int WhileNode::accept(NodeVisitor *visitor) {
+	return visitor->visitWhileNode(this);
+}
+

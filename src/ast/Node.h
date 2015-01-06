@@ -491,4 +491,103 @@ public:
 	int accept(NodeVisitor *visitor);	// override
 };
 
+
+/**
+ * base class for ForNode, ForInNode, WhileNode
+ */
+class LoopNode : public Node {
+public:
+	LoopNode(int lineNum);
+};
+
+
+class ForNode : public LoopNode {
+private:
+	/**
+	 * may be empty node
+	 */
+	Node *initNode;
+
+	/**
+	 * may be empty node
+	 */
+	Node *condNode;
+
+	/**
+	 * may be empty node
+	 */
+	Node *iterNode;
+
+	BlockNode *blockNode;
+
+public:
+	ForNode(int lineNum, Node *initNode, Node *condNode, Node *iterNode, BlockNode *blockNode);
+	~ForNode();
+
+	Node *getInitNode();
+	Node *getCondNode();
+	Node *getIterNode();
+	BlockNode *getBlockNode();
+	int accept(NodeVisitor *visitor);	// override
+};
+
+
+class ForInNode : public LoopNode {	//FIXME: callee handle, initName
+private:
+	std::string initName;
+	ExprNode *exprNode;
+	BlockNode *blockNode;
+
+	FunctionHandle *resetHandle;	// handle for __RESET__
+	FunctionHandle *nextHandle;		// handle for __NEXT__
+	FunctionHandle *hasNextHandle;	// handle for __HAS_NEXT__
+
+public:
+	ForInNode(int lineNum, std::string initName, ExprNode *exprNode, BlockNode *blockNode);
+	~ForInNode();
+
+	const std::string &getInitName();
+	ExprNode *getExprNode();
+	BlockNode *getBlockNode();
+	void setIteratorHandle(FunctionHandle *resetHandle, FunctionHandle *nextHandle, FunctionHandle *hasNextHandle);
+
+	/**
+	 * return null before call setIteratorHandle()
+	 */
+	FunctionHandle *getResetHandle();
+
+	/**
+	 * return null before call setIteratorHandle()
+	 */
+	FunctionHandle *getNextHandle();
+
+	/**
+	 * return null before call setIteratorHandle()
+	 */
+	FunctionHandle *getHasNextHandle();
+
+	int accept(NodeVisitor *visitor);	// override
+};
+
+
+class WhileNode : public LoopNode {
+private:
+	ExprNode *condNode;
+	BlockNode *blockNode;
+
+	/**
+	 * if true, this node represent for do-while
+	 */
+	bool asDoWhile;
+
+public:
+	WhileNode(int lineNum, ExprNode *condNode, BlockNode *blockNode, bool asDoWhile);
+	~WhileNode();
+
+	ExprNode *getCondNode();
+	BlockNode *getBlockNode();
+	bool isDoWhile();
+	int accept(NodeVisitor *visitor);	//override
+};
+
 #endif /* AST_NODE_H_ */
