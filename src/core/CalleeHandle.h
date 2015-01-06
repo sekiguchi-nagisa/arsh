@@ -10,7 +10,7 @@
 
 class DSType;
 
-class FieldHandle {
+class FieldHandle {	//TODO: access level
 private:
 	DSType *fieldType;
 

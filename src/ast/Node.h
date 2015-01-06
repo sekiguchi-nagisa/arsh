@@ -1,0 +1,347 @@
+/*
+ * Node.h
+ *
+ *  Created on: 2014/12/31
+ *      Author: skgchxngsxyz-osx
+ */
+
+#ifndef AST_NODE_H_
+#define AST_NODE_H_
+
+#include "../core/DSType.h"
+#include "../core/CalleeHandle.h"
+#include "NodeVisitor.h"
+
+class Node {
+protected:
+	int lineNum;
+
+public:
+	Node(int lineNum);
+	virtual ~Node();
+
+	int getLineNum();
+	virtual int accept(NodeVisitor *visitor) = 0;
+};
+
+
+class ExprNode : public Node {
+protected:
+	DSType *type;	// initial value is UnresolvedType
+
+public:
+	/**
+	 * type is null if has no type annotation(ex. IntValueNode, StringValueNode)
+	 */
+	ExprNode(int lineNum, UnresolvedType *type);
+	virtual ~ExprNode();
+
+	void setType(DSType *type);
+	DSType *getType();	// UnresolvedType before type checking
+};
+
+
+class IntValueNode : public ExprNode {
+private:
+	long value;
+
+public:
+	IntValueNode(int lineNum, long value);
+
+	long getValue();
+	int accept(NodeVisitor *visitor);	// override
+};
+
+
+class FloatValueNode : public ExprNode {
+private:
+	double value;
+
+public:
+	FloatValueNode(int lineNum, double value);
+
+	double getValue();
+	int accept(NodeVisitor *visitor);	// override
+};
+
+
+class BooleanValueNode : public ExprNode {
+private:
+	bool value;
+
+public:
+	BooleanValueNode(int lineNum, bool value);
+
+	bool getValue();
+	int accept(NodeVisitor *visitor);	// override
+};
+
+
+class StringValueNode : public ExprNode {	//FIXME:
+private:
+	std::string value;
+
+public:
+	/**
+	 * used for CommandNode. lineNum is always 0.
+	 */
+	StringValueNode(std::string value);
+
+	StringValueNode(int lineNum, char *value, bool isSingleQuoteStr);
+
+	/**
+	 * call StringValueNode(lineNum, value, false)
+	 */
+	//StringValueNode(int lineNum, char *value);	//FIXME:
+
+	std::string getValue();
+	int accept(NodeVisitor *visitor);	// override
+};
+
+
+class StringExprNode : public ExprNode {
+private:
+	std::vector<ExprNode*> nodes;
+
+public:
+	StringExprNode(int lineNum);
+	~StringExprNode();
+
+	void addExprNode(ExprNode *node);	//TODO:
+	std::vector<ExprNode*> getExprNodes();
+	int accept(NodeVisitor *visitor);	// override
+};
+
+
+class ArrayNode : public ExprNode {
+private:
+	std::vector<ExprNode*> nodes;
+
+public:
+	ArrayNode(int lineNum);
+	~ArrayNode();
+
+	void addExprNode(ExprNode *node);
+	std::vector<ExprNode*> getExprNodes();
+	int accept(NodeVisitor *visitor);	//override
+};
+
+
+class MapNode : public ExprNode {
+private:
+	std::vector<ExprNode*> keyNodes;
+	std::vector<ExprNode*> valueNodes;
+
+public:
+	MapNode(int lineNum);
+	~MapNode();
+
+	void addEntry(ExprNode *keyNode, ExprNode *valueNode);
+	std::vector<ExprNode*> getkeyNodes();
+	std::vector<ExprNode*> getValueNodes();
+	int accept(NodeVisitor *visitor);	// override
+};
+
+
+class PairNode : public ExprNode {
+private:
+	ExprNode *leftNode;
+	ExprNode *rightNode;
+
+public:
+	PairNode(int lineNum, ExprNode *leftNode, ExprNode *rightNode);
+	~PairNode();
+
+	ExprNode *getLeftNode();
+	ExprNode *getRightNode();
+	int accept(NodeVisitor *visitor);	// override
+};
+
+
+/**
+ * base class for SymbolNode, IndexNode, AccessNode
+ */
+class AssignableNode : public ExprNode {
+public:
+	AssignableNode(int lineNum);
+	~AssignableNode();
+
+	virtual bool isReadOnly() = 0;
+};
+
+
+class SymbolNode : public AssignableNode {	//TODO: symbol entry, rename to VarNode
+private:
+	std::string varName;
+	bool readOnly;
+
+public:
+	SymbolNode(int lineNum, std::string varName);
+
+	std::string getVarName();
+	bool isReadOnly();	// override
+	int accept(NodeVisitor *visitor);	// override
+};
+
+
+class IndexNode : public AssignableNode {	//TODO: change getter, setter handle class to FieldHandle
+private:
+	ExprNode *recvNode;
+	ExprNode *indexNode;
+
+	/**
+	 * for getter method ( __GET__ )
+	 */
+	FunctionHandle *getterHandle;	// not call destructor
+
+	/**
+	 * for setetr method ( __SET__ )
+	 */
+	FunctionHandle *setterHandle;	// not call destructor
+
+public:
+	IndexNode(int lineNum, ExprNode *recvNode, ExprNode *indexNode);
+	~IndexNode();
+
+	ExprNode *getRecvNode();
+	ExprNode *getIndexNode();
+
+	void setGetterHandle(FunctionHandle *handle);
+
+	/**
+	 * return null before call setGetterHandle
+	 */
+	FunctionHandle *getGetterHandle();
+
+	void setSetterHandle(FunctionHandle *handle);
+
+	/**
+	 * return null before call setSetterHandle
+	 */
+	FunctionHandle *getSetterHandle();
+
+	/**
+	 * return always false
+	 */
+	bool isReadOnly();	// override
+
+	int accept(NodeVisitor *visitor);	//override
+};
+
+
+class AccessNode : public AssignableNode {	//TODO: field handle
+private:
+	ExprNode *recvNode;
+	std::string fieldName;
+	FieldHandle *handle;
+
+public:
+	AccessNode(int lineNum, ExprNode *recvNode, std::string fieldName);
+	~AccessNode();
+
+	ExprNode *getRecvNode();
+	std::string getFieldName();
+	void setFieldHandle(FieldHandle *handle);
+
+	/**
+	 * return null before call setFieldHandle
+	 */
+	FieldHandle *getFieldHandle();
+
+	bool isReadOnly();	// oevrride
+	int accept(NodeVisitor *visitor);	// override
+};
+
+
+class CastNode : public ExprNode {	//TODO: cast op kind
+private:
+	ExprNode *targetNode;
+
+public:
+	CastNode(int lineNum, ExprNode *targetNode, UnresolvedType *type);
+	~CastNode();
+
+	ExprNode *getTargetNode();
+	int accept(NodeVisitor *visitor);	//override
+};
+
+
+class InstanceOfNode : public ExprNode {	//TODO: instanceof op kind
+private:
+	ExprNode *targetNode;
+
+public:
+	InstanceOfNode(int lineNum, ExprNode *targetNode, UnresolvedType *tyep);
+	~InstanceOfNode();
+
+	ExprNode *getTargetNode();
+	int accept(NodeVisitor *visitor);	//override
+};
+
+
+//class OperatorCallNode;	//FIXME: duplicated
+
+class ApplyNode : public ExprNode {	//TODO: function handle, named parameter
+private:
+	ExprNode *recvNode;
+	std::vector<ExprNode*> paramNodes;
+
+public:
+	ApplyNode(int lineNum, ExprNode *recvNode);
+	~ApplyNode();
+
+	ExprNode *getRecvNode();
+
+	/**
+	 * for parser
+	 */
+	void addParamNode(ExprNode *node);
+
+	std::vector<ExprNode*> getParamNodes();
+	int accept(NodeVisitor *visitor);	// override
+};
+
+
+class ConstructorCallNode : public ExprNode {	//TODO: named parameter
+private:
+	std::vector<ExprNode*> paramNodes;
+	ConstructorHandle *handle;
+
+public:
+	ConstructorCallNode(int lineNum, UnresolvedType *type);
+	~ConstructorCallNode();
+
+	void addParamNode(ExprNode *node);
+	std::vector<ExprNode*> getParamNodes();
+	void setConstructorHandle(ConstructorHandle *handle);
+
+	/**
+	 * return null before call setConstructorHandle()
+	 */
+	ConstructorHandle *getConstructorHandle();
+
+	int accept(NodeVisitor *visitor);	//override
+};
+
+
+class CondOpNode : public ExprNode {
+private:
+	ExprNode *leftNode;
+	ExprNode *rightNode;
+
+	/**
+	 * if true, conditional and. otherwise, conditional or
+	 */
+	bool andOp;
+
+public:
+	CondOpNode(int lineNum, ExprNode *leftNode, ExprNode *rightNode, bool isAndOp);
+	~CondOpNode();
+
+	ExprNode *getLeftNode();
+	ExprNode *getRightNode();
+	bool isAndOp();
+	int accept(NodeVisitor *visitor);	//override
+};
+
+#endif /* AST_NODE_H_ */

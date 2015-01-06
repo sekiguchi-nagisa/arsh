@@ -15,4 +15,3 @@ NodeVisitor::NodeVisitor() {
 NodeVisitor::~NodeVisitor() {
 	// TODO Auto-generated destructor stub
 }
-
