@@ -676,3 +676,129 @@ int InnerTaskNode::accept(NodeVisitor *visitor) {
 }
 
 
+// ########################
+// ##     AssertNode     ##
+// ########################
+
+AssertNode::AssertNode(int lineNum, ExprNode *exprNode):
+		Node(lineNum), exprNode(exprNode) {
+}
+
+AssertNode::~AssertNode() {
+	delete this->exprNode;
+}
+
+ExprNode *AssertNode::getExprNode() {
+	return this->exprNode;
+}
+
+int AssertNode::accept(NodeVisitor *visitor) {
+	return visitor->visitAssertNode(this);
+}
+
+
+// #######################
+// ##     BlockNode     ##
+// #######################
+
+BlockNode::BlockNode():
+		Node(0), nodes() {
+}
+
+BlockNode::~BlockNode() {
+	int size = this->nodes.size();
+	for(int i = 0; i < size; i++) {
+		delete this->nodes[i];
+	}
+	this->nodes.clear();
+}
+
+void BlockNode::addNode(Node *node) {
+	this->nodes.push_back(node);
+}
+
+const std::vector<Node*> &BlockNode::getNodes() {
+	return this->nodes;
+}
+
+int BlockNode::accept(NodeVisitor *visitor) {
+	return visitor->visitBlockNode(this);
+}
+
+
+// ######################
+// ##     BlockEnd     ##
+// ######################
+
+BlockEndNode::BlockEndNode(int lineNum):
+		Node(lineNum) {
+}
+
+
+// #######################
+// ##     BreakNode     ##
+// #######################
+
+BreakNode::BreakNode(int lineNum):
+		BlockEndNode(lineNum) {
+}
+
+int BreakNode::accept(NodeVisitor *visitor) {
+	return visitor->visitBreakNode(this);
+}
+
+
+// ##########################
+// ##     ContinueNode     ##
+// ##########################
+
+ContinueNode::ContinueNode(int lineNum):
+	BlockEndNode(lineNum) {
+}
+
+int ContinueNode::accept(NodeVisitor *visitor) {
+	return visitor->visitContinueNode(this);
+}
+
+
+// ###########################
+// ##     ExportEnvNode     ##
+// ###########################
+
+ExportEnvNode::ExportEnvNode(int lineNum, std::string envName, ExprNode *exprNode):
+		Node(lineNum), envName(envName), exprNode(exprNode) {
+}
+
+ExportEnvNode::~ExportEnvNode() {
+	delete this->exprNode;
+}
+
+const std::string &ExportEnvNode::getEnvName() {
+	return this->envName;
+}
+
+ExprNode *ExportEnvNode::getExprNode() {
+	return this->exprNode;
+}
+
+int ExportEnvNode::accept(NodeVisitor *visitor) {
+	return visitor->visitExportEnvNode(this);
+}
+
+
+// ###########################
+// ##     ImportEnvNode     ##
+// ###########################
+
+ImportEnvNode::ImportEnvNode(int lineNum, std::string envName):
+		Node(lineNum), envName(envName) {
+}
+
+const std::string ImportEnvNode::getEnvName() {
+	return this->envName;
+}
+
+int ImportEnvNode::accept(NodeVisitor *visitor) {
+	return visitor->visitImportEnvNode(this);
+}
+

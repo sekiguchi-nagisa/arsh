@@ -414,4 +414,81 @@ public:
 	int accept(NodeVisitor *visitor);	//override
 };
 
+
+class AssertNode : public Node {	//FIXME: callee
+private:
+	ExprNode *exprNode;
+
+public:
+	AssertNode(int lineNum, ExprNode *exprNode);
+	~AssertNode();
+
+	ExprNode *getExprNode();
+	int accept(NodeVisitor *visitor);	// override
+};
+
+
+class BlockNode : public Node {
+private:
+	std::vector<Node*> nodes;
+
+public:
+	BlockNode();
+	~BlockNode();
+
+	void addNode(Node *node);
+	const std::vector<Node*> &getNodes();
+	int accept(NodeVisitor *visitor);	// override
+};
+
+
+/**
+ * base class for break, continue, return, throw node
+ */
+class BlockEndNode : public Node {
+public:
+	BlockEndNode(int lineNum);
+};
+
+
+class BreakNode : public BlockEndNode {
+public:
+	BreakNode(int lineNum);
+	int accept(NodeVisitor *visitor);	// override
+};
+
+
+class ContinueNode : public BlockEndNode {
+public:
+	ContinueNode(int lineNum);
+	int accept(NodeVisitor *visitor);	// override
+};
+
+
+class ExportEnvNode : public Node {	//TODO: callee
+private:
+	std::string envName;
+	ExprNode *exprNode;
+
+public:
+	ExportEnvNode(int lineNum, std::string envName, ExprNode *exprNode);
+	~ExportEnvNode();
+
+	const std::string &getEnvName();
+	ExprNode *getExprNode();
+	int accept(NodeVisitor *visitor);	// override
+};
+
+
+class ImportEnvNode : public Node {	//TODO: callee
+private:
+	std::string envName;
+
+public:
+	ImportEnvNode(int lineNum, std::string envName);
+
+	const std::string getEnvName();
+	int accept(NodeVisitor *visitor);	// override
+};
+
 #endif /* AST_NODE_H_ */

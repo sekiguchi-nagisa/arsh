@@ -31,6 +31,13 @@ class SpecialCharNode;
 class TaskNode;
 class InnerTaskNode;
 
+class AssertNode;
+class BlockNode;
+class BreakNode;
+class ContinueNode;
+class ExportEnvNode;
+class ImportEnvNode;
+
 
 class NodeVisitor {
 public:
@@ -58,6 +65,12 @@ public:
 	virtual int visitSpecialCharNode    (SpecialCharNode     *node) = 0;
 	virtual int visitTaskNode           (TaskNode            *node) = 0;
 	virtual int visitInnerTaskNode      (InnerTaskNode       *node) = 0;
+	virtual int visitAssertNode         (AssertNode          *node) = 0;
+	virtual int visitBlockNode          (BlockNode           *node) = 0;
+	virtual int visitBreakNode          (BreakNode           *node) = 0;
+	virtual int visitContinueNode       (ContinueNode        *node) = 0;
+	virtual int visitExportEnvNode      (ExportEnvNode       *node) = 0;
+	virtual int visitImportEnvNode      (ImportEnvNode       *node) = 0;
 };
 
 #endif /* AST_NODEVISITOR_H_ */
