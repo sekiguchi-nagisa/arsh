@@ -794,7 +794,7 @@ ImportEnvNode::ImportEnvNode(int lineNum, std::string envName):
 		Node(lineNum), envName(envName) {
 }
 
-const std::string ImportEnvNode::getEnvName() {
+const std::string &ImportEnvNode::getEnvName() {
 	return this->envName;
 }
 

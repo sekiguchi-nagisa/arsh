@@ -487,7 +487,7 @@ private:
 public:
 	ImportEnvNode(int lineNum, std::string envName);
 
-	const std::string getEnvName();
+	const std::string &getEnvName();
 	int accept(NodeVisitor *visitor);	// override
 };
 
