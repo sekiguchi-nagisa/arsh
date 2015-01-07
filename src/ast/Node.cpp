@@ -1181,3 +1181,59 @@ int AssignNode::accept(NodeVisitor *visitor) {
 }
 
 
+// ##########################
+// ##     FunctionNode     ##
+// ##########################
+
+FunctionNode::FunctionNode(int lineNum, std::string funcName):
+		Node(lineNum), funcName(funcName), paramNodes(), returnType(0), blockNode(0) {
+}
+
+FunctionNode::~FunctionNode() {
+	int size = this->paramNodes.size();
+	for(int i = 0; i < size; i++) {
+		delete this->paramNodes[i];
+	}
+	this->paramNodes.clear();
+
+	if(this->returnType != 0 && dynamic_cast<UnresolvedType*>(this->returnType) != 0) {
+		delete this->returnType;
+	}
+
+	if(this->blockNode != 0) {
+		delete this->blockNode;
+	}
+}
+
+const std::string &FunctionNode::getFuncName() {
+	return this->funcName;
+}
+
+void FunctionNode::addParamNode(SymbolNode *node) {
+	this->paramNodes.push_back(node);
+}
+
+const std::vector<SymbolNode*> &FunctionNode::getParamNodes() {
+	return this->paramNodes;
+}
+
+void FunctionNode::setReturnType(UnresolvedType *returnType) {
+	this->returnType = returnType;
+}
+
+DSType *FunctionNode::getReturnType() {
+	return this->returnType;
+}
+
+void FunctionNode::setBlockNode(BlockNode *blockNode) {
+	this->blockNode = blockNode;
+}
+
+BlockNode *FunctionNode::getBlockNode() {
+	return this->blockNode;
+}
+
+int FunctionNode::accept(NodeVisitor *visitor) {
+	return visitor->visitFunctionNode(this);
+}
+

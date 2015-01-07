@@ -770,4 +770,46 @@ public:
 };
 
 
+class FunctionNode : public Node {	//FIXME
+private:
+	std::string funcName;
+
+	/**
+	 * for parameter definition.
+	 * each node has type annotation(not UnresolvedType).
+	 */
+	std::vector<SymbolNode*> paramNodes;
+
+	/**
+	 * may be null, if VoidType
+	 */
+	DSType *returnType;
+
+	BlockNode *blockNode;
+
+public:
+	FunctionNode(int lineNum, std::string funcName);
+	~FunctionNode();
+
+	const std::string &getFuncName();
+	void addParamNode(SymbolNode *node);
+	const std::vector<SymbolNode*> &getParamNodes();
+	void setReturnType(UnresolvedType *returnType);
+
+	/**
+	 * return null, if has no return type.
+	 */
+	DSType *getReturnType();
+
+	void setBlockNode(BlockNode *blockNode);
+
+	/**
+	 * return null before call setBlockNode()
+	 */
+	BlockNode *getBlockNode();
+
+	int accept(NodeVisitor *visitor);	// override
+};
+
+
 #endif /* AST_NODE_H_ */
