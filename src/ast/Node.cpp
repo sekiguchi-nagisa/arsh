@@ -1006,3 +1006,102 @@ int ThrowNode::accept(NodeVisitor *visitor) {
 }
 
 
+// #######################
+// ##     CatchNode     ##
+// #######################
+
+CatchNode::CatchNode(int lineNum, std::string exceptionName, UnresolvedType *type, BlockNode *blockNode):
+		Node(lineNum), exceptionName(exceptionName), exceptionType(type), blockNode(blockNode) {
+}
+
+CatchNode::~CatchNode() {
+	if(this->exceptionType != 0 && dynamic_cast<UnresolvedType*>(this->exceptionType) != 0) {
+		delete this->exceptionType;
+	}
+	delete this->blockNode;
+}
+
+const std::string &CatchNode::getExceptionName() {
+	return this->exceptionName;
+}
+
+void CatchNode::setExceptionType(DSType *type) {
+	this->exceptionType = type;
+}
+
+
+DSType *CatchNode::getExceptionType() {
+	return this->exceptionType;
+}
+
+BlockNode *CatchNode::getBlockNode() {
+	return this->blockNode;
+}
+
+int CatchNode::accept(NodeVisitor *visitor) {
+	return visitor->visitCatchNode(this);
+}
+
+
+// #####################
+// ##     TryNode     ##
+// #####################
+
+TryNode::TryNode(int lineNum, BlockNode *blockNode):
+		Node(lineNum), blockNode(blockNode), catchNodes(), finallyNode(0) {
+}
+
+TryNode::~TryNode() {
+	delete this->blockNode;
+	int size = this->catchNodes.size();
+	for(int i = 0; i < size; i++) {
+		delete this->catchNodes[i];
+	}
+	this->catchNodes.clear();
+
+	if(this->finallyNode != 0) {
+		delete this->finallyNode;
+	}
+}
+
+void TryNode::addCatchNode(CatchNode *catchNode) {
+	this->catchNodes.push_back(catchNode);
+}
+
+const std::vector<CatchNode*> TryNode::getCatchNodes() {
+	return this->catchNodes;
+}
+
+void TryNode::addFinallyNode(Node *finallyNode) {
+	this->finallyNode = finallyNode;
+}
+
+Node *TryNode::getFinallyNode() {	//FIXME:
+	return this->finallyNode;
+}
+
+int TryNode::accept(NodeVisitor *visitor) {
+	return visitor->visitTryNode(this);
+}
+
+
+// #########################
+// ##     FinallyNode     ##
+// #########################
+
+FinallyNode::FinallyNode(int lineNum, BlockNode *block):
+		Node(lineNum), blockNode(block) {
+}
+
+FinallyNode::~FinallyNode() {
+	delete this->blockNode;
+}
+
+BlockNode *FinallyNode::getBlockNode() {
+	return this->blockNode;
+}
+
+int FinallyNode::accept(NodeVisitor *visitor) {
+	return visitor->visitFinallyNode(this);
+}
+

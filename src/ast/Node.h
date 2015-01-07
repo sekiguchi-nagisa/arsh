@@ -645,4 +645,73 @@ public:
 };
 
 
+class CatchNode : public Node {	//TODO: exception name
+private:
+	std::string exceptionName;
+
+	/**
+	 * may be null, if has no type annotation.
+	 */
+	DSType *exceptionType;
+
+	BlockNode *blockNode;
+
+public:
+	/**
+	 * if type is null, has no type annotation
+	 */
+	CatchNode(int lineNum, std::string exceptionName, UnresolvedType *type, BlockNode *blockNode);
+	~CatchNode();
+
+	const std::string &getExceptionName();
+	void setExceptionType(DSType *type);
+
+	/**
+	 * return null if has no exception type
+	 */
+	DSType *getExceptionType();
+
+	BlockNode *getBlockNode();
+	int accept(NodeVisitor *visitor);	// override
+};
+
+class TryNode : public Node {	//TODO: finallyNode
+private:
+	BlockNode *blockNode;
+
+	/**
+	 * may be empty
+	 */
+	std::vector<CatchNode*> catchNodes;
+
+	/**
+	 * may be EmptyNdoe
+	 */
+	Node *finallyNode;
+
+public:
+	TryNode(int lineNum, BlockNode *blockNode);
+	~TryNode();
+
+	void addCatchNode(CatchNode *catchNode);
+	const std::vector<CatchNode*> getCatchNodes();
+	void addFinallyNode(Node *finallyNode);
+	Node *getFinallyNode();
+	int accept(NodeVisitor *visitor);	// override
+};
+
+
+class FinallyNode : public Node {
+private:
+	BlockNode *blockNode;
+
+public:
+	FinallyNode(int lineNum, BlockNode *block);
+	~FinallyNode();
+
+	BlockNode *getBlockNode();
+	int accept(NodeVisitor *visitor);	// override
+};
+
+
 #endif /* AST_NODE_H_ */
