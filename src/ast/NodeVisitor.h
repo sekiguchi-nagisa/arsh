@@ -49,6 +49,7 @@ class FinallyNode;
 class VarDeclNode;
 class AssignNode;
 class FunctionNode;
+class EmptyNode;
 
 
 class NodeVisitor {
@@ -95,6 +96,7 @@ public:
 	virtual int visitVarDeclNode        (VarDeclNode         *node) = 0;
 	virtual int visitAssignNode         (AssignNode          *node) = 0;
 	virtual int visitFunctionNode       (FunctionNode        *node) = 0;
+	virtual int visitEmptyNode          (EmptyNode           *node) = 0;
 };
 
 #endif /* AST_NODEVISITOR_H_ */

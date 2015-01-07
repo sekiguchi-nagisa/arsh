@@ -812,4 +812,32 @@ public:
 };
 
 
+// class ClassNode
+// class ConstructorNode
+
+
+class EmptyNode : public ExprNode {	//TODO: EmptyBlockNode
+public:
+	EmptyNode();
+
+	int accept(NodeVisitor *visitor);	// override
+};
+
+
+/**
+ * Root Node of AST.
+ * this class is not inheritance of Node
+ */
+class RootNode {	//FIXME:
+private:
+	std::vector<Node*> nodes;
+
+public:
+	RootNode();
+	~RootNode();
+
+	void addNode(Node *node);
+	const std::vector<Node*> &getNodes();
+};
+
 #endif /* AST_NODE_H_ */

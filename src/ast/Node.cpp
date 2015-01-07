@@ -1237,3 +1237,40 @@ int FunctionNode::accept(NodeVisitor *visitor) {
 	return visitor->visitFunctionNode(this);
 }
 
+
+// #######################
+// ##     EmptyNode     ##
+// #######################
+
+EmptyNode::EmptyNode():
+		ExprNode(0, 0) {
+}
+
+int EmptyNode::accept(NodeVisitor *visitor) {
+	return visitor->visitEmptyNode(this);
+}
+
+
+// ######################
+// ##     RootNode     ##
+// ######################
+
+RootNode::RootNode():
+		nodes() {
+}
+
+RootNode::~RootNode() {
+	int size = this->nodes.size();
+	for(int i = 0; i < size; i++) {
+		delete this->nodes[i];
+	}
+	this->nodes.clear();
+}
+
+void RootNode::addNode(Node *node) {
+	this->nodes.push_back(node);
+}
+
+const std::vector<Node*> &RootNode::getNodes() {
+	return this->nodes;
+}
