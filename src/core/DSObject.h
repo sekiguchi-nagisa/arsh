@@ -10,27 +10,8 @@
 
 #include "DSType.h"
 
-//class DSObject {
-//protected:
-//	/**
-//	 * type of this object
-//	 */
-//	DSType *type;
-//	int fieldSize;
-//
-//	/**
-//	 * contains field(include function object)
-//	 */
-//	DSObject** fieldTable;
-//
-//public:
-//	DSObject(DSType *type);
-//	virtual ~DSObject();
-//
-//	DSType *getType();
-//	int getFieldSize();
-//	DSObject **getFieldTable();
-//};
+class FunctionNode;
+class RuntimeContext;
 
 class DSObject {
 public:
@@ -121,10 +102,59 @@ public:
 };
 
 
-class FuncObject : public DSObject {	//FIXME: type
+class FuncObject : public DSObject {
+private:
+	/**
+	 * may be null, but finally must be not null
+	 */
+	FunctionType *funcType;
+
 public:
+	FuncObject(FunctionType *funcType);
+
+	DSType *getType();	// override
+
+	/**
+	 * return always 0
+	 */
+	int getFieldSize();	// override
+
+	/**
+	 * return always null
+	 */
+	DSObject *lookupField(int fieldIndex);	// override
+//
+//	/**
+//	 * set function type. must be called only once when function type is resolved.
+//	 */
+//	void setFuncType(FunctionType *funcType);
+
+	/**
+	 * equivalent to getType()
+	 */
 	FunctionType *getFuncType();
-	virtual DSObject* invoke() = 0;	//TODO: add context, stack pointer
+};
+
+
+/*
+ * for user defined function
+ */
+class UserFuncObject : public FuncObject {
+private:
+	FunctionNode *funcNode;
+
+public:
+	UserFuncObject(FunctionType *funcType, FunctionNode *funcNode);
+	~UserFuncObject();
+
+	FunctionNode *getFuncNode();
+};
+
+
+/**
+ * for builtin(native) function
+ */
+class BuiltinFuncObject : public FuncObject {
 };
 
 #endif /* CORE_DSOBJECT_H_ */

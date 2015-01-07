@@ -6,6 +6,7 @@
  */
 
 #include "DSObject.h"
+#include "../ast/Node.h"
 #include <stdio.h>
 
 // ######################
@@ -100,3 +101,44 @@ const std::string &String_Object::getValue() {
 	return this->value;
 }
 
+
+// ########################
+// ##     FuncObject     ##
+// ########################
+
+FuncObject::FuncObject(FunctionType *funcType):
+		funcType(funcType) {
+}
+
+DSType *FuncObject::getType() {
+	return this->getFuncType();
+}
+
+int FuncObject::getFieldSize() {
+	return 0;
+}
+
+DSObject *FuncObject::lookupField(int fieldIndex) {
+	return 0;
+}
+
+FunctionType *FuncObject::getFuncType() {
+	return this->funcType;
+}
+
+
+// ############################
+// ##     UserFuncObject     ##
+// ############################
+
+UserFuncObject::UserFuncObject(FunctionType *funcType, FunctionNode *funcNode):
+		FuncObject(funcType), funcNode(funcNode) {
+}
+
+UserFuncObject::~UserFuncObject() {
+	delete this->funcNode;
+}
+
+FunctionNode *UserFuncObject::getFuncNode() {
+	return this->funcNode;
+}
