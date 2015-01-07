@@ -694,7 +694,7 @@ public:
 	~TryNode();
 
 	void addCatchNode(CatchNode *catchNode);
-	const std::vector<CatchNode*> getCatchNodes();
+	const std::vector<CatchNode*> &getCatchNodes();
 	void addFinallyNode(Node *finallyNode);
 	Node *getFinallyNode();
 	int accept(NodeVisitor *visitor);	// override
@@ -711,6 +711,62 @@ public:
 
 	BlockNode *getBlockNode();
 	int accept(NodeVisitor *visitor);	// override
+};
+
+
+class VarDeclNode : public Node {
+private:
+	std::string varName;
+	bool readOnly;
+	bool global;
+	ExprNode *initValueNode;
+
+public:
+	VarDeclNode(int lineNum, std::string varName, ExprNode *initValueNode, bool readOnly);
+	~VarDeclNode();
+
+	const std::string &getVarName();
+	bool isReadOnly();
+	void setGlobal(bool global);
+	bool isGlobal();
+	ExprNode *getInitValueNode();
+	int accept(NodeVisitor *visitor);	// override
+};
+
+
+/**
+ * for assignment or named parameter
+ * assignment is statement, but base class is ExprNode(due to parser).
+ * so, after type checking, type is always VoidType
+ */
+class AssignNode : public ExprNode {	//TODO: assign op, handle
+private:
+	ExprNode *leftNode;
+	ExprNode *rightNode;
+
+	/**
+	 * if assign op is '=', it is null
+	 */
+	FunctionHandle *handle;	//FIXME
+
+public:
+	AssignNode(int lineNum, ExprNode *leftNode, ExprNode *rightNode);
+	~AssignNode();
+
+	ExprNode *getLeftNode();
+
+	/**
+	 * for type checker
+	 */
+	void setRightNode(ExprNode *rightNode);
+	ExprNode *getRightNode();
+	void setHandle(FunctionHandle *handle);
+
+	/**
+	 * return null, before call setHandle()
+	 */
+	FunctionHandle *getHandle();
+	int accept(NodeVisitor *visitor);
 };
 
 

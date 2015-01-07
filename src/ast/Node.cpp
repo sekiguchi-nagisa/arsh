@@ -1068,7 +1068,7 @@ void TryNode::addCatchNode(CatchNode *catchNode) {
 	this->catchNodes.push_back(catchNode);
 }
 
-const std::vector<CatchNode*> TryNode::getCatchNodes() {
+const std::vector<CatchNode*> &TryNode::getCatchNodes() {
 	return this->catchNodes;
 }
 
@@ -1104,4 +1104,80 @@ BlockNode *FinallyNode::getBlockNode() {
 int FinallyNode::accept(NodeVisitor *visitor) {
 	return visitor->visitFinallyNode(this);
 }
+
+
+// #########################
+// ##     VarDeclNode     ##
+// #########################
+
+VarDeclNode::VarDeclNode(int lineNum, std::string varName, ExprNode *initValueNode, bool readOnly):
+		Node(lineNum), varName(varName), readOnly(readOnly), global(false), initValueNode(initValueNode) {
+}
+
+VarDeclNode::~VarDeclNode() {
+	delete this->initValueNode;
+}
+
+const std::string &VarDeclNode::getVarName() {
+	return this->varName;
+}
+
+bool VarDeclNode::isReadOnly() {
+	return this->readOnly;
+}
+
+void VarDeclNode::setGlobal(bool global) {
+	this->global = global;
+}
+
+bool VarDeclNode::isGlobal() {
+	return this->global;
+}
+
+ExprNode *VarDeclNode::getInitValueNode() {
+	return this->initValueNode;
+}
+
+int VarDeclNode::accept(NodeVisitor *visitor) {
+	return visitor->visitVarDeclNode(this);
+}
+
+
+// ########################
+// ##     AssignNode     ##
+// ########################
+
+AssignNode::AssignNode(int lineNum, ExprNode *leftNode, ExprNode *rightNode):
+		ExprNode(lineNum, 0), leftNode(leftNode), rightNode(rightNode), handle(0) {
+}
+
+AssignNode::~AssignNode() {
+	delete this->leftNode;
+	delete this->rightNode;
+}
+
+ExprNode *AssignNode::getLeftNode() {
+	return this->leftNode;
+}
+
+void AssignNode::setRightNode(ExprNode *rightNode) {
+	this->rightNode = rightNode;
+}
+
+ExprNode *AssignNode::getRightNode() {
+	return this->rightNode;
+}
+
+void AssignNode::setHandle(FunctionHandle *handle) {
+	this->handle = handle;
+}
+
+FunctionHandle *AssignNode::getHandle() {
+	return this->handle;
+}
+
+int AssignNode::accept(NodeVisitor *visitor) {
+	return visitor->visitAssignNode(this);
+}
+
 

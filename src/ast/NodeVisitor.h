@@ -46,6 +46,8 @@ class ThrowNode;
 class CatchNode;
 class TryNode;
 class FinallyNode;
+class VarDeclNode;
+class AssignNode;
 
 
 class NodeVisitor {
@@ -89,6 +91,8 @@ public:
 	virtual int visitCatchNode          (CatchNode           *node) = 0;
 	virtual int visitTryNode            (TryNode             *node) = 0;
 	virtual int visitFinallyNode        (FinallyNode         *node) = 0;
+	virtual int visitVarDeclNode        (VarDeclNode         *node) = 0;
+	virtual int visitAssignNode         (AssignNode          *node) = 0;
 };
 
 #endif /* AST_NODEVISITOR_H_ */
