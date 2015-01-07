@@ -10,30 +10,74 @@
 
 #include "DSType.h"
 
+//class DSObject {
+//protected:
+//	/**
+//	 * type of this object
+//	 */
+//	DSType *type;
+//	int fieldSize;
+//
+//	/**
+//	 * contains field(include function object)
+//	 */
+//	DSObject** fieldTable;
+//
+//public:
+//	DSObject(DSType *type);
+//	virtual ~DSObject();
+//
+//	DSType *getType();
+//	int getFieldSize();
+//	DSObject **getFieldTable();
+//};
+
 class DSObject {
-protected:
-	/**
-	 * type of this object
-	 */
-	DSType *type;
-	int fieldSize;
-
-	/**
-	 * contains field(include function object)
-	 */
-	DSObject** fieldTable;
-
 public:
-	DSObject(DSType *type);
+	DSObject();
 	virtual ~DSObject();
 
-	DSType *getType();
-	int getFieldSize();
-	DSObject **getFieldTable();
+	/**
+	 * get object type
+	 */
+	virtual DSType *getType() = 0;
+
+	/**
+	 * retunr 0, if has no field
+	 */
+	virtual int getFieldSize() = 0;
+
+	/**
+	 * for field(or method) lookup
+	 * fieldIndex > -1 && fieldIndex < getFieldSize()
+	 * this method is not type-safe.
+	 */
+	virtual DSObject *lookupField(int fieldIndex) = 0;
 };
 
 
-class Int64_Object : public DSObject {
+class BaseObject : public DSObject {
+protected:
+	DSType *type;
+
+	int fieldSize;
+
+	/**
+	 * may be null, if has no field. (fieldSize == 0)
+	 */
+	DSObject **fieldTable;
+
+public:
+	BaseObject(DSType *type);
+	~BaseObject();
+
+	DSType *getType();	// override
+	int getFieldSize();	// override
+	DSObject *lookupField(int fieldIndex);	// override
+};
+
+
+class Int64_Object : public BaseObject {
 private:
 	long value;
 
@@ -44,7 +88,7 @@ public:
 };
 
 
-class Float_Object : public DSObject {
+class Float_Object : public BaseObject {
 private:
 	double value;
 
@@ -55,7 +99,7 @@ public:
 };
 
 
-class Boolean_Object : public DSObject {
+class Boolean_Object : public BaseObject {
 private:
 	bool value;
 
@@ -66,7 +110,7 @@ public:
 };
 
 
-class String_Object : public DSObject {
+class String_Object : public BaseObject {
 private:
 	std::string value;
 
@@ -76,5 +120,11 @@ public:
 	const std::string &getValue();
 };
 
+
+class FuncObject : public DSObject {	//FIXME: type
+public:
+	FunctionType *getFuncType();
+	virtual DSObject* invoke() = 0;	//TODO: add context, stack pointer
+};
 
 #endif /* CORE_DSOBJECT_H_ */

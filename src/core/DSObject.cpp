@@ -12,29 +12,40 @@
 // ##     DSObject     ##
 // ######################
 
-DSObject::DSObject(DSType *type):
-		type(type), fieldSize(type->getFieldSize()) {
+DSObject::DSObject() {
+}
+
+DSObject::~DSObject() {
+}
+
+
+// ########################
+// ##     BaseObject     ##
+// ########################
+
+BaseObject::BaseObject(DSType *type):	//TODO: add field to table
+		type(type), fieldSize(type->getFieldSize()), fieldTable(0) {
 	if(this->fieldSize > 0) {
 		this->fieldTable = new DSObject*[this->fieldSize];
 	}
 }
 
-DSObject::~DSObject() {
+BaseObject::~BaseObject() {
 	if(this->fieldTable != 0) {
 		delete[] this->fieldTable;
 	}
 }
 
-DSType *DSObject::getType() {
+DSType *BaseObject::getType() {
 	return this->type;
 }
 
-int DSObject::getFieldSize() {
+int BaseObject::getFieldSize() {
 	return this->fieldSize;
 }
 
-DSObject **DSObject::getFieldTable() {
-	return this->fieldTable;
+DSObject *BaseObject::lookupField(int fieldIndex) {
+	return this->fieldTable[fieldIndex];
 }
 
 
@@ -43,7 +54,7 @@ DSObject **DSObject::getFieldTable() {
 // ##########################
 
 Int64_Object::Int64_Object(DSType *type, long value):
-		DSObject(type), value(value) {
+		BaseObject(type), value(value) {
 }
 
 long Int64_Object::getValue() {
@@ -56,7 +67,7 @@ long Int64_Object::getValue() {
 // ##########################
 
 Float_Object::Float_Object(DSType *type, double value):
-		DSObject(type), value(value) {
+		BaseObject(type), value(value) {
 }
 
 double Float_Object::getValue() {
@@ -69,7 +80,7 @@ double Float_Object::getValue() {
 // ############################
 
 Boolean_Object::Boolean_Object(DSType *type, bool value):
-		DSObject(type), value(value) {
+		BaseObject(type), value(value) {
 }
 
 bool Boolean_Object::getValue() {
@@ -82,9 +93,10 @@ bool Boolean_Object::getValue() {
 // ###########################
 
 String_Object::String_Object(DSType *type, std::string value):
-		DSObject(type), value(value) {
+		BaseObject(type), value(value) {
 }
 
 const std::string &String_Object::getValue() {
 	return this->value;
 }
+
