@@ -363,13 +363,13 @@ public:
 /**
  * for command(process) argument
  */
-class ArgumentNode : public ExprNode {	//TODO: escape sequence
+class ProcArgNode : public ExprNode {	//TODO: escape sequence
 private:
 	std::vector<ExprNode*> segmentNodes;
 
 public:
-	ArgumentNode(int lineNum);
-	~ArgumentNode();
+	ProcArgNode(int lineNum);
+	~ProcArgNode();
 
 	void addSegmentNode(ExprNode *node);
 	const std::vector<ExprNode*> &getSegmentNodes();

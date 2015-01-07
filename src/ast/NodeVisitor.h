@@ -26,7 +26,7 @@ class ApplyNode;
 class ConstructorCallNode;
 class CondOpNode;
 class ProcessNode;
-class ArgumentNode;
+class ProcArgNode;
 class SpecialCharNode;
 class TaskNode;
 class InnerTaskNode;
@@ -72,7 +72,7 @@ public:
 	virtual int visitConstructorCallNode(ConstructorCallNode *node) = 0;
 	virtual int visitCondOpNode         (CondOpNode          *node) = 0;
 	virtual int visitProcessNode        (ProcessNode         *node) = 0;
-	virtual int visitArgumentNode       (ArgumentNode        *node) = 0;
+	virtual int visitProcArgNode        (ProcArgNode         *node) = 0;
 	virtual int visitSpecialCharNode    (SpecialCharNode     *node) = 0;
 	virtual int visitTaskNode           (TaskNode            *node) = 0;
 	virtual int visitInnerTaskNode      (InnerTaskNode       *node) = 0;

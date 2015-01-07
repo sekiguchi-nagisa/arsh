@@ -570,11 +570,11 @@ int ProcessNode::accept(NodeVisitor *visitor) {
 // ##     ArgumentNode     ##
 // ##########################
 
-ArgumentNode::ArgumentNode(int lineNum):
+ProcArgNode::ProcArgNode(int lineNum):
 	ExprNode(lineNum, 0), segmentNodes() {
 }
 
-ArgumentNode::~ArgumentNode() {
+ProcArgNode::~ProcArgNode() {
 	int size = this->segmentNodes.size();
 	for(int i = 0; i < size; i++) {
 		delete this->segmentNodes[i];
@@ -582,8 +582,8 @@ ArgumentNode::~ArgumentNode() {
 	this->segmentNodes.clear();
 }
 
-void ArgumentNode::addSegmentNode(ExprNode *node) {
-	ArgumentNode *argNode = dynamic_cast<ArgumentNode*>(node);
+void ProcArgNode::addSegmentNode(ExprNode *node) {
+	ProcArgNode *argNode = dynamic_cast<ProcArgNode*>(node);
 	if(argNode != 0) {
 		std::vector<ExprNode*> segmentNodes = argNode->getSegmentNodes();
 		int size = segmentNodes.size();
@@ -597,12 +597,12 @@ void ArgumentNode::addSegmentNode(ExprNode *node) {
 	this->segmentNodes.push_back(node);
 }
 
-const std::vector<ExprNode*> &ArgumentNode::getSegmentNodes() {
+const std::vector<ExprNode*> &ProcArgNode::getSegmentNodes() {
 	return this->segmentNodes;
 }
 
-int ArgumentNode::accept(NodeVisitor *visitor) {
-	return visitor->visitArgumentNode(this);
+int ProcArgNode::accept(NodeVisitor *visitor) {
+	return visitor->visitProcArgNode(this);
 }
 
 
