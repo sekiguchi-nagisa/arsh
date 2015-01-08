@@ -35,11 +35,24 @@ public:
 	virtual DSType *getSuperType() = 0;
 
 	/**
+	 * return null, if has no constructor
+	 */
+	virtual ConstructorHandle *getConstructorHandle() = 0;
+
+	/**
 	 * get size of field.
 	 */
 	virtual int getFieldSize() = 0;
 
-	bool equals(DSType *targetType);
+	/**
+	 * return null, if index < -1 && index >= getFieldSize()
+	 */
+	virtual FieldHandle *lookupFieldHandle(int fieldIndex) = 0;
+
+	/**
+	 * check equality
+	 */
+	virtual bool equals(DSType *targetType) = 0;
 
 	/**
 	 * check inheritance of target type.
@@ -55,22 +68,30 @@ public:
  */
 class UnresolvedType : public DSType {
 public:
-	virtual std::string getTypeName() = 0;
-
 	/**
 	 * return always false
 	 */
-	bool isExtendable();
+	bool isExtendable();	// override
 
 	/**
 	 * return always null
 	 */
-	DSType *getSuperType();
+	DSType *getSuperType();	// override
+
+	/**
+	 * return always null
+	 */
+	ConstructorHandle *getConstructorHandle();	// override
 
 	/**
 	 * return always 0
 	 */
-	int getFieldSize();
+	int getFieldSize();	// override
+
+	/**
+	 * return always null
+	 */
+	FieldHandle *lookupFieldHandle(int fieldIndex);	// override
 
 	virtual DSType *toType() = 0;	//TODO: add TypePool to parameter
 };
@@ -84,6 +105,7 @@ public:
 	UnresolvedClassType(std::string typeName);
 
 	std::string getTypeName();	// override
+	bool equals(DSType *targetType);	// override
 	DSType *toType();	// override
 };
 
@@ -100,6 +122,7 @@ public:
 	std::string getTypeName();	// override
 	void addElementType(UnresolvedType *type);
 	const std::vector<UnresolvedType*> &getElementTypes();
+	bool equals(DSType *targetType);	// override
 	//TODO: add TypePool to parameter
 	DSType *toType();	// override
 };
@@ -128,6 +151,11 @@ private:
 	 */
 	std::vector<UnresolvedType *> paramTypes;
 
+	/**
+	 * UnresolvedClassType of Void
+	 */
+	static UnresolvedClassType *unresolvedVoid;
+
 public:
 	UnresolvedFuncType();
 	~UnresolvedFuncType();
@@ -137,6 +165,7 @@ public:
 	UnresolvedType *getReturnType();
 	void addParamType(UnresolvedType *type);
 	const std::vector<UnresolvedType*> &getParamTypes();
+	bool equals(DSType *targetType);	// override
 	//TODO: add TypePool to parameter
 	DSType *toType();	// override
 };
