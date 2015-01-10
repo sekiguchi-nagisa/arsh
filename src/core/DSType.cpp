@@ -265,17 +265,6 @@ ClassType::~ClassType() {
 	}
 }
 
-/**
- * may be null, if has no constructor
- */
-ConstructorHandle *ClassType::getConstructorHandle() {
-	return this->constructorHandle;
-}
-
-void ClassType::setConstructorHandle(ConstructorHandle *handle) {
-	this->constructorHandle = handle;
-}
-
 std::string ClassType::getTypeName() {
 	return this->className;
 }
@@ -288,9 +277,29 @@ DSType *ClassType::getSuperType() {
 	return this->superType;
 }
 
+ConstructorHandle *ClassType::getConstructorHandle() {
+	return this->constructorHandle;
+}
+
+void ClassType::setConstructorHandle(ConstructorHandle *handle) {
+	this->constructorHandle = handle;
+}
+
 int ClassType::getFieldSize() {
 	return this->handleSize;
 }
+
+FieldHandle *ClassType::lookupFieldHandle(int fieldIndex) {	//FIXME:
+	return this->handleTable[fieldIndex];
+}
+
+bool ClassType::equals(DSType *targetType) {
+	ClassType *t = dynamic_cast<ClassType*>(targetType);
+	return t != 0 && this->className == t->className;
+}
+
+DSType *ClassType::anyType = new ClassType("Any", false, 0);
+DSType *ClassType::voidType = new ClassType("Void", false, 0);
 
 
 // ##########################
@@ -328,9 +337,43 @@ bool FunctionType::isExtendable() {
 }
 
 DSType *FunctionType::getSuperType() {
-	return 0;	//TODO: super type must be any type
+	return ClassType::anyType;
+}
+
+ConstructorHandle *FunctionType::getConstructorHandle() {
+	return 0;
 }
 
 int FunctionType::getFieldSize() {
 	return 0;
+}
+
+FieldHandle *FunctionType::lookupFieldHandle(int fieldIndex) {
+	return 0;
+}
+
+bool FunctionType::equals(DSType *targetType) {
+	FunctionType *t = dynamic_cast<FunctionType*>(targetType);
+	if(t == 0) {
+		return false;
+	}
+
+	// check return type
+	if(!this->returnType->equals(t)) {
+		return false;
+	}
+
+	// check param size
+	int size = this->paramSize;
+	if(size != t->paramSize) {
+		return false;
+	}
+
+	// check each param type
+	for(int i = 0; i < size; i++) {
+		if(!this->paramTypes[i]->equals(t->paramTypes[i])) {
+			return false;
+		}
+	}
+	return true;
 }

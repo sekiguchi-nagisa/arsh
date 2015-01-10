@@ -434,7 +434,7 @@ private:
 
 public:
 	BlockNode();
-	~BlockNode();
+	virtual ~BlockNode();
 
 	virtual void addNode(Node *node);
 	virtual const std::vector<Node*> &getNodes();

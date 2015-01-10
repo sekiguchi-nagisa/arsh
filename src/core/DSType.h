@@ -30,7 +30,7 @@ public:
 
 	/**
 	 * get super type of this type.
-	 * return null, if has no super type.
+	 * return null, if has no super type(ex. AnyType, VoidType).
 	 */
 	virtual DSType *getSuperType() = 0;
 
@@ -204,16 +204,17 @@ public:
 	ClassType(std::string className, bool extendable, DSType *superType);
 	~ClassType();
 
-	/**
-	 * may be null, if has no constructor
-	 */
-	ConstructorHandle *getConstructorHandle();
-	void setConstructorHandle(ConstructorHandle *handle);
-
 	std::string getTypeName();	// override
 	bool isExtendable();	// override
 	DSType *getSuperType();	// override
+	ConstructorHandle *getConstructorHandle();	// override
+	void setConstructorHandle(ConstructorHandle *handle);
 	int getFieldSize();	// override
+	FieldHandle *lookupFieldHandle(int fieldIndex);	// override
+	bool equals(DSType *targetType);	// override
+
+	static DSType *anyType;
+	static DSType *voidType;
 };
 
 
@@ -245,8 +246,25 @@ public:
 
 	std::string getTypeName();	// override
 	bool isExtendable();	// override
+
+	/**
+	 * return always anyType
+	 */
 	DSType *getSuperType();	// override
+
+	/**
+	 * return always null
+	 */
+	ConstructorHandle *getConstructorHandle();	// override
+
 	int getFieldSize();	// override
+
+	/**
+	 * return always null
+	 */
+	FieldHandle *lookupFieldHandle(int fieldIndex);	// override
+
+	bool equals(DSType *targetType);	// override
 };
 
 
