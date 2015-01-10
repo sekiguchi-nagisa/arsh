@@ -8,15 +8,68 @@
 #ifndef PARSER_TYPECHECKER_H_
 #define PARSER_TYPECHECKER_H_
 
+#include "../core/TypePool.h"
 #include "../core/DSType.h"
 #include "../core/CalleeHandle.h"
 #include "../ast/Node.h"
 #include "../ast/NodeVisitor.h"
 
 class TypeChecker : public NodeVisitor {
+private:
+	TypePool *typePool;
+	Node *checkedNode;
+
 public:
-	TypeChecker();
+	TypeChecker(TypePool *typePool);
 	virtual ~TypeChecker();
+
+	/**
+	 * set to this->checkedNode
+	 * if checkedNode is ExprNode, its type must not be UnresolvedType
+	 * return always 0
+	 */
+	int pushCheckedNode(Node *checkedNode);
+
+	/**
+	 * pop checkedNode.
+	 * if popped node is ExprNode, its type must not be UnresolvedType
+	 */
+	Node *popCheckedNode();
+
+	// base type check entry point
+
+	/**
+	 * check type.
+	 * if node type is void type, always success.
+	 */
+	Node *checkTypeAcceptingVoidType(Node *targetNode);
+
+	/**
+	 * check node type.
+	 * if node type is void type, throw exception
+	 */
+	Node *checkType(Node *targetNode);
+
+	/**
+	 * check node type
+	 * requiredType is not null
+	 *
+	 * if requiredType is not equivalent to node type, throw exception.
+	 */
+	Node *checkType(DSType *requiredType, Node *targetNode);
+
+	/**
+	 * check node type
+	 * requiredType may be null
+	 * unacceptableType may be null
+	 *
+	 * if requiredType is not equivalent to node type, throw exception.
+	 * if requiredType is null, do not try matching node type
+	 * and if unaccepatbelType is equivalent to node type, throw exception.
+	 */
+	Node *checkType(DSType *requiredType, Node *targetNode, DSType *unacceptableType);
+
+	// visitor api
 
 	int visitIntValueNode       (IntValueNode        *node); // override
 	int visitFloatValueNode     (FloatValueNode      *node); // override

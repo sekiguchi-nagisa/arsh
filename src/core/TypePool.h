@@ -8,6 +8,8 @@
 #ifndef CORE_TYPEPOOL_H_
 #define CORE_TYPEPOOL_H_
 
+#include <string>
+
 class DSType;
 
 class TypePool {
@@ -38,6 +40,12 @@ public:
 	DSType *getBaseArrayType();	//TODO: return type
 	DSType *getBaseMapType();	// TODO: return type
 	DSType *getBasePairType();	// TODO: return type
+
+	/**
+	 * return null, if type is not defined.
+	 * cannot get TemplateType(array.. etc)
+	 */
+	DSType *getType(std::string typeName);
 };
 
 #endif /* CORE_TYPEPOOL_H_ */
