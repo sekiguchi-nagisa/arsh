@@ -938,7 +938,9 @@ IfNode::IfNode(int lineNum, ExprNode *condNode, BlockNode *thenNode, BlockNode *
 IfNode::~IfNode() {
 	delete this->condNode;
 	delete this->thenNode;
-	delete this->elseNode;
+	if(this->elseNode != 0) {
+		delete this->elseNode;
+	}
 }
 
 ExprNode *IfNode::getCondNode() {
@@ -950,7 +952,10 @@ BlockNode *IfNode::getThenNode() {
 }
 
 BlockNode *IfNode::getElseNode() {
-	return this->elseNode;
+	if(this->elseNode != 0) {
+		return this->elseNode;
+	}
+	return &EmptyBlockNode::emptyBlockNode;
 }
 
 int IfNode::accept(NodeVisitor *visitor) {
@@ -1249,6 +1254,27 @@ EmptyNode::EmptyNode():
 int EmptyNode::accept(NodeVisitor *visitor) {
 	return visitor->visitEmptyNode(this);
 }
+
+
+// ############################
+// ##     EmptyBlockNode     ##
+// ############################
+
+EmptyBlockNode::EmptyBlockNode():
+		BlockNode() {
+}
+
+EmptyBlockNode::~EmptyBlockNode() {
+}
+
+void EmptyBlockNode::addNode(Node *node) {
+}
+
+int EmptyBlockNode::accept(NodeVisitor *visitor) {
+	return visitor->visitEmptyBlockNode(this);
+}
+
+EmptyBlockNode EmptyBlockNode::emptyBlockNode = EmptyBlockNode();
 
 
 // ######################

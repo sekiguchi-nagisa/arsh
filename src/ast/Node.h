@@ -436,8 +436,8 @@ public:
 	BlockNode();
 	~BlockNode();
 
-	void addNode(Node *node);
-	const std::vector<Node*> &getNodes();
+	virtual void addNode(Node *node);
+	virtual const std::vector<Node*> &getNodes();
 	int accept(NodeVisitor *visitor);	// override
 };
 
@@ -597,17 +597,25 @@ private:
 	BlockNode *thenNode;
 
 	/**
-	 * may be EmptyBlockNode
+	 * may be null, if has no else block
 	 */
 	BlockNode *elseNode;
 
 public:
+	/**
+	 * elseNode may be null
+	 */
 	IfNode(int lineNum, ExprNode *condNode, BlockNode *thenNode, BlockNode *elseNode);
 	~IfNode();
 
 	ExprNode *getCondNode();
 	BlockNode *getThenNode();
+
+	/*
+	 * return EmptyBlockNode, if elseNode is null.
+	 */
 	BlockNode *getElseNode();
+
 	int accept(NodeVisitor *visitor);	// override
 };
 
@@ -821,6 +829,24 @@ public:
 	EmptyNode();
 
 	int accept(NodeVisitor *visitor);	// override
+};
+
+
+class EmptyBlockNode : public BlockNode {
+private:
+	EmptyBlockNode();
+
+public:
+	~EmptyBlockNode();
+
+	/**
+	 * do nothing. do not call it
+	 */
+	void addNode(Node *node);	// override
+
+	int accept(NodeVisitor *visitor);	// override
+
+	static EmptyBlockNode emptyBlockNode;
 };
 
 
