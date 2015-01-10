@@ -8,10 +8,19 @@
 #include "TypeChecker.h"
 
 TypeChecker::TypeChecker(TypePool *typePool):
-		typePool(typePool), checkedNode(0) {
+		typePool(typePool), checkedNode(0), curReturnType(0), finallyContextStack() {
 }
 
 TypeChecker::~TypeChecker() {
+	this->finallyContextStack.clear();
+}
+
+RootNode *TypeChecker::checkTypeRootNode(RootNode *rootNode) {	//FIXME
+	int size = rootNode->getNodes().size();
+	for(int i= 0; i < size; i++) {
+		this->checkTypeAcceptingVoidType(rootNode->getNodes()[i]);
+	}
+	return rootNode;
 }
 
 int TypeChecker::pushCheckedNode(Node *checkedNode) {	//TODO: param check
@@ -24,6 +33,21 @@ Node *TypeChecker::popCheckedNode() {
 	this->checkedNode = 0;
 	return popedNode;
 }
+
+void TypeChecker::pushReturnType(DSType *returnType) {
+	this->curReturnType = returnType;
+}
+
+DSType *TypeChecker::popReturnType() {
+	DSType *returnType = this->curReturnType;
+	this->curReturnType = 0;
+	return returnType;
+}
+
+DSType *TypeChecker::getCurrentReturnType() {
+	return this->curReturnType;
+}
+
 
 // type check entry point
 
@@ -156,4 +180,12 @@ int TypeChecker::visitFinallyNode        (FinallyNode         *node) { return 0;
 int TypeChecker::visitVarDeclNode        (VarDeclNode         *node) { return 0; } //TODO
 int TypeChecker::visitAssignNode         (AssignNode          *node) { return 0; } //TODO
 int TypeChecker::visitFunctionNode       (FunctionNode        *node) { return 0; } //TODO
-int TypeChecker::visitEmptyNode          (EmptyNode           *node) { return 0; } //TODO
+
+int TypeChecker::visitEmptyNode          (EmptyNode           *node) {
+	node->setType(this->typePool->getVoidType());
+	return this->pushCheckedNode(node);
+}
+
+int TypeChecker::visitEmptyBlockNode     (EmptyBlockNode      *node) {
+	return this->pushCheckedNode(node);	// do nothing
+}

@@ -58,6 +58,7 @@ public:
 	int visitAssignNode         (AssignNode          *node); // override
 	int visitFunctionNode       (FunctionNode        *node); // override
 	int visitEmptyNode          (EmptyNode           *node); // override
+	int visitEmptyBlockNode     (EmptyBlockNode      *node); // override
 };
 
 #endif /* EVAL_EVALUATOR_H_ */

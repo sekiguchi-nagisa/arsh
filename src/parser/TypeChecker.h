@@ -14,15 +14,33 @@
 #include "../ast/Node.h"
 #include "../ast/NodeVisitor.h"
 
+#include <vector>
+
 class TypeChecker : public NodeVisitor {
 private:
 	TypePool *typePool;
 	Node *checkedNode;
 
+	/**
+	 * contains current return type of current function
+	 */
+	DSType* curReturnType;
+
+	/**
+	 * contains state which represents for within finally block
+	 */
+	std::vector<bool> finallyContextStack;
+
 public:
 	TypeChecker(TypePool *typePool);
 	virtual ~TypeChecker();
 
+	/**
+	 * type checker entry point
+	 */
+	RootNode *checkTypeRootNode(RootNode *rootNode);
+
+private:
 	/**
 	 * set to this->checkedNode
 	 * if checkedNode is ExprNode, its type must not be UnresolvedType
@@ -69,6 +87,19 @@ public:
 	 */
 	Node *checkType(DSType *requiredType, Node *targetNode, DSType *unacceptableType);
 
+	void pushReturnType(DSType *returnType);
+
+	/**
+	 * return null, if outside of function
+	 */
+	DSType *popReturnType();
+
+	/**
+	 * return null, if outside of function
+	 */
+	DSType *getCurrentReturnType();
+
+public:
 	// visitor api
 
 	int visitIntValueNode       (IntValueNode        *node); // override
@@ -111,6 +142,7 @@ public:
 	int visitAssignNode         (AssignNode          *node); // override
 	int visitFunctionNode       (FunctionNode        *node); // override
 	int visitEmptyNode          (EmptyNode           *node); // override
+	int visitEmptyBlockNode     (EmptyBlockNode      *node); // override
 };
 
 #endif /* PARSER_TYPECHECKER_H_ */

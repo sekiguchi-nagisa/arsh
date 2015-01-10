@@ -56,3 +56,4 @@ int Evaluator::visitVarDeclNode        (VarDeclNode         *node) { return 0; }
 int Evaluator::visitAssignNode         (AssignNode          *node) { return 0; } //TODO
 int Evaluator::visitFunctionNode       (FunctionNode        *node) { return 0; } //TODO
 int Evaluator::visitEmptyNode          (EmptyNode           *node) { return 0; } //TODO
+int Evaluator::visitEmptyBlockNode     (EmptyBlockNode      *node) { return 0; } //TODO
