@@ -25,7 +25,7 @@ int TypeChecker::visitStringExprNode     (StringExprNode      *node) { return 0;
 int TypeChecker::visitArrayNode          (ArrayNode           *node) { return 0; } //TODO
 int TypeChecker::visitMapNode            (MapNode             *node) { return 0; } //TODO
 int TypeChecker::visitPairNode           (PairNode            *node) { return 0; } //TODO
-int TypeChecker::visitSymbolNode         (SymbolNode          *node) { return 0; } //TODO
+int TypeChecker::visitVarNode            (VarNode             *node) { return 0; } //TODO
 int TypeChecker::visitIndexNode          (IndexNode           *node) { return 0; } //TODO
 int TypeChecker::visitAccessNode         (AccessNode          *node) { return 0; } //TODO
 int TypeChecker::visitCastNode           (CastNode            *node) { return 0; } //TODO

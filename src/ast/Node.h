@@ -170,13 +170,13 @@ public:
 };
 
 
-class SymbolNode : public AssignableNode {	//TODO: symbol entry, rename to VarNode
+class VarNode : public AssignableNode {
 private:
 	std::string varName;
 	bool readOnly;
 
 public:
-	SymbolNode(int lineNum, std::string varName);
+	VarNode(int lineNum, std::string varName);
 
 	const std::string &getVarName();
 	bool isReadOnly();	// override
@@ -786,7 +786,7 @@ private:
 	 * for parameter definition.
 	 * each node has type annotation(not UnresolvedType).
 	 */
-	std::vector<SymbolNode*> paramNodes;
+	std::vector<VarNode*> paramNodes;
 
 	/**
 	 * may be null, if VoidType
@@ -800,8 +800,8 @@ public:
 	~FunctionNode();
 
 	const std::string &getFuncName();
-	void addParamNode(SymbolNode *node);
-	const std::vector<SymbolNode*> &getParamNodes();
+	void addParamNode(VarNode *node);
+	const std::vector<VarNode*> &getParamNodes();
 	void setReturnType(UnresolvedType *returnType);
 
 	/**

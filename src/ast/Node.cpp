@@ -286,20 +286,20 @@ AssignableNode::~AssignableNode() {
 // ##     SymbolNode     ##
 // ########################
 
-SymbolNode::SymbolNode(int lineNum, std::string varName):
+VarNode::VarNode(int lineNum, std::string varName):
 		AssignableNode(lineNum), varName(varName), readOnly(false) {
 }
 
-const std::string &SymbolNode::getVarName() {
+const std::string &VarNode::getVarName() {
 	return this->varName;
 }
 
-bool SymbolNode::isReadOnly() {
+bool VarNode::isReadOnly() {
 	return this->readOnly;
 }
 
-int SymbolNode::accept(NodeVisitor *visitor) {
-	return visitor->visitSymbolNode(this);
+int VarNode::accept(NodeVisitor *visitor) {
+	return visitor->visitVarNode(this);
 }
 
 
@@ -1214,11 +1214,11 @@ const std::string &FunctionNode::getFuncName() {
 	return this->funcName;
 }
 
-void FunctionNode::addParamNode(SymbolNode *node) {
+void FunctionNode::addParamNode(VarNode *node) {
 	this->paramNodes.push_back(node);
 }
 
-const std::vector<SymbolNode*> &FunctionNode::getParamNodes() {
+const std::vector<VarNode*> &FunctionNode::getParamNodes() {
 	return this->paramNodes;
 }
 

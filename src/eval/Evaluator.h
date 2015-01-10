@@ -26,7 +26,7 @@ public:
 	int visitArrayNode          (ArrayNode           *node); // override
 	int visitMapNode            (MapNode             *node); // override
 	int visitPairNode           (PairNode            *node); // override
-	int visitSymbolNode         (SymbolNode          *node); // override
+	int visitVarNode            (VarNode             *node); // override
 	int visitIndexNode          (IndexNode           *node); // override
 	int visitAccessNode         (AccessNode          *node); // override
 	int visitCastNode           (CastNode            *node); // override

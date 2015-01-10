@@ -24,7 +24,7 @@ int Evaluator::visitStringExprNode     (StringExprNode      *node) { return 0; }
 int Evaluator::visitArrayNode          (ArrayNode           *node) { return 0; } //TODO
 int Evaluator::visitMapNode            (MapNode             *node) { return 0; } //TODO
 int Evaluator::visitPairNode           (PairNode            *node) { return 0; } //TODO
-int Evaluator::visitSymbolNode         (SymbolNode          *node) { return 0; } //TODO
+int Evaluator::visitVarNode            (VarNode             *node) { return 0; } //TODO
 int Evaluator::visitIndexNode          (IndexNode           *node) { return 0; } //TODO
 int Evaluator::visitAccessNode         (AccessNode          *node) { return 0; } //TODO
 int Evaluator::visitCastNode           (CastNode            *node) { return 0; } //TODO
