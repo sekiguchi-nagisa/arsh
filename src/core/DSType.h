@@ -8,7 +8,7 @@
 #ifndef CORE_DSTYPE_H_
 #define CORE_DSTYPE_H_
 
-//#include <unordered_map>
+#include <unordered_map>
 #include <vector>
 #include <string>
 #include "CalleeHandle.h"

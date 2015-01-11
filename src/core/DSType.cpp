@@ -119,13 +119,13 @@ bool UnresolvedReifiedType::equals(DSType *targetType) {
 	}
 
 	// check element size
-	int size = this->elementTypes.size();
+	unsigned int size = this->elementTypes.size();
 	if(size != t->elementTypes.size()) {
 		return false;
 	}
 
 	// check each element
-	for(int i = 0; i < size; i++) {
+	for(unsigned int i = 0; i < size; i++) {
 		if(this->elementTypes[i] != t->elementTypes[i]) {
 			return false;
 		}
@@ -230,13 +230,13 @@ bool UnresolvedFuncType::equals(DSType *targetType) {
 	}
 
 	// check param size
-	int size = this->paramTypes.size();
+	unsigned int size = this->paramTypes.size();
 	if(size != t->paramTypes.size()) {
 		return false;
 	}
 
 	// check each param type
-	for(int i = 0; i < size; i++) {
+	for(unsigned int i = 0; i < size; i++) {
 		if(!this->paramTypes[i]->equals(t->paramTypes[i])) {
 			return false;
 		}
