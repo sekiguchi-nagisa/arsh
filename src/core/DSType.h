@@ -44,7 +44,7 @@ public:
 	/**
 	 * get size of the all fields(include superType fieldSize).
 	 */
-	virtual int getFieldSize() = 0;
+	virtual unsigned int getFieldSize() = 0;
 
 	/**
 	 * return -1, if has no field
@@ -114,7 +114,7 @@ public:
 	/**
 	 * return always 0
 	 */
-	int getFieldSize();	// override
+	unsigned int getFieldSize();	// override
 
 	/**
 	 * return always -1
@@ -257,7 +257,7 @@ public:
 	DSType *getSuperType();	// override
 	ConstructorHandle *getConstructorHandle();	// override
 	void setConstructorHandle(ConstructorHandle *handle);
-	int getFieldSize();	// override
+	unsigned int getFieldSize();	// override
 	int getFieldIndex(const std::string &fieldName);	// override
 	FieldHandle *lookupFieldHandle(int fieldIndex);	// override
 	bool isReadOnly(int fieldIndex);	// override
@@ -280,7 +280,7 @@ private:
 	/**
 	 * may be 0, if has no parameter
 	 */
-	int paramSize;
+	unsigned int paramSize;
 
 	/**
 	 * may be null, if has no parameter
@@ -288,11 +288,11 @@ private:
 	DSType **paramTypes;
 
 public:
-	FunctionType(DSType *returnType, int paramSize, DSType **paramTypes);
+	FunctionType(DSType *returnType, unsigned int paramSize, DSType **paramTypes);
 	~FunctionType();
 
 	DSType *getReturnType();
-	int getParamSize();
+	unsigned int getParamSize();
 
 	/**
 	 * may be null, if has no parameter (getParamSize() == 0)
@@ -312,7 +312,7 @@ public:
 	 */
 	ConstructorHandle *getConstructorHandle();	// override
 
-	int getFieldSize();	// override
+	unsigned int getFieldSize();	// override
 	int getFieldIndex(const std::string &fieldName);	// override
 
 	/**

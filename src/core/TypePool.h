@@ -41,6 +41,8 @@ public:
 	DSType *getBaseMapType();	// TODO: return type
 	DSType *getBasePairType();	// TODO: return type
 
+	// for type lookup
+
 	/**
 	 * return null, if type is not defined.
 	 * cannot get TemplateType(array.. etc)

@@ -56,7 +56,7 @@ ConstructorHandle *UnresolvedType::getConstructorHandle() {
 	return 0;
 }
 
-int UnresolvedType::getFieldSize() {
+unsigned int UnresolvedType::getFieldSize() {
 	return 0;
 }
 
@@ -305,7 +305,7 @@ void ClassType::setConstructorHandle(ConstructorHandle *handle) {
 	this->constructorHandle = handle;
 }
 
-int ClassType::getFieldSize() {
+unsigned int ClassType::getFieldSize() {
 	return this->handleTable.size() + this->baseIndex;
 }
 
@@ -366,7 +366,7 @@ DSType *ClassType::voidType = new ClassType("Void", false, 0);
 // ##     FunctionType     ##
 // ##########################
 
-FunctionType::FunctionType(DSType *returnType, int paramSize, DSType **paramTypes):
+FunctionType::FunctionType(DSType *returnType, unsigned int paramSize, DSType **paramTypes):
 		returnType(returnType), paramSize(paramSize), paramTypes(paramTypes) {
 }
 
@@ -380,7 +380,7 @@ DSType *FunctionType::getReturnType() {
 	return this->returnType;
 }
 
-int FunctionType::getParamSize() {
+unsigned int FunctionType::getParamSize() {
 	return this->paramSize;
 }
 
@@ -404,7 +404,7 @@ ConstructorHandle *FunctionType::getConstructorHandle() {
 	return 0;
 }
 
-int FunctionType::getFieldSize() {
+unsigned int FunctionType::getFieldSize() {
 	return 0;
 }
 
@@ -432,13 +432,13 @@ bool FunctionType::equals(DSType *targetType) {
 	}
 
 	// check param size
-	int size = this->paramSize;
+	unsigned int size = this->paramSize;
 	if(size != t->paramSize) {
 		return false;
 	}
 
 	// check each param type
-	for(int i = 0; i < size; i++) {
+	for(unsigned int i = 0; i < size; i++) {
 		if(!this->paramTypes[i]->equals(t->paramTypes[i])) {
 			return false;
 		}
