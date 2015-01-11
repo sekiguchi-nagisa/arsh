@@ -5,6 +5,8 @@
  *      Author: skgchxngsxyz-osx
  */
 
+#include <stdexcept>
+
 #include "DSType.h"
 
 // ####################
@@ -15,6 +17,18 @@ DSType::DSType(){
 }
 
 DSType::~DSType() {
+}
+
+bool DSType::hasField(const std::string &fieldName) {
+	return this->getFieldIndex(fieldName) != -1;
+}
+
+bool DSType::isReadOnly(const std::string &fieldName) {
+	return this->isReadOnly(this->getFieldIndex(fieldName));
+}
+
+FieldHandle *DSType::lookupFieldHandle(const std::string &fieldName) {
+	return this->lookupFieldHandle(this->getFieldIndex(fieldName));
 }
 
 bool DSType::isAssignableFrom(DSType *targetType) {
@@ -46,8 +60,16 @@ int UnresolvedType::getFieldSize() {
 	return 0;
 }
 
+int UnresolvedType::getFieldIndex(const std::string &fieldName) {
+	return -1;
+}
+
 FieldHandle *UnresolvedType::lookupFieldHandle(int fieldIndex) {
 	return 0;
+}
+
+bool UnresolvedType::isReadOnly(int fieldIndex) {
+	return false;
 }
 
 
@@ -255,14 +277,12 @@ DSType *UnresolvedFuncType::toType() {
 // #######################
 
 ClassType::ClassType(std::string &&className, bool extendable, DSType *superType):
-		superType(superType), className(std::move(className)), extendable(extendable),
-		constructorHandle(0), handleSize(0), handleTable(0) {
+		superType(superType), baseIndex(superType != 0 ? superType->getFieldSize() : 0),
+		className(std::move(className)), extendable(extendable),
+		constructorHandle(0), fieldIndexMap(), handleTable(), handleFlags() {
 }
 
 ClassType::~ClassType() {
-	if(this->handleTable != 0) {
-		delete[] this->handleTable;
-	}
 }
 
 std::string ClassType::getTypeName() {
@@ -286,16 +306,56 @@ void ClassType::setConstructorHandle(ConstructorHandle *handle) {
 }
 
 int ClassType::getFieldSize() {
-	return this->handleSize;
+	return this->handleTable.size() + this->baseIndex;
 }
 
-FieldHandle *ClassType::lookupFieldHandle(int fieldIndex) {	//FIXME:
-	return this->handleTable[fieldIndex];
+int ClassType::getFieldIndex(const std::string &fieldName) {
+	try {
+		return this->fieldIndexMap.at(fieldName);
+	} catch(const std::out_of_range &e) {
+		return this->superType != 0 ? this->superType->getFieldIndex(fieldName) : -1;
+	}
+}
+
+FieldHandle *ClassType::lookupFieldHandle(int fieldIndex) {
+	int actualIndex = fieldIndex - this->baseIndex;
+	try {
+		return this->handleTable.at(actualIndex);
+	} catch(const std::out_of_range &e) {
+		return 0;
+	}
+}
+
+bool ClassType::isReadOnly(int fieldIndex) {
+	int actualIndex = fieldIndex - this->baseIndex;
+	try {
+		return this->handleFlags.at(actualIndex);
+	} catch(const std::out_of_range &e) {
+		return false;
+	}
 }
 
 bool ClassType::equals(DSType *targetType) {
 	ClassType *t = dynamic_cast<ClassType*>(targetType);
 	return t != 0 && this->className == t->className;
+}
+
+bool ClassType::addFieldHandle(const std::string &fieldName,
+		bool readOnly, FieldHandle *handle) {
+	// return false, found duplicated field
+	if(this->hasField(fieldName)) {
+		return false;
+	}
+
+	// add actual index to index map
+	int actualIndex = this->handleTable.size() + this->baseIndex;
+	this->fieldIndexMap[fieldName] = actualIndex;
+
+	// add handle and flag
+	this->handleTable.push_back(handle);
+	this->handleFlags.push_back(readOnly);
+
+	return true;
 }
 
 DSType *ClassType::anyType = new ClassType("Any", false, 0);
@@ -348,8 +408,16 @@ int FunctionType::getFieldSize() {
 	return 0;
 }
 
+int FunctionType::getFieldIndex(const std::string &fieldName) {
+	return -1;
+}
+
 FieldHandle *FunctionType::lookupFieldHandle(int fieldIndex) {
 	return 0;
+}
+
+bool FunctionType::isReadOnly(int fieldIndex) {
+	return false;
 }
 
 bool FunctionType::equals(DSType *targetType) {

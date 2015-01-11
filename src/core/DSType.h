@@ -42,14 +42,40 @@ public:
 	virtual ConstructorHandle *getConstructorHandle() = 0;
 
 	/**
-	 * get size of field.
+	 * get size of the all fields(include superType fieldSize).
 	 */
 	virtual int getFieldSize() = 0;
+
+	/**
+	 * return -1, if has no field
+	 */
+	virtual int getFieldIndex(const std::string &fieldName) = 0;
+
+	/**
+	 * return true, found field
+	 * equivalent to getFieldIndex() != -1
+	 */
+	bool hasField(const std::string &fieldName);
 
 	/**
 	 * return null, if index < -1 && index >= getFieldSize()
 	 */
 	virtual FieldHandle *lookupFieldHandle(int fieldIndex) = 0;
+
+	/**
+	 * equivalent to lookupFieldHandle(getFieldIndex())
+	 */
+	FieldHandle *lookupFieldHandle(const std::string &fieldName);
+
+	/**
+	 * return true if read only
+	 */
+	virtual bool isReadOnly(int fieldIndex) = 0;
+
+	/**
+	 * equivalent to isReadOnly(getFieldIndex())
+	 */
+	bool isReadOnly(const std::string &fieldName);
 
 	/**
 	 * check equality
@@ -91,9 +117,19 @@ public:
 	int getFieldSize();	// override
 
 	/**
+	 * return always -1
+	 */
+	int getFieldIndex(const std::string &fieldName);	// override
+
+	/**
 	 * return always null
 	 */
 	FieldHandle *lookupFieldHandle(int fieldIndex);	// override
+
+	/**
+	 * return always false
+	 */
+	bool isReadOnly(int fieldIndex);	// override
 
 	virtual DSType *toType() = 0;	//TODO: add TypePool to parameter
 };
@@ -178,14 +214,19 @@ private:
 	DSType *superType;
 
 	/**
+	 * handleTable base index
+	 */
+	const int baseIndex;
+
+	/**
 	 * string representation of this class.
 	 */
-	std::string className;
+	const std::string className;
 
 	/**
 	 * if true, can extend this class.
 	 */
-	bool extendable;
+	const bool extendable;
 
 	/**
 	 * may be null, if has no constructor.
@@ -193,16 +234,21 @@ private:
 	ConstructorHandle *constructorHandle;
 
 	/**
-	 * size of field handle table size
+	 * contains fieldName and handleTableIndex pair
 	 */
-	int handleSize;
+	std::unordered_map<std::string, int> fieldIndexMap;
+
+	std::vector<FieldHandle*> handleTable;
 
 	/**
-	 * may be null if has no field (handleSize == 0)
+	 * if field is read only, flag is true
 	 */
-	FieldHandle **handleTable;
+	std::vector<bool> handleFlags;
 
 public:
+	/**
+	 * superType may be null (Any or Void Type)
+	 */
 	ClassType(std::string &&className, bool extendable, DSType *superType);
 	~ClassType();
 
@@ -212,8 +258,15 @@ public:
 	ConstructorHandle *getConstructorHandle();	// override
 	void setConstructorHandle(ConstructorHandle *handle);
 	int getFieldSize();	// override
+	int getFieldIndex(const std::string &fieldName);	// override
 	FieldHandle *lookupFieldHandle(int fieldIndex);	// override
+	bool isReadOnly(int fieldIndex);	// override
 	bool equals(DSType *targetType);	// override
+
+	/**
+	 * return false, found duplicated field.
+	 */
+	bool addFieldHandle(const std::string &fieldName, bool readOnly, FieldHandle *handle);
 
 	static DSType *anyType;
 	static DSType *voidType;
@@ -260,11 +313,14 @@ public:
 	ConstructorHandle *getConstructorHandle();	// override
 
 	int getFieldSize();	// override
+	int getFieldIndex(const std::string &fieldName);	// override
 
 	/**
 	 * return always null
 	 */
 	FieldHandle *lookupFieldHandle(int fieldIndex);	// override
+
+	bool isReadOnly(int fieldIndex);	// override
 
 	bool equals(DSType *targetType);	// override
 };
