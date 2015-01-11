@@ -61,6 +61,6 @@ DSType *TypePool::getBasePairType() {
 	return 0;	//TODO:
 }
 
-DSType *getType(std::string typeName) {
+DSType *getType(const std::string &typeName) {
 	return 0;	//TODO:
 }

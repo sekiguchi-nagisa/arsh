@@ -11,6 +11,8 @@
 #include <unordered_map>
 #include <vector>
 #include <string>
+#include <utility>
+
 #include "CalleeHandle.h"
 
 class DSType {
@@ -102,7 +104,7 @@ private:
 	std::string typeName;
 
 public:
-	UnresolvedClassType(std::string typeName);
+	UnresolvedClassType(std::string &&typeName);
 
 	std::string getTypeName();	// override
 	bool equals(DSType *targetType);	// override
@@ -201,7 +203,7 @@ private:
 	FieldHandle **handleTable;
 
 public:
-	ClassType(std::string className, bool extendable, DSType *superType);
+	ClassType(std::string &&className, bool extendable, DSType *superType);
 	~ClassType();
 
 	std::string getTypeName();	// override

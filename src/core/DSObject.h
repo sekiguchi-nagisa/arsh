@@ -96,7 +96,7 @@ private:
 	std::string value;
 
 public:
-	String_Object(DSType *type, std::string value);
+	String_Object(DSType *type, std::string &&value);
 
 	const std::string &getValue();
 };

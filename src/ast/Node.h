@@ -8,6 +8,8 @@
 #ifndef AST_NODE_H_
 #define AST_NODE_H_
 
+#include <utility>
+
 #include "../core/DSType.h"
 #include "../core/CalleeHandle.h"
 #include "NodeVisitor.h"
@@ -85,7 +87,7 @@ public:
 	/**
 	 * used for CommandNode. lineNum is always 0.
 	 */
-	StringValueNode(std::string value);
+	StringValueNode(std::string &&value);
 
 	StringValueNode(int lineNum, char *value, bool isSingleQuoteStr);
 
@@ -176,7 +178,7 @@ private:
 	bool readOnly;
 
 public:
-	VarNode(int lineNum, std::string varName);
+	VarNode(int lineNum, std::string &&varName);
 
 	const std::string &getVarName();
 	bool isReadOnly();	// override
@@ -236,7 +238,7 @@ private:
 	FieldHandle *handle;
 
 public:
-	AccessNode(int lineNum, ExprNode *recvNode, std::string fieldName);
+	AccessNode(int lineNum, ExprNode *recvNode, std::string &&fieldName);
 	~AccessNode();
 
 	ExprNode *getRecvNode();
@@ -351,7 +353,7 @@ private:
 	std::vector<ExprNode*> argNodes;
 
 public:
-	ProcessNode(int lineNum, std::string commandName);
+	ProcessNode(int lineNum, std::string &&commandName);
 	~ProcessNode();
 
 	const std::string &getCommandName();
@@ -471,7 +473,7 @@ private:
 	ExprNode *exprNode;
 
 public:
-	ExportEnvNode(int lineNum, std::string envName, ExprNode *exprNode);
+	ExportEnvNode(int lineNum, std::string &&envName, ExprNode *exprNode);
 	~ExportEnvNode();
 
 	const std::string &getEnvName();
@@ -485,7 +487,7 @@ private:
 	std::string envName;
 
 public:
-	ImportEnvNode(int lineNum, std::string envName);
+	ImportEnvNode(int lineNum, std::string &&envName);
 
 	const std::string &getEnvName();
 	int accept(NodeVisitor *visitor);	// override
@@ -543,7 +545,7 @@ private:
 	FunctionHandle *hasNextHandle;	// handle for __HAS_NEXT__
 
 public:
-	ForInNode(int lineNum, std::string initName, ExprNode *exprNode, BlockNode *blockNode);
+	ForInNode(int lineNum, std::string &&initName, ExprNode *exprNode, BlockNode *blockNode);
 	~ForInNode();
 
 	const std::string &getInitName();
@@ -668,7 +670,7 @@ public:
 	/**
 	 * if type is null, has no type annotation
 	 */
-	CatchNode(int lineNum, std::string exceptionName, UnresolvedType *type, BlockNode *blockNode);
+	CatchNode(int lineNum, std::string &&exceptionName, UnresolvedType *type, BlockNode *blockNode);
 	~CatchNode();
 
 	const std::string &getExceptionName();
@@ -730,7 +732,7 @@ private:
 	ExprNode *initValueNode;
 
 public:
-	VarDeclNode(int lineNum, std::string varName, ExprNode *initValueNode, bool readOnly);
+	VarDeclNode(int lineNum, std::string &&varName, ExprNode *initValueNode, bool readOnly);
 	~VarDeclNode();
 
 	const std::string &getVarName();
@@ -796,7 +798,7 @@ private:
 	BlockNode *blockNode;
 
 public:
-	FunctionNode(int lineNum, std::string funcName);
+	FunctionNode(int lineNum, std::string &&funcName);
 	~FunctionNode();
 
 	const std::string &getFuncName();

@@ -93,8 +93,8 @@ bool Boolean_Object::getValue() {
 // ##     String_Object     ##
 // ###########################
 
-String_Object::String_Object(DSType *type, std::string value):
-		BaseObject(type), value(value) {
+String_Object::String_Object(DSType *type, std::string &&value):
+		BaseObject(type), value(std::move(value)) {
 }
 
 const std::string &String_Object::getValue() {

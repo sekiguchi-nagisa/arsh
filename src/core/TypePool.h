@@ -45,7 +45,7 @@ public:
 	 * return null, if type is not defined.
 	 * cannot get TemplateType(array.. etc)
 	 */
-	DSType *getType(std::string typeName);
+	DSType *getType(const std::string &typeName);
 };
 
 #endif /* CORE_TYPEPOOL_H_ */

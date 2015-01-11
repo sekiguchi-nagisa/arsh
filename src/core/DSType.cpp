@@ -55,8 +55,8 @@ FieldHandle *UnresolvedType::lookupFieldHandle(int fieldIndex) {
 // ##     UnresolvedClassType     ##
 // #################################
 
-UnresolvedClassType::UnresolvedClassType(std::string typeName) :
-		typeName(typeName) {
+UnresolvedClassType::UnresolvedClassType(std::string &&typeName) :
+		typeName(std::move(typeName)) {
 }
 
 std::string UnresolvedClassType::getTypeName() {
@@ -254,8 +254,8 @@ DSType *UnresolvedFuncType::toType() {
 // ##     ClassType     ##
 // #######################
 
-ClassType::ClassType(std::string className, bool extendable, DSType *superType):
-		superType(superType), className(className), extendable(extendable),
+ClassType::ClassType(std::string &&className, bool extendable, DSType *superType):
+		superType(superType), className(std::move(className)), extendable(extendable),
 		constructorHandle(0), handleSize(0), handleTable(0) {
 }
 

@@ -14,8 +14,6 @@
 #include "../ast/Node.h"
 #include "../ast/NodeVisitor.h"
 
-#include <vector>
-
 class TypeChecker : public NodeVisitor {
 private:
 	TypePool *typePool;
