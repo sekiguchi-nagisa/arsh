@@ -14,45 +14,45 @@
 
 class RuntimeContext {
 private:
-	/**
-	 * contains global variables(or function)
-	 */
-	std::vector<DSObject*> globalVarTable;
+    /**
+     * contains global variables(or function)
+     */
+    std::vector<DSObject*> globalVarTable;
 
-	/**
-	 * if not null, thrown exception.
-	 */
-	DSObject *thrownObject;
+    /**
+     * if not null, thrown exception.
+     */
+    DSObject *thrownObject;
 
 public:
-	RuntimeContext();
-	virtual ~RuntimeContext();
+    RuntimeContext();
+    virtual ~RuntimeContext();
 
-	/**
-	 * add new global variable or function
-	 */
-	void addGlobalVar(DSObject *obj);
+    /**
+     * add new global variable or function
+     */
+    void addGlobalVar(DSObject *obj);
 
-	/**
-	 * update exist global variable.
-	 * this is not type-safe method
-	 */
-	void updateGlobalVar(int varIndex, DSObject *obj);
+    /**
+     * update exist global variable.
+     * this is not type-safe method
+     */
+    void updateGlobalVar(int varIndex, DSObject *obj);
 
-	/**
-	 * this is not type-safe method
-	 */
-	DSObject *getGlobalVar(int index);
+    /**
+     * this is not type-safe method
+     */
+    DSObject *getGlobalVar(int index);
 
-	int getGlobalVarSize();
+    int getGlobalVarSize();
 
-	void setThrownObject(DSObject *obj);
-	void clearThrownObject();
+    void setThrownObject(DSObject *obj);
+    void clearThrownObject();
 
-	/**
-	 * return null, if not thrown
-	 */
-	DSObject *getThrownObject();
+    /**
+     * return null, if not thrown
+     */
+    DSObject *getThrownObject();
 };
 
 #endif /* CORE_RUNTIMECONTEXT_H_ */

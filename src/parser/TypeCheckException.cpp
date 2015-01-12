@@ -8,11 +8,11 @@
 #include "TypeCheckException.h"
 
 TypeCheckException::TypeCheckException() {
-	// TODO Auto-generated constructor stub
+    // TODO Auto-generated constructor stub
 
 }
 
 TypeCheckException::~TypeCheckException() {
-	// TODO Auto-generated destructor stub
+    // TODO Auto-generated destructor stub
 }
 

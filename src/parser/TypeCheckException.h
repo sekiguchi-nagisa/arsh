@@ -13,8 +13,8 @@
  */
 class TypeCheckException {
 public:
-	TypeCheckException();
-	virtual ~TypeCheckException();
+    TypeCheckException();
+    virtual ~TypeCheckException();
 };
 
 #endif /* PARSER_TYPECHECKEXCEPTION_H_ */

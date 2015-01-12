@@ -14,40 +14,40 @@ class DSType;
 
 class TypePool {
 public:
-	TypePool();
-	virtual ~TypePool();
+    TypePool();
+    virtual ~TypePool();
 
-	/**
-	 * get any type (root class of ydsh class)
-	 */
-	DSType *getAnyType();
+    /**
+     * get any type (root class of ydsh class)
+     */
+    DSType *getAnyType();
 
-	/**
-	 * get void type (pseudo class representing for void)
-	 */
-	DSType *getVoidType();
+    /**
+     * get void type (pseudo class representing for void)
+     */
+    DSType *getVoidType();
 
-	/**
-	 * equivalent to getInt64Type()
-	 */
-	DSType *getIntType();
-	DSType *getInt64Type();
-	DSType *getFloatType();
-	DSType *getBooleanType();
-	DSType *getStringType();
+    /**
+     * equivalent to getInt64Type()
+     */
+    DSType *getIntType();
+    DSType *getInt64Type();
+    DSType *getFloatType();
+    DSType *getBooleanType();
+    DSType *getStringType();
 
-	// for reified type.
-	DSType *getBaseArrayType();	//TODO: return type
-	DSType *getBaseMapType();	// TODO: return type
-	DSType *getBasePairType();	// TODO: return type
+    // for reified type.
+    DSType *getBaseArrayType(); //TODO: return type
+    DSType *getBaseMapType();	// TODO: return type
+    DSType *getBasePairType();	// TODO: return type
 
-	// for type lookup
+    // for type lookup
 
-	/**
-	 * return null, if type is not defined.
-	 * cannot get TemplateType(array.. etc)
-	 */
-	DSType *getType(const std::string &typeName);
+    /**
+     * return null, if type is not defined.
+     * cannot get TemplateType(array.. etc)
+     */
+    DSType *getType(const std::string &typeName);
 };
 
 #endif /* CORE_TYPEPOOL_H_ */

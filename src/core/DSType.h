@@ -17,313 +17,309 @@
 
 class DSType {
 public:
-	DSType();
-	virtual ~DSType();
+    DSType();
+    virtual ~DSType();
 
-	/**
-	 * string representation of this type
-	 */
-	virtual std::string getTypeName() = 0;	// must not reference value
+    /**
+     * string representation of this type
+     */
+    virtual std::string getTypeName() = 0;	// must not reference value
 
-	/**
-	 * if true, can extend this type
-	 */
-	virtual bool isExtendable() = 0;
+    /**
+     * if true, can extend this type
+     */
+    virtual bool isExtendable() = 0;
 
-	/**
-	 * get super type of this type.
-	 * return null, if has no super type(ex. AnyType, VoidType).
-	 */
-	virtual DSType *getSuperType() = 0;
+    /**
+     * get super type of this type.
+     * return null, if has no super type(ex. AnyType, VoidType).
+     */
+    virtual DSType *getSuperType() = 0;
 
-	/**
-	 * return null, if has no constructor
-	 */
-	virtual ConstructorHandle *getConstructorHandle() = 0;
+    /**
+     * return null, if has no constructor
+     */
+    virtual ConstructorHandle *getConstructorHandle() = 0;
 
-	/**
-	 * get size of the all fields(include superType fieldSize).
-	 */
-	virtual unsigned int getFieldSize() = 0;
+    /**
+     * get size of the all fields(include superType fieldSize).
+     */
+    virtual unsigned int getFieldSize() = 0;
 
-	/**
-	 * return -1, if has no field
-	 */
-	virtual int getFieldIndex(const std::string &fieldName) = 0;
+    /**
+     * return -1, if has no field
+     */
+    virtual int getFieldIndex(const std::string &fieldName) = 0;
 
-	/**
-	 * return true, found field
-	 * equivalent to getFieldIndex() != -1
-	 */
-	bool hasField(const std::string &fieldName);
+    /**
+     * return true, found field
+     * equivalent to getFieldIndex() != -1
+     */
+    bool hasField(const std::string &fieldName);
 
-	/**
-	 * return null, if index < -1 && index >= getFieldSize()
-	 */
-	virtual FieldHandle *lookupFieldHandle(int fieldIndex) = 0;
+    /**
+     * return null, if index < -1 && index >= getFieldSize()
+     */
+    virtual FieldHandle *lookupFieldHandle(int fieldIndex) = 0;
 
-	/**
-	 * equivalent to lookupFieldHandle(getFieldIndex())
-	 */
-	FieldHandle *lookupFieldHandle(const std::string &fieldName);
+    /**
+     * equivalent to lookupFieldHandle(getFieldIndex())
+     */
+    FieldHandle *lookupFieldHandle(const std::string &fieldName);
 
-	/**
-	 * return true if read only
-	 */
-	virtual bool isReadOnly(int fieldIndex) = 0;
+    /**
+     * return true if read only
+     */
+    virtual bool isReadOnly(int fieldIndex) = 0;
 
-	/**
-	 * equivalent to isReadOnly(getFieldIndex())
-	 */
-	bool isReadOnly(const std::string &fieldName);
+    /**
+     * equivalent to isReadOnly(getFieldIndex())
+     */
+    bool isReadOnly(const std::string &fieldName);
 
-	/**
-	 * check equality
-	 */
-	virtual bool equals(DSType *targetType) = 0;
+    /**
+     * check equality
+     */
+    virtual bool equals(DSType *targetType) = 0;
 
-	/**
-	 * check inheritance of target type.
-	 * if this type is equivalent to target type or
-	 * the super type of target type, return true.
-	 */
-	virtual bool isAssignableFrom(DSType *targetType);
+    /**
+     * check inheritance of target type.
+     * if this type is equivalent to target type or
+     * the super type of target type, return true.
+     */
+    virtual bool isAssignableFrom(DSType *targetType);
 };
-
 
 /**
  * represent for parsed type.
  */
-class UnresolvedType : public DSType {
+class UnresolvedType: public DSType {
 public:
-	/**
-	 * return always false
-	 */
-	bool isExtendable();	// override
+    /**
+     * return always false
+     */
+    bool isExtendable();	// override
 
-	/**
-	 * return always null
-	 */
-	DSType *getSuperType();	// override
+    /**
+     * return always null
+     */
+    DSType *getSuperType();	// override
 
-	/**
-	 * return always null
-	 */
-	ConstructorHandle *getConstructorHandle();	// override
+    /**
+     * return always null
+     */
+    ConstructorHandle *getConstructorHandle();	// override
 
-	/**
-	 * return always 0
-	 */
-	unsigned int getFieldSize();	// override
+    /**
+     * return always 0
+     */
+    unsigned int getFieldSize();	// override
 
-	/**
-	 * return always -1
-	 */
-	int getFieldIndex(const std::string &fieldName);	// override
+    /**
+     * return always -1
+     */
+    int getFieldIndex(const std::string &fieldName);	// override
 
-	/**
-	 * return always null
-	 */
-	FieldHandle *lookupFieldHandle(int fieldIndex);	// override
+    /**
+     * return always null
+     */
+    FieldHandle *lookupFieldHandle(int fieldIndex);	// override
 
-	/**
-	 * return always false
-	 */
-	bool isReadOnly(int fieldIndex);	// override
+    /**
+     * return always false
+     */
+    bool isReadOnly(int fieldIndex);	// override
 
-	virtual DSType *toType() = 0;	//TODO: add TypePool to parameter
+    virtual DSType *toType() = 0;	//TODO: add TypePool to parameter
 };
 
-
-class UnresolvedClassType : public UnresolvedType {
+class UnresolvedClassType: public UnresolvedType {
 private:
-	std::string typeName;
+    std::string typeName;
 
 public:
-	UnresolvedClassType(std::string &&typeName);
+    UnresolvedClassType(std::string &&typeName);
 
-	std::string getTypeName();	// override
-	bool equals(DSType *targetType);	// override
-	DSType *toType();	// override
+    std::string getTypeName();	// override
+    bool equals(DSType *targetType);	// override
+    DSType *toType();	// override
 };
 
-
-class UnresolvedReifiedType : public UnresolvedType {
+class UnresolvedReifiedType: public UnresolvedType {
 private:
-	UnresolvedType *templateType;
-	std::vector<UnresolvedType*> elementTypes;
+    UnresolvedType *templateType;
+    std::vector<UnresolvedType*> elementTypes;
 
 public:
-	UnresolvedReifiedType(UnresolvedType *templateType);
-	~UnresolvedReifiedType();
+    UnresolvedReifiedType(UnresolvedType *templateType);
+    ~UnresolvedReifiedType();
 
-	std::string getTypeName();	// override
-	void addElementType(UnresolvedType *type);
-	const std::vector<UnresolvedType*> &getElementTypes();
-	bool equals(DSType *targetType);	// override
-	//TODO: add TypePool to parameter
-	DSType *toType();	// override
+    std::string getTypeName();	// override
+    void addElementType(UnresolvedType *type);
+    const std::vector<UnresolvedType*> &getElementTypes();
+    bool equals(DSType *targetType);	// override
+    //TODO: add TypePool to parameter
+    DSType *toType();	// override
 };
-
 
 /**
  * create reified type name
  */
-std::string toReifiedTypeName(DSType *templateType, int elementSize, DSType **elementTypes);
+std::string toReifiedTypeName(DSType *templateType, int elementSize,
+        DSType **elementTypes);
 
 /**
  * create function type name
  */
-std::string toFunctionTypeName(DSType *returnType, int paramSize, DSType **paramTypes);
+std::string toFunctionTypeName(DSType *returnType, int paramSize,
+        DSType **paramTypes);
 
-
-class UnresolvedFuncType : public UnresolvedType {
+class UnresolvedFuncType: public UnresolvedType {
 private:
-	/**
-	 * may be null, if has return type annotation (return void)
-	 */
-	UnresolvedType *returnType;
+    /**
+     * may be null, if has return type annotation (return void)
+     */
+    UnresolvedType *returnType;
 
-	/**
-	 * may be empty vector, if has no parameter
-	 */
-	std::vector<UnresolvedType *> paramTypes;
+    /**
+     * may be empty vector, if has no parameter
+     */
+    std::vector<UnresolvedType *> paramTypes;
 
-	/**
-	 * UnresolvedClassType of Void
-	 */
-	static UnresolvedClassType *unresolvedVoid;
+    /**
+     * UnresolvedClassType of Void
+     */
+    static UnresolvedClassType *unresolvedVoid;
 
 public:
-	UnresolvedFuncType();
-	~UnresolvedFuncType();
+    UnresolvedFuncType();
+    ~UnresolvedFuncType();
 
-	std::string getTypeName();	// override
-	void setReturnType(UnresolvedType *type);
-	UnresolvedType *getReturnType();
-	void addParamType(UnresolvedType *type);
-	const std::vector<UnresolvedType*> &getParamTypes();
-	bool equals(DSType *targetType);	// override
-	//TODO: add TypePool to parameter
-	DSType *toType();	// override
+    std::string getTypeName();	// override
+    void setReturnType(UnresolvedType *type);
+    UnresolvedType *getReturnType();
+    void addParamType(UnresolvedType *type);
+    const std::vector<UnresolvedType*> &getParamTypes();
+    bool equals(DSType *targetType);	// override
+    //TODO: add TypePool to parameter
+    DSType *toType();	// override
 };
 
-
-class ClassType : public DSType {	//TODO: add field index map, read only bitmap
+class ClassType: public DSType {//TODO: add field index map, read only bitmap
 private:
-	DSType *superType;
+    DSType *superType;
 
-	/**
-	 * handleTable base index
-	 */
-	const int baseIndex;
+    /**
+     * handleTable base index
+     */
+    const int baseIndex;
 
-	/**
-	 * string representation of this class.
-	 */
-	const std::string className;
+    /**
+     * string representation of this class.
+     */
+    const std::string className;
 
-	/**
-	 * if true, can extend this class.
-	 */
-	const bool extendable;
+    /**
+     * if true, can extend this class.
+     */
+    const bool extendable;
 
-	/**
-	 * may be null, if has no constructor.
-	 */
-	ConstructorHandle *constructorHandle;
+    /**
+     * may be null, if has no constructor.
+     */
+    ConstructorHandle *constructorHandle;
 
-	/**
-	 * contains fieldName and handleTableIndex pair
-	 */
-	std::unordered_map<std::string, int> fieldIndexMap;
+    /**
+     * contains fieldName and handleTableIndex pair
+     */
+    std::unordered_map<std::string, int> fieldIndexMap;
 
-	std::vector<FieldHandle*> handleTable;
+    std::vector<FieldHandle*> handleTable;
 
-	/**
-	 * if field is read only, flag is true
-	 */
-	std::vector<bool> handleFlags;
+    /**
+     * if field is read only, flag is true
+     */
+    std::vector<bool> handleFlags;
 
 public:
-	/**
-	 * superType may be null (Any or Void Type)
-	 */
-	ClassType(std::string &&className, bool extendable, DSType *superType);
-	~ClassType();
+    /**
+     * superType may be null (Any or Void Type)
+     */
+    ClassType(std::string &&className, bool extendable, DSType *superType);
+    ~ClassType();
 
-	std::string getTypeName();	// override
-	bool isExtendable();	// override
-	DSType *getSuperType();	// override
-	ConstructorHandle *getConstructorHandle();	// override
-	void setConstructorHandle(ConstructorHandle *handle);
-	unsigned int getFieldSize();	// override
-	int getFieldIndex(const std::string &fieldName);	// override
-	FieldHandle *lookupFieldHandle(int fieldIndex);	// override
-	bool isReadOnly(int fieldIndex);	// override
-	bool equals(DSType *targetType);	// override
+    std::string getTypeName();	// override
+    bool isExtendable();	// override
+    DSType *getSuperType();	// override
+    ConstructorHandle *getConstructorHandle();	// override
+    void setConstructorHandle(ConstructorHandle *handle);
+    unsigned int getFieldSize();	// override
+    int getFieldIndex(const std::string &fieldName);	// override
+    FieldHandle *lookupFieldHandle(int fieldIndex);	// override
+    bool isReadOnly(int fieldIndex);	// override
+    bool equals(DSType *targetType);	// override
 
-	/**
-	 * return false, found duplicated field.
-	 */
-	bool addFieldHandle(const std::string &fieldName, bool readOnly, FieldHandle *handle);
+    /**
+     * return false, found duplicated field.
+     */
+    bool addFieldHandle(const std::string &fieldName, bool readOnly,
+            FieldHandle *handle);
 
-	static DSType *anyType;
-	static DSType *voidType;
+    static DSType *anyType;
+    static DSType *voidType;
 };
 
-
-class FunctionType : public DSType {
+class FunctionType: public DSType {
 private:
-	DSType *returnType;
+    DSType *returnType;
 
-	/**
-	 * may be 0, if has no parameter
-	 */
-	unsigned int paramSize;
+    /**
+     * may be 0, if has no parameter
+     */
+    unsigned int paramSize;
 
-	/**
-	 * may be null, if has no parameter
-	 */
-	DSType **paramTypes;
+    /**
+     * may be null, if has no parameter
+     */
+    DSType **paramTypes;
 
 public:
-	FunctionType(DSType *returnType, unsigned int paramSize, DSType **paramTypes);
-	~FunctionType();
+    FunctionType(DSType *returnType, unsigned int paramSize,
+            DSType **paramTypes);
+    ~FunctionType();
 
-	DSType *getReturnType();
-	unsigned int getParamSize();
+    DSType *getReturnType();
+    unsigned int getParamSize();
 
-	/**
-	 * may be null, if has no parameter (getParamSize() == 0)
-	 */
-	DSType **getParamTypes();
+    /**
+     * may be null, if has no parameter (getParamSize() == 0)
+     */
+    DSType **getParamTypes();
 
-	std::string getTypeName();	// override
-	bool isExtendable();	// override
+    std::string getTypeName();	// override
+    bool isExtendable();	// override
 
-	/**
-	 * return always anyType
-	 */
-	DSType *getSuperType();	// override
+    /**
+     * return always anyType
+     */
+    DSType *getSuperType();	// override
 
-	/**
-	 * return always null
-	 */
-	ConstructorHandle *getConstructorHandle();	// override
+    /**
+     * return always null
+     */
+    ConstructorHandle *getConstructorHandle();	// override
 
-	unsigned int getFieldSize();	// override
-	int getFieldIndex(const std::string &fieldName);	// override
+    unsigned int getFieldSize();	// override
+    int getFieldIndex(const std::string &fieldName);	// override
 
-	/**
-	 * return always null
-	 */
-	FieldHandle *lookupFieldHandle(int fieldIndex);	// override
+    /**
+     * return always null
+     */
+    FieldHandle *lookupFieldHandle(int fieldIndex);	// override
 
-	bool isReadOnly(int fieldIndex);	// override
+    bool isReadOnly(int fieldIndex);	// override
 
-	bool equals(DSType *targetType);	// override
+    bool equals(DSType *targetType);	// override
 };
-
 
 #endif /* CORE_DSTYPE_H_ */

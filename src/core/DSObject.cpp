@@ -19,126 +19,119 @@ DSObject::DSObject() {
 DSObject::~DSObject() {
 }
 
-
 // ########################
 // ##     BaseObject     ##
 // ########################
 
-BaseObject::BaseObject(DSType *type):	//TODO: add field to table
-		type(type), fieldSize(type->getFieldSize()), fieldTable(0) {
-	if(this->fieldSize > 0) {
-		this->fieldTable = new DSObject*[this->fieldSize];
-	}
+BaseObject::BaseObject(DSType *type) :	//TODO: add field to table
+        type(type), fieldSize(type->getFieldSize()), fieldTable(0) {
+    if (this->fieldSize > 0) {
+        this->fieldTable = new DSObject*[this->fieldSize];
+    }
 }
 
 BaseObject::~BaseObject() {
-	if(this->fieldTable != 0) {
-		delete[] this->fieldTable;
-	}
+    if (this->fieldTable != 0) {
+        delete[] this->fieldTable;
+    }
 }
 
 DSType *BaseObject::getType() {
-	return this->type;
+    return this->type;
 }
 
 int BaseObject::getFieldSize() {
-	return this->fieldSize;
+    return this->fieldSize;
 }
 
 DSObject *BaseObject::lookupField(int fieldIndex) {
-	return this->fieldTable[fieldIndex];
+    return this->fieldTable[fieldIndex];
 }
-
 
 // ##########################
 // ##     Int64_Object     ##
 // ##########################
 
-Int64_Object::Int64_Object(DSType *type, long value):
-		BaseObject(type), value(value) {
+Int64_Object::Int64_Object(DSType *type, long value) :
+        BaseObject(type), value(value) {
 }
 
 long Int64_Object::getValue() {
-	return this->value;
+    return this->value;
 }
-
 
 // ##########################
 // ##     Float_Object     ##
 // ##########################
 
-Float_Object::Float_Object(DSType *type, double value):
-		BaseObject(type), value(value) {
+Float_Object::Float_Object(DSType *type, double value) :
+        BaseObject(type), value(value) {
 }
 
 double Float_Object::getValue() {
-	return this->value;
+    return this->value;
 }
-
 
 // ############################
 // ##     Boolean_Object     ##
 // ############################
 
-Boolean_Object::Boolean_Object(DSType *type, bool value):
-		BaseObject(type), value(value) {
+Boolean_Object::Boolean_Object(DSType *type, bool value) :
+        BaseObject(type), value(value) {
 }
 
 bool Boolean_Object::getValue() {
-	return this->value;
+    return this->value;
 }
-
 
 // ###########################
 // ##     String_Object     ##
 // ###########################
 
-String_Object::String_Object(DSType *type, std::string &&value):
-		BaseObject(type), value(std::move(value)) {
+String_Object::String_Object(DSType *type, std::string &&value) :
+        BaseObject(type), value(std::move(value)) {
 }
 
 const std::string &String_Object::getValue() {
-	return this->value;
+    return this->value;
 }
-
 
 // ########################
 // ##     FuncObject     ##
 // ########################
 
-FuncObject::FuncObject(FunctionType *funcType):
-		funcType(funcType) {
+FuncObject::FuncObject(FunctionType *funcType) :
+        funcType(funcType) {
 }
 
 DSType *FuncObject::getType() {
-	return this->getFuncType();
+    return this->getFuncType();
 }
 
 int FuncObject::getFieldSize() {
-	return 0;
+    return 0;
 }
 
 DSObject *FuncObject::lookupField(int fieldIndex) {
-	return 0;
+    return 0;
 }
 
 FunctionType *FuncObject::getFuncType() {
-	return this->funcType;
+    return this->funcType;
 }
-
 
 // ############################
 // ##     UserFuncObject     ##
 // ############################
 
-UserFuncObject::UserFuncObject(FunctionType *funcType, FunctionNode *funcNode):
-		FuncObject(funcType), funcNode(funcNode) {
+UserFuncObject::UserFuncObject(FunctionType *funcType, FunctionNode *funcNode) :
+        FuncObject(funcType), funcNode(funcNode) {
 }
 
 UserFuncObject::~UserFuncObject() {
-	delete this->funcNode;
+    delete this->funcNode;
 }
 
 FunctionNode *UserFuncObject::getFuncNode() {
-	return this->funcNode;
+    return this->funcNode;
 }

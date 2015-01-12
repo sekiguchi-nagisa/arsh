@@ -13,76 +13,73 @@
 
 class SymbolEntry {
 public:
-	SymbolEntry();
-	virtual ~SymbolEntry();
+    SymbolEntry();
+    virtual ~SymbolEntry();
 
-	/**
-	 * return the type of symbol(variable, function)
-	 */
-	virtual DSType *getType() = 0;
+    /**
+     * return the type of symbol(variable, function)
+     */
+    virtual DSType *getType() = 0;
 
-	/**
-	 * return true, if read only entry
-	 */
-	virtual bool isReadOnly() = 0;
+    /**
+     * return true, if read only entry
+     */
+    virtual bool isReadOnly() = 0;
 
-	/**
-	 * return true, if global entry
-	 */
-	virtual bool isGlobal() = 0;
+    /**
+     * return true, if global entry
+     */
+    virtual bool isGlobal() = 0;
 };
 
-
-class CommonSymbolEntry : public SymbolEntry {
+class CommonSymbolEntry: public SymbolEntry {
 private:
-	const static int READ_ONLY = 1 << 0;
-	const static int GLOBAL    = 1 << 1;
+    const static int READ_ONLY = 1 << 0;
+    const static int GLOBAL = 1 << 1;
 
-	/**
-	 * 1 << 0: read only
-	 * 1 << 1: global
-	 */
-	unsigned char flag;
+    /**
+     * 1 << 0: read only
+     * 1 << 1: global
+     */
+    unsigned char flag;
 
-	DSType *type;
+    DSType *type;
 
 public:
-	CommonSymbolEntry(DSType *type, bool readOnly, bool global);
-	~CommonSymbolEntry();
+    CommonSymbolEntry(DSType *type, bool readOnly, bool global);
+    ~CommonSymbolEntry();
 
-	DSType *getType();	// override
-	bool isReadOnly();	// override
-	bool isGlobal();	// override
+    DSType *getType();	// override
+    bool isReadOnly();	// override
+    bool isGlobal();	// override
 };
 
-
-class FuncSymbolEntry : public SymbolEntry {
+class FuncSymbolEntry: public SymbolEntry {
 private:
-	FunctionHandle *handle;
+    FunctionHandle *handle;
 
 public:
-	FuncSymbolEntry(FunctionHandle *handle);
+    FuncSymbolEntry(FunctionHandle *handle);
 
-	DSType *getType();	// override
+    DSType *getType();	// override
 
-	/**
-	 * return always true
-	 */
-	bool isReadOnly();	// override
+    /**
+     * return always true
+     */
+    bool isReadOnly();	// override
 
-	/**
-	 * currently, return always true
-	 */
-	bool isGlobal();	// override
+    /**
+     * currently, return always true
+     */
+    bool isGlobal();	// override
 
-	FunctionHandle *getHandle();
+    FunctionHandle *getHandle();
 };
-
 
 class SymbolTable {
 public:
-	SymbolTable();
-	virtual ~SymbolTable();
+    SymbolTable();
+    virtual ~SymbolTable();
 };
 
 #endif /* PARSER_SYMBOLTABLE_H_ */

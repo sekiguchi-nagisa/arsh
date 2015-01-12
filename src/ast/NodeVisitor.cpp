@@ -8,10 +8,10 @@
 #include "NodeVisitor.h"
 
 NodeVisitor::NodeVisitor() {
-	// TODO Auto-generated constructor stub
+    // TODO Auto-generated constructor stub
 
 }
 
 NodeVisitor::~NodeVisitor() {
-	// TODO Auto-generated destructor stub
+    // TODO Auto-generated destructor stub
 }
