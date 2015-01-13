@@ -248,28 +248,28 @@ public:
 class CastNode: public ExprNode {	//TODO: cast op kind
 private:
     ExprNode *targetNode;
-    TypeToken *targetType;
+    std::unique_ptr<TypeToken> targetType;
 
 public:
-    CastNode(int lineNum, ExprNode *targetNode, TypeToken *type);
+    CastNode(int lineNum, ExprNode *targetNode, std::unique_ptr<TypeToken> &&type);
     ~CastNode();
 
     ExprNode *getTargetNode();
-    TypeToken *getTargetType();    //FIXME: use unique_ptr
+    const std::unique_ptr<TypeToken> &getTargetType();    //FIXME: use unique_ptr
     int accept(NodeVisitor *visitor);	//override
 };
 
 class InstanceOfNode: public ExprNode {	//TODO: instanceof op kind
 private:
     ExprNode *targetNode;
-    TypeToken *targetType;
+    std::unique_ptr<TypeToken> targetType;
 
 public:
-    InstanceOfNode(int lineNum, ExprNode *targetNode, TypeToken *tyep);
+    InstanceOfNode(int lineNum, ExprNode *targetNode, std::unique_ptr<TypeToken> &&tyep);
     ~InstanceOfNode();
 
     ExprNode *getTargetNode();
-    TypeToken *getTargetType();    //FIXME: use unique_ptr
+    const std::unique_ptr<TypeToken> &getTargetType();    //FIXME: use unique_ptr
     int accept(NodeVisitor *visitor);	//override
 };
 
@@ -297,15 +297,15 @@ public:
 
 class ConstructorCallNode: public ExprNode {	//TODO: named parameter
 private:
-    TypeToken *targetType;
+    std::unique_ptr<TypeToken> targetType;
     std::vector<ExprNode*> argNodes;
     ConstructorHandle *handle;
 
 public:
-    ConstructorCallNode(int lineNum, TypeToken *type);
+    ConstructorCallNode(int lineNum, std::unique_ptr<TypeToken> &&type);
     ~ConstructorCallNode();
 
-    TypeToken *getTargetType();
+    const std::unique_ptr<TypeToken> &getTargetType();
     void addArgNode(ExprNode *node);
     const std::vector<ExprNode*> &getArgNodes();
     void setConstructorHandle(ConstructorHandle *handle);
@@ -632,7 +632,7 @@ public:
 class CatchNode: public Node {	//TODO: exception name
 private:
     std::string exceptionName;
-    TypeToken *exceptionTypeToken;
+    std::unique_ptr<TypeToken> exceptionTypeToken;
 
     /**
      * may be null, if has no type annotation.
@@ -645,11 +645,12 @@ public:
     /**
      * if type is null, has no type annotation
      */
-    CatchNode(int lineNum, std::string &&exceptionName, TypeToken *type, BlockNode *blockNode);
+    CatchNode(int lineNum, std::string &&exceptionName, std::unique_ptr<TypeToken> &&type,
+            BlockNode *blockNode);
     ~CatchNode();
 
     const std::string &getExceptionName();
-    TypeToken *getTypeToken();
+    const std::unique_ptr<TypeToken> &getTypeToken();
     void setExceptionType(DSType *type);
 
     /**
@@ -764,9 +765,9 @@ private:
     /**
      * unresolved type of each parameter
      */
-    std::vector<TypeToken*> paramTypes;
+    std::vector<std::unique_ptr<TypeToken>> paramTypes;
 
-    TypeToken *returnTypeToken;
+    std::unique_ptr<TypeToken> returnTypeToken;
 
     /**
      * may be null, if VoidType
@@ -780,16 +781,16 @@ public:
     ~FunctionNode();
 
     const std::string &getFuncName();
-    void addParamNode(VarNode *node, TypeToken *paramType);
+    void addParamNode(VarNode *node, std::unique_ptr<TypeToken> &&paramType);
     const std::vector<VarNode*> &getParamNodes();
 
     /**
      * get unresolved types
      */
-    const std::vector<TypeToken*> &getParamTypes();
+    const std::vector<std::unique_ptr<TypeToken>> &getParamTypes();
 
-    void setReturnTypeToken(TypeToken *typeToken);
-    TypeToken *getReturnTypeToken();
+    void setReturnTypeToken(std::unique_ptr<TypeToken> &&typeToken);
+    const std::unique_ptr<TypeToken> &getReturnTypeToken();
     void setReturnType(DSType *returnType);
 
     /**

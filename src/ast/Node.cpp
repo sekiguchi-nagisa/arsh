@@ -377,8 +377,8 @@ int AccessNode::accept(NodeVisitor *visitor) {
 // ##     CastNode     ##
 // ######################
 
-CastNode::CastNode(int lineNum, ExprNode *targetNode, TypeToken *type) :
-        ExprNode(lineNum), targetNode(targetNode), targetType(type) {
+CastNode::CastNode(int lineNum, ExprNode *targetNode, std::unique_ptr<TypeToken> &&type) :
+        ExprNode(lineNum), targetNode(targetNode), targetType(std::move(type)) {
 }
 
 CastNode::~CastNode() {
@@ -389,7 +389,7 @@ ExprNode *CastNode::getTargetNode() {
     return this->targetNode;
 }
 
-TypeToken *CastNode::getTargetType() {
+const std::unique_ptr<TypeToken> &CastNode::getTargetType() {
     return this->targetType;
 }
 
@@ -401,8 +401,8 @@ int CastNode::accept(NodeVisitor *visitor) {
 // ##     InstanceOfNode     ##
 // ############################
 
-InstanceOfNode::InstanceOfNode(int lineNum, ExprNode *targetNode, TypeToken *type) :
-        ExprNode(lineNum), targetNode(targetNode), targetType(type) {
+InstanceOfNode::InstanceOfNode(int lineNum, ExprNode *targetNode, std::unique_ptr<TypeToken> &&type) :
+        ExprNode(lineNum), targetNode(targetNode), targetType(std::move(type)) {
 }
 
 InstanceOfNode::~InstanceOfNode() {
@@ -413,7 +413,7 @@ ExprNode *InstanceOfNode::getTargetNode() {
     return this->targetNode;
 }
 
-TypeToken *InstanceOfNode::getTargetType() {
+const std::unique_ptr<TypeToken> &InstanceOfNode::getTargetType() {
     return this->targetType;
 }
 
@@ -462,8 +462,8 @@ int ApplyNode::accept(NodeVisitor *visitor) {
 // ##     ConstructorCallNode     ##
 // #################################
 
-ConstructorCallNode::ConstructorCallNode(int lineNum, TypeToken *type) :
-        ExprNode(lineNum), targetType(type), argNodes(), handle(0) {
+ConstructorCallNode::ConstructorCallNode(int lineNum, std::unique_ptr<TypeToken> &&type) :
+        ExprNode(lineNum), targetType(std::move(type)), argNodes(), handle(0) {
 }
 
 ConstructorCallNode::~ConstructorCallNode() {
@@ -474,7 +474,7 @@ ConstructorCallNode::~ConstructorCallNode() {
     this->argNodes.clear();
 }
 
-TypeToken *ConstructorCallNode::getTargetType() {
+const std::unique_ptr<TypeToken> &ConstructorCallNode::getTargetType() {
     return this->targetType;
 }
 
@@ -991,9 +991,9 @@ int ThrowNode::accept(NodeVisitor *visitor) {
 // ##     CatchNode     ##
 // #######################
 
-CatchNode::CatchNode(int lineNum, std::string &&exceptionName, TypeToken *type,
+CatchNode::CatchNode(int lineNum, std::string &&exceptionName, std::unique_ptr<TypeToken> &&type,
         BlockNode *blockNode) :
-        Node(lineNum), exceptionName(std::move(exceptionName)), exceptionTypeToken(type), exceptionType(
+        Node(lineNum), exceptionName(std::move(exceptionName)), exceptionTypeToken(std::move(type)), exceptionType(
                 0), blockNode(blockNode) {
 }
 
@@ -1008,7 +1008,7 @@ const std::string &CatchNode::getExceptionName() {
     return this->exceptionName;
 }
 
-TypeToken *CatchNode::getTypeToken() {
+const std::unique_ptr<TypeToken> &CatchNode::getTypeToken() {
     return this->exceptionTypeToken;
 }
 
@@ -1168,8 +1168,8 @@ int AssignNode::accept(NodeVisitor *visitor) {
 // ##########################
 
 FunctionNode::FunctionNode(int lineNum, std::string &&funcName) :
-        Node(lineNum), funcName(std::move(funcName)), paramNodes(), paramTypes(), returnTypeToken(
-                0), returnType(0), blockNode(0) {
+        Node(lineNum), funcName(std::move(funcName)), paramNodes(), paramTypes(), returnTypeToken(), returnType(
+                0), blockNode(0) {
 }
 
 FunctionNode::~FunctionNode() {
@@ -1192,24 +1192,24 @@ const std::string &FunctionNode::getFuncName() {
     return this->funcName;
 }
 
-void FunctionNode::addParamNode(VarNode *node, TypeToken *paramType) {
+void FunctionNode::addParamNode(VarNode *node, std::unique_ptr<TypeToken> &&paramType) {
     this->paramNodes.push_back(node);
-    this->paramTypes.push_back(paramType);
+    this->paramTypes.push_back(std::move(paramType));
 }
 
 const std::vector<VarNode*> &FunctionNode::getParamNodes() {
     return this->paramNodes;
 }
 
-const std::vector<TypeToken*> &FunctionNode::getParamTypes() {
+const std::vector<std::unique_ptr<TypeToken>> &FunctionNode::getParamTypes() {
     return this->paramTypes;
 }
 
-void FunctionNode::setReturnTypeToken(TypeToken *typeToken) {
-    this->returnTypeToken = typeToken;
+void FunctionNode::setReturnTypeToken(std::unique_ptr<TypeToken> &&typeToken) {
+    this->returnTypeToken = std::move(typeToken);
 }
 
-TypeToken *FunctionNode::getReturnTypeToken() {
+const std::unique_ptr<TypeToken> &FunctionNode::getReturnTypeToken() {
     return this->returnTypeToken;
 }
 

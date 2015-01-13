@@ -38,21 +38,16 @@ DSType *ClassTypeToken::toType() {
 // ##     ReifiedTypeToken     ##
 // ##############################
 
-ReifiedTypeToken::ReifiedTypeToken(TypeToken *templateType) :
-        TypeToken(templateType->getLineNum()), templateType(templateType), elementTypes(2) {
+ReifiedTypeToken::ReifiedTypeToken(std::unique_ptr<TypeToken> &&templateType) :
+        TypeToken(templateType->getLineNum()), templateTypeToken(std::move(templateType)), elementTypeTokens(
+                2) {
 }
 
 ReifiedTypeToken::~ReifiedTypeToken() {
-    delete this->templateType;
-    int size = this->elementTypes.size();
-    for(int i = 0; i < size; i++) {
-        delete this->elementTypes[i];
-    }
-    this->elementTypes.clear();
 }
 
-void ReifiedTypeToken::addElementType(TypeToken *type) {
-    this->elementTypes.push_back(type);
+void ReifiedTypeToken::addElementTypeToken(std::unique_ptr<TypeToken> &&type) {
+    this->elementTypeTokens.push_back(std::move(type));
 }
 
 DSType *ReifiedTypeToken::toType() {
@@ -63,29 +58,22 @@ DSType *ReifiedTypeToken::toType() {
 // ##     FuncTypeToken     ##
 // ###########################
 
-ClassTypeToken *FuncTypeToken::unresolvedVoid = new ClassTypeToken(0, "Void");
+std::unique_ptr<TypeToken> FuncTypeToken::voidTypeToken = std::unique_ptr<TypeToken>(
+        new ClassTypeToken(0, "Void"));
 
 FuncTypeToken::FuncTypeToken(int lineNum) :
-        TypeToken(lineNum), returnType(0), paramTypes(2) {
+        TypeToken(lineNum), returnTypeToken(), paramTypeTokens(2) {
 }
 
 FuncTypeToken::~FuncTypeToken() {
-    if(this->returnType != 0) {
-        delete this->returnType;
-    }
-    int size = this->paramTypes.size();
-    for(int i = 0; i < size; i++) {
-        delete this->paramTypes[i];
-    }
-    this->paramTypes.clear();
 }
 
-void FuncTypeToken::setReturnType(TypeToken *type) {
-    this->returnType = type;
+void FuncTypeToken::setReturnTypeToken(std::unique_ptr<TypeToken> &&type) {
+    this->returnTypeToken = std::move(type);
 }
 
-void FuncTypeToken::addParamType(TypeToken *type) {
-    this->paramTypes.push_back(type);
+void FuncTypeToken::addParamTypeToken(std::unique_ptr<TypeToken> &&type) {
+    this->paramTypeTokens.push_back(std::move(type));
 }
 
 //TODO: add TypePool to parameter
