@@ -39,235 +39,6 @@ bool DSType::isAssignableFrom(DSType *targetType) {
     return superType != 0 && this->isAssignableFrom(superType);
 }
 
-// ############################
-// ##     UnresolvedType     ##
-// ############################
-
-bool UnresolvedType::isExtendable() {
-    return false;
-}
-
-DSType *UnresolvedType::getSuperType() {
-    return 0;
-}
-
-ConstructorHandle *UnresolvedType::getConstructorHandle() {
-    return 0;
-}
-
-unsigned int UnresolvedType::getFieldSize() {
-    return 0;
-}
-
-int UnresolvedType::getFieldIndex(const std::string &fieldName) {
-    return -1;
-}
-
-FieldHandle *UnresolvedType::lookupFieldHandle(int fieldIndex) {
-    return 0;
-}
-
-bool UnresolvedType::isReadOnly(int fieldIndex) {
-    return false;
-}
-
-// #################################
-// ##     UnresolvedClassType     ##
-// #################################
-
-UnresolvedClassType::UnresolvedClassType(std::string &&typeName) :
-        typeName(std::move(typeName)) {
-}
-
-std::string UnresolvedClassType::getTypeName() {
-    return this->typeName;
-}
-
-bool UnresolvedClassType::equals(DSType *targetType) {
-    UnresolvedClassType *t = dynamic_cast<UnresolvedClassType*>(targetType);
-    return t != 0 && this->typeName == t->typeName;
-}
-
-DSType *UnresolvedClassType::toType() {
-    return 0;	//TODO:
-}
-
-// ###################################
-// ##     UnresolvedReifiedType     ##
-// ###################################
-
-UnresolvedReifiedType::UnresolvedReifiedType(UnresolvedType *templateType) :
-        templateType(templateType), elementTypes(2) {
-}
-
-UnresolvedReifiedType::~UnresolvedReifiedType() {
-    delete this->templateType;
-    int size = this->elementTypes.size();
-    for (int i = 0; i < size; i++) {
-        delete this->elementTypes[i];
-    }
-    this->elementTypes.clear();
-}
-
-std::string UnresolvedReifiedType::getTypeName() {
-    int size = this->elementTypes.size();
-    DSType **types = new DSType*[size];
-    for (int i = 0; i < size; i++) {
-        types[i] = this->elementTypes[i];
-    }
-    return toReifiedTypeName(this->templateType, size, types);
-}
-
-void UnresolvedReifiedType::addElementType(UnresolvedType *type) {
-    this->elementTypes.push_back(type);
-}
-
-const std::vector<UnresolvedType*> &UnresolvedReifiedType::getElementTypes() {
-    return this->elementTypes;
-}
-
-bool UnresolvedReifiedType::equals(DSType *targetType) {
-    UnresolvedReifiedType *t = dynamic_cast<UnresolvedReifiedType*>(targetType);
-    if (t == 0) {
-        return false;
-    }
-
-    // check template type
-    if (!this->templateType->equals(t->templateType)) {
-        return false;
-    }
-
-    // check element size
-    unsigned int size = this->elementTypes.size();
-    if (size != t->elementTypes.size()) {
-        return false;
-    }
-
-    // check each element
-    for (unsigned int i = 0; i < size; i++) {
-        if (this->elementTypes[i] != t->elementTypes[i]) {
-            return false;
-        }
-    }
-    return true;
-}
-
-DSType *UnresolvedReifiedType::toType() {
-    return 0;	//TODO:
-}
-
-std::string toReifiedTypeName(DSType *templateType, int elementSize,
-        DSType **elementTypes) {
-    std::string reifiedTypeName = templateType->getTypeName() + "<";
-    for (int i = 0; i < elementSize; i++) {
-        if (i > 0) {
-            reifiedTypeName += ",";
-        }
-        reifiedTypeName += elementTypes[i]->getTypeName();
-    }
-    reifiedTypeName += ">";
-    return reifiedTypeName;
-}
-
-std::string toFunctionTypeName(DSType *returnType, int paramSize,
-        DSType **paramTypes) {
-    std::string funcTypeName = "Func<" + returnType->getTypeName();
-    for (int i = 0; i < paramSize; i++) {
-        if (i == 0) {
-            funcTypeName += ",[";
-        }
-        if (i > 0) {
-            funcTypeName += ",";
-        }
-        funcTypeName += paramTypes[i]->getTypeName();
-        if (i == paramSize - 1) {
-            funcTypeName += "]";
-        }
-    }
-    funcTypeName += ">";
-    return funcTypeName;
-}
-
-// ################################
-// ##     UnresolvedFuncType     ##
-// ################################
-
-UnresolvedClassType *UnresolvedFuncType::unresolvedVoid =
-        new UnresolvedClassType("Void");
-
-UnresolvedFuncType::UnresolvedFuncType() :
-        returnType(0), paramTypes(2) {
-}
-
-UnresolvedFuncType::~UnresolvedFuncType() {
-    if (this->returnType != 0) {
-        delete this->returnType;
-    }
-    int size = this->paramTypes.size();
-    for (int i = 0; i < size; i++) {
-        delete this->paramTypes[i];
-    }
-    this->paramTypes.clear();
-}
-
-std::string UnresolvedFuncType::getTypeName() {
-    int size = this->paramTypes.size();
-    DSType** types = new DSType*[size];
-    for (int i = 0; i < size; i++) {
-        types[i] = this->paramTypes[i];
-    }
-    return toFunctionTypeName(this->returnType, size, types);
-}
-
-void UnresolvedFuncType::setReturnType(UnresolvedType *type) {
-    this->returnType = type;
-}
-
-UnresolvedType *UnresolvedFuncType::getReturnType() {
-    if (this->returnType != 0) {
-        return this->returnType;
-    }
-    return unresolvedVoid;
-}
-
-void UnresolvedFuncType::addParamType(UnresolvedType *type) {
-    this->paramTypes.push_back(type);
-}
-
-const std::vector<UnresolvedType*> &UnresolvedFuncType::getParamTypes() {
-    return this->paramTypes;
-}
-
-bool UnresolvedFuncType::equals(DSType *targetType) {
-    UnresolvedFuncType *t = dynamic_cast<UnresolvedFuncType*>(targetType);
-    if (t == 0) {
-        return false;
-    }
-
-    // check return type
-    if (!this->returnType->equals(t->returnType)) {
-        return false;
-    }
-
-    // check param size
-    unsigned int size = this->paramTypes.size();
-    if (size != t->paramTypes.size()) {
-        return false;
-    }
-
-    // check each param type
-    for (unsigned int i = 0; i < size; i++) {
-        if (!this->paramTypes[i]->equals(t->paramTypes[i])) {
-            return false;
-        }
-    }
-    return true;
-}
-
-//TODO: add TypePool to parameter
-DSType *UnresolvedFuncType::toType() {
-    return 0;
-}
 
 // #######################
 // ##     ClassType     ##
@@ -445,4 +216,36 @@ bool FunctionType::equals(DSType *targetType) {
         }
     }
     return true;
+}
+
+std::string toReifiedTypeName(DSType *templateType, int elementSize,
+        DSType **elementTypes) {
+    std::string reifiedTypeName = templateType->getTypeName() + "<";
+    for (int i = 0; i < elementSize; i++) {
+        if (i > 0) {
+            reifiedTypeName += ",";
+        }
+        reifiedTypeName += elementTypes[i]->getTypeName();
+    }
+    reifiedTypeName += ">";
+    return reifiedTypeName;
+}
+
+std::string toFunctionTypeName(DSType *returnType, int paramSize,
+        DSType **paramTypes) {
+    std::string funcTypeName = "Func<" + returnType->getTypeName();
+    for (int i = 0; i < paramSize; i++) {
+        if (i == 0) {
+            funcTypeName += ",[";
+        }
+        if (i > 0) {
+            funcTypeName += ",";
+        }
+        funcTypeName += paramTypes[i]->getTypeName();
+        if (i == paramSize - 1) {
+            funcTypeName += "]";
+        }
+    }
+    funcTypeName += ">";
+    return funcTypeName;
 }

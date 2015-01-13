@@ -27,12 +27,12 @@ int Node::getLineNum() {
 // ##     ExprNode     ##
 // ######################
 
-ExprNode::ExprNode(int lineNum, UnresolvedType *type) :
-        Node(lineNum), type(type) {
+ExprNode::ExprNode(int lineNum) :
+        Node(lineNum), type(0) {
 }
 
 ExprNode::~ExprNode() {
-    if (this->type != 0 && dynamic_cast<UnresolvedType*>(this->type) != 0) {
+    if (this->type != 0) {
         delete this->type;
     }
 }
@@ -50,7 +50,7 @@ DSType *ExprNode::getType() {
 // ##########################
 
 IntValueNode::IntValueNode(int lineNum, long value) :
-        ExprNode(lineNum, 0), value(value) {
+        ExprNode(lineNum), value(value) {
 }
 
 long IntValueNode::getValue() {
@@ -66,7 +66,7 @@ int IntValueNode::accept(NodeVisitor *visitor) {
 // ############################
 
 FloatValueNode::FloatValueNode(int lineNum, double value) :
-        ExprNode(lineNum, 0), value(value) {
+        ExprNode(lineNum), value(value) {
 }
 
 double FloatValueNode::getValue() {
@@ -82,7 +82,7 @@ int FloatValueNode::accept(NodeVisitor *visitor) {
 // ##############################
 
 BooleanValueNode::BooleanValueNode(int lineNum, bool value) :
-        ExprNode(lineNum, 0), value(value) {
+        ExprNode(lineNum), value(value) {
 }
 
 bool BooleanValueNode::getValue() {
@@ -98,12 +98,12 @@ int BooleanValueNode::accept(NodeVisitor *visitor) {
 // ############################
 
 StringValueNode::StringValueNode(std::string &&value) :
-        ExprNode(0, 0), value(std::move(value)) {
+        ExprNode(0), value(std::move(value)) {
 }
 
 StringValueNode::StringValueNode(int lineNum, char *value,
         bool isSingleQuoteStr) :	//TODO:
-        ExprNode(lineNum, 0) {
+        ExprNode(lineNum) {
     // parser original value.
 
     /*			StringBuilder sBuilder = new StringBuilder();
@@ -150,7 +150,7 @@ int StringValueNode::accept(NodeVisitor *visitor) {
 // ############################
 
 StringExprNode::StringExprNode(int lineNum) :
-        ExprNode(lineNum, 0), nodes() {
+        ExprNode(lineNum), nodes() {
 }
 
 StringExprNode::~StringExprNode() {
@@ -178,7 +178,7 @@ int StringExprNode::accept(NodeVisitor *visitor) {
 // #######################
 
 ArrayNode::ArrayNode(int lineNum) :
-        ExprNode(lineNum, 0), nodes() {
+        ExprNode(lineNum), nodes() {
 }
 
 ArrayNode::~ArrayNode() {
@@ -206,7 +206,7 @@ int ArrayNode::accept(NodeVisitor *visitor) {
 // #####################
 
 MapNode::MapNode(int lineNum) :
-        ExprNode(lineNum, 0), keyNodes(), valueNodes() {
+        ExprNode(lineNum), keyNodes(), valueNodes() {
 }
 
 MapNode::~MapNode() {
@@ -241,7 +241,7 @@ int MapNode::accept(NodeVisitor *visitor) {
 // ######################
 
 PairNode::PairNode(int lineNum, ExprNode *leftNode, ExprNode *rightNode) :
-        ExprNode(lineNum, 0), leftNode(leftNode), rightNode(rightNode) {
+        ExprNode(lineNum), leftNode(leftNode), rightNode(rightNode) {
 }
 
 PairNode::~PairNode() {
@@ -266,7 +266,7 @@ int PairNode::accept(NodeVisitor *visitor) {
 // ############################
 
 AssignableNode::AssignableNode(int lineNum) :
-        ExprNode(lineNum, 0) {
+        ExprNode(lineNum) {
 }
 
 AssignableNode::~AssignableNode() {
@@ -379,8 +379,8 @@ int AccessNode::accept(NodeVisitor *visitor) {
 // ##     CastNode     ##
 // ######################
 
-CastNode::CastNode(int lineNum, ExprNode *targetNode, UnresolvedType *type) :
-        ExprNode(lineNum, type), targetNode(targetNode) {
+CastNode::CastNode(int lineNum, ExprNode *targetNode, TypeToken *type) :
+        ExprNode(lineNum), targetNode(targetNode), targetType(type) {
 }
 
 CastNode::~CastNode() {
@@ -389,6 +389,10 @@ CastNode::~CastNode() {
 
 ExprNode *CastNode::getTargetNode() {
     return this->targetNode;
+}
+
+TypeToken *CastNode::getTargetType() {
+    return this->targetType;
 }
 
 int CastNode::accept(NodeVisitor *visitor) {
@@ -400,8 +404,8 @@ int CastNode::accept(NodeVisitor *visitor) {
 // ############################
 
 InstanceOfNode::InstanceOfNode(int lineNum, ExprNode *targetNode,
-        UnresolvedType *type) :
-        ExprNode(lineNum, type), targetNode(targetNode) {
+        TypeToken *type) :
+        ExprNode(lineNum), targetNode(targetNode), targetType(type) {
 }
 
 InstanceOfNode::~InstanceOfNode() {
@@ -410,6 +414,10 @@ InstanceOfNode::~InstanceOfNode() {
 
 ExprNode *InstanceOfNode::getTargetNode() {
     return this->targetNode;
+}
+
+TypeToken *InstanceOfNode::getTargetType() {
+    return this->targetType;
 }
 
 int InstanceOfNode::accept(NodeVisitor *visitor) {
@@ -421,7 +429,7 @@ int InstanceOfNode::accept(NodeVisitor *visitor) {
 // #######################
 
 ApplyNode::ApplyNode(int lineNum, ExprNode *recvNode) :
-        ExprNode(lineNum, 0), recvNode(recvNode), argNodes() {
+        ExprNode(lineNum), recvNode(recvNode), argNodes() {
 }
 
 ApplyNode::~ApplyNode() {
@@ -457,8 +465,8 @@ int ApplyNode::accept(NodeVisitor *visitor) {
 // ##     ConstructorCallNode     ##
 // #################################
 
-ConstructorCallNode::ConstructorCallNode(int lineNum, UnresolvedType *type) :
-        ExprNode(lineNum, type), argNodes(), handle(0) {
+ConstructorCallNode::ConstructorCallNode(int lineNum, TypeToken *type) :
+        ExprNode(lineNum), targetType(type), argNodes(), handle(0) {
 }
 
 ConstructorCallNode::~ConstructorCallNode() {
@@ -467,6 +475,10 @@ ConstructorCallNode::~ConstructorCallNode() {
         delete this->argNodes[i];
     }
     this->argNodes.clear();
+}
+
+TypeToken *ConstructorCallNode::getTargetType() {
+    return this->targetType;
 }
 
 void ConstructorCallNode::addArgNode(ExprNode *node) {
@@ -495,7 +507,7 @@ int ConstructorCallNode::accept(NodeVisitor *visitor) {
 
 CondOpNode::CondOpNode(int lineNum, ExprNode *leftNode, ExprNode *rightNode,
         bool isAndOp) :
-        ExprNode(lineNum, 0), leftNode(leftNode), rightNode(rightNode), andOp(
+        ExprNode(lineNum), leftNode(leftNode), rightNode(rightNode), andOp(
                 isAndOp) {
 }
 
@@ -525,7 +537,7 @@ int CondOpNode::accept(NodeVisitor *visitor) {
 // #########################
 
 ProcessNode::ProcessNode(int lineNum, std::string &&commandName) :
-        ExprNode(lineNum, 0), commandName(std::move(commandName)), argNodes() {
+        ExprNode(lineNum), commandName(std::move(commandName)), argNodes() {
 }
 
 ProcessNode::~ProcessNode() {
@@ -556,7 +568,7 @@ int ProcessNode::accept(NodeVisitor *visitor) {
 // ##########################
 
 ProcArgNode::ProcArgNode(int lineNum) :
-        ExprNode(lineNum, 0), segmentNodes() {
+        ExprNode(lineNum), segmentNodes() {
 }
 
 ProcArgNode::~ProcArgNode() {
@@ -595,7 +607,7 @@ int ProcArgNode::accept(NodeVisitor *visitor) {
 // #############################
 
 SpecialCharNode::SpecialCharNode(int lineNum) :
-        ExprNode(lineNum, 0) {
+        ExprNode(lineNum) {
 }
 
 SpecialCharNode::~SpecialCharNode() {
@@ -610,7 +622,7 @@ int SpecialCharNode::accept(NodeVisitor *visitor) {
 // ######################
 
 TaskNode::TaskNode() :
-        ExprNode(0, 0), procNodes(), background(false) {
+        ExprNode(0), procNodes(), background(false) {
 }
 
 TaskNode::~TaskNode() {
@@ -642,7 +654,7 @@ int TaskNode::accept(NodeVisitor *visitor) {
 // ###########################
 
 InnerTaskNode::InnerTaskNode(ExprNode *exprNode) :
-        ExprNode(0, 0), exprNode(exprNode) {
+        ExprNode(0), exprNode(exprNode) {
 }
 
 InnerTaskNode::~InnerTaskNode() {
@@ -992,14 +1004,13 @@ int ThrowNode::accept(NodeVisitor *visitor) {
 // #######################
 
 CatchNode::CatchNode(int lineNum, std::string &&exceptionName,
-        UnresolvedType *type, BlockNode *blockNode) :
-        Node(lineNum), exceptionName(std::move(exceptionName)), exceptionType(
-                type), blockNode(blockNode) {
+        TypeToken *type, BlockNode *blockNode) :
+        Node(lineNum), exceptionName(std::move(exceptionName)), exceptionTypeToken(type), exceptionType(0), blockNode(blockNode) {
 }
 
 CatchNode::~CatchNode() {
     if (this->exceptionType != 0
-            && dynamic_cast<UnresolvedType*>(this->exceptionType) != 0) {
+            && dynamic_cast<TypeToken*>(this->exceptionType) != 0) {
         delete this->exceptionType;
     }
     delete this->blockNode;
@@ -1007,6 +1018,10 @@ CatchNode::~CatchNode() {
 
 const std::string &CatchNode::getExceptionName() {
     return this->exceptionName;
+}
+
+TypeToken *CatchNode::getTypeToken() {
+    return this->exceptionTypeToken;
 }
 
 void CatchNode::setExceptionType(DSType *type) {
@@ -1129,7 +1144,7 @@ int VarDeclNode::accept(NodeVisitor *visitor) {
 // ########################
 
 AssignNode::AssignNode(int lineNum, ExprNode *leftNode, ExprNode *rightNode) :
-        ExprNode(lineNum, 0), leftNode(leftNode), rightNode(rightNode), handle(
+        ExprNode(lineNum), leftNode(leftNode), rightNode(rightNode), handle(
                 0) {
 }
 
@@ -1167,7 +1182,7 @@ int AssignNode::accept(NodeVisitor *visitor) {
 // ##########################
 
 FunctionNode::FunctionNode(int lineNum, std::string &&funcName) :
-        Node(lineNum), funcName(std::move(funcName)), paramNodes(), returnType(
+        Node(lineNum), funcName(std::move(funcName)), paramNodes(), paramTypes(), returnTypeToken(0), returnType(
                 0), blockNode(0) {
 }
 
@@ -1179,7 +1194,7 @@ FunctionNode::~FunctionNode() {
     this->paramNodes.clear();
 
     if (this->returnType != 0
-            && dynamic_cast<UnresolvedType*>(this->returnType) != 0) {
+            && dynamic_cast<TypeToken*>(this->returnType) != 0) {
         delete this->returnType;
     }
 
@@ -1192,15 +1207,28 @@ const std::string &FunctionNode::getFuncName() {
     return this->funcName;
 }
 
-void FunctionNode::addParamNode(VarNode *node) {
+void FunctionNode::addParamNode(VarNode *node, TypeToken *paramType) {
     this->paramNodes.push_back(node);
+    this->paramTypes.push_back(paramType);
 }
 
 const std::vector<VarNode*> &FunctionNode::getParamNodes() {
     return this->paramNodes;
 }
 
-void FunctionNode::setReturnType(UnresolvedType *returnType) {
+const std::vector<TypeToken*> &FunctionNode::getParamTypes() {
+    return this->paramTypes;
+}
+
+void FunctionNode::setReturnTypeToken(TypeToken *typeToken) {
+    this->returnTypeToken = typeToken;
+}
+
+TypeToken *FunctionNode::getReturnTypeToken() {
+    return this->returnTypeToken;
+}
+
+void FunctionNode::setReturnType(DSType *returnType) {
     this->returnType = returnType;
 }
 
@@ -1225,7 +1253,7 @@ int FunctionNode::accept(NodeVisitor *visitor) {
 // #######################
 
 EmptyNode::EmptyNode() :
-        ExprNode(0, 0) {
+        ExprNode(0) {
 }
 
 int EmptyNode::accept(NodeVisitor *visitor) {

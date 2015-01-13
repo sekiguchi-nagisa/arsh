@@ -75,10 +75,10 @@ Node *TypeChecker::checkType(DSType *requiredType, Node *targetNode,
     }
 
     /**
-     * if target node is expr node and unresolved type,
+     * if target node is expr node and type is null,
      * try type check.
      */
-    if (dynamic_cast<UnresolvedType*>(exprNode->getType()) != 0) {
+    if (exprNode->getType() == 0) {
         //exprNode = (ExprNode) exprNode.accept(this);
         exprNode->accept(this);
         exprNode = dynamic_cast<ExprNode*>(this->popCheckedNode());

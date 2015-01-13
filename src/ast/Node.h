@@ -13,6 +13,7 @@
 #include "../core/DSType.h"
 #include "../core/CalleeHandle.h"
 #include "NodeVisitor.h"
+#include "TypeToken.h"
 
 class Node {
 protected:
@@ -28,17 +29,21 @@ public:
 
 class ExprNode: public Node {
 protected:
-    DSType *type;	// initial value is UnresolvedType
+    DSType *type;	// initial value is null
 
 public:
     /**
      * type is null if has no type annotation(ex. IntValueNode, StringValueNode)
      */
-    ExprNode(int lineNum, UnresolvedType *type);
+    ExprNode(int lineNum);
     virtual ~ExprNode();
 
     void setType(DSType *type);
-    DSType *getType();	// UnresolvedType before type checking
+
+    /**
+     * return null, before type checking
+     */
+    DSType *getType();
 };
 
 class IntValueNode: public ExprNode {
@@ -243,24 +248,28 @@ public:
 class CastNode: public ExprNode {	//TODO: cast op kind
 private:
     ExprNode *targetNode;
+    TypeToken *targetType;
 
 public:
-    CastNode(int lineNum, ExprNode *targetNode, UnresolvedType *type);
+    CastNode(int lineNum, ExprNode *targetNode, TypeToken *type);
     ~CastNode();
 
     ExprNode *getTargetNode();
+    TypeToken *getTargetType();    //FIXME: use unique_ptr
     int accept(NodeVisitor *visitor);	//override
 };
 
 class InstanceOfNode: public ExprNode {	//TODO: instanceof op kind
 private:
     ExprNode *targetNode;
+    TypeToken *targetType;
 
 public:
-    InstanceOfNode(int lineNum, ExprNode *targetNode, UnresolvedType *tyep);
+    InstanceOfNode(int lineNum, ExprNode *targetNode, TypeToken *tyep);
     ~InstanceOfNode();
 
     ExprNode *getTargetNode();
+    TypeToken *getTargetType();    //FIXME: use unique_ptr
     int accept(NodeVisitor *visitor);	//override
 };
 
@@ -288,13 +297,15 @@ public:
 
 class ConstructorCallNode: public ExprNode {	//TODO: named parameter
 private:
+    TypeToken *targetType;
     std::vector<ExprNode*> argNodes;
     ConstructorHandle *handle;
 
 public:
-    ConstructorCallNode(int lineNum, UnresolvedType *type);
+    ConstructorCallNode(int lineNum, TypeToken *type);
     ~ConstructorCallNode();
 
+    TypeToken *getTargetType();
     void addArgNode(ExprNode *node);
     const std::vector<ExprNode*> &getArgNodes();
     void setConstructorHandle(ConstructorHandle *handle);
@@ -626,6 +637,7 @@ public:
 class CatchNode: public Node {	//TODO: exception name
 private:
     std::string exceptionName;
+    TypeToken *exceptionTypeToken;
 
     /**
      * may be null, if has no type annotation.
@@ -638,11 +650,12 @@ public:
     /**
      * if type is null, has no type annotation
      */
-    CatchNode(int lineNum, std::string &&exceptionName, UnresolvedType *type,
+    CatchNode(int lineNum, std::string &&exceptionName, TypeToken *type,
             BlockNode *blockNode);
     ~CatchNode();
 
     const std::string &getExceptionName();
+    TypeToken *getTypeToken();
     void setExceptionType(DSType *type);
 
     /**
@@ -752,9 +765,15 @@ private:
 
     /**
      * for parameter definition.
-     * each node has type annotation(not UnresolvedType).
      */
     std::vector<VarNode*> paramNodes;
+
+    /**
+     * unresolved type of each parameter
+     */
+    std::vector<TypeToken*> paramTypes;
+
+    TypeToken *returnTypeToken;
 
     /**
      * may be null, if VoidType
@@ -768,9 +787,17 @@ public:
     ~FunctionNode();
 
     const std::string &getFuncName();
-    void addParamNode(VarNode *node);
+    void addParamNode(VarNode *node, TypeToken *paramType);
     const std::vector<VarNode*> &getParamNodes();
-    void setReturnType(UnresolvedType *returnType);
+
+    /**
+     * get unresolved types
+     */
+    const std::vector<TypeToken*> &getParamTypes();
+
+    void setReturnTypeToken(TypeToken *typeToken);
+    TypeToken *getReturnTypeToken();
+    void setReturnType(DSType *returnType);
 
     /**
      * return null, if has no return type.
