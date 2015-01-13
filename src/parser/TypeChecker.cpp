@@ -17,7 +17,7 @@ TypeChecker::~TypeChecker() {
 
 RootNode *TypeChecker::checkTypeRootNode(RootNode *rootNode) {	//FIXME
     int size = rootNode->getNodes().size();
-    for (int i = 0; i < size; i++) {
+    for(int i = 0; i < size; i++) {
         this->checkTypeAcceptingVoidType(rootNode->getNodes()[i]);
     }
     return rootNode;
@@ -63,13 +63,12 @@ Node *TypeChecker::checkType(DSType *requiredType, Node *targetNode) {
 }
 
 //TODO:
-Node *TypeChecker::checkType(DSType *requiredType, Node *targetNode,
-        DSType *unacceptableType) {
+Node *TypeChecker::checkType(DSType *requiredType, Node *targetNode, DSType *unacceptableType) {
     /**
      * if target node is statement, always check type.
      */
     ExprNode *exprNode = dynamic_cast<ExprNode*>(targetNode);
-    if (exprNode == 0) {
+    if(exprNode == 0) {
         targetNode->accept(this);
         return this->popCheckedNode();
     }
@@ -78,7 +77,7 @@ Node *TypeChecker::checkType(DSType *requiredType, Node *targetNode,
      * if target node is expr node and type is null,
      * try type check.
      */
-    if (exprNode->getType() == 0) {
+    if(exprNode->getType() == 0) {
         //exprNode = (ExprNode) exprNode.accept(this);
         exprNode->accept(this);
         exprNode = dynamic_cast<ExprNode*>(this->popCheckedNode());
@@ -97,8 +96,8 @@ Node *TypeChecker::checkType(DSType *requiredType, Node *targetNode,
     /**
      * do not try type matching.
      */
-    if (requiredType == 0) {
-        if (unacceptableType != 0 && unacceptableType->isAssignableFrom(type)) {
+    if(requiredType == 0) {
+        if(unacceptableType != 0 && unacceptableType->isAssignableFrom(type)) {
             //throw new TypeCheckException(exprNode, TypeErrorKind_OneArg.Unacceptable, type);	//FIXME: error report
         }
         return exprNode;
@@ -107,7 +106,7 @@ Node *TypeChecker::checkType(DSType *requiredType, Node *targetNode,
     /**
      * try type matching.
      */
-    if (requiredType->isAssignableFrom(type)) {
+    if(requiredType->isAssignableFrom(type)) {
         return exprNode;
     }
 
@@ -117,7 +116,7 @@ Node *TypeChecker::checkType(DSType *requiredType, Node *targetNode,
 
 // visitor api
 
-int TypeChecker::visitIntValueNode(IntValueNode *node) {//TODO: int8, int16 ..etc
+int TypeChecker::visitIntValueNode(IntValueNode *node) {	//TODO: int8, int16 ..etc
     node->setType(this->typePool->getIntType());
     return this->pushCheckedNode(node);
 }
@@ -139,9 +138,8 @@ int TypeChecker::visitStringValueNode(StringValueNode *node) {
 
 int TypeChecker::visitStringExprNode(StringExprNode *node) {
     int size = node->getExprNodes().size();
-    for (int i = 0; i < size; i++) {
-        this->checkType(this->typePool->getStringType(),
-                node->getExprNodes()[i]);
+    for(int i = 0; i < size; i++) {
+        this->checkType(this->typePool->getStringType(), node->getExprNodes()[i]);
     }
     node->setType(this->typePool->getStringType());
     return this->pushCheckedNode(node);

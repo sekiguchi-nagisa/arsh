@@ -90,8 +90,7 @@ public:
     virtual bool isAssignableFrom(DSType *targetType);
 };
 
-
-class ClassType: public DSType {//TODO: add field index map, read only bitmap
+class ClassType: public DSType {	//TODO: add field index map, read only bitmap
 private:
     DSType *superType;
 
@@ -148,8 +147,7 @@ public:
     /**
      * return false, found duplicated field.
      */
-    bool addFieldHandle(const std::string &fieldName, bool readOnly,
-            FieldHandle *handle);
+    bool addFieldHandle(const std::string &fieldName, bool readOnly, FieldHandle *handle);
 
     static DSType *anyType;
     static DSType *voidType;
@@ -170,8 +168,7 @@ private:
     DSType **paramTypes;
 
 public:
-    FunctionType(DSType *returnType, unsigned int paramSize,
-            DSType **paramTypes);
+    FunctionType(DSType *returnType, unsigned int paramSize, DSType **paramTypes);
     ~FunctionType();
 
     DSType *getReturnType();
@@ -211,13 +208,11 @@ public:
 /**
  * create reified type name
  */
-std::string toReifiedTypeName(DSType *templateType, int elementSize,
-        DSType **elementTypes);
+std::string toReifiedTypeName(DSType *templateType, int elementSize, DSType **elementTypes);
 
 /**
  * create function type name
  */
-std::string toFunctionTypeName(DSType *returnType, int paramSize,
-        DSType **paramTypes);
+std::string toFunctionTypeName(DSType *returnType, int paramSize, DSType **paramTypes);
 
 #endif /* CORE_DSTYPE_H_ */

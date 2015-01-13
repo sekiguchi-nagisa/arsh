@@ -23,10 +23,10 @@ SymbolEntry::~SymbolEntry() {
 
 CommonSymbolEntry::CommonSymbolEntry(DSType *type, bool readOnly, bool global) :
         SymbolEntry(), flag(0), type(type) {
-    if (readOnly) {
+    if(readOnly) {
         this->flag |= CommonSymbolEntry::READ_ONLY;
     }
-    if (global) {
+    if(global) {
         this->flag |= CommonSymbolEntry::GLOBAL;
     }
 }
@@ -39,8 +39,7 @@ DSType *CommonSymbolEntry::getType() {
 }
 
 bool CommonSymbolEntry::isReadOnly() {
-    return (this->flag & CommonSymbolEntry::READ_ONLY)
-            == CommonSymbolEntry::READ_ONLY;
+    return (this->flag & CommonSymbolEntry::READ_ONLY) == CommonSymbolEntry::READ_ONLY;
 }
 
 bool CommonSymbolEntry::isGlobal() {

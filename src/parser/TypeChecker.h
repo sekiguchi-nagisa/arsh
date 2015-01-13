@@ -83,8 +83,7 @@ private:
      * if requiredType is null, do not try matching node type
      * and if unaccepatbelType is equivalent to node type, throw exception.
      */
-    Node *checkType(DSType *requiredType, Node *targetNode,
-            DSType *unacceptableType);
+    Node *checkType(DSType *requiredType, Node *targetNode, DSType *unacceptableType);
 
     void pushReturnType(DSType *returnType);
 

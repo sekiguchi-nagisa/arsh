@@ -25,13 +25,13 @@ DSObject::~DSObject() {
 
 BaseObject::BaseObject(DSType *type) :	//TODO: add field to table
         type(type), fieldSize(type->getFieldSize()), fieldTable(0) {
-    if (this->fieldSize > 0) {
+    if(this->fieldSize > 0) {
         this->fieldTable = new DSObject*[this->fieldSize];
     }
 }
 
 BaseObject::~BaseObject() {
-    if (this->fieldTable != 0) {
+    if(this->fieldTable != 0) {
         delete[] this->fieldTable;
     }
 }

@@ -329,8 +329,7 @@ private:
     bool andOp;
 
 public:
-    CondOpNode(int lineNum, ExprNode *leftNode, ExprNode *rightNode,
-            bool isAndOp);
+    CondOpNode(int lineNum, ExprNode *leftNode, ExprNode *rightNode, bool isAndOp);
     ~CondOpNode();
 
     ExprNode *getLeftNode();
@@ -503,8 +502,7 @@ private:
     BlockNode *blockNode;
 
 public:
-    ForNode(int lineNum, Node *initNode, Node *condNode, Node *iterNode,
-            BlockNode *blockNode);
+    ForNode(int lineNum, Node *initNode, Node *condNode, Node *iterNode, BlockNode *blockNode);
     ~ForNode();
 
     Node *getInitNode();
@@ -525,15 +523,14 @@ private:
     FunctionHandle *hasNextHandle;	// handle for __HAS_NEXT__
 
 public:
-    ForInNode(int lineNum, std::string &&initName, ExprNode *exprNode,
-            BlockNode *blockNode);
+    ForInNode(int lineNum, std::string &&initName, ExprNode *exprNode, BlockNode *blockNode);
     ~ForInNode();
 
     const std::string &getInitName();
     ExprNode *getExprNode();
     BlockNode *getBlockNode();
-    void setIteratorHandle(FunctionHandle *resetHandle,
-            FunctionHandle *nextHandle, FunctionHandle *hasNextHandle);
+    void setIteratorHandle(FunctionHandle *resetHandle, FunctionHandle *nextHandle,
+            FunctionHandle *hasNextHandle);
 
     /**
      * return null before call setIteratorHandle()
@@ -564,8 +561,7 @@ private:
     bool asDoWhile;
 
 public:
-    WhileNode(int lineNum, ExprNode *condNode, BlockNode *blockNode,
-            bool asDoWhile);
+    WhileNode(int lineNum, ExprNode *condNode, BlockNode *blockNode, bool asDoWhile);
     ~WhileNode();
 
     ExprNode *getCondNode();
@@ -588,8 +584,7 @@ public:
     /**
      * elseNode may be null
      */
-    IfNode(int lineNum, ExprNode *condNode, BlockNode *thenNode,
-            BlockNode *elseNode);
+    IfNode(int lineNum, ExprNode *condNode, BlockNode *thenNode, BlockNode *elseNode);
     ~IfNode();
 
     ExprNode *getCondNode();
@@ -650,8 +645,7 @@ public:
     /**
      * if type is null, has no type annotation
      */
-    CatchNode(int lineNum, std::string &&exceptionName, TypeToken *type,
-            BlockNode *blockNode);
+    CatchNode(int lineNum, std::string &&exceptionName, TypeToken *type, BlockNode *blockNode);
     ~CatchNode();
 
     const std::string &getExceptionName();
@@ -712,8 +706,7 @@ private:
     ExprNode *initValueNode;
 
 public:
-    VarDeclNode(int lineNum, std::string &&varName, ExprNode *initValueNode,
-            bool readOnly);
+    VarDeclNode(int lineNum, std::string &&varName, ExprNode *initValueNode, bool readOnly);
     ~VarDeclNode();
 
     const std::string &getVarName();

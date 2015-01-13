@@ -11,7 +11,7 @@
 // ##     TypeToken     ##
 // #######################
 
-TypeToken::TypeToken(int lineNum):
+TypeToken::TypeToken(int lineNum) :
         lineNum(lineNum) {
 }
 
@@ -45,7 +45,7 @@ ReifiedTypeToken::ReifiedTypeToken(TypeToken *templateType) :
 ReifiedTypeToken::~ReifiedTypeToken() {
     delete this->templateType;
     int size = this->elementTypes.size();
-    for (int i = 0; i < size; i++) {
+    for(int i = 0; i < size; i++) {
         delete this->elementTypes[i];
     }
     this->elementTypes.clear();
@@ -59,24 +59,22 @@ DSType *ReifiedTypeToken::toType() {
     return 0;   //TODO:
 }
 
-
 // ###########################
 // ##     FuncTypeToken     ##
 // ###########################
 
-ClassTypeToken *FuncTypeToken::unresolvedVoid =
-        new ClassTypeToken(0, "Void");
+ClassTypeToken *FuncTypeToken::unresolvedVoid = new ClassTypeToken(0, "Void");
 
 FuncTypeToken::FuncTypeToken(int lineNum) :
         TypeToken(lineNum), returnType(0), paramTypes(2) {
 }
 
 FuncTypeToken::~FuncTypeToken() {
-    if (this->returnType != 0) {
+    if(this->returnType != 0) {
         delete this->returnType;
     }
     int size = this->paramTypes.size();
-    for (int i = 0; i < size; i++) {
+    for(int i = 0; i < size; i++) {
         delete this->paramTypes[i];
     }
     this->paramTypes.clear();

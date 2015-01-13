@@ -32,15 +32,13 @@ FunctionType *FunctionHandle::getFuncType() {
     return dynamic_cast<FunctionType*>(this->getFieldType());
 }
 
-bool FunctionHandle::addParamName(const std::string &paramName,
-        bool defaultValue) {
+bool FunctionHandle::addParamName(const std::string &paramName, bool defaultValue) {
     unsigned int size = this->paramIndexMap.size();
-    if (size >= this->getFuncType()->getParamSize()) {
+    if(size >= this->getFuncType()->getParamSize()) {
         return false;
     }
 
-    if (!this->paramIndexMap.insert(
-            std::pair<std::string, int>(paramName, static_cast<int>(size))).second) {
+    if(!this->paramIndexMap.insert(std::pair<std::string, int>(paramName, static_cast<int>(size))).second) {
         return false;
     }
     this->defaultValues.push_back(defaultValue);
@@ -51,7 +49,7 @@ bool FunctionHandle::addParamName(const std::string &paramName,
 int FunctionHandle::getParamIndex(const std::string &paramName) {
     try {
         return this->paramIndexMap.at(paramName);
-    } catch (const std::out_of_range &e) {
+    } catch(const std::out_of_range &e) {
         return -1;
     }
 }
@@ -59,7 +57,7 @@ int FunctionHandle::getParamIndex(const std::string &paramName) {
 bool FunctionHandle::hasDefaultValue(int paramIndex) {
     try {
         return this->defaultValues.at(paramIndex);
-    } catch (const std::out_of_range &e) {
+    } catch(const std::out_of_range &e) {
         return false;
     }
 }
@@ -68,13 +66,12 @@ bool FunctionHandle::hasDefaultValue(int paramIndex) {
 // ##     ConstructorHandle     ##
 // ###############################
 
-ConstructorHandle::ConstructorHandle(unsigned int paramSize,
-        DSType **paramTypes) :
+ConstructorHandle::ConstructorHandle(unsigned int paramSize, DSType **paramTypes) :
         paramSize(paramSize), paramTypes(paramTypes) {
 }
 
 ConstructorHandle::~ConstructorHandle() {
-    if (this->paramTypes != 0) {
+    if(this->paramTypes != 0) {
         delete[] this->paramTypes;
     }
 }

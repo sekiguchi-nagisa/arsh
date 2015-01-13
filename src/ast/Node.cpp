@@ -32,7 +32,7 @@ ExprNode::ExprNode(int lineNum) :
 }
 
 ExprNode::~ExprNode() {
-    if (this->type != 0) {
+    if(this->type != 0) {
         delete this->type;
     }
 }
@@ -101,8 +101,7 @@ StringValueNode::StringValueNode(std::string &&value) :
         ExprNode(0), value(std::move(value)) {
 }
 
-StringValueNode::StringValueNode(int lineNum, char *value,
-        bool isSingleQuoteStr) :	//TODO:
+StringValueNode::StringValueNode(int lineNum, char *value, bool isSingleQuoteStr) :	//TODO:
         ExprNode(lineNum) {
     // parser original value.
 
@@ -155,7 +154,7 @@ StringExprNode::StringExprNode(int lineNum) :
 
 StringExprNode::~StringExprNode() {
     int size = this->nodes.size();
-    for (int i = 0; i < size; i++) {
+    for(int i = 0; i < size; i++) {
         delete this->nodes[i];
     }
     this->nodes.clear();
@@ -183,7 +182,7 @@ ArrayNode::ArrayNode(int lineNum) :
 
 ArrayNode::~ArrayNode() {
     int size = this->nodes.size();
-    for (int i = 0; i < size; i++) {
+    for(int i = 0; i < size; i++) {
         delete this->nodes[i];
     }
     this->nodes.clear();
@@ -211,7 +210,7 @@ MapNode::MapNode(int lineNum) :
 
 MapNode::~MapNode() {
     int size = this->keyNodes.size();
-    for (int i = 0; i < size; i++) {
+    for(int i = 0; i < size; i++) {
         delete this->keyNodes[i];
         delete this->valueNodes[i];
     }
@@ -297,8 +296,8 @@ int VarNode::accept(NodeVisitor *visitor) {
 // #######################
 
 IndexNode::IndexNode(int lineNum, ExprNode *recvNode, ExprNode *indexNode) :
-        AssignableNode(lineNum), recvNode(recvNode), indexNode(indexNode), getterHandle(
-                0), setterHandle(0) {
+        AssignableNode(lineNum), recvNode(recvNode), indexNode(indexNode), getterHandle(0), setterHandle(
+                0) {
 }
 
 IndexNode::~IndexNode() {
@@ -343,8 +342,7 @@ int IndexNode::accept(NodeVisitor *visitor) {
 // ########################
 
 AccessNode::AccessNode(int lineNum, ExprNode *recvNode, std::string &&fieldName) :
-        AssignableNode(lineNum), recvNode(recvNode), fieldName(
-                std::move(fieldName)), handle(0) {
+        AssignableNode(lineNum), recvNode(recvNode), fieldName(std::move(fieldName)), handle(0) {
 }
 
 AccessNode::~AccessNode() {
@@ -403,8 +401,7 @@ int CastNode::accept(NodeVisitor *visitor) {
 // ##     InstanceOfNode     ##
 // ############################
 
-InstanceOfNode::InstanceOfNode(int lineNum, ExprNode *targetNode,
-        TypeToken *type) :
+InstanceOfNode::InstanceOfNode(int lineNum, ExprNode *targetNode, TypeToken *type) :
         ExprNode(lineNum), targetNode(targetNode), targetType(type) {
 }
 
@@ -436,7 +433,7 @@ ApplyNode::~ApplyNode() {
     delete this->recvNode;
 
     int size = this->argNodes.size();
-    for (int i = 0; i < size; i++) {
+    for(int i = 0; i < size; i++) {
         delete this->argNodes[i];
     }
     this->argNodes.clear();
@@ -471,7 +468,7 @@ ConstructorCallNode::ConstructorCallNode(int lineNum, TypeToken *type) :
 
 ConstructorCallNode::~ConstructorCallNode() {
     int size = this->argNodes.size();
-    for (int i = 0; i < size; i++) {
+    for(int i = 0; i < size; i++) {
         delete this->argNodes[i];
     }
     this->argNodes.clear();
@@ -505,10 +502,8 @@ int ConstructorCallNode::accept(NodeVisitor *visitor) {
 // ##     CondOpNode     ##
 // ########################
 
-CondOpNode::CondOpNode(int lineNum, ExprNode *leftNode, ExprNode *rightNode,
-        bool isAndOp) :
-        ExprNode(lineNum), leftNode(leftNode), rightNode(rightNode), andOp(
-                isAndOp) {
+CondOpNode::CondOpNode(int lineNum, ExprNode *leftNode, ExprNode *rightNode, bool isAndOp) :
+        ExprNode(lineNum), leftNode(leftNode), rightNode(rightNode), andOp(isAndOp) {
 }
 
 CondOpNode::~CondOpNode() {
@@ -542,7 +537,7 @@ ProcessNode::ProcessNode(int lineNum, std::string &&commandName) :
 
 ProcessNode::~ProcessNode() {
     int size = this->argNodes.size();
-    for (int i = 0; i < size; i++) {
+    for(int i = 0; i < size; i++) {
         delete this->argNodes[i];
     }
 }
@@ -573,7 +568,7 @@ ProcArgNode::ProcArgNode(int lineNum) :
 
 ProcArgNode::~ProcArgNode() {
     int size = this->segmentNodes.size();
-    for (int i = 0; i < size; i++) {
+    for(int i = 0; i < size; i++) {
         delete this->segmentNodes[i];
     }
     this->segmentNodes.clear();
@@ -581,10 +576,10 @@ ProcArgNode::~ProcArgNode() {
 
 void ProcArgNode::addSegmentNode(ExprNode *node) {
     ProcArgNode *argNode = dynamic_cast<ProcArgNode*>(node);
-    if (argNode != 0) {
+    if(argNode != 0) {
         std::vector<ExprNode*> segmentNodes = argNode->getSegmentNodes();
         int size = segmentNodes.size();
-        for (int i = 0; i < size; i++) {
+        for(int i = 0; i < size; i++) {
             this->segmentNodes.push_back(segmentNodes[i]);
         }
         segmentNodes.clear();
@@ -627,7 +622,7 @@ TaskNode::TaskNode() :
 
 TaskNode::~TaskNode() {
     int size = this->procNodes.size();
-    for (int i = 0; i < size; i++) {
+    for(int i = 0; i < size; i++) {
         delete this->procNodes[i];
     }
     this->procNodes.clear();
@@ -699,7 +694,7 @@ BlockNode::BlockNode() :
 
 BlockNode::~BlockNode() {
     int size = this->nodes.size();
-    for (int i = 0; i < size; i++) {
+    for(int i = 0; i < size; i++) {
         delete this->nodes[i];
     }
     this->nodes.clear();
@@ -753,8 +748,7 @@ int ContinueNode::accept(NodeVisitor *visitor) {
 // ##     ExportEnvNode     ##
 // ###########################
 
-ExportEnvNode::ExportEnvNode(int lineNum, std::string &&envName,
-        ExprNode *exprNode) :
+ExportEnvNode::ExportEnvNode(int lineNum, std::string &&envName, ExprNode *exprNode) :
         Node(lineNum), envName(std::move(envName)), exprNode(exprNode) {
 }
 
@@ -802,10 +796,9 @@ LoopNode::LoopNode(int lineNum) :
 // ##     ForNode     ##
 // #####################
 
-ForNode::ForNode(int lineNum, Node *initNode, Node *condNode, Node *iterNode,
-        BlockNode *blockNode) :
-        LoopNode(lineNum), initNode(initNode), condNode(condNode), iterNode(
-                iterNode), blockNode(blockNode) {
+ForNode::ForNode(int lineNum, Node *initNode, Node *condNode, Node *iterNode, BlockNode *blockNode) :
+        LoopNode(lineNum), initNode(initNode), condNode(condNode), iterNode(iterNode), blockNode(
+                blockNode) {
 }
 
 ForNode::~ForNode() {
@@ -839,10 +832,9 @@ int ForNode::accept(NodeVisitor *visitor) {
 // ##     ForInNode     ##
 // #######################
 
-ForInNode::ForInNode(int lineNum, std::string &&initName, ExprNode *exprNode,
-        BlockNode *blockNode) :
-        LoopNode(lineNum), initName(std::move(initName)), exprNode(exprNode), blockNode(
-                blockNode), resetHandle(0), nextHandle(0), hasNextHandle(0) {
+ForInNode::ForInNode(int lineNum, std::string &&initName, ExprNode *exprNode, BlockNode *blockNode) :
+        LoopNode(lineNum), initName(std::move(initName)), exprNode(exprNode), blockNode(blockNode), resetHandle(
+                0), nextHandle(0), hasNextHandle(0) {
 }
 
 ForInNode::~ForInNode() {
@@ -862,8 +854,8 @@ BlockNode *ForInNode::getBlockNode() {
     return this->blockNode;
 }
 
-void ForInNode::setIteratorHandle(FunctionHandle *resetHandle,
-        FunctionHandle *nextHandle, FunctionHandle *hasNextHandle) {
+void ForInNode::setIteratorHandle(FunctionHandle *resetHandle, FunctionHandle *nextHandle,
+        FunctionHandle *hasNextHandle) {
     this->resetHandle = resetHandle;
     this->nextHandle = nextHandle;
     this->hasNextHandle = hasNextHandle;
@@ -889,10 +881,8 @@ int ForInNode::accept(NodeVisitor *visitor) {
 // ##     WhileNode     ##
 // #######################
 
-WhileNode::WhileNode(int lineNum, ExprNode *condNode, BlockNode *blockNode,
-        bool asDoWhile) :
-        LoopNode(lineNum), condNode(condNode), blockNode(blockNode), asDoWhile(
-                asDoWhile) {
+WhileNode::WhileNode(int lineNum, ExprNode *condNode, BlockNode *blockNode, bool asDoWhile) :
+        LoopNode(lineNum), condNode(condNode), blockNode(blockNode), asDoWhile(asDoWhile) {
 }
 
 WhileNode::~WhileNode() {
@@ -920,16 +910,14 @@ int WhileNode::accept(NodeVisitor *visitor) {
 // ##     IfNode     ##
 // ####################
 
-IfNode::IfNode(int lineNum, ExprNode *condNode, BlockNode *thenNode,
-        BlockNode *elseNode) :
-        Node(lineNum), condNode(condNode), thenNode(thenNode), elseNode(
-                elseNode) {
+IfNode::IfNode(int lineNum, ExprNode *condNode, BlockNode *thenNode, BlockNode *elseNode) :
+        Node(lineNum), condNode(condNode), thenNode(thenNode), elseNode(elseNode) {
 }
 
 IfNode::~IfNode() {
     delete this->condNode;
     delete this->thenNode;
-    if (this->elseNode != 0) {
+    if(this->elseNode != 0) {
         delete this->elseNode;
     }
 }
@@ -943,7 +931,7 @@ BlockNode *IfNode::getThenNode() {
 }
 
 BlockNode *IfNode::getElseNode() {
-    if (this->elseNode != 0) {
+    if(this->elseNode != 0) {
         return this->elseNode;
     }
     return &EmptyBlockNode::emptyBlockNode;
@@ -966,7 +954,7 @@ ReturnNode::ReturnNode(int lineNum) :
 }
 
 ReturnNode::~ReturnNode() {
-    if (this->exprNode != 0) {
+    if(this->exprNode != 0) {
         delete this->exprNode;
     }
 }
@@ -1003,14 +991,14 @@ int ThrowNode::accept(NodeVisitor *visitor) {
 // ##     CatchNode     ##
 // #######################
 
-CatchNode::CatchNode(int lineNum, std::string &&exceptionName,
-        TypeToken *type, BlockNode *blockNode) :
-        Node(lineNum), exceptionName(std::move(exceptionName)), exceptionTypeToken(type), exceptionType(0), blockNode(blockNode) {
+CatchNode::CatchNode(int lineNum, std::string &&exceptionName, TypeToken *type,
+        BlockNode *blockNode) :
+        Node(lineNum), exceptionName(std::move(exceptionName)), exceptionTypeToken(type), exceptionType(
+                0), blockNode(blockNode) {
 }
 
 CatchNode::~CatchNode() {
-    if (this->exceptionType != 0
-            && dynamic_cast<TypeToken*>(this->exceptionType) != 0) {
+    if(this->exceptionType != 0 && dynamic_cast<TypeToken*>(this->exceptionType) != 0) {
         delete this->exceptionType;
     }
     delete this->blockNode;
@@ -1051,12 +1039,12 @@ TryNode::TryNode(int lineNum, BlockNode *blockNode) :
 TryNode::~TryNode() {
     delete this->blockNode;
     int size = this->catchNodes.size();
-    for (int i = 0; i < size; i++) {
+    for(int i = 0; i < size; i++) {
         delete this->catchNodes[i];
     }
     this->catchNodes.clear();
 
-    if (this->finallyNode != 0) {
+    if(this->finallyNode != 0) {
         delete this->finallyNode;
     }
 }
@@ -1105,10 +1093,9 @@ int FinallyNode::accept(NodeVisitor *visitor) {
 // ##     VarDeclNode     ##
 // #########################
 
-VarDeclNode::VarDeclNode(int lineNum, std::string &&varName,
-        ExprNode *initValueNode, bool readOnly) :
-        Node(lineNum), varName(std::move(varName)), readOnly(readOnly), global(
-                false), initValueNode(initValueNode) {
+VarDeclNode::VarDeclNode(int lineNum, std::string &&varName, ExprNode *initValueNode, bool readOnly) :
+        Node(lineNum), varName(std::move(varName)), readOnly(readOnly), global(false), initValueNode(
+                initValueNode) {
 }
 
 VarDeclNode::~VarDeclNode() {
@@ -1144,8 +1131,7 @@ int VarDeclNode::accept(NodeVisitor *visitor) {
 // ########################
 
 AssignNode::AssignNode(int lineNum, ExprNode *leftNode, ExprNode *rightNode) :
-        ExprNode(lineNum), leftNode(leftNode), rightNode(rightNode), handle(
-                0) {
+        ExprNode(lineNum), leftNode(leftNode), rightNode(rightNode), handle(0) {
 }
 
 AssignNode::~AssignNode() {
@@ -1182,23 +1168,22 @@ int AssignNode::accept(NodeVisitor *visitor) {
 // ##########################
 
 FunctionNode::FunctionNode(int lineNum, std::string &&funcName) :
-        Node(lineNum), funcName(std::move(funcName)), paramNodes(), paramTypes(), returnTypeToken(0), returnType(
-                0), blockNode(0) {
+        Node(lineNum), funcName(std::move(funcName)), paramNodes(), paramTypes(), returnTypeToken(
+                0), returnType(0), blockNode(0) {
 }
 
 FunctionNode::~FunctionNode() {
     int size = this->paramNodes.size();
-    for (int i = 0; i < size; i++) {
+    for(int i = 0; i < size; i++) {
         delete this->paramNodes[i];
     }
     this->paramNodes.clear();
 
-    if (this->returnType != 0
-            && dynamic_cast<TypeToken*>(this->returnType) != 0) {
+    if(this->returnType != 0 && dynamic_cast<TypeToken*>(this->returnType) != 0) {
         delete this->returnType;
     }
 
-    if (this->blockNode != 0) {
+    if(this->blockNode != 0) {
         delete this->blockNode;
     }
 }
@@ -1290,7 +1275,7 @@ RootNode::RootNode() :
 
 RootNode::~RootNode() {
     int size = this->nodes.size();
-    for (int i = 0; i < size; i++) {
+    for(int i = 0; i < size; i++) {
         delete this->nodes[i];
     }
     this->nodes.clear();
