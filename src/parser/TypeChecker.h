@@ -24,6 +24,11 @@ private:
     DSType* curReturnType;
 
     /**
+     * contains state which represents for within loop block
+     */
+    std::vector<bool> loopContextStack;
+
+    /**
      * contains state which represents for within finally block
      */
     std::vector<bool> finallyContextStack;
@@ -71,6 +76,38 @@ private:
      */
     void checkType(DSType *requiredType, Node *targetNode, DSType *unacceptableType);
 
+    /**
+     * create new symbol table and check type each node within block.
+     * after type checking, remove current symbol table
+     */
+    void checkTypeWithNewBlockScope(BlockNode *blockNode);
+
+    /**
+     * check type each node within block in current block scope
+     */
+    void checkTypeWithCurrentBlockScope(BlockNode *blockNode);
+
+    void addEntryAndThrowIfDefined(Node *node, const std::string &symbolName, DSType *type, bool readOnly);
+
+    void enterLoop();
+    void exitLoop();
+
+    /**
+     * check node inside loop.
+     * if node is out of loop, throw exception
+     * node is BreakNode or ContinueNode
+     */
+    void checkAndThrowIfOutOfLoop(Node *node);
+
+    bool findBlockEnd(const std::unique_ptr<BlockNode> &blockNode);
+
+    /**
+     * check block end (return, throw) existence in function block
+     * blockNode is function block.
+     * returnType is function return type.
+     */
+    void checkBlockEndExistence(const std::unique_ptr<BlockNode> &blockNode, DSType *returnType);
+
     void pushReturnType(DSType *returnType);
 
     /**
@@ -83,7 +120,14 @@ private:
      */
     DSType *getCurrentReturnType();
 
+    void checkAndThrowIfInsideFinally(BlockEndNode *node);
+
 public:
+    /**
+     * reset symbol table when error happened
+     */
+    void recover();
+
     // visitor api
 
     int visitIntValueNode(IntValueNode *node); // override

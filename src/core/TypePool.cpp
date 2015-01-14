@@ -49,6 +49,10 @@ DSType *TypePool::getStringType() {
     return 0;	//TODO:
 }
 
+DSType *TypePool::getTaskType() {
+    return 0;   //TODO:
+}
+
 DSType *TypePool::getBaseArrayType() {
     return 0;	//TODO:
 }

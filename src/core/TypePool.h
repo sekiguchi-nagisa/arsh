@@ -35,6 +35,7 @@ public:
     DSType *getFloatType();
     DSType *getBooleanType();
     DSType *getStringType();
+    DSType *getTaskType();
 
     // for reified type.
     DSType *getBaseArrayType(); //TODO: return type

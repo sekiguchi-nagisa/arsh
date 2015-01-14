@@ -501,7 +501,7 @@ int CondOpNode::accept(NodeVisitor *visitor) {
 // #########################
 
 ProcessNode::ProcessNode(int lineNum, std::string &&commandName) :
-        ExprNode(lineNum), commandName(std::move(commandName)), argNodes() {
+        ExprNode(lineNum), commandName(std::move(commandName)), argNodes(), redirOptions() {
 }
 
 ProcessNode::~ProcessNode() {
@@ -511,12 +511,20 @@ const std::string &ProcessNode::getCommandName() {
     return this->commandName;
 }
 
-void ProcessNode::addArgNode(std::unique_ptr<ExprNode> &&node) {
+void ProcessNode::addArgNode(std::unique_ptr<ProcArgNode> &&node) {
     this->argNodes.push_back(std::move(node));
 }
 
-const std::vector<std::unique_ptr<ExprNode>> &ProcessNode::getArgNodes() {
+const std::vector<std::unique_ptr<ProcArgNode>> &ProcessNode::getArgNodes() {
     return this->argNodes;
+}
+
+void ProcessNode::addRedirOption(std::pair<int, std::unique_ptr<ExprNode>> &&optionPair) {
+    this->redirOptions.push_back(std::move(optionPair));
+}
+
+const std::vector<std::pair<int, std::unique_ptr<ExprNode>>> &ProcessNode::getRedirOptions() {
+    return this->redirOptions;
 }
 
 int ProcessNode::accept(NodeVisitor *visitor) {

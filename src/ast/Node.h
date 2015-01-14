@@ -346,15 +346,18 @@ public:
 class ProcessNode: public ExprNode {	//FIXME: redirect option, trace
 private:
     std::string commandName;
-    std::vector<std::unique_ptr<ExprNode>> argNodes;
+    std::vector<std::unique_ptr<ProcArgNode>> argNodes;
+    std::vector<std::pair<int, std::unique_ptr<ExprNode>>> redirOptions;
 
 public:
     ProcessNode(int lineNum, std::string &&commandName);
     ~ProcessNode();
 
     const std::string &getCommandName();
-    void addArgNode(std::unique_ptr<ExprNode> &&node);
-    const std::vector<std::unique_ptr<ExprNode>> &getArgNodes();
+    void addArgNode(std::unique_ptr<ProcArgNode> &&node);
+    const std::vector<std::unique_ptr<ProcArgNode>> &getArgNodes();
+    void addRedirOption(std::pair<int, std::unique_ptr<ExprNode>> &&optionPair);
+    const std::vector<std::pair<int, std::unique_ptr<ExprNode>>> &getRedirOptions();
     int accept(NodeVisitor *visitor);	//override
 };
 
@@ -409,7 +412,7 @@ public:
     int accept(NodeVisitor *visitor);	//override
 };
 
-class AssertNode: public Node {	//FIXME: callee
+class AssertNode: public Node {
 private:
     std::unique_ptr<ExprNode> exprNode;
 
@@ -454,7 +457,7 @@ public:
     int accept(NodeVisitor *visitor);	// override
 };
 
-class ExportEnvNode: public Node {	//TODO: callee
+class ExportEnvNode: public Node {
 private:
     std::string envName;
     std::unique_ptr<ExprNode> exprNode;
@@ -468,7 +471,7 @@ public:
     int accept(NodeVisitor *visitor);	// override
 };
 
-class ImportEnvNode: public Node {	//TODO: callee
+class ImportEnvNode: public Node {
 private:
     std::string envName;
 
