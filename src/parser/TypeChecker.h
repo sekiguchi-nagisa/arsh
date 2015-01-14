@@ -17,7 +17,6 @@
 class TypeChecker: public NodeVisitor {
 private:
     TypePool *typePool;
-    Node *checkedNode;
 
     /**
      * contains current return type of current function
@@ -36,35 +35,22 @@ public:
     /**
      * type checker entry point
      */
-    RootNode *checkTypeRootNode(RootNode *rootNode);
+    void checkTypeRootNode(const std::unique_ptr<RootNode> &rootNode);
 
 private:
-    /**
-     * set to this->checkedNode
-     * if checkedNode is ExprNode, its type must not be UnresolvedType
-     * return always 0
-     */
-    int pushCheckedNode(Node *checkedNode);
-
-    /**
-     * pop checkedNode.
-     * if popped node is ExprNode, its type must not be UnresolvedType
-     */
-    Node *popCheckedNode();
-
     // base type check entry point
 
     /**
      * check type.
      * if node type is void type, always success.
      */
-    Node *checkTypeAcceptingVoidType(Node *targetNode);
+    void checkTypeAcceptingVoidType(Node *targetNode);
 
     /**
      * check node type.
      * if node type is void type, throw exception
      */
-    Node *checkType(Node *targetNode);
+    void checkType(Node *targetNode);
 
     /**
      * check node type
@@ -72,7 +58,7 @@ private:
      *
      * if requiredType is not equivalent to node type, throw exception.
      */
-    Node *checkType(DSType *requiredType, Node *targetNode);
+    void checkType(DSType *requiredType, Node *targetNode);
 
     /**
      * check node type
@@ -83,7 +69,7 @@ private:
      * if requiredType is null, do not try matching node type
      * and if unaccepatbelType is equivalent to node type, throw exception.
      */
-    Node *checkType(DSType *requiredType, Node *targetNode, DSType *unacceptableType);
+    void checkType(DSType *requiredType, Node *targetNode, DSType *unacceptableType);
 
     void pushReturnType(DSType *returnType);
 

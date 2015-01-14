@@ -8,30 +8,18 @@
 #include "TypeChecker.h"
 
 TypeChecker::TypeChecker(TypePool *typePool) :
-        typePool(typePool), checkedNode(0), curReturnType(0), finallyContextStack() {
+        typePool(typePool), curReturnType(0), finallyContextStack() {
 }
 
 TypeChecker::~TypeChecker() {
     this->finallyContextStack.clear();
 }
 
-RootNode *TypeChecker::checkTypeRootNode(RootNode *rootNode) {	//FIXME
+void TypeChecker::checkTypeRootNode(const std::unique_ptr<RootNode> &rootNode) {	//FIXME
     int size = rootNode->getNodes().size();
     for(int i = 0; i < size; i++) {
-        this->checkTypeAcceptingVoidType(rootNode->getNodes()[i]);
+        this->checkTypeAcceptingVoidType(rootNode->getNodes()[i].get());
     }
-    return rootNode;
-}
-
-int TypeChecker::pushCheckedNode(Node *checkedNode) {	//TODO: param check
-    this->checkedNode = checkedNode;
-    return 0;
-}
-
-Node *TypeChecker::popCheckedNode() {
-    Node *popedNode = this->checkedNode;
-    this->checkedNode = 0;
-    return popedNode;
 }
 
 void TypeChecker::pushReturnType(DSType *returnType) {
@@ -50,27 +38,27 @@ DSType *TypeChecker::getCurrentReturnType() {
 
 // type check entry point
 
-Node *TypeChecker::checkTypeAcceptingVoidType(Node *targetNode) {
-    return this->checkType(0, targetNode, 0);
+void TypeChecker::checkTypeAcceptingVoidType(Node *targetNode) {
+    this->checkType(0, targetNode, 0);
 }
 
-Node *TypeChecker::checkType(Node *targetNode) {
-    return this->checkType(0, targetNode, this->typePool->getVoidType());
+void TypeChecker::checkType(Node *targetNode) {
+    this->checkType(0, targetNode, this->typePool->getVoidType());
 }
 
-Node *TypeChecker::checkType(DSType *requiredType, Node *targetNode) {
-    return this->checkType(requiredType, targetNode, 0);
+void TypeChecker::checkType(DSType *requiredType, Node *targetNode) {
+    this->checkType(requiredType, targetNode, 0);
 }
 
 //TODO:
-Node *TypeChecker::checkType(DSType *requiredType, Node *targetNode, DSType *unacceptableType) {
+void TypeChecker::checkType(DSType *requiredType, Node *targetNode, DSType *unacceptableType) {
     /**
      * if target node is statement, always check type.
      */
     ExprNode *exprNode = dynamic_cast<ExprNode*>(targetNode);
     if(exprNode == 0) {
         targetNode->accept(this);
-        return this->popCheckedNode();
+        return;
     }
 
     /**
@@ -80,19 +68,18 @@ Node *TypeChecker::checkType(DSType *requiredType, Node *targetNode, DSType *una
     if(exprNode->getType() == 0) {
         //exprNode = (ExprNode) exprNode.accept(this);
         exprNode->accept(this);
-        exprNode = dynamic_cast<ExprNode*>(this->popCheckedNode());
     }
 
-//	/**
-//	 * after type checking, if type is still unresolved type,
-//	 * throw exception.
-//	 */
-//	DSType *type = exprNode->getType();
-//	if(type instanceof UnresolvedType) {
-//		throw new TypeCheckException(exprNode, TypeErrorKind_ZeroArg.Unresolved);
-//	}
-
+    /**
+     * after type checking, if type is still null,
+     * throw exception.
+     */
     DSType *type = exprNode->getType();
+    if(type == 0) {
+        //throw new TypeCheckException(exprNode, TypeErrorKind_ZeroArg.Unresolved);
+        return;
+    }
+
     /**
      * do not try type matching.
      */
@@ -100,49 +87,48 @@ Node *TypeChecker::checkType(DSType *requiredType, Node *targetNode, DSType *una
         if(unacceptableType != 0 && unacceptableType->isAssignableFrom(type)) {
             //throw new TypeCheckException(exprNode, TypeErrorKind_OneArg.Unacceptable, type);	//FIXME: error report
         }
-        return exprNode;
+        return;
     }
 
     /**
      * try type matching.
      */
     if(requiredType->isAssignableFrom(type)) {
-        return exprNode;
+        return;
     }
 
     //FIXME: error report
-    return 0;
 }
 
 // visitor api
 
 int TypeChecker::visitIntValueNode(IntValueNode *node) {	//TODO: int8, int16 ..etc
     node->setType(this->typePool->getIntType());
-    return this->pushCheckedNode(node);
+    return 0;
 }
 
 int TypeChecker::visitFloatValueNode(FloatValueNode *node) {
     node->setType(this->typePool->getFloatType());
-    return this->pushCheckedNode(node);
+    return 0;
 }
 
 int TypeChecker::visitBooleanValueNode(BooleanValueNode *node) {
     node->setType(this->typePool->getBooleanType());
-    return this->pushCheckedNode(node);
+    return 0;
 }
 
 int TypeChecker::visitStringValueNode(StringValueNode *node) {
     node->setType(this->typePool->getStringType());
-    return this->pushCheckedNode(node);
+    return 0;
 }
 
 int TypeChecker::visitStringExprNode(StringExprNode *node) {
     int size = node->getExprNodes().size();
     for(int i = 0; i < size; i++) {
-        this->checkType(this->typePool->getStringType(), node->getExprNodes()[i]);
+        this->checkType(this->typePool->getStringType(), node->getExprNodes()[i].get());
     }
     node->setType(this->typePool->getStringType());
-    return this->pushCheckedNode(node);
+    return 0;
 }
 
 int TypeChecker::visitArrayNode(ArrayNode *node) {
@@ -250,9 +236,9 @@ int TypeChecker::visitFunctionNode(FunctionNode *node) {
 
 int TypeChecker::visitEmptyNode(EmptyNode *node) {
     node->setType(this->typePool->getVoidType());
-    return this->pushCheckedNode(node);
+    return 0;
 }
 
 int TypeChecker::visitEmptyBlockNode(EmptyBlockNode *node) {
-    return this->pushCheckedNode(node);	// do nothing
+    return 0;	// do nothing
 }

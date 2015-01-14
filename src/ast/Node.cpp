@@ -153,18 +153,13 @@ StringExprNode::StringExprNode(int lineNum) :
 }
 
 StringExprNode::~StringExprNode() {
-    int size = this->nodes.size();
-    for(int i = 0; i < size; i++) {
-        delete this->nodes[i];
-    }
-    this->nodes.clear();
 }
 
-void StringExprNode::addExprNode(ExprNode *node) {	//TODO:
-    this->nodes.push_back(node);
+void StringExprNode::addExprNode(std::unique_ptr<ExprNode> &&node) {	//TODO:
+    this->nodes.push_back(std::move(node));
 }
 
-const std::vector<ExprNode*> &StringExprNode::getExprNodes() {
+const std::vector<std::unique_ptr<ExprNode>> &StringExprNode::getExprNodes() {
     return this->nodes;
 }
 
@@ -181,18 +176,13 @@ ArrayNode::ArrayNode(int lineNum) :
 }
 
 ArrayNode::~ArrayNode() {
-    int size = this->nodes.size();
-    for(int i = 0; i < size; i++) {
-        delete this->nodes[i];
-    }
-    this->nodes.clear();
 }
 
-void ArrayNode::addExprNode(ExprNode *node) {
-    this->nodes.push_back(node);
+void ArrayNode::addExprNode(std::unique_ptr<ExprNode> &&node) {
+    this->nodes.push_back(std::move(node));
 }
 
-const std::vector<ExprNode*> &ArrayNode::getExprNodes() {
+const std::vector<std::unique_ptr<ExprNode>> &ArrayNode::getExprNodes() {
     return this->nodes;
 }
 
@@ -209,25 +199,18 @@ MapNode::MapNode(int lineNum) :
 }
 
 MapNode::~MapNode() {
-    int size = this->keyNodes.size();
-    for(int i = 0; i < size; i++) {
-        delete this->keyNodes[i];
-        delete this->valueNodes[i];
-    }
-    this->keyNodes.clear();
-    this->valueNodes.clear();
 }
 
-void MapNode::addEntry(ExprNode *keyNode, ExprNode *valueNode) {
-    this->keyNodes.push_back(keyNode);
-    this->valueNodes.push_back(valueNode);
+void MapNode::addEntry(std::unique_ptr<ExprNode> &&keyNode, std::unique_ptr<ExprNode> &&valueNode) {
+    this->keyNodes.push_back(std::move(keyNode));
+    this->valueNodes.push_back(std::move(valueNode));
 }
 
-const std::vector<ExprNode*> &MapNode::getkeyNodes() {
+const std::vector<std::unique_ptr<ExprNode>> &MapNode::getkeyNodes() {
     return this->keyNodes;
 }
 
-const std::vector<ExprNode*> &MapNode::getValueNodes() {
+const std::vector<std::unique_ptr<ExprNode>> &MapNode::getValueNodes() {
     return this->valueNodes;
 }
 
@@ -239,20 +222,19 @@ int MapNode::accept(NodeVisitor *visitor) {
 // ##     PairNode     ##
 // ######################
 
-PairNode::PairNode(int lineNum, ExprNode *leftNode, ExprNode *rightNode) :
-        ExprNode(lineNum), leftNode(leftNode), rightNode(rightNode) {
+PairNode::PairNode(int lineNum, std::unique_ptr<ExprNode> &&leftNode,
+        std::unique_ptr<ExprNode> &&rightNode) :
+        ExprNode(lineNum), leftNode(std::move(leftNode)), rightNode(std::move(rightNode)) {
 }
 
 PairNode::~PairNode() {
-    delete this->leftNode;
-    delete this->rightNode;
 }
 
-ExprNode *PairNode::getLeftNode() {
+const std::unique_ptr<ExprNode> &PairNode::getLeftNode() {
     return this->leftNode;
 }
 
-ExprNode *PairNode::getRightNode() {
+const std::unique_ptr<ExprNode> &PairNode::getRightNode() {
     return this->rightNode;
 }
 
@@ -295,21 +277,20 @@ int VarNode::accept(NodeVisitor *visitor) {
 // ##     IndexNode     ##
 // #######################
 
-IndexNode::IndexNode(int lineNum, ExprNode *recvNode, ExprNode *indexNode) :
-        AssignableNode(lineNum), recvNode(recvNode), indexNode(indexNode), getterHandle(0), setterHandle(
-                0) {
+IndexNode::IndexNode(int lineNum, std::unique_ptr<ExprNode> &&recvNode,
+        std::unique_ptr<ExprNode> &&indexNode) :
+        AssignableNode(lineNum), recvNode(std::move(recvNode)), indexNode(std::move(indexNode)), getterHandle(
+                0), setterHandle(0) {
 }
 
 IndexNode::~IndexNode() {
-    delete this->recvNode;
-    delete this->indexNode;
 }
 
-ExprNode *IndexNode::getRecvNode() {
+const std::unique_ptr<ExprNode> &IndexNode::getRecvNode() {
     return this->recvNode;
 }
 
-ExprNode *IndexNode::getIndexNode() {
+const std::unique_ptr<ExprNode> &IndexNode::getIndexNode() {
     return this->indexNode;
 }
 
@@ -341,15 +322,15 @@ int IndexNode::accept(NodeVisitor *visitor) {
 // ##     AccessNode     ##
 // ########################
 
-AccessNode::AccessNode(int lineNum, ExprNode *recvNode, std::string &&fieldName) :
-        AssignableNode(lineNum), recvNode(recvNode), fieldName(std::move(fieldName)), handle(0) {
+AccessNode::AccessNode(int lineNum, std::unique_ptr<ExprNode> &&recvNode, std::string &&fieldName) :
+        AssignableNode(lineNum), recvNode(std::move(recvNode)), fieldName(std::move(fieldName)), handle(
+                0) {
 }
 
 AccessNode::~AccessNode() {
-    delete this->recvNode;
 }
 
-ExprNode *AccessNode::getRecvNode() {
+const std::unique_ptr<ExprNode> &AccessNode::getRecvNode() {
     return this->recvNode;
 }
 
@@ -377,20 +358,20 @@ int AccessNode::accept(NodeVisitor *visitor) {
 // ##     CastNode     ##
 // ######################
 
-CastNode::CastNode(int lineNum, ExprNode *targetNode, std::unique_ptr<TypeToken> &&type) :
-        ExprNode(lineNum), targetNode(targetNode), targetType(std::move(type)) {
+CastNode::CastNode(int lineNum, std::unique_ptr<ExprNode> &&targetNode,
+        std::unique_ptr<TypeToken> &&type) :
+        ExprNode(lineNum), targetNode(std::move(targetNode)), targetTypeToken(std::move(type)) {
 }
 
 CastNode::~CastNode() {
-    delete this->targetNode;
 }
 
-ExprNode *CastNode::getTargetNode() {
+const std::unique_ptr<ExprNode> &CastNode::getTargetNode() {
     return this->targetNode;
 }
 
-const std::unique_ptr<TypeToken> &CastNode::getTargetType() {
-    return this->targetType;
+const std::unique_ptr<TypeToken> &CastNode::getTargetTypeToken() {
+    return this->targetTypeToken;
 }
 
 int CastNode::accept(NodeVisitor *visitor) {
@@ -401,20 +382,20 @@ int CastNode::accept(NodeVisitor *visitor) {
 // ##     InstanceOfNode     ##
 // ############################
 
-InstanceOfNode::InstanceOfNode(int lineNum, ExprNode *targetNode, std::unique_ptr<TypeToken> &&type) :
-        ExprNode(lineNum), targetNode(targetNode), targetType(std::move(type)) {
+InstanceOfNode::InstanceOfNode(int lineNum, std::unique_ptr<ExprNode> &&targetNode,
+        std::unique_ptr<TypeToken> &&type) :
+        ExprNode(lineNum), targetNode(std::move(targetNode)), targetTypeToken(std::move(type)) {
 }
 
 InstanceOfNode::~InstanceOfNode() {
-    delete this->targetNode;
 }
 
-ExprNode *InstanceOfNode::getTargetNode() {
+const std::unique_ptr<ExprNode> &InstanceOfNode::getTargetNode() {
     return this->targetNode;
 }
 
-const std::unique_ptr<TypeToken> &InstanceOfNode::getTargetType() {
-    return this->targetType;
+const std::unique_ptr<TypeToken> &InstanceOfNode::getTargetTypeToken() {
+    return this->targetTypeToken;
 }
 
 int InstanceOfNode::accept(NodeVisitor *visitor) {
@@ -425,32 +406,25 @@ int InstanceOfNode::accept(NodeVisitor *visitor) {
 // ##     ApplyNode     ##
 // #######################
 
-ApplyNode::ApplyNode(int lineNum, ExprNode *recvNode) :
-        ExprNode(lineNum), recvNode(recvNode), argNodes() {
+ApplyNode::ApplyNode(int lineNum, std::unique_ptr<ExprNode> &&recvNode) :
+        ExprNode(lineNum), recvNode(std::move(recvNode)), argNodes() {
 }
 
 ApplyNode::~ApplyNode() {
-    delete this->recvNode;
-
-    int size = this->argNodes.size();
-    for(int i = 0; i < size; i++) {
-        delete this->argNodes[i];
-    }
-    this->argNodes.clear();
 }
 
-ExprNode *ApplyNode::getRecvNode() {
+const std::unique_ptr<ExprNode> &ApplyNode::getRecvNode() {
     return this->recvNode;
 }
 
 /**
  * for parser
  */
-void ApplyNode::addArgNode(ExprNode *node) {
-    this->argNodes.push_back(node);
+void ApplyNode::addArgNode(std::unique_ptr<ExprNode> &&node) {
+    this->argNodes.push_back(std::move(node));
 }
 
-const std::vector<ExprNode*> &ApplyNode::getArgNodes() {
+const std::vector<std::unique_ptr<ExprNode>> &ApplyNode::getArgNodes() {
     return this->argNodes;
 }
 
@@ -467,22 +441,17 @@ ConstructorCallNode::ConstructorCallNode(int lineNum, std::unique_ptr<TypeToken>
 }
 
 ConstructorCallNode::~ConstructorCallNode() {
-    int size = this->argNodes.size();
-    for(int i = 0; i < size; i++) {
-        delete this->argNodes[i];
-    }
-    this->argNodes.clear();
 }
 
 const std::unique_ptr<TypeToken> &ConstructorCallNode::getTargetType() {
     return this->targetType;
 }
 
-void ConstructorCallNode::addArgNode(ExprNode *node) {
-    this->argNodes.push_back(node);
+void ConstructorCallNode::addArgNode(std::unique_ptr<ExprNode> &&node) {
+    this->argNodes.push_back(std::move(node));
 }
 
-const std::vector<ExprNode*> &ConstructorCallNode::getArgNodes() {
+const std::vector<std::unique_ptr<ExprNode>> &ConstructorCallNode::getArgNodes() {
     return this->argNodes;
 }
 
@@ -502,20 +471,20 @@ int ConstructorCallNode::accept(NodeVisitor *visitor) {
 // ##     CondOpNode     ##
 // ########################
 
-CondOpNode::CondOpNode(int lineNum, ExprNode *leftNode, ExprNode *rightNode, bool isAndOp) :
-        ExprNode(lineNum), leftNode(leftNode), rightNode(rightNode), andOp(isAndOp) {
+CondOpNode::CondOpNode(int lineNum, std::unique_ptr<ExprNode> &&leftNode,
+        std::unique_ptr<ExprNode> &&rightNode, bool isAndOp) :
+        ExprNode(lineNum), leftNode(std::move(leftNode)), rightNode(std::move(rightNode)), andOp(
+                isAndOp) {
 }
 
 CondOpNode::~CondOpNode() {
-    delete this->leftNode;
-    delete this->rightNode;
 }
 
-ExprNode *CondOpNode::getLeftNode() {
+const std::unique_ptr<ExprNode> &CondOpNode::getLeftNode() {
     return this->leftNode;
 }
 
-ExprNode *CondOpNode::getRightNode() {
+const std::unique_ptr<ExprNode> &CondOpNode::getRightNode() {
     return this->rightNode;
 }
 
@@ -536,21 +505,17 @@ ProcessNode::ProcessNode(int lineNum, std::string &&commandName) :
 }
 
 ProcessNode::~ProcessNode() {
-    int size = this->argNodes.size();
-    for(int i = 0; i < size; i++) {
-        delete this->argNodes[i];
-    }
 }
 
 const std::string &ProcessNode::getCommandName() {
     return this->commandName;
 }
 
-void ProcessNode::addArgNode(ExprNode *node) {
-    this->argNodes.push_back(node);
+void ProcessNode::addArgNode(std::unique_ptr<ExprNode> &&node) {
+    this->argNodes.push_back(std::move(node));
 }
 
-const std::vector<ExprNode*> &ProcessNode::getArgNodes() {
+const std::vector<std::unique_ptr<ExprNode>> &ProcessNode::getArgNodes() {
     return this->argNodes;
 }
 
@@ -567,29 +532,22 @@ ProcArgNode::ProcArgNode(int lineNum) :
 }
 
 ProcArgNode::~ProcArgNode() {
-    int size = this->segmentNodes.size();
-    for(int i = 0; i < size; i++) {
-        delete this->segmentNodes[i];
-    }
-    this->segmentNodes.clear();
 }
 
-void ProcArgNode::addSegmentNode(ExprNode *node) {
-    ProcArgNode *argNode = dynamic_cast<ProcArgNode*>(node);
+void ProcArgNode::addSegmentNode(std::unique_ptr<ExprNode> &&node) {
+    ProcArgNode *argNode = dynamic_cast<ProcArgNode*>(node.release());
     if(argNode != 0) {
-        std::vector<ExprNode*> segmentNodes = argNode->getSegmentNodes();
-        int size = segmentNodes.size();
+        int size = argNode->getSegmentNodes().size();
         for(int i = 0; i < size; i++) {
-            this->segmentNodes.push_back(segmentNodes[i]);
+            this->segmentNodes.push_back(std::move(argNode->segmentNodes[i]));
         }
-        segmentNodes.clear();
         delete argNode;
         return;
     }
-    this->segmentNodes.push_back(node);
+    this->segmentNodes.push_back(std::move(node));
 }
 
-const std::vector<ExprNode*> &ProcArgNode::getSegmentNodes() {
+const std::vector<std::unique_ptr<ExprNode>> &ProcArgNode::getSegmentNodes() {
     return this->segmentNodes;
 }
 
@@ -621,18 +579,13 @@ TaskNode::TaskNode() :
 }
 
 TaskNode::~TaskNode() {
-    int size = this->procNodes.size();
-    for(int i = 0; i < size; i++) {
-        delete this->procNodes[i];
-    }
-    this->procNodes.clear();
 }
 
-void TaskNode::addProcNodes(ProcessNode* node) {
-    this->procNodes.push_back(node);
+void TaskNode::addProcNodes(std::unique_ptr<ProcessNode> &&node) {
+    this->procNodes.push_back(std::move(node));
 }
 
-const std::vector<ProcessNode*> &TaskNode::getProcNodes() {
+const std::vector<std::unique_ptr<ProcessNode>> &TaskNode::getProcNodes() {
     return this->procNodes;
 }
 
@@ -648,15 +601,14 @@ int TaskNode::accept(NodeVisitor *visitor) {
 // ##     InnerTaskNode     ##
 // ###########################
 
-InnerTaskNode::InnerTaskNode(ExprNode *exprNode) :
-        ExprNode(0), exprNode(exprNode) {
+InnerTaskNode::InnerTaskNode(std::unique_ptr<ExprNode> &&exprNode) :
+        ExprNode(0), exprNode(std::move(exprNode)) {
 }
 
 InnerTaskNode::~InnerTaskNode() {
-    delete this->exprNode;
 }
 
-ExprNode *InnerTaskNode::getExprNode() {
+const std::unique_ptr<ExprNode> &InnerTaskNode::getExprNode() {
     return this->exprNode;
 }
 
@@ -668,15 +620,14 @@ int InnerTaskNode::accept(NodeVisitor *visitor) {
 // ##     AssertNode     ##
 // ########################
 
-AssertNode::AssertNode(int lineNum, ExprNode *exprNode) :
-        Node(lineNum), exprNode(exprNode) {
+AssertNode::AssertNode(int lineNum, std::unique_ptr<ExprNode> &&exprNode) :
+        Node(lineNum), exprNode(std::move(exprNode)) {
 }
 
 AssertNode::~AssertNode() {
-    delete this->exprNode;
 }
 
-ExprNode *AssertNode::getExprNode() {
+const std::unique_ptr<ExprNode> &AssertNode::getExprNode() {
     return this->exprNode;
 }
 
@@ -693,18 +644,13 @@ BlockNode::BlockNode() :
 }
 
 BlockNode::~BlockNode() {
-    int size = this->nodes.size();
-    for(int i = 0; i < size; i++) {
-        delete this->nodes[i];
-    }
-    this->nodes.clear();
 }
 
-void BlockNode::addNode(Node *node) {
-    this->nodes.push_back(node);
+void BlockNode::addNode(std::unique_ptr<Node> &&node) {
+    this->nodes.push_back(std::move(node));
 }
 
-const std::vector<Node*> &BlockNode::getNodes() {
+const std::vector<std::unique_ptr<Node>> &BlockNode::getNodes() {
     return this->nodes;
 }
 
@@ -748,19 +694,19 @@ int ContinueNode::accept(NodeVisitor *visitor) {
 // ##     ExportEnvNode     ##
 // ###########################
 
-ExportEnvNode::ExportEnvNode(int lineNum, std::string &&envName, ExprNode *exprNode) :
-        Node(lineNum), envName(std::move(envName)), exprNode(exprNode) {
+ExportEnvNode::ExportEnvNode(int lineNum, std::string &&envName,
+        std::unique_ptr<ExprNode> &&exprNode) :
+        Node(lineNum), envName(std::move(envName)), exprNode(std::move(exprNode)) {
 }
 
 ExportEnvNode::~ExportEnvNode() {
-    delete this->exprNode;
 }
 
 const std::string &ExportEnvNode::getEnvName() {
     return this->envName;
 }
 
-ExprNode *ExportEnvNode::getExprNode() {
+const std::unique_ptr<ExprNode> &ExportEnvNode::getExprNode() {
     return this->exprNode;
 }
 
@@ -796,31 +742,28 @@ LoopNode::LoopNode(int lineNum) :
 // ##     ForNode     ##
 // #####################
 
-ForNode::ForNode(int lineNum, Node *initNode, Node *condNode, Node *iterNode, BlockNode *blockNode) :
-        LoopNode(lineNum), initNode(initNode), condNode(condNode), iterNode(iterNode), blockNode(
-                blockNode) {
+ForNode::ForNode(int lineNum, std::unique_ptr<Node> &&initNode, std::unique_ptr<Node> &&condNode,
+        std::unique_ptr<Node> &&iterNode, std::unique_ptr<BlockNode> &&blockNode) :
+        LoopNode(lineNum), initNode(std::move(initNode)), condNode(std::move(condNode)), iterNode(
+                std::move(iterNode)), blockNode(std::move(blockNode)) {
 }
 
 ForNode::~ForNode() {
-    delete this->initNode;
-    delete this->condNode;
-    delete this->iterNode;
-    delete this->blockNode;
 }
 
-Node *ForNode::getInitNode() {
+const std::unique_ptr<Node> &ForNode::getInitNode() {
     return this->initNode;
 }
 
-Node *ForNode::getCondNode() {
+const std::unique_ptr<Node> &ForNode::getCondNode() {
     return this->condNode;
 }
 
-Node *ForNode::getIterNode() {
+const std::unique_ptr<Node> &ForNode::getIterNode() {
     return this->iterNode;
 }
 
-BlockNode *ForNode::getBlockNode() {
+const std::unique_ptr<BlockNode> &ForNode::getBlockNode() {
     return this->blockNode;
 }
 
@@ -832,25 +775,24 @@ int ForNode::accept(NodeVisitor *visitor) {
 // ##     ForInNode     ##
 // #######################
 
-ForInNode::ForInNode(int lineNum, std::string &&initName, ExprNode *exprNode, BlockNode *blockNode) :
-        LoopNode(lineNum), initName(std::move(initName)), exprNode(exprNode), blockNode(blockNode), resetHandle(
-                0), nextHandle(0), hasNextHandle(0) {
+ForInNode::ForInNode(int lineNum, std::string &&initName, std::unique_ptr<ExprNode> &&exprNode,
+        std::unique_ptr<BlockNode> &&blockNode) :
+        LoopNode(lineNum), initName(std::move(initName)), exprNode(std::move(exprNode)), blockNode(
+                std::move(blockNode)), resetHandle(0), nextHandle(0), hasNextHandle(0) {
 }
 
 ForInNode::~ForInNode() {
-    delete this->exprNode;
-    delete this->blockNode;
 }
 
 const std::string &ForInNode::getInitName() {
     return this->initName;
 }
 
-ExprNode *ForInNode::getExprNode() {
+const std::unique_ptr<ExprNode> &ForInNode::getExprNode() {
     return this->exprNode;
 }
 
-BlockNode *ForInNode::getBlockNode() {
+const std::unique_ptr<BlockNode> &ForInNode::getBlockNode() {
     return this->blockNode;
 }
 
@@ -881,20 +823,20 @@ int ForInNode::accept(NodeVisitor *visitor) {
 // ##     WhileNode     ##
 // #######################
 
-WhileNode::WhileNode(int lineNum, ExprNode *condNode, BlockNode *blockNode, bool asDoWhile) :
-        LoopNode(lineNum), condNode(condNode), blockNode(blockNode), asDoWhile(asDoWhile) {
+WhileNode::WhileNode(int lineNum, std::unique_ptr<ExprNode> &&condNode,
+        std::unique_ptr<BlockNode> &&blockNode, bool asDoWhile) :
+        LoopNode(lineNum), condNode(std::move(condNode)), blockNode(std::move(blockNode)), asDoWhile(
+                asDoWhile) {
 }
 
 WhileNode::~WhileNode() {
-    delete this->condNode;
-    delete this->blockNode;
 }
 
-ExprNode *WhileNode::getCondNode() {
+const std::unique_ptr<ExprNode> &WhileNode::getCondNode() {
     return this->condNode;
 }
 
-BlockNode *WhileNode::getBlockNode() {
+const std::unique_ptr<BlockNode> &WhileNode::getBlockNode() {
     return this->blockNode;
 }
 
@@ -910,31 +852,25 @@ int WhileNode::accept(NodeVisitor *visitor) {
 // ##     IfNode     ##
 // ####################
 
-IfNode::IfNode(int lineNum, ExprNode *condNode, BlockNode *thenNode, BlockNode *elseNode) :
-        Node(lineNum), condNode(condNode), thenNode(thenNode), elseNode(elseNode) {
+IfNode::IfNode(int lineNum, std::unique_ptr<ExprNode> &&condNode,
+        std::unique_ptr<BlockNode> &&thenNode, std::unique_ptr<BlockNode> &&elseNode) :
+        Node(lineNum), condNode(std::move(condNode)), thenNode(std::move(thenNode)), elseNode(
+                std::move(elseNode)) {
 }
 
 IfNode::~IfNode() {
-    delete this->condNode;
-    delete this->thenNode;
-    if(this->elseNode != 0) {
-        delete this->elseNode;
-    }
 }
 
-ExprNode *IfNode::getCondNode() {
+const std::unique_ptr<ExprNode> &IfNode::getCondNode() {
     return this->condNode;
 }
 
-BlockNode *IfNode::getThenNode() {
+const std::unique_ptr<BlockNode> &IfNode::getThenNode() {
     return this->thenNode;
 }
 
-BlockNode *IfNode::getElseNode() {
-    if(this->elseNode != 0) {
-        return this->elseNode;
-    }
-    return &EmptyBlockNode::emptyBlockNode;
+const std::unique_ptr<BlockNode> &IfNode::getElseNode() {
+    return this->elseNode;
 }
 
 int IfNode::accept(NodeVisitor *visitor) {
@@ -945,21 +881,18 @@ int IfNode::accept(NodeVisitor *visitor) {
 // ##     ReturnNode     ##
 // ########################
 
-ReturnNode::ReturnNode(int lineNum, ExprNode *exprNode) :
-        BlockEndNode(lineNum), exprNode(exprNode) {
+ReturnNode::ReturnNode(int lineNum, std::unique_ptr<ExprNode> &&exprNode) :
+        BlockEndNode(lineNum), exprNode(std::move(exprNode)) {
 }
 
 ReturnNode::ReturnNode(int lineNum) :
-        BlockEndNode(lineNum), exprNode(0) {
+        BlockEndNode(lineNum), exprNode() {
 }
 
 ReturnNode::~ReturnNode() {
-    if(this->exprNode != 0) {
-        delete this->exprNode;
-    }
 }
 
-ExprNode *ReturnNode::getExprNode() {
+const std::unique_ptr<ExprNode> &ReturnNode::getExprNode() {
     return this->exprNode;
 }
 
@@ -971,15 +904,14 @@ int ReturnNode::accept(NodeVisitor *visitor) {
 // ##     ThrowNode     ##
 // #######################
 
-ThrowNode::ThrowNode(int lineNum, ExprNode *exprNode) :
-        BlockEndNode(lineNum), exprNode(exprNode) {
+ThrowNode::ThrowNode(int lineNum, std::unique_ptr<ExprNode> &&exprNode) :
+        BlockEndNode(lineNum), exprNode(std::move(exprNode)) {
 }
 
 ThrowNode::~ThrowNode() {
-    delete this->exprNode;
 }
 
-ExprNode *ThrowNode::getExprNode() {
+const std::unique_ptr<ExprNode> &ThrowNode::getExprNode() {
     return this->exprNode;
 }
 
@@ -992,16 +924,12 @@ int ThrowNode::accept(NodeVisitor *visitor) {
 // #######################
 
 CatchNode::CatchNode(int lineNum, std::string &&exceptionName, std::unique_ptr<TypeToken> &&type,
-        BlockNode *blockNode) :
-        Node(lineNum), exceptionName(std::move(exceptionName)), exceptionTypeToken(std::move(type)), exceptionType(
-                0), blockNode(blockNode) {
+        std::unique_ptr<BlockNode> &&blockNode) :
+        Node(lineNum), exceptionName(std::move(exceptionName)), typeToken(std::move(type)), exceptionType(
+                0), blockNode(std::move(blockNode)) {
 }
 
 CatchNode::~CatchNode() {
-    if(this->exceptionType != 0 && dynamic_cast<TypeToken*>(this->exceptionType) != 0) {
-        delete this->exceptionType;
-    }
-    delete this->blockNode;
 }
 
 const std::string &CatchNode::getExceptionName() {
@@ -1009,7 +937,7 @@ const std::string &CatchNode::getExceptionName() {
 }
 
 const std::unique_ptr<TypeToken> &CatchNode::getTypeToken() {
-    return this->exceptionTypeToken;
+    return this->typeToken;
 }
 
 void CatchNode::setExceptionType(DSType *type) {
@@ -1020,7 +948,7 @@ DSType *CatchNode::getExceptionType() {
     return this->exceptionType;
 }
 
-BlockNode *CatchNode::getBlockNode() {
+const std::unique_ptr<BlockNode> &CatchNode::getBlockNode() {
     return this->blockNode;
 }
 
@@ -1032,36 +960,26 @@ int CatchNode::accept(NodeVisitor *visitor) {
 // ##     TryNode     ##
 // #####################
 
-TryNode::TryNode(int lineNum, BlockNode *blockNode) :
-        Node(lineNum), blockNode(blockNode), catchNodes(), finallyNode(0) {
+TryNode::TryNode(int lineNum, std::unique_ptr<BlockNode> &&blockNode) :
+        Node(lineNum), blockNode(std::move(blockNode)), catchNodes(), finallyNode() {
 }
 
 TryNode::~TryNode() {
-    delete this->blockNode;
-    int size = this->catchNodes.size();
-    for(int i = 0; i < size; i++) {
-        delete this->catchNodes[i];
-    }
-    this->catchNodes.clear();
-
-    if(this->finallyNode != 0) {
-        delete this->finallyNode;
-    }
 }
 
-void TryNode::addCatchNode(CatchNode *catchNode) {
-    this->catchNodes.push_back(catchNode);
+void TryNode::addCatchNode(std::unique_ptr<CatchNode> &&catchNode) {
+    this->catchNodes.push_back(std::move(catchNode));
 }
 
-const std::vector<CatchNode*> &TryNode::getCatchNodes() {
+const std::vector<std::unique_ptr<CatchNode>> &TryNode::getCatchNodes() {
     return this->catchNodes;
 }
 
-void TryNode::addFinallyNode(Node *finallyNode) {
-    this->finallyNode = finallyNode;
+void TryNode::addFinallyNode(std::unique_ptr<Node> &&finallyNode) {
+    this->finallyNode = std::move(finallyNode);
 }
 
-Node *TryNode::getFinallyNode() {	//FIXME:
+const std::unique_ptr<Node> &TryNode::getFinallyNode() {	//FIXME:
     return this->finallyNode;
 }
 
@@ -1073,15 +991,14 @@ int TryNode::accept(NodeVisitor *visitor) {
 // ##     FinallyNode     ##
 // #########################
 
-FinallyNode::FinallyNode(int lineNum, BlockNode *block) :
-        Node(lineNum), blockNode(block) {
+FinallyNode::FinallyNode(int lineNum, std::unique_ptr<BlockNode> &&block) :
+        Node(lineNum), blockNode(std::move(block)) {
 }
 
 FinallyNode::~FinallyNode() {
-    delete this->blockNode;
 }
 
-BlockNode *FinallyNode::getBlockNode() {
+const std::unique_ptr<BlockNode> &FinallyNode::getBlockNode() {
     return this->blockNode;
 }
 
@@ -1093,13 +1010,13 @@ int FinallyNode::accept(NodeVisitor *visitor) {
 // ##     VarDeclNode     ##
 // #########################
 
-VarDeclNode::VarDeclNode(int lineNum, std::string &&varName, ExprNode *initValueNode, bool readOnly) :
+VarDeclNode::VarDeclNode(int lineNum, std::string &&varName,
+        std::unique_ptr<ExprNode> &&initValueNode, bool readOnly) :
         Node(lineNum), varName(std::move(varName)), readOnly(readOnly), global(false), initValueNode(
-                initValueNode) {
+                std::move(initValueNode)) {
 }
 
 VarDeclNode::~VarDeclNode() {
-    delete this->initValueNode;
 }
 
 const std::string &VarDeclNode::getVarName() {
@@ -1118,7 +1035,7 @@ bool VarDeclNode::isGlobal() {
     return this->global;
 }
 
-ExprNode *VarDeclNode::getInitValueNode() {
+const std::unique_ptr<ExprNode> &VarDeclNode::getInitValueNode() {
     return this->initValueNode;
 }
 
@@ -1130,24 +1047,23 @@ int VarDeclNode::accept(NodeVisitor *visitor) {
 // ##     AssignNode     ##
 // ########################
 
-AssignNode::AssignNode(int lineNum, ExprNode *leftNode, ExprNode *rightNode) :
-        ExprNode(lineNum), leftNode(leftNode), rightNode(rightNode), handle(0) {
+AssignNode::AssignNode(int lineNum, std::unique_ptr<ExprNode> &&leftNode,
+        std::unique_ptr<ExprNode> &&rightNode) :
+        ExprNode(lineNum), leftNode(std::move(leftNode)), rightNode(std::move(rightNode)), handle(0) {
 }
 
 AssignNode::~AssignNode() {
-    delete this->leftNode;
-    delete this->rightNode;
 }
 
-ExprNode *AssignNode::getLeftNode() {
+const std::unique_ptr<ExprNode> &AssignNode::getLeftNode() {
     return this->leftNode;
 }
 
-void AssignNode::setRightNode(ExprNode *rightNode) {
-    this->rightNode = rightNode;
+void AssignNode::setRightNode(std::unique_ptr<ExprNode> &&rightNode) {
+    this->rightNode = std::move(rightNode);
 }
 
-ExprNode *AssignNode::getRightNode() {
+const std::unique_ptr<ExprNode> &AssignNode::getRightNode() {
     return this->rightNode;
 }
 
@@ -1168,41 +1084,29 @@ int AssignNode::accept(NodeVisitor *visitor) {
 // ##########################
 
 FunctionNode::FunctionNode(int lineNum, std::string &&funcName) :
-        Node(lineNum), funcName(std::move(funcName)), paramNodes(), paramTypes(), returnTypeToken(), returnType(
-                0), blockNode(0) {
+        Node(lineNum), funcName(std::move(funcName)), paramNodes(), paramTypeTokens(), returnTypeToken(), returnType(
+                0), blockNode() {
 }
 
 FunctionNode::~FunctionNode() {
-    int size = this->paramNodes.size();
-    for(int i = 0; i < size; i++) {
-        delete this->paramNodes[i];
-    }
-    this->paramNodes.clear();
-
-    if(this->returnType != 0 && dynamic_cast<TypeToken*>(this->returnType) != 0) {
-        delete this->returnType;
-    }
-
-    if(this->blockNode != 0) {
-        delete this->blockNode;
-    }
 }
 
 const std::string &FunctionNode::getFuncName() {
     return this->funcName;
 }
 
-void FunctionNode::addParamNode(VarNode *node, std::unique_ptr<TypeToken> &&paramType) {
-    this->paramNodes.push_back(node);
-    this->paramTypes.push_back(std::move(paramType));
+void FunctionNode::addParamNode(std::unique_ptr<VarNode> &&node,
+        std::unique_ptr<TypeToken> &&paramType) {
+    this->paramNodes.push_back(std::move(node));
+    this->paramTypeTokens.push_back(std::move(paramType));
 }
 
-const std::vector<VarNode*> &FunctionNode::getParamNodes() {
+const std::vector<std::unique_ptr<VarNode>> &FunctionNode::getParamNodes() {
     return this->paramNodes;
 }
 
-const std::vector<std::unique_ptr<TypeToken>> &FunctionNode::getParamTypes() {
-    return this->paramTypes;
+const std::vector<std::unique_ptr<TypeToken>> &FunctionNode::getParamTypeTokens() {
+    return this->paramTypeTokens;
 }
 
 void FunctionNode::setReturnTypeToken(std::unique_ptr<TypeToken> &&typeToken) {
@@ -1221,11 +1125,11 @@ DSType *FunctionNode::getReturnType() {
     return this->returnType;
 }
 
-void FunctionNode::setBlockNode(BlockNode *blockNode) {
-    this->blockNode = blockNode;
+void FunctionNode::setBlockNode(std::unique_ptr<BlockNode> &&blockNode) {
+    this->blockNode = std::move(blockNode);
 }
 
-BlockNode *FunctionNode::getBlockNode() {
+const std::unique_ptr<BlockNode> &FunctionNode::getBlockNode() {
     return this->blockNode;
 }
 
@@ -1256,14 +1160,15 @@ EmptyBlockNode::EmptyBlockNode() :
 EmptyBlockNode::~EmptyBlockNode() {
 }
 
-void EmptyBlockNode::addNode(Node *node) {
+void EmptyBlockNode::addNode(std::unique_ptr<Node> &&node) {
 }
 
 int EmptyBlockNode::accept(NodeVisitor *visitor) {
     return visitor->visitEmptyBlockNode(this);
 }
 
-EmptyBlockNode EmptyBlockNode::emptyBlockNode = EmptyBlockNode();
+std::unique_ptr<EmptyBlockNode> EmptyBlockNode::emptyBlockNode = std::unique_ptr<EmptyBlockNode>(
+        new EmptyBlockNode());
 
 // ######################
 // ##     RootNode     ##
@@ -1274,17 +1179,12 @@ RootNode::RootNode() :
 }
 
 RootNode::~RootNode() {
-    int size = this->nodes.size();
-    for(int i = 0; i < size; i++) {
-        delete this->nodes[i];
-    }
-    this->nodes.clear();
 }
 
-void RootNode::addNode(Node *node) {
-    this->nodes.push_back(node);
+void RootNode::addNode(std::unique_ptr<Node> &&node) {
+    this->nodes.push_back(std::move(node));
 }
 
-const std::vector<Node*> &RootNode::getNodes() {
+const std::vector<std::unique_ptr<Node>> &RootNode::getNodes() {
     return this->nodes;
 }
