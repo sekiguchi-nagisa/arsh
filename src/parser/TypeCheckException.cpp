@@ -26,8 +26,8 @@ TypeCheckException::TypeCheckException(int lineNum, const std::string &t, const 
     args.push_back(arg2);
 }
 
-TypeCheckException::TypeCheckException(int lineNum, const std::string &t,
-        const std::string &arg1, const std::string &arg2, const std::string &arg3) :
+TypeCheckException::TypeCheckException(int lineNum, const std::string &t, const std::string &arg1,
+        const std::string &arg2, const std::string &arg3) :
         lineNum(lineNum), t(t), args(3) {
     args.push_back(arg1);
     args.push_back(arg2);

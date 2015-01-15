@@ -6,6 +6,7 @@
  */
 
 #include "TypeChecker.h"
+#include "TypeError.h"
 
 TypeChecker::TypeChecker(TypePool *typePool) :
         typePool(typePool), curReturnType(0), loopContextStack(), finallyContextStack() {
@@ -62,7 +63,7 @@ void TypeChecker::checkType(DSType *requiredType, Node *targetNode, DSType *unac
      */
     DSType *type = exprNode->getType();
     if(type == 0) {
-        //throw new TypeCheckException(exprNode, TypeErrorKind_ZeroArg.Unresolved);
+        Unresolved->report(exprNode->getLineNum());
         return;
     }
 
@@ -71,7 +72,8 @@ void TypeChecker::checkType(DSType *requiredType, Node *targetNode, DSType *unac
      */
     if(requiredType == 0) {
         if(unacceptableType != 0 && unacceptableType->isAssignableFrom(type)) {
-            //throw new TypeCheckException(exprNode, TypeErrorKind_OneArg.Unacceptable, type);	//FIXME: error report
+            Unacceptable->report(exprNode->getLineNum(), type->getTypeName());
+            return;
         }
         return;
     }
@@ -82,8 +84,7 @@ void TypeChecker::checkType(DSType *requiredType, Node *targetNode, DSType *unac
     if(requiredType->isAssignableFrom(type)) {
         return;
     }
-
-    //FIXME: error report
+    Required->report(exprNode->getLineNum(), requiredType->getTypeName(), type->getTypeName());
 }
 
 void TypeChecker::checkTypeWithNewBlockScope(BlockNode *blockNode) {
@@ -95,7 +96,8 @@ void TypeChecker::checkTypeWithCurrentBlockScope(BlockNode *blockNode) {
     blockNode->accept(this);
 }
 
-void TypeChecker::addEntryAndThrowIfDefined(Node *node, const std::string &symbolName, DSType *type, bool readOnly) {
+void TypeChecker::addEntryAndThrowIfDefined(Node *node, const std::string &symbolName, DSType *type,
+        bool readOnly) {
     //TODO: symbol table
 }
 
@@ -111,7 +113,7 @@ void TypeChecker::checkAndThrowIfOutOfLoop(Node *node) {
     if(!this->loopContextStack.empty() && this->loopContextStack.back()) {
         return;
     }
-    //TODO: error report
+    InsideLoop->report(node->getLineNum());
 }
 
 bool TypeChecker::findBlockEnd(const std::unique_ptr<BlockNode> &blockNode) {
@@ -132,23 +134,28 @@ bool TypeChecker::findBlockEnd(const std::unique_ptr<BlockNode> &blockNode) {
      */
     IfNode *ifNode = dynamic_cast<IfNode*>(endNode.get());
     if(ifNode != 0) {
-        return this->findBlockEnd(ifNode->getThenNode()) && this->findBlockEnd(ifNode->getElseNode());
+        return this->findBlockEnd(ifNode->getThenNode())
+                && this->findBlockEnd(ifNode->getElseNode());
     }
     return false;
 }
 
-void TypeChecker::checkBlockEndExistence(const std::unique_ptr<BlockNode> &blockNode, DSType *returnType) {
+void TypeChecker::checkBlockEndExistence(const std::unique_ptr<BlockNode> &blockNode,
+        DSType *returnType) {
     int endIndex = blockNode->getNodes().size() - 1;
     const std::unique_ptr<Node> &endNode = blockNode->getNodes()[endIndex];
-    if(returnType->equals(this->typePool->getVoidType()) && dynamic_cast<BlockEndNode*>(endNode.get()) == 0) {
+    if(returnType->equals(this->typePool->getVoidType())
+            && dynamic_cast<BlockEndNode*>(endNode.get()) == 0) {
         /**
          * insert return node to block end
          */
-        blockNode->addNode(std::unique_ptr<Node>(new ReturnNode(0, std::unique_ptr<ExprNode>(new EmptyNode()))));
+        blockNode->addNode(
+                std::unique_ptr < Node
+                        > (new ReturnNode(0, std::unique_ptr < ExprNode > (new EmptyNode()))));
         return;
     }
     if(!this->findBlockEnd(blockNode)) {
-        //TODO: error report
+        UnfoundReturn->report(blockNode->getLineNum());
     }
 }
 
@@ -168,7 +175,7 @@ DSType *TypeChecker::getCurrentReturnType() {
 
 void TypeChecker::checkAndThrowIfInsideFinally(BlockEndNode *node) {
     if(!this->finallyContextStack.empty() && this->finallyContextStack.back()) {
-        //TODO: error report
+        InsideFinally->report(node->getLineNum());
     }
 }
 
@@ -294,7 +301,7 @@ int TypeChecker::visitBlockNode(BlockNode *node) {
     for(const std::unique_ptr<Node> &targetNode : node->getNodes()) {
         this->checkTypeAcceptingVoidType(targetNode.get());
         if(dynamic_cast<BlockEndNode*>(targetNode.get()) != 0 && (count != size - 1)) {
-            //TODO: error report
+            Unreachable->report(node->getLineNum());
             return -1;
         }
         count++;

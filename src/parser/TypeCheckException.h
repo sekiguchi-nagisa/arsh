@@ -40,8 +40,10 @@ private:
 public:
     TypeCheckException(int lineNum, const std::string &t);
     TypeCheckException(int lineNum, const std::string &t, const std::string &arg1);
-    TypeCheckException(int lineNum, const std::string &t, const std::string &arg1, const std::string &arg2);
-    TypeCheckException(int lineNum, const std::string &t, const std::string &arg1, const std::string &arg2, const std::string &arg3);
+    TypeCheckException(int lineNum, const std::string &t, const std::string &arg1,
+            const std::string &arg2);
+    TypeCheckException(int lineNum, const std::string &t, const std::string &arg1,
+            const std::string &arg2, const std::string &arg3);
     virtual ~TypeCheckException();
 };
 
