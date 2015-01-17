@@ -232,3 +232,7 @@ int SymbolTable::getMaxVarIndex() {
     return 0;   // FIXME:
 }
 
+bool SymbolTable::inGlobalScope() {
+    return this->scopes.size() == 1;
+}
+

@@ -16,6 +16,9 @@ FieldHandle::FieldHandle(DSType *fieldType) :
         fieldType(fieldType) {
 }
 
+FieldHandle::~FieldHandle() {
+}
+
 DSType *FieldHandle::getFieldType() {
     return this->fieldType;
 }

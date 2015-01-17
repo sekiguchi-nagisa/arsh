@@ -83,6 +83,7 @@ extern const TypeErrorOneArg * const E_NotPrimitive;
 extern const TypeErrorOneArg * const E_NotClass;
 extern const TypeErrorOneArg * const E_Nonheritable;
 extern const TypeErrorOneArg * const E_DefinedType;
+extern const TypeErrorOneArg * const E_NoIterator;
 extern const TypeErrorOneArg * const E_Unimplemented;
 
 // two arg

@@ -99,6 +99,7 @@ const TypeErrorOneArg * const E_NotPrimitive    = new TypeErrorOneArg("not primi
 const TypeErrorOneArg * const E_NotClass        = new TypeErrorOneArg("not class type: %s");
 const TypeErrorOneArg * const E_Nonheritable    = new TypeErrorOneArg("nonheritable type: %s");
 const TypeErrorOneArg * const E_DefinedType     = new TypeErrorOneArg("already defined type: %s");
+const TypeErrorOneArg * const E_NoIterator      = new TypeErrorOneArg("not support iterator: %s");
 const TypeErrorOneArg * const E_Unimplemented   = new TypeErrorOneArg("unimplemented type checker api: %s");
 
 // two arg

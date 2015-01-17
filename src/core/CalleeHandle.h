@@ -22,6 +22,7 @@ private:
 
 public:
     FieldHandle(DSType *fieldType);
+    virtual ~FieldHandle();
 
     DSType *getFieldType();
 };

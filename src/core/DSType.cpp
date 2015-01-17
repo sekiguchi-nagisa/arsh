@@ -31,6 +31,20 @@ FieldHandle *DSType::lookupFieldHandle(const std::string &fieldName) {
     return this->lookupFieldHandle(this->getFieldIndex(fieldName));
 }
 
+FunctionHandle *DSType::lookupFunctionHandle(const std::string &funcName) {
+    FieldHandle *handle = this->lookupFieldHandle(funcName);
+    return handle != 0 ? dynamic_cast<FunctionHandle*>(handle) : 0;
+}
+
+FunctionHandle *DSType::lookupMethodHandle(const std::string &methodName) {
+    FunctionHandle *handle = this->lookupFunctionHandle(methodName);
+    if(handle != 0) {
+        DSType *recvType = handle->getFuncType()->getFirstParamType();
+        return recvType != 0 && recvType->isAssignableFrom(this) ? handle : 0;
+    }
+    return 0;
+}
+
 bool DSType::isAssignableFrom(DSType *targetType) {
     if(this->equals(targetType)) {
         return true;
@@ -150,6 +164,10 @@ unsigned int FunctionType::getParamSize() {
 
 DSType **FunctionType::getParamTypes() {
     return this->paramTypes;
+}
+
+DSType *FunctionType::getFirstParamType() {
+    return this->paramSize > 0 ? this->paramTypes[0] : 0;
 }
 
 std::string FunctionType::getTypeName() {

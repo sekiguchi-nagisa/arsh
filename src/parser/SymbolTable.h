@@ -172,6 +172,8 @@ public:
      * max number of local variable index.
      */
     int getMaxVarIndex();
+
+    bool inGlobalScope();
 };
 
 #endif /* PARSER_SYMBOLTABLE_H_ */

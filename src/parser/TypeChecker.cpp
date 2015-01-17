@@ -7,6 +7,7 @@
 
 #include "TypeChecker.h"
 #include "TypeError.h"
+#include "../core/magic_method.h"
 
 TypeChecker::TypeChecker(TypePool *typePool) :
         typePool(typePool), symbolTable(), curReturnType(0), loopContextStack(), finallyContextStack() {
@@ -340,9 +341,59 @@ int TypeChecker::visitImportEnvNode(ImportEnvNode *node) {
 }
 
 int TypeChecker::visitForNode(ForNode *node) {
+    this->symbolTable.enterScope();
+    this->checkTypeAcceptingVoidType(node->getInitNode().get());
+    this->checkType(this->typePool->getBooleanType(), node->getCondNode().get());
+    this->checkTypeAcceptingVoidType(node->getIterNode().get());
+    this->checkTypeWithCurrentBlockScope(node->getBlockNode().get());
+    this->symbolTable.exitScope();
     return 0;
-} //TODO
+}
+
 int TypeChecker::visitForInNode(ForInNode *node) {
+    this->checkType(node->getExprNode().get());
+    DSType *exprType = node->getExprNode()->getType();
+
+    // lookup RESET
+    FunctionHandle *reset = exprType->lookupMethodHandle(RESET);
+    if(reset != 0) {
+        FunctionType *funcType = reset->getFuncType();
+        if(funcType->getParamSize() != 1 ||
+                !funcType->getReturnType()->equals(this->typePool->getVoidType())) {
+            reset = 0;
+        }
+    }
+
+    // lookup NEXT
+    FunctionHandle *next = exprType->lookupMethodHandle(NEXT);
+    if(next != 0) {
+        FunctionType *funcType = next->getFuncType();
+        if(funcType->getParamSize() != 1 ||
+                funcType->getReturnType()->equals(this->typePool->getVoidType())) {
+            next = 0;
+        }
+    }
+
+    // lookup HAS_NEXT
+    FunctionHandle *hasNext = exprType->lookupMethodHandle(HAS_NEXT);
+    if(hasNext != 0) {
+        FunctionType *funcType = hasNext->getFuncType();
+        if(funcType->getParamSize() != 1 ||
+                !funcType->getReturnType()->equals(this->typePool->getBooleanType())) {
+            hasNext = 0;
+        }
+    }
+
+    if(reset == 0 || next == 0 || hasNext == 0) {
+        E_NoIterator->report(node->getLineNum(), exprType->getTypeName());
+    }
+    node->setIteratorHandle(reset, next, hasNext);
+
+    // add symbol entry
+    this->symbolTable.enterScope();
+    this->addEntryAndThrowIfDefined(node, node->getInitName(), next->getFuncType()->getReturnType(), false);
+    this->checkTypeWithCurrentBlockScope(node->getBlockNode().get());
+    this->symbolTable.exitScope();
     return 0;
 }
 
@@ -362,8 +413,19 @@ int TypeChecker::visitIfNode(IfNode *node) {
 }
 
 int TypeChecker::visitReturnNode(ReturnNode *node) {
+    this->checkAndThrowIfInsideFinally(node);
+    DSType *returnType = this->getCurrentReturnType();
+    if(returnType == 0) {
+        E_InsideFunc->report(node->getLineNum());
+    }
+    this->checkType(returnType, node->getExprNode().get());
+    if(node->getExprNode()->getType()->equals(this->typePool->getVoidType())) {
+        if(dynamic_cast<EmptyNode*>(node->getExprNode().get()) == 0) {
+            E_NotNeedExpr->report(node->getLineNum());
+        }
+    }
     return 0;
-} //TODO
+}
 
 int TypeChecker::visitThrowNode(ThrowNode *node) {
     this->checkAndThrowIfInsideFinally(node);
@@ -386,8 +448,10 @@ int TypeChecker::visitFinallyNode(FinallyNode *node) {
 }
 
 int TypeChecker::visitVarDeclNode(VarDeclNode *node) {
+    //TODO:
     return 0;
-} //TODO
+}
+
 int TypeChecker::visitAssignNode(AssignNode *node) {
     return 0;
 } //TODO

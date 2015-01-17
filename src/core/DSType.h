@@ -68,6 +68,16 @@ public:
     FieldHandle *lookupFieldHandle(const std::string &fieldName);
 
     /**
+     * equivalent to dynamic_cast<FunctionHandle*>(lookupFieldHandle())
+     */
+    FunctionHandle *lookupFunctionHandle(const std::string &funcName);
+
+    /**
+     * first parameter type is equivalent to this type
+     */
+    FunctionHandle *lookupMethodHandle(const std::string &methodName);
+
+    /**
      * return true if read only
      */
     virtual bool isReadOnly(int fieldIndex) = 0;
@@ -178,6 +188,11 @@ public:
      * may be null, if has no parameter (getParamSize() == 0)
      */
     DSType **getParamTypes();
+
+    /**
+     * may be null, if has no parameter
+     */
+    DSType *getFirstParamType();
 
     std::string getTypeName();	// override
     bool isExtendable();	// override
