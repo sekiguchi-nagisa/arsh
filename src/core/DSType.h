@@ -117,7 +117,6 @@ public:
     bool isExtendable();	// override
     DSType *getSuperType();	// override
     ConstructorHandle *getConstructorHandle();	// override
-    void setConstructorHandle(ConstructorHandle *handle);
     unsigned int getFieldSize();	// override
     FieldHandle *lookupFieldHandle(const std::string &fieldName);	// override
     bool equals(DSType *targetType);	// override
@@ -126,6 +125,17 @@ public:
      * return false, found duplicated field.
      */
     bool addNewFieldHandle(const std::string &fieldName, bool readOnly, DSType *fieldType);
+
+    /**
+     * return created function handle.
+     * return null, found duplicated field.
+     */
+    FunctionHandle *addNewFunctionHandle(const std::string &funcName, FunctionType *funcType);
+
+    /**
+     * return created constructor handle
+     */
+    ConstructorHandle *setNewConstructorHandle(unsigned int paramSize, DSType **paramTypes);
 
     static DSType *anyType;
     static DSType *voidType;

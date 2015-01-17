@@ -80,10 +80,6 @@ ConstructorHandle *ClassType::getConstructorHandle() {
     return this->constructorHandle;
 }
 
-void ClassType::setConstructorHandle(ConstructorHandle *handle) {
-    this->constructorHandle = handle;
-}
-
 unsigned int ClassType::getFieldSize() {
     return this->handleMap.size() + this->baseIndex;
 }
@@ -108,6 +104,24 @@ bool ClassType::addNewFieldHandle(const std::string &fieldName, bool readOnly, D
     FieldHandle *handle = new FieldHandle(fieldType, this->getFieldSize(), readOnly);
     this->handleMap[fieldName] = handle;
     return true;
+}
+
+FunctionHandle *ClassType::addNewFunctionHandle(const std::string &funcName, FunctionType *funcType) {
+    if(this->hasField(funcName)) {
+        return 0;
+    }
+    FunctionHandle *handle = new FunctionHandle(funcType, this->getFieldSize());
+    this->handleMap[funcName] = handle;
+    return handle;
+}
+
+ConstructorHandle *ClassType::setNewConstructorHandle(unsigned int paramSize, DSType **paramTypes) {
+    if(this->constructorHandle != 0) {
+        delete this->constructorHandle;
+    }
+    ConstructorHandle *handle = new ConstructorHandle(paramSize, paramTypes);
+    this->constructorHandle = handle;
+    return handle;
 }
 
 DSType *ClassType::anyType = new ClassType("Any", false, 0);

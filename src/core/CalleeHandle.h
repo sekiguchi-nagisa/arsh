@@ -21,7 +21,7 @@ private:
     DSType *fieldType;
 
     /**
-     * if index is -1, this handle dose not belong to DSType(ex. global function)
+     * if index is -1, this handle dose not belong to handle table
      */
     int fieldIndex;
 
@@ -34,14 +34,14 @@ public:
     DSType *getFieldType();
 
     /**
-     * return -1, if this handle dose not belong to DSType
+     * return -1, if this handle dose not belong to handle table
      */
     int getFieldIndex();
 
     bool isReadOnly();
 };
 
-class FunctionHandle: public FieldHandle {	//TODO: named parameter, default parameter
+class FunctionHandle: public FieldHandle {
 private:
     /**
      * contains parameter name and parameter index pair
@@ -56,6 +56,7 @@ private:
 public:
     FunctionHandle(FunctionType *funcType);
     FunctionHandle(FunctionType *funcType, int fieldIndex);
+    virtual ~FunctionHandle();
 
     FunctionType *getFuncType();
 
@@ -75,7 +76,10 @@ public:
     bool hasDefaultValue(int paramIndex);
 };
 
-class ConstructorHandle {	//TODO: named parameter. default parameter
+/**
+ * getFieldType() or getFuncType() is always null
+ */
+class ConstructorHandle : public FunctionHandle {
 private:
     unsigned int paramSize;
 

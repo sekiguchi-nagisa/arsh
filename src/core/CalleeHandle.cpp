@@ -43,6 +43,9 @@ FunctionHandle::FunctionHandle(FunctionType *funcType, int fieldIndex) :
         FieldHandle(funcType, fieldIndex, true), paramIndexMap(), defaultValues() {
 }
 
+FunctionHandle::~FunctionHandle() {
+}
+
 FunctionType *FunctionHandle::getFuncType() {
     return dynamic_cast<FunctionType*>(this->getFieldType());
 }
@@ -82,7 +85,7 @@ bool FunctionHandle::hasDefaultValue(int paramIndex) {
 // ###############################
 
 ConstructorHandle::ConstructorHandle(unsigned int paramSize, DSType **paramTypes) :
-        paramSize(paramSize), paramTypes(paramTypes) {
+        FunctionHandle(0), paramSize(paramSize), paramTypes(paramTypes) {
 }
 
 ConstructorHandle::~ConstructorHandle() {
