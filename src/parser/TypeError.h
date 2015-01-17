@@ -24,21 +24,21 @@ public:
     TypeError(std::string &&messageTemplate);
     virtual ~TypeError();
 
-    const std::string &getTemplate();
+    const std::string &getTemplate() const;
 };
 
 class TypeErrorZeroArg: public TypeError {
 public:
     TypeErrorZeroArg(std::string &&messageTemplate);
 
-    void report(int lineNum) throw (TypeCheckException);
+    void report(int lineNum) const throw (TypeCheckException);
 };
 
 class TypeErrorOneArg: public TypeError {
 public:
     TypeErrorOneArg(std::string &&messageTemplate);
 
-    void report(int lineNum, const std::string &arg1) throw (TypeCheckException);
+    void report(int lineNum, const std::string &arg1) const throw (TypeCheckException);
 };
 
 class TypeErrorTwoArg: public TypeError {
@@ -46,7 +46,7 @@ public:
     TypeErrorTwoArg(std::string &&messageTemplate);
 
     void report(int lineNum, const std::string &arg1, const std::string &arg2)
-            throw (TypeCheckException);
+            const throw (TypeCheckException);
 };
 
 class TypeErrorThreeArg: public TypeError {
@@ -54,45 +54,45 @@ public:
     TypeErrorThreeArg(std::string &&messageTemplate);
 
     void report(int lineNum, const std::string &arg1, const std::string &arg2,
-            const std::string &arg3) throw (TypeCheckException);
+            const std::string &arg3) const throw (TypeCheckException);
 };
 
 // error message definition
 // zero arg
-extern const std::unique_ptr<TypeErrorZeroArg> Unresolved;
-extern const std::unique_ptr<TypeErrorZeroArg> InsideLoop;
-extern const std::unique_ptr<TypeErrorZeroArg> UnfoundReturn;
-extern const std::unique_ptr<TypeErrorZeroArg> Unreachable;
-extern const std::unique_ptr<TypeErrorZeroArg> InsideFunc;
-extern const std::unique_ptr<TypeErrorZeroArg> NotNeedExpr;
-extern const std::unique_ptr<TypeErrorZeroArg> Assignable;
-extern const std::unique_ptr<TypeErrorZeroArg> ReadOnly;
-extern const std::unique_ptr<TypeErrorZeroArg> InsideFinally;
+extern const TypeErrorZeroArg * const E_Unresolved;
+extern const TypeErrorZeroArg * const E_InsideLoop;
+extern const TypeErrorZeroArg * const E_UnfoundReturn;
+extern const TypeErrorZeroArg * const E_Unreachable;
+extern const TypeErrorZeroArg * const E_InsideFunc;
+extern const TypeErrorZeroArg * const E_NotNeedExpr;
+extern const TypeErrorZeroArg * const E_Assignable;
+extern const TypeErrorZeroArg * const E_ReadOnly;
+extern const TypeErrorZeroArg * const E_InsideFinally;
 
 // one arg
-extern const std::unique_ptr<TypeErrorOneArg> DefinedSymbol;
-extern const std::unique_ptr<TypeErrorOneArg> UndefinedSymbol;
-extern const std::unique_ptr<TypeErrorOneArg> UndefinedField;
-extern const std::unique_ptr<TypeErrorOneArg> UndefinedMethod;
-extern const std::unique_ptr<TypeErrorOneArg> UndefinedInit;
-extern const std::unique_ptr<TypeErrorOneArg> Unacceptable;
-extern const std::unique_ptr<TypeErrorOneArg> NotUseGeneric;
-extern const std::unique_ptr<TypeErrorOneArg> UndefinedType;
-extern const std::unique_ptr<TypeErrorOneArg> NotGenericBase;
-extern const std::unique_ptr<TypeErrorOneArg> NotPrimitive;
-extern const std::unique_ptr<TypeErrorOneArg> NotClass;
-extern const std::unique_ptr<TypeErrorOneArg> Nonheritable;
-extern const std::unique_ptr<TypeErrorOneArg> DefinedType;
-extern const std::unique_ptr<TypeErrorOneArg> Unimplemented;
+extern const TypeErrorOneArg * const E_DefinedSymbol;
+extern const TypeErrorOneArg * const E_UndefinedSymbol;
+extern const TypeErrorOneArg * const E_UndefinedField;
+extern const TypeErrorOneArg * const E_UndefinedMethod;
+extern const TypeErrorOneArg * const E_UndefinedInit;
+extern const TypeErrorOneArg * const E_Unacceptable;
+extern const TypeErrorOneArg * const E_NotUseGeneric;
+extern const TypeErrorOneArg * const E_UndefinedType;
+extern const TypeErrorOneArg * const E_NotGenericBase;
+extern const TypeErrorOneArg * const E_NotPrimitive;
+extern const TypeErrorOneArg * const E_NotClass;
+extern const TypeErrorOneArg * const E_Nonheritable;
+extern const TypeErrorOneArg * const E_DefinedType;
+extern const TypeErrorOneArg * const E_Unimplemented;
 
 // two arg
-extern const std::unique_ptr<TypeErrorTwoArg> Required;
-extern const std::unique_ptr<TypeErrorTwoArg> CastOp;
-extern const std::unique_ptr<TypeErrorTwoArg> UnaryOp;
-extern const std::unique_ptr<TypeErrorTwoArg> UnmatchParam;
+extern const TypeErrorTwoArg * const E_Required;
+extern const TypeErrorTwoArg * const E_CastOp;
+extern const TypeErrorTwoArg * const E_UnaryOp;
+extern const TypeErrorTwoArg * const E_UnmatchParam;
 
 // three arg
-extern const std::unique_ptr<TypeErrorThreeArg> BinaryOp;
-extern const std::unique_ptr<TypeErrorThreeArg> UnmatchElement;
+extern const TypeErrorThreeArg * const E_BinaryOp;
+extern const TypeErrorThreeArg * const E_UnmatchElement;
 
 #endif /* SRC_PARSER_TYPEERROR_H_ */

@@ -63,7 +63,7 @@ void TypeChecker::checkType(DSType *requiredType, Node *targetNode, DSType *unac
      */
     DSType *type = exprNode->getType();
     if(type == 0) {
-        Unresolved->report(exprNode->getLineNum());
+        E_Unresolved->report(exprNode->getLineNum());
         return;
     }
 
@@ -72,7 +72,7 @@ void TypeChecker::checkType(DSType *requiredType, Node *targetNode, DSType *unac
      */
     if(requiredType == 0) {
         if(unacceptableType != 0 && unacceptableType->isAssignableFrom(type)) {
-            Unacceptable->report(exprNode->getLineNum(), type->getTypeName());
+            E_Unacceptable->report(exprNode->getLineNum(), type->getTypeName());
             return;
         }
         return;
@@ -84,7 +84,7 @@ void TypeChecker::checkType(DSType *requiredType, Node *targetNode, DSType *unac
     if(requiredType->isAssignableFrom(type)) {
         return;
     }
-    Required->report(exprNode->getLineNum(), requiredType->getTypeName(), type->getTypeName());
+    E_Required->report(exprNode->getLineNum(), requiredType->getTypeName(), type->getTypeName());
 }
 
 void TypeChecker::checkTypeWithNewBlockScope(BlockNode *blockNode) {
@@ -113,7 +113,7 @@ void TypeChecker::checkAndThrowIfOutOfLoop(Node *node) {
     if(!this->loopContextStack.empty() && this->loopContextStack.back()) {
         return;
     }
-    InsideLoop->report(node->getLineNum());
+    E_InsideLoop->report(node->getLineNum());
 }
 
 bool TypeChecker::findBlockEnd(const std::unique_ptr<BlockNode> &blockNode) {
@@ -155,7 +155,7 @@ void TypeChecker::checkBlockEndExistence(const std::unique_ptr<BlockNode> &block
         return;
     }
     if(!this->findBlockEnd(blockNode)) {
-        UnfoundReturn->report(blockNode->getLineNum());
+        E_UnfoundReturn->report(blockNode->getLineNum());
     }
 }
 
@@ -175,7 +175,7 @@ DSType *TypeChecker::getCurrentReturnType() {
 
 void TypeChecker::checkAndThrowIfInsideFinally(BlockEndNode *node) {
     if(!this->finallyContextStack.empty() && this->finallyContextStack.back()) {
-        InsideFinally->report(node->getLineNum());
+        E_InsideFinally->report(node->getLineNum());
     }
 }
 
@@ -301,7 +301,7 @@ int TypeChecker::visitBlockNode(BlockNode *node) {
     for(const std::unique_ptr<Node> &targetNode : node->getNodes()) {
         this->checkTypeAcceptingVoidType(targetNode.get());
         if(dynamic_cast<BlockEndNode*>(targetNode.get()) != 0 && (count != size - 1)) {
-            Unreachable->report(node->getLineNum());
+            E_Unreachable->report(node->getLineNum());
             return -1;
         }
         count++;
