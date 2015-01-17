@@ -20,11 +20,25 @@ class FieldHandle {	//TODO: access level
 private:
     DSType *fieldType;
 
+    /**
+     * if index is -1, this handle dose not belong to DSType(ex. global function)
+     */
+    int fieldIndex;
+
+    bool readOnly;
+
 public:
-    FieldHandle(DSType *fieldType);
+    FieldHandle(DSType *fieldType, int fieldIndex, bool readOnly);
     virtual ~FieldHandle();
 
     DSType *getFieldType();
+
+    /**
+     * return -1, if this handle dose not belong to DSType
+     */
+    int getFieldIndex();
+
+    bool isReadOnly();
 };
 
 class FunctionHandle: public FieldHandle {	//TODO: named parameter, default parameter
@@ -41,6 +55,7 @@ private:
 
 public:
     FunctionHandle(FunctionType *funcType);
+    FunctionHandle(FunctionType *funcType, int fieldIndex);
 
     FunctionType *getFuncType();
 

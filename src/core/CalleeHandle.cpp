@@ -12,8 +12,8 @@
 // ##     FieldHandle     ##
 // #########################
 
-FieldHandle::FieldHandle(DSType *fieldType) :
-        fieldType(fieldType) {
+FieldHandle::FieldHandle(DSType *fieldType, int fieldIndex, bool readOnly) :
+        fieldType(fieldType), fieldIndex(fieldIndex), readOnly(readOnly) {
 }
 
 FieldHandle::~FieldHandle() {
@@ -23,12 +23,24 @@ DSType *FieldHandle::getFieldType() {
     return this->fieldType;
 }
 
+int FieldHandle::getFieldIndex() {
+    return this->fieldIndex;
+}
+
+bool FieldHandle::isReadOnly() {
+    return this->readOnly;
+}
+
 // ############################
 // ##     FunctionHandle     ##
 // ############################
 
 FunctionHandle::FunctionHandle(FunctionType *funcType) :
-        FieldHandle(funcType), paramIndexMap(), defaultValues() {
+        FunctionHandle(funcType, -1) {
+}
+
+FunctionHandle::FunctionHandle(FunctionType *funcType, int fieldIndex) :
+        FieldHandle(funcType, fieldIndex, true), paramIndexMap(), defaultValues() {
 }
 
 FunctionType *FunctionHandle::getFuncType() {

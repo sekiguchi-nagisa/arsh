@@ -47,25 +47,15 @@ public:
     virtual unsigned int getFieldSize() = 0;
 
     /**
-     * return -1, if has no field
-     */
-    virtual int getFieldIndex(const std::string &fieldName) = 0;
-
-    /**
      * return true, found field
-     * equivalent to getFieldIndex() != -1
+     * equivalent to lookupFieldHandle() != 0
      */
     bool hasField(const std::string &fieldName);
 
     /**
-     * return null, if index < -1 && index >= getFieldSize()
+     * return null, if has no field
      */
-    virtual FieldHandle *lookupFieldHandle(int fieldIndex) = 0;
-
-    /**
-     * equivalent to lookupFieldHandle(getFieldIndex())
-     */
-    FieldHandle *lookupFieldHandle(const std::string &fieldName);
+    virtual FieldHandle *lookupFieldHandle(const std::string &fieldName) = 0;
 
     /**
      * equivalent to dynamic_cast<FunctionHandle*>(lookupFieldHandle())
@@ -76,16 +66,6 @@ public:
      * first parameter type is equivalent to this type
      */
     FunctionHandle *lookupMethodHandle(const std::string &methodName);
-
-    /**
-     * return true if read only
-     */
-    virtual bool isReadOnly(int fieldIndex) = 0;
-
-    /**
-     * equivalent to isReadOnly(getFieldIndex())
-     */
-    bool isReadOnly(const std::string &fieldName);
 
     /**
      * check equality
@@ -124,17 +104,7 @@ private:
      */
     ConstructorHandle *constructorHandle;
 
-    /**
-     * contains fieldName and handleTableIndex pair
-     */
-    std::unordered_map<std::string, int> fieldIndexMap;
-
-    std::vector<FieldHandle*> handleTable;
-
-    /**
-     * if field is read only, flag is true
-     */
-    std::vector<bool> handleFlags;
+    std::unordered_map<std::string, FieldHandle*> handleMap;
 
 public:
     /**
@@ -149,15 +119,13 @@ public:
     ConstructorHandle *getConstructorHandle();	// override
     void setConstructorHandle(ConstructorHandle *handle);
     unsigned int getFieldSize();	// override
-    int getFieldIndex(const std::string &fieldName);	// override
-    FieldHandle *lookupFieldHandle(int fieldIndex);	// override
-    bool isReadOnly(int fieldIndex);	// override
+    FieldHandle *lookupFieldHandle(const std::string &fieldName);	// override
     bool equals(DSType *targetType);	// override
 
     /**
      * return false, found duplicated field.
      */
-    bool addFieldHandle(const std::string &fieldName, bool readOnly, FieldHandle *handle);
+    bool addNewFieldHandle(const std::string &fieldName, bool readOnly, DSType *fieldType);
 
     static DSType *anyType;
     static DSType *voidType;
@@ -208,14 +176,11 @@ public:
     ConstructorHandle *getConstructorHandle();	// override
 
     unsigned int getFieldSize();	// override
-    int getFieldIndex(const std::string &fieldName);	// override
 
     /**
      * return always null
      */
-    FieldHandle *lookupFieldHandle(int fieldIndex);	// override
-
-    bool isReadOnly(int fieldIndex);	// override
+    FieldHandle *lookupFieldHandle(const std::string &fieldName);	// override
 
     bool equals(DSType *targetType);	// override
 };
