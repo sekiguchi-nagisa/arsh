@@ -12,8 +12,11 @@
 #include "../core/CalleeHandle.h"
 
 class SymbolEntry {
+private:
+    int varIndex;
+
 public:
-    SymbolEntry();
+    SymbolEntry(int varIndex);
     virtual ~SymbolEntry();
 
     /**
@@ -30,6 +33,8 @@ public:
      * return true, if global entry
      */
     virtual bool isGlobal() = 0;
+
+    int getVarIndex();
 };
 
 class CommonSymbolEntry: public SymbolEntry {
@@ -46,7 +51,7 @@ private:
     DSType *type;
 
 public:
-    CommonSymbolEntry(DSType *type, bool readOnly, bool global);
+    CommonSymbolEntry(int varIndex, DSType *type, bool readOnly, bool global);
     ~CommonSymbolEntry();
 
     DSType *getType();	// override
@@ -59,7 +64,7 @@ private:
     FunctionHandle *handle;
 
 public:
-    FuncSymbolEntry(FunctionHandle *handle);
+    FuncSymbolEntry(int varIndex, FunctionHandle *handle);
 
     DSType *getType();	// override
 
@@ -76,10 +81,97 @@ public:
     FunctionHandle *getHandle();
 };
 
-class SymbolTable {
+class ScopeOp {
+public:
+    virtual ~ScopeOp();
+
+    /**
+     * get entry from scope.
+     * return null, if not exist
+     */
+    virtual SymbolEntry *getEntry(const std::string &entryName) = 0;
+
+    /**
+     * add new entry.
+     * type must not be void type, parametric type.
+     * return false, if found duplicated entry
+     */
+    virtual bool addEntry(const std::string &entryName, DSType *type, bool readOnly) = 0;
+};
+
+class Scope : public ScopeOp {
+protected:
+    int curVarIndex;
+    std::unordered_map<std::string, SymbolEntry*> entryMap;
+
+public:
+    Scope(int curVarIndex);
+    virtual ~Scope();
+
+    SymbolEntry *getEntry(const std::string &entryName);    // override
+    int getCurVarIndex();
+};
+
+class GlobalScope : public Scope {
+private:
+    std::vector<std::string> entryCache;
+
+public:
+    GlobalScope();
+    ~GlobalScope();
+
+    bool addEntry(const std::string &entryName, DSType *type, bool readOnly);   // override
+    void clearEntryCache();
+    void removeCachedEntry();
+};
+
+class LocalScope : public Scope {
+private:
+    int localVarBaseIndex;
+
+public:
+    LocalScope(int localVarBaseIndex);
+    ~LocalScope();
+
+    bool addEntry(const std::string &entryName, DSType *type, bool readOnly);   // override
+};
+
+class SymbolTable : public ScopeOp {
+private:
+    /**
+     * first element is always global scope
+     */
+    std::vector<Scope*> scopes;
+
 public:
     SymbolTable();
-    virtual ~SymbolTable();
+    ~SymbolTable();
+
+    SymbolEntry *getEntry(const std::string &entryName);    // override
+    bool addEntry(const std::string &entryName, DSType *type, bool readOnly);   // override
+
+    /**
+     * create new local scope
+     */
+    void enterScope();
+
+    /**
+     * delete current local scope
+     */
+    void exitScope();
+
+    /**
+     * pop all local scope and func scope
+     */
+    void popAllLocal();
+
+    void clearEntryCache();
+    void removeCachedEntry();
+
+    /**
+     * max number of local variable index.
+     */
+    int getMaxVarIndex();
 };
 
 #endif /* PARSER_SYMBOLTABLE_H_ */

@@ -9,7 +9,7 @@
 #include "TypeError.h"
 
 TypeChecker::TypeChecker(TypePool *typePool) :
-        typePool(typePool), curReturnType(0), loopContextStack(), finallyContextStack() {
+        typePool(typePool), symbolTable(), curReturnType(0), loopContextStack(), finallyContextStack() {
 }
 
 TypeChecker::~TypeChecker() {
@@ -88,8 +88,9 @@ void TypeChecker::checkType(DSType *requiredType, Node *targetNode, DSType *unac
 }
 
 void TypeChecker::checkTypeWithNewBlockScope(BlockNode *blockNode) {
-    //TODO: symbol table, push, pop
+    this->symbolTable.enterScope();
     this->checkTypeWithCurrentBlockScope(blockNode);
+    this->symbolTable.exitScope();
 }
 
 void TypeChecker::checkTypeWithCurrentBlockScope(BlockNode *blockNode) {
@@ -98,7 +99,9 @@ void TypeChecker::checkTypeWithCurrentBlockScope(BlockNode *blockNode) {
 
 void TypeChecker::addEntryAndThrowIfDefined(Node *node, const std::string &symbolName, DSType *type,
         bool readOnly) {
-    //TODO: symbol table
+    if(!this->symbolTable.addEntry(symbolName, type, readOnly)) {
+        E_DefinedSymbol->report(node->getLineNum(), symbolName);
+    }
 }
 
 void TypeChecker::enterLoop() {
@@ -180,7 +183,9 @@ void TypeChecker::checkAndThrowIfInsideFinally(BlockEndNode *node) {
 }
 
 void TypeChecker::recover() {
-    //TODO: symbol tabel recover
+    this->symbolTable.popAllLocal();
+    this->symbolTable.removeCachedEntry();
+
     this->curReturnType = 0;
     this->loopContextStack.clear();
     this->finallyContextStack.clear();

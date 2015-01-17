@@ -13,10 +13,16 @@
 #include "../core/CalleeHandle.h"
 #include "../ast/Node.h"
 #include "../ast/NodeVisitor.h"
+#include "SymbolTable.h"
 
 class TypeChecker: public NodeVisitor {
 private:
+    /**
+     * for type lookup
+     */
     TypePool *typePool;
+
+    SymbolTable symbolTable;
 
     /**
      * contains current return type of current function
