@@ -8,8 +8,6 @@
 #ifndef AST_TYPETOKEN_H_
 #define AST_TYPETOKEN_H_
 
-#include <memory>
-
 #include "../core/DSType.h"
 
 /**
@@ -43,14 +41,14 @@ public:
 
 class ReifiedTypeToken: public TypeToken {
 private:
-    std::unique_ptr<TypeToken> templateTypeToken;
-    std::vector<std::unique_ptr<TypeToken>> elementTypeTokens;
+    TypeToken* templateTypeToken;
+    std::vector<TypeToken*> elementTypeTokens;
 
 public:
-    ReifiedTypeToken(std::unique_ptr<TypeToken> &&templateType);
+    ReifiedTypeToken(TypeToken *templateType);
     ~ReifiedTypeToken();
 
-    void addElementTypeToken(std::unique_ptr<TypeToken> &&type);
+    void addElementTypeToken(TypeToken *type);
     //TODO: add TypePool to parameter
     DSType *toType();   // override
 };
@@ -60,24 +58,24 @@ private:
     /**
      * may be null, if has return type annotation (return void)
      */
-    std::unique_ptr<TypeToken> returnTypeToken;
+    TypeToken *returnTypeToken;
 
     /**
      * may be empty vector, if has no parameter
      */
-    std::vector<std::unique_ptr<TypeToken>> paramTypeTokens;
+    std::vector<TypeToken*> paramTypeTokens;
 
     /**
      * UnresolvedClassType of Void
      */
-    static std::unique_ptr<TypeToken> voidTypeToken;
+    static TypeToken *voidTypeToken;
 
 public:
     FuncTypeToken(int lineNum);
     ~FuncTypeToken();
 
-    void setReturnTypeToken(std::unique_ptr<TypeToken> &&type);
-    void addParamTypeToken(std::unique_ptr<TypeToken> &&type);
+    void setReturnTypeToken(TypeToken *type);
+    void addParamTypeToken(TypeToken *type);
     //TODO: add TypePool to parameter
     DSType *toType();   // override
 };

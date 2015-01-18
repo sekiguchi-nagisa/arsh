@@ -38,16 +38,21 @@ DSType *ClassTypeToken::toType() {
 // ##     ReifiedTypeToken     ##
 // ##############################
 
-ReifiedTypeToken::ReifiedTypeToken(std::unique_ptr<TypeToken> &&templateType) :
-        TypeToken(templateType->getLineNum()), templateTypeToken(std::move(templateType)), elementTypeTokens(
+ReifiedTypeToken::ReifiedTypeToken(TypeToken *templateType) :
+        TypeToken(templateType->getLineNum()), templateTypeToken(templateType), elementTypeTokens(
                 2) {
 }
 
 ReifiedTypeToken::~ReifiedTypeToken() {
+    for(TypeToken *t : this->elementTypeTokens) {
+        if(t == 0) {
+            delete t;
+        }
+    }
 }
 
-void ReifiedTypeToken::addElementTypeToken(std::unique_ptr<TypeToken> &&type) {
-    this->elementTypeTokens.push_back(std::move(type));
+void ReifiedTypeToken::addElementTypeToken(TypeToken *type) {
+    this->elementTypeTokens.push_back(type);
 }
 
 DSType *ReifiedTypeToken::toType() {
@@ -58,22 +63,29 @@ DSType *ReifiedTypeToken::toType() {
 // ##     FuncTypeToken     ##
 // ###########################
 
-std::unique_ptr<TypeToken> FuncTypeToken::voidTypeToken = std::unique_ptr<TypeToken>(
-        new ClassTypeToken(0, "Void"));
+TypeToken *FuncTypeToken::voidTypeToken = new ClassTypeToken(0, "Void");
 
 FuncTypeToken::FuncTypeToken(int lineNum) :
         TypeToken(lineNum), returnTypeToken(), paramTypeTokens(2) {
 }
 
 FuncTypeToken::~FuncTypeToken() {
+    if(this->returnTypeToken != 0) {
+        delete this->returnTypeToken;
+    }
+    for(TypeToken *t : this->paramTypeTokens) {
+        if(t != 0) {
+            delete t;
+        }
+    }
 }
 
-void FuncTypeToken::setReturnTypeToken(std::unique_ptr<TypeToken> &&type) {
-    this->returnTypeToken = std::move(type);
+void FuncTypeToken::setReturnTypeToken(TypeToken *type) {
+    this->returnTypeToken = type;
 }
 
-void FuncTypeToken::addParamTypeToken(std::unique_ptr<TypeToken> &&type) {
-    this->paramTypeTokens.push_back(std::move(type));
+void FuncTypeToken::addParamTypeToken(TypeToken *type) {
+    this->paramTypeTokens.push_back(type);
 }
 
 //TODO: add TypePool to parameter

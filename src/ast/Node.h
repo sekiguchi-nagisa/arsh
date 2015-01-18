@@ -9,6 +9,7 @@
 #define AST_NODE_H_
 
 #include <utility>
+#include <memory>
 
 #include "../core/DSType.h"
 #include "../core/CalleeHandle.h"
