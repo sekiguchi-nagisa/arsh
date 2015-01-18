@@ -46,7 +46,7 @@ public:
     /**
      * type checker entry point
      */
-    void checkTypeRootNode(const std::unique_ptr<RootNode> &rootNode);
+    void checkTypeRootNode(RootNode *rootNode);
 
 private:
     // base type check entry point
@@ -105,14 +105,14 @@ private:
      */
     void checkAndThrowIfOutOfLoop(Node *node);
 
-    bool findBlockEnd(const std::unique_ptr<BlockNode> &blockNode);
+    bool findBlockEnd(BlockNode *blockNode);
 
     /**
      * check block end (return, throw) existence in function block
      * blockNode is function block.
      * returnType is function return type.
      */
-    void checkBlockEndExistence(const std::unique_ptr<BlockNode> &blockNode, DSType *returnType);
+    void checkBlockEndExistence(BlockNode *blockNode, DSType *returnType);
 
     void pushReturnType(DSType *returnType);
 

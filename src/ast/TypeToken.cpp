@@ -45,10 +45,9 @@ ReifiedTypeToken::ReifiedTypeToken(TypeToken *templateType) :
 
 ReifiedTypeToken::~ReifiedTypeToken() {
     for(TypeToken *t : this->elementTypeTokens) {
-        if(t == 0) {
-            delete t;
-        }
+        delete t;
     }
+    this->elementTypeTokens.clear();
 }
 
 void ReifiedTypeToken::addElementTypeToken(TypeToken *type) {
@@ -70,14 +69,13 @@ FuncTypeToken::FuncTypeToken(int lineNum) :
 }
 
 FuncTypeToken::~FuncTypeToken() {
-    if(this->returnTypeToken != 0) {
-        delete this->returnTypeToken;
-    }
+    delete this->returnTypeToken;
+    this->returnTypeToken = 0;
+
     for(TypeToken *t : this->paramTypeTokens) {
-        if(t != 0) {
-            delete t;
-        }
+        delete t;
     }
+    this->paramTypeTokens.clear();
 }
 
 void FuncTypeToken::setReturnTypeToken(TypeToken *type) {

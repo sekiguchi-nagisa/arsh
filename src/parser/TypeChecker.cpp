@@ -17,10 +17,10 @@ TypeChecker::~TypeChecker() {
     this->finallyContextStack.clear();
 }
 
-void TypeChecker::checkTypeRootNode(const std::unique_ptr<RootNode> &rootNode) {	//FIXME
+void TypeChecker::checkTypeRootNode(RootNode *rootNode) {	//FIXME
     int size = rootNode->getNodes().size();
     for(int i = 0; i < size; i++) {
-        this->checkTypeAcceptingVoidType(rootNode->getNodes()[i].get());
+        this->checkTypeAcceptingVoidType(rootNode->getNodes()[i]);
     }
 }
 
@@ -120,23 +120,23 @@ void TypeChecker::checkAndThrowIfOutOfLoop(Node *node) {
     E_InsideLoop->report(node->getLineNum());
 }
 
-bool TypeChecker::findBlockEnd(const std::unique_ptr<BlockNode> &blockNode) {
-    if(dynamic_cast<EmptyBlockNode*>(blockNode.get()) != 0) {
+bool TypeChecker::findBlockEnd(BlockNode *blockNode) {
+    if(dynamic_cast<EmptyBlockNode*>(blockNode) != 0) {
         return false;
     }
     int endIndex = blockNode->getNodes().size() - 1;
     if(endIndex < 0) {
         return false;
     }
-    const std::unique_ptr<Node> &endNode = blockNode->getNodes()[endIndex];
-    if(dynamic_cast<BlockEndNode*>(endNode.get()) != 0) {
+    Node *endNode = blockNode->getNodes()[endIndex];
+    if(dynamic_cast<BlockEndNode*>(endNode) != 0) {
         return true;
     }
 
     /**
      * if endNode is IfNode, search recursively
      */
-    IfNode *ifNode = dynamic_cast<IfNode*>(endNode.get());
+    IfNode *ifNode = dynamic_cast<IfNode*>(endNode);
     if(ifNode != 0) {
         return this->findBlockEnd(ifNode->getThenNode())
                 && this->findBlockEnd(ifNode->getElseNode());
@@ -144,18 +144,16 @@ bool TypeChecker::findBlockEnd(const std::unique_ptr<BlockNode> &blockNode) {
     return false;
 }
 
-void TypeChecker::checkBlockEndExistence(const std::unique_ptr<BlockNode> &blockNode,
-        DSType *returnType) {
+void TypeChecker::checkBlockEndExistence(BlockNode *blockNode, DSType *returnType) {
     int endIndex = blockNode->getNodes().size() - 1;
-    const std::unique_ptr<Node> &endNode = blockNode->getNodes()[endIndex];
+    Node *endNode = blockNode->getNodes()[endIndex];
+
     if(returnType->equals(this->typePool->getVoidType())
-            && dynamic_cast<BlockEndNode*>(endNode.get()) == 0) {
+            && dynamic_cast<BlockEndNode*>(endNode) == 0) {
         /**
          * insert return node to block end
          */
-        blockNode->addNode(
-                std::unique_ptr < Node
-                        > (new ReturnNode(0, std::unique_ptr < ExprNode > (new EmptyNode()))));
+        blockNode->addNode(new ReturnNode(0, new EmptyNode()));
         return;
     }
     if(!this->findBlockEnd(blockNode)) {
@@ -215,8 +213,8 @@ int TypeChecker::visitStringValueNode(StringValueNode *node) {
 }
 
 int TypeChecker::visitStringExprNode(StringExprNode *node) {
-    for(const std::unique_ptr<ExprNode> &exprNode : node->getExprNodes()) {
-        this->checkType(this->typePool->getStringType(), exprNode.get());
+    for(ExprNode *exprNode : node->getExprNodes()) {
+        this->checkType(this->typePool->getStringType(), exprNode);
     }
     node->setType(this->typePool->getStringType());
     return 0;
@@ -246,7 +244,7 @@ int TypeChecker::visitVarNode(VarNode *node) {
 }
 
 int TypeChecker::visitIndexNode(IndexNode *node) {
-    this->checkType(node->getRecvNode().get());
+    this->checkType(node->getRecvNode());
     DSType *recvType = node->getRecvNode()->getType();
     FunctionHandle *handle = recvType->lookupMethodHandle(GET);
     if(handle == 0 || handle->getFuncType()->getParamSize() != 2) {
@@ -254,14 +252,14 @@ int TypeChecker::visitIndexNode(IndexNode *node) {
     }
 
     FunctionType *funcType = handle->getFuncType();
-    this->checkType(funcType->getParamTypes()[1], node->getIndexNode().get());
+    this->checkType(funcType->getParamTypes()[1], node->getIndexNode());
     node->setGetterHandle(handle);
     node->setType(funcType->getReturnType());
     return 0;
 }
 
 int TypeChecker::visitAccessNode(AccessNode *node) {
-    this->checkType(node->getRecvNode().get());
+    this->checkType(node->getRecvNode());
     DSType *recvType = node->getRecvNode()->getType();
     FieldHandle *handle = recvType->lookupFieldHandle(node->getFieldName());
     if(handle == 0) {
@@ -290,20 +288,20 @@ int TypeChecker::visitCondOpNode(CondOpNode *node) {
 } //TODO
 
 int TypeChecker::visitProcessNode(ProcessNode *node) {
-    for(const std::unique_ptr<ProcArgNode> &argNode : node->getArgNodes()) {
-        this->checkTypeAcceptingVoidType(argNode.get());    //FIXME: accept void type
+    for(ProcArgNode *argNode : node->getArgNodes()) {
+        this->checkTypeAcceptingVoidType(argNode);    //FIXME: accept void type
     }
     // check type redirect options
-    for(const std::pair<int, std::unique_ptr<ExprNode>> &optionPair : node->getRedirOptions()) {
-        this->checkTypeAcceptingVoidType(optionPair.second.get());  //FIXME: accept void type
+    for(const std::pair<int, ExprNode*> &optionPair : node->getRedirOptions()) {
+        this->checkTypeAcceptingVoidType(optionPair.second);  //FIXME: accept void type
     }
     node->setType(this->typePool->getVoidType());   //FIXME: ProcessNode is always void type
     return 0;
 }
 
 int TypeChecker::visitProcArgNode(ProcArgNode *node) {
-    for(const std::unique_ptr<ExprNode> &exprNode : node->getSegmentNodes()) {
-        this->checkType(exprNode.get());
+    for(ExprNode *exprNode : node->getSegmentNodes()) {
+        this->checkType(exprNode);
     }
     node->setType(this->typePool->getVoidType());   //FIXME: ProcArgNode is always void type
     return 0;
@@ -314,8 +312,8 @@ int TypeChecker::visitSpecialCharNode(SpecialCharNode *node) {
 } //TODO
 
 int TypeChecker::visitTaskNode(TaskNode *node) {    //TODO: parent node
-    for(const std::unique_ptr<ProcessNode> &procNode : node->getProcNodes()) {
-        this->checkTypeAcceptingVoidType(procNode.get());   //FIXME: accept void
+    for(ProcessNode *procNode : node->getProcNodes()) {
+        this->checkTypeAcceptingVoidType(procNode);   //FIXME: accept void
     }
 
     /**
@@ -330,16 +328,16 @@ int TypeChecker::visitInnerTaskNode(InnerTaskNode *node) {
 } //TODO
 
 int TypeChecker::visitAssertNode(AssertNode *node) {
-    this->checkType(this->typePool->getBooleanType(), node->getExprNode().get());
+    this->checkType(this->typePool->getBooleanType(), node->getExprNode());
     return 0;
 }
 
 int TypeChecker::visitBlockNode(BlockNode *node) {
     int count = 0;
     int size = node->getNodes().size();
-    for(const std::unique_ptr<Node> &targetNode : node->getNodes()) {
-        this->checkTypeAcceptingVoidType(targetNode.get());
-        if(dynamic_cast<BlockEndNode*>(targetNode.get()) != 0 && (count != size - 1)) {
+    for(Node *targetNode : node->getNodes()) {
+        this->checkTypeAcceptingVoidType(targetNode);
+        if(dynamic_cast<BlockEndNode*>(targetNode) != 0 && (count != size - 1)) {
             E_Unreachable->report(node->getLineNum());
             return -1;
         }
@@ -363,7 +361,7 @@ int TypeChecker::visitContinueNode(ContinueNode *node) {
 int TypeChecker::visitExportEnvNode(ExportEnvNode *node) {
     DSType *stringType = this->typePool->getStringType();
     this->addEntryAndThrowIfDefined(node, node->getEnvName(), stringType, true);
-    this->checkType(stringType, node->getExprNode().get());
+    this->checkType(stringType, node->getExprNode());
     return 0;
 }
 
@@ -375,16 +373,16 @@ int TypeChecker::visitImportEnvNode(ImportEnvNode *node) {
 
 int TypeChecker::visitForNode(ForNode *node) {
     this->symbolTable.enterScope();
-    this->checkTypeAcceptingVoidType(node->getInitNode().get());
-    this->checkType(this->typePool->getBooleanType(), node->getCondNode().get());
-    this->checkTypeAcceptingVoidType(node->getIterNode().get());
-    this->checkTypeWithCurrentBlockScope(node->getBlockNode().get());
+    this->checkTypeAcceptingVoidType(node->getInitNode());
+    this->checkType(this->typePool->getBooleanType(), node->getCondNode());
+    this->checkTypeAcceptingVoidType(node->getIterNode());
+    this->checkTypeWithCurrentBlockScope(node->getBlockNode());
     this->symbolTable.exitScope();
     return 0;
 }
 
 int TypeChecker::visitForInNode(ForInNode *node) {
-    this->checkType(node->getExprNode().get());
+    this->checkType(node->getExprNode());
     DSType *exprType = node->getExprNode()->getType();
 
     // lookup RESET
@@ -425,23 +423,23 @@ int TypeChecker::visitForInNode(ForInNode *node) {
     // add symbol entry
     this->symbolTable.enterScope();
     this->addEntryAndThrowIfDefined(node, node->getInitName(), next->getFuncType()->getReturnType(), false);
-    this->checkTypeWithCurrentBlockScope(node->getBlockNode().get());
+    this->checkTypeWithCurrentBlockScope(node->getBlockNode());
     this->symbolTable.exitScope();
     return 0;
 }
 
 int TypeChecker::visitWhileNode(WhileNode *node) {
-    this->checkType(this->typePool->getBooleanType(), node->getCondNode().get());
+    this->checkType(this->typePool->getBooleanType(), node->getCondNode());
     this->enterLoop();
-    this->checkTypeWithNewBlockScope(node->getBlockNode().get());
+    this->checkTypeWithNewBlockScope(node->getBlockNode());
     this->exitLoop();
     return 0;
 }
 
 int TypeChecker::visitIfNode(IfNode *node) {
-    this->checkType(this->typePool->getBooleanType(), node->getCondNode().get());
-    this->checkTypeWithNewBlockScope(node->getThenNode().get());
-    this->checkTypeWithNewBlockScope(node->getElseNode().get());
+    this->checkType(this->typePool->getBooleanType(), node->getCondNode());
+    this->checkTypeWithNewBlockScope(node->getThenNode());
+    this->checkTypeWithNewBlockScope(node->getElseNode());
     return 0;
 }
 
@@ -451,9 +449,9 @@ int TypeChecker::visitReturnNode(ReturnNode *node) {
     if(returnType == 0) {
         E_InsideFunc->report(node->getLineNum());
     }
-    this->checkType(returnType, node->getExprNode().get());
+    this->checkType(returnType, node->getExprNode());
     if(node->getExprNode()->getType()->equals(this->typePool->getVoidType())) {
-        if(dynamic_cast<EmptyNode*>(node->getExprNode().get()) == 0) {
+        if(dynamic_cast<EmptyNode*>(node->getExprNode()) == 0) {
             E_NotNeedExpr->report(node->getLineNum());
         }
     }
@@ -462,7 +460,7 @@ int TypeChecker::visitReturnNode(ReturnNode *node) {
 
 int TypeChecker::visitThrowNode(ThrowNode *node) {
     this->checkAndThrowIfInsideFinally(node);
-    this->checkType(node->getExprNode().get()); //TODO: currently accept all type
+    this->checkType(node->getExprNode()); //TODO: currently accept all type
     return 0;
 }
 
@@ -475,7 +473,7 @@ int TypeChecker::visitTryNode(TryNode *node) {
 
 int TypeChecker::visitFinallyNode(FinallyNode *node) {
     this->finallyContextStack.push_back(true);
-    this->checkTypeWithNewBlockScope(node->getBlockNode().get());
+    this->checkTypeWithNewBlockScope(node->getBlockNode());
     this->finallyContextStack.pop_back();
     return 0;
 }
