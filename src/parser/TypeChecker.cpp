@@ -376,7 +376,9 @@ int TypeChecker::visitForNode(ForNode *node) {
     this->checkTypeAcceptingVoidType(node->getInitNode());
     this->checkType(this->typePool->getBooleanType(), node->getCondNode());
     this->checkTypeAcceptingVoidType(node->getIterNode());
+    this->enterLoop();
     this->checkTypeWithCurrentBlockScope(node->getBlockNode());
+    this->exitLoop();
     this->symbolTable.exitScope();
     return 0;
 }
@@ -421,10 +423,12 @@ int TypeChecker::visitForInNode(ForInNode *node) {
     node->setIteratorHandle(reset, next, hasNext);
 
     // add symbol entry
+    this->enterLoop();
     this->symbolTable.enterScope();
     this->addEntryAndThrowIfDefined(node, node->getInitName(), next->getFuncType()->getReturnType(), false);
     this->checkTypeWithCurrentBlockScope(node->getBlockNode());
     this->symbolTable.exitScope();
+    this->exitLoop();
     return 0;
 }
 
