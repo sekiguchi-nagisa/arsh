@@ -258,7 +258,7 @@ AssignableNode::~AssignableNode() {
 // ########################
 
 VarNode::VarNode(int lineNum, std::string &&varName) :
-        AssignableNode(lineNum), varName(std::move(varName)), readOnly(false) {
+        AssignableNode(lineNum), varName(std::move(varName)), readOnly(false), global(false), varIndex(-1) {
 }
 
 const std::string &VarNode::getVarName() {
@@ -273,14 +273,34 @@ int VarNode::accept(NodeVisitor *visitor) {
     return visitor->visitVarNode(this);
 }
 
+void VarNode::setReadOnly(bool readOnly) {
+    this->readOnly = readOnly;
+}
+
+void VarNode::setGlobal(bool global) {
+    this->global = global;
+}
+
+bool VarNode::isGlobal() {
+    return this->global;
+}
+
+void VarNode::setVarIndex(int index) {
+    this->varIndex = index;
+}
+
+int VarNode::getVarIndex() {
+    return this->varIndex;
+}
+
 // #######################
 // ##     IndexNode     ##
 // #######################
 
 IndexNode::IndexNode(int lineNum, std::unique_ptr<ExprNode> &&recvNode,
         std::unique_ptr<ExprNode> &&indexNode) :
-        AssignableNode(lineNum), recvNode(std::move(recvNode)), indexNode(std::move(indexNode)), getterHandle(
-                0), setterHandle(0) {
+        AssignableNode(lineNum), recvNode(std::move(recvNode)), indexNode(std::move(indexNode)),
+        getterHandle(0), setterHandle(0) {
 }
 
 IndexNode::~IndexNode() {
@@ -323,8 +343,7 @@ int IndexNode::accept(NodeVisitor *visitor) {
 // ########################
 
 AccessNode::AccessNode(int lineNum, std::unique_ptr<ExprNode> &&recvNode, std::string &&fieldName) :
-        AssignableNode(lineNum), recvNode(std::move(recvNode)), fieldName(std::move(fieldName)), handle(
-                0) {
+        AssignableNode(lineNum), recvNode(std::move(recvNode)), fieldName(std::move(fieldName)), fieldIndex(-1) {
 }
 
 AccessNode::~AccessNode() {
@@ -338,12 +357,12 @@ const std::string &AccessNode::getFieldName() {
     return this->fieldName;
 }
 
-void AccessNode::setFieldHandle(FieldHandle *handle) {
-    this->handle = handle;
+void AccessNode::setFieldIndex(int index) {
+    this->fieldIndex = index;
 }
 
-FieldHandle *AccessNode::getFieldHandle() {
-    return this->handle;
+int AccessNode::getFieldIndex() {
+    return this->fieldIndex;
 }
 
 bool AccessNode::isReadOnly() {

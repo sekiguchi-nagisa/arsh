@@ -231,15 +231,48 @@ int TypeChecker::visitMapNode(MapNode *node) {
 int TypeChecker::visitPairNode(PairNode *node) {
     return 0;
 } //TODO
+
 int TypeChecker::visitVarNode(VarNode *node) {
+    SymbolEntry *entry = this->symbolTable.getEntry(node->getVarName());
+    if(entry == 0) {
+        E_UndefinedSymbol->report(node->getLineNum(), node->getVarName());
+    }
+
+    node->setGlobal(entry->isGlobal());
+    node->setReadOnly(entry->isReadOnly());
+    node->setVarIndex(entry->getVarIndex());
+    node->setType(entry->getType());
     return 0;
-} //TODO
+}
+
 int TypeChecker::visitIndexNode(IndexNode *node) {
+    this->checkType(node->getRecvNode().get());
+    DSType *recvType = node->getRecvNode()->getType();
+    FunctionHandle *handle = recvType->lookupMethodHandle(GET);
+    if(handle == 0 || handle->getFuncType()->getParamSize() != 2) {
+        E_UndefinedMethod->report(node->getLineNum(), GET);
+    }
+
+    FunctionType *funcType = handle->getFuncType();
+    this->checkType(funcType->getParamTypes()[1], node->getIndexNode().get());
+    node->setGetterHandle(handle);
+    node->setType(funcType->getReturnType());
     return 0;
-} //TODO
+}
+
 int TypeChecker::visitAccessNode(AccessNode *node) {
+    this->checkType(node->getRecvNode().get());
+    DSType *recvType = node->getRecvNode()->getType();
+    FieldHandle *handle = recvType->lookupFieldHandle(node->getFieldName());
+    if(handle == 0) {
+        E_UndefinedField->report(node->getLineNum(), node->getFieldName());
+    }
+
+    node->setFieldIndex(handle->getFieldIndex());
+    node->setType(handle->getFieldType());
     return 0;
-} //TODO
+}
+
 int TypeChecker::visitCastNode(CastNode *node) {
     return 0;
 } //TODO

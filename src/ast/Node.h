@@ -170,6 +170,8 @@ class VarNode: public AssignableNode {
 private:
     std::string varName;
     bool readOnly;
+    bool global;
+    int varIndex;
 
 public:
     VarNode(int lineNum, std::string &&varName);
@@ -177,6 +179,11 @@ public:
     const std::string &getVarName();
     bool isReadOnly();	// override
     int accept(NodeVisitor *visitor);	// override
+    void setReadOnly(bool readOnly);
+    void setGlobal(bool global);
+    bool isGlobal();
+    void setVarIndex(int index);
+    int getVarIndex();
 };
 
 class IndexNode: public AssignableNode {//TODO: change getter, setter handle class to FieldHandle
@@ -228,7 +235,7 @@ class AccessNode: public AssignableNode {	//TODO: field handle
 private:
     std::unique_ptr<ExprNode> recvNode;
     std::string fieldName;
-    FieldHandle *handle;
+    int fieldIndex;
 
 public:
     AccessNode(int lineNum, std::unique_ptr<ExprNode> &&recvNode, std::string &&fieldName);
@@ -236,14 +243,10 @@ public:
 
     const std::unique_ptr<ExprNode> &getRecvNode();
     const std::string &getFieldName();
-    void setFieldHandle(FieldHandle *handle);
+    void setFieldIndex(int index);
+    int getFieldIndex();
 
-    /**
-     * return null before call setFieldHandle
-     */
-    FieldHandle *getFieldHandle();
-
-    bool isReadOnly();	// oevrride
+    bool isReadOnly();	// override
     int accept(NodeVisitor *visitor);	// override
 };
 
