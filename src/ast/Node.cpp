@@ -1075,6 +1075,12 @@ TypeToken *CatchNode::getTypeToken() {
     return this->typeToken;
 }
 
+TypeToken *CatchNode::removeTypeToken() {
+    TypeToken *t = this->typeToken;
+    this->typeToken = 0;
+    return t;
+}
+
 void CatchNode::setExceptionType(DSType *type) {
     this->exceptionType = type;
 }
@@ -1110,6 +1116,10 @@ TryNode::~TryNode() {
 
     delete this->finallyNode;
     this->finallyNode = 0;
+}
+
+BlockNode *TryNode::getBlockNode() {
+    return this->blockNode;
 }
 
 void TryNode::addCatchNode(CatchNode *catchNode) {

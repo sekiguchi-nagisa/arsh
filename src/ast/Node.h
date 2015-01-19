@@ -656,6 +656,12 @@ public:
 
     const std::string &getExceptionName();
     TypeToken *getTypeToken();
+
+    /**
+     * get type token and set 0.
+     */
+    TypeToken *removeTypeToken();
+
     void setExceptionType(DSType *type);
 
     /**
@@ -685,6 +691,7 @@ public:
     TryNode(int lineNum, BlockNode *blockNode);
     ~TryNode();
 
+    BlockNode *getBlockNode();
     void addCatchNode(CatchNode *catchNode);
     const std::vector<CatchNode*> &getCatchNodes();
     void addFinallyNode(Node *finallyNode);

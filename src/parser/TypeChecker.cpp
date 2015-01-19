@@ -282,9 +282,14 @@ int TypeChecker::visitApplyNode(ApplyNode *node) {
 int TypeChecker::visitConstructorCallNode(ConstructorCallNode *node) {
     return 0;
 } //TODO
+
 int TypeChecker::visitCondOpNode(CondOpNode *node) {
+    DSType *booleanType = this->typePool->getBooleanType();
+    this->checkType(booleanType, node->getLeftNode());
+    this->checkType(booleanType, node->getRightNode());
+    node->setType(booleanType);
     return 0;
-} //TODO
+}
 
 int TypeChecker::visitProcessNode(ProcessNode *node) {
     for(ProcArgNode *argNode : node->getArgNodes()) {
@@ -338,7 +343,6 @@ int TypeChecker::visitBlockNode(BlockNode *node) {
         this->checkTypeAcceptingVoidType(targetNode);
         if(dynamic_cast<BlockEndNode*>(targetNode) != 0 && (count != size - 1)) {
             E_Unreachable->report(node->getLineNum());
-            return -1;
         }
         count++;
     }
@@ -468,11 +472,46 @@ int TypeChecker::visitThrowNode(ThrowNode *node) {
 }
 
 int TypeChecker::visitCatchNode(CatchNode *node) {
+    TypeToken *t = node->removeTypeToken();
+    DSType *exceptionType = t->toType(this->typePool);
+    delete t;
+
+    node->setExceptionType(exceptionType);
+
+    /**
+     * check type catch block
+     */
+    this->symbolTable.enterScope();
+    this->addEntryAndThrowIfDefined(node, node->getExceptionName(), exceptionType, true);
+    this->checkTypeWithCurrentBlockScope(node->getBlockNode());
+    this->symbolTable.exitScope();
     return 0;
-} //TODO
+}
+
 int TypeChecker::visitTryNode(TryNode *node) {
+    this->checkTypeWithNewBlockScope(node->getBlockNode());
+    // check type catch block
+    for(CatchNode *c : node->getCatchNodes()) {
+        this->checkType(c);
+    }
+
+    // check type finally block, may be empty node
+    this->checkTypeAcceptingVoidType(node->getFinallyNode());
+
+    /**
+     * verify catch block order
+     */
+    int size = node->getCatchNodes().size();
+    for(int i = 0; i < size - 1; i++) {
+        DSType *curType = node->getCatchNodes()[i]->getExceptionType();
+        CatchNode *nextNode = node->getCatchNodes()[i + 1];
+        DSType *nextType = nextNode->getExceptionType();
+        if(curType->isAssignableFrom(nextType)) {
+            E_Unreachable->report(nextNode->getLineNum());
+        }
+    }
     return 0;
-} //TODO
+}
 
 int TypeChecker::visitFinallyNode(FinallyNode *node) {
     this->finallyContextStack.push_back(true);
