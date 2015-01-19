@@ -13,6 +13,7 @@
 #include <unordered_map>
 
 class DSType;
+class FunctionType;
 
 class TypePool {
 private:
@@ -61,8 +62,16 @@ public:
      */
     DSType *getTypeAndThrowIfUndefined(const std::string &typeName);
 
+    /**
+     * get template type.
+     * if template type is not found, throw exception
+     */
+    DSType *getTemplateType(const std::string &typeName, int elementSize);  //FIXME: return type
+
     //TODO: template type
     DSType *createAndGetReifiedTypeIfUndefined(DSType *templateType, const std::vector<DSType*> &elementTypes);
+
+    FunctionType *createAndGetFuncTypeIfUndefined(DSType *returnType, const std::vector<DSType*> &paramTypes);
 };
 
 #endif /* CORE_TYPEPOOL_H_ */

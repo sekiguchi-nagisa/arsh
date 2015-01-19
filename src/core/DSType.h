@@ -156,7 +156,7 @@ private:
     DSType **paramTypes;
 
 public:
-    FunctionType(DSType *returnType, unsigned int paramSize, DSType **paramTypes);
+    FunctionType(DSType *returnType, const std::vector<DSType*> &paramTypes);
     ~FunctionType();
 
     DSType *getReturnType();
@@ -198,11 +198,11 @@ public:
 /**
  * create reified type name
  */
-std::string toReifiedTypeName(DSType *templateType, int elementSize, DSType **elementTypes);
+std::string toReifiedTypeName(DSType *templateType, const std::vector<DSType*> &elementTypes);
 
 /**
  * create function type name
  */
-std::string toFunctionTypeName(DSType *returnType, int paramSize, DSType **paramTypes);
+std::string toFunctionTypeName(DSType *returnType, const std::vector<DSType*> &paramTypes);
 
 #endif /* CORE_DSTYPE_H_ */

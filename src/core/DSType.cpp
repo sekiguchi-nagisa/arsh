@@ -132,8 +132,11 @@ DSType *ClassType::voidType = new ClassType("Void", false, 0);
 // ##     FunctionType     ##
 // ##########################
 
-FunctionType::FunctionType(DSType *returnType, unsigned int paramSize, DSType **paramTypes) :
-        returnType(returnType), paramSize(paramSize), paramTypes(paramTypes) {
+FunctionType::FunctionType(DSType *returnType, const std::vector<DSType*> &paramTypes) :
+        returnType(returnType), paramSize(paramTypes.size()), paramTypes(new DSType*[paramTypes.size()]) {
+    for(int i = 0; i < this->paramSize; i++) {
+        this->paramTypes[i] = paramTypes[i];
+    }
 }
 
 FunctionType::~FunctionType() {
@@ -158,7 +161,11 @@ DSType *FunctionType::getFirstParamType() {
 }
 
 std::string FunctionType::getTypeName() {
-    return toFunctionTypeName(this->returnType, this->paramSize, this->paramTypes);
+    std::vector<DSType*> types(this->paramSize);
+    for(int i = 0; i < this->paramSize; i++) {
+        types.push_back(this->paramTypes[i]);
+    }
+    return toFunctionTypeName(this->returnType, types);
 }
 
 bool FunctionType::isExtendable() {
@@ -207,7 +214,8 @@ bool FunctionType::equals(DSType *targetType) {
     return true;
 }
 
-std::string toReifiedTypeName(DSType *templateType, int elementSize, DSType **elementTypes) {
+std::string toReifiedTypeName(DSType *templateType, const std::vector<DSType*> &elementTypes) {
+    int elementSize = elementTypes.size();
     std::string reifiedTypeName = templateType->getTypeName() + "<";
     for(int i = 0; i < elementSize; i++) {
         if(i > 0) {
@@ -219,7 +227,8 @@ std::string toReifiedTypeName(DSType *templateType, int elementSize, DSType **el
     return reifiedTypeName;
 }
 
-std::string toFunctionTypeName(DSType *returnType, int paramSize, DSType **paramTypes) {
+std::string toFunctionTypeName(DSType *returnType, const std::vector<DSType*> &paramTypes) {
+    int paramSize = paramTypes.size();
     std::string funcTypeName = "Func<" + returnType->getTypeName();
     for(int i = 0; i < paramSize; i++) {
         if(i == 0) {

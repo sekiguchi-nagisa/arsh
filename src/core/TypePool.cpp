@@ -82,7 +82,22 @@ DSType *TypePool::getTypeAndThrowIfUndefined(const std::string &typeName) {
     return type;
 }
 
+DSType *TypePool::getTemplateType(const std::string &typeName, int elementSize) {
+    return 0;   //FIXME:
+}
+
 DSType *TypePool::createAndGetReifiedTypeIfUndefined(DSType *templateType,
         const std::vector<DSType*> &elementTypes) {
     return 0;   //FIXME:
+}
+
+FunctionType *TypePool::createAndGetFuncTypeIfUndefined(DSType *returnType,
+        const std::vector<DSType*> &paramTypes) {
+    std::string typeName = toFunctionTypeName(returnType, paramTypes);
+    DSType *funcType = this->getType(typeName);
+    if(funcType == 0) {
+        funcType = new FunctionType(returnType, paramTypes);
+        this->typeMap[typeName] = funcType;
+    }
+    return dynamic_cast<FunctionType*>(funcType);
 }
