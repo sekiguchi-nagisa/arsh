@@ -6,6 +6,7 @@
  */
 
 #include "Node.h"
+#include "../core/builtin_variable.h"
 
 // ##################
 // ##     Node     ##
@@ -848,7 +849,9 @@ LoopNode::LoopNode(int lineNum) :
 // #####################
 
 ForNode::ForNode(int lineNum, Node *initNode, Node *condNode, Node *iterNode, BlockNode *blockNode) :
-        LoopNode(lineNum), initNode(initNode), condNode(condNode), iterNode(iterNode), blockNode(blockNode) {
+        LoopNode(lineNum), initNode(initNode != 0 ? initNode : new EmptyNode()),
+        condNode(condNode != 0 ? condNode : new VarNode(lineNum, std::string(TRUE))),
+        iterNode(iterNode != 0 ? iterNode : new EmptyNode()), blockNode(blockNode) {
 }
 
 ForNode::~ForNode() {
@@ -974,7 +977,8 @@ int WhileNode::accept(NodeVisitor *visitor) {
 // ####################
 
 IfNode::IfNode(int lineNum, ExprNode *condNode, BlockNode *thenNode, BlockNode *elseNode) :
-        Node(lineNum), condNode(condNode), thenNode(thenNode), elseNode(elseNode) {
+        Node(lineNum), condNode(condNode), thenNode(thenNode),
+        elseNode(elseNode != 0 ? elseNode : new EmptyBlockNode()) {
 }
 
 IfNode::~IfNode() {
@@ -1131,10 +1135,16 @@ const std::vector<CatchNode*> &TryNode::getCatchNodes() {
 }
 
 void TryNode::addFinallyNode(Node *finallyNode) {
+    if(this->finallyNode != 0) {
+        delete this->finallyNode;
+    }
     this->finallyNode = finallyNode;
 }
 
-Node *TryNode::getFinallyNode() {	//FIXME:
+Node *TryNode::getFinallyNode() {
+    if(this->finallyNode == 0) {
+        this->finallyNode = new EmptyNode();
+    }
     return this->finallyNode;
 }
 
@@ -1343,7 +1353,6 @@ int EmptyBlockNode::accept(NodeVisitor *visitor) {
     return visitor->visitEmptyBlockNode(this);
 }
 
-EmptyBlockNode *EmptyBlockNode::emptyBlockNode = new EmptyBlockNode();
 
 // ######################
 // ##     RootNode     ##

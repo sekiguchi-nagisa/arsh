@@ -508,6 +508,11 @@ private:
     BlockNode *blockNode;
 
 public:
+    /**
+     * initNode may be null.
+     * condNode may be null.
+     * iterNode may be null.
+     */
     ForNode(int lineNum, Node *initNode, Node *condNode, Node *iterNode, BlockNode *blockNode);
     ~ForNode();
 
@@ -831,10 +836,8 @@ public:
 };
 
 class EmptyBlockNode: public BlockNode {
-private:
-    EmptyBlockNode();
-
 public:
+    EmptyBlockNode();
     ~EmptyBlockNode();
 
     /**
@@ -843,8 +846,6 @@ public:
     void addNode(Node *node);	// override
 
     int accept(NodeVisitor *visitor);	// override
-
-    static EmptyBlockNode *emptyBlockNode;
 };
 
 /**
