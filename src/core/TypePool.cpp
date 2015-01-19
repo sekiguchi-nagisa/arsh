@@ -81,3 +81,8 @@ DSType *TypePool::getTypeAndThrowIfUndefined(const std::string &typeName) {
     }
     return type;
 }
+
+DSType *TypePool::createAndGetReifiedTypeIfUndefined(DSType *templateType,
+        const std::vector<DSType*> &elementTypes) {
+    return 0;   //FIXME:
+}

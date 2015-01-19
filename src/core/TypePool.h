@@ -9,6 +9,7 @@
 #define CORE_TYPEPOOL_H_
 
 #include <string>
+#include <vector>
 #include <unordered_map>
 
 class DSType;
@@ -59,6 +60,9 @@ public:
      * if type is undefined, throw exception
      */
     DSType *getTypeAndThrowIfUndefined(const std::string &typeName);
+
+    //TODO: template type
+    DSType *createAndGetReifiedTypeIfUndefined(DSType *templateType, const std::vector<DSType*> &elementTypes);
 };
 
 #endif /* CORE_TYPEPOOL_H_ */

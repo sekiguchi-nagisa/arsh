@@ -135,7 +135,7 @@ public:
     ~MapNode();
 
     void addEntry(ExprNode *keyNode, ExprNode *valueNode);
-    const std::vector<ExprNode*> &getkeyNodes();
+    const std::vector<ExprNode*> &getKeyNodes();
     const std::vector<ExprNode*> &getValueNodes();
     int accept(NodeVisitor *visitor);	// override
 };

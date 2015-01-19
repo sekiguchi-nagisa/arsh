@@ -221,7 +221,7 @@ void MapNode::addEntry(ExprNode *keyNode, ExprNode *valueNode) {
     this->valueNodes.push_back(valueNode);
 }
 
-const std::vector<ExprNode*> &MapNode::getkeyNodes() {
+const std::vector<ExprNode*> &MapNode::getKeyNodes() {
     return this->keyNodes;
 }
 

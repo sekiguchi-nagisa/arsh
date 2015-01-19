@@ -5,6 +5,9 @@
  *      Author: skgchxngsxyz-osx
  */
 
+#include <assert.h>
+#include <vector>
+
 #include "TypeChecker.h"
 #include "TypeError.h"
 #include "../core/magic_method.h"
@@ -220,14 +223,53 @@ int TypeChecker::visitStringExprNode(StringExprNode *node) {
 }
 
 int TypeChecker::visitArrayNode(ArrayNode *node) {
+    int size = node->getExprNodes().size();
+    assert(size != 0);
+    ExprNode *firstElementNode = node->getExprNodes()[0];
+    this->checkType(firstElementNode);
+    DSType *elementType = firstElementNode->getType();
+
+    for(int i = 1; i < size; i++) {
+        this->checkType(elementType, node->getExprNodes()[i]);
+    }
+
+    DSType *baseArrayType = this->typePool->getBaseArrayType(); //FIXME:
+    std::vector<DSType*> elementTypes(1);
+    elementTypes.push_back(elementType);
+    node->setType(this->typePool->createAndGetReifiedTypeIfUndefined(baseArrayType, elementTypes));
     return 0;
-} //TODO
+}
+
 int TypeChecker::visitMapNode(MapNode *node) {
+    int size = node->getValueNodes().size();
+    assert(size != 0);
+    ExprNode *firstValueNode = node->getValueNodes()[0];
+    this->checkType(firstValueNode);
+    DSType *valueType = firstValueNode->getType();
+
+    for(int i = 0; i < size; i++) {
+        this->checkType(this->typePool->getStringType(), node->getKeyNodes()[i]);
+        this->checkType(valueType, node->getValueNodes()[i]);
+    }
+
+    DSType *baseMapType = this->typePool->getBaseMapType(); //FIXME:
+    std::vector<DSType*> elementTypes(1);
+    elementTypes.push_back(valueType);
+    node->setType(this->typePool->createAndGetReifiedTypeIfUndefined(baseMapType, elementTypes));
     return 0;
-} //TODO
+}
+
 int TypeChecker::visitPairNode(PairNode *node) {
+    this->checkType(node->getLeftNode());
+    this->checkType(node->getRightNode());
+
+    DSType *basePairType = this->typePool->getBasePairType();   //FIXME:
+    std::vector<DSType*> elementTypes(2);
+    elementTypes.push_back(node->getLeftNode()->getType());
+    elementTypes.push_back(node->getRightNode()->getType());
+    node->setType(this->typePool->createAndGetReifiedTypeIfUndefined(basePairType, elementTypes));
     return 0;
-} //TODO
+}
 
 int TypeChecker::visitVarNode(VarNode *node) {
     SymbolEntry *entry = this->symbolTable.getEntry(node->getVarName());
@@ -271,15 +313,19 @@ int TypeChecker::visitAccessNode(AccessNode *node) {
 }
 
 int TypeChecker::visitCastNode(CastNode *node) {
+    E_Unimplemented->report(node->getLineNum(), "CastNode");
     return 0;
 } //TODO
 int TypeChecker::visitInstanceOfNode(InstanceOfNode *node) {
+    E_Unimplemented->report(node->getLineNum(), "InstanceOfNode");
     return 0;
 } //TODO
 int TypeChecker::visitApplyNode(ApplyNode *node) {
+    E_Unimplemented->report(node->getLineNum(), "ApplyNode");
     return 0;
 } //TODO
 int TypeChecker::visitConstructorCallNode(ConstructorCallNode *node) {
+    E_Unimplemented->report(node->getLineNum(), "ConstructorCallNode");
     return 0;
 } //TODO
 
@@ -312,6 +358,7 @@ int TypeChecker::visitProcArgNode(ProcArgNode *node) {
 }
 
 int TypeChecker::visitSpecialCharNode(SpecialCharNode *node) {
+    E_Unimplemented->report(node->getLineNum(), "SpecialCharNode");
     return 0;
 } //TODO
 
@@ -328,6 +375,7 @@ int TypeChecker::visitTaskNode(TaskNode *node) {    //TODO: parent node
 }
 
 int TypeChecker::visitInnerTaskNode(InnerTaskNode *node) {
+    E_Unimplemented->report(node->getLineNum(), "InnerTaskNode");
     return 0;
 } //TODO
 
@@ -521,14 +569,19 @@ int TypeChecker::visitFinallyNode(FinallyNode *node) {
 }
 
 int TypeChecker::visitVarDeclNode(VarDeclNode *node) {
-    //TODO:
+    this->checkType(node->getInitValueNode());
+    this->addEntryAndThrowIfDefined(node, node->getVarName(),
+            node->getInitValueNode()->getType(), node->isReadOnly());
+    node->setGlobal(this->symbolTable.inGlobalScope());
     return 0;
 }
 
 int TypeChecker::visitAssignNode(AssignNode *node) {
+    E_Unimplemented->report(node->getLineNum(), "AssignNode");
     return 0;
 } //TODO
 int TypeChecker::visitFunctionNode(FunctionNode *node) {
+    E_Unimplemented->report(node->getLineNum(), "FunctionNode");
     return 0;
 } //TODO
 
