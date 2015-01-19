@@ -85,6 +85,7 @@ FunctionHandle *FuncSymbolEntry::getHandle() {
 ScopeOp::~ScopeOp() {
 }
 
+
 // ###################
 // ##     Scope     ##
 // ###################

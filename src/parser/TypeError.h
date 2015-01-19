@@ -76,13 +76,6 @@ extern const TypeErrorOneArg * const E_UndefinedField;
 extern const TypeErrorOneArg * const E_UndefinedMethod;
 extern const TypeErrorOneArg * const E_UndefinedInit;
 extern const TypeErrorOneArg * const E_Unacceptable;
-extern const TypeErrorOneArg * const E_NotUseGeneric;
-extern const TypeErrorOneArg * const E_UndefinedType;
-extern const TypeErrorOneArg * const E_NotGenericBase;
-extern const TypeErrorOneArg * const E_NotPrimitive;
-extern const TypeErrorOneArg * const E_NotClass;
-extern const TypeErrorOneArg * const E_Nonheritable;
-extern const TypeErrorOneArg * const E_DefinedType;
 extern const TypeErrorOneArg * const E_NoIterator;
 extern const TypeErrorOneArg * const E_Unimplemented;
 
@@ -94,6 +87,5 @@ extern const TypeErrorTwoArg * const E_UnmatchParam;
 
 // three arg
 extern const TypeErrorThreeArg * const E_BinaryOp;
-extern const TypeErrorThreeArg * const E_UnmatchElement;
 
 #endif /* SRC_PARSER_TYPEERROR_H_ */

@@ -16,7 +16,7 @@
 class DSType;
 class FunctionType;
 
-class FieldHandle {	//TODO: access level
+class FieldHandle {
 private:
     DSType *fieldType;
 

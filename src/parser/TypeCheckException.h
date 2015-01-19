@@ -21,12 +21,13 @@ class TypeErrorThreeArg;
  * for type error reporting
  */
 class TypeCheckException {
-private:
+protected:
     /**
      * line number of error node
      */
     int lineNum;
 
+private:
     /**
      * template of error message
      */
@@ -45,6 +46,14 @@ public:
     TypeCheckException(int lineNum, const std::string &t, const std::string &arg1,
             const std::string &arg2, const std::string &arg3);
     virtual ~TypeCheckException();
+};
+
+class TypeLookupException : public TypeCheckException {
+public:
+    TypeLookupException(const std::string &t, const std::string &arg1);
+    TypeLookupException(const std::string &t, const std::string &arg1, const std::string &arg2, const std::string &arg3);
+
+    void setLineNum(int lineNum);
 };
 
 #endif /* PARSER_TYPECHECKEXCEPTION_H_ */

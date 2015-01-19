@@ -73,11 +73,8 @@ int FunctionHandle::getParamIndex(const std::string &paramName) {
 }
 
 bool FunctionHandle::hasDefaultValue(int paramIndex) {
-    try {
-        return this->defaultValues.at(paramIndex);
-    } catch(const std::out_of_range &e) {
-        return false;
-    }
+    return paramIndex > -1 && paramIndex < this->defaultValues.size()
+            && this->defaultValues[paramIndex];
 }
 
 // ###############################
@@ -89,9 +86,8 @@ ConstructorHandle::ConstructorHandle(unsigned int paramSize, DSType **paramTypes
 }
 
 ConstructorHandle::~ConstructorHandle() {
-    if(this->paramTypes != 0) {
-        delete[] this->paramTypes;
-    }
+    delete[] this->paramTypes;
+    this->paramTypes = 0;
 }
 
 unsigned int ConstructorHandle::getParamSize() {

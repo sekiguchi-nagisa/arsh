@@ -9,6 +9,7 @@
 #define AST_TYPETOKEN_H_
 
 #include "../core/DSType.h"
+#include "../core/TypePool.h"
 
 /**
  * represent for parsed type.
@@ -26,7 +27,7 @@ public:
     /**
      * convert to DSType.
      */
-    virtual DSType *toType() = 0;   //TODO: add TypePool to parameter
+    virtual DSType *toType(TypePool *typePool) = 0;
 };
 
 class ClassTypeToken: public TypeToken {
@@ -36,7 +37,7 @@ private:
 public:
     ClassTypeToken(int lineNum, std::string &&typeName);
 
-    DSType *toType();   // override
+    DSType *toType(TypePool *typePool);   // override
 };
 
 class ReifiedTypeToken: public TypeToken {
@@ -49,8 +50,7 @@ public:
     ~ReifiedTypeToken();
 
     void addElementTypeToken(TypeToken *type);
-    //TODO: add TypePool to parameter
-    DSType *toType();   // override
+    DSType *toType(TypePool *typePool);   // override
 };
 
 class FuncTypeToken: public TypeToken {
@@ -76,8 +76,7 @@ public:
 
     void setReturnTypeToken(TypeToken *type);
     void addParamTypeToken(TypeToken *type);
-    //TODO: add TypePool to parameter
-    DSType *toType();   // override
+    DSType *toType(TypePool *typePool);   // override
 };
 
 #endif /* AST_TYPETOKEN_H_ */

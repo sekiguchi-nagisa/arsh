@@ -92,13 +92,6 @@ const TypeErrorOneArg * const E_UndefinedField  = new TypeErrorOneArg("undefined
 const TypeErrorOneArg * const E_UndefinedMethod = new TypeErrorOneArg("undefined method: %s");
 const TypeErrorOneArg * const E_UndefinedInit   = new TypeErrorOneArg("undefined constructor: %s");
 const TypeErrorOneArg * const E_Unacceptable    = new TypeErrorOneArg("unacceptable type: %s");
-const TypeErrorOneArg * const E_NotUseGeneric   = new TypeErrorOneArg("not directly use generic base type: %s");
-const TypeErrorOneArg * const E_UndefinedType   = new TypeErrorOneArg("undefined type: %s");
-const TypeErrorOneArg * const E_NotGenericBase  = new TypeErrorOneArg("not generic base type: %s");
-const TypeErrorOneArg * const E_NotPrimitive    = new TypeErrorOneArg("not primitive type: %s");
-const TypeErrorOneArg * const E_NotClass        = new TypeErrorOneArg("not class type: %s");
-const TypeErrorOneArg * const E_Nonheritable    = new TypeErrorOneArg("nonheritable type: %s");
-const TypeErrorOneArg * const E_DefinedType     = new TypeErrorOneArg("already defined type: %s");
 const TypeErrorOneArg * const E_NoIterator      = new TypeErrorOneArg("not support iterator: %s");
 const TypeErrorOneArg * const E_Unimplemented   = new TypeErrorOneArg("unimplemented type checker api: %s");
 
@@ -110,4 +103,3 @@ const TypeErrorTwoArg * const E_UnmatchParam = new TypeErrorTwoArg("not match pa
 
 // three arg
 const TypeErrorThreeArg * const E_BinaryOp       = new TypeErrorThreeArg("undefined operator: %s %s %s");
-const TypeErrorThreeArg * const E_UnmatchElement = new TypeErrorThreeArg("not match type element, %s requires %s type element, but is %s");

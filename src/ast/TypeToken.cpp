@@ -22,6 +22,7 @@ int TypeToken::getLineNum() {
     return this->lineNum;
 }
 
+
 // ############################
 // ##     ClassTypeToken     ##
 // ############################
@@ -30,9 +31,10 @@ ClassTypeToken::ClassTypeToken(int lineNum, std::string &&typeName) :
         TypeToken(lineNum), typeName(std::move(typeName)) {
 }
 
-DSType *ClassTypeToken::toType() {
+DSType *ClassTypeToken::toType(TypePool *typePool) {
     return 0;   //TODO:
 }
+
 
 // ##############################
 // ##     ReifiedTypeToken     ##
@@ -54,9 +56,10 @@ void ReifiedTypeToken::addElementTypeToken(TypeToken *type) {
     this->elementTypeTokens.push_back(type);
 }
 
-DSType *ReifiedTypeToken::toType() {
+DSType *ReifiedTypeToken::toType(TypePool *typePool) {
     return 0;   //TODO:
 }
+
 
 // ###########################
 // ##     FuncTypeToken     ##
@@ -87,7 +90,7 @@ void FuncTypeToken::addParamTypeToken(TypeToken *type) {
 }
 
 //TODO: add TypePool to parameter
-DSType *FuncTypeToken::toType() {
+DSType *FuncTypeToken::toType(TypePool *typePool) {
     return 0;
 }
 

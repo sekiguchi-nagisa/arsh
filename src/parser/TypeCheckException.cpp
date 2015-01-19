@@ -10,6 +10,10 @@
 #include "TypeError.h"
 #include "TypeCheckException.h"
 
+// ################################
+// ##     TypeCheckException     ##
+// ################################
+
 TypeCheckException::TypeCheckException(int lineNum, const std::string &t) :
         lineNum(lineNum), t(t), args(0) {
 }
@@ -37,3 +41,20 @@ TypeCheckException::TypeCheckException(int lineNum, const std::string &t, const 
 TypeCheckException::~TypeCheckException() {
 }
 
+
+// #################################
+// ##     TypeLookupException     ##
+// #################################
+
+TypeLookupException::TypeLookupException(const std::string &t, const std::string &arg1) :
+        TypeCheckException(-1, t, arg1) {
+}
+
+TypeLookupException::TypeLookupException(const std::string &t, const std::string &arg1,
+        const std::string &arg2, const std::string &arg3) :
+        TypeCheckException(-1, t, arg1, arg2, arg3) {
+}
+
+void TypeLookupException::setLineNum(int lineNum) {
+    this->lineNum = lineNum;
+}
