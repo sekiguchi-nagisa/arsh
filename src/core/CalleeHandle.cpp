@@ -31,6 +31,7 @@ bool FieldHandle::isReadOnly() {
     return this->readOnly;
 }
 
+
 // ############################
 // ##     FunctionHandle     ##
 // ############################
@@ -76,6 +77,7 @@ bool FunctionHandle::hasDefaultValue(int paramIndex) {
     return paramIndex > -1 && paramIndex < this->defaultValues.size()
             && this->defaultValues[paramIndex];
 }
+
 
 // ###############################
 // ##     ConstructorHandle     ##

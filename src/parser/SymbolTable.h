@@ -65,6 +65,7 @@ private:
 
 public:
     FuncSymbolEntry(int varIndex, FunctionHandle *handle);
+    ~FuncSymbolEntry();
 
     DSType *getType();	// override
 

@@ -7,18 +7,21 @@
 
 #include "TypePool.h"
 #include "DSType.h"
+#include "../parser/TypeLookupError.h"
 
 // ######################
 // ##     TypePool     ##
 // ######################
 
-TypePool::TypePool() {
-    // TODO Auto-generated constructor stub
-
+TypePool::TypePool() :
+        typeMap() {
 }
 
 TypePool::~TypePool() {
-    // TODO Auto-generated destructor stub
+    for(const std::pair<std::string, DSType*> &pair : this->typeMap) {
+        delete pair.second;
+    }
+    this->typeMap.clear();
 }
 
 DSType *TypePool::getAnyType() {
@@ -65,6 +68,16 @@ DSType *TypePool::getBasePairType() {
     return 0;	//TODO:
 }
 
-DSType *getType(const std::string &typeName) {
-    return 0;	//TODO:
+DSType *TypePool::getType(const std::string &typeName) {
+    DSType *type = this->typeMap[typeName];
+    //TODO: check template type
+    return type;
+}
+
+DSType *TypePool::getTypeAndThrowIfUndefined(const std::string &typeName) {
+    DSType *type = this->getType(typeName);
+    if(type == 0) {
+        E_UndefinedType->report(typeName);
+    }
+    return type;
 }

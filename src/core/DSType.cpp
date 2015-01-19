@@ -44,6 +44,7 @@ bool DSType::isAssignableFrom(DSType *targetType) {
     return superType != 0 && this->isAssignableFrom(superType);
 }
 
+
 // #######################
 // ##     ClassType     ##
 // #######################
@@ -54,14 +55,13 @@ ClassType::ClassType(std::string &&className, bool extendable, DSType *superType
 }
 
 ClassType::~ClassType() {
-    if(this->constructorHandle != 0) {
-        delete this->constructorHandle;
-    }
+    delete this->constructorHandle;
+    this->constructorHandle = 0;
+
     for(std::pair<std::string, FieldHandle*> pair : this->handleMap) {
-        if(pair.second != 0) {
-            delete pair.second;
-        }
+        delete pair.second;
     }
+    this->handleMap.clear();
 }
 
 std::string ClassType::getTypeName() {
@@ -127,6 +127,7 @@ ConstructorHandle *ClassType::setNewConstructorHandle(unsigned int paramSize, DS
 DSType *ClassType::anyType = new ClassType("Any", false, 0);
 DSType *ClassType::voidType = new ClassType("Void", false, 0);
 
+
 // ##########################
 // ##     FunctionType     ##
 // ##########################
@@ -136,9 +137,8 @@ FunctionType::FunctionType(DSType *returnType, unsigned int paramSize, DSType **
 }
 
 FunctionType::~FunctionType() {
-    if(this->paramTypes != 0) {
-        delete[] this->paramTypes;
-    }
+    delete[] this->paramTypes;
+    this->paramTypes = 0;
 }
 
 DSType *FunctionType::getReturnType() {

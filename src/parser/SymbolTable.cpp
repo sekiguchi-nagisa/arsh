@@ -53,12 +53,18 @@ bool CommonSymbolEntry::isGlobal() {
     return (this->flag & CommonSymbolEntry::GLOBAL) == CommonSymbolEntry::GLOBAL;
 }
 
+
 // #############################
 // ##     FuncSymbolEntry     ##
 // #############################
 
 FuncSymbolEntry::FuncSymbolEntry(int varIndex, FunctionHandle *handle) :
         SymbolEntry(varIndex), handle(handle) {
+}
+
+FuncSymbolEntry::~FuncSymbolEntry() {
+    delete this->handle;
+    this->handle = 0;
 }
 
 DSType *FuncSymbolEntry::getType() {
@@ -96,10 +102,9 @@ Scope::Scope(int curVarIndex) :
 
 Scope::~Scope() {
     for(const std::pair<std::string, SymbolEntry*> &pair : this->entryMap) {
-        if(pair.second != 0) {
-            delete pair.second;
-        }
+        delete pair.second;
     }
+    this->entryMap.clear();
 }
 
 SymbolEntry *Scope::getEntry(const std::string &entryName) {
@@ -175,10 +180,9 @@ SymbolTable::SymbolTable() :
 
 SymbolTable::~SymbolTable() {
     for(Scope *scope : this->scopes) {
-        if(scope != 0) {
-            delete scope;
-        }
+        delete scope;
     }
+    this->scopes.clear();
 }
 
 SymbolEntry *SymbolTable::getEntry(const std::string &entryName) {

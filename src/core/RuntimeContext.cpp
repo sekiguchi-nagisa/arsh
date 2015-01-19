@@ -16,6 +16,10 @@ RuntimeContext::RuntimeContext() :
 }
 
 RuntimeContext::~RuntimeContext() {
+    for(DSObject *o : this->globalVarTable) {
+        delete o;
+    }
+    this->globalVarTable.clear();
 }
 
 void RuntimeContext::addGlobalVar(DSObject *obj) {

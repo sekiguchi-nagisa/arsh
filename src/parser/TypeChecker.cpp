@@ -18,9 +18,8 @@ TypeChecker::~TypeChecker() {
 }
 
 void TypeChecker::checkTypeRootNode(RootNode *rootNode) {	//FIXME
-    int size = rootNode->getNodes().size();
-    for(int i = 0; i < size; i++) {
-        this->checkTypeAcceptingVoidType(rootNode->getNodes()[i]);
+    for(Node *node : rootNode->getNodes()) {
+        this->checkTypeAcceptingVoidType(node);
     }
 }
 

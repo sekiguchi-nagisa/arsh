@@ -19,6 +19,7 @@ DSObject::DSObject() {
 DSObject::~DSObject() {
 }
 
+
 // ########################
 // ##     BaseObject     ##
 // ########################
@@ -48,6 +49,7 @@ DSObject *BaseObject::lookupField(int fieldIndex) {
     return this->fieldTable[fieldIndex];
 }
 
+
 // ##########################
 // ##     Int64_Object     ##
 // ##########################
@@ -72,6 +74,7 @@ double Float_Object::getValue() {
     return this->value;
 }
 
+
 // ############################
 // ##     Boolean_Object     ##
 // ############################
@@ -84,6 +87,7 @@ bool Boolean_Object::getValue() {
     return this->value;
 }
 
+
 // ###########################
 // ##     String_Object     ##
 // ###########################
@@ -95,6 +99,7 @@ String_Object::String_Object(DSType *type, std::string &&value) :
 const std::string &String_Object::getValue() {
     return this->value;
 }
+
 
 // ########################
 // ##     FuncObject     ##
@@ -120,6 +125,7 @@ FunctionType *FuncObject::getFuncType() {
     return this->funcType;
 }
 
+
 // ############################
 // ##     UserFuncObject     ##
 // ############################
@@ -130,6 +136,7 @@ UserFuncObject::UserFuncObject(FunctionType *funcType, FunctionNode *funcNode) :
 
 UserFuncObject::~UserFuncObject() {
     delete this->funcNode;
+    this->funcNode = 0;
 }
 
 FunctionNode *UserFuncObject::getFuncNode() {
