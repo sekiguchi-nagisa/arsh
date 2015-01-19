@@ -38,15 +38,16 @@ public:
     ClassTypeToken(int lineNum, std::string &&typeName);
 
     DSType *toType(TypePool *typePool);   // override
+    const std::string &getTokenText();
 };
 
 class ReifiedTypeToken: public TypeToken {
 private:
-    TypeToken* templateTypeToken;
+    ClassTypeToken* templateTypeToken;
     std::vector<TypeToken*> elementTypeTokens;
 
 public:
-    ReifiedTypeToken(TypeToken *templateType);
+    ReifiedTypeToken(ClassTypeToken *templateTypeToken);
     ~ReifiedTypeToken();
 
     void addElementTypeToken(TypeToken *type);

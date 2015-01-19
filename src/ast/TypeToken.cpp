@@ -6,6 +6,7 @@
  */
 
 #include "TypeToken.h"
+#include "../parser/TypeCheckException.h"
 
 // #######################
 // ##     TypeToken     ##
@@ -32,7 +33,16 @@ ClassTypeToken::ClassTypeToken(int lineNum, std::string &&typeName) :
 }
 
 DSType *ClassTypeToken::toType(TypePool *typePool) {
-    return 0;   //TODO:
+    try {
+        return typePool->getTypeAndThrowIfUndefined(this->typeName);
+    } catch(TypeLookupException &e) {
+        e.setLineNum(this->getLineNum());
+        throw;
+    }
+}
+
+const std::string &ClassTypeToken::getTokenText() {
+    return this->typeName;
 }
 
 
@@ -40,9 +50,9 @@ DSType *ClassTypeToken::toType(TypePool *typePool) {
 // ##     ReifiedTypeToken     ##
 // ##############################
 
-ReifiedTypeToken::ReifiedTypeToken(TypeToken *templateType) :
-        TypeToken(templateType->getLineNum()), templateTypeToken(templateType), elementTypeTokens(
-                2) {
+ReifiedTypeToken::ReifiedTypeToken(ClassTypeToken *templateTypeToken) :
+        TypeToken(templateTypeToken->getLineNum()), templateTypeToken(templateTypeToken),
+        elementTypeTokens(2) {
 }
 
 ReifiedTypeToken::~ReifiedTypeToken() {
@@ -57,7 +67,19 @@ void ReifiedTypeToken::addElementTypeToken(TypeToken *type) {
 }
 
 DSType *ReifiedTypeToken::toType(TypePool *typePool) {
-    return 0;   //TODO:
+    int size = this->elementTypeTokens.size();
+    DSType *templateType = typePool->getTemplateType(this->templateTypeToken->getTokenText(), size);    //FIXME: template type
+    std::vector<DSType*> elementTypes(size);
+    for(int i = 0; i < size; i++) {
+        elementTypes.push_back(this->elementTypeTokens[i]->toType(typePool));
+    }
+
+    try {
+        return typePool->createAndGetReifiedTypeIfUndefined(templateType, elementTypes);
+    } catch(TypeLookupException &e) {
+        e.setLineNum(this->getLineNum());
+        throw;
+    }
 }
 
 
@@ -89,8 +111,20 @@ void FuncTypeToken::addParamTypeToken(TypeToken *type) {
     this->paramTypeTokens.push_back(type);
 }
 
-//TODO: add TypePool to parameter
 DSType *FuncTypeToken::toType(TypePool *typePool) {
+    DSType *returnType = this->returnTypeToken->toType(typePool);
+    int size = this->paramTypeTokens.size();
+    std::vector<DSType*> paramTypes(size);
+    for(int i = 0; i < size; i++) {
+        paramTypes.push_back(this->paramTypeTokens[i]->toType(typePool));
+    }
+
+    try {
+        return typePool->createAndGetFuncTypeIfUndefined(returnType, paramTypes);
+    } catch(TypeLookupException &e) {
+        e.setLineNum(this->getLineNum());
+        throw;
+    }
     return 0;
 }
 
