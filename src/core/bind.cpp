@@ -7,14 +7,15 @@
 
 #include "bind.h"
 
-
-DSType *decodeFuncTypeInfo(TypePool *typePool, const char *typeInfo) {
-    //TODO:
-    return 0;
+static void bindNativeFuncImpl(TypePool *typePool, ClassType *type,
+        native_func_info_t *info, bool asInit) {
+    //TODO: implement decoder
 }
 
-std::vector<DSType*> decodeParamTypesOfInit(TypePool *typePool, const char *typeInfo) {
-    // TODO:
-    std::vector<DSType*> paramTypes;
-    return paramTypes;
+void bindNativeFunc(TypePool *typePool, ClassType *type, native_func_info_t *info) {
+    bindNativeFuncImpl(typePool, type, info, false);
+}
+
+void bindNativeFuncAsInit(TypePool *typePool, ClassType *type, native_func_info_t *info) {
+    bindNativeFuncImpl(typePool, type, info, true);
 }

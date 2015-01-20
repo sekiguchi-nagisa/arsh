@@ -288,13 +288,13 @@ int TypeChecker::visitIndexNode(IndexNode *node) {
     this->checkType(node->getRecvNode());
     DSType *recvType = node->getRecvNode()->getType();
     FunctionHandle *handle = recvType->lookupMethodHandle(GET);
-    if(handle == 0 || handle->getParamTypes().size() != 2) {
+    if(handle == 0 || handle->getParamTypes(this->typePool).size() != 2) {
         E_UndefinedMethod->report(node->getLineNum(), GET);
     }
 
-    this->checkType(handle->getParamTypes()[1], node->getIndexNode());
+    this->checkType(handle->getParamTypes(this->typePool)[1], node->getIndexNode());
     node->setGetterHandle(handle);
-    node->setType(handle->getReturnType());
+    node->setType(handle->getReturnType(this->typePool));
     return 0;
 }
 
@@ -440,8 +440,8 @@ int TypeChecker::visitForInNode(ForInNode *node) {
     // lookup RESET
     FunctionHandle *reset = exprType->lookupMethodHandle(RESET);
     if(reset != 0) {
-        if(reset->getParamTypes().size() != 1 ||
-                !reset->getReturnType()->equals(this->typePool->getVoidType())) {
+        if(reset->getParamTypes(this->typePool).size() != 1 ||
+                !reset->getReturnType(this->typePool)->equals(this->typePool->getVoidType())) {
             reset = 0;
         }
     }
@@ -449,8 +449,8 @@ int TypeChecker::visitForInNode(ForInNode *node) {
     // lookup NEXT
     FunctionHandle *next = exprType->lookupMethodHandle(NEXT);
     if(next != 0) {
-        if(next->getParamTypes().size() != 1 ||
-                next->getReturnType()->equals(this->typePool->getVoidType())) {
+        if(next->getParamTypes(this->typePool).size() != 1 ||
+                next->getReturnType(this->typePool)->equals(this->typePool->getVoidType())) {
             next = 0;
         }
     }
@@ -458,8 +458,8 @@ int TypeChecker::visitForInNode(ForInNode *node) {
     // lookup HAS_NEXT
     FunctionHandle *hasNext = exprType->lookupMethodHandle(HAS_NEXT);
     if(hasNext != 0) {
-        if(hasNext->getParamTypes().size() != 1 ||
-                !hasNext->getReturnType()->equals(this->typePool->getBooleanType())) {
+        if(hasNext->getParamTypes(this->typePool).size() != 1 ||
+                !hasNext->getReturnType(this->typePool)->equals(this->typePool->getBooleanType())) {
             hasNext = 0;
         }
     }
@@ -472,7 +472,7 @@ int TypeChecker::visitForInNode(ForInNode *node) {
     // add symbol entry
     this->enterLoop();
     this->symbolTable.enterScope();
-    this->addEntryAndThrowIfDefined(node, node->getInitName(), next->getReturnType(), false);
+    this->addEntryAndThrowIfDefined(node, node->getInitName(), next->getReturnType(this->typePool), false);
     this->checkTypeWithCurrentBlockScope(node->getBlockNode());
     this->symbolTable.exitScope();
     this->exitLoop();

@@ -12,8 +12,12 @@
 #include <vector>
 #include <string>
 #include <utility>
+#include <memory>
 
 #include "CalleeHandle.h"
+
+class DSObject;
+class FuncObject;
 
 class DSType {
 public:
@@ -106,6 +110,8 @@ private:
 
     std::unordered_map<std::string, FieldHandle*> handleMap;
 
+    std::vector<std::shared_ptr<DSObject*>> fieldTable;
+
 public:
     /**
      * superType may be null (Any or Void Type)
@@ -136,6 +142,18 @@ public:
      * return created constructor handle
      */
     ConstructorHandle *setNewConstructorHandle(const std::vector<DSType*> &paramTypes);
+
+    /**
+     * add function entity to ClassType. the order of calling this method must be
+     *  equivalent to addNewFieldHandle or addNewFunctionHandle.
+     *  func is null if reserve field
+     */
+    void addFunction(FuncObject *func);
+
+    /**
+     * set constructor entity to ClassType.
+     */
+    void setConstructor(FuncObject *func);
 
     static DSType *anyType;
     static DSType *voidType;

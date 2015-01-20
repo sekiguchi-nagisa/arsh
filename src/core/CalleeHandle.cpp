@@ -60,11 +60,11 @@ FunctionType *FunctionHandle::getFuncType(TypePool *typePool) {
     return dynamic_cast<FunctionType*>(this->getFieldType(typePool));
 }
 
-DSType *FunctionHandle::getReturnType() {
+DSType *FunctionHandle::getReturnType(TypePool *typePool) {
     return this->returnType;
 }
 
-const std::vector<DSType*> &FunctionHandle::getParamTypes() {
+const std::vector<DSType*> &FunctionHandle::getParamTypes(TypePool *typePool) {
     return this->paramTypes;
 }
 
@@ -95,7 +95,7 @@ int FunctionHandle::getParamIndex(const std::string &paramName) {
 }
 
 bool FunctionHandle::hasDefaultValue(int paramIndex) {
-    return paramIndex > -1 && paramIndex < this->defaultValues.size()
+    return (unsigned int) paramIndex < this->defaultValues.size()
             && this->defaultValues[paramIndex];
 }
 

@@ -7,6 +7,7 @@
 
 
 #include "DSType.h"
+#include "DSObject.h"
 
 // ####################
 // ##     DSType     ##
@@ -50,8 +51,9 @@ bool DSType::isAssignableFrom(DSType *targetType) {
 // #######################
 
 ClassType::ClassType(std::string &&className, bool extendable, DSType *superType) :
-        superType(superType), baseIndex(superType != 0 ? superType->getFieldSize() : 0), className(
-                std::move(className)), extendable(extendable), constructorHandle(0), handleMap() {
+        superType(superType), baseIndex(superType != 0 ? superType->getFieldSize() : 0),
+        className(std::move(className)), extendable(extendable), constructorHandle(0),
+        handleMap(), fieldTable() {
 }
 
 ClassType::~ClassType() {
@@ -125,6 +127,14 @@ ConstructorHandle *ClassType::setNewConstructorHandle(const std::vector<DSType*>
     return handle;
 }
 
+void ClassType::addFunction(FuncObject *func) {
+    //TODO:
+}
+
+void ClassType::setConstructor(FuncObject *func) {
+    //TODO:
+}
+
 DSType *ClassType::anyType = new ClassType("Any", false, 0);
 DSType *ClassType::voidType = new ClassType("Void", false, 0);
 
@@ -135,7 +145,7 @@ DSType *ClassType::voidType = new ClassType("Void", false, 0);
 
 FunctionType::FunctionType(DSType *returnType, const std::vector<DSType*> &paramTypes) :
         returnType(returnType), paramSize(paramTypes.size()), paramTypes(new DSType*[paramTypes.size()]) {
-    for(int i = 0; i < this->paramSize; i++) {
+    for(unsigned int i = 0; i < this->paramSize; i++) {
         this->paramTypes[i] = paramTypes[i];
     }
 }
@@ -163,7 +173,7 @@ DSType *FunctionType::getFirstParamType() {
 
 std::string FunctionType::getTypeName() {
     std::vector<DSType*> types(this->paramSize);
-    for(int i = 0; i < this->paramSize; i++) {
+    for(unsigned int i = 0; i < this->paramSize; i++) {
         types.push_back(this->paramTypes[i]);
     }
     return toFunctionTypeName(this->returnType, types);

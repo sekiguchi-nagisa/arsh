@@ -12,7 +12,7 @@
 #include "TypePool.h"
 
 /**
- * for function handle(method handle) creation.
+ * for function handle(method handle or constructor handle) creation.
  */
 typedef struct {
     const char *funcName;
@@ -41,41 +41,13 @@ typedef struct {
 } native_func_info_t;
 
 /**
- * for constructor handle creation.
+ * create function handle, function object and add to type.
  */
-typedef struct {
-    /**
-     * serialized param types
-     */
-    const char *typeInfo;
-
-    /**
-     * parameter size of native function(exclude first parameter).
-     * must be under 8.
-     */
-    int paramSize;
-
-    /**
-     * DSObject *func(RuntimeContext *ctx, DSObject *arg1, DSObject *arg2, ....).
-     * return value is always null.
-     */
-    void *func_ptr;
-
-    /**
-     * ex. if arg2, arg3 has default value, 00000110
-     */
-    unsigned char defaultValueFlag;
-} native_init_info_t;
+void bindNativeFunc(TypePool *typePool, ClassType *type, native_func_info_t *info);
 
 /**
- * for function handle initialization
+ * create constructor handle and add to type.
  */
-DSType *decodeFuncTypeInfo(TypePool *typePool, const char *typeInfo);
-
-/**
- * for constructor handle initialization
- */
-std::vector<DSType*> decodeParamTypesOfInit(TypePool *typePool, const char *typeInfo);
-
+void bindNativeFuncAsInit(TypePool *typePool, ClassType *type, native_func_info_t *info);
 
 #endif /* CORE_BIND_H_ */

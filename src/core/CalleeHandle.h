@@ -67,8 +67,8 @@ public:
     virtual DSType *getFieldType(TypePool *typePool);   // override
 
     FunctionType *getFuncType(TypePool *typePool);
-    DSType *getReturnType();
-    const std::vector<DSType*> &getParamTypes();
+    DSType *getReturnType(TypePool *typePool);
+    const std::vector<DSType*> &getParamTypes(TypePool *typePool);
 
     /**
      * return null if has no parameter
