@@ -117,14 +117,9 @@ public:
      * return always null
      */
     DSObject *lookupField(int fieldIndex);	// override
-//
-//	/**
-//	 * set function type. must be called only once when function type is resolved.
-//	 */
-//	void setFuncType(FunctionType *funcType);
 
     /**
-     * equivalent to getType()
+     * equivalent to dynamic_cast<FunctionType*>(getType())
      */
     FunctionType *getFuncType();
 };
@@ -147,6 +142,23 @@ public:
  * for builtin(native) function
  */
 class BuiltinFuncObject: public FuncObject {
+private:
+    /**
+     * size of actual parameter. exclude first parameter(RuntimeContext)
+     */
+    int paramSize;
+
+    /**
+     * DSObject *func(RuntimeContext *ctx, DSObject *arg1, DSObject *arg2, ....)
+     */
+    void *func_ptr;
+
+public:
+    BuiltinFuncObject(FunctionType *funcType, int paramSize, void *func_ptr);
+    ~BuiltinFuncObject();
+
+    int getParamSize();
+    void *getFuncPointer();
 };
 
 #endif /* CORE_DSOBJECT_H_ */

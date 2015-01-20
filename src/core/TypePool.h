@@ -74,4 +74,5 @@ public:
     FunctionType *createAndGetFuncTypeIfUndefined(DSType *returnType, const std::vector<DSType*> &paramTypes);
 };
 
+
 #endif /* CORE_TYPEPOOL_H_ */

@@ -142,3 +142,23 @@ UserFuncObject::~UserFuncObject() {
 FunctionNode *UserFuncObject::getFuncNode() {
     return this->funcNode;
 }
+
+
+// ###############################
+// ##     BuiltinFuncObject     ##
+// ###############################
+
+BuiltinFuncObject::BuiltinFuncObject(FunctionType *funcType, int paramSize, void *func_ptr) :
+        FuncObject(funcType), paramSize(paramSize), func_ptr(func_ptr) {
+}
+
+BuiltinFuncObject::~BuiltinFuncObject() {
+}
+
+int BuiltinFuncObject::getParamSize() {
+    return this->paramSize;
+}
+
+void *BuiltinFuncObject::getFuncPointer() {
+    return this->func_ptr;
+}

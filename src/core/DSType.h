@@ -205,4 +205,5 @@ std::string toReifiedTypeName(DSType *templateType, const std::vector<DSType*> &
  */
 std::string toFunctionTypeName(DSType *returnType, const std::vector<DSType*> &paramTypes);
 
+
 #endif /* CORE_DSTYPE_H_ */
