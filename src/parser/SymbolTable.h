@@ -10,6 +10,7 @@
 
 #include "../core/DSType.h"
 #include "../core/CalleeHandle.h"
+#include "../core/TypePool.h"
 
 class SymbolEntry {
 private:
@@ -22,7 +23,7 @@ public:
     /**
      * return the type of symbol(variable, function)
      */
-    virtual DSType *getType() = 0;
+    virtual DSType *getType(TypePool *typePool) = 0;
 
     /**
      * return true, if read only entry
@@ -54,7 +55,7 @@ public:
     CommonSymbolEntry(int varIndex, DSType *type, bool readOnly, bool global);
     ~CommonSymbolEntry();
 
-    DSType *getType();	// override
+    DSType *getType(TypePool *typePool);	// override
     bool isReadOnly();	// override
     bool isGlobal();	// override
 };
@@ -67,7 +68,7 @@ public:
     FuncSymbolEntry(int varIndex, FunctionHandle *handle);
     ~FuncSymbolEntry();
 
-    DSType *getType();	// override
+    DSType *getType(TypePool *typePool);	// override
 
     /**
      * return always true

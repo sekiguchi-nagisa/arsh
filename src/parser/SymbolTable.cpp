@@ -41,7 +41,7 @@ CommonSymbolEntry::CommonSymbolEntry(int varIndex, DSType *type, bool readOnly, 
 CommonSymbolEntry::~CommonSymbolEntry() {
 }
 
-DSType *CommonSymbolEntry::getType() {
+DSType *CommonSymbolEntry::getType(TypePool *typePool) {
     return this->type;
 }
 
@@ -67,8 +67,8 @@ FuncSymbolEntry::~FuncSymbolEntry() {
     this->handle = 0;
 }
 
-DSType *FuncSymbolEntry::getType() {
-    return this->handle->getFuncType();
+DSType *FuncSymbolEntry::getType(TypePool *typePool) {
+    return this->handle->getFuncType(typePool);
 }
 
 bool FuncSymbolEntry::isReadOnly() {

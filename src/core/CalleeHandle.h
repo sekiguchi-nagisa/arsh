@@ -13,13 +13,16 @@
 #include <vector>
 #include <unordered_map>
 
+#include "TypePool.h"
+
 class DSType;
 class FunctionType;
 
 class FieldHandle {
-private:
+protected:
     DSType *fieldType;
 
+private:
     /**
      * if index is -1, this handle dose not belong to handle table
      */
@@ -31,7 +34,7 @@ public:
     FieldHandle(DSType *fieldType, int fieldIndex, bool readOnly);
     virtual ~FieldHandle();
 
-    DSType *getFieldType();
+    virtual DSType *getFieldType(TypePool *typePool);
 
     /**
      * return -1, if this handle dose not belong to handle table
@@ -43,6 +46,9 @@ public:
 
 class FunctionHandle: public FieldHandle {
 private:
+    DSType *returnType;
+    std::vector<DSType*> paramTypes;
+
     /**
      * contains parameter name and parameter index pair
      */
@@ -54,11 +60,20 @@ private:
     std::vector<bool> defaultValues;
 
 public:
-    FunctionHandle(FunctionType *funcType);
-    FunctionHandle(FunctionType *funcType, int fieldIndex);
+    FunctionHandle(DSType *returnType, const std::vector<DSType*> paramTypes);
+    FunctionHandle(DSType *returnType, const std::vector<DSType*> paramTypes, int fieldIndex);
     virtual ~FunctionHandle();
 
-    FunctionType *getFuncType();
+    virtual DSType *getFieldType(TypePool *typePool);   // override
+
+    FunctionType *getFuncType(TypePool *typePool);
+    DSType *getReturnType();
+    const std::vector<DSType*> &getParamTypes();
+
+    /**
+     * return null if has no parameter
+     */
+    DSType *getFirstParamType();
 
     /**
      * return true if success, otherwise return false
@@ -76,28 +91,15 @@ public:
     bool hasDefaultValue(int paramIndex);
 };
 
-/**
- * getFieldType() or getFuncType() is always null
- */
 class ConstructorHandle : public FunctionHandle {
-private:
-    unsigned int paramSize;
-
-    /**
-     * may be null, if has no parameter (paramSize == 0)
-     */
-    DSType** paramTypes;
-
 public:
-    ConstructorHandle(unsigned int paramSize, DSType **paramTypes);
+    ConstructorHandle(const std::vector<DSType*> &paramTypes);
     ~ConstructorHandle();
 
-    unsigned int getParamSize();
-
     /**
-     * may be null, if has no parameter (getParamSize() == 0)
+     * return always null
      */
-    DSType **getParamTypes();
+    DSType *getFieldType(TypePool *typePool);   // override
 };
 
 #endif /* CORE_CALLEEHANDLE_H_ */

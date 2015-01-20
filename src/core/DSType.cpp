@@ -30,7 +30,7 @@ FunctionHandle *DSType::lookupFunctionHandle(const std::string &funcName) {
 FunctionHandle *DSType::lookupMethodHandle(const std::string &methodName) {
     FunctionHandle *handle = this->lookupFunctionHandle(methodName);
     if(handle != 0) {
-        DSType *recvType = handle->getFuncType()->getFirstParamType();
+        DSType *recvType = handle->getFirstParamType();
         return recvType != 0 && recvType->isAssignableFrom(this) ? handle : 0;
     }
     return 0;
@@ -106,20 +106,21 @@ bool ClassType::addNewFieldHandle(const std::string &fieldName, bool readOnly, D
     return true;
 }
 
-FunctionHandle *ClassType::addNewFunctionHandle(const std::string &funcName, FunctionType *funcType) {
+FunctionHandle *ClassType::addNewFunctionHandle(const std::string &funcName,
+        DSType *returnType, const std::vector<DSType*> &paramTypes) {
     if(this->hasField(funcName)) {
         return 0;
     }
-    FunctionHandle *handle = new FunctionHandle(funcType, this->getFieldSize());
+    FunctionHandle *handle = new FunctionHandle(returnType, paramTypes, this->getFieldSize());
     this->handleMap[funcName] = handle;
     return handle;
 }
 
-ConstructorHandle *ClassType::setNewConstructorHandle(unsigned int paramSize, DSType **paramTypes) {
+ConstructorHandle *ClassType::setNewConstructorHandle(const std::vector<DSType*> &paramTypes) {
     if(this->constructorHandle != 0) {
         delete this->constructorHandle;
     }
-    ConstructorHandle *handle = new ConstructorHandle(paramSize, paramTypes);
+    ConstructorHandle *handle = new ConstructorHandle(paramTypes);
     this->constructorHandle = handle;
     return handle;
 }

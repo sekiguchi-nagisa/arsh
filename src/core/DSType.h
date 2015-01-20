@@ -130,12 +130,12 @@ public:
      * return created function handle.
      * return null, found duplicated field.
      */
-    FunctionHandle *addNewFunctionHandle(const std::string &funcName, FunctionType *funcType);
+    FunctionHandle *addNewFunctionHandle(const std::string &funcName, DSType *returnType, const std::vector<DSType*> &paramTypes);
 
     /**
      * return created constructor handle
      */
-    ConstructorHandle *setNewConstructorHandle(unsigned int paramSize, DSType **paramTypes);
+    ConstructorHandle *setNewConstructorHandle(const std::vector<DSType*> &paramTypes);
 
     static DSType *anyType;
     static DSType *voidType;

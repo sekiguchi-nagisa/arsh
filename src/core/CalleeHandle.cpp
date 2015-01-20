@@ -19,7 +19,7 @@ FieldHandle::FieldHandle(DSType *fieldType, int fieldIndex, bool readOnly) :
 FieldHandle::~FieldHandle() {
 }
 
-DSType *FieldHandle::getFieldType() {
+DSType *FieldHandle::getFieldType(TypePool *typePool) {
     return this->fieldType;
 }
 
@@ -36,24 +36,45 @@ bool FieldHandle::isReadOnly() {
 // ##     FunctionHandle     ##
 // ############################
 
-FunctionHandle::FunctionHandle(FunctionType *funcType) :
-        FunctionHandle(funcType, -1) {
+FunctionHandle::FunctionHandle(DSType *returnType, const std::vector<DSType*> paramTypes) :
+        FunctionHandle(returnType, paramTypes, -1) {
 }
 
-FunctionHandle::FunctionHandle(FunctionType *funcType, int fieldIndex) :
-        FieldHandle(funcType, fieldIndex, true), paramIndexMap(), defaultValues() {
+FunctionHandle::FunctionHandle(DSType *returnType, const std::vector<DSType*> paramTypes, int fieldIndex) :
+        FieldHandle(0, fieldIndex, true),
+        returnType(returnType), paramTypes(paramTypes), paramIndexMap(), defaultValues() {
 }
 
 FunctionHandle::~FunctionHandle() {
 }
 
-FunctionType *FunctionHandle::getFuncType() {
-    return dynamic_cast<FunctionType*>(this->getFieldType());
+DSType *FunctionHandle::getFieldType(TypePool *typePool) {
+    if(this->fieldType == 0) {
+        FunctionType *funcType = typePool->createAndGetFuncTypeIfUndefined(this->returnType, this->paramTypes);
+        this->fieldType = funcType;
+    }
+    return this->fieldType;
+}
+
+FunctionType *FunctionHandle::getFuncType(TypePool *typePool) {
+    return dynamic_cast<FunctionType*>(this->getFieldType(typePool));
+}
+
+DSType *FunctionHandle::getReturnType() {
+    return this->returnType;
+}
+
+const std::vector<DSType*> &FunctionHandle::getParamTypes() {
+    return this->paramTypes;
+}
+
+DSType *FunctionHandle::getFirstParamType() {
+    return this->paramTypes.size() > 0 ? this->paramTypes[0] : 0;
 }
 
 bool FunctionHandle::addParamName(const std::string &paramName, bool defaultValue) {
     unsigned int size = this->paramIndexMap.size();
-    if(size >= this->getFuncType()->getParamSize()) {
+    if(size >= this->paramTypes.size()) {
         return false;
     }
 
@@ -83,19 +104,13 @@ bool FunctionHandle::hasDefaultValue(int paramIndex) {
 // ##     ConstructorHandle     ##
 // ###############################
 
-ConstructorHandle::ConstructorHandle(unsigned int paramSize, DSType **paramTypes) :
-        FunctionHandle(0), paramSize(paramSize), paramTypes(paramTypes) {
+ConstructorHandle::ConstructorHandle(const std::vector<DSType*> &paramTypes) :
+        FunctionHandle(0, paramTypes) {
 }
 
 ConstructorHandle::~ConstructorHandle() {
-    delete[] this->paramTypes;
-    this->paramTypes = 0;
 }
 
-unsigned int ConstructorHandle::getParamSize() {
-    return this->paramSize;
-}
-
-DSType **ConstructorHandle::getParamTypes() {
-    return this->paramTypes;
+DSType *ConstructorHandle::getFieldType(TypePool *typePool) {
+    return 0;
 }
