@@ -150,7 +150,7 @@ public:
     int visitCastNode(CastNode *node); // override
     int visitInstanceOfNode(InstanceOfNode *node); // override
     int visitApplyNode(ApplyNode *node); // override
-    int visitConstructorCallNode(ConstructorCallNode *node); // override
+    int visitNewNode(NewNode *node); // override
     int visitCondOpNode(CondOpNode *node); // override
     int visitProcessNode(ProcessNode *node); // override
     int visitProcArgNode(ProcArgNode *node); // override

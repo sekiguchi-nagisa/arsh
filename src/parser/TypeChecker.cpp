@@ -318,8 +318,8 @@ int TypeChecker::visitApplyNode(ApplyNode *node) {
     E_Unimplemented->report(node->getLineNum(), "ApplyNode");
     return 0;
 } //TODO
-int TypeChecker::visitConstructorCallNode(ConstructorCallNode *node) {
-    E_Unimplemented->report(node->getLineNum(), "ConstructorCallNode");
+int TypeChecker::visitNewNode(NewNode *node) {
+    E_Unimplemented->report(node->getLineNum(), "NewNode");
     return 0;
 } //TODO
 

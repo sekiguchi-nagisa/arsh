@@ -58,7 +58,7 @@ int Evaluator::visitInstanceOfNode(InstanceOfNode *node) {
 int Evaluator::visitApplyNode(ApplyNode *node) {
     return 0;
 } //TODO
-int Evaluator::visitConstructorCallNode(ConstructorCallNode *node) {
+int Evaluator::visitNewNode(NewNode *node) {
     return 0;
 } //TODO
 int Evaluator::visitCondOpNode(CondOpNode *node) {

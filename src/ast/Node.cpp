@@ -459,12 +459,12 @@ int InstanceOfNode::accept(NodeVisitor *visitor) {
 // ##     ApplyNode     ##
 // #######################
 
-ApplyNode::ApplyNode(int lineNum, ExprNode *recvNode) :
-        ApplyNode(lineNum, recvNode, false) {
+ApplyNode::ApplyNode(ExprNode *recvNode) :
+        ApplyNode(recvNode, false) {
 }
 
-ApplyNode::ApplyNode(int lineNum, ExprNode *recvNode, bool overload) :
-        ExprNode(lineNum), recvNode(recvNode), argNodes(),
+ApplyNode::ApplyNode(ExprNode *recvNode, bool overload) :
+        ExprNode(recvNode->getLineNum()), recvNode(recvNode), argNodes(),
         asFuncCall(false), overload(false) {
 }
 
@@ -497,46 +497,25 @@ int ApplyNode::accept(NodeVisitor *visitor) {
     return visitor->visitApplyNode(this);
 }
 
-// #################################
-// ##     ConstructorCallNode     ##
-// #################################
+// #####################
+// ##     NewNode     ##
+// #####################
 
-ConstructorCallNode::ConstructorCallNode(int lineNum, TypeToken *type) :
-        ExprNode(lineNum), targetType(type), argNodes(), handle(0) {
+NewNode::NewNode(int lineNum, TypeToken *targetTypeToken) :
+        ExprNode(lineNum), targetTypeToken(targetTypeToken) {
 }
 
-ConstructorCallNode::~ConstructorCallNode() {
-    delete this->targetType;
-    this->targetType = 0;
-
-    for(ExprNode *e : this->argNodes) {
-        delete e;
-    }
-    this->argNodes.clear();
+NewNode::~NewNode() {
+    delete this->targetTypeToken;
+    this->targetTypeToken = 0;
 }
 
-TypeToken *ConstructorCallNode::getTargetType() {
-    return this->targetType;
+TypeToken *NewNode::getTargetTypeToken() {
+    return this->targetTypeToken;
 }
 
-void ConstructorCallNode::addArgNode(ExprNode *node) {
-    this->argNodes.push_back(node);
-}
-
-const std::vector<ExprNode*> &ConstructorCallNode::getArgNodes() {
-    return this->argNodes;
-}
-
-void ConstructorCallNode::setConstructorHandle(ConstructorHandle *handle) {
-    this->handle = handle;
-}
-
-ConstructorHandle *ConstructorCallNode::getConstructorHandle() {
-    return this->handle;
-}
-
-int ConstructorCallNode::accept(NodeVisitor *visitor) {
-    return visitor->visitConstructorCallNode(this);
+int NewNode::accept(NodeVisitor *visitor) {
+    return visitor->visitNewNode(this);
 }
 
 // ########################

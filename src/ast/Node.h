@@ -295,8 +295,8 @@ private:
     bool overload;
 
 public:
-    ApplyNode(int lineNum, ExprNode *recvNode);
-    ApplyNode(int lineNum, ExprNode *recvNode, bool overload);
+    ApplyNode(ExprNode *recvNode);
+    ApplyNode(ExprNode *recvNode, bool overload);
     ~ApplyNode();
 
     ExprNode *getRecvNode();
@@ -310,27 +310,19 @@ public:
     int accept(NodeVisitor *visitor);	// override
 };
 
-class ConstructorCallNode: public ExprNode {	//TODO: named parameter
+/**
+ * allocate new DSObject
+ */
+class NewNode : public ExprNode {
 private:
-    TypeToken* targetType;
-    std::vector<ExprNode*> argNodes;
-    ConstructorHandle *handle;
+    TypeToken *targetTypeToken;
 
 public:
-    ConstructorCallNode(int lineNum, TypeToken *type);
-    ~ConstructorCallNode();
+    NewNode(int lineNum, TypeToken *targetTypeToken);
+    ~NewNode();
 
-    TypeToken *getTargetType();
-    void addArgNode(ExprNode *node);
-    const std::vector<ExprNode*> &getArgNodes();
-    void setConstructorHandle(ConstructorHandle *handle);
-
-    /**
-     * return null before call setConstructorHandle()
-     */
-    ConstructorHandle *getConstructorHandle();
-
-    int accept(NodeVisitor *visitor);	//override
+    TypeToken *getTargetTypeToken();
+    int accept(NodeVisitor *visitor);   // override
 };
 
 class CondOpNode: public ExprNode {

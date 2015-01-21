@@ -18,7 +18,7 @@ static std::string resolveOpName(int op) {
 
 static ApplyNode *createApplyNode(int lineNum, ExprNode *recvNode, std::string &&methodName, bool overload) {
     AccessNode *a = new AccessNode(lineNum, recvNode, std::move(methodName));
-    return new ApplyNode(lineNum, a, overload);
+    return new ApplyNode(a, overload);
 }
 
 
@@ -51,5 +51,9 @@ ForNode *createForInNode(int lineNum, std::string &&initName, ExprNode *exprNode
     blockNode->insertNodeToFirst(init_var);
 
     return new ForNode(lineNum, reset_varDecl, apply_hasNext, 0, blockNode);
+}
+
+ApplyNode *createConstructorCallNode(int lineNum, TypeToken *targetTypeToken) {
+    return new ApplyNode(new NewNode(lineNum, targetTypeToken));
 }
 

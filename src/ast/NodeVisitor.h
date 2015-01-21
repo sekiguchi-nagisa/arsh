@@ -23,7 +23,7 @@ class AccessNode;
 class CastNode;
 class InstanceOfNode;
 class ApplyNode;
-class ConstructorCallNode;
+class NewNode;
 class CondOpNode;
 class ProcessNode;
 class ProcArgNode;
@@ -69,7 +69,7 @@ public:
     virtual int visitCastNode(CastNode *node) = 0;
     virtual int visitInstanceOfNode(InstanceOfNode *node) = 0;
     virtual int visitApplyNode(ApplyNode *node) = 0;
-    virtual int visitConstructorCallNode(ConstructorCallNode *node) = 0;
+    virtual int visitNewNode(NewNode *node) = 0;
     virtual int visitCondOpNode(CondOpNode *node) = 0;
     virtual int visitProcessNode(ProcessNode *node) = 0;
     virtual int visitProcArgNode(ProcArgNode *node) = 0;

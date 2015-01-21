@@ -24,5 +24,7 @@ ExprNode *createUnaryOpNode(int op, ExprNode *rightNode);
 
 ForNode *createForInNode(int lineNum, std::string &&initName, ExprNode *exprNode, BlockNode *blockNode);
 
+ApplyNode *createConstructorCallNode(int lineNum, TypeToken *targetTypeToken);
+
 
 #endif /* SRC_AST_NODE_UTILS_H_ */
