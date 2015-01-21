@@ -60,8 +60,8 @@ private:
     std::vector<bool> defaultValues;
 
 public:
-    FunctionHandle(DSType *returnType, const std::vector<DSType*> paramTypes);
-    FunctionHandle(DSType *returnType, const std::vector<DSType*> paramTypes, int fieldIndex);
+    FunctionHandle(DSType *returnType, const std::vector<DSType*> &paramTypes);
+    FunctionHandle(DSType *returnType, const std::vector<DSType*> &paramTypes, int fieldIndex);
     virtual ~FunctionHandle();
 
     virtual DSType *getFieldType(TypePool *typePool);   // override

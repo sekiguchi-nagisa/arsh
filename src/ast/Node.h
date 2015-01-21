@@ -9,6 +9,7 @@
 #define AST_NODE_H_
 
 #include <utility>
+#include <list>
 
 #include "../core/DSType.h"
 #include "../core/CalleeHandle.h"
@@ -424,14 +425,14 @@ public:
 
 class BlockNode: public Node {
 private:
-    std::vector<Node*> nodes;
+    std::list<Node*> nodeList;
 
 public:
     BlockNode();
     virtual ~BlockNode();
 
     virtual void addNode(Node *node);
-    virtual const std::vector<Node*> &getNodes();
+    virtual const std::list<Node*> &getNodeList();
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -854,14 +855,14 @@ public:
  */
 class RootNode {	//FIXME:
 private:
-    std::vector<Node*> nodes;
+    std::list<Node*> nodeList;
 
 public:
     RootNode();
     ~RootNode();
 
     void addNode(Node *node);
-    const std::vector<Node*> &getNodes();
+    const std::list<Node*> &getNodeList();
 };
 
 #endif /* AST_NODE_H_ */

@@ -36,11 +36,11 @@ bool FieldHandle::isReadOnly() {
 // ##     FunctionHandle     ##
 // ############################
 
-FunctionHandle::FunctionHandle(DSType *returnType, const std::vector<DSType*> paramTypes) :
+FunctionHandle::FunctionHandle(DSType *returnType, const std::vector<DSType*> &paramTypes) :
         FunctionHandle(returnType, paramTypes, -1) {
 }
 
-FunctionHandle::FunctionHandle(DSType *returnType, const std::vector<DSType*> paramTypes, int fieldIndex) :
+FunctionHandle::FunctionHandle(DSType *returnType, const std::vector<DSType*> &paramTypes, int fieldIndex) :
         FieldHandle(0, fieldIndex, true),
         returnType(returnType), paramTypes(paramTypes), paramIndexMap(), defaultValues() {
 }

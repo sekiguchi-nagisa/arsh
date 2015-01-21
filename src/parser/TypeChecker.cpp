@@ -21,7 +21,7 @@ TypeChecker::~TypeChecker() {
 }
 
 void TypeChecker::checkTypeRootNode(RootNode *rootNode) {	//FIXME
-    for(Node *node : rootNode->getNodes()) {
+    for(Node *node : rootNode->getNodeList()) {
         this->checkTypeAcceptingVoidType(node);
     }
 }
@@ -126,11 +126,10 @@ bool TypeChecker::findBlockEnd(BlockNode *blockNode) {
     if(dynamic_cast<EmptyBlockNode*>(blockNode) != 0) {
         return false;
     }
-    int endIndex = blockNode->getNodes().size() - 1;
-    if(endIndex < 0) {
+    if(blockNode->getNodeList().size() == 0) {
         return false;
     }
-    Node *endNode = blockNode->getNodes()[endIndex];
+    Node *endNode = blockNode->getNodeList().back();
     if(dynamic_cast<BlockEndNode*>(endNode) != 0) {
         return true;
     }
@@ -147,8 +146,7 @@ bool TypeChecker::findBlockEnd(BlockNode *blockNode) {
 }
 
 void TypeChecker::checkBlockEndExistence(BlockNode *blockNode, DSType *returnType) {
-    int endIndex = blockNode->getNodes().size() - 1;
-    Node *endNode = blockNode->getNodes()[endIndex];
+    Node *endNode = blockNode->getNodeList().back();
 
     if(returnType->equals(this->typePool->getVoidType())
             && dynamic_cast<BlockEndNode*>(endNode) == 0) {
@@ -385,8 +383,8 @@ int TypeChecker::visitAssertNode(AssertNode *node) {
 
 int TypeChecker::visitBlockNode(BlockNode *node) {
     int count = 0;
-    int size = node->getNodes().size();
-    for(Node *targetNode : node->getNodes()) {
+    int size = node->getNodeList().size();
+    for(Node *targetNode : node->getNodeList()) {
         this->checkTypeAcceptingVoidType(targetNode);
         if(dynamic_cast<BlockEndNode*>(targetNode) != 0 && (count != size - 1)) {
             E_Unreachable->report(node->getLineNum());

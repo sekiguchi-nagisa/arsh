@@ -741,22 +741,22 @@ int AssertNode::accept(NodeVisitor *visitor) {
 // #######################
 
 BlockNode::BlockNode() :
-        Node(0), nodes() {
+        Node(0), nodeList() {
 }
 
 BlockNode::~BlockNode() {
-    for(Node *n : this->nodes) {
+    for(Node *n : this->nodeList) {
         delete n;
     }
-    this->nodes.clear();
+    this->nodeList.clear();
 }
 
 void BlockNode::addNode(Node *node) {
-    this->nodes.push_back(node);
+    this->nodeList.push_back(node);
 }
 
-const std::vector<Node*> &BlockNode::getNodes() {
-    return this->nodes;
+const std::list<Node*> &BlockNode::getNodeList() {
+    return this->nodeList;
 }
 
 int BlockNode::accept(NodeVisitor *visitor) {
@@ -1359,20 +1359,20 @@ int EmptyBlockNode::accept(NodeVisitor *visitor) {
 // ######################
 
 RootNode::RootNode() :
-        nodes() {
+        nodeList() {
 }
 
 RootNode::~RootNode() {
-    for(Node *n : this->nodes) {
+    for(Node *n : this->nodeList) {
         delete n;
     }
-    this->nodes.clear();
+    this->nodeList.clear();
 }
 
 void RootNode::addNode(Node *node) {
-    this->nodes.push_back(node);
+    this->nodeList.push_back(node);
 }
 
-const std::vector<Node*> &RootNode::getNodes() {
-    return this->nodes;
+const std::list<Node*> &RootNode::getNodeList() {
+    return this->nodeList;
 }
