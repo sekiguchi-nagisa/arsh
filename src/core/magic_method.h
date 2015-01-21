@@ -42,7 +42,7 @@ extern const std::string GET;   // []
 extern const std::string SET;   // [] =
 
 // iterator
-extern const std::string RESET; // must be Func<Void> type
+extern const std::string RESET; // must be Func<Any> type
 extern const std::string NEXT;  // must be Func<Any> type
 extern const std::string HAS_NEXT;  // must be Func<Boolean> type
 

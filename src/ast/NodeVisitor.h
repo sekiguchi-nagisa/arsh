@@ -38,7 +38,6 @@ class ContinueNode;
 class ExportEnvNode;
 class ImportEnvNode;
 class ForNode;
-class ForInNode;
 class WhileNode;
 class IfNode;
 class ReturnNode;
@@ -50,7 +49,6 @@ class VarDeclNode;
 class AssignNode;
 class FunctionNode;
 class EmptyNode;
-class EmptyBlockNode;
 
 class NodeVisitor {
 public:
@@ -85,7 +83,6 @@ public:
     virtual int visitExportEnvNode(ExportEnvNode *node) = 0;
     virtual int visitImportEnvNode(ImportEnvNode *node) = 0;
     virtual int visitForNode(ForNode *node) = 0;
-    virtual int visitForInNode(ForInNode *node) = 0;
     virtual int visitWhileNode(WhileNode *node) = 0;
     virtual int visitIfNode(IfNode *node) = 0;
     virtual int visitReturnNode(ReturnNode *node) = 0;
@@ -97,7 +94,6 @@ public:
     virtual int visitAssignNode(AssignNode *node) = 0;
     virtual int visitFunctionNode(FunctionNode *node) = 0;
     virtual int visitEmptyNode(EmptyNode *node) = 0;
-    virtual int visitEmptyBlockNode(EmptyBlockNode *node) = 0;
 };
 
 #endif /* AST_NODEVISITOR_H_ */

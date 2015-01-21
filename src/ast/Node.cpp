@@ -460,7 +460,12 @@ int InstanceOfNode::accept(NodeVisitor *visitor) {
 // #######################
 
 ApplyNode::ApplyNode(int lineNum, ExprNode *recvNode) :
-        ExprNode(lineNum), recvNode(recvNode), argNodes() {
+        ApplyNode(lineNum, recvNode, false) {
+}
+
+ApplyNode::ApplyNode(int lineNum, ExprNode *recvNode, bool overload) :
+        ExprNode(lineNum), recvNode(recvNode), argNodes(),
+        asFuncCall(false), overload(false) {
 }
 
 ApplyNode::~ApplyNode() {
@@ -755,6 +760,10 @@ void BlockNode::addNode(Node *node) {
     this->nodeList.push_back(node);
 }
 
+void BlockNode::insertNodeToFirst(Node *node) {
+    this->nodeList.push_front(node);
+}
+
 const std::list<Node*> &BlockNode::getNodeList() {
     return this->nodeList;
 }
@@ -889,58 +898,6 @@ int ForNode::accept(NodeVisitor *visitor) {
 }
 
 // #######################
-// ##     ForInNode     ##
-// #######################
-
-ForInNode::ForInNode(int lineNum, std::string &&initName, ExprNode *exprNode, BlockNode *blockNode) :
-        LoopNode(lineNum), initName(std::move(initName)), exprNode(exprNode), blockNode(blockNode),
-        resetHandle(0), nextHandle(0), hasNextHandle(0) {
-}
-
-ForInNode::~ForInNode() {
-    delete this->exprNode;
-    this->exprNode = 0;
-
-    delete this->blockNode;
-    this->blockNode = 0;
-}
-
-const std::string &ForInNode::getInitName() {
-    return this->initName;
-}
-
-ExprNode *ForInNode::getExprNode() {
-    return this->exprNode;
-}
-
-BlockNode *ForInNode::getBlockNode() {
-    return this->blockNode;
-}
-
-void ForInNode::setIteratorHandle(FunctionHandle *resetHandle, FunctionHandle *nextHandle,
-        FunctionHandle *hasNextHandle) {
-    this->resetHandle = resetHandle;
-    this->nextHandle = nextHandle;
-    this->hasNextHandle = hasNextHandle;
-}
-
-FunctionHandle *ForInNode::getResetHandle() {
-    return this->resetHandle;
-}
-
-FunctionHandle *ForInNode::getNextHandle() {
-    return this->nextHandle;
-}
-
-FunctionHandle *ForInNode::getHasNextHandle() {
-    return this->hasNextHandle;
-}
-
-int ForInNode::accept(NodeVisitor *visitor) {
-    return visitor->visitForInNode(this);
-}
-
-// #######################
 // ##     WhileNode     ##
 // #######################
 
@@ -978,7 +935,7 @@ int WhileNode::accept(NodeVisitor *visitor) {
 
 IfNode::IfNode(int lineNum, ExprNode *condNode, BlockNode *thenNode, BlockNode *elseNode) :
         Node(lineNum), condNode(condNode), thenNode(thenNode),
-        elseNode(elseNode != 0 ? elseNode : new EmptyBlockNode()) {
+        elseNode(elseNode != 0 ? elseNode : new BlockNode()) {
 }
 
 IfNode::~IfNode() {
@@ -1334,25 +1291,6 @@ EmptyNode::EmptyNode() :
 int EmptyNode::accept(NodeVisitor *visitor) {
     return visitor->visitEmptyNode(this);
 }
-
-// ############################
-// ##     EmptyBlockNode     ##
-// ############################
-
-EmptyBlockNode::EmptyBlockNode() :
-        BlockNode() {
-}
-
-EmptyBlockNode::~EmptyBlockNode() {
-}
-
-void EmptyBlockNode::addNode(Node *node) {
-}
-
-int EmptyBlockNode::accept(NodeVisitor *visitor) {
-    return visitor->visitEmptyBlockNode(this);
-}
-
 
 // ######################
 // ##     RootNode     ##

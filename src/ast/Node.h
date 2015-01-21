@@ -284,8 +284,19 @@ private:
     ExprNode* recvNode;
     std::vector<ExprNode*> argNodes;
 
+    /**
+     * if true, treat as function call
+     */
+    bool asFuncCall;
+
+    /**
+     * if true, resolve method overloading(only use operator call)
+     */
+    bool overload;
+
 public:
     ApplyNode(int lineNum, ExprNode *recvNode);
+    ApplyNode(int lineNum, ExprNode *recvNode, bool overload);
     ~ApplyNode();
 
     ExprNode *getRecvNode();
@@ -429,10 +440,11 @@ private:
 
 public:
     BlockNode();
-    virtual ~BlockNode();
+    ~BlockNode();
 
-    virtual void addNode(Node *node);
-    virtual const std::list<Node*> &getNodeList();
+    void addNode(Node *node);
+    void insertNodeToFirst(Node *node);
+    const std::list<Node*> &getNodeList();
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -482,7 +494,7 @@ public:
 };
 
 /**
- * base class for ForNode, ForInNode, WhileNode
+ * base class for ForNode, WhileNode
  */
 class LoopNode: public Node {
 public:
@@ -521,44 +533,6 @@ public:
     Node *getCondNode();
     Node *getIterNode();
     BlockNode *getBlockNode();
-    int accept(NodeVisitor *visitor);	// override
-};
-
-class ForInNode: public LoopNode {	//FIXME: callee handle, initName
-private:
-    std::string initName;
-    ExprNode *exprNode;
-    BlockNode *blockNode;
-
-    FunctionHandle *resetHandle;	// handle for __RESET__
-    FunctionHandle *nextHandle;		// handle for __NEXT__
-    FunctionHandle *hasNextHandle;	// handle for __HAS_NEXT__
-
-public:
-    ForInNode(int lineNum, std::string &&initName, ExprNode *exprNode, BlockNode *blockNode);
-    ~ForInNode();
-
-    const std::string &getInitName();
-    ExprNode *getExprNode();
-    BlockNode *getBlockNode();
-    void setIteratorHandle(FunctionHandle *resetHandle, FunctionHandle *nextHandle,
-            FunctionHandle *hasNextHandle);
-
-    /**
-     * return null before call setIteratorHandle()
-     */
-    FunctionHandle *getResetHandle();
-
-    /**
-     * return null before call setIteratorHandle()
-     */
-    FunctionHandle *getNextHandle();
-
-    /**
-     * return null before call setIteratorHandle()
-     */
-    FunctionHandle *getHasNextHandle();
-
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -829,22 +803,9 @@ public:
 // class ClassNode
 // class ConstructorNode
 
-class EmptyNode: public ExprNode {	//TODO: EmptyBlockNode
+class EmptyNode: public ExprNode {
 public:
     EmptyNode();
-
-    int accept(NodeVisitor *visitor);	// override
-};
-
-class EmptyBlockNode: public BlockNode {
-public:
-    EmptyBlockNode();
-    ~EmptyBlockNode();
-
-    /**
-     * do nothing. do not call it
-     */
-    void addNode(Node *node);	// override
 
     int accept(NodeVisitor *visitor);	// override
 };

@@ -123,9 +123,6 @@ void TypeChecker::checkAndThrowIfOutOfLoop(Node *node) {
 }
 
 bool TypeChecker::findBlockEnd(BlockNode *blockNode) {
-    if(dynamic_cast<EmptyBlockNode*>(blockNode) != 0) {
-        return false;
-    }
     if(blockNode->getNodeList().size() == 0) {
         return false;
     }
@@ -431,52 +428,6 @@ int TypeChecker::visitForNode(ForNode *node) {
     return 0;
 }
 
-int TypeChecker::visitForInNode(ForInNode *node) {
-    this->checkType(node->getExprNode());
-    DSType *exprType = node->getExprNode()->getType();
-
-    // lookup RESET
-    FunctionHandle *reset = exprType->lookupMethodHandle(RESET);
-    if(reset != 0) {
-        if(reset->getParamTypes(this->typePool).size() != 1 ||
-                !reset->getReturnType(this->typePool)->equals(this->typePool->getVoidType())) {
-            reset = 0;
-        }
-    }
-
-    // lookup NEXT
-    FunctionHandle *next = exprType->lookupMethodHandle(NEXT);
-    if(next != 0) {
-        if(next->getParamTypes(this->typePool).size() != 1 ||
-                next->getReturnType(this->typePool)->equals(this->typePool->getVoidType())) {
-            next = 0;
-        }
-    }
-
-    // lookup HAS_NEXT
-    FunctionHandle *hasNext = exprType->lookupMethodHandle(HAS_NEXT);
-    if(hasNext != 0) {
-        if(hasNext->getParamTypes(this->typePool).size() != 1 ||
-                !hasNext->getReturnType(this->typePool)->equals(this->typePool->getBooleanType())) {
-            hasNext = 0;
-        }
-    }
-
-    if(reset == 0 || next == 0 || hasNext == 0) {
-        E_NoIterator->report(node->getLineNum(), exprType->getTypeName());
-    }
-    node->setIteratorHandle(reset, next, hasNext);
-
-    // add symbol entry
-    this->enterLoop();
-    this->symbolTable.enterScope();
-    this->addEntryAndThrowIfDefined(node, node->getInitName(), next->getReturnType(this->typePool), false);
-    this->checkTypeWithCurrentBlockScope(node->getBlockNode());
-    this->symbolTable.exitScope();
-    this->exitLoop();
-    return 0;
-}
-
 int TypeChecker::visitWhileNode(WhileNode *node) {
     this->checkType(this->typePool->getBooleanType(), node->getCondNode());
     this->enterLoop();
@@ -582,8 +533,4 @@ int TypeChecker::visitFunctionNode(FunctionNode *node) {
 int TypeChecker::visitEmptyNode(EmptyNode *node) {
     node->setType(this->typePool->getVoidType());
     return 0;
-}
-
-int TypeChecker::visitEmptyBlockNode(EmptyBlockNode *node) {
-    return 0;	// do nothing
 }

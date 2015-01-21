@@ -100,9 +100,6 @@ int Evaluator::visitImportEnvNode(ImportEnvNode *node) {
 int Evaluator::visitForNode(ForNode *node) {
     return 0;
 } //TODO
-int Evaluator::visitForInNode(ForInNode *node) {
-    return 0;
-} //TODO
 int Evaluator::visitWhileNode(WhileNode *node) {
     return 0;
 } //TODO
@@ -134,8 +131,5 @@ int Evaluator::visitFunctionNode(FunctionNode *node) {
     return 0;
 } //TODO
 int Evaluator::visitEmptyNode(EmptyNode *node) {
-    return 0;
-} //TODO
-int Evaluator::visitEmptyBlockNode(EmptyBlockNode *node) {
     return 0;
 } //TODO

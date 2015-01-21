@@ -46,7 +46,6 @@ public:
     int visitExportEnvNode(ExportEnvNode *node); // override
     int visitImportEnvNode(ImportEnvNode *node); // override
     int visitForNode(ForNode *node); // override
-    int visitForInNode(ForInNode *node); // override
     int visitWhileNode(WhileNode *node); // override
     int visitIfNode(IfNode *node); // override
     int visitReturnNode(ReturnNode *node); // override
@@ -58,7 +57,6 @@ public:
     int visitAssignNode(AssignNode *node); // override
     int visitFunctionNode(FunctionNode *node); // override
     int visitEmptyNode(EmptyNode *node); // override
-    int visitEmptyBlockNode(EmptyBlockNode *node); // override
 };
 
 #endif /* EVAL_EVALUATOR_H_ */
