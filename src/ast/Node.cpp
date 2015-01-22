@@ -432,7 +432,8 @@ int CastNode::accept(NodeVisitor *visitor) {
 // ############################
 
 InstanceOfNode::InstanceOfNode(int lineNum, ExprNode *targetNode, TypeToken *type) :
-        ExprNode(lineNum), targetNode(targetNode), targetTypeToken(type) {
+        ExprNode(lineNum), targetNode(targetNode), targetTypeToken(type),
+        targetType(0), opKind(ALWAYS_FALSE) {
 }
 
 InstanceOfNode::~InstanceOfNode() {
@@ -449,6 +450,33 @@ ExprNode *InstanceOfNode::getTargetNode() {
 
 TypeToken *InstanceOfNode::getTargetTypeToken() {
     return this->targetTypeToken;
+}
+
+TypeToken *InstanceOfNode::removeTargetTypeToken() {
+    TypeToken *t = this->targetTypeToken;
+    this->targetTypeToken = 0;
+    return t;
+}
+
+void InstanceOfNode::setTargetType(DSType *targetType) {
+    this->targetType = targetType;
+}
+
+DSType *InstanceOfNode::getTargetType() {
+    return this->targetType;
+}
+
+void InstanceOfNode::resolveOpKind(int opKind) {
+    switch(opKind) {
+    case ALWAYS_FALSE:
+    case INSTANCEOF:
+        this->opKind = opKind;
+        break;
+    }
+}
+
+int InstanceOfNode::getOpKind() {
+    return this->opKind;
 }
 
 int InstanceOfNode::accept(NodeVisitor *visitor) {

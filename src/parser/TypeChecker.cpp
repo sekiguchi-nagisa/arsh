@@ -303,10 +303,23 @@ int TypeChecker::visitCastNode(CastNode *node) {
     E_Unimplemented->report(node->getLineNum(), "CastNode");
     return 0;
 } //TODO
+
 int TypeChecker::visitInstanceOfNode(InstanceOfNode *node) {
-    E_Unimplemented->report(node->getLineNum(), "InstanceOfNode");
+    DSType *exprType = this->checkType(node->getTargetNode());
+    TypeToken *t = node->removeTargetTypeToken();
+    DSType *targetType = t->toType(this->typePool);
+    node->setTargetType(targetType);
+    delete t;
+
+    if(exprType->isAssignableFrom(targetType) || targetType->isAssignableFrom(exprType)) {
+        node->resolveOpKind(InstanceOfNode::INSTANCEOF);
+    } else {
+        node->resolveOpKind(InstanceOfNode::ALWAYS_FALSE);
+    }
+    node->setType(this->typePool->getBooleanType());
     return 0;
-} //TODO
+}
+
 int TypeChecker::visitApplyNode(ApplyNode *node) {
     E_Unimplemented->report(node->getLineNum(), "ApplyNode");
     return 0;
@@ -510,9 +523,8 @@ int TypeChecker::visitFinallyNode(FinallyNode *node) {
 }
 
 int TypeChecker::visitVarDeclNode(VarDeclNode *node) {
-    this->checkType(node->getInitValueNode());
-    this->addEntryAndThrowIfDefined(node, node->getVarName(),
-            node->getInitValueNode()->getType(), node->isReadOnly());
+    DSType *initValueType = this->checkType(node->getInitValueNode());
+    this->addEntryAndThrowIfDefined(node, node->getVarName(), initValueType, node->isReadOnly());
     node->setGlobal(this->symbolTable.inGlobalScope());
     return 0;
 }

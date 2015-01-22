@@ -263,10 +263,12 @@ public:
     int accept(NodeVisitor *visitor);	//override
 };
 
-class InstanceOfNode: public ExprNode {	//TODO: instanceof op kind
+class InstanceOfNode: public ExprNode {
 private:
     ExprNode* targetNode;
     TypeToken* targetTypeToken;
+    DSType *targetType;
+    int opKind;
 
 public:
     InstanceOfNode(int lineNum, ExprNode *targetNode, TypeToken *tyep);
@@ -274,7 +276,20 @@ public:
 
     ExprNode *getTargetNode();
     TypeToken *getTargetTypeToken();
+
+    /**
+     * remove type token, and return removed it.
+     */
+    TypeToken *removeTargetTypeToken();
+
+    void setTargetType(DSType *targetType);
+    DSType *getTargetType();
+    void resolveOpKind(int opKind);
+    int getOpKind();
     int accept(NodeVisitor *visitor);	//override
+
+    const static int ALWAYS_FALSE = 0;
+    const static int INSTANCEOF   = 1;
 };
 
 //class OperatorCallNode;	//FIXME: duplicated
