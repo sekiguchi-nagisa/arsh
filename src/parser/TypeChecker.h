@@ -41,7 +41,7 @@ private:
 
 public:
     TypeChecker(TypePool *typePool);
-    virtual ~TypeChecker();
+    ~TypeChecker();
 
     /**
      * type checker entry point
@@ -54,22 +54,25 @@ private:
     /**
      * check type.
      * if node type is void type, always success.
+     * return resolved type. if targetNode is not ExprNode return null.
      */
-    void checkTypeAcceptingVoidType(Node *targetNode);
+    DSType *checkTypeAcceptingVoidType(Node *targetNode);
 
     /**
      * check node type.
-     * if node type is void type, throw exception
+     * if node type is void type, throw exception.
+     * return resolved type. if targetNode is not ExprNode return null.
      */
-    void checkType(Node *targetNode);
+    DSType *checkType(Node *targetNode);
 
     /**
      * check node type
      * requiredType is not null
      *
      * if requiredType is not equivalent to node type, throw exception.
+     * return resolved type. if targetNode is not ExprNode return null.
      */
-    void checkType(DSType *requiredType, Node *targetNode);
+    DSType *checkType(DSType *requiredType, Node *targetNode);
 
     /**
      * check node type
@@ -79,8 +82,9 @@ private:
      * if requiredType is not equivalent to node type, throw exception.
      * if requiredType is null, do not try matching node type
      * and if unaccepatbelType is equivalent to node type, throw exception.
+     * return resolved type. if targetNode is not ExprNode return null.
      */
-    void checkType(DSType *requiredType, Node *targetNode, DSType *unacceptableType);
+    DSType *checkType(DSType *requiredType, Node *targetNode, DSType *unacceptableType);
 
     /**
      * create new symbol table and check type each node within block.

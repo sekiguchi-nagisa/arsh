@@ -28,27 +28,27 @@ void TypeChecker::checkTypeRootNode(RootNode *rootNode) {	//FIXME
 
 // type check entry point
 
-void TypeChecker::checkTypeAcceptingVoidType(Node *targetNode) {
-    this->checkType(0, targetNode, 0);
+DSType *TypeChecker::checkTypeAcceptingVoidType(Node *targetNode) {
+    return this->checkType(0, targetNode, 0);
 }
 
-void TypeChecker::checkType(Node *targetNode) {
-    this->checkType(0, targetNode, this->typePool->getVoidType());
+DSType *TypeChecker::checkType(Node *targetNode) {
+    return this->checkType(0, targetNode, this->typePool->getVoidType());
 }
 
-void TypeChecker::checkType(DSType *requiredType, Node *targetNode) {
-    this->checkType(requiredType, targetNode, 0);
+DSType *TypeChecker::checkType(DSType *requiredType, Node *targetNode) {
+    return this->checkType(requiredType, targetNode, 0);
 }
 
 //TODO:
-void TypeChecker::checkType(DSType *requiredType, Node *targetNode, DSType *unacceptableType) {
+DSType *TypeChecker::checkType(DSType *requiredType, Node *targetNode, DSType *unacceptableType) {
     /**
      * if target node is statement, always check type.
      */
     ExprNode *exprNode = dynamic_cast<ExprNode*>(targetNode);
     if(exprNode == 0) {
         targetNode->accept(this);
-        return;
+        return 0;
     }
 
     /**
@@ -56,7 +56,6 @@ void TypeChecker::checkType(DSType *requiredType, Node *targetNode, DSType *unac
      * try type check.
      */
     if(exprNode->getType() == 0) {
-        //exprNode = (ExprNode) exprNode.accept(this);
         exprNode->accept(this);
     }
 
@@ -67,7 +66,6 @@ void TypeChecker::checkType(DSType *requiredType, Node *targetNode, DSType *unac
     DSType *type = exprNode->getType();
     if(type == 0) {
         E_Unresolved->report(exprNode->getLineNum());
-        return;
     }
 
     /**
@@ -76,18 +74,17 @@ void TypeChecker::checkType(DSType *requiredType, Node *targetNode, DSType *unac
     if(requiredType == 0) {
         if(unacceptableType != 0 && unacceptableType->isAssignableFrom(type)) {
             E_Unacceptable->report(exprNode->getLineNum(), type->getTypeName());
-            return;
         }
-        return;
+        return type;
     }
 
     /**
      * try type matching.
      */
-    if(requiredType->isAssignableFrom(type)) {
-        return;
+    if(!requiredType->isAssignableFrom(type)) {
+        E_Required->report(exprNode->getLineNum(), requiredType->getTypeName(), type->getTypeName());
     }
-    E_Required->report(exprNode->getLineNum(), requiredType->getTypeName(), type->getTypeName());
+    return type;
 }
 
 void TypeChecker::checkTypeWithNewBlockScope(BlockNode *blockNode) {
@@ -221,8 +218,7 @@ int TypeChecker::visitArrayNode(ArrayNode *node) {
     int size = node->getExprNodes().size();
     assert(size != 0);
     ExprNode *firstElementNode = node->getExprNodes()[0];
-    this->checkType(firstElementNode);
-    DSType *elementType = firstElementNode->getType();
+    DSType *elementType = this->checkType(firstElementNode);
 
     for(int i = 1; i < size; i++) {
         this->checkType(elementType, node->getExprNodes()[i]);
@@ -239,8 +235,7 @@ int TypeChecker::visitMapNode(MapNode *node) {
     int size = node->getValueNodes().size();
     assert(size != 0);
     ExprNode *firstValueNode = node->getValueNodes()[0];
-    this->checkType(firstValueNode);
-    DSType *valueType = firstValueNode->getType();
+    DSType *valueType = this->checkType(firstValueNode);
 
     for(int i = 0; i < size; i++) {
         this->checkType(this->typePool->getStringType(), node->getKeyNodes()[i]);
@@ -255,13 +250,13 @@ int TypeChecker::visitMapNode(MapNode *node) {
 }
 
 int TypeChecker::visitPairNode(PairNode *node) {
-    this->checkType(node->getLeftNode());
-    this->checkType(node->getRightNode());
+    DSType *leftType = this->checkType(node->getLeftNode());
+    DSType *rightType = this->checkType(node->getRightNode());
 
     DSType *basePairType = this->typePool->getBasePairType();   //FIXME:
     std::vector<DSType*> elementTypes(2);
-    elementTypes.push_back(node->getLeftNode()->getType());
-    elementTypes.push_back(node->getRightNode()->getType());
+    elementTypes.push_back(leftType);
+    elementTypes.push_back(rightType);
     node->setType(this->typePool->createAndGetReifiedTypeIfUndefined(basePairType, elementTypes));
     return 0;
 }
@@ -280,8 +275,7 @@ int TypeChecker::visitVarNode(VarNode *node) {
 }
 
 int TypeChecker::visitIndexNode(IndexNode *node) {
-    this->checkType(node->getRecvNode());
-    DSType *recvType = node->getRecvNode()->getType();
+    DSType *recvType = this->checkType(node->getRecvNode());
     FunctionHandle *handle = recvType->lookupMethodHandle(GET);
     if(handle == 0 || handle->getParamTypes(this->typePool).size() != 2) {
         E_UndefinedMethod->report(node->getLineNum(), GET);
@@ -294,8 +288,7 @@ int TypeChecker::visitIndexNode(IndexNode *node) {
 }
 
 int TypeChecker::visitAccessNode(AccessNode *node) {
-    this->checkType(node->getRecvNode());
-    DSType *recvType = node->getRecvNode()->getType();
+    DSType *recvType = this->checkType(node->getRecvNode());
     FieldHandle *handle = recvType->lookupFieldHandle(node->getFieldName());
     if(handle == 0) {
         E_UndefinedField->report(node->getLineNum(), node->getFieldName());
@@ -318,10 +311,13 @@ int TypeChecker::visitApplyNode(ApplyNode *node) {
     E_Unimplemented->report(node->getLineNum(), "ApplyNode");
     return 0;
 } //TODO
+
 int TypeChecker::visitNewNode(NewNode *node) {
-    E_Unimplemented->report(node->getLineNum(), "NewNode");
+    TypeToken *typeToken = node->removeTargetTypeToken();
+    node->setType(typeToken->toType(this->typePool));
+    delete typeToken;
     return 0;
-} //TODO
+}
 
 int TypeChecker::visitCondOpNode(CondOpNode *node) {
     DSType *booleanType = this->typePool->getBooleanType();
@@ -449,8 +445,8 @@ int TypeChecker::visitReturnNode(ReturnNode *node) {
     if(returnType == 0) {
         E_InsideFunc->report(node->getLineNum());
     }
-    this->checkType(returnType, node->getExprNode());
-    if(node->getExprNode()->getType()->equals(this->typePool->getVoidType())) {
+    DSType *exprType = this->checkType(returnType, node->getExprNode());
+    if(exprType->equals(this->typePool->getVoidType())) {
         if(dynamic_cast<EmptyNode*>(node->getExprNode()) == 0) {
             E_NotNeedExpr->report(node->getLineNum());
         }

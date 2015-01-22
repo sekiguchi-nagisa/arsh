@@ -493,6 +493,14 @@ const std::vector<ExprNode*> &ApplyNode::getArgNodes() {
     return this->argNodes;
 }
 
+bool ApplyNode::isFuncCall() {
+    return this->asFuncCall;
+}
+
+bool ApplyNode::isOverload() {
+    return this->overload;
+}
+
 int ApplyNode::accept(NodeVisitor *visitor) {
     return visitor->visitApplyNode(this);
 }
@@ -512,6 +520,12 @@ NewNode::~NewNode() {
 
 TypeToken *NewNode::getTargetTypeToken() {
     return this->targetTypeToken;
+}
+
+TypeToken *NewNode::removeTargetTypeToken() {
+    TypeToken *t = this->targetTypeToken;
+    this->targetTypeToken = 0;
+    return t;
 }
 
 int NewNode::accept(NodeVisitor *visitor) {

@@ -307,6 +307,8 @@ public:
     void addArgNode(ExprNode *node);
 
     const std::vector<ExprNode*> &getArgNodes();
+    bool isFuncCall();
+    bool isOverload();
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -322,6 +324,12 @@ public:
     ~NewNode();
 
     TypeToken *getTargetTypeToken();
+
+    /**
+     * remove type token and return removed type token.
+     */
+    TypeToken *removeTargetTypeToken();
+
     int accept(NodeVisitor *visitor);   // override
 };
 
