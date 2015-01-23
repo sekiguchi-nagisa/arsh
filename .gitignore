@@ -9,6 +9,8 @@ Release/
 CMakeCache.txt
 CMakeFiles/
 Makefile
+install_manifest.txt
+ydsh
 
 # Compiled Object files
 *.slo
