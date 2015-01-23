@@ -1,1 +1,1 @@
-as_static_lib()
+add_source()
