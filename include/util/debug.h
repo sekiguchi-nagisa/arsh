@@ -14,13 +14,23 @@
  * limitations under the License.
  */
 
-#include <iostream>
-#include <util/debug.h>
-using namespace std;
+#ifndef UTIL_DEBUG_H_
+#define UTIL_DEBUG_H_
 
-int main() {
-    cout << "!!!Hello World!!!" << endl; // prints !!!Hello World!!!
-    debugp("hello debug print %d!!\n", 12);
-    debugp("hello debug print no arg\n");
-    return 0;
-}
+#include <stdio.h>
+
+#ifndef NDEBUG
+#define DEBUG_ON 1
+#else
+#define DEBUG_ON 0
+#endif
+
+/**
+ * for debug logging. see util/debug.cpp
+ */
+void debug_printf(const char *format, ...);
+
+#define debugp(fmt, ...) do { if(DEBUG_ON) { debug_printf("%s:%d:%s(): " fmt, __FILE__, __LINE__, __func__, ## __VA_ARGS__);} } while(0)
+
+
+#endif /* UTIL_DEBUG_H_ */

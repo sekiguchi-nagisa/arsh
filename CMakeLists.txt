@@ -1,13 +1,16 @@
-set(CMAKE_VERBOSE_MAKEFILE 1)
-
 cmake_minimum_required(VERSION 2.8)
 
 PROJECT(ydsh)
 
 # variable definition
+SET(CMAKE_VERBOSE_MAKEFILE 1)
 SET(BIN_NAME ydsh)
 SET(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 SET(YDSH_SRC ${SRC_DIR}/ydsh.cpp)
+if("${CMAKE_BUILD_TYPE}" STREQUAL "")
+    SET(CMAKE_BUILD_TYPE Release)
+endif()
+
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11")
 
 # definition of some helper function
@@ -27,6 +30,7 @@ add_subdirectory(${SRC_DIR}/ast)
 add_subdirectory(${SRC_DIR}/core)
 add_subdirectory(${SRC_DIR}/eval)
 add_subdirectory(${SRC_DIR}/parser)
+add_subdirectory(${SRC_DIR}/util)
 
 add_executable(${BIN_NAME} ${YDSH_SRC})
 
