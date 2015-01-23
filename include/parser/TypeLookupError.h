@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#ifndef PARSER_TYPELOOKUPERROR_H_
-#define PARSER_TYPELOOKUPERROR_H_
+#ifndef YDSH_INCLUDE_PARSER_TYPELOOKUPERROR_H_
+#define YDSH_INCLUDE_PARSER_TYPELOOKUPERROR_H_
 
-#include "TypeCheckException.h"
+#include <parser/TypeCheckException.h>
 
 class TypeLookupError {
 private:
@@ -59,4 +59,4 @@ extern const TypeLookupErrorOneArg * const E_DefinedType;
 // three arg
 extern const TypeLookupErrorThreeArg * const E_UnmatchElement;
 
-#endif /* PARSER_TYPELOOKUPERROR_H_ */
+#endif /* YDSH_INCLUDE_PARSER_TYPELOOKUPERROR_H_ */

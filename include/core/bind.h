@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-#ifndef CORE_BIND_H_
-#define CORE_BIND_H_
+#ifndef YDSH_INCLUDE_CORE_BIND_H_
+#define YDSH_INCLUDE_CORE_BIND_H_
 
-#include "DSType.h"
-#include "TypePool.h"
+#include <core/DSType.h>
+#include <core/TypePool.h>
 
 /**
  * for function handle(method handle or constructor handle) creation.
@@ -59,4 +59,4 @@ void bindNativeFunc(TypePool *typePool, ClassType *type, native_func_info_t *inf
  */
 void bindNativeFuncAsInit(TypePool *typePool, ClassType *type, native_func_info_t *info);
 
-#endif /* CORE_BIND_H_ */
+#endif /* YDSH_INCLUDE_CORE_BIND_H_ */

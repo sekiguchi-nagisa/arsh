@@ -20,10 +20,10 @@
 #include <utility>
 #include <list>
 
-#include "../core/DSType.h"
-#include "../core/CalleeHandle.h"
-#include "NodeVisitor.h"
-#include "TypeToken.h"
+#include <core/DSType.h>
+#include <core/CalleeHandle.h>
+#include <ast/NodeVisitor.h>
+#include <ast/TypeToken.h>
 
 class Node {
 protected:

@@ -17,9 +17,9 @@
 #include <assert.h>
 #include <vector>
 
-#include "TypeChecker.h"
-#include "TypeError.h"
-#include "../core/magic_method.h"
+#include <core/magic_method.h>
+#include <parser/TypeChecker.h>
+#include <parser/TypeError.h>
 
 TypeChecker::TypeChecker(TypePool *typePool) :
         typePool(typePool), symbolTable(), curReturnType(0), loopContextStack(), finallyContextStack() {

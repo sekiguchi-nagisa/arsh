@@ -17,10 +17,10 @@
 #ifndef SRC_PARSER_TYPEERROR_H_
 #define SRC_PARSER_TYPEERROR_H_
 
+#include <parser/TypeCheckException.h>
 #include <string>
 #include <memory>
 
-#include "TypeCheckException.h"
 
 /**
  * for type error reporting. not use it directly

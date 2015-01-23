@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "NodeVisitor.h"
+#include <ast/NodeVisitor.h>
 
 NodeVisitor::NodeVisitor() {
     // TODO Auto-generated constructor stub

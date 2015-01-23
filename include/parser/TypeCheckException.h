@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef PARSER_TYPECHECKEXCEPTION_H_
-#define PARSER_TYPECHECKEXCEPTION_H_
+#ifndef YDSH_INCLUDE_PARSER_TYPECHECKEXCEPTION_H_
+#define YDSH_INCLUDE_PARSER_TYPECHECKEXCEPTION_H_
 
 #include <string>
 #include <vector>
@@ -65,4 +65,4 @@ public:
     void setLineNum(int lineNum);
 };
 
-#endif /* PARSER_TYPECHECKEXCEPTION_H_ */
+#endif /* YDSH_INCLUDE_PARSER_TYPECHECKEXCEPTION_H_ */

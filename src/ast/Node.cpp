@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include "Node.h"
-#include "../core/builtin_variable.h"
+#include <core/builtin_variable.h>
+#include <ast/Node.h>
 
 // ##################
 // ##     Node     ##

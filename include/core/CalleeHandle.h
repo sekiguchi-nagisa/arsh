@@ -22,7 +22,7 @@
 #include <vector>
 #include <unordered_map>
 
-#include "TypePool.h"
+#include <core/TypePool.h>
 
 class DSType;
 class FunctionType;

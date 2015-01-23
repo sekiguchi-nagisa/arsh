@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "magic_method.h"
+#include <core/magic_method.h>
 
 const std::string PLUS  = "__PLUS__";
 const std::string MINUS = "__MINUS__";

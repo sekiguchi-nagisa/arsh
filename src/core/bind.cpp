@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "bind.h"
+#include <core/bind.h>
 
 static void bindNativeFuncImpl(TypePool *typePool, ClassType *type,
         native_func_info_t *info, bool asInit) {

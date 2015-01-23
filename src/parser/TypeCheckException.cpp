@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
+#include <parser/TypeCheckException.h>
+#include <parser/TypeError.h>
+
 #include <utility>
 
-#include "TypeError.h"
-#include "TypeCheckException.h"
 
 // ################################
 // ##     TypeCheckException     ##

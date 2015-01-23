@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "TypeLookupError.h"
+#include <parser/TypeLookupError.h>
 
 // #############################
 // ##     TypeLookupError     ##

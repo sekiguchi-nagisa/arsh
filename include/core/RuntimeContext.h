@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef CORE_RUNTIMECONTEXT_H_
-#define CORE_RUNTIMECONTEXT_H_
+#ifndef YDSH_INCLUDE_CORE_RUNTIMECONTEXT_H_
+#define YDSH_INCLUDE_CORE_RUNTIMECONTEXT_H_
 
+#include <core/DSObject.h>
 #include <vector>
 
-#include "DSObject.h"
 
 class RuntimeContext {
 private:
@@ -64,4 +64,4 @@ public:
     DSObject *getThrownObject();
 };
 
-#endif /* CORE_RUNTIMECONTEXT_H_ */
+#endif /* YDSH_INCLUDE_CORE_RUNTIMECONTEXT_H_ */

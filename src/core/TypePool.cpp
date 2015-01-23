@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include "TypePool.h"
-#include "DSType.h"
-#include "../parser/TypeLookupError.h"
+#include <core/TypePool.h>
+#include <core/DSType.h>
+#include <parser/TypeLookupError.h>
 
 // ######################
 // ##     TypePool     ##

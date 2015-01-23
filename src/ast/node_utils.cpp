@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
+#include <ast/node_utils.h>
+#include <core/magic_method.h>
+
 #include <stdlib.h>
 #include <utility>
 
-#include "node_utils.h"
-#include "../core/magic_method.h"
 
 static std::string resolveOpName(int op) {
     //TODO:

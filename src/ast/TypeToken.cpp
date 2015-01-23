@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include "TypeToken.h"
-#include "../parser/TypeCheckException.h"
+#include <parser/TypeCheckException.h>
+#include <ast/TypeToken.h>
 
 // #######################
 // ##     TypeToken     ##

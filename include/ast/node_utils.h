@@ -17,7 +17,7 @@
 #ifndef SRC_AST_NODE_UTILS_H_
 #define SRC_AST_NODE_UTILS_H_
 
-#include "Node.h"
+#include <ast/Node.h>
 
 /**
  * helper function for binary op node creation.

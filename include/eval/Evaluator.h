@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-#ifndef EVAL_EVALUATOR_H_
-#define EVAL_EVALUATOR_H_
+#ifndef YDSH_INCLUDE_EVAL_EVALUATOR_H_
+#define YDSH_INCLUDE_EVAL_EVALUATOR_H_
 
-#include "../core/DSType.h"
-#include "../core/CalleeHandle.h"
-#include "../ast/Node.h"
-#include "../ast/NodeVisitor.h"
+#include <ast/Node.h>
+#include <ast/NodeVisitor.h>
+#include <core/DSType.h>
+#include <core/CalleeHandle.h>
+
 
 class Evaluator: public NodeVisitor {
 public:
@@ -68,4 +69,4 @@ public:
     int visitEmptyNode(EmptyNode *node); // override
 };
 
-#endif /* EVAL_EVALUATOR_H_ */
+#endif /* YDSH_INCLUDE_EVAL_EVALUATOR_H_ */

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef AST_NODEVISITOR_H_
-#define AST_NODEVISITOR_H_
+#ifndef YDSH_INCLUDE_AST_NODEVISITOR_H_
+#define YDSH_INCLUDE_AST_NODEVISITOR_H_
 
 class Node;
 class IntValueNode;
@@ -105,4 +105,4 @@ public:
     virtual int visitEmptyNode(EmptyNode *node) = 0;
 };
 
-#endif /* AST_NODEVISITOR_H_ */
+#endif /* YDSH_INCLUDE_AST_NODEVISITOR_H_ */

@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#ifndef CORE_DSOBJECT_H_
-#define CORE_DSOBJECT_H_
+#ifndef YDSH_INCLUDE_CORE_DSOBJECT_H_
+#define YDSH_INCLUDE_CORE_DSOBJECT_H_
 
-#include "DSType.h"
+#include <core/DSType.h>
 
 class FunctionNode;
 class RuntimeContext;
@@ -170,4 +170,4 @@ public:
     void *getFuncPointer();
 };
 
-#endif /* CORE_DSOBJECT_H_ */
+#endif /* YDSH_INCLUDE_CORE_DSOBJECT_H_ */

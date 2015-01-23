@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include "DSType.h"
-#include "DSObject.h"
+#include <core/DSType.h>
+#include <core/DSObject.h>
 
 // ####################
 // ##     DSType     ##

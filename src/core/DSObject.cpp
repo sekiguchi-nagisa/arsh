@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-#include "DSObject.h"
-#include "../ast/Node.h"
-#include <stdio.h>
+#include <core/DSObject.h>
+#include <ast/Node.h>
 
 // ######################
 // ##     DSObject     ##

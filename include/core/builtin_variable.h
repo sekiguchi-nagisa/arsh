@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CORE_BUILTIN_VARIABLE_H_
-#define CORE_BUILTIN_VARIABLE_H_
+#ifndef YDSH_INCLUDE_CORE_BUILTIN_VARIABLE_H_
+#define YDSH_INCLUDE_CORE_BUILTIN_VARIABLE_H_
 
 #include <string>
 
@@ -29,4 +29,4 @@ extern const std::string STDOUT;
 extern const std::string STDERR;
 
 
-#endif /* CORE_BUILTIN_VARIABLE_H_ */
+#endif /* YDSH_INCLUDE_CORE_BUILTIN_VARIABLE_H_ */

@@ -4,6 +4,12 @@
 Debug/
 Release/
 
+# CMake file
+*.cmake
+CMakeCache.txt
+CMakeFiles/
+Makefile
+
 # Compiled Object files
 *.slo
 *.lo

@@ -16,7 +16,7 @@
 
 #include <assert.h>
 
-#include "SymbolTable.h"
+#include <parser/SymbolTable.h>
 
 // #########################
 // ##     SymbolEntry     ##
