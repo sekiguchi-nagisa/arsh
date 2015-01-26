@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CORE_CALLEEHANDLE_H_
-#define CORE_CALLEEHANDLE_H_
+#ifndef CORE_FIELDHANDLE_H_
+#define CORE_FIELDHANDLE_H_
 
 #include <string>
 #include <utility>
@@ -82,7 +82,13 @@ public:
     /**
      * return null if has no parameter
      */
-    DSType *getFirstParamType();
+    DSType *getFirstParamType(TypePool *typePool);
+
+    /**
+     * return true, if treat as method handle.
+     * equivalent to this->getFirstParamType()->isAssignableFrom(targetType)
+     */
+    bool isMethodHandle(TypePool *typePool, DSType *targetType);
 
     /**
      * return true if success, otherwise return false
@@ -111,4 +117,4 @@ public:
     DSType *getFieldType(TypePool *typePool);   // override
 };
 
-#endif /* CORE_CALLEEHANDLE_H_ */
+#endif /* CORE_FIELDHANDLE_H_ */

@@ -36,15 +36,6 @@ FunctionHandle *DSType::lookupFunctionHandle(const std::string &funcName) {
     return handle != 0 ? dynamic_cast<FunctionHandle*>(handle) : 0;
 }
 
-FunctionHandle *DSType::lookupMethodHandle(const std::string &methodName) {
-    FunctionHandle *handle = this->lookupFunctionHandle(methodName);
-    if(handle != 0) {
-        DSType *recvType = handle->getFirstParamType();
-        return recvType != 0 && recvType->isAssignableFrom(this) ? handle : 0;
-    }
-    return 0;
-}
-
 bool DSType::isAssignableFrom(DSType *targetType) {
     if(this->equals(targetType)) {
         return true;

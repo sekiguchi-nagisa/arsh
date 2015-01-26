@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_INCLUDE_PARSER_SYMBOLTABLE_H_
-#define YDSH_INCLUDE_PARSER_SYMBOLTABLE_H_
+#ifndef PARSER_SYMBOLTABLE_H_
+#define PARSER_SYMBOLTABLE_H_
 
 #include <core/TypePool.h>
 #include <core/DSType.h>
-#include <core/CalleeHandle.h>
+#include <core/FieldHandle.h>
 
 class SymbolEntry {
 private:
@@ -187,4 +187,4 @@ public:
     bool inGlobalScope();
 };
 
-#endif /* YDSH_INCLUDE_PARSER_SYMBOLTABLE_H_ */
+#endif /* PARSER_SYMBOLTABLE_H_ */

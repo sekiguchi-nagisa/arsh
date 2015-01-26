@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <core/CalleeHandle.h>
+#include <core/FieldHandle.h>
 #include <core/DSType.h>
 
 // #########################
@@ -77,8 +77,13 @@ const std::vector<DSType*> &FunctionHandle::getParamTypes(TypePool *typePool) {
     return this->paramTypes;
 }
 
-DSType *FunctionHandle::getFirstParamType() {
+DSType *FunctionHandle::getFirstParamType(TypePool *typePool) {
     return this->paramTypes.size() > 0 ? this->paramTypes[0] : 0;
+}
+
+bool FunctionHandle::isMethodHandle(TypePool *typePool, DSType *targetType) {
+    DSType *recvType = this->getFirstParamType(typePool);
+    return recvType != 0 && recvType->isAssignableFrom(targetType);
 }
 
 bool FunctionHandle::addParamName(const std::string &paramName, bool defaultValue) {

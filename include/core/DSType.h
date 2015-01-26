@@ -23,7 +23,7 @@
 #include <utility>
 #include <memory>
 
-#include <core/CalleeHandle.h>
+#include <core/FieldHandle.h>
 
 class DSObject;
 class FuncObject;
@@ -74,11 +74,6 @@ public:
      * equivalent to dynamic_cast<FunctionHandle*>(lookupFieldHandle())
      */
     FunctionHandle *lookupFunctionHandle(const std::string &funcName);
-
-    /**
-     * first parameter type is equivalent to this type
-     */
-    FunctionHandle *lookupMethodHandle(const std::string &methodName);
 
     /**
      * check equality

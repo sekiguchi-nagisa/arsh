@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_INCLUDE_PARSER_TYPECHECKER_H_
-#define YDSH_INCLUDE_PARSER_TYPECHECKER_H_
+#ifndef PARSER_TYPECHECKER_H_
+#define PARSER_TYPECHECKER_H_
 
 #include <ast/Node.h>
 #include <ast/NodeVisitor.h>
 #include <core/TypePool.h>
 #include <core/DSType.h>
-#include <core/CalleeHandle.h>
+#include <core/FieldHandle.h>
 #include <parser/SymbolTable.h>
 
 class TypeChecker: public NodeVisitor {
@@ -190,4 +190,4 @@ public:
     int visitEmptyNode(EmptyNode *node); // override
 };
 
-#endif /* YDSH_INCLUDE_PARSER_TYPECHECKER_H_ */
+#endif /* PARSER_TYPECHECKER_H_ */
