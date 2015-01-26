@@ -163,36 +163,32 @@ public:
      * set constructor entity to ClassType.
      */
     void setConstructor(FuncObject *func);
-
-    static DSType *anyType;
-    static DSType *voidType;
 };
 
 class FunctionType: public DSType {
 private:
+    /**
+     * always BaseFuncType.
+     */
+    DSType *superType;
+
     DSType *returnType;
 
     /**
-     * may be 0, if has no parameter
+     * may be empty vector, if has no parameter
      */
-    unsigned int paramSize;
-
-    /**
-     * may be null, if has no parameter
-     */
-    DSType **paramTypes;
+    std::vector<DSType*> paramTypes;
 
 public:
-    FunctionType(DSType *returnType, const std::vector<DSType*> &paramTypes);
+    FunctionType(DSType *superType, DSType *returnType, const std::vector<DSType*> &paramTypes);
     ~FunctionType();
 
     DSType *getReturnType();
-    unsigned int getParamSize();
 
     /**
-     * may be null, if has no parameter (getParamSize() == 0)
+     * may be empty vector, if has no parameter (getParamSize() == 0)
      */
-    DSType **getParamTypes();
+    const std::vector<DSType*> &getParamTypes();
 
     /**
      * may be null, if has no parameter
@@ -203,7 +199,7 @@ public:
     bool isExtendable();	// override
 
     /**
-     * return always anyType
+     * return always BaseFuncType
      */
     DSType *getSuperType();	// override
 
@@ -215,7 +211,7 @@ public:
     unsigned int getFieldSize();	// override
 
     /**
-     * return always null
+     * lookup from super type
      */
     FieldHandle *lookupFieldHandle(const std::string &fieldName);	// override
 

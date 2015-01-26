@@ -51,6 +51,7 @@ public:
     DSType *getBooleanType();
     DSType *getStringType();
     DSType *getTaskType();
+    DSType *getBaseFuncType();
 
     // for reified type.
     DSType *getBaseArrayType(); //TODO: return type

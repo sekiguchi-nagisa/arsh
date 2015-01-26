@@ -143,48 +143,33 @@ void ClassType::setConstructor(FuncObject *func) {
     //TODO:
 }
 
-DSType *ClassType::anyType = new ClassType("Any", false, 0);
-DSType *ClassType::voidType = new ClassType("Void", false, 0);
-
 
 // ##########################
 // ##     FunctionType     ##
 // ##########################
 
-FunctionType::FunctionType(DSType *returnType, const std::vector<DSType*> &paramTypes) :
-        returnType(returnType), paramSize(paramTypes.size()), paramTypes(new DSType*[paramTypes.size()]) {
-    for(unsigned int i = 0; i < this->paramSize; i++) {
-        this->paramTypes[i] = paramTypes[i];
-    }
+FunctionType::FunctionType(DSType *superType, DSType *returnType, const std::vector<DSType*> &paramTypes) :
+        superType(superType), returnType(returnType), paramTypes(paramTypes) {
 }
 
 FunctionType::~FunctionType() {
-    delete[] this->paramTypes;
-    this->paramTypes = 0;
+    this->paramTypes.clear();
 }
 
 DSType *FunctionType::getReturnType() {
     return this->returnType;
 }
 
-unsigned int FunctionType::getParamSize() {
-    return this->paramSize;
-}
-
-DSType **FunctionType::getParamTypes() {
+const std::vector<DSType*> &FunctionType::getParamTypes() {
     return this->paramTypes;
 }
 
 DSType *FunctionType::getFirstParamType() {
-    return this->paramSize > 0 ? this->paramTypes[0] : 0;
+    return this->paramTypes.size() > 0 ? this->paramTypes[0] : 0;
 }
 
 std::string FunctionType::getTypeName() {
-    std::vector<DSType*> types(this->paramSize);
-    for(unsigned int i = 0; i < this->paramSize; i++) {
-        types.push_back(this->paramTypes[i]);
-    }
-    return toFunctionTypeName(this->returnType, types);
+    return toFunctionTypeName(this->returnType, this->paramTypes);
 }
 
 bool FunctionType::isExtendable() {
@@ -192,7 +177,7 @@ bool FunctionType::isExtendable() {
 }
 
 DSType *FunctionType::getSuperType() {
-    return ClassType::anyType;
+    return this->superType;
 }
 
 ConstructorHandle *FunctionType::getConstructorHandle() {
@@ -200,11 +185,11 @@ ConstructorHandle *FunctionType::getConstructorHandle() {
 }
 
 unsigned int FunctionType::getFieldSize() {
-    return 0;
+    return this->superType->getFieldSize();
 }
 
 FieldHandle *FunctionType::lookupFieldHandle(const std::string &fieldName) {
-    return 0;
+    return this->superType->lookupFieldHandle(fieldName);
 }
 
 bool FunctionType::equals(DSType *targetType) {
@@ -219,8 +204,8 @@ bool FunctionType::equals(DSType *targetType) {
     }
 
     // check param size
-    unsigned int size = this->paramSize;
-    if(size != t->paramSize) {
+    unsigned int size = this->paramTypes.size();
+    if(size != t->paramTypes.size()) {
         return false;
     }
 

@@ -34,11 +34,11 @@ TypePool::~TypePool() {
 }
 
 DSType *TypePool::getAnyType() {
-    return ClassType::anyType;
+    return 0;   //TODO:
 }
 
 DSType *TypePool::getVoidType() {
-    return ClassType::voidType;
+    return 0;   //TODO:
 }
 
 DSType *TypePool::getIntType() {
@@ -62,6 +62,10 @@ DSType *TypePool::getStringType() {
 }
 
 DSType *TypePool::getTaskType() {
+    return 0;   //TODO:
+}
+
+DSType *TypePool::getBaseFuncType() {
     return 0;   //TODO:
 }
 
@@ -105,7 +109,7 @@ FunctionType *TypePool::createAndGetFuncTypeIfUndefined(DSType *returnType,
     std::string typeName = toFunctionTypeName(returnType, paramTypes);
     DSType *funcType = this->getType(typeName);
     if(funcType == 0) {
-        funcType = new FunctionType(returnType, paramTypes);
+        funcType = new FunctionType(this->getBaseFuncType(), returnType, paramTypes);
         this->typeMap[typeName] = funcType;
     }
     return dynamic_cast<FunctionType*>(funcType);

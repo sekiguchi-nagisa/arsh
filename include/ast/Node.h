@@ -297,6 +297,7 @@ public:
     void addArgNode(ExprNode *node);
 
     const std::vector<ExprNode*> &getArgNodes();
+    void setFuncCall(bool asFuncCall);
     bool isFuncCall();
     bool isOverload();
     int accept(NodeVisitor *visitor);	// override

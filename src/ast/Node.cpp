@@ -479,7 +479,7 @@ ApplyNode::ApplyNode(ExprNode *recvNode) :
 
 ApplyNode::ApplyNode(ExprNode *recvNode, bool overload) :
         ExprNode(recvNode->getLineNum()), recvNode(recvNode), argNodes(),
-        asFuncCall(false), overload(false) {
+        asFuncCall(false), overload(overload) {
 }
 
 ApplyNode::~ApplyNode() {
@@ -505,6 +505,10 @@ void ApplyNode::addArgNode(ExprNode *node) {
 
 const std::vector<ExprNode*> &ApplyNode::getArgNodes() {
     return this->argNodes;
+}
+
+void ApplyNode::setFuncCall(bool asFuncCall) {
+    this->asFuncCall = asFuncCall;
 }
 
 bool ApplyNode::isFuncCall() {

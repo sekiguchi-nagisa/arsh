@@ -318,9 +318,14 @@ int TypeChecker::visitInstanceOfNode(InstanceOfNode *node) {
 }
 
 int TypeChecker::visitApplyNode(ApplyNode *node) {
-    E_Unimplemented->report(node->getLineNum(), "ApplyNode");
+    ExprNode *recvNode = node->getRecvNode();
+    AccessNode *accessNode = dynamic_cast<AccessNode*>(recvNode);
+    // check type as AccessNode
+    if(accessNode != 0) {
+        DSType *actualRecvType = this->checkType(accessNode->getRecvNode());
+    }
     return 0;
-} //TODO
+}
 
 int TypeChecker::visitNewNode(NewNode *node) {
     TypeToken *typeToken = node->removeTargetTypeToken();
