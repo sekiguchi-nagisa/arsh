@@ -73,7 +73,7 @@ public:
     /**
      * equivalent to dynamic_cast<FunctionHandle*>(lookupFieldHandle())
      */
-    FunctionHandle *lookupFunctionHandle(const std::string &funcName);
+    FunctionHandle *lookupMethodHandle(const std::string &funcName);
 
     /**
      * check equality

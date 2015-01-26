@@ -27,6 +27,9 @@
 class DSType;
 class FunctionType;
 
+/**
+ * represent for class field. field type may be function type.
+ */
 class FieldHandle {
 protected:
     DSType *fieldType;
@@ -53,6 +56,11 @@ public:
     bool isReadOnly();
 };
 
+/**
+ * represent for method or function. used from DSType or SymbolTable.
+ * function handle belongs to DSType is always treated as method.
+ * function handle belongs to global scope is always treated as function.
+ */
 class FunctionHandle: public FieldHandle {
 private:
     DSType *returnType;
@@ -78,17 +86,6 @@ public:
     FunctionType *getFuncType(TypePool *typePool);
     DSType *getReturnType(TypePool *typePool);
     const std::vector<DSType*> &getParamTypes(TypePool *typePool);
-
-    /**
-     * return null if has no parameter
-     */
-    DSType *getFirstParamType(TypePool *typePool);
-
-    /**
-     * return true, if treat as method handle.
-     * equivalent to this->getFirstParamType()->isAssignableFrom(targetType)
-     */
-    bool isMethodHandle(TypePool *typePool, DSType *targetType);
 
     /**
      * return true if success, otherwise return false

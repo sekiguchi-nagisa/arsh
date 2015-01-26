@@ -31,7 +31,7 @@ bool DSType::hasField(const std::string &fieldName) {
     return this->lookupFieldHandle(fieldName) != 0;
 }
 
-FunctionHandle *DSType::lookupFunctionHandle(const std::string &funcName) {
+FunctionHandle *DSType::lookupMethodHandle(const std::string &funcName) {
     FieldHandle *handle = this->lookupFieldHandle(funcName);
     return handle != 0 ? dynamic_cast<FunctionHandle*>(handle) : 0;
 }
