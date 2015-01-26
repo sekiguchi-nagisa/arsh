@@ -15,7 +15,10 @@
  */
 
 #include <core/builtin_variable.h>
+#include <core/magic_method.h>
 #include <ast/Node.h>
+
+#include <assert.h>
 
 // ##################
 // ##     Node     ##
@@ -282,9 +285,9 @@ AssignableNode::AssignableNode(int lineNum) :
 AssignableNode::~AssignableNode() {
 }
 
-// ########################
-// ##     SymbolNode     ##
-// ########################
+// #####################
+// ##     VarNode     ##
+// #####################
 
 VarNode::VarNode(int lineNum, std::string &&varName) :
         AssignableNode(lineNum), varName(std::move(varName)), readOnly(false), global(false), varIndex(-1) {
@@ -322,61 +325,13 @@ int VarNode::getVarIndex() {
     return this->varIndex;
 }
 
-// #######################
-// ##     IndexNode     ##
-// #######################
-
-IndexNode::IndexNode(int lineNum, ExprNode *recvNode, ExprNode *indexNode) :
-        AssignableNode(lineNum), recvNode(recvNode), indexNode(indexNode),
-        getterHandle(0), setterHandle(0) {
-}
-
-IndexNode::~IndexNode() {
-    delete this->recvNode;
-    this->recvNode = 0;
-
-    delete this->indexNode;
-    this->indexNode = 0;
-}
-
-ExprNode *IndexNode::getRecvNode() {
-    return this->recvNode;
-}
-
-ExprNode *IndexNode::getIndexNode() {
-    return this->indexNode;
-}
-
-void IndexNode::setGetterHandle(FunctionHandle *handle) {
-    this->getterHandle = handle;
-}
-
-FunctionHandle *IndexNode::getGetterHandle() {
-    return this->getterHandle;
-}
-
-void IndexNode::setSetterHandle(FunctionHandle *handle) {
-    this->setterHandle = handle;
-}
-
-FunctionHandle *IndexNode::getSetterHandle() {
-    return this->setterHandle;
-}
-
-bool IndexNode::isReadOnly() {
-    return false;
-}
-
-int IndexNode::accept(NodeVisitor *visitor) {
-    return visitor->visitIndexNode(this);
-}
-
 // ########################
 // ##     AccessNode     ##
 // ########################
 
-AccessNode::AccessNode(int lineNum, ExprNode *recvNode, std::string &&fieldName) :
-        AssignableNode(lineNum), recvNode(recvNode), fieldName(std::move(fieldName)), fieldIndex(-1) {
+AccessNode::AccessNode(ExprNode *recvNode, std::string &&fieldName) :
+        AssignableNode(recvNode->getLineNum()), recvNode(recvNode), fieldName(std::move(fieldName)),
+        fieldIndex(-1), readOnly(false), additionalOp(NOP) {
 }
 
 AccessNode::~AccessNode() {
@@ -386,6 +341,10 @@ AccessNode::~AccessNode() {
 
 ExprNode *AccessNode::getRecvNode() {
     return this->recvNode;
+}
+
+void AccessNode::setFieldName(const std::string &fieldName) {
+    this->fieldName = fieldName;
 }
 
 const std::string &AccessNode::getFieldName() {
@@ -400,8 +359,26 @@ int AccessNode::getFieldIndex() {
     return this->fieldIndex;
 }
 
+void AccessNode::setReadOnly(bool readOnly) {
+    this->readOnly = readOnly;
+}
+
 bool AccessNode::isReadOnly() {
-    return false;	//TODO: handle.isReadOnly()
+    return this->readOnly;
+}
+
+void AccessNode::setAdditionalOp(int op) {
+    switch(op) {
+    case NOP:
+    case DUP_RECV:
+    case DUP_RECV_AND_SWAP:
+        this->additionalOp = op;
+    }
+    this->additionalOp = NOP;
+}
+
+int AccessNode::getAdditionnalOp() {
+    return this->additionalOp;
 }
 
 int AccessNode::accept(NodeVisitor *visitor) {
@@ -540,6 +517,30 @@ bool ApplyNode::isOverload() {
 
 int ApplyNode::accept(NodeVisitor *visitor) {
     return visitor->visitApplyNode(this);
+}
+
+// #######################
+// ##     IndexNode     ##
+// #######################
+
+IndexNode::IndexNode(ExprNode *recvNode, ExprNode *indexNode) :
+        ApplyNode(new AccessNode(recvNode, std::string(GET)), true) {
+    this->addArgNode(indexNode);
+}
+
+IndexNode::~IndexNode() {
+}
+
+ExprNode *IndexNode::getIndexNode() {
+    return this->getArgNodes()[0];
+}
+
+ApplyNode *IndexNode::treatAsAssignment(ExprNode *rightNode) {
+    assert(this->argNodes.size() == 1);
+    AccessNode *accessNode = dynamic_cast<AccessNode*>(this->recvNode);
+    accessNode->setFieldName(std::string(SET));
+    this->addArgNode(rightNode);
+    return this;
 }
 
 // #####################
@@ -1202,8 +1203,8 @@ int VarDeclNode::accept(NodeVisitor *visitor) {
 // ##     AssignNode     ##
 // ########################
 
-AssignNode::AssignNode(int lineNum, ExprNode *leftNode, ExprNode *rightNode) :
-        ExprNode(lineNum), leftNode(leftNode), rightNode(rightNode), handle(0) {
+AssignNode::AssignNode(ExprNode *leftNode, ExprNode *rightNode) :
+        ExprNode(leftNode->getLineNum()), leftNode(leftNode), rightNode(rightNode) {
 }
 
 AssignNode::~AssignNode() {
@@ -1218,24 +1219,33 @@ ExprNode *AssignNode::getLeftNode() {
     return this->leftNode;
 }
 
-void AssignNode::setRightNode(ExprNode *rightNode) {
-    this->rightNode = rightNode;
-}
-
 ExprNode *AssignNode::getRightNode() {
     return this->rightNode;
 }
 
-void AssignNode::setHandle(FunctionHandle *handle) {
-    this->handle = handle;
-}
-
-FunctionHandle *AssignNode::getHandle() {
-    return this->handle;
-}
-
 int AssignNode::accept(NodeVisitor *visitor) {
     return visitor->visitAssignNode(this);
+}
+
+// #################################
+// ##     FieldSelfAssignNode     ##
+// #################################
+
+FieldSelfAssignNode::FieldSelfAssignNode(ApplyNode *applyNode) :
+    ExprNode(applyNode->getLineNum()), applyNode(applyNode) {
+}
+
+FieldSelfAssignNode::~FieldSelfAssignNode() {
+    delete this->applyNode;
+    this->applyNode = 0;
+}
+
+ApplyNode *FieldSelfAssignNode::getApplyNode() {
+    return this->applyNode;
+}
+
+int FieldSelfAssignNode::accept(NodeVisitor *visitor) {
+    return visitor->visitFieldSelfAssignNode(this);
 }
 
 // ##########################

@@ -27,7 +27,6 @@ class ArrayNode;
 class MapNode;
 class PairNode;
 class VarNode;
-class IndexNode;
 class AccessNode;
 class CastNode;
 class InstanceOfNode;
@@ -56,6 +55,7 @@ class TryNode;
 class FinallyNode;
 class VarDeclNode;
 class AssignNode;
+class FieldSelfAssignNode;
 class FunctionNode;
 class EmptyNode;
 
@@ -73,7 +73,6 @@ public:
     virtual int visitMapNode(MapNode *node) = 0;
     virtual int visitPairNode(PairNode *node) = 0;
     virtual int visitVarNode(VarNode *node) = 0;
-    virtual int visitIndexNode(IndexNode *node) = 0;
     virtual int visitAccessNode(AccessNode *node) = 0;
     virtual int visitCastNode(CastNode *node) = 0;
     virtual int visitInstanceOfNode(InstanceOfNode *node) = 0;
@@ -101,6 +100,7 @@ public:
     virtual int visitFinallyNode(FinallyNode *node) = 0;
     virtual int visitVarDeclNode(VarDeclNode *node) = 0;
     virtual int visitAssignNode(AssignNode *node) = 0;
+    virtual int visitFieldSelfAssignNode(FieldSelfAssignNode *node) = 0;
     virtual int visitFunctionNode(FunctionNode *node) = 0;
     virtual int visitEmptyNode(EmptyNode *node) = 0;
 };

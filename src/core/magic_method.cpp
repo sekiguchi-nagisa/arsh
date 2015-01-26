@@ -16,38 +16,38 @@
 
 #include <core/magic_method.h>
 
-const std::string PLUS  = "__PLUS__";
-const std::string MINUS = "__MINUS__";
-const std::string NOT   = "__NOT__";
+const char * const PLUS  = "__PLUS__";
+const char * const MINUS = "__MINUS__";
+const char * const NOT   = "__NOT__";
 
 // binary op definition
-const std::string ADD   = "__ADD__";
-const std::string SUB   = "__SUB__";
-const std::string MUL   = "__MUL__";
-const std::string DIV   = "__DIV__";
-const std::string MOD   = "__MOD__";
+const char * const ADD   = "__ADD__";
+const char * const SUB   = "__SUB__";
+const char * const MUL   = "__MUL__";
+const char * const DIV   = "__DIV__";
+const char * const MOD   = "__MOD__";
 
-const std::string EQ    = "__EQ__";
-const std::string NE    = "__NE__";
+const char * const EQ    = "__EQ__";
+const char * const NE    = "__NE__";
 
-const std::string LT    = "__LT__";
-const std::string GT    = "__GT__";
-const std::string LE    = "__LE__";
-const std::string GE    = "__GE__";
+const char * const LT    = "__LT__";
+const char * const GT    = "__GT__";
+const char * const LE    = "__LE__";
+const char * const GE    = "__GE__";
 
-const std::string AND   = "__AND__";
-const std::string OR    = "__OR__";
-const std::string XOR   = "__XOR__";
+const char * const AND   = "__AND__";
+const char * const OR    = "__OR__";
+const char * const XOR   = "__XOR__";
 
-const std::string RE_EQ = "__RE_EQ__";
-const std::string RE_NE = "__RE_NE__";
+const char * const RE_EQ = "__RE_EQ__";
+const char * const RE_NE = "__RE_NE__";
 
 // indexer op
-const std::string GET   = "__GET__";
-const std::string SET   = "__SET__";
+const char * const GET   = "__GET__";
+const char * const SET   = "__SET__";
 
 // iterator
-const std::string RESET    = "__RESET__";
-const std::string NEXT     = "__NEXT__";
-const std::string HAS_NEXT = "__HAS_NEXT__";
+const char * const RESET    = "__RESET__";
+const char * const NEXT     = "__NEXT__";
+const char * const HAS_NEXT = "__HAS_NEXT__";
 

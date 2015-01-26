@@ -35,5 +35,8 @@ ForNode *createForInNode(int lineNum, std::string &&initName, ExprNode *exprNode
 
 ApplyNode *createConstructorCallNode(int lineNum, TypeToken *targetTypeToken);
 
+ExprNode *createSuffixNode(ExprNode *leftNode, int op);
+
+ExprNode *createAssignNode(ExprNode *leftNode, int op, ExprNode *rightNode);
 
 #endif /* SRC_AST_NODE_UTILS_H_ */

@@ -283,19 +283,6 @@ int TypeChecker::visitVarNode(VarNode *node) {
     return 0;
 }
 
-int TypeChecker::visitIndexNode(IndexNode *node) {
-    DSType *recvType = this->checkType(node->getRecvNode());
-    FunctionHandle *handle = recvType->lookupMethodHandle(GET);
-    if(handle == 0 || handle->getParamTypes(this->typePool).size() != 2) {
-        E_UndefinedMethod->report(node->getLineNum(), GET);
-    }
-
-    this->checkType(handle->getParamTypes(this->typePool)[1], node->getIndexNode());
-    node->setGetterHandle(handle);
-    node->setType(handle->getReturnType(this->typePool));
-    return 0;
-}
-
 int TypeChecker::visitAccessNode(AccessNode *node) {
     DSType *recvType = this->checkType(node->getRecvNode());
     FieldHandle *handle = recvType->lookupFieldHandle(node->getFieldName());
@@ -304,6 +291,7 @@ int TypeChecker::visitAccessNode(AccessNode *node) {
     }
 
     node->setFieldIndex(handle->getFieldIndex());
+    node->setReadOnly(handle->isReadOnly());
     node->setType(handle->getFieldType(this->typePool));
     return 0;
 }
@@ -539,9 +527,31 @@ int TypeChecker::visitVarDeclNode(VarDeclNode *node) {
 }
 
 int TypeChecker::visitAssignNode(AssignNode *node) {
-    E_Unimplemented->report(node->getLineNum(), "AssignNode");
+    AssignableNode *leftNode = dynamic_cast<AssignableNode*>(node->getLeftNode());
+    if(leftNode == 0) {
+        E_Assignable->report(node->getLineNum());
+    }
+    if(leftNode->isReadOnly()) {
+        E_ReadOnly->report(node->getLineNum());
+    }
+
+    this->checkType(leftNode);
+    this->checkType(node->getRightNode());
+    node->setType(this->typePool->getVoidType());
     return 0;
-} //TODO
+}
+
+int TypeChecker::visitFieldSelfAssignNode(FieldSelfAssignNode *node) {
+    ApplyNode *applyNode = node->getApplyNode();
+    this->checkType(applyNode);
+
+    AccessNode *accessNode = dynamic_cast<AccessNode*>(applyNode->getRecvNode());
+    accessNode->setAdditionalOp(AccessNode::DUP_RECV);
+
+    node->setType(this->typePool->getVoidType());
+    return 0;
+}
+
 int TypeChecker::visitFunctionNode(FunctionNode *node) {
     E_Unimplemented->report(node->getLineNum(), "FunctionNode");
     return 0;

@@ -17,12 +17,12 @@
 #include <core/builtin_variable.h>
 
 // boolean
-const std::string TRUE  ("$TRUE");
-const std::string FALSE ("$FALSE");
+const char * const  TRUE  = "$TRUE";
+const char * const  FALSE = "$FALSE";
 
 // io
-const std::string STDIN ("$STDIN");
-const std::string STDOUT("$STDOUT");
-const std::string STDERR("$STDERR");
+const char * const  STDIN  = "$STDIN";
+const char * const  STDOUT = "$STDOUT";
+const char * const  STDERR = "$STDERR";
 
 

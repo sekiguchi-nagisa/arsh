@@ -52,9 +52,6 @@ int Evaluator::visitPairNode(PairNode *node) {
 int Evaluator::visitVarNode(VarNode *node) {
     return 0;
 } //TODO
-int Evaluator::visitIndexNode(IndexNode *node) {
-    return 0;
-} //TODO
 int Evaluator::visitAccessNode(AccessNode *node) {
     return 0;
 } //TODO
@@ -134,6 +131,9 @@ int Evaluator::visitVarDeclNode(VarDeclNode *node) {
     return 0;
 } //TODO
 int Evaluator::visitAssignNode(AssignNode *node) {
+    return 0;
+} //TODO
+int Evaluator::visitFieldSelfAssignNode(FieldSelfAssignNode *node) {
     return 0;
 } //TODO
 int Evaluator::visitFunctionNode(FunctionNode *node) {

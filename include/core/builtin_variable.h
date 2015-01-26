@@ -20,13 +20,13 @@
 #include <string>
 
 // boolean
-extern const std::string TRUE;
-extern const std::string FALSE;
+extern const char * const TRUE;
+extern const char * const FALSE;
 
 // io
-extern const std::string STDIN;
-extern const std::string STDOUT;
-extern const std::string STDERR;
+extern const char * const STDIN;
+extern const char * const STDOUT;
+extern const char * const STDERR;
 
 
 #endif /* YDSH_INCLUDE_CORE_BUILTIN_VARIABLE_H_ */

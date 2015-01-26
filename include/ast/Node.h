@@ -21,7 +21,6 @@
 #include <list>
 
 #include <core/DSType.h>
-#include <core/CalleeHandle.h>
 #include <ast/NodeVisitor.h>
 #include <ast/TypeToken.h>
 
@@ -165,7 +164,7 @@ public:
 };
 
 /**
- * base class for SymbolNode, IndexNode, AccessNode
+ * base class for VarNode, IndexNode, AccessNode
  */
 class AssignableNode: public ExprNode {
 public:
@@ -195,67 +194,36 @@ public:
     int getVarIndex();
 };
 
-class IndexNode: public AssignableNode {//TODO: change getter, setter handle class to FieldHandle
-private:
-    ExprNode *recvNode;
-    ExprNode *indexNode;
-
-    /**
-     * for getter method ( __GET__ )
-     */
-    FunctionHandle *getterHandle;	// not call destructor
-
-    /**
-     * for setetr method ( __SET__ )
-     */
-    FunctionHandle *setterHandle;	// not call destructor
-
-public:
-    IndexNode(int lineNum, ExprNode *recvNode, ExprNode *indexNode);
-    ~IndexNode();
-
-    ExprNode *getRecvNode();
-    ExprNode *getIndexNode();
-
-    void setGetterHandle(FunctionHandle *handle);
-
-    /**
-     * return null before call setGetterHandle
-     */
-    FunctionHandle *getGetterHandle();
-
-    void setSetterHandle(FunctionHandle *handle);
-
-    /**
-     * return null before call setSetterHandle
-     */
-    FunctionHandle *getSetterHandle();
-
-    /**
-     * return always false
-     */
-    bool isReadOnly();	// override
-
-    int accept(NodeVisitor *visitor);	//override
-};
-
-class AccessNode: public AssignableNode {	//TODO: field handle
+class AccessNode: public AssignableNode {
 private:
     ExprNode* recvNode;
     std::string fieldName;
     int fieldIndex;
+    bool readOnly;
+    int additionalOp;
 
 public:
-    AccessNode(int lineNum, ExprNode *recvNode, std::string &&fieldName);
+    AccessNode(ExprNode *recvNode, std::string &&fieldName);
     ~AccessNode();
 
     ExprNode *getRecvNode();
+    void setFieldName(const std::string &fieldName);
     const std::string &getFieldName();
     void setFieldIndex(int index);
     int getFieldIndex();
 
+    void setReadOnly(bool readOnly);
     bool isReadOnly();	// override
+    void setAdditionalOp(int op);
+    int getAdditionnalOp();
     int accept(NodeVisitor *visitor);	// override
+
+    const static int NOP               = 0;
+    const static int DUP_RECV          = 1;
+    /**
+     * dup recv node and after field access, swap oprand
+     */
+    const static int DUP_RECV_AND_SWAP = 2;
 };
 
 class CastNode: public ExprNode {	//TODO: cast op kind
@@ -301,10 +269,8 @@ public:
     const static int INSTANCEOF   = 1;
 };
 
-//class OperatorCallNode;	//FIXME: duplicated
-
 class ApplyNode: public ExprNode {	//TODO: function handle, named parameter
-private:
+protected:
     ExprNode* recvNode;
     std::vector<ExprNode*> argNodes;
 
@@ -321,7 +287,7 @@ private:
 public:
     ApplyNode(ExprNode *recvNode);
     ApplyNode(ExprNode *recvNode, bool overload);
-    ~ApplyNode();
+    virtual ~ApplyNode();
 
     ExprNode *getRecvNode();
 
@@ -334,6 +300,20 @@ public:
     bool isFuncCall();
     bool isOverload();
     int accept(NodeVisitor *visitor);	// override
+};
+
+class IndexNode : public ApplyNode {
+public:
+    IndexNode(ExprNode *recvNode, ExprNode *indexNode);
+    ~IndexNode();
+
+    ExprNode *getIndexNode();
+
+    /**
+     * return this.
+     * convert to set index
+     */
+    ApplyNode *treatAsAssignment(ExprNode *rightNode);
 };
 
 /**
@@ -739,34 +719,41 @@ public:
  * assignment is statement, but base class is ExprNode(due to parser).
  * so, after type checking, type is always VoidType
  */
-class AssignNode: public ExprNode {	//TODO: assign op, handle
+class AssignNode: public ExprNode {
 private:
+    /**
+     * must be VarNode or AccessNode
+     */
     ExprNode* leftNode;
+
     ExprNode* rightNode;
 
-    /**
-     * if assign op is '=', it is null
-     */
-    FunctionHandle *handle;	//FIXME
-
 public:
-    AssignNode(int lineNum, ExprNode *leftNode, ExprNode *rightNode);
+    AssignNode(ExprNode *leftNode, ExprNode *rightNode);
     ~AssignNode();
 
     ExprNode *getLeftNode();
-
-    /**
-     * for type checker
-     */
-    void setRightNode(ExprNode *rightNode);
     ExprNode *getRightNode();
-    void setHandle(FunctionHandle *handle);
+    int accept(NodeVisitor *visitor);   // override
+};
 
+/**
+ * for field self assignment.
+ * field self assignment is statement, but class is ExprNode(due to parser).
+ */
+class FieldSelfAssignNode : public ExprNode {
+private:
     /**
-     * return null, before call setHandle()
+     * applyNode->getRecvNode must be AccessNode.
      */
-    FunctionHandle *getHandle();
-    int accept(NodeVisitor *visitor);
+    ApplyNode *applyNode;
+
+public:
+    FieldSelfAssignNode(ApplyNode *applyNode);
+    ~FieldSelfAssignNode();
+
+    ApplyNode *getApplyNode();
+    int accept(NodeVisitor *visitor);   // override
 };
 
 class FunctionNode: public Node {	//FIXME
