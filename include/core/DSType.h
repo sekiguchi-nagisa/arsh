@@ -190,6 +190,11 @@ public:
      */
     DSType *getFirstParamType();
 
+    /**
+     * equivalent to this->getFirstParamType()->isAssignableFrom(targetType)
+     */
+    bool treatAsMethod(DSType *targetType);
+
     std::string getTypeName();	// override
     bool isExtendable();	// override
 

@@ -571,11 +571,11 @@ TypeToken *NewNode::removeTargetTypeToken() {
     return t;
 }
 
-void NewNode::setConstructorHandle(ConstructorHandle *handle) {
+void NewNode::setHandle(ConstructorHandle *handle) {
     this->handle = handle;
 }
 
-ConstructorHandle *NewNode::getConstructorHandle() {
+ConstructorHandle *NewNode::getHandle() {
     return this->handle;
 }
 

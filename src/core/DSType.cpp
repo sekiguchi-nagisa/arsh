@@ -159,6 +159,11 @@ DSType *FunctionType::getFirstParamType() {
     return this->paramTypes.size() > 0 ? this->paramTypes[0] : 0;
 }
 
+bool FunctionType::treatAsMethod(DSType *targetType) {
+    DSType *recvType = this->getFirstParamType();
+    return recvType != 0 && recvType->isAssignableFrom(targetType);
+}
+
 std::string FunctionType::getTypeName() {
     return toFunctionTypeName(this->returnType, this->paramTypes);
 }

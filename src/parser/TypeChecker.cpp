@@ -184,6 +184,64 @@ void TypeChecker::checkAndThrowIfInsideFinally(BlockEndNode *node) {
     }
 }
 
+// for ApplyNode type checking
+void TypeChecker::checkTypeAsConstructorCall(NewNode *recvNode, ApplyNode *applyNode) {
+    DSType *type = this->checkType(recvNode);
+    this->checkTypeArgNodes(recvNode->getHandle(), applyNode->getArgNodes());
+    applyNode->setType(type);
+}
+
+void TypeChecker::checkTypeAsMethodCall(AccessNode *recvNode, ApplyNode *applyNode) {   //TODO: overload
+    DSType *actualRecvType = this->checkType(recvNode->getRecvNode());
+    FieldHandle *handle = actualRecvType->lookupFieldHandle(recvNode->getFieldName());
+    if(handle == 0) {
+        E_UndefinedField->report(recvNode->getLineNum(), recvNode->getFieldName());
+    }
+
+    recvNode->setFieldIndex(handle->getFieldIndex());
+    FunctionHandle *funcHandle = dynamic_cast<FunctionHandle*>(handle);
+    // treat as method call
+    if(funcHandle != 0) {
+        recvNode->setAdditionalOp(AccessNode::DUP_RECV_AND_SWAP);
+        this->checkTypeArgNodes(funcHandle, applyNode->getArgNodes());
+        applyNode->setType(funcHandle->getReturnType(this->typePool));
+        return;
+    }
+
+    FunctionType *funcType = dynamic_cast<FunctionType*>(handle->getFieldType(this->typePool));
+    // treat as method call
+    if(funcType != 0 && funcType->treatAsMethod(actualRecvType)) {
+        recvNode->setAdditionalOp(AccessNode::DUP_RECV_AND_SWAP);
+        this->checkTypeArgNodes(funcType, applyNode->getArgNodes());
+        applyNode->setType(funcType->getReturnType());
+        return;
+    }
+
+    // treat as function call
+    if(funcType != 0) {
+        this->checkTypeAsFuncCall(recvNode, applyNode);
+        return;
+    }
+
+    E_UndefinedMethod->report(recvNode->getLineNum(), recvNode->getFieldName());
+}
+
+void TypeChecker::checkTypeAsFuncCall(ExprNode *recvNode, ApplyNode *applyNode) {    //FIXME: direct function call, overload
+    FunctionType *funcType =
+            dynamic_cast<FunctionType*>(this->checkType(this->typePool->getBaseFuncType(), recvNode));
+    applyNode->setFuncCall(true);
+    this->checkTypeArgNodes(funcType, applyNode->getArgNodes());
+    applyNode->setType(funcType->getReturnType());
+}
+
+void TypeChecker::checkTypeArgNodes(FunctionHandle *handle, const std::vector<ExprNode*> &argNodes) {
+    //TODO:
+}
+
+void TypeChecker::checkTypeArgNodes(FunctionType *funcType, const std::vector<ExprNode*> &argNodes) {
+    //TODO:
+}
+
 void TypeChecker::recover() {
     this->symbolTable.popAllLocal();
     this->symbolTable.removeCachedEntry();
@@ -319,16 +377,22 @@ int TypeChecker::visitInstanceOfNode(InstanceOfNode *node) {
 
 int TypeChecker::visitApplyNode(ApplyNode *node) {
     ExprNode *recvNode = node->getRecvNode();
-    // checl type as NewNode
+    // check type as constructor call
     NewNode *newNode = dynamic_cast<NewNode*>(recvNode);
+    if(newNode != 0) {
+        this->checkTypeAsConstructorCall(newNode, node);
+        return 0;
+    }
 
+    // check type as method call
+    AccessNode *accessNode = dynamic_cast<AccessNode*>(recvNode);
+    if(accessNode != 0) {
+        this->checkTypeAsMethodCall(accessNode, node);
+        return 0;
+    }
 
-
-//    AccessNode *accessNode = dynamic_cast<AccessNode*>(recvNode);
-//    // check type as AccessNode
-//    if(accessNode != 0) {
-//        DSType *actualRecvType = this->checkType(accessNode->getRecvNode());
-//    }
+    // check type as function call
+    this->checkTypeAsFuncCall(recvNode, node);
     return 0;
 }
 

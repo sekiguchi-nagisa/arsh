@@ -152,13 +152,17 @@ private:
      * check type ApplyNode as method call.
      * recvNode must be equivalent to applyNode->getRecvNode()
      */
-    void checkTypeAsMethodCall(AccessNode *recvNode, ApplyNode *appplyNode);
+    void checkTypeAsMethodCall(AccessNode *recvNode, ApplyNode *applyNode);
 
     /**
      * check type ApplyNode as function call.
      * recvNode must be equivalent to applyNode->getRecvNode()
      */
-    void checkTypeAsFuncCall(ExprNode *recvNode, ApplyNode *node);
+    void checkTypeAsFuncCall(ExprNode *recvNode, ApplyNode *applyNode);
+
+    // helper for argument type checking
+    void checkTypeArgNodes(FunctionHandle *handle, const std::vector<ExprNode*> &argNodes);
+    void checkTypeArgNodes(FunctionType *funcType, const std::vector<ExprNode*> &argNodes);
 
 public:
     /**

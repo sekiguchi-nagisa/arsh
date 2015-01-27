@@ -77,10 +77,7 @@ const std::vector<DSType*> &FunctionHandle::getParamTypes(TypePool *typePool) {
     return this->paramTypes;
 }
 
-//bool FunctionHandle::isMethodHandle(TypePool *typePool, DSType *targetType) {
-//    DSType *recvType = this->getFirstParamType(typePool);
-//    return recvType != 0 && recvType->isAssignableFrom(targetType);
-//}
+
 
 bool FunctionHandle::addParamName(const std::string &paramName, bool defaultValue) {
     unsigned int size = this->paramIndexMap.size();

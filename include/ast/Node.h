@@ -337,8 +337,8 @@ public:
      */
     TypeToken *removeTargetTypeToken();
 
-    void setConstructorHandle(ConstructorHandle *handle);
-    ConstructorHandle *getConstructorHandle();
+    void setHandle(ConstructorHandle *handle);
+    ConstructorHandle *getHandle();
 
     int accept(NodeVisitor *visitor);   // override
 };
