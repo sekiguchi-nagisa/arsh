@@ -41,3 +41,5 @@ ydsh
 *.out
 *.app
 
+# Others
+.DS_Store
