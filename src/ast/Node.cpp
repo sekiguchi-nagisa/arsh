@@ -552,7 +552,8 @@ ApplyNode *IndexNode::treatAsAssignment(ExprNode *rightNode) {
 // #####################
 
 NewNode::NewNode(int lineNum, TypeToken *targetTypeToken) :
-        ExprNode(lineNum), targetTypeToken(targetTypeToken) {
+        ExprNode(lineNum), targetTypeToken(targetTypeToken),
+        handle(0) {
 }
 
 NewNode::~NewNode() {
@@ -568,6 +569,14 @@ TypeToken *NewNode::removeTargetTypeToken() {
     TypeToken *t = this->targetTypeToken;
     this->targetTypeToken = 0;
     return t;
+}
+
+void NewNode::setConstructorHandle(ConstructorHandle *handle) {
+    this->handle = handle;
+}
+
+ConstructorHandle *NewNode::getConstructorHandle() {
+    return this->handle;
 }
 
 int NewNode::accept(NodeVisitor *visitor) {

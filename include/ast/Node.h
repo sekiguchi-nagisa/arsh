@@ -21,6 +21,7 @@
 #include <list>
 
 #include <core/DSType.h>
+#include <core/FieldHandle.h>
 #include <ast/NodeVisitor.h>
 #include <ast/TypeToken.h>
 
@@ -323,6 +324,7 @@ public:
 class NewNode : public ExprNode {
 private:
     TypeToken *targetTypeToken;
+    ConstructorHandle *handle;
 
 public:
     NewNode(int lineNum, TypeToken *targetTypeToken);
@@ -334,6 +336,9 @@ public:
      * remove type token and return removed type token.
      */
     TypeToken *removeTargetTypeToken();
+
+    void setConstructorHandle(ConstructorHandle *handle);
+    ConstructorHandle *getConstructorHandle();
 
     int accept(NodeVisitor *visitor);   // override
 };

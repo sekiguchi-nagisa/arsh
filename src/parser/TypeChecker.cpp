@@ -319,18 +319,29 @@ int TypeChecker::visitInstanceOfNode(InstanceOfNode *node) {
 
 int TypeChecker::visitApplyNode(ApplyNode *node) {
     ExprNode *recvNode = node->getRecvNode();
-    AccessNode *accessNode = dynamic_cast<AccessNode*>(recvNode);
-    // check type as AccessNode
-    if(accessNode != 0) {
-        DSType *actualRecvType = this->checkType(accessNode->getRecvNode());
-    }
+    // checl type as NewNode
+    NewNode *newNode = dynamic_cast<NewNode*>(recvNode);
+
+
+
+//    AccessNode *accessNode = dynamic_cast<AccessNode*>(recvNode);
+//    // check type as AccessNode
+//    if(accessNode != 0) {
+//        DSType *actualRecvType = this->checkType(accessNode->getRecvNode());
+//    }
     return 0;
 }
 
 int TypeChecker::visitNewNode(NewNode *node) {
     TypeToken *typeToken = node->removeTargetTypeToken();
-    node->setType(typeToken->toType(this->typePool));
+    DSType *type = typeToken->toType(this->typePool);
     delete typeToken;
+
+    ConstructorHandle *handle = type->getConstructorHandle();
+    if(handle == 0) {
+        E_UndefinedInit->report(node->getLineNum(), type->getTypeName());
+    }
+    node->setType(type);
     return 0;
 }
 

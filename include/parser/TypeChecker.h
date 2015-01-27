@@ -141,6 +141,25 @@ private:
 
     void checkAndThrowIfInsideFinally(BlockEndNode *node);
 
+    // for apply node type checking
+    /**
+     * check type ApplyNode as constructor call.
+     * recvNode must be equivalent to applyNode->getRecvNode()
+     */
+    void checkTypeAsConstructorCall(NewNode *recvNode, ApplyNode *applyNode);
+
+    /**
+     * check type ApplyNode as method call.
+     * recvNode must be equivalent to applyNode->getRecvNode()
+     */
+    void checkTypeAsMethodCall(AccessNode *recvNode, ApplyNode *appplyNode);
+
+    /**
+     * check type ApplyNode as function call.
+     * recvNode must be equivalent to applyNode->getRecvNode()
+     */
+    void checkTypeAsFuncCall(ExprNode *recvNode, ApplyNode *node);
+
 public:
     /**
      * reset symbol table when error happened
