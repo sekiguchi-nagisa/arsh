@@ -33,8 +33,6 @@ ExprNode *createUnaryOpNode(int op, ExprNode *rightNode);
 
 ForNode *createForInNode(int lineNum, std::string &&initName, ExprNode *exprNode, BlockNode *blockNode);
 
-ApplyNode *createConstructorCallNode(int lineNum, TypeToken *targetTypeToken);
-
 ExprNode *createSuffixNode(ExprNode *leftNode, int op);
 
 ExprNode *createAssignNode(ExprNode *leftNode, int op, ExprNode *rightNode);

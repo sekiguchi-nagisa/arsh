@@ -63,10 +63,6 @@ ForNode *createForInNode(int lineNum, std::string &&initName, ExprNode *exprNode
     return new ForNode(lineNum, reset_varDecl, apply_hasNext, 0, blockNode);
 }
 
-ApplyNode *createConstructorCallNode(int lineNum, TypeToken *targetTypeToken) {
-    return new ApplyNode(new NewNode(lineNum, targetTypeToken));
-}
-
 static std::string resolveAssignOpName(int op) {
     return std::string();   //FIXME:
 }

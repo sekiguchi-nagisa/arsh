@@ -549,7 +549,7 @@ ApplyNode *IndexNode::treatAsAssignment(ExprNode *rightNode) {
 
 NewNode::NewNode(int lineNum, TypeToken *targetTypeToken) :
         ExprNode(lineNum), targetTypeToken(targetTypeToken),
-        handle(0) {
+        argNodes() {
 }
 
 NewNode::~NewNode() {
@@ -567,12 +567,12 @@ TypeToken *NewNode::removeTargetTypeToken() {
     return t;
 }
 
-void NewNode::setHandle(ConstructorHandle *handle) {
-    this->handle = handle;
+void NewNode::addArgNode(ExprNode *argNode) {
+    this->argNodes.push_back(argNode);
 }
 
-ConstructorHandle *NewNode::getHandle() {
-    return this->handle;
+const std::vector<ExprNode*> &NewNode::getArgNodes() {
+    return this->argNodes;
 }
 
 int NewNode::accept(NodeVisitor *visitor) {

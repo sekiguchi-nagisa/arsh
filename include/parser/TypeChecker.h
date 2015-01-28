@@ -182,12 +182,6 @@ private:
      * check type ApplyNode and resolve callee(handle or function type).
      * recvNode must be equivalent to applyNode->getRecvNode()
      */
-    HandleOrFuncType resolveCallee(NewNode *recvNode, ApplyNode *applyNode);
-
-    /**
-     * check type ApplyNode and resolve callee(handle or function type).
-     * recvNode must be equivalent to applyNode->getRecvNode()
-     */
     HandleOrFuncType resolveCallee(AccessNode *recvNode, ApplyNode *applyNode);
 
     /**

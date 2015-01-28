@@ -191,10 +191,6 @@ TypeChecker::HandleOrFuncType TypeChecker::resolveCallee(ExprNode *recvNode, App
         this->checkType(argNode);
     }
 
-    NewNode *newNode = dynamic_cast<NewNode*>(recvNode);
-    if(newNode != 0) {
-        return this->resolveCallee(newNode, applyNode);
-    }
     AccessNode *accessNode = dynamic_cast<AccessNode*>(recvNode);
     if(accessNode != 0) {
         return this->resolveCallee(accessNode, applyNode);
@@ -211,25 +207,18 @@ TypeChecker::HandleOrFuncType TypeChecker::resolveCallee(ExprNode *recvNode, App
     return HandleOrFuncType(funcType);
 }
 
-TypeChecker::HandleOrFuncType TypeChecker::resolveCallee(NewNode *recvNode, ApplyNode *applyNode) {
-    this->checkType(recvNode);
-    applyNode->setFuncCall(false);
-    applyNode->setType(recvNode->getHandle()->getReturnType(this->typePool));
-    return HandleOrFuncType(recvNode->getHandle());
-}
-
 TypeChecker::HandleOrFuncType TypeChecker::resolveCallee(AccessNode *recvNode, ApplyNode *applyNode) {
     DSType *actualRecvType = this->checkType(recvNode->getRecvNode());
     // resolve overload
     if(applyNode->isOverload() && applyNode->getArgNodes().size() == 2) {
         FunctionHandle *handle =
-                this->resolveOverload(actualRecvType, recvNode->getFieldName(), applyNode->getArgNodes()[0]);
+                this->resolveOverload(actualRecvType, recvNode->getFieldName(), applyNode->getArgNodes()[0]->getType());
         if(handle == 0) {
             E_UndefinedMethod->report(recvNode->getLineNum(), recvNode->getFieldName());
         }
         recvNode->setAdditionalOp(AccessNode::DUP_RECV_AND_SWAP);
         applyNode->setFuncCall(false);
-        applyNode->setType(recvNode->getHandle()->getReturnType(this->typePool));
+        //applyNode->setType(recvNode->getHandle()->getReturnType(this->typePool));
         return HandleOrFuncType(handle);
     }
 
@@ -450,6 +439,7 @@ int TypeChecker::visitNewNode(NewNode *node) {
     if(handle == 0) {
         E_UndefinedInit->report(node->getLineNum(), type->getTypeName());
     }
+    this->checkTypeArgNodes(handle, node->getArgNodes());
     node->setType(type);
     return 0;
 }

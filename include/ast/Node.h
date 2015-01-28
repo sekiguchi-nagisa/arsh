@@ -314,12 +314,12 @@ public:
 };
 
 /**
- * allocate new DSObject
+ * allocate new DSObject and call constructor.
  */
 class NewNode : public ExprNode {
 private:
     TypeToken *targetTypeToken;
-    ConstructorHandle *handle;
+    std::vector<ExprNode*> argNodes;
 
 public:
     NewNode(int lineNum, TypeToken *targetTypeToken);
@@ -332,8 +332,8 @@ public:
      */
     TypeToken *removeTargetTypeToken();
 
-    void setHandle(ConstructorHandle *handle);
-    ConstructorHandle *getHandle();
+    void addArgNode(ExprNode *argNode);
+    const std::vector<ExprNode*> &getArgNodes();
 
     int accept(NodeVisitor *visitor);   // override
 };
