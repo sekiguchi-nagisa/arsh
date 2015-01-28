@@ -290,39 +290,35 @@ AssignableNode::~AssignableNode() {
 // #####################
 
 VarNode::VarNode(int lineNum, std::string &&varName) :
-        AssignableNode(lineNum), varName(std::move(varName)), readOnly(false), global(false), varIndex(-1) {
+        AssignableNode(lineNum), varName(std::move(varName)), handle(0) {
 }
 
 const std::string &VarNode::getVarName() {
     return this->varName;
 }
 
+void VarNode::setHandle(FieldHandle *handle) {
+    this->handle = handle;
+}
+
+FieldHandle *VarNode::getHandle() {
+    return this->handle;
+}
+
 bool VarNode::isReadOnly() {
-    return this->readOnly;
+    return this->handle->isReadOnly();
 }
 
 int VarNode::accept(NodeVisitor *visitor) {
     return visitor->visitVarNode(this);
 }
 
-void VarNode::setReadOnly(bool readOnly) {
-    this->readOnly = readOnly;
-}
-
-void VarNode::setGlobal(bool global) {
-    this->global = global;
-}
-
 bool VarNode::isGlobal() {
-    return this->global;
-}
-
-void VarNode::setVarIndex(int index) {
-    this->varIndex = index;
+    return this->handle->isGlobal();
 }
 
 int VarNode::getVarIndex() {
-    return this->varIndex;
+    return this->handle->getFieldIndex();
 }
 
 // ########################

@@ -22,7 +22,8 @@
 // #########################
 
 FieldHandle::FieldHandle(DSType *fieldType, int fieldIndex, bool readOnly) :
-        fieldType(fieldType), fieldIndex(fieldIndex), readOnly(readOnly) {
+        fieldType(fieldType), fieldIndex(fieldIndex), attributeSet() {
+
 }
 
 FieldHandle::~FieldHandle() {
@@ -36,8 +37,24 @@ int FieldHandle::getFieldIndex() {
     return this->fieldIndex;
 }
 
+void FieldHandle::setAttribute(unsigned char attribute) {
+    this->attributeSet |= attribute;
+}
+
+void FieldHandle::unsetAttribute(unsigned char attribute) {
+    this->attributeSet &= ~attribute;
+}
+
+bool FieldHandle::hasAttribute(unsigned char targetAttr) {
+    return (this->attributeSet & targetAttr) == targetAttr;
+}
+
 bool FieldHandle::isReadOnly() {
-    return this->readOnly;
+    return this->hasAttribute(READ_ONLY);
+}
+
+bool FieldHandle::isGlobal() {
+    return this->hasAttribute(GLOBAL);
 }
 
 

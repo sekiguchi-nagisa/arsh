@@ -178,20 +178,17 @@ public:
 class VarNode: public AssignableNode {
 private:
     std::string varName;
-    bool readOnly;
-    bool global;
-    int varIndex;
+    FieldHandle *handle;
 
 public:
     VarNode(int lineNum, std::string &&varName);
 
     const std::string &getVarName();
+    void setHandle(FieldHandle *handle);
+    FieldHandle *getHandle();
     bool isReadOnly();	// override
     int accept(NodeVisitor *visitor);	// override
-    void setReadOnly(bool readOnly);
-    void setGlobal(bool global);
     bool isGlobal();
-    void setVarIndex(int index);
     int getVarIndex();
 };
 

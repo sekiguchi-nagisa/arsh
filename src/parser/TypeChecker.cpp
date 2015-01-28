@@ -108,7 +108,7 @@ void TypeChecker::checkTypeWithCurrentBlockScope(BlockNode *blockNode) {
 
 void TypeChecker::addEntryAndThrowIfDefined(Node *node, const std::string &symbolName, DSType *type,
         bool readOnly) {
-    if(!this->symbolTable.addEntry(symbolName, type, readOnly)) {
+    if(!this->symbolTable.addHandle(symbolName, type, readOnly)) {
         E_DefinedSymbol->report(node->getLineNum(), symbolName);
     }
 }
@@ -329,15 +329,13 @@ int TypeChecker::visitPairNode(PairNode *node) {
 }
 
 int TypeChecker::visitVarNode(VarNode *node) {
-    SymbolEntry *entry = this->symbolTable.getEntry(node->getVarName());
-    if(entry == 0) {
+    FieldHandle *handle = this->symbolTable.getHandle(node->getVarName());
+    if(handle == 0) {
         E_UndefinedSymbol->report(node->getLineNum(), node->getVarName());
     }
 
-    node->setGlobal(entry->isGlobal());
-    node->setReadOnly(entry->isReadOnly());
-    node->setVarIndex(entry->getVarIndex());
-    node->setType(entry->getType(this->typePool));
+    node->setHandle(handle);
+    node->setType(handle->getFieldType(this->typePool));
     return 0;
 }
 

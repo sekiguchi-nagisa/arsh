@@ -22,7 +22,7 @@
 #include <core/TypePool.h>
 #include <core/DSType.h>
 #include <core/FieldHandle.h>
-#include <parser/SymbolTable.h>
+#include <core/SymbolTable.h>
 
 class TypeChecker: public NodeVisitor {
 private:

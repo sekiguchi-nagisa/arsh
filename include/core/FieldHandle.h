@@ -18,7 +18,6 @@
 #define CORE_FIELDHANDLE_H_
 
 #include <string>
-#include <utility>
 #include <vector>
 #include <unordered_map>
 
@@ -28,7 +27,7 @@ class DSType;
 class FunctionType;
 
 /**
- * represent for class field. field type may be function type.
+ * represent for class field or variable. field type may be function type.
  */
 class FieldHandle {
 protected:
@@ -40,7 +39,10 @@ private:
      */
     int fieldIndex;
 
-    bool readOnly;
+    /**
+     * attribute bit map.
+     */
+    unsigned char attributeSet;
 
 public:
     FieldHandle(DSType *fieldType, int fieldIndex, bool readOnly);
@@ -53,7 +55,27 @@ public:
      */
     int getFieldIndex();
 
+    void setAttribute(unsigned char attribute);
+    void unsetAttribute(unsigned char attribute);
+
+    /**
+     * if includes targetAttr, return true.
+     */
+    bool hasAttribute(unsigned char targetAttr);
+
+    /**
+     * equivalent to this->hasAttribute(READ_ONLY).
+     */
     bool isReadOnly();
+
+    /**
+     * equivalent to this->hasAttribute(GLOBAL).
+     */
+    bool isGlobal();
+
+    // attribute definition
+    const static unsigned char READ_ONLY = 1 << 0;
+    const static unsigned char GLOBAL    = 1 << 1;
 };
 
 /**
