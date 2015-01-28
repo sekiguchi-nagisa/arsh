@@ -196,6 +196,8 @@ private:
      */
     HandleOrFuncType resolveCallee(VarNode *recvNode, ApplyNode *applyNode);
 
+    FunctionHandle *resolveOverload(DSType *recvType, const std::string funcName, DSType *paramType);
+
     // helper for argument type checking
     void checkTypeArgNodes(FunctionHandle *handle, const std::vector<ExprNode*> &argNodes);
     void checkTypeArgNodes(FunctionType *funcType, const std::vector<ExprNode*> &argNodes);
