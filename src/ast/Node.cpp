@@ -17,6 +17,7 @@
 #include <core/builtin_variable.h>
 #include <core/magic_method.h>
 #include <ast/Node.h>
+#include <ast/node_utils.h>
 
 #include <assert.h>
 
@@ -126,7 +127,7 @@ StringValueNode::StringValueNode(int lineNum, char *value, bool isSingleQuoteStr
      if(ch == '\\') {
      char nextCh = text.charAt(++i);
      switch(nextCh) {
-     case 't' : ch = '\t'; break;
+     case 't' : ch = #include <ast/node_utils.h>'\t'; break;
      case 'b' : ch = '\b'; break;
      case 'n' : ch = '\n'; break;
      case 'r' : ch = '\r'; break;
@@ -465,17 +466,51 @@ int InstanceOfNode::accept(NodeVisitor *visitor) {
     return visitor->visitInstanceOfNode(this);
 }
 
+// ##############################
+// ##     OperatorCallNode     ##
+// ##############################
+
+OperatorCallNode::OperatorCallNode(ExprNode *leftNode, int op, ExprNode *rightNode) :
+        ExprNode(leftNode->getLineNum()), argNodes(2), op(op), handle() {
+    this->argNodes.push_back(leftNode);
+    this->argNodes.push_back(rightNode);
+}
+
+OperatorCallNode::OperatorCallNode(int op, ExprNode *rightNode) :
+        ExprNode(rightNode->getLineNum()), argNodes(1), op(op), handle() {
+    this->argNodes.push_back(rightNode);
+}
+
+OperatorCallNode::~OperatorCallNode() {
+}
+
+const std::vector<ExprNode*> OperatorCallNode::getArgNodes() {
+    return this->argNodes;
+}
+
+int OperatorCallNode::getOp() {
+    return this->op;
+}
+
+void OperatorCallNode::setHandle(FunctionHandle *handle) {
+    this->handle = handle;
+}
+
+FunctionHandle *OperatorCallNode::getHandle() {
+    return this->handle;
+}
+
+int OperatorCallNode::accept(NodeVisitor *visitor) {
+    return visitor->visitOperatorCallNode(this);
+}
+
 // #######################
 // ##     ApplyNode     ##
 // #######################
 
 ApplyNode::ApplyNode(ExprNode *recvNode) :
-        ApplyNode(recvNode, false) {
-}
-
-ApplyNode::ApplyNode(ExprNode *recvNode, bool overload) :
-        ExprNode(recvNode->getLineNum()), recvNode(recvNode), argNodes(),
-        asFuncCall(false), overload(overload) {
+        ExprNode(recvNode->getLineNum()), recvNode(recvNode),
+        argNodes(), asFuncCall(false) {
 }
 
 ApplyNode::~ApplyNode() {
@@ -511,10 +546,6 @@ bool ApplyNode::isFuncCall() {
     return this->asFuncCall;
 }
 
-bool ApplyNode::isOverload() {
-    return this->overload;
-}
-
 int ApplyNode::accept(NodeVisitor *visitor) {
     return visitor->visitApplyNode(this);
 }
@@ -524,7 +555,7 @@ int ApplyNode::accept(NodeVisitor *visitor) {
 // #######################
 
 IndexNode::IndexNode(ExprNode *recvNode, ExprNode *indexNode) :
-        ApplyNode(new AccessNode(recvNode, std::string(GET)), true) {
+        ApplyNode(new AccessNode(recvNode, std::string(GET))) {
     this->addArgNode(indexNode);
 }
 

@@ -265,6 +265,31 @@ public:
     const static int INSTANCEOF   = 1;
 };
 
+/**
+ * for unary or binary operator call.
+ * operator function must be method.
+ */
+class OperatorCallNode : public ExprNode {
+private:
+    /**
+     * two or one argument
+     */
+    std::vector<ExprNode*> argNodes;
+    int op;
+    FunctionHandle *handle;
+
+public:
+    OperatorCallNode(ExprNode *leftNode, int op, ExprNode *rightNode);
+    OperatorCallNode(int op, ExprNode *rightNode);
+    ~OperatorCallNode();
+
+    const std::vector<ExprNode*> getArgNodes();
+    int getOp();
+    void setHandle(FunctionHandle *handle);
+    FunctionHandle *getHandle();
+    int accept(NodeVisitor *visitor);   // override
+};
+
 class ApplyNode: public ExprNode {	//TODO: function handle, named parameter
 protected:
     ExprNode* recvNode;
@@ -275,14 +300,8 @@ protected:
      */
     bool asFuncCall;
 
-    /**
-     * if true, resolve method overloading(only use operator call)
-     */
-    bool overload;
-
 public:
     ApplyNode(ExprNode *recvNode);
-    ApplyNode(ExprNode *recvNode, bool overload);
     virtual ~ApplyNode();
 
     ExprNode *getRecvNode();
@@ -295,7 +314,6 @@ public:
     const std::vector<ExprNode*> &getArgNodes();
     void setFuncCall(bool asFuncCall);
     bool isFuncCall();
-    bool isOverload();
     int accept(NodeVisitor *visitor);	// override
 };
 

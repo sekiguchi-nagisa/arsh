@@ -20,6 +20,7 @@
 #include <core/magic_method.h>
 #include <parser/TypeChecker.h>
 #include <parser/TypeError.h>
+#include <ast/node_utils.h>
 
 TypeChecker::TypeChecker(TypePool *typePool) :
         typePool(typePool), symbolTable(), curReturnType(0), loopContextStack(), finallyContextStack() {
@@ -209,19 +210,6 @@ TypeChecker::HandleOrFuncType TypeChecker::resolveCallee(ExprNode *recvNode, App
 
 TypeChecker::HandleOrFuncType TypeChecker::resolveCallee(AccessNode *recvNode, ApplyNode *applyNode) {
     DSType *actualRecvType = this->checkType(recvNode->getRecvNode());
-    // resolve overload
-    if(applyNode->isOverload() && applyNode->getArgNodes().size() == 2) {
-        FunctionHandle *handle =
-                this->resolveOverload(actualRecvType, recvNode->getFieldName(), applyNode->getArgNodes()[0]->getType());
-        if(handle == 0) {
-            E_UndefinedMethod->report(recvNode->getLineNum(), recvNode->getFieldName());
-        }
-        recvNode->setAdditionalOp(AccessNode::DUP_RECV_AND_SWAP);
-        applyNode->setFuncCall(false);
-        //applyNode->setType(recvNode->getHandle()->getReturnType(this->typePool));
-        return HandleOrFuncType(handle);
-    }
-
     FieldHandle *handle = actualRecvType->lookupFieldHandle(recvNode->getFieldName());
     if(handle == 0) {
         E_UndefinedField->report(recvNode->getLineNum(), recvNode->getFieldName());
@@ -259,22 +247,6 @@ TypeChecker::HandleOrFuncType TypeChecker::resolveCallee(VarNode *recvNode, Appl
     this->checkType(recvNode);
     applyNode->setFuncCall(true);
     return HandleOrFuncType(recvNode->getHandle());
-}
-
-FunctionHandle *TypeChecker::resolveOverload(DSType *recvType, const std::string funcName, DSType *paramType) {
-    int size = funcName.size();
-    std::string funcNamePrefix = funcName.substr(0, size - 2);
-    for(int i = 1; i < 5; i++) {
-        FunctionHandle *handle =
-                recvType->lookupMethodHandle(i == 1 ? funcName : funcNamePrefix + std::to_string(i) + "__");
-        if(handle != 0) {
-            const std::vector<DSType*> &paramTypes = handle->getParamTypes(this->typePool);
-            if(paramTypes.size() == 2 && paramTypes[1]->isAssignableFrom(paramType)) {
-                return handle;
-            }
-        }
-    }
-    return 0;
 }
 
 void TypeChecker::checkTypeArgNodes(FunctionHandle *handle, const std::vector<ExprNode*> &argNodes) {
@@ -412,6 +384,55 @@ int TypeChecker::visitInstanceOfNode(InstanceOfNode *node) {
         node->resolveOpKind(InstanceOfNode::ALWAYS_FALSE);
     }
     node->setType(this->typePool->getBooleanType());
+    return 0;
+}
+
+int TypeChecker::visitOperatorCallNode(OperatorCallNode *node) {
+    const std::vector<ExprNode*> argNodes = node->getArgNodes();
+    for(ExprNode *argNode : argNodes) {
+        this->checkType(argNode);
+    }
+    DSType *recvType = argNodes[0]->getType();
+    const std::string opName = resolveOpName(node->getOp());
+    FunctionHandle *handle = 0;
+
+    // lookup handle
+    if(argNodes.size() == 1) {
+        handle = recvType->lookupMethodHandle(opName);
+    } else {    // resolve overload
+        std::string namePrefix = opName.substr(0, opName.size() - 2);
+        for(int i = 1; i < 5; i++) {
+            FunctionHandle *handle =
+                    recvType->lookupMethodHandle(i == 1 ? opName : namePrefix + std::to_string(i) + "__");
+            if(handle != 0) {
+                const std::vector<DSType*> &paramTypes = handle->getParamTypes(this->typePool);
+                if(paramTypes.size() == 2 &&
+                        paramTypes[1]->isAssignableFrom(argNodes[1]->getType())) {
+                    break;
+                }
+                handle = 0;
+            }
+        }
+    }
+    if(handle == 0) {
+        E_UndefinedMethod->report(node->getLineNum(), opName);
+    }
+
+    // check param size
+    const std::vector<DSType*> &paramTypes = handle->getParamTypes(this->typePool);
+    unsigned int size = paramTypes.size();
+    if(size != argNodes.size()) {
+        E_UnmatchParam->report(node->getLineNum(),
+                std::to_string(size), std::to_string(argNodes.size()));
+    }
+
+    // try type match
+
+    for(unsigned int i = 0; i < size; i++) {
+        this->checkType(paramTypes[i], argNodes[i]);
+    }
+    node->setHandle(handle);
+    node->setType(handle->getReturnType(this->typePool));
     return 0;
 }
 

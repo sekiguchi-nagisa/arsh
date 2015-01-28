@@ -20,41 +20,29 @@
 #include <stdlib.h>
 #include <utility>
 
-
-static std::string resolveOpName(int op) {
+std::string resolveOpName(int op) {
     //TODO:
     return std::string();
 }
 
-static ApplyNode *createApplyNode(ExprNode *recvNode, std::string &&methodName, bool overload) {
+static ApplyNode *createApplyNode(ExprNode *recvNode, std::string &&methodName) {
     AccessNode *a = new AccessNode(recvNode, std::move(methodName));
-    return new ApplyNode(a, overload);
-}
-
-
-ExprNode *createBinaryOpNode(ExprNode *leftNode, int op, ExprNode *rightNode) {
-    ApplyNode *node = createApplyNode(leftNode, resolveOpName(op), true);
-    node->addArgNode(rightNode);
-    return node;
-}
-
-ExprNode *createUnaryOpNode(int op, ExprNode *rightNode) {
-    return createApplyNode(rightNode, resolveOpName(op), false);
+    return new ApplyNode(a);
 }
 
 ForNode *createForInNode(int lineNum, std::string &&initName, ExprNode *exprNode, BlockNode *blockNode) {
     // create for-init
-    ApplyNode *apply_reset = createApplyNode(exprNode, std::string(RESET), false);
+    ApplyNode *apply_reset = createApplyNode(exprNode, std::string(RESET));
     std::string reset_var_name = std::to_string(rand());
     VarDeclNode *reset_varDecl = new VarDeclNode(lineNum, std::string(reset_var_name), apply_reset, true);
 
     // create for-cond
     VarNode *reset_var = new VarNode(lineNum, std::string(reset_var_name));
-    ApplyNode *apply_hasNext = createApplyNode(reset_var, std::string(HAS_NEXT), false);
+    ApplyNode *apply_hasNext = createApplyNode(reset_var, std::string(HAS_NEXT));
 
     // create forIn-init
     reset_var = new VarNode(lineNum, std::string(reset_var_name));
-    ApplyNode *apply_next = createApplyNode(reset_var, std::string(NEXT), false);
+    ApplyNode *apply_next = createApplyNode(reset_var, std::string(NEXT));
     VarDeclNode *init_var = new VarDeclNode(lineNum, std::move(initName), apply_next, false);
 
     // insert init to block
@@ -63,7 +51,7 @@ ForNode *createForInNode(int lineNum, std::string &&initName, ExprNode *exprNode
     return new ForNode(lineNum, reset_varDecl, apply_hasNext, 0, blockNode);
 }
 
-static std::string resolveAssignOpName(int op) {
+std::string resolveAssignOpName(int op) {
     return std::string();   //FIXME:
 }
 
@@ -92,11 +80,13 @@ ExprNode *createAssignNode(ExprNode *leftNode, int op, ExprNode *rightNode) {   
     // assign to field
     AccessNode *accessNode = dynamic_cast<AccessNode*>(leftNode);
     if(accessNode != 0) {
-        ApplyNode *applyNode = createApplyNode(accessNode, std::move(opName), true);
+        ApplyNode *applyNode = createApplyNode(accessNode, std::move(opName));
         return new FieldSelfAssignNode(applyNode);
     }
     // assign to variable.
-    ApplyNode *applyNode = createApplyNode(leftNode, std::move(opName), true);
-    applyNode->addArgNode(rightNode);
-    return new AssignNode(leftNode, applyNode);
+    OperatorCallNode *opNode = new OperatorCallNode(leftNode, op, rightNode);
+//    ApplyNode *applyNode = createApplyNode(leftNode, std::move(opName));
+//    applyNode->addArgNode(rightNode);
+//    return new AssignNode(leftNode, applyNode);
+    return 0;   //FIXME:
 }

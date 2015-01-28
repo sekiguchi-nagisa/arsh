@@ -190,8 +190,6 @@ private:
      */
     HandleOrFuncType resolveCallee(VarNode *recvNode, ApplyNode *applyNode);
 
-    FunctionHandle *resolveOverload(DSType *recvType, const std::string funcName, DSType *paramType);
-
     // helper for argument type checking
     void checkTypeArgNodes(FunctionHandle *handle, const std::vector<ExprNode*> &argNodes);
     void checkTypeArgNodes(FunctionType *funcType, const std::vector<ExprNode*> &argNodes);
@@ -216,6 +214,7 @@ public:
     int visitAccessNode(AccessNode *node); // override
     int visitCastNode(CastNode *node); // override
     int visitInstanceOfNode(InstanceOfNode *node); // override
+    int visitOperatorCallNode(OperatorCallNode *node); // override
     int visitApplyNode(ApplyNode *node); // override
     int visitNewNode(NewNode *node); // override
     int visitCondOpNode(CondOpNode *node); // override

@@ -19,17 +19,8 @@
 
 #include <ast/Node.h>
 
-/**
- * helper function for binary op node creation.
- * op is binary op kind.
- */
-ExprNode *createBinaryOpNode(ExprNode *leftNode, int op, ExprNode *rightNode);
-
-/**
- * for unary op node creation.
- * op is unary op kind
- */
-ExprNode *createUnaryOpNode(int op, ExprNode *rightNode);
+std::string resolveOpName(int op);
+std::string resolveAssignOpName(int op);
 
 ForNode *createForInNode(int lineNum, std::string &&initName, ExprNode *exprNode, BlockNode *blockNode);
 
