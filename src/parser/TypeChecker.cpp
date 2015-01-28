@@ -393,17 +393,17 @@ int TypeChecker::visitOperatorCallNode(OperatorCallNode *node) {
         this->checkType(argNode);
     }
     DSType *recvType = argNodes[0]->getType();
-    const std::string opName = resolveOpName(node->getOp());
-    FunctionHandle *handle = 0;
 
     // lookup handle
+    const std::string opName = resolveOpName(node->getOp());
+    FunctionHandle *handle = 0;
     if(argNodes.size() == 1) {
         handle = recvType->lookupMethodHandle(opName);
     } else {    // resolve overload
         std::string namePrefix = opName.substr(0, opName.size() - 2);
         for(int i = 1; i < 5; i++) {
-            FunctionHandle *handle =
-                    recvType->lookupMethodHandle(i == 1 ? opName : namePrefix + std::to_string(i) + "__");
+            handle = recvType->lookupMethodHandle(i == 1 ?
+                    opName : namePrefix + std::to_string(i) + "__");
             if(handle != 0) {
                 const std::vector<DSType*> &paramTypes = handle->getParamTypes(this->typePool);
                 if(paramTypes.size() == 2 &&
@@ -427,7 +427,6 @@ int TypeChecker::visitOperatorCallNode(OperatorCallNode *node) {
     }
 
     // try type match
-
     for(unsigned int i = 0; i < size; i++) {
         this->checkType(paramTypes[i], argNodes[i]);
     }
