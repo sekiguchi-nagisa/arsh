@@ -41,8 +41,8 @@ Scope::~Scope() {
     this->handleMap.clear();
 }
 
-FieldHandle *Scope::getHandle(const std::string &entryName) {
-    return this->handleMap[entryName];
+FieldHandle *Scope::lookupHandle(const std::string &symbolName) {
+    return this->handleMap[symbolName];
 }
 
 int Scope::getCurVarIndex() {
@@ -67,14 +67,14 @@ public:
         this->entryCache.clear();
     }
 
-    bool addHandle(const std::string &entryName, DSType *type, bool readOnly) {   // override
-        if(this->handleMap[entryName] != 0) {
+    bool registerHandle(const std::string &symbolName, DSType *type, bool readOnly) {   // override
+        if(this->handleMap[symbolName] != 0) {
             return false;
         }
         FieldHandle *handle = new FieldHandle(type, this->curVarIndex++, readOnly);
         handle->setAttribute(FieldHandle::GLOBAL);
-        this->handleMap[entryName] = handle;
-        this->entryCache.push_back(entryName);
+        this->handleMap[symbolName] = handle;
+        this->entryCache.push_back(symbolName);
         return true;
     }
 
@@ -83,8 +83,8 @@ public:
     }
 
     void removeCachedEntry() {
-        for(std::string entryName : this->entryCache) {
-            this->handleMap.erase(entryName);
+        for(std::string symbolName : this->entryCache) {
+            this->handleMap.erase(symbolName);
         }
     }
 };
@@ -106,12 +106,12 @@ public:
     ~LocalScope() {
     }
 
-    bool addHandle(const std::string &entryName, DSType *type, bool readOnly) {   // override
-        if(this->handleMap[entryName] != 0) {
+    bool registerHandle(const std::string &symbolName, DSType *type, bool readOnly) {   // override
+        if(this->handleMap[symbolName] != 0) {
             return false;
         }
         FieldHandle *handle = new FieldHandle(type, this->curVarIndex++, readOnly);
-        this->handleMap[entryName] = handle;
+        this->handleMap[symbolName] = handle;
         return true;
     }
 };
@@ -133,9 +133,9 @@ SymbolTable::~SymbolTable() {
     this->scopes.clear();
 }
 
-FieldHandle *SymbolTable::getHandle(const std::string &entryName) {
+FieldHandle *SymbolTable::lookupHandle(const std::string &symbolName) {
     for(int index = this->scopes.size() - 1; index > -1; index--) {
-        FieldHandle *handle = this->scopes[index]->getHandle(entryName);
+        FieldHandle *handle = this->scopes[index]->lookupHandle(symbolName);
         if(handle != 0) {
             return handle;
         }
@@ -143,8 +143,8 @@ FieldHandle *SymbolTable::getHandle(const std::string &entryName) {
     return 0;
 }
 
-bool SymbolTable::addHandle(const std::string &entryName, DSType *type, bool readOnly) {
-    return this->scopes.back()->addHandle(entryName, type, readOnly);
+bool SymbolTable::registerHandle(const std::string &symbolName, DSType *type, bool readOnly) {
+    return this->scopes.back()->registerHandle(symbolName, type, readOnly);
 }
 
 void SymbolTable::enterScope() {    //FIXME:

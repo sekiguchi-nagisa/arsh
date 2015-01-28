@@ -108,7 +108,7 @@ void TypeChecker::checkTypeWithCurrentBlockScope(BlockNode *blockNode) {
 
 void TypeChecker::addEntryAndThrowIfDefined(Node *node, const std::string &symbolName, DSType *type,
         bool readOnly) {
-    if(!this->symbolTable.addHandle(symbolName, type, readOnly)) {
+    if(!this->symbolTable.registerHandle(symbolName, type, readOnly)) {
         E_DefinedSymbol->report(node->getLineNum(), symbolName);
     }
 }
@@ -198,7 +198,7 @@ void TypeChecker::checkTypeAsMethodCall(AccessNode *recvNode, ApplyNode *applyNo
         E_UndefinedField->report(recvNode->getLineNum(), recvNode->getFieldName());
     }
 
-    recvNode->setFieldIndex(handle->getFieldIndex());
+    recvNode->setHandle(handle);
     FunctionHandle *funcHandle = dynamic_cast<FunctionHandle*>(handle);
     // treat as method call
     if(funcHandle != 0) {
@@ -329,7 +329,7 @@ int TypeChecker::visitPairNode(PairNode *node) {
 }
 
 int TypeChecker::visitVarNode(VarNode *node) {
-    FieldHandle *handle = this->symbolTable.getHandle(node->getVarName());
+    FieldHandle *handle = this->symbolTable.lookupHandle(node->getVarName());
     if(handle == 0) {
         E_UndefinedSymbol->report(node->getLineNum(), node->getVarName());
     }
@@ -346,8 +346,7 @@ int TypeChecker::visitAccessNode(AccessNode *node) {
         E_UndefinedField->report(node->getLineNum(), node->getFieldName());
     }
 
-    node->setFieldIndex(handle->getFieldIndex());
-    node->setReadOnly(handle->isReadOnly());
+    node->setHandle(handle);
     node->setType(handle->getFieldType(this->typePool));
     return 0;
 }

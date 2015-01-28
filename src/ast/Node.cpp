@@ -327,7 +327,7 @@ int VarNode::getVarIndex() {
 
 AccessNode::AccessNode(ExprNode *recvNode, std::string &&fieldName) :
         AssignableNode(recvNode->getLineNum()), recvNode(recvNode), fieldName(std::move(fieldName)),
-        fieldIndex(-1), readOnly(false), additionalOp(NOP) {
+        handle(0), additionalOp(NOP) {
 }
 
 AccessNode::~AccessNode() {
@@ -347,20 +347,16 @@ const std::string &AccessNode::getFieldName() {
     return this->fieldName;
 }
 
-void AccessNode::setFieldIndex(int index) {
-    this->fieldIndex = index;
+void AccessNode::setHandle(FieldHandle *handle) {
+    this->handle = handle;
 }
 
 int AccessNode::getFieldIndex() {
-    return this->fieldIndex;
-}
-
-void AccessNode::setReadOnly(bool readOnly) {
-    this->readOnly = readOnly;
+    return this->handle->getFieldIndex();
 }
 
 bool AccessNode::isReadOnly() {
-    return this->readOnly;
+    return this->handle->isReadOnly();
 }
 
 void AccessNode::setAdditionalOp(int op) {

@@ -29,14 +29,14 @@ public:
      * get handle from scope.
      * return null, if not exist
      */
-    virtual FieldHandle *getHandle(const std::string &entryName) = 0;
+    virtual FieldHandle *lookupHandle(const std::string &symbolName) = 0;
 
     /**
      * add new handle.
      * type must not be void type, parametric type.
      * return false, if found duplicated entry
      */
-    virtual bool addHandle(const std::string &entryName, DSType *type, bool readOnly) = 0;
+    virtual bool registerHandle(const std::string &symbolName, DSType *type, bool readOnly) = 0;
 };
 
 class Scope : public ScopeOp {
@@ -48,7 +48,7 @@ public:
     Scope(int curVarIndex);
     virtual ~Scope();
 
-    FieldHandle *getHandle(const std::string &entryName);    // override
+    FieldHandle *lookupHandle(const std::string &symbolName);    // override
     int getCurVarIndex();
 };
 
@@ -63,8 +63,8 @@ public:
     SymbolTable();
     ~SymbolTable();
 
-    FieldHandle *getHandle(const std::string &entryName);    // override
-    bool addHandle(const std::string &entryName, DSType *type, bool readOnly);   // override
+    FieldHandle *lookupHandle(const std::string &symbolName);    // override
+    bool registerHandle(const std::string &symbolName, DSType *type, bool readOnly);   // override
 
     /**
      * create new local scope

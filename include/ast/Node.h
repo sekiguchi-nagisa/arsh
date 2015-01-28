@@ -196,8 +196,7 @@ class AccessNode: public AssignableNode {
 private:
     ExprNode* recvNode;
     std::string fieldName;
-    int fieldIndex;
-    bool readOnly;
+    FieldHandle *handle;
     int additionalOp;
 
 public:
@@ -207,10 +206,8 @@ public:
     ExprNode *getRecvNode();
     void setFieldName(const std::string &fieldName);
     const std::string &getFieldName();
-    void setFieldIndex(int index);
+    void setHandle(FieldHandle *handle);
     int getFieldIndex();
-
-    void setReadOnly(bool readOnly);
     bool isReadOnly();	// override
     void setAdditionalOp(int op);
     int getAdditionnalOp();
