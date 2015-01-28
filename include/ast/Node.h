@@ -207,6 +207,7 @@ public:
     void setFieldName(const std::string &fieldName);
     const std::string &getFieldName();
     void setHandle(FieldHandle *handle);
+    FieldHandle *getHandle();
     int getFieldIndex();
     bool isReadOnly();	// override
     void setAdditionalOp(int op);

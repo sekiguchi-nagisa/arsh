@@ -351,6 +351,10 @@ void AccessNode::setHandle(FieldHandle *handle) {
     this->handle = handle;
 }
 
+FieldHandle *AccessNode::getHandle() {
+    return this->handle;
+}
+
 int AccessNode::getFieldIndex() {
     return this->handle->getFieldIndex();
 }

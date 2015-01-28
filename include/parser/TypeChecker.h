@@ -142,23 +142,59 @@ private:
     void checkAndThrowIfInsideFinally(BlockEndNode *node);
 
     // for apply node type checking
-    /**
-     * check type ApplyNode as constructor call.
-     * recvNode must be equivalent to applyNode->getRecvNode()
-     */
-    void checkTypeAsConstructorCall(NewNode *recvNode, ApplyNode *applyNode);
+    class HandleOrFuncType {
+    private:
+        bool hasHandle;
+        union {
+            FieldHandle *handle;
+            FunctionType *funcType;
+        };
+    public:
+        HandleOrFuncType(FieldHandle *handle) :
+            hasHandle(true), handle(handle) {
+        }
+
+        HandleOrFuncType(FunctionType *funcType) :
+            hasHandle(false), funcType(funcType) {
+        }
+
+        bool treatAsHandle() {
+            return this->hasHandle;
+        }
+
+        FieldHandle *getHandle() {
+            return this->hasHandle ? this->handle : 0;
+        }
+
+        FunctionType *getFuncType() {
+            return this->hasHandle ? 0 : this->funcType;
+        }
+    };
+
 
     /**
-     * check type ApplyNode as method call.
+     * check type ApplyNode and resolve callee(handle or function type).
      * recvNode must be equivalent to applyNode->getRecvNode()
      */
-    void checkTypeAsMethodCall(AccessNode *recvNode, ApplyNode *applyNode);
+    HandleOrFuncType resolveCallee(ExprNode *recvNode, ApplyNode *applyNode);
 
     /**
-     * check type ApplyNode as function call.
+     * check type ApplyNode and resolve callee(handle or function type).
      * recvNode must be equivalent to applyNode->getRecvNode()
      */
-    void checkTypeAsFuncCall(ExprNode *recvNode, ApplyNode *applyNode);
+    HandleOrFuncType resolveCallee(NewNode *recvNode, ApplyNode *applyNode);
+
+    /**
+     * check type ApplyNode and resolve callee(handle or function type).
+     * recvNode must be equivalent to applyNode->getRecvNode()
+     */
+    HandleOrFuncType resolveCallee(AccessNode *recvNode, ApplyNode *applyNode);
+
+    /**
+     * check type ApplyNode and resolve callee(handle or function type).
+     * recvNode must be equivalent to applyNode->getRecvNode()
+     */
+    HandleOrFuncType resolveCallee(VarNode *recvNode, ApplyNode *applyNode);
 
     // helper for argument type checking
     void checkTypeArgNodes(FunctionHandle *handle, const std::vector<ExprNode*> &argNodes);
