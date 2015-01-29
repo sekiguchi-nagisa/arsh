@@ -31,6 +31,7 @@ class AccessNode;
 class CastNode;
 class InstanceOfNode;
 class OperatorCallNode;
+class ArgsNode;
 class ApplyNode;
 class NewNode;
 class CondOpNode;
@@ -78,6 +79,7 @@ public:
     virtual int visitCastNode(CastNode *node) = 0;
     virtual int visitInstanceOfNode(InstanceOfNode *node) = 0;
     virtual int visitOperatorCallNode(OperatorCallNode *node) = 0;
+    virtual int visitArgsNode(ArgsNode *node) = 0;
     virtual int visitApplyNode(ApplyNode *node) = 0;
     virtual int visitNewNode(NewNode *node) = 0;
     virtual int visitCondOpNode(CondOpNode *node) = 0;

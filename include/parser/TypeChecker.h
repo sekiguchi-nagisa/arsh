@@ -146,11 +146,11 @@ private:
     private:
         bool hasHandle;
         union {
-            FieldHandle *handle;
+            FunctionHandle *handle;
             FunctionType *funcType;
         };
     public:
-        HandleOrFuncType(FieldHandle *handle) :
+        HandleOrFuncType(FunctionHandle *handle) :
             hasHandle(true), handle(handle) {
         }
 
@@ -162,7 +162,7 @@ private:
             return this->hasHandle;
         }
 
-        FieldHandle *getHandle() {
+        FunctionHandle *getHandle() {
             return this->hasHandle ? this->handle : 0;
         }
 
@@ -191,8 +191,8 @@ private:
     HandleOrFuncType resolveCallee(VarNode *recvNode, ApplyNode *applyNode);
 
     // helper for argument type checking
-    void checkTypeArgNodes(FunctionHandle *handle, const std::vector<ExprNode*> &argNodes);
-    void checkTypeArgNodes(FunctionType *funcType, const std::vector<ExprNode*> &argNodes);
+    void checkTypeArgNodes(FunctionHandle *handle, const std::vector<ExprNode*> &argNodes, bool isFuncCall);
+    void checkTypeArgNodes(FunctionType *funcType, const std::vector<ExprNode*> &argNodes, bool isFuncCall);
 
 public:
     /**
@@ -215,6 +215,7 @@ public:
     int visitCastNode(CastNode *node); // override
     int visitInstanceOfNode(InstanceOfNode *node); // override
     int visitOperatorCallNode(OperatorCallNode *node); // override
+    int visitArgsNode(ArgsNode *node); // override
     int visitApplyNode(ApplyNode *node); // override
     int visitNewNode(NewNode *node); // override
     int visitCondOpNode(CondOpNode *node); // override

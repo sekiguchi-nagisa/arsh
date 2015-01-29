@@ -63,7 +63,10 @@ int Evaluator::visitInstanceOfNode(InstanceOfNode *node) {
 } //TODO
 int Evaluator::visitOperatorCallNode(OperatorCallNode *node) {
     return 0;
-} //todo
+} //TODO
+int Evaluator::visitArgsNode(ArgsNode *node) {
+    return 0;
+} //TODO
 int Evaluator::visitApplyNode(ApplyNode *node) {
     return 0;
 } //TODO

@@ -504,6 +504,61 @@ int OperatorCallNode::accept(NodeVisitor *visitor) {
     return visitor->visitOperatorCallNode(this);
 }
 
+// ######################
+// ##     ArgsNode     ##
+// ######################
+
+ArgsNode::ArgsNode(std::string &&paramName, ExprNode* argNode) :
+        ExprNode(argNode->getLineNum()), argPairs(), paramIndexMap(0), paramSize(0) {
+    this->argPairs.push_back(
+            std::pair<std::string, ExprNode*>(std::move(paramName), argNode));
+}
+
+ArgsNode::ArgsNode(ExprNode *argNode) :
+        ArgsNode("", argNode) {
+}
+
+ArgsNode::~ArgsNode() {
+    delete this->paramIndexMap;
+    this->paramIndexMap = 0;
+}
+
+void ArgsNode::addArgPair(std::string &&paramName, ExprNode *argNode) {
+    this->argPairs.push_back(
+            std::pair<std::string, ExprNode*>(std::move(paramName), argNode));
+}
+
+void ArgsNode::addArg(ExprNode *argNode) {
+    this->addArgPair("", argNode);
+}
+
+void ArgsNode::initIndexMap() {
+    this->paramIndexMap = new unsigned int[this->argPairs.size()];
+}
+
+void ArgsNode::addParamIndex(unsigned int index, unsigned int value) {
+    this->paramIndexMap[index] = value;
+}
+
+unsigned int *ArgsNode::getParamIndexMap() {
+    return this->paramIndexMap;
+}
+
+void ArgsNode::setParamSize(unsigned int size) {
+    this->paramSize = size;
+}
+
+unsigned int ArgsNode::getParamSize() {
+    return this->paramSize;
+}
+const std::vector<std::pair<std::string, ExprNode*>> &ArgsNode::getArgPairs() {
+    return this->argPairs;
+}
+
+int ArgsNode::accept(NodeVisitor *visitor) {
+    return visitor->visitArgsNode(this);
+}
+
 // #######################
 // ##     ApplyNode     ##
 // #######################

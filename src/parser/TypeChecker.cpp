@@ -187,11 +187,6 @@ void TypeChecker::checkAndThrowIfInsideFinally(BlockEndNode *node) {
 
 // for ApplyNode type checking
 TypeChecker::HandleOrFuncType TypeChecker::resolveCallee(ExprNode *recvNode, ApplyNode *applyNode) {
-    // check type argNodes
-    for(ExprNode *argNode : applyNode->getArgNodes()) {
-        this->checkType(argNode);
-    }
-
     AccessNode *accessNode = dynamic_cast<AccessNode*>(recvNode);
     if(accessNode != 0) {
         return this->resolveCallee(accessNode, applyNode);
@@ -204,7 +199,6 @@ TypeChecker::HandleOrFuncType TypeChecker::resolveCallee(ExprNode *recvNode, App
     FunctionType *funcType =
             dynamic_cast<FunctionType*>(this->checkType(this->typePool->getBaseFuncType(), recvNode));
     applyNode->setFuncCall(true);
-    applyNode->setType(funcType->getReturnType());
     return HandleOrFuncType(funcType);
 }
 
@@ -221,8 +215,7 @@ TypeChecker::HandleOrFuncType TypeChecker::resolveCallee(AccessNode *recvNode, A
     if(funcHandle != 0) {
         recvNode->setAdditionalOp(AccessNode::DUP_RECV_AND_SWAP);
         applyNode->setFuncCall(false);
-        applyNode->setType(funcHandle->getReturnType(this->typePool));
-        return HandleOrFuncType(handle);
+        return HandleOrFuncType(funcHandle);
     }
 
     FunctionType *funcType = dynamic_cast<FunctionType*>(handle->getFieldType(this->typePool));
@@ -230,8 +223,7 @@ TypeChecker::HandleOrFuncType TypeChecker::resolveCallee(AccessNode *recvNode, A
     if(funcType != 0 && funcType->treatAsMethod(actualRecvType)) {
         recvNode->setAdditionalOp(AccessNode::DUP_RECV_AND_SWAP);
         applyNode->setFuncCall(false);
-        applyNode->setType(funcType->getReturnType());
-        return HandleOrFuncType(handle);
+        return HandleOrFuncType(funcType);
     }
 
     // treat as function call
@@ -239,21 +231,36 @@ TypeChecker::HandleOrFuncType TypeChecker::resolveCallee(AccessNode *recvNode, A
         E_UndefinedMethod->report(recvNode->getLineNum(), recvNode->getFieldName());
     }
     applyNode->setFuncCall(true);
-    applyNode->setType(funcType->getReturnType());
-    return HandleOrFuncType(handle);
+    return HandleOrFuncType(funcType);
 }
 
 TypeChecker::HandleOrFuncType TypeChecker::resolveCallee(VarNode *recvNode, ApplyNode *applyNode) {
-    this->checkType(recvNode);
+    FieldHandle *handle = this->symbolTable.lookupHandle(recvNode->getVarName());
+    if(handle == 0) {
+        E_UndefinedSymbol->report(recvNode->getLineNum(), recvNode->getVarName());
+    }
+    recvNode->setHandle(handle);
     applyNode->setFuncCall(true);
-    return HandleOrFuncType(recvNode->getHandle());
+
+    FunctionHandle *funcHandle = dynamic_cast<FunctionHandle*>(handle);
+    if(funcHandle != 0) {
+        return HandleOrFuncType(funcHandle);
+    }
+
+    DSType *type = handle->getFieldType(this->typePool);
+    FunctionType *funcType = dynamic_cast<FunctionType*>(type);
+    if(funcType == 0) {
+        E_Required->report(recvNode->getLineNum(),
+                this->typePool->getBaseFuncType()->getTypeName(), type->getTypeName());
+    }
+    return HandleOrFuncType(funcType);
 }
 
-void TypeChecker::checkTypeArgNodes(FunctionHandle *handle, const std::vector<ExprNode*> &argNodes) {
+void TypeChecker::checkTypeArgNodes(FunctionHandle *handle, const std::vector<ExprNode*> &argNodes, bool isFuncCall) {
     //TODO:
 }
 
-void TypeChecker::checkTypeArgNodes(FunctionType *funcType, const std::vector<ExprNode*> &argNodes) {
+void TypeChecker::checkTypeArgNodes(FunctionType *funcType, const std::vector<ExprNode*> &argNodes, bool isFuncCall) {
     //TODO:
 }
 
@@ -435,17 +442,26 @@ int TypeChecker::visitOperatorCallNode(OperatorCallNode *node) {
     return 0;
 }
 
-int TypeChecker::visitApplyNode(ApplyNode *node) {  //TODO: named parameter
+int TypeChecker::visitArgsNode(ArgsNode *node) {
+    return 0;   // not call it
+}
+
+int TypeChecker::visitApplyNode(ApplyNode *node) {
+    /**
+     * resolve handle
+     */
     ExprNode *recvNode = node->getRecvNode();
     HandleOrFuncType hf = this->resolveCallee(recvNode, node);
-    if(hf.treatAsHandle() && !node->isFuncCall()) {
-        FunctionHandle *handle = dynamic_cast<FunctionHandle*>(hf.getHandle());
-        this->checkTypeArgNodes(handle, node->getArgNodes());
+
+    /**
+     * check type arg nodes
+     */
+    if(hf.treatAsHandle()) {
+        this->checkTypeArgNodes(hf.getHandle(), node->getArgNodes(), node->isFuncCall());
+        node->setType(hf.getHandle()->getReturnType(this->typePool));
     } else {
-        FunctionType *funcType = hf.treatAsHandle() ?
-                dynamic_cast<FunctionType*>(hf.getHandle()->getFieldType(this->typePool)) :
-                hf.getFuncType();
-        this->checkTypeArgNodes(funcType, node->getArgNodes());
+        this->checkTypeArgNodes(hf.getFuncType(), node->getArgNodes(), node->isFuncCall());
+        node->setType(hf.getFuncType()->getReturnType());
     }
     return 0;
 }
@@ -459,7 +475,7 @@ int TypeChecker::visitNewNode(NewNode *node) {
     if(handle == 0) {
         E_UndefinedInit->report(node->getLineNum(), type->getTypeName());
     }
-    this->checkTypeArgNodes(handle, node->getArgNodes());
+    this->checkTypeArgNodes(handle, node->getArgNodes(), false);
     node->setType(type);
     return 0;
 }

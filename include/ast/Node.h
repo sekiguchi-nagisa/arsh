@@ -290,6 +290,43 @@ public:
     int accept(NodeVisitor *visitor);   // override
 };
 
+class ArgsNode : public ExprNode {
+private:
+    std::vector<std::pair<std::string, ExprNode*>> argPairs;
+
+    /**
+     * may be null, if not has named parameter.
+     * size is equivalent to argsPair.size()
+     */
+    unsigned int *paramIndexMap;
+
+    /**
+     * size of all parameter of callee.
+     * may be not equivalent to argPairs.size() if has default parameter.
+     */
+    unsigned int paramSize;
+
+public:
+    ArgsNode(std::string &&paramName, ExprNode* argNode);
+    ArgsNode(ExprNode *argNode);
+    ~ArgsNode();
+
+    void addArgPair(std::string &&paramName, ExprNode *argNode);
+
+    /**
+     * equivalent to this->addArgPair("", argNode)
+     */
+    void addArg(ExprNode *argNode);
+
+    void initIndexMap();
+    void addParamIndex(unsigned int index, unsigned int value);
+    unsigned int *getParamIndexMap();
+    void setParamSize(unsigned int size);
+    unsigned int getParamSize();
+    const std::vector<std::pair<std::string, ExprNode*>> &getArgPairs();
+    int accept(NodeVisitor *visitor);   // override
+};
+
 class ApplyNode: public ExprNode {	//TODO: function handle, named parameter
 protected:
     ExprNode* recvNode;

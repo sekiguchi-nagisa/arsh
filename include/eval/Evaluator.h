@@ -39,6 +39,7 @@ public:
     int visitCastNode(CastNode *node); // override
     int visitInstanceOfNode(InstanceOfNode *node); // override
     int visitOperatorCallNode(OperatorCallNode *node); // override
+    int visitArgsNode(ArgsNode *node); // override
     int visitApplyNode(ApplyNode *node); // override
     int visitNewNode(NewNode *node); // override
     int visitCondOpNode(CondOpNode *node); // override
