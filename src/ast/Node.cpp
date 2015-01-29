@@ -508,14 +508,17 @@ int OperatorCallNode::accept(NodeVisitor *visitor) {
 // ##     ArgsNode     ##
 // ######################
 
+ArgsNode::ArgsNode(int lineNum) :
+        ExprNode(lineNum), argPairs(), paramIndexMap(0), paramSize(0) {
+}
 ArgsNode::ArgsNode(std::string &&paramName, ExprNode* argNode) :
-        ExprNode(argNode->getLineNum()), argPairs(), paramIndexMap(0), paramSize(0) {
+        ArgsNode(argNode->getLineNum()) {
     this->argPairs.push_back(
             std::pair<std::string, ExprNode*>(std::move(paramName), argNode));
 }
 
 ArgsNode::ArgsNode(ExprNode *argNode) :
-        ArgsNode("", argNode) {
+        ArgsNode(std::string(""), argNode) {
 }
 
 ArgsNode::~ArgsNode() {
@@ -563,34 +566,25 @@ int ArgsNode::accept(NodeVisitor *visitor) {
 // ##     ApplyNode     ##
 // #######################
 
-ApplyNode::ApplyNode(ExprNode *recvNode) :
+ApplyNode::ApplyNode(ExprNode *recvNode, ArgsNode *argsNode) :
         ExprNode(recvNode->getLineNum()), recvNode(recvNode),
-        argNodes(), asFuncCall(false) {
+        argsNode(argsNode), asFuncCall(false) {
 }
 
 ApplyNode::~ApplyNode() {
     delete this->recvNode;
     this->recvNode = 0;
 
-    for(ExprNode *e : this->argNodes) {
-        delete e;
-    }
-    this->argNodes.clear();
+    delete this->argsNode;
+    this->argsNode = 0;
 }
 
 ExprNode *ApplyNode::getRecvNode() {
     return this->recvNode;
 }
 
-/**
- * for parser
- */
-void ApplyNode::addArgNode(ExprNode *node) {
-    this->argNodes.push_back(node);
-}
-
-const std::vector<ExprNode*> &ApplyNode::getArgNodes() {
-    return this->argNodes;
+ArgsNode *ApplyNode::getArgsNode() {
+    return this->argsNode;
 }
 
 void ApplyNode::setFuncCall(bool asFuncCall) {
@@ -610,22 +604,20 @@ int ApplyNode::accept(NodeVisitor *visitor) {
 // #######################
 
 IndexNode::IndexNode(ExprNode *recvNode, ExprNode *indexNode) :
-        ApplyNode(new AccessNode(recvNode, std::string(GET))) {
-    this->addArgNode(indexNode);
+        ApplyNode(new AccessNode(recvNode, std::string(GET)), new ArgsNode(indexNode)) {
 }
 
 IndexNode::~IndexNode() {
 }
 
 ExprNode *IndexNode::getIndexNode() {
-    return this->getArgNodes()[0];
+    return this->getArgsNode()->getArgPairs()[0].second;
 }
 
 ApplyNode *IndexNode::treatAsAssignment(ExprNode *rightNode) {
-    assert(this->argNodes.size() == 1);
     AccessNode *accessNode = dynamic_cast<AccessNode*>(this->recvNode);
     accessNode->setFieldName(std::string(SET));
-    this->addArgNode(rightNode);
+    this->getArgsNode()->addArg(rightNode);
     return this;
 }
 
@@ -633,9 +625,9 @@ ApplyNode *IndexNode::treatAsAssignment(ExprNode *rightNode) {
 // ##     NewNode     ##
 // #####################
 
-NewNode::NewNode(int lineNum, TypeToken *targetTypeToken) :
+NewNode::NewNode(int lineNum, TypeToken *targetTypeToken, ArgsNode *argsNode) :
         ExprNode(lineNum), targetTypeToken(targetTypeToken),
-        argNodes() {
+        argsNode(argsNode) {
 }
 
 NewNode::~NewNode() {
@@ -653,12 +645,8 @@ TypeToken *NewNode::removeTargetTypeToken() {
     return t;
 }
 
-void NewNode::addArgNode(ExprNode *argNode) {
-    this->argNodes.push_back(argNode);
-}
-
-const std::vector<ExprNode*> &NewNode::getArgNodes() {
-    return this->argNodes;
+ArgsNode *NewNode::getArgsNode() {
+    return this->argsNode;
 }
 
 int NewNode::accept(NodeVisitor *visitor) {

@@ -307,6 +307,7 @@ private:
     unsigned int paramSize;
 
 public:
+    ArgsNode(int lineNum);
     ArgsNode(std::string &&paramName, ExprNode* argNode);
     ArgsNode(ExprNode *argNode);
     ~ArgsNode();
@@ -329,8 +330,8 @@ public:
 
 class ApplyNode: public ExprNode {	//TODO: function handle, named parameter
 protected:
-    ExprNode* recvNode;
-    std::vector<ExprNode*> argNodes;
+    ExprNode *recvNode;
+    ArgsNode *argsNode;
 
     /**
      * if true, treat as function call
@@ -338,17 +339,11 @@ protected:
     bool asFuncCall;
 
 public:
-    ApplyNode(ExprNode *recvNode);
+    ApplyNode(ExprNode *recvNode, ArgsNode *argsNode);
     virtual ~ApplyNode();
 
     ExprNode *getRecvNode();
-
-    /**
-     * for parser
-     */
-    void addArgNode(ExprNode *node);
-
-    const std::vector<ExprNode*> &getArgNodes();
+    ArgsNode *getArgsNode();
     void setFuncCall(bool asFuncCall);
     bool isFuncCall();
     int accept(NodeVisitor *visitor);	// override
@@ -374,10 +369,10 @@ public:
 class NewNode : public ExprNode {
 private:
     TypeToken *targetTypeToken;
-    std::vector<ExprNode*> argNodes;
+    ArgsNode *argsNode;
 
 public:
-    NewNode(int lineNum, TypeToken *targetTypeToken);
+    NewNode(int lineNum, TypeToken *targetTypeToken, ArgsNode *argsNode);
     ~NewNode();
 
     TypeToken *getTargetTypeToken();
@@ -387,9 +382,7 @@ public:
      */
     TypeToken *removeTargetTypeToken();
 
-    void addArgNode(ExprNode *argNode);
-    const std::vector<ExprNode*> &getArgNodes();
-
+    ArgsNode *getArgsNode();
     int accept(NodeVisitor *visitor);   // override
 };
 

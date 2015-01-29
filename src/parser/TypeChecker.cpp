@@ -256,12 +256,20 @@ TypeChecker::HandleOrFuncType TypeChecker::resolveCallee(VarNode *recvNode, Appl
     return HandleOrFuncType(funcType);
 }
 
-void TypeChecker::checkTypeArgNodes(FunctionHandle *handle, const std::vector<ExprNode*> &argNodes, bool isFuncCall) {
+void TypeChecker::checkTypeArgNodes(FunctionHandle *handle, ArgsNode *argsNode, bool isFuncCall) {
     //TODO:
 }
 
-void TypeChecker::checkTypeArgNodes(FunctionType *funcType, const std::vector<ExprNode*> &argNodes, bool isFuncCall) {
-    //TODO:
+void TypeChecker::checkTypeArgNodes(FunctionType *funcType, ArgsNode *argsNode, bool isFuncCall) {
+    unsigned int size = funcType->getParamTypes().size();
+    // check param size
+    if((size - (isFuncCall ? 0 : 1)) != argsNode->getArgPairs().size()) {
+        E_UnmatchParam->report(argsNode->getLineNum(),
+                std::to_string(size - (isFuncCall ? 0 : 1)),
+                std::to_string(argsNode->getArgPairs().size()));
+    }
+
+
 }
 
 void TypeChecker::recover() {
@@ -457,10 +465,10 @@ int TypeChecker::visitApplyNode(ApplyNode *node) {
      * check type arg nodes
      */
     if(hf.treatAsHandle()) {
-        this->checkTypeArgNodes(hf.getHandle(), node->getArgNodes(), node->isFuncCall());
+        this->checkTypeArgNodes(hf.getHandle(), node->getArgsNode(), node->isFuncCall());
         node->setType(hf.getHandle()->getReturnType(this->typePool));
     } else {
-        this->checkTypeArgNodes(hf.getFuncType(), node->getArgNodes(), node->isFuncCall());
+        this->checkTypeArgNodes(hf.getFuncType(), node->getArgsNode(), node->isFuncCall());
         node->setType(hf.getFuncType()->getReturnType());
     }
     return 0;
@@ -475,7 +483,7 @@ int TypeChecker::visitNewNode(NewNode *node) {
     if(handle == 0) {
         E_UndefinedInit->report(node->getLineNum(), type->getTypeName());
     }
-    this->checkTypeArgNodes(handle, node->getArgNodes(), false);
+    this->checkTypeArgNodes(handle, node->getArgsNode(), false);
     node->setType(type);
     return 0;
 }

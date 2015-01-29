@@ -191,8 +191,8 @@ private:
     HandleOrFuncType resolveCallee(VarNode *recvNode, ApplyNode *applyNode);
 
     // helper for argument type checking
-    void checkTypeArgNodes(FunctionHandle *handle, const std::vector<ExprNode*> &argNodes, bool isFuncCall);
-    void checkTypeArgNodes(FunctionType *funcType, const std::vector<ExprNode*> &argNodes, bool isFuncCall);
+    void checkTypeArgNodes(FunctionHandle *handle, ArgsNode *argsNode, bool isFuncCall);
+    void checkTypeArgNodes(FunctionType *funcType, ArgsNode *argsNode, bool isFuncCall);
 
 public:
     /**
