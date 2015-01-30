@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef SRC_CORE_MAGIC_METHOD_H_
-#define SRC_CORE_MAGIC_METHOD_H_
+#ifndef CORE_MAGIC_METHOD_H_
+#define CORE_MAGIC_METHOD_H_
 
 #include <string>
 
@@ -56,4 +56,4 @@ extern const char * const NEXT;  // must be Func<Any> type
 extern const char * const HAS_NEXT;  // must be Func<Boolean> type
 
 
-#endif /* SRC_CORE_MAGIC_METHOD_H_ */
+#endif /* CORE_MAGIC_METHOD_H_ */

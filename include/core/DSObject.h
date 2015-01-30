@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_INCLUDE_CORE_DSOBJECT_H_
-#define YDSH_INCLUDE_CORE_DSOBJECT_H_
+#ifndef CORE_DSOBJECT_H_
+#define CORE_DSOBJECT_H_
 
 #include <core/DSType.h>
 
@@ -170,4 +170,4 @@ public:
     void *getFuncPointer();
 };
 
-#endif /* YDSH_INCLUDE_CORE_DSOBJECT_H_ */
+#endif /* CORE_DSOBJECT_H_ */

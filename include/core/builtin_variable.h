@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_INCLUDE_CORE_BUILTIN_VARIABLE_H_
-#define YDSH_INCLUDE_CORE_BUILTIN_VARIABLE_H_
+#ifndef CORE_BUILTIN_VARIABLE_H_
+#define CORE_BUILTIN_VARIABLE_H_
 
 #include <string>
 
@@ -29,4 +29,4 @@ extern const char * const STDOUT;
 extern const char * const STDERR;
 
 
-#endif /* YDSH_INCLUDE_CORE_BUILTIN_VARIABLE_H_ */
+#endif /* CORE_BUILTIN_VARIABLE_H_ */

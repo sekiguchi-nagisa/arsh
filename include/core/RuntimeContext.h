@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_INCLUDE_CORE_RUNTIMECONTEXT_H_
-#define YDSH_INCLUDE_CORE_RUNTIMECONTEXT_H_
+#ifndef CORE_RUNTIMECONTEXT_H_
+#define CORE_RUNTIMECONTEXT_H_
 
 #include <core/DSObject.h>
 #include <vector>
@@ -64,4 +64,4 @@ public:
     DSObject *getThrownObject();
 };
 
-#endif /* YDSH_INCLUDE_CORE_RUNTIMECONTEXT_H_ */
+#endif /* CORE_RUNTIMECONTEXT_H_ */

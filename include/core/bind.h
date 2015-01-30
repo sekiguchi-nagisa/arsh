@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_INCLUDE_CORE_BIND_H_
-#define YDSH_INCLUDE_CORE_BIND_H_
+#ifndef CORE_BIND_H_
+#define CORE_BIND_H_
 
 #include <core/DSType.h>
 #include <core/TypePool.h>
@@ -59,4 +59,4 @@ void bindNativeFunc(TypePool *typePool, ClassType *type, native_func_info_t *inf
  */
 void bindNativeFuncAsInit(TypePool *typePool, ClassType *type, native_func_info_t *info);
 
-#endif /* YDSH_INCLUDE_CORE_BIND_H_ */
+#endif /* CORE_BIND_H_ */

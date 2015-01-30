@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef SRC_AST_NODE_UTILS_H_
-#define SRC_AST_NODE_UTILS_H_
+#ifndef AST_NODE_UTILS_H_
+#define AST_NODE_UTILS_H_
 
 #include <ast/Node.h>
 
@@ -28,4 +28,4 @@ ExprNode *createSuffixNode(ExprNode *leftNode, int op);
 
 ExprNode *createAssignNode(ExprNode *leftNode, int op, ExprNode *rightNode);
 
-#endif /* SRC_AST_NODE_UTILS_H_ */
+#endif /* AST_NODE_UTILS_H_ */
