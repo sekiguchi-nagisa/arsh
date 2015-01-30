@@ -98,6 +98,7 @@ public:
 #define REPORT_TC_ERROR2(name, node, arg1, arg2)       do { throw TypeCheckException(node->getLineNum(), TypeCheckException::E_##name, arg1, arg2); } while(0)
 #define REPORT_TC_ERROR3(name, node, arg1, arg2, arg3) do { throw TypeCheckException(node->getLineNum(), TypeCheckException::E_##name, arg1, arg2, arg3); } while(0)
 
+
 #define E_Unresolved(node)                  REPORT_TC_ERROR0(Unresolved       , node)
 #define E_InsideLoop(node)                  REPORT_TC_ERROR0(InsideLoop       , node)
 #define E_UnfoundReturn(node)               REPORT_TC_ERROR0(UnfoundReturn    , node)

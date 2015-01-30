@@ -243,6 +243,7 @@ TypeChecker::HandleOrFuncType TypeChecker::resolveCallee(AccessNode *recvNode, A
     if(funcType == 0) {
         E_UndefinedMethod(recvNode, recvNode->getFieldName());
     }
+
     applyNode->setFuncCall(true);
     return HandleOrFuncType(funcType);
 }

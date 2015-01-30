@@ -102,7 +102,7 @@ const char * const TypeCheckException::E_ReadOnly        = "read only value";
 const char * const TypeCheckException::E_InsideFinally   = "unavailable inside finally block";
 const char * const TypeCheckException::E_UnneedNamedArg  = "not need named argument";
 const char * const TypeCheckException::E_NeedNamedArg    = "need named argument";
-const char * const TypeCheckException::E_NoDefaultValue    = "has no default value";
+const char * const TypeCheckException::E_NoDefaultValue  = "has no default value";
 
 // one arg
 const char * const TypeCheckException::E_DefinedSymbol     = "already defined symbol: %s";

@@ -141,6 +141,8 @@ private:
 
     void checkAndThrowIfInsideFinally(BlockEndNode *node);
 
+    // for apply node type checking
+
     /**
      * convert TypeToken to DSType.
      * after converting, delete typeToken.
