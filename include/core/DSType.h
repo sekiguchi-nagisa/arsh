@@ -24,6 +24,7 @@
 #include <memory>
 
 #include <core/FieldHandle.h>
+#include <core/TypeTemplate.h>
 
 class DSObject;
 class FuncObject;
@@ -221,7 +222,7 @@ public:
 /**
  * create reified type name
  */
-std::string toReifiedTypeName(DSType *templateType, const std::vector<DSType*> &elementTypes);
+std::string toReifiedTypeName(TypeTemplate *typeTemplate, const std::vector<DSType*> &elementTypes);
 
 /**
  * create function type name

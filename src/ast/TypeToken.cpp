@@ -15,6 +15,7 @@
  */
 
 #include <ast/TypeToken.h>
+#include <core/TypeTemplate.h>
 
 // #######################
 // ##     TypeToken     ##
@@ -71,12 +72,12 @@ void ReifiedTypeToken::addElementTypeToken(TypeToken *type) {
 
 DSType *ReifiedTypeToken::toType(TypePool *typePool) {
     int size = this->elementTypeTokens.size();
-    DSType *templateType = typePool->getTemplateType(this->templateTypeToken->getTokenText(), size);    //FIXME: template type
+    TypeTemplate *typeTemplate = typePool->getTypeTemplate(this->templateTypeToken->getTokenText(), size);
     std::vector<DSType*> elementTypes(size);
     for(int i = 0; i < size; i++) {
         elementTypes.push_back(this->elementTypeTokens[i]->toType(typePool));
     }
-    return typePool->createAndGetReifiedTypeIfUndefined(templateType, elementTypes);
+    return typePool->createAndGetReifiedTypeIfUndefined(typeTemplate, elementTypes);
 }
 
 

@@ -21,6 +21,7 @@
 #include <vector>
 #include <unordered_map>
 
+class TypeTemplate;
 class DSType;
 class FunctionType;
 
@@ -30,7 +31,7 @@ private:
 
 public:
     TypePool();
-    virtual ~TypePool();
+    ~TypePool();
 
     /**
      * get any type (root class of ydsh class)
@@ -54,15 +55,14 @@ public:
     DSType *getBaseFuncType();
 
     // for reified type.
-    DSType *getBaseArrayType(); //TODO: return type
-    DSType *getBaseMapType();	// TODO: return type
-    DSType *getBasePairType();	// TODO: return type
+    TypeTemplate *getArrayTemplate();
+    TypeTemplate *getMapTemplate();
+    TypeTemplate *getPairTemplate();
 
     // for type lookup
 
     /**
      * return null, if type is not defined.
-     * cannot get TemplateType(array.. etc)
      */
     DSType *getType(const std::string &typeName);
 
@@ -76,10 +76,9 @@ public:
      * get template type.
      * if template type is not found, throw exception
      */
-    DSType *getTemplateType(const std::string &typeName, int elementSize);  //FIXME: return type
+    TypeTemplate *getTypeTemplate(const std::string &typeName, int elementSize);
 
-    //TODO: template type
-    DSType *createAndGetReifiedTypeIfUndefined(DSType *templateType, const std::vector<DSType*> &elementTypes);
+    DSType *createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate, const std::vector<DSType*> &elementTypes);
 
     FunctionType *createAndGetFuncTypeIfUndefined(DSType *returnType, const std::vector<DSType*> &paramTypes);
 };

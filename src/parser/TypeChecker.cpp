@@ -421,10 +421,10 @@ int TypeChecker::visitArrayNode(ArrayNode *node) {
         this->checkType(elementType, node->getExprNodes()[i]);
     }
 
-    DSType *baseArrayType = this->typePool->getBaseArrayType(); //FIXME:
+    TypeTemplate *arrayTemplate = this->typePool->getArrayTemplate();
     std::vector<DSType*> elementTypes(1);
     elementTypes.push_back(elementType);
-    node->setType(this->typePool->createAndGetReifiedTypeIfUndefined(baseArrayType, elementTypes));
+    node->setType(this->typePool->createAndGetReifiedTypeIfUndefined(arrayTemplate, elementTypes));
     return 0;
 }
 
@@ -439,10 +439,10 @@ int TypeChecker::visitMapNode(MapNode *node) {
         this->checkType(valueType, node->getValueNodes()[i]);
     }
 
-    DSType *baseMapType = this->typePool->getBaseMapType(); //FIXME:
+    TypeTemplate *mapTemplate = this->typePool->getMapTemplate();
     std::vector<DSType*> elementTypes(1);
     elementTypes.push_back(valueType);
-    node->setType(this->typePool->createAndGetReifiedTypeIfUndefined(baseMapType, elementTypes));
+    node->setType(this->typePool->createAndGetReifiedTypeIfUndefined(mapTemplate, elementTypes));
     return 0;
 }
 
@@ -450,11 +450,11 @@ int TypeChecker::visitPairNode(PairNode *node) {
     DSType *leftType = this->checkType(node->getLeftNode());
     DSType *rightType = this->checkType(node->getRightNode());
 
-    DSType *basePairType = this->typePool->getBasePairType();   //FIXME:
+    TypeTemplate *pairTemplate = this->typePool->getPairTemplate();
     std::vector<DSType*> elementTypes(2);
     elementTypes.push_back(leftType);
     elementTypes.push_back(rightType);
-    node->setType(this->typePool->createAndGetReifiedTypeIfUndefined(basePairType, elementTypes));
+    node->setType(this->typePool->createAndGetReifiedTypeIfUndefined(pairTemplate, elementTypes));
     return 0;
 }
 

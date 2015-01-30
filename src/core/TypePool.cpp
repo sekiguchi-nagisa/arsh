@@ -17,6 +17,7 @@
 #include <core/TypePool.h>
 #include <core/DSType.h>
 #include <core/TypeLookupError.h>
+#include <core/TypeTemplate.h>
 
 // ######################
 // ##     TypePool     ##
@@ -69,22 +70,20 @@ DSType *TypePool::getBaseFuncType() {
     return 0;   //TODO:
 }
 
-DSType *TypePool::getBaseArrayType() {
+TypeTemplate *TypePool::getArrayTemplate() {
     return 0;	//TODO:
 }
 
-DSType *TypePool::getBaseMapType() {
+TypeTemplate *TypePool::getMapTemplate() {
     return 0;	//TODO:
 }
 
-DSType *TypePool::getBasePairType() {
+TypeTemplate *TypePool::getPairTemplate() {
     return 0;	//TODO:
 }
 
 DSType *TypePool::getType(const std::string &typeName) {
-    DSType *type = this->typeMap[typeName];
-    //TODO: check template type
-    return type;
+    return this->typeMap[typeName];
 }
 
 DSType *TypePool::getTypeAndThrowIfUndefined(const std::string &typeName) {
@@ -95,11 +94,11 @@ DSType *TypePool::getTypeAndThrowIfUndefined(const std::string &typeName) {
     return type;
 }
 
-DSType *TypePool::getTemplateType(const std::string &typeName, int elementSize) {
+TypeTemplate *TypePool::getTypeTemplate(const std::string &typeName, int elementSize) {
     return 0;   //FIXME:
 }
 
-DSType *TypePool::createAndGetReifiedTypeIfUndefined(DSType *templateType,
+DSType *TypePool::createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate,
         const std::vector<DSType*> &elementTypes) {
     return 0;   //FIXME:
 }

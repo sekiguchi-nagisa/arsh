@@ -214,9 +214,9 @@ bool FunctionType::equals(DSType *targetType) {
     return true;
 }
 
-std::string toReifiedTypeName(DSType *templateType, const std::vector<DSType*> &elementTypes) {
+std::string toReifiedTypeName(TypeTemplate *typeTemplate, const std::vector<DSType*> &elementTypes) {
     int elementSize = elementTypes.size();
-    std::string reifiedTypeName = templateType->getTypeName() + "<";
+    std::string reifiedTypeName = typeTemplate->getName() + "<";
     for(int i = 0; i < elementSize; i++) {
         if(i > 0) {
             reifiedTypeName += ",";

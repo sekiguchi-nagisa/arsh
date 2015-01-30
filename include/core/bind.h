@@ -23,7 +23,7 @@
 /**
  * for function handle(method handle or constructor handle) creation.
  */
-typedef struct {
+struct native_func_info_t {
     const char *funcName;
 
     /**
@@ -47,7 +47,7 @@ typedef struct {
      */
     unsigned char defaultValueFlag;
 
-} native_func_info_t;
+};
 
 /**
  * create function handle, function object and add to type.
