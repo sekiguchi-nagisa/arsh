@@ -532,7 +532,7 @@ void ArgsNode::addArgPair(std::string &&paramName, ExprNode *argNode) {
 }
 
 void ArgsNode::addArg(ExprNode *argNode) {
-    this->addArgPair("", argNode);
+    this->addArgPair(std::string(""), argNode);
 }
 
 void ArgsNode::initIndexMap() {

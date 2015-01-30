@@ -27,7 +27,7 @@ std::string resolveOpName(int op) {
 
 static ApplyNode *createApplyNode(ExprNode *recvNode, std::string &&methodName) {
     AccessNode *a = new AccessNode(recvNode, std::move(methodName));
-    return new ApplyNode(a);
+    return new ApplyNode(a, new ArgsNode(a->getLineNum()));
 }
 
 ForNode *createForInNode(int lineNum, std::string &&initName, ExprNode *exprNode, BlockNode *blockNode) {
