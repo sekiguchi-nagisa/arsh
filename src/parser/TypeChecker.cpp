@@ -270,6 +270,7 @@ TypeChecker::HandleOrFuncType TypeChecker::resolveCallee(VarNode *recvNode, Appl
 }
 
 void TypeChecker::checkTypeArgsNode(FunctionHandle *handle, ArgsNode *argsNode, bool isFuncCall) {
+    const unsigned int startIndex = isFuncCall ? 0 : 1;
     // check named arg existence
     bool foundNamedArg = false;
     for(const std::pair<std::string, ExprNode*> &argPair : argsNode->getArgPairs()) {
@@ -288,18 +289,18 @@ void TypeChecker::checkTypeArgsNode(FunctionHandle *handle, ArgsNode *argsNode, 
     /**
      * if named parameter not found. only check type
      */
+    const std::vector<DSType*> &paramTypes = handle->getParamTypes(this->typePool);
     if(!foundNamedArg) {
-        this->checkTypeArgsNode(handle->getParamTypes(this->typePool), argsNode, isFuncCall);
+        this->checkTypeArgsNode(paramTypes, argsNode, isFuncCall);
         return;
     }
 
     // check param size
-    const std::vector<DSType*> &paramTypes = handle->getParamTypes(this->typePool);
     unsigned int paramSize = paramTypes.size();
     unsigned int argSize = argsNode->getArgPairs().size();
-    if(argSize > (paramSize - (isFuncCall ? 0 : 1))) {
+    if(argSize > paramSize - startIndex) {
         E_UnmatchParam(argsNode,
-                std::to_string(paramSize - (isFuncCall ? 0 : 1)),
+                std::to_string(paramSize - startIndex),
                 std::to_string(argSize));
     }
 
@@ -316,27 +317,27 @@ void TypeChecker::checkTypeArgsNode(FunctionHandle *handle, ArgsNode *argsNode, 
     }
 
     // check argument duplication
-    bool foundIndexMap[paramSize];
-    // init with false
+    unsigned int foundIndexMap[paramSize];
+    // init with 0
     for(unsigned int i = 0; i < paramSize; i++) {
-        foundIndexMap[i] = false;
+        foundIndexMap[i] = 0;
     }
     for(unsigned int i = 0; i < argSize; i++) {
-        if(foundIndexMap[argsNode->getParamIndexMap()[i]]) {
+        unsigned int paramIndex = argsNode->getParamIndexMap()[i];
+        if(foundIndexMap[paramIndex]++) {
             E_DupNamedArg(argsNode, argsNode->getArgPairs()[i].first);
         }
-        foundIndexMap[argsNode->getParamIndexMap()[i]] = true;
     }
 
     // check default value existence
-    for(unsigned int i = isFuncCall ? 0 : 1; i < paramSize; i++) {
-        if(!foundIndexMap[i] && !handle->hasDefaultValue(i)) {
+    for(unsigned int i = startIndex; i < paramSize; i++) {
+        if(foundIndexMap[i] == 0 && !handle->hasDefaultValue(i)) {
             E_NoDefaultValue(argsNode);
         }
     }
 
     // check type each arg
-    for(unsigned int i = isFuncCall ? 0 : 1; i < argSize; i++) {
+    for(unsigned int i = 0; i < argSize; i++) {
         this->checkType(paramTypes[argsNode->getParamIndexMap()[i]],
                 argsNode->getArgPairs()[i].second);
     }
@@ -355,17 +356,18 @@ void TypeChecker::checkTypeArgsNode(FunctionType *funcType, ArgsNode *argsNode, 
 }
 
 void TypeChecker::checkTypeArgsNode(const std::vector<DSType*> &paramTypes, ArgsNode *argsNode, bool isFuncCall) {
+    const unsigned int startIndex = isFuncCall ? 0 : 1;
     unsigned int size = paramTypes.size();
     unsigned int argSize = argsNode->getArgPairs().size();
     // check param size
-    if((size - (isFuncCall ? 0 : 1)) != argSize) {
+    if(size - startIndex != argSize) {
         E_UnmatchParam(argsNode,
-                std::to_string(size - (isFuncCall ? 0 : 1)),
+                std::to_string(size - startIndex),
                 std::to_string(argSize));
     }
 
     // check type each node
-    for(unsigned int i = isFuncCall ? 0 : 1; i < size; i++) {
+    for(unsigned int i = startIndex; i < size; i++) {
         this->checkType(paramTypes[i], argsNode->getArgPairs()[i].second);
     }
 }
