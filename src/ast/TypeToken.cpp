@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <parser/TypeCheckException.h>
 #include <ast/TypeToken.h>
 
 // #######################
@@ -42,12 +41,7 @@ ClassTypeToken::ClassTypeToken(int lineNum, std::string &&typeName) :
 }
 
 DSType *ClassTypeToken::toType(TypePool *typePool) {
-    try {
-        return typePool->getTypeAndThrowIfUndefined(this->typeName);
-    } catch(TypeLookupException &e) {
-        e.setLineNum(this->getLineNum());
-        throw;
-    }
+    return typePool->getTypeAndThrowIfUndefined(this->typeName);
 }
 
 const std::string &ClassTypeToken::getTokenText() {
@@ -82,13 +76,7 @@ DSType *ReifiedTypeToken::toType(TypePool *typePool) {
     for(int i = 0; i < size; i++) {
         elementTypes.push_back(this->elementTypeTokens[i]->toType(typePool));
     }
-
-    try {
-        return typePool->createAndGetReifiedTypeIfUndefined(templateType, elementTypes);
-    } catch(TypeLookupException &e) {
-        e.setLineNum(this->getLineNum());
-        throw;
-    }
+    return typePool->createAndGetReifiedTypeIfUndefined(templateType, elementTypes);
 }
 
 
@@ -127,13 +115,6 @@ DSType *FuncTypeToken::toType(TypePool *typePool) {
     for(int i = 0; i < size; i++) {
         paramTypes.push_back(this->paramTypeTokens[i]->toType(typePool));
     }
-
-    try {
-        return typePool->createAndGetFuncTypeIfUndefined(returnType, paramTypes);
-    } catch(TypeLookupException &e) {
-        e.setLineNum(this->getLineNum());
-        throw;
-    }
-    return 0;
+    return typePool->createAndGetFuncTypeIfUndefined(returnType, paramTypes);
 }
 
