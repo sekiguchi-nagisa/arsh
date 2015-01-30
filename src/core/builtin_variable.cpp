@@ -24,5 +24,3 @@ const char * const  FALSE = "$FALSE";
 const char * const  STDIN  = "$STDIN";
 const char * const  STDOUT = "$STDOUT";
 const char * const  STDERR = "$STDERR";
-
-

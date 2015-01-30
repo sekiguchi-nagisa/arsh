@@ -199,6 +199,7 @@ private:
     // helper for argument type checking
     void checkTypeArgsNode(FunctionHandle *handle, ArgsNode *argsNode, bool isFuncCall);
     void checkTypeArgsNode(FunctionType *funcType, ArgsNode *argsNode, bool isFuncCall);
+    void checkTypeArgsNode(const std::vector<DSType*> &paramTypes, ArgsNode *argsNode, bool isFuncCall);
 
 public:
     /**

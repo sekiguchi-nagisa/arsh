@@ -296,7 +296,8 @@ private:
 
     /**
      * may be null, if not has named parameter.
-     * size is equivalent to argsPair.size()
+     * size is equivalent to argsPair.size().
+     * key is order of arg, value is parameter index.
      */
     unsigned int *paramIndexMap;
 

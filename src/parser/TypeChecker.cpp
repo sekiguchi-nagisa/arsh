@@ -269,19 +269,104 @@ TypeChecker::HandleOrFuncType TypeChecker::resolveCallee(VarNode *recvNode, Appl
 }
 
 void TypeChecker::checkTypeArgsNode(FunctionHandle *handle, ArgsNode *argsNode, bool isFuncCall) {
-    //TODO:
+    // check named arg existence
+    bool foundNamedArg = false;
+    for(const std::pair<std::string, ExprNode*> &argPair : argsNode->getArgPairs()) {
+        if(argPair.first != "") {
+            foundNamedArg = true;
+        }
+        /**
+         * if previously found named parameter, but current argument has no named parameter,
+         * report error.
+         */
+        else if(foundNamedArg) {
+            E_NeedNamedArg(argsNode);
+        }
+    }
+
+    /**
+     * if named parameter not found. only check type
+     */
+    if(!foundNamedArg) {
+        this->checkTypeArgsNode(handle->getParamTypes(this->typePool), argsNode, isFuncCall);
+        return;
+    }
+
+    // check param size
+    const std::vector<DSType*> &paramTypes = handle->getParamTypes(this->typePool);
+    unsigned int paramSize = paramTypes.size();
+    unsigned int argSize = argsNode->getArgPairs().size();
+    if(argSize > (paramSize - (isFuncCall ? 0 : 1))) {
+        E_UnmatchParam(argsNode,
+                std::to_string(paramSize - (isFuncCall ? 0 : 1)),
+                std::to_string(argSize));
+    }
+
+    // resolve named param index
+    argsNode->initIndexMap();
+    argsNode->setParamSize(paramSize);
+    unsigned int count = 0;
+    for(const std::pair<std::string, ExprNode*> &argPair : argsNode->getArgPairs()) {
+        int index = handle->getParamIndex(argPair.first);
+        if(index == -1) {
+            E_UnfoundNamedParam(argsNode, argPair.first);
+        }
+        argsNode->addParamIndex(count++, index);
+    }
+
+    // check argument duplication
+    bool foundIndexMap[paramSize];
+    // init with false
+    for(unsigned int i = 0; i < paramSize; i++) {
+        foundIndexMap[i] = false;
+    }
+    for(unsigned int i = 0; i < argSize; i++) {
+        if(foundIndexMap[argsNode->getParamIndexMap()[i]]) {
+            E_DupNamedArg(argsNode, argsNode->getArgPairs()[i].first);
+        }
+        foundIndexMap[argsNode->getParamIndexMap()[i]] = true;
+    }
+
+    // check default value existence
+    for(unsigned int i = isFuncCall ? 0 : 1; i < paramSize; i++) {
+        if(!foundIndexMap[i] && !handle->hasDefaultValue(i)) {
+            E_NoDefaultValue(argsNode);
+        }
+    }
+
+    // check type each arg
+    for(unsigned int i = isFuncCall ? 0 : 1; i < argSize; i++) {
+        this->checkType(paramTypes[argsNode->getParamIndexMap()[i]],
+                argsNode->getArgPairs()[i].second);
+    }
 }
 
 void TypeChecker::checkTypeArgsNode(FunctionType *funcType, ArgsNode *argsNode, bool isFuncCall) {
-    unsigned int size = funcType->getParamTypes().size();
-    // check param size
-    if((size - (isFuncCall ? 0 : 1)) != argsNode->getArgPairs().size()) {
-        E_UnmatchParam(argsNode,
-                std::to_string(size - (isFuncCall ? 0 : 1)),
-                std::to_string(argsNode->getArgPairs().size()));
+    // check has no named arg
+    for(const std::pair<std::string, ExprNode*> &argPair : argsNode->getArgPairs()) {
+        if(argPair.first != "") {
+            E_UnneedNamedArg(argsNode);
+        }
     }
 
+    // check type each node
+    this->checkTypeArgsNode(funcType->getParamTypes(), argsNode, isFuncCall);
+}
 
+void TypeChecker::checkTypeArgsNode(const std::vector<DSType*> &paramTypes, ArgsNode *argsNode, bool isFuncCall) {
+    unsigned int size = paramTypes.size();
+    unsigned int argSize = argsNode->getArgPairs().size();
+    // check param size
+    if((size - (isFuncCall ? 0 : 1)) != argSize) {
+        E_UnmatchParam(argsNode,
+                std::to_string(size - (isFuncCall ? 0 : 1)),
+                std::to_string(argSize));
+    }
+
+    // check type each node
+    for(unsigned int i = isFuncCall ? 0 : 1; i < size; i++) {
+        this->checkType(paramTypes[i], argsNode->getArgPairs()[i].second);
+    }
 }
 
 void TypeChecker::recover() {

@@ -67,6 +67,9 @@ public:
     const static char * const E_Assignable;
     const static char * const E_ReadOnly;
     const static char * const E_InsideFinally;
+    const static char * const E_UnneedNamedArg;
+    const static char * const E_NeedNamedArg;
+    const static char * const E_NoDefaultValue;
 
     // one arg
     const static char * const E_DefinedSymbol;
@@ -76,6 +79,8 @@ public:
     const static char * const E_UndefinedInit;
     const static char * const E_Unacceptable;
     const static char * const E_NoIterator;
+    const static char * const E_UnfoundNamedParam;
+    const static char * const E_DupNamedArg;
     const static char * const E_Unimplemented;
 
     // two arg
@@ -93,24 +98,29 @@ public:
 #define REPORT_TC_ERROR2(name, node, arg1, arg2)       do { throw TypeCheckException(node->getLineNum(), TypeCheckException::E_##name, arg1, arg2); } while(0)
 #define REPORT_TC_ERROR3(name, node, arg1, arg2, arg3) do { throw TypeCheckException(node->getLineNum(), TypeCheckException::E_##name, arg1, arg2, arg3); } while(0)
 
-#define E_Unresolved(node)                  REPORT_TC_ERROR0(Unresolved   , node)
-#define E_InsideLoop(node)                  REPORT_TC_ERROR0(InsideLoop   , node)
-#define E_UnfoundReturn(node)               REPORT_TC_ERROR0(UnfoundReturn, node)
-#define E_Unreachable(node)                 REPORT_TC_ERROR0(Unreachable  , node)
-#define E_InsideFunc(node)                  REPORT_TC_ERROR0(InsideFunc   , node)
-#define E_NotNeedExpr(node)                 REPORT_TC_ERROR0(NotNeedExpr  , node)
-#define E_Assignable(node)                  REPORT_TC_ERROR0(Assignable   , node)
-#define E_ReadOnly(node)                    REPORT_TC_ERROR0(ReadOnly     , node)
-#define E_InsideFinally(node)               REPORT_TC_ERROR0(InsideFinally, node)
+#define E_Unresolved(node)                  REPORT_TC_ERROR0(Unresolved       , node)
+#define E_InsideLoop(node)                  REPORT_TC_ERROR0(InsideLoop       , node)
+#define E_UnfoundReturn(node)               REPORT_TC_ERROR0(UnfoundReturn    , node)
+#define E_Unreachable(node)                 REPORT_TC_ERROR0(Unreachable      , node)
+#define E_InsideFunc(node)                  REPORT_TC_ERROR0(InsideFunc       , node)
+#define E_NotNeedExpr(node)                 REPORT_TC_ERROR0(NotNeedExpr      , node)
+#define E_Assignable(node)                  REPORT_TC_ERROR0(Assignable       , node)
+#define E_ReadOnly(node)                    REPORT_TC_ERROR0(ReadOnly         , node)
+#define E_InsideFinally(node)               REPORT_TC_ERROR0(InsideFinally    , node)
+#define E_UnneedNamedArg(node)              REPORT_TC_ERROR0(UnneedNamedArg   , node)
+#define E_NeedNamedArg(node)                REPORT_TC_ERROR0(NeedNamedArg     , node)
+#define E_NoDefaultValue(node)              REPORT_TC_ERROR0(NoDefaultValue   , node)
 
-#define E_DefinedSymbol(node, arg1)         REPORT_TC_ERROR1(DefinedSymbol  , node, arg1)
-#define E_UndefinedSymbol(node, arg1)       REPORT_TC_ERROR1(UndefinedSymbol, node, arg1)
-#define E_UndefinedField(node, arg1)        REPORT_TC_ERROR1(UndefinedField , node, arg1)
-#define E_UndefinedMethod(node, arg1)       REPORT_TC_ERROR1(UndefinedMethod, node, arg1)
-#define E_UndefinedInit(node, arg1)         REPORT_TC_ERROR1(UndefinedInit  , node, arg1)
-#define E_Unacceptable(node, arg1)          REPORT_TC_ERROR1(Unacceptable   , node, arg1)
-#define E_NoIterator(node, arg1)            REPORT_TC_ERROR1(NoIterator     , node, arg1)
-#define E_Unimplemented(node, arg1)         REPORT_TC_ERROR1(Unimplemented  , node, arg1)
+#define E_DefinedSymbol(node, arg1)         REPORT_TC_ERROR1(DefinedSymbol    , node, arg1)
+#define E_UndefinedSymbol(node, arg1)       REPORT_TC_ERROR1(UndefinedSymbol  , node, arg1)
+#define E_UndefinedField(node, arg1)        REPORT_TC_ERROR1(UndefinedField   , node, arg1)
+#define E_UndefinedMethod(node, arg1)       REPORT_TC_ERROR1(UndefinedMethod  , node, arg1)
+#define E_UndefinedInit(node, arg1)         REPORT_TC_ERROR1(UndefinedInit    , node, arg1)
+#define E_Unacceptable(node, arg1)          REPORT_TC_ERROR1(Unacceptable     , node, arg1)
+#define E_NoIterator(node, arg1)            REPORT_TC_ERROR1(NoIterator       , node, arg1)
+#define E_UnfoundNamedParam(node, arg1)     REPORT_TC_ERROR1(UnfoundNamedParam, node, arg1)
+#define E_DupNamedArg(node, arg1)           REPORT_TC_ERROR1(DupNamedArg      , node, arg1)
+#define E_Unimplemented(node, arg1)         REPORT_TC_ERROR1(Unimplemented    , node, arg1)
 
 #define E_Required(node, arg1, arg2)        REPORT_TC_ERROR2(Required    , node, arg1, arg2)
 #define E_CastOp(node, arg1, arg2)          REPORT_TC_ERROR2(CastOp      , node, arg1, arg2)

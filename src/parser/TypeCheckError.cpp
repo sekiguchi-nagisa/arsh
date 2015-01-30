@@ -100,16 +100,21 @@ const char * const TypeCheckException::E_NotNeedExpr     = "not need expression"
 const char * const TypeCheckException::E_Assignable      = "require assignable node";
 const char * const TypeCheckException::E_ReadOnly        = "read only value";
 const char * const TypeCheckException::E_InsideFinally   = "unavailable inside finally block";
+const char * const TypeCheckException::E_UnneedNamedArg  = "not need named argument";
+const char * const TypeCheckException::E_NeedNamedArg    = "need named argument";
+const char * const TypeCheckException::E_NoDefaultValue    = "has no default value";
 
 // one arg
-const char * const TypeCheckException::E_DefinedSymbol   = "already defined symbol: %s";
-const char * const TypeCheckException::E_UndefinedSymbol = "undefined symbol: %s";
-const char * const TypeCheckException::E_UndefinedField  = "undefined field: %s";
-const char * const TypeCheckException::E_UndefinedMethod = "undefined method: %s";
-const char * const TypeCheckException::E_UndefinedInit   = "undefined constructor: %s";
-const char * const TypeCheckException::E_Unacceptable    = "unacceptable type: %s";
-const char * const TypeCheckException::E_NoIterator      = "not support iterator: %s";
-const char * const TypeCheckException::E_Unimplemented   = "unimplemented type checker api: %s";
+const char * const TypeCheckException::E_DefinedSymbol     = "already defined symbol: %s";
+const char * const TypeCheckException::E_UndefinedSymbol   = "undefined symbol: %s";
+const char * const TypeCheckException::E_UndefinedField    = "undefined field: %s";
+const char * const TypeCheckException::E_UndefinedMethod   = "undefined method: %s";
+const char * const TypeCheckException::E_UndefinedInit     = "undefined constructor: %s";
+const char * const TypeCheckException::E_Unacceptable      = "unacceptable type: %s";
+const char * const TypeCheckException::E_NoIterator        = "not support iterator: %s";
+const char * const TypeCheckException::E_UnfoundNamedParam = "undefined parameter name: %s";
+const char * const TypeCheckException::E_DupNamedArg       = "found duplicated named argument: %s";
+const char * const TypeCheckException::E_Unimplemented     = "unimplemented type checker api: %s";
 
 // two arg
 const char * const TypeCheckException::E_Required        = "require %s, but is %s";
