@@ -50,9 +50,11 @@ public:
     TypeCheckException(int lineNum, const std::string &t, const std::vector<std::string> &args);
     ~TypeCheckException();
 
-    int getLineNum();
-    const std::string &getTemplate();
-    const std::vector<std::string> &getArgs();
+    int getLineNum() const;
+    const std::string &getTemplate() const ;
+    const std::vector<std::string> &getArgs() const;
+
+    bool operator==(const TypeCheckException &e);
 
     // error message definition
     // zero arg

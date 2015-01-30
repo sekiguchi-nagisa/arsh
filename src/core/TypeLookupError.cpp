@@ -34,12 +34,33 @@ TypeLookupException::TypeLookupException(const char t[], const std::string &arg1
     this->args.push_back(arg3);
 }
 
-const std::string &TypeLookupException::getTemplate() {
+const std::string &TypeLookupException::getTemplate() const {
     return this->messageTemplate;
 }
 
-const std::vector<std::string> &TypeLookupException::getArgs() {
+const std::vector<std::string> &TypeLookupException::getArgs() const {
     return this->args;
+}
+
+bool TypeLookupException::operator==(const TypeLookupException &e) {
+    // check template
+    if(this->messageTemplate != e.getTemplate()) {
+        return false;
+    }
+
+    // check arg size
+    unsigned int size = this->args.size();
+    if(size != e.getArgs().size()) {
+        return false;
+    }
+
+    // check each arg
+    for(unsigned int i = 0; i < size; i++) {
+        if(this->args[i] != e.getArgs()[i]) {
+            return false;
+        }
+    }
+    return true;
 }
 
 const char * const TypeLookupException::E_NotUseGeneric  = "not directly use generic base type: %s";

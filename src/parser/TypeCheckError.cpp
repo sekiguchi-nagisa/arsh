@@ -52,16 +52,42 @@ TypeCheckException::TypeCheckException(int lineNum, const std::string &t, const 
 TypeCheckException::~TypeCheckException() {
 }
 
-int TypeCheckException::getLineNum() {
+int TypeCheckException::getLineNum() const {
     return this->lineNum;
 }
 
-const std::string &TypeCheckException::getTemplate() {
+const std::string &TypeCheckException::getTemplate() const {
     return this->t;
 }
 
-const std::vector<std::string> &TypeCheckException::getArgs() {
+const std::vector<std::string> &TypeCheckException::getArgs() const {
     return this->args;
+}
+
+bool TypeCheckException::operator==(const TypeCheckException &e) {
+    // check line num
+    if(this->lineNum != e.getLineNum()) {
+        return false;
+    }
+
+    // check template
+    if(this->t != e.getTemplate()) {
+        return false;
+    }
+
+    // check arg size
+    unsigned int size = this->args.size();
+    if(size != e.getArgs().size()) {
+        return false;
+    }
+
+    // check each arg
+    for(unsigned int i = 0; i < size; i++) {
+        if(this->args[i] != e.getArgs()[i]) {
+            return false;
+        }
+    }
+    return true;
 }
 
 // zero arg

@@ -29,8 +29,10 @@ public:
     TypeLookupException(const char * const t, const std::string &arg1);
     TypeLookupException(const char * const t, const std::string &arg1, const std::string &arg2, const std::string &arg3);
 
-    const std::string &getTemplate();
-    const std::vector<std::string> &getArgs();
+    const std::string &getTemplate() const;
+    const std::vector<std::string> &getArgs() const;
+
+    bool operator==(const TypeLookupException &e);
 
     // error message definition
     // one arg
