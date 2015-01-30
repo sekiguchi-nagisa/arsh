@@ -16,7 +16,7 @@
 
 #include <core/TypePool.h>
 #include <core/DSType.h>
-#include <parser/TypeLookupError.h>
+#include <core/TypeLookupError.h>
 
 // ######################
 // ##     TypePool     ##
@@ -90,7 +90,7 @@ DSType *TypePool::getType(const std::string &typeName) {
 DSType *TypePool::getTypeAndThrowIfUndefined(const std::string &typeName) {
     DSType *type = this->getType(typeName);
     if(type == 0) {
-        E_UndefinedType->report(typeName);
+        E_UndefinedType(typeName);
     }
     return type;
 }

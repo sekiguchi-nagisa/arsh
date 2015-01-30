@@ -141,6 +141,12 @@ private:
 
     void checkAndThrowIfInsideFinally(BlockEndNode *node);
 
+    /**
+     * convert TypeToken to DSType.
+     * after converting, delete typeToken.
+     */
+    DSType *toType(TypeToken *typeToken);
+
     // for apply node type checking
     class HandleOrFuncType {
     private:
@@ -191,8 +197,8 @@ private:
     HandleOrFuncType resolveCallee(VarNode *recvNode, ApplyNode *applyNode);
 
     // helper for argument type checking
-    void checkTypeArgNodes(FunctionHandle *handle, ArgsNode *argsNode, bool isFuncCall);
-    void checkTypeArgNodes(FunctionType *funcType, ArgsNode *argsNode, bool isFuncCall);
+    void checkTypeArgsNode(FunctionHandle *handle, ArgsNode *argsNode, bool isFuncCall);
+    void checkTypeArgsNode(FunctionType *funcType, ArgsNode *argsNode, bool isFuncCall);
 
 public:
     /**
