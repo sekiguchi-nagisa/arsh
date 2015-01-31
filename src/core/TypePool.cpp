@@ -83,7 +83,8 @@ TypeTemplate *TypePool::getPairTemplate() {
 }
 
 DSType *TypePool::getType(const std::string &typeName) {
-    return this->typeMap[typeName];
+    auto iter = this->typeMap.find(typeName);
+    return iter != this->typeMap.end() ? iter->second : 0;
 }
 
 DSType *TypePool::getTypeAndThrowIfUndefined(const std::string &typeName) {
@@ -104,12 +105,12 @@ DSType *TypePool::createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate,
 }
 
 FunctionType *TypePool::createAndGetFuncTypeIfUndefined(DSType *returnType,
-        const std::vector<DSType*> &paramTypes) {
+        const std::vector<DSType*> &paramTypes) {   //FIXME: not use typeMap
     std::string typeName = toFunctionTypeName(returnType, paramTypes);
-    DSType *funcType = this->getType(typeName);
-    if(funcType == 0) {
-        funcType = new FunctionType(this->getBaseFuncType(), returnType, paramTypes);
-        this->typeMap[typeName] = funcType;
+    FunctionType *funcType = new FunctionType(this->getBaseFuncType(), returnType, paramTypes);
+    auto pair = this->typeMap.insert(std::make_pair(typeName, funcType));
+    if(!pair.second) {
+        delete funcType;
     }
-    return dynamic_cast<FunctionType*>(funcType);
+    return dynamic_cast<FunctionType*>(pair.first->second);
 }

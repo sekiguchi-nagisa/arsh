@@ -86,9 +86,9 @@ unsigned int ClassType::getFieldSize() {
 }
 
 FieldHandle *ClassType::lookupFieldHandle(const std::string &fieldName) {
-    FieldHandle *handle = this->handleMap[fieldName];
-    if(handle != 0) {
-        return handle;
+    auto iter = this->handleMap.find(fieldName);
+    if(iter != this->handleMap.end()) {
+        return iter->second;
     }
     return this->superType != 0 ? this->superType->lookupFieldHandle(fieldName) : 0;
 }

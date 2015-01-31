@@ -68,12 +68,14 @@ public:
     }
 
     bool registerHandle(const std::string &symbolName, DSType *type, bool readOnly) {   // override
-        if(this->handleMap[symbolName] != 0) {
+        int index = this->curVarIndex;
+        FieldHandle *handle = new FieldHandle(type, index, readOnly);
+        if(!this->handleMap.insert(std::make_pair(symbolName, handle)).second) {
+            delete handle;
             return false;
         }
-        FieldHandle *handle = new FieldHandle(type, this->curVarIndex++, readOnly);
+        this->curVarIndex++;
         handle->setAttribute(FieldHandle::GLOBAL);
-        this->handleMap[symbolName] = handle;
         this->entryCache.push_back(symbolName);
         return true;
     }
@@ -107,11 +109,13 @@ public:
     }
 
     bool registerHandle(const std::string &symbolName, DSType *type, bool readOnly) {   // override
-        if(this->handleMap[symbolName] != 0) {
+        int index = this->curVarIndex;
+        FieldHandle *handle = new FieldHandle(type, index, readOnly);
+        if(!this->handleMap.insert(std::make_pair(symbolName, handle)).second) {
+            delete handle;
             return false;
         }
-        FieldHandle *handle = new FieldHandle(type, this->curVarIndex++, readOnly);
-        this->handleMap[symbolName] = handle;
+        this->curVarIndex++;
         return true;
     }
 };

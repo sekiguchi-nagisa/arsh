@@ -102,7 +102,7 @@ bool FunctionHandle::addParamName(const std::string &paramName, bool defaultValu
         return false;
     }
 
-    if(!this->paramIndexMap.insert(std::pair<std::string, int>(paramName, static_cast<int>(size))).second) {
+    if(!this->paramIndexMap.insert(std::make_pair(paramName, static_cast<int>(size))).second) {
         return false;
     }
     this->defaultValues.push_back(defaultValue);
@@ -111,11 +111,8 @@ bool FunctionHandle::addParamName(const std::string &paramName, bool defaultValu
 }
 
 int FunctionHandle::getParamIndex(const std::string &paramName) {
-    try {
-        return this->paramIndexMap.at(paramName);
-    } catch(const std::out_of_range &e) {
-        return -1;
-    }
+    auto iter = this->paramIndexMap.find(paramName);
+    return iter != this->paramIndexMap.end() ? iter->second : -1;
 }
 
 bool FunctionHandle::hasDefaultValue(int paramIndex) {

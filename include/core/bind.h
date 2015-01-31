@@ -59,4 +59,6 @@ void bindNativeFunc(TypePool *typePool, ClassType *type, native_func_info_t *inf
  */
 void bindNativeFuncAsInit(TypePool *typePool, ClassType *type, native_func_info_t *info);
 
+
+
 #endif /* CORE_BIND_H_ */
