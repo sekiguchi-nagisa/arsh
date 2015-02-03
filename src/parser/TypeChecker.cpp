@@ -222,7 +222,7 @@ TypeChecker::HandleOrFuncType TypeChecker::resolveCallee(AccessNode *recvNode, A
         E_UndefinedField(recvNode, recvNode->getFieldName());
     }
 
-    recvNode->setHandle(handle);
+    recvNode->setAttribute(handle);
     // treat as method call
     FunctionHandle *funcHandle = dynamic_cast<FunctionHandle*>(handle);
     if(funcHandle != 0) {
@@ -253,7 +253,7 @@ TypeChecker::HandleOrFuncType TypeChecker::resolveCallee(VarNode *recvNode, Appl
     if(handle == 0) {
         E_UndefinedSymbol(recvNode, recvNode->getVarName());
     }
-    recvNode->setHandle(handle);
+    recvNode->setAttribute(handle);
     applyNode->setFuncCall(true);
 
     FunctionHandle *funcHandle = dynamic_cast<FunctionHandle*>(handle);
@@ -464,7 +464,7 @@ int TypeChecker::visitVarNode(VarNode *node) {
         E_UndefinedSymbol(node, node->getVarName());
     }
 
-    node->setHandle(handle);
+    node->setAttribute(handle);
     node->setType(handle->getFieldType(this->typePool));
     return 0;
 }
@@ -476,7 +476,7 @@ int TypeChecker::visitAccessNode(AccessNode *node) {
         E_UndefinedField(node, node->getFieldName());
     }
 
-    node->setHandle(handle);
+    node->setAttribute(handle);
     node->setType(handle->getFieldType(this->typePool));
     return 0;
 }

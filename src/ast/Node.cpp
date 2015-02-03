@@ -280,10 +280,14 @@ int PairNode::accept(NodeVisitor *visitor) {
 // ############################
 
 AssignableNode::AssignableNode(int lineNum) :
-        ExprNode(lineNum) {
+        ExprNode(lineNum), readOnly(false) {
 }
 
 AssignableNode::~AssignableNode() {
+}
+
+bool AssignableNode::isReadOnly() {
+    return this->readOnly;
 }
 
 // #####################
@@ -291,23 +295,18 @@ AssignableNode::~AssignableNode() {
 // #####################
 
 VarNode::VarNode(int lineNum, std::string &&varName) :
-        AssignableNode(lineNum), varName(std::move(varName)), handle(0) {
+        AssignableNode(lineNum), varName(std::move(varName)),
+        global(false), varIndex(-1) {
 }
 
 const std::string &VarNode::getVarName() {
     return this->varName;
 }
 
-void VarNode::setHandle(FieldHandle *handle) {
-    this->handle = handle;
-}
-
-FieldHandle *VarNode::getHandle() {
-    return this->handle;
-}
-
-bool VarNode::isReadOnly() {
-    return this->handle->isReadOnly();
+void VarNode::setAttribute(FieldHandle *handle) {
+    this->readOnly = handle->isReadOnly();
+    this->global = handle->isGlobal();
+    this->varIndex = handle->getFieldIndex();
 }
 
 int VarNode::accept(NodeVisitor *visitor) {
@@ -315,11 +314,11 @@ int VarNode::accept(NodeVisitor *visitor) {
 }
 
 bool VarNode::isGlobal() {
-    return this->handle->isGlobal();
+    return this->global;
 }
 
 int VarNode::getVarIndex() {
-    return this->handle->getFieldIndex();
+    return this->varIndex;
 }
 
 // ########################
@@ -328,7 +327,7 @@ int VarNode::getVarIndex() {
 
 AccessNode::AccessNode(ExprNode *recvNode, std::string &&fieldName) :
         AssignableNode(recvNode->getLineNum()), recvNode(recvNode), fieldName(std::move(fieldName)),
-        handle(0), additionalOp(NOP) {
+        fieldIndex(-1), additionalOp(NOP) {
 }
 
 AccessNode::~AccessNode() {
@@ -348,20 +347,13 @@ const std::string &AccessNode::getFieldName() {
     return this->fieldName;
 }
 
-void AccessNode::setHandle(FieldHandle *handle) {
-    this->handle = handle;
-}
-
-FieldHandle *AccessNode::getHandle() {
-    return this->handle;
+void AccessNode::setAttribute(FieldHandle *handle) {
+    this->readOnly = handle->isReadOnly();
+    this->fieldIndex = handle->getFieldIndex();
 }
 
 int AccessNode::getFieldIndex() {
-    return this->handle->getFieldIndex();
-}
-
-bool AccessNode::isReadOnly() {
-    return this->handle->isReadOnly();
+    return this->fieldIndex;
 }
 
 void AccessNode::setAdditionalOp(int op) {

@@ -168,25 +168,27 @@ public:
  * base class for VarNode, IndexNode, AccessNode
  */
 class AssignableNode: public ExprNode {
+protected:
+    bool readOnly;
+
 public:
     AssignableNode(int lineNum);
     ~AssignableNode();
 
-    virtual bool isReadOnly() = 0;
+    bool isReadOnly();
 };
 
 class VarNode: public AssignableNode {
 private:
     std::string varName;
-    FieldHandle *handle;
+    bool global;
+    int varIndex;
 
 public:
     VarNode(int lineNum, std::string &&varName);
 
     const std::string &getVarName();
-    void setHandle(FieldHandle *handle);
-    FieldHandle *getHandle();
-    bool isReadOnly();	// override
+    void setAttribute(FieldHandle *handle);
     int accept(NodeVisitor *visitor);	// override
     bool isGlobal();
     int getVarIndex();
@@ -196,7 +198,7 @@ class AccessNode: public AssignableNode {
 private:
     ExprNode* recvNode;
     std::string fieldName;
-    FieldHandle *handle;
+    int fieldIndex;
     int additionalOp;
 
 public:
@@ -206,10 +208,8 @@ public:
     ExprNode *getRecvNode();
     void setFieldName(const std::string &fieldName);
     const std::string &getFieldName();
-    void setHandle(FieldHandle *handle);
-    FieldHandle *getHandle();
+    void setAttribute(FieldHandle *handle);
     int getFieldIndex();
-    bool isReadOnly();	// override
     void setAdditionalOp(int op);
     int getAdditionnalOp();
     int accept(NodeVisitor *visitor);	// override
