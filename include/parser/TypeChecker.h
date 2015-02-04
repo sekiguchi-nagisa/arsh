@@ -93,7 +93,21 @@ private:
      * and if unaccepatbelType is equivalent to node type, throw exception.
      * return resolved type.
      */
-    DSType *checkType(DSType *requiredType, Node *targetNode, DSType *unacceptableType);
+    DSType *checkType(DSType *requiredType, Node *targetNode,
+            DSType *unacceptableType, bool allowCoercion = false);
+
+    /**
+     * after type checking,
+     * if requireType is FloatType and targetNode->getType() is IntType,
+     * wrap targetNode with CastNode.
+     */
+    Node *checkTypeAndResolveCoercion(DSType *requiredType, Node *targetNode);
+
+    /**
+     * return true if allow target type to required type implicit cast.
+     * currently only support int to float cast.
+     */
+    bool supportCoercion(DSType *requiredType, DSType *targetType);
 
     /**
      * create new symbol table and check type each node within block.

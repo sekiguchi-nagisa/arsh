@@ -190,6 +190,10 @@ void ArrayNode::addExprNode(Node *node) {
     this->nodes.push_back(node);
 }
 
+void ArrayNode::setExprNode(unsigned int index, Node *node) {
+    this->nodes[index] = node;
+}
+
 const std::vector<Node*> &ArrayNode::getExprNodes() {
     return this->nodes;
 }
@@ -224,6 +228,10 @@ void MapNode::addEntry(Node *keyNode, Node *valueNode) {
 
 const std::vector<Node*> &MapNode::getKeyNodes() {
     return this->keyNodes;
+}
+
+void MapNode::setValueNode(unsigned int index, Node *valueNode) {
+    this->valueNodes[index] = valueNode;
 }
 
 const std::vector<Node*> &MapNode::getValueNodes() {
@@ -512,6 +520,10 @@ void ArgsNode::addArgPair(std::string &&paramName, Node *argNode) {
 
 void ArgsNode::addArg(Node *argNode) {
     this->addArgPair(std::string(""), argNode);
+}
+
+void ArgsNode::setArg(unsigned int index, Node *argNode) {
+    this->argPairs[index].second = argNode;
 }
 
 void ArgsNode::initIndexMap() {
@@ -1279,6 +1291,10 @@ AssignNode::~AssignNode() {
 
 Node *AssignNode::getLeftNode() {
     return this->leftNode;
+}
+
+void AssignNode::setRightNode(Node *rightNode) {
+    this->rightNode = rightNode;
 }
 
 Node *AssignNode::getRightNode() {

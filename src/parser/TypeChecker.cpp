@@ -51,8 +51,8 @@ DSType *TypeChecker::checkType(DSType *requiredType, Node *targetNode) {
     return this->checkType(requiredType, targetNode, 0);
 }
 
-//TODO:
-DSType *TypeChecker::checkType(DSType *requiredType, Node *targetNode, DSType *unacceptableType) {
+DSType *TypeChecker::checkType(DSType *requiredType, Node *targetNode,
+        DSType *unacceptableType, bool allowCoercion) {
     /**
      * if target node is expr node and type is null,
      * try type check.
@@ -83,10 +83,36 @@ DSType *TypeChecker::checkType(DSType *requiredType, Node *targetNode, DSType *u
     /**
      * try type matching.
      */
-    if(!requiredType->isAssignableFrom(type)) {
-        E_Required(targetNode, requiredType->getTypeName(), type->getTypeName());
+    if(requiredType->isAssignableFrom(type)) {
+        return type;
     }
-    return type;
+
+    /**
+     * check coercion
+     */
+    if(allowCoercion && this->supportCoercion(requiredType, type)) {
+        return type;
+    }
+
+    E_Required(targetNode, requiredType->getTypeName(), type->getTypeName());
+    return 0;
+}
+
+Node *TypeChecker::checkTypeAndResolveCoercion(DSType *requiredType, Node *targetNode) {
+    DSType *type = this->checkType(requiredType, targetNode, this->typePool->getVoidType(), true);
+    if(this->supportCoercion(requiredType, type)) {
+        //FIXME: cast node
+    }
+    return targetNode;
+}
+
+bool TypeChecker::supportCoercion(DSType *requiredType, DSType *targetType) {
+    // int to float cast
+    if(requiredType->equals(this->typePool->getFloatType()) &&
+            targetType->equals(this->typePool->getIntType())) {
+        return true;
+    }
+    return false;
 }
 
 void TypeChecker::checkTypeWithNewBlockScope(BlockNode *blockNode) {
@@ -329,8 +355,9 @@ void TypeChecker::checkTypeArgsNode(FunctionHandle *handle, ArgsNode *argsNode, 
 
     // check type each arg
     for(unsigned int i = 0; i < argSize; i++) {
-        this->checkType(paramTypes[argsNode->getParamIndexMap()[i]],
-                argsNode->getArgPairs()[i].second);
+        argsNode->setArg(i, this->checkTypeAndResolveCoercion(
+                paramTypes[argsNode->getParamIndexMap()[i]],
+                argsNode->getArgPairs()[i].second));
     }
 }
 
@@ -359,7 +386,8 @@ void TypeChecker::checkTypeArgsNode(const std::vector<DSType*> &paramTypes, Args
 
     // check type each node
     for(unsigned int i = startIndex; i < size; i++) {
-        this->checkType(paramTypes[i], argsNode->getArgPairs()[i].second);
+        argsNode->setArg(i,
+                this->checkTypeAndResolveCoercion(paramTypes[i], argsNode->getArgPairs()[i].second));
     }
 }
 
@@ -403,13 +431,14 @@ int TypeChecker::visitStringExprNode(StringExprNode *node) {
 }
 
 int TypeChecker::visitArrayNode(ArrayNode *node) {
-    int size = node->getExprNodes().size();
+    unsigned int size = node->getExprNodes().size();
     assert(size != 0);
     Node *firstElementNode = node->getExprNodes()[0];
     DSType *elementType = this->checkType(firstElementNode);
 
-    for(int i = 1; i < size; i++) {
-        this->checkType(elementType, node->getExprNodes()[i]);
+    for(unsigned int i = 1; i < size; i++) {
+        node->setExprNode(i, this->checkTypeAndResolveCoercion(elementType,
+                node->getExprNodes()[i]));
     }
 
     TypeTemplate *arrayTemplate = this->typePool->getArrayTemplate();
@@ -420,14 +449,15 @@ int TypeChecker::visitArrayNode(ArrayNode *node) {
 }
 
 int TypeChecker::visitMapNode(MapNode *node) {
-    int size = node->getValueNodes().size();
+    unsigned int size = node->getValueNodes().size();
     assert(size != 0);
     Node *firstValueNode = node->getValueNodes()[0];
     DSType *valueType = this->checkType(firstValueNode);
 
-    for(int i = 0; i < size; i++) {
+    for(unsigned int i = 0; i < size; i++) {
         this->checkType(this->typePool->getStringType(), node->getKeyNodes()[i]);
-        this->checkType(valueType, node->getValueNodes()[i]);
+        node->setValueNode(i,
+                this->checkTypeAndResolveCoercion(valueType, node->getValueNodes()[i]));
     }
 
     TypeTemplate *mapTemplate = this->typePool->getMapTemplate();
@@ -510,8 +540,9 @@ int TypeChecker::visitOperatorCallNode(OperatorCallNode *node) {
                     opName : namePrefix + std::to_string(i) + "__");
             if(handle != 0) {
                 const std::vector<DSType*> &paramTypes = handle->getParamTypes(this->typePool);
-                if(paramTypes.size() == 2 &&
-                        paramTypes[1]->isAssignableFrom(argNodes[1]->getType())) {
+                DSType *paramType = paramTypes[1];
+                DSType *argType = argNodes[1]->getType();
+                if(paramTypes.size() == 2 && paramType->isAssignableFrom(argType)) {
                     break;
                 }
                 handle = 0;
@@ -531,7 +562,7 @@ int TypeChecker::visitOperatorCallNode(OperatorCallNode *node) {
 
     // try type match
     for(unsigned int i = 0; i < size; i++) {
-        this->checkType(paramTypes[i], argNodes[i]);
+        this->checkType(paramTypes[i], argNodes[i]);    //FIXME: coercion
     }
     node->setHandle(handle);
     node->setType(handle->getReturnType(this->typePool));
@@ -790,15 +821,15 @@ int TypeChecker::visitAssignNode(AssignNode *node) {
         E_ReadOnly(node);
     }
 
-    this->checkType(leftNode);
-    this->checkType(node->getRightNode());
+    DSType *leftType = this->checkType(leftNode);
+    node->setRightNode(this->checkTypeAndResolveCoercion(leftType, node->getRightNode()));
     node->setType(this->typePool->getVoidType());
     return 0;
 }
 
 int TypeChecker::visitFieldSelfAssignNode(FieldSelfAssignNode *node) {
     ApplyNode *applyNode = node->getApplyNode();
-    this->checkType(applyNode);
+    this->checkType(applyNode); //FIXME:
 
     AccessNode *accessNode = dynamic_cast<AccessNode*>(applyNode->getRecvNode());
     accessNode->setAdditionalOp(AccessNode::DUP_RECV);

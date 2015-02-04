@@ -125,6 +125,7 @@ public:
     ~ArrayNode();
 
     void addExprNode(Node *node);
+    void setExprNode(unsigned int index, Node *node);
     const std::vector<Node*> &getExprNodes();
     int accept(NodeVisitor *visitor);	//override
 };
@@ -140,6 +141,7 @@ public:
 
     void addEntry(Node *keyNode, Node *valueNode);
     const std::vector<Node*> &getKeyNodes();
+    void setValueNode(unsigned int index, Node *valueNode);
     const std::vector<Node*> &getValueNodes();
     int accept(NodeVisitor *visitor);	// override
 };
@@ -314,6 +316,7 @@ public:
      */
     void addArg(Node *argNode);
 
+    void setArg(unsigned int index, Node *argNode);
     void initIndexMap();
     void addParamIndex(unsigned int index, unsigned int value);
     unsigned int *getParamIndexMap();
@@ -779,6 +782,7 @@ public:
     ~AssignNode();
 
     Node *getLeftNode();
+    void setRightNode(Node *rightNode);
     Node *getRightNode();
     int accept(NodeVisitor *visitor);   // override
 };
