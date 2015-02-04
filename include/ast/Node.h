@@ -29,34 +29,28 @@ class Node {
 protected:
     int lineNum;
 
+    /**
+     * initial value is null.
+     */
+    DSType *type;
+
 public:
     Node(int lineNum);
     virtual ~Node();
 
     int getLineNum();
-    virtual int accept(NodeVisitor *visitor) = 0;
-};
-
-class ExprNode: public Node {
-protected:
-    DSType *type;	// initial value is null
-
-public:
-    /**
-     * type is null if has no type annotation(ex. IntValueNode, StringValueNode)
-     */
-    ExprNode(int lineNum);
-    virtual ~ExprNode();
-
     void setType(DSType *type);
 
     /**
      * return null, before type checking
      */
     DSType *getType();
+    virtual int accept(NodeVisitor *visitor) = 0;
 };
 
-class IntValueNode: public ExprNode {
+// expression definition
+
+class IntValueNode: public Node {
 private:
     long value;
 
@@ -67,7 +61,7 @@ public:
     int accept(NodeVisitor *visitor);	// override
 };
 
-class FloatValueNode: public ExprNode {
+class FloatValueNode: public Node {
 private:
     double value;
 
@@ -78,7 +72,7 @@ public:
     int accept(NodeVisitor *visitor);	// override
 };
 
-class BooleanValueNode: public ExprNode {
+class BooleanValueNode: public Node {
 private:
     bool value;
 
@@ -89,7 +83,7 @@ public:
     int accept(NodeVisitor *visitor);	// override
 };
 
-class StringValueNode: public ExprNode {	//FIXME:
+class StringValueNode: public Node {	//FIXME:
 private:
     std::string value;
 
@@ -109,65 +103,65 @@ public:
     int accept(NodeVisitor *visitor);	// override
 };
 
-class StringExprNode: public ExprNode {
+class StringExprNode: public Node {
 private:
-    std::vector<ExprNode*> nodes;
+    std::vector<Node*> nodes;
 
 public:
     StringExprNode(int lineNum);
     ~StringExprNode();
 
-    void addExprNode(ExprNode *node);	//TODO:
-    const std::vector<ExprNode*> &getExprNodes();
+    void addExprNode(Node *node);	//TODO:
+    const std::vector<Node*> &getExprNodes();
     int accept(NodeVisitor *visitor);	// override
 };
 
-class ArrayNode: public ExprNode {
+class ArrayNode: public Node {
 private:
-    std::vector<ExprNode*> nodes;
+    std::vector<Node*> nodes;
 
 public:
     ArrayNode(int lineNum);
     ~ArrayNode();
 
-    void addExprNode(ExprNode *node);
-    const std::vector<ExprNode*> &getExprNodes();
+    void addExprNode(Node *node);
+    const std::vector<Node*> &getExprNodes();
     int accept(NodeVisitor *visitor);	//override
 };
 
-class MapNode: public ExprNode {
+class MapNode: public Node {
 private:
-    std::vector<ExprNode*> keyNodes;
-    std::vector<ExprNode*> valueNodes;
+    std::vector<Node*> keyNodes;
+    std::vector<Node*> valueNodes;
 
 public:
     MapNode(int lineNum);
     ~MapNode();
 
-    void addEntry(ExprNode *keyNode, ExprNode *valueNode);
-    const std::vector<ExprNode*> &getKeyNodes();
-    const std::vector<ExprNode*> &getValueNodes();
+    void addEntry(Node *keyNode, Node *valueNode);
+    const std::vector<Node*> &getKeyNodes();
+    const std::vector<Node*> &getValueNodes();
     int accept(NodeVisitor *visitor);	// override
 };
 
-class PairNode: public ExprNode {
+class PairNode: public Node {
 private:
-    ExprNode* leftNode;
-    ExprNode* rightNode;
+    Node* leftNode;
+    Node* rightNode;
 
 public:
-    PairNode(int lineNum, ExprNode *leftNode, ExprNode *rightNode);
+    PairNode(int lineNum, Node *leftNode, Node *rightNode);
     ~PairNode();
 
-    ExprNode *getLeftNode();
-    ExprNode *getRightNode();
+    Node *getLeftNode();
+    Node *getRightNode();
     int accept(NodeVisitor *visitor);	// override
 };
 
 /**
  * base class for VarNode, IndexNode, AccessNode
  */
-class AssignableNode: public ExprNode {
+class AssignableNode: public Node {
 protected:
     bool readOnly;
 
@@ -196,16 +190,16 @@ public:
 
 class AccessNode: public AssignableNode {
 private:
-    ExprNode* recvNode;
+    Node* recvNode;
     std::string fieldName;
     int fieldIndex;
     int additionalOp;
 
 public:
-    AccessNode(ExprNode *recvNode, std::string &&fieldName);
+    AccessNode(Node *recvNode, std::string &&fieldName);
     ~AccessNode();
 
-    ExprNode *getRecvNode();
+    Node *getRecvNode();
     void setFieldName(const std::string &fieldName);
     const std::string &getFieldName();
     void setAttribute(FieldHandle *handle);
@@ -222,32 +216,32 @@ public:
     const static int DUP_RECV_AND_SWAP = 2;
 };
 
-class CastNode: public ExprNode {	//TODO: cast op kind
+class CastNode: public Node {	//TODO: cast op kind
 private:
-    ExprNode *targetNode;
+    Node *targetNode;
     TypeToken *targetTypeToken;
 
 public:
-    CastNode(int lineNum, ExprNode *targetNode, TypeToken *type);
+    CastNode(int lineNum, Node *targetNode, TypeToken *type);
     ~CastNode();
 
-    ExprNode *getTargetNode();
+    Node *getTargetNode();
     TypeToken *getTargetTypeToken();
     int accept(NodeVisitor *visitor);	//override
 };
 
-class InstanceOfNode: public ExprNode {
+class InstanceOfNode: public Node {
 private:
-    ExprNode* targetNode;
+    Node* targetNode;
     TypeToken* targetTypeToken;
     DSType *targetType;
     int opKind;
 
 public:
-    InstanceOfNode(int lineNum, ExprNode *targetNode, TypeToken *tyep);
+    InstanceOfNode(int lineNum, Node *targetNode, TypeToken *tyep);
     ~InstanceOfNode();
 
-    ExprNode *getTargetNode();
+    Node *getTargetNode();
     TypeToken *getTargetTypeToken();
 
     /**
@@ -269,30 +263,30 @@ public:
  * for unary or binary operator call.
  * operator function must be method.
  */
-class OperatorCallNode : public ExprNode {
+class OperatorCallNode : public Node {
 private:
     /**
      * two or one argument
      */
-    std::vector<ExprNode*> argNodes;
+    std::vector<Node*> argNodes;
     int op;
     FunctionHandle *handle;
 
 public:
-    OperatorCallNode(ExprNode *leftNode, int op, ExprNode *rightNode);
-    OperatorCallNode(int op, ExprNode *rightNode);
+    OperatorCallNode(Node *leftNode, int op, Node *rightNode);
+    OperatorCallNode(int op, Node *rightNode);
     ~OperatorCallNode();
 
-    const std::vector<ExprNode*> getArgNodes();
+    const std::vector<Node*> getArgNodes();
     int getOp();
     void setHandle(FunctionHandle *handle);
     FunctionHandle *getHandle();
     int accept(NodeVisitor *visitor);   // override
 };
 
-class ArgsNode : public ExprNode {
+class ArgsNode : public Node {
 private:
-    std::vector<std::pair<std::string, ExprNode*>> argPairs;
+    std::vector<std::pair<std::string, Node*>> argPairs;
 
     /**
      * may be null, if not has named parameter.
@@ -309,29 +303,29 @@ private:
 
 public:
     ArgsNode(int lineNum);
-    ArgsNode(std::string &&paramName, ExprNode* argNode);
-    ArgsNode(ExprNode *argNode);
+    ArgsNode(std::string &&paramName, Node* argNode);
+    ArgsNode(Node *argNode);
     ~ArgsNode();
 
-    void addArgPair(std::string &&paramName, ExprNode *argNode);
+    void addArgPair(std::string &&paramName, Node *argNode);
 
     /**
      * equivalent to this->addArgPair("", argNode)
      */
-    void addArg(ExprNode *argNode);
+    void addArg(Node *argNode);
 
     void initIndexMap();
     void addParamIndex(unsigned int index, unsigned int value);
     unsigned int *getParamIndexMap();
     void setParamSize(unsigned int size);
     unsigned int getParamSize();
-    const std::vector<std::pair<std::string, ExprNode*>> &getArgPairs();
+    const std::vector<std::pair<std::string, Node*>> &getArgPairs();
     int accept(NodeVisitor *visitor);   // override
 };
 
-class ApplyNode: public ExprNode {	//TODO: function handle, named parameter
+class ApplyNode: public Node {	//TODO: function handle, named parameter
 protected:
-    ExprNode *recvNode;
+    Node *recvNode;
     ArgsNode *argsNode;
 
     /**
@@ -340,10 +334,10 @@ protected:
     bool asFuncCall;
 
 public:
-    ApplyNode(ExprNode *recvNode, ArgsNode *argsNode);
+    ApplyNode(Node *recvNode, ArgsNode *argsNode);
     virtual ~ApplyNode();
 
-    ExprNode *getRecvNode();
+    Node *getRecvNode();
     ArgsNode *getArgsNode();
     void setFuncCall(bool asFuncCall);
     bool isFuncCall();
@@ -352,22 +346,22 @@ public:
 
 class IndexNode : public ApplyNode {
 public:
-    IndexNode(ExprNode *recvNode, ExprNode *indexNode);
+    IndexNode(Node *recvNode, Node *indexNode);
     ~IndexNode();
 
-    ExprNode *getIndexNode();
+    Node *getIndexNode();
 
     /**
      * return this.
      * convert to set index
      */
-    ApplyNode *treatAsAssignment(ExprNode *rightNode);
+    ApplyNode *treatAsAssignment(Node *rightNode);
 };
 
 /**
  * allocate new DSObject and call constructor.
  */
-class NewNode : public ExprNode {
+class NewNode : public Node {
 private:
     TypeToken *targetTypeToken;
     ArgsNode *argsNode;
@@ -387,10 +381,10 @@ public:
     int accept(NodeVisitor *visitor);   // override
 };
 
-class CondOpNode: public ExprNode {
+class CondOpNode: public Node {
 private:
-    ExprNode* leftNode;
-    ExprNode* rightNode;
+    Node* leftNode;
+    Node* rightNode;
 
     /**
      * if true, conditional and. otherwise, conditional or
@@ -398,20 +392,20 @@ private:
     bool andOp;
 
 public:
-    CondOpNode(int lineNum, ExprNode *leftNode, ExprNode *rightNode, bool isAndOp);
+    CondOpNode(int lineNum, Node *leftNode, Node *rightNode, bool isAndOp);
     ~CondOpNode();
 
-    ExprNode *getLeftNode();
-    ExprNode *getRightNode();
+    Node *getLeftNode();
+    Node *getRightNode();
     bool isAndOp();
     int accept(NodeVisitor *visitor);	//override
 };
 
-class ProcessNode: public ExprNode {	//FIXME: redirect option, trace
+class ProcessNode: public Node {	//FIXME: redirect option, trace
 private:
     std::string commandName;
     std::vector<ProcArgNode*> argNodes;
-    std::vector<std::pair<int, ExprNode*>> redirOptions;
+    std::vector<std::pair<int, Node*>> redirOptions;
 
 public:
     ProcessNode(int lineNum, std::string &&commandName);
@@ -420,28 +414,28 @@ public:
     const std::string &getCommandName();
     void addArgNode(ProcArgNode *node);
     const std::vector<ProcArgNode*> &getArgNodes();
-    void addRedirOption(std::pair<int, ExprNode*> &&optionPair);
-    const std::vector<std::pair<int, ExprNode*>> &getRedirOptions();
+    void addRedirOption(std::pair<int, Node*> &&optionPair);
+    const std::vector<std::pair<int, Node*>> &getRedirOptions();
     int accept(NodeVisitor *visitor);	//override
 };
 
 /**
  * for command(process) argument
  */
-class ProcArgNode: public ExprNode {	//TODO: escape sequence
+class ProcArgNode: public Node {	//TODO: escape sequence
 private:
-    std::vector<ExprNode*> segmentNodes;
+    std::vector<Node*> segmentNodes;
 
 public:
     ProcArgNode(int lineNum);
     ~ProcArgNode();
 
-    void addSegmentNode(ExprNode *node);
-    const std::vector<ExprNode*> &getSegmentNodes();
+    void addSegmentNode(Node *node);
+    const std::vector<Node*> &getSegmentNodes();
     int accept(NodeVisitor *visitor);	// override
 };
 
-class SpecialCharNode: public ExprNode {	//FIXME:
+class SpecialCharNode: public Node {	//FIXME:
 public:
     SpecialCharNode(int lineNum);
     ~SpecialCharNode();
@@ -449,7 +443,7 @@ public:
     int accept(NodeVisitor *visitor);	//override
 };
 
-class TaskNode: public ExprNode {	//TODO: background ...etc
+class TaskNode: public Node {	//TODO: background ...etc
 private:
     std::vector<ProcessNode*> procNodes;
     bool background;
@@ -464,27 +458,29 @@ public:
     int accept(NodeVisitor *visitor);	//override
 };
 
-class InnerTaskNode: public ExprNode {	//FIXME:
+class InnerTaskNode: public Node {	//FIXME:
 private:
-    ExprNode* exprNode;
+    Node* exprNode;
 
 public:
-    InnerTaskNode(ExprNode *exprNode);
+    InnerTaskNode(Node *exprNode);
     ~InnerTaskNode();
 
-    ExprNode *getExprNode();
+    Node *getExprNode();
     int accept(NodeVisitor *visitor);	//override
 };
 
+// statement definition
+
 class AssertNode: public Node {
 private:
-    ExprNode *exprNode;
+    Node *exprNode;
 
 public:
-    AssertNode(int lineNum, ExprNode *exprNode);
+    AssertNode(int lineNum, Node *exprNode);
     ~AssertNode();
 
-    ExprNode *getExprNode();
+    Node *getExprNode();
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -525,14 +521,14 @@ public:
 class ExportEnvNode: public Node {
 private:
     std::string envName;
-    ExprNode* exprNode;
+    Node* exprNode;
 
 public:
-    ExportEnvNode(int lineNum, std::string &&envName, ExprNode *exprNode);
+    ExportEnvNode(int lineNum, std::string &&envName, Node *exprNode);
     ~ExportEnvNode();
 
     const std::string &getEnvName();
-    ExprNode *getExprNode();
+    Node *getExprNode();
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -592,7 +588,7 @@ public:
 
 class WhileNode: public LoopNode {
 private:
-    ExprNode *condNode;
+    Node *condNode;
     BlockNode *blockNode;
 
     /**
@@ -601,10 +597,10 @@ private:
     bool asDoWhile;
 
 public:
-    WhileNode(int lineNum, ExprNode *condNode, BlockNode *blockNode, bool asDoWhile);
+    WhileNode(int lineNum, Node *condNode, BlockNode *blockNode, bool asDoWhile);
     ~WhileNode();
 
-    ExprNode *getCondNode();
+    Node *getCondNode();
     BlockNode *getBlockNode();
     bool isDoWhile();
     int accept(NodeVisitor *visitor);	//override
@@ -612,7 +608,7 @@ public:
 
 class IfNode: public Node {
 private:
-    ExprNode *condNode;
+    Node *condNode;
     BlockNode *thenNode;
 
     /**
@@ -624,10 +620,10 @@ public:
     /**
      * elseNode may be null
      */
-    IfNode(int lineNum, ExprNode *condNode, BlockNode *thenNode, BlockNode *elseNode);
+    IfNode(int lineNum, Node *condNode, BlockNode *thenNode, BlockNode *elseNode);
     ~IfNode();
 
-    ExprNode *getCondNode();
+    Node *getCondNode();
     BlockNode *getThenNode();
 
     /*
@@ -643,29 +639,29 @@ private:
     /**
      * may be null, if has no return value
      */
-    ExprNode* exprNode;
+    Node* exprNode;
 
 public:
-    ReturnNode(int lineNum, ExprNode *exprNode);
+    ReturnNode(int lineNum, Node *exprNode);
     ReturnNode(int lineNum);
     ~ReturnNode();
 
     /**
      * return null if has no return value
      */
-    ExprNode *getExprNode();
+    Node *getExprNode();
     int accept(NodeVisitor *visitor);	// override
 };
 
 class ThrowNode: public BlockEndNode {
 private:
-    ExprNode* exprNode;
+    Node* exprNode;
 
 public:
-    ThrowNode(int lineNum, ExprNode *exprNode);
+    ThrowNode(int lineNum, Node *exprNode);
     ~ThrowNode();
 
-    ExprNode *getExprNode();
+    Node *getExprNode();
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -750,48 +746,47 @@ private:
     std::string varName;
     bool readOnly;
     bool global;
-    ExprNode* initValueNode;
+    Node* initValueNode;
 
 public:
-    VarDeclNode(int lineNum, std::string &&varName, ExprNode *initValueNode, bool readOnly);
+    VarDeclNode(int lineNum, std::string &&varName, Node *initValueNode, bool readOnly);
     ~VarDeclNode();
 
     const std::string &getVarName();
     bool isReadOnly();
     void setGlobal(bool global);
     bool isGlobal();
-    ExprNode *getInitValueNode();
+    Node *getInitValueNode();
     int accept(NodeVisitor *visitor);	// override
 };
 
 /**
  * for assignment or named parameter
- * assignment is statement, but base class is ExprNode(due to parser).
+ * assignment is statement.
  * so, after type checking, type is always VoidType
  */
-class AssignNode: public ExprNode {
+class AssignNode: public Node {
 private:
     /**
      * must be VarNode or AccessNode
      */
-    ExprNode* leftNode;
+    Node* leftNode;
 
-    ExprNode* rightNode;
+    Node* rightNode;
 
 public:
-    AssignNode(ExprNode *leftNode, ExprNode *rightNode);
+    AssignNode(Node *leftNode, Node *rightNode);
     ~AssignNode();
 
-    ExprNode *getLeftNode();
-    ExprNode *getRightNode();
+    Node *getLeftNode();
+    Node *getRightNode();
     int accept(NodeVisitor *visitor);   // override
 };
 
 /**
  * for field self assignment.
- * field self assignment is statement, but class is ExprNode(due to parser).
  */
-class FieldSelfAssignNode : public ExprNode {
+class FieldSelfAssignNode : public Node {
 private:
     /**
      * applyNode->getRecvNode must be AccessNode.
@@ -864,7 +859,7 @@ public:
 // class ClassNode
 // class ConstructorNode
 
-class EmptyNode: public ExprNode {
+class EmptyNode: public Node {
 public:
     EmptyNode();
 

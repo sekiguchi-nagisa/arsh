@@ -63,14 +63,14 @@ private:
     /**
      * check type.
      * if node type is void type, always success.
-     * return resolved type. if targetNode is not ExprNode return null.
+     * return resolved type.
      */
-    DSType *checkTypeAcceptingVoidType(Node *targetNode);
+    DSType *checkTypeAsStatement(Node *targetNode);
 
     /**
      * check node type.
      * if node type is void type, throw exception.
-     * return resolved type. if targetNode is not ExprNode return null.
+     * return resolved type.
      */
     DSType *checkType(Node *targetNode);
 
@@ -79,7 +79,7 @@ private:
      * requiredType is not null
      *
      * if requiredType is not equivalent to node type, throw exception.
-     * return resolved type. if targetNode is not ExprNode return null.
+     * return resolved type.
      */
     DSType *checkType(DSType *requiredType, Node *targetNode);
 
@@ -91,7 +91,7 @@ private:
      * if requiredType is not equivalent to node type, throw exception.
      * if requiredType is null, do not try matching node type
      * and if unaccepatbelType is equivalent to node type, throw exception.
-     * return resolved type. if targetNode is not ExprNode return null.
+     * return resolved type.
      */
     DSType *checkType(DSType *requiredType, Node *targetNode, DSType *unacceptableType);
 
@@ -184,7 +184,7 @@ private:
      * check type ApplyNode and resolve callee(handle or function type).
      * recvNode must be equivalent to applyNode->getRecvNode()
      */
-    HandleOrFuncType resolveCallee(ExprNode *recvNode, ApplyNode *applyNode);
+    HandleOrFuncType resolveCallee(Node *recvNode, ApplyNode *applyNode);
 
     /**
      * check type ApplyNode and resolve callee(handle or function type).

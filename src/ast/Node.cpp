@@ -26,44 +26,31 @@
 // ##################
 
 Node::Node(int lineNum) :
-        lineNum(lineNum) {
+        lineNum(lineNum), type() {
 }
 
 Node::~Node() {
-    // TODO Auto-generated destructor stub
 }
 
 int Node::getLineNum() {
     return this->lineNum;
 }
 
-// ######################
-// ##     ExprNode     ##
-// ######################
-
-ExprNode::ExprNode(int lineNum) :
-        Node(lineNum), type(0) {
-}
-
-ExprNode::~ExprNode() {
-    delete this->type;
-    this->type = 0;
-}
-
-void ExprNode::setType(DSType *type) {
+void Node::setType(DSType *type) {
     this->type = type;
 }
 
-DSType *ExprNode::getType() {
+DSType *Node::getType() {
     return this->type;
 }
+
 
 // ##########################
 // ##     IntValueNode     ##
 // ##########################
 
 IntValueNode::IntValueNode(int lineNum, long value) :
-        ExprNode(lineNum), value(value) {
+        Node(lineNum), value(value) {
 }
 
 long IntValueNode::getValue() {
@@ -79,7 +66,7 @@ int IntValueNode::accept(NodeVisitor *visitor) {
 // ############################
 
 FloatValueNode::FloatValueNode(int lineNum, double value) :
-        ExprNode(lineNum), value(value) {
+        Node(lineNum), value(value) {
 }
 
 double FloatValueNode::getValue() {
@@ -95,7 +82,7 @@ int FloatValueNode::accept(NodeVisitor *visitor) {
 // ##############################
 
 BooleanValueNode::BooleanValueNode(int lineNum, bool value) :
-        ExprNode(lineNum), value(value) {
+        Node(lineNum), value(value) {
 }
 
 bool BooleanValueNode::getValue() {
@@ -111,11 +98,11 @@ int BooleanValueNode::accept(NodeVisitor *visitor) {
 // ############################
 
 StringValueNode::StringValueNode(std::string &&value) :
-        ExprNode(0), value(std::move(value)) {
+        Node(0), value(std::move(value)) {
 }
 
 StringValueNode::StringValueNode(int lineNum, char *value, bool isSingleQuoteStr) :	//TODO:
-        ExprNode(lineNum) {
+        Node(lineNum) {
     // parser original value.
 
     /*			StringBuilder sBuilder = new StringBuilder();
@@ -162,21 +149,21 @@ int StringValueNode::accept(NodeVisitor *visitor) {
 // ############################
 
 StringExprNode::StringExprNode(int lineNum) :
-        ExprNode(lineNum), nodes() {
+        Node(lineNum), nodes() {
 }
 
 StringExprNode::~StringExprNode() {
-    for(ExprNode *e : this->nodes) {
+    for(Node *e : this->nodes) {
         delete e;
     }
     this->nodes.clear();
 }
 
-void StringExprNode::addExprNode(ExprNode *node) {	//TODO:
+void StringExprNode::addExprNode(Node *node) {	//TODO:
     this->nodes.push_back(node);
 }
 
-const std::vector<ExprNode*> &StringExprNode::getExprNodes() {
+const std::vector<Node*> &StringExprNode::getExprNodes() {
     return this->nodes;
 }
 
@@ -189,21 +176,21 @@ int StringExprNode::accept(NodeVisitor *visitor) {
 // #######################
 
 ArrayNode::ArrayNode(int lineNum) :
-        ExprNode(lineNum), nodes() {
+        Node(lineNum), nodes() {
 }
 
 ArrayNode::~ArrayNode() {
-    for(ExprNode *e : this->nodes) {
+    for(Node *e : this->nodes) {
         delete e;
     }
     this->nodes.clear();
 }
 
-void ArrayNode::addExprNode(ExprNode *node) {
+void ArrayNode::addExprNode(Node *node) {
     this->nodes.push_back(node);
 }
 
-const std::vector<ExprNode*> &ArrayNode::getExprNodes() {
+const std::vector<Node*> &ArrayNode::getExprNodes() {
     return this->nodes;
 }
 
@@ -216,30 +203,30 @@ int ArrayNode::accept(NodeVisitor *visitor) {
 // #####################
 
 MapNode::MapNode(int lineNum) :
-        ExprNode(lineNum), keyNodes(), valueNodes() {
+        Node(lineNum), keyNodes(), valueNodes() {
 }
 
 MapNode::~MapNode() {
-    for(ExprNode *e : this->keyNodes) {
+    for(Node *e : this->keyNodes) {
         delete e;
     }
     this->keyNodes.clear();
-    for(ExprNode *e : this->valueNodes) {
+    for(Node *e : this->valueNodes) {
         delete e;
     }
     this->valueNodes.clear();
 }
 
-void MapNode::addEntry(ExprNode *keyNode, ExprNode *valueNode) {
+void MapNode::addEntry(Node *keyNode, Node *valueNode) {
     this->keyNodes.push_back(keyNode);
     this->valueNodes.push_back(valueNode);
 }
 
-const std::vector<ExprNode*> &MapNode::getKeyNodes() {
+const std::vector<Node*> &MapNode::getKeyNodes() {
     return this->keyNodes;
 }
 
-const std::vector<ExprNode*> &MapNode::getValueNodes() {
+const std::vector<Node*> &MapNode::getValueNodes() {
     return this->valueNodes;
 }
 
@@ -251,8 +238,8 @@ int MapNode::accept(NodeVisitor *visitor) {
 // ##     PairNode     ##
 // ######################
 
-PairNode::PairNode(int lineNum, ExprNode *leftNode, ExprNode *rightNode) :
-        ExprNode(lineNum), leftNode(leftNode), rightNode(rightNode) {
+PairNode::PairNode(int lineNum, Node *leftNode, Node *rightNode) :
+        Node(lineNum), leftNode(leftNode), rightNode(rightNode) {
 }
 
 PairNode::~PairNode() {
@@ -263,11 +250,11 @@ PairNode::~PairNode() {
     this->rightNode = 0;
 }
 
-ExprNode *PairNode::getLeftNode() {
+Node *PairNode::getLeftNode() {
     return this->leftNode;
 }
 
-ExprNode *PairNode::getRightNode() {
+Node *PairNode::getRightNode() {
     return this->rightNode;
 }
 
@@ -280,7 +267,7 @@ int PairNode::accept(NodeVisitor *visitor) {
 // ############################
 
 AssignableNode::AssignableNode(int lineNum) :
-        ExprNode(lineNum), readOnly(false) {
+        Node(lineNum), readOnly(false) {
 }
 
 AssignableNode::~AssignableNode() {
@@ -325,7 +312,7 @@ int VarNode::getVarIndex() {
 // ##     AccessNode     ##
 // ########################
 
-AccessNode::AccessNode(ExprNode *recvNode, std::string &&fieldName) :
+AccessNode::AccessNode(Node *recvNode, std::string &&fieldName) :
         AssignableNode(recvNode->getLineNum()), recvNode(recvNode), fieldName(std::move(fieldName)),
         fieldIndex(-1), additionalOp(NOP) {
 }
@@ -335,7 +322,7 @@ AccessNode::~AccessNode() {
     this->recvNode = 0;
 }
 
-ExprNode *AccessNode::getRecvNode() {
+Node *AccessNode::getRecvNode() {
     return this->recvNode;
 }
 
@@ -378,8 +365,8 @@ int AccessNode::accept(NodeVisitor *visitor) {
 // ##     CastNode     ##
 // ######################
 
-CastNode::CastNode(int lineNum, ExprNode *targetNode, TypeToken *type) :
-        ExprNode(lineNum), targetNode(targetNode), targetTypeToken(type) {
+CastNode::CastNode(int lineNum, Node *targetNode, TypeToken *type) :
+        Node(lineNum), targetNode(targetNode), targetTypeToken(type) {
 }
 
 CastNode::~CastNode() {
@@ -390,7 +377,7 @@ CastNode::~CastNode() {
     this->targetTypeToken = 0;
 }
 
-ExprNode *CastNode::getTargetNode() {
+Node *CastNode::getTargetNode() {
     return this->targetNode;
 }
 
@@ -406,8 +393,8 @@ int CastNode::accept(NodeVisitor *visitor) {
 // ##     InstanceOfNode     ##
 // ############################
 
-InstanceOfNode::InstanceOfNode(int lineNum, ExprNode *targetNode, TypeToken *type) :
-        ExprNode(lineNum), targetNode(targetNode), targetTypeToken(type),
+InstanceOfNode::InstanceOfNode(int lineNum, Node *targetNode, TypeToken *type) :
+        Node(lineNum), targetNode(targetNode), targetTypeToken(type),
         targetType(0), opKind(ALWAYS_FALSE) {
 }
 
@@ -419,7 +406,7 @@ InstanceOfNode::~InstanceOfNode() {
     this->targetTypeToken = 0;
 }
 
-ExprNode *InstanceOfNode::getTargetNode() {
+Node *InstanceOfNode::getTargetNode() {
     return this->targetNode;
 }
 
@@ -462,21 +449,21 @@ int InstanceOfNode::accept(NodeVisitor *visitor) {
 // ##     OperatorCallNode     ##
 // ##############################
 
-OperatorCallNode::OperatorCallNode(ExprNode *leftNode, int op, ExprNode *rightNode) :
-        ExprNode(leftNode->getLineNum()), argNodes(2), op(op), handle() {
+OperatorCallNode::OperatorCallNode(Node *leftNode, int op, Node *rightNode) :
+        Node(leftNode->getLineNum()), argNodes(2), op(op), handle() {
     this->argNodes.push_back(leftNode);
     this->argNodes.push_back(rightNode);
 }
 
-OperatorCallNode::OperatorCallNode(int op, ExprNode *rightNode) :
-        ExprNode(rightNode->getLineNum()), argNodes(1), op(op), handle() {
+OperatorCallNode::OperatorCallNode(int op, Node *rightNode) :
+        Node(rightNode->getLineNum()), argNodes(1), op(op), handle() {
     this->argNodes.push_back(rightNode);
 }
 
 OperatorCallNode::~OperatorCallNode() {
 }
 
-const std::vector<ExprNode*> OperatorCallNode::getArgNodes() {
+const std::vector<Node*> OperatorCallNode::getArgNodes() {
     return this->argNodes;
 }
 
@@ -501,15 +488,15 @@ int OperatorCallNode::accept(NodeVisitor *visitor) {
 // ######################
 
 ArgsNode::ArgsNode(int lineNum) :
-        ExprNode(lineNum), argPairs(), paramIndexMap(0), paramSize(0) {
+        Node(lineNum), argPairs(), paramIndexMap(0), paramSize(0) {
 }
-ArgsNode::ArgsNode(std::string &&paramName, ExprNode* argNode) :
+ArgsNode::ArgsNode(std::string &&paramName, Node* argNode) :
         ArgsNode(argNode->getLineNum()) {
     this->argPairs.push_back(
-            std::pair<std::string, ExprNode*>(std::move(paramName), argNode));
+            std::pair<std::string, Node*>(std::move(paramName), argNode));
 }
 
-ArgsNode::ArgsNode(ExprNode *argNode) :
+ArgsNode::ArgsNode(Node *argNode) :
         ArgsNode(std::string(""), argNode) {
 }
 
@@ -518,12 +505,12 @@ ArgsNode::~ArgsNode() {
     this->paramIndexMap = 0;
 }
 
-void ArgsNode::addArgPair(std::string &&paramName, ExprNode *argNode) {
+void ArgsNode::addArgPair(std::string &&paramName, Node *argNode) {
     this->argPairs.push_back(
-            std::pair<std::string, ExprNode*>(std::move(paramName), argNode));
+            std::pair<std::string, Node*>(std::move(paramName), argNode));
 }
 
-void ArgsNode::addArg(ExprNode *argNode) {
+void ArgsNode::addArg(Node *argNode) {
     this->addArgPair(std::string(""), argNode);
 }
 
@@ -546,7 +533,7 @@ void ArgsNode::setParamSize(unsigned int size) {
 unsigned int ArgsNode::getParamSize() {
     return this->paramSize;
 }
-const std::vector<std::pair<std::string, ExprNode*>> &ArgsNode::getArgPairs() {
+const std::vector<std::pair<std::string, Node*>> &ArgsNode::getArgPairs() {
     return this->argPairs;
 }
 
@@ -558,8 +545,8 @@ int ArgsNode::accept(NodeVisitor *visitor) {
 // ##     ApplyNode     ##
 // #######################
 
-ApplyNode::ApplyNode(ExprNode *recvNode, ArgsNode *argsNode) :
-        ExprNode(recvNode->getLineNum()), recvNode(recvNode),
+ApplyNode::ApplyNode(Node *recvNode, ArgsNode *argsNode) :
+        Node(recvNode->getLineNum()), recvNode(recvNode),
         argsNode(argsNode), asFuncCall(false) {
 }
 
@@ -571,7 +558,7 @@ ApplyNode::~ApplyNode() {
     this->argsNode = 0;
 }
 
-ExprNode *ApplyNode::getRecvNode() {
+Node *ApplyNode::getRecvNode() {
     return this->recvNode;
 }
 
@@ -595,18 +582,18 @@ int ApplyNode::accept(NodeVisitor *visitor) {
 // ##     IndexNode     ##
 // #######################
 
-IndexNode::IndexNode(ExprNode *recvNode, ExprNode *indexNode) :
+IndexNode::IndexNode(Node *recvNode, Node *indexNode) :
         ApplyNode(new AccessNode(recvNode, std::string(GET)), new ArgsNode(indexNode)) {
 }
 
 IndexNode::~IndexNode() {
 }
 
-ExprNode *IndexNode::getIndexNode() {
+Node *IndexNode::getIndexNode() {
     return this->getArgsNode()->getArgPairs()[0].second;
 }
 
-ApplyNode *IndexNode::treatAsAssignment(ExprNode *rightNode) {
+ApplyNode *IndexNode::treatAsAssignment(Node *rightNode) {
     AccessNode *accessNode = dynamic_cast<AccessNode*>(this->recvNode);
     accessNode->setFieldName(std::string(SET));
     this->getArgsNode()->addArg(rightNode);
@@ -618,7 +605,7 @@ ApplyNode *IndexNode::treatAsAssignment(ExprNode *rightNode) {
 // #####################
 
 NewNode::NewNode(int lineNum, TypeToken *targetTypeToken, ArgsNode *argsNode) :
-        ExprNode(lineNum), targetTypeToken(targetTypeToken),
+        Node(lineNum), targetTypeToken(targetTypeToken),
         argsNode(argsNode) {
 }
 
@@ -649,8 +636,8 @@ int NewNode::accept(NodeVisitor *visitor) {
 // ##     CondOpNode     ##
 // ########################
 
-CondOpNode::CondOpNode(int lineNum, ExprNode *leftNode, ExprNode *rightNode, bool isAndOp) :
-        ExprNode(lineNum), leftNode(leftNode), rightNode(rightNode), andOp(isAndOp) {
+CondOpNode::CondOpNode(int lineNum, Node *leftNode, Node *rightNode, bool isAndOp) :
+        Node(lineNum), leftNode(leftNode), rightNode(rightNode), andOp(isAndOp) {
 }
 
 CondOpNode::~CondOpNode() {
@@ -661,11 +648,11 @@ CondOpNode::~CondOpNode() {
     this->rightNode = 0;
 }
 
-ExprNode *CondOpNode::getLeftNode() {
+Node *CondOpNode::getLeftNode() {
     return this->leftNode;
 }
 
-ExprNode *CondOpNode::getRightNode() {
+Node *CondOpNode::getRightNode() {
     return this->rightNode;
 }
 
@@ -682,7 +669,7 @@ int CondOpNode::accept(NodeVisitor *visitor) {
 // #########################
 
 ProcessNode::ProcessNode(int lineNum, std::string &&commandName) :
-        ExprNode(lineNum), commandName(std::move(commandName)), argNodes(), redirOptions() {
+        Node(lineNum), commandName(std::move(commandName)), argNodes(), redirOptions() {
 }
 
 ProcessNode::~ProcessNode() {
@@ -691,7 +678,7 @@ ProcessNode::~ProcessNode() {
     }
     this->argNodes.clear();
 
-    for(const std::pair<int, ExprNode*> &pair : this->redirOptions) {
+    for(const std::pair<int, Node*> &pair : this->redirOptions) {
         delete pair.second;
     }
     this->redirOptions.clear();
@@ -709,11 +696,11 @@ const std::vector<ProcArgNode*> &ProcessNode::getArgNodes() {
     return this->argNodes;
 }
 
-void ProcessNode::addRedirOption(std::pair<int, ExprNode*> &&optionPair) {
+void ProcessNode::addRedirOption(std::pair<int, Node*> &&optionPair) {
     this->redirOptions.push_back(std::move(optionPair));
 }
 
-const std::vector<std::pair<int, ExprNode*>> &ProcessNode::getRedirOptions() {
+const std::vector<std::pair<int, Node*>> &ProcessNode::getRedirOptions() {
     return this->redirOptions;
 }
 
@@ -726,22 +713,22 @@ int ProcessNode::accept(NodeVisitor *visitor) {
 // #########################
 
 ProcArgNode::ProcArgNode(int lineNum) :
-        ExprNode(lineNum), segmentNodes() {
+        Node(lineNum), segmentNodes() {
 }
 
 ProcArgNode::~ProcArgNode() {
-    for(ExprNode *e : this->segmentNodes) {
+    for(Node *e : this->segmentNodes) {
         delete e;
     }
     this->segmentNodes.clear();
 }
 
-void ProcArgNode::addSegmentNode(ExprNode *node) {
+void ProcArgNode::addSegmentNode(Node *node) {
     ProcArgNode *argNode = dynamic_cast<ProcArgNode*>(node);
     if(argNode != 0) {
         int size = argNode->getSegmentNodes().size();
         for(int i = 0; i < size; i++) {
-            ExprNode *s = argNode->segmentNodes[i];
+            Node *s = argNode->segmentNodes[i];
             argNode->segmentNodes[i] = 0;
             this->segmentNodes.push_back(s);
         }
@@ -751,7 +738,7 @@ void ProcArgNode::addSegmentNode(ExprNode *node) {
     this->segmentNodes.push_back(node);
 }
 
-const std::vector<ExprNode*> &ProcArgNode::getSegmentNodes() {
+const std::vector<Node*> &ProcArgNode::getSegmentNodes() {
     return this->segmentNodes;
 }
 
@@ -764,7 +751,7 @@ int ProcArgNode::accept(NodeVisitor *visitor) {
 // #############################
 
 SpecialCharNode::SpecialCharNode(int lineNum) :
-        ExprNode(lineNum) {
+        Node(lineNum) {
 }
 
 SpecialCharNode::~SpecialCharNode() {
@@ -779,7 +766,7 @@ int SpecialCharNode::accept(NodeVisitor *visitor) {
 // ######################
 
 TaskNode::TaskNode() :
-        ExprNode(0), procNodes(), background(false) {
+        Node(0), procNodes(), background(false) {
 }
 
 TaskNode::~TaskNode() {
@@ -809,8 +796,8 @@ int TaskNode::accept(NodeVisitor *visitor) {
 // ##     InnerTaskNode     ##
 // ###########################
 
-InnerTaskNode::InnerTaskNode(ExprNode *exprNode) :
-        ExprNode(0), exprNode(exprNode) {
+InnerTaskNode::InnerTaskNode(Node *exprNode) :
+        Node(0), exprNode(exprNode) {
 }
 
 InnerTaskNode::~InnerTaskNode() {
@@ -818,7 +805,7 @@ InnerTaskNode::~InnerTaskNode() {
     this->exprNode = 0;
 }
 
-ExprNode *InnerTaskNode::getExprNode() {
+Node *InnerTaskNode::getExprNode() {
     return this->exprNode;
 }
 
@@ -830,7 +817,7 @@ int InnerTaskNode::accept(NodeVisitor *visitor) {
 // ##     AssertNode     ##
 // ########################
 
-AssertNode::AssertNode(int lineNum, ExprNode *exprNode) :
+AssertNode::AssertNode(int lineNum, Node *exprNode) :
         Node(lineNum), exprNode(exprNode) {
 }
 
@@ -839,7 +826,7 @@ AssertNode::~AssertNode() {
     this->exprNode = 0;
 }
 
-ExprNode *AssertNode::getExprNode() {
+Node *AssertNode::getExprNode() {
     return this->exprNode;
 }
 
@@ -914,7 +901,7 @@ int ContinueNode::accept(NodeVisitor *visitor) {
 // ##     ExportEnvNode     ##
 // ###########################
 
-ExportEnvNode::ExportEnvNode(int lineNum, std::string &&envName, ExprNode *exprNode) :
+ExportEnvNode::ExportEnvNode(int lineNum, std::string &&envName, Node *exprNode) :
         Node(lineNum), envName(std::move(envName)), exprNode(exprNode) {
 }
 
@@ -927,7 +914,7 @@ const std::string &ExportEnvNode::getEnvName() {
     return this->envName;
 }
 
-ExprNode *ExportEnvNode::getExprNode() {
+Node *ExportEnvNode::getExprNode() {
     return this->exprNode;
 }
 
@@ -1007,7 +994,7 @@ int ForNode::accept(NodeVisitor *visitor) {
 // ##     WhileNode     ##
 // #######################
 
-WhileNode::WhileNode(int lineNum, ExprNode *condNode, BlockNode *blockNode, bool asDoWhile) :
+WhileNode::WhileNode(int lineNum, Node *condNode, BlockNode *blockNode, bool asDoWhile) :
         LoopNode(lineNum), condNode(condNode), blockNode(blockNode), asDoWhile(asDoWhile) {
 }
 
@@ -1019,7 +1006,7 @@ WhileNode::~WhileNode() {
     this->blockNode = 0;
 }
 
-ExprNode *WhileNode::getCondNode() {
+Node *WhileNode::getCondNode() {
     return this->condNode;
 }
 
@@ -1039,7 +1026,7 @@ int WhileNode::accept(NodeVisitor *visitor) {
 // ##     IfNode     ##
 // ####################
 
-IfNode::IfNode(int lineNum, ExprNode *condNode, BlockNode *thenNode, BlockNode *elseNode) :
+IfNode::IfNode(int lineNum, Node *condNode, BlockNode *thenNode, BlockNode *elseNode) :
         Node(lineNum), condNode(condNode), thenNode(thenNode),
         elseNode(elseNode != 0 ? elseNode : new BlockNode()) {
 }
@@ -1055,7 +1042,7 @@ IfNode::~IfNode() {
     this->elseNode = 0;
 }
 
-ExprNode *IfNode::getCondNode() {
+Node *IfNode::getCondNode() {
     return this->condNode;
 }
 
@@ -1075,7 +1062,7 @@ int IfNode::accept(NodeVisitor *visitor) {
 // ##     ReturnNode     ##
 // ########################
 
-ReturnNode::ReturnNode(int lineNum, ExprNode *exprNode) :
+ReturnNode::ReturnNode(int lineNum, Node *exprNode) :
         BlockEndNode(lineNum), exprNode(exprNode) {
 }
 
@@ -1088,7 +1075,7 @@ ReturnNode::~ReturnNode() {
     this->exprNode = 0;
 }
 
-ExprNode *ReturnNode::getExprNode() {
+Node *ReturnNode::getExprNode() {
     return this->exprNode;
 }
 
@@ -1100,7 +1087,7 @@ int ReturnNode::accept(NodeVisitor *visitor) {
 // ##     ThrowNode     ##
 // #######################
 
-ThrowNode::ThrowNode(int lineNum, ExprNode *exprNode) :
+ThrowNode::ThrowNode(int lineNum, Node *exprNode) :
         BlockEndNode(lineNum), exprNode(exprNode) {
 }
 
@@ -1109,7 +1096,7 @@ ThrowNode::~ThrowNode() {
     this->exprNode = 0;
 }
 
-ExprNode *ThrowNode::getExprNode() {
+Node *ThrowNode::getExprNode() {
     return this->exprNode;
 }
 
@@ -1240,7 +1227,7 @@ int FinallyNode::accept(NodeVisitor *visitor) {
 // ##     VarDeclNode     ##
 // #########################
 
-VarDeclNode::VarDeclNode(int lineNum, std::string &&varName, ExprNode *initValueNode, bool readOnly) :
+VarDeclNode::VarDeclNode(int lineNum, std::string &&varName, Node *initValueNode, bool readOnly) :
         Node(lineNum), varName(std::move(varName)), readOnly(readOnly), global(false),
         initValueNode(initValueNode) {
 }
@@ -1266,7 +1253,7 @@ bool VarDeclNode::isGlobal() {
     return this->global;
 }
 
-ExprNode *VarDeclNode::getInitValueNode() {
+Node *VarDeclNode::getInitValueNode() {
     return this->initValueNode;
 }
 
@@ -1278,8 +1265,8 @@ int VarDeclNode::accept(NodeVisitor *visitor) {
 // ##     AssignNode     ##
 // ########################
 
-AssignNode::AssignNode(ExprNode *leftNode, ExprNode *rightNode) :
-        ExprNode(leftNode->getLineNum()), leftNode(leftNode), rightNode(rightNode) {
+AssignNode::AssignNode(Node *leftNode, Node *rightNode) :
+        Node(leftNode->getLineNum()), leftNode(leftNode), rightNode(rightNode) {
 }
 
 AssignNode::~AssignNode() {
@@ -1290,11 +1277,11 @@ AssignNode::~AssignNode() {
     this->rightNode  = 0;
 }
 
-ExprNode *AssignNode::getLeftNode() {
+Node *AssignNode::getLeftNode() {
     return this->leftNode;
 }
 
-ExprNode *AssignNode::getRightNode() {
+Node *AssignNode::getRightNode() {
     return this->rightNode;
 }
 
@@ -1307,7 +1294,7 @@ int AssignNode::accept(NodeVisitor *visitor) {
 // #################################
 
 FieldSelfAssignNode::FieldSelfAssignNode(ApplyNode *applyNode) :
-    ExprNode(applyNode->getLineNum()), applyNode(applyNode) {
+    Node(applyNode->getLineNum()), applyNode(applyNode) {
 }
 
 FieldSelfAssignNode::~FieldSelfAssignNode() {
@@ -1400,7 +1387,7 @@ int FunctionNode::accept(NodeVisitor *visitor) {
 // #######################
 
 EmptyNode::EmptyNode() :
-        ExprNode(0) {
+        Node(0) {
 }
 
 int EmptyNode::accept(NodeVisitor *visitor) {

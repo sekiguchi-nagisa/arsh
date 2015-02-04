@@ -25,12 +25,12 @@ std::string resolveOpName(int op) {
     return std::string();
 }
 
-static ApplyNode *createApplyNode(ExprNode *recvNode, std::string &&methodName) {
+static ApplyNode *createApplyNode(Node *recvNode, std::string &&methodName) {
     AccessNode *a = new AccessNode(recvNode, std::move(methodName));
     return new ApplyNode(a, new ArgsNode(a->getLineNum()));
 }
 
-ForNode *createForInNode(int lineNum, std::string &&initName, ExprNode *exprNode, BlockNode *blockNode) {
+ForNode *createForInNode(int lineNum, std::string &&initName, Node *exprNode, BlockNode *blockNode) {
     // create for-init
     ApplyNode *apply_reset = createApplyNode(exprNode, std::string(RESET));
     std::string reset_var_name = std::to_string(rand());
@@ -55,11 +55,11 @@ std::string resolveAssignOpName(int op) {
     return std::string();   //FIXME:
 }
 
-ExprNode *createSuffixNode(ExprNode *leftNode, int op) {
+Node *createSuffixNode(Node *leftNode, int op) {
     return createAssignNode(leftNode, op, new IntValueNode(leftNode->getLineNum(), 1));
 }
 
-ExprNode *createAssignNode(ExprNode *leftNode, int op, ExprNode *rightNode) {   //TODO: element self assign
+Node *createAssignNode(Node *leftNode, int op, Node *rightNode) {   //TODO: element self assign
     /*
      * basic assignment
      */

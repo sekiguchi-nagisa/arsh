@@ -22,10 +22,10 @@
 std::string resolveOpName(int op);
 std::string resolveAssignOpName(int op);
 
-ForNode *createForInNode(int lineNum, std::string &&initName, ExprNode *exprNode, BlockNode *blockNode);
+ForNode *createForInNode(int lineNum, std::string &&initName, Node *exprNode, BlockNode *blockNode);
 
-ExprNode *createSuffixNode(ExprNode *leftNode, int op);
+Node *createSuffixNode(Node *leftNode, int op);
 
-ExprNode *createAssignNode(ExprNode *leftNode, int op, ExprNode *rightNode);
+Node *createAssignNode(Node *leftNode, int op, Node *rightNode);
 
 #endif /* AST_NODE_UTILS_H_ */
