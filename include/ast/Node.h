@@ -432,7 +432,7 @@ public:
     int accept(NodeVisitor *visitor);	//override
 };
 
-class ProcessNode: public Node {	//FIXME: redirect option, trace
+class ProcessNode: public Node {	//FIXME: redirect option
 private:
     std::string commandName;
     std::vector<ProcArgNode*> argNodes;
@@ -821,15 +821,18 @@ public:
 class FieldSelfAssignNode : public Node {
 private:
     /**
+     * before type checking, must be ApplyNode.
+     * after type checking, may be CastNode due to type coercion.
      * applyNode->getRecvNode must be AccessNode.
      */
-    ApplyNode *applyNode;
+    Node *applyNode;
 
 public:
-    FieldSelfAssignNode(ApplyNode *applyNode);
+    FieldSelfAssignNode(Node *applyNode);
     ~FieldSelfAssignNode();
 
-    ApplyNode *getApplyNode();
+    void setApplyNode(Node *node);
+    Node *getApplyNode();
     int accept(NodeVisitor *visitor);   // override
 };
 

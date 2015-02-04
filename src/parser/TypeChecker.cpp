@@ -31,7 +31,7 @@ TypeChecker::~TypeChecker() {
     this->finallyContextStack.clear();
 }
 
-void TypeChecker::checkTypeRootNode(RootNode *rootNode) {	//FIXME
+void TypeChecker::checkTypeRootNode(RootNode *rootNode) {
     for(Node *node : rootNode->getNodeList()) {
         this->checkTypeAsStatement(node);
     }
@@ -669,13 +669,13 @@ int TypeChecker::visitCondOpNode(CondOpNode *node) {
 
 int TypeChecker::visitProcessNode(ProcessNode *node) {
     for(ProcArgNode *argNode : node->getArgNodes()) {
-        this->checkTypeAsStatement(argNode);    //FIXME: accept void type
+        this->checkType(this->typePool->getProcArgType(), argNode);
     }
     // check type redirect options
     for(const std::pair<int, Node*> &optionPair : node->getRedirOptions()) {
-        this->checkTypeAsStatement(optionPair.second);  //FIXME: accept void type
+        this->checkTypeAsStatement(optionPair.second);
     }
-    node->setType(this->typePool->getVoidType());   //FIXME: ProcessNode is always void type
+    node->setType(this->typePool->getProcType());
     return 0;
 }
 
@@ -683,7 +683,7 @@ int TypeChecker::visitProcArgNode(ProcArgNode *node) {
     for(Node *exprNode : node->getSegmentNodes()) {
         this->checkType(exprNode);
     }
-    node->setType(this->typePool->getVoidType());   //FIXME: ProcArgNode is always void type
+    node->setType(this->typePool->getProcArgType());
     return 0;
 }
 
@@ -694,7 +694,7 @@ int TypeChecker::visitSpecialCharNode(SpecialCharNode *node) {
 
 int TypeChecker::visitTaskNode(TaskNode *node) {    //TODO: parent node
     for(ProcessNode *procNode : node->getProcNodes()) {
-        this->checkTypeAsStatement(procNode);   //FIXME: accept void
+        this->checkType(this->typePool->getProcType(), procNode);
     }
 
     /**
@@ -806,7 +806,7 @@ int TypeChecker::visitReturnNode(ReturnNode *node) {
 
 int TypeChecker::visitThrowNode(ThrowNode *node) {
     this->checkAndThrowIfInsideFinally(node);
-    this->checkType(node->getExprNode()); //TODO: currently accept all type
+    this->checkType(node->getExprNode());
     node->setType(this->typePool->getVoidType());
     return 0;
 }
@@ -883,12 +883,13 @@ int TypeChecker::visitAssignNode(AssignNode *node) {
 }
 
 int TypeChecker::visitFieldSelfAssignNode(FieldSelfAssignNode *node) {
-    ApplyNode *applyNode = node->getApplyNode();
-    this->checkType(applyNode); //FIXME:
+    ApplyNode *applyNode = dynamic_cast<ApplyNode*>(node->getApplyNode());
+    this->checkType(applyNode);
 
     AccessNode *accessNode = dynamic_cast<AccessNode*>(applyNode->getRecvNode());
     accessNode->setAdditionalOp(AccessNode::DUP_RECV);
 
+    node->setApplyNode(this->checkTypeAndResolveCoercion(accessNode->getType(), applyNode));
     node->setType(this->typePool->getVoidType());
     return 0;
 }

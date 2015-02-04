@@ -1321,7 +1321,7 @@ int AssignNode::accept(NodeVisitor *visitor) {
 // ##     FieldSelfAssignNode     ##
 // #################################
 
-FieldSelfAssignNode::FieldSelfAssignNode(ApplyNode *applyNode) :
+FieldSelfAssignNode::FieldSelfAssignNode(Node *applyNode) :
     Node(applyNode->getLineNum()), applyNode(applyNode) {
 }
 
@@ -1330,7 +1330,11 @@ FieldSelfAssignNode::~FieldSelfAssignNode() {
     this->applyNode = 0;
 }
 
-ApplyNode *FieldSelfAssignNode::getApplyNode() {
+void FieldSelfAssignNode::setApplyNode(Node *node) {
+    this->applyNode = node;
+}
+
+Node *FieldSelfAssignNode::getApplyNode() {
     return this->applyNode;
 }
 

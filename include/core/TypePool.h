@@ -54,6 +54,10 @@ public:
     DSType *getTaskType();
     DSType *getBaseFuncType();
 
+    // for command
+    DSType *getProcArgType();
+    DSType *getProcType();
+
     // for reified type.
     TypeTemplate *getArrayTemplate();
     TypeTemplate *getMapTemplate();

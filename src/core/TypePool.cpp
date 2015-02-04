@@ -70,6 +70,14 @@ DSType *TypePool::getBaseFuncType() {
     return 0;   //TODO:
 }
 
+DSType *TypePool::getProcArgType( ){
+    return 0;   //TODO:
+}
+
+DSType *TypePool::getProcType() {
+    return 0;   //TODO:
+}
+
 TypeTemplate *TypePool::getArrayTemplate() {
     return 0;	//TODO:
 }
