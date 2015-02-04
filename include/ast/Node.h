@@ -191,11 +191,18 @@ public:
 };
 
 class AccessNode: public AssignableNode {
+public:
+    typedef enum {
+        NOP,
+        DUP_RECV,
+        DUP_RECV_AND_SWAP,
+    } AdditionalOp;
+
 private:
     Node* recvNode;
     std::string fieldName;
     int fieldIndex;
-    int additionalOp;
+    AdditionalOp additionalOp;
 
 public:
     AccessNode(Node *recvNode, std::string &&fieldName);
@@ -206,41 +213,65 @@ public:
     const std::string &getFieldName();
     void setAttribute(FieldHandle *handle);
     int getFieldIndex();
-    void setAdditionalOp(int op);
-    int getAdditionnalOp();
+    void setAdditionalOp(AdditionalOp op);
+    AdditionalOp getAdditionnalOp();
     int accept(NodeVisitor *visitor);	// override
-
-    const static int NOP               = 0;
-    const static int DUP_RECV          = 1;
-    /**
-     * dup recv node and after field access, swap oprand
-     */
-    const static int DUP_RECV_AND_SWAP = 2;
 };
 
-class CastNode: public Node {	//TODO: cast op kind
+class CastNode: public Node {
+public:
+    typedef enum {
+        NOP,
+        INT_TO_FLOAT,
+        FLOAT_TO_INT,
+        TO_STRING,
+        CHECK_CAST,
+    } CastOp;
+
 private:
-    Node *targetNode;
+    Node *exprNode;
     TypeToken *targetTypeToken;
+    CastOp opKind;
+
+    /**
+     * for string cast
+     */
+    int fieldIndex;
 
 public:
-    CastNode(int lineNum, Node *targetNode, TypeToken *type);
+    CastNode(Node *exprNode, TypeToken *type);
     ~CastNode();
 
-    Node *getTargetNode();
+    Node *getExprNode();
     TypeToken *getTargetTypeToken();
+
+    /**
+     * remove type token, and return removed it.
+     */
+    TypeToken *removeTargetTypeToken();
+
+    void setOpKind(CastOp opKind);
+    CastOp getOpKind();
+    void setFieldIndex(int index);
+    int getFieldIndex();
     int accept(NodeVisitor *visitor);	//override
 };
 
 class InstanceOfNode: public Node {
+public:
+    typedef enum {
+        ALWAYS_FALSE,
+        INSTANCEOF,
+    } InstanceOfOp;
+
 private:
     Node* targetNode;
     TypeToken* targetTypeToken;
     DSType *targetType;
-    int opKind;
+    InstanceOfOp opKind;
 
 public:
-    InstanceOfNode(int lineNum, Node *targetNode, TypeToken *tyep);
+    InstanceOfNode(Node *targetNode, TypeToken *tyep);
     ~InstanceOfNode();
 
     Node *getTargetNode();
@@ -253,12 +284,9 @@ public:
 
     void setTargetType(DSType *targetType);
     DSType *getTargetType();
-    void resolveOpKind(int opKind);
-    int getOpKind();
+    void setOpKind(InstanceOfOp opKind);
+    InstanceOfOp getOpKind();
     int accept(NodeVisitor *visitor);	//override
-
-    const static int ALWAYS_FALSE = 0;
-    const static int INSTANCEOF   = 1;
 };
 
 /**

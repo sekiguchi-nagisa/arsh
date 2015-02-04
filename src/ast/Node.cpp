@@ -351,17 +351,11 @@ int AccessNode::getFieldIndex() {
     return this->fieldIndex;
 }
 
-void AccessNode::setAdditionalOp(int op) {
-    switch(op) {
-    case NOP:
-    case DUP_RECV:
-    case DUP_RECV_AND_SWAP:
-        this->additionalOp = op;
-    }
-    this->additionalOp = NOP;
+void AccessNode::setAdditionalOp(AccessNode::AdditionalOp op) {
+    this->additionalOp = op;
 }
 
-int AccessNode::getAdditionnalOp() {
+AccessNode::AdditionalOp AccessNode::getAdditionnalOp() {
     return this->additionalOp;
 }
 
@@ -373,24 +367,47 @@ int AccessNode::accept(NodeVisitor *visitor) {
 // ##     CastNode     ##
 // ######################
 
-CastNode::CastNode(int lineNum, Node *targetNode, TypeToken *type) :
-        Node(lineNum), targetNode(targetNode), targetTypeToken(type) {
+CastNode::CastNode(Node *exprNode, TypeToken *type) :
+        Node(exprNode->getLineNum()), exprNode(exprNode), targetTypeToken(type),
+        opKind(NOP), fieldIndex(-1) {
 }
 
 CastNode::~CastNode() {
-    delete this->targetNode;
-    this->targetNode = 0;
+    delete this->exprNode;
+    this->exprNode = 0;
 
     delete this->targetTypeToken;
     this->targetTypeToken = 0;
 }
 
-Node *CastNode::getTargetNode() {
-    return this->targetNode;
+Node *CastNode::getExprNode() {
+    return this->exprNode;
 }
 
 TypeToken *CastNode::getTargetTypeToken() {
     return this->targetTypeToken;
+}
+
+TypeToken *CastNode::removeTargetTypeToken() {
+    TypeToken *t = this->targetTypeToken;
+    this->targetTypeToken = 0;
+    return t;
+}
+
+void CastNode::setOpKind(CastNode::CastOp opKind) {
+    this->opKind = opKind;
+}
+
+CastNode::CastOp CastNode::getOpKind() {
+    return this->opKind;
+}
+
+void CastNode::setFieldIndex(int index) {
+    this->fieldIndex = index;
+}
+
+int CastNode::getFieldIndex() {
+    return this->fieldIndex;
 }
 
 int CastNode::accept(NodeVisitor *visitor) {
@@ -401,8 +418,8 @@ int CastNode::accept(NodeVisitor *visitor) {
 // ##     InstanceOfNode     ##
 // ############################
 
-InstanceOfNode::InstanceOfNode(int lineNum, Node *targetNode, TypeToken *type) :
-        Node(lineNum), targetNode(targetNode), targetTypeToken(type),
+InstanceOfNode::InstanceOfNode(Node *targetNode, TypeToken *type) :
+        Node(targetNode->getLineNum()), targetNode(targetNode), targetTypeToken(type),
         targetType(0), opKind(ALWAYS_FALSE) {
 }
 
@@ -436,16 +453,11 @@ DSType *InstanceOfNode::getTargetType() {
     return this->targetType;
 }
 
-void InstanceOfNode::resolveOpKind(int opKind) {
-    switch(opKind) {
-    case ALWAYS_FALSE:
-    case INSTANCEOF:
-        this->opKind = opKind;
-        break;
-    }
+void InstanceOfNode::setOpKind(InstanceOfNode::InstanceOfOp opKind) {
+    this->opKind = opKind;
 }
 
-int InstanceOfNode::getOpKind() {
+InstanceOfNode::InstanceOfOp InstanceOfNode::getOpKind() {
     return this->opKind;
 }
 

@@ -51,3 +51,6 @@ const char * const RESET    = "__RESET__";
 const char * const NEXT     = "__NEXT__";
 const char * const HAS_NEXT = "__HAS_NEXT__";
 
+// to string
+const char * const TO_STR   = "__TO_STR__";
+

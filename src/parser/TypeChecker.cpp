@@ -99,9 +99,15 @@ DSType *TypeChecker::checkType(DSType *requiredType, Node *targetNode,
 }
 
 Node *TypeChecker::checkTypeAndResolveCoercion(DSType *requiredType, Node *targetNode) {
-    DSType *type = this->checkType(requiredType, targetNode, this->typePool->getVoidType(), true);
+    TypePool *pool = this->typePool;
+    DSType *type = this->checkType(requiredType, targetNode, pool->getVoidType(), true);
     if(this->supportCoercion(requiredType, type)) {
-        //FIXME: cast node
+        if(requiredType->equals(pool->getFloatType()) && type->equals(pool->getIntType())) {
+            // int to float
+            CastNode *castNode = new CastNode(targetNode, 0);
+            castNode->setOpKind(CastNode::INT_TO_FLOAT);
+            castNode->setType(pool->getFloatType());
+        }
     }
     return targetNode;
 }
@@ -503,9 +509,58 @@ int TypeChecker::visitAccessNode(AccessNode *node) {
 }
 
 int TypeChecker::visitCastNode(CastNode *node) {
-    E_Unimplemented(node, "CastNode");
+    DSType *exprType = this->checkType(node->getExprNode());
+    DSType *targetType = this->toType(node->removeTargetTypeToken());
+    node->setType(targetType);
+
+    // resolve cast op
+    TypePool *pool = this->typePool;
+
+    /**
+     * nop
+     */
+    if(targetType->equals(exprType)) {
+        return 0;
+    }
+
+    /**
+     * int to float
+     */
+    if(exprType->equals(pool->getIntType()) && targetType->equals(pool->getFloatType())) {
+        node->setOpKind(CastNode::INT_TO_FLOAT);
+        return 0;
+    }
+
+    /**
+     * float to int
+     */
+    if(exprType->equals(pool->getFloatType()) && targetType->equals(pool->getIntType())) {
+        node->setOpKind(CastNode::FLOAT_TO_INT);
+        return 0;
+    }
+
+    /**
+     * to string
+     */
+    if(targetType->equals(pool->getStringType())) {
+        node->setOpKind(CastNode::TO_STRING);
+        FieldHandle *handle = exprType->lookupFieldHandle(std::string(TO_STR));
+        assert(handle != 0);
+        node->setFieldIndex(handle->getFieldIndex());
+        return 0;
+    }
+
+    /**
+     * check cast
+     */
+    if(exprType->isAssignableFrom(targetType) || targetType->isAssignableFrom(exprType)) {
+        node->setOpKind(CastNode::CHECK_CAST);
+        return 0;
+    }
+
+    E_CastOp(node, exprType->getTypeName(), targetType->getTypeName());
     return 0;
-} //TODO
+}
 
 int TypeChecker::visitInstanceOfNode(InstanceOfNode *node) {
     DSType *exprType = this->checkType(node->getTargetNode());
@@ -513,9 +568,9 @@ int TypeChecker::visitInstanceOfNode(InstanceOfNode *node) {
     node->setTargetType(targetType);
 
     if(exprType->isAssignableFrom(targetType) || targetType->isAssignableFrom(exprType)) {
-        node->resolveOpKind(InstanceOfNode::INSTANCEOF);
+        node->setOpKind(InstanceOfNode::INSTANCEOF);
     } else {
-        node->resolveOpKind(InstanceOfNode::ALWAYS_FALSE);
+        node->setOpKind(InstanceOfNode::ALWAYS_FALSE);
     }
     node->setType(this->typePool->getBooleanType());
     return 0;

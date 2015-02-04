@@ -55,5 +55,8 @@ extern const char * const RESET; // must be Func<Any> type
 extern const char * const NEXT;  // must be Func<Any> type
 extern const char * const HAS_NEXT;  // must be Func<Boolean> type
 
+// to string
+extern const char * const TO_STR;   // for string cast
+
 
 #endif /* CORE_MAGIC_METHOD_H_ */
