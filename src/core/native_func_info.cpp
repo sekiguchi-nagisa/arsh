@@ -14,17 +14,8 @@
  * limitations under the License.
  */
 
-#include <core/bind.h>
+#include <core/native_func_info.h>
+#include <core/DSType.h>
+#include <core/TypePool.h>
 
-static void bindNativeFuncImpl(TypePool *typePool, ClassType *type,
-        native_func_info_t *info, bool asInit) {
-    //TODO: implement decoder
-}
 
-void bindNativeFunc(TypePool *typePool, ClassType *type, native_func_info_t *info) {
-    bindNativeFuncImpl(typePool, type, info, false);
-}
-
-void bindNativeFuncAsInit(TypePool *typePool, ClassType *type, native_func_info_t *info) {
-    bindNativeFuncImpl(typePool, type, info, true);
-}

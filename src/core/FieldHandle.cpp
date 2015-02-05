@@ -16,6 +16,9 @@
 
 #include <core/FieldHandle.h>
 #include <core/DSType.h>
+#include <core/native_func_info.h>
+
+#include <assert.h>
 
 // #########################
 // ##     FieldHandle     ##
@@ -68,7 +71,12 @@ FunctionHandle::FunctionHandle(DSType *returnType, const std::vector<DSType*> &p
 
 FunctionHandle::FunctionHandle(DSType *returnType, const std::vector<DSType*> &paramTypes, int fieldIndex) :
         FieldHandle(0, fieldIndex, true),
-        returnType(returnType), paramTypes(paramTypes), paramIndexMap(), defaultValues() {
+        returnType(returnType), paramTypes(paramTypes), paramIndexMap(), defaultValues(paramTypes.size()) {
+}
+
+FunctionHandle::FunctionHandle(unsigned int paramSize, int fieldIndex) :
+        FieldHandle(0, fieldIndex, true),
+        returnType(), paramTypes(paramSize), paramIndexMap(), defaultValues(paramSize) {
 }
 
 FunctionHandle::~FunctionHandle() {
@@ -86,15 +94,13 @@ FunctionType *FunctionHandle::getFuncType(TypePool *typePool) {
     return dynamic_cast<FunctionType*>(this->getFieldType(typePool));
 }
 
-DSType *FunctionHandle::getReturnType(TypePool *typePool) {
+DSType *FunctionHandle::getReturnType() {
     return this->returnType;
 }
 
-const std::vector<DSType*> &FunctionHandle::getParamTypes(TypePool *typePool) {
+const std::vector<DSType*> &FunctionHandle::getParamTypes() {
     return this->paramTypes;
 }
-
-
 
 bool FunctionHandle::addParamName(const std::string &paramName, bool defaultValue) {
     unsigned int size = this->paramIndexMap.size();
@@ -102,7 +108,7 @@ bool FunctionHandle::addParamName(const std::string &paramName, bool defaultValu
         return false;
     }
 
-    if(!this->paramIndexMap.insert(std::make_pair(paramName, static_cast<int>(size))).second) {
+    if(!this->paramIndexMap.insert(std::make_pair(paramName, size)).second) {
         return false;
     }
     this->defaultValues.push_back(defaultValue);
@@ -115,23 +121,130 @@ int FunctionHandle::getParamIndex(const std::string &paramName) {
     return iter != this->paramIndexMap.end() ? iter->second : -1;
 }
 
-bool FunctionHandle::hasDefaultValue(int paramIndex) {
-    return (unsigned int) paramIndex < this->defaultValues.size()
+bool FunctionHandle::hasDefaultValue(unsigned int paramIndex) {
+    return paramIndex < this->defaultValues.size()
             && this->defaultValues[paramIndex];
 }
 
+// #######################################
+// ##     LazyInitializedFuncHandle     ##
+// #######################################
 
-// ###############################
-// ##     ConstructorHandle     ##
-// ###############################
-
-ConstructorHandle::ConstructorHandle(const std::vector<DSType*> &paramTypes) :
-        FunctionHandle(0, paramTypes) {
+LazyInitializedFuncHandle::LazyInitializedFuncHandle(native_func_info_t *info, int fieldIndex) :
+        FunctionHandle(GET_PARAM_SIZE(info), fieldIndex) {
 }
 
-ConstructorHandle::~ConstructorHandle() {
+LazyInitializedFuncHandle::~LazyInitializedFuncHandle() {
 }
 
-DSType *ConstructorHandle::getFieldType(TypePool *typePool) {
+static inline unsigned int decodeNum(char *&pos) {
+    char ch = *(pos++);
+    switch(ch) {
+    case P_N0:
+    case P_N1:
+    case P_N2:
+    case P_N3:
+    case P_N4:
+    case P_N5:
+    case P_N6:
+    case P_N7:
+    case P_N8:
+        return (unsigned int) (ch - P_N0);
+    default:
+        assert(false);
+        break;
+    }
     return 0;
 }
+
+static DSType *decodeType(TypePool *typePool, char *&pos,
+        DSType *elementType0, DSType *elementType1) {
+    while(*pos != '\0') {
+        switch(*(pos++)) {
+        case VOID_T:
+            return typePool->getVoidType();
+        case ANY_T:
+            return typePool->getAnyType();
+        case INT_T:
+            return typePool->getIntType();
+        case FLOAT_T:
+            return typePool->getFloatType();
+        case BOOL_T:
+            return typePool->getBooleanType();
+        case STRING_T:
+            return typePool->getStringType();
+        case ARRAY_T: {
+            TypeTemplate *t = typePool->getArrayTemplate();
+            unsigned int size = decodeNum(pos);
+            assert(size == 1);
+            std::vector<DSType*> elementTypes(size);
+            elementTypes.push_back(decodeType(typePool, pos, elementType0, elementType1));
+            return typePool->createAndGetReifiedTypeIfUndefined(t, elementTypes);
+        }
+        case MAP_T: {
+            TypeTemplate *t = typePool->getMapTemplate();
+            unsigned int size = decodeNum(pos);
+            std::vector<DSType*> elementTypes(size);
+            for(unsigned int i = 0; i < size; i++) {
+                elementTypes.push_back(decodeType(typePool, pos, elementType0, elementType1));
+            }
+            return typePool->createAndGetReifiedTypeIfUndefined(t, elementTypes);
+        }
+        case P_N0:
+        case P_N1:
+        case P_N2:
+        case P_N3:
+        case P_N4:
+        case P_N5:
+        case P_N6:
+        case P_N7:
+        case P_N8:
+            assert(false);
+            break;
+        case T0:
+            return elementType0;
+        case T1:
+            return elementType1;
+        }
+    }
+    return 0;
+}
+
+void LazyInitializedFuncHandle::initialize(TypePool *typePool, native_func_info_t *info,
+        DSType *elementType0, DSType *elementType1) {
+    if(this->returnType != 0) {
+        return;
+    }
+
+    /**
+     * init paramIndexMap
+     */
+    unsigned int paramSize = this->paramTypes.size();
+    for(unsigned int i = 0; i < paramSize; i++) {
+        this->paramIndexMap.insert(std::make_pair(std::string(info->paramNames[i]), i));
+    }
+
+    /**
+     * init return type
+     */
+    char *pos = info->typeInfo;
+    this->returnType = decodeType(typePool, pos, elementType0, elementType1);
+
+    /**
+     * init param types
+     */
+    pos++;  // skip param size
+    for(unsigned int i = 0; i < paramSize; i++) {
+        this->paramTypes[i] = decodeType(typePool, pos, elementType0, elementType1);
+    }
+
+    /**
+     * init default value map
+     */
+    unsigned char flag = (unsigned char) *pos;
+    for(unsigned int i = 0; i < paramSize; i++) {
+        unsigned int mask = (1 << i);
+        this->defaultValues[i] = ((flag & mask) == mask);
+    }
+}
+

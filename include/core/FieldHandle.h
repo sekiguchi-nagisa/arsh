@@ -25,6 +25,7 @@
 
 class DSType;
 class FunctionType;
+struct native_func_info_t;
 
 /**
  * represent for class field or variable. field type may be function type.
@@ -84,14 +85,14 @@ public:
  * function handle belongs to global scope is always treated as function.
  */
 class FunctionHandle: public FieldHandle {
-private:
+protected:
     DSType *returnType;
     std::vector<DSType*> paramTypes;
 
     /**
      * contains parameter name and parameter index pair
      */
-    std::unordered_map<std::string, int> paramIndexMap;
+    std::unordered_map<std::string, unsigned int> paramIndexMap;
 
     /**
      * if true, has default value
@@ -101,13 +102,14 @@ private:
 public:
     FunctionHandle(DSType *returnType, const std::vector<DSType*> &paramTypes);
     FunctionHandle(DSType *returnType, const std::vector<DSType*> &paramTypes, int fieldIndex);
+    FunctionHandle(unsigned int paramSize, int fieldIndex);
     virtual ~FunctionHandle();
 
-    virtual DSType *getFieldType(TypePool *typePool);   // override
+    DSType *getFieldType(TypePool *typePool);   // override
 
     FunctionType *getFuncType(TypePool *typePool);
-    DSType *getReturnType(TypePool *typePool);
-    const std::vector<DSType*> &getParamTypes(TypePool *typePool);
+    DSType *getReturnType();
+    const std::vector<DSType*> &getParamTypes();
 
     /**
      * return true if success, otherwise return false
@@ -122,18 +124,20 @@ public:
     /**
      * return true if the parameter of the index has default value, otherwise(not have, out of index) reurn false
      */
-    bool hasDefaultValue(int paramIndex);
+    bool hasDefaultValue(unsigned int paramIndex);
 };
 
-class ConstructorHandle : public FunctionHandle {
+class LazyInitializedFuncHandle : public FunctionHandle {
 public:
-    ConstructorHandle(const std::vector<DSType*> &paramTypes);
-    ~ConstructorHandle();
+    LazyInitializedFuncHandle(native_func_info_t *info, int fieldIndex);
+    ~LazyInitializedFuncHandle();
 
     /**
-     * return always null
+     * call from BuiltinType->lookupFieldHandle() or ReifiedType->lookupFieldHandle().
+     * not use it directly.
      */
-    DSType *getFieldType(TypePool *typePool);   // override
+    void initialize(TypePool *typePool, native_func_info_t *info,
+            DSType *elementType0 = 0, DSType *elementType1 = 0);
 };
 
 #endif /* CORE_FIELDHANDLE_H_ */

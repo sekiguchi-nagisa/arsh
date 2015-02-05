@@ -53,7 +53,7 @@ public:
     /**
      * return null, if has no constructor
      */
-    virtual ConstructorHandle *getConstructorHandle() = 0;
+    virtual FunctionHandle *getConstructorHandle(TypePool *typePool) = 0;
 
     /**
      * get size of the all fields(include superType fieldSize).
@@ -61,20 +61,20 @@ public:
     virtual unsigned int getFieldSize() = 0;
 
     /**
-     * return true, found field
-     * equivalent to lookupFieldHandle() != 0
-     */
-    bool hasField(const std::string &fieldName);
-
-    /**
      * return null, if has no field
      */
-    virtual FieldHandle *lookupFieldHandle(const std::string &fieldName) = 0;
+    virtual FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName) = 0;
 
     /**
      * equivalent to dynamic_cast<FunctionHandle*>(lookupFieldHandle())
      */
-    FunctionHandle *lookupMethodHandle(const std::string &funcName);
+    FunctionHandle *lookupMethodHandle(TypePool *typePool, const std::string &funcName);
+
+    /**
+     * return null if handle not found.
+     * not directly use it
+     */
+    virtual FieldHandle *findHandle(const std::string &fieldName) = 0;
 
     /**
      * check equality
@@ -111,7 +111,7 @@ private:
     /**
      * may be null, if has no constructor.
      */
-    ConstructorHandle *constructorHandle;
+    FunctionHandle *constructorHandle;
 
     std::unordered_map<std::string, FieldHandle*> handleMap;
 
@@ -127,9 +127,10 @@ public:
     std::string getTypeName();	// override
     bool isExtendable();	// override
     DSType *getSuperType();	// override
-    ConstructorHandle *getConstructorHandle();	// override
+    FunctionHandle *getConstructorHandle(TypePool *typePool);	// override
     unsigned int getFieldSize();	// override
-    FieldHandle *lookupFieldHandle(const std::string &fieldName);	// override
+    FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName);	// override
+    FieldHandle *findHandle(const std::string &fieldName);  // override
     bool equals(DSType *targetType);	// override
 
     /**
@@ -146,7 +147,7 @@ public:
     /**
      * return created constructor handle
      */
-    ConstructorHandle *setNewConstructorHandle(const std::vector<DSType*> &paramTypes);
+    FunctionHandle *setNewConstructorHandle(const std::vector<DSType*> &paramTypes);
 
     /**
      * add function entity to ClassType. the order of calling this method must be
@@ -207,14 +208,16 @@ public:
     /**
      * return always null
      */
-    ConstructorHandle *getConstructorHandle();	// override
+    FunctionHandle *getConstructorHandle(TypePool *typePool);	// override
 
     unsigned int getFieldSize();	// override
 
     /**
      * lookup from super type
      */
-    FieldHandle *lookupFieldHandle(const std::string &fieldName);	// override
+    FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName);	// override
+
+    FieldHandle *findHandle(const std::string &fieldName);  // override
 
     bool equals(DSType *targetType);	// override
 };

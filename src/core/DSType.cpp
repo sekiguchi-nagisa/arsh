@@ -27,12 +27,8 @@ DSType::DSType() {
 DSType::~DSType() {
 }
 
-bool DSType::hasField(const std::string &fieldName) {
-    return this->lookupFieldHandle(fieldName) != 0;
-}
-
-FunctionHandle *DSType::lookupMethodHandle(const std::string &funcName) {
-    FieldHandle *handle = this->lookupFieldHandle(funcName);
+FunctionHandle *DSType::lookupMethodHandle(TypePool *typePool, const std::string &funcName) {
+    FieldHandle *handle = this->lookupFieldHandle(typePool, funcName);
     return handle != 0 ? dynamic_cast<FunctionHandle*>(handle) : 0;
 }
 
@@ -77,7 +73,7 @@ DSType *ClassType::getSuperType() {
     return this->superType;
 }
 
-ConstructorHandle *ClassType::getConstructorHandle() {
+FunctionHandle *ClassType::getConstructorHandle(TypePool *typePool) {
     return this->constructorHandle;
 }
 
@@ -85,12 +81,20 @@ unsigned int ClassType::getFieldSize() {
     return this->handleMap.size() + this->baseIndex;
 }
 
-FieldHandle *ClassType::lookupFieldHandle(const std::string &fieldName) {
+FieldHandle *ClassType::lookupFieldHandle(TypePool *typePool, const std::string &fieldName) {
     auto iter = this->handleMap.find(fieldName);
     if(iter != this->handleMap.end()) {
         return iter->second;
     }
-    return this->superType != 0 ? this->superType->lookupFieldHandle(fieldName) : 0;
+    return this->superType != 0 ? this->superType->lookupFieldHandle(typePool, fieldName) : 0;
+}
+
+FieldHandle *ClassType::findHandle(const std::string &fieldName) {
+    auto iter = this->handleMap.find(fieldName);
+    if(iter != this->handleMap.end()) {
+        return iter->second;
+    }
+    return this->superType != 0 ? superType->findHandle(fieldName) : 0;
 }
 
 bool ClassType::equals(DSType *targetType) {
@@ -99,7 +103,7 @@ bool ClassType::equals(DSType *targetType) {
 }
 
 bool ClassType::addNewFieldHandle(const std::string &fieldName, bool readOnly, DSType *fieldType) {
-    if(this->hasField(fieldName)) {
+    if(this->findHandle(fieldName) != 0) {
         return false;
     }
     FieldHandle *handle = new FieldHandle(fieldType, this->getFieldSize(), readOnly);
@@ -108,8 +112,8 @@ bool ClassType::addNewFieldHandle(const std::string &fieldName, bool readOnly, D
 }
 
 FunctionHandle *ClassType::addNewFunctionHandle(const std::string &funcName,
-        DSType *returnType, const std::vector<DSType*> &paramTypes) {
-    if(this->hasField(funcName)) {
+        DSType *returnType, const std::vector<DSType*> &paramTypes) {   //TODO: method override
+    if(this->findHandle(funcName) != 0) {
         return 0;
     }
     FunctionHandle *handle = new FunctionHandle(returnType, paramTypes, this->getFieldSize());
@@ -117,11 +121,11 @@ FunctionHandle *ClassType::addNewFunctionHandle(const std::string &funcName,
     return handle;
 }
 
-ConstructorHandle *ClassType::setNewConstructorHandle(const std::vector<DSType*> &paramTypes) {
+FunctionHandle *ClassType::setNewConstructorHandle(const std::vector<DSType*> &paramTypes) {
     if(this->constructorHandle != 0) {
         delete this->constructorHandle;
     }
-    ConstructorHandle *handle = new ConstructorHandle(paramTypes);
+    FunctionHandle *handle = new FunctionHandle(0, paramTypes);
     this->constructorHandle = handle;
     return handle;
 }
@@ -176,7 +180,7 @@ DSType *FunctionType::getSuperType() {
     return this->superType;
 }
 
-ConstructorHandle *FunctionType::getConstructorHandle() {
+FunctionHandle *FunctionType::getConstructorHandle(TypePool *typePool) {
     return 0;
 }
 
@@ -184,8 +188,12 @@ unsigned int FunctionType::getFieldSize() {
     return this->superType->getFieldSize();
 }
 
-FieldHandle *FunctionType::lookupFieldHandle(const std::string &fieldName) {
-    return this->superType->lookupFieldHandle(fieldName);
+FieldHandle *FunctionType::lookupFieldHandle(TypePool *typePool, const std::string &fieldName) {
+    return this->superType->lookupFieldHandle(typePool, fieldName);
+}
+
+FieldHandle *FunctionType::findHandle(const std::string &fieldName) {
+    return this->superType->findHandle(fieldName);
 }
 
 bool FunctionType::equals(DSType *targetType) {
