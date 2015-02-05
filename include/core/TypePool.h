@@ -27,7 +27,44 @@ class FunctionType;
 
 class TypePool {
 private:
+    /**
+     * for class type
+     */
     std::unordered_map<std::string, DSType*> typeMap;
+
+    // type definition
+    DSType *anyType;
+    DSType *voidType;
+
+    /**
+     * super type of value type(int, float, bool, string)
+     * not directly used it.
+     */
+    DSType *valueType;
+
+    DSType *intType;
+    DSType *floatType;
+    DSType *boolType;
+    DSType *stringType;
+    DSType *taskType;
+    DSType *baseFuncType;
+
+    /**
+     * for command invocation.
+     * not directly use it.
+     */
+    DSType *procArgType;
+    DSType *procType;
+
+    /**
+     * for type template
+     */
+    std::unordered_map<std::string, TypeTemplate*> templateMap;
+
+    // type template definition
+    TypeTemplate *arrayTemplate;
+    TypeTemplate *mapTemplate;
+    TypeTemplate *pairTemplate;
 
 public:
     TypePool();
@@ -46,6 +83,7 @@ public:
     /**
      * equivalent to getInt64Type()
      */
+    DSType *getValueType();
     DSType *getIntType();
     DSType *getInt64Type();
     DSType *getFloatType();

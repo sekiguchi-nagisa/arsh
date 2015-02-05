@@ -19,12 +19,64 @@
 #include <core/TypeLookupError.h>
 #include <core/TypeTemplate.h>
 
+#define INIT_CLASS_TYPE(name, extendable, superType) \
+    this->typeMap.insert(\
+            std::make_pair(name, \
+                    new ClassType(name, extendable, superType))).first->second
+
+#define INIT_TYPE_TEMPLATE(name, elemSize) \
+    this->templateMap.insert(\
+            std::make_pair(name, \
+                    new TypeTemplate(name, elemSize))).first->second
+
+
+
 // ######################
 // ##     TypePool     ##
 // ######################
 
 TypePool::TypePool() :
-        typeMap() {
+        typeMap(16), anyType(), voidType(), valueType(),
+        intType(), floatType(), boolType(), stringType(),
+        taskType(), baseFuncType(),
+        procArgType(), procType(),
+        templateMap(8),
+        arrayTemplate(), mapTemplate(), pairTemplate() {
+
+    // initialize type
+    this->anyType    = INIT_CLASS_TYPE("Any", true, 0);
+    this->voidType   = INIT_CLASS_TYPE("Void", false, 0);
+
+    /**
+     * hidden from script.
+     */
+    this->valueType  = INIT_CLASS_TYPE("%Value%", true, this->anyType);
+
+    this->intType    = INIT_CLASS_TYPE("Int", false, this->valueType);
+    this->floatType  = INIT_CLASS_TYPE("Float", false, this->valueType);
+    this->boolType   = INIT_CLASS_TYPE("Boolean", false, this->valueType);
+    this->stringType = INIT_CLASS_TYPE("String", false, this->valueType);
+    this->taskType   = INIT_CLASS_TYPE("Task", false, this->anyType);
+
+    /**
+     * hidden from script
+     */
+    this->baseFuncType = INIT_CLASS_TYPE("%BaseFunc%", false, this->anyType);
+
+    /**
+     * hidden from script
+     */
+    this->procArgType  = INIT_CLASS_TYPE("%ProcArg%", false, this->anyType);
+
+    /**
+     * hidden from script
+     */
+    this->procType     = INIT_CLASS_TYPE("%Proc%", false, this->anyType);
+
+    // initialize type template
+    this->arrayTemplate = INIT_TYPE_TEMPLATE("Array", 1);
+    this->mapTemplate   = INIT_TYPE_TEMPLATE("Map", 1); //FIXME: element size will be 2.
+    this->pairTemplate  = INIT_TYPE_TEMPLATE("Pair", 2);    //FIXME: replace to Tuple
 }
 
 TypePool::~TypePool() {
@@ -32,14 +84,23 @@ TypePool::~TypePool() {
         delete pair.second;
     }
     this->typeMap.clear();
+
+    for(const std::pair<std::string, TypeTemplate*> &pair : this->templateMap) {
+        delete pair.second;
+    }
+    this->templateMap.clear();
 }
 
 DSType *TypePool::getAnyType() {
-    return 0;   //TODO:
+    return this->anyType;
 }
 
 DSType *TypePool::getVoidType() {
-    return 0;   //TODO:
+    return this->voidType;
+}
+
+DSType *TypePool::getValueType() {
+    return this->valueType;
 }
 
 DSType *TypePool::getIntType() {
@@ -47,47 +108,47 @@ DSType *TypePool::getIntType() {
 }
 
 DSType *TypePool::getInt64Type() {
-    return 0;	// TODO
+    return this->intType;
 }
 
 DSType *TypePool::getFloatType() {
-    return 0;	// TODO
+    return this->floatType;
 }
 
 DSType *TypePool::getBooleanType() {
-    return 0;	// TODO
+    return this->boolType;
 }
 
 DSType *TypePool::getStringType() {
-    return 0;	//TODO:
+    return this->stringType;
 }
 
 DSType *TypePool::getTaskType() {
-    return 0;   //TODO:
+    return this->taskType;
 }
 
 DSType *TypePool::getBaseFuncType() {
-    return 0;   //TODO:
+    return this->baseFuncType;
 }
 
 DSType *TypePool::getProcArgType( ){
-    return 0;   //TODO:
+    return this->procArgType;
 }
 
 DSType *TypePool::getProcType() {
-    return 0;   //TODO:
+    return this->procType;
 }
 
 TypeTemplate *TypePool::getArrayTemplate() {
-    return 0;	//TODO:
+    return this->arrayTemplate;
 }
 
 TypeTemplate *TypePool::getMapTemplate() {
-    return 0;	//TODO:
+    return this->mapTemplate;
 }
 
 TypeTemplate *TypePool::getPairTemplate() {
-    return 0;	//TODO:
+    return this->pairTemplate;
 }
 
 DSType *TypePool::getType(const std::string &typeName) {
@@ -104,7 +165,11 @@ DSType *TypePool::getTypeAndThrowIfUndefined(const std::string &typeName) {
 }
 
 TypeTemplate *TypePool::getTypeTemplate(const std::string &typeName, int elementSize) {
-    return 0;   //FIXME:
+    auto iter = this->templateMap.find(typeName);
+    if(iter == this->templateMap.end()) {
+        E_NotGenericBase(typeName);
+    }
+    return iter->second;
 }
 
 DSType *TypePool::createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate,

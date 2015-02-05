@@ -42,7 +42,8 @@ Scope::~Scope() {
 }
 
 FieldHandle *Scope::lookupHandle(const std::string &symbolName) {
-    return this->handleMap[symbolName];
+    auto iter = this->handleMap.find(symbolName);
+    return iter != this->handleMap.end() ? iter->second : 0;
 }
 
 int Scope::getCurVarIndex() {
