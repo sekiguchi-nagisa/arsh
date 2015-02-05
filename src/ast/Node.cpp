@@ -226,6 +226,10 @@ void MapNode::addEntry(Node *keyNode, Node *valueNode) {
     this->valueNodes.push_back(valueNode);
 }
 
+void MapNode::setKeyNode(unsigned int index, Node *keyNode) {
+    this->keyNodes[index] = keyNode;
+}
+
 const std::vector<Node*> &MapNode::getKeyNodes() {
     return this->keyNodes;
 }

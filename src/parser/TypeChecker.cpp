@@ -457,23 +457,26 @@ int TypeChecker::visitArrayNode(ArrayNode *node) {
 int TypeChecker::visitMapNode(MapNode *node) {
     unsigned int size = node->getValueNodes().size();
     assert(size != 0);
+    Node *firstKeyNode = node->getKeyNodes()[0];
+    DSType *keyType = this->checkType(this->typePool->getValueType(), firstKeyNode);
     Node *firstValueNode = node->getValueNodes()[0];
     DSType *valueType = this->checkType(firstValueNode);
 
-    for(unsigned int i = 0; i < size; i++) {
-        this->checkType(this->typePool->getStringType(), node->getKeyNodes()[i]);
+    for(unsigned int i = 1; i < size; i++) {
+        node->setKeyNode(i,
+                this->checkTypeAndResolveCoercion(keyType, node->getKeyNodes()[i]));
         node->setValueNode(i,
                 this->checkTypeAndResolveCoercion(valueType, node->getValueNodes()[i]));
     }
 
     TypeTemplate *mapTemplate = this->typePool->getMapTemplate();
-    std::vector<DSType*> elementTypes(1);
+    std::vector<DSType*> elementTypes(2);
     elementTypes.push_back(valueType);
     node->setType(this->typePool->createAndGetReifiedTypeIfUndefined(mapTemplate, elementTypes));
     return 0;
 }
 
-int TypeChecker::visitPairNode(PairNode *node) {
+int TypeChecker::visitPairNode(PairNode *node) {    //FIXME:
     DSType *leftType = this->checkType(node->getLeftNode());
     DSType *rightType = this->checkType(node->getRightNode());
 

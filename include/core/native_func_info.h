@@ -47,7 +47,7 @@ struct native_func_info_t {
  * --> VOID_T P_N2 ARRAY_T P_N1 INT_T T1 (00000000)
  */
 typedef enum {
-    // type defintion
+    // type definition
     VOID_T = 32,
     ANY_T,
     INT_T,

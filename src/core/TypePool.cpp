@@ -75,7 +75,7 @@ TypePool::TypePool() :
 
     // initialize type template
     this->arrayTemplate = INIT_TYPE_TEMPLATE("Array", 1);
-    this->mapTemplate   = INIT_TYPE_TEMPLATE("Map", 1); //FIXME: element size will be 2.
+    this->mapTemplate   = INIT_TYPE_TEMPLATE("Map", 2);
     this->pairTemplate  = INIT_TYPE_TEMPLATE("Pair", 2);    //FIXME: replace to Tuple
 }
 

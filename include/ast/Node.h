@@ -140,6 +140,7 @@ public:
     ~MapNode();
 
     void addEntry(Node *keyNode, Node *valueNode);
+    void setKeyNode(unsigned int index, Node *keyNode);
     const std::vector<Node*> &getKeyNodes();
     void setValueNode(unsigned int index, Node *valueNode);
     const std::vector<Node*> &getValueNodes();
