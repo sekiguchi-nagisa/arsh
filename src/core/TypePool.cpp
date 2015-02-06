@@ -20,17 +20,15 @@
 #include <core/TypeTemplate.h>
 #include <core/bind.h>
 
-#define INIT_CLASS_TYPE(name, extendable, superType, bind) \
+#define INIT_CLASS_TYPE(name, extendable, superType, info) \
     this->typeMap.insert(\
             std::make_pair(name, \
-                    new BuiltinType(name, extendable, superType, \
-                            bind.infoSize, bind.infos))).first->second
+                    new BuiltinType(name, extendable, superType, info))).first->second
 
-#define INIT_TYPE_TEMPLATE(name, elemSize, bind) \
+#define INIT_TYPE_TEMPLATE(name, elemSize, info) \
     this->templateMap.insert(\
             std::make_pair(name, \
-                    new TypeTemplate(name, elemSize, \
-                            bind.infoSize, bind.infos))).first->second
+                    new TypeTemplate(name, elemSize, info))).first->second
 
 
 

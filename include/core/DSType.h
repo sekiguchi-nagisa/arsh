@@ -25,7 +25,7 @@
 
 #include <core/FieldHandle.h>
 #include <core/TypeTemplate.h>
-#include <core/native_func_info.h>
+#include <core/native_type_info.h>
 
 class DSObject;
 class FuncObject;
@@ -244,15 +244,7 @@ std::string toFunctionTypeName(DSType *returnType, const std::vector<DSType*> &p
  */
 class BuiltinType: public BaseType {    //FIXME: fieldTable
 private:
-    /**
-     * size of native_func_info_t**
-     */
-    unsigned int infoSize;
-
-    /**
-     * not delete it. may be null if infoSize is 0.
-     */
-    native_func_info_t **infos;
+    native_type_info_t *info;
 
     /**
      * may be null, if has no constructor.
@@ -265,8 +257,7 @@ public:
     /**
      * actually superType is BuiltinType
      */
-    BuiltinType(std::string &&typeName, bool extendable, DSType *superType,
-            unsigned int infoSize, native_func_info_t **infos);
+    BuiltinType(std::string &&typeName, bool extendable, DSType *superType, native_type_info_t *info);
     ~BuiltinType();
 
     FunctionHandle *getConstructorHandle(TypePool *typePool);   // override

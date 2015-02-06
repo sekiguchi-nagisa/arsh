@@ -270,19 +270,20 @@ std::string toFunctionTypeName(DSType *returnType, const std::vector<DSType*> &p
 // #########################
 
 BuiltinType::BuiltinType(std::string &&typeName, bool extendable, DSType *superType,
-        unsigned int infoSize, native_func_info_t **infos) :
+        native_type_info_t *info) :
         BaseType(std::move(typeName), extendable, superType),
-        infoSize(infoSize), infos(infos),
-        constructorHandle(), handleMap() {
-    unsigned int index = superType != 0 ? superType->getFieldSize() : 0;
-    for(unsigned int i = 0; i < infoSize; i++) {
-        native_func_info_t *info = infos[i];
-        if(i == 0 && info->funcName == 0) { // as constructor
-            this->constructorHandle = new LazyInitializedFuncHandle(info, -1);
-        } else {
-            auto *handle = new LazyInitializedFuncHandle(info, index + i);
-            this->handleMap.insert(std::make_pair(std::string(info->funcName), handle));
-        }
+        info(info), constructorHandle(), handleMap() {
+    // init constructor handle
+    if(info->initInfo != 0) {
+        this->constructorHandle = new LazyInitializedFuncHandle(info->initInfo, -1);
+    }
+
+    // init function handle
+    unsigned int baseIndex = superType != 0 ? superType->getFieldSize() : 0;
+    for(unsigned int i = 0; i < info->methodSize; i++) {
+        native_func_info_t *funcInfo = info->funcInfos[i];
+        auto *handle = new LazyInitializedFuncHandle(funcInfo, baseIndex + i);
+        this->handleMap.insert(std::make_pair(std::string(funcInfo->funcName), handle));
     }
     //TODO: init fieldTable
 }
@@ -299,16 +300,16 @@ BuiltinType::~BuiltinType() {
 
 FunctionHandle *BuiltinType::getConstructorHandle(TypePool *typePool) {
     if(this->constructorHandle != 0) {
-        this->constructorHandle->initialize(typePool, this->infos[0]);
+        this->constructorHandle->initialize(typePool, this->info->initInfo);
     }
     return this->constructorHandle;
 }
 
 unsigned int BuiltinType::getFieldSize() {
     if(this->superType != 0) {
-        return this->infoSize + this->superType->getFieldSize();
+        return this->info->methodSize + this->superType->getFieldSize();
     }
-    return this->infoSize;
+    return this->info->methodSize;
 }
 
 FieldHandle *BuiltinType::lookupFieldHandle(TypePool *typePool, const std::string &fieldName) {
@@ -322,9 +323,8 @@ FieldHandle *BuiltinType::lookupFieldHandle(TypePool *typePool, const std::strin
      */
     auto *handle = iter->second;
     unsigned int baseIndex = this->superType != 0 ? this->superType->getFieldSize() : 0;
-    unsigned int infoIndex =
-            handle->getFieldIndex() - baseIndex + (this->constructorHandle != 0 ? 1 : 0);
-    handle->initialize(typePool, this->infos[infoIndex]);
+    unsigned int infoIndex = handle->getFieldIndex() - baseIndex;
+    handle->initialize(typePool, this->info->funcInfos[infoIndex]);
     return handle;
 }
 

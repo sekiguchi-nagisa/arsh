@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-#include <core/native_func_info.h>
+#include <core/native_type_info.h>
 #include <core/DSType.h>
 #include <core/TypePool.h>
 
 typedef struct {
-    const char *typeInfo;
+    const char *handleInfo;
     unsigned int pos;
 } context_t;
 
 static bool isType(context_t *ctx) {
-    if(ctx->typeInfo[ctx->pos] != '\0') {
-        switch(ctx->typeInfo[ctx->pos++]) {
+    if(ctx->handleInfo[ctx->pos] != '\0') {
+        switch(ctx->handleInfo[ctx->pos++]) {
         case VOID_T:
         case ANY_T:
         case INT_T:
@@ -54,8 +54,8 @@ static bool isType(context_t *ctx) {
 }
 
 static int getNum(context_t *ctx) {
-    if(ctx->typeInfo[ctx->pos] != '\0') {
-        char ch = ctx->typeInfo[ctx->pos++];
+    if(ctx->handleInfo[ctx->pos] != '\0') {
+        char ch = ctx->handleInfo[ctx->pos++];
         switch(ch) {
         case VOID_T:
         case ANY_T:
@@ -85,8 +85,8 @@ static int getNum(context_t *ctx) {
 }
 
 
-bool verifyTypeInfo(char *typeInfo) {
-    context_t ctx = {typeInfo, 0};
+bool verifyHandleInfo(char *handleInfo) {
+    context_t ctx = {handleInfo, 0};
 
     /**
      * check return type
@@ -115,5 +115,5 @@ bool verifyTypeInfo(char *typeInfo) {
     /**
      * check null terminate
      */
-    return ctx.typeInfo[ctx.pos] == '\0';
+    return ctx.handleInfo[ctx.pos] == '\0';
 }

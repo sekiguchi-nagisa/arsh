@@ -18,9 +18,8 @@
 
 #include <core/TypeTemplate.h>
 
-TypeTemplate::TypeTemplate(std::string &&name, unsigned int elementSize,
-        unsigned int infoSize, native_func_info_t **infos) :
-        name(std::move(name)), elementTypeSize(elementSize), infoSize(infoSize), infos(infos) {
+TypeTemplate::TypeTemplate(std::string &&name, unsigned int elementSize, native_type_info_t *info) :
+        name(std::move(name)), elementTypeSize(elementSize), info(info) {
 }
 
 TypeTemplate::~TypeTemplate() {
@@ -34,11 +33,7 @@ unsigned int TypeTemplate::getElementTypeSize() {
     return this->elementTypeSize;
 }
 
-unsigned int TypeTemplate::getInfoSize() {
-    return this->infoSize;
-}
-
-native_func_info_t **TypeTemplate::getInfos() {
-    return this->infos;
+native_type_info_t *TypeTemplate::getInfo() {
+    return this->info;
 }
 

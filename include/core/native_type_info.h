@@ -30,9 +30,9 @@ struct native_func_info_t {
     const char *funcName;
 
     /**
-     * serialized function type
+     * serialized function handle
      */
-    char *typeInfo;
+    char *handleInfo;
 
     const char **paramNames;
 
@@ -46,6 +46,20 @@ struct native_func_info_t {
      * support up to 8 arguments.
      */
     const unsigned char defaultValueFlag;
+};
+
+struct native_type_info_t {
+    /**
+     * may be null, if has no constructor.
+     */
+    struct native_func_info_t *initInfo;
+
+    unsigned int methodSize;
+
+    /**
+     * may be null, if methodSize is 0
+     */
+    native_func_info_t **funcInfos;
 };
 
 /*
@@ -83,12 +97,12 @@ typedef enum {
     T1,
 } TypeInfo;
 
-#define GET_PARAM_SIZE(info) ((unsigned int)(info->typeInfo[1] - P_N0))
+#define GET_PARAM_SIZE(info) ((unsigned int)(info->handleInfo[1] - P_N0))
 
 /**
  * check correctness of typeInfo.
  */
-bool verifyTypeInfo(char *typeInfo);
+bool verifyHandleInfo(char *handleInfo);
 
 
 #endif /* CORE_NATIVE_FUNC_INFO_H_ */

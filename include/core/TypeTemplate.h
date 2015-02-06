@@ -20,7 +20,7 @@
 #include <string>
 #include <vector>
 
-struct native_func_info_t;
+struct native_type_info_t;
 
 /**
  * ReifiedType template.
@@ -34,22 +34,15 @@ private:
      */
     unsigned int elementTypeSize;
 
-    unsigned int infoSize;
-
-    /**
-     * may be null, if infoSize is 0
-     */
-    native_func_info_t **infos;
+    native_type_info_t *info;
 
 public:
-    TypeTemplate(std::string &&name, unsigned int elementSize,
-            unsigned int infoSize, native_func_info_t **infos);
+    TypeTemplate(std::string &&name, unsigned int elementSize, native_type_info_t *info);
     ~TypeTemplate();
 
     const std::string &getName();
     unsigned int getElementTypeSize();
-    unsigned int getInfoSize();
-    native_func_info_t **getInfos();
+    native_type_info_t *getInfo();
 };
 
 #endif /* CORE_TYPETEMPLATE_H_ */

@@ -17,39 +17,34 @@
 #ifndef CORE_BIND_H_
 #define CORE_BIND_H_
 
-struct native_func_info_t;
+struct native_type_info_t;
 
-typedef struct {
-    unsigned int infoSize;
-    native_func_info_t **infos;
-} native_func_infos_t;
-
-const native_func_infos_t &info_Dummy() {
-    static native_func_infos_t dummy = {0, 0};
-    return dummy;
+native_type_info_t *info_Dummy() {
+    static native_type_info_t dummy = {0, 0, 0};
+    return &dummy;
 }
 
 
 // for builtin type initialization.
-const native_func_infos_t &info_AnyType();
-const native_func_infos_t &info_VoidType();
+native_type_info_t *info_AnyType();
+native_type_info_t *info_VoidType();
 
-const native_func_infos_t &info_ValueType();
+native_type_info_t *info_ValueType();
 
-const native_func_infos_t &info_IntType();
-const native_func_infos_t &info_FloatType();
-const native_func_infos_t &info_BooleanType();
-const native_func_infos_t &info_StringType();
-const native_func_infos_t &info_TaskType();
-const native_func_infos_t &info_BaseFuncType();
+native_type_info_t *info_IntType();
+native_type_info_t *info_FloatType();
+native_type_info_t *info_BooleanType();
+native_type_info_t *info_StringType();
+native_type_info_t *info_TaskType();
+native_type_info_t *info_BaseFuncType();
 
-const native_func_infos_t &info_ProcArgType();
-const native_func_infos_t &info_ProcType();
+native_type_info_t *info_ProcArgType();
+native_type_info_t *info_ProcType();
 
 // for type template initialization.
-const native_func_infos_t &info_ArrayTemplate();
-const native_func_infos_t &info_MapTemplate();
-const native_func_infos_t &info_PairTemplate();
+native_type_info_t *info_ArrayTemplate();
+native_type_info_t *info_MapTemplate();
+native_type_info_t *info_PairTemplate();
 
 
 #endif /* CORE_BIND_H_ */

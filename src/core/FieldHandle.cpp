@@ -16,7 +16,7 @@
 
 #include <core/FieldHandle.h>
 #include <core/DSType.h>
-#include <core/native_func_info.h>
+#include <core/native_type_info.h>
 
 #include <assert.h>
 
@@ -209,7 +209,7 @@ void LazyInitializedFuncHandle::initialize(TypePool *typePool, native_func_info_
     /**
      * init return type
      */
-    char *pos = info->typeInfo;
+    char *pos = info->handleInfo;
     this->returnType = decodeType(typePool, pos, elementType0, elementType1);
 
     /**
