@@ -52,7 +52,7 @@ struct native_type_info_t {
     /**
      * may be null, if has no constructor.
      */
-    struct native_func_info_t *initInfo;
+    native_func_info_t *initInfo;
 
     unsigned int methodSize;
 

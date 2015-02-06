@@ -174,8 +174,14 @@ TypeTemplate *TypePool::getTypeTemplate(const std::string &typeName, int element
 }
 
 DSType *TypePool::createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate,
-        const std::vector<DSType*> &elementTypes) {
-    return 0;   //FIXME:
+        const std::vector<DSType*> &elementTypes) { //FIXME: not use typeMap
+    std::string typeName = toReifiedTypeName(typeTemplate, elementTypes);
+    DSType *type = newReifiedType(typeTemplate, this->anyType, elementTypes);
+    auto pair = this->typeMap.insert(std::make_pair(typeName, type));
+    if(!pair.second) {
+        delete type;
+    }
+    return type;
 }
 
 FunctionType *TypePool::createAndGetFuncTypeIfUndefined(DSType *returnType,

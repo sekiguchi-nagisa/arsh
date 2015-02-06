@@ -266,5 +266,11 @@ public:
     FieldHandle *findHandle(const std::string &fieldName);  // override
 };
 
+/**
+ * for reified type creation.
+ * reified type is not public class.
+ */
+DSType *newReifiedType(TypeTemplate *t, DSType *superType, const std::vector<DSType*> &elementTypes);
+
 
 #endif /* CORE_DSTYPE_H_ */
