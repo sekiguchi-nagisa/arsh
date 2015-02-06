@@ -17,6 +17,7 @@
 #include <core/native_type_info.h>
 #include <core/DSType.h>
 #include <core/TypePool.h>
+#include <util/debug.h>
 
 #include <assert.h>
 
@@ -150,6 +151,7 @@ static DSType *decodeType(TypePool *typePool, char *&pos,
     case MAP_T: {
         TypeTemplate *t = typePool->getMapTemplate();
         unsigned int size = decodeNum(pos);
+        assert(size == 2);
         std::vector<DSType*> elementTypes(size);
         for(unsigned int i = 0; i < size; i++) {
             elementTypes.push_back(decodeType(typePool, pos, elementType0, elementType1));
@@ -165,12 +167,14 @@ static DSType *decodeType(TypePool *typePool, char *&pos,
     case P_N6:
     case P_N7:
     case P_N8:
-        assert(false);
+        fatal("must be type");
         break;
     case T0:
         return elementType0;
     case T1:
         return elementType1;
+    default:
+        fatal("broken handle info");
     }
     return 0;
 }

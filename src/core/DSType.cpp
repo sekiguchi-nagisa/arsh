@@ -17,6 +17,7 @@
 #include <core/DSType.h>
 #include <core/DSObject.h>
 #include <core/native_type_info.h>
+#include <util/debug.h>
 
 // ####################
 // ##     DSType     ##
@@ -436,6 +437,8 @@ private:
             return decodeToFuncHandle(typePool, fieldIndex, info, this->elementTypes[0]);
         case 2:
             return decodeToFuncHandle(typePool, fieldIndex, info, this->elementTypes[0], this->elementTypes[1]);
+        default:
+            fatal("element size must be 1 or 2");
         }
         return 0;
     }

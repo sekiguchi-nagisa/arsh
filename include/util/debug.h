@@ -18,6 +18,7 @@
 #define UTIL_DEBUG_H_
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #ifndef NDEBUG
 #define DEBUG_ON 1
@@ -30,7 +31,21 @@
  */
 void debug_printf(const char *format, ...);
 
-#define debugp(fmt, ...) do { if(DEBUG_ON) { debug_printf("%s:%d:%s(): " fmt, __FILE__, __LINE__, __func__, ## __VA_ARGS__);} } while(0)
+#define debugp(fmt, ...) \
+    do {\
+        if(DEBUG_ON) {\
+            debug_printf("%s:%d:%s(): " fmt, __FILE__, __LINE__, __func__, ## __VA_ARGS__);\
+        }\
+    } while(0)
+
+/**
+ * report error and abort.
+ */
+#define fatal(fmt, ...) \
+    do {\
+        fprintf(stderr, "[abort] %s:%d:%s(): " fmt, __FILE__, __LINE__, __func__, ## __VA_ARGS__);\
+        abort();\
+    } while(0)
 
 
 #endif /* UTIL_DEBUG_H_ */
