@@ -223,10 +223,9 @@ void LazyInitializedFuncHandle::initialize(TypePool *typePool, native_func_info_
     /**
      * init default value map
      */
-    unsigned char flag = (unsigned char) *pos;
     for(unsigned int i = 0; i < paramSize; i++) {
         unsigned int mask = (1 << i);
-        this->defaultValues[i] = ((flag & mask) == mask);
+        this->defaultValues[i] = ((info->defaultValueFlag & mask) == mask);
     }
 }
 

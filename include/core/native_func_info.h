@@ -37,14 +37,22 @@ struct native_func_info_t {
      * DSObject *func(RuntimeContext *ctx, DSObject *arg1, DSObject *arg2, ....)
      */
     void *func_ptr;
+
+    /**
+     * if arg1, arg3, arg4 has default value, then (00001101).
+     * support up to 8 arguments.
+     */
+    const unsigned char defaultValueFlag;
 };
 
 /*
  * encoded type definition
  * ex. function hoge(a : Int, b = "re", c : Boolean, d = 2.3) : Int
- * --> INT_T P_N4 INT_T STRING_T BOOL_T FLOAT_T (00001010)
+ * --> INT_T P_N4 INT_T STRING_T BOOL_T FLOAT_T
+ *     defaultValueFlag (00001010)
  * ex. constructor(a : Array<Int>, b : T1)
- * --> VOID_T P_N2 ARRAY_T P_N1 INT_T T1 (00000000)
+ * --> VOID_T P_N2 ARRAY_T P_N1 INT_T T1
+ *     defaultValueFlag (00000000)
  */
 typedef enum {
     // type definition
@@ -74,6 +82,10 @@ typedef enum {
 
 #define GET_PARAM_SIZE(info) ((unsigned int)(info->typeInfo[1] - P_N0))
 
+/**
+ * check correctness of typeInfo.
+ */
+bool verifyTypeInfo(char *typeInfo);
 
 
 #endif /* CORE_NATIVE_FUNC_INFO_H_ */
