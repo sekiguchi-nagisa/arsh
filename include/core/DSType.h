@@ -25,6 +25,7 @@
 
 #include <core/FieldHandle.h>
 #include <core/TypeTemplate.h>
+#include <core/native_func_info.h>
 
 class DSObject;
 class FuncObject;
@@ -89,24 +90,35 @@ public:
     virtual bool isAssignableFrom(DSType *targetType);
 };
 
-class ClassType: public DSType {	//TODO: add field index map, read only bitmap
-private:
+/**
+ * base class for ClassType, BuiltinType.
+ */
+class BaseType: public DSType {
+protected:
+    std::string typeName;
+    bool extendable;
+
+    /**
+     * may be null if type is AnyType or VoidType.
+     */
     DSType *superType;
 
+public:
+    BaseType(std::string &&typeName, bool extendable, DSType *superType);
+    virtual ~BaseType();
+
+    std::string getTypeName(); // override
+    bool isExtendable(); // override
+    DSType *getSuperType(); // override
+    bool equals(DSType *targetType); // override
+};
+
+class ClassType: public BaseType {	//TODO: add field index map
+private:
     /**
      * handleTable base index
      */
     const int baseIndex;
-
-    /**
-     * string representation of this class.
-     */
-    const std::string className;
-
-    /**
-     * if true, can extend this class.
-     */
-    const bool extendable;
 
     /**
      * may be null, if has no constructor.
@@ -118,20 +130,13 @@ private:
     std::vector<std::shared_ptr<DSObject*>> fieldTable;
 
 public:
-    /**
-     * superType may be null (Any or Void Type)
-     */
     ClassType(std::string &&className, bool extendable, DSType *superType);
     ~ClassType();
 
-    std::string getTypeName();	// override
-    bool isExtendable();	// override
-    DSType *getSuperType();	// override
     FunctionHandle *getConstructorHandle(TypePool *typePool);	// override
     unsigned int getFieldSize();	// override
     FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName);	// override
     FieldHandle *findHandle(const std::string &fieldName);  // override
-    bool equals(DSType *targetType);	// override
 
     /**
      * return false, found duplicated field.
@@ -231,6 +236,44 @@ std::string toReifiedTypeName(TypeTemplate *typeTemplate, const std::vector<DSTy
  * create function type name
  */
 std::string toFunctionTypeName(DSType *returnType, const std::vector<DSType*> &paramTypes);
+
+/**
+ * builtin type(any, void, value ...)
+ * not support override. (if override method, must override DSObject's method)
+ * so this->getFieldSize is equivalent to superType->getFieldSize() + infoSize
+ */
+class BuiltinType: public BaseType {    //FIXME: fieldTable
+private:
+    /**
+     * size of native_func_info_t**
+     */
+    unsigned int infoSize;
+
+    /**
+     * not delete it. may be null if infoSize is 0.
+     */
+    native_func_info_t **infos;
+
+    /**
+     * may be null, if has no constructor.
+     */
+    LazyInitializedFuncHandle *constructorHandle;
+
+    std::unordered_map<std::string, LazyInitializedFuncHandle*> handleMap;
+
+public:
+    /**
+     * actually superType is BuiltinType
+     */
+    BuiltinType(std::string &&typeName, bool extendable, DSType *superType,
+            unsigned int infoSize, native_func_info_t **infos);
+    ~BuiltinType();
+
+    FunctionHandle *getConstructorHandle(TypePool *typePool);   // override
+    unsigned int getFieldSize();    // override
+    FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName);   // override
+    FieldHandle *findHandle(const std::string &fieldName);  // override
+};
 
 
 #endif /* CORE_DSTYPE_H_ */

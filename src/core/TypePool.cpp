@@ -18,16 +18,19 @@
 #include <core/DSType.h>
 #include <core/TypeLookupError.h>
 #include <core/TypeTemplate.h>
+#include <core/bind.h>
 
-#define INIT_CLASS_TYPE(name, extendable, superType) \
+#define INIT_CLASS_TYPE(name, extendable, superType, bind) \
     this->typeMap.insert(\
             std::make_pair(name, \
-                    new ClassType(name, extendable, superType))).first->second
+                    new BuiltinType(name, extendable, superType, \
+                            bind.infoSize, bind.infos))).first->second
 
-#define INIT_TYPE_TEMPLATE(name, elemSize) \
+#define INIT_TYPE_TEMPLATE(name, elemSize, bind) \
     this->templateMap.insert(\
             std::make_pair(name, \
-                    new TypeTemplate(name, elemSize))).first->second
+                    new TypeTemplate(name, elemSize, \
+                            bind.infoSize, bind.infos))).first->second
 
 
 
@@ -44,39 +47,39 @@ TypePool::TypePool() :
         arrayTemplate(), mapTemplate(), pairTemplate() {
 
     // initialize type
-    this->anyType    = INIT_CLASS_TYPE("Any", true, 0);
-    this->voidType   = INIT_CLASS_TYPE("Void", false, 0);
+    this->anyType    = INIT_CLASS_TYPE("Any", true, 0, info_Dummy());
+    this->voidType   = INIT_CLASS_TYPE("Void", false, 0, info_Dummy());
 
     /**
      * hidden from script.
      */
-    this->valueType  = INIT_CLASS_TYPE("%Value%", true, this->anyType);
+    this->valueType  = INIT_CLASS_TYPE("%Value%", true, this->anyType, info_Dummy());
 
-    this->intType    = INIT_CLASS_TYPE("Int", false, this->valueType);
-    this->floatType  = INIT_CLASS_TYPE("Float", false, this->valueType);
-    this->boolType   = INIT_CLASS_TYPE("Boolean", false, this->valueType);
-    this->stringType = INIT_CLASS_TYPE("String", false, this->valueType);
-    this->taskType   = INIT_CLASS_TYPE("Task", false, this->anyType);
-
-    /**
-     * hidden from script
-     */
-    this->baseFuncType = INIT_CLASS_TYPE("%BaseFunc%", false, this->anyType);
+    this->intType    = INIT_CLASS_TYPE("Int", false, this->valueType, info_Dummy());
+    this->floatType  = INIT_CLASS_TYPE("Float", false, this->valueType, info_Dummy());
+    this->boolType   = INIT_CLASS_TYPE("Boolean", false, this->valueType, info_Dummy());
+    this->stringType = INIT_CLASS_TYPE("String", false, this->valueType, info_Dummy());
+    this->taskType   = INIT_CLASS_TYPE("Task", false, this->anyType, info_Dummy());
 
     /**
      * hidden from script
      */
-    this->procArgType  = INIT_CLASS_TYPE("%ProcArg%", false, this->anyType);
+    this->baseFuncType = INIT_CLASS_TYPE("%BaseFunc%", false, this->anyType, info_Dummy());
 
     /**
      * hidden from script
      */
-    this->procType     = INIT_CLASS_TYPE("%Proc%", false, this->anyType);
+    this->procArgType  = INIT_CLASS_TYPE("%ProcArg%", false, this->anyType, info_Dummy());
+
+    /**
+     * hidden from script
+     */
+    this->procType     = INIT_CLASS_TYPE("%Proc%", false, this->anyType, info_Dummy());
 
     // initialize type template
-    this->arrayTemplate = INIT_TYPE_TEMPLATE("Array", 1);
-    this->mapTemplate   = INIT_TYPE_TEMPLATE("Map", 2);
-    this->pairTemplate  = INIT_TYPE_TEMPLATE("Pair", 2);    //FIXME: replace to Tuple
+    this->arrayTemplate = INIT_TYPE_TEMPLATE("Array", 1, info_Dummy());
+    this->mapTemplate   = INIT_TYPE_TEMPLATE("Map", 2, info_Dummy());
+    this->pairTemplate  = INIT_TYPE_TEMPLATE("Pair", 2, info_Dummy());    //FIXME: replace to Tuple
 }
 
 TypePool::~TypePool() {

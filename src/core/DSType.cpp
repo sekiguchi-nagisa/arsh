@@ -40,14 +40,42 @@ bool DSType::isAssignableFrom(DSType *targetType) {
     return superType != 0 && this->isAssignableFrom(superType);
 }
 
+// ######################
+// ##     BaseType     ##
+// ######################
+
+BaseType::BaseType(std::string &&typeName, bool extendable, DSType *superType) :
+        typeName(std::move(typeName)), extendable(extendable), superType(superType) {
+}
+
+BaseType::~BaseType() {
+}
+
+std::string BaseType::getTypeName() {
+    return this->typeName;
+}
+
+bool BaseType::isExtendable() {
+    return this->extendable;
+}
+
+DSType *BaseType::getSuperType() {
+    return this->superType;
+}
+
+bool BaseType::equals(DSType *targetType) {
+    BaseType *baseType = dynamic_cast<BaseType*>(targetType);
+    return baseType != 0 && this->typeName == baseType->typeName;
+}
 
 // #######################
 // ##     ClassType     ##
 // #######################
 
 ClassType::ClassType(std::string &&className, bool extendable, DSType *superType) :
-        superType(superType), baseIndex(superType != 0 ? superType->getFieldSize() : 0),
-        className(std::move(className)), extendable(extendable), constructorHandle(0),
+        BaseType(std::move(className), extendable, superType),
+        baseIndex(superType != 0 ? superType->getFieldSize() : 0),
+        constructorHandle(0),
         handleMap(), fieldTable() {
 }
 
@@ -59,18 +87,6 @@ ClassType::~ClassType() {
         delete pair.second;
     }
     this->handleMap.clear();
-}
-
-std::string ClassType::getTypeName() {
-    return this->className;
-}
-
-bool ClassType::isExtendable() {
-    return this->extendable;
-}
-
-DSType *ClassType::getSuperType() {
-    return this->superType;
 }
 
 FunctionHandle *ClassType::getConstructorHandle(TypePool *typePool) {
@@ -95,11 +111,6 @@ FieldHandle *ClassType::findHandle(const std::string &fieldName) {
         return iter->second;
     }
     return this->superType != 0 ? superType->findHandle(fieldName) : 0;
-}
-
-bool ClassType::equals(DSType *targetType) {
-    ClassType *t = dynamic_cast<ClassType*>(targetType);
-    return t != 0 && this->className == t->className;
 }
 
 bool ClassType::addNewFieldHandle(const std::string &fieldName, bool readOnly, DSType *fieldType) {
@@ -252,4 +263,75 @@ std::string toFunctionTypeName(DSType *returnType, const std::vector<DSType*> &p
     }
     funcTypeName += ">";
     return funcTypeName;
+}
+
+// #########################
+// ##     BuiltinType     ##
+// #########################
+
+BuiltinType::BuiltinType(std::string &&typeName, bool extendable, DSType *superType,
+        unsigned int infoSize, native_func_info_t **infos) :
+        BaseType(std::move(typeName), extendable, superType),
+        infoSize(infoSize), infos(infos),
+        constructorHandle(), handleMap() {
+    unsigned int index = superType != 0 ? superType->getFieldSize() : 0;
+    for(unsigned int i = 0; i < infoSize; i++) {
+        native_func_info_t *info = infos[i];
+        if(i == 0 && info->funcName == 0) { // as constructor
+            this->constructorHandle = new LazyInitializedFuncHandle(info, -1);
+        } else {
+            auto *handle = new LazyInitializedFuncHandle(info, index + i);
+            this->handleMap.insert(std::make_pair(std::string(info->funcName), handle));
+        }
+    }
+    //TODO: init fieldTable
+}
+
+BuiltinType::~BuiltinType() {
+    delete this->constructorHandle;
+    this->constructorHandle = 0;
+
+    for(std::pair<std::string, LazyInitializedFuncHandle*> pair : this->handleMap) {
+        delete pair.second;
+    }
+    this->handleMap.clear();
+}
+
+FunctionHandle *BuiltinType::getConstructorHandle(TypePool *typePool) {
+    if(this->constructorHandle != 0) {
+        this->constructorHandle->initialize(typePool, this->infos[0]);
+    }
+    return this->constructorHandle;
+}
+
+unsigned int BuiltinType::getFieldSize() {
+    if(this->superType != 0) {
+        return this->infoSize + this->superType->getFieldSize();
+    }
+    return this->infoSize;
+}
+
+FieldHandle *BuiltinType::lookupFieldHandle(TypePool *typePool, const std::string &fieldName) {
+    auto iter = this->handleMap.find(fieldName);
+    if(iter == this->handleMap.end()) {
+        return this->superType != 0 ? this->superType->lookupFieldHandle(typePool, fieldName) : 0;
+    }
+
+    /**
+     * initialize handle
+     */
+    auto *handle = iter->second;
+    unsigned int baseIndex = this->superType != 0 ? this->superType->getFieldSize() : 0;
+    unsigned int infoIndex =
+            handle->getFieldIndex() - baseIndex + (this->constructorHandle != 0 ? 1 : 0);
+    handle->initialize(typePool, this->infos[infoIndex]);
+    return handle;
+}
+
+FieldHandle *BuiltinType::findHandle(const std::string &fieldName) {
+    auto iter = this->handleMap.find(fieldName);
+    if(iter != this->handleMap.end()) {
+        return iter->second;
+    }
+    return this->superType != 0 ? this->superType->findHandle(fieldName) : 0;
 }

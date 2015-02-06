@@ -18,8 +18,9 @@
 
 #include <core/TypeTemplate.h>
 
-TypeTemplate::TypeTemplate(std::string &&name, unsigned int elementSize) :
-        name(std::move(name)), elementTypeSize(elementSize), init_info(), func_infos() {
+TypeTemplate::TypeTemplate(std::string &&name, unsigned int elementSize,
+        unsigned int infoSize, native_func_info_t **infos) :
+        name(std::move(name)), elementTypeSize(elementSize), infoSize(infoSize), infos(infos) {
 }
 
 TypeTemplate::~TypeTemplate() {
@@ -29,23 +30,15 @@ const std::string &TypeTemplate::getName() {
     return this->name;
 }
 
-void TypeTemplate::setNativeFuncInfoAsInit(native_func_info_t* info) {
-    this->init_info = info;
-}
-
-void TypeTemplate::addNativeFuncInfo(native_func_info_t* info) {
-    this->func_infos.push_back(info);
-}
-
-native_func_info_t *TypeTemplate::getInitInfo() {
-    return this->init_info;
-}
-
-const std::vector<native_func_info_t*> &TypeTemplate::getFuncInfos() {
-    return this->func_infos;
-}
-
 unsigned int TypeTemplate::getElementTypeSize() {
     return this->elementTypeSize;
+}
+
+unsigned int TypeTemplate::getInfoSize() {
+    return this->infoSize;
+}
+
+native_func_info_t **TypeTemplate::getInfos() {
+    return this->infos;
 }
 

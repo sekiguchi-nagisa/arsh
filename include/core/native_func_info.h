@@ -24,6 +24,9 @@ class TypePool;
  * for function handle(method handle or constructor handle) creation.
  */
 struct native_func_info_t {
+    /**
+     * if null, treat as constructor.
+     */
     const char *funcName;
 
     /**

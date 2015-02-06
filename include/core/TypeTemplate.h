@@ -34,22 +34,22 @@ private:
      */
     unsigned int elementTypeSize;
 
+    unsigned int infoSize;
+
     /**
-     * may be null, if has no constructor
+     * may be null, if infoSize is 0
      */
-    native_func_info_t *init_info;
-    std::vector<native_func_info_t*> func_infos;
+    native_func_info_t **infos;
 
 public:
-    TypeTemplate(std::string &&name, unsigned int elementSize);
+    TypeTemplate(std::string &&name, unsigned int elementSize,
+            unsigned int infoSize, native_func_info_t **infos);
     ~TypeTemplate();
 
     const std::string &getName();
-    void setNativeFuncInfoAsInit(native_func_info_t* info);
-    void addNativeFuncInfo(native_func_info_t* info);
-    native_func_info_t *getInitInfo();
-    const std::vector<native_func_info_t*> &getFuncInfos();
     unsigned int getElementTypeSize();
+    unsigned int getInfoSize();
+    native_func_info_t **getInfos();
 };
 
 #endif /* CORE_TYPETEMPLATE_H_ */
