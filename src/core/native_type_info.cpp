@@ -18,6 +18,8 @@
 #include <core/DSType.h>
 #include <core/TypePool.h>
 
+#include <assert.h>
+
 typedef struct {
     const char *handleInfo;
     unsigned int pos;
@@ -116,4 +118,93 @@ bool verifyHandleInfo(char *handleInfo) {
      * check null terminate
      */
     return ctx.handleInfo[ctx.pos] == '\0';
+}
+
+static inline unsigned int decodeNum(char *&pos) {
+    return (unsigned int) (*(pos++) - P_N0);
+}
+
+static DSType *decodeType(TypePool *typePool, char *&pos,
+        DSType *elementType0, DSType *elementType1) {
+    switch(*(pos++)) {
+    case VOID_T:
+        return typePool->getVoidType();
+    case ANY_T:
+        return typePool->getAnyType();
+    case INT_T:
+        return typePool->getIntType();
+    case FLOAT_T:
+        return typePool->getFloatType();
+    case BOOL_T:
+        return typePool->getBooleanType();
+    case STRING_T:
+        return typePool->getStringType();
+    case ARRAY_T: {
+        TypeTemplate *t = typePool->getArrayTemplate();
+        unsigned int size = decodeNum(pos);
+        assert(size == 1);
+        std::vector<DSType*> elementTypes(size);
+        elementTypes.push_back(decodeType(typePool, pos, elementType0, elementType1));
+        return typePool->createAndGetReifiedTypeIfUndefined(t, elementTypes);
+    }
+    case MAP_T: {
+        TypeTemplate *t = typePool->getMapTemplate();
+        unsigned int size = decodeNum(pos);
+        std::vector<DSType*> elementTypes(size);
+        for(unsigned int i = 0; i < size; i++) {
+            elementTypes.push_back(decodeType(typePool, pos, elementType0, elementType1));
+        }
+        return typePool->createAndGetReifiedTypeIfUndefined(t, elementTypes);
+    }
+    case P_N0:
+    case P_N1:
+    case P_N2:
+    case P_N3:
+    case P_N4:
+    case P_N5:
+    case P_N6:
+    case P_N7:
+    case P_N8:
+        assert(false);
+        break;
+    case T0:
+        return elementType0;
+    case T1:
+        return elementType1;
+    }
+    return 0;
+}
+
+FunctionHandle *decodeToFuncHandle(TypePool *typePool, int fieldIndex, native_func_info_t *info,
+        DSType *elementType0, DSType *elementType1) {
+
+    /**
+     * init return type
+     */
+    char *pos = info->handleInfo;
+    DSType *returnType = decodeType(typePool, pos, elementType0, elementType1);
+
+    /**
+     * init param types
+     */
+    unsigned int paramSize = decodeNum(pos);
+    std::vector<DSType*> paramTypes(paramSize);
+    for(unsigned int i = 0; i < paramSize; i++) {
+        paramTypes[i] = decodeType(typePool, pos, elementType0, elementType1);
+    }
+
+    /**
+     * create handle
+     */
+    FunctionHandle *handle = new FunctionHandle(returnType, paramTypes, fieldIndex);
+
+    /**
+     * init default value map
+     */
+    for(unsigned int i = 0; i < paramSize; i++) {
+        unsigned int mask = (1 << i);
+        bool defaultValue = ((info->defaultValueFlag & mask) == mask);
+        handle->addParamName(std::string(info->paramNames[i]), defaultValue);
+    }
+    return handle;
 }

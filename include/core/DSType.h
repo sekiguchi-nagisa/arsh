@@ -25,7 +25,6 @@
 
 #include <core/FieldHandle.h>
 #include <core/TypeTemplate.h>
-#include <core/native_type_info.h>
 
 class DSObject;
 class FuncObject;
@@ -110,7 +109,7 @@ public:
     std::string getTypeName(); // override
     bool isExtendable(); // override
     DSType *getSuperType(); // override
-    bool equals(DSType *targetType); // override
+    virtual bool equals(DSType *targetType); // override
 };
 
 class ClassType: public BaseType {	//TODO: add field index map
@@ -229,8 +228,11 @@ public:
 
 /**
  * create reified type name
+ * equivalent to toReifiedTypeName(typeTemplate->getName(), elementTypes)
  */
 std::string toReifiedTypeName(TypeTemplate *typeTemplate, const std::vector<DSType*> &elementTypes);
+
+std::string toReifiedTypeName(const std::string &name, const std::vector<DSType*> &elementTypes);
 
 /**
  * create function type name
@@ -238,33 +240,10 @@ std::string toReifiedTypeName(TypeTemplate *typeTemplate, const std::vector<DSTy
 std::string toFunctionTypeName(DSType *returnType, const std::vector<DSType*> &paramTypes);
 
 /**
- * builtin type(any, void, value ...)
- * not support override. (if override method, must override DSObject's method)
- * so this->getFieldSize is equivalent to superType->getFieldSize() + infoSize
+ * for builtin type creation.
  */
-class BuiltinType: public BaseType {    //FIXME: fieldTable
-private:
-    native_type_info_t *info;
-
-    /**
-     * may be null, if has no constructor.
-     */
-    LazyInitializedFuncHandle *constructorHandle;
-
-    std::unordered_map<std::string, LazyInitializedFuncHandle*> handleMap;
-
-public:
-    /**
-     * actually superType is BuiltinType
-     */
-    BuiltinType(std::string &&typeName, bool extendable, DSType *superType, native_type_info_t *info);
-    ~BuiltinType();
-
-    FunctionHandle *getConstructorHandle(TypePool *typePool);   // override
-    unsigned int getFieldSize();    // override
-    FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName);   // override
-    FieldHandle *findHandle(const std::string &fieldName);  // override
-};
+DSType *newBuiltinType(std::string &&typeName, bool extendable,
+        DSType *superType, native_type_info_t *info);
 
 /**
  * for reified type creation.

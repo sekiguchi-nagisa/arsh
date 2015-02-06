@@ -23,7 +23,7 @@
 #define INIT_CLASS_TYPE(name, extendable, superType, info) \
     this->typeMap.insert(\
             std::make_pair(name, \
-                    new BuiltinType(name, extendable, superType, info))).first->second
+                    newBuiltinType(name, extendable, superType, info))).first->second
 
 #define INIT_TYPE_TEMPLATE(name, elemSize, info) \
     this->templateMap.insert(\

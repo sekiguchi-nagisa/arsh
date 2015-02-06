@@ -127,17 +127,4 @@ public:
     bool hasDefaultValue(unsigned int paramIndex);
 };
 
-class LazyInitializedFuncHandle : public FunctionHandle {
-public:
-    LazyInitializedFuncHandle(native_func_info_t *info, int fieldIndex);
-    ~LazyInitializedFuncHandle();
-
-    /**
-     * call from BuiltinType->lookupFieldHandle() or ReifiedType->lookupFieldHandle().
-     * not use it directly.
-     */
-    void initialize(TypePool *typePool, native_func_info_t *info,
-            DSType *elementType0 = 0, DSType *elementType1 = 0);
-};
-
 #endif /* CORE_FIELDHANDLE_H_ */

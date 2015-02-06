@@ -19,6 +19,7 @@
 
 class DSType;
 class TypePool;
+class FunctionHandle;
 
 /**
  * for function handle(method handle or constructor handle) creation.
@@ -104,5 +105,12 @@ typedef enum {
  */
 bool verifyHandleInfo(char *handleInfo);
 
+
+
+/**
+ * decode native_func_info and create new FunctionHandle.
+ */
+FunctionHandle *decodeToFuncHandle(TypePool *typePool, int fieldIndex, native_func_info_t *info,
+        DSType *elementType0 = 0, DSType *elementType1 = 0);
 
 #endif /* CORE_NATIVE_FUNC_INFO_H_ */
