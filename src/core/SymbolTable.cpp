@@ -60,37 +60,43 @@ private:
     std::vector<std::string> entryCache;
 
 public:
-    GlobalScope() :
-            Scope(0), entryCache() {
-    }
+    GlobalScope();
+    ~GlobalScope();
 
-    ~GlobalScope() {
-        this->entryCache.clear();
-    }
-
-    bool registerHandle(const std::string &symbolName, DSType *type, bool readOnly) {   // override
-        int index = this->curVarIndex;
-        FieldHandle *handle = new FieldHandle(type, index, readOnly);
-        if(!this->handleMap.insert(std::make_pair(symbolName, handle)).second) {
-            delete handle;
-            return false;
-        }
-        this->curVarIndex++;
-        handle->setAttribute(FieldHandle::GLOBAL);
-        this->entryCache.push_back(symbolName);
-        return true;
-    }
-
-    void clearEntryCache() {
-        this->entryCache.clear();
-    }
-
-    void removeCachedEntry() {
-        for(std::string symbolName : this->entryCache) {
-            this->handleMap.erase(symbolName);
-        }
-    }
+    bool registerHandle(const std::string &symbolName, DSType *type, bool readOnly);   // override
+    void clearEntryCache();
+    void removeCachedEntry();
 };
+
+GlobalScope::GlobalScope() : Scope(0), entryCache() {
+}
+
+GlobalScope::~GlobalScope() {
+    this->entryCache.clear();
+}
+
+bool GlobalScope::registerHandle(const std::string &symbolName, DSType *type, bool readOnly) {
+    int index = this->curVarIndex;
+    FieldHandle *handle = new FieldHandle(type, index, readOnly);
+    if(!this->handleMap.insert(std::make_pair(symbolName, handle)).second) {
+        delete handle;
+        return false;
+    }
+    this->curVarIndex++;
+    handle->setAttribute(FieldHandle::GLOBAL);
+    this->entryCache.push_back(symbolName);
+    return true;
+}
+
+void GlobalScope::clearEntryCache() {
+    this->entryCache.clear();
+}
+
+void GlobalScope::removeCachedEntry() {
+    for(std::string symbolName : this->entryCache) {
+        this->handleMap.erase(symbolName);
+    }
+}
 
 
 // ########################
@@ -102,24 +108,29 @@ private:
     int localVarBaseIndex;
 
 public:
-    LocalScope(int localVarBaseIndex) :
-            Scope(localVarBaseIndex), localVarBaseIndex(localVarBaseIndex) {
-    }
+    LocalScope(int localVarBaseIndex);
+    ~LocalScope();
 
-    ~LocalScope() {
-    }
-
-    bool registerHandle(const std::string &symbolName, DSType *type, bool readOnly) {   // override
-        int index = this->curVarIndex;
-        FieldHandle *handle = new FieldHandle(type, index, readOnly);
-        if(!this->handleMap.insert(std::make_pair(symbolName, handle)).second) {
-            delete handle;
-            return false;
-        }
-        this->curVarIndex++;
-        return true;
-    }
+    bool registerHandle(const std::string &symbolName, DSType *type, bool readOnly);   // override
 };
+
+LocalScope::LocalScope(int localVarBaseIndex) :
+        Scope(localVarBaseIndex), localVarBaseIndex(localVarBaseIndex) {
+}
+
+LocalScope::~LocalScope() {
+}
+
+bool LocalScope::registerHandle(const std::string &symbolName, DSType *type, bool readOnly) {   // override
+    int index = this->curVarIndex;
+    FieldHandle *handle = new FieldHandle(type, index, readOnly);
+    if(!this->handleMap.insert(std::make_pair(symbolName, handle)).second) {
+        delete handle;
+        return false;
+    }
+    this->curVarIndex++;
+    return true;
+}
 
 
 // #########################
