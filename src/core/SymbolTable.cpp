@@ -87,17 +87,17 @@ FieldHandle *SymbolTable::lookupHandle(const std::string &symbolName) {
     return 0;
 }
 
-bool SymbolTable::registerHandle(const std::string &symbolName, DSType *type, bool readOnly) {
+FieldHandle *SymbolTable::registerHandle(const std::string &symbolName, DSType *type, bool readOnly) {
     FieldHandle *handle = new FieldHandle(type, this->scopes.back()->getCurVarIndex(), readOnly);
     if(!this->scopes.back()->addFieldHandle(symbolName, handle)) {
-        delete  handle;
-        return false;
+        delete handle;
+        return 0;
     }
     if(this->inGlobalScope()) {
         handle->setAttribute(FieldHandle::GLOBAL);
         this->handleCache.push_back(symbolName);
     }
-    return true;
+    return handle;
 }
 
 void SymbolTable::enterScope() {

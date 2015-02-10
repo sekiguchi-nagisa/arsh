@@ -56,6 +56,7 @@ public:
     int visitImportEnvNode(ImportEnvNode *node); // override
     int visitForNode(ForNode *node); // override
     int visitWhileNode(WhileNode *node); // override
+    int visitDoWhileNode(DoWhileNode *node); // override
     int visitIfNode(IfNode *node); // override
     int visitReturnNode(ReturnNode *node); // override
     int visitThrowNode(ThrowNode *node); // override

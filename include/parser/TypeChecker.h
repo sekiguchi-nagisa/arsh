@@ -24,6 +24,24 @@
 #include <core/FieldHandle.h>
 #include <core/SymbolTable.h>
 
+// for apply node type checking
+class HandleOrFuncType {
+private:
+    bool hasHandle;
+    union {
+        FunctionHandle *handle;
+        FunctionType *funcType;
+    };
+
+public:
+    HandleOrFuncType(FunctionHandle *handle);
+    HandleOrFuncType(FunctionType *funcType);
+
+    bool treatAsHandle();
+    FunctionHandle *getHandle();
+    FunctionType *getFuncType();
+};
+
 class TypeChecker: public NodeVisitor {
 private:
     /**
@@ -120,7 +138,7 @@ private:
      */
     void checkTypeWithCurrentBlockScope(BlockNode *blockNode);
 
-    void addEntryAndThrowIfDefined(Node *node, const std::string &symbolName, DSType *type, bool readOnly);
+    FieldHandle *addEntryAndThrowIfDefined(Node *node, const std::string &symbolName, DSType *type, bool readOnly);
 
     void enterLoop();
     void exitLoop();
@@ -162,37 +180,6 @@ private:
      * after converting, delete typeToken.
      */
     DSType *toType(TypeToken *typeToken);
-
-    // for apply node type checking
-    class HandleOrFuncType {
-    private:
-        bool hasHandle;
-        union {
-            FunctionHandle *handle;
-            FunctionType *funcType;
-        };
-    public:
-        HandleOrFuncType(FunctionHandle *handle) :
-            hasHandle(true), handle(handle) {
-        }
-
-        HandleOrFuncType(FunctionType *funcType) :
-            hasHandle(false), funcType(funcType) {
-        }
-
-        bool treatAsHandle() {
-            return this->hasHandle;
-        }
-
-        FunctionHandle *getHandle() {
-            return this->hasHandle ? this->handle : 0;
-        }
-
-        FunctionType *getFuncType() {
-            return this->hasHandle ? 0 : this->funcType;
-        }
-    };
-
 
     /**
      * check type ApplyNode and resolve callee(handle or function type).
@@ -255,6 +242,7 @@ public:
     int visitImportEnvNode(ImportEnvNode *node); // override
     int visitForNode(ForNode *node); // override
     int visitWhileNode(WhileNode *node); // override
+    int visitDoWhileNode(DoWhileNode *node); // override
     int visitIfNode(IfNode *node); // override
     int visitReturnNode(ReturnNode *node); // override
     int visitThrowNode(ThrowNode *node); // override

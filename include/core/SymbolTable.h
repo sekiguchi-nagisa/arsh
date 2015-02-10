@@ -78,9 +78,9 @@ public:
     FieldHandle *lookupHandle(const std::string &symbolName);
 
     /**
-     * return false, if found duplicated handle.
+     * return null, if found duplicated handle.
      */
-    bool registerHandle(const std::string &symbolName, DSType *type, bool readOnly);
+    FieldHandle *registerHandle(const std::string &symbolName, DSType *type, bool readOnly);
 
     /**
      * create new local scope.

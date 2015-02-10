@@ -567,11 +567,16 @@ public:
 class ImportEnvNode: public Node {
 private:
     std::string envName;
+    bool global;
+    int varIndex;
 
 public:
     ImportEnvNode(int lineNum, std::string &&envName);
 
     const std::string &getEnvName();
+    void setAttribute(FieldHandle *handle);
+    bool isGlobal();
+    int getVarIndex();
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -581,6 +586,7 @@ public:
 class LoopNode: public Node {
 public:
     LoopNode(int lineNum);
+    virtual ~LoopNode();
 };
 
 class ForNode: public LoopNode {
@@ -623,19 +629,27 @@ private:
     Node *condNode;
     BlockNode *blockNode;
 
-    /**
-     * if true, this node represent for do-while
-     */
-    bool asDoWhile;
-
 public:
-    WhileNode(int lineNum, Node *condNode, BlockNode *blockNode, bool asDoWhile);
+    WhileNode(int lineNum, Node *condNode, BlockNode *blockNode);
     ~WhileNode();
 
     Node *getCondNode();
     BlockNode *getBlockNode();
-    bool isDoWhile();
     int accept(NodeVisitor *visitor);	//override
+};
+
+class DoWhileNode : public LoopNode {
+private:
+    BlockNode *blockNode;
+    Node *condNode;
+
+public:
+    DoWhileNode(int lineNum, BlockNode *blockNode, Node *condNode);
+    ~DoWhileNode();
+
+    BlockNode *getBlockNode();
+    Node *getCondNode();
+    int accept(NodeVisitor *visitor);   //override
 };
 
 class IfNode: public Node {
@@ -778,6 +792,7 @@ private:
     std::string varName;
     bool readOnly;
     bool global;
+    int varIndex;
     Node* initValueNode;
 
 public:
@@ -786,9 +801,10 @@ public:
 
     const std::string &getVarName();
     bool isReadOnly();
-    void setGlobal(bool global);
+    void setAttribute(FieldHandle *handle);
     bool isGlobal();
     Node *getInitValueNode();
+    int getVarIndex();
     int accept(NodeVisitor *visitor);	// override
 };
 

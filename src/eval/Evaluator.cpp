@@ -115,6 +115,9 @@ int Evaluator::visitForNode(ForNode *node) {
 int Evaluator::visitWhileNode(WhileNode *node) {
     return 0;
 } //TODO
+int Evaluator::visitDoWhileNode(DoWhileNode *node) {
+    return 0;
+} //TODO
 int Evaluator::visitIfNode(IfNode *node) {
     return 0;
 } //TODO

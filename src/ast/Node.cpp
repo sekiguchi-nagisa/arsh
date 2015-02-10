@@ -955,11 +955,24 @@ int ExportEnvNode::accept(NodeVisitor *visitor) {
 // ###########################
 
 ImportEnvNode::ImportEnvNode(int lineNum, std::string &&envName) :
-        Node(lineNum), envName(std::move(envName)) {
+        Node(lineNum), envName(std::move(envName)), global(false), varIndex(-1) {
 }
 
 const std::string &ImportEnvNode::getEnvName() {
     return this->envName;
+}
+
+void ImportEnvNode::setAttribute(FieldHandle *handle) {
+    this->global = handle->isGlobal();
+    this->varIndex = handle->getFieldIndex();
+}
+
+bool ImportEnvNode::isGlobal() {
+    return this->global;
+}
+
+int ImportEnvNode::getVarIndex() {
+    return this->varIndex;
 }
 
 int ImportEnvNode::accept(NodeVisitor *visitor) {
@@ -972,6 +985,9 @@ int ImportEnvNode::accept(NodeVisitor *visitor) {
 
 LoopNode::LoopNode(int lineNum) :
         Node(lineNum) {
+}
+
+LoopNode::~LoopNode() {
 }
 
 // #####################
@@ -1022,8 +1038,8 @@ int ForNode::accept(NodeVisitor *visitor) {
 // ##     WhileNode     ##
 // #######################
 
-WhileNode::WhileNode(int lineNum, Node *condNode, BlockNode *blockNode, bool asDoWhile) :
-        LoopNode(lineNum), condNode(condNode), blockNode(blockNode), asDoWhile(asDoWhile) {
+WhileNode::WhileNode(int lineNum, Node *condNode, BlockNode *blockNode) :
+        LoopNode(lineNum), condNode(condNode), blockNode(blockNode) {
 }
 
 WhileNode::~WhileNode() {
@@ -1042,12 +1058,31 @@ BlockNode *WhileNode::getBlockNode() {
     return this->blockNode;
 }
 
-bool WhileNode::isDoWhile() {
-    return this->asDoWhile;
-}
-
 int WhileNode::accept(NodeVisitor *visitor) {
     return visitor->visitWhileNode(this);
+}
+
+// #########################
+// ##     DoWhileNode     ##
+// #########################
+
+DoWhileNode::DoWhileNode(int lineNum, BlockNode *blockNode, Node *condNode) :
+        LoopNode(lineNum), blockNode(blockNode), condNode(condNode) {
+}
+
+DoWhileNode::~DoWhileNode() {
+}
+
+BlockNode *DoWhileNode::getBlockNode() {
+    return this->blockNode;
+}
+
+Node *DoWhileNode::getCondNode() {
+    return this->condNode;
+}
+
+int DoWhileNode::accept(NodeVisitor *visitor) {
+    return visitor->visitDoWhileNode(this);
 }
 
 // ####################
@@ -1257,7 +1292,7 @@ int FinallyNode::accept(NodeVisitor *visitor) {
 
 VarDeclNode::VarDeclNode(int lineNum, std::string &&varName, Node *initValueNode, bool readOnly) :
         Node(lineNum), varName(std::move(varName)), readOnly(readOnly), global(false),
-        initValueNode(initValueNode) {
+        varIndex(-1), initValueNode(initValueNode) {
 }
 
 VarDeclNode::~VarDeclNode() {
@@ -1273,8 +1308,9 @@ bool VarDeclNode::isReadOnly() {
     return this->readOnly;
 }
 
-void VarDeclNode::setGlobal(bool global) {
-    this->global = global;
+void VarDeclNode::setAttribute(FieldHandle *handle) {
+    this->global = handle->isGlobal();
+    this->varIndex = handle->getFieldIndex();
 }
 
 bool VarDeclNode::isGlobal() {
@@ -1283,6 +1319,10 @@ bool VarDeclNode::isGlobal() {
 
 Node *VarDeclNode::getInitValueNode() {
     return this->initValueNode;
+}
+
+int VarDeclNode::getVarIndex() {
+    return this->varIndex;
 }
 
 int VarDeclNode::accept(NodeVisitor *visitor) {

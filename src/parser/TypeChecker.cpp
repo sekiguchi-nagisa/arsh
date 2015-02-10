@@ -23,6 +23,34 @@
 #include <parser/TypeChecker.h>
 #include <parser/TypeCheckError.h>
 
+// ##############################
+// ##     HandleOrFuncType     ##
+// ##############################
+
+HandleOrFuncType::HandleOrFuncType(FunctionHandle *handle) :
+        hasHandle(true), handle(handle) {
+}
+
+HandleOrFuncType::HandleOrFuncType(FunctionType *funcType) :
+        hasHandle(false), funcType(funcType) {
+}
+
+bool HandleOrFuncType::treatAsHandle() {
+    return this->hasHandle;
+}
+
+FunctionHandle *HandleOrFuncType::getHandle() {
+    return this->hasHandle ? this->handle : 0;
+}
+
+FunctionType *HandleOrFuncType::getFuncType() {
+    return this->hasHandle ? 0 : this->funcType;
+}
+
+// #########################
+// ##     TypeChecker     ##
+// #########################
+
 TypeChecker::TypeChecker(TypePool *typePool) :
         typePool(typePool), symbolTable(), curReturnType(0), loopContextStack(), finallyContextStack() {
 }
@@ -131,11 +159,13 @@ void TypeChecker::checkTypeWithCurrentBlockScope(BlockNode *blockNode) {
     blockNode->accept(this);
 }
 
-void TypeChecker::addEntryAndThrowIfDefined(Node *node, const std::string &symbolName, DSType *type,
+FieldHandle *TypeChecker::addEntryAndThrowIfDefined(Node *node, const std::string &symbolName, DSType *type,
         bool readOnly) {
-    if(!this->symbolTable.registerHandle(symbolName, type, readOnly)) {
+    FieldHandle *handle = this->symbolTable.registerHandle(symbolName, type, readOnly);
+    if(handle == 0) {
         E_DefinedSymbol(node, symbolName);
     }
+    return handle;
 }
 
 void TypeChecker::enterLoop() {
@@ -222,7 +252,7 @@ DSType *TypeChecker::toType(TypeToken *typeToken) {
 }
 
 // for ApplyNode type checking
-TypeChecker::HandleOrFuncType TypeChecker::resolveCallee(Node *recvNode, ApplyNode *applyNode) {
+HandleOrFuncType TypeChecker::resolveCallee(Node *recvNode, ApplyNode *applyNode) {
     AccessNode *accessNode = dynamic_cast<AccessNode*>(recvNode);
     if(accessNode != 0) {
         return this->resolveCallee(accessNode, applyNode);
@@ -238,7 +268,7 @@ TypeChecker::HandleOrFuncType TypeChecker::resolveCallee(Node *recvNode, ApplyNo
     return HandleOrFuncType(funcType);
 }
 
-TypeChecker::HandleOrFuncType TypeChecker::resolveCallee(AccessNode *recvNode, ApplyNode *applyNode) {
+HandleOrFuncType TypeChecker::resolveCallee(AccessNode *recvNode, ApplyNode *applyNode) {
     DSType *actualRecvType = this->checkType(recvNode->getRecvNode());
     FieldHandle *handle = actualRecvType->lookupFieldHandle(this->typePool, recvNode->getFieldName());
     if(handle == 0) {
@@ -271,7 +301,7 @@ TypeChecker::HandleOrFuncType TypeChecker::resolveCallee(AccessNode *recvNode, A
     return HandleOrFuncType(funcType);
 }
 
-TypeChecker::HandleOrFuncType TypeChecker::resolveCallee(VarNode *recvNode, ApplyNode *applyNode) {
+HandleOrFuncType TypeChecker::resolveCallee(VarNode *recvNode, ApplyNode *applyNode) {
     FieldHandle *handle = this->symbolTable.lookupHandle(recvNode->getVarName());
     if(handle == 0) {
         E_UndefinedSymbol(recvNode, recvNode->getVarName());
@@ -756,7 +786,8 @@ int TypeChecker::visitExportEnvNode(ExportEnvNode *node) {
 
 int TypeChecker::visitImportEnvNode(ImportEnvNode *node) {
     DSType *stringType = this->typePool->getStringType();
-    this->addEntryAndThrowIfDefined(node, node->getEnvName(), stringType, true);
+    FieldHandle *handle = this->addEntryAndThrowIfDefined(node, node->getEnvName(), stringType, true);
+    node->setAttribute(handle);
     node->setType(this->typePool->getVoidType());
     return 0;
 }
@@ -778,6 +809,22 @@ int TypeChecker::visitWhileNode(WhileNode *node) {
     this->checkType(this->typePool->getBooleanType(), node->getCondNode());
     this->enterLoop();
     this->checkTypeWithNewBlockScope(node->getBlockNode());
+    this->exitLoop();
+    node->setType(this->typePool->getVoidType());
+    return 0;
+}
+
+int TypeChecker::visitDoWhileNode(DoWhileNode *node) {
+    this->enterLoop();
+    this->symbolTable.enterScope();
+    this->checkTypeWithCurrentBlockScope(node->getBlockNode());
+
+    /**
+     * block node and cond node is same scope.
+     */
+    this->checkType(this->typePool->getBooleanType(), node->getCondNode());
+
+    this->symbolTable.exitScope();
     this->exitLoop();
     node->setType(this->typePool->getVoidType());
     return 0;
@@ -864,8 +911,9 @@ int TypeChecker::visitFinallyNode(FinallyNode *node) {
 
 int TypeChecker::visitVarDeclNode(VarDeclNode *node) {
     DSType *initValueType = this->checkType(node->getInitValueNode());
-    this->addEntryAndThrowIfDefined(node, node->getVarName(), initValueType, node->isReadOnly());
-    node->setGlobal(this->symbolTable.inGlobalScope());
+    FieldHandle *handle =
+            this->addEntryAndThrowIfDefined(node, node->getVarName(), initValueType, node->isReadOnly());
+    node->setAttribute(handle);
     node->setType(this->typePool->getVoidType());
     return 0;
 }

@@ -49,6 +49,7 @@ class ExportEnvNode;
 class ImportEnvNode;
 class ForNode;
 class WhileNode;
+class DoWhileNode;
 class IfNode;
 class ReturnNode;
 class ThrowNode;
@@ -96,6 +97,7 @@ public:
     virtual int visitImportEnvNode(ImportEnvNode *node) = 0;
     virtual int visitForNode(ForNode *node) = 0;
     virtual int visitWhileNode(WhileNode *node) = 0;
+    virtual int visitDoWhileNode(DoWhileNode *node) = 0;
     virtual int visitIfNode(IfNode *node) = 0;
     virtual int visitReturnNode(ReturnNode *node) = 0;
     virtual int visitThrowNode(ThrowNode *node) = 0;
