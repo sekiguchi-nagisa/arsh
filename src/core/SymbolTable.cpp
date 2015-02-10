@@ -18,19 +18,14 @@
 
 #include <core/SymbolTable.h>
 
-// #####################
-// ##     ScopeOp     ##
-// #####################
-
-ScopeOp::~ScopeOp() {
-}
-
-
 // ###################
 // ##     Scope     ##
 // ###################
 
-Scope::Scope(int curVarIndex) :
+Scope::Scope() : Scope(0) {
+}
+
+Scope::Scope(unsigned int curVarIndex) :
         curVarIndex(curVarIndex), handleMap() {
 }
 
@@ -46,90 +41,22 @@ FieldHandle *Scope::lookupHandle(const std::string &symbolName) {
     return iter != this->handleMap.end() ? iter->second : 0;
 }
 
-int Scope::getCurVarIndex() {
+bool Scope::addFieldHandle(const std::string &symbolName, FieldHandle *handle) {
+    if(!this->handleMap.insert(std::make_pair(symbolName, handle)).second) {
+        return false;
+    }
+    this->curVarIndex++;
+    return true;
+}
+
+unsigned int Scope::getCurVarIndex() {
     return this->curVarIndex;
 }
 
-
-// #########################
-// ##     GlobalScope     ##
-// #########################
-
-class GlobalScope : public Scope {
-private:
-    std::vector<std::string> entryCache;
-
-public:
-    GlobalScope();
-    ~GlobalScope();
-
-    bool registerHandle(const std::string &symbolName, DSType *type, bool readOnly);   // override
-    void clearEntryCache();
-    void removeCachedEntry();
-};
-
-GlobalScope::GlobalScope() : Scope(0), entryCache() {
-}
-
-GlobalScope::~GlobalScope() {
-    this->entryCache.clear();
-}
-
-bool GlobalScope::registerHandle(const std::string &symbolName, DSType *type, bool readOnly) {
-    int index = this->curVarIndex;
-    FieldHandle *handle = new FieldHandle(type, index, readOnly);
-    if(!this->handleMap.insert(std::make_pair(symbolName, handle)).second) {
-        delete handle;
-        return false;
-    }
-    this->curVarIndex++;
-    handle->setAttribute(FieldHandle::GLOBAL);
-    this->entryCache.push_back(symbolName);
-    return true;
-}
-
-void GlobalScope::clearEntryCache() {
-    this->entryCache.clear();
-}
-
-void GlobalScope::removeCachedEntry() {
-    for(std::string symbolName : this->entryCache) {
-        this->handleMap.erase(symbolName);
-    }
-}
-
-
-// ########################
-// ##     LocalScope     ##
-// ########################
-
-class LocalScope : public Scope {   //FIXME: var index
-private:
-    int localVarBaseIndex;
-
-public:
-    LocalScope(int localVarBaseIndex);
-    ~LocalScope();
-
-    bool registerHandle(const std::string &symbolName, DSType *type, bool readOnly);   // override
-};
-
-LocalScope::LocalScope(int localVarBaseIndex) :
-        Scope(localVarBaseIndex), localVarBaseIndex(localVarBaseIndex) {
-}
-
-LocalScope::~LocalScope() {
-}
-
-bool LocalScope::registerHandle(const std::string &symbolName, DSType *type, bool readOnly) {   // override
-    int index = this->curVarIndex;
-    FieldHandle *handle = new FieldHandle(type, index, readOnly);
-    if(!this->handleMap.insert(std::make_pair(symbolName, handle)).second) {
-        delete handle;
-        return false;
-    }
-    this->curVarIndex++;
-    return true;
+void Scope::deleteHandle(const std::string &symbolName) {
+    auto iter = this->handleMap.find(symbolName);
+    delete iter->second;
+    this->handleMap.erase(symbolName);
 }
 
 
@@ -138,8 +65,9 @@ bool LocalScope::registerHandle(const std::string &symbolName, DSType *type, boo
 // #########################
 
 SymbolTable::SymbolTable() :
-        scopes() {
-    scopes.push_back(new GlobalScope());
+        handleCache(), scopes(), maxVarIndexStack() {
+    this->scopes.push_back(new Scope());
+    this->maxVarIndexStack.push_back(0);
 }
 
 SymbolTable::~SymbolTable() {
@@ -160,45 +88,74 @@ FieldHandle *SymbolTable::lookupHandle(const std::string &symbolName) {
 }
 
 bool SymbolTable::registerHandle(const std::string &symbolName, DSType *type, bool readOnly) {
-    return this->scopes.back()->registerHandle(symbolName, type, readOnly);
+    FieldHandle *handle = new FieldHandle(type, this->scopes.back()->getCurVarIndex(), readOnly);
+    if(!this->scopes.back()->addFieldHandle(symbolName, handle)) {
+        delete  handle;
+        return false;
+    }
+    if(this->inGlobalScope()) {
+        handle->setAttribute(FieldHandle::GLOBAL);
+        this->handleCache.push_back(symbolName);
+    }
+    return true;
 }
 
-void SymbolTable::enterScope() {    //FIXME:
-    int index = this->scopes.back()->getCurVarIndex();
-    if(this->scopes.size() == 1) {
+void SymbolTable::enterScope() {
+    unsigned int index = this->scopes.back()->getCurVarIndex();
+    if(this->inGlobalScope()) {
         index = 0;
     }
-    this->scopes.push_back(new LocalScope(index));
+    this->scopes.push_back(new Scope(index));
 }
 
-void SymbolTable::exitScope() { //FIXME:
-    assert(this->scopes.size() > 1);
+void SymbolTable::exitScope() {
+    assert(!this->inGlobalScope());
+    Scope *scope = this->scopes.back();
+    unsigned int varIndex = scope->getCurVarIndex();
+    if(varIndex > this->maxVarIndexStack.back()) {
+        this->maxVarIndexStack[this->maxVarIndexStack.size() - 1] = varIndex;
+    }
+
+    this->scopes.pop_back();
+    delete scope;
+}
+
+void SymbolTable::enterFuncScope() {
+    this->scopes.push_back(new Scope());
+    this->maxVarIndexStack.push_back(0);
+}
+
+void SymbolTable::exitFuncScope() {
+    assert(!this->inGlobalScope());
     delete this->scopes.back();
     this->scopes.pop_back();
+    this->maxVarIndexStack.pop_back();
 }
 
-/**
- * pop all local scope and func scope
- */
 void SymbolTable::popAllLocal() {
-    while(this->scopes.size() > 1) {
+    while(!this->inGlobalScope()) {
         delete this->scopes.back();
         this->scopes.pop_back();
+    }
+    while(this->maxVarIndexStack.size() > 1) {
+        this->maxVarIndexStack.pop_back();
     }
 }
 
 void SymbolTable::clearEntryCache() {
-    assert(this->scopes.size() == 1);
-    dynamic_cast<GlobalScope*>(this->scopes.back())->clearEntryCache();
+    assert(this->inGlobalScope());
+    this->handleCache.clear();
 }
 
 void SymbolTable::removeCachedEntry() {
-    assert(this->scopes.size() == 1);
-    dynamic_cast<GlobalScope*>(this->scopes.back())->removeCachedEntry();
+    assert(this->inGlobalScope());
+    for(const std::string &name : this->handleCache) {
+        this->scopes.back()->deleteHandle(name);
+    }
 }
 
-int SymbolTable::getMaxVarIndex() {
-    return 0;   // FIXME:
+unsigned int SymbolTable::getMaxVarIndex() {
+    return this->maxVarIndexStack.back();
 }
 
 bool SymbolTable::inGlobalScope() {

@@ -29,34 +29,41 @@ class Logger {
 private:
     FILE *fp;
 
-    Logger() : fp(0) {
-        std::string logDest = LOG_DEST;
-        if(logDest == DEST_TYPE_ERR) {
-            this->fp = 0;
-        } else if(logDest == DEST_TYPE_SYSLOG) {
-            //FIXME:
-        } else {
-            this->fp = fopen(logDest.c_str(), "w");
-        }
-        fprintf(stderr, "initialize logger destination: %s\n", LOG_DEST);
-    }
+    Logger();
 
 public:
-    static Logger getInstance() {
-        static Logger instance;
-        return instance;
-    }
+    static Logger getInstance();
 
-    ~Logger() {
-        if(this->fp != 0) {
-            fclose(this->fp);
-        }
-    }
-
-    FILE *getfp() {
-        return this->fp != 0 ? fp : stderr;
-    }
+    ~Logger();
+    FILE *getfp();
 };
+
+Logger::Logger() : fp(0) {
+    std::string logDest = LOG_DEST;
+    if(logDest == DEST_TYPE_ERR) {
+        this->fp = 0;
+    } else if(logDest == DEST_TYPE_SYSLOG) {
+        //FIXME:
+    } else {
+        this->fp = fopen(logDest.c_str(), "w");
+    }
+    fprintf(stderr, "initialize logger destination: %s\n", LOG_DEST);
+}
+
+static Logger Logger::getInstance() {
+    static Logger instance;
+    return instance;
+}
+
+Logger::~Logger() {
+    if(this->fp != 0) {
+        fclose(this->fp);
+    }
+}
+
+FILE *Logger::getfp() {
+    return this->fp != 0 ? fp : stderr;
+}
 
 void debug_printf(const char *format, ...) {
     va_list args;

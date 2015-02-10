@@ -21,63 +21,89 @@
 #include <core/DSType.h>
 #include <core/FieldHandle.h>
 
-class ScopeOp {
-public:
-    virtual ~ScopeOp();
-
-    /**
-     * get handle from scope.
-     * return null, if not exist
-     */
-    virtual FieldHandle *lookupHandle(const std::string &symbolName) = 0;
-
-    /**
-     * add new handle.
-     * type must not be void type, parametric type.
-     * return false, if found duplicated entry
-     */
-    virtual bool registerHandle(const std::string &symbolName, DSType *type, bool readOnly) = 0;
-};
-
-class Scope : public ScopeOp {
-protected:
-    int curVarIndex;
+class Scope {
+private:
+    unsigned int curVarIndex;
     std::unordered_map<std::string, FieldHandle*> handleMap;
 
 public:
-    Scope(int curVarIndex);
-    virtual ~Scope();
+    /**
+     * equivalent to Scope(0)
+     */
+    Scope();
 
-    FieldHandle *lookupHandle(const std::string &symbolName);    // override
-    int getCurVarIndex();
+    Scope(unsigned int curVarIndex);
+    ~Scope();
+
+    /**
+     * return null, if not exist.
+     */
+    FieldHandle *lookupHandle(const std::string &symbolName);
+
+    /**
+     * add FieldHandle. if adding success, increment curVarIndex.
+     * return false if found duplicated handle.
+     */
+    bool addFieldHandle(const std::string &symbolName, FieldHandle *handle);
+
+    unsigned int getCurVarIndex();
+
+    /**
+     * remove handle from handleMap, and delete it.
+     */
+    void deleteHandle(const std::string &symbolName);
 };
 
-class SymbolTable : public ScopeOp {
+class SymbolTable {
 private:
+    std::vector<std::string> handleCache;
+
     /**
-     * first element is always global scope
+     * first scope is always global scope.
      */
     std::vector<Scope*> scopes;
+
+    /**
+     * contains max number of variable index.
+     */
+    std::vector<unsigned int> maxVarIndexStack;
 
 public:
     SymbolTable();
     ~SymbolTable();
 
-    FieldHandle *lookupHandle(const std::string &symbolName);    // override
-    bool registerHandle(const std::string &symbolName, DSType *type, bool readOnly);   // override
+    /**
+     * return null, if not found.
+     */
+    FieldHandle *lookupHandle(const std::string &symbolName);
 
     /**
-     * create new local scope
+     * return false, if found duplicated handle.
+     */
+    bool registerHandle(const std::string &symbolName, DSType *type, bool readOnly);
+
+    /**
+     * create new local scope.
      */
     void enterScope();
 
     /**
-     * delete current local scope
+     * delete current local scope.
      */
     void exitScope();
 
     /**
-     * pop all local scope and func scope
+     * create new function scope.
+     */
+    void enterFuncScope();
+
+    /**
+     * delete current function scope.
+     */
+    void exitFuncScope();
+
+    /**
+     * pop all local scope and function scope
      */
     void popAllLocal();
 
@@ -87,7 +113,7 @@ public:
     /**
      * max number of local variable index.
      */
-    int getMaxVarIndex();
+    unsigned int getMaxVarIndex();
 
     bool inGlobalScope();
 };
