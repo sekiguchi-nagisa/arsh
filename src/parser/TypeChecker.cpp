@@ -19,7 +19,6 @@
 
 #include <core/magic_method.h>
 #include <core/TypeLookupError.h>
-#include <ast/node_utils.h>
 #include <parser/TypeChecker.h>
 #include <parser/TypeCheckError.h>
 
@@ -928,19 +927,15 @@ int TypeChecker::visitAssignNode(AssignNode *node) {
     }
 
     DSType *leftType = this->checkType(leftNode);
+    if(node->isSelfAssignment()) {
+        OperatorCallNode *opNode = dynamic_cast<OperatorCallNode*>(node->getRightNode());
+        opNode->getArgNodes()[0]->setType(leftType);
+        AccessNode *accessNode = dynamic_cast<AccessNode*>(leftNode);
+        if(accessNode != 0) {
+            accessNode->setAdditionalOp(AccessNode::DUP_RECV);
+        }
+    }
     node->setRightNode(this->checkTypeAndResolveCoercion(leftType, node->getRightNode()));
-    node->setType(this->typePool->getVoidType());
-    return 0;
-}
-
-int TypeChecker::visitFieldSelfAssignNode(FieldSelfAssignNode *node) {
-    ApplyNode *applyNode = dynamic_cast<ApplyNode*>(node->getApplyNode());
-    this->checkType(applyNode);
-
-    AccessNode *accessNode = dynamic_cast<AccessNode*>(applyNode->getRecvNode());
-    accessNode->setAdditionalOp(AccessNode::DUP_RECV);
-
-    node->setApplyNode(this->checkTypeAndResolveCoercion(accessNode->getType(), applyNode));
     node->setType(this->typePool->getVoidType());
     return 0;
 }
@@ -953,4 +948,8 @@ int TypeChecker::visitFunctionNode(FunctionNode *node) {
 int TypeChecker::visitEmptyNode(EmptyNode *node) {
     node->setType(this->typePool->getVoidType());
     return 0;
+}
+
+int TypeChecker::visitDummyNode(DummyNode *node) {
+    return 0; // do nothing.
 }

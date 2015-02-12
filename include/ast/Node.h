@@ -162,24 +162,30 @@ public:
 };
 
 /**
- * base class for VarNode, IndexNode, AccessNode
+ * base class for VarNode, AccessNode
  */
 class AssignableNode: public Node {
 protected:
     bool readOnly;
 
+    /**
+     * if node is VarNode, treat as var index.
+     * if node is AccessNode, treat as field index.
+     */
+    int index;
+
 public:
     AssignableNode(int lineNum);
-    ~AssignableNode();
+    virtual ~AssignableNode();
 
     bool isReadOnly();
+    int getIndex();
 };
 
 class VarNode: public AssignableNode {
 private:
     std::string varName;
     bool global;
-    int varIndex;
 
 public:
     VarNode(int lineNum, std::string &&varName);
@@ -202,7 +208,6 @@ public:
 private:
     Node* recvNode;
     std::string fieldName;
-    int fieldIndex;
     AdditionalOp additionalOp;
 
 public:
@@ -355,39 +360,28 @@ public:
     int accept(NodeVisitor *visitor);   // override
 };
 
-class ApplyNode: public Node {	//TODO: function handle, named parameter
+class ApplyNode: public Node {
 protected:
     Node *recvNode;
     ArgsNode *argsNode;
 
-    /**
-     * if true, treat as function call
-     */
-    bool asFuncCall;
+    unsigned char attributeSet;
 
 public:
     ApplyNode(Node *recvNode, ArgsNode *argsNode);
-    virtual ~ApplyNode();
+    ~ApplyNode();
 
     Node *getRecvNode();
     ArgsNode *getArgsNode();
+    void setAttribute(unsigned char attribute);
+    void unsetAttribute(unsigned char attribute);
+    bool hasAttribute(unsigned char attribute);
     void setFuncCall(bool asFuncCall);
     bool isFuncCall();
     int accept(NodeVisitor *visitor);	// override
-};
 
-class IndexNode : public ApplyNode {
-public:
-    IndexNode(Node *recvNode, Node *indexNode);
-    ~IndexNode();
-
-    Node *getIndexNode();
-
-    /**
-     * return this.
-     * convert to set index
-     */
-    ApplyNode *treatAsAssignment(Node *rightNode);
+    const static unsigned char FUNC_CALL = 1 << 0;
+    const static unsigned char INDEX     = 1 << 1;
 };
 
 /**
@@ -809,7 +803,7 @@ public:
 };
 
 /**
- * for assignment or named parameter
+ * for assignment, self assignment or named parameter
  * assignment is statement.
  * so, after type checking, type is always VoidType
  */
@@ -822,34 +816,19 @@ private:
 
     Node* rightNode;
 
+    /**
+     * if true, treat as self assignment.
+     */
+    bool selfAssign;
+
 public:
-    AssignNode(Node *leftNode, Node *rightNode);
+    AssignNode(Node *leftNode, Node *rightNode, bool selfAssign = false);
     ~AssignNode();
 
     Node *getLeftNode();
     void setRightNode(Node *rightNode);
     Node *getRightNode();
-    int accept(NodeVisitor *visitor);   // override
-};
-
-/**
- * for field self assignment.
- */
-class FieldSelfAssignNode : public Node {
-private:
-    /**
-     * before type checking, must be ApplyNode.
-     * after type checking, may be CastNode due to type coercion.
-     * applyNode->getRecvNode must be AccessNode.
-     */
-    Node *applyNode;
-
-public:
-    FieldSelfAssignNode(Node *applyNode);
-    ~FieldSelfAssignNode();
-
-    void setApplyNode(Node *node);
-    Node *getApplyNode();
+    bool isSelfAssignment();
     int accept(NodeVisitor *visitor);   // override
 };
 
@@ -918,6 +897,13 @@ public:
     int accept(NodeVisitor *visitor);	// override
 };
 
+class DummyNode: public Node {
+public:
+    DummyNode();
+
+    int accept(NodeVisitor *visitor);   // override
+};
+
 /**
  * Root Node of AST.
  * this class is not inheritance of Node
@@ -933,5 +919,18 @@ public:
     void addNode(Node *node);
     const std::list<Node*> &getNodeList();
 };
+
+// helper function for node creation
+
+std::string resolveOpName(int op);
+std::string resolveAssignOpName(int op);
+
+ForNode *createForInNode(int lineNum, std::string &&initName, Node *exprNode, BlockNode *blockNode);
+
+Node *createSuffixNode(Node *leftNode, int op);
+
+Node *createAssignNode(Node *leftNode, int op, Node *rightNode);
+
+Node *createIndexNode(Node *recvNode, Node *indexNode);
 
 #endif /* AST_NODE_H_ */

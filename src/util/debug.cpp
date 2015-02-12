@@ -50,7 +50,7 @@ Logger::Logger() : fp(0) {
     fprintf(stderr, "initialize logger destination: %s\n", LOG_DEST);
 }
 
-static Logger Logger::getInstance() {
+Logger Logger::getInstance() {
     static Logger instance;
     return instance;
 }

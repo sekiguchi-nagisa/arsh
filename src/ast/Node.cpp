@@ -17,9 +17,10 @@
 #include <core/builtin_variable.h>
 #include <core/magic_method.h>
 #include <ast/Node.h>
-#include <ast/node_utils.h>
 
 #include <assert.h>
+#include <stdlib.h>
+#include <utility>
 
 // ##################
 // ##     Node     ##
@@ -279,7 +280,7 @@ int PairNode::accept(NodeVisitor *visitor) {
 // ############################
 
 AssignableNode::AssignableNode(int lineNum) :
-        Node(lineNum), readOnly(false) {
+        Node(lineNum), readOnly(false), index(-1) {
 }
 
 AssignableNode::~AssignableNode() {
@@ -294,8 +295,7 @@ bool AssignableNode::isReadOnly() {
 // #####################
 
 VarNode::VarNode(int lineNum, std::string &&varName) :
-        AssignableNode(lineNum), varName(std::move(varName)),
-        global(false), varIndex(-1) {
+        AssignableNode(lineNum), varName(std::move(varName)), global(false) {
 }
 
 const std::string &VarNode::getVarName() {
@@ -305,7 +305,7 @@ const std::string &VarNode::getVarName() {
 void VarNode::setAttribute(FieldHandle *handle) {
     this->readOnly = handle->isReadOnly();
     this->global = handle->isGlobal();
-    this->varIndex = handle->getFieldIndex();
+    this->index = handle->getFieldIndex();
 }
 
 int VarNode::accept(NodeVisitor *visitor) {
@@ -317,7 +317,7 @@ bool VarNode::isGlobal() {
 }
 
 int VarNode::getVarIndex() {
-    return this->varIndex;
+    return this->index;
 }
 
 // ########################
@@ -325,8 +325,8 @@ int VarNode::getVarIndex() {
 // ########################
 
 AccessNode::AccessNode(Node *recvNode, std::string &&fieldName) :
-        AssignableNode(recvNode->getLineNum()), recvNode(recvNode), fieldName(std::move(fieldName)),
-        fieldIndex(-1), additionalOp(NOP) {
+        AssignableNode(recvNode->getLineNum()), recvNode(recvNode),
+        fieldName(std::move(fieldName)), additionalOp(NOP) {
 }
 
 AccessNode::~AccessNode() {
@@ -348,11 +348,11 @@ const std::string &AccessNode::getFieldName() {
 
 void AccessNode::setAttribute(FieldHandle *handle) {
     this->readOnly = handle->isReadOnly();
-    this->fieldIndex = handle->getFieldIndex();
+    this->index = handle->getFieldIndex();
 }
 
 int AccessNode::getFieldIndex() {
-    return this->fieldIndex;
+    return this->index;
 }
 
 void AccessNode::setAdditionalOp(AccessNode::AdditionalOp op) {
@@ -575,7 +575,7 @@ int ArgsNode::accept(NodeVisitor *visitor) {
 
 ApplyNode::ApplyNode(Node *recvNode, ArgsNode *argsNode) :
         Node(recvNode->getLineNum()), recvNode(recvNode),
-        argsNode(argsNode), asFuncCall(false) {
+        argsNode(argsNode), attributeSet(0) {
 }
 
 ApplyNode::~ApplyNode() {
@@ -594,38 +594,32 @@ ArgsNode *ApplyNode::getArgsNode() {
     return this->argsNode;
 }
 
+void ApplyNode::setAttribute(unsigned char attribute) {
+    this->attributeSet |= attribute;
+}
+
+void ApplyNode::unsetAttribute(unsigned char attribute) {
+    this->attributeSet &= ~attribute;
+}
+
+bool ApplyNode::hasAttribute(unsigned char attribute) {
+    return (this->attributeSet & attribute) == attribute;
+}
+
 void ApplyNode::setFuncCall(bool asFuncCall) {
-    this->asFuncCall = asFuncCall;
+    if(asFuncCall) {
+        this->setAttribute(FUNC_CALL);
+    } else {
+        this->unsetAttribute(FUNC_CALL);
+    }
 }
 
 bool ApplyNode::isFuncCall() {
-    return this->asFuncCall;
+    return this->hasAttribute(FUNC_CALL);
 }
 
 int ApplyNode::accept(NodeVisitor *visitor) {
     return visitor->visitApplyNode(this);
-}
-
-// #######################
-// ##     IndexNode     ##
-// #######################
-
-IndexNode::IndexNode(Node *recvNode, Node *indexNode) :
-        ApplyNode(new AccessNode(recvNode, std::string(GET)), new ArgsNode(indexNode)) {
-}
-
-IndexNode::~IndexNode() {
-}
-
-Node *IndexNode::getIndexNode() {
-    return this->getArgsNode()->getArgPairs()[0].second;
-}
-
-ApplyNode *IndexNode::treatAsAssignment(Node *rightNode) {
-    AccessNode *accessNode = dynamic_cast<AccessNode*>(this->recvNode);
-    accessNode->setFieldName(std::string(SET));
-    this->getArgsNode()->addArg(rightNode);
-    return this;
 }
 
 // #####################
@@ -1333,8 +1327,8 @@ int VarDeclNode::accept(NodeVisitor *visitor) {
 // ##     AssignNode     ##
 // ########################
 
-AssignNode::AssignNode(Node *leftNode, Node *rightNode) :
-        Node(leftNode->getLineNum()), leftNode(leftNode), rightNode(rightNode) {
+AssignNode::AssignNode(Node *leftNode, Node *rightNode, bool selfAssign) :
+        Node(leftNode->getLineNum()), leftNode(leftNode), rightNode(rightNode), selfAssign(selfAssign) {
 }
 
 AssignNode::~AssignNode() {
@@ -1357,33 +1351,12 @@ Node *AssignNode::getRightNode() {
     return this->rightNode;
 }
 
+bool AssignNode::isSelfAssignment() {
+    return this->selfAssign;
+}
+
 int AssignNode::accept(NodeVisitor *visitor) {
     return visitor->visitAssignNode(this);
-}
-
-// #################################
-// ##     FieldSelfAssignNode     ##
-// #################################
-
-FieldSelfAssignNode::FieldSelfAssignNode(Node *applyNode) :
-    Node(applyNode->getLineNum()), applyNode(applyNode) {
-}
-
-FieldSelfAssignNode::~FieldSelfAssignNode() {
-    delete this->applyNode;
-    this->applyNode = 0;
-}
-
-void FieldSelfAssignNode::setApplyNode(Node *node) {
-    this->applyNode = node;
-}
-
-Node *FieldSelfAssignNode::getApplyNode() {
-    return this->applyNode;
-}
-
-int FieldSelfAssignNode::accept(NodeVisitor *visitor) {
-    return visitor->visitFieldSelfAssignNode(this);
 }
 
 // ##########################
@@ -1391,8 +1364,8 @@ int FieldSelfAssignNode::accept(NodeVisitor *visitor) {
 // ##########################
 
 FunctionNode::FunctionNode(int lineNum, std::string &&funcName) :
-        Node(lineNum), funcName(std::move(funcName)), paramNodes(), paramTypeTokens(), returnTypeToken(), returnType(
-                0), blockNode() {
+        Node(lineNum), funcName(std::move(funcName)), paramNodes(), paramTypeTokens(), returnTypeToken(),
+        returnType(0), blockNode() {
 }
 
 FunctionNode::~FunctionNode() {
@@ -1470,6 +1443,18 @@ int EmptyNode::accept(NodeVisitor *visitor) {
     return visitor->visitEmptyNode(this);
 }
 
+// #######################
+// ##     DummyNode     ##
+// #######################
+
+DummyNode::DummyNode():
+        Node(0) {
+}
+
+int DummyNode::accept(NodeVisitor *visitor) {
+    return visitor->visitDummyNode(this);
+}
+
 // ######################
 // ##     RootNode     ##
 // ######################
@@ -1491,4 +1476,85 @@ void RootNode::addNode(Node *node) {
 
 const std::list<Node*> &RootNode::getNodeList() {
     return this->nodeList;
+}
+
+// for node creation
+
+std::string resolveOpName(int op) {
+    //TODO:
+    return std::string();
+}
+
+static ApplyNode *createApplyNode(Node *recvNode, std::string &&methodName) {
+    AccessNode *a = new AccessNode(recvNode, std::move(methodName));
+    return new ApplyNode(a, new ArgsNode(a->getLineNum()));
+}
+
+ForNode *createForInNode(int lineNum, std::string &&initName, Node *exprNode, BlockNode *blockNode) {
+    // create for-init
+    ApplyNode *apply_reset = createApplyNode(exprNode, std::string(RESET));
+    std::string reset_var_name = std::to_string(rand());
+    VarDeclNode *reset_varDecl = new VarDeclNode(lineNum, std::string(reset_var_name), apply_reset, true);
+
+    // create for-cond
+    VarNode *reset_var = new VarNode(lineNum, std::string(reset_var_name));
+    ApplyNode *apply_hasNext = createApplyNode(reset_var, std::string(HAS_NEXT));
+
+    // create forIn-init
+    reset_var = new VarNode(lineNum, std::string(reset_var_name));
+    ApplyNode *apply_next = createApplyNode(reset_var, std::string(NEXT));
+    VarDeclNode *init_var = new VarDeclNode(lineNum, std::move(initName), apply_next, false);
+
+    // insert init to block
+    blockNode->insertNodeToFirst(init_var);
+
+    return new ForNode(lineNum, reset_varDecl, apply_hasNext, 0, blockNode);
+}
+
+std::string resolveAssignOpName(int op) {
+    return std::string();   //FIXME:
+}
+
+Node *createSuffixNode(Node *leftNode, int op) {
+    return createAssignNode(leftNode, op, new IntValueNode(leftNode->getLineNum(), 1));
+}
+
+Node *createAssignNode(Node *leftNode, int op, Node *rightNode) {
+    /*
+     * basic assignment
+     */
+    if(op == 0) {
+        // assign to element(actually call SET)
+        ApplyNode *indexNode = dynamic_cast<ApplyNode*>(leftNode);
+        if(indexNode != 0 && indexNode->hasAttribute(ApplyNode::INDEX)) {
+            AccessNode *accessNode = dynamic_cast<AccessNode*>(indexNode->getRecvNode());
+            accessNode->setFieldName(std::string(SET));
+            indexNode->getArgsNode()->addArg(rightNode);
+            return indexNode;
+        } else {
+            // assign to variable or field
+            return new AssignNode(leftNode, rightNode);
+        }
+    }
+
+    /**
+     * self assignment
+     */
+    // assign to element
+    ApplyNode *indexNode = dynamic_cast<ApplyNode*>(leftNode);
+    if(indexNode != 0 && indexNode->hasAttribute(ApplyNode::INDEX)) {
+        //FIXME: element self assignment
+        return 0;
+    } else {
+        // assign to variable or field
+        OperatorCallNode *opNode = new OperatorCallNode(new DummyNode(), op, rightNode);
+        return new AssignNode(leftNode, opNode, true);
+    }
+}
+
+Node *createIndexNode(Node *recvNode, Node *indexNode) {
+    ApplyNode *applyNode = createApplyNode(recvNode, std::string(GET));
+    applyNode->setAttribute(ApplyNode::INDEX);
+    applyNode->getArgsNode()->addArg(indexNode);
+    return applyNode;
 }

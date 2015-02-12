@@ -65,9 +65,9 @@ public:
     int visitFinallyNode(FinallyNode *node); // override
     int visitVarDeclNode(VarDeclNode *node); // override
     int visitAssignNode(AssignNode *node); // override
-    int visitFieldSelfAssignNode(FieldSelfAssignNode *node); // override
     int visitFunctionNode(FunctionNode *node); // override
     int visitEmptyNode(EmptyNode *node); // override
+    int visitDummyNode(DummyNode *node); // override
 };
 
 #endif /* EVAL_EVALUATOR_H_ */

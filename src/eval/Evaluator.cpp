@@ -142,12 +142,12 @@ int Evaluator::visitVarDeclNode(VarDeclNode *node) {
 int Evaluator::visitAssignNode(AssignNode *node) {
     return 0;
 } //TODO
-int Evaluator::visitFieldSelfAssignNode(FieldSelfAssignNode *node) {
-    return 0;
-} //TODO
 int Evaluator::visitFunctionNode(FunctionNode *node) {
     return 0;
 } //TODO
 int Evaluator::visitEmptyNode(EmptyNode *node) {
+    return 0;
+} //TODO
+int Evaluator::visitDummyNode(DummyNode *node) {
     return 0;
 } //TODO
