@@ -507,8 +507,8 @@ int TypeChecker::visitMapNode(MapNode *node) {
 
 int TypeChecker::visitTupleNode(TupleNode *node) {
     std::vector<DSType*> types(node->getNodes().size());
-    for(Node *node : node->getNodes()) {
-        types.push_back(this->checkType(node));
+    for(Node *elementNode : node->getNodes()) {
+        types.push_back(this->checkType(elementNode));
     }
     node->setType(this->typePool->createAndGetTupleTypeIfUndefined(types));
     return 0;
