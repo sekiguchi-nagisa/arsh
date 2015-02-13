@@ -234,22 +234,28 @@ std::string toReifiedTypeName(TypeTemplate *typeTemplate, const std::vector<DSTy
 
 std::string toReifiedTypeName(const std::string &name, const std::vector<DSType*> &elementTypes);
 
+std::string toTupleTypeName(const std::vector<DSType*> &elementTypes);
+
 /**
  * create function type name
  */
 std::string toFunctionTypeName(DSType *returnType, const std::vector<DSType*> &paramTypes);
 
 /**
- * for builtin type creation.
+ * for BuiltinType creation.
  */
 DSType *newBuiltinType(std::string &&typeName, bool extendable,
         DSType *superType, native_type_info_t *info);
 
 /**
- * for reified type creation.
+ * for ReifiedType creation.
  * reified type is not public class.
  */
 DSType *newReifiedType(TypeTemplate *t, DSType *superType, const std::vector<DSType*> &elementTypes);
 
+/**
+ * for TupleType creation
+ */
+DSType *newTupleType(DSType *superType, const std::vector<DSType*> &elementTypes);
 
 #endif /* CORE_DSTYPE_H_ */

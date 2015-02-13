@@ -247,32 +247,32 @@ int MapNode::accept(NodeVisitor *visitor) {
     return visitor->visitMapNode(this);
 }
 
-// ######################
-// ##     PairNode     ##
-// ######################
+// #######################
+// ##     TupleNode     ##
+// #######################
 
-PairNode::PairNode(int lineNum, Node *leftNode, Node *rightNode) :
-        Node(lineNum), leftNode(leftNode), rightNode(rightNode) {
+TupleNode::TupleNode(int lineNum, Node *node) :
+        Node(lineNum), nodes(2) {
+    this->nodes.push_back(node);
 }
 
-PairNode::~PairNode() {
-    delete this->leftNode;
-    this->leftNode = 0;
-
-    delete this->rightNode;
-    this->rightNode = 0;
+TupleNode::~TupleNode() {
+    for(Node *node : this->nodes) {
+        delete node;
+    }
+    this->nodes.clear();
 }
 
-Node *PairNode::getLeftNode() {
-    return this->leftNode;
+void TupleNode::addNode(Node *node) {
+    this->nodes.push_back(node);
 }
 
-Node *PairNode::getRightNode() {
-    return this->rightNode;
+const std::vector<Node*> &TupleNode::getNodes() {
+    return this->nodes;
 }
 
-int PairNode::accept(NodeVisitor *visitor) {
-    return visitor->visitPairNode(this);
+int TupleNode::accept(NodeVisitor *visitor) {
+    return visitor->visitTupleNode(this);
 }
 
 // ############################

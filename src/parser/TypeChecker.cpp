@@ -505,15 +505,12 @@ int TypeChecker::visitMapNode(MapNode *node) {
     return 0;
 }
 
-int TypeChecker::visitPairNode(PairNode *node) {    //FIXME:
-    DSType *leftType = this->checkType(node->getLeftNode());
-    DSType *rightType = this->checkType(node->getRightNode());
-
-    TypeTemplate *pairTemplate = this->typePool->getPairTemplate();
-    std::vector<DSType*> elementTypes(2);
-    elementTypes.push_back(leftType);
-    elementTypes.push_back(rightType);
-    node->setType(this->typePool->createAndGetReifiedTypeIfUndefined(pairTemplate, elementTypes));
+int TypeChecker::visitTupleNode(TupleNode *node) {
+    std::vector<DSType*> types(node->getNodes().size());
+    for(Node *node : node->getNodes()) {
+        types.push_back(this->checkType(node));
+    }
+    node->setType(this->typePool->createAndGetTupleTypeIfUndefined(types));
     return 0;
 }
 

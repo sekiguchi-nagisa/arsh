@@ -25,7 +25,7 @@ class StringValueNode;
 class StringExprNode;
 class ArrayNode;
 class MapNode;
-class PairNode;
+class TupleNode;
 class VarNode;
 class AccessNode;
 class CastNode;
@@ -74,7 +74,7 @@ public:
     virtual int visitStringExprNode(StringExprNode *node) = 0;
     virtual int visitArrayNode(ArrayNode *node) = 0;
     virtual int visitMapNode(MapNode *node) = 0;
-    virtual int visitPairNode(PairNode *node) = 0;
+    virtual int visitTupleNode(TupleNode *node) = 0;
     virtual int visitVarNode(VarNode *node) = 0;
     virtual int visitAccessNode(AccessNode *node) = 0;
     virtual int visitCastNode(CastNode *node) = 0;

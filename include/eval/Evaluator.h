@@ -33,7 +33,7 @@ public:
     int visitStringExprNode(StringExprNode *node); // override
     int visitArrayNode(ArrayNode *node); // override
     int visitMapNode(MapNode *node); // override
-    int visitPairNode(PairNode *node); // override
+    int visitTupleNode(TupleNode *node); // override
     int visitVarNode(VarNode *node); // override
     int visitAccessNode(AccessNode *node); // override
     int visitCastNode(CastNode *node); // override

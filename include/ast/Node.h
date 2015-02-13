@@ -147,17 +147,16 @@ public:
     int accept(NodeVisitor *visitor);	// override
 };
 
-class PairNode: public Node {
+class TupleNode: public Node {
 private:
-    Node* leftNode;
-    Node* rightNode;
+    std::vector<Node*> nodes;
 
 public:
-    PairNode(int lineNum, Node *leftNode, Node *rightNode);
-    ~PairNode();
+    TupleNode(int lineNum, Node *node);
+    ~TupleNode();
 
-    Node *getLeftNode();
-    Node *getRightNode();
+    void addNode(Node *node);
+    const std::vector<Node*> &getNodes();
     int accept(NodeVisitor *visitor);	// override
 };
 

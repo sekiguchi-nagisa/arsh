@@ -122,6 +122,8 @@ public:
 
     DSType *createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate, const std::vector<DSType*> &elementTypes);
 
+    DSType *createAndGetTupleTypeIfUndefined(const std::vector<DSType*> &elementTypes);
+
     FunctionType *createAndGetFuncTypeIfUndefined(DSType *returnType, const std::vector<DSType*> &paramTypes);
 };
 

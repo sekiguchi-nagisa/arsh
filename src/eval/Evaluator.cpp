@@ -46,7 +46,7 @@ int Evaluator::visitArrayNode(ArrayNode *node) {
 int Evaluator::visitMapNode(MapNode *node) {
     return 0;
 } //TODO
-int Evaluator::visitPairNode(PairNode *node) {
+int Evaluator::visitTupleNode(TupleNode *node) {
     return 0;
 } //TODO
 int Evaluator::visitVarNode(VarNode *node) {

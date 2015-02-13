@@ -184,6 +184,16 @@ DSType *TypePool::createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate,
     return type;
 }
 
+DSType *TypePool::createAndGetTupleTypeIfUndefined(const std::vector<DSType*> &elementTypes) {
+    std::string typeName = toTupleTypeName(elementTypes);
+    DSType *type = newTupleType(this->anyType, elementTypes); //FIXME: not use typeMap
+    auto pair = this->typeMap.insert(std::make_pair(typeName, type));
+    if(!pair.second) {
+        delete type;
+    }
+    return type;
+}
+
 FunctionType *TypePool::createAndGetFuncTypeIfUndefined(DSType *returnType,
         const std::vector<DSType*> &paramTypes) {   //FIXME: not use typeMap
     std::string typeName = toFunctionTypeName(returnType, paramTypes);

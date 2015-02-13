@@ -254,6 +254,11 @@ std::string toReifiedTypeName(const std::string &name, const std::vector<DSType*
     return reifiedTypeName;
 }
 
+
+std::string toTupleTypeName(const std::vector<DSType*> &elementTypes) {
+    return toReifiedTypeName("Tuple", elementTypes);
+}
+
 std::string toFunctionTypeName(DSType *returnType, const std::vector<DSType*> &paramTypes) {
     int paramSize = paramTypes.size();
     std::string funcTypeName = "Func<" + returnType->getTypeName();
@@ -468,4 +473,130 @@ DSType *newBuiltinType(std::string &&typeName, bool extendable,
 
 DSType *newReifiedType(TypeTemplate *t, DSType *superType, const std::vector<DSType*> &elementTypes) {
     return new ReifiedType(t, superType, elementTypes);
+}
+
+// #######################
+// ##     TupleType     ##
+// #######################
+
+class TupleType: public DSType {
+private:
+    DSType *superType;
+    std::vector<DSType*> types;
+    std::unordered_map<std::string, FieldHandle*> handleMap;
+
+public:
+    /**
+     * superType is always AnyType
+     */
+    TupleType(DSType *superType, const std::vector<DSType*> types);
+    ~TupleType();
+
+    std::string getTypeName(); // override
+
+    /**
+     * return always false
+     */
+    bool isExtendable(); // override
+
+    /**
+     * return always AnyType
+     */
+    DSType *getSuperType(); // override
+
+    /**
+     * return always null
+     */
+    FunctionHandle *getConstructorHandle(TypePool *typePool); // override
+
+    /**
+     * return always type.size() + superType->getFieldSize()
+     */
+    unsigned int getFieldSize(); // override
+
+    FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName); // override
+    FieldHandle *findHandle(const std::string &fieldName); // override
+    bool equals(DSType *targetType); // override
+};
+
+TupleType::TupleType(DSType *superType, const std::vector<DSType*> types) :
+        superType(superType), types(types), handleMap() {
+    unsigned int size = this->types.size();
+    unsigned int baseIndex = this->superType->getFieldSize();
+    for(unsigned int i = 0; i < size; i++) {
+        FieldHandle *handle = new FieldHandle(this->types[i], i + baseIndex, false);
+        this->handleMap.insert(std::make_pair("_" + std::to_string(i), handle));
+    }
+}
+
+TupleType::~TupleType() {
+    for(auto pair : this->handleMap) {
+        delete pair.second;
+    }
+    this->handleMap.clear();
+}
+
+std::string TupleType::getTypeName() {
+    return toTupleTypeName(this->types);
+}
+
+bool TupleType::isExtendable() {
+    return false;
+}
+
+DSType *TupleType::getSuperType() {
+    return this->superType;
+}
+
+FunctionHandle *TupleType::getConstructorHandle(TypePool *typePool) {
+    return 0;
+}
+
+unsigned int TupleType::getFieldSize() {
+    return this->superType->getFieldSize() + this->types.size();
+}
+
+FieldHandle *TupleType::lookupFieldHandle(TypePool *typePool, const std::string &fieldName) {
+    auto iter = this->handleMap.find(fieldName);
+    if(iter == this->handleMap.end()) {
+        return this->superType->lookupFieldHandle(typePool, fieldName);
+    }
+    return iter->second;
+}
+
+FieldHandle *TupleType::findHandle(const std::string &fieldName) {
+    auto iter = this->handleMap.find(fieldName);
+    if(iter == this->handleMap.end()) {
+        return this->superType->findHandle(fieldName);
+    }
+    return iter->second;
+}
+
+bool TupleType::equals(DSType *targetType) {
+    TupleType *tupleType = dynamic_cast<TupleType*>(targetType);
+    if(tupleType == 0) {
+        return false;
+    }
+
+    /**
+     * check element size
+     */
+    unsigned int size = this->types.size();
+    if(size != tupleType->types.size()) {
+        return false;
+    }
+
+    /**
+     * check each type
+     */
+    for(unsigned int i = 0; i < size; i++) {
+        if(this->types[i]->equals(tupleType->types[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+DSType *newTupleType(DSType *superType, const std::vector<DSType*> &elementTypes) {
+    return new TupleType(superType, elementTypes);
 }
