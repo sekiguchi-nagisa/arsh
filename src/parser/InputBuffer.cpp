@@ -23,7 +23,7 @@ InputBuffer::InputBuffer() :
 }
 
 InputBuffer::InputBuffer(unsigned int initSize) :
-        usedSize(initSize), maxSize(initSize), buf(new char[initSize]) {
+        usedSize(0), maxSize(initSize), buf(new char[initSize]) {
 }
 
 InputBuffer::~InputBuffer() {
