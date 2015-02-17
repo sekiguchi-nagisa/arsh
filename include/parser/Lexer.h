@@ -19,6 +19,8 @@
 
 #include <stdio.h>
 
+#include <vector>
+
 struct Token {
     unsigned int startPos;
     unsigned int size;
@@ -26,7 +28,16 @@ struct Token {
 
 typedef enum {
     INVALID,
+    EOS,
+    VAR_NAME,
 } TokenKind;
+
+typedef enum {
+    DEFAULT,
+    NAME,
+    DSTRING,
+    CMD,
+} LexerMode;
 
 class Lexer {
 private:
@@ -35,19 +46,42 @@ private:
      */
     FILE *fp;
 
-    /**
-     * used size of buffer. must be usedSize <= maxSize
-     */
-    unsigned int usedSize;
-
-    unsigned int maxSize;
+    unsigned int bufSize;
 
     /**
      * must terminate null character.
      */
     char *buf;
 
+    /**
+     * current reading pointer of buf.
+     */
+    char *cursor;
+
+    /**
+     * limit of buf.
+     */
+    char *limit;
+
+    /**
+     * for backtracking.
+     */
+    char *marker;
+
     unsigned int lineNum;
+
+    /**
+     * if fp == null, is true.
+     * if fp reach end of file, is true.
+     */
+    bool endOfFile;
+
+    std::vector<LexerMode> modeStack;
+
+    bool stmtMode;
+
+    bool enterStmt;
+
 
     const static unsigned int DEFAULT_SIZE = 256;
 
@@ -65,17 +99,33 @@ public:
      * buf must terminate null character.
      */
     Lexer(unsigned int size, char *buf);
+
     ~Lexer();
 
 private:
     /**
-     * append to this->buf.
-     * if this->usedSize + size > this->size, expand buf.
-     * b must not terminate null character.
+     * if this->usedSize + needSize > this->maxSize, expand buf.
      */
-    void appendToBuf(unsigned int size, char *b);
+    void expandBuf(unsigned int needSize);
 
 public:
+    /**
+     * fill buffer. called from this->nextToken().
+     */
+    bool fill(int n);
+
+    /**
+     * get current reading position.
+     */
+    unsigned int getPos();
+
+    unsigned int getBufSize();
+
+    /**
+     * used size of buf. must be this->getUsedSize() <= this->getBufSize().
+     */
+    unsigned int getUsedSize();
+
     /**
      * lexer entry point.
      * write next token to token.

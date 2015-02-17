@@ -34,7 +34,7 @@ add_subdirectory(${SRC_DIR}/util)
 
 set(lexer_src ${SRC_DIR}/parser/Lexer.cpp) 
 add_custom_command(OUTPUT ${lexer_src} 
-    COMMAND re2c -o ${lexer_src} ${SRC_DIR}/parser/Lexer.re2c
+    COMMAND re2c -8 -o ${lexer_src} ${SRC_DIR}/Lexer.re2c.cpp
 )
 add_custom_target(gen_lexer DEPENDS ${lexer_src})
 
