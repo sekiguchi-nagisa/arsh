@@ -72,12 +72,76 @@ typedef enum {
     SPECIAL_NAME,
     VAR_NAME,
 
+    // bracket
+    LP, // (
+    RP, // )
+    LB, // [
+    RB, // ]
+    LBC, // {
+    RBC, // }
+    LA, // <
+    RA, // >
+
     // command
     COMMAND,
 
-    // bracket
+    // separator
+    COLON,
+    COMMA,
+
+    // binary op
+    MUL,
+    DIV,
+    MOD,
+    LE,
+    GE,
+    EQ,
+    NE,
+    AND,
+    OR,
+    XOR,
+    COND_AND,
+    COND_OR,
+    RE_MATCH,
+    RE_UNMATCH,
+
+    // suffix op
+    INC,
+    DEC,
+
+    // assign op
+    ASSIGN,
+    ADD_ASSIGN,
+    SUB_ASSIGN,
+    MUL_ASSIGN,
+    DIV_ASSIGN,
+    MOD_ASSIGN,
+
+    // context dependent key word
+    AS,
+    FUNC,
+    IN,
+    IS,
+
+    // identifier.
+    IDENTIFIER,
+
+    // accessor
+    ACCESSOR,
+
+    // line end
+    LINE_END,
+    NEW_LINE,
+
 
 } TokenKind;
+
+// binary op alias
+#define ADD PLUS
+#define SUB MINUS
+#define LT LA
+#define GT RA
+
 
 typedef enum {
     yycSTMT,
