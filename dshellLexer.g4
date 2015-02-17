@@ -53,7 +53,6 @@ public void reset() {
 // ##########################
 
 // reserved key word
-As          : {!isStmt()}? 'as';
 Assert      : 'assert';
 Break       : 'break';
 Catch       : 'catch';
@@ -65,12 +64,9 @@ Extends     : 'extends';
 ExportEnv   : 'export-env' -> pushMode(NameMode);
 Finally     : 'finally';
 For         : 'for';
-Func        : {!isStmt()}? 'Func';
 Function    : 'function' -> pushMode(NameMode);
 If          : 'if';
 ImportEnv   : 'import-env' -> pushMode(NameMode);
-In          : {!isStmt()}? 'in';
-Is          : {!isStmt()}? 'is';
 Let         : 'let' -> pushMode(NameMode);
 New         : 'new';
 Not         : 'not';
@@ -225,6 +221,11 @@ MUL_ASSIGN    : '*=' {this.enterStmt = true;};
 DIV_ASSIGN    : '/=' {this.enterStmt = true;};
 MOD_ASSIGN    : '%=' {this.enterStmt = true;};
 
+// context dependent key word
+As          : 'as';
+Func        : 'Func';
+In          : 'in';
+Is          : 'is';
 
 // identifier
 Identifier

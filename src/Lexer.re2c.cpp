@@ -27,11 +27,10 @@ Lexer::Lexer(unsigned int initSize, FILE *fp) :
         bufSize(initSize < DEFAULT_SIZE ? DEFAULT_SIZE : initSize),
         buf(new char[this->bufSize]),
         cursor(this->buf), limit(this->buf), marker(0),
-        lineNum(0), endOfFile(false), modeStack(1),
-        stmtMode(true), enterStmt(false) {
+        lineNum(0), endOfFile(false), modeStack(1) {
     assert(fp != 0);
     this->buf[0] = '\0';    // terminate null character.
-    this->modeStack.push_back(DEFAULT);
+    this->modeStack.push_back(yycSTMT);
 }
 
 Lexer::Lexer(FILE *fp) : Lexer(DEFAULT_SIZE, fp) {
@@ -40,9 +39,8 @@ Lexer::Lexer(FILE *fp) : Lexer(DEFAULT_SIZE, fp) {
 Lexer::Lexer(unsigned int size, char *buf) :
         fp(0), bufSize(size), buf(buf),
         cursor(buf), limit(buf + size - 1), marker(0),
-        lineNum(0), endOfFile(true), modeStack(1),
-        stmtMode(true), enterStmt(false) {
-    this->modeStack.push_back(DEFAULT);
+        lineNum(0), endOfFile(true), modeStack(1) {
+    this->modeStack.push_back(yycSTMT);
 }
 
 Lexer::~Lexer() {
@@ -100,62 +98,104 @@ unsigned int Lexer::getUsedSize() {
     return this->limit - this->buf + 1;
 }
 
-#define POP \
+// helper macro definition.
+#define RET(k) do { kind = k; goto END; } while(0)
+
+#define SKIP() goto INIT
+
+#define ERROR() do { RET(INVALID); } while(0)
+
+#define POP_MODE() \
     do {\
         if(this->modeStack.size() > 1) {\
             this->modeStack.pop_back();\
+        } else {\
+            ERROR();\
         }\
     } while(0)
 
-#define PUSH(m) this->modeStack.push_back(m)
+#define PUSH_MODE(m) this->modeStack.push_back(yyc ## m)
 
-#define RET(k) do { kind = k; goto END; } while(0)
+#define MODE(m) \
+    do {\
+        if(this->modeStack.size() > 0) {\
+            this->modeStack[this->modeStack.size() - 1] = yyc ## m;\
+        } else {\
+            ERROR();\
+        }\
+    } while(0)
 
-#define SKIP goto INIT
+#define YYGETCONDITION() this->modeStack.back()
 
 TokenKind Lexer::nextToken(Token &token) {
     /*!re2c
-      re2c:define:YYCTYPE = "char";
+      re2c:define:YYGETCONDITION = YYGETCONDITION;
+      re2c:define:YYCTYPE = "unsigned char";
       re2c:define:YYCURSOR = this->cursor;
       re2c:define:YYLIMIT = this->limit;
       re2c:define:YYMARKER = this->marker;
       re2c:define:YYFILL:naked = 1;
       re2c:define:YYFILL@len = #;
-      re2c:define:YYFILL = "if (!this->fill(#)) { RET(EOS); }";
+      re2c:define:YYFILL = "if(!this->fill(#)) { RET(EOS); }";
       re2c:yyfill:enable = 1;
       re2c:indent:top = 1;
       re2c:indent:string = "    ";
 
+      NUM = '0' | [1-9] [0-9]*;
+      DIGITS = [0-9]+;
+      FLOAT_SUFFIX =  [eE] [+-]? NUM;
+      FLOAT = NUM '.' DIGITS FLOAT_SUFFIX?;
+
+      SQUOTE_CHAR = [^\r\n'\\] | '\\' [btnfr'\\];
       VAR_NAME = [a-zA-Z] [_0-9a-zA-Z]* | '_' [_0-9a-zA-Z]+;
-      SKIP  = '\\' [\r\n] | [ \t];
+      SPECIAL_NAMES = [@];
       OTHER = .;
     */
 
 INIT:
     unsigned int startPos = this->getPos();
     TokenKind kind = INVALID;
-    if(this->modeStack.size() < 1) {
-        RET(INVALID);
-    }
-    switch(this->modeStack.back()) {    //TODO:
-    case DEFAULT:
-        break;
-    case NAME:
-        /*!re2c
-          VAR_NAME               { RET(VAR_NAME); }
-          SKIP+                  { SKIP; }
-          OTHER                  { RET(INVALID);  }
-        */
-        break;
-    case DSTRING:
-        break;
-    case CMD:
-        break;
-    }
+    /*!re2c
+      <STMT,EXPR> 'assert'     { MODE(EXPR); RET(ASSERT); }
+      <STMT,EXPR> 'catch'      { MODE(EXPR); RET(CATCH); }
+      <STMT,EXPR> 'class'      { MODE(EXPR); RET(CLASS); }
+      <STMT,EXPR> 'continue'   { MODE(EXPR); RET(CONTINUE); }
+      <STMT,EXPR> 'do'         { MODE(EXPR); RET(DO); }
+      <STMT,EXPR> 'else'       { MODE(EXPR); RET(ELSE); }
+      <STMT,EXPR> 'extends'    { MODE(EXPR); RET(EXTENDS); }
+      <STMT,EXPR> 'export-env' { MODE(EXPR); RET(EXPORT_ENV); }
+      <STMT,EXPR> 'finally'    { MODE(EXPR); RET(FINALLY); }
+      <STMT,EXPR> 'for'        { MODE(EXPR); RET(FOR); }
+      <STMT,EXPR> 'function'   { MODE(EXPR); RET(FUNCTION); }
+      <STMT,EXPR> 'if'         { MODE(EXPR); RET(IF); }
+      <STMT,EXPR> 'import-env' { MODE(EXPR); RET(IMPORT_ENV); }
+      <STMT,EXPR> 'let'        { MODE(EXPR); RET(LET); }
+      <STMT,EXPR> 'new'        { MODE(EXPR); RET(NEW); }
+      <STMT,EXPR> 'not'        { MODE(EXPR); RET(NOT); }
+      <STMT,EXPR> 'return'     { MODE(EXPR); RET(RETURN); }
+      <STMT,EXPR> 'try'        { MODE(EXPR); RET(TRY); }
+      <STMT,EXPR> 'throw'      { MODE(EXPR); RET(THROW); }
+      <STMT,EXPR> 'var'        { MODE(EXPR); RET(VAR); }
+      <STMT,EXPR> 'while'      { MODE(EXPR); RET(WHILE); }
+
+      <STMT,EXPR> '+'          { MODE(EXPR); RET(PLUS); }
+      <STMT,EXPR> '-'          { MODE(EXPR); RET(MINUS); }
+
+      <STMT,EXPR> NUM          { MODE(EXPR); RET(INT_LITERAL); }
+      <STMT,EXPR> FLOAT        { MODE(EXPR); RET(FLOAT_LITERAL); }
+      <STMT,EXPR> ['] SQUOTE_CHAR* [']
+                               { MODE(EXPR); RET(STRING_LITERAL); }
+      <STMT,EXPR> ["]          { PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
+      <STMT,EXPR> [`] ('\\' '`' | [^\n\r])+ [`]
+                               { MODE(EXPR); RET(BQUOTE_LITERAL); }
+      <STMT,EXPR> '$('         { PUSH_MODE(STMT); RET(START_SUB_CMD); }
+
+      <STMT,EXPR> '$' VAR_NAME { MODE(EXPR); RET(APPLIED_NAME); }
+      <STMT,EXPR> '$' SPECIAL_NAMES
+                               { MODE(EXPR); RET(SPECIAL_NAME); }
+    */
 
 END:
-    this->stmtMode = this->enterStmt;
-    this->enterStmt = false;
     token.startPos = startPos;
     token.size = this->getPos() - startPos;
     return kind;

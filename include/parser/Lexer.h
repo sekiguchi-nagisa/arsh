@@ -29,14 +29,61 @@ struct Token {
 typedef enum {
     INVALID,
     EOS,
+
+    // token kind definition.
+    // reserved key word.
+    ASSERT,
+    BREAK,
+    CATCH,
+    CLASS,
+    CONTINUE,
+    DO,
+    ELSE,
+    EXTENDS,
+    EXPORT_ENV,
+    FINALLY,
+    FOR,
+    FUNCTION,
+    IF,
+    IMPORT_ENV,
+    LET,
+    NEW,
+    NOT,
+    RETURN,
+    TRY,
+    THROW,
+    VAR,
+    WHILE,
+
+    // unary op
+    PLUS,
+    MINUS,
+
+    // literal
+    INT_LITERAL,
+    FLOAT_LITERAL,
+    STRING_LITERAL,
+    OPEN_DQUOTE,
+    BQUOTE_LITERAL,
+    START_SUB_CMD,
+
+    // applied name
+    APPLIED_NAME,
+    SPECIAL_NAME,
     VAR_NAME,
+
+    // command
+    COMMAND,
+
+    // bracket
+
 } TokenKind;
 
 typedef enum {
-    DEFAULT,
-    NAME,
-    DSTRING,
-    CMD,
+    yycSTMT,
+    yycEXPR,
+    yycDSTRING,
+    yycCMD,
 } LexerMode;
 
 class Lexer {
@@ -77,11 +124,6 @@ private:
     bool endOfFile;
 
     std::vector<LexerMode> modeStack;
-
-    bool stmtMode;
-
-    bool enterStmt;
-
 
     const static unsigned int DEFAULT_SIZE = 256;
 
