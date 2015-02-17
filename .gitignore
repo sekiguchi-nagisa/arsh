@@ -10,7 +10,10 @@ CMakeCache.txt
 CMakeFiles/
 Makefile
 install_manifest.txt
+
+# generated file
 ydsh
+src/parser/Lexer.cpp
 
 # Compiled Object files
 *.slo

@@ -16,11 +16,13 @@
 
 #include <iostream>
 #include <util/debug.h>
+#include <parser/Lexer.h>
 using namespace std;
 
 int main() {
     cout << "!!!Hello World!!!" << endl; // prints !!!Hello World!!!
     debugp("hello debug print %d!!\n", 12);
     debugp("hello debug print no arg\n");
+    Lexer lexer(12, "hello");
     return 0;
 }

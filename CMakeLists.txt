@@ -32,7 +32,14 @@ add_subdirectory(${SRC_DIR}/eval)
 add_subdirectory(${SRC_DIR}/parser)
 add_subdirectory(${SRC_DIR}/util)
 
-add_executable(${BIN_NAME} ${YDSH_SRC})
+set(lexer_src ${SRC_DIR}/parser/Lexer.cpp) 
+add_custom_command(OUTPUT ${lexer_src} 
+    COMMAND re2c -o ${lexer_src} ${SRC_DIR}/parser/Lexer.re2c
+)
+add_custom_target(gen_lexer DEPENDS ${lexer_src})
+
+add_executable(${BIN_NAME} ${YDSH_SRC} ${lexer_src})
+add_dependencies(${BIN_NAME} gen_lexer)
 
 install(TARGETS ${BIN_NAME} RUNTIME DESTINATION bin)
 
