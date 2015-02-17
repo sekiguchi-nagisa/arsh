@@ -133,6 +133,20 @@ typedef enum {
     LINE_END,
     NEW_LINE,
 
+    // double quoted string
+    CLOSE_DQUOTE,
+    STR_ELEMENT,
+    START_INTERP,
+
+    // command argument
+    CMD_ARG_PART,
+    CMD_SEP,
+    REDIR_OP,
+    REDIR_OP_NO_ARG,
+    PIPE,
+    BACKGROUND,
+    OR_LIST,
+    AND_LIST,
 
 } TokenKind;
 

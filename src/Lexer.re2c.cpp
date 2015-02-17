@@ -152,9 +152,20 @@ TokenKind Lexer::nextToken(Token &token) {
       VAR_NAME = [a-zA-Z] [_0-9a-zA-Z]* | '_' [_0-9a-zA-Z]+;
       SPECIAL_NAMES = [@];
 
+      STRING_LITERAL = ['] SQUOTE_CHAR* ['];
+      BQUOTE_LITERAL = [`] ('\\' '`' | [^\n\r])+ [`];
+      APPLIED_NAME = '$' VAR_NAME;
+      SPECIAL_NAME = '$' SPECIAL_NAMES;
+
+      INNER_NAME = APPLIED_NAME | '${' VAR_NAME '}';
+      INNER_SPECIAL_NAME = SPECIAL_NAME | '${' SPECIAL_NAMES '}';
+
       CMD_START_CHAR = '\\' . | [^ \t\r\n;'"`|&<>(){}$#![\]0-9];
       CMD_CHAR       = '\\' . | [^ \t\r\n;'"`|&<>(){}$#![\]];
 
+      LINE_END = ';';
+      NEW_LINE = [\r\n];
+      COMMENT = '#' [^\r\n]*;
       OTHER = .;
     */
 
@@ -189,16 +200,15 @@ INIT:
 
       <STMT,EXPR> NUM          { MODE(EXPR); RET(INT_LITERAL); }
       <STMT,EXPR> FLOAT        { MODE(EXPR); RET(FLOAT_LITERAL); }
-      <STMT,EXPR> ['] SQUOTE_CHAR* [']
+      <STMT,EXPR> STRING_LITERAL
                                { MODE(EXPR); RET(STRING_LITERAL); }
       <STMT,EXPR> ["]          { PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
-      <STMT,EXPR> [`] ('\\' '`' | [^\n\r])+ [`]
+      <STMT,EXPR> BQUOTE_LITERAL
                                { MODE(EXPR); RET(BQUOTE_LITERAL); }
       <STMT,EXPR> '$('         { PUSH_MODE(STMT); RET(START_SUB_CMD); }
 
-      <STMT,EXPR> '$' VAR_NAME { MODE(EXPR); RET(APPLIED_NAME); }
-      <STMT,EXPR> '$' SPECIAL_NAMES
-                               { MODE(EXPR); RET(SPECIAL_NAME); }
+      <STMT,EXPR> APPLIED_NAME { MODE(EXPR); RET(APPLIED_NAME); }
+      <STMT,EXPR> SPECIAL_NAME { MODE(EXPR); RET(SPECIAL_NAME); }
 
       <STMT,EXPR> '('          { PUSH_MODE(STMT); RET(LP); }
       <STMT,EXPR> ')'          { POP_MODE(); RET(RP); }
@@ -248,12 +258,44 @@ INIT:
       <EXPR> VAR_NAME          { RET(IDENTIFIER); }
       <EXPR> '.'               { RET(ACCESSOR); }
 
-      <STMT,EXPR> ';'          { RET(LINE_END); }
-      <STMT,EXPR> [\r\n]       { INC_LINE_NUM(); RET(NEW_LINE); }
+      <STMT,EXPR> LINE_END     { RET(LINE_END); }
+      <STMT,EXPR> NEW_LINE     { INC_LINE_NUM(); RET(NEW_LINE); }
 
-      <STMT,EXPR> '#' [^\r\n]* { SKIP(); }
+      <STMT,EXPR> COMMENT      { SKIP(); }
       <STMT,EXPR> [ \t]+       { SKIP(); }
       <STMT,EXPR> '\\' [\r\n]  { INC_LINE_NUM(); SKIP(); }
+
+      <DSTRING> ["]            { POP_MODE(); RET(CLOSE_DQUOTE);}
+      <DSTRING> ([^\r\n`$"\\] | '\\' [$btnfr"`\\])+
+                               { POP_MODE(); RET(STR_ELEMENT);}
+      <DSTRING> BQUOTE_LITERAL { RET(BQUOTE_LITERAL); }
+      <DSTRING> INNER_NAME     { RET(APPLIED_NAME); }
+      <DSTRING> INNER_SPECIAL_NAME
+                               { RET(SPECIAL_NAME); }
+      <DSTRING> '${'           { PUSH_MODE(EXPR); RET(START_INTERP); }
+      <DSTRING> '$('           { PUSH_MODE(STMT); RET(START_SUB_CMD); }
+
+      <CMD> CMD_CHAR+          { RET(CMD_ARG_PART); }
+      <CMD> STRING_LITERAL     { RET(STRING_LITERAL); }
+      <CMD> ["]                { PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
+      <CMD> BQUOTE_LITERAL     { RET(BQUOTE_LITERAL); }
+      <CMD> INNER_NAME         { RET(APPLIED_NAME); }
+      <CMD> INNER_SPECIAL_NAME { RET(SPECIAL_NAME); }
+      <CMD> '${'               { PUSH_MODE(EXPR); RET(START_INTERP); }
+      <CMD> '$('               { PUSH_MODE(STMT); RET(START_SUB_CMD); }
+      <CMD> ')'                { POP_MODE(); POP_MODE(); RET(RP); }
+      <CMD> [ \t]+             { RET(CMD_SEP); }
+      <CMD> ('<' | '>' | '1>' | '1>>' | '>>' | '2>' | '2>>' | '>&' | '&>' | '&>>')
+                               { RET(REDIR_OP); }
+      <CMD> '2>&1'             { RET(REDIR_OP_NO_ARG); }
+      <CMD> '|'                { POP_MODE(); MODE(STMT); RET(PIPE); }
+      <CMD> '&'                { RET(BACKGROUND); }
+      <CMD> '||'               { POP_MODE(); MODE(STMT); RET(OR_LIST); }
+      <CMD> '&&'               { POP_MODE(); MODE(STMT); RET(AND_LIST); }
+      <CMD> LINE_END           { POP_MODE(); MODE(STMT); RET(LINE_END); }
+      <CMD> NEW_LINE           { POP_MODE(); MODE(STMT); RET(NEW_LINE); }
+      <CMD> COMMENT            { SKIP(); }
+
 
       <STMT,EXPR,DSTRING,CMD> OTHER { RET(INVALID); }
     */
