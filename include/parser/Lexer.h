@@ -193,6 +193,9 @@ private:
      */
     unsigned char *marker;
 
+    /**
+     * initial value is 1.
+     */
     unsigned int lineNum;
 
     bool endOfFile;
@@ -200,6 +203,8 @@ private:
     std::vector<LexerMode> modeStack;
 
     const static unsigned int DEFAULT_SIZE = 256;
+
+    Lexer(unsigned int initSize, bool fixed = false);
 
 public:
     Lexer(unsigned int initSize, FILE *fp);
@@ -214,6 +219,13 @@ public:
      * src must terminate null character.
      */
     Lexer(const char *src);
+
+    /**
+     * create copy of lexer.
+     * internal state is initialized.
+     * fp is always null.
+     */
+    Lexer(const Lexer &lexer);
 
     ~Lexer();
 
@@ -232,14 +244,14 @@ public:
     /**
      * get current reading position.
      */
-    unsigned int getPos();
+    unsigned int getPos() const;
 
-    unsigned int getBufSize();
+    unsigned int getBufSize() const;
 
     /**
      * used size of buf. must be this->getUsedSize() <= this->getBufSize().
      */
-    unsigned int getUsedSize();
+    unsigned int getUsedSize() const;
 
     /**
      * lexer entry point.
@@ -249,7 +261,7 @@ public:
     TokenKind nextToken(Token &token);
 
     void setLineNum(unsigned int lineNum);
-    unsigned int getLineNum();
+    unsigned int getLineNum() const;
 
     // token to value converting api.
     std::string toString(Token &token);

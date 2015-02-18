@@ -22,26 +22,34 @@
 
 #include <parser/Lexer.h>
 
-Lexer::Lexer(unsigned int initSize, FILE *fp) :
-        fp(fp),
-        bufSize(initSize < DEFAULT_SIZE ? DEFAULT_SIZE : initSize),
+Lexer::Lexer(unsigned int initSize, bool fixed) :
+        fp(0),
+        bufSize((fixed || initSize > DEFAULT_SIZE) ? initSize : DEFAULT_SIZE),
         buf(new unsigned char[this->bufSize]),
         cursor(this->buf), limit(this->buf), marker(0),
-        lineNum(0), endOfFile(false), modeStack(1) {
-    assert(fp != 0);
+        lineNum(1), endOfFile(false), modeStack(1) {
     this->buf[0] = '\0';    // terminate null character.
     this->modeStack.push_back(yycSTMT);
+}
+
+Lexer::Lexer(unsigned int initSize, FILE *fp) :
+        Lexer(initSize) {
+    this->fp = fp;
 }
 
 Lexer::Lexer(FILE *fp) : Lexer(DEFAULT_SIZE, fp) {
 }
 
 Lexer::Lexer(const char *src) :
-        fp(0), bufSize(strlen(src) + 1), buf(new unsigned char[this->bufSize]),
-        cursor(this->buf), limit(this->buf + this->bufSize - 1), marker(0),
-        lineNum(0), endOfFile(false), modeStack(1) {
+        Lexer(strlen(src) + 1, true) {
     memcpy(this->buf, src, this->bufSize);
-    this->modeStack.push_back(yycSTMT);
+    this->limit += this->bufSize - 1;
+}
+
+Lexer::Lexer(const Lexer &lexer) :
+        Lexer(lexer.getUsedSize(), true) {
+    memcpy(this->buf, lexer.buf, this->bufSize);
+    this->limit += this->bufSize - 1;
 }
 
 Lexer::~Lexer() {
@@ -93,15 +101,15 @@ bool Lexer::fill(int n) {
     return true;
 }
 
-unsigned int Lexer::getPos() {
+unsigned int Lexer::getPos() const {
     return this->cursor - this->buf;
 }
 
-unsigned int Lexer::getBufSize() {
+unsigned int Lexer::getBufSize() const {
     return this->bufSize;
 }
 
-unsigned int Lexer::getUsedSize() {
+unsigned int Lexer::getUsedSize() const {
     return this->limit - this->buf + 1;
 }
 
@@ -317,7 +325,7 @@ void Lexer::setLineNum(unsigned int lineNum) {
     this->lineNum = lineNum;
 }
 
-unsigned int Lexer::getLineNum() {
+unsigned int Lexer::getLineNum() const {
     return this->lineNum;
 }
 
