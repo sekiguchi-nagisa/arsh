@@ -25,7 +25,7 @@
 Lexer::Lexer(unsigned int initSize, FILE *fp) :
         fp(fp),
         bufSize(initSize < DEFAULT_SIZE ? DEFAULT_SIZE : initSize),
-        buf(new char[this->bufSize]),
+        buf(new unsigned char[this->bufSize]),
         cursor(this->buf), limit(this->buf), marker(0),
         lineNum(0), endOfFile(false), modeStack(1) {
     assert(fp != 0);
@@ -36,10 +36,11 @@ Lexer::Lexer(unsigned int initSize, FILE *fp) :
 Lexer::Lexer(FILE *fp) : Lexer(DEFAULT_SIZE, fp) {
 }
 
-Lexer::Lexer(unsigned int size, char *buf) :
-        fp(0), bufSize(size), buf(buf),
-        cursor(buf), limit(buf + size - 1), marker(0),
-        lineNum(0), endOfFile(true), modeStack(1) {
+Lexer::Lexer(const char *src) :
+        fp(0), bufSize(strlen(src) + 1), buf(new unsigned char[this->bufSize]),
+        cursor(this->buf), limit(this->buf + this->bufSize - 1), marker(0),
+        lineNum(0), endOfFile(false), modeStack(1) {
+    memcpy(this->buf, src, this->bufSize);
     this->modeStack.push_back(yycSTMT);
 }
 
@@ -58,7 +59,7 @@ void Lexer::expandBuf(unsigned int needSize) {
         } while(newSize < size);
         unsigned int pos = this->getPos();
         unsigned int markerPos = this->marker - this->buf;
-        char *newBuf = new char[newSize];
+        unsigned char *newBuf = new unsigned char[newSize];
         memcpy(newBuf, this->buf, usedSize);
         delete[] this->buf;
         this->buf = newBuf;
@@ -73,10 +74,16 @@ bool Lexer::fill(int n) {
     if(this->endOfFile && (this->limit - this->cursor) <= 0) {
         return false;
     }
-    if(this->endOfFile) {
-        return true;    // already filled.
+
+    if(this->fp == 0) {
+        if(this->limit - this->cursor <= 0) {
+            this->endOfFile = true;
+        }
+        return true;
     }
     int needSize = n - (this->limit - this->cursor);
+    assert(needSize > -1);
+    this->expandBuf(needSize);
     int readSize = fread(this->limit, needSize, 1, this->fp);
     this->limit += readSize;
     *this->limit = '\0';
@@ -304,6 +311,10 @@ END:
     token.startPos = startPos;
     token.size = this->getPos() - startPos;
     return kind;
+}
+
+void Lexer::setLineNum(unsigned int lineNum) {
+    this->lineNum = lineNum;
 }
 
 unsigned int Lexer::getLineNum() {

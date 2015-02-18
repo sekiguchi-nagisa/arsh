@@ -176,29 +176,25 @@ private:
     /**
      * must terminate null character.
      */
-    char *buf;
+    unsigned char *buf;
 
     /**
      * current reading pointer of buf.
      */
-    char *cursor;
+    unsigned char *cursor;
 
     /**
      * limit of buf.
      */
-    char *limit;
+    unsigned char *limit;
 
     /**
      * for backtracking.
      */
-    char *marker;
+    unsigned char *marker;
 
     unsigned int lineNum;
 
-    /**
-     * if fp == null, is true.
-     * if fp reach end of file, is true.
-     */
     bool endOfFile;
 
     std::vector<LexerMode> modeStack;
@@ -214,11 +210,10 @@ public:
     Lexer(FILE *fp);
 
     /**
-     * in destructor call, must delete buf.
-     * so, move the ownership of buf to this->buf.
-     * buf must terminate null character.
+     * copy src to this->buf.
+     * src must terminate null character.
      */
-    Lexer(unsigned int size, char *buf);
+    Lexer(const char *src);
 
     ~Lexer();
 
@@ -253,6 +248,7 @@ public:
      */
     TokenKind nextToken(Token &token);
 
+    void setLineNum(unsigned int lineNum);
     unsigned int getLineNum();
 
     // token to value converting api.
