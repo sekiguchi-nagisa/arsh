@@ -20,43 +20,43 @@
 #include <string>
 
 // unary op definition
-extern const char * const PLUS;  // +
-extern const char * const MINUS; // -
-extern const char * const NOT;   // not
+extern const char * const OP_PLUS;  // +
+extern const char * const OP_MINUS; // -
+extern const char * const OP_NOT;   // not
 
 // binary op definition
-extern const char * const ADD;   // +
-extern const char * const SUB;   // -
-extern const char * const MUL;   // *
-extern const char * const DIV;   // /
-extern const char * const MOD;   // %
+extern const char * const OP_ADD;   // +
+extern const char * const OP_SUB;   // -
+extern const char * const OP_MUL;   // *
+extern const char * const OP_DIV;   // /
+extern const char * const OP_MOD;   // %
 
-extern const char * const EQ;    // ==
-extern const char * const NE;    // !=
+extern const char * const OP_EQ;    // ==
+extern const char * const OP_NE;    // !=
 
-extern const char * const LT;    // <
-extern const char * const GT;    // >
-extern const char * const LE;    // <=
-extern const char * const GE;    // >=
+extern const char * const OP_LT;    // <
+extern const char * const OP_GT;    // >
+extern const char * const OP_LE;    // <=
+extern const char * const OP_GE;    // >=
 
-extern const char * const AND;   // &
-extern const char * const OR;    // |
-extern const char * const XOR;   // ^
+extern const char * const OP_AND;   // &
+extern const char * const OP_OR;    // |
+extern const char * const OP_XOR;   // ^
 
-extern const char * const RE_EQ; // =~
-extern const char * const RE_NE; // !~
+extern const char * const OP_RE_EQ; // =~
+extern const char * const OP_RE_NE; // !~
 
 // indexer op
-extern const char * const GET;   // []
-extern const char * const SET;   // [] =
+extern const char * const OP_GET;   // []
+extern const char * const OP_SET;   // [] =
 
 // iterator
-extern const char * const RESET; // must be Func<Any> type
-extern const char * const NEXT;  // must be Func<Any> type
-extern const char * const HAS_NEXT;  // must be Func<Boolean> type
+extern const char * const OP_RESET; // must be Func<Any> type
+extern const char * const OP_NEXT;  // must be Func<Any> type
+extern const char * const OP_HAS_NEXT;  // must be Func<Boolean> type
 
 // to string
-extern const char * const TO_STR;   // for string cast
+extern const char * const OP_TO_STR;   // for string cast
 
 
 #endif /* CORE_MAGIC_METHOD_H_ */

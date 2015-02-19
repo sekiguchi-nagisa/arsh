@@ -128,6 +128,12 @@ private:
     bool supportCoercion(DSType *requiredType, DSType *targetType);
 
     /**
+     * return typed CastNode(type is FloatType)
+     * targetNode->getType() must be IntType.
+     */
+    CastNode *intToFloat(Node *targetNode);
+
+    /**
      * create new symbol table and check type each node within block.
      * after type checking, remove current symbol table
      */
@@ -224,7 +230,7 @@ public:
     int visitAccessNode(AccessNode *node); // override
     int visitCastNode(CastNode *node); // override
     int visitInstanceOfNode(InstanceOfNode *node); // override
-    int visitOperatorCallNode(OperatorCallNode *node); // override
+    int visitBinaryOpNode(BinaryOpNode *node); // override
     int visitArgsNode(ArgsNode *node); // override
     int visitApplyNode(ApplyNode *node); // override
     int visitNewNode(NewNode *node); // override

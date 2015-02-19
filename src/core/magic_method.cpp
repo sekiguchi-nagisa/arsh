@@ -16,41 +16,41 @@
 
 #include <core/magic_method.h>
 
-const char * const PLUS  = "__PLUS__";
-const char * const MINUS = "__MINUS__";
-const char * const NOT   = "__NOT__";
+const char * const OP_PLUS  = "__PLUS__";
+const char * const OP_MINUS = "__MINUS__";
+const char * const OP_NOT   = "__NOT__";
 
 // binary op definition
-const char * const ADD   = "__ADD__";
-const char * const SUB   = "__SUB__";
-const char * const MUL   = "__MUL__";
-const char * const DIV   = "__DIV__";
-const char * const MOD   = "__MOD__";
+const char * const OP_ADD   = "__ADD__";
+const char * const OP_SUB   = "__SUB__";
+const char * const OP_MUL   = "__MUL__";
+const char * const OP_DIV   = "__DIV__";
+const char * const OP_MOD   = "__MOD__";
 
-const char * const EQ    = "__EQ__";
-const char * const NE    = "__NE__";
+const char * const OP_EQ    = "__EQ__";
+const char * const OP_NE    = "__NE__";
 
-const char * const LT    = "__LT__";
-const char * const GT    = "__GT__";
-const char * const LE    = "__LE__";
-const char * const GE    = "__GE__";
+const char * const OP_LT    = "__LT__";
+const char * const OP_GT    = "__GT__";
+const char * const OP_LE    = "__LE__";
+const char * const OP_GE    = "__GE__";
 
-const char * const AND   = "__AND__";
-const char * const OR    = "__OR__";
-const char * const XOR   = "__XOR__";
+const char * const OP_AND   = "__AND__";
+const char * const OP_OR    = "__OR__";
+const char * const OP_XOR   = "__XOR__";
 
-const char * const RE_EQ = "__RE_EQ__";
-const char * const RE_NE = "__RE_NE__";
+const char * const OP_RE_EQ = "__RE_EQ__";
+const char * const OP_RE_NE = "__RE_NE__";
 
 // indexer op
-const char * const GET   = "__GET__";
-const char * const SET   = "__SET__";
+const char * const OP_GET   = "__GET__";
+const char * const OP_SET   = "__SET__";
 
 // iterator
-const char * const RESET    = "__RESET__";
-const char * const NEXT     = "__NEXT__";
-const char * const HAS_NEXT = "__HAS_NEXT__";
+const char * const OP_RESET    = "__RESET__";
+const char * const OP_NEXT     = "__NEXT__";
+const char * const OP_HAS_NEXT = "__HAS_NEXT__";
 
 // to string
-const char * const TO_STR   = "__TO_STR__";
+const char * const OP_TO_STR   = "__TO_STR__";
 

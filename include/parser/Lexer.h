@@ -18,144 +18,14 @@
 #define PARSER_LEXER_H_
 
 #include <stdio.h>
-
 #include <vector>
+
+#include <parser/TokenKind.h>
 
 struct Token {
     unsigned int startPos;
     unsigned int size;
 };
-
-typedef enum {
-    INVALID,
-    EOS,
-
-    // token kind definition.
-    // reserved key word.
-    ASSERT,
-    BREAK,
-    CATCH,
-    CLASS,
-    CONTINUE,
-    DO,
-    ELSE,
-    EXTENDS,
-    EXPORT_ENV,
-    FINALLY,
-    FOR,
-    FUNCTION,
-    IF,
-    IMPORT_ENV,
-    LET,
-    NEW,
-    NOT,
-    RETURN,
-    TRY,
-    THROW,
-    VAR,
-    WHILE,
-
-    // unary op
-    PLUS,
-    MINUS,
-
-    // literal
-    INT_LITERAL,
-    FLOAT_LITERAL,
-    STRING_LITERAL,
-    OPEN_DQUOTE,
-    BQUOTE_LITERAL,
-    START_SUB_CMD,
-
-    // applied name
-    APPLIED_NAME,
-    SPECIAL_NAME,
-    VAR_NAME,
-
-    // bracket
-    LP, // (
-    RP, // )
-    LB, // [
-    RB, // ]
-    LBC, // {
-    RBC, // }
-    LA, // <
-    RA, // >
-
-    // command
-    COMMAND,
-
-    // separator
-    COLON,
-    COMMA,
-
-    // binary op
-    MUL,
-    DIV,
-    MOD,
-    LE,
-    GE,
-    EQ,
-    NE,
-    AND,
-    OR,
-    XOR,
-    COND_AND,
-    COND_OR,
-    RE_MATCH,
-    RE_UNMATCH,
-
-    // suffix op
-    INC,
-    DEC,
-
-    // assign op
-    ASSIGN,
-    ADD_ASSIGN,
-    SUB_ASSIGN,
-    MUL_ASSIGN,
-    DIV_ASSIGN,
-    MOD_ASSIGN,
-
-    // context dependent key word
-    AS,
-    FUNC,
-    IN,
-    IS,
-
-    // identifier.
-    IDENTIFIER,
-
-    // accessor
-    ACCESSOR,
-
-    // line end
-    LINE_END,
-    NEW_LINE,
-
-    // double quoted string
-    CLOSE_DQUOTE,
-    STR_ELEMENT,
-    START_INTERP,
-
-    // command argument
-    CMD_ARG_PART,
-    CMD_SEP,
-    REDIR_OP,
-    REDIR_OP_NO_ARG,
-    PIPE,
-    BACKGROUND,
-    OR_LIST,
-    AND_LIST,
-
-} TokenKind;
-
-// binary op alias
-#define ADD PLUS
-#define SUB MINUS
-#define LT LA
-#define GT RA
-
 
 typedef enum {
     yycSTMT,

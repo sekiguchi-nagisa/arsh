@@ -17,6 +17,7 @@
 #include <core/builtin_variable.h>
 #include <core/magic_method.h>
 #include <ast/Node.h>
+#include <util/debug.h>
 
 #include <assert.h>
 #include <stdlib.h>
@@ -469,42 +470,59 @@ int InstanceOfNode::accept(NodeVisitor *visitor) {
     return visitor->visitInstanceOfNode(this);
 }
 
-// ##############################
-// ##     OperatorCallNode     ##
-// ##############################
+// ##########################
+// ##     BinaryOpNode     ##
+// ##########################
 
-OperatorCallNode::OperatorCallNode(Node *leftNode, int op, Node *rightNode) :
-        Node(leftNode->getLineNum()), argNodes(2), op(op), handle() {
-    this->argNodes.push_back(leftNode);
-    this->argNodes.push_back(rightNode);
+BinaryOpNode::BinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode) :
+        Node(leftNode->getLineNum()),
+        leftNode(leftNode), rightNode(rightNode), op(op), applyNode(0) {
 }
 
-OperatorCallNode::OperatorCallNode(int op, Node *rightNode) :
-        Node(rightNode->getLineNum()), argNodes(1), op(op), handle() {
-    this->argNodes.push_back(rightNode);
+BinaryOpNode::~BinaryOpNode() {
+    delete this->leftNode;
+    this->leftNode = 0;
+
+    delete this->rightNode;
+    this->rightNode = 0;
+
+    delete this->applyNode;
+    this->applyNode = 0;
 }
 
-OperatorCallNode::~OperatorCallNode() {
+Node *BinaryOpNode::getLeftNode() {
+    return this->leftNode;
 }
 
-const std::vector<Node*> OperatorCallNode::getArgNodes() {
-    return this->argNodes;
+void BinaryOpNode::setLeftNode(Node *leftNode) {
+    this->leftNode = leftNode;
 }
 
-int OperatorCallNode::getOp() {
-    return this->op;
+Node *BinaryOpNode::getRightNode() {
+    return this->rightNode;
 }
 
-void OperatorCallNode::setHandle(FunctionHandle *handle) {
-    this->handle = handle;
+void BinaryOpNode::setRightNode(Node *rightNode) {
+    this->rightNode = rightNode;
 }
 
-FunctionHandle *OperatorCallNode::getHandle() {
-    return this->handle;
+ApplyNode *BinaryOpNode::creatApplyNode() {
+    this->applyNode = createApplyNode(this->leftNode, resolveBinaryOpName(this->op));
+    this->applyNode->getArgsNode()->addArg(this->rightNode);
+
+    // assign null to prevent double free.
+    this->leftNode = 0;
+    this->rightNode = 0;
+
+    return this->applyNode;
 }
 
-int OperatorCallNode::accept(NodeVisitor *visitor) {
-    return visitor->visitOperatorCallNode(this);
+ApplyNode *BinaryOpNode::getApplyNode() {
+    return this->applyNode;
+}
+
+int BinaryOpNode::accept(NodeVisitor *visitor) {
+    return visitor->visitBinaryOpNode(this);
 }
 
 // ######################
@@ -1480,29 +1498,91 @@ const std::list<Node*> &RootNode::getNodeList() {
 
 // for node creation
 
-std::string resolveOpName(int op) {
-    //TODO:
-    return std::string();
+std::string resolveUnaryOpName(TokenKind op) {
+    if(op == PLUS) {    // +
+        return std::string(OP_PLUS);
+    } else if(op == MINUS) {    // -
+        return std::string(OP_MINUS);
+    } else if(op == NOT) {  // not
+        return std::string(OP_NOT);
+    } else {
+        fatal("unsupported unary op: " + op);
+        return std::string("");
+    }
 }
 
-static ApplyNode *createApplyNode(Node *recvNode, std::string &&methodName) {
+std::string resolveBinaryOpName(TokenKind op) {
+    switch(op) {
+    case PLUS:
+        return std::string(OP_ADD);
+    case MINUS:
+        return std::string(OP_SUB);
+    case MUL:
+        return std::string(OP_MUL);
+    case DIV:
+        return std::string(OP_DIV);
+    case MOD:
+        return std::string(OP_MOD);
+    case EQ:
+        return std::string(OP_EQ);
+    case NE:
+        return std::string(OP_NE);
+    case LA:
+        return std::string(OP_LT);
+    case RA:
+        return std::string(OP_GT);
+    case LE:
+        return std::string(OP_LE);
+    case GE:
+        return std::string(OP_GE);
+    case AND:
+        return std::string(OP_AND);
+    case OR:
+        return std::string(OP_OR);
+    case XOR:
+        return std::string(OP_XOR);
+    case RE_MATCH:
+        return std::string(OP_RE_EQ);
+    case RE_UNMATCH:
+        return std::string(OP_RE_NE);
+    case INC:
+        return std::string(OP_ADD);
+    case DEC:
+        return std::string(OP_SUB);
+    case ADD_ASSIGN:
+        return std::string(OP_ADD);
+    case SUB_ASSIGN:
+        return std::string(OP_SUB);
+    case MUL_ASSIGN:
+        return std::string(OP_MUL);
+    case DIV_ASSIGN:
+        return std::string(OP_DIV);
+    case MOD_ASSIGN:
+        return std::string(OP_MOD);
+    default:
+        fatal("unsupported binary op: " + op);
+        return std::string("");
+    }
+}
+
+ApplyNode *createApplyNode(Node *recvNode, std::string &&methodName) {
     AccessNode *a = new AccessNode(recvNode, std::move(methodName));
     return new ApplyNode(a, new ArgsNode(a->getLineNum()));
 }
 
 ForNode *createForInNode(int lineNum, std::string &&initName, Node *exprNode, BlockNode *blockNode) {
     // create for-init
-    ApplyNode *apply_reset = createApplyNode(exprNode, std::string(RESET));
+    ApplyNode *apply_reset = createApplyNode(exprNode, std::string(OP_RESET));
     std::string reset_var_name = std::to_string(rand());
     VarDeclNode *reset_varDecl = new VarDeclNode(lineNum, std::string(reset_var_name), apply_reset, true);
 
     // create for-cond
     VarNode *reset_var = new VarNode(lineNum, std::string(reset_var_name));
-    ApplyNode *apply_hasNext = createApplyNode(reset_var, std::string(HAS_NEXT));
+    ApplyNode *apply_hasNext = createApplyNode(reset_var, std::string(OP_HAS_NEXT));
 
     // create forIn-init
     reset_var = new VarNode(lineNum, std::string(reset_var_name));
-    ApplyNode *apply_next = createApplyNode(reset_var, std::string(NEXT));
+    ApplyNode *apply_next = createApplyNode(reset_var, std::string(OP_NEXT));
     VarDeclNode *init_var = new VarDeclNode(lineNum, std::move(initName), apply_next, false);
 
     // insert init to block
@@ -1515,20 +1595,20 @@ std::string resolveAssignOpName(int op) {
     return std::string();   //FIXME:
 }
 
-Node *createSuffixNode(Node *leftNode, int op) {
+Node *createSuffixNode(Node *leftNode, TokenKind op) {
     return createAssignNode(leftNode, op, new IntValueNode(leftNode->getLineNum(), 1));
 }
 
-Node *createAssignNode(Node *leftNode, int op, Node *rightNode) {
+Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode) {
     /*
      * basic assignment
      */
-    if(op == 0) {
+    if(op == ASSIGN) {
         // assign to element(actually call SET)
         ApplyNode *indexNode = dynamic_cast<ApplyNode*>(leftNode);
         if(indexNode != 0 && indexNode->hasAttribute(ApplyNode::INDEX)) {
             AccessNode *accessNode = dynamic_cast<AccessNode*>(indexNode->getRecvNode());
-            accessNode->setFieldName(std::string(SET));
+            accessNode->setFieldName(std::string(OP_SET));
             indexNode->getArgsNode()->addArg(rightNode);
             return indexNode;
         } else {
@@ -1547,14 +1627,18 @@ Node *createAssignNode(Node *leftNode, int op, Node *rightNode) {
         return 0;
     } else {
         // assign to variable or field
-        OperatorCallNode *opNode = new OperatorCallNode(new DummyNode(), op, rightNode);
+        BinaryOpNode *opNode = new BinaryOpNode(new DummyNode(), op, rightNode);
         return new AssignNode(leftNode, opNode, true);
     }
 }
 
 Node *createIndexNode(Node *recvNode, Node *indexNode) {
-    ApplyNode *applyNode = createApplyNode(recvNode, std::string(GET));
+    ApplyNode *applyNode = createApplyNode(recvNode, std::string(OP_GET));
     applyNode->setAttribute(ApplyNode::INDEX);
     applyNode->getArgsNode()->addArg(indexNode);
     return applyNode;
+}
+
+Node *createUnaryOpNode(TokenKind op, Node *recvNode) {
+    return createApplyNode(recvNode, resolveUnaryOpName(op));
 }

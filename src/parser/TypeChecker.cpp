@@ -131,9 +131,7 @@ Node *TypeChecker::checkTypeAndResolveCoercion(DSType *requiredType, Node *targe
     if(this->supportCoercion(requiredType, type)) {
         if(requiredType->equals(pool->getFloatType()) && type->equals(pool->getIntType())) {
             // int to float
-            CastNode *castNode = new CastNode(targetNode, 0);
-            castNode->setOpKind(CastNode::INT_TO_FLOAT);
-            castNode->setType(pool->getFloatType());
+            return this->intToFloat(targetNode);
         }
     }
     return targetNode;
@@ -146,6 +144,16 @@ bool TypeChecker::supportCoercion(DSType *requiredType, DSType *targetType) {
         return true;
     }
     return false;
+}
+
+CastNode *TypeChecker::intToFloat(Node *targetNode) {
+    assert(targetNode->getType() != 0);
+    assert(targetNode->getType()->equals(this->typePool->getIntType()));
+
+    CastNode *castNode = new CastNode(targetNode, 0);
+    castNode->setOpKind(CastNode::INT_TO_FLOAT);
+    castNode->setType(this->typePool->getFloatType());
+    return castNode;
 }
 
 void TypeChecker::checkTypeWithNewBlockScope(BlockNode *blockNode) {
@@ -573,7 +581,7 @@ int TypeChecker::visitCastNode(CastNode *node) {
      */
     if(targetType->equals(pool->getStringType())) {
         node->setOpKind(CastNode::TO_STRING);
-        FieldHandle *handle = exprType->lookupFieldHandle(this->typePool, std::string(TO_STR));
+        FieldHandle *handle = exprType->lookupFieldHandle(this->typePool, std::string(OP_TO_STR));
         assert(handle != 0);
         node->setFieldIndex(handle->getFieldIndex());
         return 0;
@@ -605,51 +613,17 @@ int TypeChecker::visitInstanceOfNode(InstanceOfNode *node) {
     return 0;
 }
 
-int TypeChecker::visitOperatorCallNode(OperatorCallNode *node) {
-    const std::vector<Node*> argNodes = node->getArgNodes();
-    for(Node *argNode : argNodes) {
-        this->checkType(argNode);
-    }
-    DSType *recvType = argNodes[0]->getType();
+int TypeChecker::visitBinaryOpNode(BinaryOpNode *node) {
+    Node *leftNode = node->getLeftNode();
+    Node *rightNode = node->getRightNode();
+    DSType *leftType = this->checkType(leftNode);
+    DSType *rightType = this->checkType(rightNode);
 
-    // lookup handle
-    const std::string opName = resolveOpName(node->getOp());
-    FunctionHandle *handle = 0;
-    if(argNodes.size() == 1) {
-        handle = recvType->lookupMethodHandle(this->typePool, opName);
-    } else {    // resolve overload
-        std::string namePrefix = opName.substr(0, opName.size() - 2);
-        for(int i = 1; i < 5; i++) {
-            handle = recvType->lookupMethodHandle(this->typePool,
-                    i == 1 ? opName : namePrefix + std::to_string(i) + "__");
-            if(handle != 0) {
-                const std::vector<DSType*> &paramTypes = handle->getParamTypes();
-                DSType *paramType = paramTypes[1];
-                DSType *argType = argNodes[1]->getType();
-                if(paramTypes.size() == 2 && paramType->isAssignableFrom(argType)) {
-                    break;
-                }
-                handle = 0;
-            }
-        }
+    if(this->supportCoercion(rightType, leftType)) {    // cast leftNode.
+        leftNode = this->intToFloat(leftNode);
     }
-    if(handle == 0) {
-        E_UndefinedMethod(node, opName);
-    }
-
-    // check param size
-    const std::vector<DSType*> &paramTypes = handle->getParamTypes();
-    unsigned int size = paramTypes.size();
-    if(size != argNodes.size()) {
-        E_UnmatchParam(node, std::to_string(size), std::to_string(argNodes.size()));
-    }
-
-    // try type match
-    for(unsigned int i = 0; i < size; i++) {
-        this->checkType(paramTypes[i], argNodes[i]);    //FIXME: coercion
-    }
-    node->setHandle(handle);
-    node->setType(handle->getReturnType());
+    ApplyNode *applyNode = node->creatApplyNode();
+    node->setType(this->checkType(applyNode));
     return 0;
 }
 
@@ -925,8 +899,8 @@ int TypeChecker::visitAssignNode(AssignNode *node) {
 
     DSType *leftType = this->checkType(leftNode);
     if(node->isSelfAssignment()) {
-        OperatorCallNode *opNode = dynamic_cast<OperatorCallNode*>(node->getRightNode());
-        opNode->getArgNodes()[0]->setType(leftType);
+        BinaryOpNode *opNode = dynamic_cast<BinaryOpNode*>(node->getRightNode());
+        opNode->getLeftNode()->setType(leftType);
         AccessNode *accessNode = dynamic_cast<AccessNode*>(leftNode);
         if(accessNode != 0) {
             accessNode->setAdditionalOp(AccessNode::DUP_RECV);

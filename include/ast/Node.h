@@ -24,6 +24,7 @@
 #include <core/FieldHandle.h>
 #include <ast/NodeVisitor.h>
 #include <ast/TypeToken.h>
+#include <parser/TokenKind.h>
 
 class Node {
 protected:
@@ -295,27 +296,47 @@ public:
 };
 
 /**
- * for unary or binary operator call.
- * operator function must be method.
+ * binary operator call.
  */
-class OperatorCallNode : public Node {
+class BinaryOpNode : public Node {
 private:
     /**
-     * two or one argument
+     * after call this->createApplyNode(), will be null.
      */
-    std::vector<Node*> argNodes;
-    int op;
-    FunctionHandle *handle;
+    Node *leftNode;
+
+    /**
+     * after call this->createApplyNode(), will be null.
+     */
+    Node *rightNode;
+
+    TokenKind op;
+
+    /**
+     * before call this->createApplyNode(), it is null.
+     */
+    ApplyNode *applyNode;
 
 public:
-    OperatorCallNode(Node *leftNode, int op, Node *rightNode);
-    OperatorCallNode(int op, Node *rightNode);
-    ~OperatorCallNode();
+    BinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode);
+    ~BinaryOpNode();
 
-    const std::vector<Node*> getArgNodes();
-    int getOp();
-    void setHandle(FunctionHandle *handle);
-    FunctionHandle *getHandle();
+    Node *getLeftNode();
+    void setLeftNode(Node *leftNode);
+    Node *getRightNode();
+    void setRightNode(Node *rightNode);
+
+    /**
+     * create ApplyNode and set to this->applyNode.
+     * leftNode and rightNode will be null.
+     */
+    ApplyNode *creatApplyNode();
+
+    /**
+     * return null, before call this->createApplyNode().
+     */
+    ApplyNode *getApplyNode();
+
     int accept(NodeVisitor *visitor);   // override
 };
 
@@ -921,15 +942,20 @@ public:
 
 // helper function for node creation
 
-std::string resolveOpName(int op);
+std::string resolveUnaryOpName(TokenKind op);
+std::string resolveBinaryOpName(TokenKind op);
 std::string resolveAssignOpName(int op);
+
+ApplyNode *createApplyNode(Node *recvNode, std::string &&methodName);
 
 ForNode *createForInNode(int lineNum, std::string &&initName, Node *exprNode, BlockNode *blockNode);
 
-Node *createSuffixNode(Node *leftNode, int op);
+Node *createSuffixNode(Node *leftNode, TokenKind op);
 
-Node *createAssignNode(Node *leftNode, int op, Node *rightNode);
+Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode);
 
 Node *createIndexNode(Node *recvNode, Node *indexNode);
+
+Node *createUnaryOpNode(TokenKind op, Node *recvNode);
 
 #endif /* AST_NODE_H_ */

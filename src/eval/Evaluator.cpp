@@ -61,7 +61,7 @@ int Evaluator::visitCastNode(CastNode *node) {
 int Evaluator::visitInstanceOfNode(InstanceOfNode *node) {
     return 0;
 } //TODO
-int Evaluator::visitOperatorCallNode(OperatorCallNode *node) {
+int Evaluator::visitBinaryOpNode(BinaryOpNode *node) {
     return 0;
 } //TODO
 int Evaluator::visitArgsNode(ArgsNode *node) {
