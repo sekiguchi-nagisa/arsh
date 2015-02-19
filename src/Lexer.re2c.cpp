@@ -140,7 +140,16 @@ unsigned int Lexer::getUsedSize() const {
         }\
     } while(0)
 
-#define INC_LINE_NUM() this->lineNum++
+#define INC_LINE_NUM() ++this->lineNum
+
+#define FIND_NEW_LINE() \
+    do {\
+        unsigned int stopPos = this->getPos();\
+        for(unsigned int i = startPos; i < stopPos; ++i) {\
+            if(this->buf[i] == '\n') { ++this->lineNum; } \
+        }\
+    } while(0)
+
 
 #define YYGETCONDITION() this->modeStack.back()
 
@@ -235,7 +244,7 @@ INIT:
       <STMT,EXPR> '>'          { MODE(EXPR); RET(RA); }
 
       <STMT> CMD_START_CHAR CMD_CHAR*
-                               { PUSH_MODE(CMD); RET(COMMAND); }
+                               { PUSH_MODE(CMD); FIND_NEW_LINE(); RET(COMMAND); }
 
       <EXPR> ':'               { RET(COLON); }
       <EXPR> ','               { RET(COMMA); }
@@ -290,7 +299,7 @@ INIT:
       <DSTRING> '${'           { PUSH_MODE(EXPR); RET(START_INTERP); }
       <DSTRING> '$('           { PUSH_MODE(STMT); RET(START_SUB_CMD); }
 
-      <CMD> CMD_CHAR+          { RET(CMD_ARG_PART); }
+      <CMD> CMD_CHAR+          { FIND_NEW_LINE();  RET(CMD_ARG_PART); }
       <CMD> STRING_LITERAL     { RET(STRING_LITERAL); }
       <CMD> ["]                { PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
       <CMD> BQUOTE_LITERAL     { RET(BQUOTE_LITERAL); }
