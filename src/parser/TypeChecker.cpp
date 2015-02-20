@@ -614,13 +614,11 @@ int TypeChecker::visitInstanceOfNode(InstanceOfNode *node) {
 }
 
 int TypeChecker::visitBinaryOpNode(BinaryOpNode *node) {
-    Node *leftNode = node->getLeftNode();
-    Node *rightNode = node->getRightNode();
-    DSType *leftType = this->checkType(leftNode);
-    DSType *rightType = this->checkType(rightNode);
+    DSType *leftType = this->checkType(node->getLeftNode());
+    DSType *rightType = this->checkType(node->getRightNode());
 
     if(this->supportCoercion(rightType, leftType)) {    // cast leftNode.
-        leftNode = this->intToFloat(leftNode);
+        node->setLeftNode(this->intToFloat(node->getLeftNode()));
     }
     ApplyNode *applyNode = node->creatApplyNode();
     node->setType(this->checkType(applyNode));
