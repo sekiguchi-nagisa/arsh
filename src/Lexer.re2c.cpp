@@ -282,8 +282,8 @@ INIT:
       <EXPR> VAR_NAME          { RET(IDENTIFIER); }
       <EXPR> '.'               { RET(ACCESSOR); }
 
-      <STMT,EXPR> LINE_END     { RET(LINE_END); }
-      <STMT,EXPR> NEW_LINE     { INC_LINE_NUM(); RET(NEW_LINE); }
+      <STMT,EXPR> LINE_END     { MODE(STMT); RET(LINE_END); }
+      <STMT,EXPR> NEW_LINE     { MODE(STMT); INC_LINE_NUM(); RET(NEW_LINE); }
 
       <STMT,EXPR> COMMENT      { SKIP(); }
       <STMT,EXPR> [ \t]+       { SKIP(); }
@@ -291,7 +291,7 @@ INIT:
 
       <DSTRING> ["]            { POP_MODE(); RET(CLOSE_DQUOTE);}
       <DSTRING> ([^\r\n`$"\\] | '\\' [$btnfr"`\\])+
-                               { POP_MODE(); RET(STR_ELEMENT);}
+                               { RET(STR_ELEMENT);}
       <DSTRING> BQUOTE_LITERAL { RET(BQUOTE_LITERAL); }
       <DSTRING> INNER_NAME     { RET(APPLIED_NAME); }
       <DSTRING> INNER_SPECIAL_NAME
