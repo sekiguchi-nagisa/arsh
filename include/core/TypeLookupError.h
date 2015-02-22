@@ -20,36 +20,45 @@
 #include <string>
 #include <vector>
 
-class TypeLookupException {
+#define EACH_TL_ERROR(ERROR) \
+        /* one arg */\
+        ERROR(E_NotUseGeneric , "not directly use generic base type: %s") \
+        ERROR(E_UndefinedType , "undefined type: %s") \
+        ERROR(E_NotGenericBase, "not generic base type: %s") \
+        ERROR(E_NotPrimitive  , "not primitive type: %s") \
+        ERROR(E_NotClass      , "not class type: %s") \
+        ERROR(E_Nonheritable  , "nonheritable type: %s") \
+        ERROR(E_DefinedType   , "already defined type: %s") \
+        /* three arg */\
+        ERROR(E_UnmatchElement, "not match type element, %s requires %s type element, but is %s")
+
+
+class TypeLookupError {
+public:
+    typedef enum {
+#define GEN_ENUM(ENUM, MSG) ENUM,
+        EACH_TL_ERROR(GEN_ENUM)
+#undef GEN_ENUM
+    } ErrorKind;
+
 private:
     std::string messageTemplate;
     std::vector<std::string> args;
 
 public:
-    TypeLookupException(const char * const t, const std::string &arg1);
-    TypeLookupException(const char * const t, const std::string &arg1, const std::string &arg2, const std::string &arg3);
+    TypeLookupError(TypeLookupError::ErrorKind kind, const std::string &arg1);
+    TypeLookupError(TypeLookupError::ErrorKind kind, const std::string &arg1, const std::string &arg2, const std::string &arg3);
 
     const std::string &getTemplate() const;
     const std::vector<std::string> &getArgs() const;
 
-    bool operator==(const TypeLookupException &e);
-
-    // error message definition
-    // one arg
-    const static char * const E_NotUseGeneric ;
-    const static char * const E_UndefinedType ;
-    const static char * const E_NotGenericBase;
-    const static char * const E_NotPrimitive  ;
-    const static char * const E_NotClass      ;
-    const static char * const E_Nonheritable  ;
-    const static char * const E_DefinedType   ;
-
-    // three arg
-    const static char * const E_UnmatchElement;
+    bool operator==(const TypeLookupError &e);
 };
 
-#define REPORT_TL_ERROR1(name, arg1)             do { throw TypeLookupException(TypeLookupException::E_##name, arg1); } while(0)
-#define REPORT_TL_ERROR3(name, arg1, arg2, arg3) do { throw TypeLookupException(TypeLookupException::E_##name, arg1, arg2, arg3); } while(0)
+// helper macro for error reporting
+
+#define REPORT_TL_ERROR1(name, arg1)             do { throw TypeLookupError(TypeLookupError::E_##name, arg1); } while(0)
+#define REPORT_TL_ERROR3(name, arg1, arg2, arg3) do { throw TypeLookupError(TypeLookupError::E_##name, arg1, arg2, arg3); } while(0)
 
 #define E_NotUseGeneric(arg1)              REPORT_TL_ERROR1(NotUseGeneric , arg1)
 #define E_UndefinedType(arg1)              REPORT_TL_ERROR1(UndefinedType , arg1)

@@ -16,33 +16,38 @@
 
 #include <core/TypeLookupError.h>
 
+const static char *msgTable[] = {
+#define GEN_MSG(ENUM, MSG) #MSG,
+        EACH_TL_ERROR(GEN_MSG)
+#undef GEN_MSG
+};
 
-// #################################
-// ##     TypeLookupException     ##
-// #################################
+// #############################
+// ##     TypeLookupError     ##
+// #############################
 
-TypeLookupException::TypeLookupException(const char t[], const std::string &arg1) :
-        messageTemplate(t), args() {
+TypeLookupError::TypeLookupError(ErrorKind kind, const std::string &arg1) :
+        messageTemplate(msgTable[kind]), args() {
     this->args.push_back(arg1);
 }
 
-TypeLookupException::TypeLookupException(const char t[], const std::string &arg1,
+TypeLookupError::TypeLookupError(ErrorKind kind, const std::string &arg1,
         const std::string &arg2, const std::string &arg3) :
-        messageTemplate(t), args() {
+        messageTemplate(msgTable[kind]), args() {
     this->args.push_back(arg1);
     this->args.push_back(arg2);
     this->args.push_back(arg3);
 }
 
-const std::string &TypeLookupException::getTemplate() const {
+const std::string &TypeLookupError::getTemplate() const {
     return this->messageTemplate;
 }
 
-const std::vector<std::string> &TypeLookupException::getArgs() const {
+const std::vector<std::string> &TypeLookupError::getArgs() const {
     return this->args;
 }
 
-bool TypeLookupException::operator==(const TypeLookupException &e) {
+bool TypeLookupError::operator==(const TypeLookupError &e) {
     // check template
     if(this->messageTemplate != e.getTemplate()) {
         return false;
@@ -62,13 +67,3 @@ bool TypeLookupException::operator==(const TypeLookupException &e) {
     }
     return true;
 }
-
-const char * const TypeLookupException::E_NotUseGeneric  = "not directly use generic base type: %s";
-const char * const TypeLookupException::E_UndefinedType  = "undefined type: %s";
-const char * const TypeLookupException::E_NotGenericBase = "not generic base type: %s";
-const char * const TypeLookupException::E_NotPrimitive   = "not primitive type: %s";
-const char * const TypeLookupException::E_NotClass       = "not class type: %s";
-const char * const TypeLookupException::E_Nonheritable   = "nonheritable type: %s";
-const char * const TypeLookupException::E_DefinedType    = "already defined type: %s";
-
-const char * const TypeLookupException::E_UnmatchElement = "not match type element, %s requires %s type element, but is %s";

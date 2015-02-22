@@ -25,7 +25,7 @@ public:
     virtual ~ErrorListener();
 
     virtual void displyTypeError(const std::string &sourceName,
-            const TypeCheckException &e) = 0;
+            const TypeCheckError &e) = 0;
 };
 
 #endif /* PARSER_ERRORLISTENER_H_ */

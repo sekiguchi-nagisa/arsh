@@ -16,10 +16,10 @@
 
 #include <parser/TokenKind.h>
 
-#define GEN_NAME(ENUM) #ENUM,
-
 static const char *TOKEN_KIND_STRING[] = {
+#define GEN_NAME(ENUM) #ENUM,
         EACH_TOKEN(GEN_NAME)
+#undef GEN_NAME
 };
 
 const char *getTokenName(TokenKind kind) {

@@ -25,7 +25,7 @@ public:
     ~CommonErrorListener();
 
     void displayTypeError(const std::string &sourceName,
-            const TypeCheckException &e); // override
+            const TypeCheckError &e); // override
 };
 
 #endif /* PARSER_COMMONERRORLISTENER_H_ */

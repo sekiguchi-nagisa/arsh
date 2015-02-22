@@ -16,55 +16,60 @@
 
 #include <parser/TypeCheckError.h>
 
+const static char *msgTable[] = {
+#define GEN_MSG(ENUM, MSG) #MSG,
+        EACH_TC_ERROR(GEN_MSG)
+#undef GEN_MSG
+};
 
-// ################################
-// ##     TypeCheckException     ##
-// ################################
+// ############################
+// ##     TypeCheckError     ##
+// ############################
 
-TypeCheckException::TypeCheckException(int lineNum, const char * const t) :
-        lineNum(lineNum), t(t), args(0) {
+TypeCheckError::TypeCheckError(int lineNum, ErrorKind kind) :
+        lineNum(lineNum), t(msgTable[kind]), args(0) {
 }
 
-TypeCheckException::TypeCheckException(int lineNum, const char * const t, const std::string &arg1) :
-        lineNum(lineNum), t(t), args(1) {
+TypeCheckError::TypeCheckError(int lineNum, ErrorKind kind, const std::string &arg1) :
+        lineNum(lineNum), t(msgTable[kind]), args(1) {
     args.push_back(arg1);
 }
 
-TypeCheckException::TypeCheckException(int lineNum, const char * const t, const std::string &arg1,
+TypeCheckError::TypeCheckError(int lineNum, ErrorKind kind, const std::string &arg1,
         const std::string &arg2) :
-        lineNum(lineNum), t(t), args(2) {
+        lineNum(lineNum), t(msgTable[kind]), args(2) {
     args.push_back(arg1);
     args.push_back(arg2);
 }
 
-TypeCheckException::TypeCheckException(int lineNum, const char * const t, const std::string &arg1,
+TypeCheckError::TypeCheckError(int lineNum, ErrorKind kind, const std::string &arg1,
         const std::string &arg2, const std::string &arg3) :
-        lineNum(lineNum), t(t), args(3) {
+        lineNum(lineNum), t(msgTable[kind]), args(3) {
     args.push_back(arg1);
     args.push_back(arg2);
     args.push_back(arg3);
 }
 
-TypeCheckException::TypeCheckException(int lineNum, const std::string &t, const std::vector<std::string> &args) :
-        lineNum(lineNum), t(t), args(args) {
+TypeCheckError::TypeCheckError(int lineNum, const TypeLookupError &e) :
+        lineNum(lineNum), t(e.getTemplate()), args(e.getArgs()) {
 }
 
-TypeCheckException::~TypeCheckException() {
+TypeCheckError::~TypeCheckError() {
 }
 
-int TypeCheckException::getLineNum() const {
+int TypeCheckError::getLineNum() const {
     return this->lineNum;
 }
 
-const std::string &TypeCheckException::getTemplate() const {
+const std::string &TypeCheckError::getTemplate() const {
     return this->t;
 }
 
-const std::vector<std::string> &TypeCheckException::getArgs() const {
+const std::vector<std::string> &TypeCheckError::getArgs() const {
     return this->args;
 }
 
-bool TypeCheckException::operator==(const TypeCheckException &e) {
+bool TypeCheckError::operator==(const TypeCheckError &e) {
     // check line num
     if(this->lineNum != e.getLineNum()) {
         return false;
@@ -89,38 +94,3 @@ bool TypeCheckException::operator==(const TypeCheckException &e) {
     }
     return true;
 }
-
-// zero arg
-const char * const TypeCheckException::E_Unresolved      = "having unresolved type";
-const char * const TypeCheckException::E_InsideLoop      = "only available inside loop statement";
-const char * const TypeCheckException::E_UnfoundReturn   = "not found return statement";
-const char * const TypeCheckException::E_Unreachable     = "found unreachable code";
-const char * const TypeCheckException::E_InsideFunc      = "only available inside function";
-const char * const TypeCheckException::E_NotNeedExpr     = "not need expression";
-const char * const TypeCheckException::E_Assignable      = "require assignable node";
-const char * const TypeCheckException::E_ReadOnly        = "read only value";
-const char * const TypeCheckException::E_InsideFinally   = "unavailable inside finally block";
-const char * const TypeCheckException::E_UnneedNamedArg  = "not need named argument";
-const char * const TypeCheckException::E_NeedNamedArg    = "need named argument";
-const char * const TypeCheckException::E_NoDefaultValue  = "has no default value";
-
-// one arg
-const char * const TypeCheckException::E_DefinedSymbol     = "already defined symbol: %s";
-const char * const TypeCheckException::E_UndefinedSymbol   = "undefined symbol: %s";
-const char * const TypeCheckException::E_UndefinedField    = "undefined field: %s";
-const char * const TypeCheckException::E_UndefinedMethod   = "undefined method: %s";
-const char * const TypeCheckException::E_UndefinedInit     = "undefined constructor: %s";
-const char * const TypeCheckException::E_Unacceptable      = "unacceptable type: %s";
-const char * const TypeCheckException::E_NoIterator        = "not support iterator: %s";
-const char * const TypeCheckException::E_UnfoundNamedParam = "undefined parameter name: %s";
-const char * const TypeCheckException::E_DupNamedArg       = "found duplicated named argument: %s";
-const char * const TypeCheckException::E_Unimplemented     = "unimplemented type checker api: %s";
-
-// two arg
-const char * const TypeCheckException::E_Required        = "require %s, but is %s";
-const char * const TypeCheckException::E_CastOp          = "unsupported cast op: %s -> %s";
-const char * const TypeCheckException::E_UnaryOp         = "undefined operator: %s %s";
-const char * const TypeCheckException::E_UnmatchParam    = "not match parameter, require size is %s, but is %s";
-
-// three arg
-const char * const TypeCheckException::E_BinaryOp        = "undefined operator: %s %s %s";

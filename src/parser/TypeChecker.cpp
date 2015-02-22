@@ -251,10 +251,10 @@ DSType *TypeChecker::toType(TypeToken *typeToken) {
         DSType *type = typeToken->toType(this->typePool);
         delete typeToken;
         return type;
-    } catch(TypeLookupException &e) {
+    } catch(TypeLookupError &e) {
         int lineNum = typeToken->getLineNum();
         delete typeToken;
-        throw TypeCheckException(lineNum, e.getTemplate(), e.getArgs());
+        throw TypeCheckError(lineNum, e);
     }
 }
 

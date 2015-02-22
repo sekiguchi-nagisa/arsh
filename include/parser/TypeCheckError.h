@@ -19,11 +19,53 @@
 
 #include <string>
 #include <vector>
+#include <core/TypeLookupError.h>
+
+#define EACH_TC_ERROR(ERROR) \
+        /* zero arg */\
+        ERROR(E_Unresolved      , "having unresolved type") \
+        ERROR(E_InsideLoop      , "only available inside loop statement") \
+        ERROR(E_UnfoundReturn   , "not found return statement") \
+        ERROR(E_Unreachable     , "found unreachable code") \
+        ERROR(E_InsideFunc      , "only available inside function") \
+        ERROR(E_NotNeedExpr     , "not need expression") \
+        ERROR(E_Assignable      , "require assignable node") \
+        ERROR(E_ReadOnly        , "read only value") \
+        ERROR(E_InsideFinally   , "unavailable inside finally block") \
+        ERROR(E_UnneedNamedArg  , "not need named argument") \
+        ERROR(E_NeedNamedArg    , "need named argument") \
+        ERROR(E_NoDefaultValue  , "has no default value") \
+        /* one arg */\
+        ERROR(E_DefinedSymbol     , "already defined symbol: %s") \
+        ERROR(E_UndefinedSymbol   , "undefined symbol: %s") \
+        ERROR(E_UndefinedField    , "undefined field: %s") \
+        ERROR(E_UndefinedMethod   , "undefined method: %s") \
+        ERROR(E_UndefinedInit     , "undefined constructor: %s") \
+        ERROR(E_Unacceptable      , "unacceptable type: %s") \
+        ERROR(E_NoIterator        , "not support iterator: %s") \
+        ERROR(E_UnfoundNamedParam , "undefined parameter name: %s") \
+        ERROR(E_DupNamedArg       , "found duplicated named argument: %s") \
+        ERROR(E_Unimplemented     , "unimplemented type checker api: %s") \
+        /* two arg */\
+        ERROR(E_Required        , "require %s, but is %s") \
+        ERROR(E_CastOp          , "unsupported cast op: %s -> %s") \
+        ERROR(E_UnaryOp         , "undefined operator: %s %s") \
+        ERROR(E_UnmatchParam    , "not match parameter, require size is %s, but is %s") \
+        /* three arg */\
+        ERROR(E_BinaryOp        , "undefined operator: %s %s %s")
+
 
 /**
  * for type error reporting
  */
-class TypeCheckException {
+class TypeCheckError {
+public:
+    typedef enum {
+#define GEN_ENUM(ENUM, MSG) ENUM,
+        EACH_TC_ERROR(GEN_ENUM)
+#undef GEN_ENUM
+    } ErrorKind;
+
 private:
     /**
      * line number of error node
@@ -41,62 +83,28 @@ private:
     std::vector<std::string> args;
 
 public:
-    TypeCheckException(int lineNum, const char * const t);
-    TypeCheckException(int lineNum, const char * const t, const std::string &arg1);
-    TypeCheckException(int lineNum, const char * const t, const std::string &arg1,
+    TypeCheckError(int lineNum, ErrorKind kind);
+    TypeCheckError(int lineNum, ErrorKind kind, const std::string &arg1);
+    TypeCheckError(int lineNum, ErrorKind kind, const std::string &arg1,
             const std::string &arg2);
-    TypeCheckException(int lineNum, const char * const t, const std::string &arg1,
+    TypeCheckError(int lineNum, ErrorKind kind, const std::string &arg1,
             const std::string &arg2, const std::string &arg3);
-    TypeCheckException(int lineNum, const std::string &t, const std::vector<std::string> &args);
-    ~TypeCheckException();
+    TypeCheckError(int lineNum, const TypeLookupError &e);
+    ~TypeCheckError();
 
     int getLineNum() const;
     const std::string &getTemplate() const ;
     const std::vector<std::string> &getArgs() const;
 
-    bool operator==(const TypeCheckException &e);
-
-    // error message definition
-    // zero arg
-    const static char * const E_Unresolved;
-    const static char * const E_InsideLoop;
-    const static char * const E_UnfoundReturn;
-    const static char * const E_Unreachable;
-    const static char * const E_InsideFunc;
-    const static char * const E_NotNeedExpr;
-    const static char * const E_Assignable;
-    const static char * const E_ReadOnly;
-    const static char * const E_InsideFinally;
-    const static char * const E_UnneedNamedArg;
-    const static char * const E_NeedNamedArg;
-    const static char * const E_NoDefaultValue;
-
-    // one arg
-    const static char * const E_DefinedSymbol;
-    const static char * const E_UndefinedSymbol;
-    const static char * const E_UndefinedField;
-    const static char * const E_UndefinedMethod;
-    const static char * const E_UndefinedInit;
-    const static char * const E_Unacceptable;
-    const static char * const E_NoIterator;
-    const static char * const E_UnfoundNamedParam;
-    const static char * const E_DupNamedArg;
-    const static char * const E_Unimplemented;
-
-    // two arg
-    const static char * const E_Required;
-    const static char * const E_CastOp;
-    const static char * const E_UnaryOp;
-    const static char * const E_UnmatchParam;
-
-    // three arg
-    const static char * const E_BinaryOp;
+    bool operator==(const TypeCheckError &e);
 };
 
-#define REPORT_TC_ERROR0(name, node)                   do { throw TypeCheckException(node->getLineNum(), TypeCheckException::E_##name); } while(0)
-#define REPORT_TC_ERROR1(name, node, arg1)             do { throw TypeCheckException(node->getLineNum(), TypeCheckException::E_##name, arg1); } while(0)
-#define REPORT_TC_ERROR2(name, node, arg1, arg2)       do { throw TypeCheckException(node->getLineNum(), TypeCheckException::E_##name, arg1, arg2); } while(0)
-#define REPORT_TC_ERROR3(name, node, arg1, arg2, arg3) do { throw TypeCheckException(node->getLineNum(), TypeCheckException::E_##name, arg1, arg2, arg3); } while(0)
+// helper macro for error reporting
+
+#define REPORT_TC_ERROR0(name, node)                   do { throw TypeCheckError(node->getLineNum(), TypeCheckError::E_##name); } while(0)
+#define REPORT_TC_ERROR1(name, node, arg1)             do { throw TypeCheckError(node->getLineNum(), TypeCheckError::E_##name, arg1); } while(0)
+#define REPORT_TC_ERROR2(name, node, arg1, arg2)       do { throw TypeCheckError(node->getLineNum(), TypeCheckError::E_##name, arg1, arg2); } while(0)
+#define REPORT_TC_ERROR3(name, node, arg1, arg2, arg3) do { throw TypeCheckError(node->getLineNum(), TypeCheckError::E_##name, arg1, arg2, arg3); } while(0)
 
 
 #define E_Unresolved(node)                  REPORT_TC_ERROR0(Unresolved       , node)
