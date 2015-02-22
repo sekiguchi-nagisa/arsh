@@ -17,129 +17,123 @@
 #ifndef PARSER_TOKENKIND_H_
 #define PARSER_TOKENKIND_H_
 
+#define EACH_TOKEN(TOKEN) \
+    TOKEN(INVALID) \
+    TOKEN(EOS) \
+    /* token kind definition. */\
+    /* reserved key word. */\
+    TOKEN(ASSERT) \
+    TOKEN(BREAK) \
+    TOKEN(CATCH) \
+    TOKEN(CLASS) \
+    TOKEN(CONTINUE) \
+    TOKEN(DO) \
+    TOKEN(ELSE) \
+    TOKEN(EXTENDS) \
+    TOKEN(EXPORT_ENV) \
+    TOKEN(FINALLY) \
+    TOKEN(FOR) \
+    TOKEN(FUNCTION) \
+    TOKEN(IF) \
+    TOKEN(IMPORT_ENV) \
+    TOKEN(LET) \
+    TOKEN(NEW) \
+    TOKEN(NOT) \
+    TOKEN(RETURN) \
+    TOKEN(TRY) \
+    TOKEN(THROW) \
+    TOKEN(VAR) \
+    TOKEN(WHILE) \
+    /* unary op */\
+    TOKEN(PLUS) \
+    TOKEN(MINUS) \
+    /* literal */\
+    TOKEN(INT_LITERAL) \
+    TOKEN(FLOAT_LITERAL) \
+    TOKEN(STRING_LITERAL) \
+    TOKEN(OPEN_DQUOTE) \
+    TOKEN(BQUOTE_LITERAL) \
+    TOKEN(START_SUB_CMD) \
+    /* applied name */\
+    TOKEN(APPLIED_NAME) \
+    TOKEN(SPECIAL_NAME) \
+    TOKEN(VAR_NAME) \
+    /* bracket */\
+    TOKEN(LP) /* ( */\
+    TOKEN(RP) /* ) */\
+    TOKEN(LB) /* [ */\
+    TOKEN(RB) /* ] */\
+    TOKEN(LBC) /* { */\
+    TOKEN(RBC) /* } */\
+    TOKEN(LA) /* < */\
+    TOKEN(RA) /* > */\
+    /* command */\
+    TOKEN(COMMAND) \
+    /* separator */\
+    TOKEN(COLON) \
+    TOKEN(COMMA) \
+    /* binary op */\
+    TOKEN(MUL) \
+    TOKEN(DIV) \
+    TOKEN(MOD) \
+    TOKEN(LE) \
+    TOKEN(GE) \
+    TOKEN(EQ) \
+    TOKEN(NE) \
+    TOKEN(AND) \
+    TOKEN(OR) \
+    TOKEN(XOR) \
+    TOKEN(COND_AND) \
+    TOKEN(COND_OR) \
+    TOKEN(RE_MATCH) \
+    TOKEN(RE_UNMATCH) \
+    /* suffix op */\
+    TOKEN(INC) \
+    TOKEN(DEC) \
+    /* assign op */\
+    TOKEN(ASSIGN) \
+    TOKEN(ADD_ASSIGN) \
+    TOKEN(SUB_ASSIGN) \
+    TOKEN(MUL_ASSIGN) \
+    TOKEN(DIV_ASSIGN) \
+    TOKEN(MOD_ASSIGN) \
+    /* context dependent key word */\
+    TOKEN(AS) \
+    TOKEN(FUNC) \
+    TOKEN(IN) \
+    TOKEN(IS) \
+    /* identifier. */\
+    TOKEN(IDENTIFIER) \
+    /* accessor */\
+    TOKEN(ACCESSOR) \
+    /* line end */\
+    TOKEN(LINE_END) \
+    TOKEN(NEW_LINE) \
+    /* double quoted string */\
+    TOKEN(CLOSE_DQUOTE) \
+    TOKEN(STR_ELEMENT) \
+    TOKEN(START_INTERP) \
+    /* command argument */\
+    TOKEN(CMD_ARG_PART) \
+    TOKEN(CMD_SEP) \
+    TOKEN(REDIR_OP) \
+    TOKEN(REDIR_OP_NO_ARG) \
+    TOKEN(PIPE) \
+    TOKEN(BACKGROUND) \
+    TOKEN(OR_LIST) \
+    TOKEN(AND_LIST)
+
+#define GEN_ENUM(ENUM) ENUM,
+#define GEN_NAME(ENUM) #ENUM,
+
+
 typedef enum {
-    INVALID,
-    EOS,
-
-    // token kind definition.
-    // reserved key word.
-    ASSERT,
-    BREAK,
-    CATCH,
-    CLASS,
-    CONTINUE,
-    DO,
-    ELSE,
-    EXTENDS,
-    EXPORT_ENV,
-    FINALLY,
-    FOR,
-    FUNCTION,
-    IF,
-    IMPORT_ENV,
-    LET,
-    NEW,
-    NOT,
-    RETURN,
-    TRY,
-    THROW,
-    VAR,
-    WHILE,
-
-    // unary op
-    PLUS,
-    MINUS,
-
-    // literal
-    INT_LITERAL,
-    FLOAT_LITERAL,
-    STRING_LITERAL,
-    OPEN_DQUOTE,
-    BQUOTE_LITERAL,
-    START_SUB_CMD,
-
-    // applied name
-    APPLIED_NAME,
-    SPECIAL_NAME,
-    VAR_NAME,
-
-    // bracket
-    LP, // (
-    RP, // )
-    LB, // [
-    RB, // ]
-    LBC, // {
-    RBC, // }
-    LA, // <
-    RA, // >
-
-    // command
-    COMMAND,
-
-    // separator
-    COLON,
-    COMMA,
-
-    // binary op
-    MUL,
-    DIV,
-    MOD,
-    LE,
-    GE,
-    EQ,
-    NE,
-    AND,
-    OR,
-    XOR,
-    COND_AND,
-    COND_OR,
-    RE_MATCH,
-    RE_UNMATCH,
-
-    // suffix op
-    INC,
-    DEC,
-
-    // assign op
-    ASSIGN,
-    ADD_ASSIGN,
-    SUB_ASSIGN,
-    MUL_ASSIGN,
-    DIV_ASSIGN,
-    MOD_ASSIGN,
-
-    // context dependent key word
-    AS,
-    FUNC,
-    IN,
-    IS,
-
-    // identifier.
-    IDENTIFIER,
-
-    // accessor
-    ACCESSOR,
-
-    // line end
-    LINE_END,
-    NEW_LINE,
-
-    // double quoted string
-    CLOSE_DQUOTE,
-    STR_ELEMENT,
-    START_INTERP,
-
-    // command argument
-    CMD_ARG_PART,
-    CMD_SEP,
-    REDIR_OP,
-    REDIR_OP_NO_ARG,
-    PIPE,
-    BACKGROUND,
-    OR_LIST,
-    AND_LIST,
-
+        EACH_TOKEN(GEN_ENUM)
 } TokenKind;
+
+static const char *TOKEN_KIND_STRING[] = {
+        EACH_TOKEN(GEN_NAME)
+};
 
 
 // binary op alias

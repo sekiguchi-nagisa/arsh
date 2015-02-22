@@ -1506,7 +1506,7 @@ std::string resolveUnaryOpName(TokenKind op) {
     } else if(op == NOT) {  // not
         return std::string(OP_NOT);
     } else {
-        fatal("unsupported unary op: " + op);
+        fatal("unsupported unary op: %s\n", TOKEN_KIND_STRING[op]);
         return std::string("");
     }
 }
@@ -1560,7 +1560,7 @@ std::string resolveBinaryOpName(TokenKind op) {
     case MOD_ASSIGN:
         return std::string(OP_MOD);
     default:
-        fatal("unsupported binary op: " + op);
+        fatal("unsupported binary op: %s\n", TOKEN_KIND_STRING[op]);
         return std::string("");
     }
 }
