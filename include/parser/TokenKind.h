@@ -123,18 +123,16 @@
     TOKEN(OR_LIST) \
     TOKEN(AND_LIST)
 
-#define GEN_ENUM(ENUM) ENUM,
-#define GEN_NAME(ENUM) #ENUM,
-
 
 typedef enum {
+#define GEN_ENUM(ENUM) ENUM,
         EACH_TOKEN(GEN_ENUM)
+#undef GEN_ENUM
 } TokenKind;
 
-static const char *TOKEN_KIND_STRING[] = {
-        EACH_TOKEN(GEN_NAME)
-};
+const char *getTokenName(TokenKind kind);
 
+#define TO_NAME(kind) getTokenName(kind)
 
 // binary op alias
 //#define ADD PLUS

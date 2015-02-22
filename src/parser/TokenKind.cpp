@@ -14,21 +14,16 @@
  * limitations under the License.
  */
 
-#include <iostream>
-#include <util/debug.h>
-#include <parser/Lexer.h>
-using namespace std;
+#include <parser/TokenKind.h>
 
-int main() {
-    cout << "!!!Hello World!!!" << endl; // prints !!!Hello World!!!
-    debugp("hello debug print %d!!\n", 12);
-    debugp("hello debug print no arg\n");
-    Lexer lexer("12345; $a");
-    Token t;
-    TokenKind k = EOS;
-    do {
-        k = lexer.nextToken(t);
-        cout << TO_NAME(k) << endl;
-    } while(k != EOS);
-    return 0;
+#define GEN_NAME(ENUM) #ENUM,
+
+static const char *TOKEN_KIND_STRING[] = {
+        EACH_TOKEN(GEN_NAME)
+};
+
+const char *getTokenName(TokenKind kind) {
+    return TOKEN_KIND_STRING[kind];
 }
+
+
