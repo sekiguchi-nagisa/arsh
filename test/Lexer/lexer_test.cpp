@@ -410,6 +410,245 @@ TEST_F(LexerTest_Lv1, minus_tok) {
 #undef TEXT
 }
 
+/**
+ * literal test
+ */
+// integer literal
+TEST_F(LexerTest_Lv1, int_literal1) {
+#define TEXT "0"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(DUP(TEXT));
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 3);
+        this->assertToken(0, INT_LITERAL, TEXT);
+        this->assertToken(1, INT_LITERAL, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[2].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, int_literal2) {
+#define TEXT "123408"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(DUP(TEXT));
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 3);
+        this->assertToken(0, INT_LITERAL, TEXT);
+        this->assertToken(1, INT_LITERAL, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[2].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, int_literal3) {
+#define TEXT "9"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(DUP(TEXT));
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 3);
+        this->assertToken(0, INT_LITERAL, TEXT);
+        this->assertToken(1, INT_LITERAL, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[2].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, int_literal4) {
+#define TEXT "759801"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(DUP(TEXT));
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 3);
+        this->assertToken(0, INT_LITERAL, TEXT);
+        this->assertToken(1, INT_LITERAL, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[2].first);
+    });
+#undef TEXT
+}
+
+// invalid int literal
+TEST_F(LexerTest_Lv1, invaild_int_literal) {
+#define TEXT "014"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(DUP(TEXT));
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 5);
+        this->assertToken(0, INT_LITERAL, "0");
+        this->assertToken(1, INT_LITERAL, "14");
+        this->assertToken(2, INT_LITERAL, "0");
+        this->assertToken(3, INT_LITERAL, "14");
+        ASSERT_EQ(EOS, this->getTokens()[4].first);
+    });
+#undef TEXT
+}
+
+// float literal
+TEST_F(LexerTest_Lv1, float_literal1) {
+#define TEXT "0.010964"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(DUP(TEXT));
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 3);
+        this->assertToken(0, FLOAT_LITERAL, TEXT);
+        this->assertToken(1, FLOAT_LITERAL, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[2].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, float_literal2) {
+#define TEXT "103.0109640"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(DUP(TEXT));
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 3);
+        this->assertToken(0, FLOAT_LITERAL, TEXT);
+        this->assertToken(1, FLOAT_LITERAL, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[2].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, float_literal3) {
+#define TEXT "0.010964e0"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(DUP(TEXT));
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 3);
+        this->assertToken(0, FLOAT_LITERAL, TEXT);
+        this->assertToken(1, FLOAT_LITERAL, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[2].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, float_literal4) {
+#define TEXT "12.010964E-102"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(DUP(TEXT));
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 3);
+        this->assertToken(0, FLOAT_LITERAL, TEXT);
+        this->assertToken(1, FLOAT_LITERAL, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[2].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, float_literal5) {
+#define TEXT "0.00"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(DUP(TEXT));
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 3);
+        this->assertToken(0, FLOAT_LITERAL, TEXT);
+        this->assertToken(1, FLOAT_LITERAL, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[2].first);
+    });
+#undef TEXT
+}
+
+// invalid float literal
+TEST_F(LexerTest_Lv1, invalid_float_literal1) {
+#define TEXT "0.010964e+01"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(DUP(TEXT));
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 5);
+        this->assertToken(0, FLOAT_LITERAL, "0.010964e+0");
+        this->assertToken(1, INT_LITERAL, "1");
+        this->assertToken(2, FLOAT_LITERAL, "0.010964e+0");
+        this->assertToken(3, INT_LITERAL, "1");
+        ASSERT_EQ(EOS, this->getTokens()[4].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, invalid_float_literal2) {
+#define TEXT "0012.04e-78"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(DUP(TEXT));
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 7);
+        this->assertToken(0, INT_LITERAL, "0");
+        this->assertToken(1, INT_LITERAL, "0");
+        this->assertToken(2, FLOAT_LITERAL, "12.04e-78");
+        this->assertToken(3, INT_LITERAL, "0");
+        this->assertToken(4, INT_LITERAL, "0");
+        this->assertToken(5, FLOAT_LITERAL, "12.04e-78");
+        ASSERT_EQ(EOS, this->getTokens()[6].first);
+    });
+#undef TEXT
+}
+
+// string literal
+TEST_F(LexerTest_Lv1, string_literal1) {
+#define TEXT "''"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(DUP(TEXT));
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 3);
+        this->assertToken(0, STRING_LITERAL, TEXT);
+        this->assertToken(1, STRING_LITERAL, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[2].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, string_literal2) {
+#define TEXT "'fhrωu4あ\t3\"5^*&!@#~AFG '"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(DUP(TEXT));
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 3);
+        this->assertToken(0, STRING_LITERAL, TEXT);
+        this->assertToken(1, STRING_LITERAL, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[2].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, string_literal3) {
+#define TEXT "'\\b\\t\\n\\f\\r\\'\\\\'"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(DUP(TEXT));
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 3);
+        this->assertToken(0, STRING_LITERAL, TEXT);
+        this->assertToken(1, STRING_LITERAL, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[2].first);
+    });
+#undef TEXT
+}
+
+// invalid string literal
+TEST_F(LexerTest_Lv1, invalid_string_literal) {
+#define TEXT "'\n'"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(DUP(TEXT));
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 1);
+        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+    });
+#undef TEXT
+}
+
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
