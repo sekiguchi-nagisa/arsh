@@ -1,3 +1,3 @@
-setup_test(lexer)
+setup_test(lexer_test)
 
 

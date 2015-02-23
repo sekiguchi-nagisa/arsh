@@ -24,6 +24,11 @@
 
 struct Token {
     unsigned int startPos;
+
+    /**
+     * actually EOS token text is empty string,
+     * but size of EOS is 1 (due to lexer implementation).
+     */
     unsigned int size;
 };
 
@@ -100,6 +105,11 @@ public:
     ~Lexer();
 
 private:
+    /**
+     * used for constructor. not use it.
+     */
+    void copySrcBuf(const void *srcBuf);
+
     /**
      * if this->usedSize + needSize > this->maxSize, expand buf.
      */

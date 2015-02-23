@@ -42,19 +42,22 @@ Lexer::Lexer(FILE *fp) : Lexer(DEFAULT_SIZE, fp) {
 
 Lexer::Lexer(const char *src) :
         Lexer(strlen(src) + 1, true) {
-    memcpy(this->buf, src, this->bufSize);
-    this->limit += this->bufSize - 1;
+    this->copySrcBuf(src);
 }
 
 Lexer::Lexer(const Lexer &lexer) :
         Lexer(lexer.getUsedSize(), true) {
-    memcpy(this->buf, lexer.buf, this->bufSize);
-    this->limit += this->bufSize - 1;
+    this->copySrcBuf(lexer.buf);
 }
 
 Lexer::~Lexer() {
     delete[] this->buf;
     this->buf = 0;
+}
+
+void Lexer::copySrcBuf(const void *srcBuf) {
+    memcpy(this->buf, srcBuf, this->bufSize);
+    this->limit += this->bufSize - 1;
 }
 
 void Lexer::expandBuf(unsigned int needSize) {
@@ -184,8 +187,8 @@ TokenKind Lexer::nextToken(Token &token) {
       INNER_NAME = APPLIED_NAME | '${' VAR_NAME '}';
       INNER_SPECIAL_NAME = SPECIAL_NAME | '${' SPECIAL_NAMES '}';
 
-      CMD_START_CHAR = '\\' . | [^ \t\r\n;'"`|&<>(){}$#![\]0-9];
-      CMD_CHAR       = '\\' . | [^ \t\r\n;'"`|&<>(){}$#![\]];
+      CMD_START_CHAR = '\\' . | [^ \t\r\n;'"`|&<>(){}$#![\]0-9\000];
+      CMD_CHAR       = '\\' . | [^ \t\r\n;'"`|&<>(){}$#![\]\000];
 
       LINE_END = ';';
       NEW_LINE = [\r\n];
@@ -321,7 +324,8 @@ INIT:
       <CMD> COMMENT            { SKIP(); }
 
 
-      <STMT,EXPR,DSTRING,CMD> OTHER { RET(INVALID); }
+      <STMT,EXPR,DSTRING,CMD> '\000' { RET(EOS) ;}
+      <STMT,EXPR,DSTRING,CMD> OTHER  { RET(INVALID); }
     */
 
 END:
@@ -341,7 +345,7 @@ unsigned int Lexer::getLineNum() const {
 std::string Lexer::toString(Token &token) {
     assert(token.startPos < this->getUsedSize() &&
             token.startPos + token.size <= this->getUsedSize());
-    return std::string(this->buf[token.startPos], token.size);
+    return std::string((char*)(this->buf + token.startPos), token.size);
 }
 
 int Lexer::toInt(Token &token) {

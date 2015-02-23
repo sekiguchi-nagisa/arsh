@@ -23,7 +23,8 @@ int main() {
     cout << "!!!Hello World!!!" << endl; // prints !!!Hello World!!!
     debugp("hello debug print %d!!\n", 12);
     debugp("hello debug print no arg\n");
-    Lexer lexer("12345; $a");
+   // Lexer lexer("12345; $a");
+    Lexer lexer("assert");
     Token t;
     TokenKind k = EOS;
     do {
