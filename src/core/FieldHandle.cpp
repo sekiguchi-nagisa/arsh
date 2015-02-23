@@ -68,12 +68,12 @@ FunctionHandle::FunctionHandle(DSType *returnType, const std::vector<DSType*> &p
 
 FunctionHandle::FunctionHandle(DSType *returnType, const std::vector<DSType*> &paramTypes, int fieldIndex) :
         FieldHandle(0, fieldIndex, true),
-        returnType(returnType), paramTypes(paramTypes), paramIndexMap(), defaultValues(paramTypes.size()) {
+        returnType(returnType), paramTypes(paramTypes), paramIndexMap(), defaultValues() {
 }
 
 FunctionHandle::FunctionHandle(unsigned int paramSize, int fieldIndex) :
         FieldHandle(0, fieldIndex, true),
-        returnType(), paramTypes(paramSize), paramIndexMap(), defaultValues(paramSize) {
+        returnType(), paramTypes(), paramIndexMap(), defaultValues() {  //FIXME: paramTyes preallocate
 }
 
 FunctionHandle::~FunctionHandle() {

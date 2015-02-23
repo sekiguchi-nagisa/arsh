@@ -145,7 +145,7 @@ static DSType *decodeType(TypePool *typePool, char *&pos,
         unsigned int size = decodeNum(pos);
         assert(size == 1);
         std::vector<DSType*> elementTypes(size);
-        elementTypes.push_back(decodeType(typePool, pos, elementType0, elementType1));
+        elementTypes[0] = decodeType(typePool, pos, elementType0, elementType1);
         return typePool->createAndGetReifiedTypeIfUndefined(t, elementTypes);
     }
     case MAP_T: {
@@ -154,7 +154,7 @@ static DSType *decodeType(TypePool *typePool, char *&pos,
         assert(size == 2);
         std::vector<DSType*> elementTypes(size);
         for(unsigned int i = 0; i < size; i++) {
-            elementTypes.push_back(decodeType(typePool, pos, elementType0, elementType1));
+            elementTypes[i] = decodeType(typePool, pos, elementType0, elementType1);
         }
         return typePool->createAndGetReifiedTypeIfUndefined(t, elementTypes);
     }

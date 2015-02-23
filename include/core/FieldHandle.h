@@ -84,7 +84,7 @@ public:
  * function handle belongs to DSType is always treated as method.
  * function handle belongs to global scope is always treated as function.
  */
-class FunctionHandle: public FieldHandle {
+class FunctionHandle: public FieldHandle {  //FIXME:
 protected:
     DSType *returnType;
     std::vector<DSType*> paramTypes;

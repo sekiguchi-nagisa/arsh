@@ -253,7 +253,7 @@ int MapNode::accept(NodeVisitor *visitor) {
 // #######################
 
 TupleNode::TupleNode(int lineNum, Node *node) :
-        Node(lineNum), nodes(2) {
+        Node(lineNum), nodes() {
     this->nodes.push_back(node);
 }
 

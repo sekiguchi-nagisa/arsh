@@ -32,22 +32,22 @@ TypeCheckError::TypeCheckError(int lineNum, ErrorKind kind) :
 
 TypeCheckError::TypeCheckError(int lineNum, ErrorKind kind, const std::string &arg1) :
         lineNum(lineNum), t(msgTable[kind]), args(1) {
-    args.push_back(arg1);
+    args[0] = arg1;
 }
 
 TypeCheckError::TypeCheckError(int lineNum, ErrorKind kind, const std::string &arg1,
         const std::string &arg2) :
         lineNum(lineNum), t(msgTable[kind]), args(2) {
-    args.push_back(arg1);
-    args.push_back(arg2);
+    args[0] = arg1;
+    args[1] = arg2;
 }
 
 TypeCheckError::TypeCheckError(int lineNum, ErrorKind kind, const std::string &arg1,
         const std::string &arg2, const std::string &arg3) :
         lineNum(lineNum), t(msgTable[kind]), args(3) {
-    args.push_back(arg1);
-    args.push_back(arg2);
-    args.push_back(arg3);
+    args[0] = arg1;
+    args[1] = arg2;
+    args[2] = arg3;
 }
 
 TypeCheckError::TypeCheckError(int lineNum, const TypeLookupError &e) :

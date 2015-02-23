@@ -486,7 +486,7 @@ int TypeChecker::visitArrayNode(ArrayNode *node) {
 
     TypeTemplate *arrayTemplate = this->typePool->getArrayTemplate();
     std::vector<DSType*> elementTypes(1);
-    elementTypes.push_back(elementType);
+    elementTypes[0] = elementType;
     node->setType(this->typePool->createAndGetReifiedTypeIfUndefined(arrayTemplate, elementTypes));
     return 0;
 }
@@ -508,15 +508,17 @@ int TypeChecker::visitMapNode(MapNode *node) {
 
     TypeTemplate *mapTemplate = this->typePool->getMapTemplate();
     std::vector<DSType*> elementTypes(2);
-    elementTypes.push_back(valueType);
+    elementTypes[0] = keyType;
+    elementTypes[1] = valueType;
     node->setType(this->typePool->createAndGetReifiedTypeIfUndefined(mapTemplate, elementTypes));
     return 0;
 }
 
 int TypeChecker::visitTupleNode(TupleNode *node) {
-    std::vector<DSType*> types(node->getNodes().size());
-    for(Node *elementNode : node->getNodes()) {
-        types.push_back(this->checkType(elementNode));
+    unsigned int size = node->getNodes().size();
+    std::vector<DSType*> types(size);
+    for(unsigned int i = 0; i < size; i++) {
+        types[i] = this->checkType(node->getNodes()[i]);
     }
     node->setType(this->typePool->createAndGetTupleTypeIfUndefined(types));
     return 0;

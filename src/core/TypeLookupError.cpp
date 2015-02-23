@@ -27,16 +27,16 @@ const static char *msgTable[] = {
 // #############################
 
 TypeLookupError::TypeLookupError(ErrorKind kind, const std::string &arg1) :
-        messageTemplate(msgTable[kind]), args() {
-    this->args.push_back(arg1);
+        messageTemplate(msgTable[kind]), args(1) {
+    this->args[0] = arg1;
 }
 
 TypeLookupError::TypeLookupError(ErrorKind kind, const std::string &arg1,
         const std::string &arg2, const std::string &arg3) :
-        messageTemplate(msgTable[kind]), args() {
-    this->args.push_back(arg1);
-    this->args.push_back(arg2);
-    this->args.push_back(arg3);
+        messageTemplate(msgTable[kind]), args(3) {
+    this->args[0] = arg1;
+    this->args[1] = arg2;
+    this->args[2] = arg3;
 }
 
 const std::string &TypeLookupError::getTemplate() const {

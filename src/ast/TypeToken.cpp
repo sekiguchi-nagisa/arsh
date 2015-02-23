@@ -56,7 +56,7 @@ const std::string &ClassTypeToken::getTokenText() {
 
 ReifiedTypeToken::ReifiedTypeToken(ClassTypeToken *templateTypeToken) :
         TypeToken(templateTypeToken->getLineNum()), templateTypeToken(templateTypeToken),
-        elementTypeTokens(2) {
+        elementTypeTokens() {
 }
 
 ReifiedTypeToken::~ReifiedTypeToken() {
@@ -75,7 +75,7 @@ DSType *ReifiedTypeToken::toType(TypePool *typePool) {
     TypeTemplate *typeTemplate = typePool->getTypeTemplate(this->templateTypeToken->getTokenText(), size);
     std::vector<DSType*> elementTypes(size);
     for(int i = 0; i < size; i++) {
-        elementTypes.push_back(this->elementTypeTokens[i]->toType(typePool));
+        elementTypes[i] = this->elementTypeTokens[i]->toType(typePool);
     }
     return typePool->createAndGetReifiedTypeIfUndefined(typeTemplate, elementTypes);
 }
@@ -88,7 +88,7 @@ DSType *ReifiedTypeToken::toType(TypePool *typePool) {
 TypeToken *FuncTypeToken::voidTypeToken = new ClassTypeToken(0, "Void");
 
 FuncTypeToken::FuncTypeToken(int lineNum) :
-        TypeToken(lineNum), returnTypeToken(), paramTypeTokens(2) {
+        TypeToken(lineNum), returnTypeToken(), paramTypeTokens() {
 }
 
 FuncTypeToken::~FuncTypeToken() {
@@ -114,7 +114,7 @@ DSType *FuncTypeToken::toType(TypePool *typePool) {
     int size = this->paramTypeTokens.size();
     std::vector<DSType*> paramTypes(size);
     for(int i = 0; i < size; i++) {
-        paramTypes.push_back(this->paramTypeTokens[i]->toType(typePool));
+        paramTypes[i] = this->paramTypeTokens[i]->toType(typePool);
     }
     return typePool->createAndGetFuncTypeIfUndefined(returnType, paramTypes);
 }
