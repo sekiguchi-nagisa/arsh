@@ -44,7 +44,7 @@ add_custom_target(gen_lexer DEPENDS ${lexer_src})
 
 # add executable
 set(YDSH_STATIC ydsh_static)
-add_library(${YDSH_STATIC} ${YDSH_SRC} ${lexer_src})
+add_library(${YDSH_STATIC} STATIC ${YDSH_SRC} ${lexer_src})
 add_dependencies(${YDSH_STATIC} gen_lexer)
 add_executable(${BIN_NAME} ${SRC_DIR}/ydsh.cpp)
 target_link_libraries(${BIN_NAME} ${YDSH_STATIC})
