@@ -7,6 +7,7 @@ SET(CMAKE_VERBOSE_MAKEFILE 1)
 SET(BIN_NAME ydsh)
 SET(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 SET(YDSH_SRC ${SRC_DIR}/ydsh.cpp)
+SET(YDSH_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
     SET(CMAKE_BUILD_TYPE Release)
 endif()
@@ -25,18 +26,26 @@ macro(add_source)
 endmacro(add_source)
 
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+include_directories(${YDSH_INCLUDE})
 add_subdirectory(${SRC_DIR}/ast)
 add_subdirectory(${SRC_DIR}/core)
 add_subdirectory(${SRC_DIR}/eval)
 add_subdirectory(${SRC_DIR}/parser)
 add_subdirectory(${SRC_DIR}/util)
 
+# test setup
+enable_testing()
+add_subdirectory(test)
+add_custom_target(run_test COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure)
+
+
+# generate lexer 
 set(lexer_src ${SRC_DIR}/parser/Lexer.cpp) 
 add_custom_command(OUTPUT ${lexer_src} 
     COMMAND re2c -c -8 -o ${lexer_src} ${SRC_DIR}/Lexer.re2c.cpp
 )
 add_custom_target(gen_lexer DEPENDS ${lexer_src})
+
 
 add_executable(${BIN_NAME} ${YDSH_SRC} ${lexer_src})
 add_dependencies(${BIN_NAME} gen_lexer)

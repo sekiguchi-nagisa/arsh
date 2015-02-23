@@ -1,0 +1,3 @@
+setup_test(lexer)
+
+
