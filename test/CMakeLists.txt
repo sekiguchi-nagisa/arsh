@@ -17,7 +17,7 @@ add_subdirectory(${GTEST_DIR})
 macro(setup_test TEST_NAME)
     aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} ADD_SOURCES)
     add_executable(${TEST_NAME} ${ADD_SOURCES})
-    target_link_libraries(${TEST_NAME} gtest gtest_main)
+    target_link_libraries(${TEST_NAME} gtest gtest_main ${YDSH_STATIC})
     add_test(${TEST_NAME} ${TEST_NAME})
 endmacro()
 

@@ -2,8 +2,12 @@
 #include <stdio.h>
 #include <util/debug.h>
 
+#include <parser/Lexer.h>
+#include <core/DSType.h>
+
 TEST(lexer_test, case1) {
     SCOPED_TRACE("failed case1");
+    Lexer l("fhreu");
     ASSERT_EQ(1, 1);
 }
 

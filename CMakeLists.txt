@@ -6,7 +6,7 @@ PROJECT(ydsh)
 SET(CMAKE_VERBOSE_MAKEFILE 1)
 SET(BIN_NAME ydsh)
 SET(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
-SET(YDSH_SRC ${SRC_DIR}/ydsh.cpp)
+SET(YDSH_SRC "")
 SET(YDSH_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
     SET(CMAKE_BUILD_TYPE Release)
@@ -33,11 +33,6 @@ add_subdirectory(${SRC_DIR}/eval)
 add_subdirectory(${SRC_DIR}/parser)
 add_subdirectory(${SRC_DIR}/util)
 
-# test setup
-enable_testing()
-add_subdirectory(test)
-add_custom_target(run_test COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure)
-
 
 # generate lexer 
 set(lexer_src ${SRC_DIR}/parser/Lexer.cpp) 
@@ -47,10 +42,21 @@ add_custom_command(OUTPUT ${lexer_src}
 add_custom_target(gen_lexer DEPENDS ${lexer_src})
 
 
-add_executable(${BIN_NAME} ${YDSH_SRC} ${lexer_src})
-add_dependencies(${BIN_NAME} gen_lexer)
+# add executable
+set(YDSH_STATIC ydsh_static)
+add_library(${YDSH_STATIC} ${YDSH_SRC} ${lexer_src})
+add_dependencies(${YDSH_STATIC} gen_lexer)
+add_executable(${BIN_NAME} ${SRC_DIR}/ydsh.cpp)
+target_link_libraries(${BIN_NAME} ${YDSH_STATIC})
 
 install(TARGETS ${BIN_NAME} RUNTIME DESTINATION bin)
+
+# test setup
+enable_testing()
+add_subdirectory(test)
+add_custom_target(run_test COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure)
+
+
 
 MESSAGE(STATUS "CMAKE_BUILD_TYPE                 = ${CMAKE_BUILD_TYPE}")
 MESSAGE(STATUS "CMAKE_C_COMPILER                 = ${CMAKE_C_COMPILER}")
