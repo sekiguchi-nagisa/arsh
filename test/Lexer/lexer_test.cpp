@@ -649,6 +649,652 @@ TEST_F(LexerTest_Lv1, invalid_string_literal) {
 #undef TEXT
 }
 
+// applied name
+TEST_F(LexerTest_Lv1, appliedName1) {
+#define TEXT "$w10i_fArhue"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(DUP(TEXT));
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 3);
+        this->assertToken(0, APPLIED_NAME, TEXT);
+        this->assertToken(1, APPLIED_NAME, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[2].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, appliedName2) {
+#define TEXT "$__0"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(DUP(TEXT));
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 3);
+        this->assertToken(0, APPLIED_NAME, TEXT);
+        this->assertToken(1, APPLIED_NAME, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[2].first);
+    });
+#undef TEXT
+}
+
+// invalid applied name
+TEST_F(LexerTest_Lv1, invalid_appliedName) {
+#define TEXT "$_"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 1);
+        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+    });
+#undef TEXT
+}
+
+// special name
+TEST_F(LexerTest_Lv1, specialName) {
+#define TEXT "$@"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(DUP(TEXT));
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 3);
+        this->assertToken(0, SPECIAL_NAME, TEXT);
+        this->assertToken(1, SPECIAL_NAME, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[2].first);
+    });
+#undef TEXT
+}
+
+/**
+ * brace test
+ */
+TEST_F(LexerTest_Lv1, LP) {
+#define TEXT "("
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(DUP(TEXT));
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 3);
+        this->assertToken(0, LP, TEXT);
+        this->assertToken(1, LP, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[2].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, RP) {
+#define TEXT ")"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(DUP(TEXT));
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 1);
+        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, LB) {
+#define TEXT "["
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(DUP(TEXT));
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 3);
+        this->assertToken(0, LB, TEXT);
+        this->assertToken(1, LB, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[2].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, RB) {
+#define TEXT "]"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(DUP(TEXT));
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 3);
+        this->assertToken(0, RB, TEXT);
+        this->assertToken(1, RB, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[2].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, LBC) {
+#define TEXT "{"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(DUP(TEXT));
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 3);
+        this->assertToken(0, LBC, TEXT);
+        this->assertToken(1, LBC, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[2].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, RBC) {
+#define TEXT "}"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 1);
+        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+    });
+#undef TEXT
+}
+
+/*
+ * command token
+ */
+TEST_F(LexerTest_Lv1, CMD1) {
+#define TEXT "\assert"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, COMMAND, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, CMD2) {
+#define TEXT "\\ \\t\\r\\n\\;\\'\\\"\\`\\|\\&\\<\\>\\(\\)\\{\\}\\$\\#\\!\\[\\]\\8"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, COMMAND, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, CMD3) {
+#define TEXT "あ漢ω"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, COMMAND, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+/**
+ * test expr token in stmt mode.
+ */
+TEST_F(LexerTest_Lv1, COLON) {
+#define TEXT ":"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, COMMAND, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, COMMA) {
+#define TEXT ","
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, COMMAND, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, MUL) {
+#define TEXT "*"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, COMMAND, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, DIV) {
+#define TEXT "/"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, COMMAND, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, MOD) {
+#define TEXT "%"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, COMMAND, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, LT) {
+#define TEXT "<"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 1);
+        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, GT) {
+#define TEXT ">"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 1);
+        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, LE) {
+#define TEXT "<="
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 1);
+        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, GE) {
+#define TEXT ">="
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 1);
+        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, EQ) {
+#define TEXT "=="
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, COMMAND, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, NE) {
+#define TEXT "!="
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 1);
+        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, AND) {
+#define TEXT "&"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 1);
+        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, OR) {
+#define TEXT "|"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 1);
+        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, XOR) {
+#define TEXT "^"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, COMMAND, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, COND_AND) {
+#define TEXT "&&"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 1);
+        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, COND_OR) {
+#define TEXT "||"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 1);
+        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, RE_MATCH) {
+#define TEXT "=~"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, COMMAND, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, RE_UNMATCH) {
+#define TEXT "!~"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 1);
+        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, INC) {
+#define TEXT "++"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, COMMAND, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, DEC) {
+#define TEXT "--"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, COMMAND, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, ASSIGN) {
+#define TEXT "="
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, COMMAND, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, ADD_ASSIGN) {
+#define TEXT "+="
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, COMMAND, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, SUB_ASSIGN) {
+#define TEXT "-="
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, COMMAND, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, MUL_ASSIGN) {
+#define TEXT "*="
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, COMMAND, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, DIV_ASSIGN) {
+#define TEXT "/="
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, COMMAND, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, MOD_ASSIGN) {
+#define TEXT "%="
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, COMMAND, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, AS) {
+#define TEXT "as"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, COMMAND, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, FUNC) {
+#define TEXT "Func"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, COMMAND, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, IN) {
+#define TEXT "in"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, COMMAND, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, IS) {
+#define TEXT "is"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, COMMAND, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, ACCESS) {
+#define TEXT "."
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, COMMAND, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+/**
+ * new line, space and comment
+ */
+TEST_F(LexerTest_Lv1, LINE_END) {
+#define TEXT ";"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(DUP(TEXT));
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 3);
+        this->assertToken(0, LINE_END, TEXT);
+        this->assertToken(1, LINE_END, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[2].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, NEW_LINE) {
+#define TEXT "\n"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(DUP(TEXT));
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 3);
+        this->assertToken(0, NEW_LINE, TEXT);
+        this->assertToken(1, NEW_LINE, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[2].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, COMMENT) {
+#define TEXT "#fhreuvrei o"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 1);
+        ASSERT_EQ(EOS, this->getTokens()[0].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, SPACE1) {
+#define TEXT ""
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(DUP(TEXT));
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 1);
+        ASSERT_EQ(EOS, this->getTokens()[0].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, SPACE2) {
+#define TEXT "assert \\\r\\\n"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, ASSERT, "assert");
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

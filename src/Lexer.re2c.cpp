@@ -27,9 +27,8 @@ Lexer::Lexer(unsigned int initSize, bool fixed) :
         bufSize((fixed || initSize > DEFAULT_SIZE) ? initSize : DEFAULT_SIZE),
         buf(new unsigned char[this->bufSize]),
         cursor(this->buf), limit(this->buf), marker(0),
-        lineNum(1), endOfFile(false), modeStack(1) {
+        lineNum(1), endOfFile(false), modeStack(1, yycSTMT) {
     this->buf[0] = '\0';    // terminate null character.
-    this->modeStack.push_back(yycSTMT);
 }
 
 Lexer::Lexer(unsigned int initSize, FILE *fp) :
@@ -192,7 +191,7 @@ TokenKind Lexer::nextToken(Token &token) {
 
       LINE_END = ';';
       NEW_LINE = [\r\n];
-      COMMENT = '#' [^\r\n]*;
+      COMMENT = '#' [^\r\n\000]*;
       OTHER = .;
     */
 
@@ -229,10 +228,11 @@ INIT:
       <STMT,EXPR> FLOAT        { MODE(EXPR); RET(FLOAT_LITERAL); }
       <STMT,EXPR> STRING_LITERAL
                                { MODE(EXPR); RET(STRING_LITERAL); }
-      <STMT,EXPR> ["]          { PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
+      <STMT,EXPR,CMD> ["]      { PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
       <STMT,EXPR> BQUOTE_LITERAL
                                { MODE(EXPR); RET(BQUOTE_LITERAL); }
-      <STMT,EXPR> '$('         { PUSH_MODE(STMT); RET(START_SUB_CMD); }
+      <STMT,EXPR,DSTRING,CMD> '$('
+                               { PUSH_MODE(STMT); RET(START_SUB_CMD); }
 
       <STMT,EXPR> APPLIED_NAME { MODE(EXPR); RET(APPLIED_NAME); }
       <STMT,EXPR> SPECIAL_NAME { MODE(EXPR); RET(SPECIAL_NAME); }
@@ -243,8 +243,6 @@ INIT:
       <STMT,EXPR> ']'          { MODE(EXPR); RET(RB); }
       <STMT,EXPR> '{'          { PUSH_MODE(STMT); RET(LBC); }
       <STMT,EXPR> '}'          { POP_MODE(); RET(RBC); }
-      <STMT,EXPR> '<'          { MODE(EXPR); RET(LA); }
-      <STMT,EXPR> '>'          { MODE(EXPR); RET(RA); }
 
       <STMT> CMD_START_CHAR CMD_CHAR*
                                { PUSH_MODE(CMD); FIND_NEW_LINE(); RET(COMMAND); }
@@ -255,6 +253,8 @@ INIT:
       <EXPR> '*'               { RET(MUL); }
       <EXPR> '/'               { RET(DIV); }
       <EXPR> '%'               { RET(MOD); }
+      <EXPR> '<'               { RET(LA); }
+      <EXPR> '>'               { RET(RA); }
       <EXPR> '<='              { RET(LE); }
       <EXPR> '>='              { RET(GE); }
       <EXPR> '=='              { RET(EQ); }
@@ -288,28 +288,22 @@ INIT:
       <STMT,EXPR> LINE_END     { MODE(STMT); RET(LINE_END); }
       <STMT,EXPR> NEW_LINE     { MODE(STMT); INC_LINE_NUM(); RET(NEW_LINE); }
 
-      <STMT,EXPR> COMMENT      { SKIP(); }
+      <STMT,EXPR,CMD> COMMENT  { SKIP(); }
       <STMT,EXPR> [ \t]+       { SKIP(); }
-      <STMT,EXPR> '\\' [\r\n]  { INC_LINE_NUM(); SKIP(); }
+      <EXPR> '\\' [\r\n]       { INC_LINE_NUM(); SKIP(); }
 
       <DSTRING> ["]            { POP_MODE(); RET(CLOSE_DQUOTE);}
       <DSTRING> ([^\r\n`$"\\] | '\\' [$btnfr"`\\])+
                                { RET(STR_ELEMENT);}
-      <DSTRING> BQUOTE_LITERAL { RET(BQUOTE_LITERAL); }
-      <DSTRING> INNER_NAME     { RET(APPLIED_NAME); }
-      <DSTRING> INNER_SPECIAL_NAME
+      <DSTRING,CMD> BQUOTE_LITERAL
+                               { RET(BQUOTE_LITERAL); }
+      <DSTRING,CMD> INNER_NAME { RET(APPLIED_NAME); }
+      <DSTRING,CMD> INNER_SPECIAL_NAME
                                { RET(SPECIAL_NAME); }
-      <DSTRING> '${'           { PUSH_MODE(EXPR); RET(START_INTERP); }
-      <DSTRING> '$('           { PUSH_MODE(STMT); RET(START_SUB_CMD); }
+      <DSTRING,CMD> '${'       { PUSH_MODE(EXPR); RET(START_INTERP); }
 
       <CMD> CMD_CHAR+          { FIND_NEW_LINE();  RET(CMD_ARG_PART); }
       <CMD> STRING_LITERAL     { RET(STRING_LITERAL); }
-      <CMD> ["]                { PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
-      <CMD> BQUOTE_LITERAL     { RET(BQUOTE_LITERAL); }
-      <CMD> INNER_NAME         { RET(APPLIED_NAME); }
-      <CMD> INNER_SPECIAL_NAME { RET(SPECIAL_NAME); }
-      <CMD> '${'               { PUSH_MODE(EXPR); RET(START_INTERP); }
-      <CMD> '$('               { PUSH_MODE(STMT); RET(START_SUB_CMD); }
       <CMD> ')'                { POP_MODE(); POP_MODE(); RET(RP); }
       <CMD> [ \t]+             { RET(CMD_SEP); }
       <CMD> ('<' | '>' | '1>' | '1>>' | '>>' | '2>' | '2>>' | '>&' | '&>' | '&>>')
@@ -321,10 +315,9 @@ INIT:
       <CMD> '&&'               { POP_MODE(); MODE(STMT); RET(AND_LIST); }
       <CMD> LINE_END           { POP_MODE(); MODE(STMT); RET(LINE_END); }
       <CMD> NEW_LINE           { POP_MODE(); MODE(STMT); RET(NEW_LINE); }
-      <CMD> COMMENT            { SKIP(); }
 
 
-      <STMT,EXPR,DSTRING,CMD> '\000' { RET(EOS) ;}
+      <STMT,EXPR,DSTRING,CMD> '\000' { RET(EOS); }
       <STMT,EXPR,DSTRING,CMD> OTHER  { RET(INVALID); }
     */
 

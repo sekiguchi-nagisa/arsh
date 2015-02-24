@@ -30,6 +30,6 @@ int main() {
     do {
         k = lexer.nextToken(t);
         cout << TO_NAME(k) << endl;
-    } while(k != EOS);
+    } while(k != EOS && k != INVALID);
     return 0;
 }
