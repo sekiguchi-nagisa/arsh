@@ -92,12 +92,24 @@ TEST_F(LexerTest_Lv1, assert_tok) {
 #define TEXT "assert"
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->initLexer(DUP(TEXT));
+        this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 3);
+        ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, ASSERT, TEXT);
-        this->assertToken(1, ASSERT, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, break_tok) {
+#define TEXT "break"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, BREAK, TEXT);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -106,12 +118,11 @@ TEST_F(LexerTest_Lv1, catch_tok) {
 #define TEXT "catch"
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->initLexer(DUP(TEXT));
+        this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 3);
+        ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, CATCH, TEXT);
-        this->assertToken(1, CATCH, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -120,12 +131,11 @@ TEST_F(LexerTest_Lv1, class_tok) {
 #define TEXT "class"
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->initLexer(DUP(TEXT));
+        this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 3);
+        ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, CLASS, TEXT);
-        this->assertToken(1, CLASS, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -134,12 +144,11 @@ TEST_F(LexerTest_Lv1, continue_tok) {
 #define TEXT "continue"
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->initLexer(DUP(TEXT));
+        this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 3);
+        ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, CONTINUE, TEXT);
-        this->assertToken(1, CONTINUE, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -148,12 +157,11 @@ TEST_F(LexerTest_Lv1, do_tok) {
 #define TEXT "do"
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->initLexer(DUP(TEXT));
+        this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 3);
+        ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, DO, TEXT);
-        this->assertToken(1, DO, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -162,12 +170,11 @@ TEST_F(LexerTest_Lv1, else_tok) {
 #define TEXT "else"
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->initLexer(DUP(TEXT));
+        this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 3);
+        ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, ELSE, TEXT);
-        this->assertToken(1, ELSE, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -190,12 +197,11 @@ TEST_F(LexerTest_Lv1, exportenv_tok) {
 #define TEXT "export-env"
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->initLexer(DUP(TEXT));
+        this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 3);
+        ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, EXPORT_ENV, TEXT);
-        this->assertToken(1, EXPORT_ENV, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -204,12 +210,11 @@ TEST_F(LexerTest_Lv1, finally_tok) {
 #define TEXT "finally"
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->initLexer(DUP(TEXT));
+        this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 3);
+        ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, FINALLY, TEXT);
-        this->assertToken(1, FINALLY, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -218,12 +223,11 @@ TEST_F(LexerTest_Lv1, for_tok) {
 #define TEXT "for"
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->initLexer(DUP(TEXT));
+        this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 3);
+        ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, FOR, TEXT);
-        this->assertToken(1, FOR, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -232,12 +236,11 @@ TEST_F(LexerTest_Lv1, function_tok) {
 #define TEXT "function"
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->initLexer(DUP(TEXT));
+        this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 3);
+        ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, FUNCTION, TEXT);
-        this->assertToken(1, FUNCTION, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -246,12 +249,11 @@ TEST_F(LexerTest_Lv1, if_tok) {
 #define TEXT "if"
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->initLexer(DUP(TEXT));
+        this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 3);
+        ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, IF, TEXT);
-        this->assertToken(1, IF, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -260,12 +262,11 @@ TEST_F(LexerTest_Lv1, importenv_tok) {
 #define TEXT "import-env"
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->initLexer(DUP(TEXT));
+        this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 3);
+        ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, IMPORT_ENV, TEXT);
-        this->assertToken(1, IMPORT_ENV, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -274,12 +275,11 @@ TEST_F(LexerTest_Lv1, let_tok) {
 #define TEXT "let"
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->initLexer(DUP(TEXT));
+        this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 3);
+        ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, LET, TEXT);
-        this->assertToken(1, LET, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -316,12 +316,11 @@ TEST_F(LexerTest_Lv1, return_tok) {
 #define TEXT "return"
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->initLexer(DUP(TEXT));
+        this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 3);
+        ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, RETURN, TEXT);
-        this->assertToken(1, RETURN, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -330,12 +329,11 @@ TEST_F(LexerTest_Lv1, try_tok) {
 #define TEXT "try"
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->initLexer(DUP(TEXT));
+        this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 3);
+        ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, TRY, TEXT);
-        this->assertToken(1, TRY, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -344,12 +342,11 @@ TEST_F(LexerTest_Lv1, throw_tok) {
 #define TEXT "throw"
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->initLexer(DUP(TEXT));
+        this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 3);
+        ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, THROW, TEXT);
-        this->assertToken(1, THROW, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -358,12 +355,11 @@ TEST_F(LexerTest_Lv1, var_tok) {
 #define TEXT "var"
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->initLexer(DUP(TEXT));
+        this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 3);
+        ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, VAR, TEXT);
-        this->assertToken(1, VAR, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -372,12 +368,11 @@ TEST_F(LexerTest_Lv1, while_tok) {
 #define TEXT "while"
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->initLexer(DUP(TEXT));
+        this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 3);
+        ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, WHILE, TEXT);
-        this->assertToken(1, WHILE, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -1283,13 +1278,13 @@ TEST_F(LexerTest_Lv1, SPACE1) {
 }
 
 TEST_F(LexerTest_Lv1, SPACE2) {
-#define TEXT "assert \\\r\\\n"
+#define TEXT "var \\\r\\\n"
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(TEXT);
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
-        this->assertToken(0, ASSERT, "assert");
+        this->assertToken(0, VAR, "var");
         ASSERT_EQ(EOS, this->getTokens()[1].first);
     });
 #undef TEXT

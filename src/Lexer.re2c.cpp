@@ -199,27 +199,28 @@ INIT:
     unsigned int startPos = this->getPos();
     TokenKind kind = INVALID;
     /*!re2c
-      <STMT,EXPR> 'assert'     { MODE(EXPR); RET(ASSERT); }
-      <STMT,EXPR> 'catch'      { MODE(EXPR); RET(CATCH); }
-      <STMT,EXPR> 'class'      { MODE(EXPR); RET(CLASS); }
-      <STMT,EXPR> 'continue'   { MODE(EXPR); RET(CONTINUE); }
-      <STMT,EXPR> 'do'         { MODE(EXPR); RET(DO); }
-      <STMT,EXPR> 'else'       { MODE(EXPR); RET(ELSE); }
+      <STMT> 'assert'          { RET(ASSERT); }
+      <STMT> 'break'           { RET(BREAK); }
+      <STMT> 'catch'           { RET(CATCH); }
+      <STMT> 'class'           { MODE(EXPR); RET(CLASS); }
+      <STMT> 'continue'        { RET(CONTINUE); }
+      <STMT> 'do'              { RET(DO); }
+      <STMT> 'else'            { RET(ELSE); }
       <STMT,EXPR> 'extends'    { MODE(EXPR); RET(EXTENDS); }
-      <STMT,EXPR> 'export-env' { MODE(EXPR); RET(EXPORT_ENV); }
-      <STMT,EXPR> 'finally'    { MODE(EXPR); RET(FINALLY); }
-      <STMT,EXPR> 'for'        { MODE(EXPR); RET(FOR); }
-      <STMT,EXPR> 'function'   { MODE(EXPR); RET(FUNCTION); }
-      <STMT,EXPR> 'if'         { MODE(EXPR); RET(IF); }
-      <STMT,EXPR> 'import-env' { MODE(EXPR); RET(IMPORT_ENV); }
-      <STMT,EXPR> 'let'        { MODE(EXPR); RET(LET); }
+      <STMT> 'export-env'      { MODE(EXPR); RET(EXPORT_ENV); }
+      <STMT> 'finally'         { RET(FINALLY); }
+      <STMT> 'for'             { RET(FOR); }
+      <STMT> 'function'        { MODE(EXPR); RET(FUNCTION); }
+      <STMT> 'if'              { RET(IF); }
+      <STMT> 'import-env'      { MODE(EXPR); RET(IMPORT_ENV); }
+      <STMT> 'let'             { MODE(EXPR); RET(LET); }
       <STMT,EXPR> 'new'        { MODE(EXPR); RET(NEW); }
       <STMT,EXPR> 'not'        { MODE(EXPR); RET(NOT); }
-      <STMT,EXPR> 'return'     { MODE(EXPR); RET(RETURN); }
-      <STMT,EXPR> 'try'        { MODE(EXPR); RET(TRY); }
-      <STMT,EXPR> 'throw'      { MODE(EXPR); RET(THROW); }
-      <STMT,EXPR> 'var'        { MODE(EXPR); RET(VAR); }
-      <STMT,EXPR> 'while'      { MODE(EXPR); RET(WHILE); }
+      <STMT> 'return'          { MODE(EXPR); RET(RETURN); }
+      <STMT> 'try'             { RET(TRY); }
+      <STMT> 'throw'           { MODE(EXPR); RET(THROW); }
+      <STMT> 'var'             { MODE(EXPR); RET(VAR); }
+      <STMT> 'while'           { RET(WHILE); }
 
       <STMT,EXPR> '+'          { MODE(EXPR); RET(PLUS); }
       <STMT,EXPR> '-'          { MODE(EXPR); RET(MINUS); }
