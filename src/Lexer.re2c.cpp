@@ -248,8 +248,8 @@ INIT:
       <STMT> CMD_START_CHAR CMD_CHAR*
                                { PUSH_MODE(CMD); FIND_NEW_LINE(); RET(COMMAND); }
 
-      <EXPR> ':'               { RET(COLON); }
-      <EXPR> ','               { RET(COMMA); }
+      <EXPR> ':' [ \t\r\n]*    { FIND_NEW_LINE(); RET(COLON); }
+      <EXPR> ',' [ \t\r\n]*    { FIND_NEW_LINE(); RET(COMMA); }
 
       <EXPR> '*'               { RET(MUL); }
       <EXPR> '/'               { RET(DIV); }
