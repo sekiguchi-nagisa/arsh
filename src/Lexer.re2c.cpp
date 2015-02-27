@@ -338,7 +338,7 @@ unsigned int Lexer::getLineNum() const {
 }
 
 #define CHECK_TOK(token) \
-    assert(token.startPos < this->getUsedSize &&\
+    assert(token.startPos < this->getUsedSize() &&\
             token.startPos + token.size <= this->getUsedSize())
 
 std::string Lexer::toTokenText(Token &token) {
