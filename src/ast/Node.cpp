@@ -18,6 +18,7 @@
 #include <core/magic_method.h>
 #include <ast/Node.h>
 #include <util/debug.h>
+#include <ast/dump.h>
 
 #include <assert.h>
 #include <stdlib.h>
@@ -34,7 +35,7 @@ Node::Node(int lineNum) :
 Node::~Node() {
 }
 
-int Node::getLineNum() {
+int Node::getLineNum() const {
     return this->lineNum;
 }
 
@@ -42,7 +43,7 @@ void Node::setType(DSType *type) {
     this->type = type;
 }
 
-DSType *Node::getType() {
+DSType *Node::getType() const {
     return this->type;
 }
 
@@ -57,6 +58,10 @@ IntValueNode::IntValueNode(int lineNum, long value) :
 
 long IntValueNode::getValue() {
     return this->value;
+}
+
+void IntValueNode::dump(Writer &writer) const {
+    WRITE_PRIM(value);
 }
 
 int IntValueNode::accept(NodeVisitor *visitor) {
@@ -75,6 +80,10 @@ double FloatValueNode::getValue() {
     return this->value;
 }
 
+void FloatValueNode::dump(Writer &writer) const {
+    WRITE_PRIM(value);
+}
+
 int FloatValueNode::accept(NodeVisitor *visitor) {
     return visitor->visitFloatValueNode(this);
 }
@@ -89,6 +98,10 @@ BooleanValueNode::BooleanValueNode(int lineNum, bool value) :
 
 bool BooleanValueNode::getValue() {
     return this->value;
+}
+
+void BooleanValueNode::dump(Writer &writer) const {
+    WRITE_PRIM(value);
 }
 
 int BooleanValueNode::accept(NodeVisitor *visitor) {
@@ -142,6 +155,10 @@ const std::string &StringValueNode::getValue() {
     return this->value;
 }
 
+void StringValueNode::dump(Writer &writer) const {
+    WRITE(value);
+}
+
 int StringValueNode::accept(NodeVisitor *visitor) {
     return visitor->visitStringValueNode(this);
 }
@@ -167,6 +184,10 @@ void StringExprNode::addExprNode(Node *node) {	//TODO:
 
 const std::vector<Node*> &StringExprNode::getExprNodes() {
     return this->nodes;
+}
+
+void StringExprNode::dump(Writer &writer) const {
+    WRITE(nodes);
 }
 
 int StringExprNode::accept(NodeVisitor *visitor) {
@@ -198,6 +219,10 @@ void ArrayNode::setExprNode(unsigned int index, Node *node) {
 
 const std::vector<Node*> &ArrayNode::getExprNodes() {
     return this->nodes;
+}
+
+void ArrayNode::dump(Writer &writer) const {
+    WRITE(nodes);
 }
 
 int ArrayNode::accept(NodeVisitor *visitor) {
@@ -244,6 +269,11 @@ const std::vector<Node*> &MapNode::getValueNodes() {
     return this->valueNodes;
 }
 
+void MapNode::dump(Writer &writer) const {
+    WRITE(keyNodes);
+    WRITE(valueNodes);
+}
+
 int MapNode::accept(NodeVisitor *visitor) {
     return visitor->visitMapNode(this);
 }
@@ -270,6 +300,10 @@ void TupleNode::addNode(Node *node) {
 
 const std::vector<Node*> &TupleNode::getNodes() {
     return this->nodes;
+}
+
+void TupleNode::dump(Writer &writer) const {
+    WRITE(nodes);
 }
 
 int TupleNode::accept(NodeVisitor *visitor) {
@@ -307,6 +341,13 @@ void VarNode::setAttribute(FieldHandle *handle) {
     this->readOnly = handle->isReadOnly();
     this->global = handle->isGlobal();
     this->index = handle->getFieldIndex();
+}
+
+void VarNode::dump(Writer &writer) const {
+    WRITE_PRIM(readOnly);
+    WRITE_PRIM(index);
+    WRITE(varName);
+    WRITE_PRIM(global);
 }
 
 int VarNode::accept(NodeVisitor *visitor) {
@@ -364,6 +405,14 @@ AccessNode::AdditionalOp AccessNode::getAdditionnalOp() {
     return this->additionalOp;
 }
 
+void AccessNode::dump(Writer &writer) const {
+    WRITE_PRIM(readOnly);
+    WRITE_PRIM(index);
+    WRITE_PTR(recvNode);
+    WRITE(fieldName);
+    WRITE_PRIM(additionalOp);
+}
+
 int AccessNode::accept(NodeVisitor *visitor) {
     return visitor->visitAccessNode(this);
 }
@@ -415,6 +464,13 @@ int CastNode::getFieldIndex() {
     return this->fieldIndex;
 }
 
+void CastNode::dump(Writer &writer) const {
+    WRITE_PTR(exprNode);
+    WRITE_PTR(targetTypeToken);
+    WRITE_PRIM(opKind);
+    WRITE_PRIM(fieldIndex);
+}
+
 int CastNode::accept(NodeVisitor *visitor) {
     return visitor->visitCastNode(this);
 }
@@ -464,6 +520,13 @@ void InstanceOfNode::setOpKind(InstanceOfNode::InstanceOfOp opKind) {
 
 InstanceOfNode::InstanceOfOp InstanceOfNode::getOpKind() {
     return this->opKind;
+}
+
+void InstanceOfNode::dump(Writer &writer) const {
+    WRITE_PTR(targetNode);
+    WRITE_PTR(targetTypeToken);
+    WRITE_PTR(targetType);
+    WRITE_PRIM(opKind);
 }
 
 int InstanceOfNode::accept(NodeVisitor *visitor) {
@@ -519,6 +582,13 @@ ApplyNode *BinaryOpNode::creatApplyNode() {
 
 ApplyNode *BinaryOpNode::getApplyNode() {
     return this->applyNode;
+}
+
+void BinaryOpNode::dump(Writer &writer) const {
+    WRITE_PTR(leftNode);
+    WRITE_PTR(rightNode);
+    WRITE_PRIM(op);
+    WRITE_PTR(applyNode);
 }
 
 int BinaryOpNode::accept(NodeVisitor *visitor) {
@@ -583,6 +653,10 @@ const std::vector<std::pair<std::string, Node*>> &ArgsNode::getArgPairs() {
     return this->argPairs;
 }
 
+void ArgsNode::dump(Writer &writer) const {
+    //FIXME: argPairs
+}
+
 int ArgsNode::accept(NodeVisitor *visitor) {
     return visitor->visitArgsNode(this);
 }
@@ -636,6 +710,12 @@ bool ApplyNode::isFuncCall() {
     return this->hasAttribute(FUNC_CALL);
 }
 
+void ApplyNode::dump(Writer &writer) const {
+    WRITE_PTR(recvNode);
+    WRITE_PTR(argsNode);
+    WRITE_PRIM(attributeSet);   //FIXME:
+}
+
 int ApplyNode::accept(NodeVisitor *visitor) {
     return visitor->visitApplyNode(this);
 }
@@ -668,6 +748,11 @@ ArgsNode *NewNode::getArgsNode() {
     return this->argsNode;
 }
 
+void NewNode::dump(Writer &writer) const {
+    WRITE_PTR(targetTypeToken);
+    WRITE_PTR(argsNode);
+}
+
 int NewNode::accept(NodeVisitor *visitor) {
     return visitor->visitNewNode(this);
 }
@@ -698,6 +783,12 @@ Node *CondOpNode::getRightNode() {
 
 bool CondOpNode::isAndOp() {
     return this->andOp;
+}
+
+void CondOpNode::dump(Writer &writer) const {
+    WRITE_PTR(leftNode);
+    WRITE_PTR(rightNode);
+    WRITE_PRIM(andOp);
 }
 
 int CondOpNode::accept(NodeVisitor *visitor) {
@@ -744,6 +835,10 @@ const std::vector<std::pair<int, Node*>> &ProcessNode::getRedirOptions() {
     return this->redirOptions;
 }
 
+void ProcessNode::dump(Writer &writer) const {
+    //FIXME:
+}
+
 int ProcessNode::accept(NodeVisitor *visitor) {
     return visitor->visitProcessNode(this);
 }
@@ -782,6 +877,10 @@ const std::vector<Node*> &ProcArgNode::getSegmentNodes() {
     return this->segmentNodes;
 }
 
+void ProcArgNode::dump(Writer &writer) const {
+    WRITE(segmentNodes);
+}
+
 int ProcArgNode::accept(NodeVisitor *visitor) {
     return visitor->visitProcArgNode(this);
 }
@@ -795,6 +894,10 @@ SpecialCharNode::SpecialCharNode(int lineNum) :
 }
 
 SpecialCharNode::~SpecialCharNode() {
+}
+
+void SpecialCharNode::dump(Writer &writer) const {
+    //FIXME:
 }
 
 int SpecialCharNode::accept(NodeVisitor *visitor) {
@@ -828,6 +931,10 @@ bool TaskNode::isBackground() {
     return this->background;
 }
 
+void TaskNode::dump(Writer &writer) const {
+    //FIXME:
+}
+
 int TaskNode::accept(NodeVisitor *visitor) {
     return visitor->visitTaskNode(this);
 }
@@ -849,6 +956,10 @@ Node *InnerTaskNode::getExprNode() {
     return this->exprNode;
 }
 
+void InnerTaskNode::dump(Writer &writer) const {
+    //FIXME:
+}
+
 int InnerTaskNode::accept(NodeVisitor *visitor) {
     return visitor->visitInnerTaskNode(this);
 }
@@ -868,6 +979,10 @@ AssertNode::~AssertNode() {
 
 Node *AssertNode::getExprNode() {
     return this->exprNode;
+}
+
+void AssertNode::dump(Writer &writer) const {
+    WRITE_PTR(exprNode);
 }
 
 int AssertNode::accept(NodeVisitor *visitor) {
@@ -901,6 +1016,10 @@ const std::list<Node*> &BlockNode::getNodeList() {
     return this->nodeList;
 }
 
+void BlockNode::dump(Writer &writer) const {
+    WRITE(nodeList);
+}
+
 int BlockNode::accept(NodeVisitor *visitor) {
     return visitor->visitBlockNode(this);
 }
@@ -921,6 +1040,10 @@ BreakNode::BreakNode(int lineNum) :
         BlockEndNode(lineNum) {
 }
 
+void BreakNode::dump(Writer &writer) const {
+    // do nothing
+}
+
 int BreakNode::accept(NodeVisitor *visitor) {
     return visitor->visitBreakNode(this);
 }
@@ -931,6 +1054,10 @@ int BreakNode::accept(NodeVisitor *visitor) {
 
 ContinueNode::ContinueNode(int lineNum) :
         BlockEndNode(lineNum) {
+}
+
+void ContinueNode::dump(Writer &writer) const {
+    // do nothing
 }
 
 int ContinueNode::accept(NodeVisitor *visitor) {
@@ -956,6 +1083,11 @@ const std::string &ExportEnvNode::getEnvName() {
 
 Node *ExportEnvNode::getExprNode() {
     return this->exprNode;
+}
+
+void ExportEnvNode::dump(Writer &writer) const {
+    WRITE(envName);
+    WRITE_PTR(exprNode);
 }
 
 int ExportEnvNode::accept(NodeVisitor *visitor) {
@@ -985,6 +1117,12 @@ bool ImportEnvNode::isGlobal() {
 
 int ImportEnvNode::getVarIndex() {
     return this->varIndex;
+}
+
+void ImportEnvNode::dump(Writer &writer) const {
+    WRITE(envName);
+    WRITE_PRIM(global);
+    WRITE_PRIM(varIndex);
 }
 
 int ImportEnvNode::accept(NodeVisitor *visitor) {
@@ -1042,6 +1180,13 @@ BlockNode *ForNode::getBlockNode() {
     return this->blockNode;
 }
 
+void ForNode::dump(Writer &writer) const {
+    WRITE_PTR(initNode);
+    WRITE_PTR(condNode);
+    WRITE_PTR(iterNode);
+    WRITE_PTR(blockNode);
+}
+
 int ForNode::accept(NodeVisitor *visitor) {
     return visitor->visitForNode(this);
 }
@@ -1070,6 +1215,11 @@ BlockNode *WhileNode::getBlockNode() {
     return this->blockNode;
 }
 
+void WhileNode::dump(Writer &writer) const {
+    WRITE_PTR(condNode);
+    WRITE_PTR(blockNode);
+}
+
 int WhileNode::accept(NodeVisitor *visitor) {
     return visitor->visitWhileNode(this);
 }
@@ -1091,6 +1241,11 @@ BlockNode *DoWhileNode::getBlockNode() {
 
 Node *DoWhileNode::getCondNode() {
     return this->condNode;
+}
+
+void DoWhileNode::dump(Writer &writer) const {
+    WRITE_PTR(blockNode);
+    WRITE_PTR(condNode);
 }
 
 int DoWhileNode::accept(NodeVisitor *visitor) {
@@ -1129,6 +1284,12 @@ BlockNode *IfNode::getElseNode() {
     return this->elseNode;
 }
 
+void IfNode::dump(Writer &writer) const {
+    WRITE_PTR(condNode);
+    WRITE_PTR(thenNode);
+    WRITE_PTR(elseNode);
+}
+
 int IfNode::accept(NodeVisitor *visitor) {
     return visitor->visitIfNode(this);
 }
@@ -1154,6 +1315,10 @@ Node *ReturnNode::getExprNode() {
     return this->exprNode;
 }
 
+void ReturnNode::dump(Writer &writer) const {
+    WRITE_PTR(exprNode);
+}
+
 int ReturnNode::accept(NodeVisitor *visitor) {
     return visitor->visitReturnNode(this);
 }
@@ -1173,6 +1338,10 @@ ThrowNode::~ThrowNode() {
 
 Node *ThrowNode::getExprNode() {
     return this->exprNode;
+}
+
+void ThrowNode::dump(Writer &writer) const {
+    WRITE_PTR(exprNode);
 }
 
 int ThrowNode::accept(NodeVisitor *visitor) {
@@ -1220,6 +1389,13 @@ DSType *CatchNode::getExceptionType() {
 
 BlockNode *CatchNode::getBlockNode() {
     return this->blockNode;
+}
+
+void CatchNode::dump(Writer &writer) const {
+    WRITE(exceptionName);
+    WRITE_PTR(typeToken);
+    WRITE_PTR(exceptionType);
+    WRITE_PTR(blockNode);
 }
 
 int CatchNode::accept(NodeVisitor *visitor) {
@@ -1273,6 +1449,18 @@ Node *TryNode::getFinallyNode() {
     return this->finallyNode;
 }
 
+void TryNode::dump(Writer &writer) const {
+    WRITE_PTR(blockNode);
+
+    std::vector<Node*> catchNodes;
+    for(CatchNode *node : this->catchNodes) {
+        catchNodes.push_back(node);
+    }
+    WRITE(catchNodes);
+
+    WRITE_PTR(finallyNode);
+}
+
 int TryNode::accept(NodeVisitor *visitor) {
     return visitor->visitTryNode(this);
 }
@@ -1292,6 +1480,10 @@ FinallyNode::~FinallyNode() {
 
 BlockNode *FinallyNode::getBlockNode() {
     return this->blockNode;
+}
+
+void FinallyNode::dump(Writer &writer) const {
+    WRITE_PTR(blockNode);
 }
 
 int FinallyNode::accept(NodeVisitor *visitor) {
@@ -1337,6 +1529,14 @@ int VarDeclNode::getVarIndex() {
     return this->varIndex;
 }
 
+void VarDeclNode::dump(Writer &writer) const {
+    WRITE(varName);
+    WRITE_PRIM(readOnly);
+    WRITE_PRIM(global);
+    WRITE_PRIM(varIndex);
+    WRITE_PTR(initValueNode);
+}
+
 int VarDeclNode::accept(NodeVisitor *visitor) {
     return visitor->visitVarDeclNode(this);
 }
@@ -1371,6 +1571,12 @@ Node *AssignNode::getRightNode() {
 
 bool AssignNode::isSelfAssignment() {
     return this->selfAssign;
+}
+
+void AssignNode::dump(Writer &writer) const {
+    WRITE_PTR(leftNode);
+    WRITE_PTR(rightNode);
+    WRITE_PRIM(selfAssign);
 }
 
 int AssignNode::accept(NodeVisitor *visitor) {
@@ -1445,6 +1651,10 @@ BlockNode *FunctionNode::getBlockNode() {
     return this->blockNode;
 }
 
+void FunctionNode::dump(Writer &writer) const {
+    //FIXME:
+}
+
 int FunctionNode::accept(NodeVisitor *visitor) {
     return visitor->visitFunctionNode(this);
 }
@@ -1457,6 +1667,10 @@ EmptyNode::EmptyNode() :
         Node(0) {
 }
 
+void EmptyNode::dump(Writer &writer) const {
+    // do nothing
+}
+
 int EmptyNode::accept(NodeVisitor *visitor) {
     return visitor->visitEmptyNode(this);
 }
@@ -1467,6 +1681,10 @@ int EmptyNode::accept(NodeVisitor *visitor) {
 
 DummyNode::DummyNode():
         Node(0) {
+}
+
+void DummyNode::dump(Writer &writer) const {
+    // do nothing
 }
 
 int DummyNode::accept(NodeVisitor *visitor) {
@@ -1492,7 +1710,7 @@ void RootNode::addNode(Node *node) {
     this->nodeList.push_back(node);
 }
 
-const std::list<Node*> &RootNode::getNodeList() {
+const std::list<Node*> &RootNode::getNodeList() const {
     return this->nodeList;
 }
 

@@ -53,7 +53,7 @@ BaseType::BaseType(std::string &&typeName, bool extendable, DSType *superType) :
 BaseType::~BaseType() {
 }
 
-std::string BaseType::getTypeName() {
+std::string BaseType::getTypeName() const {
     return this->typeName;
 }
 
@@ -181,7 +181,7 @@ bool FunctionType::treatAsMethod(DSType *targetType) {
     return recvType != 0 && recvType->isAssignableFrom(targetType);
 }
 
-std::string FunctionType::getTypeName() {
+std::string FunctionType::getTypeName() const {
     return toFunctionTypeName(this->returnType, this->paramTypes);
 }
 
@@ -492,7 +492,7 @@ public:
     TupleType(DSType *superType, const std::vector<DSType*> types);
     ~TupleType();
 
-    std::string getTypeName(); // override
+    std::string getTypeName() const; // override
 
     /**
      * return always false
@@ -536,7 +536,7 @@ TupleType::~TupleType() {
     this->handleMap.clear();
 }
 
-std::string TupleType::getTypeName() {
+std::string TupleType::getTypeName() const {
     return toTupleTypeName(this->types);
 }
 

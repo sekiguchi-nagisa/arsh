@@ -41,6 +41,10 @@ ClassTypeToken::ClassTypeToken(int lineNum, std::string &&typeName) :
         TypeToken(lineNum), typeName(std::move(typeName)) {
 }
 
+std::string ClassTypeToken::toTokenText() const {
+    return this->typeName;
+}
+
 DSType *ClassTypeToken::toType(TypePool *typePool) {
     return typePool->getTypeAndThrowIfUndefined(this->typeName);
 }
@@ -68,6 +72,20 @@ ReifiedTypeToken::~ReifiedTypeToken() {
 
 void ReifiedTypeToken::addElementTypeToken(TypeToken *type) {
     this->elementTypeTokens.push_back(type);
+}
+
+std::string ReifiedTypeToken::toTokenText() const {
+    std::string text = this->templateTypeToken->toTokenText();
+    text += "<";
+    unsigned int size = this->elementTypeTokens.size();
+    for(unsigned int i = 0; i < size; i++) {
+        if(i > 0) {
+            text += ",";
+        }
+        text += this->elementTypeTokens[i]->toTokenText();
+    }
+    text += ">";
+    return text;
 }
 
 DSType *ReifiedTypeToken::toType(TypePool *typePool) {
@@ -107,6 +125,25 @@ void FuncTypeToken::setReturnTypeToken(TypeToken *type) {
 
 void FuncTypeToken::addParamTypeToken(TypeToken *type) {
     this->paramTypeTokens.push_back(type);
+}
+
+std::string FuncTypeToken::toTokenText() const {
+    std::string text = "Func<";
+    text += this->returnTypeToken->toTokenText();
+    unsigned int size = this->paramTypeTokens.size();
+    for(unsigned int i = 0; i < size; i++) {
+        if(i == 0) {
+            text += ",[";
+        } else {
+            text += ",";
+        }
+        text += this->paramTypeTokens[i]->toTokenText();
+        if(i == size - 1) {
+            text += "]";
+        }
+    }
+    text += ">";
+    return text;
 }
 
 DSType *FuncTypeToken::toType(TypePool *typePool) {

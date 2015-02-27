@@ -26,6 +26,8 @@
 #include <ast/TypeToken.h>
 #include <parser/TokenKind.h>
 
+class Writer;
+
 class Node {
 protected:
     int lineNum;
@@ -39,13 +41,14 @@ public:
     Node(int lineNum);
     virtual ~Node();
 
-    int getLineNum();
+    int getLineNum() const;
     void setType(DSType *type);
 
     /**
      * return null, before type checking
      */
-    DSType *getType();
+    DSType *getType() const;
+    virtual void dump(Writer &writer) const = 0;
     virtual int accept(NodeVisitor *visitor) = 0;
 };
 
@@ -59,6 +62,7 @@ public:
     IntValueNode(int lineNum, long value);
 
     long getValue();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -70,6 +74,7 @@ public:
     FloatValueNode(int lineNum, double value);
 
     double getValue();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -81,6 +86,7 @@ public:
     BooleanValueNode(int lineNum, bool value);
 
     bool getValue();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -101,6 +107,7 @@ public:
      */
     //StringValueNode(int lineNum, char *value);	//FIXME:
     const std::string &getValue();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -114,6 +121,7 @@ public:
 
     void addExprNode(Node *node);	//TODO:
     const std::vector<Node*> &getExprNodes();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -128,6 +136,7 @@ public:
     void addExprNode(Node *node);
     void setExprNode(unsigned int index, Node *node);
     const std::vector<Node*> &getExprNodes();
+    void dump(Writer &writer) const; // override
     int accept(NodeVisitor *visitor);	//override
 };
 
@@ -145,6 +154,7 @@ public:
     const std::vector<Node*> &getKeyNodes();
     void setValueNode(unsigned int index, Node *valueNode);
     const std::vector<Node*> &getValueNodes();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -158,6 +168,7 @@ public:
 
     void addNode(Node *node);
     const std::vector<Node*> &getNodes();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -192,6 +203,7 @@ public:
 
     const std::string &getVarName();
     void setAttribute(FieldHandle *handle);
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
     bool isGlobal();
     int getVarIndex();
@@ -221,6 +233,7 @@ public:
     int getFieldIndex();
     void setAdditionalOp(AdditionalOp op);
     AdditionalOp getAdditionnalOp();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -260,6 +273,7 @@ public:
     CastOp getOpKind();
     void setFieldIndex(int index);
     int getFieldIndex();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	//override
 };
 
@@ -292,6 +306,7 @@ public:
     DSType *getTargetType();
     void setOpKind(InstanceOfOp opKind);
     InstanceOfOp getOpKind();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	//override
 };
 
@@ -337,6 +352,7 @@ public:
      */
     ApplyNode *getApplyNode();
 
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);   // override
 };
 
@@ -377,11 +393,12 @@ public:
     void setParamSize(unsigned int size);
     unsigned int getParamSize();
     const std::vector<std::pair<std::string, Node*>> &getArgPairs();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);   // override
 };
 
 class ApplyNode: public Node {
-protected:
+private:
     Node *recvNode;
     ArgsNode *argsNode;
 
@@ -398,6 +415,7 @@ public:
     bool hasAttribute(unsigned char attribute);
     void setFuncCall(bool asFuncCall);
     bool isFuncCall();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 
     const static unsigned char FUNC_CALL = 1 << 0;
@@ -424,6 +442,7 @@ public:
     TypeToken *removeTargetTypeToken();
 
     ArgsNode *getArgsNode();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);   // override
 };
 
@@ -444,6 +463,7 @@ public:
     Node *getLeftNode();
     Node *getRightNode();
     bool isAndOp();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	//override
 };
 
@@ -462,6 +482,7 @@ public:
     const std::vector<ProcArgNode*> &getArgNodes();
     void addRedirOption(std::pair<int, Node*> &&optionPair);
     const std::vector<std::pair<int, Node*>> &getRedirOptions();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	//override
 };
 
@@ -478,6 +499,7 @@ public:
 
     void addSegmentNode(Node *node);
     const std::vector<Node*> &getSegmentNodes();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -486,6 +508,7 @@ public:
     SpecialCharNode(int lineNum);
     ~SpecialCharNode();
 
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	//override
 };
 
@@ -501,6 +524,7 @@ public:
     void addProcNodes(ProcessNode *node);
     const std::vector<ProcessNode*> &getProcNodes();
     bool isBackground();
+    void dump(Writer &writer) const; // override
     int accept(NodeVisitor *visitor);	//override
 };
 
@@ -513,6 +537,7 @@ public:
     ~InnerTaskNode();
 
     Node *getExprNode();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	//override
 };
 
@@ -527,6 +552,7 @@ public:
     ~AssertNode();
 
     Node *getExprNode();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -541,6 +567,7 @@ public:
     void addNode(Node *node);
     void insertNodeToFirst(Node *node);
     const std::list<Node*> &getNodeList();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -555,12 +582,16 @@ public:
 class BreakNode: public BlockEndNode {
 public:
     BreakNode(int lineNum);
+
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
 class ContinueNode: public BlockEndNode {
 public:
     ContinueNode(int lineNum);
+
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -575,6 +606,7 @@ public:
 
     const std::string &getEnvName();
     Node *getExprNode();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -591,6 +623,7 @@ public:
     void setAttribute(FieldHandle *handle);
     bool isGlobal();
     int getVarIndex();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -635,6 +668,7 @@ public:
     Node *getCondNode();
     Node *getIterNode();
     BlockNode *getBlockNode();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -649,6 +683,7 @@ public:
 
     Node *getCondNode();
     BlockNode *getBlockNode();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	//override
 };
 
@@ -663,6 +698,7 @@ public:
 
     BlockNode *getBlockNode();
     Node *getCondNode();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);   //override
 };
 
@@ -691,6 +727,7 @@ public:
      */
     BlockNode *getElseNode();
 
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -710,6 +747,8 @@ public:
      * return null if has no return value
      */
     Node *getExprNode();
+
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -722,10 +761,11 @@ public:
     ~ThrowNode();
 
     Node *getExprNode();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
-class CatchNode: public Node {	//TODO: exception name
+class CatchNode: public Node {
 private:
     std::string exceptionName;
     TypeToken *typeToken;
@@ -760,6 +800,7 @@ public:
     DSType *getExceptionType();
 
     BlockNode *getBlockNode();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -786,6 +827,7 @@ public:
     const std::vector<CatchNode*> &getCatchNodes();
     void addFinallyNode(Node *finallyNode);
     Node *getFinallyNode();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -798,6 +840,7 @@ public:
     ~FinallyNode();
 
     BlockNode *getBlockNode();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -819,6 +862,7 @@ public:
     bool isGlobal();
     Node *getInitValueNode();
     int getVarIndex();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -849,6 +893,7 @@ public:
     void setRightNode(Node *rightNode);
     Node *getRightNode();
     bool isSelfAssignment();
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);   // override
 };
 
@@ -904,6 +949,7 @@ public:
      */
     BlockNode *getBlockNode();
 
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -914,6 +960,7 @@ class EmptyNode: public Node {
 public:
     EmptyNode();
 
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
@@ -921,6 +968,7 @@ class DummyNode: public Node {
 public:
     DummyNode();
 
+    void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);   // override
 };
 
@@ -937,7 +985,7 @@ public:
     ~RootNode();
 
     void addNode(Node *node);
-    const std::list<Node*> &getNodeList();
+    const std::list<Node*> &getNodeList() const;
 };
 
 // helper function for node creation

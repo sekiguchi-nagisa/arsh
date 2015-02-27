@@ -34,6 +34,11 @@ public:
     int getLineNum();
 
     /**
+     * get token text
+     */
+    virtual std::string toTokenText() const = 0;
+
+    /**
      * convert to DSType.
      */
     virtual DSType *toType(TypePool *typePool) = 0;
@@ -46,6 +51,7 @@ private:
 public:
     ClassTypeToken(int lineNum, std::string &&typeName);
 
+    std::string toTokenText() const;  // override
     DSType *toType(TypePool *typePool);   // override
     const std::string &getTokenText();
 };
@@ -60,6 +66,7 @@ public:
     ~ReifiedTypeToken();
 
     void addElementTypeToken(TypeToken *type);
+    std::string toTokenText() const;  // override
     DSType *toType(TypePool *typePool);   // override
 };
 
@@ -86,6 +93,7 @@ public:
 
     void setReturnTypeToken(TypeToken *type);
     void addParamTypeToken(TypeToken *type);
+    std::string toTokenText() const;  // override
     DSType *toType(TypePool *typePool);   // override
 };
 

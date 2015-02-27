@@ -37,7 +37,7 @@ public:
     /**
      * string representation of this type
      */
-    virtual std::string getTypeName() = 0;	// must not reference value
+    virtual std::string getTypeName() const = 0;	// must not reference value
 
     /**
      * if true, can extend this type
@@ -106,7 +106,7 @@ public:
     BaseType(std::string &&typeName, bool extendable, DSType *superType);
     virtual ~BaseType();
 
-    std::string getTypeName(); // override
+    std::string getTypeName() const; // override
     bool isExtendable(); // override
     DSType *getSuperType(); // override
     virtual bool equals(DSType *targetType); // override
@@ -201,7 +201,7 @@ public:
      */
     bool treatAsMethod(DSType *targetType);
 
-    std::string getTypeName();	// override
+    std::string getTypeName() const;	// override
     bool isExtendable();	// override
 
     /**
