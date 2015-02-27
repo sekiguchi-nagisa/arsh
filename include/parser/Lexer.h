@@ -144,7 +144,19 @@ public:
     unsigned int getLineNum() const;
 
     // token to value converting api.
-    std::string toString(Token &token);
+    std::string toTokenText(Token &token);
+
+    /**
+     * convert token to string (single quote string or double quote string)
+     */
+    std::string toString(Token &token, bool isSingleQuote = true);
+
+    /**
+     * convert token to name(remove '$' char)
+     * ex. $hoge, ${hoge}, hoge
+     */
+    std::string toName(Token &token);
+
     int toInt(Token &token);
 };
 

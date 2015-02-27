@@ -20,6 +20,7 @@
 #include <string.h>
 #include <string>
 
+#include <util/debug.h>
 #include <parser/Lexer.h>
 
 Lexer::Lexer(unsigned int initSize, bool fixed) :
@@ -336,13 +337,70 @@ unsigned int Lexer::getLineNum() const {
     return this->lineNum;
 }
 
-std::string Lexer::toString(Token &token) {
-    assert(token.startPos < this->getUsedSize() &&
-            token.startPos + token.size <= this->getUsedSize());
+#define CHECK_TOK(token) \
+    assert(token.startPos < this->getUsedSize &&\
+            token.startPos + token.size <= this->getUsedSize())
+
+std::string Lexer::toTokenText(Token &token) {
+    CHECK_TOK(token);
     return std::string((char*)(this->buf + token.startPos), token.size);
 }
 
+std::string Lexer::toString(Token &token, bool isSingleQuote) {
+    CHECK_TOK(token);
+
+    std::string str;
+    str.reserve(token.size);
+
+    unsigned int offset = isSingleQuote ? 1 : 0;
+    unsigned int size = token.size - offset;
+    for(unsigned int i = 0; i < size; i++) {
+        char ch = this->buf[token.startPos + i];
+        if(ch == '\\') {    // handle escape sequence
+            char nextCh = this->buf[token.startPos + ++i];
+            switch(nextCh) {
+            case 'b' : ch = '\b'; break;
+            case 'f' : ch = '\f'; break;
+            case 'n' : ch = '\n'; break;
+            case 'r' : ch = '\r'; break;
+            case 't' : ch = '\t'; break;
+            case '\'': ch = '\''; break;
+            case '"' : ch = '"' ; break;
+            case '\\': ch = '\\'; break;
+            case '`' : ch = '`' ; break;
+            case '$' : ch = '$' ; break;
+            default:
+                fatal("unexpected escape sequence: %c\n", nextCh);
+                break;
+            }
+        }
+        str += ch;
+    }
+    return str;
+}
+
+std::string Lexer::toName(Token &token) {
+    CHECK_TOK(token);
+
+    std::string name;
+    name.reserve(token.size);
+    for(unsigned int i = 0; i < token.size; i++) {
+        char ch = this->buf[token.startPos + i];
+        switch(ch) {
+        case '$':
+        case '{':
+        case '}':
+            continue;
+        default:
+            name += ch;
+            break;
+        }
+    }
+    return name;
+}
+
 int Lexer::toInt(Token &token) {
+    CHECK_TOK(token);
     return 0;   //FIXME:
 }
 

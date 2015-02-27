@@ -27,9 +27,9 @@ TEST(LexerTest_Lv0, case1) {
 }
 
 /**
- * ##################################################
- * #  Lv1: statement token and Lexer::toString().  ##
- * ##################################################
+ * #####################################################
+ * #  Lv1: statement token and Lexer::toTokenText().  ##
+ * #####################################################
  */
 
 #define DUP(text) text "    \t  \t\t  " text
@@ -83,7 +83,7 @@ public:
         ASSERT_EQ(expectedKind, pair.first);
 
         ASSERT_EQ(strlen(expectedText), pair.second.size);
-        std::string text = this->lexer->toString(pair.second);
+        std::string text = this->lexer->toTokenText(pair.second);
         ASSERT_STREQ(expectedText, text.c_str());
     }
 };
