@@ -78,18 +78,6 @@ public:
     int accept(NodeVisitor *visitor);	// override
 };
 
-class BooleanValueNode: public Node {
-private:
-    bool value;
-
-public:
-    BooleanValueNode(int lineNum, bool value);
-
-    bool getValue();
-    void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	// override
-};
-
 class StringValueNode: public Node {	//FIXME:
 private:
     std::string value;
@@ -100,7 +88,7 @@ public:
      */
     StringValueNode(std::string &&value);
 
-    StringValueNode(int lineNum, char *value, bool isSingleQuoteStr);
+    StringValueNode(int lineNum, std::string &&value);
 
     /**
      * call StringValueNode(lineNum, value, false)

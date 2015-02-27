@@ -455,11 +455,6 @@ int TypeChecker::visitFloatValueNode(FloatValueNode *node) {
     return 0;
 }
 
-int TypeChecker::visitBooleanValueNode(BooleanValueNode *node) {
-    node->setType(this->typePool->getBooleanType());
-    return 0;
-}
-
 int TypeChecker::visitStringValueNode(StringValueNode *node) {
     node->setType(this->typePool->getStringType());
     return 0;

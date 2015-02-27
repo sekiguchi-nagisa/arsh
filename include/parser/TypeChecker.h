@@ -220,7 +220,6 @@ public:
 
     int visitIntValueNode(IntValueNode *node); // override
     int visitFloatValueNode(FloatValueNode *node); // override
-    int visitBooleanValueNode(BooleanValueNode *node); // override
     int visitStringValueNode(StringValueNode *node); // override
     int visitStringExprNode(StringExprNode *node); // override
     int visitArrayNode(ArrayNode *node); // override

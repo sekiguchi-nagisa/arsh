@@ -31,9 +31,6 @@ int Evaluator::visitIntValueNode(IntValueNode *node) {
 int Evaluator::visitFloatValueNode(FloatValueNode *node) {
     return 0;
 } //TODO
-int Evaluator::visitBooleanValueNode(BooleanValueNode *node) {
-    return 0;
-} //TODO
 int Evaluator::visitStringValueNode(StringValueNode *node) {
     return 0;
 } //TODO

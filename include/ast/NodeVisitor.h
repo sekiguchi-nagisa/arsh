@@ -20,7 +20,6 @@
 class Node;
 class IntValueNode;
 class FloatValueNode;
-class BooleanValueNode;
 class StringValueNode;
 class StringExprNode;
 class ArrayNode;
@@ -69,7 +68,6 @@ public:
 
     virtual int visitIntValueNode(IntValueNode *node) = 0;
     virtual int visitFloatValueNode(FloatValueNode *node) = 0;
-    virtual int visitBooleanValueNode(BooleanValueNode *node) = 0;
     virtual int visitStringValueNode(StringValueNode *node) = 0;
     virtual int visitStringExprNode(StringExprNode *node) = 0;
     virtual int visitArrayNode(ArrayNode *node) = 0;

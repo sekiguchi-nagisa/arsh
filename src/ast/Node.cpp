@@ -88,63 +88,16 @@ int FloatValueNode::accept(NodeVisitor *visitor) {
     return visitor->visitFloatValueNode(this);
 }
 
-// ##############################
-// ##     BooleanValueNode     ##
-// ##############################
-
-BooleanValueNode::BooleanValueNode(int lineNum, bool value) :
-        Node(lineNum), value(value) {
-}
-
-bool BooleanValueNode::getValue() {
-    return this->value;
-}
-
-void BooleanValueNode::dump(Writer &writer) const {
-    WRITE_PRIM(value);
-}
-
-int BooleanValueNode::accept(NodeVisitor *visitor) {
-    return visitor->visitBooleanValueNode(this);
-}
-
 // ############################
 // ##     StringValueNode    ##
 // ############################
 
 StringValueNode::StringValueNode(std::string &&value) :
-        Node(0), value(std::move(value)) {
+        StringValueNode(0, std::move(value)) {
 }
 
-StringValueNode::StringValueNode(int lineNum, char *value, bool isSingleQuoteStr) :	//TODO:
-        Node(lineNum) {
-    // parser original value.
-
-    /*			StringBuilder sBuilder = new StringBuilder();
-     String text = token.getText();
-     int startIndex = isSingleQuoteStr ? 1 : 0;
-     int endIndex = isSingleQuoteStr ? text.length() - 1 : text.length();
-     for(int i = startIndex; i < endIndex; i++) {
-     char ch = text.charAt(i);
-     if(ch == '\\') {
-     char nextCh = text.charAt(++i);
-     switch(nextCh) {
-     case 't' : ch = #include <ast/node_utils.h>'\t'; break;
-     case 'b' : ch = '\b'; break;
-     case 'n' : ch = '\n'; break;
-     case 'r' : ch = '\r'; break;
-     case 'f' : ch = '\f'; break;
-     case '\'': ch = '\''; break;
-     case '"' : ch = '"' ; break;
-     case '\\': ch = '\\'; break;
-     case '`' : ch = '`' ; break;
-     case '$' : ch = '$' ; break;
-     }
-     }
-     sBuilder.append(ch);
-     }
-     return sBuilder.toString();
-     */
+StringValueNode::StringValueNode(int lineNum, std::string &&value) :
+        Node(lineNum), value(std::move(value)) {
 }
 
 //StringValueNode::StringValueNode(int lineNum, char *value):	//FIXME:
