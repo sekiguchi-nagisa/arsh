@@ -789,7 +789,14 @@ const std::vector<std::pair<int, Node*>> &ProcessNode::getRedirOptions() {
 }
 
 void ProcessNode::dump(Writer &writer) const {
-    //FIXME:
+    WRITE(commandName);
+
+    std::vector<Node*> argNodes;
+    for(ProcArgNode *node : this->argNodes) {
+        argNodes.push_back(node);
+    }
+    WRITE(argNodes);
+    //FIXME: redirOption
 }
 
 int ProcessNode::accept(NodeVisitor *visitor) {
@@ -885,7 +892,13 @@ bool TaskNode::isBackground() {
 }
 
 void TaskNode::dump(Writer &writer) const {
-    //FIXME:
+    std::vector<Node*> procNodes;
+    for(ProcessNode *node : this->procNodes) {
+        procNodes.push_back(node);
+    }
+
+    WRITE(procNodes);
+    WRITE_PRIM(background);
 }
 
 int TaskNode::accept(NodeVisitor *visitor) {
