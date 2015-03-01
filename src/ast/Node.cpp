@@ -1095,23 +1095,12 @@ int ImportEnvNode::accept(NodeVisitor *visitor) {
     return visitor->visitImportEnvNode(this);
 }
 
-// ######################
-// ##     LoopNode     ##
-// ######################
-
-LoopNode::LoopNode(int lineNum) :
-        Node(lineNum) {
-}
-
-LoopNode::~LoopNode() {
-}
-
 // #####################
 // ##     ForNode     ##
 // #####################
 
 ForNode::ForNode(int lineNum, Node *initNode, Node *condNode, Node *iterNode, BlockNode *blockNode) :
-        LoopNode(lineNum), initNode(initNode != 0 ? initNode : new EmptyNode()),
+        Node(lineNum), initNode(initNode != 0 ? initNode : new EmptyNode()),
         condNode(condNode != 0 ? condNode : new VarNode(lineNum, std::string(TRUE))),
         iterNode(iterNode != 0 ? iterNode : new EmptyNode()), blockNode(blockNode) {
 }
@@ -1162,7 +1151,7 @@ int ForNode::accept(NodeVisitor *visitor) {
 // #######################
 
 WhileNode::WhileNode(int lineNum, Node *condNode, BlockNode *blockNode) :
-        LoopNode(lineNum), condNode(condNode), blockNode(blockNode) {
+        Node(lineNum), condNode(condNode), blockNode(blockNode) {
 }
 
 WhileNode::~WhileNode() {
@@ -1195,7 +1184,7 @@ int WhileNode::accept(NodeVisitor *visitor) {
 // #########################
 
 DoWhileNode::DoWhileNode(int lineNum, BlockNode *blockNode, Node *condNode) :
-        LoopNode(lineNum), blockNode(blockNode), condNode(condNode) {
+        Node(lineNum), blockNode(blockNode), condNode(condNode) {
 }
 
 DoWhileNode::~DoWhileNode() {
@@ -1729,24 +1718,32 @@ std::string resolveBinaryOpName(TokenKind op) {
         return std::string(OP_RE_EQ);
     case RE_UNMATCH:
         return std::string(OP_RE_NE);
-    case INC:
-        return std::string(OP_ADD);
-    case DEC:
-        return std::string(OP_SUB);
-    case ADD_ASSIGN:
-        return std::string(OP_ADD);
-    case SUB_ASSIGN:
-        return std::string(OP_SUB);
-    case MUL_ASSIGN:
-        return std::string(OP_MUL);
-    case DIV_ASSIGN:
-        return std::string(OP_DIV);
-    case MOD_ASSIGN:
-        return std::string(OP_MOD);
     default:
         fatal("unsupported binary op: %s\n", TO_NAME(op));
         return std::string("");
     }
+}
+
+TokenKind resolveAssignOp(TokenKind op) {
+    switch(op) {
+    case INC:
+        return PLUS;
+    case DEC:
+        return MINUS;
+    case ADD_ASSIGN:
+        return PLUS;
+    case SUB_ASSIGN:
+        return MINUS;
+    case MUL_ASSIGN:
+        return MUL;
+    case DIV_ASSIGN:
+        return DIV;
+    case MOD_ASSIGN:
+        return MOD;
+    default:
+        fatal("unsupported assign op: %s\n", TO_NAME(op));
+    }
+    return INVALID;
 }
 
 ApplyNode *createApplyNode(Node *recvNode, std::string &&methodName) {
@@ -1775,12 +1772,8 @@ ForNode *createForInNode(int lineNum, std::string &&initName, Node *exprNode, Bl
     return new ForNode(lineNum, reset_varDecl, apply_hasNext, 0, blockNode);
 }
 
-std::string resolveAssignOpName(int op) {
-    return std::string();   //FIXME:
-}
-
 Node *createSuffixNode(Node *leftNode, TokenKind op) {
-    return createAssignNode(leftNode, op, new IntValueNode(leftNode->getLineNum(), 1));
+    return createAssignNode(leftNode, resolveAssignOp(op), new IntValueNode(leftNode->getLineNum(), 1));
 }
 
 Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode) {
@@ -1811,7 +1804,7 @@ Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode) {
         return 0;
     } else {
         // assign to variable or field
-        BinaryOpNode *opNode = new BinaryOpNode(new DummyNode(), op, rightNode);
+        BinaryOpNode *opNode = new BinaryOpNode(new DummyNode(), resolveAssignOp(op), rightNode);
         return new AssignNode(leftNode, opNode, true);
     }
 }

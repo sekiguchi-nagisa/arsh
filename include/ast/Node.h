@@ -615,16 +615,7 @@ public:
     int accept(NodeVisitor *visitor);	// override
 };
 
-/**
- * base class for ForNode, WhileNode
- */
-class LoopNode: public Node {
-public:
-    LoopNode(int lineNum);
-    virtual ~LoopNode();
-};
-
-class ForNode: public LoopNode {
+class ForNode: public Node {
 private:
     /**
      * may be empty node
@@ -660,7 +651,7 @@ public:
     int accept(NodeVisitor *visitor);	// override
 };
 
-class WhileNode: public LoopNode {
+class WhileNode: public Node {
 private:
     Node *condNode;
     BlockNode *blockNode;
@@ -675,7 +666,7 @@ public:
     int accept(NodeVisitor *visitor);	//override
 };
 
-class DoWhileNode : public LoopNode {
+class DoWhileNode : public Node {
 private:
     BlockNode *blockNode;
     Node *condNode;
@@ -980,7 +971,7 @@ public:
 
 std::string resolveUnaryOpName(TokenKind op);
 std::string resolveBinaryOpName(TokenKind op);
-std::string resolveAssignOpName(int op);
+TokenKind resolveAssignOp(TokenKind op);
 
 ApplyNode *createApplyNode(Node *recvNode, std::string &&methodName);
 
