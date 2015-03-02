@@ -153,6 +153,11 @@ public:
     std::string toString(Token &token, bool isSingleQuote = true);
 
     /**
+     * convert token to command argument
+     */
+    std::string toCmdArg(Token &token);
+
+    /**
      * convert token to name(remove '$' char)
      * ex. $hoge, ${hoge}, hoge
      */

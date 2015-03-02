@@ -174,6 +174,30 @@ std::string Lexer::toString(Token &token, bool isSingleQuote) {
     return str;
 }
 
+std::string Lexer::toCmdArg(Token &token) {
+    CHECK_TOK(token);
+
+    std::string str;
+    str.reserve(token.size);
+
+    for(unsigned int i = 0; i < token.size; i++) {
+        char ch = this->buf[token.startPos + i];
+        if(ch == '\\') {
+            char nextCh = this->buf[token.startPos + ++i];
+            switch(nextCh) {
+            case '\n':
+            case '\r':
+                continue;
+            default:
+                ch = nextCh;
+                break;
+            }
+        }
+        str += ch;
+    }
+    return str;
+}
+
 std::string Lexer::toName(Token &token) {
     CHECK_TOK(token);
 
