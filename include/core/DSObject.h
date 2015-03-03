@@ -193,4 +193,11 @@ public:
     void *getFuncPointer();
 };
 
+
+// helper macro for object manipulation
+/**
+ * get raw pointer from shared_ptr and cast it.
+ */
+#define TYPE_AS(t, s_obj) dynamic_cast<t*>(s_obj.get())
+
 #endif /* CORE_DSOBJECT_H_ */

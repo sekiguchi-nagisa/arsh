@@ -61,7 +61,9 @@ std::shared_ptr<DSObject> IntValueNode::getValue() {
 }
 
 void IntValueNode::dump(Writer &writer) const {
-    //WRITE_PRIM(value);    //FIXME:
+    Int_Object *obj = TYPE_AS(Int_Object, this->value);
+    writer.write(NAME(value), std::to_string(obj->getValue()));
+
 }
 
 int IntValueNode::accept(NodeVisitor *visitor) {
@@ -81,7 +83,8 @@ std::shared_ptr<DSObject> FloatValueNode::getValue() {
 }
 
 void FloatValueNode::dump(Writer &writer) const {
-    //WRITE_PRIM(value);    //FIXME:
+    Float_Object *obj = TYPE_AS(Float_Object, this->value);
+    writer.write(NAME(value), std::to_string(obj->getValue()));
 }
 
 int FloatValueNode::accept(NodeVisitor *visitor) {
@@ -109,7 +112,8 @@ std::shared_ptr<DSObject> StringValueNode::getValue() {
 }
 
 void StringValueNode::dump(Writer &writer) const {
-    //WRITE(value); //FIXME:
+    String_Object *obj = TYPE_AS(String_Object, this->value);
+    writer.write(NAME(value), obj->getValue());
 }
 
 int StringValueNode::accept(NodeVisitor *visitor) {
