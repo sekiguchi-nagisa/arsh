@@ -164,6 +164,7 @@ public:
     std::string toName(Token &token);
 
     int toInt(Token &token);
+    double toDouble(Token &token);
 };
 
 #endif /* PARSER_LEXER_H_ */

@@ -220,5 +220,20 @@ std::string Lexer::toName(Token &token) {
 
 int Lexer::toInt(Token &token) {
     CHECK_TOK(token);
-    return 0;   //FIXME:
+
+    char str[token.size];
+    for(unsigned int i = 0; i < token.size; i++) {
+        str[i] = this->buf[token.startPos + i];
+    }
+    return atoi(str);
+}
+
+double Lexer::toDouble(Token &token) {
+    CHECK_TOK(token);
+
+    char str[token.size];
+    for(unsigned int i = 0; i < token.size; i++) {
+        str[i] = this->buf[token.startPos + i];
+    }
+    return atof(str);
 }
