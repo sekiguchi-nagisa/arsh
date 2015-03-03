@@ -22,6 +22,7 @@
 
 #include <core/DSType.h>
 #include <core/FieldHandle.h>
+#include <core/DSObject.h>
 #include <ast/NodeVisitor.h>
 #include <ast/TypeToken.h>
 #include <parser/TokenKind.h>
@@ -56,31 +57,31 @@ public:
 
 class IntValueNode: public Node {
 private:
-    long value;
+    std::shared_ptr<DSObject> value;
 
 public:
-    IntValueNode(int lineNum, long value);
+    IntValueNode(int lineNum, int value);
 
-    long getValue();
+    std::shared_ptr<DSObject> getValue();
     void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
 class FloatValueNode: public Node {
 private:
-    double value;
+    std::shared_ptr<DSObject> value;
 
 public:
     FloatValueNode(int lineNum, double value);
 
-    double getValue();
+    std::shared_ptr<DSObject> getValue();
     void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
 class StringValueNode: public Node {	//FIXME:
 private:
-    std::string value;
+    std::shared_ptr<DSObject> value;
 
 public:
     /**
@@ -94,7 +95,7 @@ public:
      * call StringValueNode(lineNum, value, false)
      */
     //StringValueNode(int lineNum, char *value);	//FIXME:
-    const std::string &getValue();
+    std::shared_ptr<DSObject> getValue();
     void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };

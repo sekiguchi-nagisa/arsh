@@ -80,13 +80,18 @@ public:
      */
     DSType *getVoidType();
 
-    /**
-     * equivalent to getInt64Type()
-     */
     DSType *getValueType();
+
+    /**
+     * int is 32bit.
+     */
     DSType *getIntType();
-    DSType *getInt64Type();
+
+    /**
+     * float is 64bit.
+     */
     DSType *getFloatType();
+
     DSType *getBooleanType();
     DSType *getStringType();
     DSType *getTaskType();

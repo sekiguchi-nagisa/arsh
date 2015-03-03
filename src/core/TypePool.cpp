@@ -105,10 +105,6 @@ DSType *TypePool::getValueType() {
 }
 
 DSType *TypePool::getIntType() {
-    return this->getInt64Type();
-}
-
-DSType *TypePool::getInt64Type() {
     return this->intType;
 }
 

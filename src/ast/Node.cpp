@@ -52,16 +52,16 @@ DSType *Node::getType() const {
 // ##     IntValueNode     ##
 // ##########################
 
-IntValueNode::IntValueNode(int lineNum, long value) :
-        Node(lineNum), value(value) {
+IntValueNode::IntValueNode(int lineNum, int value) :
+        Node(lineNum), value(std::make_shared<Int_Object>(value)) {
 }
 
-long IntValueNode::getValue() {
+std::shared_ptr<DSObject> IntValueNode::getValue() {
     return this->value;
 }
 
 void IntValueNode::dump(Writer &writer) const {
-    WRITE_PRIM(value);
+    //WRITE_PRIM(value);    //FIXME:
 }
 
 int IntValueNode::accept(NodeVisitor *visitor) {
@@ -73,15 +73,15 @@ int IntValueNode::accept(NodeVisitor *visitor) {
 // ############################
 
 FloatValueNode::FloatValueNode(int lineNum, double value) :
-        Node(lineNum), value(value) {
+        Node(lineNum), value(std::make_shared<Float_Object>(value)) {
 }
 
-double FloatValueNode::getValue() {
+std::shared_ptr<DSObject> FloatValueNode::getValue() {
     return this->value;
 }
 
 void FloatValueNode::dump(Writer &writer) const {
-    WRITE_PRIM(value);
+    //WRITE_PRIM(value);    //FIXME:
 }
 
 int FloatValueNode::accept(NodeVisitor *visitor) {
@@ -97,19 +97,19 @@ StringValueNode::StringValueNode(std::string &&value) :
 }
 
 StringValueNode::StringValueNode(int lineNum, std::string &&value) :
-        Node(lineNum), value(std::move(value)) {
+        Node(lineNum), value(std::make_shared<String_Object>(std::move(value))) {
 }
 
 //StringValueNode::StringValueNode(int lineNum, char *value):	//FIXME:
 //		StringValueNode(lineNum, value, false) {
 //}
 
-const std::string &StringValueNode::getValue() {
+std::shared_ptr<DSObject> StringValueNode::getValue() {
     return this->value;
 }
 
 void StringValueNode::dump(Writer &writer) const {
-    WRITE(value);
+    //WRITE(value); //FIXME:
 }
 
 int StringValueNode::accept(NodeVisitor *visitor) {

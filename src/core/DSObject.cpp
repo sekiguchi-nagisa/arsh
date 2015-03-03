@@ -49,6 +49,10 @@ DSType *BaseObject::getType() {
     return this->type;
 }
 
+void BaseObject::setType(DSType *type) {
+    this->type = type;
+}
+
 int BaseObject::getFieldSize() {
     return this->fieldSize;
 }
@@ -58,21 +62,29 @@ DSObject *BaseObject::lookupField(int fieldIndex) {
 }
 
 
-// ##########################
-// ##     Int64_Object     ##
-// ##########################
+// ########################
+// ##     Int_Object     ##
+// ########################
 
-Int64_Object::Int64_Object(DSType *type, long value) :
+Int_Object::Int_Object(int value) :
+        Int_Object(0, value) {
+}
+
+Int_Object::Int_Object(DSType *type, int value) :
         BaseObject(type), value(value) {
 }
 
-long Int64_Object::getValue() {
+int Int_Object::getValue() {
     return this->value;
 }
 
 // ##########################
 // ##     Float_Object     ##
 // ##########################
+
+Float_Object::Float_Object(double value) :
+        Float_Object(0, value) {
+}
 
 Float_Object::Float_Object(DSType *type, double value) :
         BaseObject(type), value(value) {
@@ -99,6 +111,10 @@ bool Boolean_Object::getValue() {
 // ###########################
 // ##     String_Object     ##
 // ###########################
+
+String_Object::String_Object(std::string &&value) :
+        String_Object(0, std::move(value)) {
+}
 
 String_Object::String_Object(DSType *type, std::string &&value) :
         BaseObject(type), value(std::move(value)) {

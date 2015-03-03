@@ -18,6 +18,7 @@
 #define CORE_DSOBJECT_H_
 
 #include <core/DSType.h>
+#include <memory>
 
 class FunctionNode;
 class RuntimeContext;
@@ -31,6 +32,11 @@ public:
      * get object type
      */
     virtual DSType *getType() = 0;
+
+    /**
+     * set object type.
+     */
+    virtual void setType(DSType *type) = 0;
 
     /**
      * retunr 0, if has no field
@@ -58,21 +64,27 @@ protected:
 
 public:
     BaseObject(DSType *type);
-    ~BaseObject();
+    virtual ~BaseObject();
 
     DSType *getType();	// override
+    void setType(DSType *type); // override
     int getFieldSize();	// override
     DSObject *lookupField(int fieldIndex);	// override
 };
 
-class Int64_Object: public BaseObject {
+class Int_Object: public BaseObject {
 private:
-    long value;
+    int value;
 
 public:
-    Int64_Object(DSType *type, long value);
+    /**
+     * for constant value initialization
+     */
+    Int_Object(int value);
 
-    long getValue();
+    Int_Object(DSType *type, int value);
+
+    int getValue();
 };
 
 class Float_Object: public BaseObject {
@@ -80,6 +92,11 @@ private:
     double value;
 
 public:
+    /**
+     * for constant value initialization.
+     */
+    Float_Object(double value);
+
     Float_Object(DSType *type, double value);
 
     double getValue();
@@ -100,6 +117,11 @@ private:
     std::string value;
 
 public:
+    /**
+     * for constant value initialization.
+     */
+    String_Object(std::string &&value);
+
     String_Object(DSType *type, std::string &&value);
 
     const std::string &getValue();
@@ -114,6 +136,7 @@ private:
 
 public:
     FuncObject(FunctionType *funcType);
+    virtual ~FuncObject();
 
     DSType *getType();	// override
 
