@@ -18,7 +18,6 @@ target/
 test/gtest*
 test/gtest*/
 Testing/
-lemon/lemon
 
 # Compiled Object files
 *.slo

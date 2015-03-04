@@ -26,14 +26,6 @@ macro(add_source)
 endmacro(add_source)
 
 
-# setup lemon parser generater
-set(LEMON_SRC_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lemon/lemon.c)
-set(LEMON_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lemon/lemon)
-if(NOT EXISTS "${LEMON_PATH}")
-    execute_process(COMMAND "${CMAKE_C_COMPILER}" "${LEMON_SRC_PATH}" -o "${LEMON_PATH}")
-endif()
-
-
 include_directories(${YDSH_INCLUDE})
 add_subdirectory(${SRC_DIR}/ast)
 add_subdirectory(${SRC_DIR}/core)
