@@ -19,6 +19,9 @@ test/gtest*
 test/gtest*/
 Testing/
 lemon/lemon
+include/parser/Parser.h
+src/Parser.c
+src/Parser.h
 
 # Compiled Object files
 *.slo

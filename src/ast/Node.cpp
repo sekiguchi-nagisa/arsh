@@ -1655,7 +1655,12 @@ int DummyNode::accept(NodeVisitor *visitor) {
 // ######################
 
 RootNode::RootNode() :
+        RootNode(new EmptyNode()){
+}
+
+RootNode::RootNode(Node *node) :
         nodeList() {
+    this->nodeList.push_back(node);
 }
 
 RootNode::~RootNode() {

@@ -49,11 +49,19 @@ add_custom_command(OUTPUT ${lexer_src}
 )
 add_custom_target(gen_lexer DEPENDS ${lexer_src})
 
+# generate parser
+set(parser_src ${SRC_DIR}/Parser.c)
+add_custom_command(OUTPUT ${parser_src}
+    COMMAND ${LEMON_PATH} ${SRC_DIR}/Parser.y
+    COMMAND ${CMAKE_COMMAND} -E copy ${SRC_DIR}/Parser.h ${YDSH_INCLUDE}/parser/
+)
+add_custom_target(gen_parser DEPENDS ${parser_src})
+
 
 # add executable
 set(YDSH_STATIC ydsh_static)
 add_library(${YDSH_STATIC} STATIC ${YDSH_SRC} ${lexer_src})
-add_dependencies(${YDSH_STATIC} gen_lexer)
+add_dependencies(${YDSH_STATIC} gen_lexer gen_parser)
 add_executable(${BIN_NAME} ${SRC_DIR}/ydsh.cpp)
 target_link_libraries(${BIN_NAME} ${YDSH_STATIC})
 
