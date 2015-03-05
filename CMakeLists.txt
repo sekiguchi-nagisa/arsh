@@ -26,14 +26,6 @@ macro(add_source)
 endmacro(add_source)
 
 
-# setup lemon parser generater
-set(LEMON_SRC_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lemon/lemon.c)
-set(LEMON_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lemon/lemon)
-if(NOT EXISTS "${LEMON_PATH}")
-    execute_process(COMMAND "${CMAKE_C_COMPILER}" "${LEMON_SRC_PATH}" -o "${LEMON_PATH}")
-endif()
-
-
 include_directories(${YDSH_INCLUDE})
 add_subdirectory(${SRC_DIR}/ast)
 add_subdirectory(${SRC_DIR}/core)
@@ -43,25 +35,17 @@ add_subdirectory(${SRC_DIR}/util)
 
 
 # generate lexer 
-set(lexer_src ${SRC_DIR}/parser/NextToken.cpp) 
+set(lexer_src ${SRC_DIR}/parser/nextToken.cpp) 
 add_custom_command(OUTPUT ${lexer_src} 
-    COMMAND re2c -c -8 -o ${lexer_src} ${SRC_DIR}/NextToken.re2c.cpp
+    COMMAND re2c -c -8 -o ${lexer_src} ${SRC_DIR}/nextToken.re2c.cpp
 )
 add_custom_target(gen_lexer DEPENDS ${lexer_src})
-
-# generate parser
-set(parser_src ${SRC_DIR}/Parser.c)
-add_custom_command(OUTPUT ${parser_src}
-    COMMAND ${LEMON_PATH} ${SRC_DIR}/Parser.y
-    COMMAND ${CMAKE_COMMAND} -E copy ${SRC_DIR}/Parser.h ${YDSH_INCLUDE}/parser/
-)
-add_custom_target(gen_parser DEPENDS ${parser_src})
 
 
 # add executable
 set(YDSH_STATIC ydsh_static)
 add_library(${YDSH_STATIC} STATIC ${YDSH_SRC} ${lexer_src})
-add_dependencies(${YDSH_STATIC} gen_lexer gen_parser)
+add_dependencies(${YDSH_STATIC} gen_lexer)
 add_executable(${BIN_NAME} ${SRC_DIR}/ydsh.cpp)
 target_link_libraries(${BIN_NAME} ${YDSH_STATIC})
 

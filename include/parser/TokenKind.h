@@ -18,6 +18,7 @@
 #define PARSER_TOKENKIND_H_
 
 #define EACH_TOKEN(TOKEN) \
+    TOKEN(DUMMY) /* for sentinel value. not use it as token kind */\
     TOKEN(INVALID) \
     TOKEN(EOS) \
     /* token kind definition. */\

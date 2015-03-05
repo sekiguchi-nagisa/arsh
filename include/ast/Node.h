@@ -962,7 +962,6 @@ private:
 
 public:
     RootNode();
-    RootNode(Node *node);
     ~RootNode();
 
     void addNode(Node *node);

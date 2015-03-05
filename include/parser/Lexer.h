@@ -76,7 +76,12 @@ private:
 
     bool endOfFile;
 
+    /**
+     * default mode is yycSTMT
+     */
     std::vector<LexerMode> modeStack;
+
+    bool prevNewLine;
 
     const static unsigned int DEFAULT_SIZE = 256;
 
@@ -140,6 +145,8 @@ public:
      * return the kind of next token.
      */
     TokenKind nextToken(Token &token);
+
+    bool isPrevNewLine();
 
     void setLineNum(unsigned int lineNum);
     unsigned int getLineNum() const;

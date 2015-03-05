@@ -60,3 +60,9 @@ void CommonErrorListener::displayTypeError(const std::string &sourceName,
     fprintf(stderr, "(%s):%d: [semantic error] %s\n", sourceName.c_str(), e.getLineNum(), strBuf);
     delete[] strBuf;
 }
+
+void CommonErrorListener::displayParseError(const std::string &sourceName,
+            const ParseError &e) {
+    fprintf(stderr, "(%s):%d: [syntax error] %s\n");    //FIXME:
+
+}

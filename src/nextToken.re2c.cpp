@@ -45,12 +45,21 @@
 
 #define INC_LINE_NUM() ++this->lineNum
 
-#define FIND_NEW_LINE() \
+/*
+ * count new line and increment lineNum.
+ */
+#define COUNT_NEW_LINE() \
     do {\
         unsigned int stopPos = this->getPos();\
         for(unsigned int i = startPos; i < stopPos; ++i) {\
             if(this->buf[i] == '\n') { ++this->lineNum; } \
         }\
+    } while(0)
+
+#define FIND_NEW_LINE() \
+    do {\
+        foundNewLine = true;\
+        SKIP();\
     } while(0)
 
 
@@ -87,14 +96,16 @@ TokenKind Lexer::nextToken(Token &token) {
       INNER_NAME = APPLIED_NAME | '${' VAR_NAME '}';
       INNER_SPECIAL_NAME = SPECIAL_NAME | '${' SPECIAL_NAMES '}';
 
-      CMD_START_CHAR = '\\' . | [^ \t\r\n;'"`|&<>(){}$#![\]0-9\000];
+      CMD_START_CHAR = '\\' [^\r\n] | [^ \t\r\n;'"`|&<>(){}$#![\]0-9\000];
       CMD_CHAR       = '\\' . | [^ \t\r\n;'"`|&<>(){}$#![\]\000];
 
       LINE_END = ';';
-      NEW_LINE = [\r\n];
+      NEW_LINE = [\r\n][ \t\r\n]*;
       COMMENT = '#' [^\r\n\000]*;
       OTHER = .;
     */
+
+    bool foundNewLine = false;
 
 INIT:
     unsigned int startPos = this->getPos();
@@ -147,10 +158,10 @@ INIT:
       <STMT,EXPR> '}'          { POP_MODE(); RET(RBC); }
 
       <STMT> CMD_START_CHAR CMD_CHAR*
-                               { PUSH_MODE(CMD); FIND_NEW_LINE(); RET(COMMAND); }
+                               { PUSH_MODE(CMD); COUNT_NEW_LINE(); RET(COMMAND); }
 
-      <EXPR> ':' [ \t\r\n]*    { FIND_NEW_LINE(); RET(COLON); }
-      <EXPR> ',' [ \t\r\n]*    { FIND_NEW_LINE(); RET(COMMA); }
+      <EXPR> ':'               { RET(COLON); }
+      <EXPR> ','               { RET(COMMA); }
 
       <EXPR> '*'               { RET(MUL); }
       <EXPR> '/'               { RET(DIV); }
@@ -188,11 +199,11 @@ INIT:
       <EXPR> '.'               { RET(ACCESSOR); }
 
       <STMT,EXPR> LINE_END     { MODE(STMT); RET(LINE_END); }
-      <STMT,EXPR> NEW_LINE     { MODE(STMT); INC_LINE_NUM(); RET(NEW_LINE); }
+      <STMT,EXPR> NEW_LINE     { MODE(STMT); COUNT_NEW_LINE(); FIND_NEW_LINE(); }
 
       <STMT,EXPR,CMD> COMMENT  { SKIP(); }
       <STMT,EXPR> [ \t]+       { SKIP(); }
-      <EXPR> '\\' [\r\n]       { INC_LINE_NUM(); SKIP(); }
+      <STMT,EXPR> '\\' [\r\n]  { INC_LINE_NUM(); SKIP(); }
 
       <DSTRING> ["]            { POP_MODE(); RET(CLOSE_DQUOTE);}
       <DSTRING> ([^\r\n`$"\\] | '\\' [$btnfr"`\\])+
@@ -204,7 +215,7 @@ INIT:
                                { RET(SPECIAL_NAME); }
       <DSTRING,CMD> '${'       { PUSH_MODE(EXPR); RET(START_INTERP); }
 
-      <CMD> CMD_CHAR+          { FIND_NEW_LINE();  RET(CMD_ARG_PART); }
+      <CMD> CMD_CHAR+          { COUNT_NEW_LINE();  RET(CMD_ARG_PART); }
       <CMD> STRING_LITERAL     { RET(STRING_LITERAL); }
       <CMD> ')'                { POP_MODE(); POP_MODE(); RET(RP); }
       <CMD> [ \t]+             { RET(CMD_SEP); }
@@ -216,7 +227,8 @@ INIT:
       <CMD> '||'               { POP_MODE(); MODE(STMT); RET(OR_LIST); }
       <CMD> '&&'               { POP_MODE(); MODE(STMT); RET(AND_LIST); }
       <CMD> LINE_END           { POP_MODE(); MODE(STMT); RET(LINE_END); }
-      <CMD> NEW_LINE           { POP_MODE(); MODE(STMT); RET(NEW_LINE); }
+      <CMD> NEW_LINE           { POP_MODE(); MODE(STMT); COUNT_NEW_LINE(); RET(LINE_END); }
+
 
 
       <STMT,EXPR,DSTRING,CMD> '\000' { RET(EOS); }
@@ -226,6 +238,7 @@ INIT:
 END:
     token.startPos = startPos;
     token.size = this->getPos() - startPos;
+    this->prevNewLine = foundNewLine;
     return kind;
 }
 
