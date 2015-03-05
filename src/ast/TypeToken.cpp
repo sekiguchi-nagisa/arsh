@@ -21,14 +21,14 @@
 // ##     TypeToken     ##
 // #######################
 
-TypeToken::TypeToken(int lineNum) :
+TypeToken::TypeToken(unsigned int lineNum) :
         lineNum(lineNum) {
 }
 
 TypeToken::~TypeToken() {
 }
 
-int TypeToken::getLineNum() {
+unsigned int TypeToken::getLineNum() {
     return this->lineNum;
 }
 
@@ -37,7 +37,7 @@ int TypeToken::getLineNum() {
 // ##     ClassTypeToken     ##
 // ############################
 
-ClassTypeToken::ClassTypeToken(int lineNum, std::string &&typeName) :
+ClassTypeToken::ClassTypeToken(unsigned int lineNum, std::string &&typeName) :
         TypeToken(lineNum), typeName(std::move(typeName)) {
 }
 
@@ -105,7 +105,7 @@ DSType *ReifiedTypeToken::toType(TypePool *typePool) {
 
 TypeToken *FuncTypeToken::voidTypeToken = new ClassTypeToken(0, "Void");
 
-FuncTypeToken::FuncTypeToken(int lineNum) :
+FuncTypeToken::FuncTypeToken(unsigned int lineNum) :
         TypeToken(lineNum), returnTypeToken(), paramTypeTokens() {
 }
 

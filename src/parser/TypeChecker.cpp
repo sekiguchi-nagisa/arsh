@@ -252,7 +252,7 @@ DSType *TypeChecker::toType(TypeToken *typeToken) {
         delete typeToken;
         return type;
     } catch(TypeLookupError &e) {
-        int lineNum = typeToken->getLineNum();
+        unsigned int lineNum = typeToken->getLineNum();
         delete typeToken;
         throw TypeCheckError(lineNum, e);
     }

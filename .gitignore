@@ -13,7 +13,7 @@ install_manifest.txt
 
 # generated file
 ydsh
-src/parser/NextToken.cpp
+src/parser/nextToken.cpp
 target/
 test/gtest*
 test/gtest*/

@@ -1239,20 +1239,6 @@ TEST_F(LexerTest_Lv1, LINE_END) {
 #undef TEXT
 }
 
-TEST_F(LexerTest_Lv1, NEW_LINE) {
-#define TEXT "\n"
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(DUP(TEXT));
-        this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 3);
-        this->assertToken(0, NEW_LINE, TEXT);
-        this->assertToken(1, NEW_LINE, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
-    });
-#undef TEXT
-}
-
 TEST_F(LexerTest_Lv1, COMMENT) {
 #define TEXT "#fhreuvrei o"
     ASSERT_NO_FATAL_FAILURE({
@@ -1278,7 +1264,7 @@ TEST_F(LexerTest_Lv1, SPACE1) {
 }
 
 TEST_F(LexerTest_Lv1, SPACE2) {
-#define TEXT "var \\\r\\\n"
+#define TEXT "   \n var \\\r\\\n"
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(TEXT);
@@ -1290,6 +1276,51 @@ TEST_F(LexerTest_Lv1, SPACE2) {
 #undef TEXT
 }
 
+TEST_F(LexerTest_Lv1, SPACE3) {
+#define TEXT "\n  \n assert \\\r\\\n"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, ASSERT, "assert");
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, SPACE4) {
+#define TEXT "\\\r\\\necho"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, COMMAND, "echo");
+        ASSERT_EQ(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+TEST(LexerTest_Lv2, NEW_LINE) {
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        Lexer lexer("  \n  \n   assert  \n ");
+        Token t;
+        TokenKind k;
+        k = lexer.nextToken(t);
+        ASSERT_EQ(k, ASSERT);
+        ASSERT_TRUE(lexer.isPrevNewLine());
+
+        k =lexer.nextToken(t);
+        ASSERT_EQ(k, EOS);
+        ASSERT_TRUE(lexer.isPrevNewLine());
+
+        k =lexer.nextToken(t);
+        ASSERT_EQ(k, EOS);
+        ASSERT_FALSE(lexer.isPrevNewLine());
+    });
+}
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

@@ -23,7 +23,7 @@
 
 /**
  * the implementation of Lexer::nextToken() exists
- * at src/NextToken.re2c.cpp
+ * at src/nextToken.re2c.cpp
  */
 
 
@@ -36,7 +36,7 @@ Lexer::Lexer(unsigned int initSize, bool fixed) :
         bufSize((fixed || initSize > DEFAULT_SIZE) ? initSize : DEFAULT_SIZE),
         buf(new unsigned char[this->bufSize]),
         cursor(this->buf), limit(this->buf), marker(0),
-        lineNum(1), endOfFile(false), modeStack(1, yycSTMT) {
+        lineNum(1), endOfFile(false), modeStack(1, yycSTMT), prevNewLine(false) {
     this->buf[0] = '\0';    // terminate null character.
 }
 
@@ -122,6 +122,10 @@ unsigned int Lexer::getBufSize() const {
 
 unsigned int Lexer::getUsedSize() const {
     return this->limit - this->buf + 1;
+}
+
+bool Lexer::isPrevNewLine() {
+    return this->prevNewLine;
 }
 
 void Lexer::setLineNum(unsigned int lineNum) {

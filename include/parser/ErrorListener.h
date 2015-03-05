@@ -18,14 +18,17 @@
 #define PARSER_ERRORLISTENER_H_
 
 #include <parser/TypeCheckError.h>
+#include <parser/ParseError.h>
 
 class ErrorListener {
 public:
     ErrorListener();
     virtual ~ErrorListener();
 
-    virtual void displyTypeError(const std::string &sourceName,
+    virtual void displayTypeError(const std::string &sourceName,
             const TypeCheckError &e) = 0;
+    virtual void displayParseError(const std::string &sourceName,
+            const ParseError &e) = 0;
 };
 
 #endif /* PARSER_ERRORLISTENER_H_ */

@@ -25,13 +25,13 @@
  */
 class TypeToken {
 private:
-    int lineNum;
+    unsigned int lineNum;
 
 public:
-    TypeToken(int lineNum);
+    TypeToken(unsigned int lineNum);
     virtual ~TypeToken();
 
-    int getLineNum();
+    unsigned int getLineNum();
 
     /**
      * get token text
@@ -49,7 +49,7 @@ private:
     std::string typeName;
 
 public:
-    ClassTypeToken(int lineNum, std::string &&typeName);
+    ClassTypeToken(unsigned int lineNum, std::string &&typeName);
 
     std::string toTokenText() const;  // override
     DSType *toType(TypePool *typePool);   // override
@@ -88,7 +88,7 @@ private:
     static TypeToken *voidTypeToken;
 
 public:
-    FuncTypeToken(int lineNum);
+    FuncTypeToken(unsigned int lineNum);
     ~FuncTypeToken();
 
     void setReturnTypeToken(TypeToken *type);

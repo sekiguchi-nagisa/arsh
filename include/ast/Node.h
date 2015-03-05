@@ -31,7 +31,7 @@ class Writer;
 
 class Node {
 protected:
-    int lineNum;
+    unsigned int lineNum;
 
     /**
      * initial value is null.
@@ -39,10 +39,10 @@ protected:
     DSType *type;
 
 public:
-    Node(int lineNum);
+    Node(unsigned int lineNum);
     virtual ~Node();
 
-    int getLineNum() const;
+    unsigned int getLineNum() const;
     void setType(DSType *type);
 
     /**
@@ -60,7 +60,7 @@ private:
     std::shared_ptr<DSObject> value;
 
 public:
-    IntValueNode(int lineNum, int value);
+    IntValueNode(unsigned int lineNum, int value);
 
     std::shared_ptr<DSObject> getValue();
     void dump(Writer &writer) const;  // override
@@ -72,7 +72,7 @@ private:
     std::shared_ptr<DSObject> value;
 
 public:
-    FloatValueNode(int lineNum, double value);
+    FloatValueNode(unsigned int lineNum, double value);
 
     std::shared_ptr<DSObject> getValue();
     void dump(Writer &writer) const;  // override
@@ -89,12 +89,12 @@ public:
      */
     StringValueNode(std::string &&value);
 
-    StringValueNode(int lineNum, std::string &&value);
+    StringValueNode(unsigned int lineNum, std::string &&value);
 
     /**
      * call StringValueNode(lineNum, value, false)
      */
-    //StringValueNode(int lineNum, char *value);	//FIXME:
+    //StringValueNode(unsigned int lineNum, char *value);	//FIXME:
     std::shared_ptr<DSObject> getValue();
     void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
@@ -105,7 +105,7 @@ private:
     std::vector<Node*> nodes;
 
 public:
-    StringExprNode(int lineNum);
+    StringExprNode(unsigned int lineNum);
     ~StringExprNode();
 
     void addExprNode(Node *node);	//TODO:
@@ -119,7 +119,7 @@ private:
     std::vector<Node*> nodes;
 
 public:
-    ArrayNode(int lineNum);
+    ArrayNode(unsigned int lineNum);
     ~ArrayNode();
 
     void addExprNode(Node *node);
@@ -135,7 +135,7 @@ private:
     std::vector<Node*> valueNodes;
 
 public:
-    MapNode(int lineNum);
+    MapNode(unsigned int lineNum);
     ~MapNode();
 
     void addEntry(Node *keyNode, Node *valueNode);
@@ -152,7 +152,7 @@ private:
     std::vector<Node*> nodes;
 
 public:
-    TupleNode(int lineNum, Node *node);
+    TupleNode(unsigned int lineNum, Node *node);
     ~TupleNode();
 
     void addNode(Node *node);
@@ -175,7 +175,7 @@ protected:
     int index;
 
 public:
-    AssignableNode(int lineNum);
+    AssignableNode(unsigned int lineNum);
     virtual ~AssignableNode();
 
     bool isReadOnly();
@@ -188,7 +188,7 @@ private:
     bool global;
 
 public:
-    VarNode(int lineNum, std::string &&varName);
+    VarNode(unsigned int lineNum, std::string &&varName);
 
     const std::string &getVarName();
     void setAttribute(FieldHandle *handle);
@@ -363,7 +363,7 @@ private:
     unsigned int paramSize;
 
 public:
-    ArgsNode(int lineNum);
+    ArgsNode(unsigned int lineNum);
     ArgsNode(std::string &&paramName, Node* argNode);
     ArgsNode(Node *argNode);
     ~ArgsNode();
@@ -420,7 +420,7 @@ private:
     ArgsNode *argsNode;
 
 public:
-    NewNode(int lineNum, TypeToken *targetTypeToken, ArgsNode *argsNode);
+    NewNode(unsigned int lineNum, TypeToken *targetTypeToken, ArgsNode *argsNode);
     ~NewNode();
 
     TypeToken *getTargetTypeToken();
@@ -446,7 +446,7 @@ private:
     bool andOp;
 
 public:
-    CondOpNode(int lineNum, Node *leftNode, Node *rightNode, bool isAndOp);
+    CondOpNode(unsigned int lineNum, Node *leftNode, Node *rightNode, bool isAndOp);
     ~CondOpNode();
 
     Node *getLeftNode();
@@ -463,7 +463,7 @@ private:
     std::vector<std::pair<int, Node*>> redirOptions;
 
 public:
-    ProcessNode(int lineNum, std::string &&commandName);
+    ProcessNode(unsigned int lineNum, std::string &&commandName);
     ~ProcessNode();
 
     const std::string &getCommandName();
@@ -483,7 +483,7 @@ private:
     std::vector<Node*> segmentNodes;
 
 public:
-    ProcArgNode(int lineNum);
+    ProcArgNode(unsigned int lineNum);
     ~ProcArgNode();
 
     void addSegmentNode(Node *node);
@@ -494,7 +494,7 @@ public:
 
 class SpecialCharNode: public Node {	//FIXME:
 public:
-    SpecialCharNode(int lineNum);
+    SpecialCharNode(unsigned int lineNum);
     ~SpecialCharNode();
 
     void dump(Writer &writer) const;  // override
@@ -537,7 +537,7 @@ private:
     Node *exprNode;
 
 public:
-    AssertNode(int lineNum, Node *exprNode);
+    AssertNode(unsigned int lineNum, Node *exprNode);
     ~AssertNode();
 
     Node *getExprNode();
@@ -565,12 +565,12 @@ public:
  */
 class BlockEndNode: public Node {
 public:
-    BlockEndNode(int lineNum);
+    BlockEndNode(unsigned int lineNum);
 };
 
 class BreakNode: public BlockEndNode {
 public:
-    BreakNode(int lineNum);
+    BreakNode(unsigned int lineNum);
 
     void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
@@ -578,7 +578,7 @@ public:
 
 class ContinueNode: public BlockEndNode {
 public:
-    ContinueNode(int lineNum);
+    ContinueNode(unsigned int lineNum);
 
     void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
@@ -590,7 +590,7 @@ private:
     Node* exprNode;
 
 public:
-    ExportEnvNode(int lineNum, std::string &&envName, Node *exprNode);
+    ExportEnvNode(unsigned int lineNum, std::string &&envName, Node *exprNode);
     ~ExportEnvNode();
 
     const std::string &getEnvName();
@@ -606,7 +606,7 @@ private:
     int varIndex;
 
 public:
-    ImportEnvNode(int lineNum, std::string &&envName);
+    ImportEnvNode(unsigned int lineNum, std::string &&envName);
 
     const std::string &getEnvName();
     void setAttribute(FieldHandle *handle);
@@ -641,7 +641,7 @@ public:
      * condNode may be null.
      * iterNode may be null.
      */
-    ForNode(int lineNum, Node *initNode, Node *condNode, Node *iterNode, BlockNode *blockNode);
+    ForNode(unsigned int lineNum, Node *initNode, Node *condNode, Node *iterNode, BlockNode *blockNode);
     ~ForNode();
 
     Node *getInitNode();
@@ -658,7 +658,7 @@ private:
     BlockNode *blockNode;
 
 public:
-    WhileNode(int lineNum, Node *condNode, BlockNode *blockNode);
+    WhileNode(unsigned int lineNum, Node *condNode, BlockNode *blockNode);
     ~WhileNode();
 
     Node *getCondNode();
@@ -673,7 +673,7 @@ private:
     Node *condNode;
 
 public:
-    DoWhileNode(int lineNum, BlockNode *blockNode, Node *condNode);
+    DoWhileNode(unsigned int lineNum, BlockNode *blockNode, Node *condNode);
     ~DoWhileNode();
 
     BlockNode *getBlockNode();
@@ -696,7 +696,7 @@ public:
     /**
      * elseNode may be null
      */
-    IfNode(int lineNum, Node *condNode, BlockNode *thenNode, BlockNode *elseNode);
+    IfNode(unsigned int lineNum, Node *condNode, BlockNode *thenNode, BlockNode *elseNode);
     ~IfNode();
 
     Node *getCondNode();
@@ -719,8 +719,8 @@ private:
     Node* exprNode;
 
 public:
-    ReturnNode(int lineNum, Node *exprNode);
-    ReturnNode(int lineNum);
+    ReturnNode(unsigned int lineNum, Node *exprNode);
+    ReturnNode(unsigned int lineNum);
     ~ReturnNode();
 
     /**
@@ -737,7 +737,7 @@ private:
     Node* exprNode;
 
 public:
-    ThrowNode(int lineNum, Node *exprNode);
+    ThrowNode(unsigned int lineNum, Node *exprNode);
     ~ThrowNode();
 
     Node *getExprNode();
@@ -761,7 +761,7 @@ public:
     /**
      * if type is null, has no type annotation
      */
-    CatchNode(int lineNum, std::string &&exceptionName, TypeToken *type, BlockNode *blockNode);
+    CatchNode(unsigned int lineNum, std::string &&exceptionName, TypeToken *type, BlockNode *blockNode);
     ~CatchNode();
 
     const std::string &getExceptionName();
@@ -799,7 +799,7 @@ private:
     Node* finallyNode;
 
 public:
-    TryNode(int lineNum, BlockNode *blockNode);
+    TryNode(unsigned int lineNum, BlockNode *blockNode);
     ~TryNode();
 
     BlockNode *getBlockNode();
@@ -816,7 +816,7 @@ private:
     BlockNode* blockNode;
 
 public:
-    FinallyNode(int lineNum, BlockNode *block);
+    FinallyNode(unsigned int lineNum, BlockNode *block);
     ~FinallyNode();
 
     BlockNode *getBlockNode();
@@ -833,7 +833,7 @@ private:
     Node* initValueNode;
 
 public:
-    VarDeclNode(int lineNum, std::string &&varName, Node *initValueNode, bool readOnly);
+    VarDeclNode(unsigned int lineNum, std::string &&varName, Node *initValueNode, bool readOnly);
     ~VarDeclNode();
 
     const std::string &getVarName();
@@ -901,7 +901,7 @@ private:
     BlockNode *blockNode;
 
 public:
-    FunctionNode(int lineNum, std::string &&funcName);
+    FunctionNode(unsigned int lineNum, std::string &&funcName);
     ~FunctionNode();
 
     const std::string &getFuncName();
@@ -976,7 +976,7 @@ TokenKind resolveAssignOp(TokenKind op);
 
 ApplyNode *createApplyNode(Node *recvNode, std::string &&methodName);
 
-ForNode *createForInNode(int lineNum, std::string &&initName, Node *exprNode, BlockNode *blockNode);
+ForNode *createForInNode(unsigned int lineNum, std::string &&initName, Node *exprNode, BlockNode *blockNode);
 
 Node *createSuffixNode(Node *leftNode, TokenKind op);
 

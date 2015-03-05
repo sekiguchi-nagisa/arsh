@@ -26,23 +26,23 @@ const static char *msgTable[] = {
 // ##     TypeCheckError     ##
 // ############################
 
-TypeCheckError::TypeCheckError(int lineNum, ErrorKind kind) :
+TypeCheckError::TypeCheckError(unsigned int lineNum, ErrorKind kind) :
         lineNum(lineNum), t(msgTable[kind]), args(0) {
 }
 
-TypeCheckError::TypeCheckError(int lineNum, ErrorKind kind, const std::string &arg1) :
+TypeCheckError::TypeCheckError(unsigned int lineNum, ErrorKind kind, const std::string &arg1) :
         lineNum(lineNum), t(msgTable[kind]), args(1) {
     args[0] = arg1;
 }
 
-TypeCheckError::TypeCheckError(int lineNum, ErrorKind kind, const std::string &arg1,
+TypeCheckError::TypeCheckError(unsigned int lineNum, ErrorKind kind, const std::string &arg1,
         const std::string &arg2) :
         lineNum(lineNum), t(msgTable[kind]), args(2) {
     args[0] = arg1;
     args[1] = arg2;
 }
 
-TypeCheckError::TypeCheckError(int lineNum, ErrorKind kind, const std::string &arg1,
+TypeCheckError::TypeCheckError(unsigned int lineNum, ErrorKind kind, const std::string &arg1,
         const std::string &arg2, const std::string &arg3) :
         lineNum(lineNum), t(msgTable[kind]), args(3) {
     args[0] = arg1;
@@ -50,14 +50,14 @@ TypeCheckError::TypeCheckError(int lineNum, ErrorKind kind, const std::string &a
     args[2] = arg3;
 }
 
-TypeCheckError::TypeCheckError(int lineNum, const TypeLookupError &e) :
+TypeCheckError::TypeCheckError(unsigned int lineNum, const TypeLookupError &e) :
         lineNum(lineNum), t(e.getTemplate()), args(e.getArgs()) {
 }
 
 TypeCheckError::~TypeCheckError() {
 }
 
-int TypeCheckError::getLineNum() const {
+unsigned int TypeCheckError::getLineNum() const {
     return this->lineNum;
 }
 
