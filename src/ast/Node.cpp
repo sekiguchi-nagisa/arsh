@@ -28,14 +28,14 @@
 // ##     Node     ##
 // ##################
 
-Node::Node(int lineNum) :
+Node::Node(unsigned int lineNum) :
         lineNum(lineNum), type() {
 }
 
 Node::~Node() {
 }
 
-int Node::getLineNum() const {
+unsigned int Node::getLineNum() const {
     return this->lineNum;
 }
 
@@ -52,7 +52,7 @@ DSType *Node::getType() const {
 // ##     IntValueNode     ##
 // ##########################
 
-IntValueNode::IntValueNode(int lineNum, int value) :
+IntValueNode::IntValueNode(unsigned int lineNum, int value) :
         Node(lineNum), value(std::make_shared<Int_Object>(value)) {
 }
 
@@ -74,7 +74,7 @@ int IntValueNode::accept(NodeVisitor *visitor) {
 // ##     FloatValueNode     ##
 // ############################
 
-FloatValueNode::FloatValueNode(int lineNum, double value) :
+FloatValueNode::FloatValueNode(unsigned int lineNum, double value) :
         Node(lineNum), value(std::make_shared<Float_Object>(value)) {
 }
 
@@ -99,11 +99,11 @@ StringValueNode::StringValueNode(std::string &&value) :
         StringValueNode(0, std::move(value)) {
 }
 
-StringValueNode::StringValueNode(int lineNum, std::string &&value) :
+StringValueNode::StringValueNode(unsigned int lineNum, std::string &&value) :
         Node(lineNum), value(std::make_shared<String_Object>(std::move(value))) {
 }
 
-//StringValueNode::StringValueNode(int lineNum, char *value):	//FIXME:
+//StringValueNode::StringValueNode(unsigned int lineNum, char *value):	//FIXME:
 //		StringValueNode(lineNum, value, false) {
 //}
 
@@ -124,7 +124,7 @@ int StringValueNode::accept(NodeVisitor *visitor) {
 // ##     StringExprNode     ##
 // ############################
 
-StringExprNode::StringExprNode(int lineNum) :
+StringExprNode::StringExprNode(unsigned int lineNum) :
         Node(lineNum), nodes() {
 }
 
@@ -155,7 +155,7 @@ int StringExprNode::accept(NodeVisitor *visitor) {
 // ##     ArrayNode     ##
 // #######################
 
-ArrayNode::ArrayNode(int lineNum) :
+ArrayNode::ArrayNode(unsigned int lineNum) :
         Node(lineNum), nodes() {
 }
 
@@ -190,7 +190,7 @@ int ArrayNode::accept(NodeVisitor *visitor) {
 // ##     MapNode     ##
 // #####################
 
-MapNode::MapNode(int lineNum) :
+MapNode::MapNode(unsigned int lineNum) :
         Node(lineNum), keyNodes(), valueNodes() {
 }
 
@@ -239,7 +239,7 @@ int MapNode::accept(NodeVisitor *visitor) {
 // ##     TupleNode     ##
 // #######################
 
-TupleNode::TupleNode(int lineNum, Node *node) :
+TupleNode::TupleNode(unsigned int lineNum, Node *node) :
         Node(lineNum), nodes() {
     this->nodes.push_back(node);
 }
@@ -271,7 +271,7 @@ int TupleNode::accept(NodeVisitor *visitor) {
 // ##     AssignableNode     ##
 // ############################
 
-AssignableNode::AssignableNode(int lineNum) :
+AssignableNode::AssignableNode(unsigned int lineNum) :
         Node(lineNum), readOnly(false), index(-1) {
 }
 
@@ -286,7 +286,7 @@ bool AssignableNode::isReadOnly() {
 // ##     VarNode     ##
 // #####################
 
-VarNode::VarNode(int lineNum, std::string &&varName) :
+VarNode::VarNode(unsigned int lineNum, std::string &&varName) :
         AssignableNode(lineNum), varName(std::move(varName)), global(false) {
 }
 
@@ -556,7 +556,7 @@ int BinaryOpNode::accept(NodeVisitor *visitor) {
 // ##     ArgsNode     ##
 // ######################
 
-ArgsNode::ArgsNode(int lineNum) :
+ArgsNode::ArgsNode(unsigned int lineNum) :
         Node(lineNum), argPairs(), paramIndexMap(0), paramSize(0) {
 }
 ArgsNode::ArgsNode(std::string &&paramName, Node* argNode) :
@@ -681,7 +681,7 @@ int ApplyNode::accept(NodeVisitor *visitor) {
 // ##     NewNode     ##
 // #####################
 
-NewNode::NewNode(int lineNum, TypeToken *targetTypeToken, ArgsNode *argsNode) :
+NewNode::NewNode(unsigned int lineNum, TypeToken *targetTypeToken, ArgsNode *argsNode) :
         Node(lineNum), targetTypeToken(targetTypeToken),
         argsNode(argsNode) {
 }
@@ -718,7 +718,7 @@ int NewNode::accept(NodeVisitor *visitor) {
 // ##     CondOpNode     ##
 // ########################
 
-CondOpNode::CondOpNode(int lineNum, Node *leftNode, Node *rightNode, bool isAndOp) :
+CondOpNode::CondOpNode(unsigned int lineNum, Node *leftNode, Node *rightNode, bool isAndOp) :
         Node(lineNum), leftNode(leftNode), rightNode(rightNode), andOp(isAndOp) {
 }
 
@@ -756,7 +756,7 @@ int CondOpNode::accept(NodeVisitor *visitor) {
 // ##     ProcessNode     ##
 // #########################
 
-ProcessNode::ProcessNode(int lineNum, std::string &&commandName) :
+ProcessNode::ProcessNode(unsigned int lineNum, std::string &&commandName) :
         Node(lineNum), commandName(std::move(commandName)), argNodes(), redirOptions() {
 }
 
@@ -811,7 +811,7 @@ int ProcessNode::accept(NodeVisitor *visitor) {
 // ##     ProcArgNode     ##
 // #########################
 
-ProcArgNode::ProcArgNode(int lineNum) :
+ProcArgNode::ProcArgNode(unsigned int lineNum) :
         Node(lineNum), segmentNodes() {
 }
 
@@ -853,7 +853,7 @@ int ProcArgNode::accept(NodeVisitor *visitor) {
 // ##     SpecialCharNode     ##
 // #############################
 
-SpecialCharNode::SpecialCharNode(int lineNum) :
+SpecialCharNode::SpecialCharNode(unsigned int lineNum) :
         Node(lineNum) {
 }
 
@@ -938,7 +938,7 @@ int InnerTaskNode::accept(NodeVisitor *visitor) {
 // ##     AssertNode     ##
 // ########################
 
-AssertNode::AssertNode(int lineNum, Node *exprNode) :
+AssertNode::AssertNode(unsigned int lineNum, Node *exprNode) :
         Node(lineNum), exprNode(exprNode) {
 }
 
@@ -998,7 +998,7 @@ int BlockNode::accept(NodeVisitor *visitor) {
 // ##     BlockEnd     ##
 // ######################
 
-BlockEndNode::BlockEndNode(int lineNum) :
+BlockEndNode::BlockEndNode(unsigned int lineNum) :
         Node(lineNum) {
 }
 
@@ -1006,7 +1006,7 @@ BlockEndNode::BlockEndNode(int lineNum) :
 // ##     BreakNode     ##
 // #######################
 
-BreakNode::BreakNode(int lineNum) :
+BreakNode::BreakNode(unsigned int lineNum) :
         BlockEndNode(lineNum) {
 }
 
@@ -1022,7 +1022,7 @@ int BreakNode::accept(NodeVisitor *visitor) {
 // ##     ContinueNode     ##
 // ##########################
 
-ContinueNode::ContinueNode(int lineNum) :
+ContinueNode::ContinueNode(unsigned int lineNum) :
         BlockEndNode(lineNum) {
 }
 
@@ -1038,7 +1038,7 @@ int ContinueNode::accept(NodeVisitor *visitor) {
 // ##     ExportEnvNode     ##
 // ###########################
 
-ExportEnvNode::ExportEnvNode(int lineNum, std::string &&envName, Node *exprNode) :
+ExportEnvNode::ExportEnvNode(unsigned int lineNum, std::string &&envName, Node *exprNode) :
         Node(lineNum), envName(std::move(envName)), exprNode(exprNode) {
 }
 
@@ -1068,7 +1068,7 @@ int ExportEnvNode::accept(NodeVisitor *visitor) {
 // ##     ImportEnvNode     ##
 // ###########################
 
-ImportEnvNode::ImportEnvNode(int lineNum, std::string &&envName) :
+ImportEnvNode::ImportEnvNode(unsigned int lineNum, std::string &&envName) :
         Node(lineNum), envName(std::move(envName)), global(false), varIndex(-1) {
 }
 
@@ -1103,7 +1103,7 @@ int ImportEnvNode::accept(NodeVisitor *visitor) {
 // ##     ForNode     ##
 // #####################
 
-ForNode::ForNode(int lineNum, Node *initNode, Node *condNode, Node *iterNode, BlockNode *blockNode) :
+ForNode::ForNode(unsigned int lineNum, Node *initNode, Node *condNode, Node *iterNode, BlockNode *blockNode) :
         Node(lineNum), initNode(initNode != 0 ? initNode : new EmptyNode()),
         condNode(condNode != 0 ? condNode : new VarNode(lineNum, std::string(TRUE))),
         iterNode(iterNode != 0 ? iterNode : new EmptyNode()), blockNode(blockNode) {
@@ -1154,7 +1154,7 @@ int ForNode::accept(NodeVisitor *visitor) {
 // ##     WhileNode     ##
 // #######################
 
-WhileNode::WhileNode(int lineNum, Node *condNode, BlockNode *blockNode) :
+WhileNode::WhileNode(unsigned int lineNum, Node *condNode, BlockNode *blockNode) :
         Node(lineNum), condNode(condNode), blockNode(blockNode) {
 }
 
@@ -1187,7 +1187,7 @@ int WhileNode::accept(NodeVisitor *visitor) {
 // ##     DoWhileNode     ##
 // #########################
 
-DoWhileNode::DoWhileNode(int lineNum, BlockNode *blockNode, Node *condNode) :
+DoWhileNode::DoWhileNode(unsigned int lineNum, BlockNode *blockNode, Node *condNode) :
         Node(lineNum), blockNode(blockNode), condNode(condNode) {
 }
 
@@ -1215,7 +1215,7 @@ int DoWhileNode::accept(NodeVisitor *visitor) {
 // ##     IfNode     ##
 // ####################
 
-IfNode::IfNode(int lineNum, Node *condNode, BlockNode *thenNode, BlockNode *elseNode) :
+IfNode::IfNode(unsigned int lineNum, Node *condNode, BlockNode *thenNode, BlockNode *elseNode) :
         Node(lineNum), condNode(condNode), thenNode(thenNode),
         elseNode(elseNode != 0 ? elseNode : new BlockNode()) {
 }
@@ -1257,11 +1257,11 @@ int IfNode::accept(NodeVisitor *visitor) {
 // ##     ReturnNode     ##
 // ########################
 
-ReturnNode::ReturnNode(int lineNum, Node *exprNode) :
+ReturnNode::ReturnNode(unsigned int lineNum, Node *exprNode) :
         BlockEndNode(lineNum), exprNode(exprNode) {
 }
 
-ReturnNode::ReturnNode(int lineNum) :
+ReturnNode::ReturnNode(unsigned int lineNum) :
         BlockEndNode(lineNum), exprNode() {
 }
 
@@ -1286,7 +1286,7 @@ int ReturnNode::accept(NodeVisitor *visitor) {
 // ##     ThrowNode     ##
 // #######################
 
-ThrowNode::ThrowNode(int lineNum, Node *exprNode) :
+ThrowNode::ThrowNode(unsigned int lineNum, Node *exprNode) :
         BlockEndNode(lineNum), exprNode(exprNode) {
 }
 
@@ -1311,7 +1311,7 @@ int ThrowNode::accept(NodeVisitor *visitor) {
 // ##     CatchNode     ##
 // #######################
 
-CatchNode::CatchNode(int lineNum, std::string &&exceptionName, TypeToken *type, BlockNode *blockNode) :
+CatchNode::CatchNode(unsigned int lineNum, std::string &&exceptionName, TypeToken *type, BlockNode *blockNode) :
         Node(lineNum), exceptionName(std::move(exceptionName)), typeToken(type), exceptionType(0),
         blockNode(blockNode) {
 }
@@ -1365,7 +1365,7 @@ int CatchNode::accept(NodeVisitor *visitor) {
 // ##     TryNode     ##
 // #####################
 
-TryNode::TryNode(int lineNum, BlockNode *blockNode) :
+TryNode::TryNode(unsigned int lineNum, BlockNode *blockNode) :
         Node(lineNum), blockNode(blockNode), catchNodes(), finallyNode() {
 }
 
@@ -1428,7 +1428,7 @@ int TryNode::accept(NodeVisitor *visitor) {
 // ##     FinallyNode     ##
 // #########################
 
-FinallyNode::FinallyNode(int lineNum, BlockNode *block) :
+FinallyNode::FinallyNode(unsigned int lineNum, BlockNode *block) :
         Node(lineNum), blockNode(block) {
 }
 
@@ -1453,7 +1453,7 @@ int FinallyNode::accept(NodeVisitor *visitor) {
 // ##     VarDeclNode     ##
 // #########################
 
-VarDeclNode::VarDeclNode(int lineNum, std::string &&varName, Node *initValueNode, bool readOnly) :
+VarDeclNode::VarDeclNode(unsigned int lineNum, std::string &&varName, Node *initValueNode, bool readOnly) :
         Node(lineNum), varName(std::move(varName)), readOnly(readOnly), global(false),
         varIndex(-1), initValueNode(initValueNode) {
 }
@@ -1546,7 +1546,7 @@ int AssignNode::accept(NodeVisitor *visitor) {
 // ##     FunctionNode     ##
 // ##########################
 
-FunctionNode::FunctionNode(int lineNum, std::string &&funcName) :
+FunctionNode::FunctionNode(unsigned int lineNum, std::string &&funcName) :
         Node(lineNum), funcName(std::move(funcName)), paramNodes(), paramTypeTokens(), returnTypeToken(),
         returnType(0), blockNode() {
 }
@@ -1760,7 +1760,7 @@ ApplyNode *createApplyNode(Node *recvNode, std::string &&methodName) {
     return new ApplyNode(a, new ArgsNode(a->getLineNum()));
 }
 
-ForNode *createForInNode(int lineNum, std::string &&initName, Node *exprNode, BlockNode *blockNode) {
+ForNode *createForInNode(unsigned int lineNum, std::string &&initName, Node *exprNode, BlockNode *blockNode) {
     // create for-init
     ApplyNode *apply_reset = createApplyNode(exprNode, std::string(OP_RESET));
     std::string reset_var_name = std::to_string(rand());

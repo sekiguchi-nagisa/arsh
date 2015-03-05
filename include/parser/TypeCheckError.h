@@ -70,7 +70,7 @@ private:
     /**
      * line number of error node
      */
-    int lineNum;
+    unsigned int lineNum;
 
     /**
      * template of error message
@@ -83,16 +83,16 @@ private:
     std::vector<std::string> args;
 
 public:
-    TypeCheckError(int lineNum, ErrorKind kind);
-    TypeCheckError(int lineNum, ErrorKind kind, const std::string &arg1);
-    TypeCheckError(int lineNum, ErrorKind kind, const std::string &arg1,
+    TypeCheckError(unsigned int lineNum, ErrorKind kind);
+    TypeCheckError(unsigned int lineNum, ErrorKind kind, const std::string &arg1);
+    TypeCheckError(unsigned int lineNum, ErrorKind kind, const std::string &arg1,
             const std::string &arg2);
-    TypeCheckError(int lineNum, ErrorKind kind, const std::string &arg1,
+    TypeCheckError(unsigned int lineNum, ErrorKind kind, const std::string &arg1,
             const std::string &arg2, const std::string &arg3);
-    TypeCheckError(int lineNum, const TypeLookupError &e);
+    TypeCheckError(unsigned int lineNum, const TypeLookupError &e);
     ~TypeCheckError();
 
-    int getLineNum() const;
+    unsigned int getLineNum() const;
     const std::string &getTemplate() const ;
     const std::vector<std::string> &getArgs() const;
 
