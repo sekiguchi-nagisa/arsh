@@ -152,3 +152,33 @@ bool UnexpectedNewLineError::equalsImpl(const ParseError &e) {
     return false;
 }
 
+// ###############################
+// ##     InvalidTokenError     ##
+// ###############################
+
+InvalidTokenError::InvalidTokenError(unsigned int lineNum, Token token) :
+        ParseError(lineNum, INVALID), token(token) {
+}
+
+InvalidTokenError::~InvalidTokenError() {
+}
+
+Token InvalidTokenError::getInvalidToken() {
+    return this->token;
+}
+
+bool InvalidTokenError::operator==(const InvalidTokenError &e) {
+    if(!this->baseEquals(e)) {
+        return false;
+    }
+    return this->token == e.token;
+}
+
+bool InvalidTokenError::equalsImpl(const ParseError &e) {
+    const InvalidTokenError *ex = dynamic_cast<const InvalidTokenError*>(&e);
+    if(ex != 0) {
+        return *this == *ex;
+    }
+    return false;
+}
+

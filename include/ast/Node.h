@@ -25,7 +25,7 @@
 #include <core/DSObject.h>
 #include <ast/NodeVisitor.h>
 #include <ast/TypeToken.h>
-#include <parser/TokenKind.h>
+#include <parser/Token.h>
 
 class Writer;
 

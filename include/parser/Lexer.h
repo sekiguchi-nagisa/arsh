@@ -21,17 +21,7 @@
 #include <vector>
 #include <string>
 
-#include <parser/TokenKind.h>
-
-struct Token {
-    unsigned int startPos;
-
-    /**
-     * actually EOS token text is empty string,
-     * but size of EOS is 1 (due to lexer implementation).
-     */
-    unsigned int size;
-};
+#include <parser/Token.h>
 
 typedef enum {
     yycSTMT,

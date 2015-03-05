@@ -91,7 +91,12 @@
 
 
 #define E_ALTER(alt) \
-    do { throw NoViableAlterError(LN(), this->curTokenKind, alt); } while(0)
+    do {\
+        if(this->curTokenKind == INVALID) {\
+            throw InvalidTokenError(LN(), this->curToken);\
+        }\
+        throw NoViableAlterError(LN(), this->curTokenKind, alt);\
+    } while(0)
 
 #define RET_NODE(node) return std::unique_ptr<Node>(node)
 
@@ -127,6 +132,9 @@ RootNode *Parser::parse() {
 
 inline void Parser::matchToken(TokenKind expected) {
     if(this->curTokenKind != expected) {
+        if(this->curTokenKind == INVALID) {
+            throw InvalidTokenError(LN(), this->curToken);
+        }
         throw TokenMismatchError(LN(), this->curTokenKind, expected);
     }
     NEXT_TOKEN();
@@ -134,6 +142,9 @@ inline void Parser::matchToken(TokenKind expected) {
 
 inline Token Parser::matchAndGetToken(TokenKind expected) {
     if(this->curTokenKind != expected) {
+        if(this->curTokenKind == INVALID) {
+            throw InvalidTokenError(LN(), this->curToken);
+        }
         throw TokenMismatchError(LN(), this->curTokenKind, expected);
     }
     Token token = this->curToken;
@@ -173,7 +184,7 @@ std::unique_ptr<RootNode> Parser::parse_toplevel() {
     return rootNode;
 }
 
-std::unique_ptr<Node> Parser::parse_toplevelStatement() {
+inline std::unique_ptr<Node> Parser::parse_toplevelStatement() {
     static TokenKind alters[] = {
             EACH_LA_toplevelStatement(GEN_LA_ALTER)
             DUMMY
@@ -185,7 +196,7 @@ std::unique_ptr<Node> Parser::parse_toplevelStatement() {
         fatal("not implemented rule: %s\n", getTokenName(this->curTokenKind)); //FIXME:
         break;
     EACH_LA_statement(GEN_LA_CASE)
-        break; //FIXME:
+        return this->parse_statement();
     default:
         E_ALTER(alters);
     }
@@ -254,6 +265,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
     default:
         return this->parse_expression();
     }
+    return std::unique_ptr<Node>(nullptr);
 }
 
 std::unique_ptr<Node> Parser::parse_expression() {

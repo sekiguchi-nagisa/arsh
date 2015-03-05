@@ -17,7 +17,8 @@
 #ifndef PARSER_PARSEERROR_H_
 #define PARSER_PARSEERROR_H_
 
-#include <parser/TokenKind.h>
+#include <parser/Token.h>
+#include <parser/Lexer.h>
 
 class ParseError {
 protected:
@@ -88,6 +89,22 @@ public:
     ~UnexpectedNewLineError();
 
     bool operator==(const UnexpectedNewLineError &e);
+
+private:
+    bool equalsImpl(const ParseError &e); // override
+};
+
+class InvalidTokenError : public ParseError {
+private:
+    Token token;
+
+public:
+    InvalidTokenError(unsigned int lineNum, Token token);
+    ~InvalidTokenError();
+
+    Token getInvalidToken();
+
+    bool operator==(const InvalidTokenError &e);
 
 private:
     bool equalsImpl(const ParseError &e); // override

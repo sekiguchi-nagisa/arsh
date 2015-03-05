@@ -135,11 +135,24 @@ const char *getTokenName(TokenKind kind);
 
 #define TO_NAME(kind) getTokenName(kind)
 
+
 // binary op alias
 //#define ADD PLUS
 //#define SUB MINUS
 //#define LT LA
 //#define GT RA
 
+
+struct Token {
+    unsigned int startPos;
+
+    /**
+     * actually EOS token text is empty string,
+     * but size of EOS is 1 (due to lexer implementation).
+     */
+    unsigned int size;
+
+    bool operator==(const Token &token);
+};
 
 #endif /* PARSER_TOKENKIND_H_ */

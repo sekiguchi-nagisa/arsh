@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <parser/TokenKind.h>
+#include <parser/Token.h>
 
 static const char *TOKEN_KIND_STRING[] = {
 #define GEN_NAME(ENUM) #ENUM,
@@ -26,4 +26,11 @@ const char *getTokenName(TokenKind kind) {
     return TOKEN_KIND_STRING[kind];
 }
 
+// ###################
+// ##     Token     ##
+// ###################
 
+bool Token::operator==(const Token &token) {
+    return this->startPos == token.startPos &&
+            this->size == token.size;
+}
