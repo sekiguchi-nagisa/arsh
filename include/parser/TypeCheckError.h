@@ -138,6 +138,6 @@ public:
 #define E_UnaryOp(node, arg1, arg2)         REPORT_TC_ERROR2(UnaryOp     , node, arg1, arg2)
 #define E_UnmatchParam(node, arg1, arg2)    REPORT_TC_ERROR2(UnmatchParam, node, arg1, arg2)
 
-#define E_BinaryOp(node, arg1, arg2, arg3)  REPORT_TC_ERROR3(E_BinaryOp  , node, arg1, arg2, arg3)
+#define E_BinaryOp(node, arg1, arg2, arg3)  REPORT_TC_ERROR3(BinaryOp    , node, arg1, arg2, arg3)
 
 #endif /* PARSER_TYPECHECKERROR_H_ */

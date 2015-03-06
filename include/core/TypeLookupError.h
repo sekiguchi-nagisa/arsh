@@ -29,6 +29,7 @@
         ERROR(E_NotClass      , "not class type: %s") \
         ERROR(E_Nonheritable  , "nonheritable type: %s") \
         ERROR(E_DefinedType   , "already defined type: %s") \
+        ERROR(E_InvalidElement, "invalid type element: %s") \
         /* three arg */\
         ERROR(E_UnmatchElement, "not match type element, %s requires %s type element, but is %s")
 
@@ -71,6 +72,7 @@ public:
 #define E_NotClass(arg1)                   REPORT_TL_ERROR1(NotClass      , arg1)
 #define E_Nonheritable(arg1)               REPORT_TL_ERROR1(Nonheritable  , arg1)
 #define E_DefinedType(arg1)                REPORT_TL_ERROR1(DefinedType   , arg1)
+#define E_InvalidElement(arg1)             REPORT_TL_ERROR1(InvalidElement, arg1)
 
 #define E_UnmatchElement(arg1, arg2, arg3) REPORT_TL_ERROR3(UnmatchElement, arg1, arg2, arg3)
 
