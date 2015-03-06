@@ -27,27 +27,7 @@ const static char *msgTable[] = {
 // ############################
 
 TypeCheckError::TypeCheckError(unsigned int lineNum, ErrorKind kind) :
-        lineNum(lineNum), t(msgTable[kind]), args(0) {
-}
-
-TypeCheckError::TypeCheckError(unsigned int lineNum, ErrorKind kind, const std::string &arg1) :
-        lineNum(lineNum), t(msgTable[kind]), args(1) {
-    args[0] = arg1;
-}
-
-TypeCheckError::TypeCheckError(unsigned int lineNum, ErrorKind kind, const std::string &arg1,
-        const std::string &arg2) :
-        lineNum(lineNum), t(msgTable[kind]), args(2) {
-    args[0] = arg1;
-    args[1] = arg2;
-}
-
-TypeCheckError::TypeCheckError(unsigned int lineNum, ErrorKind kind, const std::string &arg1,
-        const std::string &arg2, const std::string &arg3) :
-        lineNum(lineNum), t(msgTable[kind]), args(3) {
-    args[0] = arg1;
-    args[1] = arg2;
-    args[2] = arg3;
+        lineNum(lineNum), t(msgTable[kind]), args() {
 }
 
 TypeCheckError::TypeCheckError(unsigned int lineNum, const TypeLookupError &e) :
@@ -93,4 +73,30 @@ bool TypeCheckError::operator==(const TypeCheckError &e) {
         }
     }
     return true;
+}
+
+void TypeCheckError::report(unsigned int lineNum, ErrorKind kind) {
+    throw TypeCheckError(lineNum, kind);
+}
+
+void TypeCheckError::report(unsigned int lineNum, ErrorKind kind, const std::string &arg1) {
+    TypeCheckError error(lineNum, kind);
+    error.args.push_back(arg1);
+    throw error;
+}
+
+void TypeCheckError::report(unsigned int lineNum, ErrorKind kind, const std::string &arg1,
+        const std::string &arg2) {
+    TypeCheckError error(lineNum, kind);
+    error.args.push_back(arg1);
+    error.args.push_back(arg2);
+    throw error;
+}
+void TypeCheckError::report(unsigned int lineNum, ErrorKind kind, const std::string &arg1,
+        const std::string &arg2, const std::string &arg3) {
+    TypeCheckError error(lineNum, kind);
+    error.args.push_back(arg1);
+    error.args.push_back(arg2);
+    error.args.push_back(arg3);
+    throw error;
 }

@@ -84,11 +84,6 @@ private:
 
 public:
     TypeCheckError(unsigned int lineNum, ErrorKind kind);
-    TypeCheckError(unsigned int lineNum, ErrorKind kind, const std::string &arg1);
-    TypeCheckError(unsigned int lineNum, ErrorKind kind, const std::string &arg1,
-            const std::string &arg2);
-    TypeCheckError(unsigned int lineNum, ErrorKind kind, const std::string &arg1,
-            const std::string &arg2, const std::string &arg3);
     TypeCheckError(unsigned int lineNum, const TypeLookupError &e);
     ~TypeCheckError();
 
@@ -97,14 +92,21 @@ public:
     const std::vector<std::string> &getArgs() const;
 
     bool operator==(const TypeCheckError &e);
+
+    static void report(unsigned int lineNum, ErrorKind kind);
+    static void report(unsigned int lineNum, ErrorKind kind, const std::string &arg1);
+    static void report(unsigned int lineNum, ErrorKind kind, const std::string &arg1,
+            const std::string &arg2);
+    static void report(unsigned int lineNum, ErrorKind kind, const std::string &arg1,
+            const std::string &arg2, const std::string &arg3);
 };
 
 // helper macro for error reporting
 
-#define REPORT_TC_ERROR0(name, node)                   do { throw TypeCheckError(node->getLineNum(), TypeCheckError::E_##name); } while(0)
-#define REPORT_TC_ERROR1(name, node, arg1)             do { throw TypeCheckError(node->getLineNum(), TypeCheckError::E_##name, arg1); } while(0)
-#define REPORT_TC_ERROR2(name, node, arg1, arg2)       do { throw TypeCheckError(node->getLineNum(), TypeCheckError::E_##name, arg1, arg2); } while(0)
-#define REPORT_TC_ERROR3(name, node, arg1, arg2, arg3) do { throw TypeCheckError(node->getLineNum(), TypeCheckError::E_##name, arg1, arg2, arg3); } while(0)
+#define REPORT_TC_ERROR0(name, node)                   do { TypeCheckError::report(node->getLineNum(), TypeCheckError::E_##name); } while(0)
+#define REPORT_TC_ERROR1(name, node, arg1)             do { TypeCheckError::report(node->getLineNum(), TypeCheckError::E_##name, arg1); } while(0)
+#define REPORT_TC_ERROR2(name, node, arg1, arg2)       do { TypeCheckError::report(node->getLineNum(), TypeCheckError::E_##name, arg1, arg2); } while(0)
+#define REPORT_TC_ERROR3(name, node, arg1, arg2, arg3) do { TypeCheckError::report(node->getLineNum(), TypeCheckError::E_##name, arg1, arg2, arg3); } while(0)
 
 
 #define E_Unresolved(node)                  REPORT_TC_ERROR0(Unresolved       , node)

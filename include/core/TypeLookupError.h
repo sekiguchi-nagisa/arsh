@@ -46,19 +46,23 @@ private:
     std::vector<std::string> args;
 
 public:
-    TypeLookupError(TypeLookupError::ErrorKind kind, const std::string &arg1);
-    TypeLookupError(TypeLookupError::ErrorKind kind, const std::string &arg1, const std::string &arg2, const std::string &arg3);
+    TypeLookupError(TypeLookupError::ErrorKind kind);
+    ~TypeLookupError();
 
     const std::string &getTemplate() const;
     const std::vector<std::string> &getArgs() const;
 
     bool operator==(const TypeLookupError &e);
+
+    static void report(ErrorKind kind, const std::string &arg1);
+    static void report(ErrorKind kind, const std::string &arg1,
+            const std::string &arg2, const std::string &arg3);
 };
 
 // helper macro for error reporting
 
-#define REPORT_TL_ERROR1(name, arg1)             do { throw TypeLookupError(TypeLookupError::E_##name, arg1); } while(0)
-#define REPORT_TL_ERROR3(name, arg1, arg2, arg3) do { throw TypeLookupError(TypeLookupError::E_##name, arg1, arg2, arg3); } while(0)
+#define REPORT_TL_ERROR1(name, arg1)             do { TypeLookupError::report(TypeLookupError::E_##name, arg1); } while(0)
+#define REPORT_TL_ERROR3(name, arg1, arg2, arg3) do { TypeLookupError::report(TypeLookupError::E_##name, arg1, arg2, arg3); } while(0)
 
 #define E_NotUseGeneric(arg1)              REPORT_TL_ERROR1(NotUseGeneric , arg1)
 #define E_UndefinedType(arg1)              REPORT_TL_ERROR1(UndefinedType , arg1)
