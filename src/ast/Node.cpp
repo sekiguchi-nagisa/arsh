@@ -718,8 +718,8 @@ int NewNode::accept(NodeVisitor *visitor) {
 // ##     CondOpNode     ##
 // ########################
 
-CondOpNode::CondOpNode(unsigned int lineNum, Node *leftNode, Node *rightNode, bool isAndOp) :
-        Node(lineNum), leftNode(leftNode), rightNode(rightNode), andOp(isAndOp) {
+CondOpNode::CondOpNode(Node *leftNode, Node *rightNode, bool isAndOp) :
+        Node(leftNode->getLineNum()), leftNode(leftNode), rightNode(rightNode), andOp(isAndOp) {
 }
 
 CondOpNode::~CondOpNode() {

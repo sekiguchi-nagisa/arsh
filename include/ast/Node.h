@@ -446,7 +446,7 @@ private:
     bool andOp;
 
 public:
-    CondOpNode(unsigned int lineNum, Node *leftNode, Node *rightNode, bool isAndOp);
+    CondOpNode(Node *leftNode, Node *rightNode, bool isAndOp);
     ~CondOpNode();
 
     Node *getLeftNode();

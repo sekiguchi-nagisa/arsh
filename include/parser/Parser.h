@@ -64,6 +64,11 @@ private:
     Token matchAndGetToken(TokenKind expected);
 
     /**
+     * return curTokenKind and consume.
+     */
+    TokenKind consumeAndGetKind();
+
+    /**
      * if has new line, throw exception.
      */
     void hasNoNewLine();
@@ -72,10 +77,25 @@ private:
     std::unique_ptr<RootNode> parse_toplevel();
     std::unique_ptr<Node> parse_toplevelStatement();
     std::unique_ptr<Node> parse_statement();
-    std::unique_ptr<Node> parse_expression();
+    std::unique_ptr<BlockNode> parse_block();
     std::string parse_name();
     std::unique_ptr<Node> parse_variableDeclaration();
-    std::unique_ptr<Node> parse_rightHandleSide();
+
+    std::unique_ptr<CatchNode> parse_catchStatement();
+    std::unique_ptr<Node> parse_finallyBlock();
+
+    std::unique_ptr<Node> parse_commandListExpression();
+    std::unique_ptr<Node> parse_orListCommand();
+
+    std::unique_ptr<Node> parse_commandOrExpression();
+    std::unique_ptr<Node> parse_expression();
+    std::unique_ptr<Node> parse_assignment();
+    std::unique_ptr<Node> parse_condOrExpression();
+    std::unique_ptr<Node> parse_condAndExpression();
+    std::unique_ptr<Node> parse_orExpression();
+    std::unique_ptr<Node> parse_xorExpression();
+    std::unique_ptr<Node> parse_andExpression();
+    std::unique_ptr<Node> parse_equalityExpression();
 };
 
 #endif /* PARSER_PARSER_H_ */

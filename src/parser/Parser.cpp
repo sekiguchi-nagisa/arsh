@@ -152,6 +152,12 @@ inline Token Parser::matchAndGetToken(TokenKind expected) {
     return token;
 }
 
+inline TokenKind Parser::consumeAndGetKind() {
+    TokenKind kind = this->curTokenKind;
+    NEXT_TOKEN();
+    return kind;
+}
+
 inline void Parser::hasNoNewLine() {
     if(!HAS_NL()) {
         throw UnexpectedNewLineError(LN());
@@ -211,7 +217,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
     }
     case ASSERT: {
         this->matchToken(ASSERT);
-        RET_NODE(new AssertNode(LN(), this->parse_expression().release()));
+        RET_NODE(new AssertNode(LN(), this->parse_commandOrExpression().release()));
     }
     case BREAK: {
         this->matchToken(BREAK);
@@ -232,8 +238,22 @@ std::unique_ptr<Node> Parser::parse_statement() {
     }
     case FOR:
         break; //FIXME:
-    case IF:
-        break; //FIXME:
+    case IF: {
+        this->matchToken(IF);
+        unsigned int n = LN();
+        this->matchToken(LP);
+        auto condNode = this->parse_commandOrExpression();
+        this->matchToken(RP);
+        auto thenNode = this->parse_block();
+
+        if(this->curTokenKind == ELSE) {    //FIXME: else if
+            NEXT_TOKEN();
+            RET_NODE(new IfNode(n, condNode.release(),
+                    thenNode.release(), this->parse_block().release()));
+        } else {
+            RET_NODE(new IfNode(n, condNode.release(), thenNode.release(), 0));
+        }
+    }
     case IMPORT_ENV: {
         this->matchToken(IMPORT_ENV);
         RET_NODE(new ImportEnvNode(LN(), this->parse_name()));
@@ -251,25 +271,78 @@ std::unique_ptr<Node> Parser::parse_statement() {
         this->matchToken(THROW);
         RET_NODE(new ThrowNode(LN(), this->parse_expression().release()));
     }
-    case WHILE:
-        break; // FIXME:
-    case DO:
-        break; // FIXME:
-    case TRY:
-        break; // FIXME:
+    case WHILE: {
+        this->matchToken(WHILE);
+        unsigned int n = LN();
+        this->matchToken(LP);
+        auto condNode = this->parse_commandOrExpression();
+        this->matchToken(RP);
+        RET_NODE(new WhileNode(n, condNode.release(), this->parse_block().release()));
+    }
+    case DO: {
+        this->matchToken(DO);
+        unsigned int n = LN();
+        auto blockNode = this->parse_block();
+        this->matchToken(WHILE);
+        this->matchToken(LP);
+        auto condNode = this->parse_commandOrExpression();
+        this->matchToken(RP);
+        RET_NODE(new DoWhileNode(n, blockNode.release(), condNode.release()));
+    }
+    case TRY: {
+        this->matchToken(TRY);
+        auto tryNode = std::unique_ptr<TryNode>(new TryNode(LN(), this->parse_block().release()));
+
+        // parse catch
+        bool next = true;
+        while(next) {
+            if(this->curTokenKind == CATCH) {
+                tryNode->addCatchNode(this->parse_catchStatement().release());
+            } else {
+                next = false;
+            }
+        }
+
+        // parse finally
+        if(this->curTokenKind == FINALLY) {
+            tryNode->addFinallyNode(this->parse_finallyBlock().release());
+        }
+        RET_NODE(tryNode.release());
+    }
     case VAR:
     case LET:
         return this->parse_variableDeclaration();
     case COMMAND:
-        break; // FIXME:
+        return this->parse_commandListExpression();
     default:
         return this->parse_expression();
     }
     return std::unique_ptr<Node>(nullptr);
 }
 
-std::unique_ptr<Node> Parser::parse_expression() {
-    return std::unique_ptr<Node>(nullptr);    //FIXME:
+std::unique_ptr<BlockNode> Parser::parse_block() {
+    this->matchToken(LBC);
+    auto blockNode = std::unique_ptr<BlockNode>(new BlockNode);
+
+    blockNode->addNode(this->parse_statement().release());
+
+    bool next = true;
+    while(next) {
+        switch(this->curTokenKind) {
+        EACH_LA_statement(GEN_LA_CASE) {
+            blockNode->addNode(this->parse_statement().release());
+            break;
+        }
+        default: {
+            next = false;
+            break;
+        }
+        }
+    }
+
+    this->matchToken(RBC);
+
+    return blockNode;
 }
 
 inline std::string Parser::parse_name() {
@@ -286,11 +359,11 @@ inline std::string Parser::parse_name() {
     }
     default:
         E_ALTER(alters);
+        return "";
     }
-    return "";
 }
 
-std::unique_ptr<Node> Parser::parse_variableDeclaration() {
+inline std::unique_ptr<Node> Parser::parse_variableDeclaration() {
     static TokenKind alters[] = {
             EACH_LA_varDecl(GEN_LA_ALTER)
             DUMMY
@@ -305,7 +378,7 @@ std::unique_ptr<Node> Parser::parse_variableDeclaration() {
         this->hasNoNewLine();
         this->matchToken(ASSIGN);
         RET_NODE(new VarDeclNode(n, std::move(name),
-                this->parse_rightHandleSide().release(), readOnly));
+                this->parse_commandOrExpression().release(), readOnly));
     }
     default:
         E_ALTER(alters);
@@ -313,25 +386,144 @@ std::unique_ptr<Node> Parser::parse_variableDeclaration() {
     }
 }
 
-inline std::unique_ptr<Node> Parser::parse_rightHandleSide() {
-#define EACH_LA_RHS(OP) \
+std::unique_ptr<CatchNode> Parser::parse_catchStatement() {
+    this->matchToken(CATCH);
+    unsigned int n = LN();
+    this->matchToken(LP);
+    //FIXME:
+    return std::unique_ptr<CatchNode>(nullptr);
+}
+std::unique_ptr<Node> Parser::parse_finallyBlock() {
+    this->matchToken(FINALLY);
+    RET_NODE(new FinallyNode(LN(), this->parse_block().release()));
+}
+
+// command
+inline std::unique_ptr<Node> Parser::parse_commandListExpression() {
+    return this->parse_orListCommand();
+}
+
+inline std::unique_ptr<Node> Parser::parse_orListCommand() {
+    return std::unique_ptr<Node>(nullptr);  //FIXME:
+}
+
+// expression
+inline std::unique_ptr<Node> Parser::parse_commandOrExpression() {
+#define EACH_LA_condExpr(OP) \
     OP(COMMAND) \
     EACH_LA_expression(OP)
 
     static TokenKind alters[] = {
-            EACH_LA_RHS(GEN_LA_ALTER)
+            EACH_LA_condExpr(GEN_LA_ALTER)
             DUMMY
     };
 
-#undef EACH_LA_RHS
+#undef EACH_LA_condExpr
 
     switch(this->curTokenKind) {
     case COMMAND:
-        break; //FIXME:
+        return this->parse_commandListExpression();
     EACH_LA_expression(GEN_LA_CASE)
         return this->parse_expression();
     default:
         E_ALTER(alters);
+        return std::unique_ptr<Node>(nullptr);
     }
-    return std::unique_ptr<Node>(nullptr);
+}
+
+std::unique_ptr<Node> Parser::parse_expression() {
+    return this->parse_assignment();
+}
+
+inline std::unique_ptr<Node> Parser::parse_assignment() {
+#define EACH_LA_assignOp(OP) \
+    OP(ASSIGN) \
+    OP(ADD_ASSIGN) \
+    OP(SUB_ASSIGN) \
+    OP(MUL_ASSIGN) \
+    OP(DIV_ASSIGN) \
+    OP(MOD_ASSIGN)
+
+    static TokenKind alters[] = {
+            EACH_LA_assignOp(GEN_LA_ALTER)
+            DUMMY
+    };
+
+    // parse left handle side
+    auto node = this->parse_condOrExpression();
+
+    // parse right handle side
+    if(!HAS_NL()) {
+        switch(this->curTokenKind) {
+        EACH_LA_assignOp(GEN_LA_CASE) {
+            TokenKind kind = this->consumeAndGetKind();
+            node = std::unique_ptr<Node>(createAssignNode(node.release(),
+                    kind, this->parse_commandOrExpression().release()));
+            break;
+        }
+        default:
+            break;
+        }
+    }
+    return node;
+#undef EACH_LA_assignOp
+}
+
+inline std::unique_ptr<Node> Parser::parse_condOrExpression() {
+    auto node = this->parse_condAndExpression();
+
+    while(!HAS_NL() && this->curTokenKind == COND_OR) {
+        this->matchToken(COND_OR);
+        node = std::unique_ptr<Node>(new CondOpNode(node.release(),
+                this->parse_condAndExpression().release(), false));
+    }
+    return node;
+}
+
+inline std::unique_ptr<Node> Parser::parse_condAndExpression() {
+    auto node = this->parse_orExpression();
+
+    while(!HAS_NL() && this->curTokenKind == COND_AND) {
+        this->matchToken(COND_AND);
+        node = std::unique_ptr<Node>(new CondOpNode(node.release(),
+                this->parse_orExpression().release(), true));
+    }
+    return node;
+}
+
+inline std::unique_ptr<Node> Parser::parse_orExpression() {
+    auto node = this->parse_xorExpression();
+
+    while(!HAS_NL() && this->curTokenKind == OR) {
+        TokenKind op = this->consumeAndGetKind();
+        node = std::unique_ptr<Node>(new BinaryOpNode(node.release(), op,
+                this->parse_xorExpression().release()));
+    }
+    return node;
+}
+
+inline std::unique_ptr<Node> Parser::parse_xorExpression() {
+    auto node = this->parse_andExpression();
+
+    while(!HAS_NL() && this->curTokenKind == XOR) {
+        TokenKind op = this->consumeAndGetKind();
+        node = std::unique_ptr<Node>(new BinaryOpNode(node.release(), op,
+                this->parse_andExpression().release()));
+    }
+    return node;
+}
+
+inline std::unique_ptr<Node> Parser::parse_andExpression() {
+    auto node = this->parse_equalityExpression();
+
+    while(!HAS_NL() && this->curTokenKind == AND) {
+        TokenKind op = this->consumeAndGetKind();
+        node = std::unique_ptr<Node>(new BinaryOpNode(node.release(), op,
+                this->parse_equalityExpression().release()));
+    }
+    return node;
+}
+
+inline std::unique_ptr<Node> Parser::parse_equalityExpression() {
+    return std::unique_ptr<Node>(nullptr);  //FIXME:
 }
