@@ -108,7 +108,7 @@
     /* accessor */\
     TOKEN(ACCESSOR) \
     /* line end */\
-    TOKEN(LINE_END) \
+    TOKEN(LINE_END) /* for new line error */\
     TOKEN(NEW_LINE) \
     /* double quoted string */\
     TOKEN(CLOSE_DQUOTE) \

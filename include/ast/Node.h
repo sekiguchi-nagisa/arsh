@@ -119,7 +119,7 @@ private:
     std::vector<Node*> nodes;
 
 public:
-    ArrayNode(unsigned int lineNum);
+    ArrayNode(unsigned int lineNum, Node *node);
     ~ArrayNode();
 
     void addExprNode(Node *node);
@@ -135,7 +135,7 @@ private:
     std::vector<Node*> valueNodes;
 
 public:
-    MapNode(unsigned int lineNum);
+    MapNode(unsigned int lineNum, Node *keyNode, Node *valueNode);
     ~MapNode();
 
     void addEntry(Node *keyNode, Node *valueNode);
@@ -149,10 +149,13 @@ public:
 
 class TupleNode: public Node {
 private:
+    /**
+     * at least two nodes
+     */
     std::vector<Node*> nodes;
 
 public:
-    TupleNode(unsigned int lineNum, Node *node);
+    TupleNode(unsigned int lineNum, Node *leftNode, Node *rightNode);
     ~TupleNode();
 
     void addNode(Node *node);
@@ -196,6 +199,13 @@ public:
     int accept(NodeVisitor *visitor);	// override
     bool isGlobal();
     int getVarIndex();
+
+    // for ArgsNode
+    /**
+     * extract varName from varNode.
+     * after extracting, delete varNode.
+     */
+    static std::string extractVarNameAndDelete(VarNode *node);
 };
 
 class AccessNode: public AssignableNode {
@@ -363,15 +373,12 @@ private:
     unsigned int paramSize;
 
 public:
-    ArgsNode(unsigned int lineNum);
-    ArgsNode(std::string &&paramName, Node* argNode);
-    ArgsNode(Node *argNode);
+    ArgsNode();
     ~ArgsNode();
 
-    void addArgPair(std::string &&paramName, Node *argNode);
-
     /**
-     * equivalent to this->addArgPair("", argNode)
+     * if argNode is AssignNode and left hand side node is VarNode,
+     * treat as named argument.
      */
     void addArg(Node *argNode);
 
@@ -493,10 +500,14 @@ public:
 };
 
 class SpecialCharNode: public Node {	//FIXME:
+private:
+    std::string name;
+
 public:
-    SpecialCharNode(unsigned int lineNum);
+    SpecialCharNode(unsigned int lineNum, std::string &&name);
     ~SpecialCharNode();
 
+    const std::string &getName();
     void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	//override
 };
@@ -875,6 +886,13 @@ public:
     bool isSelfAssignment();
     void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);   // override
+
+    /**
+     * for ArgsNode
+     * split AssignNode to leftNode and rightNode.
+     * after splitting, delete AssignNode.
+     */
+    static std::pair<Node*, Node*> split(AssignNode *node);
 };
 
 class FunctionNode: public Node {	//FIXME

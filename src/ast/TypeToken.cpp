@@ -103,10 +103,9 @@ DSType *ReifiedTypeToken::toType(TypePool *typePool) {
 // ##     FuncTypeToken     ##
 // ###########################
 
-TypeToken *FuncTypeToken::voidTypeToken = new ClassTypeToken(0, "Void");
-
-FuncTypeToken::FuncTypeToken(unsigned int lineNum) :
-        TypeToken(lineNum), returnTypeToken(), paramTypeTokens() {
+FuncTypeToken::FuncTypeToken(TypeToken *returnTypeToken) :
+        TypeToken(returnTypeToken->getLineNum()),
+        returnTypeToken(returnTypeToken), paramTypeTokens() {
 }
 
 FuncTypeToken::~FuncTypeToken() {
@@ -117,10 +116,6 @@ FuncTypeToken::~FuncTypeToken() {
         delete t;
     }
     this->paramTypeTokens.clear();
-}
-
-void FuncTypeToken::setReturnTypeToken(TypeToken *type) {
-    this->returnTypeToken = type;
 }
 
 void FuncTypeToken::addParamTypeToken(TypeToken *type) {
@@ -155,4 +150,3 @@ DSType *FuncTypeToken::toType(TypePool *typePool) {
     }
     return typePool->createAndGetFuncTypeIfUndefined(returnType, paramTypes);
 }
-

@@ -83,17 +83,6 @@ private:
     bool equalsImpl(const ParseError &e); // override
 };
 
-class UnexpectedNewLineError : public ParseError {
-public:
-    UnexpectedNewLineError(unsigned int lineNum);
-    ~UnexpectedNewLineError();
-
-    bool operator==(const UnexpectedNewLineError &e);
-
-private:
-    bool equalsImpl(const ParseError &e); // override
-};
-
 class InvalidTokenError : public ParseError {
 private:
     Token token;

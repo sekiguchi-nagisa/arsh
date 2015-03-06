@@ -155,8 +155,9 @@ int StringExprNode::accept(NodeVisitor *visitor) {
 // ##     ArrayNode     ##
 // #######################
 
-ArrayNode::ArrayNode(unsigned int lineNum) :
+ArrayNode::ArrayNode(unsigned int lineNum, Node *node) :
         Node(lineNum), nodes() {
+    this->nodes.push_back(node);
 }
 
 ArrayNode::~ArrayNode() {
@@ -190,8 +191,10 @@ int ArrayNode::accept(NodeVisitor *visitor) {
 // ##     MapNode     ##
 // #####################
 
-MapNode::MapNode(unsigned int lineNum) :
+MapNode::MapNode(unsigned int lineNum, Node *keyNode, Node *valueNode) :
         Node(lineNum), keyNodes(), valueNodes() {
+    this->keyNodes.push_back(keyNode);
+    this->valueNodes.push_back(valueNode);
 }
 
 MapNode::~MapNode() {
@@ -239,9 +242,10 @@ int MapNode::accept(NodeVisitor *visitor) {
 // ##     TupleNode     ##
 // #######################
 
-TupleNode::TupleNode(unsigned int lineNum, Node *node) :
-        Node(lineNum), nodes() {
-    this->nodes.push_back(node);
+TupleNode::TupleNode(unsigned int lineNum, Node *leftNode, Node *rightNode) :
+        Node(lineNum), nodes(2) {
+    this->nodes[0] = leftNode;
+    this->nodes[1] = rightNode;
 }
 
 TupleNode::~TupleNode() {
@@ -317,6 +321,12 @@ bool VarNode::isGlobal() {
 
 int VarNode::getVarIndex() {
     return this->index;
+}
+
+std::string VarNode::extractVarNameAndDelete(VarNode *node) {
+    std::string name = std::move(node->varName);
+    delete node;
+    return name;
 }
 
 // ########################
@@ -556,17 +566,8 @@ int BinaryOpNode::accept(NodeVisitor *visitor) {
 // ##     ArgsNode     ##
 // ######################
 
-ArgsNode::ArgsNode(unsigned int lineNum) :
-        Node(lineNum), argPairs(), paramIndexMap(0), paramSize(0) {
-}
-ArgsNode::ArgsNode(std::string &&paramName, Node* argNode) :
-        ArgsNode(argNode->getLineNum()) {
-    this->argPairs.push_back(
-            std::pair<std::string, Node*>(std::move(paramName), argNode));
-}
-
-ArgsNode::ArgsNode(Node *argNode) :
-        ArgsNode(std::string(""), argNode) {
+ArgsNode::ArgsNode() :
+        Node(0), argPairs(), paramIndexMap(0), paramSize(0) {
 }
 
 ArgsNode::~ArgsNode() {
@@ -574,13 +575,16 @@ ArgsNode::~ArgsNode() {
     this->paramIndexMap = 0;
 }
 
-void ArgsNode::addArgPair(std::string &&paramName, Node *argNode) {
-    this->argPairs.push_back(
-            std::pair<std::string, Node*>(std::move(paramName), argNode));
-}
-
 void ArgsNode::addArg(Node *argNode) {
-    this->addArgPair(std::string(""), argNode);
+    AssignNode *assignNode = dynamic_cast<AssignNode*>(argNode);
+    if(assignNode != 0 && dynamic_cast<VarNode*>(assignNode->getLeftNode()) != 0) {
+        std::pair<Node*, Node*> pair = AssignNode::split(assignNode);
+        VarNode *leftNode = dynamic_cast<VarNode*>(pair.first);
+        this->argPairs.push_back(
+                std::make_pair(VarNode::extractVarNameAndDelete(leftNode), pair.second));
+    } else {
+        this->argPairs.push_back(std::make_pair("", argNode));
+    }
 }
 
 void ArgsNode::setArg(unsigned int index, Node *argNode) {
@@ -853,11 +857,15 @@ int ProcArgNode::accept(NodeVisitor *visitor) {
 // ##     SpecialCharNode     ##
 // #############################
 
-SpecialCharNode::SpecialCharNode(unsigned int lineNum) :
-        Node(lineNum) {
+SpecialCharNode::SpecialCharNode(unsigned int lineNum, std::string &&name) :
+        Node(lineNum), name(std::move(name)) {
 }
 
 SpecialCharNode::~SpecialCharNode() {
+}
+
+const std::string &SpecialCharNode::getName() {
+    return this->name;
 }
 
 void SpecialCharNode::dump(Writer &writer) const {
@@ -1542,6 +1550,17 @@ int AssignNode::accept(NodeVisitor *visitor) {
     return visitor->visitAssignNode(this);
 }
 
+std::pair<Node*, Node*> AssignNode::split(AssignNode *node) {
+    Node *leftNode = node->leftNode;
+    node->leftNode = 0;
+
+    Node *rightNode = node->rightNode;
+    node->rightNode = 0;
+
+    delete node;
+    return std::make_pair(leftNode, rightNode);
+}
+
 // ##########################
 // ##     FunctionNode     ##
 // ##########################
@@ -1752,7 +1771,7 @@ TokenKind resolveAssignOp(TokenKind op) {
 
 ApplyNode *createApplyNode(Node *recvNode, std::string &&methodName) {
     AccessNode *a = new AccessNode(recvNode, std::move(methodName));
-    return new ApplyNode(a, new ArgsNode(a->getLineNum()));
+    return new ApplyNode(a, new ArgsNode());
 }
 
 ForNode *createForInNode(unsigned int lineNum, std::string &&initName, Node *exprNode, BlockNode *blockNode) {

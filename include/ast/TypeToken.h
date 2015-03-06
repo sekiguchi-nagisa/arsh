@@ -82,16 +82,10 @@ private:
      */
     std::vector<TypeToken*> paramTypeTokens;
 
-    /**
-     * UnresolvedClassType of Void
-     */
-    static TypeToken *voidTypeToken;
-
 public:
-    FuncTypeToken(unsigned int lineNum);
+    FuncTypeToken(TypeToken *type);
     ~FuncTypeToken();
 
-    void setReturnTypeToken(TypeToken *type);
     void addParamTypeToken(TypeToken *type);
     std::string toTokenText() const;  // override
     DSType *toType(TypePool *typePool);   // override

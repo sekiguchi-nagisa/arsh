@@ -76,7 +76,9 @@ private:
     // parser rule definition.
     std::unique_ptr<RootNode> parse_toplevel();
     std::unique_ptr<Node> parse_toplevelStatement();
+    std::unique_ptr<TypeToken> parse_typeName();
     std::unique_ptr<Node> parse_statement();
+    void parse_statementEnd();
     std::unique_ptr<BlockNode> parse_block();
     std::string parse_name();
     std::unique_ptr<Node> parse_variableDeclaration();
@@ -96,6 +98,15 @@ private:
     std::unique_ptr<Node> parse_xorExpression();
     std::unique_ptr<Node> parse_andExpression();
     std::unique_ptr<Node> parse_equalityExpression();
+    std::unique_ptr<Node> parse_typeExpression();
+    std::unique_ptr<Node> parse_relationalExpression();
+    std::unique_ptr<Node> parse_addExpression();
+    std::unique_ptr<Node> parse_mulExpression();
+    std::unique_ptr<Node> parse_unaryExpression();
+    std::unique_ptr<Node> parse_suffixExpression();
+    std::unique_ptr<Node> parse_memberExpression();
+    std::unique_ptr<Node> parse_primaryExpression();
+    std::unique_ptr<ArgsNode> parse_arguments();
 };
 
 #endif /* PARSER_PARSER_H_ */

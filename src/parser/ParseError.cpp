@@ -129,29 +129,6 @@ bool NoViableAlterError::equalsImpl(const ParseError &e) {
     return false;
 }
 
-// ####################################
-// ##     UnexpectedNewLineError     ##
-// ####################################
-
-UnexpectedNewLineError::UnexpectedNewLineError(unsigned int lineNum) :
-        ParseError(lineNum, DUMMY) {
-}
-
-UnexpectedNewLineError::~UnexpectedNewLineError() {
-}
-
-bool UnexpectedNewLineError::operator==(const UnexpectedNewLineError &e) {
-    return this->baseEquals(e);
-}
-
-bool UnexpectedNewLineError::equalsImpl(const ParseError &e) {
-    const UnexpectedNewLineError *ex = dynamic_cast<const UnexpectedNewLineError*>(&e);
-    if(ex != 0) {
-        return *this == *ex;
-    }
-    return false;
-}
-
 // ###############################
 // ##     InvalidTokenError     ##
 // ###############################
