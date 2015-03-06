@@ -123,11 +123,6 @@ RootNode *Parser::parse() {
     // first, fetch token.
     NEXT_TOKEN();
 
-    int a = 12;
-    switch(a) {
-    case 0: case 1: case 2:
-        break;
-    }
     // start parsing
     std::unique_ptr<RootNode> rootNode = this->parse_toplevel();
     return rootNode.release();
@@ -230,7 +225,10 @@ std::unique_ptr<TypeToken> Parser::parse_typeName() {
             reified->addElementTypeToken(this->parse_typeName().release());
 
             while(!HAS_NL() && this->curTokenKind == COMMA) {
+                this->hasNoNewLine();
                 this->matchToken(COMMA);
+                this->hasNoNewLine();
+
                 reified->addElementTypeToken(this->parse_typeName().release());
             }
             this->hasNoNewLine();
@@ -461,8 +459,9 @@ inline std::unique_ptr<Node> Parser::parse_variableDeclaration() {
 
     switch(this->curTokenKind) {
     EACH_LA_varDecl(GEN_LA_CASE) {
-        bool readOnly = this->curTokenKind != VAR;
-        NEXT_TOKEN();
+        bool readOnly = this->consumeAndGetKind() != VAR;
+        this->hasNoNewLine();
+
         unsigned int n = LN();
         std::string name = this->parse_name();
         this->hasNoNewLine();
@@ -480,8 +479,23 @@ std::unique_ptr<CatchNode> Parser::parse_catchStatement() {
     this->matchToken(CATCH);
     unsigned int n = LN();
     this->matchToken(LP);
-    //FIXME:
-    return std::unique_ptr<CatchNode>(nullptr);
+    Token token = this->matchAndGetToken(VAR_NAME);
+    std::unique_ptr<TypeToken> typeToken;
+    if(!HAS_NL() && this->curTokenKind == COLON) {
+        this->matchToken(COLON);
+        this->hasNoNewLine();
+        typeToken = this->parse_typeName();
+    }
+    this->matchToken(RP);
+    auto blockNode = this->parse_block();
+
+    if(typeToken) {
+        return std::unique_ptr<CatchNode>(new CatchNode(n, this->lexer->toName(token),
+                typeToken.release(), blockNode.release()));
+    } else {
+        return std::unique_ptr<CatchNode>(new CatchNode(n, this->lexer->toName(token),
+                blockNode.release()));
+    }
 }
 std::unique_ptr<Node> Parser::parse_finallyBlock() {
     this->matchToken(FINALLY);
@@ -791,17 +805,6 @@ inline std::unique_ptr<Node> Parser::parse_primaryExpression() {
             DUMMY
     };
 
-    /*    OP(NEW) \
-    OP(INT_LITERAL) \
-    OP(FLOAT_LITERAL) \
-    OP(STRING_LITERAL) \
-    OP(OPEN_DQUOTE) \
-    OP(START_SUB_CMD) \
-    OP(APPLIED_NAME) \
-    OP(SPECIAL_NAME) \
-    OP(LP) \
-    OP(LB) \
-    OP(LBC)*/
     unsigned int n = LN();
     switch(this->curTokenKind) {
     case NEW: {

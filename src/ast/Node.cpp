@@ -1319,9 +1319,16 @@ int ThrowNode::accept(NodeVisitor *visitor) {
 // ##     CatchNode     ##
 // #######################
 
-CatchNode::CatchNode(unsigned int lineNum, std::string &&exceptionName, TypeToken *type, BlockNode *blockNode) :
-        Node(lineNum), exceptionName(std::move(exceptionName)), typeToken(type), exceptionType(0),
-        blockNode(blockNode) {
+CatchNode::CatchNode(unsigned int lineNum, std::string &&exceptionName,
+        BlockNode *blockNode) :
+        CatchNode(lineNum, std::move(exceptionName),
+        new ClassTypeToken(lineNum, "Any"), blockNode) {
+}
+
+CatchNode::CatchNode(unsigned int lineNum,
+        std::string &&exceptionName, TypeToken *type, BlockNode *blockNode) :
+        Node(lineNum), exceptionName(std::move(exceptionName)),
+        typeToken(type), exceptionType(0), blockNode(blockNode) {
 }
 
 CatchNode::~CatchNode() {

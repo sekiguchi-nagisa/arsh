@@ -769,10 +769,10 @@ private:
     BlockNode *blockNode;
 
 public:
-    /**
-     * if type is null, has no type annotation
-     */
-    CatchNode(unsigned int lineNum, std::string &&exceptionName, TypeToken *type, BlockNode *blockNode);
+    CatchNode(unsigned int lineNum, std::string &&exceptionName,
+            BlockNode *blockNode);
+    CatchNode(unsigned int lineNum, std::string &&exceptionName,
+            TypeToken *type, BlockNode *blockNode);
     ~CatchNode();
 
     const std::string &getExceptionName();
