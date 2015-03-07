@@ -1808,8 +1808,8 @@ TokenKind resolveAssignOp(TokenKind op) {
         return MOD;
     default:
         fatal("unsupported assign op: %s\n", TO_NAME(op));
+        return INVALID;
     }
-    return INVALID;
 }
 
 ApplyNode *createApplyNode(Node *recvNode, std::string &&methodName) {
@@ -1839,7 +1839,7 @@ ForNode *createForInNode(unsigned int lineNum, std::string &&initName, Node *exp
 }
 
 Node *createSuffixNode(Node *leftNode, TokenKind op) {
-    return createAssignNode(leftNode, resolveAssignOp(op), new IntValueNode(leftNode->getLineNum(), 1));
+    return createAssignNode(leftNode, op, new IntValueNode(leftNode->getLineNum(), 1));
 }
 
 Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode) {
