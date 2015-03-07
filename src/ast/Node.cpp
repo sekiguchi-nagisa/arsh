@@ -53,17 +53,26 @@ DSType *Node::getType() const {
 // ##########################
 
 IntValueNode::IntValueNode(unsigned int lineNum, int value) :
-        Node(lineNum), value(std::make_shared<Int_Object>(value)) {
+        Node(lineNum), tempValue(value), value() {
 }
 
 std::shared_ptr<DSObject> IntValueNode::getValue() {
     return this->value;
 }
 
-void IntValueNode::dump(Writer &writer) const {
-    Int_Object *obj = TYPE_AS(Int_Object, this->value);
-    writer.write(NAME(value), std::to_string(obj->getValue()));
+void IntValueNode::setType(DSType *type) {
+    this->type = type;
+    this->value.reset(new Int_Object(this->type, this->tempValue));
+}
 
+void IntValueNode::dump(Writer &writer) const {
+    WRITE_PRIM(tempValue);
+    if(this->type == 0) {
+        writer.write(NAME(value), "(null)");
+    } else {
+        Int_Object *obj = TYPE_AS(Int_Object, this->value);
+        writer.write(NAME(value), std::to_string(obj->getValue()));
+    }
 }
 
 int IntValueNode::accept(NodeVisitor *visitor) {
@@ -75,16 +84,26 @@ int IntValueNode::accept(NodeVisitor *visitor) {
 // ############################
 
 FloatValueNode::FloatValueNode(unsigned int lineNum, double value) :
-        Node(lineNum), value(std::make_shared<Float_Object>(value)) {
+        Node(lineNum), tempValue(value), value() {
 }
 
 std::shared_ptr<DSObject> FloatValueNode::getValue() {
     return this->value;
 }
 
+void FloatValueNode::setType(DSType *type) {
+    this->type = type;
+    this->value.reset(new Float_Object(this->type, this->tempValue));
+}
+
 void FloatValueNode::dump(Writer &writer) const {
-    Float_Object *obj = TYPE_AS(Float_Object, this->value);
-    writer.write(NAME(value), std::to_string(obj->getValue()));
+    WRITE_PRIM(tempValue);
+    if(this->type == 0) {
+        writer.write(NAME(value), "(null)");
+    } else {
+        Float_Object *obj = TYPE_AS(Float_Object, this->value);
+        writer.write(NAME(value), std::to_string(obj->getValue()));
+    }
 }
 
 int FloatValueNode::accept(NodeVisitor *visitor) {
@@ -100,7 +119,7 @@ StringValueNode::StringValueNode(std::string &&value) :
 }
 
 StringValueNode::StringValueNode(unsigned int lineNum, std::string &&value) :
-        Node(lineNum), value(std::make_shared<String_Object>(std::move(value))) {
+        Node(lineNum), tempValue(std::move(value)), value() {
 }
 
 //StringValueNode::StringValueNode(unsigned int lineNum, char *value):	//FIXME:
@@ -111,9 +130,22 @@ std::shared_ptr<DSObject> StringValueNode::getValue() {
     return this->value;
 }
 
+void StringValueNode::setType(DSType *type) {
+    this->type = type;
+    this->value.reset(
+            new String_Object(this->type, std::move(this->tempValue)));
+}
+
 void StringValueNode::dump(Writer &writer) const {
-    String_Object *obj = TYPE_AS(String_Object, this->value);
-    writer.write(NAME(value), obj->getValue());
+    if(this->type == 0) {
+        writer.write(NAME(tempValue), this->tempValue);
+        writer.write(NAME(value), "");
+
+    } else {
+        String_Object *obj = TYPE_AS(String_Object, this->value);
+        writer.write(NAME(tempValue), "");
+        writer.write(NAME(value), obj->getValue());
+    }
 }
 
 int StringValueNode::accept(NodeVisitor *visitor) {

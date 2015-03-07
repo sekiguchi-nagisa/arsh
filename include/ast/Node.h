@@ -43,7 +43,7 @@ public:
     virtual ~Node();
 
     unsigned int getLineNum() const;
-    void setType(DSType *type);
+    virtual void setType(DSType *type);
 
     /**
      * return null, before type checking
@@ -57,30 +57,58 @@ public:
 
 class IntValueNode: public Node {
 private:
+    int tempValue;
+
+    /**
+     * initialized after type check.
+     */
     std::shared_ptr<DSObject> value;
 
 public:
     IntValueNode(unsigned int lineNum, int value);
 
+    /**
+     * before type check, return empty pointer.
+     */
     std::shared_ptr<DSObject> getValue();
+
+    void setType(DSType *type); // override
     void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
 class FloatValueNode: public Node {
 private:
+    double tempValue;
+
+    /**
+     * initialized after type check.
+     */
     std::shared_ptr<DSObject> value;
 
 public:
     FloatValueNode(unsigned int lineNum, double value);
 
+    /**
+     * before type check, return empty pointer.
+     */
     std::shared_ptr<DSObject> getValue();
+
+    void setType(DSType *type); // override
     void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };
 
 class StringValueNode: public Node {	//FIXME:
 private:
+    /**
+     * after type checking, is broken.
+     */
+    std::string tempValue;
+
+    /**
+     * initialized after type check.
+     */
     std::shared_ptr<DSObject> value;
 
 public:
@@ -95,7 +123,13 @@ public:
      * call StringValueNode(lineNum, value, false)
      */
     //StringValueNode(unsigned int lineNum, char *value);	//FIXME:
+
+    /**
+     * before type check, return empty pointer.
+     */
     std::shared_ptr<DSObject> getValue();
+
+    void setType(DSType *type); // override
     void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
 };

@@ -448,27 +448,18 @@ void TypeChecker::recover() {
 int TypeChecker::visitIntValueNode(IntValueNode *node) {	//TODO: int8, int16 ..etc
     DSType *type = this->typePool->getIntType();
     node->setType(type);
-
-    // set type to object
-    node->getValue()->setType(type);
     return 0;
 }
 
 int TypeChecker::visitFloatValueNode(FloatValueNode *node) {
     DSType *type = this->typePool->getFloatType();
     node->setType(type);
-
-    // set type to object
-    node->getValue()->setType(type);
     return 0;
 }
 
 int TypeChecker::visitStringValueNode(StringValueNode *node) {
     DSType *type = this->typePool->getStringType();
     node->setType(type);
-
-    // set type to object
-    node->getValue()->setType(type);
     return 0;
 }
 

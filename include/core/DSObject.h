@@ -34,11 +34,6 @@ public:
     virtual DSType *getType() = 0;
 
     /**
-     * set object type.
-     */
-    virtual void setType(DSType *type) = 0;
-
-    /**
      * retunr 0, if has no field
      */
     virtual int getFieldSize() = 0;
@@ -67,7 +62,6 @@ public:
     virtual ~BaseObject();
 
     DSType *getType();	// override
-    void setType(DSType *type); // override
     int getFieldSize();	// override
     DSObject *lookupField(int fieldIndex);	// override
 };
@@ -77,11 +71,6 @@ private:
     int value;
 
 public:
-    /**
-     * for constant value initialization
-     */
-    Int_Object(int value);
-
     Int_Object(DSType *type, int value);
 
     int getValue();
@@ -92,11 +81,6 @@ private:
     double value;
 
 public:
-    /**
-     * for constant value initialization.
-     */
-    Float_Object(double value);
-
     Float_Object(DSType *type, double value);
 
     double getValue();
@@ -117,11 +101,6 @@ private:
     std::string value;
 
 public:
-    /**
-     * for constant value initialization.
-     */
-    String_Object(std::string &&value);
-
     String_Object(DSType *type, std::string &&value);
 
     const std::string &getValue();
