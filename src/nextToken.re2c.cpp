@@ -80,9 +80,10 @@ TokenKind Lexer::nextToken(Token &token) {
       re2c:indent:string = "    ";
 
       NUM = '0' | [1-9] [0-9]*;
+      INT = [+-]? NUM;
       DIGITS = [0-9]+;
       FLOAT_SUFFIX =  [eE] [+-]? NUM;
-      FLOAT = NUM '.' DIGITS FLOAT_SUFFIX?;
+      FLOAT = INT '.' DIGITS FLOAT_SUFFIX?;
 
       SQUOTE_CHAR = [^\r\n'\\] | '\\' [btnfr'\\];
       VAR_NAME = [a-zA-Z] [_0-9a-zA-Z]* | '_' [_0-9a-zA-Z]+;
@@ -137,7 +138,7 @@ INIT:
       <STMT,EXPR> '+'          { MODE(EXPR); RET(PLUS); }
       <STMT,EXPR> '-'          { MODE(EXPR); RET(MINUS); }
 
-      <STMT,EXPR> NUM          { MODE(EXPR); RET(INT_LITERAL); }
+      <STMT,EXPR> INT          { MODE(EXPR); RET(INT_LITERAL); }
       <STMT,EXPR> FLOAT        { MODE(EXPR); RET(FLOAT_LITERAL); }
       <STMT,EXPR> STRING_LITERAL
                                { MODE(EXPR); RET(STRING_LITERAL); }

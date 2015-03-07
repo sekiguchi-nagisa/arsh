@@ -488,7 +488,7 @@ std::unique_ptr<CatchNode> Parser::parse_catchStatement() {
     this->matchToken(CATCH);
     unsigned int n = LN();
     this->matchToken(LP);
-    Token token = this->matchAndGetToken(VAR_NAME);
+    Token token = this->matchAndGetToken(APPLIED_NAME);
     std::unique_ptr<TypeToken> typeToken;
     if(!HAS_NL() && this->curTokenKind == COLON) {
         this->matchToken(COLON);
@@ -850,7 +850,7 @@ INLINE std::unique_ptr<Node> Parser::parse_primaryExpression() {
     }
     case SPECIAL_NAME: {
         Token token = this->matchAndGetToken(SPECIAL_NAME);
-        RET_NODE(new VarNode(n, this->lexer->toName(token)));
+        RET_NODE(new SpecialCharNode(n, this->lexer->toName(token)));
     }
     case LP: {  // expression or tuple
         this->matchToken(LP);
