@@ -17,9 +17,13 @@
 #include <iostream>
 #include <util/debug.h>
 #include <parser/Lexer.h>
+#include <parser/Parser.h>
+#include <exe/Terminal.h>
+#include <ast/Node.h>
+#include <ast/dump.h>
 using namespace std;
 
-int main() {
+int main(int argc, char **argv) {
     cout << "!!!Hello World!!!" << endl; // prints !!!Hello World!!!
     debugp("hello debug print %d!!\n", 12);
     debugp("hello debug print no arg\n");
@@ -31,5 +35,16 @@ int main() {
         k = lexer.nextToken(t);
         cout << TO_NAME(k) << endl;
     } while(k != EOS && k != INVALID);
+
+    Terminal term(argv[0]);
+
+    const char *line;
+    while((line = term.readLine()) != 0) {
+        Lexer lexer(line);
+        Parser parser(&lexer);
+        RootNode *rootNode = parser.parse();
+        dumpAST(cout, *rootNode);
+        delete rootNode;
+    }
     return 0;
 }

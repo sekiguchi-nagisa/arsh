@@ -1,3 +1,5 @@
+include(CheckIncludeFiles)
+
 cmake_minimum_required(VERSION 2.8)
 
 PROJECT(ydsh)
@@ -32,7 +34,11 @@ add_subdirectory(${SRC_DIR}/core)
 add_subdirectory(${SRC_DIR}/eval)
 add_subdirectory(${SRC_DIR}/parser)
 add_subdirectory(${SRC_DIR}/util)
+add_subdirectory(${SRC_DIR}/exe)
 
+# check editline
+check_include_files("histedit.h" HAVE_HISTEDIT_H)
+find_library(HAVE_LIBEDIT NAMES edit)
 
 # generate lexer 
 set(lexer_src ${SRC_DIR}/parser/nextToken.cpp) 
@@ -47,7 +53,7 @@ set(YDSH_STATIC ydsh_static)
 add_library(${YDSH_STATIC} STATIC ${YDSH_SRC} ${lexer_src})
 add_dependencies(${YDSH_STATIC} gen_lexer)
 add_executable(${BIN_NAME} ${SRC_DIR}/ydsh.cpp)
-target_link_libraries(${BIN_NAME} ${YDSH_STATIC})
+target_link_libraries(${BIN_NAME} ${YDSH_STATIC} ${HAVE_LIBEDIT})
 
 install(TARGETS ${BIN_NAME} RUNTIME DESTINATION bin)
 

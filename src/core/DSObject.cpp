@@ -133,6 +133,9 @@ FuncObject::FuncObject(FunctionType *funcType) :
         funcType(funcType) {
 }
 
+FuncObject::~FuncObject() {
+}
+
 DSType *FuncObject::getType() {
     return this->getFuncType();
 }
