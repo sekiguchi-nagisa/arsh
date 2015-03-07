@@ -18,6 +18,14 @@
 #include <parser/ParseError.h>
 #include <util/debug.h>
 
+// for debug
+#ifdef NDEBUG
+#define INLINE inline
+#else
+#define INLINE
+#endif
+
+
 // helper macro
 #define NEXT_TOKEN() \
     do {\
@@ -128,7 +136,7 @@ RootNode *Parser::parse() {
     return rootNode.release();
 }
 
-inline void Parser::matchToken(TokenKind expected) {
+INLINE void Parser::matchToken(TokenKind expected) {
     if(this->curTokenKind != expected) {
         if(this->curTokenKind == INVALID) {
             throw InvalidTokenError(LN(), this->curToken);
@@ -138,7 +146,7 @@ inline void Parser::matchToken(TokenKind expected) {
     NEXT_TOKEN();
 }
 
-inline Token Parser::matchAndGetToken(TokenKind expected) {
+INLINE Token Parser::matchAndGetToken(TokenKind expected) {
     if(this->curTokenKind != expected) {
         if(this->curTokenKind == INVALID) {
             throw InvalidTokenError(LN(), this->curToken);
@@ -150,13 +158,13 @@ inline Token Parser::matchAndGetToken(TokenKind expected) {
     return token;
 }
 
-inline TokenKind Parser::consumeAndGetKind() {
+INLINE TokenKind Parser::consumeAndGetKind() {
     TokenKind kind = this->curTokenKind;
     NEXT_TOKEN();
     return kind;
 }
 
-inline void Parser::hasNoNewLine() {
+INLINE void Parser::hasNoNewLine() {
     if(!HAS_NL()) {
         throw TokenMismatchError(LN(), NEW_LINE, this->curTokenKind);
     }
@@ -188,7 +196,7 @@ std::unique_ptr<RootNode> Parser::parse_toplevel() {
     return rootNode;
 }
 
-inline std::unique_ptr<Node> Parser::parse_toplevelStatement() {
+INLINE std::unique_ptr<Node> Parser::parse_toplevelStatement() {
     static TokenKind alters[] = {
             EACH_LA_toplevelStatement(GEN_LA_ALTER)
             DUMMY
@@ -394,7 +402,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
     return std::unique_ptr<Node>(nullptr);
 }
 
-inline void Parser::parse_statementEnd() {
+INLINE void Parser::parse_statementEnd() {
     switch(this->curTokenKind) {
     case EOS:
     case LINE_END:
@@ -433,7 +441,7 @@ std::unique_ptr<BlockNode> Parser::parse_block() {
     return blockNode;
 }
 
-inline std::string Parser::parse_name() {
+INLINE std::string Parser::parse_name() {
     static TokenKind alters[] = {
             EACH_LA_name(GEN_LA_ALTER)
             DUMMY
@@ -451,7 +459,7 @@ inline std::string Parser::parse_name() {
     }
 }
 
-inline std::unique_ptr<Node> Parser::parse_variableDeclaration() {
+INLINE std::unique_ptr<Node> Parser::parse_variableDeclaration() {
     static TokenKind alters[] = {
             EACH_LA_varDecl(GEN_LA_ALTER)
             DUMMY
@@ -503,16 +511,16 @@ std::unique_ptr<Node> Parser::parse_finallyBlock() {
 }
 
 // command
-inline std::unique_ptr<Node> Parser::parse_commandListExpression() {
+INLINE std::unique_ptr<Node> Parser::parse_commandListExpression() {
     return this->parse_orListCommand();
 }
 
-inline std::unique_ptr<Node> Parser::parse_orListCommand() {
+INLINE std::unique_ptr<Node> Parser::parse_orListCommand() {
     return std::unique_ptr<Node>(nullptr);  //FIXME:
 }
 
 // expression
-inline std::unique_ptr<Node> Parser::parse_commandOrExpression() {
+INLINE std::unique_ptr<Node> Parser::parse_commandOrExpression() {
 #define EACH_LA_condExpr(OP) \
     OP(COMMAND) \
     EACH_LA_expression(OP)
@@ -539,7 +547,7 @@ std::unique_ptr<Node> Parser::parse_expression() {
     return this->parse_assignment();
 }
 
-inline std::unique_ptr<Node> Parser::parse_assignment() {
+INLINE std::unique_ptr<Node> Parser::parse_assignment() {
     // parse left handle side
     auto node = this->parse_condOrExpression();
 
@@ -564,7 +572,7 @@ inline std::unique_ptr<Node> Parser::parse_assignment() {
     return node;
 }
 
-inline std::unique_ptr<Node> Parser::parse_condOrExpression() {
+INLINE std::unique_ptr<Node> Parser::parse_condOrExpression() {
     auto node = this->parse_condAndExpression();
 
     while(!HAS_NL() && this->curTokenKind == COND_OR) {
@@ -575,7 +583,7 @@ inline std::unique_ptr<Node> Parser::parse_condOrExpression() {
     return node;
 }
 
-inline std::unique_ptr<Node> Parser::parse_condAndExpression() {
+INLINE std::unique_ptr<Node> Parser::parse_condAndExpression() {
     auto node = this->parse_orExpression();
 
     while(!HAS_NL() && this->curTokenKind == COND_AND) {
@@ -586,7 +594,7 @@ inline std::unique_ptr<Node> Parser::parse_condAndExpression() {
     return node;
 }
 
-inline std::unique_ptr<Node> Parser::parse_orExpression() {
+INLINE std::unique_ptr<Node> Parser::parse_orExpression() {
     auto node = this->parse_xorExpression();
 
     while(!HAS_NL() && this->curTokenKind == OR) {
@@ -597,7 +605,7 @@ inline std::unique_ptr<Node> Parser::parse_orExpression() {
     return node;
 }
 
-inline std::unique_ptr<Node> Parser::parse_xorExpression() {
+INLINE std::unique_ptr<Node> Parser::parse_xorExpression() {
     auto node = this->parse_andExpression();
 
     while(!HAS_NL() && this->curTokenKind == XOR) {
@@ -608,7 +616,7 @@ inline std::unique_ptr<Node> Parser::parse_xorExpression() {
     return node;
 }
 
-inline std::unique_ptr<Node> Parser::parse_andExpression() {
+INLINE std::unique_ptr<Node> Parser::parse_andExpression() {
     auto node = this->parse_equalityExpression();
 
     while(!HAS_NL() && this->curTokenKind == AND) {
@@ -619,7 +627,7 @@ inline std::unique_ptr<Node> Parser::parse_andExpression() {
     return node;
 }
 
-inline std::unique_ptr<Node> Parser::parse_equalityExpression() {
+INLINE std::unique_ptr<Node> Parser::parse_equalityExpression() {
     auto node = this->parse_typeExpression();
 
     bool next = true;
@@ -644,7 +652,7 @@ inline std::unique_ptr<Node> Parser::parse_equalityExpression() {
 }
 
 
-inline std::unique_ptr<Node> Parser::parse_typeExpression() {
+INLINE std::unique_ptr<Node> Parser::parse_typeExpression() {
     auto node = this->parse_relationalExpression();
 
     bool next = true;
@@ -669,7 +677,7 @@ inline std::unique_ptr<Node> Parser::parse_typeExpression() {
     return node;
 }
 
-inline std::unique_ptr<Node> Parser::parse_relationalExpression() {
+INLINE std::unique_ptr<Node> Parser::parse_relationalExpression() {
     auto node = this->parse_addExpression();
 
     bool next = true;
@@ -693,7 +701,7 @@ inline std::unique_ptr<Node> Parser::parse_relationalExpression() {
     return node;
 }
 
-inline std::unique_ptr<Node> Parser::parse_addExpression() {
+INLINE std::unique_ptr<Node> Parser::parse_addExpression() {
     auto node = this->parse_mulExpression();
 
     bool next = true;
@@ -715,7 +723,7 @@ inline std::unique_ptr<Node> Parser::parse_addExpression() {
     return node;
 }
 
-inline std::unique_ptr<Node> Parser::parse_mulExpression() {
+INLINE std::unique_ptr<Node> Parser::parse_mulExpression() {
     auto node = this->parse_unaryExpression();
 
     bool next = true;
@@ -738,7 +746,7 @@ inline std::unique_ptr<Node> Parser::parse_mulExpression() {
     return node;
 }
 
-inline std::unique_ptr<Node> Parser::parse_unaryExpression() {
+INLINE std::unique_ptr<Node> Parser::parse_unaryExpression() {
     switch(this->curTokenKind) {
     case PLUS:
     case MINUS:
@@ -752,7 +760,7 @@ inline std::unique_ptr<Node> Parser::parse_unaryExpression() {
     }
 }
 
-inline std::unique_ptr<Node> Parser::parse_suffixExpression() {
+INLINE std::unique_ptr<Node> Parser::parse_suffixExpression() {
     auto node = this->parse_memberExpression();
 
     switch(this->curTokenKind) {
@@ -764,7 +772,7 @@ inline std::unique_ptr<Node> Parser::parse_suffixExpression() {
     }
 }
 
-inline std::unique_ptr<Node> Parser::parse_memberExpression() {
+INLINE std::unique_ptr<Node> Parser::parse_memberExpression() {
     auto node = this->parse_primaryExpression();
 
     bool next = true;
@@ -799,7 +807,7 @@ inline std::unique_ptr<Node> Parser::parse_memberExpression() {
     return node;
 }
 
-inline std::unique_ptr<Node> Parser::parse_primaryExpression() {
+INLINE std::unique_ptr<Node> Parser::parse_primaryExpression() {
     static TokenKind alters[] = {
             EACH_LA_primary(GEN_LA_ALTER)
             DUMMY
@@ -897,7 +905,7 @@ inline std::unique_ptr<Node> Parser::parse_primaryExpression() {
     return std::unique_ptr<Node>(nullptr);  //FIXME:
 }
 
-inline std::unique_ptr<ArgsNode> Parser::parse_arguments() {
+INLINE std::unique_ptr<ArgsNode> Parser::parse_arguments() {
     this->matchToken(LP);
 
     auto node = std::unique_ptr<ArgsNode>(new ArgsNode());
