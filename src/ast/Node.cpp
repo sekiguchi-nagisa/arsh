@@ -1681,7 +1681,11 @@ int FunctionNode::accept(NodeVisitor *visitor) {
 // #######################
 
 EmptyNode::EmptyNode() :
-        Node(0) {
+        EmptyNode(0) {
+}
+
+EmptyNode::EmptyNode(unsigned int lineNum) :
+        Node(lineNum) {
 }
 
 void EmptyNode::dump(Writer &writer) const {

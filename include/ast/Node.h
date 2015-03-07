@@ -991,6 +991,7 @@ public:
 class EmptyNode: public Node {
 public:
     EmptyNode();
+    EmptyNode(unsigned int lineNum);
 
     void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override

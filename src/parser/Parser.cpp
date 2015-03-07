@@ -165,7 +165,7 @@ INLINE TokenKind Parser::consumeAndGetKind() {
 }
 
 INLINE void Parser::hasNoNewLine() {
-    if(!HAS_NL()) {
+    if(HAS_NL()) {
         throw TokenMismatchError(LN(), NEW_LINE, this->curToken, this->curTokenKind);
     }
 }
@@ -265,8 +265,9 @@ std::unique_ptr<TypeToken> Parser::parse_typeName() {
 std::unique_ptr<Node> Parser::parse_statement() {
     switch(this->curTokenKind) {
     case LINE_END: {
+        unsigned int n = LN();
         this->matchToken(LINE_END);
-        RET_NODE(new EmptyNode());
+        RET_NODE(new EmptyNode(n));
     }
     case ASSERT: {
         this->matchToken(ASSERT);
@@ -659,11 +660,13 @@ INLINE std::unique_ptr<Node> Parser::parse_typeExpression() {
     while(!HAS_NL() && next) {
         switch(this->curTokenKind) {
         case IS: {
+            this->matchToken(IS);
             node = std::unique_ptr<Node>(new InstanceOfNode(node.release(),
                     this->parse_typeName().release()));
             break;
         }
         case AS: {
+            this->matchToken(AS);
             node = std::unique_ptr<Node>(new CastNode(node.release(),
                     this->parse_typeName().release()));
             break;
@@ -871,6 +874,7 @@ INLINE std::unique_ptr<Node> Parser::parse_primaryExpression() {
         auto node = std::unique_ptr<ArrayNode>(
                 new ArrayNode(n, this->parse_expression().release()));
         while(this->curTokenKind == COMMA) {
+            this->matchToken(COMMA);
             node->addExprNode(this->parse_expression().release());
         }
         this->matchToken(RB);
@@ -887,6 +891,7 @@ INLINE std::unique_ptr<Node> Parser::parse_primaryExpression() {
         auto node = std::unique_ptr<MapNode>(new MapNode(n, keyNode.release(),
                 this->parse_expression().release()));
         while(this->curTokenKind == COMMA) {
+            this->matchToken(COMMA);
             auto keyNode = this->parse_expression();
 
             this->hasNoNewLine();
@@ -913,6 +918,7 @@ INLINE std::unique_ptr<ArgsNode> Parser::parse_arguments() {
     EACH_LA_expression(GEN_LA_CASE) {
         node->addArg(this->parse_expression().release());
         while(this->curTokenKind == COMMA) {
+            this->matchToken(COMMA);
             node->addArg(this->parse_expression().release());
         }
         break;
