@@ -141,7 +141,15 @@ public:
     void setLineNum(unsigned int lineNum);
     unsigned int getLineNum() const;
 
+    /**
+     * get line token which token belongs to.
+     */
+    Token getLineToken(Token &token);
+
     // token to value converting api.
+    /**
+     * get text of token.
+     */
     std::string toTokenText(Token &token);
 
     /**

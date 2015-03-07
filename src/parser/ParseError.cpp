@@ -20,18 +20,22 @@
 // ##     ParseError     ##
 // ########################
 
-ParseError::ParseError(unsigned int lineNum, TokenKind errorToken) :
-        lineNum(lineNum), errorToken(errorToken) {
+ParseError::ParseError(unsigned int lineNum, TokenKind kind, Token errorToken) :
+        lineNum(lineNum), kind(kind), errorToken(errorToken) {
 }
 
 ParseError::~ParseError() {
 }
 
-unsigned int ParseError::getLineNum() {
+unsigned int ParseError::getLineNum() const {
     return this->lineNum;
 }
 
-TokenKind ParseError::getErrorToken() {
+TokenKind ParseError::getTokenKind() const {
+    return this->kind;
+}
+
+Token ParseError::getErrorToken() const {
     return this->errorToken;
 }
 
@@ -40,21 +44,23 @@ bool ParseError::operator==(const ParseError &e) {
 }
 
 bool ParseError::baseEquals(const ParseError &e) {
-    return this->lineNum == e.lineNum && this->errorToken == e.errorToken;
+    return this->lineNum == e.lineNum &&
+            this->kind == e.kind && this->errorToken == e.errorToken;
 }
 
 // ################################
 // ##     TokenMismatchError     ##
 // ################################
 
-TokenMismatchError::TokenMismatchError(unsigned int lineNum, TokenKind actual, TokenKind expected) :
-        ParseError(lineNum, actual), expected(expected) {
+TokenMismatchError::TokenMismatchError(unsigned int lineNum, TokenKind actual,
+        Token errorToken, TokenKind expected) :
+        ParseError(lineNum, actual, errorToken), expected(expected) {
 }
 
 TokenMismatchError::~TokenMismatchError() {
 }
 
-TokenKind TokenMismatchError::getExpectedToken() {
+TokenKind TokenMismatchError::getExpectedTokenKind() const {
     return this->expected;
 }
 
@@ -63,6 +69,10 @@ bool TokenMismatchError::operator==(const TokenMismatchError &e) {
         return false;
     }
     return this->expected == e.expected;
+}
+
+void TokenMismatchError::accept(ParseErrorVisitor &visitor) const {
+    visitor.visit(*this);
 }
 
 bool TokenMismatchError::equalsImpl(const ParseError &e) {
@@ -77,29 +87,19 @@ bool TokenMismatchError::equalsImpl(const ParseError &e) {
 // ##     NoViableAlterError     ##
 // ################################
 
-NoViableAlterError::NoViableAlterError(unsigned int lineNum, TokenKind actual, TokenKind *alters) :
-        ParseError(lineNum, actual), alters(), alterSize(0) {
+NoViableAlterError::NoViableAlterError(unsigned int lineNum, TokenKind actual,
+        Token errorToken, TokenKind *alters) :
+        ParseError(lineNum, actual, errorToken), alters() {
     for(unsigned int i = 0; alters[i] != DUMMY; i++) {
-        ++this->alterSize;
-    }
-
-    this->alters = new TokenKind[this->alterSize];
-    for(unsigned int i = 0; i < this->alterSize; i++) {
-        this->alters[i] = alters[i];
+        this->alters.push_back(alters[i]);
     }
 }
 
 NoViableAlterError::~NoViableAlterError() {
-    delete this->alters;
-    this->alters = 0;
 }
 
-TokenKind *NoViableAlterError::getAlters() {
+const std::vector<TokenKind> &NoViableAlterError::getAlters() const {
     return this->alters;
-}
-
-unsigned int NoViableAlterError::getAlterSize() {
-    return this->alterSize;
 }
 
 bool NoViableAlterError::operator==(const NoViableAlterError &e) {
@@ -108,17 +108,22 @@ bool NoViableAlterError::operator==(const NoViableAlterError &e) {
     }
 
     // check alterSize
-    if(this->alterSize != e.alterSize) {
+    unsigned int size = this->alters.size();
+    if(size != e.alters.size()) {
         return false;
     }
 
     // check each alter
-    for(unsigned int i = 0; i < this->alterSize; i++) {
+    for(unsigned int i = 0; i < size; i++) {
         if(this->alters[i] != e.alters[i]) {
             return false;
         }
     }
     return true;
+}
+
+void NoViableAlterError::accept(ParseErrorVisitor &visitor) const {
+    visitor.visit(*this);
 }
 
 bool NoViableAlterError::equalsImpl(const ParseError &e) {
@@ -134,21 +139,18 @@ bool NoViableAlterError::equalsImpl(const ParseError &e) {
 // ###############################
 
 InvalidTokenError::InvalidTokenError(unsigned int lineNum, Token token) :
-        ParseError(lineNum, INVALID), token(token) {
+        ParseError(lineNum, INVALID, token) {
 }
 
 InvalidTokenError::~InvalidTokenError() {
 }
 
-Token InvalidTokenError::getInvalidToken() {
-    return this->token;
+bool InvalidTokenError::operator==(const InvalidTokenError &e) {
+    return this->baseEquals(e);
 }
 
-bool InvalidTokenError::operator==(const InvalidTokenError &e) {
-    if(!this->baseEquals(e)) {
-        return false;
-    }
-    return this->token == e.token;
+void InvalidTokenError::accept(ParseErrorVisitor &visitor) const {
+    visitor.visit(*this);
 }
 
 bool InvalidTokenError::equalsImpl(const ParseError &e) {
@@ -157,5 +159,15 @@ bool InvalidTokenError::equalsImpl(const ParseError &e) {
         return *this == *ex;
     }
     return false;
+}
+
+// ###############################
+// ##     ParseErrorVisitor     ##
+// ###############################
+
+ParseErrorVisitor::ParseErrorVisitor() {
+}
+
+ParseErrorVisitor::~ParseErrorVisitor() {
 }
 

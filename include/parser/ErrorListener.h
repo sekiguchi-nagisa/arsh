@@ -27,8 +27,8 @@ public:
 
     virtual void displayTypeError(const std::string &sourceName,
             const TypeCheckError &e) = 0;
-    virtual void displayParseError(const std::string &sourceName,
-            const ParseError &e) = 0;
+    virtual void displayParseError(Lexer &lexer,
+            const std::string &sourceName, const ParseError &e) = 0;
 };
 
 #endif /* PARSER_ERRORLISTENER_H_ */

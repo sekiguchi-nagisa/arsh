@@ -140,6 +140,33 @@ unsigned int Lexer::getLineNum() const {
     assert(token.startPos < this->getUsedSize() &&\
             token.startPos + token.size <= this->getUsedSize())
 
+Token Lexer::getLineToken(Token &token) {
+    CHECK_TOK(token);
+
+    // find start index of line.
+    unsigned int startIndex;
+    for(startIndex = token.startPos; startIndex > 0; startIndex--) {
+        if(this->buf[startIndex] == '\n') {
+            startIndex += (startIndex == token.startPos) ? 0 : 1;
+            break;
+        }
+    }
+
+    // find stop index of line
+    unsigned int stopIndex;
+    unsigned int usedSize = this->getUsedSize();
+    for(stopIndex = token.startPos + token.size; stopIndex < usedSize; stopIndex++) {
+        if(this->buf[stopIndex] == '\n') {
+            stopIndex -= (stopIndex == token.startPos + token.size) ? 0 : 1;
+            break;
+        }
+    }
+    Token lineToken;
+    lineToken.startPos = startIndex;
+    lineToken.size = stopIndex - startIndex;
+    return lineToken;
+}
+
 std::string Lexer::toTokenText(Token &token) {
     CHECK_TOK(token);
     return std::string((char*)(this->buf + token.startPos), token.size);

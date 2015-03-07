@@ -61,8 +61,80 @@ void CommonErrorListener::displayTypeError(const std::string &sourceName,
     delete[] strBuf;
 }
 
-void CommonErrorListener::displayParseError(const std::string &sourceName,
-            const ParseError &e) {
-    fprintf(stderr, "(%s):%d: [syntax error] %s\n");    //FIXME:
+class ParseErrorFormatter : public ParseErrorVisitor {
+private:
+    /**
+     * not call destrucutor.
+     */
+    Lexer *lexer;
 
+    std::string message;
+
+    ParseErrorFormatter(Lexer *lexer);
+
+public:
+    ~ParseErrorFormatter();
+
+    void visit(const TokenMismatchError &e); // override
+    void visit(const NoViableAlterError &e); // override
+    void visit(const InvalidTokenError &e); // override
+
+    static std::string format(Lexer &lexer, const ParseError &e);
+};
+
+ParseErrorFormatter::ParseErrorFormatter(Lexer *lexer) :
+        lexer(lexer), message() {
+}
+
+ParseErrorFormatter::~ParseErrorFormatter() {
+}
+
+void ParseErrorFormatter::visit(const TokenMismatchError &e) {
+    this->message += "mismatch token, expect for ";
+    this->message += TO_NAME(e.getExpectedTokenKind());
+}
+
+void ParseErrorFormatter::visit(const NoViableAlterError &e) {
+    this->message += "no viable alternative,\n";
+    this->message += "expect for ";
+    unsigned int size = e.getAlters().size();
+    for(unsigned int i = 0; i < size; i++) {
+        if(i > 0) {
+            this->message += ", ";
+        }
+        this->message += TO_NAME(e.getAlters()[i]);
+    }
+}
+
+void ParseErrorFormatter::visit(const InvalidTokenError &e) {
+    this->message += "invalid token: ";
+    Token token = e.getErrorToken();
+    this->message += this->lexer->toTokenText(token);
+}
+
+std::string ParseErrorFormatter::format(Lexer &lexer, const ParseError &e) {
+    ParseErrorFormatter f(&lexer);
+    e.accept(f);
+    return f.message;
+}
+
+static std::string formatErrorLine(Lexer &lexer, Token errorToken) {
+    Token lineToken = lexer.getLineToken(errorToken);
+    std::string line = lexer.toTokenText(lineToken);
+    line += "\n";
+    for(unsigned int i = lineToken.startPos; i < errorToken.startPos; i++) {
+        line += " ";
+    }
+    for(unsigned int i = 0; i < errorToken.size; i++) {
+        line += "^";    //TODO: support multi byte char
+    }
+    return line;
+}
+
+void CommonErrorListener::displayParseError(Lexer &lexer,
+        const std::string &sourceName, const ParseError &e) {
+    std::string msg = ParseErrorFormatter::format(lexer, e);
+    std::string line = formatErrorLine(lexer, e.getErrorToken());
+    fprintf(stderr, "%s:%d: [syntax error] %s\n%s\n",
+            sourceName.c_str(), e.getLineNum(), msg.c_str(), line.c_str());
 }

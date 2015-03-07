@@ -18,6 +18,7 @@
 #include <util/debug.h>
 #include <parser/Lexer.h>
 #include <parser/Parser.h>
+#include <parser/CommonErrorListener.h>
 #include <exe/Terminal.h>
 #include <ast/Node.h>
 #include <ast/dump.h>
@@ -41,13 +42,18 @@ int main(int argc, char **argv) {
     unsigned int lineNum = 1;
     const char *line;
     while((line = term.readLine()) != 0) {
+        CommonErrorListener listener;
         Lexer lexer(line);
         lexer.setLineNum(lineNum);
         Parser parser(&lexer);
-        RootNode *rootNode = parser.parse();
-        lineNum = lexer.getLineNum();
-        dumpAST(cout, *rootNode);
-        delete rootNode;
+        try {
+            RootNode *rootNode = parser.parse();
+            lineNum = lexer.getLineNum();
+            dumpAST(cout, *rootNode);
+            delete rootNode;
+        } catch(const ParseError &e) {
+            listener.displayParseError(lexer, "(stdin)", e);
+        }
     }
     return 0;
 }

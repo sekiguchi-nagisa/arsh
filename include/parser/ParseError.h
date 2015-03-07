@@ -20,6 +20,8 @@
 #include <parser/Token.h>
 #include <parser/Lexer.h>
 
+class ParseErrorVisitor;
+
 class ParseError {
 protected:
     /**
@@ -27,16 +29,19 @@ protected:
      */
     unsigned int lineNum;
 
-    TokenKind errorToken;
+    TokenKind kind;
+    Token errorToken;
 
 public:
-    ParseError(unsigned int lineNum, TokenKind errorToken);
+    ParseError(unsigned int lineNum, TokenKind kind, Token errorToken);
     virtual ~ParseError();
 
-    unsigned int getLineNum();
-    TokenKind getErrorToken();
+    unsigned int getLineNum() const;
+    TokenKind getTokenKind() const;
+    Token getErrorToken() const;
 
     bool operator==(const ParseError &e);
+    virtual void accept(ParseErrorVisitor &visitor) const = 0;
 
 private:
     virtual bool equalsImpl(const ParseError &e) = 0;
@@ -50,12 +55,14 @@ private:
     TokenKind expected;
 
 public:
-    TokenMismatchError(unsigned int lineNum, TokenKind actual, TokenKind expected);
+    TokenMismatchError(unsigned int lineNum, TokenKind actual,
+            Token errorToken, TokenKind expected);
     ~TokenMismatchError();
 
-    TokenKind getExpectedToken();
+    TokenKind getExpectedTokenKind() const;
 
     bool operator==(const TokenMismatchError &e);
+    void accept(ParseErrorVisitor &visitor) const; // override
 
 private:
     bool equalsImpl(const ParseError &e); // override
@@ -63,40 +70,47 @@ private:
 
 class NoViableAlterError : public ParseError {
 private:
-    TokenKind* alters;
-    unsigned int alterSize;
+    std::vector<TokenKind> alters;
 
 public:
     /**
      * the last element of alters must be DUMMY.
      * copy alters to this->alters.
      */
-    NoViableAlterError(unsigned int lineNum, TokenKind actual, TokenKind *alters);
+    NoViableAlterError(unsigned int lineNum, TokenKind actual,
+            Token errorToken, TokenKind *alters);
     ~NoViableAlterError();
 
-    TokenKind *getAlters();
-    unsigned int getAlterSize();
+    const std::vector<TokenKind> &getAlters() const;
 
     bool operator==(const NoViableAlterError &e);
+    void accept(ParseErrorVisitor &visitor) const; // override
 
 private:
     bool equalsImpl(const ParseError &e); // override
 };
 
 class InvalidTokenError : public ParseError {
-private:
-    Token token;
-
 public:
     InvalidTokenError(unsigned int lineNum, Token token);
     ~InvalidTokenError();
 
-    Token getInvalidToken();
-
     bool operator==(const InvalidTokenError &e);
+    void accept(ParseErrorVisitor &visitor) const; // override
 
 private:
     bool equalsImpl(const ParseError &e); // override
+};
+
+// for error message formatting.
+class ParseErrorVisitor {
+public:
+    ParseErrorVisitor();
+    virtual ~ParseErrorVisitor();
+
+    virtual void visit(const TokenMismatchError &e) = 0;
+    virtual void visit(const NoViableAlterError &e) = 0;
+    virtual void visit(const InvalidTokenError &e) = 0;
 };
 
 #endif /* PARSER_PARSEERROR_H_ */

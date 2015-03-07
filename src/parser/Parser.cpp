@@ -106,7 +106,7 @@
         if(this->curTokenKind == INVALID) {\
             throw InvalidTokenError(LN(), this->curToken);\
         }\
-        throw NoViableAlterError(LN(), this->curTokenKind, alt);\
+        throw NoViableAlterError(LN(), this->curTokenKind, this->curToken, alt);\
     } while(0)
 
 #define RET_NODE(node) return std::unique_ptr<Node>(node)
@@ -141,7 +141,7 @@ INLINE void Parser::matchToken(TokenKind expected) {
         if(this->curTokenKind == INVALID) {
             throw InvalidTokenError(LN(), this->curToken);
         }
-        throw TokenMismatchError(LN(), this->curTokenKind, expected);
+        throw TokenMismatchError(LN(), this->curTokenKind, this->curToken, expected);
     }
     NEXT_TOKEN();
 }
@@ -151,7 +151,7 @@ INLINE Token Parser::matchAndGetToken(TokenKind expected) {
         if(this->curTokenKind == INVALID) {
             throw InvalidTokenError(LN(), this->curToken);
         }
-        throw TokenMismatchError(LN(), this->curTokenKind, expected);
+        throw TokenMismatchError(LN(), this->curTokenKind, this->curToken, expected);
     }
     Token token = this->curToken;
     NEXT_TOKEN();
@@ -166,7 +166,7 @@ INLINE TokenKind Parser::consumeAndGetKind() {
 
 INLINE void Parser::hasNoNewLine() {
     if(!HAS_NL()) {
-        throw TokenMismatchError(LN(), NEW_LINE, this->curTokenKind);
+        throw TokenMismatchError(LN(), NEW_LINE, this->curToken, this->curTokenKind);
     }
 }
 
@@ -410,7 +410,7 @@ INLINE void Parser::parse_statementEnd() {
         break;
     default:
         if(!HAS_NL()) {
-            throw TokenMismatchError(LN(), this->curTokenKind, NEW_LINE);
+            throw TokenMismatchError(LN(), this->curTokenKind, this->curToken, NEW_LINE);
         }
         break;
     }

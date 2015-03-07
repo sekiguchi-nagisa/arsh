@@ -26,8 +26,8 @@ public:
 
     void displayTypeError(const std::string &sourceName,
             const TypeCheckError &e); // override
-    void displayParseError(const std::string &sourceName,
-                const ParseError &e); // override
+    void displayParseError(Lexer &lexer,
+            const std::string &sourceName, const ParseError &e); // override
 };
 
 #endif /* PARSER_COMMONERRORLISTENER_H_ */
