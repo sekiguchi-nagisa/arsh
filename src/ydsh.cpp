@@ -38,11 +38,14 @@ int main(int argc, char **argv) {
 
     Terminal term(argv[0]);
 
+    unsigned int lineNum = 1;
     const char *line;
     while((line = term.readLine()) != 0) {
         Lexer lexer(line);
+        lexer.setLineNum(lineNum);
         Parser parser(&lexer);
         RootNode *rootNode = parser.parse();
+        lineNum = lexer.getLineNum();
         dumpAST(cout, *rootNode);
         delete rootNode;
     }

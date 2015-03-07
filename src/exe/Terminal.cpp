@@ -26,7 +26,7 @@ static char *prompt(EditLine *el) {
 // ######################
 
 Terminal::Terminal(const char *progName) :
-        lineNum(0), el(0), ydsh_history(0), event() {
+        el(0), ydsh_history(0), event() {
     this->el = el_init(progName, stdin, stdout, stderr);
     el_set(this->el, EL_PROMPT, prompt);
     el_set(this->el, EL_EDITOR, "emacs");
@@ -46,15 +46,10 @@ Terminal::~Terminal() {
 }
 
 const char *Terminal::readLine() {
-    const char *line = el_gets(this->el, &this->lineNum);
-    if(this->lineNum > 0) {
+    int count;
+    const char *line = el_gets(this->el, &count);
+    if(count > 0) {
         history(this->ydsh_history, &this->event, H_ENTER, line);
     }
     return line;
 }
-
-unsigned int Terminal::getLineNum() {
-    return this->lineNum;
-}
-
-

@@ -21,11 +21,6 @@
 
 class Terminal {
 private:
-    /**
-     * treat as unsigned int.
-     */
-    int lineNum;
-
     EditLine *el;
     History *ydsh_history;
     HistEvent event;
@@ -39,8 +34,6 @@ public:
      * return null if reach end of file or occurs error
      */
     const char *readLine();
-
-    unsigned int getLineNum();
 };
 
 #endif /* EXE_TERMINAL_H_ */
