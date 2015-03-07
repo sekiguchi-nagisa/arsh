@@ -90,12 +90,16 @@ ParseErrorFormatter::~ParseErrorFormatter() {
 }
 
 void ParseErrorFormatter::visit(const TokenMismatchError &e) {
-    this->message += "mismatch token, expect for ";
+    this->message += "mismatch token: ";
+    this->message += TO_NAME(e.getTokenKind());
+    this->message += ", expect for ";
     this->message += TO_NAME(e.getExpectedTokenKind());
 }
 
 void ParseErrorFormatter::visit(const NoViableAlterError &e) {
-    this->message += "no viable alternative,\n";
+    this->message += "no viable alternative: ";
+    this->message += TO_NAME(e.getTokenKind());
+    this->message += ",\n";
     this->message += "expect for ";
     unsigned int size = e.getAlters().size();
     for(unsigned int i = 0; i < size; i++) {
