@@ -99,7 +99,7 @@ public:
     int accept(NodeVisitor *visitor);	// override
 };
 
-class StringValueNode: public Node {	//FIXME:
+class StringValueNode: public Node {
 private:
     /**
      * after type checking, is broken.
@@ -118,11 +118,6 @@ public:
     StringValueNode(std::string &&value);
 
     StringValueNode(unsigned int lineNum, std::string &&value);
-
-    /**
-     * call StringValueNode(lineNum, value, false)
-     */
-    //StringValueNode(unsigned int lineNum, char *value);	//FIXME:
 
     /**
      * before type check, return empty pointer.
@@ -572,7 +567,7 @@ public:
 
 private:
     /**
-     * may pipedCmdNode, CondOpNode, CmdNode
+     * may PipedCmdNode, CondOpNode, CmdNode
      */
     Node* exprNode;
 

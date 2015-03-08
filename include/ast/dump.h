@@ -89,5 +89,25 @@ void dumpAST(std::ostream &out, const RootNode &rootNode);
         }\
     } while(0)
 
+// not directly use it.
+#define GEN_ENUM_STR(ENUM, out) case ENUM: out = #ENUM; break;
+
+#define DECODE_ENUM(out, val, EACH_ENUM) \
+    do {\
+        switch(val) {\
+        EACH_ENUM(GEN_ENUM_STR, out)\
+        }\
+    } while(0)
+
+// not directly use it.
+#define GEN_FLAG_STR(FLAG, out, set) \
+        if(((set) & FLAG) == FLAG) { if(c++ > 0) { out += " | "; } out += #FLAG; }
+
+#define DECODE_BITSET(out, set, EACH_FLAG) \
+    do {\
+        unsigned int c = 0;\
+        EACH_FLAG(GEN_FLAG_STR, out, set) \
+    } while(0)
+
 
 #endif /* AST_DUMP_H_ */

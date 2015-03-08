@@ -122,10 +122,6 @@ StringValueNode::StringValueNode(unsigned int lineNum, std::string &&value) :
         Node(lineNum), tempValue(std::move(value)), value() {
 }
 
-//StringValueNode::StringValueNode(unsigned int lineNum, char *value):	//FIXME:
-//		StringValueNode(lineNum, value, false) {
-//}
-
 std::shared_ptr<DSObject> StringValueNode::getValue() {
     return this->value;
 }
@@ -414,7 +410,16 @@ void AccessNode::dump(Writer &writer) const {
     WRITE_PRIM(index);
     WRITE_PTR(recvNode);
     WRITE(fieldName);
-    WRITE_PRIM(additionalOp);
+
+#define EACH_ENUM(OP, out) \
+    OP(NOP, out) \
+    OP(DUP_RECV, out) \
+    OP(DUP_RECV_AND_SWAP, out)
+
+    std::string str;
+    DECODE_ENUM(str, this->additionalOp, EACH_ENUM);
+    writer.write(NAME(addtionalOp), str);
+#undef EACH_ENUM
 }
 
 int AccessNode::accept(NodeVisitor *visitor) {
@@ -471,7 +476,19 @@ int CastNode::getFieldIndex() {
 void CastNode::dump(Writer &writer) const {
     WRITE_PTR(exprNode);
     WRITE_PTR(targetTypeToken);
-    WRITE_PRIM(opKind);
+
+#define EACH_ENUM(OP, out) \
+    OP(NOP, out) \
+    OP(INT_TO_FLOAT, out) \
+    OP(FLOAT_TO_INT, out) \
+    OP(TO_STRING, out) \
+    OP(CHECK_CAST, out)
+
+    std::string str;
+    DECODE_ENUM(str, this->opKind, EACH_ENUM);
+    writer.write(NAME(opKind), str);
+#undef EACH_ENUM
+
     WRITE_PRIM(fieldIndex);
 }
 
@@ -530,7 +547,15 @@ void InstanceOfNode::dump(Writer &writer) const {
     WRITE_PTR(targetNode);
     WRITE_PTR(targetTypeToken);
     WRITE_PTR(targetType);
-    WRITE_PRIM(opKind);
+
+#define EACH_ENUM(OP, out) \
+    OP(ALWAYS_FALSE, out) \
+    OP(INSTANCEOF, out)
+
+    std::string val;
+    DECODE_ENUM(val, this->opKind, EACH_ENUM);
+    writer.write(NAME(opKind), val);
+#undef EACH_ENUM
 }
 
 int InstanceOfNode::accept(NodeVisitor *visitor) {
@@ -591,7 +616,7 @@ ApplyNode *BinaryOpNode::getApplyNode() {
 void BinaryOpNode::dump(Writer &writer) const {
     WRITE_PTR(leftNode);
     WRITE_PTR(rightNode);
-    WRITE_PRIM(op);
+    writer.write(NAME(op), TO_NAME(op));
     WRITE_PTR(applyNode);
 }
 
@@ -711,7 +736,15 @@ bool ApplyNode::isFuncCall() {
 void ApplyNode::dump(Writer &writer) const {
     WRITE_PTR(recvNode);
     WRITE_PTR(argsNode);
-    WRITE_PRIM(attributeSet);   //FIXME:
+
+#define EACH_FLAG(OP, out, set) \
+    OP(FUNC_CALL, out, set) \
+    OP(INDEX, out, set)
+
+    std::string str;
+    DECODE_BITSET(str, this->attributeSet, EACH_FLAG);
+    writer.write(NAME(attributeSet), str);
+#undef EACH_FLAG
 }
 
 int ApplyNode::accept(NodeVisitor *visitor) {
@@ -853,7 +886,7 @@ int CmdNode::accept(NodeVisitor *visitor) {
 // ########################
 
 CmdArgNode::CmdArgNode(Node *segmentNode) :
-        Node(lineNum), segmentNodes() {
+        Node(segmentNode->getLineNum()), segmentNodes() {
     this->addSegmentNode(segmentNode);
 }
 
@@ -898,7 +931,7 @@ const std::string &SpecialCharNode::getName() {
 }
 
 void SpecialCharNode::dump(Writer &writer) const {
-    //FIXME:
+    WRITE(name);
 }
 
 int SpecialCharNode::accept(NodeVisitor *visitor) {
@@ -947,7 +980,8 @@ int PipedCmdNode::accept(NodeVisitor *visitor) {
 // ###########################
 
 CmdContextNode::CmdContextNode(Node *exprNode) :
-        Node(0), exprNode(exprNode), retKind(VOID), attributeSet(0) {
+        Node(exprNode->getLineNum()),
+        exprNode(exprNode), retKind(VOID), attributeSet(0) {
 }
 
 CmdContextNode::~CmdContextNode() {
@@ -979,7 +1013,30 @@ CmdContextNode::CmdRetKind CmdContextNode::getRetKind() {
 }
 
 void CmdContextNode::dump(Writer &writer) const {
-    //FIXME:
+    WRITE_PTR(exprNode);
+
+#define EACH_ENUM(OP, out) \
+    OP(VOID, out) \
+    OP(BOOL, out) \
+    OP(STR, out) \
+    OP(ARRAY, out) \
+    OP(TASK, out)
+
+    std::string str;
+    DECODE_ENUM(str, this->retKind, EACH_ENUM);
+    writer.write(NAME(retKind), str);
+
+#undef EACH_ENUM
+
+#define EACH_FLAG(OP, out, set) \
+    OP(BACKGROUND, out, set) \
+    OP(FORK, out, set)
+
+    std::string value;
+    DECODE_BITSET(value, this->attributeSet, EACH_FLAG);
+    writer.write(NAME(attributeSet), value);
+
+#undef EACH_FLAG
 }
 
 int CmdContextNode::accept(NodeVisitor *visitor) {
