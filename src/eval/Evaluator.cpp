@@ -73,19 +73,19 @@ int Evaluator::visitNewNode(NewNode *node) {
 int Evaluator::visitCondOpNode(CondOpNode *node) {
     return 0;
 } //TODO
-int Evaluator::visitProcessNode(ProcessNode *node) {
+int Evaluator::visitCmdNode(CmdNode *node) {
     return 0;
 } //TODO
-int Evaluator::visitProcArgNode(ProcArgNode *node) {
+int Evaluator::visitCmdArgNode(CmdArgNode *node) {
     return 0;
 } //TODO
 int Evaluator::visitSpecialCharNode(SpecialCharNode *node) {
     return 0;
 } //TODO
-int Evaluator::visitTaskNode(TaskNode *node) {
+int Evaluator::visitPipedCmdNode(PipedCmdNode *node) {
     return 0;
 } //TODO
-int Evaluator::visitInnerTaskNode(InnerTaskNode *node) {
+int Evaluator::visitCmdContextNode(CmdContextNode *node) {
     return 0;
 } //TODO
 int Evaluator::visitAssertNode(AssertNode *node) {

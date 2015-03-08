@@ -234,11 +234,11 @@ public:
     int visitApplyNode(ApplyNode *node); // override
     int visitNewNode(NewNode *node); // override
     int visitCondOpNode(CondOpNode *node); // override
-    int visitProcessNode(ProcessNode *node); // override
-    int visitProcArgNode(ProcArgNode *node); // override
+    int visitCmdNode(CmdNode *node); // override
+    int visitCmdArgNode(CmdArgNode *node); // override
     int visitSpecialCharNode(SpecialCharNode *node); // override
-    int visitTaskNode(TaskNode *node); // override
-    int visitInnerTaskNode(InnerTaskNode *node); // override
+    int visitPipedCmdNode(PipedCmdNode *node); // override
+    int visitCmdContextNode(CmdContextNode *node); // override
     int visitAssertNode(AssertNode *node); // override
     int visitBlockNode(BlockNode *node); // override
     int visitBreakNode(BreakNode *node); // override

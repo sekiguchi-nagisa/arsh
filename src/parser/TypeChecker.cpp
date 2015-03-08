@@ -668,8 +668,8 @@ int TypeChecker::visitCondOpNode(CondOpNode *node) {
     return 0;
 }
 
-int TypeChecker::visitProcessNode(ProcessNode *node) {
-    for(ProcArgNode *argNode : node->getArgNodes()) {
+int TypeChecker::visitCmdNode(CmdNode *node) {
+    for(CmdArgNode *argNode : node->getArgNodes()) {
         this->checkType(this->typePool->getProcArgType(), argNode);
     }
     // check type redirect options
@@ -680,7 +680,7 @@ int TypeChecker::visitProcessNode(ProcessNode *node) {
     return 0;
 }
 
-int TypeChecker::visitProcArgNode(ProcArgNode *node) {
+int TypeChecker::visitCmdArgNode(CmdArgNode *node) {
     for(Node *exprNode : node->getSegmentNodes()) {
         this->checkType(exprNode);
     }
@@ -693,8 +693,8 @@ int TypeChecker::visitSpecialCharNode(SpecialCharNode *node) {
     return 0;
 } //TODO
 
-int TypeChecker::visitTaskNode(TaskNode *node) {    //TODO: parent node
-    for(ProcessNode *procNode : node->getProcNodes()) {
+int TypeChecker::visitPipedCmdNode(PipedCmdNode *node) {    //TODO: parent node
+    for(CmdNode *procNode : node->getCmdNodes()) {
         this->checkType(this->typePool->getProcType(), procNode);
     }
 
@@ -705,8 +705,8 @@ int TypeChecker::visitTaskNode(TaskNode *node) {    //TODO: parent node
     return 0;
 }
 
-int TypeChecker::visitInnerTaskNode(InnerTaskNode *node) {
-    E_Unimplemented(node, "InnerTaskNode");
+int TypeChecker::visitCmdContextNode(CmdContextNode *node) {
+    E_Unimplemented(node, "CmdContextNode");
     return 0;
 } //TODO
 

@@ -788,16 +788,16 @@ int CondOpNode::accept(NodeVisitor *visitor) {
     return visitor->visitCondOpNode(this);
 }
 
-// #########################
-// ##     ProcessNode     ##
-// #########################
+// #####################
+// ##     CmdNode     ##
+// #####################
 
-ProcessNode::ProcessNode(unsigned int lineNum, std::string &&commandName) :
+CmdNode::CmdNode(unsigned int lineNum, std::string &&commandName) :
         Node(lineNum), commandName(std::move(commandName)), argNodes(), redirOptions() {
 }
 
-ProcessNode::~ProcessNode() {
-    for(ProcArgNode *e : this->argNodes) {
+CmdNode::~CmdNode() {
+    for(CmdArgNode *e : this->argNodes) {
         delete e;
     }
     this->argNodes.clear();
@@ -808,58 +808,58 @@ ProcessNode::~ProcessNode() {
     this->redirOptions.clear();
 }
 
-const std::string &ProcessNode::getCommandName() {
+const std::string &CmdNode::getCommandName() {
     return this->commandName;
 }
 
-void ProcessNode::addArgNode(ProcArgNode *node) {
+void CmdNode::addArgNode(CmdArgNode *node) {
     this->argNodes.push_back(node);
 }
 
-const std::vector<ProcArgNode*> &ProcessNode::getArgNodes() {
+const std::vector<CmdArgNode*> &CmdNode::getArgNodes() {
     return this->argNodes;
 }
 
-void ProcessNode::addRedirOption(std::pair<int, Node*> &&optionPair) {
+void CmdNode::addRedirOption(std::pair<int, Node*> &&optionPair) {
     this->redirOptions.push_back(std::move(optionPair));
 }
 
-const std::vector<std::pair<int, Node*>> &ProcessNode::getRedirOptions() {
+const std::vector<std::pair<int, Node*>> &CmdNode::getRedirOptions() {
     return this->redirOptions;
 }
 
-void ProcessNode::dump(Writer &writer) const {
+void CmdNode::dump(Writer &writer) const {
     WRITE(commandName);
 
     std::vector<Node*> argNodes;
-    for(ProcArgNode *node : this->argNodes) {
+    for(CmdArgNode *node : this->argNodes) {
         argNodes.push_back(node);
     }
     WRITE(argNodes);
     //FIXME: redirOption
 }
 
-int ProcessNode::accept(NodeVisitor *visitor) {
-    return visitor->visitProcessNode(this);
+int CmdNode::accept(NodeVisitor *visitor) {
+    return visitor->visitCmdNode(this);
 }
 
-// #########################
-// ##     ProcArgNode     ##
-// #########################
+// ########################
+// ##     CmdArgNode     ##
+// ########################
 
-ProcArgNode::ProcArgNode(unsigned int lineNum) :
+CmdArgNode::CmdArgNode(unsigned int lineNum) :
         Node(lineNum), segmentNodes() {
 }
 
-ProcArgNode::~ProcArgNode() {
+CmdArgNode::~CmdArgNode() {
     for(Node *e : this->segmentNodes) {
         delete e;
     }
     this->segmentNodes.clear();
 }
 
-void ProcArgNode::addSegmentNode(Node *node) {
-    ProcArgNode *argNode = dynamic_cast<ProcArgNode*>(node);
+void CmdArgNode::addSegmentNode(Node *node) {
+    CmdArgNode *argNode = dynamic_cast<CmdArgNode*>(node);
     if(argNode != 0) {
         int size = argNode->getSegmentNodes().size();
         for(int i = 0; i < size; i++) {
@@ -873,16 +873,16 @@ void ProcArgNode::addSegmentNode(Node *node) {
     this->segmentNodes.push_back(node);
 }
 
-const std::vector<Node*> &ProcArgNode::getSegmentNodes() {
+const std::vector<Node*> &CmdArgNode::getSegmentNodes() {
     return this->segmentNodes;
 }
 
-void ProcArgNode::dump(Writer &writer) const {
+void CmdArgNode::dump(Writer &writer) const {
     WRITE(segmentNodes);
 }
 
-int ProcArgNode::accept(NodeVisitor *visitor) {
-    return visitor->visitProcArgNode(this);
+int CmdArgNode::accept(NodeVisitor *visitor) {
+    return visitor->visitCmdArgNode(this);
 }
 
 // #############################
@@ -909,69 +909,83 @@ int SpecialCharNode::accept(NodeVisitor *visitor) {
 }
 
 // ######################
-// ##     TaskNode     ##
+// ##     PipedCmdNode     ##
 // ######################
 
-TaskNode::TaskNode() :
-        Node(0), procNodes(), background(false) {
+PipedCmdNode::PipedCmdNode() :
+        Node(0), procNodes() {
 }
 
-TaskNode::~TaskNode() {
-    for(ProcessNode *p : this->procNodes) {
+PipedCmdNode::~PipedCmdNode() {
+    for(CmdNode *p : this->procNodes) {
         delete p;
     }
     this->procNodes.clear();
 }
 
-void TaskNode::addProcNodes(ProcessNode *node) {
+void PipedCmdNode::addProcNodes(CmdNode *node) {
     this->procNodes.push_back(node);
 }
 
-const std::vector<ProcessNode*> &TaskNode::getProcNodes() {
+const std::vector<CmdNode*> &PipedCmdNode::getCmdNodes() {
     return this->procNodes;
 }
 
-bool TaskNode::isBackground() {
-    return this->background;
-}
-
-void TaskNode::dump(Writer &writer) const {
+void PipedCmdNode::dump(Writer &writer) const {
     std::vector<Node*> procNodes;
-    for(ProcessNode *node : this->procNodes) {
+    for(CmdNode *node : this->procNodes) {
         procNodes.push_back(node);
     }
 
     WRITE(procNodes);
-    WRITE_PRIM(background);
 }
 
-int TaskNode::accept(NodeVisitor *visitor) {
-    return visitor->visitTaskNode(this);
+int PipedCmdNode::accept(NodeVisitor *visitor) {
+    return visitor->visitPipedCmdNode(this);
 }
 
 // ###########################
-// ##     InnerTaskNode     ##
+// ##     CmdContextNode    ##
 // ###########################
 
-InnerTaskNode::InnerTaskNode(Node *exprNode) :
-        Node(0), exprNode(exprNode) {
+CmdContextNode::CmdContextNode(Node *exprNode) :
+        Node(0), exprNode(exprNode), retKind(VOID), attributeSet(0) {
 }
 
-InnerTaskNode::~InnerTaskNode() {
+CmdContextNode::~CmdContextNode() {
     delete this->exprNode;
     this->exprNode = 0;
 }
 
-Node *InnerTaskNode::getExprNode() {
+Node *CmdContextNode::getExprNode() {
     return this->exprNode;
 }
 
-void InnerTaskNode::dump(Writer &writer) const {
+void CmdContextNode::setAttribute(unsigned char attribute) {
+    this->attributeSet |= attribute;
+}
+
+void CmdContextNode::unsetAttribute(unsigned char attribute) {
+    this->attributeSet &= ~attribute;
+}
+
+bool CmdContextNode::hasAttribute(unsigned char attribute) {
+    return (this->attributeSet & attribute) == attribute;
+}
+void CmdContextNode::setRetKind(CmdRetKind kind) {
+    this->retKind = kind;
+}
+
+CmdContextNode::CmdRetKind CmdContextNode::getRetKind() {
+    return this->retKind;
+}
+
+void CmdContextNode::dump(Writer &writer) const {
     //FIXME:
 }
 
-int InnerTaskNode::accept(NodeVisitor *visitor) {
-    return visitor->visitInnerTaskNode(this);
+int CmdContextNode::accept(NodeVisitor *visitor) {
+    return visitor->visitCmdContextNode(this);
 }
 
 // ########################

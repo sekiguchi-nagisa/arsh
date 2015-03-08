@@ -497,19 +497,19 @@ public:
     int accept(NodeVisitor *visitor);	//override
 };
 
-class ProcessNode: public Node {	//FIXME: redirect option
+class CmdNode: public Node {	//FIXME: redirect option
 private:
     std::string commandName;
-    std::vector<ProcArgNode*> argNodes;
+    std::vector<CmdArgNode*> argNodes;
     std::vector<std::pair<int, Node*>> redirOptions;
 
 public:
-    ProcessNode(unsigned int lineNum, std::string &&commandName);
-    ~ProcessNode();
+    CmdNode(unsigned int lineNum, std::string &&commandName);
+    ~CmdNode();
 
     const std::string &getCommandName();
-    void addArgNode(ProcArgNode *node);
-    const std::vector<ProcArgNode*> &getArgNodes();
+    void addArgNode(CmdArgNode *node);
+    const std::vector<CmdArgNode*> &getArgNodes();
     void addRedirOption(std::pair<int, Node*> &&optionPair);
     const std::vector<std::pair<int, Node*>> &getRedirOptions();
     void dump(Writer &writer) const;  // override
@@ -519,13 +519,13 @@ public:
 /**
  * for command(process) argument
  */
-class ProcArgNode: public Node {	//TODO: escape sequence
+class CmdArgNode: public Node {	//TODO: escape sequence
 private:
     std::vector<Node*> segmentNodes;
 
 public:
-    ProcArgNode(unsigned int lineNum);
-    ~ProcArgNode();
+    CmdArgNode(unsigned int lineNum);
+    ~CmdArgNode();
 
     void addSegmentNode(Node *node);
     const std::vector<Node*> &getSegmentNodes();
@@ -546,33 +546,54 @@ public:
     int accept(NodeVisitor *visitor);	//override
 };
 
-class TaskNode: public Node {	//TODO: background ...etc
+class PipedCmdNode: public Node {	//TODO: background ...etc
 private:
-    std::vector<ProcessNode*> procNodes;
-    bool background;
+    std::vector<CmdNode*> procNodes;
 
 public:
-    TaskNode();
-    ~TaskNode();
+    PipedCmdNode();
+    ~PipedCmdNode();
 
-    void addProcNodes(ProcessNode *node);
-    const std::vector<ProcessNode*> &getProcNodes();
-    bool isBackground();
+    void addProcNodes(CmdNode *node);
+    const std::vector<CmdNode*> &getCmdNodes();
     void dump(Writer &writer) const; // override
     int accept(NodeVisitor *visitor);	//override
 };
 
-class InnerTaskNode: public Node {	//FIXME:
+class CmdContextNode: public Node {
+public:
+    typedef enum {
+        VOID,   // not return
+        BOOL,   // return bool status
+        STR,    // return stdout as string
+        ARRAY,  // reutrn stdout as string array
+        TASK,   // return task ctx
+    } CmdRetKind;
+
 private:
+    /**
+     * may pipedCmdNode, CondOpNode, CmdNode
+     */
     Node* exprNode;
 
+    CmdRetKind retKind;
+    unsigned char attributeSet;
+
 public:
-    InnerTaskNode(Node *exprNode);
-    ~InnerTaskNode();
+    CmdContextNode(Node *exprNode);
+    ~CmdContextNode();
 
     Node *getExprNode();
+    void setAttribute(unsigned char attribute);
+    void unsetAttribute(unsigned char attribute);
+    bool hasAttribute(unsigned char attribute);
+    void setRetKind(CmdRetKind kind);
+    CmdRetKind getRetKind();
     void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	//override
+
+    const static unsigned char BACKGROUND = 1 << 0;
+    const static unsigned char FORK       = 1 << 1;
 };
 
 // statement definition
