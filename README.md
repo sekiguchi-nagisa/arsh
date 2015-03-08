@@ -9,4 +9,4 @@ currently, under heavy development.
 * make
 * g++ (need c++11 support)
 * re2c 0.13.7.3+ (need UTF-8 support)
-* libedit (http://thrysoee.dk/editline/)
+* libedit (need unicode support. see http://thrysoee.dk/editline/)
