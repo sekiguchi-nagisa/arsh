@@ -57,6 +57,7 @@ extern const char * const OP_HAS_NEXT;  // must be Func<Boolean> type
 
 // to string
 extern const char * const OP_TO_STR;   // for string cast
+extern const char * const OP_INTERP;   // for interpolation
 
 
 #endif /* CORE_MAGIC_METHOD_H_ */

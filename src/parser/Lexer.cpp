@@ -35,7 +35,7 @@ Lexer::Lexer(unsigned int initSize, bool fixed) :
         fp(0),
         bufSize((fixed || initSize > DEFAULT_SIZE) ? initSize : DEFAULT_SIZE),
         buf(new unsigned char[this->bufSize]),
-        cursor(this->buf), limit(this->buf), marker(0),
+        cursor(this->buf), limit(this->buf), marker(0), ctxMarker(0),
         lineNum(1), endOfFile(false), modeStack(1, yycSTMT), prevNewLine(false) {
     this->buf[0] = '\0';    // terminate null character.
 }
@@ -78,6 +78,7 @@ void Lexer::expandBuf(unsigned int needSize) {
         } while(newSize < size);
         unsigned int pos = this->getPos();
         unsigned int markerPos = this->marker - this->buf;
+        unsigned int ctxMarkerPos = this->ctxMarker - this->buf;
         unsigned char *newBuf = new unsigned char[newSize];
         memcpy(newBuf, this->buf, usedSize);
         delete[] this->buf;
@@ -86,6 +87,7 @@ void Lexer::expandBuf(unsigned int needSize) {
         this->cursor = this->buf + pos;
         this->limit = this->buf + usedSize - 1;
         this->marker = this->buf + markerPos;
+        this->ctxMarker = this->buf + ctxMarkerPos;
     }
 }
 

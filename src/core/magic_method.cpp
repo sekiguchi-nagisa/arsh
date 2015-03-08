@@ -53,4 +53,4 @@ const char * const OP_HAS_NEXT = "__HAS_NEXT__";
 
 // to string
 const char * const OP_TO_STR   = "__TO_STR__";
-
+const char * const OP_INTERP   = "__INTERP__";

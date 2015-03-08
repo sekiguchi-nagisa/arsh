@@ -40,6 +40,11 @@
 #define GEN_LA_ALTER(CASE) CASE,
 
 // for lookahead
+#define EACH_LA_interpolation(OP) \
+    OP(APPLIED_NAME) \
+    OP(SPECIAL_NAME) \
+    OP(START_INTERP)
+
 #define EACH_LA_primary(OP) \
     OP(NEW) \
     OP(INT_LITERAL) \
@@ -99,6 +104,17 @@
 #define EACH_LA_varDecl(OP) \
     OP(VAR) \
     OP(LET)
+
+#define EACH_LA_redir(OP) \
+    OP(REDIR_OP) \
+    OP(REDIR_OP_NO_ARG)
+
+#define EACH_LA_cmdArg(OP) \
+    OP(CMD_ARG_PART) \
+    OP(STRING_LITERAL) \
+    OP(OPEN_DQUOTE) \
+    OP(START_SUB_CMD) \
+    EACH_LA_interpolation(OP)
 
 
 #define E_ALTER(alt) \
@@ -251,15 +267,39 @@ std::unique_ptr<TypeToken> Parser::parse_typeName() {
         this->matchToken(LA);
         this->hasNoNewLine();
 
+        // parse return type
         auto func = std::unique_ptr<FuncTypeToken>(
                 new FuncTypeToken(this->parse_typeName().release()));
-        //FIXME
+
+        this->hasNoNewLine();
+        if(this->curTokenKind == COMMA) {   // ,[
+            this->matchToken(COMMA);
+            this->hasNoNewLine();
+
+            this->matchToken(LB);
+            this->hasNoNewLine();
+
+            // parse first arg type
+            func->addParamTypeToken(this->parse_typeName().release());
+
+            // rest arg type
+            while(!HAS_NL() && this->curTokenKind == COMMA) {
+                this->matchToken(COMMA);
+                this->hasNoNewLine();
+                func->addParamTypeToken(this->parse_typeName().release());
+            }
+            this->hasNoNewLine();
+            this->matchToken(RB);
+        }
+
+        this->hasNoNewLine();
+        this->matchAndGetToken(RA);
+        return std::unique_ptr<TypeToken>(func.release());
     }
     default:
         E_ALTER(alters);
-
+        return std::unique_ptr<TypeToken>(nullptr);
     }
-    return std::unique_ptr<TypeToken>(nullptr);
 }
 
 std::unique_ptr<Node> Parser::parse_statement() {
@@ -513,11 +553,106 @@ std::unique_ptr<Node> Parser::parse_finallyBlock() {
 
 // command
 INLINE std::unique_ptr<Node> Parser::parse_commandListExpression() {
-    return this->parse_orListCommand();
+    RET_NODE(new CmdContextNode(this->parse_orListCommand().release()));
 }
 
 INLINE std::unique_ptr<Node> Parser::parse_orListCommand() {
-    return std::unique_ptr<Node>(nullptr);  //FIXME:
+    auto node = this->parse_andListCommand();
+
+    while(this->curTokenKind == OR_LIST) {
+        this->matchToken(OR_LIST);
+        node = std::unique_ptr<Node>(new CondOpNode(node.release(),
+                this->parse_andListCommand().release(), false));
+    }
+    return node;
+}
+
+INLINE std::unique_ptr<Node> Parser::parse_andListCommand() {
+    auto node = this->parse_pipedCommand();
+
+    while(this->curTokenKind == AND_LIST) {
+        this->matchToken(AND_LIST);
+        node = std::unique_ptr<Node>(new CondOpNode(node.release(),
+                this->parse_pipedCommand().release(), true));
+    }
+    return node;
+}
+
+INLINE std::unique_ptr<Node> Parser::parse_pipedCommand() {
+    auto node = this->parse_command();
+
+    if(this->curTokenKind == PIPE) {
+        auto piped = std::unique_ptr<PipedCmdNode>(new PipedCmdNode(node.release()));
+        while(this->curTokenKind == PIPE) {
+            this->matchToken(PIPE);
+            piped->addCmdNodes(this->parse_command().release());
+        }
+        RET_NODE(piped.release());
+    }
+    RET_NODE(node.release());
+}
+
+INLINE std::unique_ptr<CmdNode> Parser::parse_command() {   //FIXME: redirect
+    unsigned int n = LN();
+    Token token = this->matchAndGetToken(COMMAND);
+    auto node = std::unique_ptr<CmdNode>(new CmdNode(n, this->lexer->toCmdArg(token)));
+
+    while(this->curTokenKind == CMD_SEP) {
+        this->matchToken(CMD_SEP);
+        node->addArgNode(this->parse_cmdArg().release());
+    }
+    return node;
+}
+
+INLINE std::unique_ptr<CmdArgNode> Parser::parse_cmdArg() {
+    auto node = std::unique_ptr<CmdArgNode>(
+            new CmdArgNode(this->parse_cmdArgSeg().release()));
+
+    bool next = true;
+    while(next) {
+        switch(this->curTokenKind) {
+        EACH_LA_cmdArg(GEN_LA_CASE) {
+            node->addSegmentNode(this->parse_cmdArgSeg().release());
+            break;
+        }
+        default: {
+            next = false;
+            break;
+        }
+        }
+    }
+    return node;
+}
+
+INLINE std::unique_ptr<Node> Parser::parse_cmdArgSeg() {
+    static TokenKind alters[] = {
+            EACH_LA_cmdArg(GEN_LA_ALTER)
+            DUMMY
+    };
+
+    switch(this->curTokenKind) {
+    case CMD_ARG_PART: {
+        unsigned int n = LN();
+        Token token = this->matchAndGetToken(CMD_ARG_PART);
+        RET_NODE(new StringValueNode(n, this->lexer->toCmdArg(token)));
+    }
+    case STRING_LITERAL: {
+        return this->parse_stringLiteral();
+    }
+    case OPEN_DQUOTE: {
+        return this->parse_stringExpression();
+    }
+    case START_SUB_CMD: {
+        return this->parse_commandSubstitution();
+    }
+    EACH_LA_interpolation(GEN_LA_CASE) {
+        return this->parse_interpolation();
+    }
+    default: {
+        E_ALTER(alters);
+        return std::unique_ptr<Node>(nullptr);
+    }
+    }
 }
 
 // expression
@@ -833,24 +968,19 @@ INLINE std::unique_ptr<Node> Parser::parse_primaryExpression() {
         RET_NODE(new FloatValueNode(n, this->lexer->toDouble(token)));
     }
     case STRING_LITERAL: {
-        Token token = this->matchAndGetToken(STRING_LITERAL);
-        RET_NODE(new StringValueNode(n, this->lexer->toString(token)));
+        return this->parse_stringLiteral();
     }
     case OPEN_DQUOTE: {
-        //FIXME:
-        break;
+        return this->parse_stringExpression();
     }
     case START_SUB_CMD: {
-        //FIXME:
-        break;
+        return this->parse_commandSubstitution();
     }
     case APPLIED_NAME: {
-        Token token = this->matchAndGetToken(APPLIED_NAME);
-        RET_NODE(new VarNode(n, this->lexer->toName(token)));
+        return this->parse_appliedName();
     }
     case SPECIAL_NAME: {
-        Token token = this->matchAndGetToken(SPECIAL_NAME);
-        RET_NODE(new SpecialCharNode(n, this->lexer->toName(token)));
+        return this->parse_specialName();
     }
     case LP: {  // expression or tuple
         this->matchToken(LP);
@@ -905,9 +1035,26 @@ INLINE std::unique_ptr<Node> Parser::parse_primaryExpression() {
     }
     default:
         E_ALTER(alters);
-        break;
+        return std::unique_ptr<Node>(nullptr);
     }
-    return std::unique_ptr<Node>(nullptr);  //FIXME:
+}
+
+INLINE std::unique_ptr<Node> Parser::parse_appliedName() {
+    unsigned int n = LN();
+    Token token = this->matchAndGetToken(APPLIED_NAME);
+    RET_NODE(new VarNode(n, this->lexer->toName(token)));
+}
+
+INLINE std::unique_ptr<Node> Parser::parse_specialName() {
+    unsigned int n = LN();
+    Token token = this->matchAndGetToken(SPECIAL_NAME);
+    RET_NODE(new SpecialCharNode(n, this->lexer->toName(token)));
+}
+
+INLINE std::unique_ptr<Node> Parser::parse_stringLiteral() {
+    unsigned int n = LN();
+    Token token = this->matchAndGetToken(STRING_LITERAL);
+    RET_NODE(new StringValueNode(n, this->lexer->toString(token)));
 }
 
 INLINE std::unique_ptr<ArgsNode> Parser::parse_arguments() {
@@ -927,6 +1074,73 @@ INLINE std::unique_ptr<ArgsNode> Parser::parse_arguments() {
         break;
     }
 
+    this->matchToken(RP);
+    return node;
+}
+
+INLINE std::unique_ptr<Node> Parser::parse_stringExpression() {
+    unsigned int n = LN();
+    this->matchToken(OPEN_DQUOTE);
+    auto node = std::unique_ptr<StringExprNode>(new StringExprNode(n));
+
+    bool next = true;
+    while(next) {
+        switch(this->curTokenKind) {
+        case STR_ELEMENT: {
+            unsigned int n = LN();
+            Token token = this->matchAndGetToken(STR_ELEMENT);
+            node->addExprNode(
+                    new StringValueNode(n, this->lexer->toString(token, false)));
+            break;
+        }
+        EACH_LA_interpolation(GEN_LA_CASE) {
+            node->addExprNode(this->parse_interpolation().release());
+            break;
+        }
+        case START_SUB_CMD: {
+            node->addExprNode(this->parse_commandSubstitution().release());
+            break;
+        }
+        default: {
+            next = false;
+            break;
+        }
+        }
+    }
+
+    this->matchToken(CLOSE_DQUOTE);
+    RET_NODE(node.release());
+}
+
+INLINE std::unique_ptr<Node> Parser::parse_interpolation() {
+    static TokenKind alters[] = {
+            EACH_LA_interpolation(GEN_LA_ALTER)
+            DUMMY
+    };
+
+    switch(this->curTokenKind) {
+    case APPLIED_NAME: {
+        return this->parse_appliedName();
+    }
+    case SPECIAL_NAME: {
+        return this->parse_specialName();
+    }
+    case START_INTERP: {
+        this->matchToken(START_INTERP);
+        auto node = this->parse_expression();
+        this->matchToken(RBC);
+        return node;
+    }
+    default: {
+        E_ALTER(alters);
+        return std::unique_ptr<Node>(nullptr);
+    }
+    }
+}
+
+INLINE std::unique_ptr<Node> Parser::parse_commandSubstitution() {
+    this->matchToken(START_SUB_CMD);
+    auto node = this->parse_commandListExpression();
     this->matchToken(RP);
     return node;
 }

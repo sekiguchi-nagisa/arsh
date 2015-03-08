@@ -142,7 +142,7 @@ public:
     StringExprNode(unsigned int lineNum);
     ~StringExprNode();
 
-    void addExprNode(Node *node);	//TODO:
+    void addExprNode(Node *node);
     const std::vector<Node*> &getExprNodes();
     void dump(Writer &writer) const;  // override
     int accept(NodeVisitor *visitor);	// override
@@ -517,14 +517,14 @@ public:
 };
 
 /**
- * for command(process) argument
+ * for command argument
  */
-class CmdArgNode: public Node {	//TODO: escape sequence
+class CmdArgNode: public Node {
 private:
     std::vector<Node*> segmentNodes;
 
 public:
-    CmdArgNode(unsigned int lineNum);
+    CmdArgNode(Node *segmentNode);
     ~CmdArgNode();
 
     void addSegmentNode(Node *node);
@@ -548,13 +548,13 @@ public:
 
 class PipedCmdNode: public Node {	//TODO: background ...etc
 private:
-    std::vector<CmdNode*> procNodes;
+    std::vector<CmdNode*> cmdNodes;
 
 public:
-    PipedCmdNode();
+    PipedCmdNode(CmdNode *node);
     ~PipedCmdNode();
 
-    void addProcNodes(CmdNode *node);
+    void addCmdNodes(CmdNode *node);
     const std::vector<CmdNode*> &getCmdNodes();
     void dump(Writer &writer) const; // override
     int accept(NodeVisitor *visitor);	//override

@@ -88,6 +88,11 @@ private:
 
     std::unique_ptr<Node> parse_commandListExpression();
     std::unique_ptr<Node> parse_orListCommand();
+    std::unique_ptr<Node> parse_andListCommand();
+    std::unique_ptr<Node> parse_pipedCommand();
+    std::unique_ptr<CmdNode> parse_command();
+    std::unique_ptr<CmdArgNode> parse_cmdArg();
+    std::unique_ptr<Node> parse_cmdArgSeg();
 
     std::unique_ptr<Node> parse_commandOrExpression();
     std::unique_ptr<Node> parse_expression();
@@ -106,7 +111,13 @@ private:
     std::unique_ptr<Node> parse_suffixExpression();
     std::unique_ptr<Node> parse_memberExpression();
     std::unique_ptr<Node> parse_primaryExpression();
+    std::unique_ptr<Node> parse_appliedName();
+    std::unique_ptr<Node> parse_specialName();
+    std::unique_ptr<Node> parse_stringLiteral();
     std::unique_ptr<ArgsNode> parse_arguments();
+    std::unique_ptr<Node> parse_stringExpression();
+    std::unique_ptr<Node> parse_interpolation();
+    std::unique_ptr<Node> parse_commandSubstitution();
 };
 
 #endif /* PARSER_PARSER_H_ */

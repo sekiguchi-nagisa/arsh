@@ -72,6 +72,7 @@ TokenKind Lexer::nextToken(Token &token) {
       re2c:define:YYCURSOR = this->cursor;
       re2c:define:YYLIMIT = this->limit;
       re2c:define:YYMARKER = this->marker;
+      re2c:define:YYCTXMARKER = this->ctxMarker;
       re2c:define:YYFILL:naked = 1;
       re2c:define:YYFILL@len = #;
       re2c:define:YYFILL = "if(!this->fill(#)) { RET(EOS); }";
@@ -219,6 +220,8 @@ INIT:
       <CMD> CMD_CHAR+          { COUNT_NEW_LINE();  RET(CMD_ARG_PART); }
       <CMD> STRING_LITERAL     { RET(STRING_LITERAL); }
       <CMD> ')'                { POP_MODE(); POP_MODE(); RET(RP); }
+      <CMD> [ \t]+ / ([|&] | LINE_END | NEW_LINE)
+                               { SKIP(); }
       <CMD> [ \t]+             { RET(CMD_SEP); }
       <CMD> ('<' | '>' | '1>' | '1>>' | '>>' | '2>' | '2>>' | '>&' | '&>' | '&>>')
                                { RET(REDIR_OP); }

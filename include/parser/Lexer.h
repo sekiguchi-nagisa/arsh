@@ -60,6 +60,11 @@ private:
     unsigned char *marker;
 
     /**
+     * for trailing context.
+     */
+    unsigned char *ctxMarker;
+
+    /**
      * initial value is 1.
      */
     unsigned int lineNum;

@@ -167,7 +167,12 @@ StringExprNode::~StringExprNode() {
     this->nodes.clear();
 }
 
-void StringExprNode::addExprNode(Node *node) {	//TODO:
+void StringExprNode::addExprNode(Node *node) {
+    if(dynamic_cast<StringValueNode*>(node) == 0 &&
+            dynamic_cast<StringExprNode*>(node) == 0 &&
+            dynamic_cast<CmdContextNode*>(node) == 0) {
+        node = createApplyNode(node, std::string(OP_INTERP));
+    }
     this->nodes.push_back(node);
 }
 
@@ -847,8 +852,9 @@ int CmdNode::accept(NodeVisitor *visitor) {
 // ##     CmdArgNode     ##
 // ########################
 
-CmdArgNode::CmdArgNode(unsigned int lineNum) :
+CmdArgNode::CmdArgNode(Node *segmentNode) :
         Node(lineNum), segmentNodes() {
+    this->addSegmentNode(segmentNode);
 }
 
 CmdArgNode::~CmdArgNode() {
@@ -859,17 +865,8 @@ CmdArgNode::~CmdArgNode() {
 }
 
 void CmdArgNode::addSegmentNode(Node *node) {
-    CmdArgNode *argNode = dynamic_cast<CmdArgNode*>(node);
-    if(argNode != 0) {
-        int size = argNode->getSegmentNodes().size();
-        for(int i = 0; i < size; i++) {
-            Node *s = argNode->segmentNodes[i];
-            argNode->segmentNodes[i] = 0;
-            this->segmentNodes.push_back(s);
-        }
-        delete argNode;
-        return;
-    }
+    //FIXME:
+
     this->segmentNodes.push_back(node);
 }
 
@@ -908,32 +905,33 @@ int SpecialCharNode::accept(NodeVisitor *visitor) {
     return visitor->visitSpecialCharNode(this);
 }
 
-// ######################
+// ##########################
 // ##     PipedCmdNode     ##
-// ######################
+// ##########################
 
-PipedCmdNode::PipedCmdNode() :
-        Node(0), procNodes() {
+PipedCmdNode::PipedCmdNode(CmdNode *node) :
+        Node(node->getLineNum()), cmdNodes() {
+    this->cmdNodes.push_back(node);
 }
 
 PipedCmdNode::~PipedCmdNode() {
-    for(CmdNode *p : this->procNodes) {
+    for(CmdNode *p : this->cmdNodes) {
         delete p;
     }
-    this->procNodes.clear();
+    this->cmdNodes.clear();
 }
 
-void PipedCmdNode::addProcNodes(CmdNode *node) {
-    this->procNodes.push_back(node);
+void PipedCmdNode::addCmdNodes(CmdNode *node) {
+    this->cmdNodes.push_back(node);
 }
 
 const std::vector<CmdNode*> &PipedCmdNode::getCmdNodes() {
-    return this->procNodes;
+    return this->cmdNodes;
 }
 
 void PipedCmdNode::dump(Writer &writer) const {
     std::vector<Node*> procNodes;
-    for(CmdNode *node : this->procNodes) {
+    for(CmdNode *node : this->cmdNodes) {
         procNodes.push_back(node);
     }
 
