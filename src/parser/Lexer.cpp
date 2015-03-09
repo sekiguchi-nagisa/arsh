@@ -16,6 +16,8 @@
 
 #include <assert.h>
 #include <string.h>
+#include <errno.h>
+#include <math.h>
 #include <string>
 
 #include <util/debug.h>
@@ -251,22 +253,66 @@ std::string Lexer::toName(Token &token) {
     return name;
 }
 
-int Lexer::toInt(Token &token) {
+int Lexer::toInt(Token &token, int &status) {
     CHECK_TOK(token);
 
-    char str[token.size];
+    char str[token.size + 1];
     for(unsigned int i = 0; i < token.size; i++) {
         str[i] = this->buf[token.startPos + i];
     }
-    return atoi(str);
+    str[token.size] = '\0';
+
+    // convert to int
+    char *end;
+    const long value = strtol(str, &end, 10);
+
+    // check error
+    if(end == str) {
+        fatal("cannot covert to int: %s\n", str);
+    }
+    if(*end != '\0') {
+        fatal("found illegal character in num: %s\n", str);
+    }
+    if((value == LONG_MIN || value == LONG_MAX) && errno == ERANGE) {
+        status = 1;
+        return 0;
+    }
+    if(value > INT_MAX || value < INT_MIN) {
+        status = 1;
+        return 0;
+    }
+    status = 0;
+    return (int) value;
 }
 
-double Lexer::toDouble(Token &token) {
+double Lexer::toDouble(Token &token, int &status) {
     CHECK_TOK(token);
 
-    char str[token.size];
+    char str[token.size + 1];
     for(unsigned int i = 0; i < token.size; i++) {
         str[i] = this->buf[token.startPos + i];
     }
-    return atof(str);
+    str[token.size] = '\0';
+
+    // convert to double
+    char *end;
+    double value = strtod(str, &end);
+
+    // check error
+    if(value == 0 && end == str) {
+        fatal("cannot convert to double: %s\n", str);
+    }
+    if(*end != '\0') {
+        fatal("found illegal character in num: %s\n", str);
+    }
+    if(value == 0 && errno == ERANGE) {
+        status = 1;
+        return 0;
+    }
+    if((value == HUGE_VALF || value == HUGE_VALL) && errno == ERANGE) {
+        status = 1;
+        return 0;
+    }
+    status = 0;
+    return value;
 }

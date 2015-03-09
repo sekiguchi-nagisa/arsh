@@ -125,6 +125,15 @@
         throw NoViableAlterError(LN(), this->curTokenKind, this->curToken, alt);\
     } while(0)
 
+// for check converted number range
+#define CONVERT_TO_NUM(out, n, kind, token, func) \
+    do {\
+        int status;\
+        out = func(token, status);\
+        if(status != 0) { throw OutOfRangeNumError(n, kind, token); }\
+    } while(0)
+
+
 #define RET_NODE(node) return std::unique_ptr<Node>(node)
 
 
@@ -961,11 +970,15 @@ INLINE std::unique_ptr<Node> Parser::parse_primaryExpression() {
     }
     case INT_LITERAL: {
         Token token = this->matchAndGetToken(INT_LITERAL);
-        RET_NODE(new IntValueNode(n, this->lexer->toInt(token)));
+        int value;
+        CONVERT_TO_NUM(value, n, INT_LITERAL, token, this->lexer->toInt);
+        RET_NODE(new IntValueNode(n, value));
     }
     case FLOAT_LITERAL: {
         Token token = this->matchAndGetToken(FLOAT_LITERAL);
-        RET_NODE(new FloatValueNode(n, this->lexer->toDouble(token)));
+        double value;
+        CONVERT_TO_NUM(value, n, FLOAT_LITERAL, token, this->lexer->toDouble);
+        RET_NODE(new FloatValueNode(n, value));
     }
     case STRING_LITERAL: {
         return this->parse_stringLiteral();

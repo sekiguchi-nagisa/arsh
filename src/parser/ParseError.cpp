@@ -161,6 +161,34 @@ bool InvalidTokenError::equalsImpl(const ParseError &e) {
     return false;
 }
 
+// ################################
+// ##     OutOfRangeNumError     ##
+// ################################
+
+OutOfRangeNumError::OutOfRangeNumError(unsigned int lineNum, TokenKind kind, Token token) :
+        ParseError(lineNum, kind, token) {
+}
+
+OutOfRangeNumError::~OutOfRangeNumError() {
+}
+
+bool OutOfRangeNumError::operator==(const OutOfRangeNumError &e) {
+    return this->baseEquals(e);
+}
+
+void OutOfRangeNumError::accept(ParseErrorVisitor &visitor) const {
+    return visitor.visit(*this);
+}
+
+bool OutOfRangeNumError::equalsImpl(const ParseError &e) {
+    const OutOfRangeNumError *ex = dynamic_cast<const OutOfRangeNumError*>(&e);
+    if(ex != 0) {
+        return *this == *ex;
+    }
+    return false;
+}
+
+
 // ###############################
 // ##     ParseErrorVisitor     ##
 // ###############################

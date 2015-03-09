@@ -102,6 +102,19 @@ private:
     bool equalsImpl(const ParseError &e); // override
 };
 
+class OutOfRangeNumError : public ParseError {
+public:
+    OutOfRangeNumError(unsigned int lineNum, TokenKind kind, Token token);
+    ~OutOfRangeNumError();
+
+    bool operator==(const OutOfRangeNumError &e);
+    void accept(ParseErrorVisitor &visitor) const; // override
+
+private:
+    bool equalsImpl(const ParseError &e); // override
+};
+
+
 // for error message formatting.
 class ParseErrorVisitor {
 public:
@@ -111,6 +124,7 @@ public:
     virtual void visit(const TokenMismatchError &e) = 0;
     virtual void visit(const NoViableAlterError &e) = 0;
     virtual void visit(const InvalidTokenError &e) = 0;
+    virtual void visit(const OutOfRangeNumError &e) = 0;
 };
 
 #endif /* PARSER_PARSEERROR_H_ */

@@ -173,8 +173,15 @@ public:
      */
     std::string toName(Token &token);
 
-    int toInt(Token &token);
-    double toDouble(Token &token);
+    /**
+     * if converted number is out of range, status is 1.
+     */
+    int toInt(Token &token, int &status);
+
+    /**
+     * if converted number is out of range, status is 1.
+     */
+    double toDouble(Token &token, int &status);
 };
 
 #endif /* PARSER_LEXER_H_ */

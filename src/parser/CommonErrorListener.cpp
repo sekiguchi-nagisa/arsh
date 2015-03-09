@@ -78,6 +78,7 @@ public:
     void visit(const TokenMismatchError &e); // override
     void visit(const NoViableAlterError &e); // override
     void visit(const InvalidTokenError &e); // override
+    void visit(const OutOfRangeNumError &e); // override
 
     static std::string format(Lexer &lexer, const ParseError &e);
 };
@@ -112,6 +113,14 @@ void ParseErrorFormatter::visit(const NoViableAlterError &e) {
 
 void ParseErrorFormatter::visit(const InvalidTokenError &e) {
     this->message += "invalid token: ";
+    Token token = e.getErrorToken();
+    this->message += this->lexer->toTokenText(token);
+}
+
+void ParseErrorFormatter::visit(const OutOfRangeNumError &e) {
+    this->message += "out of range ";
+    this->message += TO_NAME(e.getTokenKind());
+    this->message += ": ";
     Token token = e.getErrorToken();
     this->message += this->lexer->toTokenText(token);
 }
