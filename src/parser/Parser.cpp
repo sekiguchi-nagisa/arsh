@@ -89,17 +89,7 @@
     EACH_LA_statement(OP)
 
 #define EACH_LA_typeName(OP) \
-    OP(EXTENDS) \
-    OP(NEW) \
-    OP(NOT) \
-    OP(AS) \
-    OP(IN) \
-    OP(IS) \
-    OP(IDENTIFIER)
-
-#define EACH_LA_name(OP) \
-    OP(FUNC) \
-    EACH_LA_typeName(OP)
+    OP(IDENTIFIER) \
 
 #define EACH_LA_varDecl(OP) \
     OP(VAR) \
@@ -242,13 +232,16 @@ INLINE std::unique_ptr<Node> Parser::parse_toplevelStatement() {
 
 std::unique_ptr<TypeToken> Parser::parse_typeName() {
     static TokenKind alters[] = {
-            EACH_LA_name(GEN_LA_ALTER)
+            EACH_LA_typeName(GEN_LA_ALTER)
+            FUNC,
             DUMMY
     };
 
     switch(this->curTokenKind) {
     EACH_LA_typeName(GEN_LA_CASE) {
-        auto typeToken = std::unique_ptr<ClassTypeToken>(new ClassTypeToken(LN(), this->parse_name()));
+        auto typeToken = std::unique_ptr<ClassTypeToken>(
+                new ClassTypeToken(LN(),
+                        this->lexer->toName(this->matchAndGetToken(IDENTIFIER))));
         if(!HAS_NL() && this->curTokenKind == LA) {
             this->matchToken(LA);
             this->hasNoNewLine();
@@ -342,7 +335,8 @@ std::unique_ptr<Node> Parser::parse_statement() {
     case EXPORT_ENV: {
         this->matchToken(EXPORT_ENV);
         unsigned int n = LN();
-        std::string name = this->parse_name();
+        std::string name = this->lexer->toName(
+                this->matchAndGetToken(IDENTIFIER));
         this->hasNoNewLine();
         this->matchToken(ASSIGN);
         auto node = std::unique_ptr<Node>(new ExportEnvNode(n, std::move(name),
@@ -371,7 +365,8 @@ std::unique_ptr<Node> Parser::parse_statement() {
     }
     case IMPORT_ENV: {
         this->matchToken(IMPORT_ENV);
-        auto node = std::unique_ptr<Node>(new ImportEnvNode(LN(), this->parse_name()));
+        auto node = std::unique_ptr<Node>(new ImportEnvNode(LN(),
+                this->lexer->toName(this->matchAndGetToken(IDENTIFIER))));
         this->parse_statementEnd();
         return node;
     }
@@ -379,10 +374,20 @@ std::unique_ptr<Node> Parser::parse_statement() {
         this->matchToken(RETURN);
         unsigned int n = LN();
         auto node = std::unique_ptr<Node>(nullptr);
-        if(!HAS_NL()) {
-            node.reset(new ReturnNode(n));
-        } else {
+
+        bool next;
+        switch(this->curTokenKind) {
+        EACH_LA_expression(GEN_LA_CASE)
+            next = true;
+            break;
+        default:
+            next = false;
+            break;
+        }
+        if(!HAS_NL() && next) {
             node.reset(new ReturnNode(n, this->parse_expression().release()));
+        } else {
+            node.reset(new ReturnNode(n));
         }
         this->parse_statementEnd();
         return node;
@@ -493,24 +498,6 @@ std::unique_ptr<BlockNode> Parser::parse_block() {
     return blockNode;
 }
 
-INLINE std::string Parser::parse_name() {
-    static TokenKind alters[] = {
-            EACH_LA_name(GEN_LA_ALTER)
-            DUMMY
-    };
-
-    switch(this->curTokenKind) {
-    EACH_LA_name(GEN_LA_CASE) {
-        Token token = this->curToken;
-        NEXT_TOKEN();
-        return this->lexer->toName(token);
-    }
-    default:
-        E_ALTER(alters);
-        return "";
-    }
-}
-
 INLINE std::unique_ptr<Node> Parser::parse_variableDeclaration() {
     static TokenKind alters[] = {
             EACH_LA_varDecl(GEN_LA_ALTER)
@@ -520,10 +507,10 @@ INLINE std::unique_ptr<Node> Parser::parse_variableDeclaration() {
     switch(this->curTokenKind) {
     EACH_LA_varDecl(GEN_LA_CASE) {
         bool readOnly = this->consumeAndGetKind() != VAR;
-        this->hasNoNewLine();
 
         unsigned int n = LN();
-        std::string name = this->parse_name();
+        std::string name = this->lexer->toName(
+                this->matchAndGetToken(IDENTIFIER));
         this->hasNoNewLine();
         this->matchToken(ASSIGN);
         RET_NODE(new VarDeclNode(n, std::move(name),
@@ -930,8 +917,8 @@ INLINE std::unique_ptr<Node> Parser::parse_memberExpression() {
         case ACCESSOR: {
             this->matchToken(ACCESSOR);
             this->hasNoNewLine();
-            node = std::unique_ptr<Node>(
-                    new AccessNode(node.release(), this->parse_name()));
+            node = std::unique_ptr<Node>(new AccessNode(node.release(),
+                    this->lexer->toName(this->matchAndGetToken(IDENTIFIER))));
             break;
         }
         case LB: {

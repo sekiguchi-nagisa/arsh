@@ -80,7 +80,6 @@ private:
     std::unique_ptr<Node> parse_statement();
     void parse_statementEnd();
     std::unique_ptr<BlockNode> parse_block();
-    std::string parse_name();
     std::unique_ptr<Node> parse_variableDeclaration();
 
     std::unique_ptr<CatchNode> parse_catchStatement();

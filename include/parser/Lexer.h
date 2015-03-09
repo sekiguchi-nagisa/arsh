@@ -26,6 +26,7 @@
 typedef enum {
     yycSTMT,
     yycEXPR,
+    yycNAME,
     yycDSTRING,
     yycCMD,
 } LexerMode;

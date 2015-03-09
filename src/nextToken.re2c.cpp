@@ -115,26 +115,26 @@ INIT:
     /*!re2c
       <STMT> 'assert'          { RET(ASSERT); }
       <STMT> 'break'           { RET(BREAK); }
-      <STMT> 'catch'           { RET(CATCH); }
-      <STMT> 'class'           { MODE(EXPR); RET(CLASS); }
+      <STMT,EXPR> 'catch'      { RET(CATCH); }
+      <STMT,EXPR> 'class'      { MODE(NAME); RET(CLASS); }
       <STMT> 'continue'        { RET(CONTINUE); }
-      <STMT> 'do'              { RET(DO); }
-      <STMT> 'else'            { RET(ELSE); }
+      <STMT,EXPR> 'do'         { RET(DO); }
+      <STMT,EXPR> 'else'       { RET(ELSE); }
       <STMT,EXPR> 'extends'    { MODE(EXPR); RET(EXTENDS); }
-      <STMT> 'export-env'      { MODE(EXPR); RET(EXPORT_ENV); }
-      <STMT> 'finally'         { RET(FINALLY); }
-      <STMT> 'for'             { RET(FOR); }
-      <STMT> 'function'        { MODE(EXPR); RET(FUNCTION); }
-      <STMT> 'if'              { RET(IF); }
-      <STMT> 'import-env'      { MODE(EXPR); RET(IMPORT_ENV); }
-      <STMT> 'let'             { MODE(EXPR); RET(LET); }
+      <STMT,EXPR> 'export-env' { MODE(NAME); RET(EXPORT_ENV); }
+      <STMT,EXPR> 'finally'    { RET(FINALLY); }
+      <STMT,EXPR> 'for'        { RET(FOR); }
+      <STMT,EXPR> 'function'   { MODE(NAME); RET(FUNCTION); }
+      <STMT,EXPR> 'if'         { RET(IF); }
+      <STMT,EXPR> 'import-env' { MODE(NAME); RET(IMPORT_ENV); }
+      <STMT,EXPR> 'let'        { MODE(NAME); RET(LET); }
       <STMT,EXPR> 'new'        { MODE(EXPR); RET(NEW); }
       <STMT,EXPR> 'not'        { MODE(EXPR); RET(NOT); }
       <STMT> 'return'          { MODE(EXPR); RET(RETURN); }
-      <STMT> 'try'             { RET(TRY); }
+      <STMT,EXPR> 'try'        { RET(TRY); }
       <STMT> 'throw'           { MODE(EXPR); RET(THROW); }
-      <STMT> 'var'             { MODE(EXPR); RET(VAR); }
-      <STMT> 'while'           { RET(WHILE); }
+      <STMT,EXPR> 'var'        { MODE(NAME); RET(VAR); }
+      <STMT,EXPR> 'while'      { RET(WHILE); }
 
       <STMT,EXPR> '+'          { MODE(EXPR); RET(PLUS); }
       <STMT,EXPR> '-'          { MODE(EXPR); RET(MINUS); }
@@ -143,20 +143,19 @@ INIT:
       <STMT,EXPR> FLOAT        { MODE(EXPR); RET(FLOAT_LITERAL); }
       <STMT,EXPR> STRING_LITERAL
                                { MODE(EXPR); RET(STRING_LITERAL); }
-      <STMT,EXPR,CMD> ["]      { PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
+      <STMT,EXPR> ["]          { MODE(EXPR); PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
       <STMT,EXPR> BQUOTE_LITERAL
                                { MODE(EXPR); RET(BQUOTE_LITERAL); }
-      <STMT,EXPR,DSTRING,CMD> '$('
-                               { PUSH_MODE(STMT); RET(START_SUB_CMD); }
+      <STMT,EXPR> '$('         { MODE(EXPR); PUSH_MODE(STMT); RET(START_SUB_CMD); }
 
       <STMT,EXPR> APPLIED_NAME { MODE(EXPR); RET(APPLIED_NAME); }
       <STMT,EXPR> SPECIAL_NAME { MODE(EXPR); RET(SPECIAL_NAME); }
 
-      <STMT,EXPR> '('          { PUSH_MODE(STMT); RET(LP); }
+      <STMT,EXPR> '('          { MODE(EXPR); PUSH_MODE(STMT); RET(LP); }
       <STMT,EXPR> ')'          { POP_MODE(); RET(RP); }
       <STMT,EXPR> '['          { MODE(EXPR); RET(LB); }
       <STMT,EXPR> ']'          { MODE(EXPR); RET(RB); }
-      <STMT,EXPR> '{'          { PUSH_MODE(STMT); RET(LBC); }
+      <STMT,EXPR> '{'          { MODE(EXPR); PUSH_MODE(STMT); RET(LBC); }
       <STMT,EXPR> '}'          { POP_MODE(); RET(RBC); }
 
       <STMT> CMD_START_CHAR CMD_CHAR*
@@ -197,15 +196,18 @@ INIT:
       <EXPR> 'in'              { RET(IN); }
       <EXPR> 'is'              { RET(IS); }
 
-      <EXPR> VAR_NAME          { RET(IDENTIFIER); }
-      <EXPR> '.'               { RET(ACCESSOR); }
+      <EXPR,NAME> VAR_NAME     { MODE(EXPR); RET(IDENTIFIER); }
+      <NAME> NEW_LINE          { COUNT_NEW_LINE(); SKIP(); }
+      <EXPR> '.'               { MODE(NAME); RET(ACCESSOR); }
 
       <STMT,EXPR> LINE_END     { MODE(STMT); RET(LINE_END); }
       <STMT,EXPR> NEW_LINE     { MODE(STMT); COUNT_NEW_LINE(); FIND_NEW_LINE(); }
 
-      <STMT,EXPR,CMD> COMMENT  { SKIP(); }
-      <STMT,EXPR> [ \t]+       { SKIP(); }
-      <STMT,EXPR> '\\' [\r\n]  { INC_LINE_NUM(); SKIP(); }
+      <STMT,EXPR,NAME,CMD> COMMENT
+                               { SKIP(); }
+      <STMT,EXPR,NAME> [ \t]+  { SKIP(); }
+      <STMT,EXPR,NAME> '\\' [\r\n]
+                               { INC_LINE_NUM(); SKIP(); }
 
       <DSTRING> ["]            { POP_MODE(); RET(CLOSE_DQUOTE);}
       <DSTRING> ([^\r\n`$"\\] | '\\' [$btnfr"`\\])+
@@ -216,9 +218,11 @@ INIT:
       <DSTRING,CMD> INNER_SPECIAL_NAME
                                { RET(SPECIAL_NAME); }
       <DSTRING,CMD> '${'       { PUSH_MODE(EXPR); RET(START_INTERP); }
+      <DSTRING,CMD> '$('       { PUSH_MODE(STMT); RET(START_SUB_CMD); }
 
       <CMD> CMD_CHAR+          { COUNT_NEW_LINE();  RET(CMD_ARG_PART); }
       <CMD> STRING_LITERAL     { RET(STRING_LITERAL); }
+      <CMD> ["]                { PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
       <CMD> ')'                { POP_MODE(); POP_MODE(); RET(RP); }
       <CMD> [ \t]+ / ([|&] | LINE_END | NEW_LINE | ')')
                                { SKIP(); }
@@ -235,8 +239,8 @@ INIT:
 
 
 
-      <STMT,EXPR,DSTRING,CMD> '\000' { RET(EOS); }
-      <STMT,EXPR,DSTRING,CMD> OTHER  { RET(INVALID); }
+      <STMT,EXPR,NAME,DSTRING,CMD> '\000' { RET(EOS); }
+      <STMT,EXPR,NAME,DSTRING,CMD> OTHER  { RET(INVALID); }
     */
 
 END:
