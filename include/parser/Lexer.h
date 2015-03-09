@@ -149,39 +149,39 @@ public:
     /**
      * get line token which token belongs to.
      */
-    Token getLineToken(Token &token);
+    Token getLineToken(const Token &token) const;
 
     // token to value converting api.
     /**
      * get text of token.
      */
-    std::string toTokenText(Token &token);
+    std::string toTokenText(const Token &token) const;
 
     /**
      * convert token to string (single quote string or double quote string)
      */
-    std::string toString(Token &token, bool isSingleQuote = true);
+    std::string toString(const Token &token, bool isSingleQuote = true) const;
 
     /**
      * convert token to command argument
      */
-    std::string toCmdArg(Token &token);
+    std::string toCmdArg(const Token &token) const;
 
     /**
      * convert token to name(remove '$' char)
      * ex. $hoge, ${hoge}, hoge
      */
-    std::string toName(Token &token);
+    std::string toName(const Token &token) const;
 
     /**
      * if converted number is out of range, status is 1.
      */
-    int toInt(Token &token, int &status);
+    int toInt(const Token &token, int &status) const;
 
     /**
      * if converted number is out of range, status is 1.
      */
-    double toDouble(Token &token, int &status);
+    double toDouble(const Token &token, int &status) const;
 };
 
 #endif /* PARSER_LEXER_H_ */

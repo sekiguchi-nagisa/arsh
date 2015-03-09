@@ -144,7 +144,7 @@ unsigned int Lexer::getLineNum() const {
     assert(token.startPos < this->getUsedSize() &&\
             token.startPos + token.size <= this->getUsedSize())
 
-Token Lexer::getLineToken(Token &token) {
+Token Lexer::getLineToken(const Token &token) const {
     CHECK_TOK(token);
 
     // find start index of line.
@@ -171,12 +171,12 @@ Token Lexer::getLineToken(Token &token) {
     return lineToken;
 }
 
-std::string Lexer::toTokenText(Token &token) {
+std::string Lexer::toTokenText(const Token &token) const {
     CHECK_TOK(token);
     return std::string((char*)(this->buf + token.startPos), token.size);
 }
 
-std::string Lexer::toString(Token &token, bool isSingleQuote) {
+std::string Lexer::toString(const Token &token, bool isSingleQuote) const {
     CHECK_TOK(token);
 
     std::string str;
@@ -209,7 +209,7 @@ std::string Lexer::toString(Token &token, bool isSingleQuote) {
     return str;
 }
 
-std::string Lexer::toCmdArg(Token &token) {
+std::string Lexer::toCmdArg(const Token &token) const {
     CHECK_TOK(token);
 
     std::string str;
@@ -233,7 +233,7 @@ std::string Lexer::toCmdArg(Token &token) {
     return str;
 }
 
-std::string Lexer::toName(Token &token) {
+std::string Lexer::toName(const Token &token) const {
     CHECK_TOK(token);
 
     std::string name;
@@ -253,7 +253,7 @@ std::string Lexer::toName(Token &token) {
     return name;
 }
 
-int Lexer::toInt(Token &token, int &status) {
+int Lexer::toInt(const Token &token, int &status) const {
     CHECK_TOK(token);
 
     char str[token.size + 1];
@@ -285,7 +285,7 @@ int Lexer::toInt(Token &token, int &status) {
     return (int) value;
 }
 
-double Lexer::toDouble(Token &token, int &status) {
+double Lexer::toDouble(const Token &token, int &status) const {
     CHECK_TOK(token);
 
     char str[token.size + 1];
