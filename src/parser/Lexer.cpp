@@ -16,8 +16,9 @@
 
 #include <assert.h>
 #include <string.h>
-#include <errno.h>
+#include <stdlib.h>
 #include <math.h>
+#include <limits.h>
 #include <string>
 
 #include <util/debug.h>
@@ -309,7 +310,7 @@ double Lexer::toDouble(const Token &token, int &status) const {
         status = 1;
         return 0;
     }
-    if((value == HUGE_VALF || value == HUGE_VALL) && errno == ERANGE) {
+    if((value == HUGE_VAL || value == -HUGE_VAL) && errno == ERANGE) {
         status = 1;
         return 0;
     }
