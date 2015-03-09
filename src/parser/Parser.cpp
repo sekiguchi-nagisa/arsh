@@ -320,8 +320,10 @@ std::unique_ptr<Node> Parser::parse_statement() {
     }
     case ASSERT: {
         this->matchToken(ASSERT);
+        this->matchToken(LP);
         auto node = std::unique_ptr<Node>(new AssertNode(LN(),
                 this->parse_commandOrExpression().release()));
+        this->matchToken(RP);
         this->parse_statementEnd();
         return node;
     }
