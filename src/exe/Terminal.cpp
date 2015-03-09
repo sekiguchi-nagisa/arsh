@@ -45,9 +45,32 @@ Terminal::~Terminal() {
     el_end(this->el);
 }
 
+static inline bool isSkipLine(const char *line, int count) {
+    if(line == 0) {
+        return false;
+    }
+    for(int i = 0; i < count; i++) {
+        switch(line[i]) {
+        case ' ':
+        case '\t':
+        case '\r':
+        case '\n':
+            break;
+        default:
+            return false;
+        }
+    }
+    return true;
+}
+
 const char *Terminal::readLine() {
     int count;
-    const char *line = el_gets(this->el, &count);
+    const char *line;
+
+    do {
+        line = el_gets(this->el, &count);
+    } while(isSkipLine(line, count));
+
     if(count > 0) {
         history(this->ydsh_history, &this->event, H_ENTER, line);
     }

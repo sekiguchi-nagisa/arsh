@@ -31,7 +31,8 @@ public:
 
     /**
      * not delete return value.
-     * return null if reach end of file or occurs error
+     * return null if reach end of file or occurs error.
+     * skip white space and empty string.
      */
     const char *readLine();
 };
