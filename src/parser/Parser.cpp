@@ -887,7 +887,8 @@ INLINE std::unique_ptr<Node> Parser::parse_unaryExpression() {
     case PLUS:
     case MINUS:
     case NOT: {
-        RET_NODE(createUnaryOpNode(this->consumeAndGetKind(),
+        TokenKind op = this->consumeAndGetKind();
+        RET_NODE(createUnaryOpNode(op,
                 this->parse_unaryExpression().release()));
     }
     default: {
