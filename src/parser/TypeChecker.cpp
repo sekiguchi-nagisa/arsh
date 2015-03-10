@@ -204,8 +204,15 @@ bool TypeChecker::findBlockEnd(BlockNode *blockNode) {
      */
     IfNode *ifNode = dynamic_cast<IfNode*>(endNode);
     if(ifNode != 0) {
-        return this->findBlockEnd(ifNode->getThenNode())
-                && this->findBlockEnd(ifNode->getElseNode());
+        if(!this->findBlockEnd(ifNode->getThenNode())) {
+            return false;
+        }
+        for(BlockNode *elifThenNode : ifNode->getElifThenNodes()) {
+            if(!this->findBlockEnd(elifThenNode)) {
+                return false;
+            }
+        }
+        return this->findBlockEnd(ifNode->getElseNode());
     }
     return false;
 }
@@ -801,6 +808,13 @@ int TypeChecker::visitDoWhileNode(DoWhileNode *node) {
 int TypeChecker::visitIfNode(IfNode *node) {
     this->checkType(this->typePool->getBooleanType(), node->getCondNode());
     this->checkTypeWithNewBlockScope(node->getThenNode());
+
+    unsigned int size = node->getElifCondNodes().size();
+    for(unsigned int i = 0; i < size; i++) {
+        this->checkType(this->typePool->getBooleanType(), node->getElifCondNodes()[i]);
+        this->checkTypeWithNewBlockScope(node->getElifThenNodes()[i]);
+    }
+
     this->checkTypeWithNewBlockScope(node->getElseNode());
     node->setType(this->typePool->getVoidType());
     return 0;

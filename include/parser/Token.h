@@ -29,6 +29,7 @@
     TOKEN(CLASS) \
     TOKEN(CONTINUE) \
     TOKEN(DO) \
+    TOKEN(ELIF) \
     TOKEN(ELSE) \
     TOKEN(EXTENDS) \
     TOKEN(EXPORT_ENV) \

@@ -48,12 +48,12 @@ int main(int argc, char **argv) {
         Parser parser(&lexer);
         try {
             RootNode *rootNode = parser.parse();
-            lineNum = lexer.getLineNum();
             dumpAST(cout, *rootNode);
             delete rootNode;
         } catch(const ParseError &e) {
             listener.displayParseError(lexer, "(stdin)", e);
         }
+        lineNum = lexer.getLineNum();
     }
     return 0;
 }

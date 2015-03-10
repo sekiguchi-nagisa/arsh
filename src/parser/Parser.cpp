@@ -348,20 +348,29 @@ std::unique_ptr<Node> Parser::parse_statement() {
         break; //FIXME:
     }
     case IF: {
-        this->matchToken(IF);
         unsigned int n = LN();
+        this->matchToken(IF);
         this->matchToken(LP);
         auto condNode = this->parse_commandOrExpression();
         this->matchToken(RP);
-        auto thenNode = this->parse_block();
+        auto ifNode = std::unique_ptr<IfNode>(
+                new IfNode(n, condNode.release(), this->parse_block().release()));
 
-        if(this->curTokenKind == ELSE) {    //FIXME: else if
-            NEXT_TOKEN();
-            RET_NODE(new IfNode(n, condNode.release(),
-                    thenNode.release(), this->parse_block().release()));
-        } else {
-            RET_NODE(new IfNode(n, condNode.release(), thenNode.release(), 0));
+        // parse elif
+        while(this->curTokenKind == ELIF) {
+            this->matchToken(ELIF);
+            this->matchToken(LP);
+            auto condNode = this->parse_commandOrExpression();
+            this->matchToken(RP);
+            ifNode->addElifNode(condNode.release(), this->parse_block().release());
         }
+
+        // parse else
+        if(this->curTokenKind == ELSE) {
+            this->matchToken(ELSE);
+            ifNode->addElseNode(this->parse_block().release());
+        }
+        RET_NODE(ifNode.release());
     }
     case IMPORT_ENV: {
         this->matchToken(IMPORT_ENV);
@@ -522,7 +531,7 @@ INLINE std::unique_ptr<Node> Parser::parse_variableDeclaration() {
     }
 }
 
-std::unique_ptr<CatchNode> Parser::parse_catchStatement() {
+INLINE std::unique_ptr<CatchNode> Parser::parse_catchStatement() {
     this->matchToken(CATCH);
     unsigned int n = LN();
     this->matchToken(LP);
@@ -544,7 +553,8 @@ std::unique_ptr<CatchNode> Parser::parse_catchStatement() {
                 blockNode.release()));
     }
 }
-std::unique_ptr<Node> Parser::parse_finallyBlock() {
+
+INLINE std::unique_ptr<Node> Parser::parse_finallyBlock() {
     this->matchToken(FINALLY);
     RET_NODE(new FinallyNode(LN(), this->parse_block().release()));
 }

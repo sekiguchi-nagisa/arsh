@@ -748,6 +748,9 @@ private:
     Node *condNode;
     BlockNode *thenNode;
 
+    std::vector<Node*> elifCondNodes;
+    std::vector<BlockNode*> elifThenNodes;
+
     /**
      * may be null, if has no else block
      */
@@ -757,11 +760,15 @@ public:
     /**
      * elseNode may be null
      */
-    IfNode(unsigned int lineNum, Node *condNode, BlockNode *thenNode, BlockNode *elseNode);
+    IfNode(unsigned int lineNum, Node *condNode, BlockNode *thenNode);
     ~IfNode();
 
     Node *getCondNode();
     BlockNode *getThenNode();
+    void addElifNode(Node *condNode, BlockNode *thenNode);
+    const std::vector<Node*> &getElifCondNodes();
+    const std::vector<BlockNode*> &getElifThenNodes();
+    void addElseNode(BlockNode *elseNode);
 
     /*
      * return EmptyBlockNode, if elseNode is null.

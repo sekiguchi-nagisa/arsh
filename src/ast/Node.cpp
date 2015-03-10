@@ -963,12 +963,12 @@ const std::vector<CmdNode*> &PipedCmdNode::getCmdNodes() {
 }
 
 void PipedCmdNode::dump(Writer &writer) const {
-    std::vector<Node*> procNodes;
+    std::vector<Node*> cmdNodes;
     for(CmdNode *node : this->cmdNodes) {
-        procNodes.push_back(node);
+        cmdNodes.push_back(node);
     }
 
-    WRITE(procNodes);
+    WRITE(cmdNodes);
 }
 
 int PipedCmdNode::accept(NodeVisitor *visitor) {
@@ -1324,9 +1324,9 @@ int DoWhileNode::accept(NodeVisitor *visitor) {
 // ##     IfNode     ##
 // ####################
 
-IfNode::IfNode(unsigned int lineNum, Node *condNode, BlockNode *thenNode, BlockNode *elseNode) :
+IfNode::IfNode(unsigned int lineNum, Node *condNode, BlockNode *thenNode) :
         Node(lineNum), condNode(condNode), thenNode(thenNode),
-        elseNode(elseNode != 0 ? elseNode : new BlockNode()) {
+        elifCondNodes(), elifThenNodes(), elseNode(0) {
 }
 
 IfNode::~IfNode() {
@@ -1335,6 +1335,14 @@ IfNode::~IfNode() {
 
     delete this->thenNode;
     this->thenNode = 0;
+
+    unsigned int size = this->elifCondNodes.size();
+    for(unsigned int i = 0; i < size; i++) {
+        delete this->elifCondNodes[i];
+        delete this->elifThenNodes[i];
+    }
+    this->elifCondNodes.clear();
+    this->elifThenNodes.clear();
 
     delete this->elseNode;
     this->elseNode = 0;
@@ -1348,13 +1356,41 @@ BlockNode *IfNode::getThenNode() {
     return this->thenNode;
 }
 
+void IfNode::addElifNode(Node *condNode, BlockNode *thenNode) {
+    this->elifCondNodes.push_back(condNode);
+    this->elifThenNodes.push_back(thenNode);
+}
+
+const std::vector<Node*> &IfNode::getElifCondNodes() {
+    return this->elifCondNodes;
+}
+
+const std::vector<BlockNode*> &IfNode::getElifThenNodes() {
+    return this->elifThenNodes;
+}
+
+void IfNode::addElseNode(BlockNode *elseNode) {
+    this->elseNode = elseNode;
+}
+
 BlockNode *IfNode::getElseNode() {
+    if(this->elseNode == 0) {
+        this->elseNode = new BlockNode();
+    }
     return this->elseNode;
 }
 
 void IfNode::dump(Writer &writer) const {
     WRITE_PTR(condNode);
     WRITE_PTR(thenNode);
+    WRITE(elifCondNodes);
+
+    std::vector<Node*> elifThenNodes;
+    for(BlockNode *elifThenNode : this->elifThenNodes) {
+        elifThenNodes.push_back(elifThenNode);
+    }
+    WRITE(elifThenNodes);
+
     WRITE_PTR(elseNode);
 }
 

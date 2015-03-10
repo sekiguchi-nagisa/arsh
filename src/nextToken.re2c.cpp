@@ -119,6 +119,7 @@ INIT:
       <STMT,EXPR> 'class'      { MODE(NAME); RET(CLASS); }
       <STMT> 'continue'        { RET(CONTINUE); }
       <STMT,EXPR> 'do'         { RET(DO); }
+      <STMT,EXPR> 'elif'       { RET(ELIF); }
       <STMT,EXPR> 'else'       { RET(ELSE); }
       <STMT,EXPR> 'extends'    { MODE(EXPR); RET(EXTENDS); }
       <STMT,EXPR> 'export-env' { MODE(NAME); RET(EXPORT_ENV); }
