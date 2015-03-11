@@ -25,126 +25,126 @@ Evaluator::~Evaluator() {
     // TODO Auto-generated destructor stub
 }
 
-int Evaluator::visitIntValueNode(IntValueNode *node) {
-    return 0;
+void Evaluator::visitIntValueNode(IntValueNode *node) {
+
 } //TODO
-int Evaluator::visitFloatValueNode(FloatValueNode *node) {
-    return 0;
+void Evaluator::visitFloatValueNode(FloatValueNode *node) {
+
 } //TODO
-int Evaluator::visitStringValueNode(StringValueNode *node) {
-    return 0;
+void Evaluator::visitStringValueNode(StringValueNode *node) {
+
 } //TODO
-int Evaluator::visitStringExprNode(StringExprNode *node) {
-    return 0;
+void Evaluator::visitStringExprNode(StringExprNode *node) {
+
 } //TODO
-int Evaluator::visitArrayNode(ArrayNode *node) {
-    return 0;
+void Evaluator::visitArrayNode(ArrayNode *node) {
+
 } //TODO
-int Evaluator::visitMapNode(MapNode *node) {
-    return 0;
+void Evaluator::visitMapNode(MapNode *node) {
+
 } //TODO
-int Evaluator::visitTupleNode(TupleNode *node) {
-    return 0;
+void Evaluator::visitTupleNode(TupleNode *node) {
+
 } //TODO
-int Evaluator::visitVarNode(VarNode *node) {
-    return 0;
+void Evaluator::visitVarNode(VarNode *node) {
+
 } //TODO
-int Evaluator::visitAccessNode(AccessNode *node) {
-    return 0;
+void Evaluator::visitAccessNode(AccessNode *node) {
+
 } //TODO
-int Evaluator::visitCastNode(CastNode *node) {
-    return 0;
+void Evaluator::visitCastNode(CastNode *node) {
+
 } //TODO
-int Evaluator::visitInstanceOfNode(InstanceOfNode *node) {
-    return 0;
+void Evaluator::visitInstanceOfNode(InstanceOfNode *node) {
+
 } //TODO
-int Evaluator::visitBinaryOpNode(BinaryOpNode *node) {
-    return 0;
+void Evaluator::visitBinaryOpNode(BinaryOpNode *node) {
+
 } //TODO
-int Evaluator::visitArgsNode(ArgsNode *node) {
-    return 0;
+void Evaluator::visitArgsNode(ArgsNode *node) {
+
 } //TODO
-int Evaluator::visitApplyNode(ApplyNode *node) {
-    return 0;
+void Evaluator::visitApplyNode(ApplyNode *node) {
+
 } //TODO
-int Evaluator::visitNewNode(NewNode *node) {
-    return 0;
+void Evaluator::visitNewNode(NewNode *node) {
+
 } //TODO
-int Evaluator::visitCondOpNode(CondOpNode *node) {
-    return 0;
+void Evaluator::visitCondOpNode(CondOpNode *node) {
+
 } //TODO
-int Evaluator::visitCmdNode(CmdNode *node) {
-    return 0;
+void Evaluator::visitCmdNode(CmdNode *node) {
+
 } //TODO
-int Evaluator::visitCmdArgNode(CmdArgNode *node) {
-    return 0;
+void Evaluator::visitCmdArgNode(CmdArgNode *node) {
+
 } //TODO
-int Evaluator::visitSpecialCharNode(SpecialCharNode *node) {
-    return 0;
+void Evaluator::visitSpecialCharNode(SpecialCharNode *node) {
+
 } //TODO
-int Evaluator::visitPipedCmdNode(PipedCmdNode *node) {
-    return 0;
+void Evaluator::visitPipedCmdNode(PipedCmdNode *node) {
+
 } //TODO
-int Evaluator::visitCmdContextNode(CmdContextNode *node) {
-    return 0;
+void Evaluator::visitCmdContextNode(CmdContextNode *node) {
+
 } //TODO
-int Evaluator::visitAssertNode(AssertNode *node) {
-    return 0;
+void Evaluator::visitAssertNode(AssertNode *node) {
+
 } //TODO
-int Evaluator::visitBlockNode(BlockNode *node) {
-    return 0;
+void Evaluator::visitBlockNode(BlockNode *node) {
+
 } //TODO
-int Evaluator::visitBreakNode(BreakNode *node) {
-    return 0;
+void Evaluator::visitBreakNode(BreakNode *node) {
+
 } //TODO
-int Evaluator::visitContinueNode(ContinueNode *node) {
-    return 0;
+void Evaluator::visitContinueNode(ContinueNode *node) {
+
 } //TODO
-int Evaluator::visitExportEnvNode(ExportEnvNode *node) {
-    return 0;
+void Evaluator::visitExportEnvNode(ExportEnvNode *node) {
+
 } //TODO
-int Evaluator::visitImportEnvNode(ImportEnvNode *node) {
-    return 0;
+void Evaluator::visitImportEnvNode(ImportEnvNode *node) {
+
 } //TODO
-int Evaluator::visitForNode(ForNode *node) {
-    return 0;
+void Evaluator::visitForNode(ForNode *node) {
+
 } //TODO
-int Evaluator::visitWhileNode(WhileNode *node) {
-    return 0;
+void Evaluator::visitWhileNode(WhileNode *node) {
+
 } //TODO
-int Evaluator::visitDoWhileNode(DoWhileNode *node) {
-    return 0;
+void Evaluator::visitDoWhileNode(DoWhileNode *node) {
+
 } //TODO
-int Evaluator::visitIfNode(IfNode *node) {
-    return 0;
+void Evaluator::visitIfNode(IfNode *node) {
+
 } //TODO
-int Evaluator::visitReturnNode(ReturnNode *node) {
-    return 0;
+void Evaluator::visitReturnNode(ReturnNode *node) {
+
 } //TODO
-int Evaluator::visitThrowNode(ThrowNode *node) {
-    return 0;
+void Evaluator::visitThrowNode(ThrowNode *node) {
+
 } //TODO
-int Evaluator::visitCatchNode(CatchNode *node) {
-    return 0;
+void Evaluator::visitCatchNode(CatchNode *node) {
+
 } //TODO
-int Evaluator::visitTryNode(TryNode *node) {
-    return 0;
+void Evaluator::visitTryNode(TryNode *node) {
+
 } //TODO
-int Evaluator::visitFinallyNode(FinallyNode *node) {
-    return 0;
+void Evaluator::visitFinallyNode(FinallyNode *node) {
+
 } //TODO
-int Evaluator::visitVarDeclNode(VarDeclNode *node) {
-    return 0;
+void Evaluator::visitVarDeclNode(VarDeclNode *node) {
+
 } //TODO
-int Evaluator::visitAssignNode(AssignNode *node) {
-    return 0;
+void Evaluator::visitAssignNode(AssignNode *node) {
+
 } //TODO
-int Evaluator::visitFunctionNode(FunctionNode *node) {
-    return 0;
+void Evaluator::visitFunctionNode(FunctionNode *node) {
+
 } //TODO
-int Evaluator::visitEmptyNode(EmptyNode *node) {
-    return 0;
+void Evaluator::visitEmptyNode(EmptyNode *node) {
+
 } //TODO
-int Evaluator::visitDummyNode(DummyNode *node) {
-    return 0;
+void Evaluator::visitDummyNode(DummyNode *node) {
+
 } //TODO

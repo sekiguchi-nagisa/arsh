@@ -50,7 +50,7 @@ public:
      */
     DSType *getType() const;
     virtual void dump(Writer &writer) const = 0;
-    virtual int accept(NodeVisitor *visitor) = 0;
+    virtual void accept(NodeVisitor *visitor) = 0;
 };
 
 // expression definition
@@ -74,7 +74,7 @@ public:
 
     void setType(DSType *type); // override
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	// override
+    void accept(NodeVisitor *visitor);	// override
 };
 
 class FloatValueNode: public Node {
@@ -96,7 +96,7 @@ public:
 
     void setType(DSType *type); // override
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	// override
+    void accept(NodeVisitor *visitor);	// override
 };
 
 class StringValueNode: public Node {
@@ -126,7 +126,7 @@ public:
 
     void setType(DSType *type); // override
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	// override
+    void accept(NodeVisitor *visitor);	// override
 };
 
 class StringExprNode: public Node {
@@ -140,7 +140,7 @@ public:
     void addExprNode(Node *node);
     const std::vector<Node*> &getExprNodes();
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	// override
+    void accept(NodeVisitor *visitor);	// override
 };
 
 class ArrayNode: public Node {
@@ -155,7 +155,7 @@ public:
     void setExprNode(unsigned int index, Node *node);
     const std::vector<Node*> &getExprNodes();
     void dump(Writer &writer) const; // override
-    int accept(NodeVisitor *visitor);	//override
+    void accept(NodeVisitor *visitor);	//override
 };
 
 class MapNode: public Node {
@@ -173,7 +173,7 @@ public:
     void setValueNode(unsigned int index, Node *valueNode);
     const std::vector<Node*> &getValueNodes();
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	// override
+    void accept(NodeVisitor *visitor);	// override
 };
 
 class TupleNode: public Node {
@@ -190,7 +190,7 @@ public:
     void addNode(Node *node);
     const std::vector<Node*> &getNodes();
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	// override
+    void accept(NodeVisitor *visitor);	// override
 };
 
 /**
@@ -225,7 +225,7 @@ public:
     const std::string &getVarName();
     void setAttribute(FieldHandle *handle);
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	// override
+    void accept(NodeVisitor *visitor);	// override
     bool isGlobal();
     int getVarIndex();
 
@@ -262,7 +262,7 @@ public:
     void setAdditionalOp(AdditionalOp op);
     AdditionalOp getAdditionnalOp();
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	// override
+    void accept(NodeVisitor *visitor);	// override
 };
 
 class CastNode: public Node {
@@ -302,7 +302,7 @@ public:
     void setFieldIndex(int index);
     int getFieldIndex();
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	//override
+    void accept(NodeVisitor *visitor);	//override
 };
 
 class InstanceOfNode: public Node {
@@ -335,7 +335,7 @@ public:
     void setOpKind(InstanceOfOp opKind);
     InstanceOfOp getOpKind();
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	//override
+    void accept(NodeVisitor *visitor);	//override
 };
 
 /**
@@ -381,7 +381,7 @@ public:
     ApplyNode *getApplyNode();
 
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);   // override
+    void accept(NodeVisitor *visitor);   // override
 };
 
 class ArgsNode : public Node {
@@ -419,7 +419,7 @@ public:
     unsigned int getParamSize();
     const std::vector<std::pair<std::string, Node*>> &getArgPairs();
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);   // override
+    void accept(NodeVisitor *visitor);   // override
 };
 
 class ApplyNode: public Node {
@@ -441,7 +441,7 @@ public:
     void setFuncCall(bool asFuncCall);
     bool isFuncCall();
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	// override
+    void accept(NodeVisitor *visitor);	// override
 
     const static unsigned char FUNC_CALL = 1 << 0;
     const static unsigned char INDEX     = 1 << 1;
@@ -468,7 +468,7 @@ public:
 
     ArgsNode *getArgsNode();
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);   // override
+    void accept(NodeVisitor *visitor);   // override
 };
 
 class CondOpNode: public Node {
@@ -489,7 +489,7 @@ public:
     Node *getRightNode();
     bool isAndOp();
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	//override
+    void accept(NodeVisitor *visitor);	//override
 };
 
 class CmdNode: public Node {	//FIXME: redirect option
@@ -508,7 +508,7 @@ public:
     void addRedirOption(std::pair<int, Node*> &&optionPair);
     const std::vector<std::pair<int, Node*>> &getRedirOptions();
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	//override
+    void accept(NodeVisitor *visitor);	//override
 };
 
 /**
@@ -525,7 +525,7 @@ public:
     void addSegmentNode(Node *node);
     const std::vector<Node*> &getSegmentNodes();
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	// override
+    void accept(NodeVisitor *visitor);	// override
 };
 
 class SpecialCharNode: public Node {	//FIXME:
@@ -538,7 +538,7 @@ public:
 
     const std::string &getName();
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	//override
+    void accept(NodeVisitor *visitor);	//override
 };
 
 class PipedCmdNode: public Node {	//TODO: background ...etc
@@ -552,7 +552,7 @@ public:
     void addCmdNodes(CmdNode *node);
     const std::vector<CmdNode*> &getCmdNodes();
     void dump(Writer &writer) const; // override
-    int accept(NodeVisitor *visitor);	//override
+    void accept(NodeVisitor *visitor);	//override
 };
 
 class CmdContextNode: public Node {
@@ -585,7 +585,7 @@ public:
     void setRetKind(CmdRetKind kind);
     CmdRetKind getRetKind();
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	//override
+    void accept(NodeVisitor *visitor);	//override
 
     const static unsigned char BACKGROUND = 1 << 0;
     const static unsigned char FORK       = 1 << 1;
@@ -603,7 +603,7 @@ public:
 
     Node *getExprNode();
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	// override
+    void accept(NodeVisitor *visitor);	// override
 };
 
 class BlockNode: public Node {
@@ -618,7 +618,7 @@ public:
     void insertNodeToFirst(Node *node);
     const std::list<Node*> &getNodeList();
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	// override
+    void accept(NodeVisitor *visitor);	// override
 };
 
 /**
@@ -634,7 +634,7 @@ public:
     BreakNode(unsigned int lineNum);
 
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	// override
+    void accept(NodeVisitor *visitor);	// override
 };
 
 class ContinueNode: public BlockEndNode {
@@ -642,7 +642,7 @@ public:
     ContinueNode(unsigned int lineNum);
 
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	// override
+    void accept(NodeVisitor *visitor);	// override
 };
 
 class ExportEnvNode: public Node {
@@ -657,7 +657,7 @@ public:
     const std::string &getEnvName();
     Node *getExprNode();
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	// override
+    void accept(NodeVisitor *visitor);	// override
 };
 
 class ImportEnvNode: public Node {
@@ -674,7 +674,7 @@ public:
     bool isGlobal();
     int getVarIndex();
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	// override
+    void accept(NodeVisitor *visitor);	// override
 };
 
 class ForNode: public Node {
@@ -710,7 +710,7 @@ public:
     Node *getIterNode();
     BlockNode *getBlockNode();
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	// override
+    void accept(NodeVisitor *visitor);	// override
 };
 
 class WhileNode: public Node {
@@ -725,7 +725,7 @@ public:
     Node *getCondNode();
     BlockNode *getBlockNode();
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	//override
+    void accept(NodeVisitor *visitor);	//override
 };
 
 class DoWhileNode : public Node {
@@ -740,7 +740,7 @@ public:
     BlockNode *getBlockNode();
     Node *getCondNode();
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);   //override
+    void accept(NodeVisitor *visitor);   //override
 };
 
 class IfNode: public Node {
@@ -776,7 +776,7 @@ public:
     BlockNode *getElseNode();
 
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	// override
+    void accept(NodeVisitor *visitor);	// override
 };
 
 class ReturnNode: public BlockEndNode {
@@ -797,7 +797,7 @@ public:
     Node *getExprNode();
 
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	// override
+    void accept(NodeVisitor *visitor);	// override
 };
 
 class ThrowNode: public BlockEndNode {
@@ -810,7 +810,7 @@ public:
 
     Node *getExprNode();
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	// override
+    void accept(NodeVisitor *visitor);	// override
 };
 
 class CatchNode: public Node {
@@ -849,7 +849,7 @@ public:
 
     BlockNode *getBlockNode();
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	// override
+    void accept(NodeVisitor *visitor);	// override
 };
 
 class TryNode: public Node {	//TODO: finallyNode
@@ -876,7 +876,7 @@ public:
     void addFinallyNode(Node *finallyNode);
     Node *getFinallyNode();
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	// override
+    void accept(NodeVisitor *visitor);	// override
 };
 
 class FinallyNode: public Node {
@@ -889,7 +889,7 @@ public:
 
     BlockNode *getBlockNode();
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	// override
+    void accept(NodeVisitor *visitor);	// override
 };
 
 class VarDeclNode: public Node {
@@ -911,7 +911,7 @@ public:
     Node *getInitValueNode();
     int getVarIndex();
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	// override
+    void accept(NodeVisitor *visitor);	// override
 };
 
 /**
@@ -942,7 +942,7 @@ public:
     Node *getRightNode();
     bool isSelfAssignment();
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);   // override
+    void accept(NodeVisitor *visitor);   // override
 
     /**
      * for ArgsNode
@@ -1005,7 +1005,7 @@ public:
     BlockNode *getBlockNode();
 
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	// override
+    void accept(NodeVisitor *visitor);	// override
 };
 
 // class ClassNode
@@ -1017,7 +1017,7 @@ public:
     EmptyNode(unsigned int lineNum);
 
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);	// override
+    void accept(NodeVisitor *visitor);	// override
 };
 
 class DummyNode: public Node {
@@ -1025,7 +1025,7 @@ public:
     DummyNode();
 
     void dump(Writer &writer) const;  // override
-    int accept(NodeVisitor *visitor);   // override
+    void accept(NodeVisitor *visitor);   // override
 };
 
 /**

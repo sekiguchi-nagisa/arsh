@@ -75,8 +75,8 @@ void IntValueNode::dump(Writer &writer) const {
     }
 }
 
-int IntValueNode::accept(NodeVisitor *visitor) {
-    return visitor->visitIntValueNode(this);
+void IntValueNode::accept(NodeVisitor *visitor) {
+    visitor->visitIntValueNode(this);
 }
 
 // ############################
@@ -106,8 +106,8 @@ void FloatValueNode::dump(Writer &writer) const {
     }
 }
 
-int FloatValueNode::accept(NodeVisitor *visitor) {
-    return visitor->visitFloatValueNode(this);
+void FloatValueNode::accept(NodeVisitor *visitor) {
+    visitor->visitFloatValueNode(this);
 }
 
 // ############################
@@ -144,8 +144,8 @@ void StringValueNode::dump(Writer &writer) const {
     }
 }
 
-int StringValueNode::accept(NodeVisitor *visitor) {
-    return visitor->visitStringValueNode(this);
+void StringValueNode::accept(NodeVisitor *visitor) {
+    visitor->visitStringValueNode(this);
 }
 
 // ############################
@@ -180,8 +180,8 @@ void StringExprNode::dump(Writer &writer) const {
     WRITE(nodes);
 }
 
-int StringExprNode::accept(NodeVisitor *visitor) {
-    return visitor->visitStringExprNode(this);
+void StringExprNode::accept(NodeVisitor *visitor) {
+    visitor->visitStringExprNode(this);
 }
 
 // #######################
@@ -216,8 +216,8 @@ void ArrayNode::dump(Writer &writer) const {
     WRITE(nodes);
 }
 
-int ArrayNode::accept(NodeVisitor *visitor) {
-    return visitor->visitArrayNode(this);
+void ArrayNode::accept(NodeVisitor *visitor) {
+    visitor->visitArrayNode(this);
 }
 
 // #####################
@@ -267,8 +267,8 @@ void MapNode::dump(Writer &writer) const {
     WRITE(valueNodes);
 }
 
-int MapNode::accept(NodeVisitor *visitor) {
-    return visitor->visitMapNode(this);
+void MapNode::accept(NodeVisitor *visitor) {
+    visitor->visitMapNode(this);
 }
 
 // #######################
@@ -300,8 +300,8 @@ void TupleNode::dump(Writer &writer) const {
     WRITE(nodes);
 }
 
-int TupleNode::accept(NodeVisitor *visitor) {
-    return visitor->visitTupleNode(this);
+void TupleNode::accept(NodeVisitor *visitor) {
+    visitor->visitTupleNode(this);
 }
 
 // ############################
@@ -344,8 +344,8 @@ void VarNode::dump(Writer &writer) const {
     WRITE_PRIM(global);
 }
 
-int VarNode::accept(NodeVisitor *visitor) {
-    return visitor->visitVarNode(this);
+void VarNode::accept(NodeVisitor *visitor) {
+    visitor->visitVarNode(this);
 }
 
 bool VarNode::isGlobal() {
@@ -422,8 +422,8 @@ void AccessNode::dump(Writer &writer) const {
 #undef EACH_ENUM
 }
 
-int AccessNode::accept(NodeVisitor *visitor) {
-    return visitor->visitAccessNode(this);
+void AccessNode::accept(NodeVisitor *visitor) {
+    visitor->visitAccessNode(this);
 }
 
 // ######################
@@ -492,8 +492,8 @@ void CastNode::dump(Writer &writer) const {
     WRITE_PRIM(fieldIndex);
 }
 
-int CastNode::accept(NodeVisitor *visitor) {
-    return visitor->visitCastNode(this);
+void CastNode::accept(NodeVisitor *visitor) {
+    visitor->visitCastNode(this);
 }
 
 // ############################
@@ -558,8 +558,8 @@ void InstanceOfNode::dump(Writer &writer) const {
 #undef EACH_ENUM
 }
 
-int InstanceOfNode::accept(NodeVisitor *visitor) {
-    return visitor->visitInstanceOfNode(this);
+void InstanceOfNode::accept(NodeVisitor *visitor) {
+    visitor->visitInstanceOfNode(this);
 }
 
 // ##########################
@@ -620,8 +620,8 @@ void BinaryOpNode::dump(Writer &writer) const {
     WRITE_PTR(applyNode);
 }
 
-int BinaryOpNode::accept(NodeVisitor *visitor) {
-    return visitor->visitBinaryOpNode(this);
+void BinaryOpNode::accept(NodeVisitor *visitor) {
+    visitor->visitBinaryOpNode(this);
 }
 
 // ######################
@@ -680,8 +680,8 @@ void ArgsNode::dump(Writer &writer) const {
     //FIXME: argPairs
 }
 
-int ArgsNode::accept(NodeVisitor *visitor) {
-    return visitor->visitArgsNode(this);
+void ArgsNode::accept(NodeVisitor *visitor) {
+    visitor->visitArgsNode(this);
 }
 
 // #######################
@@ -747,8 +747,8 @@ void ApplyNode::dump(Writer &writer) const {
 #undef EACH_FLAG
 }
 
-int ApplyNode::accept(NodeVisitor *visitor) {
-    return visitor->visitApplyNode(this);
+void ApplyNode::accept(NodeVisitor *visitor) {
+    visitor->visitApplyNode(this);
 }
 
 // #####################
@@ -784,8 +784,8 @@ void NewNode::dump(Writer &writer) const {
     WRITE_PTR(argsNode);
 }
 
-int NewNode::accept(NodeVisitor *visitor) {
-    return visitor->visitNewNode(this);
+void NewNode::accept(NodeVisitor *visitor) {
+    visitor->visitNewNode(this);
 }
 
 // ########################
@@ -822,8 +822,8 @@ void CondOpNode::dump(Writer &writer) const {
     WRITE_PRIM(andOp);
 }
 
-int CondOpNode::accept(NodeVisitor *visitor) {
-    return visitor->visitCondOpNode(this);
+void CondOpNode::accept(NodeVisitor *visitor) {
+    visitor->visitCondOpNode(this);
 }
 
 // #####################
@@ -877,8 +877,8 @@ void CmdNode::dump(Writer &writer) const {
     //FIXME: redirOption
 }
 
-int CmdNode::accept(NodeVisitor *visitor) {
-    return visitor->visitCmdNode(this);
+void CmdNode::accept(NodeVisitor *visitor) {
+    visitor->visitCmdNode(this);
 }
 
 // ########################
@@ -911,8 +911,8 @@ void CmdArgNode::dump(Writer &writer) const {
     WRITE(segmentNodes);
 }
 
-int CmdArgNode::accept(NodeVisitor *visitor) {
-    return visitor->visitCmdArgNode(this);
+void CmdArgNode::accept(NodeVisitor *visitor) {
+    visitor->visitCmdArgNode(this);
 }
 
 // #############################
@@ -934,8 +934,8 @@ void SpecialCharNode::dump(Writer &writer) const {
     WRITE(name);
 }
 
-int SpecialCharNode::accept(NodeVisitor *visitor) {
-    return visitor->visitSpecialCharNode(this);
+void SpecialCharNode::accept(NodeVisitor *visitor) {
+    visitor->visitSpecialCharNode(this);
 }
 
 // ##########################
@@ -971,8 +971,8 @@ void PipedCmdNode::dump(Writer &writer) const {
     WRITE(cmdNodes);
 }
 
-int PipedCmdNode::accept(NodeVisitor *visitor) {
-    return visitor->visitPipedCmdNode(this);
+void PipedCmdNode::accept(NodeVisitor *visitor) {
+    visitor->visitPipedCmdNode(this);
 }
 
 // ###########################
@@ -1039,8 +1039,8 @@ void CmdContextNode::dump(Writer &writer) const {
 #undef EACH_FLAG
 }
 
-int CmdContextNode::accept(NodeVisitor *visitor) {
-    return visitor->visitCmdContextNode(this);
+void CmdContextNode::accept(NodeVisitor *visitor) {
+    visitor->visitCmdContextNode(this);
 }
 
 // ########################
@@ -1064,8 +1064,8 @@ void AssertNode::dump(Writer &writer) const {
     WRITE_PTR(exprNode);
 }
 
-int AssertNode::accept(NodeVisitor *visitor) {
-    return visitor->visitAssertNode(this);
+void AssertNode::accept(NodeVisitor *visitor) {
+    visitor->visitAssertNode(this);
 }
 
 // #######################
@@ -1099,8 +1099,8 @@ void BlockNode::dump(Writer &writer) const {
     WRITE(nodeList);
 }
 
-int BlockNode::accept(NodeVisitor *visitor) {
-    return visitor->visitBlockNode(this);
+void BlockNode::accept(NodeVisitor *visitor) {
+    visitor->visitBlockNode(this);
 }
 
 // ######################
@@ -1123,8 +1123,8 @@ void BreakNode::dump(Writer &writer) const {
     // do nothing
 }
 
-int BreakNode::accept(NodeVisitor *visitor) {
-    return visitor->visitBreakNode(this);
+void BreakNode::accept(NodeVisitor *visitor) {
+    visitor->visitBreakNode(this);
 }
 
 // ##########################
@@ -1139,8 +1139,8 @@ void ContinueNode::dump(Writer &writer) const {
     // do nothing
 }
 
-int ContinueNode::accept(NodeVisitor *visitor) {
-    return visitor->visitContinueNode(this);
+void ContinueNode::accept(NodeVisitor *visitor) {
+    visitor->visitContinueNode(this);
 }
 
 // ###########################
@@ -1169,8 +1169,8 @@ void ExportEnvNode::dump(Writer &writer) const {
     WRITE_PTR(exprNode);
 }
 
-int ExportEnvNode::accept(NodeVisitor *visitor) {
-    return visitor->visitExportEnvNode(this);
+void ExportEnvNode::accept(NodeVisitor *visitor) {
+    visitor->visitExportEnvNode(this);
 }
 
 // ###########################
@@ -1204,8 +1204,8 @@ void ImportEnvNode::dump(Writer &writer) const {
     WRITE_PRIM(varIndex);
 }
 
-int ImportEnvNode::accept(NodeVisitor *visitor) {
-    return visitor->visitImportEnvNode(this);
+void ImportEnvNode::accept(NodeVisitor *visitor) {
+    visitor->visitImportEnvNode(this);
 }
 
 // #####################
@@ -1255,8 +1255,8 @@ void ForNode::dump(Writer &writer) const {
     WRITE_PTR(blockNode);
 }
 
-int ForNode::accept(NodeVisitor *visitor) {
-    return visitor->visitForNode(this);
+void ForNode::accept(NodeVisitor *visitor) {
+    visitor->visitForNode(this);
 }
 
 // #######################
@@ -1288,8 +1288,8 @@ void WhileNode::dump(Writer &writer) const {
     WRITE_PTR(blockNode);
 }
 
-int WhileNode::accept(NodeVisitor *visitor) {
-    return visitor->visitWhileNode(this);
+void WhileNode::accept(NodeVisitor *visitor) {
+    visitor->visitWhileNode(this);
 }
 
 // #########################
@@ -1316,8 +1316,8 @@ void DoWhileNode::dump(Writer &writer) const {
     WRITE_PTR(condNode);
 }
 
-int DoWhileNode::accept(NodeVisitor *visitor) {
-    return visitor->visitDoWhileNode(this);
+void DoWhileNode::accept(NodeVisitor *visitor) {
+    visitor->visitDoWhileNode(this);
 }
 
 // ####################
@@ -1394,8 +1394,8 @@ void IfNode::dump(Writer &writer) const {
     WRITE_PTR(elseNode);
 }
 
-int IfNode::accept(NodeVisitor *visitor) {
-    return visitor->visitIfNode(this);
+void IfNode::accept(NodeVisitor *visitor) {
+    visitor->visitIfNode(this);
 }
 
 // ########################
@@ -1423,8 +1423,8 @@ void ReturnNode::dump(Writer &writer) const {
     WRITE_PTR(exprNode);
 }
 
-int ReturnNode::accept(NodeVisitor *visitor) {
-    return visitor->visitReturnNode(this);
+void ReturnNode::accept(NodeVisitor *visitor) {
+    visitor->visitReturnNode(this);
 }
 
 // #######################
@@ -1448,8 +1448,8 @@ void ThrowNode::dump(Writer &writer) const {
     WRITE_PTR(exprNode);
 }
 
-int ThrowNode::accept(NodeVisitor *visitor) {
-    return visitor->visitThrowNode(this);
+void ThrowNode::accept(NodeVisitor *visitor) {
+    visitor->visitThrowNode(this);
 }
 
 // #######################
@@ -1509,8 +1509,8 @@ void CatchNode::dump(Writer &writer) const {
     WRITE_PTR(blockNode);
 }
 
-int CatchNode::accept(NodeVisitor *visitor) {
-    return visitor->visitCatchNode(this);
+void CatchNode::accept(NodeVisitor *visitor) {
+    visitor->visitCatchNode(this);
 }
 
 // #####################
@@ -1572,8 +1572,8 @@ void TryNode::dump(Writer &writer) const {
     WRITE_PTR(finallyNode);
 }
 
-int TryNode::accept(NodeVisitor *visitor) {
-    return visitor->visitTryNode(this);
+void TryNode::accept(NodeVisitor *visitor) {
+    visitor->visitTryNode(this);
 }
 
 // #########################
@@ -1597,8 +1597,8 @@ void FinallyNode::dump(Writer &writer) const {
     WRITE_PTR(blockNode);
 }
 
-int FinallyNode::accept(NodeVisitor *visitor) {
-    return visitor->visitFinallyNode(this);
+void FinallyNode::accept(NodeVisitor *visitor) {
+    visitor->visitFinallyNode(this);
 }
 
 // #########################
@@ -1648,8 +1648,8 @@ void VarDeclNode::dump(Writer &writer) const {
     WRITE_PTR(initValueNode);
 }
 
-int VarDeclNode::accept(NodeVisitor *visitor) {
-    return visitor->visitVarDeclNode(this);
+void VarDeclNode::accept(NodeVisitor *visitor) {
+    visitor->visitVarDeclNode(this);
 }
 
 // ########################
@@ -1690,8 +1690,8 @@ void AssignNode::dump(Writer &writer) const {
     WRITE_PRIM(selfAssign);
 }
 
-int AssignNode::accept(NodeVisitor *visitor) {
-    return visitor->visitAssignNode(this);
+void AssignNode::accept(NodeVisitor *visitor) {
+    visitor->visitAssignNode(this);
 }
 
 std::pair<Node*, Node*> AssignNode::split(AssignNode *node) {
@@ -1777,8 +1777,8 @@ void FunctionNode::dump(Writer &writer) const {
     //FIXME:
 }
 
-int FunctionNode::accept(NodeVisitor *visitor) {
-    return visitor->visitFunctionNode(this);
+void FunctionNode::accept(NodeVisitor *visitor) {
+    visitor->visitFunctionNode(this);
 }
 
 // #######################
@@ -1797,8 +1797,8 @@ void EmptyNode::dump(Writer &writer) const {
     // do nothing
 }
 
-int EmptyNode::accept(NodeVisitor *visitor) {
-    return visitor->visitEmptyNode(this);
+void EmptyNode::accept(NodeVisitor *visitor) {
+    visitor->visitEmptyNode(this);
 }
 
 // #######################
@@ -1813,8 +1813,8 @@ void DummyNode::dump(Writer &writer) const {
     // do nothing
 }
 
-int DummyNode::accept(NodeVisitor *visitor) {
-    return visitor->visitDummyNode(this);
+void DummyNode::accept(NodeVisitor *visitor) {
+    visitor->visitDummyNode(this);
 }
 
 // ######################
