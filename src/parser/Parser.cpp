@@ -347,7 +347,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
         return node;
     }
     case FOR: {
-        break; //FIXME:
+        return this->parse_forStatement();
     }
     case IF: {
         this->matchToken(IF);
@@ -463,7 +463,6 @@ std::unique_ptr<Node> Parser::parse_statement() {
         return node;
     }
     }
-    return std::unique_ptr<Node>(nullptr);
 }
 
 INLINE void Parser::parse_statementEnd() {
@@ -525,6 +524,78 @@ INLINE std::unique_ptr<Node> Parser::parse_variableDeclaration() {
     }
     default:
         E_ALTER(alters);
+        return std::unique_ptr<Node>(nullptr);
+    }
+}
+
+INLINE std::unique_ptr<Node> Parser::parse_forStatement() {
+    unsigned int n = LN();
+    this->matchToken(FOR);
+    this->matchToken(LP);
+
+    auto initNode = this->parse_forInit();
+
+    VarNode *varNode = dynamic_cast<VarNode*>(initNode.get());
+    if(varNode != 0) { // treat as for-in
+        initNode.release();
+        auto nameNode = std::unique_ptr<VarNode>(varNode);
+
+        this->hasNoNewLine();
+        this->matchToken(IN);
+        auto exprNode = this->parse_expression();
+        this->matchToken(RP);
+
+        RET_NODE(createForInNode(n, nameNode.release(),
+                exprNode.release(), this->parse_block().release()));
+    }
+
+    this->matchToken(LINE_END);
+
+    auto condNode = this->parse_forCond();
+    this->matchToken(LINE_END);
+
+    auto iterNode = this->parse_forIter();
+
+    this->matchToken(RP);
+
+    RET_NODE(new ForNode(n, initNode.release(), condNode.release(),
+            iterNode.release(), this->parse_block().release()));
+}
+
+INLINE std::unique_ptr<Node> Parser::parse_forInit() {
+    switch(this->curTokenKind) {
+    EACH_LA_varDecl(GEN_LA_CASE) {
+        return this->parse_variableDeclaration();
+    }
+    EACH_LA_expression(GEN_LA_CASE) {
+        return this->parse_expression();
+    }
+    default:
+        return std::unique_ptr<Node>(nullptr);
+    }
+}
+
+INLINE std::unique_ptr<Node> Parser::parse_forCond() {
+#define EACH_LA_cmdOrExpr(OP) \
+    OP(COMMAND) \
+    EACH_LA_expression(OP)
+
+    switch(this->curTokenKind) {
+    EACH_LA_cmdOrExpr(GEN_LA_CASE) {
+        return this->parse_commandOrExpression();
+    }
+    default:
+        return std::unique_ptr<Node>(nullptr);
+    }
+#undef EACH_LA_cmdOrExpr
+}
+
+INLINE std::unique_ptr<Node> Parser::parse_forIter() {
+    switch(this->curTokenKind) {
+    EACH_LA_expression(GEN_LA_CASE) {
+        return this->parse_expression();
+    }
+    default:
         return std::unique_ptr<Node>(nullptr);
     }
 }

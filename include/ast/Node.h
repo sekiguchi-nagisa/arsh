@@ -1052,7 +1052,7 @@ TokenKind resolveAssignOp(TokenKind op);
 
 ApplyNode *createApplyNode(Node *recvNode, std::string &&methodName);
 
-ForNode *createForInNode(unsigned int lineNum, std::string &&initName, Node *exprNode, BlockNode *blockNode);
+ForNode *createForInNode(unsigned int lineNum, VarNode *varNode, Node *exprNode, BlockNode *blockNode);
 
 Node *createSuffixNode(Node *leftNode, TokenKind op);
 

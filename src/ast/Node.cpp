@@ -1922,7 +1922,7 @@ ApplyNode *createApplyNode(Node *recvNode, std::string &&methodName) {
     return new ApplyNode(a, new ArgsNode());
 }
 
-ForNode *createForInNode(unsigned int lineNum, std::string &&initName, Node *exprNode, BlockNode *blockNode) {
+ForNode *createForInNode(unsigned int lineNum, VarNode *varNode, Node *exprNode, BlockNode *blockNode) {
     // create for-init
     ApplyNode *apply_reset = createApplyNode(exprNode, std::string(OP_RESET));
     std::string reset_var_name = std::to_string(rand());
@@ -1935,7 +1935,8 @@ ForNode *createForInNode(unsigned int lineNum, std::string &&initName, Node *exp
     // create forIn-init
     reset_var = new VarNode(lineNum, std::string(reset_var_name));
     ApplyNode *apply_next = createApplyNode(reset_var, std::string(OP_NEXT));
-    VarDeclNode *init_var = new VarDeclNode(lineNum, std::move(initName), apply_next, false);
+    VarDeclNode *init_var = new VarDeclNode(lineNum,
+            VarNode::extractVarNameAndDelete(varNode), apply_next, false);
 
     // insert init to block
     blockNode->insertNodeToFirst(init_var);

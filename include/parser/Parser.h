@@ -81,6 +81,10 @@ private:
     void parse_statementEnd();
     std::unique_ptr<BlockNode> parse_block();
     std::unique_ptr<Node> parse_variableDeclaration();
+    std::unique_ptr<Node> parse_forStatement();
+    std::unique_ptr<Node> parse_forInit();
+    std::unique_ptr<Node> parse_forCond();
+    std::unique_ptr<Node> parse_forIter();
 
     std::unique_ptr<CatchNode> parse_catchStatement();
     std::unique_ptr<Node> parse_finallyBlock();
