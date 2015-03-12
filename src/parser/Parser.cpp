@@ -305,16 +305,17 @@ std::unique_ptr<TypeToken> Parser::parse_typeName() {
 }
 
 std::unique_ptr<Node> Parser::parse_statement() {
+    unsigned int n = LN();
+
     switch(this->curTokenKind) {
     case LINE_END: {
-        unsigned int n = LN();
         this->matchToken(LINE_END);
         RET_NODE(new EmptyNode(n));
     }
     case ASSERT: {
         this->matchToken(ASSERT);
         this->matchToken(LP);
-        auto node = std::unique_ptr<Node>(new AssertNode(LN(),
+        auto node = std::unique_ptr<Node>(new AssertNode(n,
                 this->parse_commandOrExpression().release()));
         this->matchToken(RP);
         this->parse_statementEnd();
@@ -322,19 +323,18 @@ std::unique_ptr<Node> Parser::parse_statement() {
     }
     case BREAK: {
         this->matchToken(BREAK);
-        auto node = std::unique_ptr<Node>(new BreakNode(LN()));
+        auto node = std::unique_ptr<Node>(new BreakNode(n));
         this->parse_statementEnd();
         return node;
     }
     case CONTINUE: {
         this->matchToken(BREAK);
-        auto node = std::unique_ptr<Node>(new ContinueNode(LN()));
+        auto node = std::unique_ptr<Node>(new ContinueNode(n));
         this->parse_statementEnd();
         return node;
     }
     case EXPORT_ENV: {
         this->matchToken(EXPORT_ENV);
-        unsigned int n = LN();
         std::string name = this->lexer->toName(
                 this->matchAndGetToken(IDENTIFIER));
         this->hasNoNewLine();
@@ -348,7 +348,6 @@ std::unique_ptr<Node> Parser::parse_statement() {
         break; //FIXME:
     }
     case IF: {
-        unsigned int n = LN();
         this->matchToken(IF);
         this->matchToken(LP);
         auto condNode = this->parse_commandOrExpression();
@@ -374,14 +373,13 @@ std::unique_ptr<Node> Parser::parse_statement() {
     }
     case IMPORT_ENV: {
         this->matchToken(IMPORT_ENV);
-        auto node = std::unique_ptr<Node>(new ImportEnvNode(LN(),
+        auto node = std::unique_ptr<Node>(new ImportEnvNode(n,
                 this->lexer->toName(this->matchAndGetToken(IDENTIFIER))));
         this->parse_statementEnd();
         return node;
     }
     case RETURN: {
         this->matchToken(RETURN);
-        unsigned int n = LN();
         auto node = std::unique_ptr<Node>(nullptr);
 
         bool next;
@@ -403,14 +401,13 @@ std::unique_ptr<Node> Parser::parse_statement() {
     }
     case THROW: {
         this->matchToken(THROW);
-        auto node = std::unique_ptr<Node>(new ThrowNode(LN(),
+        auto node = std::unique_ptr<Node>(new ThrowNode(n,
                 this->parse_expression().release()));
         this->parse_statementEnd();
         return node;
     }
     case WHILE: {
         this->matchToken(WHILE);
-        unsigned int n = LN();
         this->matchToken(LP);
         auto condNode = this->parse_commandOrExpression();
         this->matchToken(RP);
@@ -418,7 +415,6 @@ std::unique_ptr<Node> Parser::parse_statement() {
     }
     case DO: {
         this->matchToken(DO);
-        unsigned int n = LN();
         auto blockNode = this->parse_block();
         this->matchToken(WHILE);
         this->matchToken(LP);
@@ -430,7 +426,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
     }
     case TRY: {
         this->matchToken(TRY);
-        auto tryNode = std::unique_ptr<TryNode>(new TryNode(LN(), this->parse_block().release()));
+        auto tryNode = std::unique_ptr<TryNode>(new TryNode(n, this->parse_block().release()));
 
         // parse catch
         bool next = true;
