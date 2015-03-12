@@ -1062,4 +1062,6 @@ Node *createIndexNode(Node *recvNode, Node *indexNode);
 
 Node *createUnaryOpNode(TokenKind op, Node *recvNode);
 
+Node *createBinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode);
+
 #endif /* AST_NODE_H_ */

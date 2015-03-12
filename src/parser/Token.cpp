@@ -34,3 +34,47 @@ bool Token::operator==(const Token &token) {
     return this->startPos == token.startPos &&
             this->size == token.size;
 }
+
+unsigned int getPrecedence(TokenKind kind) {
+    switch(kind) {
+    case MUL:
+    case DIV:
+    case MOD:
+        return 300;
+    case PLUS:
+    case MINUS:
+        return 280;
+    case LA:
+    case RA:
+    case LE:
+    case GE:
+        return 260;
+    case IS:
+    case AS:
+        return 240;
+    case EQ:
+    case NE:
+    case RE_MATCH:
+    case RE_UNMATCH:
+        return 220;
+    case AND:
+        return 200;
+    case XOR:
+        return 180;
+    case OR:
+        return 160;
+    case COND_AND:
+        return 140;
+    case COND_OR:
+        return 120;
+    case ASSIGN:
+    case ADD_ASSIGN:
+    case SUB_ASSIGN:
+    case MUL_ASSIGN:
+    case DIV_ASSIGN:
+    case MOD_ASSIGN:
+        return 100;
+    default:
+        return 0;
+    }
+}

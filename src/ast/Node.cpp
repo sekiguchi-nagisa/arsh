@@ -1990,3 +1990,14 @@ Node *createIndexNode(Node *recvNode, Node *indexNode) {
 Node *createUnaryOpNode(TokenKind op, Node *recvNode) {
     return createApplyNode(recvNode, resolveUnaryOpName(op));
 }
+
+Node *createBinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode) {
+    switch(op) {
+    case COND_OR:
+        return new CondOpNode(leftNode, rightNode, false);
+    case COND_AND:
+        return new CondOpNode(leftNode, rightNode, true);
+    default:
+        return new BinaryOpNode(leftNode, op, rightNode);
+    }
+}

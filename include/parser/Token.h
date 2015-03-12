@@ -156,4 +156,9 @@ struct Token {
     bool operator==(const Token &token);
 };
 
+/**
+ * get binary operator precedence.
+ */
+unsigned int getPrecedence(TokenKind kind);
+
 #endif /* PARSER_TOKENKIND_H_ */

@@ -126,6 +126,8 @@
 
 #define RET_NODE(node) return std::unique_ptr<Node>(node)
 
+#define PRECEDENCE() getPrecedence(this->curTokenKind)
+
 
 // ####################
 // ##     Parser     ##
@@ -683,204 +685,37 @@ INLINE std::unique_ptr<Node> Parser::parse_commandOrExpression() {
     }
 }
 
-std::unique_ptr<Node> Parser::parse_expression() {
-    return this->parse_assignment();
+INLINE std::unique_ptr<Node> Parser::parse_expression() {
+    return this->parse_expression(
+            this->parse_unaryExpression(), getPrecedence(ASSIGN));
 }
 
-INLINE std::unique_ptr<Node> Parser::parse_assignment() {
-    // parse left handle side
-    auto node = this->parse_condOrExpression();
-
-    // parse right handle side
-    if(!HAS_NL()) {
+std::unique_ptr<Node> Parser::parse_expression(std::unique_ptr<Node> &&leftNode,
+        unsigned int basePrecedence) {
+    std::unique_ptr<Node> node = std::move(leftNode);
+    for(unsigned int p = PRECEDENCE();
+            !HAS_NL() && p >= basePrecedence; p = PRECEDENCE()) {
         switch(this->curTokenKind) {
-        case ASSIGN:
-        case ADD_ASSIGN:
-        case SUB_ASSIGN:
-        case MUL_ASSIGN:
-        case DIV_ASSIGN:
-        case MOD_ASSIGN: {
-            TokenKind kind = this->consumeAndGetKind();
-            node = std::unique_ptr<Node>(createAssignNode(node.release(),
-                    kind, this->parse_commandOrExpression().release()));
-            break;
-        }
-        default:
-            break;
-        }
-    }
-    return node;
-}
-
-INLINE std::unique_ptr<Node> Parser::parse_condOrExpression() {
-    auto node = this->parse_condAndExpression();
-
-    while(!HAS_NL() && this->curTokenKind == COND_OR) {
-        this->matchToken(COND_OR);
-        node = std::unique_ptr<Node>(new CondOpNode(node.release(),
-                this->parse_condAndExpression().release(), false));
-    }
-    return node;
-}
-
-INLINE std::unique_ptr<Node> Parser::parse_condAndExpression() {
-    auto node = this->parse_orExpression();
-
-    while(!HAS_NL() && this->curTokenKind == COND_AND) {
-        this->matchToken(COND_AND);
-        node = std::unique_ptr<Node>(new CondOpNode(node.release(),
-                this->parse_orExpression().release(), true));
-    }
-    return node;
-}
-
-INLINE std::unique_ptr<Node> Parser::parse_orExpression() {
-    auto node = this->parse_xorExpression();
-
-    while(!HAS_NL() && this->curTokenKind == OR) {
-        TokenKind op = this->consumeAndGetKind();
-        node = std::unique_ptr<Node>(new BinaryOpNode(node.release(), op,
-                this->parse_xorExpression().release()));
-    }
-    return node;
-}
-
-INLINE std::unique_ptr<Node> Parser::parse_xorExpression() {
-    auto node = this->parse_andExpression();
-
-    while(!HAS_NL() && this->curTokenKind == XOR) {
-        TokenKind op = this->consumeAndGetKind();
-        node = std::unique_ptr<Node>(new BinaryOpNode(node.release(), op,
-                this->parse_andExpression().release()));
-    }
-    return node;
-}
-
-INLINE std::unique_ptr<Node> Parser::parse_andExpression() {
-    auto node = this->parse_equalityExpression();
-
-    while(!HAS_NL() && this->curTokenKind == AND) {
-        TokenKind op = this->consumeAndGetKind();
-        node = std::unique_ptr<Node>(new BinaryOpNode(node.release(), op,
-                this->parse_equalityExpression().release()));
-    }
-    return node;
-}
-
-INLINE std::unique_ptr<Node> Parser::parse_equalityExpression() {
-    auto node = this->parse_typeExpression();
-
-    bool next = true;
-    while(!HAS_NL() && next) {
-        switch(this->curTokenKind) {
-        case EQ:
-        case NE:
-        case RE_MATCH:
-        case RE_UNMATCH: {
-            TokenKind op = this->consumeAndGetKind();
-            node = std::unique_ptr<Node>(new BinaryOpNode(node.release(), op,
-                    this->parse_typeExpression().release()));
-            break;
-        }
-        default: {
-            next = false;
-            break;
-        }
-        }
-    }
-    return node;
-}
-
-
-INLINE std::unique_ptr<Node> Parser::parse_typeExpression() {
-    auto node = this->parse_relationalExpression();
-
-    bool next = true;
-    while(!HAS_NL() && next) {
-        switch(this->curTokenKind) {
-        case IS: {
-            this->matchToken(IS);
-            node = std::unique_ptr<Node>(new InstanceOfNode(node.release(),
-                    this->parse_typeName().release()));
-            break;
-        }
         case AS: {
             this->matchToken(AS);
-            node = std::unique_ptr<Node>(new CastNode(node.release(),
+            this->hasNoNewLine();
+            RET_NODE(new CastNode(node.release(),
                     this->parse_typeName().release()));
-            break;
+        }
+        case IS: {
+            this->matchToken(IS);
+            this->hasNoNewLine();
+            RET_NODE(new InstanceOfNode(node.release(),
+                    this->parse_typeName().release()));
         }
         default: {
-            next = false;
-            break;
-        }
-        }
-    }
-    return node;
-}
-
-INLINE std::unique_ptr<Node> Parser::parse_relationalExpression() {
-    auto node = this->parse_addExpression();
-
-    bool next = true;
-    while(!HAS_NL() && next) {
-        switch(this->curTokenKind) {
-        case LA:
-        case RA:
-        case LE:
-        case GE: {
             TokenKind op = this->consumeAndGetKind();
-            node = std::unique_ptr<Node>(new BinaryOpNode(node.release(), op,
-                    this->parse_addExpression().release()));
-            break;
-        }
-        default: {
-            next = false;
-            break;
-        }
-        }
-    }
-    return node;
-}
-
-INLINE std::unique_ptr<Node> Parser::parse_addExpression() {
-    auto node = this->parse_mulExpression();
-
-    bool next = true;
-    while(!HAS_NL() && next) {
-        switch(this->curTokenKind) {
-        case PLUS:
-        case MINUS: {
-            TokenKind op = this->consumeAndGetKind();
-            node = std::unique_ptr<Node>(new BinaryOpNode(node.release(), op,
-                    this->parse_mulExpression().release()));
-            break;
-        }
-        default: {
-            next = false;
-            break;
-        }
-        }
-    }
-    return node;
-}
-
-INLINE std::unique_ptr<Node> Parser::parse_mulExpression() {
-    auto node = this->parse_unaryExpression();
-
-    bool next = true;
-    while(!HAS_NL() && next) {
-        switch(this->curTokenKind) {
-        case MUL:
-        case DIV:
-        case MOD: {
-            TokenKind op = this->consumeAndGetKind();
-            node = std::unique_ptr<Node>(new BinaryOpNode(node.release(), op,
-                    this->parse_unaryExpression().release()));
-            break;
-        }
-        default: {
-            next = false;
+            auto rightNode = this->parse_unaryExpression();
+            for(unsigned int nextP = PRECEDENCE(); nextP >= p; nextP = PRECEDENCE()) {
+                rightNode = this->parse_expression(std::move(rightNode), nextP);
+            }
+            node = std::unique_ptr<Node>(
+                    createBinaryOpNode(node.release(), op, rightNode.release()));
             break;
         }
         }

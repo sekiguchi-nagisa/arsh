@@ -95,17 +95,8 @@ private:
 
     std::unique_ptr<Node> parse_commandOrExpression();
     std::unique_ptr<Node> parse_expression();
-    std::unique_ptr<Node> parse_assignment();
-    std::unique_ptr<Node> parse_condOrExpression();
-    std::unique_ptr<Node> parse_condAndExpression();
-    std::unique_ptr<Node> parse_orExpression();
-    std::unique_ptr<Node> parse_xorExpression();
-    std::unique_ptr<Node> parse_andExpression();
-    std::unique_ptr<Node> parse_equalityExpression();
-    std::unique_ptr<Node> parse_typeExpression();
-    std::unique_ptr<Node> parse_relationalExpression();
-    std::unique_ptr<Node> parse_addExpression();
-    std::unique_ptr<Node> parse_mulExpression();
+    std::unique_ptr<Node> parse_expression(std::unique_ptr<Node> &&leftNode,
+            unsigned int basePrecedence);
     std::unique_ptr<Node> parse_unaryExpression();
     std::unique_ptr<Node> parse_suffixExpression();
     std::unique_ptr<Node> parse_memberExpression();
