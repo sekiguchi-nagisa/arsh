@@ -47,6 +47,14 @@ DSType *Node::getType() const {
     return this->type;
 }
 
+Node *Node::convertToStringNode() {
+    return createApplyNode(this, std::string(OP_INTERP));
+}
+
+Node *Node::convertToCmdArg() {
+    return createApplyNode(this, std::string(OP_TO_CMD_ARG));
+}
+
 
 // ##########################
 // ##     IntValueNode     ##
@@ -132,6 +140,14 @@ void StringValueNode::setType(DSType *type) {
             new String_Object(this->type, std::move(this->tempValue)));
 }
 
+Node *StringValueNode::convertToStringNode() {
+    return this;
+}
+
+Node *StringValueNode::convertToCmdArg() {
+    return this;
+}
+
 void StringValueNode::dump(Writer &writer) const {
     if(this->type == 0) {
         writer.write(NAME(tempValue), this->tempValue);
@@ -164,16 +180,19 @@ StringExprNode::~StringExprNode() {
 }
 
 void StringExprNode::addExprNode(Node *node) {
-    if(dynamic_cast<StringValueNode*>(node) == 0 &&
-            dynamic_cast<StringExprNode*>(node) == 0 &&
-            dynamic_cast<CmdContextNode*>(node) == 0) {
-        node = createApplyNode(node, std::string(OP_INTERP));
-    }
-    this->nodes.push_back(node);
+    this->nodes.push_back(node->convertToStringNode());
 }
 
 const std::vector<Node*> &StringExprNode::getExprNodes() {
     return this->nodes;
+}
+
+Node *StringExprNode::convertToStringNode() {
+    return this;
+}
+
+Node *StringExprNode::convertToCmdArg() {
+    return this;
 }
 
 void StringExprNode::dump(Writer &writer) const {
@@ -898,9 +917,7 @@ CmdArgNode::~CmdArgNode() {
 }
 
 void CmdArgNode::addSegmentNode(Node *node) {
-    //FIXME:
-
-    this->segmentNodes.push_back(node);
+    this->segmentNodes.push_back(node->convertToCmdArg());
 }
 
 const std::vector<Node*> &CmdArgNode::getSegmentNodes() {
@@ -1010,6 +1027,16 @@ void CmdContextNode::setRetKind(CmdRetKind kind) {
 
 CmdContextNode::CmdRetKind CmdContextNode::getRetKind() {
     return this->retKind;
+}
+
+Node *CmdContextNode::convertToStringNode() {
+    this->setRetKind(STR);
+    return this;
+}
+
+Node *CmdContextNode::convertToCmdArg() {
+    this->setRetKind(ARRAY);
+    return this;
 }
 
 void CmdContextNode::dump(Writer &writer) const {

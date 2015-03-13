@@ -49,6 +49,8 @@ public:
      * return null, before type checking
      */
     DSType *getType() const;
+    virtual Node *convertToStringNode();
+    virtual Node *convertToCmdArg();
     virtual void dump(Writer &writer) const = 0;
     virtual void accept(NodeVisitor *visitor) = 0;
 };
@@ -125,6 +127,8 @@ public:
     std::shared_ptr<DSObject> getValue();
 
     void setType(DSType *type); // override
+    Node *convertToStringNode(); // override
+    Node *convertToCmdArg(); // override
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
 };
@@ -139,6 +143,8 @@ public:
 
     void addExprNode(Node *node);
     const std::vector<Node*> &getExprNodes();
+    Node *convertToStringNode(); // override
+    Node *convertToCmdArg(); // override
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
 };
@@ -584,6 +590,8 @@ public:
     bool hasAttribute(unsigned char attribute);
     void setRetKind(CmdRetKind kind);
     CmdRetKind getRetKind();
+    Node *convertToStringNode(); // override
+    Node *convertToCmdArg(); // override
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	//override
 
