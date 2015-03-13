@@ -220,16 +220,66 @@ INLINE std::unique_ptr<Node> Parser::parse_toplevelStatement() {
     };
 
     switch(this->curTokenKind) {
-    case CLASS:
-    case FUNCTION:
+    case CLASS: {
         fatal("not implemented rule: %s\n", getTokenName(this->curTokenKind)); //FIXME:
-        break;
-    EACH_LA_statement(GEN_LA_CASE)
+        return std::unique_ptr<Node>(nullptr);
+    }
+    case FUNCTION: {
+        return this->parse_function();
+    }
+    EACH_LA_statement(GEN_LA_CASE) {
         return this->parse_statement();
+    }
     default:
         E_ALTER(alters);
+        return std::unique_ptr<Node>(nullptr);
     }
-    return std::unique_ptr<Node>(nullptr);    //FIXME:
+}
+
+INLINE std::unique_ptr<Node> Parser::parse_function() {
+    unsigned int n = LN();
+    this->matchToken(FUNCTION);
+    auto node = std::unique_ptr<FunctionNode>(
+            new FunctionNode(n, this->lexer->toName(this->matchAndGetToken(IDENTIFIER))));
+    this->matchToken(LP);
+
+    if(this->curTokenKind == APPLIED_NAME) {
+        auto nameNode = std::unique_ptr<VarNode>(
+                new VarNode(LN(), this->lexer->toName(this->matchAndGetToken(APPLIED_NAME))));
+        this->hasNoNewLine();
+        this->matchToken(COLON);
+        this->hasNoNewLine();
+
+        auto type = this->parse_typeName();
+
+        node->addParamNode(nameNode.release(), type.release());
+
+        while(!HAS_NL() && this->curTokenKind == COMMA) {
+            this->matchToken(COMMA);
+
+            nameNode = std::unique_ptr<VarNode>(
+                    new VarNode(LN(), this->lexer->toName(this->matchAndGetToken(APPLIED_NAME))));
+            this->hasNoNewLine();
+            this->matchToken(COLON);
+            this->hasNoNewLine();
+
+            type = this->parse_typeName();
+
+            node->addParamNode(nameNode.release(), type.release());
+        }
+    }
+
+    this->matchToken(RP);
+
+    if(!HAS_NL() && this->curTokenKind == COLON) {
+        this->matchToken(COLON);
+        this->hasNoNewLine();
+        node->setReturnTypeToken(this->parse_typeName().release());
+    }
+
+    node->setBlockNode(this->parse_block().release());
+
+    RET_NODE(node.release());
 }
 
 std::unique_ptr<TypeToken> Parser::parse_typeName() {

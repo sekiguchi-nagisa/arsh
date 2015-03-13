@@ -960,7 +960,7 @@ public:
     static std::pair<Node*, Node*> split(AssignNode *node);
 };
 
-class FunctionNode: public Node {	//FIXME
+class FunctionNode: public Node {	//FIXME: named parameter
 private:
     std::string funcName;
 
@@ -970,15 +970,12 @@ private:
     std::vector<VarNode*> paramNodes;
 
     /**
-     * unresolved type of each parameter
+     * type token of each parameter
      */
     std::vector<TypeToken*> paramTypeTokens;
 
     TypeToken *returnTypeToken;
 
-    /**
-     * may be null, if VoidType
-     */
     DSType *returnType;
 
     BlockNode *blockNode;

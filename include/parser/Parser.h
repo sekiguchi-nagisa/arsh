@@ -76,6 +76,7 @@ private:
     // parser rule definition.
     std::unique_ptr<RootNode> parse_toplevel();
     std::unique_ptr<Node> parse_toplevelStatement();
+    std::unique_ptr<Node> parse_function();
     std::unique_ptr<TypeToken> parse_typeName();
     std::unique_ptr<Node> parse_statement();
     void parse_statementEnd();

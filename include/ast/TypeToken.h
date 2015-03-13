@@ -91,4 +91,7 @@ public:
     DSType *toType(TypePool *typePool);   // override
 };
 
+TypeToken *newAnyTypeToken(unsigned int lineNum = 0);
+TypeToken *newVoidTypeToken(unsigned int lineNum = 0);
+
 #endif /* AST_TYPETOKEN_H_ */

@@ -1486,7 +1486,7 @@ void ThrowNode::accept(NodeVisitor *visitor) {
 CatchNode::CatchNode(unsigned int lineNum, std::string &&exceptionName,
         BlockNode *blockNode) :
         CatchNode(lineNum, std::move(exceptionName),
-        new ClassTypeToken(lineNum, "Any"), blockNode) {
+        newAnyTypeToken(lineNum), blockNode) {
 }
 
 CatchNode::CatchNode(unsigned int lineNum,
@@ -1781,6 +1781,9 @@ void FunctionNode::setReturnTypeToken(TypeToken *typeToken) {
 }
 
 TypeToken *FunctionNode::getReturnTypeToken() {
+    if(this->returnTypeToken == 0) {
+        this->returnTypeToken = newVoidTypeToken();
+    }
     return this->returnTypeToken;
 }
 
@@ -1801,7 +1804,18 @@ BlockNode *FunctionNode::getBlockNode() {
 }
 
 void FunctionNode::dump(Writer &writer) const {
-    //FIXME:
+    WRITE(funcName);
+
+    std::vector<Node*> paramNodes;
+    for(VarNode *node : this->paramNodes) {
+        paramNodes.push_back(node);
+    }
+
+    WRITE(paramNodes);
+    WRITE(paramTypeTokens);
+    WRITE_PTR(returnTypeToken);
+    WRITE_PTR(returnType);
+    WRITE_PTR(blockNode);
 }
 
 void FunctionNode::accept(NodeVisitor *visitor) {

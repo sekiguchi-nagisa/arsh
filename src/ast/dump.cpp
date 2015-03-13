@@ -81,6 +81,18 @@ void Writer::write(const char *fieldName, const DSType &type) {
     OUT << type.getTypeName() << std::endl;
 }
 
+void Writer::write(const char *fieldName, const std::vector<TypeToken*> &toks) {
+    this->writeName(fieldName);
+    unsigned int size = toks.size();
+    for(unsigned int i = 0; i < size; i++) {
+        if(i > 0) {
+            OUT << ", ";
+        }
+        OUT << toks[i]->toTokenText();
+    }
+    OUT << std::endl;
+}
+
 void Writer::writeNull(const char *fieldName) {
     this->writeName(fieldName);
     OUT << "(null)" << std::endl;

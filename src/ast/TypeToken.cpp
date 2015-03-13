@@ -150,3 +150,11 @@ DSType *FuncTypeToken::toType(TypePool *typePool) {
     }
     return typePool->createAndGetFuncTypeIfUndefined(returnType, paramTypes);
 }
+
+TypeToken *newAnyTypeToken(unsigned int lineNum) {
+    return new ClassTypeToken(lineNum, "Any");
+}
+
+TypeToken *newVoidTypeToken(unsigned int lineNum) {
+    return new ClassTypeToken(lineNum, "Void");
+}
