@@ -55,7 +55,6 @@ Node *Node::convertToCmdArg() {
     return createApplyNode(this, std::string(OP_TO_CMD_ARG));
 }
 
-
 // ##########################
 // ##     IntValueNode     ##
 // ##########################
@@ -87,6 +86,11 @@ void IntValueNode::accept(NodeVisitor *visitor) {
     visitor->visitIntValueNode(this);
 }
 
+EvalStatus IntValueNode::eval(RuntimeContext &ctx) {
+    PUSH(ctx, this->value);
+    return EVAL_SUCCESS;
+}
+
 // ############################
 // ##     FloatValueNode     ##
 // ############################
@@ -116,6 +120,11 @@ void FloatValueNode::dump(Writer &writer) const {
 
 void FloatValueNode::accept(NodeVisitor *visitor) {
     visitor->visitFloatValueNode(this);
+}
+
+EvalStatus FloatValueNode::eval(RuntimeContext &ctx) {
+    PUSH(ctx, this->value);
+    return EVAL_SUCCESS;
 }
 
 // ############################
@@ -164,6 +173,11 @@ void StringValueNode::accept(NodeVisitor *visitor) {
     visitor->visitStringValueNode(this);
 }
 
+EvalStatus StringValueNode::eval(RuntimeContext &ctx) {
+    PUSH(ctx, this->value);
+    return EVAL_SUCCESS;
+}
+
 // ############################
 // ##     StringExprNode     ##
 // ############################
@@ -203,6 +217,11 @@ void StringExprNode::accept(NodeVisitor *visitor) {
     visitor->visitStringExprNode(this);
 }
 
+EvalStatus StringExprNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO:
+    return EVAL_SUCCESS;
+}
+
 // #######################
 // ##     ArrayNode     ##
 // #######################
@@ -237,6 +256,11 @@ void ArrayNode::dump(Writer &writer) const {
 
 void ArrayNode::accept(NodeVisitor *visitor) {
     visitor->visitArrayNode(this);
+}
+
+EvalStatus ArrayNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO
+    return EVAL_SUCCESS;
 }
 
 // #####################
@@ -290,6 +314,11 @@ void MapNode::accept(NodeVisitor *visitor) {
     visitor->visitMapNode(this);
 }
 
+EvalStatus MapNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO
+    return EVAL_SUCCESS;
+}
+
 // #######################
 // ##     TupleNode     ##
 // #######################
@@ -321,6 +350,11 @@ void TupleNode::dump(Writer &writer) const {
 
 void TupleNode::accept(NodeVisitor *visitor) {
     visitor->visitTupleNode(this);
+}
+
+EvalStatus TupleNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO:
+    return EVAL_SUCCESS;
 }
 
 // ############################
@@ -373,6 +407,11 @@ bool VarNode::isGlobal() {
 
 int VarNode::getVarIndex() {
     return this->index;
+}
+
+EvalStatus VarNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO
+    return EVAL_SUCCESS;
 }
 
 std::string VarNode::extractVarNameAndDelete(VarNode *node) {
@@ -445,6 +484,11 @@ void AccessNode::accept(NodeVisitor *visitor) {
     visitor->visitAccessNode(this);
 }
 
+EvalStatus AccessNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");
+    return EVAL_SUCCESS;    //TODO
+}
+
 // ######################
 // ##     CastNode     ##
 // ######################
@@ -515,6 +559,11 @@ void CastNode::accept(NodeVisitor *visitor) {
     visitor->visitCastNode(this);
 }
 
+EvalStatus CastNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO
+    return EVAL_SUCCESS;
+}
+
 // ############################
 // ##     InstanceOfNode     ##
 // ############################
@@ -581,6 +630,11 @@ void InstanceOfNode::accept(NodeVisitor *visitor) {
     visitor->visitInstanceOfNode(this);
 }
 
+EvalStatus InstanceOfNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO
+    return EVAL_SUCCESS;
+}
+
 // ##########################
 // ##     BinaryOpNode     ##
 // ##########################
@@ -643,6 +697,11 @@ void BinaryOpNode::accept(NodeVisitor *visitor) {
     visitor->visitBinaryOpNode(this);
 }
 
+EvalStatus BinaryOpNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO
+    return EVAL_SUCCESS;
+}
+
 // ######################
 // ##     ArgsNode     ##
 // ######################
@@ -701,6 +760,11 @@ void ArgsNode::dump(Writer &writer) const {
 
 void ArgsNode::accept(NodeVisitor *visitor) {
     visitor->visitArgsNode(this);
+}
+
+EvalStatus ArgsNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO
+    return EVAL_SUCCESS;
 }
 
 // #######################
@@ -770,6 +834,11 @@ void ApplyNode::accept(NodeVisitor *visitor) {
     visitor->visitApplyNode(this);
 }
 
+EvalStatus ApplyNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO
+    return EVAL_SUCCESS;
+}
+
 // #####################
 // ##     NewNode     ##
 // #####################
@@ -805,6 +874,11 @@ void NewNode::dump(Writer &writer) const {
 
 void NewNode::accept(NodeVisitor *visitor) {
     visitor->visitNewNode(this);
+}
+
+EvalStatus NewNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO
+    return EVAL_SUCCESS;
 }
 
 // ########################
@@ -843,6 +917,11 @@ void CondOpNode::dump(Writer &writer) const {
 
 void CondOpNode::accept(NodeVisitor *visitor) {
     visitor->visitCondOpNode(this);
+}
+
+EvalStatus CondOpNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO
+    return EVAL_SUCCESS;
 }
 
 // #####################
@@ -900,6 +979,11 @@ void CmdNode::accept(NodeVisitor *visitor) {
     visitor->visitCmdNode(this);
 }
 
+EvalStatus CmdNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");
+    return EVAL_SUCCESS;    //TODO
+}
+
 // ########################
 // ##     CmdArgNode     ##
 // ########################
@@ -932,6 +1016,11 @@ void CmdArgNode::accept(NodeVisitor *visitor) {
     visitor->visitCmdArgNode(this);
 }
 
+EvalStatus CmdArgNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO
+    return EVAL_SUCCESS;
+}
+
 // #############################
 // ##     SpecialCharNode     ##
 // #############################
@@ -953,6 +1042,11 @@ void SpecialCharNode::dump(Writer &writer) const {
 
 void SpecialCharNode::accept(NodeVisitor *visitor) {
     visitor->visitSpecialCharNode(this);
+}
+
+EvalStatus SpecialCharNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO
+    return EVAL_SUCCESS;
 }
 
 // ##########################
@@ -990,6 +1084,11 @@ void PipedCmdNode::dump(Writer &writer) const {
 
 void PipedCmdNode::accept(NodeVisitor *visitor) {
     visitor->visitPipedCmdNode(this);
+}
+
+EvalStatus PipedCmdNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO
+    return EVAL_SUCCESS;
 }
 
 // ###########################
@@ -1070,6 +1169,11 @@ void CmdContextNode::accept(NodeVisitor *visitor) {
     visitor->visitCmdContextNode(this);
 }
 
+EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO
+    return EVAL_SUCCESS;
+}
+
 // ########################
 // ##     AssertNode     ##
 // ########################
@@ -1093,6 +1197,11 @@ void AssertNode::dump(Writer &writer) const {
 
 void AssertNode::accept(NodeVisitor *visitor) {
     visitor->visitAssertNode(this);
+}
+
+EvalStatus AssertNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO
+    return EVAL_SUCCESS;
 }
 
 // #######################
@@ -1130,6 +1239,11 @@ void BlockNode::accept(NodeVisitor *visitor) {
     visitor->visitBlockNode(this);
 }
 
+EvalStatus BlockNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO
+    return EVAL_SUCCESS;
+}
+
 // ######################
 // ##     BlockEnd     ##
 // ######################
@@ -1154,6 +1268,11 @@ void BreakNode::accept(NodeVisitor *visitor) {
     visitor->visitBreakNode(this);
 }
 
+EvalStatus BreakNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO:
+    return EVAL_SUCCESS;
+}
+
 // ##########################
 // ##     ContinueNode     ##
 // ##########################
@@ -1168,6 +1287,11 @@ void ContinueNode::dump(Writer &writer) const {
 
 void ContinueNode::accept(NodeVisitor *visitor) {
     visitor->visitContinueNode(this);
+}
+
+EvalStatus ContinueNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO:
+    return EVAL_SUCCESS;
 }
 
 // ###########################
@@ -1198,6 +1322,11 @@ void ExportEnvNode::dump(Writer &writer) const {
 
 void ExportEnvNode::accept(NodeVisitor *visitor) {
     visitor->visitExportEnvNode(this);
+}
+
+EvalStatus ExportEnvNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO:
+    return EVAL_SUCCESS;
 }
 
 // ###########################
@@ -1233,6 +1362,11 @@ void ImportEnvNode::dump(Writer &writer) const {
 
 void ImportEnvNode::accept(NodeVisitor *visitor) {
     visitor->visitImportEnvNode(this);
+}
+
+EvalStatus ImportEnvNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO:
+    return EVAL_SUCCESS;
 }
 
 // #####################
@@ -1286,6 +1420,11 @@ void ForNode::accept(NodeVisitor *visitor) {
     visitor->visitForNode(this);
 }
 
+EvalStatus ForNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO:
+    return EVAL_SUCCESS;
+}
+
 // #######################
 // ##     WhileNode     ##
 // #######################
@@ -1319,6 +1458,11 @@ void WhileNode::accept(NodeVisitor *visitor) {
     visitor->visitWhileNode(this);
 }
 
+EvalStatus WhileNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO:
+    return EVAL_SUCCESS;
+}
+
 // #########################
 // ##     DoWhileNode     ##
 // #########################
@@ -1345,6 +1489,11 @@ void DoWhileNode::dump(Writer &writer) const {
 
 void DoWhileNode::accept(NodeVisitor *visitor) {
     visitor->visitDoWhileNode(this);
+}
+
+EvalStatus DoWhileNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO:
+    return EVAL_SUCCESS;
 }
 
 // ####################
@@ -1425,6 +1574,11 @@ void IfNode::accept(NodeVisitor *visitor) {
     visitor->visitIfNode(this);
 }
 
+EvalStatus IfNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO:
+    return EVAL_SUCCESS;
+}
+
 // ########################
 // ##     ReturnNode     ##
 // ########################
@@ -1454,6 +1608,11 @@ void ReturnNode::accept(NodeVisitor *visitor) {
     visitor->visitReturnNode(this);
 }
 
+EvalStatus ReturnNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO:
+    return EVAL_SUCCESS;
+}
+
 // #######################
 // ##     ThrowNode     ##
 // #######################
@@ -1477,6 +1636,11 @@ void ThrowNode::dump(Writer &writer) const {
 
 void ThrowNode::accept(NodeVisitor *visitor) {
     visitor->visitThrowNode(this);
+}
+
+EvalStatus ThrowNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO:
+    return EVAL_SUCCESS;
 }
 
 // #######################
@@ -1538,6 +1702,11 @@ void CatchNode::dump(Writer &writer) const {
 
 void CatchNode::accept(NodeVisitor *visitor) {
     visitor->visitCatchNode(this);
+}
+
+EvalStatus CatchNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO:
+    return EVAL_SUCCESS;
 }
 
 // #####################
@@ -1603,6 +1772,11 @@ void TryNode::accept(NodeVisitor *visitor) {
     visitor->visitTryNode(this);
 }
 
+EvalStatus TryNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO:
+    return EVAL_SUCCESS;
+}
+
 // #########################
 // ##     FinallyNode     ##
 // #########################
@@ -1626,6 +1800,11 @@ void FinallyNode::dump(Writer &writer) const {
 
 void FinallyNode::accept(NodeVisitor *visitor) {
     visitor->visitFinallyNode(this);
+}
+
+EvalStatus FinallyNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO:
+    return EVAL_SUCCESS;
 }
 
 // #########################
@@ -1679,6 +1858,11 @@ void VarDeclNode::accept(NodeVisitor *visitor) {
     visitor->visitVarDeclNode(this);
 }
 
+EvalStatus VarDeclNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO:
+    return EVAL_SUCCESS;
+}
+
 // ########################
 // ##     AssignNode     ##
 // ########################
@@ -1719,6 +1903,11 @@ void AssignNode::dump(Writer &writer) const {
 
 void AssignNode::accept(NodeVisitor *visitor) {
     visitor->visitAssignNode(this);
+}
+
+EvalStatus AssignNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO:
+    return EVAL_SUCCESS;
 }
 
 std::pair<Node*, Node*> AssignNode::split(AssignNode *node) {
@@ -1822,6 +2011,11 @@ void FunctionNode::accept(NodeVisitor *visitor) {
     visitor->visitFunctionNode(this);
 }
 
+EvalStatus FunctionNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO:
+    return EVAL_SUCCESS;
+}
+
 // #######################
 // ##     EmptyNode     ##
 // #######################
@@ -1842,6 +2036,10 @@ void EmptyNode::accept(NodeVisitor *visitor) {
     visitor->visitEmptyNode(this);
 }
 
+EvalStatus EmptyNode::eval(RuntimeContext &ctx) {
+    return EVAL_SUCCESS; // do nothing
+}
+
 // #######################
 // ##     DummyNode     ##
 // #######################
@@ -1856,6 +2054,10 @@ void DummyNode::dump(Writer &writer) const {
 
 void DummyNode::accept(NodeVisitor *visitor) {
     visitor->visitDummyNode(this);
+}
+
+EvalStatus DummyNode::eval(RuntimeContext &ctx) {
+    return EVAL_SUCCESS; // do nothing
 }
 
 // ######################

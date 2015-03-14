@@ -20,42 +20,62 @@
 // ##     RuntimeContext     ##
 // ############################
 
+#define DEFAULT_TABLE_SIZE 32
+#define DEFAULT_LOCAL_SIZE 256
+
 RuntimeContext::RuntimeContext() :
-        globalVarTable(), thrownObject(0) {
+        globalVarTable(new std::shared_ptr<DSObject>[DEFAULT_TABLE_SIZE]),
+        tableSize(DEFAULT_TABLE_SIZE),
+        thrownObject(std::shared_ptr<DSObject>(nullptr)),
+        localStack(new std::shared_ptr<DSObject>[DEFAULT_LOCAL_SIZE]),
+        localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0), localVarOffset(0) {
 }
 
 RuntimeContext::~RuntimeContext() {
-    for(DSObject *o : this->globalVarTable) {
-        delete o;
+    delete[] this->globalVarTable;
+    this->globalVarTable = 0;
+
+    delete[] this->localStack;
+    this->localStack = 0;
+}
+
+void RuntimeContext::reserveGlobalVar(unsigned int size) {
+    if(this->tableSize < size) {
+        unsigned int newSize = this->tableSize;
+        do {
+            newSize *= 2;
+        } while(newSize < size);
+        std::shared_ptr<DSObject> *newTable = new std::shared_ptr<DSObject>[newSize];
+        for(unsigned int i = 0; i < this->tableSize; i++) {
+            newTable[i] = this->globalVarTable[i];
+        }
+        delete[] this->globalVarTable;
+        this->globalVarTable = newTable;
+        this->tableSize = newSize;
     }
-    this->globalVarTable.clear();
-}
-
-void RuntimeContext::addGlobalVar(DSObject *obj) {
-    this->globalVarTable.push_back(obj);
-}
-
-void RuntimeContext::updateGlobalVar(int varIndex, DSObject *obj) {
-    this->globalVarTable[varIndex] = obj;
-}
-
-DSObject *RuntimeContext::getGlobalVar(int index) {
-    return this->globalVarTable[index];
-}
-
-int RuntimeContext::getGlobalVarSize() {
-    return this->globalVarTable.size();
-}
-
-void RuntimeContext::setThrownObject(DSObject *obj) {
-    this->thrownObject = obj;
 }
 
 void RuntimeContext::clearThrownObject() {
-    this->thrownObject = 0;
+    this->thrownObject.reset();
 }
 
-DSObject *RuntimeContext::getThrownObject() {
-    return this->thrownObject;
+void RuntimeContext::expandLocalStack() {
+    unsigned int newSize = this->localStackSize;
+    do {
+        newSize *= 2;
+    } while(newSize < this->localStackSize);
+    auto newTable = new std::shared_ptr<DSObject>[newSize];
+    for(unsigned int i = 0; i < this->localStackSize; i++) {
+        newTable[i] = this->localStack[i];
+    }
+    delete[] this->localStack;
+    this->localStack = newTable;
+    this->localStackSize = newSize;
 }
 
+inline std::shared_ptr<DSObject> RuntimeContext::pop() {
+    std::shared_ptr<DSObject> obj = this->localStack[this->stackTopIndex];
+    this->localStack[this->stackTopIndex] = std::shared_ptr<DSObject>();
+    this->stackTopIndex--;
+    return obj;
+}

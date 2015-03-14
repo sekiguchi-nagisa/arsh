@@ -21,7 +21,7 @@
 #include <memory>
 
 class FunctionNode;
-class RuntimeContext;
+struct RuntimeContext;
 
 class DSObject {
 public:

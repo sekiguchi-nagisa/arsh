@@ -23,11 +23,21 @@
 #include <core/DSType.h>
 #include <core/FieldHandle.h>
 #include <core/DSObject.h>
+#include <core/RuntimeContext.h>
 #include <ast/NodeVisitor.h>
 #include <ast/TypeToken.h>
 #include <parser/Token.h>
 
 class Writer;
+
+typedef enum {
+    EVAL_SUCCESS,
+    EVAL_BREAK,
+    EVAL_CONTINUE,
+    EVAL_THROW,
+    EVAL_RETURN,
+} EvalStatus;
+
 
 class Node {
 protected:
@@ -53,6 +63,7 @@ public:
     virtual Node *convertToCmdArg();
     virtual void dump(Writer &writer) const = 0;
     virtual void accept(NodeVisitor *visitor) = 0;
+    virtual EvalStatus eval(RuntimeContext &ctx) = 0;
 };
 
 // expression definition
@@ -77,6 +88,7 @@ public:
     void setType(DSType *type); // override
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class FloatValueNode: public Node {
@@ -99,6 +111,7 @@ public:
     void setType(DSType *type); // override
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class StringValueNode: public Node {
@@ -131,6 +144,7 @@ public:
     Node *convertToCmdArg(); // override
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class StringExprNode: public Node {
@@ -147,6 +161,7 @@ public:
     Node *convertToCmdArg(); // override
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class ArrayNode: public Node {
@@ -162,6 +177,7 @@ public:
     const std::vector<Node*> &getExprNodes();
     void dump(Writer &writer) const; // override
     void accept(NodeVisitor *visitor);	//override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class MapNode: public Node {
@@ -180,6 +196,7 @@ public:
     const std::vector<Node*> &getValueNodes();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class TupleNode: public Node {
@@ -197,6 +214,7 @@ public:
     const std::vector<Node*> &getNodes();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 /**
@@ -234,6 +252,7 @@ public:
     void accept(NodeVisitor *visitor);	// override
     bool isGlobal();
     int getVarIndex();
+    EvalStatus eval(RuntimeContext &ctx); // override
 
     // for ArgsNode
     /**
@@ -269,6 +288,7 @@ public:
     AdditionalOp getAdditionnalOp();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class CastNode: public Node {
@@ -309,6 +329,7 @@ public:
     int getFieldIndex();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	//override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class InstanceOfNode: public Node {
@@ -342,6 +363,7 @@ public:
     InstanceOfOp getOpKind();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	//override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 /**
@@ -388,6 +410,7 @@ public:
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);   // override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class ArgsNode : public Node {
@@ -426,6 +449,7 @@ public:
     const std::vector<std::pair<std::string, Node*>> &getArgPairs();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);   // override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class ApplyNode: public Node {
@@ -448,6 +472,7 @@ public:
     bool isFuncCall();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
+    EvalStatus eval(RuntimeContext &ctx); // override
 
     const static unsigned char FUNC_CALL = 1 << 0;
     const static unsigned char INDEX     = 1 << 1;
@@ -475,6 +500,7 @@ public:
     ArgsNode *getArgsNode();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);   // override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class CondOpNode: public Node {
@@ -496,6 +522,7 @@ public:
     bool isAndOp();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	//override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class CmdNode: public Node {	//FIXME: redirect option
@@ -515,6 +542,7 @@ public:
     const std::vector<std::pair<int, Node*>> &getRedirOptions();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	//override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 /**
@@ -532,6 +560,7 @@ public:
     const std::vector<Node*> &getSegmentNodes();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class SpecialCharNode: public Node {	//FIXME:
@@ -545,6 +574,7 @@ public:
     const std::string &getName();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	//override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class PipedCmdNode: public Node {	//TODO: background ...etc
@@ -559,6 +589,7 @@ public:
     const std::vector<CmdNode*> &getCmdNodes();
     void dump(Writer &writer) const; // override
     void accept(NodeVisitor *visitor);	//override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class CmdContextNode: public Node {
@@ -594,6 +625,7 @@ public:
     Node *convertToCmdArg(); // override
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	//override
+    EvalStatus eval(RuntimeContext &ctx); // override
 
     const static unsigned char BACKGROUND = 1 << 0;
     const static unsigned char FORK       = 1 << 1;
@@ -612,6 +644,7 @@ public:
     Node *getExprNode();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class BlockNode: public Node {
@@ -627,6 +660,7 @@ public:
     const std::list<Node*> &getNodeList();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 /**
@@ -643,6 +677,7 @@ public:
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class ContinueNode: public BlockEndNode {
@@ -651,6 +686,7 @@ public:
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class ExportEnvNode: public Node {
@@ -666,6 +702,7 @@ public:
     Node *getExprNode();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class ImportEnvNode: public Node {
@@ -683,6 +720,7 @@ public:
     int getVarIndex();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class ForNode: public Node {
@@ -719,6 +757,7 @@ public:
     BlockNode *getBlockNode();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class WhileNode: public Node {
@@ -734,6 +773,7 @@ public:
     BlockNode *getBlockNode();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	//override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class DoWhileNode : public Node {
@@ -749,6 +789,7 @@ public:
     Node *getCondNode();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);   //override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class IfNode: public Node {
@@ -785,6 +826,7 @@ public:
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class ReturnNode: public BlockEndNode {
@@ -806,6 +848,7 @@ public:
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class ThrowNode: public BlockEndNode {
@@ -819,6 +862,7 @@ public:
     Node *getExprNode();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class CatchNode: public Node {
@@ -858,6 +902,7 @@ public:
     BlockNode *getBlockNode();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class TryNode: public Node {	//TODO: finallyNode
@@ -885,6 +930,7 @@ public:
     Node *getFinallyNode();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class FinallyNode: public Node {
@@ -898,6 +944,7 @@ public:
     BlockNode *getBlockNode();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class VarDeclNode: public Node {
@@ -920,6 +967,7 @@ public:
     int getVarIndex();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 /**
@@ -951,6 +999,7 @@ public:
     bool isSelfAssignment();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);   // override
+    EvalStatus eval(RuntimeContext &ctx); // override
 
     /**
      * for ArgsNode
@@ -1011,6 +1060,7 @@ public:
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 // class ClassNode
@@ -1023,6 +1073,7 @@ public:
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class DummyNode: public Node {
@@ -1031,6 +1082,7 @@ public:
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);   // override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 /**

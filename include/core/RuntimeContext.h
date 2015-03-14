@@ -18,50 +18,68 @@
 #define CORE_RUNTIMECONTEXT_H_
 
 #include <core/DSObject.h>
+
 #include <vector>
 
-
-class RuntimeContext {
-private:
+struct RuntimeContext {
     /**
      * contains global variables(or function)
      */
-    std::vector<DSObject*> globalVarTable;
+    std::shared_ptr<DSObject> *globalVarTable;
 
     /**
-     * if not null, thrown exception.
+     * size of global variable table.
      */
-    DSObject *thrownObject;
+    unsigned int tableSize;
 
-public:
+    /**
+     * if not null ptr, thrown exception.
+     */
+    std::shared_ptr<DSObject> thrownObject;
+
+    /**
+     * contains operand or local variable
+     */
+    std::shared_ptr<DSObject> *localStack;
+
+    unsigned int localStackSize;
+    unsigned int stackTopIndex;
+
+    /**
+     * offset current local variable index.
+     */
+    unsigned int localVarOffset;
+
     RuntimeContext();
-    virtual ~RuntimeContext();
+    ~RuntimeContext();
 
     /**
-     * add new global variable or function
+     * if this->tableSize < size, expand globalVarTable.
      */
-    void addGlobalVar(DSObject *obj);
+    void reserveGlobalVar(unsigned int size);
 
     /**
-     * update exist global variable.
-     * this is not type-safe method
+     * reset this->throwObject.
      */
-    void updateGlobalVar(int varIndex, DSObject *obj);
-
-    /**
-     * this is not type-safe method
-     */
-    DSObject *getGlobalVar(int index);
-
-    int getGlobalVarSize();
-
-    void setThrownObject(DSObject *obj);
     void clearThrownObject();
 
-    /**
-     * return null, if not thrown
-     */
-    DSObject *getThrownObject();
+    void expandLocalStack();
+    std::shared_ptr<DSObject> pop();
 };
+
+// helper macro for RuntimeContext manipulation.
+#define SET_GVAR(ctx, index, val) ctx.globalVarTable[index] = val
+#define GET_GVAR(ctx, index)      ctx.globalVarTable[index]
+
+#define SET_LVAR(ctx, index, val) ctx.localStack[ctx.localVarOffset + index] = val
+#define GET_LVAR(ctx, index)      ctx.localStack[ctx.localVarOffset + index]
+
+#define PUSH(ctx, val)            \
+    do {\
+        if(ctx.stackTopIndex >= ctx.localStackSize) { ctx.expandLocalStack(); }\
+        ctx.localStack[ctx.stackTopIndex++] = val;\
+    } while(0)
+
+#define POP(ctx)                  ctx.pop()
 
 #endif /* CORE_RUNTIMECONTEXT_H_ */
