@@ -18,12 +18,18 @@
 #define EXE_TERMINAL_H_
 
 #include <histedit.h>
+#include <string>
 
 class Terminal {
 private:
     EditLine *el;
     History *ydsh_history;
     HistEvent event;
+
+    /**
+     * contains previous read line.
+     */
+    std::string lineBuf;
 
 public:
     Terminal(const char *progName);
@@ -35,6 +41,10 @@ public:
      * skip white space and empty string.
      */
     const char *readLine();
+
+private:
+    const char *readLineImpl();
+    void addHistory();
 };
 
 #endif /* EXE_TERMINAL_H_ */

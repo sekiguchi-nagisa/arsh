@@ -16,9 +16,14 @@
 
 #include <exe/Terminal.h>
 #include <util/debug.h>
+#include <string.h>
 
 static char *prompt(EditLine *el) {
     return (char *) "test> ";
+}
+
+static char *prompt2(EditLine *el) {
+    return (char *) "> ";
 }
 
 // ######################
@@ -26,7 +31,7 @@ static char *prompt(EditLine *el) {
 // ######################
 
 Terminal::Terminal(const char *progName) :
-        el(0), ydsh_history(0), event() {
+        el(0), ydsh_history(0), event(), lineBuf() {
     this->el = el_init(progName, stdin, stdout, stderr);
     el_set(this->el, EL_PROMPT, prompt);
     el_set(this->el, EL_EDITOR, "emacs");
@@ -63,16 +68,55 @@ static inline bool isSkipLine(const char *line, int count) {
     return true;
 }
 
+static bool checkLineContinuation(const char *line) {
+    if(line == 0) {
+        return false;
+    }
+    unsigned int size = strlen(line);
+    for(unsigned int i = 0; i < size; i++) {
+        if(line[i] == '\\' && i + 1 < size && line[i + 1] == '\n') {
+            return true;
+        }
+    }
+    return false;
+}
+
 const char *Terminal::readLine() {
+    this->lineBuf = std::string();
+    const char *line;
+    do {
+        line = this->readLineImpl();
+        if(line == 0) {
+            return line;
+        }
+        this->lineBuf += line;
+        el_set(this->el, EL_PROMPT, prompt2);
+    } while(checkLineContinuation(line));
+
+    el_set(this->el, EL_PROMPT, prompt);
+    this->addHistory();
+    printf("%s", this->lineBuf.c_str());
+    return this->lineBuf.c_str();
+}
+
+const char *Terminal::readLineImpl() {
     int count;
     const char *line;
 
     do {
         line = el_gets(this->el, &count);
     } while(isSkipLine(line, count));
-
-    if(count > 0) {
-        history(this->ydsh_history, &this->event, H_ENTER, line);
-    }
     return line;
 }
+
+void Terminal::addHistory() {
+    std::string target = "\\\n";
+    std::string buf = this->lineBuf;
+    std::string::size_type pos = buf.find(target);
+    while(pos != std::string::npos) {
+        buf.replace(pos, target.size(), "");
+        pos = buf.find(target, pos);
+    }
+    history(this->ydsh_history, &this->event, H_ENTER, buf.c_str());
+}
+
