@@ -207,7 +207,7 @@ INIT:
       <STMT,EXPR,NAME,CMD> COMMENT
                                { SKIP(); }
       <STMT,EXPR,NAME> [ \t]+  { SKIP(); }
-      <STMT,EXPR,NAME> '\\' [\r\n]
+      <STMT,EXPR,NAME,CMD> '\\' [\r\n]
                                { INC_LINE_NUM(); SKIP(); }
 
       <DSTRING> ["]            { POP_MODE(); RET(CLOSE_DQUOTE);}
