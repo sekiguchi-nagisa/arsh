@@ -404,8 +404,9 @@ std::unique_ptr<Node> Parser::parse_statement() {
         this->matchToken(LP);
         auto condNode = this->parse_commandOrExpression();
         this->matchToken(RP);
+        auto blockNode = this->parse_block();
         auto ifNode = std::unique_ptr<IfNode>(
-                new IfNode(n, condNode.release(), this->parse_block().release()));
+                new IfNode(n, condNode.release(), blockNode.release()));
 
         // parse elif
         while(this->curTokenKind == ELIF) {
@@ -413,7 +414,8 @@ std::unique_ptr<Node> Parser::parse_statement() {
             this->matchToken(LP);
             auto condNode = this->parse_commandOrExpression();
             this->matchToken(RP);
-            ifNode->addElifNode(condNode.release(), this->parse_block().release());
+            blockNode = this->parse_block();
+            ifNode->addElifNode(condNode.release(), blockNode.release());
         }
 
         // parse else
@@ -463,7 +465,8 @@ std::unique_ptr<Node> Parser::parse_statement() {
         this->matchToken(LP);
         auto condNode = this->parse_commandOrExpression();
         this->matchToken(RP);
-        RET_NODE(new WhileNode(n, condNode.release(), this->parse_block().release()));
+        auto blockNode = this->parse_block();
+        RET_NODE(new WhileNode(n, condNode.release(), blockNode.release()));
     }
     case DO: {
         this->matchToken(DO);
@@ -594,9 +597,10 @@ INLINE std::unique_ptr<Node> Parser::parse_forStatement() {
         this->matchToken(IN);
         auto exprNode = this->parse_expression();
         this->matchToken(RP);
+        auto blockNode = this->parse_block();
 
         RET_NODE(createForInNode(n, nameNode.release(),
-                exprNode.release(), this->parse_block().release()));
+                exprNode.release(), blockNode.release()));
     }
 
     this->matchToken(LINE_END);
@@ -607,9 +611,10 @@ INLINE std::unique_ptr<Node> Parser::parse_forStatement() {
     auto iterNode = this->parse_forIter();
 
     this->matchToken(RP);
+    auto blockNode = this->parse_block();
 
     RET_NODE(new ForNode(n, initNode.release(), condNode.release(),
-            iterNode.release(), this->parse_block().release()));
+            iterNode.release(), blockNode.release()));
 }
 
 INLINE std::unique_ptr<Node> Parser::parse_forInit() {
@@ -688,8 +693,9 @@ INLINE std::unique_ptr<Node> Parser::parse_orListCommand() {
 
     while(this->curTokenKind == OR_LIST) {
         this->matchToken(OR_LIST);
-        node = std::unique_ptr<Node>(new CondOpNode(node.release(),
-                this->parse_andListCommand().release(), false));
+        auto rightNode = this->parse_andListCommand();
+        node = std::unique_ptr<Node>(
+                new CondOpNode(node.release(), rightNode.release(), false));
     }
     return node;
 }
@@ -699,8 +705,9 @@ INLINE std::unique_ptr<Node> Parser::parse_andListCommand() {
 
     while(this->curTokenKind == AND_LIST) {
         this->matchToken(AND_LIST);
-        node = std::unique_ptr<Node>(new CondOpNode(node.release(),
-                this->parse_pipedCommand().release(), true));
+        auto rightNode = this->parse_pipedCommand();
+        node = std::unique_ptr<Node>(
+                new CondOpNode(node.release(), rightNode.release(), true));
     }
     return node;
 }
@@ -820,14 +827,14 @@ std::unique_ptr<Node> Parser::parse_expression(std::unique_ptr<Node> &&leftNode,
         case AS: {
             this->matchToken(AS);
             this->hasNoNewLine();
-            RET_NODE(new CastNode(node.release(),
-                    this->parse_typeName().release()));
+            auto type = this->parse_typeName();
+            RET_NODE(new CastNode(node.release(), type.release()));
         }
         case IS: {
             this->matchToken(IS);
             this->hasNoNewLine();
-            RET_NODE(new InstanceOfNode(node.release(),
-                    this->parse_typeName().release()));
+            auto type = this->parse_typeName();
+            RET_NODE(new InstanceOfNode(node.release(), type.release()));
         }
         default: {
             TokenKind op = this->consumeAndGetKind();
@@ -880,8 +887,8 @@ INLINE std::unique_ptr<Node> Parser::parse_memberExpression() {
         case ACCESSOR: {
             this->matchToken(ACCESSOR);
             this->hasNoNewLine();
-            node = std::unique_ptr<Node>(new AccessNode(node.release(),
-                    this->lexer->toName(this->matchAndGetToken(IDENTIFIER))));
+            std::string name = this->lexer->toName(this->matchAndGetToken(IDENTIFIER));
+            node = std::unique_ptr<Node>(new AccessNode(node.release(), std::move(name)));
             break;
         }
         case LB: {
@@ -893,8 +900,8 @@ INLINE std::unique_ptr<Node> Parser::parse_memberExpression() {
             break;
         }
         case LP: {
-            node = std::unique_ptr<Node>(new ApplyNode(node.release(),
-                    this->parse_arguments().release()));
+            auto args = this->parse_arguments();
+            node = std::unique_ptr<Node>(new ApplyNode(node.release(), args.release()));
             break;
         }
         default: {
@@ -917,8 +924,9 @@ INLINE std::unique_ptr<Node> Parser::parse_primaryExpression() {
     case NEW: {
         this->matchToken(NEW);
         this->hasNoNewLine();
-        RET_NODE(new NewNode(n, this->parse_typeName().release(),
-                this->parse_arguments().release()));
+        auto type = this->parse_typeName();
+        auto args = this->parse_arguments();
+        RET_NODE(new NewNode(n, type.release(), args.release()));
     }
     case INT_LITERAL: {
         Token token = this->matchAndGetToken(INT_LITERAL);
@@ -952,8 +960,9 @@ INLINE std::unique_ptr<Node> Parser::parse_primaryExpression() {
         auto node = this->parse_expression();
         if(this->curTokenKind == COMMA) {
             this->matchToken(COMMA);
-            auto tuple = std::unique_ptr<TupleNode>(new TupleNode(n, node.release(),
-                    this->parse_expression().release()));
+            auto rightNode = this->parse_expression();
+            auto tuple = std::unique_ptr<TupleNode>(
+                    new TupleNode(n, node.release(), rightNode.release()));
 
             while(this->curTokenKind == COMMA) {
                 this->matchToken(COMMA);
@@ -983,17 +992,19 @@ INLINE std::unique_ptr<Node> Parser::parse_primaryExpression() {
         this->matchToken(COLON);
         this->hasNoNewLine();
 
-        auto node = std::unique_ptr<MapNode>(new MapNode(n, keyNode.release(),
-                this->parse_expression().release()));
+        auto valueNode = this->parse_expression();
+        auto node = std::unique_ptr<MapNode>(
+                new MapNode(n, keyNode.release(), valueNode.release()));
         while(this->curTokenKind == COMMA) {
             this->matchToken(COMMA);
-            auto keyNode = this->parse_expression();
+            keyNode = this->parse_expression();
 
             this->hasNoNewLine();
             this->matchToken(COLON);
             this->hasNoNewLine();
 
-            node->addEntry(keyNode.release(), this->parse_expression().release());
+            valueNode = this->parse_expression();
+            node->addEntry(keyNode.release(), valueNode.release());
         }
         this->matchToken(RBC);
         RET_NODE(node.release());
