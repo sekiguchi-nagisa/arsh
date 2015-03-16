@@ -106,7 +106,7 @@ public:
     BaseType(std::string &&typeName, bool extendable, DSType *superType);
     virtual ~BaseType();
 
-    std::string getTypeName() const; // override
+    virtual std::string getTypeName() const; // override
     bool isExtendable(); // override
     DSType *getSuperType(); // override
     virtual bool equals(DSType *targetType); // override

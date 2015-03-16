@@ -409,6 +409,7 @@ public:
     ReifiedType(TypeTemplate *t, DSType *superType, const std::vector<DSType*> &elementTypes);
     ~ReifiedType();
 
+    std::string getTypeName() const; // override
     bool equals(DSType *targetType); // override
 
 private:
@@ -420,6 +421,10 @@ ReifiedType::ReifiedType(TypeTemplate *t, DSType *superType, const std::vector<D
 }
 
 ReifiedType::~ReifiedType() {
+}
+
+std::string ReifiedType::getTypeName() const {
+    return toReifiedTypeName(this->typeName, this->elementTypes);
 }
 
 bool ReifiedType::equals(DSType *targetType) { // override
