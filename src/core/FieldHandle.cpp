@@ -23,7 +23,9 @@
 
 FieldHandle::FieldHandle(DSType *fieldType, int fieldIndex, bool readOnly) :
         fieldType(fieldType), fieldIndex(fieldIndex), attributeSet() {
-
+    if(readOnly) {
+        this->setAttribute(READ_ONLY);
+    }
 }
 
 FieldHandle::~FieldHandle() {

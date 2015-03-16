@@ -59,6 +59,8 @@ TypeChecker::~TypeChecker() {
 }
 
 void TypeChecker::checkTypeRootNode(RootNode *rootNode) {
+    this->symbolTable.clearEntryCache();
+
     for(Node *node : rootNode->getNodeList()) {
         this->checkTypeAsStatement(node);
     }
@@ -866,6 +868,8 @@ void TypeChecker::visitVarDeclNode(VarDeclNode *node) {
 
 void TypeChecker::visitAssignNode(AssignNode *node) {
     AssignableNode *leftNode = dynamic_cast<AssignableNode*>(node->getLeftNode());
+    DSType *leftType = this->checkType(leftNode);
+
     if(leftNode == 0) {
         E_Assignable(node);
     }
@@ -873,7 +877,6 @@ void TypeChecker::visitAssignNode(AssignNode *node) {
         E_ReadOnly(node);
     }
 
-    DSType *leftType = this->checkType(leftNode);
     if(node->isSelfAssignment()) {
         BinaryOpNode *opNode = dynamic_cast<BinaryOpNode*>(node->getRightNode());
         opNode->getLeftNode()->setType(leftType);
