@@ -56,6 +56,9 @@ public:
     const std::string &getTokenText();
 };
 
+/**
+ * for reified type and tuple type
+ */
 class ReifiedTypeToken: public TypeToken {
 private:
     ClassTypeToken* templateTypeToken;

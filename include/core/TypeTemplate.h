@@ -34,6 +34,9 @@ private:
      */
     unsigned int elementTypeSize;
 
+    /**
+     * may be null, if Tuple template
+     */
     native_type_info_t *info;
 
 public:

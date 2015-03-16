@@ -64,7 +64,11 @@ private:
     // type template definition
     TypeTemplate *arrayTemplate;
     TypeTemplate *mapTemplate;
-    TypeTemplate *pairTemplate;
+
+    /**
+     * pseudo type template for Tuple type
+     */
+    TypeTemplate *tupleTemplate;
 
 public:
     TypePool();
@@ -104,7 +108,7 @@ public:
     // for reified type.
     TypeTemplate *getArrayTemplate();
     TypeTemplate *getMapTemplate();
-    TypeTemplate *getPairTemplate();
+    TypeTemplate *getTupleTemplate();
 
     // for type lookup
 
@@ -125,6 +129,9 @@ public:
      */
     TypeTemplate *getTypeTemplate(const std::string &typeName, int elementSize);
 
+    /**
+     * if type template is Tuple, call createAndGetTupleTypeIfUndefined()
+     */
     DSType *createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate, const std::vector<DSType*> &elementTypes);
 
     DSType *createAndGetTupleTypeIfUndefined(const std::vector<DSType*> &elementTypes);

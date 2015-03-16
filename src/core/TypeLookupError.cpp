@@ -62,6 +62,11 @@ bool TypeLookupError::operator==(const TypeLookupError &e) {
     return true;
 }
 
+void TypeLookupError::report(ErrorKind kind) {
+    TypeLookupError error(kind);
+    throw error;
+}
+
 void TypeLookupError::report(ErrorKind kind, const std::string &arg1) {
     TypeLookupError error(kind);
     error.args.push_back(arg1);

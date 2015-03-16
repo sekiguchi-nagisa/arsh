@@ -42,7 +42,7 @@ TypePool::TypePool() :
         taskType(), baseFuncType(),
         procArgType(), procType(),
         templateMap(8),
-        arrayTemplate(), mapTemplate(), pairTemplate() {
+        arrayTemplate(), mapTemplate(), tupleTemplate() {
 
     // initialize type
     this->anyType    = INIT_CLASS_TYPE("Any", true, 0, info_Dummy());
@@ -77,7 +77,7 @@ TypePool::TypePool() :
     // initialize type template
     this->arrayTemplate = INIT_TYPE_TEMPLATE("Array", 1, info_Dummy());
     this->mapTemplate   = INIT_TYPE_TEMPLATE("Map", 2, info_Dummy());
-    this->pairTemplate  = INIT_TYPE_TEMPLATE("Pair", 2, info_Dummy());    //FIXME: replace to Tuple
+    this->tupleTemplate  = INIT_TYPE_TEMPLATE("Tuple", 0, 0);   // pseudo template.
 }
 
 TypePool::~TypePool() {
@@ -144,8 +144,8 @@ TypeTemplate *TypePool::getMapTemplate() {
     return this->mapTemplate;
 }
 
-TypeTemplate *TypePool::getPairTemplate() {
-    return this->pairTemplate;
+TypeTemplate *TypePool::getTupleTemplate() {
+    return this->tupleTemplate;
 }
 
 DSType *TypePool::getType(const std::string &typeName) {
@@ -171,7 +171,15 @@ TypeTemplate *TypePool::getTypeTemplate(const std::string &typeName, int element
 
 DSType *TypePool::createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate,
         const std::vector<DSType*> &elementTypes) { //FIXME: not use typeMap
+    if(this->tupleTemplate->getName() == typeTemplate->getName()) {
+        return this->createAndGetTupleTypeIfUndefined(elementTypes);
+    }
     this->checkElementTypes(elementTypes);
+
+    if(typeTemplate->getElementTypeSize() != elementTypes.size()) {
+        E_UnmatchElement(typeTemplate->getName(),
+                std::to_string(typeTemplate->getElementTypeSize()), std::to_string(elementTypes.size()));
+    }
 
     std::string typeName = toReifiedTypeName(typeTemplate, elementTypes);
     DSType *type = newReifiedType(typeTemplate, this->anyType, elementTypes);
@@ -185,6 +193,9 @@ DSType *TypePool::createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate,
 DSType *TypePool::createAndGetTupleTypeIfUndefined(const std::vector<DSType*> &elementTypes) {
     this->checkElementTypes(elementTypes);
 
+    if(elementTypes.size() < 2) {
+        E_TupleElement();
+    }
     std::string typeName = toTupleTypeName(elementTypes);
     DSType *type = newTupleType(this->anyType, elementTypes); //FIXME: not use typeMap
     auto pair = this->typeMap.insert(std::make_pair(typeName, type));

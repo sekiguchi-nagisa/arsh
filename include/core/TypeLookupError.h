@@ -21,6 +21,8 @@
 #include <vector>
 
 #define EACH_TL_ERROR(ERROR) \
+        /* zero arg */\
+        ERROR(E_TupleElement  , "Tuple type require at least 2 type element.") \
         /* one arg */\
         ERROR(E_NotUseGeneric , "not directly use generic base type: %s") \
         ERROR(E_UndefinedType , "undefined type: %s") \
@@ -55,6 +57,7 @@ public:
 
     bool operator==(const TypeLookupError &e);
 
+    static void report(ErrorKind kind);
     static void report(ErrorKind kind, const std::string &arg1);
     static void report(ErrorKind kind, const std::string &arg1,
             const std::string &arg2, const std::string &arg3);
@@ -62,9 +65,11 @@ public:
 
 // helper macro for error reporting
 
+#define REPORT_TL_ERROR0(name)                   do { TypeLookupError::report(TypeLookupError::E_##name); } while(0)
 #define REPORT_TL_ERROR1(name, arg1)             do { TypeLookupError::report(TypeLookupError::E_##name, arg1); } while(0)
 #define REPORT_TL_ERROR3(name, arg1, arg2, arg3) do { TypeLookupError::report(TypeLookupError::E_##name, arg1, arg2, arg3); } while(0)
 
+#define E_TupleElement()                   REPORT_TL_ERROR0(TupleElement)
 #define E_NotUseGeneric(arg1)              REPORT_TL_ERROR1(NotUseGeneric , arg1)
 #define E_UndefinedType(arg1)              REPORT_TL_ERROR1(UndefinedType , arg1)
 #define E_NotGenericBase(arg1)             REPORT_TL_ERROR1(NotGenericBase, arg1)
