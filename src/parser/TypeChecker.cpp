@@ -831,7 +831,7 @@ void TypeChecker::visitTryNode(TryNode *node) {
     this->checkTypeWithNewBlockScope(node->getBlockNode());
     // check type catch block
     for(CatchNode *c : node->getCatchNodes()) {
-        this->checkType(c);
+        this->checkTypeAsStatement(c);
     }
 
     // check type finally block, may be empty node
