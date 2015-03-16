@@ -829,13 +829,17 @@ std::unique_ptr<Node> Parser::parse_expression(std::unique_ptr<Node> &&leftNode,
             this->matchToken(AS);
             this->hasNoNewLine();
             auto type = this->parse_typeName();
-            RET_NODE(new CastNode(node.release(), type.release()));
+            node = std::unique_ptr<Node>(
+                    new CastNode(node.release(), type.release()));
+            break;
         }
         case IS: {
             this->matchToken(IS);
             this->hasNoNewLine();
             auto type = this->parse_typeName();
-            RET_NODE(new InstanceOfNode(node.release(), type.release()));
+            node = std::unique_ptr<Node>(
+                    new InstanceOfNode(node.release(), type.release()));
+            break;
         }
         default: {
             TokenKind op = this->consumeAndGetKind();
