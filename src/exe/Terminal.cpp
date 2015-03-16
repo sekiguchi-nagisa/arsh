@@ -95,7 +95,6 @@ const char *Terminal::readLine() {
 
     el_set(this->el, EL_PROMPT, prompt);
     this->addHistory();
-    printf("%s", this->lineBuf.c_str());
     return this->lineBuf.c_str();
 }
 

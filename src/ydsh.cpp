@@ -19,25 +19,19 @@
 #include <parser/Lexer.h>
 #include <parser/Parser.h>
 #include <parser/CommonErrorListener.h>
+#include <core/TypePool.h>
+#include <parser/TypeChecker.h>
+#include <core/DSType.h>
 #include <exe/Terminal.h>
 #include <ast/Node.h>
 #include <ast/dump.h>
 using namespace std;
 
 int main(int argc, char **argv) {
-    cout << "!!!Hello World!!!" << endl; // prints !!!Hello World!!!
-    debugp("hello debug print %d!!\n", 12);
-    debugp("hello debug print no arg\n");
-   // Lexer lexer("12345; $a");
-    Lexer lexer("assert");
-    Token t;
-    TokenKind k = EOS;
-    do {
-        k = lexer.nextToken(t);
-        cout << TO_NAME(k) << endl;
-    } while(k != EOS && k != INVALID);
-
     Terminal term(argv[0]);
+
+    TypePool pool;
+    TypeChecker checker(&pool);
 
     unsigned int lineNum = 1;
     const char *line;
@@ -46,13 +40,25 @@ int main(int argc, char **argv) {
         Lexer lexer(line);
         lexer.setLineNum(lineNum);
         Parser parser(&lexer);
+        RootNode *rootNode;
         try {
-            RootNode *rootNode = parser.parse();
+            rootNode = parser.parse();
+            cout << "```` before check type ````" << endl;
             dumpAST(cout, *rootNode);
-            delete rootNode;
         } catch(const ParseError &e) {
             listener.displayParseError(lexer, "(stdin)", e);
+            continue;
         }
+
+        try {
+            checker.checkTypeRootNode(rootNode);
+            cout << "\n```` after check type ````" << endl;
+            dumpAST(cout, *rootNode);
+        } catch(const TypeCheckError &e) {
+            listener.displayTypeError("(stdin)", e);
+            checker.recover();
+        }
+        delete rootNode;
         lineNum = lexer.getLineNum();
     }
     return 0;

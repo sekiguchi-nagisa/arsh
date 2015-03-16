@@ -17,7 +17,7 @@
 #include <core/TypeLookupError.h>
 
 const static char *msgTable[] = {
-#define GEN_MSG(ENUM, MSG) #MSG,
+#define GEN_MSG(ENUM, MSG) MSG,
         EACH_TL_ERROR(GEN_MSG)
 #undef GEN_MSG
 };

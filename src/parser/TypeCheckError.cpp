@@ -17,7 +17,7 @@
 #include <parser/TypeCheckError.h>
 
 const static char *msgTable[] = {
-#define GEN_MSG(ENUM, MSG) #MSG,
+#define GEN_MSG(ENUM, MSG) MSG,
         EACH_TC_ERROR(GEN_MSG)
 #undef GEN_MSG
 };

@@ -57,7 +57,7 @@ void CommonErrorListener::displayTypeError(const std::string &sourceName,
         break;
     }
 
-    fprintf(stderr, "(%s):%d: [semantic error] %s\n", sourceName.c_str(), e.getLineNum(), strBuf);
+    fprintf(stderr, "%s:%d: [semantic error] %s\n", sourceName.c_str(), e.getLineNum(), strBuf);
     delete[] strBuf;
 }
 
