@@ -187,7 +187,7 @@ DSType *TypePool::createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate,
     if(!pair.second) {
         delete type;
     }
-    return type;
+    return pair.first->second;
 }
 
 DSType *TypePool::createAndGetTupleTypeIfUndefined(const std::vector<DSType*> &elementTypes) {
@@ -202,7 +202,7 @@ DSType *TypePool::createAndGetTupleTypeIfUndefined(const std::vector<DSType*> &e
     if(!pair.second) {
         delete type;
     }
-    return type;
+    return pair.first->second;
 }
 
 FunctionType *TypePool::createAndGetFuncTypeIfUndefined(DSType *returnType,
