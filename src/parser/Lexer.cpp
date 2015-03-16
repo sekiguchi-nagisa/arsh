@@ -186,7 +186,7 @@ std::string Lexer::toString(const Token &token, bool isSingleQuote) const {
 
     unsigned int offset = isSingleQuote ? 1 : 0;
     unsigned int size = token.size - offset;
-    for(unsigned int i = 0; i < size; i++) {
+    for(unsigned int i = offset; i < size; i++) {
         char ch = this->buf[token.startPos + i];
         if(ch == '\\') {    // handle escape sequence
             char nextCh = this->buf[token.startPos + ++i];
