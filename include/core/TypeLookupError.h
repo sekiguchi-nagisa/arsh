@@ -24,7 +24,7 @@
         /* one arg */\
         ERROR(E_NotUseGeneric , "not directly use generic base type: %s") \
         ERROR(E_UndefinedType , "undefined type: %s") \
-        ERROR(E_NotGenericBase, "not generic base type: %s") \
+        ERROR(E_NotGenericBase, "unsupported type template: %s") \
         ERROR(E_NotPrimitive  , "not primitive type: %s") \
         ERROR(E_NotClass      , "not class type: %s") \
         ERROR(E_Nonheritable  , "nonheritable type: %s") \
