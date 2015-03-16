@@ -533,8 +533,9 @@ INLINE void Parser::parse_statementEnd() {
 }
 
 std::unique_ptr<BlockNode> Parser::parse_block() {
+    unsigned int n = LN();
     this->matchToken(LBC);
-    auto blockNode = std::unique_ptr<BlockNode>(new BlockNode);
+    auto blockNode = std::unique_ptr<BlockNode>(new BlockNode(n));
 
     blockNode->addNode(this->parse_statement().release());
 

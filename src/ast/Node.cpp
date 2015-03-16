@@ -1208,8 +1208,8 @@ EvalStatus AssertNode::eval(RuntimeContext &ctx) {
 // ##     BlockNode     ##
 // #######################
 
-BlockNode::BlockNode() :
-        Node(0), nodeList() {
+BlockNode::BlockNode(unsigned int lineNum) :
+        Node(lineNum), nodeList() {
 }
 
 BlockNode::~BlockNode() {
@@ -1551,7 +1551,7 @@ void IfNode::addElseNode(BlockNode *elseNode) {
 
 BlockNode *IfNode::getElseNode() {
     if(this->elseNode == 0) {
-        this->elseNode = new BlockNode();
+        this->elseNode = new BlockNode(0);
     }
     return this->elseNode;
 }

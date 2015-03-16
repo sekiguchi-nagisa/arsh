@@ -652,7 +652,7 @@ private:
     std::list<Node*> nodeList;
 
 public:
-    BlockNode();
+    BlockNode(unsigned int lineNum);
     ~BlockNode();
 
     void addNode(Node *node);
