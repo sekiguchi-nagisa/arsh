@@ -868,11 +868,11 @@ void TypeChecker::visitVarDeclNode(VarDeclNode *node) {
 
 void TypeChecker::visitAssignNode(AssignNode *node) {
     AssignableNode *leftNode = dynamic_cast<AssignableNode*>(node->getLeftNode());
-    DSType *leftType = this->checkType(leftNode);
-
     if(leftNode == 0) {
         E_Assignable(node);
     }
+
+    DSType *leftType = this->checkType(leftNode);
     if(leftNode->isReadOnly()) {
         E_ReadOnly(node);
     }

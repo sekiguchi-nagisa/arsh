@@ -2215,7 +2215,7 @@ Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode) {
     // assign to element
     ApplyNode *indexNode = dynamic_cast<ApplyNode*>(leftNode);
     if(indexNode != 0 && indexNode->hasAttribute(ApplyNode::INDEX)) {
-        //FIXME: element self assignment
+        fatal("unimplemented assignment to element");   //FIXME:
         return 0;
     } else {
         // assign to variable or field
