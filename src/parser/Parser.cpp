@@ -254,8 +254,8 @@ INLINE std::unique_ptr<Node> Parser::parse_function() {
         while(!HAS_NL() && this->curTokenKind == COMMA) {
             this->matchToken(COMMA);
 
-            nameNode = std::unique_ptr<VarNode>(
-                    new VarNode(LN(), this->lexer->toName(this->matchAndGetToken(APPLIED_NAME))));
+            nameNode.reset(new VarNode(LN(),
+                    this->lexer->toName(this->matchAndGetToken(APPLIED_NAME))));
             this->hasNoNewLine();
             this->matchToken(COLON);
             this->hasNoNewLine();
@@ -691,8 +691,7 @@ INLINE std::unique_ptr<Node> Parser::parse_orListCommand() {
     while(this->curTokenKind == OR_LIST) {
         this->matchToken(OR_LIST);
         std::unique_ptr<Node> rightNode(this->parse_andListCommand());
-        node = std::unique_ptr<Node>(
-                new CondOpNode(node.release(), rightNode.release(), false));
+        node.reset(new CondOpNode(node.release(), rightNode.release(), false));
     }
     return node;
 }
@@ -703,8 +702,7 @@ INLINE std::unique_ptr<Node> Parser::parse_andListCommand() {
     while(this->curTokenKind == AND_LIST) {
         this->matchToken(AND_LIST);
         std::unique_ptr<Node> rightNode(this->parse_pipedCommand());
-        node = std::unique_ptr<Node>(
-                new CondOpNode(node.release(), rightNode.release(), true));
+        node.reset(new CondOpNode(node.release(), rightNode.release(), true));
     }
     return node;
 }
@@ -824,16 +822,14 @@ std::unique_ptr<Node> Parser::parse_expression(std::unique_ptr<Node> &&leftNode,
             this->matchToken(AS);
             this->hasNoNewLine();
             std::unique_ptr<TypeToken> type(this->parse_typeName());
-            node = std::unique_ptr<Node>(
-                    new CastNode(node.release(), type.release()));
+            node.reset(new CastNode(node.release(), type.release()));
             break;
         }
         case IS: {
             this->matchToken(IS);
             this->hasNoNewLine();
             std::unique_ptr<TypeToken> type(this->parse_typeName());
-            node = std::unique_ptr<Node>(
-                    new InstanceOfNode(node.release(), type.release()));
+            node.reset(new InstanceOfNode(node.release(), type.release()));
             break;
         }
         default: {
@@ -842,8 +838,7 @@ std::unique_ptr<Node> Parser::parse_expression(std::unique_ptr<Node> &&leftNode,
             for(unsigned int nextP = PRECEDENCE(); nextP >= p; nextP = PRECEDENCE()) {
                 rightNode = this->parse_expression(std::move(rightNode), nextP);
             }
-            node = std::unique_ptr<Node>(
-                    createBinaryOpNode(node.release(), op, rightNode.release()));
+            node.reset(createBinaryOpNode(node.release(), op, rightNode.release()));
             break;
         }
         }
@@ -888,20 +883,19 @@ INLINE std::unique_ptr<Node> Parser::parse_memberExpression() {
             this->matchToken(ACCESSOR);
             this->hasNoNewLine();
             std::string name(this->lexer->toName(this->matchAndGetToken(IDENTIFIER)));
-            node = std::unique_ptr<Node>(new AccessNode(node.release(), std::move(name)));
+            node.reset(new AccessNode(node.release(), std::move(name)));
             break;
         }
         case LB: {
             this->matchToken(LB);
             std::unique_ptr<Node> indexNode(this->parse_expression());
             this->matchToken(RB);
-            node = std::unique_ptr<Node>(
-                    createIndexNode(node.release(), indexNode.release()));
+            node.reset(createIndexNode(node.release(), indexNode.release()));
             break;
         }
         case LP: {
             std::unique_ptr<ArgsNode> args(this->parse_arguments());
-            node = std::unique_ptr<Node>(new ApplyNode(node.release(), args.release()));
+            node.reset(new ApplyNode(node.release(), args.release()));
             break;
         }
         default: {
