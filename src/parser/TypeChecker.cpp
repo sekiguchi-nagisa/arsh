@@ -664,40 +664,37 @@ void TypeChecker::visitCondOpNode(CondOpNode *node) {
 
 void TypeChecker::visitCmdNode(CmdNode *node) {
     for(CmdArgNode *argNode : node->getArgNodes()) {
-        this->checkType(this->typePool->getProcArgType(), argNode);
+        this->checkTypeAsStatement(argNode);    // always void
     }
     // check type redirect options
     for(const std::pair<int, Node*> &optionPair : node->getRedirOptions()) {
         this->checkTypeAsStatement(optionPair.second);
     }
-    node->setType(this->typePool->getProcType());
+    node->setType(this->typePool->getVoidType());   // FIXME
 }
 
 void TypeChecker::visitCmdArgNode(CmdArgNode *node) {
     for(Node *exprNode : node->getSegmentNodes()) {
         this->checkType(exprNode);
     }
-    node->setType(this->typePool->getProcArgType());
+    node->setType(this->typePool->getVoidType());   //FIXME
 }
 
 void TypeChecker::visitSpecialCharNode(SpecialCharNode *node) {
     E_Unimplemented(node, "SpecialCharNode");
 } //TODO
 
-void TypeChecker::visitPipedCmdNode(PipedCmdNode *node) {    //TODO: parent node
+void TypeChecker::visitPipedCmdNode(PipedCmdNode *node) {
     for(CmdNode *procNode : node->getCmdNodes()) {
-        this->checkType(this->typePool->getProcType(), procNode);
+        this->checkTypeAsStatement(procNode);   // always void
     }
-
-    /**
-     * resolve task type
-     */
-    node->setType(this->typePool->getVoidType());
+    node->setType(this->typePool->getVoidType());   //FIXME
 }
 
-void TypeChecker::visitCmdContextNode(CmdContextNode *node) {
-    E_Unimplemented(node, "CmdContextNode");
-} //TODO
+void TypeChecker::visitCmdContextNode(CmdContextNode *node) {   //TODO: return type, attribute
+    this->checkTypeAsStatement(node->getExprNode());    // FIXME:
+    node->setType(this->typePool->getVoidType());
+}
 
 void TypeChecker::visitAssertNode(AssertNode *node) {
     this->checkType(this->typePool->getBooleanType(), node->getExprNode());

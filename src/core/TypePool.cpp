@@ -40,7 +40,6 @@ TypePool::TypePool() :
         typeMap(16), anyType(), voidType(), valueType(),
         intType(), floatType(), boolType(), stringType(),
         taskType(), baseFuncType(),
-        procArgType(), procType(),
         templateMap(8),
         arrayTemplate(), mapTemplate(), tupleTemplate() {
 
@@ -63,16 +62,6 @@ TypePool::TypePool() :
      * hidden from script
      */
     this->baseFuncType = INIT_CLASS_TYPE("%BaseFunc%", false, this->anyType, info_Dummy());
-
-    /**
-     * hidden from script
-     */
-    this->procArgType  = INIT_CLASS_TYPE("%ProcArg%", false, this->anyType, info_Dummy());
-
-    /**
-     * hidden from script
-     */
-    this->procType     = INIT_CLASS_TYPE("%Proc%", false, this->anyType, info_Dummy());
 
     // initialize type template
     this->arrayTemplate = INIT_TYPE_TEMPLATE("Array", 1, info_Dummy());
@@ -126,14 +115,6 @@ DSType *TypePool::getTaskType() {
 
 DSType *TypePool::getBaseFuncType() {
     return this->baseFuncType;
-}
-
-DSType *TypePool::getProcArgType( ){
-    return this->procArgType;
-}
-
-DSType *TypePool::getProcType() {
-    return this->procType;
 }
 
 TypeTemplate *TypePool::getArrayTemplate() {

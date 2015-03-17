@@ -50,13 +50,6 @@ private:
     DSType *baseFuncType;
 
     /**
-     * for command invocation.
-     * not directly use it.
-     */
-    DSType *procArgType;
-    DSType *procType;
-
-    /**
      * for type template
      */
     std::unordered_map<std::string, TypeTemplate*> templateMap;
@@ -100,10 +93,6 @@ public:
     DSType *getStringType();
     DSType *getTaskType();
     DSType *getBaseFuncType();
-
-    // for command
-    DSType *getProcArgType();
-    DSType *getProcType();
 
     // for reified type.
     TypeTemplate *getArrayTemplate();
