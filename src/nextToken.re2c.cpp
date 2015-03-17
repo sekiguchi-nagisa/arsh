@@ -19,6 +19,8 @@
 // helper macro definition.
 #define RET(k) do { kind = k; goto END; } while(0)
 
+#define REACH_EOS() do { goto EOS; } while(0)
+
 #define SKIP() goto INIT
 
 #define ERROR() do { RET(INVALID); } while(0)
@@ -75,7 +77,7 @@ TokenKind Lexer::nextToken(Token &token) {
       re2c:define:YYCTXMARKER = this->ctxMarker;
       re2c:define:YYFILL:naked = 1;
       re2c:define:YYFILL@len = #;
-      re2c:define:YYFILL = "if(!this->fill(#)) { RET(EOS); }";
+      re2c:define:YYFILL = "if(!this->fill(#)) { REACH_EOS(); }";
       re2c:yyfill:enable = 1;
       re2c:indent:top = 1;
       re2c:indent:string = "    ";
@@ -104,7 +106,7 @@ TokenKind Lexer::nextToken(Token &token) {
       LINE_END = ';';
       NEW_LINE = [\r\n][ \t\r\n]*;
       COMMENT = '#' [^\r\n\000]*;
-      OTHER = .;
+      OTHER = . | [\r\n];
     */
 
     bool foundNewLine = false;
@@ -240,7 +242,7 @@ INIT:
 
 
 
-      <STMT,EXPR,NAME,DSTRING,CMD> '\000' { RET(EOS); }
+      <STMT,EXPR,NAME,DSTRING,CMD> '\000' { REACH_EOS();}
       <STMT,EXPR,NAME,DSTRING,CMD> OTHER  { RET(INVALID); }
     */
 
@@ -249,5 +251,11 @@ END:
     token.size = this->getPos() - startPos;
     this->prevNewLine = foundNewLine;
     return kind;
+
+EOS:
+    token.startPos = this->limit - this->buf;
+    token.size = 0;
+    this->prevNewLine = foundNewLine;
+    return EOS;
 }
 

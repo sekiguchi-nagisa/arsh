@@ -76,11 +76,16 @@ public:
         } while(k != EOS && k != INVALID);
     }
 
+    virtual void assertKind(TokenKind expected, TokenKind actual) {
+        SCOPED_TRACE("");
+        ASSERT_STREQ(TO_NAME(expected), TO_NAME(actual));
+    }
+
     virtual void assertToken(unsigned int index, TokenKind expectedKind, const char *expectedText) {
         SCOPED_TRACE("");
         ASSERT_TRUE(index < this->tokens.size());
         auto pair = this->tokens[index];
-        ASSERT_EQ(expectedKind, pair.first);
+        this->assertKind(expectedKind, pair.first);
 
         ASSERT_EQ(strlen(expectedText), pair.second.size);
         std::string text = this->lexer->toTokenText(pair.second);
@@ -96,7 +101,7 @@ TEST_F(LexerTest_Lv1, assert_tok) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, ASSERT, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -109,7 +114,7 @@ TEST_F(LexerTest_Lv1, break_tok) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, BREAK, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -122,7 +127,7 @@ TEST_F(LexerTest_Lv1, catch_tok) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, CATCH, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -135,7 +140,7 @@ TEST_F(LexerTest_Lv1, class_tok) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, CLASS, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -148,7 +153,7 @@ TEST_F(LexerTest_Lv1, continue_tok) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, CONTINUE, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -161,7 +166,7 @@ TEST_F(LexerTest_Lv1, do_tok) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, DO, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -174,7 +179,7 @@ TEST_F(LexerTest_Lv1, else_tok) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, ELSE, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -188,7 +193,7 @@ TEST_F(LexerTest_Lv1, extends_tok) {
         ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, EXTENDS, TEXT);
         this->assertToken(1, EXTENDS, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -201,7 +206,7 @@ TEST_F(LexerTest_Lv1, exportenv_tok) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, EXPORT_ENV, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -214,7 +219,7 @@ TEST_F(LexerTest_Lv1, finally_tok) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, FINALLY, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -227,7 +232,7 @@ TEST_F(LexerTest_Lv1, for_tok) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, FOR, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -240,7 +245,7 @@ TEST_F(LexerTest_Lv1, function_tok) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, FUNCTION, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -253,7 +258,7 @@ TEST_F(LexerTest_Lv1, if_tok) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, IF, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -266,7 +271,7 @@ TEST_F(LexerTest_Lv1, importenv_tok) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, IMPORT_ENV, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -279,7 +284,7 @@ TEST_F(LexerTest_Lv1, let_tok) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, LET, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -293,7 +298,7 @@ TEST_F(LexerTest_Lv1, new_tok) {
         ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, NEW, TEXT);
         this->assertToken(1, NEW, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -307,7 +312,7 @@ TEST_F(LexerTest_Lv1, not_tok) {
         ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, NOT, TEXT);
         this->assertToken(1, NOT, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -320,7 +325,7 @@ TEST_F(LexerTest_Lv1, return_tok) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, RETURN, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -333,7 +338,7 @@ TEST_F(LexerTest_Lv1, try_tok) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, TRY, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -346,7 +351,7 @@ TEST_F(LexerTest_Lv1, throw_tok) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, THROW, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -359,7 +364,7 @@ TEST_F(LexerTest_Lv1, var_tok) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, VAR, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -372,7 +377,7 @@ TEST_F(LexerTest_Lv1, while_tok) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, WHILE, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -386,7 +391,7 @@ TEST_F(LexerTest_Lv1, plus_tok) {
         ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, PLUS, TEXT);
         this->assertToken(1, PLUS, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -400,7 +405,7 @@ TEST_F(LexerTest_Lv1, minus_tok) {
         ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, MINUS, TEXT);
         this->assertToken(1, MINUS, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -418,7 +423,7 @@ TEST_F(LexerTest_Lv1, int_literal1) {
         ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, INT_LITERAL, TEXT);
         this->assertToken(1, INT_LITERAL, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -432,7 +437,7 @@ TEST_F(LexerTest_Lv1, int_literal2) {
         ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, INT_LITERAL, TEXT);
         this->assertToken(1, INT_LITERAL, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -446,7 +451,7 @@ TEST_F(LexerTest_Lv1, int_literal3) {
         ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, INT_LITERAL, TEXT);
         this->assertToken(1, INT_LITERAL, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -460,7 +465,7 @@ TEST_F(LexerTest_Lv1, int_literal4) {
         ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, INT_LITERAL, TEXT);
         this->assertToken(1, INT_LITERAL, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -477,7 +482,7 @@ TEST_F(LexerTest_Lv1, invaild_int_literal) {
         this->assertToken(1, INT_LITERAL, "14");
         this->assertToken(2, INT_LITERAL, "0");
         this->assertToken(3, INT_LITERAL, "14");
-        ASSERT_EQ(EOS, this->getTokens()[4].first);
+        this->assertKind(EOS, this->getTokens()[4].first);
     });
 #undef TEXT
 }
@@ -492,7 +497,7 @@ TEST_F(LexerTest_Lv1, float_literal1) {
         ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, FLOAT_LITERAL, TEXT);
         this->assertToken(1, FLOAT_LITERAL, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -506,7 +511,7 @@ TEST_F(LexerTest_Lv1, float_literal2) {
         ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, FLOAT_LITERAL, TEXT);
         this->assertToken(1, FLOAT_LITERAL, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -520,7 +525,7 @@ TEST_F(LexerTest_Lv1, float_literal3) {
         ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, FLOAT_LITERAL, TEXT);
         this->assertToken(1, FLOAT_LITERAL, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -534,7 +539,7 @@ TEST_F(LexerTest_Lv1, float_literal4) {
         ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, FLOAT_LITERAL, TEXT);
         this->assertToken(1, FLOAT_LITERAL, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -548,7 +553,7 @@ TEST_F(LexerTest_Lv1, float_literal5) {
         ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, FLOAT_LITERAL, TEXT);
         this->assertToken(1, FLOAT_LITERAL, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -565,7 +570,7 @@ TEST_F(LexerTest_Lv1, invalid_float_literal1) {
         this->assertToken(1, INT_LITERAL, "1");
         this->assertToken(2, FLOAT_LITERAL, "0.010964e+0");
         this->assertToken(3, INT_LITERAL, "1");
-        ASSERT_EQ(EOS, this->getTokens()[4].first);
+        this->assertKind(EOS, this->getTokens()[4].first);
     });
 #undef TEXT
 }
@@ -583,7 +588,7 @@ TEST_F(LexerTest_Lv1, invalid_float_literal2) {
         this->assertToken(3, INT_LITERAL, "0");
         this->assertToken(4, INT_LITERAL, "0");
         this->assertToken(5, FLOAT_LITERAL, "12.04e-78");
-        ASSERT_EQ(EOS, this->getTokens()[6].first);
+        this->assertKind(EOS, this->getTokens()[6].first);
     });
 #undef TEXT
 }
@@ -598,7 +603,7 @@ TEST_F(LexerTest_Lv1, string_literal1) {
         ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, STRING_LITERAL, TEXT);
         this->assertToken(1, STRING_LITERAL, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -612,7 +617,7 @@ TEST_F(LexerTest_Lv1, string_literal2) {
         ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, STRING_LITERAL, TEXT);
         this->assertToken(1, STRING_LITERAL, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -626,7 +631,7 @@ TEST_F(LexerTest_Lv1, string_literal3) {
         ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, STRING_LITERAL, TEXT);
         this->assertToken(1, STRING_LITERAL, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -639,7 +644,53 @@ TEST_F(LexerTest_Lv1, invalid_string_literal) {
         this->initLexer(DUP(TEXT));
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 1);
-        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+        this->assertKind(INVALID, this->getTokens()[0].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, string_expr1) {
+#define TEXT "\"hello word\""
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 4);
+        this->assertToken(0, OPEN_DQUOTE, "\"");
+        this->assertToken(1, STR_ELEMENT, "hello word");
+        this->assertToken(2, CLOSE_DQUOTE, "\"");
+        this->assertKind(EOS, this->getTokens()[3].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, string_expr2) {
+#define TEXT "\"hello ${a} word\""
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 6);
+        this->assertToken(0, OPEN_DQUOTE, "\"");
+        this->assertToken(1, STR_ELEMENT, "hello ");
+        this->assertToken(2, APPLIED_NAME, "${a}");
+        this->assertToken(3, STR_ELEMENT, " word");
+        this->assertToken(4, CLOSE_DQUOTE, "\"");
+        this->assertKind(EOS, this->getTokens()[5].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, invalid_string_expr) {
+#define TEXT "\"hello\nword\""
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 3);
+        this->assertToken(0, OPEN_DQUOTE, "\"");
+        this->assertToken(1, STR_ELEMENT, "hello");
+        this->assertKind(INVALID, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -654,7 +705,7 @@ TEST_F(LexerTest_Lv1, appliedName1) {
         ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, APPLIED_NAME, TEXT);
         this->assertToken(1, APPLIED_NAME, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -668,7 +719,7 @@ TEST_F(LexerTest_Lv1, appliedName2) {
         ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, APPLIED_NAME, TEXT);
         this->assertToken(1, APPLIED_NAME, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -681,7 +732,7 @@ TEST_F(LexerTest_Lv1, invalid_appliedName) {
         this->initLexer(TEXT);
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 1);
-        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+        this->assertKind(INVALID, this->getTokens()[0].first);
     });
 #undef TEXT
 }
@@ -696,7 +747,7 @@ TEST_F(LexerTest_Lv1, specialName) {
         ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, SPECIAL_NAME, TEXT);
         this->assertToken(1, SPECIAL_NAME, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -713,7 +764,7 @@ TEST_F(LexerTest_Lv1, LP) {
         ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, LP, TEXT);
         this->assertToken(1, LP, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -725,7 +776,7 @@ TEST_F(LexerTest_Lv1, RP) {
         this->initLexer(DUP(TEXT));
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 1);
-        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+        this->assertKind(INVALID, this->getTokens()[0].first);
     });
 #undef TEXT
 }
@@ -739,7 +790,7 @@ TEST_F(LexerTest_Lv1, LB) {
         ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, LB, TEXT);
         this->assertToken(1, LB, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -753,7 +804,7 @@ TEST_F(LexerTest_Lv1, RB) {
         ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, RB, TEXT);
         this->assertToken(1, RB, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -767,7 +818,7 @@ TEST_F(LexerTest_Lv1, LBC) {
         ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, LBC, TEXT);
         this->assertToken(1, LBC, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -779,7 +830,7 @@ TEST_F(LexerTest_Lv1, RBC) {
         this->initLexer(TEXT);
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 1);
-        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+        this->assertKind(INVALID, this->getTokens()[0].first);
     });
 #undef TEXT
 }
@@ -795,7 +846,7 @@ TEST_F(LexerTest_Lv1, CMD1) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, COMMAND, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -808,7 +859,7 @@ TEST_F(LexerTest_Lv1, CMD2) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, COMMAND, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -821,7 +872,7 @@ TEST_F(LexerTest_Lv1, CMD3) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, COMMAND, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -837,7 +888,7 @@ TEST_F(LexerTest_Lv1, COLON) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, COMMAND, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -850,7 +901,7 @@ TEST_F(LexerTest_Lv1, COMMA) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, COMMAND, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -863,7 +914,7 @@ TEST_F(LexerTest_Lv1, MUL) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, COMMAND, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -876,7 +927,7 @@ TEST_F(LexerTest_Lv1, DIV) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, COMMAND, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -889,7 +940,7 @@ TEST_F(LexerTest_Lv1, MOD) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, COMMAND, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -901,7 +952,7 @@ TEST_F(LexerTest_Lv1, LT) {
         this->initLexer(TEXT);
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 1);
-        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+        this->assertKind(INVALID, this->getTokens()[0].first);
     });
 #undef TEXT
 }
@@ -913,7 +964,7 @@ TEST_F(LexerTest_Lv1, GT) {
         this->initLexer(TEXT);
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 1);
-        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+        this->assertKind(INVALID, this->getTokens()[0].first);
     });
 #undef TEXT
 }
@@ -925,7 +976,7 @@ TEST_F(LexerTest_Lv1, LE) {
         this->initLexer(TEXT);
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 1);
-        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+        this->assertKind(INVALID, this->getTokens()[0].first);
     });
 #undef TEXT
 }
@@ -937,7 +988,7 @@ TEST_F(LexerTest_Lv1, GE) {
         this->initLexer(TEXT);
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 1);
-        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+        this->assertKind(INVALID, this->getTokens()[0].first);
     });
 #undef TEXT
 }
@@ -950,7 +1001,7 @@ TEST_F(LexerTest_Lv1, EQ) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, COMMAND, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -962,7 +1013,7 @@ TEST_F(LexerTest_Lv1, NE) {
         this->initLexer(TEXT);
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 1);
-        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+        this->assertKind(INVALID, this->getTokens()[0].first);
     });
 #undef TEXT
 }
@@ -974,7 +1025,7 @@ TEST_F(LexerTest_Lv1, AND) {
         this->initLexer(TEXT);
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 1);
-        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+        this->assertKind(INVALID, this->getTokens()[0].first);
     });
 #undef TEXT
 }
@@ -986,7 +1037,7 @@ TEST_F(LexerTest_Lv1, OR) {
         this->initLexer(TEXT);
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 1);
-        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+        this->assertKind(INVALID, this->getTokens()[0].first);
     });
 #undef TEXT
 }
@@ -999,7 +1050,7 @@ TEST_F(LexerTest_Lv1, XOR) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, COMMAND, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -1011,7 +1062,7 @@ TEST_F(LexerTest_Lv1, COND_AND) {
         this->initLexer(TEXT);
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 1);
-        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+        this->assertKind(INVALID, this->getTokens()[0].first);
     });
 #undef TEXT
 }
@@ -1023,7 +1074,7 @@ TEST_F(LexerTest_Lv1, COND_OR) {
         this->initLexer(TEXT);
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 1);
-        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+        this->assertKind(INVALID, this->getTokens()[0].first);
     });
 #undef TEXT
 }
@@ -1036,7 +1087,7 @@ TEST_F(LexerTest_Lv1, RE_MATCH) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, COMMAND, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -1048,7 +1099,7 @@ TEST_F(LexerTest_Lv1, RE_UNMATCH) {
         this->initLexer(TEXT);
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 1);
-        ASSERT_EQ(INVALID, this->getTokens()[0].first);
+        this->assertKind(INVALID, this->getTokens()[0].first);
     });
 #undef TEXT
 }
@@ -1061,7 +1112,7 @@ TEST_F(LexerTest_Lv1, INC) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, COMMAND, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -1074,7 +1125,7 @@ TEST_F(LexerTest_Lv1, DEC) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, COMMAND, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -1087,7 +1138,7 @@ TEST_F(LexerTest_Lv1, ASSIGN) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, COMMAND, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -1100,7 +1151,7 @@ TEST_F(LexerTest_Lv1, ADD_ASSIGN) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, COMMAND, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -1113,7 +1164,7 @@ TEST_F(LexerTest_Lv1, SUB_ASSIGN) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, COMMAND, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -1126,7 +1177,7 @@ TEST_F(LexerTest_Lv1, MUL_ASSIGN) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, COMMAND, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -1139,7 +1190,7 @@ TEST_F(LexerTest_Lv1, DIV_ASSIGN) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, COMMAND, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -1152,7 +1203,7 @@ TEST_F(LexerTest_Lv1, MOD_ASSIGN) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, COMMAND, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -1165,7 +1216,7 @@ TEST_F(LexerTest_Lv1, AS) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, COMMAND, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -1178,7 +1229,7 @@ TEST_F(LexerTest_Lv1, FUNC) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, COMMAND, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -1191,7 +1242,7 @@ TEST_F(LexerTest_Lv1, IN) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, COMMAND, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -1204,7 +1255,7 @@ TEST_F(LexerTest_Lv1, IS) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, COMMAND, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -1217,7 +1268,7 @@ TEST_F(LexerTest_Lv1, ACCESS) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, COMMAND, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -1234,7 +1285,7 @@ TEST_F(LexerTest_Lv1, LINE_END) {
         ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, LINE_END, TEXT);
         this->assertToken(1, LINE_END, TEXT);
-        ASSERT_EQ(EOS, this->getTokens()[2].first);
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -1246,7 +1297,7 @@ TEST_F(LexerTest_Lv1, COMMENT) {
         this->initLexer(TEXT);
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 1);
-        ASSERT_EQ(EOS, this->getTokens()[0].first);
+        this->assertKind(EOS, this->getTokens()[0].first);
     });
 #undef TEXT
 }
@@ -1258,7 +1309,7 @@ TEST_F(LexerTest_Lv1, SPACE1) {
         this->initLexer(DUP(TEXT));
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 1);
-        ASSERT_EQ(EOS, this->getTokens()[0].first);
+        this->assertKind(EOS, this->getTokens()[0].first);
     });
 #undef TEXT
 }
@@ -1271,7 +1322,7 @@ TEST_F(LexerTest_Lv1, SPACE2) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, VAR, "var");
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -1284,7 +1335,7 @@ TEST_F(LexerTest_Lv1, SPACE3) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, ASSERT, "assert");
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -1297,7 +1348,7 @@ TEST_F(LexerTest_Lv1, SPACE4) {
         this->tokenize();
         ASSERT_EQ(this->getTokens().size(), 2);
         this->assertToken(0, COMMAND, "echo");
-        ASSERT_EQ(EOS, this->getTokens()[1].first);
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -1309,15 +1360,15 @@ TEST(LexerTest_Lv2, NEW_LINE) {
         Token t;
         TokenKind k;
         k = lexer.nextToken(t);
-        ASSERT_EQ(k, ASSERT);
+        ASSERT_STREQ(TO_NAME(ASSERT), TO_NAME(k));
         ASSERT_TRUE(lexer.isPrevNewLine());
 
         k =lexer.nextToken(t);
-        ASSERT_EQ(k, EOS);
+        ASSERT_STREQ(TO_NAME(EOS), TO_NAME(k));
         ASSERT_TRUE(lexer.isPrevNewLine());
 
         k =lexer.nextToken(t);
-        ASSERT_EQ(k, EOS);
+        ASSERT_STREQ(TO_NAME(EOS), TO_NAME(k));
         ASSERT_FALSE(lexer.isPrevNewLine());
     });
 }

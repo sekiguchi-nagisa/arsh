@@ -148,8 +148,7 @@ struct Token {
     unsigned int startPos;
 
     /**
-     * actually EOS token text is empty string,
-     * but size of EOS is 1 (due to lexer implementation).
+     * size of EOS is 0.
      */
     unsigned int size;
 

@@ -40,7 +40,8 @@ Lexer::Lexer(unsigned int initSize, bool fixed) :
         bufSize((fixed || initSize > DEFAULT_SIZE) ? initSize : DEFAULT_SIZE),
         buf(new unsigned char[this->bufSize]),
         cursor(this->buf), limit(this->buf), marker(0), ctxMarker(0),
-        lineNum(1), endOfFile(false), modeStack(1, yycSTMT), prevNewLine(false) {
+        lineNum(1), endOfFile(fixed), endOfString(false),
+        modeStack(1, yycSTMT), prevNewLine(false) {
     this->buf[0] = '\0';    // terminate null character.
 }
 
@@ -96,24 +97,23 @@ void Lexer::expandBuf(unsigned int needSize) {
 }
 
 bool Lexer::fill(int n) {
-    if(this->endOfFile && (this->limit - this->cursor) <= 0) {
-        return false;
-    }
-
-    if(this->fp == 0) {
-        if(this->limit - this->cursor <= 0) {
-            this->endOfFile = true;
+    if(this->limit - this->cursor <= 0) {
+        if(this->endOfString) {
+            return false;
         }
-        return true;
-    }
-    int needSize = n - (this->limit - this->cursor);
-    assert(needSize > -1);
-    this->expandBuf(needSize);
-    int readSize = fread(this->limit, needSize, 1, this->fp);
-    this->limit += readSize;
-    *this->limit = '\0';
-    if(readSize < needSize) {
-        this->endOfFile = true;
+        if(!this->endOfFile) {
+            int needSize = n - (this->limit - this->cursor);
+            assert(needSize > -1);
+            this->expandBuf(needSize);
+            int readSize = fread(this->limit, needSize, 1, this->fp);
+            this->limit += readSize;
+            *this->limit = '\0';
+            if(readSize < needSize) {
+                this->endOfFile = true;
+            }
+            return true;
+        }
+        this->endOfString = true;
     }
     return true;
 }

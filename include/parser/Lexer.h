@@ -70,7 +70,15 @@ private:
      */
     unsigned int lineNum;
 
+    /**
+     * if fp is null or fp reach EOF, it it true.
+     */
     bool endOfFile;
+
+    /**
+     * if true, reach end of string. nextToken() always return EOS.
+     */
+    bool endOfString;
 
     /**
      * default mode is yycSTMT
