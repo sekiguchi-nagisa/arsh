@@ -15,6 +15,9 @@
  */
 
 #include <core/RuntimeContext.h>
+#include <util/debug.h>
+
+#include <iostream>
 
 // ############################
 // ##     RuntimeContext     ##
@@ -24,6 +27,9 @@
 #define DEFAULT_LOCAL_SIZE 256
 
 RuntimeContext::RuntimeContext() :
+        pool(),
+        trueObj(new Boolean_Object(this->pool.getBooleanType(), true)),
+        falseObj(new Boolean_Object(this->pool.getBooleanType(), false)),
         globalVarTable(new std::shared_ptr<DSObject>[DEFAULT_TABLE_SIZE]),
         tableSize(DEFAULT_TABLE_SIZE),
         thrownObject(std::shared_ptr<DSObject>(nullptr)),
@@ -59,7 +65,7 @@ void RuntimeContext::clearThrownObject() {
     this->thrownObject.reset();
 }
 
-void RuntimeContext::expandLocalStack() {
+inline void RuntimeContext::expandLocalStack() {
     unsigned int newSize = this->localStackSize;
     do {
         newSize *= 2;
@@ -73,9 +79,39 @@ void RuntimeContext::expandLocalStack() {
     this->localStackSize = newSize;
 }
 
+inline void RuntimeContext::push(std::shared_ptr<DSObject> value) {
+    if(++this->stackTopIndex >= this->localStackSize) {
+        this->expandLocalStack();
+    }
+    this->localStack[this->stackTopIndex] = value;
+}
+
 inline std::shared_ptr<DSObject> RuntimeContext::pop() {
     std::shared_ptr<DSObject> obj = this->localStack[this->stackTopIndex];
     this->localStack[this->stackTopIndex] = std::shared_ptr<DSObject>();
-    this->stackTopIndex--;
+    --this->stackTopIndex;
     return obj;
+}
+
+void RuntimeContext::printStackTop(DSType *stackTopType) {
+    if(!stackTopType->equals(this->pool.getVoidType())) {
+        std::cout << "(" << stackTopType->getTypeName()
+                << ") " << this->pop()->toString() << std::endl;
+    }
+}
+
+void RuntimeContext::checkCast(DSType *targetType) {
+    if(!PEEK(*this)->getType()->isAssignableFrom(targetType)) {
+        this->pop();
+        //FIXME: throw TypeCastException
+        fatal("throw TypeCastException\n");
+    }
+}
+
+void RuntimeContext::instanceOf(DSType *targetType) {
+    if(this->pop()->getType()->isAssignableFrom(targetType)) {
+        this->push(this->trueObj);
+    } else {
+        this->push(this->falseObj);
+    }
 }

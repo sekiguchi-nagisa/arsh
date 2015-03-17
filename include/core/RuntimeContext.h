@@ -18,10 +18,17 @@
 #define CORE_RUNTIMECONTEXT_H_
 
 #include <core/DSObject.h>
+#include <core/TypePool.h>
+#include <core/DSType.h>
 
 #include <vector>
 
 struct RuntimeContext {
+    TypePool pool;
+
+    std::shared_ptr<Boolean_Object> trueObj;
+    std::shared_ptr<Boolean_Object> falseObj;
+
     /**
      * contains global variables(or function)
      */
@@ -43,6 +50,10 @@ struct RuntimeContext {
     std::shared_ptr<DSObject> *localStack;
 
     unsigned int localStackSize;
+
+    /**
+     * initial value is 0. increment index before push
+     */
     unsigned int stackTopIndex;
 
     /**
@@ -64,22 +75,26 @@ struct RuntimeContext {
     void clearThrownObject();
 
     void expandLocalStack();
+    void push(std::shared_ptr<DSObject> value);
     std::shared_ptr<DSObject> pop();
+
+    // some runtime api
+    void printStackTop(DSType *stackTopType);
+    void checkCast(DSType *targetType);
+    void instanceOf(DSType *targetType);
 };
 
 // helper macro for RuntimeContext manipulation.
-#define SET_GVAR(ctx, index, val) ctx.globalVarTable[index] = val
+#define SET_GVAR(ctx, index, val) do { ctx.globalVarTable[index] = val; } while(0)
 #define GET_GVAR(ctx, index)      ctx.globalVarTable[index]
 
-#define SET_LVAR(ctx, index, val) ctx.localStack[ctx.localVarOffset + index] = val
+#define SET_LVAR(ctx, index, val) do { ctx.localStack[ctx.localVarOffset + index] = val; } while(0)
 #define GET_LVAR(ctx, index)      ctx.localStack[ctx.localVarOffset + index]
 
-#define PUSH(ctx, val)            \
-    do {\
-        if(ctx.stackTopIndex >= ctx.localStackSize) { ctx.expandLocalStack(); }\
-        ctx.localStack[ctx.stackTopIndex++] = val;\
-    } while(0)
+#define PUSH(ctx, val)            ctx.push(val)
 
 #define POP(ctx)                  ctx.pop()
+
+#define PEEK(ctx)                 (ctx).localStack[(ctx).stackTopIndex]
 
 #endif /* CORE_RUNTIMECONTEXT_H_ */

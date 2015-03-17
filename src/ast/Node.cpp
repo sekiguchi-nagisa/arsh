@@ -24,6 +24,16 @@
 #include <stdlib.h>
 #include <utility>
 
+// helper macro
+#define EVAL(ctx, node) \
+    do {\
+        EvalStatus status = (node)->eval(ctx);\
+        if(status != EVAL_SUCCESS) {\
+            return status;\
+        }\
+    } while(0)
+
+
 // ##################
 // ##     Node     ##
 // ##################
@@ -218,7 +228,19 @@ void StringExprNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus StringExprNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO:
+    unsigned int size = this->nodes.size();
+    if(size == 0) {
+        PUSH(ctx, std::make_shared<String_Object>(this->type, ""));
+    } else if(size == 1) {
+        this->nodes[0]->eval(ctx);
+    } else {
+        auto value = std::make_shared<String_Object>(this->type, "");
+        for(Node *node : this->nodes) {
+            EVAL(ctx, node);
+            value->append(*TYPE_AS(String_Object, POP(ctx)));
+        }
+        PUSH(ctx, value);
+    }
     return EVAL_SUCCESS;
 }
 
@@ -259,7 +281,12 @@ void ArrayNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus ArrayNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO
+    auto value = std::make_shared<Array_Object>(this->type);
+    for(Node *node : this->nodes) {
+        EVAL(ctx, node);
+        value->append(POP(ctx));
+    }
+    PUSH(ctx, value);
     return EVAL_SUCCESS;
 }
 
@@ -353,7 +380,13 @@ void TupleNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus TupleNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO:
+    unsigned int size = this->nodes.size();
+    auto value = std::make_shared<Tuple_Object>(this->type, size);
+    for(unsigned int i = 0; i < size; i++) {
+        EVAL(ctx, this->nodes[i]);
+        value->set(i, POP(ctx));
+    }
+    PUSH(ctx, value);
     return EVAL_SUCCESS;
 }
 
@@ -560,7 +593,31 @@ void CastNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus CastNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO
+    EVAL(ctx, this->exprNode);
+
+    switch(this->opKind) {
+    case NOP:
+        break;
+    case INT_TO_FLOAT: {
+        int value = TYPE_AS(Int_Object, POP(ctx))->getValue();
+        PUSH(ctx, std::make_shared<Float_Object>(this->type, (double) value));
+        break;
+    }
+    case FLOAT_TO_INT: {
+        double value = TYPE_AS(Float_Object, POP(ctx))->getValue();
+        PUSH(ctx, std::make_shared<Int_Object>(this->type, (int) value));
+        break;
+    }
+    case TO_STRING: {
+        fatal("unimplemented eval\n");
+        break;
+    }
+    case CHECK_CAST: {
+        ctx.checkCast(this->type);
+        break;
+    }
+    }
+
     return EVAL_SUCCESS;
 }
 
@@ -618,6 +675,7 @@ void InstanceOfNode::dump(Writer &writer) const {
 
 #define EACH_ENUM(OP, out) \
     OP(ALWAYS_FALSE, out) \
+    OP(ALWAYS_TRUE, out) \
     OP(INSTANCEOF, out)
 
     std::string val;
@@ -631,7 +689,21 @@ void InstanceOfNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus InstanceOfNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO
+    EVAL(ctx, this->targetNode);
+
+    switch(this->opKind) {
+    case INSTANCEOF:
+        ctx.instanceOf(this->targetType);
+        break;
+    case ALWAYS_TRUE:
+        POP(ctx);
+        PUSH(ctx, ctx.trueObj);
+        break;
+    case ALWAYS_FALSE:
+        POP(ctx);
+        PUSH(ctx, ctx.falseObj);
+        break;
+    }
     return EVAL_SUCCESS;
 }
 
@@ -698,8 +770,7 @@ void BinaryOpNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus BinaryOpNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO
-    return EVAL_SUCCESS;
+    return this->applyNode->eval(ctx);
 }
 
 // ######################
@@ -920,8 +991,24 @@ void CondOpNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus CondOpNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO
-    return EVAL_SUCCESS;
+    // eval left node
+    EVAL(ctx, this->leftNode);
+
+    if(this->andOp) {   // and
+        if(TYPE_AS(Boolean_Object, PEEK(ctx))->getValue()) {
+            POP(ctx);
+            return this->rightNode->eval(ctx);
+        } else {
+            return EVAL_SUCCESS;
+        }
+    } else {    // or
+        if(TYPE_AS(Boolean_Object, PEEK(ctx))->getValue()) {
+            return EVAL_SUCCESS;
+        } else {
+            POP(ctx);
+            return this->rightNode->eval(ctx);
+        }
+    }
 }
 
 // #####################
@@ -1240,7 +1327,12 @@ void BlockNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus BlockNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO
+    for(Node *node : this->nodeList) {
+        EVAL(ctx, node);
+        if(!node->getType()->equals(ctx.pool.getVoidType())) {
+            POP(ctx);
+        }
+    }
     return EVAL_SUCCESS;
 }
 
@@ -1269,8 +1361,7 @@ void BreakNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus BreakNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO:
-    return EVAL_SUCCESS;
+    return EVAL_BREAK;
 }
 
 // ##########################
@@ -1290,8 +1381,7 @@ void ContinueNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus ContinueNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO:
-    return EVAL_SUCCESS;
+    return EVAL_CONTINUE;
 }
 
 // ###########################
@@ -2081,6 +2171,24 @@ void RootNode::addNode(Node *node) {
 
 const std::list<Node*> &RootNode::getNodeList() const {
     return this->nodeList;
+}
+
+EvalStatus RootNode::eval(RuntimeContext &ctx, bool repl) {
+    for(Node *node : this->nodeList) {
+        EvalStatus status = node->eval(ctx);
+        if(status == EVAL_SUCCESS) {
+            if(repl) {
+                ctx.printStackTop(node->getType());
+            } else if(!node->getType()->equals(ctx.pool.getVoidType())){
+                POP(ctx);
+            }
+        } else if(status == EVAL_THROW) {
+            fatal("unimplemted EvalStatus: %d\n", status);  //FIXME:
+        } else {
+            fatal("illegal EvalStatus: %d\n", status);
+        }
+    }
+    return EVAL_SUCCESS;
 }
 
 // for node creation

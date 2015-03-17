@@ -70,6 +70,10 @@ int Int_Object::getValue() {
     return this->value;
 }
 
+std::string Int_Object::toString() {
+    return std::to_string(this->value);
+}
+
 // ##########################
 // ##     Float_Object     ##
 // ##########################
@@ -80,6 +84,10 @@ Float_Object::Float_Object(DSType *type, double value) :
 
 double Float_Object::getValue() {
     return this->value;
+}
+
+std::string Float_Object::toString() {
+    return std::to_string(this->value);
 }
 
 
@@ -95,6 +103,10 @@ bool Boolean_Object::getValue() {
     return this->value;
 }
 
+std::string Boolean_Object::toString() {
+    return this->value ? "true" : "false";
+}
+
 
 // ###########################
 // ##     String_Object     ##
@@ -106,6 +118,72 @@ String_Object::String_Object(DSType *type, std::string &&value) :
 
 const std::string &String_Object::getValue() {
     return this->value;
+}
+
+std::string String_Object::toString() {
+    return this->value;
+}
+
+void String_Object::append(const String_Object &obj) {
+    this->value += obj.value;
+}
+
+// ##########################
+// ##     Array_Object     ##
+// ##########################
+
+Array_Object::Array_Object(DSType *type) :
+        BaseObject(type), values() {
+}
+
+const std::vector<std::shared_ptr<DSObject>> &Array_Object::getValues() {
+    return this->values;
+}
+
+std::string Array_Object::toString() {
+    std::string str = "[";
+    unsigned int size = this->values.size();
+    for(unsigned int i = 0; i  < size; i++) {
+        if(i > 0) {
+            str += ", ";
+        }
+        str += this->values[i]->toString();
+    }
+    str += "]";
+    return str;
+}
+
+void Array_Object::append(std::shared_ptr<DSObject> obj) {
+    this->values.push_back(obj);
+}
+
+// ##########################
+// ##     Tuple_Object     ##
+// ##########################
+
+Tuple_Object::Tuple_Object(DSType *type, unsigned int size) :
+        BaseObject(type), values(size) {
+}
+
+const std::vector<std::shared_ptr<DSObject>> &Tuple_Object::getValues() {
+    return this->values;
+}
+
+std::string Tuple_Object::toString() {
+    std::string str = "(";
+    unsigned int size = this->values.size();
+    for(unsigned int i = 0; i < size; i++) {
+        if(i > 0) {
+            str += ", ";
+        }
+        str += this->values[i]->toString();
+    }
+    str += ")";
+    return str;
+}
+
+void Tuple_Object::set(unsigned int index, std::shared_ptr<DSObject> obj) {
+    this->values[index] = obj;
 }
 
 
@@ -154,6 +232,13 @@ FunctionNode *UserFuncObject::getFuncNode() {
     return this->funcNode;
 }
 
+std::string UserFuncObject::toString() {
+    std::string str = "function(";
+    str += this->funcNode->getFuncName();
+    str += ")";
+    return str;
+}
+
 
 // ###############################
 // ##     BuiltinFuncObject     ##
@@ -172,4 +257,11 @@ int BuiltinFuncObject::getParamSize() {
 
 void *BuiltinFuncObject::getFuncPointer() {
     return this->func_ptr;
+}
+
+std::string BuiltinFuncObject::toString() {
+    std::string str = "function(";
+    str += std::to_string((long)this->func_ptr);
+    str += ")";
+    return str;
 }

@@ -19,6 +19,7 @@
 #include <parser/Lexer.h>
 #include <parser/Parser.h>
 #include <parser/CommonErrorListener.h>
+#include <core/RuntimeContext.h>
 #include <core/TypePool.h>
 #include <parser/TypeChecker.h>
 #include <core/DSType.h>
@@ -30,8 +31,8 @@ using namespace std;
 int main(int argc, char **argv) {
     Terminal term(argv[0]);
 
-    TypePool pool;
-    TypeChecker checker(&pool);
+    RuntimeContext ctx;
+    TypeChecker checker(&ctx.pool);
 
     unsigned int lineNum = 1;
     const char *line;
@@ -54,6 +55,10 @@ int main(int argc, char **argv) {
             checker.checkTypeRootNode(rootNode);
             cout << "\n```` after check type ````" << endl;
             dumpAST(cout, *rootNode);
+
+            cout << endl;
+            // eval
+            rootNode->eval(ctx, true);
         } catch(const TypeCheckError &e) {
             listener.displayTypeError("(stdin)", e);
             checker.recover();

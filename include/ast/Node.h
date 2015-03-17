@@ -336,6 +336,7 @@ class InstanceOfNode: public Node {
 public:
     typedef enum {
         ALWAYS_FALSE,
+        ALWAYS_TRUE,
         INSTANCEOF,
     } InstanceOfOp;
 
@@ -1099,6 +1100,7 @@ public:
 
     void addNode(Node *node);
     const std::list<Node*> &getNodeList() const;
+    EvalStatus eval(RuntimeContext &ctx, bool repl = false);
 };
 
 // helper function for node creation

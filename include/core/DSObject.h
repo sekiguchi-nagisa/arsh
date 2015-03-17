@@ -44,6 +44,11 @@ public:
      * this method is not type-safe.
      */
     virtual DSObject *lookupField(int fieldIndex) = 0;
+
+    /**
+     * for printing
+     */
+    virtual std::string toString() = 0;
 };
 
 class BaseObject: public DSObject {
@@ -74,6 +79,7 @@ public:
     Int_Object(DSType *type, int value);
 
     int getValue();
+    std::string toString(); // override
 };
 
 class Float_Object: public BaseObject {
@@ -84,6 +90,7 @@ public:
     Float_Object(DSType *type, double value);
 
     double getValue();
+    std::string toString(); // override
 };
 
 class Boolean_Object: public BaseObject {
@@ -94,6 +101,7 @@ public:
     Boolean_Object(DSType *type, bool value);
 
     bool getValue();
+    std::string toString(); // override
 };
 
 class String_Object: public BaseObject {
@@ -104,6 +112,32 @@ public:
     String_Object(DSType *type, std::string &&value);
 
     const std::string &getValue();
+    std::string toString(); // override
+    void append(const String_Object &obj);
+};
+
+class Array_Object: public BaseObject {
+private:
+    std::vector<std::shared_ptr<DSObject>> values;
+
+public:
+    Array_Object(DSType *type);
+
+    const std::vector<std::shared_ptr<DSObject>> &getValues();
+    std::string toString(); // override
+    void append(std::shared_ptr<DSObject> obj);
+};
+
+class Tuple_Object : public BaseObject {
+private:
+    std::vector<std::shared_ptr<DSObject>> values;
+
+public:
+    Tuple_Object(DSType *type, unsigned int size);
+
+    const std::vector<std::shared_ptr<DSObject>> &getValues();
+    std::string toString(); // override
+    void set(unsigned int index, std::shared_ptr<DSObject> obj);
 };
 
 class FuncObject: public DSObject {
@@ -147,6 +181,7 @@ public:
     ~UserFuncObject();
 
     FunctionNode *getFuncNode();
+    std::string toString(); // override
 };
 
 /**
@@ -170,6 +205,7 @@ public:
 
     int getParamSize();
     void *getFuncPointer();
+    std::string toString(); // override
 };
 
 

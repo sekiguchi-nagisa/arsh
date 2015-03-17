@@ -556,7 +556,7 @@ void TypeChecker::visitCastNode(CastNode *node) {
     /**
      * nop
      */
-    if(targetType->equals(exprType)) {
+    if(targetType->isAssignableFrom(exprType)) {
         return;
     }
 
@@ -590,7 +590,7 @@ void TypeChecker::visitCastNode(CastNode *node) {
     /**
      * check cast
      */
-    if(exprType->isAssignableFrom(targetType) || targetType->isAssignableFrom(exprType)) {
+    if(exprType->isAssignableFrom(targetType)) {
         node->setOpKind(CastNode::CHECK_CAST);
         return;
     }
@@ -603,7 +603,10 @@ void TypeChecker::visitInstanceOfNode(InstanceOfNode *node) {
     DSType *targetType = this->toType(node->removeTargetTypeToken());
     node->setTargetType(targetType);
 
-    if(exprType->isAssignableFrom(targetType) || targetType->isAssignableFrom(exprType)) {
+
+    if(targetType->isAssignableFrom(exprType)) {
+        node->setOpKind(InstanceOfNode::ALWAYS_TRUE);
+    } else if(exprType->isAssignableFrom(targetType)) {
         node->setOpKind(InstanceOfNode::INSTANCEOF);
     } else {
         node->setOpKind(InstanceOfNode::ALWAYS_FALSE);
