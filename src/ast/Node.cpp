@@ -448,7 +448,7 @@ EvalStatus VarNode::eval(RuntimeContext &ctx) {
 }
 
 std::string VarNode::extractVarNameAndDelete(VarNode *node) {
-    std::string name = std::move(node->varName);
+    std::string name(std::move(node->varName));
     delete node;
     return name;
 }
@@ -2276,7 +2276,7 @@ ApplyNode *createApplyNode(Node *recvNode, std::string &&methodName) {
 ForNode *createForInNode(unsigned int lineNum, VarNode *varNode, Node *exprNode, BlockNode *blockNode) {
     // create for-init
     ApplyNode *apply_reset = createApplyNode(exprNode, std::string(OP_RESET));
-    std::string reset_var_name = std::to_string(rand());
+    std::string reset_var_name(std::to_string(rand()));
     VarDeclNode *reset_varDecl = new VarDeclNode(lineNum, std::string(reset_var_name), apply_reset, true);
 
     // create for-cond

@@ -39,7 +39,7 @@ public:
 };
 
 Logger::Logger() : fp(0) {
-    std::string logDest = LOG_DEST;
+    std::string logDest(LOG_DEST);
     if(logDest == DEST_TYPE_ERR) {
         this->fp = 0;
     } else if(logDest == DEST_TYPE_SYSLOG) {

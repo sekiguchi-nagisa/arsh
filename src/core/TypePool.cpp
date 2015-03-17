@@ -162,7 +162,7 @@ DSType *TypePool::createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate,
                 std::to_string(typeTemplate->getElementTypeSize()), std::to_string(elementTypes.size()));
     }
 
-    std::string typeName = toReifiedTypeName(typeTemplate, elementTypes);
+    std::string typeName(toReifiedTypeName(typeTemplate, elementTypes));
     DSType *type = newReifiedType(typeTemplate, this->anyType, elementTypes);
     auto pair = this->typeMap.insert(std::make_pair(typeName, type));
     if(!pair.second) {
@@ -177,7 +177,7 @@ DSType *TypePool::createAndGetTupleTypeIfUndefined(const std::vector<DSType*> &e
     if(elementTypes.size() < 2) {
         E_TupleElement();
     }
-    std::string typeName = toTupleTypeName(elementTypes);
+    std::string typeName(toTupleTypeName(elementTypes));
     DSType *type = newTupleType(this->anyType, elementTypes); //FIXME: not use typeMap
     auto pair = this->typeMap.insert(std::make_pair(typeName, type));
     if(!pair.second) {
@@ -190,7 +190,7 @@ FunctionType *TypePool::createAndGetFuncTypeIfUndefined(DSType *returnType,
         const std::vector<DSType*> &paramTypes) {   //FIXME: not use typeMap
     this->checkElementTypes(paramTypes);
 
-    std::string typeName = toFunctionTypeName(returnType, paramTypes);
+    std::string typeName(toFunctionTypeName(returnType, paramTypes));
     FunctionType *funcType = new FunctionType(this->getBaseFuncType(), returnType, paramTypes);
     auto pair = this->typeMap.insert(std::make_pair(typeName, funcType));
     if(!pair.second) {

@@ -243,7 +243,8 @@ std::string toReifiedTypeName(TypeTemplate *typeTemplate, const std::vector<DSTy
 
 std::string toReifiedTypeName(const std::string &name, const std::vector<DSType*> &elementTypes) {
     int elementSize = elementTypes.size();
-    std::string reifiedTypeName = name + "<";
+    std::string reifiedTypeName(name);
+    reifiedTypeName += "<";
     for(int i = 0; i < elementSize; i++) {
         if(i > 0) {
             reifiedTypeName += ",";
@@ -261,7 +262,8 @@ std::string toTupleTypeName(const std::vector<DSType*> &elementTypes) {
 
 std::string toFunctionTypeName(DSType *returnType, const std::vector<DSType*> &paramTypes) {
     int paramSize = paramTypes.size();
-    std::string funcTypeName = "Func<" + returnType->getTypeName();
+    std::string funcTypeName("Func<");
+    funcTypeName += returnType->getTypeName();
     for(int i = 0; i < paramSize; i++) {
         if(i == 0) {
             funcTypeName += ",[";

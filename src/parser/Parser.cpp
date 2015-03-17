@@ -387,8 +387,8 @@ std::unique_ptr<Node> Parser::parse_statement() {
     }
     case EXPORT_ENV: {
         this->matchToken(EXPORT_ENV);
-        std::string name = this->lexer->toName(
-                this->matchAndGetToken(IDENTIFIER));
+        std::string name(
+                this->lexer->toName(this->matchAndGetToken(IDENTIFIER)));
         this->hasNoNewLine();
         this->matchToken(ASSIGN);
         auto node = std::unique_ptr<Node>(new ExportEnvNode(n, std::move(name),
@@ -569,8 +569,8 @@ INLINE std::unique_ptr<Node> Parser::parse_variableDeclaration() {
         bool readOnly = this->consumeAndGetKind() != VAR;
 
         unsigned int n = LN();
-        std::string name = this->lexer->toName(
-                this->matchAndGetToken(IDENTIFIER));
+        std::string name(
+                this->lexer->toName(this->matchAndGetToken(IDENTIFIER)));
         this->hasNoNewLine();
         this->matchToken(ASSIGN);
         RET_NODE(new VarDeclNode(n, std::move(name),
@@ -892,7 +892,7 @@ INLINE std::unique_ptr<Node> Parser::parse_memberExpression() {
         case ACCESSOR: {
             this->matchToken(ACCESSOR);
             this->hasNoNewLine();
-            std::string name = this->lexer->toName(this->matchAndGetToken(IDENTIFIER));
+            std::string name(this->lexer->toName(this->matchAndGetToken(IDENTIFIER)));
             node = std::unique_ptr<Node>(new AccessNode(node.release(), std::move(name)));
             break;
         }

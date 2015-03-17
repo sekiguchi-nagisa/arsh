@@ -75,7 +75,7 @@ void ReifiedTypeToken::addElementTypeToken(TypeToken *type) {
 }
 
 std::string ReifiedTypeToken::toTokenText() const {
-    std::string text = this->templateTypeToken->toTokenText();
+    std::string text(this->templateTypeToken->toTokenText());
     text += "<";
     unsigned int size = this->elementTypeTokens.size();
     for(unsigned int i = 0; i < size; i++) {
@@ -123,7 +123,7 @@ void FuncTypeToken::addParamTypeToken(TypeToken *type) {
 }
 
 std::string FuncTypeToken::toTokenText() const {
-    std::string text = "Func<";
+    std::string text("Func<");
     text += this->returnTypeToken->toTokenText();
     unsigned int size = this->paramTypeTokens.size();
     for(unsigned int i = 0; i < size; i++) {

@@ -141,7 +141,7 @@ const std::vector<std::shared_ptr<DSObject>> &Array_Object::getValues() {
 }
 
 std::string Array_Object::toString() {
-    std::string str = "[";
+    std::string str("[");
     unsigned int size = this->values.size();
     for(unsigned int i = 0; i  < size; i++) {
         if(i > 0) {
@@ -170,7 +170,7 @@ const std::vector<std::shared_ptr<DSObject>> &Tuple_Object::getValues() {
 }
 
 std::string Tuple_Object::toString() {
-    std::string str = "(";
+    std::string str("(");
     unsigned int size = this->values.size();
     for(unsigned int i = 0; i < size; i++) {
         if(i > 0) {
@@ -233,7 +233,7 @@ FunctionNode *UserFuncObject::getFuncNode() {
 }
 
 std::string UserFuncObject::toString() {
-    std::string str = "function(";
+    std::string str("function(");
     str += this->funcNode->getFuncName();
     str += ")";
     return str;
@@ -260,7 +260,7 @@ void *BuiltinFuncObject::getFuncPointer() {
 }
 
 std::string BuiltinFuncObject::toString() {
-    std::string str = "function(";
+    std::string str("function(");
     str += std::to_string((long)this->func_ptr);
     str += ")";
     return str;

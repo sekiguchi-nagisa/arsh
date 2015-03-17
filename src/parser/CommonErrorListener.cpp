@@ -133,7 +133,7 @@ std::string ParseErrorFormatter::format(Lexer &lexer, const ParseError &e) {
 
 static std::string formatErrorLine(Lexer &lexer, Token errorToken) {
     Token lineToken = lexer.getLineToken(errorToken);
-    std::string line = lexer.toTokenText(lineToken);
+    std::string line(lexer.toTokenText(lineToken));
     line += "\n";
     for(unsigned int i = lineToken.startPos; i < errorToken.startPos; i++) {
         line += " ";
@@ -146,8 +146,8 @@ static std::string formatErrorLine(Lexer &lexer, Token errorToken) {
 
 void CommonErrorListener::displayParseError(Lexer &lexer,
         const std::string &sourceName, const ParseError &e) {
-    std::string msg = ParseErrorFormatter::format(lexer, e);
-    std::string line = formatErrorLine(lexer, e.getErrorToken());
+    std::string msg(ParseErrorFormatter::format(lexer, e));
+    std::string line(formatErrorLine(lexer, e.getErrorToken()));
     fprintf(stderr, "%s:%d: [syntax error] %s\n%s\n",
             sourceName.c_str(), e.getLineNum(), msg.c_str(), line.c_str());
 }

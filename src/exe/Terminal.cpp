@@ -109,8 +109,8 @@ const char *Terminal::readLineImpl() {
 }
 
 void Terminal::addHistory() {
-    std::string target = "\\\n";
-    std::string buf = this->lineBuf;
+    std::string target("\\\n");
+    std::string buf(this->lineBuf);
     std::string::size_type pos = buf.find(target);
     while(pos != std::string::npos) {
         buf.replace(pos, target.size(), "");
