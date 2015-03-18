@@ -67,34 +67,83 @@ struct RuntimeContext {
     /**
      * if this->tableSize < size, expand globalVarTable.
      */
-    void reserveGlobalVar(unsigned int size);
+    void reserveGlobalVar(unsigned int size) {
+        if(this->tableSize < size) {
+            unsigned int newSize = this->tableSize;
+            do {
+                newSize *= 2;
+            } while(newSize < size);
+            std::shared_ptr<DSObject> *newTable = new std::shared_ptr<DSObject>[newSize];
+            for(unsigned int i = 0; i < this->tableSize; i++) {
+                newTable[i] = this->globalVarTable[i];
+            }
+            delete[] this->globalVarTable;
+            this->globalVarTable = newTable;
+            this->tableSize = newSize;
+        }
+    }
 
     /**
      * reset this->throwObject.
      */
-    void clearThrownObject();
+    void clearThrownObject() {
+        this->thrownObject.reset();
+    }
 
-    void expandLocalStack();
-    void push(std::shared_ptr<DSObject> value);
-    std::shared_ptr<DSObject> pop();
+    void expandLocalStack() {
+        unsigned int newSize = this->localStackSize;
+        do {
+            newSize *= 2;
+        } while(newSize < this->localStackSize);
+        auto newTable = new std::shared_ptr<DSObject>[newSize];
+        for(unsigned int i = 0; i < this->localStackSize; i++) {
+            newTable[i] = this->localStack[i];
+        }
+        delete[] this->localStack;
+        this->localStack = newTable;
+        this->localStackSize = newSize;
+    }
+
+    // operand manipulation
+    void push(const std::shared_ptr<DSObject> &value) {
+        if(++this->stackTopIndex >= this->localStackSize) {
+            this->expandLocalStack();
+        }
+        this->localStack[this->stackTopIndex] = value;
+    }
+
+    std::shared_ptr<DSObject> pop() {
+        std::shared_ptr<DSObject> obj = this->localStack[this->stackTopIndex];
+        this->localStack[this->stackTopIndex] = std::shared_ptr<DSObject>();
+        --this->stackTopIndex;
+        return obj;
+    }
+
+    std::shared_ptr<DSObject> peek() {
+        return this->localStack[this->stackTopIndex];
+    }
+
+    // variable operation
+    void setGlobal(unsigned int index, const std::shared_ptr<DSObject> &value) {
+        this->globalVarTable[index] = value;
+    }
+
+    std::shared_ptr<DSObject> getGlobal(unsigned int index) {
+        return this->globalVarTable[index];
+    }
+
+    void setLocal(unsigned int index, const std::shared_ptr<DSObject> &value) {
+        this->localStack[this->localVarOffset + index] = value;
+    }
+
+    std::shared_ptr<DSObject> getLocal(unsigned int index) {
+        return this->localStack[this->localVarOffset + index];
+    }
 
     // some runtime api
     void printStackTop(DSType *stackTopType);
     void checkCast(DSType *targetType);
     void instanceOf(DSType *targetType);
 };
-
-// helper macro for RuntimeContext manipulation.
-#define SET_GVAR(ctx, index, val) do { ctx.globalVarTable[index] = val; } while(0)
-#define GET_GVAR(ctx, index)      ctx.globalVarTable[index]
-
-#define SET_LVAR(ctx, index, val) do { ctx.localStack[ctx.localVarOffset + index] = val; } while(0)
-#define GET_LVAR(ctx, index)      ctx.localStack[ctx.localVarOffset + index]
-
-#define PUSH(ctx, val)            ctx.push(val)
-
-#define POP(ctx)                  ctx.pop()
-
-#define PEEK(ctx)                 (ctx).localStack[(ctx).stackTopIndex]
 
 #endif /* CORE_RUNTIMECONTEXT_H_ */

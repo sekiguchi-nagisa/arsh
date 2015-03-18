@@ -97,7 +97,7 @@ void IntValueNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus IntValueNode::eval(RuntimeContext &ctx) {
-    PUSH(ctx, this->value);
+    ctx.push(this->value);
     return EVAL_SUCCESS;
 }
 
@@ -133,7 +133,7 @@ void FloatValueNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus FloatValueNode::eval(RuntimeContext &ctx) {
-    PUSH(ctx, this->value);
+    ctx.push(this->value);
     return EVAL_SUCCESS;
 }
 
@@ -184,7 +184,7 @@ void StringValueNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus StringValueNode::eval(RuntimeContext &ctx) {
-    PUSH(ctx, this->value);
+    ctx.push(this->value);
     return EVAL_SUCCESS;
 }
 
@@ -230,16 +230,16 @@ void StringExprNode::accept(NodeVisitor *visitor) {
 EvalStatus StringExprNode::eval(RuntimeContext &ctx) {
     unsigned int size = this->nodes.size();
     if(size == 0) {
-        PUSH(ctx, std::make_shared<String_Object>(this->type, ""));
+        ctx.push(std::make_shared<String_Object>(this->type, ""));
     } else if(size == 1) {
         this->nodes[0]->eval(ctx);
     } else {
         auto value = std::make_shared<String_Object>(this->type, "");
         for(Node *node : this->nodes) {
             EVAL(ctx, node);
-            value->append(*TYPE_AS(String_Object, POP(ctx)));
+            value->append(*TYPE_AS(String_Object, ctx.pop()));
         }
-        PUSH(ctx, value);
+        ctx.push(value);
     }
     return EVAL_SUCCESS;
 }
@@ -284,9 +284,9 @@ EvalStatus ArrayNode::eval(RuntimeContext &ctx) {
     auto value = std::make_shared<Array_Object>(this->type);
     for(Node *node : this->nodes) {
         EVAL(ctx, node);
-        value->append(POP(ctx));
+        value->append(ctx.pop());
     }
-    PUSH(ctx, value);
+    ctx.push(value);
     return EVAL_SUCCESS;
 }
 
@@ -384,9 +384,9 @@ EvalStatus TupleNode::eval(RuntimeContext &ctx) {
     auto value = std::make_shared<Tuple_Object>(this->type, size);
     for(unsigned int i = 0; i < size; i++) {
         EVAL(ctx, this->nodes[i]);
-        value->set(i, POP(ctx));
+        value->set(i, ctx.pop());
     }
-    PUSH(ctx, value);
+    ctx.push(value);
     return EVAL_SUCCESS;
 }
 
@@ -599,13 +599,13 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
     case NOP:
         break;
     case INT_TO_FLOAT: {
-        int value = TYPE_AS(Int_Object, POP(ctx))->getValue();
-        PUSH(ctx, std::make_shared<Float_Object>(this->type, (double) value));
+        int value = TYPE_AS(Int_Object, ctx.pop())->getValue();
+        ctx.push(std::make_shared<Float_Object>(this->type, (double) value));
         break;
     }
     case FLOAT_TO_INT: {
-        double value = TYPE_AS(Float_Object, POP(ctx))->getValue();
-        PUSH(ctx, std::make_shared<Int_Object>(this->type, (int) value));
+        double value = TYPE_AS(Float_Object, ctx.pop())->getValue();
+        ctx.push(std::make_shared<Int_Object>(this->type, (int) value));
         break;
     }
     case TO_STRING: {
@@ -696,12 +696,12 @@ EvalStatus InstanceOfNode::eval(RuntimeContext &ctx) {
         ctx.instanceOf(this->targetType);
         break;
     case ALWAYS_TRUE:
-        POP(ctx);
-        PUSH(ctx, ctx.trueObj);
+        ctx.pop();
+        ctx.push(ctx.trueObj);
         break;
     case ALWAYS_FALSE:
-        POP(ctx);
-        PUSH(ctx, ctx.falseObj);
+        ctx.pop();
+        ctx.push(ctx.falseObj);
         break;
     }
     return EVAL_SUCCESS;
@@ -995,17 +995,17 @@ EvalStatus CondOpNode::eval(RuntimeContext &ctx) {
     EVAL(ctx, this->leftNode);
 
     if(this->andOp) {   // and
-        if(TYPE_AS(Boolean_Object, PEEK(ctx))->getValue()) {
-            POP(ctx);
+        if(TYPE_AS(Boolean_Object, ctx.peek())->getValue()) {
+            ctx.pop();
             return this->rightNode->eval(ctx);
         } else {
             return EVAL_SUCCESS;
         }
     } else {    // or
-        if(TYPE_AS(Boolean_Object, PEEK(ctx))->getValue()) {
+        if(TYPE_AS(Boolean_Object, ctx.peek())->getValue()) {
             return EVAL_SUCCESS;
         } else {
-            POP(ctx);
+            ctx.pop();
             return this->rightNode->eval(ctx);
         }
     }
@@ -1330,7 +1330,7 @@ EvalStatus BlockNode::eval(RuntimeContext &ctx) {
     for(Node *node : this->nodeList) {
         EVAL(ctx, node);
         if(!node->getType()->equals(ctx.pool.getVoidType())) {
-            POP(ctx);
+            ctx.pop();
         }
     }
     return EVAL_SUCCESS;
@@ -2180,7 +2180,7 @@ EvalStatus RootNode::eval(RuntimeContext &ctx, bool repl) {
             if(repl) {
                 ctx.printStackTop(node->getType());
             } else if(!node->getType()->equals(ctx.pool.getVoidType())){
-                POP(ctx);
+                ctx.pop();
             }
         } else if(status == EVAL_THROW) {
             fatal("unimplemted EvalStatus: %d\n", status);  //FIXME:
