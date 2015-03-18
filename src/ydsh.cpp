@@ -18,7 +18,7 @@
 #include <util/debug.h>
 #include <parser/Lexer.h>
 #include <parser/Parser.h>
-#include <parser/CommonErrorListener.h>
+#include <parser/ErrorListener.h>
 #include <core/RuntimeContext.h>
 #include <core/TypePool.h>
 #include <parser/TypeChecker.h>
