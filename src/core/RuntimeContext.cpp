@@ -67,3 +67,9 @@ void RuntimeContext::instanceOf(DSType *targetType) {
         this->push(this->falseObj);
     }
 }
+
+void RuntimeContext::assertion() {
+    if(!TYPE_AS(Boolean_Object, this->pop())->getValue()) {
+        fatal("assertion error\n"); //FIXME:
+    }
+}

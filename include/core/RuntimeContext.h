@@ -144,6 +144,7 @@ struct RuntimeContext {
     void printStackTop(DSType *stackTopType);
     void checkCast(DSType *targetType);
     void instanceOf(DSType *targetType);
+    void assertion();
 };
 
 #endif /* CORE_RUNTIMECONTEXT_H_ */

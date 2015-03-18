@@ -1287,7 +1287,8 @@ void AssertNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus AssertNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO
+    EVAL(ctx, this->exprNode);
+    ctx.assertion();
     return EVAL_SUCCESS;
 }
 
@@ -1328,9 +1329,12 @@ void BlockNode::accept(NodeVisitor *visitor) {
 
 EvalStatus BlockNode::eval(RuntimeContext &ctx) {
     for(Node *node : this->nodeList) {
-        EVAL(ctx, node);
+        EvalStatus status = node->eval(ctx);
         if(!node->getType()->equals(ctx.pool.getVoidType())) {
             ctx.pop();
+        }
+        if(status != EVAL_SUCCESS) {
+            return status;
         }
     }
     return EVAL_SUCCESS;
@@ -1511,7 +1515,24 @@ void ForNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus ForNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO:
+    EVAL(ctx, this->initNode);
+
+CONTINUE:
+    EVAL(ctx, this->condNode);
+    if(TYPE_AS(Boolean_Object, ctx.pop())->getValue()) {
+        EvalStatus status = this->blockNode->eval(ctx);
+        switch(status) {
+        case EVAL_BREAK:
+            break;
+        case EVAL_SUCCESS:
+        case EVAL_CONTINUE:
+            EVAL(ctx, this->iterNode);
+            goto CONTINUE;
+        default:
+            return status;
+        }
+    }
+
     return EVAL_SUCCESS;
 }
 
@@ -1549,7 +1570,21 @@ void WhileNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus WhileNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO:
+CONTINUE:
+    EVAL(ctx, this->condNode);
+    if(TYPE_AS(Boolean_Object, ctx.pop())->getValue()) {
+        EvalStatus status = this->blockNode->eval(ctx);
+        switch(status) {
+        case EVAL_BREAK:
+            break;
+        case EVAL_SUCCESS:
+        case EVAL_CONTINUE:
+            goto CONTINUE;
+        default:
+            return status;
+        }
+    }
+
     return EVAL_SUCCESS;
 }
 
@@ -1582,7 +1617,24 @@ void DoWhileNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus DoWhileNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO:
+CONTINUE:
+    EvalStatus status = this->blockNode->eval(ctx);
+    switch(status) {
+    case EVAL_BREAK:
+        goto BREAK;
+    case EVAL_SUCCESS:
+    case EVAL_CONTINUE:
+        break;
+    default:
+        return status;
+    }
+
+    EVAL(ctx, this->condNode);
+    if(TYPE_AS(Boolean_Object, ctx.pop())->getValue()) {
+        goto CONTINUE;
+    }
+
+BREAK:
     return EVAL_SUCCESS;
 }
 
@@ -1665,8 +1717,24 @@ void IfNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus IfNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO:
-    return EVAL_SUCCESS;
+    // if cond
+    EVAL(ctx, this->condNode);
+
+    // then block
+    if(TYPE_AS(Boolean_Object, ctx.pop())->getValue()) {
+        return this->thenNode->eval(ctx);
+    }
+
+    unsigned int size = this->elifCondNodes.size();
+    for(unsigned i = 0; i < size; i++) {    // elif
+        EVAL(ctx, this->elifCondNodes[i]);
+        if(TYPE_AS(Boolean_Object, ctx.pop())->getValue()) {
+            return this->elifThenNodes[i]->eval(ctx);
+        }
+    }
+
+    // else
+    return this->elseNode->eval(ctx);
 }
 
 // ########################
