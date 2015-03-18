@@ -707,72 +707,6 @@ EvalStatus InstanceOfNode::eval(RuntimeContext &ctx) {
     return EVAL_SUCCESS;
 }
 
-// ##########################
-// ##     BinaryOpNode     ##
-// ##########################
-
-BinaryOpNode::BinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode) :
-        Node(leftNode->getLineNum()),
-        leftNode(leftNode), rightNode(rightNode), op(op), applyNode(0) {
-}
-
-BinaryOpNode::~BinaryOpNode() {
-    delete this->leftNode;
-    this->leftNode = 0;
-
-    delete this->rightNode;
-    this->rightNode = 0;
-
-    delete this->applyNode;
-    this->applyNode = 0;
-}
-
-Node *BinaryOpNode::getLeftNode() {
-    return this->leftNode;
-}
-
-void BinaryOpNode::setLeftNode(Node *leftNode) {
-    this->leftNode = leftNode;
-}
-
-Node *BinaryOpNode::getRightNode() {
-    return this->rightNode;
-}
-
-void BinaryOpNode::setRightNode(Node *rightNode) {
-    this->rightNode = rightNode;
-}
-
-ApplyNode *BinaryOpNode::creatApplyNode() {
-    this->applyNode = createApplyNode(this->leftNode, resolveBinaryOpName(this->op));
-    this->applyNode->getArgsNode()->addArg(this->rightNode);
-
-    // assign null to prevent double free.
-    this->leftNode = 0;
-    this->rightNode = 0;
-
-    return this->applyNode;
-}
-
-ApplyNode *BinaryOpNode::getApplyNode() {
-    return this->applyNode;
-}
-
-void BinaryOpNode::dump(Writer &writer) const {
-    WRITE_PTR(leftNode);
-    WRITE_PTR(rightNode);
-    writer.write(NAME(op), TO_NAME(op));
-    WRITE_PTR(applyNode);
-}
-
-void BinaryOpNode::accept(NodeVisitor *visitor) {
-    visitor->visitBinaryOpNode(this);
-}
-
-EvalStatus BinaryOpNode::eval(RuntimeContext &ctx) {
-    return this->applyNode->eval(ctx);
-}
-
 // ######################
 // ##     ArgsNode     ##
 // ######################
@@ -952,6 +886,72 @@ EvalStatus NewNode::eval(RuntimeContext &ctx) {
     return EVAL_SUCCESS;
 }
 
+// ##########################
+// ##     BinaryOpNode     ##
+// ##########################
+
+BinaryOpNode::BinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode) :
+        Node(leftNode->getLineNum()),
+        leftNode(leftNode), rightNode(rightNode), op(op), applyNode(0) {
+}
+
+BinaryOpNode::~BinaryOpNode() {
+    delete this->leftNode;
+    this->leftNode = 0;
+
+    delete this->rightNode;
+    this->rightNode = 0;
+
+    delete this->applyNode;
+    this->applyNode = 0;
+}
+
+Node *BinaryOpNode::getLeftNode() {
+    return this->leftNode;
+}
+
+void BinaryOpNode::setLeftNode(Node *leftNode) {
+    this->leftNode = leftNode;
+}
+
+Node *BinaryOpNode::getRightNode() {
+    return this->rightNode;
+}
+
+void BinaryOpNode::setRightNode(Node *rightNode) {
+    this->rightNode = rightNode;
+}
+
+ApplyNode *BinaryOpNode::creatApplyNode() {
+    this->applyNode = createApplyNode(this->leftNode, resolveBinaryOpName(this->op));
+    this->applyNode->getArgsNode()->addArg(this->rightNode);
+
+    // assign null to prevent double free.
+    this->leftNode = 0;
+    this->rightNode = 0;
+
+    return this->applyNode;
+}
+
+ApplyNode *BinaryOpNode::getApplyNode() {
+    return this->applyNode;
+}
+
+void BinaryOpNode::dump(Writer &writer) const {
+    WRITE_PTR(leftNode);
+    WRITE_PTR(rightNode);
+    writer.write(NAME(op), TO_NAME(op));
+    WRITE_PTR(applyNode);
+}
+
+void BinaryOpNode::accept(NodeVisitor *visitor) {
+    visitor->visitBinaryOpNode(this);
+}
+
+EvalStatus BinaryOpNode::eval(RuntimeContext &ctx) {
+    return this->applyNode->eval(ctx);
+}
+
 // ########################
 // ##     CondOpNode     ##
 // ########################
@@ -1009,6 +1009,43 @@ EvalStatus CondOpNode::eval(RuntimeContext &ctx) {
             return this->rightNode->eval(ctx);
         }
     }
+}
+
+// ########################
+// ##     CmdArgNode     ##
+// ########################
+
+CmdArgNode::CmdArgNode(Node *segmentNode) :
+        Node(segmentNode->getLineNum()), segmentNodes() {
+    this->addSegmentNode(segmentNode);
+}
+
+CmdArgNode::~CmdArgNode() {
+    for(Node *e : this->segmentNodes) {
+        delete e;
+    }
+    this->segmentNodes.clear();
+}
+
+void CmdArgNode::addSegmentNode(Node *node) {
+    this->segmentNodes.push_back(node->convertToCmdArg());
+}
+
+const std::vector<Node*> &CmdArgNode::getSegmentNodes() {
+    return this->segmentNodes;
+}
+
+void CmdArgNode::dump(Writer &writer) const {
+    WRITE(segmentNodes);
+}
+
+void CmdArgNode::accept(NodeVisitor *visitor) {
+    visitor->visitCmdArgNode(this);
+}
+
+EvalStatus CmdArgNode::eval(RuntimeContext &ctx) {
+    fatal("unimplemented eval\n");  //TODO
+    return EVAL_SUCCESS;
 }
 
 // #####################
@@ -1069,43 +1106,6 @@ void CmdNode::accept(NodeVisitor *visitor) {
 EvalStatus CmdNode::eval(RuntimeContext &ctx) {
     fatal("unimplemented eval\n");
     return EVAL_SUCCESS;    //TODO
-}
-
-// ########################
-// ##     CmdArgNode     ##
-// ########################
-
-CmdArgNode::CmdArgNode(Node *segmentNode) :
-        Node(segmentNode->getLineNum()), segmentNodes() {
-    this->addSegmentNode(segmentNode);
-}
-
-CmdArgNode::~CmdArgNode() {
-    for(Node *e : this->segmentNodes) {
-        delete e;
-    }
-    this->segmentNodes.clear();
-}
-
-void CmdArgNode::addSegmentNode(Node *node) {
-    this->segmentNodes.push_back(node->convertToCmdArg());
-}
-
-const std::vector<Node*> &CmdArgNode::getSegmentNodes() {
-    return this->segmentNodes;
-}
-
-void CmdArgNode::dump(Writer &writer) const {
-    WRITE(segmentNodes);
-}
-
-void CmdArgNode::accept(NodeVisitor *visitor) {
-    visitor->visitCmdArgNode(this);
-}
-
-EvalStatus CmdArgNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO
-    return EVAL_SUCCESS;
 }
 
 // #############################
@@ -2359,4 +2359,14 @@ Node *createBinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode) {
     default:
         return new BinaryOpNode(leftNode, op, rightNode);
     }
+}
+
+// #########################
+// ##     NodeVisitor     ##
+// #########################
+
+NodeVisitor::NodeVisitor() {
+}
+
+NodeVisitor::~NodeVisitor() {
 }

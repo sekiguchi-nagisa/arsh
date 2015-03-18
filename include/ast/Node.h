@@ -24,10 +24,10 @@
 #include <core/FieldHandle.h>
 #include <core/DSObject.h>
 #include <core/RuntimeContext.h>
-#include <ast/NodeVisitor.h>
 #include <ast/TypeToken.h>
 #include <parser/Token.h>
 
+struct NodeVisitor;
 class Writer;
 
 typedef enum {
@@ -367,53 +367,6 @@ public:
     EvalStatus eval(RuntimeContext &ctx); // override
 };
 
-/**
- * binary operator call.
- */
-class BinaryOpNode : public Node {
-private:
-    /**
-     * after call this->createApplyNode(), will be null.
-     */
-    Node *leftNode;
-
-    /**
-     * after call this->createApplyNode(), will be null.
-     */
-    Node *rightNode;
-
-    TokenKind op;
-
-    /**
-     * before call this->createApplyNode(), it is null.
-     */
-    ApplyNode *applyNode;
-
-public:
-    BinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode);
-    ~BinaryOpNode();
-
-    Node *getLeftNode();
-    void setLeftNode(Node *leftNode);
-    Node *getRightNode();
-    void setRightNode(Node *rightNode);
-
-    /**
-     * create ApplyNode and set to this->applyNode.
-     * leftNode and rightNode will be null.
-     */
-    ApplyNode *creatApplyNode();
-
-    /**
-     * return null, before call this->createApplyNode().
-     */
-    ApplyNode *getApplyNode();
-
-    void dump(Writer &writer) const;  // override
-    void accept(NodeVisitor *visitor);   // override
-    EvalStatus eval(RuntimeContext &ctx); // override
-};
-
 class ArgsNode : public Node {
 private:
     std::vector<std::pair<std::string, Node*>> argPairs;
@@ -504,6 +457,53 @@ public:
     EvalStatus eval(RuntimeContext &ctx); // override
 };
 
+/**
+ * binary operator call.
+ */
+class BinaryOpNode : public Node {
+private:
+    /**
+     * after call this->createApplyNode(), will be null.
+     */
+    Node *leftNode;
+
+    /**
+     * after call this->createApplyNode(), will be null.
+     */
+    Node *rightNode;
+
+    TokenKind op;
+
+    /**
+     * before call this->createApplyNode(), it is null.
+     */
+    ApplyNode *applyNode;
+
+public:
+    BinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode);
+    ~BinaryOpNode();
+
+    Node *getLeftNode();
+    void setLeftNode(Node *leftNode);
+    Node *getRightNode();
+    void setRightNode(Node *rightNode);
+
+    /**
+     * create ApplyNode and set to this->applyNode.
+     * leftNode and rightNode will be null.
+     */
+    ApplyNode *creatApplyNode();
+
+    /**
+     * return null, before call this->createApplyNode().
+     */
+    ApplyNode *getApplyNode();
+
+    void dump(Writer &writer) const;  // override
+    void accept(NodeVisitor *visitor);   // override
+    EvalStatus eval(RuntimeContext &ctx); // override
+};
+
 class CondOpNode: public Node {
 private:
     Node* leftNode;
@@ -526,6 +526,24 @@ public:
     EvalStatus eval(RuntimeContext &ctx); // override
 };
 
+/**
+ * for command argument
+ */
+class CmdArgNode: public Node {
+private:
+    std::vector<Node*> segmentNodes;
+
+public:
+    CmdArgNode(Node *segmentNode);
+    ~CmdArgNode();
+
+    void addSegmentNode(Node *node);
+    const std::vector<Node*> &getSegmentNodes();
+    void dump(Writer &writer) const;  // override
+    void accept(NodeVisitor *visitor);  // override
+    EvalStatus eval(RuntimeContext &ctx); // override
+};
+
 class CmdNode: public Node {	//FIXME: redirect option
 private:
     std::string commandName;
@@ -543,24 +561,6 @@ public:
     const std::vector<std::pair<int, Node*>> &getRedirOptions();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	//override
-    EvalStatus eval(RuntimeContext &ctx); // override
-};
-
-/**
- * for command argument
- */
-class CmdArgNode: public Node {
-private:
-    std::vector<Node*> segmentNodes;
-
-public:
-    CmdArgNode(Node *segmentNode);
-    ~CmdArgNode();
-
-    void addSegmentNode(Node *node);
-    const std::vector<Node*> &getSegmentNodes();
-    void dump(Writer &writer) const;  // override
-    void accept(NodeVisitor *visitor);	// override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
 
@@ -1122,5 +1122,52 @@ Node *createIndexNode(Node *recvNode, Node *indexNode);
 Node *createUnaryOpNode(TokenKind op, Node *recvNode);
 
 Node *createBinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode);
+
+struct NodeVisitor {
+    NodeVisitor();
+    virtual ~NodeVisitor();
+
+    virtual void visitIntValueNode(IntValueNode *node) = 0;
+    virtual void visitFloatValueNode(FloatValueNode *node) = 0;
+    virtual void visitStringValueNode(StringValueNode *node) = 0;
+    virtual void visitStringExprNode(StringExprNode *node) = 0;
+    virtual void visitArrayNode(ArrayNode *node) = 0;
+    virtual void visitMapNode(MapNode *node) = 0;
+    virtual void visitTupleNode(TupleNode *node) = 0;
+    virtual void visitVarNode(VarNode *node) = 0;
+    virtual void visitAccessNode(AccessNode *node) = 0;
+    virtual void visitCastNode(CastNode *node) = 0;
+    virtual void visitInstanceOfNode(InstanceOfNode *node) = 0;
+    virtual void visitBinaryOpNode(BinaryOpNode *node) = 0;
+    virtual void visitArgsNode(ArgsNode *node) = 0;
+    virtual void visitApplyNode(ApplyNode *node) = 0;
+    virtual void visitNewNode(NewNode *node) = 0;
+    virtual void visitCondOpNode(CondOpNode *node) = 0;
+    virtual void visitCmdNode(CmdNode *node) = 0;
+    virtual void visitCmdArgNode(CmdArgNode *node) = 0;
+    virtual void visitSpecialCharNode(SpecialCharNode *node) = 0;
+    virtual void visitPipedCmdNode(PipedCmdNode *node) = 0;
+    virtual void visitCmdContextNode(CmdContextNode *node) = 0;
+    virtual void visitAssertNode(AssertNode *node) = 0;
+    virtual void visitBlockNode(BlockNode *node) = 0;
+    virtual void visitBreakNode(BreakNode *node) = 0;
+    virtual void visitContinueNode(ContinueNode *node) = 0;
+    virtual void visitExportEnvNode(ExportEnvNode *node) = 0;
+    virtual void visitImportEnvNode(ImportEnvNode *node) = 0;
+    virtual void visitForNode(ForNode *node) = 0;
+    virtual void visitWhileNode(WhileNode *node) = 0;
+    virtual void visitDoWhileNode(DoWhileNode *node) = 0;
+    virtual void visitIfNode(IfNode *node) = 0;
+    virtual void visitReturnNode(ReturnNode *node) = 0;
+    virtual void visitThrowNode(ThrowNode *node) = 0;
+    virtual void visitCatchNode(CatchNode *node) = 0;
+    virtual void visitTryNode(TryNode *node) = 0;
+    virtual void visitFinallyNode(FinallyNode *node) = 0;
+    virtual void visitVarDeclNode(VarDeclNode *node) = 0;
+    virtual void visitAssignNode(AssignNode *node) = 0;
+    virtual void visitFunctionNode(FunctionNode *node) = 0;
+    virtual void visitEmptyNode(EmptyNode *node) = 0;
+    virtual void visitDummyNode(DummyNode *node) = 0;
+};
 
 #endif /* AST_NODE_H_ */

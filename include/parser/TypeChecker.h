@@ -18,7 +18,6 @@
 #define PARSER_TYPECHECKER_H_
 
 #include <ast/Node.h>
-#include <ast/NodeVisitor.h>
 #include <core/TypePool.h>
 #include <core/DSType.h>
 #include <core/FieldHandle.h>
