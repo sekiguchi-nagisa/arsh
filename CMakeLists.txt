@@ -33,7 +33,6 @@ add_subdirectory(${SRC_DIR}/ast)
 add_subdirectory(${SRC_DIR}/core)
 add_subdirectory(${SRC_DIR}/parser)
 add_subdirectory(${SRC_DIR}/util)
-add_subdirectory(${SRC_DIR}/exe)
 
 # check editline
 check_include_files("histedit.h" HAVE_HISTEDIT_H)
