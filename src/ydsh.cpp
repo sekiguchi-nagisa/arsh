@@ -71,6 +71,9 @@ Terminal::Terminal(const char *progName) :
     el_set(this->el, EL_PROMPT, prompt);
     el_set(this->el, EL_EDITOR, "emacs");
 
+    el_set(this->el, EL_SETTY, "-d", "intr=^@", NULL);
+    el_set(this->el, EL_BIND, "^C", "ed-start-over", NULL);
+
     this->ydsh_history = history_init();
     if(this->ydsh_history == 0) {
         fatal("editline history initialization failed\n");
@@ -160,11 +163,11 @@ int main(int argc, char **argv) {
 
     RuntimeContext ctx;
     TypeChecker checker(&ctx.pool);
+    CommonErrorListener listener;
 
     unsigned int lineNum = 1;
     const char *line;
     while((line = term.readLine()) != 0) {
-        CommonErrorListener listener;
         Lexer lexer(line);
         lexer.setLineNum(lineNum);
         Parser parser(&lexer);
