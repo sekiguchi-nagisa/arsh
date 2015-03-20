@@ -211,13 +211,24 @@ std::string Lexer::toString(const Token &token, bool isSingleQuote) const {
     return str;
 }
 
-std::string Lexer::toCmdArg(const Token &token) const {
+std::string Lexer::toCmdArg(const Token &token, bool expandTilde) const {
     CHECK_TOK(token);
 
     std::string str;
     str.reserve(token.size);
 
-    for(unsigned int i = 0; i < token.size; i++) {
+    bool startWithTildeSlash = false;
+    if(expandTilde) {
+        if(token.size == 1 && this->buf[token.startPos] == '~') {
+            return std::string(getenv("HOME"));
+        }
+        if(token.size > 1 && this->buf[token.startPos] == '~' && this->buf[token.startPos + 1] == '/') {
+            str += getenv("HOME");
+            str += '/';
+            startWithTildeSlash = true;
+        }
+    }
+    for(unsigned int i = startWithTildeSlash ? 2 : 0; i < token.size; i++) {
         char ch = this->buf[token.startPos + i];
         if(ch == '\\') {
             char nextCh = this->buf[token.startPos + ++i];

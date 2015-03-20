@@ -1044,7 +1044,8 @@ void CmdArgNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus CmdArgNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO
+    //FIXME: concate segment node
+    EVAL(ctx, this->segmentNodes[0]);
     return EVAL_SUCCESS;
 }
 
@@ -1103,9 +1104,14 @@ void CmdNode::accept(NodeVisitor *visitor) {
     visitor->visitCmdNode(this);
 }
 
-EvalStatus CmdNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");
-    return EVAL_SUCCESS;    //TODO
+EvalStatus CmdNode::eval(RuntimeContext &ctx) { //FIXME: redirect
+    std::shared_ptr<ProcContext> proc(new ProcContext(this->commandName));
+    for(Node *node : this->argNodes) {
+        EVAL(ctx, node);
+        proc->addParam(ctx.pop());
+    }
+    ctx.push(proc);
+    return EVAL_SUCCESS;
 }
 
 // #############################
@@ -1174,7 +1180,15 @@ void PipedCmdNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus PipedCmdNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO
+    unsigned int size = this->cmdNodes.size();
+    ProcGroup group(size);
+
+    for(unsigned int i = 0; i < size; i++) {
+        EVAL(ctx, this->cmdNodes[i]);
+        group.addProc(i, std::dynamic_pointer_cast<ProcContext>(ctx.pop()));
+    }
+    group.execProcs();
+
     return EVAL_SUCCESS;
 }
 
@@ -1257,8 +1271,7 @@ void CmdContextNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO
-    return EVAL_SUCCESS;
+    return this->exprNode->eval(ctx);   //FIXME:
 }
 
 // ########################

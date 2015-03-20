@@ -20,6 +20,7 @@
 #include <core/DSObject.h>
 #include <core/TypePool.h>
 #include <core/DSType.h>
+#include <core/ProcContext.h>
 
 #include <vector>
 

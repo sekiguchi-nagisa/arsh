@@ -708,15 +708,13 @@ INLINE std::unique_ptr<Node> Parser::parse_andListCommand() {
 }
 
 INLINE std::unique_ptr<Node> Parser::parse_pipedCommand() {
-    std::unique_ptr<CmdNode> node(this->parse_command());
+    std::unique_ptr<PipedCmdNode> node(new PipedCmdNode(this->parse_command().release()));
 
     if(this->curTokenKind == PIPE) {
-        std::unique_ptr<PipedCmdNode> piped(new PipedCmdNode(node.release()));
         while(this->curTokenKind == PIPE) {
             this->matchToken(PIPE);
-            piped->addCmdNodes(this->parse_command().release());
+            node->addCmdNodes(this->parse_command().release());
         }
-        RET_NODE(piped.release());
     }
     RET_NODE(node.release());
 }
@@ -724,7 +722,7 @@ INLINE std::unique_ptr<Node> Parser::parse_pipedCommand() {
 INLINE std::unique_ptr<CmdNode> Parser::parse_command() {   //FIXME: redirect
     unsigned int n = LN();
     Token token(this->matchAndGetToken(COMMAND));
-    std::unique_ptr<CmdNode> node(new CmdNode(n, this->lexer->toCmdArg(token)));
+    std::unique_ptr<CmdNode> node(new CmdNode(n, this->lexer->toCmdArg(token, true)));
 
     while(this->curTokenKind == CMD_SEP) {
         this->matchToken(CMD_SEP);
@@ -734,7 +732,7 @@ INLINE std::unique_ptr<CmdNode> Parser::parse_command() {   //FIXME: redirect
 }
 
 INLINE std::unique_ptr<CmdArgNode> Parser::parse_cmdArg() {
-    std::unique_ptr<CmdArgNode> node(new CmdArgNode(this->parse_cmdArgSeg().release()));
+    std::unique_ptr<CmdArgNode> node(new CmdArgNode(this->parse_cmdArgSeg(true).release()));
 
     bool next = true;
     while(next) {
@@ -752,7 +750,7 @@ INLINE std::unique_ptr<CmdArgNode> Parser::parse_cmdArg() {
     return node;
 }
 
-INLINE std::unique_ptr<Node> Parser::parse_cmdArgSeg() {
+INLINE std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool expandTilde) {
     static TokenKind alters[] = {
             EACH_LA_cmdArg(GEN_LA_ALTER)
             DUMMY
@@ -762,7 +760,7 @@ INLINE std::unique_ptr<Node> Parser::parse_cmdArgSeg() {
     case CMD_ARG_PART: {
         unsigned int n = LN();
         Token token(this->matchAndGetToken(CMD_ARG_PART));
-        RET_NODE(new StringValueNode(n, this->lexer->toCmdArg(token)));
+        RET_NODE(new StringValueNode(n, this->lexer->toCmdArg(token, expandTilde)));
     }
     case STRING_LITERAL: {
         return this->parse_stringLiteral();

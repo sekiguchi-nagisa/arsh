@@ -173,8 +173,9 @@ public:
 
     /**
      * convert token to command argument
+     * if expandTilde is true, the replace first tilde to HOME
      */
-    std::string toCmdArg(const Token &token) const;
+    std::string toCmdArg(const Token &token, bool expandTilde = false) const;
 
     /**
      * convert token to name(remove '$' char)

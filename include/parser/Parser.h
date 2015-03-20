@@ -96,7 +96,7 @@ private:
     std::unique_ptr<Node> parse_pipedCommand();
     std::unique_ptr<CmdNode> parse_command();
     std::unique_ptr<CmdArgNode> parse_cmdArg();
-    std::unique_ptr<Node> parse_cmdArgSeg();
+    std::unique_ptr<Node> parse_cmdArgSeg(bool expandTilde = false);
 
     std::unique_ptr<Node> parse_commandOrExpression();
     std::unique_ptr<Node> parse_expression();

@@ -73,3 +73,4 @@ void RuntimeContext::assertion() {
         fatal("assertion error\n"); //FIXME:
     }
 }
+

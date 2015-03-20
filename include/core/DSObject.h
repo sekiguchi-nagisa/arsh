@@ -23,8 +23,7 @@
 class FunctionNode;
 struct RuntimeContext;
 
-class DSObject {
-public:
+struct DSObject {
     DSObject();
     virtual ~DSObject();
 
@@ -34,7 +33,7 @@ public:
     virtual DSType *getType() = 0;
 
     /**
-     * retunr 0, if has no field
+     * return 0, if has no field
      */
     virtual int getFieldSize() = 0;
 
@@ -51,8 +50,7 @@ public:
     virtual std::string toString() = 0;
 };
 
-class BaseObject: public DSObject {
-protected:
+struct BaseObject: public DSObject {
     DSType *type;
 
     int fieldSize;
@@ -62,7 +60,6 @@ protected:
      */
     DSObject **fieldTable;
 
-public:
     BaseObject(DSType *type);
     virtual ~BaseObject();
 
@@ -71,44 +68,36 @@ public:
     DSObject *lookupField(int fieldIndex);	// override
 };
 
-class Int_Object: public BaseObject {
-private:
+struct Int_Object: public BaseObject {
     int value;
 
-public:
     Int_Object(DSType *type, int value);
 
     int getValue();
     std::string toString(); // override
 };
 
-class Float_Object: public BaseObject {
-private:
+struct Float_Object: public BaseObject {
     double value;
 
-public:
     Float_Object(DSType *type, double value);
 
     double getValue();
     std::string toString(); // override
 };
 
-class Boolean_Object: public BaseObject {
-private:
+struct Boolean_Object: public BaseObject {
     bool value;
 
-public:
     Boolean_Object(DSType *type, bool value);
 
     bool getValue();
     std::string toString(); // override
 };
 
-class String_Object: public BaseObject {
-private:
+struct String_Object: public BaseObject {
     std::string value;
 
-public:
     String_Object(DSType *type, std::string &&value);
 
     const std::string &getValue();
@@ -116,11 +105,9 @@ public:
     void append(const String_Object &obj);
 };
 
-class Array_Object: public BaseObject {
-private:
+struct Array_Object: public BaseObject {
     std::vector<std::shared_ptr<DSObject>> values;
 
-public:
     Array_Object(DSType *type);
 
     const std::vector<std::shared_ptr<DSObject>> &getValues();
@@ -128,11 +115,9 @@ public:
     void append(std::shared_ptr<DSObject> obj);
 };
 
-class Tuple_Object : public BaseObject {
-private:
+struct Tuple_Object : public BaseObject {
     std::vector<std::shared_ptr<DSObject>> values;
 
-public:
     Tuple_Object(DSType *type, unsigned int size);
 
     const std::vector<std::shared_ptr<DSObject>> &getValues();
@@ -140,14 +125,12 @@ public:
     void set(unsigned int index, std::shared_ptr<DSObject> obj);
 };
 
-class FuncObject: public DSObject {
-private:
+struct FuncObject: public DSObject {
     /**
      * may be null, but finally must be not null
      */
     FunctionType *funcType;
 
-public:
     FuncObject(FunctionType *funcType);
     virtual ~FuncObject();
 
@@ -172,11 +155,9 @@ public:
 /*
  * for user defined function
  */
-class UserFuncObject: public FuncObject {
-private:
+struct UserFuncObject: public FuncObject {
     FunctionNode *funcNode;
 
-public:
     UserFuncObject(FunctionType *funcType, FunctionNode *funcNode);
     ~UserFuncObject();
 
@@ -187,8 +168,7 @@ public:
 /**
  * for builtin(native) function
  */
-class BuiltinFuncObject: public FuncObject {
-private:
+struct BuiltinFuncObject: public FuncObject {
     /**
      * size of actual parameter. exclude first parameter(RuntimeContext)
      */
@@ -199,7 +179,6 @@ private:
      */
     void *func_ptr;
 
-public:
     BuiltinFuncObject(FunctionType *funcType, int paramSize, void *func_ptr);
     ~BuiltinFuncObject();
 

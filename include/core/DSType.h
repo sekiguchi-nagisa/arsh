@@ -26,8 +26,8 @@
 #include <core/FieldHandle.h>
 #include <core/TypeTemplate.h>
 
-class DSObject;
-class FuncObject;
+struct DSObject;
+struct FuncObject;
 
 class DSType {
 public:
