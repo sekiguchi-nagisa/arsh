@@ -18,6 +18,8 @@
 #include <histedit.h>
 #include <string>
 #include <string.h>
+#include <signal.h>
+#include <setjmp.h>
 
 #include <util/debug.h>
 #include <parser/Lexer.h>
@@ -35,6 +37,14 @@ static bool continuation = false;
 
 static char *prompt(EditLine *el) {
     return continuation ? (char *) "> " : (char *) "test> ";
+}
+
+static sigjmp_buf jmp_ctx;
+static volatile sig_atomic_t gotsig = 0;
+
+static void handler(int num) {
+    gotsig = num;
+    siglongjmp(jmp_ctx, 1);
 }
 
 class Terminal {
@@ -64,15 +74,35 @@ private:
     void addHistory();
 };
 
+static void setupSignalHandler() {
+    // set sigint
+    struct sigaction act;
+    act.sa_handler = handler;
+    act.sa_flags = 0;
+    sigfillset(&act.sa_mask);
+
+    if(sigaction(SIGINT, &act, NULL) < 0) {
+        fatal("setup signal handeler failed\n");
+    }
+
+    // ignore some signal
+    struct sigaction ignore_act;
+    ignore_act.sa_handler = SIG_IGN;
+
+    sigaction(SIGQUIT, &ignore_act, NULL);
+    sigaction(SIGSTOP, &ignore_act, NULL);  //FIXME: foreground job
+    sigaction(SIGCONT, &ignore_act, NULL);
+    sigaction(SIGTSTP, &ignore_act, NULL);  //FIXME: background job
+}
 
 Terminal::Terminal(const char *progName) :
         el(0), ydsh_history(0), event(), lineBuf() {
+    setupSignalHandler();
+
     this->el = el_init(progName, stdin, stdout, stderr);
     el_set(this->el, EL_PROMPT, prompt);
     el_set(this->el, EL_EDITOR, "emacs");
-
-    el_set(this->el, EL_SETTY, "-d", "intr=^@", NULL);
-    el_set(this->el, EL_BIND, "^C", "ed-start-over", NULL);
+    el_set(this->el, EL_SIGNAL, 1);
 
     this->ydsh_history = history_init();
     if(this->ydsh_history == 0) {
@@ -120,6 +150,13 @@ static bool checkLineContinuation(const char *line) {
 }
 
 const char *Terminal::readLine() {
+    if(sigsetjmp(jmp_ctx, 1) != 0) {
+        if(gotsig == SIGINT) {
+            printf("\n");
+        }
+        gotsig = 0;
+    }
+
     this->lineBuf = std::string();
     const char *line;
     do {
@@ -167,6 +204,7 @@ int main(int argc, char **argv) {
 
     unsigned int lineNum = 1;
     const char *line;
+
     while((line = term.readLine()) != 0) {
         Lexer lexer(line);
         lexer.setLineNum(lineNum);
@@ -196,5 +234,6 @@ int main(int argc, char **argv) {
         delete rootNode;
         lineNum = lexer.getLineNum();
     }
+    printf("\n");
     return 0;
 }
