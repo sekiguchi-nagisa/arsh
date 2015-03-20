@@ -133,23 +133,21 @@
 // ##     Parser     ##
 // ####################
 
-Parser::Parser(Lexer *lexer) :
-        lexer(lexer), curTokenKind(), curToken() {
+Parser::Parser() :
+        lexer(), curTokenKind(), curToken() {
 }
 
 Parser::~Parser() {
 }
 
-void Parser::setLexer(Lexer *lexer) {
-    this->lexer = lexer;
-}
+void Parser::parse(Lexer &lexer, RootNode &rootNode) {
+    this->lexer = &lexer;
 
-RootNode *Parser::parse() {
     // first, fetch token.
     NEXT_TOKEN();
 
     // start parsing
-    return this->parse_toplevel().release();
+    this->parse_toplevel(rootNode);
 }
 
 INLINE void Parser::matchToken(TokenKind expected) {
@@ -188,15 +186,13 @@ INLINE void Parser::hasNoNewLine() {
 
 // parse rule definition
 
-std::unique_ptr<RootNode> Parser::parse_toplevel() {
-    std::unique_ptr<RootNode> rootNode(new RootNode());
-
+INLINE void Parser::parse_toplevel(RootNode &rootNode) {
     bool next = true;
     while(next) {
         switch(this->curTokenKind) {
         EACH_LA_toplevelStatement(GEN_LA_CASE) {
             // parse
-            rootNode->addNode(this->parse_toplevelStatement().release());
+            rootNode.addNode(this->parse_toplevelStatement().release());
             break;
         }
         default: {
@@ -207,7 +203,6 @@ std::unique_ptr<RootNode> Parser::parse_toplevel() {
     }
 
     this->matchToken(EOS);
-    return rootNode;
 }
 
 INLINE std::unique_ptr<Node> Parser::parse_toplevelStatement() {

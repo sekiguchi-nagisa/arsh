@@ -32,6 +32,7 @@ include_directories(${YDSH_INCLUDE})
 add_subdirectory(${SRC_DIR}/ast)
 add_subdirectory(${SRC_DIR}/core)
 add_subdirectory(${SRC_DIR}/parser)
+add_subdirectory(${SRC_DIR}/exe)
 add_subdirectory(${SRC_DIR}/util)
 
 # check editline

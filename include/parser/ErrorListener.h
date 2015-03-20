@@ -25,9 +25,9 @@ struct ErrorListener {
     virtual ~ErrorListener();
 
     virtual void displayTypeError(const std::string &sourceName,
-            const TypeCheckError &e) = 0;
+            const TypeCheckError &e) const = 0;
     virtual void displayParseError(Lexer &lexer,
-            const std::string &sourceName, const ParseError &e) = 0;
+            const std::string &sourceName, const ParseError &e) const = 0;
 };
 
 class CommonErrorListener : public ErrorListener {
@@ -36,9 +36,9 @@ public:
     ~CommonErrorListener();
 
     void displayTypeError(const std::string &sourceName,
-            const TypeCheckError &e); // override
+            const TypeCheckError &e) const; // override
     void displayParseError(Lexer &lexer,
-            const std::string &sourceName, const ParseError &e); // override
+            const std::string &sourceName, const ParseError &e) const; // override
 };
 
 #endif /* PARSER_ERRORLISTENER_H_ */

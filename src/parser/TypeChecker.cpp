@@ -58,10 +58,10 @@ TypeChecker::~TypeChecker() {
     this->finallyContextStack.clear();
 }
 
-void TypeChecker::checkTypeRootNode(RootNode *rootNode) {
+void TypeChecker::checkTypeRootNode(RootNode &rootNode) {
     this->symbolTable.clearEntryCache();
 
-    for(Node *node : rootNode->getNodeList()) {
+    for(Node *node : rootNode.getNodeList()) {
         this->checkTypeAsStatement(node);
     }
 }

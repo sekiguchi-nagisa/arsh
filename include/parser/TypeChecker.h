@@ -72,7 +72,7 @@ public:
     /**
      * type checker entry point
      */
-    void checkTypeRootNode(RootNode *rootNode);
+    void checkTypeRootNode(RootNode &rootNode);
 
 private:
     // base type check entry point

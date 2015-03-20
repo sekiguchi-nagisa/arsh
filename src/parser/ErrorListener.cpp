@@ -37,7 +37,7 @@ CommonErrorListener::~CommonErrorListener() {
 }
 
 void CommonErrorListener::displayTypeError(const std::string &sourceName,
-        const TypeCheckError &e) {
+        const TypeCheckError &e) const {
     int argSize = e.getArgs().size();
     int messageSize = e.getTemplate().size() + 1;
     for(const std::string &arg : e.getArgs()) {
@@ -154,7 +154,7 @@ static std::string formatErrorLine(Lexer &lexer, Token errorToken) {
 }
 
 void CommonErrorListener::displayParseError(Lexer &lexer,
-        const std::string &sourceName, const ParseError &e) {
+        const std::string &sourceName, const ParseError &e) const {
     std::string msg(ParseErrorFormatter::format(lexer, e));
     std::string line(formatErrorLine(lexer, e.getErrorToken()));
     fprintf(stderr, "%s:%d: [syntax error] %s\n%s\n",

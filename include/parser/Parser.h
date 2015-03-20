@@ -42,13 +42,14 @@ private:
     Token  curToken;
 
 public:
-    Parser(Lexer *lexer);
+    Parser();
     ~Parser();
 
-    void setLexer(Lexer *lexer);
-
-    // entry point.
-    RootNode *parse();
+    /**
+     * parse entry point.
+     * write parsed nodes to rootNode.
+     */
+    void parse(Lexer &lexer, RootNode &rootNode);
 
 private:
     /**
@@ -74,7 +75,7 @@ private:
     void hasNoNewLine();
 
     // parser rule definition.
-    std::unique_ptr<RootNode> parse_toplevel();
+    void parse_toplevel(RootNode &rootNode);
     std::unique_ptr<Node> parse_toplevelStatement();
     std::unique_ptr<Node> parse_function();
     std::unique_ptr<TypeToken> parse_typeName();
