@@ -101,7 +101,7 @@ TokenKind Lexer::nextToken(Token &token) {
       INNER_SPECIAL_NAME = SPECIAL_NAME | '${' SPECIAL_NAMES '}';
 
       CMD_START_CHAR = '\\' [^\r\n] | [^ \t\r\n;'"`|&<>(){}$#![\]0-9\000];
-      CMD_CHAR       = '\\' . | [^ \t\r\n;'"`|&<>(){}$#![\]\000];
+      CMD_CHAR       = '\\' . | '\\' [\r\n] | [^ \t\r\n;'"`|&<>(){}$#![\]\000];
 
       LINE_END = ';';
       NEW_LINE = [\r\n][ \t\r\n]*;
@@ -209,7 +209,7 @@ INIT:
       <STMT,EXPR,NAME,CMD> COMMENT
                                { SKIP(); }
       <STMT,EXPR,NAME> [ \t]+  { SKIP(); }
-      <STMT,EXPR,NAME,CMD> '\\' [\r\n]
+      <STMT,EXPR,NAME> '\\' [\r\n]
                                { INC_LINE_NUM(); SKIP(); }
 
       <DSTRING> ["]            { POP_MODE(); RET(CLOSE_DQUOTE);}
