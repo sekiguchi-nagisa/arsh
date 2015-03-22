@@ -55,6 +55,10 @@ void Shell::setDumpTypedAST(bool dump) {
     this->dumpTypedAST = dump;
 }
 
+void Shell::setAssertion(bool assertion) {
+    this->ctx.assertion = assertion;
+}
+
 CommonErrorListener Shell::clistener;
 
 bool Shell::eval(const char *sourceName, Lexer &lexer, bool interactive) {
@@ -69,13 +73,13 @@ bool Shell::eval(const char *sourceName, Lexer &lexer, bool interactive) {
             std::cout << std::endl;
         }
     } catch(const ParseError &e) {
-        listener->displayParseError(lexer, sourceName, e);
+        this->listener->displayParseError(lexer, sourceName, e);
         return false;
     }
 
     bool status = true;
     try {
-        checker.checkTypeRootNode(rootNode);
+        this->checker.checkTypeRootNode(rootNode);
 
         if(this->dumpTypedAST) {
             std::cout << "### dump typed AST ###" << std::endl;
@@ -84,11 +88,11 @@ bool Shell::eval(const char *sourceName, Lexer &lexer, bool interactive) {
         }
 
         // eval
-        ctx.repl = interactive;
-        rootNode.eval(ctx);
+        this->ctx.repl = interactive;
+        rootNode.eval(this->ctx);
     } catch(const TypeCheckError &e) {
-        listener->displayTypeError(sourceName, e);
-        checker.recover();
+        this->listener->displayTypeError(sourceName, e);
+        this->checker.recover();
         status = false;
     }
     this->lineNum = lexer.getLineNum();

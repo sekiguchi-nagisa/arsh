@@ -56,6 +56,7 @@ public:
 
     void setDumpUntypedAST(bool dump);
     void setDumpTypedAST(bool dump);
+    void setAssertion(bool assertion);
 
 private:
     bool eval(const char *sourceName, Lexer &lexer, bool interactive = false);

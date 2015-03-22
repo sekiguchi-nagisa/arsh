@@ -1304,8 +1304,10 @@ void AssertNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus AssertNode::eval(RuntimeContext &ctx) {
-    EVAL(ctx, this->exprNode);
-    ctx.assertion();
+    if(ctx.assertion) {
+        EVAL(ctx, this->exprNode);
+        ctx.checkAssertion();
+    }
     return EVAL_SUCCESS;
 }
 

@@ -67,6 +67,11 @@ struct RuntimeContext {
      */
     bool repl;
 
+    /**
+     * if true, enable assertion.
+     */
+    bool assertion;
+
     RuntimeContext();
     ~RuntimeContext();
 
@@ -150,7 +155,7 @@ struct RuntimeContext {
     void printStackTop(DSType *stackTopType);
     void checkCast(DSType *targetType);
     void instanceOf(DSType *targetType);
-    void assertion();
+    void checkAssertion();
 };
 
 #endif /* CORE_RUNTIMECONTEXT_H_ */

@@ -23,6 +23,7 @@
 enum OptionKind {
     DUMP_UAST,
     DUMP_AST,
+    DISABLE_ASSERT,
     HELP,
 };
 
@@ -41,6 +42,13 @@ int main(int argc, char **argv) {
             "--dump-ast",
             false,
             "dump abstract syntax tree (after type checking)"
+    );
+
+    parser.addOption(
+            (unsigned int) DISABLE_ASSERT,
+            "--disable-assertion",
+            false,
+            "disable assert statement"
     );
 
     parser.addOption(
@@ -70,6 +78,9 @@ int main(int argc, char **argv) {
             break;
         case DUMP_AST:
             shell.setDumpTypedAST(true);
+            break;
+        case DISABLE_ASSERT:
+            shell.setAssertion(false);
             break;
         case HELP:
             parser.printHelp(std::cout);

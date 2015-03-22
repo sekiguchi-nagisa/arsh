@@ -35,7 +35,7 @@ RuntimeContext::RuntimeContext() :
         thrownObject(std::shared_ptr<DSObject>(nullptr)),
         localStack(new std::shared_ptr<DSObject>[DEFAULT_LOCAL_SIZE]),
         localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0),
-        localVarOffset(0), repl(false) {
+        localVarOffset(0), repl(false), assertion(true) {
 }
 
 RuntimeContext::~RuntimeContext() {
@@ -69,7 +69,7 @@ void RuntimeContext::instanceOf(DSType *targetType) {
     }
 }
 
-void RuntimeContext::assertion() {
+void RuntimeContext::checkAssertion() {
     if(!TYPE_AS(Boolean_Object, this->pop())->getValue()) {
         fatal("assertion error\n"); //FIXME:
     }
