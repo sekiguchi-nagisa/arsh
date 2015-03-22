@@ -115,6 +115,11 @@ public:
      */
     unsigned int getMaxVarIndex();
 
+    /**
+     * max number of global variable index.
+     */
+    unsigned int getMaxGVarIndex();
+
     bool inGlobalScope();
 };
 

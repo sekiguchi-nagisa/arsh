@@ -443,7 +443,11 @@ int VarNode::getVarIndex() {
 }
 
 EvalStatus VarNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO
+    if(this->global) {
+        ctx.getGlobal(this->index);
+    } else {
+        ctx.getLocal(this->index);
+    }
     return EVAL_SUCCESS;
 }
 
@@ -2030,7 +2034,12 @@ void VarDeclNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus VarDeclNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO:
+    EVAL(ctx, this->initValueNode);
+    if(this->global) {
+        ctx.setGlobal(this->varIndex);
+    } else {
+        ctx.setLocal(this->varIndex);
+    }
     return EVAL_SUCCESS;
 }
 
@@ -2236,7 +2245,7 @@ EvalStatus DummyNode::eval(RuntimeContext &ctx) {
 // ######################
 
 RootNode::RootNode() :
-        Node(0), nodeList(), maxVarNum(0) {
+        Node(0), nodeList(), maxVarNum(0), maxGVarNum(0) {
 }
 
 RootNode::~RootNode() {
@@ -2262,9 +2271,18 @@ unsigned int RootNode::getMaxVarNum() const {
     return this->maxVarNum;
 }
 
+void RootNode::setMaxGVarNum(unsigned int maxGVarNum) {
+    this->maxGVarNum = maxGVarNum;
+}
+
+unsigned int RootNode::getMaxGVarNum() const {
+    return this->maxGVarNum;
+}
+
 void RootNode::dump(Writer &writer) const {
     WRITE(nodeList);
     WRITE_PRIM(maxVarNum);
+    WRITE_PRIM(maxGVarNum);
 }
 
 void RootNode::accept(NodeVisitor *visitor) {
@@ -2272,6 +2290,9 @@ void RootNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus RootNode::eval(RuntimeContext &ctx) {
+    ctx.reserveGlobalVar(this->maxGVarNum);
+    ctx.localVarOffset = this->maxVarNum;
+
     for(Node *node : this->nodeList) {
         EvalStatus status = node->eval(ctx);
         if(status == EVAL_SUCCESS) {

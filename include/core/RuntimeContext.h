@@ -79,7 +79,7 @@ struct RuntimeContext {
             do {
                 newSize *= 2;
             } while(newSize < size);
-            std::shared_ptr<DSObject> *newTable = new std::shared_ptr<DSObject>[newSize];
+            auto newTable = new std::shared_ptr<DSObject>[newSize];
             for(unsigned int i = 0; i < this->tableSize; i++) {
                 newTable[i] = this->globalVarTable[i];
             }
@@ -96,11 +96,11 @@ struct RuntimeContext {
         this->thrownObject.reset();
     }
 
-    void expandLocalStack() {
+    void expandLocalStack(unsigned int needSize) {
         unsigned int newSize = this->localStackSize;
         do {
             newSize *= 2;
-        } while(newSize < this->localStackSize);
+        } while(newSize < needSize);
         auto newTable = new std::shared_ptr<DSObject>[newSize];
         for(unsigned int i = 0; i < this->localStackSize; i++) {
             newTable[i] = this->localStack[i];
@@ -113,7 +113,7 @@ struct RuntimeContext {
     // operand manipulation
     void push(const std::shared_ptr<DSObject> &value) {
         if(++this->stackTopIndex >= this->localStackSize) {
-            this->expandLocalStack();
+            this->expandLocalStack(this->stackTopIndex);
         }
         this->localStack[this->stackTopIndex] = value;
     }
@@ -130,20 +130,20 @@ struct RuntimeContext {
     }
 
     // variable operation
-    void setGlobal(unsigned int index, const std::shared_ptr<DSObject> &value) {
-        this->globalVarTable[index] = value;
+    void setGlobal(unsigned int index) {
+        this->globalVarTable[index] = this->pop();
     }
 
-    std::shared_ptr<DSObject> getGlobal(unsigned int index) {
-        return this->globalVarTable[index];
+    void getGlobal(unsigned int index) {
+        this->push(this->globalVarTable[index]);
     }
 
-    void setLocal(unsigned int index, const std::shared_ptr<DSObject> &value) {
-        this->localStack[this->localVarOffset + index] = value;
+    void setLocal(unsigned int index) {
+        this->localStack[this->localVarOffset + index] = this->pop();
     }
 
-    std::shared_ptr<DSObject> getLocal(unsigned int index) {
-        return this->localStack[this->localVarOffset + index];
+    void getLocal(unsigned int index) {
+        this->push(this->localStack[this->localVarOffset + index]);
     }
 
     // some runtime api

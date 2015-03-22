@@ -158,6 +158,11 @@ unsigned int SymbolTable::getMaxVarIndex() {
     return this->maxVarIndexStack.back();
 }
 
+unsigned int SymbolTable::getMaxGVarIndex() {
+    assert(this->inGlobalScope());
+    return this->scopes.back()->getCurVarIndex();
+}
+
 bool SymbolTable::inGlobalScope() {
     return this->scopes.size() == 1;
 }

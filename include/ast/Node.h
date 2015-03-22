@@ -1100,6 +1100,11 @@ private:
      */
     unsigned int maxVarNum;
 
+    /**
+     * max number of global variable.
+     */
+    unsigned int maxGVarNum;
+
 public:
     RootNode();
     ~RootNode();
@@ -1108,6 +1113,8 @@ public:
     const std::list<Node*> &getNodeList() const;
     void setMaxVarNum(unsigned int maxVarNum);
     unsigned int getMaxVarNum() const;
+    void setMaxGVarNum(unsigned int maxGVarNum);
+    unsigned int getMaxGVarNum() const;
     void dump(Writer &writer) const;    // override
     void accept(NodeVisitor *visitor);  // override
     EvalStatus eval(RuntimeContext &ctx);   // override

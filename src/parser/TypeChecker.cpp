@@ -905,5 +905,6 @@ void TypeChecker::visitRootNode(RootNode *node) {
         ++iter;
     }
     node->setMaxVarNum(this->symbolTable.getMaxVarIndex());
+    node->setMaxGVarNum(this->symbolTable.getMaxGVarIndex());
     node->setType(this->typePool->getVoidType());
 }
