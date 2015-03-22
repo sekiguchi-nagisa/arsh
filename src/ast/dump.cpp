@@ -144,7 +144,5 @@ const char *Writer::INDENT = "  ";
 
 void dumpAST(std::ostream &out, const RootNode &rootNode) {
     Writer writer(&out);
-    for(Node *node : rootNode.getNodeList()) {
-        writer.write(*node);
-    }
+    rootNode.dump(writer);
 }

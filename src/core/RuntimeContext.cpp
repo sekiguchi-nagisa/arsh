@@ -34,7 +34,8 @@ RuntimeContext::RuntimeContext() :
         tableSize(DEFAULT_TABLE_SIZE),
         thrownObject(std::shared_ptr<DSObject>(nullptr)),
         localStack(new std::shared_ptr<DSObject>[DEFAULT_LOCAL_SIZE]),
-        localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0), localVarOffset(0) {
+        localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0),
+        localVarOffset(0), repl(false) {
 }
 
 RuntimeContext::~RuntimeContext() {

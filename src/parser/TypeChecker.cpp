@@ -59,11 +59,7 @@ TypeChecker::~TypeChecker() {
 }
 
 void TypeChecker::checkTypeRootNode(RootNode &rootNode) {
-    this->symbolTable.clearEntryCache();
-
-    for(Node *node : rootNode.getNodeList()) {
-        this->checkTypeAsStatement(node);
-    }
+    rootNode.accept(this);
 }
 
 // type check entry point
@@ -899,4 +895,15 @@ void TypeChecker::visitEmptyNode(EmptyNode *node) {
 
 void TypeChecker::visitDummyNode(DummyNode *node) {
     // do nothing.
+}
+
+void TypeChecker::visitRootNode(RootNode *node) {
+    this->symbolTable.clearEntryCache();
+
+    for(auto iter = node->nodeList.begin(); iter != node->nodeList.end();) {
+        this->checkTypeAsStatement(*iter);
+        ++iter;
+    }
+    node->setMaxVarNum(this->symbolTable.getMaxVarIndex());
+    node->setType(this->typePool->getVoidType());
 }

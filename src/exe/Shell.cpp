@@ -84,7 +84,8 @@ bool Shell::eval(const char *sourceName, Lexer &lexer, bool interactive) {
         }
 
         // eval
-        rootNode.eval(ctx, interactive);
+        ctx.repl = interactive;
+        rootNode.eval(ctx);
     } catch(const TypeCheckError &e) {
         listener->displayTypeError(sourceName, e);
         checker.recover();

@@ -2236,7 +2236,7 @@ EvalStatus DummyNode::eval(RuntimeContext &ctx) {
 // ######################
 
 RootNode::RootNode() :
-        nodeList() {
+        Node(0), nodeList(), maxVarNum(0) {
 }
 
 RootNode::~RootNode() {
@@ -2254,11 +2254,28 @@ const std::list<Node*> &RootNode::getNodeList() const {
     return this->nodeList;
 }
 
-EvalStatus RootNode::eval(RuntimeContext &ctx, bool repl) {
+void RootNode::setMaxVarNum(unsigned int maxVarNum) {
+    this->maxVarNum = maxVarNum;
+}
+
+unsigned int RootNode::getMaxVarNum() const {
+    return this->maxVarNum;
+}
+
+void RootNode::dump(Writer &writer) const {
+    WRITE(nodeList);
+    WRITE_PRIM(maxVarNum);
+}
+
+void RootNode::accept(NodeVisitor *visitor) {
+    visitor->visitRootNode(this);
+}
+
+EvalStatus RootNode::eval(RuntimeContext &ctx) {
     for(Node *node : this->nodeList) {
         EvalStatus status = node->eval(ctx);
         if(status == EVAL_SUCCESS) {
-            if(repl) {
+            if(ctx.repl) {
                 ctx.printStackTop(node->getType());
             } else if(!node->getType()->equals(ctx.pool.getVoidType())){
                 ctx.pop();

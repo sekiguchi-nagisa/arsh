@@ -62,6 +62,11 @@ struct RuntimeContext {
      */
     unsigned int localVarOffset;
 
+    /**
+     * if true, runtime interactive mode.
+     */
+    bool repl;
+
     RuntimeContext();
     ~RuntimeContext();
 

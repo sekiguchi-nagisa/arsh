@@ -1090,9 +1090,15 @@ public:
  * Root Node of AST.
  * this class is not inheritance of Node
  */
-class RootNode {	//FIXME:
-private:
+class RootNode : public Node {	//FIXME:
+public:
     std::list<Node*> nodeList;
+
+private:
+    /**
+     * max number of local variable.
+     */
+    unsigned int maxVarNum;
 
 public:
     RootNode();
@@ -1100,7 +1106,11 @@ public:
 
     void addNode(Node *node);
     const std::list<Node*> &getNodeList() const;
-    EvalStatus eval(RuntimeContext &ctx, bool repl = false);
+    void setMaxVarNum(unsigned int maxVarNum);
+    unsigned int getMaxVarNum() const;
+    void dump(Writer &writer) const;    // override
+    void accept(NodeVisitor *visitor);  // override
+    EvalStatus eval(RuntimeContext &ctx);   // override
 };
 
 // helper function for node creation
@@ -1168,6 +1178,7 @@ struct NodeVisitor {
     virtual void visitFunctionNode(FunctionNode *node) = 0;
     virtual void visitEmptyNode(EmptyNode *node) = 0;
     virtual void visitDummyNode(DummyNode *node) = 0;
+    virtual void visitRootNode(RootNode *node) = 0;
 };
 
 #endif /* AST_NODE_H_ */
