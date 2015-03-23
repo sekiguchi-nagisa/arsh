@@ -17,6 +17,9 @@
 #include <core/DSObject.h>
 #include <ast/Node.h>
 
+#include <assert.h>
+#include <util/debug.h>
+
 // ######################
 // ##     DSObject     ##
 // ######################
@@ -27,6 +30,8 @@ DSObject::DSObject() {
 DSObject::~DSObject() {
 }
 
+void DSObject::setType(DSType *type) {  // do nothing.
+}
 
 // ########################
 // ##     BaseObject     ##
@@ -191,8 +196,8 @@ void Tuple_Object::set(unsigned int index, std::shared_ptr<DSObject> obj) {
 // ##     FuncObject     ##
 // ########################
 
-FuncObject::FuncObject(FunctionType *funcType) :
-        funcType(funcType) {
+FuncObject::FuncObject() :
+        funcType(0) {
 }
 
 FuncObject::~FuncObject() {
@@ -200,6 +205,12 @@ FuncObject::~FuncObject() {
 
 DSType *FuncObject::getType() {
     return this->getFuncType();
+}
+
+void FuncObject::setType(DSType *type) {
+    FunctionType *funcType = dynamic_cast<FunctionType*>(type);
+    assert(funcType != 0);
+    this->funcType = funcType;
 }
 
 int FuncObject::getFieldSize() {
@@ -219,8 +230,8 @@ FunctionType *FuncObject::getFuncType() {
 // ##     UserFuncObject     ##
 // ############################
 
-UserFuncObject::UserFuncObject(FunctionType *funcType, FunctionNode *funcNode) :
-        FuncObject(funcType), funcNode(funcNode) {
+UserFuncObject::UserFuncObject(FunctionNode *funcNode) :
+        FuncObject(), funcNode(funcNode) {
 }
 
 UserFuncObject::~UserFuncObject() {
@@ -239,13 +250,29 @@ std::string UserFuncObject::toString() {
     return str;
 }
 
+bool UserFuncObject::invoke(RuntimeContext &ctx) {  //TODO: default param
+    // change stackTopIndex
+    ctx.stackTopIndex = ctx.localVarOffset + this->funcNode->getMaxVarNum();
+
+    EvalStatus s = this->funcNode->getBlockNode()->eval(ctx);
+    switch(s) {
+    case EVAL_RETURN:
+        return true;
+    case EVAL_THROW:
+        return false;
+    default:
+        fatal("illegal eval status: %d\n", s);
+        return false;
+    }
+}
+
 
 // ###############################
 // ##     BuiltinFuncObject     ##
 // ###############################
 
-BuiltinFuncObject::BuiltinFuncObject(FunctionType *funcType, int paramSize, void *func_ptr) :
-        FuncObject(funcType), paramSize(paramSize), func_ptr(func_ptr) {
+BuiltinFuncObject::BuiltinFuncObject(int paramSize, void *func_ptr) :
+        FuncObject(), paramSize(paramSize), func_ptr(func_ptr) {
 }
 
 BuiltinFuncObject::~BuiltinFuncObject() {
@@ -264,4 +291,9 @@ std::string BuiltinFuncObject::toString() {
     str += std::to_string((long)this->func_ptr);
     str += ")";
     return str;
+}
+
+bool BuiltinFuncObject::invoke(RuntimeContext &ctx) {
+    fatal("unimplemented function invocation\n");
+    return false;
 }

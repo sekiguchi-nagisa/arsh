@@ -771,8 +771,10 @@ void ArgsNode::accept(NodeVisitor *visitor) {
     visitor->visitArgsNode(this);
 }
 
-EvalStatus ArgsNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO
+EvalStatus ArgsNode::eval(RuntimeContext &ctx) {    //TODO: named argument
+    for(const std::pair<std::string, Node*> &pair : this->argPairs) {
+        EVAL(ctx, pair.second);
+    }
     return EVAL_SUCCESS;
 }
 
@@ -843,9 +845,42 @@ void ApplyNode::accept(NodeVisitor *visitor) {
     visitor->visitApplyNode(this);
 }
 
+/**
+ * stack state in function apply    stack grow ===>
+ *
+ * +-----------+---------+------------------+   +--------+
+ * | stack top | funcObj | param1(receiver) | ~ | paramN |
+ * +-----------+---------+------------------+   +--------+
+ *                       |    new offset    |   |        |
+ */
 EvalStatus ApplyNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO
-    return EVAL_SUCCESS;
+    unsigned int curStackTopIndex = ctx.stackTopIndex;
+
+    // push func object
+    EVAL(ctx, this->recvNode);
+
+    // push arguments.
+    EVAL(ctx, this->argsNode);
+
+    // call function
+    ctx.saveAndSetOffset(curStackTopIndex + 2);
+    bool status = TYPE_AS(FuncObject,
+            ctx.localStack[curStackTopIndex + 1])->invoke(ctx);
+
+    // restore stack state
+    ctx.restoreOffset();
+    for(unsigned int i = ctx.stackTopIndex; i > curStackTopIndex; i--) {
+        ctx.pop();
+    }
+
+    if(status) {
+        if(!this->type->equals(ctx.pool.getVoidType())) {
+            ctx.getReturnObject(); // push return value
+        }
+        return EVAL_SUCCESS;
+    } else {
+        return EVAL_THROW;
+    }
 }
 
 // #####################
@@ -1786,8 +1821,11 @@ void ReturnNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus ReturnNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO:
-    return EVAL_SUCCESS;
+    EVAL(ctx, this->exprNode);
+    if(!this->exprNode->getType()->equals(ctx.pool.getVoidType())) {
+        ctx.setReturnObject();
+    }
+    return EVAL_RETURN;
 }
 
 // #######################
@@ -2109,7 +2147,7 @@ std::pair<Node*, Node*> AssignNode::split(AssignNode *node) {
 
 FunctionNode::FunctionNode(unsigned int lineNum, std::string &&funcName) :
         Node(lineNum), funcName(std::move(funcName)), paramNodes(), paramTypeTokens(), returnTypeToken(),
-        returnType(0), blockNode() {
+        returnType(0), blockNode(), maxVarNum(0), varIndex(0) {
 }
 
 FunctionNode::~FunctionNode() {
@@ -2147,6 +2185,12 @@ const std::vector<TypeToken*> &FunctionNode::getParamTypeTokens() {
     return this->paramTypeTokens;
 }
 
+TypeToken *FunctionNode::removeParamTypeToken(unsigned int index) {
+    TypeToken *t = this->paramTypeTokens[index];
+    this->paramTypeTokens[index] = 0;
+    return t;
+}
+
 void FunctionNode::setReturnTypeToken(TypeToken *typeToken) {
     this->returnTypeToken = typeToken;
 }
@@ -2156,6 +2200,12 @@ TypeToken *FunctionNode::getReturnTypeToken() {
         this->returnTypeToken = newVoidTypeToken();
     }
     return this->returnTypeToken;
+}
+
+TypeToken *FunctionNode::removeReturnTypeToken() {
+    TypeToken *t = this->getReturnTypeToken();
+    this->returnTypeToken = 0;
+    return t;
 }
 
 void FunctionNode::setReturnType(DSType *returnType) {
@@ -2174,6 +2224,22 @@ BlockNode *FunctionNode::getBlockNode() {
     return this->blockNode;
 }
 
+void FunctionNode::setMaxVarNum(unsigned int maxVarNum) {
+    this->maxVarNum = maxVarNum;
+}
+
+unsigned int FunctionNode::getMaxVarNum() {
+    return this->maxVarNum;
+}
+
+void FunctionNode::setVarIndex(int varIndex) {
+    this->varIndex = varIndex;
+}
+
+int FunctionNode::getVarIndex() {
+    return this->varIndex;
+}
+
 void FunctionNode::dump(Writer &writer) const {
     WRITE(funcName);
 
@@ -2187,6 +2253,8 @@ void FunctionNode::dump(Writer &writer) const {
     WRITE_PTR(returnTypeToken);
     WRITE_PTR(returnType);
     WRITE_PTR(blockNode);
+    WRITE_PRIM(maxVarNum);
+    WRITE_PRIM(varIndex);
 }
 
 void FunctionNode::accept(NodeVisitor *visitor) {
@@ -2194,8 +2262,8 @@ void FunctionNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus FunctionNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO:
-    return EVAL_SUCCESS;
+    ctx.setGlobal(this->varIndex, std::shared_ptr<DSObject>(new UserFuncObject(this)));
+    return EVAL_REMOVE;
 }
 
 // #######################
@@ -2261,7 +2329,7 @@ void RootNode::addNode(Node *node) {
     this->nodeList.push_back(node);
 }
 
-const std::list<Node*> &RootNode::getNodeList() const {
+const std::list<Node*> &RootNode::getNodeList() {
     return this->nodeList;
 }
 
@@ -2295,7 +2363,8 @@ EvalStatus RootNode::eval(RuntimeContext &ctx) {
     ctx.reserveGlobalVar(this->maxGVarNum);
     ctx.localVarOffset = this->maxVarNum;
 
-    for(Node *node : this->nodeList) {
+    for(auto iter = this->nodeList.begin(); iter != this->nodeList.end();) {
+        Node *node = *iter;
         EvalStatus status = node->eval(ctx);
         if(status == EVAL_SUCCESS) {
             if(ctx.repl) {
@@ -2305,9 +2374,13 @@ EvalStatus RootNode::eval(RuntimeContext &ctx) {
             }
         } else if(status == EVAL_THROW) {
             fatal("unimplemted EvalStatus: %d\n", status);  //FIXME:
+        } else if(status == EVAL_REMOVE) {
+            iter = this->nodeList.erase(iter);
+            continue;
         } else {
             fatal("illegal EvalStatus: %d\n", status);
         }
+        ++iter;
     }
     return EVAL_SUCCESS;
 }

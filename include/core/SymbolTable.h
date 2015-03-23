@@ -83,6 +83,12 @@ public:
     FieldHandle *registerHandle(const std::string &symbolName, DSType *type, bool readOnly);
 
     /**
+     * return null, if found duplicated handle.
+     */
+    FunctionHandle *registerFuncHandle(const std::string &funcName, DSType *returnType,
+            const std::vector<DSType*> &paramTypes);
+
+    /**
      * create new local scope.
      */
     void enterScope();

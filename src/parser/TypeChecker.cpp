@@ -885,9 +885,39 @@ void TypeChecker::visitAssignNode(AssignNode *node) {
     node->setType(this->typePool->getVoidType());
 }
 
-void TypeChecker::visitFunctionNode(FunctionNode *node) {
-    E_Unimplemented(node, "FunctionNode");
-} //TODO
+void TypeChecker::visitFunctionNode(FunctionNode *node) {   //TODO: named parameter
+    // resolve return type, param type
+    DSType *returnType = this->toType(node->removeReturnTypeToken());
+    unsigned int paramSize = node->getParamTypeTokens().size();
+    std::vector<DSType*> paramTypes(paramSize);
+    for(unsigned int i = 0; i < paramSize; i++) {
+        paramTypes[i] = this->toType(node->removeParamTypeToken(i));
+    }
+
+    // register function handle
+    FunctionHandle *handle =
+            this->symbolTable.registerFuncHandle(node->getFuncName(), returnType, paramTypes);
+    if(handle == 0) {
+        E_DefinedSymbol(node, node->getFuncName());
+    }
+    node->setVarIndex(handle->getFieldIndex());
+
+    // check type func body
+    this->pushReturnType(returnType);
+    this->symbolTable.enterFuncScope();
+
+    for(unsigned int i = 0; i < paramSize; i++) { // register parameter
+        VarNode *paramNode = node->getParamNodes()[i];
+        this->addEntryAndThrowIfDefined(paramNode, paramNode->getVarName(), paramTypes[i], false);
+    }
+    this->checkBlockEndExistence(node->getBlockNode(), returnType);
+    this->checkTypeWithCurrentBlockScope(node->getBlockNode());
+
+    node->setMaxVarNum(this->symbolTable.getMaxVarIndex());
+    this->symbolTable.exitFuncScope();
+    this->popReturnType();
+    node->setType(this->typePool->getVoidType());
+}
 
 void TypeChecker::visitEmptyNode(EmptyNode *node) {
     node->setType(this->typePool->getVoidType());
@@ -900,9 +930,8 @@ void TypeChecker::visitDummyNode(DummyNode *node) {
 void TypeChecker::visitRootNode(RootNode *node) {
     this->symbolTable.clearEntryCache();
 
-    for(auto iter = node->nodeList.begin(); iter != node->nodeList.end();) {
-        this->checkTypeAsStatement(*iter);
-        ++iter;
+    for(Node *targetNode : node->getNodeList()) {
+        this->checkTypeAsStatement(targetNode);
     }
     node->setMaxVarNum(this->symbolTable.getMaxVarIndex());
     node->setMaxGVarNum(this->symbolTable.getMaxGVarIndex());

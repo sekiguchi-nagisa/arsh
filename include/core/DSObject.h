@@ -33,6 +33,11 @@ struct DSObject {
     virtual DSType *getType() = 0;
 
     /**
+     * for FuncObject.
+     */
+    virtual void setType(DSType *type);
+
+    /**
      * return 0, if has no field
      */
     virtual int getFieldSize() = 0;
@@ -131,10 +136,11 @@ struct FuncObject: public DSObject {
      */
     FunctionType *funcType;
 
-    FuncObject(FunctionType *funcType);
+    FuncObject();
     virtual ~FuncObject();
 
     DSType *getType();	// override
+    void setType(DSType *type); // override
 
     /**
      * return always 0
@@ -148,8 +154,16 @@ struct FuncObject: public DSObject {
 
     /**
      * equivalent to dynamic_cast<FunctionType*>(getType())
+     * may be null, before call setType()
      */
     FunctionType *getFuncType();
+
+    /**
+     * invoke function.
+     * return true, if invocation success.
+     * return false, if thrown exception.
+     */
+    virtual bool invoke(RuntimeContext &ctx) = 0;
 };
 
 /*
@@ -158,11 +172,12 @@ struct FuncObject: public DSObject {
 struct UserFuncObject: public FuncObject {
     FunctionNode *funcNode;
 
-    UserFuncObject(FunctionType *funcType, FunctionNode *funcNode);
+    UserFuncObject(FunctionNode *funcNode);
     ~UserFuncObject();
 
     FunctionNode *getFuncNode();
     std::string toString(); // override
+    bool invoke(RuntimeContext &ctx); // override
 };
 
 /**
@@ -179,12 +194,13 @@ struct BuiltinFuncObject: public FuncObject {
      */
     void *func_ptr;
 
-    BuiltinFuncObject(FunctionType *funcType, int paramSize, void *func_ptr);
+    BuiltinFuncObject(int paramSize, void *func_ptr);
     ~BuiltinFuncObject();
 
     int getParamSize();
     void *getFuncPointer();
     std::string toString(); // override
+    bool invoke(RuntimeContext &ctx); // override
 };
 
 

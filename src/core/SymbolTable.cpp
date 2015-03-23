@@ -100,6 +100,19 @@ FieldHandle *SymbolTable::registerHandle(const std::string &symbolName, DSType *
     return handle;
 }
 
+FunctionHandle *SymbolTable::registerFuncHandle(const std::string &funcName, DSType *returnType,
+        const std::vector<DSType*> &paramTypes) {
+    assert(this->inGlobalScope());
+    FunctionHandle *handle = new FunctionHandle(returnType, paramTypes, this->scopes.back()->getCurVarIndex());
+    if(!this->scopes.back()->addFieldHandle(funcName, handle)) {
+        delete handle;
+        return 0;
+    }
+    handle->setAttribute(FieldHandle::GLOBAL);
+    this->handleCache.push_back(funcName);
+    return handle;
+}
+
 void SymbolTable::enterScope() {
     unsigned int index = this->scopes.back()->getCurVarIndex();
     if(this->inGlobalScope()) {

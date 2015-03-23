@@ -36,6 +36,7 @@ typedef enum {
     EVAL_CONTINUE,
     EVAL_THROW,
     EVAL_RETURN,
+    EVAL_REMOVE,
 } EvalStatus;
 
 
@@ -1030,6 +1031,16 @@ private:
 
     BlockNode *blockNode;
 
+    /**
+     * maximum number of local variabel in function
+     */
+    unsigned int maxVarNum;
+
+    /**
+     * global variable table index of this function
+     */
+    int varIndex;
+
 public:
     FunctionNode(unsigned int lineNum, std::string &&funcName);
     ~FunctionNode();
@@ -1038,26 +1049,34 @@ public:
     void addParamNode(VarNode *node, TypeToken *paramType);
     const std::vector<VarNode*> &getParamNodes();
 
-    /**
-     * get unresolved types
-     */
     const std::vector<TypeToken*> &getParamTypeTokens();
+
+    /**
+     * remove param type token. return removed it.
+     */
+    TypeToken *removeParamTypeToken(unsigned int index);
 
     void setReturnTypeToken(TypeToken *typeToken);
     TypeToken *getReturnTypeToken();
-    void setReturnType(DSType *returnType);
 
     /**
-     * return null, if has no return type.
+     * remove return type token. return removed it.
      */
-    DSType *getReturnType();
+    TypeToken *removeReturnTypeToken();
 
+    void setReturnType(DSType *returnType);
+    DSType *getReturnType();
     void setBlockNode(BlockNode *blockNode);
 
     /**
      * return null before call setBlockNode()
      */
     BlockNode *getBlockNode();
+
+    void setMaxVarNum(unsigned int maxVarNum);
+    unsigned int getMaxVarNum();
+    void setVarIndex(int varIndex);
+    int getVarIndex();
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
@@ -1110,7 +1129,7 @@ public:
     ~RootNode();
 
     void addNode(Node *node);
-    const std::list<Node*> &getNodeList() const;
+    const std::list<Node*> &getNodeList();
     void setMaxVarNum(unsigned int maxVarNum);
     unsigned int getMaxVarNum() const;
     void setMaxGVarNum(unsigned int maxGVarNum);

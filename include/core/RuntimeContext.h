@@ -41,6 +41,11 @@ struct RuntimeContext {
     unsigned int tableSize;
 
     /**
+     * if not null ptr, has return value.
+     */
+    std::shared_ptr<DSObject> returnObject;
+
+    /**
      * if not null ptr, thrown exception.
      */
     std::shared_ptr<DSObject> thrownObject;
@@ -58,9 +63,14 @@ struct RuntimeContext {
     unsigned int stackTopIndex;
 
     /**
-     * offset current local variable index.
+     * offset of current local variable index.
      */
     unsigned int localVarOffset;
+
+    /**
+     * for function call. save localVarOffset.
+     */
+    std::vector<unsigned int> offsetStack;
 
     /**
      * if true, runtime interactive mode.
@@ -95,6 +105,21 @@ struct RuntimeContext {
     }
 
     /**
+     * pop and set to returnObject.
+     */
+    void setReturnObject() {
+        this->returnObject = this->pop();
+    }
+
+    /**
+     * pop returnObject and push to localStack.
+     */
+    void getReturnObject() {
+        this->push(this->returnObject);
+        this->returnObject.reset();
+    }
+
+    /**
      * reset this->throwObject.
      */
     void clearThrownObject() {
@@ -115,6 +140,16 @@ struct RuntimeContext {
         this->localStackSize = newSize;
     }
 
+    void saveAndSetOffset(unsigned int newOffset) {
+        this->offsetStack.push_back(this->localVarOffset);
+        this->localVarOffset = newOffset;
+    }
+
+    void restoreOffset() {
+        this->localVarOffset = this->offsetStack.back();
+        this->offsetStack.pop_back();
+    }
+
     // operand manipulation
     void push(const std::shared_ptr<DSObject> &value) {
         if(++this->stackTopIndex >= this->localStackSize) {
@@ -124,8 +159,8 @@ struct RuntimeContext {
     }
 
     std::shared_ptr<DSObject> pop() {
-        std::shared_ptr<DSObject> obj = this->localStack[this->stackTopIndex];
-        this->localStack[this->stackTopIndex] = std::shared_ptr<DSObject>();
+        std::shared_ptr<DSObject> obj(this->localStack[this->stackTopIndex]);
+        this->localStack[this->stackTopIndex].reset();
         --this->stackTopIndex;
         return obj;
     }
@@ -137,6 +172,10 @@ struct RuntimeContext {
     // variable operation
     void setGlobal(unsigned int index) {
         this->globalVarTable[index] = this->pop();
+    }
+
+    void setGlobal(unsigned int index, const std::shared_ptr<DSObject> &obj) {
+        this->globalVarTable[index] = obj;
     }
 
     void getGlobal(unsigned int index) {
