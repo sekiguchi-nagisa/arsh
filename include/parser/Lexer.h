@@ -33,7 +33,7 @@
 typedef enum {
 #define GEN_ENUM(ENUM) ENUM,
     EACH_LEXER_MODE(GEN_ENUM)
-#undef GEN_ENUM)
+#undef GEN_ENUM
 } LexerMode;
 
 class Lexer {
