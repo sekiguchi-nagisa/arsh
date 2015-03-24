@@ -27,6 +27,12 @@ macro(add_source)
     )
 endmacro(add_source)
 
+# set extra option
+option(USE_TRACE_TOKEN "trace generated token" OFF)
+if(USE_TRACE_TOKEN)
+    add_definitions(-DX_TRACE_TOKEN)
+endif()
+
 
 include_directories(${YDSH_INCLUDE})
 add_subdirectory(${SRC_DIR}/ast)

@@ -246,16 +246,36 @@ INIT:
       <STMT,EXPR,NAME,DSTRING,CMD> OTHER  { RET(INVALID); }
     */
 
+#ifdef X_TRACE_TOKEN
+    static const char *stateNames[] = {
+#define GEN_NAME(ENUM) #ENUM,
+            EACH_LEXER_MODE(GEN_NAME)
+#undef GEN_NAME
+    };
+#endif
+
 END:
     token.startPos = startPos;
     token.size = this->getPos() - startPos;
     this->prevNewLine = foundNewLine;
+#ifdef X_TRACE_TOKEN
+#include <stdio.h>
+    fprintf(stderr, "nextToken(): < kind=%s, text=%s >\n",
+            TO_NAME(kind), this->toTokenText(token).c_str());
+    fprintf(stderr, "   lexer mode: %s\n", stateNames[YYGETCONDITION()]);
+#endif
     return kind;
 
 EOS:
     token.startPos = this->limit - this->buf;
     token.size = 0;
     this->prevNewLine = foundNewLine;
+#ifdef X_TRACE_TOKEN
+#include <stdio.h>
+    fprintf(stderr, "nextToken(): < kind=%s, text=%s >\n",
+            TO_NAME(EOS), this->toTokenText(token).c_str());
+    fprintf(stderr, "   lexer mode: %s\n", stateNames[YYGETCONDITION()]);
+#endif
     return EOS;
 }
 

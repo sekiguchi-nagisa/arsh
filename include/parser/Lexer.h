@@ -23,12 +23,17 @@
 
 #include <parser/Token.h>
 
+#define EACH_LEXER_MODE(OP) \
+    OP(yycSTMT) \
+    OP(yycEXPR) \
+    OP(yycNAME) \
+    OP(yycDSTRING) \
+    OP(yycCMD)
+
 typedef enum {
-    yycSTMT,
-    yycEXPR,
-    yycNAME,
-    yycDSTRING,
-    yycCMD,
+#define GEN_ENUM(ENUM) ENUM,
+    EACH_LEXER_MODE(GEN_ENUM)
+#undef GEN_ENUM)
 } LexerMode;
 
 class Lexer {
