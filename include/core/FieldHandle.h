@@ -22,6 +22,7 @@
 #include <unordered_map>
 
 #include <core/TypePool.h>
+#include <util/flag_util.h>
 
 class DSType;
 class FunctionType;
@@ -43,7 +44,7 @@ private:
     /**
      * attribute bit map.
      */
-    unsigned char attributeSet;
+    flag8_set_t attributeSet;
 
 public:
     FieldHandle(DSType *fieldType, int fieldIndex, bool readOnly);
@@ -56,13 +57,13 @@ public:
      */
     int getFieldIndex();
 
-    void setAttribute(unsigned char attribute);
-    void unsetAttribute(unsigned char attribute);
+    void setAttribute(flag8_t attribute);
+    void unsetAttribute(flag8_t attribute);
 
     /**
      * if includes targetAttr, return true.
      */
-    bool hasAttribute(unsigned char targetAttr);
+    bool hasAttribute(flag8_t targetAttr);
 
     /**
      * equivalent to this->hasAttribute(READ_ONLY).
@@ -75,8 +76,8 @@ public:
     bool isGlobal();
 
     // attribute definition
-    const static unsigned char READ_ONLY = 1 << 0;
-    const static unsigned char GLOBAL    = 1 << 1;
+    const static flag8_t READ_ONLY = 1 << 0;
+    const static flag8_t GLOBAL    = 1 << 1;
 };
 
 /**

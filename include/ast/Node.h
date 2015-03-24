@@ -412,7 +412,7 @@ private:
     Node *recvNode;
     ArgsNode *argsNode;
 
-    unsigned char attributeSet;
+    flag8_set_t attributeSet;
 
 public:
     ApplyNode(Node *recvNode, ArgsNode *argsNode);
@@ -420,9 +420,9 @@ public:
 
     Node *getRecvNode();
     ArgsNode *getArgsNode();
-    void setAttribute(unsigned char attribute);
-    void unsetAttribute(unsigned char attribute);
-    bool hasAttribute(unsigned char attribute);
+    void setAttribute(flag8_t attribute);
+    void unsetAttribute(flag8_t attribute);
+    bool hasAttribute(flag8_t attribute);
     void setFuncCall(bool asFuncCall);
     bool isFuncCall();
     void dump(Writer &writer) const;  // override
@@ -611,16 +611,16 @@ private:
     Node* exprNode;
 
     CmdRetKind retKind;
-    unsigned char attributeSet;
+    flag8_set_t attributeSet;
 
 public:
     CmdContextNode(Node *exprNode);
     ~CmdContextNode();
 
     Node *getExprNode();
-    void setAttribute(unsigned char attribute);
-    void unsetAttribute(unsigned char attribute);
-    bool hasAttribute(unsigned char attribute);
+    void setAttribute(flag8_t attribute);
+    void unsetAttribute(flag8_t attribute);
+    bool hasAttribute(flag8_t attribute);
     void setRetKind(CmdRetKind kind);
     CmdRetKind getRetKind();
     Node *convertToStringNode(); // override

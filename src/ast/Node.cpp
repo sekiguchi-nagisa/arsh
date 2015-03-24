@@ -803,16 +803,16 @@ ArgsNode *ApplyNode::getArgsNode() {
     return this->argsNode;
 }
 
-void ApplyNode::setAttribute(unsigned char attribute) {
-    this->attributeSet |= attribute;
+void ApplyNode::setAttribute(flag8_t attribute) {
+    setFlag(this->attributeSet, attribute);
 }
 
-void ApplyNode::unsetAttribute(unsigned char attribute) {
-    this->attributeSet &= ~attribute;
+void ApplyNode::unsetAttribute(flag8_t attribute) {
+    unsetFlag(this->attributeSet, attribute);
 }
 
-bool ApplyNode::hasAttribute(unsigned char attribute) {
-    return (this->attributeSet & attribute) == attribute;
+bool ApplyNode::hasAttribute(flag8_t attribute) {
+    return hasFlag(this->attributeSet, attribute);
 }
 
 void ApplyNode::setFuncCall(bool asFuncCall) {
@@ -1249,16 +1249,16 @@ Node *CmdContextNode::getExprNode() {
     return this->exprNode;
 }
 
-void CmdContextNode::setAttribute(unsigned char attribute) {
-    this->attributeSet |= attribute;
+void CmdContextNode::setAttribute(flag8_t attribute) {
+    setFlag(this->attributeSet, attribute);
 }
 
-void CmdContextNode::unsetAttribute(unsigned char attribute) {
-    this->attributeSet &= ~attribute;
+void CmdContextNode::unsetAttribute(flag8_t attribute) {
+    unsetFlag(this->attributeSet, attribute);
 }
 
-bool CmdContextNode::hasAttribute(unsigned char attribute) {
-    return (this->attributeSet & attribute) == attribute;
+bool CmdContextNode::hasAttribute(flag8_t attribute) {
+    return hasFlag(this->attributeSet, attribute);
 }
 void CmdContextNode::setRetKind(CmdRetKind kind) {
     this->retKind = kind;
