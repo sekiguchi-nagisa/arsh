@@ -19,7 +19,7 @@
 // helper macro definition.
 #define RET(k) do { kind = k; goto END; } while(0)
 
-#define REACH_EOS() do { goto EOS; } while(0)
+#define REACH_EOS() do { this->endOfString = true; goto EOS; } while(0)
 
 #define SKIP() goto INIT
 

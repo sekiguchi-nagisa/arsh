@@ -97,23 +97,20 @@ void Lexer::expandBuf(unsigned int needSize) {
 }
 
 bool Lexer::fill(int n) {
-    if(this->limit - this->cursor <= 0) {
-        if(this->endOfString) {
-            return false;
+    if(this->endOfString && this->limit - this->cursor <= 0) {
+        return false;
+    }
+
+    if(!this->endOfFile) {
+        int needSize = n - (this->limit - this->cursor);
+        assert(needSize > -1);
+        this->expandBuf(needSize);
+        int readSize = fread(this->limit, sizeof(unsigned char), needSize, this->fp);
+        this->limit += readSize;
+        *this->limit = '\0';
+        if(readSize < needSize) {
+            this->endOfFile = true;
         }
-        if(!this->endOfFile) {
-            int needSize = n - (this->limit - this->cursor);
-            assert(needSize > -1);
-            this->expandBuf(needSize);
-            int readSize = fread(this->limit, sizeof(unsigned char), needSize, this->fp);
-            this->limit += readSize;
-            *this->limit = '\0';
-            if(readSize < needSize) {
-                this->endOfFile = true;
-            }
-            return true;
-        }
-        this->endOfString = true;
     }
     return true;
 }
