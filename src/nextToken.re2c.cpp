@@ -115,11 +115,11 @@ INIT:
     unsigned int startPos = this->getPos();
     TokenKind kind = INVALID;
     /*!re2c
-      <STMT> 'assert'          { RET(ASSERT); }
-      <STMT> 'break'           { RET(BREAK); }
+      <STMT,EXPR> 'assert'     { RET(ASSERT); }
+      <STMT,EXPR> 'break'      { RET(BREAK); }
       <STMT,EXPR> 'catch'      { RET(CATCH); }
       <STMT,EXPR> 'class'      { MODE(NAME); RET(CLASS); }
-      <STMT> 'continue'        { RET(CONTINUE); }
+      <STMT,EXPR> 'continue'   { RET(CONTINUE); }
       <STMT,EXPR> 'do'         { RET(DO); }
       <STMT,EXPR> 'elif'       { RET(ELIF); }
       <STMT,EXPR> 'else'       { RET(ELSE); }
@@ -133,9 +133,9 @@ INIT:
       <STMT,EXPR> 'let'        { MODE(NAME); RET(LET); }
       <STMT,EXPR> 'new'        { MODE(EXPR); RET(NEW); }
       <STMT,EXPR> 'not'        { MODE(EXPR); RET(NOT); }
-      <STMT> 'return'          { MODE(EXPR); RET(RETURN); }
+      <STMT,EXPR> 'return'     { MODE(EXPR); RET(RETURN); }
       <STMT,EXPR> 'try'        { RET(TRY); }
-      <STMT> 'throw'           { MODE(EXPR); RET(THROW); }
+      <STMT,EXPR> 'throw'      { MODE(EXPR); RET(THROW); }
       <STMT,EXPR> 'var'        { MODE(NAME); RET(VAR); }
       <STMT,EXPR> 'while'      { RET(WHILE); }
 
