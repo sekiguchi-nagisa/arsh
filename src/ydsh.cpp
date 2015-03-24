@@ -88,17 +88,17 @@ int main(int argc, char **argv) {
         }
     }
 
-//    if(restArgs.size() > 0) {
-//        const char *scriptName = restArgs[0];
-//        FILE *fp = fopen(scriptName, "r");
-//        if(fp == NULL) {
-//            fprintf(stderr, "cannot open file: %s\n", scriptName);
-//            return 1;
-//        }
-//        shell.eval(scriptName, fp);
-//        fclose(fp);
-//    } else {
+    if(restArgs.size() > 0) {
+        const char *scriptName = restArgs[0];
+        FILE *fp = fopen(scriptName, "r");
+        if(fp == NULL) {
+            fprintf(stderr, "cannot open file: %s\n", scriptName);
+            return 1;
+        }
+        shell.eval(scriptName, fp);
+        fclose(fp);
+    } else {
         exec_interactive(argv[0], shell);
-//    }
+    }
     return 0;
 }

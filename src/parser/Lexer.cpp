@@ -105,7 +105,7 @@ bool Lexer::fill(int n) {
             int needSize = n - (this->limit - this->cursor);
             assert(needSize > -1);
             this->expandBuf(needSize);
-            int readSize = fread(this->limit, needSize, 1, this->fp);
+            int readSize = fread(this->limit, sizeof(unsigned char), needSize, this->fp);
             this->limit += readSize;
             *this->limit = '\0';
             if(readSize < needSize) {
