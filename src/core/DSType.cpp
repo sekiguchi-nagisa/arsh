@@ -23,10 +23,29 @@
 // ##     DSType     ##
 // ####################
 
-DSType::DSType() {
+DSType::DSType(type_id_t id, bool extendable, bool isVoid) :
+        id(id), attributeSet(0) {
+    if(extendable) {
+        setFlag(this->attributeSet, EXTENDABLE);
+    }
+    if(isVoid) {
+        setFlag(this->attributeSet, VOID_TYPE);
+    }
 }
 
 DSType::~DSType() {
+}
+
+type_id_t DSType::getTypeId() const {
+    return this->id;
+}
+
+bool DSType::isExtendable() const {
+    return hasFlag(this->attributeSet, EXTENDABLE);
+}
+
+bool DSType::isVoidType() const {
+    return hasFlag(this->attributeSet, VOID_TYPE);
 }
 
 FunctionHandle *DSType::lookupMethodHandle(TypePool *typePool, const std::string &funcName) {
@@ -34,8 +53,12 @@ FunctionHandle *DSType::lookupMethodHandle(TypePool *typePool, const std::string
     return handle != 0 ? dynamic_cast<FunctionHandle*>(handle) : 0;
 }
 
+bool DSType::operator==(const DSType &type) {
+    return this->id == type.id;
+}
+
 bool DSType::isAssignableFrom(DSType *targetType) {
-    if(this->equals(targetType)) {
+    if(*this == *targetType) {
         return true;
     }
     DSType *superType = targetType->getSuperType();
@@ -46,36 +69,23 @@ bool DSType::isAssignableFrom(DSType *targetType) {
 // ##     BaseType     ##
 // ######################
 
-BaseType::BaseType(std::string &&typeName, bool extendable, DSType *superType) :
-        typeName(std::move(typeName)), extendable(extendable), superType(superType) {
+BaseType::BaseType(type_id_t id, bool extendable, DSType *superType, bool isVoid) :
+        DSType(id, extendable, isVoid), superType(superType) {
 }
 
 BaseType::~BaseType() {
-}
-
-std::string BaseType::getTypeName() const {
-    return this->typeName;
-}
-
-bool BaseType::isExtendable() {
-    return this->extendable;
 }
 
 DSType *BaseType::getSuperType() {
     return this->superType;
 }
 
-bool BaseType::equals(DSType *targetType) {
-    BaseType *baseType = dynamic_cast<BaseType*>(targetType);
-    return baseType != 0 && this->typeName == baseType->typeName;
-}
-
 // #######################
 // ##     ClassType     ##
 // #######################
 
-ClassType::ClassType(std::string &&className, bool extendable, DSType *superType) :
-        BaseType(std::move(className), extendable, superType),
+ClassType::ClassType(type_id_t id, bool extendable, DSType *superType) :
+        BaseType(id, extendable, superType, false),
         baseIndex(superType != 0 ? superType->getFieldSize() : 0),
         constructorHandle(0),
         handleMap(), fieldTable() {
@@ -156,7 +166,8 @@ void ClassType::setConstructor(FuncObject *func) {
 // ##     FunctionType     ##
 // ##########################
 
-FunctionType::FunctionType(DSType *superType, DSType *returnType, const std::vector<DSType*> &paramTypes) :
+FunctionType::FunctionType(type_id_t id, DSType *superType, DSType *returnType, const std::vector<DSType*> &paramTypes) :
+        DSType(id, false, false),
         superType(superType), returnType(returnType), paramTypes(paramTypes) {
 }
 
@@ -181,14 +192,6 @@ bool FunctionType::treatAsMethod(DSType *targetType) {
     return recvType != 0 && recvType->isAssignableFrom(targetType);
 }
 
-std::string FunctionType::getTypeName() const {
-    return toFunctionTypeName(this->returnType, this->paramTypes);
-}
-
-bool FunctionType::isExtendable() {
-    return false;
-}
-
 DSType *FunctionType::getSuperType() {
     return this->superType;
 }
@@ -207,77 +210,6 @@ FieldHandle *FunctionType::lookupFieldHandle(TypePool *typePool, const std::stri
 
 FieldHandle *FunctionType::findHandle(const std::string &fieldName) {
     return this->superType->findHandle(fieldName);
-}
-
-bool FunctionType::equals(DSType *targetType) {
-    FunctionType *t = dynamic_cast<FunctionType*>(targetType);
-    if(t == 0) {
-        return false;
-    }
-
-    // check return type
-    if(!this->returnType->equals(t)) {
-        return false;
-    }
-
-    // check param size
-    unsigned int size = this->paramTypes.size();
-    if(size != t->paramTypes.size()) {
-        return false;
-    }
-
-    // check each param type
-    for(unsigned int i = 0; i < size; i++) {
-        if(!this->paramTypes[i]->equals(t->paramTypes[i])) {
-            return false;
-        }
-    }
-    return true;
-}
-
-
-
-std::string toReifiedTypeName(TypeTemplate *typeTemplate, const std::vector<DSType*> &elementTypes) {
-    return toReifiedTypeName(typeTemplate->getName(), elementTypes);
-}
-
-std::string toReifiedTypeName(const std::string &name, const std::vector<DSType*> &elementTypes) {
-    int elementSize = elementTypes.size();
-    std::string reifiedTypeName(name);
-    reifiedTypeName += "<";
-    for(int i = 0; i < elementSize; i++) {
-        if(i > 0) {
-            reifiedTypeName += ",";
-        }
-        reifiedTypeName += elementTypes[i]->getTypeName();
-    }
-    reifiedTypeName += ">";
-    return reifiedTypeName;
-}
-
-
-std::string toTupleTypeName(const std::vector<DSType*> &elementTypes) {
-    return toReifiedTypeName("Tuple", elementTypes);
-}
-
-std::string toFunctionTypeName(DSType *returnType, const std::vector<DSType*> &paramTypes) {
-    int paramSize = paramTypes.size();
-    std::string funcTypeName("Func<");
-    funcTypeName += returnType->getTypeName();
-    for(int i = 0; i < paramSize; i++) {
-        if(i == 0) {
-            funcTypeName += ",[";
-        }
-        if(i > 0) {
-            funcTypeName += ",";
-        }
-        funcTypeName += paramTypes[i]->getTypeName();
-        if(i == paramSize - 1) {
-            funcTypeName += "]";
-        }
-    }
-    funcTypeName += ">";
-    return funcTypeName;
 }
 
 // #########################
@@ -308,8 +240,8 @@ public:
     /**
      * actually superType is BuiltinType
      */
-    BuiltinType(std::string &&typeName, bool extendable, DSType *superType,
-            native_type_info_t *info);
+    BuiltinType(type_id_t id, bool extendable, DSType *superType,
+            native_type_info_t *info, bool isVoid);
     virtual ~BuiltinType();
 
     FunctionHandle *getConstructorHandle(TypePool *typePool); // override
@@ -321,9 +253,9 @@ private:
     virtual FunctionHandle *newFuncHandle(TypePool *typePool, int fieldIndex, native_func_info_t *info);
 };
 
-BuiltinType::BuiltinType(std::string &&typeName, bool extendable, DSType *superType,
-        native_type_info_t *info) :
-        BaseType(std::move(typeName), extendable, superType),
+BuiltinType::BuiltinType(type_id_t id, bool extendable, DSType *superType,
+        native_type_info_t *info, bool isVoid) :
+        BaseType(id, extendable, superType, isVoid),
         info(info), constructorHandle(), handleMap() {
     // init function handle
     unsigned int baseIndex = superType != 0 ? superType->getFieldSize() : 0;
@@ -408,7 +340,7 @@ private:
     std::vector<DSType*> elementTypes;
 
 public:
-    ReifiedType(TypeTemplate *t, DSType *superType, const std::vector<DSType*> &elementTypes);
+    ReifiedType(type_id_t id, native_type_info_t *info, DSType *superType, const std::vector<DSType*> &elementTypes);
     ~ReifiedType();
 
     std::string getTypeName() const; // override
@@ -418,47 +350,11 @@ private:
     FunctionHandle *newFuncHandle(TypePool *typePool, int fieldIndex, native_func_info_t *info); // override
 };
 
-ReifiedType::ReifiedType(TypeTemplate *t, DSType *superType, const std::vector<DSType*> &elementTypes):
-        BuiltinType(std::string(t->getName()), false, superType, t->getInfo()), elementTypes(elementTypes) {
+ReifiedType::ReifiedType(type_id_t id, native_type_info_t *info, DSType *superType, const std::vector<DSType*> &elementTypes):
+        BuiltinType(id, false, superType, info, false), elementTypes(elementTypes) {
 }
 
 ReifiedType::~ReifiedType() {
-}
-
-std::string ReifiedType::getTypeName() const {
-    return toReifiedTypeName(this->typeName, this->elementTypes);
-}
-
-bool ReifiedType::equals(DSType *targetType) { // override
-    ReifiedType *type = dynamic_cast<ReifiedType*>(targetType);
-    if(type == 0) {
-        return false;
-    }
-
-    /**
-     * check template
-     */
-    if(this->typeName != type->typeName) {
-        return false;
-    }
-
-    /**
-     * check element size
-     */
-    unsigned int size = this->elementTypes.size();
-    if(size != type->elementTypes.size()) {
-        return false;
-    }
-
-    /**
-     * check each element type
-     */
-    for(unsigned int i = 0; i < size; i++) {
-        if(!this->elementTypes[i]->equals(type->elementTypes[i])) {
-            return false;
-        }
-    }
-    return true;
 }
 
 FunctionHandle *ReifiedType::newFuncHandle(TypePool *typePool, int fieldIndex, native_func_info_t *info) {
@@ -473,13 +369,14 @@ FunctionHandle *ReifiedType::newFuncHandle(TypePool *typePool, int fieldIndex, n
     return 0;
 }
 
-DSType *newBuiltinType(std::string &&typeName, bool extendable,
-        DSType *superType, native_type_info_t *info) {
-    return new BuiltinType(std::move(typeName), extendable, superType, info);
+DSType *newBuiltinType(type_id_t id, bool extendable,
+        DSType *superType, native_type_info_t *info, bool isVoid) {
+    return new BuiltinType(id, extendable, superType, info, isVoid);
 }
 
-DSType *newReifiedType(TypeTemplate *t, DSType *superType, const std::vector<DSType*> &elementTypes) {
-    return new ReifiedType(t, superType, elementTypes);
+DSType *newReifiedType(type_id_t id, native_type_info_t *info,
+        DSType *superType, const std::vector<DSType*> &elementTypes) {
+    return new ReifiedType(id, info, superType, elementTypes);
 }
 
 // #######################
@@ -496,15 +393,8 @@ public:
     /**
      * superType is always AnyType
      */
-    TupleType(DSType *superType, const std::vector<DSType*> types);
+    TupleType(type_id_t id, DSType *superType, const std::vector<DSType*> &types);
     ~TupleType();
-
-    std::string getTypeName() const; // override
-
-    /**
-     * return always false
-     */
-    bool isExtendable(); // override
 
     /**
      * return always AnyType
@@ -526,8 +416,8 @@ public:
     bool equals(DSType *targetType); // override
 };
 
-TupleType::TupleType(DSType *superType, const std::vector<DSType*> types) :
-        superType(superType), types(types), handleMap() {
+TupleType::TupleType(type_id_t id, DSType *superType, const std::vector<DSType*> &types) :
+        DSType(id, false, false), superType(superType), types(types), handleMap() {
     unsigned int size = this->types.size();
     unsigned int baseIndex = this->superType->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {
@@ -541,14 +431,6 @@ TupleType::~TupleType() {
         delete pair.second;
     }
     this->handleMap.clear();
-}
-
-std::string TupleType::getTypeName() const {
-    return toTupleTypeName(this->types);
-}
-
-bool TupleType::isExtendable() {
-    return false;
 }
 
 DSType *TupleType::getSuperType() {
@@ -579,31 +461,6 @@ FieldHandle *TupleType::findHandle(const std::string &fieldName) {
     return iter->second;
 }
 
-bool TupleType::equals(DSType *targetType) {
-    TupleType *tupleType = dynamic_cast<TupleType*>(targetType);
-    if(tupleType == 0) {
-        return false;
-    }
-
-    /**
-     * check element size
-     */
-    unsigned int size = this->types.size();
-    if(size != tupleType->types.size()) {
-        return false;
-    }
-
-    /**
-     * check each type
-     */
-    for(unsigned int i = 0; i < size; i++) {
-        if(this->types[i]->equals(tupleType->types[i])) {
-            return false;
-        }
-    }
-    return true;
-}
-
-DSType *newTupleType(DSType *superType, const std::vector<DSType*> &elementTypes) {
-    return new TupleType(superType, elementTypes);
+DSType *newTupleType(type_id_t id, DSType *superType, const std::vector<DSType*> &elementTypes) {
+    return new TupleType(id, superType, elementTypes);
 }

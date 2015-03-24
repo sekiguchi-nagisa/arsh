@@ -16,6 +16,7 @@
 
 #include <core/FieldHandle.h>
 #include <core/DSType.h>
+#include <core/TypePool.h>
 
 // #########################
 // ##     FieldHandle     ##

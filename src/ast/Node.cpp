@@ -874,7 +874,7 @@ EvalStatus ApplyNode::eval(RuntimeContext &ctx) {
     }
 
     if(status) {
-        if(!this->type->equals(ctx.pool.getVoidType())) {
+        if(!this->type->isVoidType()) {
             ctx.getReturnObject(); // push return value
         }
         return EVAL_SUCCESS;
@@ -1384,7 +1384,7 @@ void BlockNode::accept(NodeVisitor *visitor) {
 EvalStatus BlockNode::eval(RuntimeContext &ctx) {
     for(Node *node : this->nodeList) {
         EvalStatus status = node->eval(ctx);
-        if(!node->getType()->equals(ctx.pool.getVoidType())) {
+        if(!node->getType()->isVoidType()) {
             ctx.pop();
         }
         if(status != EVAL_SUCCESS) {
@@ -1822,7 +1822,7 @@ void ReturnNode::accept(NodeVisitor *visitor) {
 
 EvalStatus ReturnNode::eval(RuntimeContext &ctx) {
     EVAL(ctx, this->exprNode);
-    if(!this->exprNode->getType()->equals(ctx.pool.getVoidType())) {
+    if(!this->exprNode->getType()->isVoidType()) {
         ctx.setReturnObject();
     }
     return EVAL_RETURN;
@@ -2369,7 +2369,7 @@ EvalStatus RootNode::eval(RuntimeContext &ctx) {
         if(status == EVAL_SUCCESS) {
             if(ctx.repl) {
                 ctx.printStackTop(node->getType());
-            } else if(!node->getType()->equals(ctx.pool.getVoidType())){
+            } else if(!node->getType()->isVoidType()){
                 ctx.pop();
             }
         } else if(status == EVAL_THROW) {

@@ -69,7 +69,7 @@ bool Shell::eval(const char *sourceName, Lexer &lexer, bool interactive) {
 
         if(this->dumpUntypedAST) {
             std::cout << "### dump untyped AST ###" << std::endl;
-            dumpAST(std::cout, rootNode);
+            dumpAST(std::cout, this->ctx.pool, rootNode);
             std::cout << std::endl;
         }
     } catch(const ParseError &e) {
@@ -83,7 +83,7 @@ bool Shell::eval(const char *sourceName, Lexer &lexer, bool interactive) {
 
         if(this->dumpTypedAST) {
             std::cout << "### dump typed AST ###" << std::endl;
-            dumpAST(std::cout, rootNode);
+            dumpAST(std::cout, this->ctx.pool, rootNode);
             std::cout << std::endl;
         }
 

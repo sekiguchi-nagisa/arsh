@@ -67,7 +67,7 @@ void ProcContext::addParam(const std::shared_ptr<DSObject> &value) {
             this->params.push_back(std::dynamic_pointer_cast<String_Object>(element));
         }
     } else {
-        fatal("illegal command parameter type: %s", value->getType()->getTypeName().c_str());
+        fatal("illegal command parameter type: %d\n", value->getType()->getTypeId());
     }
 }
 

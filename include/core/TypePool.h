@@ -21,16 +21,20 @@
 #include <vector>
 #include <unordered_map>
 
-class TypeTemplate;
-class DSType;
-class FunctionType;
+#include <core/DSType.h>
+#include <core/TypeTemplate.h>
+
+struct native_type_info_t;
 
 class TypePool {
 private:
+    type_id_t idCount;
+
     /**
      * for class type
      */
     std::unordered_map<std::string, DSType*> typeMap;
+    std::vector<const std::string *> typeNameTable;
 
     // type definition
     DSType *anyType;
@@ -127,7 +131,29 @@ public:
 
     FunctionType *createAndGetFuncTypeIfUndefined(DSType *returnType, const std::vector<DSType*> &paramTypes);
 
+    const std::string &getTypeName(const DSType &type);
+
+    /**
+     * create reified type name
+     * equivalent to toReifiedTypeName(typeTemplate->getName(), elementTypes)
+     */
+    std::string toReifiedTypeName(TypeTemplate *typeTemplate, const std::vector<DSType*> &elementTypes);
+
+    std::string toReifiedTypeName(const std::string &name, const std::vector<DSType*> &elementTypes);
+
+    std::string toTupleTypeName(const std::vector<DSType*> &elementTypes);
+
+    /**
+     * create function type name
+     */
+    std::string toFunctionTypeName(DSType *returnType, const std::vector<DSType*> &paramTypes);
+
 private:
+    DSType *addType(std::string &&typeName, DSType *type);
+    DSType *initBuiltinType(const char *typeName, bool extendable,
+            DSType *superType, native_type_info_t *info, bool isVoid = false);
+    TypeTemplate *initTypeTemplate(const char *typeName,
+            unsigned int elemSize, native_type_info_t *info);
     void checkElementTypes(const std::vector<DSType*> &elementTypes);
 };
 

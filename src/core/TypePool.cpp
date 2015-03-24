@@ -15,58 +15,47 @@
  */
 
 #include <core/TypePool.h>
-#include <core/DSType.h>
 #include <core/TypeLookupError.h>
-#include <core/TypeTemplate.h>
 #include <core/bind.h>
 
-#define INIT_CLASS_TYPE(name, extendable, superType, info) \
-    this->typeMap.insert(\
-            std::make_pair(name, \
-                    newBuiltinType(name, extendable, superType, info))).first->second
-
-#define INIT_TYPE_TEMPLATE(name, elemSize, info) \
-    this->templateMap.insert(\
-            std::make_pair(name, \
-                    new TypeTemplate(name, elemSize, info))).first->second
-
-
+#define NEW_ID() this->idCount++
 
 // ######################
 // ##     TypePool     ##
 // ######################
 
 TypePool::TypePool() :
-        typeMap(16), anyType(), voidType(), valueType(),
+        idCount(0), typeMap(16), typeNameTable(),
+        anyType(), voidType(), valueType(),
         intType(), floatType(), boolType(), stringType(),
         taskType(), baseFuncType(),
         templateMap(8),
         arrayTemplate(), mapTemplate(), tupleTemplate() {
 
     // initialize type
-    this->anyType    = INIT_CLASS_TYPE("Any", true, 0, info_Dummy());
-    this->voidType   = INIT_CLASS_TYPE("Void", false, 0, info_Dummy());
+    this->anyType    = this->initBuiltinType("Any", true, 0, info_Dummy());
+    this->voidType   = this->initBuiltinType("Void", false, 0, info_Dummy(), true);
 
     /**
      * hidden from script.
      */
-    this->valueType  = INIT_CLASS_TYPE("%Value%", true, this->anyType, info_Dummy());
+    this->valueType  = this->initBuiltinType("%Value%", true, this->anyType, info_Dummy());
 
-    this->intType    = INIT_CLASS_TYPE("Int", false, this->valueType, info_Dummy());
-    this->floatType  = INIT_CLASS_TYPE("Float", false, this->valueType, info_Dummy());
-    this->boolType   = INIT_CLASS_TYPE("Boolean", false, this->valueType, info_Dummy());
-    this->stringType = INIT_CLASS_TYPE("String", false, this->valueType, info_Dummy());
-    this->taskType   = INIT_CLASS_TYPE("Task", false, this->anyType, info_Dummy());
+    this->intType    = this->initBuiltinType("Int", false, this->valueType, info_Dummy());
+    this->floatType  = this->initBuiltinType("Float", false, this->valueType, info_Dummy());
+    this->boolType   = this->initBuiltinType("Boolean", false, this->valueType, info_Dummy());
+    this->stringType = this->initBuiltinType("String", false, this->valueType, info_Dummy());
+    this->taskType   = this->initBuiltinType("Task", false, this->anyType, info_Dummy());
 
     /**
      * hidden from script
      */
-    this->baseFuncType = INIT_CLASS_TYPE("%BaseFunc%", false, this->anyType, info_Dummy());
+    this->baseFuncType = this->initBuiltinType("%BaseFunc%", false, this->anyType, info_Dummy());
 
     // initialize type template
-    this->arrayTemplate = INIT_TYPE_TEMPLATE("Array", 1, info_Dummy());
-    this->mapTemplate   = INIT_TYPE_TEMPLATE("Map", 2, info_Dummy());
-    this->tupleTemplate  = INIT_TYPE_TEMPLATE("Tuple", 0, 0);   // pseudo template.
+    this->arrayTemplate = this->initTypeTemplate("Array", 1, info_Dummy());
+    this->mapTemplate   = this->initTypeTemplate("Map", 2, info_Dummy());
+    this->tupleTemplate  = this->initTypeTemplate("Tuple", 0, 0);   // pseudo template.
 }
 
 TypePool::~TypePool() {
@@ -151,7 +140,7 @@ TypeTemplate *TypePool::getTypeTemplate(const std::string &typeName, int element
 }
 
 DSType *TypePool::createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate,
-        const std::vector<DSType*> &elementTypes) { //FIXME: not use typeMap
+        const std::vector<DSType*> &elementTypes) {
     if(this->tupleTemplate->getName() == typeTemplate->getName()) {
         return this->createAndGetTupleTypeIfUndefined(elementTypes);
     }
@@ -162,13 +151,13 @@ DSType *TypePool::createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate,
                 std::to_string(typeTemplate->getElementTypeSize()), std::to_string(elementTypes.size()));
     }
 
-    std::string typeName(toReifiedTypeName(typeTemplate, elementTypes));
-    DSType *type = newReifiedType(typeTemplate, this->anyType, elementTypes);
-    auto pair = this->typeMap.insert(std::make_pair(typeName, type));
-    if(!pair.second) {
-        delete type;
+    std::string typeName(this->toReifiedTypeName(typeTemplate, elementTypes));
+    auto iter = this->typeMap.find(typeName);
+    if(iter == this->typeMap.end()) {
+        return this->addType(std::move(typeName),
+                newReifiedType(NEW_ID(), typeTemplate->getInfo(), this->anyType, elementTypes));
     }
-    return pair.first->second;
+    return iter->second;
 }
 
 DSType *TypePool::createAndGetTupleTypeIfUndefined(const std::vector<DSType*> &elementTypes) {
@@ -177,32 +166,102 @@ DSType *TypePool::createAndGetTupleTypeIfUndefined(const std::vector<DSType*> &e
     if(elementTypes.size() < 2) {
         E_TupleElement();
     }
-    std::string typeName(toTupleTypeName(elementTypes));
-    DSType *type = newTupleType(this->anyType, elementTypes); //FIXME: not use typeMap
-    auto pair = this->typeMap.insert(std::make_pair(typeName, type));
-    if(!pair.second) {
-        delete type;
+
+    std::string typeName(this->toTupleTypeName(elementTypes));
+    auto iter = this->typeMap.find(typeName);
+    if(iter == this->typeMap.end()) {
+        return this->addType(std::move(typeName), newTupleType(NEW_ID(), this->anyType, elementTypes));
     }
-    return pair.first->second;
+    return iter->second;
 }
 
 FunctionType *TypePool::createAndGetFuncTypeIfUndefined(DSType *returnType,
-        const std::vector<DSType*> &paramTypes) {   //FIXME: not use typeMap
+        const std::vector<DSType*> &paramTypes) {
     this->checkElementTypes(paramTypes);
 
     std::string typeName(toFunctionTypeName(returnType, paramTypes));
-    FunctionType *funcType = new FunctionType(this->getBaseFuncType(), returnType, paramTypes);
-    auto pair = this->typeMap.insert(std::make_pair(typeName, funcType));
-    if(!pair.second) {
-        delete funcType;
+    auto iter = this->typeMap.find(typeName);
+    if(iter == this->typeMap.end()) {
+        FunctionType *funcType =
+                new FunctionType(NEW_ID(), this->getBaseFuncType(), returnType, paramTypes);
+        this->addType(std::move(typeName), funcType);
+        return funcType;
     }
-    return dynamic_cast<FunctionType*>(pair.first->second);
+
+    return dynamic_cast<FunctionType*>(iter->second);
+}
+
+const std::string &TypePool::getTypeName(const DSType &type) {
+    return *this->typeNameTable[type.getTypeId()];
+}
+
+std::string TypePool::toReifiedTypeName(TypeTemplate *typeTemplate, const std::vector<DSType*> &elementTypes) {
+    return this->toReifiedTypeName(typeTemplate->getName(), elementTypes);
+}
+
+std::string TypePool::toReifiedTypeName(const std::string &name, const std::vector<DSType*> &elementTypes) {
+    int elementSize = elementTypes.size();
+    std::string reifiedTypeName(name);
+    reifiedTypeName += "<";
+    for(int i = 0; i < elementSize; i++) {
+        if(i > 0) {
+            reifiedTypeName += ",";
+        }
+        reifiedTypeName += this->getTypeName(*elementTypes[i]);
+    }
+    reifiedTypeName += ">";
+    return reifiedTypeName;
+}
+
+
+std::string TypePool::toTupleTypeName(const std::vector<DSType*> &elementTypes) {
+    return toReifiedTypeName("Tuple", elementTypes);
+}
+
+std::string TypePool::toFunctionTypeName(DSType *returnType, const std::vector<DSType*> &paramTypes) {
+    int paramSize = paramTypes.size();
+    std::string funcTypeName("Func<");
+    funcTypeName += this->getTypeName(*returnType);
+    for(int i = 0; i < paramSize; i++) {
+        if(i == 0) {
+            funcTypeName += ",[";
+        }
+        if(i > 0) {
+            funcTypeName += ",";
+        }
+        funcTypeName += this->getTypeName(*paramTypes[i]);
+        if(i == paramSize - 1) {
+            funcTypeName += "]";
+        }
+    }
+    funcTypeName += ">";
+    return funcTypeName;
+}
+
+DSType *TypePool::addType(std::string &&typeName, DSType *type) {
+    auto pair = this->typeMap.insert(std::make_pair(std::move(typeName), type));
+    this->typeNameTable.push_back(&pair.first->first);
+    return type;
+}
+
+DSType *TypePool::initBuiltinType(const char *typeName, bool extendable,
+        DSType *superType, native_type_info_t *info, bool isVoid) {
+    // create and register type
+    return this->addType(std::string(typeName),
+            newBuiltinType(NEW_ID(), extendable, superType, info, isVoid));
+}
+
+TypeTemplate *TypePool::initTypeTemplate(const char *typeName,
+        unsigned int elemSize, native_type_info_t *info) {
+    return this->templateMap.insert(
+            std::make_pair(typeName,
+                    new TypeTemplate(typeName, elemSize, info))).first->second;
 }
 
 void TypePool::checkElementTypes(const std::vector<DSType*> &elementTypes) {
     for(DSType *type : elementTypes) {
-        if(type->equals(this->voidType)) {
-            E_InvalidElement(type->getTypeName());
+        if(*type == *this->voidType) {
+            E_InvalidElement(this->getTypeName(*type));
         }
     }
 }

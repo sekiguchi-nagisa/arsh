@@ -21,9 +21,9 @@
 #include <vector>
 #include <unordered_map>
 
-#include <core/TypePool.h>
 #include <util/flag_util.h>
 
+class TypePool;
 class DSType;
 class FunctionType;
 struct native_func_info_t;

@@ -17,6 +17,7 @@
 #include <ast/dump.h>
 #include <ast/Node.h>
 #include <ast/TypeToken.h>
+#include <core/TypePool.h>
 #include <core/DSType.h>
 #include <util/debug.h>
 
@@ -26,8 +27,8 @@
 
 #define OUT *(this->stream)
 
-Writer::Writer(std::ostream *stream) :
-        stream(stream), indentLevel(0) {
+Writer::Writer(std::ostream *stream, TypePool *pool) :
+        stream(stream), pool(pool), indentLevel(0) {
 }
 
 Writer::~Writer() {
@@ -78,7 +79,7 @@ void Writer::write(const char *fieldName, const TypeToken &tok) {
 
 void Writer::write(const char *fieldName, const DSType &type) {
     this->writeName(fieldName);
-    OUT << type.getTypeName() << std::endl;
+    OUT << this->pool->getTypeName(type) << std::endl;
 }
 
 void Writer::write(const char *fieldName, const std::vector<TypeToken*> &toks) {
@@ -129,7 +130,8 @@ void Writer::writeNodeHeader(const Node &node) {
 
     this->writeIndent();
     OUT << "@" << className << " (lineNum: " << node.getLineNum()
-            << ", type: " << (type != 0 ? type->getTypeName() : "(null)") << ")" << std::endl;
+            << ", type: " << (type != 0 ? this->pool->getTypeName(*type) : "(null)")
+            << ")" << std::endl;
 
     // free demangled name
     free(className);
@@ -142,7 +144,7 @@ void Writer::writeName(const char *fieldName) {
 
 const char *Writer::INDENT = "  ";
 
-void dumpAST(std::ostream &out, const RootNode &rootNode) {
-    Writer writer(&out);
+void dumpAST(std::ostream &out, TypePool &pool, const RootNode &rootNode) {
+    Writer writer(&out, &pool);
     rootNode.dump(writer);
 }

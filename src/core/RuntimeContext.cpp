@@ -47,8 +47,8 @@ RuntimeContext::~RuntimeContext() {
 }
 
 void RuntimeContext::printStackTop(DSType *stackTopType) {
-    if(!stackTopType->equals(this->pool.getVoidType())) {
-        std::cout << "(" << stackTopType->getTypeName()
+    if(!stackTopType->isVoidType()) {
+        std::cout << "(" << this->pool.getTypeName(*stackTopType)
                 << ") " << this->pop()->toString() << std::endl;
     }
 }

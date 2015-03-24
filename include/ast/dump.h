@@ -26,6 +26,7 @@
 
 class Node;
 class TypeToken;
+class TypePool;
 class DSType;
 class RootNode;
 
@@ -36,10 +37,15 @@ private:
      */
     std::ostream *stream;
 
+    /**
+     * not call destrcutor.
+     */
+    TypePool *pool;
+
     unsigned int indentLevel;
 
 public:
-    Writer(std::ostream *stream);
+    Writer(std::ostream *stream, TypePool *pool);
     ~Writer();
 
     /**
@@ -76,7 +82,7 @@ private:
 };
 
 // entry point
-void dumpAST(std::ostream &out, const RootNode &rootNode);
+void dumpAST(std::ostream &out, TypePool &pool, const RootNode &rootNode);
 
 // helper macro definition
 #define WRITE(field)  writer.write(NAME(field), field)

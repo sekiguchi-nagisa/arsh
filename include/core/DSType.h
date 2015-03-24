@@ -24,25 +24,39 @@
 #include <memory>
 
 #include <core/FieldHandle.h>
-#include <core/TypeTemplate.h>
 
+struct native_type_info_t;
 struct DSObject;
 struct FuncObject;
 
+typedef unsigned short type_id_t;
+
 class DSType {
+private:
+    const type_id_t id;
+    flag8_set_t attributeSet;
+
 public:
-    DSType();
+    const static flag8_t EXTENDABLE = 1 << 0;
+    const static flag8_t VOID_TYPE  = 1 << 1;
+
+    DSType(type_id_t id, bool extendable, bool isVoid = false);
     virtual ~DSType();
 
     /**
-     * string representation of this type
+     * get unique type id.
      */
-    virtual std::string getTypeName() const = 0;	// must not reference value
+    type_id_t getTypeId() const;
 
     /**
      * if true, can extend this type
      */
-    virtual bool isExtendable() = 0;
+    bool isExtendable() const;
+
+    /**
+     * if this type is VoidType, return true.
+     */
+    bool isVoidType() const;
 
     /**
      * get super type of this type.
@@ -76,10 +90,7 @@ public:
      */
     virtual FieldHandle *findHandle(const std::string &fieldName) = 0;
 
-    /**
-     * check equality
-     */
-    virtual bool equals(DSType *targetType) = 0;
+    bool operator==(const DSType &type);
 
     /**
      * check inheritance of target type.
@@ -94,22 +105,16 @@ public:
  */
 class BaseType: public DSType {
 protected:
-    std::string typeName;
-    bool extendable;
-
     /**
      * may be null if type is AnyType or VoidType.
      */
     DSType *superType;
 
 public:
-    BaseType(std::string &&typeName, bool extendable, DSType *superType);
+    BaseType(type_id_t id, bool extendable, DSType *superType, bool isVoid);
     virtual ~BaseType();
 
-    virtual std::string getTypeName() const; // override
-    bool isExtendable(); // override
     DSType *getSuperType(); // override
-    virtual bool equals(DSType *targetType); // override
 };
 
 class ClassType: public BaseType {	//TODO: add field index map
@@ -129,7 +134,7 @@ private:
     std::vector<std::shared_ptr<DSObject*>> fieldTable;
 
 public:
-    ClassType(std::string &&className, bool extendable, DSType *superType);
+    ClassType(type_id_t id, bool extendable, DSType *superType);
     ~ClassType();
 
     FunctionHandle *getConstructorHandle(TypePool *typePool);	// override
@@ -181,7 +186,7 @@ private:
     std::vector<DSType*> paramTypes;
 
 public:
-    FunctionType(DSType *superType, DSType *returnType, const std::vector<DSType*> &paramTypes);
+    FunctionType(type_id_t id, DSType *superType, DSType *returnType, const std::vector<DSType*> &paramTypes);
     ~FunctionType();
 
     DSType *getReturnType();
@@ -201,9 +206,6 @@ public:
      */
     bool treatAsMethod(DSType *targetType);
 
-    std::string getTypeName() const;	// override
-    bool isExtendable();	// override
-
     /**
      * return always BaseFuncType
      */
@@ -222,40 +224,24 @@ public:
     FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName);	// override
 
     FieldHandle *findHandle(const std::string &fieldName);  // override
-
-    bool equals(DSType *targetType);	// override
 };
-
-/**
- * create reified type name
- * equivalent to toReifiedTypeName(typeTemplate->getName(), elementTypes)
- */
-std::string toReifiedTypeName(TypeTemplate *typeTemplate, const std::vector<DSType*> &elementTypes);
-
-std::string toReifiedTypeName(const std::string &name, const std::vector<DSType*> &elementTypes);
-
-std::string toTupleTypeName(const std::vector<DSType*> &elementTypes);
-
-/**
- * create function type name
- */
-std::string toFunctionTypeName(DSType *returnType, const std::vector<DSType*> &paramTypes);
 
 /**
  * for BuiltinType creation.
  */
-DSType *newBuiltinType(std::string &&typeName, bool extendable,
-        DSType *superType, native_type_info_t *info);
+DSType *newBuiltinType(type_id_t id, bool extendable,
+        DSType *superType, native_type_info_t *info, bool isVoid = false);
 
 /**
  * for ReifiedType creation.
  * reified type is not public class.
  */
-DSType *newReifiedType(TypeTemplate *t, DSType *superType, const std::vector<DSType*> &elementTypes);
+DSType *newReifiedType(type_id_t id, native_type_info_t *info,
+        DSType *superType, const std::vector<DSType*> &elementTypes);
 
 /**
  * for TupleType creation
  */
-DSType *newTupleType(DSType *superType, const std::vector<DSType*> &elementTypes);
+DSType *newTupleType(type_id_t id, DSType *superType, const std::vector<DSType*> &elementTypes);
 
 #endif /* CORE_DSTYPE_H_ */
