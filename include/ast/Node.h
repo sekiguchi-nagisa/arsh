@@ -975,20 +975,21 @@ private:
     Node* leftNode;
 
     Node* rightNode;
-
-    /**
-     * if true, treat as self assignment.
-     */
-    bool selfAssign;
+    flag8_set_t attributeSet;
 
 public:
+    const static flag8_t SELF_ASSIGN  = 1 << 0;
+    const static flag8_t FIELD_ASSIGN = 1 << 1;
+
     AssignNode(Node *leftNode, Node *rightNode, bool selfAssign = false);
     ~AssignNode();
 
     Node *getLeftNode();
     void setRightNode(Node *rightNode);
     Node *getRightNode();
+    void setAttribute(flag8_t flag);
     bool isSelfAssignment();
+    bool isFieldAssign();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);   // override
     EvalStatus eval(RuntimeContext &ctx); // override

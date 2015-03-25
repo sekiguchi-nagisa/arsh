@@ -405,6 +405,10 @@ bool AssignableNode::isReadOnly() {
     return this->readOnly;
 }
 
+int AssignableNode::getIndex() {
+    return this->index;
+}
+
 // #####################
 // ##     VarNode     ##
 // #####################
@@ -2085,7 +2089,11 @@ EvalStatus VarDeclNode::eval(RuntimeContext &ctx) {
 // ########################
 
 AssignNode::AssignNode(Node *leftNode, Node *rightNode, bool selfAssign) :
-        Node(leftNode->getLineNum()), leftNode(leftNode), rightNode(rightNode), selfAssign(selfAssign) {
+        Node(leftNode->getLineNum()),
+        leftNode(leftNode), rightNode(rightNode), attributeSet(0) {
+    if(selfAssign) {
+        setFlag(this->attributeSet, SELF_ASSIGN);
+    }
 }
 
 AssignNode::~AssignNode() {
@@ -2108,14 +2116,31 @@ Node *AssignNode::getRightNode() {
     return this->rightNode;
 }
 
+void AssignNode::setAttribute(flag8_t flag) {
+    setFlag(this->attributeSet, flag);
+}
+
 bool AssignNode::isSelfAssignment() {
-    return this->selfAssign;
+    return hasFlag(this->attributeSet, SELF_ASSIGN);
+}
+
+bool AssignNode::isFieldAssign() {
+    return hasFlag(this->attributeSet, FIELD_ASSIGN);
 }
 
 void AssignNode::dump(Writer &writer) const {
     WRITE_PTR(leftNode);
     WRITE_PTR(rightNode);
-    WRITE_PRIM(selfAssign);
+
+#define EACH_FLAG(OP, out, set) \
+    OP(SELF_ASSIGN, out, set) \
+    OP(FIELD_ASSIGN, out, set)
+
+    std::string value;
+    DECODE_BITSET(value, this->attributeSet, EACH_FLAG);
+    writer.write(NAME(attributeSet), value);
+
+#undef EACH_FLAG
 }
 
 void AssignNode::accept(NodeVisitor *visitor) {
@@ -2123,7 +2148,20 @@ void AssignNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus AssignNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO:
+    int index = ((AssignableNode *) this->leftNode)->getIndex();
+    if(this->isFieldAssign()) {
+        EVAL(ctx, this->leftNode);
+        EVAL(ctx, this->rightNode);
+        std::shared_ptr<DSObject> value(ctx.pop());
+        ctx.pop()->setField(index, value);
+    } else {
+        EVAL(ctx, this->rightNode);
+        if(((VarNode *) this->leftNode)->isGlobal()) {
+            ctx.setGlobal(index);
+        } else {
+            ctx.setLocal(index);
+        }
+    }
     return EVAL_SUCCESS;
 }
 
