@@ -120,9 +120,17 @@ struct RuntimeContext {
     }
 
     /**
-     * reset this->throwObject.
+     * pop and set to throwObject
      */
-    void clearThrownObject() {
+    void setThrowObject() {
+        this->thrownObject = this->pop();
+    }
+
+    /**
+     * get thrownObject and push to localStack
+     */
+    void getThrownObject() {
+        this->push(this->thrownObject);
         this->thrownObject.reset();
     }
 

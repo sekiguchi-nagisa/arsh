@@ -877,6 +877,8 @@ private:
      */
     DSType *exceptionType;
 
+    int varIndex;
+
     BlockNode *blockNode;
 
 public:
@@ -901,6 +903,8 @@ public:
      */
     DSType *getExceptionType();
 
+    void setAttribute(FieldHandle *handle);
+    int getVarIndex();
     BlockNode *getBlockNode();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override

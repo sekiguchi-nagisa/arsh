@@ -819,7 +819,9 @@ void TypeChecker::visitCatchNode(CatchNode *node) {
      * check type catch block
      */
     this->symbolTable.enterScope();
-    this->addEntryAndThrowIfDefined(node, node->getExceptionName(), exceptionType, true);
+    FieldHandle *handle = this->addEntryAndThrowIfDefined(node,
+            node->getExceptionName(), exceptionType, true);
+    node->setAttribute(handle);
     this->checkTypeWithCurrentBlockScope(node->getBlockNode());
     this->symbolTable.exitScope();
     node->setType(this->typePool->getVoidType());

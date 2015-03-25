@@ -1854,8 +1854,9 @@ void ThrowNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus ThrowNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO:
-    return EVAL_SUCCESS;
+    EVAL(ctx, this->exprNode);
+    ctx.setThrowObject();
+    return EVAL_THROW;
 }
 
 // #######################
@@ -1871,7 +1872,7 @@ CatchNode::CatchNode(unsigned int lineNum, std::string &&exceptionName,
 CatchNode::CatchNode(unsigned int lineNum,
         std::string &&exceptionName, TypeToken *type, BlockNode *blockNode) :
         Node(lineNum), exceptionName(std::move(exceptionName)),
-        typeToken(type), exceptionType(0), blockNode(blockNode) {
+        typeToken(type), exceptionType(0), varIndex(0), blockNode(blockNode) {
 }
 
 CatchNode::~CatchNode() {
@@ -1904,6 +1905,14 @@ DSType *CatchNode::getExceptionType() {
     return this->exceptionType;
 }
 
+void CatchNode::setAttribute(FieldHandle *handle) {
+    this->varIndex = handle->getFieldIndex();
+}
+
+int CatchNode::getVarIndex() {
+    return this->varIndex;
+}
+
 BlockNode *CatchNode::getBlockNode() {
     return this->blockNode;
 }
@@ -1920,7 +1929,8 @@ void CatchNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus CatchNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO:
+    ctx.setLocal(this->varIndex);
+    EVAL(ctx, this->blockNode);
     return EVAL_SUCCESS;
 }
 
@@ -1988,8 +1998,25 @@ void TryNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus TryNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO:
-    return EVAL_SUCCESS;
+    // eval try block
+    EvalStatus status = this->blockNode->eval(ctx);
+
+    if(status != EVAL_THROW) {  // eval finally
+        EVAL(ctx, this->finallyNode);
+        return status;
+    } else {   // eval catch
+        DSType *thrownType = ctx.thrownObject->getType();
+        for(CatchNode *catchNode : this->catchNodes) {
+            if(catchNode->getExceptionType()->isAssignableFrom(thrownType)) {
+                ctx.getThrownObject();
+                status = catchNode->eval(ctx);
+                // eval finally
+                EVAL(ctx, this->finallyNode);
+                return status;
+            }
+        }
+    }
+    return status;
 }
 
 // #########################
