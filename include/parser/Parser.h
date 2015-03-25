@@ -89,7 +89,6 @@ private:
     std::unique_ptr<Node> parse_forIter();
 
     std::unique_ptr<CatchNode> parse_catchStatement();
-    std::unique_ptr<Node> parse_finallyBlock();
 
     std::unique_ptr<Node> parse_commandListExpression();
     std::unique_ptr<Node> parse_orListCommand();

@@ -833,7 +833,9 @@ void TypeChecker::visitTryNode(TryNode *node) {
     }
 
     // check type finally block, may be empty node
-    this->checkTypeAsStatement(node->getFinallyNode());
+    this->finallyContextStack.push_back(true);
+    this->checkTypeWithNewBlockScope(node->getFinallyNode());
+    this->finallyContextStack.pop_back();
 
     /**
      * verify catch block order
@@ -848,12 +850,6 @@ void TypeChecker::visitTryNode(TryNode *node) {
         }
     }
     node->setType(this->typePool->getVoidType());
-}
-
-void TypeChecker::visitFinallyNode(FinallyNode *node) {
-    this->finallyContextStack.push_back(true);
-    this->checkTypeWithNewBlockScope(node->getBlockNode());
-    this->finallyContextStack.pop_back();
 }
 
 void TypeChecker::visitVarDeclNode(VarDeclNode *node) {

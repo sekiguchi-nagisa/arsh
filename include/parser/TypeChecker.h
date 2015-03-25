@@ -252,7 +252,6 @@ public:
     void visitThrowNode(ThrowNode *node); // override
     void visitCatchNode(CatchNode *node); // override
     void visitTryNode(TryNode *node); // override
-    void visitFinallyNode(FinallyNode *node); // override
     void visitVarDeclNode(VarDeclNode *node); // override
     void visitAssignNode(AssignNode *node); // override
     void visitFunctionNode(FunctionNode *node); // override

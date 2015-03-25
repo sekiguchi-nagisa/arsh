@@ -917,9 +917,9 @@ private:
     std::vector<CatchNode*> catchNodes;
 
     /**
-     * may be EmptyNdoe
+     * may be EmptyBlockNode
      */
-    Node* finallyNode;
+    BlockNode* finallyNode;
 
 public:
     TryNode(unsigned int lineNum, BlockNode *blockNode);
@@ -928,22 +928,8 @@ public:
     BlockNode *getBlockNode();
     void addCatchNode(CatchNode *catchNode);
     const std::vector<CatchNode*> &getCatchNodes();
-    void addFinallyNode(Node *finallyNode);
-    Node *getFinallyNode();
-    void dump(Writer &writer) const;  // override
-    void accept(NodeVisitor *visitor);	// override
-    EvalStatus eval(RuntimeContext &ctx); // override
-};
-
-class FinallyNode: public Node {
-private:
-    BlockNode* blockNode;
-
-public:
-    FinallyNode(unsigned int lineNum, BlockNode *block);
-    ~FinallyNode();
-
-    BlockNode *getBlockNode();
+    void addFinallyNode(BlockNode *finallyNode);
+    BlockNode *getFinallyNode();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
     EvalStatus eval(RuntimeContext &ctx); // override
@@ -1198,7 +1184,6 @@ struct NodeVisitor {
     virtual void visitThrowNode(ThrowNode *node) = 0;
     virtual void visitCatchNode(CatchNode *node) = 0;
     virtual void visitTryNode(TryNode *node) = 0;
-    virtual void visitFinallyNode(FinallyNode *node) = 0;
     virtual void visitVarDeclNode(VarDeclNode *node) = 0;
     virtual void visitAssignNode(AssignNode *node) = 0;
     virtual void visitFunctionNode(FunctionNode *node) = 0;

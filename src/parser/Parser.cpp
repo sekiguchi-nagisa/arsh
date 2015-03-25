@@ -486,7 +486,8 @@ std::unique_ptr<Node> Parser::parse_statement() {
 
         // parse finally
         if(this->curTokenKind == FINALLY) {
-            tryNode->addFinallyNode(this->parse_finallyBlock().release());
+            this->matchToken(FINALLY);
+            tryNode->addFinallyNode(this->parse_block().release());
         }
         RET_NODE(tryNode.release());
     }
@@ -668,11 +669,6 @@ INLINE std::unique_ptr<CatchNode> Parser::parse_catchStatement() {
         return std::unique_ptr<CatchNode>(new CatchNode(n, this->lexer->toName(token),
                 blockNode.release()));
     }
-}
-
-INLINE std::unique_ptr<Node> Parser::parse_finallyBlock() {
-    this->matchToken(FINALLY);
-    RET_NODE(new FinallyNode(LN(), this->parse_block().release()));
 }
 
 // command

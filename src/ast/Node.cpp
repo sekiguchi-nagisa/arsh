@@ -1957,16 +1957,16 @@ const std::vector<CatchNode*> &TryNode::getCatchNodes() {
     return this->catchNodes;
 }
 
-void TryNode::addFinallyNode(Node *finallyNode) {
+void TryNode::addFinallyNode(BlockNode *finallyNode) {
     if(this->finallyNode != 0) {
         delete this->finallyNode;
     }
     this->finallyNode = finallyNode;
 }
 
-Node *TryNode::getFinallyNode() {
+BlockNode *TryNode::getFinallyNode() {
     if(this->finallyNode == 0) {
-        this->finallyNode = new EmptyNode();
+        this->finallyNode = new BlockNode(0);
     }
     return this->finallyNode;
 }
@@ -1988,36 +1988,6 @@ void TryNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus TryNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO:
-    return EVAL_SUCCESS;
-}
-
-// #########################
-// ##     FinallyNode     ##
-// #########################
-
-FinallyNode::FinallyNode(unsigned int lineNum, BlockNode *block) :
-        Node(lineNum), blockNode(block) {
-}
-
-FinallyNode::~FinallyNode() {
-    delete this->blockNode;
-    this->blockNode = 0;
-}
-
-BlockNode *FinallyNode::getBlockNode() {
-    return this->blockNode;
-}
-
-void FinallyNode::dump(Writer &writer) const {
-    WRITE_PTR(blockNode);
-}
-
-void FinallyNode::accept(NodeVisitor *visitor) {
-    visitor->visitFinallyNode(this);
-}
-
-EvalStatus FinallyNode::eval(RuntimeContext &ctx) {
     fatal("unimplemented eval\n");  //TODO:
     return EVAL_SUCCESS;
 }
