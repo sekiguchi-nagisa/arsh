@@ -47,7 +47,9 @@ struct DSObject {
      * fieldIndex > -1 && fieldIndex < getFieldSize()
      * this method is not type-safe.
      */
-    virtual DSObject *lookupField(int fieldIndex) = 0;
+    virtual std::shared_ptr<DSObject> lookupField(int fieldIndex) = 0;
+
+    virtual void setField(int fieldIndex, const std::shared_ptr<DSObject> &obj) = 0;
 
     /**
      * for printing
@@ -63,14 +65,15 @@ struct BaseObject: public DSObject {
     /**
      * may be null, if has no field. (fieldSize == 0)
      */
-    DSObject **fieldTable;
+    std::shared_ptr<DSObject> *fieldTable;
 
     BaseObject(DSType *type);
     virtual ~BaseObject();
 
     DSType *getType();	// override
     int getFieldSize();	// override
-    DSObject *lookupField(int fieldIndex);	// override
+    std::shared_ptr<DSObject> lookupField(int fieldIndex);	// override
+    void setField(int fieldIndex, const std::shared_ptr<DSObject> &obj); // override
 };
 
 struct Int_Object: public BaseObject {
@@ -150,7 +153,9 @@ struct FuncObject: public DSObject {
     /**
      * return always null
      */
-    DSObject *lookupField(int fieldIndex);	// override
+    std::shared_ptr<DSObject> lookupField(int fieldIndex);	// override
+
+    void setField(int fieldIndex, const std::shared_ptr<DSObject> &obj); // override
 
     /**
      * equivalent to dynamic_cast<FunctionType*>(getType())

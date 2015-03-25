@@ -40,7 +40,7 @@ void DSObject::setType(DSType *type) {  // do nothing.
 BaseObject::BaseObject(DSType *type) :	//TODO: add field to table
         type(type), fieldSize(type->getFieldSize()), fieldTable(0) {
     if(this->fieldSize > 0) {
-        this->fieldTable = new DSObject*[this->fieldSize];
+        this->fieldTable = new std::shared_ptr<DSObject>[this->fieldSize];
     }
 }
 
@@ -58,10 +58,13 @@ int BaseObject::getFieldSize() {
     return this->fieldSize;
 }
 
-DSObject *BaseObject::lookupField(int fieldIndex) {
+std::shared_ptr<DSObject> BaseObject::lookupField(int fieldIndex) {
     return this->fieldTable[fieldIndex];
 }
 
+void BaseObject::setField(int fieldIndex, const std::shared_ptr<DSObject> &obj) {
+    this->fieldTable[fieldIndex] = obj;
+}
 
 // ########################
 // ##     Int_Object     ##
@@ -217,8 +220,12 @@ int FuncObject::getFieldSize() {
     return 0;
 }
 
-DSObject *FuncObject::lookupField(int fieldIndex) {
-    return 0;
+std::shared_ptr<DSObject> FuncObject::lookupField(int fieldIndex) {
+    return std::shared_ptr<DSObject>(nullptr);
+}
+
+void FuncObject::setField(int fieldIndex, const std::shared_ptr<DSObject> &obj) {
+    // do nothing
 }
 
 FunctionType *FuncObject::getFuncType() {
