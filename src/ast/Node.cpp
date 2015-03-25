@@ -414,7 +414,8 @@ int AssignableNode::getIndex() {
 // #####################
 
 VarNode::VarNode(unsigned int lineNum, std::string &&varName) :
-        AssignableNode(lineNum), varName(std::move(varName)), global(false) {
+        AssignableNode(lineNum), varName(std::move(varName)),
+        global(false), env(false) {
 }
 
 const std::string &VarNode::getVarName() {
@@ -424,6 +425,7 @@ const std::string &VarNode::getVarName() {
 void VarNode::setAttribute(FieldHandle *handle) {
     this->readOnly = handle->isReadOnly();
     this->global = handle->isGlobal();
+    this->env = handle->isEnv();
     this->index = handle->getFieldIndex();
 }
 
@@ -432,6 +434,7 @@ void VarNode::dump(Writer &writer) const {
     WRITE_PRIM(index);
     WRITE(varName);
     WRITE_PRIM(global);
+    WRITE_PRIM(env);
 }
 
 void VarNode::accept(NodeVisitor *visitor) {
@@ -440,6 +443,10 @@ void VarNode::accept(NodeVisitor *visitor) {
 
 bool VarNode::isGlobal() {
     return this->global;
+}
+
+bool VarNode::isEnv() {
+    return this->env;
 }
 
 int VarNode::getVarIndex() {
@@ -1451,7 +1458,8 @@ EvalStatus ContinueNode::eval(RuntimeContext &ctx) {
 // ###########################
 
 ExportEnvNode::ExportEnvNode(unsigned int lineNum, std::string &&envName, Node *exprNode) :
-        Node(lineNum), envName(std::move(envName)), exprNode(exprNode) {
+        Node(lineNum), envName(std::move(envName)), exprNode(exprNode),
+        global(false), varIndex(0) {
 }
 
 ExportEnvNode::~ExportEnvNode() {
@@ -1467,9 +1475,24 @@ Node *ExportEnvNode::getExprNode() {
     return this->exprNode;
 }
 
+void ExportEnvNode::setAttribute(FieldHandle *handle) {
+    this->global = handle->isGlobal();
+    this->varIndex = handle->getFieldIndex();
+}
+
+bool ExportEnvNode::isGlobal() {
+    return this->global;
+}
+
+int ExportEnvNode::getVarIndex() {
+    return this->varIndex;
+}
+
 void ExportEnvNode::dump(Writer &writer) const {
     WRITE(envName);
     WRITE_PTR(exprNode);
+    WRITE_PRIM(global);
+    WRITE_PRIM(varIndex);
 }
 
 void ExportEnvNode::accept(NodeVisitor *visitor) {
@@ -1477,7 +1500,8 @@ void ExportEnvNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus ExportEnvNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO:
+    EVAL(ctx, this->exprNode);
+    ctx.exportEnv(this->envName, this->varIndex, this->global);
     return EVAL_SUCCESS;
 }
 
@@ -1517,7 +1541,7 @@ void ImportEnvNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus ImportEnvNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO:
+    ctx.importEnv(this->envName, this->varIndex, this->global);
     return EVAL_SUCCESS;
 }
 
@@ -2156,10 +2180,16 @@ EvalStatus AssignNode::eval(RuntimeContext &ctx) {
         ctx.pop()->setField(index, value);
     } else {
         EVAL(ctx, this->rightNode);
-        if(((VarNode *) this->leftNode)->isGlobal()) {
-            ctx.setGlobal(index);
+        VarNode *varNode = (VarNode *) this->leftNode;
+
+        if(varNode->isEnv()) {
+            ctx.exportEnv(varNode->getVarName(), index, varNode->isGlobal());
         } else {
-            ctx.setLocal(index);
+            if(varNode->isGlobal()) {
+                ctx.setGlobal(index);
+            } else {
+                ctx.setLocal(index);
+            }
         }
     }
     return EVAL_SUCCESS;

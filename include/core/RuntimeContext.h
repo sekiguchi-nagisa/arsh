@@ -82,7 +82,7 @@ struct RuntimeContext {
      */
     bool assertion;
 
-    RuntimeContext();
+    RuntimeContext(char **envp);
     ~RuntimeContext();
 
     /**
@@ -203,6 +203,16 @@ struct RuntimeContext {
     void checkCast(DSType *targetType);
     void instanceOf(DSType *targetType);
     void checkAssertion();
+
+    /**
+     * get environment variable and set to local variable
+     */
+    void importEnv(const std::string &envName, int index, bool isGlobal);
+
+    /**
+     * put stack top value to environment variable.
+     */
+    void exportEnv(const std::string &envName, int index, bool isGlobal);
 };
 
 #endif /* CORE_RUNTIMECONTEXT_H_ */

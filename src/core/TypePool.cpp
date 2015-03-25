@@ -24,13 +24,14 @@
 // ##     TypePool     ##
 // ######################
 
-TypePool::TypePool() :
+TypePool::TypePool(char **envp) :
         idCount(0), typeMap(16), typeNameTable(),
         anyType(), voidType(), valueType(),
         intType(), floatType(), boolType(), stringType(),
         taskType(), baseFuncType(),
         templateMap(8),
-        arrayTemplate(), mapTemplate(), tupleTemplate() {
+        arrayTemplate(), mapTemplate(), tupleTemplate(),
+        envp(envp), envSet() {
 
     // initialize type
     this->anyType    = this->initBuiltinType("Any", true, 0, info_Dummy());
@@ -236,6 +237,35 @@ std::string TypePool::toFunctionTypeName(DSType *returnType, const std::vector<D
     }
     funcTypeName += ">";
     return funcTypeName;
+}
+
+bool TypePool::hasEnv(const std::string &envName) {
+    if(this->envSet.empty()) {
+        this->initEnvSet();
+    }
+    return this->envSet.find(envName) != this->envSet.end();
+}
+
+void TypePool::addEnv(const std::string &envName) {
+    if(this->envSet.empty()) {
+        this->initEnvSet();
+    }
+    this->envSet.insert(envName);
+}
+
+void TypePool::initEnvSet() {
+    for(unsigned int i = 0; this->envp[i] != NULL; i++) {
+        char *env = this->envp[i];
+        std::string str;
+        for(unsigned int j = 0; env[j] != '\0'; j++) {
+            char ch = env[j];
+            if(ch == '=') {
+                break;
+            }
+            str += ch;
+        }
+        this->envSet.insert(std::move(str));
+    }
 }
 
 DSType *TypePool::addType(std::string &&typeName, DSType *type) {

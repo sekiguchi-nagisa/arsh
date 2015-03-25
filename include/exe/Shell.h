@@ -45,7 +45,10 @@ private:
     bool dumpTypedAST;
 
 public:
-    Shell();
+    /**
+     * envp is the pointer of environment variable.
+     */
+    Shell(char **envp);
     ~Shell();
 
     bool eval(const char *line);

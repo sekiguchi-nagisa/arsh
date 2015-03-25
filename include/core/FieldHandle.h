@@ -75,9 +75,12 @@ public:
      */
     bool isGlobal();
 
+    bool isEnv();
+
     // attribute definition
     const static flag8_t READ_ONLY = 1 << 0;
     const static flag8_t GLOBAL    = 1 << 1;
+    const static flag8_t ENV       = 1 << 2;
 };
 
 /**

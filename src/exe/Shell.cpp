@@ -17,8 +17,8 @@
 #include <exe/Shell.h>
 #include <iostream>
 
-Shell::Shell() :
-        ctx(), parser(), checker(&this->ctx.pool), lineNum(1),
+Shell::Shell(char **envp) :
+        ctx(envp), parser(), checker(&this->ctx.pool), lineNum(1),
         listener(&clistener), dumpUntypedAST(false), dumpTypedAST(false) {
 }
 

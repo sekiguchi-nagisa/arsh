@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 
 #include <core/DSType.h>
 #include <core/TypeTemplate.h>
@@ -67,8 +68,15 @@ private:
      */
     TypeTemplate *tupleTemplate;
 
+    /**
+     * not delete.
+     */
+    char **envp;
+
+    std::unordered_set<std::string> envSet;
+
 public:
-    TypePool();
+    TypePool(char **envp);
     ~TypePool();
 
     /**
@@ -148,7 +156,11 @@ public:
      */
     std::string toFunctionTypeName(DSType *returnType, const std::vector<DSType*> &paramTypes);
 
+    bool hasEnv(const std::string &envName);
+    void addEnv(const std::string &envName);
+
 private:
+    void initEnvSet();
     DSType *addType(std::string &&typeName, DSType *type);
     DSType *initBuiltinType(const char *typeName, bool extendable,
             DSType *superType, native_type_info_t *info, bool isVoid = false);

@@ -18,6 +18,7 @@
 #include <util/debug.h>
 
 #include <iostream>
+#include <stdlib.h>
 
 // ############################
 // ##     RuntimeContext     ##
@@ -26,8 +27,8 @@
 #define DEFAULT_TABLE_SIZE 32
 #define DEFAULT_LOCAL_SIZE 256
 
-RuntimeContext::RuntimeContext() :
-        pool(),
+RuntimeContext::RuntimeContext(char **envp) :
+        pool(envp),
         trueObj(new Boolean_Object(this->pool.getBooleanType(), true)),
         falseObj(new Boolean_Object(this->pool.getBooleanType(), false)),
         globalVarTable(new std::shared_ptr<DSObject>[DEFAULT_TABLE_SIZE]),
@@ -72,6 +73,28 @@ void RuntimeContext::instanceOf(DSType *targetType) {
 void RuntimeContext::checkAssertion() {
     if(!TYPE_AS(Boolean_Object, this->pop())->getValue()) {
         fatal("assertion error\n"); //FIXME:
+    }
+}
+
+void RuntimeContext::importEnv(const std::string &envName, int index, bool isGlobal) {
+    if(isGlobal) {
+        this->globalVarTable[index] =
+                std::make_shared<String_Object>(this->pool.getStringType(),
+                        std::string(getenv(envName.c_str())));
+    } else {
+        this->localStack[this->localVarOffset + index] =
+                std::make_shared<String_Object>(this->pool.getStringType(),
+                        std::string(getenv(envName.c_str())));
+    }
+}
+
+void RuntimeContext::exportEnv(const std::string &envName, int index, bool isGlobal) {
+    setenv(envName.c_str(),
+            TYPE_AS(String_Object, this->peek())->getValue().c_str(), 1);   //FIXME: check return value and throw
+    if(isGlobal) {
+        this->globalVarTable[index] = this->pop();
+    } else {
+        this->localStack[this->localVarOffset + index] = this->pop();
     }
 }
 

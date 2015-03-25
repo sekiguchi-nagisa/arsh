@@ -60,6 +60,10 @@ bool FieldHandle::isGlobal() {
     return this->hasAttribute(GLOBAL);
 }
 
+bool FieldHandle::isEnv() {
+    return this->hasAttribute(ENV);
+}
+
 
 // ############################
 // ##     FunctionHandle     ##

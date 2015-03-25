@@ -45,6 +45,7 @@
         ERROR(E_NoIterator        , "not support iterator: %s") \
         ERROR(E_UnfoundNamedParam , "undefined parameter name: %s") \
         ERROR(E_DupNamedArg       , "found duplicated named argument: %s") \
+        ERROR(E_UndefinedEnv      , "undefined environment variable: %s") \
         ERROR(E_Unimplemented     , "unimplemented type checker api: %s") \
         /* two arg */\
         ERROR(E_Required        , "require %s, but is %s") \
@@ -131,6 +132,7 @@ public:
 #define E_NoIterator(node, arg1)            REPORT_TC_ERROR1(NoIterator       , node, arg1)
 #define E_UnfoundNamedParam(node, arg1)     REPORT_TC_ERROR1(UnfoundNamedParam, node, arg1)
 #define E_DupNamedArg(node, arg1)           REPORT_TC_ERROR1(DupNamedArg      , node, arg1)
+#define E_UndefinedEnv(node, arg1)          REPORT_TC_ERROR1(UndefinedEnv     , node, arg1)
 #define E_Unimplemented(node, arg1)         REPORT_TC_ERROR1(Unimplemented    , node, arg1)
 
 #define E_Required(node, arg1, arg2)        REPORT_TC_ERROR2(Required    , node, arg1, arg2)

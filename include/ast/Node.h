@@ -244,6 +244,11 @@ private:
     std::string varName;
     bool global;
 
+    /**
+     * if true, treat as environment variable
+     */
+    bool env;
+
 public:
     VarNode(unsigned int lineNum, std::string &&varName);
 
@@ -252,6 +257,7 @@ public:
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
     bool isGlobal();
+    bool isEnv();
     int getVarIndex();
     EvalStatus eval(RuntimeContext &ctx); // override
 
@@ -695,6 +701,8 @@ class ExportEnvNode: public Node {
 private:
     std::string envName;
     Node* exprNode;
+    bool global;
+    int varIndex;
 
 public:
     ExportEnvNode(unsigned int lineNum, std::string &&envName, Node *exprNode);
@@ -702,6 +710,9 @@ public:
 
     const std::string &getEnvName();
     Node *getExprNode();
+    void setAttribute(FieldHandle *handle);
+    bool isGlobal();
+    int getVarIndex();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);	// override
     EvalStatus eval(RuntimeContext &ctx); // override

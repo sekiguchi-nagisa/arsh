@@ -27,7 +27,7 @@ enum OptionKind {
     HELP,
 };
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv, char **envp) {
     args::ArgsParser parser;
 
     parser.addOption(
@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    Shell shell;
+    Shell shell(envp);
 
     for(const std::pair<unsigned int, const char *> &cmdLine : cmdLines) {
         switch((OptionKind)cmdLine.first) {
