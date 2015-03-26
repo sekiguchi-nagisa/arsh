@@ -69,7 +69,7 @@ int main(int argc, char **argv, char **envp) {
         return 1;
     }
 
-    Shell shell(envp);
+    ydsh::Shell shell(envp);
 
     for(const std::pair<unsigned int, const char *> &cmdLine : cmdLines) {
         switch((OptionKind)cmdLine.first) {
@@ -95,8 +95,9 @@ int main(int argc, char **argv, char **envp) {
             fprintf(stderr, "cannot open file: %s\n", scriptName);
             return 1;
         }
-        shell.eval(scriptName, fp);
+        ydsh::ExitStatus status = shell.eval(scriptName, fp);
         fclose(fp);
+        return status;
     } else {
         exec_interactive(argv[0], shell);
     }

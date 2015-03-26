@@ -2438,7 +2438,7 @@ EvalStatus RootNode::eval(RuntimeContext &ctx) {
                 ctx.pop();
             }
         } else if(status == EVAL_THROW) {
-            fatal("unimplemted EvalStatus: %d\n", status);  //FIXME:
+            return EVAL_THROW;
         } else if(status == EVAL_REMOVE) {
             iter = this->nodeList.erase(iter);
             continue;

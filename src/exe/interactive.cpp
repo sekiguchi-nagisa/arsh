@@ -183,7 +183,7 @@ void Terminal::addHistory() {
     history(this->ydsh_history, &this->event, H_ENTER, buf.c_str());
 }
 
-void exec_interactive(const char *progName, Shell &shell) {
+void ydsh::exec_interactive(const char *progName, ydsh::Shell &shell) {
     Terminal term(progName);
 
     unsigned int lineNum = 1;

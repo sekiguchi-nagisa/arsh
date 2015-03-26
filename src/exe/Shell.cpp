@@ -15,7 +15,10 @@
  */
 
 #include <exe/Shell.h>
+
 #include <iostream>
+
+namespace ydsh {
 
 Shell::Shell(char **envp) :
         ctx(envp), parser(), checker(&this->ctx.pool), lineNum(1),
@@ -25,12 +28,12 @@ Shell::Shell(char **envp) :
 Shell::~Shell() {
 }
 
-bool Shell::eval(const char *line) {
+ExitStatus Shell::eval(const char *line) {
     Lexer lexer(line);
     return this->eval("(stdin)", lexer, true);
 }
 
-bool Shell::eval(const char *sourceName, FILE *fp) {
+ExitStatus Shell::eval(const char *sourceName, FILE *fp) {
     Lexer lexer(fp);
     return this->eval(sourceName, lexer);
 }
@@ -61,11 +64,14 @@ void Shell::setAssertion(bool assertion) {
 
 CommonErrorListener Shell::clistener;
 
-bool Shell::eval(const char *sourceName, Lexer &lexer, bool interactive) {
+ExitStatus Shell::eval(const char *sourceName, Lexer &lexer, bool interactive) {
     lexer.setLineNum(this->lineNum);
     RootNode rootNode;
+
+    // parse
     try {
         this->parser.parse(lexer, rootNode);
+        this->lineNum = lexer.getLineNum();
 
         if(this->dumpUntypedAST) {
             std::cout << "### dump untyped AST ###" << std::endl;
@@ -74,10 +80,11 @@ bool Shell::eval(const char *sourceName, Lexer &lexer, bool interactive) {
         }
     } catch(const ParseError &e) {
         this->listener->displayParseError(lexer, sourceName, e);
-        return false;
+        this->lineNum = lexer.getLineNum();
+        return PARSE_ERROR;
     }
 
-    bool status = true;
+    // type check
     try {
         this->checker.checkTypeRootNode(rootNode);
 
@@ -86,18 +93,22 @@ bool Shell::eval(const char *sourceName, Lexer &lexer, bool interactive) {
             dumpAST(std::cout, this->ctx.pool, rootNode);
             std::cout << std::endl;
         }
-
-        // eval
-        this->ctx.repl = interactive;
-        rootNode.eval(this->ctx);
     } catch(const TypeCheckError &e) {
         this->listener->displayTypeError(sourceName, e);
         this->checker.recover();
-        status = false;
+        return TYPE_ERROR;
     }
-    this->lineNum = lexer.getLineNum();
 
-    return status;
+    // eval
+    this->ctx.repl = interactive;
+    EvalStatus status = rootNode.eval(this->ctx);
+    if(status == EVAL_SUCCESS) {
+        return SUCCESS;
+    } else {
+        this->checker.recover();
+        std::cerr << "[runtime error] " << ctx.thrownObject->toString() << std::endl;
+        return RUNTIME_ERROR;
+    }
 }
 
-
+} /* namespace ydsh */

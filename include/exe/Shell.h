@@ -28,6 +28,15 @@
 #include <ast/Node.h>
 #include <ast/dump.h>
 
+namespace ydsh {
+
+typedef enum {
+    SUCCESS,
+    PARSE_ERROR,
+    TYPE_ERROR,
+    RUNTIME_ERROR,
+} ExitStatus;
+
 class Shell {
 private:
     RuntimeContext ctx;
@@ -51,8 +60,8 @@ public:
     Shell(char **envp);
     ~Shell();
 
-    bool eval(const char *line);
-    bool eval(const char *sourceName, FILE *fp);
+    ExitStatus eval(const char *line);
+    ExitStatus eval(const char *sourceName, FILE *fp);
     void setErrorListener(const ErrorListener *listener);
     void setLineNum(unsigned int lineNum);
     unsigned int getLineNum();
@@ -62,11 +71,13 @@ public:
     void setAssertion(bool assertion);
 
 private:
-    bool eval(const char *sourceName, Lexer &lexer, bool interactive = false);
+    ExitStatus eval(const char *sourceName, Lexer &lexer, bool interactive = false);
 
     static CommonErrorListener clistener;
 };
 
 void exec_interactive(const char *progName, Shell &shell);
+
+} /* namespace ydsh */
 
 #endif /* EXE_SHELL_H_ */
