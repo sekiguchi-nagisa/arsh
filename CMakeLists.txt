@@ -46,7 +46,7 @@ check_include_files("histedit.h" HAVE_HISTEDIT_H)
 find_library(HAVE_LIBEDIT NAMES edit)
 
 # generate lexer 
-set(lexer_src ${SRC_DIR}/parser/nextToken.cpp) 
+set(lexer_src ${CMAKE_CURRENT_BINARY_DIR}/src/parser/nextToken.cpp) 
 add_custom_command(OUTPUT ${lexer_src} 
     COMMAND re2c -c -8 -o ${lexer_src} ${SRC_DIR}/nextToken.re2c.cpp
 )

@@ -21,7 +21,7 @@ TEST(LexerTest_Lv0, case1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
 
-        FILE *fp = fopen(LEXER_TEST_DIR "lexer_test.cpp", "r");
+        FILE *fp = fopen(LEXER_TEST_DIR  "/" "lexer_test.cpp", "r");
         ASSERT_FALSE(fp == 0);
     });
 }

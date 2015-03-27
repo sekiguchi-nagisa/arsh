@@ -14,6 +14,7 @@ install_manifest.txt
 # generated file
 ydsh
 src/parser/nextToken.cpp
+test/Lexer/lexer_test
 target/
 test/gtest*
 test/gtest*/
