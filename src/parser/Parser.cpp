@@ -348,6 +348,11 @@ std::unique_ptr<TypeToken> Parser::parse_typeName() {
 }
 
 std::unique_ptr<Node> Parser::parse_statement() {
+    static TokenKind alters[] = {
+            EACH_LA_statement(GEN_LA_ALTER)
+            DUMMY
+    };
+
     unsigned int n = LN();
 
     switch(this->curTokenKind) {
@@ -502,10 +507,14 @@ std::unique_ptr<Node> Parser::parse_statement() {
         this->parse_statementEnd();
         return node;
     }
-    default: {
+    EACH_LA_expression(GEN_LA_CASE) {
         std::unique_ptr<Node> node(this->parse_expression());
         this->parse_statementEnd();
         return node;
+    }
+    default: {
+        E_ALTER(alters);
+        return std::unique_ptr<Node>(nullptr);
     }
     }
 }
