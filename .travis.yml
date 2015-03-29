@@ -5,6 +5,7 @@ compiler:
 
 before_script:
   - sudo apt-get update -y
+  - sudo apt-get install re2c libeditline0 libeditline-dev -y
   - mkdir build
   - cd ./build
   - cmake .. -DCMAKE_BUILD_TYPE=Release

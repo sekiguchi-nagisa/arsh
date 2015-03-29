@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/sekiguchi-nagisa/ydsh.svg?branch=master)](https://travis-ci.org/sekiguchi-nagisa/ydsh)
+
 # ydsh
 yet another dsh
 
