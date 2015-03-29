@@ -1,0 +1,20 @@
+language: c
+
+compiler:
+  - gcc
+
+before_script:
+  - sudo apt-get update -y
+  - mkdir build
+  - cd ./build
+  - cmake .. -DCMAKE_BUILD_TYPE=Release
+  - make clean && make
+
+script:
+  - make run_test
+
+notifications:
+  emails:
+    - s.nagisa.xyz@gmail.com
+  on_success: change
+  on_failure: always
