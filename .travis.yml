@@ -1,14 +1,15 @@
-language: c
+language: cpp
 
 compiler:
-  - gcc
-
+  - clang
+ 
 before_script:
   - sudo apt-get update -y
-  - sudo apt-get install re2c libeditline0 libeditline-dev -y
+  - sudo apt-get install clang-3.4 -y
+  - sudo apt-get install re2c libedit2 libedit-dev -y
   - mkdir build
   - cd ./build
-  - cmake .. -DCMAKE_BUILD_TYPE=Release
+  - cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
   - make clean && make
 
 script:
