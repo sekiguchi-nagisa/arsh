@@ -45,10 +45,24 @@ add_subdirectory(${SRC_DIR}/util)
 check_include_files("histedit.h" HAVE_HISTEDIT_H)
 find_library(HAVE_LIBEDIT NAMES edit)
 
+# build re2c
+set(RE2C_V "0.14.2")
+set(RE2C_URL "http://downloads.sourceforge.net/project/re2c/re2c/0.14.2/re2c-0.14.2.tar.gz?r=&ts=1427624328&use_mirror=jaist")
+set(RE2C_PATH ${CMAKE_CURRENT_BINARY_DIR}/re2c-${RE2C_V}.tar.gz)
+set(RE2C_DIR ${CMAKE_CURRENT_BINARY_DIR}/re2c-${RE2C_V})
+
+if(NOT EXISTS "${RE2C_PATH}")
+    file(DOWNLOAD "${RE2C_URL}" "${RE2C_PATH}" SHOW_PROGRESS)
+    execute_process(COMMAND ${CMAKE_COMMAND} -E tar xvf ${RE2C_PATH})
+    execute_process(COMMAND ./configure WORKING_DIRECTORY ${RE2C_DIR})
+    execute_process(COMMAND make WORKING_DIRECTORY ${RE2C_DIR})
+endif()
+
+
 # generate lexer 
 set(lexer_src ${CMAKE_CURRENT_BINARY_DIR}/src/parser/nextToken.cpp) 
 add_custom_command(OUTPUT ${lexer_src} 
-    COMMAND re2c -c -8 -o ${lexer_src} ${SRC_DIR}/nextToken.re2c.cpp
+    COMMAND ${RE2C_DIR}/re2c -c -8 -o ${lexer_src} ${SRC_DIR}/nextToken.re2c.cpp
 )
 add_custom_target(gen_lexer DEPENDS ${lexer_src})
 
