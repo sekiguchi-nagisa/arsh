@@ -19,6 +19,7 @@ target/
 test/gtest*
 test/gtest*/
 Testing/
+re2c-*
 
 # Compiled Object files
 *.slo
