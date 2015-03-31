@@ -14,12 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CORE_NATIVE_FUNC_INFO_H_
-#define CORE_NATIVE_FUNC_INFO_H_
-
-class DSType;
-class TypePool;
-class FunctionHandle;
+#ifndef CORE_NATIVE_TYPE_INFO_H_
+#define CORE_NATIVE_TYPE_INFO_H_
 
 /**
  * for function handle(method handle or constructor handle) creation.
@@ -105,12 +101,4 @@ typedef enum {
  */
 bool verifyHandleInfo(char *handleInfo);
 
-
-
-/**
- * decode native_func_info and create new FunctionHandle.
- */
-FunctionHandle *decodeToFuncHandle(TypePool *typePool, int fieldIndex, native_func_info_t *info,
-        DSType *elementType0 = 0, DSType *elementType1 = 0);
-
-#endif /* CORE_NATIVE_FUNC_INFO_H_ */
+#endif /* CORE_NATIVE_TYPE_INFO_H_ */

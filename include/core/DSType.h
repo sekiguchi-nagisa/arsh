@@ -24,8 +24,8 @@
 #include <memory>
 
 #include <core/FieldHandle.h>
+#include <core/native_type_info.h>
 
-struct native_type_info_t;
 struct DSObject;
 struct FuncObject;
 
