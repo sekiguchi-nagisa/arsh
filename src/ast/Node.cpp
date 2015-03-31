@@ -540,21 +540,21 @@ EvalStatus AccessNode::eval(RuntimeContext &ctx) {
 
     switch(this->additionalOp) {
     case NOP: {
-        ctx.push(ctx.pop()->lookupField(this->index));
+        ctx.push(ctx.pop()->fieldTable[this->index]);
         if(this->type != 0 && this->type->isFuncType()) {
             ctx.peek()->setType(this->type);
         }
         break;
     }
     case DUP_RECV: {
-        ctx.push(ctx.peek()->lookupField(this->index));
+        ctx.push(ctx.peek()->fieldTable[this->index]);
         if(this->type != 0 && this->type->isFuncType()) {
             ctx.peek()->setType(this->type);
         }
         break;
     }
     case DUP_RECV_AND_SWAP:
-        ctx.push(ctx.peek()->lookupField(this->index));
+        ctx.push(ctx.peek()->fieldTable[this->index]);
         ctx.swap();
         break;
     }
@@ -2202,7 +2202,7 @@ EvalStatus AssignNode::eval(RuntimeContext &ctx) {
         EVAL(ctx, this->leftNode);
         EVAL(ctx, this->rightNode);
         std::shared_ptr<DSObject> value(ctx.pop());
-        ctx.pop()->setField(index, value);
+        ctx.pop()->fieldTable[index] = value;
     } else {
         EVAL(ctx, this->rightNode);
         VarNode *varNode = (VarNode *) this->leftNode;

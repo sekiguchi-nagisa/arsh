@@ -24,13 +24,20 @@ class FunctionNode;
 struct RuntimeContext;
 
 struct DSObject {
-    DSObject();
+    DSType *type;
+
+    /**
+     * contains all of field (also method)
+     */
+    std::shared_ptr<DSObject> *fieldTable;
+
+    DSObject(DSType *type);
     virtual ~DSObject();
 
     /**
      * get object type
      */
-    virtual DSType *getType() = 0;
+    DSType *getType();
 
     /**
      * for FuncObject.
@@ -38,45 +45,12 @@ struct DSObject {
     virtual void setType(DSType *type);
 
     /**
-     * return 0, if has no field
-     */
-    virtual int getFieldSize() = 0;
-
-    /**
-     * for field(or method) lookup
-     * fieldIndex > -1 && fieldIndex < getFieldSize()
-     * this method is not type-safe.
-     */
-    virtual std::shared_ptr<DSObject> lookupField(int fieldIndex) = 0;
-
-    virtual void setField(int fieldIndex, const std::shared_ptr<DSObject> &obj) = 0;
-
-    /**
      * for printing
      */
     virtual std::string toString() = 0;
 };
 
-struct BaseObject: public DSObject {
-    DSType *type;
-
-    int fieldSize;
-
-    /**
-     * may be null, if has no field. (fieldSize == 0)
-     */
-    std::shared_ptr<DSObject> *fieldTable;
-
-    BaseObject(DSType *type);
-    virtual ~BaseObject();
-
-    DSType *getType();	// override
-    int getFieldSize();	// override
-    std::shared_ptr<DSObject> lookupField(int fieldIndex);	// override
-    void setField(int fieldIndex, const std::shared_ptr<DSObject> &obj); // override
-};
-
-struct Int_Object: public BaseObject {
+struct Int_Object: public DSObject {
     int value;
 
     Int_Object(DSType *type, int value);
@@ -85,7 +59,7 @@ struct Int_Object: public BaseObject {
     std::string toString(); // override
 };
 
-struct Float_Object: public BaseObject {
+struct Float_Object: public DSObject {
     double value;
 
     Float_Object(DSType *type, double value);
@@ -94,7 +68,7 @@ struct Float_Object: public BaseObject {
     std::string toString(); // override
 };
 
-struct Boolean_Object: public BaseObject {
+struct Boolean_Object: public DSObject {
     bool value;
 
     Boolean_Object(DSType *type, bool value);
@@ -103,7 +77,7 @@ struct Boolean_Object: public BaseObject {
     std::string toString(); // override
 };
 
-struct String_Object: public BaseObject {
+struct String_Object: public DSObject {
     std::string value;
 
     String_Object(DSType *type, std::string &&value);
@@ -113,7 +87,7 @@ struct String_Object: public BaseObject {
     void append(const String_Object &obj);
 };
 
-struct Array_Object: public BaseObject {
+struct Array_Object: public DSObject {
     std::vector<std::shared_ptr<DSObject>> values;
 
     Array_Object(DSType *type);
@@ -123,7 +97,7 @@ struct Array_Object: public BaseObject {
     void append(std::shared_ptr<DSObject> obj);
 };
 
-struct Tuple_Object : public BaseObject {
+struct Tuple_Object : public DSObject {
     std::vector<std::shared_ptr<DSObject>> values;
 
     Tuple_Object(DSType *type, unsigned int size);
@@ -134,28 +108,10 @@ struct Tuple_Object : public BaseObject {
 };
 
 struct FuncObject: public DSObject {
-    /**
-     * may be null, but finally must be not null
-     */
-    FunctionType *funcType;
-
     FuncObject();
     virtual ~FuncObject();
 
-    DSType *getType();	// override
     void setType(DSType *type); // override
-
-    /**
-     * return always 0
-     */
-    int getFieldSize();	// override
-
-    /**
-     * return always null
-     */
-    std::shared_ptr<DSObject> lookupField(int fieldIndex);	// override
-
-    void setField(int fieldIndex, const std::shared_ptr<DSObject> &obj); // override
 
     /**
      * equivalent to dynamic_cast<FunctionType*>(getType())

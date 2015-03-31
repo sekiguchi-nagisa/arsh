@@ -41,12 +41,7 @@ struct ProcContext : public DSObject {   //FIXME: redirect option
     ProcContext(const std::string &cmdName);
     ~ProcContext();
 
-    DSType *getType();  // override
-    int getFieldSize(); // override
-    std::shared_ptr<DSObject> lookupField(int fieldIndex);  // override
-    void setField(int fieldIndex, const std::shared_ptr<DSObject> &obj); // override
     std::string toString(); // override
-
     void addParam(const std::shared_ptr<DSObject> &value);
 
     /**

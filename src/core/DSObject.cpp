@@ -24,46 +24,23 @@
 // ##     DSObject     ##
 // ######################
 
-DSObject::DSObject() {
+DSObject::DSObject(DSType *type) :
+        type(type), fieldTable(0) {
+    if(type != 0) {
+        //FIXME: allocate fieldTable.
+    }
 }
 
 DSObject::~DSObject() {
+    delete[] this->fieldTable;
+    this->fieldTable = 0;
 }
 
-void DSObject::setType(DSType *type) {  // do nothing.
-}
-
-// ########################
-// ##     BaseObject     ##
-// ########################
-
-BaseObject::BaseObject(DSType *type) :	//TODO: add field to table
-        type(type), fieldSize(type->getFieldSize()), fieldTable(0) {
-    if(this->fieldSize > 0) {
-        this->fieldTable = new std::shared_ptr<DSObject>[this->fieldSize];
-    }
-}
-
-BaseObject::~BaseObject() {
-    if(this->fieldTable != 0) {
-        delete[] this->fieldTable;
-    }
-}
-
-DSType *BaseObject::getType() {
+DSType *DSObject::getType() {
     return this->type;
 }
 
-int BaseObject::getFieldSize() {
-    return this->fieldSize;
-}
-
-std::shared_ptr<DSObject> BaseObject::lookupField(int fieldIndex) {
-    return this->fieldTable[fieldIndex];
-}
-
-void BaseObject::setField(int fieldIndex, const std::shared_ptr<DSObject> &obj) {
-    this->fieldTable[fieldIndex] = obj;
+void DSObject::setType(DSType *type) {  // do nothing.
 }
 
 // ########################
@@ -71,7 +48,7 @@ void BaseObject::setField(int fieldIndex, const std::shared_ptr<DSObject> &obj) 
 // ########################
 
 Int_Object::Int_Object(DSType *type, int value) :
-        BaseObject(type), value(value) {
+        DSObject(type), value(value) {
 }
 
 int Int_Object::getValue() {
@@ -87,7 +64,7 @@ std::string Int_Object::toString() {
 // ##########################
 
 Float_Object::Float_Object(DSType *type, double value) :
-        BaseObject(type), value(value) {
+        DSObject(type), value(value) {
 }
 
 double Float_Object::getValue() {
@@ -104,7 +81,7 @@ std::string Float_Object::toString() {
 // ############################
 
 Boolean_Object::Boolean_Object(DSType *type, bool value) :
-        BaseObject(type), value(value) {
+        DSObject(type), value(value) {
 }
 
 bool Boolean_Object::getValue() {
@@ -121,7 +98,7 @@ std::string Boolean_Object::toString() {
 // ###########################
 
 String_Object::String_Object(DSType *type, std::string &&value) :
-        BaseObject(type), value(std::move(value)) {
+        DSObject(type), value(std::move(value)) {
 }
 
 const std::string &String_Object::getValue() {
@@ -141,7 +118,7 @@ void String_Object::append(const String_Object &obj) {
 // ##########################
 
 Array_Object::Array_Object(DSType *type) :
-        BaseObject(type), values() {
+        DSObject(type), values() {
 }
 
 const std::vector<std::shared_ptr<DSObject>> &Array_Object::getValues() {
@@ -170,7 +147,7 @@ void Array_Object::append(std::shared_ptr<DSObject> obj) {
 // ##########################
 
 Tuple_Object::Tuple_Object(DSType *type, unsigned int size) :
-        BaseObject(type), values(size) {
+        DSObject(type), values(size) {
 }
 
 const std::vector<std::shared_ptr<DSObject>> &Tuple_Object::getValues() {
@@ -200,38 +177,21 @@ void Tuple_Object::set(unsigned int index, std::shared_ptr<DSObject> obj) {
 // ########################
 
 FuncObject::FuncObject() :
-        funcType(0) {
+        DSObject(0) {
 }
 
 FuncObject::~FuncObject() {
 }
 
-DSType *FuncObject::getType() {
-    return this->getFuncType();
-}
-
 void FuncObject::setType(DSType *type) {
-    if(this->funcType == 0) {
-        FunctionType *funcType = dynamic_cast<FunctionType*>(type);
-        assert(funcType != 0);
-        this->funcType = funcType;
+    if(this->type == 0) {
+        assert(dynamic_cast<FunctionType*>(type) != 0);
+        this->type = type;
     }
 }
 
-int FuncObject::getFieldSize() {
-    return 0;
-}
-
-std::shared_ptr<DSObject> FuncObject::lookupField(int fieldIndex) {
-    return std::shared_ptr<DSObject>(nullptr);
-}
-
-void FuncObject::setField(int fieldIndex, const std::shared_ptr<DSObject> &obj) {
-    // do nothing
-}
-
 FunctionType *FuncObject::getFuncType() {
-    return this->funcType;
+    return (FunctionType *) this->type;
 }
 
 

@@ -30,28 +30,12 @@
 // #########################
 
 ProcContext::ProcContext(const std::string &cmdName) :
-        cmdName(cmdName), params(), argv(), pid(0),
+        DSObject(0), cmdName(cmdName), params(), argv(), pid(0),
         exitKind(NORMAL), exitStatus(0) {
 }
 
 ProcContext::~ProcContext() {
     delete[] this->argv;    // not delete element
-}
-
-DSType *ProcContext::getType() {
-    return 0;   // do nothing
-}
-
-int ProcContext::getFieldSize() {
-    return 0;   // do nothing
-}
-
-std::shared_ptr<DSObject> ProcContext::lookupField(int fieldIndex) {
-    return std::shared_ptr<DSObject>(nullptr); // do nothing
-}
-
-void ProcContext::setField(int fieldIndex, const std::shared_ptr<DSObject> &obj) {
-    // do nothing
 }
 
 std::string ProcContext::toString() {
