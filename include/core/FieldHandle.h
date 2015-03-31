@@ -77,10 +77,16 @@ public:
 
     bool isEnv();
 
+    /**
+     * if true, is FunctionHandle, equivalent to dynamic_cast<FunctionHandle*>(handle) != 0
+     */
+    bool isFuncHandle();
+
     // attribute definition
-    const static flag8_t READ_ONLY = 1 << 0;
-    const static flag8_t GLOBAL    = 1 << 1;
-    const static flag8_t ENV       = 1 << 2;
+    const static flag8_t READ_ONLY   = 1 << 0;
+    const static flag8_t GLOBAL      = 1 << 1;
+    const static flag8_t ENV         = 1 << 2;
+    const static flag8_t FUNC_HANDLE = 1 << 3;
 };
 
 /**

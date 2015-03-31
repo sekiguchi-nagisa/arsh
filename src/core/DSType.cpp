@@ -301,7 +301,7 @@ FieldHandle *BuiltinType::lookupFieldHandle(TypePool *typePool, const std::strin
      * initialize handle
      */
     auto *handle = iter->second;
-    if(dynamic_cast<FunctionHandle*>(handle) == 0) {
+    if(!handle->isFuncHandle()) {
         unsigned int baseIndex = this->superType != 0 ? this->superType->getFieldSize() : 0;
         unsigned int infoIndex = handle->getFieldIndex() - baseIndex;
 

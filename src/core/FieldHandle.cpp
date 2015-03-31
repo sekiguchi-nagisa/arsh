@@ -64,6 +64,10 @@ bool FieldHandle::isEnv() {
     return this->hasAttribute(ENV);
 }
 
+bool FieldHandle::isFuncHandle() {
+    return this->hasAttribute(FUNC_HANDLE);
+}
+
 
 // ############################
 // ##     FunctionHandle     ##
@@ -76,11 +80,13 @@ FunctionHandle::FunctionHandle(DSType *returnType, const std::vector<DSType*> &p
 FunctionHandle::FunctionHandle(DSType *returnType, const std::vector<DSType*> &paramTypes, int fieldIndex) :
         FieldHandle(0, fieldIndex, true),
         returnType(returnType), paramTypes(paramTypes), paramIndexMap(), defaultValues() {
+    this->setAttribute(FUNC_HANDLE);
 }
 
 FunctionHandle::FunctionHandle(unsigned int paramSize, int fieldIndex) :
         FieldHandle(0, fieldIndex, true),
         returnType(), paramTypes(), paramIndexMap(), defaultValues() {  //FIXME: paramTyes preallocate
+    this->setAttribute(FUNC_HANDLE);
 }
 
 FunctionHandle::~FunctionHandle() {
