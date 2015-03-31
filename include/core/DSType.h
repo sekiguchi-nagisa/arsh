@@ -32,13 +32,14 @@ struct FuncObject;
 typedef unsigned short type_id_t;
 
 class DSType {
-private:
+protected:
     const type_id_t id;
     flag8_set_t attributeSet;
 
 public:
     const static flag8_t EXTENDABLE = 1 << 0;
     const static flag8_t VOID_TYPE  = 1 << 1;
+    const static flag8_t FUNC_TYPE  = 1 << 2;
 
     DSType(type_id_t id, bool extendable, bool isVoid = false);
     virtual ~DSType();
@@ -57,6 +58,11 @@ public:
      * if this type is VoidType, return true.
      */
     bool isVoidType() const;
+
+    /**
+     * if this type is FunctionType, return true.
+     */
+    bool isFuncType() const;
 
     /**
      * get super type of this type.

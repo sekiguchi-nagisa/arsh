@@ -459,6 +459,9 @@ EvalStatus VarNode::eval(RuntimeContext &ctx) {
     } else {
         ctx.getLocal(this->index);
     }
+    if(this->type != 0 && this->type->isFuncType()) {
+        ctx.peek()->setType(this->type);
+    }
     return EVAL_SUCCESS;
 }
 
@@ -533,8 +536,30 @@ void AccessNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus AccessNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");
-    return EVAL_SUCCESS;    //TODO
+    EVAL(ctx, this->recvNode);
+
+    switch(this->additionalOp) {
+    case NOP: {
+        ctx.push(ctx.pop()->lookupField(this->index));
+        if(this->type != 0 && this->type->isFuncType()) {
+            ctx.peek()->setType(this->type);
+        }
+        break;
+    }
+    case DUP_RECV: {
+        ctx.push(ctx.peek()->lookupField(this->index));
+        if(this->type != 0 && this->type->isFuncType()) {
+            ctx.peek()->setType(this->type);
+        }
+        break;
+    }
+    case DUP_RECV_AND_SWAP:
+        ctx.push(ctx.peek()->lookupField(this->index));
+        ctx.swap();
+        break;
+    }
+
+    return EVAL_SUCCESS;
 }
 
 // ######################

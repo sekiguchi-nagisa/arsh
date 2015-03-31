@@ -211,9 +211,11 @@ DSType *FuncObject::getType() {
 }
 
 void FuncObject::setType(DSType *type) {
-    FunctionType *funcType = dynamic_cast<FunctionType*>(type);
-    assert(funcType != 0);
-    this->funcType = funcType;
+    if(this->funcType == 0) {
+        FunctionType *funcType = dynamic_cast<FunctionType*>(type);
+        assert(funcType != 0);
+        this->funcType = funcType;
+    }
 }
 
 int FuncObject::getFieldSize() {

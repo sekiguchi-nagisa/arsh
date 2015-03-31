@@ -177,6 +177,17 @@ struct RuntimeContext {
         return this->localStack[this->stackTopIndex];
     }
 
+    void dup() {
+        if(++this->stackTopIndex >= this->localStackSize) {
+            this->expandLocalStack(this->stackTopIndex);
+        }
+        this->localStack[this->stackTopIndex] = this->localStack[this->stackTopIndex - 1];
+    }
+
+    void swap() {
+        this->localStack[this->stackTopIndex].swap(this->localStack[this->stackTopIndex - 1]);
+    }
+
     // variable operation
     void setGlobal(unsigned int index) {
         this->globalVarTable[index] = this->pop();

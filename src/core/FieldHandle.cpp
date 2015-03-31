@@ -48,23 +48,23 @@ void FieldHandle::unsetAttribute(flag8_t attribute) {
     unsetFlag(this->attributeSet, attribute);
 }
 
-bool FieldHandle::hasAttribute(flag8_t targetAttr) {
+bool FieldHandle::hasAttribute(flag8_t targetAttr) const {
     return hasFlag(this->attributeSet, targetAttr);
 }
 
-bool FieldHandle::isReadOnly() {
+bool FieldHandle::isReadOnly() const {
     return this->hasAttribute(READ_ONLY);
 }
 
-bool FieldHandle::isGlobal() {
+bool FieldHandle::isGlobal() const {
     return this->hasAttribute(GLOBAL);
 }
 
-bool FieldHandle::isEnv() {
+bool FieldHandle::isEnv() const {
     return this->hasAttribute(ENV);
 }
 
-bool FieldHandle::isFuncHandle() {
+bool FieldHandle::isFuncHandle() const {
     return this->hasAttribute(FUNC_HANDLE);
 }
 

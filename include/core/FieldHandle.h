@@ -63,24 +63,24 @@ public:
     /**
      * if includes targetAttr, return true.
      */
-    bool hasAttribute(flag8_t targetAttr);
+    bool hasAttribute(flag8_t targetAttr) const;
 
     /**
      * equivalent to this->hasAttribute(READ_ONLY).
      */
-    bool isReadOnly();
+    bool isReadOnly() const;
 
     /**
      * equivalent to this->hasAttribute(GLOBAL).
      */
-    bool isGlobal();
+    bool isGlobal() const;
 
-    bool isEnv();
+    bool isEnv() const;
 
     /**
      * if true, is FunctionHandle, equivalent to dynamic_cast<FunctionHandle*>(handle) != 0
      */
-    bool isFuncHandle();
+    bool isFuncHandle() const;
 
     // attribute definition
     const static flag8_t READ_ONLY   = 1 << 0;

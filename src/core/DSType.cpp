@@ -48,6 +48,10 @@ bool DSType::isVoidType() const {
     return hasFlag(this->attributeSet, VOID_TYPE);
 }
 
+bool DSType::isFuncType() const {
+    return hasFlag(this->attributeSet, FUNC_TYPE);
+}
+
 FunctionHandle *DSType::lookupMethodHandle(TypePool *typePool, const std::string &funcName) {
     FieldHandle *handle = this->lookupFieldHandle(typePool, funcName);
     return handle != 0 ? dynamic_cast<FunctionHandle*>(handle) : 0;
@@ -169,6 +173,7 @@ void ClassType::setConstructor(FuncObject *func) {
 FunctionType::FunctionType(type_id_t id, DSType *superType, DSType *returnType, const std::vector<DSType*> &paramTypes) :
         DSType(id, false, false),
         superType(superType), returnType(returnType), paramTypes(paramTypes) {
+    setFlag(this->attributeSet, FUNC_TYPE);
 }
 
 FunctionType::~FunctionType() {
