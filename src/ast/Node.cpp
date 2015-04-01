@@ -381,7 +381,7 @@ void TupleNode::accept(NodeVisitor *visitor) {
 
 EvalStatus TupleNode::eval(RuntimeContext &ctx) {
     unsigned int size = this->nodes.size();
-    auto value = std::make_shared<Tuple_Object>(this->type, size);
+    auto value = std::make_shared<Tuple_Object>(this->type);
     for(unsigned int i = 0; i < size; i++) {
         EVAL(ctx, this->nodes[i]);
         value->set(i, ctx.pop());
@@ -2199,7 +2199,8 @@ void AssignNode::accept(NodeVisitor *visitor) {
 EvalStatus AssignNode::eval(RuntimeContext &ctx) {
     int index = ((AssignableNode *) this->leftNode)->getIndex();
     if(this->isFieldAssign()) {
-        EVAL(ctx, this->leftNode);
+        AccessNode *accessNode = (AccessNode *) this->leftNode;
+        EVAL(ctx, accessNode->getRecvNode());
         EVAL(ctx, this->rightNode);
         std::shared_ptr<DSObject> value(ctx.pop());
         ctx.pop()->fieldTable[index] = value;

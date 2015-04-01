@@ -98,13 +98,12 @@ struct Array_Object: public DSObject {
 };
 
 struct Tuple_Object : public DSObject {
-    std::vector<std::shared_ptr<DSObject>> values;
+    Tuple_Object(DSType *type);
 
-    Tuple_Object(DSType *type, unsigned int size);
-
-    const std::vector<std::shared_ptr<DSObject>> &getValues();
     std::string toString(); // override
-    void set(unsigned int index, std::shared_ptr<DSObject> obj);
+    unsigned int getActualIndex(unsigned int elementIndex);
+    void set(unsigned int elementIndex, const std::shared_ptr<DSObject> &obj);
+    const std::shared_ptr<DSObject> &get(unsigned int elementIndex);
 };
 
 struct FuncObject: public DSObject {
@@ -146,22 +145,22 @@ struct UserFuncObject: public FuncObject {
  */
 struct BuiltinFuncObject: public FuncObject {
     /**
-     * size of actual parameter. exclude first parameter(RuntimeContext)
-     */
-    int paramSize;
-
-    /**
-     * DSObject *func(RuntimeContext *ctx, DSObject *arg1, DSObject *arg2, ....)
+     * DSObject *func(RuntimeContext *ctx)
      */
     void *func_ptr;
 
-    BuiltinFuncObject(int paramSize, void *func_ptr);
+    BuiltinFuncObject(void *func_ptr);
     ~BuiltinFuncObject();
 
     int getParamSize();
     void *getFuncPointer();
     std::string toString(); // override
     bool invoke(RuntimeContext &ctx); // override
+
+    static /**
+     * for builtin func obejct creation
+     */
+    std::shared_ptr<DSObject> newFuncObject(void *func_ptr);
 };
 
 

@@ -109,6 +109,11 @@ public:
      * the super type of target type, return true.
      */
     virtual bool isAssignableFrom(DSType *targetType);
+
+    /**
+     * set function object to fieldTable.
+     */
+    virtual void initFieldTable(std::shared_ptr<DSObject> *fieldTable);
 };
 
 class ClassType: public DSType {	//TODO: add field index map

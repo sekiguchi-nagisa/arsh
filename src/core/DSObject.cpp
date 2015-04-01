@@ -27,7 +27,8 @@
 DSObject::DSObject(DSType *type) :
         type(type), fieldTable(0) {
     if(type != 0) {
-        //FIXME: allocate fieldTable.
+        this->fieldTable = new std::shared_ptr<DSObject>[this->type->getFieldSize()];
+        this->type->initFieldTable(this->fieldTable);
     }
 }
 
@@ -146,31 +147,34 @@ void Array_Object::append(std::shared_ptr<DSObject> obj) {
 // ##     Tuple_Object     ##
 // ##########################
 
-Tuple_Object::Tuple_Object(DSType *type, unsigned int size) :
-        DSObject(type), values(size) {
-}
-
-const std::vector<std::shared_ptr<DSObject>> &Tuple_Object::getValues() {
-    return this->values;
+Tuple_Object::Tuple_Object(DSType *type) :
+        DSObject(type) {
 }
 
 std::string Tuple_Object::toString() {
     std::string str("(");
-    unsigned int size = this->values.size();
+    unsigned int size = this->type->getFieldSize() - this->type->getSuperType()->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {
         if(i > 0) {
             str += ", ";
         }
-        str += this->values[i]->toString();
+        str += this->fieldTable[this->getActualIndex(i)]->toString();
     }
     str += ")";
     return str;
 }
 
-void Tuple_Object::set(unsigned int index, std::shared_ptr<DSObject> obj) {
-    this->values[index] = obj;
+unsigned int Tuple_Object::getActualIndex(unsigned int elementIndex) {
+    return this->type->getSuperType()->getFieldSize() + elementIndex;
 }
 
+void Tuple_Object::set(unsigned int elementIndex, const std::shared_ptr<DSObject> &obj) {
+    this->fieldTable[this->getActualIndex(elementIndex)] = obj;
+}
+
+const std::shared_ptr<DSObject> &Tuple_Object::get(unsigned int elementIndex) {
+    return this->fieldTable[this->getActualIndex(elementIndex)];
+}
 
 // ########################
 // ##     FuncObject     ##
@@ -187,6 +191,8 @@ void FuncObject::setType(DSType *type) {
     if(this->type == 0) {
         assert(dynamic_cast<FunctionType*>(type) != 0);
         this->type = type;
+        this->fieldTable = new std::shared_ptr<DSObject>[this->type->getFieldSize()];
+        this->type->initFieldTable(this->fieldTable);
     }
 }
 
@@ -240,15 +246,11 @@ bool UserFuncObject::invoke(RuntimeContext &ctx) {  //TODO: default param
 // ##     BuiltinFuncObject     ##
 // ###############################
 
-BuiltinFuncObject::BuiltinFuncObject(int paramSize, void *func_ptr) :
-        FuncObject(), paramSize(paramSize), func_ptr(func_ptr) {
+BuiltinFuncObject::BuiltinFuncObject(void *func_ptr) :
+        FuncObject(), func_ptr(func_ptr) {
 }
 
 BuiltinFuncObject::~BuiltinFuncObject() {
-}
-
-int BuiltinFuncObject::getParamSize() {
-    return this->paramSize;
 }
 
 void *BuiltinFuncObject::getFuncPointer() {
@@ -265,4 +267,8 @@ std::string BuiltinFuncObject::toString() {
 bool BuiltinFuncObject::invoke(RuntimeContext &ctx) {
     fatal("unimplemented function invocation\n");
     return false;
+}
+
+std::shared_ptr<DSObject> BuiltinFuncObject::newFuncObject(void *func_ptr) {
+    return std::make_shared<BuiltinFuncObject>(func_ptr);
 }

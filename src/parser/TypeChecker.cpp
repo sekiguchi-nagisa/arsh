@@ -891,12 +891,14 @@ void TypeChecker::visitAssignNode(AssignNode *node) {
         E_ReadOnly(node);
     }
 
+    if(dynamic_cast<AccessNode*>(leftNode) != 0) {
+        node->setAttribute(AssignNode::FIELD_ASSIGN);
+    }
     if(node->isSelfAssignment()) {
         BinaryOpNode *opNode = dynamic_cast<BinaryOpNode*>(node->getRightNode());
         opNode->getLeftNode()->setType(leftType);
         AccessNode *accessNode = dynamic_cast<AccessNode*>(leftNode);
         if(accessNode != 0) {
-            node->setAttribute(AssignNode::FIELD_ASSIGN);
             accessNode->setAdditionalOp(AccessNode::DUP_RECV);
         }
     }

@@ -74,6 +74,12 @@ bool DSType::isAssignableFrom(DSType *targetType) {
     return superType != 0 && this->isAssignableFrom(superType);
 }
 
+void DSType::initFieldTable(std::shared_ptr<DSObject> *fieldTable) {
+    if(this->superType != 0) {
+        this->superType->initFieldTable(fieldTable);
+    }
+}
+
 // #######################
 // ##     ClassType     ##
 // #######################
@@ -212,7 +218,7 @@ FieldHandle *FunctionType::findHandle(const std::string &fieldName) {
  * not support override. (if override method, must override DSObject's method)
  * so this->getFieldSize is equivalent to superType->getFieldSize() + infoSize
  */
-class BuiltinType: public DSType {    //FIXME: fieldTable
+class BuiltinType: public DSType {
 protected:
     native_type_info_t *info;
 
@@ -227,6 +233,13 @@ protected:
      */
     std::unordered_map<std::string, FieldHandle*> handleMap;
 
+    /**
+     * first is field index, second is function object.
+     * table size is equivalent to info->methodSize.
+     * initialized lazily
+     */
+    std::pair<unsigned int, std::shared_ptr<DSObject>> *objectTable;
+
 public:
     /**
      * actually superType is BuiltinType
@@ -239,6 +252,7 @@ public:
     unsigned int getFieldSize();  // override
     FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName);  // override
     FieldHandle *findHandle(const std::string &fieldName); // override
+    void initFieldTable(std::shared_ptr<DSObject> *fieldTable); // override
 
     /**
      * decode native_func_info and create new FunctionHandle.
@@ -254,15 +268,21 @@ private:
 BuiltinType::BuiltinType(type_id_t id, bool extendable, DSType *superType,
         native_type_info_t *info, bool isVoid) :
         DSType(id, extendable, superType, isVoid),
-        info(info), constructorHandle(), handleMap() {
+        info(info), constructorHandle(), handleMap(),
+        objectTable(info->methodSize == 0 ?
+                0 : new std::pair<unsigned int, std::shared_ptr<DSObject>>[info->methodSize]) {
     // init function handle
     unsigned int baseIndex = superType != 0 ? superType->getFieldSize() : 0;
     for(unsigned int i = 0; i < info->methodSize; i++) {
         native_func_info_t *funcInfo = info->funcInfos[i];
-        auto *handle = new FieldHandle(0, baseIndex + i, true);
+        unsigned int fieldIndex = baseIndex + i;
+        auto *handle = new FieldHandle(0, fieldIndex, true);
         this->handleMap.insert(std::make_pair(std::string(funcInfo->funcName), handle));
+
+        // init func object
+        this->objectTable[i] = std::make_pair(fieldIndex,
+                BuiltinFuncObject::newFuncObject(this->info->funcInfos[i]->func_ptr));
     }
-    //TODO: init fieldTable
 }
 
 BuiltinType::~BuiltinType() {
@@ -273,6 +293,9 @@ BuiltinType::~BuiltinType() {
         delete pair.second;
     }
     this->handleMap.clear();
+
+    delete[] this->objectTable;
+    this->objectTable = 0;
 }
 
 FunctionHandle *BuiltinType::getConstructorHandle(TypePool *typePool) {
@@ -317,6 +340,17 @@ FieldHandle *BuiltinType::findHandle(const std::string &fieldName) { // override
         return iter->second;
     }
     return this->superType != 0 ? this->superType->findHandle(fieldName) : 0;
+}
+
+void BuiltinType::initFieldTable(std::shared_ptr<DSObject> *fieldTable) {
+    if(this->superType != 0) {  // first, set super type func object.
+        this->superType->initFieldTable(fieldTable);
+    }
+
+    // set func object
+    for(unsigned int i = 0; i < this->info->methodSize; i++) {
+        fieldTable[this->objectTable[i].first] = this->objectTable[i].second;
+    }
 }
 
 static inline unsigned int decodeNum(char *&pos) {
@@ -491,7 +525,7 @@ public:
     FunctionHandle *getConstructorHandle(TypePool *typePool); // override
 
     /**
-     * return always type.size() + superType->getFieldSize()
+     * return always types.size() + superType->getFieldSize()
      */
     unsigned int getFieldSize(); // override
 
