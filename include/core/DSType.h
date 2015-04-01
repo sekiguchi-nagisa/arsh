@@ -24,7 +24,7 @@
 #include <memory>
 
 #include <core/FieldHandle.h>
-#include <core/native_type_info.h>
+#include <core/handle_info.h>
 
 struct DSObject;
 struct FuncObject;
@@ -214,6 +214,58 @@ public:
 
     FieldHandle *findHandle(const std::string &fieldName);  // override
 };
+
+struct RuntimeContext;
+typedef bool (*native_func_t) (RuntimeContext &);
+
+/**
+ * for function handle(method handle or constructor handle) creation.
+ */
+struct NativeFuncInfo {
+    /**
+     * if null, treat as constructor.
+     */
+    const char *funcName;
+
+    /**
+     * serialized function handle
+     */
+    char *handleInfo;
+
+    const char **paramNames;
+
+    /**
+     * bool func(RuntimeContext &ctx)
+     */
+    native_func_t func_ptr;
+
+    /**
+     * if arg1, arg3, arg4 has default value, then (00001101).
+     * support up to 8 arguments.
+     */
+    const unsigned char defaultValueFlag;
+
+    /**
+     * decode native_func_info and create new FunctionHandle.
+     */
+    FunctionHandle *toFuncHandle(TypePool *typePool, int fieldIndex,
+            DSType *elementType0 = 0, DSType *elementType1 = 0) const;
+};
+
+struct native_type_info_t {
+    /**
+     * may be null, if has no constructor.
+     */
+    NativeFuncInfo *initInfo;
+
+    unsigned int methodSize;
+
+    /**
+     * may be null, if methodSize is 0
+     */
+    NativeFuncInfo **funcInfos;
+};
+
 
 /**
  * for BuiltinType creation.

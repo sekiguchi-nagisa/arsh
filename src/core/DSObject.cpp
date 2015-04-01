@@ -315,14 +315,14 @@ bool UserFuncObject::invoke(RuntimeContext &ctx) {  //TODO: default param
 // ##     BuiltinFuncObject     ##
 // ###############################
 
-BuiltinFuncObject::BuiltinFuncObject(void *func_ptr) :
+BuiltinFuncObject::BuiltinFuncObject(native_func_t func_ptr) :
         FuncObject(), func_ptr(func_ptr) {
 }
 
 BuiltinFuncObject::~BuiltinFuncObject() {
 }
 
-void *BuiltinFuncObject::getFuncPointer() {
+native_func_t BuiltinFuncObject::getFuncPointer() {
     return this->func_ptr;
 }
 
@@ -334,10 +334,9 @@ std::string BuiltinFuncObject::toString() {
 }
 
 bool BuiltinFuncObject::invoke(RuntimeContext &ctx) {
-    fatal("unimplemented function invocation\n");
-    return false;
+    return this->func_ptr(ctx);
 }
 
-std::shared_ptr<DSObject> BuiltinFuncObject::newFuncObject(void *func_ptr) {
+std::shared_ptr<DSObject> BuiltinFuncObject::newFuncObject(native_func_t func_ptr) {
     return std::make_shared<BuiltinFuncObject>(func_ptr);
 }

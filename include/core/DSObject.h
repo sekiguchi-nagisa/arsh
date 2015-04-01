@@ -174,22 +174,22 @@ struct UserFuncObject: public FuncObject {
  */
 struct BuiltinFuncObject: public FuncObject {
     /**
-     * void func(RuntimeContext &ctx)
+     * bool func(RuntimeContext &ctx)
      */
-    void *func_ptr;
+    native_func_t func_ptr;
 
-    BuiltinFuncObject(void *func_ptr);
+    BuiltinFuncObject(native_func_t func_ptr);
     ~BuiltinFuncObject();
 
     int getParamSize();
-    void *getFuncPointer();
+    native_func_t getFuncPointer();
     std::string toString(); // override
     bool invoke(RuntimeContext &ctx); // override
 
-    static /**
+    /**
      * for builtin func obejct creation
      */
-    std::shared_ptr<DSObject> newFuncObject(void *func_ptr);
+    static std::shared_ptr<DSObject> newFuncObject(native_func_t func_ptr);
 };
 
 

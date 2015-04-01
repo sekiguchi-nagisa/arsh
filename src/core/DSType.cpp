@@ -209,6 +209,103 @@ FieldHandle *FunctionType::findHandle(const std::string &fieldName) {
     return this->superType->findHandle(fieldName);
 }
 
+// ############################
+// ##     NativeFuncInfo     ##
+// ############################
+
+static inline unsigned int decodeNum(char *&pos) {
+    return (unsigned int) (*(pos++) - P_N0);
+}
+
+static DSType *decodeType(TypePool *typePool, char *&pos,
+        DSType *elementType0, DSType *elementType1) {
+    switch(*(pos++)) {
+    case VOID_T:
+        return typePool->getVoidType();
+    case ANY_T:
+        return typePool->getAnyType();
+    case INT_T:
+        return typePool->getIntType();
+    case FLOAT_T:
+        return typePool->getFloatType();
+    case BOOL_T:
+        return typePool->getBooleanType();
+    case STRING_T:
+        return typePool->getStringType();
+    case ARRAY_T: {
+        TypeTemplate *t = typePool->getArrayTemplate();
+        unsigned int size = decodeNum(pos);
+        assert(size == 1);
+        std::vector<DSType*> elementTypes(size);
+        elementTypes[0] = decodeType(typePool, pos, elementType0, elementType1);
+        return typePool->createAndGetReifiedTypeIfUndefined(t, elementTypes);
+    }
+    case MAP_T: {
+        TypeTemplate *t = typePool->getMapTemplate();
+        unsigned int size = decodeNum(pos);
+        assert(size == 2);
+        std::vector<DSType*> elementTypes(size);
+        for(unsigned int i = 0; i < size; i++) {
+            elementTypes[i] = decodeType(typePool, pos, elementType0, elementType1);
+        }
+        return typePool->createAndGetReifiedTypeIfUndefined(t, elementTypes);
+    }
+    case P_N0:
+    case P_N1:
+    case P_N2:
+    case P_N3:
+    case P_N4:
+    case P_N5:
+    case P_N6:
+    case P_N7:
+    case P_N8:
+        fatal("must be type");
+        break;
+    case T0:
+        return elementType0;
+    case T1:
+        return elementType1;
+    default:
+        fatal("broken handle info");
+    }
+    return 0;
+}
+
+FunctionHandle *NativeFuncInfo::toFuncHandle(TypePool *typePool, int fieldIndex,
+        DSType *elementType0, DSType *elementType1) const {
+
+    /**
+     * init return type
+     */
+    char *pos = this->handleInfo;
+    DSType *returnType = decodeType(typePool, pos, elementType0, elementType1);
+
+    /**
+     * init param types
+     */
+    unsigned int paramSize = decodeNum(pos);
+    std::vector<DSType*> paramTypes(paramSize);
+    for(unsigned int i = 0; i < paramSize; i++) {
+        paramTypes[i] = decodeType(typePool, pos, elementType0, elementType1);
+    }
+
+    /**
+     * create handle
+     */
+    FunctionHandle *handle = new FunctionHandle(returnType, paramTypes, fieldIndex);
+
+    /**
+     * init default value map
+     */
+    for(unsigned int i = 0; i < paramSize; i++) {
+        unsigned int mask = (1 << i);
+        bool defaultValue = ((this->defaultValueFlag & mask) == mask);
+        handle->addParamName(std::string(this->paramNames[i]), defaultValue);
+    }
+    return handle;
+}
+
+
 // #########################
 // ##     BuiltinType     ##
 // #########################
@@ -254,15 +351,8 @@ public:
     FieldHandle *findHandle(const std::string &fieldName); // override
     void initFieldTable(std::shared_ptr<DSObject> *fieldTable); // override
 
-    /**
-     * decode native_func_info and create new FunctionHandle.
-     */
-    static FunctionHandle *decodeToFuncHandle(TypePool *typePool,
-            int fieldIndex, native_func_info_t *info,
-            DSType *elementType0 = 0, DSType *elementType1 = 0);
-
 private:
-    virtual FunctionHandle *newFuncHandle(TypePool *typePool, int fieldIndex, native_func_info_t *info);
+    virtual FunctionHandle *newFuncHandle(TypePool *typePool, int fieldIndex, NativeFuncInfo *info);
 };
 
 BuiltinType::BuiltinType(type_id_t id, bool extendable, DSType *superType,
@@ -274,7 +364,7 @@ BuiltinType::BuiltinType(type_id_t id, bool extendable, DSType *superType,
     // init function handle
     unsigned int baseIndex = superType != 0 ? superType->getFieldSize() : 0;
     for(unsigned int i = 0; i < info->methodSize; i++) {
-        native_func_info_t *funcInfo = info->funcInfos[i];
+        NativeFuncInfo *funcInfo = info->funcInfos[i];
         unsigned int fieldIndex = baseIndex + i;
         auto *handle = new FieldHandle(0, fieldIndex, true);
         this->handleMap.insert(std::make_pair(std::string(funcInfo->funcName), handle));
@@ -353,100 +443,8 @@ void BuiltinType::initFieldTable(std::shared_ptr<DSObject> *fieldTable) {
     }
 }
 
-static inline unsigned int decodeNum(char *&pos) {
-    return (unsigned int) (*(pos++) - P_N0);
-}
-
-static DSType *decodeType(TypePool *typePool, char *&pos,
-        DSType *elementType0, DSType *elementType1) {
-    switch(*(pos++)) {
-    case VOID_T:
-        return typePool->getVoidType();
-    case ANY_T:
-        return typePool->getAnyType();
-    case INT_T:
-        return typePool->getIntType();
-    case FLOAT_T:
-        return typePool->getFloatType();
-    case BOOL_T:
-        return typePool->getBooleanType();
-    case STRING_T:
-        return typePool->getStringType();
-    case ARRAY_T: {
-        TypeTemplate *t = typePool->getArrayTemplate();
-        unsigned int size = decodeNum(pos);
-        assert(size == 1);
-        std::vector<DSType*> elementTypes(size);
-        elementTypes[0] = decodeType(typePool, pos, elementType0, elementType1);
-        return typePool->createAndGetReifiedTypeIfUndefined(t, elementTypes);
-    }
-    case MAP_T: {
-        TypeTemplate *t = typePool->getMapTemplate();
-        unsigned int size = decodeNum(pos);
-        assert(size == 2);
-        std::vector<DSType*> elementTypes(size);
-        for(unsigned int i = 0; i < size; i++) {
-            elementTypes[i] = decodeType(typePool, pos, elementType0, elementType1);
-        }
-        return typePool->createAndGetReifiedTypeIfUndefined(t, elementTypes);
-    }
-    case P_N0:
-    case P_N1:
-    case P_N2:
-    case P_N3:
-    case P_N4:
-    case P_N5:
-    case P_N6:
-    case P_N7:
-    case P_N8:
-        fatal("must be type");
-        break;
-    case T0:
-        return elementType0;
-    case T1:
-        return elementType1;
-    default:
-        fatal("broken handle info");
-    }
-    return 0;
-}
-
-FunctionHandle *BuiltinType::decodeToFuncHandle(TypePool *typePool, int fieldIndex, native_func_info_t *info,
-        DSType *elementType0, DSType *elementType1) {
-
-    /**
-     * init return type
-     */
-    char *pos = info->handleInfo;
-    DSType *returnType = decodeType(typePool, pos, elementType0, elementType1);
-
-    /**
-     * init param types
-     */
-    unsigned int paramSize = decodeNum(pos);
-    std::vector<DSType*> paramTypes(paramSize);
-    for(unsigned int i = 0; i < paramSize; i++) {
-        paramTypes[i] = decodeType(typePool, pos, elementType0, elementType1);
-    }
-
-    /**
-     * create handle
-     */
-    FunctionHandle *handle = new FunctionHandle(returnType, paramTypes, fieldIndex);
-
-    /**
-     * init default value map
-     */
-    for(unsigned int i = 0; i < paramSize; i++) {
-        unsigned int mask = (1 << i);
-        bool defaultValue = ((info->defaultValueFlag & mask) == mask);
-        handle->addParamName(std::string(info->paramNames[i]), defaultValue);
-    }
-    return handle;
-}
-
-FunctionHandle *BuiltinType::newFuncHandle(TypePool *typePool, int fieldIndex, native_func_info_t *info) {
-    return decodeToFuncHandle(typePool, fieldIndex, info);
+FunctionHandle *BuiltinType::newFuncHandle(TypePool *typePool, int fieldIndex, NativeFuncInfo *info) {
+    return info->toFuncHandle(typePool, fieldIndex);
 }
 
 // #########################
@@ -471,7 +469,7 @@ public:
     bool equals(DSType *targetType); // override
 
 private:
-    FunctionHandle *newFuncHandle(TypePool *typePool, int fieldIndex, native_func_info_t *info); // override
+    FunctionHandle *newFuncHandle(TypePool *typePool, int fieldIndex, NativeFuncInfo *info); // override
 };
 
 ReifiedType::ReifiedType(type_id_t id, native_type_info_t *info, DSType *superType, const std::vector<DSType*> &elementTypes):
@@ -481,12 +479,12 @@ ReifiedType::ReifiedType(type_id_t id, native_type_info_t *info, DSType *superTy
 ReifiedType::~ReifiedType() {
 }
 
-FunctionHandle *ReifiedType::newFuncHandle(TypePool *typePool, int fieldIndex, native_func_info_t *info) {
+FunctionHandle *ReifiedType::newFuncHandle(TypePool *typePool, int fieldIndex, NativeFuncInfo *info) {
     switch(this->elementTypes.size()) {
     case 1:
-        return decodeToFuncHandle(typePool, fieldIndex, info, this->elementTypes[0]);
+        return info->toFuncHandle(typePool, fieldIndex, this->elementTypes[0]);
     case 2:
-        return decodeToFuncHandle(typePool, fieldIndex, info, this->elementTypes[0], this->elementTypes[1]);
+        return info->toFuncHandle(typePool, fieldIndex, this->elementTypes[0], this->elementTypes[1]);
     default:
         fatal("element size must be 1 or 2");
     }

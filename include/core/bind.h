@@ -17,7 +17,7 @@
 #ifndef CORE_BIND_H_
 #define CORE_BIND_H_
 
-#include <core/native_type_info.h>
+struct native_type_info;
 
 native_type_info_t *info_Dummy() {
     static native_type_info_t dummy = {0, 0, 0};

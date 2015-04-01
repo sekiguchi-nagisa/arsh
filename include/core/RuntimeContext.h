@@ -226,7 +226,15 @@ struct RuntimeContext {
      */
     void exportEnv(const std::string &envName, int index, bool isGlobal);
 
-    int checkZeroDiv(int right) {
+    bool checkZeroDiv(int right) {
+        //TODO:
+        if(right == 0) {
+            fatal("zero division\n");
+        }
+        return true;
+    }
+
+    bool checkZeroDiv(double right) {
         //TODO:
         if(right == 0) {
             fatal("zero division\n");
@@ -234,15 +242,7 @@ struct RuntimeContext {
         return right;
     }
 
-    double checkZeroDiv(double right) {
-        //TODO:
-        if(right == 0) {
-            fatal("zero division\n");
-        }
-        return right;
-    }
-
-    int checkZeroMod(int right) {
+    bool checkZeroMod(int right) {
         //TODO:
         if(right == 0) {
             fatal("zero modulo\n");
@@ -250,7 +250,7 @@ struct RuntimeContext {
         return right;
     }
 
-    double checkZeroMod(double right) {
+    bool checkZeroMod(double right) {
         //TODO:
         if(right == 0) {
             fatal("zero modulo\n");

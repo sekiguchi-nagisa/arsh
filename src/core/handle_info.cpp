@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <core/native_type_info.h>
+#include <core/handle_info.h>
 
 typedef struct {
     const char *handleInfo;

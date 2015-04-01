@@ -14,50 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CORE_NATIVE_TYPE_INFO_H_
-#define CORE_NATIVE_TYPE_INFO_H_
-
-/**
- * for function handle(method handle or constructor handle) creation.
- */
-struct native_func_info_t {
-    /**
-     * if null, treat as constructor.
-     */
-    const char *funcName;
-
-    /**
-     * serialized function handle
-     */
-    char *handleInfo;
-
-    const char **paramNames;
-
-    /**
-     * void func(RuntimeContext &ctx)
-     */
-    void *func_ptr;
-
-    /**
-     * if arg1, arg3, arg4 has default value, then (00001101).
-     * support up to 8 arguments.
-     */
-    const unsigned char defaultValueFlag;
-};
-
-struct native_type_info_t {
-    /**
-     * may be null, if has no constructor.
-     */
-    native_func_info_t *initInfo;
-
-    unsigned int methodSize;
-
-    /**
-     * may be null, if methodSize is 0
-     */
-    native_func_info_t **funcInfos;
-};
+#ifndef CORE_HANDLE_INFO_H_
+#define CORE_HANDLE_INFO_H_
 
 /*
  * encoded type definition
@@ -101,4 +59,4 @@ typedef enum {
  */
 bool verifyHandleInfo(char *handleInfo);
 
-#endif /* CORE_NATIVE_TYPE_INFO_H_ */
+#endif /* CORE_HANDLE_INFO_H_ */
