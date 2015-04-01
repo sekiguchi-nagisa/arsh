@@ -24,8 +24,8 @@
 // ##     DSType     ##
 // ####################
 
-DSType::DSType(type_id_t id, bool extendable, bool isVoid) :
-        id(id), attributeSet(0) {
+DSType::DSType(type_id_t id, bool extendable, DSType *superType, bool isVoid) :
+        id(id), attributeSet(0), superType(superType) {
     if(extendable) {
         setFlag(this->attributeSet, EXTENDABLE);
     }
@@ -53,6 +53,10 @@ bool DSType::isFuncType() const {
     return hasFlag(this->attributeSet, FUNC_TYPE);
 }
 
+DSType *DSType::getSuperType() const {
+    return this->superType;
+}
+
 FunctionHandle *DSType::lookupMethodHandle(TypePool *typePool, const std::string &funcName) {
     FieldHandle *handle = this->lookupFieldHandle(typePool, funcName);
     return handle != 0 ? dynamic_cast<FunctionHandle*>(handle) : 0;
@@ -70,27 +74,12 @@ bool DSType::isAssignableFrom(DSType *targetType) {
     return superType != 0 && this->isAssignableFrom(superType);
 }
 
-// ######################
-// ##     BaseType     ##
-// ######################
-
-BaseType::BaseType(type_id_t id, bool extendable, DSType *superType, bool isVoid) :
-        DSType(id, extendable, isVoid), superType(superType) {
-}
-
-BaseType::~BaseType() {
-}
-
-DSType *BaseType::getSuperType() {
-    return this->superType;
-}
-
 // #######################
 // ##     ClassType     ##
 // #######################
 
 ClassType::ClassType(type_id_t id, bool extendable, DSType *superType) :
-        BaseType(id, extendable, superType, false),
+        DSType(id, extendable, superType, false),
         baseIndex(superType != 0 ? superType->getFieldSize() : 0),
         constructorHandle(0),
         handleMap(), fieldTable() {
@@ -172,8 +161,8 @@ void ClassType::setConstructor(FuncObject *func) {
 // ##########################
 
 FunctionType::FunctionType(type_id_t id, DSType *superType, DSType *returnType, const std::vector<DSType*> &paramTypes) :
-        DSType(id, false, false),
-        superType(superType), returnType(returnType), paramTypes(paramTypes) {
+        DSType(id, false, superType, false),
+        returnType(returnType), paramTypes(paramTypes) {
     setFlag(this->attributeSet, FUNC_TYPE);
 }
 
@@ -196,10 +185,6 @@ DSType *FunctionType::getFirstParamType() {
 bool FunctionType::treatAsMethod(DSType *targetType) {
     DSType *recvType = this->getFirstParamType();
     return recvType != 0 && recvType->isAssignableFrom(targetType);
-}
-
-DSType *FunctionType::getSuperType() {
-    return this->superType;
 }
 
 FunctionHandle *FunctionType::getConstructorHandle(TypePool *typePool) {
@@ -227,7 +212,7 @@ FieldHandle *FunctionType::findHandle(const std::string &fieldName) {
  * not support override. (if override method, must override DSObject's method)
  * so this->getFieldSize is equivalent to superType->getFieldSize() + infoSize
  */
-class BuiltinType: public BaseType {    //FIXME: fieldTable
+class BuiltinType: public DSType {    //FIXME: fieldTable
 protected:
     native_type_info_t *info;
 
@@ -268,7 +253,7 @@ private:
 
 BuiltinType::BuiltinType(type_id_t id, bool extendable, DSType *superType,
         native_type_info_t *info, bool isVoid) :
-        BaseType(id, extendable, superType, isVoid),
+        DSType(id, extendable, superType, isVoid),
         info(info), constructorHandle(), handleMap() {
     // init function handle
     unsigned int baseIndex = superType != 0 ? superType->getFieldSize() : 0;
@@ -490,7 +475,6 @@ DSType *newReifiedType(type_id_t id, native_type_info_t *info,
 
 class TupleType: public DSType {
 private:
-    DSType *superType;
     std::vector<DSType*> types;
     std::unordered_map<std::string, FieldHandle*> handleMap;
 
@@ -500,11 +484,6 @@ public:
      */
     TupleType(type_id_t id, DSType *superType, const std::vector<DSType*> &types);
     ~TupleType();
-
-    /**
-     * return always AnyType
-     */
-    DSType *getSuperType(); // override
 
     /**
      * return always null
@@ -522,7 +501,7 @@ public:
 };
 
 TupleType::TupleType(type_id_t id, DSType *superType, const std::vector<DSType*> &types) :
-        DSType(id, false, false), superType(superType), types(types), handleMap() {
+        DSType(id, false, superType, false), types(types), handleMap() {
     unsigned int size = this->types.size();
     unsigned int baseIndex = this->superType->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {
@@ -536,10 +515,6 @@ TupleType::~TupleType() {
         delete pair.second;
     }
     this->handleMap.clear();
-}
-
-DSType *TupleType::getSuperType() {
-    return this->superType;
 }
 
 FunctionHandle *TupleType::getConstructorHandle(TypePool *typePool) {

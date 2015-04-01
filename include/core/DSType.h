@@ -36,12 +36,17 @@ protected:
     const type_id_t id;
     flag8_set_t attributeSet;
 
+    /**
+     * if this type is Void or Any type, superType is null
+     */
+    DSType *superType;
+
 public:
     const static flag8_t EXTENDABLE = 1 << 0;
     const static flag8_t VOID_TYPE  = 1 << 1;
     const static flag8_t FUNC_TYPE  = 1 << 2;
 
-    DSType(type_id_t id, bool extendable, bool isVoid = false);
+    DSType(type_id_t id, bool extendable, DSType *superType, bool isVoid = false);
     virtual ~DSType();
 
     /**
@@ -68,7 +73,7 @@ public:
      * get super type of this type.
      * return null, if has no super type(ex. AnyType, VoidType).
      */
-    virtual DSType *getSuperType() = 0;
+    DSType *getSuperType() const;
 
     /**
      * return null, if has no constructor
@@ -106,24 +111,7 @@ public:
     virtual bool isAssignableFrom(DSType *targetType);
 };
 
-/**
- * base class for ClassType, BuiltinType.
- */
-class BaseType: public DSType {
-protected:
-    /**
-     * may be null if type is AnyType or VoidType.
-     */
-    DSType *superType;
-
-public:
-    BaseType(type_id_t id, bool extendable, DSType *superType, bool isVoid);
-    virtual ~BaseType();
-
-    DSType *getSuperType(); // override
-};
-
-class ClassType: public BaseType {	//TODO: add field index map
+class ClassType: public DSType {	//TODO: add field index map
 private:
     /**
      * handleTable base index
@@ -179,11 +167,6 @@ public:
 
 class FunctionType: public DSType {
 private:
-    /**
-     * always BaseFuncType.
-     */
-    DSType *superType;
-
     DSType *returnType;
 
     /**
@@ -211,11 +194,6 @@ public:
      * equivalent to this->getFirstParamType()->isAssignableFrom(targetType)
      */
     bool treatAsMethod(DSType *targetType);
-
-    /**
-     * return always BaseFuncType
-     */
-    DSType *getSuperType();	// override
 
     /**
      * return always null
