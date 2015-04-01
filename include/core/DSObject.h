@@ -48,6 +48,21 @@ struct DSObject {
      * for printing
      */
     virtual std::string toString() = 0;
+
+    /**
+     * EQ method implementation.
+     */
+    virtual bool equals(const std::shared_ptr<DSObject> &obj);
+
+    /**
+     * STR method implementation.
+     */
+    std::shared_ptr<DSObject> str(RuntimeContext &ctx);
+
+    /**
+     * for Map_Object
+     */
+    virtual size_t hash();
 };
 
 struct Int_Object: public DSObject {
@@ -57,6 +72,7 @@ struct Int_Object: public DSObject {
 
     int getValue();
     std::string toString(); // override
+    bool equals(const std::shared_ptr<DSObject> &obj);  // override
 };
 
 struct Float_Object: public DSObject {
@@ -66,6 +82,7 @@ struct Float_Object: public DSObject {
 
     double getValue();
     std::string toString(); // override
+    bool equals(const std::shared_ptr<DSObject> &obj);  // override
 };
 
 struct Boolean_Object: public DSObject {
@@ -75,6 +92,7 @@ struct Boolean_Object: public DSObject {
 
     bool getValue();
     std::string toString(); // override
+    bool equals(const std::shared_ptr<DSObject> &obj);  // override
 };
 
 struct String_Object: public DSObject {
@@ -85,6 +103,7 @@ struct String_Object: public DSObject {
     const std::string &getValue();
     std::string toString(); // override
     void append(const String_Object &obj);
+    bool equals(const std::shared_ptr<DSObject> &obj);  // override
 };
 
 struct Array_Object: public DSObject {
@@ -168,6 +187,10 @@ struct BuiltinFuncObject: public FuncObject {
 /**
  * get raw pointer from shared_ptr and cast it.
  */
-#define TYPE_AS(t, s_obj) dynamic_cast<t*>(s_obj.get())
+#ifndef NDEBUG
+#define TYPE_AS(t, s_obj) dynamic_cast<t*>((s_obj).get())
+#else
+#define TYPE_AS(t, s_obj) ((t*) (s_obj).get())
+#endif
 
 #endif /* CORE_DSOBJECT_H_ */

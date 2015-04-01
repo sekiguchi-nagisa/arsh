@@ -44,6 +44,18 @@ DSType *DSObject::getType() {
 void DSObject::setType(DSType *type) {  // do nothing.
 }
 
+bool DSObject::equals(const std::shared_ptr<DSObject> &obj) {
+    return (long) this == (long) obj.get();
+}
+
+std::shared_ptr<DSObject> DSObject::str(RuntimeContext &ctx) {
+    return std::make_shared<String_Object>(ctx.pool.getStringType(), this->toString());
+}
+
+size_t DSObject::hash() {
+    return (long) this;
+}
+
 // ########################
 // ##     Int_Object     ##
 // ########################
@@ -58,6 +70,10 @@ int Int_Object::getValue() {
 
 std::string Int_Object::toString() {
     return std::to_string(this->value);
+}
+
+bool Int_Object::equals(const std::shared_ptr<DSObject> &obj) {
+    return this->value == TYPE_AS(Int_Object, obj)->value;
 }
 
 // ##########################
@@ -76,6 +92,10 @@ std::string Float_Object::toString() {
     return std::to_string(this->value);
 }
 
+bool Float_Object::equals(const std::shared_ptr<DSObject> &obj) {
+    return this->value == TYPE_AS(Float_Object, obj)->value;
+}
+
 
 // ############################
 // ##     Boolean_Object     ##
@@ -91,6 +111,10 @@ bool Boolean_Object::getValue() {
 
 std::string Boolean_Object::toString() {
     return this->value ? "true" : "false";
+}
+
+bool Boolean_Object::equals(const std::shared_ptr<DSObject> &obj) {
+    return this->value == TYPE_AS(Boolean_Object, obj)->value;
 }
 
 
@@ -112,6 +136,10 @@ std::string String_Object::toString() {
 
 void String_Object::append(const String_Object &obj) {
     this->value += obj.value;
+}
+
+bool String_Object::equals(const std::shared_ptr<DSObject> &obj) {
+    return this->value == TYPE_AS(String_Object, obj)->value;
 }
 
 // ##########################
