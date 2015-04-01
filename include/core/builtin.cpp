@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef BUILTIN_CPP_
-#define BUILTIN_CPP_
+#ifndef CORE_BUILTIN_CPP_
+#define CORE_BUILTIN_CPP_
 
 #include <core/RuntimeContext.h>
 #include <core/DSObject.h>
@@ -320,4 +320,4 @@ static bool boolean_ne(RuntimeContext &ctx) {
 }
 
 
-#endif /* BUILTIN_CPP_ */
+#endif /* CORE_BUILTIN_CPP_ */
