@@ -17,7 +17,7 @@
 #include <assert.h>
 #include <vector>
 
-#include <core/magic_method.h>
+#include <core/symbol.h>
 #include <core/TypeLookupError.h>
 #include <parser/TypeChecker.h>
 #include <parser/TypeCheckError.h>

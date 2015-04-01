@@ -34,7 +34,7 @@ struct native_func_info_t {
     const char **paramNames;
 
     /**
-     * DSObject *func(RuntimeContext *ctx, DSObject *arg1, DSObject *arg2, ....)
+     * void func(RuntimeContext &ctx)
      */
     void *func_ptr;
 

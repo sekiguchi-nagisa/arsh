@@ -21,6 +21,7 @@
 #include <core/TypePool.h>
 #include <core/DSType.h>
 #include <core/ProcContext.h>
+#include <util/debug.h>
 
 #include <vector>
 
@@ -224,6 +225,38 @@ struct RuntimeContext {
      * put stack top value to environment variable.
      */
     void exportEnv(const std::string &envName, int index, bool isGlobal);
+
+    int checkZeroDiv(int right) {
+        //TODO:
+        if(right == 0) {
+            fatal("zero division\n");
+        }
+        return right;
+    }
+
+    double checkZeroDiv(double right) {
+        //TODO:
+        if(right == 0) {
+            fatal("zero division\n");
+        }
+        return right;
+    }
+
+    int checkZeroMod(int right) {
+        //TODO:
+        if(right == 0) {
+            fatal("zero modulo\n");
+        }
+        return right;
+    }
+
+    double checkZeroMod(double right) {
+        //TODO:
+        if(right == 0) {
+            fatal("zero modulo\n");
+        }
+        return right;
+    }
 };
 
 #endif /* CORE_RUNTIMECONTEXT_H_ */

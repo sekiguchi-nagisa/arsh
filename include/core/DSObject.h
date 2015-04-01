@@ -22,6 +22,7 @@
 
 class FunctionNode;
 struct RuntimeContext;
+struct String_Object;
 
 struct DSObject {
     DSType *type;
@@ -57,7 +58,12 @@ struct DSObject {
     /**
      * STR method implementation.
      */
-    std::shared_ptr<DSObject> str(RuntimeContext &ctx);
+    std::shared_ptr<String_Object> str(RuntimeContext &ctx);
+
+    /**
+     * for interpolation
+     */
+    virtual std::shared_ptr<String_Object> interp(RuntimeContext &ctx);
 
     /**
      * for Map_Object
@@ -99,10 +105,12 @@ struct String_Object: public DSObject {
     std::string value;
 
     String_Object(DSType *type, std::string &&value);
+    String_Object(DSType *type);
 
     const std::string &getValue();
     std::string toString(); // override
     void append(const String_Object &obj);
+    void append(const std::shared_ptr<String_Object> &obj);
     bool equals(const std::shared_ptr<DSObject> &obj);  // override
 };
 
@@ -114,6 +122,7 @@ struct Array_Object: public DSObject {
     const std::vector<std::shared_ptr<DSObject>> &getValues();
     std::string toString(); // override
     void append(std::shared_ptr<DSObject> obj);
+    std::shared_ptr<String_Object> interp(RuntimeContext &ctx); // override
 };
 
 struct Tuple_Object : public DSObject {
@@ -123,6 +132,7 @@ struct Tuple_Object : public DSObject {
     unsigned int getActualIndex(unsigned int elementIndex);
     void set(unsigned int elementIndex, const std::shared_ptr<DSObject> &obj);
     const std::shared_ptr<DSObject> &get(unsigned int elementIndex);
+    std::shared_ptr<String_Object> interp(RuntimeContext &ctx); // override
 };
 
 struct FuncObject: public DSObject {
@@ -164,7 +174,7 @@ struct UserFuncObject: public FuncObject {
  */
 struct BuiltinFuncObject: public FuncObject {
     /**
-     * DSObject *func(RuntimeContext *ctx)
+     * void func(RuntimeContext &ctx)
      */
     void *func_ptr;
 

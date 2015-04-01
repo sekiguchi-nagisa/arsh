@@ -48,8 +48,12 @@ bool DSObject::equals(const std::shared_ptr<DSObject> &obj) {
     return (long) this == (long) obj.get();
 }
 
-std::shared_ptr<DSObject> DSObject::str(RuntimeContext &ctx) {
+std::shared_ptr<String_Object> DSObject::str(RuntimeContext &ctx) {
     return std::make_shared<String_Object>(ctx.pool.getStringType(), this->toString());
+}
+
+std::shared_ptr<String_Object> DSObject::interp(RuntimeContext &ctx) {
+    return this->str(ctx);
 }
 
 size_t DSObject::hash() {
@@ -126,6 +130,10 @@ String_Object::String_Object(DSType *type, std::string &&value) :
         DSObject(type), value(std::move(value)) {
 }
 
+String_Object::String_Object(DSType *type) :
+        DSObject(type), value() {
+}
+
 const std::string &String_Object::getValue() {
     return this->value;
 }
@@ -136,6 +144,10 @@ std::string String_Object::toString() {
 
 void String_Object::append(const String_Object &obj) {
     this->value += obj.value;
+}
+
+void String_Object::append(const std::shared_ptr<String_Object> &obj) {
+    this->value += obj->value;
 }
 
 bool String_Object::equals(const std::shared_ptr<DSObject> &obj) {
@@ -171,6 +183,22 @@ void Array_Object::append(std::shared_ptr<DSObject> obj) {
     this->values.push_back(obj);
 }
 
+std::shared_ptr<String_Object> Array_Object::interp(RuntimeContext &ctx) {
+    if(this->values.size() == 1) {
+        return this->values[0]->interp(ctx);
+    }
+
+    std::shared_ptr<String_Object> value(new String_Object(ctx.pool.getStringType()));
+    unsigned int size = this->values.size();
+    for(unsigned int i = 0; i < size; i++) {
+        if(i > 0) {
+            value->value += " ";
+        }
+        value->append(this->values[i]->str(ctx));
+    }
+    return value;
+}
+
 // ##########################
 // ##     Tuple_Object     ##
 // ##########################
@@ -202,6 +230,19 @@ void Tuple_Object::set(unsigned int elementIndex, const std::shared_ptr<DSObject
 
 const std::shared_ptr<DSObject> &Tuple_Object::get(unsigned int elementIndex) {
     return this->fieldTable[this->getActualIndex(elementIndex)];
+}
+
+std::shared_ptr<String_Object> Tuple_Object::interp(RuntimeContext &ctx) {
+    std::shared_ptr<String_Object> value(new String_Object(ctx.pool.getStringType()));
+
+    unsigned int size = this->type->getFieldSize() - this->type->getSuperType()->getFieldSize();
+    for(unsigned int i = 0; i < size; i++) {
+        if(i > 0) {
+            value->value += " ";
+        }
+        value->append(this->fieldTable[this->getActualIndex(i)]->str(ctx));
+    }
+    return value;
 }
 
 // ########################
