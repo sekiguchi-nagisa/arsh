@@ -15,6 +15,7 @@
  */
 
 #include <misc/ArgsParser.h>
+#include <string.h>
 
 namespace args {
 
