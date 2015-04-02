@@ -1,12 +1,7 @@
 #include <gtest/gtest.h>
-#include <stdio.h>
-#include <util/debug.h>
 
 #include <parser/Lexer.h>
 #include <core/DSType.h>
-
-#include <string.h>
-#include <vector>
 
 #ifndef LEXER_TEST_DIR
 #define LEXER_TEST_DIR "./"

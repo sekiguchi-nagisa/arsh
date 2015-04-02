@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef UTIL_DEBUG_H_
-#define UTIL_DEBUG_H_
+#ifndef MISC_DEBUG_H_
+#define MISC_DEBUG_H_
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,4 +48,4 @@ void debug_printf(const char *format, ...);
     } while(0)
 
 
-#endif /* UTIL_DEBUG_H_ */
+#endif /* MISC_DEBUG_H_ */

@@ -17,7 +17,6 @@
 #ifndef EXE_SHELL_H_
 #define EXE_SHELL_H_
 
-#include <util/debug.h>
 #include <parser/Lexer.h>
 #include <parser/Parser.h>
 #include <parser/ErrorListener.h>

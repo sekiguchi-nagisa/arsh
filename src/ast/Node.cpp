@@ -16,7 +16,7 @@
 
 #include <core/symbol.h>
 #include <ast/Node.h>
-#include <util/debug.h>
+#include <misc/debug.h>
 #include <ast/dump.h>
 
 #include <assert.h>

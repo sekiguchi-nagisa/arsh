@@ -39,7 +39,7 @@ add_subdirectory(${SRC_DIR}/ast)
 add_subdirectory(${SRC_DIR}/core)
 add_subdirectory(${SRC_DIR}/parser)
 add_subdirectory(${SRC_DIR}/exe)
-add_subdirectory(${SRC_DIR}/util)
+add_subdirectory(${SRC_DIR}/misc)
 
 # check editline
 check_include_files("histedit.h" HAVE_HISTEDIT_H)
@@ -72,7 +72,7 @@ set(YDSH_STATIC ydsh_static)
 add_library(${YDSH_STATIC} STATIC ${YDSH_SRC} ${lexer_src})
 add_dependencies(${YDSH_STATIC} gen_lexer)
 add_executable(${BIN_NAME} ${SRC_DIR}/ydsh.cpp)
-target_link_libraries(${BIN_NAME} ${YDSH_STATIC} ${HAVE_LIBEDIT})
+target_link_libraries(${BIN_NAME} ${YDSH_STATIC} ${HAVE_LIBEDIT} args_parser)
 
 install(TARGETS ${BIN_NAME} RUNTIME DESTINATION bin)
 

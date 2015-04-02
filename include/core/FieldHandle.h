@@ -21,7 +21,7 @@
 #include <vector>
 #include <unordered_map>
 
-#include <util/flag_util.h>
+#include <misc/flag_util.h>
 
 class TypePool;
 class DSType;

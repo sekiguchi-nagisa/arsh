@@ -7,3 +7,5 @@ IF("${btype}" STREQUAL "debug")
         PARENT_SCOPE
     )
 ENDIF()
+
+add_library(args_parser STATIC ${CMAKE_CURRENT_SOURCE_DIR}/ArgsParser.cpp)

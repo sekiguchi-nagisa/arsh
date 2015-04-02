@@ -16,7 +16,7 @@
 
 #include <parser/Parser.h>
 #include <parser/ParseError.h>
-#include <util/debug.h>
+#include <misc/debug.h>
 
 // for debug
 #ifdef NDEBUG

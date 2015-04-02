@@ -18,7 +18,7 @@
 #include <stdlib.h>
 
 #include <exe/Shell.h>
-#include <exe/ArgsParser.h>
+#include <misc/ArgsParser.h>
 #include <core/builtin.cpp>
 
 enum OptionKind {

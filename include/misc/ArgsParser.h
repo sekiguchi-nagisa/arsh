@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef EXE_ARGSPARSER_H_
-#define EXE_ARGSPARSER_H_
+#ifndef MISC_ARGSPARSER_H_
+#define MISC_ARGSPARSER_H_
 
 #include <string>
 #include <vector>
@@ -80,4 +80,4 @@ public:
 
 }
 
-#endif /* EXE_ARGSPARSER_H_ */
+#endif /* MISC_ARGSPARSER_H_ */

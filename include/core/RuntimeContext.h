@@ -21,7 +21,7 @@
 #include <core/TypePool.h>
 #include <core/DSType.h>
 #include <core/ProcContext.h>
-#include <util/debug.h>
+#include <misc/debug.h>
 
 #include <vector>
 

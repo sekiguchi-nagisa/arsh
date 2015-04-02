@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef UTIL_FLAG_UTIL_H_
-#define UTIL_FLAG_UTIL_H_
+#ifndef MISC_FLAG_UTIL_H_
+#define MISC_FLAG_UTIL_H_
 
 typedef unsigned char flag8_set_t;
 typedef unsigned char flag8_t;
@@ -32,4 +32,4 @@ inline bool hasFlag(flag8_set_t set, flag8_t flag) {
     return (set & flag) == flag;
 }
 
-#endif /* UTIL_FLAG_UTIL_H_ */
+#endif /* MISC_FLAG_UTIL_H_ */

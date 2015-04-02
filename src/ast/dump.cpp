@@ -16,13 +16,8 @@
 
 #include <ast/dump.h>
 #include <ast/Node.h>
-#include <ast/TypeToken.h>
-#include <core/TypePool.h>
-#include <core/DSType.h>
-#include <util/debug.h>
 
 #include <iostream>
-#include <typeinfo>
 #include <cxxabi.h>
 
 #define OUT *(this->stream)

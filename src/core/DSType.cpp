@@ -17,7 +17,7 @@
 #include <core/DSType.h>
 #include <core/DSObject.h>
 #include <core/TypePool.h>
-#include <util/debug.h>
+#include <misc/debug.h>
 #include <assert.h>
 
 // ####################
