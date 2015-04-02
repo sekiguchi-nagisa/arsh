@@ -4,23 +4,6 @@
 Debug/
 Release/
 
-# CMake file
-*.cmake
-CMakeCache.txt
-CMakeFiles/
-Makefile
-install_manifest.txt
-
-# generated file
-ydsh
-src/parser/nextToken.cpp
-test/Lexer/lexer_test
-target/
-test/gtest*
-test/gtest*/
-Testing/
-re2c-*
-
 # Compiled Object files
 *.slo
 *.lo
