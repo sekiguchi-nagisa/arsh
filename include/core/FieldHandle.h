@@ -23,9 +23,15 @@
 
 #include <misc/flag_util.h>
 
+namespace ydsh {
+namespace core {
+
 class TypePool;
+
 class DSType;
+
 class FunctionType;
+
 struct native_func_info_t;
 
 /**
@@ -48,6 +54,7 @@ private:
 
 public:
     FieldHandle(DSType *fieldType, int fieldIndex, bool readOnly);
+
     virtual ~FieldHandle();
 
     virtual DSType *getFieldType(TypePool *typePool);
@@ -58,6 +65,7 @@ public:
     int getFieldIndex();
 
     void setAttribute(flag8_t attribute);
+
     void unsetAttribute(flag8_t attribute);
 
     /**
@@ -83,9 +91,9 @@ public:
     bool isFuncHandle() const;
 
     // attribute definition
-    const static flag8_t READ_ONLY   = 1 << 0;
-    const static flag8_t GLOBAL      = 1 << 1;
-    const static flag8_t ENV         = 1 << 2;
+    const static flag8_t READ_ONLY = 1 << 0;
+    const static flag8_t GLOBAL = 1 << 1;
+    const static flag8_t ENV = 1 << 2;
     const static flag8_t FUNC_HANDLE = 1 << 3;
 };
 
@@ -94,10 +102,10 @@ public:
  * function handle belongs to DSType is always treated as method.
  * function handle belongs to global scope is always treated as function.
  */
-class FunctionHandle: public FieldHandle {  //FIXME:
+class FunctionHandle : public FieldHandle {  //FIXME:
 protected:
     DSType *returnType;
-    std::vector<DSType*> paramTypes;
+    std::vector<DSType *> paramTypes;
 
     /**
      * contains parameter name and parameter index pair
@@ -110,16 +118,21 @@ protected:
     std::vector<bool> defaultValues;
 
 public:
-    FunctionHandle(DSType *returnType, const std::vector<DSType*> &paramTypes);
-    FunctionHandle(DSType *returnType, const std::vector<DSType*> &paramTypes, int fieldIndex);
+    FunctionHandle(DSType *returnType, const std::vector<DSType *> &paramTypes);
+
+    FunctionHandle(DSType *returnType, const std::vector<DSType *> &paramTypes, int fieldIndex);
+
     FunctionHandle(unsigned int paramSize, int fieldIndex);
+
     virtual ~FunctionHandle();
 
     DSType *getFieldType(TypePool *typePool);   // override
 
     FunctionType *getFuncType(TypePool *typePool);
+
     DSType *getReturnType();
-    const std::vector<DSType*> &getParamTypes();
+
+    const std::vector<DSType *> &getParamTypes();
 
     /**
      * return true if success, otherwise return false
@@ -136,5 +149,8 @@ public:
      */
     bool hasDefaultValue(unsigned int paramIndex);
 };
+
+}
+}
 
 #endif /* CORE_FIELDHANDLE_H_ */

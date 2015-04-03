@@ -24,6 +24,11 @@
 #include <ast/Node.h>
 #include <ast/TypeToken.h>
 
+namespace ydsh {
+namespace parser {
+
+using namespace ydsh::ast;
+
 class Parser {
 private:
     /**
@@ -39,10 +44,11 @@ private:
     /**
      * current token. updated by Lexer.
      */
-    Token  curToken;
+    Token curToken;
 
 public:
     Parser();
+
     ~Parser();
 
     /**
@@ -76,43 +82,76 @@ private:
 
     // parser rule definition.
     void parse_toplevel(RootNode &rootNode);
+
     std::unique_ptr<Node> parse_toplevelStatement();
+
     std::unique_ptr<Node> parse_function();
+
     std::unique_ptr<TypeToken> parse_typeName();
+
     std::unique_ptr<Node> parse_statement();
+
     void parse_statementEnd();
+
     std::unique_ptr<BlockNode> parse_block();
+
     std::unique_ptr<Node> parse_variableDeclaration();
+
     std::unique_ptr<Node> parse_forStatement();
+
     std::unique_ptr<Node> parse_forInit();
+
     std::unique_ptr<Node> parse_forCond();
+
     std::unique_ptr<Node> parse_forIter();
 
     std::unique_ptr<CatchNode> parse_catchStatement();
 
     std::unique_ptr<Node> parse_commandListExpression();
+
     std::unique_ptr<Node> parse_orListCommand();
+
     std::unique_ptr<Node> parse_andListCommand();
+
     std::unique_ptr<Node> parse_pipedCommand();
+
     std::unique_ptr<CmdNode> parse_command();
+
     std::unique_ptr<CmdArgNode> parse_cmdArg();
+
     std::unique_ptr<Node> parse_cmdArgSeg(bool expandTilde = false);
 
     std::unique_ptr<Node> parse_commandOrExpression();
+
     std::unique_ptr<Node> parse_expression();
+
     std::unique_ptr<Node> parse_expression(std::unique_ptr<Node> &&leftNode,
-            unsigned int basePrecedence);
+                                           unsigned int basePrecedence);
+
     std::unique_ptr<Node> parse_unaryExpression();
+
     std::unique_ptr<Node> parse_suffixExpression();
+
     std::unique_ptr<Node> parse_memberExpression();
+
     std::unique_ptr<Node> parse_primaryExpression();
+
     std::unique_ptr<Node> parse_appliedName();
+
     std::unique_ptr<Node> parse_specialName();
+
     std::unique_ptr<Node> parse_stringLiteral();
+
     std::unique_ptr<ArgsNode> parse_arguments();
+
     std::unique_ptr<Node> parse_stringExpression();
+
     std::unique_ptr<Node> parse_interpolation();
+
     std::unique_ptr<Node> parse_commandSubstitution();
 };
+
+} // namespace parser
+} // namespace ydsh
 
 #endif /* PARSER_PARSER_H_ */

@@ -20,6 +20,9 @@
 #include <misc/debug.h>
 #include <assert.h>
 
+namespace ydsh {
+namespace core {
+
 // ####################
 // ##     DSType     ##
 // ####################
@@ -59,7 +62,7 @@ DSType *DSType::getSuperType() const {
 
 FunctionHandle *DSType::lookupMethodHandle(TypePool *typePool, const std::string &funcName) {
     FieldHandle *handle = this->lookupFieldHandle(typePool, funcName);
-    return handle != 0 ? dynamic_cast<FunctionHandle*>(handle) : 0;
+    return handle != 0 ? dynamic_cast<FunctionHandle *>(handle) : 0;
 }
 
 bool DSType::operator==(const DSType &type) {
@@ -95,7 +98,7 @@ ClassType::~ClassType() {
     delete this->constructorHandle;
     this->constructorHandle = 0;
 
-    for(std::pair<std::string, FieldHandle*> pair : this->handleMap) {
+    for(std::pair<std::string, FieldHandle *> pair : this->handleMap) {
         delete pair.second;
     }
     this->handleMap.clear();
@@ -135,7 +138,8 @@ bool ClassType::addNewFieldHandle(const std::string &fieldName, bool readOnly, D
 }
 
 FunctionHandle *ClassType::addNewFunctionHandle(const std::string &funcName,
-        DSType *returnType, const std::vector<DSType*> &paramTypes) {   //TODO: method override
+                                                DSType *returnType,
+                                                const std::vector<DSType *> &paramTypes) {   //TODO: method override
     if(this->findHandle(funcName) != 0) {
         return 0;
     }
@@ -144,7 +148,7 @@ FunctionHandle *ClassType::addNewFunctionHandle(const std::string &funcName,
     return handle;
 }
 
-FunctionHandle *ClassType::setNewConstructorHandle(const std::vector<DSType*> &paramTypes) {
+FunctionHandle *ClassType::setNewConstructorHandle(const std::vector<DSType *> &paramTypes) {
     if(this->constructorHandle != 0) {
         delete this->constructorHandle;
     }
@@ -166,7 +170,8 @@ void ClassType::setConstructor(FuncObject *func) {
 // ##     FunctionType     ##
 // ##########################
 
-FunctionType::FunctionType(type_id_t id, DSType *superType, DSType *returnType, const std::vector<DSType*> &paramTypes) :
+FunctionType::FunctionType(type_id_t id, DSType *superType, DSType *returnType, const std::vector<DSType *> &paramTypes)
+        :
         DSType(id, false, superType, false),
         returnType(returnType), paramTypes(paramTypes) {
     setFlag(this->attributeSet, FUNC_TYPE);
@@ -180,7 +185,7 @@ DSType *FunctionType::getReturnType() {
     return this->returnType;
 }
 
-const std::vector<DSType*> &FunctionType::getParamTypes() {
+const std::vector<DSType *> &FunctionType::getParamTypes() {
     return this->paramTypes;
 }
 
@@ -218,7 +223,7 @@ static inline unsigned int decodeNum(char *&pos) {
 }
 
 static DSType *decodeType(TypePool *typePool, char *&pos,
-        DSType *elementType0, DSType *elementType1) {
+                          DSType *elementType0, DSType *elementType1) {
     switch(*(pos++)) {
     case VOID_T:
         return typePool->getVoidType();
@@ -236,7 +241,7 @@ static DSType *decodeType(TypePool *typePool, char *&pos,
         TypeTemplate *t = typePool->getArrayTemplate();
         unsigned int size = decodeNum(pos);
         assert(size == 1);
-        std::vector<DSType*> elementTypes(size);
+        std::vector<DSType *> elementTypes(size);
         elementTypes[0] = decodeType(typePool, pos, elementType0, elementType1);
         return typePool->createAndGetReifiedTypeIfUndefined(t, elementTypes);
     }
@@ -244,7 +249,7 @@ static DSType *decodeType(TypePool *typePool, char *&pos,
         TypeTemplate *t = typePool->getMapTemplate();
         unsigned int size = decodeNum(pos);
         assert(size == 2);
-        std::vector<DSType*> elementTypes(size);
+        std::vector<DSType *> elementTypes(size);
         for(unsigned int i = 0; i < size; i++) {
             elementTypes[i] = decodeType(typePool, pos, elementType0, elementType1);
         }
@@ -272,7 +277,7 @@ static DSType *decodeType(TypePool *typePool, char *&pos,
 }
 
 FunctionHandle *NativeFuncInfo::toFuncHandle(TypePool *typePool, int fieldIndex,
-        DSType *elementType0, DSType *elementType1) const {
+                                             DSType *elementType0, DSType *elementType1) const {
 
     /**
      * init return type
@@ -284,7 +289,7 @@ FunctionHandle *NativeFuncInfo::toFuncHandle(TypePool *typePool, int fieldIndex,
      * init param types
      */
     unsigned int paramSize = decodeNum(pos);
-    std::vector<DSType*> paramTypes(paramSize);
+    std::vector<DSType *> paramTypes(paramSize);
     for(unsigned int i = 0; i < paramSize; i++) {
         paramTypes[i] = decodeType(typePool, pos, elementType0, elementType1);
     }
@@ -315,7 +320,7 @@ FunctionHandle *NativeFuncInfo::toFuncHandle(TypePool *typePool, int fieldIndex,
  * not support override. (if override method, must override DSObject's method)
  * so this->getFieldSize is equivalent to superType->getFieldSize() + infoSize
  */
-class BuiltinType: public DSType {
+class BuiltinType : public DSType {
 protected:
     native_type_info_t *info;
 
@@ -328,7 +333,7 @@ protected:
      * actually all of handles are FunctionHandle,
      * but initially handles are FieldHandle.
      */
-    std::unordered_map<std::string, FieldHandle*> handleMap;
+    std::unordered_map<std::string, FieldHandle *> handleMap;
 
     /**
      * first is field index, second is function object.
@@ -342,7 +347,8 @@ public:
      * actually superType is BuiltinType
      */
     BuiltinType(type_id_t id, bool extendable, DSType *superType,
-            native_type_info_t *info, bool isVoid);
+                native_type_info_t *info, bool isVoid);
+
     virtual ~BuiltinType();
 
     FunctionHandle *getConstructorHandle(TypePool *typePool); // override
@@ -356,11 +362,11 @@ private:
 };
 
 BuiltinType::BuiltinType(type_id_t id, bool extendable, DSType *superType,
-        native_type_info_t *info, bool isVoid) :
+                         native_type_info_t *info, bool isVoid) :
         DSType(id, extendable, superType, isVoid),
         info(info), constructorHandle(), handleMap(),
         objectTable(info->methodSize == 0 ?
-                0 : new std::pair<unsigned int, std::shared_ptr<DSObject>>[info->methodSize]) {
+                    0 : new std::pair<unsigned int, std::shared_ptr<DSObject>>[info->methodSize]) {
     // init function handle
     unsigned int baseIndex = superType != 0 ? superType->getFieldSize() : 0;
     for(unsigned int i = 0; i < info->methodSize; i++) {
@@ -371,7 +377,7 @@ BuiltinType::BuiltinType(type_id_t id, bool extendable, DSType *superType,
 
         // init func object
         this->objectTable[i] = std::make_pair(fieldIndex,
-                BuiltinFuncObject::newFuncObject(this->info->funcInfos[i]->func_ptr));
+                                              BuiltinFuncObject::newFuncObject(this->info->funcInfos[i]->func_ptr));
     }
 }
 
@@ -379,7 +385,7 @@ BuiltinType::~BuiltinType() {
     delete this->constructorHandle;
     this->constructorHandle = 0;
 
-    for(std::pair<std::string, FieldHandle*> pair : this->handleMap) {
+    for(std::pair<std::string, FieldHandle *> pair : this->handleMap) {
         delete pair.second;
     }
     this->handleMap.clear();
@@ -454,15 +460,16 @@ FunctionHandle *BuiltinType::newFuncHandle(TypePool *typePool, int fieldIndex, N
 /**
  * not support override.
  */
-class ReifiedType: public BuiltinType {
+class ReifiedType : public BuiltinType {
 private:
     /**
      * size is 1 or 2.
      */
-    std::vector<DSType*> elementTypes;
+    std::vector<DSType *> elementTypes;
 
 public:
-    ReifiedType(type_id_t id, native_type_info_t *info, DSType *superType, const std::vector<DSType*> &elementTypes);
+    ReifiedType(type_id_t id, native_type_info_t *info, DSType *superType, const std::vector<DSType *> &elementTypes);
+
     ~ReifiedType();
 
     std::string getTypeName() const; // override
@@ -472,7 +479,8 @@ private:
     FunctionHandle *newFuncHandle(TypePool *typePool, int fieldIndex, NativeFuncInfo *info); // override
 };
 
-ReifiedType::ReifiedType(type_id_t id, native_type_info_t *info, DSType *superType, const std::vector<DSType*> &elementTypes):
+ReifiedType::ReifiedType(type_id_t id, native_type_info_t *info, DSType *superType,
+                         const std::vector<DSType *> &elementTypes) :
         BuiltinType(id, false, superType, info, false), elementTypes(elementTypes) {
 }
 
@@ -492,12 +500,12 @@ FunctionHandle *ReifiedType::newFuncHandle(TypePool *typePool, int fieldIndex, N
 }
 
 DSType *newBuiltinType(type_id_t id, bool extendable,
-        DSType *superType, native_type_info_t *info, bool isVoid) {
+                       DSType *superType, native_type_info_t *info, bool isVoid) {
     return new BuiltinType(id, extendable, superType, info, isVoid);
 }
 
 DSType *newReifiedType(type_id_t id, native_type_info_t *info,
-        DSType *superType, const std::vector<DSType*> &elementTypes) {
+                       DSType *superType, const std::vector<DSType *> &elementTypes) {
     return new ReifiedType(id, info, superType, elementTypes);
 }
 
@@ -505,16 +513,17 @@ DSType *newReifiedType(type_id_t id, native_type_info_t *info,
 // ##     TupleType     ##
 // #######################
 
-class TupleType: public DSType {
+class TupleType : public DSType {
 private:
-    std::vector<DSType*> types;
-    std::unordered_map<std::string, FieldHandle*> handleMap;
+    std::vector<DSType *> types;
+    std::unordered_map<std::string, FieldHandle *> handleMap;
 
 public:
     /**
      * superType is always AnyType
      */
-    TupleType(type_id_t id, DSType *superType, const std::vector<DSType*> &types);
+    TupleType(type_id_t id, DSType *superType, const std::vector<DSType *> &types);
+
     ~TupleType();
 
     /**
@@ -532,7 +541,7 @@ public:
     bool equals(DSType *targetType); // override
 };
 
-TupleType::TupleType(type_id_t id, DSType *superType, const std::vector<DSType*> &types) :
+TupleType::TupleType(type_id_t id, DSType *superType, const std::vector<DSType *> &types) :
         DSType(id, false, superType, false), types(types), handleMap() {
     unsigned int size = this->types.size();
     unsigned int baseIndex = this->superType->getFieldSize();
@@ -573,6 +582,9 @@ FieldHandle *TupleType::findHandle(const std::string &fieldName) {
     return iter->second;
 }
 
-DSType *newTupleType(type_id_t id, DSType *superType, const std::vector<DSType*> &elementTypes) {
+DSType *newTupleType(type_id_t id, DSType *superType, const std::vector<DSType *> &elementTypes) {
     return new TupleType(id, superType, elementTypes);
 }
+
+} // namespace core
+} // namespace ydsh

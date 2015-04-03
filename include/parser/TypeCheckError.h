@@ -55,6 +55,10 @@
         /* three arg */\
         ERROR(E_BinaryOp        , "undefined operator: %s %s %s")
 
+namespace ydsh {
+namespace parser {
+
+using namespace ydsh::core;
 
 /**
  * for type error reporting
@@ -85,22 +89,32 @@ private:
 
 public:
     TypeCheckError(unsigned int lineNum, ErrorKind kind);
+
     TypeCheckError(unsigned int lineNum, const TypeLookupError &e);
+
     ~TypeCheckError();
 
     unsigned int getLineNum() const;
-    const std::string &getTemplate() const ;
+
+    const std::string &getTemplate() const;
+
     const std::vector<std::string> &getArgs() const;
 
     bool operator==(const TypeCheckError &e);
 
     static void report(unsigned int lineNum, ErrorKind kind);
+
     static void report(unsigned int lineNum, ErrorKind kind, const std::string &arg1);
+
     static void report(unsigned int lineNum, ErrorKind kind, const std::string &arg1,
-            const std::string &arg2);
+                       const std::string &arg2);
+
     static void report(unsigned int lineNum, ErrorKind kind, const std::string &arg1,
-            const std::string &arg2, const std::string &arg3);
+                       const std::string &arg2, const std::string &arg3);
 };
+
+} // namespace parser
+} // namespace ydsh
 
 // helper macro for error reporting
 

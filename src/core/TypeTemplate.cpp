@@ -18,6 +18,9 @@
 
 #include <core/TypeTemplate.h>
 
+namespace ydsh {
+namespace core {
+
 TypeTemplate::TypeTemplate(std::string &&name, unsigned int elementSize, native_type_info_t *info) :
         name(std::move(name)), elementTypeSize(elementSize), info(info) {
 }
@@ -37,3 +40,5 @@ native_type_info_t *TypeTemplate::getInfo() {
     return this->info;
 }
 
+} // namespace core
+} // namespace ydsh

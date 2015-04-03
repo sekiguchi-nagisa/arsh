@@ -20,6 +20,9 @@
 #include <string>
 #include <vector>
 
+namespace ydsh {
+namespace core {
+
 struct native_type_info_t;
 
 /**
@@ -41,11 +44,17 @@ private:
 
 public:
     TypeTemplate(std::string &&name, unsigned int elementSize, native_type_info_t *info);
+
     ~TypeTemplate();
 
     const std::string &getName();
+
     unsigned int getElementTypeSize();
+
     native_type_info_t *getInfo();
 };
+
+} // namespace core
+} // namespace ydsh
 
 #endif /* CORE_TYPETEMPLATE_H_ */

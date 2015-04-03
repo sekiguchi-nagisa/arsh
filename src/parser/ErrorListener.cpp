@@ -16,6 +16,9 @@
 
 #include <parser/ErrorListener.h>
 
+namespace ydsh {
+namespace parser {
+
 // ###########################
 // ##     ErrorListener     ##
 // ###########################
@@ -37,7 +40,7 @@ CommonErrorListener::~CommonErrorListener() {
 }
 
 void CommonErrorListener::displayTypeError(const std::string &sourceName,
-        const TypeCheckError &e) const {
+                                           const TypeCheckError &e) const {
     int argSize = e.getArgs().size();
     int messageSize = e.getTemplate().size() + 1;
     for(const std::string &arg : e.getArgs()) {
@@ -55,11 +58,11 @@ void CommonErrorListener::displayTypeError(const std::string &sourceName,
         break;
     case 2:
         snprintf(strBuf, messageSize, e.getTemplate().c_str(),
-                e.getArgs()[0].c_str(), e.getArgs()[1].c_str());
+                 e.getArgs()[0].c_str(), e.getArgs()[1].c_str());
         break;
     case 3:
         snprintf(strBuf, messageSize, e.getTemplate().c_str(),
-                e.getArgs()[0].c_str(), e.getArgs()[1].c_str(), e.getArgs()[2].c_str());
+                 e.getArgs()[0].c_str(), e.getArgs()[1].c_str(), e.getArgs()[2].c_str());
         break;
     default:
         snprintf(strBuf, messageSize, "!!broken args!!");
@@ -153,9 +156,12 @@ static std::string formatErrorLine(Lexer<LexerDef, TokenKind> &lexer, Token erro
 }
 
 void CommonErrorListener::displayParseError(Lexer<LexerDef, TokenKind> &lexer,
-        const std::string &sourceName, const ParseError &e) const {
+                                            const std::string &sourceName, const ParseError &e) const {
     std::string msg(ParseErrorFormatter::format(lexer, e));
     std::string line(formatErrorLine(lexer, e.getErrorToken()));
     fprintf(stderr, "%s:%d: [syntax error] %s\n%s\n",
             sourceName.c_str(), e.getLineNum(), msg.c_str(), line.c_str());
 }
+
+} // namespace parser
+} // namespace ydsh

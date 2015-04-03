@@ -29,7 +29,7 @@ enum OptionKind {
 };
 
 int main(int argc, char **argv, char **envp) {
-    args::ArgsParser parser;
+    ydsh::args::ArgsParser parser;
 
     parser.addOption(
             (unsigned int) DUMP_UAST,
@@ -64,7 +64,7 @@ int main(int argc, char **argv, char **envp) {
     std::vector<const char *> restArgs;
     try {
         restArgs = parser.parse(argc, argv, cmdLines);
-    } catch(const args::ParseError &e) {
+    } catch(const ydsh::args::ParseError &e) {
         std::cerr << e.getMessage() << ": " << e.getSuffix() << std::endl;
         parser.printHelp(std::cerr);
         return 1;

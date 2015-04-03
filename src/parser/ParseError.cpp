@@ -16,6 +16,9 @@
 
 #include <parser/ParseError.h>
 
+namespace ydsh {
+namespace parser {
+
 // ########################
 // ##     ParseError     ##
 // ########################
@@ -45,7 +48,7 @@ bool ParseError::operator==(const ParseError &e) {
 
 bool ParseError::baseEquals(const ParseError &e) {
     return this->lineNum == e.lineNum &&
-            this->kind == e.kind && this->errorToken == e.errorToken;
+           this->kind == e.kind && this->errorToken == e.errorToken;
 }
 
 // ################################
@@ -53,7 +56,7 @@ bool ParseError::baseEquals(const ParseError &e) {
 // ################################
 
 TokenMismatchError::TokenMismatchError(unsigned int lineNum, TokenKind actual,
-        Token errorToken, TokenKind expected) :
+                                       Token errorToken, TokenKind expected) :
         ParseError(lineNum, actual, errorToken), expected(expected) {
 }
 
@@ -76,7 +79,7 @@ void TokenMismatchError::accept(ParseErrorVisitor &visitor) const {
 }
 
 bool TokenMismatchError::equalsImpl(const ParseError &e) {
-    const TokenMismatchError *ex = dynamic_cast<const TokenMismatchError*>(&e);
+    const TokenMismatchError *ex = dynamic_cast<const TokenMismatchError *>(&e);
     if(ex != 0) {
         return *this == *ex;
     }
@@ -88,7 +91,7 @@ bool TokenMismatchError::equalsImpl(const ParseError &e) {
 // ################################
 
 NoViableAlterError::NoViableAlterError(unsigned int lineNum, TokenKind actual,
-        Token errorToken, TokenKind *alters) :
+                                       Token errorToken, TokenKind *alters) :
         ParseError(lineNum, actual, errorToken), alters() {
     for(unsigned int i = 0; alters[i] != DUMMY; i++) {
         this->alters.push_back(alters[i]);
@@ -127,7 +130,7 @@ void NoViableAlterError::accept(ParseErrorVisitor &visitor) const {
 }
 
 bool NoViableAlterError::equalsImpl(const ParseError &e) {
-    const NoViableAlterError *ex = dynamic_cast<const NoViableAlterError*>(&e);
+    const NoViableAlterError *ex = dynamic_cast<const NoViableAlterError *>(&e);
     if(ex != 0) {
         return *this == *ex;
     }
@@ -154,7 +157,7 @@ void InvalidTokenError::accept(ParseErrorVisitor &visitor) const {
 }
 
 bool InvalidTokenError::equalsImpl(const ParseError &e) {
-    const InvalidTokenError *ex = dynamic_cast<const InvalidTokenError*>(&e);
+    const InvalidTokenError *ex = dynamic_cast<const InvalidTokenError *>(&e);
     if(ex != 0) {
         return *this == *ex;
     }
@@ -181,7 +184,7 @@ void OutOfRangeNumError::accept(ParseErrorVisitor &visitor) const {
 }
 
 bool OutOfRangeNumError::equalsImpl(const ParseError &e) {
-    const OutOfRangeNumError *ex = dynamic_cast<const OutOfRangeNumError*>(&e);
+    const OutOfRangeNumError *ex = dynamic_cast<const OutOfRangeNumError *>(&e);
     if(ex != 0) {
         return *this == *ex;
     }
@@ -199,3 +202,5 @@ ParseErrorVisitor::ParseErrorVisitor() {
 ParseErrorVisitor::~ParseErrorVisitor() {
 }
 
+} // namespace parser
+} // namespace ydsh

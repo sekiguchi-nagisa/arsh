@@ -20,7 +20,19 @@
 #include <core/DSType.h>
 #include <memory>
 
+namespace ydsh {
+namespace ast {
+
 class FunctionNode;
+
+}
+};
+
+namespace ydsh {
+namespace  core {
+
+using namespace ydsh::ast;
+
 struct RuntimeContext;
 struct String_Object;
 
@@ -33,6 +45,7 @@ struct DSObject {
     std::shared_ptr<DSObject> *fieldTable;
 
     DSObject(DSType *type);
+
     virtual ~DSObject();
 
     /**
@@ -71,57 +84,66 @@ struct DSObject {
     virtual size_t hash();
 };
 
-struct Int_Object: public DSObject {
+struct Int_Object : public DSObject {
     int value;
 
     Int_Object(DSType *type, int value);
 
     int getValue();
+
     std::string toString(); // override
     bool equals(const std::shared_ptr<DSObject> &obj);  // override
 };
 
-struct Float_Object: public DSObject {
+struct Float_Object : public DSObject {
     double value;
 
     Float_Object(DSType *type, double value);
 
     double getValue();
+
     std::string toString(); // override
     bool equals(const std::shared_ptr<DSObject> &obj);  // override
 };
 
-struct Boolean_Object: public DSObject {
+struct Boolean_Object : public DSObject {
     bool value;
 
     Boolean_Object(DSType *type, bool value);
 
     bool getValue();
+
     std::string toString(); // override
     bool equals(const std::shared_ptr<DSObject> &obj);  // override
 };
 
-struct String_Object: public DSObject {
+struct String_Object : public DSObject {
     std::string value;
 
     String_Object(DSType *type, std::string &&value);
+
     String_Object(DSType *type);
 
     const std::string &getValue();
+
     std::string toString(); // override
     void append(const String_Object &obj);
+
     void append(const std::shared_ptr<String_Object> &obj);
+
     bool equals(const std::shared_ptr<DSObject> &obj);  // override
 };
 
-struct Array_Object: public DSObject {
+struct Array_Object : public DSObject {
     std::vector<std::shared_ptr<DSObject>> values;
 
     Array_Object(DSType *type);
 
     const std::vector<std::shared_ptr<DSObject>> &getValues();
+
     std::string toString(); // override
     void append(std::shared_ptr<DSObject> obj);
+
     std::shared_ptr<String_Object> interp(RuntimeContext &ctx); // override
 };
 
@@ -130,13 +152,17 @@ struct Tuple_Object : public DSObject {
 
     std::string toString(); // override
     unsigned int getActualIndex(unsigned int elementIndex);
+
     void set(unsigned int elementIndex, const std::shared_ptr<DSObject> &obj);
+
     const std::shared_ptr<DSObject> &get(unsigned int elementIndex);
+
     std::shared_ptr<String_Object> interp(RuntimeContext &ctx); // override
 };
 
-struct FuncObject: public DSObject {
+struct FuncObject : public DSObject {
     FuncObject();
+
     virtual ~FuncObject();
 
     void setType(DSType *type); // override
@@ -158,13 +184,15 @@ struct FuncObject: public DSObject {
 /*
  * for user defined function
  */
-struct UserFuncObject: public FuncObject {
+struct UserFuncObject : public FuncObject {
     FunctionNode *funcNode;
 
     UserFuncObject(FunctionNode *funcNode);
+
     ~UserFuncObject();
 
     FunctionNode *getFuncNode();
+
     std::string toString(); // override
     bool invoke(RuntimeContext &ctx); // override
 };
@@ -172,17 +200,20 @@ struct UserFuncObject: public FuncObject {
 /**
  * for builtin(native) function
  */
-struct BuiltinFuncObject: public FuncObject {
+struct BuiltinFuncObject : public FuncObject {
     /**
      * bool func(RuntimeContext &ctx)
      */
     native_func_t func_ptr;
 
     BuiltinFuncObject(native_func_t func_ptr);
+
     ~BuiltinFuncObject();
 
     int getParamSize();
+
     native_func_t getFuncPointer();
+
     std::string toString(); // override
     bool invoke(RuntimeContext &ctx); // override
 
@@ -191,6 +222,9 @@ struct BuiltinFuncObject: public FuncObject {
      */
     static std::shared_ptr<DSObject> newFuncObject(native_func_t func_ptr);
 };
+
+} // namespace core
+} // namespace ydsh
 
 
 // helper macro for object manipulation

@@ -17,6 +17,9 @@
 #include <ast/TypeToken.h>
 #include <core/TypeTemplate.h>
 
+namespace ydsh {
+namespace ast {
+
 // #######################
 // ##     TypeToken     ##
 // #######################
@@ -45,7 +48,7 @@ std::string ClassTypeToken::toTokenText() const {
     return this->typeName;
 }
 
-DSType *ClassTypeToken::toType(TypePool *typePool) {
+DSType *ClassTypeToken::toType(TypePool * typePool) {
     return typePool->getTypeAndThrowIfUndefined(this->typeName);
 }
 
@@ -88,10 +91,10 @@ std::string ReifiedTypeToken::toTokenText() const {
     return text;
 }
 
-DSType *ReifiedTypeToken::toType(TypePool *typePool) {
+DSType *ReifiedTypeToken::toType(TypePool * typePool) {
     int size = this->elementTypeTokens.size();
     TypeTemplate *typeTemplate = typePool->getTypeTemplate(this->templateTypeToken->getTokenText(), size);
-    std::vector<DSType*> elementTypes(size);
+    std::vector<DSType *> elementTypes(size);
     for(int i = 0; i < size; i++) {
         elementTypes[i] = this->elementTypeTokens[i]->toType(typePool);
     }
@@ -141,10 +144,10 @@ std::string FuncTypeToken::toTokenText() const {
     return text;
 }
 
-DSType *FuncTypeToken::toType(TypePool *typePool) {
+DSType *FuncTypeToken::toType(TypePool * typePool) {
     DSType *returnType = this->returnTypeToken->toType(typePool);
     int size = this->paramTypeTokens.size();
-    std::vector<DSType*> paramTypes(size);
+    std::vector<DSType *> paramTypes(size);
     for(int i = 0; i < size; i++) {
         paramTypes[i] = this->paramTypeTokens[i]->toType(typePool);
     }
@@ -158,3 +161,6 @@ TypeToken *newAnyTypeToken(unsigned int lineNum) {
 TypeToken *newVoidTypeToken(unsigned int lineNum) {
     return new ClassTypeToken(lineNum, "Void");
 }
+
+} // namespace ast
+} // namespace ydsh

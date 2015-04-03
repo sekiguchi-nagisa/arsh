@@ -18,6 +18,9 @@
 
 #include <iostream>
 
+namespace ydsh {
+namespace core {
+
 // ############################
 // ##     RuntimeContext     ##
 // ############################
@@ -48,7 +51,7 @@ RuntimeContext::~RuntimeContext() {
 void RuntimeContext::printStackTop(DSType *stackTopType) {
     if(!stackTopType->isVoidType()) {
         std::cout << "(" << this->pool.getTypeName(*stackTopType)
-                << ") " << this->pop()->toString() << std::endl;
+                            << ") " << this->pop()->toString() << std::endl;
     }
 }
 
@@ -78,17 +81,17 @@ void RuntimeContext::importEnv(const std::string &envName, int index, bool isGlo
     if(isGlobal) {
         this->globalVarTable[index] =
                 std::make_shared<String_Object>(this->pool.getStringType(),
-                        std::string(getenv(envName.c_str())));
+                                                std::string(getenv(envName.c_str())));
     } else {
         this->localStack[this->localVarOffset + index] =
                 std::make_shared<String_Object>(this->pool.getStringType(),
-                        std::string(getenv(envName.c_str())));
+                                                std::string(getenv(envName.c_str())));
     }
 }
 
 void RuntimeContext::exportEnv(const std::string &envName, int index, bool isGlobal) {
     setenv(envName.c_str(),
-            TYPE_AS(String_Object, this->peek())->getValue().c_str(), 1);   //FIXME: check return value and throw
+           TYPE_AS(String_Object, this->peek())->getValue().c_str(), 1);   //FIXME: check return value and throw
     if(isGlobal) {
         this->globalVarTable[index] = this->pop();
     } else {
@@ -96,3 +99,5 @@ void RuntimeContext::exportEnv(const std::string &envName, int index, bool isGlo
     }
 }
 
+} // namespace core
+} // namespace ydsh

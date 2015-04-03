@@ -22,6 +22,9 @@
 
 #define OUT *(this->stream)
 
+namespace ydsh {
+namespace ast {
+
 Writer::Writer(std::ostream *stream, TypePool *pool) :
         stream(stream), pool(pool), indentLevel(0) {
 }
@@ -34,7 +37,7 @@ void Writer::write(const char *fieldName, const std::string &value) {
     OUT << value << std::endl;
 }
 
-void Writer::write(const char *fieldName, const std::vector<Node*> &nodes) {
+void Writer::write(const char *fieldName, const std::vector<Node *> &nodes) {
     this->writeName(fieldName);
     OUT << std::endl;
 
@@ -45,7 +48,7 @@ void Writer::write(const char *fieldName, const std::vector<Node*> &nodes) {
     this->exitIndent();
 }
 
-void Writer::write(const char *fieldName, const std::list<Node*> &nodes) {
+void Writer::write(const char *fieldName, const std::list<Node *> &nodes) {
     this->writeName(fieldName);
     OUT << std::endl;
 
@@ -77,7 +80,7 @@ void Writer::write(const char *fieldName, const DSType &type) {
     OUT << this->pool->getTypeName(type) << std::endl;
 }
 
-void Writer::write(const char *fieldName, const std::vector<TypeToken*> &toks) {
+void Writer::write(const char *fieldName, const std::vector<TypeToken *> &toks) {
     this->writeName(fieldName);
     unsigned int size = toks.size();
     for(unsigned int i = 0; i < size; i++) {
@@ -125,8 +128,8 @@ void Writer::writeNodeHeader(const Node &node) {
 
     this->writeIndent();
     OUT << "@" << className << " (lineNum: " << node.getLineNum()
-            << ", type: " << (type != 0 ? this->pool->getTypeName(*type) : "(null)")
-            << ")" << std::endl;
+                                                << ", type: " << (type != 0 ? this->pool->getTypeName(*type) : "(null)")
+                                                << ")" << std::endl;
 
     // free demangled name
     free(className);
@@ -143,3 +146,6 @@ void dumpAST(std::ostream &out, TypePool &pool, const RootNode &rootNode) {
     Writer writer(&out, &pool);
     rootNode.dump(writer);
 }
+
+} // namespace ast
+} // namespace ydsh

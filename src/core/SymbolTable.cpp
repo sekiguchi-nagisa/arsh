@@ -18,6 +18,9 @@
 
 #include <core/SymbolTable.h>
 
+namespace ydsh {
+namespace core {
+
 // ###################
 // ##     Scope     ##
 // ###################
@@ -30,7 +33,7 @@ Scope::Scope(unsigned int curVarIndex) :
 }
 
 Scope::~Scope() {
-    for(const std::pair<std::string, FieldHandle*> &pair : this->handleMap) {
+    for(const std::pair<std::string, FieldHandle *> &pair : this->handleMap) {
         delete pair.second;
     }
     this->handleMap.clear();
@@ -101,7 +104,7 @@ FieldHandle *SymbolTable::registerHandle(const std::string &symbolName, DSType *
 }
 
 FunctionHandle *SymbolTable::registerFuncHandle(const std::string &funcName, DSType *returnType,
-        const std::vector<DSType*> &paramTypes) {
+                                                const std::vector<DSType *> &paramTypes) {
     assert(this->inGlobalScope());
     FunctionHandle *handle = new FunctionHandle(returnType, paramTypes, this->scopes.back()->getCurVarIndex());
     if(!this->scopes.back()->addFieldHandle(funcName, handle)) {
@@ -180,3 +183,5 @@ bool SymbolTable::inGlobalScope() {
     return this->scopes.size() == 1;
 }
 
+} // namespace core
+} // namespace ydsh

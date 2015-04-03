@@ -20,6 +20,9 @@
 #include <parser/Token.h>
 #include <parser/Lexer.h>
 
+namespace ydsh {
+namespace parser {
+
 class ParseErrorVisitor;
 
 class ParseError {
@@ -34,13 +37,17 @@ protected:
 
 public:
     ParseError(unsigned int lineNum, TokenKind kind, Token errorToken);
+
     virtual ~ParseError();
 
     unsigned int getLineNum() const;
+
     TokenKind getTokenKind() const;
+
     Token getErrorToken() const;
 
     bool operator==(const ParseError &e);
+
     virtual void accept(ParseErrorVisitor &visitor) const = 0;
 
 private:
@@ -56,12 +63,14 @@ private:
 
 public:
     TokenMismatchError(unsigned int lineNum, TokenKind actual,
-            Token errorToken, TokenKind expected);
+                       Token errorToken, TokenKind expected);
+
     ~TokenMismatchError();
 
     TokenKind getExpectedTokenKind() const;
 
     bool operator==(const TokenMismatchError &e);
+
     void accept(ParseErrorVisitor &visitor) const; // override
 
 private:
@@ -78,12 +87,14 @@ public:
      * copy alters to this->alters.
      */
     NoViableAlterError(unsigned int lineNum, TokenKind actual,
-            Token errorToken, TokenKind *alters);
+                       Token errorToken, TokenKind *alters);
+
     ~NoViableAlterError();
 
     const std::vector<TokenKind> &getAlters() const;
 
     bool operator==(const NoViableAlterError &e);
+
     void accept(ParseErrorVisitor &visitor) const; // override
 
 private:
@@ -93,9 +104,11 @@ private:
 class InvalidTokenError : public ParseError {
 public:
     InvalidTokenError(unsigned int lineNum, Token token);
+
     ~InvalidTokenError();
 
     bool operator==(const InvalidTokenError &e);
+
     void accept(ParseErrorVisitor &visitor) const; // override
 
 private:
@@ -105,9 +118,11 @@ private:
 class OutOfRangeNumError : public ParseError {
 public:
     OutOfRangeNumError(unsigned int lineNum, TokenKind kind, Token token);
+
     ~OutOfRangeNumError();
 
     bool operator==(const OutOfRangeNumError &e);
+
     void accept(ParseErrorVisitor &visitor) const; // override
 
 private:
@@ -119,12 +134,19 @@ private:
 class ParseErrorVisitor {
 public:
     ParseErrorVisitor();
+
     virtual ~ParseErrorVisitor();
 
     virtual void visit(const TokenMismatchError &e) = 0;
+
     virtual void visit(const NoViableAlterError &e) = 0;
+
     virtual void visit(const InvalidTokenError &e) = 0;
+
     virtual void visit(const OutOfRangeNumError &e) = 0;
 };
+
+} // namespace parser
+} // namespace ydsh
 
 #endif /* PARSER_PARSEERROR_H_ */

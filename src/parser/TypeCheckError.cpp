@@ -16,6 +16,9 @@
 
 #include <parser/TypeCheckError.h>
 
+namespace ydsh {
+namespace parser {
+
 const static char *msgTable[] = {
 #define GEN_MSG(ENUM, MSG) MSG,
         EACH_TC_ERROR(GEN_MSG)
@@ -86,17 +89,21 @@ void TypeCheckError::report(unsigned int lineNum, ErrorKind kind, const std::str
 }
 
 void TypeCheckError::report(unsigned int lineNum, ErrorKind kind, const std::string &arg1,
-        const std::string &arg2) {
+                            const std::string &arg2) {
     TypeCheckError error(lineNum, kind);
     error.args.push_back(arg1);
     error.args.push_back(arg2);
     throw error;
 }
+
 void TypeCheckError::report(unsigned int lineNum, ErrorKind kind, const std::string &arg1,
-        const std::string &arg2, const std::string &arg3) {
+                            const std::string &arg2, const std::string &arg3) {
     TypeCheckError error(lineNum, kind);
     error.args.push_back(arg1);
     error.args.push_back(arg2);
     error.args.push_back(arg3);
     throw error;
 }
+
+} // namespace parser
+} // namespace ydsh

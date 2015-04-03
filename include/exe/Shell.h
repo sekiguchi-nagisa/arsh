@@ -29,6 +29,10 @@
 
 namespace ydsh {
 
+using namespace ydsh::ast;
+using namespace ydsh::parser;
+using namespace ydsh::core;
+
 typedef enum {
     SUCCESS,
     PARSE_ERROR,

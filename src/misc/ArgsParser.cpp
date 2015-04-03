@@ -17,6 +17,7 @@
 #include <misc/ArgsParser.h>
 #include <string.h>
 
+namespace ydsh {
 namespace args {
 
 // ########################
@@ -80,13 +81,13 @@ ArgsParser::~ArgsParser() {
 }
 
 ArgsParser *ArgsParser::addOption(unsigned int optionId, const char *optionSymbol,
-        bool hasArg, const char *description) {
+                                  bool hasArg, const char *description) {
     this->options.push_back({optionId, optionSymbol, hasArg, description});
     return this;
 }
 
 std::vector<const char *> ArgsParser::parse(int argc, char **argv,
-        std::vector<std::pair<unsigned int, const char*>> &cmdLines) throw(ParseError) {
+                                            std::vector<std::pair<unsigned int, const char *>> &cmdLines) throw(ParseError) {
     static char empty[] = "";
     std::vector<const char *> restArgs;
 
@@ -141,7 +142,7 @@ void ArgsParser::printHelp(std::ostream &stream) {
     for(const Option &option : this->options) {
         unsigned int size = option.getUsageSize();
         stream << "    " << option.optionSymbol
-                << (option.hasArg ? Option::usageSuffix : "");
+                            << (option.hasArg ? Option::usageSuffix : "");
         for(unsigned int i = 0; i < maxSizeOfUsage - size; i++) {
             stream << ' ';
         }
@@ -161,4 +162,5 @@ void ArgsParser::printHelp(std::ostream &stream) {
     }
 }
 
-}
+} // namespace args
+} // namespace ydsh

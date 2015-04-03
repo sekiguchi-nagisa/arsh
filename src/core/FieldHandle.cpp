@@ -18,6 +18,9 @@
 #include <core/DSType.h>
 #include <core/TypePool.h>
 
+namespace ydsh {
+namespace core {
+
 // #########################
 // ##     FieldHandle     ##
 // #########################
@@ -73,11 +76,11 @@ bool FieldHandle::isFuncHandle() const {
 // ##     FunctionHandle     ##
 // ############################
 
-FunctionHandle::FunctionHandle(DSType *returnType, const std::vector<DSType*> &paramTypes) :
+FunctionHandle::FunctionHandle(DSType *returnType, const std::vector<DSType *> &paramTypes) :
         FunctionHandle(returnType, paramTypes, -1) {
 }
 
-FunctionHandle::FunctionHandle(DSType *returnType, const std::vector<DSType*> &paramTypes, int fieldIndex) :
+FunctionHandle::FunctionHandle(DSType *returnType, const std::vector<DSType *> &paramTypes, int fieldIndex) :
         FieldHandle(0, fieldIndex, true),
         returnType(returnType), paramTypes(paramTypes), paramIndexMap(), defaultValues() {
     this->setAttribute(FUNC_HANDLE);
@@ -101,14 +104,14 @@ DSType *FunctionHandle::getFieldType(TypePool *typePool) {
 }
 
 FunctionType *FunctionHandle::getFuncType(TypePool *typePool) {
-    return dynamic_cast<FunctionType*>(this->getFieldType(typePool));
+    return dynamic_cast<FunctionType *>(this->getFieldType(typePool));
 }
 
 DSType *FunctionHandle::getReturnType() {
     return this->returnType;
 }
 
-const std::vector<DSType*> &FunctionHandle::getParamTypes() {
+const std::vector<DSType *> &FunctionHandle::getParamTypes() {
     return this->paramTypes;
 }
 
@@ -133,6 +136,8 @@ int FunctionHandle::getParamIndex(const std::string &paramName) {
 
 bool FunctionHandle::hasDefaultValue(unsigned int paramIndex) {
     return paramIndex < this->defaultValues.size()
-            && this->defaultValues[paramIndex];
+           && this->defaultValues[paramIndex];
 }
 
+} // namespace core
+} // namespace ydsh

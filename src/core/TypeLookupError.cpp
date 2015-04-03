@@ -16,6 +16,9 @@
 
 #include <core/TypeLookupError.h>
 
+namespace ydsh {
+namespace core {
+
 const static char *msgTable[] = {
 #define GEN_MSG(ENUM, MSG) MSG,
         EACH_TL_ERROR(GEN_MSG)
@@ -74,10 +77,13 @@ void TypeLookupError::report(ErrorKind kind, const std::string &arg1) {
 }
 
 void TypeLookupError::report(ErrorKind kind, const std::string &arg1,
-        const std::string &arg2, const std::string &arg3) {
+                             const std::string &arg2, const std::string &arg3) {
     TypeLookupError error(kind);
     error.args.push_back(arg1);
     error.args.push_back(arg2);
     error.args.push_back(arg3);
     throw error;
 }
+
+} // namespace core
+} // namespace ydsh

@@ -16,6 +16,9 @@
 
 #include <parser/Token.h>
 
+namespace ydsh {
+namespace parser {
+
 static const char *TOKEN_KIND_STRING[] = {
 #define GEN_NAME(ENUM) "<" #ENUM ">",
         EACH_TOKEN(GEN_NAME)
@@ -32,7 +35,7 @@ const char *getTokenName(TokenKind kind) {
 
 bool Token::operator==(const Token &token) {
     return this->startPos == token.startPos &&
-            this->size == token.size;
+           this->size == token.size;
 }
 
 unsigned int getPrecedence(TokenKind kind) {
@@ -78,3 +81,6 @@ unsigned int getPrecedence(TokenKind kind) {
         return 0;
     }
 }
+
+} // namespace parser
+} // namespace ydsh

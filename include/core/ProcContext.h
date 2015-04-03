@@ -19,6 +19,9 @@
 
 #include <core/DSObject.h>
 
+namespace ydsh {
+namespace core {
+
 struct ProcContext : public DSObject {   //FIXME: redirect option
     typedef enum {
         NORMAL,
@@ -39,6 +42,7 @@ struct ProcContext : public DSObject {   //FIXME: redirect option
     int exitStatus;
 
     ProcContext(const std::string &cmdName);
+
     ~ProcContext();
 
     std::string toString(); // override
@@ -55,6 +59,7 @@ struct ProcGroup {
     std::shared_ptr<ProcContext> *procs;
 
     ProcGroup(unsigned int procSize);
+
     ~ProcGroup();
 
     void addProc(unsigned int index, const std::shared_ptr<ProcContext> &ctx);
@@ -64,5 +69,8 @@ struct ProcGroup {
      */
     int execProcs();
 };
+
+} // namespace core
+} // namespace ydsh
 
 #endif /* CORE_PROCCONTEXT_H_ */

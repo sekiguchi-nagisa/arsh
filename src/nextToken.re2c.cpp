@@ -67,7 +67,10 @@
 
 #define YYGETCONDITION() lexer->modeStack.back()
 
-TokenKind LexerDef::operator()(Lexer<LexerDef, TokenKind> *lexer, Token &token) const {
+namespace ydsh {
+namespace parser {
+
+TokenKind LexerDef::operator()(Lexer < LexerDef, TokenKind > *lexer, Token & token) const {
     /*!re2c
       re2c:define:YYGETCONDITION = YYGETCONDITION;
       re2c:define:YYCTYPE = "unsigned char";
@@ -111,7 +114,7 @@ TokenKind LexerDef::operator()(Lexer<LexerDef, TokenKind> *lexer, Token &token) 
 
     bool foundNewLine = false;
 
-INIT:
+    INIT:
     unsigned int startPos = lexer->getPos();
     TokenKind kind = INVALID;
     /*!re2c
@@ -246,7 +249,7 @@ INIT:
       <STMT,EXPR,NAME,DSTRING,CMD> OTHER  { RET(INVALID); }
     */
 
-END:
+    END:
     token.startPos = startPos;
     token.size = lexer->getPos() - startPos;
     lexer->prevNewLine = foundNewLine;
@@ -258,7 +261,7 @@ END:
 #endif
     return kind;
 
-EOS:
+    EOS:
     token.startPos = lexer->limit - lexer->buf;
     token.size = 0;
     lexer->prevNewLine = foundNewLine;
@@ -271,3 +274,5 @@ EOS:
     return EOS;
 }
 
+} // namespace parser
+} // namespace ydsh

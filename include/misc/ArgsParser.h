@@ -21,6 +21,7 @@
 #include <vector>
 #include <ostream>
 
+namespace ydsh {
 namespace args {
 
 class ParseError {
@@ -38,9 +39,11 @@ private:
 
 public:
     ParseError(const char *message, const char *suffix);
+
     ~ParseError();
 
     const char *getMessage() const;
+
     const char *getSuffix() const;
 };
 
@@ -53,6 +56,7 @@ private:
         const char *description;
 
         unsigned int getUsageSize() const;
+
         std::vector<std::string> getDescriptions() const;
 
         static const char *usageSuffix;
@@ -62,10 +66,11 @@ private:
 
 public:
     ArgsParser();
+
     ~ArgsParser();
 
     ArgsParser *addOption(unsigned int optionId, const char *optionSymbol,
-            bool hasArg = false, const char *description = "");
+                          bool hasArg = false, const char *description = "");
 
     /**
      * write parsed options to cmdLines.
@@ -73,11 +78,12 @@ public:
      * if parse success, return rest arguments
      */
     std::vector<const char *> parse(int argc, char **argv,
-            std::vector<std::pair<unsigned int, const char*>> &cmdLines) throw(ParseError);
+                                    std::vector<std::pair<unsigned int, const char *>> &cmdLines) throw(ParseError);
 
     void printHelp(std::ostream &stream);
 };
 
-}
+} // namespace args
+} // namespace ydsh
 
 #endif /* MISC_ARGSPARSER_H_ */

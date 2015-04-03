@@ -23,6 +23,11 @@
 #include <core/FieldHandle.h>
 #include <core/SymbolTable.h>
 
+namespace ydsh {
+namespace parser {
+
+using namespace ydsh::core;
+
 // for apply node type checking
 class HandleOrFuncType {
 private:
@@ -34,14 +39,17 @@ private:
 
 public:
     HandleOrFuncType(FunctionHandle *handle);
+
     HandleOrFuncType(FunctionType *funcType);
 
     bool treatAsHandle();
+
     FunctionHandle *getHandle();
+
     FunctionType *getFuncType();
 };
 
-class TypeChecker: public NodeVisitor {
+class TypeChecker : public NodeVisitor {
 private:
     /**
      * for type lookup
@@ -53,7 +61,7 @@ private:
     /**
      * contains current return type of current function
      */
-    DSType* curReturnType;
+    DSType *curReturnType;
 
     /**
      * contains state which represents for within loop block
@@ -67,6 +75,7 @@ private:
 
 public:
     TypeChecker(TypePool *typePool);
+
     ~TypeChecker();
 
     /**
@@ -111,7 +120,7 @@ private:
      * return resolved type.
      */
     DSType *checkType(DSType *requiredType, Node *targetNode,
-            DSType *unacceptableType, bool allowCoercion = false);
+                      DSType *unacceptableType, bool allowCoercion = false);
 
     /**
      * after type checking,
@@ -146,6 +155,7 @@ private:
     FieldHandle *addEntryAndThrowIfDefined(Node *node, const std::string &symbolName, DSType *type, bool readOnly);
 
     void enterLoop();
+
     void exitLoop();
 
     /**
@@ -206,8 +216,10 @@ private:
 
     // helper for argument type checking
     void checkTypeArgsNode(FunctionHandle *handle, ArgsNode *argsNode, bool isFuncCall);
+
     void checkTypeArgsNode(FunctionType *funcType, ArgsNode *argsNode, bool isFuncCall);
-    void checkTypeArgsNode(const std::vector<DSType*> &paramTypes, ArgsNode *argsNode, bool isFuncCall);
+
+    void checkTypeArgsNode(const std::vector<DSType *> &paramTypes, ArgsNode *argsNode, bool isFuncCall);
 
 public:
     /**
@@ -259,5 +271,8 @@ public:
     void visitDummyNode(DummyNode *node); // override
     void visitRootNode(RootNode *node); // override
 };
+
+} // namespace parser
+} // namespace ydsh
 
 #endif /* PARSER_TYPECHECKER_H_ */

@@ -7,6 +7,9 @@
 #define LEXER_TEST_DIR "./"
 #endif
 
+using namespace ydsh::core;
+using namespace ydsh::parser;
+
 /**
  * ############################
  * #  Lv0: test file loading  #

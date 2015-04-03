@@ -25,6 +25,9 @@
 
 #include <vector>
 
+namespace ydsh {
+namespace core {
+
 struct RuntimeContext {
     TypePool pool;
 
@@ -84,6 +87,7 @@ struct RuntimeContext {
     bool assertion;
 
     RuntimeContext(char **envp);
+
     ~RuntimeContext();
 
     /**
@@ -212,8 +216,11 @@ struct RuntimeContext {
 
     // some runtime api
     void printStackTop(DSType *stackTopType);
+
     void checkCast(DSType *targetType);
+
     void instanceOf(DSType *targetType);
+
     void checkAssertion();
 
     /**
@@ -258,5 +265,8 @@ struct RuntimeContext {
         return right;
     }
 };
+
+} // namespace core
+} // namespace ydsh
 
 #endif /* CORE_RUNTIMECONTEXT_H_ */

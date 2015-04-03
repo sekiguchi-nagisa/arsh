@@ -125,10 +125,12 @@
     TOKEN(OR_LIST) \
     TOKEN(AND_LIST)
 
+namespace ydsh {
+namespace parser {
 
 typedef enum {
 #define GEN_ENUM(ENUM) ENUM,
-        EACH_TOKEN(GEN_ENUM)
+    EACH_TOKEN(GEN_ENUM)
 #undef GEN_ENUM
 } TokenKind;
 
@@ -159,5 +161,8 @@ struct Token {
  * get binary operator precedence.
  */
 unsigned int getPrecedence(TokenKind kind);
+
+} // namespace parser
+} // namespace ydsh
 
 #endif /* PARSER_TOKENKIND_H_ */

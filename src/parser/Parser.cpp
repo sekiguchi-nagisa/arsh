@@ -128,6 +128,8 @@
 
 #define PRECEDENCE() getPrecedence(this->curTokenKind)
 
+namespace ydsh {
+namespace parser {
 
 // ####################
 // ##     Parser     ##
@@ -186,7 +188,7 @@ INLINE void Parser::hasNoNewLine() {
 
 // parse rule definition
 
-INLINE void Parser::parse_toplevel(RootNode &rootNode) {
+INLINE void Parser::parse_toplevel(RootNode & rootNode) {
     bool next = true;
     while(next) {
         switch(this->curTokenKind) {
@@ -250,7 +252,7 @@ INLINE std::unique_ptr<Node> Parser::parse_function() {
             this->matchToken(COMMA);
 
             nameNode.reset(new VarNode(LN(),
-                    this->lexer->toName(this->matchAndGetToken(APPLIED_NAME))));
+                                       this->lexer->toName(this->matchAndGetToken(APPLIED_NAME))));
             this->hasNoNewLine();
             this->matchToken(COLON);
             this->hasNoNewLine();
@@ -284,7 +286,8 @@ std::unique_ptr<TypeToken> Parser::parse_typeName() {
     switch(this->curTokenKind) {
     EACH_LA_typeName(GEN_LA_CASE) {
         std::unique_ptr<ClassTypeToken> typeToken(new ClassTypeToken(LN(),
-                this->lexer->toName(this->matchAndGetToken(IDENTIFIER))));
+                                                                     this->lexer->toName(
+                                                                             this->matchAndGetToken(IDENTIFIER))));
         if(!HAS_NL() && this->curTokenKind == LA) {
             this->matchToken(LA);
             this->hasNoNewLine();
@@ -364,7 +367,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
         this->matchToken(ASSERT);
         this->matchToken(LP);
         std::unique_ptr<Node> node(new AssertNode(n,
-                this->parse_commandOrExpression().release()));
+                                                  this->parse_commandOrExpression().release()));
         this->matchToken(RP);
         this->parse_statementEnd();
         return node;
@@ -388,7 +391,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
         this->hasNoNewLine();
         this->matchToken(ASSIGN);
         std::unique_ptr<Node> node(new ExportEnvNode(n, std::move(name),
-                this->parse_expression().release()));
+                                                     this->parse_expression().release()));
         this->parse_statementEnd();
         return node;
     }
@@ -402,7 +405,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
         this->matchToken(RP);
         std::unique_ptr<BlockNode> blockNode(this->parse_block());
         std::unique_ptr<IfNode> ifNode(new IfNode(n,
-                condNode.release(), blockNode.release()));
+                                                  condNode.release(), blockNode.release()));
 
         // parse elif
         while(this->curTokenKind == ELIF) {
@@ -424,7 +427,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
     case IMPORT_ENV: {
         this->matchToken(IMPORT_ENV);
         std::unique_ptr<Node> node(new ImportEnvNode(n,
-                this->lexer->toName(this->matchAndGetToken(IDENTIFIER))));
+                                                     this->lexer->toName(this->matchAndGetToken(IDENTIFIER))));
         this->parse_statementEnd();
         return node;
     }
@@ -452,7 +455,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
     case THROW: {
         this->matchToken(THROW);
         std::unique_ptr<Node> node(new ThrowNode(n,
-                this->parse_expression().release()));
+                                                 this->parse_expression().release()));
         this->parse_statementEnd();
         return node;
     }
@@ -575,7 +578,7 @@ INLINE std::unique_ptr<Node> Parser::parse_variableDeclaration() {
         this->hasNoNewLine();
         this->matchToken(ASSIGN);
         RET_NODE(new VarDeclNode(n, std::move(name),
-                this->parse_commandOrExpression().release(), readOnly));
+                                 this->parse_commandOrExpression().release(), readOnly));
     }
     default:
         E_ALTER(alters);
@@ -590,7 +593,7 @@ INLINE std::unique_ptr<Node> Parser::parse_forStatement() {
 
     std::unique_ptr<Node> initNode(this->parse_forInit());
 
-    VarNode *varNode = dynamic_cast<VarNode*>(initNode.get());
+    VarNode *varNode = dynamic_cast<VarNode *>(initNode.get());
     if(varNode != 0) { // treat as for-in
         initNode.release();
         std::unique_ptr<VarNode> nameNode(varNode);
@@ -602,7 +605,7 @@ INLINE std::unique_ptr<Node> Parser::parse_forStatement() {
         std::unique_ptr<BlockNode> blockNode(this->parse_block());
 
         RET_NODE(createForInNode(n, nameNode.release(),
-                exprNode.release(), blockNode.release()));
+                                 exprNode.release(), blockNode.release()));
     }
 
     this->matchToken(LINE_END);
@@ -616,7 +619,7 @@ INLINE std::unique_ptr<Node> Parser::parse_forStatement() {
     std::unique_ptr<BlockNode> blockNode(this->parse_block());
 
     RET_NODE(new ForNode(n, initNode.release(), condNode.release(),
-            iterNode.release(), blockNode.release()));
+                         iterNode.release(), blockNode.release()));
 }
 
 INLINE std::unique_ptr<Node> Parser::parse_forInit() {
@@ -673,10 +676,10 @@ INLINE std::unique_ptr<CatchNode> Parser::parse_catchStatement() {
 
     if(typeToken) {
         return std::unique_ptr<CatchNode>(new CatchNode(n, this->lexer->toName(token),
-                typeToken.release(), blockNode.release()));
+                                                        typeToken.release(), blockNode.release()));
     } else {
         return std::unique_ptr<CatchNode>(new CatchNode(n, this->lexer->toName(token),
-                blockNode.release()));
+                                                        blockNode.release()));
     }
 }
 
@@ -811,10 +814,10 @@ INLINE std::unique_ptr<Node> Parser::parse_expression() {
 }
 
 std::unique_ptr<Node> Parser::parse_expression(std::unique_ptr<Node> &&leftNode,
-        unsigned int basePrecedence) {
+                                               unsigned int basePrecedence) {
     std::unique_ptr<Node> node(std::move(leftNode));
     for(unsigned int p = PRECEDENCE();
-            !HAS_NL() && p >= basePrecedence; p = PRECEDENCE()) {
+        !HAS_NL() && p >= basePrecedence; p = PRECEDENCE()) {
         switch(this->curTokenKind) {
         case AS: {
             this->matchToken(AS);
@@ -851,7 +854,7 @@ INLINE std::unique_ptr<Node> Parser::parse_unaryExpression() {
     case NOT: {
         TokenKind op = this->consumeAndGetKind();
         RET_NODE(createUnaryOpNode(op,
-                this->parse_unaryExpression().release()));
+                                   this->parse_unaryExpression().release()));
     }
     default: {
         return this->parse_suffixExpression();
@@ -1112,3 +1115,6 @@ INLINE std::unique_ptr<Node> Parser::parse_commandSubstitution() {
     this->matchToken(RP);
     return node;
 }
+
+} // namespace parser
+} // namespace ydsh

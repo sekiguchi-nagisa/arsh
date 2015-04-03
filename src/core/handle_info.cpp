@@ -16,6 +16,9 @@
 
 #include <core/handle_info.h>
 
+namespace ydsh {
+namespace core {
+
 typedef struct {
     const char *handleInfo;
     unsigned int pos;
@@ -115,3 +118,6 @@ bool verifyHandleInfo(char *handleInfo) {
      */
     return ctx.handleInfo[ctx.pos] == '\0';
 }
+
+} // namespace core
+} // namespace ydsh

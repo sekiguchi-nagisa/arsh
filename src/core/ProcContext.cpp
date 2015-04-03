@@ -25,6 +25,9 @@
 #define READ_PIPE  0
 #define WRITE_PIPE 1
 
+namespace ydsh {
+namespace core {
+
 // #########################
 // ##     ProcContext     ##
 // #########################
@@ -61,8 +64,8 @@ void ProcContext::addParam(const std::shared_ptr<DSObject> &value) {
 
 void ProcContext::prepare() {
     unsigned int argc = this->params.size() + 2;
-    this->argv = new char*[argc];
-    this->argv[0] = (char*) this->cmdName.c_str();
+    this->argv = new char *[argc];
+    this->argv[0] = (char *) this->cmdName.c_str();
     for(unsigned int i = 1; i < argc - 1; i++) {
         this->argv[i] = (char *) this->params[i - 1]->value.c_str();
     }
@@ -86,8 +89,7 @@ void ProcGroup::addProc(unsigned int index, const std::shared_ptr<ProcContext> &
     this->procs[index] = ctx;
 }
 
-static void closeAllPipe(int size, int pipefds[][2])
-{
+static void closeAllPipe(int size, int pipefds[][2]) {
     for(int i = 0; i < size; i++) {
         close(pipefds[i][0]);
         close(pipefds[i][1]);
@@ -167,3 +169,6 @@ int ProcGroup::execProcs() {
         return -1;
     }
 }
+
+} // namespace core
+} // namespace ydsh

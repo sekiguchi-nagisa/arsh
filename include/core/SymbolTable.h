@@ -21,10 +21,13 @@
 #include <core/DSType.h>
 #include <core/FieldHandle.h>
 
+namespace ydsh {
+namespace core {
+
 class Scope {
 private:
     unsigned int curVarIndex;
-    std::unordered_map<std::string, FieldHandle*> handleMap;
+    std::unordered_map<std::string, FieldHandle *> handleMap;
 
 public:
     /**
@@ -33,6 +36,7 @@ public:
     Scope();
 
     Scope(unsigned int curVarIndex);
+
     ~Scope();
 
     /**
@@ -61,7 +65,7 @@ private:
     /**
      * first scope is always global scope.
      */
-    std::vector<Scope*> scopes;
+    std::vector<Scope *> scopes;
 
     /**
      * contains max number of variable index.
@@ -70,6 +74,7 @@ private:
 
 public:
     SymbolTable();
+
     ~SymbolTable();
 
     /**
@@ -86,7 +91,7 @@ public:
      * return null, if found duplicated handle.
      */
     FunctionHandle *registerFuncHandle(const std::string &funcName, DSType *returnType,
-            const std::vector<DSType*> &paramTypes);
+                                       const std::vector<DSType *> &paramTypes);
 
     /**
      * create new local scope.
@@ -114,6 +119,7 @@ public:
     void popAllLocal();
 
     void clearEntryCache();
+
     void removeCachedEntry();
 
     /**
@@ -128,5 +134,8 @@ public:
 
     bool inGlobalScope();
 };
+
+} // namespace core
+} // namespace ydsh
 
 #endif /* CORE_SYMBOLTABLE_H_ */

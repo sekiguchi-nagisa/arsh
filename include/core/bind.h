@@ -17,6 +17,9 @@
 #ifndef CORE_BIND_H_
 #define CORE_BIND_H_
 
+namespace ydsh {
+namespace core {
+
 struct native_type_info;
 
 native_type_info_t *info_Dummy() {
@@ -27,24 +30,35 @@ native_type_info_t *info_Dummy() {
 
 // for builtin type initialization.
 native_type_info_t *info_AnyType();
+
 native_type_info_t *info_VoidType();
 
 native_type_info_t *info_ValueType();
 
 native_type_info_t *info_IntType();
+
 native_type_info_t *info_FloatType();
+
 native_type_info_t *info_BooleanType();
+
 native_type_info_t *info_StringType();
+
 native_type_info_t *info_TaskType();
+
 native_type_info_t *info_BaseFuncType();
 
 native_type_info_t *info_ProcArgType();
+
 native_type_info_t *info_ProcType();
 
 // for type template initialization.
 native_type_info_t *info_ArrayTemplate();
+
 native_type_info_t *info_MapTemplate();
+
 native_type_info_t *info_PairTemplate();
 
+} // namespace core
+} // namespace ydsh
 
 #endif /* CORE_BIND_H_ */

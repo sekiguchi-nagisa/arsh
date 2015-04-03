@@ -32,6 +32,8 @@
         }\
     } while(0)
 
+namespace ydsh {
+namespace ast {
 
 // ##################
 // ##     Node     ##
@@ -95,7 +97,7 @@ void IntValueNode::accept(NodeVisitor *visitor) {
     visitor->visitIntValueNode(this);
 }
 
-EvalStatus IntValueNode::eval(RuntimeContext &ctx) {
+EvalStatus IntValueNode::eval(RuntimeContext & ctx) {
     ctx.push(this->value);
     return EVAL_SUCCESS;
 }
@@ -131,7 +133,7 @@ void FloatValueNode::accept(NodeVisitor *visitor) {
     visitor->visitFloatValueNode(this);
 }
 
-EvalStatus FloatValueNode::eval(RuntimeContext &ctx) {
+EvalStatus FloatValueNode::eval(RuntimeContext & ctx) {
     ctx.push(this->value);
     return EVAL_SUCCESS;
 }
@@ -182,7 +184,7 @@ void StringValueNode::accept(NodeVisitor *visitor) {
     visitor->visitStringValueNode(this);
 }
 
-EvalStatus StringValueNode::eval(RuntimeContext &ctx) {
+EvalStatus StringValueNode::eval(RuntimeContext & ctx) {
     ctx.push(this->value);
     return EVAL_SUCCESS;
 }
@@ -206,7 +208,7 @@ void StringExprNode::addExprNode(Node *node) {
     this->nodes.push_back(node->convertToStringNode());
 }
 
-const std::vector<Node*> &StringExprNode::getExprNodes() {
+const std::vector<Node *> &StringExprNode::getExprNodes() {
     return this->nodes;
 }
 
@@ -226,7 +228,7 @@ void StringExprNode::accept(NodeVisitor *visitor) {
     visitor->visitStringExprNode(this);
 }
 
-EvalStatus StringExprNode::eval(RuntimeContext &ctx) {
+EvalStatus StringExprNode::eval(RuntimeContext & ctx) {
     unsigned int size = this->nodes.size();
     if(size == 0) {
         ctx.push(std::make_shared<String_Object>(this->type, ""));
@@ -267,7 +269,7 @@ void ArrayNode::setExprNode(unsigned int index, Node *node) {
     this->nodes[index] = node;
 }
 
-const std::vector<Node*> &ArrayNode::getExprNodes() {
+const std::vector<Node *> &ArrayNode::getExprNodes() {
     return this->nodes;
 }
 
@@ -279,7 +281,7 @@ void ArrayNode::accept(NodeVisitor *visitor) {
     visitor->visitArrayNode(this);
 }
 
-EvalStatus ArrayNode::eval(RuntimeContext &ctx) {
+EvalStatus ArrayNode::eval(RuntimeContext & ctx) {
     auto value = std::make_shared<Array_Object>(this->type);
     for(Node *node : this->nodes) {
         EVAL(ctx, node);
@@ -319,7 +321,7 @@ void MapNode::setKeyNode(unsigned int index, Node *keyNode) {
     this->keyNodes[index] = keyNode;
 }
 
-const std::vector<Node*> &MapNode::getKeyNodes() {
+const std::vector<Node *> &MapNode::getKeyNodes() {
     return this->keyNodes;
 }
 
@@ -327,7 +329,7 @@ void MapNode::setValueNode(unsigned int index, Node *valueNode) {
     this->valueNodes[index] = valueNode;
 }
 
-const std::vector<Node*> &MapNode::getValueNodes() {
+const std::vector<Node *> &MapNode::getValueNodes() {
     return this->valueNodes;
 }
 
@@ -340,7 +342,7 @@ void MapNode::accept(NodeVisitor *visitor) {
     visitor->visitMapNode(this);
 }
 
-EvalStatus MapNode::eval(RuntimeContext &ctx) {
+EvalStatus MapNode::eval(RuntimeContext & ctx) {
     fatal("unimplemented eval\n");  //TODO
     return EVAL_SUCCESS;
 }
@@ -366,7 +368,7 @@ void TupleNode::addNode(Node *node) {
     this->nodes.push_back(node);
 }
 
-const std::vector<Node*> &TupleNode::getNodes() {
+const std::vector<Node *> &TupleNode::getNodes() {
     return this->nodes;
 }
 
@@ -378,7 +380,7 @@ void TupleNode::accept(NodeVisitor *visitor) {
     visitor->visitTupleNode(this);
 }
 
-EvalStatus TupleNode::eval(RuntimeContext &ctx) {
+EvalStatus TupleNode::eval(RuntimeContext & ctx) {
     unsigned int size = this->nodes.size();
     auto value = std::make_shared<Tuple_Object>(this->type);
     for(unsigned int i = 0; i < size; i++) {
@@ -421,7 +423,7 @@ const std::string &VarNode::getVarName() {
     return this->varName;
 }
 
-void VarNode::setAttribute(FieldHandle *handle) {
+void VarNode::setAttribute(FieldHandle * handle) {
     this->readOnly = handle->isReadOnly();
     this->global = handle->isGlobal();
     this->env = handle->isEnv();
@@ -452,7 +454,7 @@ int VarNode::getVarIndex() {
     return this->index;
 }
 
-EvalStatus VarNode::eval(RuntimeContext &ctx) {
+EvalStatus VarNode::eval(RuntimeContext & ctx) {
     if(this->global) {
         ctx.getGlobal(this->index);
     } else {
@@ -496,7 +498,7 @@ const std::string &AccessNode::getFieldName() {
     return this->fieldName;
 }
 
-void AccessNode::setAttribute(FieldHandle *handle) {
+void AccessNode::setAttribute(FieldHandle * handle) {
     this->readOnly = handle->isReadOnly();
     this->index = handle->getFieldIndex();
 }
@@ -534,7 +536,7 @@ void AccessNode::accept(NodeVisitor *visitor) {
     visitor->visitAccessNode(this);
 }
 
-EvalStatus AccessNode::eval(RuntimeContext &ctx) {
+EvalStatus AccessNode::eval(RuntimeContext & ctx) {
     EVAL(ctx, this->recvNode);
 
     switch(this->additionalOp) {
@@ -631,7 +633,7 @@ void CastNode::accept(NodeVisitor *visitor) {
     visitor->visitCastNode(this);
 }
 
-EvalStatus CastNode::eval(RuntimeContext &ctx) {
+EvalStatus CastNode::eval(RuntimeContext & ctx) {
     EVAL(ctx, this->exprNode);
 
     switch(this->opKind) {
@@ -727,7 +729,7 @@ void InstanceOfNode::accept(NodeVisitor *visitor) {
     visitor->visitInstanceOfNode(this);
 }
 
-EvalStatus InstanceOfNode::eval(RuntimeContext &ctx) {
+EvalStatus InstanceOfNode::eval(RuntimeContext & ctx) {
     EVAL(ctx, this->targetNode);
 
     switch(this->opKind) {
@@ -760,10 +762,10 @@ ArgsNode::~ArgsNode() {
 }
 
 void ArgsNode::addArg(Node *argNode) {
-    AssignNode *assignNode = dynamic_cast<AssignNode*>(argNode);
-    if(assignNode != 0 && dynamic_cast<VarNode*>(assignNode->getLeftNode()) != 0) {
-        std::pair<Node*, Node*> pair = AssignNode::split(assignNode);
-        VarNode *leftNode = dynamic_cast<VarNode*>(pair.first);
+    AssignNode *assignNode = dynamic_cast<AssignNode *>(argNode);
+    if(assignNode != 0 && dynamic_cast<VarNode *>(assignNode->getLeftNode()) != 0) {
+        std::pair<Node *, Node *> pair = AssignNode::split(assignNode);
+        VarNode *leftNode = dynamic_cast<VarNode *>(pair.first);
         this->argPairs.push_back(
                 std::make_pair(VarNode::extractVarNameAndDelete(leftNode), pair.second));
     } else {
@@ -794,7 +796,8 @@ void ArgsNode::setParamSize(unsigned int size) {
 unsigned int ArgsNode::getParamSize() {
     return this->paramSize;
 }
-const std::vector<std::pair<std::string, Node*>> &ArgsNode::getArgPairs() {
+
+const std::vector<std::pair<std::string, Node *>> &ArgsNode::getArgPairs() {
     return this->argPairs;
 }
 
@@ -806,8 +809,8 @@ void ArgsNode::accept(NodeVisitor *visitor) {
     visitor->visitArgsNode(this);
 }
 
-EvalStatus ArgsNode::eval(RuntimeContext &ctx) {    //TODO: named argument
-    for(const std::pair<std::string, Node*> &pair : this->argPairs) {
+EvalStatus ArgsNode::eval(RuntimeContext & ctx) {    //TODO: named argument
+    for(const std::pair<std::string, Node *> &pair : this->argPairs) {
         EVAL(ctx, pair.second);
     }
     return EVAL_SUCCESS;
@@ -888,7 +891,7 @@ void ApplyNode::accept(NodeVisitor *visitor) {
  * +-----------+---------+------------------+   +--------+
  *                       |    new offset    |   |        |
  */
-EvalStatus ApplyNode::eval(RuntimeContext &ctx) {
+EvalStatus ApplyNode::eval(RuntimeContext & ctx) {
     unsigned int curStackTopIndex = ctx.stackTopIndex;
 
     // push func object
@@ -900,7 +903,7 @@ EvalStatus ApplyNode::eval(RuntimeContext &ctx) {
     // call function
     ctx.saveAndSetOffset(curStackTopIndex + 2);
     bool status = TYPE_AS(FuncObject,
-            ctx.localStack[curStackTopIndex + 1])->invoke(ctx);
+                          ctx.localStack[curStackTopIndex + 1])->invoke(ctx);
 
     // restore stack state
     ctx.restoreOffset();
@@ -955,7 +958,7 @@ void NewNode::accept(NodeVisitor *visitor) {
     visitor->visitNewNode(this);
 }
 
-EvalStatus NewNode::eval(RuntimeContext &ctx) {
+EvalStatus NewNode::eval(RuntimeContext & ctx) {
     fatal("unimplemented eval\n");  //TODO
     return EVAL_SUCCESS;
 }
@@ -1022,7 +1025,7 @@ void BinaryOpNode::accept(NodeVisitor *visitor) {
     visitor->visitBinaryOpNode(this);
 }
 
-EvalStatus BinaryOpNode::eval(RuntimeContext &ctx) {
+EvalStatus BinaryOpNode::eval(RuntimeContext & ctx) {
     return this->applyNode->eval(ctx);
 }
 
@@ -1064,7 +1067,7 @@ void CondOpNode::accept(NodeVisitor *visitor) {
     visitor->visitCondOpNode(this);
 }
 
-EvalStatus CondOpNode::eval(RuntimeContext &ctx) {
+EvalStatus CondOpNode::eval(RuntimeContext & ctx) {
     // eval left node
     EVAL(ctx, this->leftNode);
 
@@ -1105,7 +1108,7 @@ void CmdArgNode::addSegmentNode(Node *node) {
     this->segmentNodes.push_back(node->convertToCmdArg());
 }
 
-const std::vector<Node*> &CmdArgNode::getSegmentNodes() {
+const std::vector<Node *> &CmdArgNode::getSegmentNodes() {
     return this->segmentNodes;
 }
 
@@ -1117,7 +1120,7 @@ void CmdArgNode::accept(NodeVisitor *visitor) {
     visitor->visitCmdArgNode(this);
 }
 
-EvalStatus CmdArgNode::eval(RuntimeContext &ctx) {
+EvalStatus CmdArgNode::eval(RuntimeContext & ctx) {
     //FIXME: concate segment node
     EVAL(ctx, this->segmentNodes[0]);
     return EVAL_SUCCESS;
@@ -1137,7 +1140,7 @@ CmdNode::~CmdNode() {
     }
     this->argNodes.clear();
 
-    for(const std::pair<int, Node*> &pair : this->redirOptions) {
+    for(const std::pair<int, Node *> &pair : this->redirOptions) {
         delete pair.second;
     }
     this->redirOptions.clear();
@@ -1151,22 +1154,22 @@ void CmdNode::addArgNode(CmdArgNode *node) {
     this->argNodes.push_back(node);
 }
 
-const std::vector<CmdArgNode*> &CmdNode::getArgNodes() {
+const std::vector<CmdArgNode *> &CmdNode::getArgNodes() {
     return this->argNodes;
 }
 
-void CmdNode::addRedirOption(std::pair<int, Node*> &&optionPair) {
+void CmdNode::addRedirOption(std::pair<int, Node *> &&optionPair) {
     this->redirOptions.push_back(std::move(optionPair));
 }
 
-const std::vector<std::pair<int, Node*>> &CmdNode::getRedirOptions() {
+const std::vector<std::pair<int, Node *>> &CmdNode::getRedirOptions() {
     return this->redirOptions;
 }
 
 void CmdNode::dump(Writer &writer) const {
     WRITE(commandName);
 
-    std::vector<Node*> argNodes;
+    std::vector<Node *> argNodes;
     for(CmdArgNode *node : this->argNodes) {
         argNodes.push_back(node);
     }
@@ -1178,7 +1181,7 @@ void CmdNode::accept(NodeVisitor *visitor) {
     visitor->visitCmdNode(this);
 }
 
-EvalStatus CmdNode::eval(RuntimeContext &ctx) { //FIXME: redirect
+EvalStatus CmdNode::eval(RuntimeContext & ctx) { //FIXME: redirect
     std::shared_ptr<ProcContext> proc(new ProcContext(this->commandName));
     for(Node *node : this->argNodes) {
         EVAL(ctx, node);
@@ -1211,7 +1214,7 @@ void SpecialCharNode::accept(NodeVisitor *visitor) {
     visitor->visitSpecialCharNode(this);
 }
 
-EvalStatus SpecialCharNode::eval(RuntimeContext &ctx) {
+EvalStatus SpecialCharNode::eval(RuntimeContext & ctx) {
     fatal("unimplemented eval\n");  //TODO
     return EVAL_SUCCESS;
 }
@@ -1236,12 +1239,12 @@ void PipedCmdNode::addCmdNodes(CmdNode *node) {
     this->cmdNodes.push_back(node);
 }
 
-const std::vector<CmdNode*> &PipedCmdNode::getCmdNodes() {
+const std::vector<CmdNode *> &PipedCmdNode::getCmdNodes() {
     return this->cmdNodes;
 }
 
 void PipedCmdNode::dump(Writer &writer) const {
-    std::vector<Node*> cmdNodes;
+    std::vector<Node *> cmdNodes;
     for(CmdNode *node : this->cmdNodes) {
         cmdNodes.push_back(node);
     }
@@ -1253,7 +1256,7 @@ void PipedCmdNode::accept(NodeVisitor *visitor) {
     visitor->visitPipedCmdNode(this);
 }
 
-EvalStatus PipedCmdNode::eval(RuntimeContext &ctx) {
+EvalStatus PipedCmdNode::eval(RuntimeContext & ctx) {
     unsigned int size = this->cmdNodes.size();
     ProcGroup group(size);
 
@@ -1295,6 +1298,7 @@ void CmdContextNode::unsetAttribute(flag8_t attribute) {
 bool CmdContextNode::hasAttribute(flag8_t attribute) {
     return hasFlag(this->attributeSet, attribute);
 }
+
 void CmdContextNode::setRetKind(CmdRetKind kind) {
     this->retKind = kind;
 }
@@ -1344,7 +1348,7 @@ void CmdContextNode::accept(NodeVisitor *visitor) {
     visitor->visitCmdContextNode(this);
 }
 
-EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
+EvalStatus CmdContextNode::eval(RuntimeContext & ctx) {
     return this->exprNode->eval(ctx);   //FIXME:
 }
 
@@ -1373,7 +1377,7 @@ void AssertNode::accept(NodeVisitor *visitor) {
     visitor->visitAssertNode(this);
 }
 
-EvalStatus AssertNode::eval(RuntimeContext &ctx) {
+EvalStatus AssertNode::eval(RuntimeContext & ctx) {
     if(ctx.assertion) {
         EVAL(ctx, this->exprNode);
         ctx.checkAssertion();
@@ -1404,7 +1408,7 @@ void BlockNode::insertNodeToFirst(Node *node) {
     this->nodeList.push_front(node);
 }
 
-const std::list<Node*> &BlockNode::getNodeList() {
+const std::list<Node *> &BlockNode::getNodeList() {
     return this->nodeList;
 }
 
@@ -1416,7 +1420,7 @@ void BlockNode::accept(NodeVisitor *visitor) {
     visitor->visitBlockNode(this);
 }
 
-EvalStatus BlockNode::eval(RuntimeContext &ctx) {
+EvalStatus BlockNode::eval(RuntimeContext & ctx) {
     for(Node *node : this->nodeList) {
         EvalStatus status = node->eval(ctx);
         if(!node->getType()->isVoidType()) {
@@ -1453,7 +1457,7 @@ void BreakNode::accept(NodeVisitor *visitor) {
     visitor->visitBreakNode(this);
 }
 
-EvalStatus BreakNode::eval(RuntimeContext &ctx) {
+EvalStatus BreakNode::eval(RuntimeContext & ctx) {
     return EVAL_BREAK;
 }
 
@@ -1473,7 +1477,7 @@ void ContinueNode::accept(NodeVisitor *visitor) {
     visitor->visitContinueNode(this);
 }
 
-EvalStatus ContinueNode::eval(RuntimeContext &ctx) {
+EvalStatus ContinueNode::eval(RuntimeContext & ctx) {
     return EVAL_CONTINUE;
 }
 
@@ -1499,7 +1503,7 @@ Node *ExportEnvNode::getExprNode() {
     return this->exprNode;
 }
 
-void ExportEnvNode::setAttribute(FieldHandle *handle) {
+void ExportEnvNode::setAttribute(FieldHandle * handle) {
     this->global = handle->isGlobal();
     this->varIndex = handle->getFieldIndex();
 }
@@ -1523,7 +1527,7 @@ void ExportEnvNode::accept(NodeVisitor *visitor) {
     visitor->visitExportEnvNode(this);
 }
 
-EvalStatus ExportEnvNode::eval(RuntimeContext &ctx) {
+EvalStatus ExportEnvNode::eval(RuntimeContext & ctx) {
     EVAL(ctx, this->exprNode);
     ctx.exportEnv(this->envName, this->varIndex, this->global);
     return EVAL_SUCCESS;
@@ -1541,7 +1545,7 @@ const std::string &ImportEnvNode::getEnvName() {
     return this->envName;
 }
 
-void ImportEnvNode::setAttribute(FieldHandle *handle) {
+void ImportEnvNode::setAttribute(FieldHandle * handle) {
     this->global = handle->isGlobal();
     this->varIndex = handle->getFieldIndex();
 }
@@ -1564,7 +1568,7 @@ void ImportEnvNode::accept(NodeVisitor *visitor) {
     visitor->visitImportEnvNode(this);
 }
 
-EvalStatus ImportEnvNode::eval(RuntimeContext &ctx) {
+EvalStatus ImportEnvNode::eval(RuntimeContext & ctx) {
     ctx.importEnv(this->envName, this->varIndex, this->global);
     return EVAL_SUCCESS;
 }
@@ -1620,10 +1624,10 @@ void ForNode::accept(NodeVisitor *visitor) {
     visitor->visitForNode(this);
 }
 
-EvalStatus ForNode::eval(RuntimeContext &ctx) {
+EvalStatus ForNode::eval(RuntimeContext & ctx) {
     EVAL(ctx, this->initNode);
 
-CONTINUE:
+    CONTINUE:
     EVAL(ctx, this->condNode);
     if(TYPE_AS(Boolean_Object, ctx.pop())->getValue()) {
         EvalStatus status = this->blockNode->eval(ctx);
@@ -1675,8 +1679,8 @@ void WhileNode::accept(NodeVisitor *visitor) {
     visitor->visitWhileNode(this);
 }
 
-EvalStatus WhileNode::eval(RuntimeContext &ctx) {
-CONTINUE:
+EvalStatus WhileNode::eval(RuntimeContext & ctx) {
+    CONTINUE:
     EVAL(ctx, this->condNode);
     if(TYPE_AS(Boolean_Object, ctx.pop())->getValue()) {
         EvalStatus status = this->blockNode->eval(ctx);
@@ -1722,8 +1726,8 @@ void DoWhileNode::accept(NodeVisitor *visitor) {
     visitor->visitDoWhileNode(this);
 }
 
-EvalStatus DoWhileNode::eval(RuntimeContext &ctx) {
-CONTINUE:
+EvalStatus DoWhileNode::eval(RuntimeContext & ctx) {
+    CONTINUE:
     EvalStatus status = this->blockNode->eval(ctx);
     switch(status) {
     case EVAL_BREAK:
@@ -1740,7 +1744,7 @@ CONTINUE:
         goto CONTINUE;
     }
 
-BREAK:
+    BREAK:
     return EVAL_SUCCESS;
 }
 
@@ -1785,11 +1789,11 @@ void IfNode::addElifNode(Node *condNode, BlockNode *thenNode) {
     this->elifThenNodes.push_back(thenNode);
 }
 
-const std::vector<Node*> &IfNode::getElifCondNodes() {
+const std::vector<Node *> &IfNode::getElifCondNodes() {
     return this->elifCondNodes;
 }
 
-const std::vector<BlockNode*> &IfNode::getElifThenNodes() {
+const std::vector<BlockNode *> &IfNode::getElifThenNodes() {
     return this->elifThenNodes;
 }
 
@@ -1809,7 +1813,7 @@ void IfNode::dump(Writer &writer) const {
     WRITE_PTR(thenNode);
     WRITE(elifCondNodes);
 
-    std::vector<Node*> elifThenNodes;
+    std::vector<Node *> elifThenNodes;
     for(BlockNode *elifThenNode : this->elifThenNodes) {
         elifThenNodes.push_back(elifThenNode);
     }
@@ -1822,7 +1826,7 @@ void IfNode::accept(NodeVisitor *visitor) {
     visitor->visitIfNode(this);
 }
 
-EvalStatus IfNode::eval(RuntimeContext &ctx) {
+EvalStatus IfNode::eval(RuntimeContext & ctx) {
     // if cond
     EVAL(ctx, this->condNode);
 
@@ -1872,7 +1876,7 @@ void ReturnNode::accept(NodeVisitor *visitor) {
     visitor->visitReturnNode(this);
 }
 
-EvalStatus ReturnNode::eval(RuntimeContext &ctx) {
+EvalStatus ReturnNode::eval(RuntimeContext & ctx) {
     EVAL(ctx, this->exprNode);
     if(!this->exprNode->getType()->isVoidType()) {
         ctx.setReturnObject();
@@ -1905,7 +1909,7 @@ void ThrowNode::accept(NodeVisitor *visitor) {
     visitor->visitThrowNode(this);
 }
 
-EvalStatus ThrowNode::eval(RuntimeContext &ctx) {
+EvalStatus ThrowNode::eval(RuntimeContext & ctx) {
     EVAL(ctx, this->exprNode);
     ctx.setThrowObject();
     return EVAL_THROW;
@@ -1916,13 +1920,13 @@ EvalStatus ThrowNode::eval(RuntimeContext &ctx) {
 // #######################
 
 CatchNode::CatchNode(unsigned int lineNum, std::string &&exceptionName,
-        BlockNode *blockNode) :
+                     BlockNode *blockNode) :
         CatchNode(lineNum, std::move(exceptionName),
-        newAnyTypeToken(lineNum), blockNode) {
+                  newAnyTypeToken(lineNum), blockNode) {
 }
 
 CatchNode::CatchNode(unsigned int lineNum,
-        std::string &&exceptionName, TypeToken *type, BlockNode *blockNode) :
+                     std::string &&exceptionName, TypeToken *type, BlockNode *blockNode) :
         Node(lineNum), exceptionName(std::move(exceptionName)),
         typeToken(type), exceptionType(0), varIndex(0), blockNode(blockNode) {
 }
@@ -1957,7 +1961,7 @@ DSType *CatchNode::getExceptionType() {
     return this->exceptionType;
 }
 
-void CatchNode::setAttribute(FieldHandle *handle) {
+void CatchNode::setAttribute(FieldHandle * handle) {
     this->varIndex = handle->getFieldIndex();
 }
 
@@ -1980,7 +1984,7 @@ void CatchNode::accept(NodeVisitor *visitor) {
     visitor->visitCatchNode(this);
 }
 
-EvalStatus CatchNode::eval(RuntimeContext &ctx) {
+EvalStatus CatchNode::eval(RuntimeContext & ctx) {
     ctx.setLocal(this->varIndex);
     EVAL(ctx, this->blockNode);
     return EVAL_SUCCESS;
@@ -2015,7 +2019,7 @@ void TryNode::addCatchNode(CatchNode *catchNode) {
     this->catchNodes.push_back(catchNode);
 }
 
-const std::vector<CatchNode*> &TryNode::getCatchNodes() {
+const std::vector<CatchNode *> &TryNode::getCatchNodes() {
     return this->catchNodes;
 }
 
@@ -2036,7 +2040,7 @@ BlockNode *TryNode::getFinallyNode() {
 void TryNode::dump(Writer &writer) const {
     WRITE_PTR(blockNode);
 
-    std::vector<Node*> catchNodes;
+    std::vector<Node *> catchNodes;
     for(CatchNode *node : this->catchNodes) {
         catchNodes.push_back(node);
     }
@@ -2049,7 +2053,7 @@ void TryNode::accept(NodeVisitor *visitor) {
     visitor->visitTryNode(this);
 }
 
-EvalStatus TryNode::eval(RuntimeContext &ctx) {
+EvalStatus TryNode::eval(RuntimeContext & ctx) {
     // eval try block
     EvalStatus status = this->blockNode->eval(ctx);
 
@@ -2093,7 +2097,7 @@ bool VarDeclNode::isReadOnly() {
     return this->readOnly;
 }
 
-void VarDeclNode::setAttribute(FieldHandle *handle) {
+void VarDeclNode::setAttribute(FieldHandle * handle) {
     this->global = handle->isGlobal();
     this->varIndex = handle->getFieldIndex();
 }
@@ -2122,7 +2126,7 @@ void VarDeclNode::accept(NodeVisitor *visitor) {
     visitor->visitVarDeclNode(this);
 }
 
-EvalStatus VarDeclNode::eval(RuntimeContext &ctx) {
+EvalStatus VarDeclNode::eval(RuntimeContext & ctx) {
     EVAL(ctx, this->initValueNode);
     if(this->global) {
         ctx.setGlobal(this->varIndex);
@@ -2149,7 +2153,7 @@ AssignNode::~AssignNode() {
     this->leftNode = 0;
 
     delete this->rightNode;
-    this->rightNode  = 0;
+    this->rightNode = 0;
 }
 
 Node *AssignNode::getLeftNode() {
@@ -2195,7 +2199,7 @@ void AssignNode::accept(NodeVisitor *visitor) {
     visitor->visitAssignNode(this);
 }
 
-EvalStatus AssignNode::eval(RuntimeContext &ctx) {
+EvalStatus AssignNode::eval(RuntimeContext & ctx) {
     int index = ((AssignableNode *) this->leftNode)->getIndex();
     if(this->isFieldAssign()) {
         AccessNode *accessNode = (AccessNode *) this->leftNode;
@@ -2220,7 +2224,7 @@ EvalStatus AssignNode::eval(RuntimeContext &ctx) {
     return EVAL_SUCCESS;
 }
 
-std::pair<Node*, Node*> AssignNode::split(AssignNode *node) {
+std::pair<Node *, Node *> AssignNode::split(AssignNode *node) {
     Node *leftNode = node->leftNode;
     node->leftNode = 0;
 
@@ -2267,11 +2271,11 @@ void FunctionNode::addParamNode(VarNode *node, TypeToken *paramType) {
     this->paramTypeTokens.push_back(paramType);
 }
 
-const std::vector<VarNode*> &FunctionNode::getParamNodes() {
+const std::vector<VarNode *> &FunctionNode::getParamNodes() {
     return this->paramNodes;
 }
 
-const std::vector<TypeToken*> &FunctionNode::getParamTypeTokens() {
+const std::vector<TypeToken *> &FunctionNode::getParamTypeTokens() {
     return this->paramTypeTokens;
 }
 
@@ -2333,7 +2337,7 @@ int FunctionNode::getVarIndex() {
 void FunctionNode::dump(Writer &writer) const {
     WRITE(funcName);
 
-    std::vector<Node*> paramNodes;
+    std::vector<Node *> paramNodes;
     for(VarNode *node : this->paramNodes) {
         paramNodes.push_back(node);
     }
@@ -2351,7 +2355,7 @@ void FunctionNode::accept(NodeVisitor *visitor) {
     visitor->visitFunctionNode(this);
 }
 
-EvalStatus FunctionNode::eval(RuntimeContext &ctx) {
+EvalStatus FunctionNode::eval(RuntimeContext & ctx) {
     ctx.setGlobal(this->varIndex, std::shared_ptr<DSObject>(new UserFuncObject(this)));
     return EVAL_REMOVE;
 }
@@ -2376,7 +2380,7 @@ void EmptyNode::accept(NodeVisitor *visitor) {
     visitor->visitEmptyNode(this);
 }
 
-EvalStatus EmptyNode::eval(RuntimeContext &ctx) {
+EvalStatus EmptyNode::eval(RuntimeContext & ctx) {
     return EVAL_SUCCESS; // do nothing
 }
 
@@ -2384,7 +2388,7 @@ EvalStatus EmptyNode::eval(RuntimeContext &ctx) {
 // ##     DummyNode     ##
 // #######################
 
-DummyNode::DummyNode():
+DummyNode::DummyNode() :
         Node(0) {
 }
 
@@ -2396,7 +2400,7 @@ void DummyNode::accept(NodeVisitor *visitor) {
     visitor->visitDummyNode(this);
 }
 
-EvalStatus DummyNode::eval(RuntimeContext &ctx) {
+EvalStatus DummyNode::eval(RuntimeContext & ctx) {
     return EVAL_SUCCESS; // do nothing
 }
 
@@ -2419,7 +2423,7 @@ void RootNode::addNode(Node *node) {
     this->nodeList.push_back(node);
 }
 
-const std::list<Node*> &RootNode::getNodeList() {
+const std::list<Node *> &RootNode::getNodeList() {
     return this->nodeList;
 }
 
@@ -2449,7 +2453,7 @@ void RootNode::accept(NodeVisitor *visitor) {
     visitor->visitRootNode(this);
 }
 
-EvalStatus RootNode::eval(RuntimeContext &ctx) {
+EvalStatus RootNode::eval(RuntimeContext & ctx) {
     ctx.reserveGlobalVar(this->maxGVarNum);
     ctx.localVarOffset = this->maxVarNum;
 
@@ -2459,7 +2463,7 @@ EvalStatus RootNode::eval(RuntimeContext &ctx) {
         if(status == EVAL_SUCCESS) {
             if(ctx.repl) {
                 ctx.printStackTop(node->getType());
-            } else if(!node->getType()->isVoidType()){
+            } else if(!node->getType()->isVoidType()) {
                 ctx.pop();
             }
         } else if(status == EVAL_THROW) {
@@ -2571,7 +2575,7 @@ ForNode *createForInNode(unsigned int lineNum, VarNode *varNode, Node *exprNode,
     reset_var = new VarNode(lineNum, std::string(reset_var_name));
     ApplyNode *apply_next = createApplyNode(reset_var, std::string(OP_NEXT));
     VarDeclNode *init_var = new VarDeclNode(lineNum,
-            VarNode::extractVarNameAndDelete(varNode), apply_next, false);
+                                            VarNode::extractVarNameAndDelete(varNode), apply_next, false);
 
     // insert init to block
     blockNode->insertNodeToFirst(init_var);
@@ -2589,9 +2593,9 @@ Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode) {
      */
     if(op == ASSIGN) {
         // assign to element(actually call SET)
-        ApplyNode *indexNode = dynamic_cast<ApplyNode*>(leftNode);
+        ApplyNode *indexNode = dynamic_cast<ApplyNode *>(leftNode);
         if(indexNode != 0 && indexNode->hasAttribute(ApplyNode::INDEX)) {
-            AccessNode *accessNode = dynamic_cast<AccessNode*>(indexNode->getRecvNode());
+            AccessNode *accessNode = dynamic_cast<AccessNode *>(indexNode->getRecvNode());
             accessNode->setFieldName(std::string(OP_SET));
             indexNode->getArgsNode()->addArg(rightNode);
             return indexNode;
@@ -2605,7 +2609,7 @@ Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode) {
      * self assignment
      */
     // assign to element
-    ApplyNode *indexNode = dynamic_cast<ApplyNode*>(leftNode);
+    ApplyNode *indexNode = dynamic_cast<ApplyNode *>(leftNode);
     if(indexNode != 0 && indexNode->hasAttribute(ApplyNode::INDEX)) {
         fatal("unimplemented assignment to element");   //FIXME:
         return 0;
@@ -2654,3 +2658,6 @@ NodeVisitor::NodeVisitor() {
 
 NodeVisitor::~NodeVisitor() {
 }
+
+} // namespace ast
+} // namespace ydsh

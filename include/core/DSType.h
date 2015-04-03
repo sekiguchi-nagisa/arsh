@@ -26,6 +26,9 @@
 #include <core/FieldHandle.h>
 #include <core/handle_info.h>
 
+namespace ydsh {
+namespace core {
+
 struct DSObject;
 struct FuncObject;
 
@@ -43,10 +46,11 @@ protected:
 
 public:
     const static flag8_t EXTENDABLE = 1 << 0;
-    const static flag8_t VOID_TYPE  = 1 << 1;
-    const static flag8_t FUNC_TYPE  = 1 << 2;
+    const static flag8_t VOID_TYPE = 1 << 1;
+    const static flag8_t FUNC_TYPE = 1 << 2;
 
     DSType(type_id_t id, bool extendable, DSType *superType, bool isVoid = false);
+
     virtual ~DSType();
 
     /**
@@ -116,7 +120,7 @@ public:
     virtual void initFieldTable(std::shared_ptr<DSObject> *fieldTable);
 };
 
-class ClassType: public DSType {	//TODO: add field index map
+class ClassType : public DSType {    //TODO: add field index map
 private:
     /**
      * handleTable base index
@@ -128,17 +132,18 @@ private:
      */
     FunctionHandle *constructorHandle;
 
-    std::unordered_map<std::string, FieldHandle*> handleMap;
+    std::unordered_map<std::string, FieldHandle *> handleMap;
 
-    std::vector<std::shared_ptr<DSObject*>> fieldTable;
+    std::vector<std::shared_ptr<DSObject *>> fieldTable;
 
 public:
     ClassType(type_id_t id, bool extendable, DSType *superType);
+
     ~ClassType();
 
-    FunctionHandle *getConstructorHandle(TypePool *typePool);	// override
-    unsigned int getFieldSize();	// override
-    FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName);	// override
+    FunctionHandle *getConstructorHandle(TypePool *typePool);    // override
+    unsigned int getFieldSize();    // override
+    FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName);    // override
     FieldHandle *findHandle(const std::string &fieldName);  // override
 
     /**
@@ -150,12 +155,13 @@ public:
      * return created function handle.
      * return null, found duplicated field.
      */
-    FunctionHandle *addNewFunctionHandle(const std::string &funcName, DSType *returnType, const std::vector<DSType*> &paramTypes);
+    FunctionHandle *addNewFunctionHandle(const std::string &funcName, DSType *returnType,
+                                         const std::vector<DSType *> &paramTypes);
 
     /**
      * return created constructor handle
      */
-    FunctionHandle *setNewConstructorHandle(const std::vector<DSType*> &paramTypes);
+    FunctionHandle *setNewConstructorHandle(const std::vector<DSType *> &paramTypes);
 
     /**
      * add function entity to ClassType. the order of calling this method must be
@@ -170,17 +176,18 @@ public:
     void setConstructor(FuncObject *func);
 };
 
-class FunctionType: public DSType {
+class FunctionType : public DSType {
 private:
     DSType *returnType;
 
     /**
      * may be empty vector, if has no parameter
      */
-    std::vector<DSType*> paramTypes;
+    std::vector<DSType *> paramTypes;
 
 public:
-    FunctionType(type_id_t id, DSType *superType, DSType *returnType, const std::vector<DSType*> &paramTypes);
+    FunctionType(type_id_t id, DSType *superType, DSType *returnType, const std::vector<DSType *> &paramTypes);
+
     ~FunctionType();
 
     DSType *getReturnType();
@@ -188,7 +195,7 @@ public:
     /**
      * may be empty vector, if has no parameter (getParamSize() == 0)
      */
-    const std::vector<DSType*> &getParamTypes();
+    const std::vector<DSType *> &getParamTypes();
 
     /**
      * may be null, if has no parameter
@@ -203,20 +210,21 @@ public:
     /**
      * return always null
      */
-    FunctionHandle *getConstructorHandle(TypePool *typePool);	// override
+    FunctionHandle *getConstructorHandle(TypePool *typePool);    // override
 
-    unsigned int getFieldSize();	// override
+    unsigned int getFieldSize();    // override
 
     /**
      * lookup from super type
      */
-    FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName);	// override
+    FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName);    // override
 
     FieldHandle *findHandle(const std::string &fieldName);  // override
 };
 
 struct RuntimeContext;
-typedef bool (*native_func_t) (RuntimeContext &);
+
+typedef bool (*native_func_t)(RuntimeContext &);
 
 /**
  * for function handle(method handle or constructor handle) creation.
@@ -249,7 +257,7 @@ struct NativeFuncInfo {
      * decode native_func_info and create new FunctionHandle.
      */
     FunctionHandle *toFuncHandle(TypePool *typePool, int fieldIndex,
-            DSType *elementType0 = 0, DSType *elementType1 = 0) const;
+                                 DSType *elementType0 = 0, DSType *elementType1 = 0) const;
 };
 
 struct native_type_info_t {
@@ -271,18 +279,21 @@ struct native_type_info_t {
  * for BuiltinType creation.
  */
 DSType *newBuiltinType(type_id_t id, bool extendable,
-        DSType *superType, native_type_info_t *info, bool isVoid = false);
+                       DSType *superType, native_type_info_t *info, bool isVoid = false);
 
 /**
  * for ReifiedType creation.
  * reified type is not public class.
  */
 DSType *newReifiedType(type_id_t id, native_type_info_t *info,
-        DSType *superType, const std::vector<DSType*> &elementTypes);
+                       DSType *superType, const std::vector<DSType *> &elementTypes);
 
 /**
  * for TupleType creation
  */
-DSType *newTupleType(type_id_t id, DSType *superType, const std::vector<DSType*> &elementTypes);
+DSType *newTupleType(type_id_t id, DSType *superType, const std::vector<DSType *> &elementTypes);
+
+} // namespace core
+} // namespace ydsh
 
 #endif /* CORE_DSTYPE_H_ */

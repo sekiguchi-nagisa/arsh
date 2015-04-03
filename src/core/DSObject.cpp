@@ -19,6 +19,9 @@
 
 #include <assert.h>
 
+namespace ydsh {
+namespace core {
+
 // ######################
 // ##     DSObject     ##
 // ######################
@@ -168,7 +171,7 @@ const std::vector<std::shared_ptr<DSObject>> &Array_Object::getValues() {
 std::string Array_Object::toString() {
     std::string str("[");
     unsigned int size = this->values.size();
-    for(unsigned int i = 0; i  < size; i++) {
+    for(unsigned int i = 0; i < size; i++) {
         if(i > 0) {
             str += ", ";
         }
@@ -257,7 +260,7 @@ FuncObject::~FuncObject() {
 
 void FuncObject::setType(DSType *type) {
     if(this->type == 0) {
-        assert(dynamic_cast<FunctionType*>(type) != 0);
+        assert(dynamic_cast<FunctionType *>(type) != 0);
         this->type = type;
         this->fieldTable = new std::shared_ptr<DSObject>[this->type->getFieldSize()];
         this->type->initFieldTable(this->fieldTable);
@@ -327,7 +330,7 @@ native_func_t BuiltinFuncObject::getFuncPointer() {
 
 std::string BuiltinFuncObject::toString() {
     std::string str("function(");
-    str += std::to_string((long)this->func_ptr);
+    str += std::to_string((long) this->func_ptr);
     str += ")";
     return str;
 }
@@ -339,3 +342,6 @@ bool BuiltinFuncObject::invoke(RuntimeContext &ctx) {
 std::shared_ptr<DSObject> BuiltinFuncObject::newFuncObject(native_func_t func_ptr) {
     return std::make_shared<BuiltinFuncObject>(func_ptr);
 }
+
+} // namespace core
+} // namespace ydsh

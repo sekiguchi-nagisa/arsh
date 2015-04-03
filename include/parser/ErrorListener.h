@@ -20,25 +20,34 @@
 #include <parser/TypeCheckError.h>
 #include <parser/ParseError.h>
 
+namespace ydsh {
+namespace parser {
+
 struct ErrorListener {
     ErrorListener();
+
     virtual ~ErrorListener();
 
     virtual void displayTypeError(const std::string &sourceName,
-            const TypeCheckError &e) const = 0;
+                                  const TypeCheckError &e) const = 0;
+
     virtual void displayParseError(Lexer<LexerDef, TokenKind> &lexer,
-            const std::string &sourceName, const ParseError &e) const = 0;
+                                   const std::string &sourceName, const ParseError &e) const = 0;
 };
 
 class CommonErrorListener : public ErrorListener {
 public:
     CommonErrorListener();
+
     ~CommonErrorListener();
 
     void displayTypeError(const std::string &sourceName,
-            const TypeCheckError &e) const; // override
+                          const TypeCheckError &e) const; // override
     void displayParseError(Lexer<LexerDef, TokenKind> &lexer,
-            const std::string &sourceName, const ParseError &e) const; // override
+                           const std::string &sourceName, const ParseError &e) const; // override
 };
+
+} // namespace parser
+} // namespace ydsh
 
 #endif /* PARSER_ERRORLISTENER_H_ */

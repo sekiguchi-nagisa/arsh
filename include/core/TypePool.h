@@ -25,6 +25,9 @@
 #include <core/DSType.h>
 #include <core/TypeTemplate.h>
 
+namespace ydsh {
+namespace core {
+
 struct native_type_info_t;
 
 class TypePool {
@@ -34,7 +37,7 @@ private:
     /**
      * for class type
      */
-    std::unordered_map<std::string, DSType*> typeMap;
+    std::unordered_map<std::string, DSType *> typeMap;
     std::vector<const std::string *> typeNameTable;
 
     // type definition
@@ -57,7 +60,7 @@ private:
     /**
      * for type template
      */
-    std::unordered_map<std::string, TypeTemplate*> templateMap;
+    std::unordered_map<std::string, TypeTemplate *> templateMap;
 
     // type template definition
     TypeTemplate *arrayTemplate;
@@ -77,6 +80,7 @@ private:
 
 public:
     TypePool(char **envp);
+
     ~TypePool();
 
     /**
@@ -102,13 +106,18 @@ public:
     DSType *getFloatType();
 
     DSType *getBooleanType();
+
     DSType *getStringType();
+
     DSType *getTaskType();
+
     DSType *getBaseFuncType();
 
     // for reified type.
     TypeTemplate *getArrayTemplate();
+
     TypeTemplate *getMapTemplate();
+
     TypeTemplate *getTupleTemplate();
 
     // for type lookup
@@ -133,11 +142,11 @@ public:
     /**
      * if type template is Tuple, call createAndGetTupleTypeIfUndefined()
      */
-    DSType *createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate, const std::vector<DSType*> &elementTypes);
+    DSType *createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate, const std::vector<DSType *> &elementTypes);
 
-    DSType *createAndGetTupleTypeIfUndefined(const std::vector<DSType*> &elementTypes);
+    DSType *createAndGetTupleTypeIfUndefined(const std::vector<DSType *> &elementTypes);
 
-    FunctionType *createAndGetFuncTypeIfUndefined(DSType *returnType, const std::vector<DSType*> &paramTypes);
+    FunctionType *createAndGetFuncTypeIfUndefined(DSType *returnType, const std::vector<DSType *> &paramTypes);
 
     const std::string &getTypeName(const DSType &type);
 
@@ -145,29 +154,36 @@ public:
      * create reified type name
      * equivalent to toReifiedTypeName(typeTemplate->getName(), elementTypes)
      */
-    std::string toReifiedTypeName(TypeTemplate *typeTemplate, const std::vector<DSType*> &elementTypes);
+    std::string toReifiedTypeName(TypeTemplate *typeTemplate, const std::vector<DSType *> &elementTypes);
 
-    std::string toReifiedTypeName(const std::string &name, const std::vector<DSType*> &elementTypes);
+    std::string toReifiedTypeName(const std::string &name, const std::vector<DSType *> &elementTypes);
 
-    std::string toTupleTypeName(const std::vector<DSType*> &elementTypes);
+    std::string toTupleTypeName(const std::vector<DSType *> &elementTypes);
 
     /**
      * create function type name
      */
-    std::string toFunctionTypeName(DSType *returnType, const std::vector<DSType*> &paramTypes);
+    std::string toFunctionTypeName(DSType *returnType, const std::vector<DSType *> &paramTypes);
 
     bool hasEnv(const std::string &envName);
+
     void addEnv(const std::string &envName);
 
 private:
     void initEnvSet();
+
     DSType *addType(std::string &&typeName, DSType *type);
+
     DSType *initBuiltinType(const char *typeName, bool extendable,
-            DSType *superType, native_type_info_t *info, bool isVoid = false);
+                            DSType *superType, native_type_info_t *info, bool isVoid = false);
+
     TypeTemplate *initTypeTemplate(const char *typeName,
-            unsigned int elemSize, native_type_info_t *info);
-    void checkElementTypes(const std::vector<DSType*> &elementTypes);
+                                   unsigned int elemSize, native_type_info_t *info);
+
+    void checkElementTypes(const std::vector<DSType *> &elementTypes);
 };
 
+} // namespace core
+} // namespace ydsh
 
 #endif /* CORE_TYPEPOOL_H_ */

@@ -37,13 +37,16 @@
     OP(yycDSTRING) \
     OP(yycCMD)
 
+namespace ydsh {
+namespace parser {
+
 typedef enum {
 #define GEN_ENUM(ENUM) ENUM,
     EACH_LEXER_MODE(GEN_ENUM)
 #undef GEN_ENUM
 } LexerMode;
 
-template <typename LEXER_DEF, typename TOKEN_KIND>
+template<typename LEXER_DEF, typename TOKEN_KIND>
 struct Lexer {
     /**
      * may be null, if input source is string. not closed it.
@@ -244,7 +247,7 @@ struct Lexer {
 
 //========== implementation ==============
 
-template<typename  LEXER_DEF, typename TOKEN_KIND>
+template<typename LEXER_DEF, typename TOKEN_KIND>
 const char *Lexer<LEXER_DEF, TOKEN_KIND>::lexerModeNames[] = {
 #define GEN_NAME(ENUM) #ENUM,
         EACH_LEXER_MODE(GEN_NAME)
@@ -252,15 +255,15 @@ const char *Lexer<LEXER_DEF, TOKEN_KIND>::lexerModeNames[] = {
 #undef EACH_LEXER_MODE
 };
 
-template<typename  LEXER_DEF, typename TOKEN_KIND>
+template<typename LEXER_DEF, typename TOKEN_KIND>
 LEXER_DEF Lexer<LEXER_DEF, TOKEN_KIND>::lexerDef;
 
-template<typename  LEXER_DEF, typename TOKEN_KIND>
+template<typename LEXER_DEF, typename TOKEN_KIND>
 TOKEN_KIND Lexer<LEXER_DEF, TOKEN_KIND>::nextToken(Token &token) {
     return lexerDef(this, token);
 }
 
-template<typename  LEXER_DEF, typename TOKEN_KIND>
+template<typename LEXER_DEF, typename TOKEN_KIND>
 void Lexer<LEXER_DEF, TOKEN_KIND>::expandBuf(unsigned int needSize) {
     unsigned int usedSize = this->getUsedSize();
     unsigned int size = usedSize + needSize;
@@ -284,7 +287,7 @@ void Lexer<LEXER_DEF, TOKEN_KIND>::expandBuf(unsigned int needSize) {
     }
 }
 
-template<typename  LEXER_DEF, typename TOKEN_KIND>
+template<typename LEXER_DEF, typename TOKEN_KIND>
 bool Lexer<LEXER_DEF, TOKEN_KIND>::fill(int n) {
     if(this->endOfString && this->limit - this->cursor <= 0) {
         return false;
@@ -309,7 +312,7 @@ bool Lexer<LEXER_DEF, TOKEN_KIND>::fill(int n) {
     assert(token.startPos < this->getUsedSize() &&\
             token.startPos + token.size <= this->getUsedSize())
 
-template<typename  LEXER_DEF, typename TOKEN_KIND>
+template<typename LEXER_DEF, typename TOKEN_KIND>
 Token Lexer<LEXER_DEF, TOKEN_KIND>::getLineToken(const Token &token) const {
     CHECK_TOK(token);
 
@@ -337,13 +340,13 @@ Token Lexer<LEXER_DEF, TOKEN_KIND>::getLineToken(const Token &token) const {
     return lineToken;
 }
 
-template<typename  LEXER_DEF, typename TOKEN_KIND>
+template<typename LEXER_DEF, typename TOKEN_KIND>
 std::string Lexer<LEXER_DEF, TOKEN_KIND>::toTokenText(const Token &token) const {
     CHECK_TOK(token);
-    return std::string((char*)(this->buf + token.startPos), token.size);
+    return std::string((char *) (this->buf + token.startPos), token.size);
 }
 
-template<typename  LEXER_DEF, typename TOKEN_KIND>
+template<typename LEXER_DEF, typename TOKEN_KIND>
 std::string Lexer<LEXER_DEF, TOKEN_KIND>::toString(const Token &token, bool isSingleQuote) const {
     CHECK_TOK(token);
 
@@ -357,16 +360,36 @@ std::string Lexer<LEXER_DEF, TOKEN_KIND>::toString(const Token &token, bool isSi
         if(ch == '\\') {    // handle escape sequence
             char nextCh = this->buf[token.startPos + ++i];
             switch(nextCh) {
-            case 'b' : ch = '\b'; break;
-            case 'f' : ch = '\f'; break;
-            case 'n' : ch = '\n'; break;
-            case 'r' : ch = '\r'; break;
-            case 't' : ch = '\t'; break;
-            case '\'': ch = '\''; break;
-            case '"' : ch = '"' ; break;
-            case '\\': ch = '\\'; break;
-            case '`' : ch = '`' ; break;
-            case '$' : ch = '$' ; break;
+            case 'b' :
+                ch = '\b';
+                break;
+            case 'f' :
+                ch = '\f';
+                break;
+            case 'n' :
+                ch = '\n';
+                break;
+            case 'r' :
+                ch = '\r';
+                break;
+            case 't' :
+                ch = '\t';
+                break;
+            case '\'':
+                ch = '\'';
+                break;
+            case '"' :
+                ch = '"';
+                break;
+            case '\\':
+                ch = '\\';
+                break;
+            case '`' :
+                ch = '`';
+                break;
+            case '$' :
+                ch = '$';
+                break;
             default:
                 fatal("unexpected escape sequence: %c\n", nextCh);
                 break;
@@ -377,7 +400,7 @@ std::string Lexer<LEXER_DEF, TOKEN_KIND>::toString(const Token &token, bool isSi
     return str;
 }
 
-template<typename  LEXER_DEF, typename TOKEN_KIND>
+template<typename LEXER_DEF, typename TOKEN_KIND>
 std::string Lexer<LEXER_DEF, TOKEN_KIND>::toCmdArg(const Token &token, bool expandTilde) const {
     CHECK_TOK(token);
 
@@ -413,7 +436,7 @@ std::string Lexer<LEXER_DEF, TOKEN_KIND>::toCmdArg(const Token &token, bool expa
     return str;
 }
 
-template<typename  LEXER_DEF, typename TOKEN_KIND>
+template<typename LEXER_DEF, typename TOKEN_KIND>
 std::string Lexer<LEXER_DEF, TOKEN_KIND>::toName(const Token &token) const {
     CHECK_TOK(token);
 
@@ -434,7 +457,7 @@ std::string Lexer<LEXER_DEF, TOKEN_KIND>::toName(const Token &token) const {
     return name;
 }
 
-template<typename  LEXER_DEF, typename TOKEN_KIND>
+template<typename LEXER_DEF, typename TOKEN_KIND>
 int Lexer<LEXER_DEF, TOKEN_KIND>::toInt(const Token &token, int &status) const {
     CHECK_TOK(token);
 
@@ -467,7 +490,7 @@ int Lexer<LEXER_DEF, TOKEN_KIND>::toInt(const Token &token, int &status) const {
     return (int) value;
 }
 
-template<typename  LEXER_DEF, typename TOKEN_KIND>
+template<typename LEXER_DEF, typename TOKEN_KIND>
 double Lexer<LEXER_DEF, TOKEN_KIND>::toDouble(const Token &token, int &status) const {
     CHECK_TOK(token);
 
@@ -502,7 +525,10 @@ double Lexer<LEXER_DEF, TOKEN_KIND>::toDouble(const Token &token, int &status) c
 
 //==== default lexer definition ======
 struct LexerDef {
-TokenKind operator()(Lexer<LexerDef, TokenKind> *lexer, Token &token) const;
+    TokenKind operator()(Lexer<LexerDef, TokenKind> *lexer, Token &token) const;
 };
+
+} // namespace parser
+} // namespace ydsh
 
 #endif /* PARSER_LEXER_H_ */

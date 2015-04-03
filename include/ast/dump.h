@@ -24,10 +24,24 @@
 #include <vector>
 #include <list>
 
-class Node;
-class TypeToken;
+namespace ydsh {
+namespace core {
+
 class TypePool;
 class DSType;
+
+}
+};
+
+
+
+namespace ydsh {
+namespace ast {
+
+using namespace ydsh::core;
+
+class Node;
+class TypeToken;
 class RootNode;
 
 class Writer {
@@ -45,7 +59,8 @@ private:
     unsigned int indentLevel;
 
 public:
-    Writer(std::ostream *stream, TypePool *pool);
+    Writer(std::ostream *stream, core::TypePool *pool);
+
     ~Writer();
 
     /**
@@ -53,8 +68,9 @@ public:
      */
     void write(const char *fieldName, const std::string &value);
 
-    void write(const char *fieldName, const std::vector<Node*> &nodes);
-    void write(const char *fieldName, const std::list<Node*> &nodes);
+    void write(const char *fieldName, const std::vector<Node *> &nodes);
+
+    void write(const char *fieldName, const std::list<Node *> &nodes);
 
     /**
      * write node with indent
@@ -62,8 +78,11 @@ public:
     void write(const char *fieldName, const Node &node);
 
     void write(const char *fieldName, const TypeToken &tok);
+
     void write(const char *fieldName, const DSType &type);
-    void write(const char *fieldName, const std::vector<TypeToken*> &toks);
+
+    void write(const char *fieldName, const std::vector<TypeToken *> &toks);
+
     void writeNull(const char *fieldName);
 
     /**
@@ -73,9 +92,13 @@ public:
 
 private:
     void enterIndent();
+
     void exitIndent();
+
     void writeIndent();
+
     void writeNodeHeader(const Node &node);
+
     void writeName(const char *fieldName);
 
     const static char *INDENT;
@@ -83,6 +106,9 @@ private:
 
 // entry point
 void dumpAST(std::ostream &out, TypePool &pool, const RootNode &rootNode);
+
+} // namespace ast
+} // namespace ydsh
 
 // helper macro definition
 #define WRITE(field)  writer.write(NAME(field), field)

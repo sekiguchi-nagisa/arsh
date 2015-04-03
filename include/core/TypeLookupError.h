@@ -35,6 +35,8 @@
         /* three arg */\
         ERROR(E_UnmatchElement, "not match type element, %s requires %s type element, but is %s")
 
+namespace ydsh {
+namespace core {
 
 class TypeLookupError {
 public:
@@ -50,18 +52,25 @@ private:
 
 public:
     TypeLookupError(TypeLookupError::ErrorKind kind);
+
     ~TypeLookupError();
 
     const std::string &getTemplate() const;
+
     const std::vector<std::string> &getArgs() const;
 
     bool operator==(const TypeLookupError &e);
 
     static void report(ErrorKind kind);
+
     static void report(ErrorKind kind, const std::string &arg1);
+
     static void report(ErrorKind kind, const std::string &arg1,
-            const std::string &arg2, const std::string &arg3);
+                       const std::string &arg2, const std::string &arg3);
 };
+
+} // namespace core
+} // namespace ydsh
 
 // helper macro for error reporting
 

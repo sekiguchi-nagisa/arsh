@@ -17,6 +17,9 @@
 #ifndef CORE_SYMBOL_H_
 #define CORE_SYMBOL_H_
 
+namespace ydsh {
+namespace core {
+
 /**
  * built-in symbol(builtin variable, magic method) definition
  */
@@ -24,11 +27,11 @@
 // =====  builtin variable  =====
 
 // boolean
-constexpr char TRUE [] = "TRUE";
+constexpr char TRUE[] = "TRUE";
 constexpr char FALSE[] = "FALSE";
 
 // io
-constexpr char STDIN [] = "STDIN";
+constexpr char STDIN[] = "STDIN";
 constexpr char STDOUT[] = "STDOUT";
 constexpr char STDERR[] = "STDERR";
 
@@ -36,48 +39,49 @@ constexpr char STDERR[] = "STDERR";
 // =====  magic method  =====
 
 // unary op definition
-constexpr char OP_PLUS [] = "__PLUS__";     // +
+constexpr char OP_PLUS[] = "__PLUS__";     // +
 constexpr char OP_MINUS[] = "__MINUS__";    // -
-constexpr char OP_NOT  [] = "__NOT__";      // not
+constexpr char OP_NOT[] = "__NOT__";      // not
 
 // binary op definition
-constexpr char OP_ADD[]   = "__ADD__";      // +
-constexpr char OP_SUB[]   = "__SUB__";      // -
-constexpr char OP_MUL[]   = "__MUL__";      // *
-constexpr char OP_DIV[]   = "__DIV__";      // /
-constexpr char OP_MOD[]   = "__MOD__";      // %
+constexpr char OP_ADD[] = "__ADD__";      // +
+constexpr char OP_SUB[] = "__SUB__";      // -
+constexpr char OP_MUL[] = "__MUL__";      // *
+constexpr char OP_DIV[] = "__DIV__";      // /
+constexpr char OP_MOD[] = "__MOD__";      // %
 
-constexpr char OP_EQ[]    = "__EQ__";       // ==
-constexpr char OP_NE[]    = "__NE__";       // !=
+constexpr char OP_EQ[] = "__EQ__";       // ==
+constexpr char OP_NE[] = "__NE__";       // !=
 
-constexpr char OP_LT[]    = "__LT__";       // <
-constexpr char OP_GT[]    = "__GT__";       // >
-constexpr char OP_LE[]    = "__LE__";       // <=
-constexpr char OP_GE[]    = "__GE__";       // >=
+constexpr char OP_LT[] = "__LT__";       // <
+constexpr char OP_GT[] = "__GT__";       // >
+constexpr char OP_LE[] = "__LE__";       // <=
+constexpr char OP_GE[] = "__GE__";       // >=
 
-constexpr char OP_AND[]   = "__AND__";      // &
-constexpr char OP_OR []   = "__OR__";       // |
-constexpr char OP_XOR[]   = "__XOR__";      // ^
+constexpr char OP_AND[] = "__AND__";      // &
+constexpr char OP_OR[] = "__OR__";       // |
+constexpr char OP_XOR[] = "__XOR__";      // ^
 
 constexpr char OP_RE_EQ[] = "__RE_EQ__";    // =~
 constexpr char OP_RE_NE[] = "__RE_NE__";    // !~
 
 // indexer op
-constexpr char OP_GET[]   = "__GET__";      // []
-constexpr char OP_SET[]   = "__SET__";      // [] =
+constexpr char OP_GET[] = "__GET__";      // []
+constexpr char OP_SET[] = "__SET__";      // [] =
 
 // iterator
-constexpr char OP_RESET   [] = "__RESET__"; // must be Func<Any> type
-constexpr char OP_NEXT    [] = "__NEXT__";  // must be Func<Any> type
+constexpr char OP_RESET[] = "__RESET__"; // must be Func<Any> type
+constexpr char OP_NEXT[] = "__NEXT__";  // must be Func<Any> type
 constexpr char OP_HAS_NEXT[] = "__HAS_NEXT__";  // must be Func<Boolean> type
 
 // to string
-constexpr char OP_TO_STR[]   = "__TO_STR__";    // for string cast
-constexpr char OP_INTERP[]   = "__INTERP__";    // for interpolation
+constexpr char OP_TO_STR[] = "__TO_STR__";    // for string cast
+constexpr char OP_INTERP[] = "__INTERP__";    // for interpolation
 
 // to command argument(string or string array)
 constexpr char OP_TO_CMD_ARG[] = "__TO_CMD_ARG__";  // for command argument
 
-
+} // namespace core
+} // namespace ydsh
 
 #endif /* CORE_SYMBOL_H_ */
