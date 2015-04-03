@@ -231,16 +231,16 @@ typedef bool (*native_func_t)(RuntimeContext &);
  */
 struct NativeFuncInfo {
     /**
-     * if null, treat as constructor.
+     * if empty string, treat as constructor.
      */
-    const char *funcName;
+    char funcName[16];
 
     /**
      * serialized function handle
      */
-    char *handleInfo;
+    char handleInfo[32];
 
-    const char **paramNames;
+    char paramNames[8][16];
 
     /**
      * bool func(RuntimeContext &ctx)
@@ -251,7 +251,7 @@ struct NativeFuncInfo {
      * if arg1, arg3, arg4 has default value, then (00001101).
      * support up to 8 arguments.
      */
-    const unsigned char defaultValueFlag;
+    unsigned char defaultValueFlag;
 
     /**
      * decode native_func_info and create new FunctionHandle.
@@ -266,12 +266,12 @@ struct native_type_info_t {
      */
     NativeFuncInfo *initInfo;
 
-    unsigned int methodSize;
-
     /**
-     * may be null, if methodSize is 0
+     * up to 24
      */
-    NativeFuncInfo **funcInfos;
+    const unsigned int methodSize;
+
+    NativeFuncInfo funcInfos[24];
 };
 
 

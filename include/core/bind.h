@@ -23,8 +23,8 @@ namespace core {
 struct native_type_info;
 
 native_type_info_t *info_Dummy() {
-    static native_type_info_t dummy = {0, 0, 0};
-    return &dummy;
+    static native_type_info_t info = {0, 0, 0};
+    return &info;
 }
 
 

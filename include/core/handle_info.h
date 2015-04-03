@@ -30,18 +30,15 @@ namespace core {
  *     defaultValueFlag (00000000)
  */
 typedef enum {
-    // type definition
-            VOID_T = 32,
+    VOID_T = 32,    // type definition
     ANY_T,
     INT_T,
     FLOAT_T,
     BOOL_T,
     STRING_T,
-    // type template
-            ARRAY_T,
+    ARRAY_T,// type template
     MAP_T,
-    // param types number
-            P_N0,
+    P_N0,   // param types number
     P_N1,
     P_N2,
     P_N3,
@@ -50,8 +47,7 @@ typedef enum {
     P_N6,
     P_N7,
     P_N8,
-    // parametric type
-            T0,
+    T0,     // parametric type
     T1,
 } TypeInfo;
 

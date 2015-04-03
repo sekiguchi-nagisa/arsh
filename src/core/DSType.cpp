@@ -218,11 +218,11 @@ FieldHandle *FunctionType::findHandle(const std::string &fieldName) {
 // ##     NativeFuncInfo     ##
 // ############################
 
-static inline unsigned int decodeNum(char *&pos) {
+static inline unsigned int decodeNum(const char *&pos) {
     return (unsigned int) (*(pos++) - P_N0);
 }
 
-static DSType *decodeType(TypePool *typePool, char *&pos,
+static DSType *decodeType(TypePool *typePool, const char *&pos,
                           DSType *elementType0, DSType *elementType1) {
     switch(*(pos++)) {
     case VOID_T:
@@ -282,7 +282,7 @@ FunctionHandle *NativeFuncInfo::toFuncHandle(TypePool *typePool, int fieldIndex,
     /**
      * init return type
      */
-    char *pos = this->handleInfo;
+    const char *pos = this->handleInfo;
     DSType *returnType = decodeType(typePool, pos, elementType0, elementType1);
 
     /**
@@ -344,7 +344,7 @@ protected:
 
 public:
     /**
-     * actually superType is BuiltinType
+     * actually superType is BuiltinType.
      */
     BuiltinType(type_id_t id, bool extendable, DSType *superType,
                 native_type_info_t *info, bool isVoid);
@@ -370,14 +370,14 @@ BuiltinType::BuiltinType(type_id_t id, bool extendable, DSType *superType,
     // init function handle
     unsigned int baseIndex = superType != 0 ? superType->getFieldSize() : 0;
     for(unsigned int i = 0; i < info->methodSize; i++) {
-        NativeFuncInfo *funcInfo = info->funcInfos[i];
+        NativeFuncInfo *funcInfo = &info->funcInfos[i];
         unsigned int fieldIndex = baseIndex + i;
         auto *handle = new FieldHandle(0, fieldIndex, true);
         this->handleMap.insert(std::make_pair(std::string(funcInfo->funcName), handle));
 
         // init func object
         this->objectTable[i] = std::make_pair(fieldIndex,
-                                              BuiltinFuncObject::newFuncObject(this->info->funcInfos[i]->func_ptr));
+                                              BuiltinFuncObject::newFuncObject(this->info->funcInfos[i].func_ptr));
     }
 }
 
@@ -424,7 +424,7 @@ FieldHandle *BuiltinType::lookupFieldHandle(TypePool *typePool, const std::strin
 
         int fieldIndex = handle->getFieldIndex();
         delete handle;
-        handle = this->newFuncHandle(typePool, fieldIndex, this->info->funcInfos[infoIndex]);
+        handle = this->newFuncHandle(typePool, fieldIndex, &this->info->funcInfos[infoIndex]);
         iter->second = handle;
     }
     return handle;
