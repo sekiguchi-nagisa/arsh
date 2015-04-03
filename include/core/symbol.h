@@ -70,16 +70,16 @@ constexpr char OP_GET[] = "__GET__";      // []
 constexpr char OP_SET[] = "__SET__";      // [] =
 
 // iterator
-constexpr char OP_RESET[] = "__RESET__"; // must be Func<Any> type
+constexpr char OP_ITER[] = "__ITERATOR__"; // must be Func<Any> type
 constexpr char OP_NEXT[] = "__NEXT__";  // must be Func<Any> type
 constexpr char OP_HAS_NEXT[] = "__HAS_NEXT__";  // must be Func<Boolean> type
 
 // to string
-constexpr char OP_TO_STR[] = "__TO_STR__";    // for string cast
+constexpr char OP_STR[] = "__STR__";    // for string cast
 constexpr char OP_INTERP[] = "__INTERP__";    // for interpolation
 
 // to command argument(string or string array)
-constexpr char OP_TO_CMD_ARG[] = "__TO_CMD_ARG__";  // for command argument
+constexpr char OP_CMD_ARG[] = "__CMD_ARG__";  // for command argument
 
 } // namespace core
 } // namespace ydsh

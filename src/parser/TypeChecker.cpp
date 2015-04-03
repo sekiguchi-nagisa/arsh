@@ -582,7 +582,7 @@ void TypeChecker::visitCastNode(CastNode * node) {
      */
     if(*targetType == *pool->getStringType()) {
         node->setOpKind(CastNode::TO_STRING);
-        FieldHandle *handle = exprType->lookupFieldHandle(this->typePool, std::string(OP_TO_STR));
+        FieldHandle *handle = exprType->lookupFieldHandle(this->typePool, std::string(OP_STR));
         assert(handle != 0);
         node->setFieldIndex(handle->getFieldIndex());
         return;
