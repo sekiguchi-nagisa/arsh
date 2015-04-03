@@ -101,6 +101,8 @@ struct Lexer {
 
     const static unsigned int DEFAULT_SIZE = 256;
 
+    static const char *lexerModeNames[];
+
     static LEXER_DEF lexerDef;
 
     Lexer(unsigned int initSize, bool fixed = false) :
@@ -241,6 +243,14 @@ struct Lexer {
 };
 
 //========== implementation ==============
+
+template<typename  LEXER_DEF, typename TOKEN_KIND>
+const char *Lexer<LEXER_DEF, TOKEN_KIND>::lexerModeNames[] = {
+#define GEN_NAME(ENUM) #ENUM,
+        EACH_LEXER_MODE(GEN_NAME)
+#undef GEN_NAME
+#undef EACH_LEXER_MODE
+};
 
 template<typename  LEXER_DEF, typename TOKEN_KIND>
 LEXER_DEF Lexer<LEXER_DEF, TOKEN_KIND>::lexerDef;

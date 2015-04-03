@@ -246,14 +246,6 @@ INIT:
       <STMT,EXPR,NAME,DSTRING,CMD> OTHER  { RET(INVALID); }
     */
 
-#ifdef X_TRACE_TOKEN
-    static const char *stateNames[] = {
-#define GEN_NAME(ENUM) #ENUM,
-            EACH_LEXER_MODE(GEN_NAME)
-#undef GEN_NAME
-    };
-#endif
-
 END:
     token.startPos = startPos;
     token.size = lexer->getPos() - startPos;
@@ -262,7 +254,7 @@ END:
 #include <stdio.h>
     fprintf(stderr, "nextToken(): < kind=%s, text=%s >\n",
             TO_NAME(kind), lexer->toTokenText(token).c_str());
-    fprintf(stderr, "   lexer mode: %s\n", stateNames[YYGETCONDITION()]);
+    fprintf(stderr, "   lexer mode: %s\n", lexerModeNames[YYGETCONDITION()]);
 #endif
     return kind;
 
@@ -274,7 +266,7 @@ EOS:
 #include <stdio.h>
     fprintf(stderr, "nextToken(): < kind=%s, text=%s >\n",
             TO_NAME(EOS), lexer->toTokenText(token).c_str());
-    fprintf(stderr, "   lexer mode: %s\n", stateNames[YYGETCONDITION()]);
+    fprintf(stderr, "   lexer mode: %s\n", lexerModeNames[YYGETCONDITION()]);
 #endif
     return EOS;
 }
