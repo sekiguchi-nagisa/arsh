@@ -3,6 +3,7 @@
 .settings/
 Debug/
 Release/
+.idea
 
 # Compiled Object files
 *.slo
