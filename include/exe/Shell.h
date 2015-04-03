@@ -70,7 +70,7 @@ public:
     void setAssertion(bool assertion);
 
 private:
-    ExitStatus eval(const char *sourceName, Lexer &lexer, bool interactive = false);
+    ExitStatus eval(const char *sourceName, Lexer<LexerDef, TokenKind> &lexer, bool interactive = false);
 
     static CommonErrorListener clistener;
 };

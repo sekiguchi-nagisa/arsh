@@ -26,7 +26,7 @@ struct ErrorListener {
 
     virtual void displayTypeError(const std::string &sourceName,
             const TypeCheckError &e) const = 0;
-    virtual void displayParseError(Lexer &lexer,
+    virtual void displayParseError(Lexer<LexerDef, TokenKind> &lexer,
             const std::string &sourceName, const ParseError &e) const = 0;
 };
 
@@ -37,7 +37,7 @@ public:
 
     void displayTypeError(const std::string &sourceName,
             const TypeCheckError &e) const; // override
-    void displayParseError(Lexer &lexer,
+    void displayParseError(Lexer<LexerDef, TokenKind> &lexer,
             const std::string &sourceName, const ParseError &e) const; // override
 };
 

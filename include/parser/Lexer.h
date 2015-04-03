@@ -21,6 +21,13 @@
 #include <vector>
 #include <string>
 
+#include <assert.h>
+#include <string.h>
+#include <math.h>
+#include <errno.h>
+#include <limits.h>
+#include <misc/debug.h>
+
 #include <parser/Token.h>
 
 #define EACH_LEXER_MODE(OP) \
@@ -36,8 +43,8 @@ typedef enum {
 #undef GEN_ENUM
 } LexerMode;
 
-class Lexer {
-private:
+template <typename LEXER_DEF, typename TOKEN_KIND>
+struct Lexer {
     /**
      * may be null, if input source is string. not closed it.
      */
@@ -94,71 +101,105 @@ private:
 
     const static unsigned int DEFAULT_SIZE = 256;
 
-    Lexer(unsigned int initSize, bool fixed = false);
+    static LEXER_DEF lexerDef;
 
-public:
-    Lexer(unsigned int initSize, FILE *fp);
+    Lexer(unsigned int initSize, bool fixed = false) :
+            fp(0),
+            bufSize((fixed || initSize > DEFAULT_SIZE) ? initSize : DEFAULT_SIZE),
+            buf(new unsigned char[this->bufSize]),
+            cursor(this->buf), limit(this->buf), marker(0), ctxMarker(0),
+            lineNum(1), endOfFile(fixed), endOfString(false),
+            modeStack(1, yycSTMT), prevNewLine(false) {
+        this->buf[0] = '\0';    // terminate null character.
+    }
+
+    Lexer(unsigned int initSize, FILE *fp) :
+            Lexer(initSize) {
+        this->fp = fp;
+    }
 
     /**
      * equivalent to Lexer(DEFAULT_SIZE, fp).
      */
-    Lexer(FILE *fp);
+    Lexer(FILE *fp) : Lexer(DEFAULT_SIZE, fp) {
+    }
 
     /**
      * copy src to this->buf.
      * src must terminate null character.
      */
-    Lexer(const char *src);
+    Lexer(const char *src) :
+            Lexer(strlen(src) + 1, true) {
+        this->copySrcBuf(src);
+    }
 
     /**
      * create copy of lexer.
      * internal state is initialized.
      * fp is always null.
      */
-    Lexer(const Lexer &lexer);
+    Lexer(const Lexer &lexer) :
+            Lexer(lexer.getUsedSize(), true) {
+        this->copySrcBuf(lexer.buf);
+    }
 
-    ~Lexer();
+    ~Lexer() {
+        delete[] this->buf;
+        this->buf = 0;
+    }
 
-private:
     /**
      * used for constructor. not use it.
      */
-    void copySrcBuf(const void *srcBuf);
-
-    /**
-     * if this->usedSize + needSize > this->maxSize, expand buf.
-     */
-    void expandBuf(unsigned int needSize);
-
-public:
-    /**
-     * fill buffer. called from this->nextToken().
-     */
-    bool fill(int n);
+    void copySrcBuf(const void *srcBuf) {
+        memcpy(this->buf, srcBuf, this->bufSize);
+        this->limit += this->bufSize - 1;
+    }
 
     /**
      * get current reading position.
      */
-    unsigned int getPos() const;
-
-    unsigned int getBufSize() const;
+    unsigned int getPos() const {
+        return this->cursor - this->buf;
+    }
 
     /**
      * used size of buf. must be this->getUsedSize() <= this->getBufSize().
      */
-    unsigned int getUsedSize() const;
+    unsigned int getUsedSize() const {
+        return this->limit - this->buf + 1;
+    }
+
+    bool isPrevNewLine() {
+        return this->prevNewLine;
+    }
+
+    void setLineNum(unsigned int lineNum) {
+        this->lineNum = lineNum;
+    }
+
+    unsigned int getLineNum() const {
+        return this->lineNum;
+    }
 
     /**
      * lexer entry point.
      * write next token to token.
      * return the kind of next token.
      */
-    TokenKind nextToken(Token &token);
+    TOKEN_KIND nextToken(Token &token);
 
-    bool isPrevNewLine();
+    /**
+     * if this->usedSize + needSize > this->maxSize, expand buf.
+     */
+    void expandBuf(unsigned int needSize);
 
-    void setLineNum(unsigned int lineNum);
-    unsigned int getLineNum() const;
+    /**
+     * fill buffer. called from this->nextToken().
+     */
+    bool fill(int n);
+
+    // some token api
 
     /**
      * get line token which token belongs to.
@@ -197,6 +238,261 @@ public:
      * if converted number is out of range, status is 1.
      */
     double toDouble(const Token &token, int &status) const;
+};
+
+//========== implementation ==============
+
+template<typename  LEXER_DEF, typename TOKEN_KIND>
+LEXER_DEF Lexer<LEXER_DEF, TOKEN_KIND>::lexerDef;
+
+template<typename  LEXER_DEF, typename TOKEN_KIND>
+TOKEN_KIND Lexer<LEXER_DEF, TOKEN_KIND>::nextToken(Token &token) {
+    return lexerDef(this, token);
+}
+
+template<typename  LEXER_DEF, typename TOKEN_KIND>
+void Lexer<LEXER_DEF, TOKEN_KIND>::expandBuf(unsigned int needSize) {
+    unsigned int usedSize = this->getUsedSize();
+    unsigned int size = usedSize + needSize;
+    if(size > this->bufSize) {
+        unsigned int newSize = this->bufSize;
+        do {
+            newSize *= 2;
+        } while(newSize < size);
+        unsigned int pos = this->getPos();
+        unsigned int markerPos = this->marker - this->buf;
+        unsigned int ctxMarkerPos = this->ctxMarker - this->buf;
+        unsigned char *newBuf = new unsigned char[newSize];
+        memcpy(newBuf, this->buf, usedSize);
+        delete[] this->buf;
+        this->buf = newBuf;
+        this->bufSize = newSize;
+        this->cursor = this->buf + pos;
+        this->limit = this->buf + usedSize - 1;
+        this->marker = this->buf + markerPos;
+        this->ctxMarker = this->buf + ctxMarkerPos;
+    }
+}
+
+template<typename  LEXER_DEF, typename TOKEN_KIND>
+bool Lexer<LEXER_DEF, TOKEN_KIND>::fill(int n) {
+    if(this->endOfString && this->limit - this->cursor <= 0) {
+        return false;
+    }
+
+    if(!this->endOfFile) {
+        int needSize = n - (this->limit - this->cursor);
+        assert(needSize > -1);
+        this->expandBuf(needSize);
+        int readSize = fread(this->limit, sizeof(unsigned char), needSize, this->fp);
+        this->limit += readSize;
+        *this->limit = '\0';
+        if(readSize < needSize) {
+            this->endOfFile = true;
+        }
+    }
+    return true;
+}
+
+
+#define CHECK_TOK(token) \
+    assert(token.startPos < this->getUsedSize() &&\
+            token.startPos + token.size <= this->getUsedSize())
+
+template<typename  LEXER_DEF, typename TOKEN_KIND>
+Token Lexer<LEXER_DEF, TOKEN_KIND>::getLineToken(const Token &token) const {
+    CHECK_TOK(token);
+
+    // find start index of line.
+    unsigned int startIndex;
+    for(startIndex = token.startPos; startIndex > 0; startIndex--) {
+        if(this->buf[startIndex] == '\n') {
+            startIndex += (startIndex == token.startPos) ? 0 : 1;
+            break;
+        }
+    }
+
+    // find stop index of line
+    unsigned int stopIndex;
+    unsigned int usedSize = this->getUsedSize();
+    for(stopIndex = token.startPos + token.size; stopIndex < usedSize; stopIndex++) {
+        if(this->buf[stopIndex] == '\n') {
+            stopIndex -= (stopIndex == token.startPos + token.size) ? 0 : 1;
+            break;
+        }
+    }
+    Token lineToken;
+    lineToken.startPos = startIndex;
+    lineToken.size = stopIndex - startIndex;
+    return lineToken;
+}
+
+template<typename  LEXER_DEF, typename TOKEN_KIND>
+std::string Lexer<LEXER_DEF, TOKEN_KIND>::toTokenText(const Token &token) const {
+    CHECK_TOK(token);
+    return std::string((char*)(this->buf + token.startPos), token.size);
+}
+
+template<typename  LEXER_DEF, typename TOKEN_KIND>
+std::string Lexer<LEXER_DEF, TOKEN_KIND>::toString(const Token &token, bool isSingleQuote) const {
+    CHECK_TOK(token);
+
+    std::string str;
+    str.reserve(token.size);
+
+    unsigned int offset = isSingleQuote ? 1 : 0;
+    unsigned int size = token.size - offset;
+    for(unsigned int i = offset; i < size; i++) {
+        char ch = this->buf[token.startPos + i];
+        if(ch == '\\') {    // handle escape sequence
+            char nextCh = this->buf[token.startPos + ++i];
+            switch(nextCh) {
+            case 'b' : ch = '\b'; break;
+            case 'f' : ch = '\f'; break;
+            case 'n' : ch = '\n'; break;
+            case 'r' : ch = '\r'; break;
+            case 't' : ch = '\t'; break;
+            case '\'': ch = '\''; break;
+            case '"' : ch = '"' ; break;
+            case '\\': ch = '\\'; break;
+            case '`' : ch = '`' ; break;
+            case '$' : ch = '$' ; break;
+            default:
+                fatal("unexpected escape sequence: %c\n", nextCh);
+                break;
+            }
+        }
+        str += ch;
+    }
+    return str;
+}
+
+template<typename  LEXER_DEF, typename TOKEN_KIND>
+std::string Lexer<LEXER_DEF, TOKEN_KIND>::toCmdArg(const Token &token, bool expandTilde) const {
+    CHECK_TOK(token);
+
+    std::string str;
+    str.reserve(token.size);
+
+    bool startWithTildeSlash = false;
+    if(expandTilde) {
+        if(token.size == 1 && this->buf[token.startPos] == '~') {
+            return std::string(getenv("HOME"));
+        }
+        if(token.size > 1 && this->buf[token.startPos] == '~' && this->buf[token.startPos + 1] == '/') {
+            str += getenv("HOME");
+            str += '/';
+            startWithTildeSlash = true;
+        }
+    }
+    for(unsigned int i = startWithTildeSlash ? 2 : 0; i < token.size; i++) {
+        char ch = this->buf[token.startPos + i];
+        if(ch == '\\') {
+            char nextCh = this->buf[token.startPos + ++i];
+            switch(nextCh) {
+            case '\n':
+            case '\r':
+                continue;
+            default:
+                ch = nextCh;
+                break;
+            }
+        }
+        str += ch;
+    }
+    return str;
+}
+
+template<typename  LEXER_DEF, typename TOKEN_KIND>
+std::string Lexer<LEXER_DEF, TOKEN_KIND>::toName(const Token &token) const {
+    CHECK_TOK(token);
+
+    std::string name;
+    name.reserve(token.size);
+    for(unsigned int i = 0; i < token.size; i++) {
+        char ch = this->buf[token.startPos + i];
+        switch(ch) {
+        case '$':
+        case '{':
+        case '}':
+            continue;
+        default:
+            name += ch;
+            break;
+        }
+    }
+    return name;
+}
+
+template<typename  LEXER_DEF, typename TOKEN_KIND>
+int Lexer<LEXER_DEF, TOKEN_KIND>::toInt(const Token &token, int &status) const {
+    CHECK_TOK(token);
+
+    char str[token.size + 1];
+    for(unsigned int i = 0; i < token.size; i++) {
+        str[i] = this->buf[token.startPos + i];
+    }
+    str[token.size] = '\0';
+
+    // convert to int
+    char *end;
+    const long value = strtol(str, &end, 10);
+
+    // check error
+    if(end == str) {
+        fatal("cannot covert to int: %s\n", str);
+    }
+    if(*end != '\0') {
+        fatal("found illegal character in num: %s\n", str);
+    }
+    if((value == LONG_MIN || value == LONG_MAX) && errno == ERANGE) {
+        status = 1;
+        return 0;
+    }
+    if(value > INT_MAX || value < INT_MIN) {
+        status = 1;
+        return 0;
+    }
+    status = 0;
+    return (int) value;
+}
+
+template<typename  LEXER_DEF, typename TOKEN_KIND>
+double Lexer<LEXER_DEF, TOKEN_KIND>::toDouble(const Token &token, int &status) const {
+    CHECK_TOK(token);
+
+    char str[token.size + 1];
+    for(unsigned int i = 0; i < token.size; i++) {
+        str[i] = this->buf[token.startPos + i];
+    }
+    str[token.size] = '\0';
+
+    // convert to double
+    char *end;
+    double value = strtod(str, &end);
+
+    // check error
+    if(value == 0 && end == str) {
+        fatal("cannot convert to double: %s\n", str);
+    }
+    if(*end != '\0') {
+        fatal("found illegal character in num: %s\n", str);
+    }
+    if(value == 0 && errno == ERANGE) {
+        status = 1;
+        return 0;
+    }
+    if((value == HUGE_VAL || value == -HUGE_VAL) && errno == ERANGE) {
+        status = 1;
+        return 0;
+    }
+    status = 0;
+    return value;
+}
+
+//==== default lexer definition ======
+struct LexerDef {
+TokenKind operator()(Lexer<LexerDef, TokenKind> *lexer, Token &token) const;
 };
 
 #endif /* PARSER_LEXER_H_ */

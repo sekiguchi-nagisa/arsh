@@ -19,7 +19,7 @@
 // helper macro definition.
 #define RET(k) do { kind = k; goto END; } while(0)
 
-#define REACH_EOS() do { this->endOfString = true; goto EOS; } while(0)
+#define REACH_EOS() do { lexer->endOfString = true; goto EOS; } while(0)
 
 #define SKIP() goto INIT
 
@@ -27,34 +27,34 @@
 
 #define POP_MODE() \
     do {\
-        if(this->modeStack.size() > 1) {\
-            this->modeStack.pop_back();\
+        if(lexer->modeStack.size() > 1) {\
+            lexer->modeStack.pop_back();\
         } else {\
             ERROR();\
         }\
     } while(0)
 
-#define PUSH_MODE(m) this->modeStack.push_back(yyc ## m)
+#define PUSH_MODE(m) lexer->modeStack.push_back(yyc ## m)
 
 #define MODE(m) \
     do {\
-        if(this->modeStack.size() > 0) {\
-            this->modeStack[this->modeStack.size() - 1] = yyc ## m;\
+        if(lexer->modeStack.size() > 0) {\
+            lexer->modeStack[lexer->modeStack.size() - 1] = yyc ## m;\
         } else {\
             ERROR();\
         }\
     } while(0)
 
-#define INC_LINE_NUM() ++this->lineNum
+#define INC_LINE_NUM() ++lexer->lineNum
 
 /*
  * count new line and increment lineNum.
  */
 #define COUNT_NEW_LINE() \
     do {\
-        unsigned int stopPos = this->getPos();\
+        unsigned int stopPos = lexer->getPos();\
         for(unsigned int i = startPos; i < stopPos; ++i) {\
-            if(this->buf[i] == '\n') { ++this->lineNum; } \
+            if(lexer->buf[i] == '\n') { ++lexer->lineNum; } \
         }\
     } while(0)
 
@@ -65,19 +65,19 @@
     } while(0)
 
 
-#define YYGETCONDITION() this->modeStack.back()
+#define YYGETCONDITION() lexer->modeStack.back()
 
-TokenKind Lexer::nextToken(Token &token) {
+TokenKind LexerDef::operator()(Lexer<LexerDef, TokenKind> *lexer, Token &token) const {
     /*!re2c
       re2c:define:YYGETCONDITION = YYGETCONDITION;
       re2c:define:YYCTYPE = "unsigned char";
-      re2c:define:YYCURSOR = this->cursor;
-      re2c:define:YYLIMIT = this->limit;
-      re2c:define:YYMARKER = this->marker;
-      re2c:define:YYCTXMARKER = this->ctxMarker;
+      re2c:define:YYCURSOR = lexer->cursor;
+      re2c:define:YYLIMIT = lexer->limit;
+      re2c:define:YYMARKER = lexer->marker;
+      re2c:define:YYCTXMARKER = lexer->ctxMarker;
       re2c:define:YYFILL:naked = 1;
       re2c:define:YYFILL@len = #;
-      re2c:define:YYFILL = "if(!this->fill(#)) { REACH_EOS(); }";
+      re2c:define:YYFILL = "if(!lexer->fill(#)) { REACH_EOS(); }";
       re2c:yyfill:enable = 1;
       re2c:indent:top = 1;
       re2c:indent:string = "    ";
@@ -112,7 +112,7 @@ TokenKind Lexer::nextToken(Token &token) {
     bool foundNewLine = false;
 
 INIT:
-    unsigned int startPos = this->getPos();
+    unsigned int startPos = lexer->getPos();
     TokenKind kind = INVALID;
     /*!re2c
       <STMT,EXPR> "assert"     { RET(ASSERT); }
@@ -256,24 +256,24 @@ INIT:
 
 END:
     token.startPos = startPos;
-    token.size = this->getPos() - startPos;
-    this->prevNewLine = foundNewLine;
+    token.size = lexer->getPos() - startPos;
+    lexer->prevNewLine = foundNewLine;
 #ifdef X_TRACE_TOKEN
 #include <stdio.h>
     fprintf(stderr, "nextToken(): < kind=%s, text=%s >\n",
-            TO_NAME(kind), this->toTokenText(token).c_str());
+            TO_NAME(kind), lexer->toTokenText(token).c_str());
     fprintf(stderr, "   lexer mode: %s\n", stateNames[YYGETCONDITION()]);
 #endif
     return kind;
 
 EOS:
-    token.startPos = this->limit - this->buf;
+    token.startPos = lexer->limit - lexer->buf;
     token.size = 0;
-    this->prevNewLine = foundNewLine;
+    lexer->prevNewLine = foundNewLine;
 #ifdef X_TRACE_TOKEN
 #include <stdio.h>
     fprintf(stderr, "nextToken(): < kind=%s, text=%s >\n",
-            TO_NAME(EOS), this->toTokenText(token).c_str());
+            TO_NAME(EOS), lexer->toTokenText(token).c_str());
     fprintf(stderr, "   lexer mode: %s\n", stateNames[YYGETCONDITION()]);
 #endif
     return EOS;

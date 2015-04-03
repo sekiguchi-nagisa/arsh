@@ -29,7 +29,7 @@ private:
     /**
      * not call destructor.
      */
-    Lexer *lexer;
+    Lexer<LexerDef, TokenKind> *lexer;
 
     /**
      * current token kind. updated by Lexer.
@@ -49,7 +49,7 @@ public:
      * parse entry point.
      * write parsed nodes to rootNode.
      */
-    void parse(Lexer &lexer, RootNode &rootNode);
+    void parse(Lexer<LexerDef, TokenKind> &lexer, RootNode &rootNode);
 
 private:
     /**

@@ -31,7 +31,7 @@ TEST(LexerTest_Lv0, case1) {
 
 class LexerTest_Lv1 : public ::testing::Test {
 public:
-    Lexer *lexer;
+    Lexer<LexerDef, TokenKind> *lexer;
     std::vector<std::pair<TokenKind, Token>> tokens;
 
 public:
@@ -52,7 +52,7 @@ public:
 
     // for test
     virtual void initLexer(const char *text) {
-        this->lexer = new Lexer(text);
+        this->lexer = new Lexer<LexerDef, TokenKind>(text);
     }
 
     virtual const std::vector<std::pair<TokenKind, Token>> &getTokens() {
@@ -1349,9 +1349,9 @@ TEST_F(LexerTest_Lv1, SPACE4) {
 }
 
 TEST(LexerTest_Lv2, NEW_LINE) {
+    Lexer<LexerDef, TokenKind> lexer("  \n  \n   assert  \n ");
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        Lexer lexer("  \n  \n   assert  \n ");
         Token t;
         TokenKind k;
         k = lexer.nextToken(t);

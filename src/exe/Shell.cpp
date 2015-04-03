@@ -29,12 +29,12 @@ Shell::~Shell() {
 }
 
 ExitStatus Shell::eval(const char *line) {
-    Lexer lexer(line);
+    Lexer<LexerDef, TokenKind> lexer(line);
     return this->eval("(stdin)", lexer, true);
 }
 
 ExitStatus Shell::eval(const char *sourceName, FILE *fp) {
-    Lexer lexer(fp);
+    Lexer<LexerDef, TokenKind> lexer(fp);
     return this->eval(sourceName, lexer);
 }
 
@@ -64,7 +64,7 @@ void Shell::setAssertion(bool assertion) {
 
 CommonErrorListener Shell::clistener;
 
-ExitStatus Shell::eval(const char *sourceName, Lexer &lexer, bool interactive) {
+ExitStatus Shell::eval(const char *sourceName, Lexer<LexerDef, TokenKind> &lexer, bool interactive) {
     lexer.setLineNum(this->lineNum);
     RootNode rootNode;
 

@@ -45,7 +45,7 @@ void CommonErrorListener::displayTypeError(const std::string &sourceName,
     }
 
     // format error message
-    char *strBuf = new char[messageSize];
+    char strBuf[messageSize];
     switch(argSize) {
     case 0:
         snprintf(strBuf, messageSize, e.getTemplate().c_str());
@@ -67,7 +67,6 @@ void CommonErrorListener::displayTypeError(const std::string &sourceName,
     }
 
     fprintf(stderr, "%s:%d: [semantic error] %s\n", sourceName.c_str(), e.getLineNum(), strBuf);
-    delete[] strBuf;
 }
 
 class ParseErrorFormatter : public ParseErrorVisitor {
@@ -75,11 +74,11 @@ private:
     /**
      * not call destrucutor.
      */
-    Lexer *lexer;
+    Lexer<LexerDef, TokenKind> *lexer;
 
     std::string message;
 
-    ParseErrorFormatter(Lexer *lexer);
+    ParseErrorFormatter(Lexer<LexerDef, TokenKind> *lexer);
 
 public:
     ~ParseErrorFormatter();
@@ -89,10 +88,10 @@ public:
     void visit(const InvalidTokenError &e); // override
     void visit(const OutOfRangeNumError &e); // override
 
-    static std::string format(Lexer &lexer, const ParseError &e);
+    static std::string format(Lexer<LexerDef, TokenKind> &lexer, const ParseError &e);
 };
 
-ParseErrorFormatter::ParseErrorFormatter(Lexer *lexer) :
+ParseErrorFormatter::ParseErrorFormatter(Lexer<LexerDef, TokenKind> *lexer) :
         lexer(lexer), message() {
 }
 
@@ -134,13 +133,13 @@ void ParseErrorFormatter::visit(const OutOfRangeNumError &e) {
     this->message += this->lexer->toTokenText(token);
 }
 
-std::string ParseErrorFormatter::format(Lexer &lexer, const ParseError &e) {
+std::string ParseErrorFormatter::format(Lexer<LexerDef, TokenKind> &lexer, const ParseError &e) {
     ParseErrorFormatter f(&lexer);
     e.accept(f);
     return f.message;
 }
 
-static std::string formatErrorLine(Lexer &lexer, Token errorToken) {
+static std::string formatErrorLine(Lexer<LexerDef, TokenKind> &lexer, Token errorToken) {
     Token lineToken = lexer.getLineToken(errorToken);
     std::string line(lexer.toTokenText(lineToken));
     line += "\n";
@@ -153,7 +152,7 @@ static std::string formatErrorLine(Lexer &lexer, Token errorToken) {
     return line;
 }
 
-void CommonErrorListener::displayParseError(Lexer &lexer,
+void CommonErrorListener::displayParseError(Lexer<LexerDef, TokenKind> &lexer,
         const std::string &sourceName, const ParseError &e) const {
     std::string msg(ParseErrorFormatter::format(lexer, e));
     std::string line(formatErrorLine(lexer, e.getErrorToken()));
