@@ -17,16 +17,12 @@
 #ifndef CORE_BIND_H_
 #define CORE_BIND_H_
 
+#include <core/DSType.h>
+
 namespace ydsh {
 namespace core {
 
-struct native_type_info;
-
-native_type_info_t *info_Dummy() {
-    static native_type_info_t info = {0, 0, 0};
-    return &info;
-}
-
+native_type_info_t *info_Dummy();
 
 // for builtin type initialization.
 native_type_info_t *info_AnyType();
@@ -43,20 +39,10 @@ native_type_info_t *info_BooleanType();
 
 native_type_info_t *info_StringType();
 
-native_type_info_t *info_TaskType();
-
-native_type_info_t *info_BaseFuncType();
-
-native_type_info_t *info_ProcArgType();
-
-native_type_info_t *info_ProcType();
-
 // for type template initialization.
-native_type_info_t *info_ArrayTemplate();
+native_type_info_t *info_ArrayType();
 
-native_type_info_t *info_MapTemplate();
-
-native_type_info_t *info_PairTemplate();
+native_type_info_t *info_MapType();
 
 } // namespace core
 } // namespace ydsh

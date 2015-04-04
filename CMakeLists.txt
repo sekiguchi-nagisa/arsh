@@ -33,14 +33,6 @@ if(USE_TRACE_TOKEN)
     add_definitions(-DX_TRACE_TOKEN)
 endif()
 
-
-include_directories(${YDSH_INCLUDE})
-add_subdirectory(${SRC_DIR}/ast)
-add_subdirectory(${SRC_DIR}/core)
-add_subdirectory(${SRC_DIR}/parser)
-add_subdirectory(${SRC_DIR}/exe)
-add_subdirectory(${SRC_DIR}/misc)
-
 # check editline
 check_include_files("histedit.h" HAVE_HISTEDIT_H)
 find_library(HAVE_LIBEDIT NAMES edit)
@@ -59,18 +51,35 @@ if(NOT EXISTS "${RE2C_PATH}")
 endif()
 
 
-# generate lexer 
-set(lexer_src ${CMAKE_CURRENT_BINARY_DIR}/src/parser/nextToken.cpp) 
-add_custom_command(OUTPUT ${lexer_src} 
+# generate lexer
+set(lexer_src ${CMAKE_CURRENT_BINARY_DIR}/src/parser/nextToken.cpp)
+add_custom_command(OUTPUT ${lexer_src}
     COMMAND ${RE2C_DIR}/re2c -c -8 -o ${lexer_src} ${SRC_DIR}/nextToken.re2c.cpp
 )
 add_custom_target(gen_lexer DEPENDS ${lexer_src})
 
+# generate builtin binding
+set(bind_src ${CMAKE_CURRENT_BINARY_DIR}/src/core/bind.cpp)
+add_custom_command(OUTPUT ${bind_src}
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tools/gen_binding/gen_binding ${YDSH_INCLUDE}/core/builtin.cpp ${bind_src}
+)
+add_custom_target(gen_bind DEPENDS ${bind_src})
+add_dependencies(gen_bind gen_binding)
+
+
+include_directories(${YDSH_INCLUDE})
+add_subdirectory(${SRC_DIR}/ast)
+add_subdirectory(${SRC_DIR}/core)
+add_subdirectory(${SRC_DIR}/parser)
+add_subdirectory(${SRC_DIR}/exe)
+add_subdirectory(${SRC_DIR}/misc)
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_binding)
 
 # add executable
 set(YDSH_STATIC ydsh_static)
-add_library(${YDSH_STATIC} STATIC ${YDSH_SRC} ${lexer_src})
-add_dependencies(${YDSH_STATIC} gen_lexer)
+add_library(${YDSH_STATIC} STATIC ${YDSH_SRC} ${lexer_src} ${bind_src})
+add_dependencies(${YDSH_STATIC} gen_lexer gen_binding gen_bind)
 add_executable(${BIN_NAME} ${SRC_DIR}/ydsh.cpp)
 target_link_libraries(${BIN_NAME} ${YDSH_STATIC} ${HAVE_LIBEDIT} args_parser)
 

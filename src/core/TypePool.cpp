@@ -37,18 +37,18 @@ TypePool::TypePool(char **envp) :
         envp(envp), envSet() {
 
     // initialize type
-    this->anyType = this->initBuiltinType("Any", true, 0, info_Dummy());
-    this->voidType = this->initBuiltinType("Void", false, 0, info_Dummy(), true);
+    this->anyType = this->initBuiltinType("Any", true, 0, info_AnyType());
+    this->voidType = this->initBuiltinType("Void", false, 0, info_VoidType(), true);
 
     /**
      * hidden from script.
      */
     this->valueType = this->initBuiltinType("%Value%", true, this->anyType, info_Dummy());
 
-    this->intType = this->initBuiltinType("Int", false, this->valueType, info_Dummy());
-    this->floatType = this->initBuiltinType("Float", false, this->valueType, info_Dummy());
-    this->boolType = this->initBuiltinType("Boolean", false, this->valueType, info_Dummy());
-    this->stringType = this->initBuiltinType("String", false, this->valueType, info_Dummy());
+    this->intType = this->initBuiltinType("Int", false, this->valueType, info_IntType());
+    this->floatType = this->initBuiltinType("Float", false, this->valueType, info_FloatType());
+    this->boolType = this->initBuiltinType("Boolean", false, this->valueType, info_BooleanType());
+    this->stringType = this->initBuiltinType("String", false, this->valueType, info_StringType());
     this->taskType = this->initBuiltinType("Task", false, this->anyType, info_Dummy());
 
     /**

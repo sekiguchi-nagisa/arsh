@@ -51,13 +51,6 @@ typedef enum {
     T1,
 } TypeInfo;
 
-#define GET_PARAM_SIZE(info) ((unsigned int)(info->handleInfo[1] - P_N0))
-
-/**
- * check correctness of typeInfo.
- */
-bool verifyHandleInfo(char *handleInfo);
-
 } // namespace core
 } // namespace ydsh
 

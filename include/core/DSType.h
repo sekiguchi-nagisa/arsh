@@ -233,14 +233,14 @@ struct NativeFuncInfo {
     /**
      * if empty string, treat as constructor.
      */
-    char funcName[16];
+    const char *funcName;
 
     /**
      * serialized function handle
      */
     char handleInfo[32];
 
-    char paramNames[8][16];
+    const char *paramNames[8];
 
     /**
      * bool func(RuntimeContext &ctx)

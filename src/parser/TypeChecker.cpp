@@ -347,7 +347,7 @@ void TypeChecker::checkTypeArgsNode(FunctionHandle *handle, ArgsNode *argsNode, 
         if(argPair.first != "") {
             foundNamedArg = true;
         }
-            /**
+        /**
          * if previously found named parameter, but current argument has no named parameter,
          * report error.
          */

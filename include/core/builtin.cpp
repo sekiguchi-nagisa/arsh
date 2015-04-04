@@ -40,12 +40,12 @@ namespace core {
 // ##     Any     ##
 // #################
 
-//!bind: function $OP_TO_STR($this : Any) : String
+//!bind: function $OP_STR($this : Any) : String
 static bool to_str(RuntimeContext & ctx) {
     RET(LOCAL(0)->str(ctx));
 }
 
-//!bind: function $OP_TO_INTERP($this : Any) : String
+//!bind: function $OP_INTERP($this : Any) : String
 static bool to_interp(RuntimeContext & ctx) {
     RET(LOCAL(0)->interp(ctx));
 }
