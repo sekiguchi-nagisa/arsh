@@ -27,6 +27,8 @@
 #define RET(value) do { ctx.returnObject = (value); return true; } while(0)
 #define TO_BOOL(value) ((value) ? ctx.trueObj : ctx.falseObj)
 
+#define SUPPRESS_WARNING(a) (void)a
+
 /**
  *   //!bind: function <method name>($this : <receiver type>, $param1 : <type1>, $param2? : <type2>, ...) : <return type>
  *   //!bind: constructor <type name>($param1 : <type1>, ....)
@@ -42,11 +44,13 @@ namespace core {
 
 //!bind: function $OP_STR($this : Any) : String
 static bool to_str(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(to_str);
     RET(LOCAL(0)->str(ctx));
 }
 
 //!bind: function $OP_INTERP($this : Any) : String
 static bool to_interp(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(to_interp);
     RET(LOCAL(0)->interp(ctx));
 }
 
@@ -63,17 +67,20 @@ static bool to_interp(RuntimeContext & ctx) {
 
 //!bind: function $OP_PLUS($this : Int) : Int
 static bool int_plus(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(int_plus);
     RET(LOCAL(0));
 }
 
 //!bind: function $OP_MINUS($this : Int) : Int
 static bool int_minus(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(int_minus);
     int value = -TYPE_AS(Int_Object, LOCAL(0))->value;
     RET(std::make_shared<Int_Object>(ctx.pool.getIntType(), value));
 }
 
 //!bind: function $OP_NOT($this : Int) : Int
 static bool int_not(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(int_not);
     int value = ~TYPE_AS(Int_Object, LOCAL(0))->value;
     RET(std::make_shared<Int_Object>(ctx.pool.getIntType(), value));
 }
@@ -85,6 +92,7 @@ static bool int_not(RuntimeContext & ctx) {
 
 //!bind: function $OP_ADD($this : Int, $target : Int) : Int
 static bool int_2_int_add(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(int_2_int_add);
     int value = TYPE_AS(Int_Object, LOCAL(0))->value
                 + TYPE_AS(Int_Object, LOCAL(1))->value;
     RET(std::make_shared<Int_Object>(ctx.pool.getIntType(), value));
@@ -92,6 +100,7 @@ static bool int_2_int_add(RuntimeContext & ctx) {
 
 //!bind: function $OP_SUB($this : Int, $target : Int) : Int
 static bool int_2_int_sub(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(int_2_int_sub);
     int value = TYPE_AS(Int_Object, LOCAL(0))->value
                 - TYPE_AS(Int_Object, LOCAL(1))->value;
     RET(std::make_shared<Int_Object>(ctx.pool.getIntType(), value));
@@ -99,6 +108,7 @@ static bool int_2_int_sub(RuntimeContext & ctx) {
 
 //!bind: function $OP_MUL($this : Int, $target : Int) : Int
 static bool int_2_int_mul(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(int_2_int_mul);
     int value = TYPE_AS(Int_Object, LOCAL(0))->value
                 * TYPE_AS(Int_Object, LOCAL(1))->value;
     RET(std::make_shared<Int_Object>(ctx.pool.getIntType(), value));
@@ -106,6 +116,7 @@ static bool int_2_int_mul(RuntimeContext & ctx) {
 
 //!bind: function $OP_DIV($this : Int, $target : Int) : Int
 static bool int_2_int_div(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(int_2_int_div);
     int left = TYPE_AS(Int_Object, LOCAL(0))->value;
     int right = TYPE_AS(Int_Object, LOCAL(1))->value;
     if(!ctx.checkZeroDiv(right)) {
@@ -117,6 +128,7 @@ static bool int_2_int_div(RuntimeContext & ctx) {
 
 //!bind: function $OP_MOD($this : Int, $target : Int) : Int
 static bool int_2_int_mod(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(int_2_int_mod);
     int left = TYPE_AS(Int_Object, LOCAL(0))->value;
     int right = TYPE_AS(Int_Object, LOCAL(1))->value;
     if(!ctx.checkZeroMod(right)) {
@@ -130,11 +142,13 @@ static bool int_2_int_mod(RuntimeContext & ctx) {
 
 //!bind: function $OP_EQ($this : Int, $target : Int) : Int
 static bool int_2_int_eq(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(int_2_int_eq);
     RET(TO_BOOL(LOCAL(0)->equals(LOCAL(1))));
 }
 
 //!bind: function $OP_NE($this : Int, $target : Int) : Int
 static bool int_2_int_ne(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(int_2_int_ne);
     RET(TO_BOOL(!LOCAL(0)->equals(LOCAL(1))));
 }
 
@@ -142,6 +156,7 @@ static bool int_2_int_ne(RuntimeContext & ctx) {
 
 //!bind: function $OP_LT($this : Int, $target : Int) : Int
 static bool int_2_int_lt(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(int_2_int_lt);
     bool r = TYPE_AS(Int_Object, LOCAL(0))->value
              < TYPE_AS(Int_Object, LOCAL(1))->value;
     RET(TO_BOOL(r));
@@ -149,6 +164,7 @@ static bool int_2_int_lt(RuntimeContext & ctx) {
 
 //!bind: function $OP_GT($this : Int, $target : Int) : Int
 static bool int_2_int_gt(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(int_2_int_gt);
     bool r = TYPE_AS(Int_Object, LOCAL(0))->value
              > TYPE_AS(Int_Object, LOCAL(1))->value;
     RET(TO_BOOL(r));
@@ -156,6 +172,7 @@ static bool int_2_int_gt(RuntimeContext & ctx) {
 
 //!bind: function $OP_LE($this : Int, $target : Int) : Int
 static bool int_2_int_le(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(int_2_int_le);
     bool r = TYPE_AS(Int_Object, LOCAL(0))->value
              <= TYPE_AS(Int_Object, LOCAL(1))->value;
     RET(TO_BOOL(r));
@@ -163,6 +180,7 @@ static bool int_2_int_le(RuntimeContext & ctx) {
 
 //!bind: function $OP_GE($this : Int, $target : Int) : Int
 static bool int_2_int_ge(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(int_2_int_ge);
     bool r = TYPE_AS(Int_Object, LOCAL(0))->value
              >= TYPE_AS(Int_Object, LOCAL(1))->value;
     RET(TO_BOOL(r));
@@ -172,6 +190,7 @@ static bool int_2_int_ge(RuntimeContext & ctx) {
 
 //!bind: function $OP_AND($this : Int, $target : Int) : Int
 static bool int_2_int_and(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(int_2_int_and);
     int value = TYPE_AS(Int_Object, LOCAL(0))->value
                 & TYPE_AS(Int_Object, LOCAL(1))->value;
     RET(std::make_shared<Int_Object>(ctx.pool.getIntType(), value));
@@ -179,6 +198,7 @@ static bool int_2_int_and(RuntimeContext & ctx) {
 
 //!bind: function $OP_OR($this : Int, $target : Int) : Int
 static bool int_2_int_or(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(int_2_int_or);
     int value = TYPE_AS(Int_Object, LOCAL(0))->value
                 | TYPE_AS(Int_Object, LOCAL(1))->value;
     RET(std::make_shared<Int_Object>(ctx.pool.getIntType(), value));
@@ -186,6 +206,7 @@ static bool int_2_int_or(RuntimeContext & ctx) {
 
 //!bind: function $OP_XOR($this : Int, $target : Int) : Int
 static bool int_2_int_xor(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(int_2_int_xor);
     int value = TYPE_AS(Int_Object, LOCAL(0))->value
                 ^TYPE_AS(Int_Object, LOCAL(1))->value;
     RET(std::make_shared<Int_Object>(ctx.pool.getIntType(), value));
@@ -200,11 +221,13 @@ static bool int_2_int_xor(RuntimeContext & ctx) {
 
 //!bind: function $OP_PLUS($this : Float) : Float
 static bool float_plus(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(float_plus);
     RET(LOCAL(0));
 }
 
 //!bind: function $OP_MINUS($this : Float) : Float
 static bool float_minus(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(float_minus);
     double value = -TYPE_AS(Float_Object, LOCAL(0))->value;
     RET(std::make_shared<Float_Object>(ctx.pool.getFloatType(), value));
 }
@@ -215,6 +238,7 @@ static bool float_minus(RuntimeContext & ctx) {
 
 //!bind: function $OP_ADD($this : Float, $target : Float) : Float
 static bool float_2_float_add(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(float_2_float_add);
     double value = TYPE_AS(Float_Object, LOCAL(0))->value
                    + TYPE_AS(Float_Object, LOCAL(1))->value;
     RET(std::make_shared<Float_Object>(ctx.pool.getFloatType(), value));
@@ -222,6 +246,7 @@ static bool float_2_float_add(RuntimeContext & ctx) {
 
 //!bind: function $OP_SUB($this : Float, $target : Float) : Float
 static bool float_2_float_sub(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(float_2_float_sub);
     double value = TYPE_AS(Float_Object, LOCAL(0))->value
                    - TYPE_AS(Float_Object, LOCAL(1))->value;
     RET(std::make_shared<Float_Object>(ctx.pool.getFloatType(), value));
@@ -229,6 +254,7 @@ static bool float_2_float_sub(RuntimeContext & ctx) {
 
 //!bind: function $OP_MUL($this : Float, $target : Float) : Float
 static bool float_2_float_mul(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(float_2_float_mul);
     double value = TYPE_AS(Float_Object, LOCAL(0))->value
                    * TYPE_AS(Float_Object, LOCAL(1))->value;
     RET(std::make_shared<Float_Object>(ctx.pool.getFloatType(), value));
@@ -236,6 +262,7 @@ static bool float_2_float_mul(RuntimeContext & ctx) {
 
 //!bind: function $OP_DIV($this : Float, $target : Float) : Float
 static bool float_2_float_div(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(float_2_float_div);
     double left = TYPE_AS(Float_Object, LOCAL(0))->value;
     double right = TYPE_AS(Float_Object, LOCAL(1))->value;
     if(!ctx.checkZeroDiv(right)) {
@@ -247,6 +274,7 @@ static bool float_2_float_div(RuntimeContext & ctx) {
 
 //!bind: function $OP_MOD($this : Float, $target : Float) : Float
 static bool float_2_float_mod(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(float_2_float_mod);
     double left = TYPE_AS(Float_Object, LOCAL(0))->value;
     double right = TYPE_AS(Float_Object, LOCAL(1))->value;
     if(!ctx.checkZeroMod(right)) {
@@ -260,11 +288,13 @@ static bool float_2_float_mod(RuntimeContext & ctx) {
 
 //!bind: function $OP_EQ($this : Float, $target : Float) : Float
 static bool float_2_float_eq(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(float_2_float_eq);
     RET(TO_BOOL(LOCAL(0)->equals(LOCAL(1))));
 }
 
 //!bind: function $OP_NE($this : Float, $target : Float) : Float
 static bool float_2_float_ne(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(float_2_float_ne);
     RET(TO_BOOL(!LOCAL(0)->equals(LOCAL(1))));
 }
 
@@ -272,6 +302,7 @@ static bool float_2_float_ne(RuntimeContext & ctx) {
 
 //!bind: function $OP_LT($this : Float, $target : Float) : Float
 static bool float_2_float_lt(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(float_2_float_lt);
     bool r = TYPE_AS(Float_Object, LOCAL(0))->value
              < TYPE_AS(Float_Object, LOCAL(1))->value;
     RET(TO_BOOL(r));
@@ -279,6 +310,7 @@ static bool float_2_float_lt(RuntimeContext & ctx) {
 
 //!bind: function $OP_GT($this : Float, $target : Float) : Float
 static bool float_2_float_gt(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(float_2_float_gt);
     bool r = TYPE_AS(Float_Object, LOCAL(0))->value
              > TYPE_AS(Float_Object, LOCAL(1))->value;
     RET(TO_BOOL(r));
@@ -286,6 +318,7 @@ static bool float_2_float_gt(RuntimeContext & ctx) {
 
 //!bind: function $OP_LE($this : Float, $target : Float) : Float
 static bool float_2_float_le(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(float_2_float_le);
     bool r = TYPE_AS(Float_Object, LOCAL(0))->value
              <= TYPE_AS(Float_Object, LOCAL(1))->value;
     RET(TO_BOOL(r));
@@ -293,6 +326,7 @@ static bool float_2_float_le(RuntimeContext & ctx) {
 
 //!bind: function $OP_GE($this : Float, $target : Float) : Float
 static bool float_2_float_ge(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(float_2_float_ge);
     bool r = TYPE_AS(Float_Object, LOCAL(0))->value
              >= TYPE_AS(Float_Object, LOCAL(1))->value;
     RET(TO_BOOL(r));
@@ -305,18 +339,21 @@ static bool float_2_float_ge(RuntimeContext & ctx) {
 
 //!bind: function $OP_NOT($this : Boolean) : Boolean
 static bool boolean_not(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(boolean_not);
     bool value = TYPE_AS(Boolean_Object, LOCAL(0))->value;
     RET(TO_BOOL(!value));
 }
 
 //!bind: function $OP_EQ($this : Boolean, $target : Boolean) : Boolean
 static bool boolean_eq(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(boolean_eq);
     bool r = LOCAL(0)->equals(LOCAL(1));
     RET(TO_BOOL(r));
 }
 
 //!bind: function $OP_NE($this : Boolean, $target : Boolean) : Boolean
 static bool boolean_ne(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(boolean_ne);
     bool r = !LOCAL(0)->equals(LOCAL(1));
     RET(TO_BOOL(r));
 }
