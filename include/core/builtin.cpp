@@ -140,13 +140,13 @@ static bool int_2_int_mod(RuntimeContext & ctx) {
 
 //   =====  equality  =====
 
-//!bind: function $OP_EQ($this : Int, $target : Int) : Int
+//!bind: function $OP_EQ($this : Int, $target : Int) : Boolean
 static bool int_2_int_eq(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_eq);
     RET(TO_BOOL(LOCAL(0)->equals(LOCAL(1))));
 }
 
-//!bind: function $OP_NE($this : Int, $target : Int) : Int
+//!bind: function $OP_NE($this : Int, $target : Int) : Boolean
 static bool int_2_int_ne(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_ne);
     RET(TO_BOOL(!LOCAL(0)->equals(LOCAL(1))));
@@ -154,7 +154,7 @@ static bool int_2_int_ne(RuntimeContext & ctx) {
 
 //   =====  relational  =====
 
-//!bind: function $OP_LT($this : Int, $target : Int) : Int
+//!bind: function $OP_LT($this : Int, $target : Int) : Boolean
 static bool int_2_int_lt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_lt);
     bool r = TYPE_AS(Int_Object, LOCAL(0))->value
@@ -162,7 +162,7 @@ static bool int_2_int_lt(RuntimeContext & ctx) {
     RET(TO_BOOL(r));
 }
 
-//!bind: function $OP_GT($this : Int, $target : Int) : Int
+//!bind: function $OP_GT($this : Int, $target : Int) : Boolean
 static bool int_2_int_gt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_gt);
     bool r = TYPE_AS(Int_Object, LOCAL(0))->value
@@ -170,7 +170,7 @@ static bool int_2_int_gt(RuntimeContext & ctx) {
     RET(TO_BOOL(r));
 }
 
-//!bind: function $OP_LE($this : Int, $target : Int) : Int
+//!bind: function $OP_LE($this : Int, $target : Int) : Boolean
 static bool int_2_int_le(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_le);
     bool r = TYPE_AS(Int_Object, LOCAL(0))->value
@@ -178,7 +178,7 @@ static bool int_2_int_le(RuntimeContext & ctx) {
     RET(TO_BOOL(r));
 }
 
-//!bind: function $OP_GE($this : Int, $target : Int) : Int
+//!bind: function $OP_GE($this : Int, $target : Int) : Boolean
 static bool int_2_int_ge(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_ge);
     bool r = TYPE_AS(Int_Object, LOCAL(0))->value
@@ -286,13 +286,13 @@ static bool float_2_float_mod(RuntimeContext & ctx) {
 
 //   =====  equality  =====
 
-//!bind: function $OP_EQ($this : Float, $target : Float) : Float
+//!bind: function $OP_EQ($this : Float, $target : Float) : Boolean
 static bool float_2_float_eq(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_eq);
     RET(TO_BOOL(LOCAL(0)->equals(LOCAL(1))));
 }
 
-//!bind: function $OP_NE($this : Float, $target : Float) : Float
+//!bind: function $OP_NE($this : Float, $target : Float) : Boolean
 static bool float_2_float_ne(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_ne);
     RET(TO_BOOL(!LOCAL(0)->equals(LOCAL(1))));
@@ -300,7 +300,7 @@ static bool float_2_float_ne(RuntimeContext & ctx) {
 
 //   =====  relational  =====
 
-//!bind: function $OP_LT($this : Float, $target : Float) : Float
+//!bind: function $OP_LT($this : Float, $target : Float) : Boolean
 static bool float_2_float_lt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_lt);
     bool r = TYPE_AS(Float_Object, LOCAL(0))->value
@@ -308,7 +308,7 @@ static bool float_2_float_lt(RuntimeContext & ctx) {
     RET(TO_BOOL(r));
 }
 
-//!bind: function $OP_GT($this : Float, $target : Float) : Float
+//!bind: function $OP_GT($this : Float, $target : Float) : Boolean
 static bool float_2_float_gt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_gt);
     bool r = TYPE_AS(Float_Object, LOCAL(0))->value
@@ -316,7 +316,7 @@ static bool float_2_float_gt(RuntimeContext & ctx) {
     RET(TO_BOOL(r));
 }
 
-//!bind: function $OP_LE($this : Float, $target : Float) : Float
+//!bind: function $OP_LE($this : Float, $target : Float) : Boolean
 static bool float_2_float_le(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_le);
     bool r = TYPE_AS(Float_Object, LOCAL(0))->value
@@ -324,7 +324,7 @@ static bool float_2_float_le(RuntimeContext & ctx) {
     RET(TO_BOOL(r));
 }
 
-//!bind: function $OP_GE($this : Float, $target : Float) : Float
+//!bind: function $OP_GE($this : Float, $target : Float) : Boolean
 static bool float_2_float_ge(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_ge);
     bool r = TYPE_AS(Float_Object, LOCAL(0))->value

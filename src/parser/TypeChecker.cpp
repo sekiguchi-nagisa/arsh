@@ -439,8 +439,8 @@ void TypeChecker::checkTypeArgsNode(const std::vector<DSType *> &paramTypes, Arg
 
     // check type each node
     for(unsigned int i = startIndex; i < size; i++) {
-        argsNode->setArg(i,
-                         this->checkTypeAndResolveCoercion(paramTypes[i], argsNode->getArgPairs()[i].second));
+        argsNode->setArg(i - startIndex,
+                         this->checkTypeAndResolveCoercion(paramTypes[i], argsNode->getArgPairs()[i - startIndex].second));
     }
 }
 
