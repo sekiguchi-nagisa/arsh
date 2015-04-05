@@ -343,6 +343,11 @@ struct RuntimeContext {
         }
         return right;
     }
+
+    void throwOutOfIndexError(std::string &&message) {
+        //TODO:
+        fatal("%s\n", message.c_str());
+    }
 };
 
 } // namespace core

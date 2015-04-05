@@ -57,7 +57,7 @@ TypePool::TypePool(char **envp) :
     this->baseFuncType = this->initBuiltinType("%BaseFunc%", false, this->anyType, info_Dummy());
 
     // initialize type template
-    this->arrayTemplate = this->initTypeTemplate("Array", 1, info_Dummy());
+    this->arrayTemplate = this->initTypeTemplate("Array", 1, info_ArrayType());
     this->mapTemplate = this->initTypeTemplate("Map", 2, info_Dummy());
     this->tupleTemplate = this->initTypeTemplate("Tuple", 0, 0);   // pseudo template.
 

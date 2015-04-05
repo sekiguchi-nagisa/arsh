@@ -404,6 +404,73 @@ static inline bool string_empty(RuntimeContext &ctx) {
     RET(TO_BOOL(empty));
 }
 
+
+// ###################
+// ##     Array     ##
+// ###################
+
+//!bind: function add($this : Array<T0>, $value : T0) : Array<T0>
+static inline bool array_add(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_add);
+    TYPE_AS(Array_Object, LOCAL(0))->values.push_back(LOCAL(1));
+    RET(LOCAL(0));
+}
+
+// check index range and throw exception.
+static bool checkRange(RuntimeContext &ctx, int index, unsigned int size) {
+    unsigned int actualIndex = (unsigned int) index;
+    if(index < 0 || actualIndex >= size) {
+        std::string message("size is ");
+        message += std::to_string(size);
+        message += ", but index is ";
+        message += std::to_string(index);
+        ctx.throwOutOfIndexError(std::move(message));
+        return false;
+    }
+    return true;
+}
+
+//!bind: function $OP_GET($this : Array<T0>, $index : Int) : T0
+static inline bool array_get(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_get);
+
+    Array_Object *obj = TYPE_AS(Array_Object, LOCAL(0));
+    unsigned int size = obj->values.size();
+    int index = TYPE_AS(Int_Object, LOCAL(1))->value;
+    if(!checkRange(ctx, index, size)) {
+        return false;
+    }
+    RET(obj->values[(unsigned int)index]);
+}
+
+//!bind: function $OP_SET($this : Array<T0>, $index : Int, $value : T0) : Void
+static inline bool array_set(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_set);
+
+    Array_Object *obj = TYPE_AS(Array_Object, LOCAL(0));
+    unsigned int size = obj->values.size();
+    int index = TYPE_AS(Int_Object, LOCAL(1))->value;
+    if(!checkRange(ctx, index, size)) {
+        return false;
+    }
+    obj->values[(unsigned int) index] = LOCAL(2);
+    return true;
+}
+
+//!bind: function size($this : Array<T0>) : Int
+static inline bool array_size(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_size);
+    int size = TYPE_AS(Array_Object, LOCAL(0))->values.size();
+    RET(std::make_shared<Int_Object>(ctx.pool.getIntType(), size));
+}
+
+//!bind: function empty($this : Array<T0>) : Boolean
+static inline bool array_empty(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_empty);
+    bool empty = TYPE_AS(Array_Object, LOCAL(0))->values.empty();
+    RET(TO_BOOL(empty));
+}
+
 } //namespace core
 } //namespace ydsh
 
