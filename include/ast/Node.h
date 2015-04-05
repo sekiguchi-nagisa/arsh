@@ -37,16 +37,6 @@ struct NodeVisitor;
 
 class Writer;
 
-typedef enum {
-    EVAL_SUCCESS,
-    EVAL_BREAK,
-    EVAL_CONTINUE,
-    EVAL_THROW,
-    EVAL_RETURN,
-    EVAL_REMOVE,
-} EvalStatus;
-
-
 class Node {
 protected:
     unsigned int lineNum;

@@ -541,21 +541,21 @@ EvalStatus AccessNode::eval(RuntimeContext & ctx) {
 
     switch(this->additionalOp) {
     case NOP: {
-        ctx.push(ctx.pop()->fieldTable[this->index]);
+        ctx.getField(this->index);
         if(this->type != 0 && this->type->isFuncType()) {
             ctx.peek()->setType(this->type);
         }
         break;
     }
     case DUP_RECV: {
-        ctx.push(ctx.peek()->fieldTable[this->index]);
+        ctx.dupAndGetField(this->index);
         if(this->type != 0 && this->type->isFuncType()) {
             ctx.peek()->setType(this->type);
         }
         break;
     }
     case DUP_RECV_AND_SWAP:
-        ctx.push(ctx.peek()->fieldTable[this->index]);
+        ctx.dupAndGetField(this->index);
         ctx.swap();
         break;
     }
@@ -634,6 +634,7 @@ void CastNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus CastNode::eval(RuntimeContext & ctx) {
+    unsigned int curStackTopIndex = ctx.stackTopIndex;
     EVAL(ctx, this->exprNode);
 
     switch(this->opKind) {
@@ -650,8 +651,9 @@ EvalStatus CastNode::eval(RuntimeContext & ctx) {
         break;
     }
     case TO_STRING: {
-        fatal("unimplemented eval\n");
-        break;
+        ctx.dupAndGetField(this->fieldIndex);
+        ctx.swap();
+        return ctx.apply(false, curStackTopIndex);
     }
     case CHECK_CAST: {
         ctx.checkCast(this->type);
@@ -901,24 +903,7 @@ EvalStatus ApplyNode::eval(RuntimeContext & ctx) {
     EVAL(ctx, this->argsNode);
 
     // call function
-    ctx.saveAndSetOffset(curStackTopIndex + 2);
-    bool status = TYPE_AS(FuncObject,
-                          ctx.localStack[curStackTopIndex + 1])->invoke(ctx);
-
-    // restore stack state
-    ctx.restoreOffset();
-    for(unsigned int i = ctx.stackTopIndex; i > curStackTopIndex; i--) {
-        ctx.pop();
-    }
-
-    if(status) {
-        if(!this->type->isVoidType()) {
-            ctx.getReturnObject(); // push return value
-        }
-        return EVAL_SUCCESS;
-    } else {
-        return EVAL_THROW;
-    }
+    return ctx.apply(this->type->isVoidType(), curStackTopIndex);
 }
 
 // #####################

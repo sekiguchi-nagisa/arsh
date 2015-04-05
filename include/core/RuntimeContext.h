@@ -28,6 +28,15 @@
 namespace ydsh {
 namespace core {
 
+typedef enum {
+    EVAL_SUCCESS,
+    EVAL_BREAK,
+    EVAL_CONTINUE,
+    EVAL_THROW,
+    EVAL_RETURN,
+    EVAL_REMOVE,
+} EvalStatus;
+
 struct RuntimeContext {
     TypePool pool;
 
@@ -193,7 +202,7 @@ struct RuntimeContext {
         this->localStack[this->stackTopIndex].swap(this->localStack[this->stackTopIndex - 1]);
     }
 
-    // variable operation
+    // variable manipulation
     void setGlobal(unsigned int index) {
         this->globalVarTable[index] = this->pop();
     }
@@ -213,6 +222,54 @@ struct RuntimeContext {
     void getLocal(unsigned int index) {
         this->push(this->localStack[this->localVarOffset + index]);
     }
+
+    // field manipulation
+
+    /**
+     * get field from stack top value.
+     */
+    void getField(unsigned int index) {
+        this->localStack[this->stackTopIndex] =
+                this->localStack[this->stackTopIndex]->fieldTable[index];
+    }
+
+    /**
+     * dup stack top value and get field from it.
+     */
+    void dupAndGetField(unsigned int index) {
+        this->push(this->peek()->fieldTable[index]);
+    }
+
+    /**
+     * stack state in function apply    stack grow ===>
+     *
+     * +-----------+---------+------------------+   +--------+
+     * | stack top | funcObj | param1(receiver) | ~ | paramN |
+     * +-----------+---------+------------------+   +--------+
+     *                       |    new offset    |   |        |
+     */
+    EvalStatus apply(bool returnTypeIsVoid, unsigned int curStackTopIndex) {
+        // call function
+        this->saveAndSetOffset(curStackTopIndex + 2);
+        bool status = TYPE_AS(FuncObject,
+                              this->localStack[curStackTopIndex + 1])->invoke(*this);
+
+        // restore stack state
+        this->restoreOffset();
+        for(unsigned int i = this->stackTopIndex; i > curStackTopIndex; i--) {
+            this->pop();
+        }
+
+        if(status) {
+            if(!returnTypeIsVoid) {
+                this->getReturnObject(); // push return value
+            }
+            return EVAL_SUCCESS;
+        } else {
+            return EVAL_THROW;
+        }
+    }
+
 
     // some runtime api
     void printStackTop(DSType *stackTopType);
