@@ -248,15 +248,17 @@ struct RuntimeContext {
      * +-----------+---------+------------------+   +--------+
      *                       |    new offset    |   |        |
      */
-    EvalStatus apply(bool returnTypeIsVoid, unsigned int curStackTopIndex) {
+    EvalStatus apply(bool returnTypeIsVoid, unsigned int paramSize) {
+        unsigned int savedStackTopIndex = this->stackTopIndex - paramSize - 1;
+
         // call function
-        this->saveAndSetOffset(curStackTopIndex + 2);
+        this->saveAndSetOffset(savedStackTopIndex + 2);
         bool status = TYPE_AS(FuncObject,
-                              this->localStack[curStackTopIndex + 1])->invoke(*this);
+                              this->localStack[savedStackTopIndex + 1])->invoke(*this);
 
         // restore stack state
         this->restoreOffset();
-        for(unsigned int i = this->stackTopIndex; i > curStackTopIndex; i--) {
+        for(unsigned int i = this->stackTopIndex; i > savedStackTopIndex; i--) {
             this->pop();
         }
 

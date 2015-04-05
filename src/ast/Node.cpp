@@ -634,7 +634,6 @@ void CastNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus CastNode::eval(RuntimeContext & ctx) {
-    unsigned int curStackTopIndex = ctx.stackTopIndex;
     EVAL(ctx, this->exprNode);
 
     switch(this->opKind) {
@@ -653,7 +652,7 @@ EvalStatus CastNode::eval(RuntimeContext & ctx) {
     case TO_STRING: {
         ctx.dupAndGetField(this->fieldIndex);
         ctx.swap();
-        return ctx.apply(false, curStackTopIndex);
+        return ctx.apply(false, 1);
     }
     case CHECK_CAST: {
         ctx.checkCast(this->type);
@@ -894,7 +893,8 @@ void ApplyNode::accept(NodeVisitor *visitor) {
  *                       |    new offset    |   |        |
  */
 EvalStatus ApplyNode::eval(RuntimeContext & ctx) {
-    unsigned int curStackTopIndex = ctx.stackTopIndex;
+    unsigned int actualParamSize =
+            this->argsNode->getParamSize() + (this->isFuncCall() ? 0 : 1);
 
     // push func object
     EVAL(ctx, this->recvNode);
@@ -903,7 +903,7 @@ EvalStatus ApplyNode::eval(RuntimeContext & ctx) {
     EVAL(ctx, this->argsNode);
 
     // call function
-    return ctx.apply(this->type->isVoidType(), curStackTopIndex);
+    return ctx.apply(this->type->isVoidType(), actualParamSize);
 }
 
 // #####################
