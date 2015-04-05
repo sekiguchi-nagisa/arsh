@@ -56,8 +56,16 @@ bool DSType::isFuncType() const {
     return hasFlag(this->attributeSet, FUNC_TYPE);
 }
 
+bool DSType::isBuiltinType() const {
+    return false;
+}
+
 DSType *DSType::getSuperType() const {
     return this->superType;
+}
+
+FuncObject *DSType::getConstructor() {
+    return 0;
 }
 
 FunctionHandle *DSType::lookupMethodHandle(TypePool *typePool, const std::string &funcName) {
@@ -106,6 +114,10 @@ ClassType::~ClassType() {
 
 FunctionHandle *ClassType::getConstructorHandle(TypePool *typePool) {
     return this->constructorHandle;
+}
+
+FuncObject *ClassType::getConstructor() {
+    return 0;   //FIXME:
 }
 
 unsigned int ClassType::getFieldSize() {
@@ -330,6 +342,11 @@ protected:
     FunctionHandle *constructorHandle;
 
     /**
+     * may be null, if has no constructor
+     */
+    FuncObject *constructor;
+
+    /**
      * actually all of handles are FunctionHandle,
      * but initially handles are FieldHandle.
      */
@@ -352,10 +369,12 @@ public:
     virtual ~BuiltinType();
 
     FunctionHandle *getConstructorHandle(TypePool *typePool); // override
+    FuncObject *getConstructor();   // override.
     unsigned int getFieldSize();  // override
     FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName);  // override
     FieldHandle *findHandle(const std::string &fieldName); // override
     void initFieldTable(std::shared_ptr<DSObject> *fieldTable); // override
+    bool isBuiltinType() const; // override
 
 private:
     virtual FunctionHandle *newFuncHandle(TypePool *typePool, int fieldIndex, NativeFuncInfo *info);
@@ -364,7 +383,7 @@ private:
 BuiltinType::BuiltinType(type_id_t id, bool extendable, DSType *superType,
                          native_type_info_t *info, bool isVoid) :
         DSType(id, extendable, superType, isVoid),
-        info(info), constructorHandle(), handleMap(),
+        info(info), constructorHandle(), constructor(), handleMap(),
         objectTable(info->methodSize == 0 ?
                     0 : new std::pair<unsigned int, std::shared_ptr<DSObject>>[info->methodSize]) {
     // init function handle
@@ -385,6 +404,9 @@ BuiltinType::~BuiltinType() {
     delete this->constructorHandle;
     this->constructorHandle = 0;
 
+    delete this->constructor;
+    this->constructor = 0;
+
     for(std::pair<std::string, FieldHandle *> pair : this->handleMap) {
         delete pair.second;
     }
@@ -397,8 +419,13 @@ BuiltinType::~BuiltinType() {
 FunctionHandle *BuiltinType::getConstructorHandle(TypePool *typePool) {
     if(this->constructorHandle == 0 && this->info->initInfo != 0) {
         this->constructorHandle = this->newFuncHandle(typePool, -1, this->info->initInfo);
+        this->constructor = new BuiltinFuncObject(this->info->initInfo->func_ptr);
     }
     return this->constructorHandle;
+}
+
+FuncObject *BuiltinType::getConstructor() {
+    return this->constructor;
 }
 
 unsigned int BuiltinType::getFieldSize() {
@@ -447,6 +474,10 @@ void BuiltinType::initFieldTable(std::shared_ptr<DSObject> *fieldTable) {
     for(unsigned int i = 0; i < this->info->methodSize; i++) {
         fieldTable[this->objectTable[i].first] = this->objectTable[i].second;
     }
+}
+
+bool BuiltinType::isBuiltinType() const {
+    return true;
 }
 
 FunctionHandle *BuiltinType::newFuncHandle(TypePool *typePool, int fieldIndex, NativeFuncInfo *info) {

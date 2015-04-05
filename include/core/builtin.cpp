@@ -21,6 +21,8 @@
 #include <core/DSObject.h>
 
 #include <math.h>
+#include "RuntimeContext.h"
+#include "DSObject.h"
 
 // helper macro
 #define LOCAL(index) (ctx.localStack[ctx.localVarOffset + (index)])
@@ -408,6 +410,14 @@ static inline bool string_empty(RuntimeContext &ctx) {
 // ###################
 // ##     Array     ##
 // ###################
+
+//!bind: constructor ($this : Array<T0>)
+static inline bool array_init(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_init);
+    DSType *type = LOCAL(0)->getType();
+    ctx.setLocal(0, std::make_shared<Array_Object>(type));
+    return true;
+}
 
 //!bind: function add($this : Array<T0>, $value : T0) : Array<T0>
 static inline bool array_add(RuntimeContext &ctx) {

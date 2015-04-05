@@ -45,6 +45,11 @@ struct RuntimeContext {
     std::shared_ptr<Boolean_Object> falseObj;
 
     /**
+     * for pseudo object allocation (used for builtin constructor call)
+     */
+    std::shared_ptr<DSObject> dummy;
+
+    /**
      * contains global variables(or function)
      */
     std::shared_ptr<DSObject> *globalVarTable;
@@ -225,6 +230,10 @@ struct RuntimeContext {
         this->localStack[this->localVarOffset + index] = this->pop();
     }
 
+    void setLocal(unsigned int index, std::shared_ptr<DSObject> &&obj) {
+        this->localStack[this->localVarOffset + index] = obj;
+    }
+
     void getLocal(unsigned int index) {
         this->push(this->localStack[this->localVarOffset + index]);
     }
@@ -272,6 +281,48 @@ struct RuntimeContext {
             if(!returnTypeIsVoid) {
                 this->getReturnObject(); // push return value
             }
+            return EVAL_SUCCESS;
+        } else {
+            return EVAL_THROW;
+        }
+    }
+
+    /**
+     * allocate new DSObject on stack top.
+     * if type is builtin type, not allocate it.
+     */
+    void newDSObject(DSType *type) {
+        if(type->isBuiltinType()) {
+           this->dummy->setType(type);
+            this->push(this->dummy);
+        } else {
+            fatal("currently, DSObject allocation not supported\n");
+        }
+    }
+
+    /**
+     * stack state in constructor call     stack grow ===>
+     *
+     * +-----------+------------------+   +--------+
+     * | stack top | param1(receiver) | ~ | paramN |
+     * +-----------+------------------+   +--------+
+     *             |    new offset    |
+     */
+    EvalStatus applyConstructor(unsigned int paramSize) {
+        unsigned int savedStackTopIndex = this->stackTopIndex - paramSize;
+
+        // call constructor
+        this->saveAndSetOffset(savedStackTopIndex);
+        bool status =
+                this->localStack[savedStackTopIndex]->type->getConstructor()->invoke(*this);
+
+        // restore stack state
+        this->restoreOffset();
+        for(unsigned int i = this->stackTopIndex; i > savedStackTopIndex; i--) {
+            this->pop();
+        }
+
+        if(status) {
             return EVAL_SUCCESS;
         } else {
             return EVAL_THROW;

@@ -916,8 +916,15 @@ void NewNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus NewNode::eval(RuntimeContext & ctx) {
-    fatal("unimplemented eval\n");  //TODO
-    return EVAL_SUCCESS;
+    unsigned int paramSize = this->argsNode->getNodes().size();
+
+    ctx.newDSObject(this->type);
+
+    // push param
+    EVAL(ctx, this->argsNode);
+
+    // call constructor
+    return ctx.applyConstructor(paramSize);
 }
 
 // ##########################

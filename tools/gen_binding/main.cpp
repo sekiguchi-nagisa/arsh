@@ -429,6 +429,12 @@ public:
         return std::unique_ptr<Element>(new Element(std::move(funcName), true, op));
     }
 
+    static std::unique_ptr<Element> newInitElement() {
+        std::unique_ptr<Element> element(new Element(std::string(""), false, false));
+        element->setReturnType(std::unique_ptr<TypeToken>(new CommonTypeToken(VOID_T)));
+        return element;
+    }
+
     virtual ~Element() {
     }
 
@@ -588,7 +594,8 @@ private:
     }
 
     std::unique_ptr<Element> parse_descriptor(const std::string &line);
-    std::unique_ptr<Element> parse_funcDes();
+    std::unique_ptr<Element> parse_funcDesc();
+    std::unique_ptr<Element> parse_initDesc();
     void parse_params(const std::unique_ptr<Element> &element);
     std::unique_ptr<TypeToken> parse_type();
 
@@ -661,9 +668,9 @@ std::unique_ptr<Element> Parser::parse_descriptor(const std::string &line) {
 
     switch(this->kind) {
     case FUNC:
-        return this->parse_funcDes();
+        return this->parse_funcDesc();
     case INIT:
-        break;
+        return this->parse_initDesc();
     default:
         error("illegal token: %s", this->lexer->toTokenText(this->token).c_str());
         break;
@@ -671,7 +678,7 @@ std::unique_ptr<Element> Parser::parse_descriptor(const std::string &line) {
     return std::unique_ptr<Element>(nullptr);
 }
 
-std::unique_ptr<Element> Parser::parse_funcDes() {
+std::unique_ptr<Element> Parser::parse_funcDesc() {
     this->matchToken(FUNC);
 
     std::unique_ptr<Element> element;
@@ -700,6 +707,17 @@ std::unique_ptr<Element> Parser::parse_funcDes() {
 
     this->matchToken(COLON);
     element->setReturnType(this->parse_type());
+
+    return element;
+}
+
+std::unique_ptr<Element> Parser::parse_initDesc() {
+    this->matchToken(INIT);
+
+    std::unique_ptr<Element> element(Element::newInitElement());
+    this->matchToken(LP);
+    this->parse_params(element);
+    this->matchToken(RP);
 
     return element;
 }
@@ -859,11 +877,11 @@ static void gencode(const char *outFileName, const std::vector<TypeBind *> &bind
     for(TypeBind *bind : binds) {
         OUT("native_type_info_t *info_%sType() {\n", bind->name.c_str());
         if(bind->initElement != 0) {
-            OUT("     static NativeFuncInfo initInfo = %s;\n",
+            OUT("    static NativeFuncInfo initInfo = %s;\n",
                 bind->initElement->toString().c_str());
         }
         OUT("    static native_type_info_t info = {\n");
-        OUT("        .initInfo = %s,\n", (bind->initElement == 0 ? "0" : "initInfo"));
+        OUT("        .initInfo = %s,\n", (bind->initElement == 0 ? "0" : "&initInfo"));
         OUT("        .methodSize = %ld,\n", bind->funcElements.size());
         OUT("        .funcInfos = {\n");
         for(Element *e : bind->funcElements) {

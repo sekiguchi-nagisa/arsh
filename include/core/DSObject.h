@@ -168,6 +168,24 @@ struct Tuple_Object : public DSObject {
     std::shared_ptr<DSObject> commandArg(RuntimeContext &ctx); // override
 };
 
+struct DummyObject : public DSObject {
+    DummyObject() : DSObject(0) {
+    }
+
+    ~DummyObject() {
+    }
+
+    void setType(DSType *type) { // override.
+        this->type = type;
+    }
+
+    std::string toString() {
+        std::string str("dummy object");
+        str += std::to_string((long)this);
+        return str;
+    }
+};
+
 struct FuncObject : public DSObject {
     FuncObject();
 

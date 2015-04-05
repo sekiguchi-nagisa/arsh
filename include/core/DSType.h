@@ -73,6 +73,8 @@ public:
      */
     bool isFuncType() const;
 
+    virtual bool isBuiltinType() const;
+
     /**
      * get super type of this type.
      * return null, if has no super type(ex. AnyType, VoidType).
@@ -83,6 +85,11 @@ public:
      * return null, if has no constructor
      */
     virtual FunctionHandle *getConstructorHandle(TypePool *typePool) = 0;
+
+    /**
+     * return null, if has no constructor
+     */
+    virtual FuncObject *getConstructor();
 
     /**
      * get size of the all fields(include superType fieldSize).
@@ -142,6 +149,7 @@ public:
     ~ClassType();
 
     FunctionHandle *getConstructorHandle(TypePool *typePool);    // override
+    FuncObject *getConstructor();   // override
     unsigned int getFieldSize();    // override
     FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName);    // override
     FieldHandle *findHandle(const std::string &fieldName);  // override

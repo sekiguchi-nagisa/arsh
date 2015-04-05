@@ -32,6 +32,7 @@ RuntimeContext::RuntimeContext(char **envp) :
         pool(envp),
         trueObj(new Boolean_Object(this->pool.getBooleanType(), true)),
         falseObj(new Boolean_Object(this->pool.getBooleanType(), false)),
+        dummy(new DummyObject()),
         globalVarTable(new std::shared_ptr<DSObject>[DEFAULT_TABLE_SIZE]),
         tableSize(DEFAULT_TABLE_SIZE),
         returnObject(), thrownObject(),
