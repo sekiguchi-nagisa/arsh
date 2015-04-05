@@ -650,9 +650,7 @@ EvalStatus CastNode::eval(RuntimeContext & ctx) {
         break;
     }
     case TO_STRING: {
-        ctx.dupAndGetField(this->fieldIndex);
-        ctx.swap();
-        return ctx.apply(false, 1);
+        return ctx.toString();
     }
     case CHECK_CAST: {
         ctx.checkCast(this->type);

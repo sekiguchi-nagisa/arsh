@@ -21,6 +21,7 @@
 #include <core/TypePool.h>
 #include <core/DSType.h>
 #include <core/ProcContext.h>
+#include <core/symbol.h>
 #include <misc/debug.h>
 
 #include <vector>
@@ -94,6 +95,11 @@ struct RuntimeContext {
      * if true, enable assertion.
      */
     bool assertion;
+
+    /**
+     * for string cast
+     */
+    int fieldIndexOf_STR = -1;
 
     RuntimeContext(char **envp);
 
@@ -270,6 +276,20 @@ struct RuntimeContext {
         } else {
             return EVAL_THROW;
         }
+    }
+
+    /**
+     * cast stack top value to String
+     */
+    EvalStatus toString() {
+        if(this->fieldIndexOf_STR == -1) {
+            FunctionHandle *handle =
+                    this->pool.getAnyType()->lookupMethodHandle(&this->pool, std::string(OP_STR));
+            this->fieldIndexOf_STR = handle->getFieldIndex();
+        }
+        this->dupAndGetField(this->fieldIndexOf_STR);
+        this->swap();
+        return this->apply(false, 1);
     }
 
 

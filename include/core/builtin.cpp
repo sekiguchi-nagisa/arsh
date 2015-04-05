@@ -360,6 +360,50 @@ static inline bool boolean_ne(RuntimeContext & ctx) {
     RET(TO_BOOL(r));
 }
 
+
+// ####################
+// ##     String     ##
+// ####################
+
+//!bind: function $OP_ADD($this : String, $target : Any) : String
+static inline bool string_add(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_add);
+    ctx.getLocal(1);
+    ctx.toString();
+    std::shared_ptr<String_Object> str(new String_Object(ctx.pool.getStringType()));
+    str->value += TYPE_AS(String_Object, LOCAL(0))->value;
+    str->value += TYPE_AS(String_Object, ctx.peek())->value;
+    RET(str);
+}
+
+//!bind: function $OP_EQ($this : String, $target : String) : Boolean
+static inline bool string_eq(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_eq);
+    bool  r = LOCAL(0)->equals(LOCAL(1));
+    RET(TO_BOOL(r));
+}
+
+//!bind: function $OP_NE($this : String, $target : String) : Boolean
+static inline bool string_ne(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_ne);
+    bool  r = !LOCAL(0)->equals(LOCAL(1));
+    RET(TO_BOOL(r));
+}
+
+//!bind: function size($this : String) : Int
+static inline bool string_size(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_size);
+    int size = TYPE_AS(String_Object, LOCAL(0))->value.size();
+    RET(std::make_shared<Int_Object>(ctx.pool.getIntType(), size));
+}
+
+//!bind: function empty($this : String) : Boolean
+static inline bool string_empty(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_empty);
+    bool empty = TYPE_AS(String_Object, LOCAL(0))->value.empty();
+    RET(TO_BOOL(empty));
+}
+
 } //namespace core
 } //namespace ydsh
 
