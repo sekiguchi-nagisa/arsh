@@ -61,7 +61,7 @@ struct DSObject {
     /**
      * for printing
      */
-    virtual std::string toString() = 0;
+    virtual std::string toString();
 
     /**
      * EQ method implementation.
@@ -127,6 +127,8 @@ struct String_Object : public DSObject {
 
     String_Object(DSType *type, std::string &&value);
 
+    String_Object(DSType *type, const std::string &value);
+
     String_Object(DSType *type);
 
     const std::string &getValue();
@@ -168,6 +170,23 @@ struct Tuple_Object : public DSObject {
     std::shared_ptr<DSObject> commandArg(RuntimeContext &ctx); // override
 };
 
+struct Error_Object : public DSObject {
+    std::shared_ptr<DSObject> message;
+    std::vector<std::string> stackTrace;
+
+    Error_Object(DSType *type, const std::shared_ptr<DSObject> &message);
+    ~Error_Object();
+
+    std::string toString(); // override
+    void createStackTrace(RuntimeContext &ctx);
+
+    /**
+     * create new Error_Object and create stack trace
+     */
+    static Error_Object *newError(RuntimeContext &ctx, DSType *type,
+                                  const std::shared_ptr<DSObject> &message);
+};
+
 struct DummyObject : public DSObject {
     DummyObject() : DSObject(0) {
     }
@@ -177,12 +196,6 @@ struct DummyObject : public DSObject {
 
     void setType(DSType *type) { // override.
         this->type = type;
-    }
-
-    std::string toString() {
-        std::string str("dummy object");
-        str += std::to_string((long)this);
-        return str;
     }
 };
 

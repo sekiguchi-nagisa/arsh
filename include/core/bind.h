@@ -39,6 +39,8 @@ native_type_info_t *info_BooleanType();
 
 native_type_info_t *info_StringType();
 
+native_type_info_t *info_ErrorType();
+
 // for type template initialization.
 native_type_info_t *info_ArrayType();
 

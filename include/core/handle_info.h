@@ -36,6 +36,7 @@ typedef enum {
     FLOAT_T,
     BOOL_T,
     STRING_T,
+    ERROR_T,
     ARRAY_T,// type template
     MAP_T,
     P_N0,   // param types number

@@ -249,6 +249,8 @@ static DSType *decodeType(TypePool *typePool, const char *&pos,
         return typePool->getBooleanType();
     case STRING_T:
         return typePool->getStringType();
+    case ERROR_T:
+        return typePool->getErrorType();
     case ARRAY_T: {
         TypeTemplate *t = typePool->getArrayTemplate();
         unsigned int size = decodeNum(pos);

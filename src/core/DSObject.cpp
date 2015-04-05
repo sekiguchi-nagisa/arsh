@@ -46,6 +46,13 @@ DSType *DSObject::getType() {
 void DSObject::setType(DSType *type) {  // do nothing.
 }
 
+std::string DSObject::toString() {
+    std::string str("DSObject(");
+    str += std::to_string((long) this);
+    str += ")";
+    return str;
+}
+
 bool DSObject::equals(const std::shared_ptr<DSObject> &obj) {
     return (long) this == (long) obj.get();
 }
@@ -134,6 +141,10 @@ bool Boolean_Object::equals(const std::shared_ptr<DSObject> &obj) {
 
 String_Object::String_Object(DSType *type, std::string &&value) :
         DSObject(type), value(std::move(value)) {
+}
+
+String_Object::String_Object(DSType *type, const std::string &value) :
+        DSObject(type), value(value) {
 }
 
 String_Object::String_Object(DSType *type) :
@@ -298,6 +309,37 @@ std::shared_ptr<DSObject> Tuple_Object::commandArg(RuntimeContext &ctx) {
         }
     }
     return result;
+}
+
+// ##########################
+// ##     Error_Object     ##
+// ##########################
+
+Error_Object::Error_Object(DSType *type, const std::shared_ptr<DSObject> &message) :
+        DSObject(type), message(message), stackTrace() {
+}
+
+Error_Object::~Error_Object() {
+}
+
+std::string Error_Object::toString() {
+    std::string str("Error(");
+    str += std::to_string((long) this);
+    str += ", ";
+    str += TYPE_AS(String_Object, this->message)->value;
+    str += ")";
+    return str;
+}
+
+void Error_Object::createStackTrace(RuntimeContext &ctx) {
+    //TODO:
+}
+
+Error_Object *Error_Object::newError(RuntimeContext &ctx, DSType *type,
+                                     const std::shared_ptr<DSObject> &message) {
+    Error_Object *obj = new Error_Object(type, message);
+    obj->createStackTrace(ctx);
+    return obj;
 }
 
 // ########################

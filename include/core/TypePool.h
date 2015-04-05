@@ -54,6 +54,7 @@ private:
     DSType *floatType;
     DSType *boolType;
     DSType *stringType;
+    DSType *errorType;
     DSType *taskType;
     DSType *baseFuncType;
 
@@ -113,6 +114,8 @@ public:
     DSType *getBooleanType();
 
     DSType *getStringType();
+
+    DSType *getErrorType();
 
     DSType *getTaskType();
 

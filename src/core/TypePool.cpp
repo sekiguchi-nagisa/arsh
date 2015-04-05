@@ -31,7 +31,7 @@ TypePool::TypePool(char **envp) :
         idCount(0), typeMap(16), typeNameTable(),
         anyType(), voidType(), valueType(),
         intType(), floatType(), boolType(), stringType(),
-        taskType(), baseFuncType(),
+        errorType(), taskType(), baseFuncType(),
         templateMap(8),
         arrayTemplate(), mapTemplate(), tupleTemplate(),
         stringArrayType(), envp(envp), envSet() {
@@ -49,6 +49,7 @@ TypePool::TypePool(char **envp) :
     this->floatType = this->initBuiltinType("Float", false, this->valueType, info_FloatType());
     this->boolType = this->initBuiltinType("Boolean", false, this->valueType, info_BooleanType());
     this->stringType = this->initBuiltinType("String", false, this->valueType, info_StringType());
+    this->errorType = this->initBuiltinType("Error", true, this->anyType, info_ErrorType());
     this->taskType = this->initBuiltinType("Task", false, this->anyType, info_Dummy());
 
     /**
@@ -105,6 +106,10 @@ DSType *TypePool::getBooleanType() {
 
 DSType *TypePool::getStringType() {
     return this->stringType;
+}
+
+DSType *TypePool::getErrorType() {
+    return this->errorType;
 }
 
 DSType *TypePool::getTaskType() {

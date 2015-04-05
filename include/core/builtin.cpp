@@ -21,8 +21,6 @@
 #include <core/DSObject.h>
 
 #include <math.h>
-#include "RuntimeContext.h"
-#include "DSObject.h"
 
 // helper macro
 #define LOCAL(index) (ctx.localStack[ctx.localVarOffset + (index)])
@@ -480,6 +478,26 @@ static inline bool array_empty(RuntimeContext &ctx) {
     bool empty = TYPE_AS(Array_Object, LOCAL(0))->values.empty();
     RET(TO_BOOL(empty));
 }
+
+
+// ###################
+// ##     Error     ##
+// ###################
+
+//!bind: constructor ($this : Error, $message : String)
+static inline bool error_init(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(error_init);
+    DSType *type = LOCAL(0)->type;
+    ctx.setLocal(0, std::shared_ptr<DSObject>(Error_Object::newError(ctx, type, LOCAL(1))));
+    return true;
+}
+
+//!bind: function message($this : Error) : String
+static inline bool error_message(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(error_message);
+    RET(TYPE_AS(Error_Object, LOCAL(0))->message);
+}
+
 
 } //namespace core
 } //namespace ydsh

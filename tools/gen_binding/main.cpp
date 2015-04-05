@@ -67,6 +67,7 @@ static bool isType(context_t *ctx) {
         case FLOAT_T:
         case BOOL_T:
         case STRING_T:
+        case ERROR_T:
         case ARRAY_T:
         case MAP_T:
             return true;
@@ -98,6 +99,7 @@ static int getNum(context_t *ctx) {
         case FLOAT_T:
         case BOOL_T:
         case STRING_T:
+        case ERROR_T:
         case ARRAY_T:
         case MAP_T:
             return -1;
@@ -160,6 +162,7 @@ static std::string toTypeInfoName(TypeInfo info) {
     OP(FLOAT_T) \
     OP(BOOL_T) \
     OP(STRING_T) \
+    OP(ERROR_T) \
     OP(ARRAY_T) \
     OP(MAP_T) \
     OP(P_N0) \
@@ -304,6 +307,8 @@ std::unique_ptr<TypeToken> CommonTypeToken::newTypeToken(const std::string &name
         info = BOOL_T;
     } else if(name == "String") {
         info = STRING_T;
+    } else if(name == "Error") {
+        info = ERROR_T;
     } else if(name == "T0") {
         info = T0;
     } else if(name == "T1") {
@@ -827,6 +832,7 @@ static std::vector<TypeBind *> genTypeBinds(std::vector<std::unique_ptr<Element>
     binds.push_back(new TypeBind(FLOAT_T, "Float"));
     binds.push_back(new TypeBind(BOOL_T, "Boolean"));
     binds.push_back(new TypeBind(STRING_T, "String"));
+    binds.push_back(new TypeBind(ERROR_T, "Error"));
     binds.push_back(new TypeBind(ARRAY_T, "Array"));
     binds.push_back(new TypeBind(MAP_T, "Map"));
 
