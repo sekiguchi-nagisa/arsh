@@ -1167,7 +1167,7 @@ void CmdNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus CmdNode::eval(RuntimeContext & ctx) { //FIXME: redirect
-    std::shared_ptr<ProcContext> proc(new ProcContext(this->commandName));
+    std::shared_ptr<ProcContext> proc(new ProcContext(ctx, this->commandName));
     for(Node *node : this->argNodes) {
         EVAL(ctx, node);
         proc->addParam(ctx.pop());

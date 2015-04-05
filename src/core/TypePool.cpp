@@ -34,7 +34,7 @@ TypePool::TypePool(char **envp) :
         taskType(), baseFuncType(),
         templateMap(8),
         arrayTemplate(), mapTemplate(), tupleTemplate(),
-        envp(envp), envSet() {
+        stringArrayType(), envp(envp), envSet() {
 
     // initialize type
     this->anyType = this->initBuiltinType("Any", true, 0, info_AnyType());
@@ -60,6 +60,11 @@ TypePool::TypePool(char **envp) :
     this->arrayTemplate = this->initTypeTemplate("Array", 1, info_Dummy());
     this->mapTemplate = this->initTypeTemplate("Map", 2, info_Dummy());
     this->tupleTemplate = this->initTypeTemplate("Tuple", 0, 0);   // pseudo template.
+
+    // init string array type(for command argument)
+    std::vector<DSType *> types(1);
+    types[0] = this->stringType;
+    this->stringArrayType = this->createAndGetReifiedTypeIfUndefined(this->arrayTemplate, types);
 }
 
 TypePool::~TypePool() {
@@ -108,6 +113,10 @@ DSType *TypePool::getTaskType() {
 
 DSType *TypePool::getBaseFuncType() {
     return this->baseFuncType;
+}
+
+DSType *TypePool::getStringArrayType() {
+    return this->stringArrayType;
 }
 
 TypeTemplate *TypePool::getArrayTemplate() {

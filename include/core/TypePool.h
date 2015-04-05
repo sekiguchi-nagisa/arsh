@@ -71,6 +71,11 @@ private:
      */
     TypeTemplate *tupleTemplate;
 
+    /*
+     * for command argument
+     */
+    DSType *stringArrayType;
+
     /**
      * not delete.
      */
@@ -112,6 +117,8 @@ public:
     DSType *getTaskType();
 
     DSType *getBaseFuncType();
+
+    DSType *getStringArrayType();
 
     // for reified type.
     TypeTemplate *getArrayTemplate();

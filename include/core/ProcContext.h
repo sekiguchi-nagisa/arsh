@@ -22,12 +22,19 @@
 namespace ydsh {
 namespace core {
 
+struct RuntimeContext;
+
 struct ProcContext : public DSObject {   //FIXME: redirect option
     typedef enum {
         NORMAL,
         INTR,
     } ExitKind;
 
+
+    /**
+     * not call destructor.
+     */
+    RuntimeContext *ctx;
 
     std::string cmdName;
     std::vector<std::shared_ptr<String_Object>> params;
@@ -41,7 +48,7 @@ struct ProcContext : public DSObject {   //FIXME: redirect option
     ExitKind exitKind;
     int exitStatus;
 
-    ProcContext(const std::string &cmdName);
+    ProcContext(RuntimeContext &ctx, const std::string &cmdName);
 
     ~ProcContext();
 

@@ -19,6 +19,8 @@
 #include <sys/wait.h>
 #include <stdlib.h>
 
+#include <core/RuntimeContext.h>
+#include <core/DSType.h>
 #include <core/ProcContext.h>
 #include <misc/debug.h>
 
@@ -32,8 +34,8 @@ namespace core {
 // ##     ProcContext     ##
 // #########################
 
-ProcContext::ProcContext(const std::string &cmdName) :
-        DSObject(0), cmdName(cmdName), params(), argv(), pid(0),
+ProcContext::ProcContext(RuntimeContext &ctx, const std::string &cmdName) :
+        DSObject(0), ctx(&ctx), cmdName(cmdName), params(), argv(), pid(0),
         exitKind(NORMAL), exitStatus(0) {
 }
 
@@ -46,19 +48,19 @@ std::string ProcContext::toString() {
 }
 
 void ProcContext::addParam(const std::shared_ptr<DSObject> &value) {
-    String_Object *strObj = TYPE_AS(String_Object, value);
-    if(strObj != 0) {
+    DSType *valueType = value->getType();
+    if(*valueType == *this->ctx->pool.getStringType()) {
         this->params.push_back(std::dynamic_pointer_cast<String_Object>(value));
         return;
     }
 
-    Array_Object *arrayObj = TYPE_AS(Array_Object, value);
-    if(arrayObj != 0) {
+    if(*valueType == *this->ctx->pool.getStringArrayType()) {
+        Array_Object *arrayObj = TYPE_AS(Array_Object, value);
         for(const std::shared_ptr<DSObject> &element : arrayObj->values) {
             this->params.push_back(std::dynamic_pointer_cast<String_Object>(element));
         }
     } else {
-        fatal("illegal command parameter type: %d\n", value->getType()->getTypeId());
+        fatal("illegal command parameter type: %s\n", this->ctx->pool.getTypeName(*valueType).c_str());
     }
 }
 
