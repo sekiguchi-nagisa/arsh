@@ -2161,12 +2161,19 @@ void AssignNode::accept(NodeVisitor *visitor) {
 EvalStatus AssignNode::eval(RuntimeContext & ctx) {
     int index = ((AssignableNode *) this->leftNode)->getIndex();
     if(this->isFieldAssign()) {
-        AccessNode *accessNode = (AccessNode *) this->leftNode;
-        EVAL(ctx, accessNode->getRecvNode());
+        if(this->isSelfAssignment()) {
+            EVAL(ctx, this->leftNode);
+        } else {
+            AccessNode *accessNode = (AccessNode *) this->leftNode;
+            EVAL(ctx, accessNode->getRecvNode());
+        }
         EVAL(ctx, this->rightNode);
         std::shared_ptr<DSObject> value(ctx.pop());
         ctx.pop()->fieldTable[index] = value;
     } else {
+        if(this->isSelfAssignment()) {
+            EVAL(ctx, this->leftNode);
+        }
         EVAL(ctx, this->rightNode);
         VarNode *varNode = (VarNode *) this->leftNode;
 
