@@ -54,9 +54,11 @@ static inline bool to_interp(RuntimeContext & ctx) {
     RET(LOCAL(0)->interp(ctx));
 }
 
-//TODO: add to_cmd_arg
-////!bind: function $OP_TO_CMD_ARG($this : Any) : CommanddArg
-//static inline bool to_cmd_arg(RuntimeContext &ctx);
+//!bind: function $OP_CMD_ARG($this : Any) : Any
+static inline bool to_cmd_arg(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(to_cmd_arg);
+    RET(LOCAL(0)->commandArg(ctx));
+}
 
 
 // #################

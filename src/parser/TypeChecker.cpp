@@ -668,7 +668,7 @@ void TypeChecker::visitCondOpNode(CondOpNode * node) {
 
 void TypeChecker::visitCmdNode(CmdNode * node) {
     for(CmdArgNode *argNode : node->getArgNodes()) {
-        this->checkTypeAsStatement(argNode);    // always void
+        this->checkType(argNode);
     }
     // check type redirect options
     for(const std::pair<int, Node *> &optionPair : node->getRedirOptions()) {
@@ -681,7 +681,7 @@ void TypeChecker::visitCmdArgNode(CmdArgNode * node) {
     for(Node *exprNode : node->getSegmentNodes()) {
         this->checkType(exprNode);
     }
-    node->setType(this->typePool->getVoidType());   //FIXME
+    node->setType(this->typePool->getAnyType());   //FIXME
 }
 
 void TypeChecker::visitSpecialCharNode(SpecialCharNode * node) {

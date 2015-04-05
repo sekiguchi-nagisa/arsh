@@ -79,6 +79,11 @@ struct DSObject {
     virtual std::shared_ptr<String_Object> interp(RuntimeContext &ctx);
 
     /**
+     * for command argument.
+     */
+    virtual std::shared_ptr<DSObject> commandArg(RuntimeContext &ctx);
+
+    /**
      * for Map_Object
      */
     virtual size_t hash();
@@ -145,6 +150,7 @@ struct Array_Object : public DSObject {
     void append(std::shared_ptr<DSObject> obj);
 
     std::shared_ptr<String_Object> interp(RuntimeContext &ctx); // override
+    std::shared_ptr<DSObject> commandArg(RuntimeContext &ctx); // override
 };
 
 struct Tuple_Object : public DSObject {
@@ -152,12 +158,14 @@ struct Tuple_Object : public DSObject {
 
     std::string toString(); // override
     unsigned int getActualIndex(unsigned int elementIndex);
+    unsigned int getElementSize();
 
     void set(unsigned int elementIndex, const std::shared_ptr<DSObject> &obj);
 
     const std::shared_ptr<DSObject> &get(unsigned int elementIndex);
 
     std::shared_ptr<String_Object> interp(RuntimeContext &ctx); // override
+    std::shared_ptr<DSObject> commandArg(RuntimeContext &ctx); // override
 };
 
 struct FuncObject : public DSObject {

@@ -58,6 +58,10 @@ std::shared_ptr<String_Object> DSObject::interp(RuntimeContext &ctx) {
     return this->str(ctx);
 }
 
+std::shared_ptr<DSObject> DSObject::commandArg(RuntimeContext &ctx) {
+    return this->str(ctx);
+}
+
 size_t DSObject::hash() {
     return (long) this;
 }
@@ -201,6 +205,30 @@ std::shared_ptr<String_Object> Array_Object::interp(RuntimeContext &ctx) {
     return value;
 }
 
+std::shared_ptr<DSObject> Array_Object::commandArg(RuntimeContext &ctx) {
+    if(*this->type == *ctx.pool.getStringArrayType()) {
+        return std::shared_ptr<DSObject>(this);
+    }
+
+    std::shared_ptr<Array_Object> result(new Array_Object(ctx.pool.getStringArrayType()));
+    for(const std::shared_ptr<DSObject> &e : this->values) {
+        std::shared_ptr<DSObject> temp(e->commandArg(ctx));
+
+        DSType *tempType = temp->type;
+        if(*tempType == *ctx.pool.getStringType()) {
+            result->values.push_back(std::move(temp));
+        } else if(*tempType == *ctx.pool.getStringArrayType()) {
+            Array_Object *tempArray = TYPE_AS(Array_Object, temp);
+            for(const std::shared_ptr<DSObject> &tempValue : tempArray->values) {
+                result->values.push_back(tempValue);
+            }
+        } else {
+            fatal("illegal command argument type: %s\n", ctx.pool.getTypeName(*tempType).c_str());
+        }
+    }
+    return result;
+}
+
 // ##########################
 // ##     Tuple_Object     ##
 // ##########################
@@ -211,7 +239,7 @@ Tuple_Object::Tuple_Object(DSType *type) :
 
 std::string Tuple_Object::toString() {
     std::string str("(");
-    unsigned int size = this->type->getFieldSize() - this->type->getSuperType()->getFieldSize();
+    unsigned int size = this->getElementSize();
     for(unsigned int i = 0; i < size; i++) {
         if(i > 0) {
             str += ", ";
@@ -226,6 +254,10 @@ unsigned int Tuple_Object::getActualIndex(unsigned int elementIndex) {
     return this->type->getSuperType()->getFieldSize() + elementIndex;
 }
 
+unsigned int Tuple_Object::getElementSize() {
+    return this->type->getFieldSize() - this->type->getSuperType()->getFieldSize();
+}
+
 void Tuple_Object::set(unsigned int elementIndex, const std::shared_ptr<DSObject> &obj) {
     this->fieldTable[this->getActualIndex(elementIndex)] = obj;
 }
@@ -237,7 +269,7 @@ const std::shared_ptr<DSObject> &Tuple_Object::get(unsigned int elementIndex) {
 std::shared_ptr<String_Object> Tuple_Object::interp(RuntimeContext &ctx) {
     std::shared_ptr<String_Object> value(new String_Object(ctx.pool.getStringType()));
 
-    unsigned int size = this->type->getFieldSize() - this->type->getSuperType()->getFieldSize();
+    unsigned int size = this->getElementSize();
     for(unsigned int i = 0; i < size; i++) {
         if(i > 0) {
             value->value += " ";
@@ -245,6 +277,27 @@ std::shared_ptr<String_Object> Tuple_Object::interp(RuntimeContext &ctx) {
         value->append(this->fieldTable[this->getActualIndex(i)]->str(ctx));
     }
     return value;
+}
+
+std::shared_ptr<DSObject> Tuple_Object::commandArg(RuntimeContext &ctx) {
+    std::shared_ptr<Array_Object> result(new Array_Object(ctx.pool.getStringArrayType()));
+    unsigned int size = this->getElementSize();
+    for(unsigned int i = 0; i < size; i++) {
+        std::shared_ptr<DSObject> temp(this->fieldTable[this->getActualIndex(i)]->commandArg(ctx));
+
+        DSType *tempType = temp->type;
+        if(*tempType == *ctx.pool.getStringType()) {
+            result->values.push_back(std::move(temp));
+        } else if(*tempType == *ctx.pool.getStringArrayType()) {
+            Array_Object *tempArray = TYPE_AS(Array_Object, temp);
+            for(const std::shared_ptr<DSObject> &tempValue : tempArray->values) {
+                result->values.push_back(tempValue);
+            }
+        } else {
+            fatal("illegal command argument type: %s\n", ctx.pool.getTypeName(*tempType).c_str());
+        }
+    }
+    return result;
 }
 
 // ########################
