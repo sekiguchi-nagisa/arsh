@@ -761,6 +761,7 @@ void Parser::parse_funcDecl(const std::string &line, std::unique_ptr<Element> &e
     this->init(lexer);
 
     this->matchToken(STATIC);
+    this->matchToken(INLINE);
     this->matchToken(BOOL);
 
     auto token = this->matchAndGetToken(IDENTIFIER);
@@ -849,7 +850,7 @@ static void gencode(const char *outFileName, const std::vector<TypeBind *> &bind
 
     // generate dummy
     OUT("native_type_info_t *info_Dummy() {\n");
-    OUT("    static native_type_info_t info = {0, 0, 0};\n");
+    OUT("    static native_type_info_t info = {0, 0, {}};\n");
     OUT("    return &info;\n");
     OUT("}\n");
     OUT("\n");

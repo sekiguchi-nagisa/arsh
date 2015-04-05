@@ -52,6 +52,7 @@ DescTokenKind DescLexer::operator()(ydsh::parser::Lexer<DescLexer, DescTokenKind
       "function"             { RET(FUNC); }
       "constructor"          { RET(INIT); }
       "static"               { RET(STATIC); }
+      "inline"               { RET(INLINE); }
       "bool"                 { RET(BOOL);}
       "RuntimeContext"       { RET(RCTX); }
       "Array"                { RET(ARRAY); }

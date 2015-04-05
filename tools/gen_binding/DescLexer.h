@@ -26,6 +26,7 @@
     OP(FUNC)           /* function */\
     OP(INIT)           /* constructor */\
     OP(STATIC)         /* static */\
+    OP(INLINE)         /* inline */\
     OP(BOOL)           /* bool */\
     OP(RCTX)           /* RuntimeContext */\
     OP(ARRAY)          /* Array */\
