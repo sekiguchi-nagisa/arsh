@@ -423,45 +423,18 @@ public:
 
 class ArgsNode : public Node {
 private:
-    std::vector<std::pair<std::string, Node *>> argPairs;
-
-    /**
-     * may be null, if not has named parameter.
-     * size is equivalent to argsPair.size().
-     * key is order of arg, value is parameter index.
-     */
-    unsigned int *paramIndexMap;
-
-    /**
-     * size of all parameter of callee.
-     * may be not equivalent to argPairs.size() if has default parameter.
-     */
-    unsigned int paramSize;
+    std::vector<Node *> nodes;
 
 public:
     ArgsNode();
 
     ~ArgsNode();
 
-    /**
-     * if argNode is AssignNode and left hand side node is VarNode,
-     * treat as named argument.
-     */
     void addArg(Node *argNode);
 
     void setArg(unsigned int index, Node *argNode);
 
-    void initIndexMap();
-
-    void addParamIndex(unsigned int index, unsigned int value);
-
-    unsigned int *getParamIndexMap();
-
-    void setParamSize(unsigned int size);
-
-    unsigned int getParamSize();
-
-    const std::vector<std::pair<std::string, Node *>> &getArgPairs();
+    const std::vector<Node *> &getNodes();
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);   // override

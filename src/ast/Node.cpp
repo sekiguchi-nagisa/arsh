@@ -754,65 +754,39 @@ EvalStatus InstanceOfNode::eval(RuntimeContext & ctx) {
 // ######################
 
 ArgsNode::ArgsNode() :
-        Node(0), argPairs(), paramIndexMap(0), paramSize(0) {
+        Node(0), nodes() {
 }
 
 ArgsNode::~ArgsNode() {
-    delete this->paramIndexMap;
-    this->paramIndexMap = 0;
+    for(Node *node : this->nodes) {
+        delete node;
+    }
+    this->nodes.clear();
 }
 
-void ArgsNode::addArg(Node *argNode) {
-    AssignNode *assignNode = dynamic_cast<AssignNode *>(argNode);
-    if(assignNode != 0 && dynamic_cast<VarNode *>(assignNode->getLeftNode()) != 0) {
-        std::pair<Node *, Node *> pair = AssignNode::split(assignNode);
-        VarNode *leftNode = dynamic_cast<VarNode *>(pair.first);
-        this->argPairs.push_back(
-                std::make_pair(VarNode::extractVarNameAndDelete(leftNode), pair.second));
-    } else {
-        this->argPairs.push_back(std::make_pair("", argNode));
-    }
+void ArgsNode::addArg(Node *argNode) {  //TODO: named argument
+    this->nodes.push_back(argNode);
 }
 
 void ArgsNode::setArg(unsigned int index, Node *argNode) {
-    this->argPairs[index].second = argNode;
+    this->nodes[index] = argNode;
 }
 
-void ArgsNode::initIndexMap() {
-    this->paramIndexMap = new unsigned int[this->argPairs.size()];
-}
-
-void ArgsNode::addParamIndex(unsigned int index, unsigned int value) {
-    this->paramIndexMap[index] = value;
-}
-
-unsigned int *ArgsNode::getParamIndexMap() {
-    return this->paramIndexMap;
-}
-
-void ArgsNode::setParamSize(unsigned int size) {
-    this->paramSize = size;
-}
-
-unsigned int ArgsNode::getParamSize() {
-    return this->paramSize;
-}
-
-const std::vector<std::pair<std::string, Node *>> &ArgsNode::getArgPairs() {
-    return this->argPairs;
+const std::vector<Node *> &ArgsNode::getNodes() {
+    return this->nodes;
 }
 
 void ArgsNode::dump(Writer &writer) const {
-    //FIXME: argPairs
+    WRITE(nodes);
 }
 
 void ArgsNode::accept(NodeVisitor *visitor) {
     visitor->visitArgsNode(this);
 }
 
-EvalStatus ArgsNode::eval(RuntimeContext & ctx) {    //TODO: named argument
-    for(const std::pair<std::string, Node *> &pair : this->argPairs) {
-        EVAL(ctx, pair.second);
+EvalStatus ArgsNode::eval(RuntimeContext & ctx) {
+    for(Node *node : this->nodes) {
+        EVAL(ctx, node);
     }
     return EVAL_SUCCESS;
 }
@@ -894,7 +868,7 @@ void ApplyNode::accept(NodeVisitor *visitor) {
  */
 EvalStatus ApplyNode::eval(RuntimeContext & ctx) {
     unsigned int actualParamSize =
-            this->argsNode->getParamSize() + (this->isFuncCall() ? 0 : 1);
+            this->argsNode->getNodes().size() + (this->isFuncCall() ? 0 : 1);
 
     // push func object
     EVAL(ctx, this->recvNode);

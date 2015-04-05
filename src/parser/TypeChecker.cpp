@@ -340,96 +340,18 @@ HandleOrFuncType TypeChecker::resolveCallee(VarNode * recvNode, ApplyNode * appl
 }
 
 void TypeChecker::checkTypeArgsNode(FunctionHandle *handle, ArgsNode *argsNode, bool isFuncCall) {
-    const unsigned int startIndex = isFuncCall ? 0 : 1;
-    // check named arg existence
-    bool foundNamedArg = false;
-    for(const std::pair<std::string, Node *> &argPair : argsNode->getArgPairs()) {
-        if(argPair.first != "") {
-            foundNamedArg = true;
-        }
-        /**
-         * if previously found named parameter, but current argument has no named parameter,
-         * report error.
-         */
-        else if(foundNamedArg) {
-            E_NeedNamedArg(argsNode);
-        }
-    }
-
-    /**
-     * if named parameter not found. only check type
-     */
     const std::vector<DSType *> &paramTypes = handle->getParamTypes();
-    if(!foundNamedArg) {
-        this->checkTypeArgsNode(paramTypes, argsNode, isFuncCall);
-        return;
-    }
-
-    // check param size
-    unsigned int paramSize = paramTypes.size();
-    unsigned int argSize = argsNode->getArgPairs().size();
-    if(argSize > paramSize - startIndex) {
-        E_UnmatchParam(argsNode,
-                       std::to_string(paramSize - startIndex),
-                       std::to_string(argSize));
-    }
-
-    // resolve named param index
-    argsNode->initIndexMap();
-    argsNode->setParamSize(paramSize);
-    unsigned int count = 0;
-    for(const std::pair<std::string, Node *> &argPair : argsNode->getArgPairs()) {
-        int index = handle->getParamIndex(argPair.first);
-        if(index == -1) {
-            E_UnfoundNamedParam(argsNode, argPair.first);
-        }
-        argsNode->addParamIndex(count++, index);
-    }
-
-    // check argument duplication
-    unsigned int foundIndexMap[paramSize];
-    // init with 0
-    for(unsigned int i = 0; i < paramSize; i++) {
-        foundIndexMap[i] = 0;
-    }
-    for(unsigned int i = 0; i < argSize; i++) {
-        unsigned int paramIndex = argsNode->getParamIndexMap()[i];
-        if(foundIndexMap[paramIndex]++) {
-            E_DupNamedArg(argsNode, argsNode->getArgPairs()[i].first);
-        }
-    }
-
-    // check default value existence
-    for(unsigned int i = startIndex; i < paramSize; i++) {
-        if(foundIndexMap[i] == 0 && !handle->hasDefaultValue(i)) {
-            E_NoDefaultValue(argsNode);
-        }
-    }
-
-    // check type each arg
-    for(unsigned int i = 0; i < argSize; i++) {
-        argsNode->setArg(i, this->checkTypeAndResolveCoercion(
-                paramTypes[argsNode->getParamIndexMap()[i]],
-                argsNode->getArgPairs()[i].second));
-    }
+    this->checkTypeArgsNode(paramTypes, argsNode, isFuncCall);
 }
 
 void TypeChecker::checkTypeArgsNode(FunctionType *funcType, ArgsNode *argsNode, bool isFuncCall) {
-    // check has no named arg
-    for(const std::pair<std::string, Node *> &argPair : argsNode->getArgPairs()) {
-        if(argPair.first != "") {
-            E_UnneedNamedArg(argsNode);
-        }
-    }
-
-    // check type each node
     this->checkTypeArgsNode(funcType->getParamTypes(), argsNode, isFuncCall);
 }
 
 void TypeChecker::checkTypeArgsNode(const std::vector<DSType *> &paramTypes, ArgsNode *argsNode, bool isFuncCall) {
     const unsigned int startIndex = isFuncCall ? 0 : 1;
     unsigned int size = paramTypes.size();
-    unsigned int argSize = argsNode->getArgPairs().size();
+    unsigned int argSize = argsNode->getNodes().size();
     // check param size
     if(size - startIndex != argSize) {
         E_UnmatchParam(argsNode,
@@ -440,7 +362,7 @@ void TypeChecker::checkTypeArgsNode(const std::vector<DSType *> &paramTypes, Arg
     // check type each node
     for(unsigned int i = startIndex; i < size; i++) {
         argsNode->setArg(i - startIndex,
-                         this->checkTypeAndResolveCoercion(paramTypes[i], argsNode->getArgPairs()[i - startIndex].second));
+                         this->checkTypeAndResolveCoercion(paramTypes[i], argsNode->getNodes()[i - startIndex]));
     }
 }
 
