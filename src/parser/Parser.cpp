@@ -836,7 +836,7 @@ std::unique_ptr<Node> Parser::parse_expression(std::unique_ptr<Node> &&leftNode,
         default: {
             TokenKind op = this->consumeAndGetKind();
             std::unique_ptr<Node> rightNode(this->parse_unaryExpression());
-            for(unsigned int nextP = PRECEDENCE(); nextP >= p; nextP = PRECEDENCE()) {
+            for(unsigned int nextP = PRECEDENCE(); nextP > p; nextP = PRECEDENCE()) {
                 rightNode = this->parse_expression(std::move(rightNode), nextP);
             }
             node.reset(createBinaryOpNode(node.release(), op, rightNode.release()));
