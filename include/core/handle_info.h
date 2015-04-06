@@ -20,6 +20,45 @@
 namespace ydsh {
 namespace core {
 
+// builtin type
+#define EACH_HANDLE_INFO_TYPE(OP) \
+    OP(VOID_T) \
+    OP(ANY_T) \
+    OP(INT_T) \
+    OP(FLOAT_T) \
+    OP(BOOL_T)  \
+    OP(STRING_T) \
+    OP(ERROR_T)
+
+// type template
+#define EACH_HANDLE_INFO_TYPE_TEMP(OP) \
+    OP(ARRAY_T) \
+    OP(MAP_T)
+
+// param types num
+#define EACH_HANDLE_INFO_NUM(OP) \
+    OP(P_N0) \
+    OP(P_N1) \
+    OP(P_N2) \
+    OP(P_N3) \
+    OP(P_N4) \
+    OP(P_N5) \
+    OP(P_N6) \
+    OP(P_N7) \
+    OP(P_N8)
+
+// parametric type
+#define EACH_HANDLE_INFO_PTYPE(OP) \
+    OP(T0) \
+    OP(T1)
+
+#define EACH_HANDLE_INFO(OP) \
+    EACH_HANDLE_INFO_TYPE(OP) \
+    EACH_HANDLE_INFO_TYPE_TEMP(OP) \
+    EACH_HANDLE_INFO_NUM(OP) \
+    EACH_HANDLE_INFO_PTYPE(OP)
+
+
 /*
  * encoded type definition
  * ex. function hoge(a : Int, b = "re", c : Boolean, d = 2.3) : Int
@@ -29,28 +68,11 @@ namespace core {
  * --> VOID_T P_N2 ARRAY_T P_N1 INT_T T1
  *     defaultValueFlag (00000000)
  */
-typedef enum {
-    VOID_T = 32,    // type definition
-    ANY_T,
-    INT_T,
-    FLOAT_T,
-    BOOL_T,
-    STRING_T,
-    ERROR_T,
-    ARRAY_T,// type template
-    MAP_T,
-    P_N0,   // param types number
-    P_N1,
-    P_N2,
-    P_N3,
-    P_N4,
-    P_N5,
-    P_N6,
-    P_N7,
-    P_N8,
-    T0,     // parametric type
-    T1,
-} TypeInfo;
+enum HandleInfo {
+#define GEN_ENUM(ENUM) ENUM,
+    EACH_HANDLE_INFO(GEN_ENUM)
+#undef GEN_ENUM
+};
 
 } // namespace core
 } // namespace ydsh

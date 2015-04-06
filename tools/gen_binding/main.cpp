@@ -34,20 +34,14 @@ typedef struct {
     unsigned int pos;
 } context_t;
 
-static TypeInfo toNum(unsigned int num) {
+static HandleInfo toNum(unsigned int num) {
     // check range
     if(num < 9) {
-        TypeInfo info = (TypeInfo) (num + P_N0);
+        HandleInfo info = (HandleInfo) (num + P_N0);
         switch(info) {
-        case P_N0:
-        case P_N1:
-        case P_N2:
-        case P_N3:
-        case P_N4:
-        case P_N5:
-        case P_N6:
-        case P_N7:
-        case P_N8:
+#define GEN_CASE(ENUM) case ENUM:
+        EACH_HANDLE_INFO_NUM(GEN_CASE)
+#undef GEN_CASE
             return info;
         default:
             break;
@@ -59,66 +53,40 @@ static TypeInfo toNum(unsigned int num) {
 
 
 static bool isType(context_t *ctx) {
+#define GEN_CASE(ENUM) case ENUM:
     if(ctx->handleInfo[ctx->pos] != '\0') {
         switch(ctx->handleInfo[ctx->pos++]) {
-        case VOID_T:
-        case ANY_T:
-        case INT_T:
-        case FLOAT_T:
-        case BOOL_T:
-        case STRING_T:
-        case ERROR_T:
-        case ARRAY_T:
-        case MAP_T:
+        EACH_HANDLE_INFO_TYPE(GEN_CASE)
             return true;
-        case P_N0:
-        case P_N1:
-        case P_N2:
-        case P_N3:
-        case P_N4:
-        case P_N5:
-        case P_N6:
-        case P_N7:
-        case P_N8:
+        EACH_HANDLE_INFO_TYPE_TEMP(GEN_CASE)
+            return true;
+        EACH_HANDLE_INFO_NUM(GEN_CASE)
             return false;
-        case T0:
-        case T1:
+        EACH_HANDLE_INFO_PTYPE(GEN_CASE)
             return true;
         }
     }
     return false;
+#undef GEN_CASE
 }
 
 static int getNum(context_t *ctx) {
+#define GEN_CASE(ENUM) case ENUM:
     if(ctx->handleInfo[ctx->pos] != '\0') {
         char ch = ctx->handleInfo[ctx->pos++];
         switch(ch) {
-        case VOID_T:
-        case ANY_T:
-        case INT_T:
-        case FLOAT_T:
-        case BOOL_T:
-        case STRING_T:
-        case ERROR_T:
-        case ARRAY_T:
-        case MAP_T:
+        EACH_HANDLE_INFO_TYPE(GEN_CASE)
             return -1;
-        case P_N0:
-        case P_N1:
-        case P_N2:
-        case P_N3:
-        case P_N4:
-        case P_N5:
-        case P_N6:
-        case P_N7:
-        case P_N8:
+        EACH_HANDLE_INFO_TYPE_TEMP(GEN_CASE)
+            return -1;
+        EACH_HANDLE_INFO_NUM(GEN_CASE)
             return (int) (ch - P_N0);
-        case T0:
-        case T1:
+        EACH_HANDLE_INFO_PTYPE(GEN_CASE)
             return -1;
         }
     }
     return -1;
+#undef GEN_ENUM
 }
 
 static bool verifyHandleInfo(char *handleInfo) {
@@ -154,39 +122,15 @@ static bool verifyHandleInfo(char *handleInfo) {
     return ctx.handleInfo[ctx.pos] == '\0';
 }
 
-static std::string toTypeInfoName(TypeInfo info) {
-#define EACH_TYPE_INFO(OP) \
-    OP(VOID_T) \
-    OP(ANY_T) \
-    OP(INT_T) \
-    OP(FLOAT_T) \
-    OP(BOOL_T) \
-    OP(STRING_T) \
-    OP(ERROR_T) \
-    OP(ARRAY_T) \
-    OP(MAP_T) \
-    OP(P_N0) \
-    OP(P_N1) \
-    OP(P_N2) \
-    OP(P_N3) \
-    OP(P_N4) \
-    OP(P_N5) \
-    OP(P_N6) \
-    OP(P_N7) \
-    OP(P_N8) \
-    OP(T0) \
-    OP(T1)
-
+static std::string toTypeInfoName(HandleInfo info) {
     switch(info) {
-    #define GEN_NAME(INFO) case INFO: return std::string(#INFO);
-        EACH_TYPE_INFO(GEN_NAME)
-    #undef GEN_NAME
+#define GEN_NAME(INFO) case INFO: return std::string(#INFO);
+        EACH_HANDLE_INFO(GEN_NAME)
+#undef GEN_NAME
     default:
         fatal("illegal type info: %d", info);
         return std::string();
     }
-
-#undef EACH_TYPE_INFO
 }
 
 class ProcessingError {
@@ -222,11 +166,75 @@ static void error(const char *fmt, ...) {
     throw ProcessingError(buf);
 }
 
+class HandleInfoMap {
+private:
+    std::unordered_map<std::string, HandleInfo> name2InfoMap;
+    std::vector<std::pair<HandleInfo, std::string>> info2NameMap;
+
+    HandleInfoMap();
+
+public:
+    ~HandleInfoMap();
+
+    static HandleInfoMap &getInstance();
+    const std::string &getName(HandleInfo info);
+    HandleInfo getInfo(const std::string &name);
+
+private:
+    void registerName(HandleInfo info, const char *name);
+};
+
+HandleInfoMap::HandleInfoMap() :
+        name2InfoMap(), info2NameMap() {
+    this->registerName(VOID_T, "Void");
+    this->registerName(ANY_T, "Any");
+    this->registerName(INT_T, "Int");
+    this->registerName(FLOAT_T, "Float");
+    this->registerName(BOOL_T, "Boolean");
+    this->registerName(STRING_T, "String");
+    this->registerName(ERROR_T, "Error");
+    this->registerName(ARRAY_T, "Array");
+    this->registerName(MAP_T, "Map");
+    this->registerName(T0, "T0");
+    this->registerName(T1, "T1");
+}
+
+HandleInfoMap::~HandleInfoMap() {
+}
+
+HandleInfoMap &HandleInfoMap::getInstance() {
+    static HandleInfoMap map;
+    return map;
+}
+
+const std::string &HandleInfoMap::getName(HandleInfo info) {
+    for(auto &pair : this->info2NameMap) {
+        if(pair.first == info) {
+            return pair.second;
+        }
+    }
+    fatal("not found handle info: %s\n", toTypeInfoName(info).c_str());
+    return std::string("");
+}
+
+HandleInfo HandleInfoMap::getInfo(const std::string &name) {
+    auto  iter = this->name2InfoMap.find(name);
+    if(iter == this->name2InfoMap.end()) {
+        fatal("not found type name: %s\n", name.c_str());
+    }
+    return iter->second;
+}
+
+void HandleInfoMap::registerName(HandleInfo info, const char *name) {
+    std::string actualName(name);
+    this->info2NameMap.push_back(std::make_pair(info, actualName));
+    this->name2InfoMap.insert(std::make_pair(actualName, info));
+}
 
 
 class HandleInfoSerializer {
 private:
-    std::vector<TypeInfo> infos;
+    std::vector<HandleInfo> infos;
 
 public:
     HandleInfoSerializer() : infos() {
@@ -235,7 +243,7 @@ public:
     ~HandleInfoSerializer() {
     }
 
-    void add(TypeInfo info) {
+    void add(HandleInfo info) {
         this->infos.push_back(info);
     }
 
@@ -262,19 +270,19 @@ public:
     }
 
     virtual void serialize(HandleInfoSerializer &s) = 0;
-    virtual bool isType(TypeInfo info) = 0;
+    virtual bool isType(HandleInfo info) = 0;
 };
 
 
 class CommonTypeToken : public  TypeToken {
 private:
-    TypeInfo info;
+    HandleInfo info;
 
 public:
     /**
      * not call it directory.
      */
-    CommonTypeToken(TypeInfo info) :
+    CommonTypeToken(HandleInfo info) :
         info(info) {
     }
 
@@ -285,7 +293,7 @@ public:
         s.add(this->info);
     }
 
-    bool isType(TypeInfo info) {    // override
+    bool isType(HandleInfo info) {    // override
         return this->info == info;
     }
 
@@ -293,31 +301,8 @@ public:
 };
 
 std::unique_ptr<TypeToken> CommonTypeToken::newTypeToken(const std::string &name) {
-    TypeInfo info = VOID_T;
-
-    if(name == "Void") {
-        info = VOID_T;
-    } else if(name == "Any") {
-        info = ANY_T;
-    } else if(name == "Int") {
-        info = INT_T;
-    } else if(name == "Float") {
-        info = FLOAT_T;
-    } else if(name == "Boolean") {
-        info = BOOL_T;
-    } else if(name == "String") {
-        info = STRING_T;
-    } else if(name == "Error") {
-        info = ERROR_T;
-    } else if(name == "T0") {
-        info = T0;
-    } else if(name == "T1") {
-        info = T1;
-    } else {
-        error("unsupported type: %s\n", name.c_str());
-    }
-
-    return std::unique_ptr<TypeToken>(new CommonTypeToken(info));
+    return std::unique_ptr<TypeToken>(
+            new CommonTypeToken(HandleInfoMap::getInstance().getInfo(name)));
 }
 
 
@@ -345,7 +330,7 @@ public:
     }
     void serialize(HandleInfoSerializer &s);    // override
 
-    bool isType(TypeInfo info) {    // override
+    bool isType(HandleInfo info) {    // override
         return this->typeTemp->isType(info);
     }
 
@@ -464,7 +449,7 @@ public:
         this->actualFuncName = name;
     }
 
-    bool isOwnerType(TypeInfo info) {
+    bool isOwnerType(HandleInfo info) {
         return this->ownerType->isType(info);
     }
 
@@ -806,7 +791,7 @@ void Parser::parse_funcDecl(const std::string &line, std::unique_ptr<Element> &e
 
 
 struct TypeBind {
-    TypeInfo info;
+    HandleInfo info;
     std::string name;
 
     /**
@@ -816,8 +801,9 @@ struct TypeBind {
 
     std::vector<Element*> funcElements;
 
-    TypeBind(TypeInfo info, const char *name) :
-            info(info), name(name), initElement(), funcElements() {
+    TypeBind(HandleInfo info) :
+            info(info), name(HandleInfoMap::getInstance().getName(info)),
+            initElement(), funcElements() {
     }
 
     ~TypeBind() {
@@ -826,15 +812,10 @@ struct TypeBind {
 
 static std::vector<TypeBind *> genTypeBinds(std::vector<std::unique_ptr<Element>> &elements) {
     std::vector<TypeBind *> binds;
-    binds.push_back(new TypeBind(VOID_T, "Void"));
-    binds.push_back(new TypeBind(ANY_T, "Any"));
-    binds.push_back(new TypeBind(INT_T, "Int"));
-    binds.push_back(new TypeBind(FLOAT_T, "Float"));
-    binds.push_back(new TypeBind(BOOL_T, "Boolean"));
-    binds.push_back(new TypeBind(STRING_T, "String"));
-    binds.push_back(new TypeBind(ERROR_T, "Error"));
-    binds.push_back(new TypeBind(ARRAY_T, "Array"));
-    binds.push_back(new TypeBind(MAP_T, "Map"));
+#define GEN_BIND(ENUM) binds.push_back(new TypeBind(ENUM));
+    EACH_HANDLE_INFO_TYPE(GEN_BIND)
+    EACH_HANDLE_INFO_TYPE_TEMP(GEN_BIND)
+#undef GEN_BIND
 
     for(const std::unique_ptr<Element> &element : elements) {
         bool matched = false;
