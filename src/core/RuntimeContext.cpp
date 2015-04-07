@@ -56,12 +56,18 @@ void RuntimeContext::printStackTop(DSType *stackTopType) {
     }
 }
 
-void RuntimeContext::checkCast(DSType *targetType) {
-    if(!this->peek()->getType()->isAssignableFrom(targetType)) {
+bool RuntimeContext::checkCast(DSType *targetType) {
+    DSType *stackTopType = this->peek()->getType();
+    if(!stackTopType->isAssignableFrom(targetType)) {
         this->pop();
-        //FIXME: throw TypeCastException
-        fatal("throw TypeCastException\n");
+        std::string str("cannot cast ");
+        str += this->pool.getTypeName(*stackTopType);
+        str += " to ";
+        str += this->pool.getTypeName(*targetType);
+        this->throwError(this->pool.getTypeCastErrorType(), std::move(str));
+        return false;
     }
+    return true;
 }
 
 void RuntimeContext::instanceOf(DSType *targetType) {

@@ -251,6 +251,14 @@ static DSType *decodeType(TypePool *typePool, const char *&pos,
         return typePool->getStringType();
     case ERROR_T:
         return typePool->getErrorType();
+    case ARITH_ERROR_T:
+        return typePool->getArithmeticErrorType();
+    case OUT_OF_INDEX_ERROR_T:
+        return typePool->getOutOfIndexErrorType();
+    case KEY_NOT_ERROR_T:
+        return typePool->getKetNotFoundErrorType();
+    case CAST_ERROR_T:
+        return typePool->getTypeCastErrorType();
     case ARRAY_T: {
         TypeTemplate *t = typePool->getArrayTemplate();
         unsigned int size = decodeNum(pos);

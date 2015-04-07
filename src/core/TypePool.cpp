@@ -32,6 +32,8 @@ TypePool::TypePool(char **envp) :
         anyType(), voidType(), valueType(),
         intType(), floatType(), boolType(), stringType(),
         errorType(), taskType(), baseFuncType(),
+        arithmeticErrorType(), outOfIndexErrorType(),
+        keyNotFoundErrorType(), typeCastErrorType(),
         templateMap(8),
         arrayTemplate(), mapTemplate(), tupleTemplate(),
         stringArrayType(), envp(envp), envSet() {
@@ -66,6 +68,12 @@ TypePool::TypePool(char **envp) :
     std::vector<DSType *> types(1);
     types[0] = this->stringType;
     this->stringArrayType = this->createAndGetReifiedTypeIfUndefined(this->arrayTemplate, types);
+
+    // init some error type
+    this->arithmeticErrorType = this->initBuiltinType("ArithmeticError", true, this->errorType, info_ArithmeticErrorType());
+    this->outOfIndexErrorType = this->initBuiltinType("OutOfIndexError", true, this->errorType, info_OutOfIndexErrorType());
+    this->keyNotFoundErrorType = this->initBuiltinType("KeyNotFoundError", true, this->errorType, info_KeyNotFoundErrorType());
+    this->typeCastErrorType = this->initBuiltinType("TypeCastError", true, this->errorType, info_TypeCastErrorType());
 }
 
 TypePool::~TypePool() {
@@ -122,6 +130,22 @@ DSType *TypePool::getBaseFuncType() {
 
 DSType *TypePool::getStringArrayType() {
     return this->stringArrayType;
+}
+
+DSType *TypePool::getArithmeticErrorType() {
+    return this->arithmeticErrorType;
+}
+
+DSType *TypePool::getOutOfIndexErrorType() {
+    return this->outOfIndexErrorType;
+}
+
+DSType *TypePool::getKetNotFoundErrorType() {
+    return this->keyNotFoundErrorType;
+}
+
+DSType *TypePool::getTypeCastErrorType() {
+    return this->typeCastErrorType;
 }
 
 TypeTemplate *TypePool::getArrayTemplate() {

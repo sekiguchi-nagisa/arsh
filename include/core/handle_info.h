@@ -28,7 +28,11 @@ namespace core {
     OP(FLOAT_T) \
     OP(BOOL_T)  \
     OP(STRING_T) \
-    OP(ERROR_T)
+    OP(ERROR_T) \
+    OP(ARITH_ERROR_T) \
+    OP(OUT_OF_INDEX_ERROR_T) \
+    OP(KEY_NOT_ERROR_T) \
+    OP(CAST_ERROR_T)
 
 // type template
 #define EACH_HANDLE_INFO_TYPE_TEMP(OP) \

@@ -25,6 +25,7 @@
 #include <misc/debug.h>
 
 #include <vector>
+#include <iostream>
 
 namespace ydsh {
 namespace core {
@@ -106,6 +107,11 @@ struct RuntimeContext {
      */
     int fieldIndexOf_STR = -1;
 
+    /**
+     * for error reporting
+     */
+    int fieldIndexOf_bt = -1;
+
     RuntimeContext(char **envp);
 
     ~RuntimeContext();
@@ -142,6 +148,21 @@ struct RuntimeContext {
     void getReturnObject() {
         this->push(this->returnObject);
         this->returnObject.reset();
+    }
+
+    /**
+     * for internal error reporting.
+     */
+    void throwError(DSType *errorType, const char *message) {
+        this->thrownObject = std::shared_ptr<DSObject>(
+                Error_Object::newError(*this, errorType, std::make_shared<String_Object>(
+                        this->pool.getStringType(), std::string(message))));
+    }
+
+    void throwError(DSType *errorType, std::string &&message) {
+        this->thrownObject = std::shared_ptr<DSObject>(
+                Error_Object::newError(*this, errorType, std::make_shared<String_Object>(
+                        this->pool.getStringType(), message)));
     }
 
     /**
@@ -343,11 +364,35 @@ struct RuntimeContext {
         return this->apply(false, 1);
     }
 
+    /**
+     * report thrown object error message.
+     * after error reporting, clear thrown object
+     */
+    void reportError() {
+        std::cerr << "[runtime error]" << std::endl;
+        if(this->pool.getErrorType()->isAssignableFrom(this->thrownObject->type)) {
+            if(this->fieldIndexOf_bt == -1) {
+                std::string str("backtrace");
+                FieldHandle *handle = this->pool.getErrorType()->lookupMethodHandle(&this->pool, str);
+                this->fieldIndexOf_bt = handle->getFieldIndex();
+            }
+            this->getThrownObject();
+            this->dupAndGetField(this->fieldIndexOf_bt);
+            this->swap();
+            this->apply(false, 1);
+        } else {
+            std::cerr << this->thrownObject->toString() << std::endl;
+        }
+
+
+//        std::cerr << "[runtime error] " << ctx.thrownObject->toString() << std::endl;
+    }
+
 
     // some runtime api
     void printStackTop(DSType *stackTopType);
 
-    void checkCast(DSType *targetType);
+    bool checkCast(DSType *targetType);
 
     void instanceOf(DSType *targetType);
 
@@ -364,40 +409,39 @@ struct RuntimeContext {
     void exportEnv(const std::string &envName, int index, bool isGlobal);
 
     bool checkZeroDiv(int right) {
-        //TODO:
         if(right == 0) {
-            fatal("zero division\n");
+            this->throwError(this->pool.getArithmeticErrorType(), "zero division");
+            return false;
         }
         return true;
     }
 
     bool checkZeroDiv(double right) {
-        //TODO:
         if(right == 0) {
-            fatal("zero division\n");
+            this->throwError(this->pool.getArithmeticErrorType(), "zero division");
+            return false;
         }
-        return right;
+        return true;
     }
 
     bool checkZeroMod(int right) {
-        //TODO:
         if(right == 0) {
-            fatal("zero modulo\n");
+            this->throwError(this->pool.getArithmeticErrorType(), "zero module");
+            return false;
         }
-        return right;
+        return true;
     }
 
     bool checkZeroMod(double right) {
-        //TODO:
         if(right == 0) {
-            fatal("zero modulo\n");
+            this->throwError(this->pool.getArithmeticErrorType(), "zero module");
+            return false;
         }
-        return right;
+        return true;
     }
 
     void throwOutOfIndexError(std::string &&message) {
-        //TODO:
-        fatal("%s\n", message.c_str());
+        this->throwError(this->pool.getOutOfIndexErrorType(), std::move(message));
     }
 };
 

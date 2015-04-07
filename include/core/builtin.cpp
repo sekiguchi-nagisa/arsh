@@ -21,6 +21,7 @@
 #include <core/DSObject.h>
 
 #include <math.h>
+#include "RuntimeContext.h"
 
 // helper macro
 #define LOCAL(index) (ctx.localStack[ctx.localVarOffset + (index)])
@@ -498,6 +499,36 @@ static inline bool error_message(RuntimeContext &ctx) {
     RET(TYPE_AS(Error_Object, LOCAL(0))->message);
 }
 
+//!bind: function backtrace($this : Error) : Void
+static inline bool error_backtrace(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(error_backtrace);
+    TYPE_AS(Error_Object, LOCAL(0))->printStackTrace(ctx);
+    return true;
+}
+
+//!bind: constructor ($this : ArithmeticError, $message : String)
+static inline bool arith_error_init(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(arith_error_init);
+    return error_init(ctx);
+}
+
+//!bind: constructor ($this : OutOfIndexError, $message : String)
+static inline bool out_error_init(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(out_error_init);
+    return error_init(ctx);
+}
+
+//!bind: constructor ($this : KeyNotFoundError, $message : String)
+static inline bool key_error_init(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(key_error_init);
+    return error_init(ctx);
+}
+
+//!bind: constructor ($this : TypeCastError, $message : String)
+static inline bool cast_error_init(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(cast_error_init);
+    return error_init(ctx);
+}
 
 } //namespace core
 } //namespace ydsh

@@ -175,16 +175,25 @@ struct Error_Object : public DSObject {
     std::vector<std::string> stackTrace;
 
     Error_Object(DSType *type, const std::shared_ptr<DSObject> &message);
+    Error_Object(DSType *type, std::shared_ptr<DSObject> &&message);
     ~Error_Object();
 
     std::string toString(); // override
     void createStackTrace(RuntimeContext &ctx);
 
     /**
+     * print stack trace to stderr
+     */
+    void printStackTrace(RuntimeContext &ctx);
+
+    /**
      * create new Error_Object and create stack trace
      */
     static Error_Object *newError(RuntimeContext &ctx, DSType *type,
                                   const std::shared_ptr<DSObject> &message);
+
+    static Error_Object *newError(RuntimeContext &ctx, DSType *type,
+                                  std::shared_ptr<DSObject> &&message);
 };
 
 struct DummyObject : public DSObject {

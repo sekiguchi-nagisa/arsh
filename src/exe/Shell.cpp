@@ -106,7 +106,7 @@ ExitStatus Shell::eval(const char *sourceName, Lexer<LexerDef, TokenKind> &lexer
         return SUCCESS;
     } else {
         this->checker.recover();
-        std::cerr << "[runtime error] " << ctx.thrownObject->toString() << std::endl;
+        this->ctx.reportError();
         return RUNTIME_ERROR;
     }
 }

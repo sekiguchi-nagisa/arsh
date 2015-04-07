@@ -653,8 +653,7 @@ EvalStatus CastNode::eval(RuntimeContext & ctx) {
         return ctx.toString();
     }
     case CHECK_CAST: {
-        ctx.checkCast(this->type);
-        break;
+        return ctx.checkCast(this->type) ? EVAL_SUCCESS : EVAL_THROW;
     }
     }
 

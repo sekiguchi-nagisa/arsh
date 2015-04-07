@@ -18,6 +18,7 @@
 #include <ast/Node.h>
 
 #include <assert.h>
+#include <iostream>
 
 namespace ydsh {
 namespace core {
@@ -319,6 +320,10 @@ Error_Object::Error_Object(DSType *type, const std::shared_ptr<DSObject> &messag
         DSObject(type), message(message), stackTrace() {
 }
 
+Error_Object::Error_Object(DSType *type, std::shared_ptr<DSObject> &&message) :
+        DSObject(type), message(message), stackTrace() {
+}
+
 Error_Object::~Error_Object() {
 }
 
@@ -335,12 +340,31 @@ void Error_Object::createStackTrace(RuntimeContext &ctx) {
     //TODO:
 }
 
+void Error_Object::printStackTrace(RuntimeContext &ctx) {
+    // print header
+    std::cerr << ctx.pool.getTypeName(*this->type) << ": "
+    << TYPE_AS(String_Object, this->message)->value << std::endl;
+
+    // print stack trace
+    for(const std::string &s : this->stackTrace) {
+        std::cerr << "    " << s << std::endl;
+    }
+}
+
 Error_Object *Error_Object::newError(RuntimeContext &ctx, DSType *type,
                                      const std::shared_ptr<DSObject> &message) {
     Error_Object *obj = new Error_Object(type, message);
     obj->createStackTrace(ctx);
     return obj;
 }
+
+Error_Object *Error_Object::newError(RuntimeContext &ctx, DSType *type,
+                              std::shared_ptr<DSObject> &&message) {
+    auto *obj = new Error_Object(type, std::move(message));
+    obj->createStackTrace(ctx);
+    return obj;
+}
+
 
 // ########################
 // ##     FuncObject     ##

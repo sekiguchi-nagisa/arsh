@@ -193,6 +193,10 @@ HandleInfoMap::HandleInfoMap() :
     this->registerName(BOOL_T, "Boolean");
     this->registerName(STRING_T, "String");
     this->registerName(ERROR_T, "Error");
+    this->registerName(ARITH_ERROR_T, "ArithmeticError");
+    this->registerName(OUT_OF_INDEX_ERROR_T, "OutOfIndexError");
+    this->registerName(KEY_NOT_ERROR_T, "KeyNotFoundError");
+    this->registerName(CAST_ERROR_T, "TypeCastError");
     this->registerName(ARRAY_T, "Array");
     this->registerName(MAP_T, "Map");
     this->registerName(T0, "T0");

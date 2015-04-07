@@ -59,6 +59,14 @@ private:
     DSType *baseFuncType;
 
     /**
+     * for exception
+     */
+    DSType *arithmeticErrorType;
+    DSType *outOfIndexErrorType;
+    DSType *keyNotFoundErrorType;
+    DSType *typeCastErrorType;
+
+    /**
      * for type template
      */
     std::unordered_map<std::string, TypeTemplate *> templateMap;
@@ -122,6 +130,13 @@ public:
     DSType *getBaseFuncType();
 
     DSType *getStringArrayType();
+
+    // for error
+    DSType *getArithmeticErrorType();
+    DSType *getOutOfIndexErrorType();
+    DSType *getKetNotFoundErrorType();
+    DSType *getTypeCastErrorType();
+
 
     // for reified type.
     TypeTemplate *getArrayTemplate();
