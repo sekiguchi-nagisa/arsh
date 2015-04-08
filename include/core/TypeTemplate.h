@@ -24,6 +24,7 @@ namespace ydsh {
 namespace core {
 
 struct native_type_info_t;
+class DSType;
 
 /**
  * ReifiedType template.
@@ -32,18 +33,14 @@ class TypeTemplate {
 private:
     std::string name;
 
-    /**
-     * if size is 0, allow infinite element type.(for Tuple)
-     */
-    unsigned int elementTypeSize;
+    std::vector<DSType*> acceptableTypes;
 
     /**
      * may be null, if Tuple template
      */
     native_type_info_t *info;
-
 public:
-    TypeTemplate(std::string &&name, unsigned int elementSize, native_type_info_t *info);
+    TypeTemplate(std::string &&name, std::vector<DSType*> &&elementTypes, native_type_info_t *info);
 
     ~TypeTemplate();
 
@@ -52,6 +49,8 @@ public:
     unsigned int getElementTypeSize();
 
     native_type_info_t *getInfo();
+
+    const std::vector<DSType *> &getAcceptableTypes();
 };
 
 } // namespace core

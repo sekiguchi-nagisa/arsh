@@ -98,6 +98,7 @@ struct Int_Object : public DSObject {
 
     std::string toString(); // override
     bool equals(const std::shared_ptr<DSObject> &obj);  // override
+    size_t hash();  // override
 };
 
 struct Float_Object : public DSObject {
@@ -109,6 +110,7 @@ struct Float_Object : public DSObject {
 
     std::string toString(); // override
     bool equals(const std::shared_ptr<DSObject> &obj);  // override
+    size_t hash();  // override
 };
 
 struct Boolean_Object : public DSObject {
@@ -120,6 +122,7 @@ struct Boolean_Object : public DSObject {
 
     std::string toString(); // override
     bool equals(const std::shared_ptr<DSObject> &obj);  // override
+    size_t hash();  // override
 };
 
 struct String_Object : public DSObject {
@@ -139,6 +142,7 @@ struct String_Object : public DSObject {
     void append(const std::shared_ptr<String_Object> &obj);
 
     bool equals(const std::shared_ptr<DSObject> &obj);  // override
+    size_t hash();  // override
 };
 
 struct Array_Object : public DSObject {
@@ -153,6 +157,34 @@ struct Array_Object : public DSObject {
 
     std::shared_ptr<String_Object> interp(RuntimeContext &ctx); // override
     std::shared_ptr<DSObject> commandArg(RuntimeContext &ctx); // override
+};
+
+struct KeyCompare {
+    bool operator() (const std::shared_ptr<DSObject> &x,
+                     const std::shared_ptr<DSObject> &y) const;
+};
+
+struct GenHash {
+    std::size_t operator() (const std::shared_ptr<DSObject> &key) const;
+};
+
+typedef std::unordered_map<std::shared_ptr<DSObject>, std::shared_ptr<DSObject>, GenHash, KeyCompare> HashMap;
+
+struct Map_Object : public DSObject {
+    HashMap valueMap;
+
+    Map_Object(DSType *type);
+
+    const HashMap &getValueMap();
+
+    void set(const std::shared_ptr<DSObject> &key, const std::shared_ptr<DSObject> &value);
+
+    /**
+     * for Map_Object creation.
+     */
+    void add(const std::shared_ptr<DSObject> &value, const std::shared_ptr<DSObject> &key);
+
+    std::string toString(); // override
 };
 
 struct Tuple_Object : public DSObject {

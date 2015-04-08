@@ -71,7 +71,7 @@ std::shared_ptr<DSObject> DSObject::commandArg(RuntimeContext &ctx) {
 }
 
 size_t DSObject::hash() {
-    return (long) this;
+    return std::hash<long>()((long) this);
 }
 
 // ########################
@@ -94,6 +94,10 @@ bool Int_Object::equals(const std::shared_ptr<DSObject> &obj) {
     return this->value == TYPE_AS(Int_Object, obj)->value;
 }
 
+size_t Int_Object::hash() {
+    return std::hash<int>()(this->value);
+}
+
 // ##########################
 // ##     Float_Object     ##
 // ##########################
@@ -112,6 +116,10 @@ std::string Float_Object::toString() {
 
 bool Float_Object::equals(const std::shared_ptr<DSObject> &obj) {
     return this->value == TYPE_AS(Float_Object, obj)->value;
+}
+
+size_t Float_Object::hash() {
+    return std::hash<double>()(this->value);
 }
 
 
@@ -133,6 +141,10 @@ std::string Boolean_Object::toString() {
 
 bool Boolean_Object::equals(const std::shared_ptr<DSObject> &obj) {
     return this->value == TYPE_AS(Boolean_Object, obj)->value;
+}
+
+size_t Boolean_Object::hash() {
+    return std::hash<bool>()(this->value);
 }
 
 
@@ -170,6 +182,10 @@ void String_Object::append(const std::shared_ptr<String_Object> &obj) {
 
 bool String_Object::equals(const std::shared_ptr<DSObject> &obj) {
     return this->value == TYPE_AS(String_Object, obj)->value;
+}
+
+size_t String_Object::hash() {
+    return std::hash<std::string>()(this->value);
 }
 
 // ##########################
@@ -239,6 +255,50 @@ std::shared_ptr<DSObject> Array_Object::commandArg(RuntimeContext &ctx) {
         }
     }
     return result;
+}
+
+bool KeyCompare::operator() (const std::shared_ptr<DSObject> &x,
+                             const std::shared_ptr<DSObject> &y) const {
+    return x->equals(y);
+}
+
+std::size_t GenHash::operator() (const std::shared_ptr<DSObject> &key) const {
+    return key->hash();
+}
+
+// ########################
+// ##     Map_Object     ##
+// ########################
+
+Map_Object::Map_Object(DSType *type) :
+        DSObject(type), valueMap() {
+}
+
+const HashMap &Map_Object::getValueMap() {
+    return this->valueMap;
+}
+
+void Map_Object::set(const std::shared_ptr<DSObject> &key, const std::shared_ptr<DSObject> &value) {
+    this->valueMap[key] = value;
+}
+
+void Map_Object::add(const std::shared_ptr<DSObject> &value, const std::shared_ptr<DSObject> &key) {
+    this->valueMap[key] = value;
+}
+
+std::string Map_Object::toString() {
+    std::string str("{");
+    unsigned int count = 0;
+    for(auto &iter : this->valueMap) {
+        if(count++ > 0) {
+            str += ", ";
+        }
+        str += iter.first->toString();
+        str += " : ";
+        str += iter.second->toString();
+    }
+    str += "}";
+    return str;
 }
 
 // ##########################

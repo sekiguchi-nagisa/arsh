@@ -21,8 +21,8 @@
 namespace ydsh {
 namespace core {
 
-TypeTemplate::TypeTemplate(std::string &&name, unsigned int elementSize, native_type_info_t *info) :
-        name(std::move(name)), elementTypeSize(elementSize), info(info) {
+TypeTemplate::TypeTemplate(std::string &&name, std::vector<DSType*> &&elementTypes, native_type_info_t *info) :
+        name(std::move(name)), acceptableTypes(elementTypes), info(info) {
 }
 
 TypeTemplate::~TypeTemplate() {
@@ -33,11 +33,15 @@ const std::string &TypeTemplate::getName() {
 }
 
 unsigned int TypeTemplate::getElementTypeSize() {
-    return this->elementTypeSize;
+    return this->acceptableTypes.size();
 }
 
 native_type_info_t *TypeTemplate::getInfo() {
     return this->info;
+}
+
+const std::vector<DSType *> &TypeTemplate::getAcceptableTypes() {
+    return this->acceptableTypes;
 }
 
 } // namespace core

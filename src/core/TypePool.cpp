@@ -60,9 +60,17 @@ TypePool::TypePool(char **envp) :
     this->baseFuncType = this->initBuiltinType("%BaseFunc%", false, this->anyType, info_Dummy());
 
     // initialize type template
-    this->arrayTemplate = this->initTypeTemplate("Array", 1, info_ArrayType());
-    this->mapTemplate = this->initTypeTemplate("Map", 2, info_Dummy());
-    this->tupleTemplate = this->initTypeTemplate("Tuple", 0, 0);   // pseudo template.
+    std::vector<DSType*> elements;
+    elements.push_back(this->anyType);
+    this->arrayTemplate = this->initTypeTemplate("Array", std::move(elements), info_ArrayType());
+
+    elements = std::vector<DSType*>();
+    elements.push_back(this->valueType);
+    elements.push_back(this->anyType);
+    this->mapTemplate = this->initTypeTemplate("Map", std::move(elements), info_MapType());
+
+    elements = std::vector<DSType*>();
+    this->tupleTemplate = this->initTypeTemplate("Tuple", std::move(elements), 0);   // pseudo template.
 
     // init string array type(for command argument)
     std::vector<DSType *> types(1);
@@ -186,7 +194,7 @@ DSType *TypePool::createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate,
     if(this->tupleTemplate->getName() == typeTemplate->getName()) {
         return this->createAndGetTupleTypeIfUndefined(elementTypes);
     }
-    this->checkElementTypes(elementTypes);
+    this->checkElementTypes(typeTemplate, elementTypes);
 
     if(typeTemplate->getElementTypeSize() != elementTypes.size()) {
         E_UnmatchElement(typeTemplate->getName(),
@@ -318,21 +326,30 @@ DSType *TypePool::addType(std::string &&typeName, DSType *type) {
 DSType *TypePool::initBuiltinType(const char *typeName, bool extendable,
                                   DSType *superType, native_type_info_t *info, bool isVoid) {
     // create and register type
-    return this->addType(std::string(typeName),
-                         newBuiltinType(NEW_ID(), extendable, superType, info, isVoid));
+    return this->addType(
+            std::string(typeName), newBuiltinType(NEW_ID(), extendable, superType, info, isVoid));
 }
 
 TypeTemplate *TypePool::initTypeTemplate(const char *typeName,
-                                         unsigned int elemSize, native_type_info_t *info) {
+                                         std::vector<DSType*> &&elementTypes, native_type_info_t *info) {
     return this->templateMap.insert(
-            std::make_pair(typeName,
-                           new TypeTemplate(typeName, elemSize, info))).first->second;
+            std::make_pair(typeName, new TypeTemplate(std::string(typeName),
+                                                      std::move(elementTypes), info))).first->second;
 }
 
 void TypePool::checkElementTypes(const std::vector<DSType *> &elementTypes) {
     for(DSType *type : elementTypes) {
         if(*type == *this->voidType) {
             E_InvalidElement(this->getTypeName(*type));
+        }
+    }
+}
+
+void TypePool::checkElementTypes(TypeTemplate *t, const std::vector<DSType *> &elementTypes) {
+    unsigned int size = elementTypes.size();
+    for(unsigned int i = 0; i < size; i++) {
+        if(!t->getAcceptableTypes()[i]->isAssignableFrom(elementTypes[i])) {
+            E_InvalidElement(this->getTypeName(*elementTypes[i]));
         }
     }
 }

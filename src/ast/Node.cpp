@@ -343,7 +343,15 @@ void MapNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus MapNode::eval(RuntimeContext & ctx) {
-    fatal("unimplemented eval\n");  //TODO
+    auto value = std::make_shared<Map_Object>(this->type);
+    unsigned int size = this->keyNodes.size();
+    for(unsigned int i = 0; i < size; i++) {
+        EVAL(ctx, this->keyNodes[i]);
+        EVAL(ctx, this->valueNodes[i]);
+        // first is value, second is key
+        value->add(ctx.pop(), ctx.pop());
+    }
+    ctx.push(value);
     return EVAL_SUCCESS;
 }
 

@@ -480,6 +480,64 @@ static inline bool array_empty(RuntimeContext &ctx) {
 }
 
 
+// #################
+// ##     Map     ##
+// #################
+
+//!bind: constructor ($this : Map<T0, T1>)
+static inline bool map_init(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(map_init);
+    DSType *type = LOCAL(0)->type;
+    ctx.setLocal(0, std::make_shared<Map_Object>(type));
+    return  true;
+}
+
+//!bind: function $OP_GET($this : Map<T0, T1>, $key : T0) : T1
+static inline bool map_get(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(map_get);
+    Map_Object *obj = TYPE_AS(Map_Object, LOCAL(0));
+    auto iter = obj->getValueMap().find(LOCAL(1));
+    if(iter == obj->getValueMap().end()) {
+        std::string msg("not found key: ");
+        msg += LOCAL(1)->toString();
+        ctx.throwError(ctx.pool.getKetNotFoundErrorType(), std::move(msg));
+        return false;
+    }
+    RET(iter->second);
+}
+
+//!bind: function $OP_SET($this : Map<T0, T1>, $key : T0, $value : T1) : Void
+static inline bool map_set(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(map_set);
+    Map_Object *obj = TYPE_AS(Map_Object, LOCAL(0));
+    obj->set(LOCAL(1), LOCAL(2));
+    return true;
+}
+
+//!bind: function size($this : Map<T0, T1>) : Int
+static inline bool map_size(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(map_size);
+    Map_Object *obj = TYPE_AS(Map_Object, LOCAL(0));
+    int value = obj->getValueMap().size();
+    RET(std::make_shared<Int_Object>(ctx.pool.getIntType(), value));
+}
+
+//!bind: function empty($this : Map<T0, T1>) : Boolean
+static inline bool map_empty(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(map_empty);
+    Map_Object *obj = TYPE_AS(Map_Object, LOCAL(0));
+    bool value = obj->getValueMap().empty();
+    RET(TO_BOOL(value));
+}
+
+//!bind: function find($this : Map<T0, T1>, $key : T0) : Boolean
+static inline bool map_find(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(map_find);
+    Map_Object *obj = TYPE_AS(Map_Object, LOCAL(0));
+    auto iter = obj->getValueMap().find(LOCAL(1));
+    RET(TO_BOOL(iter != obj->getValueMap().end()));
+}
+
 // ###################
 // ##     Error     ##
 // ###################

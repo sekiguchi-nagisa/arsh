@@ -425,10 +425,10 @@ void TypeChecker::visitMapNode(MapNode * node) {
     DSType *valueType = this->checkType(firstValueNode);
 
     for(unsigned int i = 1; i < size; i++) {
-        node->setKeyNode(i,
-                         this->checkTypeAndResolveCoercion(keyType, node->getKeyNodes()[i]));
-        node->setValueNode(i,
-                           this->checkTypeAndResolveCoercion(valueType, node->getValueNodes()[i]));
+        node->setKeyNode(
+                i, this->checkTypeAndResolveCoercion(keyType, node->getKeyNodes()[i]));
+        node->setValueNode(
+                i, this->checkTypeAndResolveCoercion(valueType, node->getValueNodes()[i]));
     }
 
     TypeTemplate *mapTemplate = this->typePool->getMapTemplate();

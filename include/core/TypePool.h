@@ -203,9 +203,10 @@ private:
                             DSType *superType, native_type_info_t *info, bool isVoid = false);
 
     TypeTemplate *initTypeTemplate(const char *typeName,
-                                   unsigned int elemSize, native_type_info_t *info);
+                                   std::vector<DSType*> &&elementTypes, native_type_info_t *info);
 
     void checkElementTypes(const std::vector<DSType *> &elementTypes);
+    void checkElementTypes(TypeTemplate *t, const std::vector<DSType *> &elementTypes);
 };
 
 } // namespace core
