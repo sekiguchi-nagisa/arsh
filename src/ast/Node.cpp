@@ -2377,6 +2377,47 @@ EvalStatus FunctionNode::eval(RuntimeContext & ctx) {
     return EVAL_REMOVE;
 }
 
+// ###########################
+// ##     DefineVarNode     ##
+// ###########################
+
+DefineVarNode::DefineVarNode(std::string &&varName, std::shared_ptr<DSObject> &&value) :
+        Node(0), varName(varName), varIndex(-1), value(value) {
+}
+
+const std::string &DefineVarNode::getVarName() {
+    return this->varName;
+}
+
+void DefineVarNode::setAttribute(FieldHandle *handle) {
+    this->varIndex = handle->getFieldIndex();
+}
+
+int DefineVarNode::getVarIndex() {
+    return this->varIndex;
+}
+
+const std::shared_ptr<DSObject> &DefineVarNode::getValue() {
+    return this->value;
+}
+
+void DefineVarNode::dump(Writer &writer) const {
+    WRITE(varName);
+    WRITE_PRIM(varIndex);
+
+    std::string value(this->value->toString());
+    WRITE(value);
+}
+
+void DefineVarNode::accept(NodeVisitor *visitor) {
+    visitor->visitDefineVarNode(this);
+}
+
+EvalStatus DefineVarNode::eval(RuntimeContext &ctx) {
+    ctx.setGlobal(this->varIndex, this->value);
+    return EVAL_SUCCESS;
+}
+
 // #######################
 // ##     EmptyNode     ##
 // #######################

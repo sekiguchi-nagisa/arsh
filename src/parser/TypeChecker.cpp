@@ -869,6 +869,14 @@ void TypeChecker::visitFunctionNode(FunctionNode * node) {   //TODO: named param
     node->setType(this->typePool->getVoidType());
 }
 
+void TypeChecker::visitDefineVarNode(DefineVarNode *node) {
+    DSType *valueType = node->getValue()->getType();
+    FieldHandle *handle =
+            this->addEntryAndThrowIfDefined(node, node->getVarName(), valueType, true);
+    node->setAttribute(handle);
+    node->setType(this->typePool->getVoidType());
+}
+
 void TypeChecker::visitEmptyNode(EmptyNode * node) {
     node->setType(this->typePool->getVoidType());
 }

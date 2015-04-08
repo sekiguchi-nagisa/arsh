@@ -1247,6 +1247,27 @@ public:
 // class ClassNode
 // class ConstructorNode
 
+/**
+ * define builtin global variable.
+ */
+class DefineVarNode : public Node {
+private:
+    std::string varName;
+    int varIndex;
+    std::shared_ptr<DSObject> value;
+
+public:
+    DefineVarNode(std::string &&varName, std::shared_ptr<DSObject> &&value);
+
+    const std::string &getVarName();
+    void setAttribute(FieldHandle *handle);
+    int getVarIndex();
+    const std::shared_ptr<DSObject> &getValue();
+    void dump(Writer &writer) const;  // override
+    void accept(NodeVisitor *visitor);    // override
+    EvalStatus eval(RuntimeContext &ctx); // override
+};
+
 class EmptyNode : public Node {
 public:
     EmptyNode();
@@ -1412,6 +1433,8 @@ struct NodeVisitor {
     virtual void visitElementSelfAssignNode(ElementSelfAssignNode *node) = 0;
 
     virtual void visitFunctionNode(FunctionNode *node) = 0;
+
+    virtual void visitDefineVarNode(DefineVarNode *node) = 0;
 
     virtual void visitEmptyNode(EmptyNode *node) = 0;
 
