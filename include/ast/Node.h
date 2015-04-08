@@ -64,6 +64,8 @@ public:
 
     virtual Node *convertToCmdArg();
 
+    virtual bool isBlockEndNode();
+
     virtual void dump(Writer &writer) const = 0;
 
     virtual void accept(NodeVisitor *visitor) = 0;
@@ -750,6 +752,9 @@ public:
 class BlockEndNode : public Node {
 public:
     BlockEndNode(unsigned int lineNum);
+    virtual ~BlockEndNode();
+
+    bool isBlockEndNode();  // override
 };
 
 class BreakNode : public BlockEndNode {

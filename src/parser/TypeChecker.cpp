@@ -197,7 +197,7 @@ bool TypeChecker::findBlockEnd(BlockNode * blockNode) {
         return false;
     }
     Node *endNode = blockNode->getNodeList().back();
-    if(dynamic_cast<BlockEndNode *>(endNode) != 0) {
+    if(endNode->isBlockEndNode()) {
         return true;
     }
 
@@ -222,8 +222,7 @@ bool TypeChecker::findBlockEnd(BlockNode * blockNode) {
 void TypeChecker::checkBlockEndExistence(BlockNode * blockNode, DSType * returnType) {
     Node *endNode = blockNode->getNodeList().back();
 
-    if(*returnType == *this->typePool->getVoidType()
-       && dynamic_cast<BlockEndNode *>(endNode) == 0) {
+    if(*returnType == *this->typePool->getVoidType() && !endNode->isBlockEndNode()) {
         /**
          * insert return node to block end
          */
@@ -635,7 +634,7 @@ void TypeChecker::visitBlockNode(BlockNode * node) {
     int size = node->getNodeList().size();
     for(Node *targetNode : node->getNodeList()) {
         this->checkTypeAsStatement(targetNode);
-        if(dynamic_cast<BlockEndNode *>(targetNode) != 0 && (count != size - 1)) {
+        if(targetNode->isBlockEndNode() && (count != size - 1)) {
             E_Unreachable(node);
         }
         count++;

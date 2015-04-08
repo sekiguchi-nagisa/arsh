@@ -66,6 +66,10 @@ Node *Node::convertToCmdArg() {
     return createApplyNode(this, std::string(OP_CMD_ARG));
 }
 
+bool Node::isBlockEndNode() {
+    return false;
+}
+
 // ##########################
 // ##     IntValueNode     ##
 // ##########################
@@ -1410,6 +1414,13 @@ EvalStatus BlockNode::eval(RuntimeContext &ctx) {
 
 BlockEndNode::BlockEndNode(unsigned int lineNum) :
         Node(lineNum) {
+}
+
+BlockEndNode::~BlockEndNode() {
+}
+
+bool BlockEndNode::isBlockEndNode() {
+    return true;
 }
 
 // #######################
