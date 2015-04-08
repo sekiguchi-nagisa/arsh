@@ -23,6 +23,7 @@ namespace ydsh {
 Shell::Shell(char **envp) :
         ctx(envp), parser(), checker(&this->ctx.pool), lineNum(1),
         listener(&clistener), dumpUntypedAST(false), dumpTypedAST(false) {
+    this->initBuiltinVar();
 }
 
 Shell::~Shell() {
@@ -109,6 +110,20 @@ ExitStatus Shell::eval(const char *sourceName, Lexer<LexerDef, TokenKind> &lexer
         this->ctx.reportError();
         return RUNTIME_ERROR;
     }
+}
+
+void Shell::initBuiltinVar() {
+    RootNode rootNode;
+    rootNode.addNode(new BindVarNode("TRUE", this->ctx.trueObj));
+    rootNode.addNode(new BindVarNode("True", this->ctx.trueObj));
+    rootNode.addNode(new BindVarNode("true", this->ctx.trueObj));
+    rootNode.addNode(new BindVarNode("FALSE", this->ctx.falseObj));
+    rootNode.addNode(new BindVarNode("False", this->ctx.falseObj));
+    rootNode.addNode(new BindVarNode("false", this->ctx.falseObj));
+
+    // ignore error check (must be always success)
+    this->checker.checkTypeRootNode(rootNode);
+    rootNode.eval(this->ctx);
 }
 
 } /* namespace ydsh */

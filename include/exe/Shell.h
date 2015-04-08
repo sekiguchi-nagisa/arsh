@@ -76,6 +76,11 @@ public:
 private:
     ExitStatus eval(const char *sourceName, Lexer<LexerDef, TokenKind> &lexer, bool interactive = false);
 
+    /**
+     * call only once.
+     */
+    void initBuiltinVar();
+
     static CommonErrorListener clistener;
 };
 

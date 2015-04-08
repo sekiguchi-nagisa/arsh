@@ -869,7 +869,7 @@ void TypeChecker::visitFunctionNode(FunctionNode * node) {   //TODO: named param
     node->setType(this->typePool->getVoidType());
 }
 
-void TypeChecker::visitDefineVarNode(DefineVarNode *node) {
+void TypeChecker::visitBindVarNode(BindVarNode *node) {
     DSType *valueType = node->getValue()->getType();
     FieldHandle *handle =
             this->addEntryAndThrowIfDefined(node, node->getVarName(), valueType, true);

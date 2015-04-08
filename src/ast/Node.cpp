@@ -2378,30 +2378,30 @@ EvalStatus FunctionNode::eval(RuntimeContext & ctx) {
 }
 
 // ###########################
-// ##     DefineVarNode     ##
+// ##     BindVarNode     ##
 // ###########################
 
-DefineVarNode::DefineVarNode(std::string &&varName, std::shared_ptr<DSObject> &&value) :
-        Node(0), varName(varName), varIndex(-1), value(value) {
+BindVarNode::BindVarNode(const char *name, const std::shared_ptr<DSObject> &value) :
+        Node(0), varName(std::string(name)), varIndex(-1), value(value) {
 }
 
-const std::string &DefineVarNode::getVarName() {
+const std::string &BindVarNode::getVarName() {
     return this->varName;
 }
 
-void DefineVarNode::setAttribute(FieldHandle *handle) {
+void BindVarNode::setAttribute(FieldHandle *handle) {
     this->varIndex = handle->getFieldIndex();
 }
 
-int DefineVarNode::getVarIndex() {
+int BindVarNode::getVarIndex() {
     return this->varIndex;
 }
 
-const std::shared_ptr<DSObject> &DefineVarNode::getValue() {
+const std::shared_ptr<DSObject> &BindVarNode::getValue() {
     return this->value;
 }
 
-void DefineVarNode::dump(Writer &writer) const {
+void BindVarNode::dump(Writer &writer) const {
     WRITE(varName);
     WRITE_PRIM(varIndex);
 
@@ -2409,11 +2409,11 @@ void DefineVarNode::dump(Writer &writer) const {
     WRITE(value);
 }
 
-void DefineVarNode::accept(NodeVisitor *visitor) {
-    visitor->visitDefineVarNode(this);
+void BindVarNode::accept(NodeVisitor *visitor) {
+    visitor->visitBindVarNode(this);
 }
 
-EvalStatus DefineVarNode::eval(RuntimeContext &ctx) {
+EvalStatus BindVarNode::eval(RuntimeContext &ctx) {
     ctx.setGlobal(this->varIndex, this->value);
     return EVAL_SUCCESS;
 }

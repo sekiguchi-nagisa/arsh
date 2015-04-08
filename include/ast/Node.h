@@ -1250,14 +1250,14 @@ public:
 /**
  * define builtin global variable.
  */
-class DefineVarNode : public Node {
+class BindVarNode : public Node {
 private:
     std::string varName;
     int varIndex;
     std::shared_ptr<DSObject> value;
 
 public:
-    DefineVarNode(std::string &&varName, std::shared_ptr<DSObject> &&value);
+    BindVarNode(const char *name, const std::shared_ptr<DSObject> &value);
 
     const std::string &getVarName();
     void setAttribute(FieldHandle *handle);
@@ -1434,7 +1434,7 @@ struct NodeVisitor {
 
     virtual void visitFunctionNode(FunctionNode *node) = 0;
 
-    virtual void visitDefineVarNode(DefineVarNode *node) = 0;
+    virtual void visitBindVarNode(BindVarNode *node) = 0;
 
     virtual void visitEmptyNode(EmptyNode *node) = 0;
 
