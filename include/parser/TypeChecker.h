@@ -228,6 +228,7 @@ public:
     void recover();
 
     // visitor api
+    void visitDefault(Node *node); // override
 
     void visitIntValueNode(IntValueNode *node); // override
     void visitFloatValueNode(FloatValueNode *node); // override

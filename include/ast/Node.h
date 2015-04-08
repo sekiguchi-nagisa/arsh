@@ -1356,91 +1356,51 @@ struct NodeVisitor {
 
     virtual ~NodeVisitor();
 
-    virtual void visitIntValueNode(IntValueNode *node) = 0;
+    virtual void visitDefault(Node *node) = 0;
 
-    virtual void visitFloatValueNode(FloatValueNode *node) = 0;
-
-    virtual void visitStringValueNode(StringValueNode *node) = 0;
-
-    virtual void visitStringExprNode(StringExprNode *node) = 0;
-
-    virtual void visitArrayNode(ArrayNode *node) = 0;
-
-    virtual void visitMapNode(MapNode *node) = 0;
-
-    virtual void visitTupleNode(TupleNode *node) = 0;
-
-    virtual void visitVarNode(VarNode *node) = 0;
-
-    virtual void visitAccessNode(AccessNode *node) = 0;
-
-    virtual void visitCastNode(CastNode *node) = 0;
-
-    virtual void visitInstanceOfNode(InstanceOfNode *node) = 0;
-
-    virtual void visitBinaryOpNode(BinaryOpNode *node) = 0;
-
-    virtual void visitArgsNode(ArgsNode *node) = 0;
-
-    virtual void visitApplyNode(ApplyNode *node) = 0;
-
-    virtual void visitNewNode(NewNode *node) = 0;
-
-    virtual void visitCondOpNode(CondOpNode *node) = 0;
-
-    virtual void visitCmdNode(CmdNode *node) = 0;
-
-    virtual void visitCmdArgNode(CmdArgNode *node) = 0;
-
-    virtual void visitSpecialCharNode(SpecialCharNode *node) = 0;
-
-    virtual void visitPipedCmdNode(PipedCmdNode *node) = 0;
-
-    virtual void visitCmdContextNode(CmdContextNode *node) = 0;
-
-    virtual void visitAssertNode(AssertNode *node) = 0;
-
-    virtual void visitBlockNode(BlockNode *node) = 0;
-
-    virtual void visitBreakNode(BreakNode *node) = 0;
-
-    virtual void visitContinueNode(ContinueNode *node) = 0;
-
-    virtual void visitExportEnvNode(ExportEnvNode *node) = 0;
-
-    virtual void visitImportEnvNode(ImportEnvNode *node) = 0;
-
-    virtual void visitForNode(ForNode *node) = 0;
-
-    virtual void visitWhileNode(WhileNode *node) = 0;
-
-    virtual void visitDoWhileNode(DoWhileNode *node) = 0;
-
-    virtual void visitIfNode(IfNode *node) = 0;
-
-    virtual void visitReturnNode(ReturnNode *node) = 0;
-
-    virtual void visitThrowNode(ThrowNode *node) = 0;
-
-    virtual void visitCatchNode(CatchNode *node) = 0;
-
-    virtual void visitTryNode(TryNode *node) = 0;
-
-    virtual void visitVarDeclNode(VarDeclNode *node) = 0;
-
-    virtual void visitAssignNode(AssignNode *node) = 0;
-
-    virtual void visitElementSelfAssignNode(ElementSelfAssignNode *node) = 0;
-
-    virtual void visitFunctionNode(FunctionNode *node) = 0;
-
-    virtual void visitBindVarNode(BindVarNode *node) = 0;
-
-    virtual void visitEmptyNode(EmptyNode *node) = 0;
-
-    virtual void visitDummyNode(DummyNode *node) = 0;
-
-    virtual void visitRootNode(RootNode *node) = 0;
+    virtual void visitIntValueNode(IntValueNode *node);
+    virtual void visitFloatValueNode(FloatValueNode *node);
+    virtual void visitStringValueNode(StringValueNode *node);
+    virtual void visitStringExprNode(StringExprNode *node);
+    virtual void visitArrayNode(ArrayNode *node);
+    virtual void visitMapNode(MapNode *node);
+    virtual void visitTupleNode(TupleNode *node);
+    virtual void visitVarNode(VarNode *node);
+    virtual void visitAccessNode(AccessNode *node);
+    virtual void visitCastNode(CastNode *node);
+    virtual void visitInstanceOfNode(InstanceOfNode *node);
+    virtual void visitBinaryOpNode(BinaryOpNode *node);
+    virtual void visitArgsNode(ArgsNode *node);
+    virtual void visitApplyNode(ApplyNode *node);
+    virtual void visitNewNode(NewNode *node);
+    virtual void visitCondOpNode(CondOpNode *node);
+    virtual void visitCmdNode(CmdNode *node);
+    virtual void visitCmdArgNode(CmdArgNode *node);
+    virtual void visitSpecialCharNode(SpecialCharNode *node);
+    virtual void visitPipedCmdNode(PipedCmdNode *node);
+    virtual void visitCmdContextNode(CmdContextNode *node);
+    virtual void visitAssertNode(AssertNode *node);
+    virtual void visitBlockNode(BlockNode *node);
+    virtual void visitBreakNode(BreakNode *node);
+    virtual void visitContinueNode(ContinueNode *node);
+    virtual void visitExportEnvNode(ExportEnvNode *node);
+    virtual void visitImportEnvNode(ImportEnvNode *node);
+    virtual void visitForNode(ForNode *node);
+    virtual void visitWhileNode(WhileNode *node);
+    virtual void visitDoWhileNode(DoWhileNode *node);
+    virtual void visitIfNode(IfNode *node);
+    virtual void visitReturnNode(ReturnNode *node);
+    virtual void visitThrowNode(ThrowNode *node);
+    virtual void visitCatchNode(CatchNode *node);
+    virtual void visitTryNode(TryNode *node);
+    virtual void visitVarDeclNode(VarDeclNode *node);
+    virtual void visitAssignNode(AssignNode *node);
+    virtual void visitElementSelfAssignNode(ElementSelfAssignNode *node);
+    virtual void visitFunctionNode(FunctionNode *node);
+    virtual void visitBindVarNode(BindVarNode *node);
+    virtual void visitEmptyNode(EmptyNode *node);
+    virtual void visitDummyNode(DummyNode *node);
+    virtual void visitRootNode(RootNode *node);
 };
 
 } // namespace ast

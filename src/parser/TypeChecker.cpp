@@ -376,6 +376,9 @@ void TypeChecker::recover() {
 }
 
 // visitor api
+void TypeChecker::visitDefault(Node *node) {
+    E_Unimplemented(node, "unimplemented");
+}
 
 void TypeChecker::visitIntValueNode(IntValueNode * node) {    //TODO: int8, int16 ..etc
     DSType *type = this->typePool->getIntType();
