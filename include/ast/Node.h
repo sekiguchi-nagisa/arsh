@@ -1143,6 +1143,26 @@ public:
     static std::pair<Node *, Node *> split(AssignNode *node);
 };
 
+class ElementSelfAssignNode : public Node {
+private:
+    /**
+     * must be ApplyNode
+     */
+    ApplyNode *leftNode;
+
+    Node *rightNode;
+
+public:
+    ElementSelfAssignNode(ApplyNode *leftNode, Node *rightNode);
+    ~ElementSelfAssignNode();
+
+    ApplyNode *getLeftNode();
+    Node *getRightNode();
+    void dump(Writer &writer) const;  // override
+    void accept(NodeVisitor *visitor);   // override
+    EvalStatus eval(RuntimeContext &ctx); // override
+};
+
 class FunctionNode : public Node {    //FIXME: named parameter
 private:
     std::string funcName;
@@ -1388,6 +1408,8 @@ struct NodeVisitor {
     virtual void visitVarDeclNode(VarDeclNode *node) = 0;
 
     virtual void visitAssignNode(AssignNode *node) = 0;
+
+    virtual void visitElementSelfAssignNode(ElementSelfAssignNode *node) = 0;
 
     virtual void visitFunctionNode(FunctionNode *node) = 0;
 

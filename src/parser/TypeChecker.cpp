@@ -831,6 +831,10 @@ void TypeChecker::visitAssignNode(AssignNode * node) {
     node->setType(this->typePool->getVoidType());
 }
 
+void TypeChecker::visitElementSelfAssignNode(ElementSelfAssignNode *node) {
+    E_Unimplemented(node, "visitElementSelfAssignNode");
+}
+
 void TypeChecker::visitFunctionNode(FunctionNode * node) {   //TODO: named parameter
     // resolve return type, param type
     DSType *returnType = this->toType(node->removeReturnTypeToken());

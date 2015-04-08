@@ -266,6 +266,7 @@ public:
     void visitTryNode(TryNode *node); // override
     void visitVarDeclNode(VarDeclNode *node); // override
     void visitAssignNode(AssignNode *node); // override
+    void visitElementSelfAssignNode(ElementSelfAssignNode *node); // override
     void visitFunctionNode(FunctionNode *node); // override
     void visitEmptyNode(EmptyNode *node); // override
     void visitDummyNode(DummyNode *node); // override

@@ -2205,6 +2205,45 @@ std::pair<Node *, Node *> AssignNode::split(AssignNode *node) {
     return std::make_pair(leftNode, rightNode);
 }
 
+// ###################################
+// ##     ElementSelfAssignNode     ##
+// ###################################
+
+ElementSelfAssignNode::ElementSelfAssignNode(ApplyNode *leftNode, Node *rightNode) :
+        Node(leftNode->getLineNum()), leftNode(leftNode), rightNode(rightNode) {
+}
+
+ElementSelfAssignNode::~ElementSelfAssignNode() {
+    delete this->leftNode;
+    this->leftNode = 0;
+
+    delete this->rightNode;
+    this->rightNode = 0;
+}
+
+ApplyNode *ElementSelfAssignNode::getLeftNode() {
+    return this->leftNode;
+}
+
+Node *ElementSelfAssignNode::getRightNode() {
+    return this->rightNode;
+}
+
+void ElementSelfAssignNode::dump(Writer &writer) const {
+    WRITE_PTR(leftNode);
+    WRITE_PTR(rightNode);
+}
+
+void ElementSelfAssignNode::accept(NodeVisitor *visitor) {
+    visitor->visitElementSelfAssignNode(this);
+}
+
+EvalStatus ElementSelfAssignNode::eval(RuntimeContext &ctx) {
+    return EVAL_SUCCESS;    //TODO:
+}
+
+
+
 // ##########################
 // ##     FunctionNode     ##
 // ##########################
@@ -2581,8 +2620,7 @@ Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode) {
     // assign to element
     ApplyNode *indexNode = dynamic_cast<ApplyNode *>(leftNode);
     if(indexNode != 0 && indexNode->hasAttribute(ApplyNode::INDEX)) {
-        fatal("unimplemented assignment to element");   //FIXME:
-        return 0;
+        return new ElementSelfAssignNode(indexNode, rightNode);
     } else {
         // assign to variable or field
         BinaryOpNode *opNode = new BinaryOpNode(new DummyNode(), resolveAssignOp(op), rightNode);
