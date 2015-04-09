@@ -16,8 +16,6 @@
 
 #include <exe/Shell.h>
 
-#include <iostream>
-
 namespace ydsh {
 
 Shell::Shell(char **envp) :
@@ -49,6 +47,16 @@ void Shell::setLineNum(unsigned int lineNum) {
 
 unsigned int Shell::getLineNum() {
     return this->lineNum;
+}
+
+void Shell::setArguments(const std::vector<const char *> &args) {
+    unsigned int size = args.size();
+    this->ctx.scriptName = std::make_shared<String_Object>(
+            this->ctx.pool.getStringType(), std::string(args[0]));
+    for(unsigned int i = 1; i < size; i++) {
+        this->ctx.scriptArgs->values.push_back(
+                std::make_shared<String_Object>( this->ctx.pool.getStringType(), std::string(args[i])));
+    }
 }
 
 void Shell::setDumpUntypedAST(bool dump) {
@@ -114,12 +122,17 @@ ExitStatus Shell::eval(const char *sourceName, Lexer<LexerDef, TokenKind> &lexer
 
 void Shell::initBuiltinVar() {
     RootNode rootNode;
+    // register boolean
     rootNode.addNode(new BindVarNode("TRUE", this->ctx.trueObj));
     rootNode.addNode(new BindVarNode("True", this->ctx.trueObj));
     rootNode.addNode(new BindVarNode("true", this->ctx.trueObj));
     rootNode.addNode(new BindVarNode("FALSE", this->ctx.falseObj));
     rootNode.addNode(new BindVarNode("False", this->ctx.falseObj));
     rootNode.addNode(new BindVarNode("false", this->ctx.falseObj));
+
+    // register special char
+    rootNode.addNode(new BindVarNode("0", this->ctx.scriptName));
+    rootNode.addNode(new BindVarNode("@", this->ctx.scriptArgs));
 
     // ignore error check (must be always success)
     this->checker.checkTypeRootNode(rootNode);

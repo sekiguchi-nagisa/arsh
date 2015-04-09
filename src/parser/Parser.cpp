@@ -1019,7 +1019,7 @@ INLINE std::unique_ptr<Node> Parser::parse_appliedName() {
 INLINE std::unique_ptr<Node> Parser::parse_specialName() {
     unsigned int n = LN();
     Token token(this->matchAndGetToken(SPECIAL_NAME));
-    RET_NODE(new SpecialCharNode(n, this->lexer->toName(token)));
+    RET_NODE(new VarNode(n, this->lexer->toName(token)));
 }
 
 INLINE std::unique_ptr<Node> Parser::parse_stringLiteral() {

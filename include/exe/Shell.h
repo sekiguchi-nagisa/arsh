@@ -68,6 +68,7 @@ public:
     void setErrorListener(const ErrorListener *listener);
     void setLineNum(unsigned int lineNum);
     unsigned int getLineNum();
+    void setArguments(const std::vector<const char *> &args);
 
     void setDumpUntypedAST(bool dump);
     void setDumpTypedAST(bool dump);

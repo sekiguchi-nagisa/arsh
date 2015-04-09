@@ -628,22 +628,6 @@ public:
     EvalStatus eval(RuntimeContext &ctx); // override
 };
 
-class SpecialCharNode : public Node {    //FIXME:
-private:
-    std::string name;
-
-public:
-    SpecialCharNode(unsigned int lineNum, std::string &&name);
-
-    ~SpecialCharNode();
-
-    const std::string &getName();
-
-    void dump(Writer &writer) const;  // override
-    void accept(NodeVisitor *visitor);    //override
-    EvalStatus eval(RuntimeContext &ctx); // override
-};
-
 class PipedCmdNode : public Node {    //TODO: background ...etc
 private:
     std::vector<CmdNode *> cmdNodes;
@@ -1381,7 +1365,6 @@ struct NodeVisitor {
     virtual void visitCondOpNode(CondOpNode *node);
     virtual void visitCmdNode(CmdNode *node);
     virtual void visitCmdArgNode(CmdArgNode *node);
-    virtual void visitSpecialCharNode(SpecialCharNode *node);
     virtual void visitPipedCmdNode(PipedCmdNode *node);
     virtual void visitCmdContextNode(CmdContextNode *node);
     virtual void visitAssertNode(AssertNode *node);

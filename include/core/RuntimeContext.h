@@ -51,6 +51,16 @@ struct RuntimeContext {
     std::shared_ptr<DSObject> dummy;
 
     /**
+     * represent shell or shell script name. ($0)
+     */
+    std::shared_ptr<String_Object> scriptName;
+
+    /**
+     * contains script argument(exclude script name). ($@)
+     */
+    std::shared_ptr<Array_Object> scriptArgs;
+
+    /**
      * contains global variables(or function)
      */
     std::shared_ptr<DSObject> *globalVarTable;

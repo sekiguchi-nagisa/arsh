@@ -248,7 +248,6 @@ public:
     void visitCondOpNode(CondOpNode *node); // override
     void visitCmdNode(CmdNode *node); // override
     void visitCmdArgNode(CmdArgNode *node); // override
-    void visitSpecialCharNode(SpecialCharNode *node); // override
     void visitPipedCmdNode(PipedCmdNode *node); // override
     void visitCmdContextNode(CmdContextNode *node); // override
     void visitAssertNode(AssertNode *node); // override

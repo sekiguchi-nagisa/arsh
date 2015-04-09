@@ -1166,34 +1166,6 @@ EvalStatus CmdNode::eval(RuntimeContext &ctx) { //FIXME: redirect
     return EVAL_SUCCESS;
 }
 
-// #############################
-// ##     SpecialCharNode     ##
-// #############################
-
-SpecialCharNode::SpecialCharNode(unsigned int lineNum, std::string &&name) :
-        Node(lineNum), name(std::move(name)) {
-}
-
-SpecialCharNode::~SpecialCharNode() {
-}
-
-const std::string &SpecialCharNode::getName() {
-    return this->name;
-}
-
-void SpecialCharNode::dump(Writer &writer) const {
-    WRITE(name);
-}
-
-void SpecialCharNode::accept(NodeVisitor *visitor) {
-    visitor->visitSpecialCharNode(this);
-}
-
-EvalStatus SpecialCharNode::eval(RuntimeContext &ctx) {
-    fatal("unimplemented eval\n");  //TODO
-    return EVAL_SUCCESS;
-}
-
 // ##########################
 // ##     PipedCmdNode     ##
 // ##########################
@@ -2745,7 +2717,6 @@ void NodeVisitor::visitNewNode(NewNode *node)                             { this
 void NodeVisitor::visitCondOpNode(CondOpNode *node)                       { this->visitDefault(node); }
 void NodeVisitor::visitCmdNode(CmdNode *node)                             { this->visitDefault(node); }
 void NodeVisitor::visitCmdArgNode(CmdArgNode *node)                       { this->visitDefault(node); }
-void NodeVisitor::visitSpecialCharNode(SpecialCharNode *node)             { this->visitDefault(node); }
 void NodeVisitor::visitPipedCmdNode(PipedCmdNode *node)                   { this->visitDefault(node); }
 void NodeVisitor::visitCmdContextNode(CmdContextNode *node)               { this->visitDefault(node); }
 void NodeVisitor::visitAssertNode(AssertNode *node)                       { this->visitDefault(node); }

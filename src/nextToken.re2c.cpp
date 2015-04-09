@@ -93,7 +93,7 @@ TokenKind LexerDef::operator()(Lexer < LexerDef, TokenKind > *lexer, Token & tok
 
       SQUOTE_CHAR = [^\r\n'\\] | '\\' [btnfr'\\];
       VAR_NAME = [a-zA-Z] [_0-9a-zA-Z]* | '_' [_0-9a-zA-Z]+;
-      SPECIAL_NAMES = [@];
+      SPECIAL_NAMES = [@0?];
 
       STRING_LITERAL = ['] SQUOTE_CHAR* ['];
       BQUOTE_LITERAL = [`] ('\\' '`' | [^\n\r])+ [`];

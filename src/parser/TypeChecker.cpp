@@ -608,10 +608,6 @@ void TypeChecker::visitCmdArgNode(CmdArgNode * node) {
     node->setType(this->typePool->getAnyType());   //FIXME
 }
 
-void TypeChecker::visitSpecialCharNode(SpecialCharNode * node) {
-    E_Unimplemented(node, "SpecialCharNode");
-} //TODO
-
 void TypeChecker::visitPipedCmdNode(PipedCmdNode * node) {
     for(CmdNode *procNode : node->getCmdNodes()) {
         this->checkTypeAsStatement(procNode);   // always void

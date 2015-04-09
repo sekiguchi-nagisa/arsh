@@ -96,6 +96,7 @@ int main(int argc, char **argv, char **envp) {
             fprintf(stderr, "cannot open file: %s\n", scriptName);
             return 1;
         }
+        shell.setArguments(restArgs);
         ydsh::ExitStatus status = shell.eval(scriptName, fp);
         fclose(fp);
         return status;
