@@ -136,12 +136,12 @@ void SymbolTable::exitScope() {
     delete scope;
 }
 
-void SymbolTable::enterFuncScope() {
+void SymbolTable::enterFunc() {
     this->scopes.push_back(new Scope());
     this->maxVarIndexStack.push_back(0);
 }
 
-void SymbolTable::exitFuncScope() {
+void SymbolTable::exitFunc() {
     assert(!this->inGlobalScope());
     delete this->scopes.back();
     this->scopes.pop_back();

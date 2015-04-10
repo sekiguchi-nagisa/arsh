@@ -2496,7 +2496,7 @@ void RootNode::accept(NodeVisitor *visitor) {
 
 EvalStatus RootNode::eval(RuntimeContext &ctx) {
     ctx.reserveGlobalVar(this->maxGVarNum);
-    ctx.localVarOffset = this->maxVarNum;
+    ctx.stackTopIndex = this->maxVarNum;
 
     for (auto iter = this->nodeList.begin(); iter != this->nodeList.end();) {
         Node *node = *iter;

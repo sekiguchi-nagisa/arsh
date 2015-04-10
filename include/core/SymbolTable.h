@@ -106,12 +106,12 @@ public:
     /**
      * create new function scope.
      */
-    void enterFuncScope();
+    void enterFunc();
 
     /**
      * delete current function scope.
      */
-    void exitFuncScope();
+    void exitFunc();
 
     /**
      * pop all local scope and function scope

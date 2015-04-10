@@ -852,17 +852,21 @@ void TypeChecker::visitFunctionNode(FunctionNode * node) {   //TODO: named param
 
     // check type func body
     this->pushReturnType(returnType);
-    this->symbolTable.enterFuncScope();
+    this->symbolTable.enterFunc();
+    this->symbolTable.enterScope();
 
     for(unsigned int i = 0; i < paramSize; i++) { // register parameter
         VarNode *paramNode = node->getParamNodes()[i];
-        this->addEntryAndThrowIfDefined(paramNode, paramNode->getVarName(), paramTypes[i], false);
+        FieldHandle *handle = this->addEntryAndThrowIfDefined(
+                paramNode, paramNode->getVarName(), paramTypes[i], false);
+        paramNode->setAttribute(handle);
     }
     this->checkBlockEndExistence(node->getBlockNode(), returnType);
     this->checkTypeWithCurrentBlockScope(node->getBlockNode());
+    this->symbolTable.exitScope();
 
     node->setMaxVarNum(this->symbolTable.getMaxVarIndex());
-    this->symbolTable.exitFuncScope();
+    this->symbolTable.exitFunc();
     this->popReturnType();
     node->setType(this->typePool->getVoidType());
 }
