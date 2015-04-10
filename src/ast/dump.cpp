@@ -87,7 +87,8 @@ void Writer::write(const char *fieldName, const std::vector<TypeToken *> &toks) 
         if(i > 0) {
             OUT << ", ";
         }
-        OUT << toks[i]->toTokenText();
+        TypeToken *tok = toks[i];
+        OUT << (tok == 0 ? "(null)" : tok->toTokenText());
     }
     OUT << std::endl;
 }
