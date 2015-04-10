@@ -115,12 +115,22 @@ struct RuntimeContext {
     /**
      * for string cast
      */
-    int fieldIndexOf_STR = -1;
+    int fieldIndexOf_STR;
+
+    /**
+     * for string interpolation
+     */
+    int fieldIndexOf_INTERP;
+
+    /**
+     * for command argument
+     */
+    int fieldIndexOf_CMD_ARG;
 
     /**
      * for error reporting
      */
-    int fieldIndexOf_bt = -1;
+    int fieldIndexOf_bt;
 
     RuntimeContext(char **envp);
 
@@ -365,11 +375,39 @@ struct RuntimeContext {
      */
     EvalStatus toString() {
         if(this->fieldIndexOf_STR == -1) {
-            FunctionHandle *handle =
-                    this->pool.getAnyType()->lookupMethodHandle(&this->pool, std::string(OP_STR));
+            auto *handle = this->pool.getAnyType()->
+                    lookupMethodHandle(&this->pool, std::string(OP_STR));
             this->fieldIndexOf_STR = handle->getFieldIndex();
         }
         this->dupAndGetField(this->fieldIndexOf_STR);
+        this->swap();
+        return this->apply(false, 1);
+    }
+
+    /**
+     * call __INTERP__
+     */
+    EvalStatus toInterp() {
+        if(this->fieldIndexOf_INTERP == -1) {
+            auto *handle = this->pool.getAnyType()->
+                    lookupMethodHandle(&this->pool, std::string(OP_INTERP));
+            this->fieldIndexOf_INTERP = handle->getFieldIndex();
+        }
+        this->dupAndGetField(this->fieldIndexOf_INTERP);
+        this->swap();
+        return this->apply(false, 1);
+    }
+
+    /**
+     * call __CMD_ARG__
+     */
+    EvalStatus toCmdArg() {
+        if(this->fieldIndexOf_CMD_ARG == -1) {
+            auto *handle = this->pool.getAnyType()->
+                    lookupMethodHandle(&this->pool, std::string(OP_CMD_ARG));
+            this->fieldIndexOf_CMD_ARG = handle->getFieldIndex();
+        }
+        this->dupAndGetField(this->fieldIndexOf_CMD_ARG);
         this->swap();
         return this->apply(false, 1);
     }
@@ -393,9 +431,6 @@ struct RuntimeContext {
         } else {
             std::cerr << this->thrownObject->toString() << std::endl;
         }
-
-
-//        std::cerr << "[runtime error] " << ctx.thrownObject->toString() << std::endl;
     }
 
 

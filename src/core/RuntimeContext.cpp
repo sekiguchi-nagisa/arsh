@@ -16,8 +16,6 @@
 
 #include <core/RuntimeContext.h>
 
-#include <iostream>
-
 namespace ydsh {
 namespace core {
 
@@ -40,7 +38,8 @@ RuntimeContext::RuntimeContext(char **envp) :
         returnObject(), thrownObject(),
         localStack(new std::shared_ptr<DSObject>[DEFAULT_LOCAL_SIZE]),
         localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0),
-        localVarOffset(0), offsetStack(), repl(false), assertion(true) {
+        localVarOffset(0), offsetStack(), repl(false), assertion(true),
+        fieldIndexOf_STR(-1), fieldIndexOf_INTERP(-1), fieldIndexOf_CMD_ARG(-1), fieldIndexOf_bt(-1) {
 }
 
 RuntimeContext::~RuntimeContext() {

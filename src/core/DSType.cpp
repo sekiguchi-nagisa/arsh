@@ -77,6 +77,10 @@ bool DSType::operator==(const DSType &type) {
     return this->id == type.id;
 }
 
+bool DSType::operator!=(const DSType &type) {
+    return this->id != type.id;
+}
+
 bool DSType::isAssignableFrom(DSType *targetType) {
     if(*this == *targetType) {
         return true;

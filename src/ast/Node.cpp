@@ -58,12 +58,10 @@ DSType *Node::getType() const {
     return this->type;
 }
 
-Node *Node::convertToStringNode() {
-    return createApplyNode(this, std::string(OP_INTERP));
+void Node::inStringExprNode() { // do nothing
 }
 
-Node *Node::convertToCmdArg() {
-    return createApplyNode(this, std::string(OP_CMD_ARG));
+void Node::inCmdArgNode() { // do nothing
 }
 
 bool Node::isBlockEndNode() {
@@ -164,14 +162,6 @@ void StringValueNode::setType(DSType *type) {
             new String_Object(this->type, std::move(this->tempValue)));
 }
 
-Node *StringValueNode::convertToStringNode() {
-    return this;
-}
-
-Node *StringValueNode::convertToCmdArg() {
-    return this;
-}
-
 void StringValueNode::dump(Writer &writer) const {
     if (this->type == 0) {
         writer.write(NAME(tempValue), this->tempValue);
@@ -209,19 +199,12 @@ StringExprNode::~StringExprNode() {
 }
 
 void StringExprNode::addExprNode(Node *node) {
-    this->nodes.push_back(node->convertToStringNode());
+    node->inStringExprNode();
+    this->nodes.push_back(node);
 }
 
 const std::vector<Node *> &StringExprNode::getExprNodes() {
     return this->nodes;
-}
-
-Node *StringExprNode::convertToStringNode() {
-    return this;
-}
-
-Node *StringExprNode::convertToCmdArg() {
-    return this;
 }
 
 void StringExprNode::dump(Writer &writer) const {
@@ -235,13 +218,22 @@ void StringExprNode::accept(NodeVisitor *visitor) {
 EvalStatus StringExprNode::eval(RuntimeContext &ctx) {
     unsigned int size = this->nodes.size();
     if (size == 0) {
-        ctx.push(std::make_shared<String_Object>(this->type, ""));
+        ctx.push(std::make_shared<String_Object>(this->type));
     } else if (size == 1) {
-        this->nodes[0]->eval(ctx);
+        EVAL(ctx, this->nodes[0]);
+        if(*this->nodes[0]->getType() != *ctx.pool.getStringType()) {
+            return ctx.toInterp();
+        }
     } else {
-        auto value = std::make_shared<String_Object>(this->type, "");
+        auto value = std::make_shared<String_Object>(this->type);
         for (Node *node : this->nodes) {
             EVAL(ctx, node);
+            if(*node->getType() != *ctx.pool.getStringType()) {
+                EvalStatus status = ctx.toInterp();
+                if(status != EVAL_SUCCESS) {
+                    return status;
+                }
+            }
             value->append(*TYPE_AS(String_Object, ctx.pop()));
         }
         ctx.push(value);
@@ -1080,7 +1072,8 @@ CmdArgNode::~CmdArgNode() {
 }
 
 void CmdArgNode::addSegmentNode(Node *node) {
-    this->segmentNodes.push_back(node->convertToCmdArg());
+    node->inCmdArgNode();
+    this->segmentNodes.push_back(node);
 }
 
 const std::vector<Node *> &CmdArgNode::getSegmentNodes() {
@@ -1098,6 +1091,10 @@ void CmdArgNode::accept(NodeVisitor *visitor) {
 EvalStatus CmdArgNode::eval(RuntimeContext &ctx) {
     //FIXME: concate segment node
     EVAL(ctx, this->segmentNodes[0]);
+    DSType *type = this->segmentNodes[0]->getType();
+    if(*type != *ctx.pool.getStringType() && *type != *ctx.pool.getStringArrayType()) {
+        return ctx.toCmdArg();
+    }
     return EVAL_SUCCESS;
 }
 
@@ -1252,16 +1249,6 @@ void CmdContextNode::setRetKind(CmdRetKind kind) {
 
 CmdContextNode::CmdRetKind CmdContextNode::getRetKind() {
     return this->retKind;
-}
-
-Node *CmdContextNode::convertToStringNode() {
-    this->setRetKind(STR);
-    return this;
-}
-
-Node *CmdContextNode::convertToCmdArg() {
-    this->setRetKind(ARRAY);
-    return this;
 }
 
 void CmdContextNode::dump(Writer &writer) const {

@@ -234,10 +234,6 @@ std::shared_ptr<String_Object> Array_Object::interp(RuntimeContext &ctx) {
 }
 
 std::shared_ptr<DSObject> Array_Object::commandArg(RuntimeContext &ctx) {
-    if(*this->type == *ctx.pool.getStringArrayType()) {
-        return std::shared_ptr<DSObject>(this);
-    }
-
     std::shared_ptr<Array_Object> result(new Array_Object(ctx.pool.getStringArrayType()));
     for(const std::shared_ptr<DSObject> &e : this->values) {
         std::shared_ptr<DSObject> temp(e->commandArg(ctx));

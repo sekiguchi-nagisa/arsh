@@ -60,9 +60,15 @@ public:
      */
     DSType *getType() const;
 
-    virtual Node *convertToStringNode();
+    /**
+     * for CmdContextNode, normally do nothing
+     */
+    virtual void inStringExprNode();
 
-    virtual Node *convertToCmdArg();
+    /**
+     * for CmdContextNode, normally do nothing
+     */
+    virtual void inCmdArgNode();
 
     virtual bool isBlockEndNode();
 
@@ -147,8 +153,6 @@ public:
     std::shared_ptr<DSObject> getValue();
 
     void setType(DSType *type); // override
-    Node *convertToStringNode(); // override
-    Node *convertToCmdArg(); // override
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
@@ -167,8 +171,6 @@ public:
 
     const std::vector<Node *> &getExprNodes();
 
-    Node *convertToStringNode(); // override
-    Node *convertToCmdArg(); // override
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
@@ -682,8 +684,6 @@ public:
 
     CmdRetKind getRetKind();
 
-    Node *convertToStringNode(); // override
-    Node *convertToCmdArg(); // override
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    //override
     EvalStatus eval(RuntimeContext &ctx); // override

@@ -51,8 +51,7 @@ unsigned int Shell::getLineNum() {
 
 void Shell::setArguments(const std::vector<const char *> &args) {
     unsigned int size = args.size();
-    this->ctx.scriptName = std::make_shared<String_Object>(
-            this->ctx.pool.getStringType(), std::string(args[0]));
+    this->ctx.scriptName->value = args[0];
     for(unsigned int i = 1; i < size; i++) {
         this->ctx.scriptArgs->values.push_back(
                 std::make_shared<String_Object>( this->ctx.pool.getStringType(), std::string(args[i])));

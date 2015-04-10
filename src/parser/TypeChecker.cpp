@@ -396,7 +396,7 @@ void TypeChecker::visitStringValueNode(StringValueNode * node) {
 
 void TypeChecker::visitStringExprNode(StringExprNode * node) {
     for(Node *exprNode : node->getExprNodes()) {
-        this->checkType(this->typePool->getStringType(), exprNode);
+        this->checkType(exprNode);
     }
     node->setType(this->typePool->getStringType());
 }

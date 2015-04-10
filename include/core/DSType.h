@@ -113,6 +113,7 @@ public:
     virtual FieldHandle *findHandle(const std::string &fieldName) = 0;
 
     bool operator==(const DSType &type);
+    bool operator!=(const DSType &type);
 
     /**
      * check inheritance of target type.
