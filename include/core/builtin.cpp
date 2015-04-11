@@ -500,7 +500,7 @@ static inline bool map_get(RuntimeContext &ctx) {
     if(iter == obj->getValueMap().end()) {
         std::string msg("not found key: ");
         msg += LOCAL(1)->toString();
-        ctx.throwError(ctx.pool.getKetNotFoundErrorType(), std::move(msg));
+        ctx.throwError(ctx.pool.getKeyNotFoundErrorType(), std::move(msg));
         return false;
     }
     RET(iter->second);

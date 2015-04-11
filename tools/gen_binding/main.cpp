@@ -186,21 +186,11 @@ private:
 
 HandleInfoMap::HandleInfoMap() :
         name2InfoMap(), info2NameMap() {
-    this->registerName(VOID_T, "Void");
-    this->registerName(ANY_T, "Any");
-    this->registerName(INT_T, "Int");
-    this->registerName(FLOAT_T, "Float");
-    this->registerName(BOOL_T, "Boolean");
-    this->registerName(STRING_T, "String");
-    this->registerName(ERROR_T, "Error");
-    this->registerName(ARITH_ERROR_T, "ArithmeticError");
-    this->registerName(OUT_OF_INDEX_ERROR_T, "OutOfIndexError");
-    this->registerName(KEY_NOT_ERROR_T, "KeyNotFoundError");
-    this->registerName(CAST_ERROR_T, "TypeCastError");
-    this->registerName(ARRAY_T, "Array");
-    this->registerName(MAP_T, "Map");
-    this->registerName(T0, "T0");
-    this->registerName(T1, "T1");
+#define REGISTER(ENUM) this->registerName(ENUM, #ENUM);
+    EACH_HANDLE_INFO_TYPE(REGISTER)
+    EACH_HANDLE_INFO_PTYPE(REGISTER)
+    EACH_HANDLE_INFO_TYPE_TEMP(REGISTER)
+#undef REGISTER
 }
 
 HandleInfoMap::~HandleInfoMap() {
@@ -358,10 +348,10 @@ std::unique_ptr<ReifiedTypeToken> ReifiedTypeToken::newReifiedTypeToken(const st
     std::unique_ptr<CommonTypeToken> tok;
     unsigned int size = 0;
     if(name == "Array") {
-        tok.reset(new CommonTypeToken(ARRAY_T));
+        tok.reset(new CommonTypeToken(Array));
         size = 1;
     } else if(name == "Map") {
-        tok.reset(new CommonTypeToken(MAP_T));
+        tok.reset(new CommonTypeToken(Map));
         size = 2;
     } else {
         error("unsupported type template: %s\n", name.c_str());
@@ -425,7 +415,7 @@ public:
 
     static std::unique_ptr<Element> newInitElement() {
         std::unique_ptr<Element> element(new Element(std::string(""), false, false));
-        element->setReturnType(std::unique_ptr<TypeToken>(new CommonTypeToken(VOID_T)));
+        element->setReturnType(std::unique_ptr<TypeToken>(new CommonTypeToken(Void)));
         return element;
     }
 

@@ -241,29 +241,10 @@ static inline unsigned int decodeNum(const char *&pos) {
 static DSType *decodeType(TypePool *typePool, const char *&pos,
                           DSType *elementType0, DSType *elementType1) {
     switch(*(pos++)) {
-    case VOID_T:
-        return typePool->getVoidType();
-    case ANY_T:
-        return typePool->getAnyType();
-    case INT_T:
-        return typePool->getIntType();
-    case FLOAT_T:
-        return typePool->getFloatType();
-    case BOOL_T:
-        return typePool->getBooleanType();
-    case STRING_T:
-        return typePool->getStringType();
-    case ERROR_T:
-        return typePool->getErrorType();
-    case ARITH_ERROR_T:
-        return typePool->getArithmeticErrorType();
-    case OUT_OF_INDEX_ERROR_T:
-        return typePool->getOutOfIndexErrorType();
-    case KEY_NOT_ERROR_T:
-        return typePool->getKetNotFoundErrorType();
-    case CAST_ERROR_T:
-        return typePool->getTypeCastErrorType();
-    case ARRAY_T: {
+#define GEN_CASE(ENUM) case ENUM: return typePool->get##ENUM##Type();
+    EACH_HANDLE_INFO_TYPE(GEN_CASE)
+#undef GEN_CASE
+    case Array: {
         TypeTemplate *t = typePool->getArrayTemplate();
         unsigned int size = decodeNum(pos);
         assert(size == 1);
@@ -271,7 +252,7 @@ static DSType *decodeType(TypePool *typePool, const char *&pos,
         elementTypes[0] = decodeType(typePool, pos, elementType0, elementType1);
         return typePool->createAndGetReifiedTypeIfUndefined(t, elementTypes);
     }
-    case MAP_T: {
+    case Map: {
         TypeTemplate *t = typePool->getMapTemplate();
         unsigned int size = decodeNum(pos);
         assert(size == 2);

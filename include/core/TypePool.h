@@ -134,7 +134,7 @@ public:
     // for error
     DSType *getArithmeticErrorType();
     DSType *getOutOfIndexErrorType();
-    DSType *getKetNotFoundErrorType();
+    DSType *getKeyNotFoundErrorType();
     DSType *getTypeCastErrorType();
 
 

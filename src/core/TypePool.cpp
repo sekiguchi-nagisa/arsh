@@ -148,7 +148,7 @@ DSType *TypePool::getOutOfIndexErrorType() {
     return this->outOfIndexErrorType;
 }
 
-DSType *TypePool::getKetNotFoundErrorType() {
+DSType *TypePool::getKeyNotFoundErrorType() {
     return this->keyNotFoundErrorType;
 }
 

@@ -22,22 +22,22 @@ namespace core {
 
 // builtin type
 #define EACH_HANDLE_INFO_TYPE(OP) \
-    OP(VOID_T) \
-    OP(ANY_T) \
-    OP(INT_T) \
-    OP(FLOAT_T) \
-    OP(BOOL_T)  \
-    OP(STRING_T) \
-    OP(ERROR_T) \
-    OP(ARITH_ERROR_T) \
-    OP(OUT_OF_INDEX_ERROR_T) \
-    OP(KEY_NOT_ERROR_T) \
-    OP(CAST_ERROR_T)
+    OP(Void) \
+    OP(Any) \
+    OP(Int) \
+    OP(Float) \
+    OP(Boolean)  \
+    OP(String) \
+    OP(Error) \
+    OP(ArithmeticError) \
+    OP(OutOfIndexError) \
+    OP(KeyNotFoundError) \
+    OP(TypeCastError)
 
 // type template
 #define EACH_HANDLE_INFO_TYPE_TEMP(OP) \
-    OP(ARRAY_T) \
-    OP(MAP_T)
+    OP(Array) \
+    OP(Map)
 
 // param types num
 #define EACH_HANDLE_INFO_NUM(OP) \
