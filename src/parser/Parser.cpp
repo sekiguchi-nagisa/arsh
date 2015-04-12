@@ -48,6 +48,12 @@
 #define EACH_LA_primary(OP) \
     OP(NEW) \
     OP(INT_LITERAL) \
+    OP(INT8_LITERAL) \
+    OP(UINT8_LITERAL) \
+    OP(INT16_LITERAL) \
+    OP(UINT16_LITERAL) \
+    OP(INT32_LITERAL) \
+    OP(UINT32_LITERAL) \
     OP(FLOAT_LITERAL) \
     OP(STRING_LITERAL) \
     OP(OPEN_DQUOTE) \
@@ -929,6 +935,42 @@ INLINE std::unique_ptr<Node> Parser::parse_primaryExpression() {
         CONVERT_TO_NUM(value, n, INT_LITERAL, token, this->lexer->toInt);
         RET_NODE(new IntValueNode(n, value));
     }
+    case INT8_LITERAL : {
+        Token token(this->matchAndGetToken(INT8_LITERAL));
+        char value;
+        CONVERT_TO_NUM(value, n, INT8_LITERAL, token, this->lexer->toInt8);
+        RET_NODE(IntValueNode::newInt8(n, value));
+    };
+    case UINT8_LITERAL : {
+        Token token(this->matchAndGetToken(UINT8_LITERAL));
+        unsigned char value;
+        CONVERT_TO_NUM(value, n, UINT8_LITERAL, token, this->lexer->toUint8);
+        RET_NODE(IntValueNode::newUint8(n, value));
+    };
+    case INT16_LITERAL : {
+        Token token(this->matchAndGetToken(INT16_LITERAL));
+        short value;
+        CONVERT_TO_NUM(value, n, INT16_LITERAL, token, this->lexer->toInt16);
+        RET_NODE(IntValueNode::newInt16(n, value));
+    };
+    case UINT16_LITERAL : {
+        Token token(this->matchAndGetToken(UINT16_LITERAL));
+        unsigned short value;
+        CONVERT_TO_NUM(value, n, UINT8_LITERAL, token, this->lexer->toUint16);
+        RET_NODE(IntValueNode::newUint16(n, value));
+    };
+    case INT32_LITERAL : {
+        Token token(this->matchAndGetToken(INT32_LITERAL));
+        int value;
+        CONVERT_TO_NUM(value, n, INT32_LITERAL, token, this->lexer->toInt32);
+        RET_NODE(IntValueNode::newInt32(n, value));
+    };
+    case UINT32_LITERAL : {
+        Token token(this->matchAndGetToken(UINT32_LITERAL));
+        unsigned int value;
+        CONVERT_TO_NUM(value, n, UINT32_LITERAL, token, this->lexer->toUint32);
+        RET_NODE(IntValueNode::newUint32(n, value));
+    };
     case FLOAT_LITERAL: {
         Token token(this->matchAndGetToken(FLOAT_LITERAL));
         double value;

@@ -82,7 +82,18 @@ public:
 // expression definition
 
 class IntValueNode : public Node {
+public:
+    typedef enum {
+        INT8,
+        UINT8,
+        INT16,
+        UINT16,
+        INT32,
+        UINT32,
+    } IntKind;
+
 private:
+    IntKind kind;
     int tempValue;
 
     /**
@@ -90,8 +101,19 @@ private:
      */
     std::shared_ptr<DSObject> value;
 
+private:
+    IntValueNode(unsigned int lineNum, IntKind kind, int value);
+
 public:
     IntValueNode(unsigned int lineNum, int value);
+    static IntValueNode *newInt8(unsigned int lineNum, char value);
+    static IntValueNode *newUint8(unsigned int lineNum, unsigned char value);
+    static IntValueNode *newInt16(unsigned int lineNum, short value);
+    static IntValueNode *newUint16(unsigned int lineNum, unsigned short value);
+    static IntValueNode *newInt32(unsigned int lineNum, int value);
+    static IntValueNode *newUint32(unsigned int lineNum, unsigned int value);
+
+    IntKind getKind();
 
     /**
      * before type check, return empty pointer.
@@ -102,6 +124,8 @@ public:
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
+
+
 };
 
 class FloatValueNode : public Node {

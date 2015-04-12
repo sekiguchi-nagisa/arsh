@@ -379,8 +379,28 @@ void TypeChecker::visitDefault(Node *node) {
     E_Unimplemented(node, "unimplemented");
 }
 
-void TypeChecker::visitIntValueNode(IntValueNode * node) {    //TODO: int8, int16 ..etc
+void TypeChecker::visitIntValueNode(IntValueNode * node) {
     DSType *type = this->typePool->getIntType();
+    switch(node->getKind()) {
+    case IntValueNode::INT8:
+        type = this->typePool->getInt8Type();
+        break;
+    case IntValueNode::UINT8:
+        type = this->typePool->getUint8Type();
+        break;
+    case IntValueNode::INT16:
+        type = this->typePool->getInt16Type();
+        break;
+    case IntValueNode::UINT16:
+        type = this->typePool->getUint16Type();
+        break;
+    case IntValueNode::INT32:
+        type = this->typePool->getInt32Type();
+        break;
+    case IntValueNode::UINT32:
+        type = this->typePool->getUint32Type();
+        break;
+    }
     node->setType(type);
 }
 

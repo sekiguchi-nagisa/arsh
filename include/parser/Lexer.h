@@ -18,6 +18,7 @@
 #define PARSER_LEXER_H_
 
 #include <stdio.h>
+#include <stdint.h>
 #include <vector>
 #include <string>
 
@@ -237,7 +238,20 @@ struct Lexer {
     /**
      * if converted number is out of range, status is 1.
      */
+    char toInt8(const Token &token, int &status) const;
+
+    unsigned char toUint8(const Token &token, int &status) const;
+    short toInt16(const Token &token, int &status) const;
+    unsigned short toUint16(const Token &token, int &status) const;
+
+    /**
+     * equivalent to toInt32().
+     */
     int toInt(const Token &token, int &status) const;
+
+    int toInt32(const Token &token, int &status) const;
+    unsigned int toUint32(const Token &token, int &status) const;
+    long toInt64(const Token &token, int &status) const;
 
     /**
      * if converted number is out of range, status is 1.
@@ -458,7 +472,72 @@ std::string Lexer<LEXER_DEF, TOKEN_KIND>::toName(const Token &token) const {
 }
 
 template<typename LEXER_DEF, typename TOKEN_KIND>
+char Lexer<LEXER_DEF, TOKEN_KIND>::toInt8(const Token &token, int &status) const {
+    long value = this->toInt64(token, status);
+    if(value > INT8_MAX || value < INT8_MIN) {
+        status = 1;
+        return 0;
+    }
+    return (char) value;
+}
+
+template<typename LEXER_DEF, typename TOKEN_KIND>
+unsigned char Lexer<LEXER_DEF, TOKEN_KIND>::toUint8(const Token &token, int &status) const {
+    long value = this->toInt64(token, status);
+    if(value > UINT8_MAX || value < 0) {
+        status = 1;
+        return 0;
+    }
+    return (unsigned char) value;
+}
+
+template<typename LEXER_DEF, typename TOKEN_KIND>
+short Lexer<LEXER_DEF, TOKEN_KIND>::toInt16(const Token &token, int &status) const {
+    long value = this->toInt64(token, status);
+    if(value > INT16_MAX || value < INT16_MIN) {
+        status = 1;
+        return 0;
+    }
+    return (short) value;
+}
+
+template<typename LEXER_DEF, typename TOKEN_KIND>
+unsigned short Lexer<LEXER_DEF, TOKEN_KIND>::toUint16(const Token &token, int &status) const {
+    long value = this->toInt64(token, status);
+    if(value > UINT16_MAX || value < 0) {
+        status = 1;
+        return 0;
+    }
+    return (unsigned short) value;
+}
+
+template<typename LEXER_DEF, typename TOKEN_KIND>
 int Lexer<LEXER_DEF, TOKEN_KIND>::toInt(const Token &token, int &status) const {
+    return this->toInt32(token, status);
+}
+
+template<typename LEXER_DEF, typename TOKEN_KIND>
+int Lexer<LEXER_DEF, TOKEN_KIND>::toInt32(const Token &token, int &status) const {
+    long value = this->toInt64(token, status);
+    if(value > INT32_MAX || value < INT32_MIN) {
+        status = 1;
+        return 0;
+    }
+    return (int) value;
+}
+
+template<typename LEXER_DEF, typename TOKEN_KIND>
+unsigned int Lexer<LEXER_DEF, TOKEN_KIND>::toUint32(const Token &token, int &status) const {
+    long value = this->toInt64(token, status);
+    if(value > UINT32_MAX || value < 0) {
+        status = 1;
+        return 0;
+    }
+    return (unsigned int) value;
+}
+
+template<typename LEXER_DEF, typename TOKEN_KIND>
+long Lexer<LEXER_DEF, TOKEN_KIND>::toInt64(const Token &token, int &status) const {
     CHECK_TOK(token);
 
     char str[token.size + 1];
@@ -475,19 +554,15 @@ int Lexer<LEXER_DEF, TOKEN_KIND>::toInt(const Token &token, int &status) const {
     if(end == str) {
         fatal("cannot covert to int: %s\n", str);
     }
-    if(*end != '\0') {
-        fatal("found illegal character in num: %s\n", str);
-    }
+//    if(*end != '\0') {
+//        fatal("found illegal character in num: %s\n", str);
+//    }
     if((value == LONG_MIN || value == LONG_MAX) && errno == ERANGE) {
         status = 1;
         return 0;
     }
-    if(value > INT_MAX || value < INT_MIN) {
-        status = 1;
-        return 0;
-    }
     status = 0;
-    return (int) value;
+    return value;
 }
 
 template<typename LEXER_DEF, typename TOKEN_KIND>

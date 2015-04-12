@@ -53,7 +53,7 @@ RuntimeContext::~RuntimeContext() {
 void RuntimeContext::printStackTop(DSType *stackTopType) {
     if(!stackTopType->isVoidType()) {
         std::cout << "(" << this->pool.getTypeName(*stackTopType)
-                            << ") " << this->pop()->toString() << std::endl;
+                            << ") " << this->pop()->toString(*this) << std::endl;
     }
 }
 

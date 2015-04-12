@@ -25,6 +25,12 @@ namespace core {
     OP(Void) \
     OP(Any) \
     OP(Int) \
+    OP(Int8) \
+    OP(Uint8) \
+    OP(Int16) \
+    OP(Uint16) \
+    OP(Int32) \
+    OP(Uint32) \
     OP(Float) \
     OP(Boolean)  \
     OP(String) \

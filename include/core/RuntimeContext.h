@@ -429,7 +429,7 @@ struct RuntimeContext {
             this->swap();
             this->apply(false, 1);
         } else {
-            std::cerr << this->thrownObject->toString() << std::endl;
+            std::cerr << this->thrownObject->toString(*this) << std::endl;
         }
     }
 

@@ -30,7 +30,8 @@ namespace core {
 TypePool::TypePool(char **envp) :
         idCount(0), typeMap(16), typeNameTable(),
         anyType(), voidType(), valueType(),
-        intType(), floatType(), boolType(), stringType(),
+        int8Type(), uint8Type(), int16Type(), uint16Type(),
+        int32Type(), uint32Type(), floatType(), boolType(), stringType(),
         errorType(), taskType(), baseFuncType(),
         arithmeticErrorType(), outOfIndexErrorType(),
         keyNotFoundErrorType(), typeCastErrorType(),
@@ -47,7 +48,12 @@ TypePool::TypePool(char **envp) :
      */
     this->valueType = this->initBuiltinType("%Value%", true, this->anyType, info_Dummy());
 
-    this->intType = this->initBuiltinType("Int", false, this->valueType, info_IntType());
+    this->int8Type = this->initBuiltinType("Int8", false, this->valueType, info_Int8Type());
+    this->uint8Type = this->initBuiltinType("Uint8", false, this->valueType, info_Uint8Type());
+    this->int16Type = this->initBuiltinType("Int16", false, this->valueType, info_Int16Type());
+    this->uint16Type = this->initBuiltinType("Uint16", false, this->valueType, info_Uint16Type());
+    this->int32Type = this->initBuiltinType("Int", false, this->valueType, info_IntType());
+    this->uint32Type = this->initBuiltinType("Uint32", false, this->valueType, info_Uint32Type());
     this->floatType = this->initBuiltinType("Float", false, this->valueType, info_FloatType());
     this->boolType = this->initBuiltinType("Boolean", false, this->valueType, info_BooleanType());
     this->stringType = this->initBuiltinType("String", false, this->valueType, info_StringType());
@@ -109,7 +115,31 @@ DSType *TypePool::getValueType() {
 }
 
 DSType *TypePool::getIntType() {
-    return this->intType;
+    return this->getInt32Type();
+}
+
+DSType *TypePool::getInt8Type() {
+    return this->int8Type;
+}
+
+DSType *TypePool::getUint8Type() {
+    return this->uint8Type;
+}
+
+DSType *TypePool::getInt16Type() {
+    return this->int16Type;
+}
+
+DSType *TypePool::getUint16Type() {
+    return this->uint16Type;
+}
+
+DSType *TypePool::getInt32Type() {
+    return this->int32Type;
+}
+
+DSType *TypePool::getUint32Type() {
+    return this->uint32Type;
 }
 
 DSType *TypePool::getFloatType() {

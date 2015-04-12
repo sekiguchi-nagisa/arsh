@@ -33,6 +33,18 @@ native_type_info_t *info_ValueType();
 
 native_type_info_t *info_IntType();
 
+native_type_info_t *info_Int8Type();
+
+native_type_info_t *info_Uint8Type();
+
+native_type_info_t *info_Int16Type();
+
+native_type_info_t *info_Uint16Type();
+
+native_type_info_t *info_Int32Type();
+
+native_type_info_t *info_Uint32Type();
+
 native_type_info_t *info_FloatType();
 
 native_type_info_t *info_BooleanType();

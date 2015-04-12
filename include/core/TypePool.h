@@ -50,7 +50,12 @@ private:
      */
     DSType *valueType;
 
-    DSType *intType;
+    DSType *int8Type;
+    DSType *uint8Type;
+    DSType *int16Type;
+    DSType *uint16Type;
+    DSType *int32Type;
+    DSType *uint32Type;
     DSType *floatType;
     DSType *boolType;
     DSType *stringType;
@@ -113,6 +118,13 @@ public:
      * int is 32bit.
      */
     DSType *getIntType();
+
+    DSType *getInt8Type();
+    DSType *getUint8Type();
+    DSType *getInt16Type();
+    DSType *getUint16Type();
+    DSType *getInt32Type();
+    DSType *getUint32Type();
 
     /**
      * float is 64bit.

@@ -47,7 +47,7 @@ DSType *DSObject::getType() {
 void DSObject::setType(DSType *type) {  // do nothing.
 }
 
-std::string DSObject::toString() {
+std::string DSObject::toString(RuntimeContext &ctx) {
     std::string str("DSObject(");
     str += std::to_string((long) this);
     str += ")";
@@ -59,7 +59,7 @@ bool DSObject::equals(const std::shared_ptr<DSObject> &obj) {
 }
 
 std::shared_ptr<String_Object> DSObject::str(RuntimeContext &ctx) {
-    return std::make_shared<String_Object>(ctx.pool.getStringType(), this->toString());
+    return std::make_shared<String_Object>(ctx.pool.getStringType(), this->toString(ctx));
 }
 
 std::shared_ptr<String_Object> DSObject::interp(RuntimeContext &ctx) {
@@ -86,7 +86,10 @@ int Int_Object::getValue() {
     return this->value;
 }
 
-std::string Int_Object::toString() {
+std::string Int_Object::toString(RuntimeContext &ctx) {
+    if(*this->type == *ctx.pool.getUint32Type()) {
+        return std::to_string((unsigned int) this->value);
+    }
     return std::to_string(this->value);
 }
 
@@ -110,7 +113,7 @@ double Float_Object::getValue() {
     return this->value;
 }
 
-std::string Float_Object::toString() {
+std::string Float_Object::toString(RuntimeContext &ctx) {
     return std::to_string(this->value);
 }
 
@@ -135,7 +138,7 @@ bool Boolean_Object::getValue() {
     return this->value;
 }
 
-std::string Boolean_Object::toString() {
+std::string Boolean_Object::toString(RuntimeContext &ctx) {
     return this->value ? "true" : "false";
 }
 
@@ -168,7 +171,7 @@ const std::string &String_Object::getValue() {
     return this->value;
 }
 
-std::string String_Object::toString() {
+std::string String_Object::toString(RuntimeContext &ctx) {
     return this->value;
 }
 
@@ -200,14 +203,14 @@ const std::vector<std::shared_ptr<DSObject>> &Array_Object::getValues() {
     return this->values;
 }
 
-std::string Array_Object::toString() {
+std::string Array_Object::toString(RuntimeContext &ctx) {
     std::string str("[");
     unsigned int size = this->values.size();
     for(unsigned int i = 0; i < size; i++) {
         if(i > 0) {
             str += ", ";
         }
-        str += this->values[i]->toString();
+        str += this->values[i]->toString(ctx);
     }
     str += "]";
     return str;
@@ -228,7 +231,7 @@ std::shared_ptr<String_Object> Array_Object::interp(RuntimeContext &ctx) {
         if(i > 0) {
             value->value += " ";
         }
-        value->append(this->values[i]->str(ctx));
+        value->append(this->values[i]->interp(ctx));
     }
     return value;
 }
@@ -282,16 +285,16 @@ void Map_Object::add(const std::shared_ptr<DSObject> &value, const std::shared_p
     this->valueMap[key] = value;
 }
 
-std::string Map_Object::toString() {
+std::string Map_Object::toString(RuntimeContext &ctx) {
     std::string str("{");
     unsigned int count = 0;
     for(auto &iter : this->valueMap) {
         if(count++ > 0) {
             str += ", ";
         }
-        str += iter.first->toString();
+        str += iter.first->toString(ctx);
         str += " : ";
-        str += iter.second->toString();
+        str += iter.second->toString(ctx);
     }
     str += "}";
     return str;
@@ -305,14 +308,14 @@ Tuple_Object::Tuple_Object(DSType *type) :
         DSObject(type) {
 }
 
-std::string Tuple_Object::toString() {
+std::string Tuple_Object::toString(RuntimeContext &ctx) {
     std::string str("(");
     unsigned int size = this->getElementSize();
     for(unsigned int i = 0; i < size; i++) {
         if(i > 0) {
             str += ", ";
         }
-        str += this->fieldTable[this->getActualIndex(i)]->toString();
+        str += this->fieldTable[this->getActualIndex(i)]->toString(ctx);
     }
     str += ")";
     return str;
@@ -383,7 +386,7 @@ Error_Object::Error_Object(DSType *type, std::shared_ptr<DSObject> &&message) :
 Error_Object::~Error_Object() {
 }
 
-std::string Error_Object::toString() {
+std::string Error_Object::toString(RuntimeContext &ctx) {
     std::string str("Error(");
     str += std::to_string((long) this);
     str += ", ";
@@ -464,7 +467,7 @@ FunctionNode *UserFuncObject::getFuncNode() {
     return this->funcNode;
 }
 
-std::string UserFuncObject::toString() {
+std::string UserFuncObject::toString(RuntimeContext &ctx) {
     std::string str("function(");
     str += this->funcNode->getFuncName();
     str += ")";
@@ -503,7 +506,7 @@ native_func_t BuiltinFuncObject::getFuncPointer() {
     return this->func_ptr;
 }
 
-std::string BuiltinFuncObject::toString() {
+std::string BuiltinFuncObject::toString(RuntimeContext &ctx) {
     std::string str("function(");
     str += std::to_string((long) this->func_ptr);
     str += ")";

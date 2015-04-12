@@ -61,7 +61,7 @@ struct DSObject {
     /**
      * for printing
      */
-    virtual std::string toString();
+    virtual std::string toString(RuntimeContext &ctx);
 
     /**
      * EQ method implementation.
@@ -96,7 +96,7 @@ struct Int_Object : public DSObject {
 
     int getValue();
 
-    std::string toString(); // override
+    std::string toString(RuntimeContext &ctx); // override
     bool equals(const std::shared_ptr<DSObject> &obj);  // override
     size_t hash();  // override
 };
@@ -108,7 +108,7 @@ struct Float_Object : public DSObject {
 
     double getValue();
 
-    std::string toString(); // override
+    std::string toString(RuntimeContext &ctx); // override
     bool equals(const std::shared_ptr<DSObject> &obj);  // override
     size_t hash();  // override
 };
@@ -120,7 +120,7 @@ struct Boolean_Object : public DSObject {
 
     bool getValue();
 
-    std::string toString(); // override
+    std::string toString(RuntimeContext &ctx); // override
     bool equals(const std::shared_ptr<DSObject> &obj);  // override
     size_t hash();  // override
 };
@@ -136,7 +136,7 @@ struct String_Object : public DSObject {
 
     const std::string &getValue();
 
-    std::string toString(); // override
+    std::string toString(RuntimeContext &ctx); // override
     void append(const String_Object &obj);
 
     void append(const std::shared_ptr<String_Object> &obj);
@@ -152,7 +152,7 @@ struct Array_Object : public DSObject {
 
     const std::vector<std::shared_ptr<DSObject>> &getValues();
 
-    std::string toString(); // override
+    std::string toString(RuntimeContext &ctx); // override
     void append(std::shared_ptr<DSObject> obj);
 
     std::shared_ptr<String_Object> interp(RuntimeContext &ctx); // override
@@ -184,13 +184,13 @@ struct Map_Object : public DSObject {
      */
     void add(const std::shared_ptr<DSObject> &value, const std::shared_ptr<DSObject> &key);
 
-    std::string toString(); // override
+    std::string toString(RuntimeContext &ctx); // override
 };
 
 struct Tuple_Object : public DSObject {
     Tuple_Object(DSType *type);
 
-    std::string toString(); // override
+    std::string toString(RuntimeContext &ctx); // override
     unsigned int getActualIndex(unsigned int elementIndex);
     unsigned int getElementSize();
 
@@ -210,7 +210,7 @@ struct Error_Object : public DSObject {
     Error_Object(DSType *type, std::shared_ptr<DSObject> &&message);
     ~Error_Object();
 
-    std::string toString(); // override
+    std::string toString(RuntimeContext &ctx); // override
     void createStackTrace(RuntimeContext &ctx);
 
     /**
@@ -273,7 +273,7 @@ struct UserFuncObject : public FuncObject {
 
     FunctionNode *getFuncNode();
 
-    std::string toString(); // override
+    std::string toString(RuntimeContext &ctx); // override
     bool invoke(RuntimeContext &ctx); // override
 };
 
@@ -294,7 +294,7 @@ struct BuiltinFuncObject : public FuncObject {
 
     native_func_t getFuncPointer();
 
-    std::string toString(); // override
+    std::string toString(RuntimeContext &ctx); // override
     bool invoke(RuntimeContext &ctx); // override
 
     /**

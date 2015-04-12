@@ -72,8 +72,40 @@ bool Node::isBlockEndNode() {
 // ##     IntValueNode     ##
 // ##########################
 
+IntValueNode::IntValueNode(unsigned int lineNum, IntKind kind, int value) :
+        Node(lineNum), kind(kind), tempValue(value), value() {
+}
+
 IntValueNode::IntValueNode(unsigned int lineNum, int value) :
-        Node(lineNum), tempValue(value), value() {
+        IntValueNode(lineNum, INT32, value) {
+}
+
+IntValueNode *IntValueNode::newInt8(unsigned int lineNum, char value) {
+    return new IntValueNode(lineNum, INT8, (int) value);
+}
+
+IntValueNode *IntValueNode::newUint8(unsigned int lineNum, unsigned char value) {
+    return new IntValueNode(lineNum, UINT8, (int) value);
+}
+
+IntValueNode *IntValueNode::newInt16(unsigned int lineNum, short value) {
+    return new IntValueNode(lineNum, INT16, (int) value);
+}
+
+IntValueNode *IntValueNode::newUint16(unsigned int lineNum, unsigned short value) {
+    return new IntValueNode(lineNum, UINT16, (int) value);
+}
+
+IntValueNode *IntValueNode::newInt32(unsigned int lineNum, int value) {
+    return new IntValueNode(lineNum, INT32, value);
+}
+
+IntValueNode *IntValueNode::newUint32(unsigned int lineNum, unsigned int value) {
+    return new IntValueNode(lineNum, UINT32, (int) value);
+}
+
+IntValueNode::IntKind IntValueNode::getKind() {
+    return this->kind;
 }
 
 std::shared_ptr<DSObject> IntValueNode::getValue() {
@@ -2374,9 +2406,7 @@ const std::shared_ptr<DSObject> &BindVarNode::getValue() {
 void BindVarNode::dump(Writer &writer) const {
     WRITE(varName);
     WRITE_PRIM(varIndex);
-
-    std::string value(this->value->toString());
-    WRITE(value);
+    // FIXME: value
 }
 
 void BindVarNode::accept(NodeVisitor *visitor) {
