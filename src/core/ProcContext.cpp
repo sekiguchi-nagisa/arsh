@@ -43,10 +43,6 @@ ProcContext::~ProcContext() {
     delete[] this->argv;    // not delete element
 }
 
-std::string ProcContext::toString() {
-    return "<process>"; //FIXME
-}
-
 void ProcContext::addParam(const std::shared_ptr<DSObject> &value) {
     DSType *valueType = value->getType();
     if(*valueType == *this->ctx->pool.getStringType()) {

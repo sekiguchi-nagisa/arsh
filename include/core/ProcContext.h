@@ -52,7 +52,6 @@ struct ProcContext : public DSObject {   //FIXME: redirect option
 
     ~ProcContext();
 
-    std::string toString(); // override
     void addParam(const std::shared_ptr<DSObject> &value);
 
     /**
