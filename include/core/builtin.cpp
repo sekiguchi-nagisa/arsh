@@ -479,6 +479,33 @@ static inline bool array_empty(RuntimeContext &ctx) {
     RET(TO_BOOL(empty));
 }
 
+//!bind: function $OP_ITER($this : Array<T0>) : Array<T0>
+static inline bool array_iter(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_iter);
+    TYPE_AS(Array_Object, LOCAL(0))->curIndex = 0;
+    RET(LOCAL(0));
+}
+
+//!bind: function $OP_NEXT($this : Array<T0>) : T0
+static inline bool array_next(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_next);
+    Array_Object *obj = TYPE_AS(Array_Object, LOCAL(0));
+    unsigned int size = obj->values.size();
+    int index = obj->curIndex++;
+    if(!checkRange(ctx, index, size)) {
+        return false;
+    }
+    RET(obj->values[(unsigned int)index]);
+}
+
+//!bind: function $OP_HAS_NEXT($this : Array<T0>) : Boolean
+static inline bool array_hasNext(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_hasNext);
+    Array_Object *obj = TYPE_AS(Array_Object, LOCAL(0));
+    bool r = obj->curIndex < obj->values.size();
+    RET(TO_BOOL(r));
+}
+
 
 // #################
 // ##     Map     ##

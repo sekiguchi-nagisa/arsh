@@ -146,6 +146,7 @@ struct String_Object : public DSObject {
 };
 
 struct Array_Object : public DSObject {
+    unsigned int curIndex;
     std::vector<std::shared_ptr<DSObject>> values;
 
     Array_Object(DSType *type);

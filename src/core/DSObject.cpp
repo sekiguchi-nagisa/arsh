@@ -196,7 +196,7 @@ size_t String_Object::hash() {
 // ##########################
 
 Array_Object::Array_Object(DSType *type) :
-        DSObject(type), values() {
+        DSObject(type), curIndex(0), values() {
 }
 
 const std::vector<std::shared_ptr<DSObject>> &Array_Object::getValues() {
