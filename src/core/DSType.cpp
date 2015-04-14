@@ -381,12 +381,19 @@ BuiltinType::BuiltinType(type_id_t id, bool extendable, DSType *superType,
         info(info), constructorHandle(), constructor(), handleMap(),
         objectTable(info->methodSize == 0 ?
                     0 : new std::pair<unsigned int, std::shared_ptr<DSObject>>[info->methodSize]) {
+
+    const static unsigned long tag = 1L << 63;
     // init function handle
     unsigned int baseIndex = superType != 0 ? superType->getFieldSize() : 0;
     for(unsigned int i = 0; i < info->methodSize; i++) {
         NativeFuncInfo *funcInfo = &info->funcInfos[i];
         unsigned int fieldIndex = baseIndex + i;
-        auto *handle = new FieldHandle(0, fieldIndex, true);
+
+        /**
+         * treat fieldIndex as FieldHandle*
+         */
+        auto *handle = (FieldHandle *) (tag | fieldIndex);
+
         this->handleMap.insert(std::make_pair(std::string(funcInfo->funcName), handle));
 
         // init func object
@@ -403,7 +410,9 @@ BuiltinType::~BuiltinType() {
     this->constructor = 0;
 
     for(std::pair<std::string, FieldHandle *> pair : this->handleMap) {
-        delete pair.second;
+        if((long) pair.second > -1) {
+            delete pair.second;
+        }
     }
     this->handleMap.clear();
 
@@ -439,13 +448,21 @@ FieldHandle *BuiltinType::lookupFieldHandle(TypePool *typePool, const std::strin
     /**
      * initialize handle
      */
+    const static unsigned long mask = ~(1L << 63);
     auto *handle = iter->second;
-    if(!handle->isFuncHandle()) {
-        unsigned int baseIndex = this->superType != 0 ? this->superType->getFieldSize() : 0;
-        unsigned int infoIndex = handle->getFieldIndex() - baseIndex;
 
-        int fieldIndex = handle->getFieldIndex();
-        delete handle;
+    /**
+     * check if FieldHandle* is fieldIndex.
+     */
+    if(((long) handle) < 0) {
+        /**
+         * get fieldIndex
+         */
+        int fieldIndex = (mask & ((unsigned long) handle));
+
+        unsigned int baseIndex = this->superType != 0 ? this->superType->getFieldSize() : 0;
+        unsigned int infoIndex = fieldIndex - baseIndex;
+
         handle = this->newFuncHandle(typePool, fieldIndex, &this->info->funcInfos[infoIndex]);
         iter->second = handle;
     }
