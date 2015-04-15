@@ -252,6 +252,7 @@ struct Lexer {
     int toInt32(const Token &token, int &status) const;
     unsigned int toUint32(const Token &token, int &status) const;
     long toInt64(const Token &token, int &status) const;
+    unsigned long toUint64(const Token &token, int &status) const;
 
     /**
      * if converted number is out of range, status is 1.
@@ -564,6 +565,38 @@ long Lexer<LEXER_DEF, TOKEN_KIND>::toInt64(const Token &token, int &status) cons
     status = 0;
     return value;
 }
+
+template<typename LEXER_DEF, typename TOKEN_KIND>
+unsigned long Lexer<LEXER_DEF, TOKEN_KIND>::toUint64(const Token &token, int &status) const {
+    CHECK_TOK(token);
+
+    char str[token.size + 1];
+    for(unsigned int i = 0; i < token.size; i++) {
+        str[i] = this->buf[token.startPos + i];
+    }
+    str[token.size] = '\0';
+
+    // convert to int
+    char *end;
+    const long long value = strtoll(str, &end, 10);
+
+    // check error
+    if(end == str) {
+        fatal("cannot covert to int: %s\n", str);
+    }
+    if((value == LONG_LONG_MIN || value == LONG_LONG_MAX) && errno == ERANGE) {
+        status = 1;
+        return 0;
+    }
+    if(value > UINT64_MAX || value < 0) {
+        status = 1;
+        return 0;
+    }
+    status = 0;
+    return (unsigned long) value;
+}
+
+
 
 template<typename LEXER_DEF, typename TOKEN_KIND>
 double Lexer<LEXER_DEF, TOKEN_KIND>::toDouble(const Token &token, int &status) const {

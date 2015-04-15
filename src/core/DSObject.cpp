@@ -101,6 +101,33 @@ size_t Int_Object::hash() {
     return std::hash<int>()(this->value);
 }
 
+// #########################
+// ##     Long_Object     ##
+// #########################
+
+Long_Object::Long_Object(DSType *type, long value) :
+        DSObject(type), value(value) {
+}
+
+long Long_Object::getValue() {
+    return this->value;
+}
+
+std::string Long_Object::toString(RuntimeContext &ctx) {
+    if(*this->type == *ctx.pool.getUint64Type()) {
+        return std::to_string((unsigned long) this->value);
+    }
+    return std::to_string(this->value);
+}
+
+bool Long_Object::equals(const std::shared_ptr<DSObject> &obj) {
+    return this->value == TYPE_AS(Long_Object, obj)->value;
+}
+
+size_t Long_Object::hash() {
+    return std::hash<long>()(this->value);
+}
+
 // ##########################
 // ##     Float_Object     ##
 // ##########################

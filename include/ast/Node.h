@@ -124,8 +124,34 @@ public:
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
+};
 
+class LongValueNode : public Node {
+private:
+    long tempValue;
+    bool unsignedValue;
 
+    std::shared_ptr<DSObject> value;
+
+public:
+    LongValueNode(unsigned int lineNum, long value, bool unsignedValue);
+    static LongValueNode *newInt64(unsigned int lineNum, long value);
+    static LongValueNode *newUint64(unsigned int lineNum, unsigned long value);
+
+    /**
+     * before type check, return empty pointer.
+     */
+    const std::shared_ptr<DSObject> &getValue();
+
+    /**
+     * if true, treat as unsigned int 64.
+     */
+    bool isUnsignedValue();
+
+    void setType(DSType *type); // override
+    void dump(Writer &writer) const;  // override
+    void accept(NodeVisitor *visitor);    // override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class FloatValueNode : public Node {
@@ -1359,6 +1385,7 @@ struct NodeVisitor {
     virtual void visitDefault(Node *node) = 0;
 
     virtual void visitIntValueNode(IntValueNode *node);
+    virtual void visitLongValueNode(LongValueNode *node);
     virtual void visitFloatValueNode(FloatValueNode *node);
     virtual void visitStringValueNode(StringValueNode *node);
     virtual void visitStringExprNode(StringExprNode *node);

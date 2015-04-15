@@ -230,6 +230,7 @@ public:
     void visitDefault(Node *node); // override
 
     void visitIntValueNode(IntValueNode *node); // override
+    void visitLongValueNode(LongValueNode *node); // override
     void visitFloatValueNode(FloatValueNode *node); // override
     void visitStringValueNode(StringValueNode *node); // override
     void visitStringExprNode(StringExprNode *node); // override

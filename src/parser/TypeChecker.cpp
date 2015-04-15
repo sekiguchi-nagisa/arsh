@@ -402,6 +402,14 @@ void TypeChecker::visitIntValueNode(IntValueNode * node) {
     node->setType(type);
 }
 
+void TypeChecker::visitLongValueNode(LongValueNode *node) {
+    DSType *type = this->typePool->getInt64Type();
+    if(node->isUnsignedValue()) {
+        type = this->typePool->getUint64Type();
+    }
+    node->setType(type);
+}
+
 void TypeChecker::visitFloatValueNode(FloatValueNode * node) {
     DSType *type = this->typePool->getFloatType();
     node->setType(type);

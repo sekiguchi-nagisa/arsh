@@ -54,6 +54,8 @@
     OP(UINT16_LITERAL) \
     OP(INT32_LITERAL) \
     OP(UINT32_LITERAL) \
+    OP(INT64_LITERAL) \
+    OP(UINT64_LITERAL) \
     OP(FLOAT_LITERAL) \
     OP(STRING_LITERAL) \
     OP(OPEN_DQUOTE) \
@@ -982,6 +984,18 @@ INLINE std::unique_ptr<Node> Parser::parse_primaryExpression() {
         unsigned int value;
         CONVERT_TO_NUM(value, n, UINT32_LITERAL, token, this->lexer->toUint32);
         RET_NODE(IntValueNode::newUint32(n, value));
+    };
+    case INT64_LITERAL: {
+        Token token(this->matchAndGetToken(INT64_LITERAL));
+        long value;
+        CONVERT_TO_NUM(value, n, INT64_LITERAL, token, this->lexer->toInt64);
+        RET_NODE(LongValueNode::newInt64(n, value));
+    };
+    case UINT64_LITERAL: {
+        Token token(this->matchAndGetToken(UINT64_LITERAL));
+        unsigned long value;
+        CONVERT_TO_NUM(value, n, UINT64_LITERAL, token, this->lexer->toUint64);
+        RET_NODE(LongValueNode::newUint64(n, value));
     };
     case FLOAT_LITERAL: {
         Token token(this->matchAndGetToken(FLOAT_LITERAL));

@@ -136,6 +136,56 @@ EvalStatus IntValueNode::eval(RuntimeContext &ctx) {
     return EVAL_SUCCESS;
 }
 
+// ###########################
+// ##     LongValueNode     ##
+// ###########################
+
+LongValueNode::LongValueNode(unsigned int lineNum, long value, bool unsignedValue) :
+        Node(lineNum), tempValue(value), unsignedValue(unsignedValue), value() {
+}
+
+LongValueNode *LongValueNode::newInt64(unsigned int lineNum, long value) {
+    return new LongValueNode(lineNum, value, false);
+}
+
+LongValueNode *LongValueNode::newUint64(unsigned int lineNum, unsigned long value) {
+    return new LongValueNode(lineNum, (long) value, true);
+}
+
+const std::shared_ptr<DSObject> &LongValueNode::getValue() {
+    return this->value;
+}
+
+bool LongValueNode::isUnsignedValue() {
+    return this->unsignedValue;
+}
+
+void LongValueNode::setType(DSType *type) {
+    this->type = type;
+    this->value.reset(new Long_Object(this->type, this->tempValue));
+}
+
+void LongValueNode::dump(Writer &writer) const {
+    WRITE_PRIM(tempValue);
+    WRITE_PRIM(unsignedValue);
+    if (this->type == 0) {
+        writer.write(NAME(value), "(null)");
+    } else {
+        Long_Object *obj = TYPE_AS(Long_Object, this->value);
+        writer.write(NAME(value), std::to_string(obj->getValue()));
+    }
+}
+
+void LongValueNode::accept(NodeVisitor *visitor) {
+    visitor->visitLongValueNode(this);
+}
+
+EvalStatus LongValueNode::eval(RuntimeContext &ctx) {
+    ctx.push(this->value);
+    return EVAL_SUCCESS;
+}
+
+
 // ############################
 // ##     FloatValueNode     ##
 // ############################
@@ -2715,6 +2765,7 @@ NodeVisitor::~NodeVisitor() {
 }
 
 void NodeVisitor::visitIntValueNode(IntValueNode *node)                   { this->visitDefault(node); }
+void NodeVisitor::visitLongValueNode(LongValueNode *node)                 { this->visitDefault(node); }
 void NodeVisitor::visitFloatValueNode(FloatValueNode *node)               { this->visitDefault(node); }
 void NodeVisitor::visitStringValueNode(StringValueNode *node)             { this->visitDefault(node); }
 void NodeVisitor::visitStringExprNode(StringExprNode *node)               { this->visitDefault(node); }

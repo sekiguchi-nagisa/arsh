@@ -101,6 +101,18 @@ struct Int_Object : public DSObject {
     size_t hash();  // override
 };
 
+struct Long_Object : public DSObject {
+    long value;
+
+    Long_Object(DSType *type, long value);
+
+    long getValue();
+
+    std::string toString(RuntimeContext &ctx); // override
+    bool equals(const std::shared_ptr<DSObject> &obj);  // override
+    size_t hash();  // override
+};
+
 struct Float_Object : public DSObject {
     double value;
 

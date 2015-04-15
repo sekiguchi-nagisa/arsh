@@ -45,6 +45,10 @@ native_type_info_t *info_Int32Type();
 
 native_type_info_t *info_Uint32Type();
 
+native_type_info_t *info_Int64Type();
+
+native_type_info_t *info_Uint64Type();
+
 native_type_info_t *info_FloatType();
 
 native_type_info_t *info_BooleanType();

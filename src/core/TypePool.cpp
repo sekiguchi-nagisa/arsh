@@ -31,7 +31,8 @@ TypePool::TypePool(char **envp) :
         idCount(0), typeMap(16), typeNameTable(),
         anyType(), voidType(), valueType(),
         int8Type(), uint8Type(), int16Type(), uint16Type(),
-        int32Type(), uint32Type(), floatType(), boolType(), stringType(),
+        int32Type(), uint32Type(), int64Type(), uint64Type(),
+        floatType(), boolType(), stringType(),
         errorType(), taskType(), baseFuncType(),
         arithmeticErrorType(), outOfIndexErrorType(),
         keyNotFoundErrorType(), typeCastErrorType(),
@@ -54,6 +55,8 @@ TypePool::TypePool(char **envp) :
     this->uint16Type = this->initBuiltinType("Uint16", false, this->valueType, info_Uint16Type());
     this->int32Type = this->initBuiltinType("Int", false, this->valueType, info_IntType());
     this->uint32Type = this->initBuiltinType("Uint32", false, this->valueType, info_Uint32Type());
+    this->int64Type = this->initBuiltinType("Int64", false, this->valueType, info_Int64Type());
+    this->uint64Type = this->initBuiltinType("Uint64", false, this->valueType, info_Uint64Type());
     this->floatType = this->initBuiltinType("Float", false, this->valueType, info_FloatType());
     this->boolType = this->initBuiltinType("Boolean", false, this->valueType, info_BooleanType());
     this->stringType = this->initBuiltinType("String", false, this->valueType, info_StringType());
@@ -142,6 +145,14 @@ DSType *TypePool::getInt32Type() {
 
 DSType *TypePool::getUint32Type() {
     return this->uint32Type;
+}
+
+DSType *TypePool::getInt64Type() {
+    return this->int64Type;
+}
+
+DSType *TypePool::getUint64Type() {
+    return this->uint64Type;
 }
 
 DSType *TypePool::getFloatType() {

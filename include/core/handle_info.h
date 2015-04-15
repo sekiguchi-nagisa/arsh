@@ -31,6 +31,8 @@ namespace core {
     OP(Uint16) \
     OP(Int32) \
     OP(Uint32) \
+    OP(Int64) \
+    OP(Uint64) \
     OP(Float) \
     OP(Boolean)  \
     OP(String) \
