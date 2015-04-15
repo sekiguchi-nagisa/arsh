@@ -84,8 +84,7 @@ public:
 class IntValueNode : public Node {
 public:
     typedef enum {
-        INT8,
-        UINT8,
+        BYTE,
         INT16,
         UINT16,
         INT32,
@@ -106,8 +105,7 @@ private:
 
 public:
     IntValueNode(unsigned int lineNum, int value);
-    static IntValueNode *newInt8(unsigned int lineNum, char value);
-    static IntValueNode *newUint8(unsigned int lineNum, unsigned char value);
+    static IntValueNode *newByte(unsigned int lineNum, unsigned char value);
     static IntValueNode *newInt16(unsigned int lineNum, short value);
     static IntValueNode *newUint16(unsigned int lineNum, unsigned short value);
     static IntValueNode *newInt32(unsigned int lineNum, int value);

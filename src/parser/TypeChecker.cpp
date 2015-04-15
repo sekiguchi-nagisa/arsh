@@ -380,11 +380,8 @@ void TypeChecker::visitDefault(Node *node) {
 void TypeChecker::visitIntValueNode(IntValueNode * node) {
     DSType *type = this->typePool->getIntType();
     switch(node->getKind()) {
-    case IntValueNode::INT8:
-        type = this->typePool->getInt8Type();
-        break;
-    case IntValueNode::UINT8:
-        type = this->typePool->getUint8Type();
+    case IntValueNode::BYTE:
+        type = this->typePool->getByteType();
         break;
     case IntValueNode::INT16:
         type = this->typePool->getInt16Type();

@@ -33,9 +33,7 @@ native_type_info_t *info_ValueType();
 
 native_type_info_t *info_IntType();
 
-native_type_info_t *info_Int8Type();
-
-native_type_info_t *info_Uint8Type();
+native_type_info_t *info_ByteType();
 
 native_type_info_t *info_Int16Type();
 

@@ -50,8 +50,11 @@ private:
      */
     DSType *valueType;
 
-    DSType *int8Type;
-    DSType *uint8Type;
+    /**
+     * unsigned int 8
+     */
+    DSType *byteType;
+
     DSType *int16Type;
     DSType *uint16Type;
     DSType *int32Type;
@@ -121,8 +124,7 @@ public:
      */
     DSType *getIntType();
 
-    DSType *getInt8Type();
-    DSType *getUint8Type();
+    DSType *getByteType();
     DSType *getInt16Type();
     DSType *getUint16Type();
     DSType *getInt32Type();

@@ -52,8 +52,7 @@
     TOKEN(MINUS) \
     /* literal */\
     TOKEN(INT_LITERAL) /* equivalent to int32 */\
-    TOKEN(INT8_LITERAL) \
-    TOKEN(UINT8_LITERAL) \
+    TOKEN(BYTE_LITERAL) \
     TOKEN(INT16_LITERAL) \
     TOKEN(UINT16_LITERAL) \
     TOKEN(INT32_LITERAL) \

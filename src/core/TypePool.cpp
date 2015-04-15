@@ -30,7 +30,7 @@ namespace core {
 TypePool::TypePool(char **envp) :
         idCount(0), typeMap(16), typeNameTable(),
         anyType(), voidType(), valueType(),
-        int8Type(), uint8Type(), int16Type(), uint16Type(),
+        byteType(), int16Type(), uint16Type(),
         int32Type(), uint32Type(), int64Type(), uint64Type(),
         floatType(), boolType(), stringType(),
         errorType(), taskType(), baseFuncType(),
@@ -49,8 +49,7 @@ TypePool::TypePool(char **envp) :
      */
     this->valueType = this->initBuiltinType("%Value%", true, this->anyType, info_Dummy());
 
-    this->int8Type = this->initBuiltinType("Int8", false, this->valueType, info_Int8Type());
-    this->uint8Type = this->initBuiltinType("Uint8", false, this->valueType, info_Uint8Type());
+    this->byteType = this->initBuiltinType("Byte", false, this->valueType, info_ByteType());
     this->int16Type = this->initBuiltinType("Int16", false, this->valueType, info_Int16Type());
     this->uint16Type = this->initBuiltinType("Uint16", false, this->valueType, info_Uint16Type());
     this->int32Type = this->initBuiltinType("Int", false, this->valueType, info_IntType());
@@ -123,12 +122,8 @@ DSType *TypePool::getIntType() {
     return this->getInt32Type();
 }
 
-DSType *TypePool::getInt8Type() {
-    return this->int8Type;
-}
-
-DSType *TypePool::getUint8Type() {
-    return this->uint8Type;
+DSType *TypePool::getByteType() {
+    return this->byteType;
 }
 
 DSType *TypePool::getInt16Type() {

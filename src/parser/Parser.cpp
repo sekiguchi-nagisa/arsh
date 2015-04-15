@@ -48,8 +48,7 @@
 #define EACH_LA_primary(OP) \
     OP(NEW) \
     OP(INT_LITERAL) \
-    OP(INT8_LITERAL) \
-    OP(UINT8_LITERAL) \
+    OP(BYTE_LITERAL) \
     OP(INT16_LITERAL) \
     OP(UINT16_LITERAL) \
     OP(INT32_LITERAL) \
@@ -949,17 +948,11 @@ INLINE std::unique_ptr<Node> Parser::parse_primaryExpression() {
         CONVERT_TO_NUM(value, n, INT_LITERAL, token, this->lexer->toInt);
         RET_NODE(new IntValueNode(n, value));
     }
-    case INT8_LITERAL : {
-        Token token(this->matchAndGetToken(INT8_LITERAL));
-        char value;
-        CONVERT_TO_NUM(value, n, INT8_LITERAL, token, this->lexer->toInt8);
-        RET_NODE(IntValueNode::newInt8(n, value));
-    };
-    case UINT8_LITERAL : {
-        Token token(this->matchAndGetToken(UINT8_LITERAL));
+    case BYTE_LITERAL : {
+        Token token(this->matchAndGetToken(BYTE_LITERAL));
         unsigned char value;
-        CONVERT_TO_NUM(value, n, UINT8_LITERAL, token, this->lexer->toUint8);
-        RET_NODE(IntValueNode::newUint8(n, value));
+        CONVERT_TO_NUM(value, n, BYTE_LITERAL, token, this->lexer->toUint8);
+        RET_NODE(IntValueNode::newByte(n, value));
     };
     case INT16_LITERAL : {
         Token token(this->matchAndGetToken(INT16_LITERAL));
@@ -970,7 +963,7 @@ INLINE std::unique_ptr<Node> Parser::parse_primaryExpression() {
     case UINT16_LITERAL : {
         Token token(this->matchAndGetToken(UINT16_LITERAL));
         unsigned short value;
-        CONVERT_TO_NUM(value, n, UINT8_LITERAL, token, this->lexer->toUint16);
+        CONVERT_TO_NUM(value, n, UINT16_LITERAL, token, this->lexer->toUint16);
         RET_NODE(IntValueNode::newUint16(n, value));
     };
     case INT32_LITERAL : {

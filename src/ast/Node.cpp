@@ -80,12 +80,8 @@ IntValueNode::IntValueNode(unsigned int lineNum, int value) :
         IntValueNode(lineNum, INT32, value) {
 }
 
-IntValueNode *IntValueNode::newInt8(unsigned int lineNum, char value) {
-    return new IntValueNode(lineNum, INT8, (int) value);
-}
-
-IntValueNode *IntValueNode::newUint8(unsigned int lineNum, unsigned char value) {
-    return new IntValueNode(lineNum, UINT8, (int) value);
+IntValueNode *IntValueNode::newByte(unsigned int lineNum, unsigned char value) {
+    return new IntValueNode(lineNum, BYTE, (int) value);
 }
 
 IntValueNode *IntValueNode::newInt16(unsigned int lineNum, short value) {

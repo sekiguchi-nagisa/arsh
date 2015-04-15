@@ -25,8 +25,7 @@ namespace core {
     OP(Void) \
     OP(Any) \
     OP(Int) \
-    OP(Int8) \
-    OP(Uint8) \
+    OP(Byte) \
     OP(Int16) \
     OP(Uint16) \
     OP(Int32) \

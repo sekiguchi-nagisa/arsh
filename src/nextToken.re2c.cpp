@@ -147,11 +147,10 @@ TokenKind LexerDef::operator()(Lexer < LexerDef, TokenKind > *lexer, Token & tok
       <STMT,EXPR> "-"          { MODE(EXPR); RET(MINUS); }
 
       <STMT,EXPR> INT          { MODE(EXPR); RET(INT_LITERAL); }
-      <STMT,EXPR> INT "i8"     { MODE(EXPR); RET(INT8_LITERAL); }
+      <STMT,EXPR> INT "b"      { MODE(EXPR); RET(BYTE_LITERAL); }
       <STMT,EXPR> INT "i16"    { MODE(EXPR); RET(INT16_LITERAL); }
       <STMT,EXPR> INT "i32"    { MODE(EXPR); RET(INT32_LITERAL); }
       <STMT,EXPR> INT "i64"    { MODE(EXPR); RET(INT64_LITERAL); }
-      <STMT,EXPR> NUM "u8"     { MODE(EXPR); RET(UINT8_LITERAL); }
       <STMT,EXPR> NUM "u16"    { MODE(EXPR); RET(UINT16_LITERAL); }
       <STMT,EXPR> NUM "u32"    { MODE(EXPR); RET(UINT32_LITERAL); }
       <STMT,EXPR> NUM "u64"    { MODE(EXPR); RET(UINT64_LITERAL); }
