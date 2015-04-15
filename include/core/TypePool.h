@@ -35,7 +35,7 @@ private:
     type_id_t idCount;
 
     /**
-     * for class type
+     * contains tagged pointer if set alias.
      */
     std::unordered_map<std::string, DSType *> typeMap;
     std::vector<const std::string *> typeNameTable;
@@ -184,6 +184,11 @@ public:
     DSType *createAndGetTupleTypeIfUndefined(const std::vector<DSType *> &elementTypes);
 
     FunctionType *createAndGetFuncTypeIfUndefined(DSType *returnType, const std::vector<DSType *> &paramTypes);
+
+    /**
+     * set type name alias. if alias name has already defined, report error.
+     */
+    void setAlias(const std::string &alias, DSType *targetType);
 
     const std::string &getTypeName(const DSType &type);
 

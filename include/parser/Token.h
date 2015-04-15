@@ -44,6 +44,7 @@
     TOKEN(RETURN) \
     TOKEN(TRY) \
     TOKEN(THROW) \
+    TOKEN(TYPE_ALIAS) \
     TOKEN(VAR) \
     TOKEN(WHILE) \
     /* unary op */\

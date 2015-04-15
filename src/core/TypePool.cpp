@@ -92,7 +92,9 @@ TypePool::TypePool(char **envp) :
 
 TypePool::~TypePool() {
     for(const std::pair<std::string, DSType *> &pair : this->typeMap) {
-        delete pair.second;
+        if((long) pair.second > -1) {
+            delete pair.second;
+        }
     }
     this->typeMap.clear();
 
@@ -199,8 +201,16 @@ TypeTemplate *TypePool::getTupleTemplate() {
 }
 
 DSType *TypePool::getType(const std::string &typeName) {
+    static const unsigned long mask = ~(1L << 63);
     auto iter = this->typeMap.find(typeName);
-    return iter != this->typeMap.end() ? iter->second : 0;
+    if(iter != this->typeMap.end()) {
+        DSType *type = iter->second;
+        if((long) type < 0) {   // if tagged pointer, mask tag
+            return (DSType *) (mask & (unsigned long) type);
+        }
+        return type;
+    }
+    return 0;
 }
 
 DSType *TypePool::getTypeAndThrowIfUndefined(const std::string &typeName) {
@@ -269,6 +279,19 @@ FunctionType *TypePool::createAndGetFuncTypeIfUndefined(DSType *returnType,
     }
 
     return dynamic_cast<FunctionType *>(iter->second);
+}
+
+void TypePool::setAlias(const std::string &alias, DSType *targetType) {
+    static const unsigned long tag = 1L << 63;
+
+    /**
+     * use tagged pointer to prevent double free.
+     */
+    DSType *taggedPtr = (DSType *) (tag | (unsigned long) targetType);
+    auto pair = this->typeMap.insert(std::make_pair(alias, taggedPtr));
+    if(!pair.second) {
+        E_DefinedType(alias);
+    }
 }
 
 const std::string &TypePool::getTypeName(const DSType &type) {

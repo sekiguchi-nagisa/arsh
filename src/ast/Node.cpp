@@ -1528,6 +1528,40 @@ EvalStatus ImportEnvNode::eval(RuntimeContext &ctx) {
     return EVAL_SUCCESS;
 }
 
+// ###########################
+// ##     TypeAliasNode     ##
+// ###########################
+
+TypeAliasNode::TypeAliasNode(unsigned int lineNum, std::string &&alias, TypeToken *targetTypeToken) :
+        Node(lineNum), alias(alias), targetTypeToken(targetTypeToken) {
+}
+
+TypeAliasNode::~TypeAliasNode() {
+    delete this->targetTypeToken;
+    this->targetTypeToken = 0;
+}
+
+const std::string &TypeAliasNode::getAlias() {
+    return this->alias;
+}
+
+TypeToken *TypeAliasNode::getTargetTypeToken() {
+    return this->targetTypeToken;
+}
+
+void TypeAliasNode::dump(Writer &writer) const {
+    WRITE(alias);
+    WRITE_PTR(targetTypeToken);
+}
+
+void TypeAliasNode::accept(NodeVisitor *visitor) {
+    visitor->visitTypeAliasNode(this);
+}
+
+EvalStatus TypeAliasNode::eval(RuntimeContext &ctx) {
+    return EVAL_SUCCESS;    // do nothing.
+}
+
 // #####################
 // ##     ForNode     ##
 // #####################
@@ -2706,6 +2740,7 @@ void NodeVisitor::visitBreakNode(BreakNode *node)                         { this
 void NodeVisitor::visitContinueNode(ContinueNode *node)                   { this->visitDefault(node); }
 void NodeVisitor::visitExportEnvNode(ExportEnvNode *node)                 { this->visitDefault(node); }
 void NodeVisitor::visitImportEnvNode(ImportEnvNode *node)                 { this->visitDefault(node); }
+void NodeVisitor::visitTypeAliasNode(TypeAliasNode *node)                 { this->visitDefault(node); }
 void NodeVisitor::visitForNode(ForNode *node)                             { this->visitDefault(node); }
 void NodeVisitor::visitWhileNode(WhileNode *node)                         { this->visitDefault(node); }
 void NodeVisitor::visitDoWhileNode(DoWhileNode *node)                     { this->visitDefault(node); }

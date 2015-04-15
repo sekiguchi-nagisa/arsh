@@ -700,6 +700,17 @@ void TypeChecker::visitImportEnvNode(ImportEnvNode * node) {
     node->setType(this->typePool->getVoidType());
 }
 
+void TypeChecker::visitTypeAliasNode(TypeAliasNode *node) {
+    TypeToken *typeToken = node->getTargetTypeToken();
+    try {
+        this->typePool->setAlias(node->getAlias(), this->toType(typeToken));
+        node->setType(this->typePool->getVoidType());
+    } catch(TypeLookupError &e) {
+        unsigned int lineNum = typeToken->getLineNum();
+        throw TypeCheckError(lineNum, e);
+    }
+}
+
 void TypeChecker::visitForNode(ForNode * node) {
     this->symbolTable.enterScope();
     this->checkTypeAsStatement(node->getInitNode());

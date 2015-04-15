@@ -92,6 +92,7 @@
 #define EACH_LA_toplevelStatement(OP) \
     OP(CLASS) \
     OP(FUNCTION) \
+    OP(TYPE_ALIAS) \
     EACH_LA_statement(OP)
 
 #define EACH_LA_typeName(OP) \
@@ -227,6 +228,9 @@ INLINE std::unique_ptr<Node> Parser::parse_toplevelStatement() {
     case FUNCTION: {
         return this->parse_function();
     }
+    case TYPE_ALIAS: {
+        return this->parse_typeAlias();
+    };
     EACH_LA_statement(GEN_LA_CASE) {
         return this->parse_statement();
     }
@@ -280,6 +284,14 @@ INLINE std::unique_ptr<Node> Parser::parse_function() {
     node->setBlockNode(this->parse_block().release());
 
     RET_NODE(node.release());
+}
+
+std::unique_ptr<Node> Parser::parse_typeAlias() {
+    unsigned int n = LN();
+    this->matchToken(TYPE_ALIAS);
+    Token token = this->matchAndGetToken(IDENTIFIER);
+    auto typeToken = this->parse_typeName();
+    RET_NODE(new TypeAliasNode(n, this->lexer->toTokenText(token), typeToken.release()));
 }
 
 std::unique_ptr<TypeToken> Parser::parse_typeName() {

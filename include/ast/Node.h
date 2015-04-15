@@ -817,6 +817,23 @@ public:
     EvalStatus eval(RuntimeContext &ctx); // override
 };
 
+class TypeAliasNode : public Node {
+private:
+    std::string alias;
+    TypeToken *targetTypeToken;
+
+public:
+    TypeAliasNode(unsigned int lineNum, std::string &&alias, TypeToken *targetTypeToken);
+    ~TypeAliasNode();
+
+    const std::string &getAlias();
+    TypeToken *getTargetTypeToken();
+
+    void dump(Writer &writer) const;  // override
+    void accept(NodeVisitor *visitor);    // override
+    EvalStatus eval(RuntimeContext &ctx); // override
+};
+
 class ForNode : public Node {
 private:
     /**
@@ -1367,6 +1384,7 @@ struct NodeVisitor {
     virtual void visitContinueNode(ContinueNode *node);
     virtual void visitExportEnvNode(ExportEnvNode *node);
     virtual void visitImportEnvNode(ImportEnvNode *node);
+    virtual void visitTypeAliasNode(TypeAliasNode *node);
     virtual void visitForNode(ForNode *node);
     virtual void visitWhileNode(WhileNode *node);
     virtual void visitDoWhileNode(DoWhileNode *node);

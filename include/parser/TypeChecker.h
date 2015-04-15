@@ -255,6 +255,7 @@ public:
     void visitContinueNode(ContinueNode *node); // override
     void visitExportEnvNode(ExportEnvNode *node); // override
     void visitImportEnvNode(ImportEnvNode *node); // override
+    void visitTypeAliasNode(TypeAliasNode *node); // override
     void visitForNode(ForNode *node); // override
     void visitWhileNode(WhileNode *node); // override
     void visitDoWhileNode(DoWhileNode *node); // override

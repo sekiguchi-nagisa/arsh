@@ -87,6 +87,8 @@ private:
 
     std::unique_ptr<Node> parse_function();
 
+    std::unique_ptr<Node> parse_typeAlias();
+
     std::unique_ptr<TypeToken> parse_typeName();
 
     std::unique_ptr<Node> parse_statement();
