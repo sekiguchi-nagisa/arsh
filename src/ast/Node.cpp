@@ -624,12 +624,6 @@ TypeToken *CastNode::getTargetTypeToken() {
     return this->targetTypeToken;
 }
 
-TypeToken *CastNode::removeTargetTypeToken() {
-    TypeToken *t = this->targetTypeToken;
-    this->targetTypeToken = 0;
-    return t;
-}
-
 void CastNode::setOpKind(CastNode::CastOp opKind) {
     this->opKind = opKind;
 }
@@ -719,12 +713,6 @@ Node *InstanceOfNode::getTargetNode() {
 
 TypeToken *InstanceOfNode::getTargetTypeToken() {
     return this->targetTypeToken;
-}
-
-TypeToken *InstanceOfNode::removeTargetTypeToken() {
-    TypeToken *t = this->targetTypeToken;
-    this->targetTypeToken = 0;
-    return t;
 }
 
 void InstanceOfNode::setTargetType(DSType *targetType) {
@@ -929,12 +917,6 @@ NewNode::~NewNode() {
 
 TypeToken *NewNode::getTargetTypeToken() {
     return this->targetTypeToken;
-}
-
-TypeToken *NewNode::removeTargetTypeToken() {
-    TypeToken *t = this->targetTypeToken;
-    this->targetTypeToken = 0;
-    return t;
 }
 
 ArgsNode *NewNode::getArgsNode() {
@@ -1920,12 +1902,6 @@ TypeToken *CatchNode::getTypeToken() {
     return this->typeToken;
 }
 
-TypeToken *CatchNode::removeTypeToken() {
-    TypeToken *t = this->typeToken;
-    this->typeToken = 0;
-    return t;
-}
-
 void CatchNode::setExceptionType(DSType *type) {
     this->exceptionType = type;
 }
@@ -2298,12 +2274,6 @@ const std::vector<TypeToken *> &FunctionNode::getParamTypeTokens() {
     return this->paramTypeTokens;
 }
 
-TypeToken *FunctionNode::removeParamTypeToken(unsigned int index) {
-    TypeToken *t = this->paramTypeTokens[index];
-    this->paramTypeTokens[index] = 0;
-    return t;
-}
-
 void FunctionNode::setReturnTypeToken(TypeToken *typeToken) {
     this->returnTypeToken = typeToken;
 }
@@ -2313,12 +2283,6 @@ TypeToken *FunctionNode::getReturnTypeToken() {
         this->returnTypeToken = newVoidTypeToken();
     }
     return this->returnTypeToken;
-}
-
-TypeToken *FunctionNode::removeReturnTypeToken() {
-    TypeToken *t = this->getReturnTypeToken();
-    this->returnTypeToken = 0;
-    return t;
 }
 
 void FunctionNode::setReturnType(DSType *returnType) {

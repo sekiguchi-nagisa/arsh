@@ -191,8 +191,7 @@ private:
     // for apply node type checking
 
     /**
-     * convert TypeToken to DSType.
-     * after converting, delete typeToken.
+     * convert TypeToken to DSType..
      */
     DSType *toType(TypeToken *typeToken);
 

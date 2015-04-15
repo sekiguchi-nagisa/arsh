@@ -257,11 +257,9 @@ void TypeChecker::checkAndThrowIfInsideFinally(BlockEndNode * node) {
 DSType *TypeChecker::toType(TypeToken * typeToken) {
     try {
         DSType *type = typeToken->toType(this->typePool);
-        delete typeToken;
         return type;
     } catch(TypeLookupError &e) {
         unsigned int lineNum = typeToken->getLineNum();
-        delete typeToken;
         throw TypeCheckError(lineNum, e);
     }
 }
@@ -492,7 +490,7 @@ void TypeChecker::visitAccessNode(AccessNode * node) {
 
 void TypeChecker::visitCastNode(CastNode * node) {
     DSType *exprType = this->checkType(node->getExprNode());
-    DSType *targetType = this->toType(node->removeTargetTypeToken());
+    DSType *targetType = this->toType(node->getTargetTypeToken());
     node->setType(targetType);
 
     // resolve cast op
@@ -545,7 +543,7 @@ void TypeChecker::visitCastNode(CastNode * node) {
 
 void TypeChecker::visitInstanceOfNode(InstanceOfNode * node) {
     DSType *exprType = this->checkType(node->getTargetNode());
-    DSType *targetType = this->toType(node->removeTargetTypeToken());
+    DSType *targetType = this->toType(node->getTargetTypeToken());
     node->setTargetType(targetType);
 
 
@@ -594,7 +592,7 @@ void TypeChecker::visitApplyNode(ApplyNode * node) {
 }
 
 void TypeChecker::visitNewNode(NewNode * node) {
-    DSType *type = this->toType(node->removeTargetTypeToken());
+    DSType *type = this->toType(node->getTargetTypeToken());
     FunctionHandle *handle = type->getConstructorHandle(this->typePool);
     if(handle == 0) {
         E_UndefinedInit(node, this->typePool->getTypeName(*type));
@@ -773,7 +771,7 @@ void TypeChecker::visitThrowNode(ThrowNode * node) {
 }
 
 void TypeChecker::visitCatchNode(CatchNode * node) {
-    DSType *exceptionType = this->toType(node->removeTypeToken());
+    DSType *exceptionType = this->toType(node->getTypeToken());
     node->setExceptionType(exceptionType);
 
     /**
@@ -855,11 +853,11 @@ void TypeChecker::visitElementSelfAssignNode(ElementSelfAssignNode *node) {
 
 void TypeChecker::visitFunctionNode(FunctionNode * node) {   //TODO: named parameter
     // resolve return type, param type
-    DSType *returnType = this->toType(node->removeReturnTypeToken());
+    DSType *returnType = this->toType(node->getReturnTypeToken());
     unsigned int paramSize = node->getParamTypeTokens().size();
     std::vector<DSType *> paramTypes(paramSize);
     for(unsigned int i = 0; i < paramSize; i++) {
-        paramTypes[i] = this->toType(node->removeParamTypeToken(i));
+        paramTypes[i] = this->toType(node->getParamTypeTokens()[i]);
     }
 
     // register function handle

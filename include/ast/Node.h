@@ -390,11 +390,6 @@ public:
 
     TypeToken *getTargetTypeToken();
 
-    /**
-     * remove type token, and return removed it.
-     */
-    TypeToken *removeTargetTypeToken();
-
     void setOpKind(CastOp opKind);
 
     CastOp getOpKind();
@@ -430,11 +425,6 @@ public:
     Node *getTargetNode();
 
     TypeToken *getTargetTypeToken();
-
-    /**
-     * remove type token, and return removed it.
-     */
-    TypeToken *removeTargetTypeToken();
 
     void setTargetType(DSType *targetType);
 
@@ -517,11 +507,6 @@ public:
     ~NewNode();
 
     TypeToken *getTargetTypeToken();
-
-    /**
-     * remove type token and return removed type token.
-     */
-    TypeToken *removeTargetTypeToken();
 
     ArgsNode *getArgsNode();
 
@@ -1022,11 +1007,6 @@ public:
 
     TypeToken *getTypeToken();
 
-    /**
-     * get type token and set 0.
-     */
-    TypeToken *removeTypeToken();
-
     void setExceptionType(DSType *type);
 
     /**
@@ -1219,19 +1199,9 @@ public:
 
     const std::vector<TypeToken *> &getParamTypeTokens();
 
-    /**
-     * remove param type token. return removed it.
-     */
-    TypeToken *removeParamTypeToken(unsigned int index);
-
     void setReturnTypeToken(TypeToken *typeToken);
 
     TypeToken *getReturnTypeToken();
-
-    /**
-     * remove return type token. return removed it.
-     */
-    TypeToken *removeReturnTypeToken();
 
     void setReturnType(DSType *returnType);
 
