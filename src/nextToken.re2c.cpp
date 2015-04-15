@@ -151,9 +151,9 @@ TokenKind LexerDef::operator()(Lexer < LexerDef, TokenKind > *lexer, Token & tok
       <STMT,EXPR> INT "i16"    { MODE(EXPR); RET(INT16_LITERAL); }
       <STMT,EXPR> INT "i32"    { MODE(EXPR); RET(INT32_LITERAL); }
       <STMT,EXPR> INT "i64"    { MODE(EXPR); RET(INT64_LITERAL); }
-      <STMT,EXPR> NUM "u16"    { MODE(EXPR); RET(UINT16_LITERAL); }
-      <STMT,EXPR> NUM "u32"    { MODE(EXPR); RET(UINT32_LITERAL); }
-      <STMT,EXPR> NUM "u64"    { MODE(EXPR); RET(UINT64_LITERAL); }
+      <STMT,EXPR> INT "u16"    { MODE(EXPR); RET(UINT16_LITERAL); }
+      <STMT,EXPR> INT "u32"    { MODE(EXPR); RET(UINT32_LITERAL); }
+      <STMT,EXPR> INT "u64"    { MODE(EXPR); RET(UINT64_LITERAL); }
       <STMT,EXPR> FLOAT        { MODE(EXPR); RET(FLOAT_LITERAL); }
       <STMT,EXPR> STRING_LITERAL
                                { MODE(EXPR); RET(STRING_LITERAL); }
