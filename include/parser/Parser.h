@@ -61,14 +61,16 @@ private:
     /**
      * match curToken and expected token.
      * if failed, throw exception.
+     * if fetchNext is true, call NEXT_TOKEN()
      */
-    void matchToken(TokenKind expected);
+    void matchToken(TokenKind expected, bool fetchNext = true);
 
     /**
      * match curToken and expected token.
      * if success, return matched token, otherwise throw exception.
+     * if fetchNext is true, call NEXT_TOKEN()
      */
-    Token matchAndGetToken(TokenKind expected);
+    Token matchAndGetToken(TokenKind expected, bool fetchNext = true);
 
     /**
      * return curTokenKind and consume.
@@ -89,6 +91,11 @@ private:
 
     std::unique_ptr<Node> parse_typeAlias();
 
+    void restoreLexerState(unsigned int prevLineNum, const Token &prevToken);
+
+    /**
+     * not call NETX_TOKEN, before call it.
+     */
     std::unique_ptr<TypeToken> parse_typeName();
 
     std::unique_ptr<Node> parse_statement();

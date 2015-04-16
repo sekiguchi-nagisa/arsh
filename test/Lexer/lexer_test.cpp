@@ -722,19 +722,6 @@ TEST_F(LexerTest_Lv1, appliedName2) {
 #undef TEXT
 }
 
-// invalid applied name
-TEST_F(LexerTest_Lv1, invalid_appliedName) {
-#define TEXT "$_"
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(TEXT);
-        this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 1);
-        this->assertKind(INVALID, this->getTokens()[0].first);
-    });
-#undef TEXT
-}
-
 // special name
 TEST_F(LexerTest_Lv1, specialName) {
 #define TEXT "$@"

@@ -92,7 +92,7 @@ TokenKind LexerDef::operator()(Lexer < LexerDef, TokenKind > *lexer, Token & tok
       FLOAT = INT "." DIGITS FLOAT_SUFFIX?;
 
       SQUOTE_CHAR = [^\r\n'\\] | '\\' [btnfr'\\];
-      VAR_NAME = [a-zA-Z] [_0-9a-zA-Z]* | '_' [_0-9a-zA-Z]+;
+      VAR_NAME = [_a-zA-Z] [_0-9a-zA-Z]* ;
       SPECIAL_NAMES = [@0?];
 
       STRING_LITERAL = ['] SQUOTE_CHAR* ['];
@@ -217,10 +217,11 @@ TokenKind LexerDef::operator()(Lexer < LexerDef, TokenKind > *lexer, Token & tok
       <STMT,EXPR> LINE_END     { MODE(STMT); RET(LINE_END); }
       <STMT,EXPR> NEW_LINE     { MODE(STMT); COUNT_NEW_LINE(); FIND_NEW_LINE(); }
 
-      <STMT,EXPR,NAME,CMD> COMMENT
+      <STMT,EXPR,NAME,CMD,TYPE> COMMENT
                                { SKIP(); }
-      <STMT,EXPR,NAME> [ \t]+  { SKIP(); }
-      <STMT,EXPR,NAME> "\\" [\r\n]
+      <STMT,EXPR,NAME,TYPE> [ \t]+
+                               { SKIP(); }
+      <STMT,EXPR,NAME,TYPE> "\\" [\r\n]
                                { INC_LINE_NUM(); SKIP(); }
 
       <DSTRING> ["]            { POP_MODE(); RET(CLOSE_DQUOTE);}
@@ -251,9 +252,19 @@ TokenKind LexerDef::operator()(Lexer < LexerDef, TokenKind > *lexer, Token & tok
       <CMD> LINE_END           { POP_MODE(); MODE(STMT); RET(LINE_END); }
       <CMD> NEW_LINE           { POP_MODE(); MODE(STMT); COUNT_NEW_LINE(); RET(LINE_END); }
 
+      <TYPE> "Func"            { RET(FUNC); }
+      <TYPE> VAR_NAME          { RET(IDENTIFIER); }
+      <TYPE> NEW_LINE          { COUNT_NEW_LINE(); FIND_NEW_LINE(); }
+      <TYPE> "<"               { RET(TYPE_OPEN); }
+      <TYPE> ">"               { RET(TYPE_CLOSE); }
+      <TYPE> ","               { RET(TYPE_SEP); }
+      <TYPE> "["               { RET(PTYPE_OPEN); }
+      <TYPE> "]"               { RET(PTYPE_CLOSE); }
+      <TYPE> "."               { RET(TYPE_PATH); }
+      <TYPE> OTHER             { RET(TYPE_OTHER); }
 
 
-      <STMT,EXPR,NAME,DSTRING,CMD> "\000" { REACH_EOS();}
+      <STMT,EXPR,NAME,DSTRING,CMD,TYPE> "\000" { REACH_EOS();}
       <STMT,EXPR,NAME,DSTRING,CMD> OTHER  { RET(INVALID); }
     */
 
@@ -265,7 +276,7 @@ TokenKind LexerDef::operator()(Lexer < LexerDef, TokenKind > *lexer, Token & tok
 #include <stdio.h>
     fprintf(stderr, "nextToken(): < kind=%s, text=%s >\n",
             TO_NAME(kind), lexer->toTokenText(token).c_str());
-    fprintf(stderr, "   lexer mode: %s\n", lexerModeNames[YYGETCONDITION()]);
+    fprintf(stderr, "   lexer mode: %s\n", lexer->getLexerModeName(YYGETCONDITION()));
 #endif
     return kind;
 
@@ -277,7 +288,7 @@ TokenKind LexerDef::operator()(Lexer < LexerDef, TokenKind > *lexer, Token & tok
 #include <stdio.h>
     fprintf(stderr, "nextToken(): < kind=%s, text=%s >\n",
             TO_NAME(EOS), lexer->toTokenText(token).c_str());
-    fprintf(stderr, "   lexer mode: %s\n", lexerModeNames[YYGETCONDITION()]);
+    fprintf(stderr, "   lexer mode: %s\n", lexer->getLexerModeName(YYGETCONDITION()));
 #endif
     return EOS;
 }

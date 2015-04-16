@@ -97,7 +97,7 @@
     EACH_LA_statement(OP)
 
 #define EACH_LA_typeName(OP) \
-    OP(IDENTIFIER) \
+    OP(IDENTIFIER)
 
 #define EACH_LA_varDecl(OP) \
     OP(VAR) \
@@ -160,17 +160,17 @@ void Parser::parse(Lexer<LexerDef, TokenKind> &lexer, RootNode &rootNode) {
     this->parse_toplevel(rootNode);
 }
 
-INLINE void Parser::matchToken(TokenKind expected) {
+INLINE void Parser::matchToken(TokenKind expected, bool fetchNext) {
     if(this->curTokenKind != expected) {
         if(this->curTokenKind == INVALID) {
             throw InvalidTokenError(LN(), this->curToken);
         }
         throw TokenMismatchError(LN(), this->curTokenKind, this->curToken, expected);
     }
-    NEXT_TOKEN();
+    if(fetchNext) { NEXT_TOKEN(); }
 }
 
-INLINE Token Parser::matchAndGetToken(TokenKind expected) {
+INLINE Token Parser::matchAndGetToken(TokenKind expected, bool fetchNext) {
     if(this->curTokenKind != expected) {
         if(this->curTokenKind == INVALID) {
             throw InvalidTokenError(LN(), this->curToken);
@@ -178,7 +178,7 @@ INLINE Token Parser::matchAndGetToken(TokenKind expected) {
         throw TokenMismatchError(LN(), this->curTokenKind, this->curToken, expected);
     }
     Token token(this->curToken);
-    NEXT_TOKEN();
+    if(fetchNext) { NEXT_TOKEN(); }
     return token;
 }
 
@@ -252,8 +252,7 @@ INLINE std::unique_ptr<Node> Parser::parse_function() {
         std::unique_ptr<VarNode> nameNode(
                 new VarNode(LN(), this->lexer->toName(this->matchAndGetToken(APPLIED_NAME))));
         this->hasNoNewLine();
-        this->matchToken(COLON);
-        this->hasNoNewLine();
+        this->matchToken(COLON, false);
 
         std::unique_ptr<TypeToken> type(this->parse_typeName());
 
@@ -265,8 +264,7 @@ INLINE std::unique_ptr<Node> Parser::parse_function() {
             nameNode.reset(new VarNode(LN(),
                                        this->lexer->toName(this->matchAndGetToken(APPLIED_NAME))));
             this->hasNoNewLine();
-            this->matchToken(COLON);
-            this->hasNoNewLine();
+            this->matchToken(COLON, false);
 
             type = this->parse_typeName();
 
@@ -277,8 +275,7 @@ INLINE std::unique_ptr<Node> Parser::parse_function() {
     this->matchToken(RP);
 
     if(!HAS_NL() && this->curTokenKind == COLON) {
-        this->matchToken(COLON);
-        this->hasNoNewLine();
+        this->matchToken(COLON, false);
         node->setReturnTypeToken(this->parse_typeName().release());
     }
 
@@ -290,9 +287,17 @@ INLINE std::unique_ptr<Node> Parser::parse_function() {
 std::unique_ptr<Node> Parser::parse_typeAlias() {
     unsigned int n = LN();
     this->matchToken(TYPE_ALIAS);
-    Token token = this->matchAndGetToken(IDENTIFIER);
+    Token token = this->matchAndGetToken(IDENTIFIER, false);
     auto typeToken = this->parse_typeName();
     RET_NODE(new TypeAliasNode(n, this->lexer->toTokenText(token), typeToken.release()));
+}
+
+void Parser::restoreLexerState(unsigned int prevLineNum, const Token &prevToken) {
+    unsigned int pos = prevToken.startPos + prevToken.size;
+    this->lexer->setPos(pos);
+    this->lexer->modeStack.pop_back();
+    this->lexer->setLineNum(prevLineNum);
+    NEXT_TOKEN();
 }
 
 std::unique_ptr<TypeToken> Parser::parse_typeName() {
@@ -302,65 +307,65 @@ std::unique_ptr<TypeToken> Parser::parse_typeName() {
             DUMMY
     };
 
+    // change lexer state to TYPE
+    this->lexer->modeStack.push_back(yycTYPE);
+    NEXT_TOKEN();
+
     switch(this->curTokenKind) {
     EACH_LA_typeName(GEN_LA_CASE) {
-        std::unique_ptr<ClassTypeToken> typeToken(new ClassTypeToken(LN(),
-                                                                     this->lexer->toName(
-                                                                             this->matchAndGetToken(IDENTIFIER))));
-        if(!HAS_NL() && this->curTokenKind == LA) {
-            this->matchToken(LA);
-            this->hasNoNewLine();
+        unsigned int n = LN();
+        Token token = this->matchAndGetToken(IDENTIFIER);
+        std::unique_ptr<ClassTypeToken> typeToken(
+                new ClassTypeToken(n, this->lexer->toName(token)));
+        if(!HAS_NL() && this->curTokenKind == TYPE_OPEN) {
+            this->matchToken(TYPE_OPEN, false);
 
             std::unique_ptr<ReifiedTypeToken> reified(
                     new ReifiedTypeToken(typeToken.release()));
             reified->addElementTypeToken(this->parse_typeName().release());
 
-            while(!HAS_NL() && this->curTokenKind == COMMA) {
-                this->hasNoNewLine();
-                this->matchToken(COMMA);
-                this->hasNoNewLine();
-
+            while(this->curTokenKind == TYPE_SEP) {
+                this->matchToken(TYPE_SEP, false);
                 reified->addElementTypeToken(this->parse_typeName().release());
             }
-            this->hasNoNewLine();
-            this->matchToken(RA);
+            n = LN();
+            token = this->matchAndGetToken(TYPE_CLOSE);
+
+            this->restoreLexerState(n, token);
             return std::unique_ptr<TypeToken>(reified.release());
         }
+
+        this->restoreLexerState(n, token);
         return std::unique_ptr<TypeToken>(typeToken.release());
     }
     case FUNC: {
         this->matchToken(FUNC);
         this->hasNoNewLine();
-        this->matchToken(LA);
-        this->hasNoNewLine();
+        this->matchToken(TYPE_OPEN, false);
 
         // parse return type
         std::unique_ptr<FuncTypeToken> func(
                 new FuncTypeToken(this->parse_typeName().release()));
 
-        this->hasNoNewLine();
-        if(this->curTokenKind == COMMA) {   // ,[
-            this->matchToken(COMMA);
-            this->hasNoNewLine();
-
-            this->matchToken(LB);
-            this->hasNoNewLine();
+        if(this->curTokenKind == TYPE_SEP) {   // ,[
+            this->matchToken(TYPE_SEP);
+            this->matchToken(PTYPE_OPEN, false);
 
             // parse first arg type
             func->addParamTypeToken(this->parse_typeName().release());
 
             // rest arg type
-            while(!HAS_NL() && this->curTokenKind == COMMA) {
-                this->matchToken(COMMA);
-                this->hasNoNewLine();
+            while(this->curTokenKind == TYPE_SEP) {
+                this->matchToken(TYPE_SEP, false);
                 func->addParamTypeToken(this->parse_typeName().release());
             }
-            this->hasNoNewLine();
-            this->matchToken(RB);
+            this->matchToken(PTYPE_CLOSE);
         }
 
-        this->hasNoNewLine();
-        this->matchAndGetToken(RA);
+        unsigned int n = LN();
+        Token token = this->matchAndGetToken(TYPE_CLOSE);
+
+        this->restoreLexerState(n, token);
         return std::unique_ptr<TypeToken>(func.release());
     }
     default:
@@ -686,8 +691,7 @@ INLINE std::unique_ptr<CatchNode> Parser::parse_catchStatement() {
     Token token(this->matchAndGetToken(APPLIED_NAME));
     std::unique_ptr<TypeToken> typeToken;
     if(!HAS_NL() && this->curTokenKind == COLON) {
-        this->matchToken(COLON);
-        this->hasNoNewLine();
+        this->matchToken(COLON, false);
         typeToken = this->parse_typeName();
     }
     this->matchToken(RP);
@@ -839,15 +843,13 @@ std::unique_ptr<Node> Parser::parse_expression(std::unique_ptr<Node> &&leftNode,
         !HAS_NL() && p >= basePrecedence; p = PRECEDENCE()) {
         switch(this->curTokenKind) {
         case AS: {
-            this->matchToken(AS);
-            this->hasNoNewLine();
+            this->matchToken(AS, false);
             std::unique_ptr<TypeToken> type(this->parse_typeName());
             node.reset(new CastNode(node.release(), type.release()));
             break;
         }
         case IS: {
-            this->matchToken(IS);
-            this->hasNoNewLine();
+            this->matchToken(IS, false);
             std::unique_ptr<TypeToken> type(this->parse_typeName());
             node.reset(new InstanceOfNode(node.release(), type.release()));
             break;
@@ -936,8 +938,7 @@ INLINE std::unique_ptr<Node> Parser::parse_primaryExpression() {
     unsigned int n = LN();
     switch(this->curTokenKind) {
     case NEW: {
-        this->matchToken(NEW);
-        this->hasNoNewLine();
+        this->matchToken(NEW, false);
         std::unique_ptr<TypeToken> type(this->parse_typeName());
         std::unique_ptr<ArgsNode> args(this->parse_arguments());
         RET_NODE(new NewNode(n, type.release(), args.release()));

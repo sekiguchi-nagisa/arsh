@@ -131,7 +131,15 @@
     TOKEN(PIPE) \
     TOKEN(BACKGROUND) \
     TOKEN(OR_LIST) \
-    TOKEN(AND_LIST)
+    TOKEN(AND_LIST) \
+    /* type  */\
+    TOKEN(TYPE_OPEN) /* < */\
+    TOKEN(TYPE_CLOSE) /* > */\
+    TOKEN(TYPE_SEP) /* , */\
+    TOKEN(PTYPE_OPEN) /* [ */\
+    TOKEN(PTYPE_CLOSE) /* ] */\
+    TOKEN(TYPE_PATH) /* . */\
+    TOKEN(TYPE_OTHER)
 
 namespace ydsh {
 namespace parser {

@@ -37,7 +37,8 @@
     OP(yycEXPR) \
     OP(yycNAME) \
     OP(yycDSTRING) \
-    OP(yycCMD)
+    OP(yycCMD) \
+    OP(yycTYPE)
 
 namespace ydsh {
 namespace parser {
@@ -170,6 +171,13 @@ struct Lexer {
         return this->cursor - this->buf;
     }
 
+    void setPos(unsigned int pos) {
+        if(this->buf + pos > this->limit) {
+            fatal("too large position: %u\n", pos);
+        }
+        this->cursor = this->buf + pos;
+    }
+
     /**
      * used size of buf. must be this->getUsedSize() <= this->getBufSize().
      */
@@ -187,6 +195,10 @@ struct Lexer {
 
     unsigned int getLineNum() const {
         return this->lineNum;
+    }
+
+    const char *getLexerModeName(LexerMode mode) const {
+        return lexerModeNames[mode];
     }
 
     /**
