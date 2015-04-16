@@ -69,6 +69,11 @@ private:
     DSType *baseFuncType;
 
     /**
+     * for D-Bus object path
+     */
+    DSType *objectPathType;
+
+    /**
      * for exception
      */
     DSType *arithmeticErrorType;
@@ -146,6 +151,8 @@ public:
     DSType *getTaskType();
 
     DSType *getBaseFuncType();
+
+    DSType *getObjectPathType();
 
     DSType *getStringArrayType();
 

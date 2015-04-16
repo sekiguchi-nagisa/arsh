@@ -176,7 +176,7 @@ public:
 };
 
 class StringValueNode : public Node {
-private:
+protected:
     /**
      * after type checking, is broken.
      */
@@ -195,6 +195,8 @@ public:
 
     StringValueNode(unsigned int lineNum, std::string &&value);
 
+    virtual ~StringValueNode();
+
     /**
      * before type check, return empty pointer.
      */
@@ -202,8 +204,15 @@ public:
 
     void setType(DSType *type); // override
     void dump(Writer &writer) const;  // override
-    void accept(NodeVisitor *visitor);    // override
+    virtual void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
+};
+
+class ObjectPathNode : public StringValueNode {
+public:
+    ObjectPathNode(unsigned int lineNum, std::string &&value);
+
+    void accept(NodeVisitor *visitor); // override
 };
 
 class StringExprNode : public Node {
@@ -1386,6 +1395,7 @@ struct NodeVisitor {
     virtual void visitLongValueNode(LongValueNode *node);
     virtual void visitFloatValueNode(FloatValueNode *node);
     virtual void visitStringValueNode(StringValueNode *node);
+    virtual void visitObjectPathNode(ObjectPathNode *node);
     virtual void visitStringExprNode(StringExprNode *node);
     virtual void visitArrayNode(ArrayNode *node);
     virtual void visitMapNode(MapNode *node);

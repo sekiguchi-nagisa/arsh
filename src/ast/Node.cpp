@@ -230,6 +230,9 @@ StringValueNode::StringValueNode(unsigned int lineNum, std::string &&value) :
         Node(lineNum), tempValue(std::move(value)), value() {
 }
 
+StringValueNode::~StringValueNode() {
+}
+
 std::shared_ptr<DSObject> StringValueNode::getValue() {
     return this->value;
 }
@@ -259,6 +262,18 @@ void StringValueNode::accept(NodeVisitor *visitor) {
 EvalStatus StringValueNode::eval(RuntimeContext &ctx) {
     ctx.push(this->value);
     return EVAL_SUCCESS;
+}
+
+// ############################
+// ##     ObjectPathNode     ##
+// ############################
+
+ObjectPathNode::ObjectPathNode(unsigned int lineNum, std::string &&value) :
+        StringValueNode(lineNum, std::move(value)) {
+}
+
+void ObjectPathNode::accept(NodeVisitor *visitor) {
+    visitor->visitObjectPathNode(this);
 }
 
 // ############################
@@ -2764,6 +2779,7 @@ void NodeVisitor::visitIntValueNode(IntValueNode *node)                   { this
 void NodeVisitor::visitLongValueNode(LongValueNode *node)                 { this->visitDefault(node); }
 void NodeVisitor::visitFloatValueNode(FloatValueNode *node)               { this->visitDefault(node); }
 void NodeVisitor::visitStringValueNode(StringValueNode *node)             { this->visitDefault(node); }
+void NodeVisitor::visitObjectPathNode(ObjectPathNode *node)               { this->visitDefault(node); }
 void NodeVisitor::visitStringExprNode(StringExprNode *node)               { this->visitDefault(node); }
 void NodeVisitor::visitArrayNode(ArrayNode *node)                         { this->visitDefault(node); }
 void NodeVisitor::visitMapNode(MapNode *node)                             { this->visitDefault(node); }

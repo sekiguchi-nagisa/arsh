@@ -53,6 +53,8 @@ native_type_info_t *info_BooleanType();
 
 native_type_info_t *info_StringType();
 
+native_type_info_t *info_ObjectPathType();
+
 native_type_info_t *info_ErrorType();
 
 native_type_info_t *info_ArithmeticErrorType();

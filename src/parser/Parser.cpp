@@ -57,6 +57,7 @@
     OP(UINT64_LITERAL) \
     OP(FLOAT_LITERAL) \
     OP(STRING_LITERAL) \
+    OP(PATH_LITERAL) \
     OP(OPEN_DQUOTE) \
     OP(START_SUB_CMD) \
     OP(APPLIED_NAME) \
@@ -1000,6 +1001,16 @@ INLINE std::unique_ptr<Node> Parser::parse_primaryExpression() {
     case STRING_LITERAL: {
         return this->parse_stringLiteral();
     }
+    case PATH_LITERAL: {
+        Token token = this->matchAndGetToken(PATH_LITERAL);
+
+        /**
+         * skip prefix 'p'
+         */
+        token.startPos++;
+        token.size--;
+        RET_NODE(new ObjectPathNode(n, this->lexer->toString(token)));
+    };
     case OPEN_DQUOTE: {
         return this->parse_stringExpression();
     }

@@ -35,6 +35,7 @@ namespace core {
     OP(Float) \
     OP(Boolean)  \
     OP(String) \
+    OP(ObjectPath) \
     OP(Error) \
     OP(ArithmeticError) \
     OP(OutOfIndexError) \

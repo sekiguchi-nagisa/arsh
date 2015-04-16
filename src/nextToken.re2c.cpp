@@ -157,6 +157,8 @@ TokenKind LexerDef::operator()(Lexer < LexerDef, TokenKind > *lexer, Token & tok
       <STMT,EXPR> FLOAT        { MODE(EXPR); RET(FLOAT_LITERAL); }
       <STMT,EXPR> STRING_LITERAL
                                { MODE(EXPR); RET(STRING_LITERAL); }
+      <STMT,EXPR> "p" STRING_LITERAL
+                               { MODE(EXPR); RET(PATH_LITERAL); }
       <STMT,EXPR> ["]          { MODE(EXPR); PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
       <STMT,EXPR> BQUOTE_LITERAL
                                { MODE(EXPR); RET(BQUOTE_LITERAL); }

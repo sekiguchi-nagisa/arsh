@@ -233,6 +233,7 @@ public:
     void visitLongValueNode(LongValueNode *node); // override
     void visitFloatValueNode(FloatValueNode *node); // override
     void visitStringValueNode(StringValueNode *node); // override
+    void visitObjectPathNode(ObjectPathNode *node); // override
     void visitStringExprNode(StringExprNode *node); // override
     void visitArrayNode(ArrayNode *node); // override
     void visitMapNode(MapNode *node); // override

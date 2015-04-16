@@ -33,7 +33,7 @@ TypePool::TypePool(char **envp) :
         byteType(), int16Type(), uint16Type(),
         int32Type(), uint32Type(), int64Type(), uint64Type(),
         floatType(), boolType(), stringType(),
-        errorType(), taskType(), baseFuncType(),
+        errorType(), taskType(), baseFuncType(), objectPathType(),
         arithmeticErrorType(), outOfIndexErrorType(),
         keyNotFoundErrorType(), typeCastErrorType(),
         templateMap(8),
@@ -59,6 +59,7 @@ TypePool::TypePool(char **envp) :
     this->floatType = this->initBuiltinType("Float", false, this->valueType, info_FloatType());
     this->boolType = this->initBuiltinType("Boolean", false, this->valueType, info_BooleanType());
     this->stringType = this->initBuiltinType("String", false, this->valueType, info_StringType());
+    this->objectPathType = this->initBuiltinType("ObjectPath", false, this->stringType, info_ObjectPathType());
     this->errorType = this->initBuiltinType("Error", true, this->anyType, info_ErrorType());
     this->taskType = this->initBuiltinType("Task", false, this->anyType, info_Dummy());
 
@@ -172,6 +173,10 @@ DSType *TypePool::getTaskType() {
 
 DSType *TypePool::getBaseFuncType() {
     return this->baseFuncType;
+}
+
+DSType *TypePool::getObjectPathType() {
+    return this->objectPathType;
 }
 
 DSType *TypePool::getStringArrayType() {

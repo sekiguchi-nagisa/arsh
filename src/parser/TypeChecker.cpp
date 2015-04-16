@@ -417,6 +417,11 @@ void TypeChecker::visitStringValueNode(StringValueNode * node) {
     node->setType(type);
 }
 
+void TypeChecker::visitObjectPathNode(ObjectPathNode *node) {
+    DSType *type = this->typePool->getObjectPathType();
+    node->setType(type);
+}
+
 void TypeChecker::visitStringExprNode(StringExprNode * node) {
     for(Node *exprNode : node->getExprNodes()) {
         this->checkType(exprNode);
