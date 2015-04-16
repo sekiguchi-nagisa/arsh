@@ -548,5 +548,39 @@ std::shared_ptr<DSObject> BuiltinFuncObject::newFuncObject(native_func_t func_pt
     return std::make_shared<BuiltinFuncObject>(func_ptr);
 }
 
+// #########################
+// ##     DBus_Object     ##
+// #########################
+
+DBus_Object::DBus_Object(TypePool &pool) :
+        DSObject(pool.getDBusType()),
+        systemBus(std::make_shared<Bus_Object>(pool.getBusType())),
+        sessionBus(std::make_shared<Bus_Object>(pool.getBusType())) {
+}
+
+const std::shared_ptr<Bus_Object> &DBus_Object::getSystemBus() {
+    return this->systemBus;
+}
+
+const std::shared_ptr<Bus_Object> &DBus_Object::getSessionBus() {
+    return this->sessionBus;
+}
+
+// ########################
+// ##     Bus_Object     ##
+// ########################
+
+Bus_Object::Bus_Object(DSType *type) :
+        DSObject(type) {
+}
+
+// ###############################
+// ##     Connection_Object     ##
+// ###############################
+
+Connection_Object::Connection_Object(DSType *type, const std::shared_ptr<DSObject> &destination) :
+        DSObject(type), destination(destination) {
+}
+
 } // namespace core
 } // namespace ydsh

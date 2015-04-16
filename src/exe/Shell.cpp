@@ -133,6 +133,9 @@ void Shell::initBuiltinVar() {
     rootNode.addNode(new BindVarNode("0", this->ctx.scriptName));
     rootNode.addNode(new BindVarNode("@", this->ctx.scriptArgs));
 
+    // register DBus management object
+    rootNode.addNode(new BindVarNode("DBus",this->ctx.dbus));
+
     // ignore error check (must be always success)
     this->checker.checkTypeRootNode(rootNode);
     rootNode.eval(this->ctx);

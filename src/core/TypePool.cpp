@@ -34,6 +34,7 @@ TypePool::TypePool(char **envp) :
         int32Type(), uint32Type(), int64Type(), uint64Type(),
         floatType(), boolType(), stringType(),
         errorType(), taskType(), baseFuncType(), objectPathType(),
+        dbusType(), busType(), connectionType(),
         arithmeticErrorType(), outOfIndexErrorType(),
         keyNotFoundErrorType(), typeCastErrorType(),
         templateMap(8),
@@ -56,10 +57,16 @@ TypePool::TypePool(char **envp) :
     this->uint32Type = this->initBuiltinType("Uint32", false, this->valueType, info_Uint32Type());
     this->int64Type = this->initBuiltinType("Int64", false, this->valueType, info_Int64Type());
     this->uint64Type = this->initBuiltinType("Uint64", false, this->valueType, info_Uint64Type());
+
     this->floatType = this->initBuiltinType("Float", false, this->valueType, info_FloatType());
     this->boolType = this->initBuiltinType("Boolean", false, this->valueType, info_BooleanType());
     this->stringType = this->initBuiltinType("String", false, this->valueType, info_StringType());
+
     this->objectPathType = this->initBuiltinType("ObjectPath", false, this->stringType, info_ObjectPathType());
+    this->dbusType = this->initBuiltinType("DBus", false, this->anyType, info_DBusType());
+    this->busType = this->initBuiltinType("Bus", false, this->anyType, info_BusType());
+    this->connectionType = this->initBuiltinType("Connection", false, this->anyType, info_ConnectionType());
+
     this->errorType = this->initBuiltinType("Error", true, this->anyType, info_ErrorType());
     this->taskType = this->initBuiltinType("Task", false, this->anyType, info_Dummy());
 
@@ -177,6 +184,18 @@ DSType *TypePool::getBaseFuncType() {
 
 DSType *TypePool::getObjectPathType() {
     return this->objectPathType;
+}
+
+DSType *TypePool::getDBusType() {
+    return this->dbusType;
+}
+
+DSType *TypePool::getBusType() {
+    return this->busType;
+}
+
+DSType *TypePool::getConnectionType() {
+    return this->connectionType;
 }
 
 DSType *TypePool::getStringArrayType() {

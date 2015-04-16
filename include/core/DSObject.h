@@ -316,6 +316,35 @@ struct BuiltinFuncObject : public FuncObject {
     static std::shared_ptr<DSObject> newFuncObject(native_func_t func_ptr);
 };
 
+
+struct Bus_Object;
+
+// management object for some D-Bus related function (ex. Bus)
+struct DBus_Object : public DSObject {  //FIXME:
+    std::shared_ptr<Bus_Object> systemBus;
+    std::shared_ptr<Bus_Object> sessionBus;
+
+    DBus_Object(TypePool &pool);
+
+    const std::shared_ptr<Bus_Object> &getSystemBus();
+    const std::shared_ptr<Bus_Object> &getSessionBus();
+};
+
+// represent for SystemBus, SessionBus, or specific bus.
+struct Bus_Object : public DSObject {   //FIXME:
+    Bus_Object(DSType *type);
+};
+
+// represent for connection
+struct Connection_Object : public DSObject {    //FIXME:
+    /**
+     * actually, String_Object
+     */
+    std::shared_ptr<DSObject> destination;
+
+    Connection_Object(DSType *type, const std::shared_ptr<DSObject> &destination);
+};
+
 } // namespace core
 } // namespace ydsh
 

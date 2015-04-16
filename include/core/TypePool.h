@@ -74,6 +74,21 @@ private:
     DSType *objectPathType;
 
     /**
+     * for owner type of each bus object
+     */
+    DSType *dbusType;
+
+    /**
+     * for dbus bus.
+     */
+    DSType *busType;
+
+    /**
+     * for dbus connection.
+     */
+    DSType *connectionType;
+
+    /**
      * for exception
      */
     DSType *arithmeticErrorType;
@@ -153,6 +168,10 @@ public:
     DSType *getBaseFuncType();
 
     DSType *getObjectPathType();
+
+    DSType *getDBusType();
+    DSType *getBusType();
+    DSType *getConnectionType();
 
     DSType *getStringArrayType();
 

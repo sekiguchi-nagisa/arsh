@@ -36,6 +36,9 @@ namespace core {
     OP(Boolean)  \
     OP(String) \
     OP(ObjectPath) \
+    OP(DBus) \
+    OP(Bus) \
+    OP(Connection) \
     OP(Error) \
     OP(ArithmeticError) \
     OP(OutOfIndexError) \

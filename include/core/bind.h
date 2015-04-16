@@ -55,6 +55,12 @@ native_type_info_t *info_StringType();
 
 native_type_info_t *info_ObjectPathType();
 
+native_type_info_t *info_DBusType();
+
+native_type_info_t *info_BusType();
+
+native_type_info_t *info_ConnectionType();
+
 native_type_info_t *info_ErrorType();
 
 native_type_info_t *info_ArithmeticErrorType();

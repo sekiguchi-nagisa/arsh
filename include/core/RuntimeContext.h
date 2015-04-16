@@ -61,6 +61,11 @@ struct RuntimeContext {
     std::shared_ptr<Array_Object> scriptArgs;
 
     /**
+     * management object for dbus related function
+     */
+    std::shared_ptr<DBus_Object> dbus;
+
+    /**
      * contains global variables(or function)
      */
     std::shared_ptr<DSObject> *globalVarTable;

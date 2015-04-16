@@ -614,6 +614,33 @@ static inline bool cast_error_init(RuntimeContext &ctx) {
     return error_init(ctx);
 }
 
+// ##################
+// ##     DBus     ##
+// ##################
+
+//!bind: function systemBus($this : DBus) : Bus
+static inline bool dbus_systemBus(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(dbus_systemBus);
+    RET(TYPE_AS(DBus_Object, LOCAL(0))->getSystemBus());
+}
+
+//!bind: function sessionBus($this : DBus) : Bus
+static inline bool dbus_sessionBus(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(dbus_sessionBus);
+    RET(TYPE_AS(DBus_Object, LOCAL(0))->getSessionBus());
+}
+
+// #################
+// ##     Bus     ##
+// #################
+
+//!bind: function connection($this : Bus, $dest : String) : Connection
+static inline bool bus_connection(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(bus_connection);
+    RET(std::make_shared<Connection_Object>(ctx.pool.getConnectionType(), LOCAL(1)));
+}
+
+
 } //namespace core
 } //namespace ydsh
 
