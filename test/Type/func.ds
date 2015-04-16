@@ -1,0 +1,28 @@
+var a = 2.__ADD__ is 
+
+
+ Func<
+Int
+
+ ,
+  
+
+  [
+
+  Int
+   
+    ,     
+
+
+
+    Int
+   
+
+ ]
+
+
+  >
+
+echo $a
+assert($a)
+

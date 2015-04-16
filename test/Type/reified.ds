@@ -1,0 +1,35 @@
+var a = 12 is 
+Array<
+Int
+>
+
+echo $a
+assert(not $a)
+
+$a = {"23" : (23, $true, 23.4)} is 
+Map<
+String
+  
+ ,   
+
+ Tuple<
+
+Int,
+
+   
+    Boolean
+
+
+  ,  
+
+  Float
+
+
+  
+  >
+
+
+ > 
+
+echo $a
+assert($a)

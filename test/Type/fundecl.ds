@@ -1,0 +1,25 @@
+function f($a :
+        Tuple<
+            Int
+            ,
+            Int
+        >
+) :
+    Int
+
+    {
+    return $a._0 + $a._1;
+}
+
+assert($f is
+        Func<
+            Int,
+            [
+            Tuple<
+            Int
+            ,
+            Int
+            >
+            ]
+        >
+)
