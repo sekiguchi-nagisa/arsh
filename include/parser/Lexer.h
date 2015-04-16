@@ -18,6 +18,7 @@
 #define PARSER_LEXER_H_
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <vector>
 #include <string>
@@ -584,7 +585,7 @@ unsigned long Lexer<LEXER_DEF, TOKEN_KIND>::toUint64(const Token &token, int &st
     if(end == str) {
         fatal("cannot covert to int: %s\n", str);
     }
-    if((value == LONG_LONG_MIN || value == LONG_LONG_MAX) && errno == ERANGE) {
+    if((value == LLONG_MIN || value == LLONG_MAX) && errno == ERANGE) {
         status = 1;
         return 0;
     }
