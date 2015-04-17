@@ -599,6 +599,24 @@ public:
     EvalStatus eval(RuntimeContext &ctx); // override
 };
 
+/**
+ * represent for '(' expr ')'
+ */
+class GroupNode : public Node {
+private:
+    Node *exprNode;
+
+public:
+    GroupNode(unsigned int lineNum, Node *exprNode);
+    ~GroupNode();
+
+    Node *getExprNode();
+
+    void dump(Writer &writer) const;  // override
+    void accept(NodeVisitor *visitor);   // override
+    EvalStatus eval(RuntimeContext &ctx); // override
+};
+
 class CondOpNode : public Node {
 private:
     Node *leftNode;
@@ -1408,6 +1426,7 @@ struct NodeVisitor {
     virtual void visitArgsNode(ArgsNode *node);
     virtual void visitApplyNode(ApplyNode *node);
     virtual void visitNewNode(NewNode *node);
+    virtual void visitGroupNode(GroupNode *node);
     virtual void visitCondOpNode(CondOpNode *node);
     virtual void visitCmdNode(CmdNode *node);
     virtual void visitCmdArgNode(CmdArgNode *node);

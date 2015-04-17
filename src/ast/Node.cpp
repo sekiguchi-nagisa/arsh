@@ -1071,6 +1071,37 @@ EvalStatus BinaryOpNode::eval(RuntimeContext &ctx) {
     return this->applyNode->eval(ctx);
 }
 
+// #######################
+// ##     GroupNode     ##
+// #######################
+
+GroupNode::GroupNode(unsigned int lineNum, Node *exprNode) :
+        Node(lineNum), exprNode(exprNode) {
+}
+
+GroupNode::~GroupNode() {
+    delete this->exprNode;
+    this->exprNode = 0;
+}
+
+Node *GroupNode::getExprNode() {
+    return this->exprNode;
+}
+
+void GroupNode::dump(Writer &writer) const {
+    WRITE_PTR(exprNode);
+}
+
+void GroupNode::accept(NodeVisitor *visitor) {
+    visitor->visitGroupNode(this);
+}
+
+EvalStatus GroupNode::eval(RuntimeContext &ctx) {
+    return this->exprNode->eval(ctx);
+}
+
+
+
 // ########################
 // ##     CondOpNode     ##
 // ########################
@@ -2792,6 +2823,7 @@ void NodeVisitor::visitBinaryOpNode(BinaryOpNode *node)                   { this
 void NodeVisitor::visitArgsNode(ArgsNode *node)                           { this->visitDefault(node); }
 void NodeVisitor::visitApplyNode(ApplyNode *node)                         { this->visitDefault(node); }
 void NodeVisitor::visitNewNode(NewNode *node)                             { this->visitDefault(node); }
+void NodeVisitor::visitGroupNode(GroupNode *node)                         { this->visitDefault(node); }
 void NodeVisitor::visitCondOpNode(CondOpNode *node)                       { this->visitDefault(node); }
 void NodeVisitor::visitCmdNode(CmdNode *node)                             { this->visitDefault(node); }
 void NodeVisitor::visitCmdArgNode(CmdArgNode *node)                       { this->visitDefault(node); }

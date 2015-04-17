@@ -1030,10 +1030,12 @@ INLINE std::unique_ptr<Node> Parser::parse_primaryExpression() {
     case SPECIAL_NAME: {
         return this->parse_specialName();
     }
-    case LP: {  // expression or tuple
+    case LP: {  // group or tuple
         this->matchToken(LP);
         std::unique_ptr<Node> node(this->parse_expression());
+        bool isTuple = false;
         if(this->curTokenKind == COMMA) {
+            isTuple = true;
             this->matchToken(COMMA);
             std::unique_ptr<Node> rightNode(this->parse_expression());
             std::unique_ptr<TupleNode> tuple(
@@ -1046,6 +1048,9 @@ INLINE std::unique_ptr<Node> Parser::parse_primaryExpression() {
             node.reset(tuple.release());
         }
         this->matchToken(RP);
+        if(!isTuple) {
+            return std::unique_ptr<Node>(new GroupNode(n, node.release()));
+        }
         return node;
     }
     case LB: {
