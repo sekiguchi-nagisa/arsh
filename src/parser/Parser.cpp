@@ -305,6 +305,7 @@ std::unique_ptr<TypeToken> Parser::parse_typeName() {
     static TokenKind alters[] = {
             EACH_LA_typeName(GEN_LA_ALTER)
             FUNC,
+            TYPE_PATH,
             DUMMY
     };
 
@@ -369,6 +370,12 @@ std::unique_ptr<TypeToken> Parser::parse_typeName() {
         this->restoreLexerState(n, token);
         return std::unique_ptr<TypeToken>(func.release());
     }
+    case TYPE_PATH: {
+        unsigned  int n = LN();
+        Token token = this->matchAndGetToken(TYPE_PATH);
+        this->restoreLexerState(n, token);
+        return std::unique_ptr<TypeToken>(new DBusInterfaceToken(n , this->lexer->toTokenText(token)));
+    };
     default:
         E_ALTER(alters);
         return std::unique_ptr<TypeToken>(nullptr);

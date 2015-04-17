@@ -254,6 +254,8 @@ TokenKind LexerDef::operator()(Lexer < LexerDef, TokenKind > *lexer, Token & tok
       <CMD> LINE_END           { POP_MODE(); MODE(STMT); RET(LINE_END); }
       <CMD> NEW_LINE           { POP_MODE(); MODE(STMT); COUNT_NEW_LINE(); RET(LINE_END); }
 
+      <TYPE> VAR_NAME ("." VAR_NAME)+
+                               { RET(TYPE_PATH); }
       <TYPE> "Func"            { RET(FUNC); }
       <TYPE> VAR_NAME          { RET(IDENTIFIER); }
       <TYPE> NEW_LINE          { COUNT_NEW_LINE(); FIND_NEW_LINE(); }
@@ -262,7 +264,6 @@ TokenKind LexerDef::operator()(Lexer < LexerDef, TokenKind > *lexer, Token & tok
       <TYPE> ","               { RET(TYPE_SEP); }
       <TYPE> "["               { RET(PTYPE_OPEN); }
       <TYPE> "]"               { RET(PTYPE_CLOSE); }
-      <TYPE> "."               { RET(TYPE_PATH); }
       <TYPE> OTHER             { RET(TYPE_OTHER); }
 
 

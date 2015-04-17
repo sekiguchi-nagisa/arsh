@@ -22,18 +22,19 @@
 
 #define EACH_TL_ERROR(ERROR) \
         /* zero arg */\
-        ERROR(E_TupleElement  , "Tuple type require at least 2 type element.") \
+        ERROR(E_TupleElement   , "Tuple type require at least 2 type element.") \
         /* one arg */\
-        ERROR(E_NotUseGeneric , "not directly use generic base type: %s") \
-        ERROR(E_UndefinedType , "undefined type: %s") \
-        ERROR(E_NotGenericBase, "unsupported type template: %s") \
-        ERROR(E_NotPrimitive  , "not primitive type: %s") \
-        ERROR(E_NotClass      , "not class type: %s") \
-        ERROR(E_Nonheritable  , "nonheritable type: %s") \
-        ERROR(E_DefinedType   , "already defined type: %s") \
-        ERROR(E_InvalidElement, "invalid type element: %s") \
+        ERROR(E_NotUseGeneric  , "not directly use generic base type: %s") \
+        ERROR(E_UndefinedType  , "undefined type: %s") \
+        ERROR(E_NotGenericBase , "unsupported type template: %s") \
+        ERROR(E_NotPrimitive   , "not primitive type: %s") \
+        ERROR(E_NotClass       , "not class type: %s") \
+        ERROR(E_Nonheritable   , "nonheritable type: %s") \
+        ERROR(E_DefinedType    , "already defined type: %s") \
+        ERROR(E_InvalidElement , "invalid type element: %s") \
+        ERROR(E_NoDBusInterface, "not found dbus interface: %s") \
         /* three arg */\
-        ERROR(E_UnmatchElement, "not match type element, %s requires %s type element, but is %s")
+        ERROR(E_UnmatchElement , "not match type element, %s requires %s type element, but is %s")
 
 namespace ydsh {
 namespace core {
@@ -79,16 +80,17 @@ public:
 #define REPORT_TL_ERROR3(name, arg1, arg2, arg3) do { TypeLookupError::report(TypeLookupError::E_##name, arg1, arg2, arg3); } while(0)
 
 #define E_TupleElement()                   REPORT_TL_ERROR0(TupleElement)
-#define E_NotUseGeneric(arg1)              REPORT_TL_ERROR1(NotUseGeneric , arg1)
-#define E_UndefinedType(arg1)              REPORT_TL_ERROR1(UndefinedType , arg1)
-#define E_NotGenericBase(arg1)             REPORT_TL_ERROR1(NotGenericBase, arg1)
-#define E_NotPrimitive(arg1)               REPORT_TL_ERROR1(NotPrimitive  , arg1)
-#define E_NotClass(arg1)                   REPORT_TL_ERROR1(NotClass      , arg1)
-#define E_Nonheritable(arg1)               REPORT_TL_ERROR1(Nonheritable  , arg1)
-#define E_DefinedType(arg1)                REPORT_TL_ERROR1(DefinedType   , arg1)
-#define E_InvalidElement(arg1)             REPORT_TL_ERROR1(InvalidElement, arg1)
+#define E_NotUseGeneric(arg1)              REPORT_TL_ERROR1(NotUseGeneric  , arg1)
+#define E_UndefinedType(arg1)              REPORT_TL_ERROR1(UndefinedType  , arg1)
+#define E_NotGenericBase(arg1)             REPORT_TL_ERROR1(NotGenericBase , arg1)
+#define E_NotPrimitive(arg1)               REPORT_TL_ERROR1(NotPrimitive   , arg1)
+#define E_NotClass(arg1)                   REPORT_TL_ERROR1(NotClass       , arg1)
+#define E_Nonheritable(arg1)               REPORT_TL_ERROR1(Nonheritable   , arg1)
+#define E_DefinedType(arg1)                REPORT_TL_ERROR1(DefinedType    , arg1)
+#define E_InvalidElement(arg1)             REPORT_TL_ERROR1(InvalidElement , arg1)
+#define E_NoDBusInterface(arg1)            REPORT_TL_ERROR1(NoDBusInterface, arg1)
 
-#define E_UnmatchElement(arg1, arg2, arg3) REPORT_TL_ERROR3(UnmatchElement, arg1, arg2, arg3)
+#define E_UnmatchElement(arg1, arg2, arg3) REPORT_TL_ERROR3(UnmatchElement , arg1, arg2, arg3)
 
 
 #endif /* CORE_TYPELOOKUPERROR_H_ */

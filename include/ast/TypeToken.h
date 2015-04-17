@@ -104,6 +104,21 @@ public:
     DSType *toType(TypePool *typePool);   // override
 };
 
+class DBusInterfaceToken : public TypeToken {
+private:
+    /**
+     * must be valid interface name.
+     * ex. org.freedesktop.NetworkManager
+     */
+    std::string name;
+
+public:
+    DBusInterfaceToken(unsigned int lineNum, std::string &&name);
+
+    std::string toTokenText() const; // override
+    DSType *toType(TypePool *typePool);
+};
+
 TypeToken *newAnyTypeToken(unsigned int lineNum = 0);
 
 TypeToken *newVoidTypeToken(unsigned int lineNum = 0);

@@ -154,12 +154,29 @@ DSType *FuncTypeToken::toType(TypePool * typePool) {
     return typePool->createAndGetFuncTypeIfUndefined(returnType, paramTypes);
 }
 
+// ################################
+// ##     DBusInterfaceToken     ##
+// ################################
+
+DBusInterfaceToken::DBusInterfaceToken(unsigned int lineNum, std::string &&name) :
+        TypeToken(lineNum), name(name) {
+}
+
+std::string DBusInterfaceToken::toTokenText() const {
+    return this->name;
+}
+
+DSType *DBusInterfaceToken::toType(TypePool *typePool) {
+    return typePool->getDBusInterfaceType(this->name);
+}
+
+
 TypeToken *newAnyTypeToken(unsigned int lineNum) {
-    return new ClassTypeToken(lineNum, "Any");
+    return new ClassTypeToken(lineNum, std::string("Any"));
 }
 
 TypeToken *newVoidTypeToken(unsigned int lineNum) {
-    return new ClassTypeToken(lineNum, "Void");
+    return new ClassTypeToken(lineNum, std::string("Void"));
 }
 
 } // namespace ast

@@ -218,6 +218,11 @@ public:
     FunctionType *createAndGetFuncTypeIfUndefined(DSType *returnType, const std::vector<DSType *> &paramTypes);
 
     /**
+     * if not found type, search directory /etc/ydsh/dbus/
+     */
+    DSType *getDBusInterfaceType(const std::string &typeName);
+
+    /**
      * set type name alias. if alias name has already defined, report error.
      */
     void setAlias(const std::string &alias, DSType *targetType);

@@ -311,6 +311,15 @@ FunctionType *TypePool::createAndGetFuncTypeIfUndefined(DSType *returnType,
     return dynamic_cast<FunctionType *>(iter->second);
 }
 
+DSType *TypePool::getDBusInterfaceType(const std::string &typeName) {
+    auto iter = this->typeMap.find(typeName);
+    if(iter == this->typeMap.end()) {
+        // search dbus interface
+        E_NoDBusInterface(typeName);    //FIXME:
+    }
+    return iter->second;
+}
+
 void TypePool::setAlias(const std::string &alias, DSType *targetType) {
     static const unsigned long tag = 1L << 63;
 
