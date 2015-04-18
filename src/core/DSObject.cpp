@@ -306,10 +306,6 @@ void Map_Object::set(const std::shared_ptr<DSObject> &key, const std::shared_ptr
     this->valueMap[key] = value;
 }
 
-void Map_Object::add(const std::shared_ptr<DSObject> &value, const std::shared_ptr<DSObject> &key) {
-    this->valueMap[key] = value;
-}
-
 std::string Map_Object::toString(RuntimeContext &ctx) {
     std::string str("{");
     unsigned int count = 0;

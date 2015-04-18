@@ -866,7 +866,19 @@ void TypeChecker::visitAssignNode(AssignNode * node) {
 }
 
 void TypeChecker::visitElementSelfAssignNode(ElementSelfAssignNode *node) {
-    E_Unimplemented(node, "visitElementSelfAssignNode");
+    DSType *recvType = this->checkType(node->getRecvNode());
+    DSType *indexType = this->checkType(node->getIndexNode());
+
+    node->setRecvType(recvType);
+    node->setIndexType(indexType);
+
+    DSType *elementType = this->checkType(node->getGetterNode());
+    node->getBinaryNode()->getLeftNode()->setType(elementType);
+    this->checkType(node->getBinaryNode());
+    node->getSetterNode()->getArgsNode()->getNodes()[1]->setType(elementType);
+    this->checkTypeAsStatement(node->getSetterNode());
+
+    node->setType(this->typePool->getVoidType());
 }
 
 void TypeChecker::visitFunctionNode(FunctionNode * node) {   //TODO: named parameter

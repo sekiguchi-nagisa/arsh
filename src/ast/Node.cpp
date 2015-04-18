@@ -432,15 +432,16 @@ void MapNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus MapNode::eval(RuntimeContext &ctx) {
-    auto value = std::make_shared<Map_Object>(this->type);
+    auto map = std::make_shared<Map_Object>(this->type);
     unsigned int size = this->keyNodes.size();
     for (unsigned int i = 0; i < size; i++) {
         EVAL(ctx, this->keyNodes[i]);
+        auto key = ctx.pop();
         EVAL(ctx, this->valueNodes[i]);
-        // first is value, second is key
-        value->add(ctx.pop(), ctx.pop());
+        auto value = ctx.pop();
+        map->set(key, value);
     }
-    ctx.push(value);
+    ctx.push(map);
     return EVAL_SUCCESS;
 }
 
@@ -951,6 +952,10 @@ MethodCallNode::MethodCallNode(Node *recvNode, std::string &&methodName, ArgsNod
 MethodCallNode::~MethodCallNode() {
     delete this->recvNode;
     this->recvNode = 0;
+}
+
+void MethodCallNode::setRecvNode(Node *node) {
+    this->recvNode = node;
 }
 
 Node *MethodCallNode::getRecvNode() {
@@ -2381,29 +2386,80 @@ std::pair<Node *, Node *> AssignNode::split(AssignNode *node) {
 // ##     ElementSelfAssignNode     ##
 // ###################################
 
-ElementSelfAssignNode::ElementSelfAssignNode(MethodCallNode *leftNode, Node *rightNode) :
-        Node(leftNode->getLineNum()), leftNode(leftNode), rightNode(rightNode) {
+ElementSelfAssignNode::ElementSelfAssignNode(MethodCallNode *leftNode, BinaryOpNode *binaryNode) :
+        Node(leftNode->getLineNum()),
+        recvNode(), indexNode(),
+        getterNode(), setterNode(), binaryNode(binaryNode) {
+    // init recv, indexNode
+    this->recvNode = leftNode->getRecvNode();
+    leftNode->setRecvNode(nullptr);
+    this->indexNode = leftNode->getArgsNode()->getNodes()[0];
+    leftNode->getArgsNode()->setArg(0, nullptr);
+    delete leftNode;
+
+    // init getter node
+    this->getterNode = new MethodCallNode(new DummyNode(), std::string(OP_GET));
+    this->getterNode->getArgsNode()->addArg(new DummyNode());
+
+    // init setter node
+    this->setterNode = new MethodCallNode(new DummyNode(), std::string(OP_SET));
+    this->setterNode->getArgsNode()->addArg(new DummyNode());
+    this->setterNode->getArgsNode()->addArg(new DummyNode());
 }
 
 ElementSelfAssignNode::~ElementSelfAssignNode() {
-    delete this->leftNode;
-    this->leftNode = 0;
+    delete this->recvNode;
+    this->recvNode = 0;
 
-    delete this->rightNode;
-    this->rightNode = 0;
+    delete this->indexNode;
+    this->indexNode = 0;
+
+    delete this->getterNode;
+    this->getterNode = 0;
+
+    delete this->setterNode;
+    this->setterNode = 0;
+
+    delete this->binaryNode;
+    this->binaryNode = 0;
 }
 
-MethodCallNode *ElementSelfAssignNode::getLeftNode() {
-    return this->leftNode;
+Node *ElementSelfAssignNode::getRecvNode() {
+    return this->recvNode;
 }
 
-Node *ElementSelfAssignNode::getRightNode() {
-    return this->rightNode;
+Node *ElementSelfAssignNode::getIndexNode() {
+    return this->indexNode;
+}
+
+BinaryOpNode *ElementSelfAssignNode::getBinaryNode() {
+    return this->binaryNode;
+}
+
+MethodCallNode *ElementSelfAssignNode::getGetterNode() {
+    return this->getterNode;
+}
+
+MethodCallNode *ElementSelfAssignNode::getSetterNode() {
+    return this->setterNode;
+}
+
+void ElementSelfAssignNode::setRecvType(DSType *type) {
+    this->getterNode->getRecvNode()->setType(type);
+    this->setterNode->getRecvNode()->setType(type);
+}
+
+void ElementSelfAssignNode::setIndexType(DSType *type) {
+    this->getterNode->getArgsNode()->getNodes()[0]->setType(type);
+    this->setterNode->getArgsNode()->getNodes()[0]->setType(type);
 }
 
 void ElementSelfAssignNode::dump(Writer &writer) const {
-    WRITE_PTR(leftNode);
-    WRITE_PTR(rightNode);
+    WRITE_PTR(recvNode);
+    WRITE_PTR(indexNode);
+    WRITE_PTR(getterNode);
+    WRITE_PTR(setterNode);
+    WRITE_PTR(binaryNode);
 }
 
 void ElementSelfAssignNode::accept(NodeVisitor *visitor) {
@@ -2411,9 +2467,15 @@ void ElementSelfAssignNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus ElementSelfAssignNode::eval(RuntimeContext &ctx) {
-    return EVAL_SUCCESS;    //TODO:
-}
+    EVAL(ctx, this->recvNode);
+    EVAL(ctx, this->indexNode);
+    ctx.dup2();
 
+    EVAL(ctx, this->getterNode);
+    EVAL(ctx, this->binaryNode);
+
+    return this->setterNode->eval(ctx);
+}
 
 
 // ##########################
@@ -2820,12 +2882,12 @@ Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode) {
      * self assignment
      */
     // assign to element
+    BinaryOpNode *opNode = new BinaryOpNode(new DummyNode(), resolveAssignOp(op), rightNode);
     MethodCallNode *indexNode = dynamic_cast<MethodCallNode *>(leftNode);
     if (indexNode != 0 && indexNode->hasAttribute(MethodCallNode::INDEX)) {
-        return new ElementSelfAssignNode(indexNode, rightNode);
+        return new ElementSelfAssignNode(indexNode, opNode);
     } else {
         // assign to variable or field
-        BinaryOpNode *opNode = new BinaryOpNode(new DummyNode(), resolveAssignOp(op), rightNode);
         return new AssignNode(leftNode, opNode, true);
     }
 }

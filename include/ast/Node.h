@@ -534,6 +534,7 @@ public:
     MethodCallNode(Node *recvNode, std::string &&methodName, ArgsNode *argsNode);
     ~MethodCallNode();
 
+    void setRecvNode(Node *node);
     Node *getRecvNode();
     void setMethodName(std::string &&methodName);
     const std::string &getMethodName();
@@ -546,6 +547,8 @@ public:
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
+
+
 
     const static flag8_t INDEX = 1 << 0;
     const static flag8_t ICALL = 1 << 1;
@@ -1231,19 +1234,44 @@ public:
 
 class ElementSelfAssignNode : public Node {
 private:
-    /**
-     * must be ApplyNode
-     */
-    MethodCallNode *leftNode;
+    Node *recvNode;
+    Node *indexNode;
 
-    Node *rightNode;
+    /**
+     * receiver and argument are dummy node
+     */
+    MethodCallNode *getterNode;
+
+    /**
+     * receiver and argument are dummy node
+     */
+    MethodCallNode *setterNode;
+
+    /**
+     * left node is dummy node.
+     */
+    BinaryOpNode *binaryNode;
 
 public:
-    ElementSelfAssignNode(MethodCallNode *leftNode, Node *rightNode);
+    ElementSelfAssignNode(MethodCallNode *leftNode, BinaryOpNode *binaryNode);
     ~ElementSelfAssignNode();
 
-    MethodCallNode *getLeftNode();
-    Node *getRightNode();
+    Node *getRecvNode();
+    Node *getIndexNode();
+    BinaryOpNode *getBinaryNode();
+    MethodCallNode *getGetterNode();
+    MethodCallNode *getSetterNode();
+
+    /**
+     * add recv type of getterNode and setterNode
+     */
+    void setRecvType(DSType *type);
+
+    /**
+     * add index type of getterNode and setterNode.
+     */
+    void setIndexType(DSType *type);
+
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);   // override
     EvalStatus eval(RuntimeContext &ctx); // override

@@ -255,6 +255,15 @@ struct RuntimeContext {
         this->localStack[this->stackTopIndex] = this->localStack[this->stackTopIndex - 1];
     }
 
+    void dup2() {
+        this->stackTopIndex += 2;
+        if(this->stackTopIndex >= this->localStackSize) {
+            this->expandLocalStack(this->stackTopIndex);
+        }
+        this->localStack[this->stackTopIndex] = this->localStack[this->stackTopIndex - 2];
+        this->localStack[this->stackTopIndex - 1] = this->localStack[this->stackTopIndex - 3];
+    }
+
     void swap() {
         this->localStack[this->stackTopIndex].swap(this->localStack[this->stackTopIndex - 1]);
     }

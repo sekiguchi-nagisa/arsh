@@ -188,11 +188,6 @@ struct Map_Object : public DSObject {
 
     void set(const std::shared_ptr<DSObject> &key, const std::shared_ptr<DSObject> &value);
 
-    /**
-     * for Map_Object creation.
-     */
-    void add(const std::shared_ptr<DSObject> &value, const std::shared_ptr<DSObject> &key);
-
     std::string toString(RuntimeContext &ctx); // override
 };
 
