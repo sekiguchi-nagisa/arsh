@@ -31,6 +31,8 @@ namespace core {
 
 struct DSObject;
 struct FuncObject;
+class MethodRef;
+
 
 typedef unsigned short type_id_t;
 
@@ -84,27 +86,32 @@ public:
     /**
      * return null, if has no constructor
      */
-    virtual FunctionHandle *getConstructorHandle(TypePool *typePool) = 0;
+    virtual MethodHandle *getConstructorHandle(TypePool *typePool);
 
     /**
      * return null, if has no constructor
      */
-    virtual FuncObject *getConstructor();
+    virtual MethodRef *getConstructor();
 
     /**
      * get size of the all fields(include superType fieldSize).
      */
-    virtual unsigned int getFieldSize() = 0;
+    virtual unsigned int getFieldSize();
+
+    /**
+     * get size of the all methods(include superType method size)
+     */
+    virtual unsigned int getMethodSize();
 
     /**
      * return null, if has no field
      */
-    virtual FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName) = 0;
+    virtual FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName);
 
     /**
-     * equivalent to dynamic_cast<FunctionHandle*>(lookupFieldHandle())
+     * return null, if has no field.
      */
-    FunctionHandle *lookupMethodHandle(TypePool *typePool, const std::string &funcName);
+    virtual MethodHandle *lookupMethodHandle(TypePool *typePool, const std::string &methodName);
 
     /**
      * return null if handle not found.
@@ -122,67 +129,8 @@ public:
      */
     virtual bool isAssignableFrom(DSType *targetType);
 
-    /**
-     * set function object to fieldTable.
-     */
-    virtual void initFieldTable(std::shared_ptr<DSObject> *fieldTable);
-};
-
-class ClassType : public DSType {    //TODO: add field index map
-private:
-    /**
-     * handleTable base index
-     */
-    const int baseIndex;
-
-    /**
-     * may be null, if has no constructor.
-     */
-    FunctionHandle *constructorHandle;
-
-    std::unordered_map<std::string, FieldHandle *> handleMap;
-
-    std::vector<std::shared_ptr<DSObject *>> fieldTable;
-
-public:
-    ClassType(type_id_t id, bool extendable, DSType *superType);
-
-    ~ClassType();
-
-    FunctionHandle *getConstructorHandle(TypePool *typePool);    // override
-    FuncObject *getConstructor();   // override
-    unsigned int getFieldSize();    // override
-    FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName);    // override
-    FieldHandle *findHandle(const std::string &fieldName);  // override
-
-    /**
-     * return false, found duplicated field.
-     */
-    bool addNewFieldHandle(const std::string &fieldName, bool readOnly, DSType *fieldType);
-
-    /**
-     * return created function handle.
-     * return null, found duplicated field.
-     */
-    FunctionHandle *addNewFunctionHandle(const std::string &funcName, DSType *returnType,
-                                         const std::vector<DSType *> &paramTypes);
-
-    /**
-     * return created constructor handle
-     */
-    FunctionHandle *setNewConstructorHandle(const std::vector<DSType *> &paramTypes);
-
-    /**
-     * add function entity to ClassType. the order of calling this method must be
-     *  equivalent to addNewFieldHandle or addNewFunctionHandle.
-     *  func is null if reserve field
-     */
-    void addFunction(FuncObject *func);
-
-    /**
-     * set constructor entity to ClassType.
-     */
-    void setConstructor(FuncObject *func);
+    virtual MethodRef *getMethodRef(unsigned int methodIndex);
+    virtual void copyAllMethodRef(std::vector<std::shared_ptr<MethodRef>> &methodTable);
 };
 
 class FunctionType : public DSType {
@@ -195,7 +143,8 @@ private:
     std::vector<DSType *> paramTypes;
 
 public:
-    FunctionType(type_id_t id, DSType *superType, DSType *returnType, const std::vector<DSType *> &paramTypes);
+    FunctionType(type_id_t id, DSType *superType,
+                 DSType *returnType, const std::vector<DSType *> &paramTypes);
 
     ~FunctionType();
 
@@ -207,26 +156,9 @@ public:
     const std::vector<DSType *> &getParamTypes();
 
     /**
-     * may be null, if has no parameter
-     */
-    DSType *getFirstParamType();
-
-    /**
-     * equivalent to this->getFirstParamType()->isAssignableFrom(targetType)
-     */
-    bool treatAsMethod(DSType *targetType);
-
-    /**
-     * return always null
-     */
-    FunctionHandle *getConstructorHandle(TypePool *typePool);    // override
-
-    unsigned int getFieldSize();    // override
-
-    /**
      * lookup from super type
      */
-    FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName);    // override
+    MethodHandle *lookupMethodHandle(TypePool *typePool, const std::string &methodName);    // override
 
     FieldHandle *findHandle(const std::string &fieldName);  // override
 };
@@ -261,12 +193,6 @@ struct NativeFuncInfo {
      * support up to 8 arguments.
      */
     unsigned char defaultValueFlag;
-
-    /**
-     * decode native_func_info and create new FunctionHandle.
-     */
-    FunctionHandle *toFuncHandle(TypePool *typePool, int fieldIndex,
-                                 DSType *elementType0 = 0, DSType *elementType1 = 0) const;
 };
 
 struct native_type_info_t {

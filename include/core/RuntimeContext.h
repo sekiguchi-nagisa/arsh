@@ -291,31 +291,63 @@ struct RuntimeContext {
      */
     void getField(unsigned int index) {
         this->localStack[this->stackTopIndex] =
-                this->localStack[this->stackTopIndex]->fieldTable[index];
+                this->localStack[this->stackTopIndex]->getFieldTable()[index];
     }
 
     /**
      * dup stack top value and get field from it.
      */
     void dupAndGetField(unsigned int index) {
-        this->push(this->peek()->fieldTable[index]);
+        this->push(this->peek()->getFieldTable()[index]);
     }
 
     /**
      * stack state in function apply    stack grow ===>
      *
-     * +-----------+---------+------------------+   +--------+
-     * | stack top | funcObj | param1(receiver) | ~ | paramN |
-     * +-----------+---------+------------------+   +--------+
-     *                       |    new offset    |   |        |
+     * +-----------+---------+--------+   +--------+
+     * | stack top | funcObj | param1 | ~ | paramN |
+     * +-----------+---------+--------+   +--------+
+     *                       | offset |   |        |
      */
-    EvalStatus apply(bool returnTypeIsVoid, unsigned int paramSize) {
+    EvalStatus applyFuncObject(bool returnTypeIsVoid, unsigned int paramSize) {
         unsigned int savedStackTopIndex = this->stackTopIndex - paramSize - 1;
 
         // call function
         this->saveAndSetOffset(savedStackTopIndex + 2);
         bool status = TYPE_AS(FuncObject,
                               this->localStack[savedStackTopIndex + 1])->invoke(*this);
+
+        // restore stack state
+        this->restoreOffset();
+        for(unsigned int i = this->stackTopIndex; i > savedStackTopIndex; i--) {
+            this->pop();
+        }
+
+        if(status) {
+            if(!returnTypeIsVoid) {
+                this->getReturnObject(); // push return value
+            }
+            return EVAL_SUCCESS;
+        } else {
+            return EVAL_THROW;
+        }
+    }
+
+    /**
+     * stack state in method call    stack grow ===>
+     *
+     * +-----------+------------------+   +--------+
+     * | stack top | param1(receiver) | ~ | paramN |
+     * +-----------+------------------+   +--------+
+     *             | offset           |   |        |
+     */
+    EvalStatus callMethod(bool returnTypeIsVoid, unsigned int methodIndex, unsigned int paramSize) {
+        unsigned int savedStackTopIndex = this->stackTopIndex - paramSize;
+
+        // call method
+        this->saveAndSetOffset(savedStackTopIndex + 1);
+        bool status = this->localStack[savedStackTopIndex + 1]->
+                type->getMethodRef(methodIndex)->invoke(*this);
 
         // restore stack state
         this->restoreOffset();
@@ -354,7 +386,7 @@ struct RuntimeContext {
      * +-----------+------------------+   +--------+
      *             |    new offset    |
      */
-    EvalStatus applyConstructor(unsigned int paramSize) {
+    EvalStatus callConstructor(unsigned int paramSize) {
         unsigned int savedStackTopIndex = this->stackTopIndex - paramSize;
 
         // call constructor
@@ -384,9 +416,7 @@ struct RuntimeContext {
                     lookupMethodHandle(&this->pool, std::string(OP_STR));
             this->fieldIndexOf_STR = handle->getFieldIndex();
         }
-        this->dupAndGetField(this->fieldIndexOf_STR);
-        this->swap();
-        return this->apply(false, 1);
+        return this->callMethod(false, this->fieldIndexOf_STR, 1);
     }
 
     /**
@@ -398,9 +428,7 @@ struct RuntimeContext {
                     lookupMethodHandle(&this->pool, std::string(OP_INTERP));
             this->fieldIndexOf_INTERP = handle->getFieldIndex();
         }
-        this->dupAndGetField(this->fieldIndexOf_INTERP);
-        this->swap();
-        return this->apply(false, 1);
+        return this->callMethod(false, this->fieldIndexOf_INTERP, 1);
     }
 
     /**
@@ -412,9 +440,7 @@ struct RuntimeContext {
                     lookupMethodHandle(&this->pool, std::string(OP_CMD_ARG));
             this->fieldIndexOf_CMD_ARG = handle->getFieldIndex();
         }
-        this->dupAndGetField(this->fieldIndexOf_CMD_ARG);
-        this->swap();
-        return this->apply(false, 1);
+        return this->callMethod(false, this->fieldIndexOf_CMD_ARG, 1);
     }
 
     /**
@@ -430,9 +456,7 @@ struct RuntimeContext {
                 this->fieldIndexOf_bt = handle->getFieldIndex();
             }
             this->getThrownObject();
-            this->dupAndGetField(this->fieldIndexOf_bt);
-            this->swap();
-            this->apply(false, 1);
+            this->callMethod(false, this->fieldIndexOf_bt, 1);
         } else {
             std::cerr << this->thrownObject->toString(*this) << std::endl;
         }

@@ -32,7 +32,7 @@ class DSType;
 
 class FunctionType;
 
-struct native_func_info_t;
+struct NativeFuncInfo;
 
 /**
  * represent for class field or variable. field type may be function type.
@@ -98,8 +98,7 @@ public:
 };
 
 /**
- * represent for method or function. used from DSType or SymbolTable.
- * function handle belongs to DSType is always treated as method.
+ * represent for function. used from DSType or SymbolTable.
  * function handle belongs to global scope is always treated as function.
  */
 class FunctionHandle : public FieldHandle {  //FIXME:
@@ -124,7 +123,7 @@ public:
 
     FunctionHandle(unsigned int paramSize, int fieldIndex);
 
-    virtual ~FunctionHandle();
+    ~FunctionHandle();
 
     DSType *getFieldType(TypePool *typePool);   // override
 
@@ -150,7 +149,46 @@ public:
     bool hasDefaultValue(unsigned int paramIndex);
 };
 
-}
-}
+class MethodHandle : public FieldHandle {
+private:
+    DSType *returnType;
+
+    DSType *recvType;
+
+    /**
+     * not contains receiver type
+     */
+    std::vector<DSType *> paramTypes;
+
+    /**
+     * may be null, if has no overloaded method.
+     */
+    MethodHandle *next;
+
+public:
+    MethodHandle(int fieldIndex);
+    ~MethodHandle();
+
+    DSType *getReturnType();
+    DSType *getRecvType();
+    const std::vector<DSType *> &getParamTypes();
+
+    /**
+     * initialize internal types.
+     */
+    void init(TypePool *typePool, NativeFuncInfo *info,
+              DSType *elementType0 = 0, DSType *elementType1 = 0);
+
+    /**
+     * return always true, after call init().
+     */
+    bool initalized();
+
+    void setNext(MethodHandle *handle);
+    MethodHandle *getNext();
+};
+
+} // namespace core
+} // namespace ydsh
 
 #endif /* CORE_FIELDHANDLE_H_ */

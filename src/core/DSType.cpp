@@ -64,13 +64,28 @@ DSType *DSType::getSuperType() const {
     return this->superType;
 }
 
-FuncObject *DSType::getConstructor() {
+MethodHandle *DSType::getConstructorHandle(TypePool *typePool) {
     return 0;
 }
 
-FunctionHandle *DSType::lookupMethodHandle(TypePool *typePool, const std::string &funcName) {
-    FieldHandle *handle = this->lookupFieldHandle(typePool, funcName);
-    return handle != 0 ? dynamic_cast<FunctionHandle *>(handle) : 0;
+MethodRef *DSType::getConstructor() {
+    return 0;
+}
+
+unsigned int DSType::getFieldSize() {
+    return this->superType != 0 ? this->superType->getFieldSize() : 0;
+}
+
+unsigned int DSType::getMethodSize() {
+    return this->superType != 0 ? this->superType->getMethodSize() : 0;
+}
+
+FieldHandle *DSType::lookupFieldHandle(TypePool *typePool, const std::string &fieldName) {
+    return 0;
+}
+
+MethodHandle *DSType::lookupMethodHandle(TypePool *typePool, const std::string &methodName) {
+    return 0;
 }
 
 bool DSType::operator==(const DSType &type) {
@@ -89,105 +104,19 @@ bool DSType::isAssignableFrom(DSType *targetType) {
     return superType != 0 && this->isAssignableFrom(superType);
 }
 
-void DSType::initFieldTable(std::shared_ptr<DSObject> *fieldTable) {
-    if(this->superType != 0) {
-        this->superType->initFieldTable(fieldTable);
-    }
+MethodRef *DSType::getMethodRef(unsigned int methodIndex) {
+    return this->superType != 0 ? this->superType->getMethodRef(methodIndex) : 0;
 }
 
-// #######################
-// ##     ClassType     ##
-// #######################
-
-ClassType::ClassType(type_id_t id, bool extendable, DSType *superType) :
-        DSType(id, extendable, superType, false),
-        baseIndex(superType != 0 ? superType->getFieldSize() : 0),
-        constructorHandle(0),
-        handleMap(), fieldTable() {
+void DSType::copyAllMethodRef(std::vector<std::shared_ptr<MethodRef>> &methodTable) {
 }
-
-ClassType::~ClassType() {
-    delete this->constructorHandle;
-    this->constructorHandle = 0;
-
-    for(std::pair<std::string, FieldHandle *> pair : this->handleMap) {
-        delete pair.second;
-    }
-    this->handleMap.clear();
-}
-
-FunctionHandle *ClassType::getConstructorHandle(TypePool *typePool) {
-    return this->constructorHandle;
-}
-
-FuncObject *ClassType::getConstructor() {
-    return 0;   //FIXME:
-}
-
-unsigned int ClassType::getFieldSize() {
-    return this->handleMap.size() + this->baseIndex;
-}
-
-FieldHandle *ClassType::lookupFieldHandle(TypePool *typePool, const std::string &fieldName) {
-    auto iter = this->handleMap.find(fieldName);
-    if(iter != this->handleMap.end()) {
-        return iter->second;
-    }
-    return this->superType != 0 ? this->superType->lookupFieldHandle(typePool, fieldName) : 0;
-}
-
-FieldHandle *ClassType::findHandle(const std::string &fieldName) {
-    auto iter = this->handleMap.find(fieldName);
-    if(iter != this->handleMap.end()) {
-        return iter->second;
-    }
-    return this->superType != 0 ? superType->findHandle(fieldName) : 0;
-}
-
-bool ClassType::addNewFieldHandle(const std::string &fieldName, bool readOnly, DSType *fieldType) {
-    if(this->findHandle(fieldName) != 0) {
-        return false;
-    }
-    FieldHandle *handle = new FieldHandle(fieldType, this->getFieldSize(), readOnly);
-    this->handleMap[fieldName] = handle;
-    return true;
-}
-
-FunctionHandle *ClassType::addNewFunctionHandle(const std::string &funcName,
-                                                DSType *returnType,
-                                                const std::vector<DSType *> &paramTypes) {   //TODO: method override
-    if(this->findHandle(funcName) != 0) {
-        return 0;
-    }
-    FunctionHandle *handle = new FunctionHandle(returnType, paramTypes, this->getFieldSize());
-    this->handleMap[funcName] = handle;
-    return handle;
-}
-
-FunctionHandle *ClassType::setNewConstructorHandle(const std::vector<DSType *> &paramTypes) {
-    if(this->constructorHandle != 0) {
-        delete this->constructorHandle;
-    }
-    FunctionHandle *handle = new FunctionHandle(0, paramTypes);
-    this->constructorHandle = handle;
-    return handle;
-}
-
-void ClassType::addFunction(FuncObject *func) {
-    //TODO:
-}
-
-void ClassType::setConstructor(FuncObject *func) {
-    //TODO:
-}
-
 
 // ##########################
 // ##     FunctionType     ##
 // ##########################
 
-FunctionType::FunctionType(type_id_t id, DSType *superType, DSType *returnType, const std::vector<DSType *> &paramTypes)
-        :
+FunctionType::FunctionType(type_id_t id, DSType *superType,
+                           DSType *returnType, const std::vector<DSType *> &paramTypes) :
         DSType(id, false, superType, false),
         returnType(returnType), paramTypes(paramTypes) {
     setFlag(this->attributeSet, FUNC_TYPE);
@@ -205,118 +134,13 @@ const std::vector<DSType *> &FunctionType::getParamTypes() {
     return this->paramTypes;
 }
 
-DSType *FunctionType::getFirstParamType() {
-    return this->paramTypes.size() > 0 ? this->paramTypes[0] : 0;
-}
-
-bool FunctionType::treatAsMethod(DSType *targetType) {
-    DSType *recvType = this->getFirstParamType();
-    return recvType != 0 && recvType->isAssignableFrom(targetType);
-}
-
-FunctionHandle *FunctionType::getConstructorHandle(TypePool *typePool) {
-    return 0;
-}
-
-unsigned int FunctionType::getFieldSize() {
-    return this->superType->getFieldSize();
-}
-
-FieldHandle *FunctionType::lookupFieldHandle(TypePool *typePool, const std::string &fieldName) {
-    return this->superType->lookupFieldHandle(typePool, fieldName);
+MethodHandle *FunctionType::lookupMethodHandle(TypePool *typePool, const std::string &methodName) {
+    return this->superType->lookupMethodHandle(typePool, methodName);
 }
 
 FieldHandle *FunctionType::findHandle(const std::string &fieldName) {
     return this->superType->findHandle(fieldName);
 }
-
-// ############################
-// ##     NativeFuncInfo     ##
-// ############################
-
-static inline unsigned int decodeNum(const char *&pos) {
-    return (unsigned int) (*(pos++) - P_N0);
-}
-
-static DSType *decodeType(TypePool *typePool, const char *&pos,
-                          DSType *elementType0, DSType *elementType1) {
-    switch(*(pos++)) {
-#define GEN_CASE(ENUM) case ENUM: return typePool->get##ENUM##Type();
-    EACH_HANDLE_INFO_TYPE(GEN_CASE)
-#undef GEN_CASE
-    case Array: {
-        TypeTemplate *t = typePool->getArrayTemplate();
-        unsigned int size = decodeNum(pos);
-        assert(size == 1);
-        std::vector<DSType *> elementTypes(size);
-        elementTypes[0] = decodeType(typePool, pos, elementType0, elementType1);
-        return typePool->createAndGetReifiedTypeIfUndefined(t, elementTypes);
-    }
-    case Map: {
-        TypeTemplate *t = typePool->getMapTemplate();
-        unsigned int size = decodeNum(pos);
-        assert(size == 2);
-        std::vector<DSType *> elementTypes(size);
-        for(unsigned int i = 0; i < size; i++) {
-            elementTypes[i] = decodeType(typePool, pos, elementType0, elementType1);
-        }
-        return typePool->createAndGetReifiedTypeIfUndefined(t, elementTypes);
-    }
-    case P_N0:
-    case P_N1:
-    case P_N2:
-    case P_N3:
-    case P_N4:
-    case P_N5:
-    case P_N6:
-    case P_N7:
-    case P_N8:
-        fatal("must be type");
-        break;
-    case T0:
-        return elementType0;
-    case T1:
-        return elementType1;
-    default:
-        fatal("broken handle info");
-    }
-    return 0;
-}
-
-FunctionHandle *NativeFuncInfo::toFuncHandle(TypePool *typePool, int fieldIndex,
-                                             DSType *elementType0, DSType *elementType1) const {
-
-    /**
-     * init return type
-     */
-    const char *pos = this->handleInfo;
-    DSType *returnType = decodeType(typePool, pos, elementType0, elementType1);
-
-    /**
-     * init param types
-     */
-    unsigned int paramSize = decodeNum(pos);
-    std::vector<DSType *> paramTypes(paramSize);
-    for(unsigned int i = 0; i < paramSize; i++) {
-        paramTypes[i] = decodeType(typePool, pos, elementType0, elementType1);
-    }
-
-    /**
-     * create handle
-     */
-    FunctionHandle *handle = new FunctionHandle(returnType, paramTypes, fieldIndex);
-
-    /**
-     * init default value map
-     */
-    for(unsigned int i = 0; i < paramSize; i++) {
-        unsigned int mask = (1 << i);
-        bool defaultValue = ((this->defaultValueFlag & mask) == mask);
-        handle->addParamName(std::string(this->paramNames[i]), defaultValue);
-    }
-    return handle;
-}
-
 
 // #########################
 // ##     BuiltinType     ##
@@ -334,25 +158,15 @@ protected:
     /**
      * may be null, if has no constructor.
      */
-    FunctionHandle *constructorHandle;
+    MethodHandle *constructorHandle;
 
     /**
      * may be null, if has no constructor
      */
-    FuncObject *constructor;
+    std::shared_ptr<MethodRef> constructor;
 
-    /**
-     * actually all of handles are FunctionHandle,
-     * but initially handles are FieldHandle.
-     */
-    std::unordered_map<std::string, FieldHandle *> handleMap;
-
-    /**
-     * first is field index, second is function object.
-     * table size is equivalent to info->methodSize.
-     * initialized lazily
-     */
-    std::pair<unsigned int, std::shared_ptr<DSObject>> *objectTable;
+    std::unordered_map<std::string, MethodHandle *> methodHandleMap;
+    std::vector<std::shared_ptr<MethodRef>> methodTable;
 
 public:
     /**
@@ -363,42 +177,40 @@ public:
 
     virtual ~BuiltinType();
 
-    FunctionHandle *getConstructorHandle(TypePool *typePool); // override
-    FuncObject *getConstructor();   // override.
-    unsigned int getFieldSize();  // override
-    FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName);  // override
+    MethodHandle *getConstructorHandle(TypePool *typePool); // override
+    MethodRef *getConstructor();   // override.
+    MethodHandle *lookupMethodHandle(TypePool *typePool, const std::string &methodName);  // override
     FieldHandle *findHandle(const std::string &fieldName); // override
-    void initFieldTable(std::shared_ptr<DSObject> *fieldTable); // override
     bool isBuiltinType() const; // override
+    unsigned int getMethodSize(); // override
+    MethodRef *getMethodRef(unsigned int methodIndex); // override
+    void copyAllMethodRef(std::vector<std::shared_ptr<MethodRef>> &methodTable); // override
 
 private:
-    virtual FunctionHandle *newFuncHandle(TypePool *typePool, int fieldIndex, NativeFuncInfo *info);
+    virtual void initMethodHandle(MethodHandle *handle, TypePool *typePool, NativeFuncInfo *info);
 };
 
 BuiltinType::BuiltinType(type_id_t id, bool extendable, DSType *superType,
                          native_type_info_t *info, bool isVoid) :
         DSType(id, extendable, superType, isVoid),
-        info(info), constructorHandle(), constructor(), handleMap(),
-        objectTable(info->methodSize == 0 ?
-                    0 : new std::pair<unsigned int, std::shared_ptr<DSObject>>[info->methodSize]) {
+        info(info), constructorHandle(), constructor(), methodHandleMap(),
+        methodTable(superType != 0 ? superType->getMethodSize() + info->methodSize : info->methodSize) {
 
-    const static unsigned long tag = 1L << 63;
-    // init function handle
-    unsigned int baseIndex = superType != 0 ? superType->getFieldSize() : 0;
+    // copy super type methodRef to method table
+    if(this->superType != 0) {
+        this->superType->copyAllMethodRef(this->methodTable);
+    }
+
+    // init method handle
+    unsigned int baseIndex = superType != 0 ? superType->getMethodSize() : 0;
     for(unsigned int i = 0; i < info->methodSize; i++) {
         NativeFuncInfo *funcInfo = &info->funcInfos[i];
-        unsigned int fieldIndex = baseIndex + i;
+        unsigned int methodIndex = baseIndex + i;
+        auto *handle = new MethodHandle(methodIndex);
+        this->methodHandleMap.insert(std::make_pair(std::string(funcInfo->funcName), handle));
 
-        /**
-         * treat fieldIndex as FieldHandle*
-         */
-        auto *handle = (FieldHandle *) (tag | fieldIndex);
-
-        this->handleMap.insert(std::make_pair(std::string(funcInfo->funcName), handle));
-
-        // init func object
-        this->objectTable[i] = std::make_pair(fieldIndex,
-                                              BuiltinFuncObject::newFuncObject(this->info->funcInfos[i].func_ptr));
+        // set to method table
+        this->methodTable[methodIndex] = std::make_shared<NativeMethodRef>(this->info->funcInfos[i].func_ptr);
     }
 }
 
@@ -406,94 +218,74 @@ BuiltinType::~BuiltinType() {
     delete this->constructorHandle;
     this->constructorHandle = 0;
 
-    delete this->constructor;
-    this->constructor = 0;
-
-    for(std::pair<std::string, FieldHandle *> pair : this->handleMap) {
-        if((long) pair.second > -1) {
-            delete pair.second;
-        }
+    for(std::pair<std::string, MethodHandle *> pair : this->methodHandleMap) {
+        delete pair.second;
     }
-    this->handleMap.clear();
-
-    delete[] this->objectTable;
-    this->objectTable = 0;
+    this->methodHandleMap.clear();
 }
 
-FunctionHandle *BuiltinType::getConstructorHandle(TypePool *typePool) {
+MethodHandle *BuiltinType::getConstructorHandle(TypePool *typePool) {
     if(this->constructorHandle == 0 && this->info->initInfo != 0) {
-        this->constructorHandle = this->newFuncHandle(typePool, -1, this->info->initInfo);
-        this->constructor = new BuiltinFuncObject(this->info->initInfo->func_ptr);
+        this->constructorHandle = new MethodHandle(0);
+        this->initMethodHandle(this->constructorHandle, typePool, this->info->initInfo);
+        this->constructor.reset(new NativeMethodRef(this->info->initInfo->func_ptr));
     }
     return this->constructorHandle;
 }
 
-FuncObject *BuiltinType::getConstructor() {
-    return this->constructor;
+MethodRef *BuiltinType::getConstructor() {
+    return this->constructor.get();
 }
 
-unsigned int BuiltinType::getFieldSize() {
-    if(this->superType != 0) {
-        return this->info->methodSize + this->superType->getFieldSize();
-    }
-    return this->info->methodSize;
-}
-
-FieldHandle *BuiltinType::lookupFieldHandle(TypePool *typePool, const std::string &fieldName) {
-    auto iter = this->handleMap.find(fieldName);
-    if(iter == this->handleMap.end()) {
-        return this->superType != 0 ? this->superType->lookupFieldHandle(typePool, fieldName) : 0;
+MethodHandle *BuiltinType::lookupMethodHandle(TypePool *typePool, const std::string &methodName) {
+    auto iter = this->methodHandleMap.find(methodName);
+    if(iter == this->methodHandleMap.end()) {
+        return this->superType != 0 ? this->superType->lookupMethodHandle(typePool, methodName) : 0;
     }
 
-    /**
-     * initialize handle
-     */
-    const static unsigned long mask = ~(1L << 63);
-    auto *handle = iter->second;
-
-    /**
-     * check if FieldHandle* is fieldIndex.
-     */
-    if(((long) handle) < 0) {
-        /**
-         * get fieldIndex
-         */
-        int fieldIndex = (mask & ((unsigned long) handle));
-
-        unsigned int baseIndex = this->superType != 0 ? this->superType->getFieldSize() : 0;
-        unsigned int infoIndex = fieldIndex - baseIndex;
-
-        handle = this->newFuncHandle(typePool, fieldIndex, &this->info->funcInfos[infoIndex]);
-        iter->second = handle;
+    MethodHandle *handle = iter->second;
+    if(!handle->initalized()) { // init handle
+        unsigned int baseIndex = this->superType != 0 ? this->superType->getMethodSize() : 0;
+        unsigned int infoIndex = handle->getFieldIndex() - baseIndex;
+        this->initMethodHandle(handle, typePool, &this->info->funcInfos[infoIndex]);
     }
     return handle;
 }
 
 FieldHandle *BuiltinType::findHandle(const std::string &fieldName) { // override
-    auto iter = this->handleMap.find(fieldName);
-    if(iter != this->handleMap.end()) {
+    auto iter = this->methodHandleMap.find(fieldName);
+    if(iter != this->methodHandleMap.end()) {
         return iter->second;
     }
     return this->superType != 0 ? this->superType->findHandle(fieldName) : 0;
-}
-
-void BuiltinType::initFieldTable(std::shared_ptr<DSObject> *fieldTable) {
-    if(this->superType != 0) {  // first, set super type func object.
-        this->superType->initFieldTable(fieldTable);
-    }
-
-    // set func object
-    for(unsigned int i = 0; i < this->info->methodSize; i++) {
-        fieldTable[this->objectTable[i].first] = this->objectTable[i].second;
-    }
 }
 
 bool BuiltinType::isBuiltinType() const {
     return true;
 }
 
-FunctionHandle *BuiltinType::newFuncHandle(TypePool *typePool, int fieldIndex, NativeFuncInfo *info) {
-    return info->toFuncHandle(typePool, fieldIndex);
+unsigned int BuiltinType::getMethodSize() {
+    if(this->superType != 0) {
+        return this->superType->getMethodSize() + this->methodHandleMap.size();
+    }
+    return this->methodHandleMap.size();
+}
+
+MethodRef *BuiltinType::getMethodRef(unsigned int methodIndex) {
+    return this->methodTable[methodIndex].get();
+}
+
+void BuiltinType::copyAllMethodRef(std::vector<std::shared_ptr<MethodRef>> &methodTable) {
+    unsigned int size = this->getMethodSize();
+    assert(size <= methodTable.size());
+
+    for(unsigned int i = 0; i < size; i++) {
+        methodTable[i] = this->methodTable[i];
+    }
+}
+
+void BuiltinType::initMethodHandle(MethodHandle *handle, TypePool *typePool, NativeFuncInfo *info) {
+    handle->init(typePool, info);
 }
 
 // #########################
@@ -519,7 +311,7 @@ public:
     bool equals(DSType *targetType); // override
 
 private:
-    FunctionHandle *newFuncHandle(TypePool *typePool, int fieldIndex, NativeFuncInfo *info); // override
+    void initMethodHandle(MethodHandle *handle, TypePool *typePool, NativeFuncInfo *info); // override
 };
 
 ReifiedType::ReifiedType(type_id_t id, native_type_info_t *info, DSType *superType,
@@ -530,16 +322,17 @@ ReifiedType::ReifiedType(type_id_t id, native_type_info_t *info, DSType *superTy
 ReifiedType::~ReifiedType() {
 }
 
-FunctionHandle *ReifiedType::newFuncHandle(TypePool *typePool, int fieldIndex, NativeFuncInfo *info) {
+void ReifiedType::initMethodHandle(MethodHandle *handle, TypePool *typePool, NativeFuncInfo *info) {
     switch(this->elementTypes.size()) {
     case 1:
-        return info->toFuncHandle(typePool, fieldIndex, this->elementTypes[0]);
+        handle->init(typePool, info, this->elementTypes[0]);
+        break;
     case 2:
-        return info->toFuncHandle(typePool, fieldIndex, this->elementTypes[0], this->elementTypes[1]);
+        handle->init(typePool, info, this->elementTypes[0], this->elementTypes[1]);
+        break;
     default:
         fatal("element size must be 1 or 2");
     }
-    return 0;
 }
 
 DSType *newBuiltinType(type_id_t id, bool extendable,
@@ -559,23 +352,18 @@ DSType *newReifiedType(type_id_t id, native_type_info_t *info,
 class TupleType : public DSType {
 private:
     std::vector<DSType *> types;
-    std::unordered_map<std::string, FieldHandle *> handleMap;
+    std::unordered_map<std::string, FieldHandle *> fieldHandleMap;
 
 public:
     /**
      * superType is always AnyType
      */
     TupleType(type_id_t id, DSType *superType, const std::vector<DSType *> &types);
-
     ~TupleType();
 
-    /**
-     * return always null
-     */
-    FunctionHandle *getConstructorHandle(TypePool *typePool); // override
 
     /**
-     * return always types.size() + superType->getFieldSize()
+     * return types.size()
      */
     unsigned int getFieldSize(); // override
 
@@ -585,41 +373,37 @@ public:
 };
 
 TupleType::TupleType(type_id_t id, DSType *superType, const std::vector<DSType *> &types) :
-        DSType(id, false, superType, false), types(types), handleMap() {
+        DSType(id, false, superType, false), types(types), fieldHandleMap() {
     unsigned int size = this->types.size();
     unsigned int baseIndex = this->superType->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {
         FieldHandle *handle = new FieldHandle(this->types[i], i + baseIndex, false);
-        this->handleMap.insert(std::make_pair("_" + std::to_string(i), handle));
+        this->fieldHandleMap.insert(std::make_pair("_" + std::to_string(i), handle));
     }
 }
 
 TupleType::~TupleType() {
-    for(auto pair : this->handleMap) {
+    for(auto pair : this->fieldHandleMap) {
         delete pair.second;
     }
-    this->handleMap.clear();
-}
-
-FunctionHandle *TupleType::getConstructorHandle(TypePool *typePool) {
-    return 0;
+    this->fieldHandleMap.clear();
 }
 
 unsigned int TupleType::getFieldSize() {
-    return this->superType->getFieldSize() + this->types.size();
+    return this->types.size();
 }
 
 FieldHandle *TupleType::lookupFieldHandle(TypePool *typePool, const std::string &fieldName) {
-    auto iter = this->handleMap.find(fieldName);
-    if(iter == this->handleMap.end()) {
+    auto iter = this->fieldHandleMap.find(fieldName);
+    if(iter == this->fieldHandleMap.end()) {
         return this->superType->lookupFieldHandle(typePool, fieldName);
     }
     return iter->second;
 }
 
 FieldHandle *TupleType::findHandle(const std::string &fieldName) {
-    auto iter = this->handleMap.find(fieldName);
-    if(iter == this->handleMap.end()) {
+    auto iter = this->fieldHandleMap.find(fieldName);
+    if(iter == this->fieldHandleMap.end()) {
         return this->superType->findHandle(fieldName);
     }
     return iter->second;

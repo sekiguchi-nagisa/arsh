@@ -39,13 +39,7 @@ struct String_Object;
 struct DSObject {
     DSType *type;
 
-    /**
-     * contains all of field (also method)
-     */
-    std::shared_ptr<DSObject> *fieldTable;
-
     DSObject(DSType *type);
-
     virtual ~DSObject();
 
     /**
@@ -57,6 +51,8 @@ struct DSObject {
      * for FuncObject.
      */
     virtual void setType(DSType *type);
+
+    virtual std::shared_ptr<DSObject> *getFieldTable();
 
     /**
      * for printing
@@ -200,11 +196,21 @@ struct Map_Object : public DSObject {
     std::string toString(RuntimeContext &ctx); // override
 };
 
-struct Tuple_Object : public DSObject {
+struct BaseObject : public DSObject {
+protected:
+    std::shared_ptr<DSObject> *fieldTable;
+
+public:
+    BaseObject(DSType *type);
+    virtual ~BaseObject();
+
+    std::shared_ptr<DSObject> *getFieldTable(); // override
+};
+
+struct Tuple_Object : public BaseObject {
     Tuple_Object(DSType *type);
 
     std::string toString(RuntimeContext &ctx); // override
-    unsigned int getActualIndex(unsigned int elementIndex);
     unsigned int getElementSize();
 
     void set(unsigned int elementIndex, const std::shared_ptr<DSObject> &obj);
@@ -314,6 +320,28 @@ struct BuiltinFuncObject : public FuncObject {
      * for builtin func obejct creation
      */
     static std::shared_ptr<DSObject> newFuncObject(native_func_t func_ptr);
+};
+
+/**
+ * reference of method. for method call, constructor call.
+ */
+class MethodRef {
+public:
+    MethodRef();
+    virtual ~MethodRef();
+
+    virtual bool invoke(RuntimeContext &ctx) = 0;
+};
+
+class NativeMethodRef : public MethodRef {
+private:
+    native_func_t func_ptr;
+
+public:
+    NativeMethodRef(native_func_t func_ptr);
+    ~NativeMethodRef();
+
+    bool invoke(RuntimeContext &ctx);   // override
 };
 
 

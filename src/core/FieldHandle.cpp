@@ -17,6 +17,9 @@
 #include <core/FieldHandle.h>
 #include <core/DSType.h>
 #include <core/TypePool.h>
+#include <misc/debug.h>
+
+#include <assert.h>
 
 namespace ydsh {
 namespace core {
@@ -137,6 +140,122 @@ int FunctionHandle::getParamIndex(const std::string &paramName) {
 bool FunctionHandle::hasDefaultValue(unsigned int paramIndex) {
     return paramIndex < this->defaultValues.size()
            && this->defaultValues[paramIndex];
+}
+
+// ##########################
+// ##     MethodHandle     ##
+// ##########################
+
+MethodHandle::MethodHandle(int fieldIndex) :
+        FieldHandle(0, fieldIndex, true), returnType(), recvType(),
+        paramTypes(), next() {
+}
+
+MethodHandle::~MethodHandle() {
+    delete this->next;
+    this->next = 0;
+}
+
+
+DSType *MethodHandle::getReturnType() {
+    return this->returnType;
+}
+
+DSType *MethodHandle::getRecvType() {
+    return this->recvType;
+}
+
+const std::vector<DSType *> &MethodHandle::getParamTypes() {
+    return this->paramTypes;
+}
+
+static inline unsigned int decodeNum(const char *&pos) {
+    return (unsigned int) (*(pos++) - P_N0);
+}
+
+static DSType *decodeType(TypePool *typePool, const char *&pos,
+                          DSType *elementType0, DSType *elementType1) {
+    switch(*(pos++)) {
+#define GEN_CASE(ENUM) case ENUM: return typePool->get##ENUM##Type();
+    EACH_HANDLE_INFO_TYPE(GEN_CASE)
+#undef GEN_CASE
+    case Array: {
+        TypeTemplate *t = typePool->getArrayTemplate();
+        unsigned int size = decodeNum(pos);
+        assert(size == 1);
+        std::vector<DSType *> elementTypes(size);
+        elementTypes[0] = decodeType(typePool, pos, elementType0, elementType1);
+        return typePool->createAndGetReifiedTypeIfUndefined(t, elementTypes);
+    }
+    case Map: {
+        TypeTemplate *t = typePool->getMapTemplate();
+        unsigned int size = decodeNum(pos);
+        assert(size == 2);
+        std::vector<DSType *> elementTypes(size);
+        for(unsigned int i = 0; i < size; i++) {
+            elementTypes[i] = decodeType(typePool, pos, elementType0, elementType1);
+        }
+        return typePool->createAndGetReifiedTypeIfUndefined(t, elementTypes);
+    }
+    case P_N0:
+    case P_N1:
+    case P_N2:
+    case P_N3:
+    case P_N4:
+    case P_N5:
+    case P_N6:
+    case P_N7:
+    case P_N8:
+        fatal("must be type");
+        break;
+    case T0:
+        return elementType0;
+    case T1:
+        return elementType1;
+    default:
+        fatal("broken handle info");
+    }
+    return 0;
+}
+
+void MethodHandle::init(TypePool *typePool, NativeFuncInfo *info,
+                        DSType *elementType0, DSType *elementType1) {
+    // init return type
+    const char *pos = info->handleInfo;
+    this->returnType = decodeType(typePool, pos, elementType0, elementType1);
+
+    /**
+     * init param types
+     */
+    unsigned int paramSize = decodeNum(pos);
+    for(unsigned int i = 0; i < paramSize; i++) {
+        if(i == 0) {
+            this->recvType = decodeType(typePool, pos, elementType0, elementType1);
+        } else {
+            this->paramTypes.push_back(decodeType(typePool, pos, elementType0, elementType1));
+        }
+    }
+
+//    /**
+//     * init default value map
+//     */
+//    for(unsigned int i = 0; i < paramSize; i++) {
+//        unsigned int mask = (1 << i);
+//        bool defaultValue = ((this->defaultValueFlag & mask) == mask);
+//        handle->addParamName(std::string(this->paramNames[i]), defaultValue);
+//    }
+}
+
+bool MethodHandle::initalized() {
+    return this->returnType != 0;
+}
+
+void MethodHandle::setNext(MethodHandle *handle) {
+    this->next = handle;
+}
+
+MethodHandle *MethodHandle::getNext() {
+    return this->next;
 }
 
 } // namespace core

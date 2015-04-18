@@ -28,16 +28,10 @@ namespace core {
 // ######################
 
 DSObject::DSObject(DSType *type) :
-        type(type), fieldTable(0) {
-    if(type != 0) {
-        this->fieldTable = new std::shared_ptr<DSObject>[this->type->getFieldSize()];
-        this->type->initFieldTable(this->fieldTable);
-    }
+        type(type) {
 }
 
 DSObject::~DSObject() {
-    delete[] this->fieldTable;
-    this->fieldTable = 0;
 }
 
 DSType *DSObject::getType() {
@@ -45,6 +39,10 @@ DSType *DSObject::getType() {
 }
 
 void DSObject::setType(DSType *type) {  // do nothing.
+}
+
+std::shared_ptr<DSObject> *DSObject::getFieldTable() {
+    return 0;
 }
 
 std::string DSObject::toString(RuntimeContext &ctx) {
@@ -327,12 +325,29 @@ std::string Map_Object::toString(RuntimeContext &ctx) {
     return str;
 }
 
+// ########################
+// ##     BaseObject     ##
+// ########################
+
+BaseObject::BaseObject(DSType *type) :
+        DSObject(type), fieldTable(new std::shared_ptr<DSObject>[type->getFieldSize()]) {
+}
+
+BaseObject::~BaseObject() {
+    delete[] this->fieldTable;
+    this->fieldTable = 0;
+}
+
+std::shared_ptr<DSObject> *BaseObject::getFieldTable() {
+    return this->fieldTable;
+}
+
 // ##########################
 // ##     Tuple_Object     ##
 // ##########################
 
 Tuple_Object::Tuple_Object(DSType *type) :
-        DSObject(type) {
+        BaseObject(type) {
 }
 
 std::string Tuple_Object::toString(RuntimeContext &ctx) {
@@ -342,26 +357,22 @@ std::string Tuple_Object::toString(RuntimeContext &ctx) {
         if(i > 0) {
             str += ", ";
         }
-        str += this->fieldTable[this->getActualIndex(i)]->toString(ctx);
+        str += this->fieldTable[i]->toString(ctx);
     }
     str += ")";
     return str;
 }
 
-unsigned int Tuple_Object::getActualIndex(unsigned int elementIndex) {
-    return this->type->getSuperType()->getFieldSize() + elementIndex;
-}
-
 unsigned int Tuple_Object::getElementSize() {
-    return this->type->getFieldSize() - this->type->getSuperType()->getFieldSize();
+    return this->type->getFieldSize();
 }
 
 void Tuple_Object::set(unsigned int elementIndex, const std::shared_ptr<DSObject> &obj) {
-    this->fieldTable[this->getActualIndex(elementIndex)] = obj;
+    this->fieldTable[elementIndex] = obj;
 }
 
 const std::shared_ptr<DSObject> &Tuple_Object::get(unsigned int elementIndex) {
-    return this->fieldTable[this->getActualIndex(elementIndex)];
+    return this->fieldTable[elementIndex];
 }
 
 std::shared_ptr<String_Object> Tuple_Object::interp(RuntimeContext &ctx) {
@@ -372,7 +383,7 @@ std::shared_ptr<String_Object> Tuple_Object::interp(RuntimeContext &ctx) {
         if(i > 0) {
             value->value += " ";
         }
-        value->append(this->fieldTable[this->getActualIndex(i)]->str(ctx));
+        value->append(this->fieldTable[i]->str(ctx));
     }
     return value;
 }
@@ -381,7 +392,7 @@ std::shared_ptr<DSObject> Tuple_Object::commandArg(RuntimeContext &ctx) {
     std::shared_ptr<Array_Object> result(new Array_Object(ctx.pool.getStringArrayType()));
     unsigned int size = this->getElementSize();
     for(unsigned int i = 0; i < size; i++) {
-        std::shared_ptr<DSObject> temp(this->fieldTable[this->getActualIndex(i)]->commandArg(ctx));
+        std::shared_ptr<DSObject> temp(this->fieldTable[i]->commandArg(ctx));
 
         DSType *tempType = temp->type;
         if(*tempType == *ctx.pool.getStringType()) {
@@ -467,8 +478,6 @@ void FuncObject::setType(DSType *type) {
     if(this->type == 0) {
         assert(dynamic_cast<FunctionType *>(type) != 0);
         this->type = type;
-        this->fieldTable = new std::shared_ptr<DSObject>[this->type->getFieldSize()];
-        this->type->initFieldTable(this->fieldTable);
     }
 }
 
@@ -546,6 +555,32 @@ bool BuiltinFuncObject::invoke(RuntimeContext &ctx) {
 
 std::shared_ptr<DSObject> BuiltinFuncObject::newFuncObject(native_func_t func_ptr) {
     return std::make_shared<BuiltinFuncObject>(func_ptr);
+}
+
+// #######################
+// ##     MethodRef     ##
+// #######################
+
+MethodRef::MethodRef() {
+}
+
+MethodRef::~MethodRef() {
+}
+
+
+// #############################
+// ##     NativeMethodRef     ##
+// #############################
+
+NativeMethodRef::NativeMethodRef(native_func_t func_ptr) :
+        MethodRef(), func_ptr(func_ptr) {
+}
+
+NativeMethodRef::~NativeMethodRef() {
+}
+
+bool NativeMethodRef::invoke(RuntimeContext &ctx) {
+    return this->func_ptr(ctx);
 }
 
 // #########################

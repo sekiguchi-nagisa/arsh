@@ -197,28 +197,19 @@ private:
 
     /**
      * check type ApplyNode and resolve callee(handle or function type).
-     * recvNode must be equivalent to applyNode->getRecvNode()
      */
-    HandleOrFuncType resolveCallee(Node *recvNode, ApplyNode *applyNode);
+    HandleOrFuncType resolveCallee(Node *recvNode);
 
     /**
      * check type ApplyNode and resolve callee(handle or function type).
-     * recvNode must be equivalent to applyNode->getRecvNode()
      */
-    HandleOrFuncType resolveCallee(AccessNode *recvNode, ApplyNode *applyNode);
-
-    /**
-     * check type ApplyNode and resolve callee(handle or function type).
-     * recvNode must be equivalent to applyNode->getRecvNode()
-     */
-    HandleOrFuncType resolveCallee(VarNode *recvNode, ApplyNode *applyNode);
+    HandleOrFuncType resolveCallee(VarNode *recvNode);
 
     // helper for argument type checking
     void checkTypeArgsNode(FunctionHandle *handle, ArgsNode *argsNode, bool isFuncCall);
-
     void checkTypeArgsNode(FunctionType *funcType, ArgsNode *argsNode, bool isFuncCall);
-
     void checkTypeArgsNode(const std::vector<DSType *> &paramTypes, ArgsNode *argsNode, bool isFuncCall);
+    void checkTypeArgsNode(MethodHandle *handle, ArgsNode *argsNode);
 
 public:
     /**
@@ -245,6 +236,7 @@ public:
     void visitBinaryOpNode(BinaryOpNode *node); // override
     void visitArgsNode(ArgsNode *node); // override
     void visitApplyNode(ApplyNode *node); // override
+    void visitMethodCallNode(MethodCallNode *node); // override
     void visitNewNode(NewNode *node); // override
     void visitGroupNode(GroupNode *node); // override
     void visitCondOpNode(CondOpNode *node); // override

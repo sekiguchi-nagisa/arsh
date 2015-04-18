@@ -392,6 +392,12 @@ public:
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
+
+    /**
+     * extract recvNode, and fieldName.
+     * after extraction, call destructor.
+     */
+    static std::pair<Node *, std::string> split(AccessNode *accessNode);
 };
 
 class CastNode : public Node {
@@ -409,11 +415,6 @@ private:
     TypeToken *targetTypeToken;
     CastOp opKind;
 
-    /**
-     * for string cast
-     */
-    int fieldIndex;
-
 public:
     CastNode(Node *exprNode, TypeToken *type);
 
@@ -426,10 +427,6 @@ public:
     void setOpKind(CastOp opKind);
 
     CastOp getOpKind();
-
-    void setFieldIndex(int index);
-
-    int getFieldIndex();
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    //override
@@ -492,38 +489,66 @@ public:
     EvalStatus eval(RuntimeContext &ctx); // override
 };
 
-class ApplyNode : public Node {
+/**
+ * super type of NewNode, ApplyNode, MethodCallNode
+ */
+class CallNode : public Node {
+protected:
+    ArgsNode *argsNode;
+
+public:
+    CallNode(unsigned int lineNum, ArgsNode *argsNode);
+    virtual ~CallNode();
+
+    ArgsNode *getArgsNode();
+};
+
+/**
+ * for function object apply
+ */
+class ApplyNode : public CallNode {
+private:
+    Node *exprNode;
+
+public:
+    ApplyNode(Node *exprNode, ArgsNode *argsNode);
+    ~ApplyNode();
+
+    Node *getExprNode();
+
+    void dump(Writer &writer) const;  // override
+    void accept(NodeVisitor *visitor);    // override
+    EvalStatus eval(RuntimeContext &ctx); // override
+};
+
+class MethodCallNode : public CallNode {
 private:
     Node *recvNode;
-    ArgsNode *argsNode;
+    std::string methodName;
+    unsigned int methodIndex;
 
     flag8_set_t attributeSet;
 
 public:
-    ApplyNode(Node *recvNode, ArgsNode *argsNode);
-
-    ~ApplyNode();
+    MethodCallNode(Node *recvNode, std::string &&methodName);
+    MethodCallNode(Node *recvNode, std::string &&methodName, ArgsNode *argsNode);
+    ~MethodCallNode();
 
     Node *getRecvNode();
-
-    ArgsNode *getArgsNode();
+    void setMethodName(std::string &&methodName);
+    const std::string &getMethodName();
 
     void setAttribute(flag8_t attribute);
-
-    void unsetAttribute(flag8_t attribute);
-
     bool hasAttribute(flag8_t attribute);
-
-    void setFuncCall(bool asFuncCall);
-
-    bool isFuncCall();
+    void setMethodIndex(unsigned int index);
+    unsigned int getMethodIndex();
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 
-    const static unsigned char FUNC_CALL = 1 << 0;
-    const static unsigned char INDEX = 1 << 1;
+    const static flag8_t INDEX = 1 << 0;
+    const static flag8_t ICALL = 1 << 1;
 };
 
 /**
@@ -568,7 +593,7 @@ private:
     /**
      * before call this->createApplyNode(), it is null.
      */
-    ApplyNode *applyNode;
+    MethodCallNode *methodCallNode;
 
 public:
     BinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode);
@@ -587,12 +612,12 @@ public:
      * create ApplyNode and set to this->applyNode.
      * leftNode and rightNode will be null.
      */
-    ApplyNode *creatApplyNode();
+    MethodCallNode *creatApplyNode();
 
     /**
      * return null, before call this->createApplyNode().
      */
-    ApplyNode *getApplyNode();
+    MethodCallNode *getApplyNode();
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);   // override
@@ -1209,15 +1234,15 @@ private:
     /**
      * must be ApplyNode
      */
-    ApplyNode *leftNode;
+    MethodCallNode *leftNode;
 
     Node *rightNode;
 
 public:
-    ElementSelfAssignNode(ApplyNode *leftNode, Node *rightNode);
+    ElementSelfAssignNode(MethodCallNode *leftNode, Node *rightNode);
     ~ElementSelfAssignNode();
 
-    ApplyNode *getLeftNode();
+    MethodCallNode *getLeftNode();
     Node *getRightNode();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);   // override
@@ -1388,7 +1413,10 @@ std::string resolveBinaryOpName(TokenKind op);
 
 TokenKind resolveAssignOp(TokenKind op);
 
-ApplyNode *createApplyNode(Node *recvNode, std::string &&methodName);
+/**
+ * create ApplyNode or MethodCallNode.
+ */
+CallNode *createCallNode(Node *recvNode, ArgsNode *argsNode);
 
 ForNode *createForInNode(unsigned int lineNum, VarNode *varNode, Node *exprNode, BlockNode *blockNode);
 
@@ -1425,6 +1453,7 @@ struct NodeVisitor {
     virtual void visitBinaryOpNode(BinaryOpNode *node);
     virtual void visitArgsNode(ArgsNode *node);
     virtual void visitApplyNode(ApplyNode *node);
+    virtual void visitMethodCallNode(MethodCallNode *node);
     virtual void visitNewNode(NewNode *node);
     virtual void visitGroupNode(GroupNode *node);
     virtual void visitCondOpNode(CondOpNode *node);

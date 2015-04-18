@@ -925,7 +925,7 @@ INLINE std::unique_ptr<Node> Parser::parse_memberExpression() {
         }
         case LP: {
             std::unique_ptr<ArgsNode> args(this->parse_arguments());
-            node.reset(new ApplyNode(node.release(), args.release()));
+            node.reset(createCallNode(node.release(), args.release()));
             break;
         }
         default: {
