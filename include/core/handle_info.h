@@ -24,7 +24,6 @@ namespace core {
 #define EACH_HANDLE_INFO_TYPE(OP) \
     OP(Void) \
     OP(Any) \
-    OP(Int) \
     OP(Byte) \
     OP(Int16) \
     OP(Uint16) \

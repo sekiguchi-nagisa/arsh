@@ -136,6 +136,9 @@ void Shell::initBuiltinVar() {
     // register DBus management object
     rootNode.addNode(new BindVarNode("DBus",this->ctx.dbus));
 
+    // set alias
+    rootNode.addNode(new TypeAliasNode("Int", "Int32"));
+
     // ignore error check (must be always success)
     this->checker.checkTypeRootNode(rootNode);
     rootNode.eval(this->ctx);

@@ -621,8 +621,7 @@ void AccessNode::dump(Writer &writer) const {
 
 #define EACH_ENUM(OP, out) \
     OP(NOP, out) \
-    OP(DUP_RECV, out) \
-    OP(DUP_RECV_AND_SWAP, out)
+    OP(DUP_RECV, out)
 
     std::string str;
     DECODE_ENUM(str, this->additionalOp, EACH_ENUM);
@@ -652,10 +651,6 @@ EvalStatus AccessNode::eval(RuntimeContext &ctx) {
         }
         break;
     }
-    case DUP_RECV_AND_SWAP:
-        ctx.dupAndGetField(this->index);
-        ctx.swap();
-        break;
     }
 
     return EVAL_SUCCESS;
@@ -1682,6 +1677,12 @@ EvalStatus ImportEnvNode::eval(RuntimeContext &ctx) {
 TypeAliasNode::TypeAliasNode(unsigned int lineNum, std::string &&alias, TypeToken *targetTypeToken) :
         Node(lineNum), alias(alias), targetTypeToken(targetTypeToken) {
 }
+
+TypeAliasNode::TypeAliasNode(const char *alias, const char *targetTypeName) :
+        Node(0), alias(std::string(alias)),
+        targetTypeToken(new ClassTypeToken(0, std::string(targetTypeName))) {
+}
+
 
 TypeAliasNode::~TypeAliasNode() {
     delete this->targetTypeToken;

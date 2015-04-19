@@ -53,7 +53,7 @@ TypePool::TypePool(char **envp) :
     this->byteType = this->initBuiltinType("Byte", false, this->valueType, info_ByteType());
     this->int16Type = this->initBuiltinType("Int16", false, this->valueType, info_Int16Type());
     this->uint16Type = this->initBuiltinType("Uint16", false, this->valueType, info_Uint16Type());
-    this->int32Type = this->initBuiltinType("Int", false, this->valueType, info_IntType());
+    this->int32Type = this->initBuiltinType("Int32", false, this->valueType, info_Int32Type());
     this->uint32Type = this->initBuiltinType("Uint32", false, this->valueType, info_Uint32Type());
     this->int64Type = this->initBuiltinType("Int64", false, this->valueType, info_Int64Type());
     this->uint64Type = this->initBuiltinType("Uint64", false, this->valueType, info_Uint64Type());

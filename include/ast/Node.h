@@ -362,7 +362,6 @@ public:
     typedef enum {
         NOP,
         DUP_RECV,
-        DUP_RECV_AND_SWAP,
     } AdditionalOp;
 
 private:
@@ -903,6 +902,7 @@ private:
 
 public:
     TypeAliasNode(unsigned int lineNum, std::string &&alias, TypeToken *targetTypeToken);
+    TypeAliasNode(const char *alias, const char *targetTypeName);
     ~TypeAliasNode();
 
     const std::string &getAlias();
