@@ -214,7 +214,7 @@ const std::string &HandleInfoMap::getName(HandleInfo info) {
 HandleInfo HandleInfoMap::getInfo(const std::string &name) {
     auto  iter = this->name2InfoMap.find(name);
     if(iter == this->name2InfoMap.end()) {
-        fatal("not found type name: %s\n", name.c_str());
+        error("not found type name: %s", name.c_str());
     }
     return iter->second;
 }
@@ -334,7 +334,7 @@ public:
 void ReifiedTypeToken::serialize(HandleInfoSerializer &s) {
     // check element size
     if(this->requiredSize != this->elements.size()) {
-        error("require %d, but is %d\n", this->requiredSize, this->elements.size());
+        error("require %d, but is %d", this->requiredSize, this->elements.size());
     }
 
     typeTemp->serialize(s);
@@ -354,7 +354,7 @@ std::unique_ptr<ReifiedTypeToken> ReifiedTypeToken::newReifiedTypeToken(const st
         tok.reset(new CommonTypeToken(Map));
         size = 2;
     } else {
-        error("unsupported type template: %s\n", name.c_str());
+        error("unsupported type template: %s", name.c_str());
     }
     return std::unique_ptr<ReifiedTypeToken>(new ReifiedTypeToken(std::move(tok), size));
 }
