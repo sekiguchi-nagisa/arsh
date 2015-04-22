@@ -179,5 +179,12 @@ TypeToken *newVoidTypeToken(unsigned int lineNum) {
     return new ClassTypeToken(lineNum, std::string("Void"));
 }
 
+ReifiedTypeToken *newTupleTypeToken(TypeToken *typeToken) {
+    ReifiedTypeToken *t = new ReifiedTypeToken(
+            new ClassTypeToken(typeToken->getLineNum(), std::string("Tuple")));
+    t->addElementTypeToken(typeToken);
+    return t;
+}
+
 } // namespace ast
 } // namespace ydsh

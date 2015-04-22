@@ -277,7 +277,17 @@ INLINE std::unique_ptr<Node> Parser::parse_function() {
 
     if(!HAS_NL() && this->curTokenKind == COLON) {
         this->matchToken(COLON, false);
-        node->setReturnTypeToken(this->parse_typeName().release());
+        auto type(this->parse_typeName());
+        if(this->curTokenKind != COMMA) {
+            node->setReturnTypeToken(type.release());
+        } else {
+            std::unique_ptr<ReifiedTypeToken> tuple(newTupleTypeToken(type.release()));
+            while(this->curTokenKind == COMMA) {
+                this->matchToken(COMMA, false);
+                tuple->addElementTypeToken(this->parse_typeName().release());
+            }
+            node->setReturnTypeToken(tuple.release());
+        }
     }
 
     node->setBlockNode(this->parse_block().release());

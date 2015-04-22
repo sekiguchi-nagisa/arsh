@@ -123,6 +123,8 @@ TypeToken *newAnyTypeToken(unsigned int lineNum = 0);
 
 TypeToken *newVoidTypeToken(unsigned int lineNum = 0);
 
+ReifiedTypeToken *newTupleTypeToken(TypeToken *typeToken);
+
 } // namespace ast
 } // namespace ydsh
 
