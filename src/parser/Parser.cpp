@@ -243,6 +243,12 @@ INLINE std::unique_ptr<Node> Parser::parse_toplevelStatement() {
 }
 
 INLINE std::unique_ptr<Node> Parser::parse_function() {
+    auto node(this->parse_funcDecl());
+    node->setBlockNode(this->parse_block().release());
+    return std::move(node);
+}
+
+INLINE std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
     unsigned int n = LN();
     this->matchToken(FUNCTION);
     std::unique_ptr<FunctionNode> node(
@@ -290,9 +296,7 @@ INLINE std::unique_ptr<Node> Parser::parse_function() {
         }
     }
 
-    node->setBlockNode(this->parse_block().release());
-
-    RET_NODE(node.release());
+    return std::move(node);
 }
 
 std::unique_ptr<Node> Parser::parse_typeAlias() {
@@ -344,11 +348,11 @@ std::unique_ptr<TypeToken> Parser::parse_typeName() {
             token = this->matchAndGetToken(TYPE_CLOSE);
 
             this->restoreLexerState(n, token);
-            return std::unique_ptr<TypeToken>(reified.release());
+            return std::move(reified);
         }
 
         this->restoreLexerState(n, token);
-        return std::unique_ptr<TypeToken>(typeToken.release());
+        return std::move(typeToken);
     }
     case FUNC: {
         this->matchToken(FUNC);
@@ -378,7 +382,7 @@ std::unique_ptr<TypeToken> Parser::parse_typeName() {
         Token token = this->matchAndGetToken(TYPE_CLOSE);
 
         this->restoreLexerState(n, token);
-        return std::unique_ptr<TypeToken>(func.release());
+        return std::move(func);
     }
     case TYPE_PATH: {
         unsigned  int n = LN();
@@ -408,8 +412,8 @@ std::unique_ptr<Node> Parser::parse_statement() {
     case ASSERT: {
         this->matchToken(ASSERT);
         this->matchToken(LP);
-        std::unique_ptr<Node> node(new AssertNode(n,
-                                                  this->parse_commandOrExpression().release()));
+        std::unique_ptr<Node> node(
+                new AssertNode(n, this->parse_commandOrExpression().release()));
         this->matchToken(RP);
         this->parse_statementEnd();
         return node;
@@ -464,12 +468,12 @@ std::unique_ptr<Node> Parser::parse_statement() {
             this->matchToken(ELSE);
             ifNode->addElseNode(this->parse_block().release());
         }
-        RET_NODE(ifNode.release());
+        return  std::move(ifNode);
     }
     case IMPORT_ENV: {
         this->matchToken(IMPORT_ENV);
-        std::unique_ptr<Node> node(new ImportEnvNode(n,
-                                                     this->lexer->toName(this->matchAndGetToken(IDENTIFIER))));
+        std::unique_ptr<Node> node(
+                new ImportEnvNode(n, this->lexer->toName(this->matchAndGetToken(IDENTIFIER))));
         this->parse_statementEnd();
         return node;
     }
@@ -496,8 +500,8 @@ std::unique_ptr<Node> Parser::parse_statement() {
     }
     case THROW: {
         this->matchToken(THROW);
-        std::unique_ptr<Node> node(new ThrowNode(n,
-                                                 this->parse_expression().release()));
+        std::unique_ptr<Node> node(
+                new ThrowNode(n, this->parse_expression().release()));
         this->parse_statementEnd();
         return node;
     }
@@ -539,7 +543,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
             this->matchToken(FINALLY);
             tryNode->addFinallyNode(this->parse_block().release());
         }
-        RET_NODE(tryNode.release());
+        return std::move(tryNode);
     }
     case VAR:
     case LET: {
@@ -760,7 +764,7 @@ INLINE std::unique_ptr<Node> Parser::parse_pipedCommand() {
             node->addCmdNodes(this->parse_command().release());
         }
     }
-    RET_NODE(node.release());
+    return std::move(node);
 }
 
 INLINE std::unique_ptr<CmdNode> Parser::parse_command() {   //FIXME: redirect
@@ -1072,7 +1076,7 @@ INLINE std::unique_ptr<Node> Parser::parse_primaryExpression() {
             node->addExprNode(this->parse_expression().release());
         }
         this->matchToken(RB);
-        RET_NODE(node.release());
+        return std::move(node);
     }
     case LBC: {
         this->matchToken(LBC);
@@ -1097,7 +1101,7 @@ INLINE std::unique_ptr<Node> Parser::parse_primaryExpression() {
             node->addEntry(keyNode.release(), valueNode.release());
         }
         this->matchToken(RBC);
-        RET_NODE(node.release());
+        return std::move(node);
     }
     default:
         E_ALTER(alters);
@@ -1175,7 +1179,7 @@ INLINE std::unique_ptr<Node> Parser::parse_stringExpression() {
     }
 
     this->matchToken(CLOSE_DQUOTE);
-    RET_NODE(node.release());
+    return std::move(node);
 }
 
 INLINE std::unique_ptr<Node> Parser::parse_interpolation() {

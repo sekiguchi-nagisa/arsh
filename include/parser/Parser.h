@@ -88,6 +88,7 @@ private:
     std::unique_ptr<Node> parse_toplevelStatement();
 
     std::unique_ptr<Node> parse_function();
+    std::unique_ptr<FunctionNode> parse_funcDecl();
 
     std::unique_ptr<Node> parse_typeAlias();
 
