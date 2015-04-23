@@ -33,7 +33,8 @@ TypePool::TypePool(char **envp) :
         byteType(), int16Type(), uint16Type(),
         int32Type(), uint32Type(), int64Type(), uint64Type(),
         floatType(), boolType(), stringType(),
-        errorType(), taskType(), baseFuncType(), objectPathType(),
+        errorType(), taskType(), baseFuncType(),
+        objectPathType(), unixFDType(),
         dbusType(), busType(), connectionType(),
         arithmeticErrorType(), outOfIndexErrorType(),
         keyNotFoundErrorType(), typeCastErrorType(),
@@ -63,6 +64,7 @@ TypePool::TypePool(char **envp) :
     this->stringType = this->initBuiltinType("String", false, this->valueType, info_StringType());
 
     this->objectPathType = this->initBuiltinType("ObjectPath", false, this->stringType, info_ObjectPathType());
+    this->unixFDType = this->initBuiltinType("UnixFD", false, this->uint32Type, info_UnixFDType());
     this->dbusType = this->initBuiltinType("DBus", false, this->anyType, info_DBusType());
     this->busType = this->initBuiltinType("Bus", false, this->anyType, info_BusType());
     this->connectionType = this->initBuiltinType("Connection", false, this->anyType, info_ConnectionType());
@@ -184,6 +186,10 @@ DSType *TypePool::getBaseFuncType() {
 
 DSType *TypePool::getObjectPathType() {
     return this->objectPathType;
+}
+
+DSType *TypePool::getUnixFDType() {
+    return this->unixFDType;
 }
 
 DSType *TypePool::getDBusType() {

@@ -74,6 +74,12 @@ private:
     DSType *objectPathType;
 
     /**
+     * for Unix file descriptor
+     */
+    DSType *unixFDType;
+
+
+    /**
      * for owner type of each bus object
      */
     DSType *dbusType;
@@ -168,6 +174,7 @@ public:
     DSType *getBaseFuncType();
 
     DSType *getObjectPathType();
+    DSType *getUnixFDType();
 
     DSType *getDBusType();
     DSType *getBusType();

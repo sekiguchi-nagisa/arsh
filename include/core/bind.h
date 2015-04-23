@@ -53,6 +53,8 @@ native_type_info_t *info_StringType();
 
 native_type_info_t *info_ObjectPathType();
 
+native_type_info_t *info_UnixFDType();
+
 native_type_info_t *info_DBusType();
 
 native_type_info_t *info_BusType();

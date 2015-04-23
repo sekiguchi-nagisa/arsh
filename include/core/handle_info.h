@@ -35,6 +35,7 @@ namespace core {
     OP(Boolean)  \
     OP(String) \
     OP(ObjectPath) \
+    OP(UnixFD) \
     OP(DBus) \
     OP(Bus) \
     OP(Connection) \
