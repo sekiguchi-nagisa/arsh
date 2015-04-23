@@ -246,17 +246,17 @@ MethodHandle *BuiltinType::lookupMethodHandle(TypePool *typePool, const std::str
     MethodHandle *handle = iter->second;
     if(!handle->initalized()) { // init handle
         unsigned int baseIndex = this->superType != 0 ? this->superType->getMethodSize() : 0;
-        unsigned int infoIndex = handle->getFieldIndex() - baseIndex;
+        unsigned int infoIndex = handle->getMethodIndex() - baseIndex;
         this->initMethodHandle(handle, typePool, &this->info->funcInfos[infoIndex]);
     }
     return handle;
 }
 
 FieldHandle *BuiltinType::findHandle(const std::string &fieldName) { // override
-    auto iter = this->methodHandleMap.find(fieldName);
-    if(iter != this->methodHandleMap.end()) {
-        return iter->second;
-    }
+//    auto iter = this->methodHandleMap.find(fieldName);
+//    if(iter != this->methodHandleMap.end()) {
+//        return iter->second;
+//    }
     return this->superType != 0 ? this->superType->findHandle(fieldName) : 0;
 }
 

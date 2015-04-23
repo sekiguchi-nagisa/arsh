@@ -588,7 +588,7 @@ void TypeChecker::visitMethodCallNode(MethodCallNode *node) {
     // check type argument
     this->checkTypeArgsNode(handle, node->getArgsNode());
 
-    node->setMethodIndex(handle->getFieldIndex());
+    node->setMethodIndex(handle->getMethodIndex());
     node->setType(handle->getReturnType());
 }
 

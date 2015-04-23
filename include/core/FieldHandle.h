@@ -149,8 +149,10 @@ public:
     bool hasDefaultValue(unsigned int paramIndex);
 };
 
-class MethodHandle : public FieldHandle {
+class MethodHandle {
 private:
+    unsigned int methodIndex;
+
     DSType *returnType;
 
     DSType *recvType;
@@ -166,9 +168,10 @@ private:
     MethodHandle *next;
 
 public:
-    MethodHandle(int fieldIndex);
+    MethodHandle(int methodIndex);
     ~MethodHandle();
 
+    unsigned int getMethodIndex();
     DSType *getReturnType();
     DSType *getRecvType();
     const std::vector<DSType *> &getParamTypes();

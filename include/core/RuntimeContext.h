@@ -120,22 +120,22 @@ struct RuntimeContext {
     /**
      * for string cast
      */
-    int fieldIndexOf_STR;
+    int methodIndexOf_STR;
 
     /**
      * for string interpolation
      */
-    int fieldIndexOf_INTERP;
+    int methodIndexOf_INTERP;
 
     /**
      * for command argument
      */
-    int fieldIndexOf_CMD_ARG;
+    int methodIndexOf_CMD_ARG;
 
     /**
      * for error reporting
      */
-    int fieldIndexOf_bt;
+    int methodIndexOf_bt;
 
     RuntimeContext(char **envp);
 
@@ -420,36 +420,36 @@ struct RuntimeContext {
      * cast stack top value to String
      */
     EvalStatus toString() {
-        if(this->fieldIndexOf_STR == -1) {
+        if(this->methodIndexOf_STR == -1) {
             auto *handle = this->pool.getAnyType()->
                     lookupMethodHandle(&this->pool, std::string(OP_STR));
-            this->fieldIndexOf_STR = handle->getFieldIndex();
+            this->methodIndexOf_STR = handle->getMethodIndex();
         }
-        return this->callMethod(false, this->fieldIndexOf_STR, 1);
+        return this->callMethod(false, this->methodIndexOf_STR, 1);
     }
 
     /**
      * call __INTERP__
      */
     EvalStatus toInterp() {
-        if(this->fieldIndexOf_INTERP == -1) {
+        if(this->methodIndexOf_INTERP == -1) {
             auto *handle = this->pool.getAnyType()->
                     lookupMethodHandle(&this->pool, std::string(OP_INTERP));
-            this->fieldIndexOf_INTERP = handle->getFieldIndex();
+            this->methodIndexOf_INTERP = handle->getMethodIndex();
         }
-        return this->callMethod(false, this->fieldIndexOf_INTERP, 1);
+        return this->callMethod(false, this->methodIndexOf_INTERP, 1);
     }
 
     /**
      * call __CMD_ARG__
      */
     EvalStatus toCmdArg() {
-        if(this->fieldIndexOf_CMD_ARG == -1) {
+        if(this->methodIndexOf_CMD_ARG == -1) {
             auto *handle = this->pool.getAnyType()->
                     lookupMethodHandle(&this->pool, std::string(OP_CMD_ARG));
-            this->fieldIndexOf_CMD_ARG = handle->getFieldIndex();
+            this->methodIndexOf_CMD_ARG = handle->getMethodIndex();
         }
-        return this->callMethod(false, this->fieldIndexOf_CMD_ARG, 1);
+        return this->callMethod(false, this->methodIndexOf_CMD_ARG, 1);
     }
 
     /**
@@ -459,13 +459,13 @@ struct RuntimeContext {
     void reportError() {
         std::cerr << "[runtime error]" << std::endl;
         if(this->pool.getErrorType()->isAssignableFrom(this->thrownObject->type)) {
-            if(this->fieldIndexOf_bt == -1) {
+            if(this->methodIndexOf_bt == -1) {
                 std::string str("backtrace");
-                FieldHandle *handle = this->pool.getErrorType()->lookupMethodHandle(&this->pool, str);
-                this->fieldIndexOf_bt = handle->getFieldIndex();
+                auto *handle = this->pool.getErrorType()->lookupMethodHandle(&this->pool, str);
+                this->methodIndexOf_bt = handle->getMethodIndex();
             }
             this->getThrownObject();
-            this->callMethod(false, this->fieldIndexOf_bt, 1);
+            this->callMethod(false, this->methodIndexOf_bt, 1);
         } else {
             std::cerr << this->thrownObject->toString(*this) << std::endl;
         }

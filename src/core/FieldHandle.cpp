@@ -146,8 +146,8 @@ bool FunctionHandle::hasDefaultValue(unsigned int paramIndex) {
 // ##     MethodHandle     ##
 // ##########################
 
-MethodHandle::MethodHandle(int fieldIndex) :
-        FieldHandle(0, fieldIndex, true), returnType(), recvType(),
+MethodHandle::MethodHandle(int methodIndex) :
+        methodIndex(methodIndex), returnType(), recvType(),
         paramTypes(), next() {
 }
 
@@ -156,6 +156,9 @@ MethodHandle::~MethodHandle() {
     this->next = 0;
 }
 
+unsigned int MethodHandle::getMethodIndex() {
+    return this->methodIndex;
+}
 
 DSType *MethodHandle::getReturnType() {
     return this->returnType;
