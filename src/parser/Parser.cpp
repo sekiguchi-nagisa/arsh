@@ -94,6 +94,7 @@
 #define EACH_LA_toplevelStatement(OP) \
     OP(CLASS) \
     OP(FUNCTION) \
+    OP(INTERFACE) \
     OP(TYPE_ALIAS) \
     EACH_LA_statement(OP)
 
@@ -230,6 +231,9 @@ INLINE std::unique_ptr<Node> Parser::parse_toplevelStatement() {
     case FUNCTION: {
         return this->parse_function();
     }
+    case INTERFACE: {
+        return this->parse_interface();
+    };
     case TYPE_ALIAS: {
         return this->parse_typeAlias();
     };
@@ -295,6 +299,68 @@ INLINE std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
             node->setReturnTypeToken(tuple.release());
         }
     }
+
+    return std::move(node);
+}
+
+std::unique_ptr<Node> Parser::parse_interface() {
+    unsigned int n = LN();
+
+    this->matchToken(INTERFACE, false);
+
+    // enter TYPE mode
+    this->lexer->modeStack.push_back(yycTYPE);
+    NEXT_TOKEN();
+
+    unsigned int prevNum = LN();
+    Token token = this->matchAndGetToken(TYPE_PATH);
+
+    // exit TYPE mode
+    this->restoreLexerState(prevNum, token);
+
+    std::unique_ptr<InterfaceNode> node(new InterfaceNode(n, this->lexer->toTokenText(token)));
+    this->matchToken(LBC);
+
+    static TokenKind alters[] = {
+            FUNCTION,
+            VAR,
+            LET,
+            DUMMY,
+    };
+
+    bool next = true;
+    unsigned int count = 0;
+    while(next) {
+        switch(this->curTokenKind) {
+        case VAR:
+        case LET: {
+            unsigned int n = LN();
+            bool readOnly = this->consumeAndGetKind() == LET;
+            Token token = this->matchAndGetToken(IDENTIFIER);
+            this->matchToken(COLON, false);
+            auto type(this->parse_typeName());
+            node->addFieldDecl(
+                    new VarDeclNode(n, this->lexer->toName(token), nullptr, readOnly), type.release());
+            this->parse_statementEnd();
+            break;
+        };
+        case FUNCTION: {
+            auto funcNode(this->parse_funcDecl());
+            this->parse_statementEnd();
+            node->addMethodDeclNode(funcNode.release());
+            break;
+        };
+        default:
+            next = false;
+            if(count == 0) {
+                E_ALTER(alters);
+            }
+            break;
+        }
+        count++;
+    }
+
+    this->matchToken(RBC);
 
     return std::move(node);
 }

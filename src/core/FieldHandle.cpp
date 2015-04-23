@@ -261,5 +261,36 @@ MethodHandle *MethodHandle::getNext() {
     return this->next;
 }
 
+bool MethodHandle::isInterfaceMethod() {
+    return false;
+}
+
+// ###################################
+// ##     InterfaceMethodHandle     ##
+// ###################################
+
+InterfaceMethodHandle::InterfaceMethodHandle() :
+        MethodHandle(0) {   //method index is always 0.
+}
+
+InterfaceMethodHandle::~InterfaceMethodHandle() {
+}
+
+void InterfaceMethodHandle::setReturnType(DSType *type) {
+    this->returnType = type;
+}
+
+void InterfaceMethodHandle::setRecvType(DSType *type) {
+    this->recvType = type;
+}
+
+void InterfaceMethodHandle::addParamType(DSType *type) {
+    this->paramTypes.push_back(type);
+}
+
+bool InterfaceMethodHandle::isInterfaceMethod() {
+    return true;
+}
+
 } // namespace core
 } // namespace ydsh

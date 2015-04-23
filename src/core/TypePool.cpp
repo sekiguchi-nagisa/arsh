@@ -311,6 +311,17 @@ FunctionType *TypePool::createAndGetFuncTypeIfUndefined(DSType *returnType,
     return dynamic_cast<FunctionType *>(iter->second);
 }
 
+InterfaceType *TypePool::createAndGetInterfaceTypeIfUndefined(const std::string &interfaceName) {
+    auto iter = this->typeMap.find(interfaceName);
+    if(iter == this->typeMap.end()) {
+        InterfaceType *type = new InterfaceType(NEW_ID(), this->anyType);
+        this->addType(std::string(interfaceName), type);
+        return type;
+    }
+
+    return dynamic_cast<InterfaceType *>(iter->second);
+}
+
 DSType *TypePool::getDBusInterfaceType(const std::string &typeName) {
     auto iter = this->typeMap.find(typeName);
     if(iter == this->typeMap.end()) {

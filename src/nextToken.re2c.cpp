@@ -133,6 +133,7 @@ TokenKind LexerDef::operator()(Lexer < LexerDef, TokenKind > *lexer, Token & tok
       <STMT,EXPR> "function"   { MODE(NAME); RET(FUNCTION); }
       <STMT,EXPR> "if"         { RET(IF); }
       <STMT,EXPR> "import-env" { MODE(NAME); RET(IMPORT_ENV); }
+      <STMT,EXPR> "interface"  { RET(INTERFACE); }
       <STMT,EXPR> "let"        { MODE(NAME); RET(LET); }
       <STMT,EXPR> "new"        { MODE(EXPR); RET(NEW); }
       <STMT,EXPR> "not"        { MODE(EXPR); RET(NOT); }

@@ -48,8 +48,9 @@ protected:
 
 public:
     const static flag8_t EXTENDABLE = 1 << 0;
-    const static flag8_t VOID_TYPE = 1 << 1;
-    const static flag8_t FUNC_TYPE = 1 << 2;
+    const static flag8_t VOID_TYPE  = 1 << 1;
+    const static flag8_t FUNC_TYPE  = 1 << 2;
+    const static flag8_t INTERFACE  = 1 << 3;
 
     DSType(type_id_t id, bool extendable, DSType *superType, bool isVoid = false);
 
@@ -74,6 +75,11 @@ public:
      * if this type is FunctionType, return true.
      */
     bool isFuncType() const;
+
+    /**
+     * if this type is InterfaceType, return true.
+     */
+    bool isInterface() const;
 
     virtual bool isBuiltinType() const;
 
@@ -227,6 +233,36 @@ DSType *newReifiedType(type_id_t id, native_type_info_t *info,
  * for TupleType creation
  */
 DSType *newTupleType(type_id_t id, DSType *superType, const std::vector<DSType *> &elementTypes);
+
+/**
+ * for D-Bus interface
+ */
+class InterfaceType : public DSType {
+private:
+    std::unordered_map<std::string, FieldHandle *> fieldHandleMap;
+    std::unordered_map<std::string, InterfaceMethodHandle *> methodHandleMap;
+
+public:
+    /**
+     * superType is always AnyType.
+     */
+    InterfaceType(type_id_t id, DSType *superType);
+
+    ~InterfaceType();
+
+    /**
+     * return null, if found duplicated field
+     */
+    FieldHandle *newFieldHandle(const std::string &fieldName, DSType *fieldType, bool readOnly);
+
+    InterfaceMethodHandle *newMethodHandle(const std::string &methodName);
+
+    unsigned int getFieldSize();    // override
+    unsigned int getMethodSize();   // override
+    FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName);   // override
+    MethodHandle *lookupMethodHandle(TypePool *typePool, const std::string &methodName); // override
+    FieldHandle *findHandle(const std::string &fieldName); // overrdie
+};
 
 } // namespace core
 } // namespace ydsh

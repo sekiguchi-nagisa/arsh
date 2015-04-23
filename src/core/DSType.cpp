@@ -56,6 +56,10 @@ bool DSType::isFuncType() const {
     return hasFlag(this->attributeSet, FUNC_TYPE);
 }
 
+bool DSType::isInterface() const {
+    return hasFlag(this->attributeSet, INTERFACE);
+}
+
 bool DSType::isBuiltinType() const {
     return false;
 }
@@ -411,6 +415,80 @@ FieldHandle *TupleType::findHandle(const std::string &fieldName) {
 
 DSType *newTupleType(type_id_t id, DSType *superType, const std::vector<DSType *> &elementTypes) {
     return new TupleType(id, superType, elementTypes);
+}
+
+// ###########################
+// ##     InterfaceType     ##
+// ###########################
+
+InterfaceType::InterfaceType(type_id_t id, DSType *superType) :
+        DSType(id, false, superType, false), fieldHandleMap(), methodHandleMap() {
+    setFlag(this->attributeSet, INTERFACE);
+}
+
+InterfaceType::~InterfaceType() {
+    for(auto &pair : this->fieldHandleMap) {
+        delete pair.second;
+    }
+    this->fieldHandleMap.clear();
+
+    for(auto &pair : this->methodHandleMap) {
+        delete pair.second;
+    }
+    this->methodHandleMap.clear();
+}
+
+FieldHandle *InterfaceType::newFieldHandle(const std::string &fieldName, DSType *fieldType, bool readOnly) {
+    // field index is always 0.
+    FieldHandle *handle = new FieldHandle(fieldType, 0, readOnly);
+    handle->setAttribute(FieldHandle::INTERFACE);
+    auto pair = this->fieldHandleMap.insert(std::make_pair(fieldName, handle));
+    if(pair.second) {
+        return handle;
+    } else {
+        delete handle;
+        return nullptr;
+    }
+}
+
+InterfaceMethodHandle *InterfaceType::newMethodHandle(const std::string &methodName) {
+    InterfaceMethodHandle *handle = new InterfaceMethodHandle();
+    auto pair = this->methodHandleMap.insert(std::make_pair(methodName, handle));
+    if(!pair.second) {
+        handle->setNext(pair.first->second);
+        pair.first->second = handle;
+    }
+    return handle;
+}
+
+unsigned int InterfaceType::getFieldSize() {
+    return this->superType->getFieldSize() + this->fieldHandleMap.size();
+}
+
+unsigned int InterfaceType::getMethodSize() {
+    return this->superType->getMethodSize() + this->methodHandleMap.size();
+}
+
+FieldHandle *InterfaceType::lookupFieldHandle(TypePool *typePool, const std::string &fieldName) {
+    auto iter = this->fieldHandleMap.find(fieldName);
+    if(iter == this->fieldHandleMap.end()) {
+        return this->superType->lookupFieldHandle(typePool, fieldName);
+    }
+    return iter->second;
+}
+
+MethodHandle *InterfaceType::lookupMethodHandle(TypePool *typePool, const std::string &methodName) {
+    auto iter = this->methodHandleMap.find(methodName);
+    if(iter == this->methodHandleMap.end()) {
+        return this->superType->lookupMethodHandle(typePool, methodName);
+    }
+
+    //FIXME:
+    return iter->second;
+}
+
+FieldHandle *InterfaceType::findHandle(const std::string &fieldName) {
+    return this->superType->findHandle(fieldName);
 }
 
 } // namespace core

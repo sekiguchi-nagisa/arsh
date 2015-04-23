@@ -38,6 +38,7 @@
     TOKEN(FUNCTION) \
     TOKEN(IF) \
     TOKEN(IMPORT_ENV) \
+    TOKEN(INTERFACE) \
     TOKEN(LET) \
     TOKEN(NEW) \
     TOKEN(NOT) \

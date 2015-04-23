@@ -95,6 +95,7 @@ public:
     const static flag8_t GLOBAL      = 1 << 1;
     const static flag8_t ENV         = 1 << 2;
     const static flag8_t FUNC_HANDLE = 1 << 3;
+    const static flag8_t INTERFACE   = 1 << 4;
 };
 
 /**
@@ -150,7 +151,7 @@ public:
 };
 
 class MethodHandle {
-private:
+protected:
     unsigned int methodIndex;
 
     DSType *returnType;
@@ -169,7 +170,7 @@ private:
 
 public:
     MethodHandle(int methodIndex);
-    ~MethodHandle();
+    virtual ~MethodHandle();
 
     unsigned int getMethodIndex();
     DSType *getReturnType();
@@ -189,6 +190,22 @@ public:
 
     void setNext(MethodHandle *handle);
     MethodHandle *getNext();
+
+    virtual bool isInterfaceMethod();
+};
+
+/**
+ * for D-Bus method
+ */
+class InterfaceMethodHandle : public MethodHandle {
+public:
+    InterfaceMethodHandle();
+    ~InterfaceMethodHandle();
+
+    void setReturnType(DSType *type);
+    void setRecvType(DSType *type);
+    void addParamType(DSType *type);
+    bool isInterfaceMethod(); // override
 };
 
 } // namespace core

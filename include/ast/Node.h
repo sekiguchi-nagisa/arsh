@@ -1348,6 +1348,35 @@ public:
     EvalStatus eval(RuntimeContext &ctx); // override
 };
 
+class InterfaceNode : public Node {
+private:
+    std::string interfaceName;
+
+    std::vector<FunctionNode *> methodDeclNodes;
+    std::vector<VarDeclNode *> fieldDeclNodes;
+    std::vector<TypeToken *> fieldTypeTokens;
+
+public:
+    InterfaceNode(unsigned int lineNum, std::string &&interfaceName);
+    ~InterfaceNode();
+
+    const std::string &getInterfaceName();
+    void addMethodDeclNode(FunctionNode *methodDeclNode);
+    const std::vector<FunctionNode *> &getMethodDeclNodes();
+
+    /**
+     * initNode of node is null.
+     */
+    void addFieldDecl(VarDeclNode *node, TypeToken *typeToken);
+
+    const std::vector<VarDeclNode *> &getFieldDeclNodes();
+    const std::vector<TypeToken *> &getFieldTypeTokens();
+
+    void dump(Writer &writer) const;  // override
+    void accept(NodeVisitor *visitor);    // override
+    EvalStatus eval(RuntimeContext &ctx); // override
+};
+
 // class ClassNode
 // class ConstructorNode
 
@@ -1508,6 +1537,7 @@ struct NodeVisitor {
     virtual void visitAssignNode(AssignNode *node);
     virtual void visitElementSelfAssignNode(ElementSelfAssignNode *node);
     virtual void visitFunctionNode(FunctionNode *node);
+    virtual void visitInterfaceNode(InterfaceNode *node);
     virtual void visitBindVarNode(BindVarNode *node);
     virtual void visitEmptyNode(EmptyNode *node);
     virtual void visitDummyNode(DummyNode *node);

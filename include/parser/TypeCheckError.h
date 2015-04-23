@@ -37,6 +37,7 @@
         ERROR(E_NoDefaultValue  , "has no default value") \
         /* one arg */\
         ERROR(E_DefinedSymbol     , "already defined symbol: %s") \
+        ERROR(E_DefinedField      , "already defiend field: %s") \
         ERROR(E_UndefinedSymbol   , "undefined symbol: %s") \
         ERROR(E_UndefinedField    , "undefined field: %s") \
         ERROR(E_UndefinedMethod   , "undefined method: %s") \
@@ -138,6 +139,7 @@ public:
 #define E_NoDefaultValue(node)              REPORT_TC_ERROR0(NoDefaultValue   , node)
 
 #define E_DefinedSymbol(node, arg1)         REPORT_TC_ERROR1(DefinedSymbol    , node, arg1)
+#define E_DefinedField(node, arg1)          REPORT_TC_ERROR1(DefinedField     , node, arg1)
 #define E_UndefinedSymbol(node, arg1)       REPORT_TC_ERROR1(UndefinedSymbol  , node, arg1)
 #define E_UndefinedField(node, arg1)        REPORT_TC_ERROR1(UndefinedField   , node, arg1)
 #define E_UndefinedMethod(node, arg1)       REPORT_TC_ERROR1(UndefinedMethod  , node, arg1)

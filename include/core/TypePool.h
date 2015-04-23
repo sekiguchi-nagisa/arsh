@@ -217,6 +217,8 @@ public:
 
     FunctionType *createAndGetFuncTypeIfUndefined(DSType *returnType, const std::vector<DSType *> &paramTypes);
 
+    InterfaceType *createAndGetInterfaceTypeIfUndefined(const std::string &interfaceName);
+
     /**
      * if not found type, search directory /etc/ydsh/dbus/
      */

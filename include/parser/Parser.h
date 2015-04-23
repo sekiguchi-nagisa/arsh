@@ -89,7 +89,7 @@ private:
 
     std::unique_ptr<Node> parse_function();
     std::unique_ptr<FunctionNode> parse_funcDecl();
-
+    std::unique_ptr<Node> parse_interface();
     std::unique_ptr<Node> parse_typeAlias();
 
     void restoreLexerState(unsigned int prevLineNum, const Token &prevToken);

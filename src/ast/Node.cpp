@@ -2593,6 +2593,82 @@ EvalStatus FunctionNode::eval(RuntimeContext &ctx) {
 }
 
 // ###########################
+// ##     InterfaceNode     ##
+// ###########################
+
+InterfaceNode::InterfaceNode(unsigned int lineNum, std::string &&interfaceName) :
+        Node(lineNum), interfaceName(interfaceName), methodDeclNodes(),
+        fieldDeclNodes(), fieldTypeTokens() {
+}
+
+InterfaceNode::~InterfaceNode() {
+    for(FunctionNode *node : this->methodDeclNodes) {
+        delete node;
+    }
+    this->methodDeclNodes.clear();
+
+    for(VarDeclNode *node : this->fieldDeclNodes) {
+        delete node;
+    }
+    this->fieldDeclNodes.clear();
+
+    for(TypeToken *t : this->fieldTypeTokens) {
+        delete t;
+    }
+    this->fieldTypeTokens.clear();
+}
+
+const std::string &InterfaceNode::getInterfaceName() {
+    return this->interfaceName;
+}
+
+void InterfaceNode::addMethodDeclNode(FunctionNode *methodDeclNode) {
+    this->methodDeclNodes.push_back(methodDeclNode);
+}
+
+const std::vector<FunctionNode *> &InterfaceNode::getMethodDeclNodes() {
+    return this->methodDeclNodes;
+}
+
+void InterfaceNode::addFieldDecl(VarDeclNode *node, TypeToken *typeToken) {
+    this->fieldDeclNodes.push_back(node);
+    this->fieldTypeTokens.push_back(typeToken);
+}
+
+const std::vector<VarDeclNode *> &InterfaceNode::getFieldDeclNodes() {
+    return this->fieldDeclNodes;
+}
+
+const std::vector<TypeToken *> &InterfaceNode::getFieldTypeTokens() {
+    return this->fieldTypeTokens;
+}
+
+void InterfaceNode::dump(Writer &writer) const {
+    WRITE(interfaceName);
+
+    std::vector<Node *> methodDeclNodes;
+    for(FunctionNode *funcNode : this->methodDeclNodes) {
+        methodDeclNodes.push_back(funcNode);
+    }
+    WRITE(methodDeclNodes);
+
+    std::vector<Node *> fieldDeclNodes;
+    for(VarDeclNode *node : this->fieldDeclNodes) {
+        fieldDeclNodes.push_back(node);
+    }
+    WRITE(fieldDeclNodes);
+    WRITE(fieldTypeTokens);
+}
+
+void InterfaceNode::accept(NodeVisitor *visitor) {
+    visitor->visitInterfaceNode(this);
+}
+
+EvalStatus InterfaceNode::eval(RuntimeContext &ctx) {
+    return EVAL_SUCCESS;    // do nothing
+}
+
+// ###########################
 // ##     BindVarNode     ##
 // ###########################
 
@@ -2975,6 +3051,7 @@ void NodeVisitor::visitVarDeclNode(VarDeclNode *node)                     { this
 void NodeVisitor::visitAssignNode(AssignNode *node)                       { this->visitDefault(node); }
 void NodeVisitor::visitElementSelfAssignNode(ElementSelfAssignNode *node) { this->visitDefault(node); }
 void NodeVisitor::visitFunctionNode(FunctionNode *node)                   { this->visitDefault(node); }
+void NodeVisitor::visitInterfaceNode(InterfaceNode *node)                 { this->visitDefault(node); }
 void NodeVisitor::visitBindVarNode(BindVarNode *node)                     { this->visitDefault(node); }
 void NodeVisitor::visitEmptyNode(EmptyNode *node)                         { this->visitDefault(node); }
 void NodeVisitor::visitDummyNode(DummyNode *node)                         { this->visitDefault(node); }

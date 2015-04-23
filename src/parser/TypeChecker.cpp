@@ -919,6 +919,36 @@ void TypeChecker::visitFunctionNode(FunctionNode * node) {   //TODO: named param
     node->setType(this->typePool->getVoidType());
 }
 
+void TypeChecker::visitInterfaceNode(InterfaceNode *node) {
+    InterfaceType *type = this->typePool->createAndGetInterfaceTypeIfUndefined(node->getInterfaceName());
+
+    // create field handle
+    unsigned int fieldSize = node->getFieldDeclNodes().size();
+    for(unsigned int i = 0; i < fieldSize; i++) {
+        VarDeclNode *fieldDeclNode = node->getFieldDeclNodes()[i];
+        DSType *fieldType = this->toType(node->getFieldTypeTokens()[i]);
+        FieldHandle *handle = type->newFieldHandle(
+                fieldDeclNode->getVarName(), fieldType, fieldDeclNode->isReadOnly());
+        if(handle == 0) {
+            E_DefinedField(fieldDeclNode, fieldDeclNode->getVarName());
+        }
+    }
+
+    // create method handle
+    for(FunctionNode *funcNode : node->getMethodDeclNodes()) {
+        InterfaceMethodHandle *handle = type->newMethodHandle(funcNode->getFuncName());
+        handle->setRecvType(type);
+        handle->setReturnType(this->toType(funcNode->getReturnTypeToken()));
+
+        unsigned int paramSize = funcNode->getParamNodes().size();
+        for(unsigned int i = 0; i < paramSize; i++) {
+            handle->addParamType(this->toType(funcNode->getParamTypeTokens()[i]));
+        }
+    }
+
+    node->setType(this->typePool->getVoidType());
+}
+
 void TypeChecker::visitBindVarNode(BindVarNode *node) {
     DSType *valueType = node->getValue()->getType();
     FieldHandle *handle =
