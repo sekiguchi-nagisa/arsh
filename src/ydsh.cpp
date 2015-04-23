@@ -24,6 +24,7 @@
 enum OptionKind {
     DUMP_UAST,
     DUMP_AST,
+    PARSE_ONLY,
     DISABLE_ASSERT,
     HELP,
 };
@@ -43,6 +44,13 @@ int main(int argc, char **argv, char **envp) {
             "--dump-ast",
             false,
             "dump abstract syntax tree (after type checking)"
+    );
+
+    parser.addOption(
+            (unsigned int) PARSE_ONLY,
+            "--parse-only",
+            false,
+            "not evalute, parse only"
     );
 
     parser.addOption(
@@ -79,6 +87,9 @@ int main(int argc, char **argv, char **envp) {
             break;
         case DUMP_AST:
             shell.setDumpTypedAST(true);
+            break;
+        case PARSE_ONLY:
+            shell.setParseOnly(true);
             break;
         case DISABLE_ASSERT:
             shell.setAssertion(false);

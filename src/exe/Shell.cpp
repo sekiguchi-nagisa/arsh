@@ -20,7 +20,8 @@ namespace ydsh {
 
 Shell::Shell(char **envp) :
         ctx(envp), parser(), checker(&this->ctx.pool), lineNum(1),
-        listener(&clistener), dumpUntypedAST(false), dumpTypedAST(false) {
+        listener(&clistener), dumpUntypedAST(false),
+        dumpTypedAST(false), parseOnly(false) {
     this->initBuiltinVar();
 }
 
@@ -66,6 +67,10 @@ void Shell::setDumpTypedAST(bool dump) {
     this->dumpTypedAST = dump;
 }
 
+void Shell::setParseOnly(bool parseOnly) {
+    this->parseOnly = parseOnly;
+}
+
 void Shell::setAssertion(bool assertion) {
     this->ctx.assertion = assertion;
 }
@@ -107,6 +112,10 @@ ExitStatus Shell::eval(const char *sourceName, Lexer<LexerDef, TokenKind> &lexer
         return TYPE_ERROR;
     }
 
+    if(this->parseOnly) {
+        return SUCCESS;
+    }
+    
     // eval
     this->ctx.repl = interactive;
     EvalStatus status = rootNode.eval(this->ctx);

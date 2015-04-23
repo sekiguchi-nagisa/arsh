@@ -55,6 +55,7 @@ private:
     // option
     bool dumpUntypedAST;
     bool dumpTypedAST;
+    bool parseOnly;
 
 public:
     /**
@@ -72,6 +73,7 @@ public:
 
     void setDumpUntypedAST(bool dump);
     void setDumpTypedAST(bool dump);
+    void setParseOnly(bool parseOnly);
     void setAssertion(bool assertion);
 
 private:
