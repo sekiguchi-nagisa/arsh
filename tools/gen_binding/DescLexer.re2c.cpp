@@ -57,6 +57,7 @@ DescTokenKind DescLexer::operator()(ydsh::parser::Lexer<DescLexer, DescTokenKind
       "RuntimeContext"       { RET(RCTX); }
       "Array"                { RET(ARRAY); }
       "Map"                  { RET(MAP); }
+      "Tuple"                { RET(TUPLE); }
       IDENTIFIER             { RET(IDENTIFIER); }
       "<"                    { RET(TYPE_OPEN); }
       ">"                    { RET(TYPE_CLOSE); }

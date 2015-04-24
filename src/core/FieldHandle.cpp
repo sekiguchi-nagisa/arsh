@@ -200,6 +200,14 @@ static DSType *decodeType(TypePool *typePool, const char *&pos,
         }
         return typePool->createAndGetReifiedTypeIfUndefined(t, elementTypes);
     }
+    case Tuple: {
+        unsigned int size = decodeNum(pos);
+        std::vector<DSType *> elementTypes(size);
+        for(unsigned int i = 0; i < size; i++) {
+            elementTypes[i] = decodeType(typePool, pos, elementType0, elementType1);
+        }
+        return typePool->createAndGetTupleTypeIfUndefined(elementTypes);
+    };
     case P_N0:
     case P_N1:
     case P_N2:

@@ -31,6 +31,7 @@
     OP(RCTX)           /* RuntimeContext */\
     OP(ARRAY)          /* Array */\
     OP(MAP)            /* Map */\
+    OP(TUPLE)          /* Tuple */\
     OP(AND)            /* & */\
     OP(IDENTIFIER) \
     OP(TYPE_OPEN)      /* < */\

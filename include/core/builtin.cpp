@@ -21,6 +21,7 @@
 #include <core/DSObject.h>
 
 #include <math.h>
+#include "DSObject.h"
 
 // helper macro
 #define LOCAL(index) (ctx.localStack[ctx.localVarOffset + (index)])
@@ -564,6 +565,20 @@ static inline bool map_find(RuntimeContext &ctx) {
     auto iter = obj->getValueMap().find(LOCAL(1));
     RET(TO_BOOL(iter != obj->getValueMap().end()));
 }
+
+// ###################
+// ##     Tuple     ##
+// ###################
+
+//!bind: constructor ($this : Tuple<T0>, $arg : T0)
+static inline bool tuple_init(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(tuple_init);
+    DSType *type = LOCAL(0)->type;
+    ctx.setLocal(0, std::make_shared<Tuple_Object>(type));
+    TYPE_AS(Tuple_Object, LOCAL(0))->set(0, LOCAL(1));
+    return true;
+}
+
 
 // ###################
 // ##     Error     ##

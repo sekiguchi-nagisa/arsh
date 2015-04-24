@@ -48,7 +48,8 @@ namespace core {
 // type template
 #define EACH_HANDLE_INFO_TYPE_TEMP(OP) \
     OP(Array) \
-    OP(Map)
+    OP(Map) \
+    OP(Tuple)
 
 // param types num
 #define EACH_HANDLE_INFO_NUM(OP) \

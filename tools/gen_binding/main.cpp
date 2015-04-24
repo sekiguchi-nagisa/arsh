@@ -305,7 +305,8 @@ private:
     std::unique_ptr<CommonTypeToken> typeTemp;
 
     /**
-     * element size. must be equivalent to this->elements.size()
+     * element size. must be equivalent to this->elements.size().
+     * if requiredSize is 0, allow any elements
      */
     unsigned int requiredSize;
 
@@ -333,12 +334,15 @@ public:
 
 void ReifiedTypeToken::serialize(HandleInfoSerializer &s) {
     // check element size
-    if(this->requiredSize != this->elements.size()) {
-        error("require %d, but is %d", this->requiredSize, this->elements.size());
+    unsigned int elementSize = this->elements.size();
+    if(this->requiredSize > 0) {
+        if(this->requiredSize != elementSize) {
+            error("require %d, but is %d", this->requiredSize, this->elements.size());
+        }
     }
 
     typeTemp->serialize(s);
-    s.add(toNum(this->requiredSize));
+    s.add(toNum(elementSize));
     for(auto &tok : this->elements) {
         tok->serialize(s);
     }
@@ -347,12 +351,15 @@ void ReifiedTypeToken::serialize(HandleInfoSerializer &s) {
 std::unique_ptr<ReifiedTypeToken> ReifiedTypeToken::newReifiedTypeToken(const std::string &name) {
     std::unique_ptr<CommonTypeToken> tok;
     unsigned int size = 0;
-    if(name == "Array") {
+    if(name == toTypeInfoName(Array)) {
         tok.reset(new CommonTypeToken(Array));
         size = 1;
-    } else if(name == "Map") {
+    } else if(name == toTypeInfoName(Map)) {
         tok.reset(new CommonTypeToken(Map));
         size = 2;
+    } else if(name == toTypeInfoName(Tuple)) {
+        tok.reset(new CommonTypeToken(Tuple));
+        size = 0;
     } else {
         error("unsupported type template: %s", name.c_str());
     }
@@ -733,7 +740,8 @@ std::unique_ptr<TypeToken> Parser::parse_type() {
         return CommonTypeToken::newTypeToken(this->lexer->toTokenText(token));
     };
     case ARRAY:
-    case MAP: {
+    case MAP:
+    case TUPLE: {
         auto token = this->token;
         this->nextToken();
 
