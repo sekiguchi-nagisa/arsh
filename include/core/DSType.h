@@ -81,6 +81,9 @@ public:
      */
     bool isInterface() const;
 
+    /**
+     * return true, if type is builtin type, reified type, tuple type.
+     */
     virtual bool isBuiltinType() const;
 
     /**
@@ -228,6 +231,49 @@ DSType *newBuiltinType(type_id_t id, bool extendable,
  */
 DSType *newReifiedType(type_id_t id, native_type_info_t *info,
                        DSType *superType, const std::vector<DSType *> &elementTypes);
+
+
+class TupleType : public DSType {
+private:
+    std::vector<DSType *> types;
+    std::unordered_map<std::string, FieldHandle *> fieldHandleMap;
+
+    /**
+     * may be null, if has more than two element.
+     */
+    MethodHandle *constructorHandle;
+
+    static NativeFuncInfo *funcInfo;
+    static std::shared_ptr<MethodRef> initRef;
+
+public:
+    /**
+     * superType is always AnyType
+     */
+    TupleType(type_id_t id, DSType *superType, const std::vector<DSType *> &types);
+    ~TupleType();
+
+    MethodHandle *getConstructorHandle(TypePool *typePool); // override
+    MethodRef *getConstructor();    // override
+
+    /**
+     * return always true.
+     */
+    bool isBuiltinType() const; // override
+
+    /**
+     * return types.size()
+     */
+    unsigned int getFieldSize(); // override
+
+    FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName); // override
+    FieldHandle *findHandle(const std::string &fieldName); // override
+
+    /**
+     * call only once.
+     */
+    static void registerFuncInfo(NativeFuncInfo *info);
+};
 
 /**
  * for TupleType creation

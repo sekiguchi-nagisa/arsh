@@ -76,6 +76,8 @@ native_type_info_t *info_ArrayType();
 
 native_type_info_t *info_MapType();
 
+native_type_info_t *info_TupleType();
+
 } // namespace core
 } // namespace ydsh
 

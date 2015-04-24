@@ -353,31 +353,9 @@ DSType *newReifiedType(type_id_t id, native_type_info_t *info,
 // ##     TupleType     ##
 // #######################
 
-class TupleType : public DSType {
-private:
-    std::vector<DSType *> types;
-    std::unordered_map<std::string, FieldHandle *> fieldHandleMap;
-
-public:
-    /**
-     * superType is always AnyType
-     */
-    TupleType(type_id_t id, DSType *superType, const std::vector<DSType *> &types);
-    ~TupleType();
-
-
-    /**
-     * return types.size()
-     */
-    unsigned int getFieldSize(); // override
-
-    FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName); // override
-    FieldHandle *findHandle(const std::string &fieldName); // override
-    bool equals(DSType *targetType); // override
-};
-
 TupleType::TupleType(type_id_t id, DSType *superType, const std::vector<DSType *> &types) :
-        DSType(id, false, superType, false), types(types), fieldHandleMap() {
+        DSType(id, false, superType, false), types(types),
+        fieldHandleMap(), constructorHandle() {
     unsigned int size = this->types.size();
     unsigned int baseIndex = this->superType->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {
@@ -391,6 +369,25 @@ TupleType::~TupleType() {
         delete pair.second;
     }
     this->fieldHandleMap.clear();
+
+    delete this->constructorHandle;
+    this->constructorHandle = 0;
+}
+
+MethodHandle *TupleType::getConstructorHandle(TypePool *typePool) {
+    if(this->types.size() == 1 && this->constructorHandle == 0) {
+        this->constructorHandle = new MethodHandle(0);
+        this->constructorHandle->init(typePool, funcInfo, this->types[0]);
+    }
+    return this->constructorHandle;
+}
+
+MethodRef *TupleType::getConstructor() {
+    return initRef.get();
+}
+
+bool TupleType::isBuiltinType() const {
+    return true;
 }
 
 unsigned int TupleType::getFieldSize() {
@@ -411,6 +408,16 @@ FieldHandle *TupleType::findHandle(const std::string &fieldName) {
         return this->superType->findHandle(fieldName);
     }
     return iter->second;
+}
+
+NativeFuncInfo *TupleType::funcInfo = 0;
+std::shared_ptr<MethodRef> TupleType::initRef;
+
+void TupleType::registerFuncInfo(NativeFuncInfo *info) {
+    if(funcInfo == 0) {
+        funcInfo = info;
+        initRef.reset(new NativeMethodRef(info->func_ptr));
+    }
 }
 
 DSType *newTupleType(type_id_t id, DSType *superType, const std::vector<DSType *> &elementTypes) {

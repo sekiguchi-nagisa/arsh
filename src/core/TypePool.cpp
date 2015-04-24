@@ -72,6 +72,9 @@ TypePool::TypePool(char **envp) :
     this->errorType = this->initBuiltinType("Error", true, this->anyType, info_ErrorType());
     this->taskType = this->initBuiltinType("Task", false, this->anyType, info_Dummy());
 
+    // register NativeFuncInfo to TupleType
+    TupleType::registerFuncInfo(info_TupleType()->initInfo);
+
     /**
      * hidden from script
      */
@@ -289,7 +292,7 @@ DSType *TypePool::createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate,
 DSType *TypePool::createAndGetTupleTypeIfUndefined(const std::vector<DSType *> &elementTypes) {
     this->checkElementTypes(elementTypes);
 
-    if(elementTypes.size() < 2) {
+    if(elementTypes.size() == 0) {
         E_TupleElement();
     }
 
