@@ -28,7 +28,7 @@ namespace core {
 // ######################
 
 TypePool::TypePool(char **envp) :
-        idCount(0), typeMap(16), typeNameTable(),
+        idCount(0), typeMap(16), typeNameTable(), typeCache(),
         anyType(), voidType(), valueType(),
         byteType(), int16Type(), uint16Type(),
         int32Type(), uint32Type(), int64Type(), uint64Type(),
@@ -321,7 +321,7 @@ InterfaceType *TypePool::createAndGetInterfaceTypeIfUndefined(const std::string 
     auto iter = this->typeMap.find(interfaceName);
     if(iter == this->typeMap.end()) {
         InterfaceType *type = new InterfaceType(NEW_ID(), this->anyType);
-        this->addType(std::string(interfaceName), type);
+        this->addType(std::string(interfaceName), type, true);
         return type;
     }
 
@@ -411,6 +411,22 @@ void TypePool::addEnv(const std::string &envName) {
     this->envSet.insert(envName);
 }
 
+void TypePool::removeCachedType() {
+    for(const std::string *typeName : this->typeCache) {
+        auto iter = this->typeMap.find(*typeName);
+        if(iter != this->typeMap.end()) {
+            if((long) iter->second > -1) {
+                delete iter->second;
+            }
+            this->typeMap.erase(iter);
+        }
+    }
+}
+
+void TypePool::clearTypeCache() {
+    this->typeCache.clear();
+}
+
 void TypePool::initEnvSet() {
     for(unsigned int i = 0; this->envp[i] != NULL; i++) {
         char *env = this->envp[i];
@@ -426,9 +442,12 @@ void TypePool::initEnvSet() {
     }
 }
 
-DSType *TypePool::addType(std::string &&typeName, DSType *type) {
+DSType *TypePool::addType(std::string &&typeName, DSType *type, bool cache) {
     auto pair = this->typeMap.insert(std::make_pair(std::move(typeName), type));
     this->typeNameTable.push_back(&pair.first->first);
+    if(cache) {
+        this->typeCache.push_back(&pair.first->first);
+    }
     return type;
 }
 

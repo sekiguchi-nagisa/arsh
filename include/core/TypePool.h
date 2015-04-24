@@ -40,6 +40,11 @@ private:
     std::unordered_map<std::string, DSType *> typeMap;
     std::vector<const std::string *> typeNameTable;
 
+    /**
+     * cache generated type(interface).
+     */
+    std::vector<const std::string *> typeCache;
+
     // type definition
     DSType *anyType;
     DSType *voidType;
@@ -257,10 +262,17 @@ public:
 
     void addEnv(const std::string &envName);
 
+    /**
+     * remove cached type from typeMap and call destructor.
+     */
+    void removeCachedType();
+
+    void clearTypeCache();
+
 private:
     void initEnvSet();
 
-    DSType *addType(std::string &&typeName, DSType *type);
+    DSType *addType(std::string &&typeName, DSType *type, bool cache = false);
 
     DSType *initBuiltinType(const char *typeName, bool extendable,
                             DSType *superType, native_type_info_t *info, bool isVoid = false);
