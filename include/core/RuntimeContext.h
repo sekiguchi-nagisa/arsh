@@ -137,6 +137,10 @@ struct RuntimeContext {
      */
     int methodIndexOf_bt;
 
+    const static unsigned int defaultFileNameIndex = 0;
+    std::vector<std::string> readFiles;
+
+
     RuntimeContext(char **envp);
 
     ~RuntimeContext();
@@ -526,6 +530,13 @@ struct RuntimeContext {
     void throwOutOfIndexError(std::string &&message) {
         this->throwError(this->pool.getOutOfIndexErrorType(), std::move(message));
     }
+
+    /**
+     * register source name to readFiles.
+     * return pointer of added name.
+     * sourceName is null, if source is stdin.
+     */
+    const char *registerSourceName(const char *sourceName);
 };
 
 } // namespace core

@@ -77,6 +77,9 @@ public:
     void setAssertion(bool assertion);
 
 private:
+    /**
+     * sourceName is null, if read stdin.
+     */
     ExitStatus eval(const char *sourceName, Lexer<LexerDef, TokenKind> &lexer, bool interactive = false);
 
     /**

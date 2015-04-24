@@ -1427,6 +1427,7 @@ public:
  */
 class RootNode : public Node {    //FIXME:
 public:
+    const char *sourceName;
     std::list<Node *> nodeList;
 
 private:
@@ -1445,6 +1446,8 @@ public:
 
     ~RootNode();
 
+    void setSourceName(const char *sourceName);
+    const char *getSourceName();
     void addNode(Node *node);
 
     const std::list<Node *> &getNodeList();

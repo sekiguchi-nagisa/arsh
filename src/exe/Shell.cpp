@@ -30,7 +30,7 @@ Shell::~Shell() {
 
 ExitStatus Shell::eval(const char *line) {
     Lexer<LexerDef, TokenKind> lexer(line);
-    return this->eval("(stdin)", lexer, true);
+    return this->eval(0, lexer, true);
 }
 
 ExitStatus Shell::eval(const char *sourceName, FILE *fp) {
@@ -78,11 +78,13 @@ void Shell::setAssertion(bool assertion) {
 CommonErrorListener Shell::clistener;
 
 ExitStatus Shell::eval(const char *sourceName, Lexer<LexerDef, TokenKind> &lexer, bool interactive) {
+    sourceName = this->ctx.registerSourceName(sourceName);
     lexer.setLineNum(this->lineNum);
     RootNode rootNode;
 
     // parse
     try {
+        rootNode.setSourceName(sourceName);
         this->parser.parse(lexer, rootNode);
         this->lineNum = lexer.getLineNum();
 

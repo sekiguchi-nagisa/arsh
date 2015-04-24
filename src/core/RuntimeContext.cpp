@@ -40,7 +40,9 @@ RuntimeContext::RuntimeContext(char **envp) :
         localStack(new std::shared_ptr<DSObject>[DEFAULT_LOCAL_SIZE]),
         localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0),
         localVarOffset(0), offsetStack(), repl(false), assertion(true),
-        methodIndexOf_STR(-1), methodIndexOf_INTERP(-1), methodIndexOf_CMD_ARG(-1), methodIndexOf_bt(-1) {
+        methodIndexOf_STR(-1), methodIndexOf_INTERP(-1), methodIndexOf_CMD_ARG(-1), methodIndexOf_bt(-1),
+        readFiles() {
+    this->readFiles.push_back(std::string("(stdin)"));
 }
 
 RuntimeContext::~RuntimeContext() {
@@ -106,6 +108,14 @@ void RuntimeContext::exportEnv(const std::string &envName, int index, bool isGlo
     } else {
         this->localStack[this->localVarOffset + index] = this->pop();
     }
+}
+
+const char *RuntimeContext::registerSourceName(const char *sourceName) {
+    if(sourceName == 0) {
+        return this->readFiles[defaultFileNameIndex].c_str();
+    }
+    this->readFiles.push_back(std::string(sourceName));
+    return this->readFiles.back().c_str();
 }
 
 } // namespace core

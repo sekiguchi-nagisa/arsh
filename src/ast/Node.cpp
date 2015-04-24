@@ -2756,7 +2756,7 @@ EvalStatus DummyNode::eval(RuntimeContext &ctx) {
 // ######################
 
 RootNode::RootNode() :
-        Node(0), nodeList(), maxVarNum(0), maxGVarNum(0) {
+        Node(0), sourceName(0), nodeList(), maxVarNum(0), maxGVarNum(0) {
 }
 
 RootNode::~RootNode() {
@@ -2764,6 +2764,14 @@ RootNode::~RootNode() {
         delete n;
     }
     this->nodeList.clear();
+}
+
+void RootNode::setSourceName(const char *sourceName) {
+    this->sourceName = sourceName;
+}
+
+const char *RootNode::getSourceName() {
+    return this->sourceName;
 }
 
 void RootNode::addNode(Node *node) {
