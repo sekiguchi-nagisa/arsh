@@ -95,6 +95,8 @@ static void closeAllPipe(int size, int pipefds[][2]) {
 }
 
 int ProcGroup::execProcs() {
+    RuntimeContext *ctx = this->procs[0]->ctx;
+
     // prepare each proc
     for(unsigned int i = 0; i < this->procSize; i++) {
         this->procs[i]->prepare();
@@ -138,6 +140,7 @@ int ProcGroup::execProcs() {
                 ctx->exitStatus = WTERMSIG(status);
             }
         }
+        ctx->exitStatus->value = this->procs[this->procSize - 1]->exitStatus;
         return 0;
     } else if(pid[procIndex] == 0) { // child process
         ProcContext *ctx = this->procs[procIndex].get();

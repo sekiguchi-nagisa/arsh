@@ -33,6 +33,7 @@ RuntimeContext::RuntimeContext(char **envp) :
         dummy(new DummyObject()),
         scriptName(std::make_shared<String_Object>(this->pool.getStringType(), std::string("-ydsh"))),
         scriptArgs(std::make_shared<Array_Object>(this->pool.getStringArrayType())),
+        exitStatus(std::make_shared<Int_Object>(this->pool.getIntType(), 0)),
         dbus(new DBus_Object(this->pool)),
         globalVarTable(new std::shared_ptr<DSObject>[DEFAULT_TABLE_SIZE]),
         tableSize(DEFAULT_TABLE_SIZE),

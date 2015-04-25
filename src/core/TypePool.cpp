@@ -17,6 +17,7 @@
 #include <core/TypePool.h>
 #include <core/TypeLookupError.h>
 #include <core/bind.h>
+#include <core/builtin.cpp>
 
 
 namespace ydsh {

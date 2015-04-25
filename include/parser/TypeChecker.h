@@ -73,6 +73,8 @@ private:
      */
     std::vector<bool> finallyContextStack;
 
+    std::vector<CmdContextNode *> cmdContextStack;
+
 public:
     TypeChecker(TypePool *typePool);
 

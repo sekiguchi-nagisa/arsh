@@ -160,6 +160,7 @@ void Shell::initBuiltinVar() {
     // register special char
     rootNode.addNode(new BindVarNode("0", this->ctx.scriptName));
     rootNode.addNode(new BindVarNode("@", this->ctx.scriptArgs));
+    rootNode.addNode(new BindVarNode("?", this->ctx.exitStatus));
 
     // register DBus management object
     rootNode.addNode(new BindVarNode("DBus",this->ctx.dbus));

@@ -19,7 +19,6 @@
 
 #include <exe/Shell.h>
 #include <misc/ArgsParser.h>
-#include <core/builtin.cpp>
 
 enum OptionKind {
     DUMP_UAST,

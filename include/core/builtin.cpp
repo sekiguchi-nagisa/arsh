@@ -21,7 +21,6 @@
 #include <core/DSObject.h>
 
 #include <math.h>
-#include "DSObject.h"
 
 // helper macro
 #define LOCAL(index) (ctx.localStack[ctx.localVarOffset + (index)])

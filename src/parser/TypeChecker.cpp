@@ -54,7 +54,8 @@ FunctionType *HandleOrFuncType::getFuncType() {
 // #########################
 
 TypeChecker::TypeChecker(TypePool * typePool) :
-        typePool(typePool), symbolTable(), curReturnType(0), loopContextStack(), finallyContextStack() {
+        typePool(typePool), symbolTable(), curReturnType(0),
+        loopContextStack(), finallyContextStack(), cmdContextStack() {
 }
 
 TypeChecker::~TypeChecker() {
@@ -351,6 +352,7 @@ void TypeChecker::recover() {
     this->curReturnType = 0;
     this->loopContextStack.clear();
     this->finallyContextStack.clear();
+    this->cmdContextStack.clear();
 }
 
 // visitor api
@@ -638,16 +640,46 @@ void TypeChecker::visitPipedCmdNode(PipedCmdNode * node) {
     for(CmdNode *procNode : node->getCmdNodes()) {
         this->checkTypeAsStatement(procNode);   // always void
     }
-    node->setType(this->typePool->getVoidType());   //FIXME
+    if(node->treatAsBool() || this->cmdContextStack.back()->getRetKind() == CmdContextNode::BOOL) {
+        node->setType(this->typePool->getBooleanType());
+    } else {
+        node->setType(this->typePool->getVoidType());
+    }
 }
 
-void TypeChecker::visitCmdContextNode(CmdContextNode * node) {   //TODO: return type, attribute
-    this->checkTypeAsStatement(node->getExprNode());    // FIXME:
-    node->setType(this->typePool->getVoidType());
+void TypeChecker::visitCmdContextNode(CmdContextNode * node) {   //TODO: attribute
+    // check type condNode
+    this->cmdContextStack.push_back(node);
+    this->checkTypeAsStatement(node->getExprNode());
+    this->cmdContextStack.pop_back();
+
+    DSType *type = this->typePool->getVoidType();
+
+    switch(node->getRetKind()) {
+    case CmdContextNode::VOID:
+        type = this->typePool->getVoidType();
+        break;
+    case CmdContextNode::BOOL:
+        type = this->typePool->getBooleanType();
+        break;
+//    case CmdContextNode::STR:
+//        type = this->typePool->getStringType();
+//        break;
+//    case CmdContextNode::ARRAY:
+//        type = this->typePool->getStringArrayType();  //FIXME:
+//        break;
+    default: {
+        std::string msg("unsupported ret kind: ");
+        msg += node->getRetKind();
+        E_Unimplemented(node, msg);
+        break;
+    }
+    }
+    node->setType(type);
 }
 
 void TypeChecker::visitAssertNode(AssertNode * node) {
-    this->checkType(this->typePool->getBooleanType(), node->getExprNode());
+    this->checkType(this->typePool->getBooleanType(), node->getCondNode());
     node->setType(this->typePool->getVoidType());
 }
 

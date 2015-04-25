@@ -64,6 +64,9 @@ void Node::inStringExprNode() { // do nothing
 void Node::inCmdArgNode() { // do nothing
 }
 
+void Node::inCondition() {  // do nothing
+}
+
 bool Node::isBlockEndNode() {
     return false;
 }
@@ -1158,6 +1161,8 @@ EvalStatus GroupNode::eval(RuntimeContext &ctx) {
 
 CondOpNode::CondOpNode(Node *leftNode, Node *rightNode, bool isAndOp) :
         Node(leftNode->getLineNum()), leftNode(leftNode), rightNode(rightNode), andOp(isAndOp) {
+    this->leftNode->inCondition();
+    this->rightNode->inCondition();
 }
 
 CondOpNode::~CondOpNode() {
@@ -1324,7 +1329,7 @@ EvalStatus CmdNode::eval(RuntimeContext &ctx) { //FIXME: redirect
 // ##########################
 
 PipedCmdNode::PipedCmdNode(CmdNode *node) :
-        Node(node->getLineNum()), cmdNodes() {
+        Node(node->getLineNum()), cmdNodes(), asBool(false) {
     this->cmdNodes.push_back(node);
 }
 
@@ -1341,6 +1346,14 @@ void PipedCmdNode::addCmdNodes(CmdNode *node) {
 
 const std::vector<CmdNode *> &PipedCmdNode::getCmdNodes() {
     return this->cmdNodes;
+}
+
+void PipedCmdNode::inCondition() {
+    this->asBool = true;
+}
+
+bool PipedCmdNode::treatAsBool() {
+    return this->asBool;
 }
 
 void PipedCmdNode::dump(Writer &writer) const {
@@ -1366,6 +1379,14 @@ EvalStatus PipedCmdNode::eval(RuntimeContext &ctx) {
     }
     group.execProcs();
 
+    if(*this->type == *ctx.pool.getBooleanType()) {
+        if(ctx.exitStatus->value == 0) {
+            ctx.push(ctx.trueObj);
+        } else {
+            ctx.push(ctx.falseObj);
+        }
+    }
+
     return EVAL_SUCCESS;
 }
 
@@ -1376,6 +1397,9 @@ EvalStatus PipedCmdNode::eval(RuntimeContext &ctx) {
 CmdContextNode::CmdContextNode(Node *exprNode) :
         Node(exprNode->getLineNum()),
         exprNode(exprNode), retKind(VOID), attributeSet(0) {
+    if(dynamic_cast<CondOpNode*>(exprNode) != 0) {
+        this->retKind = BOOL;
+    }
 }
 
 CmdContextNode::~CmdContextNode() {
@@ -1405,6 +1429,18 @@ void CmdContextNode::setRetKind(CmdRetKind kind) {
 
 CmdContextNode::CmdRetKind CmdContextNode::getRetKind() {
     return this->retKind;
+}
+
+void CmdContextNode::inStringExprNode() {
+    this->setRetKind(STR);
+}
+
+void CmdContextNode::inCmdArgNode() {
+    this->setRetKind(ARRAY);
+}
+
+void CmdContextNode::inCondition() {
+    this->setRetKind(BOOL);
 }
 
 void CmdContextNode::dump(Writer &writer) const {
@@ -1446,21 +1482,22 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
 // ##     AssertNode     ##
 // ########################
 
-AssertNode::AssertNode(unsigned int lineNum, Node *exprNode) :
-        Node(lineNum), exprNode(exprNode) {
+AssertNode::AssertNode(unsigned int lineNum, Node *condNode) :
+        Node(lineNum), condNode(condNode) {
+    this->condNode->inCondition();
 }
 
 AssertNode::~AssertNode() {
-    delete this->exprNode;
-    this->exprNode = 0;
+    delete this->condNode;
+    this->condNode = 0;
 }
 
-Node *AssertNode::getExprNode() {
-    return this->exprNode;
+Node *AssertNode::getCondNode() {
+    return this->condNode;
 }
 
 void AssertNode::dump(Writer &writer) const {
-    WRITE_PTR(exprNode);
+    WRITE_PTR(condNode);
 }
 
 void AssertNode::accept(NodeVisitor *visitor) {
@@ -1469,7 +1506,7 @@ void AssertNode::accept(NodeVisitor *visitor) {
 
 EvalStatus AssertNode::eval(RuntimeContext &ctx) {
     if (ctx.assertion) {
-        EVAL(ctx, this->exprNode);
+        EVAL(ctx, this->condNode);
         ctx.checkAssertion();
     }
     return EVAL_SUCCESS;
@@ -1724,6 +1761,7 @@ ForNode::ForNode(unsigned int lineNum, Node *initNode, Node *condNode, Node *ite
     if(this->condNode == 0) {
         this->condNode = new VarNode(lineNum, std::string(TRUE));
     }
+    this->condNode->inCondition();
 
     if(this->iterNode == 0) {
         this->iterNode = new EmptyNode();
@@ -1799,6 +1837,7 @@ EvalStatus ForNode::eval(RuntimeContext &ctx) {
 
 WhileNode::WhileNode(unsigned int lineNum, Node *condNode, BlockNode *blockNode) :
         Node(lineNum), condNode(condNode), blockNode(blockNode) {
+    this->condNode->inCondition();
 }
 
 WhileNode::~WhileNode() {
@@ -1851,6 +1890,7 @@ EvalStatus WhileNode::eval(RuntimeContext &ctx) {
 
 DoWhileNode::DoWhileNode(unsigned int lineNum, BlockNode *blockNode, Node *condNode) :
         Node(lineNum), blockNode(blockNode), condNode(condNode) {
+    this->condNode->inCondition();
 }
 
 DoWhileNode::~DoWhileNode() {
@@ -1902,6 +1942,7 @@ EvalStatus DoWhileNode::eval(RuntimeContext &ctx) {
 IfNode::IfNode(unsigned int lineNum, Node *condNode, BlockNode *thenNode) :
         Node(lineNum), condNode(condNode), thenNode(thenNode),
         elifCondNodes(), elifThenNodes(), elseNode(0) {
+    this->condNode->inCondition();
 }
 
 IfNode::~IfNode() {
@@ -1932,6 +1973,7 @@ BlockNode *IfNode::getThenNode() {
 }
 
 void IfNode::addElifNode(Node *condNode, BlockNode *thenNode) {
+    condNode->inCondition();
     this->elifCondNodes.push_back(condNode);
     this->elifThenNodes.push_back(thenNode);
 }

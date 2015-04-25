@@ -61,6 +61,11 @@ struct RuntimeContext {
     std::shared_ptr<Array_Object> scriptArgs;
 
     /**
+     * contains exit status of most recent executed process. ($?)
+     */
+    std::shared_ptr<Int_Object> exitStatus;
+
+    /**
      * management object for dbus related function
      */
     std::shared_ptr<DBus_Object> dbus;

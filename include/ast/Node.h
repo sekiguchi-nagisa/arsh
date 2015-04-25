@@ -70,6 +70,11 @@ public:
      */
     virtual void inCmdArgNode();
 
+    /**
+     * for CmdContextNode, normally do nothing
+     */
+    virtual void inCondition();
+
     virtual bool isBlockEndNode();
 
     virtual void dump(Writer &writer) const = 0;
@@ -720,15 +725,16 @@ public:
 class PipedCmdNode : public Node {    //TODO: background ...etc
 private:
     std::vector<CmdNode *> cmdNodes;
+    bool asBool;
 
 public:
     PipedCmdNode(CmdNode *node);
-
     ~PipedCmdNode();
 
     void addCmdNodes(CmdNode *node);
-
     const std::vector<CmdNode *> &getCmdNodes();
+    void inCondition(); // override
+    bool treatAsBool();
 
     void dump(Writer &writer) const; // override
     void accept(NodeVisitor *visitor);    //override
@@ -756,41 +762,39 @@ private:
 
 public:
     CmdContextNode(Node *exprNode);
-
     ~CmdContextNode();
 
     Node *getExprNode();
-
     void setAttribute(flag8_t attribute);
-
     void unsetAttribute(flag8_t attribute);
-
     bool hasAttribute(flag8_t attribute);
-
     void setRetKind(CmdRetKind kind);
-
     CmdRetKind getRetKind();
+
+    void inStringExprNode();    // override
+    void inCmdArgNode();    // override
+    void inCondition(); // override
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    //override
     EvalStatus eval(RuntimeContext &ctx); // override
 
-    const static unsigned char BACKGROUND = 1 << 0;
-    const static unsigned char FORK = 1 << 1;
+    const static flag8_t BACKGROUND = 1 << 0;
+    const static flag8_t FORK       = 1 << 1;
 };
 
 // statement definition
 
 class AssertNode : public Node {
 private:
-    Node *exprNode;
+    Node *condNode;
 
 public:
-    AssertNode(unsigned int lineNum, Node *exprNode);
+    AssertNode(unsigned int lineNum, Node *condNode);
 
     ~AssertNode();
 
-    Node *getExprNode();
+    Node *getCondNode();
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
