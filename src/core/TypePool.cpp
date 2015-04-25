@@ -18,7 +18,6 @@
 #include <core/TypeLookupError.h>
 #include <core/bind.h>
 
-#define NEW_ID() this->idCount++
 
 namespace ydsh {
 namespace core {
@@ -28,7 +27,7 @@ namespace core {
 // ######################
 
 TypePool::TypePool(char **envp) :
-        idCount(0), typeMap(16), typeNameTable(), typeCache(),
+        typeMap(16), typeNameMap(), typeCache(),
         anyType(), voidType(), valueType(),
         byteType(), int16Type(), uint16Type(),
         int32Type(), uint32Type(), int64Type(), uint64Type(),
@@ -284,7 +283,7 @@ DSType *TypePool::createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate,
     auto iter = this->typeMap.find(typeName);
     if(iter == this->typeMap.end()) {
         return this->addType(std::move(typeName),
-                             newReifiedType(NEW_ID(), typeTemplate->getInfo(), this->anyType, elementTypes));
+                             newReifiedType(typeTemplate->getInfo(), this->anyType, elementTypes));
     }
     return iter->second;
 }
@@ -299,7 +298,7 @@ DSType *TypePool::createAndGetTupleTypeIfUndefined(const std::vector<DSType *> &
     std::string typeName(this->toTupleTypeName(elementTypes));
     auto iter = this->typeMap.find(typeName);
     if(iter == this->typeMap.end()) {
-        return this->addType(std::move(typeName), newTupleType(NEW_ID(), this->anyType, elementTypes));
+        return this->addType(std::move(typeName), newTupleType(this->anyType, elementTypes));
     }
     return iter->second;
 }
@@ -312,7 +311,7 @@ FunctionType *TypePool::createAndGetFuncTypeIfUndefined(DSType *returnType,
     auto iter = this->typeMap.find(typeName);
     if(iter == this->typeMap.end()) {
         FunctionType *funcType =
-                new FunctionType(NEW_ID(), this->getBaseFuncType(), returnType, paramTypes);
+                new FunctionType(this->getBaseFuncType(), returnType, paramTypes);
         this->addType(std::move(typeName), funcType);
         return funcType;
     }
@@ -323,7 +322,7 @@ FunctionType *TypePool::createAndGetFuncTypeIfUndefined(DSType *returnType,
 InterfaceType *TypePool::createAndGetInterfaceTypeIfUndefined(const std::string &interfaceName) {
     auto iter = this->typeMap.find(interfaceName);
     if(iter == this->typeMap.end()) {
-        InterfaceType *type = new InterfaceType(NEW_ID(), this->anyType);
+        InterfaceType *type = new InterfaceType(this->anyType);
         this->addType(std::string(interfaceName), type, true);
         return type;
     }
@@ -354,7 +353,7 @@ void TypePool::setAlias(const std::string &alias, DSType *targetType) {
 }
 
 const std::string &TypePool::getTypeName(const DSType &type) {
-    return *this->typeNameTable[type.getTypeId()];
+    return *this->typeNameMap[(unsigned long) &type];
 }
 
 std::string TypePool::toReifiedTypeName(TypeTemplate *typeTemplate, const std::vector<DSType *> &elementTypes) {
@@ -447,7 +446,8 @@ void TypePool::initEnvSet() {
 
 DSType *TypePool::addType(std::string &&typeName, DSType *type, bool cache) {
     auto pair = this->typeMap.insert(std::make_pair(std::move(typeName), type));
-    this->typeNameTable.push_back(&pair.first->first);
+    //this->typeNameMap.push_back(&pair.first->first);
+    this->typeNameMap.insert(std::make_pair((unsigned long) type, &pair.first->first));
     if(cache) {
         this->typeCache.push_back(&pair.first->first);
     }
@@ -458,7 +458,7 @@ DSType *TypePool::initBuiltinType(const char *typeName, bool extendable,
                                   DSType *superType, native_type_info_t *info, bool isVoid) {
     // create and register type
     return this->addType(
-            std::string(typeName), newBuiltinType(NEW_ID(), extendable, superType, info, isVoid));
+            std::string(typeName), newBuiltinType(extendable, superType, info, isVoid));
 }
 
 TypeTemplate *TypePool::initTypeTemplate(const char *typeName,

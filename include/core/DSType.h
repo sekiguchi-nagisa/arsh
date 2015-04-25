@@ -33,12 +33,8 @@ struct DSObject;
 struct FuncObject;
 class MethodRef;
 
-
-typedef unsigned short type_id_t;
-
 class DSType {
 protected:
-    const type_id_t id;
     flag8_set_t attributeSet;
 
     /**
@@ -52,14 +48,9 @@ public:
     const static flag8_t FUNC_TYPE  = 1 << 2;
     const static flag8_t INTERFACE  = 1 << 3;
 
-    DSType(type_id_t id, bool extendable, DSType *superType, bool isVoid = false);
+    DSType(bool extendable, DSType *superType, bool isVoid = false);
 
     virtual ~DSType();
-
-    /**
-     * get unique type id.
-     */
-    type_id_t getTypeId() const;
 
     /**
      * if true, can extend this type
@@ -152,7 +143,7 @@ private:
     std::vector<DSType *> paramTypes;
 
 public:
-    FunctionType(type_id_t id, DSType *superType,
+    FunctionType(DSType *superType,
                  DSType *returnType, const std::vector<DSType *> &paramTypes);
 
     ~FunctionType();
@@ -222,15 +213,15 @@ struct native_type_info_t {
 /**
  * for BuiltinType creation.
  */
-DSType *newBuiltinType(type_id_t id, bool extendable,
-                       DSType *superType, native_type_info_t *info, bool isVoid = false);
+DSType *newBuiltinType(bool extendable, DSType *superType,
+                       native_type_info_t *info, bool isVoid = false);
 
 /**
  * for ReifiedType creation.
  * reified type is not public class.
  */
-DSType *newReifiedType(type_id_t id, native_type_info_t *info,
-                       DSType *superType, const std::vector<DSType *> &elementTypes);
+DSType *newReifiedType(native_type_info_t *info, DSType *superType,
+                       const std::vector<DSType *> &elementTypes);
 
 
 class TupleType : public DSType {
@@ -250,7 +241,7 @@ public:
     /**
      * superType is always AnyType
      */
-    TupleType(type_id_t id, DSType *superType, const std::vector<DSType *> &types);
+    TupleType(DSType *superType, const std::vector<DSType *> &types);
     ~TupleType();
 
     MethodHandle *getConstructorHandle(TypePool *typePool); // override
@@ -278,7 +269,7 @@ public:
 /**
  * for TupleType creation
  */
-DSType *newTupleType(type_id_t id, DSType *superType, const std::vector<DSType *> &elementTypes);
+DSType *newTupleType(DSType *superType, const std::vector<DSType *> &elementTypes);
 
 /**
  * for D-Bus interface
@@ -292,7 +283,7 @@ public:
     /**
      * superType is always AnyType.
      */
-    InterfaceType(type_id_t id, DSType *superType);
+    InterfaceType(DSType *superType);
 
     ~InterfaceType();
 

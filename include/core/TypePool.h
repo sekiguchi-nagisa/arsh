@@ -32,13 +32,11 @@ struct native_type_info_t;
 
 class TypePool {
 private:
-    type_id_t idCount;
-
     /**
      * contains tagged pointer if set alias.
      */
     std::unordered_map<std::string, DSType *> typeMap;
-    std::vector<const std::string *> typeNameTable;
+    std::unordered_map<unsigned long, const std::string *> typeNameMap;
 
     /**
      * cache generated type(interface).

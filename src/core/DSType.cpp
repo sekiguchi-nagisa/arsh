@@ -27,8 +27,8 @@ namespace core {
 // ##     DSType     ##
 // ####################
 
-DSType::DSType(type_id_t id, bool extendable, DSType *superType, bool isVoid) :
-        id(id), attributeSet(0), superType(superType) {
+DSType::DSType(bool extendable, DSType *superType, bool isVoid) :
+        attributeSet(0), superType(superType) {
     if(extendable) {
         setFlag(this->attributeSet, EXTENDABLE);
     }
@@ -38,10 +38,6 @@ DSType::DSType(type_id_t id, bool extendable, DSType *superType, bool isVoid) :
 }
 
 DSType::~DSType() {
-}
-
-type_id_t DSType::getTypeId() const {
-    return this->id;
 }
 
 bool DSType::isExtendable() const {
@@ -93,11 +89,11 @@ MethodHandle *DSType::lookupMethodHandle(TypePool *typePool, const std::string &
 }
 
 bool DSType::operator==(const DSType &type) {
-    return this->id == type.id;
+    return (unsigned long) this == (unsigned long) &type;
 }
 
 bool DSType::operator!=(const DSType &type) {
-    return this->id != type.id;
+    return (unsigned long) this != (unsigned long) &type;
 }
 
 bool DSType::isAssignableFrom(DSType *targetType) {
@@ -119,9 +115,9 @@ void DSType::copyAllMethodRef(std::vector<std::shared_ptr<MethodRef>> &methodTab
 // ##     FunctionType     ##
 // ##########################
 
-FunctionType::FunctionType(type_id_t id, DSType *superType,
-                           DSType *returnType, const std::vector<DSType *> &paramTypes) :
-        DSType(id, false, superType, false),
+FunctionType::FunctionType(DSType *superType, DSType *returnType,
+                           const std::vector<DSType *> &paramTypes) :
+        DSType(false, superType, false),
         returnType(returnType), paramTypes(paramTypes) {
     setFlag(this->attributeSet, FUNC_TYPE);
 }
@@ -176,7 +172,7 @@ public:
     /**
      * actually superType is BuiltinType.
      */
-    BuiltinType(type_id_t id, bool extendable, DSType *superType,
+    BuiltinType(bool extendable, DSType *superType,
                 native_type_info_t *info, bool isVoid);
 
     virtual ~BuiltinType();
@@ -194,9 +190,9 @@ private:
     virtual void initMethodHandle(MethodHandle *handle, TypePool *typePool, NativeFuncInfo *info);
 };
 
-BuiltinType::BuiltinType(type_id_t id, bool extendable, DSType *superType,
+BuiltinType::BuiltinType(bool extendable, DSType *superType,
                          native_type_info_t *info, bool isVoid) :
-        DSType(id, extendable, superType, isVoid),
+        DSType(extendable, superType, isVoid),
         info(info), constructorHandle(), constructor(), methodHandleMap(),
         methodTable(superType != 0 ? superType->getMethodSize() + info->methodSize : info->methodSize) {
 
@@ -307,7 +303,7 @@ private:
     std::vector<DSType *> elementTypes;
 
 public:
-    ReifiedType(type_id_t id, native_type_info_t *info, DSType *superType, const std::vector<DSType *> &elementTypes);
+    ReifiedType(native_type_info_t *info, DSType *superType, const std::vector<DSType *> &elementTypes);
 
     ~ReifiedType();
 
@@ -318,9 +314,9 @@ private:
     void initMethodHandle(MethodHandle *handle, TypePool *typePool, NativeFuncInfo *info); // override
 };
 
-ReifiedType::ReifiedType(type_id_t id, native_type_info_t *info, DSType *superType,
+ReifiedType::ReifiedType(native_type_info_t *info, DSType *superType,
                          const std::vector<DSType *> &elementTypes) :
-        BuiltinType(id, false, superType, info, false), elementTypes(elementTypes) {
+        BuiltinType(false, superType, info, false), elementTypes(elementTypes) {
 }
 
 ReifiedType::~ReifiedType() {
@@ -339,22 +335,22 @@ void ReifiedType::initMethodHandle(MethodHandle *handle, TypePool *typePool, Nat
     }
 }
 
-DSType *newBuiltinType(type_id_t id, bool extendable,
+DSType *newBuiltinType(bool extendable,
                        DSType *superType, native_type_info_t *info, bool isVoid) {
-    return new BuiltinType(id, extendable, superType, info, isVoid);
+    return new BuiltinType(extendable, superType, info, isVoid);
 }
 
-DSType *newReifiedType(type_id_t id, native_type_info_t *info,
+DSType *newReifiedType(native_type_info_t *info,
                        DSType *superType, const std::vector<DSType *> &elementTypes) {
-    return new ReifiedType(id, info, superType, elementTypes);
+    return new ReifiedType(info, superType, elementTypes);
 }
 
 // #######################
 // ##     TupleType     ##
 // #######################
 
-TupleType::TupleType(type_id_t id, DSType *superType, const std::vector<DSType *> &types) :
-        DSType(id, false, superType, false), types(types),
+TupleType::TupleType(DSType *superType, const std::vector<DSType *> &types) :
+        DSType(false, superType, false), types(types),
         fieldHandleMap(), constructorHandle() {
     unsigned int size = this->types.size();
     unsigned int baseIndex = this->superType->getFieldSize();
@@ -420,16 +416,16 @@ void TupleType::registerFuncInfo(NativeFuncInfo *info) {
     }
 }
 
-DSType *newTupleType(type_id_t id, DSType *superType, const std::vector<DSType *> &elementTypes) {
-    return new TupleType(id, superType, elementTypes);
+DSType *newTupleType(DSType *superType, const std::vector<DSType *> &elementTypes) {
+    return new TupleType(superType, elementTypes);
 }
 
 // ###########################
 // ##     InterfaceType     ##
 // ###########################
 
-InterfaceType::InterfaceType(type_id_t id, DSType *superType) :
-        DSType(id, false, superType, false), fieldHandleMap(), methodHandleMap() {
+InterfaceType::InterfaceType(DSType *superType) :
+        DSType(false, superType, false), fieldHandleMap(), methodHandleMap() {
     setFlag(this->attributeSet, INTERFACE);
 }
 
