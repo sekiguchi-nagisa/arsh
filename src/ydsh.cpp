@@ -26,6 +26,7 @@ enum OptionKind {
     DUMP_AST,
     PARSE_ONLY,
     DISABLE_ASSERT,
+    VERSION,
     HELP,
 };
 
@@ -58,6 +59,13 @@ int main(int argc, char **argv, char **envp) {
             "--disable-assertion",
             false,
             "disable assert statement"
+    );
+
+    parser.addOption(
+            (unsigned int) VERSION,
+            "--version",
+            false,
+            "show version and copyright"
     );
 
     parser.addOption(
@@ -94,6 +102,10 @@ int main(int argc, char **argv, char **envp) {
         case DISABLE_ASSERT:
             shell.setAssertion(false);
             break;
+        case VERSION:
+            std::cout << shell.getVersion() << std::endl;
+            std::cout << shell.getCopyright() << std::endl;
+            return 0;
         case HELP:
             parser.printHelp(std::cout);
             return 0;
@@ -112,6 +124,9 @@ int main(int argc, char **argv, char **envp) {
         fclose(fp);
         return status;
     } else {
+        std::cout << shell.getVersion() << std::endl;
+        std::cout << shell.getCopyright() << std::endl;
+
         exec_interactive(argv[0], shell);
     }
     return 0;

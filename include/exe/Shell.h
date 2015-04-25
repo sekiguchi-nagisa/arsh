@@ -27,6 +27,12 @@
 #include <ast/Node.h>
 #include <ast/dump.h>
 
+#define YDSH_MAJOR_VERSION "0"
+#define YDSH_MINOR_VERSION "0"
+#define YDSH_PATCH_VERSION "4-unstable"
+
+#define YDSH_COPYRIGHT_YEAR "2015"
+
 namespace ydsh {
 
 using namespace ydsh::ast;
@@ -75,6 +81,9 @@ public:
     void setDumpTypedAST(bool dump);
     void setParseOnly(bool parseOnly);
     void setAssertion(bool assertion);
+
+    const char *getVersion();
+    const char *getCopyright();
 
 private:
     /**

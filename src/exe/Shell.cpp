@@ -75,6 +75,23 @@ void Shell::setAssertion(bool assertion) {
     this->ctx.assertion = assertion;
 }
 
+const char *Shell::getVersion() {
+#define XSTR(S) #S
+#define STR(S) XSTR(S)
+    static const char version[] =
+            "ydsh, version " YDSH_MAJOR_VERSION "." YDSH_MINOR_VERSION "." YDSH_PATCH_VERSION
+            " (" STR(X_INFO_SYSTEM) "), build by " STR(X_INFO_CPP) " " STR(X_INFO_CPP_V);
+#undef STR
+#undef XSTR
+    return version;
+}
+
+const char *Shell::getCopyright() {
+    static const char copyright[] = "Copyright (c) " YDSH_COPYRIGHT_YEAR " Nagisa Sekiguchi";
+    return copyright;
+}
+
+
 CommonErrorListener Shell::clistener;
 
 ExitStatus Shell::eval(const char *sourceName, Lexer<LexerDef, TokenKind> &lexer, bool interactive) {

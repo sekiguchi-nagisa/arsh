@@ -7,6 +7,7 @@ currently, under heavy development.
 
 ## Build Requirement
 
+* Linux x64
 * cmake 2.8+
 * make
 * g++ (need c++11 support)
