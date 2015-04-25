@@ -27,11 +27,15 @@
 #include <ast/Node.h>
 #include <ast/dump.h>
 
-#define YDSH_MAJOR_VERSION "0"
-#define YDSH_MINOR_VERSION "0"
-#define YDSH_PATCH_VERSION "4-unstable"
+#define YDSH_MAJOR_VERSION 0
+#define YDSH_MINOR_VERSION 0
+#define YDSH_PATCH_VERSION 4
 
-#define YDSH_COPYRIGHT_YEAR "2015"
+#if 1
+#define DEV_STATE "-unstable"
+#else
+#define DEV_STATE ""
+#endif
 
 namespace ydsh {
 

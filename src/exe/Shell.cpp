@@ -79,7 +79,7 @@ const char *Shell::getVersion() {
 #define XSTR(S) #S
 #define STR(S) XSTR(S)
     static const char version[] =
-            "ydsh, version " YDSH_MAJOR_VERSION "." YDSH_MINOR_VERSION "." YDSH_PATCH_VERSION
+            "ydsh, version " STR(YDSH_MAJOR_VERSION) "." STR(YDSH_MINOR_VERSION) "." STR(YDSH_PATCH_VERSION) DEV_STATE
             " (" STR(X_INFO_SYSTEM) "), build by " STR(X_INFO_CPP) " " STR(X_INFO_CPP_V);
 #undef STR
 #undef XSTR
@@ -87,7 +87,7 @@ const char *Shell::getVersion() {
 }
 
 const char *Shell::getCopyright() {
-    static const char copyright[] = "Copyright (c) " YDSH_COPYRIGHT_YEAR " Nagisa Sekiguchi";
+    static const char copyright[] = "Copyright (c) 2015 Nagisa Sekiguchi";
     return copyright;
 }
 
