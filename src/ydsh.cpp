@@ -20,6 +20,16 @@
 #include <exe/Shell.h>
 #include <misc/ArgsParser.h>
 
+#define YDSH_MAJOR_VERSION 0
+#define YDSH_MINOR_VERSION 0
+#define YDSH_PATCH_VERSION 4
+
+#if 1
+#define DEV_STATE "-unstable"
+#else
+#define DEV_STATE ""
+#endif
+
 enum OptionKind {
     DUMP_UAST,
     DUMP_AST,
@@ -28,6 +38,31 @@ enum OptionKind {
     VERSION,
     HELP,
 };
+
+static const char *getVersion() {
+#define XSTR(S) #S
+#define STR(S) XSTR(S)
+    static const char version[] =
+            "ydsh, version " STR(YDSH_MAJOR_VERSION) "."
+                    STR(YDSH_MINOR_VERSION) "." STR(YDSH_PATCH_VERSION) DEV_STATE
+                    " (" STR(X_INFO_SYSTEM) "), build by " STR(X_INFO_CPP) " " STR(X_INFO_CPP_V);
+#undef STR
+#undef XSTR
+    return version;
+}
+
+static const char *getCopyright() {
+    static const char copyright[] = "Copyright (c) 2015 Nagisa Sekiguchi";
+    return copyright;
+}
+
+static void showVersion(std::ostream &stream) {
+    stream << getVersion() << std::endl;
+}
+
+static void showCopyright(std::ostream &stream) {
+    stream << getCopyright() << std::endl;
+}
 
 int main(int argc, char **argv, char **envp) {
     ydsh::args::ArgsParser parser;
@@ -81,6 +116,7 @@ int main(int argc, char **argv, char **envp) {
         restArgs = parser.parse(argc, argv, cmdLines);
     } catch(const ydsh::args::ParseError &e) {
         std::cerr << e.getMessage() << ": " << e.getSuffix() << std::endl;
+        showVersion(std::cerr);
         parser.printHelp(std::cerr);
         return 1;
     }
@@ -102,10 +138,11 @@ int main(int argc, char **argv, char **envp) {
             shell.setAssertion(false);
             break;
         case VERSION:
-            std::cout << shell.getVersion() << std::endl;
-            std::cout << shell.getCopyright() << std::endl;
+            showVersion(std::cout);
+            showCopyright(std::cout);
             return 0;
         case HELP:
+            showVersion(std::cout);
             parser.printHelp(std::cout);
             return 0;
         }
@@ -123,8 +160,8 @@ int main(int argc, char **argv, char **envp) {
         fclose(fp);
         return status;
     } else {
-        std::cout << shell.getVersion() << std::endl;
-        std::cout << shell.getCopyright() << std::endl;
+        showVersion(std::cout);
+        showCopyright(std::cout);
 
         exec_interactive(argv[0], shell);
     }
