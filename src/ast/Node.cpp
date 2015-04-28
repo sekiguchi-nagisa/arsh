@@ -672,24 +672,39 @@ std::pair<Node *, std::string> AccessNode::split(AccessNode *accessNode) {
 // ##     CastNode     ##
 // ######################
 
-CastNode::CastNode(Node *exprNode, TypeToken *type) :
-        Node(exprNode->getLineNum()), exprNode(exprNode), targetTypeToken(type),
+CastNode::CastNode(Node *exprNode, TypeToken *type, bool dupTypeToken) :
+        Node(exprNode->getLineNum()), exprNode(exprNode), targetTypeToken(0),
         opKind(NOP) {
+    static const unsigned long tag = 1L << 63;
+
+    if(dupTypeToken) {
+        TypeToken *tok = (TypeToken *) (tag | (unsigned long) type);
+        this->targetTypeToken = tok;
+    } else {
+        this->targetTypeToken = type;
+    }
 }
 
 CastNode::~CastNode() {
     delete this->exprNode;
     this->exprNode = 0;
 
-    delete this->targetTypeToken;
-    this->targetTypeToken = 0;
+    if((long) this->targetTypeToken >= 0) {
+        delete this->targetTypeToken;
+        this->targetTypeToken = 0;
+    }
 }
 
 Node *CastNode::getExprNode() {
     return this->exprNode;
 }
 
-TypeToken *CastNode::getTargetTypeToken() {
+TypeToken *CastNode::getTargetTypeToken() const {
+    static const unsigned long mask = ~(1L << 63);
+    if((long) this->targetTypeToken < 0) {
+        TypeToken *tok = (TypeToken *) (mask & (unsigned long) this->targetTypeToken);
+        return tok;
+    }
     return this->targetTypeToken;
 }
 
@@ -703,6 +718,7 @@ CastNode::CastOp CastNode::getOpKind() {
 
 void CastNode::dump(Writer &writer) const {
     WRITE_PTR(exprNode);
+    TypeToken *targetTypeToken = this->getTargetTypeToken();
     WRITE_PTR(targetTypeToken);
 
 #define EACH_ENUM(OP, out) \
@@ -1939,10 +1955,33 @@ EvalStatus DoWhileNode::eval(RuntimeContext &ctx) {
 // ##     IfNode     ##
 // ####################
 
+/**
+ * if condNode is InstanceOfNode and targetNode is VarNode, insert VarDeclNode to blockNode.
+ */
+static void resolveIfIsStatement(Node *condNode, BlockNode *blockNode) {
+    InstanceOfNode *isNode = dynamic_cast<InstanceOfNode *>(condNode);
+    if(isNode == 0) {
+        return;
+    }
+
+    VarNode *varNode = dynamic_cast<VarNode *>(isNode->getTargetNode());
+    if(varNode == 0) {
+        return;
+    }
+
+    VarNode *exprNode = new VarNode(isNode->getLineNum(), std::string(varNode->getVarName()));
+    CastNode *castNode = new CastNode(exprNode, isNode->getTargetTypeToken(), true);
+    VarDeclNode *declNode =
+            new VarDeclNode(isNode->getLineNum(), std::string(varNode->getVarName()), castNode, true);
+    blockNode->insertNodeToFirst(declNode);
+}
+
 IfNode::IfNode(unsigned int lineNum, Node *condNode, BlockNode *thenNode) :
         Node(lineNum), condNode(condNode), thenNode(thenNode),
         elifCondNodes(), elifThenNodes(), elseNode(0) {
     this->condNode->inCondition();
+
+    resolveIfIsStatement(this->condNode, this->thenNode);
 }
 
 IfNode::~IfNode() {
@@ -1976,6 +2015,8 @@ void IfNode::addElifNode(Node *condNode, BlockNode *thenNode) {
     condNode->inCondition();
     this->elifCondNodes.push_back(condNode);
     this->elifThenNodes.push_back(thenNode);
+
+    resolveIfIsStatement(condNode, thenNode);
 }
 
 const std::vector<Node *> &IfNode::getElifCondNodes() {

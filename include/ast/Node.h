@@ -416,17 +416,22 @@ public:
 
 private:
     Node *exprNode;
+
+    /**
+     * may be tagged pointer
+     */
     TypeToken *targetTypeToken;
+
     CastOp opKind;
 
 public:
-    CastNode(Node *exprNode, TypeToken *type);
+    CastNode(Node *exprNode, TypeToken *type, bool dupTypeToken = false);
 
     ~CastNode();
 
     Node *getExprNode();
 
-    TypeToken *getTargetTypeToken();
+    TypeToken *getTargetTypeToken() const;
 
     void setOpKind(CastOp opKind);
 
