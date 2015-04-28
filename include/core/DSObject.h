@@ -354,8 +354,16 @@ struct DBus_Object : public DSObject {  //FIXME:
 };
 
 // represent for SystemBus, SessionBus, or specific bus.
-struct Bus_Object : public DSObject {   //FIXME:
-    Bus_Object(DSType *type);
+struct Bus_Object : public DSObject {
+    /**
+     * if true, SystemBus.
+     * if false, SessionBus.
+     */
+    bool systemBus;
+
+    Bus_Object(DSType *type, bool systemBus);
+
+    bool isSystemBus();
 };
 
 // represent for connection
@@ -366,6 +374,22 @@ struct Connection_Object : public DSObject {    //FIXME:
     std::shared_ptr<DSObject> destination;
 
     Connection_Object(DSType *type, const std::shared_ptr<DSObject> &destination);
+};
+
+// represent for D-Bus object.
+struct DBusProxy_Object : public DSObject { //FIXME: implemented interface
+    /**
+     * if true, SystemBus.
+     * if false, SessionBus.
+     */
+    bool systemBus;
+
+    std::string destination;
+    std::string objectPath;
+
+    DBusProxy_Object(DSType *type, bool systemBus,
+                     std::string &&destination, std::string &&objectPath);
+    std::string toString(RuntimeContext &ctx); // override
 };
 
 } // namespace core

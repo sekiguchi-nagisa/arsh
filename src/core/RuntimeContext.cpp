@@ -72,7 +72,7 @@ void RuntimeContext::printStackTop(DSType *stackTopType) {
 
 bool RuntimeContext::checkCast(DSType *targetType) {
     DSType *stackTopType = this->peek()->getType();
-    if(!stackTopType->isAssignableFrom(targetType)) {
+    if(!targetType->isAssignableFrom(stackTopType)) {
         this->pop();
         std::string str("cannot cast ");
         str += this->pool.getTypeName(*stackTopType);
@@ -85,7 +85,7 @@ bool RuntimeContext::checkCast(DSType *targetType) {
 }
 
 void RuntimeContext::instanceOf(DSType *targetType) {
-    if(this->pop()->getType()->isAssignableFrom(targetType)) {
+    if(targetType->isAssignableFrom(this->pop()->getType())) {
         this->push(this->trueObj);
     } else {
         this->push(this->falseObj);

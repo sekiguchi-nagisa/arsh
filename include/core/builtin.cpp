@@ -644,14 +644,25 @@ static inline bool dbus_sessionBus(RuntimeContext &ctx) {
     RET(TYPE_AS(DBus_Object, LOCAL(0))->getSessionBus());
 }
 
+//!bind: function waitSignal($this : DBus, $obj : DBusObject) : Void
+static inline bool dbus_waitSignal(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(dbus_waitSignal);  //FIXME:
+    return true;
+}
+
 // #################
 // ##     Bus     ##
 // #################
 
-//!bind: function connection($this : Bus, $dest : String) : Connection
-static inline bool bus_connection(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(bus_connection);
-    RET(std::make_shared<Connection_Object>(ctx.pool.getConnectionType(), LOCAL(1)));
+//!bind: function object($this : Bus, $dest : String, $path : ObjectPath) : DBusObject
+static inline bool bus_object(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(bus_object);
+    bool systemBus = TYPE_AS(Bus_Object, LOCAL(0))->isSystemBus();
+    String_Object *strObj = TYPE_AS(String_Object, LOCAL(1));
+    String_Object *pathObj = TYPE_AS(String_Object, LOCAL(2));
+
+    RET(std::make_shared<DBusProxy_Object>(ctx.pool.getDBusObjectType(), systemBus,
+                                           std::string(strObj->value), std::string(pathObj->value)));
 }
 
 

@@ -585,8 +585,8 @@ bool NativeMethodRef::invoke(RuntimeContext &ctx) {
 
 DBus_Object::DBus_Object(TypePool &pool) :
         DSObject(pool.getDBusType()),
-        systemBus(std::make_shared<Bus_Object>(pool.getBusType())),
-        sessionBus(std::make_shared<Bus_Object>(pool.getBusType())) {
+        systemBus(std::make_shared<Bus_Object>(pool.getBusType(), true)),
+        sessionBus(std::make_shared<Bus_Object>(pool.getBusType(), false)) {
 }
 
 const std::shared_ptr<Bus_Object> &DBus_Object::getSystemBus() {
@@ -601,8 +601,12 @@ const std::shared_ptr<Bus_Object> &DBus_Object::getSessionBus() {
 // ##     Bus_Object     ##
 // ########################
 
-Bus_Object::Bus_Object(DSType *type) :
-        DSObject(type) {
+Bus_Object::Bus_Object(DSType *type, bool systemBus) :
+        DSObject(type), systemBus(systemBus) {
+}
+
+bool Bus_Object::isSystemBus() {
+    return this->systemBus;
 }
 
 // ###############################
@@ -612,6 +616,25 @@ Bus_Object::Bus_Object(DSType *type) :
 Connection_Object::Connection_Object(DSType *type, const std::shared_ptr<DSObject> &destination) :
         DSObject(type), destination(destination) {
 }
+
+// ##############################
+// ##     DBusProxy_Object     ##
+// ##############################
+
+DBusProxy_Object::DBusProxy_Object(DSType *type, bool systemBus,
+                                   std::string &&destination, std::string &&objectPath) :
+        DSObject(type), systemBus(systemBus), destination(destination), objectPath(objectPath) {
+}
+
+std::string DBusProxy_Object::toString(RuntimeContext &ctx) {
+    std::string str("[dest=");
+    str += this->destination;
+    str += ", path=";
+    str += this->objectPath;
+    str += "]";
+    return str;
+}
+
 
 } // namespace core
 } // namespace ydsh

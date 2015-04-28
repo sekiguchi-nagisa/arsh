@@ -300,5 +300,10 @@ bool InterfaceMethodHandle::isInterfaceMethod() {
     return true;
 }
 
+bool InterfaceMethodHandle::isSignal() {
+    return this->paramTypes.size() == 1 &&
+            this->paramTypes[0]->isFuncType() && this->returnType->isVoidType();
+}
+
 } // namespace core
 } // namespace ydsh

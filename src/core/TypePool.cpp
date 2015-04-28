@@ -38,7 +38,7 @@ TypePool::TypePool(char **envp) :
         floatType(), boolType(), stringType(),
         errorType(), taskType(), baseFuncType(),
         objectPathType(), unixFDType(),
-        dbusType(), busType(), connectionType(),
+        dbusType(), busType(), dbusObjectType(),
         arithmeticErrorType(), outOfIndexErrorType(),
         keyNotFoundErrorType(), typeCastErrorType(),
         templateMap(8),
@@ -70,7 +70,7 @@ TypePool::TypePool(char **envp) :
     this->unixFDType = this->initBuiltinType("UnixFD", false, this->uint32Type, info_UnixFDType());
     this->dbusType = this->initBuiltinType("DBus", false, this->anyType, info_DBusType());
     this->busType = this->initBuiltinType("Bus", false, this->anyType, info_BusType());
-    this->connectionType = this->initBuiltinType("Connection", false, this->anyType, info_ConnectionType());
+    this->dbusObjectType = this->initBuiltinType("DBusObject", false, this->anyType, info_Dummy());
 
     this->errorType = this->initBuiltinType("Error", true, this->anyType, info_ErrorType());
     this->taskType = this->initBuiltinType("Task", false, this->anyType, info_Dummy());
@@ -206,8 +206,8 @@ DSType *TypePool::getBusType() {
     return this->busType;
 }
 
-DSType *TypePool::getConnectionType() {
-    return this->connectionType;
+DSType *TypePool::getDBusObjectType() {
+    return this->dbusObjectType;
 }
 
 DSType *TypePool::getStringArrayType() {
@@ -326,7 +326,7 @@ FunctionType *TypePool::createAndGetFuncTypeIfUndefined(DSType *returnType,
 InterfaceType *TypePool::createAndGetInterfaceTypeIfUndefined(const std::string &interfaceName) {
     auto iter = this->typeMap.find(interfaceName);
     if(iter == this->typeMap.end()) {
-        InterfaceType *type = new InterfaceType(this->anyType);
+        InterfaceType *type = new InterfaceType(this->dbusObjectType);
         this->addType(std::string(interfaceName), type, true);
         return type;
     }

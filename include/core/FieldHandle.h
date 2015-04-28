@@ -206,6 +206,7 @@ public:
     void setRecvType(DSType *type);
     void addParamType(DSType *type);
     bool isInterfaceMethod(); // override
+    bool isSignal();
 };
 
 } // namespace core

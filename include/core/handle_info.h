@@ -38,7 +38,7 @@ namespace core {
     OP(UnixFD) \
     OP(DBus) \
     OP(Bus) \
-    OP(Connection) \
+    OP(DBusObject) \
     OP(Error) \
     OP(ArithmeticError) \
     OP(OutOfIndexError) \

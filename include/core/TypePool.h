@@ -93,9 +93,9 @@ private:
     DSType *busType;
 
     /**
-     * for dbus connection.
+     * for D-Bus proxy instance
      */
-    DSType *connectionType;
+    DSType *dbusObjectType;
 
     /**
      * for exception
@@ -181,7 +181,7 @@ public:
 
     DSType *getDBusType();
     DSType *getBusType();
-    DSType *getConnectionType();
+    DSType *getDBusObjectType();
 
     DSType *getStringArrayType();
 

@@ -26,56 +26,31 @@ native_type_info_t *info_Dummy();
 
 // for builtin type initialization.
 native_type_info_t *info_AnyType();
-
 native_type_info_t *info_VoidType();
-
 native_type_info_t *info_ValueType();
-
 native_type_info_t *info_ByteType();
-
 native_type_info_t *info_Int16Type();
-
 native_type_info_t *info_Uint16Type();
-
 native_type_info_t *info_Int32Type();
-
 native_type_info_t *info_Uint32Type();
-
 native_type_info_t *info_Int64Type();
-
 native_type_info_t *info_Uint64Type();
-
 native_type_info_t *info_FloatType();
-
 native_type_info_t *info_BooleanType();
-
 native_type_info_t *info_StringType();
-
 native_type_info_t *info_ObjectPathType();
-
 native_type_info_t *info_UnixFDType();
-
 native_type_info_t *info_DBusType();
-
 native_type_info_t *info_BusType();
-
-native_type_info_t *info_ConnectionType();
-
 native_type_info_t *info_ErrorType();
-
 native_type_info_t *info_ArithmeticErrorType();
-
 native_type_info_t *info_OutOfIndexErrorType();
-
 native_type_info_t *info_KeyNotFoundErrorType();
-
 native_type_info_t *info_TypeCastErrorType();
 
 // for type template initialization.
 native_type_info_t *info_ArrayType();
-
 native_type_info_t *info_MapType();
-
 native_type_info_t *info_TupleType();
 
 } // namespace core
