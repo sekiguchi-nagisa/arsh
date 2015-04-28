@@ -85,6 +85,8 @@ public:
      */
     void checkTypeRootNode(RootNode &rootNode);
 
+    static DSType *resolveInterface(TypePool *typePool, InterfaceNode *node);
+
 private:
     // base type check entry point
 
@@ -195,7 +197,7 @@ private:
     /**
      * convert TypeToken to DSType..
      */
-    DSType *toType(TypeToken *typeToken);
+    static DSType *toType(TypePool *typePool, TypeToken *typeToken);
 
     /**
      * check type ApplyNode and resolve callee(handle or function type).

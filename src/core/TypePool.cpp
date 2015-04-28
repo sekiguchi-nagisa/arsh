@@ -18,6 +18,9 @@
 #include <core/TypeLookupError.h>
 #include <core/bind.h>
 #include <core/builtin.cpp>
+#include <parser/Parser.h>
+#include <ast/Node.h>
+#include <parser/TypeChecker.h>
 
 
 namespace ydsh {
@@ -334,8 +337,20 @@ InterfaceType *TypePool::createAndGetInterfaceTypeIfUndefined(const std::string 
 DSType *TypePool::getDBusInterfaceType(const std::string &typeName) {
     auto iter = this->typeMap.find(typeName);
     if(iter == this->typeMap.end()) {
-        // search dbus interface
-        E_NoDBusInterface(typeName);    //FIXME:
+        // load dbus interface
+        std::string ifacePath(RuntimeContext::typeDefDir);
+        ifacePath += typeName;
+
+        RootNode rootNode;
+        if(!parse(ifacePath.c_str(), rootNode)) {
+            E_NoDBusInterface(typeName);
+        }
+
+        InterfaceNode *ifaceNode = dynamic_cast<InterfaceNode *>(rootNode.getNodeList().front());
+        if(ifaceNode == 0) {
+            E_NoDBusInterface(typeName);
+        }
+        return TypeChecker::resolveInterface(this, ifaceNode);
     }
     return iter->second;
 }

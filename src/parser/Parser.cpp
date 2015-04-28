@@ -1281,5 +1281,22 @@ INLINE std::unique_ptr<Node> Parser::parse_commandSubstitution() {
     return node;
 }
 
+bool parse(const char *sourceName, RootNode &rootNode) {
+    FILE *fp = fopen(sourceName, "r");
+    if(fp == NULL) {
+        return false;
+    }
+
+    Lexer<LexerDef, TokenKind> lexer(fp);
+    Parser parser;
+
+    try {
+        parser.parse(lexer, rootNode);
+    } catch(const ParseError &e) {
+        return false;   //FIXME: display error message.
+    }
+    return true;
+}
+
 } // namespace parser
 } // namespace ydsh

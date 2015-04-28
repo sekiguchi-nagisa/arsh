@@ -54,6 +54,15 @@ RuntimeContext::~RuntimeContext() {
     this->localStack = 0;
 }
 
+
+#ifndef X_CONFIG_DIR
+#define X_CONFIG_DIR "./.ydsh/"
+#endif
+
+const char *RuntimeContext::configRootDir = X_CONFIG_DIR;
+const char *RuntimeContext::typeDefDir = X_CONFIG_DIR "dbus/iface/";
+
+
 void RuntimeContext::printStackTop(DSType *stackTopType) {
     if(!stackTopType->isVoidType()) {
         std::cout << "(" << this->pool.getTypeName(*stackTopType)

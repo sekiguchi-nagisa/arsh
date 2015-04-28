@@ -161,6 +161,13 @@ private:
     std::unique_ptr<Node> parse_commandSubstitution();
 };
 
+// for DBus interface loading
+
+/**
+ * if parse error happened, return false.
+ */
+bool parse(const char *sourceName, RootNode &rootNode);
+
 } // namespace parser
 } // namespace ydsh
 

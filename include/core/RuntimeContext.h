@@ -145,6 +145,8 @@ struct RuntimeContext {
     const static unsigned int defaultFileNameIndex = 0;
     std::vector<std::string> readFiles;
 
+    static const char *configRootDir;
+    static const char *typeDefDir;
 
     RuntimeContext(char **envp);
 
