@@ -80,11 +80,10 @@ CommonErrorListener Shell::clistener;
 ExitStatus Shell::eval(const char *sourceName, Lexer<LexerDef, TokenKind> &lexer, bool interactive) {
     sourceName = this->ctx.registerSourceName(sourceName);
     lexer.setLineNum(this->lineNum);
-    RootNode rootNode;
+    RootNode rootNode(sourceName);
 
     // parse
     try {
-        rootNode.setSourceName(sourceName);
         this->parser.parse(lexer, rootNode);
         this->lineNum = lexer.getLineNum();
 

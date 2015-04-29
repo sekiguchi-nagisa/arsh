@@ -341,7 +341,7 @@ DSType *TypePool::getDBusInterfaceType(const std::string &typeName) {
         std::string ifacePath(RuntimeContext::typeDefDir);
         ifacePath += typeName;
 
-        RootNode rootNode;
+        RootNode rootNode(ifacePath.c_str());
         if(!parse(ifacePath.c_str(), rootNode)) {
             E_NoDBusInterface(typeName);
         }

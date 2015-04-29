@@ -66,6 +66,8 @@ public:
     /**
      * write field
      */
+    void write(const char *fieldName, const char *value);
+
     void write(const char *fieldName, const std::string &value);
 
     void write(const char *fieldName, const std::vector<Node *> &nodes);

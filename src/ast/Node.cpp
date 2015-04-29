@@ -71,6 +71,14 @@ bool Node::isBlockEndNode() {
     return false;
 }
 
+void Node::setSourceName(const char *sourceName) {  // do nothing
+}
+
+const char *Node::getSourceName() {
+    static const char empty[] = "";
+    return empty;
+}
+
 // ##########################
 // ##     IntValueNode     ##
 // ##########################
@@ -2649,6 +2657,14 @@ int FunctionNode::getVarIndex() {
     return this->varIndex;
 }
 
+void FunctionNode::setSourceName(const char *sourceName) {
+    this->sourceName = sourceName;
+}
+
+const char *FunctionNode::getSourceName() {
+    return this->sourceName;
+}
+
 void FunctionNode::dump(Writer &writer) const {
     WRITE(funcName);
 
@@ -2664,6 +2680,7 @@ void FunctionNode::dump(Writer &writer) const {
     WRITE_PTR(blockNode);
     WRITE_PRIM(maxVarNum);
     WRITE_PRIM(varIndex);
+    WRITE(sourceName);
 }
 
 void FunctionNode::accept(NodeVisitor *visitor) {
@@ -2839,7 +2856,13 @@ EvalStatus DummyNode::eval(RuntimeContext &ctx) {
 // ######################
 
 RootNode::RootNode() :
-        Node(0), sourceName(0), nodeList(), maxVarNum(0), maxGVarNum(0) {
+        RootNode(0) {
+    static const char empty[] = "";
+    this->sourceName = empty;
+}
+
+RootNode::RootNode(const char *sourceName) :
+        Node(0), sourceName(sourceName), nodeList(), maxVarNum(0), maxGVarNum(0) {
 }
 
 RootNode::~RootNode() {
@@ -2849,15 +2872,12 @@ RootNode::~RootNode() {
     this->nodeList.clear();
 }
 
-void RootNode::setSourceName(const char *sourceName) {
-    this->sourceName = sourceName;
-}
-
 const char *RootNode::getSourceName() {
     return this->sourceName;
 }
 
 void RootNode::addNode(Node *node) {
+    node->setSourceName(this->sourceName);
     this->nodeList.push_back(node);
 }
 
@@ -2883,6 +2903,7 @@ unsigned int RootNode::getMaxGVarNum() const {
 
 void RootNode::dump(Writer &writer) const {
     WRITE(nodeList);
+    WRITE(sourceName);
     WRITE_PRIM(maxVarNum);
     WRITE_PRIM(maxGVarNum);
 }

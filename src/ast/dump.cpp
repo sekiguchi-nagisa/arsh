@@ -32,6 +32,11 @@ Writer::Writer(std::ostream *stream, TypePool *pool) :
 Writer::~Writer() {
 }
 
+void Writer::write(const char *fieldName, const char *value) {
+    std::string str(value);
+    this->write(fieldName, str);
+}
+
 void Writer::write(const char *fieldName, const std::string &value) {
     this->writeName(fieldName);
     OUT << value << std::endl;

@@ -77,10 +77,11 @@ public:
 
     virtual bool isBlockEndNode();
 
+    virtual void setSourceName(const char *sourceName);
+    virtual const char *getSourceName();
+
     virtual void dump(Writer &writer) const = 0;
-
     virtual void accept(NodeVisitor *visitor) = 0;
-
     virtual EvalStatus eval(RuntimeContext &ctx) = 0;
 };
 
@@ -1306,6 +1307,8 @@ private:
 
     BlockNode *blockNode;
 
+    const char *sourceName;
+
     /**
      * maximum number of local variabel in function
      */
@@ -1351,6 +1354,9 @@ public:
     void setVarIndex(int varIndex);
 
     int getVarIndex();
+
+    void setSourceName(const char *sourceName); // override
+    const char *getSourceName(); // override
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
@@ -1452,11 +1458,11 @@ private:
 
 public:
     RootNode();
+    RootNode(const char *sourceName);
 
     ~RootNode();
 
-    void setSourceName(const char *sourceName);
-    const char *getSourceName();
+    const char *getSourceName();    // override
     void addNode(Node *node);
 
     const std::list<Node *> &getNodeList();
