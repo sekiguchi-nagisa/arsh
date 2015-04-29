@@ -118,7 +118,7 @@ int main(int argc, char **argv, char **envp) {
         std::cerr << e.getMessage() << ": " << e.getSuffix() << std::endl;
         showVersion(std::cerr);
         parser.printHelp(std::cerr);
-        return 1;
+        return ydsh::core::ARGS_ERROR;
     }
 
     ydsh::Shell shell(envp);
@@ -140,11 +140,11 @@ int main(int argc, char **argv, char **envp) {
         case VERSION:
             showVersion(std::cout);
             showCopyright(std::cout);
-            return 0;
+            return ydsh::core::SUCCESS;
         case HELP:
             showVersion(std::cout);
             parser.printHelp(std::cout);
-            return 0;
+            return ydsh::core::SUCCESS;
         }
     }
 
@@ -153,7 +153,7 @@ int main(int argc, char **argv, char **envp) {
         FILE *fp = fopen(scriptName, "r");
         if(fp == NULL) {
             fprintf(stderr, "cannot open file: %s\n", scriptName);
-            return 1;
+            return ydsh::core::IO_ERROR;
         }
         shell.setArguments(restArgs);
         ydsh::ExitStatus status = shell.eval(scriptName, fp);
@@ -165,5 +165,5 @@ int main(int argc, char **argv, char **envp) {
 
         exec_interactive(argv[0], shell);
     }
-    return 0;
+    return ydsh::core::SUCCESS;
 }

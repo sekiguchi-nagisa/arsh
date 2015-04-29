@@ -15,6 +15,7 @@
  */
 
 #include <core/RuntimeContext.h>
+#include <ast/Node.h>
 
 namespace ydsh {
 namespace core {
@@ -62,6 +63,35 @@ RuntimeContext::~RuntimeContext() {
 const char *RuntimeContext::configRootDir = X_CONFIG_DIR;
 const char *RuntimeContext::typeDefDir = X_CONFIG_DIR "dbus/iface/";
 
+void RuntimeContext::fillInStackTrace(std::vector<std::string> &stackTrace) {
+    static const unsigned long lowOrderMask = ~((1L << 32) - 1);
+    static const unsigned long highOrderMask = ~(((1L << 32) - 1) << 32);
+
+    for(auto iter = this->callStack.rbegin(); iter != this->callStack.rend(); ++iter) {
+        unsigned long frame = *iter;
+        std::string str("from ");
+        unsigned long funcCtxIndex = (frame & lowOrderMask) >> 32;
+        Node *node = this->funcContextStack[funcCtxIndex];
+        const char *sourceNmae = node->getSourceName();
+        unsigned long lineNum = frame & highOrderMask;
+
+        str += sourceNmae;
+        str += ":";
+        str += std::to_string(lineNum);
+        str += " '";
+
+        FunctionNode *funcNode = dynamic_cast<FunctionNode *>(node);
+        if(funcNode != 0) {
+            str += "function ";
+            str += funcNode->getFuncName();
+        } else {
+            str += "<toplevel>";
+        }
+        str += "()'";
+
+        stackTrace.push_back(std::move(str));
+    }
+}
 
 void RuntimeContext::printStackTop(DSType *stackTopType) {
     if(!stackTopType->isVoidType()) {
@@ -94,9 +124,19 @@ void RuntimeContext::instanceOf(DSType *targetType) {
     }
 }
 
-void RuntimeContext::checkAssertion() {
+void RuntimeContext::checkAssertion(unsigned int lineNum) {
     if(!TYPE_AS(Boolean_Object, this->pop())->getValue()) {
-        fatal("assertion error\n"); //FIXME:
+        this->pushCallFrame(lineNum);
+        std::vector<std::string> stackTrace;
+        this->fillInStackTrace(stackTrace);
+        this->popCallFrame();
+
+        // print stack trace
+        std::cerr << "Assertion Error" << std::endl;
+        for(const std::string &str : stackTrace) {
+            std::cerr << "    " << str << std::endl;
+        }
+        exit(ASSERTION_ERROR);
     }
 }
 

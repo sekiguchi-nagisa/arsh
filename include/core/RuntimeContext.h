@@ -22,6 +22,7 @@
 #include <core/DSType.h>
 #include <core/ProcContext.h>
 #include <core/symbol.h>
+#include <core/status.h>
 #include <misc/debug.h>
 
 #include <vector>
@@ -38,15 +39,6 @@ class Node;
 
 namespace ydsh {
 namespace core {
-
-enum EvalStatus {
-    EVAL_SUCCESS,
-    EVAL_BREAK,
-    EVAL_CONTINUE,
-    EVAL_THROW,
-    EVAL_RETURN,
-    EVAL_REMOVE,
-};
 
 struct RuntimeContext {
     TypePool pool;
@@ -518,13 +510,15 @@ struct RuntimeContext {
 
 
     // some runtime api
+    void fillInStackTrace(std::vector<std::string> &stackTrace);
+
     void printStackTop(DSType *stackTopType);
 
     bool checkCast(unsigned int lineNum, DSType *targetType);
 
     void instanceOf(DSType *targetType);
 
-    void checkAssertion();
+    void checkAssertion(unsigned int lineNum);
 
     /**
      * get environment variable and set to local variable

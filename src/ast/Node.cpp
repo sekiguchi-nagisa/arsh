@@ -1531,7 +1531,7 @@ void AssertNode::accept(NodeVisitor *visitor) {
 EvalStatus AssertNode::eval(RuntimeContext &ctx) {
     if (ctx.assertion) {
         EVAL(ctx, this->condNode);
-        ctx.checkAssertion();
+        ctx.checkAssertion(this->condNode->getLineNum());
     }
     return EVAL_SUCCESS;
 }

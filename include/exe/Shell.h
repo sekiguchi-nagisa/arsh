@@ -24,6 +24,7 @@
 #include <core/TypePool.h>
 #include <parser/TypeChecker.h>
 #include <core/DSType.h>
+#include <core/status.h>
 #include <ast/Node.h>
 #include <ast/dump.h>
 
@@ -32,13 +33,6 @@ namespace ydsh {
 using namespace ydsh::ast;
 using namespace ydsh::parser;
 using namespace ydsh::core;
-
-typedef enum {
-    SUCCESS,
-    PARSE_ERROR,
-    TYPE_ERROR,
-    RUNTIME_ERROR,
-} ExitStatus;
 
 class Shell {
 private:
