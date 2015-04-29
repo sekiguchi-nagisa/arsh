@@ -23,8 +23,8 @@
 #include <core/DSType.h>
 #include <core/FieldHandle.h>
 #include <core/DSObject.h>
-#include <core/RuntimeContext.h>
 #include <ast/TypeToken.h>
+#include <core/RuntimeContext.h>
 #include <parser/Token.h>
 
 namespace ydsh {

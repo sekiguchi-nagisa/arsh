@@ -430,7 +430,33 @@ std::string Error_Object::toString(RuntimeContext &ctx) {
 }
 
 void Error_Object::createStackTrace(RuntimeContext &ctx) {
-    //TODO:
+    static const unsigned long lowOrderMask = ~((1L << 32) - 1);
+    static const unsigned long highOrderMask = ~(((1L << 32) - 1) << 32);
+
+    for(auto iter = ctx.callStack.rbegin(); iter != ctx.callStack.rend(); ++iter) {
+        unsigned long frame = *iter;
+        std::string str("    from ");
+        unsigned long funcCtxIndex = (frame & lowOrderMask) >> 32;
+        Node *node = ctx.funcContextStack[funcCtxIndex];
+        const char *sourceNmae = node->getSourceName();
+        unsigned long lineNum = frame & highOrderMask;
+
+        str += sourceNmae;
+        str += ":";
+        str += std::to_string(lineNum);
+        str += " '";
+
+        FunctionNode *funcNode = dynamic_cast<FunctionNode *>(node);
+        if(funcNode != 0) {
+            str += "function ";
+            str += funcNode->getFuncName();
+        } else {
+            str += "<toplevel>";
+        }
+        str += "()'";
+
+        this->stackTrace.push_back(std::move(str));
+    }
 }
 
 void Error_Object::printStackTrace(RuntimeContext &ctx) {
@@ -508,9 +534,11 @@ std::string UserFuncObject::toString(RuntimeContext &ctx) {
 
 bool UserFuncObject::invoke(RuntimeContext &ctx) {  //TODO: default param
     // change stackTopIndex
+    ctx.funcContextStack.push_back(this->funcNode);
     ctx.stackTopIndex = ctx.localVarOffset + this->funcNode->getMaxVarNum();
 
     EvalStatus s = this->funcNode->getBlockNode()->eval(ctx);
+    ctx.funcContextStack.pop_back();
     switch(s) {
     case EVAL_RETURN:
         return true;

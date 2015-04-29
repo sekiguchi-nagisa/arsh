@@ -326,14 +326,14 @@ EvalStatus StringExprNode::eval(RuntimeContext &ctx) {
     } else if (size == 1) {
         EVAL(ctx, this->nodes[0]);
         if(*this->nodes[0]->getType() != *ctx.pool.getStringType()) {
-            return ctx.toInterp();
+            return ctx.toInterp(this->nodes[0]->getLineNum());
         }
     } else {
         auto value = std::make_shared<String_Object>(this->type);
         for (Node *node : this->nodes) {
             EVAL(ctx, node);
             if(*node->getType() != *ctx.pool.getStringType()) {
-                EvalStatus status = ctx.toInterp();
+                EvalStatus status = ctx.toInterp(node->getLineNum());
                 if(status != EVAL_SUCCESS) {
                     return status;
                 }
@@ -763,10 +763,10 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
         break;
     }
     case TO_STRING: {
-        return ctx.toString();
+        return ctx.toString(this->getLineNum());
     }
     case CHECK_CAST: {
-        return ctx.checkCast(this->type) ? EVAL_SUCCESS : EVAL_THROW;
+        return ctx.checkCast(this->lineNum, this->type) ? EVAL_SUCCESS : EVAL_THROW;
     }
     }
 
@@ -955,7 +955,7 @@ EvalStatus ApplyNode::eval(RuntimeContext &ctx) {
     EVAL(ctx, this->argsNode);
 
     // call function
-    return ctx.applyFuncObject(this->type->isVoidType(), actualParamSize);
+    return ctx.applyFuncObject(this->lineNum, this->type->isVoidType(), actualParamSize);
 }
 
 // ############################
@@ -1037,7 +1037,7 @@ EvalStatus MethodCallNode::eval(RuntimeContext &ctx) {
      */
     unsigned int paramSize = this->argsNode->getNodes().size() + 1;
 
-    return ctx.callMethod(this->type->isVoidType(), this->methodIndex, paramSize);
+    return ctx.callMethod(this->lineNum, this->type->isVoidType(), this->methodIndex, paramSize);
 }
 
 // #####################
@@ -1080,7 +1080,7 @@ EvalStatus NewNode::eval(RuntimeContext &ctx) {
     EVAL(ctx, this->argsNode);
 
     // call constructor
-    return ctx.callConstructor(paramSize);
+    return ctx.callConstructor(this->lineNum, paramSize);
 }
 
 // ##########################
@@ -1278,7 +1278,7 @@ EvalStatus CmdArgNode::eval(RuntimeContext &ctx) {
     EVAL(ctx, this->segmentNodes[0]);
     DSType *type = this->segmentNodes[0]->getType();
     if(*type != *ctx.pool.getStringType() && *type != *ctx.pool.getStringArrayType()) {
-        return ctx.toCmdArg();
+        return ctx.toCmdArg(this->lineNum);
     }
     return EVAL_SUCCESS;
 }
@@ -2913,6 +2913,10 @@ void RootNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus RootNode::eval(RuntimeContext &ctx) {
+    ctx.funcContextStack.clear();
+    ctx.callStack.clear();
+
+    ctx.funcContextStack.push_back(this);
     ctx.reserveGlobalVar(this->maxGVarNum);
     ctx.stackTopIndex = this->maxVarNum;
 

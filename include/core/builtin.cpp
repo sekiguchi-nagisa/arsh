@@ -369,7 +369,7 @@ static inline bool boolean_ne(RuntimeContext & ctx) {
 static inline bool string_add(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_add);
     ctx.getLocal(1);
-    ctx.toString();
+    ctx.toString(0);    //FIXME
     std::shared_ptr<String_Object> str(new String_Object(ctx.pool.getStringType()));
     str->value += TYPE_AS(String_Object, LOCAL(0))->value;
     str->value += TYPE_AS(String_Object, ctx.peek())->value;

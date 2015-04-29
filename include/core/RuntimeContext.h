@@ -28,16 +28,25 @@
 #include <iostream>
 
 namespace ydsh {
+namespace ast {
+
+class Node;
+
+}
+}
+
+
+namespace ydsh {
 namespace core {
 
-typedef enum {
+enum EvalStatus {
     EVAL_SUCCESS,
     EVAL_BREAK,
     EVAL_CONTINUE,
     EVAL_THROW,
     EVAL_RETURN,
     EVAL_REMOVE,
-} EvalStatus;
+};
 
 struct RuntimeContext {
     TypePool pool;
@@ -142,8 +151,18 @@ struct RuntimeContext {
      */
     int methodIndexOf_bt;
 
-    const static unsigned int defaultFileNameIndex = 0;
+    static const unsigned int defaultFileNameIndex = 0;
     std::vector<std::string> readFiles;
+
+    /**
+     * contains currently evaluating FunctionNode or RootNode
+     */
+    std::vector<ast::Node *> funcContextStack;
+
+    /**
+     * contains line number and funcContextStack index.
+     */
+    std::vector<unsigned long> callStack;
 
     static const char *configRootDir;
     static const char *typeDefDir;
@@ -321,6 +340,15 @@ struct RuntimeContext {
         this->push(this->peek()->getFieldTable()[index]);
     }
 
+    void pushCallFrame(unsigned int lineNum) {
+        unsigned long index = ((unsigned long) (this->funcContextStack.size() - 1)) << 32;
+        this->callStack.push_back(index | (unsigned long) lineNum);
+    }
+
+    void popCallFrame() {
+        this->callStack.pop_back();
+    }
+
     /**
      * stack state in function apply    stack grow ===>
      *
@@ -329,13 +357,15 @@ struct RuntimeContext {
      * +-----------+---------+--------+   +--------+
      *                       | offset |   |        |
      */
-    EvalStatus applyFuncObject(bool returnTypeIsVoid, unsigned int paramSize) {
+    EvalStatus applyFuncObject(unsigned int lineNum, bool returnTypeIsVoid, unsigned int paramSize) {
         unsigned int savedStackTopIndex = this->stackTopIndex - paramSize - 1;
 
         // call function
         this->saveAndSetOffset(savedStackTopIndex + 2);
+        this->pushCallFrame(lineNum);
         bool status = TYPE_AS(FuncObject,
                               this->localStack[savedStackTopIndex + 1])->invoke(*this);
+        this->popCallFrame();
 
         // restore stack state
         this->restoreOffset();
@@ -361,13 +391,15 @@ struct RuntimeContext {
      * +-----------+------------------+   +--------+
      *             | offset           |   |        |
      */
-    EvalStatus callMethod(bool returnTypeIsVoid, unsigned int methodIndex, unsigned int paramSize) {
+    EvalStatus callMethod(unsigned int lineNum, bool returnTypeIsVoid, unsigned int methodIndex, unsigned int paramSize) {
         unsigned int savedStackTopIndex = this->stackTopIndex - paramSize;
 
         // call method
         this->saveAndSetOffset(savedStackTopIndex + 1);
+        this->pushCallFrame(lineNum);
         bool status = this->localStack[savedStackTopIndex + 1]->
                 type->getMethodRef(methodIndex)->invoke(*this);
+        this->popCallFrame();
 
         // restore stack state
         this->restoreOffset();
@@ -406,13 +438,15 @@ struct RuntimeContext {
      * +-----------+------------------+   +--------+
      *             |    new offset    |
      */
-    EvalStatus callConstructor(unsigned int paramSize) {
+    EvalStatus callConstructor(unsigned int lineNum, unsigned int paramSize) {
         unsigned int savedStackTopIndex = this->stackTopIndex - paramSize;
 
         // call constructor
         this->saveAndSetOffset(savedStackTopIndex);
+        this->pushCallFrame(lineNum);
         bool status =
                 this->localStack[savedStackTopIndex]->type->getConstructor()->invoke(*this);
+        this->popCallFrame();
 
         // restore stack state
         this->restoreOffset();
@@ -430,37 +464,37 @@ struct RuntimeContext {
     /**
      * cast stack top value to String
      */
-    EvalStatus toString() {
+    EvalStatus toString(unsigned int lineNum) {
         if(this->methodIndexOf_STR == -1) {
             auto *handle = this->pool.getAnyType()->
                     lookupMethodHandle(&this->pool, std::string(OP_STR));
             this->methodIndexOf_STR = handle->getMethodIndex();
         }
-        return this->callMethod(false, this->methodIndexOf_STR, 1);
+        return this->callMethod(lineNum, false, this->methodIndexOf_STR, 1);
     }
 
     /**
      * call __INTERP__
      */
-    EvalStatus toInterp() {
+    EvalStatus toInterp(unsigned int lineNum) {
         if(this->methodIndexOf_INTERP == -1) {
             auto *handle = this->pool.getAnyType()->
                     lookupMethodHandle(&this->pool, std::string(OP_INTERP));
             this->methodIndexOf_INTERP = handle->getMethodIndex();
         }
-        return this->callMethod(false, this->methodIndexOf_INTERP, 1);
+        return this->callMethod(lineNum, false, this->methodIndexOf_INTERP, 1);
     }
 
     /**
      * call __CMD_ARG__
      */
-    EvalStatus toCmdArg() {
+    EvalStatus toCmdArg(unsigned int lineNum) {
         if(this->methodIndexOf_CMD_ARG == -1) {
             auto *handle = this->pool.getAnyType()->
                     lookupMethodHandle(&this->pool, std::string(OP_CMD_ARG));
             this->methodIndexOf_CMD_ARG = handle->getMethodIndex();
         }
-        return this->callMethod(false, this->methodIndexOf_CMD_ARG, 1);
+        return this->callMethod(lineNum, false, this->methodIndexOf_CMD_ARG, 1);
     }
 
     /**
@@ -476,7 +510,7 @@ struct RuntimeContext {
                 this->methodIndexOf_bt = handle->getMethodIndex();
             }
             this->getThrownObject();
-            this->callMethod(false, this->methodIndexOf_bt, 1);
+            this->callMethod(0, false, this->methodIndexOf_bt, 1);
         } else {
             std::cerr << this->thrownObject->toString(*this) << std::endl;
         }
@@ -486,7 +520,7 @@ struct RuntimeContext {
     // some runtime api
     void printStackTop(DSType *stackTopType);
 
-    bool checkCast(DSType *targetType);
+    bool checkCast(unsigned int lineNum, DSType *targetType);
 
     void instanceOf(DSType *targetType);
 

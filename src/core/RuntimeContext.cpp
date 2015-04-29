@@ -42,7 +42,7 @@ RuntimeContext::RuntimeContext(char **envp) :
         localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0),
         localVarOffset(0), offsetStack(), repl(false), assertion(true),
         methodIndexOf_STR(-1), methodIndexOf_INTERP(-1), methodIndexOf_CMD_ARG(-1), methodIndexOf_bt(-1),
-        readFiles() {
+        readFiles(), funcContextStack(), callStack() {
     this->readFiles.push_back(std::string("(stdin)"));
 }
 
@@ -70,7 +70,7 @@ void RuntimeContext::printStackTop(DSType *stackTopType) {
     }
 }
 
-bool RuntimeContext::checkCast(DSType *targetType) {
+bool RuntimeContext::checkCast(unsigned int lineNum, DSType *targetType) {
     DSType *stackTopType = this->peek()->getType();
     if(!targetType->isAssignableFrom(stackTopType)) {
         this->pop();
@@ -78,7 +78,9 @@ bool RuntimeContext::checkCast(DSType *targetType) {
         str += this->pool.getTypeName(*stackTopType);
         str += " to ";
         str += this->pool.getTypeName(*targetType);
+        this->pushCallFrame(lineNum);
         this->throwError(this->pool.getTypeCastErrorType(), std::move(str));
+        this->popCallFrame();
         return false;
     }
     return true;
