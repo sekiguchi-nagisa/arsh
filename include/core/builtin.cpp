@@ -216,6 +216,160 @@ static inline bool int_2_int_xor(RuntimeContext & ctx) {
 
 
 // ###################
+// ##     Uint32     ##
+// ###################
+
+// =====  unary op  =====
+
+//!bind: function $OP_PLUS($this : Uint32) : Uint32
+static inline bool uint_plus(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint_plus);
+    RET(LOCAL(0));
+}
+
+//!bind: function $OP_MINUS($this : Uint32) : Uint32
+static inline bool uint_minus(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint_minus);
+    unsigned int value = -TYPE_AS(Int_Object, LOCAL(0))->value;
+    RET(std::make_shared<Int_Object>(ctx.pool.getUint32Type(), value));
+}
+
+//!bind: function $OP_NOT($this : Uint32) : Uint32
+static inline bool uint_not(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint_not);
+    unsigned int value = ~TYPE_AS(Int_Object, LOCAL(0))->value;
+    RET(std::make_shared<Int_Object>(ctx.pool.getUint32Type(), value));
+}
+
+
+// =====  binary op  =====
+
+//   =====  arithmetic  =====
+
+//!bind: function $OP_ADD($this : Uint32, $target : Uint32) : Uint32
+static inline bool uint_2_uint_add(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint_2_uint_add);
+    unsigned int value = (unsigned int) TYPE_AS(Int_Object, LOCAL(0))->value
+                + (unsigned int) TYPE_AS(Int_Object, LOCAL(1))->value;
+    RET(std::make_shared<Int_Object>(ctx.pool.getUint32Type(), value));
+}
+
+//!bind: function $OP_SUB($this : Uint32, $target : Uint32) : Uint32
+static inline bool uint_2_uint_sub(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint_2_uint_sub);
+    unsigned int value = (unsigned int) TYPE_AS(Int_Object, LOCAL(0))->value
+                - (unsigned int) TYPE_AS(Int_Object, LOCAL(1))->value;
+    RET(std::make_shared<Int_Object>(ctx.pool.getUint32Type(), value));
+}
+
+//!bind: function $OP_MUL($this : Uint32, $target : Uint32) : Uint32
+static inline bool uint_2_uint_mul(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint_2_uint_mul);
+    unsigned int value = (unsigned int) TYPE_AS(Int_Object, LOCAL(0))->value
+                * (unsigned int) TYPE_AS(Int_Object, LOCAL(1))->value;
+    RET(std::make_shared<Int_Object>(ctx.pool.getUint32Type(), value));
+}
+
+//!bind: function $OP_DIV($this : Uint32, $target : Uint32) : Uint32
+static inline bool uint_2_uint_div(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint_2_uint_div);
+    unsigned int left = TYPE_AS(Int_Object, LOCAL(0))->value;
+    unsigned int right = TYPE_AS(Int_Object, LOCAL(1))->value;
+    if(!ctx.checkZeroDiv((int) right)) {
+        return false;
+    }
+    unsigned int value = left / right;
+    RET(std::make_shared<Int_Object>(ctx.pool.getUint32Type(), value));
+}
+
+//!bind: function $OP_MOD($this : Uint32, $target : Uint32) : Uint32
+static inline bool uint_2_uint_mod(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint_2_uint_mod);
+    unsigned int left = TYPE_AS(Int_Object, LOCAL(0))->value;
+    unsigned int right = TYPE_AS(Int_Object, LOCAL(1))->value;
+    if(!ctx.checkZeroMod((int) right)) {
+        return false;
+    }
+    unsigned int value = left % right;
+    RET(std::make_shared<Int_Object>(ctx.pool.getUint32Type(), value));
+}
+
+//   =====  equality  =====
+
+//!bind: function $OP_EQ($this : Uint32, $target : Uint32) : Boolean
+static inline bool uint_2_uint_eq(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint_2_uint_eq);
+    RET(TO_BOOL(LOCAL(0)->equals(LOCAL(1))));
+}
+
+//!bind: function $OP_NE($this : Uint32, $target : Uint32) : Boolean
+static inline bool uint_2_uint_ne(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint_2_uint_ne);
+    RET(TO_BOOL(!LOCAL(0)->equals(LOCAL(1))));
+}
+
+//   =====  relational  =====
+
+//!bind: function $OP_LT($this : Uint32, $target : Uint32) : Boolean
+static inline bool uint_2_uint_lt(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint_2_uint_lt);
+    bool r = (unsigned int) TYPE_AS(Int_Object, LOCAL(0))->value
+             < (unsigned int) TYPE_AS(Int_Object, LOCAL(1))->value;
+    RET(TO_BOOL(r));
+}
+
+//!bind: function $OP_GT($this : Uint32, $target : Uint32) : Boolean
+static inline bool uint_2_uint_gt(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint_2_uint_gt);
+    bool r = (unsigned int) TYPE_AS(Int_Object, LOCAL(0))->value
+             > (unsigned int) TYPE_AS(Int_Object, LOCAL(1))->value;
+    RET(TO_BOOL(r));
+}
+
+//!bind: function $OP_LE($this : Uint32, $target : Uint32) : Boolean
+static inline bool uint_2_uint_le(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint_2_uint_le);
+    bool r = (unsigned int) TYPE_AS(Int_Object, LOCAL(0))->value
+             <= (unsigned int) TYPE_AS(Int_Object, LOCAL(1))->value;
+    RET(TO_BOOL(r));
+}
+
+//!bind: function $OP_GE($this : Uint32, $target : Uint32) : Boolean
+static inline bool uint_2_uint_ge(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint_2_uint_ge);
+    bool r = (unsigned int) TYPE_AS(Int_Object, LOCAL(0))->value
+             >= (unsigned int) TYPE_AS(Int_Object, LOCAL(1))->value;
+    RET(TO_BOOL(r));
+}
+
+//   =====  logical  =====
+
+//!bind: function $OP_AND($this : Uint32, $target : Uint32) : Uint32
+static inline bool uint_2_uint_and(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint_2_uint_and);
+    unsigned int value = (unsigned int) TYPE_AS(Int_Object, LOCAL(0))->value
+                &(unsigned int) TYPE_AS(Int_Object, LOCAL(1))->value;
+    RET(std::make_shared<Int_Object>(ctx.pool.getUint32Type(), value));
+}
+
+//!bind: function $OP_OR($this : Uint32, $target : Uint32) : Uint32
+static inline bool uint_2_uint_or(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint_2_uint_or);
+    unsigned int value = (unsigned int) TYPE_AS(Int_Object, LOCAL(0))->value
+                | (unsigned int) TYPE_AS(Int_Object, LOCAL(1))->value;
+    RET(std::make_shared<Int_Object>(ctx.pool.getUint32Type(), value));
+}
+
+//!bind: function $OP_XOR($this : Uint32, $target : Uint32) : Uint32
+static inline bool uint_2_uint_xor(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint_2_uint_xor);
+    unsigned int value = (unsigned int) TYPE_AS(Int_Object, LOCAL(0))->value
+                ^ (unsigned int) TYPE_AS(Int_Object, LOCAL(1))->value;
+    RET(std::make_shared<Int_Object>(ctx.pool.getUint32Type(), value));
+}
+
+
+// ###################
 // ##     Float     ##
 // ###################
 

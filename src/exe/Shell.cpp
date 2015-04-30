@@ -149,6 +149,7 @@ void Shell::initBuiltinVar() {
 
     // set alias
     rootNode.addNode(new TypeAliasNode("Int", "Int32"));
+    rootNode.addNode(new TypeAliasNode("Uint", "Uint32"));
 
     // ignore error check (must be always success)
     this->checker.checkTypeRootNode(rootNode);
