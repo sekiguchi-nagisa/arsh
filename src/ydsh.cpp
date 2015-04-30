@@ -21,8 +21,8 @@
 #include <misc/ArgsParser.h>
 
 #define YDSH_MAJOR_VERSION 0
-#define YDSH_MINOR_VERSION 0
-#define YDSH_PATCH_VERSION 4
+#define YDSH_MINOR_VERSION 1
+#define YDSH_PATCH_VERSION 0
 
 #if 1
 #define DEV_STATE "-unstable"
