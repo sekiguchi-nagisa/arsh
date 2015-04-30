@@ -24,6 +24,8 @@
 #include <utility>
 
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 // helper macro
 #define EVAL(ctx, node) \
