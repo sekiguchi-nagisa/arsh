@@ -96,6 +96,7 @@ TokenKind LexerDef::operator()(Lexer < LexerDef, TokenKind > *lexer, Token & tok
       SPECIAL_NAMES = [@0?];
 
       STRING_LITERAL = ['] SQUOTE_CHAR* ['];
+      PATH_CHARS = "/" | ("/" [_a-zA-Z0-9]+ )+;
       BQUOTE_LITERAL = [`] ('\\' '`' | [^\n\r])+ [`];
       APPLIED_NAME = "$" VAR_NAME;
       SPECIAL_NAME = "$" SPECIAL_NAMES;
@@ -158,7 +159,7 @@ TokenKind LexerDef::operator()(Lexer < LexerDef, TokenKind > *lexer, Token & tok
       <STMT,EXPR> FLOAT        { MODE(EXPR); RET(FLOAT_LITERAL); }
       <STMT,EXPR> STRING_LITERAL
                                { MODE(EXPR); RET(STRING_LITERAL); }
-      <STMT,EXPR> "p" STRING_LITERAL
+      <STMT,EXPR> "p" ['] PATH_CHARS [']
                                { MODE(EXPR); RET(PATH_LITERAL); }
       <STMT,EXPR> ["]          { MODE(EXPR); PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
       <STMT,EXPR> BQUOTE_LITERAL

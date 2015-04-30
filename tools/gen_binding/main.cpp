@@ -208,7 +208,9 @@ const std::string &HandleInfoMap::getName(HandleInfo info) {
         }
     }
     fatal("not found handle info: %s\n", toTypeInfoName(info).c_str());
-    return std::string("");
+
+    const static std::string empty("");
+    return empty;
 }
 
 HandleInfo HandleInfoMap::getInfo(const std::string &name) {
