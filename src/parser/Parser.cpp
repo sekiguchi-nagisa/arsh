@@ -1277,6 +1277,7 @@ INLINE std::unique_ptr<Node> Parser::parse_interpolation() {
 INLINE std::unique_ptr<Node> Parser::parse_commandSubstitution() {
     this->matchToken(START_SUB_CMD);
     std::unique_ptr<Node> node(this->parse_commandListExpression());
+    node->inCmdArgNode();
     this->matchToken(RP);
     return node;
 }

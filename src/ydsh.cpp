@@ -85,7 +85,7 @@ int main(int argc, char **argv, char **envp) {
             (unsigned int) PARSE_ONLY,
             "--parse-only",
             false,
-            "not evalute, parse only"
+            "not evaluate, parse only"
     );
 
     parser.addOption(

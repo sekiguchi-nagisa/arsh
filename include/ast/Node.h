@@ -75,6 +75,11 @@ public:
      */
     virtual void inCondition();
 
+    /**
+     * for CmdContextNode, normally do nothing
+     */
+    virtual void inRightHandleSide();
+
     virtual bool isBlockEndNode();
 
     virtual void setSourceName(const char *sourceName);
@@ -748,22 +753,12 @@ public:
 };
 
 class CmdContextNode : public Node {
-public:
-    typedef enum {
-        VOID,   // not return
-        BOOL,   // return bool status
-        STR,    // return stdout as string
-        ARRAY,  // reutrn stdout as string array
-        TASK,   // return task ctx
-    } CmdRetKind;
-
 private:
     /**
      * may PipedCmdNode, CondOpNode, CmdNode
      */
     Node *exprNode;
 
-    CmdRetKind retKind;
     flag8_set_t attributeSet;
 
 public:
@@ -774,12 +769,11 @@ public:
     void setAttribute(flag8_t attribute);
     void unsetAttribute(flag8_t attribute);
     bool hasAttribute(flag8_t attribute);
-    void setRetKind(CmdRetKind kind);
-    CmdRetKind getRetKind();
 
     void inStringExprNode();    // override
     void inCmdArgNode();    // override
     void inCondition(); // override
+    void inRightHandleSide();   // override
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    //override
@@ -787,6 +781,9 @@ public:
 
     const static flag8_t BACKGROUND = 1 << 0;
     const static flag8_t FORK       = 1 << 1;
+    const static flag8_t STR_CAP    = 1 << 2;
+    const static flag8_t ARRAY_CAP  = 1 << 3;
+    const static flag8_t CONDITION  = 1 << 4;
 };
 
 // statement definition

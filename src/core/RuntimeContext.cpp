@@ -72,10 +72,10 @@ void RuntimeContext::fillInStackTrace(std::vector<std::string> &stackTrace) {
         std::string str("from ");
         unsigned long funcCtxIndex = (frame & lowOrderMask) >> 32;
         Node *node = this->funcContextStack[funcCtxIndex];
-        const char *sourceNmae = node->getSourceName();
+        const char *sourceName = node->getSourceName();
         unsigned long lineNum = frame & highOrderMask;
 
-        str += sourceNmae;
+        str += sourceName;
         str += ":";
         str += std::to_string(lineNum);
         str += " '";

@@ -67,6 +67,9 @@ void Node::inCmdArgNode() { // do nothing
 void Node::inCondition() {  // do nothing
 }
 
+void Node::inRightHandleSide() {    // do nothing
+}
+
 bool Node::isBlockEndNode() {
     return false;
 }
@@ -1420,9 +1423,9 @@ EvalStatus PipedCmdNode::eval(RuntimeContext &ctx) {
 
 CmdContextNode::CmdContextNode(Node *exprNode) :
         Node(exprNode->getLineNum()),
-        exprNode(exprNode), retKind(VOID), attributeSet(0) {
+        exprNode(exprNode), attributeSet(0) {
     if(dynamic_cast<CondOpNode*>(exprNode) != 0) {
-        this->retKind = BOOL;
+        this->setAttribute(CONDITION);
     }
 }
 
@@ -1447,45 +1450,31 @@ bool CmdContextNode::hasAttribute(flag8_t attribute) {
     return hasFlag(this->attributeSet, attribute);
 }
 
-void CmdContextNode::setRetKind(CmdRetKind kind) {
-    this->retKind = kind;
-}
-
-CmdContextNode::CmdRetKind CmdContextNode::getRetKind() {
-    return this->retKind;
-}
-
 void CmdContextNode::inStringExprNode() {
-    this->setRetKind(STR);
+    this->setAttribute(STR_CAP);
 }
 
 void CmdContextNode::inCmdArgNode() {
-    this->setRetKind(ARRAY);
+    this->setAttribute(ARRAY_CAP);
 }
 
 void CmdContextNode::inCondition() {
-    this->setRetKind(BOOL);
+    this->setAttribute(CONDITION);
+}
+
+void CmdContextNode::inRightHandleSide() {
+    this->setAttribute(CONDITION);
 }
 
 void CmdContextNode::dump(Writer &writer) const {
     WRITE_PTR(exprNode);
 
-#define EACH_ENUM(OP, out) \
-    OP(VOID, out) \
-    OP(BOOL, out) \
-    OP(STR, out) \
-    OP(ARRAY, out) \
-    OP(TASK, out)
-
-    std::string str;
-    DECODE_ENUM(str, this->retKind, EACH_ENUM);
-    writer.write(NAME(retKind), str);
-
-#undef EACH_ENUM
-
 #define EACH_FLAG(OP, out, set) \
     OP(BACKGROUND, out, set) \
-    OP(FORK, out, set)
+    OP(FORK, out, set) \
+    OP(STR_CAP, out, set) \
+    OP(ARRAY_CAP, out, set) \
+    OP(CONDITION, out, set)
 
     std::string value;
     DECODE_BITSET(value, this->attributeSet, EACH_FLAG);
@@ -2314,6 +2303,7 @@ EvalStatus TryNode::eval(RuntimeContext &ctx) {
 VarDeclNode::VarDeclNode(unsigned int lineNum, std::string &&varName, Node *initValueNode, bool readOnly) :
         Node(lineNum), varName(std::move(varName)), readOnly(readOnly), global(false),
         varIndex(-1), initValueNode(initValueNode) {
+    this->initValueNode->inRightHandleSide();
 }
 
 VarDeclNode::~VarDeclNode() {
@@ -3055,6 +3045,8 @@ Node *createSuffixNode(Node *leftNode, TokenKind op) {
 }
 
 Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode) {
+    rightNode->inRightHandleSide();
+
     /*
      * basic assignment
      */

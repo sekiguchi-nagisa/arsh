@@ -672,7 +672,7 @@ void TypeChecker::visitPipedCmdNode(PipedCmdNode * node) {
     for(CmdNode *procNode : node->getCmdNodes()) {
         this->checkTypeAsStatement(procNode);   // always void
     }
-    if(node->treatAsBool() || this->cmdContextStack.back()->getRetKind() == CmdContextNode::BOOL) {
+    if(node->treatAsBool() || this->cmdContextStack.back()->hasAttribute(CmdContextNode::CONDITION)) {
         node->setType(this->typePool->getBooleanType());
     } else {
         node->setType(this->typePool->getVoidType());
@@ -687,25 +687,12 @@ void TypeChecker::visitCmdContextNode(CmdContextNode * node) {   //TODO: attribu
 
     DSType *type = this->typePool->getVoidType();
 
-    switch(node->getRetKind()) {
-    case CmdContextNode::VOID:
-        type = this->typePool->getVoidType();
-        break;
-    case CmdContextNode::BOOL:
-        type = this->typePool->getBooleanType();
-        break;
-//    case CmdContextNode::STR:
+    if(node->hasAttribute(CmdContextNode::STR_CAP)) {
 //        type = this->typePool->getStringType();
-//        break;
-//    case CmdContextNode::ARRAY:
-//        type = this->typePool->getStringArrayType();  //FIXME:
-//        break;
-    default: {
-        std::string msg("unsupported ret kind: ");
-        msg += node->getRetKind();
-        E_Unimplemented(node, msg);
-        break;
-    }
+    } else if(node->hasAttribute(CmdContextNode::ARRAY_CAP)) {
+//        type = this->typePool->getStringArrayType();
+    } else if(node->hasAttribute(CmdContextNode::CONDITION)) {
+        type = this->typePool->getBooleanType();
     }
     node->setType(type);
 }
