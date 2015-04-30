@@ -24,6 +24,9 @@ namespace core {
 
 struct RuntimeContext;
 
+static constexpr unsigned int READ_PIPE = 0;
+static constexpr unsigned int WRITE_PIPE = 1;
+
 struct ProcContext : public DSObject {   //FIXME: redirect option
     typedef enum {
         NORMAL,

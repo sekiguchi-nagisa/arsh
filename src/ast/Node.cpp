@@ -23,6 +23,8 @@
 #include <stdlib.h>
 #include <utility>
 
+#include <unistd.h>
+
 // helper macro
 #define EVAL(ctx, node) \
     do {\
@@ -1452,10 +1454,12 @@ bool CmdContextNode::hasAttribute(flag8_t attribute) {
 
 void CmdContextNode::inStringExprNode() {
     this->setAttribute(STR_CAP);
+    this->setAttribute(FORK);
 }
 
 void CmdContextNode::inCmdArgNode() {
     this->setAttribute(ARRAY_CAP);
+    this->setAttribute(FORK);
 }
 
 void CmdContextNode::inCondition() {
@@ -1488,7 +1492,107 @@ void CmdContextNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
-    return this->exprNode->eval(ctx);   //FIXME:
+    if(this->hasAttribute(FORK) &&
+            (this->hasAttribute(STR_CAP) || this->hasAttribute(ARRAY_CAP))) {
+        // capture stdout
+        pid_t pipefds[2];
+
+        if(pipe(pipefds) < 0) {
+            perror("pipe creation failed\n");
+            exit(RUNTIME_ERROR);    //FIXME: throw exception
+        }
+
+        pid_t pid = fork();
+        if(pid > 0) {   // parent process
+            close(pipefds[WRITE_PIPE]);
+
+            std::shared_ptr<DSObject> obj;
+
+            if(*this->type == *ctx.pool.getStringType()) {  // capture stdout as String
+                static const int bufSize = 256;
+                char buf[bufSize + 1];
+                int readSize = 0;
+                std::string str;
+                while((readSize = read(pipefds[READ_PIPE], &buf, bufSize)) > 0) {
+                    if(readSize == bufSize) {
+                        buf[bufSize] = '\0';
+                        str += buf;
+                    } else {
+                        // find last index of no newline
+                        int endIndex = readSize - 1;
+                        for(; endIndex > -1; endIndex--) {
+                            if(buf[endIndex] != '\n') {
+                                endIndex++;
+                                break;
+                            }
+                        }
+
+                        // copy to str
+                        for(unsigned int i = 0; i < endIndex; i++) {
+                            str += (unsigned char)buf[i];
+                        }
+                    }
+                }
+
+                obj.reset(new String_Object(this->type, std::move(str)));
+            } else {    // capture stdout as String Array
+                static const int bufSize = 256;
+                char buf[bufSize];
+                int readSize;
+                std::string str;
+                Array_Object *array = new Array_Object(this->type);
+                while((readSize = read(pipefds[READ_PIPE], &buf, bufSize))> 0) {
+                    for(unsigned int i = 0; i < readSize; i++) {
+                        char ch = buf[i];
+                        switch(ch) {
+                        case ' ':
+                        case '\t':
+                        case '\n': {
+                            if(!str.empty()) {
+                                array->append(std::make_shared<String_Object>(
+                                        ctx.pool.getStringType(), std::move(str)));
+                                str = "";
+                            }
+                            break;
+                        }
+                        default: {
+                            str += ch;
+                            break;
+                        }
+                        }
+                    }
+                }
+                if(!str.empty()) {
+                    array->append(std::make_shared<String_Object>(
+                            ctx.pool.getStringType(), std::move(str)));
+                }
+
+                obj.reset(array);
+            }
+            close(pipefds[READ_PIPE]);
+
+            // wait exit
+            int status;
+            waitpid(pid, &status, 0);
+
+            // push object
+            ctx.push(obj);
+            return EVAL_SUCCESS;
+        } else if(pid == 0) {   // child process
+            dup2(pipefds[WRITE_PIPE], STDOUT_FILENO);
+            close(pipefds[READ_PIPE]);
+            close(pipefds[WRITE_PIPE]);
+
+            this->exprNode->eval(ctx);  //FIXME: error reporting
+            exit(0);
+        } else {
+            perror("fork failed");
+            exit(RUNTIME_ERROR);    //FIXME: throw exception
+        }
+    }
+
+
+    return this->exprNode->eval(ctx);
 }
 
 // ########################

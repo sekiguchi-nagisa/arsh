@@ -24,9 +24,6 @@
 #include <core/ProcContext.h>
 #include <misc/debug.h>
 
-#define READ_PIPE  0
-#define WRITE_PIPE 1
-
 namespace ydsh {
 namespace core {
 

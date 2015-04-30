@@ -688,9 +688,9 @@ void TypeChecker::visitCmdContextNode(CmdContextNode * node) {   //TODO: attribu
     DSType *type = this->typePool->getVoidType();
 
     if(node->hasAttribute(CmdContextNode::STR_CAP)) {
-//        type = this->typePool->getStringType();
+        type = this->typePool->getStringType();
     } else if(node->hasAttribute(CmdContextNode::ARRAY_CAP)) {
-//        type = this->typePool->getStringArrayType();
+        type = this->typePool->getStringArrayType();
     } else if(node->hasAttribute(CmdContextNode::CONDITION)) {
         type = this->typePool->getBooleanType();
     }
