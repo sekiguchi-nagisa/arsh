@@ -215,9 +215,9 @@ static inline bool int_2_int_xor(RuntimeContext & ctx) {
 }
 
 
-// ###################
+// ####################
 // ##     Uint32     ##
-// ###################
+// ####################
 
 // =====  unary op  =====
 
@@ -521,6 +521,158 @@ static inline bool int64_2_int64_xor(RuntimeContext & ctx) {
     RET(std::make_shared<Long_Object>(ctx.pool.getInt64Type(), value));
 }
 
+// ####################
+// ##     Uint64     ##
+// ####################
+
+// =====  unary op  =====
+
+//!bind: function $OP_PLUS($this : Uint64) : Uint64
+static inline bool uint64_plus(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint64_plus);
+    RET(LOCAL(0));
+}
+
+//!bind: function $OP_MINUS($this : Uint64) : Uint64
+static inline bool uint64_minus(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint64_minus);
+    unsigned long value = -TYPE_AS(Long_Object, LOCAL(0))->value;
+    RET(std::make_shared<Long_Object>(ctx.pool.getUint64Type(), value));
+}
+
+//!bind: function $OP_NOT($this : Uint64) : Uint64
+static inline bool uint64_not(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint64_not);
+    unsigned long value = ~TYPE_AS(Long_Object, LOCAL(0))->value;
+    RET(std::make_shared<Long_Object>(ctx.pool.getUint64Type(), value));
+}
+
+
+// =====  binary op  =====
+
+//   =====  arithmetic  =====
+
+//!bind: function $OP_ADD($this : Uint64, $target : Uint64) : Uint64
+static inline bool uint64_2_uint64_add(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint64_2_uint64_add);
+    unsigned long value = (unsigned long) TYPE_AS(Long_Object, LOCAL(0))->value
+                 + (unsigned long) TYPE_AS(Long_Object, LOCAL(1))->value;
+    RET(std::make_shared<Long_Object>(ctx.pool.getUint64Type(), value));
+}
+
+//!bind: function $OP_SUB($this : Uint64, $target : Uint64) : Uint64
+static inline bool uint64_2_uint64_sub(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint64_2_uint64_sub);
+    unsigned long value = (unsigned long) TYPE_AS(Long_Object, LOCAL(0))->value
+                 - (unsigned long) TYPE_AS(Long_Object, LOCAL(1))->value;
+    RET(std::make_shared<Long_Object>(ctx.pool.getUint64Type(), value));
+}
+
+//!bind: function $OP_MUL($this : Uint64, $target : Uint64) : Uint64
+static inline bool uint64_2_uint64_mul(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint64_2_uint64_mul);
+    unsigned long value = (unsigned long) TYPE_AS(Long_Object, LOCAL(0))->value
+                 * (unsigned long) TYPE_AS(Long_Object, LOCAL(1))->value;
+    RET(std::make_shared<Long_Object>(ctx.pool.getUint64Type(), value));
+}
+
+//!bind: function $OP_DIV($this : Uint64, $target : Uint64) : Uint64
+static inline bool uint64_2_uint64_div(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint64_2_uint64_div);
+    unsigned long left = (unsigned long) TYPE_AS(Long_Object, LOCAL(0))->value;
+    unsigned long right = (unsigned long) TYPE_AS(Long_Object, LOCAL(1))->value;
+    if(!ctx.checkZeroDiv((int) right)) {
+        return false;
+    }
+    unsigned long value = left / right;
+    RET(std::make_shared<Long_Object>(ctx.pool.getUint64Type(), value));
+}
+
+//!bind: function $OP_MOD($this : Uint64, $target : Uint64) : Uint64
+static inline bool uint64_2_uint64_mod(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint64_2_uint64_mod);
+    unsigned long left = (unsigned long) TYPE_AS(Long_Object, LOCAL(0))->value;
+    unsigned long right = (unsigned long) TYPE_AS(Long_Object, LOCAL(1))->value;
+    if(!ctx.checkZeroMod((int) right)) {
+        return false;
+    }
+    unsigned long value = left % right;
+    RET(std::make_shared<Long_Object>(ctx.pool.getUint64Type(), value));
+}
+
+//   =====  equality  =====
+
+//!bind: function $OP_EQ($this : Uint64, $target : Uint64) : Boolean
+static inline bool uint64_2_uint64_eq(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint64_2_uint64_eq);
+    RET(TO_BOOL(LOCAL(0)->equals(LOCAL(1))));
+}
+
+//!bind: function $OP_NE($this : Uint64, $target : Uint64) : Boolean
+static inline bool uint64_2_uint64_ne(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint64_2_uint64_ne);
+    RET(TO_BOOL(!LOCAL(0)->equals(LOCAL(1))));
+}
+
+//   =====  relational  =====
+
+//!bind: function $OP_LT($this : Uint64, $target : Uint64) : Boolean
+static inline bool uint64_2_uint64_lt(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint64_2_uint64_lt);
+    bool r = (unsigned long) TYPE_AS(Long_Object, LOCAL(0))->value
+             < (unsigned long) TYPE_AS(Long_Object, LOCAL(1))->value;
+    RET(TO_BOOL(r));
+}
+
+//!bind: function $OP_GT($this : Uint64, $target : Uint64) : Boolean
+static inline bool uint64_2_uint64_gt(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint64_2_uint64_gt);
+    bool r = (unsigned long) TYPE_AS(Long_Object, LOCAL(0))->value
+             > (unsigned long) TYPE_AS(Long_Object, LOCAL(1))->value;
+    RET(TO_BOOL(r));
+}
+
+//!bind: function $OP_LE($this : Uint64, $target : Uint64) : Boolean
+static inline bool uint64_2_uint64_le(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint64_2_uint64_le);
+    bool r = (unsigned long) TYPE_AS(Long_Object, LOCAL(0))->value
+             <= (unsigned long) TYPE_AS(Long_Object, LOCAL(1))->value;
+    RET(TO_BOOL(r));
+}
+
+//!bind: function $OP_GE($this : Uint64, $target : Uint64) : Boolean
+static inline bool uint64_2_uint64_ge(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint64_2_uint64_ge);
+    bool r = (unsigned long) TYPE_AS(Long_Object, LOCAL(0))->value
+             >= (unsigned long) TYPE_AS(Long_Object, LOCAL(1))->value;
+    RET(TO_BOOL(r));
+}
+
+//   =====  logical  =====
+
+//!bind: function $OP_AND($this : Uint64, $target : Uint64) : Uint64
+static inline bool uint64_2_uint64_and(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint64_2_uint64_and);
+    unsigned long value = (unsigned long) TYPE_AS(Long_Object, LOCAL(0))->value
+                 & (unsigned long) TYPE_AS(Long_Object, LOCAL(1))->value;
+    RET(std::make_shared<Long_Object>(ctx.pool.getUint64Type(), value));
+}
+
+//!bind: function $OP_OR($this : Uint64, $target : Uint64) : Uint64
+static inline bool uint64_2_uint64_or(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint64_2_uint64_or);
+    unsigned long value = (unsigned long) TYPE_AS(Long_Object, LOCAL(0))->value
+                 | (unsigned long) TYPE_AS(Long_Object, LOCAL(1))->value;
+    RET(std::make_shared<Long_Object>(ctx.pool.getUint64Type(), value));
+}
+
+//!bind: function $OP_XOR($this : Uint64, $target : Uint64) : Uint64
+static inline bool uint64_2_uint64_xor(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(uint64_2_uint64_xor);
+    unsigned long value = (unsigned long) TYPE_AS(Long_Object, LOCAL(0))->value
+                 ^ (unsigned long) TYPE_AS(Long_Object, LOCAL(1))->value;
+    RET(std::make_shared<Long_Object>(ctx.pool.getUint64Type(), value));
+}
 
 
 // ###################
