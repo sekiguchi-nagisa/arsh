@@ -5,7 +5,7 @@ set(GTEST_URL "https://googletest.googlecode.com/files/gtest-${GTEST_V}.zip")
 set(GTEST_PATH ${CMAKE_CURRENT_SOURCE_DIR}/gtest-${GTEST_V}.zip)
 set(GTEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/gtest-${GTEST_V})
 
-if(NOT EXISTS "${GTEST_PATH}")
+if(NOT EXISTS "${GTEST_DIR}")
     file(DOWNLOAD "${GTEST_URL}" "${GTEST_PATH}" SHOW_PROGRESS)
     execute_process(COMMAND unzip ${GTEST_PATH} -d ${CMAKE_CURRENT_SOURCE_DIR})
 endif()

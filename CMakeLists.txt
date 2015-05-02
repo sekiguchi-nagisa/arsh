@@ -48,7 +48,7 @@ set(RE2C_URL "http://downloads.sourceforge.net/project/re2c/re2c/0.14.2/re2c-0.1
 set(RE2C_PATH ${CMAKE_CURRENT_BINARY_DIR}/re2c-${RE2C_V}.tar.gz)
 set(RE2C_DIR ${CMAKE_CURRENT_BINARY_DIR}/re2c-${RE2C_V})
 
-if(NOT EXISTS "${RE2C_PATH}")
+if(NOT EXISTS "${RE2C_DIR}")
     file(DOWNLOAD "${RE2C_URL}" "${RE2C_PATH}" SHOW_PROGRESS)
     execute_process(COMMAND ${CMAKE_COMMAND} -E tar xvf ${RE2C_PATH})
     execute_process(COMMAND ./configure WORKING_DIRECTORY ${RE2C_DIR})
