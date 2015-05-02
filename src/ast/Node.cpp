@@ -1530,7 +1530,7 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
                         }
 
                         // copy to str
-                        for(unsigned int i = 0; i < endIndex; i++) {
+                        for(int i = 0; i < endIndex; i++) {
                             str += (unsigned char)buf[i];
                         }
                     }
@@ -1543,8 +1543,8 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
                 int readSize;
                 std::string str;
                 Array_Object *array = new Array_Object(this->type);
-                while((readSize = read(pipefds[READ_PIPE], &buf, bufSize))> 0) {
-                    for(unsigned int i = 0; i < readSize; i++) {
+                while((readSize = read(pipefds[READ_PIPE], &buf, bufSize)) > 0) {
+                    for(int i = 0; i < readSize; i++) {
                         char ch = buf[i];
                         switch(ch) {
                         case ' ':
