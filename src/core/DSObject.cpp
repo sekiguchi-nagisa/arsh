@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include <core/DSObject.h>
-#include <ast/Node.h>
+#include "DSObject.h"
+#include "../ast/Node.h"
 
 #include <assert.h>
 #include <iostream>

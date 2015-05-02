@@ -16,7 +16,7 @@
 
 #include <assert.h>
 
-#include <core/SymbolTable.h>
+#include "SymbolTable.h"
 
 namespace ydsh {
 namespace core {

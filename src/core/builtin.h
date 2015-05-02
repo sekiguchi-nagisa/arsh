@@ -17,8 +17,8 @@
 #ifndef CORE_BUILTIN_CPP_
 #define CORE_BUILTIN_CPP_
 
-#include <core/RuntimeContext.h>
-#include <core/DSObject.h>
+#include "RuntimeContext.h"
+#include "DSObject.h"
 
 #include <math.h>
 

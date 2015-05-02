@@ -66,13 +66,13 @@ add_custom_target(gen_lexer DEPENDS ${lexer_src})
 # generate builtin binding
 set(bind_src ${CMAKE_CURRENT_BINARY_DIR}/src/core/bind.cpp)
 add_custom_command(OUTPUT ${bind_src}
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tools/gen_binding/gen_binding ${YDSH_INCLUDE}/core/builtin.cpp ${bind_src}
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tools/gen_binding/gen_binding ${SRC_DIR}/core/builtin.h ${bind_src}
 )
 add_custom_target(gen_bind DEPENDS ${bind_src})
 add_dependencies(gen_bind gen_binding)
 
 
-include_directories(${YDSH_INCLUDE})
+include_directories(${SRC_DIR})
 add_subdirectory(${SRC_DIR}/ast)
 add_subdirectory(${SRC_DIR}/core)
 add_subdirectory(${SRC_DIR}/parser)

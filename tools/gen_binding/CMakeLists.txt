@@ -5,7 +5,7 @@ add_custom_command(OUTPUT ${lexer_src}
 )
 add_custom_target(gen_desc_lexer DEPENDS ${lexer_src})
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${SRC_DIR})
 add_executable(gen_binding ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp ${lexer_src})
 add_dependencies(gen_binding gen_desc_lexer)
 target_link_libraries(gen_binding args_parser)

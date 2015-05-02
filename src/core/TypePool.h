@@ -22,8 +22,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include <core/DSType.h>
-#include <core/TypeTemplate.h>
+#include "DSType.h"
+#include "TypeTemplate.h"
 
 namespace ydsh {
 namespace core {

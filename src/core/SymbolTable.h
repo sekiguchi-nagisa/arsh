@@ -17,9 +17,9 @@
 #ifndef CORE_SYMBOLTABLE_H_
 #define CORE_SYMBOLTABLE_H_
 
-#include <core/TypePool.h>
-#include <core/DSType.h>
-#include <core/FieldHandle.h>
+#include "TypePool.h"
+#include "DSType.h"
+#include "FieldHandle.h"
 
 namespace ydsh {
 namespace core {

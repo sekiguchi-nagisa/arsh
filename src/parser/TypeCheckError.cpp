@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <parser/TypeCheckError.h>
+#include "TypeCheckError.h"
 
 namespace ydsh {
 namespace parser {

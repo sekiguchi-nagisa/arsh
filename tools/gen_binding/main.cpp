@@ -849,7 +849,7 @@ static void gencode(const char *outFileName, const std::vector<TypeBind *> &bind
 
     // write header
     OUT("#include <core/bind.h>\n");
-    OUT("#include <core/builtin.cpp>\n");
+    OUT("#include <core/builtin.h>\n");
     OUT("#include <core/symbol.h>\n");
     OUT("#include <core/DSType.h>\n");
     OUT("\n");

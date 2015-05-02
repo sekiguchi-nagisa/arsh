@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include <ast/TypeToken.h>
-#include <core/TypeTemplate.h>
+#include "TypeToken.h"
+#include "../core/TypeTemplate.h"
 
 namespace ydsh {
 namespace ast {

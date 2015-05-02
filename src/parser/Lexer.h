@@ -28,9 +28,8 @@
 #include <math.h>
 #include <errno.h>
 #include <limits.h>
-#include <misc/debug.h>
 
-#include <parser/Token.h>
+#include "../misc/debug.h"
 #include "Token.h"
 
 #define EACH_LEXER_MODE(OP) \

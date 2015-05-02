@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <parser/ErrorListener.h>
+#include "ErrorListener.h"
 
 namespace ydsh {
 namespace parser {

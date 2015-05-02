@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include <core/RuntimeContext.h>
-#include <ast/Node.h>
+#include "RuntimeContext.h"
+#include "../ast/Node.h"
 
 namespace ydsh {
 namespace core {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <parser/ParseError.h>
+#include "ParseError.h"
 
 namespace ydsh {
 namespace parser {

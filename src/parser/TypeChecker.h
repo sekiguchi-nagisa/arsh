@@ -17,11 +17,11 @@
 #ifndef PARSER_TYPECHECKER_H_
 #define PARSER_TYPECHECKER_H_
 
-#include <ast/Node.h>
-#include <core/TypePool.h>
-#include <core/DSType.h>
-#include <core/FieldHandle.h>
-#include <core/SymbolTable.h>
+#include "../ast/Node.h"
+#include "../core/TypePool.h"
+#include "../core/DSType.h"
+#include "../core/FieldHandle.h"
+#include "../core/SymbolTable.h"
 
 namespace ydsh {
 namespace parser {

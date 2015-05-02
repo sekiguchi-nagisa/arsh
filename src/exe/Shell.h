@@ -17,16 +17,16 @@
 #ifndef EXE_SHELL_H_
 #define EXE_SHELL_H_
 
-#include <parser/Lexer.h>
-#include <parser/Parser.h>
-#include <parser/ErrorListener.h>
-#include <core/RuntimeContext.h>
-#include <core/TypePool.h>
-#include <parser/TypeChecker.h>
-#include <core/DSType.h>
-#include <core/status.h>
-#include <ast/Node.h>
-#include <ast/dump.h>
+#include "../parser/Lexer.h"
+#include "../parser/Parser.h"
+#include "../parser/ErrorListener.h"
+#include "../core/RuntimeContext.h"
+#include "../core/TypePool.h"
+#include "../parser/TypeChecker.h"
+#include "../core/DSType.h"
+#include "../core/status.h"
+#include "../ast/Node.h"
+#include "../ast/dump.h"
 
 namespace ydsh {
 

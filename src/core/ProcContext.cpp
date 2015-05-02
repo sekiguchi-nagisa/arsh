@@ -19,10 +19,10 @@
 #include <sys/wait.h>
 #include <stdlib.h>
 
-#include <core/RuntimeContext.h>
-#include <core/DSType.h>
-#include <core/ProcContext.h>
-#include <misc/debug.h>
+#include "RuntimeContext.h"
+#include "DSType.h"
+#include "ProcContext.h"
+#include "../misc/debug.h"
 
 namespace ydsh {
 namespace core {

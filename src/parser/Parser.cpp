@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include <parser/Parser.h>
-#include <parser/ParseError.h>
-#include <misc/debug.h>
+#include "Parser.h"
+#include "ParseError.h"
+#include "../misc/debug.h"
 
 // for debug
 #ifdef NDEBUG

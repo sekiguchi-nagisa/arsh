@@ -20,7 +20,7 @@
 #include <signal.h>
 #include <setjmp.h>
 
-#include <exe/Shell.h>
+#include "Shell.h"
 
 static bool continuation = false;
 

@@ -20,12 +20,12 @@
 #include <utility>
 #include <list>
 
-#include <core/DSType.h>
-#include <core/FieldHandle.h>
-#include <core/DSObject.h>
-#include <ast/TypeToken.h>
-#include <core/RuntimeContext.h>
-#include <parser/Token.h>
+#include "../core/DSType.h"
+#include "../core/FieldHandle.h"
+#include "../core/DSObject.h"
+#include "../core/RuntimeContext.h"
+#include "../parser/Token.h"
+#include "TypeToken.h"
 
 namespace ydsh {
 namespace ast {

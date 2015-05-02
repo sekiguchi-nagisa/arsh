@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <core/TypeLookupError.h>
+#include "TypeLookupError.h"
 
 namespace ydsh {
 namespace core {

@@ -17,8 +17,8 @@
 #include <iostream>
 #include <stdlib.h>
 
-#include <exe/Shell.h>
-#include <misc/ArgsParser.h>
+#include "exe/Shell.h"
+#include "misc/ArgsParser.h"
 
 #define YDSH_MAJOR_VERSION 0
 #define YDSH_MINOR_VERSION 1

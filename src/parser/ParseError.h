@@ -17,8 +17,8 @@
 #ifndef PARSER_PARSEERROR_H_
 #define PARSER_PARSEERROR_H_
 
-#include <parser/Token.h>
-#include <parser/Lexer.h>
+#include "Token.h"
+#include "Lexer.h"
 
 namespace ydsh {
 namespace parser {

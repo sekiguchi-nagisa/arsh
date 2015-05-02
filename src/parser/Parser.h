@@ -20,9 +20,9 @@
 #include <memory>
 #include <utility>
 
-#include <parser/Lexer.h>
-#include <ast/Node.h>
-#include <ast/TypeToken.h>
+#include "Lexer.h"
+#include "../ast/Node.h"
+#include "../ast/TypeToken.h"
 
 namespace ydsh {
 namespace parser {

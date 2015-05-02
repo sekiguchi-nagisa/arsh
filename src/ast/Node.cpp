@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include <core/symbol.h>
-#include <ast/Node.h>
-#include <misc/debug.h>
-#include <ast/dump.h>
+#include "../core/symbol.h"
+#include "../misc/debug.h"
+#include "Node.h"
+#include "dump.h"
 
 #include <assert.h>
 #include <stdlib.h>

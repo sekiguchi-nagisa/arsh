@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include <ast/dump.h>
-#include <ast/Node.h>
+#include "dump.h"
+#include "../ast/Node.h"
 
 #include <iostream>
 #include <cxxabi.h>

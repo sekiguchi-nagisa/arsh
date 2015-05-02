@@ -17,7 +17,7 @@
 #ifndef CORE_BIND_H_
 #define CORE_BIND_H_
 
-#include <core/DSType.h>
+#include "DSType.h"
 
 namespace ydsh {
 namespace core {

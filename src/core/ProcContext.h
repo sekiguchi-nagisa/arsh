@@ -17,7 +17,7 @@
 #ifndef CORE_PROCCONTEXT_H_
 #define CORE_PROCCONTEXT_H_
 
-#include <core/DSObject.h>
+#include "DSObject.h"
 
 namespace ydsh {
 namespace core {

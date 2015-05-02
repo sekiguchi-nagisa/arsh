@@ -17,10 +17,10 @@
 #include <assert.h>
 #include <vector>
 
-#include <core/symbol.h>
-#include <core/TypeLookupError.h>
-#include <parser/TypeChecker.h>
-#include <parser/TypeCheckError.h>
+#include "../core/symbol.h"
+#include "../core/TypeLookupError.h"
+#include "TypeChecker.h"
+#include "TypeCheckError.h"
 
 namespace ydsh {
 namespace parser {

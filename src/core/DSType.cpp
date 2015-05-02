@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include <core/DSType.h>
-#include <core/DSObject.h>
-#include <core/TypePool.h>
-#include <misc/debug.h>
+#include "DSType.h"
+#include "DSObject.h"
+#include "TypePool.h"
+#include "../misc/debug.h"
 #include <assert.h>
 
 namespace ydsh {

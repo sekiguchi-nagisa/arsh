@@ -17,13 +17,13 @@
 #ifndef CORE_RUNTIMECONTEXT_H_
 #define CORE_RUNTIMECONTEXT_H_
 
-#include <core/DSObject.h>
-#include <core/TypePool.h>
-#include <core/DSType.h>
-#include <core/ProcContext.h>
-#include <core/symbol.h>
-#include <core/status.h>
-#include <misc/debug.h>
+#include "DSObject.h"
+#include "TypePool.h"
+#include "DSType.h"
+#include "ProcContext.h"
+#include "symbol.h"
+#include "status.h"
+#include "../misc/debug.h"
 
 #include <vector>
 #include <iostream>

@@ -19,7 +19,7 @@
 
 #include <string>
 #include <vector>
-#include <core/TypeLookupError.h>
+#include "../core/TypeLookupError.h"
 
 #define EACH_TC_ERROR(ERROR) \
         /* zero arg */\

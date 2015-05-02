@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <parser/Token.h>
+#include "Token.h"
 
 namespace ydsh {
 namespace parser {

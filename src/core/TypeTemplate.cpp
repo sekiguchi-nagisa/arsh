@@ -16,7 +16,7 @@
 
 #include <utility>
 
-#include <core/TypeTemplate.h>
+#include "TypeTemplate.h"
 
 namespace ydsh {
 namespace core {

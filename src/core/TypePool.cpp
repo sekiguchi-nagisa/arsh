@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-#include <core/TypePool.h>
-#include <core/TypeLookupError.h>
-#include <core/bind.h>
-#include <core/builtin.cpp>
-#include <parser/Parser.h>
-#include <ast/Node.h>
-#include <parser/TypeChecker.h>
+#include "TypePool.h"
+#include "TypeLookupError.h"
+#include "bind.h"
+#include "../parser/Parser.h"
+#include "../ast/Node.h"
+#include "../parser/TypeChecker.h"
 
 
 namespace ydsh {
