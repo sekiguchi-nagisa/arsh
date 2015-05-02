@@ -143,7 +143,7 @@ std::string ParseErrorFormatter::format(Lexer<LexerDef, TokenKind> &lexer, const
 }
 
 static std::string formatErrorLine(Lexer<LexerDef, TokenKind> &lexer, Token errorToken) {
-    Token lineToken = lexer.getLineToken(errorToken);
+    Token lineToken = lexer.getLineToken(errorToken, true);
     std::string line(lexer.toTokenText(lineToken));
     line += "\n";
     for(unsigned int i = lineToken.startPos; i < errorToken.startPos; i++) {

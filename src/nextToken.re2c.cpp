@@ -279,8 +279,8 @@ TokenKind LexerDef::operator()(Lexer < LexerDef, TokenKind > *lexer, Token & tok
     lexer->prevNewLine = foundNewLine;
 #ifdef X_TRACE_TOKEN
 #include <stdio.h>
-    fprintf(stderr, "nextToken(): < kind=%s, text=%s >\n",
-            TO_NAME(kind), lexer->toTokenText(token).c_str());
+    fprintf(stderr, "nextToken(): < kind=%s, start=%d, size=%d, text=%s >\n",
+            TO_NAME(kind), token.startPos, token.size, lexer->toTokenText(token).c_str());
     fprintf(stderr, "   lexer mode: %s\n", lexer->getLexerModeName(YYGETCONDITION()));
 #endif
     return kind;
@@ -291,8 +291,8 @@ TokenKind LexerDef::operator()(Lexer < LexerDef, TokenKind > *lexer, Token & tok
     lexer->prevNewLine = foundNewLine;
 #ifdef X_TRACE_TOKEN
 #include <stdio.h>
-    fprintf(stderr, "nextToken(): < kind=%s, text=%s >\n",
-            TO_NAME(EOS), lexer->toTokenText(token).c_str());
+    fprintf(stderr, "nextToken(): < kind=%s, start=%d, size=%d, text=%s >\n",
+            TO_NAME(EOS), token.startPos, token.size, lexer->toTokenText(token).c_str());
     fprintf(stderr, "   lexer mode: %s\n", lexer->getLexerModeName(YYGETCONDITION()));
 #endif
     return EOS;

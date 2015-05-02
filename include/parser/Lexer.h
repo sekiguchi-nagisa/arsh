@@ -31,6 +31,7 @@
 #include <misc/debug.h>
 
 #include <parser/Token.h>
+#include "Token.h"
 
 #define EACH_LEXER_MODE(OP) \
     OP(yycSTMT) \
@@ -223,7 +224,9 @@ struct Lexer {
     /**
      * get line token which token belongs to.
      */
-    Token getLineToken(const Token &token) const;
+    Token getLineToken(const Token &token, bool skipEOS = false) const;
+
+    Token getLineTokenImpl(const Token &token) const;
 
     // token to value converting api.
     /**
@@ -341,7 +344,29 @@ bool Lexer<LEXER_DEF, TOKEN_KIND>::fill(int n) {
             token.startPos + token.size <= this->getUsedSize())
 
 template<typename LEXER_DEF, typename TOKEN_KIND>
-Token Lexer<LEXER_DEF, TOKEN_KIND>::getLineToken(const Token &token) const {
+Token Lexer<LEXER_DEF, TOKEN_KIND>::getLineToken(const Token &token, bool skipEOS) const {
+    if(skipEOS && token.size == 0) {
+        unsigned int startIndex = token.startPos;
+        for(; startIndex > 0; startIndex--) {
+            char ch = this->buf[startIndex];
+            if(ch == ' ' || ch == '\t' || ch == '\n' || ch == '\000') {
+                continue;
+            }
+            if(ch == '\\' && startIndex - 1 > 0 && this->buf[startIndex - 1] == '\n') {
+                continue;
+            }
+            break;
+        }
+        Token skippedToken;
+        skippedToken.startPos = startIndex;
+        skippedToken.size = 0;
+        return this->getLineTokenImpl(skippedToken);
+    }
+    return this->getLineTokenImpl(token);
+}
+
+template<typename LEXER_DEF, typename TOKEN_KIND>
+Token Lexer<LEXER_DEF, TOKEN_KIND>::getLineTokenImpl(const Token &token) const {
     CHECK_TOK(token);
 
     // find start index of line.
@@ -358,7 +383,6 @@ Token Lexer<LEXER_DEF, TOKEN_KIND>::getLineToken(const Token &token) const {
     unsigned int usedSize = this->getUsedSize();
     for(stopIndex = token.startPos + token.size; stopIndex < usedSize; stopIndex++) {
         if(this->buf[stopIndex] == '\n') {
-            stopIndex -= (stopIndex == token.startPos + token.size) ? 0 : 1;
             break;
         }
     }
