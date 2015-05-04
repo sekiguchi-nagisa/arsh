@@ -17,6 +17,7 @@
 #include "DSType.h"
 #include "DSObject.h"
 #include "TypePool.h"
+#include "FieldHandle.h"
 #include "../misc/debug.h"
 #include <assert.h>
 

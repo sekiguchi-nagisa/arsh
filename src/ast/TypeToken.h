@@ -17,8 +17,17 @@
 #ifndef AST_TYPETOKEN_H_
 #define AST_TYPETOKEN_H_
 
-#include "../core/DSType.h"
-#include "../core/TypePool.h"
+#include <string>
+#include <vector>
+
+namespace ydsh {
+namespace core {
+
+class DSType;
+class TypePool;
+
+}
+}
 
 namespace ydsh {
 namespace ast {

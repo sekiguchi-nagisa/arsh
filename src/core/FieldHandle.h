@@ -27,11 +27,8 @@ namespace ydsh {
 namespace core {
 
 class TypePool;
-
 class DSType;
-
 class FunctionType;
-
 struct NativeFuncInfo;
 
 /**

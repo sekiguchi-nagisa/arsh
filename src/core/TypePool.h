@@ -22,12 +22,13 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "DSType.h"
-#include "TypeTemplate.h"
-
 namespace ydsh {
 namespace core {
 
+class DSType;
+class FunctionType;
+class InterfaceType;
+class TypeTemplate;
 struct native_type_info_t;
 
 class TypePool {

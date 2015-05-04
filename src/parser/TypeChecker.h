@@ -27,6 +27,7 @@ namespace ydsh {
 namespace parser {
 
 using namespace ydsh::core;
+using namespace ydsh::ast;
 
 // for apply node type checking
 class HandleOrFuncType {

@@ -16,6 +16,8 @@
 
 #include "TypeToken.h"
 #include "../core/TypeTemplate.h"
+#include "../core/DSType.h"
+#include "../core/TypePool.h"
 
 namespace ydsh {
 namespace ast {

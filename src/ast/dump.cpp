@@ -16,6 +16,8 @@
 
 #include "dump.h"
 #include "../ast/Node.h"
+#include "../core/TypePool.h"
+#include "../misc/debug.h"
 
 #include <iostream>
 #include <cxxabi.h>

@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "../core/symbol.h"
+#include "../core/DSObject.h"
 #include "../core/TypeLookupError.h"
 #include "TypeChecker.h"
 #include "TypeCheckError.h"

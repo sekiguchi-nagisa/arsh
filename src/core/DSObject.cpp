@@ -15,10 +15,14 @@
  */
 
 #include "DSObject.h"
+#include "TypePool.h"
+#include "DSType.h"
+#include "RuntimeContext.h"
 #include "../ast/Node.h"
 
 #include <assert.h>
-#include <iostream>
+#include <utility>
+#include <memory>
 
 namespace ydsh {
 namespace core {

@@ -19,13 +19,23 @@
 
 #include <utility>
 #include <list>
+#include <memory>
 
-#include "../core/DSType.h"
-#include "../core/FieldHandle.h"
-#include "../core/DSObject.h"
-#include "../core/RuntimeContext.h"
+#include "../misc/flag_util.h"
 #include "../parser/Token.h"
+#include "../core/status.h"
 #include "TypeToken.h"
+
+namespace ydsh {
+namespace core {
+
+class DSType;
+class FieldHandle;
+struct DSObject;
+struct RuntimeContext;
+
+}
+}
 
 namespace ydsh {
 namespace ast {
@@ -34,7 +44,6 @@ using namespace ydsh::core;
 using namespace ydsh::parser;
 
 struct NodeVisitor;
-
 class Writer;
 
 class Node {

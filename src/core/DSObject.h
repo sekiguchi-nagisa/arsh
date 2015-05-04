@@ -17,8 +17,8 @@
 #ifndef CORE_DSOBJECT_H_
 #define CORE_DSOBJECT_H_
 
-#include "DSType.h"
 #include <memory>
+#include "DSType.h"
 
 namespace ydsh {
 namespace ast {

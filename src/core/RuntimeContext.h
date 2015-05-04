@@ -19,6 +19,7 @@
 
 #include "DSObject.h"
 #include "TypePool.h"
+#include "FieldHandle.h"
 #include "DSType.h"
 #include "ProcContext.h"
 #include "symbol.h"

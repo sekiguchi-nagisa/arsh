@@ -23,8 +23,9 @@
 #include <utility>
 #include <memory>
 
-#include "FieldHandle.h"
+#include "../misc/flag_util.h"
 #include "handle_info.h"
+#include "TypePool.h"
 
 namespace ydsh {
 namespace core {
@@ -32,6 +33,13 @@ namespace core {
 struct DSObject;
 struct FuncObject;
 class MethodRef;
+
+class FieldHandle;
+class MethodHandle;
+class InterfaceMethodHandle;
+
+struct RuntimeContext;
+typedef bool (*native_func_t)(RuntimeContext &);
 
 class DSType {
 protected:
@@ -162,10 +170,6 @@ public:
 
     FieldHandle *findHandle(const std::string &fieldName);  // override
 };
-
-struct RuntimeContext;
-
-typedef bool (*native_func_t)(RuntimeContext &);
 
 /**
  * for function handle(method handle or constructor handle) creation.
