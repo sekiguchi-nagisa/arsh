@@ -18,6 +18,7 @@
 #define CORE_RUNTIMECONTEXT_H_
 
 #include "DSObject.h"
+#include "DBusBind.h"
 #include "TypePool.h"
 #include "FieldHandle.h"
 #include "DSType.h"
