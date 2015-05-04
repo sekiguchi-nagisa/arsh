@@ -77,6 +77,9 @@ TypePool::TypePool(char **envp) :
     // register NativeFuncInfo to TupleType
     TupleType::registerFuncInfo(info_TupleType()->initInfo);
 
+    // register NativeFuncInfo to ErrorType
+    ErrorType::registerFuncInfo(info_ErrorType()->initInfo);
+
     /**
      * hidden from script
      */
@@ -101,10 +104,10 @@ TypePool::TypePool(char **envp) :
     this->stringArrayType = this->createAndGetReifiedTypeIfUndefined(this->arrayTemplate, types);
 
     // init some error type
-    this->arithmeticErrorType = this->initBuiltinType("ArithmeticError", true, this->errorType, info_ArithmeticErrorType());
-    this->outOfIndexErrorType = this->initBuiltinType("OutOfIndexError", true, this->errorType, info_OutOfIndexErrorType());
-    this->keyNotFoundErrorType = this->initBuiltinType("KeyNotFoundError", true, this->errorType, info_KeyNotFoundErrorType());
-    this->typeCastErrorType = this->initBuiltinType("TypeCastError", true, this->errorType, info_TypeCastErrorType());
+    this->arithmeticErrorType = this->initErrorType("ArithmeticError", this->errorType);
+    this->outOfIndexErrorType = this->initErrorType("OutOfIndexError", this->errorType);
+    this->keyNotFoundErrorType = this->initErrorType("KeyNotFoundError", this->errorType);
+    this->typeCastErrorType = this->initErrorType("TypeCastError", this->errorType);
 }
 
 TypePool::~TypePool() {
@@ -481,6 +484,10 @@ TypeTemplate *TypePool::initTypeTemplate(const char *typeName,
     return this->templateMap.insert(
             std::make_pair(typeName, new TypeTemplate(std::string(typeName),
                                                       std::move(elementTypes), info))).first->second;
+}
+
+DSType *TypePool::initErrorType(const char *typeName, DSType *superType) {
+    return this->addType(std::string(typeName), new ErrorType(superType));
 }
 
 void TypePool::checkElementTypes(const std::vector<DSType *> &elementTypes) {

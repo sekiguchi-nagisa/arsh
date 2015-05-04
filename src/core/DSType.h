@@ -73,7 +73,7 @@ public:
     bool isInterface() const;
 
     /**
-     * return true, if type is builtin type, reified type, tuple type.
+     * return true, if type is builtin type, reified type, tuple type, error type.
      */
     virtual bool isBuiltinType() const;
 
@@ -299,6 +299,40 @@ public:
     FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName);   // override
     MethodHandle *lookupMethodHandle(TypePool *typePool, const std::string &methodName); // override
     FieldHandle *findHandle(const std::string &fieldName); // overrdie
+};
+
+class ErrorType : public DSType {
+private:
+    MethodHandle *constructorHandle;
+
+    static NativeFuncInfo *funcInfo;
+    static std::shared_ptr<MethodRef> initRef;
+
+public:
+    ErrorType(DSType *superType);
+    ~ErrorType();
+
+    MethodHandle *getConstructorHandle(TypePool *typePool); // override
+    MethodRef *getConstructor();    // override
+
+    /**
+     * return always true.
+     */
+    bool isBuiltinType() const; // override
+
+    /**
+     * return types.size()
+     */
+    unsigned int getFieldSize(); // override
+
+    FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName); // override
+    MethodHandle *lookupMethodHandle(TypePool *typePool, const std::string &methodName);    // override
+    FieldHandle *findHandle(const std::string &fieldName); // override
+
+    /**
+     * call only once.
+     */
+    static void registerFuncInfo(NativeFuncInfo *info);
 };
 
 } // namespace core

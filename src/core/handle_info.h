@@ -39,11 +39,7 @@ namespace core {
     OP(DBus) \
     OP(Bus) \
     OP(DBusObject) \
-    OP(Error) \
-    OP(ArithmeticError) \
-    OP(OutOfIndexError) \
-    OP(KeyNotFoundError) \
-    OP(TypeCastError)
+    OP(Error)
 
 // type template
 #define EACH_HANDLE_INFO_TYPE_TEMP(OP) \

@@ -43,10 +43,6 @@ native_type_info_t *info_UnixFDType();
 native_type_info_t *info_DBusType();
 native_type_info_t *info_BusType();
 native_type_info_t *info_ErrorType();
-native_type_info_t *info_ArithmeticErrorType();
-native_type_info_t *info_OutOfIndexErrorType();
-native_type_info_t *info_KeyNotFoundErrorType();
-native_type_info_t *info_TypeCastErrorType();
 
 // for type template initialization.
 native_type_info_t *info_ArrayType();

@@ -1064,30 +1064,6 @@ static inline bool error_backtrace(RuntimeContext &ctx) {
     return true;
 }
 
-//!bind: constructor ($this : ArithmeticError, $message : String)
-static inline bool arith_error_init(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(arith_error_init);
-    return error_init(ctx);
-}
-
-//!bind: constructor ($this : OutOfIndexError, $message : String)
-static inline bool out_error_init(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(out_error_init);
-    return error_init(ctx);
-}
-
-//!bind: constructor ($this : KeyNotFoundError, $message : String)
-static inline bool key_error_init(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(key_error_init);
-    return error_init(ctx);
-}
-
-//!bind: constructor ($this : TypeCastError, $message : String)
-static inline bool cast_error_init(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(cast_error_init);
-    return error_init(ctx);
-}
-
 // ##################
 // ##     DBus     ##
 // ##################

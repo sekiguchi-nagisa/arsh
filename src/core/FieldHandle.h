@@ -174,6 +174,7 @@ public:
 
     unsigned int getMethodIndex();
     DSType *getReturnType();
+    void setRecvType(DSType *type);
     DSType *getRecvType();
     const std::vector<DSType *> &getParamTypes();
 
@@ -203,7 +204,6 @@ public:
     ~InterfaceMethodHandle();
 
     void setReturnType(DSType *type);
-    void setRecvType(DSType *type);
     void addParamType(DSType *type);
     bool isInterfaceMethod(); // override
     bool isSignal();

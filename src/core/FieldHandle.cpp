@@ -164,6 +164,10 @@ DSType *MethodHandle::getReturnType() {
     return this->returnType;
 }
 
+void MethodHandle::setRecvType(DSType *type) {
+    this->recvType = type;
+}
+
 DSType *MethodHandle::getRecvType() {
     return this->recvType;
 }
@@ -286,10 +290,6 @@ InterfaceMethodHandle::~InterfaceMethodHandle() {
 
 void InterfaceMethodHandle::setReturnType(DSType *type) {
     this->returnType = type;
-}
-
-void InterfaceMethodHandle::setRecvType(DSType *type) {
-    this->recvType = type;
 }
 
 void InterfaceMethodHandle::addParamType(DSType *type) {

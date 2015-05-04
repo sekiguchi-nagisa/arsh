@@ -494,5 +494,64 @@ FieldHandle *InterfaceType::findHandle(const std::string &fieldName) {
     return this->superType->findHandle(fieldName);
 }
 
+// #######################
+// ##     ErrorType     ##
+// #######################
+
+ErrorType::ErrorType(DSType *superType) :
+    DSType(true, superType, false), constructorHandle() {
+}
+
+ErrorType::~ErrorType() {
+    delete this->constructorHandle;
+    this->constructorHandle = 0;
+}
+
+NativeFuncInfo *ErrorType::funcInfo = 0;
+std::shared_ptr<MethodRef> ErrorType::initRef;
+
+MethodHandle *ErrorType::getConstructorHandle(TypePool *typePool) {
+    if(this->constructorHandle == 0) {
+        this->constructorHandle = new MethodHandle(0);
+        this->constructorHandle->init(typePool, funcInfo);
+        this->constructorHandle->setRecvType(this);
+    }
+    return this->constructorHandle;
+}
+
+MethodRef *ErrorType::getConstructor() {
+    return initRef.get();
+}
+
+bool ErrorType::isBuiltinType() const {
+    return true;
+}
+
+unsigned int ErrorType::getFieldSize() {
+    return this->superType->getFieldSize();
+}
+
+FieldHandle *ErrorType::lookupFieldHandle(TypePool *typePool, const std::string &fieldName) {
+    return this->superType->lookupFieldHandle(typePool, fieldName);
+}
+
+MethodHandle *ErrorType::lookupMethodHandle(TypePool *typePool, const std::string &methodName) {
+    return this->superType->lookupMethodHandle(typePool, methodName);
+}
+
+FieldHandle *ErrorType::findHandle(const std::string &fieldName) {
+    return this->superType->findHandle(fieldName);
+}
+
+/**
+ * call only once.
+ */
+void ErrorType::registerFuncInfo(NativeFuncInfo *info) {
+    if(funcInfo == 0) {
+        funcInfo = info;
+        initRef.reset(new NativeMethodRef(info->func_ptr));
+    }
+}
+
 } // namespace core
 } // namespace ydsh
