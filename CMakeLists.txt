@@ -46,9 +46,10 @@ check_header(HAVE_HISTEDIT_H "histedit.h")
 find_library(HAVE_LIBEDIT NAMES edit)
 
 # check dbus
-SET(CMAKE_INCLUDE_PATH "/usr/include/dbus-1.0" "/usr/lib64/dbus-1.0/include" "/usr/lib/dbus-1.0/include")
+SET(CMAKE_INCLUDE_PATH "/usr/include/dbus-1.0" "/usr/lib64/dbus-1.0/include" "/usr/lib/dbus-1.0/include" "/usr/lib/x86_64-linux-gnu/dbus-1.0/include")
 check_header(HAVE_DBUS_H "dbus/dbus.h")
 check_header(HAVE_DBUS_ARCH_DEPS_H "dbus/dbus-arch-deps.h")
+SET(CMAKE_LIBRARY_PATH "/usr/lib/x86_64-linux-gnu")
 find_library(HAVE_LIBDBUS NAMES dbus-1)
 
 # build re2c
