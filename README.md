@@ -12,4 +12,4 @@ currently, under heavy development.
 * make
 * g++ (need c++11 support)
 * libedit (need unicode support. see http://thrysoee.dk/editline/)
-* libdbus-1
+* libdbus 1.8.x

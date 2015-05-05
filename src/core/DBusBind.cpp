@@ -18,7 +18,10 @@
 #include "FieldHandle.h"
 #include "RuntimeContext.h"
 
+extern "C" {
 #include <dbus/dbus.h>
+}
+
 
 namespace ydsh {
 namespace core {

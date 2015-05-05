@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
-#include <histedit.h>
 #include <string>
 #include <string.h>
 #include <signal.h>
 #include <setjmp.h>
+
+extern "C" {
+#include <histedit.h>
+}
 
 #include "Shell.h"
 
