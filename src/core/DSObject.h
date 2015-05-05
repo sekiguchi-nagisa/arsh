@@ -87,7 +87,7 @@ struct DSObject {
     /**
      * check if this type is instance of targetType.
      */
-    virtual bool introspect(DSType *targetType);
+    virtual bool introspect(RuntimeContext &ctx, DSType *targetType);
 };
 
 struct Int_Object : public DSObject {

@@ -76,7 +76,7 @@ size_t DSObject::hash() {
     return std::hash<long>()((long) this);
 }
 
-bool DSObject::introspect(DSType *targetType) {
+bool DSObject::introspect(RuntimeContext &ctx, DSType *targetType) {
     return targetType->isAssignableFrom(this->type);
 }
 

@@ -101,7 +101,7 @@ void RuntimeContext::printStackTop(DSType *stackTopType) {
 }
 
 bool RuntimeContext::checkCast(unsigned int lineNum, DSType *targetType) {
-    if(!this->peek()->introspect(targetType)) {
+    if(!this->peek()->introspect(*this, targetType)) {
         DSType *stackTopType = this->pop()->getType();
         std::string str("cannot cast ");
         str += this->pool.getTypeName(*stackTopType);
@@ -116,7 +116,7 @@ bool RuntimeContext::checkCast(unsigned int lineNum, DSType *targetType) {
 }
 
 void RuntimeContext::instanceOf(DSType *targetType) {
-    if(this->pop()->introspect(targetType)) {
+    if(this->pop()->introspect(*this, targetType)) {
         this->push(this->trueObj);
     } else {
         this->push(this->falseObj);
