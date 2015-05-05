@@ -455,8 +455,9 @@ FieldHandle *InterfaceType::newFieldHandle(const std::string &fieldName, DSType 
     }
 }
 
-InterfaceMethodHandle *InterfaceType::newMethodHandle(const std::string &methodName) {
-    InterfaceMethodHandle *handle = new InterfaceMethodHandle();
+MethodHandle *InterfaceType::newMethodHandle(const std::string &methodName) {
+    MethodHandle *handle = new MethodHandle(0);
+    handle->setAttribute(MethodHandle::INTERFACE);
     auto pair = this->methodHandleMap.insert(std::make_pair(methodName, handle));
     if(!pair.second) {
         handle->setNext(pair.first->second);

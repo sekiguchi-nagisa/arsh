@@ -36,7 +36,6 @@ class MethodRef;
 
 class FieldHandle;
 class MethodHandle;
-class InterfaceMethodHandle;
 
 struct RuntimeContext;
 typedef bool (*native_func_t)(RuntimeContext &);
@@ -281,7 +280,7 @@ DSType *newTupleType(DSType *superType, const std::vector<DSType *> &elementType
 class InterfaceType : public DSType {
 private:
     std::unordered_map<std::string, FieldHandle *> fieldHandleMap;
-    std::unordered_map<std::string, InterfaceMethodHandle *> methodHandleMap;
+    std::unordered_map<std::string, MethodHandle *> methodHandleMap;
 
 public:
     /**
@@ -296,7 +295,7 @@ public:
      */
     FieldHandle *newFieldHandle(const std::string &fieldName, DSType *fieldType, bool readOnly);
 
-    InterfaceMethodHandle *newMethodHandle(const std::string &methodName);
+    MethodHandle *newMethodHandle(const std::string &methodName);
 
     unsigned int getFieldSize();    // override
     unsigned int getMethodSize();   // override

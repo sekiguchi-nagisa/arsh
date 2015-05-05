@@ -42,7 +42,7 @@ RuntimeContext::RuntimeContext(char **envp) :
         localStack(new std::shared_ptr<DSObject>[DEFAULT_LOCAL_SIZE]),
         localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0),
         localVarOffset(0), offsetStack(), repl(false), assertion(true),
-        methodIndexOf_STR(-1), methodIndexOf_INTERP(-1), methodIndexOf_CMD_ARG(-1), methodIndexOf_bt(-1),
+        handle_STR(0), handle_INTERP(0), handle_CMD_ARG(0),handle_bt(0),
         readFiles(), funcContextStack(), callStack() {
     this->readFiles.push_back(std::string("(stdin)"));
 }
@@ -101,9 +101,8 @@ void RuntimeContext::printStackTop(DSType *stackTopType) {
 }
 
 bool RuntimeContext::checkCast(unsigned int lineNum, DSType *targetType) {
-    DSType *stackTopType = this->peek()->getType();
-    if(!targetType->isAssignableFrom(stackTopType)) {
-        this->pop();
+    if(!this->peek()->introspect(targetType)) {
+        DSType *stackTopType = this->pop()->getType();
         std::string str("cannot cast ");
         str += this->pool.getTypeName(*stackTopType);
         str += " to ";
@@ -117,7 +116,7 @@ bool RuntimeContext::checkCast(unsigned int lineNum, DSType *targetType) {
 }
 
 void RuntimeContext::instanceOf(DSType *targetType) {
-    if(targetType->isAssignableFrom(this->pop()->getType())) {
+    if(this->pop()->introspect(targetType)) {
         this->push(this->trueObj);
     } else {
         this->push(this->falseObj);

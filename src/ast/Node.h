@@ -31,6 +31,7 @@ namespace core {
 
 class DSType;
 class FieldHandle;
+class MethodHandle;
 struct DSObject;
 struct RuntimeContext;
 
@@ -324,49 +325,32 @@ public:
  */
 class AssignableNode : public Node {
 protected:
-    bool readOnly;
-
-    /**
-     * if node is VarNode, treat as var index.
-     * if node is AccessNode, treat as field index.
-     */
-    int index;
+    FieldHandle *handle;
 
 public:
     AssignableNode(unsigned int lineNum);
-
     virtual ~AssignableNode();
 
+    void setHandle(FieldHandle *handle);
+    FieldHandle *getHandle();
     bool isReadOnly();
-
-    int getIndex();
+    unsigned int getIndex();
 };
 
 class VarNode : public AssignableNode {
 private:
     std::string varName;
-    bool global;
-
-    /**
-     * if true, treat as environment variable
-     */
-    bool env;
 
 public:
     VarNode(unsigned int lineNum, std::string &&varName);
 
     const std::string &getVarName();
 
-    void setAttribute(FieldHandle *handle);
-
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
     bool isGlobal();
-
     bool isEnv();
-
-    int getVarIndex();
-
+    unsigned int getVarIndex();
     EvalStatus eval(RuntimeContext &ctx); // override
 
     // for ArgsNode
@@ -391,21 +375,13 @@ private:
 
 public:
     AccessNode(Node *recvNode, std::string &&fieldName);
-
     ~AccessNode();
 
     Node *getRecvNode();
-
     void setFieldName(const std::string &fieldName);
-
     const std::string &getFieldName();
-
-    void setAttribute(FieldHandle *handle);
-
-    int getFieldIndex();
-
+    unsigned int getFieldIndex();
     void setAdditionalOp(AdditionalOp op);
-
     AdditionalOp getAdditionnalOp();
 
     void dump(Writer &writer) const;  // override
@@ -549,7 +525,7 @@ class MethodCallNode : public CallNode {
 private:
     Node *recvNode;
     std::string methodName;
-    unsigned int methodIndex;
+    MethodHandle *handle;
 
     flag8_set_t attributeSet;
 
@@ -565,14 +541,12 @@ public:
 
     void setAttribute(flag8_t attribute);
     bool hasAttribute(flag8_t attribute);
-    void setMethodIndex(unsigned int index);
-    unsigned int getMethodIndex();
+    void setHandle(MethodHandle *handle);
+    MethodHandle *getHandle();
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
-
-
 
     const static flag8_t INDEX = 1 << 0;
     const static flag8_t ICALL = 1 << 1;
@@ -867,7 +841,7 @@ private:
     std::string envName;
     Node *exprNode;
     bool global;
-    int varIndex;
+    unsigned int varIndex;
 
 public:
     ExportEnvNode(unsigned int lineNum, std::string &&envName, Node *exprNode);
@@ -882,7 +856,7 @@ public:
 
     bool isGlobal();
 
-    int getVarIndex();
+    unsigned int getVarIndex();
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
@@ -893,7 +867,7 @@ class ImportEnvNode : public Node {
 private:
     std::string envName;
     bool global;
-    int varIndex;
+    unsigned int varIndex;
 
 public:
     ImportEnvNode(unsigned int lineNum, std::string &&envName);
@@ -904,7 +878,7 @@ public:
 
     bool isGlobal();
 
-    int getVarIndex();
+    unsigned int getVarIndex();
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
@@ -1102,7 +1076,7 @@ private:
      */
     DSType *exceptionType;
 
-    int varIndex;
+    unsigned int varIndex;
 
     BlockNode *blockNode;
 
@@ -1128,7 +1102,7 @@ public:
 
     void setAttribute(FieldHandle *handle);
 
-    int getVarIndex();
+    unsigned int getVarIndex();
 
     BlockNode *getBlockNode();
 
@@ -1176,7 +1150,7 @@ private:
     std::string varName;
     bool readOnly;
     bool global;
-    int varIndex;
+    unsigned int varIndex;
     Node *initValueNode;
 
 public:
@@ -1194,7 +1168,7 @@ public:
 
     Node *getInitValueNode();
 
-    int getVarIndex();
+    unsigned int getVarIndex();
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
@@ -1323,7 +1297,7 @@ private:
     /**
      * global variable table index of this function
      */
-    int varIndex;
+    unsigned int varIndex;
 
 public:
     FunctionNode(unsigned int lineNum, std::string &&funcName);
@@ -1357,9 +1331,9 @@ public:
 
     unsigned int getMaxVarNum();
 
-    void setVarIndex(int varIndex);
+    void setVarIndex(unsigned int varIndex);
 
-    int getVarIndex();
+    unsigned int getVarIndex();
 
     void setSourceName(const char *sourceName); // override
     const char *getSourceName(); // override
@@ -1407,7 +1381,7 @@ public:
 class BindVarNode : public Node {
 private:
     std::string varName;
-    int varIndex;
+    unsigned int varIndex;
     std::shared_ptr<DSObject> value;
 
 public:
@@ -1415,7 +1389,7 @@ public:
 
     const std::string &getVarName();
     void setAttribute(FieldHandle *handle);
-    int getVarIndex();
+    unsigned int getVarIndex();
     const std::shared_ptr<DSObject> &getValue();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override

@@ -83,6 +83,11 @@ struct DSObject {
      * for Map_Object
      */
     virtual size_t hash();
+
+    /**
+     * check if this type is instance of targetType.
+     */
+    virtual bool introspect(DSType *targetType);
 };
 
 struct Int_Object : public DSObject {
@@ -337,6 +342,30 @@ public:
     ~NativeMethodRef();
 
     bool invoke(RuntimeContext &ctx);   // override
+};
+
+struct ProxyObject : public DSObject {
+    ProxyObject(DSType *type) : DSObject(type) {
+    }
+
+    virtual ~ProxyObject();
+
+    /**
+     * invoke method and set return value.
+     */
+    virtual bool invokeMethod(RuntimeContext &ctx, const std::string &methodName, MethodHandle *handle) = 0;
+
+    /**
+     * push got value to stack top.
+     * return false, if error happened.
+     */
+    virtual bool invokeGetter(RuntimeContext &ctx, const std::string &fieldName, DSType *fieldType) = 0;
+
+    /**
+     * pop stack top value and set to field.
+     * return false, if error happened.
+     */
+    virtual bool invokeSetter(RuntimeContext &ctx, const std::string &fieldName, DSType *fieldType) = 0;
 };
 
 } // namespace core

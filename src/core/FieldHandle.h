@@ -39,10 +39,7 @@ protected:
     DSType *fieldType;
 
 private:
-    /**
-     * if index is -1, this handle dose not belong to handle table
-     */
-    int fieldIndex;
+    unsigned int fieldIndex;
 
     /**
      * attribute bit map.
@@ -50,19 +47,13 @@ private:
     flag8_set_t attributeSet;
 
 public:
-    FieldHandle(DSType *fieldType, int fieldIndex, bool readOnly);
-
+    FieldHandle(DSType *fieldType, unsigned int fieldIndex, bool readOnly);
     virtual ~FieldHandle();
 
     virtual DSType *getFieldType(TypePool *typePool);
-
-    /**
-     * return -1, if this handle dose not belong to handle table
-     */
-    int getFieldIndex();
-
+    unsigned int getFieldIndex();
+    std::string toString() const;
     void setAttribute(flag8_t attribute);
-
     void unsetAttribute(flag8_t attribute);
 
     /**
@@ -87,12 +78,14 @@ public:
      */
     bool isFuncHandle() const;
 
+    bool withinInterface() const;
+
     // attribute definition
-    const static flag8_t READ_ONLY   = 1 << 0;
-    const static flag8_t GLOBAL      = 1 << 1;
-    const static flag8_t ENV         = 1 << 2;
-    const static flag8_t FUNC_HANDLE = 1 << 3;
-    const static flag8_t INTERFACE   = 1 << 4;
+    static constexpr flag8_t READ_ONLY   = 1 << 0;
+    static constexpr flag8_t GLOBAL      = 1 << 1;
+    static constexpr flag8_t ENV         = 1 << 2;
+    static constexpr flag8_t FUNC_HANDLE = 1 << 3;
+    static constexpr flag8_t INTERFACE   = 1 << 4;
 };
 
 /**
@@ -115,12 +108,7 @@ protected:
     std::vector<bool> defaultValues;
 
 public:
-    FunctionHandle(DSType *returnType, const std::vector<DSType *> &paramTypes);
-
-    FunctionHandle(DSType *returnType, const std::vector<DSType *> &paramTypes, int fieldIndex);
-
-    FunctionHandle(unsigned int paramSize, int fieldIndex);
-
+    FunctionHandle(DSType *returnType, const std::vector<DSType *> &paramTypes, unsigned int fieldIndex);
     ~FunctionHandle();
 
     DSType *getFieldType(TypePool *typePool);   // override
@@ -150,6 +138,7 @@ public:
 class MethodHandle {
 protected:
     unsigned int methodIndex;
+    flag8_set_t attributeSet;
 
     DSType *returnType;
 
@@ -167,12 +156,14 @@ protected:
 
 public:
     MethodHandle(int methodIndex);
-    virtual ~MethodHandle();
+    ~MethodHandle();
 
     unsigned int getMethodIndex();
+    void setReturnType(DSType *type);
     DSType *getReturnType();
     void setRecvType(DSType *type);
     DSType *getRecvType();
+    void addParamType(DSType *type);
     const std::vector<DSType *> &getParamTypes();
 
     /**
@@ -189,21 +180,11 @@ public:
     void setNext(MethodHandle *handle);
     MethodHandle *getNext();
 
-    virtual bool isInterfaceMethod();
-};
-
-/**
- * for D-Bus method
- */
-class InterfaceMethodHandle : public MethodHandle {
-public:
-    InterfaceMethodHandle();
-    ~InterfaceMethodHandle();
-
-    void setReturnType(DSType *type);
-    void addParamType(DSType *type);
-    bool isInterfaceMethod(); // override
+    void setAttribute(flag8_t attribute);
+    bool isInterfaceMethod();
     bool isSignal();
+
+    static constexpr flag8_t INTERFACE = 1 << 0;
 };
 
 } // namespace core

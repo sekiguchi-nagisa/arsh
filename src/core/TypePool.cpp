@@ -40,7 +40,7 @@ TypePool::TypePool(char **envp) :
         int32Type(), uint32Type(), int64Type(), uint64Type(),
         floatType(), boolType(), stringType(),
         errorType(), taskType(), baseFuncType(),
-        objectPathType(), unixFDType(),
+        objectPathType(), unixFDType(), proxyType(),
         dbusType(), busType(), dbusObjectType(),
         arithmeticErrorType(), outOfIndexErrorType(),
         keyNotFoundErrorType(), typeCastErrorType(),
@@ -71,9 +71,10 @@ TypePool::TypePool(char **envp) :
 
     this->objectPathType = this->initBuiltinType("ObjectPath", false, this->stringType, info_ObjectPathType());
     this->unixFDType = this->initBuiltinType("UnixFD", false, this->uint32Type, info_UnixFDType());
+    this->proxyType = this->initBuiltinType("Proxy", false, this->anyType, info_ProxyType());
     this->dbusType = this->initBuiltinType("DBus", false, this->anyType, info_DBusType());
     this->busType = this->initBuiltinType("Bus", false, this->anyType, info_BusType());
-    this->dbusObjectType = this->initBuiltinType("DBusObject", false, this->anyType, info_Dummy());
+    this->dbusObjectType = this->initBuiltinType("DBusObject", false, this->proxyType, info_Dummy());
 
     this->errorType = this->initBuiltinType("Error", true, this->anyType, info_ErrorType());
     this->taskType = this->initBuiltinType("Task", false, this->anyType, info_Dummy());
@@ -202,6 +203,10 @@ DSType *TypePool::getObjectPathType() {
 
 DSType *TypePool::getUnixFDType() {
     return this->unixFDType;
+}
+
+DSType *TypePool::getProxyType() {
+    return this->proxyType;
 }
 
 DSType *TypePool::getDBusType() {

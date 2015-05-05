@@ -43,6 +43,7 @@ native_type_info_t *info_UnixFDType();
 native_type_info_t *info_DBusType();
 native_type_info_t *info_BusType();
 native_type_info_t *info_ErrorType();
+native_type_info_t *info_ProxyType();
 
 // for type template initialization.
 native_type_info_t *info_ArrayType();

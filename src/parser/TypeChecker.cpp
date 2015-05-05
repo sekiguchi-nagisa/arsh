@@ -84,7 +84,7 @@ DSType *TypeChecker::resolveInterface(TypePool *typePool, InterfaceNode *node) {
 
     // create method handle
     for(FunctionNode *funcNode : node->getMethodDeclNodes()) {
-        InterfaceMethodHandle *handle = type->newMethodHandle(funcNode->getFuncName());
+        MethodHandle *handle = type->newMethodHandle(funcNode->getFuncName());
         handle->setRecvType(type);
         handle->setReturnType(toType(typePool, funcNode->getReturnTypeToken()));
 
@@ -315,7 +315,7 @@ HandleOrFuncType TypeChecker::resolveCallee(VarNode * recvNode) {
     if(handle == 0) {
         E_UndefinedSymbol(recvNode, recvNode->getVarName());
     }
-    recvNode->setAttribute(handle);
+    recvNode->setHandle(handle);
 
     FunctionHandle *funcHandle = dynamic_cast<FunctionHandle *>(handle);
     if(funcHandle != 0) {
@@ -499,7 +499,7 @@ void TypeChecker::visitVarNode(VarNode * node) {
         E_UndefinedSymbol(node, node->getVarName());
     }
 
-    node->setAttribute(handle);
+    node->setHandle(handle);
     node->setType(handle->getFieldType(this->typePool));
 }
 
@@ -510,7 +510,7 @@ void TypeChecker::visitAccessNode(AccessNode * node) {
         E_UndefinedField(node, node->getFieldName());
     }
 
-    node->setAttribute(handle);
+    node->setHandle(handle);
     node->setType(handle->getFieldType(this->typePool));
 }
 
@@ -624,7 +624,7 @@ void TypeChecker::visitMethodCallNode(MethodCallNode *node) {
     // check type argument
     this->checkTypeArgsNode(handle, node->getArgsNode());
 
-    node->setMethodIndex(handle->getMethodIndex());
+    node->setHandle(handle);
     node->setType(handle->getReturnType());
 }
 
@@ -960,7 +960,7 @@ void TypeChecker::visitFunctionNode(FunctionNode * node) {   //TODO: named param
         VarNode *paramNode = node->getParamNodes()[i];
         FieldHandle *handle = this->addEntryAndThrowIfDefined(
                 paramNode, paramNode->getVarName(), paramTypes[i], false);
-        paramNode->setAttribute(handle);
+        paramNode->setHandle(handle);
     }
     this->checkBlockEndExistence(node->getBlockNode(), returnType);
     this->checkTypeWithCurrentBlockScope(node->getBlockNode());

@@ -82,6 +82,7 @@ private:
      */
     DSType *unixFDType;
 
+    DSType *proxyType;
 
     /**
      * for owner type of each bus object
@@ -179,6 +180,8 @@ public:
 
     DSType *getObjectPathType();
     DSType *getUnixFDType();
+
+    DSType *getProxyType();
 
     DSType *getDBusType();
     DSType *getBusType();

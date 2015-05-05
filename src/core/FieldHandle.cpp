@@ -28,7 +28,7 @@ namespace core {
 // ##     FieldHandle     ##
 // #########################
 
-FieldHandle::FieldHandle(DSType *fieldType, int fieldIndex, bool readOnly) :
+FieldHandle::FieldHandle(DSType *fieldType, unsigned int fieldIndex, bool readOnly) :
         fieldType(fieldType), fieldIndex(fieldIndex), attributeSet(0) {
     if(readOnly) {
         this->setAttribute(READ_ONLY);
@@ -42,8 +42,35 @@ DSType *FieldHandle::getFieldType(TypePool *typePool) {
     return this->fieldType;
 }
 
-int FieldHandle::getFieldIndex() {
+unsigned int FieldHandle::getFieldIndex() {
     return this->fieldIndex;
+}
+
+std::string FieldHandle::toString() const {
+    std::string str("{");
+
+    str += "fieldIndex = ";
+    str += std::to_string(this->fieldIndex);
+    str += ", attributeSet = ";
+
+    unsigned int count = 0;
+#define EACH_ATTRIBUTE(OP) \
+    OP(READ_ONLY) \
+    OP(GLOBAL) \
+    OP(ENV) \
+    OP(FUNC_HANDLE) \
+    OP(INTERFACE)
+
+#define DECODE_ATTR(ATTR) \
+    if(this->hasAttribute(ATTR)) { if(count++ > 0) { str += " | "; } str += #ATTR; }
+
+    EACH_ATTRIBUTE(DECODE_ATTR)
+
+#undef DECODE_ATTR
+#undef EACH_ATTRIBUTE
+
+    str += "}";
+    return str;
 }
 
 void FieldHandle::setAttribute(flag8_t attribute) {
@@ -74,24 +101,18 @@ bool FieldHandle::isFuncHandle() const {
     return this->hasAttribute(FUNC_HANDLE);
 }
 
+bool FieldHandle::withinInterface() const {
+    return this->hasAttribute(INTERFACE);
+}
+
 
 // ############################
 // ##     FunctionHandle     ##
 // ############################
 
-FunctionHandle::FunctionHandle(DSType *returnType, const std::vector<DSType *> &paramTypes) :
-        FunctionHandle(returnType, paramTypes, -1) {
-}
-
-FunctionHandle::FunctionHandle(DSType *returnType, const std::vector<DSType *> &paramTypes, int fieldIndex) :
+FunctionHandle::FunctionHandle(DSType *returnType, const std::vector<DSType *> &paramTypes, unsigned int fieldIndex) :
         FieldHandle(0, fieldIndex, true),
         returnType(returnType), paramTypes(paramTypes), paramIndexMap(), defaultValues() {
-    this->setAttribute(FUNC_HANDLE);
-}
-
-FunctionHandle::FunctionHandle(unsigned int paramSize, int fieldIndex) :
-        FieldHandle(0, fieldIndex, true),
-        returnType(), paramTypes(), paramIndexMap(), defaultValues() {  //FIXME: paramTyes preallocate
     this->setAttribute(FUNC_HANDLE);
 }
 
@@ -147,8 +168,8 @@ bool FunctionHandle::hasDefaultValue(unsigned int paramIndex) {
 // ##########################
 
 MethodHandle::MethodHandle(int methodIndex) :
-        methodIndex(methodIndex), returnType(), recvType(),
-        paramTypes(), next() {
+        methodIndex(methodIndex), attributeSet(),
+        returnType(), recvType(), paramTypes(), next() {
 }
 
 MethodHandle::~MethodHandle() {
@@ -158,6 +179,10 @@ MethodHandle::~MethodHandle() {
 
 unsigned int MethodHandle::getMethodIndex() {
     return this->methodIndex;
+}
+
+void MethodHandle::setReturnType(DSType *type) {
+    this->returnType = type;
 }
 
 DSType *MethodHandle::getReturnType() {
@@ -170,6 +195,10 @@ void MethodHandle::setRecvType(DSType *type) {
 
 DSType *MethodHandle::getRecvType() {
     return this->recvType;
+}
+
+void MethodHandle::addParamType(DSType *type) {
+    this->paramTypes.push_back(type);
 }
 
 const std::vector<DSType *> &MethodHandle::getParamTypes() {
@@ -273,36 +302,17 @@ MethodHandle *MethodHandle::getNext() {
     return this->next;
 }
 
+void MethodHandle::setAttribute(flag8_t attribute) {
+    setFlag(this->attributeSet, attribute);
+}
+
 bool MethodHandle::isInterfaceMethod() {
-    return false;
+    return hasFlag(this->attributeSet, INTERFACE);
 }
 
-// ###################################
-// ##     InterfaceMethodHandle     ##
-// ###################################
-
-InterfaceMethodHandle::InterfaceMethodHandle() :
-        MethodHandle(0) {   //method index is always 0.
-}
-
-InterfaceMethodHandle::~InterfaceMethodHandle() {
-}
-
-void InterfaceMethodHandle::setReturnType(DSType *type) {
-    this->returnType = type;
-}
-
-void InterfaceMethodHandle::addParamType(DSType *type) {
-    this->paramTypes.push_back(type);
-}
-
-bool InterfaceMethodHandle::isInterfaceMethod() {
-    return true;
-}
-
-bool InterfaceMethodHandle::isSignal() {
-    return this->paramTypes.size() == 1 &&
-            this->paramTypes[0]->isFuncType() && this->returnType->isVoidType();
+bool MethodHandle::isSignal() {
+    return this->isInterfaceMethod() && this->paramTypes.size() == 1 &&
+           this->paramTypes[0]->isFuncType() && this->returnType->isVoidType();
 }
 
 } // namespace core

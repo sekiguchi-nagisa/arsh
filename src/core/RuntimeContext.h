@@ -128,22 +128,22 @@ struct RuntimeContext {
     /**
      * for string cast
      */
-    int methodIndexOf_STR;
+    MethodHandle *handle_STR;
 
     /**
      * for string interpolation
      */
-    int methodIndexOf_INTERP;
+    MethodHandle *handle_INTERP;
 
     /**
      * for command argument
      */
-    int methodIndexOf_CMD_ARG;
+    MethodHandle *handle_CMD_ARG;
 
     /**
      * for error reporting
      */
-    int methodIndexOf_bt;
+    MethodHandle *handle_bt;
 
     static const unsigned int defaultFileNameIndex = 0;
     std::vector<std::string> readFiles;
@@ -319,6 +319,19 @@ struct RuntimeContext {
 
     // field manipulation
 
+    void setField(unsigned int index) {
+        std::shared_ptr<DSObject> value(this->pop());
+        this->pop()->getFieldTable()[index] = std::move(value);
+    }
+
+    EvalStatus setField(const std::string &fieldName, DSType *fieldType) {
+        bool status = TYPE_AS(ProxyObject, this->localStack[this->stackTopIndex - 1])->
+                invokeSetter(*this, fieldName, fieldType);
+        // pop receiver
+        this->pop();
+        return status ? EVAL_SUCCESS : EVAL_THROW;
+    }
+
     /**
      * get field from stack top value.
      */
@@ -327,11 +340,23 @@ struct RuntimeContext {
                 this->localStack[this->stackTopIndex]->getFieldTable()[index];
     }
 
+    EvalStatus getField(const std::string &fieldName, DSType *fieldType) {
+        bool status = TYPE_AS(ProxyObject, this->pop())->
+                invokeGetter(*this, fieldName, fieldType);
+        return status ? EVAL_SUCCESS : EVAL_THROW;
+    }
+
     /**
      * dup stack top value and get field from it.
      */
     void dupAndGetField(unsigned int index) {
         this->push(this->peek()->getFieldTable()[index]);
+    }
+
+    EvalStatus dupAndGetField(const std::string &fieldName, DSType *fieldType) {
+        bool status = TYPE_AS(ProxyObject, this->localStack[this->stackTopIndex])->
+                invokeGetter(*this, fieldName, fieldType);
+        return status ? EVAL_SUCCESS : EVAL_THROW;
     }
 
     void pushCallFrame(unsigned int lineNum) {
@@ -385,14 +410,28 @@ struct RuntimeContext {
      * +-----------+------------------+   +--------+
      *             | offset           |   |        |
      */
-    EvalStatus callMethod(unsigned int lineNum, bool returnTypeIsVoid, unsigned int methodIndex, unsigned int paramSize) {
+    EvalStatus callMethod(unsigned int lineNum, const std::string &methodName, MethodHandle *handle) {
+        /**
+         * include receiver
+         */
+        unsigned int paramSize = handle->getParamTypes().size() + 1;
+
         unsigned int savedStackTopIndex = this->stackTopIndex - paramSize;
 
         // call method
         this->saveAndSetOffset(savedStackTopIndex + 1);
         this->pushCallFrame(lineNum);
-        bool status = this->localStack[savedStackTopIndex + 1]->
-                type->getMethodRef(methodIndex)->invoke(*this);
+
+        bool status = false;
+        // check method handle type
+        if(!handle->isInterfaceMethod()) {  // call virtual method
+            status = this->localStack[savedStackTopIndex + 1]->
+                    type->getMethodRef(handle->getMethodIndex())->invoke(*this);
+        } else {    // call proxy method
+            status = TYPE_AS(ProxyObject, this->localStack[savedStackTopIndex + 1])->
+                    invokeMethod(*this, methodName, handle);
+        }
+
         this->popCallFrame();
 
         // restore stack state
@@ -402,7 +441,7 @@ struct RuntimeContext {
         }
 
         if(status) {
-            if(!returnTypeIsVoid) {
+            if(!handle->getReturnType()->isVoidType()) {
                 this->getReturnObject(); // push return value
             }
             return EVAL_SUCCESS;
@@ -459,36 +498,39 @@ struct RuntimeContext {
      * cast stack top value to String
      */
     EvalStatus toString(unsigned int lineNum) {
-        if(this->methodIndexOf_STR == -1) {
-            auto *handle = this->pool.getAnyType()->
-                    lookupMethodHandle(&this->pool, std::string(OP_STR));
-            this->methodIndexOf_STR = handle->getMethodIndex();
+        static const std::string methodName(OP_STR);
+
+        if(this->handle_STR == nullptr) {
+            this->handle_STR = this->pool.getAnyType()->
+                    lookupMethodHandle(&this->pool, methodName);
         }
-        return this->callMethod(lineNum, false, this->methodIndexOf_STR, 1);
+        return this->callMethod(lineNum, methodName, this->handle_STR);
     }
 
     /**
      * call __INTERP__
      */
     EvalStatus toInterp(unsigned int lineNum) {
-        if(this->methodIndexOf_INTERP == -1) {
-            auto *handle = this->pool.getAnyType()->
-                    lookupMethodHandle(&this->pool, std::string(OP_INTERP));
-            this->methodIndexOf_INTERP = handle->getMethodIndex();
+        static const std::string methodName(OP_INTERP);
+
+        if(this->handle_INTERP == nullptr) {
+            this->handle_INTERP = this->pool.getAnyType()->
+                    lookupMethodHandle(&this->pool, methodName);
         }
-        return this->callMethod(lineNum, false, this->methodIndexOf_INTERP, 1);
+        return this->callMethod(lineNum, methodName, this->handle_INTERP);
     }
 
     /**
      * call __CMD_ARG__
      */
     EvalStatus toCmdArg(unsigned int lineNum) {
-        if(this->methodIndexOf_CMD_ARG == -1) {
-            auto *handle = this->pool.getAnyType()->
-                    lookupMethodHandle(&this->pool, std::string(OP_CMD_ARG));
-            this->methodIndexOf_CMD_ARG = handle->getMethodIndex();
+        static const std::string methodName(OP_CMD_ARG);
+
+        if(this->handle_CMD_ARG == nullptr) {
+            this->handle_CMD_ARG = this->pool.getAnyType()->
+                    lookupMethodHandle(&this->pool, methodName);
         }
-        return this->callMethod(lineNum, false, this->methodIndexOf_CMD_ARG, 1);
+        return this->callMethod(lineNum, methodName, this->handle_CMD_ARG);
     }
 
     /**
@@ -498,13 +540,13 @@ struct RuntimeContext {
     void reportError() {
         std::cerr << "[runtime error]" << std::endl;
         if(this->pool.getErrorType()->isAssignableFrom(this->thrownObject->type)) {
-            if(this->methodIndexOf_bt == -1) {
-                std::string str("backtrace");
-                auto *handle = this->pool.getErrorType()->lookupMethodHandle(&this->pool, str);
-                this->methodIndexOf_bt = handle->getMethodIndex();
+            static const std::string methodName("backtrace");
+
+            if(this->handle_bt == nullptr) {
+                this->handle_bt = this->pool.getErrorType()->lookupMethodHandle(&this->pool, methodName);
             }
             this->getThrownObject();
-            this->callMethod(0, false, this->methodIndexOf_bt, 1);
+            this->callMethod(0, methodName, this->handle_bt);
         } else {
             std::cerr << this->thrownObject->toString(*this) << std::endl;
         }

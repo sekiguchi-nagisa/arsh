@@ -512,46 +512,44 @@ EvalStatus TupleNode::eval(RuntimeContext &ctx) {
 // ############################
 
 AssignableNode::AssignableNode(unsigned int lineNum) :
-        Node(lineNum), readOnly(false), index(-1) {
+        Node(lineNum), handle() {
 }
 
 AssignableNode::~AssignableNode() {
 }
 
-bool AssignableNode::isReadOnly() {
-    return this->readOnly;
+void AssignableNode::setHandle(FieldHandle *handle) {
+    this->handle = handle;
 }
 
-int AssignableNode::getIndex() {
-    return this->index;
+FieldHandle *AssignableNode::getHandle() {
+    return this->handle;
 }
+
+bool AssignableNode::isReadOnly() {
+    return this->handle->isReadOnly();
+}
+
+unsigned int AssignableNode::getIndex() {
+    return  this->handle->getFieldIndex();
+}
+
 
 // #####################
 // ##     VarNode     ##
 // #####################
 
 VarNode::VarNode(unsigned int lineNum, std::string &&varName) :
-        AssignableNode(lineNum), varName(std::move(varName)),
-        global(false), env(false) {
+        AssignableNode(lineNum), varName(std::move(varName)) {
 }
 
 const std::string &VarNode::getVarName() {
     return this->varName;
 }
 
-void VarNode::setAttribute(FieldHandle *handle) {
-    this->readOnly = handle->isReadOnly();
-    this->global = handle->isGlobal();
-    this->env = handle->isEnv();
-    this->index = handle->getFieldIndex();
-}
-
 void VarNode::dump(Writer &writer) const {
-    WRITE_PRIM(readOnly);
-    WRITE_PRIM(index);
     WRITE(varName);
-    WRITE_PRIM(global);
-    WRITE_PRIM(env);
+    WRITE_PTR(handle);
 }
 
 void VarNode::accept(NodeVisitor *visitor) {
@@ -559,22 +557,22 @@ void VarNode::accept(NodeVisitor *visitor) {
 }
 
 bool VarNode::isGlobal() {
-    return this->global;
+    return this->handle->isGlobal();
 }
 
 bool VarNode::isEnv() {
-    return this->env;
+    return this->handle->isEnv();
 }
 
-int VarNode::getVarIndex() {
-    return this->index;
+unsigned int VarNode::getVarIndex() {
+    return this->handle->getFieldIndex();
 }
 
 EvalStatus VarNode::eval(RuntimeContext &ctx) {
-    if (this->global) {
-        ctx.getGlobal(this->index);
+    if (this->isGlobal()) {
+        ctx.getGlobal(this->getVarIndex());
     } else {
-        ctx.getLocal(this->index);
+        ctx.getLocal(this->getVarIndex());
     }
     if (this->type != 0 && this->type->isFuncType()) {
         ctx.peek()->setType(this->type);
@@ -614,13 +612,8 @@ const std::string &AccessNode::getFieldName() {
     return this->fieldName;
 }
 
-void AccessNode::setAttribute(FieldHandle *handle) {
-    this->readOnly = handle->isReadOnly();
-    this->index = handle->getFieldIndex();
-}
-
-int AccessNode::getFieldIndex() {
-    return this->index;
+unsigned int AccessNode::getFieldIndex() {
+    return this->handle->getFieldIndex();
 }
 
 void AccessNode::setAdditionalOp(AccessNode::AdditionalOp op) {
@@ -632,10 +625,9 @@ AccessNode::AdditionalOp AccessNode::getAdditionnalOp() {
 }
 
 void AccessNode::dump(Writer &writer) const {
-    WRITE_PRIM(readOnly);
-    WRITE_PRIM(index);
     WRITE_PTR(recvNode);
     WRITE(fieldName);
+    WRITE_PTR(handle);
 
 #define EACH_ENUM(OP, out) \
     OP(NOP, out) \
@@ -656,14 +648,22 @@ EvalStatus AccessNode::eval(RuntimeContext &ctx) {
 
     switch (this->additionalOp) {
     case NOP: {
-        ctx.getField(this->index);
+        if(this->handle->withinInterface()) {
+            return ctx.getField(this->fieldName, this->type);
+        }
+
+        ctx.getField(this->getFieldIndex());
         if (this->type != 0 && this->type->isFuncType()) {
             ctx.peek()->setType(this->type);
         }
         break;
     }
     case DUP_RECV: {
-        ctx.dupAndGetField(this->index);
+        if(this->handle->withinInterface()) {
+            return ctx.dupAndGetField(this->fieldName, this->type);
+        }
+
+        ctx.dupAndGetField(this->getFieldIndex());
         if (this->type != 0 && this->type->isFuncType()) {
             ctx.peek()->setType(this->type);
         }
@@ -975,7 +975,7 @@ MethodCallNode::MethodCallNode(Node *recvNode, std::string &&methodName) :
 
 MethodCallNode::MethodCallNode(Node *recvNode, std::string &&methodName, ArgsNode *argsNode) :
         CallNode(recvNode->getLineNum(), argsNode),
-        recvNode(recvNode), methodName(methodName), methodIndex(), attributeSet() {
+        recvNode(recvNode), methodName(methodName), handle(), attributeSet() {
 }
 
 MethodCallNode::~MethodCallNode() {
@@ -1007,17 +1007,18 @@ bool MethodCallNode::hasAttribute(flag8_t attribute) {
     return hasFlag(this->attributeSet, attribute);
 }
 
-void MethodCallNode::setMethodIndex(unsigned int index) {
-    this->methodIndex = index;
+void MethodCallNode::setHandle(MethodHandle *handle) {
+    this->handle = handle;
 }
 
-unsigned int MethodCallNode::getMethodIndex() {
-    return this->methodIndex;
+MethodHandle *MethodCallNode::getHandle() {
+    return this->handle;
 }
 
 void MethodCallNode::dump(Writer &writer) const {
     WRITE_PTR(recvNode);
     WRITE(methodName);
+    unsigned int methodIndex = this->handle->getMethodIndex();
     WRITE_PRIM(methodIndex);
     WRITE_PTR(argsNode);
 
@@ -1039,12 +1040,7 @@ EvalStatus MethodCallNode::eval(RuntimeContext &ctx) {
     EVAL(ctx, this->recvNode);
     EVAL(ctx, this->argsNode);
 
-    /**
-     * include receiver
-     */
-    unsigned int paramSize = this->argsNode->getNodes().size() + 1;
-
-    return ctx.callMethod(this->lineNum, this->type->isVoidType(), this->methodIndex, paramSize);
+    return ctx.callMethod(this->lineNum, this->methodName, this->handle);
 }
 
 // #####################
@@ -1765,7 +1761,7 @@ bool ExportEnvNode::isGlobal() {
     return this->global;
 }
 
-int ExportEnvNode::getVarIndex() {
+unsigned int ExportEnvNode::getVarIndex() {
     return this->varIndex;
 }
 
@@ -1791,7 +1787,7 @@ EvalStatus ExportEnvNode::eval(RuntimeContext &ctx) {
 // ###########################
 
 ImportEnvNode::ImportEnvNode(unsigned int lineNum, std::string &&envName) :
-        Node(lineNum), envName(std::move(envName)), global(false), varIndex(-1) {
+        Node(lineNum), envName(std::move(envName)), global(false), varIndex(0) {
 }
 
 const std::string &ImportEnvNode::getEnvName() {
@@ -1807,7 +1803,7 @@ bool ImportEnvNode::isGlobal() {
     return this->global;
 }
 
-int ImportEnvNode::getVarIndex() {
+unsigned int ImportEnvNode::getVarIndex() {
     return this->varIndex;
 }
 
@@ -2292,7 +2288,7 @@ void CatchNode::setAttribute(FieldHandle *handle) {
     this->varIndex = handle->getFieldIndex();
 }
 
-int CatchNode::getVarIndex() {
+unsigned int CatchNode::getVarIndex() {
     return this->varIndex;
 }
 
@@ -2408,7 +2404,7 @@ EvalStatus TryNode::eval(RuntimeContext &ctx) {
 
 VarDeclNode::VarDeclNode(unsigned int lineNum, std::string &&varName, Node *initValueNode, bool readOnly) :
         Node(lineNum), varName(std::move(varName)), readOnly(readOnly), global(false),
-        varIndex(-1), initValueNode(initValueNode) {
+        varIndex(0), initValueNode(initValueNode) {
     this->initValueNode->inRightHandleSide();
 }
 
@@ -2438,7 +2434,7 @@ Node *VarDeclNode::getInitValueNode() {
     return this->initValueNode;
 }
 
-int VarDeclNode::getVarIndex() {
+unsigned int VarDeclNode::getVarIndex() {
     return this->varIndex;
 }
 
@@ -2528,7 +2524,8 @@ void AssignNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus AssignNode::eval(RuntimeContext &ctx) {
-    int index = ((AssignableNode *) this->leftNode)->getIndex();
+    FieldHandle *handle = ((AssignableNode *) this->leftNode)->getHandle();
+    unsigned int index = ((AssignableNode *) this->leftNode)->getIndex();
     if (this->isFieldAssign()) {
         if (this->isSelfAssignment()) {
             EVAL(ctx, this->leftNode);
@@ -2537,8 +2534,12 @@ EvalStatus AssignNode::eval(RuntimeContext &ctx) {
             EVAL(ctx, accessNode->getRecvNode());
         }
         EVAL(ctx, this->rightNode);
-        std::shared_ptr<DSObject> value(ctx.pop());
-        ctx.pop()->getFieldTable()[index] = value;
+
+        if(handle->withinInterface()) {
+            AccessNode *accessNode = (AccessNode *) this->leftNode;
+            return ctx.setField(accessNode->getFieldName(), accessNode->getType());
+        }
+        ctx.setField(index);
     } else {
         if (this->isSelfAssignment()) {
             EVAL(ctx, this->leftNode);
@@ -2745,11 +2746,11 @@ unsigned int FunctionNode::getMaxVarNum() {
     return this->maxVarNum;
 }
 
-void FunctionNode::setVarIndex(int varIndex) {
+void FunctionNode::setVarIndex(unsigned int varIndex) {
     this->varIndex = varIndex;
 }
 
-int FunctionNode::getVarIndex() {
+unsigned int FunctionNode::getVarIndex() {
     return this->varIndex;
 }
 
@@ -2869,7 +2870,7 @@ EvalStatus InterfaceNode::eval(RuntimeContext &ctx) {
 // ###########################
 
 BindVarNode::BindVarNode(const char *name, const std::shared_ptr<DSObject> &value) :
-        Node(0), varName(std::string(name)), varIndex(-1), value(value) {
+        Node(0), varName(std::string(name)), varIndex(0), value(value) {
 }
 
 const std::string &BindVarNode::getVarName() {
@@ -2880,7 +2881,7 @@ void BindVarNode::setAttribute(FieldHandle *handle) {
     this->varIndex = handle->getFieldIndex();
 }
 
-int BindVarNode::getVarIndex() {
+unsigned int BindVarNode::getVarIndex() {
     return this->varIndex;
 }
 
@@ -2891,7 +2892,7 @@ const std::shared_ptr<DSObject> &BindVarNode::getValue() {
 void BindVarNode::dump(Writer &writer) const {
     WRITE(varName);
     WRITE_PRIM(varIndex);
-    // FIXME: value
+    //FIXME: value
 }
 
 void BindVarNode::accept(NodeVisitor *visitor) {

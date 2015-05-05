@@ -76,6 +76,10 @@ size_t DSObject::hash() {
     return std::hash<long>()((long) this);
 }
 
+bool DSObject::introspect(DSType *targetType) {
+    return targetType->isAssignableFrom(this->type);
+}
+
 // ########################
 // ##     Int_Object     ##
 // ########################

@@ -29,6 +29,7 @@ namespace core {
 
 class TypePool;
 class DSType;
+class FieldHandle;
 
 }
 };
@@ -82,6 +83,8 @@ public:
     void write(const char *fieldName, const DSType &type);
 
     void write(const char *fieldName, const std::vector<TypeToken *> &toks);
+
+    void write(const char *fieldName, const FieldHandle &handle);
 
     void writeNull(const char *fieldName);
 

@@ -39,7 +39,8 @@ namespace core {
     OP(DBus) \
     OP(Bus) \
     OP(DBusObject) \
-    OP(Error)
+    OP(Error) \
+    OP(Proxy)
 
 // type template
 #define EACH_HANDLE_INFO_TYPE_TEMP(OP) \
