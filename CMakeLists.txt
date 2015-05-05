@@ -1,5 +1,3 @@
-include(CheckIncludeFiles)
-
 cmake_minimum_required(VERSION 2.8)
 
 PROJECT(ydsh)
@@ -27,6 +25,11 @@ macro(add_source)
     )
 endmacro(add_source)
 
+macro(check_header VAR NAME)
+    find_path(${VAR} ${NAME})
+    MESSAGE(STATUS "find header file - ${NAME} in ${${VAR}}")
+endmacro()
+
 # set some system infomation
 add_definitions(-DX_INFO_SYSTEM=${CMAKE_SYSTEM})
 add_definitions(-DX_INFO_CPP=${CMAKE_CXX_COMPILER_ID})
@@ -39,11 +42,13 @@ if(USE_TRACE_TOKEN)
 endif()
 
 # check editline
-check_include_files("histedit.h" HAVE_HISTEDIT_H)
+check_header(HAVE_HISTEDIT_H "histedit.h")
 find_library(HAVE_LIBEDIT NAMES edit)
 
 # check dbus
-check_include_files("dbus-1.0/dbus/dbus.h" HAVE_DBUS_H)
+SET(CMAKE_INCLUDE_PATH "/usr/include/dbus-1.0" "/usr/lib64/dbus-1.0/include" "/usr/lib/dbus-1.0/include")
+check_header(HAVE_DBUS_H "dbus/dbus.h")
+check_header(HAVE_DBUS_ARCH_DEPS_H "dbus/dbus-arch-deps.h")
 find_library(HAVE_LIBDBUS NAMES dbus-1)
 
 # build re2c
@@ -76,7 +81,7 @@ add_custom_target(gen_bind DEPENDS ${bind_src})
 add_dependencies(gen_bind gen_binding)
 
 
-include_directories(${SRC_DIR} "/usr/include/dbus-1.0" "/usr/lib64/dbus-1.0/include")
+include_directories(${SRC_DIR} ${HAVE_DBUS_H} ${HAVE_DBUS_ARCH_DEPS_H})
 add_subdirectory(${SRC_DIR}/ast)
 add_subdirectory(${SRC_DIR}/core)
 add_subdirectory(${SRC_DIR}/parser)
