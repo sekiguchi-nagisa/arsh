@@ -233,6 +233,8 @@ public:
 
     InterfaceType *createAndGetInterfaceTypeIfUndefined(const std::string &interfaceName);
 
+    DSType *createAndGetErrorTypeIfUndefined(const std::string &errorName, DSType *superType);
+
     /**
      * if not found type, search directory /etc/ydsh/dbus/
      */

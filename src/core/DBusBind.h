@@ -18,58 +18,77 @@
 #define CORE_DBUSBIND_H
 
 #include "DSObject.h"
+#include <unordered_set>
+
+struct DBusConnection;
+
 
 namespace ydsh {
 namespace core {
 
 // represent for SystemBus, SessionBus, or specific bus.
 struct Bus_Object : public DSObject {
+    DBusConnection *conn;
+
+    Bus_Object(DSType *type);
+    ~Bus_Object();
+
     /**
-     * if true, SystemBus.
-     * if false, SessionBus.
+     * get DBusConnection.
+     * return false, if error happened.
      */
-    bool systemBus;
-
-    Bus_Object(DSType *type, bool systemBus);
-
-    bool isSystemBus();
+    bool initConnection(RuntimeContext &ctx, bool systemBus);
 };
 
 // management object for some D-Bus related function (ex. Bus)
-struct DBus_Object : public DSObject {  //FIXME:
+struct DBus_Object : public DSObject {
     std::shared_ptr<Bus_Object> systemBus;
     std::shared_ptr<Bus_Object> sessionBus;
 
     DBus_Object(TypePool &pool);
 
-    const std::shared_ptr<Bus_Object> &getSystemBus();
-    const std::shared_ptr<Bus_Object> &getSessionBus();
-};
-
-// represent for connection
-struct Connection_Object : public DSObject {    //FIXME:
     /**
-     * actually, String_Object
+     * init and get Bus_Object representing for system bus.
+     * return false, if error happened
      */
-    std::shared_ptr<DSObject> destination;
+    bool getSystemBus(RuntimeContext &ctx);
 
-    Connection_Object(DSType *type, const std::shared_ptr<DSObject> &destination);
+    /**
+     * init and get Bus_Object representing for session bus.
+     * return false, if error happened
+     */
+    bool getSessionBus(RuntimeContext &ctx);
 };
 
 // represent for D-Bus object.
-struct DBusProxy_Object : public DSObject { //FIXME: implemented interface
-    /**
-     * if true, SystemBus.
-     * if false, SessionBus.
-     */
-    bool systemBus;
+struct DBusProxy_Object : public ProxyObject { //FIXME: implemented interface
+    DBusConnection *conn;
 
     std::string destination;
     std::string objectPath;
 
-    DBusProxy_Object(DSType *type, bool systemBus,
+    /**
+     * contains having interface name.
+     */
+    std::unordered_set<std::string> ifaceSet;
+
+    DBusProxy_Object(DSType *type, const std::shared_ptr<DSObject> &busObj,
                      std::string &&destination, std::string &&objectPath);
+
     std::string toString(RuntimeContext &ctx); // override
+    bool introspect(RuntimeContext &ctx, DSType *targetType); // override
+
+    /**
+     * call only once
+     */
+    bool doIntrospection(RuntimeContext &ctx);
+
+    bool invokeMethod(RuntimeContext &ctx, const std::string &methodName, MethodHandle *handle);    // override
+    bool invokeGetter(RuntimeContext &ctx, const std::string &fieldName, DSType *fieldType);    // override
+    bool invokeSetter(RuntimeContext &ctx, const std::string &fieldName, DSType *fieldType);    // override
+
+    static bool newObject(RuntimeContext &ctx, const std::shared_ptr<DSObject> &busObj,
+                          std::string &&destination, std::string &&objectPath);
 };
 
 

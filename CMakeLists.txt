@@ -42,6 +42,10 @@ endif()
 check_include_files("histedit.h" HAVE_HISTEDIT_H)
 find_library(HAVE_LIBEDIT NAMES edit)
 
+# check dbus
+check_include_files("dbus-1.0/dbus/dbus.h" HAVE_DBUS_H)
+find_library(HAVE_LIBDBUS NAMES dbus-1)
+
 # build re2c
 set(RE2C_V "0.14.2")
 set(RE2C_URL "http://downloads.sourceforge.net/project/re2c/re2c/0.14.2/re2c-0.14.2.tar.gz?r=&ts=1427624328&use_mirror=jaist")
@@ -72,7 +76,7 @@ add_custom_target(gen_bind DEPENDS ${bind_src})
 add_dependencies(gen_bind gen_binding)
 
 
-include_directories(${SRC_DIR})
+include_directories(${SRC_DIR} "/usr/include/dbus-1.0" "/usr/lib64/dbus-1.0/include")
 add_subdirectory(${SRC_DIR}/ast)
 add_subdirectory(${SRC_DIR}/core)
 add_subdirectory(${SRC_DIR}/parser)
@@ -86,7 +90,7 @@ set(YDSH_STATIC ydsh_static)
 add_library(${YDSH_STATIC} STATIC ${YDSH_SRC} ${lexer_src} ${bind_src})
 add_dependencies(${YDSH_STATIC} gen_lexer gen_binding gen_bind)
 add_executable(${BIN_NAME} ${SRC_DIR}/ydsh.cpp)
-target_link_libraries(${BIN_NAME} ${YDSH_STATIC} ${HAVE_LIBEDIT} args_parser)
+target_link_libraries(${BIN_NAME} ${YDSH_STATIC} ${HAVE_LIBEDIT} ${HAVE_LIBDBUS} args_parser)
 
 install(TARGETS ${BIN_NAME} RUNTIME DESTINATION bin)
 

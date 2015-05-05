@@ -345,6 +345,16 @@ InterfaceType *TypePool::createAndGetInterfaceTypeIfUndefined(const std::string 
     return dynamic_cast<InterfaceType *>(iter->second);
 }
 
+DSType *TypePool::createAndGetErrorTypeIfUndefined(const std::string &errorName, DSType *superType) {
+    auto iter = this->typeMap.find(errorName);
+    if(iter == this->typeMap.end()) {
+        DSType *type = new ErrorType(superType);
+        this->addType(std::string(errorName), type, false);
+        return type;
+    }
+    return iter->second;
+}
+
 DSType *TypePool::getDBusInterfaceType(const std::string &typeName) {
     auto iter = this->typeMap.find(typeName);
     if(iter == this->typeMap.end()) {

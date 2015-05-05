@@ -1071,13 +1071,13 @@ static inline bool error_backtrace(RuntimeContext &ctx) {
 //!bind: function systemBus($this : DBus) : Bus
 static inline bool dbus_systemBus(RuntimeContext &ctx) {
     SUPPRESS_WARNING(dbus_systemBus);
-    RET(TYPE_AS(DBus_Object, LOCAL(0))->getSystemBus());
+    return TYPE_AS(DBus_Object, LOCAL(0))->getSystemBus(ctx);
 }
 
 //!bind: function sessionBus($this : DBus) : Bus
 static inline bool dbus_sessionBus(RuntimeContext &ctx) {
     SUPPRESS_WARNING(dbus_sessionBus);
-    RET(TYPE_AS(DBus_Object, LOCAL(0))->getSessionBus());
+    return TYPE_AS(DBus_Object, LOCAL(0))->getSessionBus(ctx);
 }
 
 //!bind: function waitSignal($this : DBus, $obj : DBusObject) : Void
@@ -1093,12 +1093,10 @@ static inline bool dbus_waitSignal(RuntimeContext &ctx) {
 //!bind: function object($this : Bus, $dest : String, $path : ObjectPath) : DBusObject
 static inline bool bus_object(RuntimeContext &ctx) {
     SUPPRESS_WARNING(bus_object);
-    bool systemBus = TYPE_AS(Bus_Object, LOCAL(0))->isSystemBus();
     String_Object *strObj = TYPE_AS(String_Object, LOCAL(1));
     String_Object *pathObj = TYPE_AS(String_Object, LOCAL(2));
 
-    RET(std::make_shared<DBusProxy_Object>(ctx.pool.getDBusObjectType(), systemBus,
-                                           std::string(strObj->value), std::string(pathObj->value)));
+    return DBusProxy_Object::newObject(ctx, LOCAL(0), std::string(strObj->value), std::string(pathObj->value));
 }
 
 

@@ -348,7 +348,8 @@ struct ProxyObject : public DSObject {
     ProxyObject(DSType *type) : DSObject(type) {
     }
 
-    virtual ~ProxyObject();
+    virtual ~ProxyObject() {
+    }
 
     /**
      * invoke method and set return value.
