@@ -143,53 +143,13 @@ FieldHandle *FunctionType::findHandle(const std::string &fieldName) {
     return this->superType->findHandle(fieldName);
 }
 
+void FunctionType::accept(TypeVisitor *visitor) {
+    visitor->visitFunctionType(this);
+}
+
 // #########################
 // ##     BuiltinType     ##
 // #########################
-
-/**
- * builtin type(any, void, value ...)
- * not support override. (if override method, must override DSObject's method)
- * so this->getFieldSize is equivalent to superType->getFieldSize() + infoSize
- */
-class BuiltinType : public DSType {
-protected:
-    native_type_info_t *info;
-
-    /**
-     * may be null, if has no constructor.
-     */
-    MethodHandle *constructorHandle;
-
-    /**
-     * may be null, if has no constructor
-     */
-    std::shared_ptr<MethodRef> constructor;
-
-    std::unordered_map<std::string, MethodHandle *> methodHandleMap;
-    std::vector<std::shared_ptr<MethodRef>> methodTable;
-
-public:
-    /**
-     * actually superType is BuiltinType.
-     */
-    BuiltinType(bool extendable, DSType *superType,
-                native_type_info_t *info, bool isVoid);
-
-    virtual ~BuiltinType();
-
-    MethodHandle *getConstructorHandle(TypePool *typePool); // override
-    MethodRef *getConstructor();   // override.
-    MethodHandle *lookupMethodHandle(TypePool *typePool, const std::string &methodName);  // override
-    FieldHandle *findHandle(const std::string &fieldName); // override
-    bool isBuiltinType() const; // override
-    unsigned int getMethodSize(); // override
-    MethodRef *getMethodRef(unsigned int methodIndex); // override
-    void copyAllMethodRef(std::vector<std::shared_ptr<MethodRef>> &methodTable); // override
-
-private:
-    virtual void initMethodHandle(MethodHandle *handle, TypePool *typePool, NativeFuncInfo *info);
-};
 
 BuiltinType::BuiltinType(bool extendable, DSType *superType,
                          native_type_info_t *info, bool isVoid) :
@@ -261,6 +221,10 @@ FieldHandle *BuiltinType::findHandle(const std::string &fieldName) { // override
     return this->superType != 0 ? this->superType->findHandle(fieldName) : 0;
 }
 
+void BuiltinType::accept(TypeVisitor *visitor) {
+    visitor->visitBuiltinType(this);
+}
+
 bool BuiltinType::isBuiltinType() const {
     return true;
 }
@@ -293,28 +257,6 @@ void BuiltinType::initMethodHandle(MethodHandle *handle, TypePool *typePool, Nat
 // ##     ReifiedType     ##
 // #########################
 
-/**
- * not support override.
- */
-class ReifiedType : public BuiltinType {
-private:
-    /**
-     * size is 1 or 2.
-     */
-    std::vector<DSType *> elementTypes;
-
-public:
-    ReifiedType(native_type_info_t *info, DSType *superType, const std::vector<DSType *> &elementTypes);
-
-    ~ReifiedType();
-
-    std::string getTypeName() const; // override
-    bool equals(DSType *targetType); // override
-
-private:
-    void initMethodHandle(MethodHandle *handle, TypePool *typePool, NativeFuncInfo *info); // override
-};
-
 ReifiedType::ReifiedType(native_type_info_t *info, DSType *superType,
                          const std::vector<DSType *> &elementTypes) :
         BuiltinType(false, superType, info, false), elementTypes(elementTypes) {
@@ -334,6 +276,10 @@ void ReifiedType::initMethodHandle(MethodHandle *handle, TypePool *typePool, Nat
     default:
         fatal("element size must be 1 or 2");
     }
+}
+
+void ReifiedType::accept(TypeVisitor *visitor) {
+    visitor->visitReifiedType(this);
 }
 
 DSType *newBuiltinType(bool extendable,
@@ -405,6 +351,10 @@ FieldHandle *TupleType::findHandle(const std::string &fieldName) {
         return this->superType->findHandle(fieldName);
     }
     return iter->second;
+}
+
+void TupleType::accept(TypeVisitor *visitor) {
+    visitor->visitTupleType(this);
 }
 
 NativeFuncInfo *TupleType::funcInfo = 0;
@@ -496,6 +446,10 @@ FieldHandle *InterfaceType::findHandle(const std::string &fieldName) {
     return this->superType->findHandle(fieldName);
 }
 
+void InterfaceType::accept(TypeVisitor *visitor) {
+    visitor->visitInterfaceType(this);
+}
+
 // #######################
 // ##     ErrorType     ##
 // #######################
@@ -543,6 +497,10 @@ MethodHandle *ErrorType::lookupMethodHandle(TypePool *typePool, const std::strin
 
 FieldHandle *ErrorType::findHandle(const std::string &fieldName) {
     return this->superType->findHandle(fieldName);
+}
+
+void ErrorType::accept(TypeVisitor *visitor) {
+    visitor->visitErrorType(this);
 }
 
 /**

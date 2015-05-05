@@ -30,6 +30,8 @@
 namespace ydsh {
 namespace core {
 
+struct TypeVisitor;
+
 struct DSObject;
 struct FuncObject;
 class MethodRef;
@@ -126,6 +128,8 @@ public:
      */
     virtual FieldHandle *findHandle(const std::string &fieldName) = 0;
 
+    virtual void accept(TypeVisitor *visitor) = 0;
+
     bool operator==(const DSType &type);
     bool operator!=(const DSType &type);
 
@@ -168,6 +172,7 @@ public:
     MethodHandle *lookupMethodHandle(TypePool *typePool, const std::string &methodName);    // override
 
     FieldHandle *findHandle(const std::string &fieldName);  // override
+    void accept(TypeVisitor *visitor); // override
 };
 
 /**
@@ -212,12 +217,82 @@ struct native_type_info_t {
     NativeFuncInfo funcInfos[24];
 };
 
+/**
+ * builtin type(any, void, value ...)
+ * not support override. (if override method, must override DSObject's method)
+ * so this->getFieldSize is equivalent to superType->getFieldSize() + infoSize
+ */
+class BuiltinType : public DSType {
+protected:
+    native_type_info_t *info;
+
+    /**
+     * may be null, if has no constructor.
+     */
+    MethodHandle *constructorHandle;
+
+    /**
+     * may be null, if has no constructor
+     */
+    std::shared_ptr<MethodRef> constructor;
+
+    std::unordered_map<std::string, MethodHandle *> methodHandleMap;
+    std::vector<std::shared_ptr<MethodRef>> methodTable;
+
+public:
+    /**
+     * actually superType is BuiltinType.
+     */
+    BuiltinType(bool extendable, DSType *superType,
+                native_type_info_t *info, bool isVoid);
+
+    virtual ~BuiltinType();
+
+    MethodHandle *getConstructorHandle(TypePool *typePool); // override
+    MethodRef *getConstructor();   // override.
+    MethodHandle *lookupMethodHandle(TypePool *typePool, const std::string &methodName);  // override
+    FieldHandle *findHandle(const std::string &fieldName); // override
+    virtual void accept(TypeVisitor *visitor); // override
+    bool isBuiltinType() const; // override
+    unsigned int getMethodSize(); // override
+    MethodRef *getMethodRef(unsigned int methodIndex); // override
+    void copyAllMethodRef(std::vector<std::shared_ptr<MethodRef>> &methodTable); // override
+
+private:
+    virtual void initMethodHandle(MethodHandle *handle, TypePool *typePool, NativeFuncInfo *info);
+};
 
 /**
  * for BuiltinType creation.
  */
 DSType *newBuiltinType(bool extendable, DSType *superType,
                        native_type_info_t *info, bool isVoid = false);
+
+
+/**
+ * not support override.
+ */
+class ReifiedType : public BuiltinType {
+private:
+    /**
+     * size is 1 or 2.
+     */
+    std::vector<DSType *> elementTypes;
+
+public:
+    ReifiedType(native_type_info_t *info, DSType *superType, const std::vector<DSType *> &elementTypes);
+
+    ~ReifiedType();
+
+    void accept(TypeVisitor *visitor); // override
+
+    std::string getTypeName() const; // override
+    bool equals(DSType *targetType); // override
+
+private:
+    void initMethodHandle(MethodHandle *handle, TypePool *typePool, NativeFuncInfo *info); // override
+};
+
 
 /**
  * for ReifiedType creation.
@@ -262,6 +337,7 @@ public:
 
     FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName); // override
     FieldHandle *findHandle(const std::string &fieldName); // override
+    void accept(TypeVisitor *visitor); // override
 
     /**
      * call only once.
@@ -302,6 +378,7 @@ public:
     FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName);   // override
     MethodHandle *lookupMethodHandle(TypePool *typePool, const std::string &methodName); // override
     FieldHandle *findHandle(const std::string &fieldName); // overrdie
+    void accept(TypeVisitor *visitor); // override
 };
 
 class ErrorType : public DSType {
@@ -331,11 +408,21 @@ public:
     FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName); // override
     MethodHandle *lookupMethodHandle(TypePool *typePool, const std::string &methodName);    // override
     FieldHandle *findHandle(const std::string &fieldName); // override
+    void accept(TypeVisitor *visitor); // override
 
     /**
      * call only once.
      */
     static void registerFuncInfo(NativeFuncInfo *info);
+};
+
+struct TypeVisitor {
+    virtual void visitFunctionType(FunctionType *type) = 0;
+    virtual void visitBuiltinType(BuiltinType *type) = 0;
+    virtual void visitReifiedType(ReifiedType *type) = 0;
+    virtual void visitTupleType(TupleType *type) = 0;
+    virtual void visitInterfaceType(InterfaceType *type) = 0;
+    virtual void visitErrorType(ErrorType *type) = 0;
 };
 
 } // namespace core
