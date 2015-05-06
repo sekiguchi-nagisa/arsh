@@ -280,6 +280,9 @@ private:
     std::vector<DSType *> elementTypes;
 
 public:
+    /**
+     * super type is AnyType or VariantType.
+     */
     ReifiedType(native_type_info_t *info, DSType *superType, const std::vector<DSType *> &elementTypes);
 
     ~ReifiedType();
@@ -317,7 +320,7 @@ private:
 
 public:
     /**
-     * superType is always AnyType
+     * superType is AnyType ot VariantType
      */
     TupleType(DSType *superType, const std::vector<DSType *> &types);
     ~TupleType();

@@ -35,7 +35,7 @@ using namespace ydsh::ast;
 
 TypePool::TypePool(char **envp) :
         typeMap(16), typeNameMap(), typeCache(),
-        anyType(), voidType(), valueType(),
+        anyType(), voidType(), variantType(), valueType(),
         byteType(), int16Type(), uint16Type(),
         int32Type(), uint32Type(), int64Type(), uint64Type(),
         floatType(), boolType(), stringType(),
@@ -51,11 +51,12 @@ TypePool::TypePool(char **envp) :
     // initialize type
     this->anyType = this->initBuiltinType("Any", true, 0, info_AnyType());
     this->voidType = this->initBuiltinType("Void", false, 0, info_VoidType(), true);
+    this->variantType = this->initBuiltinType("Variant", false, this->anyType, info_Dummy());
 
     /**
      * hidden from script.
      */
-    this->valueType = this->initBuiltinType("%Value%", true, this->anyType, info_Dummy());
+    this->valueType = this->initBuiltinType("%Value%", true, this->variantType, info_Dummy());
 
     this->byteType = this->initBuiltinType("Byte", false, this->valueType, info_ByteType());
     this->int16Type = this->initBuiltinType("Int16", false, this->valueType, info_Int16Type());
@@ -221,6 +222,10 @@ DSType *TypePool::getDBusObjectType() {
     return this->dbusObjectType;
 }
 
+DSType *TypePool::getVariantType() {
+    return this->variantType;
+}
+
 DSType *TypePool::getStringArrayType() {
     return this->stringArrayType;
 }
@@ -297,8 +302,9 @@ DSType *TypePool::createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate,
     std::string typeName(this->toReifiedTypeName(typeTemplate, elementTypes));
     auto iter = this->typeMap.find(typeName);
     if(iter == this->typeMap.end()) {
+        DSType *superType = this->asVariantType(elementTypes) ? this->variantType : this->anyType;
         return this->addType(std::move(typeName),
-                             newReifiedType(typeTemplate->getInfo(), this->anyType, elementTypes));
+                             newReifiedType(typeTemplate->getInfo(), superType, elementTypes));
     }
     return iter->second;
 }
@@ -313,7 +319,8 @@ DSType *TypePool::createAndGetTupleTypeIfUndefined(const std::vector<DSType *> &
     std::string typeName(this->toTupleTypeName(elementTypes));
     auto iter = this->typeMap.find(typeName);
     if(iter == this->typeMap.end()) {
-        return this->addType(std::move(typeName), newTupleType(this->anyType, elementTypes));
+        DSType *superType = this->asVariantType(elementTypes) ? this->variantType : this->anyType;
+        return this->addType(std::move(typeName), newTupleType(superType, elementTypes));
     }
     return iter->second;
 }
@@ -524,6 +531,15 @@ void TypePool::checkElementTypes(TypeTemplate *t, const std::vector<DSType *> &e
             E_InvalidElement(this->getTypeName(*elementTypes[i]));
         }
     }
+}
+
+bool TypePool::asVariantType(const std::vector<DSType *> &elementTypes) {
+    for(DSType *type : elementTypes) {
+        if(!this->variantType->isAssignableFrom(type)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 } // namespace core

@@ -49,6 +49,11 @@ private:
     DSType *voidType;
 
     /**
+     * for base type of all of D-Bus related type.
+     */
+    DSType *variantType;
+
+    /**
      * super type of value type(int, float, bool, string)
      * not directly used it.
      */
@@ -90,7 +95,7 @@ private:
     DSType *dbusType;
 
     /**
-     * for dbus bus.
+     * for message bus.
      */
     DSType *busType;
 
@@ -148,6 +153,7 @@ public:
      */
     DSType *getVoidType();
 
+    DSType *getVariantType();
     DSType *getValueType();
 
     /**
@@ -288,6 +294,7 @@ private:
 
     void checkElementTypes(const std::vector<DSType *> &elementTypes);
     void checkElementTypes(TypeTemplate *t, const std::vector<DSType *> &elementTypes);
+    bool asVariantType(const std::vector<DSType *> &elementTypes);
 };
 
 } // namespace core
