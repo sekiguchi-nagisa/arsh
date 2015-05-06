@@ -13,3 +13,16 @@ currently, under heavy development.
 * g++ (need c++11 support)
 * libedit (need unicode support. see http://thrysoee.dk/editline/)
 * libdbus 1.8.x
+
+## How to use
+
+```
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make
+```
+if not need D-Bus support,
+```
+$ cmake .. -DNO_DBUS=on
+```
