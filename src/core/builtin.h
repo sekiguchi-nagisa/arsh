@@ -1096,7 +1096,7 @@ static inline bool bus_object(RuntimeContext &ctx) {
     String_Object *strObj = TYPE_AS(String_Object, LOCAL(1));
     String_Object *pathObj = TYPE_AS(String_Object, LOCAL(2));
 
-    return DBusProxy_Object::newObject(ctx, LOCAL(0), std::string(strObj->value), std::string(pathObj->value));
+    return newObject(ctx, LOCAL(0), std::string(strObj->value), std::string(pathObj->value));
 }
 
 

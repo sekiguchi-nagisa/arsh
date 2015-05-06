@@ -41,16 +41,24 @@ if(USE_TRACE_TOKEN)
     add_definitions(-DX_TRACE_TOKEN)
 endif()
 
+option(NO_DBUS "not support D-Bus" OFF)
+if(NO_DBUS)
+    add_definitions(-DX_NO_DBUS)
+endif()
+
 # check editline
 check_header(HAVE_HISTEDIT_H "histedit.h")
 find_library(HAVE_LIBEDIT NAMES edit)
 
 # check dbus
-SET(CMAKE_INCLUDE_PATH "/usr/include/dbus-1.0" "/usr/lib64/dbus-1.0/include" "/usr/lib/dbus-1.0/include" "/usr/lib/x86_64-linux-gnu/dbus-1.0/include")
-check_header(HAVE_DBUS_H "dbus/dbus.h")
-check_header(HAVE_DBUS_ARCH_DEPS_H "dbus/dbus-arch-deps.h")
-SET(CMAKE_LIBRARY_PATH "/usr/lib/x86_64-linux-gnu")
-find_library(HAVE_LIBDBUS NAMES dbus-1)
+if(NOT NO_DBUS)
+    SET(CMAKE_INCLUDE_PATH "/usr/include/dbus-1.0" "/usr/lib64/dbus-1.0/include" "/usr/lib/dbus-1.0/include" "/usr/lib/x86_64-linux-gnu/dbus-1.0/include")
+    check_header(HAVE_DBUS_H "dbus/dbus.h")
+    check_header(HAVE_DBUS_ARCH_DEPS_H "dbus/dbus-arch-deps.h")
+    SET(CMAKE_LIBRARY_PATH "/usr/lib/x86_64-linux-gnu")
+    find_library(HAVE_LIBDBUS NAMES dbus-1)
+endif()
+
 
 # build re2c
 set(RE2C_V "0.14.2")
@@ -82,12 +90,21 @@ add_custom_target(gen_bind DEPENDS ${bind_src})
 add_dependencies(gen_bind gen_binding)
 
 
-include_directories(${SRC_DIR} ${HAVE_DBUS_H} ${HAVE_DBUS_ARCH_DEPS_H})
+include_directories(${SRC_DIR})
+
+if(NOT NO_DBUS)
+    include_directories(${HAVE_DBUS_H} ${HAVE_DBUS_ARCH_DEPS_H})
+endif()
+
 add_subdirectory(${SRC_DIR}/ast)
 add_subdirectory(${SRC_DIR}/core)
 add_subdirectory(${SRC_DIR}/parser)
 add_subdirectory(${SRC_DIR}/exe)
 add_subdirectory(${SRC_DIR}/misc)
+
+if(NOT NO_DBUS)
+    add_subdirectory(${SRC_DIR}/dbus)
+endif()
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_binding)
 
@@ -96,7 +113,11 @@ set(YDSH_STATIC ydsh_static)
 add_library(${YDSH_STATIC} STATIC ${YDSH_SRC} ${lexer_src} ${bind_src})
 add_dependencies(${YDSH_STATIC} gen_lexer gen_binding gen_bind)
 add_executable(${BIN_NAME} ${SRC_DIR}/ydsh.cpp)
-target_link_libraries(${BIN_NAME} ${YDSH_STATIC} ${HAVE_LIBEDIT} ${HAVE_LIBDBUS} args_parser)
+target_link_libraries(${BIN_NAME} ${YDSH_STATIC} ${HAVE_LIBEDIT} args_parser)
+
+if(NOT NO_DBUS)
+    target_link_libraries(${BIN_NAME} ${HAVE_LIBDBUS})
+endif()
 
 install(TARGETS ${BIN_NAME} RUNTIME DESTINATION bin)
 

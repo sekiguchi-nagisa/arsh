@@ -18,27 +18,25 @@
 #define CORE_DBUSBIND_H
 
 #include "DSObject.h"
-#include <unordered_set>
 
-struct DBusConnection;
-
+#ifndef X_NO_DBUS
+#include "../dbus/DBusBindImpl.h"
+#endif
 
 namespace ydsh {
 namespace core {
 
-// represent for SystemBus, SessionBus, or specific bus.
+#ifdef X_NO_DBUS
 struct Bus_Object : public DSObject {
-    DBusConnection *conn;
+    Bus_Object(DSType *type) :
+            DSObject(type) {
+    }
 
-    Bus_Object(DSType *type);
-    ~Bus_Object();
-
-    /**
-     * get DBusConnection.
-     * return false, if error happened.
-     */
-    bool initConnection(RuntimeContext &ctx, bool systemBus);
+    bool initConnection(RuntimeContext &ctx, bool systemBus) {
+        return true;
+    }
 };
+#endif
 
 // management object for some D-Bus related function (ex. Bus)
 struct DBus_Object : public DSObject {
@@ -60,36 +58,8 @@ struct DBus_Object : public DSObject {
     bool getSessionBus(RuntimeContext &ctx);
 };
 
-// represent for D-Bus object.
-struct DBusProxy_Object : public ProxyObject { //FIXME: implemented interface
-    DBusConnection *conn;
-
-    std::string destination;
-    std::string objectPath;
-
-    /**
-     * contains having interface name.
-     */
-    std::unordered_set<std::string> ifaceSet;
-
-    DBusProxy_Object(DSType *type, const std::shared_ptr<DSObject> &busObj,
-                     std::string &&destination, std::string &&objectPath);
-
-    std::string toString(RuntimeContext &ctx); // override
-    bool introspect(RuntimeContext &ctx, DSType *targetType); // override
-
-    /**
-     * call only once
-     */
-    bool doIntrospection(RuntimeContext &ctx);
-
-    bool invokeMethod(RuntimeContext &ctx, const std::string &methodName, MethodHandle *handle);    // override
-    bool invokeGetter(RuntimeContext &ctx, const std::string &fieldName, DSType *fieldType);    // override
-    bool invokeSetter(RuntimeContext &ctx, const std::string &fieldName, DSType *fieldType);    // override
-
-    static bool newObject(RuntimeContext &ctx, const std::shared_ptr<DSObject> &busObj,
-                          std::string &&destination, std::string &&objectPath);
-};
+bool newObject(RuntimeContext &ctx, const std::shared_ptr<DSObject> &busObj,
+               std::string &&destination, std::string &&objectPath);
 
 
 } // namespace core
