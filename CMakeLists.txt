@@ -42,7 +42,10 @@ if(USE_TRACE_TOKEN)
 endif()
 
 option(NO_DBUS "not support D-Bus" OFF)
-if(NO_DBUS)
+if("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
+    set(NO_DBUS ON)
+    add_definitions(-DX_NO_DBUS)
+elseif(NO_DBUS)
     add_definitions(-DX_NO_DBUS)
 endif()
 
