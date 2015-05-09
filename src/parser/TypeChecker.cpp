@@ -315,7 +315,7 @@ HandleOrFuncType TypeChecker::resolveCallee(VarNode * recvNode) {
     if(handle == 0) {
         E_UndefinedSymbol(recvNode, recvNode->getVarName());
     }
-    recvNode->setHandle(handle);
+    recvNode->setAttribute(handle);
 
     FunctionHandle *funcHandle = dynamic_cast<FunctionHandle *>(handle);
     if(funcHandle != 0) {
@@ -499,7 +499,7 @@ void TypeChecker::visitVarNode(VarNode * node) {
         E_UndefinedSymbol(node, node->getVarName());
     }
 
-    node->setHandle(handle);
+    node->setAttribute(handle);
     node->setType(handle->getFieldType(this->typePool));
 }
 
@@ -510,7 +510,7 @@ void TypeChecker::visitAccessNode(AccessNode * node) {
         E_UndefinedField(node, node->getFieldName());
     }
 
-    node->setHandle(handle);
+    node->setAttribute(handle);
     node->setType(handle->getFieldType(this->typePool));
 }
 
@@ -960,7 +960,7 @@ void TypeChecker::visitFunctionNode(FunctionNode * node) {   //TODO: named param
         VarNode *paramNode = node->getParamNodes()[i];
         FieldHandle *handle = this->addEntryAndThrowIfDefined(
                 paramNode, paramNode->getVarName(), paramTypes[i], false);
-        paramNode->setHandle(handle);
+        paramNode->setAttribute(handle);
     }
     this->checkBlockEndExistence(node->getBlockNode(), returnType);
     this->checkTypeWithCurrentBlockScope(node->getBlockNode());

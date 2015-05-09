@@ -512,28 +512,47 @@ EvalStatus TupleNode::eval(RuntimeContext &ctx) {
 // ############################
 
 AssignableNode::AssignableNode(unsigned int lineNum) :
-        Node(lineNum), handle() {
+        Node(lineNum), index(0),
+        readOnly(false), global(false), env(false), interface(false) {
 }
 
 AssignableNode::~AssignableNode() {
 }
 
-void AssignableNode::setHandle(FieldHandle *handle) {
-    this->handle = handle;
+void AssignableNode::setAttribute(FieldHandle *handle) {
+    this->index = handle->getFieldIndex();
+    this->readOnly = handle->isReadOnly();
+    this->global = handle->isGlobal();
+    this->env = handle->isEnv();
 }
 
-FieldHandle *AssignableNode::getHandle() {
-    return this->handle;
+bool AssignableNode::isReadOnly() const {
+    return this->readOnly;
 }
 
-bool AssignableNode::isReadOnly() {
-    return this->handle->isReadOnly();
+bool AssignableNode::isGlobal() const {
+    return this->global;
+}
+
+bool AssignableNode::isEnv() const {
+    return this->env;
+}
+
+bool AssignableNode::withinInterface() const {
+    return this->interface;
 }
 
 unsigned int AssignableNode::getIndex() {
-    return  this->handle->getFieldIndex();
+    return  this->index;
 }
 
+void AssignableNode::dump(Writer &writer) const {
+    WRITE_PRIM(index);
+    WRITE_PRIM(readOnly);
+    WRITE_PRIM(global);
+    WRITE_PRIM(env);
+    WRITE_PRIM(interface);
+}
 
 // #####################
 // ##     VarNode     ##
@@ -549,30 +568,18 @@ const std::string &VarNode::getVarName() {
 
 void VarNode::dump(Writer &writer) const {
     WRITE(varName);
-    WRITE_PTR(handle);
+    AssignableNode::dump(writer);
 }
 
 void VarNode::accept(NodeVisitor *visitor) {
     visitor->visitVarNode(this);
 }
 
-bool VarNode::isGlobal() {
-    return this->handle->isGlobal();
-}
-
-bool VarNode::isEnv() {
-    return this->handle->isEnv();
-}
-
-unsigned int VarNode::getVarIndex() {
-    return this->handle->getFieldIndex();
-}
-
 EvalStatus VarNode::eval(RuntimeContext &ctx) {
     if (this->isGlobal()) {
-        ctx.getGlobal(this->getVarIndex());
+        ctx.getGlobal(this->getIndex());
     } else {
-        ctx.getLocal(this->getVarIndex());
+        ctx.getLocal(this->getIndex());
     }
     if (this->type != 0 && this->type->isFuncType()) {
         ctx.peek()->setType(this->type);
@@ -612,10 +619,6 @@ const std::string &AccessNode::getFieldName() {
     return this->fieldName;
 }
 
-unsigned int AccessNode::getFieldIndex() {
-    return this->handle->getFieldIndex();
-}
-
 void AccessNode::setAdditionalOp(AccessNode::AdditionalOp op) {
     this->additionalOp = op;
 }
@@ -627,7 +630,7 @@ AccessNode::AdditionalOp AccessNode::getAdditionnalOp() {
 void AccessNode::dump(Writer &writer) const {
     WRITE_PTR(recvNode);
     WRITE(fieldName);
-    WRITE_PTR(handle);
+    AssignableNode::dump(writer);
 
 #define EACH_ENUM(OP, out) \
     OP(NOP, out) \
@@ -648,22 +651,22 @@ EvalStatus AccessNode::eval(RuntimeContext &ctx) {
 
     switch (this->additionalOp) {
     case NOP: {
-        if(this->handle->withinInterface()) {
+        if(this->withinInterface()) {
             return ctx.getField(this->fieldName, this->type);
         }
 
-        ctx.getField(this->getFieldIndex());
+        ctx.getField(this->getIndex());
         if (this->type != 0 && this->type->isFuncType()) {
             ctx.peek()->setType(this->type);
         }
         break;
     }
     case DUP_RECV: {
-        if(this->handle->withinInterface()) {
+        if(this->withinInterface()) {
             return ctx.dupAndGetField(this->fieldName, this->type);
         }
 
-        ctx.dupAndGetField(this->getFieldIndex());
+        ctx.dupAndGetField(this->getIndex());
         if (this->type != 0 && this->type->isFuncType()) {
             ctx.peek()->setType(this->type);
         }
@@ -2301,6 +2304,7 @@ void CatchNode::dump(Writer &writer) const {
     WRITE_PTR(typeToken);
     WRITE_PTR(exceptionType);
     WRITE_PTR(blockNode);
+    WRITE_PRIM(varIndex);
 }
 
 void CatchNode::accept(NodeVisitor *visitor) {
@@ -2524,8 +2528,8 @@ void AssignNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus AssignNode::eval(RuntimeContext &ctx) {
-    FieldHandle *handle = ((AssignableNode *) this->leftNode)->getHandle();
-    unsigned int index = ((AssignableNode *) this->leftNode)->getIndex();
+    AssignableNode *assignableNode = (AssignableNode *) this->leftNode;
+    unsigned int index = assignableNode->getIndex();
     if (this->isFieldAssign()) {
         if (this->isSelfAssignment()) {
             EVAL(ctx, this->leftNode);
@@ -2535,7 +2539,7 @@ EvalStatus AssignNode::eval(RuntimeContext &ctx) {
         }
         EVAL(ctx, this->rightNode);
 
-        if(handle->withinInterface()) {
+        if(assignableNode->withinInterface()) {
             AccessNode *accessNode = (AccessNode *) this->leftNode;
             return ctx.setField(accessNode->getFieldName(), accessNode->getType());
         }

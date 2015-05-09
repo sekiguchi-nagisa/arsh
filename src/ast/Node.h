@@ -325,16 +325,24 @@ public:
  */
 class AssignableNode : public Node {
 protected:
-    FieldHandle *handle;
+    unsigned int index;
+    bool readOnly;
+    bool global;
+    bool env;
+    bool interface;
 
 public:
     AssignableNode(unsigned int lineNum);
     virtual ~AssignableNode();
 
-    void setHandle(FieldHandle *handle);
-    FieldHandle *getHandle();
-    bool isReadOnly();
+    void setAttribute(FieldHandle *handle);
+    bool isReadOnly() const;
+    bool isGlobal() const;
+    bool isEnv() const;
+    bool withinInterface() const;
     unsigned int getIndex();
+
+    virtual void dump(Writer &writer) const;  // override
 };
 
 class VarNode : public AssignableNode {
@@ -348,9 +356,6 @@ public:
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
-    bool isGlobal();
-    bool isEnv();
-    unsigned int getVarIndex();
     EvalStatus eval(RuntimeContext &ctx); // override
 
     // for ArgsNode
@@ -380,7 +385,6 @@ public:
     Node *getRecvNode();
     void setFieldName(const std::string &fieldName);
     const std::string &getFieldName();
-    unsigned int getFieldIndex();
     void setAdditionalOp(AdditionalOp op);
     AdditionalOp getAdditionnalOp();
 
