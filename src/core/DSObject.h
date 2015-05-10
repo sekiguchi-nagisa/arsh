@@ -369,6 +369,27 @@ struct ProxyObject : public DSObject {
     virtual bool invokeSetter(RuntimeContext &ctx, const std::string &fieldName, DSType *fieldType) = 0;
 };
 
+struct DBus_Object : public DSObject {
+    DBus_Object(DSType *type);
+    virtual ~DBus_Object();
+
+    /**
+     * init and get Bus_Object representing for system bus.
+     * return false, if error happened
+    */
+    virtual bool getSystemBus(RuntimeContext &ctx);
+
+    /**
+     * init and get Bus_Object representing for session bus.
+     * return false, if error happened
+     */
+    virtual bool getSessionBus(RuntimeContext &ctx);
+
+    static DBus_Object *newDBus_Object(DSType *type);
+    static bool newObject(RuntimeContext &ctx, const std::shared_ptr<DSObject> &busObj,
+                          std::string &&destination, std::string &&objectPath);
+};
+
 } // namespace core
 } // namespace ydsh
 

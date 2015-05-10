@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "DBusBindImpl.h"
+#include "DBusBind.h"
 #include "../core/FieldHandle.h"
 #include "../core/RuntimeContext.h"
 
@@ -71,6 +71,40 @@ bool Bus_Object::initConnection(RuntimeContext &ctx, bool systemBus) {
     }
     return true;
 }
+
+// #############################
+// ##     DBus_ObjectImpl     ##
+// #############################
+
+DBus_ObjectImpl::DBus_ObjectImpl(DSType *type) :
+        DBus_Object(type), systemBus(), sessionBus() {
+}
+
+DBus_ObjectImpl::~DBus_ObjectImpl() {
+}
+
+bool DBus_ObjectImpl::getSystemBus(RuntimeContext &ctx) {
+    if(!this->systemBus) {
+        this->systemBus.reset(new Bus_Object(ctx.pool.getBusType()));
+        if(!this->systemBus->initConnection(ctx, true)) {
+            return false;
+        }
+    }
+    ctx.returnObject = this->systemBus;
+    return true;
+}
+
+bool DBus_ObjectImpl::getSessionBus(RuntimeContext &ctx) {
+    if(!this->sessionBus) {
+        this->sessionBus.reset(new Bus_Object(ctx.pool.getBusType()));
+        if(!this->sessionBus->initConnection(ctx, false)) {
+            return false;
+        }
+    }
+    ctx.returnObject = this->sessionBus;
+    return true;
+}
+
 
 // ##############################
 // ##     DBusProxy_Object     ##

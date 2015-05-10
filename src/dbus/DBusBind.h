@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef DBUS_DBUSBINDIMPL_H
-#define DBUS_DBUSBINDIMPL_H
+#ifndef DBUS_DBUSBIND_H
+#define DBUS_DBUSBIND_H
 
 #include "../core/DSObject.h"
 #include <unordered_set>
@@ -37,6 +37,17 @@ struct Bus_Object : public DSObject {
      * return false, if error happened.
      */
     bool initConnection(RuntimeContext &ctx, bool systemBus);
+};
+
+struct DBus_ObjectImpl : public DBus_Object {
+    std::shared_ptr<Bus_Object> systemBus;
+    std::shared_ptr<Bus_Object> sessionBus;
+
+    DBus_ObjectImpl(DSType *type);
+    ~DBus_ObjectImpl();
+
+    bool getSystemBus(RuntimeContext &ctx); // override
+    bool getSessionBus(RuntimeContext &ctx);    // override
 };
 
 // represent for D-Bus object.
@@ -74,4 +85,4 @@ struct DBusProxy_Object : public ProxyObject {
 } // namespace ydsh
 
 
-#endif //DBUS_DBUSBINDIMPL_H
+#endif //DBUS_DBUSBIND_H

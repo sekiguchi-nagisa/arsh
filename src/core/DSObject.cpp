@@ -15,14 +15,14 @@
  */
 
 #include "DSObject.h"
-#include "TypePool.h"
-#include "DSType.h"
 #include "RuntimeContext.h"
 #include "../ast/Node.h"
 
+#ifndef X_NO_DBUS
+#include "../dbus/DBusBind.h"
+#endif
+
 #include <assert.h>
-#include <utility>
-#include <memory>
 
 namespace ydsh {
 namespace core {
@@ -587,6 +587,45 @@ NativeMethodRef::~NativeMethodRef() {
 
 bool NativeMethodRef::invoke(RuntimeContext &ctx) {
     return this->func_ptr(ctx);
+}
+
+// #########################
+// ##     DBus_Object     ##
+// #########################
+
+DBus_Object::DBus_Object(DSType *type) :
+        DSObject(type) {
+}
+
+DBus_Object::~DBus_Object() {
+}
+
+bool DBus_Object::getSystemBus(RuntimeContext &ctx) {
+    ctx.throwError(ctx.pool.getErrorType(), "unsupported feature");
+    return false;
+}
+
+bool DBus_Object::getSessionBus(RuntimeContext &ctx) {
+    ctx.throwError(ctx.pool.getErrorType(), "unsupported feature");
+    return false;
+}
+
+DBus_Object *DBus_Object::newDBus_Object(DSType *type) {
+#ifdef X_NO_DBUS
+    return new DBus_Object(type);
+#else
+    return new DBus_ObjectImpl(type);
+#endif
+}
+
+bool DBus_Object::newObject(RuntimeContext &ctx, const std::shared_ptr<DSObject> &busObj,
+               std::string &&destination, std::string &&objectPath) {
+#ifdef X_NO_DBUS
+    ctx.throwError(ctx.pool.getErrorType(), "not support D-Bus proxy object");
+    return false;
+#else
+    return DBusProxy_Object::newObject(ctx, busObj, std::move(destination), std::move(objectPath));
+#endif
 }
 
 } // namespace core
