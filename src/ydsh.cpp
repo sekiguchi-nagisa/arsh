@@ -65,57 +65,57 @@ static void showCopyright(std::ostream &stream) {
 }
 
 int main(int argc, char **argv, char **envp) {
-    ydsh::args::ArgsParser parser;
+    ydsh::args::ArgsParser<OptionKind > parser;
 
     parser.addOption(
-            (unsigned int) DUMP_UAST,
+            DUMP_UAST,
             "--dump-untyped-ast",
             false,
             "dump abstract syntax tree (before type checking)"
     );
 
     parser.addOption(
-            (unsigned int) DUMP_AST,
+            DUMP_AST,
             "--dump-ast",
             false,
             "dump abstract syntax tree (after type checking)"
     );
 
     parser.addOption(
-            (unsigned int) PARSE_ONLY,
+            PARSE_ONLY,
             "--parse-only",
             false,
             "not evaluate, parse only"
     );
 
     parser.addOption(
-            (unsigned int) DISABLE_ASSERT,
+            DISABLE_ASSERT,
             "--disable-assertion",
             false,
             "disable assert statement"
     );
 
     parser.addOption(
-            (unsigned int) VERSION,
+            VERSION,
             "--version",
             false,
             "show version and copyright"
     );
 
     parser.addOption(
-            (unsigned int) HELP,
+            HELP,
             "--help",
             false,
             "show this help message"
     );
 
-    std::vector<std::pair<unsigned int, const char *>> cmdLines;
+    std::vector<std::pair<OptionKind , const char *>> cmdLines;
 
     std::vector<const char *> restArgs;
     try {
         restArgs = parser.parse(argc, argv, cmdLines);
     } catch(const ydsh::args::ParseError &e) {
-        std::cerr << e.getMessage() << ": " << e.getSuffix() << std::endl;
+        std::cerr << e.message << ": " << e.suffix << std::endl;
         showVersion(std::cerr);
         parser.printHelp(std::cerr);
         return ydsh::core::ARGS_ERROR;
@@ -123,8 +123,8 @@ int main(int argc, char **argv, char **envp) {
 
     ydsh::Shell shell(envp);
 
-    for(const std::pair<unsigned int, const char *> &cmdLine : cmdLines) {
-        switch((OptionKind)cmdLine.first) {
+    for(auto &cmdLine : cmdLines) {
+        switch(cmdLine.first) {
         case DUMP_UAST:
             shell.setDumpUntypedAST(true);
             break;

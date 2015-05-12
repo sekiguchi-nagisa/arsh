@@ -1,1 +1,0 @@
-add_library(args_parser STATIC ${CMAKE_CURRENT_SOURCE_DIR}/ArgsParser.cpp)
