@@ -138,6 +138,11 @@ private:
 
     std::unordered_set<std::string> envSet;
 
+    /**
+     * for integer widening
+     */
+    std::unordered_map<unsigned long, int> precisionMap;
+
 public:
     TypePool(char **envp);
 
@@ -271,6 +276,17 @@ public:
     bool hasEnv(const std::string &envName);
 
     void addEnv(const std::string &envName);
+
+    static constexpr int INT64_PRECISION = 50;
+    static constexpr int INT32_PRECISION = 40;
+    static constexpr int INT16_PRECISION = 30;
+    static constexpr int BYTE_PRECISION = 20;
+    static constexpr int INVALID_PRECISION = 1;
+
+    /**
+     * get integer precision. if type is not int type, return INVALID_PRECISION.
+     */
+    int getIntPrecision(DSType *type);
 
     /**
      * remove cached type from typeMap and call destructor.

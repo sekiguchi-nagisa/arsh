@@ -46,7 +46,7 @@ TypePool::TypePool(char **envp) :
         keyNotFoundErrorType(), typeCastErrorType(),
         templateMap(8),
         arrayTemplate(), mapTemplate(), tupleTemplate(),
-        stringArrayType(), envp(envp), envSet() {
+        stringArrayType(), envp(envp), envSet(), precisionMap() {
 
     // initialize type
     this->anyType = this->initBuiltinType("Any", true, 0, info_AnyType());
@@ -455,6 +455,37 @@ void TypePool::addEnv(const std::string &envName) {
         this->initEnvSet();
     }
     this->envSet.insert(envName);
+}
+
+constexpr int TypePool::INT64_PRECISION;
+constexpr int TypePool::INT32_PRECISION;
+constexpr int TypePool::INT16_PRECISION;
+constexpr int TypePool::BYTE_PRECISION;
+constexpr int TypePool::INVALID_PRECISION;
+
+int TypePool::getIntPrecision(DSType *type) {
+    if(this->precisionMap.empty()) {    // init precision map
+        // int64, uint64
+        this->precisionMap.insert(std::make_pair((unsigned long) this->getInt64Type(), INT64_PRECISION));
+        this->precisionMap.insert(std::make_pair((unsigned long) this->getUint64Type(), INT64_PRECISION));
+
+        // int32, uint32
+        this->precisionMap.insert(std::make_pair((unsigned long) this->getInt32Type(), INT32_PRECISION));
+        this->precisionMap.insert(std::make_pair((unsigned long) this->getUint32Type(), INT32_PRECISION));
+
+        // int16, uint16
+        this->precisionMap.insert(std::make_pair((unsigned long) this->getInt16Type(), INT16_PRECISION));
+        this->precisionMap.insert(std::make_pair((unsigned long) this->getUint16Type(), INT16_PRECISION));
+
+        // byte
+        this->precisionMap.insert(std::make_pair((unsigned long) this->getByteType(), BYTE_PRECISION));
+    }
+
+    auto iter = this->precisionMap.find((unsigned long) type);
+    if(iter == this->precisionMap.end()) {
+        return INVALID_PRECISION;
+    }
+    return iter->second;
 }
 
 void TypePool::removeCachedType() {

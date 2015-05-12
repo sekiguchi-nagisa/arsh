@@ -50,6 +50,14 @@ public:
     FunctionType *getFuncType();
 };
 
+enum CoercionKind {
+    INT_2_FLOAT,        // int(except for Int64, Uint64) to float
+    INT_2_LONG,         // int(except for Int64, Uint64) to long(Int64, Uint64)
+    INT_NOP,            // int(except for Int64, Uin64) to int(except for Int64, Uint64)
+    LONG_NOP,           // long(Int64, Uint64) to long(Int64, Uint64)
+    INVALID_COERCION,   // illegal coercion.
+};
+
 class TypeChecker : public NodeVisitor {
 private:
     /**
@@ -75,6 +83,11 @@ private:
     std::vector<bool> finallyContextStack;
 
     std::vector<CmdContextNode *> cmdContextStack;
+
+    /**
+     * for type coercion
+     */
+    CoercionKind coercionKind;
 
 public:
     TypeChecker(TypePool *typePool);
@@ -134,17 +147,15 @@ private:
      */
     Node *checkTypeAndResolveCoercion(DSType *requiredType, Node *targetNode);
 
-    /**
-     * return true if allow target type to required type implicit cast.
-     * currently only support int to float cast.
-     */
-    bool supportCoercion(DSType *requiredType, DSType *targetType);
+    bool checkCoercion(DSType *requiredType, DSType *targetType);
 
     /**
-     * return typed CastNode(type is FloatType)
-     * targetNode->getType() must be IntType.
+     * for int type conversion.
+     * return true if allow target type to required type implicit cast.
      */
-    CastNode *intToFloat(Node *targetNode);
+    bool checkCoercion(CoercionKind &kind, DSType *requiredType, DSType *targetType);
+
+    Node *resolveCoercion(CoercionKind kind, DSType *requiredType, Node *targetNode);
 
     /**
      * create new symbol table and check type each node within block.
@@ -217,6 +228,23 @@ private:
     void checkTypeArgsNode(MethodHandle *handle, ArgsNode *argsNode);
 
 public:
+    // for type cast
+    bool checkInt2Float(int beforePrecision, DSType *afterType);
+    bool checkFloat2Int(DSType *beforeType, int afterPrecision);
+    bool checkLong2Float(int beforePrecision, DSType *afterType);
+    bool checkFloat2Long(DSType *beforeType, int afterPrecision);
+
+    /**
+     * check to same or higher precision int type.
+     */
+    bool checkInt2IntWidening(int beforePrecision, int afterPrecision);
+
+    bool checkInt2IntNallowing(int beforePrecision, int afterPrecision);
+    bool checkLongToLong(int beforePrecision, int afterPrecision);
+    bool checkInt2Long(int beforePrecision, int afterPrecision);
+    bool checkLong2Int(int beforePrecision, int afterPrecision);
+
+
     /**
      * reset symbol table when error happened
      */

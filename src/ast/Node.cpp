@@ -743,6 +743,12 @@ void CastNode::dump(Writer &writer) const {
     OP(NOP, out) \
     OP(INT_TO_FLOAT, out) \
     OP(FLOAT_TO_INT, out) \
+    OP(INT_TO_LONG, out) \
+    OP(LONG_TO_INT, out) \
+    OP(LONG_TO_FLOAT, out) \
+    OP(FLOAT_TO_LONG, out) \
+    OP(COPY_INT, out) \
+    OP(COPY_LONG, out) \
     OP(TO_STRING, out) \
     OP(CHECK_CAST, out)
 
@@ -764,23 +770,89 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
         break;
     case INT_TO_FLOAT: {
         int value = TYPE_AS(Int_Object, ctx.pop())->getValue();
-        ctx.push(std::make_shared<Float_Object>(this->type, (double) value));
+        double afterValue = value;
+        if(*this->exprNode->getType() != *ctx.pool.getInt32Type()) {
+            afterValue = (unsigned int) value;
+        }
+        ctx.push(std::make_shared<Float_Object>(this->type, afterValue));
         break;
     }
     case FLOAT_TO_INT: {
         double value = TYPE_AS(Float_Object, ctx.pop())->getValue();
-        ctx.push(std::make_shared<Int_Object>(this->type, (int) value));
+        int afterValue = value;
+        if(*this->type == *ctx.pool.getUint32Type()) {
+            unsigned int temp = value;
+            afterValue = temp;
+        }
+        ctx.push(std::make_shared<Int_Object>(this->type, afterValue));
         break;
     }
+    case INT_TO_LONG: {
+        int value = TYPE_AS(Int_Object, ctx.pop())->getValue();
+        long afterValue = (long) value;
+        if(*this->exprNode->getType() != *ctx.pool.getInt32Type()) {
+            afterValue = (unsigned int) value;
+        }
+        ctx.push(std::make_shared<Long_Object>(this->type, afterValue));
+        break;
+    };
+    case LONG_TO_INT: {
+        long value = TYPE_AS(Long_Object, ctx.pop())->getValue();
+        int afterValue = value;
+        if(*this->type == *ctx.pool.getUint32Type()) {
+            unsigned int temp = value;
+            afterValue = temp;
+        }
+        ctx.push(std::make_shared<Int_Object>(this->type, afterValue));
+        break;
+    };
+    case LONG_TO_FLOAT: {
+        long value = TYPE_AS(Long_Object, ctx.pop())->getValue();
+        double afterValue = value;
+        if(*this->exprNode->getType() == *ctx.pool.getUint64Type()) {
+            afterValue = (unsigned long) value;
+        }
+        ctx.push(std::make_shared<Float_Object>(this->type, afterValue));
+        break;
+    };
+    case FLOAT_TO_LONG: {
+        double value = TYPE_AS(Float_Object, ctx.pop())->getValue();
+        long afterValue = (long) value;
+        if(*this->type == *ctx.pool.getUint64Type()) {
+            unsigned long temp = (unsigned long) value;
+            afterValue = temp;
+        }
+        ctx.push(std::make_shared<Long_Object>(this->type, afterValue));
+        break;
+    };
+    case COPY_INT: {
+        int value = TYPE_AS(Int_Object, ctx.pop())->getValue();
+        ctx.push(std::make_shared<Int_Object>(this->type, value));
+        break;
+    };
+    case COPY_LONG: {
+        long value = TYPE_AS(Long_Object, ctx.pop())->getValue();
+        ctx.push(std::make_shared<Long_Object>(this->type, value));
+        break;
+    };
     case TO_STRING: {
         return ctx.toString(this->getLineNum());
     }
     case CHECK_CAST: {
         return ctx.checkCast(this->lineNum, this->type) ? EVAL_SUCCESS : EVAL_THROW;
     }
+    default:
+        fatal("unsupported cast op");
     }
-
     return EVAL_SUCCESS;
+}
+
+CastNode *CastNode::newTypedCastNode(Node *targetNode, DSType *type, CastNode::CastOp op) {
+    assert(targetNode->getType() != nullptr);
+    CastNode *castNode = new CastNode(targetNode, 0);
+    castNode->setOpKind(op);
+    castNode->setType(type);
+    return castNode;
 }
 
 // ############################

@@ -96,6 +96,15 @@ std::string Int_Object::toString(RuntimeContext &ctx) {
     if(*this->type == *ctx.pool.getUint32Type()) {
         return std::to_string((unsigned int) this->value);
     }
+    if(*this->type == *ctx.pool.getInt16Type()) {
+        return std::to_string((short) this->value);
+    }
+    if(*this->type == *ctx.pool.getUint16Type()) {
+        return std::to_string((unsigned short) this->value);
+    }
+    if(*this->type == *ctx.pool.getByteType()) {
+        return std::to_string((unsigned char) this->value);
+    }
     return std::to_string(this->value);
 }
 

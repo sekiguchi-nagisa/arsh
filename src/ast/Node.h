@@ -405,6 +405,12 @@ public:
         NOP,
         INT_TO_FLOAT,
         FLOAT_TO_INT,
+        INT_TO_LONG,
+        LONG_TO_INT,
+        LONG_TO_FLOAT,
+        FLOAT_TO_LONG,
+        COPY_INT,
+        COPY_LONG,
         TO_STRING,
         CHECK_CAST,
     } CastOp;
@@ -435,6 +441,12 @@ public:
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    //override
     EvalStatus eval(RuntimeContext &ctx); // override
+
+    /**
+     * for implicite cast.
+     * targetNode must be typed node.
+     */
+    static CastNode *newTypedCastNode(Node *targetNode, DSType *type, CastOp op);
 };
 
 class InstanceOfNode : public Node {
