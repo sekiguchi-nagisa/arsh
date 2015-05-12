@@ -716,7 +716,7 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode * node) {
             rightPrecision < TypePool::INT32_PRECISION) {   // int widening
         node->setLeftNode(this->resolveCoercion(INT_NOP, this->typePool->getInt32Type(), node->getLeftNode()));
         node->setRightNode(this->resolveCoercion(INT_NOP, this->typePool->getInt32Type(), node->getRightNode()));
-    } else if(this->checkCoercion(kind, rightType, leftType)) {    // cast left
+    } else if(leftPrecision != rightPrecision && this->checkCoercion(kind, rightType, leftType)) {    // cast left
         node->setLeftNode(this->resolveCoercion(kind, rightType, node->getLeftNode()));
     }
 
