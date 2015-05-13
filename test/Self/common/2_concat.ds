@@ -1,0 +1,14 @@
+var a = 100
+var b = 3.14
+var c = $true
+var d = "hello"
+var e = "world"
+
+assert($d + $e == "helloworld")
+assert($e + $d == "worldhello")
+assert($a + $d == "100hello")
+assert($d + $a == "hello100")
+assert($b + $d == "3.14hello")
+assert($d + $b == "hello3.14")
+assert($c + $d == "truehello")
+assert($d + $c == "hellotrue")

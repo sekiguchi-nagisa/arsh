@@ -1,0 +1,11 @@
+var a = 3.14
+var b = 0.5e3
+var c = -23.456789
+var d = 3.0540
+
+assert($a == 3.14)
+assert($b == 0.5e3)
+assert($b == 0.5e+3)
+assert($b == 0.5E3)
+assert($c == -23.456789)
+assert($d == 3.0540)

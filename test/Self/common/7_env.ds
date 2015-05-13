@@ -1,0 +1,11 @@
+import-env HOME
+import-env HOGE
+
+cd ~/
+let a = "$(pwd)"
+assert($a == $HOME)
+assert($HOGE == "")
+
+let e = "enviroment-test"
+export-env ZZZ = $a
+assert($ZZZ == $a)

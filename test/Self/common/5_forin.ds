@@ -1,0 +1,12 @@
+var a = [1, 2, 3, 5, 7]
+var i = 0
+
+for($val in $a) {
+	assert($val == $a[$i])
+	$i = $i + 1
+}
+
+var m = {"a" : 1, "b" : 2, "c" : 3}
+for($val in $m.keys()) {
+	assert($m.hasKey($val))
+}

@@ -1,0 +1,56 @@
+try {
+	1 / 0
+	assert($false)
+} catch($e : OutOfIndexException) {
+	assert($false)
+} catch($e : ArithmeticException) {
+	assert($true)
+} catch($e : Exception) {
+	assert($false)
+}
+
+try {
+	[12][3]
+} catch($e : KeyNotFoundException) {
+	assert($false)
+} catch($e) {
+	assert($true)
+}
+
+var flag = $false
+function f($a : boolean): int {
+	$flag = $false
+	try {
+		if($a) {
+			1 / 0
+		}
+		return 100
+	}
+	catch($e) {
+		return -100
+	}
+	finally {
+		$flag = $true
+	}
+	return 0
+}
+
+assert($f($true) == -100)
+assert($flag)
+assert($f($false) == 100)
+assert($flag)
+
+# nested finally
+function g() {
+	try {
+		try {
+			return
+		} finally {
+			log "in first finally"
+		}
+	} finally {
+		log "in second finally"
+	}
+}
+
+$g()

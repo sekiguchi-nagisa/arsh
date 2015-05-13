@@ -1,0 +1,17 @@
+function func($x: int) : int {
+	return $x * 2
+}
+
+function call() {
+	var sub = $func
+	assert($func(3) == 6)
+	assert($sub(3) == 6)
+}
+
+$call()
+
+function f($obj : Func<int, [int]>, $value : int) : int {
+	return $obj($value)
+}
+
+assert($f($func, 12) == 24)

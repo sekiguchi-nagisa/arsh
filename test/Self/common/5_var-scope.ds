@@ -1,0 +1,6 @@
+var a = 12
+if(true) {
+	var a = 9
+	assert($a == 9)
+}
+assert($a == 12)

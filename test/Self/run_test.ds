@@ -1,0 +1,56 @@
+let LOG = "./test-result.log"
+let jar = "./dshell.jar"
+let JVM_OPTION = "-Xbootclasspath/a:$jar -XX:+TieredCompilation -XX:TieredStopAtLevel=1 dshell.main.DShellTest"
+
+function test($test_dir : String, $test_file : String, $option : String, $args : Array<String>): Boolean {
+	var mode = "[s]"
+	if($option == "-i") {
+		$mode = "[i]"
+	}
+	echo "====== Test: $mode $test_file ======" &>> $LOG
+	let result = java -ea $(echo $JVM_OPTION) $option ${test_dir}/${test_file} $args &>> $LOG
+	var prefix = "[fail]:"
+	if($result) {
+		$prefix = "[pass]:"
+	}
+	var msg = "$prefix $mode ${test_dir}/${test_file}"
+	echo $msg
+	echo $msg &>> $LOG
+
+	return $result
+}
+
+function test_all($dir : String, $option : Int) {
+	var count = 0
+	var pass_count = 0
+	let args = ["a", "b", "c"]
+	for($test_file in $(ls $dir)) {
+		if($option == 0) {
+			$count++
+			if($test($dir, $test_file, "", $args)) {
+				$pass_count++
+			}
+			$count++
+			if($test($dir, $test_file, "-i", $args)) {
+				$pass_count++
+			}
+		} elif($option == 1) {
+			$count++
+			if($test($dir, $test_file, "", $args)) {
+				$pass_count++
+			}
+		} else {
+			$count++
+			if($test($dir, $test_file, "-i", $args)) {
+				$pass_count++
+			}
+		}
+	}
+	echo "result:$dir ${pass_count}/${count}"
+}
+
+import-env TEST_DIR
+echo > $LOG
+$test_all("$TEST_DIR/common", 0)
+$test_all("$TEST_DIR/scripting", 1)
+

@@ -1,0 +1,11 @@
+var i = 0;
+let count = 5;
+
+do {
+	if($i == $count) {
+		break;
+	}
+	$i++
+} while(true);
+
+assert($i == $count)

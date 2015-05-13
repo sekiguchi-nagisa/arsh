@@ -1,0 +1,4 @@
+var str = "うずまきナルト"
+assert($str == "うずまきナルト")
+$str = 'hello world'
+assert($str == 'hello world')

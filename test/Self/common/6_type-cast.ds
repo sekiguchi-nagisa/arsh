@@ -1,0 +1,26 @@
+# int to float
+var a1 = 12
+var b1 = $a1 as float
+assert($b1 == 12.0)
+
+# float to int 
+var a2 = 3.14
+var b2 = $a2 as int
+assert($b2 == 3)
+
+# to string
+var a3 = 12
+var b3 = $a3 as String
+assert($b3 == "12")
+
+# cast
+var a4 = new Exception()
+$a4 = new OutOfIndexException()
+($a4 as OutOfIndexException).printStackTrace()
+
+try {
+	"fhuri" as Exception
+	assert($false)
+} catch($e : TypeCastException) {
+	assert($true)
+}

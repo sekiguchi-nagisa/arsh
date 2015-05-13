@@ -1,0 +1,20 @@
+function f() {
+	try {
+		ls -la | grep hfiru
+	}
+	catch($e : MultipleException) {
+		var a = $e.getExceptions()
+		assert($a[0] is NullException)
+		assert($a[1] is DShellException)
+		assert(not ($a[1] is NullException))
+	}
+}
+
+$f()
+
+
+try {
+	/bin/hogefrehufr
+} catch($e) {
+	assert($e is FileNotFoundException)
+}

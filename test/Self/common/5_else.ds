@@ -1,0 +1,12 @@
+function func($num : int): boolean {
+	if ($num > 2) {
+		return $true
+	}
+	else {
+		return $false
+	}
+}
+
+assert(not $func(1))
+assert(not $func(2))
+assert($func(3))

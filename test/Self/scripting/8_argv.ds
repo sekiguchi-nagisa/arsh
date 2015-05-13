@@ -1,0 +1,6 @@
+var a = "$(basename ${$ARGV[0]})"
+assert($a == "8_argv.ds")
+
+echo "`echo $@`"
+assert("`echo $@`" == 'a b c')
+assert("$@" == "a b c")

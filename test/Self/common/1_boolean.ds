@@ -1,0 +1,6 @@
+var a = $true
+var b = $false
+
+assert($a)
+assert($b == $false)
+assert($true==$true)

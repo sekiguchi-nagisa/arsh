@@ -1,0 +1,23 @@
+var a = 0
+let size = 5
+var i = 0
+while($i < $size) {
+	$a += $i
+	$i++
+}
+assert($a == 10)
+
+$a = 0
+$i = 0
+
+while($i < $size) {
+	$a = $i * 10 + $a
+	var j = 0
+	while($j < $size) {
+		$a -= $j
+		$j++
+	}
+	$i++
+}
+
+assert($a == 50)
