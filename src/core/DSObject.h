@@ -376,13 +376,15 @@ struct ProxyObject : public DSObject {
      * push got value to stack top.
      * return false, if error happened.
      */
-    virtual bool invokeGetter(RuntimeContext &ctx, const std::string &fieldName, DSType *fieldType) = 0;
+    virtual bool invokeGetter(RuntimeContext &ctx, DSType *recvType,
+                              const std::string &fieldName, DSType *fieldType) = 0;
 
     /**
      * pop stack top value and set to field.
      * return false, if error happened.
      */
-    virtual bool invokeSetter(RuntimeContext &ctx, const std::string &fieldName, DSType *fieldType) = 0;
+    virtual bool invokeSetter(RuntimeContext &ctx,DSType *recvType,
+                              const std::string &fieldName, DSType *fieldType) = 0;
 };
 
 struct DBus_Object : public DSObject {

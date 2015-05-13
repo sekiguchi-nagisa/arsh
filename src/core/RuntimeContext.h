@@ -323,9 +323,9 @@ struct RuntimeContext {
         this->pop()->getFieldTable()[index] = std::move(value);
     }
 
-    EvalStatus setField(const std::string &fieldName, DSType *fieldType) {
+    EvalStatus setField(DSType *recvType, const std::string &fieldName, DSType *fieldType) {
         bool status = TYPE_AS(ProxyObject, this->localStack[this->stackTopIndex - 1])->
-                invokeSetter(*this, fieldName, fieldType);
+                invokeSetter(*this, recvType, fieldName, fieldType);
         // pop receiver
         this->pop();
         return status ? EVAL_SUCCESS : EVAL_THROW;
@@ -339,9 +339,9 @@ struct RuntimeContext {
                 this->localStack[this->stackTopIndex]->getFieldTable()[index];
     }
 
-    EvalStatus getField(const std::string &fieldName, DSType *fieldType) {
+    EvalStatus getField(DSType *recvType, const std::string &fieldName, DSType *fieldType) {
         bool status = TYPE_AS(ProxyObject, this->pop())->
-                invokeGetter(*this, fieldName, fieldType);
+                invokeGetter(*this, recvType, fieldName, fieldType);
         return status ? EVAL_SUCCESS : EVAL_THROW;
     }
 
@@ -352,9 +352,9 @@ struct RuntimeContext {
         this->push(this->peek()->getFieldTable()[index]);
     }
 
-    EvalStatus dupAndGetField(const std::string &fieldName, DSType *fieldType) {
+    EvalStatus dupAndGetField(DSType *recvType, const std::string &fieldName, DSType *fieldType) {
         bool status = TYPE_AS(ProxyObject, this->localStack[this->stackTopIndex])->
-                invokeGetter(*this, fieldName, fieldType);
+                invokeGetter(*this, recvType, fieldName, fieldType);
         return status ? EVAL_SUCCESS : EVAL_THROW;
     }
 

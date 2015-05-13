@@ -234,12 +234,14 @@ bool DBusProxy_Object::invokeMethod(RuntimeContext &ctx, const std::string &meth
     return false;
 }
 
-bool DBusProxy_Object::invokeGetter(RuntimeContext &ctx, const std::string &fieldName, DSType *fieldType) {
+bool DBusProxy_Object::invokeGetter(RuntimeContext &ctx,DSType *recvType,
+                                    const std::string &fieldName, DSType *fieldType) {
     fatal("unimplemented\n");
     return false;
 }
 
-bool DBusProxy_Object::invokeSetter(RuntimeContext &ctx, const std::string &fieldName, DSType *fieldType) {
+bool DBusProxy_Object::invokeSetter(RuntimeContext &ctx,DSType *recvType,
+                                    const std::string &fieldName, DSType *fieldType) {
     fatal("unimplemented\n");
     return false;
 }

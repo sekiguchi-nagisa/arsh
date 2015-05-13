@@ -652,7 +652,7 @@ EvalStatus AccessNode::eval(RuntimeContext &ctx) {
     switch (this->additionalOp) {
     case NOP: {
         if(this->withinInterface()) {
-            return ctx.getField(this->fieldName, this->type);
+            return ctx.getField(this->recvNode->getType(), this->fieldName, this->type);
         }
 
         ctx.getField(this->getIndex());
@@ -663,7 +663,7 @@ EvalStatus AccessNode::eval(RuntimeContext &ctx) {
     }
     case DUP_RECV: {
         if(this->withinInterface()) {
-            return ctx.dupAndGetField(this->fieldName, this->type);
+            return ctx.dupAndGetField(this->recvNode->getType(), this->fieldName, this->type);
         }
 
         ctx.dupAndGetField(this->getIndex());
@@ -2643,7 +2643,8 @@ EvalStatus AssignNode::eval(RuntimeContext &ctx) {
 
         if(assignableNode->withinInterface()) {
             AccessNode *accessNode = (AccessNode *) this->leftNode;
-            return ctx.setField(accessNode->getFieldName(), accessNode->getType());
+            return ctx.setField(accessNode->getRecvNode()->getType(),
+                                accessNode->getFieldName(), accessNode->getType());
         }
         ctx.setField(index);
     } else {

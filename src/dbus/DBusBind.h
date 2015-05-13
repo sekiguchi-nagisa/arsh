@@ -74,8 +74,10 @@ struct DBusProxy_Object : public ProxyObject {
     bool doIntrospection(RuntimeContext &ctx);
 
     bool invokeMethod(RuntimeContext &ctx, const std::string &methodName, MethodHandle *handle);    // override
-    bool invokeGetter(RuntimeContext &ctx, const std::string &fieldName, DSType *fieldType);    // override
-    bool invokeSetter(RuntimeContext &ctx, const std::string &fieldName, DSType *fieldType);    // override
+    bool invokeGetter(RuntimeContext &ctx,DSType *recvType,
+                      const std::string &fieldName, DSType *fieldType);    // override
+    bool invokeSetter(RuntimeContext &ctx, DSType *recvType,
+                      const std::string &fieldName, DSType *fieldType);    // override
 
     static bool newObject(RuntimeContext &ctx, const std::shared_ptr<DSObject> &busObj,
                           std::string &&destination, std::string &&objectPath);
