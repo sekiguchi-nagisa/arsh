@@ -27,13 +27,13 @@ namespace core {
 // =====  builtin variable  =====
 
 // boolean
-constexpr char TRUE[] = "TRUE";
-constexpr char FALSE[] = "FALSE";
+constexpr char VAR_TRUE[] = "TRUE";
+constexpr char VAR_FALSE[] = "FALSE";
 
 // io
-constexpr char STDIN[] = "STDIN";
-constexpr char STDOUT[] = "STDOUT";
-constexpr char STDERR[] = "STDERR";
+constexpr char VAR_STDIN[] = "STDIN";
+constexpr char VAR_STDOUT[] = "STDOUT";
+constexpr char VAR_STDERR[] = "STDERR";
 
 
 // =====  magic method  =====

@@ -132,10 +132,10 @@ ExitStatus Shell::eval(const char *sourceName, Lexer<LexerDef, TokenKind> &lexer
 void Shell::initBuiltinVar() {
     RootNode rootNode;
     // register boolean
-    rootNode.addNode(new BindVarNode("TRUE", this->ctx.trueObj));
+    rootNode.addNode(new BindVarNode("VAR_TRUE", this->ctx.trueObj));
     rootNode.addNode(new BindVarNode("True", this->ctx.trueObj));
     rootNode.addNode(new BindVarNode("true", this->ctx.trueObj));
-    rootNode.addNode(new BindVarNode("FALSE", this->ctx.falseObj));
+    rootNode.addNode(new BindVarNode("VAR_FALSE", this->ctx.falseObj));
     rootNode.addNode(new BindVarNode("False", this->ctx.falseObj));
     rootNode.addNode(new BindVarNode("false", this->ctx.falseObj));
 

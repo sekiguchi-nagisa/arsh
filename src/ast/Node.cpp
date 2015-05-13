@@ -1979,7 +1979,7 @@ ForNode::ForNode(unsigned int lineNum, Node *initNode, Node *condNode, Node *ite
     }
 
     if(this->condNode == 0) {
-        this->condNode = new VarNode(lineNum, std::string(TRUE));
+        this->condNode = new VarNode(lineNum, std::string(VAR_TRUE));
     }
     this->condNode->inCondition();
 
