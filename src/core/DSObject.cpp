@@ -80,6 +80,10 @@ bool DSObject::introspect(RuntimeContext &ctx, DSType *targetType) {
     return targetType->isAssignableFrom(this->type);
 }
 
+void DSObject::accept(ObjectVisitor *visitor) {
+    visitor->visitDefault(this);
+}
+
 // ########################
 // ##     Int_Object     ##
 // ########################
@@ -116,6 +120,10 @@ size_t Int_Object::hash() {
     return std::hash<int>()(this->value);
 }
 
+void Int_Object::accept(ObjectVisitor *visitor) {
+    visitor->visitInt_Object(this);
+}
+
 // #########################
 // ##     Long_Object     ##
 // #########################
@@ -143,6 +151,10 @@ size_t Long_Object::hash() {
     return std::hash<long>()(this->value);
 }
 
+void Long_Object::accept(ObjectVisitor *visitor) {
+    visitor->visitLong_Object(this);
+}
+
 // ##########################
 // ##     Float_Object     ##
 // ##########################
@@ -165,6 +177,10 @@ bool Float_Object::equals(const std::shared_ptr<DSObject> &obj) {
 
 size_t Float_Object::hash() {
     return std::hash<double>()(this->value);
+}
+
+void Float_Object::accept(ObjectVisitor *visitor) {
+    visitor->visitFloat_Object(this);
 }
 
 
@@ -192,6 +208,9 @@ size_t Boolean_Object::hash() {
     return std::hash<bool>()(this->value);
 }
 
+void Boolean_Object::accept(ObjectVisitor *visitor) {
+    visitor->visitBoolean_Object(this);
+}
 
 // ###########################
 // ##     String_Object     ##
@@ -231,6 +250,10 @@ bool String_Object::equals(const std::shared_ptr<DSObject> &obj) {
 
 size_t String_Object::hash() {
     return std::hash<std::string>()(this->value);
+}
+
+void String_Object::accept(ObjectVisitor *visitor) {
+    visitor->visitString_Object(this);
 }
 
 // ##########################
@@ -298,6 +321,10 @@ std::shared_ptr<DSObject> Array_Object::commandArg(RuntimeContext &ctx) {
     return result;
 }
 
+void Array_Object::accept(ObjectVisitor *visitor) {
+    visitor->visitArray_Object(this);
+}
+
 bool KeyCompare::operator() (const std::shared_ptr<DSObject> &x,
                              const std::shared_ptr<DSObject> &y) const {
     return x->equals(y);
@@ -336,6 +363,10 @@ std::string Map_Object::toString(RuntimeContext &ctx) {
     }
     str += "}";
     return str;
+}
+
+void Map_Object::accept(ObjectVisitor *visitor) {
+    visitor->visitMap_Object(this);
 }
 
 // ########################
@@ -422,6 +453,10 @@ std::shared_ptr<DSObject> Tuple_Object::commandArg(RuntimeContext &ctx) {
     return result;
 }
 
+void Tuple_Object::accept(ObjectVisitor *visitor) {
+    visitor->visitTuple_Object(this);
+}
+
 // ##########################
 // ##     Error_Object     ##
 // ##########################
@@ -473,6 +508,10 @@ Error_Object *Error_Object::newError(RuntimeContext &ctx, DSType *type,
     auto *obj = new Error_Object(type, std::move(message));
     obj->createStackTrace(ctx);
     return obj;
+}
+
+void Error_Object::accept(ObjectVisitor *visitor) {
+    visitor->visitError_Object(this);
 }
 
 
@@ -541,6 +580,10 @@ bool UserFuncObject::invoke(RuntimeContext &ctx) {  //TODO: default param
     }
 }
 
+void UserFuncObject::accept(ObjectVisitor *visitor) {
+    visitor->visitUserFuncObject(this);
+}
+
 
 // ###############################
 // ##     BuiltinFuncObject     ##
@@ -570,6 +613,10 @@ bool BuiltinFuncObject::invoke(RuntimeContext &ctx) {
 
 std::shared_ptr<DSObject> BuiltinFuncObject::newFuncObject(native_func_t func_ptr) {
     return std::make_shared<BuiltinFuncObject>(func_ptr);
+}
+
+void BuiltinFuncObject::accept(ObjectVisitor *visitor) {
+    visitor->visitBuiltinFuncObject(this);
 }
 
 // #######################

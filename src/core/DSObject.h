@@ -18,6 +18,7 @@
 #define CORE_DSOBJECT_H_
 
 #include <memory>
+#include <ast/Node.h>
 #include "DSType.h"
 
 namespace ydsh {
@@ -35,6 +36,7 @@ using namespace ydsh::ast;
 
 struct RuntimeContext;
 struct String_Object;
+struct ObjectVisitor;
 
 struct DSObject {
     DSType *type;
@@ -88,6 +90,8 @@ struct DSObject {
      * check if this type is instance of targetType.
      */
     virtual bool introspect(RuntimeContext &ctx, DSType *targetType);
+
+    virtual void accept(ObjectVisitor *visitor);
 };
 
 struct Int_Object : public DSObject {
@@ -100,6 +104,7 @@ struct Int_Object : public DSObject {
     std::string toString(RuntimeContext &ctx); // override
     bool equals(const std::shared_ptr<DSObject> &obj);  // override
     size_t hash();  // override
+    void accept(ObjectVisitor *visitor); // override
 };
 
 struct Long_Object : public DSObject {
@@ -112,6 +117,7 @@ struct Long_Object : public DSObject {
     std::string toString(RuntimeContext &ctx); // override
     bool equals(const std::shared_ptr<DSObject> &obj);  // override
     size_t hash();  // override
+    void accept(ObjectVisitor *visitor); // override
 };
 
 struct Float_Object : public DSObject {
@@ -124,6 +130,7 @@ struct Float_Object : public DSObject {
     std::string toString(RuntimeContext &ctx); // override
     bool equals(const std::shared_ptr<DSObject> &obj);  // override
     size_t hash();  // override
+    void accept(ObjectVisitor *visitor); // override
 };
 
 struct Boolean_Object : public DSObject {
@@ -136,6 +143,7 @@ struct Boolean_Object : public DSObject {
     std::string toString(RuntimeContext &ctx); // override
     bool equals(const std::shared_ptr<DSObject> &obj);  // override
     size_t hash();  // override
+    void accept(ObjectVisitor *visitor); // override
 };
 
 struct String_Object : public DSObject {
@@ -156,6 +164,7 @@ struct String_Object : public DSObject {
 
     bool equals(const std::shared_ptr<DSObject> &obj);  // override
     size_t hash();  // override
+    void accept(ObjectVisitor *visitor); // override
 };
 
 struct Array_Object : public DSObject {
@@ -171,6 +180,7 @@ struct Array_Object : public DSObject {
 
     std::shared_ptr<String_Object> interp(RuntimeContext &ctx); // override
     std::shared_ptr<DSObject> commandArg(RuntimeContext &ctx); // override
+    void accept(ObjectVisitor *visitor); // override
 };
 
 struct KeyCompare {
@@ -194,6 +204,7 @@ struct Map_Object : public DSObject {
     void set(const std::shared_ptr<DSObject> &key, const std::shared_ptr<DSObject> &value);
 
     std::string toString(RuntimeContext &ctx); // override
+    void accept(ObjectVisitor *visitor); // override
 };
 
 struct BaseObject : public DSObject {
@@ -219,6 +230,7 @@ struct Tuple_Object : public BaseObject {
 
     std::shared_ptr<String_Object> interp(RuntimeContext &ctx); // override
     std::shared_ptr<DSObject> commandArg(RuntimeContext &ctx); // override
+    void accept(ObjectVisitor *visitor); // override
 };
 
 struct Error_Object : public DSObject {
@@ -236,6 +248,8 @@ struct Error_Object : public DSObject {
      * print stack trace to stderr
      */
     void printStackTrace(RuntimeContext &ctx);
+
+    void accept(ObjectVisitor *visitor); // override
 
     /**
      * create new Error_Object and create stack trace
@@ -294,6 +308,7 @@ struct UserFuncObject : public FuncObject {
 
     std::string toString(RuntimeContext &ctx); // override
     bool invoke(RuntimeContext &ctx); // override
+    void accept(ObjectVisitor *visitor); // override
 };
 
 /**
@@ -320,6 +335,7 @@ struct BuiltinFuncObject : public FuncObject {
      * for builtin func obejct creation
      */
     static std::shared_ptr<DSObject> newFuncObject(native_func_t func_ptr);
+    void accept(ObjectVisitor *visitor); // override
 };
 
 /**
@@ -388,6 +404,23 @@ struct DBus_Object : public DSObject {
     static DBus_Object *newDBus_Object(DSType *type);
     static bool newObject(RuntimeContext &ctx, const std::shared_ptr<DSObject> &busObj,
                           std::string &&destination, std::string &&objectPath);
+};
+
+struct ObjectVisitor {
+    virtual ~ObjectVisitor() = default;
+
+    virtual void visitDefault(DSObject *obj) = 0;
+    virtual void visitInt_Object(Int_Object *obj) = 0;
+    virtual void visitLong_Object(Long_Object *obj) = 0;
+    virtual void visitFloat_Object(Float_Object *obj) = 0;
+    virtual void visitBoolean_Object(Boolean_Object *obj) = 0;
+    virtual void visitString_Object(String_Object *obj) = 0;
+    virtual void visitArray_Object(Array_Object *obj) = 0;
+    virtual void visitMap_Object(Map_Object *obj) = 0;
+    virtual void visitTuple_Object(Tuple_Object *obj) = 0;
+    virtual void visitError_Object(Error_Object *obj) = 0;
+    virtual void visitUserFuncObject(UserFuncObject *obj) = 0;
+    virtual void visitBuiltinFuncObject(BuiltinFuncObject *obj) = 0;
 };
 
 } // namespace core
