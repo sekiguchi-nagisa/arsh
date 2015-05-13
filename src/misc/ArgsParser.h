@@ -86,7 +86,7 @@ public:
 template<typename OPTION_ENUM>
 template<typename OPTION_ENUM2>
 unsigned int ArgsParser<OPTION_ENUM>::Option<OPTION_ENUM2>::getUsageSize() const {
-    return strlen(this->optionSymbol) + (this->hasArg ? strlen(" <arg>") : 0);
+    return strlen(this->optionSymbol) + (this->hasArg ? strlen(usageSuffix) : 0);
 }
 
 template<typename OPTION_ENUM>
@@ -98,7 +98,7 @@ std::vector<std::string> ArgsParser<OPTION_ENUM>::Option<OPTION_ENUM2>::getDescr
         char ch = this->description[i];
         if(ch == '\n') {
             if(!buf.empty()) {
-                bufs.push_back(buf);
+                bufs.push_back(std::move(buf));
                 buf.clear();
             }
         } else {
@@ -106,7 +106,7 @@ std::vector<std::string> ArgsParser<OPTION_ENUM>::Option<OPTION_ENUM2>::getDescr
         }
     }
     if(!buf.empty()) {
-        bufs.push_back(buf);
+        bufs.push_back(std::move(buf));
     }
     return bufs;
 }
