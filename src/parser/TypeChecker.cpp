@@ -789,7 +789,7 @@ void TypeChecker::visitCmdNode(CmdNode * node) {
         this->checkType(argNode);
     }
     // check type redirect options
-    for(const std::pair<int, Node *> &optionPair : node->getRedirOptions()) {
+    for(auto &optionPair : node->getRedirOptions()) {
         this->checkTypeAsStatement(optionPair.second);
     }
     node->setType(this->typePool->getVoidType());   // FIXME

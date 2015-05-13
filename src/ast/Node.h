@@ -34,6 +34,7 @@ class FieldHandle;
 class MethodHandle;
 struct DSObject;
 struct RuntimeContext;
+enum RedirectOP : unsigned int;
 
 }
 }
@@ -710,7 +711,7 @@ class CmdNode : public Node {    //FIXME: redirect option
 private:
     std::string commandName;
     std::vector<CmdArgNode *> argNodes;
-    std::vector<std::pair<int, Node *>> redirOptions;
+    std::vector<std::pair<RedirectOP, CmdArgNode *>> redirOptions;
 
 public:
     CmdNode(unsigned int lineNum, std::string &&commandName);
@@ -723,9 +724,10 @@ public:
 
     const std::vector<CmdArgNode *> &getArgNodes();
 
-    void addRedirOption(std::pair<int, Node *> &&optionPair);
+    void addRedirOption(TokenKind kind, CmdArgNode *node);
+    void addRedirOption(TokenKind kind);
 
-    const std::vector<std::pair<int, Node *>> &getRedirOptions();
+    const std::vector<std::pair<RedirectOP, CmdArgNode *>> &getRedirOptions();
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    //override

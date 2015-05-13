@@ -127,6 +127,8 @@ private:
 
     std::unique_ptr<CmdNode> parse_command();
 
+    void parse_redirOption(std::unique_ptr<CmdNode> &node);
+
     std::unique_ptr<CmdArgNode> parse_cmdArg();
 
     std::unique_ptr<Node> parse_cmdArgSeg(bool expandTilde = false);

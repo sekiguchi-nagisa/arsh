@@ -1375,7 +1375,7 @@ CmdNode::~CmdNode() {
     }
     this->argNodes.clear();
 
-    for (const std::pair<int, Node *> &pair : this->redirOptions) {
+    for (auto &pair : this->redirOptions) {
         delete pair.second;
     }
     this->redirOptions.clear();
@@ -1393,11 +1393,25 @@ const std::vector<CmdArgNode *> &CmdNode::getArgNodes() {
     return this->argNodes;
 }
 
-void CmdNode::addRedirOption(std::pair<int, Node *> &&optionPair) {
-    this->redirOptions.push_back(std::move(optionPair));
+void CmdNode::addRedirOption(TokenKind kind, CmdArgNode *node) {
+    RedirectOP op;
+    switch(kind) {
+#define GEN_CASE(ENUM, STR) case REDIR_##ENUM : op = RedirectOP::ENUM; break;
+        EACH_RedirectOP(GEN_CASE)
+#undef GEN_CASE
+    default:
+        fatal("unsupported redirect op: %s\n", TO_NAME(kind));
+        break;
+    }
+
+    this->redirOptions.push_back(std::make_pair(op, node));
 }
 
-const std::vector<std::pair<int, Node *>> &CmdNode::getRedirOptions() {
+void CmdNode::addRedirOption(TokenKind kind) {
+    this->addRedirOption(kind, new CmdArgNode(new StringValueNode(std::string(""))));
+}
+
+const std::vector<std::pair<RedirectOP, CmdArgNode *>> &CmdNode::getRedirOptions() {
     return this->redirOptions;
 }
 
@@ -1409,18 +1423,34 @@ void CmdNode::dump(Writer &writer) const {
         argNodes.push_back(node);
     }
     WRITE(argNodes);
-    //FIXME: redirOption
+
+    static const char *redirOpStr[] = {
+#define GEN_STR(ENUM, STR) #ENUM,
+            EACH_RedirectOP(GEN_STR)
+#undef GEN_STR
+    };
+
+    std::vector<std::pair<std::string, Node *>> redirOptions;
+    for(auto &pair : this->redirOptions) {
+        redirOptions.push_back(std::make_pair(std::string(redirOpStr[pair.first]), pair.second));
+    }
+    WRITE(redirOptions);
 }
 
 void CmdNode::accept(NodeVisitor *visitor) {
     visitor->visitCmdNode(this);
 }
 
-EvalStatus CmdNode::eval(RuntimeContext &ctx) { //FIXME: redirect
+EvalStatus CmdNode::eval(RuntimeContext &ctx) {
     std::shared_ptr<ProcContext> proc(new ProcContext(ctx, this->commandName));
-    for (Node *node : this->argNodes) {
+    for(Node *node : this->argNodes) {
         EVAL(ctx, node);
         proc->addParam(ctx.pop());
+    }
+
+    for(auto &pair : this->redirOptions) {
+        EVAL(ctx, pair.second);
+        proc->addRedirOption(pair.first, ctx.pop());
     }
     ctx.push(proc);
     return EVAL_SUCCESS;

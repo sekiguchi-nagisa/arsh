@@ -27,6 +27,22 @@ struct RuntimeContext;
 static constexpr unsigned int READ_PIPE = 0;
 static constexpr unsigned int WRITE_PIPE = 1;
 
+#define EACH_RedirectOP(OP) \
+    OP(IN_2_FILE, "<") \
+    OP(OUT_2_FILE, "1>") \
+    OP(OUT_2_FILE_APPEND, "1>>") \
+    OP(ERR_2_FILE, "2>") \
+    OP(ERR_2_FILE_APPEND, "2>>") \
+    OP(MERGE_ERR_2_OUT_2_FILE, "&>") \
+    OP(MERGE_ERR_2_OUT_2_FILE_APPEND, "&>>") \
+    OP(MERGE_ERR_2_OUT, "2>&1")
+
+enum RedirectOP : unsigned int {
+#define GEN_ENUM(ENUM, STR) ENUM,
+    EACH_RedirectOP(GEN_ENUM)
+#undef GEN_ENUM
+};
+
 struct ProcContext : public DSObject {   //FIXME: redirect option
     typedef enum {
         NORMAL,
@@ -41,6 +57,7 @@ struct ProcContext : public DSObject {   //FIXME: redirect option
 
     std::string cmdName;
     std::vector<std::shared_ptr<String_Object>> params;
+    std::vector<std::pair<RedirectOP, std::shared_ptr<String_Object>>> redirs;
 
     /**
      * actual command parameter. the last element must be NULL.
@@ -55,7 +72,8 @@ struct ProcContext : public DSObject {   //FIXME: redirect option
 
     ~ProcContext();
 
-    void addParam(const std::shared_ptr<DSObject> &value);
+    void addParam(std::shared_ptr<DSObject> &&value);
+    void addRedirOption(RedirectOP op, std::shared_ptr<DSObject> &&value);
 
     /**
      * init argv.

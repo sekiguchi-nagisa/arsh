@@ -243,12 +243,20 @@ TokenKind LexerDef::operator()(Lexer < LexerDef, TokenKind > *lexer, Token & tok
       <CMD> STRING_LITERAL     { RET(STRING_LITERAL); }
       <CMD> ["]                { PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
       <CMD> ")"                { POP_MODE(); POP_MODE(); RET(RP); }
+      <CMD> [ \t]+ / "&>"      { RET(CMD_SEP); }
       <CMD> [ \t]+ / ([|&] | LINE_END | NEW_LINE | ')')
                                { SKIP(); }
       <CMD> [ \t]+             { RET(CMD_SEP); }
-      <CMD> ("<" | ">" | "1>" | "1>>" | ">>" | "2>" | "2>>" | ">&" | "&>" | "&>>")
-                               { RET(REDIR_OP); }
-      <CMD> "2>&1"             { RET(REDIR_OP_NO_ARG); }
+
+      <CMD> "<"                { RET(REDIR_IN_2_FILE); }
+      <CMD> (">" | "1>")       { RET(REDIR_OUT_2_FILE); }
+      <CMD> ("1>>" | ">>")     { RET(REDIR_OUT_2_FILE_APPEND); }
+      <CMD> "2>"               { RET(REDIR_ERR_2_FILE); }
+      <CMD> "2>>"              { RET(REDIR_ERR_2_FILE_APPEND); }
+      <CMD> (">&" | "&>")      { RET(REDIR_MERGE_ERR_2_OUT_2_FILE); }
+      <CMD> "&>>"              { RET(REDIR_MERGE_ERR_2_OUT_2_FILE_APPEND); }
+      <CMD> "2>&1"             { RET(REDIR_MERGE_ERR_2_OUT); }
+
       <CMD> "|"                { POP_MODE(); MODE(STMT); RET(PIPE); }
       <CMD> "&"                { RET(BACKGROUND); }
       <CMD> "||"               { POP_MODE(); MODE(STMT); RET(OR_LIST); }

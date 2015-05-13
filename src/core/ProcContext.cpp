@@ -32,7 +32,7 @@ namespace core {
 // #########################
 
 ProcContext::ProcContext(RuntimeContext &ctx, const std::string &cmdName) :
-        DSObject(0), ctx(&ctx), cmdName(cmdName), params(), argv(), pid(0),
+        DSObject(0), ctx(&ctx), cmdName(cmdName), params(), redirs(), argv(), pid(0),
         exitKind(NORMAL), exitStatus(0) {
 }
 
@@ -40,7 +40,7 @@ ProcContext::~ProcContext() {
     delete[] this->argv;    // not delete element
 }
 
-void ProcContext::addParam(const std::shared_ptr<DSObject> &value) {
+void ProcContext::addParam(std::shared_ptr<DSObject> &&value) {
     DSType *valueType = value->getType();
     if(*valueType == *this->ctx->pool.getStringType()) {
         this->params.push_back(std::dynamic_pointer_cast<String_Object>(value));
@@ -51,6 +51,28 @@ void ProcContext::addParam(const std::shared_ptr<DSObject> &value) {
         Array_Object *arrayObj = TYPE_AS(Array_Object, value);
         for(const std::shared_ptr<DSObject> &element : arrayObj->values) {
             this->params.push_back(std::dynamic_pointer_cast<String_Object>(element));
+        }
+    } else {
+        fatal("illegal command parameter type: %s\n", this->ctx->pool.getTypeName(*valueType).c_str());
+    }
+}
+
+void ProcContext::addRedirOption(RedirectOP op, std::shared_ptr<DSObject> &&value) {
+    DSType *valueType = value->getType();
+    if(*valueType == *this->ctx->pool.getStringType()) {
+        this->redirs.push_back(std::make_pair(op, std::dynamic_pointer_cast<String_Object>(value)));
+        return;
+    }
+
+    if(*valueType == *this->ctx->pool.getStringArrayType()) {
+        Array_Object *arrayObj = TYPE_AS(Array_Object, value);
+        unsigned int count = 0;
+        for(auto &element : arrayObj->values) {
+            if(count++ == 0) {
+                this->redirs.push_back(std::make_pair(op, std::dynamic_pointer_cast<String_Object>(element)));
+            } else {
+                this->params.push_back(std::dynamic_pointer_cast<String_Object>(element));
+            }
         }
     } else {
         fatal("illegal command parameter type: %s\n", this->ctx->pool.getTypeName(*valueType).c_str());
@@ -91,6 +113,63 @@ static void closeAllPipe(int size, int pipefds[][2]) {
     }
 }
 
+static void redirectToFile(const char *fileName, const char *mode, int targetFD) {
+    FILE *fp = fopen(fileName, mode);
+    if(fp != NULL) {
+        int fd = fileno(fp);
+        dup2(fd, targetFD);
+        fclose(fp);
+    } else {
+        fprintf(stderr, "-ydsh: %s: ", fileName);
+        perror("");
+        exit(1);
+    }
+}
+
+/**
+ * if redirection failed, exit 1
+ */
+static void redirect(ProcContext *ctx) {  //FIXME: error reporting
+    for(auto &pair : ctx->redirs) {
+        switch(pair.first) {
+        case IN_2_FILE: {
+            redirectToFile(pair.second->value.c_str(), "rb", STDIN_FILENO);
+            break;
+        };
+        case OUT_2_FILE: {
+            redirectToFile(pair.second->value.c_str(), "wb", STDOUT_FILENO);
+            break;
+        };
+        case OUT_2_FILE_APPEND: {
+            redirectToFile(pair.second->value.c_str(), "ab", STDOUT_FILENO);
+            break;
+        };
+        case ERR_2_FILE: {
+            redirectToFile(pair.second->value.c_str(), "wb", STDERR_FILENO);
+            break;
+        };
+        case ERR_2_FILE_APPEND: {
+            redirectToFile(pair.second->value.c_str(), "ab", STDERR_FILENO);
+            break;
+        };
+        case MERGE_ERR_2_OUT_2_FILE: {
+            dup2(STDERR_FILENO, STDOUT_FILENO);
+            redirectToFile(pair.second->value.c_str(), "wb", STDOUT_FILENO);
+            break;
+        };
+        case MERGE_ERR_2_OUT_2_FILE_APPEND: {
+            dup2(STDERR_FILENO, STDOUT_FILENO);
+            redirectToFile(pair.second->value.c_str(), "ab", STDOUT_FILENO);
+            break;
+        };
+        case MERGE_ERR_2_OUT: {
+            dup2(STDERR_FILENO, STDOUT_FILENO);
+            break;
+        };
+        }
+    }
+}
+
 int ProcGroup::execProcs() {
     RuntimeContext *ctx = this->procs[0]->ctx;
 
@@ -117,10 +196,8 @@ int ProcGroup::execProcs() {
     }
 
     if(procIndex == this->procSize) {   // parent process
-        //TODO: asynchronous invocation
         closeAllPipe(this->procSize - 1, pipefds);
         close(pipefds[this->procSize - 1][WRITE_PIPE]);
-        //TODO: stdout capture.
         close(pipefds[this->procSize - 1][READ_PIPE]);
 
         // wait for exit
@@ -140,9 +217,8 @@ int ProcGroup::execProcs() {
         ctx->exitStatus->value = this->procs[this->procSize - 1]->exitStatus;
         return 0;
     } else if(pid[procIndex] == 0) { // child process
-        ProcContext *ctx = this->procs[procIndex].get();
+        ProcContext *procCtx = this->procs[procIndex].get();
         if(procIndex == 0) {    // first process
-            //TODO: redirect
             if(this->procSize > 1) {
                 dup2(pipefds[procIndex][WRITE_PIPE], STDOUT_FILENO);
             }
@@ -155,12 +231,14 @@ int ProcGroup::execProcs() {
             if(this->procSize > 1) {
                 dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
             }
-            //TODO: stdout capture
         }
+
+        redirect(procCtx);
+
         closeAllPipe(this->procSize, pipefds);
-        execvp(ctx->argv[0], ctx->argv);
+        execvp(procCtx->argv[0], procCtx->argv);
         perror("execution error");
-        fprintf(stderr, "executed cmd: %s\n", ctx->argv[0]);
+        fprintf(stderr, "executed cmd: %s\n", procCtx->argv[0]);
         exit(1);
     } else {
         perror("child process error");

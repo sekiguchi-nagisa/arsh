@@ -105,9 +105,21 @@
     OP(VAR) \
     OP(LET)
 
+#define EACH_LA_redirFile(OP) \
+    OP(REDIR_IN_2_FILE) \
+    OP(REDIR_OUT_2_FILE) \
+    OP(REDIR_OUT_2_FILE_APPEND) \
+    OP(REDIR_ERR_2_FILE) \
+    OP(REDIR_ERR_2_FILE_APPEND) \
+    OP(REDIR_MERGE_ERR_2_OUT_2_FILE) \
+    OP(REDIR_MERGE_ERR_2_OUT_2_FILE_APPEND)
+
+#define EACH_LA_redirNoFile(OP) \
+    OP(REDIR_MERGE_ERR_2_OUT)
+
 #define EACH_LA_redir(OP) \
-    OP(REDIR_OP) \
-    OP(REDIR_OP_NO_ARG)
+    EACH_LA_redirFile(OP) \
+    EACH_LA_redirNoFile(OP)
 
 #define EACH_LA_cmdArg(OP) \
     OP(CMD_ARG_PART) \
@@ -834,15 +846,59 @@ INLINE std::unique_ptr<Node> Parser::parse_pipedCommand() {
 }
 
 INLINE std::unique_ptr<CmdNode> Parser::parse_command() {   //FIXME: redirect
+    static TokenKind alters[] = {
+           EACH_LA_cmdArg(GEN_LA_ALTER)
+           EACH_LA_redir(GEN_LA_ALTER)
+           DUMMY
+    };
+
     unsigned int n = LN();
     Token token(this->matchAndGetToken(COMMAND));
     std::unique_ptr<CmdNode> node(new CmdNode(n, this->lexer->toCmdArg(token, true)));
 
     while(this->curTokenKind == CMD_SEP) {
         this->matchToken(CMD_SEP);
-        node->addArgNode(this->parse_cmdArg().release());
+        switch(this->curTokenKind) {
+        EACH_LA_cmdArg(GEN_LA_CASE) {
+            node->addArgNode(this->parse_cmdArg().release());
+            break;
+        };
+        EACH_LA_redir(GEN_LA_CASE) {
+            this->parse_redirOption(node);
+            break;
+        };
+        default:
+            E_ALTER(alters);
+            return std::unique_ptr<CmdNode>();
+        }
     }
     return node;
+}
+
+INLINE void Parser::parse_redirOption(std::unique_ptr<CmdNode> &node) {
+    static TokenKind alters[] = {
+            EACH_LA_redir(GEN_LA_ALTER)
+            DUMMY
+    };
+
+    switch(this->curTokenKind) {
+    EACH_LA_redirFile(GEN_LA_CASE) {
+        TokenKind kind = this->consumeAndGetKind();
+        if(this->curTokenKind == CMD_SEP) {
+            NEXT_TOKEN();
+        }
+        node->addRedirOption(kind, this->parse_cmdArg().release());
+        break;
+    };
+    EACH_LA_redirNoFile(GEN_LA_CASE) {
+        TokenKind kind = this->consumeAndGetKind();
+        node->addRedirOption(kind);
+        break;
+    };
+    default:
+        E_ALTER(alters);
+        break;
+    }
 }
 
 INLINE std::unique_ptr<CmdArgNode> Parser::parse_cmdArg() {
