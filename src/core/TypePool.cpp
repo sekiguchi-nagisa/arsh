@@ -70,7 +70,7 @@ TypePool::TypePool(char **envp) :
     this->boolType = this->initBuiltinType("Boolean", false, this->valueType, info_BooleanType());
     this->stringType = this->initBuiltinType("String", false, this->valueType, info_StringType());
 
-    this->objectPathType = this->initBuiltinType("ObjectPath", false, this->stringType, info_ObjectPathType());
+    this->objectPathType = this->initBuiltinType("ObjectPath", false, this->valueType, info_ObjectPathType());
     this->unixFDType = this->initBuiltinType("UnixFD", false, this->uint32Type, info_UnixFDType());
     this->proxyType = this->initBuiltinType("Proxy", false, this->anyType, info_ProxyType());
     this->dbusType = this->initBuiltinType("DBus", false, this->anyType, info_DBusType());

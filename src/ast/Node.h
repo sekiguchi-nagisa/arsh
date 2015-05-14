@@ -707,7 +707,7 @@ public:
     EvalStatus eval(RuntimeContext &ctx); // override
 };
 
-class CmdNode : public Node {    //FIXME: redirect option
+class CmdNode : public Node {
 private:
     std::string commandName;
     std::vector<CmdArgNode *> argNodes;
@@ -1129,7 +1129,7 @@ public:
     EvalStatus eval(RuntimeContext &ctx); // override
 };
 
-class TryNode : public Node {    //TODO: finallyNode
+class TryNode : public Node {
 private:
     BlockNode *blockNode;
 

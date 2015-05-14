@@ -829,7 +829,7 @@ static inline bool boolean_ne(RuntimeContext & ctx) {
 static inline bool string_add(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_add);
     ctx.getLocal(1);
-    ctx.toString(0);    //FIXME
+    ctx.toString(0);    //FIXME: throw error
     std::shared_ptr<String_Object> str(new String_Object(ctx.pool.getStringType()));
     str->value += TYPE_AS(String_Object, LOCAL(0))->value;
     str->value += TYPE_AS(String_Object, ctx.peek())->value;
@@ -862,6 +862,32 @@ static inline bool string_empty(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_empty);
     bool empty = TYPE_AS(String_Object, LOCAL(0))->value.empty();
     RET(TO_BOOL(empty));
+}
+
+
+// ########################
+// ##     ObjectPath     ##
+// ########################
+
+//!bind: function $OP_EQ($this : ObjectPath, $target : ObjectPath) : Boolean
+static inline bool objectpath_eq(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(objectpath_eq);
+    bool r = LOCAL(0)->equals(LOCAL(1));
+    RET(TO_BOOL(r));
+}
+
+//!bind: function $OP_NE($this : ObjectPath, $target : ObjectPath) : Boolean
+static inline bool objectpath_ne(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(objectpath_ne);
+    bool r = !LOCAL(0)->equals(LOCAL(1));
+    RET(TO_BOOL(r));
+}
+
+//!bind: function size($this : ObjectPath) : Uint32
+static inline bool objectpath_size(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(objectpath_size);
+    unsigned int size = TYPE_AS(String_Object, LOCAL(0))->value.size();
+    RET(std::make_shared<Int_Object>(ctx.pool.getUint32Type(), size));
 }
 
 
