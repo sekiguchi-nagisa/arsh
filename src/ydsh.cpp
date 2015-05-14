@@ -66,7 +66,7 @@ static void showCopyright(std::ostream &stream) {
 }
 
 int main(int argc, char **argv, char **envp) {
-    ydsh::args::ArgsParser<OptionKind > parser;
+    ydsh::args::ArgsParser<OptionKind> parser;
 
     parser.addOption(
             DUMP_UAST,
