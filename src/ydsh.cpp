@@ -16,6 +16,7 @@
 
 #include <iostream>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "exe/Shell.h"
 #include "misc/ArgsParser.h"
@@ -159,6 +160,13 @@ int main(int argc, char **argv, char **envp) {
         ydsh::ExitStatus status = shell.eval(scriptName, fp);
         fclose(fp);
         return status;
+    } else if(isatty(STDIN_FILENO) == 0) {
+        FILE *fp = fdopen(STDIN_FILENO, "r");
+        if(fp == NULL) {
+            fprintf(stderr, "cannnot open stdin\n");
+            return ydsh::core::IO_ERROR;
+        }
+        return shell.eval(nullptr, fp);
     } else {
         showVersion(std::cout);
         showCopyright(std::cout);
