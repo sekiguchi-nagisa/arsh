@@ -52,6 +52,7 @@ endif()
 # check editline
 check_header(HAVE_HISTEDIT_H "histedit.h")
 find_library(HAVE_LIBEDIT NAMES edit)
+set(extra_lib ${HAVE_LIBEDIT})
 
 # check dbus
 if(NOT NO_DBUS)
@@ -60,6 +61,7 @@ if(NOT NO_DBUS)
     check_header(HAVE_DBUS_ARCH_DEPS_H "dbus/dbus-arch-deps.h")
     SET(CMAKE_LIBRARY_PATH "/usr/lib/x86_64-linux-gnu")
     find_library(HAVE_LIBDBUS NAMES dbus-1)
+    set(extra_lib ${extra_lib} ${HAVE_LIBDBUS})
 endif()
 
 
@@ -115,11 +117,7 @@ set(YDSH_STATIC ydsh_static)
 add_library(${YDSH_STATIC} STATIC ${YDSH_SRC} ${lexer_src} ${bind_src})
 add_dependencies(${YDSH_STATIC} gen_lexer gen_binding gen_bind)
 add_executable(${BIN_NAME} ${SRC_DIR}/ydsh.cpp)
-target_link_libraries(${BIN_NAME} ${YDSH_STATIC} ${HAVE_LIBEDIT})
-
-if(NOT NO_DBUS)
-    target_link_libraries(${BIN_NAME} ${HAVE_LIBDBUS})
-endif()
+target_link_libraries(${BIN_NAME} ${YDSH_STATIC} ${extra_lib})
 
 install(TARGETS ${BIN_NAME} RUNTIME DESTINATION bin)
 
