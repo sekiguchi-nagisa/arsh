@@ -144,6 +144,9 @@ private:
     std::unordered_map<unsigned long, int> precisionMap;
 
 public:
+    /**
+     * must not be null.
+     */
     TypePool(char **envp);
 
     ~TypePool();
@@ -231,7 +234,7 @@ public:
      * get template type.
      * if template type is not found, throw exception
      */
-    TypeTemplate *getTypeTemplate(const std::string &typeName, int elementSize);
+    TypeTemplate *getTypeTemplate(const std::string &typeName);
 
     /**
      * if type template is Tuple, call createAndGetTupleTypeIfUndefined()

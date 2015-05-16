@@ -94,10 +94,10 @@ std::string ReifiedTypeToken::toTokenText() const {
 }
 
 DSType *ReifiedTypeToken::toType(TypePool * typePool) {
-    int size = this->elementTypeTokens.size();
-    TypeTemplate *typeTemplate = typePool->getTypeTemplate(this->templateTypeToken->getTokenText(), size);
+    unsigned int size = this->elementTypeTokens.size();
+    TypeTemplate *typeTemplate = typePool->getTypeTemplate(this->templateTypeToken->getTokenText());
     std::vector<DSType *> elementTypes(size);
-    for(int i = 0; i < size; i++) {
+    for(unsigned int i = 0; i < size; i++) {
         elementTypes[i] = this->elementTypeTokens[i]->toType(typePool);
     }
     return typePool->createAndGetReifiedTypeIfUndefined(typeTemplate, elementTypes);

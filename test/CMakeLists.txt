@@ -25,3 +25,4 @@ include_directories(${GTEST_DIR}/include)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Lexer)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Parser)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Type)

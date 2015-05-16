@@ -51,6 +51,8 @@ public:
     native_type_info_t *getInfo();
 
     const std::vector<DSType *> &getAcceptableTypes();
+
+
 };
 
 } // namespace core
