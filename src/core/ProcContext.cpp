@@ -40,10 +40,14 @@ ProcContext::~ProcContext() {
     delete[] this->argv;    // not delete element
 }
 
-void ProcContext::addParam(std::shared_ptr<DSObject> &&value) {
+void ProcContext::addParam(std::shared_ptr<DSObject> &&value, bool skipEmptyString) {
     DSType *valueType = value->getType();
     if(*valueType == *this->ctx->pool.getStringType()) {
-        this->params.push_back(std::dynamic_pointer_cast<String_Object>(value));
+        std::shared_ptr<String_Object> obj = std::dynamic_pointer_cast<String_Object>(value);
+        if(skipEmptyString && obj->value.empty()) {
+            return;
+        }
+        this->params.push_back(std::move(obj));
         return;
     }
 

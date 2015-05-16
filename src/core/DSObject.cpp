@@ -264,6 +264,10 @@ Array_Object::Array_Object(DSType *type) :
         DSObject(type), curIndex(0), values() {
 }
 
+Array_Object::Array_Object(DSType *type, std::vector<std::shared_ptr<DSObject>> &&values) :
+        DSObject(type), curIndex(0), values(values) {
+}
+
 const std::vector<std::shared_ptr<DSObject>> &Array_Object::getValues() {
     return this->values;
 }

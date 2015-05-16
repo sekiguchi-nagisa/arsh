@@ -705,12 +705,24 @@ public:
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);  // override
     EvalStatus eval(RuntimeContext &ctx); // override
+
+    /**
+     * if node->getSegmentNodes().size() == 1
+     * and segmentNode is StringValueNode or StringExprNode,
+     * extract segmentNode.
+     * return segmentNode or this.
+     */
+    static Node *compactNode(CmdArgNode *node);
 };
 
 class CmdNode : public Node {
 private:
     std::string commandName;
-    std::vector<CmdArgNode *> argNodes;
+
+    /**
+     * may be CmdArgNode, StringValueNode or StringExprNdoe
+     */
+    std::vector<Node *> argNodes;
     std::vector<std::pair<RedirectOP, CmdArgNode *>> redirOptions;
 
 public:
@@ -722,7 +734,7 @@ public:
 
     void addArgNode(CmdArgNode *node);
 
-    const std::vector<CmdArgNode *> &getArgNodes();
+    const std::vector<Node *> &getArgNodes();
 
     void addRedirOption(TokenKind kind, CmdArgNode *node);
     void addRedirOption(TokenKind kind);

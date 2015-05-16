@@ -72,7 +72,7 @@ struct ProcContext : public DSObject {   //FIXME: redirect option
 
     ~ProcContext();
 
-    void addParam(std::shared_ptr<DSObject> &&value);
+    void addParam(std::shared_ptr<DSObject> &&value, bool skipEmptyString);
     void addRedirOption(RedirectOP op, std::shared_ptr<DSObject> &&value);
 
     /**

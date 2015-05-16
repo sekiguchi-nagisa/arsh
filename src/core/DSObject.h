@@ -172,6 +172,7 @@ struct Array_Object : public DSObject {
     std::vector<std::shared_ptr<DSObject>> values;
 
     Array_Object(DSType *type);
+    Array_Object(DSType *type, std::vector<std::shared_ptr<DSObject>> &&values);
 
     const std::vector<std::shared_ptr<DSObject>> &getValues();
 

@@ -1318,6 +1318,61 @@ EvalStatus CondOpNode::eval(RuntimeContext &ctx) {
     }
 }
 
+class CmdArgBuilder {
+private:
+    TypePool *pool;
+    std::vector<std::shared_ptr<DSObject>> values;
+    std::string buf;
+
+public:
+    CmdArgBuilder(TypePool &pool) : pool(&pool), values(), buf() {
+    }
+
+    /**
+     * value must be String type ot String array type
+     */
+    void append(std::shared_ptr<DSObject> &&value) {
+        DSType *type = value->getType();
+        if(*type == *this->pool->getStringType()) {
+            buf += TYPE_AS(String_Object, value)->value;
+            return;
+        }
+
+        if(*type == *this->pool->getStringArrayType()) {
+            Array_Object *arrayObj = TYPE_AS(Array_Object, value);
+            unsigned int size = arrayObj->values.size();
+            if(size == 1) {
+                this->buf += TYPE_AS(String_Object, arrayObj->values[0])->value;
+            } else for(unsigned int i = 0; i < size; i++) {
+                if(i == 0) {
+                    this->buf += TYPE_AS(String_Object, arrayObj->values[i])->value;
+                    this->values.push_back(
+                            std::make_shared<String_Object>(this->pool->getStringType(), std::move(this->buf)));
+                    this->buf.clear();
+                } else if(i == size - 1) {
+                    this->buf += TYPE_AS(String_Object, arrayObj->values[i])->value;
+                } else {
+                    this->values.push_back(arrayObj->values[i]);
+                }
+            }
+            return;
+        }
+
+        fatal("unsupported type: %s\n", this->pool->getTypeName(*type).c_str());
+    }
+
+    std::shared_ptr<DSObject> buildArg() {
+        std::shared_ptr<String_Object> result(new String_Object(this->pool->getStringType(), std::move(this->buf)));
+        if(this->values.empty()) {
+            return std::move(result);
+        }
+
+        this->values.push_back(std::move(result));
+        return std::make_shared<Array_Object>(this->pool->getStringArrayType(), std::move(this->values));
+    }
+};
+
+
 // ########################
 // ##     CmdArgNode     ##
 // ########################
@@ -1352,13 +1407,41 @@ void CmdArgNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus CmdArgNode::eval(RuntimeContext &ctx) {
-    //FIXME: concate segment node
-    EVAL(ctx, this->segmentNodes[0]);
-    DSType *type = this->segmentNodes[0]->getType();
-    if(*type != *ctx.pool.getStringType() && *type != *ctx.pool.getStringArrayType()) {
-        return ctx.toCmdArg(this->lineNum);
+    if(this->segmentNodes.size() == 1) {
+        EVAL(ctx, this->segmentNodes[0]);
+        DSType *type = this->segmentNodes[0]->getType();
+        if(*type != *ctx.pool.getStringType() && *type != *ctx.pool.getStringArrayType()) {
+            return ctx.toCmdArg(this->lineNum);
+        }
+        return EVAL_SUCCESS;
     }
+
+    CmdArgBuilder builder(ctx.pool);
+    for(auto *node : this->segmentNodes) {
+        EVAL(ctx, node);
+        DSType *type = node->getType();
+        if(*type != *ctx.pool.getStringType() && *type != *ctx.pool.getStringArrayType()) {
+            if(ctx.toCmdArg(this->lineNum) != EVAL_SUCCESS) {
+                return EVAL_THROW;
+            }
+        }
+        builder.append(ctx.pop());
+    }
+    ctx.push(builder.buildArg());
     return EVAL_SUCCESS;
+}
+
+Node *CmdArgNode::compactNode(CmdArgNode *node) {
+    if(node->segmentNodes.size() == 1) {
+        Node *segmentNode = node->segmentNodes[0];
+        if(dynamic_cast<StringValueNode *>(segmentNode) != nullptr ||
+                dynamic_cast<StringExprNode *>(segmentNode) != nullptr) {
+            node->segmentNodes[0] = nullptr;
+            delete node;
+            return segmentNode;
+        }
+    }
+    return node;
 }
 
 // #####################
@@ -1370,7 +1453,7 @@ CmdNode::CmdNode(unsigned int lineNum, std::string &&commandName) :
 }
 
 CmdNode::~CmdNode() {
-    for (CmdArgNode *e : this->argNodes) {
+    for (auto *e : this->argNodes) {
         delete e;
     }
     this->argNodes.clear();
@@ -1386,10 +1469,10 @@ const std::string &CmdNode::getCommandName() {
 }
 
 void CmdNode::addArgNode(CmdArgNode *node) {
-    this->argNodes.push_back(node);
+    this->argNodes.push_back(CmdArgNode::compactNode(node));
 }
 
-const std::vector<CmdArgNode *> &CmdNode::getArgNodes() {
+const std::vector<Node *> &CmdNode::getArgNodes() {
     return this->argNodes;
 }
 
@@ -1417,11 +1500,6 @@ const std::vector<std::pair<RedirectOP, CmdArgNode *>> &CmdNode::getRedirOptions
 
 void CmdNode::dump(Writer &writer) const {
     WRITE(commandName);
-
-    std::vector<Node *> argNodes;
-    for (CmdArgNode *node : this->argNodes) {
-        argNodes.push_back(node);
-    }
     WRITE(argNodes);
 
     static const char *redirOpStr[] = {
@@ -1445,10 +1523,11 @@ EvalStatus CmdNode::eval(RuntimeContext &ctx) {
     std::shared_ptr<ProcContext> proc(new ProcContext(ctx, this->commandName));
     for(Node *node : this->argNodes) {
         EVAL(ctx, node);
-        proc->addParam(ctx.pop());
+        bool skipEmptyString = dynamic_cast<CmdArgNode *>(node) != nullptr;
+        proc->addParam(ctx.pop(), skipEmptyString);
     }
 
-    for(auto &pair : this->redirOptions) {
+    for(auto &pair : this->redirOptions) {  //FIXME: change evaluation order
         EVAL(ctx, pair.second);
         proc->addRedirOption(pair.first, ctx.pop());
     }

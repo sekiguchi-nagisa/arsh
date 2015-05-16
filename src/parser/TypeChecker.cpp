@@ -785,7 +785,7 @@ void TypeChecker::visitCondOpNode(CondOpNode * node) {
 }
 
 void TypeChecker::visitCmdNode(CmdNode * node) {
-    for(CmdArgNode *argNode : node->getArgNodes()) {
+    for(auto *argNode : node->getArgNodes()) {
         this->checkType(argNode);
     }
     // check type redirect options
