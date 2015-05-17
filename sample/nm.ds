@@ -1,0 +1,18 @@
+interface org.freedesktop.NetworkManager {
+    let NetworkingEnabled : Boolean
+    var WirelessEnabled : Boolean
+    let Devices : Array<ObjectPath>
+}
+
+var a = $DBus.systemBus().object("org.freedesktop.NetworkManager", p'/org/freedesktop/NetworkManager')
+
+type-alias NM org.freedesktop.NetworkManager
+
+assert($a is NM)
+if($a is NM) {
+    echo NetworkingEnabled : ${$a.NetworkingEnabled}
+    echo WirelessEnabled : ${$a.WirelessEnabled}
+    $a.WirelessEnabled = $true
+    echo WirelessEnabled : ${$a.WirelessEnabled}
+    echo Devices : ${$a.Devices}
+}

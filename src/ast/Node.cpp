@@ -524,6 +524,7 @@ void AssignableNode::setAttribute(FieldHandle *handle) {
     this->readOnly = handle->isReadOnly();
     this->global = handle->isGlobal();
     this->env = handle->isEnv();
+    this->interface = handle->withinInterface();
 }
 
 bool AssignableNode::isReadOnly() const {
@@ -2590,7 +2591,9 @@ EvalStatus TryNode::eval(RuntimeContext &ctx) {
 VarDeclNode::VarDeclNode(unsigned int lineNum, std::string &&varName, Node *initValueNode, bool readOnly) :
         Node(lineNum), varName(std::move(varName)), readOnly(readOnly), global(false),
         varIndex(0), initValueNode(initValueNode) {
-    this->initValueNode->inRightHandleSide();
+    if(this->initValueNode != nullptr) {
+        this->initValueNode->inRightHandleSide();
+    }
 }
 
 VarDeclNode::~VarDeclNode() {

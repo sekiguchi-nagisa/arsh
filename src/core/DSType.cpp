@@ -278,6 +278,10 @@ void ReifiedType::initMethodHandle(MethodHandle *handle, TypePool *typePool, Nat
     }
 }
 
+const std::vector<DSType *> &ReifiedType::getElementTypes() {
+    return this->elementTypes;
+}
+
 void ReifiedType::accept(TypeVisitor *visitor) {
     visitor->visitReifiedType(this);
 }
@@ -315,6 +319,10 @@ TupleType::~TupleType() {
 
     delete this->constructorHandle;
     this->constructorHandle = 0;
+}
+
+const std::vector<DSType *> &TupleType::getTypes() {
+    return this->types;
 }
 
 MethodHandle *TupleType::getConstructorHandle(TypePool *typePool) {

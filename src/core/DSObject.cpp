@@ -354,6 +354,10 @@ void Map_Object::set(const std::shared_ptr<DSObject> &key, const std::shared_ptr
     this->valueMap[key] = value;
 }
 
+void Map_Object::add(std::pair<std::shared_ptr<DSObject>, std::shared_ptr<DSObject>> &&entry) {
+    this->valueMap.insert(std::move(entry));
+}
+
 std::string Map_Object::toString(RuntimeContext &ctx) {
     std::string str("{");
     unsigned int count = 0;
@@ -653,8 +657,8 @@ bool NativeMethodRef::invoke(RuntimeContext &ctx) {
 // ##     DBus_Object     ##
 // #########################
 
-DBus_Object::DBus_Object(DSType *type) :
-        DSObject(type) {
+DBus_Object::DBus_Object(TypePool *typePool) :
+        DSObject(typePool->getDBusType()) {
 }
 
 DBus_Object::~DBus_Object() {
@@ -670,11 +674,11 @@ bool DBus_Object::getSessionBus(RuntimeContext &ctx) {
     return false;
 }
 
-DBus_Object *DBus_Object::newDBus_Object(DSType *type) {
+DBus_Object *DBus_Object::newDBus_Object(TypePool *typePool) {
 #ifdef X_NO_DBUS
-    return new DBus_Object(type);
+    return new DBus_Object(typePool);
 #else
-    return new DBus_ObjectImpl(type);
+    return new DBus_ObjectImpl(typePool);
 #endif
 }
 

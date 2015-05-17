@@ -203,6 +203,7 @@ struct Map_Object : public DSObject {
     const HashMap &getValueMap();
 
     void set(const std::shared_ptr<DSObject> &key, const std::shared_ptr<DSObject> &value);
+    void add(std::pair<std::shared_ptr<DSObject>, std::shared_ptr<DSObject>> &&entry);
 
     std::string toString(RuntimeContext &ctx); // override
     void accept(ObjectVisitor *visitor); // override
@@ -389,7 +390,7 @@ struct ProxyObject : public DSObject {
 };
 
 struct DBus_Object : public DSObject {
-    DBus_Object(DSType *type);
+    DBus_Object(TypePool *typePool);
     virtual ~DBus_Object();
 
     /**
@@ -404,7 +405,7 @@ struct DBus_Object : public DSObject {
      */
     virtual bool getSessionBus(RuntimeContext &ctx);
 
-    static DBus_Object *newDBus_Object(DSType *type);
+    static DBus_Object *newDBus_Object(TypePool *typePool);
     static bool newObject(RuntimeContext &ctx, const std::shared_ptr<DSObject> &busObj,
                           std::string &&destination, std::string &&objectPath);
 };

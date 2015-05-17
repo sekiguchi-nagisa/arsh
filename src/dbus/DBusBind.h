@@ -21,9 +21,87 @@
 #include <unordered_set>
 
 struct DBusConnection;
+struct DBusMessageIter;
+struct DBusMessage;
 
 namespace ydsh {
 namespace core {
+
+/**
+ * for base type descriptor
+ */
+class BaseTypeDescriptorMap {
+private:
+    std::unordered_map<unsigned long, int> map;
+
+public:
+    BaseTypeDescriptorMap(TypePool *pool);
+
+    /**
+     * return DBUS_TYPE_INVALID, if not base type.
+     */
+    int getDescriptor(DSType *type);
+};
+
+
+/**
+ * for container type descriptor generation.
+ */
+class DescriptorBuilder : public TypeVisitor {
+private:
+    TypePool *pool;
+    BaseTypeDescriptorMap *typeMap;
+    unsigned int usedSize;
+    unsigned int size;
+    char *buf;
+
+public:
+    DescriptorBuilder(TypePool *pool, BaseTypeDescriptorMap *typeMap);
+    ~DescriptorBuilder();
+
+    const char *buildDescriptor(DSType *type);
+
+    void visitFunctionType(FunctionType *type) override;
+    void visitBuiltinType(BuiltinType *type) override;
+    void visitReifiedType(ReifiedType *type) override;
+    void visitTupleType(TupleType *type) override;
+    void visitInterfaceType(InterfaceType *type) override;
+    void visitErrorType(ErrorType *type) override;
+
+private:
+    void append(char ch);
+};
+
+class MessageBuilder : public TypeVisitor {
+private:
+    TypePool *pool;
+
+    BaseTypeDescriptorMap *typeMap;
+    DescriptorBuilder *descBuilder;
+
+    std::vector<DSObject *> objStack;
+
+    DBusMessageIter *iter;
+
+public:
+    MessageBuilder(TypePool *pool);
+    ~MessageBuilder();
+    void appendArg(DBusMessageIter *iter, DSType *argType, const std::shared_ptr<DSObject> &arg);
+
+    void visitFunctionType(FunctionType *type) override;
+    void visitBuiltinType(BuiltinType *type) override;
+    void visitReifiedType(ReifiedType *type) override;
+    void visitTupleType(TupleType *type) override;
+    void visitInterfaceType(InterfaceType *type) override;
+    void visitErrorType(ErrorType *type) override;
+
+private:
+    void push(DSObject *obj);
+    DSObject *pop();
+    DSObject *peek();
+    void append(DSType *type, DSObject *value);
+    DescriptorBuilder *getBuilder();
+};
 
 // represent for SystemBus, SessionBus, or specific bus.
 struct Bus_Object : public DSObject {
@@ -42,8 +120,9 @@ struct Bus_Object : public DSObject {
 struct DBus_ObjectImpl : public DBus_Object {
     std::shared_ptr<Bus_Object> systemBus;
     std::shared_ptr<Bus_Object> sessionBus;
+    MessageBuilder builder;
 
-    DBus_ObjectImpl(DSType *type);
+    DBus_ObjectImpl(TypePool *typePool);
     ~DBus_ObjectImpl();
 
     bool getSystemBus(RuntimeContext &ctx); // override
@@ -78,6 +157,9 @@ struct DBusProxy_Object : public ProxyObject {
                       const std::string &fieldName, DSType *fieldType);    // override
     bool invokeSetter(RuntimeContext &ctx, DSType *recvType,
                       const std::string &fieldName, DSType *fieldType);    // override
+
+    DBusMessage *newMethodCallMsg(const char *ifaceName, const char *methodName);
+    DBusMessage *newMethodCallMsg(const std::string &ifaceName, const std::string &methodName);
 
     static bool newObject(RuntimeContext &ctx, const std::shared_ptr<DSObject> &busObj,
                           std::string &&destination, std::string &&objectPath);

@@ -287,6 +287,7 @@ public:
 
     ~ReifiedType();
 
+    const std::vector<DSType *> &getElementTypes();
     void accept(TypeVisitor *visitor); // override
 
     std::string getTypeName() const; // override
@@ -325,6 +326,7 @@ public:
     TupleType(DSType *superType, const std::vector<DSType *> &types);
     ~TupleType();
 
+    const std::vector<DSType *> &getTypes();
     MethodHandle *getConstructorHandle(TypePool *typePool); // override
     MethodRef *getConstructor();    // override
 
@@ -420,6 +422,8 @@ public:
 };
 
 struct TypeVisitor {
+    virtual ~TypeVisitor() = default;
+
     virtual void visitFunctionType(FunctionType *type) = 0;
     virtual void visitBuiltinType(BuiltinType *type) = 0;
     virtual void visitReifiedType(ReifiedType *type) = 0;
