@@ -649,6 +649,7 @@ static std::shared_ptr<DSObject> decodeMessageIterImpl(RuntimeContext &ctx, DBus
                 dbus_message_iter_next(&entryIter);
                 auto value(decodeMessageIterImpl(ctx, &entryIter));
                 dbus_message_iter_next(&entryIter);
+                elementType = dbus_message_iter_get_arg_type(&entryIter);
                 entries.push_back(std::make_pair(std::move(key), std::move(value)));
             } while(elementType != DBUS_TYPE_INVALID);  //FIXME: support empty map
             std::vector<DSType *> types(2);
@@ -741,12 +742,47 @@ static void appendArg(RuntimeContext &ctx, DBusMessageIter *iter,
     dbus->builder.appendArg(iter, argType, arg);
 }
 
-#define LOCAL(index) (ctx.localStack[ctx.localVarOffset + (index)])
+static void appendArg(RuntimeContext &ctx, DBusMessageIter *iter,
+                      DSType *argType, unsigned int index) {
+    appendArg(ctx, iter, argType, ctx.localStack[ctx.localVarOffset + index]);
+}
 
 bool DBusProxy_Object::invokeMethod(RuntimeContext &ctx, const std::string &methodName, MethodHandle *handle) {
+    DBusError error;
+    dbus_error_init(&error);
 
-    fatal("unimplemented\n");
-    return false;
+    DBusMessage *msg = this->newMethodCallMsg(ctx.pool.getTypeName(*handle->getRecvType()), methodName);
+
+    // append arg
+    DBusMessageIter iter;
+    dbus_message_iter_init_append(msg, &iter);
+
+    unsigned int paramSize = handle->getParamTypes().size();
+    for(unsigned int i = 0; i < paramSize; i++) {
+        appendArg(ctx, &iter, handle->getParamTypes()[i], i);
+    }
+
+    // send message
+    DBusMessage *retMsg = dbus_connection_send_with_reply_and_block(this->conn, msg, DBUS_TIMEOUT_USE_DEFAULT, &error);
+    unrefMessage(msg);
+
+    if(dbus_error_is_set(&error)) {
+        reportError(ctx, error);
+
+        dbus_error_free(&error);
+        unrefMessage(retMsg);
+
+        return false;
+    }
+
+    // decode result
+    DBusMessageIter resultIter;
+    dbus_message_iter_init(retMsg, &resultIter);
+    auto result(decodeMessageIter(ctx, &resultIter));
+
+    unrefMessage(retMsg);
+    ctx.returnObject = std::move(result);
+    return true;
 }
 
 bool DBusProxy_Object::invokeGetter(RuntimeContext &ctx,DSType *recvType,
@@ -778,6 +814,7 @@ bool DBusProxy_Object::invokeGetter(RuntimeContext &ctx,DSType *recvType,
         return false;
     }
 
+    // decode result
     DBusMessageIter resultIter;
     dbus_message_iter_init(ret, &resultIter);
     auto result(decodeMessageIter(ctx, &resultIter));
@@ -810,7 +847,7 @@ bool DBusProxy_Object::invokeSetter(RuntimeContext &ctx,DSType *recvType,
     DBusMessage *ret = dbus_connection_send_with_reply_and_block(this->conn, msg, DBUS_TIMEOUT_USE_DEFAULT, &error);
     unrefMessage(msg);
 
-    if(dbus_error_is_set(&error) && !dbus_error_has_name(&error, DBUS_ERROR_NO_REPLY)) {
+    if(dbus_error_is_set(&error)) {
         reportError(ctx, error);
 
         dbus_error_free(&error);
