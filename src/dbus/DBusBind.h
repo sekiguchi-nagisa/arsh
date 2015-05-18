@@ -18,6 +18,8 @@
 #define DBUS_DBUSBIND_H
 
 #include "../core/DSObject.h"
+#include "../core/RuntimeContext.h"
+
 #include <unordered_set>
 
 struct DBusConnection;
@@ -51,9 +53,7 @@ class DescriptorBuilder : public TypeVisitor {
 private:
     TypePool *pool;
     BaseTypeDescriptorMap *typeMap;
-    unsigned int usedSize;
-    unsigned int size;
-    char *buf;
+    std::string buf;
 
 public:
     DescriptorBuilder(TypePool *pool, BaseTypeDescriptorMap *typeMap);
@@ -101,6 +101,16 @@ private:
     DSObject *peek();
     void append(DSType *type, DSObject *value);
     DescriptorBuilder *getBuilder();
+
+    /**
+     * open container iter and set it to this->iter. return old iter
+     */
+    DBusMessageIter *openContainerIter(int dbusType, const char *desc, DBusMessageIter *subIter);
+
+    /**
+     * close container iter and set parentIter to this->iter,
+     */
+    void closeContainerIter(DBusMessageIter *parentIter, DBusMessageIter *subIter);
 };
 
 // represent for SystemBus, SessionBus, or specific bus.
@@ -160,6 +170,11 @@ struct DBusProxy_Object : public ProxyObject {
 
     DBusMessage *newMethodCallMsg(const char *ifaceName, const char *methodName);
     DBusMessage *newMethodCallMsg(const std::string &ifaceName, const std::string &methodName);
+
+    /**
+     * send message.
+     */
+    DBusMessage *sendAndUnrefMessage(RuntimeContext &ctx, DBusMessage *sendMsg, bool &status);
 
     static bool newObject(RuntimeContext &ctx, const std::shared_ptr<DSObject> &busObj,
                           std::string &&destination, std::string &&objectPath);

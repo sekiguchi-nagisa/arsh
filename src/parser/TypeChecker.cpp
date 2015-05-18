@@ -88,7 +88,7 @@ void TypeGenerator::visitFuncTypeToken(FuncTypeToken *token) {
     DSType *returnType = this->generateType(token->getReturnTypeToken());
     unsigned int size = token->getParamTypeTokens().size();
     std::vector<DSType *> paramTypes(size);
-    for(int i = 0; i < size; i++) {
+    for(unsigned int i = 0; i < size; i++) {
         paramTypes[i] = this->generateType(token->getParamTypeTokens()[i]);
     }
     this->type = this->pool->createAndGetFuncTypeIfUndefined(returnType, paramTypes);

@@ -1,6 +1,7 @@
 interface org.freedesktop.NetworkManager {
     function GetDevices() : Array<ObjectPath>
     function GetPermissions() : Map<String, String>
+    function GetLogging() : String, String
     let NetworkingEnabled : Boolean
     var WirelessEnabled : Boolean
     let Devices : Array<ObjectPath>
@@ -19,4 +20,5 @@ if($a is NM) {
     echo Devices : ${$a.Devices}
     #echo ${$a.GetDevices()}
     echo Permittions : ${$a.GetPermissions()}
+    echo Logging : ${$a.GetLogging()}
 }

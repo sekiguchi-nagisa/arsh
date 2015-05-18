@@ -15,8 +15,6 @@
  */
 
 #include "DBusBind.h"
-#include "../core/FieldHandle.h"
-#include "../core/RuntimeContext.h"
 
 #include <string.h>
 
@@ -33,6 +31,12 @@ static void reportError(RuntimeContext &ctx, DBusError &error) {
     std::string name(error.name);
     DSType *type = ctx.pool.createAndGetErrorTypeIfUndefined(name, ctx.pool.getErrorType());
     ctx.throwError(type, error.message);
+}
+
+static void reportError(RuntimeContext &ctx, const char *dbusErrorName, const char *message) {
+    std::string name(dbusErrorName);
+    DSType *type = ctx.pool.createAndGetErrorTypeIfUndefined(name, ctx.pool.getErrorType());
+    ctx.throwError(type, message);
 }
 
 static void unrefMessage(DBusMessage *msg) {
@@ -83,20 +87,16 @@ int BaseTypeDescriptorMap::getDescriptor(DSType *type) {
 // ###############################
 
 DescriptorBuilder::DescriptorBuilder(TypePool *pool, BaseTypeDescriptorMap *typeMap) :
-        pool(pool), typeMap(typeMap), usedSize(0), size(128), buf(new char[this->size]) {
+        pool(pool), typeMap(typeMap), buf() {
 }
 
 DescriptorBuilder::~DescriptorBuilder() {
-    delete[] this->buf;
-    this->buf = 0;
 }
 
 const char * DescriptorBuilder::buildDescriptor(DSType *type) {
-    this->usedSize = 0;
+    this->buf.clear();
     type->accept(this);
-
-    this->append('\0'); // null terminate
-    return this->buf;
+    return this->buf.c_str();
 }
 
 void DescriptorBuilder::visitFunctionType(FunctionType *type) {
@@ -148,15 +148,7 @@ void DescriptorBuilder::visitErrorType(ErrorType *type) {
 }
 
 void DescriptorBuilder::append(char ch) {
-    if(this->usedSize == this->size) {  // expand buffer
-        unsigned int newSize = this->size * 2;
-        char newBuf[newSize];
-        memcpy(newBuf, this->buf, this->usedSize);
-        delete[] this->buf;
-        this->buf = newBuf;
-        this->size = newSize;
-    }
-    this->buf[this->usedSize++] = ch;
+    this->buf += ch;
 }
 
 // ############################
@@ -188,7 +180,7 @@ void MessageBuilder::appendArg(DBusMessageIter *iter, DSType *argType, const std
 }
 
 void MessageBuilder::visitFunctionType(FunctionType *type) {
-    fatal("unsupported type\n");
+    fatal("unsupported type: %s\n", this->pool->getTypeName(*type).c_str());
 }
 
 void MessageBuilder::visitBuiltinType(BuiltinType *type) {
@@ -257,18 +249,14 @@ void MessageBuilder::visitBuiltinType(BuiltinType *type) {
             DSType *actualType = this->peek()->getType();
             const char *desc = this->getBuilder()->buildDescriptor(actualType);
 
-            DBusMessageIter *curIter = this->iter;
             DBusMessageIter subIter;
-            dbus_message_iter_open_container(this->iter, DBUS_TYPE_VARIANT, desc, &subIter);
+            DBusMessageIter *curIter = this->openContainerIter(DBUS_TYPE_VARIANT, desc, &subIter);
 
             // append value
-            this->iter = &subIter;
-
             this->append(actualType, this->peek());
 
-            this->iter = curIter;
-            dbus_message_iter_close_container(this->iter, &subIter);
-            return;;
+            this->closeContainerIter(curIter, &subIter);
+            return;
         }
 
         fatal("unsupported type: %s\n", this->pool->getTypeName(*type).c_str());
@@ -282,55 +270,42 @@ void MessageBuilder::visitReifiedType(ReifiedType *type) {
         DSType *elementType = type->getElementTypes()[0];
         const char *desc = this->getBuilder()->buildDescriptor(elementType);
 
-        DBusMessageIter *curIter = this->iter;
         DBusMessageIter subIter;
-        dbus_message_iter_open_container(this->iter, DBUS_TYPE_ARRAY, desc, &subIter);
+        DBusMessageIter *curIter = this->openContainerIter(DBUS_TYPE_ARRAY, desc, &subIter);
 
         // append element
-        this->iter = &subIter;
-
         Array_Object *arrayObj = (Array_Object *) this->peek();
         for(auto &e : arrayObj->values) {
             this->append(elementType, e.get());
         }
 
-        this->iter = curIter;
-        dbus_message_iter_close_container(this->iter, &subIter);
+        this->closeContainerIter(curIter, &subIter);
     } else if(elementSize == 2) {   // Map
         DSType *keyType = type->getElementTypes()[0];
         DSType *valueType = type->getElementTypes()[1];
 
         const char *desc = (this->getBuilder()->buildDescriptor(type) + 1);
 
-        DBusMessageIter *curIter = this->iter;
         DBusMessageIter subIter;
-        dbus_message_iter_open_container(this->iter, DBUS_TYPE_ARRAY, desc, &subIter);
+        DBusMessageIter *curIter = this->openContainerIter(DBUS_TYPE_ARRAY, desc, &subIter);
 
         // append entry
-        this->iter = &subIter;
-
         Map_Object *mapObj = (Map_Object *) this->peek();
         for(auto &pair : mapObj->valueMap) {
-            DBusMessageIter *curIter = this->iter;
             DBusMessageIter entryIter;
-            dbus_message_iter_open_container(this->iter, DBUS_TYPE_DICT_ENTRY, NULL, &entryIter);
+            DBusMessageIter *curIter = this->openContainerIter(DBUS_TYPE_DICT_ENTRY, NULL, &entryIter);
 
             // append key, value
-            this->iter = &entryIter;
-
             this->append(keyType, pair.first.get());
             this->append(valueType, pair.second.get());
 
-            this->iter = curIter;
-            dbus_message_iter_close_container(this->iter, &entryIter);
+            this->closeContainerIter(curIter, &entryIter);
         }
 
-        this->iter = curIter;
-        dbus_message_iter_close_container(this->iter, &subIter);
+        this->closeContainerIter(curIter, &subIter);
     } else {
         fatal("unsupported type: %s\n", this->pool->getTypeName(*type).c_str());
     }
-    fatal("unsupported type: %s\n", this->pool->getTypeName(*type).c_str());
 }
 
 void MessageBuilder::visitTupleType(TupleType *type) {
@@ -352,11 +327,11 @@ void MessageBuilder::visitTupleType(TupleType *type) {
 }
 
 void MessageBuilder::visitInterfaceType(InterfaceType *type) {
-    fatal("unsupported type\n");
+    fatal("unsupported type: %s\n", this->pool->getTypeName(*type).c_str());
 }
 
 void MessageBuilder::visitErrorType(ErrorType *type) {
-    fatal("unsupported type\n");
+    fatal("unsupported type: %s\n", this->pool->getTypeName(*type).c_str());
 }
 
 void MessageBuilder::push(DSObject *obj) {
@@ -384,6 +359,18 @@ DescriptorBuilder *MessageBuilder::getBuilder() {
         this->descBuilder = new DescriptorBuilder(this->pool, this->typeMap);
     }
     return this->descBuilder;
+}
+
+DBusMessageIter *MessageBuilder::openContainerIter(int dbusType, const char *desc, DBusMessageIter *subIter) {
+    dbus_message_iter_open_container(this->iter, dbusType, desc, subIter);
+    DBusMessageIter *old = this->iter;
+    this->iter = subIter;
+    return old;
+}
+
+void MessageBuilder::closeContainerIter(DBusMessageIter *parentIter, DBusMessageIter *subIter) {
+    this->iter = parentIter;
+    dbus_message_iter_close_container(this->iter, subIter);
 }
 
 
@@ -530,19 +517,10 @@ bool DBusProxy_Object::doIntrospection(RuntimeContext &ctx) {
         return false;
     }
 
-    DBusMessage *msg = dbus_message_new_method_call(
-            this->destination.c_str(), this->objectPath.c_str(),
-            "org.freedesktop.DBus.Introspectable", "Introspect");
-
-    DBusMessage *ret = dbus_connection_send_with_reply_and_block(this->conn, msg, DBUS_TIMEOUT_USE_DEFAULT, &error);
-    unrefMessage(msg);
-
-    if(dbus_error_is_set(&error)) {
-        reportError(ctx, error);
-
-        dbus_error_free(&error);
-        unrefMessage(ret);
-
+    DBusMessage *msg = this->newMethodCallMsg("org.freedesktop.DBus.Introspectable", "Introspect");
+    bool status;
+    DBusMessage *ret = this->sendAndUnrefMessage(ctx, msg, status);
+    if(!status) {
         return false;
     }
 
@@ -572,7 +550,7 @@ bool DBusProxy_Object::doIntrospection(RuntimeContext &ctx) {
 }
 
 //FIXME: empty array
-static std::shared_ptr<DSObject> decodeMessageIterImpl(RuntimeContext &ctx, DBusMessageIter *iter) {
+static std::shared_ptr<DSObject> decodeMessageIter(RuntimeContext &ctx, DBusMessageIter *iter) {
     int dbusType = dbus_message_iter_get_arg_type(iter);
     switch(dbusType) {
     case DBUS_TYPE_BYTE: {
@@ -645,9 +623,9 @@ static std::shared_ptr<DSObject> decodeMessageIterImpl(RuntimeContext &ctx, DBus
                 DBusMessageIter entryIter;
                 dbus_message_iter_recurse(&subIter, &entryIter);
 
-                auto key(decodeMessageIterImpl(ctx, &entryIter));
+                auto key(decodeMessageIter(ctx, &entryIter));
                 dbus_message_iter_next(&entryIter);
-                auto value(decodeMessageIterImpl(ctx, &entryIter));
+                auto value(decodeMessageIter(ctx, &entryIter));
                 dbus_message_iter_next(&entryIter);
                 elementType = dbus_message_iter_get_arg_type(&entryIter);
                 entries.push_back(std::make_pair(std::move(key), std::move(value)));
@@ -666,7 +644,7 @@ static std::shared_ptr<DSObject> decodeMessageIterImpl(RuntimeContext &ctx, DBus
         } else {    // array
             std::vector<std::shared_ptr<DSObject>> values;
             do {
-                values.push_back(decodeMessageIterImpl(ctx, &subIter));
+                values.push_back(decodeMessageIter(ctx, &subIter));
                 dbus_message_iter_next(&subIter);
                 elementType = dbus_message_iter_get_arg_type(&subIter);
             } while(elementType != DBUS_TYPE_INVALID);    //FIXME: support empty array
@@ -686,7 +664,7 @@ static std::shared_ptr<DSObject> decodeMessageIterImpl(RuntimeContext &ctx, DBus
         std::vector<DSType *> types;
         std::vector<std::shared_ptr<DSObject>> values;
         do {
-            values.push_back(decodeMessageIterImpl(ctx, &subIter));
+            values.push_back(decodeMessageIter(ctx, &subIter));
             types.push_back(values.back()->getType());
             dbus_message_iter_next(&subIter);
             elementType = dbus_message_iter_get_arg_type(&subIter);
@@ -703,7 +681,7 @@ static std::shared_ptr<DSObject> decodeMessageIterImpl(RuntimeContext &ctx, DBus
         DBusMessageIter subIter;
         dbus_message_iter_recurse(iter, &subIter);
 
-        return decodeMessageIterImpl(ctx, &subIter);
+        return decodeMessageIter(ctx, &subIter);
     };
     default:
         fatal("unsupported dbus type: %c\n", (char)dbusType);
@@ -711,16 +689,39 @@ static std::shared_ptr<DSObject> decodeMessageIterImpl(RuntimeContext &ctx, DBus
     }
 }
 
-static std::shared_ptr<DSObject> decodeMessageIter(RuntimeContext &ctx, DBusMessageIter *iter) {
+/**
+ * decode read message.
+ * after decoding, unref message.
+ * return null ptr, if illegal message.(ex. mismatch type)
+ */
+static std::shared_ptr<DSObject> decodeAndUnrefMessage(RuntimeContext &ctx,
+                                                       const std::vector<DSType *> &types, DBusMessage *msg) {
+    DBusMessageIter iter;
+    dbus_message_iter_init(msg, &iter);
+
     std::vector<DSType *> valueTypes;
     std::vector<std::shared_ptr<DSObject>> values;  // contains decoded value;
 
+    // decode message
     do {
-        values.push_back(decodeMessageIterImpl(ctx, iter));
+        values.push_back(decodeMessageIter(ctx, &iter));
         valueTypes.push_back(values.back()->getType());
-    } while(dbus_message_iter_next(iter));
+    } while(dbus_message_iter_next(&iter));
 
+    // check type
     unsigned int size = values.size();
+    if(types.size() != size) {
+        reportError(ctx, DBUS_ERROR_INVALID_SIGNATURE, "mismatched return value number");
+        return std::shared_ptr<DSObject>(nullptr);
+    }
+
+    for(unsigned int i = 0; i < size; i++) {
+        if(*valueTypes[i] != *types[i]) {
+            reportError(ctx, DBUS_ERROR_INVALID_SIGNATURE, "mismatched return value type");
+            return std::shared_ptr<DSObject>(nullptr);
+        }
+    }
+
     if(size == 1) {
         return std::move(values[0]);
     } else if(size == 0) {
@@ -733,7 +734,14 @@ static std::shared_ptr<DSObject> decodeMessageIter(RuntimeContext &ctx, DBusMess
         tuple->set(i, values[i]);
     }
 
+    unrefMessage(msg);
     return std::move(tuple);
+}
+
+static std::shared_ptr<DSObject> decodeAndUnrefMessage(RuntimeContext &ctx, DSType *type, DBusMessage *msg) {
+    std::vector<DSType *> types(1);
+    types[0] = type;
+    return decodeAndUnrefMessage(ctx, types, msg);
 }
 
 static void appendArg(RuntimeContext &ctx, DBusMessageIter *iter,
@@ -763,25 +771,25 @@ bool DBusProxy_Object::invokeMethod(RuntimeContext &ctx, const std::string &meth
     }
 
     // send message
-    DBusMessage *retMsg = dbus_connection_send_with_reply_and_block(this->conn, msg, DBUS_TIMEOUT_USE_DEFAULT, &error);
-    unrefMessage(msg);
-
-    if(dbus_error_is_set(&error)) {
-        reportError(ctx, error);
-
-        dbus_error_free(&error);
-        unrefMessage(retMsg);
-
+    bool status;
+    DBusMessage *retMsg = this->sendAndUnrefMessage(ctx, msg, status);
+    if(!status) {
         return false;
     }
 
     // decode result
-    DBusMessageIter resultIter;
-    dbus_message_iter_init(retMsg, &resultIter);
-    auto result(decodeMessageIter(ctx, &resultIter));
-
-    unrefMessage(retMsg);
-    ctx.returnObject = std::move(result);
+    if(retMsg != nullptr) {
+        std::shared_ptr<DSObject> result(nullptr);
+        if(handle->hasMultipleReturnType()) {
+            result = decodeAndUnrefMessage(ctx, ((TupleType *) handle->getReturnType())->getTypes(), retMsg);
+        } else {
+            result = decodeAndUnrefMessage(ctx, handle->getReturnType(), retMsg);
+        }
+        if(!result) {
+            return false;
+        }
+        ctx.returnObject = std::move(result);
+    }
     return true;
 }
 
@@ -802,24 +810,18 @@ bool DBusProxy_Object::invokeGetter(RuntimeContext &ctx,DSType *recvType,
     const char *propertyName = fieldName.c_str();
     dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, &propertyName);
 
-    DBusMessage *ret = dbus_connection_send_with_reply_and_block(this->conn, msg, DBUS_TIMEOUT_USE_DEFAULT, &error);
-    unrefMessage(msg);
-
-    if(dbus_error_is_set(&error)) {
-        reportError(ctx, error);
-
-        dbus_error_free(&error);
-        unrefMessage(ret);
-
+    // call getter
+    bool status;
+    DBusMessage *ret = this->sendAndUnrefMessage(ctx, msg, status);
+    if(!status) {
         return false;
     }
 
     // decode result
-    DBusMessageIter resultIter;
-    dbus_message_iter_init(ret, &resultIter);
-    auto result(decodeMessageIter(ctx, &resultIter));
-
-    unrefMessage(ret);
+    auto result(decodeAndUnrefMessage(ctx, fieldType, ret));
+    if(!result) {
+        return false;
+    }
     ctx.push(result);
     return true;
 }
@@ -843,19 +845,13 @@ bool DBusProxy_Object::invokeSetter(RuntimeContext &ctx,DSType *recvType,
 
     appendArg(ctx, &iter, ctx.pool.getVariantType(), ctx.localStack[ctx.stackTopIndex]);
 
-
-    DBusMessage *ret = dbus_connection_send_with_reply_and_block(this->conn, msg, DBUS_TIMEOUT_USE_DEFAULT, &error);
-    unrefMessage(msg);
-
-    if(dbus_error_is_set(&error)) {
-        reportError(ctx, error);
-
-        dbus_error_free(&error);
+    // call setter
+    bool status;
+    DBusMessage *ret = this->sendAndUnrefMessage(ctx, msg, status);
+    if(status) {
         unrefMessage(ret);
-
-        return false;
     }
-    return true;
+    return status;
 }
 
 DBusMessage *DBusProxy_Object::newMethodCallMsg(const char *ifaceName, const char *methodName) {
@@ -865,6 +861,26 @@ DBusMessage *DBusProxy_Object::newMethodCallMsg(const char *ifaceName, const cha
 
 DBusMessage *DBusProxy_Object::newMethodCallMsg(const std::string &ifaceName, const std::string &methodName) {
     return this->newMethodCallMsg(ifaceName.c_str(), methodName.c_str());
+}
+
+DBusMessage *DBusProxy_Object::sendAndUnrefMessage(RuntimeContext &ctx, DBusMessage *sendMsg, bool &status) {
+    DBusError error;
+    dbus_error_init(&error);
+
+    status = false;
+    DBusMessage *retMsg = dbus_connection_send_with_reply_and_block(this->conn, sendMsg, DBUS_TIMEOUT_USE_DEFAULT, &error);
+    unrefMessage(sendMsg);
+
+    if(dbus_error_is_set(&error)) {
+        reportError(ctx, error);
+
+        dbus_error_free(&error);
+        unrefMessage(retMsg);
+
+        return nullptr;
+    }
+    status = true;
+    return retMsg;
 }
 
 bool DBusProxy_Object::newObject(RuntimeContext &ctx, const std::shared_ptr<DSObject> &busObj,
