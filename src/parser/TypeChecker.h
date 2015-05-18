@@ -78,6 +78,7 @@ public:
     void visitReifiedTypeToken(ReifiedTypeToken *token);    // override
     void visitFuncTypeToken(FuncTypeToken *token);  // override
     void visitDBusInterfaceToken(DBusInterfaceToken *token);    // override
+    void visitReturnTypeToken(ReturnTypeToken *token);  // override
 
 private:
     DSType *generateType(TypeToken *token);

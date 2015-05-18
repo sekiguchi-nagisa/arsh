@@ -122,11 +122,28 @@ public:
     void accept(TypeTokenVisitor *visitor); // override
 };
 
+/**
+ * for multiple return type
+ */
+class ReturnTypeToken : public TypeToken {
+private:
+    std::vector<TypeToken *> typeTokens;
+
+public:
+    ReturnTypeToken(TypeToken *token);
+    ~ReturnTypeToken();
+
+    void addTypeToken(TypeToken *token);
+    const std::vector<TypeToken *> &getTypeTokens();
+    bool hasMultiReturn();
+
+    std::string toTokenText() const; // override
+    void accept(TypeTokenVisitor *visitor); // override
+};
+
 TypeToken *newAnyTypeToken(unsigned int lineNum = 0);
 
 TypeToken *newVoidTypeToken(unsigned int lineNum = 0);
-
-ReifiedTypeToken *newTupleTypeToken(TypeToken *typeToken);
 
 
 struct TypeTokenVisitor {
@@ -136,6 +153,7 @@ struct TypeTokenVisitor {
     virtual void visitReifiedTypeToken(ReifiedTypeToken *token) = 0;
     virtual void visitFuncTypeToken(FuncTypeToken *token) = 0;
     virtual void visitDBusInterfaceToken(DBusInterfaceToken *token) = 0;
+    virtual void visitReturnTypeToken(ReturnTypeToken *token) = 0;
 };
 
 

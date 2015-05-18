@@ -310,6 +310,10 @@ bool MethodHandle::isInterfaceMethod() {
     return hasFlag(this->attributeSet, INTERFACE);
 }
 
+bool MethodHandle::hasMultipleReturnType() {
+    return hasFlag(this->attributeSet, MULTI_RETURN);
+}
+
 bool MethodHandle::isSignal() {
     return this->isInterfaceMethod() && this->paramTypes.size() == 1 &&
            this->paramTypes[0]->isFuncType() && this->returnType->isVoidType();

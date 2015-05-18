@@ -177,6 +177,50 @@ void DBusInterfaceToken::accept(TypeTokenVisitor *visitor) {
     visitor->visitDBusInterfaceToken(this);
 }
 
+// #############################
+// ##     ReturnTypeToken     ##
+// #############################
+
+ReturnTypeToken::ReturnTypeToken(TypeToken *token) :
+        TypeToken(token->getLineNum()), typeTokens() {
+    this->addTypeToken(token);
+}
+
+ReturnTypeToken::~ReturnTypeToken() {
+    for(auto t : this->typeTokens) {
+        delete t;
+    }
+    this->typeTokens.clear();
+}
+
+void ReturnTypeToken::addTypeToken(TypeToken *token) {
+    this->typeTokens.push_back(token);
+}
+
+const std::vector<TypeToken *> &ReturnTypeToken::getTypeTokens() {
+    return this->typeTokens;
+}
+
+bool ReturnTypeToken::hasMultiReturn() {
+    return this->typeTokens.size() > 1;
+}
+
+std::string ReturnTypeToken::toTokenText() const {
+    std::string str;
+    unsigned int count = 0;
+    for(TypeToken *t : this->typeTokens) {
+        if(count++ > 0) {
+            str += ", ";
+        }
+        str += t->toTokenText();
+    }
+    return str;
+}
+
+void ReturnTypeToken::accept(TypeTokenVisitor *visitor) {
+    visitor->visitReturnTypeToken(this);
+}
+
 
 TypeToken *newAnyTypeToken(unsigned int lineNum) {
     return new ClassTypeToken(lineNum, std::string("Any"));
@@ -184,13 +228,6 @@ TypeToken *newAnyTypeToken(unsigned int lineNum) {
 
 TypeToken *newVoidTypeToken(unsigned int lineNum) {
     return new ClassTypeToken(lineNum, std::string("Void"));
-}
-
-ReifiedTypeToken *newTupleTypeToken(TypeToken *typeToken) {
-    ReifiedTypeToken *t = new ReifiedTypeToken(
-            new ClassTypeToken(typeToken->getLineNum(), std::string("Tuple")));
-    t->addElementTypeToken(typeToken);
-    return t;
 }
 
 } // namespace ast

@@ -182,9 +182,11 @@ public:
 
     void setAttribute(flag8_t attribute);
     bool isInterfaceMethod();
+    bool hasMultipleReturnType();
     bool isSignal();
 
-    static constexpr flag8_t INTERFACE = 1 << 0;
+    static constexpr flag8_t INTERFACE    = 1 << 0;
+    static constexpr flag8_t MULTI_RETURN = 1 << 1;
 };
 
 } // namespace core

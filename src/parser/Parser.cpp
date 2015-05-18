@@ -299,17 +299,12 @@ INLINE std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
 
     if(!HAS_NL() && this->curTokenKind == COLON) {
         this->matchToken(COLON, false);
-        auto type(this->parse_typeName());
-        if(this->curTokenKind != COMMA) {
-            node->setReturnTypeToken(type.release());
-        } else {
-            std::unique_ptr<ReifiedTypeToken> tuple(newTupleTypeToken(type.release()));
-            while(this->curTokenKind == COMMA) {
-                this->matchToken(COMMA, false);
-                tuple->addElementTypeToken(this->parse_typeName().release());
-            }
-            node->setReturnTypeToken(tuple.release());
+        std::unique_ptr<ReturnTypeToken> type(new ReturnTypeToken(this->parse_typeName().release()));
+        while(this->curTokenKind == COMMA) {
+            this->matchToken(COMMA, false);
+            type->addTypeToken(this->parse_typeName().release());
         }
+        node->setReturnTypeToken(type.release());
     }
 
     return std::move(node);

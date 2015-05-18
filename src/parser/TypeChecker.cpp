@@ -98,6 +98,20 @@ void TypeGenerator::visitDBusInterfaceToken(DBusInterfaceToken *token) {
     this->type = this->pool->getDBusInterfaceType(token->getTokenText());
 }
 
+void TypeGenerator::visitReturnTypeToken(ReturnTypeToken *token) {
+    unsigned int size = token->getTypeTokens().size();
+    if(size == 1) {
+        this->type = this->generateType(token->getTypeTokens()[0]);
+        return;
+    }
+
+    std::vector<DSType *> types(size);
+    for(unsigned int i = 0; i < size; i++) {
+        types[i] = this->generateType(token->getTypeTokens()[i]);
+    }
+    this->type = this->pool->createAndGetTupleTypeIfUndefined(types);
+}
+
 DSType *TypeGenerator::generateType(TypeToken *token) {
     token->accept(this);
     return this->type;
@@ -144,6 +158,11 @@ DSType *TypeChecker::resolveInterface(TypePool *typePool, InterfaceNode *node) {
         MethodHandle *handle = type->newMethodHandle(funcNode->getFuncName());
         handle->setRecvType(type);
         handle->setReturnType(typeGen.generateTypeAndThrow(funcNode->getReturnTypeToken()));
+        // resolve multi return
+        ReturnTypeToken *rToken = dynamic_cast<ReturnTypeToken *>(funcNode->getReturnTypeToken());
+        if(rToken != nullptr && rToken->hasMultiReturn()) {
+            handle->setAttribute(MethodHandle::MULTI_RETURN);
+        }
 
         unsigned int paramSize = funcNode->getParamNodes().size();
         for(unsigned int i = 0; i < paramSize; i++) {
