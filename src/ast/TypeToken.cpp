@@ -15,9 +15,6 @@
  */
 
 #include "TypeToken.h"
-#include "../core/TypeTemplate.h"
-#include "../core/DSType.h"
-#include "../core/TypePool.h"
 
 namespace ydsh {
 namespace ast {
@@ -50,12 +47,12 @@ std::string ClassTypeToken::toTokenText() const {
     return this->typeName;
 }
 
-DSType *ClassTypeToken::toType(TypePool * typePool) {
-    return typePool->getTypeAndThrowIfUndefined(this->typeName);
-}
-
 const std::string &ClassTypeToken::getTokenText() {
     return this->typeName;
+}
+
+void ClassTypeToken::accept(TypeTokenVisitor *visitor) {
+    visitor->visitClassTypeToken(this);
 }
 
 
@@ -79,6 +76,14 @@ void ReifiedTypeToken::addElementTypeToken(TypeToken *type) {
     this->elementTypeTokens.push_back(type);
 }
 
+ClassTypeToken *ReifiedTypeToken::getTemplate() {
+    return this->templateTypeToken;
+}
+
+const std::vector<TypeToken *> &ReifiedTypeToken::getElementTypeTokens() {
+    return this->elementTypeTokens;
+}
+
 std::string ReifiedTypeToken::toTokenText() const {
     std::string text(this->templateTypeToken->toTokenText());
     text += "<";
@@ -93,14 +98,8 @@ std::string ReifiedTypeToken::toTokenText() const {
     return text;
 }
 
-DSType *ReifiedTypeToken::toType(TypePool * typePool) {
-    unsigned int size = this->elementTypeTokens.size();
-    TypeTemplate *typeTemplate = typePool->getTypeTemplate(this->templateTypeToken->getTokenText());
-    std::vector<DSType *> elementTypes(size);
-    for(unsigned int i = 0; i < size; i++) {
-        elementTypes[i] = this->elementTypeTokens[i]->toType(typePool);
-    }
-    return typePool->createAndGetReifiedTypeIfUndefined(typeTemplate, elementTypes);
+void ReifiedTypeToken::accept(TypeTokenVisitor *visitor) {
+    visitor->visitReifiedTypeToken(this);
 }
 
 
@@ -127,6 +126,14 @@ void FuncTypeToken::addParamTypeToken(TypeToken *type) {
     this->paramTypeTokens.push_back(type);
 }
 
+const std::vector<TypeToken *> &FuncTypeToken::getParamTypeTokens() {
+    return this->paramTypeTokens;
+}
+
+TypeToken *FuncTypeToken::getReturnTypeToken() {
+    return this->returnTypeToken;
+}
+
 std::string FuncTypeToken::toTokenText() const {
     std::string text("Func<");
     text += this->returnTypeToken->toTokenText();
@@ -146,14 +153,8 @@ std::string FuncTypeToken::toTokenText() const {
     return text;
 }
 
-DSType *FuncTypeToken::toType(TypePool * typePool) {
-    DSType *returnType = this->returnTypeToken->toType(typePool);
-    int size = this->paramTypeTokens.size();
-    std::vector<DSType *> paramTypes(size);
-    for(int i = 0; i < size; i++) {
-        paramTypes[i] = this->paramTypeTokens[i]->toType(typePool);
-    }
-    return typePool->createAndGetFuncTypeIfUndefined(returnType, paramTypes);
+void FuncTypeToken::accept(TypeTokenVisitor *visitor) {
+    visitor->visitFuncTypeToken(this);
 }
 
 // ################################
@@ -164,12 +165,16 @@ DBusInterfaceToken::DBusInterfaceToken(unsigned int lineNum, std::string &&name)
         TypeToken(lineNum), name(name) {
 }
 
+const std::string &DBusInterfaceToken::getTokenText() {
+    return this->name;
+}
+
 std::string DBusInterfaceToken::toTokenText() const {
     return this->name;
 }
 
-DSType *DBusInterfaceToken::toType(TypePool *typePool) {
-    return typePool->getDBusInterfaceType(this->name);
+void DBusInterfaceToken::accept(TypeTokenVisitor *visitor) {
+    visitor->visitDBusInterfaceToken(this);
 }
 
 

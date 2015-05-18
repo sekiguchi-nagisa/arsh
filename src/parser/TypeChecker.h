@@ -22,6 +22,7 @@
 #include "../core/DSType.h"
 #include "../core/FieldHandle.h"
 #include "../core/SymbolTable.h"
+#include "TypeCheckError.h"
 
 namespace ydsh {
 namespace parser {
@@ -58,6 +59,31 @@ enum CoercionKind {
     INVALID_COERCION,   // illegal coercion.
 };
 
+class TypeGenerator : public TypeTokenVisitor {
+private:
+    TypePool *pool;
+    DSType *type;
+
+public:
+    TypeGenerator(TypePool *pool);
+    ~TypeGenerator();
+
+    /**
+     * entry point.
+     * generate DSType from TypeToken.
+     */
+    DSType *generateTypeAndThrow(TypeToken *token) throw(TypeCheckError);
+
+    void visitClassTypeToken(ClassTypeToken *token);    // overrode
+    void visitReifiedTypeToken(ReifiedTypeToken *token);    // override
+    void visitFuncTypeToken(FuncTypeToken *token);  // override
+    void visitDBusInterfaceToken(DBusInterfaceToken *token);    // override
+
+private:
+    DSType *generateType(TypeToken *token);
+};
+
+
 class TypeChecker : public NodeVisitor {
 private:
     /**
@@ -66,6 +92,7 @@ private:
     TypePool *typePool;
 
     SymbolTable symbolTable;
+    TypeGenerator typeGen;
 
     /**
      * contains current return type of current function
@@ -209,7 +236,7 @@ private:
     /**
      * convert TypeToken to DSType..
      */
-    static DSType *toType(TypePool *typePool, TypeToken *typeToken);
+    DSType *toType(TypeToken *typeToken);
 
     /**
      * check type ApplyNode and resolve callee(handle or function type).

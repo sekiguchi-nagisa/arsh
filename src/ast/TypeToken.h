@@ -21,18 +21,9 @@
 #include <vector>
 
 namespace ydsh {
-namespace core {
-
-class DSType;
-class TypePool;
-
-}
-}
-
-namespace ydsh {
 namespace ast {
 
-using namespace ydsh::core;
+struct TypeTokenVisitor;
 
 /**
  * represent for parsed type.
@@ -53,10 +44,7 @@ public:
      */
     virtual std::string toTokenText() const = 0;
 
-    /**
-     * convert to DSType.
-     */
-    virtual DSType *toType(TypePool *typePool) = 0;
+    virtual void accept(TypeTokenVisitor *visitor) = 0;
 };
 
 class ClassTypeToken : public TypeToken {
@@ -67,8 +55,8 @@ public:
     ClassTypeToken(unsigned int lineNum, std::string &&typeName);
 
     std::string toTokenText() const;  // override
-    DSType *toType(TypePool *typePool);   // override
     const std::string &getTokenText();
+    void accept(TypeTokenVisitor *visitor); // override
 };
 
 /**
@@ -85,9 +73,11 @@ public:
     ~ReifiedTypeToken();
 
     void addElementTypeToken(TypeToken *type);
+    ClassTypeToken *getTemplate();
+    const std::vector<TypeToken *> &getElementTypeTokens();
 
     std::string toTokenText() const;  // override
-    DSType *toType(TypePool *typePool);   // override
+    void accept(TypeTokenVisitor *visitor); // override
 };
 
 class FuncTypeToken : public TypeToken {
@@ -108,9 +98,11 @@ public:
     ~FuncTypeToken();
 
     void addParamTypeToken(TypeToken *type);
+    const std::vector<TypeToken *> &getParamTypeTokens();
+    TypeToken *getReturnTypeToken();
 
     std::string toTokenText() const;  // override
-    DSType *toType(TypePool *typePool);   // override
+    void accept(TypeTokenVisitor *visitor); // override
 };
 
 class DBusInterfaceToken : public TypeToken {
@@ -124,8 +116,10 @@ private:
 public:
     DBusInterfaceToken(unsigned int lineNum, std::string &&name);
 
+    const std::string &getTokenText();
+
     std::string toTokenText() const; // override
-    DSType *toType(TypePool *typePool);
+    void accept(TypeTokenVisitor *visitor); // override
 };
 
 TypeToken *newAnyTypeToken(unsigned int lineNum = 0);
@@ -133,6 +127,17 @@ TypeToken *newAnyTypeToken(unsigned int lineNum = 0);
 TypeToken *newVoidTypeToken(unsigned int lineNum = 0);
 
 ReifiedTypeToken *newTupleTypeToken(TypeToken *typeToken);
+
+
+struct TypeTokenVisitor {
+    virtual ~TypeTokenVisitor() = default;
+
+    virtual void visitClassTypeToken(ClassTypeToken *token) = 0;
+    virtual void visitReifiedTypeToken(ReifiedTypeToken *token) = 0;
+    virtual void visitFuncTypeToken(FuncTypeToken *token) = 0;
+    virtual void visitDBusInterfaceToken(DBusInterfaceToken *token) = 0;
+};
+
 
 } // namespace ast
 } // namespace ydsh

@@ -51,12 +51,65 @@ FunctionType *HandleOrFuncType::getFuncType() {
     return this->hasHandle ? 0 : this->funcType;
 }
 
+// ###########################
+// ##     TypeGenerator     ##
+// ###########################
+
+TypeGenerator::TypeGenerator(TypePool *pool) : pool(pool), type(0) {
+}
+
+TypeGenerator::~TypeGenerator() {
+}
+
+DSType *TypeGenerator::generateTypeAndThrow(TypeToken *token) throw(TypeCheckError) {
+    try {
+        return this->generateType(token);
+    } catch(TypeLookupError &e) {
+        unsigned int lineNum = token->getLineNum();
+        throw TypeCheckError(lineNum, e);
+    }
+}
+
+void TypeGenerator::visitClassTypeToken(ClassTypeToken *token) {
+    this->type = this->pool->getTypeAndThrowIfUndefined(token->getTokenText());
+}
+
+void TypeGenerator::visitReifiedTypeToken(ReifiedTypeToken *token) {
+    unsigned int size = token->getElementTypeTokens().size();
+    TypeTemplate *typeTemplate = this->pool->getTypeTemplate(token->getTemplate()->getTokenText());
+    std::vector<DSType *> elementTypes(size);
+    for(unsigned int i = 0; i < size; i++) {
+        elementTypes[i] = this->generateType(token->getElementTypeTokens()[i]);
+    }
+    this->type = this->pool->createAndGetReifiedTypeIfUndefined(typeTemplate, elementTypes);
+}
+
+void TypeGenerator::visitFuncTypeToken(FuncTypeToken *token) {
+    DSType *returnType = this->generateType(token->getReturnTypeToken());
+    unsigned int size = token->getParamTypeTokens().size();
+    std::vector<DSType *> paramTypes(size);
+    for(int i = 0; i < size; i++) {
+        paramTypes[i] = this->generateType(token->getParamTypeTokens()[i]);
+    }
+    this->type = this->pool->createAndGetFuncTypeIfUndefined(returnType, paramTypes);
+}
+
+void TypeGenerator::visitDBusInterfaceToken(DBusInterfaceToken *token) {
+    this->type = this->pool->getDBusInterfaceType(token->getTokenText());
+}
+
+DSType *TypeGenerator::generateType(TypeToken *token) {
+    token->accept(this);
+    return this->type;
+}
+
+
 // #########################
 // ##     TypeChecker     ##
 // #########################
 
 TypeChecker::TypeChecker(TypePool * typePool) :
-        typePool(typePool), symbolTable(), curReturnType(0),
+        typePool(typePool), symbolTable(), typeGen(typePool), curReturnType(0),
         loopContextStack(), finallyContextStack(),
         cmdContextStack(), coercionKind(INVALID_COERCION) {
 }
@@ -70,13 +123,15 @@ void TypeChecker::checkTypeRootNode(RootNode & rootNode) {
 }
 
 DSType *TypeChecker::resolveInterface(TypePool *typePool, InterfaceNode *node) {
+    TypeGenerator typeGen(typePool);
+
     InterfaceType *type = typePool->createAndGetInterfaceTypeIfUndefined(node->getInterfaceName());
 
     // create field handle
     unsigned int fieldSize = node->getFieldDeclNodes().size();
     for(unsigned int i = 0; i < fieldSize; i++) {
         VarDeclNode *fieldDeclNode = node->getFieldDeclNodes()[i];
-        DSType *fieldType = toType(typePool, node->getFieldTypeTokens()[i]);
+        DSType *fieldType = typeGen.generateTypeAndThrow(node->getFieldTypeTokens()[i]);
         FieldHandle *handle = type->newFieldHandle(
                 fieldDeclNode->getVarName(), fieldType, fieldDeclNode->isReadOnly());
         if(handle == 0) {
@@ -88,11 +143,11 @@ DSType *TypeChecker::resolveInterface(TypePool *typePool, InterfaceNode *node) {
     for(FunctionNode *funcNode : node->getMethodDeclNodes()) {
         MethodHandle *handle = type->newMethodHandle(funcNode->getFuncName());
         handle->setRecvType(type);
-        handle->setReturnType(toType(typePool, funcNode->getReturnTypeToken()));
+        handle->setReturnType(typeGen.generateTypeAndThrow(funcNode->getReturnTypeToken()));
 
         unsigned int paramSize = funcNode->getParamNodes().size();
         for(unsigned int i = 0; i < paramSize; i++) {
-            handle->addParamType(toType(typePool, funcNode->getParamTypeTokens()[i]));
+            handle->addParamType(typeGen.generateTypeAndThrow(funcNode->getParamTypeTokens()[i]));
         }
     }
 
@@ -323,14 +378,8 @@ void TypeChecker::checkAndThrowIfInsideFinally(BlockEndNode * node) {
     }
 }
 
-DSType *TypeChecker::toType(TypePool *typePool, TypeToken * typeToken) {
-    try {
-        DSType *type = typeToken->toType(typePool);
-        return type;
-    } catch(TypeLookupError &e) {
-        unsigned int lineNum = typeToken->getLineNum();
-        throw TypeCheckError(lineNum, e);
-    }
+DSType *TypeChecker::toType(TypeToken * typeToken) {
+    return this->typeGen.generateTypeAndThrow(typeToken);
 }
 
 // for ApplyNode type checking
@@ -604,7 +653,7 @@ void TypeChecker::visitAccessNode(AccessNode * node) {
 
 void TypeChecker::visitCastNode(CastNode * node) {
     DSType *exprType = this->checkType(node->getExprNode());
-    DSType *targetType = toType(this->typePool, node->getTargetTypeToken());
+    DSType *targetType = this->toType(node->getTargetTypeToken());
     node->setType(targetType);
 
     // resolve cast op
@@ -687,7 +736,7 @@ void TypeChecker::visitCastNode(CastNode * node) {
 
 void TypeChecker::visitInstanceOfNode(InstanceOfNode * node) {
     DSType *exprType = this->checkType(node->getTargetNode());
-    DSType *targetType = toType(this->typePool, node->getTargetTypeToken());
+    DSType *targetType = this->toType(node->getTargetTypeToken());
     node->setTargetType(targetType);
 
 
@@ -762,7 +811,7 @@ void TypeChecker::visitMethodCallNode(MethodCallNode *node) {
 }
 
 void TypeChecker::visitNewNode(NewNode * node) {
-    DSType *type = toType(this->typePool, node->getTargetTypeToken());
+    DSType *type = this->toType(node->getTargetTypeToken());
     MethodHandle *handle = type->getConstructorHandle(this->typePool);
     if(handle == 0) {
         E_UndefinedInit(node, this->typePool->getTypeName(*type));
@@ -896,7 +945,7 @@ void TypeChecker::visitImportEnvNode(ImportEnvNode * node) {
 void TypeChecker::visitTypeAliasNode(TypeAliasNode *node) {
     TypeToken *typeToken = node->getTargetTypeToken();
     try {
-        this->typePool->setAlias(node->getAlias(), toType(this->typePool, typeToken));
+        this->typePool->setAlias(node->getAlias(), this->toType(typeToken));
         node->setType(this->typePool->getVoidType());
     } catch(TypeLookupError &e) {
         unsigned int lineNum = typeToken->getLineNum();
@@ -975,7 +1024,7 @@ void TypeChecker::visitThrowNode(ThrowNode * node) {
 }
 
 void TypeChecker::visitCatchNode(CatchNode * node) {
-    DSType *exceptionType = toType(this->typePool, node->getTypeToken());
+    DSType *exceptionType = this->toType(node->getTypeToken());
     node->setExceptionType(exceptionType);
 
     /**
@@ -1069,11 +1118,11 @@ void TypeChecker::visitElementSelfAssignNode(ElementSelfAssignNode *node) {
 
 void TypeChecker::visitFunctionNode(FunctionNode * node) {   //TODO: named parameter
     // resolve return type, param type
-    DSType *returnType = toType(this->typePool, node->getReturnTypeToken());
+    DSType *returnType = this->toType(node->getReturnTypeToken());
     unsigned int paramSize = node->getParamTypeTokens().size();
     std::vector<DSType *> paramTypes(paramSize);
     for(unsigned int i = 0; i < paramSize; i++) {
-        paramTypes[i] = toType(this->typePool, node->getParamTypeTokens()[i]);
+        paramTypes[i] = this->toType(node->getParamTypeTokens()[i]);
     }
 
     // register function handle
