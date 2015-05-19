@@ -128,6 +128,14 @@
     OP(START_SUB_CMD) \
     EACH_LA_interpolation(OP)
 
+#define EACH_LA_assign(OP) \
+    OP(ASSIGN) \
+    OP(ADD_ASSIGN) \
+    OP(SUB_ASSIGN) \
+    OP(MUL_ASSIGN) \
+    OP(DIV_ASSIGN) \
+    OP(MOD_ASSIGN)
+
 
 #define E_ALTER(alt) \
     do {\
@@ -840,7 +848,7 @@ INLINE std::unique_ptr<Node> Parser::parse_pipedCommand() {
     return std::move(node);
 }
 
-INLINE std::unique_ptr<CmdNode> Parser::parse_command() {   //FIXME: redirect
+INLINE std::unique_ptr<CmdNode> Parser::parse_command() {
     static TokenKind alters[] = {
            EACH_LA_cmdArg(GEN_LA_ALTER)
            EACH_LA_redir(GEN_LA_ALTER)
@@ -986,13 +994,19 @@ std::unique_ptr<Node> Parser::parse_expression(std::unique_ptr<Node> &&leftNode,
             std::unique_ptr<TypeToken> type(this->parse_typeName());
             node.reset(new CastNode(node.release(), type.release()));
             break;
-        }
+        };
         case IS: {
             this->matchToken(IS, false);
             std::unique_ptr<TypeToken> type(this->parse_typeName());
             node.reset(new InstanceOfNode(node.release(), type.release()));
             break;
-        }
+        };
+        EACH_LA_assign(GEN_LA_CASE) {
+            TokenKind op = this->consumeAndGetKind();
+            auto rightNode(this->parse_commandOrExpression());
+            node.reset(createBinaryOpNode(node.release(), op, rightNode.release()));
+            break;
+        };
         default: {
             TokenKind op = this->consumeAndGetKind();
             std::unique_ptr<Node> rightNode(this->parse_unaryExpression());
@@ -1001,7 +1015,7 @@ std::unique_ptr<Node> Parser::parse_expression(std::unique_ptr<Node> &&leftNode,
             }
             node.reset(createBinaryOpNode(node.release(), op, rightNode.release()));
             break;
-        }
+        };
         }
     }
     return node;

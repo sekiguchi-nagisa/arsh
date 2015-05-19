@@ -15,7 +15,7 @@ for($file in $(ls)) {
 }
 
 
-$d2 = "$(echo $(echo hello   world    ))"
+var d2 = "$(echo $(echo hello   world    ))"
 assert($d2 == 'hello world')
 
 
@@ -34,6 +34,3 @@ if(echo heyy) {
 } else {
 	assert($false)
 }
-
-var r = echo hello
-assert($r)
