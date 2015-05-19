@@ -1,24 +1,24 @@
 try {
 	1 / 0
 	assert($false)
-} catch($e : OutOfIndexException) {
+} catch($e : OutOfIndexError) {
 	assert($false)
-} catch($e : ArithmeticException) {
+} catch($e : ArithmeticError) {
 	assert($true)
-} catch($e : Exception) {
+} catch($e : Error) {
 	assert($false)
 }
 
 try {
 	[12][3]
-} catch($e : KeyNotFoundException) {
+} catch($e : KeyNotFoundError) {
 	assert($false)
 } catch($e) {
 	assert($true)
 }
 
 var flag = $false
-function f($a : boolean): int {
+function f($a : Boolean): Int {
 	$flag = $false
 	try {
 		if($a) {
@@ -41,16 +41,20 @@ assert($f($false) == 100)
 assert($flag)
 
 # nested finally
-function g() {
+function g() : Int {
+	var i = 0
 	try {
 		try {
-			return
+			return $i
 		} finally {
-			log "in first finally"
+			assert($i == 0)
+			$i++
 		}
 	} finally {
-		log "in second finally"
+		assert($i == 1)
+		$i++
 	}
+	return 99
 }
 
-$g()
+assert($g() == 2)

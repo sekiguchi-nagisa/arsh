@@ -1,0 +1,23 @@
+var a = {"a" : 1}
+assert($a["a"] == 1)
+
+$a["a"] = 54
+assert($a["a"] == 54)
+
+$a["b"] = -456
+assert($a["b"] == -456)
+
+assert($a.size() == 2)
+assert(not $a.empty())
+
+assert($a.find("b"))
+assert(not $a.find("c"))
+
+
+var b = new Map<Int, Float>()
+assert($b.size() == 0)
+assert($b.empty())
+
+$b[34] = 34.56
+assert($b.size() == 1)
+assert($b[34] == 34.56)

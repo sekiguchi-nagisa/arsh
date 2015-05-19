@@ -1,0 +1,15 @@
+import-env HOME
+
+assert($HOME is String)
+$HOME = "hello world"
+assert($HOME == "hello world")
+
+export-env ZZZ = $HOME
+assert($ZZZ is String)
+assert($ZZZ == $HOME)
+$ZZZ = "hey"
+assert($ZZZ == "hey")
+
+
+
+

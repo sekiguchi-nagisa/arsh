@@ -1,0 +1,3 @@
+var a = "$(/bin/echo hello world)"
+assert($a == 'hello world')
+

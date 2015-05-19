@@ -1,8 +1,0 @@
-$STDOUT.writeLine("hello stdout1")
-$STDERR.writeLine("hello stderr!")
-
-var a = "hello "
-$STDOUT.writeLine($a + "stdout2")
-$STDERR.writeLine($a + "stderr2")
-
-# always passed

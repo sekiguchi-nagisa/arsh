@@ -9,3 +9,12 @@ do {
 } while(true);
 
 assert($i == $count)
+
+
+
+do {
+	let a = 23
+	$i++
+} while($i < $a)
+
+assert($i == 23)

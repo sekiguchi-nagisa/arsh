@@ -1,0 +1,54 @@
+# primitive type
+var a = 1
+assert($a is Int)
+assert($a is Int32)
+var b = $true
+assert($b is Boolean)
+var c = 3.23
+assert($c is Float)
+
+# func type
+function f($a : Int, $b : Error) {
+	var c = $a + 12
+	log $a
+	throw $b
+}
+
+assert($f is Func<Void, [Int, Error]>)
+assert(not($f is Func<Float, [Int, Int]>))
+
+# generic type
+var g1 = [1u32, 2u32, 3u32]
+var g2 = ["a", "b", "c"]
+assert($g1 is Array<Uint>)
+assert($g1 is Array<Uint32>)
+assert($g2 is Array<String>)
+
+var g4 = {"a" : 1, "b" : 2}
+var g5 = {"a" : "aa", "b" : "bb"}
+assert($g4 is Map<String, Int>)
+assert($g5 is Map<String, String>)
+assert(not($g5 is Map<Int, String>))
+
+# Exception type
+var h1 = new Error("")
+var h2 = new TypeCastError("")
+
+assert($h1 is Error)
+assert(not ($h1 is OutOfIndexError))
+assert($h2 is Error)
+assert($h2 is TypeCastError)
+$h1 = $h2
+assert($h1 is TypeCastError)
+assert(not ($h1 is KeyNotFoundError))
+
+
+try {
+	1 / 0
+	assert($false)
+} catch($e) {
+	assert($e is ArithmeticError)
+	assert($e is Error)
+	assert($e is Any)
+}
+

@@ -1,4 +1,4 @@
-function func($num: int) : boolean {
+function func($num: Int) : Boolean {
 	if ($num == 2) {
 		return $true
 	}

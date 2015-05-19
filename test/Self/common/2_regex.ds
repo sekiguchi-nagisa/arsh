@@ -1,3 +1,0 @@
-var str = "abc"
-assert($str =~ "^a")
-assert($str !~ "^b")

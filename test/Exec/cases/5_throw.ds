@@ -1,0 +1,14 @@
+var a = $false
+try {
+	throw new Error("hello")
+} catch($e : Error) {
+	$a = $true
+	assert($e.message() == 'hello')
+}
+assert($a)
+
+try {
+	throw new OutOfIndexError("a")
+} catch($e : Error) {
+	assert($e.message() == "a")
+}

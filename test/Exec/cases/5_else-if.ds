@@ -1,7 +1,7 @@
-function func($num : int) : int {
+function func($num : Int32) : Int32 {
 	if($num == 1) {
 		return $num * 10
-	} else if($num == 2) {
+	} elif($num == 2) {
 		return $num * 100
 	}
 	return $num * 100

@@ -1,0 +1,24 @@
+var a = (12, "hello")
+assert($a._0 == 12)
+assert($a._1 == "hello")
+$a._0 = 100
+assert($a._0 == 100)
+$a._1 = "world"
+assert($a._1 == "world")
+
+assert(not ($false, 
+		3.14)._0
+		)
+
+
+var b = new Tuple<String>("hello")
+assert($b._0 == "hello")
+
+
+var c = ($true,
+         23,
+              "hello")
+
+assert($c._0)
+assert($c._1 == 23)
+assert($c._2 == "hello")

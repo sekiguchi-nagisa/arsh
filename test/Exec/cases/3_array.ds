@@ -1,0 +1,23 @@
+var a = ["3", "43", "d"]
+$a.add("hello")
+
+assert($a[0] == "3")
+assert($a[1] == "43")
+assert($a[2] == "d")
+assert($a[3] == "hello")
+
+$a[2] = "ho"
+assert($a[2] == "ho")
+
+assert($a.empty() == $false)
+assert($a.size() == 4)
+
+
+var b = new Array<Boolean>()
+
+assert($b.size() == 0)
+assert($b.empty() == $true)
+
+$b.add($true)
+assert($b.size() == 1)
+assert($b[0])

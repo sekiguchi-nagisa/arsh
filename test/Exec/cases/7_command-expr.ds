@@ -1,0 +1,39 @@
+# variable expand
+var a = "$(echo hello world)"
+var c1 = "$(echo $a)"
+assert($a == $c1)
+
+var c2 = "$(echo "he${"ll" + "o"} world")"
+assert($c2 == "hello world")
+
+# command substitution
+var d = $(ls)
+var i = 0;
+for($file in $(ls)) {
+	assert($file == $d[$i])
+	$i++
+}
+
+
+$d2 = "$(echo $(echo hello   world    ))"
+assert($d2 == 'hello world')
+
+
+# assign right
+var r = echo hello
+assert($r)
+
+$r = ls huirfh
+assert(not $r)
+
+# conditional
+assert(echo hello && echo hey)
+
+if(echo heyy) {
+	assert($true)
+} else {
+	assert($false)
+}
+
+var r = echo hello
+assert($r)
