@@ -244,7 +244,7 @@ TokenKind LexerDef::operator()(Lexer < LexerDef, TokenKind > *lexer, Token & tok
       <CMD> ["]                { PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
       <CMD> ")"                { POP_MODE(); POP_MODE(); RET(RP); }
       <CMD> [ \t]+ / "&>"      { RET(CMD_SEP); }
-      <CMD> [ \t]+ / ([|&] | LINE_END | NEW_LINE | ')')
+      <CMD> [ \t]+ / ([|&] | LINE_END | NEW_LINE | ')' | '#')
                                { SKIP(); }
       <CMD> [ \t]+             { RET(CMD_SEP); }
 
