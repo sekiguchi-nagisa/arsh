@@ -248,13 +248,14 @@ struct RuntimeContext {
     }
 
     std::shared_ptr<DSObject> pop() {
-        std::shared_ptr<DSObject> obj(this->localStack[this->stackTopIndex]);
-        this->localStack[this->stackTopIndex].reset();
-        --this->stackTopIndex;
-        return obj;
+        return std::move(this->localStack[this->stackTopIndex--]);
     }
 
-    std::shared_ptr<DSObject> peek() {
+    void popNoReturn() {
+        this->localStack[this->stackTopIndex--].reset();
+    }
+
+    const std::shared_ptr<DSObject> peek() {
         return this->localStack[this->stackTopIndex];
     }
 
@@ -314,7 +315,7 @@ struct RuntimeContext {
         bool status = TYPE_AS(ProxyObject, this->localStack[this->stackTopIndex - 1])->
                 invokeSetter(*this, recvType, fieldName, fieldType);
         // pop receiver
-        this->pop();
+        this->popNoReturn();
         return status ? EVAL_SUCCESS : EVAL_THROW;
     }
 
@@ -380,7 +381,7 @@ struct RuntimeContext {
 
         this->restoreOffset();
         for(unsigned int i = this->stackTopIndex; i > savedStackTopIndex; i--) {
-            this->pop();
+            this->popNoReturn();
         }
 
         if(returnValue) {
@@ -429,7 +430,7 @@ struct RuntimeContext {
 
         this->restoreOffset();
         for(unsigned int i = this->stackTopIndex; i > savedStackTopIndex; i--) {
-            this->pop();
+            this->popNoReturn();
         }
 
         if(returnValue) {
@@ -472,7 +473,7 @@ struct RuntimeContext {
         // restore stack state
         this->restoreOffset();
         for(unsigned int i = this->stackTopIndex; i > savedStackTopIndex; i--) {
-            this->pop();
+            this->popNoReturn();
         }
 
         if(status) {

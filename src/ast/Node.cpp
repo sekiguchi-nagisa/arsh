@@ -925,11 +925,11 @@ EvalStatus InstanceOfNode::eval(RuntimeContext &ctx) {
         ctx.instanceOf(this->targetType);
         break;
     case ALWAYS_TRUE:
-        ctx.pop();
+        ctx.popNoReturn();
         ctx.push(ctx.trueObj);
         break;
     case ALWAYS_FALSE:
-        ctx.pop();
+        ctx.popNoReturn();
         ctx.push(ctx.falseObj);
         break;
     }
@@ -1304,7 +1304,7 @@ EvalStatus CondOpNode::eval(RuntimeContext &ctx) {
 
     if (this->andOp) {   // and
         if (TYPE_AS(Boolean_Object, ctx.peek())->getValue()) {
-            ctx.pop();
+            ctx.popNoReturn();
             return this->rightNode->eval(ctx);
         } else {
             return EVAL_SUCCESS;
@@ -1313,7 +1313,7 @@ EvalStatus CondOpNode::eval(RuntimeContext &ctx) {
         if (TYPE_AS(Boolean_Object, ctx.peek())->getValue()) {
             return EVAL_SUCCESS;
         } else {
-            ctx.pop();
+            ctx.popNoReturn();
             return this->rightNode->eval(ctx);
         }
     }
@@ -1851,7 +1851,7 @@ EvalStatus BlockNode::eval(RuntimeContext &ctx) {
     for (Node *node : this->nodeList) {
         EvalStatus status = node->eval(ctx);
         if (!node->getType()->isVoidType()) {
-            ctx.pop();
+            ctx.popNoReturn();
         }
         if (status != EVAL_SUCCESS) {
             return status;
@@ -3210,7 +3210,7 @@ EvalStatus RootNode::eval(RuntimeContext &ctx) {
             if (ctx.repl) {
                 ctx.printStackTop(node->getType());
             } else if (!node->getType()->isVoidType()) {
-                ctx.pop();
+                ctx.popNoReturn();
             }
         } else if (status == EVAL_THROW) {
             return EVAL_THROW;
