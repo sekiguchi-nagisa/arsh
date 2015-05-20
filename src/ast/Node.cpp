@@ -347,7 +347,7 @@ EvalStatus StringExprNode::eval(RuntimeContext &ctx) {
             }
             value->append(*TYPE_AS(String_Object, ctx.pop()));
         }
-        ctx.push(value);
+        ctx.push(std::move(value));
     }
     return EVAL_SUCCESS;
 }
@@ -394,7 +394,7 @@ EvalStatus ArrayNode::eval(RuntimeContext &ctx) {
         EVAL(ctx, node);
         value->append(ctx.pop());
     }
-    ctx.push(value);
+    ctx.push(std::move(value));
     return EVAL_SUCCESS;
 }
 
@@ -459,7 +459,7 @@ EvalStatus MapNode::eval(RuntimeContext &ctx) {
         auto value = ctx.pop();
         map->set(key, value);
     }
-    ctx.push(map);
+    ctx.push(std::move(map));
     return EVAL_SUCCESS;
 }
 
@@ -503,7 +503,7 @@ EvalStatus TupleNode::eval(RuntimeContext &ctx) {
         EVAL(ctx, this->nodes[i]);
         value->set(i, ctx.pop());
     }
-    ctx.push(value);
+    ctx.push(std::move(value));
     return EVAL_SUCCESS;
 }
 
@@ -1532,7 +1532,7 @@ EvalStatus CmdNode::eval(RuntimeContext &ctx) {
         EVAL(ctx, pair.second);
         proc->addRedirOption(pair.first, ctx.pop());
     }
-    ctx.push(proc);
+    ctx.push(std::move(proc));
     return EVAL_SUCCESS;
 }
 
@@ -1759,7 +1759,7 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
             waitpid(pid, &status, 0);
 
             // push object
-            ctx.push(obj);
+            ctx.push(std::move(obj));
             return EVAL_SUCCESS;
         } else if(pid == 0) {   // child process
             dup2(pipefds[WRITE_PIPE], STDOUT_FILENO);

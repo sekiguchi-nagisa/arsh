@@ -96,8 +96,6 @@ public:
     void visitErrorType(ErrorType *type) override;
 
 private:
-    void push(DSObject *obj);
-    DSObject *pop();
     DSObject *peek();
     void append(DSType *type, DSObject *value);
     DescriptorBuilder *getBuilder();

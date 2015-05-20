@@ -334,24 +334,14 @@ void MessageBuilder::visitErrorType(ErrorType *type) {
     fatal("unsupported type: %s\n", this->pool->getTypeName(*type).c_str());
 }
 
-void MessageBuilder::push(DSObject *obj) {
-    this->objStack.push_back(obj);
-}
-
-DSObject *MessageBuilder::pop() {
-    auto value = this->objStack.back();
-    this->objStack.pop_back();
-    return value;
-}
-
 DSObject *MessageBuilder::peek() {
     return this->objStack.back();
 }
 
 void MessageBuilder::append(DSType *type, DSObject *value) {
-    this->push(value);
+    this->objStack.push_back(value);
     type->accept(this);
-    this->pop();
+    this->objStack.pop_back();
 }
 
 DescriptorBuilder *MessageBuilder::getBuilder() {
@@ -822,7 +812,7 @@ bool DBusProxy_Object::invokeGetter(RuntimeContext &ctx,DSType *recvType,
     if(!result) {
         return false;
     }
-    ctx.push(result);
+    ctx.push(std::move(result));
     return true;
 }
 
