@@ -244,7 +244,7 @@ struct RuntimeContext {
         if(++this->stackTopIndex >= this->localStackSize) {
             this->expandLocalStack(this->stackTopIndex);
         }
-        this->localStack[this->stackTopIndex] = value;
+        this->localStack[this->stackTopIndex] = std::move(value);
     }
 
     std::shared_ptr<DSObject> pop() {
@@ -375,7 +375,7 @@ struct RuntimeContext {
         // restore stack state
         std::shared_ptr<DSObject> returnValue;
         if(!returnTypeIsVoid) {
-            returnValue = this->peek();
+            returnValue = std::move(this->localStack[this->stackTopIndex]);
         }
 
         this->restoreOffset();
@@ -424,7 +424,7 @@ struct RuntimeContext {
         // restore stack state
         std::shared_ptr<DSObject> returnValue;
         if(!handle->getReturnType()->isVoidType()) {
-            returnValue = this->peek();
+            returnValue = std::move(this->localStack[this->stackTopIndex]);
         }
 
         this->restoreOffset();

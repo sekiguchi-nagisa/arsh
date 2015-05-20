@@ -25,7 +25,7 @@
 // helper macro
 #define LOCAL(index) (ctx.localStack[ctx.localVarOffset + (index)])
 #define RET(value) do { ctx.push(value); return true; } while(0)
-#define TO_BOOL(value) ((value) ? ctx.trueObj : ctx.falseObj)
+#define RET_BOOL(value) do { ctx.push((value) ? ctx.trueObj : ctx.falseObj); return true; } while(0)
 
 #define SUPPRESS_WARNING(a) (void)a
 
@@ -145,13 +145,13 @@ static inline bool int_2_int_mod(RuntimeContext & ctx) {
 //!bind: function $OP_EQ($this : Int32, $target : Int32) : Boolean
 static inline bool int_2_int_eq(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_eq);
-    RET(TO_BOOL(LOCAL(0)->equals(LOCAL(1))));
+    RET_BOOL(LOCAL(0)->equals(LOCAL(1)));
 }
 
 //!bind: function $OP_NE($this : Int32, $target : Int32) : Boolean
 static inline bool int_2_int_ne(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_ne);
-    RET(TO_BOOL(!LOCAL(0)->equals(LOCAL(1))));
+    RET_BOOL(!LOCAL(0)->equals(LOCAL(1)));
 }
 
 //   =====  relational  =====
@@ -161,7 +161,7 @@ static inline bool int_2_int_lt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_lt);
     bool r = TYPE_AS(Int_Object, LOCAL(0))->value
              < TYPE_AS(Int_Object, LOCAL(1))->value;
-    RET(TO_BOOL(r));
+    RET_BOOL(r);
 }
 
 //!bind: function $OP_GT($this : Int32, $target : Int32) : Boolean
@@ -169,7 +169,7 @@ static inline bool int_2_int_gt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_gt);
     bool r = TYPE_AS(Int_Object, LOCAL(0))->value
              > TYPE_AS(Int_Object, LOCAL(1))->value;
-    RET(TO_BOOL(r));
+    RET_BOOL(r);
 }
 
 //!bind: function $OP_LE($this : Int32, $target : Int32) : Boolean
@@ -177,7 +177,7 @@ static inline bool int_2_int_le(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_le);
     bool r = TYPE_AS(Int_Object, LOCAL(0))->value
              <= TYPE_AS(Int_Object, LOCAL(1))->value;
-    RET(TO_BOOL(r));
+    RET_BOOL(r);
 }
 
 //!bind: function $OP_GE($this : Int32, $target : Int32) : Boolean
@@ -185,7 +185,7 @@ static inline bool int_2_int_ge(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_ge);
     bool r = TYPE_AS(Int_Object, LOCAL(0))->value
              >= TYPE_AS(Int_Object, LOCAL(1))->value;
-    RET(TO_BOOL(r));
+    RET_BOOL(r);
 }
 
 //   =====  logical  =====
@@ -299,13 +299,13 @@ static inline bool uint_2_uint_mod(RuntimeContext & ctx) {
 //!bind: function $OP_EQ($this : Uint32, $target : Uint32) : Boolean
 static inline bool uint_2_uint_eq(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_eq);
-    RET(TO_BOOL(LOCAL(0)->equals(LOCAL(1))));
+    RET_BOOL(LOCAL(0)->equals(LOCAL(1)));
 }
 
 //!bind: function $OP_NE($this : Uint32, $target : Uint32) : Boolean
 static inline bool uint_2_uint_ne(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_ne);
-    RET(TO_BOOL(!LOCAL(0)->equals(LOCAL(1))));
+    RET_BOOL(!LOCAL(0)->equals(LOCAL(1)));
 }
 
 //   =====  relational  =====
@@ -315,7 +315,7 @@ static inline bool uint_2_uint_lt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_lt);
     bool r = (unsigned int) TYPE_AS(Int_Object, LOCAL(0))->value
              < (unsigned int) TYPE_AS(Int_Object, LOCAL(1))->value;
-    RET(TO_BOOL(r));
+    RET_BOOL(r);
 }
 
 //!bind: function $OP_GT($this : Uint32, $target : Uint32) : Boolean
@@ -323,7 +323,7 @@ static inline bool uint_2_uint_gt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_gt);
     bool r = (unsigned int) TYPE_AS(Int_Object, LOCAL(0))->value
              > (unsigned int) TYPE_AS(Int_Object, LOCAL(1))->value;
-    RET(TO_BOOL(r));
+    RET_BOOL(r);
 }
 
 //!bind: function $OP_LE($this : Uint32, $target : Uint32) : Boolean
@@ -331,7 +331,7 @@ static inline bool uint_2_uint_le(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_le);
     bool r = (unsigned int) TYPE_AS(Int_Object, LOCAL(0))->value
              <= (unsigned int) TYPE_AS(Int_Object, LOCAL(1))->value;
-    RET(TO_BOOL(r));
+    RET_BOOL(r);
 }
 
 //!bind: function $OP_GE($this : Uint32, $target : Uint32) : Boolean
@@ -339,7 +339,7 @@ static inline bool uint_2_uint_ge(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_ge);
     bool r = (unsigned int) TYPE_AS(Int_Object, LOCAL(0))->value
              >= (unsigned int) TYPE_AS(Int_Object, LOCAL(1))->value;
-    RET(TO_BOOL(r));
+    RET_BOOL(r);
 }
 
 //   =====  logical  =====
@@ -452,13 +452,13 @@ static inline bool int64_2_int64_mod(RuntimeContext & ctx) {
 //!bind: function $OP_EQ($this : Int64, $target : Int64) : Boolean
 static inline bool int64_2_int64_eq(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_eq);
-    RET(TO_BOOL(LOCAL(0)->equals(LOCAL(1))));
+    RET_BOOL(LOCAL(0)->equals(LOCAL(1)));
 }
 
 //!bind: function $OP_NE($this : Int64, $target : Int64) : Boolean
 static inline bool int64_2_int64_ne(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_ne);
-    RET(TO_BOOL(!LOCAL(0)->equals(LOCAL(1))));
+    RET_BOOL(!LOCAL(0)->equals(LOCAL(1)));
 }
 
 //   =====  relational  =====
@@ -468,7 +468,7 @@ static inline bool int64_2_int64_lt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_lt);
     bool r = TYPE_AS(Long_Object, LOCAL(0))->value
              < TYPE_AS(Long_Object, LOCAL(1))->value;
-    RET(TO_BOOL(r));
+    RET_BOOL(r);
 }
 
 //!bind: function $OP_GT($this : Int64, $target : Int64) : Boolean
@@ -476,7 +476,7 @@ static inline bool int64_2_int64_gt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_gt);
     bool r = TYPE_AS(Long_Object, LOCAL(0))->value
              > TYPE_AS(Long_Object, LOCAL(1))->value;
-    RET(TO_BOOL(r));
+    RET_BOOL(r);
 }
 
 //!bind: function $OP_LE($this : Int64, $target : Int64) : Boolean
@@ -484,7 +484,7 @@ static inline bool int64_2_int64_le(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_le);
     bool r = TYPE_AS(Long_Object, LOCAL(0))->value
              <= TYPE_AS(Long_Object, LOCAL(1))->value;
-    RET(TO_BOOL(r));
+    RET_BOOL(r);
 }
 
 //!bind: function $OP_GE($this : Int64, $target : Int64) : Boolean
@@ -492,7 +492,7 @@ static inline bool int64_2_int64_ge(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_ge);
     bool r = TYPE_AS(Long_Object, LOCAL(0))->value
              >= TYPE_AS(Long_Object, LOCAL(1))->value;
-    RET(TO_BOOL(r));
+    RET_BOOL(r);
 }
 
 //   =====  logical  =====
@@ -605,13 +605,13 @@ static inline bool uint64_2_uint64_mod(RuntimeContext & ctx) {
 //!bind: function $OP_EQ($this : Uint64, $target : Uint64) : Boolean
 static inline bool uint64_2_uint64_eq(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_eq);
-    RET(TO_BOOL(LOCAL(0)->equals(LOCAL(1))));
+    RET_BOOL(LOCAL(0)->equals(LOCAL(1)));
 }
 
 //!bind: function $OP_NE($this : Uint64, $target : Uint64) : Boolean
 static inline bool uint64_2_uint64_ne(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_ne);
-    RET(TO_BOOL(!LOCAL(0)->equals(LOCAL(1))));
+    RET_BOOL(!LOCAL(0)->equals(LOCAL(1)));
 }
 
 //   =====  relational  =====
@@ -621,7 +621,7 @@ static inline bool uint64_2_uint64_lt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_lt);
     bool r = (unsigned long) TYPE_AS(Long_Object, LOCAL(0))->value
              < (unsigned long) TYPE_AS(Long_Object, LOCAL(1))->value;
-    RET(TO_BOOL(r));
+    RET_BOOL(r);
 }
 
 //!bind: function $OP_GT($this : Uint64, $target : Uint64) : Boolean
@@ -629,7 +629,7 @@ static inline bool uint64_2_uint64_gt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_gt);
     bool r = (unsigned long) TYPE_AS(Long_Object, LOCAL(0))->value
              > (unsigned long) TYPE_AS(Long_Object, LOCAL(1))->value;
-    RET(TO_BOOL(r));
+    RET_BOOL(r);
 }
 
 //!bind: function $OP_LE($this : Uint64, $target : Uint64) : Boolean
@@ -637,7 +637,7 @@ static inline bool uint64_2_uint64_le(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_le);
     bool r = (unsigned long) TYPE_AS(Long_Object, LOCAL(0))->value
              <= (unsigned long) TYPE_AS(Long_Object, LOCAL(1))->value;
-    RET(TO_BOOL(r));
+    RET_BOOL(r);
 }
 
 //!bind: function $OP_GE($this : Uint64, $target : Uint64) : Boolean
@@ -645,7 +645,7 @@ static inline bool uint64_2_uint64_ge(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_ge);
     bool r = (unsigned long) TYPE_AS(Long_Object, LOCAL(0))->value
              >= (unsigned long) TYPE_AS(Long_Object, LOCAL(1))->value;
-    RET(TO_BOOL(r));
+    RET_BOOL(r);
 }
 
 //   =====  logical  =====
@@ -751,13 +751,13 @@ static inline bool float_2_float_mod(RuntimeContext & ctx) {
 //!bind: function $OP_EQ($this : Float, $target : Float) : Boolean
 static inline bool float_2_float_eq(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_eq);
-    RET(TO_BOOL(LOCAL(0)->equals(LOCAL(1))));
+    RET_BOOL(LOCAL(0)->equals(LOCAL(1)));
 }
 
 //!bind: function $OP_NE($this : Float, $target : Float) : Boolean
 static inline bool float_2_float_ne(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_ne);
-    RET(TO_BOOL(!LOCAL(0)->equals(LOCAL(1))));
+    RET_BOOL(!LOCAL(0)->equals(LOCAL(1)));
 }
 
 //   =====  relational  =====
@@ -767,7 +767,7 @@ static inline bool float_2_float_lt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_lt);
     bool r = TYPE_AS(Float_Object, LOCAL(0))->value
              < TYPE_AS(Float_Object, LOCAL(1))->value;
-    RET(TO_BOOL(r));
+    RET_BOOL(r);
 }
 
 //!bind: function $OP_GT($this : Float, $target : Float) : Boolean
@@ -775,7 +775,7 @@ static inline bool float_2_float_gt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_gt);
     bool r = TYPE_AS(Float_Object, LOCAL(0))->value
              > TYPE_AS(Float_Object, LOCAL(1))->value;
-    RET(TO_BOOL(r));
+    RET_BOOL(r);
 }
 
 //!bind: function $OP_LE($this : Float, $target : Float) : Boolean
@@ -783,7 +783,7 @@ static inline bool float_2_float_le(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_le);
     bool r = TYPE_AS(Float_Object, LOCAL(0))->value
              <= TYPE_AS(Float_Object, LOCAL(1))->value;
-    RET(TO_BOOL(r));
+    RET_BOOL(r);
 }
 
 //!bind: function $OP_GE($this : Float, $target : Float) : Boolean
@@ -791,7 +791,7 @@ static inline bool float_2_float_ge(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_ge);
     bool r = TYPE_AS(Float_Object, LOCAL(0))->value
              >= TYPE_AS(Float_Object, LOCAL(1))->value;
-    RET(TO_BOOL(r));
+    RET_BOOL(r);
 }
 
 
@@ -803,21 +803,21 @@ static inline bool float_2_float_ge(RuntimeContext & ctx) {
 static inline bool boolean_not(RuntimeContext & ctx) {
     SUPPRESS_WARNING(boolean_not);
     bool value = TYPE_AS(Boolean_Object, LOCAL(0))->value;
-    RET(TO_BOOL(!value));
+    RET_BOOL(!value);
 }
 
 //!bind: function $OP_EQ($this : Boolean, $target : Boolean) : Boolean
 static inline bool boolean_eq(RuntimeContext & ctx) {
     SUPPRESS_WARNING(boolean_eq);
     bool r = LOCAL(0)->equals(LOCAL(1));
-    RET(TO_BOOL(r));
+    RET_BOOL(r);
 }
 
 //!bind: function $OP_NE($this : Boolean, $target : Boolean) : Boolean
 static inline bool boolean_ne(RuntimeContext & ctx) {
     SUPPRESS_WARNING(boolean_ne);
     bool r = !LOCAL(0)->equals(LOCAL(1));
-    RET(TO_BOOL(r));
+    RET_BOOL(r);
 }
 
 
@@ -838,21 +838,21 @@ static inline bool string_add(RuntimeContext &ctx) {
     std::shared_ptr<String_Object> str(new String_Object(ctx.pool.getStringType()));
     str->value += TYPE_AS(String_Object, LOCAL(0))->value;
     str->value += TYPE_AS(String_Object, ctx.peek())->value;
-    RET(str);
+    RET(std::move(str));
 }
 
 //!bind: function $OP_EQ($this : String, $target : String) : Boolean
 static inline bool string_eq(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_eq);
     bool r = LOCAL(0)->equals(LOCAL(1));
-    RET(TO_BOOL(r));
+    RET_BOOL(r);
 }
 
 //!bind: function $OP_NE($this : String, $target : String) : Boolean
 static inline bool string_ne(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_ne);
     bool r = !LOCAL(0)->equals(LOCAL(1));
-    RET(TO_BOOL(r));
+    RET_BOOL(r);
 }
 
 //!bind: function size($this : String) : Uint32
@@ -866,7 +866,7 @@ static inline bool string_size(RuntimeContext &ctx) {
 static inline bool string_empty(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_empty);
     bool empty = TYPE_AS(String_Object, LOCAL(0))->value.empty();
-    RET(TO_BOOL(empty));
+    RET_BOOL(empty);
 }
 
 
@@ -878,14 +878,14 @@ static inline bool string_empty(RuntimeContext &ctx) {
 static inline bool objectpath_eq(RuntimeContext &ctx) {
     SUPPRESS_WARNING(objectpath_eq);
     bool r = LOCAL(0)->equals(LOCAL(1));
-    RET(TO_BOOL(r));
+    RET_BOOL(r);
 }
 
 //!bind: function $OP_NE($this : ObjectPath, $target : ObjectPath) : Boolean
 static inline bool objectpath_ne(RuntimeContext &ctx) {
     SUPPRESS_WARNING(objectpath_ne);
     bool r = !LOCAL(0)->equals(LOCAL(1));
-    RET(TO_BOOL(r));
+    RET_BOOL(r);
 }
 
 //!bind: function size($this : ObjectPath) : Uint32
@@ -966,7 +966,7 @@ static inline bool array_size(RuntimeContext &ctx) {
 static inline bool array_empty(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_empty);
     bool empty = TYPE_AS(Array_Object, LOCAL(0))->values.empty();
-    RET(TO_BOOL(empty));
+    RET_BOOL(empty);
 }
 
 //!bind: function $OP_ITER($this : Array<T0>) : Array<T0>
@@ -993,7 +993,7 @@ static inline bool array_hasNext(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_hasNext);
     Array_Object *obj = TYPE_AS(Array_Object, LOCAL(0));
     bool r = obj->curIndex < obj->values.size();
-    RET(TO_BOOL(r));
+    RET_BOOL(r);
 }
 
 
@@ -1044,7 +1044,7 @@ static inline bool map_empty(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_empty);
     Map_Object *obj = TYPE_AS(Map_Object, LOCAL(0));
     bool value = obj->getValueMap().empty();
-    RET(TO_BOOL(value));
+    RET_BOOL(value);
 }
 
 //!bind: function find($this : Map<T0, T1>, $key : T0) : Boolean
@@ -1052,7 +1052,7 @@ static inline bool map_find(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_find);
     Map_Object *obj = TYPE_AS(Map_Object, LOCAL(0));
     auto iter = obj->getValueMap().find(LOCAL(1));
-    RET(TO_BOOL(iter != obj->getValueMap().end()));
+    RET_BOOL(iter != obj->getValueMap().end());
 }
 
 // ###################
