@@ -57,4 +57,4 @@ function g() : Int {
 	return 99
 }
 
-assert($g() == 2)
+assert($g() == 0)

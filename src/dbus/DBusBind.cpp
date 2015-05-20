@@ -424,7 +424,7 @@ bool DBus_ObjectImpl::getSystemBus(RuntimeContext &ctx) {
             return false;
         }
     }
-    ctx.returnObject = this->systemBus;
+    ctx.push(this->systemBus);
     return true;
 }
 
@@ -435,7 +435,7 @@ bool DBus_ObjectImpl::getSessionBus(RuntimeContext &ctx) {
             return false;
         }
     }
-    ctx.returnObject = this->sessionBus;
+    ctx.push(this->sessionBus);
     return true;
 }
 
@@ -788,7 +788,7 @@ bool DBusProxy_Object::invokeMethod(RuntimeContext &ctx, const std::string &meth
         if(!result) {
             return false;
         }
-        ctx.returnObject = std::move(result);
+        ctx.push(std::move(result));
     }
     return true;
 }
@@ -894,7 +894,7 @@ bool DBusProxy_Object::newObject(RuntimeContext &ctx, const std::shared_ptr<DSOb
         return false;
     }
 
-    ctx.returnObject = std::move(obj);
+    ctx.push(std::move(obj));
     return true;
 }
 

@@ -24,7 +24,7 @@
 
 // helper macro
 #define LOCAL(index) (ctx.localStack[ctx.localVarOffset + (index)])
-#define RET(value) do { ctx.returnObject = (value); return true; } while(0)
+#define RET(value) do { ctx.push(value); return true; } while(0)
 #define TO_BOOL(value) ((value) ? ctx.trueObj : ctx.falseObj)
 
 #define SUPPRESS_WARNING(a) (void)a

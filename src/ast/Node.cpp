@@ -2392,9 +2392,6 @@ void ReturnNode::accept(NodeVisitor *visitor) {
 
 EvalStatus ReturnNode::eval(RuntimeContext &ctx) {
     EVAL(ctx, this->exprNode);
-    if (!this->exprNode->getType()->isVoidType()) {
-        ctx.setReturnObject();
-    }
     return EVAL_RETURN;
 }
 

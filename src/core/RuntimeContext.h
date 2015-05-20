@@ -83,11 +83,6 @@ struct RuntimeContext {
     unsigned int tableSize;
 
     /**
-     * if not null ptr, has return value.
-     */
-    std::shared_ptr<DSObject> returnObject;
-
-    /**
      * if not null ptr, thrown exception.
      */
     std::shared_ptr<DSObject> thrownObject;
@@ -184,21 +179,6 @@ struct RuntimeContext {
     }
 
     /**
-     * pop and set to returnObject.
-     */
-    void setReturnObject() {
-        this->returnObject = this->pop();
-    }
-
-    /**
-     * pop returnObject and push to localStack.
-     */
-    void getReturnObject() {
-        this->push(this->returnObject);
-        this->returnObject.reset();
-    }
-
-    /**
      * for internal error reporting.
      */
     void throwError(DSType *errorType, const char *message) {
@@ -254,6 +234,13 @@ struct RuntimeContext {
 
     // operand manipulation
     void push(const std::shared_ptr<DSObject> &value) {
+        if(++this->stackTopIndex >= this->localStackSize) {
+            this->expandLocalStack(this->stackTopIndex);
+        }
+        this->localStack[this->stackTopIndex] = value;
+    }
+
+    void push(std::shared_ptr<DSObject> &&value) {
         if(++this->stackTopIndex >= this->localStackSize) {
             this->expandLocalStack(this->stackTopIndex);
         }
@@ -386,19 +373,20 @@ struct RuntimeContext {
         this->popCallFrame();
 
         // restore stack state
+        std::shared_ptr<DSObject> returnValue;
+        if(!returnTypeIsVoid) {
+            returnValue = this->peek();
+        }
+
         this->restoreOffset();
         for(unsigned int i = this->stackTopIndex; i > savedStackTopIndex; i--) {
             this->pop();
         }
 
-        if(status) {
-            if(!returnTypeIsVoid) {
-                this->getReturnObject(); // push return value
-            }
-            return EVAL_SUCCESS;
-        } else {
-            return EVAL_THROW;
+        if(returnValue) {
+            this->push(std::move(returnValue));
         }
+        return status ? EVAL_SUCCESS : EVAL_THROW;
     }
 
     /**
@@ -421,7 +409,7 @@ struct RuntimeContext {
         this->saveAndSetOffset(savedStackTopIndex + 1);
         this->pushCallFrame(lineNum);
 
-        bool status = false;
+        bool status;
         // check method handle type
         if(!handle->isInterfaceMethod()) {  // call virtual method
             status = this->localStack[savedStackTopIndex + 1]->
@@ -434,19 +422,20 @@ struct RuntimeContext {
         this->popCallFrame();
 
         // restore stack state
+        std::shared_ptr<DSObject> returnValue;
+        if(!handle->getReturnType()->isVoidType()) {
+            returnValue = this->peek();
+        }
+
         this->restoreOffset();
         for(unsigned int i = this->stackTopIndex; i > savedStackTopIndex; i--) {
             this->pop();
         }
 
-        if(status) {
-            if(!handle->getReturnType()->isVoidType()) {
-                this->getReturnObject(); // push return value
-            }
-            return EVAL_SUCCESS;
-        } else {
-            return EVAL_THROW;
+        if(returnValue) {
+            this->push(std::move(returnValue));
         }
+        return status ? EVAL_SUCCESS : EVAL_THROW;
     }
 
     /**
