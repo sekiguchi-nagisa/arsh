@@ -413,7 +413,7 @@ protected:
     std::string actualFuncName;
 
     Element(std::string &&funcName, bool func, bool op) :
-            func(func), funcName(funcName), op(op), ownerType(), returnType(),
+            func(func), funcName(std::move(funcName)), op(op), ownerType(), returnType(),
             paramTypes(), paramNames(), actualFuncName() {
     }
 
@@ -449,7 +449,7 @@ public:
     }
 
     void setActualFuncName(std::string &&name) {
-        this->actualFuncName = name;
+        this->actualFuncName = std::move(name);
     }
 
     bool isOwnerType(HandleInfo info) {

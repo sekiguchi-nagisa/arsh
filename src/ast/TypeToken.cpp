@@ -162,7 +162,7 @@ void FuncTypeToken::accept(TypeTokenVisitor *visitor) {
 // ################################
 
 DBusInterfaceToken::DBusInterfaceToken(unsigned int lineNum, std::string &&name) :
-        TypeToken(lineNum), name(name) {
+        TypeToken(lineNum), name(std::move(name)) {
 }
 
 const std::string &DBusInterfaceToken::getTokenText() {

@@ -1051,7 +1051,7 @@ MethodCallNode::MethodCallNode(Node *recvNode, std::string &&methodName) :
 
 MethodCallNode::MethodCallNode(Node *recvNode, std::string &&methodName, ArgsNode *argsNode) :
         CallNode(recvNode->getLineNum(), argsNode),
-        recvNode(recvNode), methodName(methodName), handle(), attributeSet() {
+        recvNode(recvNode), methodName(std::move(methodName)), handle(), attributeSet() {
 }
 
 MethodCallNode::~MethodCallNode() {
@@ -1068,7 +1068,7 @@ Node *MethodCallNode::getRecvNode() {
 }
 
 void MethodCallNode::setMethodName(std::string &&methodName) {
-    this->methodName = methodName;
+    this->methodName = std::move(methodName);
 }
 
 const std::string &MethodCallNode::getMethodName() {
@@ -2012,7 +2012,7 @@ EvalStatus ImportEnvNode::eval(RuntimeContext &ctx) {
 // ###########################
 
 TypeAliasNode::TypeAliasNode(unsigned int lineNum, std::string &&alias, TypeToken *targetTypeToken) :
-        Node(lineNum), alias(alias), targetTypeToken(targetTypeToken) {
+        Node(lineNum), alias(std::move(alias)), targetTypeToken(targetTypeToken) {
 }
 
 TypeAliasNode::TypeAliasNode(const char *alias, const char *targetTypeName) :
@@ -2980,7 +2980,7 @@ EvalStatus FunctionNode::eval(RuntimeContext &ctx) {
 // ###########################
 
 InterfaceNode::InterfaceNode(unsigned int lineNum, std::string &&interfaceName) :
-        Node(lineNum), interfaceName(interfaceName), methodDeclNodes(),
+        Node(lineNum), interfaceName(std::move(interfaceName)), methodDeclNodes(),
         fieldDeclNodes(), fieldTypeTokens() {
 }
 

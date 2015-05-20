@@ -22,7 +22,7 @@ namespace ydsh {
 namespace core {
 
 TypeTemplate::TypeTemplate(std::string &&name, std::vector<DSType*> &&elementTypes, native_type_info_t *info) :
-        name(std::move(name)), acceptableTypes(elementTypes), info(info) {
+        name(std::move(name)), acceptableTypes(std::move(elementTypes)), info(info) {
 }
 
 TypeTemplate::~TypeTemplate() {

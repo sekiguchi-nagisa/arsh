@@ -436,7 +436,8 @@ bool DBus_ObjectImpl::getSessionBus(RuntimeContext &ctx) {
 
 DBusProxy_Object::DBusProxy_Object(DSType *type, const std::shared_ptr<DSObject> &busObj,
                                    std::string &&destination, std::string &&objectPath) :
-        ProxyObject(type), conn(0), destination(destination), objectPath(objectPath), ifaceSet() {
+        ProxyObject(type), conn(0), destination(std::move(destination)),
+        objectPath(std::move(objectPath)), ifaceSet() {
     this->conn = TYPE_AS(Bus_Object, busObj)->conn;
 }
 

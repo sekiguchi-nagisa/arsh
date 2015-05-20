@@ -265,7 +265,7 @@ Array_Object::Array_Object(DSType *type) :
 }
 
 Array_Object::Array_Object(DSType *type, std::vector<std::shared_ptr<DSObject>> &&values) :
-        DSObject(type), curIndex(0), values(values) {
+        DSObject(type), curIndex(0), values(std::move(values)) {
 }
 
 const std::vector<std::shared_ptr<DSObject>> &Array_Object::getValues() {
@@ -474,7 +474,7 @@ Error_Object::Error_Object(DSType *type, const std::shared_ptr<DSObject> &messag
 }
 
 Error_Object::Error_Object(DSType *type, std::shared_ptr<DSObject> &&message) :
-        DSObject(type), message(message), stackTrace() {
+        DSObject(type), message(std::move(message)), stackTrace() {
 }
 
 Error_Object::~Error_Object() {
