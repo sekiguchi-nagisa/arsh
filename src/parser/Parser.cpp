@@ -172,7 +172,7 @@ Parser::Parser() :
 Parser::~Parser() {
 }
 
-void Parser::parse(Lexer<LexerDef, TokenKind> &lexer, RootNode &rootNode) {
+void Parser::parse(DSLexer &lexer, RootNode &rootNode) {
     this->lexer = &lexer;
 
     // first, fetch token.

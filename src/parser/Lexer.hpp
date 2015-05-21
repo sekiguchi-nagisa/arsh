@@ -672,6 +672,8 @@ struct LexerDef {
     TokenKind operator()(Lexer<LexerDef, TokenKind> *lexer, Token &token) const;
 };
 
+typedef Lexer<LexerDef, TokenKind> DSLexer;
+
 } // namespace parser
 } // namespace ydsh
 

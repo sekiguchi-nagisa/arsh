@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <parser/Lexer.h>
+#include <parser/Lexer.hpp>
 #include <parser/Parser.h>
 #include <parser/ParseError.h>
 #include <ast/Node.h>

@@ -20,7 +20,7 @@
 #include <memory>
 #include <utility>
 
-#include "Lexer.h"
+#include "Lexer.hpp"
 #include "../ast/Node.h"
 #include "../ast/TypeToken.h"
 
@@ -34,7 +34,7 @@ private:
     /**
      * not call destructor.
      */
-    Lexer<LexerDef, TokenKind> *lexer;
+    DSLexer *lexer;
 
     /**
      * current token kind. updated by Lexer.
@@ -55,7 +55,7 @@ public:
      * parse entry point.
      * write parsed nodes to rootNode.
      */
-    void parse(Lexer<LexerDef, TokenKind> &lexer, RootNode &rootNode);
+    void parse(DSLexer &lexer, RootNode &rootNode);
 
 private:
     /**

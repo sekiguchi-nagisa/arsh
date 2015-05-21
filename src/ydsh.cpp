@@ -19,7 +19,7 @@
 #include <unistd.h>
 
 #include "exe/Shell.h"
-#include "misc/ArgsParser.h"
+#include "misc/ArgsParser.hpp"
 
 #define YDSH_MAJOR_VERSION 0
 #define YDSH_MINOR_VERSION 1

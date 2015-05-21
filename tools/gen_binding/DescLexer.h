@@ -17,7 +17,7 @@
 #ifndef TOOLS_DESCLEXER_H
 #define TOOLS_DESCLEXER_H
 
-#include <parser/Lexer.h>
+#include <parser/Lexer.hpp>
 
 #define EACH_DESC_TOKEN(OP) \
     OP(INVALID) \

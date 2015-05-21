@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <parser/Lexer.h>
+#include <parser/Lexer.hpp>
 
 // helper macro definition.
 #define RET(k) do { kind = k; goto END; } while(0)
