@@ -3,8 +3,11 @@
 #include <core/TypePool.h>
 #include <core/DSType.h>
 #include <core/TypeTemplate.h>
+#include <ast/TypeToken.h>
+#include <parser/TypeChecker.h>
 
 using namespace ydsh::core;
+using namespace ydsh::ast;
 
 class TypeTest : public ::testing::Test {
 public:
@@ -51,6 +54,8 @@ public:
     virtual void assertSuperType(DSType *type, DSType *superType) {
         SCOPED_TRACE("");
 
+        ASSERT_TRUE(type != nullptr);
+        ASSERT_TRUE(superType != nullptr);
         DSType *actualSuperType = type->getSuperType();
         ASSERT_TRUE(actualSuperType != nullptr);
         ASSERT_EQ(this->pool->getTypeName(*actualSuperType), this->pool->getTypeName(*superType));
@@ -79,7 +84,26 @@ public:
         ASSERT_EQ(size, gotten->getElementTypeSize());
         ASSERT_TRUE((unsigned long)this->pool->getTypeTemplate(name) == (unsigned long)t);
     }
+
+    virtual DSType *toType(std::unique_ptr<TypeToken> &&tok) {
+        SCOPED_TRACE("");
+        try {
+            TypeToken *ptr = tok.get();
+            return TypeGenerator(this->pool).generateTypeAndThrow(ptr);
+        } catch(const TypeCheckError &e) {
+            std::cerr << e.getTemplate() << std::endl;
+            return nullptr;
+        }
+    }
 };
+
+// helper utils
+#include "type_util.hpp"
+
+static std::unique_ptr<TypeToken> type(const char *name, unsigned int lineNum = 0) {
+    return std::unique_ptr<TypeToken>(new ClassTypeToken(lineNum, std::string(name)));
+}
+
 
 TEST_F(TypeTest, builtinName) {
     ASSERT_NO_FATAL_FAILURE({
@@ -164,5 +188,29 @@ TEST_F(TypeTest, templateName) {
         this->assertTemplateName("Array", this->pool->getArrayTemplate(), 1);
         this->assertTemplateName("Map", this->pool->getMapTemplate(), 2);
         this->assertTemplateName("Tuple", this->pool->getTupleTemplate(), 0);
+    });
+}
+
+TEST_F(TypeTest, typeToken) {
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+
+        this->assertSuperType(this->toType(type("Int32")), this->pool->getValueType());
+        this->assertAlias("Int", this->pool->getInt32Type());
+        this->assertSuperType(this->toType(type("Int")), this->pool->getValueType());
+
+        this->assertSuperType(this->toType(reified("Array", type("String"))), this->pool->getVariantType());
+        this->assertSuperType(this->toType(reified("Array", reified("Array", type("ObjectPath")))), this->pool->getVariantType());
+        this->assertSuperType(this->toType(reified("Array", type("Error"))), this->pool->getAnyType());
+
+        this->assertSuperType(this->toType(reified("Map", type("Byte"), type("Uint64"))), this->pool->getVariantType());
+        this->assertSuperType(this->toType(
+                reified("Map", type("Boolean"),
+                        reified("Tuple", type("Uint32"), type("String")))), this->pool->getVariantType());
+        this->assertSuperType(this->toType(reified("Tuple", type("Error"))), this->pool->getAnyType());
+
+        this->assertSuperType(this->toType(func(type("Void"))), this->pool->getBaseFuncType());
+        this->assertSuperType(this->toType(
+                func(type("Int16"), type("Uint16"), type("Int64"), type("Float"))), this->pool->getBaseFuncType());
     });
 }
