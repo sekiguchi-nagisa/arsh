@@ -38,6 +38,7 @@ namespace core {
     OP(UnixFD) \
     OP(DBus) \
     OP(Bus) \
+    OP(Service) \
     OP(DBusObject) \
     OP(Error) \
     OP(Proxy)

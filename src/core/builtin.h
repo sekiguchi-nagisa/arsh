@@ -1120,13 +1120,22 @@ static inline bool dbus_waitSignal(RuntimeContext &ctx) {
 // ##     Bus     ##
 // #################
 
-//!bind: function object($this : Bus, $dest : String, $path : ObjectPath) : DBusObject
-static inline bool bus_object(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(bus_object);
+//!bind: function service($this : Bus, $dest : String) : Service
+static inline bool bus_service(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(bus_service);
     String_Object *strObj = TYPE_AS(String_Object, LOCAL(1));
-    String_Object *pathObj = TYPE_AS(String_Object, LOCAL(2));
+    return DBus_Object::newService(ctx, LOCAL(0), std::string(strObj->value));
+}
 
-    return DBus_Object::newObject(ctx, LOCAL(0), std::string(strObj->value), std::string(pathObj->value));
+// #####################
+// ##     Service     ##
+// #####################
+
+//!bind: function object($this : Service, $path : ObjectPath) : DBusObject
+static inline bool service_object(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(service_object);
+    String_Object *path = TYPE_AS(String_Object, LOCAL(1));
+    return DBus_Object::newObject(ctx, LOCAL(0), std::string(path->value));
 }
 
 

@@ -125,6 +125,26 @@ struct Bus_Object : public DSObject {
     bool initConnection(RuntimeContext &ctx, bool systemBus);
 };
 
+struct Service_Object : public DSObject {
+    /**
+     * not delete it.
+     */
+    DBusConnection *conn;
+
+    /**
+     * service name of destination process.
+     */
+    std::string serviceName;
+
+    Service_Object(DSType *type, DBusConnection *conn, std::string &&serviceName);
+    ~Service_Object();
+
+    std::string toString(RuntimeContext &ctx); // override
+
+    static bool newServiceObject(RuntimeContext &ctx,
+                                 const std::shared_ptr<DSObject> &obj, std::string &&serviceName);
+};
+
 struct DBus_ObjectImpl : public DBus_Object {
     std::shared_ptr<Bus_Object> systemBus;
     std::shared_ptr<Bus_Object> sessionBus;
@@ -139,9 +159,7 @@ struct DBus_ObjectImpl : public DBus_Object {
 
 // represent for D-Bus object.
 struct DBusProxy_Object : public ProxyObject {
-    DBusConnection *conn;
-
-    std::string destination;
+    std::shared_ptr<Service_Object> srv;
     std::string objectPath;
 
     /**
@@ -149,8 +167,7 @@ struct DBusProxy_Object : public ProxyObject {
      */
     std::unordered_set<std::string> ifaceSet;
 
-    DBusProxy_Object(DSType *type, const std::shared_ptr<DSObject> &busObj,
-                     std::string &&destination, std::string &&objectPath);
+    DBusProxy_Object(DSType *type, const std::shared_ptr<DSObject> &srcObj, std::string &&objectPath);
 
     std::string toString(RuntimeContext &ctx); // override
     bool introspect(RuntimeContext &ctx, DSType *targetType); // override
@@ -175,7 +192,7 @@ struct DBusProxy_Object : public ProxyObject {
     DBusMessage *sendAndUnrefMessage(RuntimeContext &ctx, DBusMessage *sendMsg, bool &status);
 
     static bool newObject(RuntimeContext &ctx, const std::shared_ptr<DSObject> &busObj,
-                          std::string &&destination, std::string &&objectPath);
+                          std::string &&objectPath);
 };
 
 } // namespace core

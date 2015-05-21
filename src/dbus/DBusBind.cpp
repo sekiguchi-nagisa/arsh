@@ -396,6 +396,28 @@ bool Bus_Object::initConnection(RuntimeContext &ctx, bool systemBus) {
     return true;
 }
 
+// ############################
+// ##     Service_Object     ##
+// ############################
+
+Service_Object::Service_Object(DSType *type, DBusConnection *conn, std::string &&serviceName) :
+        DSObject(type), conn(conn), serviceName(std::move(serviceName)) {
+}
+
+Service_Object::~Service_Object() {
+}
+
+std::string Service_Object::toString(RuntimeContext &ctx) {
+    return this->serviceName;
+}
+
+bool Service_Object::newServiceObject(RuntimeContext &ctx,
+                                      const std::shared_ptr<DSObject> &obj, std::string &&serviceName) {
+    ctx.push(std::make_shared<Service_Object>(
+            ctx.pool.getServiceType(), TYPE_AS(Service_Object, obj)->conn, std::move(serviceName)));
+    return true;
+}
+
 // #############################
 // ##     DBus_ObjectImpl     ##
 // #############################
@@ -434,16 +456,15 @@ bool DBus_ObjectImpl::getSessionBus(RuntimeContext &ctx) {
 // ##     DBusProxy_Object     ##
 // ##############################
 
-DBusProxy_Object::DBusProxy_Object(DSType *type, const std::shared_ptr<DSObject> &busObj,
-                                   std::string &&destination, std::string &&objectPath) :
-        ProxyObject(type), conn(0), destination(std::move(destination)),
+DBusProxy_Object::DBusProxy_Object(DSType *type, const std::shared_ptr<DSObject> &srcObj, std::string &&objectPath) :
+        ProxyObject(type), srv(),
         objectPath(std::move(objectPath)), ifaceSet() {
-    this->conn = TYPE_AS(Bus_Object, busObj)->conn;
+    this->srv = std::dynamic_pointer_cast<Service_Object>(srcObj);
 }
 
 std::string DBusProxy_Object::toString(RuntimeContext &ctx) {
     std::string str("[dest=");
-    str += this->destination;
+    str += this->srv->serviceName;
     str += ", path=";
     str += this->objectPath;
     str += ", iface=";
@@ -503,7 +524,7 @@ bool DBusProxy_Object::doIntrospection(RuntimeContext &ctx) {
     DBusError error;
     dbus_error_init(&error);
 
-    if(!dbus_validate_bus_name(this->destination.c_str(), &error)) {
+    if(!dbus_validate_bus_name(this->srv->serviceName.c_str(), &error)) {
         reportError(ctx, error);
         return false;
     }
@@ -847,7 +868,7 @@ bool DBusProxy_Object::invokeSetter(RuntimeContext &ctx,DSType *recvType,
 
 DBusMessage *DBusProxy_Object::newMethodCallMsg(const char *ifaceName, const char *methodName) {
     return dbus_message_new_method_call(
-            this->destination.c_str(), this->objectPath.c_str(), ifaceName, methodName);
+            this->srv->serviceName.c_str(), this->objectPath.c_str(), ifaceName, methodName);
 }
 
 DBusMessage *DBusProxy_Object::newMethodCallMsg(const std::string &ifaceName, const std::string &methodName) {
@@ -859,7 +880,7 @@ DBusMessage *DBusProxy_Object::sendAndUnrefMessage(RuntimeContext &ctx, DBusMess
     dbus_error_init(&error);
 
     status = false;
-    DBusMessage *retMsg = dbus_connection_send_with_reply_and_block(this->conn, sendMsg, DBUS_TIMEOUT_USE_DEFAULT, &error);
+    DBusMessage *retMsg = dbus_connection_send_with_reply_and_block(this->srv->conn, sendMsg, DBUS_TIMEOUT_USE_DEFAULT, &error);
     unrefMessage(sendMsg);
 
     if(dbus_error_is_set(&error)) {
@@ -874,11 +895,10 @@ DBusMessage *DBusProxy_Object::sendAndUnrefMessage(RuntimeContext &ctx, DBusMess
     return retMsg;
 }
 
-bool DBusProxy_Object::newObject(RuntimeContext &ctx, const std::shared_ptr<DSObject> &busObj,
-                                 std::string &&destination, std::string &&objectPath) {
+bool DBusProxy_Object::newObject(RuntimeContext &ctx, const std::shared_ptr<DSObject> &srvObj,
+                                 std::string &&objectPath) {
     std::shared_ptr<DBusProxy_Object> obj(
-            new DBusProxy_Object(ctx.pool.getDBusObjectType(), busObj,
-                                 std::move(destination), std::move(objectPath)));
+            new DBusProxy_Object(ctx.pool.getDBusObjectType(), srvObj, std::move(objectPath)));
 
     // first call Introspection and resolve interface type.
     if(!obj->doIntrospection(ctx)) {

@@ -100,6 +100,11 @@ private:
     DSType *busType;
 
     /**
+     * for service
+     */
+    DSType *serviceType;
+
+    /**
      * for D-Bus proxy instance
      */
     DSType *dbusObjectType;
@@ -199,6 +204,7 @@ public:
 
     DSType *getDBusType();
     DSType *getBusType();
+    DSType *getServiceType();
     DSType *getDBusObjectType();
 
     DSType *getStringArrayType();

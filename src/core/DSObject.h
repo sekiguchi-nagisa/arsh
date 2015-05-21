@@ -406,8 +406,9 @@ struct DBus_Object : public DSObject {
     virtual bool getSessionBus(RuntimeContext &ctx);
 
     static DBus_Object *newDBus_Object(TypePool *typePool);
-    static bool newObject(RuntimeContext &ctx, const std::shared_ptr<DSObject> &busObj,
-                          std::string &&destination, std::string &&objectPath);
+    static bool newService(RuntimeContext &ctx, const std::shared_ptr<DSObject> &busObj, std::string &&serviceName);
+
+    static bool newObject(RuntimeContext &ctx, const std::shared_ptr<DSObject> &srvObj, std::string &&objectPath);
 };
 
 struct ObjectVisitor {

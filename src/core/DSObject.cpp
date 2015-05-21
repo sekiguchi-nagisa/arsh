@@ -682,13 +682,23 @@ DBus_Object *DBus_Object::newDBus_Object(TypePool *typePool) {
 #endif
 }
 
-bool DBus_Object::newObject(RuntimeContext &ctx, const std::shared_ptr<DSObject> &busObj,
-               std::string &&destination, std::string &&objectPath) {
+bool DBus_Object::newService(RuntimeContext &ctx, const std::shared_ptr<DSObject> &busObj,
+                             std::string &&serviceName) {
+#ifdef X_NO_DBUS
+    ctx.throwError(ctx.pool.getErrorType(), "not support D-Bus service object");
+    return false;
+#else
+    return Service_Object::newServiceObject(ctx, busObj, std::move(serviceName));
+#endif
+}
+
+bool DBus_Object::newObject(RuntimeContext &ctx, const std::shared_ptr<DSObject> &srvObj,
+                            std::string &&objectPath) {
 #ifdef X_NO_DBUS
     ctx.throwError(ctx.pool.getErrorType(), "not support D-Bus proxy object");
     return false;
 #else
-    return DBusProxy_Object::newObject(ctx, busObj, std::move(destination), std::move(objectPath));
+    return DBusProxy_Object::newObject(ctx, srvObj, std::move(objectPath));
 #endif
 }
 

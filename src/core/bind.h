@@ -42,6 +42,7 @@ native_type_info_t *info_ObjectPathType();
 native_type_info_t *info_UnixFDType();
 native_type_info_t *info_DBusType();
 native_type_info_t *info_BusType();
+native_type_info_t *info_ServiceType();
 native_type_info_t *info_ErrorType();
 native_type_info_t *info_ProxyType();
 

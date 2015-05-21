@@ -41,7 +41,7 @@ TypePool::TypePool(char **envp) :
         floatType(), boolType(), stringType(),
         errorType(), taskType(), baseFuncType(),
         objectPathType(), unixFDType(), proxyType(),
-        dbusType(), busType(), dbusObjectType(),
+        dbusType(), busType(), serviceType(), dbusObjectType(),
         arithmeticErrorType(), outOfIndexErrorType(),
         keyNotFoundErrorType(), typeCastErrorType(),
         templateMap(8),
@@ -75,6 +75,7 @@ TypePool::TypePool(char **envp) :
     this->proxyType = this->initBuiltinType("Proxy", false, this->anyType, info_ProxyType());
     this->dbusType = this->initBuiltinType("DBus", false, this->anyType, info_DBusType());
     this->busType = this->initBuiltinType("Bus", false, this->anyType, info_BusType());
+    this->serviceType = this->initBuiltinType("Service", false, this->anyType, info_ServiceType());
     this->dbusObjectType = this->initBuiltinType("DBusObject", false, this->proxyType, info_Dummy());
 
     this->errorType = this->initBuiltinType("Error", true, this->anyType, info_ErrorType());
@@ -216,6 +217,10 @@ DSType *TypePool::getDBusType() {
 
 DSType *TypePool::getBusType() {
     return this->busType;
+}
+
+DSType *TypePool::getServiceType() {
+    return this->serviceType;
 }
 
 DSType *TypePool::getDBusObjectType() {

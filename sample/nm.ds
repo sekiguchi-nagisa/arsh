@@ -7,7 +7,9 @@ interface org.freedesktop.NetworkManager {
     let Devices : Array<ObjectPath>
 }
 
-var a = $DBus.systemBus().object("org.freedesktop.NetworkManager", p'/org/freedesktop/NetworkManager')
+var a = $DBus.systemBus()\
+            .service("org.freedesktop.NetworkManager")\
+            .object(p'/org/freedesktop/NetworkManager')
 
 type-alias NM org.freedesktop.NetworkManager
 
