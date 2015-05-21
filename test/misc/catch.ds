@@ -1,9 +1,0 @@
-try {
-    12 / 0
-    assert($false)
-}
-catch($e : Error) {
-    $e.backtrace()
-    assert($true)
-}
-
