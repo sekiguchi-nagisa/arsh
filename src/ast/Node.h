@@ -446,6 +446,7 @@ public:
     /**
      * for implicite cast.
      * targetNode must be typed node.
+     * type is after casted value type.
      */
     static CastNode *newTypedCastNode(Node *targetNode, DSType *type, CastOp op);
 };

@@ -785,19 +785,25 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode * node) {
     DSType *leftType = this->checkType(node->getLeftNode());
     DSType *rightType = this->checkType(node->getRightNode());
 
-    int leftPrecision = this->typePool->getIntPrecision(leftType);
-    int rightPrecision = this->typePool->getIntPrecision(rightType);
+    if(*leftType != *this->typePool->getStringType() &&
+            *rightType == *this->typePool->getStringType()) {   // check string cast
+        node->setLeftNode(CastNode::newTypedCastNode(
+                node->getLeftNode(), this->typePool->getStringType(), CastNode::TO_STRING));
+    } else {    // check int cast
+        int leftPrecision = this->typePool->getIntPrecision(leftType);
+        int rightPrecision = this->typePool->getIntPrecision(rightType);
 
-    CoercionKind kind = CoercionKind::INVALID_COERCION;
+        CoercionKind kind = CoercionKind::INVALID_COERCION;
 
-    if(leftPrecision > TypePool::INVALID_PRECISION &&
-            leftPrecision < TypePool::INT32_PRECISION &&
-            rightPrecision > TypePool::INVALID_PRECISION &&
-            rightPrecision < TypePool::INT32_PRECISION) {   // int widening
-        node->setLeftNode(this->resolveCoercion(INT_NOP, this->typePool->getInt32Type(), node->getLeftNode()));
-        node->setRightNode(this->resolveCoercion(INT_NOP, this->typePool->getInt32Type(), node->getRightNode()));
-    } else if(leftPrecision != rightPrecision && this->checkCoercion(kind, rightType, leftType)) {    // cast left
-        node->setLeftNode(this->resolveCoercion(kind, rightType, node->getLeftNode()));
+        if(leftPrecision > TypePool::INVALID_PRECISION &&
+           leftPrecision < TypePool::INT32_PRECISION &&
+           rightPrecision > TypePool::INVALID_PRECISION &&
+           rightPrecision < TypePool::INT32_PRECISION) {   // int widening
+            node->setLeftNode(this->resolveCoercion(INT_NOP, this->typePool->getInt32Type(), node->getLeftNode()));
+            node->setRightNode(this->resolveCoercion(INT_NOP, this->typePool->getInt32Type(), node->getRightNode()));
+        } else if(leftPrecision != rightPrecision && this->checkCoercion(kind, rightType, leftType)) {    // cast left
+            node->setLeftNode(this->resolveCoercion(kind, rightType, node->getLeftNode()));
+        }
     }
 
     MethodCallNode *applyNode = node->creatApplyNode();
