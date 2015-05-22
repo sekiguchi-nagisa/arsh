@@ -5,6 +5,7 @@
 #include <core/TypeTemplate.h>
 #include <ast/TypeToken.h>
 #include <parser/TypeChecker.h>
+#include <misc/types.hpp>
 
 using namespace ydsh::core;
 using namespace ydsh::ast;
@@ -96,13 +97,6 @@ public:
         }
     }
 };
-
-// helper utils
-#include "type_util.hpp"
-
-static std::unique_ptr<TypeToken> type(const char *name, unsigned int lineNum = 0) {
-    return std::unique_ptr<TypeToken>(new ClassTypeToken(lineNum, std::string(name)));
-}
 
 
 TEST_F(TypeTest, builtinName) {

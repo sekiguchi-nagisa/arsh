@@ -15,7 +15,6 @@
  */
 
 #include "RuntimeContext.h"
-#include "../ast/Node.h"
 
 namespace ydsh {
 namespace core {

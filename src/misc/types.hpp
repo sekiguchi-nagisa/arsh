@@ -5,7 +5,10 @@
 #ifndef YDSH_TYPE_UTIL_H
 #define YDSH_TYPE_UTIL_H
 
-#include <ast/TypeToken.h>
+#include "../ast/TypeToken.h"
+
+namespace ydsh {
+namespace ast {
 
 void addElement(std::unique_ptr<ReifiedTypeToken> &reified) {
 }
@@ -40,6 +43,15 @@ std::unique_ptr<TypeToken> func(std::unique_ptr<TypeToken> &&returnType, T&&... 
     addParamType(func, std::forward<T>(paramTypes)...);
     return std::move(func);
 }
+
+inline std::unique_ptr<TypeToken> type(const char *name, unsigned int lineNum = 0) {
+    return std::unique_ptr<TypeToken>(new ClassTypeToken(lineNum, std::string(name)));
+}
+
+} // namespace ast
+} // namespace ydsh
+
+
 
 
 #endif //YDSH_TYPE_UTIL_H

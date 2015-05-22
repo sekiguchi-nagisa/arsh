@@ -28,7 +28,7 @@ extern "C" {
 static bool continuation = false;
 
 static char *prompt(EditLine *el) {
-    return continuation ? (char *) "> " : (char *) "test> ";
+    return continuation ? (char *) "> " : (char *) "ydsh> ";
 }
 
 static sigjmp_buf jmp_ctx;

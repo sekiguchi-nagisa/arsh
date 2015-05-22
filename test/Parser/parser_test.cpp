@@ -4,39 +4,15 @@
 #include <parser/Parser.h>
 #include <parser/ParseError.h>
 #include <ast/Node.h>
+#include <misc/files.h>
 
 #include <stdio.h>
-#include <dirent.h>
 
 #ifndef PARSER_TEST_DIR
 #define PARSER_TEST_DIR "."
 #endif
 
 using namespace ydsh::parser;
-
-static std::vector<const char *> getFileList(const char *path) {
-    std::vector<const char *> fileList;
-
-    DIR *dir = opendir(path);
-    if(dir == nullptr) {
-        exit(1);
-    }
-
-    dirent *entry;
-
-    do {
-        entry = readdir(dir);
-        if(entry == nullptr) {
-            break;
-        }
-        if(entry->d_type == DT_REG) {
-            fileList.push_back(entry->d_name);
-        }
-    } while(true);
-
-    return fileList;
-}
-
 
 class ParserTest : public ::testing::TestWithParam<const char *> {
 private:
