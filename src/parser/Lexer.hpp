@@ -30,6 +30,7 @@
 #include <limits.h>
 
 #include "../misc/debug.h"
+#include "../misc/num.h"
 #include "Token.h"
 
 #define EACH_LEXER_MODE(OP) \
@@ -583,22 +584,12 @@ long Lexer<LEXER_DEF, TOKEN_KIND>::toInt64(const Token &token, int &status) cons
     }
     str[token.size] = '\0';
 
-    // convert to int
-    char *end;
-    const long value = strtol(str, &end, 10);
-
-    // check error
-    if(end == str) {
+    long value = convertToInt64(str, status, true);
+    if(status == -1) {
         fatal("cannot covert to int: %s\n", str);
+    } else if(status == -2) {
+        fatal("found illegal character in num: %s\n", str);
     }
-//    if(*end != '\0') {
-//        fatal("found illegal character in num: %s\n", str);
-//    }
-    if((value == LONG_MIN || value == LONG_MAX) && errno == ERANGE) {
-        status = 1;
-        return 0;
-    }
-    status = 0;
     return value;
 }
 
@@ -612,24 +603,13 @@ unsigned long Lexer<LEXER_DEF, TOKEN_KIND>::toUint64(const Token &token, int &st
     }
     str[token.size] = '\0';
 
-    // convert to int
-    char *end;
-    const long long value = strtoll(str, &end, 10);
-
-    // check error
-    if(end == str) {
+    unsigned long value = convertToUint64(str, status, true);
+    if(status == -1) {
         fatal("cannot covert to int: %s\n", str);
+    } else if(status == -2) {
+        fatal("found illegal character in num: %s\n", str);
     }
-    if((value == LLONG_MIN || value == LLONG_MAX) && errno == ERANGE) {
-        status = 1;
-        return 0;
-    }
-    if(value > UINT64_MAX || value < 0) {
-        status = 1;
-        return 0;
-    }
-    status = 0;
-    return (unsigned long) value;
+    return value;
 }
 
 
@@ -644,26 +624,12 @@ double Lexer<LEXER_DEF, TOKEN_KIND>::toDouble(const Token &token, int &status) c
     }
     str[token.size] = '\0';
 
-    // convert to double
-    char *end;
-    double value = strtod(str, &end);
-
-    // check error
-    if(value == 0 && end == str) {
+    double value = convertToDouble(str, status, false);
+    if(status == -1) {
         fatal("cannot convert to double: %s\n", str);
-    }
-    if(*end != '\0') {
+    } else if(status == -2) {
         fatal("found illegal character in num: %s\n", str);
     }
-    if(value == 0 && errno == ERANGE) {
-        status = 1;
-        return 0;
-    }
-    if((value == HUGE_VAL || value == -HUGE_VAL) && errno == ERANGE) {
-        status = 1;
-        return 0;
-    }
-    status = 0;
     return value;
 }
 
