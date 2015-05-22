@@ -326,8 +326,6 @@ struct BuiltinFuncObject : public FuncObject {
 
     ~BuiltinFuncObject();
 
-    int getParamSize();
-
     native_func_t getFuncPointer();
 
     std::string toString(RuntimeContext &ctx); // override

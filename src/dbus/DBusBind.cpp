@@ -555,6 +555,8 @@ bool DBusProxy_Object::doIntrospection(RuntimeContext &ctx) {
             fatal("invalied argType\n");
         }
     };
+    default:
+        break;
     }
     unrefMessage(ret);
 

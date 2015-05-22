@@ -387,7 +387,7 @@ public:
     void setFieldName(const std::string &fieldName);
     const std::string &getFieldName();
     void setAdditionalOp(AdditionalOp op);
-    AdditionalOp getAdditionnalOp();
+    AdditionalOp getAdditionalOp();
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
@@ -444,7 +444,7 @@ public:
     EvalStatus eval(RuntimeContext &ctx); // override
 
     /**
-     * for implicite cast.
+     * for implicit cast.
      * targetNode must be typed node.
      * type is after casted value type.
      */
@@ -466,7 +466,7 @@ private:
     InstanceOfOp opKind;
 
 public:
-    InstanceOfNode(Node *targetNode, TypeToken *tyep);
+    InstanceOfNode(Node *targetNode, TypeToken *typeToken);
 
     ~InstanceOfNode();
 
@@ -620,7 +620,7 @@ public:
      * create ApplyNode and set to this->applyNode.
      * exprNode will be null.
      */
-    MethodCallNode *creatApplyNode();
+    MethodCallNode *createApplyNode();
 
     /**
      * return null, before call this->createApplyNode().
@@ -671,7 +671,7 @@ public:
      * create ApplyNode and set to this->applyNode.
      * leftNode and rightNode will be null.
      */
-    MethodCallNode *creatApplyNode();
+    MethodCallNode *createApplyNode();
 
     /**
      * return null, before call this->createApplyNode().
@@ -761,7 +761,7 @@ private:
     std::string commandName;
 
     /**
-     * may be CmdArgNode, StringValueNode or StringExprNdoe
+     * may be CmdArgNode, StringValueNode or StringExprNode
      */
     std::vector<Node *> argNodes;
     std::vector<std::pair<RedirectOP, CmdArgNode *>> redirOptions;
@@ -1361,7 +1361,7 @@ private:
     const char *sourceName;
 
     /**
-     * maximum number of local variabel in function
+     * maximum number of local variable in function
      */
     unsigned int maxVarNum;
 

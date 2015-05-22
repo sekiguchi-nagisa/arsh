@@ -290,9 +290,6 @@ public:
     const std::vector<DSType *> &getElementTypes();
     void accept(TypeVisitor *visitor); // override
 
-    std::string getTypeName() const; // override
-    bool equals(DSType *targetType); // override
-
 private:
     void initMethodHandle(MethodHandle *handle, TypePool *typePool, NativeFuncInfo *info); // override
 };

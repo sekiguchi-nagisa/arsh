@@ -1,8 +1,6 @@
 #include <gtest/gtest.h>
 
 #include <dbus/DBusBind.h>
-#include <core/DSType.h>
-#include <core/TypePool.h>
 #include <core/TypeLookupError.h>
 
 using namespace ydsh::core;

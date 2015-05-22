@@ -17,13 +17,9 @@
 #include <core/handle_info.h>
 #include <DescLexer.h>
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <stdarg.h>
 #include <fstream>
 #include <iostream>
-#include <string>
-#include <vector>
 #include <memory>
 #include <unordered_map>
 

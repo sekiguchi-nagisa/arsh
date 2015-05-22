@@ -27,7 +27,6 @@ native_type_info_t *info_Dummy();
 // for builtin type initialization.
 native_type_info_t *info_AnyType();
 native_type_info_t *info_VoidType();
-native_type_info_t *info_ValueType();
 native_type_info_t *info_ByteType();
 native_type_info_t *info_Int16Type();
 native_type_info_t *info_Uint16Type();

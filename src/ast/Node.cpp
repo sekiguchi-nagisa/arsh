@@ -17,14 +17,11 @@
 #include "../core/symbol.h"
 #include "../core/DSObject.h"
 #include "../core/RuntimeContext.h"
-#include "Node.h"
 #include "dump.h"
 
 #include <assert.h>
-#include <stdlib.h>
 
 #include <unistd.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 
 // helper macro
@@ -624,7 +621,7 @@ void AccessNode::setAdditionalOp(AccessNode::AdditionalOp op) {
     this->additionalOp = op;
 }
 
-AccessNode::AdditionalOp AccessNode::getAdditionnalOp() {
+AccessNode::AdditionalOp AccessNode::getAdditionalOp() {
     return this->additionalOp;
 }
 
@@ -694,7 +691,7 @@ std::pair<Node *, std::string> AccessNode::split(AccessNode *accessNode) {
 CastNode::CastNode(Node *exprNode, TypeToken *type, bool dupTypeToken) :
         Node(exprNode->getLineNum()), exprNode(exprNode), targetTypeToken(0),
         opKind(NOP) {
-    static const unsigned long tag = 1L << 63;
+    static const unsigned long tag = (unsigned long) 1L << 63;
 
     if(dupTypeToken) {
         TypeToken *tok = (TypeToken *) (tag | (unsigned long) type);
@@ -860,8 +857,8 @@ CastNode *CastNode::newTypedCastNode(Node *targetNode, DSType *type, CastNode::C
 // ##     InstanceOfNode     ##
 // ############################
 
-InstanceOfNode::InstanceOfNode(Node *targetNode, TypeToken *type) :
-        Node(targetNode->getLineNum()), targetNode(targetNode), targetTypeToken(type),
+InstanceOfNode::InstanceOfNode(Node *targetNode, TypeToken *typeToken) :
+        Node(targetNode->getLineNum()), targetNode(targetNode), targetTypeToken(typeToken),
         targetType(0), opKind(ALWAYS_FALSE) {
 }
 
@@ -1186,7 +1183,7 @@ void UnaryOpNode::setExprNode(Node *exprNode) {
     this->exprNode = exprNode;
 }
 
-MethodCallNode *UnaryOpNode::creatApplyNode() {
+MethodCallNode *UnaryOpNode::createApplyNode() {
     this->methodCallNode = new MethodCallNode(this->exprNode, resolveUnaryOpName(this->op));
 
     // assign null to prevent double free
@@ -1250,7 +1247,7 @@ void BinaryOpNode::setRightNode(Node *rightNode) {
     this->rightNode = rightNode;
 }
 
-MethodCallNode *BinaryOpNode::creatApplyNode() {
+MethodCallNode *BinaryOpNode::createApplyNode() {
     this->methodCallNode = new MethodCallNode(this->leftNode, resolveBinaryOpName(this->op));
     this->methodCallNode->getArgsNode()->addArg(this->rightNode);
 

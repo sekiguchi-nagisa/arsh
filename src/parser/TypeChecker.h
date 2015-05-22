@@ -162,7 +162,7 @@ private:
      *
      * if requiredType is not equivalent to node type, throw exception.
      * if requiredType is null, do not try matching node type
-     * and if unaccepatbelType is equivalent to node type, throw exception.
+     * and if unacceptableType is equivalent to node type, throw exception.
      * return resolved type.
      */
     DSType *checkType(DSType *requiredType, Node *targetNode,
@@ -267,7 +267,7 @@ public:
      */
     bool checkInt2IntWidening(int beforePrecision, int afterPrecision);
 
-    bool checkInt2IntNallowing(int beforePrecision, int afterPrecision);
+    bool checkInt2IntNarrowing(int beforePrecision, int afterPrecision);
     bool checkLongToLong(int beforePrecision, int afterPrecision);
     bool checkInt2Long(int beforePrecision, int afterPrecision);
     bool checkLong2Int(int beforePrecision, int afterPrecision);

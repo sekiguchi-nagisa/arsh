@@ -41,8 +41,8 @@ CommonErrorListener::~CommonErrorListener() {
 
 void CommonErrorListener::displayTypeError(const std::string &sourceName,
                                            const TypeCheckError &e) const {
-    int argSize = e.getArgs().size();
-    int messageSize = e.getTemplate().size() + 1;
+    unsigned int argSize = e.getArgs().size();
+    unsigned int messageSize = e.getTemplate().size() + 1;
     for(const std::string &arg : e.getArgs()) {
         messageSize += arg.size();
     }

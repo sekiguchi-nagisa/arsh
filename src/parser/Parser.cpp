@@ -16,7 +16,6 @@
 
 #include "Parser.h"
 #include "ParseError.h"
-#include "../misc/debug.h"
 
 // for debug
 #ifdef NDEBUG
@@ -351,7 +350,7 @@ std::unique_ptr<Node> Parser::parse_interface() {
         case LET: {
             unsigned int n = LN();
             bool readOnly = this->consumeAndGetKind() == LET;
-            Token token = this->matchAndGetToken(IDENTIFIER);
+            token = this->matchAndGetToken(IDENTIFIER);
             this->matchToken(COLON, false);
             auto type(this->parse_typeName());
             node->addFieldDecl(
@@ -538,7 +537,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
         while(this->curTokenKind == ELIF) {
             this->matchToken(ELIF);
             this->matchToken(LP);
-            std::unique_ptr<Node> condNode(this->parse_commandOrExpression());
+            condNode = this->parse_commandOrExpression();
             this->matchToken(RP);
             blockNode = this->parse_block();
             ifNode->addElifNode(condNode.release(), blockNode.release());

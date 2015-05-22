@@ -68,10 +68,7 @@ TokenKind TokenMismatchError::getExpectedTokenKind() const {
 }
 
 bool TokenMismatchError::operator==(const TokenMismatchError &e) {
-    if(!this->baseEquals(e)) {
-        return false;
-    }
-    return this->expected == e.expected;
+    return this->baseEquals(e) && this->expected == e.expected;
 }
 
 void TokenMismatchError::accept(ParseErrorVisitor &visitor) const {
@@ -80,10 +77,7 @@ void TokenMismatchError::accept(ParseErrorVisitor &visitor) const {
 
 bool TokenMismatchError::equalsImpl(const ParseError &e) {
     const TokenMismatchError *ex = dynamic_cast<const TokenMismatchError *>(&e);
-    if(ex != 0) {
-        return *this == *ex;
-    }
-    return false;
+    return ex != nullptr && *this == *ex;
 }
 
 // ################################
@@ -131,10 +125,7 @@ void NoViableAlterError::accept(ParseErrorVisitor &visitor) const {
 
 bool NoViableAlterError::equalsImpl(const ParseError &e) {
     const NoViableAlterError *ex = dynamic_cast<const NoViableAlterError *>(&e);
-    if(ex != 0) {
-        return *this == *ex;
-    }
-    return false;
+    return ex != nullptr && *this == *ex;
 }
 
 // ###############################
@@ -158,10 +149,7 @@ void InvalidTokenError::accept(ParseErrorVisitor &visitor) const {
 
 bool InvalidTokenError::equalsImpl(const ParseError &e) {
     const InvalidTokenError *ex = dynamic_cast<const InvalidTokenError *>(&e);
-    if(ex != 0) {
-        return *this == *ex;
-    }
-    return false;
+    return ex != nullptr && *this == *ex;
 }
 
 // ################################
@@ -185,10 +173,7 @@ void OutOfRangeNumError::accept(ParseErrorVisitor &visitor) const {
 
 bool OutOfRangeNumError::equalsImpl(const ParseError &e) {
     const OutOfRangeNumError *ex = dynamic_cast<const OutOfRangeNumError *>(&e);
-    if(ex != 0) {
-        return *this == *ex;
-    }
-    return false;
+    return ex != nullptr && *this == *ex;
 }
 
 

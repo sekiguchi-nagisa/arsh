@@ -66,7 +66,7 @@ public:
         SCOPED_TRACE("");
 
         Token t;
-        TokenKind k = EOS;
+        TokenKind k;
         do {
             SCOPED_TRACE("");
             k = this->lexer->nextToken(t);
@@ -1339,20 +1339,20 @@ TEST_F(LexerTest_Lv1, SPACE4) {
 }
 
 TEST(LexerTest_Lv2, NEW_LINE) {
-    DSLexer lexer("  \n  \n   assert  \n ");
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
+        DSLexer lexer("  \n  \n   assert  \n ");
         Token t;
         TokenKind k;
         k = lexer.nextToken(t);
         ASSERT_STREQ(TO_NAME(ASSERT), TO_NAME(k));
         ASSERT_TRUE(lexer.isPrevNewLine());
 
-        k =lexer.nextToken(t);
+        k = lexer.nextToken(t);
         ASSERT_STREQ(TO_NAME(EOS), TO_NAME(k));
         ASSERT_TRUE(lexer.isPrevNewLine());
 
-        k =lexer.nextToken(t);
+        k = lexer.nextToken(t);
         ASSERT_STREQ(TO_NAME(EOS), TO_NAME(k));
         ASSERT_FALSE(lexer.isPrevNewLine());
     });

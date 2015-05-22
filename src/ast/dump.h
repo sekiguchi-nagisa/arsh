@@ -105,8 +105,6 @@ private:
     void writeNodeHeader(const Node &node);
 
     void writeName(const char *fieldName);
-
-    const static char *INDENT;
 };
 
 // entry point

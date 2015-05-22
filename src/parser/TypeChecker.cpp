@@ -17,12 +17,10 @@
 #include <assert.h>
 #include <vector>
 
-#include "../core/symbol.h"
 #include "../core/DSObject.h"
 #include "../core/TypeLookupError.h"
 #include "../misc/debug.h"
 #include "TypeChecker.h"
-#include "TypeCheckError.h"
 
 namespace ydsh {
 namespace parser {
@@ -520,7 +518,7 @@ bool TypeChecker::checkInt2IntWidening(int beforePrecision, int afterPrecision) 
             beforePrecision <= afterPrecision;
 }
 
-bool TypeChecker::checkInt2IntNallowing(int beforePrecision, int afterPrecision) {
+bool TypeChecker::checkInt2IntNarrowing(int beforePrecision, int afterPrecision) {
     return beforePrecision < TypePool::INT64_PRECISION &&
            afterPrecision > TypePool::INVALID_PRECISION &&
            beforePrecision > afterPrecision;
@@ -714,7 +712,7 @@ void TypeChecker::visitCastNode(CastNode * node) {
         return;
     }
 
-    if(this->checkInt2IntNallowing(exprPrecision, targetPrecision)) {
+    if(this->checkInt2IntNarrowing(exprPrecision, targetPrecision)) {
         node->setOpKind(CastNode::COPY_INT);
         return;
     }
@@ -777,7 +775,7 @@ void TypeChecker::visitUnaryOpNode(UnaryOpNode *node) {
         node->setExprNode(this->resolveCoercion(INT_NOP, this->typePool->getInt32Type(), node->getExprNode()));
     }
 
-    MethodCallNode *applyNode = node->creatApplyNode();
+    MethodCallNode *applyNode = node->createApplyNode();
     node->setType(this->checkType(applyNode));
 }
 
@@ -806,7 +804,7 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode * node) {
         }
     }
 
-    MethodCallNode *applyNode = node->creatApplyNode();
+    MethodCallNode *applyNode = node->createApplyNode();
     node->setType(this->checkType(applyNode));
 }
 

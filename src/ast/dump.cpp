@@ -139,7 +139,7 @@ void Writer::exitIndent() {
 
 void Writer::writeIndent() {
     for(unsigned int i = 0; i < this->indentLevel; i++) {
-        OUT << INDENT;
+        OUT << "  ";
     }
 }
 
@@ -166,8 +166,6 @@ void Writer::writeName(const char *fieldName) {
     this->writeIndent();
     OUT << " " << fieldName << ": ";
 }
-
-const char *Writer::INDENT = "  ";
 
 void dumpAST(std::ostream &out, TypePool &pool, const RootNode &rootNode) {
     Writer writer(&out, &pool);

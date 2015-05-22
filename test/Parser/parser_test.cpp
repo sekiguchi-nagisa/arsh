@@ -3,10 +3,7 @@
 #include <parser/Lexer.hpp>
 #include <parser/Parser.h>
 #include <parser/ParseError.h>
-#include <ast/Node.h>
 #include <misc/files.h>
-
-#include <stdio.h>
 
 #ifndef PARSER_TEST_DIR
 #define PARSER_TEST_DIR "."
@@ -45,10 +42,9 @@ public:
 
         Lexer<LexerDef, TokenKind> lexer(fp);
 
-        bool status = false;
+        bool status = true;
         try {
             this->parser.parse(lexer, rootNode);
-            status = true;
         } catch(const ParseError &e) {
             status = false;
         }
