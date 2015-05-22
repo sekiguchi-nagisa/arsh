@@ -75,6 +75,10 @@ void Shell::setAssertion(bool assertion) {
     this->ctx.assertion = assertion;
 }
 
+const std::string &Shell::getWorkingDir() {
+    return this->ctx.workingDir;
+}
+
 CommonErrorListener Shell::clistener;
 
 ExitStatus Shell::eval(const char *sourceName, Lexer<LexerDef, TokenKind> &lexer, bool interactive) {

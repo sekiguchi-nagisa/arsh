@@ -58,5 +58,4 @@ inline std::vector<const char *> getFileList(const char *path) {
     return fileList;
 }
 
-
 #endif //MISC_FILES_H

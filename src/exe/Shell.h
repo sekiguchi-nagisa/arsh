@@ -70,6 +70,8 @@ public:
     void setParseOnly(bool parseOnly);
     void setAssertion(bool assertion);
 
+    const std::string &getWorkingDir();
+
 private:
     /**
      * sourceName is null, if read stdin.

@@ -152,6 +152,8 @@ struct RuntimeContext {
      */
     std::vector<unsigned long> callStack;
 
+    std::string workingDir;
+
     static const char *configRootDir;
     static const char *typeDefDir;
 

@@ -15,6 +15,7 @@
  */
 
 #include "RuntimeContext.h"
+#include "../misc/files.h"
 
 namespace ydsh {
 namespace core {
@@ -41,7 +42,8 @@ RuntimeContext::RuntimeContext(char **envp) :
         localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0),
         localVarOffset(0), offsetStack(), repl(false), assertion(true),
         handle_STR(0), handle_INTERP(0), handle_CMD_ARG(0),handle_bt(0),
-        readFiles(), funcContextStack(), callStack() {
+        readFiles(), funcContextStack(), callStack(),
+        workingDir(getCurrentWorkingDir()) {
     this->readFiles.push_back(std::string("(stdin)"));
 }
 

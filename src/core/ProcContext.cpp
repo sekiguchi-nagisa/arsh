@@ -20,9 +20,8 @@
 #include <stdlib.h>
 
 #include "RuntimeContext.h"
-#include "DSType.h"
-#include "ProcContext.h"
-#include "../misc/debug.h"
+#include "../misc/files.h"
+#include "../misc/num.h"
 
 namespace ydsh {
 namespace core {
@@ -174,7 +173,45 @@ static void redirect(ProcContext *ctx) {  //FIXME: error reporting
     }
 }
 
-int ProcGroup::execProcs() {
+static int execBuiltin(ProcContext *procCtx) {
+    unsigned int paramSize = procCtx->params.size();
+    if(procCtx->cmdName == "cd") {
+        const char *targetDir = getenv("HOME");
+        if(paramSize > 0) {
+            targetDir = procCtx->params[0]->value.c_str();
+        }
+        if(chdir(targetDir) != 0) {
+            perror("-ydsh: cd");
+            return -1;
+        }
+        procCtx->ctx->workingDir = getCurrentWorkingDir();
+        return 0;
+    } else if(procCtx->cmdName == "exit") {
+        if(paramSize == 0) {
+            exit(EXIT_SUCCESS);
+        } else if(paramSize > 0) {
+            const char *num = procCtx->params[0]->value.c_str();
+            int status;
+            long value = convertToInt64(num, status, false);
+            if(status == 0) {
+                exit(value);
+            } else {
+                exit(0);
+            }
+        }
+        return 0;
+    } else {
+        fatal("unsupported builtin command %s\n", procCtx->cmdName.c_str());
+        return -1;
+    }
+}
+
+int ProcGroup::execProcs() {    //FIXME: builtin
+    // check builtin(cd, exit)
+    if(this->procSize == 1 && (this->procs[0]->cmdName == "cd" || this->procs[0]->cmdName == "exit")) {
+        return execBuiltin(this->procs[0].get());
+    }
+
     RuntimeContext *ctx = this->procs[0]->ctx;
 
     // prepare each proc
