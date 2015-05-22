@@ -17,6 +17,9 @@
 #ifndef MISC_NUM_H
 #define MISC_NUM_H
 
+#include <limits.h>
+#include <math.h>
+#include <errno.h>
 
 /**
  * if success, status is 0.
