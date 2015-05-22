@@ -1162,6 +1162,58 @@ EvalStatus NewNode::eval(RuntimeContext &ctx) {
     return ctx.callConstructor(this->lineNum, paramSize);
 }
 
+// #########################
+// ##     UnaryOpNode     ##
+// #########################
+
+UnaryOpNode::UnaryOpNode(TokenKind op, Node *exprNode) :
+        Node(exprNode->getLineNum()), op(op), exprNode(exprNode), methodCallNode(0) {
+}
+
+UnaryOpNode::~UnaryOpNode() {
+    delete this->exprNode;
+    this->exprNode = 0;
+
+    delete this->methodCallNode;
+    this->methodCallNode = 0;
+}
+
+Node *UnaryOpNode::getExprNode() {
+    return this->exprNode;
+}
+
+void UnaryOpNode::setExprNode(Node *exprNode) {
+    this->exprNode = exprNode;
+}
+
+MethodCallNode *UnaryOpNode::creatApplyNode() {
+    this->methodCallNode = new MethodCallNode(this->exprNode, resolveUnaryOpName(this->op));
+
+    // assign null to prevent double free
+    this->exprNode = 0;
+
+    return this->methodCallNode;
+}
+
+MethodCallNode *UnaryOpNode::getApplyNode() {
+    return this->methodCallNode;
+}
+
+void UnaryOpNode::dump(Writer &writer) const {
+    writer.write(NAME(op), TO_NAME(op));
+    WRITE_PTR(exprNode);
+    WRITE_PTR(methodCallNode);
+}
+
+void UnaryOpNode::accept(NodeVisitor *visitor) {
+    visitor->visitUnaryOpNode(this);
+}
+
+EvalStatus UnaryOpNode::eval(RuntimeContext &ctx) {
+    return this->methodCallNode->eval(ctx);
+}
+
+
 // ##########################
 // ##     BinaryOpNode     ##
 // ##########################
@@ -3377,10 +3429,6 @@ Node *createIndexNode(Node *recvNode, Node *indexNode) {
     return methodCallNode;
 }
 
-Node *createUnaryOpNode(TokenKind op, Node *recvNode) {
-    return new MethodCallNode(recvNode, resolveUnaryOpName(op));
-}
-
 Node *createBinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode) {
     switch (op) {
     case COND_OR:
@@ -3422,6 +3470,7 @@ void NodeVisitor::visitVarNode(VarNode *node)                             { this
 void NodeVisitor::visitAccessNode(AccessNode *node)                       { this->visitDefault(node); }
 void NodeVisitor::visitCastNode(CastNode *node)                           { this->visitDefault(node); }
 void NodeVisitor::visitInstanceOfNode(InstanceOfNode *node)               { this->visitDefault(node); }
+void NodeVisitor::visitUnaryOpNode(UnaryOpNode *node)                     { this->visitDefault(node); }
 void NodeVisitor::visitBinaryOpNode(BinaryOpNode *node)                   { this->visitDefault(node); }
 void NodeVisitor::visitArgsNode(ArgsNode *node)                           { this->visitDefault(node); }
 void NodeVisitor::visitApplyNode(ApplyNode *node)                         { this->visitDefault(node); }

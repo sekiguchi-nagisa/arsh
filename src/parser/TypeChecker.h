@@ -294,6 +294,7 @@ public:
     void visitAccessNode(AccessNode *node); // override
     void visitCastNode(CastNode *node); // override
     void visitInstanceOfNode(InstanceOfNode *node); // override
+    void visitUnaryOpNode(UnaryOpNode *node); // override
     void visitBinaryOpNode(BinaryOpNode *node); // override
     void visitArgsNode(ArgsNode *node); // override
     void visitApplyNode(ApplyNode *node); // override

@@ -769,6 +769,18 @@ void TypeChecker::visitInstanceOfNode(InstanceOfNode * node) {
     node->setType(this->typePool->getBooleanType());
 }
 
+void TypeChecker::visitUnaryOpNode(UnaryOpNode *node) {
+    DSType *exprType = this->checkType(node->getExprNode());
+    int precision = this->typePool->getIntPrecision(exprType);
+
+    if(precision > TypePool::INVALID_PRECISION && precision < TypePool::INT32_PRECISION) {  // int widening
+        node->setExprNode(this->resolveCoercion(INT_NOP, this->typePool->getInt32Type(), node->getExprNode()));
+    }
+
+    MethodCallNode *applyNode = node->creatApplyNode();
+    node->setType(this->checkType(applyNode));
+}
+
 void TypeChecker::visitBinaryOpNode(BinaryOpNode * node) {
     DSType *leftType = this->checkType(node->getLeftNode());
     DSType *rightType = this->checkType(node->getRightNode());

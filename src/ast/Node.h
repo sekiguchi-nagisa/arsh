@@ -592,6 +592,46 @@ public:
 };
 
 /**
+ * for unary operator call
+ */
+class UnaryOpNode : public Node {
+private:
+    TokenKind op;
+
+    /**
+     * after call this->createApplyNode(), will be null.
+     */
+    Node *exprNode;
+
+    /**
+     * before call this->createApplyNode(), it is null.
+     */
+    MethodCallNode *methodCallNode;
+
+public:
+    UnaryOpNode(TokenKind op, Node *exprNode);
+    ~UnaryOpNode();
+
+    Node *getExprNode();
+    void setExprNode(Node *exprNode);
+
+    /**
+     * create ApplyNode and set to this->applyNode.
+     * exprNode will be null.
+     */
+    MethodCallNode *creatApplyNode();
+
+    /**
+     * return null, before call this->createApplyNode().
+     */
+    MethodCallNode *getApplyNode();
+
+    void dump(Writer &writer) const;  // override
+    void accept(NodeVisitor *visitor);   // override
+    EvalStatus eval(RuntimeContext &ctx); // override
+};
+
+/**
  * binary operator call.
  */
 class BinaryOpNode : public Node {
@@ -1511,8 +1551,6 @@ Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode);
 
 Node *createIndexNode(Node *recvNode, Node *indexNode);
 
-Node *createUnaryOpNode(TokenKind op, Node *recvNode);
-
 Node *createBinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode);
 
 struct NodeVisitor {
@@ -1535,6 +1573,7 @@ struct NodeVisitor {
     virtual void visitAccessNode(AccessNode *node);
     virtual void visitCastNode(CastNode *node);
     virtual void visitInstanceOfNode(InstanceOfNode *node);
+    virtual void visitUnaryOpNode(UnaryOpNode *node);
     virtual void visitBinaryOpNode(BinaryOpNode *node);
     virtual void visitArgsNode(ArgsNode *node);
     virtual void visitApplyNode(ApplyNode *node);
