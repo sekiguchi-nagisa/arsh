@@ -34,10 +34,12 @@ inline long convertToInt64(const char *str, int &status, bool skipIllegalChar) {
 
     // check error
     if(end == str) {
-        return -1;
+        status = -1;
+        return 0;
     }
     if(*end != '\0' && !skipIllegalChar) {
-        return -2;
+        status = -2;
+        return 0;
     }
     if((value == LONG_MIN || value == LONG_MAX) && errno == ERANGE) {
         status = 1;
@@ -56,20 +58,18 @@ inline long convertToInt64(const char *str, int &status, bool skipIllegalChar) {
 inline unsigned long convertToUint64(const char *str, int &status, bool skipIllegalChar) {
     // convert to int
     char *end;
-    const long long value = strtoll(str, &end, 10);
+    const unsigned long long value = strtoull(str, &end, 10);
 
     // check error
     if(end == str) {
-        return -1;
-    }
-    if(*end != '\0' && !skipIllegalChar) {
-        return -2;
-    }
-    if((value == LLONG_MIN || value == LLONG_MAX) && errno == ERANGE) {
-        status = 1;
+        status = -1;
         return 0;
     }
-    if(value > UINT64_MAX || value < 0) {
+    if(*end != '\0' && !skipIllegalChar) {
+        status = -2;
+        return 0;
+    }
+    if(value == ULLONG_MAX && errno == ERANGE) {
         status = 1;
         return 0;
     }
@@ -90,10 +90,12 @@ inline double convertToDouble(const char *str, int &status, bool skipIllegalChar
 
     // check error
     if(value == 0 && end == str) {
-        return -1;
+        status = -1;
+        return 0;
     }
     if(*end != '\0' && !skipIllegalChar) {
-        return -2;
+        status = -2;
+        return 0;
     }
     if(value == 0 && errno == ERANGE) {
         status = 1;
