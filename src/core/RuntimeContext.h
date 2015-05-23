@@ -589,14 +589,6 @@ struct RuntimeContext {
         return true;
     }
 
-    bool checkZeroMod(double right) {
-        if(right == 0) {
-            this->throwError(this->pool.getArithmeticErrorType(), "zero module");
-            return false;
-        }
-        return true;
-    }
-
     void throwOutOfIndexError(std::string &&message) {
         this->throwError(this->pool.getOutOfIndexErrorType(), std::move(message));
     }

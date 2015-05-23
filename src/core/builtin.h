@@ -734,18 +734,6 @@ static inline bool float_2_float_div(RuntimeContext & ctx) {
     RET(std::make_shared<Float_Object>(ctx.pool.getFloatType(), value));
 }
 
-//!bind: function $OP_MOD($this : Float, $target : Float) : Float
-static inline bool float_2_float_mod(RuntimeContext & ctx) {
-    SUPPRESS_WARNING(float_2_float_mod);
-    double left = TYPE_AS(Float_Object, LOCAL(0))->value;
-    double right = TYPE_AS(Float_Object, LOCAL(1))->value;
-    if(!ctx.checkZeroMod(right)) {
-        return false;
-    }
-    double value = fmod(left, right);
-    RET(std::make_shared<Float_Object>(ctx.pool.getFloatType(), value));
-}
-
 //   =====  equality  =====
 
 //!bind: function $OP_EQ($this : Float, $target : Float) : Boolean
