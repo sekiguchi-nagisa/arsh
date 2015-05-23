@@ -19,6 +19,7 @@
 
 #include "../core/DSObject.h"
 #include "../core/RuntimeContext.h"
+#include "../core/DSType.h"
 
 #include <unordered_set>
 
@@ -115,7 +116,13 @@ private:
 struct Bus_Object : public DSObject {
     DBusConnection *conn;
 
-    Bus_Object(DSType *type);
+    /**
+     * if true, system bus.
+     * if else, session bus.
+     */
+    bool systemBus;
+
+    Bus_Object(DSType *type, bool systemBus);
     ~Bus_Object();
 
     /**
@@ -123,20 +130,19 @@ struct Bus_Object : public DSObject {
      * return false, if error happened.
      */
     bool initConnection(RuntimeContext &ctx, bool systemBus);
+
+    bool isSystemBus();
 };
 
 struct Service_Object : public DSObject {
-    /**
-     * not delete it.
-     */
-    DBusConnection *conn;
+    std::shared_ptr<Bus_Object> bus;
 
     /**
      * service name of destination process.
      */
     std::string serviceName;
 
-    Service_Object(DSType *type, DBusConnection *conn, std::string &&serviceName);
+    Service_Object(DSType *type, const std::shared_ptr<Bus_Object> &bus, std::string &&serviceName);
     ~Service_Object();
 
     std::string toString(RuntimeContext &ctx); // override
@@ -155,10 +161,30 @@ struct DBus_ObjectImpl : public DBus_Object {
 
     bool getSystemBus(RuntimeContext &ctx); // override
     bool getSessionBus(RuntimeContext &ctx);    // override
+
+    bool waitSignal(RuntimeContext &ctx);   // override
 };
 
+/**
+ * first is interface name, second is method name.
+ */
+typedef std::pair<const char *, const char *> SignalSelector;
+
+struct SignalSelectorComparator {
+    bool operator() (const SignalSelector &x,
+                     const SignalSelector &y) const;
+};
+
+struct SignalSelectorHash {
+    std::size_t operator() (const SignalSelector &key) const;
+};
+
+typedef std::unordered_map<SignalSelector, std::shared_ptr<FuncObject>,
+        SignalSelectorHash, SignalSelectorComparator> HandlerMap;
+
 // represent for D-Bus object.
-struct DBusProxy_Object : public ProxyObject {
+class DBusProxy_Object : public ProxyObject {
+private:
     std::shared_ptr<Service_Object> srv;
     std::string objectPath;
 
@@ -167,21 +193,44 @@ struct DBusProxy_Object : public ProxyObject {
      */
     std::unordered_set<std::string> ifaceSet;
 
+    /**
+     * contains signal handler
+     */
+    HandlerMap handerMap;
+
+public:
     DBusProxy_Object(DSType *type, const std::shared_ptr<DSObject> &srcObj, std::string &&objectPath);
 
     std::string toString(RuntimeContext &ctx); // override
     bool introspect(RuntimeContext &ctx, DSType *targetType); // override
-
-    /**
-     * call only once
-     */
-    bool doIntrospection(RuntimeContext &ctx);
 
     bool invokeMethod(RuntimeContext &ctx, const std::string &methodName, MethodHandle *handle);    // override
     bool invokeGetter(RuntimeContext &ctx,DSType *recvType,
                       const std::string &fieldName, DSType *fieldType);    // override
     bool invokeSetter(RuntimeContext &ctx, DSType *recvType,
                       const std::string &fieldName, DSType *fieldType);    // override
+
+    const std::string &getObjectPath();
+
+    /**
+     * lookup signal handler and push stack top. return func type of found handler.
+     */
+    FunctionType  *lookupHandler(RuntimeContext &ctx, const char *ifaceName, const char *methodName);
+
+    bool matchObject(const char *serviceName, const char *objectPath);
+
+    /**
+     * create signal match rule and write to ruleList.
+     */
+    void createSignalMatchRule(std::vector<std::string> &ruleList);
+
+    bool isBelongToSystemBus();
+
+private:
+    /**
+     * call only once
+     */
+    bool doIntrospection(RuntimeContext &ctx);
 
     DBusMessage *newMethodCallMsg(const char *ifaceName, const char *methodName);
     DBusMessage *newMethodCallMsg(const std::string &ifaceName, const std::string &methodName);
@@ -191,6 +240,12 @@ struct DBusProxy_Object : public ProxyObject {
      */
     DBusMessage *sendAndUnrefMessage(RuntimeContext &ctx, DBusMessage *sendMsg, bool &status);
 
+    /**
+     * obj must be FuncObject
+     */
+    void addHandler(const std::string &ifaceName, const std::string &methodName, std::shared_ptr<DSObject> &&obj);
+
+public:
     static bool newObject(RuntimeContext &ctx, const std::shared_ptr<DSObject> &busObj,
                           std::string &&objectPath);
 };

@@ -18,7 +18,7 @@
 #define CORE_DSOBJECT_H_
 
 #include <memory>
-#include <ast/Node.h>
+#include "ast/Node.h"
 #include "DSType.h"
 
 namespace ydsh {
@@ -402,6 +402,8 @@ struct DBus_Object : public DSObject {
      * return false, if error happened
      */
     virtual bool getSessionBus(RuntimeContext &ctx);
+
+    virtual bool waitSignal(RuntimeContext &ctx);
 
     static DBus_Object *newDBus_Object(TypePool *typePool);
     static bool newService(RuntimeContext &ctx, const std::shared_ptr<DSObject> &busObj, std::string &&serviceName);

@@ -674,6 +674,11 @@ bool DBus_Object::getSessionBus(RuntimeContext &ctx) {
     return false;
 }
 
+bool DBus_Object::waitSignal(RuntimeContext &ctx) {
+    ctx.throwError(ctx.pool.getErrorType(), "not support waitSignal method");
+    return false;
+}
+
 DBus_Object *DBus_Object::newDBus_Object(TypePool *typePool) {
 #ifdef X_NO_DBUS
     return new DBus_Object(typePool);

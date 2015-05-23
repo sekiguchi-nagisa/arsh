@@ -1112,8 +1112,8 @@ static inline bool dbus_sessionBus(RuntimeContext &ctx) {
 
 //!bind: function waitSignal($this : DBus, $obj : DBusObject) : Void
 static inline bool dbus_waitSignal(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(dbus_waitSignal);  //FIXME:
-    return true;
+    SUPPRESS_WARNING(dbus_waitSignal);
+    return TYPE_AS(DBus_Object, LOCAL(0))->waitSignal(ctx);
 }
 
 // #################

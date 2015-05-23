@@ -5,7 +5,13 @@ interface org.freedesktop.NetworkManager {
     let NetworkingEnabled : Boolean
     var WirelessEnabled : Boolean
     let Devices : Array<ObjectPath>
+    function StateChanged($h : Func<Void,[Uint32]>)
 }
+
+function f($s : Uint32) {
+    echo state changed : $s
+}
+
 
 var a = $DBus.systemBus()\
             .service("org.freedesktop.NetworkManager")\
@@ -23,4 +29,6 @@ if($a is NM) {
     #echo ${$a.GetDevices()}
     echo Permittions : ${$a.GetPermissions()}
     echo Logging : ${$a.GetLogging()}
+    $a.StateChanged($f)
 }
+$DBus.waitSignal($a)
