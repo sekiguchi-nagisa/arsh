@@ -994,7 +994,7 @@ static inline bool map_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_init);
     DSType *type = LOCAL(0)->type;
     ctx.setLocal(0, std::make_shared<Map_Object>(type));
-    return  true;
+    return true;
 }
 
 //!bind: function $OP_GET($this : Map<T0, T1>, $key : T0) : T1
@@ -1041,6 +1041,25 @@ static inline bool map_find(RuntimeContext &ctx) {
     Map_Object *obj = TYPE_AS(Map_Object, LOCAL(0));
     auto iter = obj->getValueMap().find(LOCAL(1));
     RET_BOOL(iter != obj->getValueMap().end());
+}
+
+//!bind: function $OP_ITER($this : Map<T0, T1>) : Map<T0, T1>
+static inline bool map_iter(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(map_iter);
+    TYPE_AS(Map_Object, LOCAL(0))->initIterator();
+    RET(LOCAL(0));
+}
+
+//!bind: function $OP_NEXT($this : Map<T0, T1>) : Tuple<T0, T1>
+static inline bool map_next(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(map_next);
+    RET(TYPE_AS(Map_Object, LOCAL(0))->nextElement(ctx));
+}
+
+//!bind: function $OP_HAS_NEXT($this : Map<T0, T1>) : Boolean
+static inline bool map_hasNext(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(map_hasNext);
+    RET_BOOL(TYPE_AS(Map_Object, LOCAL(0))->hasNext());
 }
 
 // ###################

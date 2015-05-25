@@ -358,6 +358,28 @@ void Map_Object::add(std::pair<std::shared_ptr<DSObject>, std::shared_ptr<DSObje
     this->valueMap.insert(std::move(entry));
 }
 
+void Map_Object::initIterator() {
+    this->iter = this->valueMap.cbegin();
+}
+
+std::shared_ptr<DSObject> Map_Object::nextElement(RuntimeContext &ctx) {
+    std::vector<DSType *> types(2);
+    types[0] = this->iter->first->getType();
+    types[1] = this->iter->second->getType();
+
+    std::shared_ptr<Tuple_Object> entry(
+            new Tuple_Object(ctx.pool.createAndGetTupleTypeIfUndefined(types)));
+    entry->set(0, this->iter->first);
+    entry->set(1, this->iter->second);
+    this->iter++;
+
+    return std::move(entry);
+}
+
+bool Map_Object::hasNext() {
+    return this->iter != this->valueMap.cend();
+}
+
 std::string Map_Object::toString(RuntimeContext &ctx) {
     std::string str("{");
     unsigned int count = 0;

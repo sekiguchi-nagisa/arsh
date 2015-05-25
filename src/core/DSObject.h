@@ -197,6 +197,7 @@ typedef std::unordered_map<std::shared_ptr<DSObject>, std::shared_ptr<DSObject>,
 
 struct Map_Object : public DSObject {
     HashMap valueMap;
+    HashMap::const_iterator iter;
 
     Map_Object(DSType *type);
 
@@ -204,6 +205,9 @@ struct Map_Object : public DSObject {
 
     void set(const std::shared_ptr<DSObject> &key, const std::shared_ptr<DSObject> &value);
     void add(std::pair<std::shared_ptr<DSObject>, std::shared_ptr<DSObject>> &&entry);
+    void initIterator();
+    std::shared_ptr<DSObject> nextElement(RuntimeContext &ctx);
+    bool hasNext();
 
     std::string toString(RuntimeContext &ctx); // override
     void accept(ObjectVisitor *visitor); // override
