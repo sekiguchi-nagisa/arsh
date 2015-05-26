@@ -193,15 +193,14 @@ TEST_F(TypeTest, typeToken) {
         this->assertAlias("Int", this->pool->getInt32Type());
         this->assertSuperType(this->toType(type("Int")), this->pool->getValueType());
 
-        this->assertSuperType(this->toType(reified("Array", type("String"))), this->pool->getVariantType());
-        this->assertSuperType(this->toType(reified("Array", reified("Array", type("ObjectPath")))), this->pool->getVariantType());
-        this->assertSuperType(this->toType(reified("Array", type("Error"))), this->pool->getAnyType());
+        this->assertSuperType(this->toType(array(type("String"))), this->pool->getVariantType());
+        this->assertSuperType(this->toType(array(reified("Array", type("ObjectPath")))), this->pool->getVariantType());
+        this->assertSuperType(this->toType(array(type("Error"))), this->pool->getAnyType());
 
-        this->assertSuperType(this->toType(reified("Map", type("Byte"), type("Uint64"))), this->pool->getVariantType());
+        this->assertSuperType(this->toType(map(type("Byte"), type("Uint64"))), this->pool->getVariantType());
         this->assertSuperType(this->toType(
-                reified("Map", type("Boolean"),
-                        reified("Tuple", type("Uint32"), type("String")))), this->pool->getVariantType());
-        this->assertSuperType(this->toType(reified("Tuple", type("Error"))), this->pool->getAnyType());
+                map(type("Boolean"), tuple(type("Uint32"), type("String")))), this->pool->getVariantType());
+        this->assertSuperType(this->toType(tuple(type("Error"))), this->pool->getAnyType());
 
         this->assertSuperType(this->toType(func(type("Void"))), this->pool->getBaseFuncType());
         this->assertSuperType(this->toType(
