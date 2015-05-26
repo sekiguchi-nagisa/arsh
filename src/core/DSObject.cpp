@@ -368,7 +368,7 @@ std::shared_ptr<DSObject> Map_Object::nextElement(RuntimeContext &ctx) {
     types[1] = this->iter->second->getType();
 
     std::shared_ptr<Tuple_Object> entry(
-            new Tuple_Object(ctx.pool.createAndGetTupleTypeIfUndefined(types)));
+            new Tuple_Object(ctx.pool.createAndGetTupleTypeIfUndefined(std::move(types))));
     entry->set(0, this->iter->first);
     entry->set(1, this->iter->second);
     this->iter++;

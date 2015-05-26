@@ -132,7 +132,7 @@ static std::shared_ptr<DSObject> decodeMessageIter(RuntimeContext &ctx, DBusMess
             types[1] = entries.back().second->getType();
 
             auto map = std::make_shared<Map_Object>(
-                    ctx.pool.createAndGetReifiedTypeIfUndefined(ctx.pool.getMapTemplate(), types));
+                    ctx.pool.createAndGetReifiedTypeIfUndefined(ctx.pool.getMapTemplate(), std::move(types)));
             unsigned int size = entries.size();
             for(unsigned int i = 0; i < size; i++) {
                 map->add(std::move(entries[i]));
@@ -149,7 +149,8 @@ static std::shared_ptr<DSObject> decodeMessageIter(RuntimeContext &ctx, DBusMess
             types[0] = values[0]->getType();
 
             return std::make_shared<Array_Object>(
-                    ctx.pool.createAndGetReifiedTypeIfUndefined(ctx.pool.getArrayTemplate(), types), std::move(values));
+                    ctx.pool.createAndGetReifiedTypeIfUndefined(
+                            ctx.pool.getArrayTemplate(), std::move(types)), std::move(values));
         }
 
     };
@@ -166,9 +167,9 @@ static std::shared_ptr<DSObject> decodeMessageIter(RuntimeContext &ctx, DBusMess
             dbus_message_iter_next(&subIter);
             elementType = dbus_message_iter_get_arg_type(&subIter);
         } while(elementType != DBUS_TYPE_INVALID);
-        DSType *tupleType = ctx.pool.createAndGetTupleTypeIfUndefined(types);
+        DSType *tupleType = ctx.pool.createAndGetTupleTypeIfUndefined(std::move(types));
         std::shared_ptr<Tuple_Object> tuple(new Tuple_Object(tupleType));
-        unsigned int size = types.size();
+        unsigned int size = values.size();
         for(unsigned int i = 0; i < size; i++) {
             tuple->set(i, values[i]);
         }
@@ -233,7 +234,7 @@ static std::shared_ptr<DSObject> decodeAndUnrefMessage(RuntimeContext &ctx,
     }
 
     std::shared_ptr<Tuple_Object> tuple(
-            new Tuple_Object(ctx.pool.createAndGetTupleTypeIfUndefined(types)));
+            new Tuple_Object(ctx.pool.createAndGetTupleTypeIfUndefined(std::vector<DSType *>(types))));
     for(unsigned int i = 0; i < size; i++) {
         tuple->set(i, values[i]);
     }

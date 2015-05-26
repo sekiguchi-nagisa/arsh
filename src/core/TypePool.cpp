@@ -108,7 +108,7 @@ TypePool::TypePool(char **envp) :
     // init string array type(for command argument)
     std::vector<DSType *> types(1);
     types[0] = this->stringType;
-    this->stringArrayType = this->createAndGetReifiedTypeIfUndefined(this->arrayTemplate, types);
+    this->stringArrayType = this->createAndGetReifiedTypeIfUndefined(this->arrayTemplate, std::move(types));
 
     // init some error type
     this->arithmeticErrorType = this->initErrorType("ArithmeticError", this->errorType);
@@ -293,9 +293,9 @@ TypeTemplate *TypePool::getTypeTemplate(const std::string &typeName) {
 }
 
 DSType *TypePool::createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate,
-                                                     const std::vector<DSType *> &elementTypes) {
+                                                     std::vector<DSType *> &&elementTypes) {
     if(this->tupleTemplate->getName() == typeTemplate->getName()) {
-        return this->createAndGetTupleTypeIfUndefined(elementTypes);
+        return this->createAndGetTupleTypeIfUndefined(std::move(elementTypes));
     }
     this->checkElementTypes(typeTemplate, elementTypes);
 
@@ -309,12 +309,12 @@ DSType *TypePool::createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate,
     if(iter == this->typeMap.end()) {
         DSType *superType = this->asVariantType(elementTypes) ? this->variantType : this->anyType;
         return this->addType(std::move(typeName),
-                             newReifiedType(typeTemplate->getInfo(), superType, elementTypes));
+                             new ReifiedType(typeTemplate->getInfo(), superType, std::move(elementTypes)));
     }
     return iter->second;
 }
 
-DSType *TypePool::createAndGetTupleTypeIfUndefined(const std::vector<DSType *> &elementTypes) {
+DSType *TypePool::createAndGetTupleTypeIfUndefined(std::vector<DSType *> &&elementTypes) {
     this->checkElementTypes(elementTypes);
 
     if(elementTypes.size() == 0) {
@@ -325,20 +325,19 @@ DSType *TypePool::createAndGetTupleTypeIfUndefined(const std::vector<DSType *> &
     auto iter = this->typeMap.find(typeName);
     if(iter == this->typeMap.end()) {
         DSType *superType = this->asVariantType(elementTypes) ? this->variantType : this->anyType;
-        return this->addType(std::move(typeName), newTupleType(superType, elementTypes));
+        return this->addType(std::move(typeName), new TupleType(superType, std::move(elementTypes)));
     }
     return iter->second;
 }
 
-FunctionType *TypePool::createAndGetFuncTypeIfUndefined(DSType *returnType,
-                                                        const std::vector<DSType *> &paramTypes) {
+FunctionType *TypePool::createAndGetFuncTypeIfUndefined(DSType *returnType, std::vector<DSType *> &&paramTypes) {
     this->checkElementTypes(paramTypes);
 
     std::string typeName(toFunctionTypeName(returnType, paramTypes));
     auto iter = this->typeMap.find(typeName);
     if(iter == this->typeMap.end()) {
         FunctionType *funcType =
-                new FunctionType(this->getBaseFuncType(), returnType, paramTypes);
+                new FunctionType(this->getBaseFuncType(), returnType, std::move(paramTypes));
         this->addType(std::move(typeName), funcType);
         return funcType;
     }
@@ -498,6 +497,7 @@ void TypePool::removeCachedType() {
         auto iter = this->typeMap.find(*typeName);
         if(iter != this->typeMap.end()) {
             if((long) iter->second > -1) {
+                this->typeNameMap.erase((unsigned long) iter->second);
                 delete iter->second;
             }
             this->typeMap.erase(iter);

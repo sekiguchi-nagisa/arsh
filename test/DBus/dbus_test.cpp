@@ -53,7 +53,7 @@ public:
 
         try {
             return this->pool->createAndGetReifiedTypeIfUndefined(
-                    this->pool->getArrayTemplate(), types);
+                    this->pool->getArrayTemplate(), std::move(types));
         } catch(const TypeLookupError &e) {
             return nullptr;
         }
@@ -68,7 +68,7 @@ public:
 
         try {
             return this->pool->createAndGetReifiedTypeIfUndefined(
-                    this->pool->getMapTemplate(), types);
+                    this->pool->getMapTemplate(), std::move(types));
         } catch(const TypeLookupError &e) {
             return nullptr;
         }
@@ -98,7 +98,7 @@ public:
 
     virtual DSType *newTupleType(const std::vector<DSType *> &types) {
         try {
-            return this->pool->createAndGetTupleTypeIfUndefined(types);
+            return this->pool->createAndGetTupleTypeIfUndefined(std::vector<DSType *>(types));
         } catch(const TypeLookupError &e) {
             return nullptr;
         }

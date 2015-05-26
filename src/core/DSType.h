@@ -155,7 +155,7 @@ private:
 
 public:
     FunctionType(DSType *superType,
-                 DSType *returnType, const std::vector<DSType *> &paramTypes);
+                 DSType *returnType, std::vector<DSType *> &&paramTypes);
 
     ~FunctionType();
 
@@ -283,7 +283,7 @@ public:
     /**
      * super type is AnyType or VariantType.
      */
-    ReifiedType(native_type_info_t *info, DSType *superType, const std::vector<DSType *> &elementTypes);
+    ReifiedType(native_type_info_t *info, DSType *superType, std::vector<DSType *> &&elementTypes);
 
     ~ReifiedType();
 
@@ -293,14 +293,6 @@ public:
 private:
     void initMethodHandle(MethodHandle *handle, TypePool *typePool, NativeFuncInfo *info); // override
 };
-
-
-/**
- * for ReifiedType creation.
- * reified type is not public class.
- */
-DSType *newReifiedType(native_type_info_t *info, DSType *superType,
-                       const std::vector<DSType *> &elementTypes);
 
 
 class TupleType : public DSType {
@@ -320,7 +312,7 @@ public:
     /**
      * superType is AnyType ot VariantType
      */
-    TupleType(DSType *superType, const std::vector<DSType *> &types);
+    TupleType(DSType *superType, std::vector<DSType *> &&types);
     ~TupleType();
 
     const std::vector<DSType *> &getTypes();
@@ -346,11 +338,6 @@ public:
      */
     static void registerFuncInfo(NativeFuncInfo *info);
 };
-
-/**
- * for TupleType creation
- */
-DSType *newTupleType(DSType *superType, const std::vector<DSType *> &elementTypes);
 
 /**
  * for D-Bus interface

@@ -245,11 +245,11 @@ public:
     /**
      * if type template is Tuple, call createAndGetTupleTypeIfUndefined()
      */
-    DSType *createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate, const std::vector<DSType *> &elementTypes);
+    DSType *createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate, std::vector<DSType *> &&elementTypes);
 
-    DSType *createAndGetTupleTypeIfUndefined(const std::vector<DSType *> &elementTypes);
+    DSType *createAndGetTupleTypeIfUndefined(std::vector<DSType *> &&elementTypes);
 
-    FunctionType *createAndGetFuncTypeIfUndefined(DSType *returnType, const std::vector<DSType *> &paramTypes);
+    FunctionType *createAndGetFuncTypeIfUndefined(DSType *returnType, std::vector<DSType *> &&paramTypes);
 
     InterfaceType *createAndGetInterfaceTypeIfUndefined(const std::string &interfaceName);
 

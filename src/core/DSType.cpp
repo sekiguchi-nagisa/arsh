@@ -116,9 +116,9 @@ void DSType::copyAllMethodRef(std::vector<std::shared_ptr<MethodRef>> &methodTab
 // ##########################
 
 FunctionType::FunctionType(DSType *superType, DSType *returnType,
-                           const std::vector<DSType *> &paramTypes) :
+                           std::vector<DSType *> &&paramTypes) :
         DSType(false, superType, false),
-        returnType(returnType), paramTypes(paramTypes) {
+        returnType(returnType), paramTypes(std::move(paramTypes)) {
     setFlag(this->attributeSet, FUNC_TYPE);
 }
 
@@ -257,8 +257,8 @@ void BuiltinType::initMethodHandle(MethodHandle *handle, TypePool *typePool, Nat
 // #########################
 
 ReifiedType::ReifiedType(native_type_info_t *info, DSType *superType,
-                         const std::vector<DSType *> &elementTypes) :
-        BuiltinType(false, superType, info, false), elementTypes(elementTypes) {
+                         std::vector<DSType *> &&elementTypes) :
+        BuiltinType(false, superType, info, false), elementTypes(std::move(elementTypes)) {
 }
 
 ReifiedType::~ReifiedType() {
@@ -290,17 +290,12 @@ DSType *newBuiltinType(bool extendable,
     return new BuiltinType(extendable, superType, info, isVoid);
 }
 
-DSType *newReifiedType(native_type_info_t *info,
-                       DSType *superType, const std::vector<DSType *> &elementTypes) {
-    return new ReifiedType(info, superType, elementTypes);
-}
-
 // #######################
 // ##     TupleType     ##
 // #######################
 
-TupleType::TupleType(DSType *superType, const std::vector<DSType *> &types) :
-        DSType(false, superType, false), types(types),
+TupleType::TupleType(DSType *superType, std::vector<DSType *> &&types) :
+        DSType(false, superType, false), types(std::move(types)),
         fieldHandleMap(), constructorHandle() {
     unsigned int size = this->types.size();
     unsigned int baseIndex = this->superType->getFieldSize();
@@ -372,10 +367,6 @@ void TupleType::registerFuncInfo(NativeFuncInfo *info) {
         funcInfo = info;
         initRef.reset(new NativeMethodRef(info->func_ptr));
     }
-}
-
-DSType *newTupleType(DSType *superType, const std::vector<DSType *> &elementTypes) {
-    return new TupleType(superType, elementTypes);
 }
 
 // ###########################

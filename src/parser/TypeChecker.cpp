@@ -79,7 +79,7 @@ void TypeGenerator::visitReifiedTypeToken(ReifiedTypeToken *token) {
     for(unsigned int i = 0; i < size; i++) {
         elementTypes[i] = this->generateType(token->getElementTypeTokens()[i]);
     }
-    this->type = this->pool->createAndGetReifiedTypeIfUndefined(typeTemplate, elementTypes);
+    this->type = this->pool->createAndGetReifiedTypeIfUndefined(typeTemplate, std::move(elementTypes));
 }
 
 void TypeGenerator::visitFuncTypeToken(FuncTypeToken *token) {
@@ -89,7 +89,7 @@ void TypeGenerator::visitFuncTypeToken(FuncTypeToken *token) {
     for(unsigned int i = 0; i < size; i++) {
         paramTypes[i] = this->generateType(token->getParamTypeTokens()[i]);
     }
-    this->type = this->pool->createAndGetFuncTypeIfUndefined(returnType, paramTypes);
+    this->type = this->pool->createAndGetFuncTypeIfUndefined(returnType, std::move(paramTypes));
 }
 
 void TypeGenerator::visitDBusInterfaceToken(DBusInterfaceToken *token) {
@@ -107,7 +107,7 @@ void TypeGenerator::visitReturnTypeToken(ReturnTypeToken *token) {
     for(unsigned int i = 0; i < size; i++) {
         types[i] = this->generateType(token->getTypeTokens()[i]);
     }
-    this->type = this->pool->createAndGetTupleTypeIfUndefined(types);
+    this->type = this->pool->createAndGetTupleTypeIfUndefined(std::move(types));
 }
 
 DSType *TypeGenerator::generateType(TypeToken *token) {
@@ -613,7 +613,7 @@ void TypeChecker::visitArrayNode(ArrayNode * node) {
     TypeTemplate *arrayTemplate = this->typePool->getArrayTemplate();
     std::vector<DSType *> elementTypes(1);
     elementTypes[0] = elementType;
-    node->setType(this->typePool->createAndGetReifiedTypeIfUndefined(arrayTemplate, elementTypes));
+    node->setType(this->typePool->createAndGetReifiedTypeIfUndefined(arrayTemplate, std::move(elementTypes)));
 }
 
 void TypeChecker::visitMapNode(MapNode * node) {
@@ -635,7 +635,7 @@ void TypeChecker::visitMapNode(MapNode * node) {
     std::vector<DSType *> elementTypes(2);
     elementTypes[0] = keyType;
     elementTypes[1] = valueType;
-    node->setType(this->typePool->createAndGetReifiedTypeIfUndefined(mapTemplate, elementTypes));
+    node->setType(this->typePool->createAndGetReifiedTypeIfUndefined(mapTemplate, std::move(elementTypes)));
 }
 
 void TypeChecker::visitTupleNode(TupleNode * node) {
@@ -644,7 +644,7 @@ void TypeChecker::visitTupleNode(TupleNode * node) {
     for(unsigned int i = 0; i < size; i++) {
         types[i] = this->checkType(node->getNodes()[i]);
     }
-    node->setType(this->typePool->createAndGetTupleTypeIfUndefined(types));
+    node->setType(this->typePool->createAndGetTupleTypeIfUndefined(std::move(types)));
 }
 
 void TypeChecker::visitVarNode(VarNode * node) {

@@ -121,14 +121,13 @@ FunctionHandle::~FunctionHandle() {
 
 DSType *FunctionHandle::getFieldType(TypePool *typePool) {
     if(this->fieldType == 0) {
-        FunctionType *funcType = typePool->createAndGetFuncTypeIfUndefined(this->returnType, this->paramTypes);
-        this->fieldType = funcType;
+        this->fieldType = typePool->createAndGetFuncTypeIfUndefined(this->returnType, std::move(this->paramTypes));
     }
     return this->fieldType;
 }
 
 FunctionType *FunctionHandle::getFuncType(TypePool *typePool) {
-    return dynamic_cast<FunctionType *>(this->getFieldType(typePool));
+    return static_cast<FunctionType *>(this->getFieldType(typePool));
 }
 
 DSType *FunctionHandle::getReturnType() {
@@ -136,6 +135,9 @@ DSType *FunctionHandle::getReturnType() {
 }
 
 const std::vector<DSType *> &FunctionHandle::getParamTypes() {
+    if(this->fieldType != nullptr) {
+        return static_cast<FunctionType *>(this->fieldType)->getParamTypes();
+    }
     return this->paramTypes;
 }
 
@@ -221,7 +223,7 @@ static DSType *decodeType(TypePool *typePool, const char *&pos,
         assert(size == 1);
         std::vector<DSType *> elementTypes(size);
         elementTypes[0] = decodeType(typePool, pos, elementType0, elementType1);
-        return typePool->createAndGetReifiedTypeIfUndefined(t, elementTypes);
+        return typePool->createAndGetReifiedTypeIfUndefined(t, std::move(elementTypes));
     }
     case Map: {
         TypeTemplate *t = typePool->getMapTemplate();
@@ -231,7 +233,7 @@ static DSType *decodeType(TypePool *typePool, const char *&pos,
         for(unsigned int i = 0; i < size; i++) {
             elementTypes[i] = decodeType(typePool, pos, elementType0, elementType1);
         }
-        return typePool->createAndGetReifiedTypeIfUndefined(t, elementTypes);
+        return typePool->createAndGetReifiedTypeIfUndefined(t, std::move(elementTypes));
     }
     case Tuple: {
         unsigned int size = decodeNum(pos);
@@ -239,7 +241,7 @@ static DSType *decodeType(TypePool *typePool, const char *&pos,
         for(unsigned int i = 0; i < size; i++) {
             elementTypes[i] = decodeType(typePool, pos, elementType0, elementType1);
         }
-        return typePool->createAndGetTupleTypeIfUndefined(elementTypes);
+        return typePool->createAndGetTupleTypeIfUndefined(std::move(elementTypes));
     };
     case P_N0:
     case P_N1:
