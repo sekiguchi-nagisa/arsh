@@ -49,6 +49,7 @@ struct Bus_ObjectImpl : public Bus_Object,
     bool isSystemBus();
 
     bool service(RuntimeContext &ctx, std::string &&serviceName); // override
+    bool listNames(RuntimeContext &ctx, bool activeName);    // override
 };
 
 struct Service_ObjectImpl : public Service_Object,

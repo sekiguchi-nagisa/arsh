@@ -318,6 +318,25 @@ bool Bus_ObjectImpl::service(RuntimeContext &ctx, std::string &&serviceName) {
     return true;
 }
 
+bool Bus_ObjectImpl::listNames(RuntimeContext &ctx, bool activeName) {
+    auto msg = dbus_message_new_method_call(
+            "org.freedesktop.DBus", "/org/freedesktop/DBus",
+            "org.freedesktop.DBus", activeName ? "ListActivatableNames" : "ListNames");
+    bool status;
+    auto reply = sendAndUnrefMessage(ctx, this->conn, msg, status);
+    if(!status) {
+        return false;
+    }
+
+    // decode result
+    auto result(decodeAndUnrefMessage(ctx, ctx.pool.getStringArrayType(), reply));
+    if(!result) {
+        return false;
+    }
+    ctx.push(std::move(result));
+    return true;
+}
+
 
 // ################################
 // ##     Service_ObjectImpl     ##

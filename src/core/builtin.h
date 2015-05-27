@@ -1134,6 +1134,18 @@ static inline bool bus_service(RuntimeContext &ctx) {
     return TYPE_AS(Bus_Object, LOCAL(0))->service(ctx, std::string(strObj->value));
 }
 
+//!bind: function listNames($this : Bus) : Array<String>
+static inline bool bus_listNames(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(bus_listNames);
+    return TYPE_AS(Bus_Object, LOCAL(0))->listNames(ctx, false);
+}
+
+//!bind: function listActiveNames($this : Bus) : Array<String>
+static inline bool bus_listActiveNames(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(bus_listNames);
+    return TYPE_AS(Bus_Object, LOCAL(0))->listNames(ctx, true);
+}
+
 // #####################
 // ##     Service     ##
 // #####################

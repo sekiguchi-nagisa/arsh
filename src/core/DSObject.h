@@ -417,6 +417,7 @@ struct Bus_Object : public DSObject {
     virtual ~Bus_Object() = default;
 
     virtual bool service(RuntimeContext &ctx, std::string &&serviceName);
+    virtual bool listNames(RuntimeContext &ctx, bool activeName);
 };
 
 struct Service_Object : public DSObject {

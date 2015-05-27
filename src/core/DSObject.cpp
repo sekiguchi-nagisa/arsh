@@ -720,6 +720,11 @@ bool Bus_Object::service(RuntimeContext &ctx, std::string &&serviceName) {
     return false;
 }
 
+bool Bus_Object::listNames(RuntimeContext &ctx, bool activeName) {
+    ctx.throwError(ctx.pool.getErrorType(), "not support listNames method");
+    return false;
+}
+
 // ############################
 // ##     Service_Object     ##
 // ############################
