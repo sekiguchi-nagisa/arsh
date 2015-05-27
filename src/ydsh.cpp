@@ -24,7 +24,7 @@
 #define YDSH_MINOR_VERSION 1
 #define YDSH_PATCH_VERSION 0
 
-#if 1
+#if 0
 #define DEV_STATE "-unstable"
 #else
 #define DEV_STATE ""
