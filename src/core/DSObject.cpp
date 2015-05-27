@@ -16,7 +16,6 @@
 
 #include "DSObject.h"
 #include "RuntimeContext.h"
-#include "../ast/Node.h"
 
 #ifndef X_NO_DBUS
 #include "../dbus/DBusBind.h"
@@ -705,28 +704,32 @@ DBus_Object *DBus_Object::newDBus_Object(TypePool *typePool) {
 #ifdef X_NO_DBUS
     return new DBus_Object(typePool);
 #else
-    return new DBus_ObjectImpl(typePool);
+    return newDBusObject(typePool);
 #endif
 }
 
-bool DBus_Object::newService(RuntimeContext &ctx, const std::shared_ptr<DSObject> &busObj,
-                             std::string &&serviceName) {
-#ifdef X_NO_DBUS
+// ########################
+// ##     Bus_Object     ##
+// ########################
+
+Bus_Object::Bus_Object(DSType *type) : DSObject(type) {
+}
+
+bool Bus_Object::service(RuntimeContext &ctx, std::string &&serviceName) {
     ctx.throwError(ctx.pool.getErrorType(), "not support D-Bus service object");
     return false;
-#else
-    return Service_Object::newServiceObject(ctx, busObj, std::move(serviceName));
-#endif
 }
 
-bool DBus_Object::newObject(RuntimeContext &ctx, const std::shared_ptr<DSObject> &srvObj,
-                            std::string &&objectPath) {
-#ifdef X_NO_DBUS
+// ############################
+// ##     Service_Object     ##
+// ############################
+
+Service_Object::Service_Object(DSType *type) : DSObject(type) {
+}
+
+bool Service_Object::object(RuntimeContext &ctx, std::string &&objectPath) {
     ctx.throwError(ctx.pool.getErrorType(), "not support D-Bus proxy object");
     return false;
-#else
-    return DBusProxy_Object::newObject(ctx, srvObj, std::move(objectPath));
-#endif
 }
 
 } // namespace core

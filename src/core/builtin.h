@@ -1131,7 +1131,7 @@ static inline bool dbus_waitSignal(RuntimeContext &ctx) {
 static inline bool bus_service(RuntimeContext &ctx) {
     SUPPRESS_WARNING(bus_service);
     String_Object *strObj = TYPE_AS(String_Object, LOCAL(1));
-    return DBus_Object::newService(ctx, LOCAL(0), std::string(strObj->value));
+    return TYPE_AS(Bus_Object, LOCAL(0))->service(ctx, std::string(strObj->value));
 }
 
 // #####################
@@ -1142,7 +1142,7 @@ static inline bool bus_service(RuntimeContext &ctx) {
 static inline bool service_object(RuntimeContext &ctx) {
     SUPPRESS_WARNING(service_object);
     String_Object *path = TYPE_AS(String_Object, LOCAL(1));
-    return DBus_Object::newObject(ctx, LOCAL(0), std::string(path->value));
+    return TYPE_AS(Service_Object, LOCAL(0))->object(ctx, std::string(path->value));
 }
 
 

@@ -396,13 +396,13 @@ struct DBus_Object : public DSObject {
     virtual ~DBus_Object();
 
     /**
-     * init and get Bus_Object representing for system bus.
+     * init and get Bus_ObjectImpl representing for system bus.
      * return false, if error happened
     */
     virtual bool getSystemBus(RuntimeContext &ctx);
 
     /**
-     * init and get Bus_Object representing for session bus.
+     * init and get Bus_ObjectImpl representing for session bus.
      * return false, if error happened
      */
     virtual bool getSessionBus(RuntimeContext &ctx);
@@ -410,9 +410,20 @@ struct DBus_Object : public DSObject {
     virtual bool waitSignal(RuntimeContext &ctx);
 
     static DBus_Object *newDBus_Object(TypePool *typePool);
-    static bool newService(RuntimeContext &ctx, const std::shared_ptr<DSObject> &busObj, std::string &&serviceName);
+};
 
-    static bool newObject(RuntimeContext &ctx, const std::shared_ptr<DSObject> &srvObj, std::string &&objectPath);
+struct Bus_Object : public DSObject {
+    Bus_Object(DSType *type);
+    virtual ~Bus_Object() = default;
+
+    virtual bool service(RuntimeContext &ctx, std::string &&serviceName);
+};
+
+struct Service_Object : public DSObject {
+    Service_Object(DSType *type);
+    virtual ~Service_Object() = default;
+
+    virtual bool object(RuntimeContext &ctx, std::string &&objectPath);
 };
 
 struct ObjectVisitor {

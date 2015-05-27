@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <dbus/DBusBind.h>
+#include <dbus/DBusBindImpl.h>
 #include <core/TypeLookupError.h>
 
 using namespace ydsh::core;
