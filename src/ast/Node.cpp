@@ -2749,19 +2749,19 @@ void AssignNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus AssignNode::eval(RuntimeContext &ctx) {
-    AssignableNode *assignableNode = (AssignableNode *) this->leftNode;
+    AssignableNode *assignableNode = static_cast<AssignableNode *>(this->leftNode);
     unsigned int index = assignableNode->getIndex();
     if (this->isFieldAssign()) {
         if (this->isSelfAssignment()) {
             EVAL(ctx, this->leftNode);
         } else {
-            AccessNode *accessNode = (AccessNode *) this->leftNode;
+            AccessNode *accessNode = static_cast<AccessNode *>(this->leftNode);
             EVAL(ctx, accessNode->getRecvNode());
         }
         EVAL(ctx, this->rightNode);
 
         if(assignableNode->withinInterface()) {
-            AccessNode *accessNode = (AccessNode *) this->leftNode;
+            AccessNode *accessNode = static_cast<AccessNode *>(this->leftNode);
             return ctx.setField(accessNode->getRecvNode()->getType(),
                                 accessNode->getFieldName(), accessNode->getType());
         }
@@ -2771,7 +2771,7 @@ EvalStatus AssignNode::eval(RuntimeContext &ctx) {
             EVAL(ctx, this->leftNode);
         }
         EVAL(ctx, this->rightNode);
-        VarNode *varNode = (VarNode *) this->leftNode;
+        VarNode *varNode = static_cast<VarNode *>(this->leftNode);
 
         if (varNode->isEnv()) {
             ctx.exportEnv(varNode->getVarName(), index, varNode->isGlobal());

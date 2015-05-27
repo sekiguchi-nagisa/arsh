@@ -461,7 +461,7 @@ struct ObjectVisitor {
 #ifndef NDEBUG
 #define TYPE_AS(t, s_obj) dynamic_cast<t*>((s_obj).get())
 #else
-#define TYPE_AS(t, s_obj) ((t*) (s_obj).get())
+#define TYPE_AS(t, s_obj) static_cast<t*>((s_obj).get())
 #endif
 
 #endif /* CORE_DSOBJECT_H_ */

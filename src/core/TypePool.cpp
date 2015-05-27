@@ -420,8 +420,9 @@ FunctionType *TypePool::createAndGetFuncTypeIfUndefined(DSType *returnType, std:
         this->typeMap.addType(std::move(typeName), funcType);
         return funcType;
     }
+    assert(type->isFuncType());
 
-    return dynamic_cast<FunctionType *>(type);
+    return static_cast<FunctionType *>(type);
 }
 
 InterfaceType *TypePool::createAndGetInterfaceTypeIfUndefined(const std::string &interfaceName) {
@@ -431,8 +432,9 @@ InterfaceType *TypePool::createAndGetInterfaceTypeIfUndefined(const std::string 
         this->typeMap.addType(std::string(interfaceName), type);
         return type;
     }
+    assert(type->isInterface());
 
-    return dynamic_cast<InterfaceType *>(type);
+    return static_cast<InterfaceType *>(type);
 }
 
 DSType *TypePool::createAndGetErrorTypeIfUndefined(const std::string &errorName, DSType *superType) {

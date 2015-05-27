@@ -244,7 +244,7 @@ static std::shared_ptr<DSObject> decodeAndUnrefMessage(RuntimeContext &ctx, DSTy
 
 static void appendArg(RuntimeContext &ctx, DBusMessageIter *iter,
                       DSType *argType, const std::shared_ptr<DSObject> &arg) {
-    DBus_ObjectImpl *dbus = (DBus_ObjectImpl *)  ctx.dbus.get();
+    DBus_ObjectImpl *dbus = TYPE_AS(DBus_ObjectImpl, ctx.dbus);
     dbus->builder.appendArg(iter, argType, arg);
 }
 
@@ -648,7 +648,7 @@ bool DBusProxy_Object::invokeMethod(RuntimeContext &ctx, const std::string &meth
     if(retMsg != nullptr) {
         std::shared_ptr<DSObject> result(nullptr);
         if(handle->hasMultipleReturnType()) {
-            result = decodeAndUnrefMessage(ctx, ((TupleType *) handle->getReturnType())->getTypes(), retMsg);
+            result = decodeAndUnrefMessage(ctx, static_cast<TupleType *>(handle->getReturnType())->getTypes(), retMsg);
         } else {
             result = decodeAndUnrefMessage(ctx, handle->getReturnType(), retMsg);
         }

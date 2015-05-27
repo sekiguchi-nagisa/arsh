@@ -554,7 +554,7 @@ void FuncObject::setType(DSType *type) {
 }
 
 FunctionType *FuncObject::getFuncType() {
-    return (FunctionType *) this->type;
+    return static_cast<FunctionType *>(this->type);
 }
 
 
