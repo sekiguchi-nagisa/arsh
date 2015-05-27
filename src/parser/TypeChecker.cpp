@@ -481,7 +481,7 @@ void TypeChecker::checkTypeArgsNode(MethodHandle *handle, ArgsNode *argsNode) { 
 void TypeChecker::recover() {
     this->symbolTable.popAllLocal();
     this->symbolTable.removeCachedEntry();
-    this->typePool->removeCachedType();
+    this->typePool->abort();
 
     this->curReturnType = 0;
     this->loopContextStack.clear();
@@ -1211,7 +1211,7 @@ void TypeChecker::visitDummyNode(DummyNode * node) {
 
 void TypeChecker::visitRootNode(RootNode * node) {
     this->symbolTable.clearEntryCache();
-    this->typePool->clearTypeCache();
+    this->typePool->commit();
 
     for(Node *targetNode : node->getNodeList()) {
         this->checkTypeAsStatement(targetNode);

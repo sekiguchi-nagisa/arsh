@@ -29,12 +29,103 @@ namespace core {
 
 using namespace ydsh::ast;
 
+// #####################
+// ##     TypeMap     ##
+// #####################
+
+TypeMap::TypeMap() :
+        typeMapImpl(), typeNameMap(), typeCache() {
+}
+
+TypeMap::~TypeMap() {
+    for(auto pair : this->typeMapImpl) {
+        if(!isAlias(pair.second)) {
+            delete pair.second;
+        }
+    }
+    this->typeMapImpl.clear();
+    this->typeNameMap.clear();
+    this->typeCache.clear();
+}
+
+
+DSType *TypeMap::addType(std::string &&typeName, DSType *type) {
+    assert(type != nullptr);
+    auto pair = this->typeMapImpl.insert(std::make_pair(std::move(typeName), type));
+    this->typeNameMap.insert(std::make_pair(asKey(type), &pair.first->first));
+    this->typeCache.push_back(&pair.first->first);
+    return type;
+}
+
+DSType *TypeMap::getType(const std::string &typeName) {
+    static const unsigned long mask = ~(1L << 63);
+    auto iter = this->typeMapImpl.find(typeName);
+    if(iter != this->typeMapImpl.end()) {
+        DSType *type = iter->second;
+        if(isAlias(type)) {   // if tagged pointer, mask tag
+            return (DSType *) (mask & (unsigned long) type);
+        }
+        return type;
+    }
+    return nullptr;
+}
+
+const std::string &TypeMap::getTypeName(const DSType &type) {
+    auto iter = this->typeNameMap.find(asKey(&type));
+    assert(iter != this->typeNameMap.end());
+    return *iter->second;
+}
+
+bool TypeMap::setAlias(const std::string &alias, DSType *targetType) {
+    static const unsigned long tag = 1L << 63;
+
+    /**
+     * use tagged pointer to prevent double free.
+     */
+    DSType *taggedPtr = (DSType *) (tag | (unsigned long) targetType);
+    auto pair = this->typeMapImpl.insert(std::make_pair(alias, taggedPtr));
+    return pair.second;
+}
+
+void TypeMap::commit() {
+    this->typeCache.clear();
+}
+
+void TypeMap::abort() {
+    for(const std::string *typeName : this->typeCache) {
+        this->removeType(*typeName);
+    }
+    this->typeCache.clear();
+}
+
+bool TypeMap::isAlias(const DSType *type) {
+    assert(type != nullptr);
+    return ((long) type) < 0;
+}
+
+unsigned long TypeMap::asKey(const DSType *type) {
+    assert(type != nullptr);
+    return (unsigned long) type;
+}
+
+void TypeMap::removeType(const std::string &typeName) {
+    auto iter = this->typeMapImpl.find(typeName);
+    if(iter != this->typeMapImpl.end()) {
+        if(!isAlias(iter->second)) {
+            this->typeNameMap.erase(asKey(iter->second));
+            delete iter->second;
+        }
+        this->typeMapImpl.erase(iter);
+    }
+}
+
+
 // ######################
 // ##     TypePool     ##
 // ######################
 
 TypePool::TypePool(char **envp) :
-        typeMap(16), typeNameMap(), typeCache(),
+        typeMap(),
         anyType(), voidType(), variantType(), valueType(),
         byteType(), int16Type(), uint16Type(),
         int32Type(), uint32Type(), int64Type(), uint64Type(),
@@ -115,16 +206,12 @@ TypePool::TypePool(char **envp) :
     this->outOfIndexErrorType = this->initErrorType("OutOfIndexError", this->errorType);
     this->keyNotFoundErrorType = this->initErrorType("KeyNotFoundError", this->errorType);
     this->typeCastErrorType = this->initErrorType("TypeCastError", this->errorType);
+
+    // commit generated type
+    this->typeMap.commit();
 }
 
 TypePool::~TypePool() {
-    for(const std::pair<std::string, DSType *> &pair : this->typeMap) {
-        if((long) pair.second > -1) {
-            delete pair.second;
-        }
-    }
-    this->typeMap.clear();
-
     for(const std::pair<std::string, TypeTemplate *> &pair : this->templateMap) {
         delete pair.second;
     }
@@ -264,16 +351,7 @@ TypeTemplate *TypePool::getTupleTemplate() {
 }
 
 DSType *TypePool::getType(const std::string &typeName) {
-    static const unsigned long mask = ~(1L << 63);
-    auto iter = this->typeMap.find(typeName);
-    if(iter != this->typeMap.end()) {
-        DSType *type = iter->second;
-        if((long) type < 0) {   // if tagged pointer, mask tag
-            return (DSType *) (mask & (unsigned long) type);
-        }
-        return type;
-    }
-    return 0;
+    return this->typeMap.getType(typeName);
 }
 
 DSType *TypePool::getTypeAndThrowIfUndefined(const std::string &typeName) {
@@ -305,13 +383,13 @@ DSType *TypePool::createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate,
     }
 
     std::string typeName(this->toReifiedTypeName(typeTemplate, elementTypes));
-    auto iter = this->typeMap.find(typeName);
-    if(iter == this->typeMap.end()) {
+    DSType *type = this->typeMap.getType(typeName);
+    if(type == nullptr) {
         DSType *superType = this->asVariantType(elementTypes) ? this->variantType : this->anyType;
-        return this->addType(std::move(typeName),
+        return this->typeMap.addType(std::move(typeName),
                              new ReifiedType(typeTemplate->getInfo(), superType, std::move(elementTypes)));
     }
-    return iter->second;
+    return type;
 }
 
 DSType *TypePool::createAndGetTupleTypeIfUndefined(std::vector<DSType *> &&elementTypes) {
@@ -322,53 +400,53 @@ DSType *TypePool::createAndGetTupleTypeIfUndefined(std::vector<DSType *> &&eleme
     }
 
     std::string typeName(this->toTupleTypeName(elementTypes));
-    auto iter = this->typeMap.find(typeName);
-    if(iter == this->typeMap.end()) {
+    DSType *type = this->typeMap.getType(typeName);
+    if(type == nullptr) {
         DSType *superType = this->asVariantType(elementTypes) ? this->variantType : this->anyType;
-        return this->addType(std::move(typeName), new TupleType(superType, std::move(elementTypes)));
+        return this->typeMap.addType(std::move(typeName), new TupleType(superType, std::move(elementTypes)));
     }
-    return iter->second;
+    return type;
 }
 
 FunctionType *TypePool::createAndGetFuncTypeIfUndefined(DSType *returnType, std::vector<DSType *> &&paramTypes) {
     this->checkElementTypes(paramTypes);
 
     std::string typeName(toFunctionTypeName(returnType, paramTypes));
-    auto iter = this->typeMap.find(typeName);
-    if(iter == this->typeMap.end()) {
+    DSType *type = this->typeMap.getType(typeName);
+    if(type == nullptr) {
         FunctionType *funcType =
                 new FunctionType(this->getBaseFuncType(), returnType, std::move(paramTypes));
-        this->addType(std::move(typeName), funcType);
+        this->typeMap.addType(std::move(typeName), funcType);
         return funcType;
     }
 
-    return dynamic_cast<FunctionType *>(iter->second);
+    return dynamic_cast<FunctionType *>(type);
 }
 
 InterfaceType *TypePool::createAndGetInterfaceTypeIfUndefined(const std::string &interfaceName) {
-    auto iter = this->typeMap.find(interfaceName);
-    if(iter == this->typeMap.end()) {
+    DSType *type = this->typeMap.getType(interfaceName);
+    if(type == nullptr) {
         InterfaceType *type = new InterfaceType(this->dbusObjectType);
-        this->addType(std::string(interfaceName), type, true);
+        this->typeMap.addType(std::string(interfaceName), type);
         return type;
     }
 
-    return dynamic_cast<InterfaceType *>(iter->second);
+    return dynamic_cast<InterfaceType *>(type);
 }
 
 DSType *TypePool::createAndGetErrorTypeIfUndefined(const std::string &errorName, DSType *superType) {
-    auto iter = this->typeMap.find(errorName);
-    if(iter == this->typeMap.end()) {
+    DSType *type = this->typeMap.getType(errorName);
+    if(type == nullptr) {
         DSType *type = new ErrorType(superType);
-        this->addType(std::string(errorName), type, false);
+        this->typeMap.addType(std::string(errorName), type);
         return type;
     }
-    return iter->second;
+    return type;
 }
 
 DSType *TypePool::getDBusInterfaceType(const std::string &typeName) {
-    auto iter = this->typeMap.find(typeName);
-    if(iter == this->typeMap.end()) {
+    DSType *type = this->typeMap.getType(typeName);
+    if(type == nullptr) {
         // load dbus interface
         std::string ifacePath(RuntimeContext::typeDefDir);
         ifacePath += typeName;
@@ -384,24 +462,17 @@ DSType *TypePool::getDBusInterfaceType(const std::string &typeName) {
         }
         return TypeChecker::resolveInterface(this, ifaceNode);
     }
-    return iter->second;
+    return type;
 }
 
 void TypePool::setAlias(const std::string &alias, DSType *targetType) {
-    static const unsigned long tag = 1L << 63;
-
-    /**
-     * use tagged pointer to prevent double free.
-     */
-    DSType *taggedPtr = (DSType *) (tag | (unsigned long) targetType);
-    auto pair = this->typeMap.insert(std::make_pair(alias, taggedPtr));
-    if(!pair.second) {
+    if(!this->typeMap.setAlias(alias, targetType)) {
         E_DefinedType(alias);
     }
 }
 
 const std::string &TypePool::getTypeName(const DSType &type) {
-    return *this->typeNameMap[(unsigned long) &type];
+    return this->typeMap.getTypeName(type);
 }
 
 std::string TypePool::toReifiedTypeName(TypeTemplate *typeTemplate, const std::vector<DSType *> &elementTypes) {
@@ -492,21 +563,12 @@ int TypePool::getIntPrecision(DSType *type) {
     return iter->second;
 }
 
-void TypePool::removeCachedType() {
-    for(const std::string *typeName : this->typeCache) {
-        auto iter = this->typeMap.find(*typeName);
-        if(iter != this->typeMap.end()) {
-            if((long) iter->second > -1) {
-                this->typeNameMap.erase((unsigned long) iter->second);
-                delete iter->second;
-            }
-            this->typeMap.erase(iter);
-        }
-    }
+void TypePool::commit() {
+    this->typeMap.commit();
 }
 
-void TypePool::clearTypeCache() {
-    this->typeCache.clear();
+void TypePool::abort() {
+    this->typeMap.abort();
 }
 
 void TypePool::initEnvSet() {
@@ -524,20 +586,10 @@ void TypePool::initEnvSet() {
     }
 }
 
-DSType *TypePool::addType(std::string &&typeName, DSType *type, bool cache) {
-    auto pair = this->typeMap.insert(std::make_pair(std::move(typeName), type));
-    //this->typeNameMap.push_back(&pair.first->first);
-    this->typeNameMap.insert(std::make_pair((unsigned long) type, &pair.first->first));
-    if(cache) {
-        this->typeCache.push_back(&pair.first->first);
-    }
-    return type;
-}
-
 DSType *TypePool::initBuiltinType(const char *typeName, bool extendable,
                                   DSType *superType, native_type_info_t *info, bool isVoid) {
     // create and register type
-    return this->addType(
+    return this->typeMap.addType(
             std::string(typeName), newBuiltinType(extendable, superType, info, isVoid));
 }
 
@@ -549,7 +601,7 @@ TypeTemplate *TypePool::initTypeTemplate(const char *typeName,
 }
 
 DSType *TypePool::initErrorType(const char *typeName, DSType *superType) {
-    return this->addType(std::string(typeName), new ErrorType(superType));
+    return this->typeMap.addType(std::string(typeName), new ErrorType(superType));
 }
 
 void TypePool::checkElementTypes(const std::vector<DSType *> &elementTypes) {

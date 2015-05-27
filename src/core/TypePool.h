@@ -31,18 +31,64 @@ class InterfaceType;
 class TypeTemplate;
 struct native_type_info_t;
 
-class TypePool {
+class TypeMap {
 private:
-    /**
-     * contains tagged pointer if set alias.
-     */
-    std::unordered_map<std::string, DSType *> typeMap;
+    std::unordered_map<std::string, DSType *> typeMapImpl;
     std::unordered_map<unsigned long, const std::string *> typeNameMap;
 
     /**
      * cache generated type(interface).
      */
     std::vector<const std::string *> typeCache;
+
+public:
+    TypeMap();
+    ~TypeMap();
+
+    /**
+     * return added type. type must not be null.
+     */
+    DSType *addType(std::string &&typeName, DSType *type);
+
+    /**
+     * return null, if has no type.
+     */
+    DSType *getType(const std::string &typeName);
+
+    /**
+     * type must not be null.
+     */
+    const std::string &getTypeName(const DSType &type);
+
+    /**
+     * return false, if duplicated
+     */
+    bool setAlias(const std::string &alias, DSType *targetType);
+
+    /**
+     * clear typeCache.
+     */
+    void commit();
+
+    /**
+     * remove cached type
+     */
+    void abort();
+
+
+private:
+    static bool isAlias(const DSType *type);
+    static unsigned long asKey(const DSType *type);
+
+    /**
+     * remove type and call destructor.
+     */
+    void removeType(const std::string &typeName);
+};
+
+class TypePool {
+private:
+    TypeMap typeMap;
 
     // type definition
     DSType *anyType;
@@ -298,16 +344,17 @@ public:
     int getIntPrecision(DSType *type);
 
     /**
-     * remove cached type from typeMap and call destructor.
+     * commit changed state(type, env)
      */
-    void removeCachedType();
+    void commit();
 
-    void clearTypeCache();
+    /**
+     * abort changed state(type, env)
+     */
+    void abort();
 
 private:
     void initEnvSet();
-
-    DSType *addType(std::string &&typeName, DSType *type, bool cache = false);
 
     DSType *initBuiltinType(const char *typeName, bool extendable,
                             DSType *superType, native_type_info_t *info, bool isVoid = false);
