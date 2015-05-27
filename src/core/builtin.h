@@ -1142,7 +1142,7 @@ static inline bool bus_listNames(RuntimeContext &ctx) {
 
 //!bind: function listActiveNames($this : Bus) : Array<String>
 static inline bool bus_listActiveNames(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(bus_listNames);
+    SUPPRESS_WARNING(bus_listActiveNames);
     return TYPE_AS(Bus_Object, LOCAL(0))->listNames(ctx, true);
 }
 

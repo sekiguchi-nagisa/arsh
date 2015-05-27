@@ -35,7 +35,8 @@ private:
     std::unordered_map<unsigned long, int> map;
 
 public:
-    BaseTypeDescriptorMap(TypePool *pool);
+    explicit BaseTypeDescriptorMap(TypePool *pool);
+    ~BaseTypeDescriptorMap() = default;
 
     /**
      * return DBUS_TYPE_INVALID, if not base type.
@@ -55,7 +56,7 @@ private:
 
 public:
     DescriptorBuilder(TypePool *pool, BaseTypeDescriptorMap *typeMap);
-    ~DescriptorBuilder();
+    ~DescriptorBuilder() = default;
 
     const char *buildDescriptor(DSType *type);
 
@@ -82,7 +83,7 @@ private:
     DBusMessageIter *iter;
 
 public:
-    MessageBuilder(TypePool *pool);
+    explicit MessageBuilder(TypePool *pool);
     ~MessageBuilder();
     void appendArg(DBusMessageIter *iter, DSType *argType, const std::shared_ptr<DSObject> &arg);
 

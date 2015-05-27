@@ -35,7 +35,7 @@ public:
      */
     Scope();
 
-    Scope(unsigned int curVarIndex);
+    explicit Scope(unsigned int curVarIndex);
 
     ~Scope();
 

@@ -346,9 +346,6 @@ Service_ObjectImpl::Service_ObjectImpl(DSType *type, const std::shared_ptr<Bus_O
         Service_Object(type), bus(bus), serviceName(std::move(serviceName)) {
 }
 
-Service_ObjectImpl::~Service_ObjectImpl() {
-}
-
 std::string Service_ObjectImpl::toString(RuntimeContext &ctx) {
     return this->serviceName;
 }
@@ -376,9 +373,6 @@ DBus_Object *newDBusObject(TypePool *pool) {
 
 DBus_ObjectImpl::DBus_ObjectImpl(TypePool *typePool) :
         DBus_Object(typePool), systemBus(), sessionBus(), builder(typePool) {
-}
-
-DBus_ObjectImpl::~DBus_ObjectImpl() {
 }
 
 bool DBus_ObjectImpl::getSystemBus(RuntimeContext &ctx) {

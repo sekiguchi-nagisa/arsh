@@ -32,9 +32,6 @@ Writer::Writer(std::ostream *stream, TypePool *pool) :
         stream(stream), pool(pool), indentLevel(0) {
 }
 
-Writer::~Writer() {
-}
-
 void Writer::write(const char *fieldName, const char *value) {
     std::string str(value);
     this->write(fieldName, str);

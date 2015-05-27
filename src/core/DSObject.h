@@ -41,8 +41,8 @@ struct ObjectVisitor;
 struct DSObject {
     DSType *type;
 
-    DSObject(DSType *type);
-    virtual ~DSObject();
+    explicit DSObject(DSType *type);
+    virtual ~DSObject() = default;
 
     /**
      * get object type
@@ -98,6 +98,7 @@ struct Int_Object : public DSObject {
     int value;
 
     Int_Object(DSType *type, int value);
+    ~Int_Object() = default;
 
     int getValue();
 
@@ -111,6 +112,7 @@ struct Long_Object : public DSObject {
     long value;
 
     Long_Object(DSType *type, long value);
+    ~Long_Object() = default;
 
     long getValue();
 
@@ -124,6 +126,7 @@ struct Float_Object : public DSObject {
     double value;
 
     Float_Object(DSType *type, double value);
+    ~Float_Object() = default;
 
     double getValue();
 
@@ -137,6 +140,7 @@ struct Boolean_Object : public DSObject {
     bool value;
 
     Boolean_Object(DSType *type, bool value);
+    ~Boolean_Object() = default;
 
     bool getValue();
 
@@ -153,7 +157,8 @@ struct String_Object : public DSObject {
 
     String_Object(DSType *type, const std::string &value);
 
-    String_Object(DSType *type);
+    explicit String_Object(DSType *type);
+    ~String_Object() = default;
 
     const std::string &getValue();
 
@@ -171,8 +176,9 @@ struct Array_Object : public DSObject {
     unsigned int curIndex;
     std::vector<std::shared_ptr<DSObject>> values;
 
-    Array_Object(DSType *type);
+    explicit Array_Object(DSType *type);
     Array_Object(DSType *type, std::vector<std::shared_ptr<DSObject>> &&values);
+    ~Array_Object() = default;
 
     const std::vector<std::shared_ptr<DSObject>> &getValues();
 
@@ -199,7 +205,8 @@ struct Map_Object : public DSObject {
     HashMap valueMap;
     HashMap::const_iterator iter;
 
-    Map_Object(DSType *type);
+    explicit Map_Object(DSType *type);
+    ~Map_Object() = default;
 
     const HashMap &getValueMap();
 
@@ -218,14 +225,15 @@ protected:
     std::shared_ptr<DSObject> *fieldTable;
 
 public:
-    BaseObject(DSType *type);
+    explicit BaseObject(DSType *type);
     virtual ~BaseObject();
 
     std::shared_ptr<DSObject> *getFieldTable(); // override
 };
 
 struct Tuple_Object : public BaseObject {
-    Tuple_Object(DSType *type);
+    explicit Tuple_Object(DSType *type);
+    ~Tuple_Object() = default;
 
     std::string toString(RuntimeContext &ctx); // override
     unsigned int getElementSize();
@@ -245,7 +253,7 @@ struct Error_Object : public DSObject {
 
     Error_Object(DSType *type, const std::shared_ptr<DSObject> &message);
     Error_Object(DSType *type, std::shared_ptr<DSObject> &&message);
-    ~Error_Object();
+    ~Error_Object() = default;
 
     std::string toString(RuntimeContext &ctx); // override
     void createStackTrace(RuntimeContext &ctx);
@@ -271,8 +279,7 @@ struct DummyObject : public DSObject {
     DummyObject() : DSObject(0) {
     }
 
-    ~DummyObject() {
-    }
+    ~DummyObject() = default;
 
     void setType(DSType *type) { // override.
         this->type = type;
@@ -282,7 +289,7 @@ struct DummyObject : public DSObject {
 struct FuncObject : public DSObject {
     FuncObject();
 
-    virtual ~FuncObject();
+    virtual ~FuncObject() = default;
 
     void setType(DSType *type); // override
 
@@ -306,7 +313,7 @@ struct FuncObject : public DSObject {
 struct UserFuncObject : public FuncObject {
     FunctionNode *funcNode;
 
-    UserFuncObject(FunctionNode *funcNode);
+    explicit UserFuncObject(FunctionNode *funcNode);
 
     ~UserFuncObject();
 
@@ -326,9 +333,9 @@ struct BuiltinFuncObject : public FuncObject {
      */
     native_func_t func_ptr;
 
-    BuiltinFuncObject(native_func_t func_ptr);
+    explicit BuiltinFuncObject(native_func_t func_ptr);
 
-    ~BuiltinFuncObject();
+    ~BuiltinFuncObject() = default;
 
     native_func_t getFuncPointer();
 
@@ -347,8 +354,8 @@ struct BuiltinFuncObject : public FuncObject {
  */
 class MethodRef {
 public:
-    MethodRef();
-    virtual ~MethodRef();
+    MethodRef() = default;
+    virtual ~MethodRef() = default;
 
     virtual bool invoke(RuntimeContext &ctx) = 0;
 };
@@ -358,18 +365,17 @@ private:
     native_func_t func_ptr;
 
 public:
-    NativeMethodRef(native_func_t func_ptr);
-    ~NativeMethodRef();
+    explicit NativeMethodRef(native_func_t func_ptr);
+    ~NativeMethodRef() = default;
 
     bool invoke(RuntimeContext &ctx);   // override
 };
 
 struct ProxyObject : public DSObject {
-    ProxyObject(DSType *type) : DSObject(type) {
+    explicit ProxyObject(DSType *type) : DSObject(type) {
     }
 
-    virtual ~ProxyObject() {
-    }
+    virtual ~ProxyObject() = default;
 
     /**
      * invoke method and set return value.
@@ -392,8 +398,8 @@ struct ProxyObject : public DSObject {
 };
 
 struct DBus_Object : public DSObject {
-    DBus_Object(TypePool *typePool);
-    virtual ~DBus_Object();
+    explicit DBus_Object(TypePool *typePool);
+    virtual ~DBus_Object() = default;
 
     /**
      * init and get Bus_ObjectImpl representing for system bus.
@@ -413,7 +419,7 @@ struct DBus_Object : public DSObject {
 };
 
 struct Bus_Object : public DSObject {
-    Bus_Object(DSType *type);
+    explicit Bus_Object(DSType *type);
     virtual ~Bus_Object() = default;
 
     virtual bool service(RuntimeContext &ctx, std::string &&serviceName);
@@ -421,7 +427,7 @@ struct Bus_Object : public DSObject {
 };
 
 struct Service_Object : public DSObject {
-    Service_Object(DSType *type);
+    explicit Service_Object(DSType *type);
     virtual ~Service_Object() = default;
 
     virtual bool object(RuntimeContext &ctx, std::string &&objectPath);

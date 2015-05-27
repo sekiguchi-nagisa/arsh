@@ -25,9 +25,6 @@ Shell::Shell(char **envp) :
     this->initBuiltinVar();
 }
 
-Shell::~Shell() {
-}
-
 ExitStatus Shell::eval(const char *line) {
     Lexer<LexerDef, TokenKind> lexer(line);
     return this->eval(0, lexer, true);

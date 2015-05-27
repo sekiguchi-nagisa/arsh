@@ -93,7 +93,7 @@ public:
 
     TypeCheckError(unsigned int lineNum, const TypeLookupError &e);
 
-    ~TypeCheckError();
+    ~TypeCheckError() = default;
 
     unsigned int getLineNum() const;
 

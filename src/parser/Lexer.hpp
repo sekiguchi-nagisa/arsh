@@ -130,14 +130,14 @@ struct Lexer {
     /**
      * equivalent to Lexer(DEFAULT_SIZE, fp).
      */
-    Lexer(FILE *fp) : Lexer(DEFAULT_SIZE, fp) {
+    explicit Lexer(FILE *fp) : Lexer(DEFAULT_SIZE, fp) {
     }
 
     /**
      * copy src to this->buf.
      * src must terminate null character.
      */
-    Lexer(const char *src) :
+    explicit Lexer(const char *src) :
             Lexer(strlen(src) + 1, true) {
         this->copySrcBuf(src);
     }
@@ -147,7 +147,7 @@ struct Lexer {
      * internal state is initialized.
      * fp is always null.
      */
-    Lexer(const Lexer &lexer) :
+    explicit Lexer(const Lexer &lexer) :
             Lexer(lexer.getUsedSize(), true) {
         this->copySrcBuf(lexer.buf);
     }

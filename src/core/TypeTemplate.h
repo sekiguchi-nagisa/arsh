@@ -42,7 +42,7 @@ private:
 public:
     TypeTemplate(std::string &&name, std::vector<DSType*> &&elementTypes, native_type_info_t *info);
 
-    ~TypeTemplate();
+    ~TypeTemplate() = default;
 
     const std::string &getName();
 

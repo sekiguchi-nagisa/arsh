@@ -65,8 +65,8 @@ private:
     DSType *type;
 
 public:
-    TypeGenerator(TypePool *pool);
-    ~TypeGenerator();
+    explicit TypeGenerator(TypePool *pool);
+    ~TypeGenerator() = default;
 
     /**
      * entry point.
@@ -118,9 +118,9 @@ private:
     CoercionKind coercionKind;
 
 public:
-    TypeChecker(TypePool *typePool);
+    explicit TypeChecker(TypePool *typePool);
 
-    ~TypeChecker();
+    ~TypeChecker() = default;
 
     /**
      * type checker entry point

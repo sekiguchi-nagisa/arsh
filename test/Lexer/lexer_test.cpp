@@ -38,9 +38,7 @@ public:
     std::vector<std::pair<TokenKind, Token>> tokens;
 
 public:
-    LexerTest_Lv1() :
-        lexer(), tokens() {
-    }
+    LexerTest_Lv1() = default;
 
     virtual ~LexerTest_Lv1() {
         delete this->lexer;

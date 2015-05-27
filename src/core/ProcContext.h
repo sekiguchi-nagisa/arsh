@@ -85,7 +85,7 @@ struct ProcGroup {
     unsigned int procSize;
     std::shared_ptr<ProcContext> *procs;
 
-    ProcGroup(unsigned int procSize);
+    explicit ProcGroup(unsigned int procSize);
 
     ~ProcGroup();
 

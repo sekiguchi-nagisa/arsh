@@ -61,9 +61,9 @@ private:
     std::vector<Option<OPTION_ENUM>> options;
 
 public:
-    ArgsParser();
+    ArgsParser() = default;
 
-    ~ArgsParser();
+    ~ArgsParser() = default;
 
     ArgsParser *addOption(OPTION_ENUM optionId, const char *optionSymbol,
                           bool hasArg = false, const char *description = "");
@@ -118,15 +118,6 @@ const char *ArgsParser<OPTION_ENUM>::Option<OPTION_ENUM2>::usageSuffix = " <arg>
 // ########################
 // ##     ArgsParser     ##
 // ########################
-
-template<typename OPTION_ENUM>
-ArgsParser<OPTION_ENUM>::ArgsParser() :
-        options() {
-}
-
-template<typename OPTION_ENUM>
-ArgsParser<OPTION_ENUM>::~ArgsParser() {
-}
 
 template<typename OPTION_ENUM>
 ArgsParser<OPTION_ENUM> *ArgsParser<OPTION_ENUM>::addOption(OPTION_ENUM optionId, const char *optionSymbol,

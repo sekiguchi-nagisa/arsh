@@ -164,13 +164,6 @@ namespace parser {
 // ##     Parser     ##
 // ####################
 
-Parser::Parser() :
-        lexer(), curTokenKind(), curToken() {
-}
-
-Parser::~Parser() {
-}
-
 void Parser::parse(DSLexer &lexer, RootNode &rootNode) {
     this->lexer = &lexer;
 

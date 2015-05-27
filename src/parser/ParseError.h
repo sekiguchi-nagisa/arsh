@@ -38,7 +38,7 @@ protected:
 public:
     ParseError(unsigned int lineNum, TokenKind kind, Token errorToken);
 
-    virtual ~ParseError();
+    virtual ~ParseError() = default;
 
     unsigned int getLineNum() const;
 
@@ -65,7 +65,7 @@ public:
     TokenMismatchError(unsigned int lineNum, TokenKind actual,
                        Token errorToken, TokenKind expected);
 
-    ~TokenMismatchError();
+    ~TokenMismatchError() = default;
 
     TokenKind getExpectedTokenKind() const;
 
@@ -89,7 +89,7 @@ public:
     NoViableAlterError(unsigned int lineNum, TokenKind actual,
                        Token errorToken, TokenKind *alters);
 
-    ~NoViableAlterError();
+    ~NoViableAlterError() = default;
 
     const std::vector<TokenKind> &getAlters() const;
 
@@ -105,7 +105,7 @@ class InvalidTokenError : public ParseError {
 public:
     InvalidTokenError(unsigned int lineNum, Token token);
 
-    ~InvalidTokenError();
+    ~InvalidTokenError() = default;
 
     bool operator==(const InvalidTokenError &e);
 
@@ -119,7 +119,7 @@ class OutOfRangeNumError : public ParseError {
 public:
     OutOfRangeNumError(unsigned int lineNum, TokenKind kind, Token token);
 
-    ~OutOfRangeNumError();
+    ~OutOfRangeNumError() = default;
 
     bool operator==(const OutOfRangeNumError &e);
 
@@ -133,9 +133,7 @@ private:
 // for error message formatting.
 class ParseErrorVisitor {
 public:
-    ParseErrorVisitor();
-
-    virtual ~ParseErrorVisitor();
+    virtual ~ParseErrorVisitor() = default;
 
     virtual void visit(const TokenMismatchError &e) = 0;
 

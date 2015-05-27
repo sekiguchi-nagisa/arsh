@@ -52,9 +52,9 @@ private:
     std::vector<std::string> args;
 
 public:
-    TypeLookupError(TypeLookupError::ErrorKind kind);
+    explicit TypeLookupError(TypeLookupError::ErrorKind kind);
 
-    ~TypeLookupError();
+    ~TypeLookupError() = default;
 
     const std::string &getTemplate() const;
 

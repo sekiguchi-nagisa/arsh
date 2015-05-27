@@ -64,9 +64,6 @@ DescriptorBuilder::DescriptorBuilder(TypePool *pool, BaseTypeDescriptorMap *type
         pool(pool), typeMap(typeMap), buf() {
 }
 
-DescriptorBuilder::~DescriptorBuilder() {
-}
-
 const char * DescriptorBuilder::buildDescriptor(DSType *type) {
     this->buf.clear();
     type->accept(this);

@@ -27,9 +27,6 @@ TypeToken::TypeToken(unsigned int lineNum) :
         lineNum(lineNum) {
 }
 
-TypeToken::~TypeToken() {
-}
-
 unsigned int TypeToken::getLineNum() {
     return this->lineNum;
 }

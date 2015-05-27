@@ -37,9 +37,6 @@ DSType::DSType(bool extendable, DSType *superType, bool isVoid) :
     }
 }
 
-DSType::~DSType() {
-}
-
 bool DSType::isExtendable() const {
     return hasFlag(this->attributeSet, EXTENDABLE);
 }
@@ -120,10 +117,6 @@ FunctionType::FunctionType(DSType *superType, DSType *returnType,
         DSType(false, superType, false),
         returnType(returnType), paramTypes(std::move(paramTypes)) {
     setFlag(this->attributeSet, FUNC_TYPE);
-}
-
-FunctionType::~FunctionType() {
-    this->paramTypes.clear();
 }
 
 DSType *FunctionType::getReturnType() {
@@ -259,9 +252,6 @@ void BuiltinType::initMethodHandle(MethodHandle *handle, TypePool *typePool, Nat
 ReifiedType::ReifiedType(native_type_info_t *info, DSType *superType,
                          std::vector<DSType *> &&elementTypes) :
         BuiltinType(false, superType, info, false), elementTypes(std::move(elementTypes)) {
-}
-
-ReifiedType::~ReifiedType() {
 }
 
 void ReifiedType::initMethodHandle(MethodHandle *handle, TypePool *typePool, NativeFuncInfo *info) {

@@ -56,9 +56,6 @@ FunctionType *HandleOrFuncType::getFuncType() {
 TypeGenerator::TypeGenerator(TypePool *pool) : pool(pool), type(0) {
 }
 
-TypeGenerator::~TypeGenerator() {
-}
-
 DSType *TypeGenerator::generateTypeAndThrow(TypeToken *token) throw(TypeCheckError) {
     try {
         return this->generateType(token);
@@ -124,10 +121,6 @@ TypeChecker::TypeChecker(TypePool * typePool) :
         typePool(typePool), symbolTable(), typeGen(typePool), curReturnType(0),
         loopContextStack(), finallyContextStack(),
         cmdContextStack(), coercionKind(INVALID_COERCION) {
-}
-
-TypeChecker::~TypeChecker() {
-    this->finallyContextStack.clear();
 }
 
 void TypeChecker::checkTypeRootNode(RootNode & rootNode) {

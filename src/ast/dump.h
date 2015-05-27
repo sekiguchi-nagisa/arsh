@@ -60,7 +60,7 @@ private:
 public:
     Writer(std::ostream *stream, core::TypePool *pool);
 
-    ~Writer();
+    ~Writer() = default;
 
     /**
      * write field

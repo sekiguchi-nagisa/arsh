@@ -59,7 +59,7 @@ public:
 
     DSType(bool extendable, DSType *superType, bool isVoid = false);
 
-    virtual ~DSType();
+    virtual ~DSType() = default;
 
     /**
      * if true, can extend this type
@@ -157,7 +157,7 @@ public:
     FunctionType(DSType *superType,
                  DSType *returnType, std::vector<DSType *> &&paramTypes);
 
-    ~FunctionType();
+    ~FunctionType() = default;
 
     DSType *getReturnType();
 
@@ -285,7 +285,7 @@ public:
      */
     ReifiedType(native_type_info_t *info, DSType *superType, std::vector<DSType *> &&elementTypes);
 
-    ~ReifiedType();
+    ~ReifiedType() = default;
 
     const std::vector<DSType *> &getElementTypes();
     void accept(TypeVisitor *visitor); // override
@@ -351,7 +351,7 @@ public:
     /**
      * superType is always AnyType.
      */
-    InterfaceType(DSType *superType);
+    explicit InterfaceType(DSType *superType);
 
     ~InterfaceType();
 
@@ -378,7 +378,7 @@ private:
     static std::shared_ptr<MethodRef> initRef;
 
 public:
-    ErrorType(DSType *superType);
+    explicit ErrorType(DSType *superType);
     ~ErrorType();
 
     MethodHandle *getConstructorHandle(TypePool *typePool); // override

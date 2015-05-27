@@ -23,6 +23,8 @@
 #include <memory>
 #include <unordered_map>
 
+namespace {
+
 using namespace ydsh::core;
 
 typedef struct {
@@ -121,7 +123,7 @@ static bool verifyHandleInfo(char *handleInfo) {
 static std::string toTypeInfoName(HandleInfo info) {
     switch(info) {
 #define GEN_NAME(INFO) case INFO: return std::string(#INFO);
-        EACH_HANDLE_INFO(GEN_NAME)
+    EACH_HANDLE_INFO(GEN_NAME)
 #undef GEN_NAME
     default:
         fatal("illegal type info: %d", info);
@@ -134,12 +136,11 @@ private:
     std::string message;
 
 public:
-    ProcessingError(const char *message) :
+    explicit ProcessingError(const char *message) :
             message(message) {
     }
 
-    ~ProcessingError() {
-    }
+    ~ProcessingError() = default;
 
     const std::string &getMessage() const {
         return this->message;
@@ -170,10 +171,12 @@ private:
     HandleInfoMap();
 
 public:
-    ~HandleInfoMap();
+    ~HandleInfoMap() = default;
 
     static HandleInfoMap &getInstance();
+
     const std::string &getName(HandleInfo info);
+
     HandleInfo getInfo(const std::string &name);
 
 private:
@@ -187,9 +190,6 @@ HandleInfoMap::HandleInfoMap() :
     EACH_HANDLE_INFO_PTYPE(REGISTER)
     EACH_HANDLE_INFO_TYPE_TEMP(REGISTER)
 #undef REGISTER
-}
-
-HandleInfoMap::~HandleInfoMap() {
 }
 
 HandleInfoMap &HandleInfoMap::getInstance() {
@@ -210,7 +210,7 @@ const std::string &HandleInfoMap::getName(HandleInfo info) {
 }
 
 HandleInfo HandleInfoMap::getInfo(const std::string &name) {
-    auto  iter = this->name2InfoMap.find(name);
+    auto iter = this->name2InfoMap.find(name);
     if(iter == this->name2InfoMap.end()) {
         error("not found type name: %s", name.c_str());
     }
@@ -229,11 +229,9 @@ private:
     std::vector<HandleInfo> infos;
 
 public:
-    HandleInfoSerializer() : infos() {
-    }
+    HandleInfoSerializer() = default;
 
-    ~HandleInfoSerializer() {
-    }
+    ~HandleInfoSerializer()= default;
 
     void add(HandleInfo info) {
         this->infos.push_back(info);
@@ -253,20 +251,16 @@ public:
     }
 };
 
-class TypeToken {
-public:
-    TypeToken() {
-    }
-
-    virtual ~TypeToken() {
-    }
+struct TypeToken {
+    virtual ~TypeToken() = default;
 
     virtual void serialize(HandleInfoSerializer &s) = 0;
+
     virtual bool isType(HandleInfo info) = 0;
 };
 
 
-class CommonTypeToken : public  TypeToken {
+class CommonTypeToken : public TypeToken {
 private:
     HandleInfo info;
 
@@ -274,12 +268,11 @@ public:
     /**
      * not call it directory.
      */
-    CommonTypeToken(HandleInfo info) :
-        info(info) {
+    explicit CommonTypeToken(HandleInfo info) :
+            info(info) {
     }
 
-    ~CommonTypeToken() {
-    }
+    ~CommonTypeToken() = default;
 
     void serialize(HandleInfoSerializer &s) {    // override
         s.add(this->info);
@@ -315,12 +308,12 @@ private:
     }
 
 public:
-    ~ReifiedTypeToken() {
-    }
+    ~ReifiedTypeToken() = default;
 
     void addElement(std::unique_ptr<TypeToken> &&type) {
         this->elements.push_back(std::move(type));
     }
+
     void serialize(HandleInfoSerializer &s);    // override
 
     bool isType(HandleInfo info) {    // override
@@ -424,14 +417,13 @@ public:
         return element;
     }
 
-    virtual ~Element() {
-    }
+    virtual ~Element() = default;
 
     bool isFunc() {
         return this->func;
     }
 
-    void addParam(std::string &&name, bool hasDefault, std::unique_ptr<TypeToken> && type) {
+    void addParam(std::string &&name, bool hasDefault, std::unique_ptr<TypeToken> &&type) {
         if(!this->ownerType) {  // treat first param type as receiver
             this->ownerType = std::move(type);
             return;
@@ -525,16 +517,13 @@ private:
      */
     ydsh::parser::Lexer<DescLexer, DescTokenKind> *lexer;
 
-    DescTokenKind  kind;
+    DescTokenKind kind;
     ydsh::parser::Token token;
 
-    Parser() :
-            lexer() {
-    }
+    Parser() = default;
 
 public:
-    ~Parser() {
-    }
+    ~Parser() = default;
 
     /**
      * open file and parse.
@@ -583,9 +572,13 @@ private:
     }
 
     std::unique_ptr<Element> parse_descriptor(const std::string &line);
+
     std::unique_ptr<Element> parse_funcDesc();
+
     std::unique_ptr<Element> parse_initDesc();
+
     void parse_params(const std::unique_ptr<Element> &element);
+
     std::unique_ptr<TypeToken> parse_type();
 
     void parse_funcDecl(const std::string &line, std::unique_ptr<Element> &element);
@@ -799,15 +792,14 @@ struct TypeBind {
      */
     Element *initElement;
 
-    std::vector<Element*> funcElements;
+    std::vector<Element *> funcElements;
 
-    TypeBind(HandleInfo info) :
+    explicit TypeBind(HandleInfo info) :
             info(info), name(HandleInfoMap::getInstance().getName(info)),
             initElement(), funcElements() {
     }
 
-    ~TypeBind() {
-    }
+    ~TypeBind() = default;
 };
 
 static std::vector<TypeBind *> genTypeBinds(std::vector<std::unique_ptr<Element>> &elements) {
@@ -885,6 +877,8 @@ static void gencode(const char *outFileName, const std::vector<TypeBind *> &bind
     OUT("} // namespace ydsh\n");
     fclose(fp);
 }
+
+} // namespace
 
 int main(int argc, char **argv) {
     if(argc != 3) {

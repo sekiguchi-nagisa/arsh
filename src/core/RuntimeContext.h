@@ -157,7 +157,7 @@ struct RuntimeContext {
     static const char *configRootDir;
     static const char *typeDefDir;
 
-    RuntimeContext(char **envp);
+    explicit RuntimeContext(char **envp);
 
     ~RuntimeContext();
 

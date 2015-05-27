@@ -44,9 +44,6 @@ Node::Node(unsigned int lineNum) :
         lineNum(lineNum), type() {
 }
 
-Node::~Node() {
-}
-
 unsigned int Node::getLineNum() const {
     return this->lineNum;
 }
@@ -511,9 +508,6 @@ EvalStatus TupleNode::eval(RuntimeContext &ctx) {
 AssignableNode::AssignableNode(unsigned int lineNum) :
         Node(lineNum), index(0),
         readOnly(false), global(false), env(false), interface(false) {
-}
-
-AssignableNode::~AssignableNode() {
 }
 
 void AssignableNode::setAttribute(FieldHandle *handle) {
@@ -1915,9 +1909,6 @@ EvalStatus BlockNode::eval(RuntimeContext &ctx) {
 
 BlockEndNode::BlockEndNode(unsigned int lineNum) :
         Node(lineNum) {
-}
-
-BlockEndNode::~BlockEndNode() {
 }
 
 bool BlockEndNode::isBlockEndNode() {
@@ -3447,12 +3438,6 @@ Node *createBinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode) {
 // #########################
 // ##     NodeVisitor     ##
 // #########################
-
-NodeVisitor::NodeVisitor() {
-}
-
-NodeVisitor::~NodeVisitor() {
-}
 
 void NodeVisitor::visitIntValueNode(IntValueNode *node)                   { this->visitDefault(node); }
 void NodeVisitor::visitLongValueNode(LongValueNode *node)                 { this->visitDefault(node); }

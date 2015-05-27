@@ -25,9 +25,6 @@ TypeTemplate::TypeTemplate(std::string &&name, std::vector<DSType*> &&elementTyp
         name(std::move(name)), acceptableTypes(std::move(elementTypes)), info(info) {
 }
 
-TypeTemplate::~TypeTemplate() {
-}
-
 const std::string &TypeTemplate::getName() {
     return this->name;
 }

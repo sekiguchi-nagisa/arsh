@@ -37,9 +37,6 @@ TypeCheckError::TypeCheckError(unsigned int lineNum, const TypeLookupError &e) :
         lineNum(lineNum), t(e.getTemplate()), args(e.getArgs()) {
 }
 
-TypeCheckError::~TypeCheckError() {
-}
-
 unsigned int TypeCheckError::getLineNum() const {
     return this->lineNum;
 }

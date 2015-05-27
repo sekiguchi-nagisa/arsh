@@ -34,9 +34,6 @@ DSObject::DSObject(DSType *type) :
         type(type) {
 }
 
-DSObject::~DSObject() {
-}
-
 DSType *DSObject::getType() {
     return this->type;
 }
@@ -498,9 +495,6 @@ Error_Object::Error_Object(DSType *type, std::shared_ptr<DSObject> &&message) :
         DSObject(type), message(std::move(message)), stackTrace() {
 }
 
-Error_Object::~Error_Object() {
-}
-
 std::string Error_Object::toString(RuntimeContext &ctx) {
     std::string str("Error(");
     str += std::to_string((long) this);
@@ -550,9 +544,6 @@ void Error_Object::accept(ObjectVisitor *visitor) {
 
 FuncObject::FuncObject() :
         DSObject(0) {
-}
-
-FuncObject::~FuncObject() {
 }
 
 void FuncObject::setType(DSType *type) {
@@ -622,9 +613,6 @@ BuiltinFuncObject::BuiltinFuncObject(native_func_t func_ptr) :
         FuncObject(), func_ptr(func_ptr) {
 }
 
-BuiltinFuncObject::~BuiltinFuncObject() {
-}
-
 native_func_t BuiltinFuncObject::getFuncPointer() {
     return this->func_ptr;
 }
@@ -648,16 +636,6 @@ void BuiltinFuncObject::accept(ObjectVisitor *visitor) {
     visitor->visitBuiltinFuncObject(this);
 }
 
-// #######################
-// ##     MethodRef     ##
-// #######################
-
-MethodRef::MethodRef() {
-}
-
-MethodRef::~MethodRef() {
-}
-
 
 // #############################
 // ##     NativeMethodRef     ##
@@ -665,9 +643,6 @@ MethodRef::~MethodRef() {
 
 NativeMethodRef::NativeMethodRef(native_func_t func_ptr) :
         MethodRef(), func_ptr(func_ptr) {
-}
-
-NativeMethodRef::~NativeMethodRef() {
 }
 
 bool NativeMethodRef::invoke(RuntimeContext &ctx) {
@@ -680,9 +655,6 @@ bool NativeMethodRef::invoke(RuntimeContext &ctx) {
 
 DBus_Object::DBus_Object(TypePool *typePool) :
         DSObject(typePool->getDBusType()) {
-}
-
-DBus_Object::~DBus_Object() {
 }
 
 bool DBus_Object::getSystemBus(RuntimeContext &ctx) {

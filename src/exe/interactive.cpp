@@ -25,6 +25,8 @@ extern "C" {
 
 #include "Shell.h"
 
+namespace {
+
 static bool continuation = false;
 
 static char *prompt(EditLine *el) {
@@ -51,7 +53,8 @@ private:
     std::string lineBuf;
 
 public:
-    Terminal(const char *progName);
+    explicit Terminal(const char *progName);
+
     ~Terminal();
 
     /**
@@ -63,6 +66,7 @@ public:
 
 private:
     const char *readLineImpl();
+
     void addHistory();
 };
 
@@ -185,6 +189,8 @@ void Terminal::addHistory() {
     }
     history(this->ydsh_history, &this->event, H_ENTER, buf.c_str());
 }
+
+} // namespace
 
 void ydsh::exec_interactive(const char *progName, ydsh::Shell &shell) {
     Terminal term(progName);

@@ -17,8 +17,8 @@ private:
     std::string targetName;
 
 public:
-    ExecTest() : targetName() {
-    }
+    ExecTest() = default;
+    virtual ~ExecTest() = default;
 
     virtual void SetUp() {
         this->targetName += EXEC_TEST_DIR;

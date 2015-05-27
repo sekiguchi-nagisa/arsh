@@ -19,25 +19,9 @@
 namespace ydsh {
 namespace parser {
 
-// ###########################
-// ##     ErrorListener     ##
-// ###########################
-
-ErrorListener::ErrorListener() {
-}
-
-ErrorListener::~ErrorListener() {
-}
-
 // #################################
 // ##     CommonErrorListener     ##
 // #################################
-
-CommonErrorListener::CommonErrorListener() {
-}
-
-CommonErrorListener::~CommonErrorListener() {
-}
 
 void CommonErrorListener::displayTypeError(const std::string &sourceName,
                                            const TypeCheckError &e) const {

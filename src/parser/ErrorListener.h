@@ -24,9 +24,7 @@ namespace ydsh {
 namespace parser {
 
 struct ErrorListener {
-    ErrorListener();
-
-    virtual ~ErrorListener();
+    virtual ~ErrorListener() = default;
 
     virtual void displayTypeError(const std::string &sourceName,
                                   const TypeCheckError &e) const = 0;
@@ -37,9 +35,9 @@ struct ErrorListener {
 
 class CommonErrorListener : public ErrorListener {
 public:
-    CommonErrorListener();
+    CommonErrorListener() = default;
 
-    ~CommonErrorListener();
+    ~CommonErrorListener() = default;
 
     void displayTypeError(const std::string &sourceName,
                           const TypeCheckError &e) const; // override

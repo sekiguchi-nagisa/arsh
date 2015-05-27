@@ -48,7 +48,7 @@ private:
 
 public:
     FieldHandle(DSType *fieldType, unsigned int fieldIndex, bool readOnly);
-    virtual ~FieldHandle();
+    virtual ~FieldHandle() = default;
 
     virtual DSType *getFieldType(TypePool *typePool);
     unsigned int getFieldIndex();
@@ -109,7 +109,7 @@ protected:
 
 public:
     FunctionHandle(DSType *returnType, const std::vector<DSType *> &paramTypes, unsigned int fieldIndex);
-    ~FunctionHandle();
+    ~FunctionHandle() = default;
 
     DSType *getFieldType(TypePool *typePool);   // override
 
@@ -155,7 +155,7 @@ protected:
     MethodHandle *next;
 
 public:
-    MethodHandle(int methodIndex);
+    explicit MethodHandle(int methodIndex);
     ~MethodHandle();
 
     unsigned int getMethodIndex();

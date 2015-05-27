@@ -17,8 +17,8 @@ private:
     Parser parser;
 
 public:
-    ParserTest() : targetName(), parser() {
-    }
+    ParserTest() = default;
+    virtual ~ParserTest() = default;
 
     virtual void SetUp() {
         this->targetName += PARSER_TEST_DIR;

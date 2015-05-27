@@ -62,7 +62,7 @@ struct Service_ObjectImpl : public Service_Object,
     std::string serviceName;
 
     Service_ObjectImpl(DSType *type, const std::shared_ptr<Bus_ObjectImpl> &bus, std::string &&serviceName);
-    ~Service_ObjectImpl();
+    ~Service_ObjectImpl() = default;
 
     std::string toString(RuntimeContext &ctx); // override
     bool object(RuntimeContext &ctx, std::string &&objectPath); // override
@@ -73,8 +73,8 @@ struct DBus_ObjectImpl : public DBus_Object {
     std::shared_ptr<Bus_ObjectImpl> sessionBus;
     MessageBuilder builder;
 
-    DBus_ObjectImpl(TypePool *typePool);
-    ~DBus_ObjectImpl();
+    explicit DBus_ObjectImpl(TypePool *typePool);
+    ~DBus_ObjectImpl() = default;
 
     bool getSystemBus(RuntimeContext &ctx); // override
     bool getSessionBus(RuntimeContext &ctx);    // override
@@ -117,6 +117,7 @@ private:
 
 public:
     DBusProxy_Object(DSType *type, const std::shared_ptr<DSObject> &srcObj, std::string &&objectPath);
+    ~DBusProxy_Object() = default;
 
     std::string toString(RuntimeContext &ctx); // override
     bool introspect(RuntimeContext &ctx, DSType *targetType); // override

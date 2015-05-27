@@ -27,9 +27,6 @@ ParseError::ParseError(unsigned int lineNum, TokenKind kind, Token errorToken) :
         lineNum(lineNum), kind(kind), errorToken(errorToken) {
 }
 
-ParseError::~ParseError() {
-}
-
 unsigned int ParseError::getLineNum() const {
     return this->lineNum;
 }
@@ -60,9 +57,6 @@ TokenMismatchError::TokenMismatchError(unsigned int lineNum, TokenKind actual,
         ParseError(lineNum, actual, errorToken), expected(expected) {
 }
 
-TokenMismatchError::~TokenMismatchError() {
-}
-
 TokenKind TokenMismatchError::getExpectedTokenKind() const {
     return this->expected;
 }
@@ -90,9 +84,6 @@ NoViableAlterError::NoViableAlterError(unsigned int lineNum, TokenKind actual,
     for(unsigned int i = 0; alters[i] != DUMMY; i++) {
         this->alters.push_back(alters[i]);
     }
-}
-
-NoViableAlterError::~NoViableAlterError() {
 }
 
 const std::vector<TokenKind> &NoViableAlterError::getAlters() const {
@@ -136,9 +127,6 @@ InvalidTokenError::InvalidTokenError(unsigned int lineNum, Token token) :
         ParseError(lineNum, INVALID, token) {
 }
 
-InvalidTokenError::~InvalidTokenError() {
-}
-
 bool InvalidTokenError::operator==(const InvalidTokenError &e) {
     return this->baseEquals(e);
 }
@@ -160,9 +148,6 @@ OutOfRangeNumError::OutOfRangeNumError(unsigned int lineNum, TokenKind kind, Tok
         ParseError(lineNum, kind, token) {
 }
 
-OutOfRangeNumError::~OutOfRangeNumError() {
-}
-
 bool OutOfRangeNumError::operator==(const OutOfRangeNumError &e) {
     return this->baseEquals(e);
 }
@@ -174,17 +159,6 @@ void OutOfRangeNumError::accept(ParseErrorVisitor &visitor) const {
 bool OutOfRangeNumError::equalsImpl(const ParseError &e) {
     const OutOfRangeNumError *ex = dynamic_cast<const OutOfRangeNumError *>(&e);
     return ex != nullptr && *this == *ex;
-}
-
-
-// ###############################
-// ##     ParseErrorVisitor     ##
-// ###############################
-
-ParseErrorVisitor::ParseErrorVisitor() {
-}
-
-ParseErrorVisitor::~ParseErrorVisitor() {
 }
 
 } // namespace parser

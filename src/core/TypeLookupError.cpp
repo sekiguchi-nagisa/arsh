@@ -33,9 +33,6 @@ TypeLookupError::TypeLookupError(ErrorKind kind) :
         messageTemplate(msgTable[kind]), args() {
 }
 
-TypeLookupError::~TypeLookupError() {
-}
-
 const std::string &TypeLookupError::getTemplate() const {
     return this->messageTemplate;
 }

@@ -58,9 +58,9 @@ protected:
     DSType *type;
 
 public:
-    Node(unsigned int lineNum);
+    explicit Node(unsigned int lineNum);
 
-    virtual ~Node();
+    virtual ~Node() = default;
 
     unsigned int getLineNum() const;
 
@@ -213,7 +213,7 @@ public:
     /**
      * used for CommandNode. lineNum is always 0.
      */
-    StringValueNode(std::string &&value);
+    explicit StringValueNode(std::string &&value);
 
     StringValueNode(unsigned int lineNum, std::string &&value);
 
@@ -233,6 +233,7 @@ public:
 class ObjectPathNode : public StringValueNode {
 public:
     ObjectPathNode(unsigned int lineNum, std::string &&value);
+    ~ObjectPathNode() = default;
 
     void accept(NodeVisitor *visitor); // override
 };
@@ -242,7 +243,7 @@ private:
     std::vector<Node *> nodes;
 
 public:
-    StringExprNode(unsigned int lineNum);
+    explicit StringExprNode(unsigned int lineNum);
 
     ~StringExprNode();
 
@@ -333,8 +334,8 @@ protected:
     bool interface;
 
 public:
-    AssignableNode(unsigned int lineNum);
-    virtual ~AssignableNode();
+    explicit AssignableNode(unsigned int lineNum);
+    virtual ~AssignableNode() = default;
 
     void setAttribute(FieldHandle *handle);
     bool isReadOnly() const;
@@ -352,6 +353,7 @@ private:
 
 public:
     VarNode(unsigned int lineNum, std::string &&varName);
+    ~VarNode() = default;
 
     const std::string &getVarName();
 
@@ -735,7 +737,7 @@ private:
     std::vector<Node *> segmentNodes;
 
 public:
-    CmdArgNode(Node *segmentNode);
+    explicit CmdArgNode(Node *segmentNode);
 
     ~CmdArgNode();
 
@@ -793,7 +795,7 @@ private:
     bool asBool;
 
 public:
-    PipedCmdNode(CmdNode *node);
+    explicit PipedCmdNode(CmdNode *node);
     ~PipedCmdNode();
 
     void addCmdNodes(CmdNode *node);
@@ -816,7 +818,7 @@ private:
     flag8_set_t attributeSet;
 
 public:
-    CmdContextNode(Node *exprNode);
+    explicit CmdContextNode(Node *exprNode);
     ~CmdContextNode();
 
     Node *getExprNode();
@@ -863,7 +865,7 @@ private:
     std::list<Node *> nodeList;
 
 public:
-    BlockNode(unsigned int lineNum);
+    explicit BlockNode(unsigned int lineNum);
 
     ~BlockNode();
 
@@ -883,15 +885,16 @@ public:
  */
 class BlockEndNode : public Node {
 public:
-    BlockEndNode(unsigned int lineNum);
-    virtual ~BlockEndNode();
+    explicit BlockEndNode(unsigned int lineNum);
+    virtual ~BlockEndNode() = default;
 
     bool isBlockEndNode();  // override
 };
 
 class BreakNode : public BlockEndNode {
 public:
-    BreakNode(unsigned int lineNum);
+    explicit BreakNode(unsigned int lineNum);
+    ~BreakNode() = default;
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
@@ -900,7 +903,8 @@ public:
 
 class ContinueNode : public BlockEndNode {
 public:
-    ContinueNode(unsigned int lineNum);
+    explicit ContinueNode(unsigned int lineNum);
+    ~ContinueNode() = default;
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
@@ -942,6 +946,7 @@ private:
 
 public:
     ImportEnvNode(unsigned int lineNum, std::string &&envName);
+    ~ImportEnvNode() = default;
 
     const std::string &getEnvName();
 
@@ -1107,7 +1112,7 @@ private:
 public:
     ReturnNode(unsigned int lineNum, Node *exprNode);
 
-    ReturnNode(unsigned int lineNum);
+    explicit ReturnNode(unsigned int lineNum);
 
     ~ReturnNode();
 
@@ -1457,6 +1462,7 @@ private:
 
 public:
     BindVarNode(const char *name, const std::shared_ptr<DSObject> &value);
+    ~BindVarNode() = default;
 
     const std::string &getVarName();
     void setAttribute(FieldHandle *handle);
@@ -1470,8 +1476,8 @@ public:
 class EmptyNode : public Node {
 public:
     EmptyNode();
-
-    EmptyNode(unsigned int lineNum);
+    explicit EmptyNode(unsigned int lineNum);
+    ~EmptyNode() = default;
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
@@ -1481,6 +1487,7 @@ public:
 class DummyNode : public Node {
 public:
     DummyNode();
+    ~DummyNode() = default;
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);   // override
@@ -1509,7 +1516,7 @@ private:
 
 public:
     RootNode();
-    RootNode(const char *sourceName);
+    explicit RootNode(const char *sourceName);
 
     ~RootNode();
 
@@ -1555,9 +1562,7 @@ Node *createIndexNode(Node *recvNode, Node *indexNode);
 Node *createBinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode);
 
 struct NodeVisitor {
-    NodeVisitor();
-
-    virtual ~NodeVisitor();
+    virtual ~NodeVisitor() = default;
 
     virtual void visitDefault(Node *node) = 0;
 

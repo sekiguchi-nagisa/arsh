@@ -33,9 +33,9 @@ private:
     unsigned int lineNum;
 
 public:
-    TypeToken(unsigned int lineNum);
+    explicit TypeToken(unsigned int lineNum);
 
-    virtual ~TypeToken();
+    virtual ~TypeToken() = default;
 
     unsigned int getLineNum();
 
@@ -53,6 +53,7 @@ private:
 
 public:
     ClassTypeToken(unsigned int lineNum, std::string &&typeName);
+    ~ClassTypeToken() = default;
 
     std::string toTokenText() const;  // override
     const std::string &getTokenText();
@@ -68,7 +69,7 @@ private:
     std::vector<TypeToken *> elementTypeTokens;
 
 public:
-    ReifiedTypeToken(ClassTypeToken *templateTypeToken);
+    explicit ReifiedTypeToken(ClassTypeToken *templateTypeToken);
 
     ~ReifiedTypeToken();
 
@@ -93,7 +94,7 @@ private:
     std::vector<TypeToken *> paramTypeTokens;
 
 public:
-    FuncTypeToken(TypeToken *type);
+    explicit FuncTypeToken(TypeToken *type);
 
     ~FuncTypeToken();
 
@@ -115,6 +116,7 @@ private:
 
 public:
     DBusInterfaceToken(unsigned int lineNum, std::string &&name);
+    ~DBusInterfaceToken() = default;
 
     const std::string &getTokenText();
 
@@ -130,7 +132,7 @@ private:
     std::vector<TypeToken *> typeTokens;
 
 public:
-    ReturnTypeToken(TypeToken *token);
+    explicit ReturnTypeToken(TypeToken *token);
     ~ReturnTypeToken();
 
     void addTypeToken(TypeToken *token);

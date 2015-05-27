@@ -55,8 +55,8 @@ public:
     /**
      * envp is the pointer of environment variable.
      */
-    Shell(char **envp);
-    ~Shell();
+    explicit Shell(char **envp);
+    ~Shell() = default;
 
     ExitStatus eval(const char *line);
     ExitStatus eval(const char *sourceName, FILE *fp);

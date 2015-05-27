@@ -35,9 +35,6 @@ FieldHandle::FieldHandle(DSType *fieldType, unsigned int fieldIndex, bool readOn
     }
 }
 
-FieldHandle::~FieldHandle() {
-}
-
 DSType *FieldHandle::getFieldType(TypePool *typePool) {
     return this->fieldType;
 }
@@ -114,9 +111,6 @@ FunctionHandle::FunctionHandle(DSType *returnType, const std::vector<DSType *> &
         FieldHandle(0, fieldIndex, true),
         returnType(returnType), paramTypes(paramTypes), paramIndexMap(), defaultValues() {
     this->setAttribute(FUNC_HANDLE);
-}
-
-FunctionHandle::~FunctionHandle() {
 }
 
 DSType *FunctionHandle::getFieldType(TypePool *typePool) {

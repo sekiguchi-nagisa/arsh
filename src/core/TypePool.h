@@ -199,7 +199,7 @@ public:
     /**
      * must not be null.
      */
-    TypePool(char **envp);
+    explicit TypePool(char **envp);
 
     ~TypePool();
 

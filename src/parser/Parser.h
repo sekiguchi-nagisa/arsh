@@ -47,9 +47,9 @@ private:
     Token curToken;
 
 public:
-    Parser();
+    Parser() = default;
 
-    ~Parser();
+    ~Parser() = default;
 
     /**
      * parse entry point.
