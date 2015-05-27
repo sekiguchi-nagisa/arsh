@@ -17,12 +17,13 @@ public:
 
 public:
     TypeTest() : env(0), pool(0) {
-        static char env1[] = "HOME";
-        static char env2[] = "PATH";
+        static char env1[] = "HOME=/home/hoge";
+        static char env2[] = "PATH=/bin";
 
-        this->env = new char*[2];
+        this->env = new char*[3];
         this->env[0] = env1;
         this->env[1] = env2;
+        this->env[2] = nullptr;
 
         this->pool = new TypePool(this->env);
     }
@@ -206,4 +207,33 @@ TEST_F(TypeTest, typeToken) {
         this->assertSuperType(this->toType(
                 func(type("Int16"), type("Uint16"), type("Int64"), type("Float"))), this->pool->getBaseFuncType());
     });
+}
+
+TEST_F(TypeTest, pool) {
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+
+        // type
+        DSType *t = this->toType(array(type("Int32")));
+        std::string typeName = this->pool->getTypeName(*t);
+        std::string alias = "IArray";
+        this->assertAlias(alias.c_str(), t);
+        this->pool->abort();
+
+        ASSERT_TRUE(this->pool->getType(typeName) == nullptr);
+        ASSERT_TRUE(this->pool->getType(alias) == nullptr);
+
+        // env
+        std::string envName("GGGGG");
+        this->pool->addEnv(envName);
+        ASSERT_TRUE(this->pool->hasEnv(envName));
+        this->pool->abort();
+
+        ASSERT_FALSE(this->pool->hasEnv(envName));
+    });
+}
+
+int main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

@@ -84,6 +84,7 @@ bool TypeMap::setAlias(const std::string &alias, DSType *targetType) {
      */
     DSType *taggedPtr = (DSType *) (tag | (unsigned long) targetType);
     auto pair = this->typeMapImpl.insert(std::make_pair(alias, taggedPtr));
+    this->typeCache.push_back(&pair.first->first);
     return pair.second;
 }
 
@@ -573,7 +574,7 @@ void TypePool::abort() {
     this->typeMap.abort();
 
     // remove env
-    for(auto &ptr : this->envCache) {
+    for(auto ptr : this->envCache) {
         auto iter = this->envSet.find(*ptr);
         if(iter != this->envSet.end()) {
             this->envSet.erase(iter);

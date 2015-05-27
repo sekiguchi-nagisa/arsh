@@ -13,12 +13,13 @@ public:
     DescriptorBuilder *builder;
 
     DescriptorTest() :  env(0), pool(0), map(0), builder(0) {
-        static char env1[] = "HOME:hoge";
-        static char env2[] = "PATH:/bin";
+        static char env1[] = "HOME=/home/hoge";
+        static char env2[] = "PATH=/bin";
 
-        this->env = new char*[2];
+        this->env = new char*[3];
         this->env[0] = env1;
         this->env[1] = env2;
+        this->env[2] = nullptr;
 
         this->pool = new TypePool(this->env);
         this->map = new BaseTypeDescriptorMap(this->pool);
@@ -156,4 +157,9 @@ TEST_F(DescriptorTest, containerType) {
                 this->newArrayType(this->newArrayType(this->pool->getStringType())),
                 this->newTupleType(this->pool->getInt16Type())));
     });
+}
+
+int main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }
