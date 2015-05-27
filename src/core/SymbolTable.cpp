@@ -148,7 +148,13 @@ void SymbolTable::exitFunc() {
     this->maxVarIndexStack.pop_back();
 }
 
-void SymbolTable::popAllLocal() {
+void SymbolTable::commit() {
+    assert(this->inGlobalScope());
+    this->handleCache.clear();
+}
+
+void SymbolTable::abort() {
+    // pop local scope and function scope
     while(!this->inGlobalScope()) {
         delete this->scopes.back();
         this->scopes.pop_back();
@@ -156,14 +162,8 @@ void SymbolTable::popAllLocal() {
     while(this->maxVarIndexStack.size() > 1) {
         this->maxVarIndexStack.pop_back();
     }
-}
 
-void SymbolTable::clearEntryCache() {
-    assert(this->inGlobalScope());
-    this->handleCache.clear();
-}
-
-void SymbolTable::removeCachedEntry() {
+    // remove cached entry
     assert(this->inGlobalScope());
     for(const std::string &name : this->handleCache) {
         this->scopes.back()->deleteHandle(name);

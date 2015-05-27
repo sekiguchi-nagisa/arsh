@@ -114,13 +114,14 @@ public:
     void exitFunc();
 
     /**
-     * pop all local scope and function scope
+     * clear entry cache.
      */
-    void popAllLocal();
+    void commit();
 
-    void clearEntryCache();
-
-    void removeCachedEntry();
+    /**
+     * remove changed state(local scope, global FieldHandle)
+     */
+    void abort();
 
     /**
      * max number of local variable index.

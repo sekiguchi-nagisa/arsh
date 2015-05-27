@@ -479,8 +479,7 @@ void TypeChecker::checkTypeArgsNode(MethodHandle *handle, ArgsNode *argsNode) { 
 }
 
 void TypeChecker::recover() {
-    this->symbolTable.popAllLocal();
-    this->symbolTable.removeCachedEntry();
+    this->symbolTable.abort();
     this->typePool->abort();
 
     this->curReturnType = 0;
@@ -1210,7 +1209,7 @@ void TypeChecker::visitDummyNode(DummyNode * node) {
 }
 
 void TypeChecker::visitRootNode(RootNode * node) {
-    this->symbolTable.clearEntryCache();
+    this->symbolTable.commit();
     this->typePool->commit();
 
     for(Node *targetNode : node->getNodeList()) {
