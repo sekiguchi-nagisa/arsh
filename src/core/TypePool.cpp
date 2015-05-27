@@ -137,7 +137,7 @@ TypePool::TypePool(char **envp) :
         keyNotFoundErrorType(), typeCastErrorType(),
         templateMap(8),
         arrayTemplate(), mapTemplate(), tupleTemplate(),
-        stringArrayType(), envp(envp), envSet(), precisionMap() {
+        stringArrayType(), envp(envp), envSet(), envCache(), precisionMap() {
 
     // initialize type
     this->anyType = this->initBuiltinType("Any", true, 0, info_AnyType());
@@ -529,7 +529,8 @@ void TypePool::addEnv(const std::string &envName) {
     if(this->envSet.empty()) {
         this->initEnvSet();
     }
-    this->envSet.insert(envName);
+    auto pair = this->envSet.insert(envName);
+    this->envCache.push_back(&*pair.first);
 }
 
 constexpr int TypePool::INT64_PRECISION;
@@ -565,10 +566,20 @@ int TypePool::getIntPrecision(DSType *type) {
 
 void TypePool::commit() {
     this->typeMap.commit();
+    this->envCache.clear();
 }
 
 void TypePool::abort() {
     this->typeMap.abort();
+
+    // remove env
+    for(auto &ptr : this->envCache) {
+        auto iter = this->envSet.find(*ptr);
+        if(iter != this->envSet.end()) {
+            this->envSet.erase(iter);
+        }
+    }
+    this->envCache.clear();
 }
 
 void TypePool::initEnvSet() {

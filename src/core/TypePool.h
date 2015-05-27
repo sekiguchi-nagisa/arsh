@@ -188,6 +188,7 @@ private:
     char **envp;
 
     std::unordered_set<std::string> envSet;
+    std::vector<const std::string *> envCache;
 
     /**
      * for integer widening
