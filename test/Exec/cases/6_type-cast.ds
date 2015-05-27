@@ -24,3 +24,9 @@ try {
 } catch($e : TypeCastError) {
 	assert($true)
 }
+
+
+var q = 2345 as Any
+if($q is Int) {
+    assert($q == 2345)
+}

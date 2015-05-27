@@ -1,6 +1,7 @@
 var a = ["3", "43", "d"]
 $a.add("hello")
 
+assert($a[0] is String)
 assert($a[0] == "3")
 assert($a[1] == "43")
 assert($a[2] == "d")
@@ -21,3 +22,11 @@ assert($b.empty() == $true)
 $b.add($true)
 assert($b.size() == 1)
 assert($b[0])
+
+# inheritance
+assert([34, 43] is Array<Int32>)
+assert([32, 43] is Variant)
+assert([34] is Any)
+
+assert(new Array<Any>() is Array<Any>)
+assert(not(new Array<Any>() is Variant))

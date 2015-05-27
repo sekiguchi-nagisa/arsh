@@ -3,4 +3,15 @@ var b = $false
 
 assert($a)
 assert($b == $false)
-assert($true==$true)
+assert($true == $True)
+assert($TRUE == $true)
+assert($false == $False)
+assert($FALSE == $false)
+assert(not $true == $false)
+assert(not not $true == $true)
+assert(not not $TRUE)
+
+# inheritance
+assert($true is Boolean)
+assert($a is Variant)
+assert($a is Any)

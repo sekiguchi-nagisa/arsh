@@ -2,7 +2,22 @@ var a = [1, 2, 3, 5, 7]
 var i = 0
 
 for($val in $a) {
+    assert($val is Int)
 	assert($val == $a[$i])
 	$i = $i + 1
 }
 assert($i == 5)
+
+
+var b = {"a" : 1, 
+            "b" : 2,
+            "c" : 3,
+            "d" : 4}
+
+$i = 0;
+for($e in $b) {
+    assert($e is Tuple<String, Int>)
+    assert($b[$e._0] == $e._1)
+    $i++
+}
+assert($i == 4)

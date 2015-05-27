@@ -1,5 +1,5 @@
 var a = 12
-if(true) {
+if($true) {
 	var a = 9
 	assert($a == 9)
 }

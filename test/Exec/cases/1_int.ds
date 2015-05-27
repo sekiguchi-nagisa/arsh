@@ -1,9 +1,232 @@
-var a = 10
-var b = -1
-var c = 2147483647
-var d = -2147483648
+# Byte
+var b = 12b
+assert($b is Byte)
+assert(+0b is Byte)
+assert(0b is Byte)
+assert(+255b is Byte)
+assert(255b is Byte)
 
-assert($a == 10)
-assert($b == -1)
-assert($c == 2147483647)
-assert($d == -2147483648)
+# Int16
+var i16 = -2334i16
+assert($i16 is Int16)
+assert(32767i16 is Int16)
+assert(+32767i16 is Int16)
+assert(-32767i16 is Int16)
+
+# Uint16
+var u16 = 45243u16
+assert($u16 is Uint16)
+assert(0u16 is Uint16)
+assert(+0u16 is Uint16)
+assert(65535u16 is Uint16)
+assert(+65535u16 is Uint16)
+
+# Int32
+var i32 = 23i32
+assert($i32 is Int)
+assert($i32 is Int32)
+assert(+43 is Int32)
+assert(2147483647 is Int32)
+assert(+2147483647 is Int32)
+assert(2147483647i32 is Int32)
+assert(-2147483647 is Int32)
+assert(-2147483647i32 is Int32)
+
+# Uint32
+var u32 = 43u32
+assert($u32 is Uint)
+assert($u32 is Uint32)
+assert(0u32 is Uint32)
+assert(+0u32 is Uint32)
+assert(4294967295u32 is Uint32)
+assert(+4294967295u32 is Uint)
+
+#Int64
+var i64 = 63457i64
+assert($i64 is Int64)
+assert(9223372036854775807i64 is Int64)
+assert(+9223372036854775807i64 is Int64)
+assert(-9223372036854775807i64 is Int64)
+
+# Uint64
+var u64 = 56345u64
+assert($u64 is Uint64)
+assert(0u64 is Uint64)
+assert(+0u64 is Uint64)
+assert(18446744073709551615u64 is Uint64)
+assert(+18446744073709551615u64 is Uint64)
+
+# Int32 op
+assert((12 + 3) is Int32)
+assert(12 + 3 == 15)
+
+assert((150 - 50) is Int32)
+assert(150 - 50 == 100)
+
+assert((50 * 10) is Int32)
+assert(50 * 10 == 500)
+
+assert((99 / 33) is Int32)
+assert(99 / 33 == 3)
+
+assert((99 % 33) is Int32)
+assert(99 % 33 == 0)
+
+assert(12 == + 12)
+assert(-12 == - 12)
+assert((not 43) is Int32)
+
+assert(3456 != 345)
+assert(3543 < 9999)
+assert(32 > -999)
+assert(43 <= 43)
+assert(not (43 <= 0))
+assert(55 >= 55)
+assert(43 >= -353)
+
+assert((1 | 2) is Int32)
+assert((1 | 2) == 3)
+
+assert((3 & 3) is Int32)
+assert((3 & 3) == 3)
+
+assert((1 ^ 2) is Int32)
+assert((1 ^ 2) == 3)
+
+# Uint32
+assert((12u32 + 3u32) is Uint32)
+assert(12u32 + 3u32 == 15u32)
+
+assert((150u32 - 50u32) is Uint32)
+assert(150u32 - 50u32 == 100u32)
+
+assert((50u32 * 10u32) is Uint32)
+assert(50u32 * 10u32 == 500u32)
+
+assert((99u32 / 33u32) is Uint32)
+assert(99u32 / 33u32 == 3u32)
+
+assert((99u32 % 33u32) is Uint32)
+assert(99u32 % 33u32 == 0u32)
+
+assert(12u32 == + 12u32)
+assert((not 43u32) is Uint32)
+
+assert(3456u32 != 345u32)
+assert(3543u32 < 9999u32)
+assert(32u32 > 9u32)
+assert(43u32 <= 438u32)
+assert(55u32 >= 55u32)
+assert(43u32 <= 77u32)
+assert(890u32 >= 4u32)
+
+assert((1u32 | 2u32) is Uint32)
+assert((1u32 | 2u32) == 3u32)
+
+assert((3u32 & 3u32) is Uint32)
+assert((3u32 & 3u32) == 3u32)
+
+assert((1u32 ^ 2u32) is Uint32)
+assert((1u32 ^ 2u32) == 3u32)
+
+# Int64 op
+assert((12i64 + 3i64) is Int64)
+assert(12i64 + 3i64 == 15i64)
+
+assert((150i64 - 50i64) is Int64)
+assert(150i64 - 50i64 == 100i64)
+
+assert((50i64 * 10i64) is Int64)
+assert(50i64 * 10i64 == 500i64)
+
+assert((99i64 / 33i64) is Int64)
+assert(99i64 / 33i64 == 3i64)
+
+assert((99i64 % 33i64) is Int64)
+assert(99i64 % 33i64 == 0i64)
+
+assert(12i64 == + 12i64)
+assert(-12i64 == - 12i64)
+assert((not 43i64) is Int64)
+
+assert(3456i64 != 345i64)
+assert(3543i64 < 9999i64)
+assert(32i64 > -999i64)
+assert(43i64 <= 43i64)
+assert(not (43i64 <= 0i64))
+assert(55i64 >= 55i64)
+assert(43i64 >= -353i64)
+
+assert((1i64 | 2i64) is Int64)
+assert((1i64 | 2i64) == 3i64)
+
+assert((3i64 & 3i64) is Int64)
+assert((3i64 & 3i64) == 3i64)
+
+assert((1i64 ^ 2i64) is Int64)
+assert((1i64 ^ 2i64) == 3i64)
+
+# Uint64
+assert((12u64 + 3u64) is Uint64)
+assert(12u64 + 3u64 == 15u64)
+
+assert((150u64 - 50u64) is Uint64)
+assert(150u64 - 50u64 == 100u64)
+
+assert((50u64 * 10u64) is Uint64)
+assert(50u64 * 10u64 == 500u64)
+
+assert((99u64 / 33u64) is Uint64)
+assert(99u64 / 33u64 == 3u64)
+
+assert((99u64 % 33u64) is Uint64)
+assert(99u64 % 33u64 == 0u64)
+
+assert(12u64 == + 12u64)
+assert((not 43u64) is Uint64)
+
+assert(3456u64 != 345u64)
+assert(3543u64 < 9999u64)
+assert(32u64 > 9u64)
+assert(43u64 <= 438u64)
+assert(55u64 >= 55u64)
+assert(43u64 <= 77u64)
+assert(890u64 >= 4u64)
+
+assert((1u64 | 2u64) is Uint64)
+assert((1u64 | 2u64) == 3u64)
+
+assert((3u64 & 3u64) is Uint64)
+assert((3u64 & 3u64) == 3u64)
+
+assert((1u64 ^ 2u64) is Uint64)
+assert((1u64 ^ 2u64) == 3u64)
+
+# int cast
+assert((2b + 4b) is Int32)
+assert((- 2b) is Int32)
+
+assert((2i16 - 43) is Int32)
+assert((43 / 2u16) is Int32)
+
+assert((34u64 / 2u16) is Uint64)
+
+assert((23i32 / 56u32) is Int32)
+assert((23u32 % 78i32) is Uint32)
+
+assert((234i32 - 5674i64) is Int64)
+assert((5463u64 * 4533i32) is Uint64)
+
+assert((34i64 - 54u64) is Int64)
+assert((43u64 - 45i64) is Uint64)
+
+# widening
+var a = 2345
+$a = 12b
+assert($a == 12)
+$a = 12i16
+assert($a == 12)
+$a = 345u16
+assert($a == 345)
+$a = 23u32
+assert($a == 23)

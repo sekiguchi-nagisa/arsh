@@ -2,3 +2,56 @@ var str = "うずまきナルト"
 assert($str == "うずまきナルト")
 $str = 'hello world'
 assert($str == 'hello world')
+assert($str != "fer")
+assert("".empty())
+assert("".size() == 0)
+assert("".size() is Uint32)
+
+$str = "はるのサクラ"
+#$str = $str.replace("はるの", "うずまき")
+#assert($str == "うずまきサクラ")
+
+var a = "hello world"
+assert($a.size() == 11)
+assert($a == "hello" + ' ' + "world")
+#assert($a.get(2) == "l")
+#assert($a.sliceFrom(3) == "lo world")
+#assert($a.sliceTo(3) == "hel")
+#assert($a.slice(1, 3) == "el")
+#assert(not $a.equals("hf"))
+#assert(not $a.startsWith("hoge"))
+#assert($a.endsWith("rld"))
+#assert($a.indexOf("q") == -1)
+#assert($a.lastIndexOf("l") == 9)
+#assert($a.clone() == $a)
+
+var b = "aaa"
+var c = 'ccc'
+
+#assert($b < $c)
+#assert($b <= $c)
+#assert(not($b > $c))
+#assert(not($b >= $c))
+
+# string interpolation
+$a = "西暦${1900 + 114}年"
+$b = "西暦\${1900 + 114}年"
+
+assert($a == "西暦2014年")
+assert($b == '西暦${1900 + 114}年')
+
+var d = $true
+assert("this is true" == "this is $d")
+assert("this is true" == "this is $true")
+assert("this is false" == "this is $false")
+
+assert("this is true" == "this is ${d}")
+assert("this is true" == "this is ${true}")
+assert("this is false" == "this is ${false}")
+
+# string cast
+assert((12 + "hello") is String)
+assert(12 + "hello" == "12hello")
+assert(("fre" + 3.14) is String)
+assert("hey" + $true == 'heytrue')
+assert("" + $False == "false")

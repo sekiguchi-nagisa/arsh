@@ -1,6 +1,6 @@
 function func() {
 	var num = 1
-	while (true) {
+	while ($true) {
 		$num = $num + 1
 		if($num == 3) {
 			break

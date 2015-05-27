@@ -10,5 +10,15 @@ assert($a)
 try {
 	throw new OutOfIndexError("a")
 } catch($e : Error) {
+	assert($e is OutOfIndexError)
 	assert($e.message() == "a")
+}
+
+try {
+    throw 23
+} catch($e : Error) {
+    assert($false)
+} catch($e) {
+    assert($e is Int32)
+    assert($e as Int == 23)
 }

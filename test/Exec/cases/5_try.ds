@@ -27,6 +27,8 @@ function f($a : Boolean): Int {
 		return 100
 	}
 	catch($e) {
+		assert($e is Error)
+		assert($e is ArithmeticError)
 		return -100
 	}
 	finally {

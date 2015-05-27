@@ -1,3 +1,5 @@
 var a = "$(/bin/echo hello world)"
 assert($a == 'hello world')
 
+import-env HOME
+assert($HOME == "$(echo ~)")

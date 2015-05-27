@@ -1,5 +1,7 @@
 var a = (12, "hello")
+assert($a._0 is Int)
 assert($a._0 == 12)
+assert($a._1 is String)
 assert($a._1 == "hello")
 $a._0 = 100
 assert($a._0 == 100)
@@ -22,3 +24,11 @@ var c = ($true,
 assert($c._0)
 assert($c._1 == 23)
 assert($c._2 == "hello")
+
+# inheritance
+assert((23, "") is Tuple<Int, String>)
+assert((23, "") is Variant)
+assert((23, "") is Any)
+
+assert((12 as Any, $true) is Tuple<Any, Boolean>)
+assert(not ((12 as Any, $true) is Variant))

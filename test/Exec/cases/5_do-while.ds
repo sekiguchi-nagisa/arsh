@@ -6,7 +6,7 @@ do {
 		break;
 	}
 	$i++
-} while(true);
+} while($true);
 
 assert($i == $count)
 

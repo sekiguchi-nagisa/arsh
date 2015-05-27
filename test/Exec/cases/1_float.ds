@@ -1,11 +1,61 @@
+# float(double precision floating point)
+
 var a = 3.14
 var b = 0.5e3
 var c = -23.456789
 var d = 3.0540
 
 assert($a == 3.14)
-assert($b == 0.5e3)
+assert($a == 3.14e0)
+assert($a == 3.14e-0)
 assert($b == 0.5e+3)
 assert($b == 0.5E3)
+assert(-43.4e-3 == -43.4E-3)
 assert($c == -23.456789)
 assert($d == 3.0540)
+
+# float to float op
+assert(3.14 == + 3.14)
+assert(-3.14 == - 3.14)
+
+assert(3.14 + 23.0 == 26.14)
+assert(323.4 - 3.4 == 320.0)
+assert(3.14 * 2.0 == 6.28)
+assert(6.28 / 2.0 == 3.14)
+
+assert(3.14 != 0.004)
+assert(3.14 > 0.004)
+assert(not (3.14 < 0.004))
+assert(3.14 >= 0.004)
+assert(3.14 >= 3.14E0)
+assert(not (3.14 <= 0.004))
+assert(3.14 <= 3.14E0)
+assert(3.14 != -4.5)
+
+
+# int to float, float to int op
+assert(6b + 3.14 == 9.14)
+assert(3.14 + 6b == 9.14)
+
+assert(6i16 + 3.14 == 9.14)
+assert(3.14 + 6i16 == 9.14)
+
+assert(6u16 + 3.14 == 9.14)
+assert(3.14 + 6u16 == 9.14)
+
+assert(6i32 + 3.14 == 9.14)
+assert(3.14 + 6i32 == 9.14)
+
+assert(6u32 + 3.14 == 9.14)
+assert(3.14 + 6u32 == 9.14)
+
+assert((6i64 as Float) + 3.14 == 9.14)
+assert(3.14 + (6i64 as Float) == 9.14)
+
+assert((6u64 as Float) + 3.14 == 9.14)
+assert(3.14 + (6u64 as Float) == 9.14)
+
+# inheritance
+assert(3.14 is Float)
+assert(3.14 is Variant)
+assert(3.14 is Any)

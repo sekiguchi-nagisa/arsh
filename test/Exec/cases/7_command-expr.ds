@@ -1,6 +1,7 @@
 # variable expand
 var a = "$(echo hello world)"
 var c1 = "$(echo $a)"
+assert($a is String)
 assert($a == $c1)
 
 var c2 = "$(echo "he${"ll" + "o"} world")"
@@ -8,6 +9,8 @@ assert($c2 == "hello world")
 
 # command substitution
 var d = $(ls)
+assert(not ($d is String))
+assert($d is Array<String>)
 var i = 0;
 for($file in $(ls)) {
 	assert($file == $d[$i])
@@ -21,6 +24,7 @@ assert($d2 == 'hello world')
 
 # assign right
 var r = echo hello
+assert($r is Boolean)
 assert($r)
 
 $r = ls huirfh

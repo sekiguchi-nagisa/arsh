@@ -2,11 +2,17 @@ function func($x: Int) : Int {
 	return $x * 2
 }
 
+assert($func is Func<Int, [Int]>)
+assert($func is Any)
+assert(not ($func is Variant))
+
 function call() {
 	var sub = $func
 	assert($func(3) == 6)
 	assert($sub(3) == 6)
 }
+
+assert($call is Func<Void>)
 
 $call()
 
@@ -18,4 +24,12 @@ function f($obj :
 	return $obj($value)
 }
 
+assert($f is Func<Int, [Func<Int, [Int]>, Int]>)
 assert($f($func, 12) == 24)
+
+function make_pair($a : Float) : String, Uint32 {
+    var str = $a as String
+    return ($str, $str.size())
+}
+
+assert($make_pair is Func<Tuple<String, Uint32>, [Float]>)
