@@ -3,7 +3,8 @@
 # ydsh
 yet another dsh
 
-currently, under heavy development.
+Currently, under heavy development.
+Language specification is subject to change without notice. 
 
 ## Build Requirement
 
