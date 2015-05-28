@@ -173,8 +173,9 @@ static void redirect(ProcContext *ctx) {  //FIXME: error reporting
     }
 }
 
-static int execBuiltin(ProcContext *procCtx) {
+static EvalStatus execBuiltin(ProcContext *procCtx) {   //FIXME: error report
     unsigned int paramSize = procCtx->params.size();
+    auto ctx = procCtx->ctx;
     if(procCtx->cmdName == "cd") {
         const char *targetDir = getenv("HOME");
         if(paramSize > 0) {
@@ -182,31 +183,31 @@ static int execBuiltin(ProcContext *procCtx) {
         }
         if(chdir(targetDir) != 0) {
             perror("-ydsh: cd");
-            return -1;
+            return EvalStatus::SUCCESS;
         }
-        procCtx->ctx->workingDir = getCurrentWorkingDir();
-        return 0;
+        ctx->workingDir = getCurrentWorkingDir();
+        return EvalStatus::SUCCESS;
     } else if(procCtx->cmdName == "exit") {
         if(paramSize == 0) {
-            exit(EXIT_SUCCESS);
+            ctx->updateExitStatus(0);
         } else if(paramSize > 0) {
             const char *num = procCtx->params[0]->value.c_str();
             int status;
             long value = convertToInt64(num, status, false);
             if(status == 0) {
-                exit(value);
+                ctx->updateExitStatus(value);
             } else {
-                exit(0);
+                ctx->updateExitStatus(0);
             }
         }
-        return 0;
+        return EvalStatus::EXIT;
     } else {
         fatal("unsupported builtin command %s\n", procCtx->cmdName.c_str());
-        return -1;
+        return EvalStatus::SUCCESS;
     }
 }
 
-int ProcGroup::execProcs() {    //FIXME: builtin
+EvalStatus ProcGroup::execProcs() {    //FIXME: builtin
     // check builtin(cd, exit)
     if(this->procSize == 1 && (this->procs[0]->cmdName == "cd" || this->procs[0]->cmdName == "exit")) {
         return execBuiltin(this->procs[0].get());
@@ -226,7 +227,7 @@ int ProcGroup::execProcs() {    //FIXME: builtin
     for(unsigned int i = 0; i < this->procSize; i++) {
         if(pipe(pipefds[i]) < 0) {
             perror("pipe creation error");
-            return -1;
+            exit(1);
         }
     }
 
@@ -244,19 +245,19 @@ int ProcGroup::execProcs() {    //FIXME: builtin
         // wait for exit
         for(unsigned int i = 0; i < this->procSize; i++) {
             int status;
-            ProcContext *ctx = this->procs[i].get();
+            ProcContext *procCtx = this->procs[i].get();
             waitpid(pid[i], &status, 0);
             if(WIFEXITED(status)) {
-                ctx->exitKind = ProcContext::NORMAL;
-                ctx->exitStatus = WEXITSTATUS(status);
+                procCtx->exitKind = ProcContext::NORMAL;
+                procCtx->exitStatus = WEXITSTATUS(status);
             }
             if(WIFSIGNALED(status)) {
-                ctx->exitKind = ProcContext::INTR;
-                ctx->exitStatus = WTERMSIG(status);
+                procCtx->exitKind = ProcContext::INTR;
+                procCtx->exitStatus = WTERMSIG(status);
             }
         }
-        ctx->exitStatus->value = this->procs[this->procSize - 1]->exitStatus;
-        return 0;
+        ctx->updateExitStatus(this->procs[this->procSize - 1]->exitStatus);
+        return EvalStatus::SUCCESS ;
     } else if(pid[procIndex] == 0) { // child process
         ProcContext *procCtx = this->procs[procIndex].get();
         if(procIndex == 0) {    // first process
@@ -283,7 +284,7 @@ int ProcGroup::execProcs() {    //FIXME: builtin
         exit(1);
     } else {
         perror("child process error");
-        return -1;
+        exit(1);
     }
 }
 

@@ -25,12 +25,12 @@ Shell::Shell(char **envp) :
     this->initBuiltinVar();
 }
 
-ExitStatus Shell::eval(const char *line) {
+ShellStatus Shell::eval(const char *line) {
     Lexer<LexerDef, TokenKind> lexer(line);
     return this->eval(0, lexer);
 }
 
-ExitStatus Shell::eval(const char *sourceName, FILE *fp) {
+ShellStatus Shell::eval(const char *sourceName, FILE *fp) {
     Lexer<LexerDef, TokenKind> lexer(fp);
     return this->eval(sourceName, lexer);
 }
@@ -80,9 +80,13 @@ const std::string &Shell::getWorkingDir() {
     return this->ctx.workingDir;
 }
 
+int Shell::getExitStatus() {
+    return this->ctx.exitStatus->value;
+}
+
 CommonErrorListener Shell::clistener;
 
-ExitStatus Shell::eval(const char *sourceName, Lexer<LexerDef, TokenKind> &lexer) {
+ShellStatus Shell::eval(const char *sourceName, Lexer<LexerDef, TokenKind> &lexer) {
     sourceName = this->ctx.registerSourceName(sourceName);
     lexer.setLineNum(this->lineNum);
     RootNode rootNode(sourceName);
@@ -100,7 +104,7 @@ ExitStatus Shell::eval(const char *sourceName, Lexer<LexerDef, TokenKind> &lexer
     } catch(const ParseError &e) {
         this->listener->displayParseError(lexer, sourceName, e);
         this->lineNum = lexer.getLineNum();
-        return PARSE_ERROR;
+        return ShellStatus::PARSE_ERROR;
     }
 
     // type check
@@ -115,21 +119,25 @@ ExitStatus Shell::eval(const char *sourceName, Lexer<LexerDef, TokenKind> &lexer
     } catch(const TypeCheckError &e) {
         this->listener->displayTypeError(sourceName, e);
         this->checker.recover();
-        return TYPE_ERROR;
+        return ShellStatus::TYPE_ERROR;
     }
 
     if(this->parseOnly) {
-        return SUCCESS;
+        return ShellStatus::SUCCESS;
     }
     
     // eval
-    EvalStatus status = rootNode.eval(this->ctx);
-    if(status == EVAL_SUCCESS) {
-        return SUCCESS;
-    } else {
+    switch(rootNode.eval(this->ctx)) {
+    case EvalStatus::SUCCESS:
+        return ShellStatus::SUCCESS;
+    case EvalStatus::ASSERT_FAIL:
+        return ShellStatus::ASSERTION_ERROR;
+    case EvalStatus::EXIT:
+        return ShellStatus::EXIT;
+    default:
         this->checker.recover();
         this->ctx.reportError();
-        return RUNTIME_ERROR;
+        return ShellStatus::RUNTIME_ERROR;
     }
 }
 

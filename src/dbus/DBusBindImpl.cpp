@@ -474,7 +474,7 @@ bool DBus_ObjectImpl::waitSignal(RuntimeContext &ctx) {
             }
 
             // apply handler
-            if(ctx.applyFuncObject(0, true, size) != EVAL_SUCCESS) {
+            if(ctx.applyFuncObject(0, true, size) != EvalStatus::SUCCESS) {
                 return false;
             }
         }

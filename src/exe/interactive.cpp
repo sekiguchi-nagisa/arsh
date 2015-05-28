@@ -201,9 +201,15 @@ void ydsh::exec_interactive(const char *progName, ydsh::Shell &shell) {
 
     while((line = term.readLine()) != 0) {
         shell.setLineNum(lineNum);
-        shell.eval(line);
+        ydsh::ShellStatus status = shell.eval(line);
+        if(status == ShellStatus::ASSERTION_ERROR) {
+            exit(1);
+        } else if(status == ShellStatus::EXIT) {
+            exit(shell.getExitStatus());
+        }
         lineNum = shell.getLineNum();
     }
     printf("\n");
+    exit(0);
 }
 

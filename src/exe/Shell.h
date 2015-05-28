@@ -24,7 +24,6 @@
 #include "../core/TypePool.h"
 #include "../parser/TypeChecker.h"
 #include "../core/DSType.h"
-#include "../core/status.h"
 #include "../ast/Node.h"
 #include "../ast/dump.h"
 
@@ -33,6 +32,15 @@ namespace ydsh {
 using namespace ydsh::ast;
 using namespace ydsh::parser;
 using namespace ydsh::core;
+
+enum class ShellStatus : unsigned int {
+    SUCCESS,
+    PARSE_ERROR,
+    TYPE_ERROR,
+    RUNTIME_ERROR,
+    ASSERTION_ERROR,
+    EXIT,
+};
 
 class Shell {
 private:
@@ -58,8 +66,8 @@ public:
     explicit Shell(char **envp);
     ~Shell() = default;
 
-    ExitStatus eval(const char *line);
-    ExitStatus eval(const char *sourceName, FILE *fp);
+    ShellStatus eval(const char *line);
+    ShellStatus eval(const char *sourceName, FILE *fp);
     void setErrorListener(const ErrorListener *listener);
     void setLineNum(unsigned int lineNum);
     unsigned int getLineNum();
@@ -73,11 +81,16 @@ public:
 
     const std::string &getWorkingDir();
 
+    /**
+     * get exit status of recently executed command.(also exit command)
+     */
+    int getExitStatus();
+
 private:
     /**
      * sourceName is null, if read stdin.
      */
-    ExitStatus eval(const char *sourceName, DSLexer &lexer);
+    ShellStatus eval(const char *sourceName, DSLexer &lexer);
 
     /**
      * call only once.

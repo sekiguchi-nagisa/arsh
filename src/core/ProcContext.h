@@ -23,6 +23,7 @@ namespace ydsh {
 namespace core {
 
 struct RuntimeContext;
+enum class EvalStatus : unsigned int;
 
 static constexpr unsigned int READ_PIPE = 0;
 static constexpr unsigned int WRITE_PIPE = 1;
@@ -94,7 +95,7 @@ struct ProcGroup {
     /**
      * execute all process.
      */
-    int execProcs();
+    EvalStatus execProcs();
 };
 
 } // namespace core

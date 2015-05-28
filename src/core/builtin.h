@@ -819,7 +819,7 @@ static inline bool string_add(RuntimeContext &ctx) {
 
     // cats LOCAL(1) to string
     ctx.getLocal(1);
-    if(ctx.toString(0) != EVAL_SUCCESS) {
+    if(ctx.toString(0) != EvalStatus::SUCCESS) {
         return false;
     }
 

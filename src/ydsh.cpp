@@ -30,6 +30,8 @@
 #define DEV_STATE ""
 #endif
 
+using namespace ydsh;
+
 enum OptionKind {
     DUMP_UAST,
     DUMP_AST,
@@ -65,8 +67,19 @@ static void showCopyright(std::ostream &stream) {
     stream << getCopyright() << std::endl;
 }
 
+static void evalAndExit(Shell &shell, const char *sourceName, FILE *fp) {
+    ShellStatus status = shell.eval(sourceName, fp);
+    if(status == ShellStatus::SUCCESS) {
+        exit(0);
+    } else if(status == ShellStatus::EXIT) {
+        exit(shell.getExitStatus());
+    } else {
+        exit(1);
+    }
+}
+
 int main(int argc, char **argv, char **envp) {
-    ydsh::args::ArgsParser<OptionKind> parser;
+    args::ArgsParser<OptionKind> parser;
 
     parser.addOption(
             DUMP_UAST,
@@ -126,7 +139,7 @@ int main(int argc, char **argv, char **envp) {
         std::cerr << e.message << ": " << e.suffix << std::endl;
         showVersion(std::cerr);
         parser.printHelp(std::cerr);
-        return ydsh::core::ARGS_ERROR;
+        return 1;
     }
 
     ydsh::Shell shell(envp);
@@ -151,11 +164,11 @@ int main(int argc, char **argv, char **envp) {
         case VERSION:
             showVersion(std::cout);
             showCopyright(std::cout);
-            return ydsh::core::SUCCESS;
+            return 0;
         case HELP:
             showVersion(std::cout);
             parser.printHelp(std::cout);
-            return ydsh::core::SUCCESS;
+            return 0;
         }
     }
 
@@ -164,24 +177,22 @@ int main(int argc, char **argv, char **envp) {
         FILE *fp = fopen(scriptName, "r");
         if(fp == NULL) {
             fprintf(stderr, "cannot open file: %s\n", scriptName);
-            return ydsh::core::IO_ERROR;
+            return 1;
         }
         shell.setArguments(restArgs);
-        ydsh::ExitStatus status = shell.eval(scriptName, fp);
-        fclose(fp);
-        return status;
+        evalAndExit(shell, scriptName, fp);
     } else if(isatty(STDIN_FILENO) == 0) {
         FILE *fp = fdopen(STDIN_FILENO, "r");
         if(fp == NULL) {
             fprintf(stderr, "cannnot open stdin\n");
-            return ydsh::core::IO_ERROR;
+            return 1;
         }
-        return shell.eval(nullptr, fp);
+        evalAndExit(shell, nullptr, fp);
     } else {
         showVersion(std::cout);
         showCopyright(std::cout);
 
         exec_interactive(argv[0], shell);
     }
-    return ydsh::core::SUCCESS;
+    return 0;
 }

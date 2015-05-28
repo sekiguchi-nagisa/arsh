@@ -590,9 +590,9 @@ bool UserFuncObject::invoke(RuntimeContext &ctx) {  //TODO: default param
     EvalStatus s = this->funcNode->getBlockNode()->eval(ctx);
     ctx.funcContextStack.pop_back();
     switch(s) {
-    case EVAL_RETURN:
+    case EvalStatus::RETURN:
         return true;
-    case EVAL_THROW:
+    case EvalStatus::THROW:
         return false;
     default:
         fatal("illegal eval status: %d\n", s);

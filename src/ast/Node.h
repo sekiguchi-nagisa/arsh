@@ -23,7 +23,6 @@
 
 #include "../misc/flag_util.h"
 #include "../parser/Token.h"
-#include "../core/status.h"
 #include "TypeToken.h"
 
 namespace ydsh {
@@ -34,6 +33,7 @@ class FieldHandle;
 class MethodHandle;
 struct DSObject;
 struct RuntimeContext;
+enum class EvalStatus : unsigned int;
 enum RedirectOP : unsigned int;
 
 }

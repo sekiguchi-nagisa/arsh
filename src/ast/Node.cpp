@@ -28,7 +28,7 @@
 #define EVAL(ctx, node) \
     do {\
         EvalStatus status = (node)->eval(ctx);\
-        if(status != EVAL_SUCCESS) {\
+        if(status != EvalStatus::SUCCESS) {\
             return status;\
         }\
     } while(0)
@@ -141,7 +141,7 @@ void IntValueNode::accept(NodeVisitor *visitor) {
 
 EvalStatus IntValueNode::eval(RuntimeContext &ctx) {
     ctx.push(this->value);
-    return EVAL_SUCCESS;
+    return EvalStatus::SUCCESS;
 }
 
 // ###########################
@@ -190,7 +190,7 @@ void LongValueNode::accept(NodeVisitor *visitor) {
 
 EvalStatus LongValueNode::eval(RuntimeContext &ctx) {
     ctx.push(this->value);
-    return EVAL_SUCCESS;
+    return EvalStatus::SUCCESS;
 }
 
 
@@ -227,7 +227,7 @@ void FloatValueNode::accept(NodeVisitor *visitor) {
 
 EvalStatus FloatValueNode::eval(RuntimeContext &ctx) {
     ctx.push(this->value);
-    return EVAL_SUCCESS;
+    return EvalStatus::SUCCESS;
 }
 
 // ############################
@@ -273,7 +273,7 @@ void StringValueNode::accept(NodeVisitor *visitor) {
 
 EvalStatus StringValueNode::eval(RuntimeContext &ctx) {
     ctx.push(this->value);
-    return EVAL_SUCCESS;
+    return EvalStatus::SUCCESS;
 }
 
 // ############################
@@ -335,7 +335,7 @@ EvalStatus StringExprNode::eval(RuntimeContext &ctx) {
             EVAL(ctx, node);
             if(*node->getType() != *ctx.pool.getStringType()) {
                 EvalStatus status = ctx.toInterp(node->getLineNum());
-                if(status != EVAL_SUCCESS) {
+                if(status != EvalStatus::SUCCESS) {
                     return status;
                 }
             }
@@ -343,7 +343,7 @@ EvalStatus StringExprNode::eval(RuntimeContext &ctx) {
         }
         ctx.push(std::move(value));
     }
-    return EVAL_SUCCESS;
+    return EvalStatus::SUCCESS;
 }
 
 // #######################
@@ -389,7 +389,7 @@ EvalStatus ArrayNode::eval(RuntimeContext &ctx) {
         value->append(ctx.pop());
     }
     ctx.push(std::move(value));
-    return EVAL_SUCCESS;
+    return EvalStatus::SUCCESS;
 }
 
 // #####################
@@ -454,7 +454,7 @@ EvalStatus MapNode::eval(RuntimeContext &ctx) {
         map->set(key, value);
     }
     ctx.push(std::move(map));
-    return EVAL_SUCCESS;
+    return EvalStatus::SUCCESS;
 }
 
 // #######################
@@ -498,7 +498,7 @@ EvalStatus TupleNode::eval(RuntimeContext &ctx) {
         value->set(i, ctx.pop());
     }
     ctx.push(std::move(value));
-    return EVAL_SUCCESS;
+    return EvalStatus::SUCCESS;
 }
 
 // ############################
@@ -576,7 +576,7 @@ EvalStatus VarNode::eval(RuntimeContext &ctx) {
     if (this->type != 0 && this->type->isFuncType()) {
         ctx.peek()->setType(this->type);
     }
-    return EVAL_SUCCESS;
+    return EvalStatus::SUCCESS;
 }
 
 std::string VarNode::extractVarNameAndDelete(VarNode *node) {
@@ -666,7 +666,7 @@ EvalStatus AccessNode::eval(RuntimeContext &ctx) {
     }
     }
 
-    return EVAL_SUCCESS;
+    return EvalStatus::SUCCESS;
 }
 
 std::pair<Node *, std::string> AccessNode::split(AccessNode *accessNode) {
@@ -831,12 +831,12 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
         return ctx.toString(this->getLineNum());
     }
     case CHECK_CAST: {
-        return ctx.checkCast(this->lineNum, this->type) ? EVAL_SUCCESS : EVAL_THROW;
+        return ctx.checkCast(this->lineNum, this->type) ? EvalStatus::SUCCESS : EvalStatus::THROW;
     }
     default:
         fatal("unsupported cast op");
     }
-    return EVAL_SUCCESS;
+    return EvalStatus::SUCCESS;
 }
 
 CastNode *CastNode::newTypedCastNode(Node *targetNode, DSType *type, CastNode::CastOp op) {
@@ -924,7 +924,7 @@ EvalStatus InstanceOfNode::eval(RuntimeContext &ctx) {
         ctx.push(ctx.falseObj);
         break;
     }
-    return EVAL_SUCCESS;
+    return EvalStatus::SUCCESS;
 }
 
 // ######################
@@ -966,7 +966,7 @@ EvalStatus ArgsNode::eval(RuntimeContext &ctx) {
     for (Node *node : this->nodes) {
         EVAL(ctx, node);
     }
-    return EVAL_SUCCESS;
+    return EvalStatus::SUCCESS;
 }
 
 // ######################
@@ -1350,11 +1350,11 @@ EvalStatus CondOpNode::eval(RuntimeContext &ctx) {
             ctx.popNoReturn();
             return this->rightNode->eval(ctx);
         } else {
-            return EVAL_SUCCESS;
+            return EvalStatus::SUCCESS;
         }
     } else {    // or
         if (TYPE_AS(Boolean_Object, ctx.peek())->getValue()) {
-            return EVAL_SUCCESS;
+            return EvalStatus::SUCCESS;
         } else {
             ctx.popNoReturn();
             return this->rightNode->eval(ctx);
@@ -1457,7 +1457,7 @@ EvalStatus CmdArgNode::eval(RuntimeContext &ctx) {
         if(*type != *ctx.pool.getStringType() && *type != *ctx.pool.getStringArrayType()) {
             return ctx.toCmdArg(this->lineNum);
         }
-        return EVAL_SUCCESS;
+        return EvalStatus::SUCCESS;
     }
 
     CmdArgBuilder builder(ctx.pool);
@@ -1465,14 +1465,14 @@ EvalStatus CmdArgNode::eval(RuntimeContext &ctx) {
         EVAL(ctx, node);
         DSType *type = node->getType();
         if(*type != *ctx.pool.getStringType() && *type != *ctx.pool.getStringArrayType()) {
-            if(ctx.toCmdArg(this->lineNum) != EVAL_SUCCESS) {
-                return EVAL_THROW;
+            if(ctx.toCmdArg(this->lineNum) != EvalStatus::SUCCESS) {
+                return EvalStatus::THROW;
             }
         }
         builder.append(ctx.pop());
     }
     ctx.push(builder.buildArg());
-    return EVAL_SUCCESS;
+    return EvalStatus::SUCCESS;
 }
 
 Node *CmdArgNode::compactNode(CmdArgNode *node) {
@@ -1576,7 +1576,7 @@ EvalStatus CmdNode::eval(RuntimeContext &ctx) {
         proc->addRedirOption(pair.first, ctx.pop());
     }
     ctx.push(std::move(proc));
-    return EVAL_SUCCESS;
+    return EvalStatus::SUCCESS;
 }
 
 // ##########################
@@ -1632,7 +1632,7 @@ EvalStatus PipedCmdNode::eval(RuntimeContext &ctx) {
         EVAL(ctx, this->cmdNodes[i]);
         group.addProc(i, std::dynamic_pointer_cast<ProcContext>(ctx.pop()));
     }
-    group.execProcs();
+    EvalStatus status = group.execProcs();
 
     if(*this->type == *ctx.pool.getBooleanType()) {
         if(ctx.exitStatus->value == 0) {
@@ -1642,7 +1642,7 @@ EvalStatus PipedCmdNode::eval(RuntimeContext &ctx) {
         }
     }
 
-    return EVAL_SUCCESS;
+    return status;
 }
 
 // ###########################
@@ -1725,7 +1725,7 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
 
         if(pipe(pipefds) < 0) {
             perror("pipe creation failed\n");
-            exit(RUNTIME_ERROR);    //FIXME: throw exception
+            exit(1);    //FIXME: throw exception
         }
 
         pid_t pid = fork();
@@ -1803,7 +1803,7 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
 
             // push object
             ctx.push(std::move(obj));
-            return EVAL_SUCCESS;
+            return EvalStatus::SUCCESS;
         } else if(pid == 0) {   // child process
             dup2(pipefds[WRITE_PIPE], STDOUT_FILENO);
             close(pipefds[READ_PIPE]);
@@ -1813,7 +1813,7 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
             exit(0);
         } else {
             perror("fork failed");
-            exit(RUNTIME_ERROR);    //FIXME: throw exception
+            exit(1);    //FIXME: throw exception
         }
     }
 
@@ -1850,9 +1850,9 @@ void AssertNode::accept(NodeVisitor *visitor) {
 EvalStatus AssertNode::eval(RuntimeContext &ctx) {
     if (ctx.assertion) {
         EVAL(ctx, this->condNode);
-        ctx.checkAssertion(this->condNode->getLineNum());
+        return ctx.checkAssertion(this->condNode->getLineNum());
     }
-    return EVAL_SUCCESS;
+    return EvalStatus::SUCCESS;
 }
 
 // #######################
@@ -1896,11 +1896,11 @@ EvalStatus BlockNode::eval(RuntimeContext &ctx) {
         if (!node->getType()->isVoidType()) {
             ctx.popNoReturn();
         }
-        if (status != EVAL_SUCCESS) {
+        if (status != EvalStatus::SUCCESS) {
             return status;
         }
     }
-    return EVAL_SUCCESS;
+    return EvalStatus::SUCCESS;
 }
 
 // ######################
@@ -1932,7 +1932,7 @@ void BreakNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus BreakNode::eval(RuntimeContext &ctx) {
-    return EVAL_BREAK;
+    return EvalStatus::BREAK;
 }
 
 // ##########################
@@ -1952,7 +1952,7 @@ void ContinueNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus ContinueNode::eval(RuntimeContext &ctx) {
-    return EVAL_CONTINUE;
+    return EvalStatus::CONTINUE;
 }
 
 // ###########################
@@ -2004,7 +2004,7 @@ void ExportEnvNode::accept(NodeVisitor *visitor) {
 EvalStatus ExportEnvNode::eval(RuntimeContext &ctx) {
     EVAL(ctx, this->exprNode);
     ctx.exportEnv(this->envName, this->varIndex, this->global);
-    return EVAL_SUCCESS;
+    return EvalStatus::SUCCESS;
 }
 
 // ###########################
@@ -2044,7 +2044,7 @@ void ImportEnvNode::accept(NodeVisitor *visitor) {
 
 EvalStatus ImportEnvNode::eval(RuntimeContext &ctx) {
     ctx.importEnv(this->envName, this->varIndex, this->global);
-    return EVAL_SUCCESS;
+    return EvalStatus::SUCCESS;
 }
 
 // ###########################
@@ -2084,7 +2084,7 @@ void TypeAliasNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus TypeAliasNode::eval(RuntimeContext &ctx) {
-    return EVAL_SUCCESS;    // do nothing.
+    return EvalStatus::SUCCESS;    // do nothing.
 }
 
 // #####################
@@ -2157,10 +2157,10 @@ EvalStatus ForNode::eval(RuntimeContext &ctx) {
     if (TYPE_AS(Boolean_Object, ctx.pop())->getValue()) {
         EvalStatus status = this->blockNode->eval(ctx);
         switch (status) {
-        case EVAL_BREAK:
+        case EvalStatus::BREAK:
             break;
-        case EVAL_SUCCESS:
-        case EVAL_CONTINUE:
+        case EvalStatus::SUCCESS:
+        case EvalStatus::CONTINUE:
             EVAL(ctx, this->iterNode);
             goto CONTINUE;
         default:
@@ -2168,7 +2168,7 @@ EvalStatus ForNode::eval(RuntimeContext &ctx) {
         }
     }
 
-    return EVAL_SUCCESS;
+    return EvalStatus::SUCCESS;
 }
 
 // #######################
@@ -2211,17 +2211,17 @@ EvalStatus WhileNode::eval(RuntimeContext &ctx) {
     if (TYPE_AS(Boolean_Object, ctx.pop())->getValue()) {
         EvalStatus status = this->blockNode->eval(ctx);
         switch (status) {
-        case EVAL_BREAK:
+        case EvalStatus::BREAK:
             break;
-        case EVAL_SUCCESS:
-        case EVAL_CONTINUE:
+        case EvalStatus::SUCCESS:
+        case EvalStatus::CONTINUE:
             goto CONTINUE;
         default:
             return status;
         }
     }
 
-    return EVAL_SUCCESS;
+    return EvalStatus::SUCCESS;
 }
 
 // #########################
@@ -2257,10 +2257,10 @@ EvalStatus DoWhileNode::eval(RuntimeContext &ctx) {
     CONTINUE:
     EvalStatus status = this->blockNode->eval(ctx);
     switch (status) {
-    case EVAL_BREAK:
+    case EvalStatus::BREAK:
         goto BREAK;
-    case EVAL_SUCCESS:
-    case EVAL_CONTINUE:
+    case EvalStatus::SUCCESS:
+    case EvalStatus::CONTINUE:
         break;
     default:
         return status;
@@ -2272,7 +2272,7 @@ EvalStatus DoWhileNode::eval(RuntimeContext &ctx) {
     }
 
     BREAK:
-    return EVAL_SUCCESS;
+    return EvalStatus::SUCCESS;
 }
 
 // ####################
@@ -2432,7 +2432,7 @@ void ReturnNode::accept(NodeVisitor *visitor) {
 
 EvalStatus ReturnNode::eval(RuntimeContext &ctx) {
     EVAL(ctx, this->exprNode);
-    return EVAL_RETURN;
+    return EvalStatus::RETURN;
 }
 
 // #######################
@@ -2463,7 +2463,7 @@ void ThrowNode::accept(NodeVisitor *visitor) {
 EvalStatus ThrowNode::eval(RuntimeContext &ctx) {
     EVAL(ctx, this->exprNode);
     ctx.setThrowObject();
-    return EVAL_THROW;
+    return EvalStatus::THROW;
 }
 
 // #######################
@@ -2533,7 +2533,7 @@ void CatchNode::accept(NodeVisitor *visitor) {
 EvalStatus CatchNode::eval(RuntimeContext &ctx) {
     ctx.setLocal(this->varIndex);
     EVAL(ctx, this->blockNode);
-    return EVAL_SUCCESS;
+    return EvalStatus::SUCCESS;
 }
 
 // #####################
@@ -2603,7 +2603,7 @@ EvalStatus TryNode::eval(RuntimeContext &ctx) {
     // eval try block
     EvalStatus status = this->blockNode->eval(ctx);
 
-    if (status != EVAL_THROW) {  // eval finally
+    if (status != EvalStatus::THROW) {  // eval finally
         EVAL(ctx, this->finallyNode);
         return status;
     } else {   // eval catch
@@ -2682,7 +2682,7 @@ EvalStatus VarDeclNode::eval(RuntimeContext &ctx) {
     } else {
         ctx.setLocal(this->varIndex);
     }
-    return EVAL_SUCCESS;
+    return EvalStatus::SUCCESS;
 }
 
 // ########################
@@ -2783,7 +2783,7 @@ EvalStatus AssignNode::eval(RuntimeContext &ctx) {
             }
         }
     }
-    return EVAL_SUCCESS;
+    return EvalStatus::SUCCESS;
 }
 
 std::pair<Node *, Node *> AssignNode::split(AssignNode *node) {
@@ -3012,7 +3012,7 @@ void FunctionNode::accept(NodeVisitor *visitor) {
 
 EvalStatus FunctionNode::eval(RuntimeContext &ctx) {
     ctx.setGlobal(this->varIndex, std::shared_ptr<DSObject>(new UserFuncObject(this)));
-    return EVAL_REMOVE;
+    return EvalStatus::REMOVE;
 }
 
 // ###########################
@@ -3088,7 +3088,7 @@ void InterfaceNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus InterfaceNode::eval(RuntimeContext &ctx) {
-    return EVAL_SUCCESS;    // do nothing
+    return EvalStatus::SUCCESS;    // do nothing
 }
 
 // ###########################
@@ -3127,7 +3127,7 @@ void BindVarNode::accept(NodeVisitor *visitor) {
 
 EvalStatus BindVarNode::eval(RuntimeContext &ctx) {
     ctx.setGlobal(this->varIndex, this->value);
-    return EVAL_SUCCESS;
+    return EvalStatus::SUCCESS;
 }
 
 // #######################
@@ -3151,7 +3151,7 @@ void EmptyNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus EmptyNode::eval(RuntimeContext &ctx) {
-    return EVAL_SUCCESS; // do nothing
+    return EvalStatus::SUCCESS; // do nothing
 }
 
 // #######################
@@ -3171,7 +3171,7 @@ void DummyNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus DummyNode::eval(RuntimeContext &ctx) {
-    return EVAL_SUCCESS; // do nothing
+    return EvalStatus::SUCCESS; // do nothing
 }
 
 // ######################
@@ -3243,36 +3243,44 @@ EvalStatus RootNode::eval(RuntimeContext &ctx) {
     ctx.reserveGlobalVar(this->maxGVarNum);
     ctx.stackTopIndex = this->maxVarNum;
 
-    for (auto iter = this->nodeList.begin(); iter != this->nodeList.end();) {
+    for(auto iter = this->nodeList.begin(); iter != this->nodeList.end();) {
         Node *node = *iter;
         EvalStatus status = node->eval(ctx);
-        if (status == EVAL_SUCCESS) {
-            if (ctx.toplevelPrinting) {
+        switch(status) {
+        case EvalStatus::SUCCESS: {
+            if(ctx.toplevelPrinting) {
                 ctx.printStackTop(node->getType());
-            } else if (!node->getType()->isVoidType()) {
+            } else if(!node->getType()->isVoidType()) {
                 ctx.popNoReturn();
             }
-        } else if (status == EVAL_THROW) {
-            return EVAL_THROW;
-        } else if (status == EVAL_REMOVE) {
+            break;
+        };
+        case EvalStatus::THROW:
+        case EvalStatus::ASSERT_FAIL:
+        case EvalStatus::EXIT: {
+            return status;
+        };
+        case EvalStatus::REMOVE: {
             iter = this->nodeList.erase(iter);
             continue;
-        } else {
+        };
+        default:
             fatal("illegal EvalStatus: %d\n", status);
+            break;
         }
         ++iter;
     }
-    return EVAL_SUCCESS;
+    return EvalStatus::SUCCESS;
 }
 
 // for node creation
 
 std::string resolveUnaryOpName(TokenKind op) {
-    if (op == PLUS) {    // +
+    if(op == PLUS) {    // +
         return std::string(OP_PLUS);
-    } else if (op == MINUS) {    // -
+    } else if(op == MINUS) {    // -
         return std::string(OP_MINUS);
-    } else if (op == NOT) {  // not
+    } else if(op == NOT) {  // not
         return std::string(OP_NOT);
     } else {
         fatal("unsupported unary op: %s\n", TO_NAME(op));

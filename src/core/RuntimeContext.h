@@ -23,7 +23,6 @@
 #include "DSType.h"
 #include "ProcContext.h"
 #include "symbol.h"
-#include "status.h"
 #include "../misc/debug.h"
 
 #include <vector>
@@ -40,6 +39,17 @@ class Node;
 
 namespace ydsh {
 namespace core {
+
+enum class EvalStatus : unsigned int {
+    SUCCESS,
+    BREAK,
+    CONTINUE,
+    THROW,
+    RETURN,
+    ASSERT_FAIL,
+    EXIT,
+    REMOVE,
+};
 
 struct RuntimeContext {
     TypePool pool;
@@ -318,7 +328,7 @@ struct RuntimeContext {
                 invokeSetter(*this, recvType, fieldName, fieldType);
         // pop receiver
         this->popNoReturn();
-        return status ? EVAL_SUCCESS : EVAL_THROW;
+        return status ? EvalStatus::SUCCESS : EvalStatus::THROW;
     }
 
     /**
@@ -332,7 +342,7 @@ struct RuntimeContext {
     EvalStatus getField(DSType *recvType, const std::string &fieldName, DSType *fieldType) {
         bool status = TYPE_AS(ProxyObject, this->pop())->
                 invokeGetter(*this, recvType, fieldName, fieldType);
-        return status ? EVAL_SUCCESS : EVAL_THROW;
+        return status ? EvalStatus::SUCCESS : EvalStatus::THROW;
     }
 
     /**
@@ -345,7 +355,7 @@ struct RuntimeContext {
     EvalStatus dupAndGetField(DSType *recvType, const std::string &fieldName, DSType *fieldType) {
         bool status = TYPE_AS(ProxyObject, this->localStack[this->stackTopIndex])->
                 invokeGetter(*this, recvType, fieldName, fieldType);
-        return status ? EVAL_SUCCESS : EVAL_THROW;
+        return status ? EvalStatus::SUCCESS : EvalStatus::THROW;
     }
 
     void pushCallFrame(unsigned int lineNum) {
@@ -389,7 +399,7 @@ struct RuntimeContext {
         if(returnValue) {
             this->push(std::move(returnValue));
         }
-        return status ? EVAL_SUCCESS : EVAL_THROW;
+        return status ? EvalStatus::SUCCESS : EvalStatus::THROW;
     }
 
     /**
@@ -438,7 +448,7 @@ struct RuntimeContext {
         if(returnValue) {
             this->push(std::move(returnValue));
         }
-        return status ? EVAL_SUCCESS : EVAL_THROW;
+        return status ? EvalStatus::SUCCESS : EvalStatus::THROW;
     }
 
     /**
@@ -479,9 +489,9 @@ struct RuntimeContext {
         }
 
         if(status) {
-            return EVAL_SUCCESS;
+            return EvalStatus::SUCCESS;
         } else {
-            return EVAL_THROW;
+            return EvalStatus::THROW;
         }
     }
 
@@ -553,7 +563,7 @@ struct RuntimeContext {
 
     void instanceOf(DSType *targetType);
 
-    void checkAssertion(unsigned int lineNum);
+    EvalStatus checkAssertion(unsigned int lineNum);
 
     /**
      * get environment variable and set to local variable
@@ -599,6 +609,8 @@ struct RuntimeContext {
      * sourceName is null, if source is stdin.
      */
     const char *registerSourceName(const char *sourceName);
+
+    void updateExitStatus(unsigned int status);
 };
 
 } // namespace core

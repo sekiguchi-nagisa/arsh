@@ -34,7 +34,7 @@ RuntimeContext::RuntimeContext(char **envp) :
         dummy(new DummyObject()),
         scriptName(std::make_shared<String_Object>(this->pool.getStringType(), std::string("-ydsh"))),
         scriptArgs(std::make_shared<Array_Object>(this->pool.getStringArrayType())),
-        exitStatus(std::make_shared<Int_Object>(this->pool.getIntType(), 0)),
+        exitStatus(std::make_shared<Int_Object>(this->pool.getInt32Type(), 0)),
         dbus(DBus_Object::newDBus_Object(&this->pool)),
         globalVarTable(new std::shared_ptr<DSObject>[DEFAULT_TABLE_SIZE]),
         tableSize(DEFAULT_TABLE_SIZE), thrownObject(),
@@ -123,7 +123,7 @@ void RuntimeContext::instanceOf(DSType *targetType) {
     }
 }
 
-void RuntimeContext::checkAssertion(unsigned int lineNum) {
+EvalStatus RuntimeContext::checkAssertion(unsigned int lineNum) {
     if(!TYPE_AS(Boolean_Object, this->pop())->getValue()) {
         this->pushCallFrame(lineNum);
         std::vector<std::string> stackTrace;
@@ -135,8 +135,9 @@ void RuntimeContext::checkAssertion(unsigned int lineNum) {
         for(const std::string &str : stackTrace) {
             std::cerr << "    " << str << std::endl;
         }
-        exit(ASSERTION_ERROR);
+        return EvalStatus::ASSERT_FAIL;
     }
+    return EvalStatus::SUCCESS;
 }
 
 void RuntimeContext::importEnv(const std::string &envName, int index, bool isGlobal) {
@@ -167,6 +168,10 @@ const char *RuntimeContext::registerSourceName(const char *sourceName) {
     }
     this->readFiles.push_back(std::string(sourceName));
     return this->readFiles.back().c_str();
+}
+
+void RuntimeContext::updateExitStatus(unsigned int status) {
+    this->exitStatus = std::make_shared<Int_Object>(this->pool.getInt32Type(), status);
 }
 
 } // namespace core
