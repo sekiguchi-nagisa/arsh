@@ -35,6 +35,7 @@ enum OptionKind {
     DUMP_AST,
     PARSE_ONLY,
     DISABLE_ASSERT,
+    PRINT_TOPLEVEL,
     VERSION,
     HELP,
 };
@@ -96,6 +97,13 @@ int main(int argc, char **argv, char **envp) {
     );
 
     parser.addOption(
+            PRINT_TOPLEVEL,
+            "--print-toplevel",
+            false,
+            "print toplevel evaluated value"
+    );
+
+    parser.addOption(
             VERSION,
             "--version",
             false,
@@ -136,6 +144,9 @@ int main(int argc, char **argv, char **envp) {
             break;
         case DISABLE_ASSERT:
             shell.setAssertion(false);
+            break;
+        case PRINT_TOPLEVEL:
+            shell.setToplevelprinting(true);
             break;
         case VERSION:
             showVersion(std::cout);

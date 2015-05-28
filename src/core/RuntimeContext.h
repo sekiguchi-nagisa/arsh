@@ -110,9 +110,9 @@ struct RuntimeContext {
     std::vector<unsigned int> offsetStack;
 
     /**
-     * if true, runtime interactive mode.
+     * if true, print top level evaluated value.
      */
-    bool repl;
+    bool toplevelPrinting;
 
     /**
      * if true, enable assertion.

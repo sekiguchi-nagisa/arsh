@@ -3247,7 +3247,7 @@ EvalStatus RootNode::eval(RuntimeContext &ctx) {
         Node *node = *iter;
         EvalStatus status = node->eval(ctx);
         if (status == EVAL_SUCCESS) {
-            if (ctx.repl) {
+            if (ctx.toplevelPrinting) {
                 ctx.printStackTop(node->getType());
             } else if (!node->getType()->isVoidType()) {
                 ctx.popNoReturn();

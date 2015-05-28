@@ -69,6 +69,7 @@ public:
     void setDumpTypedAST(bool dump);
     void setParseOnly(bool parseOnly);
     void setAssertion(bool assertion);
+    void setToplevelprinting(bool print);
 
     const std::string &getWorkingDir();
 
@@ -76,7 +77,7 @@ private:
     /**
      * sourceName is null, if read stdin.
      */
-    ExitStatus eval(const char *sourceName, DSLexer &lexer, bool interactive = false);
+    ExitStatus eval(const char *sourceName, DSLexer &lexer);
 
     /**
      * call only once.

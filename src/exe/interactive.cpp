@@ -194,6 +194,7 @@ void Terminal::addHistory() {
 
 void ydsh::exec_interactive(const char *progName, ydsh::Shell &shell) {
     Terminal term(progName);
+    shell.setToplevelprinting(true);
 
     unsigned int lineNum = 1;
     const char *line;

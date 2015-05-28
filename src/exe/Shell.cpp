@@ -27,7 +27,7 @@ Shell::Shell(char **envp) :
 
 ExitStatus Shell::eval(const char *line) {
     Lexer<LexerDef, TokenKind> lexer(line);
-    return this->eval(0, lexer, true);
+    return this->eval(0, lexer);
 }
 
 ExitStatus Shell::eval(const char *sourceName, FILE *fp) {
@@ -72,13 +72,17 @@ void Shell::setAssertion(bool assertion) {
     this->ctx.assertion = assertion;
 }
 
+void Shell::setToplevelprinting(bool print) {
+    this->ctx.toplevelPrinting = print;
+}
+
 const std::string &Shell::getWorkingDir() {
     return this->ctx.workingDir;
 }
 
 CommonErrorListener Shell::clistener;
 
-ExitStatus Shell::eval(const char *sourceName, Lexer<LexerDef, TokenKind> &lexer, bool interactive) {
+ExitStatus Shell::eval(const char *sourceName, Lexer<LexerDef, TokenKind> &lexer) {
     sourceName = this->ctx.registerSourceName(sourceName);
     lexer.setLineNum(this->lineNum);
     RootNode rootNode(sourceName);
@@ -119,7 +123,6 @@ ExitStatus Shell::eval(const char *sourceName, Lexer<LexerDef, TokenKind> &lexer
     }
     
     // eval
-    this->ctx.repl = interactive;
     EvalStatus status = rootNode.eval(this->ctx);
     if(status == EVAL_SUCCESS) {
         return SUCCESS;

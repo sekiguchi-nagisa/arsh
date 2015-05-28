@@ -40,7 +40,7 @@ RuntimeContext::RuntimeContext(char **envp) :
         tableSize(DEFAULT_TABLE_SIZE), thrownObject(),
         localStack(new std::shared_ptr<DSObject>[DEFAULT_LOCAL_SIZE]),
         localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0),
-        localVarOffset(0), offsetStack(), repl(false), assertion(true),
+        localVarOffset(0), offsetStack(), toplevelPrinting(false), assertion(true),
         handle_STR(0), handle_INTERP(0), handle_CMD_ARG(0),handle_bt(0),
         readFiles(), funcContextStack(), callStack(),
         workingDir(getCurrentWorkingDir()) {
