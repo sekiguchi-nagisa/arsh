@@ -1123,6 +1123,12 @@ static inline bool dbus_waitSignal(RuntimeContext &ctx) {
     return TYPE_AS(DBus_Object, LOCAL(0))->waitSignal(ctx);
 }
 
+//!bind: function available($this : DBus) : Boolean
+static inline bool dbus_available(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(dbus_available);
+    RET_BOOL(TYPE_AS(DBus_Object, LOCAL(0))->supportDBus());
+}
+
 // #################
 // ##     Bus     ##
 // #################

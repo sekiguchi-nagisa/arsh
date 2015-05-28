@@ -415,6 +415,8 @@ struct DBus_Object : public DSObject {
 
     virtual bool waitSignal(RuntimeContext &ctx);
 
+    bool supportDBus();
+
     static DBus_Object *newDBus_Object(TypePool *typePool);
 };
 

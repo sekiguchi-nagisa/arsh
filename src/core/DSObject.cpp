@@ -672,6 +672,14 @@ bool DBus_Object::waitSignal(RuntimeContext &ctx) {
     return false;
 }
 
+bool DBus_Object::supportDBus() {
+#ifdef X_NO_DBUS
+    return false;
+#else
+    return true;
+#endif
+}
+
 DBus_Object *DBus_Object::newDBus_Object(TypePool *typePool) {
 #ifdef X_NO_DBUS
     return new DBus_Object(typePool);
