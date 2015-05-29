@@ -20,8 +20,9 @@
 #include <stdlib.h>
 
 #include "RuntimeContext.h"
-#include "../misc/files.h"
+#include "ProcContext.h"
 #include "../misc/num.h"
+#include "../misc/debug.h"
 
 namespace ydsh {
 namespace core {
@@ -41,36 +42,36 @@ ProcContext::~ProcContext() {
 
 void ProcContext::addParam(std::shared_ptr<DSObject> &&value, bool skipEmptyString) {
     DSType *valueType = value->getType();
-    if(*valueType == *this->ctx->pool.getStringType()) {
+    if(*valueType == *this->ctx->getPool().getStringType()) {
         std::shared_ptr<String_Object> obj = std::dynamic_pointer_cast<String_Object>(value);
-        if(skipEmptyString && obj->value.empty()) {
+        if(skipEmptyString && obj->getValue().empty()) {
             return;
         }
         this->params.push_back(std::move(obj));
         return;
     }
 
-    if(*valueType == *this->ctx->pool.getStringArrayType()) {
+    if(*valueType == *this->ctx->getPool().getStringArrayType()) {
         Array_Object *arrayObj = TYPE_AS(Array_Object, value);
-        for(const std::shared_ptr<DSObject> &element : arrayObj->values) {
+        for(const std::shared_ptr<DSObject> &element : arrayObj->getValues()) {
             this->params.push_back(std::dynamic_pointer_cast<String_Object>(element));
         }
     } else {
-        fatal("illegal command parameter type: %s\n", this->ctx->pool.getTypeName(*valueType).c_str());
+        fatal("illegal command parameter type: %s\n", this->ctx->getPool().getTypeName(*valueType).c_str());
     }
 }
 
 void ProcContext::addRedirOption(RedirectOP op, std::shared_ptr<DSObject> &&value) {
     DSType *valueType = value->getType();
-    if(*valueType == *this->ctx->pool.getStringType()) {
+    if(*valueType == *this->ctx->getPool().getStringType()) {
         this->redirs.push_back(std::make_pair(op, std::dynamic_pointer_cast<String_Object>(value)));
         return;
     }
 
-    if(*valueType == *this->ctx->pool.getStringArrayType()) {
+    if(*valueType == *this->ctx->getPool().getStringArrayType()) {
         Array_Object *arrayObj = TYPE_AS(Array_Object, value);
         unsigned int count = 0;
-        for(auto &element : arrayObj->values) {
+        for(auto &element : arrayObj->getValues()) {
             if(count++ == 0) {
                 this->redirs.push_back(std::make_pair(op, std::dynamic_pointer_cast<String_Object>(element)));
             } else {
@@ -78,7 +79,7 @@ void ProcContext::addRedirOption(RedirectOP op, std::shared_ptr<DSObject> &&valu
             }
         }
     } else {
-        fatal("illegal command parameter type: %s\n", this->ctx->pool.getTypeName(*valueType).c_str());
+        fatal("illegal command parameter type: %s\n", this->ctx->getPool().getTypeName(*valueType).c_str());
     }
 }
 
@@ -87,7 +88,7 @@ void ProcContext::prepare() {
     this->argv = new char *[argc];
     this->argv[0] = (char *) this->cmdName.c_str();
     for(unsigned int i = 1; i < argc - 1; i++) {
-        this->argv[i] = (char *) this->params[i - 1]->value.c_str();
+        this->argv[i] = (char *) this->params[i - 1]->getValue().c_str();
     }
     this->argv[argc - 1] = NULL;
 }
@@ -136,33 +137,33 @@ static void redirect(ProcContext *ctx) {  //FIXME: error reporting
     for(auto &pair : ctx->redirs) {
         switch(pair.first) {
         case IN_2_FILE: {
-            redirectToFile(pair.second->value.c_str(), "rb", STDIN_FILENO);
+            redirectToFile(pair.second->getValue().c_str(), "rb", STDIN_FILENO);
             break;
         };
         case OUT_2_FILE: {
-            redirectToFile(pair.second->value.c_str(), "wb", STDOUT_FILENO);
+            redirectToFile(pair.second->getValue().c_str(), "wb", STDOUT_FILENO);
             break;
         };
         case OUT_2_FILE_APPEND: {
-            redirectToFile(pair.second->value.c_str(), "ab", STDOUT_FILENO);
+            redirectToFile(pair.second->getValue().c_str(), "ab", STDOUT_FILENO);
             break;
         };
         case ERR_2_FILE: {
-            redirectToFile(pair.second->value.c_str(), "wb", STDERR_FILENO);
+            redirectToFile(pair.second->getValue().c_str(), "wb", STDERR_FILENO);
             break;
         };
         case ERR_2_FILE_APPEND: {
-            redirectToFile(pair.second->value.c_str(), "ab", STDERR_FILENO);
+            redirectToFile(pair.second->getValue().c_str(), "ab", STDERR_FILENO);
             break;
         };
         case MERGE_ERR_2_OUT_2_FILE: {
             dup2(STDERR_FILENO, STDOUT_FILENO);
-            redirectToFile(pair.second->value.c_str(), "wb", STDOUT_FILENO);
+            redirectToFile(pair.second->getValue().c_str(), "wb", STDOUT_FILENO);
             break;
         };
         case MERGE_ERR_2_OUT_2_FILE_APPEND: {
             dup2(STDERR_FILENO, STDOUT_FILENO);
-            redirectToFile(pair.second->value.c_str(), "ab", STDOUT_FILENO);
+            redirectToFile(pair.second->getValue().c_str(), "ab", STDOUT_FILENO);
             break;
         };
         case MERGE_ERR_2_OUT: {
@@ -179,19 +180,19 @@ static EvalStatus execBuiltin(ProcContext *procCtx) {   //FIXME: error report
     if(procCtx->cmdName == "cd") {
         const char *targetDir = getenv("HOME");
         if(paramSize > 0) {
-            targetDir = procCtx->params[0]->value.c_str();
+            targetDir = procCtx->params[0]->getValue().c_str();
         }
         if(chdir(targetDir) != 0) {
             perror("-ydsh: cd");
             return EvalStatus::SUCCESS;
         }
-        ctx->workingDir = getCurrentWorkingDir();
+        ctx->updateWorkingDir();
         return EvalStatus::SUCCESS;
     } else if(procCtx->cmdName == "exit") {
         if(paramSize == 0) {
             ctx->updateExitStatus(0);
         } else if(paramSize > 0) {
-            const char *num = procCtx->params[0]->value.c_str();
+            const char *num = procCtx->params[0]->getValue().c_str();
             int status;
             long value = convertToInt64(num, status, false);
             if(status == 0) {

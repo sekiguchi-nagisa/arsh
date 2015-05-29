@@ -16,6 +16,7 @@
 
 #include "DSObject.h"
 #include "RuntimeContext.h"
+#include "../misc/debug.h"
 
 #ifndef X_NO_DBUS
 #include "../dbus/DBusBind.h"
@@ -57,7 +58,7 @@ bool DSObject::equals(const std::shared_ptr<DSObject> &obj) {
 }
 
 std::shared_ptr<String_Object> DSObject::str(RuntimeContext &ctx) {
-    return std::make_shared<String_Object>(ctx.pool.getStringType(), this->toString(ctx));
+    return std::make_shared<String_Object>(ctx.getPool().getStringType(), this->toString(ctx));
 }
 
 std::shared_ptr<String_Object> DSObject::interp(RuntimeContext &ctx) {
@@ -93,16 +94,16 @@ int Int_Object::getValue() {
 }
 
 std::string Int_Object::toString(RuntimeContext &ctx) {
-    if(*this->type == *ctx.pool.getUint32Type()) {
+    if(*this->type == *ctx.getPool().getUint32Type()) {
         return std::to_string((unsigned int) this->value);
     }
-    if(*this->type == *ctx.pool.getInt16Type()) {
+    if(*this->type == *ctx.getPool().getInt16Type()) {
         return std::to_string((short) this->value);
     }
-    if(*this->type == *ctx.pool.getUint16Type()) {
+    if(*this->type == *ctx.getPool().getUint16Type()) {
         return std::to_string((unsigned short) this->value);
     }
-    if(*this->type == *ctx.pool.getByteType()) {
+    if(*this->type == *ctx.getPool().getByteType()) {
         return std::to_string((unsigned char) this->value);
     }
     return std::to_string(this->value);
@@ -133,7 +134,7 @@ long Long_Object::getValue() {
 }
 
 std::string Long_Object::toString(RuntimeContext &ctx) {
-    if(*this->type == *ctx.pool.getUint64Type()) {
+    if(*this->type == *ctx.getPool().getUint64Type()) {
         return std::to_string((unsigned long) this->value);
     }
     return std::to_string(this->value);
@@ -232,14 +233,6 @@ std::string String_Object::toString(RuntimeContext &ctx) {
     return this->value;
 }
 
-void String_Object::append(const String_Object &obj) {
-    this->value += obj.value;
-}
-
-void String_Object::append(const std::shared_ptr<String_Object> &obj) {
-    this->value += obj->value;
-}
-
 bool String_Object::equals(const std::shared_ptr<DSObject> &obj) {
     return this->value == TYPE_AS(String_Object, obj)->value;
 }
@@ -281,8 +274,30 @@ std::string Array_Object::toString(RuntimeContext &ctx) {
     return str;
 }
 
-void Array_Object::append(std::shared_ptr<DSObject> obj) {
+void Array_Object::append(std::shared_ptr<DSObject> &&obj) {
+    this->values.push_back(std::move(obj));
+}
+
+void Array_Object::append(const std::shared_ptr<DSObject> &obj) {
     this->values.push_back(obj);
+}
+
+void Array_Object::set(unsigned int index, const std::shared_ptr<DSObject> &obj) {
+    this->values[index] = obj;
+}
+
+void Array_Object::initIterator() {
+    this->curIndex = 0;
+}
+
+const std::shared_ptr<DSObject> &Array_Object::nextElement() {
+    unsigned int index = this->curIndex++;
+    assert(index < this->values.size());
+    return this->values[index];
+}
+
+bool Array_Object::hasNext() {
+    return this->curIndex < this->values.size();
 }
 
 std::shared_ptr<String_Object> Array_Object::interp(RuntimeContext &ctx) {
@@ -290,32 +305,32 @@ std::shared_ptr<String_Object> Array_Object::interp(RuntimeContext &ctx) {
         return this->values[0]->interp(ctx);
     }
 
-    std::shared_ptr<String_Object> value(new String_Object(ctx.pool.getStringType()));
+    std::string str;
     unsigned int size = this->values.size();
     for(unsigned int i = 0; i < size; i++) {
         if(i > 0) {
-            value->value += " ";
+            str += " ";
         }
-        value->append(this->values[i]->interp(ctx));
+        str += this->values[i]->interp(ctx)->getValue();
     }
-    return value;
+    return std::make_shared<String_Object>(ctx.getPool().getStringType(), std::move(str));
 }
 
 std::shared_ptr<DSObject> Array_Object::commandArg(RuntimeContext &ctx) {
-    std::shared_ptr<Array_Object> result(new Array_Object(ctx.pool.getStringArrayType()));
+    std::shared_ptr<Array_Object> result(new Array_Object(ctx.getPool().getStringArrayType()));
     for(const std::shared_ptr<DSObject> &e : this->values) {
         std::shared_ptr<DSObject> temp(e->commandArg(ctx));
 
-        DSType *tempType = temp->type;
-        if(*tempType == *ctx.pool.getStringType()) {
+        DSType *tempType = temp->getType();
+        if(*tempType == *ctx.getPool().getStringType()) {
             result->values.push_back(std::move(temp));
-        } else if(*tempType == *ctx.pool.getStringArrayType()) {
+        } else if(*tempType == *ctx.getPool().getStringArrayType()) {
             Array_Object *tempArray = TYPE_AS(Array_Object, temp);
             for(const std::shared_ptr<DSObject> &tempValue : tempArray->values) {
                 result->values.push_back(tempValue);
             }
         } else {
-            fatal("illegal command argument type: %s\n", ctx.pool.getTypeName(*tempType).c_str());
+            fatal("illegal command argument type: %s\n", ctx.getPool().getTypeName(*tempType).c_str());
         }
     }
     return result;
@@ -364,7 +379,7 @@ std::shared_ptr<DSObject> Map_Object::nextElement(RuntimeContext &ctx) {
     types[1] = this->iter->second->getType();
 
     std::shared_ptr<Tuple_Object> entry(
-            new Tuple_Object(ctx.pool.createAndGetTupleTypeIfUndefined(std::move(types))));
+            new Tuple_Object(ctx.getPool().createAndGetTupleTypeIfUndefined(std::move(types))));
     entry->set(0, this->iter->first);
     entry->set(1, this->iter->second);
     this->iter++;
@@ -446,34 +461,33 @@ const std::shared_ptr<DSObject> &Tuple_Object::get(unsigned int elementIndex) {
 }
 
 std::shared_ptr<String_Object> Tuple_Object::interp(RuntimeContext &ctx) {
-    std::shared_ptr<String_Object> value(new String_Object(ctx.pool.getStringType()));
-
+    std::string str;
     unsigned int size = this->getElementSize();
     for(unsigned int i = 0; i < size; i++) {
         if(i > 0) {
-            value->value += " ";
+            str += " ";
         }
-        value->append(this->fieldTable[i]->str(ctx));
+        str += this->fieldTable[i]->str(ctx)->getValue();
     }
-    return value;
+    return std::make_shared<String_Object>(ctx.getPool().getStringType(), std::move(str));
 }
 
 std::shared_ptr<DSObject> Tuple_Object::commandArg(RuntimeContext &ctx) {
-    std::shared_ptr<Array_Object> result(new Array_Object(ctx.pool.getStringArrayType()));
+    std::shared_ptr<Array_Object> result(new Array_Object(ctx.getPool().getStringArrayType()));
     unsigned int size = this->getElementSize();
     for(unsigned int i = 0; i < size; i++) {
         std::shared_ptr<DSObject> temp(this->fieldTable[i]->commandArg(ctx));
 
-        DSType *tempType = temp->type;
-        if(*tempType == *ctx.pool.getStringType()) {
-            result->values.push_back(std::move(temp));
-        } else if(*tempType == *ctx.pool.getStringArrayType()) {
+        DSType *tempType = temp->getType();
+        if(*tempType == *ctx.getPool().getStringType()) {
+            result->append(std::move(temp));
+        } else if(*tempType == *ctx.getPool().getStringArrayType()) {
             Array_Object *tempArray = TYPE_AS(Array_Object, temp);
-            for(const std::shared_ptr<DSObject> &tempValue : tempArray->values) {
-                result->values.push_back(tempValue);
+            for(const std::shared_ptr<DSObject> &tempValue : tempArray->getValues()) {
+                result->append(tempValue);
             }
         } else {
-            fatal("illegal command argument type: %s\n", ctx.pool.getTypeName(*tempType).c_str());
+            fatal("illegal command argument type: %s\n", ctx.getPool().getTypeName(*tempType).c_str());
         }
     }
     return result;
@@ -499,24 +513,28 @@ std::string Error_Object::toString(RuntimeContext &ctx) {
     std::string str("Error(");
     str += std::to_string((long) this);
     str += ", ";
-    str += TYPE_AS(String_Object, this->message)->value;
+    str += TYPE_AS(String_Object, this->message)->getValue();
     str += ")";
     return str;
 }
 
-void Error_Object::createStackTrace(RuntimeContext &ctx) {
-    ctx.fillInStackTrace(this->stackTrace);
+const std::shared_ptr<DSObject> &Error_Object::getMessage() {
+    return this->message;
 }
 
 void Error_Object::printStackTrace(RuntimeContext &ctx) {
     // print header
-    std::cerr << ctx.pool.getTypeName(*this->type) << ": "
-    << TYPE_AS(String_Object, this->message)->value << std::endl;
+    std::cerr << ctx.getPool().getTypeName(*this->type) << ": "
+    << TYPE_AS(String_Object, this->message)->getValue() << std::endl;
 
     // print stack trace
     for(const std::string &s : this->stackTrace) {
         std::cerr << "    " << s << std::endl;
     }
+}
+
+void Error_Object::accept(ObjectVisitor *visitor) {
+    visitor->visitError_Object(this);
 }
 
 Error_Object *Error_Object::newError(RuntimeContext &ctx, DSType *type,
@@ -527,14 +545,14 @@ Error_Object *Error_Object::newError(RuntimeContext &ctx, DSType *type,
 }
 
 Error_Object *Error_Object::newError(RuntimeContext &ctx, DSType *type,
-                              std::shared_ptr<DSObject> &&message) {
-    auto *obj = new Error_Object(type, std::move(message));
+                                     std::shared_ptr<DSObject> &&message) {
+    Error_Object *obj = new Error_Object(type, std::move(message));
     obj->createStackTrace(ctx);
     return obj;
 }
 
-void Error_Object::accept(ObjectVisitor *visitor) {
-    visitor->visitError_Object(this);
+void Error_Object::createStackTrace(RuntimeContext &ctx) {
+    ctx.fillInStackTrace(this->stackTrace);
 }
 
 
@@ -584,11 +602,11 @@ std::string UserFuncObject::toString(RuntimeContext &ctx) {
 
 bool UserFuncObject::invoke(RuntimeContext &ctx) {  //TODO: default param
     // change stackTopIndex
-    ctx.funcContextStack.push_back(this->funcNode);
-    ctx.stackTopIndex = ctx.localVarOffset + this->funcNode->getMaxVarNum();
+    ctx.pushFuncContext(this->funcNode);
+    ctx.reserveLocalVar(ctx.getLocalVarOffset() + this->funcNode->getMaxVarNum());
 
     EvalStatus s = this->funcNode->getBlockNode()->eval(ctx);
-    ctx.funcContextStack.pop_back();
+    ctx.popFuncContext();
     switch(s) {
     case EvalStatus::RETURN:
         return true;
@@ -658,17 +676,17 @@ DBus_Object::DBus_Object(TypePool *typePool) :
 }
 
 bool DBus_Object::getSystemBus(RuntimeContext &ctx) {
-    ctx.throwError(ctx.pool.getErrorType(), "unsupported feature");
+    ctx.throwError(ctx.getPool().getErrorType(), "unsupported feature");
     return false;
 }
 
 bool DBus_Object::getSessionBus(RuntimeContext &ctx) {
-    ctx.throwError(ctx.pool.getErrorType(), "unsupported feature");
+    ctx.throwError(ctx.getPool().getErrorType(), "unsupported feature");
     return false;
 }
 
 bool DBus_Object::waitSignal(RuntimeContext &ctx) {
-    ctx.throwError(ctx.pool.getErrorType(), "not support waitSignal method");
+    ctx.throwError(ctx.getPool().getErrorType(), "not support waitSignal method");
     return false;
 }
 
@@ -696,12 +714,12 @@ Bus_Object::Bus_Object(DSType *type) : DSObject(type) {
 }
 
 bool Bus_Object::service(RuntimeContext &ctx, std::string &&serviceName) {
-    ctx.throwError(ctx.pool.getErrorType(), "not support D-Bus service object");
+    ctx.throwError(ctx.getPool().getErrorType(), "not support D-Bus service object");
     return false;
 }
 
 bool Bus_Object::listNames(RuntimeContext &ctx, bool activeName) {
-    ctx.throwError(ctx.pool.getErrorType(), "not support listNames method");
+    ctx.throwError(ctx.getPool().getErrorType(), "not support listNames method");
     return false;
 }
 
@@ -713,7 +731,7 @@ Service_Object::Service_Object(DSType *type) : DSObject(type) {
 }
 
 bool Service_Object::object(RuntimeContext &ctx, std::string &&objectPath) {
-    ctx.throwError(ctx.pool.getErrorType(), "not support D-Bus proxy object");
+    ctx.throwError(ctx.getPool().getErrorType(), "not support D-Bus proxy object");
     return false;
 }
 

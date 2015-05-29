@@ -162,7 +162,7 @@ private:
     /**
      * obj must be FuncObject
      */
-    void addHandler(const std::string &ifaceName, const std::string &methodName, std::shared_ptr<DSObject> &&obj);
+    void addHandler(const std::string &ifaceName, const std::string &methodName, const std::shared_ptr<DSObject> &obj);
 };
 
 } // namespace core

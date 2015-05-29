@@ -15,6 +15,9 @@
  */
 
 #include "RuntimeContext.h"
+#include "FieldHandle.h"
+#include "symbol.h"
+#include "../misc/debug.h"
 #include "../misc/files.h"
 
 namespace ydsh {
@@ -62,6 +65,233 @@ RuntimeContext::~RuntimeContext() {
 
 const char *RuntimeContext::configRootDir = X_CONFIG_DIR;
 const char *RuntimeContext::typeDefDir = X_CONFIG_DIR "dbus/iface/";
+
+void RuntimeContext::setScriptName(const char *name) {
+    this->scriptName = std::make_shared<String_Object>(this->pool.getStringType(), std::string(name));
+}
+
+void RuntimeContext::addScriptArg(const char *arg) {
+    this->scriptArgs->append(
+            std::make_shared<String_Object>(this->pool.getStringType(), std::string(arg)));
+}
+
+void RuntimeContext::reserveGlobalVar(unsigned int size) {
+    if(this->tableSize < size) {
+        unsigned int newSize = this->tableSize;
+        do {
+            newSize *= 2;
+        } while(newSize < size);
+        auto newTable = new std::shared_ptr<DSObject>[newSize];
+        for(unsigned int i = 0; i < this->tableSize; i++) {
+            newTable[i] = this->globalVarTable[i];
+        }
+        delete[] this->globalVarTable;
+        this->globalVarTable = newTable;
+        this->tableSize = newSize;
+    }
+}
+
+void RuntimeContext::reserveLocalVar(unsigned int size) {
+    if(size > this->localStackSize) {
+        this->expandLocalStack(size);
+    }
+    this->stackTopIndex = size;
+}
+
+void RuntimeContext::throwError(DSType *errorType, const char *message) {
+    this->thrownObject = std::shared_ptr<DSObject>(
+            Error_Object::newError(*this, errorType, std::make_shared<String_Object>(
+                    this->pool.getStringType(), std::string(message))));
+}
+
+void RuntimeContext::throwError(DSType *errorType, std::string &&message) {
+    this->thrownObject = std::shared_ptr<DSObject>(
+            Error_Object::newError(*this, errorType, std::make_shared<String_Object>(
+                    this->pool.getStringType(), message)));
+}
+
+void RuntimeContext::expandLocalStack(unsigned int needSize) {
+    unsigned int newSize = this->localStackSize;
+    do {
+        newSize *= 2;
+    } while(newSize < needSize);
+    auto newTable = new std::shared_ptr<DSObject>[newSize];
+    for(unsigned int i = 0; i < this->localStackSize; i++) {
+        newTable[i] = this->localStack[i];
+    }
+    delete[] this->localStack;
+    this->localStack = newTable;
+    this->localStackSize = newSize;
+}
+
+/**
+ * stack state in function apply    stack grow ===>
+ *
+ * +-----------+---------+--------+   +--------+
+ * | stack top | funcObj | param1 | ~ | paramN |
+ * +-----------+---------+--------+   +--------+
+ *                       | offset |   |        |
+ */
+EvalStatus RuntimeContext::applyFuncObject(unsigned int lineNum, bool returnTypeIsVoid, unsigned int paramSize) {
+    unsigned int savedStackTopIndex = this->stackTopIndex - paramSize - 1;
+
+    // call function
+    this->saveAndSetOffset(savedStackTopIndex + 2);
+    this->pushCallFrame(lineNum);
+    bool status = TYPE_AS(FuncObject,
+                          this->localStack[savedStackTopIndex + 1])->invoke(*this);
+    this->popCallFrame();
+
+    // restore stack state
+    std::shared_ptr<DSObject> returnValue;
+    if(!returnTypeIsVoid) {
+        returnValue = std::move(this->localStack[this->stackTopIndex]);
+    }
+
+    this->restoreOffset();
+    for(unsigned int i = this->stackTopIndex; i > savedStackTopIndex; i--) {
+        this->popNoReturn();
+    }
+
+    if(returnValue) {
+        this->push(std::move(returnValue));
+    }
+    return status ? EvalStatus::SUCCESS : EvalStatus::THROW;
+}
+
+/**
+ * stack state in method call    stack grow ===>
+ *
+ * +-----------+------------------+   +--------+
+ * | stack top | param1(receiver) | ~ | paramN |
+ * +-----------+------------------+   +--------+
+ *             | offset           |   |        |
+ */
+EvalStatus RuntimeContext::callMethod(unsigned int lineNum, const std::string &methodName, MethodHandle *handle) {
+    /**
+     * include receiver
+     */
+    unsigned int paramSize = handle->getParamTypes().size() + 1;
+
+    unsigned int savedStackTopIndex = this->stackTopIndex - paramSize;
+
+    // call method
+    this->saveAndSetOffset(savedStackTopIndex + 1);
+    this->pushCallFrame(lineNum);
+
+    bool status;
+    // check method handle type
+    if(!handle->isInterfaceMethod()) {  // call virtual method
+        status = this->localStack[savedStackTopIndex + 1]->
+                getType()->getMethodRef(handle->getMethodIndex())->invoke(*this);
+    } else {    // call proxy method
+        status = TYPE_AS(ProxyObject, this->localStack[savedStackTopIndex + 1])->
+                invokeMethod(*this, methodName, handle);
+    }
+
+    this->popCallFrame();
+
+    // restore stack state
+    std::shared_ptr<DSObject> returnValue;
+    if(!handle->getReturnType()->isVoidType()) {
+        returnValue = std::move(this->localStack[this->stackTopIndex]);
+    }
+
+    this->restoreOffset();
+    for(unsigned int i = this->stackTopIndex; i > savedStackTopIndex; i--) {
+        this->popNoReturn();
+    }
+
+    if(returnValue) {
+        this->push(std::move(returnValue));
+    }
+    return status ? EvalStatus::SUCCESS : EvalStatus::THROW;
+}
+
+void RuntimeContext::newDSObject(DSType *type) {
+    if(type->isBuiltinType()) {
+        this->dummy->setType(type);
+        this->push(this->dummy);
+    } else {
+        fatal("currently, DSObject allocation not supported\n");
+    }
+}
+
+/**
+ * stack state in constructor call     stack grow ===>
+ *
+ * +-----------+------------------+   +--------+
+ * | stack top | param1(receiver) | ~ | paramN |
+ * +-----------+------------------+   +--------+
+ *             |    new offset    |
+ */
+EvalStatus RuntimeContext::callConstructor(unsigned int lineNum, unsigned int paramSize) {
+    unsigned int savedStackTopIndex = this->stackTopIndex - paramSize;
+
+    // call constructor
+    this->saveAndSetOffset(savedStackTopIndex);
+    this->pushCallFrame(lineNum);
+    bool status =
+            this->localStack[savedStackTopIndex]->getType()->getConstructor()->invoke(*this);
+    this->popCallFrame();
+
+    // restore stack state
+    this->restoreOffset();
+    for(unsigned int i = this->stackTopIndex; i > savedStackTopIndex; i--) {
+        this->popNoReturn();
+    }
+
+    if(status) {
+        return EvalStatus::SUCCESS;
+    } else {
+        return EvalStatus::THROW;
+    }
+}
+
+EvalStatus RuntimeContext::toString(unsigned int lineNum) {
+    static const std::string methodName(OP_STR);
+
+    if(this->handle_STR == nullptr) {
+        this->handle_STR = this->pool.getAnyType()->
+                lookupMethodHandle(&this->pool, methodName);
+    }
+    return this->callMethod(lineNum, methodName, this->handle_STR);
+}
+
+EvalStatus RuntimeContext::toInterp(unsigned int lineNum) {
+    static const std::string methodName(OP_INTERP);
+
+    if(this->handle_INTERP == nullptr) {
+        this->handle_INTERP = this->pool.getAnyType()->
+                lookupMethodHandle(&this->pool, methodName);
+    }
+    return this->callMethod(lineNum, methodName, this->handle_INTERP);
+}
+
+EvalStatus RuntimeContext::toCmdArg(unsigned int lineNum) {
+    static const std::string methodName(OP_CMD_ARG);
+
+    if(this->handle_CMD_ARG == nullptr) {
+        this->handle_CMD_ARG = this->pool.getAnyType()->
+                lookupMethodHandle(&this->pool, methodName);
+    }
+    return this->callMethod(lineNum, methodName, this->handle_CMD_ARG);
+}
+
+void RuntimeContext::reportError() {
+    std::cerr << "[runtime error]" << std::endl;
+    if(this->pool.getErrorType()->isAssignableFrom(this->thrownObject->getType())) {
+        static const std::string methodName("backtrace");
+
+        if(this->handle_bt == nullptr) {
+            this->handle_bt = this->pool.getErrorType()->lookupMethodHandle(&this->pool, methodName);
+        }
+        this->pushThrownObject();
+        this->callMethod(0, methodName, this->handle_bt);
+    } else {
+        std::cerr << this->thrownObject->toString(*this) << std::endl;
+    }
+}
 
 void RuntimeContext::fillInStackTrace(std::vector<std::string> &stackTrace) {
     static const unsigned long lowOrderMask = ~((1L << 32) - 1);
@@ -160,6 +390,34 @@ void RuntimeContext::exportEnv(const std::string &envName, int index, bool isGlo
     } else {
         this->localStack[this->localVarOffset + index] = this->pop();
     }
+}
+
+bool RuntimeContext::checkZeroDiv(int right) {
+    if(right == 0) {
+        this->throwError(this->pool.getArithmeticErrorType(), "zero division");
+        return false;
+    }
+    return true;
+}
+
+bool RuntimeContext::checkZeroDiv(double right) {
+    if(right == 0) {
+        this->throwError(this->pool.getArithmeticErrorType(), "zero division");
+        return false;
+    }
+    return true;
+}
+
+bool RuntimeContext::checkZeroMod(int right) {
+    if(right == 0) {
+        this->throwError(this->pool.getArithmeticErrorType(), "zero module");
+        return false;
+    }
+    return true;
+}
+
+void RuntimeContext::updateWorkingDir() {
+    this->workingDir = getCurrentWorkingDir();
 }
 
 const char *RuntimeContext::registerSourceName(const char *sourceName) {

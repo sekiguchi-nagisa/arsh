@@ -53,7 +53,7 @@ public:
     /**
      * return null, if has no type.
      */
-    DSType *getType(const std::string &typeName);
+    DSType *getType(const std::string &typeName) const;
 
     /**
      * type must not be null.
@@ -206,76 +206,157 @@ public:
     /**
      * get any type (root class of ydsh class)
      */
-    DSType *getAnyType();
+    DSType *getAnyType() const {
+        return this->anyType;
+    }
 
     /**
      * get void type (pseudo class representing for void)
      */
-    DSType *getVoidType();
+    DSType *getVoidType() const {
+        return this->voidType;
+    }
 
-    DSType *getVariantType();
-    DSType *getValueType();
+    DSType *getVariantType() const {
+        return this->variantType;
+    }
+
+    DSType *getValueType() const {
+        return this->valueType;
+    }
 
     /**
      * int is 32bit.
      */
-    DSType *getIntType();
+    DSType *getIntType() const {
+        return this->getInt32Type();
+    }
 
-    DSType *getByteType();
-    DSType *getInt16Type();
-    DSType *getUint16Type();
-    DSType *getInt32Type();
-    DSType *getUint32Type();
-    DSType *getInt64Type();
-    DSType *getUint64Type();
+    DSType *getByteType() const {
+        return this->byteType;
+    }
+
+    DSType *getInt16Type() const {
+        return this->int16Type;
+    }
+
+    DSType *getUint16Type() const {
+        return this->uint16Type;
+    }
+
+    DSType *getInt32Type() const {
+        return this->int32Type;
+    }
+
+    DSType *getUint32Type() const {
+        return this->uint32Type;
+    }
+
+    DSType *getInt64Type() const {
+        return this->int64Type;
+    }
+
+    DSType *getUint64Type() const {
+        return this->uint64Type;
+    }
 
     /**
      * float is 64bit.
      */
-    DSType *getFloatType();
+    DSType *getFloatType() const {
+        return this->floatType;
+    }
 
-    DSType *getBooleanType();
+    DSType *getBooleanType() const {
+        return this->boolType;
+    }
 
-    DSType *getStringType();
+    DSType *getStringType() const {
+        return this->stringType;
+    }
 
-    DSType *getErrorType();
+    DSType *getErrorType() const {
+        return this->errorType;
+    }
 
-    DSType *getTaskType();
+    DSType *getTaskType() const {
+        return this->taskType;
+    }
 
-    DSType *getBaseFuncType();
+    DSType *getBaseFuncType() const {
+        return this->baseFuncType;
+    }
 
-    DSType *getObjectPathType();
-    DSType *getUnixFDType();
+    DSType *getObjectPathType() const {
+        return this->objectPathType;
+    }
 
-    DSType *getProxyType();
+    DSType *getUnixFDType() const {
+        return this->unixFDType;
+    }
 
-    DSType *getDBusType();
-    DSType *getBusType();
-    DSType *getServiceType();
-    DSType *getDBusObjectType();
+    DSType *getProxyType() const {
+        return this->proxyType;
+    }
 
-    DSType *getStringArrayType();
+    DSType *getDBusType() const {
+        return this->dbusType;
+    }
+
+    DSType *getBusType() const {
+        return this->busType;
+    }
+
+    DSType *getServiceType() const {
+        return this->serviceType;
+    }
+
+    DSType *getDBusObjectType() const {
+        return this->dbusObjectType;
+    }
+
+    DSType *getStringArrayType() const {
+        return this->stringArrayType;
+    }
 
     // for error
-    DSType *getArithmeticErrorType();
-    DSType *getOutOfIndexErrorType();
-    DSType *getKeyNotFoundErrorType();
-    DSType *getTypeCastErrorType();
+    DSType *getArithmeticErrorType() const {
+        return this->arithmeticErrorType;
+    }
 
+    DSType *getOutOfIndexErrorType() const {
+        return this->outOfIndexErrorType;
+    }
+
+    DSType *getKeyNotFoundErrorType() const {
+        return this->keyNotFoundErrorType;
+    }
+
+    DSType *getTypeCastErrorType() const {
+        return this->typeCastErrorType;
+    }
 
     // for reified type.
-    TypeTemplate *getArrayTemplate();
+    TypeTemplate *getArrayTemplate() const {
+        return this->arrayTemplate;
+    }
 
-    TypeTemplate *getMapTemplate();
+    TypeTemplate *getMapTemplate() const {
+        return this->mapTemplate;
+    }
 
-    TypeTemplate *getTupleTemplate();
+    TypeTemplate *getTupleTemplate() const {
+        return this->tupleTemplate;
+    }
 
     // for type lookup
 
     /**
      * return null, if type is not defined.
      */
-    DSType *getType(const std::string &typeName);
+    DSType *getType(const std::string &typeName) const {
+        return this->typeMap.getType(typeName);
+    }
 
     /**
      * get type except template type.

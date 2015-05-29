@@ -22,7 +22,7 @@
 namespace ydsh {
 namespace core {
 
-struct RuntimeContext;
+class RuntimeContext;
 enum class EvalStatus : unsigned int;
 
 static constexpr unsigned int READ_PIPE = 0;

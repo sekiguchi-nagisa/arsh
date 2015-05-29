@@ -19,23 +19,9 @@
 
 #include "DSObject.h"
 #include "TypePool.h"
-#include "FieldHandle.h"
-#include "DSType.h"
-#include "ProcContext.h"
-#include "symbol.h"
-#include "../misc/debug.h"
 
 #include <vector>
 #include <iostream>
-
-namespace ydsh {
-namespace ast {
-
-class Node;
-
-}
-}
-
 
 namespace ydsh {
 namespace core {
@@ -51,7 +37,8 @@ enum class EvalStatus : unsigned int {
     REMOVE,
 };
 
-struct RuntimeContext {
+class RuntimeContext {
+private:
     TypePool pool;
 
     std::shared_ptr<Boolean_Object> trueObj;
@@ -164,46 +151,89 @@ struct RuntimeContext {
 
     std::string workingDir;
 
+public:
     static const char *configRootDir;
     static const char *typeDefDir;
 
+public:
     explicit RuntimeContext(char **envp);
 
     ~RuntimeContext();
 
+    TypePool &getPool() {
+        return this->pool;
+    }
+
+    const std::shared_ptr<Boolean_Object> &getTrueObj() {
+        return this->trueObj;
+    }
+
+    const std::shared_ptr<Boolean_Object> &getFalseObj() {
+        return this->falseObj;
+    }
+
+    const std::shared_ptr<String_Object> &getScriptName() {
+        return this->scriptName;
+    }
+
+    const std::shared_ptr<Array_Object> &getScriptArgs() {
+        return this->scriptArgs;
+    }
+
+    void addScriptArg(const char *arg);
+
+    const std::shared_ptr<Int_Object> &getExitStatus() {
+        return this->exitStatus;
+    }
+
+    void setScriptName(const char *name);
+
+    const std::shared_ptr<DBus_Object> &getDBus() {
+        return this->dbus;
+    }
+
+    bool isToplevelPrinting() {
+        return this->toplevelPrinting;
+    }
+
+    void setToplevelPrinting(bool print) {
+        this->toplevelPrinting = print;
+    }
+
+    bool isAssertion() {
+        return this->assertion;
+    }
+
+    void setAssertion(bool assertion) {
+        this->assertion = assertion;
+    }
+
+    const std::shared_ptr<DSObject> &getThrownObject() {
+        return this->thrownObject;
+    }
+
+    unsigned int getLocalVarOffset() {
+        return this->localVarOffset;
+    }
+
+
     /**
      * if this->tableSize < size, expand globalVarTable.
      */
-    void reserveGlobalVar(unsigned int size) {
-        if(this->tableSize < size) {
-            unsigned int newSize = this->tableSize;
-            do {
-                newSize *= 2;
-            } while(newSize < size);
-            auto newTable = new std::shared_ptr<DSObject>[newSize];
-            for(unsigned int i = 0; i < this->tableSize; i++) {
-                newTable[i] = this->globalVarTable[i];
-            }
-            delete[] this->globalVarTable;
-            this->globalVarTable = newTable;
-            this->tableSize = newSize;
-        }
-    }
+    void reserveGlobalVar(unsigned int size);
+
+    /**
+     * set stackTopIndex.
+     * if this->localStackSize < size, expand localStack.
+     */
+    void reserveLocalVar(unsigned int size);
 
     /**
      * for internal error reporting.
      */
-    void throwError(DSType *errorType, const char *message) {
-        this->thrownObject = std::shared_ptr<DSObject>(
-                Error_Object::newError(*this, errorType, std::make_shared<String_Object>(
-                        this->pool.getStringType(), std::string(message))));
-    }
+    void throwError(DSType *errorType, const char *message);
 
-    void throwError(DSType *errorType, std::string &&message) {
-        this->thrownObject = std::shared_ptr<DSObject>(
-                Error_Object::newError(*this, errorType, std::make_shared<String_Object>(
-                        this->pool.getStringType(), message)));
-    }
+    void throwError(DSType *errorType, std::string &&message);
 
     /**
      * pop and set to throwObject
@@ -215,24 +245,12 @@ struct RuntimeContext {
     /**
      * get thrownObject and push to localStack
      */
-    void getThrownObject() {
+    void pushThrownObject() {
         this->push(this->thrownObject);
         this->thrownObject.reset();
     }
 
-    void expandLocalStack(unsigned int needSize) {
-        unsigned int newSize = this->localStackSize;
-        do {
-            newSize *= 2;
-        } while(newSize < needSize);
-        auto newTable = new std::shared_ptr<DSObject>[newSize];
-        for(unsigned int i = 0; i < this->localStackSize; i++) {
-            newTable[i] = this->localStack[i];
-        }
-        delete[] this->localStack;
-        this->localStack = newTable;
-        this->localStackSize = newSize;
-    }
+    void expandLocalStack(unsigned int needSize);
 
     void saveAndSetOffset(unsigned int newOffset) {
         this->offsetStack.push_back(this->localVarOffset);
@@ -316,6 +334,10 @@ struct RuntimeContext {
         this->push(this->localStack[this->localVarOffset + index]);
     }
 
+    const std::shared_ptr<DSObject> &GetLocal(unsigned int index) {
+        return this->localStack[this->localVarOffset + index];
+    }
+
     // field manipulation
 
     void setField(unsigned int index) {
@@ -367,191 +389,37 @@ struct RuntimeContext {
         this->callStack.pop_back();
     }
 
-    /**
-     * stack state in function apply    stack grow ===>
-     *
-     * +-----------+---------+--------+   +--------+
-     * | stack top | funcObj | param1 | ~ | paramN |
-     * +-----------+---------+--------+   +--------+
-     *                       | offset |   |        |
-     */
-    EvalStatus applyFuncObject(unsigned int lineNum, bool returnTypeIsVoid, unsigned int paramSize) {
-        unsigned int savedStackTopIndex = this->stackTopIndex - paramSize - 1;
-
-        // call function
-        this->saveAndSetOffset(savedStackTopIndex + 2);
-        this->pushCallFrame(lineNum);
-        bool status = TYPE_AS(FuncObject,
-                              this->localStack[savedStackTopIndex + 1])->invoke(*this);
-        this->popCallFrame();
-
-        // restore stack state
-        std::shared_ptr<DSObject> returnValue;
-        if(!returnTypeIsVoid) {
-            returnValue = std::move(this->localStack[this->stackTopIndex]);
-        }
-
-        this->restoreOffset();
-        for(unsigned int i = this->stackTopIndex; i > savedStackTopIndex; i--) {
-            this->popNoReturn();
-        }
-
-        if(returnValue) {
-            this->push(std::move(returnValue));
-        }
-        return status ? EvalStatus::SUCCESS : EvalStatus::THROW;
-    }
-
-    /**
-     * stack state in method call    stack grow ===>
-     *
-     * +-----------+------------------+   +--------+
-     * | stack top | param1(receiver) | ~ | paramN |
-     * +-----------+------------------+   +--------+
-     *             | offset           |   |        |
-     */
-    EvalStatus callMethod(unsigned int lineNum, const std::string &methodName, MethodHandle *handle) {
-        /**
-         * include receiver
-         */
-        unsigned int paramSize = handle->getParamTypes().size() + 1;
-
-        unsigned int savedStackTopIndex = this->stackTopIndex - paramSize;
-
-        // call method
-        this->saveAndSetOffset(savedStackTopIndex + 1);
-        this->pushCallFrame(lineNum);
-
-        bool status;
-        // check method handle type
-        if(!handle->isInterfaceMethod()) {  // call virtual method
-            status = this->localStack[savedStackTopIndex + 1]->
-                    type->getMethodRef(handle->getMethodIndex())->invoke(*this);
-        } else {    // call proxy method
-            status = TYPE_AS(ProxyObject, this->localStack[savedStackTopIndex + 1])->
-                    invokeMethod(*this, methodName, handle);
-        }
-
-        this->popCallFrame();
-
-        // restore stack state
-        std::shared_ptr<DSObject> returnValue;
-        if(!handle->getReturnType()->isVoidType()) {
-            returnValue = std::move(this->localStack[this->stackTopIndex]);
-        }
-
-        this->restoreOffset();
-        for(unsigned int i = this->stackTopIndex; i > savedStackTopIndex; i--) {
-            this->popNoReturn();
-        }
-
-        if(returnValue) {
-            this->push(std::move(returnValue));
-        }
-        return status ? EvalStatus::SUCCESS : EvalStatus::THROW;
-    }
+    EvalStatus applyFuncObject(unsigned int lineNum, bool returnTypeIsVoid, unsigned int paramSize);
+    EvalStatus callMethod(unsigned int lineNum, const std::string &methodName, MethodHandle *handle);
 
     /**
      * allocate new DSObject on stack top.
      * if type is builtin type, not allocate it.
      */
-    void newDSObject(DSType *type) {
-        if(type->isBuiltinType()) {
-           this->dummy->setType(type);
-            this->push(this->dummy);
-        } else {
-            fatal("currently, DSObject allocation not supported\n");
-        }
-    }
+    void newDSObject(DSType *type);
 
-    /**
-     * stack state in constructor call     stack grow ===>
-     *
-     * +-----------+------------------+   +--------+
-     * | stack top | param1(receiver) | ~ | paramN |
-     * +-----------+------------------+   +--------+
-     *             |    new offset    |
-     */
-    EvalStatus callConstructor(unsigned int lineNum, unsigned int paramSize) {
-        unsigned int savedStackTopIndex = this->stackTopIndex - paramSize;
-
-        // call constructor
-        this->saveAndSetOffset(savedStackTopIndex);
-        this->pushCallFrame(lineNum);
-        bool status =
-                this->localStack[savedStackTopIndex]->type->getConstructor()->invoke(*this);
-        this->popCallFrame();
-
-        // restore stack state
-        this->restoreOffset();
-        for(unsigned int i = this->stackTopIndex; i > savedStackTopIndex; i--) {
-            this->popNoReturn();
-        }
-
-        if(status) {
-            return EvalStatus::SUCCESS;
-        } else {
-            return EvalStatus::THROW;
-        }
-    }
+    EvalStatus callConstructor(unsigned int lineNum, unsigned int paramSize);
 
     /**
      * cast stack top value to String
      */
-    EvalStatus toString(unsigned int lineNum) {
-        static const std::string methodName(OP_STR);
-
-        if(this->handle_STR == nullptr) {
-            this->handle_STR = this->pool.getAnyType()->
-                    lookupMethodHandle(&this->pool, methodName);
-        }
-        return this->callMethod(lineNum, methodName, this->handle_STR);
-    }
+    EvalStatus toString(unsigned int lineNum);
 
     /**
      * call __INTERP__
      */
-    EvalStatus toInterp(unsigned int lineNum) {
-        static const std::string methodName(OP_INTERP);
-
-        if(this->handle_INTERP == nullptr) {
-            this->handle_INTERP = this->pool.getAnyType()->
-                    lookupMethodHandle(&this->pool, methodName);
-        }
-        return this->callMethod(lineNum, methodName, this->handle_INTERP);
-    }
+    EvalStatus toInterp(unsigned int lineNum);
 
     /**
      * call __CMD_ARG__
      */
-    EvalStatus toCmdArg(unsigned int lineNum) {
-        static const std::string methodName(OP_CMD_ARG);
-
-        if(this->handle_CMD_ARG == nullptr) {
-            this->handle_CMD_ARG = this->pool.getAnyType()->
-                    lookupMethodHandle(&this->pool, methodName);
-        }
-        return this->callMethod(lineNum, methodName, this->handle_CMD_ARG);
-    }
+    EvalStatus toCmdArg(unsigned int lineNum);
 
     /**
      * report thrown object error message.
      * after error reporting, clear thrown object
      */
-    void reportError() {
-        std::cerr << "[runtime error]" << std::endl;
-        if(this->pool.getErrorType()->isAssignableFrom(this->thrownObject->type)) {
-            static const std::string methodName("backtrace");
-
-            if(this->handle_bt == nullptr) {
-                this->handle_bt = this->pool.getErrorType()->lookupMethodHandle(&this->pool, methodName);
-            }
-            this->getThrownObject();
-            this->callMethod(0, methodName, this->handle_bt);
-        } else {
-            std::cerr << this->thrownObject->toString(*this) << std::endl;
-        }
-    }
+    void reportError();
 
 
     // some runtime api
@@ -575,33 +443,32 @@ struct RuntimeContext {
      */
     void exportEnv(const std::string &envName, int index, bool isGlobal);
 
-    bool checkZeroDiv(int right) {
-        if(right == 0) {
-            this->throwError(this->pool.getArithmeticErrorType(), "zero division");
-            return false;
-        }
-        return true;
-    }
-
-    bool checkZeroDiv(double right) {
-        if(right == 0) {
-            this->throwError(this->pool.getArithmeticErrorType(), "zero division");
-            return false;
-        }
-        return true;
-    }
-
-    bool checkZeroMod(int right) {
-        if(right == 0) {
-            this->throwError(this->pool.getArithmeticErrorType(), "zero module");
-            return false;
-        }
-        return true;
-    }
+    bool checkZeroDiv(int right);
+    bool checkZeroDiv(double right);
+    bool checkZeroMod(int right);
 
     void throwOutOfIndexError(std::string &&message) {
         this->throwError(this->pool.getOutOfIndexErrorType(), std::move(message));
     }
+
+    void pushFuncContext(ast::Node *node) {
+        this->funcContextStack.push_back(node);
+    }
+
+    void popFuncContext() {
+        this->funcContextStack.pop_back();
+    }
+
+    void clearCallStack() {
+        this->funcContextStack.clear();
+        this->callStack.clear();
+    }
+
+    const std::string &getWorkingDir() {
+        return this->workingDir;
+    }
+
+    void updateWorkingDir();
 
     /**
      * register source name to readFiles.

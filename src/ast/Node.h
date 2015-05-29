@@ -31,8 +31,8 @@ namespace core {
 class DSType;
 class FieldHandle;
 class MethodHandle;
-struct DSObject;
-struct RuntimeContext;
+class DSObject;
+class RuntimeContext;
 enum class EvalStatus : unsigned int;
 enum RedirectOP : unsigned int;
 

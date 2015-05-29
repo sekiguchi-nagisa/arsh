@@ -17,6 +17,9 @@
 #include "../core/symbol.h"
 #include "../core/DSObject.h"
 #include "../core/RuntimeContext.h"
+#include "../core/ProcContext.h"
+#include "../core/FieldHandle.h"
+#include "../misc/debug.h"
 #include "dump.h"
 
 #include <assert.h>
@@ -326,22 +329,22 @@ EvalStatus StringExprNode::eval(RuntimeContext &ctx) {
         ctx.push(std::make_shared<String_Object>(this->type));
     } else if (size == 1) {
         EVAL(ctx, this->nodes[0]);
-        if(*this->nodes[0]->getType() != *ctx.pool.getStringType()) {
+        if(*this->nodes[0]->getType() != *ctx.getPool().getStringType()) {
             return ctx.toInterp(this->nodes[0]->getLineNum());
         }
     } else {
-        auto value = std::make_shared<String_Object>(this->type);
+        std::string str;
         for (Node *node : this->nodes) {
             EVAL(ctx, node);
-            if(*node->getType() != *ctx.pool.getStringType()) {
+            if(*node->getType() != *ctx.getPool().getStringType()) {
                 EvalStatus status = ctx.toInterp(node->getLineNum());
                 if(status != EvalStatus::SUCCESS) {
                     return status;
                 }
             }
-            value->append(*TYPE_AS(String_Object, ctx.pop()));
+            str += TYPE_AS(String_Object, ctx.pop())->getValue();
         }
-        ctx.push(std::move(value));
+        ctx.push(std::make_shared<String_Object>(this->type, std::move(str)));
     }
     return EvalStatus::SUCCESS;
 }
@@ -763,7 +766,7 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
     case INT_TO_FLOAT: {
         int value = TYPE_AS(Int_Object, ctx.pop())->getValue();
         double afterValue = value;
-        if(*this->exprNode->getType() != *ctx.pool.getInt32Type()) {
+        if(*this->exprNode->getType() != *ctx.getPool().getInt32Type()) {
             afterValue = (unsigned int) value;
         }
         ctx.push(std::make_shared<Float_Object>(this->type, afterValue));
@@ -772,7 +775,7 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
     case FLOAT_TO_INT: {
         double value = TYPE_AS(Float_Object, ctx.pop())->getValue();
         int afterValue = value;
-        if(*this->type == *ctx.pool.getUint32Type()) {
+        if(*this->type == *ctx.getPool().getUint32Type()) {
             unsigned int temp = value;
             afterValue = temp;
         }
@@ -782,7 +785,7 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
     case INT_TO_LONG: {
         int value = TYPE_AS(Int_Object, ctx.pop())->getValue();
         long afterValue = (long) value;
-        if(*this->exprNode->getType() != *ctx.pool.getInt32Type()) {
+        if(*this->exprNode->getType() != *ctx.getPool().getInt32Type()) {
             afterValue = (unsigned int) value;
         }
         ctx.push(std::make_shared<Long_Object>(this->type, afterValue));
@@ -791,7 +794,7 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
     case LONG_TO_INT: {
         long value = TYPE_AS(Long_Object, ctx.pop())->getValue();
         int afterValue = value;
-        if(*this->type == *ctx.pool.getUint32Type()) {
+        if(*this->type == *ctx.getPool().getUint32Type()) {
             unsigned int temp = value;
             afterValue = temp;
         }
@@ -801,7 +804,7 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
     case LONG_TO_FLOAT: {
         long value = TYPE_AS(Long_Object, ctx.pop())->getValue();
         double afterValue = value;
-        if(*this->exprNode->getType() == *ctx.pool.getUint64Type()) {
+        if(*this->exprNode->getType() == *ctx.getPool().getUint64Type()) {
             afterValue = (unsigned long) value;
         }
         ctx.push(std::make_shared<Float_Object>(this->type, afterValue));
@@ -810,7 +813,7 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
     case FLOAT_TO_LONG: {
         double value = TYPE_AS(Float_Object, ctx.pop())->getValue();
         long afterValue = (long) value;
-        if(*this->type == *ctx.pool.getUint64Type()) {
+        if(*this->type == *ctx.getPool().getUint64Type()) {
             unsigned long temp = (unsigned long) value;
             afterValue = temp;
         }
@@ -917,11 +920,11 @@ EvalStatus InstanceOfNode::eval(RuntimeContext &ctx) {
         break;
     case ALWAYS_TRUE:
         ctx.popNoReturn();
-        ctx.push(ctx.trueObj);
+        ctx.push(ctx.getTrueObj());
         break;
     case ALWAYS_FALSE:
         ctx.popNoReturn();
-        ctx.push(ctx.falseObj);
+        ctx.push(ctx.getFalseObj());
         break;
     }
     return EvalStatus::SUCCESS;
@@ -1378,25 +1381,25 @@ public:
     void append(std::shared_ptr<DSObject> &&value) {
         DSType *type = value->getType();
         if(*type == *this->pool->getStringType()) {
-            buf += TYPE_AS(String_Object, value)->value;
+            buf += TYPE_AS(String_Object, value)->getValue();
             return;
         }
 
         if(*type == *this->pool->getStringArrayType()) {
             Array_Object *arrayObj = TYPE_AS(Array_Object, value);
-            unsigned int size = arrayObj->values.size();
+            unsigned int size = arrayObj->getValues().size();
             if(size == 1) {
-                this->buf += TYPE_AS(String_Object, arrayObj->values[0])->value;
+                this->buf += TYPE_AS(String_Object, arrayObj->getValues()[0])->getValue();
             } else for(unsigned int i = 0; i < size; i++) {
                 if(i == 0) {
-                    this->buf += TYPE_AS(String_Object, arrayObj->values[i])->value;
+                    this->buf += TYPE_AS(String_Object, arrayObj->getValues()[i])->getValue();
                     this->values.push_back(
                             std::make_shared<String_Object>(this->pool->getStringType(), std::move(this->buf)));
                     this->buf.clear();
                 } else if(i == size - 1) {
-                    this->buf += TYPE_AS(String_Object, arrayObj->values[i])->value;
+                    this->buf += TYPE_AS(String_Object, arrayObj->getValues()[i])->getValue();
                 } else {
-                    this->values.push_back(arrayObj->values[i]);
+                    this->values.push_back(arrayObj->getValues()[i]);
                 }
             }
             return;
@@ -1454,17 +1457,17 @@ EvalStatus CmdArgNode::eval(RuntimeContext &ctx) {
     if(this->segmentNodes.size() == 1) {
         EVAL(ctx, this->segmentNodes[0]);
         DSType *type = this->segmentNodes[0]->getType();
-        if(*type != *ctx.pool.getStringType() && *type != *ctx.pool.getStringArrayType()) {
+        if(*type != *ctx.getPool().getStringType() && *type != *ctx.getPool().getStringArrayType()) {
             return ctx.toCmdArg(this->lineNum);
         }
         return EvalStatus::SUCCESS;
     }
 
-    CmdArgBuilder builder(ctx.pool);
+    CmdArgBuilder builder(ctx.getPool());
     for(auto *node : this->segmentNodes) {
         EVAL(ctx, node);
         DSType *type = node->getType();
-        if(*type != *ctx.pool.getStringType() && *type != *ctx.pool.getStringArrayType()) {
+        if(*type != *ctx.getPool().getStringType() && *type != *ctx.getPool().getStringArrayType()) {
             if(ctx.toCmdArg(this->lineNum) != EvalStatus::SUCCESS) {
                 return EvalStatus::THROW;
             }
@@ -1634,11 +1637,11 @@ EvalStatus PipedCmdNode::eval(RuntimeContext &ctx) {
     }
     EvalStatus status = group.execProcs();
 
-    if(*this->type == *ctx.pool.getBooleanType()) {
-        if(ctx.exitStatus->value == 0) {
-            ctx.push(ctx.trueObj);
+    if(*this->type == *ctx.getPool().getBooleanType()) {
+        if(ctx.getExitStatus()->getValue() == 0) {
+            ctx.push(ctx.getTrueObj());
         } else {
-            ctx.push(ctx.falseObj);
+            ctx.push(ctx.getFalseObj());
         }
     }
 
@@ -1734,7 +1737,7 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
 
             std::shared_ptr<DSObject> obj;
 
-            if(*this->type == *ctx.pool.getStringType()) {  // capture stdout as String
+            if(*this->type == *ctx.getPool().getStringType()) {  // capture stdout as String
                 static const int bufSize = 256;
                 char buf[bufSize + 1];
                 int readSize = 0;
@@ -1776,7 +1779,7 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
                         case '\n': {
                             if(!str.empty()) {
                                 array->append(std::make_shared<String_Object>(
-                                        ctx.pool.getStringType(), std::move(str)));
+                                        ctx.getPool().getStringType(), std::move(str)));
                                 str = "";
                             }
                             break;
@@ -1790,7 +1793,7 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
                 }
                 if(!str.empty()) {
                     array->append(std::make_shared<String_Object>(
-                            ctx.pool.getStringType(), std::move(str)));
+                            ctx.getPool().getStringType(), std::move(str)));
                 }
 
                 obj.reset(array);
@@ -1848,7 +1851,7 @@ void AssertNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus AssertNode::eval(RuntimeContext &ctx) {
-    if (ctx.assertion) {
+    if(ctx.isAssertion()) {
         EVAL(ctx, this->condNode);
         return ctx.checkAssertion(this->condNode->getLineNum());
     }
@@ -2607,10 +2610,10 @@ EvalStatus TryNode::eval(RuntimeContext &ctx) {
         EVAL(ctx, this->finallyNode);
         return status;
     } else {   // eval catch
-        DSType *thrownType = ctx.thrownObject->getType();
+        DSType *thrownType = ctx.getThrownObject()->getType();
         for (CatchNode *catchNode : this->catchNodes) {
             if (catchNode->getExceptionType()->isAssignableFrom(thrownType)) {
-                ctx.getThrownObject();
+                ctx.pushThrownObject();
                 status = catchNode->eval(ctx);
                 // eval finally
                 EVAL(ctx, this->finallyNode);
@@ -3236,19 +3239,18 @@ void RootNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus RootNode::eval(RuntimeContext &ctx) {
-    ctx.funcContextStack.clear();
-    ctx.callStack.clear();
+    ctx.clearCallStack();
 
-    ctx.funcContextStack.push_back(this);
+    ctx.pushFuncContext(this);
     ctx.reserveGlobalVar(this->maxGVarNum);
-    ctx.stackTopIndex = this->maxVarNum;
+    ctx.reserveLocalVar(this->maxVarNum);
 
     for(auto iter = this->nodeList.begin(); iter != this->nodeList.end();) {
         Node *node = *iter;
         EvalStatus status = node->eval(ctx);
         switch(status) {
         case EvalStatus::SUCCESS: {
-            if(ctx.toplevelPrinting) {
+            if(ctx.isToplevelPrinting()) {
                 ctx.printStackTop(node->getType());
             } else if(!node->getType()->isVoidType()) {
                 ctx.popNoReturn();

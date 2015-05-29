@@ -18,29 +18,23 @@
 #define CORE_DSOBJECT_H_
 
 #include <memory>
-#include "ast/Node.h"
+#include "../ast/Node.h"
 #include "DSType.h"
-
-namespace ydsh {
-namespace ast {
-
-class FunctionNode;
-
-}
-};
 
 namespace ydsh {
 namespace  core {
 
 using namespace ydsh::ast;
 
-struct RuntimeContext;
-struct String_Object;
+class RuntimeContext;
+class String_Object;
 struct ObjectVisitor;
 
-struct DSObject {
+class DSObject {
+protected:
     DSType *type;
 
+public:
     explicit DSObject(DSType *type);
     virtual ~DSObject() = default;
 
@@ -94,9 +88,11 @@ struct DSObject {
     virtual void accept(ObjectVisitor *visitor);
 };
 
-struct Int_Object : public DSObject {
+class Int_Object : public DSObject {
+private:
     int value;
 
+public:
     Int_Object(DSType *type, int value);
     ~Int_Object() = default;
 
@@ -108,9 +104,11 @@ struct Int_Object : public DSObject {
     void accept(ObjectVisitor *visitor); // override
 };
 
-struct Long_Object : public DSObject {
+class Long_Object : public DSObject {
+private:
     long value;
 
+public:
     Long_Object(DSType *type, long value);
     ~Long_Object() = default;
 
@@ -122,9 +120,11 @@ struct Long_Object : public DSObject {
     void accept(ObjectVisitor *visitor); // override
 };
 
-struct Float_Object : public DSObject {
+class Float_Object : public DSObject {
+private:
     double value;
 
+public:
     Float_Object(DSType *type, double value);
     ~Float_Object() = default;
 
@@ -136,9 +136,11 @@ struct Float_Object : public DSObject {
     void accept(ObjectVisitor *visitor); // override
 };
 
-struct Boolean_Object : public DSObject {
+class Boolean_Object : public DSObject {
+private:
     bool value;
 
+public:
     Boolean_Object(DSType *type, bool value);
     ~Boolean_Object() = default;
 
@@ -150,9 +152,11 @@ struct Boolean_Object : public DSObject {
     void accept(ObjectVisitor *visitor); // override
 };
 
-struct String_Object : public DSObject {
+class String_Object : public DSObject {
+private:
     std::string value;
 
+public:
     String_Object(DSType *type, std::string &&value);
 
     String_Object(DSType *type, const std::string &value);
@@ -163,19 +167,18 @@ struct String_Object : public DSObject {
     const std::string &getValue();
 
     std::string toString(RuntimeContext &ctx); // override
-    void append(const String_Object &obj);
-
-    void append(const std::shared_ptr<String_Object> &obj);
 
     bool equals(const std::shared_ptr<DSObject> &obj);  // override
     size_t hash();  // override
     void accept(ObjectVisitor *visitor); // override
 };
 
-struct Array_Object : public DSObject {
+class Array_Object : public DSObject {
+private:
     unsigned int curIndex;
     std::vector<std::shared_ptr<DSObject>> values;
 
+public:
     explicit Array_Object(DSType *type);
     Array_Object(DSType *type, std::vector<std::shared_ptr<DSObject>> &&values);
     ~Array_Object() = default;
@@ -183,7 +186,13 @@ struct Array_Object : public DSObject {
     const std::vector<std::shared_ptr<DSObject>> &getValues();
 
     std::string toString(RuntimeContext &ctx); // override
-    void append(std::shared_ptr<DSObject> obj);
+    void append(std::shared_ptr<DSObject> &&obj);
+    void append(const std::shared_ptr<DSObject> &obj);
+    void set(unsigned int index, const std::shared_ptr<DSObject> &obj);
+
+    void initIterator();
+    const std::shared_ptr<DSObject> &nextElement();
+    bool hasNext();
 
     std::shared_ptr<String_Object> interp(RuntimeContext &ctx); // override
     std::shared_ptr<DSObject> commandArg(RuntimeContext &ctx); // override
@@ -201,10 +210,12 @@ struct GenHash {
 
 typedef std::unordered_map<std::shared_ptr<DSObject>, std::shared_ptr<DSObject>, GenHash, KeyCompare> HashMap;
 
-struct Map_Object : public DSObject {
+class Map_Object : public DSObject {
+private:
     HashMap valueMap;
     HashMap::const_iterator iter;
 
+public:
     explicit Map_Object(DSType *type);
     ~Map_Object() = default;
 
@@ -220,7 +231,7 @@ struct Map_Object : public DSObject {
     void accept(ObjectVisitor *visitor); // override
 };
 
-struct BaseObject : public DSObject {
+class BaseObject : public DSObject {
 protected:
     std::shared_ptr<DSObject> *fieldTable;
 
@@ -247,16 +258,19 @@ struct Tuple_Object : public BaseObject {
     void accept(ObjectVisitor *visitor); // override
 };
 
-struct Error_Object : public DSObject {
+class Error_Object : public DSObject {
+private:
     std::shared_ptr<DSObject> message;
     std::vector<std::string> stackTrace;
 
+public:
     Error_Object(DSType *type, const std::shared_ptr<DSObject> &message);
     Error_Object(DSType *type, std::shared_ptr<DSObject> &&message);
     ~Error_Object() = default;
 
     std::string toString(RuntimeContext &ctx); // override
-    void createStackTrace(RuntimeContext &ctx);
+
+    const std::shared_ptr<DSObject> &getMessage();
 
     /**
      * print stack trace to stderr
@@ -273,6 +287,9 @@ struct Error_Object : public DSObject {
 
     static Error_Object *newError(RuntimeContext &ctx, DSType *type,
                                   std::shared_ptr<DSObject> &&message);
+
+private:
+    void createStackTrace(RuntimeContext &ctx);
 };
 
 struct DummyObject : public DSObject {
@@ -310,9 +327,11 @@ struct FuncObject : public DSObject {
 /*
  * for user defined function
  */
-struct UserFuncObject : public FuncObject {
+class UserFuncObject : public FuncObject {
+private:
     FunctionNode *funcNode;
 
+public:
     explicit UserFuncObject(FunctionNode *funcNode);
 
     ~UserFuncObject();
@@ -327,12 +346,14 @@ struct UserFuncObject : public FuncObject {
 /**
  * for builtin(native) function
  */
-struct BuiltinFuncObject : public FuncObject {
+class BuiltinFuncObject : public FuncObject {
+private:
     /**
      * bool func(RuntimeContext &ctx)
      */
     native_func_t func_ptr;
 
+public:
     explicit BuiltinFuncObject(native_func_t func_ptr);
 
     ~BuiltinFuncObject() = default;
@@ -352,8 +373,7 @@ struct BuiltinFuncObject : public FuncObject {
 /**
  * reference of method. for method call, constructor call.
  */
-class MethodRef {
-public:
+struct MethodRef {
     MethodRef() = default;
     virtual ~MethodRef() = default;
 

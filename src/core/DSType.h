@@ -32,14 +32,14 @@ namespace core {
 
 struct TypeVisitor;
 
-struct DSObject;
+class DSObject;
 struct FuncObject;
-class MethodRef;
+struct MethodRef;
 
 class FieldHandle;
 class MethodHandle;
 
-struct RuntimeContext;
+class RuntimeContext;
 typedef bool (*native_func_t)(RuntimeContext &);
 
 class DSType {

@@ -19,7 +19,7 @@
 namespace ydsh {
 
 Shell::Shell(char **envp) :
-        ctx(envp), parser(), checker(&this->ctx.pool), lineNum(1),
+        ctx(envp), parser(), checker(&this->ctx.getPool()), lineNum(1),
         listener(&clistener), dumpUntypedAST(false),
         dumpTypedAST(false), parseOnly(false) {
     this->initBuiltinVar();
@@ -49,10 +49,9 @@ unsigned int Shell::getLineNum() {
 
 void Shell::setArguments(const std::vector<const char *> &args) {
     unsigned int size = args.size();
-    this->ctx.scriptName->value = args[0];
+    this->ctx.setScriptName(args[0]);
     for(unsigned int i = 1; i < size; i++) {
-        this->ctx.scriptArgs->values.push_back(
-                std::make_shared<String_Object>( this->ctx.pool.getStringType(), std::string(args[i])));
+        this->ctx.addScriptArg(args[i]);
     }
 }
 
@@ -69,19 +68,19 @@ void Shell::setParseOnly(bool parseOnly) {
 }
 
 void Shell::setAssertion(bool assertion) {
-    this->ctx.assertion = assertion;
+    this->ctx.setAssertion(assertion);
 }
 
 void Shell::setToplevelprinting(bool print) {
-    this->ctx.toplevelPrinting = print;
+    this->ctx.setToplevelPrinting(print);
 }
 
 const std::string &Shell::getWorkingDir() {
-    return this->ctx.workingDir;
+    return this->ctx.getWorkingDir();
 }
 
 int Shell::getExitStatus() {
-    return this->ctx.exitStatus->value;
+    return this->ctx.getExitStatus()->getValue();
 }
 
 CommonErrorListener Shell::clistener;
@@ -98,7 +97,7 @@ ShellStatus Shell::eval(const char *sourceName, Lexer<LexerDef, TokenKind> &lexe
 
         if(this->dumpUntypedAST) {
             std::cout << "### dump untyped AST ###" << std::endl;
-            dumpAST(std::cout, this->ctx.pool, rootNode);
+            dumpAST(std::cout, this->ctx.getPool(), rootNode);
             std::cout << std::endl;
         }
     } catch(const ParseError &e) {
@@ -113,7 +112,7 @@ ShellStatus Shell::eval(const char *sourceName, Lexer<LexerDef, TokenKind> &lexe
 
         if(this->dumpTypedAST) {
             std::cout << "### dump typed AST ###" << std::endl;
-            dumpAST(std::cout, this->ctx.pool, rootNode);
+            dumpAST(std::cout, this->ctx.getPool(), rootNode);
             std::cout << std::endl;
         }
     } catch(const TypeCheckError &e) {
@@ -144,20 +143,20 @@ ShellStatus Shell::eval(const char *sourceName, Lexer<LexerDef, TokenKind> &lexe
 void Shell::initBuiltinVar() {
     RootNode rootNode;
     // register boolean
-    rootNode.addNode(new BindVarNode("TRUE", this->ctx.trueObj));
-    rootNode.addNode(new BindVarNode("True", this->ctx.trueObj));
-    rootNode.addNode(new BindVarNode("true", this->ctx.trueObj));
-    rootNode.addNode(new BindVarNode("FALSE", this->ctx.falseObj));
-    rootNode.addNode(new BindVarNode("False", this->ctx.falseObj));
-    rootNode.addNode(new BindVarNode("false", this->ctx.falseObj));
+    rootNode.addNode(new BindVarNode("TRUE", this->ctx.getTrueObj()));
+    rootNode.addNode(new BindVarNode("True", this->ctx.getTrueObj()));
+    rootNode.addNode(new BindVarNode("true", this->ctx.getTrueObj()));
+    rootNode.addNode(new BindVarNode("FALSE", this->ctx.getFalseObj()));
+    rootNode.addNode(new BindVarNode("False", this->ctx.getFalseObj()));
+    rootNode.addNode(new BindVarNode("false", this->ctx.getFalseObj()));
 
     // register special char
-    rootNode.addNode(new BindVarNode("0", this->ctx.scriptName));
-    rootNode.addNode(new BindVarNode("@", this->ctx.scriptArgs));
-    rootNode.addNode(new BindVarNode("?", this->ctx.exitStatus));
+    rootNode.addNode(new BindVarNode("0", this->ctx.getScriptName()));
+    rootNode.addNode(new BindVarNode("@", this->ctx.getScriptArgs()));
+    rootNode.addNode(new BindVarNode("?", this->ctx.getExitStatus()));
 
     // register DBus management object
-    rootNode.addNode(new BindVarNode("DBus",this->ctx.dbus));
+    rootNode.addNode(new BindVarNode("DBus",this->ctx.getDBus()));
 
     // set alias
     rootNode.addNode(new TypeAliasNode("Int", "Int32"));

@@ -19,6 +19,7 @@
 
 #include <unistd.h>
 #include <dirent.h>
+#include <cstdlib>
 
 /**
  * get current working directory. return empty string, if error happened.
