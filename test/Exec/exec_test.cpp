@@ -8,13 +8,12 @@
 #define EXEC_TEST_DIR "."
 #endif
 
-#ifndef EXEC_TEST_BIN
-#define EXEC_TEST_BIN "./ydsh"
-#endif
+using namespace ydsh;
 
 class ExecTest : public ::testing::TestWithParam<const char *> {
 private:
     std::string targetName;
+    Shell shell;
 
 public:
     ExecTest() = default;
@@ -37,13 +36,13 @@ public:
     virtual void doTest() {
         SCOPED_TRACE("");
 
-        std::string cmd;
-        cmd += EXEC_TEST_BIN;
-        cmd += " ";
-        cmd += this->getSourceName();
+        const char *scriptName = this->getSourceName().c_str();
+        FILE *fp = fopen(scriptName, "r");
+        ASSERT_TRUE(fp != nullptr);
 
-        int status = system(cmd.c_str());
-        ASSERT_EQ(0, status);
+        ShellStatus status = this->shell.eval(scriptName, fp);
+
+        ASSERT_EQ(ShellStatus::SUCCESS, status);
     }
 };
 
