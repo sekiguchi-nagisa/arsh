@@ -238,16 +238,15 @@ public:
     /**
      * pop and set to throwObject
      */
-    void setThrowObject() {
-        this->thrownObject = this->pop();
+    void storeThrowObject() {
+        this->thrownObject = std::move(this->pop());
     }
 
     /**
      * get thrownObject and push to localStack
      */
-    void pushThrownObject() {
-        this->push(this->thrownObject);
-        this->thrownObject.reset();
+    void loadThrownObject() {
+        this->push(std::move(this->thrownObject));
     }
 
     void expandLocalStack(unsigned int needSize);
@@ -285,7 +284,7 @@ public:
         this->localStack[this->stackTopIndex--].reset();
     }
 
-    const std::shared_ptr<DSObject> peek() {
+    const std::shared_ptr<DSObject> &peek() {
         return this->localStack[this->stackTopIndex];
     }
 
@@ -310,42 +309,42 @@ public:
     }
 
     // variable manipulation
-    void setGlobal(unsigned int index) {
-        this->globalVarTable[index] = this->pop();
+    void storeGlobal(unsigned int index) {
+        this->globalVarTable[index] = std::move(this->pop());
     }
 
-    void setGlobal(unsigned int index, const std::shared_ptr<DSObject> &obj) {
+    void storeGlobal(unsigned int index, const std::shared_ptr<DSObject> &obj) {
         this->globalVarTable[index] = obj;
     }
 
-    void getGlobal(unsigned int index) {
+    void loadGlobal(unsigned int index) {
         this->push(this->globalVarTable[index]);
     }
 
-    void setLocal(unsigned int index) {
-        this->localStack[this->localVarOffset + index] = this->pop();
+    void storeLocal(unsigned int index) {
+        this->localStack[this->localVarOffset + index] = std::move(this->pop());
     }
 
-    void setLocal(unsigned int index, std::shared_ptr<DSObject> &&obj) {
-        this->localStack[this->localVarOffset + index] = obj;
+    void storeLocal(unsigned int index, std::shared_ptr<DSObject> &&obj) {
+        this->localStack[this->localVarOffset + index] = std::move(obj);
     }
 
-    void getLocal(unsigned int index) {
+    void loadLocal(unsigned int index) {
         this->push(this->localStack[this->localVarOffset + index]);
     }
 
-    const std::shared_ptr<DSObject> &GetLocal(unsigned int index) {
+    const std::shared_ptr<DSObject> &getLocal(unsigned int index) {
         return this->localStack[this->localVarOffset + index];
     }
 
     // field manipulation
 
-    void setField(unsigned int index) {
+    void storeField(unsigned int index) {
         std::shared_ptr<DSObject> value(this->pop());
         this->pop()->getFieldTable()[index] = std::move(value);
     }
 
-    EvalStatus setField(DSType *recvType, const std::string &fieldName, DSType *fieldType) {
+    EvalStatus storeField(DSType *recvType, const std::string &fieldName, DSType *fieldType) {
         bool status = TYPE_AS(ProxyObject, this->localStack[this->stackTopIndex - 1])->
                 invokeSetter(*this, recvType, fieldName, fieldType);
         // pop receiver
@@ -356,12 +355,12 @@ public:
     /**
      * get field from stack top value.
      */
-    void getField(unsigned int index) {
+    void loadField(unsigned int index) {
         this->localStack[this->stackTopIndex] =
                 this->localStack[this->stackTopIndex]->getFieldTable()[index];
     }
 
-    EvalStatus getField(DSType *recvType, const std::string &fieldName, DSType *fieldType) {
+    EvalStatus loadField(DSType *recvType, const std::string &fieldName, DSType *fieldType) {
         bool status = TYPE_AS(ProxyObject, this->pop())->
                 invokeGetter(*this, recvType, fieldName, fieldType);
         return status ? EvalStatus::SUCCESS : EvalStatus::THROW;
@@ -370,11 +369,11 @@ public:
     /**
      * dup stack top value and get field from it.
      */
-    void dupAndGetField(unsigned int index) {
+    void dupAndLoadField(unsigned int index) {
         this->push(this->peek()->getFieldTable()[index]);
     }
 
-    EvalStatus dupAndGetField(DSType *recvType, const std::string &fieldName, DSType *fieldType) {
+    EvalStatus dupAndLoadField(DSType *recvType, const std::string &fieldName, DSType *fieldType) {
         bool status = TYPE_AS(ProxyObject, this->localStack[this->stackTopIndex])->
                 invokeGetter(*this, recvType, fieldName, fieldType);
         return status ? EvalStatus::SUCCESS : EvalStatus::THROW;

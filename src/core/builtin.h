@@ -23,7 +23,7 @@
 #include <math.h>
 
 // helper macro
-#define LOCAL(index) (ctx.GetLocal(index))
+#define LOCAL(index) (ctx.getLocal(index))
 #define RET(value) do { ctx.push(value); return true; } while(0)
 #define RET_BOOL(value) do { ctx.push((value) ? ctx.getTrueObj() : ctx.getFalseObj()); return true; } while(0)
 
@@ -817,7 +817,7 @@ static inline bool string_add(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_add);
 
     // cats LOCAL(1) to string
-    ctx.getLocal(1);
+    ctx.loadLocal(1);
     if(ctx.toString(0) != EvalStatus::SUCCESS) {
         return false;
     }
@@ -890,7 +890,7 @@ static inline bool objectpath_size(RuntimeContext &ctx) {
 static inline bool array_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_init);
     DSType *type = LOCAL(0)->getType();
-    ctx.setLocal(0, std::make_shared<Array_Object>(type));
+    ctx.storeLocal(0, std::make_shared<Array_Object>(type));
     return true;
 }
 
@@ -990,7 +990,7 @@ static inline bool array_hasNext(RuntimeContext &ctx) {
 static inline bool map_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_init);
     DSType *type = LOCAL(0)->getType();
-    ctx.setLocal(0, std::make_shared<Map_Object>(type));
+    ctx.storeLocal(0, std::make_shared<Map_Object>(type));
     return true;
 }
 
@@ -1067,7 +1067,7 @@ static inline bool map_hasNext(RuntimeContext &ctx) {
 static inline bool tuple_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(tuple_init);
     DSType *type = LOCAL(0)->getType();
-    ctx.setLocal(0, std::make_shared<Tuple_Object>(type));
+    ctx.storeLocal(0, std::make_shared<Tuple_Object>(type));
     TYPE_AS(Tuple_Object, LOCAL(0))->set(0, LOCAL(1));
     return true;
 }
@@ -1081,7 +1081,7 @@ static inline bool tuple_init(RuntimeContext &ctx) {
 static inline bool error_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(error_init);
     DSType *type = LOCAL(0)->getType();
-    ctx.setLocal(0, std::shared_ptr<DSObject>(Error_Object::newError(ctx, type, LOCAL(1))));
+    ctx.storeLocal(0, std::shared_ptr<DSObject>(Error_Object::newError(ctx, type, LOCAL(1))));
     return true;
 }
 

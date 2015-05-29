@@ -286,7 +286,7 @@ void RuntimeContext::reportError() {
         if(this->handle_bt == nullptr) {
             this->handle_bt = this->pool.getErrorType()->lookupMethodHandle(&this->pool, methodName);
         }
-        this->pushThrownObject();
+        this->loadThrownObject();
         this->callMethod(0, methodName, this->handle_bt);
     } else {
         std::cerr << this->thrownObject->toString(*this) << std::endl;

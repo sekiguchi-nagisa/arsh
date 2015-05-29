@@ -252,7 +252,7 @@ static void appendArg(RuntimeContext &ctx, DBusMessageIter *iter,
 
 static void appendArg(RuntimeContext &ctx, DBusMessageIter *iter,
                       DSType *argType, unsigned int index) {
-    appendArg(ctx, iter, argType, ctx.GetLocal(index));
+    appendArg(ctx, iter, argType, ctx.getLocal(index));
 }
 
 
@@ -401,7 +401,7 @@ bool DBus_ObjectImpl::getSessionBus(RuntimeContext &ctx) {
 
 bool DBus_ObjectImpl::waitSignal(RuntimeContext &ctx) {
     std::vector<DBusProxy_Object *> proxies;
-    proxies.push_back(TYPE_AS(DBusProxy_Object, ctx.GetLocal(1)));
+    proxies.push_back(TYPE_AS(DBusProxy_Object, ctx.getLocal(1)));
 
     // add signal match rule
     DBusConnection *conn =
@@ -620,7 +620,7 @@ bool DBusProxy_Object::invokeMethod(RuntimeContext &ctx, const std::string &meth
     // check signal
     if(handle->isSignal()) {
         this->addHandler(ctx.getPool().getTypeName(*handle->getRecvType()),
-                         methodName, ctx.GetLocal(1));
+                         methodName, ctx.getLocal(1));
         return true;
     }
 

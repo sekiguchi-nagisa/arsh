@@ -572,9 +572,9 @@ void VarNode::accept(NodeVisitor *visitor) {
 
 EvalStatus VarNode::eval(RuntimeContext &ctx) {
     if (this->isGlobal()) {
-        ctx.getGlobal(this->getIndex());
+        ctx.loadGlobal(this->getIndex());
     } else {
-        ctx.getLocal(this->getIndex());
+        ctx.loadLocal(this->getIndex());
     }
     if (this->type != 0 && this->type->isFuncType()) {
         ctx.peek()->setType(this->type);
@@ -647,10 +647,10 @@ EvalStatus AccessNode::eval(RuntimeContext &ctx) {
     switch (this->additionalOp) {
     case NOP: {
         if(this->withinInterface()) {
-            return ctx.getField(this->recvNode->getType(), this->fieldName, this->type);
+            return ctx.loadField(this->recvNode->getType(), this->fieldName, this->type);
         }
 
-        ctx.getField(this->getIndex());
+        ctx.loadField(this->getIndex());
         if (this->type != 0 && this->type->isFuncType()) {
             ctx.peek()->setType(this->type);
         }
@@ -658,10 +658,10 @@ EvalStatus AccessNode::eval(RuntimeContext &ctx) {
     }
     case DUP_RECV: {
         if(this->withinInterface()) {
-            return ctx.dupAndGetField(this->recvNode->getType(), this->fieldName, this->type);
+            return ctx.dupAndLoadField(this->recvNode->getType(), this->fieldName, this->type);
         }
 
-        ctx.dupAndGetField(this->getIndex());
+        ctx.dupAndLoadField(this->getIndex());
         if (this->type != 0 && this->type->isFuncType()) {
             ctx.peek()->setType(this->type);
         }
@@ -2465,7 +2465,7 @@ void ThrowNode::accept(NodeVisitor *visitor) {
 
 EvalStatus ThrowNode::eval(RuntimeContext &ctx) {
     EVAL(ctx, this->exprNode);
-    ctx.setThrowObject();
+    ctx.storeThrowObject();
     return EvalStatus::THROW;
 }
 
@@ -2534,7 +2534,7 @@ void CatchNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus CatchNode::eval(RuntimeContext &ctx) {
-    ctx.setLocal(this->varIndex);
+    ctx.storeLocal(this->varIndex);
     EVAL(ctx, this->blockNode);
     return EvalStatus::SUCCESS;
 }
@@ -2613,7 +2613,7 @@ EvalStatus TryNode::eval(RuntimeContext &ctx) {
         DSType *thrownType = ctx.getThrownObject()->getType();
         for (CatchNode *catchNode : this->catchNodes) {
             if (catchNode->getExceptionType()->isAssignableFrom(thrownType)) {
-                ctx.pushThrownObject();
+                ctx.loadThrownObject();
                 status = catchNode->eval(ctx);
                 // eval finally
                 EVAL(ctx, this->finallyNode);
@@ -2681,9 +2681,9 @@ void VarDeclNode::accept(NodeVisitor *visitor) {
 EvalStatus VarDeclNode::eval(RuntimeContext &ctx) {
     EVAL(ctx, this->initValueNode);
     if (this->global) {
-        ctx.setGlobal(this->varIndex);
+        ctx.storeGlobal(this->varIndex);
     } else {
-        ctx.setLocal(this->varIndex);
+        ctx.storeLocal(this->varIndex);
     }
     return EvalStatus::SUCCESS;
 }
@@ -2765,10 +2765,10 @@ EvalStatus AssignNode::eval(RuntimeContext &ctx) {
 
         if(assignableNode->withinInterface()) {
             AccessNode *accessNode = static_cast<AccessNode *>(this->leftNode);
-            return ctx.setField(accessNode->getRecvNode()->getType(),
-                                accessNode->getFieldName(), accessNode->getType());
+            return ctx.storeField(accessNode->getRecvNode()->getType(),
+                                  accessNode->getFieldName(), accessNode->getType());
         }
-        ctx.setField(index);
+        ctx.storeField(index);
     } else {
         if (this->isSelfAssignment()) {
             EVAL(ctx, this->leftNode);
@@ -2780,9 +2780,9 @@ EvalStatus AssignNode::eval(RuntimeContext &ctx) {
             ctx.exportEnv(varNode->getVarName(), index, varNode->isGlobal());
         } else {
             if (varNode->isGlobal()) {
-                ctx.setGlobal(index);
+                ctx.storeGlobal(index);
             } else {
-                ctx.setLocal(index);
+                ctx.storeLocal(index);
             }
         }
     }
@@ -3014,7 +3014,7 @@ void FunctionNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus FunctionNode::eval(RuntimeContext &ctx) {
-    ctx.setGlobal(this->varIndex, std::shared_ptr<DSObject>(new UserFuncObject(this)));
+    ctx.storeGlobal(this->varIndex, std::shared_ptr<DSObject>(new UserFuncObject(this)));
     return EvalStatus::REMOVE;
 }
 
@@ -3129,7 +3129,7 @@ void BindVarNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus BindVarNode::eval(RuntimeContext &ctx) {
-    ctx.setGlobal(this->varIndex, this->value);
+    ctx.storeGlobal(this->varIndex, this->value);
     return EvalStatus::SUCCESS;
 }
 
