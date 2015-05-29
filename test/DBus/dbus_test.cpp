@@ -7,37 +7,17 @@ using namespace ydsh::core;
 
 class DescriptorTest : public ::testing::Test {
 public:
-    char **env;
     TypePool *pool;
-    BaseTypeDescriptorMap *map;
-    DescriptorBuilder *builder;
+    BaseTypeDescriptorMap map;
+    DescriptorBuilder builder;
 
-    DescriptorTest() :  env(0), pool(0), map(0), builder(0) {
-        static char env1[] = "HOME=/home/hoge";
-        static char env2[] = "PATH=/bin";
-
-        this->env = new char*[3];
-        this->env[0] = env1;
-        this->env[1] = env2;
-        this->env[2] = nullptr;
-
-        this->pool = new TypePool(this->env);
-        this->map = new BaseTypeDescriptorMap(this->pool);
-        this->builder = new DescriptorBuilder(this->pool, this->map);
+    DescriptorTest() :
+            pool(new TypePool()), map(this->pool), builder(this->pool, &this->map) {
     }
 
     virtual ~DescriptorTest() {
-        delete[] this->env;
-        this->env = 0;
-
         delete this->pool;
         this->pool = 0;
-
-        delete this->map;
-        this->map = 0;
-
-        delete this->builder;
-        this->builder = 0;
     }
 
     virtual void SetUp() {
@@ -109,7 +89,7 @@ public:
 
     virtual void assertDesc(const char *expected, DSType *type) {
         ASSERT_TRUE(type != nullptr);
-        const char *actual = this->builder->buildDescriptor(type);
+        const char *actual = this->builder.buildDescriptor(type);
         ASSERT_STREQ(expected, actual);
     }
 };

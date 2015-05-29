@@ -18,8 +18,8 @@
 
 namespace ydsh {
 
-Shell::Shell(char **envp) :
-        ctx(envp), parser(), checker(&this->ctx.getPool()), lineNum(1),
+Shell::Shell() :
+        ctx(), parser(), checker(&this->ctx.getPool()), lineNum(1),
         listener(&clistener), dumpUntypedAST(false),
         dumpTypedAST(false), parseOnly(false) {
     this->initBuiltinVar();

@@ -156,7 +156,7 @@ public:
     static const char *typeDefDir;
 
 public:
-    explicit RuntimeContext(char **envp);
+    RuntimeContext();
 
     ~RuntimeContext();
 

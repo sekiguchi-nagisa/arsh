@@ -78,7 +78,7 @@ static void evalAndExit(Shell &shell, const char *sourceName, FILE *fp) {
     }
 }
 
-int main(int argc, char **argv, char **envp) {
+int main(int argc, char **argv) {
     args::ArgsParser<OptionKind> parser;
 
     parser.addOption(
@@ -142,7 +142,7 @@ int main(int argc, char **argv, char **envp) {
         return 1;
     }
 
-    ydsh::Shell shell(envp);
+    ydsh::Shell shell;
 
     for(auto &cmdLine : cmdLines) {
         switch(cmdLine.first) {

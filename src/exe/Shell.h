@@ -60,10 +60,7 @@ private:
     bool parseOnly;
 
 public:
-    /**
-     * envp is the pointer of environment variable.
-     */
-    explicit Shell(char **envp);
+    Shell();
     ~Shell() = default;
 
     ShellStatus eval(const char *line);

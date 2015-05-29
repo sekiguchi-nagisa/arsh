@@ -182,11 +182,6 @@ private:
      */
     DSType *stringArrayType;
 
-    /**
-     * not delete.
-     */
-    char **envp;
-
     std::unordered_set<std::string> envSet;
     std::vector<const std::string *> envCache;
 
@@ -196,10 +191,7 @@ private:
     std::unordered_map<unsigned long, int> precisionMap;
 
 public:
-    /**
-     * must not be null.
-     */
-    explicit TypePool(char **envp);
+    TypePool();
 
     ~TypePool();
 

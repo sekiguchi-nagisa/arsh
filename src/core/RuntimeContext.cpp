@@ -30,8 +30,8 @@ namespace core {
 #define DEFAULT_TABLE_SIZE 32
 #define DEFAULT_LOCAL_SIZE 256
 
-RuntimeContext::RuntimeContext(char **envp) :
-        pool(envp),
+RuntimeContext::RuntimeContext() :
+        pool(),
         trueObj(new Boolean_Object(this->pool.getBooleanType(), true)),
         falseObj(new Boolean_Object(this->pool.getBooleanType(), false)),
         dummy(new DummyObject()),

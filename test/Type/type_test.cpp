@@ -12,26 +12,13 @@ using namespace ydsh::ast;
 
 class TypeTest : public ::testing::Test {
 public:
-    char **env;
     TypePool *pool;
 
 public:
-    TypeTest() : env(0), pool(0) {
-        static char env1[] = "HOME=/home/hoge";
-        static char env2[] = "PATH=/bin";
-
-        this->env = new char*[3];
-        this->env[0] = env1;
-        this->env[1] = env2;
-        this->env[2] = nullptr;
-
-        this->pool = new TypePool(this->env);
+    TypeTest() : pool(new TypePool()) {
     }
 
     virtual ~TypeTest() {
-        delete[] this->env;
-        this->env = 0;
-
         delete this->pool;
         this->pool = 0;
     }

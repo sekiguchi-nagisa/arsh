@@ -24,6 +24,8 @@
 #include "../parser/TypeChecker.h"
 #include "RuntimeContext.h"
 
+extern char **environ;
+
 namespace ydsh {
 namespace core {
 
@@ -125,7 +127,7 @@ void TypeMap::removeType(const std::string &typeName) {
 // ##     TypePool     ##
 // ######################
 
-TypePool::TypePool(char **envp) :
+TypePool::TypePool() :
         typeMap(),
         anyType(), voidType(), variantType(), valueType(),
         byteType(), int16Type(), uint16Type(),
@@ -138,7 +140,7 @@ TypePool::TypePool(char **envp) :
         keyNotFoundErrorType(), typeCastErrorType(),
         templateMap(8),
         arrayTemplate(), mapTemplate(), tupleTemplate(),
-        stringArrayType(), envp(envp), envSet(), envCache(), precisionMap() {
+        stringArrayType(), envSet(), envCache(), precisionMap() {
 
     // initialize type
     this->anyType = this->initBuiltinType("Any", true, 0, info_AnyType());
@@ -450,8 +452,8 @@ void TypePool::abort() {
 }
 
 void TypePool::initEnvSet() {
-    for(unsigned int i = 0; this->envp[i] != NULL; i++) {
-        char *env = this->envp[i];
+    for(unsigned int i = 0; environ[i] != NULL; i++) {
+        char *env = environ[i];
         std::string str;
         for(unsigned int j = 0; env[j] != '\0'; j++) {
             char ch = env[j];
