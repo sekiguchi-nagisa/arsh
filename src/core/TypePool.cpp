@@ -35,10 +35,6 @@ using namespace ydsh::ast;
 // ##     TypeMap     ##
 // #####################
 
-TypeMap::TypeMap() :
-        typeMapImpl(), typeNameMap(), typeCache() {
-}
-
 TypeMap::~TypeMap() {
     for(auto pair : this->typeMapImpl) {
         if(!isAlias(pair.second)) {
@@ -78,14 +74,14 @@ const std::string &TypeMap::getTypeName(const DSType &type) {
     return *iter->second;
 }
 
-bool TypeMap::setAlias(const std::string &alias, DSType *targetType) {
+bool TypeMap::setAlias(std::string &&alias, DSType *targetType) {
     static const unsigned long tag = 1L << 63;
 
     /**
      * use tagged pointer to prevent double free.
      */
     DSType *taggedPtr = (DSType *) (tag | (unsigned long) targetType);
-    auto pair = this->typeMapImpl.insert(std::make_pair(alias, taggedPtr));
+    auto pair = this->typeMapImpl.insert(std::make_pair(std::move(alias), taggedPtr));
     this->typeCache.push_back(&pair.first->first);
     return pair.second;
 }
@@ -137,7 +133,7 @@ TypePool::TypePool() :
         objectPathType(), unixFDType(), proxyType(),
         dbusType(), busType(), serviceType(), dbusObjectType(),
         arithmeticErrorType(), outOfRangeErrorType(),
-        keyNotFoundErrorType(), typeCastErrorType(),
+        keyNotFoundErrorType(), typeCastErrorType(), dbusErrorType(),
         templateMap(8),
         arrayTemplate(), mapTemplate(), tupleTemplate(),
         stringArrayType(), envSet(), envCache(), precisionMap() {
@@ -209,6 +205,7 @@ TypePool::TypePool() :
     this->outOfRangeErrorType = this->initErrorType("OutOfRangeError", this->errorType);
     this->keyNotFoundErrorType = this->initErrorType("KeyNotFoundError", this->errorType);
     this->typeCastErrorType = this->initErrorType("TypeCastError", this->errorType);
+    this->dbusErrorType = this->initErrorType("DBusError", this->errorType);
 
     // commit generated type
     this->typeMap.commit();
@@ -335,7 +332,11 @@ DSType *TypePool::getDBusInterfaceType(const std::string &typeName) {
 }
 
 void TypePool::setAlias(const std::string &alias, DSType *targetType) {
-    if(!this->typeMap.setAlias(alias, targetType)) {
+    this->setAlias(alias.c_str(), targetType);
+}
+
+void TypePool::setAlias(const char *alias, DSType *targetType) {
+    if(!this->typeMap.setAlias(std::string(alias), targetType)) {
         E_DefinedType(alias);
     }
 }

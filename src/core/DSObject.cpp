@@ -502,11 +502,11 @@ void Tuple_Object::accept(ObjectVisitor *visitor) {
 // ##########################
 
 Error_Object::Error_Object(DSType *type, const std::shared_ptr<DSObject> &message) :
-        DSObject(type), message(message), stackTrace() {
+        DSObject(type), message(message), name(), stackTrace() {
 }
 
 Error_Object::Error_Object(DSType *type, std::shared_ptr<DSObject> &&message) :
-        DSObject(type), message(std::move(message)), stackTrace() {
+        DSObject(type), message(std::move(message)), name(), stackTrace() {
 }
 
 std::string Error_Object::toString(RuntimeContext &ctx) {
@@ -531,6 +531,14 @@ void Error_Object::printStackTrace(RuntimeContext &ctx) {
     for(const std::string &s : this->stackTrace) {
         std::cerr << "    " << s << std::endl;
     }
+}
+
+const std::shared_ptr<DSObject> &Error_Object::getName(RuntimeContext &ctx) {
+    if(!this->name) {
+        this->name = std::make_shared<String_Object>(
+                ctx.getPool().getStringType(), ctx.getPool().getTypeName(*this->type));
+    }
+    return this->name;
 }
 
 void Error_Object::accept(ObjectVisitor *visitor) {

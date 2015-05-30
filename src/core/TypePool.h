@@ -42,7 +42,7 @@ private:
     std::vector<const std::string *> typeCache;
 
 public:
-    TypeMap();
+    TypeMap() = default;
     ~TypeMap();
 
     /**
@@ -63,7 +63,7 @@ public:
     /**
      * return false, if duplicated
      */
-    bool setAlias(const std::string &alias, DSType *targetType);
+    bool setAlias(std::string &&alias, DSType *targetType);
 
     /**
      * clear typeCache.
@@ -162,6 +162,7 @@ private:
     DSType *outOfRangeErrorType;
     DSType *keyNotFoundErrorType;
     DSType *typeCastErrorType;
+    DSType *dbusErrorType;
 
     /**
      * for type template
@@ -328,6 +329,10 @@ public:
         return this->typeCastErrorType;
     }
 
+    DSType *getDBusErrorType() const {
+        return this->dbusErrorType;
+    }
+
     // for reified type.
     TypeTemplate *getArrayTemplate() const {
         return this->arrayTemplate;
@@ -384,6 +389,8 @@ public:
      * set type name alias. if alias name has already defined, report error.
      */
     void setAlias(const std::string &alias, DSType *targetType);
+
+    void setAlias(const char *alias, DSType *targetType);
 
     const std::string &getTypeName(const DSType &type);
 

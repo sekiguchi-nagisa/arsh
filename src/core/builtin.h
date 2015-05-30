@@ -1103,6 +1103,12 @@ static inline bool error_backtrace(RuntimeContext &ctx) {
     return true;
 }
 
+//!bind: function name($this : Error) : String
+static inline bool error_name(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(error_name);
+    RET(TYPE_AS(Error_Object, LOCAL(0))->getName(ctx));
+}
+
 // ##################
 // ##     DBus     ##
 // ##################

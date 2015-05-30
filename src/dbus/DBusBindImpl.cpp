@@ -25,15 +25,15 @@ namespace ydsh {
 namespace core {
 
 // helper util
-static void reportError(RuntimeContext &ctx, DBusError &error) {
+static void reportDBusError(RuntimeContext &ctx, DBusError &error) {
     std::string name(error.name);
-    DSType *type = ctx.getPool().createAndGetErrorTypeIfUndefined(name, ctx.getPool().getErrorType());
+    DSType *type = ctx.getPool().createAndGetErrorTypeIfUndefined(name, ctx.getPool().getDBusErrorType());
     ctx.throwError(type, error.message);
 }
 
-static void reportError(RuntimeContext &ctx, const char *dbusErrorName, const char *message) {
+static void reportDBusError(RuntimeContext &ctx, const char *dbusErrorName, const char *message) {
     std::string name(dbusErrorName);
-    DSType *type = ctx.getPool().createAndGetErrorTypeIfUndefined(name, ctx.getPool().getErrorType());
+    DSType *type = ctx.getPool().createAndGetErrorTypeIfUndefined(name, ctx.getPool().getDBusErrorType());
     ctx.throwError(type, message);
 }
 
@@ -203,13 +203,13 @@ static bool decodeAndUnrefMessage(std::vector<std::shared_ptr<DSObject>> &values
     // check type
     unsigned int size = values.size();
     if(types.size() != size) {
-        reportError(ctx, DBUS_ERROR_INVALID_SIGNATURE, "mismatched return value number");
+        reportDBusError(ctx, DBUS_ERROR_INVALID_SIGNATURE, "mismatched return value number");
         return false;
     }
 
     for(unsigned int i = 0; i < size; i++) {
         if(*values[i]->getType() != *types[i]) {
-            reportError(ctx, DBUS_ERROR_INVALID_SIGNATURE, "mismatched return value type");
+            reportDBusError(ctx, DBUS_ERROR_INVALID_SIGNATURE, "mismatched return value type");
             return false;
         }
     }
@@ -267,7 +267,7 @@ static DBusMessage *sendAndUnrefMessage(RuntimeContext &ctx,
     unrefMessage(sendMsg);
 
     if(dbus_error_is_set(&error)) {
-        reportError(ctx, error);
+        reportDBusError(ctx, error);
 
         dbus_error_free(&error);
         unrefMessage(retMsg);
@@ -299,7 +299,7 @@ bool Bus_ObjectImpl::initConnection(RuntimeContext &ctx, bool systemBus) {
 
     this->conn = dbus_bus_get(systemBus ? DBUS_BUS_SYSTEM : DBUS_BUS_SESSION, &error);
     if(dbus_error_is_set(&error)) {
-        reportError(ctx, error);
+        reportDBusError(ctx, error);
         dbus_error_free(&error);
         return false;
     }
@@ -415,7 +415,7 @@ bool DBus_ObjectImpl::waitSignal(RuntimeContext &ctx) {
         debugp("match rule: %s\n", rule.c_str());
         dbus_bus_add_match(conn, rule.c_str(), &error);
         if(dbus_error_is_set(&error)) {
-            reportError(ctx, error);
+            reportDBusError(ctx, error);
             dbus_error_free(&error);
             return false;
         }
@@ -578,7 +578,7 @@ bool DBusProxy_Object::doIntrospection(RuntimeContext &ctx) {
     dbus_error_init(&error);
 
     if(!dbus_validate_bus_name(this->srv->serviceName.c_str(), &error)) {
-        reportError(ctx, error);
+        reportDBusError(ctx, error);
         return false;
     }
 

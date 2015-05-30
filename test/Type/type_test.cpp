@@ -114,6 +114,7 @@ TEST_F(TypeTest, builtinName) {
         this->assertTypeName("OutOfRangeError", this->pool.getOutOfRangeErrorType());
         this->assertTypeName("KeyNotFoundError", this->pool.getKeyNotFoundErrorType());
         this->assertTypeName("TypeCastError", this->pool.getTypeCastErrorType());
+        this->assertTypeName("DBusError", this->pool.getDBusErrorType());
     });
 }
 
@@ -148,6 +149,7 @@ TEST_F(TypeTest, superType) {
         this->assertSuperType(this->pool.getOutOfRangeErrorType(), this->pool.getErrorType());
         this->assertSuperType(this->pool.getKeyNotFoundErrorType(), this->pool.getErrorType());
         this->assertSuperType(this->pool.getTypeCastErrorType(), this->pool.getErrorType());
+        this->assertSuperType(this->pool.getDBusErrorType(), this->pool.getErrorType());
     });
 }
 

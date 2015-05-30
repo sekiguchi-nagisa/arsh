@@ -261,6 +261,7 @@ struct Tuple_Object : public BaseObject {
 class Error_Object : public DSObject {
 private:
     std::shared_ptr<DSObject> message;
+    std::shared_ptr<DSObject> name;
     std::vector<std::string> stackTrace;
 
 public:
@@ -276,6 +277,8 @@ public:
      * print stack trace to stderr
      */
     void printStackTrace(RuntimeContext &ctx);
+
+    const std::shared_ptr<DSObject> &getName(RuntimeContext &ctx);
 
     void accept(ObjectVisitor *visitor); // override
 

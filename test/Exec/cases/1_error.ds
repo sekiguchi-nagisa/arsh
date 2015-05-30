@@ -1,0 +1,38 @@
+# error type
+
+var m = "hello world"
+var e = new Error($m)
+
+# method
+
+assert($e.message() is String)
+assert($e.message() == $m)
+assert($e.name() == "Error")
+$e.backtrace()
+
+# sub type
+
+$e = new ArithmeticError("")
+assert($e is ArithmeticError)
+assert($e is Error)
+assert($e.name() == "ArithmeticError")
+
+$e = new OutOfRangeError("")
+assert($e is OutOfRangeError)
+assert($e is Error)
+assert($e.name() == "OutOfRangeError")
+
+$e = new KeyNotFoundError("")
+assert($e is KeyNotFoundError)
+assert($e is Error)
+assert($e.name() == "KeyNotFoundError")
+
+$e = new TypeCastError("")
+assert($e is TypeCastError)
+assert($e is Error)
+assert($e.name() == "TypeCastError")
+
+$e = new DBusError("")
+assert($e is DBusError)
+assert($e is Error)
+assert($e.name() == "DBusError")
