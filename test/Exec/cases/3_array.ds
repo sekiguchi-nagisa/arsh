@@ -23,6 +23,24 @@ $b.add($true)
 assert($b.size() == 1)
 assert($b[0])
 
+# iterator
+var c = [23, 32]
+try {
+    for(var i = $c.__ITERATOR__(); $true; $i.__NEXT__()) {
+        echo in iterator
+    }
+    assert($false)
+} catch($e : OutOfRangeError) {
+    echo ${$e.message()}
+}
+
+var count = 0
+for(var i = $c.__ITERATOR__(); $i.__HAS_NEXT__(); ) {
+    assert($c[$count] == $i.__NEXT__())
+    $count++;
+}
+
+
 # inheritance
 assert([34, 43] is Array<Int32>)
 assert([32, 43] is Variant)

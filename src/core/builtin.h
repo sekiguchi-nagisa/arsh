@@ -965,14 +965,13 @@ static inline bool array_iter(RuntimeContext &ctx) {
 //!bind: function $OP_NEXT($this : Array<T0>) : T0
 static inline bool array_next(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_next);
-//    Array_Object *obj = TYPE_AS(Array_Object, LOCAL(0));
-//    unsigned int size = obj->values.size();
-//    int index = obj->curIndex++;
-//    if(!checkRange(ctx, index, size)) {
-//        return false;
-//    }
-//    RET(obj->values[(unsigned int)index]);
-    RET(TYPE_AS(Array_Object, LOCAL(0))->nextElement());
+    Array_Object *obj = TYPE_AS(Array_Object, LOCAL(0));
+    if(!obj->hasNext()) {
+        ctx.throwError(ctx.getPool().getOutOfRangeErrorType(),
+                       "array iterator has already reached end");
+        return false;
+    }
+    RET(obj->nextElement());
 }
 
 //!bind: function $OP_HAS_NEXT($this : Array<T0>) : Boolean
@@ -1050,7 +1049,13 @@ static inline bool map_iter(RuntimeContext &ctx) {
 //!bind: function $OP_NEXT($this : Map<T0, T1>) : Tuple<T0, T1>
 static inline bool map_next(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_next);
-    RET(TYPE_AS(Map_Object, LOCAL(0))->nextElement(ctx));
+    Map_Object *obj = TYPE_AS(Map_Object, LOCAL(0));
+    if(!obj->hasNext()) {
+        ctx.throwError(ctx.getPool().getOutOfRangeErrorType(),
+                       "map iterator has already reached end");
+        return false;
+    }
+    RET(obj->nextElement(ctx));
 }
 
 //!bind: function $OP_HAS_NEXT($this : Map<T0, T1>) : Boolean

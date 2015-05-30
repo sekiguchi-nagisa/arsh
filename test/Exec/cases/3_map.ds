@@ -24,6 +24,26 @@ $b[34] = 34.56
 assert($b.size() == 1)
 assert($b[34] == 34.56)
 
+# iterator
+var c = {"a" : 23, "d" : 43, "e" : 4}
+try {
+    for(var i = $c.__ITERATOR__(); $true; $i.__NEXT__()) {
+        echo in iterator
+    }
+    assert($false)
+} catch($e : OutOfRangeError) {
+    echo ${$e.message()}
+}
+
+var count = 0
+for(var i = $c.__ITERATOR__(); $i.__HAS_NEXT__(); ) {
+    var e = $i.__NEXT__()
+    assert($c[$e._0] == $e._1)
+    $count++;
+}
+assert($count == 3)
+
+
 # inheritance
 assert({23 : $true} is Map<Int, Boolean>)
 assert({"fr" : 34.2} is Variant)
