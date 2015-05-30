@@ -16,6 +16,7 @@
 
 #include "Parser.h"
 #include "ParseError.h"
+#include "../misc/debug.h"
 
 // for debug
 #ifdef NDEBUG
@@ -164,7 +165,7 @@ namespace parser {
 // ##     Parser     ##
 // ####################
 
-void Parser::parse(DSLexer &lexer, RootNode &rootNode) {
+void Parser::parse(Lexer &lexer, RootNode &rootNode) {
     this->lexer = &lexer;
 
     // first, fetch token.
@@ -316,7 +317,7 @@ std::unique_ptr<Node> Parser::parse_interface() {
     this->matchToken(INTERFACE, false);
 
     // enter TYPE mode
-    this->lexer->modeStack.push_back(yycTYPE);
+    this->lexer->pushLexerMode(yycTYPE);
     NEXT_TOKEN();
 
     unsigned int prevNum = LN();
@@ -383,7 +384,7 @@ std::unique_ptr<Node> Parser::parse_typeAlias() {
 void Parser::restoreLexerState(unsigned int prevLineNum, const Token &prevToken) {
     unsigned int pos = prevToken.startPos + prevToken.size;
     this->lexer->setPos(pos);
-    this->lexer->modeStack.pop_back();
+    this->lexer->popLexerMode();
     this->lexer->setLineNum(prevLineNum);
     NEXT_TOKEN();
 }
@@ -397,7 +398,7 @@ std::unique_ptr<TypeToken> Parser::parse_typeName() {
     };
 
     // change lexer state to TYPE
-    this->lexer->modeStack.push_back(yycTYPE);
+    this->lexer->pushLexerMode(yycTYPE);
     NEXT_TOKEN();
 
     switch(this->curTokenKind) {
@@ -1344,7 +1345,7 @@ bool parse(const char *sourceName, RootNode &rootNode) {
         return false;
     }
 
-    Lexer<LexerDef, TokenKind> lexer(fp);
+    Lexer lexer(fp);
     Parser parser;
 
     try {

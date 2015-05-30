@@ -26,12 +26,12 @@ Shell::Shell() :
 }
 
 ShellStatus Shell::eval(const char *line) {
-    Lexer<LexerDef, TokenKind> lexer(line);
+    Lexer lexer(line);
     return this->eval(0, lexer);
 }
 
 ShellStatus Shell::eval(const char *sourceName, FILE *fp) {
-    Lexer<LexerDef, TokenKind> lexer(fp);
+    Lexer lexer(fp);
     return this->eval(sourceName, lexer);
 }
 
@@ -85,7 +85,7 @@ int Shell::getExitStatus() {
 
 CommonErrorListener Shell::clistener;
 
-ShellStatus Shell::eval(const char *sourceName, Lexer<LexerDef, TokenKind> &lexer) {
+ShellStatus Shell::eval(const char *sourceName, Lexer &lexer) {
     sourceName = this->ctx.registerSourceName(sourceName);
     lexer.setLineNum(this->lineNum);
     RootNode rootNode(sourceName);

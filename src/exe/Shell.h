@@ -17,7 +17,7 @@
 #ifndef EXE_SHELL_H_
 #define EXE_SHELL_H_
 
-#include "../parser/Lexer.hpp"
+#include "../parser/Lexer.h"
 #include "../parser/Parser.h"
 #include "../parser/ErrorListener.h"
 #include "../core/RuntimeContext.h"
@@ -87,7 +87,7 @@ private:
     /**
      * sourceName is null, if read stdin.
      */
-    ShellStatus eval(const char *sourceName, DSLexer &lexer);
+    ShellStatus eval(const char *sourceName, Lexer &lexer);
 
     /**
      * call only once.

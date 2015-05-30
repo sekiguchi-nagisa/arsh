@@ -29,8 +29,7 @@ struct ErrorListener {
     virtual void displayTypeError(const std::string &sourceName,
                                   const TypeCheckError &e) const = 0;
 
-    virtual void displayParseError(Lexer<LexerDef, TokenKind> &lexer,
-                                   const std::string &sourceName, const ParseError &e) const = 0;
+    virtual void displayParseError(Lexer &lexer, const std::string &sourceName, const ParseError &e) const = 0;
 };
 
 class CommonErrorListener : public ErrorListener {
@@ -41,8 +40,7 @@ public:
 
     void displayTypeError(const std::string &sourceName,
                           const TypeCheckError &e) const; // override
-    void displayParseError(Lexer<LexerDef, TokenKind> &lexer,
-                           const std::string &sourceName, const ParseError &e) const; // override
+    void displayParseError(Lexer &lexer, const std::string &sourceName, const ParseError &e) const; // override
 };
 
 } // namespace parser

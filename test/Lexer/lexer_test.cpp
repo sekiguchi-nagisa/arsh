@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <parser/Lexer.hpp>
+#include <parser/Lexer.h>
 #include <core/DSType.h>
 
 #ifndef LEXER_TEST_DIR
@@ -34,7 +34,7 @@ TEST(LexerTest_Lv0, case1) {
 
 class LexerTest_Lv1 : public ::testing::Test {
 public:
-    DSLexer *lexer;
+    Lexer *lexer;
     std::vector<std::pair<TokenKind, Token>> tokens;
 
 public:
@@ -53,7 +53,7 @@ public:
 
     // for test
     virtual void initLexer(const char *text) {
-        this->lexer = new DSLexer(text);
+        this->lexer = new Lexer(text);
     }
 
     virtual const std::vector<std::pair<TokenKind, Token>> &getTokens() {
@@ -1339,7 +1339,7 @@ TEST_F(LexerTest_Lv1, SPACE4) {
 TEST(LexerTest_Lv2, NEW_LINE) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        DSLexer lexer("  \n  \n   assert  \n ");
+        Lexer lexer("  \n  \n   assert  \n ");
         Token t;
         TokenKind k;
         k = lexer.nextToken(t);

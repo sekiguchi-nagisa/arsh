@@ -24,6 +24,7 @@ extern "C" {
 }
 
 #include "Shell.h"
+#include "../misc/debug.h"
 
 namespace {
 

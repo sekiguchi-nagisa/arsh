@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <parser/Lexer.hpp>
+#include <parser/Lexer.h>
 #include <parser/Parser.h>
 #include <parser/ParseError.h>
 #include <misc/files.h>
@@ -40,7 +40,7 @@ public:
         FILE *fp = fopen(this->getSourceName(), "r");
         ASSERT_NE(nullptr, fp);
 
-        Lexer<LexerDef, TokenKind> lexer(fp);
+        Lexer lexer(fp);
 
         bool status = true;
         try {

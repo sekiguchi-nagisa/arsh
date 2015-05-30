@@ -19,23 +19,23 @@
 // helper macro definition.
 #define RET(k) do { kind = k; goto END; } while(0)
 
-#define REACH_EOS() do { lexer->endOfString = true; goto EOS; } while(0)
+#define REACH_EOS() do { this->endOfString = true; goto EOS; } while(0)
 
 #define SKIP() goto INIT
 
 #define ERROR() do { RET(INVALID); } while(0)
 
 
-DescTokenKind DescLexer::operator()(ydsh::parser::Lexer<DescLexer, DescTokenKind > *lexer, ydsh::parser::Token &token) const {
+DescTokenKind DescLexer::nextToken(ydsh::parser::Token &token) {
     /*!re2c
       re2c:define:YYCTYPE = "unsigned char";
-      re2c:define:YYCURSOR = lexer->cursor;
-      re2c:define:YYLIMIT = lexer->limit;
-      re2c:define:YYMARKER = lexer->marker;
-      re2c:define:YYCTXMARKER = lexer->ctxMarker;
+      re2c:define:YYCURSOR = this->cursor;
+      re2c:define:YYLIMIT = this->limit;
+      re2c:define:YYMARKER = this->marker;
+      re2c:define:YYCTXMARKER = this->ctxMarker;
       re2c:define:YYFILL:naked = 1;
       re2c:define:YYFILL@len = #;
-      re2c:define:YYFILL = "if(!lexer->fill(#)) { REACH_EOS(); }";
+      re2c:define:YYFILL = "if(!this->fill(#)) { REACH_EOS(); }";
       re2c:yyfill:enable = 1;
       re2c:indent:top = 1;
       re2c:indent:string = "    ";
@@ -45,7 +45,7 @@ DescTokenKind DescLexer::operator()(ydsh::parser::Lexer<DescLexer, DescTokenKind
     */
 
     INIT:
-    unsigned int startPos = lexer->getPos();
+    unsigned int startPos = this->getPos();
     DescTokenKind kind = INVALID;
     /*!re2c
       "//!bind:"             { RET(DESC_PREFIX); }
@@ -78,11 +78,11 @@ DescTokenKind DescLexer::operator()(ydsh::parser::Lexer<DescLexer, DescTokenKind
 
     END:
     token.startPos = startPos;
-    token.size = lexer->getPos() - startPos;
+    token.size = this->getPos() - startPos;
     return kind;
 
     EOS:
-    token.startPos = lexer->limit - lexer->buf;
+    token.startPos = this->limit - this->buf;
     token.size = 0;
     return EOS;
 }

@@ -15,6 +15,7 @@
  */
 
 #include <core/handle_info.h>
+#include <misc/debug.h>
 #include <DescLexer.h>
 
 #include <stdarg.h>
@@ -22,6 +23,7 @@
 #include <iostream>
 #include <memory>
 #include <unordered_map>
+#include <vector>
 
 namespace {
 
@@ -515,7 +517,7 @@ private:
     /**
      * not call destructor
      */
-    ydsh::parser::Lexer<DescLexer, DescTokenKind> *lexer;
+    DescLexer *lexer;
 
     DescTokenKind kind;
     ydsh::parser::Token token;
@@ -534,6 +536,16 @@ public:
 private:
     static bool isDescriptor(const std::string &line);
 
+    std::string toTokenText(ydsh::parser::Token token) {
+        return this->lexer->getText(token.startPos, token.size);
+    }
+
+    std::string toName(ydsh::parser::Token token) {
+        unsigned startPos = token.startPos + 1;
+        unsigned size = token.size - 1;
+        return this->lexer->getText(startPos, size);
+    }
+
     void nextToken() {
         this->kind = this->lexer->nextToken(this->token);
     }
@@ -543,7 +555,7 @@ private:
             error("expected: %s, but is: %s, %s",
                   getTokenKindName(expected),
                   getTokenKindName(this->kind),
-                  this->lexer->toTokenText(this->token).c_str());
+                  this->toTokenText(this->token).c_str());
         }
         this->nextToken();
     }
@@ -553,7 +565,7 @@ private:
             error("expected: %s, but is: %s, %s",
                   getTokenKindName(expected),
                   getTokenKindName(this->kind),
-                  this->lexer->toTokenText(this->token).c_str());
+                  this->toTokenText(this->token).c_str());
         }
         auto token(this->token);
         this->nextToken();
@@ -566,7 +578,7 @@ private:
         return kind;
     }
 
-    void init(ydsh::parser::Lexer<DescLexer, DescTokenKind> &lexer) {
+    void init(DescLexer &lexer) {
         this->lexer = &lexer;
         this->nextToken();
     }
@@ -643,7 +655,7 @@ bool Parser::isDescriptor(const std::string &line) {
 }
 
 std::unique_ptr<Element> Parser::parse_descriptor(const std::string &line) {
-    ydsh::parser::Lexer<DescLexer, DescTokenKind> lexer(line.c_str());
+    DescLexer lexer(line.c_str());
     this->init(lexer);
 
     this->matchToken(DESC_PREFIX);
@@ -654,7 +666,7 @@ std::unique_ptr<Element> Parser::parse_descriptor(const std::string &line) {
     case INIT:
         return this->parse_initDesc();
     default:
-        error("illegal token: %s", this->lexer->toTokenText(this->token).c_str());
+        error("illegal token: %s", this->toTokenText(this->token).c_str());
         break;
     }
     return std::unique_ptr<Element>(nullptr);
@@ -669,16 +681,16 @@ std::unique_ptr<Element> Parser::parse_funcDesc() {
     switch(this->kind) {
     case IDENTIFIER: {
         auto token = this->matchAndGetToken(IDENTIFIER);
-        element = Element::newFuncElement(this->lexer->toName(token), false);
+        element = Element::newFuncElement(this->toTokenText(token), false);
         break;
     }
     case VAR_NAME: {
         auto token = this->matchAndGetToken(VAR_NAME);
-        element = Element::newFuncElement(this->lexer->toName(token), true);
+        element = Element::newFuncElement(this->toName(token), true);
         break;
     }
     default:
-        error("illegal token: %s", this->lexer->toTokenText(this->token).c_str());
+        error("illegal token: %s", this->toTokenText(this->token).c_str());
         return std::unique_ptr<Element>(nullptr);
     }
 
@@ -720,7 +732,7 @@ void Parser::parse_params(const std::unique_ptr<Element> &element) {
         this->matchToken(COLON);
         std::unique_ptr<TypeToken> type(this->parse_type());
 
-        element->addParam(this->lexer->toName(token), hasDefault, std::move(type));
+        element->addParam(this->toName(token), hasDefault, std::move(type));
     } while(this->kind == COMMA);
 }
 
@@ -728,7 +740,7 @@ std::unique_ptr<TypeToken> Parser::parse_type() {
     switch(this->kind) {
     case IDENTIFIER: {
         auto token = this->matchAndGetToken(IDENTIFIER);
-        return CommonTypeToken::newTypeToken(this->lexer->toTokenText(token));
+        return CommonTypeToken::newTypeToken(this->toTokenText(token));
     };
     case ARRAY:
     case MAP:
@@ -736,7 +748,7 @@ std::unique_ptr<TypeToken> Parser::parse_type() {
         auto token = this->token;
         this->nextToken();
 
-        auto type(ReifiedTypeToken::newReifiedTypeToken(this->lexer->toTokenText(token)));
+        auto type(ReifiedTypeToken::newReifiedTypeToken(this->toTokenText(token)));
         this->matchToken(TYPE_OPEN);
 
         unsigned int count = 0;
@@ -752,13 +764,13 @@ std::unique_ptr<TypeToken> Parser::parse_type() {
         return std::unique_ptr<TypeToken>(type.release());
     };
     default:
-        error("invalid token: %s", this->lexer->toTokenText(this->token).c_str());
+        error("invalid token: %s", this->toTokenText(this->token).c_str());
         return std::unique_ptr<TypeToken>();
     }
 }
 
 void Parser::parse_funcDecl(const std::string &line, std::unique_ptr<Element> &element) {
-    ydsh::parser::Lexer<DescLexer, DescTokenKind> lexer(line.c_str());
+    DescLexer lexer(line.c_str());
     this->init(lexer);
 
     this->matchToken(STATIC);
@@ -766,7 +778,7 @@ void Parser::parse_funcDecl(const std::string &line, std::unique_ptr<Element> &e
     this->matchToken(BOOL);
 
     auto token = this->matchAndGetToken(IDENTIFIER);
-    std::string str(this->lexer->toTokenText(token));
+    std::string str(this->toTokenText(token));
     element->setActualFuncName(std::move(str));
 
     this->matchToken(LP);
