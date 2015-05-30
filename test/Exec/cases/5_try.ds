@@ -1,7 +1,7 @@
 try {
 	1 / 0
 	assert($false)
-} catch($e : OutOfIndexError) {
+} catch($e : OutOfRangeError) {
 	assert($false)
 } catch($e : ArithmeticError) {
 	assert($true)

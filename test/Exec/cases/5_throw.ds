@@ -8,9 +8,9 @@ try {
 assert($a)
 
 try {
-	throw new OutOfIndexError("a")
+	throw new OutOfRangeError("a")
 } catch($e : Error) {
-	assert($e is OutOfIndexError)
+	assert($e is OutOfRangeError)
 	assert($e.message() == "a")
 }
 

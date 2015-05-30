@@ -35,7 +35,7 @@ var h1 = new Error("")
 var h2 = new TypeCastError("")
 
 assert($h1 is Error)
-assert(not ($h1 is OutOfIndexError))
+assert(not ($h1 is OutOfRangeError))
 assert($h2 is Error)
 assert($h2 is TypeCastError)
 $h1 = $h2

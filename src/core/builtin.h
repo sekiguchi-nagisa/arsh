@@ -908,7 +908,7 @@ static bool checkRange(RuntimeContext &ctx, unsigned int index, unsigned int siz
         message += std::to_string(size);
         message += ", but index is ";
         message += std::to_string(index);
-        ctx.throwOutOfIndexError(std::move(message));
+        ctx.throwOutOfRangeError(std::move(message));
         return false;
     }
     return true;

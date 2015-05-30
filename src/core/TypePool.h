@@ -159,7 +159,7 @@ private:
      * for exception
      */
     DSType *arithmeticErrorType;
-    DSType *outOfIndexErrorType;
+    DSType *outOfRangeErrorType;
     DSType *keyNotFoundErrorType;
     DSType *typeCastErrorType;
 
@@ -316,8 +316,8 @@ public:
         return this->arithmeticErrorType;
     }
 
-    DSType *getOutOfIndexErrorType() const {
-        return this->outOfIndexErrorType;
+    DSType *getOutOfRangeErrorType() const {
+        return this->outOfRangeErrorType;
     }
 
     DSType *getKeyNotFoundErrorType() const {

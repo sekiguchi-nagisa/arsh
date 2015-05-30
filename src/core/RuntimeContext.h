@@ -446,8 +446,8 @@ public:
     bool checkZeroDiv(double right);
     bool checkZeroMod(int right);
 
-    void throwOutOfIndexError(std::string &&message) {
-        this->throwError(this->pool.getOutOfIndexErrorType(), std::move(message));
+    void throwOutOfRangeError(std::string &&message) {
+        this->throwError(this->pool.getOutOfRangeErrorType(), std::move(message));
     }
 
     void pushFuncContext(ast::Node *node) {

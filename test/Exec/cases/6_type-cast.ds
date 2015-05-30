@@ -15,8 +15,8 @@ assert($b3 == "12")
 
 # cast
 var a4 = new Error("")
-$a4 = new OutOfIndexError("")
-($a4 as OutOfIndexError).backtrace()
+$a4 = new OutOfRangeError("")
+($a4 as OutOfRangeError).backtrace()
 
 try {
 	new Error("") as ArithmeticError

@@ -136,7 +136,7 @@ TypePool::TypePool() :
         errorType(), taskType(), baseFuncType(),
         objectPathType(), unixFDType(), proxyType(),
         dbusType(), busType(), serviceType(), dbusObjectType(),
-        arithmeticErrorType(), outOfIndexErrorType(),
+        arithmeticErrorType(), outOfRangeErrorType(),
         keyNotFoundErrorType(), typeCastErrorType(),
         templateMap(8),
         arrayTemplate(), mapTemplate(), tupleTemplate(),
@@ -206,7 +206,7 @@ TypePool::TypePool() :
 
     // init some error type
     this->arithmeticErrorType = this->initErrorType("ArithmeticError", this->errorType);
-    this->outOfIndexErrorType = this->initErrorType("OutOfIndexError", this->errorType);
+    this->outOfRangeErrorType = this->initErrorType("OutOfRangeError", this->errorType);
     this->keyNotFoundErrorType = this->initErrorType("KeyNotFoundError", this->errorType);
     this->typeCastErrorType = this->initErrorType("TypeCastError", this->errorType);
 

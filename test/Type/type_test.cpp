@@ -111,7 +111,7 @@ TEST_F(TypeTest, builtinName) {
         this->assertTypeName("Array<String>", this->pool.getStringArrayType());
         this->assertTypeName("Error", this->pool.getErrorType());
         this->assertTypeName("ArithmeticError", this->pool.getArithmeticErrorType());
-        this->assertTypeName("OutOfIndexError", this->pool.getOutOfIndexErrorType());
+        this->assertTypeName("OutOfRangeError", this->pool.getOutOfRangeErrorType());
         this->assertTypeName("KeyNotFoundError", this->pool.getKeyNotFoundErrorType());
         this->assertTypeName("TypeCastError", this->pool.getTypeCastErrorType());
     });
@@ -145,7 +145,7 @@ TEST_F(TypeTest, superType) {
         this->assertSuperType(this->pool.getStringArrayType(), this->pool.getVariantType());
         this->assertSuperType(this->pool.getErrorType(), this->pool.getAnyType());
         this->assertSuperType(this->pool.getArithmeticErrorType(), this->pool.getErrorType());
-        this->assertSuperType(this->pool.getOutOfIndexErrorType(), this->pool.getErrorType());
+        this->assertSuperType(this->pool.getOutOfRangeErrorType(), this->pool.getErrorType());
         this->assertSuperType(this->pool.getKeyNotFoundErrorType(), this->pool.getErrorType());
         this->assertSuperType(this->pool.getTypeCastErrorType(), this->pool.getErrorType());
     });
