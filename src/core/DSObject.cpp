@@ -706,6 +706,26 @@ bool DBus_Object::supportDBus() {
 #endif
 }
 
+bool DBus_Object::getServiceFromProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy) {
+    ctx.throwError(ctx.getPool().getErrorType(), "not support method");
+    return false;
+}
+
+bool DBus_Object::getObjectPathFromProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy) {
+    ctx.throwError(ctx.getPool().getErrorType(), "not support method");
+    return false;
+}
+
+bool DBus_Object::getIfaceListFromProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy) {
+    ctx.throwError(ctx.getPool().getErrorType(), "not support method");
+    return false;
+}
+
+bool DBus_Object::introspectProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy) {
+    ctx.throwError(ctx.getPool().getErrorType(), "not support method");
+    return false;
+}
+
 DBus_Object *DBus_Object::newDBus_Object(TypePool *typePool) {
 #ifdef X_NO_DBUS
     return new DBus_Object(typePool);
@@ -738,7 +758,7 @@ bool Bus_Object::listNames(RuntimeContext &ctx, bool activeName) {
 Service_Object::Service_Object(DSType *type) : DSObject(type) {
 }
 
-bool Service_Object::object(RuntimeContext &ctx, std::string &&objectPath) {
+bool Service_Object::object(RuntimeContext &ctx, const std::shared_ptr<String_Object> &objectPath) {
     ctx.throwError(ctx.getPool().getErrorType(), "not support D-Bus proxy object");
     return false;
 }

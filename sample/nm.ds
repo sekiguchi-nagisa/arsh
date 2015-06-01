@@ -20,7 +20,14 @@ try {
 } catch($e : DBusError) {
     $e.backtrace()
 }
-var a = $srv.object(p'/org/freedesktop/NetworkManager')
+
+var path = p'/org/freedesktop/NetworkManager'
+var a = $srv.object($path)
+
+assert($DBus.getService($a) as String == $srv as String)
+assert($DBus.getObjectPath($a) == $path)
+
+echo ${$DBus.introspect($a)}
 
 type-alias NM org.freedesktop.NetworkManager
 

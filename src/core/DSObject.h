@@ -439,6 +439,10 @@ struct DBus_Object : public DSObject {
     virtual bool waitSignal(RuntimeContext &ctx);
 
     bool supportDBus();
+    virtual bool getServiceFromProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy);
+    virtual bool getObjectPathFromProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy);
+    virtual bool getIfaceListFromProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy);
+    virtual bool introspectProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy);
 
     static DBus_Object *newDBus_Object(TypePool *typePool);
 };
@@ -455,7 +459,7 @@ struct Service_Object : public DSObject {
     explicit Service_Object(DSType *type);
     virtual ~Service_Object() = default;
 
-    virtual bool object(RuntimeContext &ctx, std::string &&objectPath);
+    virtual bool object(RuntimeContext &ctx, const std::shared_ptr<String_Object> &objectPath);
 };
 
 struct ObjectVisitor {

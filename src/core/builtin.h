@@ -1137,6 +1137,30 @@ static inline bool dbus_available(RuntimeContext &ctx) {
     RET_BOOL(TYPE_AS(DBus_Object, LOCAL(0))->supportDBus());
 }
 
+//!bind: function getService($this : DBus, $proxy : DBusObject) : Service
+static inline bool dbus_getSrv(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(dbus_getSrv);
+    return TYPE_AS(DBus_Object, LOCAL(0))->getServiceFromProxy(ctx, LOCAL(1));
+}
+
+//!bind: function getObjectPath($this : DBus, $proxy : DBusObject) : ObjectPath
+static inline bool dbus_getPath(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(dbus_getPath);
+    return TYPE_AS(DBus_Object, LOCAL(0))->getObjectPathFromProxy(ctx, LOCAL(1));
+}
+
+//!bind: function getIfaces($this : DBus, $proxy : DBusObject) : Array<String>
+static inline bool dbus_getIface(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(dbus_getIface);
+    return TYPE_AS(DBus_Object, LOCAL(0))->getIfaceListFromProxy(ctx, LOCAL(1));
+}
+
+//!bind: function introspect($this : DBus, $proxy : DBusObject) : String
+static inline bool dbus_introspect(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(dbus_introspect);
+    return TYPE_AS(DBus_Object, LOCAL(0))->introspectProxy(ctx, LOCAL(1));
+}
+
 // #################
 // ##     Bus     ##
 // #################
@@ -1167,8 +1191,7 @@ static inline bool bus_listActiveNames(RuntimeContext &ctx) {
 //!bind: function object($this : Service, $path : ObjectPath) : DBusObject
 static inline bool service_object(RuntimeContext &ctx) {
     SUPPRESS_WARNING(service_object);
-    String_Object *path = TYPE_AS(String_Object, LOCAL(1));
-    return TYPE_AS(Service_Object, LOCAL(0))->object(ctx, std::string(path->getValue()));
+    return TYPE_AS(Service_Object, LOCAL(0))->object(ctx, std::dynamic_pointer_cast<String_Object>(LOCAL(1)));
 }
 
 

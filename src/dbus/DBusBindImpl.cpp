@@ -369,9 +369,9 @@ std::string Service_ObjectImpl::toString(RuntimeContext &ctx) {
     return this->serviceName;
 }
 
-bool Service_ObjectImpl::object(RuntimeContext &ctx, std::string &&objectPath) {
+bool Service_ObjectImpl::object(RuntimeContext &ctx, const std::shared_ptr<String_Object> &objectPath) {
     std::shared_ptr<DBusProxy_Object> obj(
-            new DBusProxy_Object(ctx.getPool().getDBusObjectType(), this->shared_from_this(), std::move(objectPath)));
+            new DBusProxy_Object(ctx.getPool().getDBusObjectType(), this->shared_from_this(), objectPath));
 
     // first call Introspection and resolve interface type.
     if(!obj->doIntrospection(ctx)) {
@@ -502,6 +502,41 @@ bool DBus_ObjectImpl::waitSignal(RuntimeContext &ctx) {
     return true;
 }
 
+bool DBus_ObjectImpl::getServiceFromProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy) {
+    ctx.push(TYPE_AS(DBusProxy_Object, proxy)->getService());
+    return true;
+}
+
+bool DBus_ObjectImpl::getObjectPathFromProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy) {
+    ctx.push(TYPE_AS(DBusProxy_Object, proxy)->getObjectPath());
+    return true;
+}
+
+bool DBus_ObjectImpl::getIfaceListFromProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy) {
+    ctx.push(TYPE_AS(DBusProxy_Object, proxy)->createIfaceList(ctx));
+    return true;
+}
+
+bool DBus_ObjectImpl::introspectProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy) {
+    DBusProxy_Object *obj = TYPE_AS(DBusProxy_Object, proxy);
+    auto msg = dbus_message_new_method_call(
+            obj->getService()->serviceName.c_str(), obj->getObjectPath()->getValue().c_str(),
+            "org.freedesktop.DBus.Introspectable", "Introspect");
+    bool status;
+    auto reply = sendAndUnrefMessage(ctx, obj->getService()->bus->conn, msg, status);
+    if(!status) {
+        return false;
+    }
+
+    // decode result
+    auto result(decodeAndUnrefMessage(ctx, ctx.getPool().getStringType(), reply));
+    if(!result) {
+        return false;
+    }
+    ctx.push(std::move(result));
+    return true;
+}
+
 
 bool SignalSelectorComparator::operator() (const SignalSelector &x,
                                            const SignalSelector &y) const {
@@ -526,9 +561,10 @@ std::size_t SignalSelectorHash::operator() (const SignalSelector &key) const {
 // ##     DBusProxy_Object     ##
 // ##############################
 
-DBusProxy_Object::DBusProxy_Object(DSType *type, const std::shared_ptr<DSObject> &srcObj, std::string &&objectPath) :
+DBusProxy_Object::DBusProxy_Object(DSType *type, const std::shared_ptr<DSObject> &srcObj,
+                                   const std::shared_ptr<String_Object> &objectPath) :
         ProxyObject(type), srv(std::dynamic_pointer_cast<Service_ObjectImpl>(srcObj)),
-        objectPath(std::move(objectPath)), ifaceSet(), handerMap() {
+        objectPath(objectPath), ifaceSet(), handerMap() {
     assert(this->srv);
 }
 
@@ -536,7 +572,7 @@ std::string DBusProxy_Object::toString(RuntimeContext &ctx) {
     std::string str("[dest=");
     str += this->srv->serviceName;
     str += ", path=";
-    str += this->objectPath;
+    str += this->objectPath->getValue();
     str += ", iface=";
     unsigned int count = 0;
     for(auto &iter : this->ifaceSet) {
@@ -632,7 +668,7 @@ bool DBusProxy_Object::doIntrospection(RuntimeContext &ctx) {
 
     if(this->ifaceSet.empty()) {
         std::string msg = ("illegal object path: ");
-        msg += this->objectPath;
+        msg += this->objectPath->getValue();
         reportDBusError(ctx, DBUS_ERROR_UNKNOWN_OBJECT, std::move(msg));
         return false;
     }
@@ -646,10 +682,6 @@ bool DBusProxy_Object::invokeMethod(RuntimeContext &ctx, const std::string &meth
                          methodName, ctx.getLocal(1));
         return true;
     }
-
-
-    DBusError error;
-    dbus_error_init(&error);
 
     DBusMessage *msg = this->newMethodCallMsg(ctx.getPool().getTypeName(*handle->getRecvType()), methodName);
 
@@ -687,9 +719,6 @@ bool DBusProxy_Object::invokeMethod(RuntimeContext &ctx, const std::string &meth
 
 bool DBusProxy_Object::invokeGetter(RuntimeContext &ctx,DSType *recvType,
                                     const std::string &fieldName, DSType *fieldType) {
-    DBusError error;
-    dbus_error_init(&error);
-
     DBusMessage *msg = this->newMethodCallMsg("org.freedesktop.DBus.Properties", "Get");
 
     // append arg
@@ -720,9 +749,6 @@ bool DBusProxy_Object::invokeGetter(RuntimeContext &ctx,DSType *recvType,
 
 bool DBusProxy_Object::invokeSetter(RuntimeContext &ctx,DSType *recvType,
                                     const std::string &fieldName, DSType *fieldType) {
-    DBusError error;
-    dbus_error_init(&error);
-
     DBusMessage *msg = this->newMethodCallMsg("org.freedesktop.DBus.Properties", "Set");
 
     // append arg
@@ -746,8 +772,21 @@ bool DBusProxy_Object::invokeSetter(RuntimeContext &ctx,DSType *recvType,
     return status;
 }
 
-const std::string &DBusProxy_Object::getObjectPath() {
+const std::shared_ptr<Service_ObjectImpl> &DBusProxy_Object::getService() {
+    return this->srv;
+}
+
+const std::shared_ptr<String_Object> &DBusProxy_Object::getObjectPath() {
     return this->objectPath;
+}
+
+std::shared_ptr<Array_Object> DBusProxy_Object::createIfaceList(RuntimeContext &ctx) {
+    std::vector<std::shared_ptr<DSObject>> list(this->ifaceSet.size());
+    unsigned int i = 0;
+    for(auto &value : this->ifaceSet) {
+        list[i++] = std::make_shared<String_Object>(ctx.getPool().getStringType(), value);
+    }
+    return std::make_shared<Array_Object>(ctx.getPool().getStringArrayType(), std::move(list));
 }
 
 FunctionType  *DBusProxy_Object::lookupHandler(RuntimeContext &ctx,
@@ -762,7 +801,7 @@ FunctionType  *DBusProxy_Object::lookupHandler(RuntimeContext &ctx,
 
 bool DBusProxy_Object::matchObject(const char *serviceName, const char *objectPath) {
     return /*strcmp(serviceName, this->srv->serviceName.c_str()) == 0 && */
-           strcmp(objectPath, this->objectPath.c_str()) == 0;
+           strcmp(objectPath, this->objectPath->getValue().c_str()) == 0;
 }
 
 static inline void quote(std::string &str, const std::string &value) {
@@ -781,7 +820,7 @@ void DBusProxy_Object::createSignalMatchRule(std::vector<std::string> &ruleList)
     for(auto &pair : this->handerMap) {
         std::string rule("type="); quote(rule, "signal");
         rule += ", sender="; quote(rule, this->srv->serviceName);
-        rule += ", path="; quote(rule, this->objectPath);
+        rule += ", path="; quote(rule, this->objectPath->getValue());
         rule += ", interface="; quote(rule, pair.first.first);
         rule += ", member="; quote(rule, pair.first.second);
 
@@ -795,7 +834,7 @@ bool DBusProxy_Object::isBelongToSystemBus() {
 
 DBusMessage *DBusProxy_Object::newMethodCallMsg(const char *ifaceName, const char *methodName) {
     return dbus_message_new_method_call(
-            this->srv->serviceName.c_str(), this->objectPath.c_str(), ifaceName, methodName);
+            this->srv->serviceName.c_str(), this->objectPath->getValue().c_str(), ifaceName, methodName);
 }
 
 DBusMessage *DBusProxy_Object::newMethodCallMsg(const std::string &ifaceName, const std::string &methodName) {

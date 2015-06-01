@@ -65,7 +65,7 @@ struct Service_ObjectImpl : public Service_Object,
     ~Service_ObjectImpl() = default;
 
     std::string toString(RuntimeContext &ctx); // override
-    bool object(RuntimeContext &ctx, std::string &&objectPath); // override
+    bool object(RuntimeContext &ctx, const std::shared_ptr<String_Object> &objectPath); // override
 };
 
 struct DBus_ObjectImpl : public DBus_Object {
@@ -80,6 +80,10 @@ struct DBus_ObjectImpl : public DBus_Object {
     bool getSessionBus(RuntimeContext &ctx);    // override
 
     bool waitSignal(RuntimeContext &ctx);   // override
+    bool getServiceFromProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy);  // override
+    bool getObjectPathFromProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy);   // override
+    bool getIfaceListFromProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy);    // override
+    bool introspectProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy); // override
 };
 
 /**
@@ -103,7 +107,7 @@ typedef std::unordered_map<SignalSelector, std::shared_ptr<FuncObject>,
 class DBusProxy_Object : public ProxyObject {
 private:
     std::shared_ptr<Service_ObjectImpl> srv;
-    std::string objectPath;
+    std::shared_ptr<String_Object> objectPath;
 
     /**
      * contains having interface name.
@@ -116,7 +120,8 @@ private:
     HandlerMap handerMap;
 
 public:
-    DBusProxy_Object(DSType *type, const std::shared_ptr<DSObject> &srcObj, std::string &&objectPath);
+    DBusProxy_Object(DSType *type, const std::shared_ptr<DSObject> &srcObj,
+                     const std::shared_ptr<String_Object> &objectPath);
     ~DBusProxy_Object() = default;
 
     std::string toString(RuntimeContext &ctx); // override
@@ -128,7 +133,9 @@ public:
     bool invokeSetter(RuntimeContext &ctx, DSType *recvType,
                       const std::string &fieldName, DSType *fieldType);    // override
 
-    const std::string &getObjectPath();
+    const std::shared_ptr<Service_ObjectImpl> &getService();
+    const std::shared_ptr<String_Object> &getObjectPath();
+    std::shared_ptr<Array_Object> createIfaceList(RuntimeContext &ctx);
 
     /**
      * lookup signal handler and push stack top. return func type of found handler.
