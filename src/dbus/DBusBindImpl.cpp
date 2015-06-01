@@ -31,10 +31,10 @@ static void reportDBusError(RuntimeContext &ctx, DBusError &error) {
     ctx.throwError(type, error.message);
 }
 
-static void reportDBusError(RuntimeContext &ctx, const char *dbusErrorName, const char *message) {
+static void reportDBusError(RuntimeContext &ctx, const char *dbusErrorName, std::string &&message) {
     std::string name(dbusErrorName);
     DSType *type = ctx.getPool().createAndGetErrorTypeIfUndefined(name, ctx.getPool().getDBusErrorType());
-    ctx.throwError(type, message);
+    ctx.throwError(type, std::move(message));
 }
 
 static void unrefMessage(DBusMessage *msg) {
@@ -112,6 +112,7 @@ static std::shared_ptr<DSObject> decodeMessageIter(RuntimeContext &ctx, DBusMess
         dbus_message_iter_recurse(iter, &subIter);
         int elementType = dbus_message_iter_get_arg_type(&subIter);
         if(elementType == DBUS_TYPE_DICT_ENTRY) {   // map
+            int firstElementType = DBUS_TYPE_INVALID;
             std::vector<std::pair<std::shared_ptr<DSObject>, std::shared_ptr<DSObject>>> entries;
             do {
                 DBusMessageIter entryIter;
@@ -119,14 +120,18 @@ static std::shared_ptr<DSObject> decodeMessageIter(RuntimeContext &ctx, DBusMess
 
                 auto key(decodeMessageIter(ctx, &entryIter));
                 dbus_message_iter_next(&entryIter);
+                if(firstElementType == DBUS_TYPE_INVALID) {
+                    firstElementType = dbus_message_iter_get_arg_type(&entryIter);
+                }
                 auto value(decodeMessageIter(ctx, &entryIter));
-                dbus_message_iter_next(&entryIter);
-                elementType = dbus_message_iter_get_arg_type(&entryIter);
+                dbus_message_iter_next(&subIter);
+                elementType = dbus_message_iter_get_arg_type(&subIter);
                 entries.push_back(std::make_pair(std::move(key), std::move(value)));
             } while(elementType != DBUS_TYPE_INVALID);  //FIXME: support empty map
             std::vector<DSType *> types(2);
             types[0] = entries.back().first->getType();
-            types[1] = entries.back().second->getType();
+            types[1] = firstElementType == DBUS_TYPE_VARIANT ?
+                       ctx.getPool().getVariantType() : entries.back().second->getType();
 
             auto map = std::make_shared<Map_Object>(
                     ctx.getPool().createAndGetReifiedTypeIfUndefined(ctx.getPool().getMapTemplate(), std::move(types)));
@@ -136,14 +141,18 @@ static std::shared_ptr<DSObject> decodeMessageIter(RuntimeContext &ctx, DBusMess
             }
             return std::move(map);
         } else {    // array
+            int firstElementType = DBUS_TYPE_INVALID;
             std::vector<std::shared_ptr<DSObject>> values;
             do {
                 values.push_back(decodeMessageIter(ctx, &subIter));
                 dbus_message_iter_next(&subIter);
                 elementType = dbus_message_iter_get_arg_type(&subIter);
+                if(elementType != DBUS_TYPE_INVALID) {
+                    firstElementType = elementType;
+                }
             } while(elementType != DBUS_TYPE_INVALID);    //FIXME: support empty array
             std::vector<DSType *> types(1);
-            types[0] = values[0]->getType();
+            types[0] = firstElementType == DBUS_TYPE_VARIANT ? ctx.getPool().getVariantType() : values[0]->getType();
 
             return std::make_shared<Array_Object>(
                     ctx.getPool().createAndGetReifiedTypeIfUndefined(
@@ -203,13 +212,21 @@ static bool decodeAndUnrefMessage(std::vector<std::shared_ptr<DSObject>> &values
     // check type
     unsigned int size = values.size();
     if(types.size() != size) {
-        reportDBusError(ctx, DBUS_ERROR_INVALID_SIGNATURE, "mismatched return value number");
+        std::string msg = "mismatched return value number, require size is: ";
+        msg += std::to_string(types.size());
+        msg += ", but is: ";
+        msg += std::to_string(values.size());
+        reportDBusError(ctx, DBUS_ERROR_INVALID_SIGNATURE, std::move(msg));
         return false;
     }
 
     for(unsigned int i = 0; i < size; i++) {
-        if(*values[i]->getType() != *types[i]) {
-            reportDBusError(ctx, DBUS_ERROR_INVALID_SIGNATURE, "mismatched return value type");
+        if(!types[i]->isAssignableFrom(values[i]->getType())) {
+            std::string msg = "require type is: ";
+            msg += ctx.getPool().getTypeName(*types[i]);
+            msg += ", but is: ";
+            msg += ctx.getPool().getTypeName(*values[i]->getType());
+            reportDBusError(ctx, DBUS_ERROR_INVALID_SIGNATURE, std::move(msg));
             return false;
         }
     }
@@ -438,7 +455,7 @@ bool DBus_ObjectImpl::waitSignal(RuntimeContext &ctx) {
             return false;
         }
 
-        std::cerr << "receive signal" << std::endl;
+        debugp("receive signal\n");
 
         // check service name and object path
         const char *srv = dbus_message_get_sender(message);
@@ -636,7 +653,7 @@ bool DBusProxy_Object::invokeMethod(RuntimeContext &ctx, const std::string &meth
 
     unsigned int paramSize = handle->getParamTypes().size();
     for(unsigned int i = 0; i < paramSize; i++) {
-        appendArg(ctx, &iter, handle->getParamTypes()[i], i);
+        appendArg(ctx, &iter, handle->getParamTypes()[i], i + 1);
     }
 
     // send message

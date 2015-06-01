@@ -19,6 +19,10 @@ var a = $DBus.systemBus()\
 
 type-alias NM org.freedesktop.NetworkManager
 
+# get all properties
+var p = ($a as Properties).GetAll("org.freedesktop.NetworkManager")
+echo $p
+
 assert($a is NM)
 if($a is NM) {
     echo NetworkingEnabled : ${$a.NetworkingEnabled}
