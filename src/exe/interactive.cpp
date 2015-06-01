@@ -193,22 +193,22 @@ void Terminal::addHistory() {
 
 } // namespace
 
-void ydsh::exec_interactive(const char *progName, ydsh::Shell &shell) {
+void ydsh::exec_interactive(const char *progName, std::unique_ptr<Shell> &shell) {
     Terminal term(progName);
-    shell.setToplevelprinting(true);
+    shell->setToplevelprinting(true);
 
     unsigned int lineNum = 1;
     const char *line;
 
     while((line = term.readLine()) != 0) {
-        shell.setLineNum(lineNum);
-        ydsh::ShellStatus status = shell.eval(line);
+        shell->setLineNum(lineNum);
+        ydsh::ShellStatus status = shell->eval(line);
         if(status == ShellStatus::ASSERTION_ERROR) {
             exit(1);
         } else if(status == ShellStatus::EXIT) {
-            exit(shell.getExitStatus());
+            exit(shell->getExitStatus());
         }
-        lineNum = shell.getLineNum();
+        lineNum = shell->getLineNum();
     }
     printf("\n");
     exit(0);

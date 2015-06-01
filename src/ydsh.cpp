@@ -67,12 +67,12 @@ static void showCopyright(std::ostream &stream) {
     stream << getCopyright() << std::endl;
 }
 
-static void evalAndExit(Shell &shell, const char *sourceName, FILE *fp) {
-    ShellStatus status = shell.eval(sourceName, fp);
+static void evalAndExit(std::unique_ptr<Shell> &shell, const char *sourceName, FILE *fp) {
+    ShellStatus status = shell->eval(sourceName, fp);
     if(status == ShellStatus::SUCCESS) {
         exit(0);
     } else if(status == ShellStatus::EXIT) {
-        exit(shell.getExitStatus());
+        exit(shell->getExitStatus());
     } else {
         exit(1);
     }
@@ -142,24 +142,24 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    ydsh::Shell shell;
+    auto shell = ydsh::Shell::createShell();
 
     for(auto &cmdLine : cmdLines) {
         switch(cmdLine.first) {
         case DUMP_UAST:
-            shell.setDumpUntypedAST(true);
+            shell->setDumpUntypedAST(true);
             break;
         case DUMP_AST:
-            shell.setDumpTypedAST(true);
+            shell->setDumpTypedAST(true);
             break;
         case PARSE_ONLY:
-            shell.setParseOnly(true);
+            shell->setParseOnly(true);
             break;
         case DISABLE_ASSERT:
-            shell.setAssertion(false);
+            shell->setAssertion(false);
             break;
         case PRINT_TOPLEVEL:
-            shell.setToplevelprinting(true);
+            shell->setToplevelprinting(true);
             break;
         case VERSION:
             showVersion(std::cout);
@@ -179,7 +179,7 @@ int main(int argc, char **argv) {
             fprintf(stderr, "cannot open file: %s\n", scriptName);
             return 1;
         }
-        shell.setArguments(restArgs);
+        shell->setArguments(restArgs);
         evalAndExit(shell, scriptName, fp);
     } else if(isatty(STDIN_FILENO) == 0) {
         FILE *fp = fdopen(STDIN_FILENO, "r");

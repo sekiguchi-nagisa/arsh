@@ -22,7 +22,6 @@ Shell::Shell() :
         ctx(), parser(), checker(&this->ctx.getPool()), lineNum(1),
         listener(&clistener), dumpUntypedAST(false),
         dumpTypedAST(false), parseOnly(false) {
-    this->initBuiltinVar();
 }
 
 ShellStatus Shell::eval(const char *line) {
@@ -81,6 +80,13 @@ const std::string &Shell::getWorkingDir() {
 
 int Shell::getExitStatus() {
     return this->ctx.getExitStatus()->getValue();
+}
+
+std::unique_ptr<Shell> Shell::createShell() {
+    std::unique_ptr<Shell> shell(new Shell());
+    shell->initBuiltinVar();
+
+    return shell;
 }
 
 CommonErrorListener Shell::clistener;

@@ -13,10 +13,12 @@ using namespace ydsh;
 class ExecTest : public ::testing::TestWithParam<const char *> {
 private:
     std::string targetName;
-    Shell shell;
+    std::unique_ptr<Shell> shell;
 
 public:
-    ExecTest() = default;
+    ExecTest()  : targetName(), shell(Shell::createShell()) {
+    }
+
     virtual ~ExecTest() = default;
 
     virtual void SetUp() {
@@ -40,7 +42,7 @@ public:
         FILE *fp = fopen(scriptName, "r");
         ASSERT_TRUE(fp != nullptr);
 
-        ShellStatus status = this->shell.eval(scriptName, fp);
+        ShellStatus status = this->shell->eval(scriptName, fp);
 
         ASSERT_EQ(ShellStatus::SUCCESS, status);
     }

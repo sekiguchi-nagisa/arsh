@@ -59,9 +59,21 @@ private:
     bool dumpTypedAST;
     bool parseOnly;
 
-public:
+protected:
     Shell();
+
+    /**
+     * not allow copy constructor
+     */
+    explicit Shell(const Shell &shell);
+
+public:
     ~Shell() = default;
+
+    /**
+     * not allow assignment
+     */
+    Shell &operator=(const Shell &shell);
 
     ShellStatus eval(const char *line);
     ShellStatus eval(const char *sourceName, FILE *fp);
@@ -83,6 +95,8 @@ public:
      */
     int getExitStatus();
 
+    static std::unique_ptr<Shell> createShell();
+
 private:
     /**
      * sourceName is null, if read stdin.
@@ -97,7 +111,7 @@ private:
     static CommonErrorListener clistener;
 };
 
-void exec_interactive(const char *progName, Shell &shell);
+void exec_interactive(const char *progName, std::unique_ptr<Shell> &shell);
 
 } /* namespace ydsh */
 
