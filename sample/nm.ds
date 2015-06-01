@@ -12,10 +12,15 @@ function f($s : Uint32) {
     echo state changed : $s
 }
 
+var srv = $DBus.systemBus()\
+            .service("org.freedesktop.NetworkManager")
 
-var a = $DBus.systemBus()\
-            .service("org.freedesktop.NetworkManager")\
-            .object(p'/org/freedesktop/NetworkManager')
+try {
+    $srv.object(p'/org/feedekstop/Net')
+} catch($e : DBusError) {
+    $e.backtrace()
+}
+var a = $srv.object(p'/org/freedesktop/NetworkManager')
 
 type-alias NM org.freedesktop.NetworkManager
 

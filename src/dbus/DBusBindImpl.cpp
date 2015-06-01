@@ -630,6 +630,12 @@ bool DBusProxy_Object::doIntrospection(RuntimeContext &ctx) {
     }
     unrefMessage(ret);
 
+    if(this->ifaceSet.empty()) {
+        std::string msg = ("illegal object path: ");
+        msg += this->objectPath;
+        reportDBusError(ctx, DBUS_ERROR_UNKNOWN_OBJECT, std::move(msg));
+        return false;
+    }
     return true;
 }
 
