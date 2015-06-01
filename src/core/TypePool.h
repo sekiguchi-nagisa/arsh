@@ -448,6 +448,11 @@ private:
     void checkElementTypes(const std::vector<DSType *> &elementTypes);
     void checkElementTypes(TypeTemplate *t, const std::vector<DSType *> &elementTypes);
     bool asVariantType(const std::vector<DSType *> &elementTypes);
+
+    /**
+     * add standard dbus error type and alias. must call only once.
+     */
+    void registerDBusErrorTypes();
 };
 
 } // namespace core

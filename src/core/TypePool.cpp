@@ -207,6 +207,8 @@ TypePool::TypePool() :
     this->typeCastErrorType = this->initErrorType("TypeCastError", this->errorType);
     this->dbusErrorType = this->initErrorType("DBusError", this->errorType);
 
+    this->registerDBusErrorTypes();
+
     // commit generated type
     this->typeMap.commit();
 }
@@ -509,6 +511,64 @@ bool TypePool::asVariantType(const std::vector<DSType *> &elementTypes) {
         }
     }
     return true;
+}
+
+void TypePool::registerDBusErrorTypes() {
+#define EACH_DBUS_ERROR(OP) \
+    OP("Failed") \
+    OP("NoMemory") \
+    OP("ServiceUnknown") \
+    OP("NameHasNoOwner") \
+    OP("NoReply") \
+    OP("IOError") \
+    OP("BadAddress") \
+    OP("NotSupported") \
+    OP("LimitsExceeded") \
+    OP("AccessDenied") \
+    OP("AuthFailed") \
+    OP("NoServer") \
+    OP("Timeout") \
+    OP("NoNetwork") \
+    OP("AddressInUse") \
+    OP("Disconnected") \
+    OP("InvalidArgs") \
+    OP("FileNotFound") \
+    OP("FileExists") \
+    OP("UnknownMethod") \
+    OP("UnknownObject") \
+    OP("UnknownInterface") \
+    OP("UnknownProperty") \
+    OP("PropertyReadOnly") \
+    OP("TimedOut") \
+    OP("MatchRuleNotFound") \
+    OP("MatchRuleInvalid") \
+    OP("Spawn.ExecFailed") \
+    OP("Spawn.ForkFailed") \
+    OP("Spawn.ChildExited") \
+    OP("Spawn.ChildSignaled") \
+    OP("Spawn.Failed") \
+    OP("Spawn.FailedToSetup") \
+    OP("Spawn.ConfigInvalid") \
+    OP("Spawn.ServiceNotValid") \
+    OP("Spawn.ServiceNotFound") \
+    OP("Spawn.PermissionsInvalid") \
+    OP("Spawn.FileInvalid") \
+    OP("Spawn.NoMemory") \
+    OP("UnixProcessIdUnknown") \
+    OP("InvalidSignature") \
+    OP("InvalidFileContent") \
+    OP("SELinuxSecurityContextUnknown") \
+    OP("AdtAuditDataUnknown") \
+    OP("ObjectPathInUse") \
+    OP("InconsistentMessage") \
+    OP("InteractiveAuthorizationRequired")
+
+#define ADD_ERROR(E) this->setAlias(E, this->initErrorType("org.freedesktop.DBus.Error." E, this->dbusErrorType));
+
+    EACH_DBUS_ERROR(ADD_ERROR)
+
+#undef ADD_ERROR
+#undef EACH_DBUS_ERROR
 }
 
 } // namespace core
