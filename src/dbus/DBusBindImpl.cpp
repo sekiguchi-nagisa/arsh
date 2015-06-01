@@ -707,6 +707,11 @@ bool DBusProxy_Object::invokeMethod(RuntimeContext &ctx, const std::string &meth
         if(handle->hasMultipleReturnType()) {
             result = decodeAndUnrefMessage(ctx, static_cast<TupleType *>(handle->getReturnType())->getTypes(), retMsg);
         } else {
+            DSType *type = handle->getReturnType();
+            if(*type == *ctx.getPool().getVoidType()) {
+                unrefMessage(retMsg);
+                return true;
+            }
             result = decodeAndUnrefMessage(ctx, handle->getReturnType(), retMsg);
         }
         if(!result) {
