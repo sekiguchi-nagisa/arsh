@@ -15,6 +15,7 @@
  */
 
 #include "Shell.h"
+#include "../misc/debug.h"
 
 namespace ydsh {
 
@@ -85,6 +86,7 @@ int Shell::getExitStatus() {
 std::unique_ptr<Shell> Shell::createShell() {
     std::unique_ptr<Shell> shell(new Shell());
     shell->initBuiltinVar();
+    shell->initbuiltinIface();
 
     return shell;
 }
@@ -171,6 +173,42 @@ void Shell::initBuiltinVar() {
     // ignore error check (must be always success)
     this->checker.checkTypeRootNode(rootNode);
     rootNode.eval(this->ctx);
+}
+
+void Shell::initbuiltinIface() {
+    static const char builtinIface[] = ""
+            "interface org.freedesktop.DBus.Peer {\n"
+            "    function Ping()\n"
+            "    function GetMachineId() : String\n"
+            "}\n"
+            "type-alias Peer org.freedesktop.DBus.Peer\n"
+            "\n"
+            "interface org.freedesktop.DBus.Introspectable {\n"
+            "    function Introspect() : String\n"
+            "}\n"
+            "type-alias Introspectable org.freedesktop.DBus.Introspectable\n"
+            "\n"
+            "interface org.freedesktop.DBus.Properties {\n"
+            "    function Get($iface : String, $property : String) : Variant\n"
+            "    function Set($iface : String, $property : String, $value : Variant)\n"
+            "    function GetAll($iface : String) : Map<String, Variant>\n"
+            "    function PropertiesChanged($hd : Func<Void, [String, Map<String, Variant>, Array<String>]>)\n"
+            "}\n"
+            "type-alias Properties org.freedesktop.DBus.Properties\n"
+            "\n"
+            "type-alias ObjectAttr Map<String, Map<String, Variant>>"
+            "interface org.freedesktop.DBus.ObjectManager {\n"
+            "    function GetManagedObjects() : Map<ObjectPath, ObjectAttr>\n"
+            "    function InterfacesAdded($hd : Func<Void, [ObjectPath, ObjectAttr]>)\n"
+            "    function InterfacesRemoved($hd : Func<Void, [ObjectPath, Array<String>]>)\n"
+            "}\n"
+            "type-alias ObjectManager org.freedesktop.DBus.ObjectManager\n";
+
+    ShellStatus s = this->eval(builtinIface);
+    if(s != ShellStatus::SUCCESS) {
+        fatal("broken builtin iface\n");
+    }
+    this->ctx.getPool().commit();
 }
 
 } /* namespace ydsh */

@@ -108,6 +108,11 @@ private:
      */
     void initBuiltinVar();
 
+    /**
+     * call only once
+     */
+    void initbuiltinIface();
+
     static CommonErrorListener clistener;
 };
 
