@@ -274,9 +274,9 @@ public:
 
 
     /**
-     * reset symbol table when error happened
+     * abort symbol table and TypePool when error happened
      */
-    void recover();
+    void recover(bool abortType = true);
 
     // visitor api
     void visitDefault(Node *node); // override

@@ -471,9 +471,11 @@ void TypeChecker::checkTypeArgsNode(MethodHandle *handle, ArgsNode *argsNode) { 
     } while(handle->getNext() != 0);
 }
 
-void TypeChecker::recover() {
+void TypeChecker::recover(bool abortType) {
     this->symbolTable.abort();
-    this->typePool->abort();
+    if(abortType) {
+        this->typePool->abort();
+    }
 
     this->curReturnType = 0;
     this->loopContextStack.clear();

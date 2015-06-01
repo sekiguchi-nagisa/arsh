@@ -140,8 +140,8 @@ ShellStatus Shell::eval(const char *sourceName, Lexer &lexer) {
     case EvalStatus::EXIT:
         return ShellStatus::EXIT;
     default:
-        this->checker.recover();
         this->ctx.reportError();
+        this->checker.recover(false);
         return ShellStatus::RUNTIME_ERROR;
     }
 }
