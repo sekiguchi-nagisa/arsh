@@ -8,9 +8,7 @@ interface org.freedesktop.NetworkManager {
     function StateChanged($h : Func<Void,[Uint32]>)
 }
 
-function f($s : Uint32) {
-    echo state changed : $s
-}
+
 
 var srv = $DBus.systemBus()\
             .service("org.freedesktop.NetworkManager")
@@ -34,6 +32,11 @@ type-alias NM org.freedesktop.NetworkManager
 # get all properties
 var p = ($a as Properties).GetAll("org.freedesktop.NetworkManager")
 echo $p
+
+function f($s : Uint32) {
+    echo state changed : $s
+    echo devices: ${($a as NM).GetDevices()}
+}
 
 assert($a is NM)
 if($a is NM) {
