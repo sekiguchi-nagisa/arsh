@@ -1,0 +1,7 @@
+interface org.freedesktop.UDisks2.Filesystem {
+    function SetLabel($label : String, $options : Map<String, Variant>)
+    function Mount($options : Map<String, Variant>) : String
+    function Unmount($options : Map<String, Variant>)
+    let MountPoints : Array<Array<Byte>>
+}
+
