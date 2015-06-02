@@ -447,7 +447,7 @@ bool DBus_ObjectImpl::waitSignal(RuntimeContext &ctx) {
 
     // wait and dispatch
     while(true) {
-        dbus_connection_read_write(conn, 10000);
+        dbus_connection_read_write(conn, 1000);
         DBusMessage *message = dbus_connection_pop_message(conn);
 
         debugp("timeout\n");
