@@ -110,6 +110,7 @@ private:
     void closeContainerIter(DBusMessageIter *parentIter, DBusMessageIter *subIter);
 };
 
+DSType *decodeTypeDescriptor(TypePool *pool, const char *desc);
 
 } // namespace core
 } // namespace ydsh

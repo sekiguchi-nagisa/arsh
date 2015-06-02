@@ -212,9 +212,10 @@ void MessageBuilder::visitBuiltinType(BuiltinType *type) {
         dbus_message_iter_append_basic(this->iter, dbusType, &value);
         return;
     };
-//    case DBUS_TYPE_UNIX_FD: {
-//        break;
-//    };
+    case DBUS_TYPE_UNIX_FD: {
+        fatal("unsupported dbus type: UNIX_FD\n");
+        break;
+    };
     default:
         if(*type == *this->pool->getVariantType()) {    //variant
             DSType *actualType = this->peek()->getType();
@@ -332,6 +333,73 @@ DBusMessageIter *MessageBuilder::openContainerIter(int dbusType, const char *des
 void MessageBuilder::closeContainerIter(DBusMessageIter *parentIter, DBusMessageIter *subIter) {
     this->iter = parentIter;
     dbus_message_iter_close_container(this->iter, subIter);
+}
+
+static DSType *decodeTypeDescriptorImpl(TypePool *pool, const char *&desc) {
+    int kind = *(desc++);
+    switch(kind) {
+    case DBUS_TYPE_INT64:
+        return pool->getInt64Type();
+    case DBUS_TYPE_UINT64:
+        return pool->getUint64Type();
+    case DBUS_TYPE_INT32:
+        return pool->getInt32Type();
+    case DBUS_TYPE_UINT32:
+        return pool->getUint32Type();
+    case DBUS_TYPE_INT16:
+        return pool->getInt16Type();
+    case DBUS_TYPE_UINT16:
+        return pool->getUint16Type();
+    case DBUS_TYPE_BYTE:
+        return pool->getByteType();
+    case DBUS_TYPE_DOUBLE:
+        return pool->getFloatType();
+    case DBUS_TYPE_BOOLEAN:
+        return pool->getBooleanType();
+    case DBUS_TYPE_STRING:
+        return pool->getStringType();
+    case DBUS_TYPE_OBJECT_PATH:
+        return pool->getObjectPathType();
+    case DBUS_TYPE_UNIX_FD:
+        fatal("unsupported dbus type: UNIX_FD\n");
+        return pool->getUnixFDType();
+    case DBUS_TYPE_ARRAY: {
+        int nextKind = *desc;
+        if(nextKind == DBUS_DICT_ENTRY_BEGIN_CHAR) {    // map
+            desc++; // consume begin char
+
+            std::vector<DSType *> types(2);
+            types[0] = decodeTypeDescriptorImpl(pool, desc);
+            types[1] = decodeTypeDescriptorImpl(pool, desc);
+
+            desc++; // consume end char
+
+            return pool->createAndGetReifiedTypeIfUndefined(pool->getMapTemplate(), std::move(types));
+        } else {    // array
+            std::vector<DSType *> types(1);
+            types[0] = decodeTypeDescriptorImpl(pool, desc);
+            return pool->createAndGetReifiedTypeIfUndefined(pool->getArrayTemplate(), std::move(types));
+        }
+    };
+    case DBUS_STRUCT_BEGIN_CHAR: {  // Tuple
+        std::vector<DSType *> types;
+        do {
+            types.push_back(decodeTypeDescriptorImpl(pool, desc));
+        } while(*desc != DBUS_STRUCT_END_CHAR);
+        return pool->createAndGetTupleTypeIfUndefined(std::move(types));
+    };
+    case DBUS_TYPE_VARIANT: {
+        return pool->getVariantType();
+    };
+    default:
+        fatal("unsupported dbus type: %c", kind);
+        return nullptr;
+    }
+}
+
+DSType *decodeTypeDescriptor(TypePool *pool, const char *desc) {
+    const char *copyDesc = desc;
+    return decodeTypeDescriptorImpl(pool, copyDesc);
 }
 
 } // namespace core

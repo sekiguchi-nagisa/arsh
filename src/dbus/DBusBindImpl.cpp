@@ -102,16 +102,24 @@ static std::shared_ptr<DSObject> decodeMessageIter(RuntimeContext &ctx, DBusMess
         dbus_message_iter_get_basic(iter, &value);
         return std::make_shared<String_Object>(ctx.getPool().getObjectPathType(), std::string(value));
     };
-//    case DBUS_TYPE_UNIX_FD: {
-//        fatal("unsupported dbus type: UNIX_FD");
-//        return std::shared_ptr<DSObject>(nullptr);
-//    };
-
+    case DBUS_TYPE_UNIX_FD: {
+        fatal("unsupported dbus type: UNIX_FD");
+        return std::shared_ptr<DSObject>(nullptr);
+    };
     case DBUS_TYPE_ARRAY: {
+        int elementType = dbus_message_iter_get_element_type(iter);
         DBusMessageIter subIter;
         dbus_message_iter_recurse(iter, &subIter);
-        int elementType = dbus_message_iter_get_arg_type(&subIter);
         if(elementType == DBUS_TYPE_DICT_ENTRY) {   // map
+            if(!dbus_message_iter_has_next(&subIter)) { //empty map
+                char *desc = dbus_message_iter_get_signature(&subIter);
+                std::string mapDesc("a");
+                mapDesc += desc;
+                dbus_free(desc);
+                DSType *mapType = decodeTypeDescriptor(&ctx.getPool(), mapDesc.c_str());
+                return std::make_shared<Map_Object>(mapType);
+            }
+
             int firstElementType = DBUS_TYPE_INVALID;
             std::vector<std::pair<std::shared_ptr<DSObject>, std::shared_ptr<DSObject>>> entries;
             do {
@@ -124,35 +132,38 @@ static std::shared_ptr<DSObject> decodeMessageIter(RuntimeContext &ctx, DBusMess
                     firstElementType = dbus_message_iter_get_arg_type(&entryIter);
                 }
                 auto value(decodeMessageIter(ctx, &entryIter));
-                dbus_message_iter_next(&subIter);
-                elementType = dbus_message_iter_get_arg_type(&subIter);
                 entries.push_back(std::make_pair(std::move(key), std::move(value)));
-            } while(elementType != DBUS_TYPE_INVALID);  //FIXME: support empty map
+            } while(dbus_message_iter_next(&subIter));
             std::vector<DSType *> types(2);
             types[0] = entries.back().first->getType();
             types[1] = firstElementType == DBUS_TYPE_VARIANT ?
                        ctx.getPool().getVariantType() : entries.back().second->getType();
 
             auto map = std::make_shared<Map_Object>(
-                    ctx.getPool().createAndGetReifiedTypeIfUndefined(ctx.getPool().getMapTemplate(), std::move(types)));
+                    ctx.getPool().createAndGetReifiedTypeIfUndefined(
+                            ctx.getPool().getMapTemplate(), std::move(types)));
             unsigned int size = entries.size();
             for(unsigned int i = 0; i < size; i++) {
                 map->add(std::move(entries[i]));
             }
             return std::move(map);
         } else {    // array
-            int firstElementType = DBUS_TYPE_INVALID;
+            if(!dbus_message_iter_has_next(&subIter)) { //empty array
+                char *desc = dbus_message_iter_get_signature(&subIter);
+                std::vector<DSType*> types(1);
+                types[0] = decodeTypeDescriptor(&ctx.getPool(), desc);
+                dbus_free(desc);
+                return std::make_shared<Array_Object>(
+                        ctx.getPool().createAndGetReifiedTypeIfUndefined(
+                                ctx.getPool().getArrayTemplate(), std::move(types)));
+            }
+
             std::vector<std::shared_ptr<DSObject>> values;
             do {
                 values.push_back(decodeMessageIter(ctx, &subIter));
-                dbus_message_iter_next(&subIter);
-                elementType = dbus_message_iter_get_arg_type(&subIter);
-                if(elementType != DBUS_TYPE_INVALID) {
-                    firstElementType = elementType;
-                }
-            } while(elementType != DBUS_TYPE_INVALID);    //FIXME: support empty array
+            } while(dbus_message_iter_next(&subIter));
             std::vector<DSType *> types(1);
-            types[0] = firstElementType == DBUS_TYPE_VARIANT ? ctx.getPool().getVariantType() : values[0]->getType();
+            types[0] = elementType == DBUS_TYPE_VARIANT ? ctx.getPool().getVariantType() : values[0]->getType();
 
             return std::make_shared<Array_Object>(
                     ctx.getPool().createAndGetReifiedTypeIfUndefined(
@@ -164,15 +175,12 @@ static std::shared_ptr<DSObject> decodeMessageIter(RuntimeContext &ctx, DBusMess
         DBusMessageIter subIter;
         dbus_message_iter_recurse(iter, &subIter);
 
-        int elementType;
         std::vector<DSType *> types;
         std::vector<std::shared_ptr<DSObject>> values;
         do {
             values.push_back(decodeMessageIter(ctx, &subIter));
             types.push_back(values.back()->getType());
-            dbus_message_iter_next(&subIter);
-            elementType = dbus_message_iter_get_arg_type(&subIter);
-        } while(elementType != DBUS_TYPE_INVALID);
+        } while(dbus_message_iter_next(&subIter));
         DSType *tupleType = ctx.getPool().createAndGetTupleTypeIfUndefined(std::move(types));
         std::shared_ptr<Tuple_Object> tuple(new Tuple_Object(tupleType));
         unsigned int size = values.size();
@@ -184,7 +192,6 @@ static std::shared_ptr<DSObject> decodeMessageIter(RuntimeContext &ctx, DBusMess
     case DBUS_TYPE_VARIANT: {
         DBusMessageIter subIter;
         dbus_message_iter_recurse(iter, &subIter);
-
         return decodeMessageIter(ctx, &subIter);
     };
     default:

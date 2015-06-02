@@ -1,0 +1,13 @@
+function hd($path : ObjectPath, $attr : ObjectAttr) {
+    echo $attr
+    exit
+}
+
+var a = $DBus.systemBus()\
+            .service("org.freedesktop.UDisks2")\
+            .object(p'/org/freedesktop/UDisks2')
+echo ${($a as ObjectManager).GetManagedObjects()}
+
+#($a as ObjectManager).InterfacesAdded($hd)
+#$DBus.waitSignal($a)
+
