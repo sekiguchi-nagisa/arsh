@@ -608,7 +608,7 @@ std::string UserFuncObject::toString(RuntimeContext &ctx) {
     return str;
 }
 
-bool UserFuncObject::invoke(RuntimeContext &ctx) {  //TODO: default param
+EvalStatus UserFuncObject::invoke(RuntimeContext &ctx) {  //TODO: default param
     // change stackTopIndex
     ctx.pushFuncContext(this->funcNode);
     ctx.reserveLocalVar(ctx.getLocalVarOffset() + this->funcNode->getMaxVarNum());
@@ -617,51 +617,20 @@ bool UserFuncObject::invoke(RuntimeContext &ctx) {  //TODO: default param
     ctx.popFuncContext();
     switch(s) {
     case EvalStatus::RETURN:
-        return true;
+        return EvalStatus::SUCCESS;
     case EvalStatus::THROW:
-        return false;
+    case EvalStatus::EXIT:
+    case EvalStatus::ASSERT_FAIL:
+        return s;
     default:
         fatal("illegal eval status: %d\n", s);
-        return false;
+        return s;
     }
 }
 
 void UserFuncObject::accept(ObjectVisitor *visitor) {
     visitor->visitUserFuncObject(this);
 }
-
-
-// ###############################
-// ##     BuiltinFuncObject     ##
-// ###############################
-
-BuiltinFuncObject::BuiltinFuncObject(native_func_t func_ptr) :
-        FuncObject(), func_ptr(func_ptr) {
-}
-
-native_func_t BuiltinFuncObject::getFuncPointer() {
-    return this->func_ptr;
-}
-
-std::string BuiltinFuncObject::toString(RuntimeContext &ctx) {
-    std::string str("function(");
-    str += std::to_string((long) this->func_ptr);
-    str += ")";
-    return str;
-}
-
-bool BuiltinFuncObject::invoke(RuntimeContext &ctx) {
-    return this->func_ptr(ctx);
-}
-
-std::shared_ptr<DSObject> BuiltinFuncObject::newFuncObject(native_func_t func_ptr) {
-    return std::make_shared<BuiltinFuncObject>(func_ptr);
-}
-
-void BuiltinFuncObject::accept(ObjectVisitor *visitor) {
-    visitor->visitBuiltinFuncObject(this);
-}
-
 
 // #############################
 // ##     NativeMethodRef     ##

@@ -146,7 +146,7 @@ EvalStatus RuntimeContext::applyFuncObject(unsigned int lineNum, bool returnType
     // call function
     this->saveAndSetOffset(savedStackTopIndex + 2);
     this->pushCallFrame(lineNum);
-    bool status = TYPE_AS(FuncObject,
+    EvalStatus status = TYPE_AS(FuncObject,
                           this->localStack[savedStackTopIndex + 1])->invoke(*this);
     this->popCallFrame();
 
@@ -164,7 +164,7 @@ EvalStatus RuntimeContext::applyFuncObject(unsigned int lineNum, bool returnType
     if(returnValue) {
         this->push(std::move(returnValue));
     }
-    return status ? EvalStatus::SUCCESS : EvalStatus::THROW;
+    return status;
 }
 
 /**

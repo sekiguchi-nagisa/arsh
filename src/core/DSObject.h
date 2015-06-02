@@ -26,7 +26,6 @@ namespace  core {
 
 using namespace ydsh::ast;
 
-class RuntimeContext;
 class String_Object;
 struct ObjectVisitor;
 
@@ -324,7 +323,7 @@ struct FuncObject : public DSObject {
      * return true, if invocation success.
      * return false, if thrown exception.
      */
-    virtual bool invoke(RuntimeContext &ctx) = 0;
+    virtual EvalStatus invoke(RuntimeContext &ctx) = 0;
 };
 
 /*
@@ -342,34 +341,7 @@ public:
     FunctionNode *getFuncNode();
 
     std::string toString(RuntimeContext &ctx); // override
-    bool invoke(RuntimeContext &ctx); // override
-    void accept(ObjectVisitor *visitor); // override
-};
-
-/**
- * for builtin(native) function
- */
-class BuiltinFuncObject : public FuncObject {
-private:
-    /**
-     * bool func(RuntimeContext &ctx)
-     */
-    native_func_t func_ptr;
-
-public:
-    explicit BuiltinFuncObject(native_func_t func_ptr);
-
-    ~BuiltinFuncObject() = default;
-
-    native_func_t getFuncPointer();
-
-    std::string toString(RuntimeContext &ctx); // override
-    bool invoke(RuntimeContext &ctx); // override
-
-    /**
-     * for builtin func obejct creation
-     */
-    static std::shared_ptr<DSObject> newFuncObject(native_func_t func_ptr);
+    EvalStatus invoke(RuntimeContext &ctx); // override
     void accept(ObjectVisitor *visitor); // override
 };
 
@@ -476,7 +448,6 @@ struct ObjectVisitor {
     virtual void visitTuple_Object(Tuple_Object *obj) = 0;
     virtual void visitError_Object(Error_Object *obj) = 0;
     virtual void visitUserFuncObject(UserFuncObject *obj) = 0;
-    virtual void visitBuiltinFuncObject(BuiltinFuncObject *obj) = 0;
 };
 
 } // namespace core
