@@ -58,13 +58,21 @@ RuntimeContext::~RuntimeContext() {
     this->localStack = 0;
 }
 
-
-#ifndef X_CONFIG_DIR
-#define X_CONFIG_DIR "./.ydsh/"
+std::string RuntimeContext::getConfigRootDir() {
+#ifdef X_CONFIG_DIR
+    return std::string(X_CONFIG_DIR);
+#else
+    std::string path(getenv("HOME"));
+    path += "/.ydsh";
+    return path;
 #endif
+}
 
-const char *RuntimeContext::configRootDir = X_CONFIG_DIR;
-const char *RuntimeContext::typeDefDir = X_CONFIG_DIR "dbus/iface/";
+std::string RuntimeContext::getIfaceDir() {
+    std::string root(getConfigRootDir());
+    root += "/dbus/iface";
+    return root;
+}
 
 void RuntimeContext::setScriptName(const char *name) {
     this->scriptName = std::make_shared<String_Object>(this->pool.getStringType(), std::string(name));

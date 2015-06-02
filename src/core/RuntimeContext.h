@@ -151,7 +151,6 @@ private:
 
     std::string workingDir;
 
-public:
     static const char *configRootDir;
     static const char *typeDefDir;
 
@@ -159,6 +158,9 @@ public:
     RuntimeContext();
 
     ~RuntimeContext();
+
+    static std::string getConfigRootDir();
+    static std::string getIfaceDir();
 
     TypePool &getPool() {
         return this->pool;
