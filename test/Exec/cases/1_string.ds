@@ -50,8 +50,6 @@ assert("this is true" == "this is ${true}")
 assert("this is false" == "this is ${false}")
 
 # string cast
-assert((12 + "hello") is String)
-assert(12 + "hello" == "12hello")
 assert(("fre" + 3.14) is String)
 assert("hey" + $true == 'heytrue')
 assert("" + $False == "false")
