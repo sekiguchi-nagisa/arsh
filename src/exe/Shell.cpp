@@ -88,6 +88,9 @@ std::unique_ptr<Shell> Shell::createShell() {
     shell->initBuiltinVar();
     shell->initbuiltinIface();
 
+    // reset line number
+    shell->lineNum = 1;
+
     return shell;
 }
 
