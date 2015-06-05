@@ -263,13 +263,6 @@ private:
 };
 
 /**
- * for BuiltinType creation.
- */
-DSType *newBuiltinType(bool extendable, DSType *superType,
-                       native_type_info_t *info, bool isVoid = false);
-
-
-/**
  * not support override.
  */
 class ReifiedType : public BuiltinType {
@@ -414,6 +407,33 @@ struct TypeVisitor {
     virtual void visitTupleType(TupleType *type) = 0;
     virtual void visitInterfaceType(InterfaceType *type) = 0;
     virtual void visitErrorType(ErrorType *type) = 0;
+};
+
+/**
+ * ReifiedType template.
+ */
+class TypeTemplate {
+private:
+    std::string name;
+
+    std::vector<DSType*> acceptableTypes;
+
+    /**
+     * may be null, if Tuple template
+     */
+    native_type_info_t *info;
+public:
+    TypeTemplate(std::string &&name, std::vector<DSType*> &&elementTypes, native_type_info_t *info);
+
+    ~TypeTemplate() = default;
+
+    const std::string &getName();
+
+    unsigned int getElementTypeSize();
+
+    native_type_info_t *getInfo();
+
+    const std::vector<DSType *> &getAcceptableTypes();
 };
 
 } // namespace core

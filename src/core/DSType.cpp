@@ -275,11 +275,6 @@ void ReifiedType::accept(TypeVisitor *visitor) {
     visitor->visitReifiedType(this);
 }
 
-DSType *newBuiltinType(bool extendable,
-                       DSType *superType, native_type_info_t *info, bool isVoid) {
-    return new BuiltinType(extendable, superType, info, isVoid);
-}
-
 // #######################
 // ##     TupleType     ##
 // #######################
@@ -499,6 +494,30 @@ void ErrorType::registerFuncInfo(NativeFuncInfo *info) {
         funcInfo = info;
         initRef.reset(new NativeMethodRef(info->func_ptr));
     }
+}
+
+// ##########################
+// ##     TypeTemplate     ##
+// ##########################
+
+TypeTemplate::TypeTemplate(std::string &&name, std::vector<DSType*> &&elementTypes, native_type_info_t *info) :
+        name(std::move(name)), acceptableTypes(std::move(elementTypes)), info(info) {
+}
+
+const std::string &TypeTemplate::getName() {
+    return this->name;
+}
+
+unsigned int TypeTemplate::getElementTypeSize() {
+    return this->acceptableTypes.size();
+}
+
+native_type_info_t *TypeTemplate::getInfo() {
+    return this->info;
+}
+
+const std::vector<DSType *> &TypeTemplate::getAcceptableTypes() {
+    return this->acceptableTypes;
 }
 
 } // namespace core

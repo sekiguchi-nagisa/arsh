@@ -18,7 +18,6 @@
 #include "TypeLookupError.h"
 #include "bind.h"
 #include "DSType.h"
-#include "TypeTemplate.h"
 #include "../parser/Parser.h"
 #include "../ast/Node.h"
 #include "../parser/TypeChecker.h"
@@ -474,7 +473,7 @@ DSType *TypePool::initBuiltinType(const char *typeName, bool extendable,
                                   DSType *superType, native_type_info_t *info, bool isVoid) {
     // create and register type
     return this->typeMap.addType(
-            std::string(typeName), newBuiltinType(extendable, superType, info, isVoid));
+            std::string(typeName), new BuiltinType(extendable, superType, info, isVoid));
 }
 
 TypeTemplate *TypePool::initTypeTemplate(const char *typeName,

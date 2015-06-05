@@ -2,7 +2,6 @@
 
 #include <core/TypePool.h>
 #include <core/DSType.h>
-#include <core/TypeTemplate.h>
 #include <ast/TypeToken.h>
 #include <parser/TypeChecker.h>
 #include <misc/types.hpp>
