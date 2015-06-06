@@ -18,7 +18,7 @@
 #define TOOLS_DESCLEXER_H
 
 #include <parser/InputBuffer.hpp>
-#include <parser/Token.h>
+#include <parser/ParserBase.hpp>
 
 #define EACH_DESC_TOKEN(OP) \
     OP(INVALID) \
@@ -52,12 +52,19 @@ EACH_DESC_TOKEN(GEN_ENUM)
 #undef GEN_ENUM
 };
 
-class DescLexer : public ydsh::parser::InputBuffer {
+typedef ydsh::parser_base::Token<DescTokenKind> Token;
+
+class DescLexer : public ydsh::parser::InputBuffer,
+                  public ydsh::parser_base::LexerBase<DescTokenKind, DescLexer> {
 public:
     DescLexer(const char *line) : InputBuffer(line) {}
     ~DescLexer() = default;
 
-    DescTokenKind nextToken(ydsh::parser::Token &token);
+    void nextToken(Token &token);
+
+    static bool isInvalidToken(DescTokenKind kind) {
+        return kind == INVALID;
+    }
 };
 
 const char *getTokenKindName(DescTokenKind kind);

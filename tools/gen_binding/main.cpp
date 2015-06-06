@@ -512,16 +512,8 @@ public:
     }
 };
 
-class Parser {
+class Parser : public ydsh::parser_base::ParserBase<DescTokenKind, DescLexer> {
 private:
-    /**
-     * not call destructor
-     */
-    DescLexer *lexer;
-
-    DescTokenKind kind;
-    ydsh::parser::Token token;
-
     Parser() = default;
 
 public:
@@ -536,51 +528,23 @@ public:
 private:
     static bool isDescriptor(const std::string &line);
 
-    std::string toTokenText(ydsh::parser::Token token) {
+    std::string toTokenText(Token token) {
         return this->lexer->getText(token.startPos, token.size);
     }
 
-    std::string toName(ydsh::parser::Token token) {
+    std::string toName(Token token) {
         unsigned startPos = token.startPos + 1;
         unsigned size = token.size - 1;
         return this->lexer->getText(startPos, size);
     }
 
-    void nextToken() {
-        this->kind = this->lexer->nextToken(this->token);
-    }
-
-    void matchToken(DescTokenKind expected) {
-        if(this->kind != expected) {
-            error("expected: %s, but is: %s, %s",
-                  getTokenKindName(expected),
-                  getTokenKindName(this->kind),
-                  this->toTokenText(this->token).c_str());
-        }
-        this->nextToken();
-    }
-
-    ydsh::parser::Token matchAndGetToken(DescTokenKind expected) {
-        if(this->kind != expected) {
-            error("expected: %s, but is: %s, %s",
-                  getTokenKindName(expected),
-                  getTokenKindName(this->kind),
-                  this->toTokenText(this->token).c_str());
-        }
-        auto token(this->token);
-        this->nextToken();
-        return token;
-    }
-
-    DescTokenKind consumeAndGetKind() {
-        DescTokenKind kind = this->kind;
-        this->nextToken();
-        return kind;
-    }
-
     void init(DescLexer &lexer) {
         this->lexer = &lexer;
-        this->nextToken();
+        this->fetchNext();
+    }
+
+    bool isInvalidToken(DescTokenKind kind) {
+        return kind == INVALID;
     }
 
     std::unique_ptr<Element> parse_descriptor(const std::string &line);
@@ -594,6 +558,12 @@ private:
     std::unique_ptr<TypeToken> parse_type();
 
     void parse_funcDecl(const std::string &line, std::unique_ptr<Element> &element);
+
+    void printParseError(const ParseError &e);
+
+    void printParseError(const TokenMismatchedError *e);
+    void printParseError(const NoViableAlterError *e);
+    void printParseError(const InvalidTokenError *e);
 };
 
 void Parser::parse(char *fileName, std::vector<std::unique_ptr<Element>> &elements) {
@@ -627,6 +597,11 @@ void Parser::parse(char *fileName, std::vector<std::unique_ptr<Element>> &elemen
             << ": [error] " << e.getMessage() << std::endl;
             std::cerr << line << std::endl;
             exit(EXIT_FAILURE);
+        } catch(const ParseError &e) {
+            std::cerr << fileName << ":" << lineNum << ": [error] ";
+            parser.printParseError(e);
+            std::cerr << line << std::endl;
+            exit(EXIT_FAILURE);
         }
     }
 }
@@ -658,60 +633,70 @@ std::unique_ptr<Element> Parser::parse_descriptor(const std::string &line) {
     DescLexer lexer(line.c_str());
     this->init(lexer);
 
-    this->matchToken(DESC_PREFIX);
+    this->expect(DESC_PREFIX);
 
-    switch(this->kind) {
+    switch(this->curToken.kind) {
     case FUNC:
         return this->parse_funcDesc();
     case INIT:
         return this->parse_initDesc();
-    default:
-        error("illegal token: %s", this->toTokenText(this->token).c_str());
+    default: {
+        std::vector<DescTokenKind> alters;
+        alters.push_back(FUNC);
+        alters.push_back(INIT);
+        this->alternativeError(std::move(alters));
         break;
+    }
     }
     return std::unique_ptr<Element>(nullptr);
 }
 
 std::unique_ptr<Element> Parser::parse_funcDesc() {
-    this->matchToken(FUNC);
+    this->expect(FUNC);
 
     std::unique_ptr<Element> element;
 
     // parser function name
-    switch(this->kind) {
+    switch(this->curToken.kind) {
     case IDENTIFIER: {
-        auto token = this->matchAndGetToken(IDENTIFIER);
+        Token token;
+        this->expect(IDENTIFIER, token);
         element = Element::newFuncElement(this->toTokenText(token), false);
         break;
     }
     case VAR_NAME: {
-        auto token = this->matchAndGetToken(VAR_NAME);
+        Token token;
+        this->expect(VAR_NAME, token);
         element = Element::newFuncElement(this->toName(token), true);
         break;
     }
-    default:
-        error("illegal token: %s", this->toTokenText(this->token).c_str());
+    default: {
+        std::vector<DescTokenKind> alters;
+        alters.push_back(IDENTIFIER);
+        alters.push_back(VAR_NAME);
+        this->alternativeError(std::move(alters));
         return std::unique_ptr<Element>(nullptr);
+    }
     }
 
     // parser parameter decl
-    this->matchToken(LP);
+    this->expect(LP);
     this->parse_params(element);
-    this->matchToken(RP);
+    this->expect(RP);
 
-    this->matchToken(COLON);
+    this->expect(COLON);
     element->setReturnType(this->parse_type());
 
     return element;
 }
 
 std::unique_ptr<Element> Parser::parse_initDesc() {
-    this->matchToken(INIT);
+    this->expect(INIT);
 
     std::unique_ptr<Element> element(Element::newInitElement());
-    this->matchToken(LP);
+    this->expect(LP);
     this->parse_params(element);
-    this->matchToken(RP);
+    this->expect(RP);
 
     return element;
 }
@@ -720,51 +705,58 @@ void Parser::parse_params(const std::unique_ptr<Element> &element) {
     int count = 0;
     do {
         if(count++ > 0) {
-            this->matchToken(COMMA);
+            this->expect(COMMA);
         }
 
-        auto token = this->matchAndGetToken(VAR_NAME);
+        Token token;
+        this->expect(VAR_NAME, token);
         bool hasDefault = false;
-        if(this->kind == OPT) {
-            this->matchToken(OPT);
+        if(this->curToken.kind == OPT) {
+            this->expect(OPT);
             hasDefault = true;
         }
-        this->matchToken(COLON);
+        this->expect(COLON);
         std::unique_ptr<TypeToken> type(this->parse_type());
 
         element->addParam(this->toName(token), hasDefault, std::move(type));
-    } while(this->kind == COMMA);
+    } while(this->curToken.kind == COMMA);
 }
 
 std::unique_ptr<TypeToken> Parser::parse_type() {
-    switch(this->kind) {
+    switch(this->curToken.kind) {
     case IDENTIFIER: {
-        auto token = this->matchAndGetToken(IDENTIFIER);
+        Token token;
+        this->expect(IDENTIFIER, token);
         return CommonTypeToken::newTypeToken(this->toTokenText(token));
     };
     case ARRAY:
     case MAP:
     case TUPLE: {
-        auto token = this->token;
-        this->nextToken();
+        auto token = this->curToken;
+        this->fetchNext();
 
         auto type(ReifiedTypeToken::newReifiedTypeToken(this->toTokenText(token)));
-        this->matchToken(TYPE_OPEN);
+        this->expect(TYPE_OPEN);
 
         unsigned int count = 0;
         do {
             if(count++ > 0) {
-                this->matchToken(COMMA);
+                this->expect(COMMA);
             }
             type->addElement(this->parse_type());
-        } while(this->kind == COMMA);
+        } while(this->curToken.kind == COMMA);
 
-        this->matchToken(TYPE_CLOSE);
+        this->expect(TYPE_CLOSE);
 
         return std::unique_ptr<TypeToken>(type.release());
     };
     default:
-        error("invalid token: %s", this->toTokenText(this->token).c_str());
+        std::vector<DescTokenKind> alters;
+        alters.push_back(IDENTIFIER);
+        alters.push_back(ARRAY);
+        alters.push_back(MAP);
+        alters.push_back(TUPLE);
+        this->alternativeError(std::move(alters));
         return std::unique_ptr<TypeToken>();
     }
 }
@@ -773,20 +765,67 @@ void Parser::parse_funcDecl(const std::string &line, std::unique_ptr<Element> &e
     DescLexer lexer(line.c_str());
     this->init(lexer);
 
-    this->matchToken(STATIC);
-    this->matchToken(INLINE);
-    this->matchToken(BOOL);
+    this->expect(STATIC);
+    this->expect(INLINE);
+    this->expect(BOOL);
 
-    auto token = this->matchAndGetToken(IDENTIFIER);
+    Token token;
+    this->expect(IDENTIFIER, token);
     std::string str(this->toTokenText(token));
     element->setActualFuncName(std::move(str));
 
-    this->matchToken(LP);
-    this->matchToken(RCTX);
-    this->matchToken(AND);
-    this->matchToken(IDENTIFIER);
-    this->matchToken(RP);
-    this->matchToken(LBC);
+    this->expect(LP);
+    this->expect(RCTX);
+    this->expect(AND);
+    this->expect(IDENTIFIER);
+    this->expect(RP);
+    this->expect(LBC);
+}
+
+void Parser::printParseError(const ParseError &e) {
+#define EACH_TYPE(OP) \
+    OP(TokenMismatchedError) \
+    OP(NoViableAlterError) \
+    OP(InvalidTokenError)
+
+#define DISPATCH(OP) if(dynamic_cast<const OP *>(&e) != nullptr) { \
+    this->printParseError(static_cast<const OP *>(&e)); return; }
+
+    EACH_TYPE(DISPATCH)
+
+#undef DISPATCH
+#undef EACH_TYPE
+}
+
+void Parser::printParseError(const TokenMismatchedError *e) {
+    std::string message = "mismatched token: ";
+    message += getTokenKindName(e->getErrorToken().kind);
+    message += ", expect for ";
+    message += getTokenKindName(e->getExpectedKind());
+
+    std::cerr << message << std::endl;
+}
+
+void Parser::printParseError(const NoViableAlterError *e) {
+    std::string message = "no viable alternative: ";
+    message += getTokenKindName(e->getErrorToken().kind);
+    message += ", expect for ";
+    unsigned int size = e->getAlters().size();
+    for(unsigned int i = 0; i < size; i++) {
+        if(i > 0) {
+            message += ", ";
+        }
+        message += getTokenKindName(e->getAlters()[i]);
+    }
+
+    std::cerr << message << std::endl;
+}
+
+void Parser::printParseError(const InvalidTokenError *e) {
+    std::string message = "invalid token: ";
+    message += this->toTokenText(e->getErrorToken());
+
+    std::cerr << message << std::endl;
 }
 
 #define OUT(fmt, ...) \
