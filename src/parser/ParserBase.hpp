@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_ABSTRACTPARSER_HPP
-#define YDSH_ABSTRACTPARSER_HPP
+#ifndef YDSH_PARSERBASE_HPP
+#define YDSH_PARSERBASE_HPP
 
 #include <vector>
 
@@ -217,4 +217,4 @@ void ParserBase<T, LexerImpl>::alternativeError(std::vector<T> &&alters) {
 } //namespace ydsh
 
 
-#endif //YDSH_ABSTRACTPARSER_HPP
+#endif //YDSH_PARSERBASE_HPP

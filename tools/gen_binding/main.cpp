@@ -528,11 +528,11 @@ public:
 private:
     static bool isDescriptor(const std::string &line);
 
-    std::string toTokenText(Token token) {
+    std::string toTokenText(const Token &token) {
         return this->lexer->getText(token.startPos, token.size);
     }
 
-    std::string toName(Token token) {
+    std::string toName(const Token &token) {
         unsigned startPos = token.startPos + 1;
         unsigned size = token.size - 1;
         return this->lexer->getText(startPos, size);
