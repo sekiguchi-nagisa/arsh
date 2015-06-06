@@ -165,6 +165,14 @@ private:
     DSType *dbusErrorType;
 
     /**
+     * for internal status reporting.
+     * they are pseudo type, so must not use it from shell
+     */
+    DSType *internalStatus; // base type
+    DSType *shellExit;
+    DSType *assertFail;
+
+    /**
      * for type template
      */
     std::unordered_map<std::string, TypeTemplate *> templateMap;
@@ -331,6 +339,19 @@ public:
 
     DSType *getDBusErrorType() const {
         return this->dbusErrorType;
+    }
+
+    // for internal status reporting
+    DSType *getInternalStatus() const {
+        return this->internalStatus;
+    }
+
+    DSType *getShellExit() const {
+        return this->internalStatus;
+    }
+
+    DSType *getAssertFail() const {
+        return this->assertFail;
     }
 
     // for reified type.

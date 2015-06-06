@@ -500,12 +500,8 @@ bool DBus_ObjectImpl::waitSignal(RuntimeContext &ctx) {
             }
 
             // apply handler
-//            if(ctx.applyFuncObject(0, true, size) != EvalStatus::SUCCESS) {
-//                return false;
-//            }
-            EvalStatus s = ctx.applyFuncObject(0, true, size);
-            if(s == EvalStatus::ASSERT_FAIL || s == EvalStatus::EXIT) {
-                exit(0);    //FIXME: this is ad-hoc
+            if(ctx.applyFuncObject(0, true, size) != EvalStatus::SUCCESS) {
+                return false;
             }
         }
     }

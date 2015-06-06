@@ -284,11 +284,11 @@ public:
     /**
      * create new Error_Object and create stack trace
      */
-    static Error_Object *newError(RuntimeContext &ctx, DSType *type,
-                                  const std::shared_ptr<DSObject> &message);
+    static std::shared_ptr<Error_Object> newError(RuntimeContext &ctx, DSType *type,
+                                                  const std::shared_ptr<DSObject> &message);
 
-    static Error_Object *newError(RuntimeContext &ctx, DSType *type,
-                                  std::shared_ptr<DSObject> &&message);
+    static std::shared_ptr<Error_Object> newError(RuntimeContext &ctx, DSType *type,
+                                                  std::shared_ptr<DSObject> &&message);
 
 private:
     void createStackTrace(RuntimeContext &ctx);
@@ -323,7 +323,7 @@ struct FuncObject : public DSObject {
      * return true, if invocation success.
      * return false, if thrown exception.
      */
-    virtual EvalStatus invoke(RuntimeContext &ctx) = 0;
+    virtual bool invoke(RuntimeContext &ctx) = 0;
 };
 
 /*
@@ -341,7 +341,7 @@ public:
     FunctionNode *getFuncNode();
 
     std::string toString(RuntimeContext &ctx); // override
-    EvalStatus invoke(RuntimeContext &ctx); // override
+    bool invoke(RuntimeContext &ctx); // override
     void accept(ObjectVisitor *visitor); // override
 };
 

@@ -32,8 +32,6 @@ enum class EvalStatus : unsigned int {
     CONTINUE,
     THROW,
     RETURN,
-    ASSERT_FAIL,
-    EXIT,
     REMOVE,
 };
 
@@ -479,6 +477,8 @@ public:
     const char *registerSourceName(const char *sourceName);
 
     void updateExitStatus(unsigned int status);
+
+    void exitShell(unsigned int status);
 };
 
 } // namespace core

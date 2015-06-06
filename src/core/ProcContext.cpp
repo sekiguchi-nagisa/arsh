@@ -190,18 +190,18 @@ static EvalStatus execBuiltin(ProcContext *procCtx) {   //FIXME: error report
         return EvalStatus::SUCCESS;
     } else if(procCtx->cmdName == "exit") {
         if(paramSize == 0) {
-            ctx->updateExitStatus(0);
+            ctx->exitShell(0);
         } else if(paramSize > 0) {
             const char *num = procCtx->params[0]->getValue().c_str();
             int status;
             long value = convertToInt64(num, status, false);
             if(status == 0) {
-                ctx->updateExitStatus(value);
+                ctx->exitShell(value);
             } else {
-                ctx->updateExitStatus(0);
+                ctx->exitShell(0);
             }
         }
-        return EvalStatus::EXIT;
+        return EvalStatus::THROW;
     } else {
         fatal("unsupported builtin command %s\n", procCtx->cmdName.c_str());
         return EvalStatus::SUCCESS;

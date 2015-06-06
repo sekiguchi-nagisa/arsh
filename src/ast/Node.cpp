@@ -3257,9 +3257,7 @@ EvalStatus RootNode::eval(RuntimeContext &ctx) {
             }
             break;
         };
-        case EvalStatus::THROW:
-        case EvalStatus::ASSERT_FAIL:
-        case EvalStatus::EXIT: {
+        case EvalStatus::THROW: {
             return status;
         };
         case EvalStatus::REMOVE: {

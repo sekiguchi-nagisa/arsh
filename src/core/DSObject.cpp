@@ -545,18 +545,18 @@ void Error_Object::accept(ObjectVisitor *visitor) {
     visitor->visitError_Object(this);
 }
 
-Error_Object *Error_Object::newError(RuntimeContext &ctx, DSType *type,
+std::shared_ptr<Error_Object> Error_Object::newError(RuntimeContext &ctx, DSType *type,
                                      const std::shared_ptr<DSObject> &message) {
-    Error_Object *obj = new Error_Object(type, message);
+    auto obj = std::make_shared<Error_Object>(type, message);
     obj->createStackTrace(ctx);
-    return obj;
+    return std::move(obj);
 }
 
-Error_Object *Error_Object::newError(RuntimeContext &ctx, DSType *type,
+std::shared_ptr<Error_Object>Error_Object::newError(RuntimeContext &ctx, DSType *type,
                                      std::shared_ptr<DSObject> &&message) {
-    Error_Object *obj = new Error_Object(type, std::move(message));
+    auto obj = std::make_shared<Error_Object>(type, std::move(message));
     obj->createStackTrace(ctx);
-    return obj;
+    return std::move(obj);
 }
 
 void Error_Object::createStackTrace(RuntimeContext &ctx) {
@@ -608,7 +608,7 @@ std::string UserFuncObject::toString(RuntimeContext &ctx) {
     return str;
 }
 
-EvalStatus UserFuncObject::invoke(RuntimeContext &ctx) {  //TODO: default param
+bool UserFuncObject::invoke(RuntimeContext &ctx) {  //TODO: default param
     // change stackTopIndex
     ctx.pushFuncContext(this->funcNode);
     ctx.reserveLocalVar(ctx.getLocalVarOffset() + this->funcNode->getMaxVarNum());
@@ -617,14 +617,12 @@ EvalStatus UserFuncObject::invoke(RuntimeContext &ctx) {  //TODO: default param
     ctx.popFuncContext();
     switch(s) {
     case EvalStatus::RETURN:
-        return EvalStatus::SUCCESS;
+        return true;
     case EvalStatus::THROW:
-    case EvalStatus::EXIT:
-    case EvalStatus::ASSERT_FAIL:
-        return s;
+        return false;
     default:
         fatal("illegal eval status: %d\n", s);
-        return s;
+        return false;
     }
 }
 

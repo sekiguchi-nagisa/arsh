@@ -133,6 +133,7 @@ TypePool::TypePool() :
         dbusType(), busType(), serviceType(), dbusObjectType(),
         arithmeticErrorType(), outOfRangeErrorType(),
         keyNotFoundErrorType(), typeCastErrorType(), dbusErrorType(),
+        internalStatus(), shellExit(), assertFail(),
         templateMap(8),
         arrayTemplate(), mapTemplate(), tupleTemplate(),
         stringArrayType(), envSet(), envCache(), precisionMap() {
@@ -207,6 +208,11 @@ TypePool::TypePool() :
     this->dbusErrorType = this->initErrorType("DBusError", this->errorType);
 
     this->registerDBusErrorTypes();
+
+    // init internal status type
+    this->internalStatus = this->initBuiltinType("%internal status%", false, 0, info_Dummy());
+    this->shellExit = this->initBuiltinType("Shell Exit", false, this->internalStatus, info_Dummy());
+    this->assertFail = this->initBuiltinType("Assertion Error", false, this->internalStatus, info_Dummy());
 
     // commit generated type
     this->typeMap.commit();

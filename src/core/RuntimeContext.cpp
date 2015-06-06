@@ -107,15 +107,13 @@ void RuntimeContext::reserveLocalVar(unsigned int size) {
 }
 
 void RuntimeContext::throwError(DSType *errorType, const char *message) {
-    this->thrownObject = std::shared_ptr<DSObject>(
-            Error_Object::newError(*this, errorType, std::make_shared<String_Object>(
-                    this->pool.getStringType(), std::string(message))));
+    this->thrownObject = Error_Object::newError(*this, errorType, std::make_shared<String_Object>(
+            this->pool.getStringType(), std::string(message)));
 }
 
 void RuntimeContext::throwError(DSType *errorType, std::string &&message) {
-    this->thrownObject = std::shared_ptr<DSObject>(
-            Error_Object::newError(*this, errorType, std::make_shared<String_Object>(
-                    this->pool.getStringType(), message)));
+    this->thrownObject = Error_Object::newError(*this, errorType, std::make_shared<String_Object>(
+            this->pool.getStringType(), message));
 }
 
 void RuntimeContext::expandLocalStack(unsigned int needSize) {
@@ -146,7 +144,7 @@ EvalStatus RuntimeContext::applyFuncObject(unsigned int lineNum, bool returnType
     // call function
     this->saveAndSetOffset(savedStackTopIndex + 2);
     this->pushCallFrame(lineNum);
-    EvalStatus status = TYPE_AS(FuncObject,
+    bool status = TYPE_AS(FuncObject,
                           this->localStack[savedStackTopIndex + 1])->invoke(*this);
     this->popCallFrame();
 
@@ -164,7 +162,7 @@ EvalStatus RuntimeContext::applyFuncObject(unsigned int lineNum, bool returnType
     if(returnValue) {
         this->push(std::move(returnValue));
     }
-    return status;
+    return status ? EvalStatus::SUCCESS : EvalStatus::THROW;
 }
 
 /**
@@ -364,16 +362,9 @@ void RuntimeContext::instanceOf(DSType *targetType) {
 EvalStatus RuntimeContext::checkAssertion(unsigned int lineNum) {
     if(!TYPE_AS(Boolean_Object, this->pop())->getValue()) {
         this->pushCallFrame(lineNum);
-        std::vector<std::string> stackTrace;
-        this->fillInStackTrace(stackTrace);
+        this->throwError(this->pool.getAssertFail(), "");
         this->popCallFrame();
-
-        // print stack trace
-        std::cerr << "Assertion Error" << std::endl;
-        for(const std::string &str : stackTrace) {
-            std::cerr << "    " << str << std::endl;
-        }
-        return EvalStatus::ASSERT_FAIL;
+        return EvalStatus::THROW;
     }
     return EvalStatus::SUCCESS;
 }
@@ -438,6 +429,11 @@ const char *RuntimeContext::registerSourceName(const char *sourceName) {
 
 void RuntimeContext::updateExitStatus(unsigned int status) {
     this->exitStatus = std::make_shared<Int_Object>(this->pool.getInt32Type(), status);
+}
+
+void RuntimeContext::exitShell(unsigned int status) {
+    this->updateExitStatus(status);
+    this->throwError(this->pool.getShellExit(), "exit shell by exit command");
 }
 
 } // namespace core

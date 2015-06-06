@@ -140,11 +140,18 @@ ShellStatus Shell::eval(const char *sourceName, Lexer &lexer) {
     switch(rootNode.eval(this->ctx)) {
     case EvalStatus::SUCCESS:
         return ShellStatus::SUCCESS;
-    case EvalStatus::ASSERT_FAIL:
-        return ShellStatus::ASSERTION_ERROR;
-    case EvalStatus::EXIT:
-        return ShellStatus::EXIT;
     default:
+        DSType *thrownType = ctx.getThrownObject()->getType();
+        if(this->ctx.getPool().getInternalStatus()->isAssignableFrom(thrownType)) {
+            if(*thrownType == *this->ctx.getPool().getShellExit()) {
+                return ShellStatus::EXIT;
+            }
+            if(*thrownType == *this->ctx.getPool().getAssertFail()) {
+                this->ctx.loadThrownObject();
+                TYPE_AS(Error_Object, ctx.pop())->printStackTrace(this->ctx);
+                return ShellStatus::ASSERTION_ERROR;
+            }
+        }
         this->ctx.reportError();
         this->checker.recover(false);
         return ShellStatus::RUNTIME_ERROR;
