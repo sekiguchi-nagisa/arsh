@@ -30,7 +30,7 @@ struct Token {
     unsigned int size;
 
     bool operator==(const Token<T> &token) {
-        return this->lineNum = token.lineNum && this->kind == token.kind &&
+        return this->lineNum == token.lineNum && this->kind == token.kind &&
                 this->startPos == token.startPos && this->size == token.size;
     }
 
