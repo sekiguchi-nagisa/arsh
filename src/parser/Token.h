@@ -17,6 +17,8 @@
 #ifndef PARSER_TOKENKIND_H_
 #define PARSER_TOKENKIND_H_
 
+#include "ParserBase.hpp"
+
 #define EACH_TOKEN(TOKEN) \
     TOKEN(DUMMY) /* for sentinel value. not use it as token kind */\
     TOKEN(INVALID) \
@@ -170,17 +172,7 @@ const char *getTokenName(TokenKind kind);
 //#define LT LA
 //#define GT RA
 
-
-struct Token {
-    unsigned int startPos;
-
-    /**
-     * size of EOS is 0.
-     */
-    unsigned int size;
-
-    bool operator==(const Token &token);
-};
+typedef ydsh::parser_base::Token<TokenKind> Token;
 
 /**
  * get binary operator precedence.

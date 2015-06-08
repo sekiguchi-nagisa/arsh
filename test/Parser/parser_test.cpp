@@ -2,7 +2,6 @@
 
 #include <parser/Lexer.h>
 #include <parser/Parser.h>
-#include <parser/ParseError.h>
 #include <misc/files.h>
 
 #ifndef PARSER_TEST_DIR

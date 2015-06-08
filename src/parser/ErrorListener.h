@@ -18,7 +18,7 @@
 #define PARSER_ERRORLISTENER_H_
 
 #include "TypeCheckError.h"
-#include "ParseError.h"
+#include "Parser.h"
 
 namespace ydsh {
 namespace parser {

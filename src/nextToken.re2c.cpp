@@ -70,7 +70,7 @@
 namespace ydsh {
 namespace parser {
 
-TokenKind Lexer::nextToken(Token &token) {
+void Lexer::nextToken(Token &token) {
     /*!re2c
       re2c:define:YYGETCONDITION = YYGETCONDITION;
       re2c:define:YYCTYPE = "unsigned char";
@@ -116,6 +116,7 @@ TokenKind Lexer::nextToken(Token &token) {
     bool foundNewLine = false;
 
     INIT:
+    unsigned int n = this->lineNum;
     unsigned int startPos = this->getPos();
     TokenKind kind = INVALID;
     /*!re2c
@@ -282,6 +283,8 @@ TokenKind Lexer::nextToken(Token &token) {
     */
 
     END:
+    token.lineNum = n;
+    token.kind = kind;
     token.startPos = startPos;
     token.size = this->getPos() - startPos;
     this->prevNewLine = foundNewLine;
@@ -291,9 +294,11 @@ TokenKind Lexer::nextToken(Token &token) {
             TO_NAME(kind), token.startPos, token.size, this->toTokenText(token).c_str());
     fprintf(stderr, "   lexer mode: %s\n", this->getLexerModeName(YYGETCONDITION()));
 #endif
-    return kind;
+    return;
 
     EOS:
+    token.lineNum = n;
+    token.kind = EOS;
     token.startPos = this->limit - this->buf;
     token.size = 0;
     this->prevNewLine = foundNewLine;
@@ -303,7 +308,7 @@ TokenKind Lexer::nextToken(Token &token) {
             TO_NAME(EOS), token.startPos, token.size, this->toTokenText(token).c_str());
     fprintf(stderr, "   lexer mode: %s\n", this->getLexerModeName(YYGETCONDITION()));
 #endif
-    return EOS;
+    return;
 }
 
 } // namespace parser

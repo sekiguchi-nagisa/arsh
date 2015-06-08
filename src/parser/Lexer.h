@@ -41,7 +41,8 @@ typedef enum {
 #undef GEN_ENUM
 } LexerMode;
 
-class Lexer : public InputBuffer {
+class Lexer : public InputBuffer,
+              public ydsh::parser_base::LexerBase<Token, Lexer> {
 private:
     /**
      * initial value is 1.
@@ -94,12 +95,16 @@ public:
         return lexerModeNames[mode];
     }
 
+    static bool isInvalidToken(TokenKind kind) {
+        return kind == INVALID;
+    }
+
     /**
      * lexer entry point.
      * write next token to token.
      * return the kind of next token.
      */
-    TokenKind nextToken(Token &token);
+    void nextToken(Token &token);
 
     // some token api
 

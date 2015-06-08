@@ -29,23 +29,7 @@ namespace parser {
 
 using namespace ydsh::ast;
 
-class Parser {
-private:
-    /**
-     * not call destructor.
-     */
-    Lexer *lexer;
-
-    /**
-     * current token kind. updated by Lexer.
-     */
-    TokenKind curTokenKind;
-
-    /**
-     * current token. updated by Lexer.
-     */
-    Token curToken;
-
+class Parser : public ydsh::parser_base::ParserBase<TokenKind, Lexer> {
 public:
     Parser() = default;
 
@@ -59,28 +43,11 @@ public:
 
 private:
     /**
-     * match curToken and expected token.
-     * if failed, throw exception.
-     * if fetchNext is true, call NEXT_TOKEN()
-     */
-    void matchToken(TokenKind expected, bool fetchNext = true);
-
-    /**
-     * match curToken and expected token.
-     * if success, return matched token, otherwise throw exception.
-     * if fetchNext is true, call NEXT_TOKEN()
-     */
-    Token matchAndGetToken(TokenKind expected, bool fetchNext = true);
-
-    /**
-     * return curTokenKind and consume.
-     */
-    TokenKind consumeAndGetKind();
-
-    /**
      * if has new line, throw exception.
      */
     void hasNoNewLine();
+
+    void alternative(const TokenKind *kinds);
 
     // parser rule definition.
     void parse_toplevel(RootNode &rootNode);
@@ -92,7 +59,7 @@ private:
     std::unique_ptr<Node> parse_interface();
     std::unique_ptr<Node> parse_typeAlias();
 
-    void restoreLexerState(unsigned int prevLineNum, const Token &prevToken);
+    void restoreLexerState(const Token &prevToken);
 
     /**
      * not call NETX_TOKEN, before call it.
@@ -169,6 +136,35 @@ private:
  * if parse error happened, return false.
  */
 bool parse(const char *sourceName, RootNode &rootNode);
+
+// for parser error
+
+typedef Parser::ParseError ParseError;
+typedef Parser::TokenMismatchedError TokenMismatchedError;
+typedef Parser::NoViableAlterError NoViableAlterError;
+typedef Parser::InvalidTokenError InvalidTokenError;
+
+
+class OutOfRangeNumError : public ParseError {
+public:
+    OutOfRangeNumError(Token errorToken) : ParseError(errorToken) {}
+
+    ~OutOfRangeNumError() = default;
+
+    bool operator==(const OutOfRangeNumError &e) {
+        return this->errorToken == e.errorToken;
+    }
+};
+
+class UnexpectedNewLineError : public ParseError {
+public:
+    UnexpectedNewLineError(Token errorToken) : ParseError(errorToken) {}
+    ~UnexpectedNewLineError() = default;
+
+    bool operator==(const UnexpectedNewLineError &e) {
+        return this->errorToken == e.errorToken;
+    }
+};
 
 } // namespace parser
 } // namespace ydsh

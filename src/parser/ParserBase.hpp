@@ -54,6 +54,14 @@ public:
         return this->errorToken;
     }
 
+    T getTokenKind() const {
+        return this->errorToken.kind;
+    }
+
+    unsigned int getLineNum() const {
+        return this->errorToken.lineNum;
+    }
+
     bool operator==(const ParseError<T> &e) const {
         return this->errorToken == e.errorToken;
     }
@@ -211,7 +219,6 @@ void ParserBase<T, LexerImpl>::alternativeError(std::vector<T> &&alters) {
     }
     throw NoViableAlterError(this->curToken, std::move(alters));
 }
-
 
 } //namespace parser_base
 } //namespace ydsh

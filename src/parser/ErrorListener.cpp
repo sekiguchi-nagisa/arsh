@@ -56,74 +56,69 @@ void CommonErrorListener::displayTypeError(const std::string &sourceName,
     fprintf(stderr, "%s:%d: [semantic error] %s\n", sourceName.c_str(), e.getLineNum(), strBuf);
 }
 
-class ParseErrorFormatter : public ParseErrorVisitor {
-private:
-    /**
-     * not call destrucutor.
-     */
-    Lexer *lexer;
-
-    std::string message;
-
-    ParseErrorFormatter(Lexer *lexer);
-
-public:
-    ~ParseErrorFormatter();
-
-    void visit(const TokenMismatchError &e); // override
-    void visit(const NoViableAlterError &e); // override
-    void visit(const InvalidTokenError &e); // override
-    void visit(const OutOfRangeNumError &e); // override
-
-    static std::string format(Lexer &lexer, const ParseError &e);
-};
-
-ParseErrorFormatter::ParseErrorFormatter(Lexer *lexer) :
-        lexer(lexer), message() {
+static std::string format(Lexer &lexer, const TokenMismatchedError &e) {
+    std::string message = "mismatch token: ";
+    message += TO_NAME(e.getTokenKind());
+    message += ", expect for ";
+    message += TO_NAME(e.getExpectedKind());
+    return message;
 }
 
-ParseErrorFormatter::~ParseErrorFormatter() {
-}
-
-void ParseErrorFormatter::visit(const TokenMismatchError &e) {
-    this->message += "mismatch token: ";
-    this->message += TO_NAME(e.getTokenKind());
-    this->message += ", expect for ";
-    this->message += TO_NAME(e.getExpectedTokenKind());
-}
-
-void ParseErrorFormatter::visit(const NoViableAlterError &e) {
-    this->message += "no viable alternative: ";
-    this->message += TO_NAME(e.getTokenKind());
-    this->message += ",\n";
-    this->message += "expect for ";
+static std::string format(Lexer &lexer, const NoViableAlterError &e) {
+    std::string message = "no viable alternative: ";
+    message += TO_NAME(e.getTokenKind());
+    message += ",\n";
+    message += "expect for ";
     unsigned int size = e.getAlters().size();
     for(unsigned int i = 0; i < size; i++) {
         if(i > 0) {
-            this->message += ", ";
+            message += ", ";
         }
-        this->message += TO_NAME(e.getAlters()[i]);
+        message += TO_NAME(e.getAlters()[i]);
     }
+    return message;
 }
 
-void ParseErrorFormatter::visit(const InvalidTokenError &e) {
-    this->message += "invalid token: ";
+static std::string format(Lexer &lexer, const InvalidTokenError &e) {
+    std::string message = "invalid token: ";
     Token token = e.getErrorToken();
-    this->message += this->lexer->toTokenText(token);
+    message += lexer.toTokenText(token);
+    return message;
 }
 
-void ParseErrorFormatter::visit(const OutOfRangeNumError &e) {
-    this->message += "out of range ";
-    this->message += TO_NAME(e.getTokenKind());
-    this->message += ": ";
+static std::string format(Lexer &lexer, const OutOfRangeNumError &e) {
+    std::string message = "out of range ";
+    message += TO_NAME(e.getTokenKind());
+    message += ": ";
     Token token = e.getErrorToken();
-    this->message += this->lexer->toTokenText(token);
+    message += lexer.toTokenText(token);
+    return message;
 }
 
-std::string ParseErrorFormatter::format(Lexer &lexer, const ParseError &e) {
-    ParseErrorFormatter f(&lexer);
-    e.accept(f);
-    return f.message;
+static std::string format(Lexer &lexer, const UnexpectedNewLineError &e) {
+    std::string message = "unexpected new line: ";
+    Token token = e.getErrorToken();
+    message += lexer.toTokenText(token);
+    return message;
+}
+
+static std::string format(Lexer &lexer, const ParseError &e) {
+#define EACH_ERROR(E) \
+    E(TokenMismatchedError) \
+    E(NoViableAlterError) \
+    E(InvalidTokenError) \
+    E(OutOfRangeNumError) \
+    E(UnexpectedNewLineError)
+
+#define DISPATCH(E) if(dynamic_cast<const E *>(&e) != nullptr) { \
+    return format(lexer, *static_cast<const E *>(&e)); }
+
+    EACH_ERROR(DISPATCH)
+
+    return std::string();
+
+#undef DISPATCH
+#undef EACH_ERROR
 }
 
 static std::string formatErrorLine(Lexer &lexer, Token errorToken) {
@@ -141,7 +136,7 @@ static std::string formatErrorLine(Lexer &lexer, Token errorToken) {
 
 void CommonErrorListener::displayParseError(Lexer &lexer,
                                             const std::string &sourceName, const ParseError &e) const {
-    std::string msg(ParseErrorFormatter::format(lexer, e));
+    std::string msg(format(lexer, e));
     std::string line(formatErrorLine(lexer, e.getErrorToken()));
     fprintf(stderr, "%s:%d: [syntax error] %s\n%s\n",
             sourceName.c_str(), e.getLineNum(), msg.c_str(), line.c_str());
