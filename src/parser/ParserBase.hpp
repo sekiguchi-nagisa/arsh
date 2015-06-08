@@ -100,26 +100,29 @@ public:
         return this->alters;
     }
 
-    bool operator==(const NoViableAlterError<T> &e) {
-        if(this->errorToken != e.errorToken) {
-            return false;
-        }
-
-        // check size
-        unsigned int size = this->alters.size();
-        if(size != e.alters.size()) {
-            return false;
-        }
-
-        // check each alters
-        for(unsigned int i = 0; i < size; i++) {
-            if(this->alters[i] != e.alters[i]) {
-                return false;
-            }
-        }
-        return true;
-    }
+    bool operator==(const NoViableAlterError<T> &e);
 };
+
+template <typename T>
+bool NoViableAlterError<T>::operator==(const NoViableAlterError<T> &e) {
+    if(this->errorToken != e.errorToken) {
+        return false;
+    }
+
+    // check size
+    unsigned int size = this->alters.size();
+    if(size != e.alters.size()) {
+        return false;
+    }
+
+    // check each alters
+    for(unsigned int i = 0; i < size; i++) {
+        if(this->alters[i] != e.alters[i]) {
+            return false;
+        }
+    }
+    return true;
+}
 
 template <typename T>
 class InvalidTokenError : public ParseError<T> {
@@ -135,17 +138,6 @@ public:
 } // namespace __parser_error
 
 
-template <typename T, typename Derived>
-struct LexerBase {
-    void nextToken(Token<T> &token) {
-        static_cast<Derived *>(this)->nextToken(token);
-    }
-
-    static bool isInvalidToken(T kind) {
-        return Derived::isInvalidToken(kind);
-    }
-};
-
 template <typename T, typename LexerImpl>
 class ParserBase {
 public:
@@ -153,7 +145,6 @@ public:
     typedef __parser_error::TokenMismatchedError<T> TokenMismatchedError;
     typedef __parser_error::NoViableAlterError<T> NoViableAlterError;
     typedef __parser_error::InvalidTokenError<T> InvalidTokenError;
-
 
 protected:
     LexerImpl *lexer;

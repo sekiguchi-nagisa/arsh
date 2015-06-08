@@ -41,8 +41,7 @@ typedef enum {
 #undef GEN_ENUM
 } LexerMode;
 
-class Lexer : public InputBuffer,
-              public ydsh::parser_base::LexerBase<Token, Lexer> {
+class Lexer : public InputBuffer {
 private:
     /**
      * initial value is 1.
@@ -60,12 +59,10 @@ private:
 
 public:
     Lexer(const char *source) :
-            InputBuffer(source), lineNum(1), modeStack(1, yycSTMT), prevNewLine(false) {
-    }
+            InputBuffer(source), lineNum(1), modeStack(1, yycSTMT), prevNewLine(false) {}
 
     Lexer(FILE *fp) :
-            InputBuffer(fp), lineNum(1), modeStack(1, yycSTMT), prevNewLine(false) {
-    }
+            InputBuffer(fp), lineNum(1), modeStack(1, yycSTMT), prevNewLine(false) {}
 
     ~Lexer() = default;
 
