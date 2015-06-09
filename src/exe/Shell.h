@@ -26,6 +26,7 @@
 #include "../core/DSType.h"
 #include "../ast/Node.h"
 #include "../ast/dump.h"
+#include <ydsh/ydsh.h>
 
 namespace ydsh {
 
@@ -33,16 +34,7 @@ using namespace ydsh::ast;
 using namespace ydsh::parser;
 using namespace ydsh::core;
 
-enum class ShellStatus : unsigned int {
-    SUCCESS,
-    PARSE_ERROR,
-    TYPE_ERROR,
-    RUNTIME_ERROR,
-    ASSERTION_ERROR,
-    EXIT,
-};
-
-class Shell {
+class Shell : public ExecutionEngine {
 private:
     RuntimeContext ctx;
     Parser parser;
@@ -75,20 +67,20 @@ public:
      */
     Shell &operator=(const Shell &shell);
 
-    ShellStatus eval(const char *line);
-    ShellStatus eval(const char *sourceName, FILE *fp);
+    ExecStatus eval(const char *line); // override
+    ExecStatus eval(const char *sourceName, FILE *fp); // overrie
     void setErrorListener(const ErrorListener *listener);
-    void setLineNum(unsigned int lineNum);
-    unsigned int getLineNum();
-    void setArguments(const std::vector<const char *> &args);
+    void setLineNum(unsigned int lineNum); // override
+    unsigned int getLineNum();  // override
+    void setArguments(const std::vector<const char *> &args);   // override
 
-    void setDumpUntypedAST(bool dump);
-    void setDumpTypedAST(bool dump);
-    void setParseOnly(bool parseOnly);
-    void setAssertion(bool assertion);
-    void setToplevelprinting(bool print);
+    void setDumpUntypedAST(bool dump);  // override
+    void setDumpTypedAST(bool dump);    // override
+    void setParseOnly(bool parseOnly);  // override
+    void setAssertion(bool assertion); // override
+    void setToplevelprinting(bool print);   // override
 
-    const std::string &getWorkingDir();
+    const std::string &getWorkingDir(); // override
 
     /**
      * get exit status of recently executed command.(also exit command)
@@ -101,7 +93,7 @@ private:
     /**
      * sourceName is null, if read stdin.
      */
-    ShellStatus eval(const char *sourceName, Lexer &lexer);
+    ExecStatus eval(const char *sourceName, Lexer &lexer);
 
     /**
      * call only once.
@@ -115,8 +107,6 @@ private:
 
     static CommonErrorListener clistener;
 };
-
-void exec_interactive(const char *progName, std::unique_ptr<Shell> &shell);
 
 } /* namespace ydsh */
 

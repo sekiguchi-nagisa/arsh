@@ -19,18 +19,31 @@
 
 namespace ydsh {
 
+// #############################
+// ##     ExecutionEngine     ##
+// #############################
+
+std::unique_ptr<ExecutionEngine> ExecutionEngine::createInstance() {
+    return Shell::createShell();
+}
+
+
+// ###################
+// ##     Shell     ##
+// ###################
+
 Shell::Shell() :
         ctx(), parser(), checker(&this->ctx.getPool()), lineNum(1),
         listener(&clistener), dumpUntypedAST(false),
         dumpTypedAST(false), parseOnly(false) {
 }
 
-ShellStatus Shell::eval(const char *line) {
+ExecStatus Shell::eval(const char *line) {
     Lexer lexer(line);
     return this->eval(0, lexer);
 }
 
-ShellStatus Shell::eval(const char *sourceName, FILE *fp) {
+ExecStatus Shell::eval(const char *sourceName, FILE *fp) {
     Lexer lexer(fp);
     return this->eval(sourceName, lexer);
 }
@@ -96,7 +109,7 @@ std::unique_ptr<Shell> Shell::createShell() {
 
 CommonErrorListener Shell::clistener;
 
-ShellStatus Shell::eval(const char *sourceName, Lexer &lexer) {
+ExecStatus Shell::eval(const char *sourceName, Lexer &lexer) {
     sourceName = this->ctx.registerSourceName(sourceName);
     lexer.setLineNum(this->lineNum);
     RootNode rootNode(sourceName);
@@ -114,7 +127,7 @@ ShellStatus Shell::eval(const char *sourceName, Lexer &lexer) {
     } catch(const ParseError &e) {
         this->listener->displayParseError(lexer, sourceName, e);
         this->lineNum = lexer.getLineNum();
-        return ShellStatus::PARSE_ERROR;
+        return ExecStatus::PARSE_ERROR;
     }
 
     // type check
@@ -129,32 +142,32 @@ ShellStatus Shell::eval(const char *sourceName, Lexer &lexer) {
     } catch(const TypeCheckError &e) {
         this->listener->displayTypeError(sourceName, e);
         this->checker.recover();
-        return ShellStatus::TYPE_ERROR;
+        return ExecStatus::TYPE_ERROR;
     }
 
     if(this->parseOnly) {
-        return ShellStatus::SUCCESS;
+        return ExecStatus::SUCCESS;
     }
     
     // eval
     switch(rootNode.eval(this->ctx)) {
     case EvalStatus::SUCCESS:
-        return ShellStatus::SUCCESS;
+        return ExecStatus::SUCCESS;
     default:
         DSType *thrownType = ctx.getThrownObject()->getType();
         if(this->ctx.getPool().getInternalStatus()->isAssignableFrom(thrownType)) {
             if(*thrownType == *this->ctx.getPool().getShellExit()) {
-                return ShellStatus::EXIT;
+                return ExecStatus::EXIT;
             }
             if(*thrownType == *this->ctx.getPool().getAssertFail()) {
                 this->ctx.loadThrownObject();
                 TYPE_AS(Error_Object, ctx.pop())->printStackTrace(this->ctx);
-                return ShellStatus::ASSERTION_ERROR;
+                return ExecStatus::ASSERTION_ERROR;
             }
         }
         this->ctx.reportError();
         this->checker.recover(false);
-        return ShellStatus::RUNTIME_ERROR;
+        return ExecStatus::RUNTIME_ERROR;
     }
 }
 
@@ -214,8 +227,8 @@ void Shell::initbuiltinIface() {
             "}\n"
             "type-alias ObjectManager org.freedesktop.DBus.ObjectManager\n";
 
-    ShellStatus s = this->eval(builtinIface);
-    if(s != ShellStatus::SUCCESS) {
+    ExecStatus s = this->eval(builtinIface);
+    if(s != ExecStatus::SUCCESS) {
         fatal("broken builtin iface\n");
     }
     this->ctx.getPool().commit();

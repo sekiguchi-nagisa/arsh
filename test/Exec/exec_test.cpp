@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <exe/Shell.h>
+#include <ydsh/ydsh.h>
 #include <misc/files.h>
 
 
@@ -13,10 +13,10 @@ using namespace ydsh;
 class ExecTest : public ::testing::TestWithParam<const char *> {
 private:
     std::string targetName;
-    std::unique_ptr<Shell> shell;
+    std::unique_ptr<ExecutionEngine> shell;
 
 public:
-    ExecTest()  : targetName(), shell(Shell::createShell()) {
+    ExecTest()  : targetName(), shell(ExecutionEngine::createInstance()) {
     }
 
     virtual ~ExecTest() = default;
@@ -42,9 +42,9 @@ public:
         FILE *fp = fopen(scriptName, "r");
         ASSERT_TRUE(fp != nullptr);
 
-        ShellStatus status = this->shell->eval(scriptName, fp);
+        ExecStatus status = this->shell->eval(scriptName, fp);
 
-        ASSERT_EQ(ShellStatus::SUCCESS, status);
+        ASSERT_EQ(ExecStatus::SUCCESS, status);
     }
 };
 

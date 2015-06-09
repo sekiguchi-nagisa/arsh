@@ -17,7 +17,7 @@
 #include <iostream>
 #include <unistd.h>
 
-#include "exe/Shell.h"
+#include <ydsh/ydsh.h>
 #include "misc/ArgsParser.hpp"
 
 #define YDSH_MAJOR_VERSION 0
@@ -41,6 +41,8 @@ enum OptionKind {
     VERSION,
     HELP,
 };
+
+void exec_interactive(const char *progName, std::unique_ptr<ExecutionEngine> &shell);
 
 static const char *getVersion() {
 #define XSTR(S) #S
@@ -67,11 +69,11 @@ static void showCopyright(std::ostream &stream) {
     stream << getCopyright() << std::endl;
 }
 
-static void evalAndExit(std::unique_ptr<Shell> &shell, const char *sourceName, FILE *fp) {
-    ShellStatus status = shell->eval(sourceName, fp);
-    if(status == ShellStatus::SUCCESS) {
+static void evalAndExit(std::unique_ptr<ExecutionEngine> &shell, const char *sourceName, FILE *fp) {
+    ExecStatus status = shell->eval(sourceName, fp);
+    if(status == ExecStatus::SUCCESS) {
         exit(0);
-    } else if(status == ShellStatus::EXIT) {
+    } else if(status == ExecStatus::EXIT) {
         exit(shell->getExitStatus());
     } else {
         exit(1);
@@ -142,7 +144,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    auto shell = ydsh::Shell::createShell();
+    auto shell = ydsh::ExecutionEngine::createInstance();
 
     for(auto &cmdLine : cmdLines) {
         switch(cmdLine.first) {

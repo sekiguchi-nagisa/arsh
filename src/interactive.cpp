@@ -23,8 +23,8 @@ extern "C" {
 #include <histedit.h>
 }
 
-#include "Shell.h"
-#include "../misc/debug.h"
+#include <ydsh/ydsh.h>
+#include "misc/debug.h"
 
 namespace {
 
@@ -193,7 +193,9 @@ void Terminal::addHistory() {
 
 } // namespace
 
-void ydsh::exec_interactive(const char *progName, std::unique_ptr<Shell> &shell) {
+using namespace ydsh;
+
+void exec_interactive(const char *progName, std::unique_ptr<ExecutionEngine> &shell) {
     Terminal term(progName);
     shell->setToplevelprinting(true);
 
@@ -202,10 +204,10 @@ void ydsh::exec_interactive(const char *progName, std::unique_ptr<Shell> &shell)
 
     while((line = term.readLine()) != 0) {
         shell->setLineNum(lineNum);
-        ydsh::ShellStatus status = shell->eval(line);
-        if(status == ShellStatus::ASSERTION_ERROR) {
+        ExecStatus status = shell->eval(line);
+        if(status == ExecStatus::ASSERTION_ERROR) {
             exit(1);
-        } else if(status == ShellStatus::EXIT) {
+        } else if(status == ExecStatus::EXIT) {
             exit(shell->getExitStatus());
         }
         lineNum = shell->getLineNum();

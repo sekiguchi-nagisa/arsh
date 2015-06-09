@@ -96,6 +96,7 @@ add_dependencies(gen_bind gen_binding)
 
 
 include_directories(${SRC_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 if(NOT NO_DBUS)
     include_directories(${HAVE_DBUS_H} ${HAVE_DBUS_ARCH_DEPS_H})
@@ -116,7 +117,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_binding)
 set(YDSH_STATIC ydsh_static)
 add_library(${YDSH_STATIC} STATIC ${YDSH_SRC} ${lexer_src} ${bind_src})
 add_dependencies(${YDSH_STATIC} gen_lexer gen_binding gen_bind)
-add_executable(${BIN_NAME} ${SRC_DIR}/ydsh.cpp)
+add_executable(${BIN_NAME} ${SRC_DIR}/ydsh.cpp ${SRC_DIR}/interactive.cpp)
 target_link_libraries(${BIN_NAME} ${YDSH_STATIC} ${extra_lib})
 
 install(TARGETS ${BIN_NAME} RUNTIME DESTINATION bin)
