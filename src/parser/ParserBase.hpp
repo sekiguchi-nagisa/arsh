@@ -18,6 +18,7 @@
 #define YDSH_PARSERBASE_HPP
 
 #include <vector>
+#include "InputBuffer.hpp"
 
 namespace ydsh {
 namespace parser_base {
@@ -37,7 +38,24 @@ struct Token {
     bool operator!=(const Token<T> &token) const {
         return !(*this == token);
     }
+
+    std::string toString() const;
 };
+
+template <typename T>
+std::string Token<T>::toString() const {
+    std::string str("{ lineNum = ");
+    str += std::to_string(this->lineNum);
+    str += ", kind = ";
+    str += toString(this->kind);
+    str += ", startPos = ";
+    str += std::to_string(this->startPos);
+    str += ", size = ";
+    str += std::to_string(this->size);
+    str += " }";
+    return str;
+}
+
 
 namespace __parser_error {
 
@@ -136,6 +154,43 @@ public:
 };
 
 } // namespace __parser_error
+
+template <typename T>
+class LexerBase : public ydsh::parser::InputBuffer {
+public:
+    explicit LexerBase(FILE *fp) : InputBuffer(fp) {}
+    explicit LexerBase(const char *src) : InputBuffer(src) {}
+    virtual ~LexerBase() = default;
+
+    bool withinRange(const Token<T> &token) const {
+        return token.startPos < this->getUsedSize()
+               && token.startPos + token.size <= this->getUsedSize();
+    }
+
+    /**
+     * get text of token.
+     */
+    std::string toTokenText(const Token<T> &token) const {
+        assert(this->withinRange(token));
+        return std::string((char *) (this->buf + token.startPos), token.size);
+    }
+
+    std::string formatLineMarker(const Token<T> &lineToken, const Token<T> &token) const;
+};
+
+template <typename T>
+std::string LexerBase<T>::formatLineMarker(const Token<T> &lineToken, const Token<T> &token) const {
+    assert(lineToken.startPos <= token.startPos);
+
+    std::string marker;
+    for(unsigned int i = lineToken.startPos; i < token.startPos; i++) {
+        marker += " ";
+    }
+    for(unsigned int i = 0; i < token.size; i++) {
+        marker += "^";    //TODO: support multi byte char
+    }
+    return marker;
+}
 
 
 template <typename T, typename LexerImpl>

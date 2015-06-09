@@ -131,24 +131,6 @@ public:
         return this->limit - this->buf + 1;
     }
 
-
-#define CHECK_RANGE(satrtPos, size) \
-    assert(startPos < this->getUsedSize() &&\
-            startPos + size <= this->getUsedSize())
-
-    void writeText(unsigned int startPos, unsigned size, std::string &str) const {
-        CHECK_RANGE(startPos, size);
-        str += std::string((char *) (this->buf + startPos), size);
-    }
-
-    std::string getText(unsigned int startPos, unsigned size) const {
-        std::string str;
-        this->writeText(startPos, size, str);
-        return str;
-    }
-
-#undef CHECK_RANGE
-
 private:
     /**
      * used for constructor. not use it.

@@ -41,7 +41,7 @@ typedef enum {
 #undef GEN_ENUM
 } LexerMode;
 
-class Lexer : public InputBuffer {
+class Lexer : public ydsh::parser_base::LexerBase<TokenKind> {
 private:
     /**
      * initial value is 1.
@@ -58,11 +58,11 @@ private:
     static const char *lexerModeNames[];
 
 public:
-    Lexer(const char *source) :
-            InputBuffer(source), lineNum(1), modeStack(1, yycSTMT), prevNewLine(false) {}
+    explicit Lexer(const char *source) :
+            LexerBase(source), lineNum(1), modeStack(1, yycSTMT), prevNewLine(false) {}
 
-    Lexer(FILE *fp) :
-            InputBuffer(fp), lineNum(1), modeStack(1, yycSTMT), prevNewLine(false) {}
+    explicit Lexer(FILE *fp) :
+            LexerBase(fp), lineNum(1), modeStack(1, yycSTMT), prevNewLine(false) {}
 
     ~Lexer() = default;
 
@@ -113,10 +113,6 @@ public:
     Token getLineTokenImpl(const Token &token) const;
 
     // token to value converting api.
-    /**
-     * get text of token.
-     */
-    std::string toTokenText(const Token &token) const;
 
     /**
      * convert token to string (single quote string or double quote string)

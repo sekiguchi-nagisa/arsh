@@ -161,9 +161,9 @@ typedef enum {
 #undef GEN_ENUM
 } TokenKind;
 
-const char *getTokenName(TokenKind kind);
+const char *toString(TokenKind kind);
 
-#define TO_NAME(kind) getTokenName(kind)
+#define TO_NAME(kind) toString(kind)
 
 
 // binary op alias

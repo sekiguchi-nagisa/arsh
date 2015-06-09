@@ -43,10 +43,6 @@ void Lexer::setPos(unsigned int pos) {
     this->cursor = this->buf + pos;
 }
 
-#define CHECK_TOK(token) \
-    assert(token.startPos < this->getUsedSize() &&\
-            token.startPos + token.size <= this->getUsedSize())
-
 Token Lexer::getLineToken(const Token &token, bool skipEOS) const {
     if(skipEOS && token.size == 0) {
         unsigned int startIndex = token.startPos;
@@ -69,7 +65,7 @@ Token Lexer::getLineToken(const Token &token, bool skipEOS) const {
 }
 
 Token Lexer::getLineTokenImpl(const Token &token) const {
-    CHECK_TOK(token);
+    assert(this->withinRange(token));
 
     // find start index of line.
     unsigned int startIndex;
@@ -94,13 +90,8 @@ Token Lexer::getLineTokenImpl(const Token &token) const {
     return lineToken;
 }
 
-std::string Lexer::toTokenText(const Token &token) const {
-    CHECK_TOK(token);
-    return std::string((char *) (this->buf + token.startPos), token.size);
-}
-
 std::string Lexer::toString(const Token &token, bool isSingleQuote) const {
-    CHECK_TOK(token);
+    assert(this->withinRange(token));
 
     std::string str;
     str.reserve(token.size);
@@ -153,7 +144,7 @@ std::string Lexer::toString(const Token &token, bool isSingleQuote) const {
 }
 
 std::string Lexer::toCmdArg(const Token &token, bool expandTilde) const {
-    CHECK_TOK(token);
+    assert(this->withinRange(token));
 
     std::string str;
     str.reserve(token.size);
@@ -188,7 +179,7 @@ std::string Lexer::toCmdArg(const Token &token, bool expandTilde) const {
 }
 
 std::string Lexer::toName(const Token &token) const {
-    CHECK_TOK(token);
+    assert(this->withinRange(token));
 
     std::string name;
     name.reserve(token.size);
@@ -266,7 +257,7 @@ unsigned int Lexer::toUint32(const Token &token, int &status) const {
 }
 
 long Lexer::toInt64(const Token &token, int &status) const {
-    CHECK_TOK(token);
+    assert(this->withinRange(token));
 
     char str[token.size + 1];
     for(unsigned int i = 0; i < token.size; i++) {
@@ -284,7 +275,7 @@ long Lexer::toInt64(const Token &token, int &status) const {
 }
 
 unsigned long Lexer::toUint64(const Token &token, int &status) const {
-    CHECK_TOK(token);
+    assert(this->withinRange(token));
 
     char str[token.size + 1];
     for(unsigned int i = 0; i < token.size; i++) {
@@ -302,7 +293,7 @@ unsigned long Lexer::toUint64(const Token &token, int &status) const {
 }
 
 double Lexer::toDouble(const Token &token, int &status) const {
-    CHECK_TOK(token);
+    assert(this->withinRange(token));
 
     char str[token.size + 1];
     for(unsigned int i = 0; i < token.size; i++) {

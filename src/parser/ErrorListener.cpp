@@ -125,12 +125,7 @@ static std::string formatErrorLine(Lexer &lexer, Token errorToken) {
     Token lineToken = lexer.getLineToken(errorToken, true);
     std::string line(lexer.toTokenText(lineToken));
     line += "\n";
-    for(unsigned int i = lineToken.startPos; i < errorToken.startPos; i++) {
-        line += " ";
-    }
-    for(unsigned int i = 0; i < errorToken.size; i++) {
-        line += "^";    //TODO: support multi byte char
-    }
+    line += lexer.formatLineMarker(lineToken, errorToken);
     return line;
 }
 

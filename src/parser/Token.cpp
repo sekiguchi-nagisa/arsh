@@ -25,7 +25,7 @@ static const char *TOKEN_KIND_STRING[] = {
 #undef GEN_NAME
 };
 
-const char *getTokenName(TokenKind kind) {
+const char *toString(TokenKind kind) {
     return TOKEN_KIND_STRING[kind];
 }
 

@@ -528,14 +528,11 @@ public:
 private:
     static bool isDescriptor(const std::string &line);
 
-    std::string toTokenText(const Token &token) {
-        return this->lexer->getText(token.startPos, token.size);
-    }
-
     std::string toName(const Token &token) {
-        unsigned startPos = token.startPos + 1;
-        unsigned size = token.size - 1;
-        return this->lexer->getText(startPos, size);
+        Token t = token;
+        t.startPos++;
+        t.size--;
+        return this->lexer->toTokenText(t);
     }
 
     void init(DescLexer &lexer) {
@@ -661,7 +658,7 @@ std::unique_ptr<Element> Parser::parse_funcDesc() {
     case IDENTIFIER: {
         Token token;
         this->expect(IDENTIFIER, token);
-        element = Element::newFuncElement(this->toTokenText(token), false);
+        element = Element::newFuncElement(this->lexer->toTokenText(token), false);
         break;
     }
     case VAR_NAME: {
@@ -727,7 +724,7 @@ std::unique_ptr<TypeToken> Parser::parse_type() {
     case IDENTIFIER: {
         Token token;
         this->expect(IDENTIFIER, token);
-        return CommonTypeToken::newTypeToken(this->toTokenText(token));
+        return CommonTypeToken::newTypeToken(this->lexer->toTokenText(token));
     };
     case ARRAY:
     case MAP:
@@ -735,7 +732,7 @@ std::unique_ptr<TypeToken> Parser::parse_type() {
         auto token = this->curToken;
         this->fetchNext();
 
-        auto type(ReifiedTypeToken::newReifiedTypeToken(this->toTokenText(token)));
+        auto type(ReifiedTypeToken::newReifiedTypeToken(this->lexer->toTokenText(token)));
         this->expect(TYPE_OPEN);
 
         unsigned int count = 0;
@@ -771,7 +768,7 @@ void Parser::parse_funcDecl(const std::string &line, std::unique_ptr<Element> &e
 
     Token token;
     this->expect(IDENTIFIER, token);
-    std::string str(this->toTokenText(token));
+    std::string str(this->lexer->toTokenText(token));
     element->setActualFuncName(std::move(str));
 
     this->expect(LP);
@@ -799,23 +796,23 @@ void Parser::printParseError(const ParseError &e) {
 
 void Parser::printParseError(const TokenMismatchedError *e) {
     std::string message = "mismatched token: ";
-    message += getTokenKindName(e->getErrorToken().kind);
+    message += toString(e->getErrorToken().kind);
     message += ", expect for ";
-    message += getTokenKindName(e->getExpectedKind());
+    message += toString(e->getExpectedKind());
 
     std::cerr << message << std::endl;
 }
 
 void Parser::printParseError(const NoViableAlterError *e) {
     std::string message = "no viable alternative: ";
-    message += getTokenKindName(e->getErrorToken().kind);
+    message += toString(e->getErrorToken().kind);
     message += ", expect for ";
     unsigned int size = e->getAlters().size();
     for(unsigned int i = 0; i < size; i++) {
         if(i > 0) {
             message += ", ";
         }
-        message += getTokenKindName(e->getAlters()[i]);
+        message += toString(e->getAlters()[i]);
     }
 
     std::cerr << message << std::endl;
@@ -823,7 +820,7 @@ void Parser::printParseError(const NoViableAlterError *e) {
 
 void Parser::printParseError(const InvalidTokenError *e) {
     std::string message = "invalid token: ";
-    message += this->toTokenText(e->getErrorToken());
+    message += this->lexer->toTokenText(e->getErrorToken());
 
     std::cerr << message << std::endl;
 }

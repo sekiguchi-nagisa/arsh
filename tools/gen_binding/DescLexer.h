@@ -54,9 +54,9 @@ EACH_DESC_TOKEN(GEN_ENUM)
 
 typedef ydsh::parser_base::Token<DescTokenKind> Token;
 
-class DescLexer : public ydsh::parser::InputBuffer {
+class DescLexer : public ydsh::parser_base::LexerBase<DescTokenKind> {
 public:
-    DescLexer(const char *line) : InputBuffer(line) {}
+    DescLexer(const char *line) : LexerBase(line) {}
     ~DescLexer() = default;
 
     void nextToken(Token &token);
@@ -66,6 +66,6 @@ public:
     }
 };
 
-const char *getTokenKindName(DescTokenKind kind);
+const char *toString(DescTokenKind kind);
 
 #endif //TOOLS_DESCLEXER_H
