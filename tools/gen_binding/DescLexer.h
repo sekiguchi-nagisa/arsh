@@ -17,6 +17,8 @@
 #ifndef TOOLS_DESCLEXER_H
 #define TOOLS_DESCLEXER_H
 
+#include <ostream>
+
 #include <parser/InputBuffer.hpp>
 #include <parser/ParserBase.hpp>
 
@@ -67,5 +69,7 @@ public:
 };
 
 const char *toString(DescTokenKind kind);
+
+std::ostream &operator<<(std::ostream &stream, DescTokenKind kind);
 
 #endif //TOOLS_DESCLEXER_H

@@ -98,3 +98,8 @@ const char *toString(DescTokenKind kind) {
 
     return names[kind];
 }
+
+std::ostream &operator<<(std::ostream &stream, DescTokenKind kind) {
+    stream << toString(kind);
+    return stream;
+}

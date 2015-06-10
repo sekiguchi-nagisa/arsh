@@ -29,6 +29,11 @@ const char *toString(TokenKind kind) {
     return TOKEN_KIND_STRING[kind];
 }
 
+std::ostream &operator<<(std::ostream &stream, TokenKind kind) {
+    stream << toString(kind);
+    return stream;
+}
+
 unsigned int getPrecedence(TokenKind kind) {
     switch(kind) {
     case MUL:

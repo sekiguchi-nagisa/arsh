@@ -17,6 +17,8 @@
 #ifndef PARSER_TOKENKIND_H_
 #define PARSER_TOKENKIND_H_
 
+#include <ostream>
+
 #include "ParserBase.hpp"
 
 #define EACH_TOKEN(TOKEN) \
@@ -162,6 +164,8 @@ typedef enum {
 } TokenKind;
 
 const char *toString(TokenKind kind);
+
+std::ostream &operator<<(std::ostream &stream, TokenKind kind);
 
 #define TO_NAME(kind) toString(kind)
 

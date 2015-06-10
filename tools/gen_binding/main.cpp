@@ -557,10 +557,6 @@ private:
     void parse_funcDecl(const std::string &line, std::unique_ptr<Element> &element);
 
     void printParseError(const ParseError &e);
-
-    void printParseError(const TokenMismatchedError *e);
-    void printParseError(const NoViableAlterError *e);
-    void printParseError(const InvalidTokenError *e);
 };
 
 void Parser::parse(char *fileName, std::vector<std::unique_ptr<Element>> &elements) {
@@ -598,6 +594,10 @@ void Parser::parse(char *fileName, std::vector<std::unique_ptr<Element>> &elemen
             std::cerr << fileName << ":" << lineNum << ": [error] ";
             parser.printParseError(e);
             std::cerr << line << std::endl;
+            Token lineToken;
+            lineToken.startPos = 0;
+            lineToken.size = line.size();
+            std::cerr << parser.lexer->formatLineMarker(lineToken, e.getErrorToken()) << std::endl;
             exit(EXIT_FAILURE);
         }
     }
@@ -785,44 +785,13 @@ void Parser::printParseError(const ParseError &e) {
     OP(NoViableAlterError) \
     OP(InvalidTokenError)
 
-#define DISPATCH(OP) if(dynamic_cast<const OP *>(&e) != nullptr) { \
-    this->printParseError(static_cast<const OP *>(&e)); return; }
+#define PRINT(OP) if(dynamic_cast<const OP *>(&e) != nullptr) { \
+    std::cerr << *static_cast<const OP *>(&e) << std::endl; return; }
 
-    EACH_TYPE(DISPATCH)
+    EACH_TYPE(PRINT)
 
-#undef DISPATCH
+#undef PRINT
 #undef EACH_TYPE
-}
-
-void Parser::printParseError(const TokenMismatchedError *e) {
-    std::string message = "mismatched token: ";
-    message += toString(e->getErrorToken().kind);
-    message += ", expect for ";
-    message += toString(e->getExpectedKind());
-
-    std::cerr << message << std::endl;
-}
-
-void Parser::printParseError(const NoViableAlterError *e) {
-    std::string message = "no viable alternative: ";
-    message += toString(e->getErrorToken().kind);
-    message += ", expect for ";
-    unsigned int size = e->getAlters().size();
-    for(unsigned int i = 0; i < size; i++) {
-        if(i > 0) {
-            message += ", ";
-        }
-        message += toString(e->getAlters()[i]);
-    }
-
-    std::cerr << message << std::endl;
-}
-
-void Parser::printParseError(const InvalidTokenError *e) {
-    std::string message = "invalid token: ";
-    message += this->lexer->toTokenText(e->getErrorToken());
-
-    std::cerr << message << std::endl;
 }
 
 #define OUT(fmt, ...) \

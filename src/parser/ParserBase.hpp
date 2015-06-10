@@ -18,6 +18,7 @@
 #define YDSH_PARSERBASE_HPP
 
 #include <vector>
+#include <ostream>
 #include "InputBuffer.hpp"
 
 namespace ydsh {
@@ -105,6 +106,16 @@ public:
 };
 
 template <typename T>
+std::ostream &operator<<(std::ostream &stream, const TokenMismatchedError<T> &e);
+
+template <typename T>
+std::ostream &operator<<(std::ostream &stream, const TokenMismatchedError<T> &e) {
+    stream << "mismatched token: " << e.getTokenKind() << ", expect for" << e.getExpectedKind();
+    return stream;
+}
+
+
+template <typename T>
 class NoViableAlterError : public ParseError<T> {
 private:
     std::vector<T> alters;
@@ -143,6 +154,23 @@ bool NoViableAlterError<T>::operator==(const NoViableAlterError<T> &e) {
 }
 
 template <typename T>
+std::ostream &operator<<(std::ostream &stream, const NoViableAlterError<T> &e);
+
+template <typename T>
+std::ostream &operator<<(std::ostream &stream, const NoViableAlterError<T> &e) {
+    stream << "no viable alternative: " << e.getTokenKind() << ", expect for ";
+    unsigned int count = 0;
+    for(auto &a : e.getAlters()) {
+        if(count++ > 0) {
+            stream << ", ";
+        }
+        stream << a;
+    }
+    return stream;
+}
+
+
+template <typename T>
 class InvalidTokenError : public ParseError<T> {
 public:
     InvalidTokenError(Token<T> errorToken) : ParseError<T>(errorToken) {}
@@ -152,6 +180,15 @@ public:
         return this->errorToken == e.errorToken;
     }
 };
+
+template <typename T>
+std::ostream &operator<<(std::ostream &stream, const InvalidTokenError<T> &e);
+
+template <typename T>
+std::ostream &operator<<(std::ostream &stream, const InvalidTokenError<T> &e) {
+    stream << "invalid token";
+    return stream;
+}
 
 } // namespace __parser_error
 
