@@ -2,6 +2,7 @@
 
 #include <ydsh/ydsh.h>
 #include <misc/files.h>
+#include <misc/directive.hpp>
 
 
 #ifndef EXEC_TEST_DIR
@@ -9,6 +10,7 @@
 #endif
 
 using namespace ydsh;
+using namespace ydsh::directive;
 
 class ExecTest : public ::testing::TestWithParam<const char *> {
 private:
@@ -38,13 +40,17 @@ public:
     virtual void doTest() {
         SCOPED_TRACE("");
 
+        Directive d;
+        bool s = DirectiveParser::parse(this->getSourceName(), d);
+        ASSERT_TRUE(s);
+
         const char *scriptName = this->getSourceName().c_str();
         FILE *fp = fopen(scriptName, "r");
         ASSERT_TRUE(fp != nullptr);
 
         ExecStatus status = this->shell->eval(scriptName, fp);
 
-        ASSERT_EQ(ExecStatus::SUCCESS, status);
+        ASSERT_EQ(d.getResult(), status);
     }
 };
 
