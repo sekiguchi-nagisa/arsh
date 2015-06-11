@@ -111,33 +111,14 @@ protected:
     static constexpr unsigned int DEFAULT_SIZE = 256;
 
 private:
-      LexerBase() = default;
+      LexerBase() :
+              fp(0), bufSize(0), buf(0), cursor(0),
+              limit(0), marker(0), ctxMarker(0),
+              endOfFile(false), endOfString(false), zeroCopyBuf(false) {}
 
 public:
-    explicit LexerBase(FILE *fp) : LexerBase() {
-        this->fp = fp;
-        this->bufSize = DEFAULT_SIZE;
-        this->buf = new unsigned char[this->bufSize];
-        this->buf[0] = '\0';    // terminate null character.
-
-        this->cursor = this->buf;
-        this->limit = this->buf;
-    }
-
-    explicit LexerBase(const char *src, bool zeroCopy = false) : LexerBase() {
-        this->bufSize = strlen(src) + 1;
-        this->zeroCopyBuf = zeroCopy;
-        if(this->zeroCopyBuf) {
-            this->buf = (unsigned char *)src;
-        } else {
-            this->buf = new unsigned char[this->bufSize];
-            memcpy(this->buf, src, this->bufSize);
-        }
-
-        this->cursor = this->buf;
-        this->limit = this->buf + this->bufSize - 1;
-        this->endOfFile = true;
-    }
+    explicit LexerBase(FILE *fp);
+    explicit LexerBase(const char *src, bool zeroCopy = false);
 
     /**
      * not allow copy constructor
@@ -196,6 +177,33 @@ protected:
 // #######################
 // ##     LexerBase     ##
 // #######################
+
+template <typename T>
+LexerBase<T>::LexerBase(FILE *fp) : LexerBase<T>() {
+    this->fp = fp;
+    this->bufSize = DEFAULT_SIZE;
+    this->buf = new unsigned char[this->bufSize];
+    this->buf[0] = '\0';    // terminate null character.
+
+    this->cursor = this->buf;
+    this->limit = this->buf;
+}
+
+template <typename T>
+LexerBase<T>::LexerBase(const char *src, bool zeroCopy) : LexerBase<T>() {
+    this->bufSize = strlen(src) + 1;
+    this->zeroCopyBuf = zeroCopy;
+    if(this->zeroCopyBuf) {
+        this->buf = (unsigned char *)src;
+    } else {
+        this->buf = new unsigned char[this->bufSize];
+        memcpy(this->buf, src, this->bufSize);
+    }
+
+    this->cursor = this->buf;
+    this->limit = this->buf + this->bufSize - 1;
+    this->endOfFile = true;
+}
 
 template<typename T>
 std::string LexerBase<T>::formatLineMarker(const Token<T> &lineToken, const Token<T> &token) const {
