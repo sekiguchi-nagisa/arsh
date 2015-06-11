@@ -1,0 +1,7 @@
+#$test($result = 'throw')
+
+if($DBus.available()) {
+    $DBus.systemBus().service("org.fr").object(p'/org')
+} else {
+    throw new DBusError("unsupported")
+}
