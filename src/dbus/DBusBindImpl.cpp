@@ -335,8 +335,37 @@ bool Bus_ObjectImpl::initConnection(RuntimeContext &ctx, bool systemBus) {
 }
 
 bool Bus_ObjectImpl::service(RuntimeContext &ctx, std::string &&serviceName) {
+    auto msg = dbus_message_new_method_call(
+            "org.freedesktop.DBus", "/org/freedesktop/DBus",
+            "org.freedesktop.DBus", "GetNameOwner");
+
+    // append arg
+    DBusMessageIter iter;
+    dbus_message_iter_init_append(msg, &iter);
+    const char *value = serviceName.c_str();
+    dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, &value);
+
+    // send
+    bool status;
+    auto reply = sendAndUnrefMessage(ctx, this->conn, msg, status);
+    if(!status) {
+        return false;
+    }
+
+    // get result
+    DBusMessageIter replyIter;
+    dbus_message_iter_init(reply, &replyIter);
+    assert(dbus_message_iter_get_arg_type(&replyIter) == DBUS_TYPE_STRING);
+    dbus_message_iter_get_basic(&replyIter, &value);
+
+    std::string uniqueName(value);
+
+    unrefMessage(reply);
+
+    // init service object
     ctx.push(std::make_shared<Service_ObjectImpl>(
-            ctx.getPool().getServiceType(), this->shared_from_this(), std::move(serviceName)));
+            ctx.getPool().getServiceType(), this->shared_from_this(),
+            std::move(serviceName), std::move(uniqueName)));
     return true;
 }
 
@@ -364,8 +393,9 @@ bool Bus_ObjectImpl::listNames(RuntimeContext &ctx, bool activeName) {
 // ##     Service_ObjectImpl     ##
 // ################################
 
-Service_ObjectImpl::Service_ObjectImpl(DSType *type, const std::shared_ptr<Bus_ObjectImpl> &bus, std::string &&serviceName) :
-        Service_Object(type), bus(bus), serviceName(std::move(serviceName)) {
+Service_ObjectImpl::Service_ObjectImpl(DSType *type, const std::shared_ptr<Bus_ObjectImpl> &bus,
+                                       std::string &&serviceName, std::string &&uniqueName) :
+        Service_Object(type), bus(bus), serviceName(std::move(serviceName)), uniqueName(std::move(uniqueName)) {
 }
 
 std::string Service_ObjectImpl::toString(RuntimeContext &ctx) {
@@ -630,14 +660,6 @@ static void extractInterfaceName(std::unordered_set<std::string> &ifaceSet, char
 }
 
 bool DBusProxy_Object::doIntrospection(RuntimeContext &ctx) {
-    DBusError error;
-    dbus_error_init(&error);
-
-    if(!dbus_validate_bus_name(this->srv->getServiceName(), &error)) {
-        reportDBusError(ctx, error);
-        return false;
-    }
-
     DBusMessage *msg = this->newMethodCallMsg("org.freedesktop.DBus.Introspectable", "Introspect");
     bool status;
     DBusMessage *ret = this->sendMessage(ctx, msg, status);
@@ -808,7 +830,7 @@ FunctionType  *DBusProxy_Object::lookupHandler(RuntimeContext &ctx,
 }
 
 bool DBusProxy_Object::matchObject(const char *serviceName, const char *objectPath) {
-    return /*strcmp(serviceName, this->srv->serviceName.c_str()) == 0 && */
+    return strcmp(serviceName, this->srv->getUniqueName()) == 0 &&
            strcmp(objectPath, this->objectPath->getValue().c_str()) == 0;
 }
 

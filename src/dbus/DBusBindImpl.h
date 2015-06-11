@@ -70,8 +70,14 @@ private:
      */
     std::string serviceName;
 
+    /**
+     * unique connection name.
+     */
+    std::string uniqueName;
+
 public:
-    Service_ObjectImpl(DSType *type, const std::shared_ptr<Bus_ObjectImpl> &bus, std::string &&serviceName);
+    Service_ObjectImpl(DSType *type, const std::shared_ptr<Bus_ObjectImpl> &bus,
+                       std::string &&serviceName, std::string &&uniqueName);
     ~Service_ObjectImpl() = default;
 
     const std::shared_ptr<Bus_ObjectImpl> &getBus() const {
@@ -84,6 +90,10 @@ public:
 
     const char *getServiceName() const {
         return this->serviceName.c_str();
+    }
+
+    const char *getUniqueName() const {
+        return this->uniqueName.c_str();
     }
 
     std::string toString(RuntimeContext &ctx); // override
