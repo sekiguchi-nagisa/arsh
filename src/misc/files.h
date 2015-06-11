@@ -20,6 +20,9 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <cstdlib>
+#include <vector>
+#include <list>
+#include <string>
 
 /**
  * get current working directory. return empty string, if error happened.
@@ -33,29 +36,47 @@ inline std::string getCurrentWorkingDir() {
     return std::string(buf);
 }
 
-/**
- * get file list(exclude directory) of specific path.
- */
-inline std::vector<const char *> getFileList(const char *path) {
-    std::vector<const char *> fileList;
+inline void getFileList(const char *dirPath, bool recursive, std::vector<std::string> &results) {
+    std::list<std::string> dirList;
+    dirList.push_back(dirPath);
 
-    DIR *dir = opendir(path);
-    if(dir == nullptr) {
-        exit(1);
+    while(!dirList.empty()) {
+        std::string path = std::move(dirList.front());
+        dirList.pop_front();
+        DIR *dir = opendir(path.c_str());
+        if(dir == nullptr) {
+            return;
+        }
+
+        dirent *entry;
+
+        do {
+            entry = readdir(dir);
+            if(entry == nullptr) {
+                break;
+            }
+            if(entry->d_type == DT_REG) {
+                std::string name(path);
+                name += "/";
+                name += entry->d_name;
+                results.push_back(std::move(name));
+            } else if(recursive && entry->d_type == DT_DIR &&
+                    strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+                std::string name(path);
+                name += "/";
+                name += entry->d_name;
+                dirList.push_back(std::move(name));
+            }
+        } while(true);
     }
+}
 
-    dirent *entry;
-
-    do {
-        entry = readdir(dir);
-        if(entry == nullptr) {
-            break;
-        }
-        if(entry->d_type == DT_REG) {
-            fileList.push_back(entry->d_name);
-        }
-    } while(true);
-
+/**
+ * get full file path in specific directory
+ */
+inline std::vector<std::string> getFileList(const char *dirPath, bool recursive = false) {
+    std::vector<std::string> fileList;
+    getFileList(dirPath, recursive, fileList);
     return fileList;
 }
 

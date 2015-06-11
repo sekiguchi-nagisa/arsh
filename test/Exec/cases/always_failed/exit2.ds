@@ -1,0 +1,4 @@
+#$test($result = 'exit', $status = 20)
+
+var a = 20
+exit $a

@@ -1,0 +1,7 @@
+#$test($result = 'exit', $status = 6543)
+
+# exit in block
+
+if($true) {
+    exit 6543
+}

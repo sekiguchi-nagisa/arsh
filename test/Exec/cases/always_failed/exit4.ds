@@ -1,0 +1,9 @@
+# exit in function
+
+#$test($result = 'exit', $status = 9)
+
+function f() {
+    if($true) { exit 9; }
+}
+
+$f()

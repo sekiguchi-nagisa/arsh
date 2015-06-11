@@ -1,0 +1,7 @@
+# assert in block
+
+#$test($result = 'assert')
+
+if($true) {
+    assert("fjire".empty())
+}

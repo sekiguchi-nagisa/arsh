@@ -1,0 +1,5 @@
+# assert top level
+
+#$test($result = 'assert')
+
+assert(12 == 6453)

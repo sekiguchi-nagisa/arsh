@@ -1,0 +1,12 @@
+# assert in function
+
+#$test($result = 'assert')
+
+function f($a : Int) {
+    if($true) {
+        assert($a > 0)
+    }
+}
+
+$f(234)
+$f(-453)

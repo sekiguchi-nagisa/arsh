@@ -35,8 +35,13 @@ private:
     ydsh::ExecStatus result;
     std::vector<std::string> params;
 
+    /**
+     * for command exit status
+     */
+    unsigned int status;
+
 public:
-    Directive() : result(ExecStatus::SUCCESS), params() {}
+    Directive() : result(ExecStatus::SUCCESS), params(), status(0) {}
     ~Directive() = default;
 
     ydsh::ExecStatus getResult() const {
@@ -53,6 +58,14 @@ public:
 
     const std::vector<std::string> &getParams() const {
         return this->params;
+    }
+
+    void setStatus(unsigned int status) {
+        this->status = status;
+    }
+
+    unsigned int getStatus() const {
+        return this->status;
     }
 };
 
@@ -374,6 +387,13 @@ void DirectiveParser<N>::parse_toplevel(Directive &directive) {
                 }
                 directive.appendParam(std::string(value->getValue()));
             }
+            continue;
+        }
+
+        if(keyValue.getKey() == "status" &&
+                dynamic_cast<NumberNode *>(keyValue.getValue().get()) != nullptr) {
+            NumberNode *node = static_cast<NumberNode *>(keyValue.getValue().get());
+            directive.setStatus(node->getValue());
             continue;
         }
 

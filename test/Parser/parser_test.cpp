@@ -10,7 +10,7 @@
 
 using namespace ydsh::parser;
 
-class ParserTest : public ::testing::TestWithParam<const char *> {
+class ParserTest : public ::testing::TestWithParam<std::string> {
 private:
     std::string targetName;
     Parser parser;
@@ -20,9 +20,7 @@ public:
     virtual ~ParserTest() = default;
 
     virtual void SetUp() {
-        this->targetName += PARSER_TEST_DIR;
-        this->targetName += "/";
-        this->targetName += this->GetParam();
+        this->targetName = this->GetParam();
     }
 
     virtual void TearDown() {

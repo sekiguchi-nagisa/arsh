@@ -12,7 +12,7 @@
 using namespace ydsh;
 using namespace ydsh::directive;
 
-class ExecTest : public ::testing::TestWithParam<const char *> {
+class ExecTest : public ::testing::TestWithParam<std::string> {
 private:
     std::string targetName;
     std::unique_ptr<ExecutionEngine> shell;
@@ -24,9 +24,7 @@ public:
     virtual ~ExecTest() = default;
 
     virtual void SetUp() {
-        this->targetName += EXEC_TEST_DIR;
-        this->targetName += "/";
-        this->targetName += this->GetParam();
+        this->targetName = this->GetParam();
     }
 
     virtual void TearDown() {
@@ -51,6 +49,10 @@ public:
         ExecStatus status = this->shell->eval(scriptName, fp);
 
         ASSERT_EQ(d.getResult(), status);
+
+        if(d.getResult() == ExecStatus::EXIT) {
+            ASSERT_EQ(d.getStatus(), this->shell->getExitStatus());
+        }
     }
 };
 
@@ -61,7 +63,7 @@ TEST_P(ExecTest, baseTest) {
     });
 }
 
-INSTANTIATE_TEST_CASE_P(ExecTest, ExecTest, ::testing::ValuesIn(getFileList(EXEC_TEST_DIR)));
+INSTANTIATE_TEST_CASE_P(ExecTest, ExecTest, ::testing::ValuesIn(getFileList(EXEC_TEST_DIR, true)));
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
