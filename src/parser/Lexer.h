@@ -22,7 +22,7 @@
 #include <vector>
 
 #include "Token.h"
-#include "InputBuffer.hpp"
+#include "LexerBase.hpp"
 
 #define EACH_LEXER_MODE(OP) \
     OP(yycSTMT) \

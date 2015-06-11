@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_INPUTBUFFER_HPP
-#define YDSH_INPUTBUFFER_HPP
+#ifndef YDSH_LEXERBASE_HPP
+#define YDSH_LEXERBASE_HPP
 
 #include <cstdio>
 #include <cstring>
@@ -23,18 +23,47 @@
 #include <string>
 
 namespace ydsh {
-namespace parser {
-namespace __input_buffer_detail {
+namespace parser_base {
+
+template <typename T>
+struct Token {
+    unsigned int lineNum;
+    T kind;
+    unsigned int startPos;
+    unsigned int size;
+
+    bool operator==(const Token<T> &token) {
+        return this->lineNum == token.lineNum && this->kind == token.kind &&
+               this->startPos == token.startPos && this->size == token.size;
+    }
+
+    bool operator!=(const Token<T> &token) const {
+        return !(*this == token);
+    }
+
+    std::string toString() const;
+};
+
+template <typename T>
+std::string Token<T>::toString() const {
+    std::string str("{ lineNum = ");
+    str += std::to_string(this->lineNum);
+    str += ", kind = ";
+    str += toString(this->kind);
+    str += ", startPos = ";
+    str += std::to_string(this->startPos);
+    str += ", size = ";
+    str += std::to_string(this->size);
+    str += " }";
+    return str;
+}
 
 /**
- * input buffer for re2c
+ * base lexer for re2c
  */
-template <unsigned int DEFAULT_SIZE>
-class InputBuffer {
+template <typename T>
+class LexerBase {
 protected:
-
-    static_assert(DEFAULT_SIZE >= 32, "default buffer size must be more than 32");
-
     /**
      * may be null, if input source is string. not closed it.
      */
@@ -77,8 +106,10 @@ protected:
      */
     bool endOfString;
 
+    static constexpr unsigned int DEFAULT_SIZE = 256;
+
 private:
-    InputBuffer(unsigned int initSize, bool fixed = false) :
+    LexerBase(unsigned int initSize, bool fixed = false) :
             fp(0),
             bufSize((fixed || initSize > DEFAULT_SIZE) ? initSize : DEFAULT_SIZE),
             buf(new unsigned char[this->bufSize]),
@@ -87,8 +118,7 @@ private:
         this->buf[0] = '\0';    // terminate null character.
     }
 
-    InputBuffer(unsigned int initSize, FILE *fp) :
-            InputBuffer(initSize) {
+    LexerBase(unsigned int initSize, FILE *fp) : LexerBase(initSize) {
         this->fp = fp;
     }
 
@@ -96,23 +126,23 @@ public:
     /**
      * equivalent to Lexer(DEFAULT_SIZE, fp).
      */
-    explicit InputBuffer(FILE *fp) : InputBuffer(DEFAULT_SIZE, fp) {
+    explicit LexerBase(FILE *fp) : LexerBase(DEFAULT_SIZE, fp) {
     }
 
     /**
      * copy src to this->buf.
      * src must terminate null character.
      */
-    explicit InputBuffer(const char *src) : InputBuffer(strlen(src) + 1, true) {
+    explicit LexerBase(const char *src) : LexerBase(strlen(src) + 1, true) {
         this->copySrcBuf(src);
     }
 
     /**
      * not allow copy constructor
      */
-    explicit InputBuffer(const InputBuffer<DEFAULT_SIZE> &buffer);
+    explicit LexerBase(const LexerBase<T> &buffer);
 
-    virtual ~InputBuffer() {
+    virtual ~LexerBase() {
         delete[] this->buf;
         this->buf = 0;
     }
@@ -130,6 +160,21 @@ public:
     unsigned int getUsedSize() const {
         return this->limit - this->buf + 1;
     }
+
+    bool withinRange(const Token<T> &token) const {
+        return token.startPos < this->getUsedSize()
+               && token.startPos + token.size <= this->getUsedSize();
+    }
+
+    /**
+     * get text of token.
+     */
+    std::string toTokenText(const Token<T> &token) const {
+        assert(this->withinRange(token));
+        return std::string((char *) (this->buf + token.startPos), token.size);
+    }
+
+    std::string formatLineMarker(const Token<T> &lineToken, const Token<T> &token) const;
 
 private:
     /**
@@ -152,12 +197,26 @@ protected:
     bool fill(int n);
 };
 
-// #########################
-// ##     InputBuffer     ##
-// #########################
+// #######################
+// ##     LexerBase     ##
+// #######################
 
-template<unsigned int DEFAULT_SIZE>
-void InputBuffer<DEFAULT_SIZE>::expandBuf(unsigned int needSize) {
+template<typename T>
+std::string LexerBase<T>::formatLineMarker(const Token<T> &lineToken, const Token<T> &token) const {
+    assert(lineToken.startPos <= token.startPos);
+
+    std::string marker;
+    for(unsigned int i = lineToken.startPos; i < token.startPos; i++) {
+        marker += " ";
+    }
+    for(unsigned int i = 0; i < token.size; i++) {
+        marker += "^";    //TODO: support multi byte char
+    }
+    return marker;
+}
+
+template<typename T>
+void LexerBase<T>::expandBuf(unsigned int needSize) {
     unsigned int usedSize = this->getUsedSize();
     unsigned int size = usedSize + needSize;
     if(size > this->bufSize) {
@@ -180,8 +239,8 @@ void InputBuffer<DEFAULT_SIZE>::expandBuf(unsigned int needSize) {
     }
 }
 
-template<unsigned int DEFAULT_SIZE>
-bool InputBuffer<DEFAULT_SIZE>::fill(int n) {
+template<typename T>
+bool LexerBase<T>::fill(int n) {
     if(this->endOfString && this->limit - this->cursor <= 0) {
         return false;
     }
@@ -200,11 +259,7 @@ bool InputBuffer<DEFAULT_SIZE>::fill(int n) {
     return true;
 }
 
-} // namespace __input_buffer_detail
-
-typedef __input_buffer_detail::InputBuffer<256> InputBuffer;
-
-} // namespace parser
+} // namespace parser_base
 } // namespace ydsh
 
-#endif //YDSH_INPUTBUFFER_HPP
+#endif //YDSH_LEXERBASE_HPP

@@ -19,7 +19,7 @@
 
 #include <ostream>
 
-#include <parser/InputBuffer.hpp>
+#include <parser/LexerBase.hpp>
 #include <parser/ParserBase.hpp>
 
 #define EACH_DESC_TOKEN(OP) \
