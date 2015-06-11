@@ -27,8 +27,9 @@ namespace ydsh {
 namespace core {
 
 // represent for SystemBus, SessionBus, or specific bus.
-struct Bus_ObjectImpl : public Bus_Object,
+class Bus_ObjectImpl : public Bus_Object,
                         public std::enable_shared_from_this<Bus_ObjectImpl> {
+private:
     DBusConnection *conn;
 
     /**
@@ -37,6 +38,7 @@ struct Bus_ObjectImpl : public Bus_Object,
      */
     bool systemBus;
 
+public:
     Bus_ObjectImpl(DSType *type, bool systemBus);
     ~Bus_ObjectImpl();
 
@@ -46,14 +48,21 @@ struct Bus_ObjectImpl : public Bus_Object,
      */
     bool initConnection(RuntimeContext &ctx, bool systemBus);
 
-    bool isSystemBus();
+    DBusConnection *getConnection() {
+        return this->conn;
+    }
+
+    bool isSystemBus() {
+        return this->systemBus;
+    }
 
     bool service(RuntimeContext &ctx, std::string &&serviceName); // override
     bool listNames(RuntimeContext &ctx, bool activeName);    // override
 };
 
-struct Service_ObjectImpl : public Service_Object,
+class Service_ObjectImpl : public Service_Object,
                             public std::enable_shared_from_this<Service_ObjectImpl> {
+private:
     std::shared_ptr<Bus_ObjectImpl> bus;
 
     /**
@@ -61,20 +70,53 @@ struct Service_ObjectImpl : public Service_Object,
      */
     std::string serviceName;
 
+public:
     Service_ObjectImpl(DSType *type, const std::shared_ptr<Bus_ObjectImpl> &bus, std::string &&serviceName);
     ~Service_ObjectImpl() = default;
+
+    const std::shared_ptr<Bus_ObjectImpl> &getBus() const {
+        return this->bus;
+    }
+
+    DBusConnection *getConnection() const {
+        return this->bus->getConnection();
+    }
+
+    const char *getServiceName() const {
+        return this->serviceName.c_str();
+    }
 
     std::string toString(RuntimeContext &ctx); // override
     bool object(RuntimeContext &ctx, const std::shared_ptr<String_Object> &objectPath); // override
 };
 
-struct DBus_ObjectImpl : public DBus_Object {
+class DBus_ObjectImpl : public DBus_Object {
+private:
     std::shared_ptr<Bus_ObjectImpl> systemBus;
     std::shared_ptr<Bus_ObjectImpl> sessionBus;
     MessageBuilder builder;
 
+public:
     explicit DBus_ObjectImpl(TypePool *typePool);
     ~DBus_ObjectImpl() = default;
+
+    /**
+     * return null, before call getSystemBus(ctx)
+     */
+    const std::shared_ptr<Bus_ObjectImpl> &getSystemBus() {
+        return this->systemBus;
+    }
+
+    /**
+     * return null, before call getSessionBus(ctx)
+     */
+    const std::shared_ptr<Bus_ObjectImpl> &getSessionBus() {
+        return this->sessionBus;
+    }
+
+    MessageBuilder &getBuilder() {
+        return this->builder;
+    }
 
     bool getSystemBus(RuntimeContext &ctx); // override
     bool getSessionBus(RuntimeContext &ctx);    // override

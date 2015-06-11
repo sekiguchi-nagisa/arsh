@@ -271,7 +271,7 @@ static std::shared_ptr<DSObject> decodeAndUnrefMessage(RuntimeContext &ctx, DSTy
 static void appendArg(RuntimeContext &ctx, DBusMessageIter *iter,
                       DSType *argType, const std::shared_ptr<DSObject> &arg) {
     DBus_ObjectImpl *dbus = TYPE_AS(DBus_ObjectImpl, ctx.getDBus());
-    dbus->builder.appendArg(iter, argType, arg);
+    dbus->getBuilder().appendArg(iter, argType, arg);
 }
 
 static void appendArg(RuntimeContext &ctx, DBusMessageIter *iter,
@@ -332,10 +332,6 @@ bool Bus_ObjectImpl::initConnection(RuntimeContext &ctx, bool systemBus) {
         fatal("must not null\n");
     }
     return true;
-}
-
-bool Bus_ObjectImpl::isSystemBus() {
-    return this->systemBus;
 }
 
 bool Bus_ObjectImpl::service(RuntimeContext &ctx, std::string &&serviceName) {
@@ -429,7 +425,7 @@ bool DBus_ObjectImpl::waitSignal(RuntimeContext &ctx) {
 
     // add signal match rule
     DBusConnection *conn =
-            (proxies[0]->isBelongToSystemBus() ? this->systemBus : this->sessionBus)->conn;
+            (proxies[0]->isBelongToSystemBus() ? this->systemBus : this->sessionBus)->getConnection();
     std::vector<std::string> ruleList;
     proxies[0]->createSignalMatchRule(ruleList);
 
@@ -527,10 +523,10 @@ bool DBus_ObjectImpl::getIfaceListFromProxy(RuntimeContext &ctx, const std::shar
 bool DBus_ObjectImpl::introspectProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy) {
     DBusProxy_Object *obj = TYPE_AS(DBusProxy_Object, proxy);
     auto msg = dbus_message_new_method_call(
-            obj->getService()->serviceName.c_str(), obj->getObjectPath()->getValue().c_str(),
+            obj->getService()->getServiceName(), obj->getObjectPath()->getValue().c_str(),
             "org.freedesktop.DBus.Introspectable", "Introspect");
     bool status;
-    auto reply = sendAndUnrefMessage(ctx, obj->getService()->bus->conn, msg, status);
+    auto reply = sendAndUnrefMessage(ctx, obj->getService()->getConnection(), msg, status);
     if(!status) {
         return false;
     }
@@ -577,7 +573,7 @@ DBusProxy_Object::DBusProxy_Object(DSType *type, const std::shared_ptr<DSObject>
 
 std::string DBusProxy_Object::toString(RuntimeContext &ctx) {
     std::string str("[dest=");
-    str += this->srv->serviceName;
+    str += this->srv->getServiceName();
     str += ", path=";
     str += this->objectPath->getValue();
     str += ", iface=";
@@ -637,7 +633,7 @@ bool DBusProxy_Object::doIntrospection(RuntimeContext &ctx) {
     DBusError error;
     dbus_error_init(&error);
 
-    if(!dbus_validate_bus_name(this->srv->serviceName.c_str(), &error)) {
+    if(!dbus_validate_bus_name(this->srv->getServiceName(), &error)) {
         reportDBusError(ctx, error);
         return false;
     }
@@ -831,7 +827,7 @@ static inline void quote(std::string &str, const char *value) {
 void DBusProxy_Object::createSignalMatchRule(std::vector<std::string> &ruleList) {
     for(auto &pair : this->handerMap) {
         std::string rule("type="); quote(rule, "signal");
-        rule += ", sender="; quote(rule, this->srv->serviceName);
+        rule += ", sender="; quote(rule, this->srv->getServiceName());
         rule += ", path="; quote(rule, this->objectPath->getValue());
         rule += ", interface="; quote(rule, pair.first.first);
         rule += ", member="; quote(rule, pair.first.second);
@@ -841,12 +837,12 @@ void DBusProxy_Object::createSignalMatchRule(std::vector<std::string> &ruleList)
 }
 
 bool DBusProxy_Object::isBelongToSystemBus() {
-    return this->srv->bus->isSystemBus();
+    return this->srv->getBus()->isSystemBus();
 }
 
 DBusMessage *DBusProxy_Object::newMethodCallMsg(const char *ifaceName, const char *methodName) {
     return dbus_message_new_method_call(
-            this->srv->serviceName.c_str(), this->objectPath->getValue().c_str(), ifaceName, methodName);
+            this->srv->getServiceName(), this->objectPath->getValue().c_str(), ifaceName, methodName);
 }
 
 DBusMessage *DBusProxy_Object::newMethodCallMsg(const std::string &ifaceName, const std::string &methodName) {
@@ -854,7 +850,7 @@ DBusMessage *DBusProxy_Object::newMethodCallMsg(const std::string &ifaceName, co
 }
 
 DBusMessage *DBusProxy_Object::sendMessage(RuntimeContext &ctx, DBusMessage *sendMsg, bool &status) {
-    return sendAndUnrefMessage(ctx, this->srv->bus->conn, sendMsg, status);
+    return sendAndUnrefMessage(ctx, this->srv->getConnection(), sendMsg, status);
 }
 
 void DBusProxy_Object::addHandler(const std::string &ifaceName,
