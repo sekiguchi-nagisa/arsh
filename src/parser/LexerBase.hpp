@@ -106,35 +106,37 @@ protected:
      */
     bool endOfString;
 
+    bool zeroCopyBuf;
+
     static constexpr unsigned int DEFAULT_SIZE = 256;
 
 private:
-    LexerBase(unsigned int initSize, bool fixed = false) :
-            fp(0),
-            bufSize((fixed || initSize > DEFAULT_SIZE) ? initSize : DEFAULT_SIZE),
-            buf(new unsigned char[this->bufSize]),
-            cursor(this->buf), limit(this->buf), marker(0), ctxMarker(0),
-            endOfFile(fixed), endOfString(false) {
-        this->buf[0] = '\0';    // terminate null character.
-    }
-
-    LexerBase(unsigned int initSize, FILE *fp) : LexerBase(initSize) {
-        this->fp = fp;
-    }
+      LexerBase() = default;
 
 public:
-    /**
-     * equivalent to Lexer(DEFAULT_SIZE, fp).
-     */
-    explicit LexerBase(FILE *fp) : LexerBase(DEFAULT_SIZE, fp) {
+    explicit LexerBase(FILE *fp) : LexerBase() {
+        this->fp = fp;
+        this->bufSize = DEFAULT_SIZE;
+        this->buf = new unsigned char[this->bufSize];
+        this->buf[0] = '\0';    // terminate null character.
+
+        this->cursor = this->buf;
+        this->limit = this->buf;
     }
 
-    /**
-     * copy src to this->buf.
-     * src must terminate null character.
-     */
-    explicit LexerBase(const char *src) : LexerBase(strlen(src) + 1, true) {
-        this->copySrcBuf(src);
+    explicit LexerBase(const char *src, bool zeroCopy = false) : LexerBase() {
+        this->bufSize = strlen(src) + 1;
+        this->zeroCopyBuf = zeroCopy;
+        if(this->zeroCopyBuf) {
+            this->buf = (unsigned char *)src;
+        } else {
+            this->buf = new unsigned char[this->bufSize];
+            memcpy(this->buf, src, this->bufSize);
+        }
+
+        this->cursor = this->buf;
+        this->limit = this->buf + this->bufSize - 1;
+        this->endOfFile = true;
     }
 
     /**
@@ -143,8 +145,10 @@ public:
     explicit LexerBase(const LexerBase<T> &buffer);
 
     virtual ~LexerBase() {
-        delete[] this->buf;
-        this->buf = 0;
+        if(!this->zeroCopyBuf) {
+            delete[] this->buf;
+            this->buf = 0;
+        }
     }
 
     /**
@@ -177,14 +181,6 @@ public:
     std::string formatLineMarker(const Token<T> &lineToken, const Token<T> &token) const;
 
 private:
-    /**
-     * used for constructor. not use it.
-     */
-    void copySrcBuf(const void *srcBuf) {
-        memcpy(this->buf, srcBuf, this->bufSize);
-        this->limit += this->bufSize - 1;
-    }
-
     /**
      * if this->usedSize + needSize > this->maxSize, expand buf.
      */

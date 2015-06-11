@@ -38,8 +38,8 @@ Shell::Shell() :
         dumpTypedAST(false), parseOnly(false) {
 }
 
-ExecStatus Shell::eval(const char *line) {
-    Lexer lexer(line);
+ExecStatus Shell::eval(const char *line, bool zeroCopy) {
+    Lexer lexer(line, zeroCopy);
     return this->eval(0, lexer);
 }
 
@@ -227,7 +227,10 @@ void Shell::initbuiltinIface() {
             "}\n"
             "type-alias ObjectManager org.freedesktop.DBus.ObjectManager\n";
 
-    ExecStatus s = this->eval(builtinIface);
+    /**
+     * zero copy
+     */
+    ExecStatus s = this->eval(builtinIface, true);
     if(s != ExecStatus::SUCCESS) {
         fatal("broken builtin iface\n");
     }

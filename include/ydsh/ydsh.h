@@ -34,7 +34,8 @@ enum class ExecStatus : unsigned int {
 struct ExecutionEngine {
     virtual ~ExecutionEngine() = default;
 
-    virtual ExecStatus eval(const char *line) = 0;
+    ExecStatus eval(const char *line) { return this->eval(line, false); }
+    virtual ExecStatus eval(const char *line, bool zeroCopy) = 0;
     virtual ExecStatus eval(const char *sourceName, FILE *fp) = 0;
     virtual void setLineNum(unsigned int lineNum) = 0;
     virtual unsigned int getLineNum() = 0;

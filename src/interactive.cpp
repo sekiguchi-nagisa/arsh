@@ -204,7 +204,7 @@ void exec_interactive(const char *progName, std::unique_ptr<ExecutionEngine> &sh
 
     while((line = term.readLine()) != 0) {
         shell->setLineNum(lineNum);
-        ExecStatus status = shell->eval(line);
+        ExecStatus status = shell->eval(line, true);
         if(status == ExecStatus::ASSERTION_ERROR) {
             exit(1);
         } else if(status == ExecStatus::EXIT) {
