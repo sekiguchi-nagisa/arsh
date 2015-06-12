@@ -1,4 +1,4 @@
-var a = 2.__ADD__ is 
+var a = 2 is
 
 
  Func<
@@ -24,5 +24,5 @@ Int
   >
 
 echo $a
-assert($a)
+assert(not $a)
 
