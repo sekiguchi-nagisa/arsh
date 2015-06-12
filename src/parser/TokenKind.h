@@ -19,8 +19,6 @@
 
 #include <ostream>
 
-#include "ParserBase.hpp"
-
 #define EACH_TOKEN(TOKEN) \
     TOKEN(DUMMY) /* for sentinel value. not use it as token kind */\
     TOKEN(INVALID) \

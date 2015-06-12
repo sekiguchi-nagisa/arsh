@@ -20,6 +20,7 @@
 #include <memory>
 #include <utility>
 
+#include "ParserBase.hpp"
 #include "Lexer.h"
 #include "../ast/Node.h"
 #include "../ast/TypeToken.h"

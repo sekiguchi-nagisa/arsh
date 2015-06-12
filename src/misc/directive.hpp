@@ -18,7 +18,7 @@
 #define YDSH_DIRECTIVE_HPP
 
 #include "../parser/Lexer.h"
-#include "../parser/TokenKind.h"
+#include "../parser/ParserBase.hpp"
 #include "debug.h"
 #include <ydsh/ydsh.h>
 #include <memory>
