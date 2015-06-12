@@ -176,7 +176,6 @@ std::ostream &operator<<(std::ostream &stream, TokenKind kind);
 //#define LT LA
 //#define GT RA
 
-typedef ydsh::parser_base::Token<TokenKind> Token;
 
 /**
  * get binary operator precedence.

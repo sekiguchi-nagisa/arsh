@@ -22,7 +22,7 @@
 #include <memory>
 
 #include "../misc/flag_util.h"
-#include "../parser/Token.h"
+#include "../parser/TokenKind.h"
 #include "TypeToken.h"
 
 namespace ydsh {

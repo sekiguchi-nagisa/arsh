@@ -21,7 +21,7 @@
 #include <stdint.h>
 #include <vector>
 
-#include "Token.h"
+#include "TokenKind.h"
 #include "LexerBase.hpp"
 
 #define EACH_LEXER_MODE(OP) \
@@ -40,6 +40,8 @@ typedef enum {
     EACH_LEXER_MODE(GEN_ENUM)
 #undef GEN_ENUM
 } LexerMode;
+
+typedef ydsh::parser_base::Token<TokenKind> Token;
 
 class Lexer : public ydsh::parser_base::LexerBase<TokenKind> {
 private:
