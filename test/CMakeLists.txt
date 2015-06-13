@@ -1,4 +1,6 @@
-# setup gtest
+#+++++++++++++++++++++#
+#     build gtest     #
+#+++++++++++++++++++++#
 
 set(GTEST_V "1.7.0")
 set(GTEST_URL "https://googletest.googlecode.com/files/gtest-${GTEST_V}.zip")
@@ -13,13 +15,9 @@ endif()
 add_subdirectory(${GTEST_DIR})
 
 
-# helper macro for testing
-macro(setup_test TEST_NAME)
-    aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} ADD_SOURCES)
-    add_executable(${TEST_NAME} ${ADD_SOURCES})
-    target_link_libraries(${TEST_NAME} gtest gtest_main ${YDSH_STATIC} ${extra_lib})
-    add_test(${TEST_NAME} ${TEST_NAME})
-endmacro()
+#++++++++++++++++++++++++++++++++++++#
+#     setup test in subdirectory     #
+#++++++++++++++++++++++++++++++++++++#
 
 include_directories(${GTEST_DIR}/include)
 

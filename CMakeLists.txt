@@ -2,40 +2,41 @@ cmake_minimum_required(VERSION 2.8)
 
 PROJECT(ydsh)
 
-# variable definition
-SET(CMAKE_VERBOSE_MAKEFILE 1)
-SET(BIN_NAME ydsh)
-SET(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
-SET(YDSH_SRC "")
-SET(YDSH_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-if("${CMAKE_BUILD_TYPE}" STREQUAL "")
-    SET(CMAKE_BUILD_TYPE Release)
-endif()
-
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11")
-
-# definition of some helper function
-# add source in current directory to target
-macro(add_source)
-    aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} ADD_SOURCES)
-    set(YDSH_SRC
-        ${YDSH_SRC}
-        ${ADD_SOURCES}
-        PARENT_SCOPE
-    )
-endmacro(add_source)
+#++++++++++++++++++++++#
+#     helper macro     #
+#++++++++++++++++++++++#
 
 macro(check_header VAR NAME)
     find_path(${VAR} ${NAME})
     MESSAGE(STATUS "find header file - ${NAME} in ${${VAR}}")
 endmacro()
 
-# set some system infomation
+
+#++++++++++++++++++++++++++++#
+#     set some variable      #
+#++++++++++++++++++++++++++++#
+
+SET(CMAKE_VERBOSE_MAKEFILE 1)
+if("${CMAKE_BUILD_TYPE}" STREQUAL "")
+    SET(CMAKE_BUILD_TYPE Release)
+endif()
+
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11")
+
+
+#++++++++++++++++++++++++++++++++++++#
+#     set some system infomation     #
+#++++++++++++++++++++++++++++++++++++#
+
 add_definitions(-DX_INFO_SYSTEM=${CMAKE_SYSTEM})
 add_definitions(-DX_INFO_CPP=${CMAKE_CXX_COMPILER_ID})
 add_definitions(-DX_INFO_CPP_V=${CMAKE_CXX_COMPILER_VERSION})
 
-# set extra option
+
+#++++++++++++++++++++++++++#
+#     set extra option     #
+#++++++++++++++++++++++++++#
+
 option(USE_TRACE_TOKEN "trace generated token" OFF)
 if(USE_TRACE_TOKEN)
     add_definitions(-DX_TRACE_TOKEN)
@@ -49,23 +50,37 @@ elseif(NOT USE_DBUS)
     add_definitions(-DX_NO_DBUS)
 endif()
 
-# check editline
+
+#++++++++++++++++++++++#
+#     find libedit     #
+#++++++++++++++++++++++#
+
 check_header(HAVE_HISTEDIT_H "histedit.h")
 find_library(HAVE_LIBEDIT NAMES edit)
-set(extra_lib ${HAVE_LIBEDIT})
 
-# check dbus
+
+#++++++++++++++++++++++#
+#     find libdbus     #
+#++++++++++++++++++++++#
+
 if(USE_DBUS)
-    SET(CMAKE_INCLUDE_PATH "/usr/include/dbus-1.0" "/usr/lib64/dbus-1.0/include" "/usr/lib/dbus-1.0/include" "/usr/lib/x86_64-linux-gnu/dbus-1.0/include")
+    SET(CMAKE_INCLUDE_PATH
+        "/usr/include/dbus-1.0"
+        "/usr/lib64/dbus-1.0/include"
+        "/usr/lib/dbus-1.0/include"
+        "/usr/lib/x86_64-linux-gnu/dbus-1.0/include"
+    )
     check_header(HAVE_DBUS_H "dbus/dbus.h")
     check_header(HAVE_DBUS_ARCH_DEPS_H "dbus/dbus-arch-deps.h")
     SET(CMAKE_LIBRARY_PATH "/usr/lib/x86_64-linux-gnu")
     find_library(HAVE_LIBDBUS NAMES dbus-1)
-    set(extra_lib ${extra_lib} ${HAVE_LIBDBUS})
 endif()
 
 
-# build re2c
+#+++++++++++++++++++#
+#     build re2c    #
+#+++++++++++++++++++#
+
 set(RE2C_V "0.14.2")
 set(RE2C_URL "http://downloads.sourceforge.net/project/re2c/re2c/0.14.2/re2c-0.14.2.tar.gz?r=&ts=1427624328&use_mirror=jaist")
 set(RE2C_PATH ${CMAKE_CURRENT_BINARY_DIR}/re2c-${RE2C_V}.tar.gz)
@@ -79,55 +94,100 @@ if(NOT EXISTS "${RE2C_DIR}")
 endif()
 
 
-# generate lexer
+#========================#
+#     generate Lexer     #
+#========================#
+
 set(lexer_src ${CMAKE_CURRENT_BINARY_DIR}/src/parser/nextToken.cpp)
 add_custom_command(OUTPUT ${lexer_src}
-    COMMAND ${RE2C_DIR}/re2c -c -8 -o ${lexer_src} ${SRC_DIR}/nextToken.re2c.cpp
+    COMMAND ${RE2C_DIR}/re2c -c -8 -o ${lexer_src} ${CMAKE_CURRENT_SOURCE_DIR}/src/parser/nextToken.re2c.cpp
 )
 add_custom_target(gen_lexer DEPENDS ${lexer_src})
 
-# generate builtin binding
+
+#==================================#
+#     generate builtin binding     #
+#==================================#
+
 set(bind_src ${CMAKE_CURRENT_BINARY_DIR}/src/core/bind.cpp)
 add_custom_command(OUTPUT ${bind_src}
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tools/gen_binding/gen_binding ${SRC_DIR}/core/builtin.h ${bind_src}
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tools/gen_binding/gen_binding
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/core/builtin.h ${bind_src}
 )
 add_custom_target(gen_bind DEPENDS ${bind_src})
 add_dependencies(gen_bind gen_binding)
 
 
-include_directories(${SRC_DIR})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+#=================#
+#     libydsh     #
+#=================#
+
+SET(BIN_NAME ydsh)
+
+include_directories(src)
+include_directories(include)
 
 if(USE_DBUS)
     include_directories(${HAVE_DBUS_H} ${HAVE_DBUS_ARCH_DEPS_H})
 endif()
 
-add_subdirectory(${SRC_DIR}/ast)
-add_subdirectory(${SRC_DIR}/core)
-add_subdirectory(${SRC_DIR}/parser)
-add_subdirectory(${SRC_DIR}/exe)
+SET(YDSH_SRC
+    src/ast/dump.cpp
+    src/ast/Node.cpp
+    src/ast/TypeToken.cpp
+    src/core/DSObject.cpp
+    src/core/DSType.cpp
+    src/core/FieldHandle.cpp
+    src/core/ProcContext.cpp
+    src/core/RuntimeContext.cpp
+    src/core/SymbolTable.cpp
+    src/core/TypeLookupError.cpp
+    src/core/TypePool.cpp
+    src/exe/Shell.cpp
+    src/parser/ErrorListener.cpp
+    src/parser/Lexer.cpp
+    src/parser/Parser.cpp
+    src/parser/TokenKind.cpp
+    src/parser/TypeChecker.cpp
+    src/parser/TypeCheckError.cpp)
 
 if(USE_DBUS)
-    add_subdirectory(${SRC_DIR}/dbus)
+    SET(YDSH_SRC ${YDSH_SRC}
+        src/dbus/DBusBindImpl.cpp
+        src/dbus/DBusUtil.cpp)
 endif()
+
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_binding)
 
-# add executable
 set(YDSH_STATIC ydsh_static)
 add_library(${YDSH_STATIC} STATIC ${YDSH_SRC} ${lexer_src} ${bind_src})
 add_dependencies(${YDSH_STATIC} gen_lexer gen_binding gen_bind)
-add_executable(${BIN_NAME} ${SRC_DIR}/ydsh.cpp ${SRC_DIR}/interactive.cpp)
-target_link_libraries(${BIN_NAME} ${YDSH_STATIC} ${extra_lib})
+target_link_libraries(${YDSH_STATIC} ${HAVE_LIBDBUS})
+
+
+#==============#
+#     ydsh     #
+#==============#
+
+add_executable(${BIN_NAME} src/ydsh.cpp src/interactive.cpp)
+target_link_libraries(${BIN_NAME} ${YDSH_STATIC} ${HAVE_LIBEDIT})
 
 install(TARGETS ${BIN_NAME} RUNTIME DESTINATION bin)
 
-# test setup
+
+#==================#
+#     run_test     #
+#==================#
+
 enable_testing()
 add_subdirectory(test)
 add_custom_target(run_test COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure)
 
 
+#+++++++++++++++++++++++++#
+#     show enviroment     #
+#+++++++++++++++++++++++++#
 
 MESSAGE(STATUS "CMAKE_BUILD_TYPE                 = ${CMAKE_BUILD_TYPE}")
 MESSAGE(STATUS "CMAKE_SYSTEM                     = ${CMAKE_SYSTEM}")
