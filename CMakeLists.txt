@@ -98,7 +98,7 @@ endif()
 #     generate Lexer     #
 #========================#
 
-set(lexer_src ${CMAKE_CURRENT_BINARY_DIR}/src/parser/nextToken.cpp)
+set(lexer_src ${CMAKE_CURRENT_BINARY_DIR}/nextToken.cpp)
 add_custom_command(OUTPUT ${lexer_src}
     COMMAND ${RE2C_DIR}/re2c -c -8 -o ${lexer_src} ${CMAKE_CURRENT_SOURCE_DIR}/src/parser/nextToken.re2c.cpp
 )
@@ -109,7 +109,7 @@ add_custom_target(gen_lexer DEPENDS ${lexer_src})
 #     generate builtin binding     #
 #==================================#
 
-set(bind_src ${CMAKE_CURRENT_BINARY_DIR}/src/core/bind.cpp)
+set(bind_src ${CMAKE_CURRENT_BINARY_DIR}/bind.cpp)
 add_custom_command(OUTPUT ${bind_src}
     COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tools/gen_binding/gen_binding
             ${CMAKE_CURRENT_SOURCE_DIR}/src/core/builtin.h ${bind_src}
