@@ -20,6 +20,7 @@ add_subdirectory(${GTEST_DIR})
 #++++++++++++++++++++++++++++++++++++#
 
 include_directories(${GTEST_DIR}/include)
+include_directories(${CMAKE_SOURCE_DIR}/tools/directive)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Lexer)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Type)

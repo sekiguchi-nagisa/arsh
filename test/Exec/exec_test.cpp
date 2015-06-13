@@ -2,7 +2,7 @@
 
 #include <ydsh/ydsh.h>
 #include <misc/files.h>
-#include <misc/directive.hpp>
+#include <directive.h>
 
 
 #ifndef EXEC_TEST_DIR
@@ -39,7 +39,7 @@ public:
         SCOPED_TRACE("");
 
         Directive d;
-        bool s = DirectiveParser::parse(this->getSourceName(), d);
+        bool s = Directive::init(this->getSourceName().c_str(), d);
         ASSERT_TRUE(s);
 
         const char *scriptName = this->getSourceName().c_str();

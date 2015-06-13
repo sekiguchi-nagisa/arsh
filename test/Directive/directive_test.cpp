@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <misc/directive.hpp>
+#include <directive.h>
 
 using namespace ydsh::directive;
 
@@ -22,9 +22,7 @@ public:
         SCOPED_TRACE("");
         ASSERT_TRUE(line != nullptr);
 
-        std::string str(line);
-        DirectiveParser parser;
-        bool s = parser(1, "(dummy)", line, this->d);
+        bool s = Directive::init("(dummy)", line, this->d);
         ASSERT_EQ(status, s);
     }
 

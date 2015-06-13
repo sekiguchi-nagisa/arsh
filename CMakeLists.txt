@@ -159,6 +159,7 @@ endif()
 
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_binding)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/directive)
 
 set(YDSH_STATIC ydsh_static)
 add_library(${YDSH_STATIC} STATIC ${YDSH_SRC} ${lexer_src} ${bind_src})
