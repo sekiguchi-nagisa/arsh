@@ -25,5 +25,5 @@ $ make
 ```
 if not need D-Bus support,
 ```
-$ cmake .. -DNO_DBUS=on
+$ cmake .. -DUSE_DBUS=off
 ```

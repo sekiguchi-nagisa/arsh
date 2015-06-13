@@ -41,11 +41,11 @@ if(USE_TRACE_TOKEN)
     add_definitions(-DX_TRACE_TOKEN)
 endif()
 
-option(NO_DBUS "not support D-Bus" OFF)
+option(USE_DBUS "support D-Bus" ON)
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
-    set(NO_DBUS ON)
+    set(USE_DBUS OFF)
     add_definitions(-DX_NO_DBUS)
-elseif(NO_DBUS)
+elseif(NOT USE_DBUS)
     add_definitions(-DX_NO_DBUS)
 endif()
 
@@ -55,7 +55,7 @@ find_library(HAVE_LIBEDIT NAMES edit)
 set(extra_lib ${HAVE_LIBEDIT})
 
 # check dbus
-if(NOT NO_DBUS)
+if(USE_DBUS)
     SET(CMAKE_INCLUDE_PATH "/usr/include/dbus-1.0" "/usr/lib64/dbus-1.0/include" "/usr/lib/dbus-1.0/include" "/usr/lib/x86_64-linux-gnu/dbus-1.0/include")
     check_header(HAVE_DBUS_H "dbus/dbus.h")
     check_header(HAVE_DBUS_ARCH_DEPS_H "dbus/dbus-arch-deps.h")
@@ -98,7 +98,7 @@ add_dependencies(gen_bind gen_binding)
 include_directories(${SRC_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-if(NOT NO_DBUS)
+if(USE_DBUS)
     include_directories(${HAVE_DBUS_H} ${HAVE_DBUS_ARCH_DEPS_H})
 endif()
 
@@ -107,7 +107,7 @@ add_subdirectory(${SRC_DIR}/core)
 add_subdirectory(${SRC_DIR}/parser)
 add_subdirectory(${SRC_DIR}/exe)
 
-if(NOT NO_DBUS)
+if(USE_DBUS)
     add_subdirectory(${SRC_DIR}/dbus)
 endif()
 

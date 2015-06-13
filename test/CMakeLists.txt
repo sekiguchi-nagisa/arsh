@@ -28,6 +28,6 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Type)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Directive)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Exec)
 
-if(NOT NO_DBUS)
+if(USE_DBUS)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/DBus)
 endif()
