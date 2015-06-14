@@ -17,13 +17,6 @@
 #include "Parser.h"
 #include "../misc/debug.h"
 
-// for debug
-#ifdef NDEBUG
-#define INLINE inline
-#else
-#define INLINE
-#endif
-
 
 // helper macro
 #define NEXT_TOKEN() this->fetchNext()
@@ -167,7 +160,7 @@ void Parser::parse(Lexer &lexer, RootNode &rootNode) {
     this->parse_toplevel(rootNode);
 }
 
-INLINE void Parser::hasNoNewLine() {
+void Parser::hasNoNewLine() {
     if(HAS_NL()) {
         throw UnexpectedNewLineError(this->curToken);
     }
@@ -183,7 +176,7 @@ void Parser::alternative(const TokenKind *kinds) {
 
 // parse rule definition
 
-INLINE void Parser::parse_toplevel(RootNode & rootNode) {
+void Parser::parse_toplevel(RootNode & rootNode) {
     bool next = true;
     while(next) {
         switch(CUR_KIND()) {
@@ -202,7 +195,7 @@ INLINE void Parser::parse_toplevel(RootNode & rootNode) {
     this->expect(EOS);
 }
 
-INLINE std::unique_ptr<Node> Parser::parse_toplevelStatement() {
+std::unique_ptr<Node> Parser::parse_toplevelStatement() {
     static TokenKind alters[] = {
             EACH_LA_toplevelStatement(GEN_LA_ALTER)
             DUMMY
@@ -231,13 +224,13 @@ INLINE std::unique_ptr<Node> Parser::parse_toplevelStatement() {
     }
 }
 
-INLINE std::unique_ptr<Node> Parser::parse_function() {
+std::unique_ptr<Node> Parser::parse_function() {
     auto node(this->parse_funcDecl());
     node->setBlockNode(this->parse_block().release());
     return std::move(node);
 }
 
-INLINE std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
+std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
     unsigned int n = LN();
     this->expect(FUNCTION);
     Token token;
@@ -620,7 +613,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
     }
 }
 
-INLINE void Parser::parse_statementEnd() {
+void Parser::parse_statementEnd() {
     switch(CUR_KIND()) {
     case EOS:
     case LINE_END:
@@ -660,7 +653,7 @@ std::unique_ptr<BlockNode> Parser::parse_block() {
     return blockNode;
 }
 
-INLINE std::unique_ptr<Node> Parser::parse_variableDeclaration() {
+std::unique_ptr<Node> Parser::parse_variableDeclaration() {
     static TokenKind alters[] = {
             EACH_LA_varDecl(GEN_LA_ALTER)
             DUMMY
@@ -684,7 +677,7 @@ INLINE std::unique_ptr<Node> Parser::parse_variableDeclaration() {
     }
 }
 
-INLINE std::unique_ptr<Node> Parser::parse_forStatement() {
+std::unique_ptr<Node> Parser::parse_forStatement() {
     unsigned int n = LN();
     this->expect(FOR);
     this->expect(LP);
@@ -720,7 +713,7 @@ INLINE std::unique_ptr<Node> Parser::parse_forStatement() {
                          iterNode.release(), blockNode.release()));
 }
 
-INLINE std::unique_ptr<Node> Parser::parse_forInit() {
+std::unique_ptr<Node> Parser::parse_forInit() {
     switch(CUR_KIND()) {
     EACH_LA_varDecl(GEN_LA_CASE) {
         return this->parse_variableDeclaration();
@@ -733,7 +726,7 @@ INLINE std::unique_ptr<Node> Parser::parse_forInit() {
     }
 }
 
-INLINE std::unique_ptr<Node> Parser::parse_forCond() {
+std::unique_ptr<Node> Parser::parse_forCond() {
 #define EACH_LA_cmdOrExpr(OP) \
     OP(COMMAND) \
     EACH_LA_expression(OP)
@@ -748,7 +741,7 @@ INLINE std::unique_ptr<Node> Parser::parse_forCond() {
 #undef EACH_LA_cmdOrExpr
 }
 
-INLINE std::unique_ptr<Node> Parser::parse_forIter() {
+std::unique_ptr<Node> Parser::parse_forIter() {
     switch(CUR_KIND()) {
     EACH_LA_expression(GEN_LA_CASE) {
         return this->parse_expression();
@@ -758,7 +751,7 @@ INLINE std::unique_ptr<Node> Parser::parse_forIter() {
     }
 }
 
-INLINE std::unique_ptr<CatchNode> Parser::parse_catchStatement() {
+std::unique_ptr<CatchNode> Parser::parse_catchStatement() {
     this->expect(CATCH);
     unsigned int n = LN();
     this->expect(LP);
@@ -782,11 +775,11 @@ INLINE std::unique_ptr<CatchNode> Parser::parse_catchStatement() {
 }
 
 // command
-INLINE std::unique_ptr<Node> Parser::parse_commandListExpression() {
+std::unique_ptr<Node> Parser::parse_commandListExpression() {
     RET_NODE(new CmdContextNode(this->parse_orListCommand().release()));
 }
 
-INLINE std::unique_ptr<Node> Parser::parse_orListCommand() {
+std::unique_ptr<Node> Parser::parse_orListCommand() {
     std::unique_ptr<Node> node(this->parse_andListCommand());
 
     while(CUR_KIND() == OR_LIST) {
@@ -797,7 +790,7 @@ INLINE std::unique_ptr<Node> Parser::parse_orListCommand() {
     return node;
 }
 
-INLINE std::unique_ptr<Node> Parser::parse_andListCommand() {
+std::unique_ptr<Node> Parser::parse_andListCommand() {
     std::unique_ptr<Node> node(this->parse_pipedCommand());
 
     while(CUR_KIND() == AND_LIST) {
@@ -808,7 +801,7 @@ INLINE std::unique_ptr<Node> Parser::parse_andListCommand() {
     return node;
 }
 
-INLINE std::unique_ptr<Node> Parser::parse_pipedCommand() {
+std::unique_ptr<Node> Parser::parse_pipedCommand() {
     std::unique_ptr<PipedCmdNode> node(new PipedCmdNode(this->parse_command().release()));
 
     if(CUR_KIND() == PIPE) {
@@ -820,7 +813,7 @@ INLINE std::unique_ptr<Node> Parser::parse_pipedCommand() {
     return std::move(node);
 }
 
-INLINE std::unique_ptr<CmdNode> Parser::parse_command() {
+std::unique_ptr<CmdNode> Parser::parse_command() {
     static TokenKind alters[] = {
            EACH_LA_cmdArg(GEN_LA_ALTER)
            EACH_LA_redir(GEN_LA_ALTER)
@@ -850,7 +843,7 @@ INLINE std::unique_ptr<CmdNode> Parser::parse_command() {
     return node;
 }
 
-INLINE void Parser::parse_redirOption(std::unique_ptr<CmdNode> &node) {
+void Parser::parse_redirOption(std::unique_ptr<CmdNode> &node) {
     static TokenKind alters[] = {
             EACH_LA_redir(GEN_LA_ALTER)
             DUMMY
@@ -876,7 +869,7 @@ INLINE void Parser::parse_redirOption(std::unique_ptr<CmdNode> &node) {
     }
 }
 
-INLINE std::unique_ptr<CmdArgNode> Parser::parse_cmdArg() {
+std::unique_ptr<CmdArgNode> Parser::parse_cmdArg() {
     std::unique_ptr<CmdArgNode> node(new CmdArgNode(this->parse_cmdArgSeg(true).release()));
 
     bool next = true;
@@ -895,7 +888,7 @@ INLINE std::unique_ptr<CmdArgNode> Parser::parse_cmdArg() {
     return node;
 }
 
-INLINE std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool expandTilde) {
+std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool expandTilde) {
     static TokenKind alters[] = {
             EACH_LA_cmdArg(GEN_LA_ALTER)
             DUMMY
@@ -927,7 +920,7 @@ INLINE std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool expandTilde) {
 }
 
 // expression
-INLINE std::unique_ptr<Node> Parser::parse_commandOrExpression() {
+std::unique_ptr<Node> Parser::parse_commandOrExpression() {
 #define EACH_LA_condExpr(OP) \
     OP(COMMAND) \
     EACH_LA_expression(OP)
@@ -950,7 +943,7 @@ INLINE std::unique_ptr<Node> Parser::parse_commandOrExpression() {
     }
 }
 
-INLINE std::unique_ptr<Node> Parser::parse_expression() {
+std::unique_ptr<Node> Parser::parse_expression() {
     return this->parse_expression(
             this->parse_unaryExpression(), getPrecedence(ASSIGN));
 }
@@ -993,7 +986,7 @@ std::unique_ptr<Node> Parser::parse_expression(std::unique_ptr<Node> &&leftNode,
     return node;
 }
 
-INLINE std::unique_ptr<Node> Parser::parse_unaryExpression() {
+std::unique_ptr<Node> Parser::parse_unaryExpression() {
     switch(CUR_KIND()) {
     case PLUS:
     case MINUS:
@@ -1007,7 +1000,7 @@ INLINE std::unique_ptr<Node> Parser::parse_unaryExpression() {
     }
 }
 
-INLINE std::unique_ptr<Node> Parser::parse_suffixExpression() {
+std::unique_ptr<Node> Parser::parse_suffixExpression() {
     std::unique_ptr<Node> node(this->parse_memberExpression());
 
     switch(CUR_KIND()) {
@@ -1019,7 +1012,7 @@ INLINE std::unique_ptr<Node> Parser::parse_suffixExpression() {
     }
 }
 
-INLINE std::unique_ptr<Node> Parser::parse_memberExpression() {
+std::unique_ptr<Node> Parser::parse_memberExpression() {
     std::unique_ptr<Node> node(this->parse_primaryExpression());
 
     bool next = true;
@@ -1055,7 +1048,7 @@ INLINE std::unique_ptr<Node> Parser::parse_memberExpression() {
     return node;
 }
 
-INLINE std::unique_ptr<Node> Parser::parse_primaryExpression() {
+std::unique_ptr<Node> Parser::parse_primaryExpression() {
     static TokenKind alters[] = {
             EACH_LA_primary(GEN_LA_ALTER)
             DUMMY
@@ -1223,25 +1216,25 @@ INLINE std::unique_ptr<Node> Parser::parse_primaryExpression() {
     }
 }
 
-INLINE std::unique_ptr<Node> Parser::parse_appliedName() {
+std::unique_ptr<Node> Parser::parse_appliedName() {
     Token token;
     this->expect(APPLIED_NAME, token);
     RET_NODE(new VarNode(token.lineNum, this->lexer->toName(token)));
 }
 
-INLINE std::unique_ptr<Node> Parser::parse_specialName() {
+std::unique_ptr<Node> Parser::parse_specialName() {
     Token token;
     this->expect(SPECIAL_NAME, token);
     RET_NODE(new VarNode(token.lineNum, this->lexer->toName(token)));
 }
 
-INLINE std::unique_ptr<Node> Parser::parse_stringLiteral() {
+std::unique_ptr<Node> Parser::parse_stringLiteral() {
     Token token;
     this->expect(STRING_LITERAL, token);
     RET_NODE(new StringValueNode(token.lineNum, this->lexer->toString(token)));
 }
 
-INLINE std::unique_ptr<ArgsNode> Parser::parse_arguments() {
+std::unique_ptr<ArgsNode> Parser::parse_arguments() {
     this->expect(LP);
 
     std::unique_ptr<ArgsNode> node(new ArgsNode());
@@ -1262,7 +1255,7 @@ INLINE std::unique_ptr<ArgsNode> Parser::parse_arguments() {
     return node;
 }
 
-INLINE std::unique_ptr<Node> Parser::parse_stringExpression() {
+std::unique_ptr<Node> Parser::parse_stringExpression() {
     unsigned int n = LN();
     this->expect(OPEN_DQUOTE);
     std::unique_ptr<StringExprNode> node(new StringExprNode(n));
@@ -1296,7 +1289,7 @@ INLINE std::unique_ptr<Node> Parser::parse_stringExpression() {
     return std::move(node);
 }
 
-INLINE std::unique_ptr<Node> Parser::parse_interpolation() {
+std::unique_ptr<Node> Parser::parse_interpolation() {
     static TokenKind alters[] = {
             EACH_LA_interpolation(GEN_LA_ALTER)
             DUMMY
@@ -1322,7 +1315,7 @@ INLINE std::unique_ptr<Node> Parser::parse_interpolation() {
     }
 }
 
-INLINE std::unique_ptr<Node> Parser::parse_commandSubstitution() {
+std::unique_ptr<Node> Parser::parse_commandSubstitution() {
     this->expect(START_SUB_CMD);
     std::unique_ptr<Node> node(this->parse_commandListExpression());
     node->inCmdArgNode();
