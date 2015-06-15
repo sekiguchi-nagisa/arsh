@@ -27,9 +27,9 @@ function f($obj :
 assert($f is Func<Int, [Func<Int, [Int]>, Int]>)
 assert($f($func, 12) == 24)
 
-function make_pair($a : Float) : String, Uint32 {
+function make_pair($a : Float) : String, Int32 {
     var str = $a as String
     return ($str, $str.size())
 }
 
-assert($make_pair is Func<Tuple<String, Uint32>, [Float]>)
+assert($make_pair is Func<Tuple<String, Int32>, [Float]>)

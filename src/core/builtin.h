@@ -841,11 +841,11 @@ static inline bool string_ne(RuntimeContext &ctx) {
     RET_BOOL(r);
 }
 
-//!bind: function size($this : String) : Uint32
+//!bind: function size($this : String) : Int32
 static inline bool string_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_size);
-    unsigned int size = TYPE_AS(String_Object, LOCAL(0))->getValue().size();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getUint32Type(), size));
+    int size = TYPE_AS(String_Object, LOCAL(0))->getValue().size();
+    RET(std::make_shared<Int_Object>(ctx.getPool().getInt32Type(), size));
 }
 
 //!bind: function empty($this : String) : Boolean
@@ -874,11 +874,11 @@ static inline bool objectpath_ne(RuntimeContext &ctx) {
     RET_BOOL(r);
 }
 
-//!bind: function size($this : ObjectPath) : Uint32
+//!bind: function size($this : ObjectPath) : Int32
 static inline bool objectpath_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(objectpath_size);
-    unsigned int size = TYPE_AS(String_Object, LOCAL(0))->getValue().size();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getUint32Type(), size));
+    int size = TYPE_AS(String_Object, LOCAL(0))->getValue().size();
+    RET(std::make_shared<Int_Object>(ctx.getPool().getInt32Type(), size));
 }
 
 
@@ -902,8 +902,8 @@ static inline bool array_add(RuntimeContext &ctx) {
 }
 
 // check index range and throw exception.
-static bool checkRange(RuntimeContext &ctx, unsigned int index, unsigned int size) {
-    if(index >= size) {
+static bool checkRange(RuntimeContext &ctx, int index, int size) {
+    if(index < 0 || index >= size) {
         std::string message("size is ");
         message += std::to_string(size);
         message += ", but index is ";
@@ -914,26 +914,26 @@ static bool checkRange(RuntimeContext &ctx, unsigned int index, unsigned int siz
     return true;
 }
 
-//!bind: function $OP_GET($this : Array<T0>, $index : Uint32) : T0
+//!bind: function $OP_GET($this : Array<T0>, $index : Int32) : T0
 static inline bool array_get(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_get);
 
     Array_Object *obj = TYPE_AS(Array_Object, LOCAL(0));
-    unsigned int size = obj->getValues().size();
-    unsigned int index = TYPE_AS(Int_Object, LOCAL(1))->getValue();
+    int size = obj->getValues().size();
+    int index = TYPE_AS(Int_Object, LOCAL(1))->getValue();
     if(!checkRange(ctx, index, size)) {
         return false;
     }
     RET(obj->getValues()[index]);
 }
 
-//!bind: function $OP_SET($this : Array<T0>, $index : Uint32, $value : T0) : Void
+//!bind: function $OP_SET($this : Array<T0>, $index : Int32, $value : T0) : Void
 static inline bool array_set(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_set);
 
     Array_Object *obj = TYPE_AS(Array_Object, LOCAL(0));
-    unsigned int size = obj->getValues().size();
-    unsigned int index = TYPE_AS(Int_Object, LOCAL(1))->getValue();
+    int size = obj->getValues().size();
+    int index = TYPE_AS(Int_Object, LOCAL(1))->getValue();
     if(!checkRange(ctx, index, size)) {
         return false;
     }
@@ -941,11 +941,11 @@ static inline bool array_set(RuntimeContext &ctx) {
     return true;
 }
 
-//!bind: function size($this : Array<T0>) : Uint32
+//!bind: function size($this : Array<T0>) : Int32
 static inline bool array_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_size);
-    unsigned int size = TYPE_AS(Array_Object, LOCAL(0))->getValues().size();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getUint32Type(), size));
+    int size = TYPE_AS(Array_Object, LOCAL(0))->getValues().size();
+    RET(std::make_shared<Int_Object>(ctx.getPool().getInt32Type(), size));
 }
 
 //!bind: function empty($this : Array<T0>) : Boolean
@@ -1015,12 +1015,12 @@ static inline bool map_set(RuntimeContext &ctx) {
     return true;
 }
 
-//!bind: function size($this : Map<T0, T1>) : Uint32
+//!bind: function size($this : Map<T0, T1>) : Int32
 static inline bool map_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_size);
     Map_Object *obj = TYPE_AS(Map_Object, LOCAL(0));
-    unsigned int value = obj->getValueMap().size();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getUint32Type(), value));
+    int value = obj->getValueMap().size();
+    RET(std::make_shared<Int_Object>(ctx.getPool().getInt32Type(), value));
 }
 
 //!bind: function empty($this : Map<T0, T1>) : Boolean

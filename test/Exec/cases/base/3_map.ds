@@ -8,7 +8,7 @@ assert($a["a"] == 54)
 $a["b"] = -456
 assert($a["b"] == -456)
 
-assert($a.size() is Uint32)
+assert($a.size() is Int32)
 assert($a.size() == 2)
 assert(not $a.empty())
 

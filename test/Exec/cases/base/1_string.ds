@@ -5,7 +5,7 @@ assert($str == 'hello world')
 assert($str != "fer")
 assert("".empty())
 assert("".size() == 0)
-assert("".size() is Uint32)
+assert("".size() is Int32)
 
 $str = "はるのサクラ"
 #$str = $str.replace("はるの", "うずまき")
