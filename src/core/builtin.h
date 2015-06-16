@@ -897,7 +897,12 @@ static inline bool array_init(RuntimeContext &ctx) {
 //!bind: function add($this : Array<T0>, $value : T0) : Array<T0>
 static inline bool array_add(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_add);
-    TYPE_AS(Array_Object, LOCAL(0))->append(LOCAL(1));
+    Array_Object *obj = TYPE_AS(Array_Object, LOCAL(0));
+    if(obj->getValues().size() == INT32_MAX) {
+        ctx.throwError(ctx.getPool().getOutOfRangeErrorType(), "reach Array size limit");
+        return false;
+    }
+    obj->append(LOCAL(1));
     RET(LOCAL(0));
 }
 
