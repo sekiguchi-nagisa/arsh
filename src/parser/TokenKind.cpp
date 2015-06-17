@@ -36,31 +36,30 @@ std::ostream &operator<<(std::ostream &stream, TokenKind kind) {
 
 unsigned int getPrecedence(TokenKind kind) {
     switch(kind) {
+    case IS:
+    case AS:
+        return 300;
     case MUL:
     case DIV:
     case MOD:
-        return 300;
+        return 280;
     case PLUS:
     case MINUS:
-        return 280;
+        return 260;
+    case AND:
+        return 220;
+    case XOR:
+        return 200;
+    case OR:
+        return 180;
     case LA:
     case RA:
     case LE:
     case GE:
-        return 260;
-    case IS:
-    case AS:
-        return 240;
     case EQ:
     case NE:
     case RE_MATCH:
     case RE_UNMATCH:
-        return 220;
-    case AND:
-        return 200;
-    case XOR:
-        return 180;
-    case OR:
         return 160;
     case COND_AND:
         return 140;
