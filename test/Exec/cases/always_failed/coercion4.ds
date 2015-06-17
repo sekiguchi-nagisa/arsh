@@ -1,0 +1,5 @@
+# int to int cast
+
+#$test($result = 'type')
+
+23u32 % 78i32

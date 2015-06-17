@@ -211,14 +211,8 @@ assert((43 / 2u16) is Int32)
 
 assert((34u64 / 2u16) is Uint64)
 
-assert((23i32 / 56u32) is Int32)
-assert((23u32 % 78i32) is Uint32)
-
 assert((234i32 - 5674i64) is Int64)
 assert((5463u64 * 4533i32) is Uint64)
-
-assert((34i64 - 54u64) is Int64)
-assert((43u64 - 45i64) is Uint64)
 
 # widening
 var a = 2345
@@ -228,5 +222,3 @@ $a = 12i16
 assert($a == 12)
 $a = 345u16
 assert($a == 345)
-$a = 23u32
-assert($a == 23)

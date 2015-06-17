@@ -263,12 +263,18 @@ public:
     bool checkFloat2Long(DSType *beforeType, int afterPrecision);
 
     /**
-     * check to same or higher precision int type.
+     * check to higher precision int type.
      */
     bool checkInt2IntWidening(int beforePrecision, int afterPrecision);
 
     bool checkInt2IntNarrowing(int beforePrecision, int afterPrecision);
-    bool checkLongToLong(int beforePrecision, int afterPrecision);
+
+    /**
+     * some precision cast
+     */
+    bool checkInt2Int(int beforePrecision, int afterPrecision);
+
+    bool checkLong2Long(int beforePrecision, int afterPrecision);
     bool checkInt2Long(int beforePrecision, int afterPrecision);
     bool checkLong2Int(int beforePrecision, int afterPrecision);
 

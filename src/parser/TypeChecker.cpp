@@ -261,9 +261,6 @@ bool TypeChecker::checkCoercion(CoercionKind &kind, DSType *requiredType, DSType
     } else if(this->checkInt2IntWidening(targetPrecision, requiredPrecision)) {
         kind = INT_NOP;
         return true;
-    } else if(this->checkLongToLong(targetPrecision, requiredPrecision)) {
-        kind = LONG_NOP;
-        return true;
     }
     return false;
 }
@@ -509,7 +506,7 @@ bool TypeChecker::checkFloat2Long(DSType *beforeType, int afterPrecision) {
 bool TypeChecker::checkInt2IntWidening(int beforePrecision, int afterPrecision) {
     return beforePrecision > TypePool::INVALID_PRECISION &&
            afterPrecision < TypePool::INT64_PRECISION &&
-            beforePrecision <= afterPrecision;
+            beforePrecision < afterPrecision;
 }
 
 bool TypeChecker::checkInt2IntNarrowing(int beforePrecision, int afterPrecision) {
@@ -518,7 +515,12 @@ bool TypeChecker::checkInt2IntNarrowing(int beforePrecision, int afterPrecision)
            beforePrecision > afterPrecision;
 }
 
-bool TypeChecker::checkLongToLong(int beforePrecision, int afterPrecision) {
+bool TypeChecker::checkInt2Int(int beforePrecision, int afterPrecision) {
+    return beforePrecision == TypePool::INT32_PRECISION &&
+           beforePrecision == afterPrecision;
+}
+
+bool TypeChecker::checkLong2Long(int beforePrecision, int afterPrecision) {
     return beforePrecision == TypePool::INT64_PRECISION &&
            beforePrecision == afterPrecision;
 }
@@ -711,7 +713,12 @@ void TypeChecker::visitCastNode(CastNode * node) {
         return;
     }
 
-    if(this->checkLongToLong(exprPrecision, targetPrecision)) {
+    if(this->checkInt2Int(exprPrecision, targetPrecision)) {
+        node->setOpKind(CastNode::COPY_INT);
+        return;
+    }
+
+    if(this->checkLong2Long(exprPrecision, targetPrecision)) {
         node->setOpKind(CastNode::COPY_LONG);
         return;
     }
