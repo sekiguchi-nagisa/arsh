@@ -46,7 +46,7 @@ private:
     /**
      * if has new line, throw exception.
      */
-    void hasNoNewLine();
+    void noNewLine();
 
     void alternative(const TokenKind *kinds);
 

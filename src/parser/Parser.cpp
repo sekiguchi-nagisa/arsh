@@ -160,7 +160,7 @@ void Parser::parse(Lexer &lexer, RootNode &rootNode) {
     this->parse_toplevel(rootNode);
 }
 
-void Parser::hasNoNewLine() {
+void Parser::noNewLine() {
     if(HAS_NL()) {
         throw UnexpectedNewLineError(this->curToken);
     }
@@ -241,7 +241,7 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
     if(CUR_KIND() == APPLIED_NAME) {
         this->expect(APPLIED_NAME, token);
         std::unique_ptr<VarNode> nameNode(new VarNode(token.lineNum, this->lexer->toName(token)));
-        this->hasNoNewLine();
+        this->noNewLine();
         this->expect(COLON, false);
 
         std::unique_ptr<TypeToken> type(this->parse_typeName());
@@ -254,7 +254,7 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
 
             nameNode.reset(new VarNode(token.lineNum, this->lexer->toName(token)));
 
-            this->hasNoNewLine();
+            this->noNewLine();
             this->expect(COLON, false);
 
             type = this->parse_typeName();
@@ -397,7 +397,7 @@ std::unique_ptr<TypeToken> Parser::parse_typeName() {
     }
     case FUNC: {
         this->expect(FUNC);
-        this->hasNoNewLine();
+        this->noNewLine();
         this->expect(TYPE_OPEN, false);
 
         // parse return type
@@ -477,7 +477,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
         this->expect(IDENTIFIER, token);
         std::string name(
                 this->lexer->toName(token));
-        this->hasNoNewLine();
+        this->noNewLine();
         this->expect(ASSIGN);
         std::unique_ptr<Node> node(new ExportEnvNode(n, std::move(name),
                                                      this->parse_expression().release()));
@@ -666,7 +666,7 @@ std::unique_ptr<Node> Parser::parse_variableDeclaration() {
         Token token;
         this->expect(IDENTIFIER, token);
         std::string name(this->lexer->toName(token));
-        this->hasNoNewLine();
+        this->noNewLine();
         this->expect(ASSIGN);
         RET_NODE(new VarDeclNode(token.lineNum, std::move(name),
                                  this->parse_commandOrExpression().release(), readOnly));
@@ -689,7 +689,7 @@ std::unique_ptr<Node> Parser::parse_forStatement() {
         initNode.release();
         std::unique_ptr<VarNode> nameNode(varNode);
 
-        this->hasNoNewLine();
+        this->noNewLine();
         this->expect(IN);
         std::unique_ptr<Node> exprNode(this->parse_expression());
         this->expect(RP);
@@ -1020,7 +1020,7 @@ std::unique_ptr<Node> Parser::parse_memberExpression() {
         switch(CUR_KIND()) {
         case ACCESSOR: {
             this->expect(ACCESSOR);
-            this->hasNoNewLine();
+            this->noNewLine();
             Token token;
             this->expect(IDENTIFIER, token);
             std::string name(this->lexer->toName(token));
@@ -1189,9 +1189,9 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         this->expect(LBC);
         std::unique_ptr<Node> keyNode(this->parse_expression());
 
-        this->hasNoNewLine();
+        this->noNewLine();
         this->expect(COLON);
-        this->hasNoNewLine();
+        this->noNewLine();
 
         std::unique_ptr<Node> valueNode(this->parse_expression());
         std::unique_ptr<MapNode> node(
@@ -1200,9 +1200,9 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
             this->expect(COMMA);
             keyNode = this->parse_expression();
 
-            this->hasNoNewLine();
+            this->noNewLine();
             this->expect(COLON);
-            this->hasNoNewLine();
+            this->noNewLine();
 
             valueNode = this->parse_expression();
             node->addEntry(keyNode.release(), valueNode.release());
