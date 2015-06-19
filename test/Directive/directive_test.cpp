@@ -80,6 +80,41 @@ TEST_F(DirectiveTest, fail3) {
     });
 }
 
+TEST_F(DirectiveTest, fail4) {
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->parse("#$test($status = -23)", false);
+    });
+}
+
+TEST_F(DirectiveTest, fail5) {
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->parse("#$test($result = 123)", false);
+    });
+}
+
+TEST_F(DirectiveTest, fail6) {
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->parse("#$test($result = [23])", false);
+    });
+}
+
+TEST_F(DirectiveTest, fail7) {
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->parse("#$test($params = 23)", false);
+    });
+}
+
+TEST_F(DirectiveTest, fail8) {
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->parse("#$test($params = 'grt')", false);
+    });
+}
+
 TEST_F(DirectiveTest, result1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
@@ -208,6 +243,14 @@ TEST_F(DirectiveTest, param) {
         ASSERT_EQ(2, this->getDirective().getParams().size());
         ASSERT_STREQ("1", this->getDirective().getParams()[0].c_str());
         ASSERT_STREQ("hello", this->getDirective().getParams()[1].c_str());
+    });
+}
+
+TEST_F(DirectiveTest, status) {
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->parse("#$test($status = 23)", true);
+        ASSERT_EQ(23, this->getDirective().getStatus());
     });
 }
 

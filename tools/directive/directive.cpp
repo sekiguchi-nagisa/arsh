@@ -54,7 +54,8 @@ bool DirectiveParser::operator()(const char *sourceName, std::istream &input, Di
         }
 
         // prepare
-        Lexer lexer(line.c_str() + 1);
+        const char *src = line.c_str() + 1;
+        Lexer lexer(src);
         lexer.setLineNum(lineNum);
         this->lexer = &lexer;
         this->fetchNext();
@@ -74,9 +75,9 @@ bool DirectiveParser::operator()(const char *sourceName, std::istream &input, Di
                 std::cerr << *static_cast<const InvalidTokenError *>(&e) << std::endl;
             }
 
-            std::cerr << line << std::endl;
+            std::cerr << src << std::endl;
             Token lineToken;
-            lineToken.startPos = 1;
+            lineToken.startPos = 0;
             lineToken.size = line.size();
             std::cerr << this->lexer->formatLineMarker(lineToken, e.getErrorToken()) << std::endl;
             return false;
@@ -84,9 +85,9 @@ bool DirectiveParser::operator()(const char *sourceName, std::istream &input, Di
             std::cerr << sourceName << ":" << e.getErrorToken().lineNum << ": [semantic error] ";
             std::cerr << e.getMessage() << std::endl;
 
-            std::cerr << line << std::endl;
+            std::cerr << src << std::endl;
             Token lineToken;
-            lineToken.startPos = 1;
+            lineToken.startPos = 0;
             lineToken.size = line.size();
             std::cerr << this->lexer->formatLineMarker(lineToken, e.getErrorToken()) << std::endl;
             return false;
@@ -167,7 +168,7 @@ void DirectiveParser::parse_number(std::unique_ptr<Node> &node) {
     if(value < 0 || status != 0) {
         std::string str("out of range number: ");
         str += this->lexer->toTokenText(token);
-        throw SemanticError(node->getToken(), std::move(str));
+        throw SemanticError(token, std::move(str));
     }
     node.reset(new NumberNode(token, value));
 }
@@ -233,9 +234,7 @@ void DirectiveInitializer::visitNumberNode(NumberNode &node) {
         return;
     }
 
-    std::string str("unsupported attribute: ");
-    str += *this->name;
-    throw SemanticError(*this->token, std::move(str));
+    this->raiseAttributeError();
 }
 
 void DirectiveInitializer::visitStringNode(StringNode &node) {
@@ -244,20 +243,28 @@ void DirectiveInitializer::visitStringNode(StringNode &node) {
         this->directive->setResult(status);
         return;
     }
-    if(*this->name == "params") {
+    if(*this->name == "params" && this->inArray) {
         this->directive->appendParam(std::string(node.getValue()));
         return;
     }
 
-    std::string str("unsupported attribute: ");
-    str += *this->name;
-    throw SemanticError(*this->token, std::move(str));
+    this->raiseAttributeError();
 }
 
 void DirectiveInitializer::visitArrayNode(ArrayNode &node) {
-    for(auto &e : node.getValues()) {
-        e->accept(*this);
+    if(*this->name == "params") {
+        for(auto &e : node.getValues()) {
+            if(!isType<StringNode>(e)) {
+                throw SemanticError(e->getToken(), "must be string");
+            }
+            this->inArray = true;
+            e->accept(*this);
+            this->inArray = false;
+        }
+        return;
     }
+
+    this->raiseAttributeError();
 }
 
 ExecStatus DirectiveInitializer::resolveStatus(const StringNode &node) {
@@ -300,6 +307,12 @@ ExecStatus DirectiveInitializer::resolveStatus(const StringNode &node) {
 #undef ALTER
 #undef MATCH
 #undef EACH_STATUS
+}
+
+void DirectiveInitializer::raiseAttributeError() {
+    std::string str("unsupported attribute: ");
+    str += *this->name;
+    throw SemanticError(*this->token, std::move(str));
 }
 
 

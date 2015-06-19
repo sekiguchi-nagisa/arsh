@@ -17,6 +17,8 @@
 #ifndef YDSH_DIRECTIVE_PARSER_H
 #define YDSH_DIRECTIVE_PARSER_H
 
+#include <type_traits>
+
 #include "directive.h"
 #include <parser/Lexer.h>
 #include <parser/ParserBase.hpp>
@@ -168,31 +170,26 @@ public:
     }
 };
 
-class KeyValue {
-private:
-    std::string key;
-    std::unique_ptr<Node> value;
+template <typename T>
+bool isType(const Node &node);
 
-public:
-    KeyValue() = default;
-    ~KeyValue() = default;
+template <typename T>
+bool isType(const Node &node) {
+    static_assert(std::is_base_of<Node, T>::value, "not derived type");
 
-    void setKey(std::string &&key) {
-        this->key = std::move(key);
-    }
+    return dynamic_cast<const T *>(&node) != nullptr;
+}
 
-    const std::string &getKey() {
-        return this->key;
-    }
+template <typename T>
+bool isType(const std::unique_ptr<Node> &node);
 
-    void setValue(std::unique_ptr<Node> &&value) {
-        this->value = std::move(value);
-    }
+template <typename T>
+bool isType(const std::unique_ptr<Node> &node) {
+    static_assert(std::is_base_of<Node, T>::value, "not derived type");
 
-    const std::unique_ptr<Node> &getValue() {
-        return this->value;
-    }
-};
+    return dynamic_cast<T *>(node.get()) != nullptr;
+}
+
 
 class SemanticError {
 private:
@@ -253,8 +250,10 @@ private:
      */
     const std::string *name;
 
+    bool inArray;
+
 public:
-    DirectiveInitializer() = default;
+    DirectiveInitializer(): directive(), token(), name(), inArray(false) {}
     ~DirectiveInitializer() = default;
 
     /**
@@ -270,6 +269,7 @@ public:
 
 private:
     ExecStatus resolveStatus(const StringNode &node);
+    void raiseAttributeError();
 };
 
 } // namespace directive
