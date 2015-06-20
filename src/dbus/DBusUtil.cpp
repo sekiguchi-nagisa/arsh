@@ -265,13 +265,13 @@ void MessageBuilder::visitReifiedType(ReifiedType *type) {
         Map_Object *mapObj = static_cast<Map_Object *>(this->peek());
         for(auto &pair : mapObj->getValueMap()) {
             DBusMessageIter entryIter;
-            DBusMessageIter *curIter = this->openContainerIter(DBUS_TYPE_DICT_ENTRY, NULL, &entryIter);
+            DBusMessageIter *oldIter = this->openContainerIter(DBUS_TYPE_DICT_ENTRY, NULL, &entryIter);
 
             // append key, value
             this->append(keyType, pair.first.get());
             this->append(valueType, pair.second.get());
 
-            this->closeContainerIter(curIter, &entryIter);
+            this->closeContainerIter(oldIter, &entryIter);
         }
 
         this->closeContainerIter(curIter, &subIter);

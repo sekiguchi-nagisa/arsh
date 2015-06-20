@@ -309,7 +309,7 @@ std::unique_ptr<Node> Parser::parse_interface() {
         switch(CUR_KIND()) {
         case VAR:
         case LET: {
-            unsigned int n = LN();
+            n = LN();
             bool readOnly = this->consume() == LET;
             this->expect(IDENTIFIER, token);
             this->expect(COLON, false);

@@ -15,8 +15,6 @@
  */
 
 #include <math.h>
-#include <errno.h>
-#include <limits.h>
 
 #include "../misc/debug.h"
 #include "../misc/num.h"

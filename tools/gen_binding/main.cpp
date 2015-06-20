@@ -23,7 +23,6 @@
 #include <iostream>
 #include <memory>
 #include <unordered_map>
-#include <vector>
 
 namespace {
 
@@ -538,10 +537,6 @@ private:
     void init(DescLexer &lexer) {
         this->lexer = &lexer;
         this->fetchNext();
-    }
-
-    bool isInvalidToken(DescTokenKind kind) {
-        return kind == INVALID;
     }
 
     std::unique_ptr<Element> parse_descriptor(const std::string &line);
