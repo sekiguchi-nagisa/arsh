@@ -171,7 +171,7 @@ target_link_libraries(${YDSH_STATIC} ${HAVE_LIBDBUS})
 #     ydsh     #
 #==============#
 
-add_executable(${BIN_NAME} src/ydsh.cpp src/interactive.cpp)
+add_executable(${BIN_NAME} src/main.cpp src/interactive.cpp)
 target_link_libraries(${BIN_NAME} ${YDSH_STATIC} ${HAVE_LIBEDIT})
 
 install(TARGETS ${BIN_NAME} RUNTIME DESTINATION bin)
