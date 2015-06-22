@@ -18,6 +18,7 @@
 #define YDSH_DIRECTIVE_PARSER_H
 
 #include <type_traits>
+#include <memory>
 
 #include "directive.h"
 #include <parser/Lexer.h>
