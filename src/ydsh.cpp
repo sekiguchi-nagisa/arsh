@@ -55,8 +55,8 @@ void DSContext_delete(DSContext **ctx) {
 }
 
 static int createStatus(ExecStatus s, Shell *shell, DSStatus **status) {
-    unsigned int type;
-    int ret;
+    unsigned int type = DS_STATUS_SUCCESS;
+    int ret = 0;
     switch(s) {
     case ExecStatus::SUCCESS:
         type = DS_STATUS_SUCCESS;

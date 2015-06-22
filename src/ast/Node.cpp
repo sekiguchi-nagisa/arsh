@@ -1742,7 +1742,7 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
                 char buf[bufSize + 1];
                 int readSize = 0;
                 std::string str;
-                while((readSize = read(pipefds[READ_PIPE], &buf, bufSize)) > 0) {
+                while((readSize = read(pipefds[READ_PIPE], buf, bufSize)) > 0) {
                     if(readSize == bufSize) {
                         buf[bufSize] = '\0';
                         str += buf;
@@ -1770,7 +1770,7 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
                 int readSize;
                 std::string str;
                 Array_Object *array = new Array_Object(this->type);
-                while((readSize = read(pipefds[READ_PIPE], &buf, bufSize)) > 0) {
+                while((readSize = read(pipefds[READ_PIPE], buf, bufSize)) > 0) {
                     for(int i = 0; i < readSize; i++) {
                         char ch = buf[i];
                         switch(ch) {
