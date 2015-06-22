@@ -55,6 +55,7 @@ int DSContext_eval(DSContext *ctx, const char *source, DSStatus **status);
 /**
  * evaluate file content.
  * if sourceName is null, source name is treated as standard input.
+ * fp must be opened binary mode.
  * if status is not null, write status and you can call DSStatus_free() to release object.
  * return exit status of shell.(if reach end of script, return 0. if call exit, return specified value.)
  */

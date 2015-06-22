@@ -43,7 +43,7 @@ public:
         ASSERT_TRUE(s);
 
         const char *scriptName = this->getSourceName().c_str();
-        FILE *fp = fopen(scriptName, "r");
+        FILE *fp = fopen(scriptName, "rb");
         ASSERT_TRUE(fp != nullptr);
 
         DSStatus *status;

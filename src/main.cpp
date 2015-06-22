@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
 
     if(restArgs.size() > 0) {
         const char *scriptName = restArgs[0];
-        FILE *fp = fopen(scriptName, "r");
+        FILE *fp = fopen(scriptName, "rb");
         if(fp == NULL) {
             fprintf(stderr, "cannot open file: %s\n", scriptName);
             return 1;
@@ -181,7 +181,7 @@ int main(int argc, char **argv) {
         DSContext_setArguments(ctx, shellArgs);
         return DSContext_loadAndEval(ctx, scriptName, fp, nullptr);
     } else if(isatty(STDIN_FILENO) == 0) {
-        FILE *fp = fdopen(STDIN_FILENO, "r");
+        FILE *fp = fdopen(STDIN_FILENO, "rb");
         if(fp == NULL) {
             fprintf(stderr, "cannnot open stdin\n");
             return 1;

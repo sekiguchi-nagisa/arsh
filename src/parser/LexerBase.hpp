@@ -66,6 +66,7 @@ class LexerBase {
 protected:
     /**
      * may be null, if input source is string. not closed it.
+     * must be binary mode.
      */
     FILE *fp;
 
@@ -117,7 +118,11 @@ private:
               endOfFile(false), endOfString(false), zeroCopyBuf(false) {}
 
 public:
+    /**
+     * FILE must be opened with binary mode.
+     */
     explicit LexerBase(FILE *fp);
+
     explicit LexerBase(const char *src, bool zeroCopy = false);
 
     /**

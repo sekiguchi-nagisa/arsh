@@ -76,7 +76,12 @@ public:
     Shell &operator=(const Shell &shell);
 
     ExecStatus eval(const char *line, bool zeroCopy);   // override
+
+    /**
+     * fp must be opened binary mode.
+     */
     ExecStatus eval(const char *sourceName, FILE *fp); // overrie
+
     void setErrorListener(const ErrorListener *listener);
     void setLineNum(unsigned int lineNum); // override
     unsigned int getLineNum();  // override
