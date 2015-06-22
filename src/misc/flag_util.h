@@ -32,4 +32,19 @@ inline bool hasFlag(flag8_set_t set, flag8_t flag) {
     return (set & flag) == flag;
 }
 
+typedef unsigned int flag32_set_t;
+typedef unsigned int flag32_t;
+
+inline void setFlag(flag32_set_t &set, flag32_t flag) {
+    set |= flag;
+}
+
+inline void unsetFlag(flag32_set_t &set, flag32_t flag) {
+    set &= ~flag;
+}
+
+inline bool hasFlag(flag32_set_t set, flag32_t flag) {
+    return (set & flag) == flag;
+}
+
 #endif /* MISC_FLAG_UTIL_H_ */

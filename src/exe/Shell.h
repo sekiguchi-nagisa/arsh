@@ -26,7 +26,6 @@
 #include "../core/DSType.h"
 #include "../ast/Node.h"
 #include "../ast/dump.h"
-#include <ydsh/ydsh.h>
 
 namespace ydsh {
 
@@ -34,7 +33,16 @@ using namespace ydsh::ast;
 using namespace ydsh::parser;
 using namespace ydsh::core;
 
-class Shell : public ExecutionEngine {
+enum class ExecStatus : unsigned int {
+    SUCCESS,
+    PARSE_ERROR,
+    TYPE_ERROR,
+    RUNTIME_ERROR,
+    ASSERTION_ERROR,
+    EXIT,
+};
+
+class Shell {
 private:
     RuntimeContext ctx;
     Parser parser;
@@ -87,7 +95,7 @@ public:
      */
     int getExitStatus();
 
-    static std::unique_ptr<Shell> createShell();
+    static Shell *createShell();
 
 private:
     /**

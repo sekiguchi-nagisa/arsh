@@ -19,15 +19,6 @@
 
 namespace ydsh {
 
-// #############################
-// ##     ExecutionEngine     ##
-// #############################
-
-std::unique_ptr<ExecutionEngine> ExecutionEngine::createInstance() {
-    return Shell::createShell();
-}
-
-
 // ###################
 // ##     Shell     ##
 // ###################
@@ -96,8 +87,8 @@ int Shell::getExitStatus() {
     return this->ctx.getExitStatus()->getValue();
 }
 
-std::unique_ptr<Shell> Shell::createShell() {
-    std::unique_ptr<Shell> shell(new Shell());
+Shell *Shell::createShell() {
+    Shell *shell = new Shell();
     shell->initBuiltinVar();
     shell->initbuiltinIface();
 

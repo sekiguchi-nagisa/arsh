@@ -132,6 +132,7 @@ if(USE_DBUS)
 endif()
 
 SET(YDSH_SRC
+    src/ydsh.cpp
     src/ast/dump.cpp
     src/ast/Node.cpp
     src/ast/TypeToken.cpp

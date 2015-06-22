@@ -15,10 +15,10 @@ using namespace ydsh::directive;
 class ExecTest : public ::testing::TestWithParam<std::string> {
 private:
     std::string targetName;
-    std::unique_ptr<ExecutionEngine> shell;
+    DSContext *ctx;
 
 public:
-    ExecTest()  : targetName(), shell(ExecutionEngine::createInstance()) {
+    ExecTest()  : targetName(), ctx(DSContext_create()) {
     }
 
     virtual ~ExecTest() = default;
@@ -46,12 +46,13 @@ public:
         FILE *fp = fopen(scriptName, "r");
         ASSERT_TRUE(fp != nullptr);
 
-        ExecStatus status = this->shell->eval(scriptName, fp);
+        DSStatus *status;
+        DSContext_loadAndEval(this->ctx, scriptName, fp, &status);
 
-        ASSERT_EQ(d.getResult(), status);
+        ASSERT_EQ(d.getResult(), DSStatus_getType(status));
 
-        if(d.getResult() == ExecStatus::EXIT) {
-            ASSERT_EQ(d.getStatus(), this->shell->getExitStatus());
+        if(d.getResult() == DS_STATUS_EXIT) {
+            ASSERT_EQ(d.getStatus(), DSContext_getExitStatus(ctx));
         }
     }
 };

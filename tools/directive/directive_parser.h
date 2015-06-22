@@ -268,7 +268,7 @@ public:
     void visitArrayNode(ArrayNode &node);   // override
 
 private:
-    ExecStatus resolveStatus(const StringNode &node);
+    unsigned int resolveStatus(const StringNode &node);
     void raiseAttributeError();
 };
 

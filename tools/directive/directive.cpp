@@ -239,7 +239,7 @@ void DirectiveInitializer::visitNumberNode(NumberNode &node) {
 
 void DirectiveInitializer::visitStringNode(StringNode &node) {
     if(*this->name == "result") {
-        ExecStatus status = this->resolveStatus(node);
+        unsigned int status = this->resolveStatus(node);
         this->directive->setResult(status);
         return;
     }
@@ -267,7 +267,7 @@ void DirectiveInitializer::visitArrayNode(ArrayNode &node) {
     this->raiseAttributeError();
 }
 
-ExecStatus DirectiveInitializer::resolveStatus(const StringNode &node) {
+unsigned int DirectiveInitializer::resolveStatus(const StringNode &node) {
 #define EACH_STATUS(OP) \
     OP("SUCCESS", SUCCESS) \
     OP("success", SUCCESS) \
@@ -285,7 +285,7 @@ ExecStatus DirectiveInitializer::resolveStatus(const StringNode &node) {
     OP("exit", EXIT) \
     OP("EXIT", EXIT)
 
-#define MATCH(STR, STATUS) if(node.getValue() == STR) { return ExecStatus::STATUS; }
+#define MATCH(STR, KIND) if(node.getValue() == STR) { return DS_STATUS_##KIND; }
 
     EACH_STATUS(MATCH)
 

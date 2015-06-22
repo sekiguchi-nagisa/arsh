@@ -17,44 +17,97 @@
 #ifndef YDSH_YDSH_H
 #define YDSH_YDSH_H
 
-#include <vector>
-#include <memory>
+#include <stdio.h>
 
-namespace ydsh {
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-enum class ExecStatus : unsigned int {
-    SUCCESS,
-    PARSE_ERROR,
-    TYPE_ERROR,
-    RUNTIME_ERROR,
-    ASSERTION_ERROR,
-    EXIT,
-};
+struct DSContext;
+typedef struct DSContext DSContext;
 
-struct ExecutionEngine {
-    virtual ~ExecutionEngine() = default;
+struct DSStatus;
+typedef struct DSStatus DSStatus;
 
-    ExecStatus eval(const char *line) { return this->eval(line, false); }
-    virtual ExecStatus eval(const char *line, bool zeroCopy) = 0;
-    virtual ExecStatus eval(const char *sourceName, FILE *fp) = 0;
-    virtual void setLineNum(unsigned int lineNum) = 0;
-    virtual unsigned int getLineNum() = 0;
-    virtual void setArguments(const std::vector<const char *> &args) = 0;
-    virtual void setDumpUntypedAST(bool dump) = 0;
-    virtual void setDumpTypedAST(bool dump) = 0;
-    virtual void setParseOnly(bool parseOnly) = 0;
-    virtual void setAssertion(bool assertion) = 0;
-    virtual void setToplevelprinting(bool print) = 0;
-    virtual const std::string &getWorkingDir() = 0;
 
-    /**
-     * get exit status of recently executed command.(also exit command)
-     */
-    virtual int getExitStatus() = 0;
+/***********************/
+/**     DSContext     **/
+/***********************/
 
-    static std::unique_ptr<ExecutionEngine> createInstance();
-};
+/**
+ * create new DSContext.
+ * you can call DSContext_delete() to release object.
+ */
+DSContext *DSContext_create();
 
-} // namespace ydsh
+/**
+ * delete DSContext. after release object, assign null to ctx.
+ */
+void DSContext_delete(DSContext **ctx);
+
+/**
+ * evaluate string.
+ * if status is not null, write status and you can call DSStatus_free() to release object.
+ * return exit status of shell.(if reach end of script, return 0. if call exit, return specified value.)
+ */
+int DSContext_eval(DSContext *ctx, const char *source, DSStatus **status);
+
+/**
+ * evaluate file content.
+ * if sourceName is null, source name is treated as standard input.
+ * if status is not null, write status and you can call DSStatus_free() to release object.
+ * return exit status of shell.(if reach end of script, return 0. if call exit, return specified value.)
+ */
+int DSContext_loadAndEval(DSContext *ctx, const char *sourceName, FILE *fp, DSStatus **status);
+
+void DSContext_setLineNum(DSContext *ctx, unsigned int lineNum);
+unsigned int DSContext_getLineNum(DSContext *ctx);
+
+/**
+ * last element of args must be null.
+ */
+void DSContext_setArguments(DSContext *ctx, const char **args);
+
+const char *DSContext_getWorkingDir(DSContext *ctx);
+
+/**
+ * return exit status of most recently executed command(include exit).
+ */
+int DSContext_getExitStatus(DSContext *ctx);
+
+
+#define DS_OPTION_DUMP_UAST  (1 << 0)
+#define DS_OPTION_DUMP_AST   (1 << 1)
+#define DS_OPTION_PARSE_ONLY (1 << 2)
+#define DS_OPTION_ASSERT     (1 << 3)
+#define DS_OPTION_TOPLEVEL   (1 << 4)
+
+void DSContext_setOption(DSContext *ctx, unsigned int optionSet);
+void DSContext_unsetOption(DSContext *ctx, unsigned int optionSet);
+
+
+/**********************/
+/**     DSStatus     **/
+/**********************/
+
+/**
+ * delete DSStatus. after release object, assign null to status.
+ */
+void DSStatus_free(DSStatus **status);
+
+
+#define DS_STATUS_SUCCESS         0
+#define DS_STATUS_PARSE_ERROR     1
+#define DS_STATUS_TYPE_ERROR      2
+#define DS_STATUS_RUNTIME_ERROR   3
+#define DS_STATUS_ASSERTION_ERROR 4
+#define DS_STATUS_EXIT            5
+
+unsigned int DSStatus_getType(DSStatus *status);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //YDSH_YDSH_H

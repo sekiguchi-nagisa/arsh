@@ -42,7 +42,7 @@ enum OptionKind {
     HELP,
 };
 
-void exec_interactive(const char *progName, std::unique_ptr<ExecutionEngine> &shell);
+void exec_interactive(const char *progName, DSContext *ctx);
 
 static const char *getVersion() {
 #define XSTR(S) #S
@@ -67,17 +67,6 @@ static void showVersion(std::ostream &stream) {
 
 static void showCopyright(std::ostream &stream) {
     stream << getCopyright() << std::endl;
-}
-
-static void evalAndExit(std::unique_ptr<ExecutionEngine> &shell, const char *sourceName, FILE *fp) {
-    ExecStatus status = shell->eval(sourceName, fp);
-    if(status == ExecStatus::SUCCESS) {
-        exit(0);
-    } else if(status == ExecStatus::EXIT) {
-        exit(shell->getExitStatus());
-    } else {
-        exit(1);
-    }
 }
 
 int main(int argc, char **argv) {
@@ -144,24 +133,24 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    auto shell = ydsh::ExecutionEngine::createInstance();
+    DSContext *ctx = DSContext_create();
 
     for(auto &cmdLine : cmdLines) {
         switch(cmdLine.first) {
         case DUMP_UAST:
-            shell->setDumpUntypedAST(true);
+            DSContext_setOption(ctx, DS_OPTION_DUMP_UAST);
             break;
         case DUMP_AST:
-            shell->setDumpTypedAST(true);
+            DSContext_setOption(ctx, DS_OPTION_DUMP_AST);
             break;
         case PARSE_ONLY:
-            shell->setParseOnly(true);
+            DSContext_setOption(ctx, DS_OPTION_PARSE_ONLY);
             break;
         case DISABLE_ASSERT:
-            shell->setAssertion(false);
+            DSContext_unsetOption(ctx, DS_OPTION_ASSERT);
             break;
         case PRINT_TOPLEVEL:
-            shell->setToplevelprinting(true);
+            DSContext_setOption(ctx, DS_OPTION_TOPLEVEL);
             break;
         case VERSION:
             showVersion(std::cout);
@@ -181,20 +170,28 @@ int main(int argc, char **argv) {
             fprintf(stderr, "cannot open file: %s\n", scriptName);
             return 1;
         }
-        shell->setArguments(restArgs);
-        evalAndExit(shell, scriptName, fp);
+
+        unsigned int size = restArgs.size();
+        const char *shellArgs[size + 1];
+        for(unsigned int i = 0; i < size; i++) {
+            shellArgs[i] = restArgs[i];
+        }
+        shellArgs[size] = nullptr;
+
+        DSContext_setArguments(ctx, shellArgs);
+        return DSContext_loadAndEval(ctx, scriptName, fp, nullptr);
     } else if(isatty(STDIN_FILENO) == 0) {
         FILE *fp = fdopen(STDIN_FILENO, "r");
         if(fp == NULL) {
             fprintf(stderr, "cannnot open stdin\n");
             return 1;
         }
-        evalAndExit(shell, nullptr, fp);
+        return DSContext_loadAndEval(ctx, nullptr, fp, nullptr);
     } else {
         showVersion(std::cout);
         showCopyright(std::cout);
 
-        exec_interactive(argv[0], shell);
+        exec_interactive(argv[0], ctx);
     }
     return 0;
 }

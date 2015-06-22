@@ -27,7 +27,11 @@ namespace directive {
 
 class Directive {
 private:
-    ydsh::ExecStatus result;
+    /**
+     * kind of status.(DS_STATUS_*)
+     */
+    unsigned int result;
+
     std::vector<std::string> params;
 
     /**
@@ -36,14 +40,14 @@ private:
     unsigned int status;
 
 public:
-    Directive() : result(ExecStatus::SUCCESS), params(), status(0) {}
+    Directive() : result(DS_STATUS_SUCCESS), params(), status(0) {}
     ~Directive() = default;
 
-    ydsh::ExecStatus getResult() const {
+    unsigned int getResult() const {
         return this->result;
     }
 
-    void setResult(ydsh::ExecStatus status) {
+    void setResult(unsigned int status) {
         this->result = status;
     }
 
