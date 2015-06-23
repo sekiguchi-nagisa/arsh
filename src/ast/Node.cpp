@@ -1125,6 +1125,9 @@ NewNode::NewNode(unsigned int lineNum, TypeToken *targetTypeToken, ArgsNode *arg
 NewNode::~NewNode() {
     delete this->targetTypeToken;
     this->targetTypeToken = 0;
+
+    delete this->argsNode;
+    this->argsNode = 0;
 }
 
 TypeToken *NewNode::getTargetTypeToken() {

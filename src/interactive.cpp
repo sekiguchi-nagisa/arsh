@@ -208,12 +208,15 @@ void exec_interactive(const char *progName, DSContext *ctx) {
         int ret = DSContext_eval(ctx, line, &status);
         unsigned int type = DSStatus_getType(status);
         if(type == DS_STATUS_ASSERTION_ERROR || type == DS_STATUS_EXIT) {
+            DSStatus_free(&status);
+            DSContext_delete(&ctx);
             exit(ret);
         }
         lineNum = DSContext_getLineNum(ctx);
         DSStatus_free(&status);
     }
     printf("\n");
+    DSContext_delete(&ctx);
     exit(0);
 }
 

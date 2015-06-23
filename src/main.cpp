@@ -179,14 +179,18 @@ int main(int argc, char **argv) {
         shellArgs[size] = nullptr;
 
         DSContext_setArguments(ctx, shellArgs);
-        return DSContext_loadAndEval(ctx, scriptName, fp, nullptr);
+        int ret = DSContext_loadAndEval(ctx, scriptName, fp, nullptr);
+        DSContext_delete(&ctx);
+        return ret;
     } else if(isatty(STDIN_FILENO) == 0) {
         FILE *fp = fdopen(STDIN_FILENO, "rb");
         if(fp == NULL) {
             fprintf(stderr, "cannnot open stdin\n");
             return 1;
         }
-        return DSContext_loadAndEval(ctx, nullptr, fp, nullptr);
+        int ret = DSContext_loadAndEval(ctx, nullptr, fp, nullptr);
+        DSContext_delete(&ctx);
+        return ret;
     } else {
         showVersion(std::cout);
         showCopyright(std::cout);
