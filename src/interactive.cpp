@@ -85,6 +85,8 @@ static void setupSignalHandler() {
     // ignore some signal
     struct sigaction ignore_act;
     ignore_act.sa_handler = SIG_IGN;
+    ignore_act.sa_flags = 0;
+    sigemptyset(&ignore_act.sa_mask);
 
     sigaction(SIGQUIT, &ignore_act, NULL);
     sigaction(SIGSTOP, &ignore_act, NULL);  //FIXME: foreground job
