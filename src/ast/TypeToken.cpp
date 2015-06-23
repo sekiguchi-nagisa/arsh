@@ -63,6 +63,7 @@ ReifiedTypeToken::ReifiedTypeToken(ClassTypeToken *templateTypeToken) :
 }
 
 ReifiedTypeToken::~ReifiedTypeToken() {
+    delete this->templateTypeToken;
     for(TypeToken *t : this->elementTypeTokens) {
         delete t;
     }
