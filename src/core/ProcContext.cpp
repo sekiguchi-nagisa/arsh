@@ -157,17 +157,17 @@ static void redirect(ProcContext *ctx) {  //FIXME: error reporting
             break;
         };
         case MERGE_ERR_2_OUT_2_FILE: {
-            dup2(STDERR_FILENO, STDOUT_FILENO);
             redirectToFile(pair.second->getValue().c_str(), "wb", STDOUT_FILENO);
+            dup2(STDOUT_FILENO, STDERR_FILENO);
             break;
         };
         case MERGE_ERR_2_OUT_2_FILE_APPEND: {
-            dup2(STDERR_FILENO, STDOUT_FILENO);
             redirectToFile(pair.second->getValue().c_str(), "ab", STDOUT_FILENO);
+            dup2(STDOUT_FILENO, STDERR_FILENO);
             break;
         };
         case MERGE_ERR_2_OUT: {
-            dup2(STDERR_FILENO, STDOUT_FILENO);
+            dup2(STDOUT_FILENO, STDERR_FILENO);
             break;
         };
         }
