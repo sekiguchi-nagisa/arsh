@@ -7,6 +7,8 @@ echo "hello" > /dev/null
 var a = "$(ls hueri &> /dev/null)"
 assert($a == "")
 
+assert(ls hoferr345h 2>&1 | grep ls)
+
 echo hello world  #this is a comment
 
 $a = ""
