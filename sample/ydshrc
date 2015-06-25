@@ -1,0 +1,16 @@
+## ydshrc sample
+
+function __test_each($data : Array<String>, $test : Func<Boolean, [String]>) {
+    var c = 0
+    let size = $data.size()
+    for(var i = 0; $i < $size; $i++) {
+        var t = $data[$i]
+        if($test($t)) {
+            $c++
+            echo "[OK]" $t
+        } else {
+            echo "[NG]" $t
+        }
+    }
+    echo ++++ result "[$c/$size]" ++++
+}

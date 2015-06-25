@@ -69,6 +69,23 @@ static void showCopyright(std::ostream &stream) {
     stream << getCopyright() << std::endl;
 }
 
+static void loadRC(DSContext *ctx) {
+    std::string path(getenv("HOME"));
+    path += "/.ydshrc";
+    FILE *fp = fopen(path.c_str(), "rb");
+    if(fp == NULL) {
+        return; // not read
+    }
+    DSStatus *s;
+    int ret = DSContext_loadAndEval(ctx, path.c_str(), fp, &s);
+    int type = DSStatus_getType(s);
+    DSStatus_free(&s);
+    if(type != DS_STATUS_SUCCESS) {
+        DSContext_delete(&ctx);
+        exit(ret);
+    }
+}
+
 int main(int argc, char **argv) {
     args::ArgsParser<OptionKind> parser;
 
@@ -162,6 +179,9 @@ int main(int argc, char **argv) {
             return 0;
         }
     }
+
+    // load ydshrc
+    loadRC(ctx);
 
     if(restArgs.size() > 0) {
         const char *scriptName = restArgs[0];
