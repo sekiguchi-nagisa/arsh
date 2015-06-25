@@ -36,7 +36,8 @@ static constexpr unsigned int WRITE_PIPE = 1;
     OP(ERR_2_FILE_APPEND, "2>>") \
     OP(MERGE_ERR_2_OUT_2_FILE, "&>") \
     OP(MERGE_ERR_2_OUT_2_FILE_APPEND, "&>>") \
-    OP(MERGE_ERR_2_OUT, "2>&1")
+    OP(MERGE_ERR_2_OUT, "2>&1") \
+    OP(MERGE_OUT_2_ERR, "1>&2")
 
 enum RedirectOP : unsigned int {
 #define GEN_ENUM(ENUM, STR) ENUM,

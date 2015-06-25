@@ -106,7 +106,8 @@
     OP(REDIR_MERGE_ERR_2_OUT_2_FILE_APPEND)
 
 #define EACH_LA_redirNoFile(OP) \
-    OP(REDIR_MERGE_ERR_2_OUT)
+    OP(REDIR_MERGE_ERR_2_OUT) \
+    OP(REDIR_MERGE_OUT_2_ERR)
 
 #define EACH_LA_redir(OP) \
     EACH_LA_redirFile(OP) \

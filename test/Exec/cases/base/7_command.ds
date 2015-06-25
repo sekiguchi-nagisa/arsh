@@ -9,6 +9,8 @@ assert($a == "")
 
 assert(ls hoferr345h 2>&1 | grep ls)
 
+assert("$(echo hello 1>&2)" == "")
+
 echo hello world  #this is a comment
 
 $a = ""

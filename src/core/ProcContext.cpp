@@ -170,6 +170,10 @@ static void redirect(ProcContext *ctx) {  //FIXME: error reporting
             dup2(STDOUT_FILENO, STDERR_FILENO);
             break;
         };
+        case MERGE_OUT_2_ERR: {
+            dup2(STDERR_FILENO, STDOUT_FILENO);
+            break;
+        }
         }
     }
 }
