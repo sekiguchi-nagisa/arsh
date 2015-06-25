@@ -80,6 +80,7 @@ static void loadRC(DSContext *ctx) {
     int ret = DSContext_loadAndEval(ctx, path.c_str(), fp, &s);
     int type = DSStatus_getType(s);
     DSStatus_free(&s);
+    fclose(fp);
     if(type != DS_STATUS_SUCCESS) {
         DSContext_delete(&ctx);
         exit(ret);
