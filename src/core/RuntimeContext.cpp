@@ -35,7 +35,7 @@ RuntimeContext::RuntimeContext() :
         trueObj(new Boolean_Object(this->pool.getBooleanType(), true)),
         falseObj(new Boolean_Object(this->pool.getBooleanType(), false)),
         dummy(new DummyObject()),
-        scriptName(std::make_shared<String_Object>(this->pool.getStringType(), std::string("-ydsh"))),
+        scriptName(std::make_shared<String_Object>(this->pool.getStringType(), std::string("ydsh"))),
         scriptArgs(std::make_shared<Array_Object>(this->pool.getStringArrayType())),
         exitStatus(std::make_shared<Int_Object>(this->pool.getInt32Type(), 0)),
         dbus(DBus_Object::newDBus_Object(&this->pool)),

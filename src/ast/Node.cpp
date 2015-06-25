@@ -2240,6 +2240,11 @@ DoWhileNode::DoWhileNode(unsigned int lineNum, BlockNode *blockNode, Node *condN
 }
 
 DoWhileNode::~DoWhileNode() {
+    delete this->blockNode;
+    this->blockNode = 0;
+
+    delete this->condNode;
+    this->condNode = 0;
 }
 
 BlockNode *DoWhileNode::getBlockNode() {
