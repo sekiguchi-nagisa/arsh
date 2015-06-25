@@ -1,0 +1,37 @@
+#!/usr/local/bin/ydsh
+
+# check argument
+if($@.size() != 2) {
+    echo usage: $0 "[target binary] [test case dir]" 1>&2
+    exit 1
+}
+
+let bin = $@[0]
+let dir = $@[1]
+
+test -x $bin
+if($? != 0) {
+    echo not found executable file: $bin 1>&2
+    exit 1
+}
+
+# check valgrind
+which valgrind
+if($? != 0) {
+    echo need valgrind 1>&2
+    exit 1
+}
+
+function test($a : String) : Boolean {
+    test -f $a
+    if($? != 0) {
+        echo not found file: $a 1>&2
+        exit 1
+    }
+    var r = valgrind -v --leak-check=full $bin $a 2>&1 > /dev/null | grep "definitely lost: 0" > /dev/null
+    return $r
+}
+
+
+$__test_each($(find $dir -name "*.ds" | sort), $test)
+
