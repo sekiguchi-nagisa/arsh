@@ -152,8 +152,8 @@ void Writer::writeNodeHeader(const Node &node) {
 
     this->writeIndent();
     OUT << "@" << className << " (lineNum: " << node.getLineNum()
-                                                << ", type: " << (type != 0 ? this->pool->getTypeName(*type) : "(null)")
-                                                << ")" << std::endl;
+    << ", type: " << (type != 0 ? this->pool->getTypeName(*type) : "(null)")
+    << ")" << std::endl;
 
     // free demangled name
     free(className);

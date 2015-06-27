@@ -139,7 +139,7 @@ ExecStatus Shell::eval(const char *sourceName, Lexer &lexer) {
     if(this->parseOnly) {
         return ExecStatus::SUCCESS;
     }
-    
+
     // eval
     switch(rootNode.eval(this->ctx)) {
     case EvalStatus::SUCCESS:
@@ -178,7 +178,7 @@ void Shell::initBuiltinVar() {
     rootNode.addNode(new BindVarNode("?", this->ctx.getExitStatus()));
 
     // register DBus management object
-    rootNode.addNode(new BindVarNode("DBus",this->ctx.getDBus()));
+    rootNode.addNode(new BindVarNode("DBus", this->ctx.getDBus()));
 
     // set alias
     rootNode.addNode(new TypeAliasNode("Int", "Int32"));

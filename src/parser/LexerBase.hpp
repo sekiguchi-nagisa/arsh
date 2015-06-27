@@ -25,7 +25,7 @@
 namespace ydsh {
 namespace parser_base {
 
-template <typename T>
+template<typename T>
 struct Token {
     unsigned int lineNum;
     T kind;
@@ -44,7 +44,7 @@ struct Token {
     std::string toString() const;
 };
 
-template <typename T>
+template<typename T>
 std::string Token<T>::toString() const {
     std::string str("{ lineNum = ");
     str += std::to_string(this->lineNum);
@@ -61,7 +61,7 @@ std::string Token<T>::toString() const {
 /**
  * base lexer for re2c
  */
-template <typename T>
+template<typename T>
 class LexerBase {
 protected:
     /**
@@ -112,10 +112,10 @@ protected:
     static constexpr unsigned int DEFAULT_SIZE = 256;
 
 private:
-      LexerBase() :
-              fp(0), bufSize(0), buf(0), cursor(0),
-              limit(0), marker(0), ctxMarker(0),
-              endOfFile(false), endOfString(false), zeroCopyBuf(false) {}
+    LexerBase() :
+            fp(0), bufSize(0), buf(0), cursor(0),
+            limit(0), marker(0), ctxMarker(0),
+            endOfFile(false), endOfString(false), zeroCopyBuf(false) { }
 
 public:
     /**
@@ -183,7 +183,7 @@ protected:
 // ##     LexerBase     ##
 // #######################
 
-template <typename T>
+template<typename T>
 LexerBase<T>::LexerBase(FILE *fp) : LexerBase<T>() {
     this->fp = fp;
     this->bufSize = DEFAULT_SIZE;
@@ -194,12 +194,12 @@ LexerBase<T>::LexerBase(FILE *fp) : LexerBase<T>() {
     this->limit = this->buf;
 }
 
-template <typename T>
+template<typename T>
 LexerBase<T>::LexerBase(const char *src, bool zeroCopy) : LexerBase<T>() {
     this->bufSize = strlen(src) + 1;
     this->zeroCopyBuf = zeroCopy;
     if(this->zeroCopyBuf) {
-        this->buf = (unsigned char *)src;
+        this->buf = (unsigned char *) src;
     } else {
         this->buf = new unsigned char[this->bufSize];
         memcpy(this->buf, src, this->bufSize);

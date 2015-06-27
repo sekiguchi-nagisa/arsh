@@ -183,16 +183,16 @@ TypePool::TypePool() :
     this->baseFuncType = this->initBuiltinType("%BaseFunc%", false, this->anyType, info_Dummy());
 
     // initialize type template
-    std::vector<DSType*> elements;
+    std::vector<DSType *> elements;
     elements.push_back(this->anyType);
     this->arrayTemplate = this->initTypeTemplate("Array", std::move(elements), info_ArrayType());
 
-    elements = std::vector<DSType*>();
+    elements = std::vector<DSType *>();
     elements.push_back(this->valueType);
     elements.push_back(this->anyType);
     this->mapTemplate = this->initTypeTemplate("Map", std::move(elements), info_MapType());
 
-    elements = std::vector<DSType*>();
+    elements = std::vector<DSType *>();
     this->tupleTemplate = this->initTypeTemplate("Tuple", std::move(elements), 0);   // pseudo template.
 
     // init string array type(for command argument)
@@ -258,7 +258,7 @@ DSType *TypePool::createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate,
     if(type == nullptr) {
         DSType *superType = this->asVariantType(elementTypes) ? this->variantType : this->anyType;
         return this->typeMap.addType(std::move(typeName),
-                             new ReifiedType(typeTemplate->getInfo(), superType, std::move(elementTypes)));
+                                     new ReifiedType(typeTemplate->getInfo(), superType, std::move(elementTypes)));
     }
     return type;
 }
@@ -483,7 +483,7 @@ DSType *TypePool::initBuiltinType(const char *typeName, bool extendable,
 }
 
 TypeTemplate *TypePool::initTypeTemplate(const char *typeName,
-                                         std::vector<DSType*> &&elementTypes, native_type_info_t *info) {
+                                         std::vector<DSType *> &&elementTypes, native_type_info_t *info) {
     return this->templateMap.insert(
             std::make_pair(typeName, new TypeTemplate(std::string(typeName),
                                                       std::move(elementTypes), info))).first->second;

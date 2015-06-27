@@ -139,7 +139,7 @@ int main(int argc, char **argv) {
             "show this help message"
     );
 
-    std::vector<std::pair<OptionKind , const char *>> cmdLines;
+    std::vector<std::pair<OptionKind, const char *>> cmdLines;
 
     std::vector<const char *> restArgs;
     try {

@@ -262,7 +262,7 @@ EvalStatus ProcGroup::execProcs() {    //FIXME: builtin
             }
         }
         ctx->updateExitStatus(this->procs[this->procSize - 1]->exitStatus);
-        return EvalStatus::SUCCESS ;
+        return EvalStatus::SUCCESS;
     } else if(pid[procIndex] == 0) { // child process
         ProcContext *procCtx = this->procs[procIndex].get();
         if(procIndex == 0) {    // first process

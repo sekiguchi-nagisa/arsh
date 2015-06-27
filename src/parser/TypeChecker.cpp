@@ -29,11 +29,11 @@ namespace parser {
 // ##     HandleOrFuncType     ##
 // ##############################
 
-HandleOrFuncType::HandleOrFuncType(FunctionHandle * handle) :
+HandleOrFuncType::HandleOrFuncType(FunctionHandle *handle) :
         hasHandle(true), handle(handle) {
 }
 
-HandleOrFuncType::HandleOrFuncType(FunctionType * funcType) :
+HandleOrFuncType::HandleOrFuncType(FunctionType *funcType) :
         hasHandle(false), funcType(funcType) {
 }
 
@@ -117,13 +117,13 @@ DSType *TypeGenerator::generateType(TypeToken *token) {
 // ##     TypeChecker     ##
 // #########################
 
-TypeChecker::TypeChecker(TypePool * typePool) :
+TypeChecker::TypeChecker(TypePool *typePool) :
         typePool(typePool), symbolTable(), typeGen(typePool), curReturnType(0),
         loopContextStack(), finallyContextStack(),
         cmdContextStack(), coercionKind(INVALID_COERCION) {
 }
 
-void TypeChecker::checkTypeRootNode(RootNode & rootNode) {
+void TypeChecker::checkTypeRootNode(RootNode &rootNode) {
     rootNode.accept(this);
 }
 
@@ -168,15 +168,15 @@ DSType *TypeChecker::resolveInterface(TypePool *typePool, InterfaceNode *node) {
 
 // type check entry point
 
-DSType *TypeChecker::checkTypeAsStatement(Node * targetNode) {
+DSType *TypeChecker::checkTypeAsStatement(Node *targetNode) {
     return this->checkType(0, targetNode, 0);
 }
 
-DSType *TypeChecker::checkType(Node * targetNode) {
+DSType *TypeChecker::checkType(Node *targetNode) {
     return this->checkType(0, targetNode, this->typePool->getVoidType());
 }
 
-DSType *TypeChecker::checkType(DSType * requiredType, Node * targetNode) {
+DSType *TypeChecker::checkType(DSType *requiredType, Node *targetNode) {
     return this->checkType(requiredType, targetNode, 0);
 }
 
@@ -230,7 +230,7 @@ DSType *TypeChecker::checkType(DSType *requiredType, Node *targetNode,
     return 0;
 }
 
-Node *TypeChecker::checkTypeAndResolveCoercion(DSType * requiredType, Node * targetNode) {
+Node *TypeChecker::checkTypeAndResolveCoercion(DSType *requiredType, Node *targetNode) {
     TypePool *pool = this->typePool;
     this->checkType(requiredType, targetNode, pool->getVoidType(), true);
     if(this->coercionKind != INVALID_COERCION) {
@@ -289,13 +289,13 @@ Node *TypeChecker::resolveCoercion(CoercionKind kind, DSType *requiredType, Node
     return CastNode::newTypedCastNode(targetNode, requiredType, op);
 }
 
-void TypeChecker::checkTypeWithNewBlockScope(BlockNode * blockNode) {
+void TypeChecker::checkTypeWithNewBlockScope(BlockNode *blockNode) {
     this->symbolTable.enterScope();
     this->checkTypeWithCurrentBlockScope(blockNode);
     this->symbolTable.exitScope();
 }
 
-void TypeChecker::checkTypeWithCurrentBlockScope(BlockNode * blockNode) {
+void TypeChecker::checkTypeWithCurrentBlockScope(BlockNode *blockNode) {
     blockNode->accept(this);
 }
 
@@ -316,14 +316,14 @@ void TypeChecker::exitLoop() {
     this->loopContextStack.pop_back();
 }
 
-void TypeChecker::checkAndThrowIfOutOfLoop(Node * node) {
+void TypeChecker::checkAndThrowIfOutOfLoop(Node *node) {
     if(!this->loopContextStack.empty() && this->loopContextStack.back()) {
         return;
     }
     E_InsideLoop(node);
 }
 
-bool TypeChecker::findBlockEnd(BlockNode * blockNode) {
+bool TypeChecker::findBlockEnd(BlockNode *blockNode) {
     if(blockNode->getNodeList().size() == 0) {
         return false;
     }
@@ -350,7 +350,7 @@ bool TypeChecker::findBlockEnd(BlockNode * blockNode) {
     return false;
 }
 
-void TypeChecker::checkBlockEndExistence(BlockNode * blockNode, DSType * returnType) {
+void TypeChecker::checkBlockEndExistence(BlockNode *blockNode, DSType *returnType) {
     Node *endNode = blockNode->getNodeList().back();
 
     if(*returnType == *this->typePool->getVoidType() && !endNode->isBlockEndNode()) {
@@ -365,7 +365,7 @@ void TypeChecker::checkBlockEndExistence(BlockNode * blockNode, DSType * returnT
     }
 }
 
-void TypeChecker::pushReturnType(DSType * returnType) {
+void TypeChecker::pushReturnType(DSType *returnType) {
     this->curReturnType = returnType;
 }
 
@@ -379,18 +379,18 @@ DSType *TypeChecker::getCurrentReturnType() {
     return this->curReturnType;
 }
 
-void TypeChecker::checkAndThrowIfInsideFinally(BlockEndNode * node) {
+void TypeChecker::checkAndThrowIfInsideFinally(BlockEndNode *node) {
     if(!this->finallyContextStack.empty() && this->finallyContextStack.back()) {
         E_InsideFinally(node);
     }
 }
 
-DSType *TypeChecker::toType(TypeToken * typeToken) {
+DSType *TypeChecker::toType(TypeToken *typeToken) {
     return this->typeGen.generateTypeAndThrow(typeToken);
 }
 
 // for ApplyNode type checking
-HandleOrFuncType TypeChecker::resolveCallee(Node * recvNode) {
+HandleOrFuncType TypeChecker::resolveCallee(Node *recvNode) {
     VarNode *varNode = dynamic_cast<VarNode *>(recvNode);
     if(varNode != 0) {
         return this->resolveCallee(varNode);
@@ -401,7 +401,7 @@ HandleOrFuncType TypeChecker::resolveCallee(Node * recvNode) {
     return HandleOrFuncType(funcType);
 }
 
-HandleOrFuncType TypeChecker::resolveCallee(VarNode * recvNode) {
+HandleOrFuncType TypeChecker::resolveCallee(VarNode *recvNode) {
     FieldHandle *handle = this->symbolTable.lookupHandle(recvNode->getVarName());
     if(handle == 0) {
         E_UndefinedSymbol(recvNode, recvNode->getVarName());
@@ -484,7 +484,7 @@ void TypeChecker::recover(bool abortType) {
 bool TypeChecker::checkInt2Float(int beforePrecision, DSType *afterType) {
     return beforePrecision > TypePool::INVALID_PRECISION &&
            beforePrecision < TypePool::INT64_PRECISION &&
-            *afterType == *this->typePool->getFloatType();
+           *afterType == *this->typePool->getFloatType();
 }
 
 bool TypeChecker::checkFloat2Int(DSType *beforeType, int afterPrecision) {
@@ -506,7 +506,7 @@ bool TypeChecker::checkFloat2Long(DSType *beforeType, int afterPrecision) {
 bool TypeChecker::checkInt2IntWidening(int beforePrecision, int afterPrecision) {
     return beforePrecision > TypePool::INVALID_PRECISION &&
            afterPrecision < TypePool::INT64_PRECISION &&
-            beforePrecision < afterPrecision;
+           beforePrecision < afterPrecision;
 }
 
 bool TypeChecker::checkInt2IntNarrowing(int beforePrecision, int afterPrecision) {
@@ -533,8 +533,8 @@ bool TypeChecker::checkInt2Long(int beforePrecision, int afterPrecision) {
 
 bool TypeChecker::checkLong2Int(int beforePrecision, int afterPrecision) {
     return beforePrecision == TypePool::INT64_PRECISION &&
-            afterPrecision > TypePool::INVALID_PRECISION &&
-            beforePrecision > afterPrecision;
+           afterPrecision > TypePool::INVALID_PRECISION &&
+           beforePrecision > afterPrecision;
 }
 
 
@@ -543,7 +543,7 @@ void TypeChecker::visitDefault(Node *node) {
     E_Unimplemented(node, "unimplemented");
 }
 
-void TypeChecker::visitIntValueNode(IntValueNode * node) {
+void TypeChecker::visitIntValueNode(IntValueNode *node) {
     DSType *type = this->typePool->getIntType();
     switch(node->getKind()) {
     case IntValueNode::BYTE:
@@ -573,12 +573,12 @@ void TypeChecker::visitLongValueNode(LongValueNode *node) {
     node->setType(type);
 }
 
-void TypeChecker::visitFloatValueNode(FloatValueNode * node) {
+void TypeChecker::visitFloatValueNode(FloatValueNode *node) {
     DSType *type = this->typePool->getFloatType();
     node->setType(type);
 }
 
-void TypeChecker::visitStringValueNode(StringValueNode * node) {
+void TypeChecker::visitStringValueNode(StringValueNode *node) {
     DSType *type = this->typePool->getStringType();
     node->setType(type);
 }
@@ -588,14 +588,14 @@ void TypeChecker::visitObjectPathNode(ObjectPathNode *node) {
     node->setType(type);
 }
 
-void TypeChecker::visitStringExprNode(StringExprNode * node) {
+void TypeChecker::visitStringExprNode(StringExprNode *node) {
     for(Node *exprNode : node->getExprNodes()) {
         this->checkType(exprNode);
     }
     node->setType(this->typePool->getStringType());
 }
 
-void TypeChecker::visitArrayNode(ArrayNode * node) {
+void TypeChecker::visitArrayNode(ArrayNode *node) {
     unsigned int size = node->getExprNodes().size();
     assert(size != 0);
     Node *firstElementNode = node->getExprNodes()[0];
@@ -612,7 +612,7 @@ void TypeChecker::visitArrayNode(ArrayNode * node) {
     node->setType(this->typePool->createAndGetReifiedTypeIfUndefined(arrayTemplate, std::move(elementTypes)));
 }
 
-void TypeChecker::visitMapNode(MapNode * node) {
+void TypeChecker::visitMapNode(MapNode *node) {
     unsigned int size = node->getValueNodes().size();
     assert(size != 0);
     Node *firstKeyNode = node->getKeyNodes()[0];
@@ -634,7 +634,7 @@ void TypeChecker::visitMapNode(MapNode * node) {
     node->setType(this->typePool->createAndGetReifiedTypeIfUndefined(mapTemplate, std::move(elementTypes)));
 }
 
-void TypeChecker::visitTupleNode(TupleNode * node) {
+void TypeChecker::visitTupleNode(TupleNode *node) {
     unsigned int size = node->getNodes().size();
     std::vector<DSType *> types(size);
     for(unsigned int i = 0; i < size; i++) {
@@ -643,7 +643,7 @@ void TypeChecker::visitTupleNode(TupleNode * node) {
     node->setType(this->typePool->createAndGetTupleTypeIfUndefined(std::move(types)));
 }
 
-void TypeChecker::visitVarNode(VarNode * node) {
+void TypeChecker::visitVarNode(VarNode *node) {
     FieldHandle *handle = this->symbolTable.lookupHandle(node->getVarName());
     if(handle == 0) {
         E_UndefinedSymbol(node, node->getVarName());
@@ -653,7 +653,7 @@ void TypeChecker::visitVarNode(VarNode * node) {
     node->setType(handle->getFieldType(this->typePool));
 }
 
-void TypeChecker::visitAccessNode(AccessNode * node) {
+void TypeChecker::visitAccessNode(AccessNode *node) {
     DSType *recvType = this->checkType(node->getRecvNode());
     FieldHandle *handle = recvType->lookupFieldHandle(this->typePool, node->getFieldName());
     if(handle == 0) {
@@ -664,7 +664,7 @@ void TypeChecker::visitAccessNode(AccessNode * node) {
     node->setType(handle->getFieldType(this->typePool));
 }
 
-void TypeChecker::visitCastNode(CastNode * node) {
+void TypeChecker::visitCastNode(CastNode *node) {
     DSType *exprType = this->checkType(node->getExprNode());
     DSType *targetType = this->toType(node->getTargetTypeToken());
     node->setType(targetType);
@@ -752,7 +752,7 @@ void TypeChecker::visitCastNode(CastNode * node) {
     E_CastOp(node, this->typePool->getTypeName(*exprType), this->typePool->getTypeName(*targetType));
 }
 
-void TypeChecker::visitInstanceOfNode(InstanceOfNode * node) {
+void TypeChecker::visitInstanceOfNode(InstanceOfNode *node) {
     DSType *exprType = this->checkType(node->getTargetNode());
     DSType *targetType = this->toType(node->getTargetTypeToken());
     node->setTargetType(targetType);
@@ -780,7 +780,7 @@ void TypeChecker::visitUnaryOpNode(UnaryOpNode *node) {
     node->setType(this->checkType(applyNode));
 }
 
-void TypeChecker::visitBinaryOpNode(BinaryOpNode * node) {
+void TypeChecker::visitBinaryOpNode(BinaryOpNode *node) {
     DSType *leftType = this->checkType(node->getLeftNode());
     DSType *rightType = this->checkType(node->getRightNode());
 
@@ -804,11 +804,11 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode * node) {
     node->setType(this->checkType(applyNode));
 }
 
-void TypeChecker::visitArgsNode(ArgsNode * node) {
+void TypeChecker::visitArgsNode(ArgsNode *node) {
     // not call it
 }
 
-void TypeChecker::visitApplyNode(ApplyNode * node) {
+void TypeChecker::visitApplyNode(ApplyNode *node) {
     /**
      * resolve handle
      */
@@ -841,7 +841,7 @@ void TypeChecker::visitMethodCallNode(MethodCallNode *node) {
     node->setType(handle->getReturnType());
 }
 
-void TypeChecker::visitNewNode(NewNode * node) {
+void TypeChecker::visitNewNode(NewNode *node) {
     DSType *type = this->toType(node->getTargetTypeToken());
     MethodHandle *handle = type->getConstructorHandle(this->typePool);
     if(handle == 0) {
@@ -857,14 +857,14 @@ void TypeChecker::visitGroupNode(GroupNode *node) {
     node->setType(type);
 }
 
-void TypeChecker::visitCondOpNode(CondOpNode * node) {
+void TypeChecker::visitCondOpNode(CondOpNode *node) {
     DSType *booleanType = this->typePool->getBooleanType();
     this->checkType(booleanType, node->getLeftNode());
     this->checkType(booleanType, node->getRightNode());
     node->setType(booleanType);
 }
 
-void TypeChecker::visitCmdNode(CmdNode * node) {
+void TypeChecker::visitCmdNode(CmdNode *node) {
     for(auto *argNode : node->getArgNodes()) {
         this->checkType(argNode);
     }
@@ -875,14 +875,14 @@ void TypeChecker::visitCmdNode(CmdNode * node) {
     node->setType(this->typePool->getVoidType());   // FIXME
 }
 
-void TypeChecker::visitCmdArgNode(CmdArgNode * node) {
+void TypeChecker::visitCmdArgNode(CmdArgNode *node) {
     for(Node *exprNode : node->getSegmentNodes()) {
         this->checkType(exprNode);
     }
     node->setType(this->typePool->getAnyType());   //FIXME
 }
 
-void TypeChecker::visitPipedCmdNode(PipedCmdNode * node) {
+void TypeChecker::visitPipedCmdNode(PipedCmdNode *node) {
     for(CmdNode *procNode : node->getCmdNodes()) {
         this->checkTypeAsStatement(procNode);   // always void
     }
@@ -893,7 +893,7 @@ void TypeChecker::visitPipedCmdNode(PipedCmdNode * node) {
     }
 }
 
-void TypeChecker::visitCmdContextNode(CmdContextNode * node) {   //TODO: attribute
+void TypeChecker::visitCmdContextNode(CmdContextNode *node) {   //TODO: attribute
     // check type condNode
     this->cmdContextStack.push_back(node);
     this->checkTypeAsStatement(node->getExprNode());
@@ -911,12 +911,12 @@ void TypeChecker::visitCmdContextNode(CmdContextNode * node) {   //TODO: attribu
     node->setType(type);
 }
 
-void TypeChecker::visitAssertNode(AssertNode * node) {
+void TypeChecker::visitAssertNode(AssertNode *node) {
     this->checkType(this->typePool->getBooleanType(), node->getCondNode());
     node->setType(this->typePool->getVoidType());
 }
 
-void TypeChecker::visitBlockNode(BlockNode * node) {
+void TypeChecker::visitBlockNode(BlockNode *node) {
     int count = 0;
     int size = node->getNodeList().size();
     for(Node *targetNode : node->getNodeList()) {
@@ -929,19 +929,19 @@ void TypeChecker::visitBlockNode(BlockNode * node) {
     node->setType(this->typePool->getVoidType());
 }
 
-void TypeChecker::visitBreakNode(BreakNode * node) {
+void TypeChecker::visitBreakNode(BreakNode *node) {
     this->checkAndThrowIfInsideFinally(node);
     this->checkAndThrowIfOutOfLoop(node);
     node->setType(this->typePool->getVoidType());
 }
 
-void TypeChecker::visitContinueNode(ContinueNode * node) {
+void TypeChecker::visitContinueNode(ContinueNode *node) {
     this->checkAndThrowIfInsideFinally(node);
     this->checkAndThrowIfOutOfLoop(node);
     node->setType(this->typePool->getVoidType());
 }
 
-void TypeChecker::visitExportEnvNode(ExportEnvNode * node) {
+void TypeChecker::visitExportEnvNode(ExportEnvNode *node) {
     DSType *stringType = this->typePool->getStringType();
     FieldHandle *handle =
             this->addEntryAndThrowIfDefined(node, node->getEnvName(), stringType, false);
@@ -955,7 +955,7 @@ void TypeChecker::visitExportEnvNode(ExportEnvNode * node) {
     node->setType(this->typePool->getVoidType());
 }
 
-void TypeChecker::visitImportEnvNode(ImportEnvNode * node) {
+void TypeChecker::visitImportEnvNode(ImportEnvNode *node) {
     // check env existence
     if(!this->typePool->hasEnv(node->getEnvName())) {
         E_UndefinedEnv(node, node->getEnvName());
@@ -984,7 +984,7 @@ void TypeChecker::visitTypeAliasNode(TypeAliasNode *node) {
     }
 }
 
-void TypeChecker::visitForNode(ForNode * node) {
+void TypeChecker::visitForNode(ForNode *node) {
     this->symbolTable.enterScope();
     this->checkTypeAsStatement(node->getInitNode());
     this->checkType(this->typePool->getBooleanType(), node->getCondNode());
@@ -996,7 +996,7 @@ void TypeChecker::visitForNode(ForNode * node) {
     node->setType(this->typePool->getVoidType());
 }
 
-void TypeChecker::visitWhileNode(WhileNode * node) {
+void TypeChecker::visitWhileNode(WhileNode *node) {
     this->checkType(this->typePool->getBooleanType(), node->getCondNode());
     this->enterLoop();
     this->checkTypeWithNewBlockScope(node->getBlockNode());
@@ -1004,7 +1004,7 @@ void TypeChecker::visitWhileNode(WhileNode * node) {
     node->setType(this->typePool->getVoidType());
 }
 
-void TypeChecker::visitDoWhileNode(DoWhileNode * node) {
+void TypeChecker::visitDoWhileNode(DoWhileNode *node) {
     this->enterLoop();
     this->symbolTable.enterScope();
     this->checkTypeWithCurrentBlockScope(node->getBlockNode());
@@ -1019,7 +1019,7 @@ void TypeChecker::visitDoWhileNode(DoWhileNode * node) {
     node->setType(this->typePool->getVoidType());
 }
 
-void TypeChecker::visitIfNode(IfNode * node) {
+void TypeChecker::visitIfNode(IfNode *node) {
     this->checkType(this->typePool->getBooleanType(), node->getCondNode());
     this->checkTypeWithNewBlockScope(node->getThenNode());
 
@@ -1033,7 +1033,7 @@ void TypeChecker::visitIfNode(IfNode * node) {
     node->setType(this->typePool->getVoidType());
 }
 
-void TypeChecker::visitReturnNode(ReturnNode * node) {
+void TypeChecker::visitReturnNode(ReturnNode *node) {
     this->checkAndThrowIfInsideFinally(node);
     DSType *returnType = this->getCurrentReturnType();
     if(returnType == 0) {
@@ -1048,13 +1048,13 @@ void TypeChecker::visitReturnNode(ReturnNode * node) {
     node->setType(this->typePool->getVoidType());
 }
 
-void TypeChecker::visitThrowNode(ThrowNode * node) {
+void TypeChecker::visitThrowNode(ThrowNode *node) {
     this->checkAndThrowIfInsideFinally(node);
     this->checkType(node->getExprNode());
     node->setType(this->typePool->getVoidType());
 }
 
-void TypeChecker::visitCatchNode(CatchNode * node) {
+void TypeChecker::visitCatchNode(CatchNode *node) {
     DSType *exceptionType = this->toType(node->getTypeToken());
     node->setExceptionType(exceptionType);
 
@@ -1070,7 +1070,7 @@ void TypeChecker::visitCatchNode(CatchNode * node) {
     node->setType(this->typePool->getVoidType());
 }
 
-void TypeChecker::visitTryNode(TryNode * node) {
+void TypeChecker::visitTryNode(TryNode *node) {
     this->checkTypeWithNewBlockScope(node->getBlockNode());
     // check type catch block
     for(CatchNode *c : node->getCatchNodes()) {
@@ -1097,7 +1097,7 @@ void TypeChecker::visitTryNode(TryNode * node) {
     node->setType(this->typePool->getVoidType());
 }
 
-void TypeChecker::visitVarDeclNode(VarDeclNode * node) {
+void TypeChecker::visitVarDeclNode(VarDeclNode *node) {
     DSType *initValueType = this->checkType(node->getInitValueNode());
     FieldHandle *handle =
             this->addEntryAndThrowIfDefined(node, node->getVarName(), initValueType, node->isReadOnly());
@@ -1105,7 +1105,7 @@ void TypeChecker::visitVarDeclNode(VarDeclNode * node) {
     node->setType(this->typePool->getVoidType());
 }
 
-void TypeChecker::visitAssignNode(AssignNode * node) {
+void TypeChecker::visitAssignNode(AssignNode *node) {
     AssignableNode *leftNode = dynamic_cast<AssignableNode *>(node->getLeftNode());
     if(leftNode == 0) {
         E_Assignable(node);
@@ -1147,7 +1147,7 @@ void TypeChecker::visitElementSelfAssignNode(ElementSelfAssignNode *node) {
     node->setType(this->typePool->getVoidType());
 }
 
-void TypeChecker::visitFunctionNode(FunctionNode * node) {   //TODO: named parameter
+void TypeChecker::visitFunctionNode(FunctionNode *node) {   //TODO: named parameter
     // resolve return type, param type
     DSType *returnType = this->toType(node->getReturnTypeToken());
     unsigned int paramSize = node->getParamTypeTokens().size();
@@ -1197,15 +1197,15 @@ void TypeChecker::visitBindVarNode(BindVarNode *node) {
     node->setType(this->typePool->getVoidType());
 }
 
-void TypeChecker::visitEmptyNode(EmptyNode * node) {
+void TypeChecker::visitEmptyNode(EmptyNode *node) {
     node->setType(this->typePool->getVoidType());
 }
 
-void TypeChecker::visitDummyNode(DummyNode * node) {
+void TypeChecker::visitDummyNode(DummyNode *node) {
     // do nothing.
 }
 
-void TypeChecker::visitRootNode(RootNode * node) {
+void TypeChecker::visitRootNode(RootNode *node) {
     this->symbolTable.commit();
     this->typePool->commit();
 

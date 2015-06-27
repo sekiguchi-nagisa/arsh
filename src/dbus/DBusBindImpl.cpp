@@ -150,7 +150,7 @@ static std::shared_ptr<DSObject> decodeMessageIter(RuntimeContext &ctx, DBusMess
         } else {    // array
             if(!dbus_message_iter_has_next(&subIter)) { //empty array
                 char *desc = dbus_message_iter_get_signature(&subIter);
-                std::vector<DSType*> types(1);
+                std::vector<DSType *> types(1);
                 types[0] = decodeTypeDescriptor(&ctx.getPool(), desc);
                 dbus_free(desc);
                 return std::make_shared<Array_Object>(
@@ -195,7 +195,7 @@ static std::shared_ptr<DSObject> decodeMessageIter(RuntimeContext &ctx, DBusMess
         return decodeMessageIter(ctx, &subIter);
     };
     default:
-        fatal("unsupported dbus type: %c\n", (char)dbusType);
+        fatal("unsupported dbus type: %c\n", (char) dbusType);
         return std::shared_ptr<DSObject>(nullptr);
     }
 }
@@ -206,7 +206,7 @@ static std::shared_ptr<DSObject> decodeMessageIter(RuntimeContext &ctx, DBusMess
  * return false, if illegal message.(ex. mismatch type)
  */
 static bool decodeAndUnrefMessage(std::vector<std::shared_ptr<DSObject>> &values, RuntimeContext &ctx,
-                                                       const std::vector<DSType *> &types, DBusMessage *msg) {
+                                  const std::vector<DSType *> &types, DBusMessage *msg) {
     DBusMessageIter iter;
     dbus_message_iter_init(msg, &iter);
 
@@ -571,12 +571,12 @@ bool DBus_ObjectImpl::introspectProxy(RuntimeContext &ctx, const std::shared_ptr
 }
 
 
-bool SignalSelectorComparator::operator() (const SignalSelector &x,
-                                           const SignalSelector &y) const {
+bool SignalSelectorComparator::operator()(const SignalSelector &x,
+                                          const SignalSelector &y) const {
     return strcmp(x.first, y.first) == 0 && strcmp(x.second, y.second) == 0;
 }
 
-std::size_t SignalSelectorHash::operator() (const SignalSelector &key) const {
+std::size_t SignalSelectorHash::operator()(const SignalSelector &key) const {
     size_t hash = 0;
 
     for(unsigned int i = 0; key.first[i] != '\0'; i++) {
@@ -747,7 +747,7 @@ bool DBusProxy_Object::invokeMethod(RuntimeContext &ctx, const std::string &meth
     return true;
 }
 
-bool DBusProxy_Object::invokeGetter(RuntimeContext &ctx,DSType *recvType,
+bool DBusProxy_Object::invokeGetter(RuntimeContext &ctx, DSType *recvType,
                                     const std::string &fieldName, DSType *fieldType) {
     DBusMessage *msg = this->newMethodCallMsg("org.freedesktop.DBus.Properties", "Get");
 
@@ -777,7 +777,7 @@ bool DBusProxy_Object::invokeGetter(RuntimeContext &ctx,DSType *recvType,
     return true;
 }
 
-bool DBusProxy_Object::invokeSetter(RuntimeContext &ctx,DSType *recvType,
+bool DBusProxy_Object::invokeSetter(RuntimeContext &ctx, DSType *recvType,
                                     const std::string &fieldName, DSType *fieldType) {
     DBusMessage *msg = this->newMethodCallMsg("org.freedesktop.DBus.Properties", "Set");
 
@@ -819,8 +819,8 @@ std::shared_ptr<Array_Object> DBusProxy_Object::createIfaceList(RuntimeContext &
     return std::make_shared<Array_Object>(ctx.getPool().getStringArrayType(), std::move(list));
 }
 
-FunctionType  *DBusProxy_Object::lookupHandler(RuntimeContext &ctx,
-                                    const char *ifaceName, const char *methodName) {
+FunctionType *DBusProxy_Object::lookupHandler(RuntimeContext &ctx,
+                                              const char *ifaceName, const char *methodName) {
     auto iter = this->handerMap.find(std::make_pair(ifaceName, methodName));
     if(iter == this->handerMap.end()) {
         return nullptr;
@@ -848,11 +848,16 @@ static inline void quote(std::string &str, const char *value) {
 
 void DBusProxy_Object::createSignalMatchRule(std::vector<std::string> &ruleList) {
     for(auto &pair : this->handerMap) {
-        std::string rule("type="); quote(rule, "signal");
-        rule += ", sender="; quote(rule, this->srv->getServiceName());
-        rule += ", path="; quote(rule, this->objectPath->getValue());
-        rule += ", interface="; quote(rule, pair.first.first);
-        rule += ", member="; quote(rule, pair.first.second);
+        std::string rule("type=");
+        quote(rule, "signal");
+        rule += ", sender=";
+        quote(rule, this->srv->getServiceName());
+        rule += ", path=";
+        quote(rule, this->objectPath->getValue());
+        rule += ", interface=";
+        quote(rule, pair.first.first);
+        rule += ", member=";
+        quote(rule, pair.first.second);
 
         ruleList.push_back(std::move(rule));
     }

@@ -22,7 +22,8 @@ using namespace ydsh;
 struct DSContext {
     Shell *shell;
 
-    DSContext() : shell(Shell::createShell()) {}
+    DSContext() : shell(Shell::createShell()) { }
+
     ~DSContext() {
         delete this->shell;
     }
@@ -34,7 +35,8 @@ struct DSStatus {
      */
     unsigned int type;
 
-    DSStatus(unsigned int type) : type(type) {}
+    DSStatus(unsigned int type) : type(type) { }
+
     ~DSStatus() = default;
 };
 

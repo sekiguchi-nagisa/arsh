@@ -130,7 +130,7 @@ void IntValueNode::setType(DSType *type) {
 
 void IntValueNode::dump(Writer &writer) const {
     WRITE_PRIM(tempValue);
-    if (this->type == 0) {
+    if(this->type == 0) {
         writer.write(NAME(value), "(null)");
     } else {
         Int_Object *obj = TYPE_AS(Int_Object, this->value);
@@ -179,7 +179,7 @@ void LongValueNode::setType(DSType *type) {
 void LongValueNode::dump(Writer &writer) const {
     WRITE_PRIM(tempValue);
     WRITE_PRIM(unsignedValue);
-    if (this->type == 0) {
+    if(this->type == 0) {
         writer.write(NAME(value), "(null)");
     } else {
         Long_Object *obj = TYPE_AS(Long_Object, this->value);
@@ -216,7 +216,7 @@ void FloatValueNode::setType(DSType *type) {
 
 void FloatValueNode::dump(Writer &writer) const {
     WRITE_PRIM(tempValue);
-    if (this->type == 0) {
+    if(this->type == 0) {
         writer.write(NAME(value), "(null)");
     } else {
         Float_Object *obj = TYPE_AS(Float_Object, this->value);
@@ -259,7 +259,7 @@ void StringValueNode::setType(DSType *type) {
 }
 
 void StringValueNode::dump(Writer &writer) const {
-    if (this->type == 0) {
+    if(this->type == 0) {
         writer.write(NAME(tempValue), this->tempValue);
         writer.write(NAME(value), "");
 
@@ -300,7 +300,7 @@ StringExprNode::StringExprNode(unsigned int lineNum) :
 }
 
 StringExprNode::~StringExprNode() {
-    for (Node *e : this->nodes) {
+    for(Node *e : this->nodes) {
         delete e;
     }
     this->nodes.clear();
@@ -325,16 +325,16 @@ void StringExprNode::accept(NodeVisitor *visitor) {
 
 EvalStatus StringExprNode::eval(RuntimeContext &ctx) {
     unsigned int size = this->nodes.size();
-    if (size == 0) {
+    if(size == 0) {
         ctx.push(std::make_shared<String_Object>(this->type));
-    } else if (size == 1) {
+    } else if(size == 1) {
         EVAL(ctx, this->nodes[0]);
         if(*this->nodes[0]->getType() != *ctx.getPool().getStringType()) {
             return ctx.toInterp(this->nodes[0]->getLineNum());
         }
     } else {
         std::string str;
-        for (Node *node : this->nodes) {
+        for(Node *node : this->nodes) {
             EVAL(ctx, node);
             if(*node->getType() != *ctx.getPool().getStringType()) {
                 EvalStatus status = ctx.toInterp(node->getLineNum());
@@ -359,7 +359,7 @@ ArrayNode::ArrayNode(unsigned int lineNum, Node *node) :
 }
 
 ArrayNode::~ArrayNode() {
-    for (Node *e : this->nodes) {
+    for(Node *e : this->nodes) {
         delete e;
     }
     this->nodes.clear();
@@ -387,7 +387,7 @@ void ArrayNode::accept(NodeVisitor *visitor) {
 
 EvalStatus ArrayNode::eval(RuntimeContext &ctx) {
     auto value = std::make_shared<Array_Object>(this->type);
-    for (Node *node : this->nodes) {
+    for(Node *node : this->nodes) {
         EVAL(ctx, node);
         value->append(ctx.pop());
     }
@@ -406,11 +406,11 @@ MapNode::MapNode(unsigned int lineNum, Node *keyNode, Node *valueNode) :
 }
 
 MapNode::~MapNode() {
-    for (Node *e : this->keyNodes) {
+    for(Node *e : this->keyNodes) {
         delete e;
     }
     this->keyNodes.clear();
-    for (Node *e : this->valueNodes) {
+    for(Node *e : this->valueNodes) {
         delete e;
     }
     this->valueNodes.clear();
@@ -449,7 +449,7 @@ void MapNode::accept(NodeVisitor *visitor) {
 EvalStatus MapNode::eval(RuntimeContext &ctx) {
     auto map = std::make_shared<Map_Object>(this->type);
     unsigned int size = this->keyNodes.size();
-    for (unsigned int i = 0; i < size; i++) {
+    for(unsigned int i = 0; i < size; i++) {
         EVAL(ctx, this->keyNodes[i]);
         auto key = ctx.pop();
         EVAL(ctx, this->valueNodes[i]);
@@ -471,7 +471,7 @@ TupleNode::TupleNode(unsigned int lineNum, Node *leftNode, Node *rightNode) :
 }
 
 TupleNode::~TupleNode() {
-    for (Node *node : this->nodes) {
+    for(Node *node : this->nodes) {
         delete node;
     }
     this->nodes.clear();
@@ -496,7 +496,7 @@ void TupleNode::accept(NodeVisitor *visitor) {
 EvalStatus TupleNode::eval(RuntimeContext &ctx) {
     unsigned int size = this->nodes.size();
     auto value = std::make_shared<Tuple_Object>(this->type);
-    for (unsigned int i = 0; i < size; i++) {
+    for(unsigned int i = 0; i < size; i++) {
         EVAL(ctx, this->nodes[i]);
         value->set(i, ctx.pop());
     }
@@ -538,7 +538,7 @@ bool AssignableNode::withinInterface() const {
 }
 
 unsigned int AssignableNode::getIndex() {
-    return  this->index;
+    return this->index;
 }
 
 void AssignableNode::dump(Writer &writer) const {
@@ -571,12 +571,12 @@ void VarNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus VarNode::eval(RuntimeContext &ctx) {
-    if (this->isGlobal()) {
+    if(this->isGlobal()) {
         ctx.loadGlobal(this->getIndex());
     } else {
         ctx.loadLocal(this->getIndex());
     }
-    if (this->type != 0 && this->type->isFuncType()) {
+    if(this->type != 0 && this->type->isFuncType()) {
         ctx.peek()->setType(this->type);
     }
     return EvalStatus::SUCCESS;
@@ -644,14 +644,14 @@ void AccessNode::accept(NodeVisitor *visitor) {
 EvalStatus AccessNode::eval(RuntimeContext &ctx) {
     EVAL(ctx, this->recvNode);
 
-    switch (this->additionalOp) {
+    switch(this->additionalOp) {
     case NOP: {
         if(this->withinInterface()) {
             return ctx.loadField(this->recvNode->getType(), this->fieldName, this->type);
         }
 
         ctx.loadField(this->getIndex());
-        if (this->type != 0 && this->type->isFuncType()) {
+        if(this->type != 0 && this->type->isFuncType()) {
             ctx.peek()->setType(this->type);
         }
         break;
@@ -662,7 +662,7 @@ EvalStatus AccessNode::eval(RuntimeContext &ctx) {
         }
 
         ctx.dupAndLoadField(this->getIndex());
-        if (this->type != 0 && this->type->isFuncType()) {
+        if(this->type != 0 && this->type->isFuncType()) {
             ctx.peek()->setType(this->type);
         }
         break;
@@ -760,7 +760,7 @@ void CastNode::accept(NodeVisitor *visitor) {
 EvalStatus CastNode::eval(RuntimeContext &ctx) {
     EVAL(ctx, this->exprNode);
 
-    switch (this->opKind) {
+    switch(this->opKind) {
     case NOP:
         break;
     case INT_TO_FLOAT: {
@@ -914,7 +914,7 @@ void InstanceOfNode::accept(NodeVisitor *visitor) {
 EvalStatus InstanceOfNode::eval(RuntimeContext &ctx) {
     EVAL(ctx, this->targetNode);
 
-    switch (this->opKind) {
+    switch(this->opKind) {
     case INSTANCEOF:
         ctx.instanceOf(this->targetType);
         break;
@@ -939,7 +939,7 @@ ArgsNode::ArgsNode() :
 }
 
 ArgsNode::~ArgsNode() {
-    for (Node *node : this->nodes) {
+    for(Node *node : this->nodes) {
         delete node;
     }
     this->nodes.clear();
@@ -966,7 +966,7 @@ void ArgsNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus ArgsNode::eval(RuntimeContext &ctx) {
-    for (Node *node : this->nodes) {
+    for(Node *node : this->nodes) {
         EVAL(ctx, node);
     }
     return EvalStatus::SUCCESS;
@@ -1351,15 +1351,15 @@ EvalStatus CondOpNode::eval(RuntimeContext &ctx) {
     // eval left node
     EVAL(ctx, this->leftNode);
 
-    if (this->andOp) {   // and
-        if (TYPE_AS(Boolean_Object, ctx.peek())->getValue()) {
+    if(this->andOp) {   // and
+        if(TYPE_AS(Boolean_Object, ctx.peek())->getValue()) {
             ctx.popNoReturn();
             return this->rightNode->eval(ctx);
         } else {
             return EvalStatus::SUCCESS;
         }
     } else {    // or
-        if (TYPE_AS(Boolean_Object, ctx.peek())->getValue()) {
+        if(TYPE_AS(Boolean_Object, ctx.peek())->getValue()) {
             return EvalStatus::SUCCESS;
         } else {
             ctx.popNoReturn();
@@ -1393,18 +1393,19 @@ public:
             unsigned int size = arrayObj->getValues().size();
             if(size == 1) {
                 this->buf += TYPE_AS(String_Object, arrayObj->getValues()[0])->getValue();
-            } else for(unsigned int i = 0; i < size; i++) {
-                if(i == 0) {
-                    this->buf += TYPE_AS(String_Object, arrayObj->getValues()[i])->getValue();
-                    this->values.push_back(
-                            std::make_shared<String_Object>(this->pool->getStringType(), std::move(this->buf)));
-                    this->buf.clear();
-                } else if(i == size - 1) {
-                    this->buf += TYPE_AS(String_Object, arrayObj->getValues()[i])->getValue();
-                } else {
-                    this->values.push_back(arrayObj->getValues()[i]);
+            } else
+                for(unsigned int i = 0; i < size; i++) {
+                    if(i == 0) {
+                        this->buf += TYPE_AS(String_Object, arrayObj->getValues()[i])->getValue();
+                        this->values.push_back(
+                                std::make_shared<String_Object>(this->pool->getStringType(), std::move(this->buf)));
+                        this->buf.clear();
+                    } else if(i == size - 1) {
+                        this->buf += TYPE_AS(String_Object, arrayObj->getValues()[i])->getValue();
+                    } else {
+                        this->values.push_back(arrayObj->getValues()[i]);
+                    }
                 }
-            }
             return;
         }
 
@@ -1433,7 +1434,7 @@ CmdArgNode::CmdArgNode(Node *segmentNode) :
 }
 
 CmdArgNode::~CmdArgNode() {
-    for (Node *e : this->segmentNodes) {
+    for(Node *e : this->segmentNodes) {
         delete e;
     }
     this->segmentNodes.clear();
@@ -1485,7 +1486,7 @@ Node *CmdArgNode::compactNode(CmdArgNode *node) {
     if(node->segmentNodes.size() == 1) {
         Node *segmentNode = node->segmentNodes[0];
         if(dynamic_cast<StringValueNode *>(segmentNode) != nullptr ||
-                dynamic_cast<StringExprNode *>(segmentNode) != nullptr) {
+           dynamic_cast<StringExprNode *>(segmentNode) != nullptr) {
             node->segmentNodes[0] = nullptr;
             delete node;
             return segmentNode;
@@ -1503,12 +1504,12 @@ CmdNode::CmdNode(unsigned int lineNum, std::string &&commandName) :
 }
 
 CmdNode::~CmdNode() {
-    for (auto *e : this->argNodes) {
+    for(auto *e : this->argNodes) {
         delete e;
     }
     this->argNodes.clear();
 
-    for (auto &pair : this->redirOptions) {
+    for(auto &pair : this->redirOptions) {
         delete pair.second;
     }
     this->redirOptions.clear();
@@ -1530,7 +1531,7 @@ void CmdNode::addRedirOption(TokenKind kind, CmdArgNode *node) {
     RedirectOP op;
     switch(kind) {
 #define GEN_CASE(ENUM, STR) case REDIR_##ENUM : op = RedirectOP::ENUM; break;
-        EACH_RedirectOP(GEN_CASE)
+    EACH_RedirectOP(GEN_CASE)
 #undef GEN_CASE
     default:
         fatal("unsupported redirect op: %s\n", TO_NAME(kind));
@@ -1595,7 +1596,7 @@ PipedCmdNode::PipedCmdNode(CmdNode *node) :
 }
 
 PipedCmdNode::~PipedCmdNode() {
-    for (CmdNode *p : this->cmdNodes) {
+    for(CmdNode *p : this->cmdNodes) {
         delete p;
     }
     this->cmdNodes.clear();
@@ -1619,7 +1620,7 @@ bool PipedCmdNode::treatAsBool() {
 
 void PipedCmdNode::dump(Writer &writer) const {
     std::vector<Node *> cmdNodes;
-    for (CmdNode *node : this->cmdNodes) {
+    for(CmdNode *node : this->cmdNodes) {
         cmdNodes.push_back(node);
     }
 
@@ -1634,7 +1635,7 @@ EvalStatus PipedCmdNode::eval(RuntimeContext &ctx) {
     unsigned int size = this->cmdNodes.size();
     ProcGroup group(size);
 
-    for (unsigned int i = 0; i < size; i++) {
+    for(unsigned int i = 0; i < size; i++) {
         EVAL(ctx, this->cmdNodes[i]);
         group.addProc(i, std::dynamic_pointer_cast<ProcContext>(ctx.pop()));
     }
@@ -1658,7 +1659,7 @@ EvalStatus PipedCmdNode::eval(RuntimeContext &ctx) {
 CmdContextNode::CmdContextNode(Node *exprNode) :
         Node(exprNode->getLineNum()),
         exprNode(exprNode), attributeSet(0) {
-    if(dynamic_cast<CondOpNode*>(exprNode) != 0) {
+    if(dynamic_cast<CondOpNode *>(exprNode) != 0) {
         this->setAttribute(CONDITION);
     }
 }
@@ -1725,7 +1726,7 @@ void CmdContextNode::accept(NodeVisitor *visitor) {
 
 EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
     if(this->hasAttribute(FORK) &&
-            (this->hasAttribute(STR_CAP) || this->hasAttribute(ARRAY_CAP))) {
+       (this->hasAttribute(STR_CAP) || this->hasAttribute(ARRAY_CAP))) {
         // capture stdout
         pid_t pipefds[2];
 
@@ -1761,7 +1762,7 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
 
                         // copy to str
                         for(int i = 0; i < endIndex; i++) {
-                            str += (unsigned char)buf[i];
+                            str += (unsigned char) buf[i];
                         }
                     }
                 }
@@ -1870,7 +1871,7 @@ BlockNode::BlockNode(unsigned int lineNum) :
 }
 
 BlockNode::~BlockNode() {
-    for (Node *n : this->nodeList) {
+    for(Node *n : this->nodeList) {
         delete n;
     }
     this->nodeList.clear();
@@ -1897,12 +1898,12 @@ void BlockNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus BlockNode::eval(RuntimeContext &ctx) {
-    for (Node *node : this->nodeList) {
+    for(Node *node : this->nodeList) {
         EvalStatus status = node->eval(ctx);
-        if (!node->getType()->isVoidType()) {
+        if(!node->getType()->isVoidType()) {
             ctx.popNoReturn();
         }
-        if (status != EvalStatus::SUCCESS) {
+        if(status != EvalStatus::SUCCESS) {
             return status;
         }
     }
@@ -2160,9 +2161,9 @@ EvalStatus ForNode::eval(RuntimeContext &ctx) {
 
     CONTINUE:
     EVAL(ctx, this->condNode);
-    if (TYPE_AS(Boolean_Object, ctx.pop())->getValue()) {
+    if(TYPE_AS(Boolean_Object, ctx.pop())->getValue()) {
         EvalStatus status = this->blockNode->eval(ctx);
-        switch (status) {
+        switch(status) {
         case EvalStatus::BREAK:
             break;
         case EvalStatus::SUCCESS:
@@ -2214,9 +2215,9 @@ void WhileNode::accept(NodeVisitor *visitor) {
 EvalStatus WhileNode::eval(RuntimeContext &ctx) {
     CONTINUE:
     EVAL(ctx, this->condNode);
-    if (TYPE_AS(Boolean_Object, ctx.pop())->getValue()) {
+    if(TYPE_AS(Boolean_Object, ctx.pop())->getValue()) {
         EvalStatus status = this->blockNode->eval(ctx);
-        switch (status) {
+        switch(status) {
         case EvalStatus::BREAK:
             break;
         case EvalStatus::SUCCESS:
@@ -2267,7 +2268,7 @@ void DoWhileNode::accept(NodeVisitor *visitor) {
 EvalStatus DoWhileNode::eval(RuntimeContext &ctx) {
     CONTINUE:
     EvalStatus status = this->blockNode->eval(ctx);
-    switch (status) {
+    switch(status) {
     case EvalStatus::BREAK:
         goto BREAK;
     case EvalStatus::SUCCESS:
@@ -2278,7 +2279,7 @@ EvalStatus DoWhileNode::eval(RuntimeContext &ctx) {
     }
 
     EVAL(ctx, this->condNode);
-    if (TYPE_AS(Boolean_Object, ctx.pop())->getValue()) {
+    if(TYPE_AS(Boolean_Object, ctx.pop())->getValue()) {
         goto CONTINUE;
     }
 
@@ -2327,7 +2328,7 @@ IfNode::~IfNode() {
     this->thenNode = 0;
 
     unsigned int size = this->elifCondNodes.size();
-    for (unsigned int i = 0; i < size; i++) {
+    for(unsigned int i = 0; i < size; i++) {
         delete this->elifCondNodes[i];
         delete this->elifThenNodes[i];
     }
@@ -2367,7 +2368,7 @@ void IfNode::addElseNode(BlockNode *elseNode) {
 }
 
 BlockNode *IfNode::getElseNode() {
-    if (this->elseNode == 0) {
+    if(this->elseNode == 0) {
         this->elseNode = new BlockNode(0);
     }
     return this->elseNode;
@@ -2379,7 +2380,7 @@ void IfNode::dump(Writer &writer) const {
     WRITE(elifCondNodes);
 
     std::vector<Node *> elifThenNodes;
-    for (BlockNode *elifThenNode : this->elifThenNodes) {
+    for(BlockNode *elifThenNode : this->elifThenNodes) {
         elifThenNodes.push_back(elifThenNode);
     }
     WRITE(elifThenNodes);
@@ -2396,14 +2397,14 @@ EvalStatus IfNode::eval(RuntimeContext &ctx) {
     EVAL(ctx, this->condNode);
 
     // then block
-    if (TYPE_AS(Boolean_Object, ctx.pop())->getValue()) {
+    if(TYPE_AS(Boolean_Object, ctx.pop())->getValue()) {
         return this->thenNode->eval(ctx);
     }
 
     unsigned int size = this->elifCondNodes.size();
-    for (unsigned i = 0; i < size; i++) {    // elif
+    for(unsigned i = 0; i < size; i++) {    // elif
         EVAL(ctx, this->elifCondNodes[i]);
-        if (TYPE_AS(Boolean_Object, ctx.pop())->getValue()) {
+        if(TYPE_AS(Boolean_Object, ctx.pop())->getValue()) {
             return this->elifThenNodes[i]->eval(ctx);
         }
     }
@@ -2559,7 +2560,7 @@ TryNode::~TryNode() {
     delete this->blockNode;
     this->blockNode = 0;
 
-    for (CatchNode *n : this->catchNodes) {
+    for(CatchNode *n : this->catchNodes) {
         delete n;
     }
     this->catchNodes.clear();
@@ -2581,14 +2582,14 @@ const std::vector<CatchNode *> &TryNode::getCatchNodes() {
 }
 
 void TryNode::addFinallyNode(BlockNode *finallyNode) {
-    if (this->finallyNode != 0) {
+    if(this->finallyNode != 0) {
         delete this->finallyNode;
     }
     this->finallyNode = finallyNode;
 }
 
 BlockNode *TryNode::getFinallyNode() {
-    if (this->finallyNode == 0) {
+    if(this->finallyNode == 0) {
         this->finallyNode = new BlockNode(0);
     }
     return this->finallyNode;
@@ -2598,7 +2599,7 @@ void TryNode::dump(Writer &writer) const {
     WRITE_PTR(blockNode);
 
     std::vector<Node *> catchNodes;
-    for (CatchNode *node : this->catchNodes) {
+    for(CatchNode *node : this->catchNodes) {
         catchNodes.push_back(node);
     }
     WRITE(catchNodes);
@@ -2614,13 +2615,13 @@ EvalStatus TryNode::eval(RuntimeContext &ctx) {
     // eval try block
     EvalStatus status = this->blockNode->eval(ctx);
 
-    if (status != EvalStatus::THROW) {  // eval finally
+    if(status != EvalStatus::THROW) {  // eval finally
         EVAL(ctx, this->finallyNode);
         return status;
     } else {   // eval catch
         DSType *thrownType = ctx.getThrownObject()->getType();
-        for (CatchNode *catchNode : this->catchNodes) {
-            if (catchNode->getExceptionType()->isAssignableFrom(thrownType)) {
+        for(CatchNode *catchNode : this->catchNodes) {
+            if(catchNode->getExceptionType()->isAssignableFrom(thrownType)) {
                 ctx.loadThrownObject();
                 status = catchNode->eval(ctx);
                 // eval finally
@@ -2688,7 +2689,7 @@ void VarDeclNode::accept(NodeVisitor *visitor) {
 
 EvalStatus VarDeclNode::eval(RuntimeContext &ctx) {
     EVAL(ctx, this->initValueNode);
-    if (this->global) {
+    if(this->global) {
         ctx.storeGlobal(this->varIndex);
     } else {
         ctx.storeLocal(this->varIndex);
@@ -2703,7 +2704,7 @@ EvalStatus VarDeclNode::eval(RuntimeContext &ctx) {
 AssignNode::AssignNode(Node *leftNode, Node *rightNode, bool selfAssign) :
         Node(leftNode->getLineNum()),
         leftNode(leftNode), rightNode(rightNode), attributeSet(0) {
-    if (selfAssign) {
+    if(selfAssign) {
         setFlag(this->attributeSet, SELF_ASSIGN);
     }
 }
@@ -2762,8 +2763,8 @@ void AssignNode::accept(NodeVisitor *visitor) {
 EvalStatus AssignNode::eval(RuntimeContext &ctx) {
     AssignableNode *assignableNode = static_cast<AssignableNode *>(this->leftNode);
     unsigned int index = assignableNode->getIndex();
-    if (this->isFieldAssign()) {
-        if (this->isSelfAssignment()) {
+    if(this->isFieldAssign()) {
+        if(this->isSelfAssignment()) {
             EVAL(ctx, this->leftNode);
         } else {
             AccessNode *accessNode = static_cast<AccessNode *>(this->leftNode);
@@ -2778,16 +2779,16 @@ EvalStatus AssignNode::eval(RuntimeContext &ctx) {
         }
         ctx.storeField(index);
     } else {
-        if (this->isSelfAssignment()) {
+        if(this->isSelfAssignment()) {
             EVAL(ctx, this->leftNode);
         }
         EVAL(ctx, this->rightNode);
         VarNode *varNode = static_cast<VarNode *>(this->leftNode);
 
-        if (varNode->isEnv()) {
+        if(varNode->isEnv()) {
             ctx.exportEnv(varNode->getVarName(), index, varNode->isGlobal());
         } else {
-            if (varNode->isGlobal()) {
+            if(varNode->isGlobal()) {
                 ctx.storeGlobal(index);
             } else {
                 ctx.storeLocal(index);
@@ -2914,12 +2915,12 @@ FunctionNode::FunctionNode(unsigned int lineNum, std::string &&funcName) :
 }
 
 FunctionNode::~FunctionNode() {
-    for (VarNode *n : this->paramNodes) {
+    for(VarNode *n : this->paramNodes) {
         delete n;
     }
     this->paramNodes.clear();
 
-    for (TypeToken *t : this->paramTypeTokens) {
+    for(TypeToken *t : this->paramTypeTokens) {
         delete t;
     }
     this->paramTypeTokens.clear();
@@ -2953,7 +2954,7 @@ void FunctionNode::setReturnTypeToken(TypeToken *typeToken) {
 }
 
 TypeToken *FunctionNode::getReturnTypeToken() {
-    if (this->returnTypeToken == 0) {
+    if(this->returnTypeToken == 0) {
         this->returnTypeToken = newVoidTypeToken();
     }
     return this->returnTypeToken;
@@ -3003,7 +3004,7 @@ void FunctionNode::dump(Writer &writer) const {
     WRITE(funcName);
 
     std::vector<Node *> paramNodes;
-    for (VarNode *node : this->paramNodes) {
+    for(VarNode *node : this->paramNodes) {
         paramNodes.push_back(node);
     }
 
@@ -3200,7 +3201,7 @@ RootNode::RootNode(const char *sourceName) :
 }
 
 RootNode::~RootNode() {
-    for (Node *n : this->nodeList) {
+    for(Node *n : this->nodeList) {
         delete n;
     }
     this->nodeList.clear();
@@ -3297,7 +3298,7 @@ std::string resolveUnaryOpName(TokenKind op) {
 }
 
 std::string resolveBinaryOpName(TokenKind op) {
-    switch (op) {
+    switch(op) {
     case PLUS:
         return std::string(OP_ADD);
     case MINUS:
@@ -3337,7 +3338,7 @@ std::string resolveBinaryOpName(TokenKind op) {
 }
 
 TokenKind resolveAssignOp(TokenKind op) {
-    switch (op) {
+    switch(op) {
     case INC:
         return PLUS;
     case DEC:
@@ -3399,10 +3400,10 @@ Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode) {
     /*
      * basic assignment
      */
-    if (op == ASSIGN) {
+    if(op == ASSIGN) {
         // assign to element(actually call SET)
         MethodCallNode *indexNode = dynamic_cast<MethodCallNode *>(leftNode);
-        if (indexNode != 0 && indexNode->hasAttribute(MethodCallNode::INDEX)) {
+        if(indexNode != 0 && indexNode->hasAttribute(MethodCallNode::INDEX)) {
             indexNode->setMethodName(std::string(OP_SET));
             indexNode->getArgsNode()->addArg(rightNode);
             return indexNode;
@@ -3418,7 +3419,7 @@ Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode) {
     // assign to element
     BinaryOpNode *opNode = new BinaryOpNode(new DummyNode(), resolveAssignOp(op), rightNode);
     MethodCallNode *indexNode = dynamic_cast<MethodCallNode *>(leftNode);
-    if (indexNode != 0 && indexNode->hasAttribute(MethodCallNode::INDEX)) {
+    if(indexNode != 0 && indexNode->hasAttribute(MethodCallNode::INDEX)) {
         return new ElementSelfAssignNode(indexNode, opNode);
     } else {
         // assign to variable or field
@@ -3434,7 +3435,7 @@ Node *createIndexNode(Node *recvNode, Node *indexNode) {
 }
 
 Node *createBinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode) {
-    switch (op) {
+    switch(op) {
     case COND_OR:
         return new CondOpNode(leftNode, rightNode, false);
     case COND_AND:
@@ -3455,55 +3456,103 @@ Node *createBinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode) {
 // ##     NodeVisitor     ##
 // #########################
 
-void NodeVisitor::visitIntValueNode(IntValueNode *node)                   { this->visitDefault(node); }
-void NodeVisitor::visitLongValueNode(LongValueNode *node)                 { this->visitDefault(node); }
-void NodeVisitor::visitFloatValueNode(FloatValueNode *node)               { this->visitDefault(node); }
-void NodeVisitor::visitStringValueNode(StringValueNode *node)             { this->visitDefault(node); }
-void NodeVisitor::visitObjectPathNode(ObjectPathNode *node)               { this->visitDefault(node); }
-void NodeVisitor::visitStringExprNode(StringExprNode *node)               { this->visitDefault(node); }
-void NodeVisitor::visitArrayNode(ArrayNode *node)                         { this->visitDefault(node); }
-void NodeVisitor::visitMapNode(MapNode *node)                             { this->visitDefault(node); }
-void NodeVisitor::visitTupleNode(TupleNode *node)                         { this->visitDefault(node); }
-void NodeVisitor::visitVarNode(VarNode *node)                             { this->visitDefault(node); }
-void NodeVisitor::visitAccessNode(AccessNode *node)                       { this->visitDefault(node); }
-void NodeVisitor::visitCastNode(CastNode *node)                           { this->visitDefault(node); }
-void NodeVisitor::visitInstanceOfNode(InstanceOfNode *node)               { this->visitDefault(node); }
-void NodeVisitor::visitUnaryOpNode(UnaryOpNode *node)                     { this->visitDefault(node); }
-void NodeVisitor::visitBinaryOpNode(BinaryOpNode *node)                   { this->visitDefault(node); }
-void NodeVisitor::visitArgsNode(ArgsNode *node)                           { this->visitDefault(node); }
-void NodeVisitor::visitApplyNode(ApplyNode *node)                         { this->visitDefault(node); }
-void NodeVisitor::visitMethodCallNode(MethodCallNode *node)               { this->visitDefault(node); }
-void NodeVisitor::visitNewNode(NewNode *node)                             { this->visitDefault(node); }
-void NodeVisitor::visitGroupNode(GroupNode *node)                         { this->visitDefault(node); }
-void NodeVisitor::visitCondOpNode(CondOpNode *node)                       { this->visitDefault(node); }
-void NodeVisitor::visitCmdNode(CmdNode *node)                             { this->visitDefault(node); }
-void NodeVisitor::visitCmdArgNode(CmdArgNode *node)                       { this->visitDefault(node); }
-void NodeVisitor::visitPipedCmdNode(PipedCmdNode *node)                   { this->visitDefault(node); }
-void NodeVisitor::visitCmdContextNode(CmdContextNode *node)               { this->visitDefault(node); }
-void NodeVisitor::visitAssertNode(AssertNode *node)                       { this->visitDefault(node); }
-void NodeVisitor::visitBlockNode(BlockNode *node)                         { this->visitDefault(node); }
-void NodeVisitor::visitBreakNode(BreakNode *node)                         { this->visitDefault(node); }
-void NodeVisitor::visitContinueNode(ContinueNode *node)                   { this->visitDefault(node); }
-void NodeVisitor::visitExportEnvNode(ExportEnvNode *node)                 { this->visitDefault(node); }
-void NodeVisitor::visitImportEnvNode(ImportEnvNode *node)                 { this->visitDefault(node); }
-void NodeVisitor::visitTypeAliasNode(TypeAliasNode *node)                 { this->visitDefault(node); }
-void NodeVisitor::visitForNode(ForNode *node)                             { this->visitDefault(node); }
-void NodeVisitor::visitWhileNode(WhileNode *node)                         { this->visitDefault(node); }
-void NodeVisitor::visitDoWhileNode(DoWhileNode *node)                     { this->visitDefault(node); }
-void NodeVisitor::visitIfNode(IfNode *node)                               { this->visitDefault(node); }
-void NodeVisitor::visitReturnNode(ReturnNode *node)                       { this->visitDefault(node); }
-void NodeVisitor::visitThrowNode(ThrowNode *node)                         { this->visitDefault(node); }
-void NodeVisitor::visitCatchNode(CatchNode *node)                         { this->visitDefault(node); }
-void NodeVisitor::visitTryNode(TryNode *node)                             { this->visitDefault(node); }
-void NodeVisitor::visitVarDeclNode(VarDeclNode *node)                     { this->visitDefault(node); }
-void NodeVisitor::visitAssignNode(AssignNode *node)                       { this->visitDefault(node); }
+void NodeVisitor::visitIntValueNode(IntValueNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitLongValueNode(LongValueNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitFloatValueNode(FloatValueNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitStringValueNode(StringValueNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitObjectPathNode(ObjectPathNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitStringExprNode(StringExprNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitArrayNode(ArrayNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitMapNode(MapNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitTupleNode(TupleNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitVarNode(VarNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitAccessNode(AccessNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitCastNode(CastNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitInstanceOfNode(InstanceOfNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitUnaryOpNode(UnaryOpNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitBinaryOpNode(BinaryOpNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitArgsNode(ArgsNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitApplyNode(ApplyNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitMethodCallNode(MethodCallNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitNewNode(NewNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitGroupNode(GroupNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitCondOpNode(CondOpNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitCmdNode(CmdNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitCmdArgNode(CmdArgNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitPipedCmdNode(PipedCmdNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitCmdContextNode(CmdContextNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitAssertNode(AssertNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitBlockNode(BlockNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitBreakNode(BreakNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitContinueNode(ContinueNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitExportEnvNode(ExportEnvNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitImportEnvNode(ImportEnvNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitTypeAliasNode(TypeAliasNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitForNode(ForNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitWhileNode(WhileNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitDoWhileNode(DoWhileNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitIfNode(IfNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitReturnNode(ReturnNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitThrowNode(ThrowNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitCatchNode(CatchNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitTryNode(TryNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitVarDeclNode(VarDeclNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitAssignNode(AssignNode *node) { this->visitDefault(node); }
+
 void NodeVisitor::visitElementSelfAssignNode(ElementSelfAssignNode *node) { this->visitDefault(node); }
-void NodeVisitor::visitFunctionNode(FunctionNode *node)                   { this->visitDefault(node); }
-void NodeVisitor::visitInterfaceNode(InterfaceNode *node)                 { this->visitDefault(node); }
-void NodeVisitor::visitBindVarNode(BindVarNode *node)                     { this->visitDefault(node); }
-void NodeVisitor::visitEmptyNode(EmptyNode *node)                         { this->visitDefault(node); }
-void NodeVisitor::visitDummyNode(DummyNode *node)                         { this->visitDefault(node); }
-void NodeVisitor::visitRootNode(RootNode *node)                           { this->visitDefault(node); }
+
+void NodeVisitor::visitFunctionNode(FunctionNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitInterfaceNode(InterfaceNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitBindVarNode(BindVarNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitEmptyNode(EmptyNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitDummyNode(DummyNode *node) { this->visitDefault(node); }
+
+void NodeVisitor::visitRootNode(RootNode *node) { this->visitDefault(node); }
 
 } // namespace ast
 } // namespace ydsh

@@ -19,7 +19,9 @@
 #include "../misc/debug.h"
 
 #ifndef X_NO_DBUS
+
 #include "../dbus/DBusBind.h"
+
 #endif
 
 #include <assert.h>
@@ -340,12 +342,12 @@ void Array_Object::accept(ObjectVisitor *visitor) {
     visitor->visitArray_Object(this);
 }
 
-bool KeyCompare::operator() (const std::shared_ptr<DSObject> &x,
-                             const std::shared_ptr<DSObject> &y) const {
+bool KeyCompare::operator()(const std::shared_ptr<DSObject> &x,
+                            const std::shared_ptr<DSObject> &y) const {
     return x->equals(y);
 }
 
-std::size_t GenHash::operator() (const std::shared_ptr<DSObject> &key) const {
+std::size_t GenHash::operator()(const std::shared_ptr<DSObject> &key) const {
     return key->hash();
 }
 
@@ -546,14 +548,14 @@ void Error_Object::accept(ObjectVisitor *visitor) {
 }
 
 std::shared_ptr<Error_Object> Error_Object::newError(RuntimeContext &ctx, DSType *type,
-                                     const std::shared_ptr<DSObject> &message) {
+                                                     const std::shared_ptr<DSObject> &message) {
     auto obj = std::make_shared<Error_Object>(type, message);
     obj->createStackTrace(ctx);
     return std::move(obj);
 }
 
 std::shared_ptr<Error_Object>Error_Object::newError(RuntimeContext &ctx, DSType *type,
-                                     std::shared_ptr<DSObject> &&message) {
+                                                    std::shared_ptr<DSObject> &&message) {
     auto obj = std::make_shared<Error_Object>(type, std::move(message));
     obj->createStackTrace(ctx);
     return std::move(obj);

@@ -177,7 +177,7 @@ void Parser::alternative(const TokenKind *kinds) {
 
 // parse rule definition
 
-void Parser::parse_toplevel(RootNode & rootNode) {
+void Parser::parse_toplevel(RootNode &rootNode) {
     bool next = true;
     while(next) {
         switch(CUR_KIND()) {
@@ -512,7 +512,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
             this->expect(ELSE);
             ifNode->addElseNode(this->parse_block().release());
         }
-        return  std::move(ifNode);
+        return std::move(ifNode);
     }
     case IMPORT_ENV: {
         this->expect(IMPORT_ENV);
@@ -816,9 +816,9 @@ std::unique_ptr<Node> Parser::parse_pipedCommand() {
 
 std::unique_ptr<CmdNode> Parser::parse_command() {
     static TokenKind alters[] = {
-           EACH_LA_cmdArg(GEN_LA_ALTER)
-           EACH_LA_redir(GEN_LA_ALTER)
-           DUMMY
+            EACH_LA_cmdArg(GEN_LA_ALTER)
+            EACH_LA_redir(GEN_LA_ALTER)
+            DUMMY
     };
 
     Token token;

@@ -232,7 +232,7 @@ private:
 public:
     HandleInfoSerializer() = default;
 
-    ~HandleInfoSerializer()= default;
+    ~HandleInfoSerializer() = default;
 
     void add(HandleInfo info) {
         this->infos.push_back(info);

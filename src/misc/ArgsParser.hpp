@@ -122,14 +122,14 @@ const char *ArgsParser<OPTION_ENUM>::Option<OPTION_ENUM2>::usageSuffix = " <arg>
 
 template<typename OPTION_ENUM>
 ArgsParser<OPTION_ENUM> *ArgsParser<OPTION_ENUM>::addOption(OPTION_ENUM optionId, const char *optionSymbol,
-                                  bool hasArg, const char *description) {
+                                                            bool hasArg, const char *description) {
     this->options.push_back({optionId, optionSymbol, hasArg, description});
     return this;
 }
 
 template<typename OPTION_ENUM>
 std::vector<const char *> ArgsParser<OPTION_ENUM>::parse(int argc, char **argv,
-                                            std::vector<std::pair<OPTION_ENUM, const char *>> &cmdLines) throw(ParseError) {
+                                                         std::vector<std::pair<OPTION_ENUM, const char *>> &cmdLines) throw(ParseError) {
     static char empty[] = "";
     std::vector<const char *> restArgs;
 

@@ -44,7 +44,7 @@ RuntimeContext::RuntimeContext() :
         localStack(new std::shared_ptr<DSObject>[DEFAULT_LOCAL_SIZE]),
         localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0),
         localVarOffset(0), offsetStack(), toplevelPrinting(false), assertion(true),
-        handle_STR(0), handle_INTERP(0), handle_CMD_ARG(0),handle_bt(0),
+        handle_STR(0), handle_INTERP(0), handle_CMD_ARG(0), handle_bt(0),
         readFiles(), funcContextStack(), callStack(),
         workingDir(getCurrentWorkingDir()) {
     this->readFiles.push_back(std::string("(stdin)"));
@@ -332,7 +332,7 @@ void RuntimeContext::fillInStackTrace(std::vector<std::string> &stackTrace) {
 void RuntimeContext::printStackTop(DSType *stackTopType) {
     if(!stackTopType->isVoidType()) {
         std::cout << "(" << this->pool.getTypeName(*stackTopType)
-                            << ") " << this->pop()->toString(*this) << std::endl;
+        << ") " << this->pop()->toString(*this) << std::endl;
     }
 }
 

@@ -26,13 +26,14 @@ namespace parser_base {
 
 namespace __parser_error {
 
-template <typename T>
+template<typename T>
 class ParseError {
 protected:
     Token<T> errorToken;
 
 public:
-    ParseError(Token<T> errorToken) : errorToken(errorToken) {}
+    ParseError(Token<T> errorToken) : errorToken(errorToken) { }
+
     virtual ~ParseError() = default;
 
     const Token<T> &getErrorToken() const {
@@ -52,14 +53,15 @@ public:
     }
 };
 
-template <typename T>
+template<typename T>
 class TokenMismatchedError : public ParseError<T> {
 private:
     T expected;
 
 public:
     TokenMismatchedError(Token<T> errrorToken, T expected) :
-            ParseError<T>(errrorToken), expected(expected) {}
+            ParseError<T>(errrorToken), expected(expected) { }
+
     ~TokenMismatchedError() = default;
 
     T getExpectedKind() const {
@@ -71,24 +73,25 @@ public:
     }
 };
 
-template <typename T>
+template<typename T>
 std::ostream &operator<<(std::ostream &stream, const TokenMismatchedError<T> &e);
 
-template <typename T>
+template<typename T>
 std::ostream &operator<<(std::ostream &stream, const TokenMismatchedError<T> &e) {
     stream << "mismatched token: " << e.getTokenKind() << ", expect for" << e.getExpectedKind();
     return stream;
 }
 
 
-template <typename T>
+template<typename T>
 class NoViableAlterError : public ParseError<T> {
 private:
     std::vector<T> alters;
 
 public:
     NoViableAlterError(Token<T> errorToken, std::vector<T> &&alters) :
-            ParseError<T>(errorToken), alters(std::move(alters)) {}
+            ParseError<T>(errorToken), alters(std::move(alters)) { }
+
     ~NoViableAlterError() = default;
 
     const std::vector<T> &getAlters() const {
@@ -98,7 +101,7 @@ public:
     bool operator==(const NoViableAlterError<T> &e);
 };
 
-template <typename T>
+template<typename T>
 bool NoViableAlterError<T>::operator==(const NoViableAlterError<T> &e) {
     if(this->errorToken != e.errorToken) {
         return false;
@@ -119,10 +122,10 @@ bool NoViableAlterError<T>::operator==(const NoViableAlterError<T> &e) {
     return true;
 }
 
-template <typename T>
+template<typename T>
 std::ostream &operator<<(std::ostream &stream, const NoViableAlterError<T> &e);
 
-template <typename T>
+template<typename T>
 std::ostream &operator<<(std::ostream &stream, const NoViableAlterError<T> &e) {
     stream << "no viable alternative: " << e.getTokenKind() << ", expect for ";
     unsigned int count = 0;
@@ -136,10 +139,11 @@ std::ostream &operator<<(std::ostream &stream, const NoViableAlterError<T> &e) {
 }
 
 
-template <typename T>
+template<typename T>
 class InvalidTokenError : public ParseError<T> {
 public:
-    InvalidTokenError(Token<T> errorToken) : ParseError<T>(errorToken) {}
+    InvalidTokenError(Token<T> errorToken) : ParseError<T>(errorToken) { }
+
     ~InvalidTokenError() = default;
 
     bool operator==(const InvalidTokenError<T> &e) {
@@ -147,10 +151,10 @@ public:
     }
 };
 
-template <typename T>
+template<typename T>
 std::ostream &operator<<(std::ostream &stream, const InvalidTokenError<T> &e);
 
-template <typename T>
+template<typename T>
 std::ostream &operator<<(std::ostream &stream, const InvalidTokenError<T> &e) {
     stream << "invalid token";
     return stream;
@@ -159,7 +163,7 @@ std::ostream &operator<<(std::ostream &stream, const InvalidTokenError<T> &e) {
 } // namespace __parser_error
 
 
-template <typename T, typename LexerImpl>
+template<typename T, typename LexerImpl>
 class ParserBase {
 public:
     typedef __parser_error::ParseError<T> ParseError;
@@ -173,6 +177,7 @@ protected:
 
 public:
     ParserBase() = default;
+
     virtual ~ParserBase() = default;
 
 protected:
@@ -181,8 +186,11 @@ protected:
     }
 
     void expect(T kind, bool fetchNext = true);
+
     void expect(T kind, Token<T> &token, bool fetchNext = true);
+
     T consume();
+
     void alternativeError(std::vector<T> &&alters);
 };
 
@@ -190,7 +198,7 @@ protected:
 // ##     ParserBase     ##
 // ########################
 
-template <typename T, typename LexerImpl>
+template<typename T, typename LexerImpl>
 void ParserBase<T, LexerImpl>::expect(T kind, bool fetchNext) {
     if(this->curToken.kind != kind) {
         if(LexerImpl::isInvalidToken(this->curToken.kind)) {
@@ -203,7 +211,7 @@ void ParserBase<T, LexerImpl>::expect(T kind, bool fetchNext) {
     }
 }
 
-template <typename T, typename LexerImpl>
+template<typename T, typename LexerImpl>
 void ParserBase<T, LexerImpl>::expect(T kind, Token<T> &token, bool fetchNext) {
     if(this->curToken.kind != kind) {
         if(LexerImpl::isInvalidToken(this->curToken.kind)) {
@@ -217,14 +225,14 @@ void ParserBase<T, LexerImpl>::expect(T kind, Token<T> &token, bool fetchNext) {
     }
 }
 
-template <typename T, typename LexerImpl>
+template<typename T, typename LexerImpl>
 T ParserBase<T, LexerImpl>::consume() {
     T kind = this->curToken.kind;
     this->fetchNext();
     return kind;
 }
 
-template <typename T, typename LexerImpl>
+template<typename T, typename LexerImpl>
 void ParserBase<T, LexerImpl>::alternativeError(std::vector<T> &&alters) {
     if(LexerImpl::isInvalidToken(this->curToken.kind)) {
         throw InvalidTokenError(this->curToken);

@@ -438,7 +438,7 @@ void InterfaceType::accept(TypeVisitor *visitor) {
 // #######################
 
 ErrorType::ErrorType(DSType *superType) :
-    DSType(true, superType, false), constructorHandle() {
+        DSType(true, superType, false), constructorHandle() {
 }
 
 ErrorType::~ErrorType() {
@@ -500,7 +500,7 @@ void ErrorType::registerFuncInfo(NativeFuncInfo *info) {
 // ##     TypeTemplate     ##
 // ##########################
 
-TypeTemplate::TypeTemplate(std::string &&name, std::vector<DSType*> &&elementTypes, native_type_info_t *info) :
+TypeTemplate::TypeTemplate(std::string &&name, std::vector<DSType *> &&elementTypes, native_type_info_t *info) :
         name(std::move(name)), acceptableTypes(std::move(elementTypes)), info(info) {
 }
 
