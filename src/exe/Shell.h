@@ -75,25 +75,25 @@ public:
      */
     Shell &operator=(const Shell &shell);
 
-    ExecStatus eval(const char *line, bool zeroCopy);   // override
+    ExecStatus eval(const char *line);
 
     /**
      * fp must be opened binary mode.
      */
-    ExecStatus eval(const char *sourceName, FILE *fp); // overrie
+    ExecStatus eval(const char *sourceName, FILE *fp);
 
     void setErrorListener(const ErrorListener *listener);
-    void setLineNum(unsigned int lineNum); // override
-    unsigned int getLineNum();  // override
-    void setArguments(const std::vector<const char *> &args);   // override
+    void setLineNum(unsigned int lineNum);
+    unsigned int getLineNum();
+    void setArguments(const std::vector<const char *> &args);
 
-    void setDumpUntypedAST(bool dump);  // override
-    void setDumpTypedAST(bool dump);    // override
-    void setParseOnly(bool parseOnly);  // override
-    void setAssertion(bool assertion); // override
-    void setToplevelprinting(bool print);   // override
+    void setDumpUntypedAST(bool dump);
+    void setDumpTypedAST(bool dump);
+    void setParseOnly(bool parseOnly);
+    void setAssertion(bool assertion);
+    void setToplevelprinting(bool print);
 
-    const std::string &getWorkingDir(); // override
+    const std::string &getWorkingDir();
 
     /**
      * get exit status of recently executed command.(also exit command)

@@ -93,7 +93,7 @@ static int createStatus(ExecStatus s, Shell *shell, DSStatus **status) {
 }
 
 int DSContext_eval(DSContext *ctx, const char *source, DSStatus **status) {
-    ExecStatus s = ctx->shell->eval(source, true);
+    ExecStatus s = ctx->shell->eval(source);
     return createStatus(s, ctx->shell, status); //FIXME:
 }
 

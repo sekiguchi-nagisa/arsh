@@ -29,8 +29,8 @@ Shell::Shell() :
         dumpTypedAST(false), parseOnly(false) {
 }
 
-ExecStatus Shell::eval(const char *line, bool zeroCopy) {
-    Lexer lexer(line, zeroCopy);
+ExecStatus Shell::eval(const char *line) {
+    Lexer lexer(line, true);    // zero copy buf.
     return this->eval(0, lexer);
 }
 
@@ -221,7 +221,7 @@ void Shell::initbuiltinIface() {
     /**
      * zero copy
      */
-    ExecStatus s = this->eval(builtinIface, true);
+    ExecStatus s = this->eval(builtinIface);
     if(s != ExecStatus::SUCCESS) {
         fatal("broken builtin iface\n");
     }
