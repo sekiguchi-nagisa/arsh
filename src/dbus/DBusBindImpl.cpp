@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
+#include <cassert>
+#include <cstring>
+
 #include "DBusBindImpl.h"
 #include "../core/FieldHandle.h"
 #include "../misc/debug.h"
-
-#include <assert.h>
-#include <string.h>
 
 namespace ydsh {
 namespace core {

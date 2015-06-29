@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#include <cassert>
-
 #include "RuntimeContext.h"
 #include "FieldHandle.h"
 #include "symbol.h"
@@ -444,7 +442,9 @@ void RuntimeContext::exitShell(unsigned int status) {
 
 void RuntimeContext::registerSpecialChar(const std::string &varName, unsigned int index) {
     auto pair = this->specialCharMap.insert(std::make_pair(varName, index));
-    assert(pair.second);
+    if(!pair.second) {
+        fatal("found duplicated character: %s\n", varName.c_str());
+    }
 }
 
 unsigned int RuntimeContext::getSpecialCharIndex(const char *varName) {

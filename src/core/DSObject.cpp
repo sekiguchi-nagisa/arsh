@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <cassert>
+
 #include "DSObject.h"
 #include "RuntimeContext.h"
 #include "../misc/debug.h"
@@ -23,8 +25,6 @@
 #include "../dbus/DBusBind.h"
 
 #endif
-
-#include <assert.h>
 
 namespace ydsh {
 namespace core {

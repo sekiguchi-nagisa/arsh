@@ -17,10 +17,10 @@
 #ifndef YDSH_DIRECTIVE_H
 #define YDSH_DIRECTIVE_H
 
-#include <ydsh/ydsh.h>
-
 #include <vector>
 #include <iostream>
+
+#include <ydsh/ydsh.h>
 
 namespace ydsh {
 namespace directive {

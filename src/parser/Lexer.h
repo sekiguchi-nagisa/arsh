@@ -17,8 +17,8 @@
 #ifndef PARSER_LEXER_H_
 #define PARSER_LEXER_H_
 
-#include <stdlib.h>
-#include <stdint.h>
+#include <cstdlib>
+#include <cstdint>
 #include <vector>
 
 #include "TokenKind.h"

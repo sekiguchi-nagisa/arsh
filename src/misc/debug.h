@@ -17,8 +17,8 @@
 #ifndef MISC_DEBUG_H_
 #define MISC_DEBUG_H_
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 
 #ifndef NDEBUG
 #define DEBUG_ON 1

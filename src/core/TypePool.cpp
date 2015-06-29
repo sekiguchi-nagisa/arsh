@@ -17,9 +17,7 @@
 #include "TypePool.h"
 #include "TypeLookupError.h"
 #include "bind.h"
-#include "DSType.h"
 #include "../parser/Parser.h"
-#include "../ast/Node.h"
 #include "../parser/TypeChecker.h"
 #include "RuntimeContext.h"
 

@@ -17,10 +17,10 @@
 #ifndef CORE_BUILTIN_CPP_
 #define CORE_BUILTIN_CPP_
 
+#include <cmath>
+
 #include "RuntimeContext.h"
 #include "DSObject.h"
-
-#include <math.h>
 
 // helper macro
 #define LOCAL(index) (ctx.getLocal(index))

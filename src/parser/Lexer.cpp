@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <math.h>
+#include <cmath>
 
 #include "../misc/debug.h"
 #include "../misc/num.h"

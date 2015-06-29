@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-#include <core/handle_info.h>
-#include <misc/debug.h>
-#include <DescLexer.h>
-
 #include <stdarg.h>
+
 #include <fstream>
 #include <iostream>
 #include <memory>
 #include <unordered_map>
+
+#include <core/handle_info.h>
+#include <misc/debug.h>
+#include <DescLexer.h>
 
 namespace {
 

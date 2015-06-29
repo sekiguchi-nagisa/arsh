@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+#include <unistd.h>
+#include <sys/wait.h>
+
+#include <cassert>
+
 #include "../core/symbol.h"
 #include "../core/DSObject.h"
 #include "../core/RuntimeContext.h"
@@ -21,11 +26,6 @@
 #include "../core/FieldHandle.h"
 #include "../misc/debug.h"
 #include "dump.h"
-
-#include <assert.h>
-
-#include <unistd.h>
-#include <sys/wait.h>
 
 // helper macro
 #define EVAL(ctx, node) \

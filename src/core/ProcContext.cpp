@@ -17,7 +17,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <stdlib.h>
+
+#include <cstdlib>
 
 #include "RuntimeContext.h"
 #include "ProcContext.h"

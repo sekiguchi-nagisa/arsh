@@ -19,6 +19,7 @@
 
 #include <vector>
 #include <ostream>
+
 #include "LexerBase.hpp"
 
 namespace ydsh {

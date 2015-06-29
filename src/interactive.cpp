@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-#include <string>
-#include <string.h>
 #include <signal.h>
 #include <setjmp.h>
 
 extern "C" {
 #include <histedit.h>
 }
+
+#include <cstring>
+#include <string>
 
 #include <ydsh/ydsh.h>
 #include "misc/debug.h"

@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
+#include <iostream>
+#include <cxxabi.h>
+
 #include "dump.h"
 #include "../ast/Node.h"
 #include "../core/TypePool.h"
 #include "../core/FieldHandle.h"
 #include "../misc/debug.h"
-
-#include <iostream>
-#include <cxxabi.h>
 
 #define OUT *(this->stream)
 

@@ -18,6 +18,7 @@
 #define CORE_DSOBJECT_H_
 
 #include <memory>
+
 #include "../ast/Node.h"
 #include "DSType.h"
 

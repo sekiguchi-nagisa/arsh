@@ -17,11 +17,11 @@
 #ifndef CORE_RUNTIMECONTEXT_H_
 #define CORE_RUNTIMECONTEXT_H_
 
-#include "DSObject.h"
-#include "TypePool.h"
-
 #include <vector>
 #include <iostream>
+
+#include "DSObject.h"
+#include "TypePool.h"
 
 namespace ydsh {
 namespace core {

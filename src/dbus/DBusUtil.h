@@ -16,13 +16,13 @@
 #ifndef YDSH_DBUSUTIL_H
 #define YDSH_DBUSUTIL_H
 
-#include "../core/DSType.h"
-#include "../core/DSObject.h"
-#include "../core/TypePool.h"
-
 extern "C" {
 #include <dbus/dbus.h>
 }
+
+#include "../core/DSType.h"
+#include "../core/DSObject.h"
+#include "../core/TypePool.h"
 
 namespace ydsh {
 namespace core {

@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
+#include <cassert>
+
 #include "FieldHandle.h"
 #include "DSType.h"
-#include "TypePool.h"
 #include "../misc/debug.h"
-
-#include <assert.h>
 
 namespace ydsh {
 namespace core {

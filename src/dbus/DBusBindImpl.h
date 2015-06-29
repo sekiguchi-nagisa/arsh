@@ -17,11 +17,11 @@
 #ifndef DBUS_DBUSBIND_H
 #define DBUS_DBUSBIND_H
 
+#include <unordered_set>
+
 #include "../core/DSObject.h"
 #include "../core/RuntimeContext.h"
 #include "DBusUtil.h"
-
-#include <unordered_set>
 
 namespace ydsh {
 namespace core {
