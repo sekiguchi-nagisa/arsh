@@ -53,7 +53,7 @@ unsigned int Shell::getLineNum() {
 
 void Shell::setArguments(const std::vector<const char *> &args) {
     unsigned int size = args.size();
-    this->ctx.setScriptName(args[0]);
+    this->ctx.updateScriptName(args[0]);
     for(unsigned int i = 1; i < size; i++) {
         this->ctx.addScriptArg(args[i]);
     }
@@ -173,9 +173,9 @@ void Shell::initBuiltinVar() {
     rootNode.addNode(new BindVarNode("false", this->ctx.getFalseObj()));
 
     // register special char
-    rootNode.addNode(new BindVarNode("0", this->ctx.getScriptName()));
-    rootNode.addNode(new BindVarNode("@", this->ctx.getScriptArgs()));
-    rootNode.addNode(new BindVarNode("?", this->ctx.getExitStatus()));
+    rootNode.addNode(new BindVarNode("0", this->ctx.getScriptName(), true));
+    rootNode.addNode(new BindVarNode("@", this->ctx.getScriptArgs(), true));
+    rootNode.addNode(new BindVarNode("?", this->ctx.getExitStatus(), true));
 
     // register DBus management object
     rootNode.addNode(new BindVarNode("DBus", this->ctx.getDBus()));

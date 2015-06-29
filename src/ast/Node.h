@@ -1459,9 +1459,10 @@ private:
     std::string varName;
     unsigned int varIndex;
     std::shared_ptr<DSObject> value;
+    bool updatable;
 
 public:
-    BindVarNode(const char *name, const std::shared_ptr<DSObject> &value);
+    BindVarNode(const char *name, const std::shared_ptr<DSObject> &value, bool updatable = false);
     ~BindVarNode() = default;
 
     const std::string &getVarName();

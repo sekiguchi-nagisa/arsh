@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <cassert>
+
 #include "RuntimeContext.h"
 #include "FieldHandle.h"
 #include "symbol.h"
@@ -46,7 +48,7 @@ RuntimeContext::RuntimeContext() :
         localVarOffset(0), offsetStack(), toplevelPrinting(false), assertion(true),
         handle_STR(0), handle_INTERP(0), handle_CMD_ARG(0), handle_bt(0),
         readFiles(), funcContextStack(), callStack(),
-        workingDir(getCurrentWorkingDir()) {
+        workingDir(getCurrentWorkingDir()), specialCharMap() {
     this->readFiles.push_back(std::string("(stdin)"));
 }
 
@@ -74,8 +76,10 @@ std::string RuntimeContext::getIfaceDir() {
     return root;
 }
 
-void RuntimeContext::setScriptName(const char *name) {
+void RuntimeContext::updateScriptName(const char *name) {
     this->scriptName = std::make_shared<String_Object>(this->pool.getStringType(), std::string(name));
+    unsigned int index = this->getSpecialCharIndex("0");
+    this->storeGlobal(index, this->scriptName);
 }
 
 void RuntimeContext::addScriptArg(const char *arg) {
@@ -429,11 +433,26 @@ const char *RuntimeContext::registerSourceName(const char *sourceName) {
 
 void RuntimeContext::updateExitStatus(unsigned int status) {
     this->exitStatus = std::make_shared<Int_Object>(this->pool.getInt32Type(), status);
+    unsigned int index = this->getSpecialCharIndex("?");
+    this->storeGlobal(index, this->exitStatus);
 }
 
 void RuntimeContext::exitShell(unsigned int status) {
     this->updateExitStatus(status);
     this->throwError(this->pool.getShellExit(), "exit shell by exit command");
+}
+
+void RuntimeContext::registerSpecialChar(const std::string &varName, unsigned int index) {
+    auto pair = this->specialCharMap.insert(std::make_pair(varName, index));
+    assert(pair.second);
+}
+
+unsigned int RuntimeContext::getSpecialCharIndex(const char *varName) {
+    auto iter = this->specialCharMap.find(varName);
+    if(iter == this->specialCharMap.end()) {
+        fatal("undefined special character: %s\n", varName);
+    }
+    return iter->second;
 }
 
 } // namespace core

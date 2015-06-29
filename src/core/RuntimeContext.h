@@ -149,6 +149,11 @@ private:
 
     std::string workingDir;
 
+    /**
+     * contains special character index.
+     */
+    std::unordered_map<std::string, unsigned int> specialCharMap;
+
     static const char *configRootDir;
     static const char *typeDefDir;
 
@@ -186,7 +191,7 @@ public:
         return this->exitStatus;
     }
 
-    void setScriptName(const char *name);
+    void updateScriptName(const char *name);
 
     const std::shared_ptr<DBus_Object> &getDBus() {
         return this->dbus;
@@ -479,6 +484,9 @@ public:
     void updateExitStatus(unsigned int status);
 
     void exitShell(unsigned int status);
+
+    void registerSpecialChar(const std::string &varName, unsigned int index);
+    unsigned int getSpecialCharIndex(const char *varName);
 };
 
 } // namespace core
