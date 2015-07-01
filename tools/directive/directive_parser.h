@@ -19,6 +19,7 @@
 
 #include <type_traits>
 #include <memory>
+#include <unordered_map>
 
 #include "directive.h"
 #include <parser/Lexer.h>
@@ -45,9 +46,68 @@ struct NodeVisitor {
     virtual void visitArrayNode(ArrayNode &node) = 0;
 };
 
+class TypeImpl {
+private:
+    std::string name;
+    std::vector<std::shared_ptr<TypeImpl>> childs;
+
+public:
+    TypeImpl(const char *name, unsigned int childSize) : name(name), childs(childSize) { }
+    ~TypeImpl() = default;
+
+    const std::string &getName() const {
+        return this->name;
+    }
+
+    const std::vector<std::shared_ptr<TypeImpl>> &getChilds() const {
+        return this->childs;
+    }
+
+    std::string getRealName();
+
+    bool operator==(const TypeImpl &t) const;
+
+    bool operator!=(const TypeImpl &t) const {
+        return !(*this == t);
+    }
+
+    static std::shared_ptr<TypeImpl> create(const char *name);
+    static std::shared_ptr<TypeImpl> create(const char *name, const std::shared_ptr<TypeImpl> &child);
+};
+
+typedef std::shared_ptr<TypeImpl> Type;
+
+class TypeEnv {
+private:
+    std::unordered_map<std::string, Type> typeMap;
+
+public:
+    TypeEnv();
+    ~TypeEnv() = default;
+
+    const Type &getType(const std::string &name);
+
+    const Type &getIntType() {
+        return this->getType(std::string("Int"));
+    }
+
+    const Type &getStringType() {
+        return this->getType(std::string("String"));
+    }
+
+    const Type &getArrayType(const Type &elementType);
+
+private:
+    const Type &addType(Type &&type);
+    const Type &addType(std::string &&name, Type &&type);
+    bool hasType(const std::string &name);
+};
+
+
 class Node {
 protected:
     Token token;
+    Type type;
 
 public:
     Node(const Token &token) : token(token) {}
@@ -55,6 +115,14 @@ public:
 
     const Token &getToken() const {
         return this->token;
+    }
+
+    const Type &getType() const {
+        return this->type;
+    }
+
+    void setType(const Type &type) {
+        this->type = type;
     }
 
     virtual void accept(NodeVisitor &visitor) = 0;
@@ -171,26 +239,6 @@ public:
     }
 };
 
-template <typename T>
-bool isType(const Node &node);
-
-template <typename T>
-bool isType(const Node &node) {
-    static_assert(std::is_base_of<Node, T>::value, "not derived type");
-
-    return dynamic_cast<const T *>(&node) != nullptr;
-}
-
-template <typename T>
-bool isType(const std::unique_ptr<Node> &node);
-
-template <typename T>
-bool isType(const std::unique_ptr<Node> &node) {
-    static_assert(std::is_base_of<Node, T>::value, "not derived type");
-
-    return dynamic_cast<T *>(node.get()) != nullptr;
-}
-
 
 class SemanticError {
 private:
@@ -234,27 +282,18 @@ private:
     void parse_array(std::unique_ptr<Node> &node);
 };
 
+struct AttributeHandler {
+    virtual void operator()(Node &node, Directive &d) = 0;
+};
+
 class DirectiveInitializer : public NodeVisitor {
 private:
-    /**
-     * not delete it
-     */
-    Directive *directive;
-
-    /**
-     * contains currently processing attribute token.
-     */
-    const Token *token;
-
-    /**
-     * contains currently processing attribute name.
-     */
-    const std::string *name;
-
-    bool inArray;
+    TypeEnv env;
+    typedef std::pair<Type, AttributeHandler *> Handler;
+    std::unordered_map<std::string, Handler> handlerMap;
 
 public:
-    DirectiveInitializer(): directive(), token(), name(), inArray(false) {}
+    DirectiveInitializer() = default;
     ~DirectiveInitializer() = default;
 
     /**
@@ -269,9 +308,16 @@ public:
     void visitArrayNode(ArrayNode &node);   // override
 
 private:
-    unsigned int resolveStatus(const StringNode &node);
-    void raiseAttributeError();
+    Type checkType(Node &node);
+    Type checkType(const Type &requiredType, Node &node);
+    void addHandler(const char *attributeName, const Type &type, AttributeHandler &handler);
+
+    /**
+     * if not found corresponding handler, return null.
+     */
+    const std::pair<Type, AttributeHandler *> *lookupHandler(const std::string &name);
 };
+
 
 } // namespace directive
 } // namespace ydsh

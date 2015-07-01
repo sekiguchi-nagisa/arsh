@@ -23,6 +23,105 @@
 namespace ydsh {
 namespace directive {
 
+// ######################
+// ##     TypeImpl     ##
+// ######################
+
+std::string TypeImpl::getRealName() {
+    if(this->childs.size() == 0) {
+        return this->name;
+    }
+
+    std::string str(this->name);
+    str += "<";
+    unsigned int size = this->childs.size();
+    for(unsigned int i = 0; i < size; i++) {
+        if(i > 0) {
+            str += ",";
+        }
+        str += this->childs[i]->getRealName();
+    }
+    str += ">";
+    return std::move(str);
+}
+
+bool TypeImpl::operator==(const TypeImpl &t) const {
+    // check name
+    if(this->getName() != t.getName()) {
+        return false;
+    }
+
+    // check child size
+    unsigned int size = this->getChilds().size();
+    if(size != t.getChilds().size()) {
+        return false;
+    }
+
+    // check child
+    for(unsigned int i = 0; i < size; i++) {
+        if(*this->getChilds()[i] != *t.getChilds()[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+std::shared_ptr<TypeImpl> TypeImpl::create(const char *name) {
+    return std::make_shared<TypeImpl>(name, 0);
+}
+
+std::shared_ptr<TypeImpl> TypeImpl::create(const char *name, const std::shared_ptr<TypeImpl> &child) {
+    auto value(std::make_shared<TypeImpl>(name, 1));
+    value->childs[0] = child;
+    return std::move(value);
+}
+
+// #####################
+// ##     TypeEnv     ##
+// #####################
+
+TypeEnv::TypeEnv() : typeMap() {
+    this->addType(TypeImpl::create("Int"));
+    this->addType(TypeImpl::create("String"));
+}
+
+const Type &TypeEnv::getType(const std::string &name) {
+    auto iter = this->typeMap.find(name);
+    if(iter == this->typeMap.end()) {
+        fatal("undefined type: %s\n", name.c_str());
+    }
+    return iter->second;
+}
+
+const Type &TypeEnv::getArrayType(const Type &elementType) {
+    std::string name("Array<");
+    name += elementType->getRealName();
+    name += ">";
+
+    if(this->hasType(name)) {
+        return this->getType(name);
+    }
+    return addType(std::move(name), TypeImpl::create("Array", elementType));
+}
+
+const Type &TypeEnv::addType(Type &&type) {
+    std::string name(type->getRealName());
+    return this->addType(std::move(name), std::move(type));
+}
+
+const Type &TypeEnv::addType(std::string &&name, Type &&type) {
+    auto pair = this->typeMap.insert(std::make_pair(std::move(name), std::move(type)));
+    if(!pair.second) {
+        fatal("found duplicated type: %s\n", pair.first->first.c_str());
+    }
+    return pair.first->second;
+}
+
+bool TypeEnv::hasType(const std::string &name) {
+    auto iter = this->typeMap.find(name);
+    return iter != this->typeMap.end();
+}
+
 
 // #############################
 // ##     DirectiveParser     ##
@@ -197,77 +296,26 @@ void DirectiveParser::parse_array(std::unique_ptr<Node> &node) {
     node = std::move(arrayNode);
 }
 
-// ##################################
-// ##     DirectiveInitializer     ##
-// ##################################
-
-bool DirectiveInitializer::operator()(const std::unique_ptr<DirectiveNode> &node, Directive &d) {
-    this->directive = &d;
-
-    node->accept(*this);
-    return true;
+template <typename T>
+T *cast(Node &node) {
+    static_assert(std::is_base_of<Node, T>::value, "not derived type");
+    auto t = dynamic_cast<T *>(&node);
+    if(t == nullptr) {
+        fatal("illegal cast\n");
+    }
+    return t;
 }
 
-void DirectiveInitializer::visitDirectiveNode(DirectiveNode &node) {
-    // check name
-    if(node.getName() != "test") {
-        std::string str("unsupported directive: ");
-        str += node.getName();
-        throw SemanticError(node.getToken(), std::move(str));
+
+// for attribute initialization
+struct StatusHandler : public AttributeHandler {
+    void operator()(Node &node, Directive &d) { // override
+        d.setStatus(cast<NumberNode>(node)->getValue());
     }
+};
 
-    for(auto &e : node.getNodes()) {
-        e->accept(*this);
-    }
-}
-
-void DirectiveInitializer::visitAttributeNode(AttributeNode &node) {
-    this->token = &node.getToken();
-    this->name = &node.getName();
-
-    node.getAttrNode()->accept(*this);
-}
-
-void DirectiveInitializer::visitNumberNode(NumberNode &node) {
-    if(*this->name == "status") {
-        this->directive->setStatus(node.getValue());
-        return;
-    }
-
-    this->raiseAttributeError();
-}
-
-void DirectiveInitializer::visitStringNode(StringNode &node) {
-    if(*this->name == "result") {
-        unsigned int status = this->resolveStatus(node);
-        this->directive->setResult(status);
-        return;
-    }
-    if(*this->name == "params" && this->inArray) {
-        this->directive->appendParam(std::string(node.getValue()));
-        return;
-    }
-
-    this->raiseAttributeError();
-}
-
-void DirectiveInitializer::visitArrayNode(ArrayNode &node) {
-    if(*this->name == "params") {
-        for(auto &e : node.getValues()) {
-            if(!isType<StringNode>(e)) {
-                throw SemanticError(e->getToken(), "must be string");
-            }
-            this->inArray = true;
-            e->accept(*this);
-            this->inArray = false;
-        }
-        return;
-    }
-
-    this->raiseAttributeError();
-}
-
-unsigned int DirectiveInitializer::resolveStatus(const StringNode &node) {
+struct ResultHandler : public AttributeHandler {
+    unsigned int resolveStatus(const StringNode &node) {
 #define EACH_STATUS(OP) \
     OP("SUCCESS", SUCCESS) \
     OP("success", SUCCESS) \
@@ -287,32 +335,146 @@ unsigned int DirectiveInitializer::resolveStatus(const StringNode &node) {
 
 #define MATCH(STR, KIND) if(node.getValue() == STR) { return DS_STATUS_##KIND; }
 
-    EACH_STATUS(MATCH)
+        EACH_STATUS(MATCH)
 
 #define ALTER(STR, STATUS) alters.push_back(std::string(STR));
 
-    std::vector<std::string> alters;
-    EACH_STATUS(ALTER)
+        std::vector<std::string> alters;
+        EACH_STATUS(ALTER)
 
-    std::string message("illegal status, expect for ");
-    unsigned int count = 0;
-    for(auto &e : alters) {
-        if(count++ > 0) {
-            message += ", ";
+        std::string message("illegal status, expect for ");
+        unsigned int count = 0;
+        for(auto &e : alters) {
+            if(count++ > 0) {
+                message += ", ";
+            }
+            message += e;
         }
-        message += e;
-    }
-    throw SemanticError(node.getToken(), std::move(message));
+        throw SemanticError(node.getToken(), std::move(message));
 
 #undef ALTER
 #undef MATCH
 #undef EACH_STATUS
+    }
+
+    void operator()(Node &node, Directive &d) { // override
+        d.setResult(this->resolveStatus(*cast<StringNode>(node)));
+    }
+};
+
+struct ParamsHandler : public AttributeHandler {
+    void operator()(Node &node, Directive &d) { // override
+        auto value = cast<ArrayNode>(node);
+        for(auto &e : value->getValues()) {
+            d.appendParam(std::string(cast<StringNode>(*e)->getValue()));
+        }
+    }
+};
+
+// ##################################
+// ##     DirectiveInitializer     ##
+// ##################################
+
+bool DirectiveInitializer::operator()(const std::unique_ptr<DirectiveNode> &node, Directive &d) {
+    // check name
+    if(node->getName() != "test") {
+        std::string str("unsupported directive: ");
+        str += node->getName();
+        throw SemanticError(node->getToken(), std::move(str));
+    }
+
+    // set handler
+    auto statusHandler = StatusHandler();
+    auto resultHandler = ResultHandler();
+    auto paramHandler = ParamsHandler();
+
+    this->addHandler("status", this->env.getIntType(), statusHandler);
+    this->addHandler("result", this->env.getStringType(), resultHandler);
+    this->addHandler("params", this->env.getArrayType(this->env.getStringType()), paramHandler);
+
+    for(auto &e : node->getNodes()) {
+        auto *pair = this->lookupHandler(e->getName());
+        if(pair == nullptr) {
+            std::string str("unsupported attribute: ");
+            str += e->getName();
+            throw SemanticError(e->getToken(), std::move(str));
+        }
+
+        // check type attribute
+        this->checkType(pair->first, *e->getAttrNode());
+
+        // invoke handler
+        (*pair->second)(*e->getAttrNode(), d);
+    }
+    return true;
 }
 
-void DirectiveInitializer::raiseAttributeError() {
-    std::string str("unsupported attribute: ");
-    str += *this->name;
-    throw SemanticError(*this->token, std::move(str));
+void DirectiveInitializer::visitDirectiveNode(DirectiveNode &node) {
+    fatal("unsupported: visitDirectibeNode\n");
+}
+
+void DirectiveInitializer::visitAttributeNode(AttributeNode &node) {
+    fatal("unsupported: visitAttributeNode\n");
+}
+
+void DirectiveInitializer::visitNumberNode(NumberNode &node) {
+    node.setType(this->env.getIntType());
+}
+
+void DirectiveInitializer::visitStringNode(StringNode &node) {
+    node.setType(this->env.getStringType());
+}
+
+void DirectiveInitializer::visitArrayNode(ArrayNode &node) {
+    unsigned int size = node.getValues().size();
+    auto type = this->checkType(*node.getValues()[0]);
+    for(unsigned int i = 1; i < size; i++) {
+        this->checkType(type, *node.getValues()[i]);
+    }
+    node.setType(this->env.getArrayType(type));
+}
+
+
+Type DirectiveInitializer::checkType(Node &node) {
+    auto type = node.getType();
+    if(type) {
+        return type;
+    }
+
+    node.accept(*this);
+    type = node.getType();
+
+    if(!type) {
+        throw SemanticError(node.getToken(), std::string("require type, but is null"));
+    }
+    return type;
+}
+
+Type DirectiveInitializer::checkType(const Type &requiredType, Node &node) {
+    Type type = this->checkType(node);
+    if(*type != *requiredType) {
+        std::string str("require: ");
+        str += requiredType->getRealName();
+        str += ", but is: ";
+        str += type->getRealName();
+        throw SemanticError(node.getToken(), std::move(str));
+    }
+    return type;
+}
+
+void DirectiveInitializer::addHandler(const char *attributeName, const Type &type, AttributeHandler &handler) {
+    auto pair = this->handlerMap.insert(std::make_pair(attributeName, std::make_pair(type, &handler)));
+    if(!pair.second) {
+        fatal("found duplicated handler: %s\n", attributeName);
+    }
+}
+
+const std::pair<Type, AttributeHandler *> *DirectiveInitializer::lookupHandler(const std::string &name) {
+    auto iter = this->handlerMap.find(name);
+    if(iter == this->handlerMap.end()) {
+        return nullptr;
+    }
+    return &iter->second;
 }
 
 
