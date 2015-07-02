@@ -14,27 +14,26 @@
  * limitations under the License.
  */
 
-#include <signal.h>
-#include <setjmp.h>
-
 extern "C" {
 #include <histedit.h>
 }
 
+#include <csetjmp>
+#include <csignal>
 #include <cstring>
 #include <string>
 
 #include <ydsh/ydsh.h>
 #include "misc/debug.h"
 
-namespace {
-
+// for prompt
 static bool continuation = false;
 
 static char *prompt(EditLine *el) {
     return continuation ? (char *) "> " : (char *) "ydsh> ";
 }
 
+// for signal handler
 static sigjmp_buf jmp_ctx;
 static volatile sig_atomic_t gotsig = 0;
 
@@ -42,35 +41,6 @@ static void handler(int num) {
     gotsig = num;
     siglongjmp(jmp_ctx, 1);
 }
-
-class Terminal {
-private:
-    EditLine *el;
-    History *ydsh_history;
-    HistEvent event;
-
-    /**
-     * contains previous read line.
-     */
-    std::string lineBuf;
-
-public:
-    explicit Terminal(const char *progName);
-
-    ~Terminal();
-
-    /**
-     * not delete return value.
-     * return null if reach end of file or occurs error.
-     * skip white space and empty string.
-     */
-    const char *readLine();
-
-private:
-    const char *readLineImpl();
-
-    void addHistory();
-};
 
 static void setupSignalHandler() {
     // set sigint
@@ -95,31 +65,39 @@ static void setupSignalHandler() {
     sigaction(SIGTSTP, &ignore_act, NULL);  //FIXME: background job
 }
 
-Terminal::Terminal(const char *progName) :
-        el(0), ydsh_history(0), event(), lineBuf() {
+// for editline
+static EditLine *el;
+static History *ydsh_history;
+static HistEvent event;
+
+// contains previous read line
+std::string lineBuf;
+
+static void initEditLine(const char *progName) {
     setupSignalHandler();
 
-    this->el = el_init(progName, stdin, stdout, stderr);
-    el_set(this->el, EL_PROMPT, prompt);
-    el_set(this->el, EL_EDITOR, "emacs");
-    el_set(this->el, EL_SIGNAL, 1);
+    el = el_init(progName, stdin, stdout, stderr);
+    el_set(el, EL_PROMPT, prompt);
+    el_set(el, EL_EDITOR, "emacs");
+    el_set(el, EL_SIGNAL, 1);
 
-    this->ydsh_history = history_init();
-    if(this->ydsh_history == 0) {
+    ydsh_history = history_init();
+    if(ydsh_history == 0) {
         fatal("editline history initialization failed\n");
     }
 
-    history(this->ydsh_history, &this->event, H_SETSIZE, 200);
-    el_set(el, EL_HIST, history, this->ydsh_history);
+    history(ydsh_history, &event, H_SETSIZE, 200);
+    el_set(el, EL_HIST, history, ydsh_history);
 }
 
-Terminal::~Terminal() {
-    history_end(this->ydsh_history);
-    el_end(this->el);
+static void endEditLine() {
+    history_end(ydsh_history);
+    el_end(el);
 }
+
 
 static inline bool isSkipLine(const char *line, int count) {
-    if(line == 0) {
+    if(line == nullptr) {
         return false;
     }
     for(int i = 0; i < count; i++) {
@@ -149,7 +127,28 @@ static bool checkLineContinuation(const char *line) {
     return false;
 }
 
-const char *Terminal::readLine() {
+static void addHistory() {
+    std::string target("\\\n");
+    std::string buf(lineBuf);
+    std::string::size_type pos = buf.find(target);
+    while(pos != std::string::npos) {
+        buf.replace(pos, target.size(), "");
+        pos = buf.find(target, pos);
+    }
+    history(ydsh_history, &event, H_ENTER, buf.c_str());
+}
+
+static const char *readLineImpl() {
+    int count;
+    const char *line;
+
+    do {
+        line = el_gets(el, &count);
+    } while(isSkipLine(line, count));
+    return line;
+}
+
+static const char *readLine() {
     if(sigsetjmp(jmp_ctx, 1) != 0) {
         if(gotsig == SIGINT) {
             printf("\n");
@@ -157,67 +156,45 @@ const char *Terminal::readLine() {
         gotsig = 0;
     }
 
-    this->lineBuf = std::string();
+    lineBuf = std::string();
     const char *line;
     do {
-        line = this->readLineImpl();
+        line = readLineImpl();
         if(line == 0) {
             return line;
         }
-        this->lineBuf += line;
+        lineBuf += line;
         continuation = true;
     } while(checkLineContinuation(line));
 
     continuation = false;
-    this->addHistory();
-    return this->lineBuf.c_str();
+    addHistory();
+    return lineBuf.c_str();
 }
 
-const char *Terminal::readLineImpl() {
-    int count;
-    const char *line;
-
-    do {
-        line = el_gets(this->el, &count);
-    } while(isSkipLine(line, count));
-    return line;
-}
-
-void Terminal::addHistory() {
-    std::string target("\\\n");
-    std::string buf(this->lineBuf);
-    std::string::size_type pos = buf.find(target);
-    while(pos != std::string::npos) {
-        buf.replace(pos, target.size(), "");
-        pos = buf.find(target, pos);
-    }
-    history(this->ydsh_history, &this->event, H_ENTER, buf.c_str());
-}
-
-} // namespace
-
-void exec_interactive(const char *progName, DSContext *ctx) {
-    Terminal term(progName);
+void exec_interactive(const char *progName, DSContext *ctx) {   // never return
+    initEditLine(progName);
     DSContext_setOption(ctx, DS_OPTION_TOPLEVEL);
 
-    unsigned int lineNum = 1;
     const char *line;
+    int exitStatus = 0;
 
-    while((line = term.readLine()) != 0) {
+    for(unsigned int lineNum = 1; (line = readLine()) != 0; lineNum = DSContext_getLineNum(ctx)) {
         DSContext_setLineNum(ctx, lineNum);
         DSStatus *status;
         int ret = DSContext_eval(ctx, line, &status);
         unsigned int type = DSStatus_getType(status);
-        if(type == DS_STATUS_ASSERTION_ERROR || type == DS_STATUS_EXIT) {
-            DSStatus_free(&status);
-            DSContext_delete(&ctx);
-            exit(ret);
-        }
-        lineNum = DSContext_getLineNum(ctx);
         DSStatus_free(&status);
+        if(type == DS_STATUS_ASSERTION_ERROR || type == DS_STATUS_EXIT) {
+            exitStatus = ret;
+            goto END;
+        }
     }
     printf("\n");
+
+    END:
     DSContext_delete(&ctx);
-    exit(0);
+    endEditLine();
+    exit(exitStatus);
 }
 
