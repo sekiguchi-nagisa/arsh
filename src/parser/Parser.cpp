@@ -817,12 +817,6 @@ std::unique_ptr<Node> Parser::parse_pipedCommand() {
 }
 
 std::unique_ptr<CmdNode> Parser::parse_command() {
-    static TokenKind alters[] = {
-            EACH_LA_cmdArg(GEN_LA_ALTER)
-            EACH_LA_redir(GEN_LA_ALTER)
-            DUMMY
-    };
-
     Token token;
     this->expect(COMMAND, token);
     std::unique_ptr<CmdNode> node(new CmdNode(token.lineNum, this->lexer->toCmdArg(token, true)));
