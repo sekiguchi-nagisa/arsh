@@ -81,8 +81,8 @@ endif()
 #     build re2c    #
 #+++++++++++++++++++#
 
-set(RE2C_V "0.14.2")
-set(RE2C_URL "http://downloads.sourceforge.net/project/re2c/re2c/0.14.2/re2c-0.14.2.tar.gz?r=&ts=1427624328&use_mirror=jaist")
+set(RE2C_V "0.14.3")
+set(RE2C_URL "http://sourceforge.net/projects/re2c/files/re2c/0.14.3/re2c-0.14.3.tar.gz")
 set(RE2C_PATH ${CMAKE_CURRENT_BINARY_DIR}/re2c-${RE2C_V}.tar.gz)
 set(RE2C_DIR ${CMAKE_CURRENT_BINARY_DIR}/re2c-${RE2C_V})
 
