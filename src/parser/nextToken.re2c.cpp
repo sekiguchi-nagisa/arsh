@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+#ifdef X_TRACE_TOKEN
+#include <iostream>
+#endif
+
 #include <parser/Lexer.h>
 
 // helper macro definition.
@@ -290,10 +294,8 @@ void Lexer::nextToken(Token &token) {
     token.size = this->getPos() - startPos;
     this->prevNewLine = foundNewLine;
 #ifdef X_TRACE_TOKEN
-#include <stdio.h>
-    fprintf(stderr, "nextToken(): < kind=%s, start=%d, size=%d, text=%s >\n",
-            TO_NAME(kind), token.startPos, token.size, this->toTokenText(token).c_str());
-    fprintf(stderr, "   lexer mode: %s\n", this->getLexerModeName(YYGETCONDITION()));
+    std::cerr << "nextToken(): " << token.toString() << ", text = " << this->toTokenText(token) << std::endl;
+    std::cerr << "   lexer mode: " << this->getLexerModeName(YYGETCONDITION()) << std::endl;
 #endif
     return;
 
@@ -304,10 +306,8 @@ void Lexer::nextToken(Token &token) {
     token.size = 0;
     this->prevNewLine = foundNewLine;
 #ifdef X_TRACE_TOKEN
-#include <stdio.h>
-    fprintf(stderr, "nextToken(): < kind=%s, start=%d, size=%d, text=%s >\n",
-            TO_NAME(EOS), token.startPos, token.size, this->toTokenText(token).c_str());
-    fprintf(stderr, "   lexer mode: %s\n", this->getLexerModeName(YYGETCONDITION()));
+    std::cerr << "nextToken(): " << token.toString() << ", text = " << this->toTokenText(token) << std::endl;
+    std::cerr << "   lexer mode: " << this->getLexerModeName(YYGETCONDITION()) << std::endl;
 #endif
     return;
 }

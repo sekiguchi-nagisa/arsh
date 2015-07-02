@@ -21,6 +21,7 @@
 #include <cstring>
 #include <cassert>
 #include <string>
+#include <sstream>
 
 namespace ydsh {
 namespace parser_base {
@@ -46,16 +47,10 @@ struct Token {
 
 template<typename T>
 std::string Token<T>::toString() const {
-    std::string str("{ lineNum = ");
-    str += std::to_string(this->lineNum);
-    str += ", kind = ";
-    str += toString(this->kind);
-    str += ", startPos = ";
-    str += std::to_string(this->startPos);
-    str += ", size = ";
-    str += std::to_string(this->size);
-    str += " }";
-    return str;
+    std::ostringstream stream;
+    stream << "{ lineNum = " << this->lineNum << ", kind = "
+    << this->kind << ", startPos = " << this->startPos << ", size = " << this->size << "}";
+    return stream.str();
 }
 
 /**
