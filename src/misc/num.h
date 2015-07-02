@@ -20,6 +20,7 @@
 #include <climits>
 #include <cerrno>
 #include <cmath>
+#include <cstdlib>
 
 /**
  * if success, status is 0.
