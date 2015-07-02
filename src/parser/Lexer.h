@@ -57,17 +57,22 @@ private:
 
     bool prevNewLine;
 
+    /**
+     * only available in command mode.
+     */
+    bool prevSpace;
+
     static const char *lexerModeNames[];
 
 public:
     explicit Lexer(const char *source, bool zeroCopy = false) :
-            LexerBase(source, zeroCopy), lineNum(1), modeStack(1, yycSTMT), prevNewLine(false) {}
+            LexerBase(source, zeroCopy), lineNum(1), modeStack(1, yycSTMT), prevNewLine(false), prevSpace(false) {}
 
     /**
      * FILE must be opened with binary mode.
      */
     explicit Lexer(FILE *fp) :
-            LexerBase(fp), lineNum(1), modeStack(1, yycSTMT), prevNewLine(false) {}
+            LexerBase(fp), lineNum(1), modeStack(1, yycSTMT), prevNewLine(false), prevSpace(false) {}
 
     ~Lexer() = default;
 
@@ -75,6 +80,10 @@ public:
 
     bool isPrevNewLine() {
         return this->prevNewLine;
+    }
+
+    bool isPrevSpace() {
+        return this->prevSpace;
     }
 
     void setLineNum(unsigned int lineNum) {

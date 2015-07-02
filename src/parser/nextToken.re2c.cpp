@@ -68,6 +68,13 @@
         SKIP();\
     } while(0)
 
+#define FIND_SPACE() \
+    do {\
+        foundSpace = true;\
+        SKIP();\
+    } while(0)
+
+
 
 #define YYGETCONDITION() this->modeStack.back()
 
@@ -108,8 +115,9 @@ void Lexer::nextToken(Token &token) {
       INNER_NAME = APPLIED_NAME | '${' VAR_NAME '}';
       INNER_SPECIAL_NAME = SPECIAL_NAME | '${' SPECIAL_NAMES '}';
 
-      CMD_START_CHAR = "\\" [^\r\n] | [^ \t\r\n;'"`|&<>(){}$#![\]0-9\000];
-      CMD_CHAR       = "\\" . | "\\" [\r\n] | [^ \t\r\n;'"`|&<>(){}$#![\]\000];
+      CMD_START_CHAR     = "\\" [^\r\n] | [^ \t\r\n;'"`|&<>(){}$#![\]0-9\000];
+      CMD_CHAR           = "\\" . | "\\" [\r\n] | [^ \t\r\n;'"`|&<>(){}$#![\]\000];
+      CMD_ARG_START_CHAR = "\\" . | [^ \t\r\n;'"`|&<>(){}$#![\]\000];
 
       LINE_END = ";";
       NEW_LINE = [\r\n][ \t\r\n]*;
@@ -118,6 +126,7 @@ void Lexer::nextToken(Token &token) {
     */
 
     bool foundNewLine = false;
+    bool foundSpace = false;
 
     INIT:
     unsigned int n = this->lineNum;
@@ -244,14 +253,13 @@ void Lexer::nextToken(Token &token) {
       <DSTRING,CMD> "${"       { PUSH_MODE(EXPR); RET(START_INTERP); }
       <DSTRING,CMD> "$("       { PUSH_MODE(STMT); RET(START_SUB_CMD); }
 
-      <CMD> CMD_CHAR+          { COUNT_NEW_LINE();  RET(CMD_ARG_PART); }
+      <CMD> CMD_ARG_START_CHAR CMD_CHAR*
+                               { COUNT_NEW_LINE();  RET(CMD_ARG_PART); }
       <CMD> STRING_LITERAL     { RET(STRING_LITERAL); }
       <CMD> ["]                { PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
       <CMD> ")"                { POP_MODE(); POP_MODE(); RET(RP); }
-      <CMD> [ \t]+ / "&>"      { RET(CMD_SEP); }
-      <CMD> [ \t]+ / ([|&] | LINE_END | NEW_LINE | ')' | '#')
-                               { SKIP(); }
-      <CMD> [ \t]+             { RET(CMD_SEP); }
+      <CMD> [ \t]+             { FIND_SPACE(); }
+      <CMD> "\\" [\r\n]        { INC_LINE_NUM(); FIND_SPACE(); }
 
       <CMD> "<"                { RET(REDIR_IN_2_FILE); }
       <CMD> (">" | "1>")       { RET(REDIR_OUT_2_FILE); }
@@ -293,6 +301,7 @@ void Lexer::nextToken(Token &token) {
     token.startPos = startPos;
     token.size = this->getPos() - startPos;
     this->prevNewLine = foundNewLine;
+    this->prevSpace = foundSpace;
 #ifdef X_TRACE_TOKEN
     std::cerr << "nextToken(): " << token.toString() << ", text = " << this->toTokenText(token) << std::endl;
     std::cerr << "   lexer mode: " << this->getLexerModeName(YYGETCONDITION()) << std::endl;
@@ -305,6 +314,7 @@ void Lexer::nextToken(Token &token) {
     token.startPos = this->limit - this->buf;
     token.size = 0;
     this->prevNewLine = foundNewLine;
+    this->prevSpace = foundSpace;
 #ifdef X_TRACE_TOKEN
     std::cerr << "nextToken(): " << token.toString() << ", text = " << this->toTokenText(token) << std::endl;
     std::cerr << "   lexer mode: " << this->getLexerModeName(YYGETCONDITION()) << std::endl;

@@ -129,7 +129,6 @@
     TOKEN(START_INTERP) \
     /* command argument */\
     TOKEN(CMD_ARG_PART) \
-    TOKEN(CMD_SEP) \
     /* redir op */\
     TOKEN(REDIR_IN_2_FILE) \
     TOKEN(REDIR_OUT_2_FILE) \

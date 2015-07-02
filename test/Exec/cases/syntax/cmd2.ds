@@ -1,0 +1,4 @@
+echo he ds | #fjierjfreoi
+    grep ds;
+
+assert($? == 0)

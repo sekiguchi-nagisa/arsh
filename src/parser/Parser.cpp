@@ -25,6 +25,8 @@
 
 #define HAS_NL() this->lexer->isPrevNewLine()
 
+#define HAS_SPACE() this->lexer->isPrevSpace()
+
 #define CUR_KIND() this->curToken.kind
 
 #define GEN_LA_CASE(CASE) case CASE:
@@ -825,8 +827,8 @@ std::unique_ptr<CmdNode> Parser::parse_command() {
     this->expect(COMMAND, token);
     std::unique_ptr<CmdNode> node(new CmdNode(token.lineNum, this->lexer->toCmdArg(token, true)));
 
-    while(CUR_KIND() == CMD_SEP) {
-        this->expect(CMD_SEP);
+    bool next = true;
+    while(HAS_SPACE() && next) {
         switch(CUR_KIND()) {
         EACH_LA_cmdArg(GEN_LA_CASE) {
             node->addArgNode(this->parse_cmdArg().release());
@@ -837,8 +839,8 @@ std::unique_ptr<CmdNode> Parser::parse_command() {
             break;
         };
         default:
-            E_ALTER(alters);
-            return std::unique_ptr<CmdNode>();
+            next = false;
+            break;
         }
     }
     return node;
@@ -853,9 +855,6 @@ void Parser::parse_redirOption(std::unique_ptr<CmdNode> &node) {
     switch(CUR_KIND()) {
     EACH_LA_redirFile(GEN_LA_CASE) {
         TokenKind kind = this->consume();
-        if(CUR_KIND() == CMD_SEP) {
-            NEXT_TOKEN();
-        }
         node->addRedirOption(kind, this->parse_cmdArg().release());
         break;
     };
@@ -874,7 +873,7 @@ std::unique_ptr<CmdArgNode> Parser::parse_cmdArg() {
     std::unique_ptr<CmdArgNode> node(new CmdArgNode(this->parse_cmdArgSeg(true).release()));
 
     bool next = true;
-    while(next) {
+    while(!HAS_SPACE() && next) {
         switch(CUR_KIND()) {
         EACH_LA_cmdArg(GEN_LA_CASE) {
             node->addSegmentNode(this->parse_cmdArgSeg().release());
