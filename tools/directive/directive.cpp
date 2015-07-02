@@ -233,7 +233,7 @@ void DirectiveParser::parse_value(std::unique_ptr<Node> &value) {
 #define EACH_LA_value(OP) \
     OP(INT_LITERAL) \
     OP(STRING_LITERAL) \
-    OP(LB)
+    OP(ARRAY_OPEN)
 
 #define GEN_LA_ALTER(K) alters.push_back(K);
 
@@ -244,7 +244,7 @@ void DirectiveParser::parse_value(std::unique_ptr<Node> &value) {
     case STRING_LITERAL:
         this->parse_string(value);
         return;
-    case LB:
+    case ARRAY_OPEN:
         this->parse_array(value);
         return;
     default:
@@ -275,12 +275,12 @@ void DirectiveParser::parse_number(std::unique_ptr<Node> &node) {
 void DirectiveParser::parse_string(std::unique_ptr<Node> &node) {
     Token token;
     this->expect(STRING_LITERAL, token);
-    node.reset(new StringNode(token, this->lexer->toString(token, true)));
+    node.reset(new StringNode(token, this->lexer->toString(token)));
 }
 
 void DirectiveParser::parse_array(std::unique_ptr<Node> &node) {
     Token token;
-    this->expect(LB, token);
+    this->expect(ARRAY_OPEN, token);
     std::unique_ptr<ArrayNode> arrayNode(new ArrayNode(token));
     std::unique_ptr<Node> value;
     this->parse_value(value);
@@ -292,7 +292,7 @@ void DirectiveParser::parse_array(std::unique_ptr<Node> &node) {
         this->parse_value(value);
         arrayNode->appendNode(std::move(value));
     }
-    this->expect(RB);
+    this->expect(ARRAY_CLOSE);
     node = std::move(arrayNode);
 }
 

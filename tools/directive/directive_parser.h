@@ -22,13 +22,11 @@
 #include <unordered_map>
 
 #include "directive.h"
-#include <parser/Lexer.h>
+#include "directive_lexer.h"
 #include <parser/ParserBase.hpp>
 
 namespace ydsh {
 namespace directive {
-
-using namespace ydsh::parser;
 
 class DirectiveNode;
 class AttributeNode;
