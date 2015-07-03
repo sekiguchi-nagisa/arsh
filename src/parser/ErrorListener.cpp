@@ -28,35 +28,8 @@ namespace parser {
 
 void CommonErrorListener::displayTypeError(const std::string &sourceName,
                                            const TypeCheckError &e) const {
-    unsigned int argSize = e.getArgs().size();
-    unsigned int messageSize = e.getTemplate().size() + 1;
-    for(const std::string &arg : e.getArgs()) {
-        messageSize += arg.size();
-    }
-
-    // format error message
-    char strBuf[messageSize];
-    switch(argSize) {
-    case 0:
-        snprintf(strBuf, messageSize, e.getTemplate().c_str());
-        break;
-    case 1:
-        snprintf(strBuf, messageSize, e.getTemplate().c_str(), e.getArgs()[0].c_str());
-        break;
-    case 2:
-        snprintf(strBuf, messageSize, e.getTemplate().c_str(),
-                 e.getArgs()[0].c_str(), e.getArgs()[1].c_str());
-        break;
-    case 3:
-        snprintf(strBuf, messageSize, e.getTemplate().c_str(),
-                 e.getArgs()[0].c_str(), e.getArgs()[1].c_str(), e.getArgs()[2].c_str());
-        break;
-    default:
-        snprintf(strBuf, messageSize, "!!broken args!!");
-        break;
-    }
-
-    fprintf(stderr, "%s:%d: [semantic error] %s\n", sourceName.c_str(), e.getLineNum(), strBuf);
+    std::cerr << sourceName << ":" << e.getLineNum() << ": [semantic error] "
+    << e.getMessage() << std::endl;
 }
 
 static std::ostream &format(std::ostream &stream, const ParseError &e) {
@@ -88,7 +61,7 @@ static std::ostream &formatErrorLine(std::ostream &stream, Lexer &lexer, const T
 
 void CommonErrorListener::displayParseError(Lexer &lexer,
                                             const std::string &sourceName, const ParseError &e) const {
-    std::cerr << sourceName << ":" << e.getLineNum() << ":[syntax error] ";
+    std::cerr << sourceName << ":" << e.getLineNum() << ": [syntax error] ";
     format(std::cerr, e) << std::endl;
     formatErrorLine(std::cerr, lexer, e.getErrorToken()) << std::endl;
 }

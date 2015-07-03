@@ -75,7 +75,7 @@ public:
             TypeToken *ptr = tok.get();
             return TypeGenerator(&this->pool).generateTypeAndThrow(ptr);
         } catch(const TypeCheckError &e) {
-            std::cerr << e.getTemplate() << std::endl;
+            std::cerr << e.getMessage() << std::endl;
             return nullptr;
         }
     }

@@ -14,73 +14,97 @@
  * limitations under the License.
  */
 
+#define IN_SRC_FILE
 #include "TypeLookupError.h"
 
 namespace ydsh {
 namespace core {
 
-const static char *msgTable[] = {
-#define GEN_MSG(ENUM, MSG) MSG,
-        EACH_TL_ERROR(GEN_MSG)
+// for message
+struct MsgTuple1 {
+    const char *kindStr;
+    const char *msg1;
+};
+
+static MsgTuple1 errorTuple0[] = {
+#define GEN_MSG(ENUM, S1) {#ENUM, S1},
+        EACH_TL_ERROR0(GEN_MSG)
 #undef GEN_MSG
 };
+
+static MsgTuple1 errorTuple1[] = {
+#define GEN_MSG(ENUM, S1) {#ENUM, S1},
+        EACH_TL_ERROR1(GEN_MSG)
+#undef GEN_MSG
+};
+
+struct MsgTuple3 {
+    const char *kindStr;
+    const char *msg1;
+    const char *msg2;
+    const char *msg3;
+};
+
+static MsgTuple3 errorTuple3[] = {
+#define GEN_MSG(ENUM, S1, S2, S3) {#ENUM, S1, S2, S3},
+        EACH_TL_ERROR3(GEN_MSG)
+#undef GEN_MSG
+};
+
 
 // #############################
 // ##     TypeLookupError     ##
 // #############################
 
-TypeLookupError::TypeLookupError(ErrorKind kind) :
-        messageTemplate(msgTable[kind]), args() {
+TypeLookupError::TypeLookupError(TypeLookupError::ErrorKind0 k) :
+        kind(errorTuple0[k].kindStr), message(errorTuple0[k].msg1) {
 }
 
-const std::string &TypeLookupError::getTemplate() const {
-    return this->messageTemplate;
+TypeLookupError::TypeLookupError(TypeLookupError::ErrorKind1 k, const std::string &arg1) :
+        kind(errorTuple1[k].kindStr), message(errorTuple1[k].msg1) {
+    this->message += arg1;
 }
 
-const std::vector<std::string> &TypeLookupError::getArgs() const {
-    return this->args;
+TypeLookupError::TypeLookupError(TypeLookupError::ErrorKind3 k, const std::string &arg1,
+                                 const std::string &arg2, const std::string &arg3) :
+        kind(errorTuple3[k].kindStr), message(errorTuple3[k].msg1) {
+    this->message += arg1;
+    this->message += errorTuple3[k].msg2;
+    this->message += arg2;
+    this->message += errorTuple3[k].msg3;
+    this->message += arg3;
+
 }
 
-bool TypeLookupError::operator==(const TypeLookupError &e) {
-    // check template
-    if(this->messageTemplate != e.getTemplate()) {
-        return false;
-    }
-
-    // check arg size
-    unsigned int size = this->args.size();
-    if(size != e.getArgs().size()) {
-        return false;
-    }
-
-    // check each arg
-    for(unsigned int i = 0; i < size; i++) {
-        if(this->args[i] != e.getArgs()[i]) {
-            return false;
-        }
-    }
-    return true;
+std::ostream &operator<<(std::ostream &stream, TypeLookupError::ErrorKind0 kind) {
+    stream << errorTuple0[kind].kindStr;
+    return stream;
 }
 
-void TypeLookupError::report(ErrorKind kind) {
-    TypeLookupError error(kind);
-    throw error;
+std::ostream &operator<<(std::ostream &stream, TypeLookupError::ErrorKind1 kind) {
+    stream << errorTuple1[kind].kindStr;
+    return stream;
 }
 
-void TypeLookupError::report(ErrorKind kind, const std::string &arg1) {
-    TypeLookupError error(kind);
-    error.args.push_back(arg1);
-    throw error;
+std::ostream &operator<<(std::ostream &stream, TypeLookupError::ErrorKind3 kind) {
+    stream << errorTuple3[kind].kindStr;
+    return stream;
 }
 
-void TypeLookupError::report(ErrorKind kind, const std::string &arg1,
-                             const std::string &arg2, const std::string &arg3) {
-    TypeLookupError error(kind);
-    error.args.push_back(arg1);
-    error.args.push_back(arg2);
-    error.args.push_back(arg3);
-    throw error;
-}
+#define GEN_VAR(ENUM, S1) ErrorRaiser0 E_##ENUM = { TypeLookupError::ENUM };
+    EACH_TL_ERROR0(GEN_VAR)
+#undef GEN_VAR
+
+#define GEN_VAR(ENUM, S1) ErrorRaiser1 E_##ENUM = { TypeLookupError::ENUM };
+    EACH_TL_ERROR1(GEN_VAR)
+#undef GEN_VAR
+
+#define GEN_VAR(ENUM, S1, S2, S3) ErrorRaiser3 E_##ENUM = { TypeLookupError::ENUM };
+EACH_TL_ERROR3(GEN_VAR)
+#undef GEN_VAR
+
+
+#undef IN_SRC_FILE
 
 } // namespace core
 } // namespace ydsh

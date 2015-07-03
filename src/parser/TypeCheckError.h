@@ -22,56 +22,83 @@
 
 #include "../core/TypeLookupError.h"
 
-#define EACH_TC_ERROR(ERROR) \
-        /* zero arg */\
-        ERROR(E_Unresolved      , "having unresolved type") \
-        ERROR(E_InsideLoop      , "only available inside loop statement") \
-        ERROR(E_UnfoundReturn   , "not found return statement") \
-        ERROR(E_Unreachable     , "found unreachable code") \
-        ERROR(E_InsideFunc      , "only available inside function") \
-        ERROR(E_NotNeedExpr     , "not need expression") \
-        ERROR(E_Assignable      , "require assignable node") \
-        ERROR(E_ReadOnly        , "read only value") \
-        ERROR(E_InsideFinally   , "unavailable inside finally block") \
-        ERROR(E_UnneedNamedArg  , "not need named argument") \
-        ERROR(E_NeedNamedArg    , "need named argument") \
-        ERROR(E_NoDefaultValue  , "has no default value") \
-        /* one arg */\
-        ERROR(E_DefinedSymbol     , "already defined symbol: %s") \
-        ERROR(E_DefinedField      , "already defiend field: %s") \
-        ERROR(E_UndefinedSymbol   , "undefined symbol: %s") \
-        ERROR(E_UndefinedField    , "undefined field: %s") \
-        ERROR(E_UndefinedMethod   , "undefined method: %s") \
-        ERROR(E_UndefinedInit     , "undefined constructor: %s") \
-        ERROR(E_Unacceptable      , "unacceptable type: %s") \
-        ERROR(E_NoIterator        , "not support iterator: %s") \
-        ERROR(E_UnfoundNamedParam , "undefined parameter name: %s") \
-        ERROR(E_DupNamedArg       , "found duplicated named argument: %s") \
-        ERROR(E_UndefinedEnv      , "undefined environment variable: %s") \
-        ERROR(E_Unimplemented     , "unimplemented type checker api: %s") \
-        /* two arg */\
-        ERROR(E_Required        , "require %s, but is %s") \
-        ERROR(E_CastOp          , "unsupported cast op: %s -> %s") \
-        ERROR(E_UnaryOp         , "undefined operator: %s %s") \
-        ERROR(E_UnmatchParam    , "not match parameter, require size is %s, but is %s") \
-        /* three arg */\
-        ERROR(E_BinaryOp        , "undefined operator: %s %s %s")
+#define EACH_TC_ERROR0(E) \
+    E(Unresolved    , "having unresolved type") \
+    E(InsideLoop    , "only available inside loop statement") \
+    E(UnfoundReturn , "not found return statement") \
+    E(Unreachable   , "found unreachable code") \
+    E(InsideFunc    , "only available inside function") \
+    E(NotNeedExpr   , "not need expression") \
+    E(Assignable    , "require assignable node") \
+    E(ReadOnly      , "read only value") \
+    E(InsideFinally , "unavailable inside finally block") \
+    E(UnneedNamedArg, "not need named argument") \
+    E(NeedNamedArg  , "need named argument") \
+    E(NoDefaultValue, "has no default value")
+
+#define EACH_TC_ERROR1(E) \
+    E(DefinedSymbol    , "already defined symbol: ") \
+    E(DefinedField     , "already defiend field: ") \
+    E(UndefinedSymbol  , "undefined symbol: ") \
+    E(UndefinedField   , "undefined field: ") \
+    E(UndefinedMethod  , "undefined method: ") \
+    E(UndefinedInit    , "undefined constructor: ") \
+    E(Unacceptable     , "unacceptable type: ") \
+    E(NoIterator       , "not support iterator: ") \
+    E(UnfoundNamedParam, "undefined parameter name: ") \
+    E(DupNamedArg      , "found duplicated named argument: ") \
+    E(UndefinedEnv     , "undefined environment variable: ") \
+    E(Unimplemented    , "unimplemented type checker api: ")
+
+#define EACH_TC_ERROR2(E) \
+    E(Required    , "require ", " but is ") \
+    E(CastOp      , "unsupported cast op: ", " -> ") \
+    E(UnaryOp     , "undefined operator: ", " ") \
+    E(UnmatchParam, "not match parameter, require size is ", ", but is ")
+
+#define EACH_TC_ERROR3(E) \
+    E(BinaryOp, "undefined operator: ", " ", " ")
+
+namespace ydsh {
+namespace ast {
+
+class Node;
+
+}
+}
+
 
 namespace ydsh {
 namespace parser {
-
-using namespace ydsh::core;
 
 /**
  * for type error reporting
  */
 class TypeCheckError {
 public:
-    typedef enum {
-#define GEN_ENUM(ENUM, MSG) ENUM,
-        EACH_TC_ERROR(GEN_ENUM)
+    enum ErrorKind0 {
+#define GEN_ENUM(ENUM, S1) ENUM,
+        EACH_TC_ERROR0(GEN_ENUM)
 #undef GEN_ENUM
-    } ErrorKind;
+    };
+
+    enum ErrorKind1 {
+#define GEN_ENUM(ENUM, S1) ENUM,
+        EACH_TC_ERROR1(GEN_ENUM)
+#undef GEN_ENUM
+    };
+
+    enum ErrorKind2 {
+#define GEN_ENUM(ENUM, S1, S2) ENUM,
+        EACH_TC_ERROR2(GEN_ENUM)
+#undef GEN_ENUM
+    };
+
+    enum ErrorKind3 {
+#define GEN_ENUM(ENUM, S1, S2, S3) ENUM,
+        EACH_TC_ERROR3(GEN_ENUM)
+#undef GEN_ENUM
+    };
 
 private:
     /**
@@ -79,84 +106,98 @@ private:
      */
     unsigned int lineNum;
 
-    /**
-     * template of error message
-     */
-    std::string t;
+    const char *kind;
 
-    /**
-     * message arguments
-     */
-    std::vector<std::string> args;
+    std::string message;
 
 public:
-    TypeCheckError(unsigned int lineNum, ErrorKind kind);
+    TypeCheckError(unsigned int lineNum, TypeCheckError::ErrorKind0 k);
+    TypeCheckError(unsigned int lineNum, TypeCheckError::ErrorKind1 k, const std::string &arg1);
+    TypeCheckError(unsigned int lineNum, TypeCheckError::ErrorKind2 k, const std::string &arg1,
+                   const std::string &arg2);
+    TypeCheckError(unsigned int lineNum, TypeCheckError::ErrorKind3 k, const std::string &arg1,
+                   const std::string &arg2, const std::string &arg3);
 
-    TypeCheckError(unsigned int lineNum, const TypeLookupError &e);
+    TypeCheckError(unsigned int lineNum, const core::TypeLookupError &e);
 
     ~TypeCheckError() = default;
 
-    unsigned int getLineNum() const;
+    unsigned int getLineNum() const {
+        return this->lineNum;
+    }
 
-    const std::string &getTemplate() const;
+    const char *getKind() const {
+        return this->kind;
+    }
 
-    const std::vector<std::string> &getArgs() const;
+    const std::string &getMessage() const {
+        return this->message;
+    }
 
-    bool operator==(const TypeCheckError &e);
-
-    static void report(unsigned int lineNum, ErrorKind kind);
-
-    static void report(unsigned int lineNum, ErrorKind kind, const std::string &arg1);
-
-    static void report(unsigned int lineNum, ErrorKind kind, const std::string &arg1,
-                       const std::string &arg2);
-
-    static void report(unsigned int lineNum, ErrorKind kind, const std::string &arg1,
-                       const std::string &arg2, const std::string &arg3);
+    bool operator==(const TypeCheckError &e) const {
+        return this->message == e.getMessage();
+    }
 };
+
+std::ostream &operator<<(std::ostream &stream, TypeCheckError::ErrorKind0 kind);
+std::ostream &operator<<(std::ostream &stream, TypeCheckError::ErrorKind1 kind);
+std::ostream &operator<<(std::ostream &stream, TypeCheckError::ErrorKind2 kind);
+std::ostream &operator<<(std::ostream &stream, TypeCheckError::ErrorKind3 kind);
+
+struct ErrorRaiser0 {
+    TypeCheckError::ErrorKind0 kind;
+
+    void operator()(ast::Node *node) throw(TypeCheckError);
+};
+
+struct ErrorRaiser1 {
+    TypeCheckError::ErrorKind1 kind;
+
+    void operator()(ast::Node *node, const std::string &arg1) throw(TypeCheckError);
+};
+
+struct ErrorRaiser2 {
+    TypeCheckError::ErrorKind2 kind;
+
+    void operator()(ast::Node *node, const std::string &arg1,
+                    const std::string &arg2) throw(TypeCheckError);
+};
+
+struct ErrorRaiser3 {
+    TypeCheckError::ErrorKind3 kind;
+
+    void operator()(ast::Node *node, const std::string &arg1,
+                    const std::string &arg2, const std::string &arg3) throw(TypeCheckError);
+};
+
+// define function object for error reporting
+
+#define GEN_VAR(ENUM, S1) extern ErrorRaiser0 E_##ENUM;
+EACH_TC_ERROR0(GEN_VAR)
+#undef GEN_VAR
+
+#define GEN_VAR(ENUM, S1) extern ErrorRaiser1 E_##ENUM;
+EACH_TC_ERROR1(GEN_VAR)
+#undef GEN_VAR
+
+#define GEN_VAR(ENUM, S1, S2) extern ErrorRaiser2 E_##ENUM;
+EACH_TC_ERROR2(GEN_VAR)
+#undef GEN_VAR
+
+#define GEN_VAR(ENUM, S1, S2, S3) extern ErrorRaiser3 E_##ENUM;
+EACH_TC_ERROR3(GEN_VAR)
+#undef GEN_VAR
 
 } // namespace parser
 } // namespace ydsh
 
-// helper macro for error reporting
+// undef macro
+#ifndef IN_SRC_FILE
+#undef EACH_TC_ERROR0
+#undef EACH_TC_ERROR1
+#undef EACH_TC_ERROR2
+#undef EACH_TC_ERROR3
+#endif
 
-#define REPORT_TC_ERROR0(name, node)                   do { TypeCheckError::report(node->getLineNum(), TypeCheckError::E_##name); } while(0)
-#define REPORT_TC_ERROR1(name, node, arg1)             do { TypeCheckError::report(node->getLineNum(), TypeCheckError::E_##name, arg1); } while(0)
-#define REPORT_TC_ERROR2(name, node, arg1, arg2)       do { TypeCheckError::report(node->getLineNum(), TypeCheckError::E_##name, arg1, arg2); } while(0)
-#define REPORT_TC_ERROR3(name, node, arg1, arg2, arg3) do { TypeCheckError::report(node->getLineNum(), TypeCheckError::E_##name, arg1, arg2, arg3); } while(0)
-
-
-#define E_Unresolved(node)                  REPORT_TC_ERROR0(Unresolved       , node)
-#define E_InsideLoop(node)                  REPORT_TC_ERROR0(InsideLoop       , node)
-#define E_UnfoundReturn(node)               REPORT_TC_ERROR0(UnfoundReturn    , node)
-#define E_Unreachable(node)                 REPORT_TC_ERROR0(Unreachable      , node)
-#define E_InsideFunc(node)                  REPORT_TC_ERROR0(InsideFunc       , node)
-#define E_NotNeedExpr(node)                 REPORT_TC_ERROR0(NotNeedExpr      , node)
-#define E_Assignable(node)                  REPORT_TC_ERROR0(Assignable       , node)
-#define E_ReadOnly(node)                    REPORT_TC_ERROR0(ReadOnly         , node)
-#define E_InsideFinally(node)               REPORT_TC_ERROR0(InsideFinally    , node)
-#define E_UnneedNamedArg(node)              REPORT_TC_ERROR0(UnneedNamedArg   , node)
-#define E_NeedNamedArg(node)                REPORT_TC_ERROR0(NeedNamedArg     , node)
-#define E_NoDefaultValue(node)              REPORT_TC_ERROR0(NoDefaultValue   , node)
-
-#define E_DefinedSymbol(node, arg1)         REPORT_TC_ERROR1(DefinedSymbol    , node, arg1)
-#define E_DefinedField(node, arg1)          REPORT_TC_ERROR1(DefinedField     , node, arg1)
-#define E_UndefinedSymbol(node, arg1)       REPORT_TC_ERROR1(UndefinedSymbol  , node, arg1)
-#define E_UndefinedField(node, arg1)        REPORT_TC_ERROR1(UndefinedField   , node, arg1)
-#define E_UndefinedMethod(node, arg1)       REPORT_TC_ERROR1(UndefinedMethod  , node, arg1)
-#define E_UndefinedInit(node, arg1)         REPORT_TC_ERROR1(UndefinedInit    , node, arg1)
-#define E_Unacceptable(node, arg1)          REPORT_TC_ERROR1(Unacceptable     , node, arg1)
-#define E_NoIterator(node, arg1)            REPORT_TC_ERROR1(NoIterator       , node, arg1)
-#define E_UnfoundNamedParam(node, arg1)     REPORT_TC_ERROR1(UnfoundNamedParam, node, arg1)
-#define E_DupNamedArg(node, arg1)           REPORT_TC_ERROR1(DupNamedArg      , node, arg1)
-#define E_UndefinedEnv(node, arg1)          REPORT_TC_ERROR1(UndefinedEnv     , node, arg1)
-#define E_Unimplemented(node, arg1)         REPORT_TC_ERROR1(Unimplemented    , node, arg1)
-
-#define E_Required(node, arg1, arg2)        REPORT_TC_ERROR2(Required    , node, arg1, arg2)
-#define E_CastOp(node, arg1, arg2)          REPORT_TC_ERROR2(CastOp      , node, arg1, arg2)
-#define E_UnaryOp(node, arg1, arg2)         REPORT_TC_ERROR2(UnaryOp     , node, arg1, arg2)
-#define E_UnmatchParam(node, arg1, arg2)    REPORT_TC_ERROR2(UnmatchParam, node, arg1, arg2)
-
-#define E_BinaryOp(node, arg1, arg2, arg3)  REPORT_TC_ERROR3(BinaryOp    , node, arg1, arg2, arg3)
 
 #endif /* PARSER_TYPECHECKERROR_H_ */
