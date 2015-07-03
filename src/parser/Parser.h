@@ -157,6 +157,8 @@ public:
     }
 };
 
+std::ostream &operator<<(std::ostream &stream, const OutOfRangeNumError &e);
+
 class UnexpectedNewLineError : public ParseError {
 public:
     UnexpectedNewLineError(Token errorToken) : ParseError(errorToken) {}
@@ -166,6 +168,8 @@ public:
         return this->errorToken == e.errorToken;
     }
 };
+
+std::ostream &operator<<(std::ostream &stream, const UnexpectedNewLineError &e);
 
 } // namespace parser
 } // namespace ydsh

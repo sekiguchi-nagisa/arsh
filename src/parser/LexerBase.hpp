@@ -214,7 +214,7 @@ std::string LexerBase<T>::formatLineMarker(const Token<T> &lineToken, const Toke
         marker += " ";
     }
     for(unsigned int i = 0; i < token.size; i++) {
-        marker += "^";    //TODO: support multi byte char
+        marker += (i == 0 ? "^" : "~");    //TODO: support multi byte char
     }
     return marker;
 }

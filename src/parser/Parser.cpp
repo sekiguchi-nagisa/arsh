@@ -1334,5 +1334,16 @@ bool parse(const char *sourceName, RootNode &rootNode) {
     return true;
 }
 
+// parser error
+std::ostream &operator<<(std::ostream &stream, const OutOfRangeNumError &e) {
+    stream << "out of range: " << e.getTokenKind();
+    return stream;
+}
+
+std::ostream &operator<<(std::ostream &stream, const UnexpectedNewLineError &e) {
+    stream << "unexpected new line before: " << e.getTokenKind();
+    return stream;
+}
+
 } // namespace parser
 } // namespace ydsh

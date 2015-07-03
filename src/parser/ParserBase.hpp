@@ -79,7 +79,7 @@ std::ostream &operator<<(std::ostream &stream, const TokenMismatchedError<T> &e)
 
 template<typename T>
 std::ostream &operator<<(std::ostream &stream, const TokenMismatchedError<T> &e) {
-    stream << "mismatched token: " << e.getTokenKind() << ", expect for" << e.getExpectedKind();
+    stream << "mismatched token: " << e.getTokenKind() << ", expected: " << e.getExpectedKind();
     return stream;
 }
 
@@ -128,7 +128,7 @@ std::ostream &operator<<(std::ostream &stream, const NoViableAlterError<T> &e);
 
 template<typename T>
 std::ostream &operator<<(std::ostream &stream, const NoViableAlterError<T> &e) {
-    stream << "no viable alternative: " << e.getTokenKind() << ", expect for ";
+    stream << "no viable alternative: " << e.getTokenKind() << ", expected: ";
     unsigned int count = 0;
     for(auto &a : e.getAlters()) {
         if(count++ > 0) {

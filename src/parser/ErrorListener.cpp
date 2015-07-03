@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
+#include <iostream>
+
 #include "ErrorListener.h"
+#include "misc/debug.h"
 
 namespace ydsh {
 namespace parser {
@@ -56,53 +59,7 @@ void CommonErrorListener::displayTypeError(const std::string &sourceName,
     fprintf(stderr, "%s:%d: [semantic error] %s\n", sourceName.c_str(), e.getLineNum(), strBuf);
 }
 
-static std::string format(Lexer &lexer, const TokenMismatchedError &e) {
-    std::string message = "mismatch token: ";
-    message += TO_NAME(e.getTokenKind());
-    message += ", expect for ";
-    message += TO_NAME(e.getExpectedKind());
-    return message;
-}
-
-static std::string format(Lexer &lexer, const NoViableAlterError &e) {
-    std::string message = "no viable alternative: ";
-    message += TO_NAME(e.getTokenKind());
-    message += ",\n";
-    message += "expect for ";
-    unsigned int size = e.getAlters().size();
-    for(unsigned int i = 0; i < size; i++) {
-        if(i > 0) {
-            message += ", ";
-        }
-        message += TO_NAME(e.getAlters()[i]);
-    }
-    return message;
-}
-
-static std::string format(Lexer &lexer, const InvalidTokenError &e) {
-    std::string message = "invalid token: ";
-    Token token = e.getErrorToken();
-    message += lexer.toTokenText(token);
-    return message;
-}
-
-static std::string format(Lexer &lexer, const OutOfRangeNumError &e) {
-    std::string message = "out of range ";
-    message += TO_NAME(e.getTokenKind());
-    message += ": ";
-    Token token = e.getErrorToken();
-    message += lexer.toTokenText(token);
-    return message;
-}
-
-static std::string format(Lexer &lexer, const UnexpectedNewLineError &e) {
-    std::string message = "unexpected new line: ";
-    Token token = e.getErrorToken();
-    message += lexer.toTokenText(token);
-    return message;
-}
-
-static std::string format(Lexer &lexer, const ParseError &e) {
+static std::ostream &format(std::ostream &stream, const ParseError &e) {
 #define EACH_ERROR(E) \
     E(TokenMismatchedError) \
     E(NoViableAlterError) \
@@ -111,30 +68,29 @@ static std::string format(Lexer &lexer, const ParseError &e) {
     E(UnexpectedNewLineError)
 
 #define DISPATCH(E) if(dynamic_cast<const E *>(&e) != nullptr) { \
-    return format(lexer, *static_cast<const E *>(&e)); }
+    stream << *static_cast<const E *>(&e); return stream; }
 
     EACH_ERROR(DISPATCH)
 
-    return std::string();
+    fatal("unsupported parse error kind\n");
+    return stream;
 
 #undef DISPATCH
 #undef EACH_ERROR
 }
 
-static std::string formatErrorLine(Lexer &lexer, Token errorToken) {
+static std::ostream &formatErrorLine(std::ostream &stream, Lexer &lexer, const Token &errorToken) {
     Token lineToken = lexer.getLineToken(errorToken, true);
-    std::string line(lexer.toTokenText(lineToken));
-    line += "\n";
-    line += lexer.formatLineMarker(lineToken, errorToken);
-    return line;
+    stream << lexer.toTokenText(lineToken) << std::endl;
+    stream << lexer.formatLineMarker(lineToken, errorToken);
+    return stream;
 }
 
 void CommonErrorListener::displayParseError(Lexer &lexer,
                                             const std::string &sourceName, const ParseError &e) const {
-    std::string msg(format(lexer, e));
-    std::string line(formatErrorLine(lexer, e.getErrorToken()));
-    fprintf(stderr, "%s:%d: [syntax error] %s\n%s\n",
-            sourceName.c_str(), e.getLineNum(), msg.c_str(), line.c_str());
+    std::cerr << sourceName << ":" << e.getLineNum() << ":[syntax error] ";
+    format(std::cerr, e) << std::endl;
+    formatErrorLine(std::cerr, lexer, e.getErrorToken()) << std::endl;
 }
 
 } // namespace parser
