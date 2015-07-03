@@ -20,143 +20,143 @@
 #include <ostream>
 
 #define EACH_TOKEN(TOKEN) \
-    TOKEN(DUMMY) /* for sentinel value. not use it as token kind */\
-    TOKEN(INVALID) \
-    TOKEN(EOS) \
+    TOKEN(DUMMY                              , "<Dummy>") /* for sentinel value. not use it as token kind */\
+    TOKEN(INVALID                            , "<Invalid>") \
+    TOKEN(EOS                                , "<EOS>") \
     /* token kind definition. */\
     /* reserved key word. */\
-    TOKEN(ASSERT) \
-    TOKEN(BREAK) \
-    TOKEN(CATCH) \
-    TOKEN(CLASS) \
-    TOKEN(CONTINUE) \
-    TOKEN(DO) \
-    TOKEN(ELIF) \
-    TOKEN(ELSE) \
-    TOKEN(EXTENDS) \
-    TOKEN(EXPORT_ENV) \
-    TOKEN(FINALLY) \
-    TOKEN(FOR) \
-    TOKEN(FUNCTION) \
-    TOKEN(IF) \
-    TOKEN(IMPORT_ENV) \
-    TOKEN(INTERFACE) \
-    TOKEN(LET) \
-    TOKEN(NEW) \
-    TOKEN(NOT) \
-    TOKEN(RETURN) \
-    TOKEN(TRY) \
-    TOKEN(THROW) \
-    TOKEN(TYPE_ALIAS) \
-    TOKEN(VAR) \
-    TOKEN(WHILE) \
+    TOKEN(ASSERT                             , "assert") \
+    TOKEN(BREAK                              , "break") \
+    TOKEN(CATCH                              , "catch") \
+    TOKEN(CLASS                              , "class") \
+    TOKEN(CONTINUE                           , "continue") \
+    TOKEN(DO                                 , "do") \
+    TOKEN(ELIF                               , "elif") \
+    TOKEN(ELSE                               , "else") \
+    TOKEN(EXTENDS                            , "extends") \
+    TOKEN(EXPORT_ENV                         , "export-env") \
+    TOKEN(FINALLY                            , "finally") \
+    TOKEN(FOR                                , "for") \
+    TOKEN(FUNCTION                           , "function") \
+    TOKEN(IF                                 , "if") \
+    TOKEN(IMPORT_ENV                         , "import-env") \
+    TOKEN(INTERFACE                          , "interface") \
+    TOKEN(LET                                , "let") \
+    TOKEN(NEW                                , "new") \
+    TOKEN(NOT                                , "not") \
+    TOKEN(RETURN                             , "return") \
+    TOKEN(TRY                                , "try") \
+    TOKEN(THROW                              , "throw") \
+    TOKEN(TYPE_ALIAS                         , "type-alias") \
+    TOKEN(VAR                                , "var") \
+    TOKEN(WHILE                              , "while") \
     /* unary op */\
-    TOKEN(PLUS) \
-    TOKEN(MINUS) \
+    TOKEN(PLUS                               , "+") \
+    TOKEN(MINUS                              , "-") \
     /* literal */\
-    TOKEN(INT_LITERAL) /* equivalent to int32 */\
-    TOKEN(BYTE_LITERAL) \
-    TOKEN(INT16_LITERAL) \
-    TOKEN(UINT16_LITERAL) \
-    TOKEN(INT32_LITERAL) \
-    TOKEN(UINT32_LITERAL) \
-    TOKEN(INT64_LITERAL) \
-    TOKEN(UINT64_LITERAL) \
-    TOKEN(FLOAT_LITERAL) \
-    TOKEN(STRING_LITERAL) \
-    TOKEN(PATH_LITERAL) \
-    TOKEN(OPEN_DQUOTE) \
-    TOKEN(BQUOTE_LITERAL) \
-    TOKEN(START_SUB_CMD) \
+    TOKEN(INT_LITERAL                        , "<Int Literal>") /* equivalent to int32 */\
+    TOKEN(BYTE_LITERAL                       , "<Byte Literal>") \
+    TOKEN(INT16_LITERAL                      , "<Int16 Literal>") \
+    TOKEN(UINT16_LITERAL                     , "<Uint16 Literal>") \
+    TOKEN(INT32_LITERAL                      , "<Int32 Literal>") \
+    TOKEN(UINT32_LITERAL                     , "<Uint32 Literal>") \
+    TOKEN(INT64_LITERAL                      , "<Int64 Literal>") \
+    TOKEN(UINT64_LITERAL                     , "<Uint64 Literal>") \
+    TOKEN(FLOAT_LITERAL                      , "<Float Literal>") \
+    TOKEN(STRING_LITERAL                     , "<String Literal>") \
+    TOKEN(PATH_LITERAL                       , "<Path Literal>") \
+    TOKEN(OPEN_DQUOTE                        , "\"") \
+    TOKEN(BQUOTE_LITERAL                     , "<Backquote Literal>") \
+    TOKEN(START_SUB_CMD                      , "$(") \
     /* applied name */\
-    TOKEN(APPLIED_NAME) \
-    TOKEN(SPECIAL_NAME) \
-    TOKEN(VAR_NAME) \
+    TOKEN(APPLIED_NAME                       , "<$ Name>") \
+    TOKEN(SPECIAL_NAME                       , "<$ Char>") \
+    TOKEN(VAR_NAME                           , "<Variable Name>") \
     /* bracket */\
-    TOKEN(LP) /* ( */\
-    TOKEN(RP) /* ) */\
-    TOKEN(LB) /* [ */\
-    TOKEN(RB) /* ] */\
-    TOKEN(LBC) /* { */\
-    TOKEN(RBC) /* } */\
-    TOKEN(LA) /* < */\
-    TOKEN(RA) /* > */\
+    TOKEN(LP                                 , "(") /* ( */\
+    TOKEN(RP                                 , ")") /* ) */\
+    TOKEN(LB                                 , "[") /* [ */\
+    TOKEN(RB                                 , "]") /* ] */\
+    TOKEN(LBC                                , "{") /* { */\
+    TOKEN(RBC                                , "}") /* } */\
+    TOKEN(LA                                 , "<") /* < */\
+    TOKEN(RA                                 , ">") /* > */\
     /* command */\
-    TOKEN(COMMAND) \
+    TOKEN(COMMAND                            , "<Command>") \
     /* separator */\
-    TOKEN(COLON) \
-    TOKEN(COMMA) \
+    TOKEN(COLON                              , ":") \
+    TOKEN(COMMA                              , ",") \
     /* binary op */\
-    TOKEN(MUL) \
-    TOKEN(DIV) \
-    TOKEN(MOD) \
-    TOKEN(LE) \
-    TOKEN(GE) \
-    TOKEN(EQ) \
-    TOKEN(NE) \
-    TOKEN(AND) \
-    TOKEN(OR) \
-    TOKEN(XOR) \
-    TOKEN(COND_AND) \
-    TOKEN(COND_OR) \
-    TOKEN(RE_MATCH) \
-    TOKEN(RE_UNMATCH) \
+    TOKEN(MUL                                , "*") \
+    TOKEN(DIV                                , "/") \
+    TOKEN(MOD                                , "%") \
+    TOKEN(LE                                 , "<=") \
+    TOKEN(GE                                 , ">=") \
+    TOKEN(EQ                                 , "==") \
+    TOKEN(NE                                 , "!=") \
+    TOKEN(AND                                , "&") \
+    TOKEN(OR                                 , "|") \
+    TOKEN(XOR                                , "^") \
+    TOKEN(COND_AND                           , "&&") \
+    TOKEN(COND_OR                            , "||") \
+    TOKEN(RE_MATCH                           , "=~") \
+    TOKEN(RE_UNMATCH                         , "!~") \
     /* suffix op */\
-    TOKEN(INC) \
-    TOKEN(DEC) \
+    TOKEN(INC                                , "++") \
+    TOKEN(DEC                                , "--") \
     /* assign op */\
-    TOKEN(ASSIGN) \
-    TOKEN(ADD_ASSIGN) \
-    TOKEN(SUB_ASSIGN) \
-    TOKEN(MUL_ASSIGN) \
-    TOKEN(DIV_ASSIGN) \
-    TOKEN(MOD_ASSIGN) \
+    TOKEN(ASSIGN                             , "=") \
+    TOKEN(ADD_ASSIGN                         , "+=") \
+    TOKEN(SUB_ASSIGN                         , "-=") \
+    TOKEN(MUL_ASSIGN                         , "*=") \
+    TOKEN(DIV_ASSIGN                         , "/=") \
+    TOKEN(MOD_ASSIGN                         , "%=") \
     /* context dependent key word */\
-    TOKEN(AS) \
-    TOKEN(FUNC) \
-    TOKEN(IN) \
-    TOKEN(IS) \
+    TOKEN(AS                                 , "as") \
+    TOKEN(FUNC                               , "Func") \
+    TOKEN(IN                                 , "in") \
+    TOKEN(IS                                 , "is") \
     /* identifier. */\
-    TOKEN(IDENTIFIER) \
+    TOKEN(IDENTIFIER                         , "<Identifier>") \
     /* accessor */\
-    TOKEN(ACCESSOR) \
+    TOKEN(ACCESSOR                           , ".") \
     /* line end */\
-    TOKEN(LINE_END) /* for new line error */\
-    TOKEN(NEW_LINE) \
+    TOKEN(LINE_END                           , ";") /* for new line error */\
+    TOKEN(NEW_LINE                           , "<NewLine>") \
     /* double quoted string */\
-    TOKEN(CLOSE_DQUOTE) \
-    TOKEN(STR_ELEMENT) \
-    TOKEN(START_INTERP) \
+    TOKEN(CLOSE_DQUOTE                       , "\"") \
+    TOKEN(STR_ELEMENT                        , "<String Element>") \
+    TOKEN(START_INTERP                       , "${") \
     /* command argument */\
-    TOKEN(CMD_ARG_PART) \
+    TOKEN(CMD_ARG_PART                       , "<Argument Part>") \
     /* redir op */\
-    TOKEN(REDIR_IN_2_FILE) \
-    TOKEN(REDIR_OUT_2_FILE) \
-    TOKEN(REDIR_OUT_2_FILE_APPEND) \
-    TOKEN(REDIR_ERR_2_FILE) \
-    TOKEN(REDIR_ERR_2_FILE_APPEND) \
-    TOKEN(REDIR_MERGE_ERR_2_OUT_2_FILE) \
-    TOKEN(REDIR_MERGE_ERR_2_OUT_2_FILE_APPEND) \
-    TOKEN(REDIR_MERGE_ERR_2_OUT) \
-    TOKEN(REDIR_MERGE_OUT_2_ERR) \
-    TOKEN(PIPE) \
-    TOKEN(BACKGROUND) \
-    TOKEN(OR_LIST) \
-    TOKEN(AND_LIST) \
+    TOKEN(REDIR_IN_2_FILE                    , "<") \
+    TOKEN(REDIR_OUT_2_FILE                   , "1>") \
+    TOKEN(REDIR_OUT_2_FILE_APPEND            , "1>>") \
+    TOKEN(REDIR_ERR_2_FILE                   , "2>") \
+    TOKEN(REDIR_ERR_2_FILE_APPEND            , "2>>") \
+    TOKEN(REDIR_MERGE_ERR_2_OUT_2_FILE       , "&>") \
+    TOKEN(REDIR_MERGE_ERR_2_OUT_2_FILE_APPEND, "&>>") \
+    TOKEN(REDIR_MERGE_ERR_2_OUT              , "2>&1") \
+    TOKEN(REDIR_MERGE_OUT_2_ERR              , "1>&2") \
+    TOKEN(PIPE                               , "|") \
+    TOKEN(BACKGROUND                         , "&") \
+    TOKEN(OR_LIST                            , "||") \
+    TOKEN(AND_LIST                           , "&&") \
     /* type  */\
-    TOKEN(TYPE_OPEN) /* < */\
-    TOKEN(TYPE_CLOSE) /* > */\
-    TOKEN(TYPE_SEP) /* , */\
-    TOKEN(PTYPE_OPEN) /* [ */\
-    TOKEN(PTYPE_CLOSE) /* ] */\
-    TOKEN(TYPE_PATH) /* . */\
-    TOKEN(TYPE_OTHER)
+    TOKEN(TYPE_OPEN                          , "<") /* < */\
+    TOKEN(TYPE_CLOSE                         , ">") /* > */\
+    TOKEN(TYPE_SEP                           , ",") /* , */\
+    TOKEN(PTYPE_OPEN                         , "[") /* [ */\
+    TOKEN(PTYPE_CLOSE                        , "]") /* ] */\
+    TOKEN(TYPE_PATH                          , ".") /* . */\
+    TOKEN(TYPE_OTHER                         , "<Type Other>")
 
 namespace ydsh {
 namespace parser {
 
 typedef enum {
-#define GEN_ENUM(ENUM) ENUM,
+#define GEN_ENUM(ENUM, STR) ENUM,
     EACH_TOKEN(GEN_ENUM)
 #undef GEN_ENUM
 } TokenKind;

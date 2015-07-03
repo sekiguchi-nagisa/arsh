@@ -20,7 +20,7 @@ namespace ydsh {
 namespace parser {
 
 static const char *TOKEN_KIND_STRING[] = {
-#define GEN_NAME(ENUM) "<" #ENUM ">",
+#define GEN_NAME(ENUM, STR) STR,
         EACH_TOKEN(GEN_NAME)
 #undef GEN_NAME
 };
