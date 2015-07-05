@@ -35,28 +35,27 @@ enum OptionKind {
 
 void exec_interactive(const char *progName, DSContext *ctx);
 
-static const char *getVersion() {
+/**
+ * write version string.
+ * not write new line.
+ */
+static std::ostream &version(std::ostream &stream) {
 #define XSTR(S) #S
 #define STR(S) XSTR(S)
-    static const char version[] =
-            "ydsh, version " STR(X_INFO_VERSION)
-                    " (" STR(X_INFO_SYSTEM) "), build by " STR(X_INFO_CPP) " " STR(X_INFO_CPP_V);
+    stream <<  "ydsh, version " STR(X_INFO_VERSION)
+                       " (" STR(X_INFO_SYSTEM) "), build by " STR(X_INFO_CPP) " " STR(X_INFO_CPP_V);
 #undef STR
 #undef XSTR
-    return version;
+    return stream;
 }
 
-static const char *getCopyright() {
-    static const char copyright[] = "Copyright (c) 2015 Nagisa Sekiguchi";
-    return copyright;
-}
-
-static void showVersion(std::ostream &stream) {
-    stream << getVersion() << std::endl;
-}
-
-static void showCopyright(std::ostream &stream) {
-    stream << getCopyright() << std::endl;
+/**
+ * write copyright.
+ * not write new line.
+ */
+static std::ostream &copyright(std::ostream &stream) {
+    stream << "Copyright (c) 2015 Nagisa Sekiguchi";
+    return stream;
 }
 
 static void loadRC(DSContext *ctx) {
@@ -136,7 +135,7 @@ int main(int argc, char **argv) {
         restArgs = parser.parse(argc, argv, cmdLines);
     } catch(const ydsh::args::ParseError &e) {
         std::cerr << e.message << ": " << e.suffix << std::endl;
-        showVersion(std::cerr);
+        std::cerr << version << std::endl;
         parser.printHelp(std::cerr);
         return 1;
     }
@@ -161,11 +160,10 @@ int main(int argc, char **argv) {
             DSContext_setOption(ctx, DS_OPTION_TOPLEVEL);
             break;
         case VERSION:
-            showVersion(std::cout);
-            showCopyright(std::cout);
+            std::cout << version << std::endl << copyright << std::endl;
             return 0;
         case HELP:
-            showVersion(std::cout);
+            std::cout << version << std::endl;
             parser.printHelp(std::cout);
             return 0;
         }
@@ -178,7 +176,7 @@ int main(int argc, char **argv) {
         const char *scriptName = restArgs[0];
         FILE *fp = fopen(scriptName, "rb");
         if(fp == NULL) {
-            fprintf(stderr, "cannot open file: %s\n", scriptName);
+            std::cerr << "cannot open file: " << scriptName << std::endl;
             return 1;
         }
 
@@ -198,8 +196,7 @@ int main(int argc, char **argv) {
         DSContext_delete(&ctx);
         return ret;
     } else {
-        showVersion(std::cout);
-        showCopyright(std::cout);
+        std::cout << version << std::endl << copyright << std::endl;
 
         exec_interactive(argv[0], ctx);
     }
