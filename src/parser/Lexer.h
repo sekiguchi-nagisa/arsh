@@ -102,8 +102,8 @@ public:
         this->modeStack.pop_back();
     }
 
-    const char *getLexerModeName(LexerMode mode) const {
-        return lexerModeNames[mode];
+    const char *getLexerModeName() const {
+        return lexerModeNames[this->modeStack.back()];
     }
 
     static bool isInvalidToken(TokenKind kind) {

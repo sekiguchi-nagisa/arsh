@@ -21,7 +21,7 @@
 #include <cstring>
 #include <cassert>
 #include <string>
-#include <sstream>
+#include <ostream>
 
 namespace ydsh {
 namespace parser_base {
@@ -41,16 +41,16 @@ struct Token {
     bool operator!=(const Token<T> &token) const {
         return !(*this == token);
     }
-
-    std::string toString() const;
 };
 
-template<typename T>
-std::string Token<T>::toString() const {
-    std::ostringstream stream;
-    stream << "{ lineNum = " << this->lineNum << ", kind = "
-    << this->kind << ", startPos = " << this->startPos << ", size = " << this->size << "}";
-    return stream.str();
+template <typename T>
+std::ostream &operator<<(std::ostream &stream, const Token<T> &token);
+
+template <typename T>
+std::ostream &operator<<(std::ostream &stream, const Token<T> &token) {
+    stream << "{ lineNum = " << token.lineNum << ", kind = " << token.kind
+    << ", startPos = " << token.startPos << ", size = " << token.size << "}";
+    return stream;
 }
 
 /**

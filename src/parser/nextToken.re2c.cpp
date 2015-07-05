@@ -16,6 +16,7 @@
 
 #ifdef X_TRACE_TOKEN
 #include <iostream>
+#include <cstdlib>
 #endif
 
 #include <parser/Lexer.h>
@@ -302,11 +303,7 @@ void Lexer::nextToken(Token &token) {
     token.size = this->getPos() - startPos;
     this->prevNewLine = foundNewLine;
     this->prevSpace = foundSpace;
-#ifdef X_TRACE_TOKEN
-    std::cerr << "nextToken(): " << token.toString() << ", text = " << this->toTokenText(token) << std::endl;
-    std::cerr << "   lexer mode: " << this->getLexerModeName(YYGETCONDITION()) << std::endl;
-#endif
-    return;
+    goto RET;
 
     EOS:
     token.lineNum = n;
@@ -315,9 +312,14 @@ void Lexer::nextToken(Token &token) {
     token.size = 0;
     this->prevNewLine = foundNewLine;
     this->prevSpace = foundSpace;
+    goto RET;
+
+    RET:
 #ifdef X_TRACE_TOKEN
-    std::cerr << "nextToken(): " << token.toString() << ", text = " << this->toTokenText(token) << std::endl;
-    std::cerr << "   lexer mode: " << this->getLexerModeName(YYGETCONDITION()) << std::endl;
+    if(getenv("YDSH_TRACE_TOKEN") != nullptr) {
+        std::cerr << "nextToken(): " << token << ", text = " << this->toTokenText(token) << std::endl;
+        std::cerr << "   lexer mode: " << this->getLexerModeName() << std::endl;
+    }
 #endif
     return;
 }
