@@ -92,7 +92,7 @@ TypeCheckError::TypeCheckError(unsigned int lineNum, TypeCheckError::ErrorKind3 
         lineNum(lineNum), kind(errorTuple3[k].kindStr), message(errorTuple3[k].msg1) {
     this->message += arg1;
     this->message += errorTuple3[k].msg2;
-    this->message == arg2;
+    this->message += arg2;
     this->message += errorTuple3[k].msg3;
     this->message += arg3;
 }
