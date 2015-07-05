@@ -44,9 +44,6 @@ struct Token {
 };
 
 template <typename T>
-std::ostream &operator<<(std::ostream &stream, const Token<T> &token);
-
-template <typename T>
 std::ostream &operator<<(std::ostream &stream, const Token<T> &token) {
     stream << "{ lineNum = " << token.lineNum << ", kind = " << token.kind
     << ", startPos = " << token.startPos << ", size = " << token.size << "}";

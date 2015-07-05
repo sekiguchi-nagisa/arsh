@@ -48,10 +48,6 @@ public:
     unsigned int getLineNum() const {
         return this->errorToken.lineNum;
     }
-
-    bool operator==(const ParseError<T> &e) const {
-        return this->errorToken == e.errorToken;
-    }
 };
 
 template<typename T>
@@ -73,9 +69,6 @@ public:
         return this->errorToken == e.errorToken && this->expected == e.expected;
     }
 };
-
-template<typename T>
-std::ostream &operator<<(std::ostream &stream, const TokenMismatchedError<T> &e);
 
 template<typename T>
 std::ostream &operator<<(std::ostream &stream, const TokenMismatchedError<T> &e) {
@@ -124,9 +117,6 @@ bool NoViableAlterError<T>::operator==(const NoViableAlterError<T> &e) {
 }
 
 template<typename T>
-std::ostream &operator<<(std::ostream &stream, const NoViableAlterError<T> &e);
-
-template<typename T>
 std::ostream &operator<<(std::ostream &stream, const NoViableAlterError<T> &e) {
     stream << "no viable alternative: " << e.getTokenKind() << ", expected: ";
     unsigned int count = 0;
@@ -151,9 +141,6 @@ public:
         return this->errorToken == e.errorToken;
     }
 };
-
-template<typename T>
-std::ostream &operator<<(std::ostream &stream, const InvalidTokenError<T> &e);
 
 template<typename T>
 std::ostream &operator<<(std::ostream &stream, const InvalidTokenError<T> &e) {
