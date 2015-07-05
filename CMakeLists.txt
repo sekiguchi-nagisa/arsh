@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-PROJECT(ydsh)
+project(ydsh)
 
 #++++++++++++++++++++++#
 #     helper macro     #
@@ -8,7 +8,14 @@ PROJECT(ydsh)
 
 macro(check_header VAR NAME)
     find_path(${VAR} ${NAME})
-    MESSAGE(STATUS "find header file - ${NAME} in ${${VAR}}")
+    if(NOT ${VAR})
+        message(FATAL_ERROR "not found header file - ${NAME}")
+    endif()
+    message(STATUS "found header file - ${NAME} in ${${VAR}}")
+endmacro()
+
+macro(show_option OPTION)
+    message(STATUS "extra option - ${OPTION}=${${OPTION}}")
 endmacro()
 
 
@@ -34,12 +41,12 @@ endif()
 #     set some variable      #
 #++++++++++++++++++++++++++++#
 
-SET(CMAKE_VERBOSE_MAKEFILE 1)
+set(CMAKE_VERBOSE_MAKEFILE 1)
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
     SET(CMAKE_BUILD_TYPE Release)
 endif()
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11")
 
 
 #++++++++++++++++++++++++++++++++++++#
@@ -60,6 +67,7 @@ option(USE_TRACE_TOKEN "trace generated token" OFF)
 if(USE_TRACE_TOKEN)
     add_definitions(-DX_TRACE_TOKEN)
 endif()
+show_option(USE_TRACE_TOKEN)
 
 option(USE_DBUS "support D-Bus" ON)
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
@@ -68,6 +76,7 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
 elseif(NOT USE_DBUS)
     add_definitions(-DX_NO_DBUS)
 endif()
+show_option(USE_DBUS)
 
 
 #++++++++++++++++++++++#
@@ -83,7 +92,7 @@ find_library(HAVE_LIBEDIT NAMES edit)
 #++++++++++++++++++++++#
 
 if(USE_DBUS)
-    SET(CMAKE_INCLUDE_PATH
+    set(CMAKE_INCLUDE_PATH
         "/usr/include/dbus-1.0"
         "/usr/lib64/dbus-1.0/include"
         "/usr/lib/dbus-1.0/include"
@@ -91,7 +100,7 @@ if(USE_DBUS)
     )
     check_header(HAVE_DBUS_H "dbus/dbus.h")
     check_header(HAVE_DBUS_ARCH_DEPS_H "dbus/dbus-arch-deps.h")
-    SET(CMAKE_LIBRARY_PATH "/usr/lib/x86_64-linux-gnu")
+    set(CMAKE_LIBRARY_PATH "/usr/lib/x86_64-linux-gnu")
     find_library(HAVE_LIBDBUS NAMES dbus-1)
 endif()
 
@@ -101,7 +110,7 @@ endif()
 #+++++++++++++++++++#
 
 set(RE2C_V "0.14.3")
-set(RE2C_URL "http://sourceforge.net/projects/re2c/files/re2c/0.14.3/re2c-0.14.3.tar.gz")
+set(RE2C_URL "http://sourceforge.net/projects/re2c/files/re2c/${RE2C_V}/re2c-${RE2C_V}.tar.gz")
 set(RE2C_PATH ${CMAKE_CURRENT_BINARY_DIR}/re2c-${RE2C_V}.tar.gz)
 set(RE2C_DIR ${CMAKE_CURRENT_BINARY_DIR}/re2c-${RE2C_V})
 
@@ -141,7 +150,7 @@ add_dependencies(gen_bind gen_binding)
 #     libydsh     #
 #=================#
 
-SET(BIN_NAME ydsh)
+set(BIN_NAME ydsh)
 
 include_directories(src)
 include_directories(include)
@@ -150,7 +159,7 @@ if(USE_DBUS)
     include_directories(${HAVE_DBUS_H} ${HAVE_DBUS_ARCH_DEPS_H})
 endif()
 
-SET(YDSH_SRC
+set(YDSH_SRC
     src/ydsh.cpp
     src/ast/dump.cpp
     src/ast/Node.cpp
@@ -172,7 +181,7 @@ SET(YDSH_SRC
     src/parser/TypeCheckError.cpp)
 
 if(USE_DBUS)
-    SET(YDSH_SRC ${YDSH_SRC}
+    set(YDSH_SRC ${YDSH_SRC}
         src/dbus/DBusBindImpl.cpp
         src/dbus/DBusUtil.cpp)
 endif()
@@ -210,20 +219,20 @@ add_custom_target(run_test COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure)
 #     show enviroment     #
 #+++++++++++++++++++++++++#
 
-MESSAGE(STATUS "CMAKE_BUILD_TYPE                 = ${CMAKE_BUILD_TYPE}")
-MESSAGE(STATUS "CMAKE_SYSTEM                     = ${CMAKE_SYSTEM}")
-MESSAGE(STATUS "CMAKE_C_COMPILER_ID              = ${CMAKE_C_COMPILER_ID}")
-MESSAGE(STATUS "CMAKE_C_COMPILER_VERSION         = ${CMAKE_C_COMPILER_VERSION}")
-MESSAGE(STATUS "CMAKE_C_COMPILER                 = ${CMAKE_C_COMPILER}")
-MESSAGE(STATUS "CMAKE_C_FLAGS                    = ${CMAKE_C_FLAGS}")
-MESSAGE(STATUS "CMAKE_C_FLAGS_DEBUG              = ${CMAKE_C_FLAGS_DEBUG}")
-MESSAGE(STATUS "CMAKE_C_FLAGS_RELEASE            = ${CMAKE_C_FLAGS_RELEASE}")
-MESSAGE(STATUS "CMAKE_C_FLAGS_RELWITHDEBINFO     = ${CMAKE_C_FLAGS_RELWITHDEBINFO}")
-MESSAGE(STATUS "CMAKE_CXX_COMPILER_ID            = ${CMAKE_CXX_COMPILER_ID}")
-MESSAGE(STATUS "CMAKE_CXX_COMPILER_VERSION       = ${CMAKE_CXX_COMPILER_VERSION}")
-MESSAGE(STATUS "CMAKE_CXX_COMPILER               = ${CMAKE_CXX_COMPILER}")
-MESSAGE(STATUS "CMAKE_CXX_FLAGS                  = ${CMAKE_CXX_FLAGS}")
-MESSAGE(STATUS "CMAKE_CXX_FLAGS_DEBUG            = ${CMAKE_CXX_FLAGS_DEBUG}")
-MESSAGE(STATUS "CMAKE_CXX_FLAGS_RELEASE          = ${CMAKE_CXX_FLAGS_RELEASE}")
-MESSAGE(STATUS "CMAKE_CXX_FLAGS_RELWITHDEBINFO   = ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
-MESSAGE(STATUS "CMAKE_INSTALL_PREFIX             = ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "CMAKE_BUILD_TYPE                 = ${CMAKE_BUILD_TYPE}")
+message(STATUS "CMAKE_SYSTEM                     = ${CMAKE_SYSTEM}")
+message(STATUS "CMAKE_C_COMPILER_ID              = ${CMAKE_C_COMPILER_ID}")
+message(STATUS "CMAKE_C_COMPILER_VERSION         = ${CMAKE_C_COMPILER_VERSION}")
+message(STATUS "CMAKE_C_COMPILER                 = ${CMAKE_C_COMPILER}")
+message(STATUS "CMAKE_C_FLAGS                    = ${CMAKE_C_FLAGS}")
+message(STATUS "CMAKE_C_FLAGS_DEBUG              = ${CMAKE_C_FLAGS_DEBUG}")
+message(STATUS "CMAKE_C_FLAGS_RELEASE            = ${CMAKE_C_FLAGS_RELEASE}")
+message(STATUS "CMAKE_C_FLAGS_RELWITHDEBINFO     = ${CMAKE_C_FLAGS_RELWITHDEBINFO}")
+message(STATUS "CMAKE_CXX_COMPILER_ID            = ${CMAKE_CXX_COMPILER_ID}")
+message(STATUS "CMAKE_CXX_COMPILER_VERSION       = ${CMAKE_CXX_COMPILER_VERSION}")
+message(STATUS "CMAKE_CXX_COMPILER               = ${CMAKE_CXX_COMPILER}")
+message(STATUS "CMAKE_CXX_FLAGS                  = ${CMAKE_CXX_FLAGS}")
+message(STATUS "CMAKE_CXX_FLAGS_DEBUG            = ${CMAKE_CXX_FLAGS_DEBUG}")
+message(STATUS "CMAKE_CXX_FLAGS_RELEASE          = ${CMAKE_CXX_FLAGS_RELEASE}")
+message(STATUS "CMAKE_CXX_FLAGS_RELWITHDEBINFO   = ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+message(STATUS "CMAKE_INSTALL_PREFIX             = ${CMAKE_INSTALL_PREFIX}")
