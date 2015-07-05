@@ -12,6 +12,24 @@ macro(check_header VAR NAME)
 endmacro()
 
 
+#++++++++++++++++++++++++++#
+#     project version      #
+#++++++++++++++++++++++++++#
+
+set(YDSH_MAJOR_VERSION 0)
+set(YDSH_MINOR_VERSION 2)
+set(YDSH_PATCH_VERSION 0)
+set(YDSH_STABLE_RELEASE off)
+
+set(YDSH_VERSION
+    "${YDSH_MAJOR_VERSION}.${YDSH_MINOR_VERSION}.${YDSH_PATCH_VERSION}"
+)
+
+if(NOT ${YDSH_STABLE_RELEASE})
+    set(YDSH_VERSION ${YDSH_VERSION}-unstable)
+endif()
+
+
 #++++++++++++++++++++++++++++#
 #     set some variable      #
 #++++++++++++++++++++++++++++#
@@ -31,6 +49,7 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11")
 add_definitions(-DX_INFO_SYSTEM=${CMAKE_SYSTEM})
 add_definitions(-DX_INFO_CPP=${CMAKE_CXX_COMPILER_ID})
 add_definitions(-DX_INFO_CPP_V=${CMAKE_CXX_COMPILER_VERSION})
+add_definitions(-DX_INFO_VERSION=${YDSH_VERSION})
 
 
 #++++++++++++++++++++++++++#

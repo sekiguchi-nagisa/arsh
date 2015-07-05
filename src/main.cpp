@@ -21,16 +21,6 @@
 #include <ydsh/ydsh.h>
 #include "misc/ArgsParser.hpp"
 
-#define YDSH_MAJOR_VERSION 0
-#define YDSH_MINOR_VERSION 2
-#define YDSH_PATCH_VERSION 0
-
-#if 1
-#define DEV_STATE "-unstable"
-#else
-#define DEV_STATE ""
-#endif
-
 using namespace ydsh;
 
 enum OptionKind {
@@ -49,8 +39,7 @@ static const char *getVersion() {
 #define XSTR(S) #S
 #define STR(S) XSTR(S)
     static const char version[] =
-            "ydsh, version " STR(YDSH_MAJOR_VERSION) "."
-                    STR(YDSH_MINOR_VERSION) "." STR(YDSH_PATCH_VERSION) DEV_STATE
+            "ydsh, version " STR(X_INFO_VERSION)
                     " (" STR(X_INFO_SYSTEM) "), build by " STR(X_INFO_CPP) " " STR(X_INFO_CPP_V);
 #undef STR
 #undef XSTR
@@ -205,12 +194,7 @@ int main(int argc, char **argv) {
         DSContext_delete(&ctx);
         return ret;
     } else if(isatty(STDIN_FILENO) == 0) {
-        FILE *fp = fdopen(STDIN_FILENO, "rb");
-        if(fp == NULL) {
-            fprintf(stderr, "cannnot open stdin\n");
-            return 1;
-        }
-        int ret = DSContext_loadAndEval(ctx, nullptr, fp, nullptr);
+        int ret = DSContext_loadAndEval(ctx, nullptr, stdin, nullptr);
         DSContext_delete(&ctx);
         return ret;
     } else {
