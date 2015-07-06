@@ -90,6 +90,10 @@ public:
         return this->listener;
     }
 
+    const ErrorListener *getDefaultListener() const {
+        return &clistener;
+    }
+
     void setLineNum(unsigned int lineNum) {
         this->lineNum = lineNum;
     }

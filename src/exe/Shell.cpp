@@ -101,10 +101,7 @@ ExecStatus Shell::eval(const char *sourceName, Lexer &lexer) {
     }
 
     // eval
-    switch(rootNode.eval(this->ctx)) {
-    case EvalStatus::SUCCESS:
-        return ExecStatus::SUCCESS;
-    default:
+    if(rootNode.eval(this->ctx) != EvalStatus::SUCCESS) {
         DSType *thrownType = ctx.getThrownObject()->getType();
         if(this->ctx.getPool().getInternalStatus()->isAssignableFrom(thrownType)) {
             if(*thrownType == *this->ctx.getPool().getShellExit()) {
@@ -120,6 +117,7 @@ ExecStatus Shell::eval(const char *sourceName, Lexer &lexer) {
         this->checker.recover(false);
         return ExecStatus::RUNTIME_ERROR;
     }
+    return ExecStatus::SUCCESS;
 }
 
 void Shell::initBuiltinVar() {
@@ -177,10 +175,7 @@ void Shell::initbuiltinIface() {
             "    function InterfacesRemoved($hd : Func<Void, [ObjectPath, Array<String>]>)\n"
             "}\n"
             "type-alias ObjectManager org.freedesktop.DBus.ObjectManager\n";
-
-    /**
-     * zero copy
-     */
+    
     ExecStatus s = this->eval(builtinIface);
     if(s != ExecStatus::SUCCESS) {
         fatal("broken builtin iface\n");
