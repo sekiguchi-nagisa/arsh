@@ -76,7 +76,7 @@ ExecStatus Shell::eval(const char *sourceName, Lexer &lexer) {
             std::cout << std::endl;
         }
     } catch(const ParseError &e) {
-        this->listener->displayParseError(lexer, sourceName, e);
+        this->listener->handleParseError(lexer, sourceName, e);
         this->lineNum = lexer.getLineNum();
         return ExecStatus::PARSE_ERROR;
     }
@@ -91,7 +91,7 @@ ExecStatus Shell::eval(const char *sourceName, Lexer &lexer) {
             std::cout << std::endl;
         }
     } catch(const TypeCheckError &e) {
-        this->listener->displayTypeError(sourceName, e);
+        this->listener->handleTypeError(sourceName, e);
         this->checker.recover();
         return ExecStatus::TYPE_ERROR;
     }

@@ -17,6 +17,8 @@
 #ifndef PARSER_ERRORLISTENER_H_
 #define PARSER_ERRORLISTENER_H_
 
+#include <vector>
+
 #include "TypeCheckError.h"
 #include "Parser.h"
 
@@ -26,11 +28,37 @@ namespace parser {
 struct ErrorListener {
     virtual ~ErrorListener() = default;
 
-    virtual void displayTypeError(const std::string &sourceName,
-                                  const TypeCheckError &e) const = 0;
+    virtual void handleTypeError(const std::string &sourceName,
+                                 const TypeCheckError &e) const = 0;
 
-    virtual void displayParseError(Lexer &lexer, const std::string &sourceName, const ParseError &e) const = 0;
+    virtual void handleParseError(Lexer &lexer, const std::string &sourceName, const ParseError &e) const = 0;
 };
+
+class ProxyErrorListener : public ErrorListener {
+private:
+    std::vector<const ErrorListener *> listeners;
+
+public:
+    ProxyErrorListener() = default;
+    ~ProxyErrorListener() = default;
+
+    void handleTypeError(const std::string &sourceName, const TypeCheckError &e) const {    // override
+        for(const ErrorListener *l : this->listeners) {
+            l->handleTypeError(sourceName, e);
+        }
+    }
+
+    void handleParseError(Lexer &lexer, const std::string &sourceName, const ParseError &e) const { // override
+        for(const ErrorListener *l : this->listeners) {
+            l->handleParseError(lexer, sourceName, e);
+        }
+    }
+
+    void addListener(const ErrorListener *listener) {
+        this->listeners.push_back(listener);
+    }
+};
+
 
 class CommonErrorListener : public ErrorListener {
 public:
@@ -38,9 +66,9 @@ public:
 
     ~CommonErrorListener() = default;
 
-    void displayTypeError(const std::string &sourceName,
-                          const TypeCheckError &e) const; // override
-    void displayParseError(Lexer &lexer, const std::string &sourceName, const ParseError &e) const; // override
+    void handleTypeError(const std::string &sourceName,
+                         const TypeCheckError &e) const; // override
+    void handleParseError(Lexer &lexer, const std::string &sourceName, const ParseError &e) const; // override
 };
 
 } // namespace parser

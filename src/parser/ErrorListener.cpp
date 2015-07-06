@@ -26,8 +26,8 @@ namespace parser {
 // ##     CommonErrorListener     ##
 // #################################
 
-void CommonErrorListener::displayTypeError(const std::string &sourceName,
-                                           const TypeCheckError &e) const {
+void CommonErrorListener::handleTypeError(const std::string &sourceName,
+                                          const TypeCheckError &e) const {
     std::cerr << sourceName << ":" << e.getLineNum() << ": [semantic error] "
     << e.getMessage() << std::endl;
 }
@@ -59,8 +59,8 @@ static std::ostream &formatErrorLine(std::ostream &stream, Lexer &lexer, const T
     return stream;
 }
 
-void CommonErrorListener::displayParseError(Lexer &lexer,
-                                            const std::string &sourceName, const ParseError &e) const {
+void CommonErrorListener::handleParseError(Lexer &lexer,
+                                           const std::string &sourceName, const ParseError &e) const {
     std::cerr << sourceName << ":" << e.getLineNum() << ": [syntax error] ";
     format(std::cerr, e) << std::endl;
     formatErrorLine(std::cerr, lexer, e.getErrorToken()) << std::endl;
