@@ -39,52 +39,12 @@ ExecStatus Shell::eval(const char *sourceName, FILE *fp) {
     return this->eval(sourceName, lexer);
 }
 
-void Shell::setErrorListener(const ErrorListener *listener) {
-    this->listener = listener;
-}
-
-void Shell::setLineNum(unsigned int lineNum) {
-    this->lineNum = lineNum;
-}
-
-unsigned int Shell::getLineNum() {
-    return this->lineNum;
-}
-
 void Shell::setArguments(const std::vector<const char *> &args) {
     unsigned int size = args.size();
     this->ctx.updateScriptName(args[0]);
     for(unsigned int i = 1; i < size; i++) {
         this->ctx.addScriptArg(args[i]);
     }
-}
-
-void Shell::setDumpUntypedAST(bool dump) {
-    this->dumpUntypedAST = dump;
-}
-
-void Shell::setDumpTypedAST(bool dump) {
-    this->dumpTypedAST = dump;
-}
-
-void Shell::setParseOnly(bool parseOnly) {
-    this->parseOnly = parseOnly;
-}
-
-void Shell::setAssertion(bool assertion) {
-    this->ctx.setAssertion(assertion);
-}
-
-void Shell::setToplevelprinting(bool print) {
-    this->ctx.setToplevelPrinting(print);
-}
-
-const std::string &Shell::getWorkingDir() {
-    return this->ctx.getWorkingDir();
-}
-
-int Shell::getExitStatus() {
-    return this->ctx.getExitStatus()->getValue();
 }
 
 Shell *Shell::createShell() {

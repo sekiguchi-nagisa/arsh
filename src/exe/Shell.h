@@ -82,23 +82,54 @@ public:
      */
     ExecStatus eval(const char *sourceName, FILE *fp);
 
-    void setErrorListener(const ErrorListener *listener);
-    void setLineNum(unsigned int lineNum);
-    unsigned int getLineNum();
+    void setErrorListener(const ErrorListener *listener) {
+        this->listener = listener;
+    }
+
+    const ErrorListener *getErrorListener() const {
+        return this->listener;
+    }
+
+    void setLineNum(unsigned int lineNum) {
+        this->lineNum = lineNum;
+    }
+
+    unsigned int getLineNum() const {
+        return this->lineNum;
+    }
+
     void setArguments(const std::vector<const char *> &args);
 
-    void setDumpUntypedAST(bool dump);
-    void setDumpTypedAST(bool dump);
-    void setParseOnly(bool parseOnly);
-    void setAssertion(bool assertion);
-    void setToplevelprinting(bool print);
+    void setDumpUntypedAST(bool dump) {
+        this->dumpUntypedAST = dump;
+    }
 
-    const std::string &getWorkingDir();
+    void setDumpTypedAST(bool dump) {
+        this->dumpTypedAST = dump;
+    }
+
+    void setParseOnly(bool parseOnly) {
+        this->parseOnly = parseOnly;
+    }
+
+    void setAssertion(bool assertion) {
+        this->ctx.setAssertion(assertion);
+    }
+
+    void setToplevelprinting(bool print) {
+        this->ctx.setToplevelPrinting(print);
+    }
+
+    const std::string &getWorkingDir() {
+        return this->ctx.getWorkingDir();
+    }
 
     /**
      * get exit status of recently executed command.(also exit command)
      */
-    int getExitStatus();
+    int getExitStatus() {
+        return this->ctx.getExitStatus()->getValue();
+    }
 
     static Shell *createShell();
 
