@@ -285,8 +285,6 @@ public:
     void recover(bool abortType = true);
 
     // visitor api
-    void visitDefault(Node *node); // override
-
     void visitIntValueNode(IntValueNode *node); // override
     void visitLongValueNode(LongValueNode *node); // override
     void visitFloatValueNode(FloatValueNode *node); // override

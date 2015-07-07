@@ -539,10 +539,6 @@ bool TypeChecker::checkLong2Int(int beforePrecision, int afterPrecision) {
 
 
 // visitor api
-void TypeChecker::visitDefault(Node *node) {
-    E_Unimplemented(node, "unimplemented");
-}
-
 void TypeChecker::visitIntValueNode(IntValueNode *node) {
     DSType *type = this->typePool->getIntType();
     switch(node->getKind()) {
