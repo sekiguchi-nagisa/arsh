@@ -33,5 +33,9 @@ function test($a : String) : Boolean {
 }
 
 
-$__test_each($(find $dir -name "*.ds" | sort), $test)
+if($__test_each($(find $dir -name "*.ds" | sort), $test)) {
+    exit 0
+} else {
+    exit 1
+}
 
