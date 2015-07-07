@@ -33,8 +33,9 @@ namespace core {
 // #########################
 
 void ProcInvoker::openProc() {
-    unsigned int offset = this->argArray.getUsedSize();
-    this->procOffsets.push_back(std::make_pair(offset, 0));
+    unsigned int argOffset = this->argArray.getUsedSize();
+    unsigned int redirOffset = this->redirOptions.size();
+    this->procOffsets.push_back(std::make_pair(argOffset, redirOffset));
 }
 
 void ProcInvoker::closeProc() {
@@ -70,9 +71,6 @@ void ProcInvoker::addParam(const std::shared_ptr<DSObject> &value, bool skipEmpt
 void ProcInvoker::addRedirOption(RedirectOP op, const std::shared_ptr<DSObject> &value) {
     DSType *valueType = value->getType();
     if(*valueType == *this->ctx->getPool().getStringType()) {
-        if(this->procOffsets.back().second == 0) {
-            this->procOffsets.back().second = this->redirOptions.size();
-        }
         this->redirOptions.push_back(
                 std::make_pair(op, std::dynamic_pointer_cast<String_Object>(value)->getValue().c_str()));
     } else {
@@ -105,7 +103,7 @@ static void redirectToFile(const char *fileName, const char *mode, int targetFD)
  */
 void ProcInvoker::redirect(unsigned int procIndex) {  //FIXME: error reporting
     unsigned int startIndex = this->procOffsets[procIndex].second;
-    for(; this->redirOptions[startIndex].first != RedirectOP:: DUMMY; startIndex++) {
+    for(; this->redirOptions[startIndex].first != RedirectOP::DUMMY; startIndex++) {
         const std::pair<RedirectOP, const char *> &pair = this->redirOptions[startIndex];
         switch(pair.first) {
         case IN_2_FILE: {
