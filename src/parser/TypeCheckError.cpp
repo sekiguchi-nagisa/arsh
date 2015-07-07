@@ -97,8 +97,8 @@ TypeCheckError::TypeCheckError(unsigned int lineNum, TypeCheckError::ErrorKind3 
     this->message += arg3;
 }
 
-TypeCheckError::TypeCheckError(unsigned int lineNum, const core::TypeLookupError &e) :
-        lineNum(lineNum), kind(e.getKind()), message(e.getMessage()) {
+TypeCheckError::TypeCheckError(unsigned int lineNum, core::TypeLookupError &e) :
+        lineNum(lineNum), kind(e.getKind()), message(e.moveMessage()) {
 }
 
 std::ostream &operator<<(std::ostream &stream, TypeCheckError::ErrorKind0 kind) {

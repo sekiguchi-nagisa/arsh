@@ -81,6 +81,13 @@ public:
         return this->message;
     }
 
+    /**
+     * after call it, message will be empty.
+     */
+    std::string moveMessage() {
+        return std::move(this->message);
+    }
+
     bool operator==(const TypeLookupError &e) const {
         return this->message == e.getMessage();
     }

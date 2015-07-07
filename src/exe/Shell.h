@@ -19,13 +19,13 @@
 
 #include "../parser/Lexer.h"
 #include "../parser/Parser.h"
-#include "../parser/ErrorListener.h"
 #include "../core/RuntimeContext.h"
 #include "../core/TypePool.h"
 #include "../parser/TypeChecker.h"
 #include "../core/DSType.h"
 #include "../ast/Node.h"
 #include "../ast/dump.h"
+#include "ErrorListener.h"
 
 namespace ydsh {
 
@@ -52,7 +52,7 @@ private:
     /*
      * not delete it.
      */
-    const ErrorListener *listener;
+    ErrorListener *listener;
 
     // option
     bool dumpUntypedAST;
@@ -82,7 +82,7 @@ public:
      */
     ExecStatus eval(const char *sourceName, FILE *fp);
 
-    void setErrorListener(const ErrorListener *listener) {
+    void setErrorListener(ErrorListener * const listener) {
         this->listener = listener;
     }
 

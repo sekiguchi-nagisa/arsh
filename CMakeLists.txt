@@ -173,7 +173,7 @@ set(YDSH_SRC
     src/core/TypeLookupError.cpp
     src/core/TypePool.cpp
     src/exe/Shell.cpp
-    src/parser/ErrorListener.cpp
+    src/exe/ErrorListener.cpp
     src/parser/Lexer.cpp
     src/parser/Parser.cpp
     src/parser/TokenKind.cpp

@@ -118,7 +118,7 @@ public:
     TypeCheckError(unsigned int lineNum, TypeCheckError::ErrorKind3 k, const std::string &arg1,
                    const std::string &arg2, const std::string &arg3);
 
-    TypeCheckError(unsigned int lineNum, const core::TypeLookupError &e);
+    TypeCheckError(unsigned int lineNum, core::TypeLookupError &e);
 
     ~TypeCheckError() = default;
 

@@ -17,20 +17,16 @@
 #include <iostream>
 
 #include "ErrorListener.h"
-#include "misc/debug.h"
+#include "../misc/debug.h"
 
 namespace ydsh {
-namespace parser {
 
 // #################################
 // ##     CommonErrorListener     ##
 // #################################
 
-void CommonErrorListener::handleTypeError(const std::string &sourceName,
-                                          const TypeCheckError &e) const {
-    std::cerr << sourceName << ":" << e.getLineNum() << ": [semantic error] "
-    << e.getMessage() << std::endl;
-}
+CommonErrorListener::CommonErrorListener() : CommonErrorListener(std::cerr) { }
+CommonErrorListener::CommonErrorListener(std::ostream &stream) : stream(&stream) { }
 
 static std::ostream &format(std::ostream &stream, const ParseError &e) {
 #define EACH_ERROR(E) \
@@ -59,12 +55,21 @@ static std::ostream &formatErrorLine(std::ostream &stream, Lexer &lexer, const T
     return stream;
 }
 
+#define STREAM (*this->stream)
+
 void CommonErrorListener::handleParseError(Lexer &lexer,
-                                           const std::string &sourceName, const ParseError &e) const {
-    std::cerr << sourceName << ":" << e.getLineNum() << ": [syntax error] ";
-    format(std::cerr, e) << std::endl;
-    formatErrorLine(std::cerr, lexer, e.getErrorToken()) << std::endl;
+                                           const std::string &sourceName, const ParseError &e) noexcept {
+    STREAM << sourceName << ":" << e.getLineNum() << ": [syntax error] ";
+    format(STREAM, e) << std::endl;
+    formatErrorLine(STREAM, lexer, e.getErrorToken()) << std::endl;
 }
 
-} // namespace parser
+void CommonErrorListener::handleTypeError(const std::string &sourceName,
+                                          const TypeCheckError &e) noexcept {
+    STREAM << sourceName << ":" << e.getLineNum() << ": [semantic error] "
+    << e.getMessage() << std::endl;
+}
+
+#undef STREAM
+
 } // namespace ydsh
