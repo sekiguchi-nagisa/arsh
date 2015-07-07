@@ -1458,6 +1458,16 @@ void CmdArgNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus CmdArgNode::eval(RuntimeContext &ctx) {
+    EvalStatus s = this->evalImpl(ctx);
+    if(s != EvalStatus::SUCCESS) {
+        return s;
+    }
+
+    ctx.getProcInvoker().addParam(ctx.peek(), this->isIgnorableEmptyString());
+    return EvalStatus::SUCCESS;
+}
+
+EvalStatus CmdArgNode::evalImpl(RuntimeContext &ctx) {
     if(this->segmentNodes.size() == 1) {
         EVAL(ctx, this->segmentNodes[0]);
         DSType *type = this->segmentNodes[0]->getType();
@@ -1482,17 +1492,54 @@ EvalStatus CmdArgNode::eval(RuntimeContext &ctx) {
     return EvalStatus::SUCCESS;
 }
 
-Node *CmdArgNode::compactNode(CmdArgNode *node) {
-    if(node->segmentNodes.size() == 1) {
-        Node *segmentNode = node->segmentNodes[0];
-        if(dynamic_cast<StringValueNode *>(segmentNode) != nullptr ||
-           dynamic_cast<StringExprNode *>(segmentNode) != nullptr) {
-            node->segmentNodes[0] = nullptr;
-            delete node;
-            return segmentNode;
-        }
+bool CmdArgNode::isIgnorableEmptyString() {
+    return this->segmentNodes.size() > 1 ||
+            (dynamic_cast<StringValueNode *>(this->segmentNodes.back()) == nullptr &&
+                    dynamic_cast<StringExprNode *>(this->segmentNodes.back()) == nullptr);
+}
+
+// #######################
+// ##     RedirNode     ##
+// #######################
+
+RedirNode::RedirNode(TokenKind kind, CmdArgNode *node) :
+        Node(0), op(RedirectOP::DUMMY), targetNode(node) {
+    switch(kind) {
+#define GEN_CASE(ENUM, STR) case REDIR_##ENUM : this->op = RedirectOP::ENUM; break;
+    EACH_RedirectOP(GEN_CASE)
+#undef GEN_CASE
+    default:
+        fatal("unsupported redirect op: %s\n", TO_NAME(kind));
+        break;
     }
-    return node;
+}
+
+RedirNode::~RedirNode() {
+    delete this->targetNode;
+}
+
+void RedirNode::dump(Writer &writer) const {
+    static const char *redirOpStr[] = {
+#define GEN_STR(ENUM, STR) #ENUM,
+            EACH_RedirectOP(GEN_STR)
+#undef GEN_STR
+    };
+
+    writer.write(NAME(op), redirOpStr[this->op]);
+    WRITE_PTR(targetNode);
+}
+
+void RedirNode::accept(NodeVisitor *visitor) {
+    visitor->visitRedirNode(this);
+}
+
+EvalStatus RedirNode::eval(RuntimeContext &ctx) {
+    EvalStatus s = this->targetNode->evalImpl(ctx);
+    if(s != EvalStatus::SUCCESS) {
+        return s;
+    }
+    ctx.getProcInvoker().addRedirOption(this->op, ctx.peek());
+    return EvalStatus::SUCCESS;
 }
 
 // #####################
@@ -1500,7 +1547,7 @@ Node *CmdArgNode::compactNode(CmdArgNode *node) {
 // #####################
 
 CmdNode::CmdNode(unsigned int lineNum, std::string &&commandName) :
-        Node(lineNum), commandName(std::move(commandName)), argNodes(), redirOptions() {
+        Node(lineNum), commandName(std::move(commandName)), argNodes() {
 }
 
 CmdNode::~CmdNode() {
@@ -1508,11 +1555,6 @@ CmdNode::~CmdNode() {
         delete e;
     }
     this->argNodes.clear();
-
-    for(auto &pair : this->redirOptions) {
-        delete pair.second;
-    }
-    this->redirOptions.clear();
 }
 
 const std::string &CmdNode::getCommandName() {
@@ -1520,7 +1562,7 @@ const std::string &CmdNode::getCommandName() {
 }
 
 void CmdNode::addArgNode(CmdArgNode *node) {
-    this->argNodes.push_back(CmdArgNode::compactNode(node));
+    this->argNodes.push_back(node);
 }
 
 const std::vector<Node *> &CmdNode::getArgNodes() {
@@ -1528,42 +1570,16 @@ const std::vector<Node *> &CmdNode::getArgNodes() {
 }
 
 void CmdNode::addRedirOption(TokenKind kind, CmdArgNode *node) {
-    RedirectOP op;
-    switch(kind) {
-#define GEN_CASE(ENUM, STR) case REDIR_##ENUM : op = RedirectOP::ENUM; break;
-    EACH_RedirectOP(GEN_CASE)
-#undef GEN_CASE
-    default:
-        fatal("unsupported redirect op: %s\n", TO_NAME(kind));
-        break;
-    }
-
-    this->redirOptions.push_back(std::make_pair(op, node));
+    this->argNodes.push_back(new RedirNode(kind, node));
 }
 
 void CmdNode::addRedirOption(TokenKind kind) {
     this->addRedirOption(kind, new CmdArgNode(new StringValueNode(std::string(""))));
 }
 
-const std::vector<std::pair<RedirectOP, CmdArgNode *>> &CmdNode::getRedirOptions() {
-    return this->redirOptions;
-}
-
 void CmdNode::dump(Writer &writer) const {
     WRITE(commandName);
     WRITE(argNodes);
-
-    static const char *redirOpStr[] = {
-#define GEN_STR(ENUM, STR) #ENUM,
-            EACH_RedirectOP(GEN_STR)
-#undef GEN_STR
-    };
-
-    std::vector<std::pair<std::string, Node *>> redirOptions;
-    for(auto &pair : this->redirOptions) {
-        redirOptions.push_back(std::make_pair(std::string(redirOpStr[pair.first]), pair.second));
-    }
-    WRITE(redirOptions);
 }
 
 void CmdNode::accept(NodeVisitor *visitor) {
@@ -1576,13 +1592,6 @@ EvalStatus CmdNode::eval(RuntimeContext &ctx) {
     ctx.getProcInvoker().addCommandName(this->commandName);
     for(Node *node : this->argNodes) {
         EVAL(ctx, node);
-        bool skipEmptyString = dynamic_cast<CmdArgNode *>(node) != nullptr;
-        ctx.getProcInvoker().addParam(ctx.peek(), skipEmptyString);
-    }
-
-    for(auto &pair : this->redirOptions) {  //FIXME: change evaluation order
-        EVAL(ctx, pair.second);
-        ctx.getProcInvoker().addRedirOption(pair.first, ctx.peek());
     }
 
     ctx.getProcInvoker().closeProc();

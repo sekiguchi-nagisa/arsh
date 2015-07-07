@@ -64,19 +64,6 @@ void Writer::write(const char *fieldName, const std::list<Node *> &nodes) {
     this->exitIndent();
 }
 
-void Writer::write(const char *fieldName, const std::vector<std::pair<std::string, Node *>> &pairs) {
-    this->writeName(fieldName);
-    OUT << std::endl;
-
-    this->enterIndent();
-    for(auto &pair : pairs) {
-        this->writeIndent();
-        OUT << pair.first << std::endl;
-        this->write(*pair.second);
-    }
-    this->exitIndent();
-}
-
 void Writer::write(const char *fieldName, const Node &node) {
     // write field name
     this->writeName(fieldName);

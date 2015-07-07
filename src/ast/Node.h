@@ -749,13 +749,35 @@ public:
     void accept(NodeVisitor *visitor);  // override
     EvalStatus eval(RuntimeContext &ctx); // override
 
+    EvalStatus evalImpl(RuntimeContext &ctx);
+
     /**
-     * if node->getSegmentNodes().size() == 1
-     * and segmentNode is StringValueNode or StringExprNode,
-     * extract segmentNode.
-     * return segmentNode or this.
+     * if true, ignore evaluated empty string.
      */
-    static Node *compactNode(CmdArgNode *node);
+    bool isIgnorableEmptyString();
+};
+
+class RedirNode : public Node {
+private:
+    RedirectOP op;
+    CmdArgNode *targetNode;
+
+public:
+    RedirNode(TokenKind kind, CmdArgNode *node);
+
+    ~RedirNode();
+
+    RedirectOP getRedirectOP() {
+        return this->op;
+    }
+
+    CmdArgNode *getTargetNode() {
+        return this->targetNode;
+    }
+
+    void dump(Writer &writer) const;  // override
+    void accept(NodeVisitor *visitor);  // override
+    EvalStatus eval(RuntimeContext &ctx); // override
 };
 
 class CmdNode : public Node {
@@ -763,10 +785,9 @@ private:
     std::string commandName;
 
     /**
-     * may be CmdArgNode, StringValueNode or StringExprNode
+     * may be CmdArgNode, RedirNode
      */
     std::vector<Node *> argNodes;
-    std::vector<std::pair<RedirectOP, CmdArgNode *>> redirOptions;
 
 public:
     CmdNode(unsigned int lineNum, std::string &&commandName);
@@ -781,8 +802,6 @@ public:
 
     void addRedirOption(TokenKind kind, CmdArgNode *node);
     void addRedirOption(TokenKind kind);
-
-    const std::vector<std::pair<RedirectOP, CmdArgNode *>> &getRedirOptions();
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    //override
@@ -1588,6 +1607,7 @@ struct NodeVisitor {
     virtual void visitCondOpNode(CondOpNode *node) = 0;
     virtual void visitCmdNode(CmdNode *node) = 0;
     virtual void visitCmdArgNode(CmdArgNode *node) = 0;
+    virtual void visitRedirNode(RedirNode *node) = 0;
     virtual void visitPipedCmdNode(PipedCmdNode *node) = 0;
     virtual void visitCmdContextNode(CmdContextNode *node) = 0;
     virtual void visitAssertNode(AssertNode *node) = 0;

@@ -864,10 +864,6 @@ void TypeChecker::visitCmdNode(CmdNode *node) {
     for(auto *argNode : node->getArgNodes()) {
         this->checkType(argNode);
     }
-    // check type redirect options
-    for(auto &optionPair : node->getRedirOptions()) {
-        this->checkTypeAsStatement(optionPair.second);
-    }
     node->setType(this->typePool->getVoidType());   // FIXME
 }
 
@@ -875,6 +871,11 @@ void TypeChecker::visitCmdArgNode(CmdArgNode *node) {
     for(Node *exprNode : node->getSegmentNodes()) {
         this->checkType(exprNode);
     }
+    node->setType(this->typePool->getAnyType());   //FIXME
+}
+
+void TypeChecker::visitRedirNode(RedirNode *node) {
+    this->checkTypeAsStatement(node->getTargetNode());
     node->setType(this->typePool->getAnyType());   //FIXME
 }
 

@@ -17,3 +17,5 @@ $a = ""
 assert("$(echo $a hello $a)" == "hello")
 
 assert("$(echo "" 23)" == " 23")
+
+assert(ls -la 2>&1 > /dev/null)

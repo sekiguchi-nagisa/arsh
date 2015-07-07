@@ -73,8 +73,6 @@ public:
 
     void write(const char *fieldName, const std::list<Node *> &nodes);
 
-    void write(const char *fieldName, const std::vector<std::pair<std::string, Node *>> &pairs);
-
     /**
      * write node with indent
      */
