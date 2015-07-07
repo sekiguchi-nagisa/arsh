@@ -22,6 +22,7 @@
 
 #include "DSObject.h"
 #include "TypePool.h"
+#include "ProcInvoker.h"
 
 namespace ydsh {
 namespace core {
@@ -154,6 +155,8 @@ private:
      */
     std::unordered_map<std::string, unsigned int> specialCharMap;
 
+    ProcInvoker procInvoker;
+
     static const char *configRootDir;
     static const char *typeDefDir;
 
@@ -215,6 +218,10 @@ public:
 
     const std::shared_ptr<DSObject> &getThrownObject() {
         return this->thrownObject;
+    }
+
+    unsigned int getStackTopIndex() {
+        return this->stackTopIndex;
     }
 
     unsigned int getLocalVarOffset() {
@@ -487,6 +494,10 @@ public:
 
     void registerSpecialChar(const std::string &varName, unsigned int index);
     unsigned int getSpecialCharIndex(const char *varName);
+
+    ProcInvoker &getProcInvoker() {
+        return this->procInvoker;
+    }
 };
 
 } // namespace core

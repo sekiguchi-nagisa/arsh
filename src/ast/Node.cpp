@@ -22,7 +22,7 @@
 #include "../core/symbol.h"
 #include "../core/DSObject.h"
 #include "../core/RuntimeContext.h"
-#include "../core/ProcContext.h"
+#include "../core/ProcInvoker.h"
 #include "../core/FieldHandle.h"
 #include "../misc/debug.h"
 #include "dump.h"
@@ -1571,18 +1571,21 @@ void CmdNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus CmdNode::eval(RuntimeContext &ctx) {
-    std::shared_ptr<ProcContext> proc(new ProcContext(ctx, this->commandName));
+    ctx.getProcInvoker().openProc();
+
+    ctx.getProcInvoker().addCommandName(this->commandName);
     for(Node *node : this->argNodes) {
         EVAL(ctx, node);
         bool skipEmptyString = dynamic_cast<CmdArgNode *>(node) != nullptr;
-        proc->addParam(ctx.pop(), skipEmptyString);
+        ctx.getProcInvoker().addParam(ctx.peek(), skipEmptyString);
     }
 
     for(auto &pair : this->redirOptions) {  //FIXME: change evaluation order
         EVAL(ctx, pair.second);
-        proc->addRedirOption(pair.first, ctx.pop());
+        ctx.getProcInvoker().addRedirOption(pair.first, ctx.peek());
     }
-    ctx.push(std::move(proc));
+
+    ctx.getProcInvoker().closeProc();
     return EvalStatus::SUCCESS;
 }
 
@@ -1632,15 +1635,21 @@ void PipedCmdNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus PipedCmdNode::eval(RuntimeContext &ctx) {
-    unsigned int size = this->cmdNodes.size();
-    ProcGroup group(size);
+    const unsigned int oldIndex = ctx.getStackTopIndex();
+    ctx.getProcInvoker().clear();
 
-    for(unsigned int i = 0; i < size; i++) {
-        EVAL(ctx, this->cmdNodes[i]);
-        group.addProc(i, std::dynamic_pointer_cast<ProcContext>(ctx.pop()));
+    for(auto &node : this->cmdNodes) {
+        EVAL(ctx, node);
     }
-    EvalStatus status = group.execProcs();
+    EvalStatus status = ctx.getProcInvoker().invoke();
 
+    // pop command argument
+    const unsigned int curIndex = ctx.getStackTopIndex();
+    for(unsigned int i = curIndex; i > oldIndex; i--) {
+        ctx.popNoReturn();
+    }
+
+    // push exit status
     if(*this->type == *ctx.getPool().getBooleanType()) {
         if(ctx.getExitStatus()->getValue() == 0) {
             ctx.push(ctx.getTrueObj());

@@ -46,7 +46,7 @@ RuntimeContext::RuntimeContext() :
         localVarOffset(0), offsetStack(), toplevelPrinting(false), assertion(true),
         handle_STR(0), handle_INTERP(0), handle_CMD_ARG(0), handle_bt(0),
         readFiles(), funcContextStack(), callStack(),
-        workingDir(getCurrentWorkingDir()), specialCharMap() {
+        workingDir(getCurrentWorkingDir()), specialCharMap(), procInvoker(this) {
     this->readFiles.push_back(std::string("(stdin)"));
 }
 

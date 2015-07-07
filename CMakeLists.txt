@@ -167,7 +167,7 @@ set(YDSH_SRC
     src/core/DSObject.cpp
     src/core/DSType.cpp
     src/core/FieldHandle.cpp
-    src/core/ProcContext.cpp
+    src/core/ProcInvoker.cpp
     src/core/RuntimeContext.cpp
     src/core/SymbolTable.cpp
     src/core/TypeLookupError.cpp
