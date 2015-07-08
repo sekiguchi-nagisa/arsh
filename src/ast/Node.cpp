@@ -1650,7 +1650,10 @@ EvalStatus PipedCmdNode::eval(RuntimeContext &ctx) {
     for(auto &node : this->cmdNodes) {
         EVAL(ctx, node);
     }
+
+    ctx.pushCallFrame(this->lineNum);
     EvalStatus status = ctx.getProcInvoker().invoke();
+    ctx.popCallFrame();
 
     // pop command argument
     const unsigned int curIndex = ctx.getStackTopIndex();

@@ -29,6 +29,7 @@ enum OptionKind {
     PARSE_ONLY,
     DISABLE_ASSERT,
     PRINT_TOPLEVEL,
+    TRACE_EXIT,
     VERSION,
     HELP,
 };
@@ -115,6 +116,13 @@ int main(int argc, char **argv) {
     );
 
     parser.addOption(
+            TRACE_EXIT,
+            "--trace-exit",
+            false,
+            "trace execution process to exit command."
+    );
+
+    parser.addOption(
             VERSION,
             "--version",
             false,
@@ -158,6 +166,9 @@ int main(int argc, char **argv) {
             break;
         case PRINT_TOPLEVEL:
             DSContext_setOption(ctx, DS_OPTION_TOPLEVEL);
+            break;
+        case TRACE_EXIT:
+            DSContext_setOption(ctx, DS_OPTION_TRACE_EXIT);
             break;
         case VERSION:
             std::cout << version << std::endl << copyright << std::endl;

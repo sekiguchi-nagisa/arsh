@@ -356,7 +356,7 @@ public:
     }
 
     DSType *getShellExit() const {
-        return this->internalStatus;
+        return this->shellExit;
     }
 
     DSType *getAssertFail() const {

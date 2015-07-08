@@ -58,6 +58,7 @@ private:
     bool dumpUntypedAST;
     bool dumpTypedAST;
     bool parseOnly;
+    bool traceExit;
 
 protected:
     Shell();
@@ -125,6 +126,10 @@ public:
 
     void setToplevelprinting(bool print) {
         this->ctx.setToplevelPrinting(print);
+    }
+
+    void setTraceExit(bool trace) {
+        this->traceExit = trace;
     }
 
     const std::string &getWorkingDir() {

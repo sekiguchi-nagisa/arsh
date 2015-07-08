@@ -28,7 +28,7 @@ namespace ydsh {
 Shell::Shell() :
         ctx(), parser(), checker(&this->ctx.getPool()), lineNum(1),
         listener(&clistener), dumpUntypedAST(false),
-        dumpTypedAST(false), parseOnly(false) {
+        dumpTypedAST(false), parseOnly(false), traceExit(false) {
 }
 
 ExecStatus Shell::eval(const char *line) {
@@ -109,6 +109,10 @@ ExecStatus Shell::eval(const char *sourceName, Lexer &lexer) {
         DSType *thrownType = ctx.getThrownObject()->getType();
         if(this->ctx.getPool().getInternalStatus()->isSameOrBaseTypeOf(thrownType)) {
             if(*thrownType == *this->ctx.getPool().getShellExit()) {
+                if(this->traceExit) {
+                    this->ctx.loadThrownObject();
+                    TYPE_AS(Error_Object, ctx.pop())->printStackTrace(this->ctx);
+                }
                 return ExecStatus::EXIT;
             }
             if(*thrownType == *this->ctx.getPool().getAssertFail()) {

@@ -143,6 +143,9 @@ static void setOptionImpl(Shell *shell, flag32_set_t flagSet, bool set) {
     if(hasFlag(flagSet, DS_OPTION_TOPLEVEL)) {
         shell->setToplevelprinting(set);
     }
+    if(hasFlag(flagSet, DS_OPTION_TRACE_EXIT)) {
+        shell->setTraceExit(set);
+    }
 }
 
 void DSContext_setOption(DSContext *ctx, unsigned int optionSet) {

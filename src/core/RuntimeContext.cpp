@@ -431,7 +431,9 @@ void RuntimeContext::updateExitStatus(unsigned int status) {
 
 void RuntimeContext::exitShell(unsigned int status) {
     this->updateExitStatus(status);
-    this->throwError(this->pool.getShellExit(), "exit shell by exit command");
+    std::string str("terminated by exit ");
+    str += std::to_string(status);
+    this->throwError(this->pool.getShellExit(), std::move(str));
 }
 
 void RuntimeContext::registerSpecialChar(const std::string &varName, unsigned int index) {
