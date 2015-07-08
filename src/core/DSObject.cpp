@@ -499,6 +499,20 @@ void Tuple_Object::accept(ObjectVisitor *visitor) {
     visitor->visitTuple_Object(this);
 }
 
+// ###############################
+// ##     StackTraceElement     ##
+// ###############################
+
+std::ostream &operator<<(std::ostream &stream, const StackTraceElement &e) {
+    return stream << "from " << e.getSourceName() << ":"
+           << e.getLineNum() << " '" << e.getCallerName() << "()'";
+}
+
+unsigned int getOccuredLineNum(const std::vector<StackTraceElement> &elements) {
+    return elements.front().getLineNum();
+}
+
+
 // ##########################
 // ##     Error_Object     ##
 // ##########################
@@ -530,7 +544,7 @@ void Error_Object::printStackTrace(RuntimeContext &ctx) {
     << TYPE_AS(String_Object, this->message)->getValue() << std::endl;
 
     // print stack trace
-    for(const std::string &s : this->stackTrace) {
+    for(auto &s : this->stackTrace) {
         std::cerr << "    " << s << std::endl;
     }
 }
@@ -541,6 +555,10 @@ const std::shared_ptr<DSObject> &Error_Object::getName(RuntimeContext &ctx) {
                 ctx.getPool().getStringType(), ctx.getPool().getTypeName(*this->type));
     }
     return this->name;
+}
+
+const std::vector<StackTraceElement> &Error_Object::getStackTrace() {
+    return this->stackTrace;
 }
 
 void Error_Object::accept(ObjectVisitor *visitor) {

@@ -434,7 +434,7 @@ public:
 
 
     // some runtime api
-    void fillInStackTrace(std::vector<std::string> &stackTrace);
+    void fillInStackTrace(std::vector<StackTraceElement> &stackTrace);
 
     void printStackTop(DSType *stackTopType);
 

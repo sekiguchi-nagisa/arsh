@@ -301,33 +301,27 @@ void RuntimeContext::reportError() {
     }
 }
 
-void RuntimeContext::fillInStackTrace(std::vector<std::string> &stackTrace) {
+void RuntimeContext::fillInStackTrace(std::vector<StackTraceElement> &stackTrace) {
     static const unsigned long lowOrderMask = ~((1L << 32) - 1);
     static const unsigned long highOrderMask = ~(((1L << 32) - 1) << 32);
 
     for(auto iter = this->callStack.rbegin(); iter != this->callStack.rend(); ++iter) {
         unsigned long frame = *iter;
-        std::string str("from ");
         unsigned long funcCtxIndex = (frame & lowOrderMask) >> 32;
         Node *node = this->funcContextStack[funcCtxIndex];
         const char *sourceName = node->getSourceName();
         unsigned long lineNum = frame & highOrderMask;
 
-        str += sourceName;
-        str += ":";
-        str += std::to_string(lineNum);
-        str += " '";
-
+        std::string callerName;
         FunctionNode *funcNode = dynamic_cast<FunctionNode *>(node);
         if(funcNode != 0) {
-            str += "function ";
-            str += funcNode->getFuncName();
+            callerName += "function ";
+            callerName += funcNode->getFuncName();
         } else {
-            str += "<toplevel>";
+            callerName += "<toplevel>";
         }
-        str += "()'";
 
-        stackTrace.push_back(std::move(str));
+        stackTrace.push_back(StackTraceElement(sourceName, lineNum, std::move(callerName)));
     }
 }
 

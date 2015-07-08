@@ -17,6 +17,7 @@
 #ifndef CORE_DSOBJECT_H_
 #define CORE_DSOBJECT_H_
 
+#include <ostream>
 #include <memory>
 
 #include "../ast/Node.h"
@@ -258,11 +259,43 @@ struct Tuple_Object : public BaseObject {
     void accept(ObjectVisitor *visitor); // override
 };
 
+class StackTraceElement {
+private:
+    const char *sourceName;
+    unsigned int lineNum;
+    std::string callerName;
+
+public:
+    StackTraceElement() :
+            sourceName(), lineNum(0), callerName() { }
+
+    StackTraceElement(const char *sourceName, unsigned int lineNum, std::string &&callerName) :
+            sourceName(sourceName), lineNum(lineNum), callerName(std::move(callerName)) { }
+    ~StackTraceElement() = default;
+
+    const char *getSourceName() const {
+        return this->sourceName;
+    }
+
+    unsigned int getLineNum() const {
+        return this->lineNum;
+    }
+
+    const std::string &getCallerName() const {
+        return this->callerName;
+    }
+};
+
+std::ostream &operator<<(std::ostream &stream, const StackTraceElement &e);
+
+unsigned int getOccuredLineNum(const std::vector<StackTraceElement> &elements);
+
+
 class Error_Object : public DSObject {
 private:
     std::shared_ptr<DSObject> message;
     std::shared_ptr<DSObject> name;
-    std::vector<std::string> stackTrace;
+    std::vector<StackTraceElement> stackTrace;
 
 public:
     Error_Object(DSType *type, const std::shared_ptr<DSObject> &message);
@@ -279,6 +312,8 @@ public:
     void printStackTrace(RuntimeContext &ctx);
 
     const std::shared_ptr<DSObject> &getName(RuntimeContext &ctx);
+
+    const std::vector<StackTraceElement> &getStackTrace();
 
     void accept(ObjectVisitor *visitor); // override
 
