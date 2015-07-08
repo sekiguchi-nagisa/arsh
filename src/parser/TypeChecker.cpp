@@ -205,7 +205,7 @@ DSType *TypeChecker::checkType(DSType *requiredType, Node *targetNode,
      * do not try type matching.
      */
     if(requiredType == 0) {
-        if(unacceptableType != 0 && unacceptableType->isAssignableFrom(type)) {
+        if(unacceptableType != 0 && unacceptableType->isSameOrBaseTypeOf(type)) {
             E_Unacceptable(targetNode, this->typePool->getTypeName(*type));
         }
         return type;
@@ -214,7 +214,7 @@ DSType *TypeChecker::checkType(DSType *requiredType, Node *targetNode,
     /**
      * try type matching.
      */
-    if(requiredType->isAssignableFrom(type)) {
+    if(requiredType->isSameOrBaseTypeOf(type)) {
         return type;
     }
 
@@ -671,7 +671,7 @@ void TypeChecker::visitCastNode(CastNode *node) {
     /**
      * nop
      */
-    if(targetType->isAssignableFrom(exprType)) {
+    if(targetType->isSameOrBaseTypeOf(exprType)) {
         return;
     }
 
@@ -740,7 +740,7 @@ void TypeChecker::visitCastNode(CastNode *node) {
     /**
      * check cast
      */
-    if(exprType->isAssignableFrom(targetType)) {
+    if(exprType->isSameOrBaseTypeOf(targetType)) {
         node->setOpKind(CastNode::CHECK_CAST);
         return;
     }
@@ -754,9 +754,9 @@ void TypeChecker::visitInstanceOfNode(InstanceOfNode *node) {
     node->setTargetType(targetType);
 
 
-    if(targetType->isAssignableFrom(exprType)) {
+    if(targetType->isSameOrBaseTypeOf(exprType)) {
         node->setOpKind(InstanceOfNode::ALWAYS_TRUE);
-    } else if(exprType->isAssignableFrom(targetType)) {
+    } else if(exprType->isSameOrBaseTypeOf(targetType)) {
         node->setOpKind(InstanceOfNode::INSTANCEOF);
     } else {
         node->setOpKind(InstanceOfNode::ALWAYS_FALSE);
@@ -1087,7 +1087,7 @@ void TypeChecker::visitTryNode(TryNode *node) {
         DSType *curType = node->getCatchNodes()[i]->getExceptionType();
         CatchNode *nextNode = node->getCatchNodes()[i + 1];
         DSType *nextType = nextNode->getExceptionType();
-        if(curType->isAssignableFrom(nextType)) {
+        if(curType->isSameOrBaseTypeOf(nextType)) {
             E_Unreachable(nextNode);
         }
     }

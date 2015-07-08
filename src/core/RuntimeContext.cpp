@@ -288,7 +288,7 @@ EvalStatus RuntimeContext::toCmdArg(unsigned int lineNum) {
 
 void RuntimeContext::reportError() {
     std::cerr << "[runtime error]" << std::endl;
-    if(this->pool.getErrorType()->isAssignableFrom(this->thrownObject->getType())) {
+    if(this->pool.getErrorType()->isSameOrBaseTypeOf(this->thrownObject->getType())) {
         static const std::string methodName("backtrace");
 
         if(this->handle_bt == nullptr) {

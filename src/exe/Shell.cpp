@@ -107,7 +107,7 @@ ExecStatus Shell::eval(const char *sourceName, Lexer &lexer) {
     // eval
     if(rootNode.eval(this->ctx) != EvalStatus::SUCCESS) {
         DSType *thrownType = ctx.getThrownObject()->getType();
-        if(this->ctx.getPool().getInternalStatus()->isAssignableFrom(thrownType)) {
+        if(this->ctx.getPool().getInternalStatus()->isSameOrBaseTypeOf(thrownType)) {
             if(*thrownType == *this->ctx.getPool().getShellExit()) {
                 return ExecStatus::EXIT;
             }

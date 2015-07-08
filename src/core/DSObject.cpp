@@ -76,7 +76,7 @@ size_t DSObject::hash() {
 }
 
 bool DSObject::introspect(RuntimeContext &ctx, DSType *targetType) {
-    return targetType->isAssignableFrom(this->type);
+    return targetType->isSameOrBaseTypeOf(this->type);
 }
 
 void DSObject::accept(ObjectVisitor *visitor) {

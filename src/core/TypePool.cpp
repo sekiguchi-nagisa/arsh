@@ -502,7 +502,7 @@ void TypePool::checkElementTypes(const std::vector<DSType *> &elementTypes) {
 void TypePool::checkElementTypes(TypeTemplate *t, const std::vector<DSType *> &elementTypes) {
     unsigned int size = elementTypes.size();
     for(unsigned int i = 0; i < size; i++) {
-        if(!t->getAcceptableTypes()[i]->isAssignableFrom(elementTypes[i])) {
+        if(!t->getAcceptableTypes()[i]->isSameOrBaseTypeOf(elementTypes[i])) {
             E_InvalidElement(this->getTypeName(*elementTypes[i]));
         }
     }
@@ -510,7 +510,7 @@ void TypePool::checkElementTypes(TypeTemplate *t, const std::vector<DSType *> &e
 
 bool TypePool::asVariantType(const std::vector<DSType *> &elementTypes) {
     for(DSType *type : elementTypes) {
-        if(!this->variantType->isAssignableFrom(type)) {
+        if(!this->variantType->isSameOrBaseTypeOf(type)) {
             return false;
         }
     }

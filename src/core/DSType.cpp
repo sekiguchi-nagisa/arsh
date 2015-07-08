@@ -94,12 +94,12 @@ bool DSType::operator!=(const DSType &type) {
     return (unsigned long) this != (unsigned long) &type;
 }
 
-bool DSType::isAssignableFrom(DSType *targetType) {
+bool DSType::isSameOrBaseTypeOf(DSType *targetType) {
     if(*this == *targetType) {
         return true;
     }
     DSType *superType = targetType->getSuperType();
-    return superType != 0 && this->isAssignableFrom(superType);
+    return superType != 0 && this->isSameOrBaseTypeOf(superType);
 }
 
 MethodRef *DSType::getMethodRef(unsigned int methodIndex) {

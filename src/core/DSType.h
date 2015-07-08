@@ -138,7 +138,7 @@ public:
      * if this type is equivalent to target type or
      * the super type of target type, return true.
      */
-    virtual bool isAssignableFrom(DSType *targetType);
+    virtual bool isSameOrBaseTypeOf(DSType *targetType);
 
     virtual MethodRef *getMethodRef(unsigned int methodIndex);
     virtual void copyAllMethodRef(std::vector<std::shared_ptr<MethodRef>> &methodTable);

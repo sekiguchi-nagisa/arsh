@@ -2639,7 +2639,7 @@ EvalStatus TryNode::eval(RuntimeContext &ctx) {
     } else {   // eval catch
         DSType *thrownType = ctx.getThrownObject()->getType();
         for(CatchNode *catchNode : this->catchNodes) {
-            if(catchNode->getExceptionType()->isAssignableFrom(thrownType)) {
+            if(catchNode->getExceptionType()->isSameOrBaseTypeOf(thrownType)) {
                 ctx.loadThrownObject();
                 status = catchNode->eval(ctx);
                 // eval finally
