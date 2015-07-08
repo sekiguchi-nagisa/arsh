@@ -228,7 +228,7 @@ static bool decodeAndUnrefMessage(std::vector<std::shared_ptr<DSObject>> &values
     }
 
     for(unsigned int i = 0; i < size; i++) {
-        if(!types[i]->isAssignableFrom(values[i]->getType())) {
+        if(!types[i]->isSameOrBaseTypeOf(values[i]->getType())) {
             std::string msg = "require type is: ";
             msg += ctx.getPool().getTypeName(*types[i]);
             msg += ", but is: ";
