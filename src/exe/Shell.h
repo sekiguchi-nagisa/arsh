@@ -102,6 +102,9 @@ public:
         return this->lineNum;
     }
 
+    /**
+     * ignore empty string
+     */
     void setArguments(const std::vector<const char *> &args);
 
     void setDumpUntypedAST(bool dump) {
@@ -151,7 +154,7 @@ private:
     /**
      * call only once
      */
-    void initbuiltinIface();
+    void initBuiltinIface();
 
     static CommonErrorListener clistener;
 };

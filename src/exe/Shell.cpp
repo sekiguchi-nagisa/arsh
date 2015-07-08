@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <cstring>
+
 #include "Shell.h"
 #include "../misc/debug.h"
 
@@ -43,14 +45,16 @@ void Shell::setArguments(const std::vector<const char *> &args) {
     unsigned int size = args.size();
     this->ctx.updateScriptName(args[0]);
     for(unsigned int i = 1; i < size; i++) {
-        this->ctx.addScriptArg(args[i]);
+        if(strcmp(args[i], "") != 0) {
+            this->ctx.addScriptArg(args[i]);
+        }
     }
 }
 
 Shell *Shell::createShell() {
     Shell *shell = new Shell();
     shell->initBuiltinVar();
-    shell->initbuiltinIface();
+    shell->initBuiltinIface();
 
     // reset line number
     shell->lineNum = 1;
@@ -147,7 +151,7 @@ void Shell::initBuiltinVar() {
     rootNode.eval(this->ctx);
 }
 
-void Shell::initbuiltinIface() {
+void Shell::initBuiltinIface() {
     static const char builtinIface[] = ""
             "interface org.freedesktop.DBus.Peer {\n"
             "    function Ping()\n"
