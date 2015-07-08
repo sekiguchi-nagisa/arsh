@@ -871,11 +871,26 @@ void TypeChecker::visitCmdArgNode(CmdArgNode *node) {
     for(Node *exprNode : node->getSegmentNodes()) {
         this->checkType(exprNode);
     }
+
+    // not allow Collection type(Array, Map, Tuple)
+    if(node->getSegmentNodes().size() > 1) {
+        for(Node *exprNode : node->getSegmentNodes()) {
+            this->checkType(nullptr, exprNode, this->typePool->getCollectionType());
+        }
+    }
     node->setType(this->typePool->getAnyType());   //FIXME
 }
 
 void TypeChecker::visitRedirNode(RedirNode *node) {
-    this->checkTypeAsStatement(node->getTargetNode());
+    CmdArgNode *argNode = node->getTargetNode();
+
+    this->checkTypeAsStatement(argNode);
+
+    // not allow Collection type
+    if(argNode->getSegmentNodes().size() == 1) {
+        this->checkType(nullptr, argNode->getSegmentNodes()[0], this->typePool->getCollectionType());
+    }
+
     node->setType(this->typePool->getAnyType());   //FIXME
 }
 

@@ -186,6 +186,11 @@ private:
      */
     TypeTemplate *tupleTemplate;
 
+    /**
+     * pseudo base type of Array, Map, Tuple type
+     */
+    DSType *collectionType;
+
     /*
      * for command argument
      */
@@ -318,6 +323,10 @@ public:
 
     DSType *getStringArrayType() const {
         return this->stringArrayType;
+    }
+
+    DSType *getCollectionType() const {
+        return this->collectionType;
     }
 
     // for error

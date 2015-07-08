@@ -355,6 +355,21 @@ void TupleType::registerFuncInfo(NativeFuncInfo *info) {
     }
 }
 
+// ############################
+// ##     CollectionType     ##
+// ############################
+
+void CollectionType::accept(TypeVisitor *visitor) {
+    fatal("unsupported\n");
+}
+
+bool CollectionType::isSameOrBaseTypeOf(DSType *targetType) {
+    return dynamic_cast<ReifiedType *>(targetType) != nullptr ||
+            dynamic_cast<TupleType *>(targetType) != nullptr ||
+            (targetType->getSuperType() != nullptr && this->isSameOrBaseTypeOf(targetType->getSuperType()));
+}
+
+
 // ###########################
 // ##     InterfaceType     ##
 // ###########################

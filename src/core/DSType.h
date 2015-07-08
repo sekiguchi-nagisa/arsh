@@ -333,6 +333,30 @@ public:
 };
 
 /**
+ * pseudo base type of Array, Map, Tuple type.
+ * for command argument type checking.
+ */
+class CollectionType : public DSType {
+public:
+    /**
+     * super type is always Any type
+     */
+    explicit CollectionType(DSType *superType) : DSType(false, superType, false) { }
+    ~CollectionType() = default;
+
+    FieldHandle *findHandle(const std::string &fieldName) { // override
+        return nullptr;
+    }
+
+    void accept(TypeVisitor *visitor);  // override
+
+    /**
+     * if targetType is Array, Map, Tupple type, return true.
+     */
+    bool isSameOrBaseTypeOf(DSType *targetType); // override
+};
+
+/**
  * for D-Bus interface
  */
 class InterfaceType : public DSType {

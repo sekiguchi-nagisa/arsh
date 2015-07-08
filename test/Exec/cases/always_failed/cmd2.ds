@@ -1,0 +1,6 @@
+# not allow collection type (Array, Map, Tuple type) in redirection target
+
+#$test($result = 'type')
+
+
+echo hello > ${["fer", "fr"]} 54fherui   # illegal target
