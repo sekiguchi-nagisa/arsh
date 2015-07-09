@@ -44,6 +44,7 @@ namespace ast {
 
 using namespace ydsh::core;
 using namespace ydsh::parser;
+using namespace ydsh::misc;
 
 struct NodeVisitor;
 class Writer;

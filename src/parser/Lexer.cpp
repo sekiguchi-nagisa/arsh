@@ -23,6 +23,8 @@
 namespace ydsh {
 namespace parser {
 
+using namespace ydsh::misc;
+
 // ###################
 // ##     Lexer     ##
 // ###################

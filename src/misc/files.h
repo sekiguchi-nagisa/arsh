@@ -26,6 +26,9 @@
 #include <list>
 #include <string>
 
+namespace ydsh {
+namespace misc {
+
 /**
  * get current working directory. return empty string, if error happened.
  */
@@ -81,5 +84,8 @@ inline std::vector<std::string> getFileList(const char *dirPath, bool recursive 
     getFileList(dirPath, recursive, fileList);
     return fileList;
 }
+
+} // namespace misc
+} // namespace ydsh
 
 #endif //MISC_FILES_H

@@ -30,6 +30,8 @@
 namespace ydsh {
 namespace core {
 
+using namespace ydsh::misc;
+
 struct TypeVisitor;
 
 class DSObject;

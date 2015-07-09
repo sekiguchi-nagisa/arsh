@@ -17,6 +17,9 @@
 #ifndef MISC_FLAG_UTIL_H_
 #define MISC_FLAG_UTIL_H_
 
+namespace ydsh {
+namespace misc {
+
 typedef unsigned char flag8_set_t;
 typedef unsigned char flag8_t;
 
@@ -46,5 +49,9 @@ inline void unsetFlag(flag32_set_t &set, flag32_t flag) {
 inline bool hasFlag(flag32_set_t set, flag32_t flag) {
     return (set & flag) == flag;
 }
+
+} // namespace misc
+} // namespace ydsh
+
 
 #endif /* MISC_FLAG_UTIL_H_ */

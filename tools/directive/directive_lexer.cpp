@@ -23,6 +23,8 @@
 namespace ydsh {
 namespace directive {
 
+using namespace ydsh::misc;
+
 static const char *TOKEN_KIND_STR[] = {
 #define GEN_STR(ENUM) "<" #ENUM ">",
     EACH_TOKEN(GEN_STR)

@@ -11,6 +11,7 @@
 
 using namespace ydsh;
 using namespace ydsh::directive;
+using namespace ydsh::misc;
 
 class ExecTest : public ::testing::TestWithParam<std::string> {
 private:

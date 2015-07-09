@@ -22,6 +22,9 @@
 #include <cmath>
 #include <cstdlib>
 
+namespace ydsh {
+namespace misc {
+
 /**
  * if success, status is 0.
  * if out of range, status is 1.
@@ -109,6 +112,9 @@ inline double convertToDouble(const char *str, int &status, bool skipIllegalChar
     status = 0;
     return value;
 }
+
+} // namespace misc
+} // namespace ydsh
 
 
 #endif //MISC_NUM_H
