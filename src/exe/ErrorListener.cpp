@@ -49,7 +49,7 @@ static std::ostream &format(std::ostream &stream, const ParseError &e) {
 
 static std::ostream &formatErrorLine(std::ostream &stream, Lexer &lexer, const Token &errorToken) {
     Token lineToken = lexer.getLineToken(errorToken, true);
-    stream << misc::TermColor::Magenta << lexer.toTokenText(lineToken) << misc::reset << std::endl;
+    stream << misc::TermColor::Cyan << lexer.toTokenText(lineToken) << misc::reset << std::endl;
     stream << misc::TermColor::Green << lexer.formatLineMarker(lineToken, errorToken) << misc::reset;
     return stream;
 }
@@ -59,7 +59,7 @@ static std::ostream &formatErrorLine(std::ostream &stream, Lexer &lexer, const T
 void CommonErrorListener::handleParseError(Lexer &lexer,
                                            const std::string &sourceName, const ParseError &e) noexcept {
     STREAM << sourceName << ":" << e.getLineNum() << ":"
-    << misc::TermColor::Red << " [syntax error] " << misc::reset;
+    << misc::TermColor::Magenta << " [syntax error] " << misc::reset;
     format(STREAM, e) << std::endl;
     formatErrorLine(STREAM, lexer, e.getErrorToken()) << std::endl;
 }
@@ -67,7 +67,7 @@ void CommonErrorListener::handleParseError(Lexer &lexer,
 void CommonErrorListener::handleTypeError(const std::string &sourceName,
                                           const TypeCheckError &e) noexcept {
     STREAM << sourceName << ":" << e.getLineNum() << ":"
-    << misc::TermColor::Red << " [semantic error] " << misc::reset
+    << misc::TermColor::Magenta << " [semantic error] " << misc::reset
     << e.getMessage() << std::endl;
 }
 
