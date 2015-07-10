@@ -50,7 +50,8 @@ static void setupSignalHandler() {
     sigfillset(&act.sa_mask);
 
     if(sigaction(SIGINT, &act, NULL) < 0) {
-        fatal("setup signal handeler failed\n");
+        perror("setup signal handeler failed\n");
+        exit(1);
     }
 
     // ignore some signal

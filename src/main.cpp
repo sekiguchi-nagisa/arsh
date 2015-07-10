@@ -15,7 +15,9 @@
  */
 
 #include <unistd.h>
+#include <execinfo.h>
 
+#include <csignal>
 #include <iostream>
 
 #include <ydsh/ydsh.h>
@@ -77,7 +79,43 @@ static void loadRC(DSContext *ctx) {
     }
 }
 
+static void segvHandler(int num) {
+    const unsigned int size = 128;
+    void *buf[size];
+
+    // get backtrace
+    int retSize = backtrace(buf, size);
+    backtrace_symbols_fd(buf, retSize, STDERR_FILENO);
+    close(STDERR_FILENO);
+
+    abort();
+}
+
 int main(int argc, char **argv) {
+    // init alternative stack (for signal handler)
+    static char altStack[SIGSTKSZ];
+    stack_t ss;
+    ss.ss_sp = altStack;
+    ss.ss_size = SIGSTKSZ;
+    ss.ss_flags = 0;
+
+    if(sigaltstack(&ss, nullptr) == -1) {
+        perror("sigaltstack failed\n");
+        exit(1);
+    }
+
+    // set signal handler for SEGV
+    struct sigaction act;
+    act.sa_handler = segvHandler;
+    act.sa_flags = SA_ONSTACK;
+    sigfillset(&act.sa_mask);
+
+    if(sigaction(SIGSEGV, &act, nullptr) < 0) {
+        perror("setup signal handeler failed\n");
+        exit(1);
+    }
+
+
     args::ArgsParser<OptionKind> parser;
 
     parser.addOption(
