@@ -58,6 +58,7 @@ public:
 
         // check status
         ASSERT_EQ(d.getResult(), DSStatus_getType(status));
+        ASSERT_EQ(d.getLineNum(), DSStatus_getErrorLineNum(status));
 
         if(d.getResult() == DS_STATUS_EXIT) {
             ASSERT_EQ(d.getStatus(), DSContext_getExitStatus(ctx));

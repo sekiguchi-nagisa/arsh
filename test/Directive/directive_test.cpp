@@ -40,6 +40,7 @@ TEST_F(DirectiveTest, empty1) {
         this->parse("#!/usr/bin/ydsh", true);
         ASSERT_EQ(DS_STATUS_SUCCESS, this->getDirective().getResult());
         ASSERT_EQ(0, this->getDirective().getParams().size());
+        ASSERT_EQ(0, this->getDirective().getLineNum());
     });
 }
 
@@ -49,6 +50,7 @@ TEST_F(DirectiveTest, empty2) {
         this->parse("fhreuifre", true);
         ASSERT_EQ(DS_STATUS_SUCCESS, this->getDirective().getResult());
         ASSERT_EQ(0, this->getDirective().getParams().size());
+        ASSERT_EQ(0, this->getDirective().getLineNum());
     });
 }
 
@@ -252,6 +254,14 @@ TEST_F(DirectiveTest, status) {
         SCOPED_TRACE("");
         this->parse("#$test($status = 23)", true);
         ASSERT_EQ(23, this->getDirective().getStatus());
+    });
+}
+
+TEST_F(DirectiveTest, lineNum) {
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->parse("#$test($lineNum = 9)", true);
+        ASSERT_EQ(9, this->getDirective().getLineNum());
     });
 }
 

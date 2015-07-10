@@ -1,5 +1,5 @@
 # int to int cast
 
-#$test($result = 'type')
+#$test($result = 'type', $lineNum = 5)
 
 23u32 % 78i32

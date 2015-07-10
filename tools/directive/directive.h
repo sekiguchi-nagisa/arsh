@@ -40,8 +40,10 @@ private:
      */
     unsigned int status;
 
+    unsigned int lineNum;
+
 public:
-    Directive() : result(DS_STATUS_SUCCESS), params(), status(0) {}
+    Directive() : result(DS_STATUS_SUCCESS), params(), status(0), lineNum(0) {}
     ~Directive() = default;
 
     unsigned int getResult() const {
@@ -66,6 +68,14 @@ public:
 
     unsigned int getStatus() const {
         return this->status;
+    }
+
+    void setLineNum(unsigned int lineNum) {
+        this->lineNum = lineNum;
+    }
+
+    unsigned int getLineNum() const {
+        return this->lineNum;
     }
 
     /**

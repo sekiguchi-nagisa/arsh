@@ -371,6 +371,12 @@ struct ParamsHandler : public AttributeHandler {
     }
 };
 
+struct LineNumHandler : public AttributeHandler {
+    void operator()(Node &node, Directive &d) { // override
+        d.setLineNum(cast<NumberNode>(node)->getValue());
+    }
+};
+
 // ##################################
 // ##     DirectiveInitializer     ##
 // ##################################
@@ -387,10 +393,12 @@ bool DirectiveInitializer::operator()(const std::unique_ptr<DirectiveNode> &node
     auto statusHandler = StatusHandler();
     auto resultHandler = ResultHandler();
     auto paramHandler = ParamsHandler();
+    auto lineNumHandler = LineNumHandler();
 
     this->addHandler("status", this->env.getIntType(), statusHandler);
     this->addHandler("result", this->env.getStringType(), resultHandler);
     this->addHandler("params", this->env.getArrayType(this->env.getStringType()), paramHandler);
+    this->addHandler("lineNum", this->env.getIntType(), lineNumHandler);
 
     for(auto &e : node->getNodes()) {
         auto *pair = this->lookupHandler(e->getName());
