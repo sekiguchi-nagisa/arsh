@@ -45,12 +45,12 @@ ExecStatus Shell::eval(const char *sourceName, FILE *fp) {
     return this->eval(sourceName, lexer);
 }
 
-void Shell::setArguments(const std::vector<const char *> &args) {
-    unsigned int size = args.size();
-    this->ctx.updateScriptName(args[0]);
+void Shell::setArguments(const std::vector<const char *> &argv) {
+    unsigned int size = argv.size();
+    this->ctx.updateScriptName(argv[0]);
     for(unsigned int i = 1; i < size; i++) {
-        if(strcmp(args[i], "") != 0) {
-            this->ctx.addScriptArg(args[i]);
+        if(strcmp(argv[i], "") != 0) {
+            this->ctx.addScriptArg(argv[i]);
         }
     }
 }

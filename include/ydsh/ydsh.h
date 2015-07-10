@@ -65,9 +65,11 @@ void DSContext_setLineNum(DSContext *ctx, unsigned int lineNum);
 unsigned int DSContext_getLineNum(DSContext *ctx);
 
 /**
- * last element of args must be null.
+ * first element of argv must be source name and not empty string.
+ * last element of argv must be null.
+ * empty string argument will be ignored.
  */
-void DSContext_setArguments(DSContext *ctx, const char **args);
+void DSContext_setArguments(DSContext *ctx, const char **argv);
 
 const char *DSContext_getWorkingDir(DSContext *ctx);
 

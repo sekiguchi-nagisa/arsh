@@ -107,9 +107,10 @@ public:
     }
 
     /**
-     * ignore empty string
+     * ignore empty string.
+     * first element must be source name
      */
-    void setArguments(const std::vector<const char *> &args);
+    void setArguments(const std::vector<const char *> &argv);
 
     void setDumpUntypedAST(bool dump) {
         this->dumpUntypedAST = dump;
