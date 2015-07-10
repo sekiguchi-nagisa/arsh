@@ -65,7 +65,7 @@ DSType *TypeMap::getType(const std::string &typeName) const {
     return nullptr;
 }
 
-const std::string &TypeMap::getTypeName(const DSType &type) {
+const std::string &TypeMap::getTypeName(const DSType &type) const {
     auto iter = this->typeNameMap.find(asKey(&type));
     assert(iter != this->typeNameMap.end());
     return *iter->second;
@@ -351,7 +351,7 @@ void TypePool::setAlias(const char *alias, DSType *targetType) {
     }
 }
 
-const std::string &TypePool::getTypeName(const DSType &type) {
+const std::string &TypePool::getTypeName(const DSType &type) const {
     return this->typeMap.getTypeName(type);
 }
 

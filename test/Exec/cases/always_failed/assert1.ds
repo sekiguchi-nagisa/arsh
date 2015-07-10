@@ -1,5 +1,5 @@
 # assert top level
 
-#$test($result = 'assert')
+#$test($result = 'assert', $lineNum = 5)
 
 assert(12 == 6453)

@@ -17,6 +17,8 @@
 #include "ErrorListener.h"
 #include "../misc/debug.h"
 #include "../misc/term.h"
+#include "../core/DSObject.h"
+#include "../core/TypePool.h"
 
 namespace ydsh {
 
@@ -73,6 +75,11 @@ void CommonErrorListener::handleTypeError(const std::string &sourceName,
 
 #undef STREAM
 
+void CommonErrorListener::handleRuntimeError(const TypePool &pool,
+                        const std::shared_ptr<DSObject> &raisedObj) noexcept {
+    // do nothing
+}
+
 // ###############################
 // ##     ReportingListener     ##
 // ###############################
@@ -107,6 +114,16 @@ void ReportingListener::handleTypeError(const std::string &sourceName,
                                         const TypeCheckError &e) noexcept {
     this->lineNum = e.getLineNum();
     this->messageKind = e.getKind();
+}
+
+void ReportingListener::handleRuntimeError(const TypePool &pool,
+                                           const std::shared_ptr<DSObject> &raisedObj) noexcept {
+    this->lineNum = 0;
+    this->messageKind = pool.getTypeName(*raisedObj->getType()).c_str();
+    if(dynamic_cast<Error_Object *>(raisedObj.get()) != nullptr) {
+        Error_Object *obj = TYPE_AS(Error_Object, raisedObj);
+        this->lineNum = getOccuredLineNum(obj->getStackTrace());
+    }
 }
 
 } // namespace ydsh

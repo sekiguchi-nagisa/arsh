@@ -1,7 +1,4 @@
-#$test($result = 'throw')
+#$test($result = 'throw', $lineNum = 4)
 
-if($DBus.available()) {
-    $DBus.systemBus().service("org.fr").object(p'/org')
-} else {
-    throw new DBusError("unsupported")
-}
+if($DBus.available())
+   { $DBus.systemBus().service("org.fr").object(p'/org'); } else { throw new DBusError("unsupported"); }

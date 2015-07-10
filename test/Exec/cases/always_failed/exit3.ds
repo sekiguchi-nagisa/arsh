@@ -1,4 +1,4 @@
-#$test($result = 'exit', $status = 6543)
+#$test($result = 'exit', $status = 6543, $lineNum = 6)
 
 # exit in block
 

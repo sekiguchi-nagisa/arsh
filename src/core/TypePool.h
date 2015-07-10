@@ -58,7 +58,7 @@ public:
     /**
      * type must not be null.
      */
-    const std::string &getTypeName(const DSType &type);
+    const std::string &getTypeName(const DSType &type) const;
 
     /**
      * return false, if duplicated
@@ -422,7 +422,7 @@ public:
 
     void setAlias(const char *alias, DSType *targetType);
 
-    const std::string &getTypeName(const DSType &type);
+    const std::string &getTypeName(const DSType &type) const;
 
     /**
      * create reified type name

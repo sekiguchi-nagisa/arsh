@@ -19,9 +19,20 @@
 
 #include <vector>
 #include <ostream>
+#include <memory>
 
 #include "../parser/TypeCheckError.h"
 #include "../parser/Parser.h"
+
+namespace ydsh {
+namespace core {
+
+class DSObject;
+class TypePool;
+
+} // namespace core
+} // namespace ydsh
+
 
 namespace ydsh {
 
@@ -35,6 +46,9 @@ struct ErrorListener {
 
     virtual void handleTypeError(const std::string &sourceName,
                                  const TypeCheckError &e) noexcept = 0;
+
+    virtual void handleRuntimeError(const TypePool &pool,
+                                    const std::shared_ptr<DSObject> &raisedObj) noexcept = 0;
 };
 
 class ProxyErrorListener : public ErrorListener {
@@ -55,6 +69,13 @@ public:
     void handleTypeError(const std::string &sourceName, const TypeCheckError &e) noexcept {    // override
         for(ErrorListener *l : this->listeners) {
             l->handleTypeError(sourceName, e);
+        }
+    }
+
+    void handleRuntimeError(const TypePool &pool,
+                            const std::shared_ptr<DSObject> &raisedObj) noexcept {  // override
+        for(ErrorListener *l : this->listeners) {
+            l->handleRuntimeError(pool, raisedObj);
         }
     }
 
@@ -81,6 +102,8 @@ public:
                           const std::string &sourceName, const ParseError &e) noexcept; // override
     void handleTypeError(const std::string &sourceName,
                          const TypeCheckError &e) noexcept; // override
+    void handleRuntimeError(const TypePool &pool,
+                            const std::shared_ptr<DSObject> &raisedObj) noexcept;    // override
 };
 
 class ReportingListener : public ErrorListener {
@@ -111,6 +134,8 @@ public:
                           const std::string &sourceName, const ParseError &e) noexcept; // override
     void handleTypeError(const std::string &sourceName,
                          const TypeCheckError &e) noexcept; // override
+    void handleRuntimeError(const TypePool &pool,
+                            const std::shared_ptr<DSObject> &raisedObj) noexcept;    // override
 };
 
 } // namespace ydsh

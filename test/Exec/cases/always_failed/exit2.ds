@@ -1,4 +1,4 @@
-#$test($result = 'exit', $status = 20)
+#$test($result = 'exit', $status = 20, $lineNum = 4)
 
 var a = 20
 exit $a

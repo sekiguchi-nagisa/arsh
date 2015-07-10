@@ -1,3 +1,0 @@
-#$test($result = 'throw')
-
-throw new Error("hello")

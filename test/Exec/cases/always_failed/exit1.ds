@@ -1,3 +1,3 @@
-#$test($result = 'EXIT')
+#$test($result = 'EXIT', $lineNum = 3)
 
 exit

@@ -92,14 +92,20 @@ static int createStatus(ExecStatus s, Shell *shell, DSStatus **status) {
     case ExecStatus::RUNTIME_ERROR:
         type = DS_STATUS_RUNTIME_ERROR;
         ret = 1;
+        lineNum = shell->getReportingListener().getLineNum();
+        errorKind = shell->getReportingListener().getMessageKind();
         break;
     case ExecStatus::ASSERTION_ERROR:
         type = DS_STATUS_ASSERTION_ERROR;
         ret = 1;
+        lineNum = shell->getReportingListener().getLineNum();
+        errorKind = shell->getReportingListener().getMessageKind();
         break;
     case ExecStatus::EXIT:
         type = DS_STATUS_EXIT;
         ret = shell->getExitStatus();
+        lineNum = shell->getReportingListener().getLineNum();
+        errorKind = shell->getReportingListener().getMessageKind();
         break;
     }
 

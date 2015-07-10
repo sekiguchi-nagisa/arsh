@@ -110,18 +110,20 @@ ExecStatus Shell::eval(const char *sourceName, Lexer &lexer) {
 
     // eval
     if(rootNode.eval(this->ctx) != EvalStatus::SUCCESS) {
-        DSType *thrownType = ctx.getThrownObject()->getType();
+        this->listener->handleRuntimeError(this->ctx.getPool(), this->ctx.getThrownObject());
+
+        DSType *thrownType = this->ctx.getThrownObject()->getType();
         if(this->ctx.getPool().getInternalStatus()->isSameOrBaseTypeOf(thrownType)) {
             if(*thrownType == *this->ctx.getPool().getShellExit()) {
                 if(this->traceExit) {
                     this->ctx.loadThrownObject();
-                    TYPE_AS(Error_Object, ctx.pop())->printStackTrace(this->ctx);
+                    TYPE_AS(Error_Object, this->ctx.pop())->printStackTrace(this->ctx);
                 }
                 return ExecStatus::EXIT;
             }
             if(*thrownType == *this->ctx.getPool().getAssertFail()) {
                 this->ctx.loadThrownObject();
-                TYPE_AS(Error_Object, ctx.pop())->printStackTrace(this->ctx);
+                TYPE_AS(Error_Object, this->ctx.pop())->printStackTrace(this->ctx);
                 return ExecStatus::ASSERTION_ERROR;
             }
         }
