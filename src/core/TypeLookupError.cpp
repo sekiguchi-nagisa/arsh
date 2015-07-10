@@ -91,6 +91,20 @@ std::ostream &operator<<(std::ostream &stream, TypeLookupError::ErrorKind3 kind)
     return stream;
 }
 
+// ErrorRaiser
+const char* ErrorRaiser0::str() const {
+    return errorTuple0[this->kind].kindStr;
+}
+
+const char* ErrorRaiser1::str() const {
+    return errorTuple1[this->kind].kindStr;
+}
+
+const char* ErrorRaiser3::str() const {
+    return errorTuple3[this->kind].kindStr;
+}
+
+
 #define GEN_VAR(ENUM, S1) ErrorRaiser0 E_##ENUM = { TypeLookupError::ENUM };
     EACH_TL_ERROR0(GEN_VAR)
 #undef GEN_VAR

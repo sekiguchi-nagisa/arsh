@@ -100,26 +100,32 @@ std::ostream &operator<<(std::ostream &stream, TypeLookupError::ErrorKind3 kind)
 struct ErrorRaiser0 {
     TypeLookupError::ErrorKind0 kind;
 
-    void operator()() throw(TypeLookupError) {
+    void operator()() const throw(TypeLookupError) {
         throw TypeLookupError(this->kind);
     }
+
+    const char *str() const;
 };
 
 struct ErrorRaiser1 {
     TypeLookupError::ErrorKind1 kind;
 
-    void operator()(const std::string &arg1) throw(TypeLookupError) {
+    void operator()(const std::string &arg1) const throw(TypeLookupError) {
         throw TypeLookupError(this->kind, arg1);
     }
+
+    const char *str() const;
 };
 
 struct ErrorRaiser3 {
     TypeLookupError::ErrorKind3 kind;
 
     void operator()(const std::string &arg1,
-                    const std::string &arg2, const std::string &arg3) throw(TypeLookupError) {
+                    const std::string &arg2, const std::string &arg3) const throw(TypeLookupError) {
         throw TypeLookupError(this->kind, arg1, arg2, arg3);
     }
+
+    const char *str() const;
 };
 
 // define function objects for error reporting

@@ -147,27 +147,35 @@ std::ostream &operator<<(std::ostream &stream, TypeCheckError::ErrorKind3 kind);
 struct ErrorRaiser0 {
     TypeCheckError::ErrorKind0 kind;
 
-    void operator()(ast::Node *node) throw(TypeCheckError);
+    void operator()(ast::Node *node) const throw(TypeCheckError);
+
+    const char *str() const;
 };
 
 struct ErrorRaiser1 {
     TypeCheckError::ErrorKind1 kind;
 
-    void operator()(ast::Node *node, const std::string &arg1) throw(TypeCheckError);
+    void operator()(ast::Node *node, const std::string &arg1) const throw(TypeCheckError);
+
+    const char *str() const;
 };
 
 struct ErrorRaiser2 {
     TypeCheckError::ErrorKind2 kind;
 
     void operator()(ast::Node *node, const std::string &arg1,
-                    const std::string &arg2) throw(TypeCheckError);
+                    const std::string &arg2) const throw(TypeCheckError);
+
+    const char *str() const;
 };
 
 struct ErrorRaiser3 {
     TypeCheckError::ErrorKind3 kind;
 
     void operator()(ast::Node *node, const std::string &arg1,
-                    const std::string &arg2, const std::string &arg3) throw(TypeCheckError);
+                    const std::string &arg2, const std::string &arg3) const throw(TypeCheckError);
+
+    const char *str() const;
 };
 
 // define function object for error reporting

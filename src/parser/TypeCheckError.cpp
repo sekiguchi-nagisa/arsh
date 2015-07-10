@@ -125,32 +125,48 @@ std::ostream &operator<<(std::ostream &stream, TypeCheckError::ErrorKind3 kind) 
 // ##     ErrorRaiser0     ##
 // ##########################
 
-void ErrorRaiser0::operator()(ast::Node *node) throw(TypeCheckError) {
+void ErrorRaiser0::operator()(ast::Node *node) const throw(TypeCheckError) {
     throw TypeCheckError(node->getLineNum(), this->kind);
+}
+
+const char* ErrorRaiser0::str() const {
+    return errorTuple0[this->kind].kindStr;
 }
 
 // ##########################
 // ##     ErrorRaiser1     ##
 // ##########################
 
-void ErrorRaiser1::operator()(ast::Node *node, const std::string &arg1) throw(TypeCheckError) {
+void ErrorRaiser1::operator()(ast::Node *node, const std::string &arg1) const throw(TypeCheckError) {
     throw TypeCheckError(node->getLineNum(), this->kind, arg1);
+}
+
+const char* ErrorRaiser1::str() const {
+    return errorTuple1[this->kind].kindStr;
 }
 
 // ##########################
 // ##     ErrorRaiser2     ##
 // ##########################
 void ErrorRaiser2::operator()(ast::Node *node, const std::string &arg1,
-                              const std::string &arg2) throw(TypeCheckError) {
+                              const std::string &arg2) const throw(TypeCheckError) {
     throw TypeCheckError(node->getLineNum(), this->kind, arg1, arg2);
+}
+
+const char* ErrorRaiser2::str() const {
+    return errorTuple2[this->kind].kindStr;
 }
 
 // ##########################
 // ##     ErrorRaiser3     ##
 // ##########################
 void ErrorRaiser3::operator()(ast::Node *node, const std::string &arg1,
-                              const std::string &arg2, const std::string &arg3) throw(TypeCheckError) {
+                              const std::string &arg2, const std::string &arg3) const throw(TypeCheckError) {
     throw TypeCheckError(node->getLineNum(), this->kind, arg1, arg2, arg3);
+}
+
+const char* ErrorRaiser3::str() const {
+    return errorTuple3[this->kind].kindStr;
 }
 
 #define GEN_VAR(ENUM, S1) ErrorRaiser0 E_##ENUM = { TypeCheckError::ENUM };
