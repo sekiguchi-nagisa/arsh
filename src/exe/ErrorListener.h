@@ -83,6 +83,36 @@ public:
                          const TypeCheckError &e) noexcept; // override
 };
 
+class ReportingListener : public ErrorListener {
+private:
+    /**
+     * for error location
+     */
+    unsigned int lineNum;
+
+    /**
+     * parse error or type error
+     */
+    const char *messageKind;
+
+public:
+    ReportingListener() = default;
+    ~ReportingListener() = default;
+
+    unsigned int getLineNum() const {
+        return this->lineNum;
+    }
+
+    const char *getMessageKind() const {
+        return this->messageKind;
+    }
+
+    void handleParseError(Lexer &lexer,
+                          const std::string &sourceName, const ParseError &e) noexcept; // override
+    void handleTypeError(const std::string &sourceName,
+                         const TypeCheckError &e) noexcept; // override
+};
+
 } // namespace ydsh
 
 #endif /* EXE_ERRORLISTENER_H_ */

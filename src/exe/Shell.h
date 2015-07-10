@@ -54,6 +54,9 @@ private:
      */
     ErrorListener *listener;
 
+    ProxyErrorListener proxy;
+    ReportingListener reportingListener;
+
     // option
     bool dumpUntypedAST;
     bool dumpTypedAST;
@@ -87,11 +90,11 @@ public:
         this->listener = listener;
     }
 
-    const ErrorListener *getErrorListener() const {
+    ErrorListener * const getErrorListener() const {
         return this->listener;
     }
 
-    const ErrorListener *getDefaultListener() const {
+    ErrorListener * const getDefaultListener() const {
         return &clistener;
     }
 
@@ -141,6 +144,10 @@ public:
      */
     int getExitStatus() {
         return this->ctx.getExitStatus()->getValue();
+    }
+
+    const ReportingListener &getReportingListener() {
+        return this->reportingListener;
     }
 
     static Shell *createShell();

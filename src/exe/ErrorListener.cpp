@@ -73,4 +73,40 @@ void CommonErrorListener::handleTypeError(const std::string &sourceName,
 
 #undef STREAM
 
+// ###############################
+// ##     ReportingListener     ##
+// ###############################
+
+void ReportingListener::handleParseError(Lexer &lexer,
+                                         const std::string &sourceName, const ParseError &e) noexcept {
+#define EACH_ERROR(E) \
+    E(TokenMismatched  , 0) \
+    E(NoViableAlter    , 1) \
+    E(InvalidToken     , 2) \
+    E(OutOfRangeNum    , 3) \
+    E(UnexpectedNewLine, 4)
+
+    static const char *strs[] = {
+#define GEN_STR(K, N) #K,
+            EACH_ERROR(GEN_STR)
+#undef GEN_STR
+    };
+
+#define DISPATCH(K, N) if(dynamic_cast<const K##Error *>(&e) != nullptr) { this->messageKind = strs[N]; }
+
+    EACH_ERROR(DISPATCH)
+
+#undef DISPATCH
+
+    this->lineNum = e.getLineNum();
+
+#undef EACH_ERROR
+}
+
+void ReportingListener::handleTypeError(const std::string &sourceName,
+                                        const TypeCheckError &e) noexcept {
+    this->lineNum = e.getLineNum();
+    this->messageKind = e.getKind();
+}
+
 } // namespace ydsh

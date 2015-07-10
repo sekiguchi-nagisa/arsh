@@ -27,8 +27,12 @@ namespace ydsh {
 
 Shell::Shell() :
         ctx(), parser(), checker(&this->ctx.getPool()), lineNum(1),
-        listener(&clistener), dumpUntypedAST(false),
-        dumpTypedAST(false), parseOnly(false), traceExit(false) {
+        listener(0), proxy(), reportingListener(),
+        dumpUntypedAST(false), dumpTypedAST(false), parseOnly(false), traceExit(false) {
+    // set error listener
+    this->setErrorListener(&this->proxy);
+    this->proxy.addListener(this->getDefaultListener());
+    this->proxy.addListener(&this->reportingListener);
 }
 
 ExecStatus Shell::eval(const char *line) {

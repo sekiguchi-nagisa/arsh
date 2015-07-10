@@ -105,7 +105,24 @@ void DSStatus_free(DSStatus **status);
 #define DS_STATUS_ASSERTION_ERROR 4
 #define DS_STATUS_EXIT            5
 
+/**
+ * return type of status.
+ * see DS_STATUS_* macro.
+ */
 unsigned int DSStatus_getType(DSStatus *status);
+
+/**
+ * return line number of error location.
+ * if type is DS_STATUS_SUCCESS, return always 0.
+ */
+unsigned int DSStatus_getErrorLineNum(DSStatus *status);
+
+/**
+ * if type is DS_STATUS_PARSE_ERROR or DS_STATUS_TYPE_ERROR, return error kind.
+ * if type is DS_STATUS_RUNTIME_ERROR, return exception type name.
+ * otherwise, return always empty string.
+ */
+const char *DSStatus_getErrorKind(DSStatus *status);
 
 
 #ifdef __cplusplus

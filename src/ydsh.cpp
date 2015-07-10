@@ -35,7 +35,15 @@ struct DSStatus {
      */
     unsigned int type;
 
-    DSStatus(unsigned int type) : type(type) { }
+    /**
+     * for error location.
+     */
+    unsigned int lineNum;
+
+    const char *errorKind;
+
+    DSStatus(unsigned int type, unsigned int lineNum, const char *errorKind) :
+            type(type), lineNum(lineNum), errorKind(errorKind) { }
 
     ~DSStatus() = default;
 };
@@ -57,8 +65,13 @@ void DSContext_delete(DSContext **ctx) {
 }
 
 static int createStatus(ExecStatus s, Shell *shell, DSStatus **status) {
+    static char empty[] = "";
+
     unsigned int type = DS_STATUS_SUCCESS;
     int ret = 0;
+    unsigned int lineNum = 0;
+    const char *errorKind = empty;
+
     switch(s) {
     case ExecStatus::SUCCESS:
         type = DS_STATUS_SUCCESS;
@@ -67,10 +80,14 @@ static int createStatus(ExecStatus s, Shell *shell, DSStatus **status) {
     case ExecStatus::PARSE_ERROR:
         type = DS_STATUS_PARSE_ERROR;
         ret = 1;
+        lineNum = shell->getReportingListener().getLineNum();
+        errorKind = shell->getReportingListener().getMessageKind();
         break;
     case ExecStatus::TYPE_ERROR:
         type = DS_STATUS_TYPE_ERROR;
         ret = 1;
+        lineNum = shell->getReportingListener().getLineNum();
+        errorKind = shell->getReportingListener().getMessageKind();
         break;
     case ExecStatus::RUNTIME_ERROR:
         type = DS_STATUS_RUNTIME_ERROR;
@@ -87,7 +104,7 @@ static int createStatus(ExecStatus s, Shell *shell, DSStatus **status) {
     }
 
     if(status != nullptr) {
-        *status = new DSStatus(type);
+        *status = new DSStatus(type, lineNum, errorKind);
     }
     return ret;
 }
@@ -170,4 +187,12 @@ void DSStatus_free(DSStatus **status) {
 
 unsigned int DSStatus_getType(DSStatus *status) {
     return status->type;
+}
+
+unsigned int DSStatus_getErrorLineNum(DSStatus *status) {
+    return status->lineNum;
+}
+
+const char *DSStatus_getErrorKind(DSStatus *status) {
+    return status->errorKind;
 }
