@@ -39,6 +39,7 @@ public:
     virtual void doTest() {
         SCOPED_TRACE("");
 
+        // create directive
         Directive d;
         bool s = Directive::init(this->getSourceName().c_str(), d);
         ASSERT_TRUE(s);
@@ -47,9 +48,15 @@ public:
         FILE *fp = fopen(scriptName, "rb");
         ASSERT_TRUE(fp != nullptr);
 
+        // set argument
+        std::unique_ptr<const char *> argv = d.getAsArgv(scriptName);
+        DSContext_setArguments(this->ctx, argv.get());
+
+        // execute
         DSStatus *status;
         DSContext_loadAndEval(this->ctx, scriptName, fp, &status);
 
+        // check status
         ASSERT_EQ(d.getResult(), DSStatus_getType(status));
 
         if(d.getResult() == DS_STATUS_EXIT) {
