@@ -572,7 +572,7 @@ std::shared_ptr<Error_Object> Error_Object::newError(RuntimeContext &ctx, DSType
     return std::move(obj);
 }
 
-std::shared_ptr<Error_Object>Error_Object::newError(RuntimeContext &ctx, DSType *type,
+std::shared_ptr<Error_Object> Error_Object::newError(RuntimeContext &ctx, DSType *type,
                                                     std::shared_ptr<DSObject> &&message) {
     auto obj = std::make_shared<Error_Object>(type, std::move(message));
     obj->createStackTrace(ctx);
