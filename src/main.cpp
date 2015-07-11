@@ -80,13 +80,17 @@ static void loadRC(DSContext *ctx) {
 }
 
 static void segvHandler(int num) {
+    // write message
+    char msg[] = "+++++ catch Segmentation fault +++++\n";
+    write(STDERR_FILENO, msg, strlen(msg));
+
+    // get backtrace
     const unsigned int size = 128;
     void *buf[size];
 
-    // get backtrace
     int retSize = backtrace(buf, size);
     backtrace_symbols_fd(buf, retSize, STDERR_FILENO);
-    close(STDERR_FILENO);
+    fsync(STDERR_FILENO);
 
     abort();
 }
@@ -104,7 +108,7 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    // set signal handler for SEGV
+    // set signal handler for SIGSEGV
     struct sigaction act;
     act.sa_handler = segvHandler;
     act.sa_flags = SA_ONSTACK;
