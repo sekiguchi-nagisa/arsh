@@ -26,12 +26,15 @@
 namespace ydsh {
 namespace parser_base {
 
-template<typename T>
-struct Token {
-    unsigned int lineNum;
-    T kind;
+struct TokenRange {
     unsigned int startPos;
     unsigned int size;
+};
+
+template<typename T>
+struct Token : public TokenRange {
+    unsigned int lineNum;
+    T kind;
 
     bool operator==(const Token<T> &token) {
         return this->lineNum == token.lineNum && this->kind == token.kind &&
@@ -50,12 +53,16 @@ std::ostream &operator<<(std::ostream &stream, const Token<T> &token) {
     return stream;
 }
 
+namespace __detail {
+
 /**
  * base lexer for re2c
  */
-template<typename T>
+template<bool T>
 class LexerBase {
 protected:
+    static_assert(T, "not allowed instantiation");
+
     /**
      * may be null, if input source is string. not closed it.
      * must be binary mode.
@@ -143,20 +150,20 @@ public:
         return this->limit - this->buf + 1;
     }
 
-    bool withinRange(const Token<T> &token) const {
-        return token.startPos < this->getUsedSize()
-               && token.startPos + token.size <= this->getUsedSize();
+    bool withinRange(const TokenRange &range) const {
+        return range.startPos < this->getUsedSize()
+               && range.startPos + range.size <= this->getUsedSize();
     }
 
     /**
      * get text of token.
      */
-    std::string toTokenText(const Token<T> &token) const {
-        assert(this->withinRange(token));
-        return std::string((char *) (this->buf + token.startPos), token.size);
+    std::string toTokenText(const TokenRange &range) const {
+        assert(this->withinRange(range));
+        return std::string((char *) (this->buf + range.startPos), range.size);
     }
 
-    std::string formatLineMarker(const Token<T> &lineToken, const Token<T> &token) const;
+    std::string formatLineMarker(const TokenRange &lineToken, const TokenRange &token) const;
 
 private:
     /**
@@ -175,7 +182,7 @@ protected:
 // ##     LexerBase     ##
 // #######################
 
-template<typename T>
+template<bool T>
 LexerBase<T>::LexerBase(FILE *fp) : LexerBase<T>() {
     this->fp = fp;
     this->bufSize = DEFAULT_SIZE;
@@ -186,7 +193,7 @@ LexerBase<T>::LexerBase(FILE *fp) : LexerBase<T>() {
     this->limit = this->buf;
 }
 
-template<typename T>
+template<bool T>
 LexerBase<T>::LexerBase(const char *src, bool zeroCopy) : LexerBase<T>() {
     this->bufSize = strlen(src) + 1;
     this->zeroCopyBuf = zeroCopy;
@@ -202,8 +209,8 @@ LexerBase<T>::LexerBase(const char *src, bool zeroCopy) : LexerBase<T>() {
     this->endOfFile = true;
 }
 
-template<typename T>
-std::string LexerBase<T>::formatLineMarker(const Token<T> &lineToken, const Token<T> &token) const {
+template<bool T>
+std::string LexerBase<T>::formatLineMarker(const TokenRange &lineToken, const TokenRange &token) const {
     assert(lineToken.startPos <= token.startPos);
 
     std::string marker;
@@ -216,7 +223,7 @@ std::string LexerBase<T>::formatLineMarker(const Token<T> &lineToken, const Toke
     return marker;
 }
 
-template<typename T>
+template<bool T>
 void LexerBase<T>::expandBuf(unsigned int needSize) {
     unsigned int usedSize = this->getUsedSize();
     unsigned int size = usedSize + needSize;
@@ -240,7 +247,7 @@ void LexerBase<T>::expandBuf(unsigned int needSize) {
     }
 }
 
-template<typename T>
+template<bool T>
 bool LexerBase<T>::fill(int n) {
     if(this->endOfString && this->limit - this->cursor <= 0) {
         return false;
@@ -259,6 +266,11 @@ bool LexerBase<T>::fill(int n) {
     }
     return true;
 }
+
+} // namespace __detail
+
+typedef __detail::LexerBase<true> LexerBase;
+
 
 } // namespace parser_base
 } // namespace ydsh

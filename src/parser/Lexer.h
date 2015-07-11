@@ -43,7 +43,7 @@ typedef enum {
 
 typedef ydsh::parser_base::Token<TokenKind> Token;
 
-class Lexer : public ydsh::parser_base::LexerBase<TokenKind> {
+class Lexer : public ydsh::parser_base::LexerBase {
 private:
     /**
      * initial value is 1.
