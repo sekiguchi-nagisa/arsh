@@ -83,6 +83,7 @@ std::shared_ptr<TypeImpl> TypeImpl::create(const char *name, const std::shared_p
 TypeEnv::TypeEnv() : typeMap() {
     this->addType(TypeImpl::create("Int"));
     this->addType(TypeImpl::create("String"));
+    this->addType(TypeImpl::create("Boolean"));
 }
 
 const Type &TypeEnv::getType(const std::string &name) {
@@ -235,6 +236,8 @@ void DirectiveParser::parse_value(std::unique_ptr<Node> &value) {
 #define EACH_LA_value(OP) \
     OP(INT_LITERAL) \
     OP(STRING_LITERAL) \
+    OP(TRUE_LITERAL) \
+    OP(FALSE_LITERAL) \
     OP(ARRAY_OPEN)
 
 #define GEN_LA_ALTER(K) alters.push_back(K);
@@ -245,6 +248,10 @@ void DirectiveParser::parse_value(std::unique_ptr<Node> &value) {
         return;
     case STRING_LITERAL:
         this->parse_string(value);
+        return;
+    case TRUE_LITERAL:
+    case FALSE_LITERAL:
+        this->parse_boolean(value);
         return;
     case ARRAY_OPEN:
         this->parse_array(value);
@@ -278,6 +285,19 @@ void DirectiveParser::parse_string(std::unique_ptr<Node> &node) {
     Token token;
     this->expect(STRING_LITERAL, token);
     node.reset(new StringNode(token, this->lexer->toString(token)));
+}
+
+void DirectiveParser::parse_boolean(std::unique_ptr<Node> &node) {
+    Token token;
+    bool value = true;
+    if(this->curToken.kind == TRUE_LITERAL) {
+        this->expect(TRUE_LITERAL, token);
+        value = true;
+    } else {
+        this->expect(FALSE_LITERAL, token);
+        value = false;
+    }
+    node.reset(new BooleanNode(token, value));
 }
 
 void DirectiveParser::parse_array(std::unique_ptr<Node> &node) {
@@ -379,6 +399,12 @@ struct LineNumHandler : public AttributeHandler {
     }
 };
 
+struct IfHaveDBusHandler : public AttributeHandler {
+    void operator()(Node &node, Directive &d) { // override
+        d.setIfHaveDBus(cast<BooleanNode>(node)->getValue());
+    }
+};
+
 // ##################################
 // ##     DirectiveInitializer     ##
 // ##################################
@@ -396,11 +422,13 @@ bool DirectiveInitializer::operator()(const std::unique_ptr<DirectiveNode> &node
     auto resultHandler = ResultHandler();
     auto paramHandler = ParamsHandler();
     auto lineNumHandler = LineNumHandler();
+    auto ifHaveDBusHandler = IfHaveDBusHandler();
 
     this->addHandler("status", this->env.getIntType(), statusHandler);
     this->addHandler("result", this->env.getStringType(), resultHandler);
     this->addHandler("params", this->env.getArrayType(this->env.getStringType()), paramHandler);
     this->addHandler("lineNum", this->env.getIntType(), lineNumHandler);
+    this->addHandler("ifHaveDBus", this->env.getBooleanType(), ifHaveDBusHandler);
 
     for(auto &e : node->getNodes()) {
         auto *pair = this->lookupHandler(e->getName());
@@ -433,6 +461,10 @@ void DirectiveInitializer::visitNumberNode(NumberNode &node) {
 
 void DirectiveInitializer::visitStringNode(StringNode &node) {
     node.setType(this->env.getStringType());
+}
+
+void DirectiveInitializer::visitBooleanNode(BooleanNode &node) {
+    node.setType(this->env.getBooleanType());
 }
 
 void DirectiveInitializer::visitArrayNode(ArrayNode &node) {

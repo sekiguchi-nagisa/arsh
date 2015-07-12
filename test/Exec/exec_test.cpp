@@ -44,6 +44,16 @@ public:
         bool s = Directive::init(this->getSourceName().c_str(), d);
         ASSERT_TRUE(s);
 
+        // check run condition
+        RunCondition haveDBus = RunCondition::TRUE ;
+#ifdef X_NO_DBUS
+        haveDBus = RunCondition::FALSE;
+#endif
+        if(d.getIfHaveDBus() != RunCondition::IGNORE && haveDBus != d.getIfHaveDBus()) {
+            return; // do nothing
+        }
+
+
         const char *scriptName = this->getSourceName().c_str();
         FILE *fp = fopen(scriptName, "rb");
         ASSERT_TRUE(fp != nullptr);

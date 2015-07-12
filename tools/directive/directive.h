@@ -26,6 +26,12 @@
 namespace ydsh {
 namespace directive {
 
+enum class RunCondition : unsigned int {
+    IGNORE,
+    TRUE,
+    FALSE,
+};
+
 class Directive {
 private:
     /**
@@ -42,8 +48,16 @@ private:
 
     unsigned int lineNum;
 
+    /**
+     * default is IGNORE
+     */
+    RunCondition ifHaveDBus;
+
 public:
-    Directive() : result(DS_STATUS_SUCCESS), params(), status(0), lineNum(0) {}
+    Directive() :
+            result(DS_STATUS_SUCCESS), params(), status(0), lineNum(0),
+            ifHaveDBus(RunCondition::IGNORE) {}
+
     ~Directive() = default;
 
     unsigned int getResult() const {
@@ -76,6 +90,18 @@ public:
 
     unsigned int getLineNum() const {
         return this->lineNum;
+    }
+
+    void setIfHaveDBus(bool value) {
+        if(value) {
+            this->ifHaveDBus = RunCondition::TRUE;
+        } else {
+            this->ifHaveDBus = RunCondition::FALSE;
+        }
+    }
+
+    RunCondition getIfHaveDBus() const {
+        return this->ifHaveDBus;
     }
 
     /**

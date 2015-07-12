@@ -33,7 +33,9 @@
     TOKEN(COMMA) /* , */\
     TOKEN(ASSIGN) /* = */\
     TOKEN(LP) /* ( */\
-    TOKEN(RP) /* ) */
+    TOKEN(RP) /* ) */\
+    TOKEN(TRUE_LITERAL) /* TREU, True, true */\
+    TOKEN(FALSE_LITERAL) /* FALSE, False, false */
 
 
 namespace ydsh {

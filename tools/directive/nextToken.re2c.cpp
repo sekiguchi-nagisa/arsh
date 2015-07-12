@@ -62,6 +62,12 @@ void Lexer::nextToken(Token & token) {
       "="                  { RET(ASSIGN); }
       "("                  { RET(LP); }
       ")"                  { RET(RP); }
+      "TRUE"               { RET(TRUE_LITERAL); }
+      "True"               { RET(TRUE_LITERAL); }
+      "true"               { RET(TRUE_LITERAL); }
+      "FALSE"              { RET(FALSE_LITERAL); }
+      "False"              { RET(FALSE_LITERAL); }
+      "false"              { RET(FALSE_LITERAL); }
 
       [ \t]+               { SKIP(); }
       "\000"               { REACH_EOS(); }

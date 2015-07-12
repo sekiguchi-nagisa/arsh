@@ -32,6 +32,7 @@ class DirectiveNode;
 class AttributeNode;
 class NumberNode;
 class StringNode;
+class BooleanNode;
 class ArrayNode;
 
 struct NodeVisitor {
@@ -41,6 +42,7 @@ struct NodeVisitor {
     virtual void visitAttributeNode(AttributeNode &node) = 0;
     virtual void visitNumberNode(NumberNode &node) = 0;
     virtual void visitStringNode(StringNode &node) = 0;
+    virtual void visitBooleanNode(BooleanNode &node) = 0;
     virtual void visitArrayNode(ArrayNode &node) = 0;
 };
 
@@ -91,6 +93,10 @@ public:
 
     const Type &getStringType() {
         return this->getType(std::string("String"));
+    }
+
+    const Type &getBooleanType() {
+        return this->getType(std::string("Boolean"));
     }
 
     const Type &getArrayType(const Type &elementType);
@@ -216,6 +222,23 @@ public:
     }
 };
 
+class BooleanNode : public Node {
+private:
+    bool value;
+
+public:
+    BooleanNode(const Token &token, bool value) : Node(token), value(value) {}
+    ~BooleanNode() = default;
+
+    bool getValue() const {
+        return this->value;
+    }
+
+    void accept(NodeVisitor &visitor) { // override
+        visitor.visitBooleanNode(*this);
+    }
+};
+
 class ArrayNode : public Node {
 private:
     std::vector<std::unique_ptr<Node>> values;
@@ -277,6 +300,7 @@ private:
     void parse_value(std::unique_ptr<Node> &value);
     void parse_number(std::unique_ptr<Node> &node);
     void parse_string(std::unique_ptr<Node> &node);
+    void parse_boolean(std::unique_ptr<Node> &node);
     void parse_array(std::unique_ptr<Node> &node);
 };
 
@@ -303,6 +327,7 @@ public:
     void visitAttributeNode(AttributeNode &node);   // override
     void visitNumberNode(NumberNode &node); // override
     void visitStringNode(StringNode &node); // override
+    void visitBooleanNode(BooleanNode &node);   // override
     void visitArrayNode(ArrayNode &node);   // override
 
 private:
