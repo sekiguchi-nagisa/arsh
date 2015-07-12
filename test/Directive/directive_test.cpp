@@ -169,7 +169,7 @@ TEST_F(DirectiveTest, result7) {
 TEST_F(DirectiveTest, result8) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->parse("#$test($result = 'RUNTIME_ERROR'", true);
+        this->parse("#$test($result = 'RUNTIME_ERROR')", true);
         ASSERT_EQ(DS_STATUS_RUNTIME_ERROR, this->getDirective().getResult());
     });
 }
@@ -193,7 +193,7 @@ TEST_F(DirectiveTest, result10) {
 TEST_F(DirectiveTest, result11) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->parse("#$test($result = 'throw'", true);
+        this->parse("#$test($result = 'throw')", true);
         ASSERT_EQ(DS_STATUS_RUNTIME_ERROR, this->getDirective().getResult());
     });
 }

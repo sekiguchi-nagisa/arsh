@@ -215,6 +215,8 @@ void DirectiveParser::parse_toplevel(std::unique_ptr<DirectiveNode> &node) {
         this->parse_attribute(attr);
         node->append(std::move(attr));
     } while(CUR_KIND() == COMMA);
+
+    this->expect(RP);
 }
 
 void DirectiveParser::parse_attribute(std::unique_ptr<AttributeNode> &node) {
