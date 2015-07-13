@@ -22,7 +22,6 @@
 #include "../core/symbol.h"
 #include "../core/DSObject.h"
 #include "../core/RuntimeContext.h"
-#include "../core/ProcInvoker.h"
 #include "../core/FieldHandle.h"
 #include "../misc/debug.h"
 #include "dump.h"

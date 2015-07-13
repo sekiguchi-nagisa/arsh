@@ -161,7 +161,7 @@ int main(int argc, char **argv) {
             TRACE_EXIT,
             "--trace-exit",
             false,
-            "trace execution process to exit command."
+            "trace execution process to exit command"
     );
 
     parser.addOption(
