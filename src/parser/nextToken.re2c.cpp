@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-#ifdef X_TRACE_TOKEN
+#include <parser/Lexer.h>
+#include <config.h>
+
+#ifdef USE_TRACE_TOKEN
 #include <iostream>
 #include <cstdlib>
 #endif
-
-#include <parser/Lexer.h>
 
 // helper macro definition.
 #define RET(k) do { kind = k; goto END; } while(0)
@@ -315,7 +316,7 @@ void Lexer::nextToken(Token &token) {
     goto RET;
 
     RET:
-#ifdef X_TRACE_TOKEN
+#ifdef USE_TRACE_TOKEN
     if(getenv("YDSH_TRACE_TOKEN") != nullptr) {
         std::cerr << "nextToken(): " << token << ", text = " << this->toTokenText(token) << std::endl;
         std::cerr << "   lexer mode: " << this->getLexerModeName() << std::endl;

@@ -19,11 +19,10 @@
 #include "DSObject.h"
 #include "RuntimeContext.h"
 #include "../misc/debug.h"
+#include "../config.h"
 
-#ifndef X_NO_DBUS
-
+#ifdef USE_DBUS
 #include "../dbus/DBusBind.h"
-
 #endif
 
 namespace ydsh {
@@ -686,10 +685,10 @@ bool DBus_Object::waitSignal(RuntimeContext &ctx) {
 }
 
 bool DBus_Object::supportDBus() {
-#ifdef X_NO_DBUS
-    return false;
-#else
+#ifdef USE_DBUS
     return true;
+#else
+    return false;
 #endif
 }
 
@@ -714,10 +713,10 @@ bool DBus_Object::introspectProxy(RuntimeContext &ctx, const std::shared_ptr<DSO
 }
 
 DBus_Object *DBus_Object::newDBus_Object(TypePool *typePool) {
-#ifdef X_NO_DBUS
-    return new DBus_Object(typePool);
-#else
+#ifdef USE_DBUS
     return newDBusObject(typePool);
+#else
+    return new DBus_Object(typePool);
 #endif
 }
 

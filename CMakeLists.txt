@@ -49,32 +49,16 @@ endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11")
 
 
-#++++++++++++++++++++++++++++++++++++#
-#     set some system infomation     #
-#++++++++++++++++++++++++++++++++++++#
-
-add_definitions(-DX_INFO_SYSTEM=${CMAKE_SYSTEM})
-add_definitions(-DX_INFO_CPP=${CMAKE_CXX_COMPILER_ID})
-add_definitions(-DX_INFO_CPP_V=${CMAKE_CXX_COMPILER_VERSION})
-add_definitions(-DX_INFO_VERSION=${YDSH_VERSION})
-
-
 #++++++++++++++++++++++++++#
 #     set extra option     #
 #++++++++++++++++++++++++++#
 
 option(USE_TRACE_TOKEN "trace generated token" OFF)
-if(USE_TRACE_TOKEN)
-    add_definitions(-DX_TRACE_TOKEN)
-endif()
 show_option(USE_TRACE_TOKEN)
 
 option(USE_DBUS "support D-Bus" ON)
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
     set(USE_DBUS OFF)
-    add_definitions(-DX_NO_DBUS)
-elseif(NOT USE_DBUS)
-    add_definitions(-DX_NO_DBUS)
 endif()
 show_option(USE_DBUS)
 
@@ -103,6 +87,13 @@ if(USE_DBUS)
     set(CMAKE_LIBRARY_PATH "/usr/lib/x86_64-linux-gnu")
     find_library(HAVE_LIBDBUS NAMES dbus-1)
 endif()
+
+
+#+++++++++++++++++++++++++++#
+#     generate config.h     #
+#+++++++++++++++++++++++++++#
+
+configure_file(src/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/src/config.h)
 
 
 #+++++++++++++++++++#
@@ -220,6 +211,7 @@ add_custom_target(run_test COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure)
 #+++++++++++++++++++++++++#
 
 message("")
+message("+++++ List of System Configuration +++++")
 message(STATUS "CMAKE_BUILD_TYPE                 = ${CMAKE_BUILD_TYPE}")
 message(STATUS "CMAKE_SYSTEM                     = ${CMAKE_SYSTEM}")
 message(STATUS "CMAKE_C_COMPILER_ID              = ${CMAKE_C_COMPILER_ID}")

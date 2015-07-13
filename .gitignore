@@ -5,6 +5,9 @@ Debug/
 Release/
 .idea/
 
+# Auto-generated file
+src/config.h
+
 # Compiled Object files
 *.slo
 *.lo

@@ -3,6 +3,7 @@
 #include <ydsh/ydsh.h>
 #include <misc/files.h>
 #include <directive.h>
+#include <config.h>
 
 
 #ifndef EXEC_TEST_DIR
@@ -45,9 +46,9 @@ public:
         ASSERT_TRUE(s);
 
         // check run condition
-        RunCondition haveDBus = RunCondition::TRUE ;
-#ifdef X_NO_DBUS
-        haveDBus = RunCondition::FALSE;
+        RunCondition haveDBus = RunCondition::FALSE;
+#ifdef USE_DBUS
+        haveDBus = RunCondition::TRUE;
 #endif
         if(d.getIfHaveDBus() != RunCondition::IGNORE && haveDBus != d.getIfHaveDBus()) {
             return; // do nothing

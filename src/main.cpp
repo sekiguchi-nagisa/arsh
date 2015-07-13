@@ -22,6 +22,7 @@
 
 #include <ydsh/ydsh.h>
 #include "misc/ArgsParser.hpp"
+#include "config.h"
 
 using namespace ydsh;
 
@@ -43,13 +44,8 @@ void exec_interactive(const char *progName, DSContext *ctx);
  * not write new line.
  */
 static std::ostream &version(std::ostream &stream) {
-#define XSTR(S) #S
-#define STR(S) XSTR(S)
-    stream <<  "ydsh, version " STR(X_INFO_VERSION)
-                       " (" STR(X_INFO_SYSTEM) "), build by " STR(X_INFO_CPP) " " STR(X_INFO_CPP_V);
-#undef STR
-#undef XSTR
-    return stream;
+    return stream << "ydsh, version " X_INFO_VERSION
+                             " (" X_INFO_SYSTEM "), build by " X_INFO_CPP " " X_INFO_CPP_V;
 }
 
 /**
@@ -57,8 +53,7 @@ static std::ostream &version(std::ostream &stream) {
  * not write new line.
  */
 static std::ostream &copyright(std::ostream &stream) {
-    stream << "Copyright (c) 2015 Nagisa Sekiguchi";
-    return stream;
+    return stream << "Copyright (c) 2015 Nagisa Sekiguchi";
 }
 
 static void loadRC(DSContext *ctx) {
