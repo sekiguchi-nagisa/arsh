@@ -1,4 +1,4 @@
-#$test($result = 'throw', $lineNum = 5, $ifHaveDBus = false)
+#$test($result = 'throw', $lineNum = 5, $ifHaveDBus = false, $errorKind = 'DBusError')
 
 assert(not $DBus.available())
 

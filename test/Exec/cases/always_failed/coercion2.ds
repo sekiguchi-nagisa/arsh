@@ -1,5 +1,5 @@
 # long to long cast
 
-#$test($result = 'type', $lineNum = 5)
+#$test($result = 'type', $lineNum = 5, $errorKind = 'Required')
 
 34u64 - 54i64   # not allow some precision cast

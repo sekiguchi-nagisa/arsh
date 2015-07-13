@@ -73,6 +73,8 @@ public:
         if(d.getResult() == DS_STATUS_EXIT) {
             ASSERT_EQ(d.getStatus(), DSContext_getExitStatus(ctx));
         }
+
+        ASSERT_STREQ(d.getErrorKind().c_str(), DSStatus_getErrorKind(status));
     }
 };
 

@@ -53,10 +53,16 @@ private:
      */
     RunCondition ifHaveDBus;
 
+    /**
+     * represent parse or type error name or raised exception type name.
+     * default is empty string
+     */
+    std::string errorKind;
+
 public:
     Directive() :
             result(DS_STATUS_SUCCESS), params(), status(0), lineNum(0),
-            ifHaveDBus(RunCondition::IGNORE) {}
+            ifHaveDBus(RunCondition::IGNORE), errorKind() {}
 
     ~Directive() = default;
 
@@ -68,8 +74,8 @@ public:
         this->result = status;
     }
 
-    void appendParam(std::string &&param) {
-        this->params.push_back(std::move(param));
+    void appendParam(const std::string &param) {
+        this->params.push_back(param);
     }
 
     const std::vector<std::string> &getParams() const {
@@ -102,6 +108,14 @@ public:
 
     RunCondition getIfHaveDBus() const {
         return this->ifHaveDBus;
+    }
+
+    void setErrorKind(const std::string &kind) {
+        this->errorKind = kind;
+    }
+
+    const std::string &getErrorKind() const {
+        return this->errorKind;
     }
 
     /**

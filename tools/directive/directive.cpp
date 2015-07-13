@@ -388,7 +388,7 @@ struct ParamsHandler : public AttributeHandler {
     void operator()(Node &node, Directive &d) { // override
         auto value = cast<ArrayNode>(node);
         for(auto &e : value->getValues()) {
-            d.appendParam(std::string(cast<StringNode>(*e)->getValue()));
+            d.appendParam(cast<StringNode>(*e)->getValue());
         }
     }
 };
@@ -402,6 +402,12 @@ struct LineNumHandler : public AttributeHandler {
 struct IfHaveDBusHandler : public AttributeHandler {
     void operator()(Node &node, Directive &d) { // override
         d.setIfHaveDBus(cast<BooleanNode>(node)->getValue());
+    }
+};
+
+struct ErrorKindHandler : public AttributeHandler {
+    void operator()(Node &node, Directive &d) { // override
+        d.setErrorKind(cast<StringNode>(node)->getValue());
     }
 };
 
@@ -423,12 +429,14 @@ bool DirectiveInitializer::operator()(const std::unique_ptr<DirectiveNode> &node
     auto paramHandler = ParamsHandler();
     auto lineNumHandler = LineNumHandler();
     auto ifHaveDBusHandler = IfHaveDBusHandler();
+    auto errorKindHandler = ErrorKindHandler();
 
     this->addHandler("status", this->env.getIntType(), statusHandler);
     this->addHandler("result", this->env.getStringType(), resultHandler);
     this->addHandler("params", this->env.getArrayType(this->env.getStringType()), paramHandler);
     this->addHandler("lineNum", this->env.getIntType(), lineNumHandler);
     this->addHandler("ifHaveDBus", this->env.getBooleanType(), ifHaveDBusHandler);
+    this->addHandler("errorKind", this->env.getStringType(), errorKindHandler);
 
     for(auto &e : node->getNodes()) {
         auto *pair = this->lookupHandler(e->getName());

@@ -42,6 +42,7 @@ TEST_F(DirectiveTest, empty1) {
         ASSERT_EQ(0, this->getDirective().getParams().size());
         ASSERT_EQ(0, this->getDirective().getLineNum());
         ASSERT_EQ(RunCondition::IGNORE, this->getDirective().getIfHaveDBus());
+        ASSERT_STREQ("", this->getDirective().getErrorKind().c_str());
     });
 }
 
@@ -53,6 +54,7 @@ TEST_F(DirectiveTest, empty2) {
         ASSERT_EQ(0, this->getDirective().getParams().size());
         ASSERT_EQ(0, this->getDirective().getLineNum());
         ASSERT_EQ(RunCondition::IGNORE, this->getDirective().getIfHaveDBus());
+        ASSERT_STREQ("", this->getDirective().getErrorKind().c_str());
     });
 }
 
@@ -312,6 +314,14 @@ TEST_F(DirectiveTest, ifHaveDBus6) {
         SCOPED_TRACE("");
         this->parse("#$test($ifHaveDBus = false)", true);
         ASSERT_EQ(RunCondition::FALSE, this->getDirective().getIfHaveDBus());
+    });
+}
+
+TEST_F(DirectiveTest, errorKind) {
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->parse("#$test($errorKind = 'Error')", true);
+        ASSERT_STREQ("Error", this->getDirective().getErrorKind().c_str());
     });
 }
 

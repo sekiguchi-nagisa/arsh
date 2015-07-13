@@ -118,8 +118,15 @@ void ReportingListener::handleTypeError(const std::string &sourceName,
 
 void ReportingListener::handleRuntimeError(const TypePool &pool,
                                            const std::shared_ptr<DSObject> &raisedObj) noexcept {
+    static char empty[] = "";
+
     this->lineNum = 0;
-    this->messageKind = pool.getTypeName(*raisedObj->getType()).c_str();
+    this->messageKind = empty;
+
+    if(!pool.getInternalStatus()->isSameOrBaseTypeOf(raisedObj->getType())) {
+        this->messageKind = pool.getTypeName(*raisedObj->getType()).c_str();
+    }
+
     if(dynamic_cast<Error_Object *>(raisedObj.get()) != nullptr) {
         Error_Object *obj = TYPE_AS(Error_Object, raisedObj);
         this->lineNum = getOccuredLineNum(obj->getStackTrace());

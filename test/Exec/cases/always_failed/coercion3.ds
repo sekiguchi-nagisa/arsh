@@ -1,5 +1,5 @@
 # int to int cast
 
-#$test($result = 'type', $lineNum = 5)
+#$test($result = 'type', $lineNum = 5, $errorKind = 'Required')
 
 23i32 / 56u32    # not allow some precision cast
