@@ -1368,61 +1368,6 @@ EvalStatus CondOpNode::eval(RuntimeContext &ctx) {
     }
 }
 
-class CmdArgBuilder {
-private:
-    TypePool *pool;
-    std::vector<std::shared_ptr<DSObject>> values;
-    std::string buf;
-
-public:
-    CmdArgBuilder(TypePool &pool) : pool(&pool), values(), buf() {
-    }
-
-    /**
-     * value must be String type ot String array type
-     */
-    void append(std::shared_ptr<DSObject> &&value) {
-        DSType *type = value->getType();
-        if(*type == *this->pool->getStringType()) {
-            buf += TYPE_AS(String_Object, value)->getValue();
-            return;
-        }
-
-        if(*type == *this->pool->getStringArrayType()) {
-            Array_Object *arrayObj = TYPE_AS(Array_Object, value);
-            unsigned int size = arrayObj->getValues().size();
-            if(size == 1) {
-                this->buf += TYPE_AS(String_Object, arrayObj->getValues()[0])->getValue();
-            } else
-                for(unsigned int i = 0; i < size; i++) {
-                    if(i == 0) {
-                        this->buf += TYPE_AS(String_Object, arrayObj->getValues()[i])->getValue();
-                        this->values.push_back(
-                                std::make_shared<String_Object>(this->pool->getStringType(), std::move(this->buf)));
-                        this->buf.clear();
-                    } else if(i == size - 1) {
-                        this->buf += TYPE_AS(String_Object, arrayObj->getValues()[i])->getValue();
-                    } else {
-                        this->values.push_back(arrayObj->getValues()[i]);
-                    }
-                }
-            return;
-        }
-
-        fatal("unsupported type: %s\n", this->pool->getTypeName(*type).c_str());
-    }
-
-    std::shared_ptr<DSObject> buildArg() {
-        std::shared_ptr<String_Object> result(new String_Object(this->pool->getStringType(), std::move(this->buf)));
-        if(this->values.empty()) {
-            return std::move(result);
-        }
-
-        this->values.push_back(std::move(result));
-        return std::make_shared<Array_Object>(this->pool->getStringArrayType(), std::move(this->values));
-    }
-};
-
 
 // ########################
 // ##     CmdArgNode     ##
@@ -1477,18 +1422,18 @@ EvalStatus CmdArgNode::evalImpl(RuntimeContext &ctx) {
         return EvalStatus::SUCCESS;
     }
 
-    CmdArgBuilder builder(ctx.getPool());
+    std::string str;
     for(auto *node : this->segmentNodes) {
         EVAL(ctx, node);
         DSType *type = node->getType();
-        if(*type != *ctx.getPool().getStringType() && *type != *ctx.getPool().getStringArrayType()) {
+        if(*type != *ctx.getPool().getStringType()) {
             if(ctx.toCmdArg(this->lineNum) != EvalStatus::SUCCESS) {
                 return EvalStatus::THROW;
             }
         }
-        builder.append(ctx.pop());
+        str += TYPE_AS(String_Object, ctx.pop())->getValue();
     }
-    ctx.push(builder.buildArg());
+    ctx.push(std::make_shared<String_Object>(ctx.getPool().getStringType(), std::move(str)));
     return EvalStatus::SUCCESS;
 }
 
