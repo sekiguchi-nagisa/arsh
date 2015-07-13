@@ -121,8 +121,7 @@ unsigned int DSStatus_getErrorLineNum(DSStatus *status);
 
 /**
  * if type is DS_STATUS_PARSE_ERROR or DS_STATUS_TYPE_ERROR, return error kind.
- * if type is DS_STATUS_RUNTIME_ERROR, DS_STATUS_ASSERTION_ERROR or DS_STATUS_EXIT,
- * return raised type name.
+ * if type is DS_STATUS_RUNTIME_ERROR return raised type name.
  * otherwise, return always empty string.
  */
 const char *DSStatus_getErrorKind(DSStatus *status);

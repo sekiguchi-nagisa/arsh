@@ -182,7 +182,7 @@ void Shell::initBuiltinIface() {
             "}\n"
             "type-alias Properties org.freedesktop.DBus.Properties\n"
             "\n"
-            "type-alias ObjectAttr Map<String, Map<String, Variant>>"
+            "type-alias ObjectAttr Map<String, Map<String, Variant>>\n"
             "interface org.freedesktop.DBus.ObjectManager {\n"
             "    function GetManagedObjects() : Map<ObjectPath, ObjectAttr>\n"
             "    function InterfacesAdded($hd : Func<Void, [ObjectPath, ObjectAttr]>)\n"

@@ -1318,7 +1318,7 @@ std::unique_ptr<Node> Parser::parse_commandSubstitution() {
 }
 
 bool parse(const char *sourceName, RootNode &rootNode) {
-    FILE *fp = fopen(sourceName, "r");
+    FILE *fp = fopen(sourceName, "rb");
     if(fp == NULL) {
         return false;
     }

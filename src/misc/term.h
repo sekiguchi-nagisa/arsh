@@ -25,7 +25,7 @@ namespace ydsh {
 namespace misc {
 
 /**
- * if stream is cout or cerr, and the file descrioptor indicates tty, return true
+ * if stream is cout or cerr, and the file descriptor indicates tty, return true
  */
 inline bool isTerminal(const std::ostream &stream) {
     // check stdout
