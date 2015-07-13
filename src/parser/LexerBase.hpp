@@ -22,17 +22,20 @@
 #include <cassert>
 #include <string>
 #include <ostream>
+#include <type_traits>
 
 namespace ydsh {
 namespace parser_base {
 
-struct TokenRange {
+struct TokenBase {
     unsigned int startPos;
     unsigned int size;
 };
 
 template<typename T>
-struct Token : public TokenRange {
+struct Token : public TokenBase {
+    static_assert(std::is_enum<T>::value, "must be enum type");
+
     unsigned int lineNum;
     T kind;
 
@@ -150,7 +153,7 @@ public:
         return this->limit - this->buf + 1;
     }
 
-    bool withinRange(const TokenRange &range) const {
+    bool withinRange(const TokenBase &range) const {
         return range.startPos < this->getUsedSize()
                && range.startPos + range.size <= this->getUsedSize();
     }
@@ -158,12 +161,12 @@ public:
     /**
      * get text of token.
      */
-    std::string toTokenText(const TokenRange &range) const {
+    std::string toTokenText(const TokenBase &range) const {
         assert(this->withinRange(range));
         return std::string((char *) (this->buf + range.startPos), range.size);
     }
 
-    std::string formatLineMarker(const TokenRange &lineToken, const TokenRange &token) const;
+    std::string formatLineMarker(const TokenBase &lineToken, const TokenBase &token) const;
 
 private:
     /**
@@ -210,7 +213,7 @@ LexerBase<T>::LexerBase(const char *src, bool zeroCopy) : LexerBase<T>() {
 }
 
 template<bool T>
-std::string LexerBase<T>::formatLineMarker(const TokenRange &lineToken, const TokenRange &token) const {
+std::string LexerBase<T>::formatLineMarker(const TokenBase &lineToken, const TokenBase &token) const {
     assert(lineToken.startPos <= token.startPos);
 
     std::string marker;

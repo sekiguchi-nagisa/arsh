@@ -154,10 +154,10 @@ std::ostream &operator<<(std::ostream &stream, const InvalidTokenError<T> &e) {
 template<typename T, typename LexerImpl>
 class ParserBase {
 public:
-    typedef __parser_error::ParseError<T> ParseError;
+    typedef __parser_error::ParseError<T>           ParseError;
     typedef __parser_error::TokenMismatchedError<T> TokenMismatchedError;
-    typedef __parser_error::NoViableAlterError<T> NoViableAlterError;
-    typedef __parser_error::InvalidTokenError<T> InvalidTokenError;
+    typedef __parser_error::NoViableAlterError<T>   NoViableAlterError;
+    typedef __parser_error::InvalidTokenError<T>    InvalidTokenError;
 
 protected:
     LexerImpl *lexer;
