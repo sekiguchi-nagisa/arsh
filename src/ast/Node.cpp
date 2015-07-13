@@ -837,7 +837,7 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
         return ctx.checkCast(this->lineNum, this->type) ? EvalStatus::SUCCESS : EvalStatus::THROW;
     }
     default:
-        fatal("unsupported cast op");
+        fatal("unsupported cast op\n");
     }
     return EvalStatus::SUCCESS;
 }

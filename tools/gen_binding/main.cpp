@@ -128,7 +128,7 @@ static std::string toTypeInfoName(HandleInfo info) {
     EACH_HANDLE_INFO(GEN_NAME)
 #undef GEN_NAME
     default:
-        fatal("illegal type info: %d", info);
+        fatal("illegal type info: %d\n", info);
         return std::string();
     }
 }
@@ -845,7 +845,7 @@ static std::vector<TypeBind *> genTypeBinds(std::vector<std::unique_ptr<Element>
 static void gencode(const char *outFileName, const std::vector<TypeBind *> &binds) {
     FILE *fp = fopen(outFileName, "w");
     if(fp == NULL) {
-        fatal("cannot open output file: %s", outFileName);
+        fatal("cannot open output file: %s\n", outFileName);
     }
 
     // write header

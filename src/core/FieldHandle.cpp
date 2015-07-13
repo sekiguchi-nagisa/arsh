@@ -245,14 +245,14 @@ static DSType *decodeType(TypePool *typePool, const char *&pos,
     case P_N6:
     case P_N7:
     case P_N8:
-        fatal("must be type");
+        fatal("must be type\n");
         break;
     case T0:
         return elementType0;
     case T1:
         return elementType1;
     default:
-        fatal("broken handle info");
+        fatal("broken handle info\n");
     }
     return 0;
 }

@@ -281,7 +281,7 @@ Node *TypeChecker::resolveCoercion(CoercionKind kind, DSType *requiredType, Node
         op = CastNode::COPY_LONG;
         break;
     default:
-        fatal("unsupported int coercion: %s -> %s",
+        fatal("unsupported int coercion: %s -> %s\n",
               this->typePool->getTypeName(*targetNode->getType()).c_str(),
               this->typePool->getTypeName(*requiredType).c_str());
         return nullptr;

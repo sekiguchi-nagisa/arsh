@@ -264,7 +264,7 @@ void ReifiedType::initMethodHandle(MethodHandle *handle, TypePool *typePool, Nat
         handle->init(typePool, info, this->elementTypes[0], this->elementTypes[1]);
         break;
     default:
-        fatal("element size must be 1 or 2");
+        fatal("element size must be 1 or 2\n");
     }
 }
 
