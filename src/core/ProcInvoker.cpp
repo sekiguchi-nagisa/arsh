@@ -56,6 +56,8 @@ static int builtin_cd(RuntimeContext *ctx, const BuiltinContext &bctx, bool &rai
     return 0;
 }
 
+static int builtin_check_env(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
+
 static int builtin_exit(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
     int ret = 0;
     if(bctx.argc > 1) {
@@ -81,6 +83,9 @@ const struct {
                 "    Changing the current directory to DIR. The Environment variable\n"
                 "    HOME is the default DIR.  A null directory name is the same as\n"
                 "    the current directory."},
+        {"check_env", builtin_check_env, "[environmental variable ...]",
+                "    Check existence of specified environmental variables.\n"
+                "    If all of variables are exist and not empty string, exit with 0."},
         {"exit", builtin_exit, "[n]",
                 "    Exit the shell with a status of N.  If N is omitted, the exit\n"
                 "    status is 0."},
@@ -108,7 +113,7 @@ static int builtin_help(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
     }
     bool isShortHelp = false;
     bool foundValidCommand = false;
-    for(int i = 1; i < bctx.argc; i++) {
+    for(unsigned int i = 1; i < bctx.argc; i++) {
         const char *arg = bctx.argv[i];
         if(strcmp(arg, "-s") == 0 && bctx.argc == 2) {
             printAllUsage(bctx.fp_stdout);
@@ -135,6 +140,20 @@ static int builtin_help(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
         fprintf(bctx.fp_stderr,
                 "-ydsh: help: no help topics match `%s'.  Try `help help'.\n", bctx.argv[bctx.argc - 1]);
         return 1;
+    }
+    return 0;
+}
+
+static int builtin_check_env(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+    if(bctx.argc == 1) {
+        fprintf(bctx.fp_stderr, "%s: usage: %s [environmental variable ...]\n", bctx.argv[0], bctx.argv[0]);
+        return 1;
+    }
+    for(unsigned int i = 1; i < bctx.argc; i++) {
+        const char *env = getenv(bctx.argv[i]);
+        if(env == nullptr || strlen(env) == 0) {
+            return 1;
+        }
     }
     return 0;
 }
