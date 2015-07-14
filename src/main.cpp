@@ -36,6 +36,7 @@ enum OptionKind {
     VERSION,
     HELP,
     COMMAND,
+    NORC,
 };
 
 void exec_interactive(const char *progName, DSContext *ctx);
@@ -181,6 +182,13 @@ int main(int argc, char **argv) {
             "evaluate argument"
     );
 
+    parser.addOption(
+            NORC,
+            "--norc",
+            false,
+            "not load ydshrc"
+    );
+
     std::vector<std::pair<OptionKind, const char *>> cmdLines;
 
     std::vector<const char *> restArgs;
@@ -194,7 +202,8 @@ int main(int argc, char **argv) {
     }
 
     DSContext *ctx = DSContext_create();
-   const char *evalArg = nullptr;
+    const char *evalArg = nullptr;
+    bool userc = true;
 
     for(auto &cmdLine : cmdLines) {
         switch(cmdLine.first) {
@@ -226,12 +235,13 @@ int main(int argc, char **argv) {
         case COMMAND:
             evalArg = cmdLine.second;
             goto EXEC;
+        case NORC:
+            userc = false;
+            break;
         }
     }
 
     EXEC:
-    // load ydshrc
-    loadRC(ctx);
 
     // evaluate argument
     if(evalArg != nullptr) {
@@ -265,7 +275,10 @@ int main(int argc, char **argv) {
         int ret = DSContext_loadAndEval(ctx, nullptr, stdin, nullptr);
         DSContext_delete(&ctx);
         return ret;
-    } else {
+    } else {    // interactive mode
+        if(userc) {
+            loadRC(ctx);
+        }
         std::cout << version << std::endl << copyright << std::endl;
 
         exec_interactive(argv[0], ctx);
