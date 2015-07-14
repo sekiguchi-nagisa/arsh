@@ -53,7 +53,7 @@ static std::ostream &version(std::ostream &stream) {
  * not write new line.
  */
 static std::ostream &copyright(std::ostream &stream) {
-    return stream << "Copyright (c) 2015 Nagisa Sekiguchi";
+    return stream << "Copyright (C) 2015 Nagisa Sekiguchi";
 }
 
 static void loadRC(DSContext *ctx) {
