@@ -35,6 +35,7 @@ enum OptionKind {
     TRACE_EXIT,
     VERSION,
     HELP,
+    COMMAND,
 };
 
 void exec_interactive(const char *progName, DSContext *ctx);
@@ -173,6 +174,13 @@ int main(int argc, char **argv) {
             "show this help message"
     );
 
+    parser.addOption(
+            COMMAND,
+            "-c",
+            true,
+            "evaluate argument"
+    );
+
     std::vector<std::pair<OptionKind, const char *>> cmdLines;
 
     std::vector<const char *> restArgs;
@@ -186,6 +194,7 @@ int main(int argc, char **argv) {
     }
 
     DSContext *ctx = DSContext_create();
+   const char *evalArg = nullptr;
 
     for(auto &cmdLine : cmdLines) {
         switch(cmdLine.first) {
@@ -214,12 +223,25 @@ int main(int argc, char **argv) {
             std::cout << version << std::endl;
             parser.printHelp(std::cout);
             return 0;
+        case COMMAND:
+            evalArg = cmdLine.second;
+            goto EXEC;
         }
     }
 
+    EXEC:
     // load ydshrc
     loadRC(ctx);
 
+    // evaluate argument
+    if(evalArg != nullptr) {
+        DSContext_eval(ctx, evalArg, nullptr);
+        int ret = DSContext_getExitStatus(ctx);
+        DSContext_delete(&ctx);
+        return ret;
+    }
+
+    // execute
     if(restArgs.size() > 0) {
         const char *scriptName = restArgs[0];
         FILE *fp = fopen(scriptName, "rb");
