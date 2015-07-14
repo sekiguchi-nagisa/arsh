@@ -77,14 +77,14 @@ const struct {
     const char *usage;
     const char *detail;
 } builtinCommands[] {
-        {"cd", builtin_cd, "cd [dir]",
+        {"cd", builtin_cd, "[dir]",
                 "    Changing the current directory to DIR. The Environment variable\n"
                 "    HOME is the default DIR.  A null directory name is the same as\n"
                 "    the current directory."},
-        {"exit", builtin_exit, "exit [n]",
+        {"exit", builtin_exit, "[n]",
                 "    Exit the shell with a status of N.  If N is omitted, the exit\n"
                 "    status is 0."},
-        {"help", builtin_help, "help [-s] [pattern ...]",
+        {"help", builtin_help, "[-s] [pattern ...]",
                 "    Display helpful information about builtin commands."}
 };
 
@@ -97,7 +97,7 @@ static size_t sizeOfArray(const T (&array)[N]) {
 static void printAllUsage(FILE *fp) {
     unsigned int size = sizeOfArray(builtinCommands);
     for(unsigned int i = 0; i < size; i++) {
-        fprintf(fp, "%s\n", builtinCommands[i].usage);
+        fprintf(fp, "%s %s\n", builtinCommands[i].commandName, builtinCommands[i].usage);
     }
 }
 
@@ -122,7 +122,7 @@ static int builtin_help(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
             for(unsigned int j = 0; j < size; j++) {
                 if(strcmp(arg, builtinCommands[j].commandName) == 0) {
                     foundValidCommand = true;
-                    fprintf(bctx.fp_stdout, "%s: %s\n", arg, builtinCommands[j].usage);
+                    fprintf(bctx.fp_stdout, "%s: %s %s\n", arg, arg, builtinCommands[j].usage);
                     if(!isShortHelp) {
                         fprintf(bctx.fp_stdout, "%s\n", builtinCommands[j].detail);
                     }
