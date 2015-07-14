@@ -1407,7 +1407,7 @@ EvalStatus CmdArgNode::eval(RuntimeContext &ctx) {
         return s;
     }
 
-    ctx.getProcInvoker().addParam(ctx.peek(), this->isIgnorableEmptyString());
+    ctx.getProcInvoker().addArg(ctx.peek(), this->isIgnorableEmptyString());
     return EvalStatus::SUCCESS;
 }
 

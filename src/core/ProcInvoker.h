@@ -103,7 +103,56 @@ public:
     }
 };
 
+struct CStringComparator {
+    bool operator()(const char *x, const char *y) const {
+        return strcmp(x, y) == 0;
+    }
+};
+
+struct CStringHash {
+    std::size_t operator()(const char *key) const {
+        std::size_t hash = 1;
+        for(std::size_t i = 0; key[i] != '\0'; i++) {
+            hash = hash * 61 + key[i];
+        }
+        return hash;
+    }
+};
+
+template <typename T>
+using CStringHashMap = std::unordered_map<const char *, T, CStringHash, CStringComparator>;
+
+/**
+ * for builtin command argument.
+ * following vairbales are read-only.
+ */
+struct BuiltinContext {
+    /**
+     * number of argv, exclude last elememnt
+     */
+    int argc;
+
+    /**
+     * first element of argv is command name.
+     * last element of argv is null.
+     */
+    char **argv;
+
+    // not close theme
+    FILE *fp_stdin;
+    FILE *fp_stdout;
+    FILE *fp_stderr;
+};
+
+
 class ProcInvoker {
+public:
+    /**
+     * if some error happened(ex. exit), raised will be true.
+     * return exit status.
+     */
+    typedef int (*builtin_command_t)(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
+
 private:
     enum ExitKind : unsigned int {
         NORMAL,
@@ -125,11 +174,15 @@ private:
         }
     };
 
-
     /**
      * not delete it
      */
     RuntimeContext *ctx;
+
+    /**
+     * builtin command name and pointer.
+     */
+    CStringHashMap<builtin_command_t> builtinMap;
 
     ArgArray argArray;
 
@@ -145,8 +198,7 @@ private:
     std::vector<ProcContext> procCtxs;
 
 public:
-    ProcInvoker(RuntimeContext *ctx) :
-            ctx(ctx), argArray(), redirOptions(), procOffsets(), procCtxs() { }
+    ProcInvoker(RuntimeContext *ctx);
     ~ProcInvoker() = default;
 
     void clear() {
@@ -159,13 +211,19 @@ public:
     void openProc();
     void closeProc();
     void addCommandName(const std::string &name);
-    void addParam(const std::shared_ptr<DSObject> &value, bool skipEmptyString);
+    void addArg(const std::shared_ptr<DSObject> &value, bool skipEmptyString);
     void addRedirOption(RedirectOP op, const std::shared_ptr<DSObject> &value);
 
     EvalStatus invoke();
 
 private:
     void redirect(unsigned int procIndex);
+    bool redirectBuiltin(unsigned int procIndex, std::vector<FILE *> &openedFps, BuiltinContext &bctx);
+
+    /**
+     * return null, if not found builtin command.
+     */
+    builtin_command_t lookupBuiltinCommand(const char *commandName);
 };
 
 

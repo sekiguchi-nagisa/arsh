@@ -28,9 +28,130 @@
 namespace ydsh {
 namespace core {
 
+/**
+ * for builtin command error message.
+ */
+static void builtin_perror(FILE *fp, const char *prefix) {
+    const unsigned int size = 128;
+    char buf[size];
+    strerror_r(errno, buf, size);
+    fprintf(fp, "%s: %s\n", prefix, buf);
+}
+
+// builtin command definition
+
+static int builtin_help(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
+
+static int builtin_cd(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+    const char *destDir = getenv("HOME");
+    if(bctx.argc > 1) {
+        destDir = bctx.argv[1];
+    }
+    if(chdir(destDir) != 0) {
+        builtin_perror(bctx.fp_stderr, "-ydsh: cd");
+        return 1;
+    }
+
+    ctx->updateWorkingDir();
+    return 0;
+}
+
+static int builtin_exit(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+    int ret = 0;
+    if(bctx.argc > 1) {
+        const char *num = bctx.argv[1];
+        int status;
+        long value = convertToInt64(num, status, false);
+        if(status == 0) {
+            ret = value;
+        }
+    }
+    ctx->exitShell(ret);
+    raised = true;
+    return ret;
+}
+
+const struct {
+    const char *commandName;
+    ProcInvoker::builtin_command_t cmd_ptr;
+    const char *usage;
+    const char *detail;
+} builtinCommands[] {
+        {"cd", builtin_cd, "cd [dir]",
+                "    Changing the current directory to DIR. The Environment variable\n"
+                "    HOME is the default DIR.  A null directory name is the same as\n"
+                "    the current directory."},
+        {"exit", builtin_exit, "exit [n]",
+                "    Exit the shell with a status of N.  If N is omitted, the exit\n"
+                "    status is 0."},
+        {"help", builtin_help, "help [-s] [pattern ...]",
+                "    Display helpful information about builtin commands."}
+};
+
+template<typename T, size_t N>
+static size_t sizeOfArray(const T (&array)[N]) {
+    return N;
+}
+
+
+static void printAllUsage(FILE *fp) {
+    unsigned int size = sizeOfArray(builtinCommands);
+    for(unsigned int i = 0; i < size; i++) {
+        fprintf(fp, "%s\n", builtinCommands[i].usage);
+    }
+}
+
+static int builtin_help(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+    if(bctx.argc == 1) {
+        printAllUsage(bctx.fp_stdout);
+        return 0;
+    }
+    bool isShortHelp = false;
+    bool foundValidCommand = false;
+    for(int i = 1; i < bctx.argc; i++) {
+        const char *arg = bctx.argv[i];
+        if(strcmp(arg, "-s") == 0 && bctx.argc == 2) {
+            printAllUsage(bctx.fp_stdout);
+            foundValidCommand = true;
+        }
+        else if(strcmp(arg, "-s") == 0 && i == 1) {
+            isShortHelp = true;
+        }
+        else {
+            unsigned int size = sizeOfArray(builtinCommands);
+            for(unsigned int j = 0; j < size; j++) {
+                if(strcmp(arg, builtinCommands[j].commandName) == 0) {
+                    foundValidCommand = true;
+                    fprintf(bctx.fp_stdout, "%s: %s\n", arg, builtinCommands[j].usage);
+                    if(!isShortHelp) {
+                        fprintf(bctx.fp_stdout, "%s\n", builtinCommands[j].detail);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    if(!foundValidCommand) {
+        fprintf(bctx.fp_stderr,
+                "-ydsh: help: no help topics match `%s'.  Try `help help'.\n", bctx.argv[bctx.argc - 1]);
+        return 1;
+    }
+    return 0;
+}
+
+
 // #########################
 // ##     ProcInvoker     ##
 // #########################
+
+ProcInvoker::ProcInvoker(RuntimeContext *ctx) :
+        ctx(ctx), builtinMap(), argArray(), redirOptions(), procOffsets(), procCtxs() {
+    // register builtin command
+    unsigned int size = sizeOfArray(builtinCommands);
+    for(unsigned int i = 0; i < size; i++) {
+        this->builtinMap.insert(std::make_pair(builtinCommands[i].commandName, builtinCommands[i].cmd_ptr));
+    }
+}
 
 void ProcInvoker::openProc() {
     unsigned int argOffset = this->argArray.getUsedSize();
@@ -47,7 +168,7 @@ void ProcInvoker::addCommandName(const std::string &name) {
     this->argArray.append(name.c_str());
 }
 
-void ProcInvoker::addParam(const std::shared_ptr<DSObject> &value, bool skipEmptyString) {
+void ProcInvoker::addArg(const std::shared_ptr<DSObject> &value, bool skipEmptyString) {
     DSType *valueType = value->getType();
     if(*valueType == *this->ctx->getPool().getStringType()) {
         std::shared_ptr<String_Object> obj = std::dynamic_pointer_cast<String_Object>(value);
@@ -150,49 +271,113 @@ void ProcInvoker::redirect(unsigned int procIndex) {  //FIXME: error reporting
     }
 }
 
-static EvalStatus execBuiltin(RuntimeContext *ctx, char **argv) {   //FIXME: error report
-    unsigned int argSize = 0;
-    for(; argv[argSize + 1] != nullptr; argSize++);
-
-    if(strcmp(argv[0], "cd") == 0) {
-        const char *targetDir = getenv("HOME");
-        if(argSize > 0) {
-            targetDir = argv[1];
-        }
-        if(chdir(targetDir) != 0) {
-            perror("-ydsh: cd");
-            return EvalStatus::SUCCESS;
-        }
-        ctx->updateWorkingDir();
-        return EvalStatus::SUCCESS;
-    } else if(strcmp(argv[0], "exit") == 0) {
-        if(argSize == 0) {
-            ctx->exitShell(0);
-        } else if(argSize > 0) {
-            const char *num = argv[1];
-            int status;
-            long value = convertToInt64(num, status, false);
-            if(status == 0) {
-                ctx->exitShell(value);
-            } else {
-                ctx->exitShell(0);
-            }
-        }
-        return EvalStatus::THROW;
-    } else {
-        fatal("unsupported builtin command %s\n",argv[0]);
-        return EvalStatus::SUCCESS;
+/**
+ * open file and get file descriptor.
+ * write opend file pointer to openedFps.
+ * if cannot open file, return -1.
+ */
+static bool redirectToFile(const char *fileName, const char *mode, FILE **targetFp, std::vector<FILE *> &openedFps) {
+    FILE *fp = fopen(fileName, mode);
+    if(fp == nullptr) {
+        fprintf(stderr, "-ydsh: %s: ", fileName);
+        perror("");
+        return false;   //FIXME: error reporting
     }
+    openedFps.push_back(fp);
+    *targetFp = fp;
+    return true;
+}
+
+#define REDIRECT_TO(name, mode, targetFD) \
+    do { if(!redirectToFile(name, mode, &targetFD, openedFps)) { return false; }} while(false)
+
+bool ProcInvoker::redirectBuiltin(unsigned int procIndex, std::vector<FILE *> &openedFps, BuiltinContext &bctx) {
+    unsigned int startIndex = this->procOffsets[procIndex].second;
+    for(; this->redirOptions[startIndex].first != RedirectOP::DUMMY; startIndex++) {
+        const std::pair<RedirectOP, const char *> &pair = this->redirOptions[startIndex];
+        switch(pair.first) {
+        case IN_2_FILE: {
+            REDIRECT_TO(pair.second, "rb", bctx.fp_stdin);
+            break;
+        };
+        case OUT_2_FILE: {
+            REDIRECT_TO(pair.second, "wb", bctx.fp_stdout);
+            break;
+        };
+        case OUT_2_FILE_APPEND: {
+            REDIRECT_TO(pair.second, "ab", bctx.fp_stdout);
+            break;
+        };
+        case ERR_2_FILE: {
+            REDIRECT_TO(pair.second, "wb", bctx.fp_stderr);
+            break;
+        };
+        case ERR_2_FILE_APPEND: {
+            REDIRECT_TO(pair.second, "ab", bctx.fp_stderr);
+            break;
+        };
+        case MERGE_ERR_2_OUT_2_FILE: {
+            REDIRECT_TO(pair.second, "wb", bctx.fp_stdout);
+            bctx.fp_stderr = bctx.fp_stdout;
+            break;
+        };
+        case MERGE_ERR_2_OUT_2_FILE_APPEND: {
+            REDIRECT_TO(pair.second, "ab", bctx.fp_stdout);
+            bctx.fp_stderr = bctx.fp_stdout;
+            break;
+        };
+        case MERGE_ERR_2_OUT: {
+            bctx.fp_stderr = bctx.fp_stdout;
+            break;
+        };
+        case MERGE_OUT_2_ERR: {
+            bctx.fp_stdout = bctx.fp_stderr;
+            break;
+        }
+        default:
+            fatal("unsupported redir option: %d\n", pair.first);
+        }
+    }
+    return true;
+}
+
+ProcInvoker::builtin_command_t ProcInvoker::lookupBuiltinCommand(const char *commandName) {
+    auto iter = this->builtinMap.find(commandName);
+    if(iter == this->builtinMap.end()) {
+        return nullptr;
+    }
+    return iter->second;
 }
 
 EvalStatus ProcInvoker::invoke() {
     const unsigned int procSize = this->procOffsets.size();
 
-    // check builtin(cd, exit)
+    // check builtin command
     if(procSize == 1) {
         char **argv = this->argArray.getRawData(this->procOffsets[0].first);
-        if(strcmp(argv[0], "cd") == 0 || strcmp(argv[0], "exit") == 0) {
-            return execBuiltin(this->ctx, argv);
+        builtin_command_t cmd_ptr = this->lookupBuiltinCommand(argv[0]);
+        if(cmd_ptr != nullptr) {
+            BuiltinContext bctx = {
+                    .argc = 1, .argv = argv,
+                    .fp_stdin = stdin, .fp_stdout = stdout, .fp_stderr = stderr
+            };
+            for(; argv[bctx.argc] != nullptr; bctx.argc++);
+
+            std::vector<FILE *> fps;
+            if(!this->redirectBuiltin(0, fps, bctx)) {
+                this->ctx->updateExitStatus(1);
+                return EvalStatus::SUCCESS;
+            }
+
+            // invoke
+            bool raised = false;
+            this->ctx->updateExitStatus(cmd_ptr(this->ctx, bctx, raised));
+
+            for(FILE *fp : fps) {
+                fclose(fp);
+            }
+
+            return raised ? EvalStatus::THROW : EvalStatus::SUCCESS;
         }
     }
 
@@ -251,6 +436,19 @@ EvalStatus ProcInvoker::invoke() {
         closeAllPipe(procSize, pipefds);
 
         char **argv = this->argArray.getRawData(this->procOffsets[procIndex].first);
+
+        // check builtin
+        builtin_command_t cmd_ptr = this->lookupBuiltinCommand(argv[0]);
+        if(cmd_ptr != nullptr) {
+            BuiltinContext bctx = {
+                    .argc = 1, .argv = argv,
+                    .fp_stdin = stdin, .fp_stdout = stdout, .fp_stderr = stderr
+            };
+            for(; argv[bctx.argc] != nullptr; bctx.argc++);
+            bool raised = false;
+            exit(cmd_ptr(this->ctx, bctx, raised));
+        }
+
         execvp(argv[0], argv);
         perror("execution error");
         fprintf(stderr, "executed cmd: %s\n", argv[0]);

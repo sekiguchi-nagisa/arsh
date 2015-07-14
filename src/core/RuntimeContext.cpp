@@ -430,7 +430,6 @@ void RuntimeContext::updateExitStatus(unsigned int status) {
 }
 
 void RuntimeContext::exitShell(unsigned int status) {
-    this->updateExitStatus(status);
     std::string str("terminated by exit ");
     str += std::to_string(status);
     this->throwError(this->pool.getShellExit(), std::move(str));
