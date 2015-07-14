@@ -32,10 +32,7 @@ namespace core {
  * for builtin command error message.
  */
 static void builtin_perror(FILE *fp, const char *prefix) {
-    const unsigned int size = 128;
-    char buf[size];
-    strerror_r(errno, buf, size);
-    fprintf(fp, "%s: %s\n", prefix, buf);
+    fprintf(fp, "%s: %s\n", prefix, strerror(errno));
 }
 
 // builtin command definition
@@ -113,7 +110,7 @@ static int builtin_help(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
     }
     bool isShortHelp = false;
     bool foundValidCommand = false;
-    for(unsigned int i = 1; i < bctx.argc; i++) {
+    for(int i = 1; i < bctx.argc; i++) {
         const char *arg = bctx.argv[i];
         if(strcmp(arg, "-s") == 0 && bctx.argc == 2) {
             printAllUsage(bctx.fp_stdout);
@@ -149,7 +146,7 @@ static int builtin_check_env(RuntimeContext *ctx, const BuiltinContext &bctx, bo
         fprintf(bctx.fp_stderr, "%s: usage: %s [environmental variable ...]\n", bctx.argv[0], bctx.argv[0]);
         return 1;
     }
-    for(unsigned int i = 1; i < bctx.argc; i++) {
+    for(int i = 1; i < bctx.argc; i++) {
         const char *env = getenv(bctx.argv[i]);
         if(env == nullptr || strlen(env) == 0) {
             return 1;
