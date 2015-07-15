@@ -21,23 +21,10 @@
 #include <iostream>
 
 #include <ydsh/ydsh.h>
-#include "misc/ArgsParser.hpp"
+#include "misc/argv.hpp"
 #include "config.h"
 
 using namespace ydsh;
-
-enum OptionKind {
-    DUMP_UAST,
-    DUMP_AST,
-    PARSE_ONLY,
-    DISABLE_ASSERT,
-    PRINT_TOPLEVEL,
-    TRACE_EXIT,
-    VERSION,
-    HELP,
-    COMMAND,
-    NORC,
-};
 
 void exec_interactive(const char *progName, DSContext *ctx);
 
@@ -92,6 +79,41 @@ static void segvHandler(int num) {
     abort();
 }
 
+enum OptionKind {
+    DUMP_UAST,
+    DUMP_AST,
+    PARSE_ONLY,
+    DISABLE_ASSERT,
+    PRINT_TOPLEVEL,
+    TRACE_EXIT,
+    VERSION,
+    HELP,
+    COMMAND,
+    NORC,
+};
+
+static const argv::Option<OptionKind> options[] = {
+        {DUMP_UAST, "--dump-untyped-ast", 0,
+                "dump abstract syntax tree (before type checking)"},
+        {DUMP_AST,  "--dump-ast", 0,
+                "dump abstract syntax tree (after type checking)"},
+        {PARSE_ONLY, "--parse-only", 0,
+                "not evaluate, parse only"},
+        {DISABLE_ASSERT, "--disable-assertion", 0,
+                "disable assert statement"},
+        {PRINT_TOPLEVEL, "--print-toplevel", 0,
+                "print toplevel evaluated value"},
+        {TRACE_EXIT, "--trace-exit", 0,
+                "trace execution process to exit command"},
+        {VERSION, "--version", 0,
+                "show version and copyright"},
+        {HELP, "--help", 0,
+                "show this help message"},
+        {COMMAND, "-c", argv::REQUIRE_ARG,
+                "evaluate argument"},
+        {NORC, "--norc", 0, "not load ydshrc"},
+};
+
 int main(int argc, char **argv) {
     // init alternative stack (for signal handler)
     static char altStack[SIGSTKSZ];
@@ -117,87 +139,14 @@ int main(int argc, char **argv) {
     }
 
 
-    args::ArgsParser<OptionKind> parser;
-
-    parser.addOption(
-            DUMP_UAST,
-            "--dump-untyped-ast",
-            false,
-            "dump abstract syntax tree (before type checking)"
-    );
-
-    parser.addOption(
-            DUMP_AST,
-            "--dump-ast",
-            false,
-            "dump abstract syntax tree (after type checking)"
-    );
-
-    parser.addOption(
-            PARSE_ONLY,
-            "--parse-only",
-            false,
-            "not evaluate, parse only"
-    );
-
-    parser.addOption(
-            DISABLE_ASSERT,
-            "--disable-assertion",
-            false,
-            "disable assert statement"
-    );
-
-    parser.addOption(
-            PRINT_TOPLEVEL,
-            "--print-toplevel",
-            false,
-            "print toplevel evaluated value"
-    );
-
-    parser.addOption(
-            TRACE_EXIT,
-            "--trace-exit",
-            false,
-            "trace execution process to exit command"
-    );
-
-    parser.addOption(
-            VERSION,
-            "--version",
-            false,
-            "show version and copyright"
-    );
-
-    parser.addOption(
-            HELP,
-            "--help",
-            false,
-            "show this help message"
-    );
-
-    parser.addOption(
-            COMMAND,
-            "-c",
-            true,
-            "evaluate argument"
-    );
-
-    parser.addOption(
-            NORC,
-            "--norc",
-            false,
-            "not load ydshrc"
-    );
-
     std::vector<std::pair<OptionKind, const char *>> cmdLines;
-
     std::vector<const char *> restArgs;
     try {
-        restArgs = parser.parse(argc, argv, cmdLines);
-    } catch(const ydsh::args::ParseError &e) {
-        std::cerr << e.message << ": " << e.suffix << std::endl;
+        restArgs = argv::parseArgv(argc, argv, options, cmdLines);
+    } catch(const argv::ParseError &e) {
+        std::cerr << e.getMessage() << std::endl;
         std::cerr << version << std::endl;
-        parser.printHelp(std::cerr);
+        std::cerr << options << std::endl;
         return 1;
     }
 
@@ -230,7 +179,7 @@ int main(int argc, char **argv) {
             return 0;
         case HELP:
             std::cout << version << std::endl;
-            parser.printHelp(std::cout);
+            std::cerr << options << std::endl;
             return 0;
         case COMMAND:
             evalArg = cmdLine.second;
