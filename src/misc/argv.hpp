@@ -70,7 +70,7 @@ struct Option {
 
     unsigned int getUsageSize() const {
         return strlen(this->optionName) +
-               (misc::hasFlag(this->flag, REQUIRE_ARG) ? strlen(usageSuffix) : 0);
+               (misc::hasFlag(this->flag, REQUIRE_ARG) ? sizeof(usageSuffix) - 1 : 0);
     }
 
     std::vector<std::string> getDetails() const;
@@ -97,54 +97,65 @@ std::vector<std::string> Option<T>::getDetails() const {
     return bufs;
 }
 
+typedef std::vector<const char *> RestArgs;
 
+template<typename T>
+using CmdLines = std::vector<std::pair<T, const char *>>;
+
+/**
+ * first element of argv is always ignored.
+ */
 template<typename T, size_t N>
-std::vector<const char *> parseArgv(int argc, char **argv, const Option<T> (&options)[N],
-                                    std::vector<std::pair<T, const char *>> &cmdLines) {
+RestArgs parseArgv(int argc, char **argv, const Option<T> (&options)[N], CmdLines<T> &cmdLines) {
     // register option
     misc::CStringHashMap<unsigned int> indexMap;
     for(unsigned int i = 0; i < N; i++) {
-        if(!indexMap.insert(std::make_pair(options[i].optionName, i)).second) {
-            throw ParseError("duplicated option", options[i].optionName);
+        const char *optionName = options[i].optionName;
+        if(optionName[0] != '-') {
+            throw ParseError("illegal option name", optionName);
+        }
+        if(!indexMap.insert(std::make_pair(optionName, i)).second) {
+            throw ParseError("duplicated option", optionName);
         }
     }
 
     // parse
     static char empty[] = "";
-    std::vector<const char *> restArgs;
+    RestArgs restArgs;
 
-    int ignoredIndex = argc;
-    for(int i = 1; i < argc; i++) {
-        const char *arg = argv[i];
-        if(arg[0] == '-') {
-            auto iter = indexMap.find(arg);
-            if(iter == indexMap.end()) {    // not found
-                throw ParseError("illegal option", arg);
-            }
+    int index = 1;
+    for(; index < argc; index++) {
+        const char *arg = argv[index];
+        if(arg[0] != '-') {
+            break;
+        }
 
-            const Option<T> &option = options[iter->second];
-            const char *optionArg = empty;
+        auto iter = indexMap.find(arg);
+        if(iter == indexMap.end()) {    // not found
+            throw ParseError("illegal option", arg);
+        }
 
-            if(option.requireArg()) {
-                if(i + 1 < argc) {
-                    optionArg = argv[++i];
-                } else {
-                    throw ParseError("expect for argument", arg);
-                }
-            }
-            cmdLines.push_back(std::make_pair(option.kind, optionArg));
+        const Option<T> &option = options[iter->second];
+        const char *optionArg = empty;
 
-            if(!option.ignoreRest()) {
-                continue;
+        if(option.requireArg()) {
+            if(index + 1 < argc && argv[++index][0] != '-') {
+                optionArg = argv[index];
+            } else {
+                throw ParseError("need argument", arg);
             }
         }
-        ignoredIndex = i + 1;
-        break;
+        cmdLines.push_back(std::make_pair(option.kind, optionArg));
+
+        if(option.ignoreRest()) {
+            index++;
+            break;
+        }
     }
 
     // get rest argument
-    for(; ignoredIndex < argc; ignoredIndex++) {
-        restArgs.push_back(argv[ignoredIndex]);
+    for(; index < argc; index++) {
+        restArgs.push_back(argv[index]);
     }
 
     return restArgs;
