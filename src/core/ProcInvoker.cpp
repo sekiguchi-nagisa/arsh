@@ -17,7 +17,6 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <fcntl.h>
 
 #include <cstdlib>
 
@@ -155,21 +154,6 @@ static int builtin_check_env(RuntimeContext *ctx, const BuiltinContext &bctx, bo
     }
     return 0;
 }
-
-// for error reporting
-struct ChildError {
-    /**
-     * index of redirect option having some error.
-     * if 0, has no error in redirection.
-     */
-    unsigned int redirIndex;
-
-    /**
-     * error number of occurred error.
-     */
-    int errorNum;
-};
-
 
 
 // #########################
@@ -423,19 +407,6 @@ EvalStatus ProcInvoker::invoke() {
         }
     }
 
-    // create self-pipe for error reporting
-    int selfpipes[procSize][2];
-    for(unsigned int i = 0; i < procSize; i++) {
-        if(pipe(selfpipes[i]) < 0) {
-            perror("pipe creation error");
-            exit(1);
-        }
-        if(fcntl(selfpipes[i][WRITE_PIPE], F_SETFD, fcntl(selfpipes[i][WRITE_PIPE], F_GETFD) | FD_CLOEXEC)) {
-            perror("fcntl error");
-            exit(1);
-        }
-    }
-
     // fork
     unsigned int procIndex;
     for(procIndex = 0; procIndex < procSize && (pid[procIndex] = fork()) > 0; procIndex++) {
@@ -443,20 +414,9 @@ EvalStatus ProcInvoker::invoke() {
     }
 
     if(procIndex == procSize) {   // parent process
-        // clse unused pipe
         closeAllPipe(procSize - 1, pipefds);
         close(pipefds[procSize - 1][WRITE_PIPE]);
         close(pipefds[procSize - 1][READ_PIPE]);
-
-        for(unsigned int i = 0; i < procSize; i++) {
-            close(selfpipes[i][WRITE_PIPE]);
-        }
-
-        // receive error via self-pipe
-
-        for(unsigned int i = 0; i < procSize; i++) {
-            close(selfpipes[i][READ_PIPE]);
-        }
 
         // wait for exit
         for(unsigned int i = 0; i < procSize; i++) {
