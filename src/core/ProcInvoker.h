@@ -21,6 +21,7 @@
 #include <cassert>
 
 #include "DSObject.h"
+#include "misc/hash.hpp"
 
 namespace ydsh {
 namespace core {
@@ -103,24 +104,6 @@ public:
     }
 };
 
-struct CStringComparator {
-    bool operator()(const char *x, const char *y) const {
-        return strcmp(x, y) == 0;
-    }
-};
-
-struct CStringHash {
-    std::size_t operator()(const char *key) const {
-        std::size_t hash = 1;
-        for(std::size_t i = 0; key[i] != '\0'; i++) {
-            hash = hash * 61 + key[i];
-        }
-        return hash;
-    }
-};
-
-template <typename T>
-using CStringHashMap = std::unordered_map<const char *, T, CStringHash, CStringComparator>;
 
 /**
  * for builtin command argument.
