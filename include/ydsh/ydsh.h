@@ -79,12 +79,12 @@ const char *DSContext_getWorkingDir(DSContext *ctx);
 int DSContext_getExitStatus(DSContext *ctx);
 
 
-#define DS_OPTION_DUMP_UAST  (1 << 0)
-#define DS_OPTION_DUMP_AST   (1 << 1)
-#define DS_OPTION_PARSE_ONLY (1 << 2)
-#define DS_OPTION_ASSERT     (1 << 3)
-#define DS_OPTION_TOPLEVEL   (1 << 4)
-#define DS_OPTION_TRACE_EXIT (1 << 5)
+#define DS_OPTION_DUMP_UAST  ((unsigned int)(1 << 0))
+#define DS_OPTION_DUMP_AST   ((unsigned int)(1 << 1))
+#define DS_OPTION_PARSE_ONLY ((unsigned int)(1 << 2))
+#define DS_OPTION_ASSERT     ((unsigned int)(1 << 3))
+#define DS_OPTION_TOPLEVEL   ((unsigned int)(1 << 4))
+#define DS_OPTION_TRACE_EXIT ((unsigned int)(1 << 5))
 
 void DSContext_setOption(DSContext *ctx, unsigned int optionSet);
 void DSContext_unsetOption(DSContext *ctx, unsigned int optionSet);

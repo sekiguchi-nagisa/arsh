@@ -17,36 +17,35 @@
 #ifndef MISC_FLAG_UTIL_H_
 #define MISC_FLAG_UTIL_H_
 
+#include <type_traits>
+
 namespace ydsh {
 namespace misc {
 
 typedef unsigned char flag8_set_t;
 typedef unsigned char flag8_t;
 
-inline void setFlag(flag8_set_t &set, flag8_t flag) {
-    set |= flag;
-}
-
-inline void unsetFlag(flag8_set_t &set, flag8_t flag) {
-    set &= ~flag;
-}
-
-inline bool hasFlag(flag8_set_t set, flag8_t flag) {
-    return (set & flag) == flag;
-}
-
 typedef unsigned int flag32_set_t;
 typedef unsigned int flag32_t;
 
-inline void setFlag(flag32_set_t &set, flag32_t flag) {
+template <typename T>
+void setFlag(T &set, T flag) {
+    static_assert(std::is_unsigned<T>::value, "must be unsigned type");
+
     set |= flag;
 }
 
-inline void unsetFlag(flag32_set_t &set, flag32_t flag) {
+template <typename T>
+void unsetFlag(T &set, T flag) {
+    static_assert(std::is_unsigned<T>::value, "must be unsigned type");
+
     set &= ~flag;
 }
 
-inline bool hasFlag(flag32_set_t set, flag32_t flag) {
+template <typename T>
+bool hasFlag(T set, T flag) {
+    static_assert(std::is_unsigned<T>::value, "must be unsigned type");
+
     return (set & flag) == flag;
 }
 

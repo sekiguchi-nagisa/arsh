@@ -130,8 +130,8 @@ int main(int argc, char **argv) {
     }
 
 
-    std::vector<std::pair<OptionKind, const char *>> cmdLines;
-    std::vector<const char *> restArgs;
+    argv::CmdLines<OptionKind> cmdLines;
+    argv::RestArgs restArgs;
     try {
         restArgs = argv::parseArgv(argc, argv, options, cmdLines);
     } catch(const argv::ParseError &e) {
@@ -190,7 +190,7 @@ int main(int argc, char **argv) {
     shellArgs[size] = nullptr;
 
     // evaluate argument
-    if(evalArg != nullptr) {
+    if(evalArg != nullptr) {    // command line mode
         DSContext_setArguments(ctx, shellArgs);
         DSContext_eval(ctx, evalArg, nullptr);
         int ret = DSContext_getExitStatus(ctx);
@@ -199,7 +199,7 @@ int main(int argc, char **argv) {
     }
 
     // execute
-    if(restArgs.size() > 0) {
+    if(restArgs.size() > 0) {   // script mode
         const char *scriptName = restArgs[0];
         FILE *fp = fopen(scriptName, "rb");
         if(fp == NULL) {
@@ -211,7 +211,7 @@ int main(int argc, char **argv) {
         int ret = DSContext_loadAndEval(ctx, scriptName, fp, nullptr);
         DSContext_delete(&ctx);
         return ret;
-    } else if(isatty(STDIN_FILENO) == 0) {
+    } else if(isatty(STDIN_FILENO) == 0) {  // pipe line mode
         int ret = DSContext_loadAndEval(ctx, nullptr, stdin, nullptr);
         DSContext_delete(&ctx);
         return ret;

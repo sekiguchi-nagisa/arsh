@@ -23,7 +23,7 @@
 #include <utility>
 #include <memory>
 
-#include "../misc/flag_util.h"
+#include "../misc/flag_util.hpp"
 #include "handle_info.h"
 #include "TypePool.h"
 

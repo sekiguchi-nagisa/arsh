@@ -23,7 +23,7 @@
 #include <algorithm>
 
 #include "hash.hpp"
-#include "flag_util.h"
+#include "flag_util.hpp"
 
 namespace ydsh {
 namespace argv {

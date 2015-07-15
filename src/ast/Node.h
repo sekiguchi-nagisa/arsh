@@ -21,7 +21,7 @@
 #include <list>
 #include <memory>
 
-#include "../misc/flag_util.h"
+#include "../misc/flag_util.hpp"
 #include "../parser/TokenKind.h"
 #include "TypeToken.h"
 
