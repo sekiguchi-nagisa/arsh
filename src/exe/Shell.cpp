@@ -47,6 +47,9 @@ ExecStatus Shell::eval(const char *sourceName, FILE *fp) {
 
 void Shell::setArguments(const std::vector<const char *> &argv) {
     unsigned int size = argv.size();
+    if(size == 0) {
+        return;
+    }
     this->ctx.updateScriptName(argv[0]);
     for(unsigned int i = 1; i < size; i++) {
         if(strcmp(argv[i], "") != 0) {

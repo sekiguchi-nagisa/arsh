@@ -79,40 +79,31 @@ static void segvHandler(int num) {
     abort();
 }
 
+#define EACH_OPT(OP) \
+    OP(DUMP_UAST,      "--dump-untyped-ast",  0, "dump abstract syntax tree (before type checking)") \
+    OP(DUMP_AST,       "--dump-ast",          0, "dump abstract syntax tree (after type checking)") \
+    OP(PARSE_ONLY,     "--parse-only",        0, "not evaluate, parse only") \
+    OP(DISABLE_ASSERT, "--disable-assertion", 0, "disable assert statement") \
+    OP(PRINT_TOPLEVEL, "--print-toplevel",    0, "print toplevel evaluated value") \
+    OP(TRACE_EXIT,     "--trace-exit",        0, "trace execution process to exit command") \
+    OP(VERSION,        "--version",           0, "show version and copyright") \
+    OP(HELP,           "--help",              0, "show this help message") \
+    OP(COMMAND,        "-c",                  argv::REQUIRE_ARG | argv::IGNORE_REST, "evaluate argument") \
+    OP(NORC,           "--norc",              0, "not load ydshrc")
+
 enum OptionKind {
-    DUMP_UAST,
-    DUMP_AST,
-    PARSE_ONLY,
-    DISABLE_ASSERT,
-    PRINT_TOPLEVEL,
-    TRACE_EXIT,
-    VERSION,
-    HELP,
-    COMMAND,
-    NORC,
+#define GEN_ENUM(E, S, F, D) E,
+    EACH_OPT(GEN_ENUM)
+#undef GEN_ENUM
 };
 
 static const argv::Option<OptionKind> options[] = {
-        {DUMP_UAST, "--dump-untyped-ast", 0,
-                "dump abstract syntax tree (before type checking)"},
-        {DUMP_AST,  "--dump-ast", 0,
-                "dump abstract syntax tree (after type checking)"},
-        {PARSE_ONLY, "--parse-only", 0,
-                "not evaluate, parse only"},
-        {DISABLE_ASSERT, "--disable-assertion", 0,
-                "disable assert statement"},
-        {PRINT_TOPLEVEL, "--print-toplevel", 0,
-                "print toplevel evaluated value"},
-        {TRACE_EXIT, "--trace-exit", 0,
-                "trace execution process to exit command"},
-        {VERSION, "--version", 0,
-                "show version and copyright"},
-        {HELP, "--help", 0,
-                "show this help message"},
-        {COMMAND, "-c", argv::REQUIRE_ARG,
-                "evaluate argument"},
-        {NORC, "--norc", 0, "not load ydshrc"},
+#define GEN_OPT(E, S, F, D) {E, S, F, D},
+        EACH_OPT(GEN_OPT)
+#undef GEN_OPT
 };
+
+#undef EACH_OPT
 
 int main(int argc, char **argv) {
     // init alternative stack (for signal handler)
@@ -183,17 +174,24 @@ int main(int argc, char **argv) {
             return 0;
         case COMMAND:
             evalArg = cmdLine.second;
-            goto EXEC;
+            break;
         case NORC:
             userc = false;
             break;
         }
     }
 
-    EXEC:
+    // set rest argument
+    unsigned int size = restArgs.size();
+    const char *shellArgs[size + 1];
+    for(unsigned int i = 0; i < size; i++) {
+        shellArgs[i] = restArgs[i];
+    }
+    shellArgs[size] = nullptr;
 
     // evaluate argument
     if(evalArg != nullptr) {
+        DSContext_setArguments(ctx, shellArgs);
         DSContext_eval(ctx, evalArg, nullptr);
         int ret = DSContext_getExitStatus(ctx);
         DSContext_delete(&ctx);
@@ -209,13 +207,6 @@ int main(int argc, char **argv) {
             return 1;
         }
 
-        unsigned int size = restArgs.size();
-        const char *shellArgs[size + 1];
-        for(unsigned int i = 0; i < size; i++) {
-            shellArgs[i] = restArgs[i];
-        }
-        shellArgs[size] = nullptr;
-
         DSContext_setArguments(ctx, shellArgs);
         int ret = DSContext_loadAndEval(ctx, scriptName, fp, nullptr);
         DSContext_delete(&ctx);
@@ -225,10 +216,10 @@ int main(int argc, char **argv) {
         DSContext_delete(&ctx);
         return ret;
     } else {    // interactive mode
+        std::cout << version << std::endl << copyright << std::endl;
         if(userc) {
             loadRC(ctx);
         }
-        std::cout << version << std::endl << copyright << std::endl;
 
         exec_interactive(argv[0], ctx);
     }
