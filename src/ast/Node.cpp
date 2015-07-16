@@ -1087,7 +1087,8 @@ MethodHandle *MethodCallNode::getHandle() {
 void MethodCallNode::dump(Writer &writer) const {
     WRITE_PTR(recvNode);
     WRITE(methodName);
-    unsigned int methodIndex = this->handle->getMethodIndex();
+    unsigned int methodIndex =
+            this->handle != nullptr ? this->handle->getMethodIndex() : 0;
     WRITE_PRIM(methodIndex);
     WRITE_PTR(argsNode);
 

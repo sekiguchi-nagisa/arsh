@@ -20,7 +20,6 @@
 #include "dump.h"
 #include "../ast/Node.h"
 #include "../core/TypePool.h"
-#include "../core/FieldHandle.h"
 #include "../misc/debug.h"
 
 #define OUT *(this->stream)
@@ -96,11 +95,6 @@ void Writer::write(const char *fieldName, const std::vector<TypeToken *> &toks) 
         OUT << (tok == 0 ? "(null)" : tok->toTokenText());
     }
     OUT << std::endl;
-}
-
-void Writer::write(const char *fieldName, const FieldHandle &handle) {
-    this->writeName(fieldName);
-    OUT << handle.toString() << std::endl;
 }
 
 void Writer::writeNull(const char *fieldName) {
