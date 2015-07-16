@@ -97,16 +97,16 @@ std::vector<std::string> Option<T>::getDetails() const {
     return bufs;
 }
 
-typedef std::vector<const char *> RestArgs;
-
 template<typename T>
 using CmdLines = std::vector<std::pair<T, const char *>>;
 
 /**
  * first element of argv is always ignored.
+ * return start index of rest argument(< argc).
+ * if not found rest argument, return argc.
  */
 template<typename T, size_t N>
-RestArgs parseArgv(int argc, char **argv, const Option<T> (&options)[N], CmdLines<T> &cmdLines) {
+int parseArgv(int argc, char **argv, const Option<T> (&options)[N], CmdLines<T> &cmdLines) {
     // register option
     misc::CStringHashMap<unsigned int> indexMap;
     for(unsigned int i = 0; i < N; i++) {
@@ -121,7 +121,6 @@ RestArgs parseArgv(int argc, char **argv, const Option<T> (&options)[N], CmdLine
 
     // parse
     static char empty[] = "";
-    RestArgs restArgs;
 
     int index = 1;
     for(; index < argc; index++) {
@@ -152,13 +151,7 @@ RestArgs parseArgv(int argc, char **argv, const Option<T> (&options)[N], CmdLine
             break;
         }
     }
-
-    // get rest argument
-    for(; index < argc; index++) {
-        restArgs.push_back(argv[index]);
-    }
-
-    return restArgs;
+    return index;
 };
 
 template<typename T, size_t N>

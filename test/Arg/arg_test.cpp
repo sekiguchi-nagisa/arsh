@@ -11,6 +11,7 @@ enum class Kind : unsigned int {
 typedef Option<Kind> Opt;
 typedef CmdLines<Kind> CL;
 
+typedef std::vector<const char *> RestArgs;
 
 void addArg(std::vector<std::string> &ars) {
 }
@@ -53,7 +54,7 @@ public:
         ASSERT_TRUE(expect != nullptr);
         try {
             CL cl;
-            this->rest = parseArgv(argc, argv, options, cl);
+            parseArgv(argc, argv, options, cl);
             ASSERT_TRUE(false);
         } catch(const ParseError &e) {
             ASSERT_STREQ(expect, e.getMessage().c_str());
@@ -70,7 +71,11 @@ public:
         SCOPED_TRACE("");
 
         try {
-            this->rest = parseArgv(argc, argv, options, cl);
+            int index = parseArgv(argc, argv, options, cl);
+            ASSERT_TRUE(index <= argc && index > 0);
+            for(; index < argc; index++) {
+                this->rest.push_back(argv[index]);
+            }
         } catch(const ParseError &e) {
             ASSERT_TRUE(false);
         }

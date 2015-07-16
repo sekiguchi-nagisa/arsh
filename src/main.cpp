@@ -131,9 +131,9 @@ int main(int argc, char **argv) {
 
 
     argv::CmdLines<OptionKind> cmdLines;
-    argv::RestArgs restArgs;
+    int restIndex = argc;
     try {
-        restArgs = argv::parseArgv(argc, argv, options, cmdLines);
+        restIndex = argv::parseArgv(argc, argv, options, cmdLines);
     } catch(const argv::ParseError &e) {
         std::cerr << e.getMessage() << std::endl;
         std::cerr << version << std::endl;
@@ -182,11 +182,9 @@ int main(int argc, char **argv) {
     }
 
     // set rest argument
-    unsigned int size = restArgs.size();
+    const int size = argc - restIndex;
     const char *shellArgs[size + 1];
-    for(unsigned int i = 0; i < size; i++) {
-        shellArgs[i] = restArgs[i];
-    }
+    memcpy(shellArgs, argv + restIndex, sizeof(char *) * size);
     shellArgs[size] = nullptr;
 
     // evaluate argument
@@ -199,8 +197,8 @@ int main(int argc, char **argv) {
     }
 
     // execute
-    if(restArgs.size() > 0) {   // script mode
-        const char *scriptName = restArgs[0];
+    if(size > 0) {   // script mode
+        const char *scriptName = shellArgs[0];
         FILE *fp = fopen(scriptName, "rb");
         if(fp == NULL) {
             std::cerr << "cannot open file: " << scriptName << std::endl;
