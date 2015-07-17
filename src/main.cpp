@@ -170,7 +170,7 @@ int main(int argc, char **argv) {
             return 0;
         case HELP:
             std::cout << version << std::endl;
-            std::cerr << options << std::endl;
+            std::cout << options << std::endl;
             return 0;
         case COMMAND:
             evalArg = cmdLine.second;

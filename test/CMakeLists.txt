@@ -27,6 +27,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Type)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Directive)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Exec)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Arg)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Option)
 
 if(USE_DBUS)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/DBus)
