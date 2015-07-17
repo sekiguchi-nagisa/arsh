@@ -190,8 +190,7 @@ int main(int argc, char **argv) {
     // evaluate argument
     if(evalArg != nullptr) {    // command line mode
         DSContext_setArguments(ctx, shellArgs);
-        DSContext_eval(ctx, evalArg, nullptr);
-        int ret = DSContext_getExitStatus(ctx);
+        int ret = DSContext_eval(ctx, evalArg, nullptr);
         DSContext_delete(&ctx);
         return ret;
     }

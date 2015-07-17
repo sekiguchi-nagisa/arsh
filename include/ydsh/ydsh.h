@@ -48,7 +48,9 @@ void DSContext_delete(DSContext **ctx);
 /**
  * evaluate string.
  * if status is not null, write status and you can call DSStatus_free() to release object.
- * return exit status of shell.(if reach end of script, return 0. if call exit, return specified value.)
+ * if terminated by exit command or terminated normally,
+ * return exit status of most recently executed command(include exit).
+ * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
  */
 int DSContext_eval(DSContext *ctx, const char *source, DSStatus **status);
 
@@ -56,8 +58,9 @@ int DSContext_eval(DSContext *ctx, const char *source, DSStatus **status);
  * evaluate file content.
  * if sourceName is null, source name is treated as standard input.
  * fp must be opened binary mode.
- * if status is not null, write status and you can call DSStatus_free() to release object.
- * return exit status of shell.(if reach end of script, return 0. if call exit, return specified value.)
+ * if terminated by exit command or terminated normally,
+ * return exit status of most recently executed command(include exit).
+ * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
  */
 int DSContext_loadAndEval(DSContext *ctx, const char *sourceName, FILE *fp, DSStatus **status);
 
@@ -72,11 +75,6 @@ unsigned int DSContext_getLineNum(DSContext *ctx);
 void DSContext_setArguments(DSContext *ctx, const char **argv);
 
 const char *DSContext_getWorkingDir(DSContext *ctx);
-
-/**
- * return exit status of most recently executed command(include exit).
- */
-int DSContext_getExitStatus(DSContext *ctx);
 
 
 #define DS_OPTION_DUMP_UAST  ((unsigned int)(1 << 0))

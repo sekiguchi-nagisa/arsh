@@ -65,48 +65,28 @@ void DSContext_delete(DSContext **ctx) {
 }
 
 static int createStatus(ExecStatus s, Shell *shell, DSStatus **status) {
-    static char empty[] = "";
-
     unsigned int type = DS_STATUS_SUCCESS;
-    int ret = 0;
-    unsigned int lineNum = 0;
-    const char *errorKind = empty;
+    int ret = 1;
+    unsigned int lineNum = shell->getReportingListener().getLineNum();
+    const char *errorKind = shell->getReportingListener().getMessageKind();
 
     switch(s) {
-    case ExecStatus::SUCCESS:
-        type = DS_STATUS_SUCCESS;
-        ret = 0;
-        break;
-    case ExecStatus::PARSE_ERROR:
-        type = DS_STATUS_PARSE_ERROR;
-        ret = 1;
-        lineNum = shell->getReportingListener().getLineNum();
-        errorKind = shell->getReportingListener().getMessageKind();
-        break;
-    case ExecStatus::TYPE_ERROR:
-        type = DS_STATUS_TYPE_ERROR;
-        ret = 1;
-        lineNum = shell->getReportingListener().getLineNum();
-        errorKind = shell->getReportingListener().getMessageKind();
-        break;
-    case ExecStatus::RUNTIME_ERROR:
-        type = DS_STATUS_RUNTIME_ERROR;
-        ret = 1;
-        lineNum = shell->getReportingListener().getLineNum();
-        errorKind = shell->getReportingListener().getMessageKind();
-        break;
-    case ExecStatus::ASSERTION_ERROR:
-        type = DS_STATUS_ASSERTION_ERROR;
-        ret = 1;
-        lineNum = shell->getReportingListener().getLineNum();
-        errorKind = shell->getReportingListener().getMessageKind();
-        break;
-    case ExecStatus::EXIT:
-        type = DS_STATUS_EXIT;
+#define EACH_STATUS(OP) \
+    OP(SUCCESS) \
+    OP(PARSE_ERROR) \
+    OP(TYPE_ERROR) \
+    OP(RUNTIME_ERROR) \
+    OP(ASSERTION_ERROR) \
+    OP(EXIT)
+
+#define GEN_CASE(S) case ExecStatus::S : type = DS_STATUS_##S; break;
+    EACH_STATUS(GEN_CASE)
+#undef GEN_CASE
+#undef EACH_STATUS
+    }
+
+    if(type == DS_STATUS_SUCCESS || type == DS_STATUS_EXIT) {
         ret = shell->getExitStatus();
-        lineNum = shell->getReportingListener().getLineNum();
-        errorKind = shell->getReportingListener().getMessageKind();
-        break;
     }
 
     if(status != nullptr) {
@@ -144,10 +124,6 @@ void DSContext_setArguments(DSContext *ctx, const char **argv) {
 
 const char *DSContext_getWorkingDir(DSContext *ctx) {
     return ctx->shell->getWorkingDir().c_str();
-}
-
-int DSContext_getExitStatus(DSContext *ctx) {
-    return ctx->shell->getExitStatus();
 }
 
 static void setOptionImpl(Shell *shell, flag32_set_t flagSet, bool set) {

@@ -119,7 +119,7 @@ private:
     const char *messageKind;
 
 public:
-    ReportingListener() = default;
+    ReportingListener();
     ~ReportingListener() = default;
 
     unsigned int getLineNum() const {

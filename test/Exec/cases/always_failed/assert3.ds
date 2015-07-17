@@ -1,6 +1,6 @@
 # assert in function
 
-#$test($result = 'assert', $lineNum = 7)
+#$test($result = 'assert', $lineNum = 7, $status = 1)
 
 function f($a : Int) {
     if($true) {

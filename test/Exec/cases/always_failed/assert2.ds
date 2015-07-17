@@ -1,6 +1,6 @@
 # assert in block
 
-#$test($result = 'assert', $lineNum = 6)
+#$test($result = 'assert', $lineNum = 6, $status = 1)
 
 if($true) {
     assert("fjire".empty())

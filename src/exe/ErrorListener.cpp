@@ -84,6 +84,11 @@ void CommonErrorListener::handleRuntimeError(const TypePool &pool,
 // ##     ReportingListener     ##
 // ###############################
 
+ReportingListener::ReportingListener() : lineNum(0), messageKind() {
+    static char empty[] = "";
+    this->messageKind = empty;
+}
+
 void ReportingListener::handleParseError(Lexer &lexer,
                                          const std::string &sourceName, const ParseError &e) noexcept {
 #define EACH_ERROR(E) \
@@ -118,11 +123,6 @@ void ReportingListener::handleTypeError(const std::string &sourceName,
 
 void ReportingListener::handleRuntimeError(const TypePool &pool,
                                            const std::shared_ptr<DSObject> &raisedObj) noexcept {
-    static char empty[] = "";
-
-    this->lineNum = 0;
-    this->messageKind = empty;
-
     if(!pool.getInternalStatus()->isSameOrBaseTypeOf(raisedObj->getType())) {
         this->messageKind = pool.getTypeName(*raisedObj->getType()).c_str();
     }

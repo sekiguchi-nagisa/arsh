@@ -65,16 +65,12 @@ public:
 
         // execute
         DSStatus *status;
-        DSContext_loadAndEval(this->ctx, scriptName, fp, &status);
+        int ret = DSContext_loadAndEval(this->ctx, scriptName, fp, &status);
 
         // check status
         ASSERT_EQ(d.getResult(), DSStatus_getType(status));
         ASSERT_EQ(d.getLineNum(), DSStatus_getErrorLineNum(status));
-
-        if(d.getResult() == DS_STATUS_EXIT) {
-            ASSERT_EQ(d.getStatus(), DSContext_getExitStatus(ctx));
-        }
-
+        ASSERT_EQ(d.getStatus(), ret);
         ASSERT_STREQ(d.getErrorKind().c_str(), DSStatus_getErrorKind(status));
     }
 };
