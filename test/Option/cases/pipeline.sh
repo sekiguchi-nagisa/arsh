@@ -1,16 +1,9 @@
 #!/usr/bin/env bash
 
+trap "echo trap error; exit 1" ERR
 
 YDSH_BIN=$1
 
-$YDSH_BIN << EOF
-
-exit 67
-
-EOF
-
-if [ $? != 67 ]; then
-    exit 1
-fi
+echo 'assert($0 == "ydsh")' | $YDSH_BIN
 
 exit 0
