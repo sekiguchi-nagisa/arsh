@@ -74,8 +74,6 @@ unsigned int DSContext_getLineNum(DSContext *ctx);
  */
 void DSContext_setArguments(DSContext *ctx, const char **argv);
 
-const char *DSContext_getWorkingDir(DSContext *ctx);
-
 
 #define DS_OPTION_DUMP_UAST  ((unsigned int)(1 << 0))
 #define DS_OPTION_DUMP_AST   ((unsigned int)(1 << 1))

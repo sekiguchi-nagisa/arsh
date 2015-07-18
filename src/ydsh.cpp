@@ -97,12 +97,12 @@ static int createStatus(ExecStatus s, Shell *shell, DSStatus **status) {
 
 int DSContext_eval(DSContext *ctx, const char *source, DSStatus **status) {
     ExecStatus s = ctx->shell->eval(source);
-    return createStatus(s, ctx->shell, status); //FIXME:
+    return createStatus(s, ctx->shell, status);
 }
 
 int DSContext_loadAndEval(DSContext *ctx, const char *sourceName, FILE *fp, DSStatus **status) {
     ExecStatus s = ctx->shell->eval(sourceName, fp);
-    return createStatus(s, ctx->shell, status); //FIXME:
+    return createStatus(s, ctx->shell, status);
 }
 
 void DSContext_setLineNum(DSContext *ctx, unsigned int lineNum) {
@@ -120,10 +120,6 @@ void DSContext_setArguments(DSContext *ctx, const char **argv) {
     }
 
     ctx->shell->setArguments(argList);
-}
-
-const char *DSContext_getWorkingDir(DSContext *ctx) {
-    return ctx->shell->getWorkingDir().c_str();
 }
 
 static void setOptionImpl(Shell *shell, flag32_set_t flagSet, bool set) {

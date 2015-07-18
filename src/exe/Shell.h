@@ -136,10 +136,6 @@ public:
         this->traceExit = trace;
     }
 
-    const std::string &getWorkingDir() {
-        return this->ctx.getWorkingDir();
-    }
-
     /**
      * get exit status of recently executed command.(also exit command)
      */
