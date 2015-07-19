@@ -19,12 +19,15 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 
 #ifndef NDEBUG
 #define DEBUG_ON 1
 #else
 #define DEBUG_ON 0
 #endif
+
+#define __FILE_NAME__ (strrchr(__FILE__, '/') != nullptr ? strrchr(__FILE__, '/') + 1 : __FILE__)
 
 #define debugp(fmt, ...) \
     do {\
@@ -38,7 +41,7 @@
  */
 #define fatal(fmt, ...) \
     do {\
-        fprintf(stderr, "[abort] %s:%d:%s(): " fmt, __FILE__, __LINE__, __func__, ## __VA_ARGS__);\
+        fprintf(stderr, "[fatal] %s:%d:%s(): " fmt, __FILE_NAME__, __LINE__, __func__, ## __VA_ARGS__);\
         abort();\
     } while(0)
 
