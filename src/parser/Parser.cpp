@@ -85,7 +85,6 @@
     EACH_LA_expression(OP)
 
 #define EACH_LA_toplevelStatement(OP) \
-    OP(CLASS) \
     OP(FUNCTION) \
     OP(INTERFACE) \
     OP(TYPE_ALIAS) \
@@ -205,10 +204,6 @@ std::unique_ptr<Node> Parser::parse_toplevelStatement() {
     };
 
     switch(CUR_KIND()) {
-    case CLASS: {
-        fatal("not implemented rule: %s\n", toString(CUR_KIND())); //FIXME:
-        return std::unique_ptr<Node>(nullptr);
-    }
     case FUNCTION: {
         return this->parse_function();
     }
