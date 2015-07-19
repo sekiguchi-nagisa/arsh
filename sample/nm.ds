@@ -1,3 +1,5 @@
+#!/usr/bin/env ydsh
+
 interface org.freedesktop.NetworkManager {
     function GetDevices() : Array<ObjectPath>
     function GetPermissions() : Map<String, String>

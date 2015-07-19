@@ -115,7 +115,7 @@ int main(int argc, char **argv) {
 
     if(sigaltstack(&ss, nullptr) == -1) {
         perror("sigaltstack failed\n");
-        exit(1);
+        return 1;
     }
 
     // set signal handler for SIGSEGV
@@ -126,7 +126,7 @@ int main(int argc, char **argv) {
 
     if(sigaction(SIGSEGV, &act, nullptr) < 0) {
         perror("setup signal handeler failed\n");
-        exit(1);
+        return 1;
     }
 
 

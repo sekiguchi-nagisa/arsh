@@ -1,4 +1,4 @@
-#!/usr/local/bin/ydsh
+#!/usr/bin/env ydsh
 
 # check argument
 if($@.size() != 2) {

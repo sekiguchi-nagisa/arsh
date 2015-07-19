@@ -1,3 +1,5 @@
+#!/usr/bin/env ydsh
+
 interface org.freedesktop.UDisks2.Filesystem {
     function SetLabel($label : String, $options : Map<String, Variant>)
     function Mount($options : Map<String, Variant>) : String

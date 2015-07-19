@@ -1,2 +1,4 @@
+#!/usr/bin/env ydsh
+
 var a = $DBus.systemBus().service("org.freedesktop.UDisks2").object(p'/org/freedesktop/UDisks2')
 ($a as org.freedesktop.DBus.Peer).Ping()
