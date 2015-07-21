@@ -45,8 +45,8 @@ RuntimeContext::RuntimeContext() :
         localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0),
         localVarOffset(0), offsetStack(), toplevelPrinting(false), assertion(true),
         handle_STR(0), handle_INTERP(0), handle_CMD_ARG(0), handle_bt(0),
-        readFiles(), funcContextStack(), callStack(),
-        workingDir(getCurrentWorkingDir()), procInvoker(this) {
+        handle_OLDPWD(0), handle_PWD(0),
+        readFiles(), funcContextStack(), callStack(), procInvoker(this) {
     this->readFiles.push_back(std::string("(stdin)"));
 }
 
@@ -412,7 +412,34 @@ bool RuntimeContext::checkZeroMod(int right) {
 }
 
 void RuntimeContext::updateWorkingDir() {
-    this->workingDir = getCurrentWorkingDir();
+    // check handle
+    const char *env_OLDPWD = "OLDPWD";
+    if(this->handle_OLDPWD == nullptr) {
+        this->handle_OLDPWD = this->symbolTable.lookupHandle(env_OLDPWD);
+        if(this->handle_OLDPWD == nullptr || !this->handle_OLDPWD->isEnv()) {
+            fatal("broken env: %s\n", env_OLDPWD);
+        }
+    }
+
+    const char *env_PWD = "PWD";
+    if(this->handle_PWD == nullptr) {
+        this->handle_PWD = this->symbolTable.lookupHandle(env_PWD);
+        if(this->handle_PWD == nullptr || !this->handle_PWD->isEnv()) {
+            fatal("broken env: %s\n", env_PWD);
+        }
+    }
+
+    // update OLDPWD
+    this->globalVarTable[this->handle_OLDPWD->getFieldIndex()] =
+            this->globalVarTable[this->handle_PWD->getFieldIndex()];
+    setenv(env_OLDPWD,
+           TYPE_AS(String_Object, this->globalVarTable[this->handle_OLDPWD->getFieldIndex()])->getValue().c_str(), 1);
+
+    // update PWD
+    this->globalVarTable[this->handle_PWD->getFieldIndex()] =
+            std::make_shared<String_Object>(this->pool.getStringType(), getCurrentWorkingDir());
+    setenv(env_PWD,
+           TYPE_AS(String_Object, this->globalVarTable[this->handle_PWD->getFieldIndex()])->getValue().c_str(), 1);
 }
 
 const char *RuntimeContext::registerSourceName(const char *sourceName) {

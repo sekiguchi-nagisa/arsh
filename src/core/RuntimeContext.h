@@ -136,6 +136,16 @@ private:
      */
     MethodHandle *handle_bt;
 
+    /**
+     * for builtin cd command
+     */
+    FieldHandle *handle_OLDPWD;
+
+    /**
+     * for builtin cd command
+     */
+    FieldHandle *handle_PWD;
+
     static const unsigned int defaultFileNameIndex = 0;
     std::vector<std::string> readFiles;
 
@@ -148,8 +158,6 @@ private:
      * contains line number and funcContextStack index.
      */
     std::vector<unsigned long> callStack;
-
-    std::string workingDir;
 
     ProcInvoker procInvoker;
 
@@ -475,10 +483,9 @@ public:
         this->callStack.clear();
     }
 
-    const std::string &getWorkingDir() {
-        return this->workingDir;
-    }
-
+    /**
+     * update OLDPWD and PWD
+     */
     void updateWorkingDir();
 
     /**

@@ -19,6 +19,7 @@
 #include "Shell.h"
 #include "../misc/debug.h"
 #include "../misc/num.h"
+#include "../misc/files.h"
 
 namespace ydsh {
 
@@ -37,6 +38,11 @@ Shell::Shell() :
 
     // update shell level
     setenv("SHLVL", std::to_string(originalShellLevel + 1).c_str(), 1);
+
+    // set some env
+    std::string wd = getCurrentWorkingDir();
+    setenv("OLDPWD", wd.c_str(), 0);
+    setenv("PWD", wd.c_str(), 0);
 }
 
 ExecStatus Shell::eval(const char *line) {
@@ -158,6 +164,10 @@ void Shell::initBuiltinVar() {
 
     // register DBus management object
     rootNode.addNode(new BindVarNode("DBus", this->ctx.getDBus()));
+
+    // env
+    rootNode.addNode(new ImportEnvNode(0, std::string("OLDPWD")));
+    rootNode.addNode(new ImportEnvNode(0, std::string("PWD")));
 
     // set alias
     rootNode.addNode(new TypeAliasNode("Int", "Int32"));
