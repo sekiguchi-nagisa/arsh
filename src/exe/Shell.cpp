@@ -27,7 +27,7 @@ namespace ydsh {
 // ###################
 
 Shell::Shell() :
-        ctx(), parser(), checker(&this->ctx.getPool()), lineNum(1),
+        ctx(), parser(), checker(this->ctx.getPool(), this->ctx.getSymbolTable()), lineNum(1),
         listener(0), proxy(), reportingListener(),
         dumpUntypedAST(false), dumpTypedAST(false), parseOnly(false), traceExit(false) {
     // set error listener
@@ -152,9 +152,9 @@ void Shell::initBuiltinVar() {
     rootNode.addNode(new BindVarNode("false", this->ctx.getFalseObj()));
 
     // register special char
-    rootNode.addNode(new BindVarNode("0", this->ctx.getScriptName(), true));
-    rootNode.addNode(new BindVarNode("@", this->ctx.getScriptArgs(), true));
-    rootNode.addNode(new BindVarNode("?", this->ctx.getExitStatus(), true));
+    rootNode.addNode(new BindVarNode("0", this->ctx.getScriptName()));
+    rootNode.addNode(new BindVarNode("@", this->ctx.getScriptArgs()));
+    rootNode.addNode(new BindVarNode("?", this->ctx.getExitStatus()));
 
     // register DBus management object
     rootNode.addNode(new BindVarNode("DBus", this->ctx.getDBus()));

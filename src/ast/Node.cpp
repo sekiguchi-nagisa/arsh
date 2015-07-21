@@ -3073,8 +3073,8 @@ EvalStatus InterfaceNode::eval(RuntimeContext &ctx) {
 // ##     BindVarNode     ##
 // #########################
 
-BindVarNode::BindVarNode(const char *name, const std::shared_ptr<DSObject> &value, bool updatable) :
-        Node(0), varName(std::string(name)), varIndex(0), value(value), updatable(updatable) {
+BindVarNode::BindVarNode(const char *name, const std::shared_ptr<DSObject> &value) :
+        Node(0), varName(std::string(name)), varIndex(0), value(value) {
 }
 
 const std::string &BindVarNode::getVarName() {
@@ -3096,7 +3096,6 @@ const std::shared_ptr<DSObject> &BindVarNode::getValue() {
 void BindVarNode::dump(Writer &writer) const {
     WRITE(varName);
     WRITE_PRIM(varIndex);
-    WRITE_PRIM(updatable);
     //FIXME: value
 }
 
@@ -3106,9 +3105,6 @@ void BindVarNode::accept(NodeVisitor *visitor) {
 
 EvalStatus BindVarNode::eval(RuntimeContext &ctx) {
     ctx.storeGlobal(this->varIndex, this->value);
-    if(this->updatable) {
-        ctx.registerSpecialChar(this->varName, this->varIndex);
-    }
     return EvalStatus::SUCCESS;
 }
 

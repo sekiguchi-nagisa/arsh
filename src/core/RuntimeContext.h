@@ -21,7 +21,7 @@
 #include <iostream>
 
 #include "DSObject.h"
-#include "TypePool.h"
+#include "SymbolTable.h"
 #include "ProcInvoker.h"
 
 namespace ydsh {
@@ -39,6 +39,7 @@ enum class EvalStatus : unsigned int {
 class RuntimeContext {
 private:
     TypePool pool;
+    SymbolTable symbolTable;
 
     std::shared_ptr<Boolean_Object> trueObj;
     std::shared_ptr<Boolean_Object> falseObj;
@@ -150,11 +151,6 @@ private:
 
     std::string workingDir;
 
-    /**
-     * contains special character index.
-     */
-    std::unordered_map<std::string, unsigned int> specialCharMap;
-
     ProcInvoker procInvoker;
 
     static const char *configRootDir;
@@ -170,6 +166,10 @@ public:
 
     TypePool &getPool() {
         return this->pool;
+    }
+
+    SymbolTable &getSymbolTable() {
+        return this->symbolTable;
     }
 
     const std::shared_ptr<Boolean_Object> &getTrueObj() {

@@ -31,7 +31,7 @@ namespace core {
 #define DEFAULT_LOCAL_SIZE 256
 
 RuntimeContext::RuntimeContext() :
-        pool(),
+        pool(), symbolTable(),
         trueObj(new Boolean_Object(this->pool.getBooleanType(), true)),
         falseObj(new Boolean_Object(this->pool.getBooleanType(), false)),
         dummy(new DummyObject()),
@@ -46,7 +46,7 @@ RuntimeContext::RuntimeContext() :
         localVarOffset(0), offsetStack(), toplevelPrinting(false), assertion(true),
         handle_STR(0), handle_INTERP(0), handle_CMD_ARG(0), handle_bt(0),
         readFiles(), funcContextStack(), callStack(),
-        workingDir(getCurrentWorkingDir()), specialCharMap(), procInvoker(this) {
+        workingDir(getCurrentWorkingDir()), procInvoker(this) {
     this->readFiles.push_back(std::string("(stdin)"));
 }
 
@@ -435,19 +435,13 @@ void RuntimeContext::exitShell(unsigned int status) {
     this->throwError(this->pool.getShellExit(), std::move(str));
 }
 
-void RuntimeContext::registerSpecialChar(const std::string &varName, unsigned int index) {
-    auto pair = this->specialCharMap.insert(std::make_pair(varName, index));
-    if(!pair.second) {
-        fatal("found duplicated character: %s\n", varName.c_str());
-    }
-}
-
 unsigned int RuntimeContext::getSpecialCharIndex(const char *varName) {
-    auto iter = this->specialCharMap.find(varName);
-    if(iter == this->specialCharMap.end()) {
+    std::string name(varName);
+    FieldHandle *handle = this->symbolTable.lookupHandle(name);
+    if(handle == nullptr || !handle->isGlobal() || !handle->isReadOnly()) {
         fatal("undefined special character: %s\n", varName);
     }
-    return iter->second;
+    return handle->getFieldIndex();
 }
 
 } // namespace core

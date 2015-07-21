@@ -117,8 +117,8 @@ DSType *TypeGenerator::generateType(TypeToken *token) {
 // ##     TypeChecker     ##
 // #########################
 
-TypeChecker::TypeChecker(TypePool *typePool) :
-        typePool(typePool), symbolTable(), typeGen(typePool), curReturnType(0),
+TypeChecker::TypeChecker(TypePool &typePool, SymbolTable &symbolTable) :
+        typePool(&typePool), symbolTable(symbolTable), typeGen(this->typePool), curReturnType(0),
         loopContextStack(), finallyContextStack(),
         cmdContextStack(), coercionKind(INVALID_COERCION) {
 }

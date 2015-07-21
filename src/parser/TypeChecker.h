@@ -92,7 +92,7 @@ private:
      */
     TypePool *typePool;
 
-    SymbolTable symbolTable;
+    SymbolTable &symbolTable;
     TypeGenerator typeGen;
 
     /**
@@ -118,7 +118,7 @@ private:
     CoercionKind coercionKind;
 
 public:
-    explicit TypeChecker(TypePool *typePool);
+    TypeChecker(TypePool &typePool, SymbolTable &symbolTable);
 
     ~TypeChecker() = default;
 
