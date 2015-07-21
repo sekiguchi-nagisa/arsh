@@ -1,8 +1,7 @@
 import-env HOME
 
 assert($HOME is String)
-$HOME = "hello world"
-assert($HOME == "hello world")
+assert($HOME == "$(echo ~)")
 
 export-env ZZZ = $HOME
 assert($ZZZ is String)
