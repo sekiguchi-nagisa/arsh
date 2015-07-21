@@ -22,12 +22,12 @@
 #include "../core/TypePool.h"
 #include "../misc/debug.h"
 
-#define OUT *(this->stream)
+#define OUT (this->stream)
 
 namespace ydsh {
 namespace ast {
 
-Writer::Writer(std::ostream *stream, TypePool *pool) :
+Writer::Writer(std::ostream &stream, TypePool &pool) :
         stream(stream), pool(pool), indentLevel(0) {
 }
 
@@ -81,7 +81,7 @@ void Writer::write(const char *fieldName, const TypeToken &tok) {
 
 void Writer::write(const char *fieldName, const DSType &type) {
     this->writeName(fieldName);
-    OUT << this->pool->getTypeName(type) << std::endl;
+    OUT << this->pool.getTypeName(type) << std::endl;
 }
 
 void Writer::write(const char *fieldName, const std::vector<TypeToken *> &toks) {
@@ -133,7 +133,7 @@ void Writer::writeNodeHeader(const Node &node) {
 
     this->writeIndent();
     OUT << "@" << className << " (lineNum: " << node.getLineNum()
-    << ", type: " << (type != 0 ? this->pool->getTypeName(*type) : "(null)")
+    << ", type: " << (type != 0 ? this->pool.getTypeName(*type) : "(null)")
     << ")" << std::endl;
 
     // free demangled name
@@ -146,7 +146,7 @@ void Writer::writeName(const char *fieldName) {
 }
 
 void dumpAST(std::ostream &out, TypePool &pool, const RootNode &rootNode) {
-    Writer writer(&out, &pool);
+    Writer writer(out, pool);
     rootNode.dump(writer);
 }
 

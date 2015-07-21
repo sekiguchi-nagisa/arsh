@@ -44,20 +44,13 @@ class RootNode;
 
 class Writer {
 private:
-    /**
-     * not call destructor.
-     */
-    std::ostream *stream;
-
-    /**
-     * not call destrcutor.
-     */
-    TypePool *pool;
+    std::ostream &stream;
+    TypePool &pool;
 
     unsigned int indentLevel;
 
 public:
-    Writer(std::ostream *stream, core::TypePool *pool);
+    Writer(std::ostream &stream, core::TypePool &pool);
 
     ~Writer() = default;
 
