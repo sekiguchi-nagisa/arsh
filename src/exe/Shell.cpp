@@ -18,6 +18,7 @@
 
 #include "Shell.h"
 #include "../misc/debug.h"
+#include "../misc/num.h"
 
 namespace ydsh {
 
@@ -33,6 +34,9 @@ Shell::Shell() :
     this->setErrorListener(&this->proxy);
     this->proxy.addListener(this->getDefaultListener());
     this->proxy.addListener(&this->reportingListener);
+
+    // update shell level
+    setenv("SHLVL", std::to_string(originalShellLevel + 1).c_str(), 1);
 }
 
 ExecStatus Shell::eval(const char *line) {
@@ -199,5 +203,23 @@ void Shell::initBuiltinIface() {
     }
     this->ctx.getPool().commit();
 }
+
+const unsigned int Shell::originalShellLevel = getShellLevel();
+
+unsigned int Shell::getShellLevel() {
+    char *shlvl = getenv("SHLVL");
+    unsigned int level = 0;
+    if(shlvl != nullptr) {
+        int status;
+        long value = ydsh::misc::convertToInt64(shlvl, status, false);
+        if(status != 0) {
+            level = 0;
+        } else {
+            level = value;
+        }
+    }
+    return level;
+}
+
 
 } /* namespace ydsh */

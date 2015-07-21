@@ -447,12 +447,12 @@ public:
     /**
      * get environment variable and set to local variable
      */
-    void importEnv(const std::string &envName, int index, bool isGlobal);
+    void importEnv(const std::string &envName, unsigned int index, bool isGlobal);
 
     /**
      * put stack top value to environment variable.
      */
-    void exportEnv(const std::string &envName, int index, bool isGlobal);
+    void exportEnv(const std::string &envName, unsigned int index, bool isGlobal);
 
     bool checkZeroDiv(int right);
     bool checkZeroDiv(double right);

@@ -166,6 +166,13 @@ private:
     void initBuiltinIface();
 
     static CommonErrorListener clistener;
+
+    static const unsigned int originalShellLevel;
+
+    /**
+     * if environmental variable SHLVL dose not exist, set 0.
+     */
+    static unsigned int getShellLevel();
 };
 
 } /* namespace ydsh */

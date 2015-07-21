@@ -365,7 +365,7 @@ EvalStatus RuntimeContext::checkAssertion(unsigned int lineNum) {
     return EvalStatus::SUCCESS;
 }
 
-void RuntimeContext::importEnv(const std::string &envName, int index, bool isGlobal) {
+void RuntimeContext::importEnv(const std::string &envName, unsigned int index, bool isGlobal) {
     if(isGlobal) {
         this->globalVarTable[index] =
                 std::make_shared<String_Object>(this->pool.getStringType(),
@@ -377,7 +377,7 @@ void RuntimeContext::importEnv(const std::string &envName, int index, bool isGlo
     }
 }
 
-void RuntimeContext::exportEnv(const std::string &envName, int index, bool isGlobal) {
+void RuntimeContext::exportEnv(const std::string &envName, unsigned int index, bool isGlobal) {
     setenv(envName.c_str(),
            TYPE_AS(String_Object, this->peek())->getValue().c_str(), 1);   //FIXME: check return value and throw
     if(isGlobal) {
