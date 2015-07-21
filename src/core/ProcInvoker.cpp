@@ -45,7 +45,9 @@ static int builtin_cd(RuntimeContext *ctx, const BuiltinContext &bctx, bool &rai
         destDir = bctx.argv[1];
     }
     if(chdir(destDir) != 0) {
-        builtin_perror(bctx.fp_stderr, "-ydsh: cd");
+        std::string msg("-ydsh: cd: ");
+        msg += destDir;
+        builtin_perror(bctx.fp_stderr, msg.c_str());
         return 1;
     }
 
