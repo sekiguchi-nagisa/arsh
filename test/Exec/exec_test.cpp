@@ -20,17 +20,19 @@ private:
     DSContext *ctx;
 
 public:
-    ExecTest()  : targetName(), ctx(DSContext_create()) {
+    ExecTest() : targetName(), ctx() {
     }
 
     virtual ~ExecTest() = default;
 
     virtual void SetUp() {
         this->targetName = this->GetParam();
+        this->ctx = DSContext_create();
     }
 
     virtual void TearDown() {
         this->targetName.clear();
+        DSContext_delete(&this->ctx);
     }
 
     virtual const std::string &getSourceName() {
