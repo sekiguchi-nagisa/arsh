@@ -19,13 +19,39 @@ private:
     std::string targetName;
     DSContext *ctx;
 
+    /**
+     * save some env
+     */
+    std::vector<std::pair<std::string, std::string>> envList;
+
 public:
-    ExecTest() : targetName(), ctx() {
+    ExecTest() : targetName(), ctx(), envList() {
     }
 
     virtual ~ExecTest() = default;
 
+
+    virtual void saveEnv(const char *envName) {
+        const char *value = getenv(envName);
+        if(value != nullptr) {
+            this->envList.push_back(std::make_pair(envName, value));
+        }
+    }
+
+    virtual void restoreAllEnv() {
+        for(auto &pair : this->envList) {
+            setenv(pair.first.c_str(), pair.second.c_str(), 1);
+        }
+    }
+
     virtual void SetUp() {
+        // save env
+        this->saveEnv("HOME");
+        this->saveEnv("PATH");
+        this->saveEnv("OLDPWD");
+        this->saveEnv("PWD");
+        this->saveEnv("TMPDIR");
+
         this->targetName = this->GetParam();
         this->ctx = DSContext_create();
     }
@@ -33,6 +59,8 @@ public:
     virtual void TearDown() {
         this->targetName.clear();
         DSContext_delete(&this->ctx);
+
+        this->restoreAllEnv();
     }
 
     virtual const std::string &getSourceName() {
