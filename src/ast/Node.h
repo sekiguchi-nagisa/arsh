@@ -106,13 +106,13 @@ public:
 
 class IntValueNode : public Node {
 public:
-    typedef enum {
+    enum IntKind{
         BYTE,
         INT16,
         UINT16,
         INT32,
         UINT32,
-    } IntKind;
+    };
 
 private:
     IntKind kind;
@@ -372,10 +372,10 @@ public:
 
 class AccessNode : public AssignableNode {
 public:
-    typedef enum {
+    enum AdditionalOp {
         NOP,
         DUP_RECV,
-    } AdditionalOp;
+    };
 
 private:
     Node *recvNode;
@@ -405,7 +405,7 @@ public:
 
 class CastNode : public Node {
 public:
-    typedef enum {
+    enum CastOp {
         NOP,
         INT_TO_FLOAT,
         FLOAT_TO_INT,
@@ -417,7 +417,7 @@ public:
         COPY_LONG,
         TO_STRING,
         CHECK_CAST,
-    } CastOp;
+    };
 
 private:
     Node *exprNode;
@@ -456,11 +456,11 @@ public:
 
 class InstanceOfNode : public Node {
 public:
-    typedef enum {
+    enum InstanceOfOp {
         ALWAYS_FALSE,
         ALWAYS_TRUE,
         INSTANCEOF,
-    } InstanceOfOp;
+    };
 
 private:
     Node *targetNode;

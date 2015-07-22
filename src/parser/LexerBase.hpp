@@ -153,25 +153,25 @@ public:
         return this->limit - this->buf + 1;
     }
 
-    bool withinRange(const TokenBase &range) const {
-        return range.startPos < this->getUsedSize()
-               && range.startPos + range.size <= this->getUsedSize();
+    bool withinRange(const TokenBase &token) const {
+        return token.startPos < this->getUsedSize()
+               && token.startPos + token.size <= this->getUsedSize();
     }
 
     /**
      * get text of token.
      */
-    std::string toTokenText(const TokenBase &range) const {
-        assert(this->withinRange(range));
-        return std::string((char *) (this->buf + range.startPos), range.size);
+    std::string toTokenText(const TokenBase &token) const {
+        assert(this->withinRange(token));
+        return std::string((char *) (this->buf + token.startPos), token.size);
     }
 
     /**
      * buf size must be equivalent to base.size
      */
-    void copyTokenText(const TokenBase &base, char *buf) const {
-        assert(this->withinRange(range));
-        memcpy(buf, (char *)this->buf + base.startPos, base.size);
+    void copyTokenText(const TokenBase &token, char *buf) const {
+        assert(this->withinRange(token));
+        memcpy(buf, (char *)this->buf + token.startPos, token.size);
     }
 
     std::string formatLineMarker(const TokenBase &lineToken, const TokenBase &token) const;
