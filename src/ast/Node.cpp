@@ -16,6 +16,7 @@
 
 #include <unistd.h>
 #include <sys/wait.h>
+#include <pwd.h>
 
 #include <cassert>
 
@@ -1499,64 +1500,44 @@ EvalStatus RedirNode::eval(RuntimeContext &ctx) {
 // ##     TildeNode     ##
 // #######################
 
-TildeNode::TildeNode(unsigned int lineNum, TildeNode::ExpansionKind kind, std::string &&value) :
-        Node(lineNum), kind(kind), rest(std::move(value)) { }
+TildeNode::TildeNode(unsigned int lineNum, std::string &&prefix, std::string &&rest) :
+        Node(lineNum), prefix(std::move(prefix)), rest(std::move(rest)) { }
 
 void TildeNode::dump(Writer &writer) const {
+    WRITE(prefix);
     WRITE(rest);
-
-#define EACH_ENUM(OP, out) \
-    OP(CUR_HOME, out) \
-    OP(USER_HOME, out) \
-    OP(PWD, out) \
-    OP(OLDPWD, out)
-
-    std::string val;
-    DECODE_ENUM(val, this->kind, EACH_ENUM);
-    writer.write(NAME(opKind), val);
-#undef EACH_ENUM
 }
 
 void TildeNode::accept(NodeVisitor *visitor) {
     visitor->visitTildeNode(this);
 }
 
-std::string TildeNode::expand(bool notFollowing) {
-    bool notExpand = !notFollowing && this->rest.empty();
-    switch(this->kind) {
-    case CUR_HOME: {
-        if(notExpand) {
-            return std::string("~");
-        }
-        std::string value(getenv("HOME"));
-        value += this->rest;
+std::string TildeNode::expand(bool isLastSegment) {
+    if(!isLastSegment && this->rest.empty()) {
+        std::string value("~");
+        value += this->prefix;
         return value;
     }
-    case USER_HOME: {
-        std::string str("~");
-        str += this->rest;
-        return str;
-    }
-    case PWD: {
-        if(notExpand) {
-            return std::string("~+");
+
+    unsigned int prefixSize = this->prefix.size();
+    std::string value;
+    if(prefixSize == 0) {
+        value += getenv("HOME");
+    } else if(prefixSize == 1 && this->prefix[0] == '+') {
+        value += getenv("PWD");
+    } else if(prefixSize == 1 && this->prefix[0] == '-') {
+        value += getenv("OLDPWD");
+    } else {
+        struct passwd *pw = getpwnam(this->prefix.c_str());
+        if(pw != nullptr) {
+            value += pw->pw_dir;
+        } else {
+            value += "~";
+            value += this->prefix;
         }
-        std::string value(getenv("PWD"));
-        value += this->rest;
-        return value;
     }
-    case OLDPWD: {
-        if(notExpand) {
-            return std::string("~-");
-        }
-        std::string value(getenv("OLDPWD"));
-        value += this->rest;
-        return value;
-    }
-    default:
-        fatal("unsupported tilde expansion\n");
-        return this->rest;
-    }
+    value += this->rest;
+    return value;
 }
 
 EvalStatus TildeNode::eval(RuntimeContext &ctx) {

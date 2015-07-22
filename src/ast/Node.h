@@ -786,28 +786,23 @@ public:
  * TildeNode is always first element of CmdArgNode.
  */
 class TildeNode : public Node {
-public:
-    enum ExpansionKind {
-        CUR_HOME,
-        USER_HOME,
-        PWD,
-        OLDPWD,
-    };
-
 private:
-    ExpansionKind kind;
+    /**
+     * may be empty string.
+     */
+    std::string prefix;
 
     /**
-     * may be empty string
+     * may be empty string or startswith '/'
      */
     std::string rest;
 
 public:
-    TildeNode(unsigned int lineNum, ExpansionKind kind, std::string &&value);
+    TildeNode(unsigned int lineNum, std::string &&prefix, std::string &&rest);
     ~TildeNode() = default;
 
-    ExpansionKind getKind() {
-        return this->kind;
+    const std::string &getPrefix() {
+        return this->prefix;
     }
 
     const std::string &getRest() {
@@ -818,9 +813,9 @@ public:
     void accept(NodeVisitor *visitor);  // override
 
     /**
-     * if notFollowing is true, segment nodes size is 1.
+     * if isLastSegment is true, segment nodes size is 1.
      */
-    std::string expand(bool notFollowing = true);
+    std::string expand(bool isLastSegment = true);
 
     EvalStatus eval(RuntimeContext &ctx); // override
 };

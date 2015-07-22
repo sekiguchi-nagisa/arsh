@@ -818,9 +818,9 @@ std::unique_ptr<CmdNode> Parser::parse_command() {
 
     {
         std::string rest;
-        TildeNode::ExpansionKind kind;
-        if(this->checkTildeExpansion(token, kind, rest)) {
-            node.reset(new CmdNode(new TildeNode(token.lineNum, kind, std::move(rest))));
+        std::string prefix;
+        if(this->checkTildeExpansion(token, prefix, rest)) {
+            node.reset(new CmdNode(new TildeNode(token.lineNum, std::move(prefix), std::move(rest))));
         } else {
             node.reset(new CmdNode(token.lineNum, this->lexer->toCmdArg(token)));
         }
@@ -898,10 +898,10 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool expandTilde) {
         Token token;
         this->expect(CMD_ARG_PART, token);
         if(expandTilde) {
-            TildeNode::ExpansionKind kind;
+            std::string prefix;
             std::string rest;
-            if(checkTildeExpansion(token, kind, rest)) {
-                RET_NODE(new TildeNode(token.lineNum, kind, std::move(rest)));
+            if(checkTildeExpansion(token, prefix, rest)) {
+                RET_NODE(new TildeNode(token.lineNum, std::move(prefix), std::move(rest)));
             }
         }
         RET_NODE(new StringValueNode(token.lineNum, this->lexer->toCmdArg(token)));
@@ -925,15 +925,16 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool expandTilde) {
     }
 }
 
-bool Parser::checkTildeExpansion(const Token &token, TildeNode::ExpansionKind &kind, std::string &rest) {
+bool Parser::checkTildeExpansion(const Token &token, std::string &prefix, std::string &rest) {
     if(!this->lexer->startswith(token, '~')) {
         return false;
     }
 
-    unsigned int size = token.size;
+    const unsigned int size = token.size;
+    prefix.clear();
     rest.clear();
+
     if(size == 1) {
-        kind = TildeNode::CUR_HOME;
         return true;
     }
 
@@ -941,34 +942,15 @@ bool Parser::checkTildeExpansion(const Token &token, TildeNode::ExpansionKind &k
     this->lexer->copyTokenText(token, buf);
     buf[size] = '\0';
 
-    unsigned int restIndex = 1;
-    kind = TildeNode::USER_HOME;
-
-    switch(buf[1]) {
-    case '/':
-        kind = TildeNode::CUR_HOME;
-        break;
-    case '+':
-    case '-': {
-        if(size == 2) {
-            kind = buf[1] == '+' ? TildeNode::PWD : TildeNode::OLDPWD;
-            restIndex = 2;
-            break;
-        } else if(buf[2] == '/') {
-            kind = buf[1] == '+' ? TildeNode::PWD : TildeNode::OLDPWD;
-            restIndex = 2;
-            break;
-        }
-        break;
-    }
-    default:
-        break;
+    unsigned int index = 1;
+    for(; buf[index] != '/' && index < size; index++) {
+        prefix += buf[index];
     }
 
-    for(; restIndex < size; restIndex++) {
-        char ch = buf[restIndex];
+    for(; index < size; index++) {
+        char ch = buf[index];
         if(ch == '\\') {
-            char nextCh = buf[++restIndex];
+            char nextCh = buf[++index];
             switch(nextCh) {
             case '\n':
             case '\r':
@@ -980,6 +962,7 @@ bool Parser::checkTildeExpansion(const Token &token, TildeNode::ExpansionKind &k
         }
         rest += ch;
     }
+
     return true;
 }
 

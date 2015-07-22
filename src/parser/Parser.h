@@ -101,7 +101,7 @@ private:
 
     std::unique_ptr<Node> parse_cmdArgSeg(bool expandTilde = false);
 
-    bool checkTildeExpansion(const Token &token, TildeNode::ExpansionKind &kind, std::string &rest);
+    bool checkTildeExpansion(const Token &token, std::string &prefix, std::string &rest);
 
     std::unique_ptr<Node> parse_commandOrExpression();
 
