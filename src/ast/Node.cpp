@@ -1423,7 +1423,15 @@ EvalStatus CmdArgNode::evalImpl(RuntimeContext &ctx) {
     }
 
     std::string str;
-    for(auto *node : this->segmentNodes) {
+    unsigned int index = 0;
+    unsigned int size = this->segmentNodes.size();
+    if(dynamic_cast<TildeNode *>(this->segmentNodes[0]) != nullptr) {
+        str += static_cast<TildeNode *>(this->segmentNodes[0])->expand(false);
+        index++;
+    }
+
+    for(; index < size; index++) {
+        Node *node = this->segmentNodes[index];
         EVAL(ctx, node);
         DSType *type = node->getType();
         if(*type != *ctx.getPool().getStringType()) {
@@ -1487,23 +1495,98 @@ EvalStatus RedirNode::eval(RuntimeContext &ctx) {
     return EvalStatus::SUCCESS;
 }
 
+// #######################
+// ##     TildeNode     ##
+// #######################
+
+TildeNode::TildeNode(unsigned int lineNum, TildeNode::ExpansionKind kind, std::string &&value) :
+        Node(lineNum), kind(kind), rest(std::move(value)) { }
+
+void TildeNode::dump(Writer &writer) const {
+    WRITE(rest);
+
+#define EACH_ENUM(OP, out) \
+    OP(CUR_HOME, out) \
+    OP(USER_HOME, out) \
+    OP(PWD, out) \
+    OP(OLDPWD, out)
+
+    std::string val;
+    DECODE_ENUM(val, this->kind, EACH_ENUM);
+    writer.write(NAME(opKind), val);
+#undef EACH_ENUM
+}
+
+void TildeNode::accept(NodeVisitor *visitor) {
+    visitor->visitTildeNode(this);
+}
+
+std::string TildeNode::expand(bool notFollowing) {
+    bool notExpand = !notFollowing && this->rest.empty();
+    switch(this->kind) {
+    case CUR_HOME: {
+        if(notExpand) {
+            return std::string("~");
+        }
+        std::string value(getenv("HOME"));
+        value += this->rest;
+        return value;
+    }
+    case USER_HOME: {
+        std::string str("~");
+        str += this->rest;
+        return str;
+    }
+    case PWD: {
+        if(notExpand) {
+            return std::string("~+");
+        }
+        std::string value(getenv("PWD"));
+        value += this->rest;
+        return value;
+    }
+    case OLDPWD: {
+        if(notExpand) {
+            return std::string("~-");
+        }
+        std::string value(getenv("OLDPWD"));
+        value += this->rest;
+        return value;
+    }
+    default:
+        fatal("unsupported tilde expansion\n");
+        return this->rest;
+    }
+}
+
+EvalStatus TildeNode::eval(RuntimeContext &ctx) {
+    ctx.push(std::make_shared<String_Object>(ctx.getPool().getStringType(), this->expand()));
+    return EvalStatus::SUCCESS;
+}
+
 // #####################
 // ##     CmdNode     ##
 // #####################
 
-CmdNode::CmdNode(unsigned int lineNum, std::string &&commandName) :
-        Node(lineNum), commandName(std::move(commandName)), argNodes() {
+CmdNode::CmdNode(unsigned int lineNum, std::string &&value) :
+        Node(lineNum), nameNode(new StringValueNode(lineNum, std::move(value))), argNodes() {
 }
 
+CmdNode::CmdNode(TildeNode *nameNode) :
+        Node(nameNode->getLineNum()), nameNode(nameNode), argNodes() { }
+
 CmdNode::~CmdNode() {
+    delete this->nameNode;
+    this->nameNode = 0;
+
     for(auto *e : this->argNodes) {
         delete e;
     }
     this->argNodes.clear();
 }
 
-const std::string &CmdNode::getCommandName() {
-    return this->commandName;
+Node *CmdNode::getNameNode() {
+    return this->nameNode;
 }
 
 void CmdNode::addArgNode(CmdArgNode *node) {
@@ -1523,7 +1606,7 @@ void CmdNode::addRedirOption(TokenKind kind) {
 }
 
 void CmdNode::dump(Writer &writer) const {
-    WRITE(commandName);
+    WRITE_PTR(nameNode);
     WRITE(argNodes);
 }
 
@@ -1534,7 +1617,11 @@ void CmdNode::accept(NodeVisitor *visitor) {
 EvalStatus CmdNode::eval(RuntimeContext &ctx) {
     ctx.getProcInvoker().openProc();
 
-    ctx.getProcInvoker().addCommandName(this->commandName);
+    EVAL(ctx, this->nameNode);
+
+    ctx.getProcInvoker().addCommandName(
+            TYPE_AS(String_Object, ctx.peek())->getValue());
+
     for(Node *node : this->argNodes) {
         EVAL(ctx, node);
     }

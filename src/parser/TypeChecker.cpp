@@ -861,6 +861,7 @@ void TypeChecker::visitCondOpNode(CondOpNode *node) {
 }
 
 void TypeChecker::visitCmdNode(CmdNode *node) {
+    this->checkType(this->typePool->getStringType(), node->getNameNode());
     for(auto *argNode : node->getArgNodes()) {
         this->checkType(argNode);
     }
@@ -892,6 +893,10 @@ void TypeChecker::visitRedirNode(RedirNode *node) {
     }
 
     node->setType(this->typePool->getAnyType());   //FIXME
+}
+
+void TypeChecker::visitTildeNode(TildeNode *node) {
+    node->setType(this->typePool->getStringType());
 }
 
 void TypeChecker::visitPipedCmdNode(PipedCmdNode *node) {

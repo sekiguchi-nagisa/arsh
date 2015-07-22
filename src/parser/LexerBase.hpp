@@ -166,6 +166,14 @@ public:
         return std::string((char *) (this->buf + range.startPos), range.size);
     }
 
+    /**
+     * buf size must be equivalent to base.size
+     */
+    void copyTokenText(const TokenBase &base, char *buf) const {
+        assert(this->withinRange(range));
+        memcpy(buf, (char *)this->buf + base.startPos, base.size);
+    }
+
     std::string formatLineMarker(const TokenBase &lineToken, const TokenBase &token) const;
 
 private:

@@ -2,6 +2,7 @@
 
 cd ~
 assert($PWD == "$(pwd)")    # PWD is builtin environmental variable
+assert($PWD == "$(echo ~+)")
 
 import-env HOME
 assert($PWD == $HOME)

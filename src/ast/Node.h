@@ -781,9 +781,56 @@ public:
     EvalStatus eval(RuntimeContext &ctx); // override
 };
 
+/**
+ * for tilde expansion
+ * TildeNode is always first element of CmdArgNode.
+ */
+class TildeNode : public Node {
+public:
+    enum ExpansionKind {
+        CUR_HOME,
+        USER_HOME,
+        PWD,
+        OLDPWD,
+    };
+
+private:
+    ExpansionKind kind;
+
+    /**
+     * may be empty string
+     */
+    std::string rest;
+
+public:
+    TildeNode(unsigned int lineNum, ExpansionKind kind, std::string &&value);
+    ~TildeNode() = default;
+
+    ExpansionKind getKind() {
+        return this->kind;
+    }
+
+    const std::string &getRest() {
+        return this->rest;
+    }
+
+    void dump(Writer &writer) const;  // override
+    void accept(NodeVisitor *visitor);  // override
+
+    /**
+     * if notFollowing is true, segment nodes size is 1.
+     */
+    std::string expand(bool notFollowing = true);
+
+    EvalStatus eval(RuntimeContext &ctx); // override
+};
+
 class CmdNode : public Node {
 private:
-    std::string commandName;
+    /**
+     * msy be TildeNode or StringValueNode.
+     */
+    Node *nameNode;
 
     /**
      * may be CmdArgNode, RedirNode
@@ -791,11 +838,12 @@ private:
     std::vector<Node *> argNodes;
 
 public:
-    CmdNode(unsigned int lineNum, std::string &&commandName);
+    CmdNode(unsigned int lineNum, std::string &&value);
+    explicit CmdNode(TildeNode *nameNode);
 
     ~CmdNode();
 
-    const std::string &getCommandName();
+    Node *getNameNode();
 
     void addArgNode(CmdArgNode *node);
 
@@ -1608,6 +1656,7 @@ struct NodeVisitor {
     virtual void visitCmdNode(CmdNode *node) = 0;
     virtual void visitCmdArgNode(CmdArgNode *node) = 0;
     virtual void visitRedirNode(RedirNode *node) = 0;
+    virtual void visitTildeNode(TildeNode *node) = 0;
     virtual void visitPipedCmdNode(PipedCmdNode *node) = 0;
     virtual void visitCmdContextNode(CmdContextNode *node) = 0;
     virtual void visitAssertNode(AssertNode *node) = 0;

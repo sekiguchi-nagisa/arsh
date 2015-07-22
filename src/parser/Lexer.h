@@ -135,15 +135,16 @@ public:
 
     /**
      * convert token to command argument
-     * if expandTilde is true, the replace first tilde to HOME
      */
-    std::string toCmdArg(const Token &token, bool expandTilde = false) const;
+    std::string toCmdArg(const Token &token) const;
 
     /**
      * convert token to name(remove '$' char)
      * ex. $hoge, ${hoge}, hoge
      */
     std::string toName(const Token &token) const;
+
+    bool startswith(const Token &token, char ch) const;
 
     /**
      * if converted number is out of range, status is 1.

@@ -814,7 +814,17 @@ std::unique_ptr<Node> Parser::parse_pipedCommand() {
 std::unique_ptr<CmdNode> Parser::parse_command() {
     Token token;
     this->expect(COMMAND, token);
-    std::unique_ptr<CmdNode> node(new CmdNode(token.lineNum, this->lexer->toCmdArg(token, true)));
+    std::unique_ptr<CmdNode> node;
+
+    {
+        std::string rest;
+        TildeNode::ExpansionKind kind;
+        if(this->checkTildeExpansion(token, kind, rest)) {
+            node.reset(new CmdNode(new TildeNode(token.lineNum, kind, std::move(rest))));
+        } else {
+            node.reset(new CmdNode(token.lineNum, this->lexer->toCmdArg(token)));
+        }
+    }
 
     bool next = true;
     while(HAS_SPACE() && next) {
@@ -887,7 +897,14 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool expandTilde) {
     case CMD_ARG_PART: {
         Token token;
         this->expect(CMD_ARG_PART, token);
-        RET_NODE(new StringValueNode(token.lineNum, this->lexer->toCmdArg(token, expandTilde)));
+        if(expandTilde) {
+            TildeNode::ExpansionKind kind;
+            std::string rest;
+            if(checkTildeExpansion(token, kind, rest)) {
+                RET_NODE(new TildeNode(token.lineNum, kind, std::move(rest)));
+            }
+        }
+        RET_NODE(new StringValueNode(token.lineNum, this->lexer->toCmdArg(token)));
     }
     case STRING_LITERAL: {
         return this->parse_stringLiteral();
@@ -906,6 +923,64 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool expandTilde) {
         return std::unique_ptr<Node>(nullptr);
     }
     }
+}
+
+bool Parser::checkTildeExpansion(const Token &token, TildeNode::ExpansionKind &kind, std::string &rest) {
+    if(!this->lexer->startswith(token, '~')) {
+        return false;
+    }
+
+    unsigned int size = token.size;
+    rest.clear();
+    if(size == 1) {
+        kind = TildeNode::CUR_HOME;
+        return true;
+    }
+
+    char buf[size + 1];
+    this->lexer->copyTokenText(token, buf);
+    buf[size] = '\0';
+
+    unsigned int restIndex = 1;
+    kind = TildeNode::USER_HOME;
+
+    switch(buf[1]) {
+    case '/':
+        kind = TildeNode::CUR_HOME;
+        break;
+    case '+':
+    case '-': {
+        if(size == 2) {
+            kind = buf[1] == '+' ? TildeNode::PWD : TildeNode::OLDPWD;
+            restIndex = 2;
+            break;
+        } else if(buf[2] == '/') {
+            kind = buf[1] == '+' ? TildeNode::PWD : TildeNode::OLDPWD;
+            restIndex = 2;
+            break;
+        }
+        break;
+    }
+    default:
+        break;
+    }
+
+    for(; restIndex < size; restIndex++) {
+        char ch = buf[restIndex];
+        if(ch == '\\') {
+            char nextCh = buf[++restIndex];
+            switch(nextCh) {
+            case '\n':
+            case '\r':
+                continue;
+            default:
+                ch = nextCh;
+                break;
+            }
+        }
+        rest += ch;
+    }
+    return true;
 }
 
 // expression
