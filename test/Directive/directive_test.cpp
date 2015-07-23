@@ -114,6 +114,13 @@ TEST_F(DirectiveTest, fail7) {
     });
 }
 
+TEST_F(DirectiveTest, fail8) {
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->parse("#$test($result = 'exit', $result = 'success')", false);
+    });
+}
+
 TEST_F(DirectiveTest, result1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");

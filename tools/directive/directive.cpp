@@ -16,6 +16,7 @@
 
 #include <fstream>
 #include <sstream>
+#include <unordered_set>
 
 #include "directive_parser.h"
 #include <misc/debug.h>
@@ -438,11 +439,22 @@ bool DirectiveInitializer::operator()(const std::unique_ptr<DirectiveNode> &node
     this->addHandler("ifHaveDBus", this->env.getBooleanType(), ifHaveDBusHandler);
     this->addHandler("errorKind", this->env.getStringType(), errorKindHandler);
 
+    std::unordered_set<std::string> foundAttrSet;
+
     for(auto &e : node->getNodes()) {
-        auto *pair = this->lookupHandler(e->getName());
+        const std::string &attrName = e->getName();
+        auto *pair = this->lookupHandler(attrName);
         if(pair == nullptr) {
             std::string str("unsupported attribute: ");
-            str += e->getName();
+            str += attrName;
+            throw SemanticError(e->getToken(), std::move(str));
+        }
+
+        // check duplication
+        auto iter = foundAttrSet.find(attrName);
+        if(iter != foundAttrSet.end()) {
+            std::string str("duplicated attribute: ");
+            str += attrName;
             throw SemanticError(e->getToken(), std::move(str));
         }
 
@@ -451,6 +463,8 @@ bool DirectiveInitializer::operator()(const std::unique_ptr<DirectiveNode> &node
 
         // invoke handler
         (*pair->second)(*e->getAttrNode(), d);
+
+        foundAttrSet.insert(attrName);
     }
     return true;
 }

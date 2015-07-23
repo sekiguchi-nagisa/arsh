@@ -2,4 +2,4 @@
 
 #$test($result = 'type', $lineNum = 5, $errorKind = 'Required', $status = 1)
 
-34u64 - 54i64   # not allow some precision cast
+34u64 - 54i64   # not allow same precision cast
