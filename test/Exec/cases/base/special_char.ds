@@ -1,5 +1,0 @@
-ls hfuernufriefre
-assert($? != 0)
-
-echo hello
-assert($? == 0)

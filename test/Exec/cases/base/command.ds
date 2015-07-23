@@ -1,21 +1,214 @@
-echo "hello" | grep "hello"
-echo "hello" > /dev/null
+# simple command
+echo hello
+assert($? == 0)
 
-#var a = "`ls hueri &> /dev/null`"
-#assert($a == '')
+ls fhuirethie4g
+assert($? != 0)
 
-var a = "$(ls hueri &> /dev/null)"
-assert($a == "")
+/bin/echo hello
+assert($? == 0)
 
-assert(ls hoferr345h 2>&1 | grep ls)
 
+# pipe
+echo hello | grep hello
+assert($? == 0)
+
+echo hello | grep workd
+assert($? != 0)     # $? indicates last command of pipe
+
+echo 'hello' | grep hello
+assert($? == 0)
+
+echo "hello" | grep hello
+assert($? == 0)
+
+echo """h"el'l'o"" | grep hello
+assert($? == 0)
+
+
+# and/or list
+echo hello && echo world
+assert($? == 0)
+
+echo hello && ls hfeur
+assert($? != 0)
+
+echo hello || ls hfueruvif
+assert($? == 0)
+
+ls fhrehuv || echo hello
+assert($? == 0)
+
+
+# redirection        ## not write 2>> and 1>>
+cat < $0 | grep '# redirection'
+assert($? == 0)
+
+echo hello > /dev/null | grep hello
+assert($? != 0)
+
+echo hello 1> /dev/null | grep hello
+assert($? != 0)
+
+ls fheriuf &> /dev/null | grep fheriuf
+assert($? != 0)
+
+ls fheriuf >& /dev/null | grep fheriuf
+assert($? != 0)
+
+echo hello 1>&2 | grep hello
+assert($? != 0)
+
+ls hfreure 2>&1 | grep ls
+assert($? == 0)
+
+
+# parameter expansion
+echo $true | grep true
+assert($? == 0)
+
+echo $true$false | grep truefalse
+assert($? == 0)
+
+echo 12$true | grep 12true
+assert($? == 0)
+
+echo "$true" | grep true
+assert($? == 0)
+
+echo ${true}34 | grep true34
+assert($? == 0)
+
+echo "${true}" | grep true
+assert($? == 0)
+
+echo 'h'e"l${"l" + 'o'}" ""world"${3 + 7}" | grep 'hello world10'
+assert($? == 0)
+
+
+# command substitution
+
+## as string array
+assert($(echo a b) is Array<String>)
+assert($(echo a b).size() == 2)
+assert($(echo a b)[1] == 'b')
+assert($(echo).size() == 0)
+assert($(echo '    \n  \t   ').size() == 0)   # ignore space and newline
+assert($(echo '  b  \n  \t   ').size() == 1)
+assert($(echo '  b  \n  \t   ')[0] == 'b')
+
+var d = $(ls)
+assert(not ($d is String))
+assert($d is Array<String>)
+var i = 0;
+for($file in $(ls)) {
+    assert($file == $d[$i])
+    $i++
+}
+
+echo $(echo a b c) | grep 'a b c'
+assert($? == 0)
+
+
+## as string
+assert("$(echo a b)" == "a b")
+assert("$(echo '   ')" == "   ")
+assert("$(echo 'ab\n\n')" == "ab")  # ignore last newlines
+assert("$(echo 'a \nb \n')" == "a \nb ")
+assert("$(echo)" == "")
+assert("$(ls hueri &> /dev/null)" == "")
 assert("$(echo hello 1>&2)" == "")
 
-echo hello world  #this is a comment
+var a = "$(echo hello world)"
+var c1 = "$(echo $a)"
+assert($a is String)
+assert($a == $c1)
+
+var c2 = "$(echo "he${"ll" + "o"} world")"
+assert($c2 == "hello world")
 
 $a = ""
 assert("$(echo $a hello $a)" == "hello")
 
 assert("$(echo "" 23)" == " 23")
-
 assert("$(ls -la 2>&1 > /dev/null)" == "")
+
+assert("$(echo $(echo hello   world    ))" == 'hello world')
+assert("hello\nworld" == "$(echo hello && echo world)")  # and-list
+
+
+# right handle side expression
+var r = echo hello
+assert($r is Boolean)
+assert($r)
+
+$r = ls huirfh
+assert(not $r)
+
+$r = echo hello && echo
+assert($r)
+
+$r = ls t845 || ls ugrt8uje
+assert(not $r)
+
+
+# conditional
+assert(echo hello)
+assert(ls hoferr345h 2>&1 | grep ls)
+assert(echo hello && echo world)
+assert(ls fhrehuv || echo hello)
+
+if(echo) {
+    assert($true)
+} else {
+    assert($false)
+}
+
+
+# tilde expansion
+
+## expand to HOME
+import-env HOME
+assert($HOME == "$(echo ~)")
+assert($HOME + "/" == "$(echo ~/)")
+assert($HOME + "/hoge" == "$(echo ~/hoge)")
+assert("~g" == "$(echo ~'g')")
+assert($HOME + "/h" == "$(echo ~/'h')")
+
+## expand to PWD
+assert($PWD == "$(echo ~+)")
+assert($PWD + "/" == "$(echo ~+/)")
+assert($PWD + "/huge" == "$(echo ~+/huge)")
+assert($PWD + "/huge" == "$(echo ~+/"huge")")
+assert("~+e" == "$(echo ~+e)")
+assert("~+e" == "$(echo ~+'e')")
+
+## expand to OLDPWD
+assert($OLDPWD == "$(echo ~-)")
+assert($OLDPWD + "/" == "$(echo ~-/)")
+assert($OLDPWD + "/we" == "$(echo ~-/we)")
+assert($OLDPWD + "/false" == "$(echo ~-/$false)")
+assert("~-yfr" == "$(echo ~-yfr)")
+assert("~-true" == "$(echo ~-$true)")
+
+
+# redirection (append)
+let DIR = "$(mktemp -d 2> /dev/null || mktemp -d -t hferui4g)"
+assert(not $DIR.empty())
+
+## stdout append
+assert(echo "hello world!!" >> $DIR/out && echo "hello world!!" >> $DIR/out)
+assert("$(cat $DIR/out)" == "hello world!!\nhello world!!")
+
+## stderr append
+var t = "gheru4g9"
+ls $t 2>> $DIR/err
+assert($? != 0)
+
+ls $t 2>> $DIR/err
+assert($? != 0)
+
+$t = "$(ls $t 2>&1)"
+assert("$t\n$t" == "$(cat $DIR/err)")
+
+rm -rf $DIR   # cleanup
