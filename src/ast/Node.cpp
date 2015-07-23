@@ -1786,11 +1786,11 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
                 }
 
                 // remove last newlines
-                for(auto iter = str.cend() - 1; iter != str.cbegin(); --iter) {
-                    if(*iter != '\n') {
-                        str.erase(iter + 1, str.cend());
-                        break;
-                    }
+                unsigned int pos = str.find_last_not_of('\n');
+                if(pos == std::string::npos) {
+                    str.clear();
+                } else {
+                    str.erase(pos + 1);
                 }
 
                 obj.reset(new String_Object(this->type, std::move(str)));
