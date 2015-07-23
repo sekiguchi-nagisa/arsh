@@ -29,9 +29,9 @@ function __test_each($data : Array<String>, $test : Func<Boolean, [String]>): Bo
         var t = $data[$i]
         if($test($t)) {
             $c++
-            echo "[OK]" $t
+            echo -e "\\e[32m[OK]\\e[0m" $t
         } else {
-            echo "[NG]" $t
+            echo -e "\\e[35m[NG]\\e[0m" $t
         }
     }
     echo ++++ result "[$c/$size]" ++++
