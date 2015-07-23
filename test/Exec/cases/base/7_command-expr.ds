@@ -38,3 +38,6 @@ if(echo heyy) {
 } else {
 	assert($false)
 }
+
+# and-list substitution
+assert("hello\nworld" == "$(echo hello && echo world)")

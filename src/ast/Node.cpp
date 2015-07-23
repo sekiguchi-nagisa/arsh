@@ -1781,23 +1781,15 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
                 int readSize = 0;
                 std::string str;
                 while((readSize = read(pipefds[READ_PIPE], buf, bufSize)) > 0) {
-                    if(readSize == bufSize) {
-                        buf[bufSize] = '\0';
-                        str += buf;
-                    } else {
-                        // find last index of no newline
-                        int endIndex = readSize - 1;
-                        for(; endIndex > -1; endIndex--) {
-                            if(buf[endIndex] != '\n') {
-                                endIndex++;
-                                break;
-                            }
-                        }
+                    buf[readSize] = '\0';
+                    str += buf;
+                }
 
-                        // copy to str
-                        for(int i = 0; i < endIndex; i++) {
-                            str += (unsigned char) buf[i];
-                        }
+                // remove last newlines
+                for(auto iter = str.cend() - 1; iter != str.cbegin(); --iter) {
+                    if(*iter != '\n') {
+                        str.erase(iter + 1, str.cend());
+                        break;
                     }
                 }
 
