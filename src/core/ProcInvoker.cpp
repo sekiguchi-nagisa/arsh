@@ -395,6 +395,11 @@ EvalStatus ProcInvoker::invoke() {
                 fclose(fp);
             }
 
+            // flush standard stream to prevent buffering.
+            fflush(stdin);
+            fflush(stdout);
+            fflush(stderr);
+
             return raised ? EvalStatus::THROW : EvalStatus::SUCCESS;
         }
     }
