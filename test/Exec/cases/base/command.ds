@@ -90,6 +90,8 @@ assert($? == 0)
 
 ## as string array
 assert($(echo a b) is Array<String>)
+echo elementof $(echo a b)
+echo a b
 assert($(echo a b).size() == 2)
 assert($(echo a b)[1] == 'b')
 assert($(echo).size() == 0)
