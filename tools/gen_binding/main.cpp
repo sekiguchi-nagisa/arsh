@@ -29,11 +29,6 @@ namespace {
 
 using namespace ydsh::core;
 
-typedef struct {
-    const char *handleInfo;
-    unsigned int pos;
-} context_t;
-
 static HandleInfo toNum(unsigned int num) {
     // check range
     if(num < 9) {
@@ -49,77 +44,6 @@ static HandleInfo toNum(unsigned int num) {
     }
     fatal("out of range, must be 0~8\n");
     return P_N0;
-}
-
-
-static bool isType(context_t *ctx) {
-#define GEN_CASE(ENUM) case ENUM:
-    if(ctx->handleInfo[ctx->pos] != '\0') {
-        switch(ctx->handleInfo[ctx->pos++]) {
-        EACH_HANDLE_INFO_TYPE(GEN_CASE)
-            return true;
-        EACH_HANDLE_INFO_TYPE_TEMP(GEN_CASE)
-            return true;
-        EACH_HANDLE_INFO_NUM(GEN_CASE)
-            return false;
-        EACH_HANDLE_INFO_PTYPE(GEN_CASE)
-            return true;
-        }
-    }
-    return false;
-#undef GEN_CASE
-}
-
-static int getNum(context_t *ctx) {
-#define GEN_CASE(ENUM) case ENUM:
-    if(ctx->handleInfo[ctx->pos] != '\0') {
-        char ch = ctx->handleInfo[ctx->pos++];
-        switch(ch) {
-        EACH_HANDLE_INFO_TYPE(GEN_CASE)
-            return -1;
-        EACH_HANDLE_INFO_TYPE_TEMP(GEN_CASE)
-            return -1;
-        EACH_HANDLE_INFO_NUM(GEN_CASE)
-            return (int) (ch - P_N0);
-        EACH_HANDLE_INFO_PTYPE(GEN_CASE)
-            return -1;
-        }
-    }
-    return -1;
-#undef GEN_ENUM
-}
-
-static bool verifyHandleInfo(char *handleInfo) {
-    context_t ctx = {handleInfo, 0};
-
-    /**
-     * check return type
-     */
-    if(!isType(&ctx)) {
-        return false;
-    }
-
-    /**
-     * check param size
-     */
-    int paramSize = getNum(&ctx);
-    if(paramSize < 0 || paramSize > 8) {
-        return false;
-    }
-
-    /**
-     * check param types
-     */
-    for(int i = 0; i < paramSize; i++) {
-        if(!isType(&ctx)) {
-            return false;
-        }
-    }
-
-    /**
-     * check null terminate
-     */
-    return ctx.handleInfo[ctx.pos] == '\0';
 }
 
 static std::string toTypeInfoName(HandleInfo info) {
@@ -249,9 +173,101 @@ public:
             str += toTypeInfoName(this->infos[i]);
         }
         str += "}";
+
+        if(!verifyHandleInfo(this->infos)) {
+            fatal("broken handle info: %s\n", str.c_str());
+        }
         return str;
     }
+
+private:
+    static int getNum(const std::vector<HandleInfo> &infos, unsigned int &index);
+    static bool isType(const std::vector<HandleInfo> &infos, unsigned int &index);
+    static bool verifyHandleInfo(const std::vector<HandleInfo> &infos);
 };
+
+bool HandleInfoSerializer::isType(const std::vector<HandleInfo> &infos, unsigned int &index) {
+#define GEN_CASE(ENUM) case ENUM:
+    if(index < infos.size()) {
+        switch(infos[index++]) {
+        EACH_HANDLE_INFO_TYPE(GEN_CASE)
+            return true;
+        case Array: {
+            return getNum(infos, index) == 1 && isType(infos, index);
+        }
+        case Map: {
+            return getNum(infos, index) == 2 && isType(infos, index) && isType(infos, index);
+        }
+        case Tuple: {
+            int num = getNum(infos, index);
+            if(num < 0 || num > 8) {
+                return false;
+            }
+            for(int i = 0; i < num; i++) {
+                if(!isType(infos, index)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        EACH_HANDLE_INFO_NUM(GEN_CASE)
+            return false;
+        EACH_HANDLE_INFO_PTYPE(GEN_CASE)
+            return true;
+        }
+    }
+    return false;
+#undef GEN_CASE
+}
+
+int HandleInfoSerializer::getNum(const std::vector<HandleInfo> &infos, unsigned int &index) {
+#define GEN_CASE(ENUM) case ENUM:
+    if(index < infos.size()) {
+        auto ch = infos[index++];
+        switch(ch) {
+        EACH_HANDLE_INFO_TYPE(GEN_CASE)
+            return -1;
+        EACH_HANDLE_INFO_TYPE_TEMP(GEN_CASE)
+            return -1;
+        EACH_HANDLE_INFO_NUM(GEN_CASE)
+            return (int) (ch - P_N0);
+        EACH_HANDLE_INFO_PTYPE(GEN_CASE)
+            return -1;
+        }
+    }
+    return -1;
+#undef GEN_ENUM
+}
+
+bool HandleInfoSerializer::verifyHandleInfo(const std::vector<HandleInfo> &infos) {
+    unsigned int index = 0;
+
+    /**
+     * check return type
+     */
+    if(!isType(infos, index)) {
+        return false;
+    }
+
+    /**
+     * check param size
+     */
+    int paramSize = getNum(infos, index);
+    if(paramSize < 0 || paramSize > 8) {
+        return false;
+    }
+
+    /**
+     * check each param type
+     */
+    for(int i = 0; i < paramSize; i++) {
+        if(!isType(infos, index)) {
+            return false;
+        }
+    }
+    return index == infos.size();
+}
+
 
 struct TypeToken {
     virtual ~TypeToken() = default;
