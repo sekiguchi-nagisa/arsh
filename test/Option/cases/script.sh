@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-DIR="$(mktemp -d)"
+DIR="$(mktemp -d 2> /dev/null || mktemp -d -t hferug)"
 
 cleanup_tmpdir() {
     rm -rf $DIR
