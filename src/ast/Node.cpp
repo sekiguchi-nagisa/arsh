@@ -1786,7 +1786,7 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
                 }
 
                 // remove last newlines
-                unsigned int pos = str.find_last_not_of('\n');
+                std::string::size_type pos = str.find_last_not_of('\n');
                 if(pos == std::string::npos) {
                     str.clear();
                 } else {
