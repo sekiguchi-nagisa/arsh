@@ -160,12 +160,51 @@ static int builtin_false(RuntimeContext *ctx, const BuiltinContext &bctx, bool &
     return 1;
 }
 
+/**
+ * for stdin redirection test
+ */
+static int builtin___gets(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+    unsigned int bufSize = 256;
+    char buf[bufSize];
+    int readSize;
+    while((readSize = fread(buf, sizeof(char), bufSize, bctx.fp_stdin)) > 0) {
+        fwrite(buf, sizeof(char), readSize, bctx.fp_stdout);
+    }
+    return 0;
+}
+
+/**
+ * for stdout/stderr redirection test
+ */
+static int builtin___puts(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+    for(int index = 1; index < bctx.argc; index++) {
+        const char *arg = bctx.argv[index];
+        if(strcmp("-1", arg) == 0 && ++index < bctx.argc) {
+            fputs(bctx.argv[index], bctx.fp_stdout);
+            fputc('\n', bctx.fp_stdout);
+        } else if(strcmp("-2", arg) == 0 && ++index < bctx.argc) {
+            fputs(bctx.argv[index], bctx.fp_stderr);
+            fputc('\n', bctx.fp_stderr);
+        } else {
+            return 1;   // need option
+        }
+    }
+    return 0;
+}
+
 const struct {
     const char *commandName;
     ProcInvoker::builtin_command_t cmd_ptr;
     const char *usage;
     const char *detail;
 } builtinCommands[] {
+        {"__gets", builtin___gets, "",
+                "    standard input and print to standard output."},
+        {"__puts", builtin___puts, "[-1] [arg1] [-2] [arg2]",
+                "    print specified argument to standard output/error and print new line.\n"
+                "    Options:\n"
+                "        -1    print to standard output\n"
+                "        -2    print to standard error"},
         {"cd", builtin_cd, "[dir]",
                 "    Changing the current directory to DIR. The Environment variable\n"
                 "    HOME is the default DIR.  A null directory name is the same as\n"
