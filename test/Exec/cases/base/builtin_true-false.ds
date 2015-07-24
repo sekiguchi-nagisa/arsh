@@ -1,0 +1,17 @@
+# builtin true command
+true
+assert($? == 0)
+
+assert(true)
+
+assert(help true | grep 'always success')
+
+
+# builtin false command
+false
+assert($? == 1)
+
+var t = false
+assert(not $t)
+
+assert(help false | grep 'always failure')

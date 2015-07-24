@@ -147,6 +147,14 @@ static int builtin_echo(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
     return 0;
 }
 
+static int builtin_true(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+    return 0;
+}
+
+static int builtin_false(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+    return 1;
+}
+
 const struct {
     const char *commandName;
     ProcInvoker::builtin_command_t cmd_ptr;
@@ -168,12 +176,16 @@ const struct {
                 "                  \\a    bell\n"
                 "                  \\c    ignore subsequent string\n"
                 "                  \\e    escape\n"
-                "                  \\v    vertical tab\n"},
+                "                  \\v    vertical tab"},
         {"exit", builtin_exit, "[n]",
                 "    Exit the shell with a status of N.  If N is omitted, the exit\n"
                 "    status is 0."},
         {"help", builtin_help, "[-s] [pattern ...]",
-                "    Display helpful information about builtin commands."}
+                "    Display helpful information about builtin commands."},
+        {"true", builtin_true, "",
+                "    always success (exit status is 0)."},
+        {"false", builtin_false, "",
+                "    always failure (exit status is 1)."},
 };
 
 template<typename T, size_t N>
