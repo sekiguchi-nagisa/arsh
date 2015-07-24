@@ -1,0 +1,39 @@
+# builtin cd command
+
+cd ~
+assert($PWD == "$(pwd)")    # PWD is builtin environmental variable
+assert($PWD == "$(echo ~+)")
+
+import-env HOME
+assert($PWD == $HOME)
+
+var OLD = $PWD
+
+cd ~
+assert($PWD == "$(pwd)")
+assert($OLDPWD == $OLD) # OLDPWD is builtin environmental variable
+
+
+# error
+cd fhreuifrevk
+assert($? == 1)
+
+# error message
+var DIR = 'jfreire'
+cd $DIR 2>&1 | grep "ydsh: cd: $DIR:"
+assert($? == 0)
+
+# empty HOME
+$HOME = ''
+
+cd ~    # if HOME is empty, not change PWD, but OLDPWD is changed
+assert($? == 0)
+assert($OLDPWD == $PWD)
+
+# empty arg
+cd "$(echo)"    # not change PWD, but OLDPWD is changed
+assert($? == 0)
+assert($OLDPWD == $PWD)
+
+
+assert(help cd | grep 'cd: cd \\[dir]')

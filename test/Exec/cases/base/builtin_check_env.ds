@@ -1,0 +1,19 @@
+assert(check_env HOME)
+
+# undefined env
+check_env HFUIR
+assert($? != 0)
+
+# empty env
+$OLDPWD = ''
+checl_env OLDPWD
+assert($? == 1)
+
+# multiple env
+check_env HOME PATH
+assert($? == 0)
+
+check_env HOME PATH HDUWEGDFE
+assert($? == 1)
+
+assert(help check_env | grep 'check_env: check_env \\[variable ...]')

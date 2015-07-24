@@ -40,18 +40,23 @@ static void builtin_perror(FILE *fp, const char *prefix) {
 static int builtin_help(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
 
 static int builtin_cd(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+    bool OLDPWD_only = true;
     const char *destDir = getenv("HOME");
+
     if(bctx.argc > 1) {
         destDir = bctx.argv[1];
     }
-    if(chdir(destDir) != 0) {
-        std::string msg("-ydsh: cd: ");
-        msg += destDir;
-        builtin_perror(bctx.fp_stderr, msg.c_str());
-        return 1;
+    if(destDir != nullptr && strlen(destDir) != 0) {
+        OLDPWD_only = false;
+        if(chdir(destDir) != 0) {
+            std::string msg("-ydsh: cd: ");
+            msg += destDir;
+            builtin_perror(bctx.fp_stderr, msg.c_str());
+            return 1;
+        }
     }
 
-    ctx->updateWorkingDir();
+    ctx->updateWorkingDir(OLDPWD_only);
     return 0;
 }
 

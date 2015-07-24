@@ -411,7 +411,7 @@ bool RuntimeContext::checkZeroMod(int right) {
     return true;
 }
 
-void RuntimeContext::updateWorkingDir() {
+void RuntimeContext::updateWorkingDir(bool OLDPWD_only) {
     // check handle
     const char *env_OLDPWD = "OLDPWD";
     if(this->handle_OLDPWD == nullptr) {
@@ -432,14 +432,21 @@ void RuntimeContext::updateWorkingDir() {
     // update OLDPWD
     this->globalVarTable[this->handle_OLDPWD->getFieldIndex()] =
             this->globalVarTable[this->handle_PWD->getFieldIndex()];
-    setenv(env_OLDPWD,
-           TYPE_AS(String_Object, this->globalVarTable[this->handle_OLDPWD->getFieldIndex()])->getValue().c_str(), 1);
+    const char *oldpwd =
+            TYPE_AS(String_Object, this->globalVarTable[this->handle_OLDPWD->getFieldIndex()])->getValue().c_str();
+    setenv(env_OLDPWD, oldpwd, 1);
 
     // update PWD
-    this->globalVarTable[this->handle_PWD->getFieldIndex()] =
-            std::make_shared<String_Object>(this->pool.getStringType(), getCurrentWorkingDir());
-    setenv(env_PWD,
-           TYPE_AS(String_Object, this->globalVarTable[this->handle_PWD->getFieldIndex()])->getValue().c_str(), 1);
+    if(!OLDPWD_only) {
+        size_t size = PATH_MAX;
+        char buf[size];
+        char *cwd = getcwd(buf, size);
+        if(cwd != nullptr && strcmp(cwd, oldpwd) != 0) {
+            setenv(env_PWD, cwd, 1);
+            this->globalVarTable[this->handle_PWD->getFieldIndex()] =
+                    std::make_shared<String_Object>(this->pool.getStringType(), std::string(cwd));
+        }
+    }
 }
 
 const char *RuntimeContext::registerSourceName(const char *sourceName) {

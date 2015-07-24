@@ -4,6 +4,7 @@ assert($? == 0)
 
 assert(true)
 
+assert(help true | grep 'true: true')
 assert(help true | grep 'always success')
 
 
@@ -14,4 +15,5 @@ assert($? == 1)
 var t = false
 assert(not $t)
 
+assert(help false | grep 'false: false')
 assert(help false | grep 'always failure')

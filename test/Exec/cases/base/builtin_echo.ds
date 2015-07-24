@@ -1,0 +1,10 @@
+assert(echo hello | grep hello)
+
+assert("$(echo hello && echo world)" == "hello\nworld")
+assert("$(echo -n hello && echo world)" == "helloworld")
+
+assert("$(echo -e 'hello\\c' world)" == "hello")
+
+
+assert(help echo | grep 'echo: echo \\[-ne]')
+assert(help echo | grep 'print argument to standard output and print new line.')

@@ -486,7 +486,7 @@ public:
     /**
      * update OLDPWD and PWD
      */
-    void updateWorkingDir();
+    void updateWorkingDir(bool OLDPWD_only);
 
     /**
      * register source name to readFiles.
