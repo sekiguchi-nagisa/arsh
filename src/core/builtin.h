@@ -890,7 +890,7 @@ static inline bool objectpath_size(RuntimeContext &ctx) {
 static inline bool array_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_init);
     DSType *type = LOCAL(0)->getType();
-    ctx.storeLocal(0, std::make_shared<Array_Object>(type));
+    ctx.setLocal(0, std::make_shared<Array_Object>(type));
     return true;
 }
 
@@ -994,7 +994,7 @@ static inline bool array_hasNext(RuntimeContext &ctx) {
 static inline bool map_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_init);
     DSType *type = LOCAL(0)->getType();
-    ctx.storeLocal(0, std::make_shared<Map_Object>(type));
+    ctx.setLocal(0, std::make_shared<Map_Object>(type));
     return true;
 }
 
@@ -1077,7 +1077,7 @@ static inline bool map_hasNext(RuntimeContext &ctx) {
 static inline bool tuple_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(tuple_init);
     DSType *type = LOCAL(0)->getType();
-    ctx.storeLocal(0, std::make_shared<Tuple_Object>(type));
+    ctx.setLocal(0, std::make_shared<Tuple_Object>(type));
     TYPE_AS(Tuple_Object, LOCAL(0))->set(0, LOCAL(1));
     return true;
 }
@@ -1091,7 +1091,7 @@ static inline bool tuple_init(RuntimeContext &ctx) {
 static inline bool error_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(error_init);
     DSType *type = LOCAL(0)->getType();
-    ctx.storeLocal(0, std::shared_ptr<DSObject>(Error_Object::newError(ctx, type, LOCAL(1))));
+    ctx.setLocal(0, std::shared_ptr<DSObject>(Error_Object::newError(ctx, type, LOCAL(1))));
     return true;
 }
 

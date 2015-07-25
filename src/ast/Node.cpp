@@ -3049,7 +3049,7 @@ void FunctionNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus FunctionNode::eval(RuntimeContext &ctx) {
-    ctx.storeGlobal(this->varIndex, std::shared_ptr<DSObject>(new UserFuncObject(this)));
+    ctx.setGlobal(this->varIndex, std::shared_ptr<DSObject>(new UserFuncObject(this)));
     return EvalStatus::REMOVE;
 }
 
@@ -3164,7 +3164,7 @@ void BindVarNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus BindVarNode::eval(RuntimeContext &ctx) {
-    ctx.storeGlobal(this->varIndex, this->value);
+    ctx.setGlobal(this->varIndex, this->value);
     return EvalStatus::SUCCESS;
 }
 

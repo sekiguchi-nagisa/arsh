@@ -333,24 +333,32 @@ public:
         this->globalVarTable[index] = std::move(this->pop());
     }
 
-    void storeGlobal(unsigned int index, const std::shared_ptr<DSObject> &obj) {
+    void loadGlobal(unsigned int index) {
+        this->push(this->globalVarTable[index]);
+    }
+
+    void setGlobal(unsigned int index, const std::shared_ptr<DSObject> &obj) {
         this->globalVarTable[index] = obj;
     }
 
-    void loadGlobal(unsigned int index) {
-        this->push(this->globalVarTable[index]);
+    void setGlobal(unsigned int index, std::shared_ptr<DSObject> &&obj) {
+        this->globalVarTable[index] = std::move(obj);
+    }
+
+    const std::shared_ptr<DSObject> &getGlobal(unsigned int index) {
+        return this->globalVarTable[index];
     }
 
     void storeLocal(unsigned int index) {
         this->localStack[this->localVarOffset + index] = std::move(this->pop());
     }
 
-    void storeLocal(unsigned int index, std::shared_ptr<DSObject> &&obj) {
-        this->localStack[this->localVarOffset + index] = std::move(obj);
-    }
-
     void loadLocal(unsigned int index) {
         this->push(this->localStack[this->localVarOffset + index]);
+    }
+
+    void setLocal(unsigned int index, std::shared_ptr<DSObject> &&obj) {
+        this->localStack[this->localVarOffset + index] = std::move(obj);
     }
 
     const std::shared_ptr<DSObject> &getLocal(unsigned int index) {

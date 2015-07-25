@@ -77,7 +77,7 @@ std::string RuntimeContext::getIfaceDir() {
 void RuntimeContext::updateScriptName(const char *name) {
     this->scriptName = std::make_shared<String_Object>(this->pool.getStringType(), std::string(name));
     unsigned int index = this->getSpecialCharIndex("0");
-    this->storeGlobal(index, this->scriptName);
+    this->setGlobal(index, this->scriptName);
 }
 
 void RuntimeContext::addScriptArg(const char *arg) {
@@ -430,10 +430,10 @@ void RuntimeContext::updateWorkingDir(bool OLDPWD_only) {
     }
 
     // update OLDPWD
-    this->globalVarTable[this->handle_OLDPWD->getFieldIndex()] =
-            this->globalVarTable[this->handle_PWD->getFieldIndex()];
+    this->setGlobal(this->handle_OLDPWD->getFieldIndex(),
+                    this->getGlobal(this->handle_PWD->getFieldIndex()));
     const char *oldpwd =
-            TYPE_AS(String_Object, this->globalVarTable[this->handle_OLDPWD->getFieldIndex()])->getValue().c_str();
+            TYPE_AS(String_Object, this->getGlobal(this->handle_OLDPWD->getFieldIndex()))->getValue().c_str();
     setenv(env_OLDPWD, oldpwd, 1);
 
     // update PWD
@@ -443,8 +443,8 @@ void RuntimeContext::updateWorkingDir(bool OLDPWD_only) {
         char *cwd = getcwd(buf, size);
         if(cwd != nullptr && strcmp(cwd, oldpwd) != 0) {
             setenv(env_PWD, cwd, 1);
-            this->globalVarTable[this->handle_PWD->getFieldIndex()] =
-                    std::make_shared<String_Object>(this->pool.getStringType(), std::string(cwd));
+            this->setGlobal(this->handle_PWD->getFieldIndex(),
+                            std::make_shared<String_Object>(this->pool.getStringType(), std::string(cwd)));
         }
     }
 }
@@ -460,7 +460,7 @@ const char *RuntimeContext::registerSourceName(const char *sourceName) {
 void RuntimeContext::updateExitStatus(unsigned int status) {
     this->exitStatus = std::make_shared<Int_Object>(this->pool.getInt32Type(), status);
     unsigned int index = this->getSpecialCharIndex("?");
-    this->storeGlobal(index, this->exitStatus);
+    this->setGlobal(index, this->exitStatus);
 }
 
 void RuntimeContext::exitShell(unsigned int status) {
