@@ -1850,7 +1850,14 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
             close(pipefds[READ_PIPE]);
             close(pipefds[WRITE_PIPE]);
 
-            this->exprNode->eval(ctx);  //FIXME: error reporting
+            if(this->exprNode->eval(ctx) == EvalStatus::THROW) {
+                if(ctx.getPool().getErrorType()->isSameOrBaseTypeOf(ctx.getThrownObject()->getType())) {
+                    Error_Object *obj = TYPE_AS(Error_Object, ctx.getThrownObject());
+                    fprintf(stderr, "%s\n", TYPE_AS(String_Object, obj->getMessage())->getValue().c_str());
+                }
+                exit(1);
+            } //FIXME: propagate error
+
             exit(0);
         } else {
             perror("fork failed");
