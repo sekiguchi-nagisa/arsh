@@ -654,6 +654,8 @@ EvalStatus ProcInvoker::invoke() {
         // check builtin
         builtin_command_t cmd_ptr = this->lookupBuiltinCommand(argv[0]);
         if(cmd_ptr != nullptr) {
+            closeAllPipe(procSize, selfpipes);
+
             BuiltinContext bctx = {
                     .argc = 1, .argv = argv,
                     .fp_stdin = stdin, .fp_stdout = stdout, .fp_stderr = stderr
