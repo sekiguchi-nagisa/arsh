@@ -119,6 +119,10 @@ IntValueNode::IntKind IntValueNode::getKind() {
     return this->kind;
 }
 
+int IntValueNode::getTempValue() {
+    return this->tempValue;
+}
+
 std::shared_ptr<DSObject> IntValueNode::getValue() {
     return this->value;
 }
@@ -1246,6 +1250,10 @@ Node *BinaryOpNode::getRightNode() {
 
 void BinaryOpNode::setRightNode(Node *rightNode) {
     this->rightNode = rightNode;
+}
+
+TokenKind BinaryOpNode::getOp() {
+    return this->op;
 }
 
 MethodCallNode *BinaryOpNode::createApplyNode() {

@@ -29,6 +29,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Exec)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Arg)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Option)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Redirect)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Precedence)
 
 if(USE_DBUS)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/DBus)

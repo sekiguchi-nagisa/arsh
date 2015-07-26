@@ -136,6 +136,8 @@ public:
 
     IntKind getKind();
 
+    int getTempValue();
+
     /**
      * before type check, return empty pointer.
      */
@@ -669,6 +671,8 @@ public:
     Node *getRightNode();
 
     void setRightNode(Node *rightNode);
+
+    TokenKind getOp();
 
     /**
      * create ApplyNode and set to this->applyNode.
@@ -1627,6 +1631,7 @@ Node *createBinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode);
 struct NodeVisitor {
     virtual ~NodeVisitor() = default;
 
+    void visit(Node *node) { node->accept(this); }
     virtual void visitIntValueNode(IntValueNode *node) = 0;
     virtual void visitLongValueNode(LongValueNode *node) = 0;
     virtual void visitFloatValueNode(FloatValueNode *node) = 0;
