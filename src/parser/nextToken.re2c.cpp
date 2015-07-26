@@ -117,7 +117,7 @@ void Lexer::nextToken(Token &token) {
       INNER_NAME = APPLIED_NAME | '${' VAR_NAME '}';
       INNER_SPECIAL_NAME = SPECIAL_NAME | '${' SPECIAL_NAMES '}';
 
-      CMD_START_CHAR     = "\\" [^\r\n] | [^ \t\r\n;'"`|&<>(){}$#![\]0-9\000];
+      CMD_START_CHAR     = "\\" [^\r\n] | [^ \t\r\n;'"`|&<>(){}$#![\]+\-0-9\000];
       CMD_CHAR           = "\\" . | "\\" [\r\n] | [^ \t\r\n;'"`|&<>(){}$#![\]\000];
       CMD_ARG_START_CHAR = "\\" . | [^ \t\r\n;'"`|&<>(){}$#![\]\000];
 

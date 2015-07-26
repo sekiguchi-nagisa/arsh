@@ -1094,9 +1094,10 @@ TEST_F(LexerTest_Lv1, INC) {
         SCOPED_TRACE("");
         this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 2);
-        this->assertToken(0, COMMAND, TEXT);
-        this->assertKind(EOS, this->getTokens()[1].first);
+        ASSERT_EQ(this->getTokens().size(), 3);
+        this->assertToken(0, PLUS, "+");
+        this->assertToken(1, PLUS, "+");
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -1107,9 +1108,10 @@ TEST_F(LexerTest_Lv1, DEC) {
         SCOPED_TRACE("");
         this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 2);
-        this->assertToken(0, COMMAND, TEXT);
-        this->assertKind(EOS, this->getTokens()[1].first);
+        ASSERT_EQ(this->getTokens().size(), 3);
+        this->assertToken(0, MINUS, "-");
+        this->assertToken(1, MINUS, "-");
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -1133,9 +1135,10 @@ TEST_F(LexerTest_Lv1, ADD_ASSIGN) {
         SCOPED_TRACE("");
         this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 2);
-        this->assertToken(0, COMMAND, TEXT);
-        this->assertKind(EOS, this->getTokens()[1].first);
+        ASSERT_EQ(this->getTokens().size(), 3);
+        this->assertToken(0, PLUS, "+");
+        this->assertToken(1, ASSIGN, "=");
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -1146,9 +1149,10 @@ TEST_F(LexerTest_Lv1, SUB_ASSIGN) {
         SCOPED_TRACE("");
         this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 2);
-        this->assertToken(0, COMMAND, TEXT);
-        this->assertKind(EOS, this->getTokens()[1].first);
+        ASSERT_EQ(this->getTokens().size(), 3);
+        this->assertToken(0, MINUS, "-");
+        this->assertToken(1, ASSIGN, "=");
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
