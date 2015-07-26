@@ -67,7 +67,7 @@ private:
     void expand() {
         unsigned int newSize = this->size * 2;
         char **newData = new char *[newSize];
-        memcpy(newData, this->data, this->size);
+        memcpy(newData, this->data, sizeof(char *) * this->size);
         delete[] this->data;
         this->data = newData;
         this->size = newSize;
