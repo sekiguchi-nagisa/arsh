@@ -32,6 +32,8 @@ namespace misc {
  * if found illegal character, status is -2.
  */
 inline long convertToInt64(const char *str, int &status, bool skipIllegalChar) {
+    errno = 0;
+
     // convert to int
     char *end;
     const long value = strtol(str, &end, 10);
@@ -60,6 +62,8 @@ inline long convertToInt64(const char *str, int &status, bool skipIllegalChar) {
  * if found illegal character, status is -2.
  */
 inline unsigned long convertToUint64(const char *str, int &status, bool skipIllegalChar) {
+    errno = 0;
+
     // convert to int
     char *end;
     const unsigned long long value = strtoull(str, &end, 10);
@@ -88,6 +92,8 @@ inline unsigned long convertToUint64(const char *str, int &status, bool skipIlle
  * if found illegal character, status is -2.
  */
 inline double convertToDouble(const char *str, int &status, bool skipIllegalChar) {
+    errno = 0;
+
     // convert to double
     char *end;
     const double value = strtod(str, &end);
