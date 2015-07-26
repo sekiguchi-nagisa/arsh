@@ -1,0 +1,38 @@
+# builtin command
+# redirect
+
+var a = 'fjeir4g'
+try {
+    __gets < $a
+    assert($false)
+} catch($e : Error) {   # not found file
+    assert(echo ${$e.message()} | grep "io redirection error: $a:")
+}
+
+
+# external command
+# execution error
+
+try {
+    hfjhei94fg | grep ds
+    assert($false)
+} catch($e : Error) {
+    assert(echo ${$e.message()} | grep "execution error: hfjhei94fg:")
+}
+
+try {
+    ls | grepfe4
+    assert($false)
+} catch($e : Error) {
+    assert(echo ${$e.message()} | grep "execution error: grepfe4:")
+}
+
+
+# redirect
+
+try {
+    cat < $a
+    assert($false)
+} catch($e : Error) {
+    assert(echo ${$e.message()} | grep "io redirection error: $a:")
+}

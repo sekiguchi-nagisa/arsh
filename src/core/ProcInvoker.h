@@ -127,6 +127,27 @@ struct BuiltinContext {
     FILE *fp_stderr;
 };
 
+// for error reporting
+struct ChildError {
+    /**
+     * index of redirect option having some error.
+     * if 0, has no error in redirection.
+     */
+    unsigned int redirIndex;
+
+    /**
+     * error number of occurred error.
+     */
+    int errorNum;
+
+    ChildError() : redirIndex(0), errorNum(0) { }
+    ~ChildError() = default;
+
+    operator bool() const {
+        return errorNum == 0 && redirIndex == 0;
+    }
+};
+
 
 class ProcInvoker {
 public:
@@ -200,13 +221,16 @@ public:
     EvalStatus invoke();
 
 private:
-    void redirect(unsigned int procIndex);
+    void redirect(unsigned int procIndex, int errorPipe);
     bool redirectBuiltin(unsigned int procIndex, std::vector<FILE *> &openedFps, BuiltinContext &bctx);
 
     /**
      * return null, if not found builtin command.
      */
     builtin_command_t lookupBuiltinCommand(const char *commandName);
+
+    const char *getCommandName(unsigned int procIndex);
+    bool checkChildError(const std::pair<unsigned int, ChildError> &errorPair);
 };
 
 

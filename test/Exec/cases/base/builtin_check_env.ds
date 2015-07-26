@@ -6,7 +6,7 @@ assert($? != 0)
 
 # empty env
 $OLDPWD = ''
-checl_env OLDPWD
+check_env OLDPWD
 assert($? == 1)
 
 # multiple env

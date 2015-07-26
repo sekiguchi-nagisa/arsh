@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 
 #include <cstdlib>
 
@@ -350,54 +351,60 @@ static void closeAllPipe(int size, int pipefds[][2]) {
     }
 }
 
-static void redirectToFile(const char *fileName, const char *mode, int targetFD) {
+/**
+ * if failed, return non-zero value(errno)
+ */
+static int redirectToFile(const char *fileName, const char *mode, int targetFD) {
     FILE *fp = fopen(fileName, mode);
     if(fp != NULL) {
         int fd = fileno(fp);
         dup2(fd, targetFD);
         fclose(fp);
+        return 0;
     } else {
-        fprintf(stderr, "-ydsh: %s: ", fileName);
-        perror("");
-        exit(1);
+        return errno;
     }
 }
 
 /**
  * if redirection failed, exit 1
  */
-void ProcInvoker::redirect(unsigned int procIndex) {  //FIXME: error reporting
+void ProcInvoker::redirect(unsigned int procIndex, int errorPipe) {
+#define CHECK_ERROR(result) do { occuredError = (result); if(occuredError != 0) { goto ERR; } } while(0)
+
+    int occuredError = 0;
+
     unsigned int startIndex = this->procOffsets[procIndex].second;
     for(; this->redirOptions[startIndex].first != RedirectOP::DUMMY; startIndex++) {
         const std::pair<RedirectOP, const char *> &pair = this->redirOptions[startIndex];
         switch(pair.first) {
         case IN_2_FILE: {
-            redirectToFile(pair.second, "rb", STDIN_FILENO);
+            CHECK_ERROR(redirectToFile(pair.second, "rb", STDIN_FILENO));
             break;
         };
         case OUT_2_FILE: {
-            redirectToFile(pair.second, "wb", STDOUT_FILENO);
+            CHECK_ERROR(redirectToFile(pair.second, "wb", STDOUT_FILENO));
             break;
         };
         case OUT_2_FILE_APPEND: {
-            redirectToFile(pair.second, "ab", STDOUT_FILENO);
+            CHECK_ERROR(redirectToFile(pair.second, "ab", STDOUT_FILENO));
             break;
         };
         case ERR_2_FILE: {
-            redirectToFile(pair.second, "wb", STDERR_FILENO);
+            CHECK_ERROR(redirectToFile(pair.second, "wb", STDERR_FILENO));
             break;
         };
         case ERR_2_FILE_APPEND: {
-            redirectToFile(pair.second, "ab", STDERR_FILENO);
+            CHECK_ERROR(redirectToFile(pair.second, "ab", STDERR_FILENO));
             break;
         };
         case MERGE_ERR_2_OUT_2_FILE: {
-            redirectToFile(pair.second, "wb", STDOUT_FILENO);
+            CHECK_ERROR(redirectToFile(pair.second, "wb", STDOUT_FILENO));
             dup2(STDOUT_FILENO, STDERR_FILENO);
             break;
         };
         case MERGE_ERR_2_OUT_2_FILE_APPEND: {
-            redirectToFile(pair.second, "ab", STDOUT_FILENO);
+            CHECK_ERROR(redirectToFile(pair.second, "ab", STDOUT_FILENO));
             dup2(STDOUT_FILENO, STDERR_FILENO);
             break;
         };
@@ -413,29 +420,40 @@ void ProcInvoker::redirect(unsigned int procIndex) {  //FIXME: error reporting
             fatal("unsupported redir option: %d\n", pair.first);
         }
     }
+
+    ERR:
+    if(occuredError != 0) {
+        ChildError e;
+        e.redirIndex = startIndex;
+        e.errorNum = occuredError;
+
+        write(errorPipe, &e, sizeof(ChildError));
+        exit(0);
+    }
+
+#undef CHECK_ERROR
 }
 
 /**
  * open file and get file descriptor.
  * write opend file pointer to openedFps.
- * if cannot open file, return -1.
+ * if cannot open file, return errno.
  */
-static bool redirectToFile(const char *fileName, const char *mode, FILE **targetFp, std::vector<FILE *> &openedFps) {
+static int redirectToFile(const char *fileName, const char *mode, FILE **targetFp, std::vector<FILE *> &openedFps) {
     FILE *fp = fopen(fileName, mode);
     if(fp == nullptr) {
-        fprintf(stderr, "-ydsh: %s: ", fileName);
-        perror("");
-        return false;   //FIXME: error reporting
+        return errno;
     }
     openedFps.push_back(fp);
     *targetFp = fp;
-    return true;
+    return 0;
 }
 
-#define REDIRECT_TO(name, mode, targetFD) \
-    do { if(!redirectToFile(name, mode, &targetFD, openedFps)) { return false; }} while(false)
-
 bool ProcInvoker::redirectBuiltin(unsigned int procIndex, std::vector<FILE *> &openedFps, BuiltinContext &bctx) {
+#define REDIRECT_TO(name, mode, targetFD) \
+    do { occuredError = redirectToFile(name, mode, &targetFD, openedFps); if(occuredError != 0) { goto ERR; } } while(false)
+
+    int occuredError = 0;
     unsigned int startIndex = this->procOffsets[procIndex].second;
     for(; this->redirOptions[startIndex].first != RedirectOP::DUMMY; startIndex++) {
         const std::pair<RedirectOP, const char *> &pair = this->redirOptions[startIndex];
@@ -482,7 +500,19 @@ bool ProcInvoker::redirectBuiltin(unsigned int procIndex, std::vector<FILE *> &o
             fatal("unsupported redir option: %d\n", pair.first);
         }
     }
+
+    ERR:
+    if(occuredError != 0) {
+        ChildError e;
+
+        e.redirIndex = startIndex;
+        e.errorNum = occuredError;
+        return this->checkChildError(std::make_pair(0, e)); // return false
+    }
+
     return true;
+
+#undef REDIRECT_TO
 }
 
 ProcInvoker::builtin_command_t ProcInvoker::lookupBuiltinCommand(const char *commandName) {
@@ -507,15 +537,14 @@ EvalStatus ProcInvoker::invoke() {
             };
             for(; argv[bctx.argc] != nullptr; bctx.argc++);
 
+            bool raised = false;
             std::vector<FILE *> fps;
             if(!this->redirectBuiltin(0, fps, bctx)) {
                 this->ctx->updateExitStatus(1);
-                return EvalStatus::SUCCESS;
+                raised = true;
+            } else {
+                this->ctx->updateExitStatus(cmd_ptr(this->ctx, bctx, raised));
             }
-
-            // invoke
-            bool raised = false;
-            this->ctx->updateExitStatus(cmd_ptr(this->ctx, bctx, raised));
 
             for(FILE *fp : fps) {
                 fclose(fp);
@@ -540,19 +569,54 @@ EvalStatus ProcInvoker::invoke() {
         }
     }
 
+    // create self-pipe for error reporting
+    int selfpipes[procSize][2];
+    for(unsigned int i = 0; i < procSize; i++) {
+        if(pipe(selfpipes[i]) < 0) {
+            perror("pipe creation error");
+            exit(1);
+        }
+        if(fcntl(selfpipes[i][WRITE_PIPE], F_SETFD, fcntl(selfpipes[i][WRITE_PIPE], F_GETFD) | FD_CLOEXEC)) {
+            perror("fcntl error");
+            exit(1);
+        }
+    }
+
     // fork
+    std::pair<unsigned int, ChildError> errorPair;
     unsigned int procIndex;
     for(procIndex = 0; procIndex < procSize && (pid[procIndex] = fork()) > 0; procIndex++) {
         this->procCtxs.push_back(ProcInvoker::ProcContext(pid[procIndex]));
+
+        // check error via self-pipe
+        int readSize;
+        ChildError childError;
+        close(selfpipes[procIndex][WRITE_PIPE]);
+        while((readSize = read(selfpipes[procIndex][READ_PIPE], &childError, sizeof(childError))) == -1) {
+            if(errno != EAGAIN && errno != EINTR) {
+                break;
+            }
+        }
+        if(readSize > 0 && !childError) {   // if error happened, stop forking.
+            errorPair.first = procIndex;
+            errorPair.second = childError;
+
+            procIndex = procSize;
+            break;
+        }
     }
 
     if(procIndex == procSize) {   // parent process
+        // close unused pipe
         closeAllPipe(procSize - 1, pipefds);
         close(pipefds[procSize - 1][WRITE_PIPE]);
         close(pipefds[procSize - 1][READ_PIPE]);
 
+        closeAllPipe(procSize, selfpipes);
+
         // wait for exit
-        for(unsigned int i = 0; i < procSize; i++) {
+        const unsigned int actualProcSize = this->procCtxs.size();
+        for(unsigned int i = 0; i < actualProcSize; i++) {
             int status;
             waitpid(pid[i], &status, 0);
             if(WIFEXITED(status)) {
@@ -562,8 +626,9 @@ EvalStatus ProcInvoker::invoke() {
                 this->procCtxs[i].set(ExitKind::INTR, WTERMSIG(status));
             }
         }
-        ctx->updateExitStatus(this->procCtxs[procSize - 1].exitStatus);
-        return EvalStatus::SUCCESS;
+
+        this->ctx->updateExitStatus(this->procCtxs[actualProcSize - 1].exitStatus);
+        return this->checkChildError(errorPair) ? EvalStatus::SUCCESS : EvalStatus::THROW ;
     } else if(pid[procIndex] == 0) { // child process
         if(procIndex == 0) {    // first process
             if(procSize > 1) {
@@ -580,7 +645,7 @@ EvalStatus ProcInvoker::invoke() {
             }
         }
 
-        this->redirect(procIndex);
+        this->redirect(procIndex, selfpipes[procIndex][WRITE_PIPE]);
 
         closeAllPipe(procSize, pipefds);
 
@@ -599,13 +664,44 @@ EvalStatus ProcInvoker::invoke() {
         }
 
         execvp(argv[0], argv);
-        perror("execution error");
-        fprintf(stderr, "executed cmd: %s\n", argv[0]);
+
+        ChildError e;
+        e.errorNum = errno;
+
+        write(selfpipes[procIndex][WRITE_PIPE], &e, sizeof(ChildError));
         exit(1);
     } else {
         perror("child process error");
         exit(1);
     }
+}
+
+const char *ProcInvoker::getCommandName(unsigned int procIndex) {
+    char **argv = this->argArray.getRawData(this->procOffsets[procIndex].first);
+    return argv[0];
+}
+
+bool ProcInvoker::checkChildError(const std::pair<unsigned int, ChildError> &errorPair) {
+    if(!errorPair.second) {
+        const std::pair<RedirectOP, const char *> &pair = this->redirOptions[errorPair.second.redirIndex];
+
+        std::string msg;
+        if(pair.first == RedirectOP::DUMMY) {  // execution error
+            msg += "execution error: ";
+            msg += this->getCommandName(errorPair.first);
+            msg += ": ";
+        } else {    // redirection error
+            msg += "io redirection error: ";
+            if(pair.second != nullptr && strlen(pair.second) != 0) {
+                msg += pair.second;
+                msg += ": ";
+            }
+        }
+        msg += strerror(errorPair.second.errorNum);
+        this->ctx->throwError(this->ctx->getPool().getErrorType(), std::move(msg));
+        return false;
+    }
+    return true;
 }
 
 
