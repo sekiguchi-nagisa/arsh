@@ -56,6 +56,21 @@ assert(+0u64 is Uint64)
 assert(18446744073709551615u64 is Uint64)
 assert(+18446744073709551615u64 is Uint64)
 
+# Byte op
+assert(-12b is Int16)
+assert(+ 23b is Byte)
+assert(not 23b is Byte)
+
+# Int16 op
+assert(+ 23i16 is Int16)
+assert(- 23i16 is Int16)
+assert(not 43i16 is Int16)
+
+# Uint16 op
+assert(- 23u16 is Int32)
+assert(+ 34u16 is Uint16)
+assert(not 34u16 is Uint16)
+
 # Int32 op
 assert((12 + 3) is Int32)
 assert(12 + 3 == 15)
@@ -93,7 +108,9 @@ assert((3 & 3) == 3)
 assert((1 ^ 2) is Int32)
 assert((1 ^ 2) == 3)
 
-# Uint32
+# Uint32 op
+assert(-12u32 is Int64)
+
 assert((12u32 + 3u32) is Uint32)
 assert(12u32 + 3u32 == 15u32)
 
@@ -166,7 +183,7 @@ assert((3i64 & 3i64) == 3i64)
 assert((1i64 ^ 2i64) is Int64)
 assert((1i64 ^ 2i64) == 3i64)
 
-# Uint64
+# Uint64 op
 assert((12u64 + 3u64) is Uint64)
 assert(12u64 + 3u64 == 15u64)
 
@@ -204,7 +221,6 @@ assert((1u64 ^ 2u64) == 3u64)
 
 # int cast
 assert((2b + 4b) is Int32)
-assert((- 2b) is Int32)
 
 assert((2i16 - 43) is Int32)
 assert((43 / 2u16) is Int32)

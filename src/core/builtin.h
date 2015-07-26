@@ -61,6 +61,81 @@ static inline bool to_cmd_arg(RuntimeContext &ctx) {
 }
 
 
+// ##################
+// ##     Byte     ##
+// ##################
+
+//!bind: function $OP_PLUS($this: Byte) : Byte
+static inline bool byte_plus(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(byte_plus);
+    RET(LOCAL(0));
+}
+
+//!bind: function $OP_MINUS($this: Byte) : Int16
+static inline bool byte_minus(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(byte_minus);
+    short value = -TYPE_AS(Int_Object, LOCAL(0))->getValue();
+    RET(std::make_shared<Int_Object>(ctx.getPool().getInt16Type(), value));
+}
+
+//!bind: function $OP_NOT($this : Byte) : Byte
+static inline bool byte_not(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(byte_not);
+    unsigned char value = ~TYPE_AS(Int_Object, LOCAL(0))->getValue();
+    RET(std::make_shared<Int_Object>(ctx.getPool().getByteType(), value));
+}
+
+
+// ###################
+// ##     Int16     ##
+// ###################
+
+//!bind: function $OP_PLUS($this: Int16) : Int16
+static inline bool int16_plus(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(int16_plus);
+    RET(LOCAL(0));
+}
+
+//!bind: function $OP_MINUS($this: Int16) : Int16
+static inline bool int16_minus(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(int16_minus);
+    short value = -TYPE_AS(Int_Object, LOCAL(0))->getValue();
+    RET(std::make_shared<Int_Object>(ctx.getPool().getInt16Type(), value));
+}
+
+//!bind: function $OP_NOT($this : Int16) : Int16
+static inline bool int16_not(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(int16_not);
+    short value = ~TYPE_AS(Int_Object, LOCAL(0))->getValue();
+    RET(std::make_shared<Int_Object>(ctx.getPool().getInt16Type(), value));
+}
+
+
+// ####################
+// ##     Uint16     ##
+// ####################
+
+//!bind: function $OP_PLUS($this: Uint16) : Uint16
+static inline bool uint16_plus(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(uint16_plus);
+    RET(LOCAL(0));
+}
+
+//!bind: function $OP_MINUS($this: Uint16) : Int32
+static inline bool uint16_minus(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(uint16_minus);
+    int value = -TYPE_AS(Int_Object, LOCAL(0))->getValue();
+    RET(std::make_shared<Int_Object>(ctx.getPool().getInt32Type(), value));
+}
+
+//!bind: function $OP_NOT($this : Uint16) : Uint16
+static inline bool uint16_not(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(uint16_not);
+    unsigned short value = ~TYPE_AS(Int_Object, LOCAL(0))->getValue();
+    RET(std::make_shared<Int_Object>(ctx.getPool().getUint16Type(), value));
+}
+
+
 // ###################
 // ##     Int32     ##
 // ###################
@@ -227,11 +302,12 @@ static inline bool uint_plus(RuntimeContext & ctx) {
     RET(LOCAL(0));
 }
 
-//!bind: function $OP_MINUS($this : Uint32) : Uint32
+//!bind: function $OP_MINUS($this : Uint32) : Int64
 static inline bool uint_minus(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_minus);
-    unsigned int value = -TYPE_AS(Int_Object, LOCAL(0))->getValue();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getUint32Type(), value));
+    long value = TYPE_AS(Int_Object, LOCAL(0))->getValue();
+    value = -value;
+    RET(std::make_shared<Long_Object>(ctx.getPool().getInt64Type(), value));
 }
 
 //!bind: function $OP_NOT($this : Uint32) : Uint32

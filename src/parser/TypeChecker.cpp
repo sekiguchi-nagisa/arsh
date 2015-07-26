@@ -765,13 +765,7 @@ void TypeChecker::visitInstanceOfNode(InstanceOfNode *node) {
 }
 
 void TypeChecker::visitUnaryOpNode(UnaryOpNode *node) {
-    DSType *exprType = this->checkType(node->getExprNode());
-    int precision = this->typePool->getIntPrecision(exprType);
-
-    if(precision > TypePool::INVALID_PRECISION && precision < TypePool::INT32_PRECISION) {  // int widening
-        node->setExprNode(this->resolveCoercion(INT_NOP, this->typePool->getInt32Type(), node->getExprNode()));
-    }
-
+    this->checkType(node->getExprNode());
     MethodCallNode *applyNode = node->createApplyNode();
     node->setType(this->checkType(applyNode));
 }

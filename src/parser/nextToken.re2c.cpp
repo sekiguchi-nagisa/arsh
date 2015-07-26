@@ -99,10 +99,9 @@ void Lexer::nextToken(Token &token) {
       re2c:indent:string = "    ";
 
       NUM = "0" | [1-9] [0-9]*;
-      INT = [+-]? NUM;
       DIGITS = [0-9]+;
       FLOAT_SUFFIX =  [eE] [+-]? NUM;
-      FLOAT = INT "." DIGITS FLOAT_SUFFIX?;
+      FLOAT = NUM "." DIGITS FLOAT_SUFFIX?;
 
       SQUOTE_CHAR = [^\r\n'\\] | '\\' [btnfr'\\];
       VAR_NAME = [_a-zA-Z] [_0-9a-zA-Z]* ;
@@ -164,14 +163,14 @@ void Lexer::nextToken(Token &token) {
       <STMT,EXPR> "+"          { MODE(EXPR); RET(PLUS); }
       <STMT,EXPR> "-"          { MODE(EXPR); RET(MINUS); }
 
-      <STMT,EXPR> INT          { MODE(EXPR); RET(INT_LITERAL); }
-      <STMT,EXPR> INT "b"      { MODE(EXPR); RET(BYTE_LITERAL); }
-      <STMT,EXPR> INT "i16"    { MODE(EXPR); RET(INT16_LITERAL); }
-      <STMT,EXPR> INT "i32"    { MODE(EXPR); RET(INT32_LITERAL); }
-      <STMT,EXPR> INT "i64"    { MODE(EXPR); RET(INT64_LITERAL); }
-      <STMT,EXPR> INT "u16"    { MODE(EXPR); RET(UINT16_LITERAL); }
-      <STMT,EXPR> INT "u32"    { MODE(EXPR); RET(UINT32_LITERAL); }
-      <STMT,EXPR> INT "u64"    { MODE(EXPR); RET(UINT64_LITERAL); }
+      <STMT,EXPR> NUM          { MODE(EXPR); RET(INT_LITERAL); }
+      <STMT,EXPR> NUM "b"      { MODE(EXPR); RET(BYTE_LITERAL); }
+      <STMT,EXPR> NUM "i16"    { MODE(EXPR); RET(INT16_LITERAL); }
+      <STMT,EXPR> NUM "i32"    { MODE(EXPR); RET(INT32_LITERAL); }
+      <STMT,EXPR> NUM "i64"    { MODE(EXPR); RET(INT64_LITERAL); }
+      <STMT,EXPR> NUM "u16"    { MODE(EXPR); RET(UINT16_LITERAL); }
+      <STMT,EXPR> NUM "u32"    { MODE(EXPR); RET(UINT32_LITERAL); }
+      <STMT,EXPR> NUM "u64"    { MODE(EXPR); RET(UINT64_LITERAL); }
       <STMT,EXPR> FLOAT        { MODE(EXPR); RET(FLOAT_LITERAL); }
       <STMT,EXPR> STRING_LITERAL
                                { MODE(EXPR); RET(STRING_LITERAL); }
