@@ -222,7 +222,7 @@ public:
 
 private:
     void redirect(unsigned int procIndex, int errorPipe);
-    bool redirectBuiltin(unsigned int procIndex, std::vector<FILE *> &openedFps, BuiltinContext &bctx);
+    bool redirectBuiltin(std::vector<FILE *> &openedFps, BuiltinContext &bctx);
 
     /**
      * return null, if not found builtin command.

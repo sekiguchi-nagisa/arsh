@@ -449,12 +449,12 @@ static int redirectToFile(const char *fileName, const char *mode, FILE **targetF
     return 0;
 }
 
-bool ProcInvoker::redirectBuiltin(unsigned int procIndex, std::vector<FILE *> &openedFps, BuiltinContext &bctx) {
+bool ProcInvoker::redirectBuiltin(std::vector<FILE *> &openedFps, BuiltinContext &bctx) {
 #define REDIRECT_TO(name, mode, targetFD) \
     do { occuredError = redirectToFile(name, mode, &targetFD, openedFps); if(occuredError != 0) { goto ERR; } } while(false)
 
     int occuredError = 0;
-    unsigned int startIndex = this->procOffsets[procIndex].second;
+    unsigned int startIndex = this->procOffsets[0].second;  // procIndex must be 0
     for(; this->redirOptions[startIndex].first != RedirectOP::DUMMY; startIndex++) {
         const std::pair<RedirectOP, const char *> &pair = this->redirOptions[startIndex];
         switch(pair.first) {
@@ -539,7 +539,7 @@ EvalStatus ProcInvoker::invoke() {
 
             bool raised = false;
             std::vector<FILE *> fps;
-            if(!this->redirectBuiltin(0, fps, bctx)) {
+            if(!this->redirectBuiltin(fps, bctx)) {
                 this->ctx->updateExitStatus(1);
                 raised = true;
             } else {
@@ -608,10 +608,7 @@ EvalStatus ProcInvoker::invoke() {
 
     if(procIndex == procSize) {   // parent process
         // close unused pipe
-        closeAllPipe(procSize - 1, pipefds);
-        close(pipefds[procSize - 1][WRITE_PIPE]);
-        close(pipefds[procSize - 1][READ_PIPE]);
-
+        closeAllPipe(procSize, pipefds);
         closeAllPipe(procSize, selfpipes);
 
         // wait for exit
