@@ -200,7 +200,7 @@ int main(int argc, char **argv) {
         const char *scriptName = shellArgs[0];
         FILE *fp = fopen(scriptName, "rb");
         if(fp == NULL) {
-            std::cerr << "cannot open file: " << scriptName << std::endl;
+            fprintf(stderr, "ydsh: %s: %s\n", scriptName, strerror(errno));
             return 1;
         }
 
