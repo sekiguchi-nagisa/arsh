@@ -836,10 +836,10 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
     };
     case TO_STRING: {
         return ctx.toString(this->getLineNum());
-    }
+    };
     case CHECK_CAST: {
         return ctx.checkCast(this->lineNum, this->type) ? EvalStatus::SUCCESS : EvalStatus::THROW;
-    }
+    };
     default:
         fatal("unsupported cast op\n");
     }
@@ -1852,8 +1852,7 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
 
             if(this->exprNode->eval(ctx) == EvalStatus::THROW) {
                 if(ctx.getPool().getErrorType()->isSameOrBaseTypeOf(ctx.getThrownObject()->getType())) {
-                    Error_Object *obj = TYPE_AS(Error_Object, ctx.getThrownObject());
-                    fprintf(stderr, "%s\n", TYPE_AS(String_Object, obj->getMessage())->getValue().c_str());
+                    ctx.reportError();
                 }
                 exit(1);
             } //FIXME: propagate error

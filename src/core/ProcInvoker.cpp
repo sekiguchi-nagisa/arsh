@@ -234,7 +234,7 @@ const struct {
 };
 
 template<typename T, size_t N>
-static size_t sizeOfArray(const T (&array)[N]) {
+static constexpr size_t sizeOfArray(const T (&array)[N]) {
     return N;
 }
 
@@ -258,11 +258,9 @@ static int builtin_help(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
         if(strcmp(arg, "-s") == 0 && bctx.argc == 2) {
             printAllUsage(bctx.fp_stdout);
             foundValidCommand = true;
-        }
-        else if(strcmp(arg, "-s") == 0 && i == 1) {
+        } else if(strcmp(arg, "-s") == 0 && i == 1) {
             isShortHelp = true;
-        }
-        else {
+        } else {
             unsigned int size = sizeOfArray(builtinCommands);
             for(unsigned int j = 0; j < size; j++) {
                 if(strcmp(arg, builtinCommands[j].commandName) == 0) {
@@ -356,14 +354,13 @@ static void closeAllPipe(int size, int pipefds[][2]) {
  */
 static int redirectToFile(const char *fileName, const char *mode, int targetFD) {
     FILE *fp = fopen(fileName, mode);
-    if(fp != NULL) {
-        int fd = fileno(fp);
-        dup2(fd, targetFD);
-        fclose(fp);
-        return 0;
-    } else {
+    if(fp == NULL) {
         return errno;
     }
+    int fd = fileno(fp);
+    dup2(fd, targetFD);
+    fclose(fp);
+    return 0;
 }
 
 /**
@@ -415,7 +412,7 @@ void ProcInvoker::redirect(unsigned int procIndex, int errorPipe) {
         case MERGE_OUT_2_ERR: {
             dup2(STDERR_FILENO, STDOUT_FILENO);
             break;
-        }
+        };
         default:
             fatal("unsupported redir option: %d\n", pair.first);
         }
@@ -495,7 +492,7 @@ bool ProcInvoker::redirectBuiltin(std::vector<FILE *> &openedFps, BuiltinContext
         case MERGE_OUT_2_ERR: {
             bctx.fp_stdout = bctx.fp_stderr;
             break;
-        }
+        };
         default:
             fatal("unsupported redir option: %d\n", pair.first);
         }
@@ -559,20 +556,15 @@ EvalStatus ProcInvoker::invoke() {
         }
     }
 
-    // create pipe
     pid_t pid[procSize];
     int pipefds[procSize][2];
+    int selfpipes[procSize][2];
     for(unsigned int i = 0; i < procSize; i++) {
-        if(pipe(pipefds[i]) < 0) {
+        if(pipe(pipefds[i]) < 0) {  // create pipe
             perror("pipe creation error");
             exit(1);
         }
-    }
-
-    // create self-pipe for error reporting
-    int selfpipes[procSize][2];
-    for(unsigned int i = 0; i < procSize; i++) {
-        if(pipe(selfpipes[i]) < 0) {
+        if(pipe(selfpipes[i]) < 0) {    // create self-pipe for error reporting
             perror("pipe creation error");
             exit(1);
         }

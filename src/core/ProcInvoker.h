@@ -111,7 +111,7 @@ public:
  */
 struct BuiltinContext {
     /**
-     * number of argv, exclude last elememnt
+     * number of argv, exclude last element
      */
     int argc;
 
