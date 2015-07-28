@@ -127,16 +127,34 @@ static int builtin_echo(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
             char ch = arg[i];
             if(ch == '\\' && arg[i + 1] != '\0') {
                 switch(arg[++i]) {
+                case '\\':
+                    ch = '\\';
+                    break;
                 case 'a':
                     ch = '\a';
                     break;
+                case 'b':
+                    ch = '\b';
+                    break;
                 case 'c':   // stop printing
                     return 0;
-                case 'v':
-                    ch = '\v';
-                    break;
                 case 'e':
                     ch = '\033';
+                    break;
+                case 'f':
+                    ch = '\f';
+                    break;
+                case 'n':
+                    ch = '\n';
+                    break;
+                case 'r':
+                    ch = '\r';
+                    break;
+                case 't':
+                    ch = '\t';
+                    break;
+                case 'v':
+                    ch = '\v';
                     break;
                 default:
                     i--;
@@ -218,9 +236,15 @@ const struct {
                 "    Options:\n"
                 "        -n    not print new line\n"
                 "        -e    interpret some escape sequence\n"
+                "                  \\\\    backslash\n"
                 "                  \\a    bell\n"
+                "                  \\b    backspace\n"
                 "                  \\c    ignore subsequent string\n"
-                "                  \\e    escape\n"
+                "                  \\e    escape sequence\n"
+                "                  \\f    form feed\n"
+                "                  \\n    newline\n"
+                "                  \\r    carriage return\n"
+                "                  \\t    horizontal tab\n"
                 "                  \\v    vertical tab"},
         {"exit", builtin_exit, "[n]",
                 "    Exit the shell with a status of N.  If N is omitted, the exit\n"
