@@ -62,6 +62,9 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
 endif()
 show_option(USE_DBUS)
 
+option(USE_IFACE_GEN "D-Bus interface generater" ON)
+show_option(USE_IFACE_GEN)
+
 
 #++++++++++++++++++++++#
 #     find libedit     #
@@ -179,12 +182,20 @@ endif()
 
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_binding)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/directive)
 
 set(YDSH_STATIC ydsh_static)
 add_library(${YDSH_STATIC} STATIC ${YDSH_SRC} ${lexer_src} ${bind_src})
 add_dependencies(${YDSH_STATIC} gen_lexer gen_binding gen_bind)
 target_link_libraries(${YDSH_STATIC} ${HAVE_LIBDBUS})
+
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/directive)
+
+if(USE_IFACE_GEN)
+    if(USE_DBUS)
+        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_iface)
+    endif()
+endif()
 
 
 #==============#

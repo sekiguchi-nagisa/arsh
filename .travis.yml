@@ -6,7 +6,7 @@ compiler:
 before_script:
   - sudo apt-get update -y
   - sudo apt-get install clang-3.4 -y
-  - sudo apt-get install libedit2 libedit-dev libdbus-1-3 libdbus-1-dev -y
+  - sudo apt-get install libedit2 libedit-dev libdbus-1-3 libdbus-1-dev libxerces-c-dev -y
   - mkdir build
   - cd ./build
   - cmake .. -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DUSE_DBUS=off -DUSE_TRACE_TOKEN=on

@@ -14,6 +14,7 @@ Language specification is subject to change without notice.
 * g++ (need c++11 support)
 * libedit (need unicode support. see http://thrysoee.dk/editline/)
 * libdbus 1.8.x
+* libxerces-c 3.1 (for D-Bus introspection)
 
 ## How to use
 
@@ -26,4 +27,9 @@ $ make
 if not need D-Bus support,
 ```
 $ cmake .. -DUSE_DBUS=off
+```
+
+if not need iface_gen, (D-Bus interface definition generater)
+```
+$ cmake .. -DUSE_IFACE_GEN=off
 ```
