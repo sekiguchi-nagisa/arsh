@@ -152,6 +152,10 @@ void DSContext_unsetOption(DSContext *ctx, unsigned int optionSet) {
     setOptionImpl(ctx->shell, optionSet, false);
 }
 
+const char *DSContext_getPrompt(DSContext *ctx, unsigned int n) {
+    ctx->shell->getInterpretedPrompt(n);
+}
+
 unsigned int DSContext_getMajorVersion() {
     return X_INFO_MAJOR_VERSION;
 }

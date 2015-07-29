@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
+#include <libgen.h>
+
+#include <ctime>
+
 #include "RuntimeContext.h"
-#include "FieldHandle.h"
+#include "../config.h"
 #include "symbol.h"
 #include "../misc/debug.h"
 #include "../misc/files.h"
@@ -476,6 +480,134 @@ unsigned int RuntimeContext::getSpecialCharIndex(const char *varName) {
         fatal("undefined special character: %s\n", varName);
     }
     return handle->getFieldIndex();
+}
+
+static void format2digit(int num, std::string &out) {
+    if(num < 10) {
+        out += "0";
+    }
+    out += std::to_string(num);
+}
+
+void RuntimeContext::interpretPromptString(const char *ps, std::string &output) {
+    output.clear();
+
+    time_t timer = time(nullptr);
+    struct tm *local = localtime(&timer);
+
+    static const char *wdays[] = {
+            "Sun", "Mon", "Tue", "Wed", "Thurs", "Fri", "Sat"
+    };
+
+    unsigned int hostNameSize = HOST_NAME_MAX + 1;
+    char hostName[hostNameSize];
+    if(gethostname(hostName, hostNameSize) !=  0) {
+        hostName[0] = '\0';
+    }
+
+    for(unsigned int i = 0; ps[i] != '\0'; i++) {
+        char ch = ps[i];
+        if(ch == '\\' && ps[i + 1] != '\0') {
+            switch(ps[++i]) {
+            case 'a':
+                ch = '\a';
+                break;
+            case 'd': {
+                output += wdays[local->tm_wday];
+                output += " ";
+                output += std::to_string(local->tm_mon + 1);
+                output += " ";
+                output += std::to_string(local->tm_mday);
+                continue;
+            }
+            case 'e':
+                ch = '\033';
+                break;
+            case 'h': {
+                for(unsigned int i = 0; hostName[i] != '\0' && hostName[i] != '.'; i++) {
+                    output += hostName[i];
+                }
+                continue;
+            }
+            case 'H':
+                output += hostName;
+                continue;
+            case 'n':
+                ch = '\n';
+                break;
+            case 'r':
+                ch = '\r';
+                break;
+            case 's':
+                output += this->getScriptName()->getValue();
+                continue;
+            case 't': {
+                format2digit(local->tm_hour, output);
+                output += ":";
+                format2digit(local->tm_min, output);
+                output += ":";
+                format2digit(local->tm_sec, output);
+                continue;
+            }
+            case 'T': {
+                format2digit(local->tm_hour < 12 ? local->tm_hour : local->tm_hour - 12, output);
+                output += ":";
+                format2digit(local->tm_min, output);
+                output += ":";
+                format2digit(local->tm_sec, output);
+                continue;
+            }
+            case '@': {
+                format2digit(local->tm_hour < 12 ? local->tm_hour : local->tm_hour - 12, output);
+                output += ":";
+                format2digit(local->tm_min, output);
+                output += " ";
+                output += local->tm_hour < 12 ? "AM" : "PM";
+                continue;
+            }
+            case 'u': {
+                const char *c = getenv("USER");
+                output += c != nullptr ? c : "";
+                continue;
+            }
+            case 'v': {
+                output += std::to_string(X_INFO_MAJOR_VERSION);
+                output += ".";
+                output += std::to_string(X_INFO_MINOR_VERSION);
+                continue;
+            }
+            case 'V': {
+                output += std::to_string(X_INFO_MAJOR_VERSION);
+                output += ".";
+                output += std::to_string(X_INFO_MINOR_VERSION);
+                output += ".";
+                output += std::to_string(X_INFO_PATCH_VERSION);
+                continue;
+            }
+            case 'w': {
+                const char *c = getenv("PWD");
+                output += c != nullptr ? c : "";
+                continue;
+            }
+            case 'W': 
+                output += basename(getenv("PWD"));
+                continue;
+            case '$':
+                ch = (getuid() == 0 ? '#' : '$');
+                break;
+            case '\\':
+                ch = '\\';
+                break;
+            case '[':
+            case ']':
+                continue;
+            default:
+                i--;
+                break;
+            }
+        }
+        output += ch;
+    }
 }
 
 } // namespace core

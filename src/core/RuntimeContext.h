@@ -513,6 +513,11 @@ public:
     ProcInvoker &getProcInvoker() {
         return this->procInvoker;
     }
+
+    /**
+     * n is 1 or 2
+     */
+    void interpretPromptString(const char *ps, std::string &output);
 };
 
 } // namespace core

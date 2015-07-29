@@ -30,7 +30,7 @@ namespace ydsh {
 Shell::Shell() :
         ctx(), parser(), checker(this->ctx.getPool(), this->ctx.getSymbolTable()), lineNum(1),
         listener(0), proxy(), reportingListener(),
-        dumpUntypedAST(false), dumpTypedAST(false), parseOnly(false), traceExit(false) {
+        dumpUntypedAST(false), dumpTypedAST(false), parseOnly(false), traceExit(false), ps1(), ps2() {
     // set error listener
     this->setErrorListener(&this->proxy);
     this->proxy.addListener(this->getDefaultListener());
@@ -66,6 +66,39 @@ void Shell::setArguments(const std::vector<const char *> &argv) {
             this->ctx.addScriptArg(argv[i]);
         }
     }
+}
+
+const char *Shell::getInterpretedPrompt(unsigned int n) {
+    static char empty[] = "";
+
+    FieldHandle *handle = nullptr;
+    bool usePS1 = true;
+    switch(n) {
+    case 1:
+        handle = this->ctx.getSymbolTable().lookupHandle("PS1");
+        break;
+    case 2:
+        handle = this->ctx.getSymbolTable().lookupHandle("PS2");
+        usePS1 = false;
+        break;
+    default:
+        break;
+    }
+
+    if(handle == nullptr) {
+        return empty;
+    }
+
+    unsigned int index = handle->getFieldIndex();
+    const std::shared_ptr<DSObject> &obj = this->ctx.getGlobal(index);
+    if(dynamic_cast<String_Object *>(obj.get()) == nullptr) {
+        return empty;
+    }
+
+    this->ctx.interpretPromptString(
+            TYPE_AS(String_Object, obj)->getValue().c_str(), usePS1 ? this->ps1 : this->ps2);
+
+    return (usePS1 ? this->ps1 : this->ps2).c_str();
 }
 
 Shell *Shell::createShell() {
@@ -147,6 +180,10 @@ ExecStatus Shell::eval(const char *sourceName, Lexer &lexer) {
     return ExecStatus::SUCCESS;
 }
 
+static VarDeclNode *newStringVar(const char *name, const char *value, bool readOnly = false) {
+    return new VarDeclNode(0, std::string(name), new StringValueNode(std::string(value)), readOnly);
+}
+
 void Shell::initBuiltinVar() {
     RootNode rootNode;
     // register boolean
@@ -172,6 +209,10 @@ void Shell::initBuiltinVar() {
     // set alias
     rootNode.addNode(new TypeAliasNode("Int", "Int32"));
     rootNode.addNode(new TypeAliasNode("Uint", "Uint32"));
+
+    // define writable variable
+    rootNode.addNode(newStringVar("PS1", "\\s-\\v\\$ "));
+    rootNode.addNode(newStringVar("PS2", "> "));
 
     // ignore error check (must be always success)
     this->checker.checkTypeRootNode(rootNode);

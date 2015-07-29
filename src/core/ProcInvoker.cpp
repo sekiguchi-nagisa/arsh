@@ -211,6 +211,21 @@ static int builtin___puts(RuntimeContext *ctx, const BuiltinContext &bctx, bool 
     return 0;
 }
 
+/**
+ * for prompt string debugging
+ */
+static int builtin_ps_intrp(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+    if(bctx.argc != 2) {
+        fprintf(bctx.fp_stderr, "%s: usage: %s [prompt string]\n", bctx.argv[0], bctx.argv[0]);
+        return 1;
+    }
+    std::string str;
+    ctx->interpretPromptString(bctx.argv[1], str);
+    fputs(str.c_str(), bctx.fp_stdout);
+    fputc('\n', bctx.fp_stdout);
+    return 0;
+}
+
 const struct {
     const char *commandName;
     ProcInvoker::builtin_command_t cmd_ptr;
@@ -253,6 +268,29 @@ const struct {
                 "    Always failure (exit status is 1)."},
         {"help", builtin_help, "[-s] [pattern ...]",
                 "    Display helpful information about builtin commands."},
+        {"ps_intrp", builtin_ps_intrp, "[prompt string]",
+                "    Interpret prompt string.\n"
+                "    Escape Sequence:\n"
+                "        \\a    bell\n"
+                "        \\d    date\n"
+                "        \\e    escape sequence\n"
+                "        \\h    host name\n"
+                "        \\H    fully qualified host name\n"
+                "        \\n    newline\n"
+                "        \\r    carriage return\n"
+                "        \\s    shell name ($0)\n"
+                "        \\t    24 hour notation (HH:MM:SS)\n"
+                "        \\T    12 hour notation (HH:MM:SS)\n"
+                "        \\@    12 hour notation with AM/PM\n"
+                "        \\u    user name\n"
+                "        \\v    version\n"
+                "        \\V    version with patch level\n"
+                "        \\w    current directory\n"
+                "        \\W    base name of current directory\n"
+                "        \\$    # if uid is 0, otherwise $\n"
+                "        \\\\    backslash\n"
+                "        \\[    begin of unprintable sequence\n"
+                "        \\]    end of unprintable sequence"},
         {"true", builtin_true, "",
                 "    Always success (exit status is 0)."},
 };

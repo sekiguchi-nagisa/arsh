@@ -26,11 +26,13 @@ extern "C" {
 #include <ydsh/ydsh.h>
 #include "misc/debug.h"
 
+static DSContext *dsContext;
+
 // for prompt
 static bool continuation = false;
 
 static char *prompt(EditLine *el) {
-    return continuation ? (char *) "> " : (char *) "ydsh> ";
+    return (char *)DSContext_getPrompt(dsContext, continuation ? 2 : 1);
 }
 
 // for signal handler
@@ -176,6 +178,7 @@ static const char *readLine() {
 void exec_interactive(const char *progName, DSContext *ctx) {   // never return
     initEditLine(progName);
     DSContext_setOption(ctx, DS_OPTION_TOPLEVEL);
+    dsContext = ctx;
 
     const char *line;
     int exitStatus = 0;

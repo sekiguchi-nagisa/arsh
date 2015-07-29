@@ -85,6 +85,13 @@ void DSContext_setArguments(DSContext *ctx, const char **argv);
 void DSContext_setOption(DSContext *ctx, unsigned int optionSet);
 void DSContext_unsetOption(DSContext *ctx, unsigned int optionSet);
 
+/**
+ * if n is 1, return primary prompt.
+ * if n is 2, return secondary prompt.
+ * otherwise, return empty string.
+ */
+const char *DSContext_getPrompt(DSContext *ctx, unsigned int n);
+
 // for version information
 unsigned int DSContext_getMajorVersion();
 unsigned int DSContext_getMinorVersion();
@@ -96,6 +103,7 @@ unsigned int DSContext_getPatchVersion();
 const char *DSContext_getVersion();
 
 const char *DSContext_getCopyright();
+
 
 /**********************/
 /**     DSStatus     **/

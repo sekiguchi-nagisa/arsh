@@ -63,6 +63,12 @@ private:
     bool parseOnly;
     bool traceExit;
 
+    /**
+     * for prompt
+     */
+    std::string ps1;
+    std::string ps2;
+
 protected:
     Shell();
 
@@ -146,6 +152,12 @@ public:
     const ReportingListener &getReportingListener() {
         return this->reportingListener;
     }
+
+    /**
+     * n is 1 or 2(PS1, PS2)
+     * return interpreted prompt string. if interpretation is failed, return empty string.
+     */
+    const char *getInterpretedPrompt(unsigned int n);
 
     static Shell *createShell();
 
