@@ -218,21 +218,21 @@ const struct {
     const char *detail;
 } builtinCommands[] {
         {"__gets", builtin___gets, "",
-                "    standard input and print to standard output."},
+                "    Read standard input and write to standard output."},
         {"__puts", builtin___puts, "[-1] [arg1] [-2] [arg2]",
-                "    print specified argument to standard output/error and print new line.\n"
+                "    Print specified argument to standard output/error and print new line.\n"
                 "    Options:\n"
                 "        -1    print to standard output\n"
                 "        -2    print to standard error"},
         {"cd", builtin_cd, "[dir]",
-                "    Changing the current directory to DIR. The Environment variable\n"
+                "    Changing the current directory to DIR.  The Environment variable\n"
                 "    HOME is the default DIR.  A null directory name is the same as\n"
                 "    the current directory."},
         {"check_env", builtin_check_env, "[variable ...]",
                 "    Check existence of specified environmental variables.\n"
                 "    If all of variables are exist and not empty string, exit with 0."},
         {"echo", builtin_echo, "[-ne]",
-                "    print argument to standard output and print new line.\n"
+                "    Print argument to standard output and print new line.\n"
                 "    Options:\n"
                 "        -n    not print new line\n"
                 "        -e    interpret some escape sequence\n"
@@ -249,12 +249,12 @@ const struct {
         {"exit", builtin_exit, "[n]",
                 "    Exit the shell with a status of N.  If N is omitted, the exit\n"
                 "    status is 0."},
+        {"false", builtin_false, "",
+                "    Always failure (exit status is 1)."},
         {"help", builtin_help, "[-s] [pattern ...]",
                 "    Display helpful information about builtin commands."},
         {"true", builtin_true, "",
-                "    always success (exit status is 0)."},
-        {"false", builtin_false, "",
-                "    always failure (exit status is 1)."},
+                "    Always success (exit status is 0)."},
 };
 
 template<typename T, size_t N>
