@@ -153,7 +153,7 @@ void DSContext_unsetOption(DSContext *ctx, unsigned int optionSet) {
 }
 
 const char *DSContext_getPrompt(DSContext *ctx, unsigned int n) {
-    ctx->shell->getInterpretedPrompt(n);
+    return ctx->shell->getInterpretedPrompt(n);
 }
 
 unsigned int DSContext_getMajorVersion() {
