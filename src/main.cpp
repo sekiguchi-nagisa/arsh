@@ -22,28 +22,10 @@
 
 #include <ydsh/ydsh.h>
 #include "misc/argv.hpp"
-#include "config.h"
 
 using namespace ydsh;
 
 void exec_interactive(const char *progName, DSContext *ctx);
-
-/**
- * write version string.
- * not write new line.
- */
-static std::ostream &version(std::ostream &stream) {
-    return stream << "ydsh, version " X_INFO_VERSION
-                             " (" X_INFO_SYSTEM "), build by " X_INFO_CPP " " X_INFO_CPP_V;
-}
-
-/**
- * write copyright.
- * not write new line.
- */
-static std::ostream &copyright(std::ostream &stream) {
-    return stream << "Copyright (C) 2015 Nagisa Sekiguchi";
-}
 
 static void loadRC(DSContext *ctx) {
     std::string path(getenv("HOME"));
@@ -136,7 +118,7 @@ int main(int argc, char **argv) {
         restIndex = argv::parseArgv(argc, argv, options, cmdLines);
     } catch(const argv::ParseError &e) {
         std::cerr << e.getMessage() << std::endl;
-        std::cerr << version << std::endl;
+        std::cerr << DSContext_getVersion() << std::endl;
         std::cerr << options << std::endl;
         return 1;
     }
@@ -166,10 +148,11 @@ int main(int argc, char **argv) {
             DSContext_setOption(ctx, DS_OPTION_TRACE_EXIT);
             break;
         case VERSION:
-            std::cout << version << std::endl << copyright << std::endl;
+            std::cout << DSContext_getVersion() << std::endl;
+            std::cout << DSContext_getCopyright() << std::endl;
             return 0;
         case HELP:
-            std::cout << version << std::endl;
+            std::cout << DSContext_getVersion() << std::endl;
             std::cout << options << std::endl;
             return 0;
         case COMMAND:
@@ -213,7 +196,8 @@ int main(int argc, char **argv) {
         DSContext_delete(&ctx);
         return ret;
     } else {    // interactive mode
-        std::cout << version << std::endl << copyright << std::endl;
+        std::cout << DSContext_getVersion() << std::endl;
+        std::cout << DSContext_getCopyright() << std::endl;
         if(userc) {
             loadRC(ctx);
         }

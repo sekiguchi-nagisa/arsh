@@ -85,6 +85,17 @@ void DSContext_setArguments(DSContext *ctx, const char **argv);
 void DSContext_setOption(DSContext *ctx, unsigned int optionSet);
 void DSContext_unsetOption(DSContext *ctx, unsigned int optionSet);
 
+// for version information
+unsigned int DSContext_getMajorVersion();
+unsigned int DSContext_getMinorVersion();
+unsigned int DSContext_getPatchVersion();
+
+/**
+ * get version string (include some build information)
+ */
+const char *DSContext_getVersion();
+
+const char *DSContext_getCopyright();
 
 /**********************/
 /**     DSStatus     **/

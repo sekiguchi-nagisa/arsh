@@ -16,6 +16,7 @@
 
 #include <ydsh/ydsh.h>
 #include "exe/Shell.h"
+#include "config.h"
 
 using namespace ydsh;
 
@@ -149,6 +150,27 @@ void DSContext_setOption(DSContext *ctx, unsigned int optionSet) {
 
 void DSContext_unsetOption(DSContext *ctx, unsigned int optionSet) {
     setOptionImpl(ctx->shell, optionSet, false);
+}
+
+unsigned int DSContext_getMajorVersion() {
+    return X_INFO_MAJOR_VERSION;
+}
+
+unsigned int DSContext_getMinorVersion() {
+    return X_INFO_MINOR_VERSION;
+}
+
+unsigned int DSContext_getPatchVersion() {
+    return X_INFO_PATCH_VERSION;
+}
+
+const char *DSContext_getVersion() {
+    return "ydsh, version " X_INFO_VERSION
+            " (" X_INFO_SYSTEM "), build by " X_INFO_CPP " " X_INFO_CPP_V;
+}
+
+const char *DSContext_getCopyright() {
+    return "Copyright (C) 2015 Nagisa Sekiguchi";
 }
 
 
