@@ -5,7 +5,7 @@ assert($? == 0)
 assert(true)
 
 assert(help true | grep 'true: true')
-assert(help true | grep 'always success')
+assert(help true | grep 'Always success')
 
 
 # builtin false command
@@ -16,4 +16,4 @@ var t = false
 assert(not $t)
 
 assert(help false | grep 'false: false')
-assert(help false | grep 'always failure')
+assert(help false | grep 'Always failure')

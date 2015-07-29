@@ -7,4 +7,4 @@ assert("$(echo -e 'hello\\c' world)" == "hello")
 
 
 assert(help echo | grep 'echo: echo \\[-ne]')
-assert(help echo | grep 'print argument to standard output and print new line.')
+assert(help echo | grep 'Print argument to standard output and print new line.')
