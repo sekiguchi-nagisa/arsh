@@ -499,7 +499,7 @@ void RuntimeContext::interpretPromptString(const char *ps, std::string &output) 
             "Sun", "Mon", "Tue", "Wed", "Thurs", "Fri", "Sat"
     };
 
-    unsigned int hostNameSize = HOST_NAME_MAX + 1;
+    unsigned int hostNameSize = 256;    // in linux environment, HOST_NAME_MAX is 64
     char hostName[hostNameSize];
     if(gethostname(hostName, hostNameSize) !=  0) {
         hostName[0] = '\0';
