@@ -109,7 +109,6 @@ void Lexer::nextToken(Token &token) {
 
       STRING_LITERAL = ['] SQUOTE_CHAR* ['];
       PATH_CHARS = "/" | ("/" [_a-zA-Z0-9]+ )+;
-      BQUOTE_LITERAL = [`] ('\\' '`' | [^\n\r])+ [`];
       APPLIED_NAME = "$" VAR_NAME;
       SPECIAL_NAME = "$" SPECIAL_NAMES;
 
@@ -177,8 +176,6 @@ void Lexer::nextToken(Token &token) {
       <STMT,EXPR> "p" ['] PATH_CHARS [']
                                { MODE(EXPR); RET(PATH_LITERAL); }
       <STMT,EXPR> ["]          { MODE(EXPR); PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
-      <STMT,EXPR> BQUOTE_LITERAL
-                               { MODE(EXPR); RET(BQUOTE_LITERAL); }
       <STMT,EXPR> "$("         { MODE(EXPR); PUSH_MODE(STMT); RET(START_SUB_CMD); }
 
       <STMT,EXPR> APPLIED_NAME { MODE(EXPR); RET(APPLIED_NAME); }
@@ -246,8 +243,6 @@ void Lexer::nextToken(Token &token) {
       <DSTRING> ["]            { POP_MODE(); RET(CLOSE_DQUOTE);}
       <DSTRING> ([^\r\n`$"\\] | '\\' [$btnfr"`\\])+
                                { RET(STR_ELEMENT);}
-      <DSTRING,CMD> BQUOTE_LITERAL
-                               { RET(BQUOTE_LITERAL); }
       <DSTRING,CMD> INNER_NAME { RET(APPLIED_NAME); }
       <DSTRING,CMD> INNER_SPECIAL_NAME
                                { RET(SPECIAL_NAME); }

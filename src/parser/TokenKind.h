@@ -66,7 +66,6 @@
     TOKEN(STRING_LITERAL                     , "<String Literal>") \
     TOKEN(PATH_LITERAL                       , "<Path Literal>") \
     TOKEN(OPEN_DQUOTE                        , "\"") \
-    TOKEN(BQUOTE_LITERAL                     , "<Backquote Literal>") \
     TOKEN(START_SUB_CMD                      , "$(") \
     /* applied name */\
     TOKEN(APPLIED_NAME                       , "<$ Name>") \
