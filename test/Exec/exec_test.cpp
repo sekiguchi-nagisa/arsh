@@ -124,16 +124,16 @@ void addArg(std::vector<char *> &out, const char *first, T ...rest) {
 }
 
 template <typename... T>
-std::unique_ptr<char *const[]> make_argv(const char *name, T ...args) {
+std::unique_ptr<char *[]> make_argv(const char *name, T ...args) {
     std::vector<char *> out;
     addArg(out, name, args...);
     unsigned int size = out.size();
-    char **ptr = new char*[size + 1];
+    std::unique_ptr<char *[]> ptr(new char*[size + 1]);
     for(unsigned int i = 0; i < size; i++) {
         ptr[i] = out[i];
     }
     ptr[size] = nullptr;
-    return std::unique_ptr<char *const[]>(ptr);
+    return ptr;
 }
 
 
