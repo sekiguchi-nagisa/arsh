@@ -90,7 +90,7 @@ public:
         ASSERT_TRUE(fp != nullptr);
 
         // set argument
-        std::unique_ptr<char *const[]> argv = d.getAsArgv(scriptName);
+        std::unique_ptr<char *[]> argv = d.getAsArgv(scriptName);
         DSContext_setArguments(this->ctx, argv.get());
 
         // execute
