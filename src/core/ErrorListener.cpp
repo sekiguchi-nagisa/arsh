@@ -15,10 +15,10 @@
  */
 
 #include "ErrorListener.h"
+#include "DSObject.h"
+#include "TypePool.h"
 #include "../misc/debug.h"
 #include "../misc/term.h"
-#include "../core/DSObject.h"
-#include "../core/TypePool.h"
 
 namespace ydsh {
 

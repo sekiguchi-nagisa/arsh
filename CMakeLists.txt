@@ -166,8 +166,7 @@ set(YDSH_SRC
     src/core/SymbolTable.cpp
     src/core/TypeLookupError.cpp
     src/core/TypePool.cpp
-    src/exe/Shell.cpp
-    src/exe/ErrorListener.cpp
+    src/core/ErrorListener.cpp
     src/parser/Lexer.cpp
     src/parser/Parser.cpp
     src/parser/TokenKind.cpp
