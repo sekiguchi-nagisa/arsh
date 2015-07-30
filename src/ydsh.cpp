@@ -114,7 +114,7 @@ unsigned int DSContext_getLineNum(DSContext *ctx) {
     return ctx->shell->getLineNum();
 }
 
-void DSContext_setArguments(DSContext *ctx, const char **argv) {
+void DSContext_setArguments(DSContext *ctx, char *const argv[]) {
     std::vector<const char *> argList;
     for(unsigned int i = 0; argv[i] != nullptr; i++) {
         argList.push_back(argv[i]);

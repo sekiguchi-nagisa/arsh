@@ -122,7 +122,7 @@ public:
      * first element is sourceName.
      * last element is null.
      */
-    std::unique_ptr<const char *> getAsArgv(const char *sourceName) const;
+    std::unique_ptr<char *const[]> getAsArgv(const char *sourceName) const;
 
     static bool init(const char *fileName, Directive &d);
 

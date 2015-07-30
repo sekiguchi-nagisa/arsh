@@ -546,17 +546,17 @@ const std::pair<Type, AttributeHandler *> *DirectiveInitializer::lookupHandler(c
 // ##     Directive     ##
 // #######################
 
-std::unique_ptr<const char *> Directive::getAsArgv(const char *sourceName) const {
+std::unique_ptr<char *const[]> Directive::getAsArgv(const char *sourceName) const {
     unsigned int size = this->params.size();
-    const char **ptr = new const char*[size + 2];
+    char ** ptr = new char*[size + 2];
 
-    ptr[0] = sourceName;
+    ptr[0] = const_cast<char *>(sourceName);
     for(unsigned int i = 0; i < size; i++) {
-        ptr[i + 1] = this->params[i].c_str();
+        ptr[i + 1] = const_cast<char *>(this->params[i].c_str());
     }
     ptr[size + 1] = nullptr;
 
-    return std::unique_ptr<const char *>(ptr);
+    return std::unique_ptr<char *const[]>(ptr);
 }
 
 bool Directive::init(const char *fileName, Directive &d) {

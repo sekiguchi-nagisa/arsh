@@ -166,7 +166,7 @@ int main(int argc, char **argv) {
 
     // set rest argument
     const int size = argc - restIndex;
-    const char *shellArgs[size + 1];
+    char *shellArgs[size + 1];
     memcpy(shellArgs, argv + restIndex, sizeof(char *) * size);
     shellArgs[size] = nullptr;
 

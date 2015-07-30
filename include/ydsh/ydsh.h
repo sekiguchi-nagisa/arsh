@@ -72,7 +72,7 @@ unsigned int DSContext_getLineNum(DSContext *ctx);
  * last element of argv must be null.
  * empty string argument will be ignored.
  */
-void DSContext_setArguments(DSContext *ctx, const char **argv);
+void DSContext_setArguments(DSContext *ctx, char *const argv[]);
 
 
 #define DS_OPTION_DUMP_UAST  ((unsigned int)(1 << 0))
