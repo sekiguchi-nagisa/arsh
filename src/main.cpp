@@ -71,7 +71,8 @@ static void segvHandler(int num) {
     OP(VERSION,        "--version",           0, "show version and copyright") \
     OP(HELP,           "--help",              0, "show this help message") \
     OP(COMMAND,        "-c",                  argv::REQUIRE_ARG | argv::IGNORE_REST, "evaluate argument") \
-    OP(NORC,           "--norc",              0, "not load ydshrc")
+    OP(NORC,           "--norc",              0, "not load ydshrc") \
+    OP(EXEC,           "-e",                  argv::REQUIRE_ARG | argv::IGNORE_REST, "execute builtin command (ignore some option)")
 
 enum OptionKind {
 #define GEN_ENUM(E, S, F, D) E,
@@ -125,6 +126,7 @@ int main(int argc, char **argv) {
 
     DSContext *ctx = DSContext_create();
     const char *evalArg = nullptr;
+    bool execBuiltin = false;
     bool userc = true;
 
     for(auto &cmdLine : cmdLines) {
@@ -161,6 +163,10 @@ int main(int argc, char **argv) {
         case NORC:
             userc = false;
             break;
+        case EXEC:
+            execBuiltin = true;
+            restIndex--;
+            break;
         }
     }
 
@@ -169,6 +175,13 @@ int main(int argc, char **argv) {
     char *shellArgs[size + 1];
     memcpy(shellArgs, argv + restIndex, sizeof(char *) * size);
     shellArgs[size] = nullptr;
+
+    // execute builtin command
+    if(execBuiltin) {
+        int ret = DSContext_exec(ctx, shellArgs, nullptr);
+        DSContext_delete(&ctx);
+        return ret;
+    }
 
     // evaluate argument
     if(evalArg != nullptr) {    // command line mode

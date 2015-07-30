@@ -101,6 +101,16 @@ const char *Shell::getInterpretedPrompt(unsigned int n) {
     return (usePS1 ? this->ps1 : this->ps2).c_str();
 }
 
+ExecStatus Shell::exec(char *const argv[]) {
+    if(this->ctx.getProcInvoker().execBuiltinCommand(argv) != EvalStatus::SUCCESS) {
+        DSType *thrownType = this->ctx.getThrownObject()->getType();
+        if(*thrownType == *this->ctx.getPool().getShellExit()) {
+            return ExecStatus::EXIT;
+        }
+    }
+    return ExecStatus::SUCCESS;
+}
+
 Shell *Shell::createShell() {
     Shell *shell = new Shell();
     shell->initBuiltinVar();

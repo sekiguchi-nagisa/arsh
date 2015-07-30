@@ -119,7 +119,7 @@ struct BuiltinContext {
      * first element of argv is command name.
      * last element of argv is null.
      */
-    char **argv;
+    char *const *argv;
 
     // not close theme
     FILE *fp_stdin;
@@ -219,6 +219,12 @@ public:
     void addRedirOption(RedirectOP op, const std::shared_ptr<DSObject> &value);
 
     EvalStatus invoke();
+
+    /**
+     * first element of argv is command name.
+     * last element of argv is null.
+     */
+    EvalStatus execBuiltinCommand(char *const argv[]);
 
 private:
     void redirect(unsigned int procIndex, int errorPipe);

@@ -159,6 +159,13 @@ public:
      */
     const char *getInterpretedPrompt(unsigned int n);
 
+    /**
+     * execute builtin command.
+     * first element of argv must be command name.
+     * last element of argv must be null.
+     */
+    ExecStatus exec(char *const argv[]);
+
     static Shell *createShell();
 
 private:

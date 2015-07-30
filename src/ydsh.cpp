@@ -106,6 +106,11 @@ int DSContext_loadAndEval(DSContext *ctx, const char *sourceName, FILE *fp, DSSt
     return createStatus(s, ctx->shell, status);
 }
 
+int DSContext_exec(DSContext *ctx, char *const argv[], DSStatus **status) {
+    ExecStatus s = ctx->shell->exec(argv);
+    return createStatus(s, ctx->shell, status);
+}
+
 void DSContext_setLineNum(DSContext *ctx, unsigned int lineNum) {
     ctx->shell->setLineNum(lineNum);
 }

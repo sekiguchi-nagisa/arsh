@@ -93,7 +93,7 @@ static int builtin_exit(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
 static int builtin_echo(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
     FILE *fp = bctx.fp_stdout;  // not close it.
     int argc = bctx.argc;
-    char **argv = bctx.argv;
+    char *const *argv = bctx.argv;
 
     bool newline = true;
     bool interpEscape = false;
@@ -122,7 +122,7 @@ static int builtin_echo(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
             fputs(argv[index], fp);
             continue;
         }
-        char *arg = argv[index];
+        const char *arg = argv[index];
         for(unsigned int i = 0; arg[i] != '\0'; i++) {
             char ch = arg[i];
             if(ch == '\\' && arg[i + 1] != '\0') {
@@ -727,6 +727,31 @@ EvalStatus ProcInvoker::invoke() {
         perror("child process error");
         exit(1);
     }
+}
+
+EvalStatus ProcInvoker::execBuiltinCommand(char *const argv[]) {
+    builtin_command_t cmd_ptr = this->lookupBuiltinCommand(argv[0]);
+    if(cmd_ptr == nullptr) {
+        fprintf(stderr, "ydsh: %s: not builtin command\n", argv[0]);
+        this->ctx->updateExitStatus(1);
+        return EvalStatus::SUCCESS;
+    }
+
+    BuiltinContext bctx = {
+            .argc = 1, .argv = argv,
+            .fp_stdin = stdin, .fp_stdout = stdout, .fp_stderr = stderr
+    };
+    for(; argv[bctx.argc] != nullptr; bctx.argc++);
+
+    bool raised = false;
+    this->ctx->updateExitStatus(cmd_ptr(this->ctx, bctx, raised));
+
+    // flush standard stream to prevent buffering.
+    fflush(stdin);
+    fflush(stdout);
+    fflush(stderr);
+
+    return raised ? EvalStatus::THROW : EvalStatus::SUCCESS;
 }
 
 const char *ProcInvoker::getCommandName(unsigned int procIndex) {

@@ -64,6 +64,15 @@ int DSContext_eval(DSContext *ctx, const char *source, DSStatus **status);
  */
 int DSContext_loadAndEval(DSContext *ctx, const char *sourceName, FILE *fp, DSStatus **status);
 
+/**
+ * execute builtin command.
+ * first element of argv must be command name.
+ * last element of argv must be null.
+ * return exit status of executed command.
+ * if command not found, return 1.
+ */
+int DSContext_exec(DSContext *ctx, char *const argv[], DSStatus **status);
+
 void DSContext_setLineNum(DSContext *ctx, unsigned int lineNum);
 unsigned int DSContext_getLineNum(DSContext *ctx);
 

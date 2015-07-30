@@ -114,6 +114,79 @@ TEST_P(ExecTest, baseTest) {
 
 INSTANTIATE_TEST_CASE_P(ExecTest, ExecTest, ::testing::ValuesIn(getFileList(EXEC_TEST_DIR, true)));
 
+
+void addArg(std::vector<char *> &out) { }
+
+template <typename... T>
+void addArg(std::vector<char *> &out, const char *first, T ...rest) {
+    out.push_back(const_cast<char *>(first));
+    addArg(out, rest...);
+}
+
+template <typename... T>
+std::unique_ptr<char *const[]> make_argv(const char *name, T ...args) {
+    std::vector<char *> out;
+    addArg(out, name, args...);
+    unsigned int size = out.size();
+    char **ptr = new char*[size + 1];
+    for(unsigned int i = 0; i < size; i++) {
+        ptr[i] = out[i];
+    }
+    ptr[size] = nullptr;
+    return std::unique_ptr<char *const[]>(ptr);
+}
+
+
+
+TEST(BuiltinExecTest, case1) {
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+
+        DSContext *ctx = DSContext_create();
+        DSStatus *s;
+
+        int ret = DSContext_exec(ctx, make_argv("echo", "hello").get(), &s);
+        ASSERT_EQ(0, ret);
+        ASSERT_EQ(DS_STATUS_SUCCESS, DSStatus_getType(s));
+
+        DSStatus_free(&s);
+        DSContext_delete(&ctx);
+    });
+}
+
+TEST(BuiltinExecTest, case2) {
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+
+        DSContext *ctx = DSContext_create();
+        DSStatus *s;
+
+        int ret = DSContext_exec(ctx, make_argv("fheruifh", "hello").get(), &s);
+        ASSERT_EQ(1, ret);
+        ASSERT_EQ(DS_STATUS_SUCCESS, DSStatus_getType(s));  // if command not found, still success.
+
+        DSStatus_free(&s);
+        DSContext_delete(&ctx);
+    });
+}
+
+TEST(BuiltinExecTest, case3) {
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+
+        DSContext *ctx = DSContext_create();
+        DSStatus *s;
+
+        int ret = DSContext_exec(ctx, make_argv("exit", "12").get(), &s);
+        ASSERT_EQ(12, ret);
+        ASSERT_EQ(DS_STATUS_EXIT, DSStatus_getType(s));
+        ASSERT_EQ(0, DSStatus_getErrorLineNum(s));  // error line num is always 0.
+
+        DSStatus_free(&s);
+        DSContext_delete(&ctx);
+    });
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
