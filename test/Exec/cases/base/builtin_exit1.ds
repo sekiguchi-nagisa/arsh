@@ -1,5 +1,5 @@
 #$test($result = 'EXIT', $lineNum = 5)
 
-assert(help exit | grep 'exit: exit \\[n]')
+assert(help exit | grep 'exit: exit \[n]')
 
 exit

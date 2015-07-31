@@ -36,4 +36,4 @@ assert($? == 0)
 assert($OLDPWD == $PWD)
 
 
-assert(help cd | grep 'cd: cd \\[dir]')
+assert(help cd | grep 'cd: cd \[dir]')

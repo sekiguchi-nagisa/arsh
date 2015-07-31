@@ -143,6 +143,81 @@ std::string Lexer::toString(const Token &token, bool isSingleQuote) const {
     return str;
 }
 
+std::string Lexer::singleToString(const Token &token) const {
+    if(this->startsWith(token, '$')) {
+        return this->escapedSingleToString(token);
+    }
+
+    Token trimed = token;
+    trimed.startPos++;
+    trimed.size -= 2;
+
+    return this->toTokenText(trimed);
+}
+
+std::string Lexer::escapedSingleToString(const Token &token) const {
+    assert(this->withinRange(token));
+
+    std::string str;
+    str.reserve(token.size - 3);
+
+    const unsigned int stopPos = token.startPos + token.size - 1; // ignore suffix "'"
+    for(unsigned int i = token.startPos + 2; i < stopPos; i++) {  // ignore prefix "$'"
+        char ch = this->buf[i];
+        if(ch == '\\' && i + 1 < stopPos) {
+            switch(this->buf[++i]) {
+            case 'n':
+                ch = '\n';
+                break;
+            case 'r':
+                ch = '\r';
+                break;
+            case 't':
+                ch = '\t';
+                break;
+            case '\'':
+                ch = '\'';
+                break;
+            case '\\':
+                ch = '\\';
+                break;
+            default:
+                --i;
+                break;
+            }
+        }
+        str += ch;
+    }
+    return str;
+}
+
+std::string Lexer::doubleElementToString(const Token &token) const {
+    assert(this->withinRange(token));
+
+    std::string str;
+    str.reserve(token.size);
+
+    const unsigned int stopPos = token.startPos + token.size;
+    for(unsigned int i = token.startPos; i < stopPos; i++) {
+        char ch = this->buf[i];
+        if(ch == '\\' && i + 1 < stopPos) {
+            char next = this->buf[++i];
+            switch(next) {
+            case '"':
+            case '$':
+            case '\\':
+                ch = next;
+                break;
+            default:
+                --i;
+                break;
+            }
+        }
+        str += ch;
+    }
+    return str;
+}
+
 std::string Lexer::toCmdArg(const Token &token) const {
     assert(this->withinRange(token));
 
@@ -185,11 +260,6 @@ std::string Lexer::toName(const Token &token) const {
         }
     }
     return name;
-}
-
-bool Lexer::startswith(const Token &token, char ch) const {
-    assert(this->withinRange(token));
-    return this->buf[token.startPos] == ch;
 }
 
 char Lexer::toInt8(const Token &token, int &status) const {

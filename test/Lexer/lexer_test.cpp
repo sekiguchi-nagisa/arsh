@@ -84,7 +84,6 @@ public:
         auto pair = this->tokens[index];
         this->assertKind(expectedKind, pair.first);
 
-        ASSERT_EQ(strlen(expectedText), pair.second.size);
         std::string text = this->lexer->toTokenText(pair.second);
         ASSERT_STREQ(expectedText, text.c_str());
     }
@@ -620,28 +619,55 @@ TEST_F(LexerTest_Lv1, string_literal2) {
 }
 
 TEST_F(LexerTest_Lv1, string_literal3) {
-#define TEXT "'\\b\\t\\n\\f\\r\\'\\\\'"
+#define TEXT "'\\t\\n\\r\\\\'"
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->initLexer(DUP(TEXT));
+        this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 3);
-        this->assertToken(0, STRING_LITERAL, TEXT);
-        this->assertToken(1, STRING_LITERAL, TEXT);
-        this->assertKind(EOS, this->getTokens()[2].first);
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, STRING_LITERAL, "'\\t\\n\\r\\\\'");
+        this->assertKind(EOS, this->getTokens()[1].first);
     });
 #undef TEXT
 }
 
-// invalid string literal
-TEST_F(LexerTest_Lv1, invalid_string_literal) {
-#define TEXT "'\n'"
+TEST_F(LexerTest_Lv1, string_literal4) {
+#define TEXT "$'\\''"
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->initLexer(DUP(TEXT));
+        this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 1);
-        this->assertKind(INVALID, this->getTokens()[0].first);
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, STRING_LITERAL, "$'\\''");
+        this->assertKind(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, string_literal5) {
+#define TEXT "$'\\n'"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, STRING_LITERAL, "$'\\n'");
+        this->assertKind(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+
+// invalid string literal
+TEST_F(LexerTest_Lv1, invalid_string_literal) {
+#define TEXT "'\\''"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, STRING_LITERAL, "'\\'");
+        this->assertKind(INVALID, this->getTokens()[1].first);
     });
 #undef TEXT
 }
@@ -678,8 +704,38 @@ TEST_F(LexerTest_Lv1, string_expr2) {
 #undef TEXT
 }
 
+TEST_F(LexerTest_Lv1, string_expr3) {
+#define TEXT "\"hello\\\"world\""
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 4);
+        this->assertToken(0, OPEN_DQUOTE, "\"");
+        this->assertToken(1, STR_ELEMENT, "hello\\\"world");
+        this->assertToken(2, CLOSE_DQUOTE, "\"");
+        this->assertKind(EOS, this->getTokens()[3].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, string_expr4) {
+#define TEXT "\"hello\\$world\""
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 4);
+        this->assertToken(0, OPEN_DQUOTE, "\"");
+        this->assertToken(1, STR_ELEMENT, "hello\\$world");
+        this->assertToken(2, CLOSE_DQUOTE, "\"");
+        this->assertKind(EOS, this->getTokens()[3].first);
+    });
+#undef TEXT
+}
+
 TEST_F(LexerTest_Lv1, invalid_string_expr) {
-#define TEXT "\"hello\nword\""
+#define TEXT "\"hello$\""
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(TEXT);

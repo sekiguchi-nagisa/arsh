@@ -134,6 +134,21 @@ public:
     std::string toString(const Token &token, bool isSingleQuote = true) const;
 
     /**
+     * convert single quote string literal token to string.
+     */
+    std::string singleToString(const Token &token) const;
+
+    /**
+     * convert escaped single quote string literal token to string.
+     */
+    std::string escapedSingleToString(const Token &token) const;
+
+    /**
+     * convert double quote string element token to string.
+     */
+    std::string doubleElementToString(const Token &token) const;
+
+    /**
      * convert token to command argument
      */
     std::string toCmdArg(const Token &token) const;
@@ -143,8 +158,6 @@ public:
      * ex. $hoge, ${hoge}, hoge
      */
     std::string toName(const Token &token) const;
-
-    bool startswith(const Token &token, char ch) const;
 
     /**
      * if converted number is out of range, status is 1.

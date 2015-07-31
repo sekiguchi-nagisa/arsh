@@ -926,7 +926,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool expandTilde) {
 }
 
 bool Parser::checkTildeExpansion(const Token &token, std::string &prefix, std::string &rest) {
-    if(!this->lexer->startswith(token, '~')) {
+    if(!this->lexer->startsWith(token, '~')) {
         return false;
     }
 
@@ -1278,7 +1278,7 @@ std::unique_ptr<Node> Parser::parse_specialName() {
 std::unique_ptr<Node> Parser::parse_stringLiteral() {
     Token token;
     this->expect(STRING_LITERAL, token);
-    RET_NODE(new StringValueNode(token.lineNum, this->lexer->toString(token)));
+    RET_NODE(new StringValueNode(token.lineNum, this->lexer->singleToString(token)));
 }
 
 std::unique_ptr<ArgsNode> Parser::parse_arguments() {
@@ -1314,7 +1314,7 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
             Token token;
             this->expect(STR_ELEMENT, token);
             node->addExprNode(
-                    new StringValueNode(token.lineNum, this->lexer->toString(token, false)));
+                    new StringValueNode(token.lineNum, this->lexer->doubleElementToString(token)));
             break;
         }
         EACH_LA_interpolation(GEN_LA_CASE) {

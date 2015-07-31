@@ -95,9 +95,9 @@ echo a b
 assert($(echo a b).size() == 2)
 assert($(echo a b)[1] == 'b')
 assert($(echo).size() == 0)
-assert($(echo '    \n  \t   ').size() == 0)   # ignore space and newline
-assert($(echo '  b  \n  \t   ').size() == 1)
-assert($(echo '  b  \n  \t   ')[0] == 'b')
+assert($(echo -e '    \n  \t   ').size() == 0)   # ignore space and newline
+assert($(echo -e '  b  \n  \t   ').size() == 1)
+assert($(echo -e '  b  \n  \t   ')[0] == 'b')
 
 var d = $(ls)
 assert(not ($d is String))
@@ -115,8 +115,8 @@ assert($? == 0)
 ## as string
 assert("$(echo a b)" == "a b")
 assert("$(echo '   ')" == "   ")
-assert("$(echo 'ab\n\n')" == "ab")  # ignore last newlines
-assert("$(echo 'a \nb \n')" == "a \nb ")
+assert("$(echo $'ab\n\n')" == "ab")  # ignore last newlines
+assert("$(echo $'ab \n')" == "ab ")
 assert("$(echo)" == "")
 assert("$(ls hueri &> /dev/null)" == "")
 assert("$(echo hello 1>&2)" == "")
@@ -136,7 +136,8 @@ assert("$(echo "" 23)" == " 23")
 assert("$(ls -la 2>&1 > /dev/null)" == "")
 
 assert("$(echo $(echo hello   world    ))" == 'hello world')
-assert("hello\nworld" == "$(echo hello && echo world)")  # and-list
+assert("hello
+world" == "$(echo hello && echo world)")  # and-list
 
 
 # right handle side expression
@@ -200,7 +201,7 @@ assert(not $DIR.empty())
 
 ## stdout append
 assert(echo "hello world!!" >> $DIR/out && echo "hello world!!" >> $DIR/out)
-assert("$(cat $DIR/out)" == "hello world!!\nhello world!!")
+assert("$(cat $DIR/out)" == "$(echo -e "hello world!!\nhello world!!" )")
 
 ## stderr append
 var t = "gheru4g9"
@@ -211,6 +212,6 @@ ls $t 2>> $DIR/err
 assert($? != 0)
 
 $t = "$(ls $t 2>&1)"
-assert("$t\n$t" == "$(cat $DIR/err)")
+assert("$(echo -e "$t\n$t")" == "$(cat $DIR/err)")
 
 rm -rf $DIR   # cleanup

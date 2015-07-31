@@ -3,6 +3,19 @@ assert($str == "うずまきナルト")
 $str = 'hello world'
 assert($str == 'hello world')
 assert($str != "fer")
+
+# string literal
+assert('a\nb' == $'a\\nb')
+assert('a\rb' == $'a\\rb')
+assert('a\tb' == $'a\\tb')
+assert('a\b' == $'a\b')
+assert('a
+b' == "a
+b")  # allow new line
+assert('a\nb' == "a\nb")
+assert('a\rb' == "a\rb")
+
+# string method
 assert("".empty())
 assert("".size() == 0)
 assert("".size() is Int32)

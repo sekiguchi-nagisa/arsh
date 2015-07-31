@@ -174,6 +174,11 @@ public:
         memcpy(buf, (char *)this->buf + token.startPos, token.size);
     }
 
+    bool startsWith(const TokenBase &token, char ch) const {
+        assert(this->withinRange(token));
+        return this->buf[token.startPos] == ch;
+    }
+
     std::string formatLineMarker(const TokenBase &lineToken, const TokenBase &token) const;
 
 private:

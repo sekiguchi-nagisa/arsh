@@ -103,11 +103,12 @@ void Lexer::nextToken(Token &token) {
       FLOAT_SUFFIX =  [eE] [+-]? NUM;
       FLOAT = NUM "." DIGITS FLOAT_SUFFIX?;
 
-      SQUOTE_CHAR = [^\r\n'\\] | '\\' [btnfr'\\];
+      SQUOTE_CHAR = [^'] | '\\' ['];
       VAR_NAME = [_a-zA-Z] [_0-9a-zA-Z]* ;
       SPECIAL_NAMES = [@0?];
 
-      STRING_LITERAL = ['] SQUOTE_CHAR* ['];
+      STRING_LITERAL = ['] [^']* ['];
+      ESTRING_LITERAL = "$" ['] SQUOTE_CHAR* ['];
       PATH_CHARS = "/" | ("/" [_a-zA-Z0-9]+ )+;
       APPLIED_NAME = "$" VAR_NAME;
       SPECIAL_NAME = "$" SPECIAL_NAMES;
@@ -172,6 +173,8 @@ void Lexer::nextToken(Token &token) {
       <STMT,EXPR> NUM "u64"    { MODE(EXPR); RET(UINT64_LITERAL); }
       <STMT,EXPR> FLOAT        { MODE(EXPR); RET(FLOAT_LITERAL); }
       <STMT,EXPR> STRING_LITERAL
+                               { MODE(EXPR); RET(STRING_LITERAL); }
+      <STMT,EXPR> ESTRING_LITERAL
                                { MODE(EXPR); RET(STRING_LITERAL); }
       <STMT,EXPR> "p" ['] PATH_CHARS [']
                                { MODE(EXPR); RET(PATH_LITERAL); }
@@ -241,8 +244,8 @@ void Lexer::nextToken(Token &token) {
                                { INC_LINE_NUM(); SKIP(); }
 
       <DSTRING> ["]            { POP_MODE(); RET(CLOSE_DQUOTE);}
-      <DSTRING> ([^\r\n`$"\\] | '\\' [$btnfr"`\\])+
-                               { RET(STR_ELEMENT);}
+      <DSTRING> ([^$"] | '\\' [$"])+
+                               { COUNT_NEW_LINE(); RET(STR_ELEMENT);}
       <DSTRING,CMD> INNER_NAME { RET(APPLIED_NAME); }
       <DSTRING,CMD> INNER_SPECIAL_NAME
                                { RET(SPECIAL_NAME); }
@@ -252,6 +255,7 @@ void Lexer::nextToken(Token &token) {
       <CMD> CMD_ARG_START_CHAR CMD_CHAR*
                                { COUNT_NEW_LINE();  RET(CMD_ARG_PART); }
       <CMD> STRING_LITERAL     { RET(STRING_LITERAL); }
+      <CMD> ESTRING_LITERAL    { RET(STRING_LITERAL); }
       <CMD> ["]                { PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
       <CMD> ")"                { POP_MODE(); POP_MODE(); RET(RP); }
       <CMD> [ \t]+             { FIND_SPACE(); }

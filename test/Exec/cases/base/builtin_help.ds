@@ -1,8 +1,8 @@
-assert(help help | grep 'help: help \\[-s] \\[pattern ...]')
+assert(help help | grep 'help: help \[-s] \[pattern ...]')
 assert(help help | grep 'Display helpful information about builtin commands.')
 
 # -s option
-assert(help -s help | grep 'help: help \\[-s] \\[pattern ...]')
+assert(help -s help | grep 'help: help \[-s] \[pattern ...]')
 help -s help | grep 'Display helpful information about builtin commands.'
 assert($? != 0)
 
@@ -10,7 +10,7 @@ assert($? != 0)
 help fheurb
 assert($? == 1)
 
-assert(help hoge 2>&1 | grep '\\-ydsh: help: no help topics match `hoge\'.  Try `help help\'.')
+assert(help hoge 2>&1 | grep $'\-ydsh: help: no help topics match `hoge\'.  Try `help help\'.')
 
 # multiple
 help hugew gkrtp
