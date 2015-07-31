@@ -50,10 +50,7 @@ struct DSContext {
     ReportingListener reportingListener;
 
     // option
-    bool dumpUntypedAST;
-    bool dumpTypedAST;
-    bool parseOnly;
-    bool traceExit;
+    flag32_set_t option;
 
     /**
      * for prompt
@@ -138,8 +135,7 @@ struct DSStatus {
 
 DSContext::DSContext() :
         ctx(), parser(), checker(this->ctx.getPool(), this->ctx.getSymbolTable()), lineNum(1),
-        listener(0), proxy(), reportingListener(),
-        dumpUntypedAST(false), dumpTypedAST(false), parseOnly(false), traceExit(false), ps1(), ps2() {
+        listener(0), proxy(), reportingListener(), option(0), ps1(), ps2() {
     // set error listener
     this->setErrorListener(&this->proxy);
     this->proxy.addListener(this->getDefaultListener());
@@ -166,7 +162,7 @@ unsigned int DSContext::eval(const char *sourceName, Lexer &lexer) {
         this->parser.parse(lexer, rootNode);
         this->lineNum = lexer.getLineNum();
 
-        if(this->dumpUntypedAST) {
+        if(hasFlag(this->option, DS_OPTION_DUMP_UAST)) {
             std::cout << "### dump untyped AST ###" << std::endl;
             dumpAST(std::cout, this->ctx.getPool(), rootNode);
             std::cout << std::endl;
@@ -181,7 +177,7 @@ unsigned int DSContext::eval(const char *sourceName, Lexer &lexer) {
     try {
         this->checker.checkTypeRootNode(rootNode);
 
-        if(this->dumpTypedAST) {
+        if(hasFlag(this->option, DS_OPTION_DUMP_AST)) {
             std::cout << "### dump typed AST ###" << std::endl;
             dumpAST(std::cout, this->ctx.getPool(), rootNode);
             std::cout << std::endl;
@@ -192,7 +188,7 @@ unsigned int DSContext::eval(const char *sourceName, Lexer &lexer) {
         return DS_STATUS_TYPE_ERROR;
     }
 
-    if(this->parseOnly) {
+    if(hasFlag(this->option, DS_OPTION_PARSE_ONLY)) {
         return DS_STATUS_SUCCESS;
     }
 
@@ -203,7 +199,7 @@ unsigned int DSContext::eval(const char *sourceName, Lexer &lexer) {
         DSType *thrownType = this->ctx.getThrownObject()->getType();
         if(this->ctx.getPool().getInternalStatus()->isSameOrBaseTypeOf(thrownType)) {
             if(*thrownType == *this->ctx.getPool().getShellExit()) {
-                if(this->traceExit) {
+                if(hasFlag(this->option, DS_OPTION_TRACE_EXIT)) {
                     this->ctx.loadThrownObject();
                     TYPE_AS(Error_Object, this->ctx.pop())->printStackTrace(this->ctx);
                 }
@@ -394,31 +390,21 @@ void DSContext_setArguments(DSContext *ctx, char *const argv[]) {
 }
 
 static void setOptionImpl(DSContext *ctx, flag32_set_t flagSet, bool set) {
-    if(hasFlag(flagSet, DS_OPTION_DUMP_UAST)) {
-        ctx->dumpUntypedAST = set;
-    }
-    if(hasFlag(flagSet, DS_OPTION_DUMP_AST)) {
-        ctx->dumpTypedAST = set;
-    }
-    if(hasFlag(flagSet, DS_OPTION_PARSE_ONLY)) {
-        ctx->parseOnly = set;
-    }
     if(hasFlag(flagSet, DS_OPTION_ASSERT)) {
         ctx->ctx.setAssertion(set);
     }
     if(hasFlag(flagSet, DS_OPTION_TOPLEVEL)) {
         ctx->ctx.setToplevelPrinting(set);
     }
-    if(hasFlag(flagSet, DS_OPTION_TRACE_EXIT)) {
-        ctx->traceExit = set;
-    }
 }
 
 void DSContext_setOption(DSContext *ctx, unsigned int optionSet) {
+    setFlag(ctx->option, optionSet);
     setOptionImpl(ctx, optionSet, true);
 }
 
 void DSContext_unsetOption(DSContext *ctx, unsigned int optionSet) {
+    unsetFlag(ctx->option, optionSet);
     setOptionImpl(ctx, optionSet, false);
 }
 
