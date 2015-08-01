@@ -4,10 +4,66 @@
 #include <core/DSType.h>
 #include <ast/TypeToken.h>
 #include <parser/TypeChecker.h>
-#include <misc/types.hpp>
 
 using namespace ydsh::core;
 using namespace ydsh::ast;
+
+// helper method for type token generation
+std::unique_ptr<TypeToken> addRestElements(std::unique_ptr<ReifiedTypeToken> &&reified) {
+    return std::move(reified);
+}
+
+template <typename... T>
+std::unique_ptr<TypeToken> addRestElements(std::unique_ptr<ReifiedTypeToken> &&reified,
+                                           std::unique_ptr<TypeToken>&& type, T&&... rest) {
+    reified->addElementTypeToken(type.release());
+    return addRestElements(std::move(reified), std::forward<T>(rest)...);
+}
+
+
+template <typename... T>
+std::unique_ptr<TypeToken> reified(const char *name, std::unique_ptr<TypeToken> &&first, T&&... rest) {
+    std::unique_ptr<ReifiedTypeToken> reified(
+            new ReifiedTypeToken(new ClassTypeToken(0, std::string(name))));
+    reified->addElementTypeToken(first.release());
+    return addRestElements(std::move(reified), std::forward<T>(rest)...);
+}
+
+
+std::unique_ptr<TypeToken> addParamType(std::unique_ptr<FuncTypeToken> &&func) {
+    return std::move(func);
+}
+
+template <typename... T>
+std::unique_ptr<TypeToken> addParamType(std::unique_ptr<FuncTypeToken> &&func,
+                                        std::unique_ptr<TypeToken>&& type, T&&... rest) {
+    func->addParamTypeToken(type.release());
+    return addParamType(std::move(func), std::forward<T>(rest)...);
+}
+
+template <typename... T>
+std::unique_ptr<TypeToken> func(std::unique_ptr<TypeToken> &&returnType, T&&... paramTypes) {
+    std::unique_ptr<FuncTypeToken> func(new FuncTypeToken(returnType.release()));
+    return addParamType(std::move(func), std::forward<T>(paramTypes)...);
+}
+
+inline std::unique_ptr<TypeToken> type(const char *name, unsigned int lineNum = 0) {
+    return std::unique_ptr<TypeToken>(new ClassTypeToken(lineNum, std::string(name)));
+}
+
+inline std::unique_ptr<TypeToken> array(std::unique_ptr<TypeToken> &&type) {
+    return reified("Array", std::move(type));
+}
+
+inline std::unique_ptr<TypeToken> map(std::unique_ptr<TypeToken> &&keyType, std::unique_ptr<TypeToken> &&valueType) {
+    return reified("Map", std::move(keyType), std::move(valueType));
+}
+
+template <typename... T>
+std::unique_ptr<TypeToken> tuple(std::unique_ptr<TypeToken> &&first, T&&... rest) {
+    return reified("Tuple", std::move(first), std::forward<T>(rest)...);
+}
+
 
 class TypeTest : public ::testing::Test {
 public:
