@@ -173,9 +173,9 @@ void Lexer::nextToken(Token &token) {
       <STMT,EXPR> NUM "u64"    { MODE(EXPR); RET(UINT64_LITERAL); }
       <STMT,EXPR> FLOAT        { MODE(EXPR); RET(FLOAT_LITERAL); }
       <STMT,EXPR> STRING_LITERAL
-                               { MODE(EXPR); RET(STRING_LITERAL); }
+                               { COUNT_NEW_LINE(); MODE(EXPR); RET(STRING_LITERAL); }
       <STMT,EXPR> ESTRING_LITERAL
-                               { MODE(EXPR); RET(STRING_LITERAL); }
+                               { COUNT_NEW_LINE(); MODE(EXPR); RET(STRING_LITERAL); }
       <STMT,EXPR> "p" ['] PATH_CHARS [']
                                { MODE(EXPR); RET(PATH_LITERAL); }
       <STMT,EXPR> ["]          { MODE(EXPR); PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
@@ -225,7 +225,6 @@ void Lexer::nextToken(Token &token) {
       <EXPR> "%="              { MODE(STMT); RET(MOD_ASSIGN); }
 
       <EXPR> "as"              { RET(AS); }
-      <EXPR> "Func"            { RET(FUNC); }
       <EXPR> "in"              { RET(IN); }
       <EXPR> "is"              { RET(IS); }
 
@@ -254,8 +253,8 @@ void Lexer::nextToken(Token &token) {
 
       <CMD> CMD_ARG_START_CHAR CMD_CHAR*
                                { COUNT_NEW_LINE();  RET(CMD_ARG_PART); }
-      <CMD> STRING_LITERAL     { RET(STRING_LITERAL); }
-      <CMD> ESTRING_LITERAL    { RET(STRING_LITERAL); }
+      <CMD> STRING_LITERAL     { COUNT_NEW_LINE(); RET(STRING_LITERAL); }
+      <CMD> ESTRING_LITERAL    { COUNT_NEW_LINE(); RET(STRING_LITERAL); }
       <CMD> ["]                { PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
       <CMD> ")"                { POP_MODE(); POP_MODE(); RET(RP); }
       <CMD> [ \t]+             { FIND_SPACE(); }
