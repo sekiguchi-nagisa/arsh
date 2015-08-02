@@ -441,6 +441,14 @@ const char *DSContext_getPrompt(DSContext *ctx, unsigned int n) {
     return (usePS1 ? ctx->ps1 : ctx->ps2).c_str();
 }
 
+int DSContext_supportDBus() {
+#ifdef USE_DBUS
+    return 1;
+#else
+    return 0;
+#endif
+}
+
 unsigned int DSContext_getMajorVersion() {
     return X_INFO_MAJOR_VERSION;
 }

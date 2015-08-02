@@ -101,6 +101,12 @@ void DSContext_unsetOption(DSContext *ctx, unsigned int optionSet);
  */
 const char *DSContext_getPrompt(DSContext *ctx, unsigned int n);
 
+/**
+ * return 1 if support D-Bus.
+ * otherwise, return 0.
+ */
+int DSContext_supportDBus();
+
 // for version information
 unsigned int DSContext_getMajorVersion();
 unsigned int DSContext_getMinorVersion();
