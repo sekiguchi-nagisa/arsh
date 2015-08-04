@@ -90,15 +90,14 @@ Token Lexer::getLineTokenImpl(const Token &token) const {
     return lineToken;
 }
 
-std::string Lexer::toString(const Token &token, bool isSingleQuote) const {
+std::string Lexer::toString(const Token &token) const {
     assert(this->withinRange(token));
 
     std::string str;
     str.reserve(token.size);
-
-    unsigned int offset = isSingleQuote ? 1 : 0;
-    unsigned int size = token.size - offset;
-    for(unsigned int i = offset; i < size; i++) {
+    
+    unsigned int size = token.size - 1;
+    for(unsigned int i = 1; i < size; i++) {
         char ch = this->buf[token.startPos + i];
         if(ch == '\\') {    // handle escape sequence
             char nextCh = this->buf[token.startPos + ++i];
