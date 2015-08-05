@@ -1184,7 +1184,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
          */
         token.startPos++;
         token.size--;
-        RET_NODE(new ObjectPathNode(n, this->lexer->toString(token)));
+        RET_NODE(new ObjectPathNode(n, this->lexer->singleToString(token)));
     };
     case OPEN_DQUOTE: {
         return this->parse_stringExpression();

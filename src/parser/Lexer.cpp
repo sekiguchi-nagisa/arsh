@@ -90,58 +90,6 @@ Token Lexer::getLineTokenImpl(const Token &token) const {
     return lineToken;
 }
 
-std::string Lexer::toString(const Token &token) const {
-    assert(this->withinRange(token));
-
-    std::string str;
-    str.reserve(token.size);
-    
-    unsigned int size = token.size - 1;
-    for(unsigned int i = 1; i < size; i++) {
-        char ch = this->buf[token.startPos + i];
-        if(ch == '\\') {    // handle escape sequence
-            char nextCh = this->buf[token.startPos + ++i];
-            switch(nextCh) {
-            case 'b' :
-                ch = '\b';
-                break;
-            case 'f' :
-                ch = '\f';
-                break;
-            case 'n' :
-                ch = '\n';
-                break;
-            case 'r' :
-                ch = '\r';
-                break;
-            case 't' :
-                ch = '\t';
-                break;
-            case '\'':
-                ch = '\'';
-                break;
-            case '"' :
-                ch = '"';
-                break;
-            case '\\':
-                ch = '\\';
-                break;
-            case '`' :
-                ch = '`';
-                break;
-            case '$' :
-                ch = '$';
-                break;
-            default:
-                fatal("unexpected escape sequence: %c\n", nextCh);
-                break;
-            }
-        }
-        str += ch;
-    }
-    return str;
-}
-
 std::string Lexer::singleToString(const Token &token) const {
     if(this->startsWith(token, '$')) {
         return this->escapedSingleToString(token);

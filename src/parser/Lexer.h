@@ -129,11 +129,6 @@ public:
     // token to value converting api.
 
     /**
-     * convert token to string (single quote string or double quote string)
-     */
-    std::string toString(const Token &token) const;
-
-    /**
      * convert single quote string literal token to string.
      */
     std::string singleToString(const Token &token) const;
