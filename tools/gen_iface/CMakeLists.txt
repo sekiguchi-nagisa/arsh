@@ -9,5 +9,5 @@ find_library(HAVE_LIBXERCES_C NAMES xerces-c)
 #     gen_iface     #
 #===================#
 
-add_executable(gen_iface main.cpp Introspector.cpp)
-target_link_libraries(gen_iface ${YDSH_STATIC} ${HAVE_LIBXERCES_C})
+add_executable(gen_iface main.cpp)
+target_link_libraries(gen_iface ${HAVE_LIBXERCES_C})

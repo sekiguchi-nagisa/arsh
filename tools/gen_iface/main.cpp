@@ -20,6 +20,7 @@
 #include <fstream>
 #include <list>
 #include <memory>
+#include <unordered_set>
 
 #include <xercesc/sax2/SAX2XMLReader.hpp>
 #include <xercesc/sax2/XMLReaderFactory.hpp>
@@ -29,15 +30,10 @@
 
 #include <misc/argv.hpp>
 #include <misc/debug.h>
-#include <core/TypePool.h>
-#include <dbus/DBusUtil.h>
-#include "Introspector.h"
 
 using namespace xercesc;
 
 namespace {
-
-using namespace ydsh::core;
 
 class Config {
 private:
@@ -315,7 +311,6 @@ class IntrospectionDataHandler : public DefaultHandler {
 private:
     const Config &config;
     std::list<std::string> &pathList;
-    TypePool pool;
 
     unsigned int nodeCount;
     FILE *fp;
@@ -325,7 +320,7 @@ private:
 
 public:
     IntrospectionDataHandler(const Config &config, std::list<std::string> &pathList) :
-            DefaultHandler(), config(config), pathList(pathList), pool(), nodeCount(0), fp(nullptr),
+            DefaultHandler(), config(config), pathList(pathList), nodeCount(0), fp(nullptr),
             mBuilder(), sBuilder(), foundIfaceSet() {
         if(!this->config.isAllowStd()) {
             this->generatedPreviously("org.freedesktop.DBus.Peer");
@@ -350,13 +345,92 @@ private:
     bool generatedPreviously(const std::string &ifaceName) {
         return !this->foundIfaceSet.insert(ifaceName).second;
     }
-
-    const std::string &decode(const std::string &desc) {
-        DSType *type = decodeTypeDescriptor(&this->pool, desc.c_str());
-        check(type != nullptr);
-        return this->pool.getTypeName(*type);
-    }
 };
+
+static void decodeImpl(const std::string &desc, unsigned int &index, std::string &out) {
+    assert(index < desc.size());
+
+    char ch = desc[index++];
+    switch(ch) {
+    case 'y':
+        out += "Byte";
+        break;
+    case 'b':
+        out += "Boolean";
+        break;
+    case 'n':
+        out += "Int16";
+        break;
+    case 'q':
+        out += "Uint16";
+        break;
+    case 'i':
+        out += "Int32";
+        break;
+    case 'u':
+        out += "Uint32";
+        break;
+    case 'x':
+        out += "Int64";
+        break;
+    case 't':
+        out += "Uint64";
+        break;
+    case 'd':
+        out += "Float";
+        break;
+    case 's':
+        out += "String";
+        break;
+    case 'o':
+        out += "ObjectPath";
+        break;
+    case 'a': {
+        if(index < desc.size() && desc[index] == '{') { // as Map
+            out += "Map<";
+            index++; // comsume '{'
+            decodeImpl(desc, index, out);
+            out += ",";
+            decodeImpl(desc, index, out);
+            index++;    // consume '}'
+            out += ">";
+        } else {    // as array
+            out += "Array<";
+            decodeImpl(desc, index, out);
+            out += ">";
+        }
+        break;
+    }
+    case '(': {
+        out += "Tuple<";
+        unsigned int count = 0;
+        do {
+            if(count++ > 0) {
+                out += ",";
+            }
+            decodeImpl(desc, index, out);
+        } while(desc[index] != ')');
+        out += ">";
+        break;
+    }
+    case 'v':
+        out += "Variant";
+        break;
+    case 'h':
+        // currently not supported
+    default:
+        fatal("unsupported type signature: %c, %s\n", ch, desc.c_str());
+        break;
+    }
+}
+
+static std::string decode(const std::string &desc) {
+    std::string str;
+    unsigned int index = 0;
+    decodeImpl(desc, index, str);
+    assert(index == desc.size());
+    return str;
+}
 
 // ######################################
 // ##     IntrospectionDataHandler     ##
@@ -424,11 +498,11 @@ void IntrospectionDataHandler::startElement(const XMLCh * const uri, const XMLCh
         fputs(name.c_str(), this->fp);
         fputs(" : ", this->fp);
 
-        fputs(this->decode(type).c_str(), this->fp);
+        fputs(decode(type).c_str(), this->fp);
         fputs("\n", this->fp);
     } else if(elementName == "arg") {
         std::string t(getAttr(attrs, "type"));
-        const std::string &type = this->decode(t);
+        std::string type = decode(t);
 
         if(!this->mBuilder.empty()) {
             std::string direction(getAttr(attrs, "direction"));
@@ -469,11 +543,33 @@ void IntrospectionDataHandler::endElement(const XMLCh * const uri, const XMLCh *
 
 
 static std::string introspect(const Config &config) {
-    Introspector introspector;
-    if(!introspector) {
-        fatal("D-Bus introspection is not supported\n");
+    std::string cmd("dbus-send --print-reply=literal");
+    cmd += (config.isSystemBus() ? " --system" : " --session");
+    cmd += " --dest=";
+    cmd += config.getDest();
+    cmd += " ";
+    cmd += config.getCurrentPath();
+    cmd += " org.freedesktop.DBus.Introspectable.Introspect";
+
+    FILE *fp = popen(cmd.c_str(), "r");
+    if(fp == nullptr) {
+        perror("dbus-send execution failed\n");
+        exit(1);
     }
-    return introspector(config.isSystemBus(), config.getDest(), config.getCurrentPath());
+
+    std::string msg;
+
+    const unsigned int size = 256;
+    char buf[size + 1];
+    int readSize;
+    while((readSize = fread(buf, sizeof(char), size, fp)) > 0) {
+        buf[readSize] = '\0';
+        msg += buf;
+    }
+
+    pclose(fp);
+
+    return msg;
 }
 
 static void parse(std::unique_ptr<SAX2XMLReader> &parser, const std::string &xmlStr) {

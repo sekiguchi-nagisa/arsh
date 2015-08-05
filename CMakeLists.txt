@@ -191,9 +191,7 @@ target_link_libraries(${YDSH_STATIC} ${HAVE_LIBDBUS})
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/directive)
 
 if(USE_IFACE_GEN)
-    if(USE_DBUS)
-        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_iface)
-    endif()
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_iface)
 endif()
 
 
