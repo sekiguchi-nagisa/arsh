@@ -16,22 +16,16 @@
 
 #include <sys/stat.h>
 
+#include <libxml/SAX2.h>
+
 #include <iostream>
 #include <fstream>
 #include <list>
-#include <memory>
 #include <unordered_set>
-
-#include <xercesc/sax2/SAX2XMLReader.hpp>
-#include <xercesc/sax2/XMLReaderFactory.hpp>
-#include <xercesc/framework/MemBufInputSource.hpp>
-#include <xercesc/sax2/DefaultHandler.hpp>
-#include <xercesc/sax2/Attributes.hpp>
+#include <cassert>
 
 #include <misc/argv.hpp>
 #include <misc/debug.h>
-
-using namespace xercesc;
 
 namespace {
 
@@ -175,18 +169,11 @@ public:
 #define STR(x) "`" #x "'"
 #define check(expr) do { if(!(expr)) { fatal("assertion fail => %s\n", STR(expr)); } } while(0)
 
-static std::string str(const XMLCh *const str) {
-    char *ptr = XMLString::transcode(str);
-    std::string value(ptr);
-    XMLString::release(&ptr);
-    return value;
-}
-
-static std::string getAttr(const Attributes &attrs, const char *attrName) {
-    XMLCh *xch = XMLString::transcode(attrName);
-    std::string attr(str(attrs.getValue(xch)));
-    XMLString::release(&xch);
-    return attr;
+/**
+ * xmlChar is actually unsigned char(UTF8)
+ */
+static std::string str(const xmlChar *str) {
+    return std::string((char *)str);
 }
 
 static bool existFile(const std::string &fileName) {
@@ -307,8 +294,7 @@ public:
 };
 
 
-class IntrospectionDataHandler : public DefaultHandler {
-private:
+struct SAXHandlerContext {
     const Config &config;
     std::list<std::string> &pathList;
 
@@ -318,9 +304,8 @@ private:
     SignalBuilder sBuilder;
     std::unordered_set<std::string> foundIfaceSet;
 
-public:
-    IntrospectionDataHandler(const Config &config, std::list<std::string> &pathList) :
-            DefaultHandler(), config(config), pathList(pathList), nodeCount(0), fp(nullptr),
+    SAXHandlerContext(const Config &config, std::list<std::string> &pathList) :
+            config(config), pathList(pathList), nodeCount(0), fp(nullptr),
             mBuilder(), sBuilder(), foundIfaceSet() {
         if(!this->config.isAllowStd()) {
             this->generatedPreviously("org.freedesktop.DBus.Peer");
@@ -330,18 +315,12 @@ public:
         }
     }
 
-    ~IntrospectionDataHandler() = default;
+    ~SAXHandlerContext() = default;
 
     const Config &getConfig() const {
         return this->config;
     }
 
-    void startElement(const XMLCh * const uri, const XMLCh * const localname,
-                      const XMLCh * const qname, const Attributes &attrs);
-    void endElement(const XMLCh * const uri, const XMLCh * const localname,
-                      const XMLCh * const qname);
-
-private:
     bool generatedPreviously(const std::string &ifaceName) {
         return !this->foundIfaceSet.insert(ifaceName).second;
     }
@@ -432,115 +411,148 @@ static std::string decode(const std::string &desc) {
     return str;
 }
 
-// ######################################
-// ##     IntrospectionDataHandler     ##
-// ######################################
+class AttributeMap {
+private:
+    ydsh::misc::CStringHashMap<std::string> map;
 
-void IntrospectionDataHandler::startElement(const XMLCh * const uri, const XMLCh * const localname,
-                  const XMLCh * const qname, const Attributes &attrs) {
+public:
+    AttributeMap(int nb_attributes, const xmlChar **attributes) : map() {
+        for(int i = 0; i < nb_attributes; i++) {
+            int index = i * 5;
+            const char *name = (const char *)attributes[index];
+            std::string value(attributes[index + 3], attributes[index + 4]);
+            if(!this->map.insert(std::make_pair(name, std::move(value))).second) {
+                fatal("duplicated attribute: %s\n", name);
+            }
+        }
+    }
+
+    ~AttributeMap() = default;
+
+    const std::string &getAttr(const char *name) {
+        auto iter = this->map.find(name);
+        if(iter == this->map.end()) {
+            fatal("not found attribute: %s\n", name);
+        }
+        return iter->second;
+    }
+};
+
+
+
+/**
+ * ctx is actually
+ */
+static void handler_startElementNs(void *ctx, const xmlChar *localname,
+                                   const xmlChar *prefix, const xmlChar *URI,
+                                   int nb_namespaces, const xmlChar **namespaces,
+                                   int nb_attributes, int nb_defaulted, const xmlChar **attributes) {
+    SAXHandlerContext *hctx = (SAXHandlerContext *) ctx;
+
     std::string elementName(str(localname));
-    if(elementName == "node" && this->nodeCount++ != 0) {
-        if(this->config.isRecursive()) {
-            check(attrs.getLength() == 1);
-            std::string nodeName(config.getCurrentPath());
+    AttributeMap attrMap(nb_attributes, attributes);
+
+    if(elementName == "node" && hctx->nodeCount++ != 0) {
+        if(hctx->config.isRecursive()) {
+            check(nb_attributes == 1);
+            std::string nodeName(hctx->config.getCurrentPath());
             nodeName += "/";
-            nodeName += getAttr(attrs, "name");
-            this->pathList.push_back(std::move(nodeName));
+            nodeName += attrMap.getAttr("name");
+            hctx->pathList.push_back(std::move(nodeName));
         }
     } else if(elementName == "interface") {
-        check(attrs.getLength() == 1);
-        std::string ifaceName(getAttr(attrs, "name"));
+        check(nb_attributes == 1);
+        const std::string &ifaceName(attrMap.getAttr("name"));
 
-        if(this->generatedPreviously(ifaceName)) {
-            this->fp = fopen("/dev/null", "w");
-            if(this->fp == nullptr) {
+        if(hctx->generatedPreviously(ifaceName)) {
+            hctx->fp = fopen("/dev/null", "w");
+            if(hctx->fp == nullptr) {
                 std::cerr << "cannot open file: /dev/null" << strerror(errno) << std::endl;
                 exit(1);
             }
-        } else if(this->config.getOutputDir().empty()) {
-            this->fp = stdout;
+        } else if(hctx->config.getOutputDir().empty()) {
+            hctx->fp = stdout;
         } else {
-            std::string fileName(this->config.getOutputDir());
+            std::string fileName(hctx->config.getOutputDir());
             fileName += '/';
             fileName += ifaceName;
 
             // open target file
             const char *fileNameStr = fileName.c_str();
-            if(!this->config.isOverwrite() && existFile(fileName)) {    // check file existence
+            if(!hctx->config.isOverwrite() && existFile(fileName)) {    // check file existence
                 fileNameStr = "/dev/null";
             }
-            this->fp = fopen(fileNameStr, "w");
-            if(this->fp == nullptr) {
+            hctx->fp = fopen(fileNameStr, "w");
+            if(hctx->fp == nullptr) {
                 std::cerr << "cannot open file: " << fileNameStr << strerror(errno) << std::endl;
                 exit(1);
             }
         }
         // write
-        fprintf(this->fp, "interface %s {\n", ifaceName.c_str());
+        fprintf(hctx->fp, "interface %s {\n", ifaceName.c_str());
     } else if(elementName == "method") {
-        check(attrs.getLength() == 1);
-        std::string methodName(getAttr(attrs, "name"));
-        this->mBuilder.setMethodName(std::move(methodName));
+        check(nb_attributes == 1);
+        hctx->mBuilder.setMethodName(std::string(attrMap.getAttr("name")));
     } else if(elementName == "signal") {
-        check(attrs.getLength() == 1);
-        std::string signalName(getAttr(attrs, "name"));
-        this->sBuilder.setSignalName(std::move(signalName));
+        check(nb_attributes == 1);
+        hctx->sBuilder.setSignalName(std::string(attrMap.getAttr("name")));
     } else if(elementName == "property") {
-        std::string name(getAttr(attrs, "name"));
-        std::string type(getAttr(attrs, "type"));
-        std::string access(getAttr(attrs, "access"));
-
-        if(access.find("write") != std::string::npos) {
-            fprintf(this->fp, "    var ");
+        if(attrMap.getAttr("access").find("write") != std::string::npos) {
+            fprintf(hctx->fp, "    var ");
         } else {
-            fprintf(this->fp, "    let ");
+            fprintf(hctx->fp, "    let ");
         }
-        fputs(name.c_str(), this->fp);
-        fputs(" : ", this->fp);
+        fputs(attrMap.getAttr("name").c_str(), hctx->fp);
+        fputs(" : ", hctx->fp);
 
-        fputs(decode(type).c_str(), this->fp);
-        fputs("\n", this->fp);
+        fputs(decode(attrMap.getAttr("type")).c_str(), hctx->fp);
+        fputs("\n", hctx->fp);
     } else if(elementName == "arg") {
-        std::string t(getAttr(attrs, "type"));
-        std::string type = decode(t);
-
-        if(!this->mBuilder.empty()) {
-            std::string direction(getAttr(attrs, "direction"));
-            if(direction == "in") {
+        std::string type = decode(attrMap.getAttr("type"));
+        if(!hctx->mBuilder.empty()) {
+            if(attrMap.getAttr("direction") == "in") {
                 std::string argName("$");
-                argName += getAttr(attrs, "name");
-                this->mBuilder.appendArg(std::move(argName), type);
+                argName += attrMap.getAttr("name");
+                hctx->mBuilder.appendArg(std::move(argName), type);
             } else {
-                this->mBuilder.appendReturnType(type);
+                hctx->mBuilder.appendReturnType(type);
             }
-        } else if(!this->sBuilder.empty()) {
-            this->sBuilder.appendArgType(type);
+        } else if(!hctx->sBuilder.empty()) {
+            hctx->sBuilder.appendArgType(type);
         } else {
             fatal("broken arg\n");
         }
     }
 }
 
-void IntrospectionDataHandler::endElement(const XMLCh * const uri, const XMLCh * const localname,
-                const XMLCh * const qname) {
+/**
+ * ctx is actually
+ */
+static void handler_endElementNs(void *ctx, const xmlChar* localname, const xmlChar* prefix, const xmlChar* URI) {
+    SAXHandlerContext *hctx = (SAXHandlerContext *) ctx;
+
     std::string elementName(str(localname));
     if(elementName == "node") {
-        this->nodeCount--;
+        hctx->nodeCount--;
     } else if(elementName == "interface") {
-        fprintf(this->fp, "}\n\n");
-        fflush(this->fp);
-        if(!this->config.getOutputDir().empty()) {
-            fclose(this->fp);
+        fprintf(hctx->fp, "}\n\n");
+        fflush(hctx->fp);
+        if(!hctx->config.getOutputDir().empty()) {
+            fclose(hctx->fp);
         }
     } else if(elementName == "method") {
-        this->mBuilder.write(this->fp);
-        this->mBuilder.clear();
+        hctx->mBuilder.write(hctx->fp);
+        hctx->mBuilder.clear();
     } else if(elementName == "signal") {
-        this->sBuilder.write(this->fp);
-        this->sBuilder.clear();
+        hctx->sBuilder.write(hctx->fp);
+        hctx->sBuilder.clear();
     }
 }
 
+
+static void handler_characters(void *ctx, const xmlChar *ch, int len) {
+    // do nothing
+}
 
 static std::string introspect(const Config &config) {
     std::string cmd("dbus-send --print-reply=literal");
@@ -572,24 +584,31 @@ static std::string introspect(const Config &config) {
     return msg;
 }
 
-static void parse(std::unique_ptr<SAX2XMLReader> &parser, const std::string &xmlStr) {
-    try {
-        MemBufInputSource input((const XMLByte*) xmlStr.c_str(), xmlStr.size(), "source");
-        parser->parse(input);
-    } catch(const XMLException &e) {
-        char *msg = XMLString::transcode(e.getMessage());
-        std::cerr << msg << std::endl;
-        XMLString::release(&msg);
+static void parse(SAXHandlerContext &handlerCtx, xmlSAXHandler &saxHander, const std::string &xmlStr) {
+    xmlParserCtxtPtr ctxt =
+            xmlCreatePushParserCtxt(&saxHander, &handlerCtx, nullptr, 0, "source");
+    int s = xmlParseChunk(ctxt, xmlStr.c_str(), xmlStr.size(), 1);
+    if(s != 0) {
+        xmlParserError(ctxt, "xml parse error");
         exit(1);
     }
+
+    xmlFreeParserCtxt(ctxt);
+    xmlCleanupParser();
 }
 
 static void generateIface(Config &config) {
     std::list<std::string> pathList;
-    IntrospectionDataHandler handler(config, pathList);
+    SAXHandlerContext handlerCtx(config, pathList);
 
-    std::unique_ptr<SAX2XMLReader> parser(XMLReaderFactory::createXMLReader());
-    parser->setContentHandler(&handler);
+    // init sax handler
+    xmlSAXHandler saxHander;
+    memset(&saxHander, 0, sizeof(xmlSAXHandler));
+
+    saxHander.initialized = XML_SAX2_MAGIC;
+    saxHander.startElementNs = handler_startElementNs;
+    saxHander.endElementNs = handler_endElementNs;
+    saxHander.characters = handler_characters;
 
     // for specifed xml file
     if(!config.getXmlFileName().empty()) {
@@ -610,7 +629,7 @@ static void generateIface(Config &config) {
             fprintf(stderr, "broken xml\n");
             exit(1);
         }
-        parse(parser, xmlStr);
+        parse(handlerCtx, saxHander, xmlStr);
         return;
     }
 
@@ -629,7 +648,7 @@ static void generateIface(Config &config) {
             fprintf(stderr, "broken xml\n");
             exit(1);
         }
-        parse(parser, xmlStr);
+        parse(handlerCtx, saxHander, xmlStr);
     }
 }
 
@@ -727,19 +746,7 @@ int main(int argc, char **argv) {
         config.addPath(argv[i]);
     }
 
-    // init xerces
-    try {
-        XMLPlatformUtils::Initialize();
-    } catch(const XMLException &e) {
-        char *msg = XMLString::transcode(e.getMessage());
-        std::cerr << msg << std::endl;
-        XMLString::release(&msg);
-        exit(1);
-    }
-
     generateIface(config);
-
-    XMLPlatformUtils::Terminate();
 
     return 0;
 }
