@@ -27,7 +27,7 @@
 #define DEBUG_ON 0
 #endif
 
-#define __FILE_NAME__ (strrchr(__FILE__, '/') != nullptr ? strrchr(__FILE__, '/') + 1 : __FILE__)
+#define __FILE_NAME__ (strrchr(__FILE__, '/') != nullptr ? ((const char *)strrchr(__FILE__, '/') + 1) : __FILE__)
 
 #define debugp(fmt, ...) \
     do {\
