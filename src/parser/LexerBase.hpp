@@ -24,7 +24,7 @@
 #include <ostream>
 #include <type_traits>
 
-#include "utf8.hpp"
+#include "../misc/utf8.hpp"
 
 namespace ydsh {
 namespace parser_base {
@@ -238,7 +238,7 @@ std::string LexerBase<T>::formatLineMarker(const TokenBase &lineToken, const Tok
     const unsigned int stopPos = token.size + token.startPos;
     for(unsigned int i = token.startPos; i < stopPos;) {
         unsigned int prev = i;
-        i = parser::UTF8Util::getNextPos(i, this->buf[i]);
+        i = misc::UTF8Util::getNextPos(i, this->buf[i]);
         if(i - prev == 1) { // ascii
             marker += (prev == token.startPos ? "^" : "~");
         } else {

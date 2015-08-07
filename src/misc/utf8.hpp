@@ -18,7 +18,7 @@
 #define YDSH_UTF8_HPP
 
 namespace ydsh {
-namespace parser {
+namespace misc {
 
 namespace __detail_utf8 {
 
@@ -56,7 +56,7 @@ const unsigned char UTF8Util<T>::utf8SkipData[] = {
 typedef __detail_utf8::UTF8Util<true> UTF8Util;
 
 
-} // namespace parser
+} // namespace misc
 } // namespace ydsh
 
 #endif //YDSH_UTF8_HPP
