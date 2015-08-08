@@ -157,7 +157,7 @@ void Lexer::nextToken(Token &token) {
       <STMT,EXPR> "return"     { MODE(EXPR); RET(RETURN); }
       <STMT,EXPR> "try"        { RET(TRY); }
       <STMT,EXPR> "throw"      { MODE(EXPR); RET(THROW); }
-      <STMT,EXPR> "type-alias" { MODE(EXPR); RET(TYPE_ALIAS);}
+      <STMT,EXPR> "type-alias" { MODE(NAME); RET(TYPE_ALIAS);}
       <STMT,EXPR> "var"        { MODE(NAME); RET(VAR); }
       <STMT,EXPR> "while"      { RET(WHILE); }
 

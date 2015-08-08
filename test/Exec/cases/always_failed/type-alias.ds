@@ -1,0 +1,9 @@
+#$test($result = 'type', $status = 1, $errorKind = 'DefinedType', $lineNum = 8)
+
+type-alias catch Int
+
+assert(12 is catch) # allow any identifier
+
+
+type-alias Func Int
+assert(12 is Func)
