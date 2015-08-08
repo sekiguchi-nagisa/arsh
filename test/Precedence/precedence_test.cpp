@@ -213,7 +213,7 @@ public:
         ASSERT_TRUE(input != nullptr);
 
         // parse
-        Lexer lexer(input, true);
+        Lexer lexer(input);
         RootNode rootNode;
         Parser parser;
         try {

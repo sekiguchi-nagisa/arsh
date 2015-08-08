@@ -42,8 +42,8 @@ void Lexer::nextToken(Token & token) {
 
       IDENTIFIER = [_a-zA-Z][_a-zA-Z0-9]*;
       NUM = "0" | [1-9] [0-9]*;
-      SQUOTE_CHAR = [^\r\n'\\] | '\\' [btnfr'\\];
-      DQUOTE_CHAR = [^\r\n"\\] | '\\' [btnfr"\\];
+      SQUOTE_CHAR = [^\r\n'\\\000] | '\\' [btnfr'\\];
+      DQUOTE_CHAR = [^\r\n"\\\000] | '\\' [btnfr"\\];
 
       OTHER = .;
     */
@@ -69,7 +69,7 @@ void Lexer::nextToken(Token & token) {
       "False"              { RET(FALSE_LITERAL); }
       "false"              { RET(FALSE_LITERAL); }
 
-      [ \t]+               { SKIP(); }
+      [ \t\r\n]+           { SKIP(); }
       "\000"               { REACH_EOS(); }
 
       OTHER                { RET(INVALID); }

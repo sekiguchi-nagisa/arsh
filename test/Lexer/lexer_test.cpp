@@ -879,14 +879,15 @@ TEST_F(LexerTest_Lv1, RBC) {
  * command token
  */
 TEST_F(LexerTest_Lv1, CMD1) {
-#define TEXT "\assert"
+#define TEXT "\\assert"
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 2);
-        this->assertToken(0, COMMAND, TEXT);
-        this->assertKind(EOS, this->getTokens()[1].first);
+        ASSERT_EQ(this->getTokens().size(), 3);
+        this->assertToken(0, COMMAND, "\\assert");
+        this->assertToken(1, LINE_END, "\n");
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -897,9 +898,10 @@ TEST_F(LexerTest_Lv1, CMD2) {
         SCOPED_TRACE("");
         this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 2);
+        ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, COMMAND, TEXT);
-        this->assertKind(EOS, this->getTokens()[1].first);
+        this->assertToken(1, LINE_END, "\n");
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -910,9 +912,10 @@ TEST_F(LexerTest_Lv1, CMD3) {
         SCOPED_TRACE("");
         this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 2);
+        ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, COMMAND, TEXT);
-        this->assertKind(EOS, this->getTokens()[1].first);
+        this->assertToken(1, LINE_END, "\n");
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -926,9 +929,10 @@ TEST_F(LexerTest_Lv1, COLON) {
         SCOPED_TRACE("");
         this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 2);
+        ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, COMMAND, TEXT);
-        this->assertKind(EOS, this->getTokens()[1].first);
+        this->assertToken(1, LINE_END, "\n");
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -939,9 +943,10 @@ TEST_F(LexerTest_Lv1, COMMA) {
         SCOPED_TRACE("");
         this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 2);
+        ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, COMMAND, TEXT);
-        this->assertKind(EOS, this->getTokens()[1].first);
+        this->assertToken(1, LINE_END, "\n");
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -952,9 +957,10 @@ TEST_F(LexerTest_Lv1, MUL) {
         SCOPED_TRACE("");
         this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 2);
+        ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, COMMAND, TEXT);
-        this->assertKind(EOS, this->getTokens()[1].first);
+        this->assertToken(1, LINE_END, "\n");
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -965,9 +971,10 @@ TEST_F(LexerTest_Lv1, DIV) {
         SCOPED_TRACE("");
         this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 2);
+        ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, COMMAND, TEXT);
-        this->assertKind(EOS, this->getTokens()[1].first);
+        this->assertToken(1, LINE_END, "\n");
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -978,9 +985,10 @@ TEST_F(LexerTest_Lv1, MOD) {
         SCOPED_TRACE("");
         this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 2);
+        ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, COMMAND, TEXT);
-        this->assertKind(EOS, this->getTokens()[1].first);
+        this->assertToken(1, LINE_END, "\n");
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -1039,9 +1047,10 @@ TEST_F(LexerTest_Lv1, EQ) {
         SCOPED_TRACE("");
         this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 2);
+        ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, COMMAND, TEXT);
-        this->assertKind(EOS, this->getTokens()[1].first);
+        this->assertToken(1, LINE_END, "\n");
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -1088,9 +1097,10 @@ TEST_F(LexerTest_Lv1, XOR) {
         SCOPED_TRACE("");
         this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 2);
+        ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, COMMAND, TEXT);
-        this->assertKind(EOS, this->getTokens()[1].first);
+        this->assertToken(1, LINE_END, "\n");
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -1125,9 +1135,10 @@ TEST_F(LexerTest_Lv1, RE_MATCH) {
         SCOPED_TRACE("");
         this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 2);
+        ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, COMMAND, TEXT);
-        this->assertKind(EOS, this->getTokens()[1].first);
+        this->assertToken(1, LINE_END, "\n");
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -1178,9 +1189,10 @@ TEST_F(LexerTest_Lv1, ASSIGN) {
         SCOPED_TRACE("");
         this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 2);
+        ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, COMMAND, TEXT);
-        this->assertKind(EOS, this->getTokens()[1].first);
+        this->assertToken(1, LINE_END, "\n");
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -1219,9 +1231,10 @@ TEST_F(LexerTest_Lv1, MUL_ASSIGN) {
         SCOPED_TRACE("");
         this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 2);
+        ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, COMMAND, TEXT);
-        this->assertKind(EOS, this->getTokens()[1].first);
+        this->assertToken(1, LINE_END, "\n");
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -1232,9 +1245,10 @@ TEST_F(LexerTest_Lv1, DIV_ASSIGN) {
         SCOPED_TRACE("");
         this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 2);
+        ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, COMMAND, TEXT);
-        this->assertKind(EOS, this->getTokens()[1].first);
+        this->assertToken(1, LINE_END, "\n");
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -1245,9 +1259,10 @@ TEST_F(LexerTest_Lv1, MOD_ASSIGN) {
         SCOPED_TRACE("");
         this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 2);
+        ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, COMMAND, TEXT);
-        this->assertKind(EOS, this->getTokens()[1].first);
+        this->assertToken(1, LINE_END, "\n");
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -1258,9 +1273,10 @@ TEST_F(LexerTest_Lv1, AS) {
         SCOPED_TRACE("");
         this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 2);
+        ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, COMMAND, TEXT);
-        this->assertKind(EOS, this->getTokens()[1].first);
+        this->assertToken(1, LINE_END, "\n");
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -1271,9 +1287,10 @@ TEST_F(LexerTest_Lv1, FUNC) {
         SCOPED_TRACE("");
         this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 2);
+        ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, COMMAND, TEXT);
-        this->assertKind(EOS, this->getTokens()[1].first);
+        this->assertToken(1, LINE_END, "\n");
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -1284,9 +1301,10 @@ TEST_F(LexerTest_Lv1, IN) {
         SCOPED_TRACE("");
         this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 2);
+        ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, COMMAND, TEXT);
-        this->assertKind(EOS, this->getTokens()[1].first);
+        this->assertToken(1, LINE_END, "\n");
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -1297,9 +1315,10 @@ TEST_F(LexerTest_Lv1, IS) {
         SCOPED_TRACE("");
         this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 2);
+        ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, COMMAND, TEXT);
-        this->assertKind(EOS, this->getTokens()[1].first);
+        this->assertToken(1, LINE_END, "\n");
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -1310,9 +1329,10 @@ TEST_F(LexerTest_Lv1, ACCESS) {
         SCOPED_TRACE("");
         this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 2);
+        ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, COMMAND, TEXT);
-        this->assertKind(EOS, this->getTokens()[1].first);
+        this->assertToken(1, LINE_END, "\n");
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }
@@ -1390,9 +1410,10 @@ TEST_F(LexerTest_Lv1, SPACE4) {
         SCOPED_TRACE("");
         this->initLexer(TEXT);
         this->tokenize();
-        ASSERT_EQ(this->getTokens().size(), 2);
+        ASSERT_EQ(this->getTokens().size(), 3);
         this->assertToken(0, COMMAND, "echo");
-        this->assertKind(EOS, this->getTokens()[1].first);
+        this->assertToken(1, LINE_END, "\n");
+        this->assertKind(EOS, this->getTokens()[2].first);
     });
 #undef TEXT
 }

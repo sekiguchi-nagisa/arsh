@@ -286,7 +286,7 @@ void DSContext::initBuiltinIface() {
             "}\n"
             "type-alias ObjectManager org.freedesktop.DBus.ObjectManager\n";
 
-    Lexer lexer(builtinIface, true);
+    Lexer lexer(builtinIface);
     unsigned int s = this->eval(0, lexer);
     if(s != DS_STATUS_SUCCESS) {
         fatal("broken builtin iface\n");
@@ -349,7 +349,7 @@ static int createStatus(unsigned int type, DSContext *ctx, DSStatus **status) {
 }
 
 int DSContext_eval(DSContext *ctx, const char *source, DSStatus **status) {
-    Lexer lexer(source, true);    // zero copy buf.
+    Lexer lexer(source);
     unsigned int s = ctx->eval(0, lexer);
     return createStatus(s, ctx, status);
 }

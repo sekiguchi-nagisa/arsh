@@ -58,7 +58,7 @@ private:
     unsigned int lineNum;
 
 public:
-    explicit Lexer(const char *src) : LexerBase(src, true) { }
+    explicit Lexer(const char *src) : LexerBase(src) { }
     ~Lexer() = default;
 
     void nextToken(Token &token);

@@ -114,20 +114,27 @@ protected:
     bool zeroCopyBuf;
 
     static constexpr unsigned int DEFAULT_SIZE = 256;
+    static constexpr unsigned int DEFAULT_READ_SIZE = 128;
 
 private:
     LexerBase() :
             fp(0), bufSize(0), buf(0), cursor(0),
             limit(0), marker(0), ctxMarker(0),
-            endOfFile(false), endOfString(false), zeroCopyBuf(false) { }
+            endOfFile(false), endOfString(false), zeroCopyBuf(true) { }
 
 public:
     /**
      * FILE must be opened with binary mode.
+     * insert newline if not terminated by it.
      */
     explicit LexerBase(FILE *fp);
 
-    explicit LexerBase(const char *src, bool zeroCopy = false);
+    /**
+     * must be null terminated.
+     * if the last character of string(exclude null character) is newline, not copy it.
+     * otherwise, copy it.
+     */
+    explicit LexerBase(const char *src);
 
     /**
      * not allow copy constructor
@@ -205,21 +212,25 @@ LexerBase<T>::LexerBase(FILE *fp) : LexerBase<T>() {
     this->fp = fp;
     this->bufSize = DEFAULT_SIZE;
     this->buf = new unsigned char[this->bufSize];
-    this->buf[0] = '\0';    // terminate null character.
 
     this->cursor = this->buf;
     this->limit = this->buf;
 }
 
 template<bool T>
-LexerBase<T>::LexerBase(const char *src, bool zeroCopy) : LexerBase<T>() {
+LexerBase<T>::LexerBase(const char *src) : LexerBase<T>() {
     this->bufSize = strlen(src) + 1;
-    this->zeroCopyBuf = zeroCopy;
+    this->zeroCopyBuf = src[this->bufSize - 2] == '\n';
+
     if(this->zeroCopyBuf) {
         this->buf = (unsigned char *) src;
-    } else {
+    } else {    // copy src and insert newline
+        unsigned int srcSize = this->bufSize - 1;
+        this->bufSize++;
         this->buf = new unsigned char[this->bufSize];
-        memcpy(this->buf, src, this->bufSize);
+        memcpy(this->buf, src, sizeof(unsigned char) * srcSize);
+        this->buf[this->bufSize - 2] = '\n';
+        this->buf[this->bufSize - 1] = '\0';
     }
 
     this->cursor = this->buf;
@@ -255,13 +266,13 @@ void LexerBase<T>::expandBuf(unsigned int needSize) {
     if(size > this->bufSize) {
         unsigned int newSize = this->bufSize;
         do {
-            newSize *= 2;
+            newSize += (newSize * 2);
         } while(newSize < size);
         unsigned int pos = this->getPos();
         unsigned int markerPos = this->marker - this->buf;
         unsigned int ctxMarkerPos = this->ctxMarker - this->buf;
         unsigned char *newBuf = new unsigned char[newSize];
-        memcpy(newBuf, this->buf, usedSize);
+        memcpy(newBuf, this->buf, sizeof(unsigned char) * usedSize);
         delete[] this->buf;
         this->buf = newBuf;
         this->bufSize = newSize;
@@ -281,12 +292,19 @@ bool LexerBase<T>::fill(int n) {
     if(!this->endOfFile) {
         int needSize = n - (this->limit - this->cursor);
         assert(needSize > -1);
+        needSize = (needSize > DEFAULT_READ_SIZE) ? needSize : DEFAULT_READ_SIZE;
         this->expandBuf(needSize);
         int readSize = fread(this->limit, sizeof(unsigned char), needSize, this->fp);
         this->limit += readSize;
         *this->limit = '\0';
         if(readSize < needSize) {
             this->endOfFile = true;
+            if(*(this->limit - 1) != '\n') {    // terminated newline
+                this->expandBuf(1);
+                *this->limit = '\n';
+                this->limit += 1;
+                *this->limit = '\0';
+            }
         }
     }
     return true;

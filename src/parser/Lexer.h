@@ -65,8 +65,8 @@ private:
     static const char *lexerModeNames[];
 
 public:
-    explicit Lexer(const char *source, bool zeroCopy = false) :
-            LexerBase(source, zeroCopy), lineNum(1), modeStack(1, yycSTMT), prevNewLine(false), prevSpace(false) {}
+    explicit Lexer(const char *source) :
+            LexerBase(source), lineNum(1), modeStack(1, yycSTMT), prevNewLine(false), prevSpace(false) {}
 
     /**
      * FILE must be opened with binary mode.

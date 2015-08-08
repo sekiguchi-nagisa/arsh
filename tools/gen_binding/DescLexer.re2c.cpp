@@ -70,7 +70,7 @@ void DescLexer::nextToken(Token &token) {
       "&"                    { RET(AND); }
       "?"                    { RET(OPT); }
 
-      [ \t]+                 { SKIP(); }
+      [ \t\r\n]+             { SKIP(); }
       "\000"                 { REACH_EOS(); }
 
       OTHER                  { RET(INVALID); }
