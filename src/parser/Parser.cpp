@@ -394,7 +394,13 @@ std::unique_ptr<TypeToken> Parser::parse_typeName() {
         return std::move(typeToken);
     }
     case FUNC: {
-        this->expect(FUNC);
+        Token token;
+        this->expect(FUNC, token);
+        if(CUR_KIND() != TYPE_OPEN) {
+            this->restoreLexerState(token);
+            return std::unique_ptr<TypeToken>(new ClassTypeToken(token.lineNum, this->lexer->toName(token)));
+        }
+
         this->noNewLine();
         this->expect(TYPE_OPEN, false);
 
@@ -417,7 +423,6 @@ std::unique_ptr<TypeToken> Parser::parse_typeName() {
             this->expect(PTYPE_CLOSE);
         }
 
-        Token token;
         this->expect(TYPE_CLOSE, token);
 
         this->restoreLexerState(token);

@@ -179,7 +179,7 @@ TypePool::TypePool() :
     /**
      * hidden from script
      */
-    this->baseFuncType = this->initBuiltinType("%BaseFunc%", false, this->anyType, info_Dummy());
+    this->baseFuncType = this->initBuiltinType("Func", false, this->anyType, info_Dummy());
 
     // initialize type template
     std::vector<DSType *> elements;

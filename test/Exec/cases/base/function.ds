@@ -1,15 +1,16 @@
 function func($x: Int) : Int {
-	return $x * 2
+    return $x * 2
 }
 
 assert($func is Func<Int, [Int]>)
 assert($func is Any)
+assert($func is Func) # function base type
 assert(not ($func is Variant))
 
 function call() {
-	var sub = $func
-	assert($func(3) == 6)
-	assert($sub(3) == 6)
+    var sub = $func
+    assert($func(3) == 6)
+    assert($sub(3) == 6)
 }
 
 assert($call is Func<Void>)
@@ -21,7 +22,7 @@ function f($obj :
                Int,
                [Int]>,
           $value : Int) : Int {
-	return $obj($value)
+    return $obj($value)
 }
 
 assert($f is Func<Int, [Func<Int, [Int]>, Int]>)
