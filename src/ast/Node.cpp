@@ -2462,7 +2462,7 @@ ReturnNode::ReturnNode(unsigned int lineNum, Node *exprNode) :
 }
 
 ReturnNode::ReturnNode(unsigned int lineNum) :
-        BlockEndNode(lineNum), exprNode() {
+        ReturnNode(lineNum, new EmptyNode(lineNum)) {
 }
 
 ReturnNode::~ReturnNode() {

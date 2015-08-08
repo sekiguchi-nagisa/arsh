@@ -17,6 +17,12 @@ assert($call is Func<Void>)
 
 $call()
 
+function void() {
+    return
+}
+
+assert($void is Func<Void>)
+
 function f($obj :
             Func<
                Int,

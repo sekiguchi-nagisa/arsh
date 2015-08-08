@@ -1171,9 +1171,6 @@ public:
 
 class ReturnNode : public BlockEndNode {
 private:
-    /**
-     * may be null, if has no return value
-     */
     Node *exprNode;
 
 public:
@@ -1183,11 +1180,7 @@ public:
 
     ~ReturnNode();
 
-    /**
-     * return null if has no return value
-     */
     Node *getExprNode();
-
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
