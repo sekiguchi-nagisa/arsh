@@ -103,11 +103,12 @@ void Lexer::nextToken(Token &token) {
       FLOAT_SUFFIX =  [eE] [+-]? NUM;
       FLOAT = NUM "." DIGITS FLOAT_SUFFIX?;
 
-      SQUOTE_CHAR = [^'] | '\\' ['];
+      SQUOTE_CHAR = '\\' ['] | [^'\000];
+      DQUOTE_CHAR = "\\" [^\000] | [^$\\"\000];
       VAR_NAME = [_a-zA-Z] [_0-9a-zA-Z]* ;
       SPECIAL_NAMES = [@0?];
 
-      STRING_LITERAL = ['] [^']* ['];
+      STRING_LITERAL = ['] [^'\000]* ['];
       ESTRING_LITERAL = "$" ['] SQUOTE_CHAR* ['];
       PATH_CHARS = "/" | ("/" [_a-zA-Z0-9]+ )+;
       APPLIED_NAME = "$" VAR_NAME;
@@ -116,14 +117,14 @@ void Lexer::nextToken(Token &token) {
       INNER_NAME = APPLIED_NAME | '${' VAR_NAME '}';
       INNER_SPECIAL_NAME = SPECIAL_NAME | '${' SPECIAL_NAMES '}';
 
-      CMD_START_CHAR     = "\\" [^\r\n] | [^ \t\r\n;'"`|&<>(){}$#![\]+\-0-9\000];
-      CMD_CHAR           = "\\" . | "\\" [\r\n] | [^ \t\r\n;'"`|&<>(){}$#![\]\000];
-      CMD_ARG_START_CHAR = "\\" . | [^ \t\r\n;'"`|&<>(){}$#![\]\000];
+      CMD_START_CHAR     = "\\" [^\r\n\000] | [^ \t\r\n\\;'"`|&<>(){}$#![\]+\-0-9\000];
+      CMD_CHAR           = "\\" [^\000]     | [^ \t\r\n\\;'"`|&<>(){}$#![\]\000];
+      CMD_ARG_START_CHAR = "\\" [^\r\n\000] | [^ \t\r\n\\;'"`|&<>(){}$#![\]\000];
 
       LINE_END = ";";
       NEW_LINE = [\r\n][ \t\r\n]*;
       COMMENT = "#" [^\r\n\000]*;
-      OTHER = . | [\r\n];
+      OTHER = . ;
     */
 
     bool foundNewLine = false;
@@ -243,8 +244,7 @@ void Lexer::nextToken(Token &token) {
                                { INC_LINE_NUM(); SKIP(); }
 
       <DSTRING> ["]            { POP_MODE(); RET(CLOSE_DQUOTE);}
-      <DSTRING> ([^$"] | '\\' [$"])+
-                               { COUNT_NEW_LINE(); RET(STR_ELEMENT);}
+      <DSTRING> DQUOTE_CHAR+   { COUNT_NEW_LINE(); RET(STR_ELEMENT);}
       <DSTRING,CMD> INNER_NAME { RET(APPLIED_NAME); }
       <DSTRING,CMD> INNER_SPECIAL_NAME
                                { RET(SPECIAL_NAME); }

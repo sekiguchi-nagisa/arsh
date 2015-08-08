@@ -85,6 +85,18 @@ assert($? == 0)
 echo 'h'e"l${"l" + 'o'}" ""world"${3 + 7}" | grep 'hello world10'
 assert($? == 0)
 
+echo \$true/hoge | grep '$true/hoge'   # escape
+assert($? == 0)
+
+echo \\$true/hoge | grep '\\true/hoge'   # escape
+assert($? == 0)
+
+echo "\$true/hoge" | grep '$true/hoge'   # escape
+assert($? == 0)
+
+echo "\\$true/hoge" | grep '\\true/hoge'   # escape
+assert($? == 0)
+
 
 # command substitution
 

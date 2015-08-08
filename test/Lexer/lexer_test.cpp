@@ -657,6 +657,19 @@ TEST_F(LexerTest_Lv1, string_literal5) {
 #undef TEXT
 }
 
+TEST_F(LexerTest_Lv1, string_literal6) {
+#define TEXT "$'\\\\'"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, STRING_LITERAL, "$'\\\\'");
+        this->assertKind(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
 
 // invalid string literal
 TEST_F(LexerTest_Lv1, invalid_string_literal) {
@@ -728,6 +741,21 @@ TEST_F(LexerTest_Lv1, string_expr4) {
         ASSERT_EQ(this->getTokens().size(), 4);
         this->assertToken(0, OPEN_DQUOTE, "\"");
         this->assertToken(1, STR_ELEMENT, "hello\\$world");
+        this->assertToken(2, CLOSE_DQUOTE, "\"");
+        this->assertKind(EOS, this->getTokens()[3].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, string_expr5) {
+#define TEXT "\"\\\\\""
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 4);
+        this->assertToken(0, OPEN_DQUOTE, "\"");
+        this->assertToken(1, STR_ELEMENT, "\\\\");
         this->assertToken(2, CLOSE_DQUOTE, "\"");
         this->assertKind(EOS, this->getTokens()[3].first);
     });
@@ -919,6 +947,32 @@ TEST_F(LexerTest_Lv1, CMD3) {
     });
 #undef TEXT
 }
+
+TEST_F(LexerTest_Lv1, CMD4) {
+#define TEXT "l\\"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 2);
+        this->assertToken(0, COMMAND, "l\\\n");
+        this->assertKind(EOS, this->getTokens()[1].first);
+    });
+#undef TEXT
+}
+
+TEST_F(LexerTest_Lv1, CMD5) {
+#define TEXT "\\"
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(TEXT);
+        this->tokenize();
+        ASSERT_EQ(this->getTokens().size(), 1); // skip backslashed newline
+        this->assertKind(EOS, this->getTokens()[0].first);
+    });
+#undef TEXT
+}
+
 
 /**
  * test expr token in stmt mode.
