@@ -23,6 +23,7 @@ include_directories(${GTEST_DIR}/include)
 include_directories(${CMAKE_SOURCE_DIR}/tools/directive)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/arg)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/buffer)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lexer)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/type)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/precedence)
