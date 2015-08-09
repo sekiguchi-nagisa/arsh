@@ -266,7 +266,7 @@ void LexerBase<T>::expandBuf(unsigned int needSize) {
     if(size > this->bufSize) {
         unsigned int newSize = this->bufSize;
         do {
-            newSize += (newSize * 2);
+            newSize += (newSize >> 1);
         } while(newSize < size);
         unsigned int pos = this->getPos();
         unsigned int markerPos = this->marker - this->buf;
