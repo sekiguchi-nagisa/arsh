@@ -133,8 +133,8 @@ TEST(BufferTest, case3) {
     });
 }
 
+typedef __detail_flex_buffer::FlexBuffer<const char *, unsigned char> StrBuffer;
 TEST(BufferTest, case4) {
-    typedef __detail_flex_buffer::FlexBuffer<const char *, unsigned char> StrBuffer;
     StrBuffer buffer;
 
     const char *v[] = {
@@ -154,6 +154,18 @@ TEST(BufferTest, case4) {
         raised = true;
     }
     ASSERT_NO_FATAL_FAILURE({ASSERT_TRUE(raised);});
+}
+
+TEST(BufferTest, case5) {
+    const StrBuffer::size_type size = 254;
+    StrBuffer buffer(size);
+
+    ASSERT_NO_FATAL_FAILURE({
+        ASSERT_EQ(StrBuffer::MAXIMUM_CAPACITY - 1, buffer.capacity());
+    });
+
+    const char *v[size];
+    buffer.append(v, size);
 }
 
 

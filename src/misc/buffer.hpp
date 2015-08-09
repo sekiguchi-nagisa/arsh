@@ -28,7 +28,6 @@ namespace __detail_flex_buffer {
 
 /**
  * only available primitive type or pointer type.
- * maximum capacity is 4GB
  */
 template <typename T, typename SIZE_T>
 class FlexBuffer {
@@ -185,6 +184,9 @@ T &FlexBuffer<T, SIZE_T>::at(size_type index) const {
 
 } // namespace __detail_flex_buffer
 
+/**
+ * maximum capacity is 4GB
+ */
 template <typename T>
 using FlexBuffer = __detail_flex_buffer::FlexBuffer<T, unsigned int>;
 
