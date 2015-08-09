@@ -120,7 +120,7 @@ private:
     LexerBase() :
             fp(0), bufSize(0), buf(0), cursor(0),
             limit(0), marker(0), ctxMarker(0),
-            endOfFile(false), endOfString(false), zeroCopyBuf(true) { }
+            endOfFile(false), endOfString(false), zeroCopyBuf(false) { }
 
 public:
     /**
