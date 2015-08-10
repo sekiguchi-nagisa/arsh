@@ -226,8 +226,16 @@ String_Object::String_Object(DSType *type) :
         DSObject(type), value() {
 }
 
-const std::string &String_Object::getValue() {
-    return this->value;
+const char *String_Object::getValue() const {
+    return this->value.c_str();
+}
+
+unsigned int String_Object::size() const {
+    return this->value.size();
+}
+
+bool String_Object::empty() const {
+    return this->size() == 0;
 }
 
 std::string String_Object::toString(RuntimeContext &ctx) {

@@ -436,7 +436,7 @@ const char *DSContext_getPrompt(DSContext *ctx, unsigned int n) {
     }
 
     ctx->ctx.interpretPromptString(
-            TYPE_AS(String_Object, obj)->getValue().c_str(), usePS1 ? ctx->ps1 : ctx->ps2);
+            TYPE_AS(String_Object, obj)->getValue(), usePS1 ? ctx->ps1 : ctx->ps2);
 
     return (usePS1 ? ctx->ps1 : ctx->ps2).c_str();
 }

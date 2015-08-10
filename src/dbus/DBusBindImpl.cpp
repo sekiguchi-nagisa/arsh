@@ -553,7 +553,7 @@ bool DBus_ObjectImpl::getIfaceListFromProxy(RuntimeContext &ctx, const std::shar
 bool DBus_ObjectImpl::introspectProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy) {
     DBusProxy_Object *obj = TYPE_AS(DBusProxy_Object, proxy);
     auto msg = dbus_message_new_method_call(
-            obj->getService()->getServiceName(), obj->getObjectPath()->getValue().c_str(),
+            obj->getService()->getServiceName(), obj->getObjectPath()->getValue(),
             "org.freedesktop.DBus.Introspectable", "Introspect");
     bool status;
     auto reply = sendAndUnrefMessage(ctx, obj->getService()->getConnection(), msg, status);
@@ -831,7 +831,7 @@ FunctionType *DBusProxy_Object::lookupHandler(RuntimeContext &ctx,
 
 bool DBusProxy_Object::matchObject(const char *serviceName, const char *objectPath) {
     return strcmp(serviceName, this->srv->getUniqueName()) == 0 &&
-           strcmp(objectPath, this->objectPath->getValue().c_str()) == 0;
+           strcmp(objectPath, this->objectPath->getValue()) == 0;
 }
 
 static inline void quote(std::string &str, const std::string &value) {
@@ -869,7 +869,7 @@ bool DBusProxy_Object::isBelongToSystemBus() {
 
 DBusMessage *DBusProxy_Object::newMethodCallMsg(const char *ifaceName, const char *methodName) {
     return dbus_message_new_method_call(
-            this->srv->getServiceName(), this->objectPath->getValue().c_str(), ifaceName, methodName);
+            this->srv->getServiceName(), this->objectPath->getValue(), ifaceName, methodName);
 }
 
 DBusMessage *DBusProxy_Object::newMethodCallMsg(const std::string &ifaceName, const std::string &methodName) {

@@ -369,25 +369,25 @@ void ProcInvoker::closeProc() {
     this->redirOptions.push_back(std::make_pair(RedirectOP::DUMMY, nullptr));
 }
 
-void ProcInvoker::addCommandName(const std::string &name) {
-    this->argArray.append(name.c_str());
+void ProcInvoker::addCommandName(const char *name) {
+    this->argArray.append(name);
 }
 
 void ProcInvoker::addArg(const std::shared_ptr<DSObject> &value, bool skipEmptyString) {
     DSType *valueType = value->getType();
     if(*valueType == *this->ctx->getPool().getStringType()) {
         std::shared_ptr<String_Object> obj = std::dynamic_pointer_cast<String_Object>(value);
-        if(skipEmptyString && obj->getValue().empty()) {
+        if(skipEmptyString && obj->empty()) {
             return;
         }
-        this->argArray.append(obj->getValue().c_str());
+        this->argArray.append(obj->getValue());
         return;
     }
 
     if(*valueType == *this->ctx->getPool().getStringArrayType()) {
         Array_Object *arrayObj = TYPE_AS(Array_Object, value);
         for(const std::shared_ptr<DSObject> &element : arrayObj->getValues()) {
-            this->argArray.append(std::dynamic_pointer_cast<String_Object>(element)->getValue().c_str());
+            this->argArray.append(std::dynamic_pointer_cast<String_Object>(element)->getValue());
         }
     } else {
         fatal("illegal command parameter type: %s\n", this->ctx->getPool().getTypeName(*valueType).c_str());
@@ -398,7 +398,7 @@ void ProcInvoker::addRedirOption(RedirectOP op, const std::shared_ptr<DSObject> 
     DSType *valueType = value->getType();
     if(*valueType == *this->ctx->getPool().getStringType()) {
         this->redirOptions.push_back(
-                std::make_pair(op, std::dynamic_pointer_cast<String_Object>(value)->getValue().c_str()));
+                std::make_pair(op, std::dynamic_pointer_cast<String_Object>(value)->getValue()));
     } else {
         fatal("illegal command parameter type: %s\n", this->ctx->getPool().getTypeName(*valueType).c_str());
     }

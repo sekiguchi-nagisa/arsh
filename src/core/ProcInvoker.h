@@ -214,7 +214,7 @@ public:
 
     void openProc();
     void closeProc();
-    void addCommandName(const std::string &name);
+    void addCommandName(const char *name);
     void addArg(const std::shared_ptr<DSObject> &value, bool skipEmptyString);
     void addRedirOption(RedirectOP op, const std::shared_ptr<DSObject> &value);
 

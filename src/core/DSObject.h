@@ -165,7 +165,14 @@ public:
     explicit String_Object(DSType *type);
     ~String_Object() = default;
 
-    const std::string &getValue();
+    const char *getValue() const;
+
+    /**
+     * equivalent to strlen(this->getValue())
+     */
+    unsigned int size() const;
+
+    bool empty() const;
 
     std::string toString(RuntimeContext &ctx); // override
 

@@ -920,14 +920,14 @@ static inline bool string_ne(RuntimeContext &ctx) {
 //!bind: function size($this : String) : Int32
 static inline bool string_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_size);
-    int size = TYPE_AS(String_Object, LOCAL(0))->getValue().size();
+    int size = TYPE_AS(String_Object, LOCAL(0))->size();
     RET(std::make_shared<Int_Object>(ctx.getPool().getInt32Type(), size));
 }
 
 //!bind: function empty($this : String) : Boolean
 static inline bool string_empty(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_empty);
-    bool empty = TYPE_AS(String_Object, LOCAL(0))->getValue().empty();
+    bool empty = TYPE_AS(String_Object, LOCAL(0))->empty();
     RET_BOOL(empty);
 }
 
@@ -953,7 +953,7 @@ static inline bool objectpath_ne(RuntimeContext &ctx) {
 //!bind: function size($this : ObjectPath) : Int32
 static inline bool objectpath_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(objectpath_size);
-    int size = TYPE_AS(String_Object, LOCAL(0))->getValue().size();
+    int size = TYPE_AS(String_Object, LOCAL(0))->size();
     RET(std::make_shared<Int_Object>(ctx.getPool().getInt32Type(), size));
 }
 

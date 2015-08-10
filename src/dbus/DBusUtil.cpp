@@ -203,12 +203,12 @@ void MessageBuilder::visitBuiltinType(BuiltinType *type) {
         return;
     };
     case DBUS_TYPE_STRING: {
-        const char *value = (static_cast<String_Object *>(this->peek()))->getValue().c_str();
+        const char *value = (static_cast<String_Object *>(this->peek()))->getValue();
         dbus_message_iter_append_basic(this->iter, dbusType, &value);
         return;
     };
     case DBUS_TYPE_OBJECT_PATH: {
-        const char *value = (static_cast<String_Object *>(this->peek()))->getValue().c_str();
+        const char *value = (static_cast<String_Object *>(this->peek()))->getValue();
         dbus_message_iter_append_basic(this->iter, dbusType, &value);
         return;
     };

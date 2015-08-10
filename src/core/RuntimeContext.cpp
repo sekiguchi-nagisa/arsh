@@ -383,7 +383,7 @@ void RuntimeContext::importEnv(const std::string &envName, unsigned int index, b
 
 void RuntimeContext::exportEnv(const std::string &envName, unsigned int index, bool isGlobal) {
     setenv(envName.c_str(),
-           TYPE_AS(String_Object, this->peek())->getValue().c_str(), 1);   //FIXME: check return value and throw
+           TYPE_AS(String_Object, this->peek())->getValue(), 1);   //FIXME: check return value and throw
     if(isGlobal) {
         this->globalVarTable[index] = this->pop();
     } else {
@@ -437,7 +437,7 @@ void RuntimeContext::updateWorkingDir(bool OLDPWD_only) {
     this->setGlobal(this->handle_OLDPWD->getFieldIndex(),
                     this->getGlobal(this->handle_PWD->getFieldIndex()));
     const char *oldpwd =
-            TYPE_AS(String_Object, this->getGlobal(this->handle_OLDPWD->getFieldIndex()))->getValue().c_str();
+            TYPE_AS(String_Object, this->getGlobal(this->handle_OLDPWD->getFieldIndex()))->getValue();
     setenv(env_OLDPWD, oldpwd, 1);
 
     // update PWD
