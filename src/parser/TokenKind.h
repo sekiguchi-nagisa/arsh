@@ -33,7 +33,6 @@
     TOKEN(DO                                 , "do") \
     TOKEN(ELIF                               , "elif") \
     TOKEN(ELSE                               , "else") \
-    TOKEN(EXTENDS                            , "extends") \
     TOKEN(EXPORT_ENV                         , "export-env") \
     TOKEN(FINALLY                            , "finally") \
     TOKEN(FOR                                , "for") \

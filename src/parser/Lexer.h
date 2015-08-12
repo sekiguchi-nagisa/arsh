@@ -62,28 +62,36 @@ private:
      */
     bool prevSpace;
 
+    LexerMode prevMode;
+
     static const char *lexerModeNames[];
 
 public:
     explicit Lexer(const char *source) :
-            LexerBase(source), lineNum(1), modeStack(1, yycSTMT), prevNewLine(false), prevSpace(false) {}
+            LexerBase(source),
+            lineNum(1), modeStack(1, yycSTMT), prevNewLine(false), prevSpace(false), prevMode(yycSTMT) {}
 
     /**
      * FILE must be opened with binary mode.
      */
     explicit Lexer(FILE *fp) :
-            LexerBase(fp), lineNum(1), modeStack(1, yycSTMT), prevNewLine(false), prevSpace(false) {}
+            LexerBase(fp),
+            lineNum(1), modeStack(1, yycSTMT), prevNewLine(false), prevSpace(false), prevMode(yycSTMT) {}
 
     ~Lexer() = default;
 
     void setPos(unsigned int pos);
 
-    bool isPrevNewLine() {
+    bool isPrevNewLine() const {
         return this->prevNewLine;
     }
 
-    bool isPrevSpace() {
+    bool isPrevSpace() const {
         return this->prevSpace;
+    }
+
+    LexerMode getPrevMode() const {
+        return this->prevMode;
     }
 
     void setLineNum(unsigned int lineNum) {
@@ -92,6 +100,10 @@ public:
 
     unsigned int getLineNum() const {
         return this->lineNum;
+    }
+
+    void setLexerMode(LexerMode mode) {
+        this->modeStack[this->modeStack.size() - 1] = mode;
     }
 
     void pushLexerMode(LexerMode mode) {

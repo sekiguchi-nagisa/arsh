@@ -129,40 +129,40 @@ void Lexer::nextToken(Token &token) {
 
     bool foundNewLine = false;
     bool foundSpace = false;
+    LexerMode prevMode = this->modeStack.back();
 
     INIT:
     unsigned int n = this->lineNum;
     unsigned int startPos = this->getPos();
     TokenKind kind = INVALID;
     /*!re2c
-      <STMT,EXPR> "assert"     { RET(ASSERT); }
-      <STMT,EXPR> "break"      { RET(BREAK); }
-      <STMT,EXPR> "catch"      { RET(CATCH); }
-      <STMT,EXPR> "class"      { MODE(NAME); RET(CLASS); }
-      <STMT,EXPR> "continue"   { RET(CONTINUE); }
-      <STMT,EXPR> "do"         { RET(DO); }
-      <STMT,EXPR> "elif"       { RET(ELIF); }
-      <STMT,EXPR> "else"       { RET(ELSE); }
-      <STMT,EXPR> "extends"    { MODE(EXPR); RET(EXTENDS); }
-      <STMT,EXPR> "export-env" { MODE(NAME); RET(EXPORT_ENV); }
-      <STMT,EXPR> "finally"    { RET(FINALLY); }
-      <STMT,EXPR> "for"        { RET(FOR); }
-      <STMT,EXPR> "function"   { MODE(NAME); RET(FUNCTION); }
-      <STMT,EXPR> "if"         { RET(IF); }
-      <STMT,EXPR> "import-env" { MODE(NAME); RET(IMPORT_ENV); }
-      <STMT,EXPR> "interface"  { RET(INTERFACE); }
-      <STMT,EXPR> "let"        { MODE(NAME); RET(LET); }
+      <STMT> "assert"          { RET(ASSERT); }
+      <STMT> "break"           { RET(BREAK); }
+      <EXPR> "catch"           { RET(CATCH); }
+      <STMT> "class"           { MODE(NAME); RET(CLASS); }
+      <STMT> "continue"        { RET(CONTINUE); }
+      <STMT> "do"              { RET(DO); }
+      <EXPR> "elif"            { RET(ELIF); }
+      <EXPR> "else"            { RET(ELSE); }
+      <STMT> "export-env"      { MODE(NAME); RET(EXPORT_ENV); }
+      <EXPR> "finally"         { RET(FINALLY); }
+      <STMT> "for"             { RET(FOR); }
+      <STMT> "function"        { MODE(NAME); RET(FUNCTION); }
+      <STMT> "if"              { RET(IF); }
+      <STMT> "import-env"      { MODE(NAME); RET(IMPORT_ENV); }
+      <STMT> "interface"       { RET(INTERFACE); }
+      <STMT> "let"             { MODE(NAME); RET(LET); }
       <STMT,EXPR> "new"        { MODE(EXPR); RET(NEW); }
-      <STMT,EXPR> "not"        { MODE(EXPR); RET(NOT); }
-      <STMT,EXPR> "return"     { MODE(EXPR); RET(RETURN); }
-      <STMT,EXPR> "try"        { RET(TRY); }
-      <STMT,EXPR> "throw"      { MODE(EXPR); RET(THROW); }
-      <STMT,EXPR> "type-alias" { MODE(NAME); RET(TYPE_ALIAS);}
-      <STMT,EXPR> "var"        { MODE(NAME); RET(VAR); }
+      <STMT,EXPR> "not"        { RET(NOT); }
+      <STMT> "return"          { RET(RETURN); }
+      <STMT> "try"             { RET(TRY); }
+      <STMT> "throw"           { RET(THROW); }
+      <STMT> "type-alias"      { MODE(NAME); RET(TYPE_ALIAS);}
+      <STMT> "var"             { MODE(NAME); RET(VAR); }
       <STMT,EXPR> "while"      { RET(WHILE); }
 
-      <STMT,EXPR> "+"          { MODE(EXPR); RET(PLUS); }
-      <STMT,EXPR> "-"          { MODE(EXPR); RET(MINUS); }
+      <STMT,EXPR> "+"          { RET(PLUS); }
+      <STMT,EXPR> "-"          { RET(MINUS); }
 
       <STMT,EXPR> NUM          { MODE(EXPR); RET(INT_LITERAL); }
       <STMT,EXPR> NUM "b"      { MODE(EXPR); RET(BYTE_LITERAL); }
@@ -230,11 +230,11 @@ void Lexer::nextToken(Token &token) {
       <EXPR> "is"              { RET(IS); }
 
       <EXPR,NAME> VAR_NAME     { MODE(EXPR); RET(IDENTIFIER); }
-      <NAME> NEW_LINE          { COUNT_NEW_LINE(); SKIP(); }
       <EXPR> "."               { MODE(NAME); RET(ACCESSOR); }
 
       <STMT,EXPR> LINE_END     { MODE(STMT); RET(LINE_END); }
-      <STMT,EXPR> NEW_LINE     { MODE(STMT); COUNT_NEW_LINE(); FIND_NEW_LINE(); }
+      <STMT,EXPR,NAME,TYPE> NEW_LINE
+                               { COUNT_NEW_LINE(); FIND_NEW_LINE(); }
 
       <STMT,EXPR,NAME,CMD,TYPE> COMMENT
                                { SKIP(); }
@@ -281,7 +281,6 @@ void Lexer::nextToken(Token &token) {
                                { RET(TYPE_PATH); }
       <TYPE> "Func"            { RET(FUNC); }
       <TYPE> VAR_NAME          { RET(IDENTIFIER); }
-      <TYPE> NEW_LINE          { COUNT_NEW_LINE(); FIND_NEW_LINE(); }
       <TYPE> "<"               { RET(TYPE_OPEN); }
       <TYPE> ">"               { RET(TYPE_CLOSE); }
       <TYPE> ","               { RET(TYPE_SEP); }
@@ -299,8 +298,6 @@ void Lexer::nextToken(Token &token) {
     token.kind = kind;
     token.startPos = startPos;
     token.size = this->getPos() - startPos;
-    this->prevNewLine = foundNewLine;
-    this->prevSpace = foundSpace;
     goto RET;
 
     EOS:
@@ -308,11 +305,13 @@ void Lexer::nextToken(Token &token) {
     token.kind = EOS;
     token.startPos = this->limit - this->buf;
     token.size = 0;
-    this->prevNewLine = foundNewLine;
-    this->prevSpace = foundSpace;
     goto RET;
 
     RET:
+    this->prevNewLine = foundNewLine;
+    this->prevSpace = foundSpace;
+    this->prevMode = prevMode;
+
 #ifdef USE_TRACE_TOKEN
     if(getenv("YDSH_TRACE_TOKEN") != nullptr) {
         std::cerr << "nextToken(): " << token << ", text = " << this->toTokenText(token) << std::endl;

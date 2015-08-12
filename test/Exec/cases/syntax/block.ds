@@ -1,0 +1,9 @@
+if($true) {
+    ;   # empty statement
+}
+
+if($true) {
+    # empty
+}
+
+do {} while($false)

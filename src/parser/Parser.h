@@ -53,6 +53,8 @@ private:
     // parser rule definition.
     void parse_toplevel(RootNode &rootNode);
 
+    void refetch(unsigned int lineNum, unsigned int startPos, LexerMode mode);
+
     std::unique_ptr<Node> parse_toplevelStatement();
 
     std::unique_ptr<Node> parse_function();
