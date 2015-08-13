@@ -262,6 +262,15 @@ static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
     return 0;
 }
 
+static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+    if(bctx.argc > 1) {
+        execvp(bctx.argv[1], bctx.argv + 1);
+        fprintf(stderr, "-ydsh: eval: %s: %s\n", bctx.argv[1], strerror(errno));
+        return 1;
+    }
+    return 0;
+}
+
 const struct {
     const char *commandName;
     ProcInvoker::builtin_command_t cmd_ptr;
@@ -297,6 +306,8 @@ const struct {
                 "                  \\r    carriage return\n"
                 "                  \\t    horizontal tab\n"
                 "                  \\v    vertical tab"},
+        {"eval", builtin_eval, "[args ...]",
+                "    evaluate ARGS as command."},
         {"exec", builtin_exec, "[-c] [-a name] file [args ...]",
                 "    Execute FILE and replace this shell with specified program.\n"
                 "    If FILE is not specified, the redirections take effect in this shell.\n"
@@ -637,7 +648,7 @@ EvalStatus ProcInvoker::invoke() {
     if(procSize == 1) {
         char **argv = this->argArray.getRawData(this->procOffsets[0].first);
         builtin_command_t cmd_ptr = this->lookupBuiltinCommand(argv[0]);
-        if(cmd_ptr != nullptr) {
+        if(cmd_ptr != nullptr && cmd_ptr != builtin_eval) {
             BuiltinContext bctx = {
                     .argc = 1, .argv = argv,
                     .fp_stdin = stdin, .fp_stdout = stdout, .fp_stderr = stderr
