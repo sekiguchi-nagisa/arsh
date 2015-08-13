@@ -15,6 +15,7 @@
  */
 
 #include <cstring>
+#include <pwd.h>
 
 #include <ydsh/ydsh.h>
 #include "config.h"
@@ -148,6 +149,14 @@ DSContext::DSContext() :
     std::string wd = getCurrentWorkingDir();
     setenv("OLDPWD", wd.c_str(), 0);
     setenv("PWD", wd.c_str(), 0);
+    if(getenv("HOME") == nullptr) {
+        struct passwd *pw = getpwuid(getuid());
+        if(pw == nullptr) {
+            perror("getpwuid failed\n");
+            fatal();
+        }
+        setenv("HOME", pw->pw_dir, 1);
+    }
 }
 
 CommonErrorListener DSContext::clistener;
