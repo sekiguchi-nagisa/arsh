@@ -226,6 +226,42 @@ static int builtin_ps_intrp(RuntimeContext *ctx, const BuiltinContext &bctx, boo
     return 0;
 }
 
+static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+    int index = 1;
+    bool clearEnv = false;
+    const char *progName = nullptr;
+    for(; index < bctx.argc; index++) {
+        const char *arg = bctx.argv[index];
+        if(arg[0] != '-') {
+            break;
+        }
+//        if(strcmp(arg, "-c") == 0) {
+//            clearEnv = true;
+//        } else
+        if(strcmp(arg, "-a") == 0 && ++index < bctx.argc) {
+            progName = bctx.argv[index];
+        } else {
+            fprintf(bctx.fp_stderr, "%s: usage: %s [-c] [-a name] file [args ...]\n", bctx.argv[0], bctx.argv[0]);
+            return 1;
+        }
+    }
+
+    if(index < bctx.argc) { // exec
+        if(progName == nullptr) {
+            progName = bctx.argv[index];
+        }
+
+        if(clearEnv) {
+
+        } else {
+            execvp(progName, bctx.argv + index);
+            fprintf(stderr, "-ydsh: exec: %s: %s\n", bctx.argv[index], strerror(errno));
+            return 1;
+        }
+    }
+    return 0;
+}
+
 const struct {
     const char *commandName;
     ProcInvoker::builtin_command_t cmd_ptr;
@@ -261,6 +297,12 @@ const struct {
                 "                  \\r    carriage return\n"
                 "                  \\t    horizontal tab\n"
                 "                  \\v    vertical tab"},
+        {"exec", builtin_exec, "[-c] [-a name] file [args ...]",
+                "    Execute FILE and replace this shell with specified program.\n"
+                "    If FILE is not specified, the redirections take effect in this shell.\n"
+                "    Options:\n"
+                "        -c    cleaner environmental variable\n"
+                "        -a    specify set program name(default is FILE)"},
         {"exit", builtin_exit, "[n]",
                 "    Exit the shell with a status of N.  If N is omitted, the exit\n"
                 "    status is 0."},
@@ -426,9 +468,11 @@ static int redirectToFile(const char *fileName, const char *mode, int targetFD) 
 }
 
 /**
- * if redirection failed, exit 1
+ * do redirection and report error.
+ * if errorPipe is -1, report error and return false.
+ * if errorPipe is not -1, report error and exit 1
  */
-void ProcInvoker::redirect(unsigned int procIndex, int errorPipe) {
+bool ProcInvoker::redirect(unsigned int procIndex, int errorPipe) {
 #define CHECK_ERROR(result) do { occuredError = (result); if(occuredError != 0) { goto ERR; } } while(0)
 
     int occuredError = 0;
@@ -486,9 +530,13 @@ void ProcInvoker::redirect(unsigned int procIndex, int errorPipe) {
         e.redirIndex = startIndex;
         e.errorNum = occuredError;
 
+        if(errorPipe == -1) {
+            return this->checkChildError(std::make_pair(0, e)); // return false
+        }
         write(errorPipe, &e, sizeof(ChildError));
         exit(0);
     }
+    return true;
 
 #undef CHECK_ERROR
 }
@@ -597,6 +645,18 @@ EvalStatus ProcInvoker::invoke() {
             for(; argv[bctx.argc] != nullptr; bctx.argc++);
 
             bool raised = false;
+
+            // for builtin-exec
+            if(strcmp(argv[0], "exec") == 0) {
+                if(!this->redirect(0, -1)) {
+                    this->ctx->updateExitStatus(1);
+                    return EvalStatus::THROW;
+                }
+                this->ctx->updateExitStatus(cmd_ptr(this->ctx, bctx, raised));
+                return EvalStatus::SUCCESS;
+            }
+
+            // for other builtin command
             std::vector<FILE *> fps;
             if(!this->redirectBuiltin(fps, bctx)) {
                 this->ctx->updateExitStatus(1);

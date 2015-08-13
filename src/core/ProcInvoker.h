@@ -227,7 +227,7 @@ public:
     EvalStatus execBuiltinCommand(char *const argv[]);
 
 private:
-    void redirect(unsigned int procIndex, int errorPipe);
+    bool redirect(unsigned int procIndex, int errorPipe);
     bool redirectBuiltin(std::vector<FILE *> &openedFps, BuiltinContext &bctx);
 
     /**
