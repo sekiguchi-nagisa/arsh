@@ -19,6 +19,7 @@
 
 #include <ydsh/ydsh.h>
 #include "config.h"
+#include "embed.h"
 
 #include "ast/dump.h"
 #include "parser/Lexer.h"
@@ -98,7 +99,7 @@ struct DSContext {
     /**
      * call only once
      */
-    void initBuiltinIface();
+    void loadEmbeddedScript();
 
     static CommonErrorListener clistener;
 
@@ -227,10 +228,6 @@ unsigned int DSContext::eval(const char *sourceName, Lexer &lexer) {
     return DS_STATUS_SUCCESS;
 }
 
-static VarDeclNode *newStringVar(const char *name, const char *value, bool readOnly = false) {
-    return new VarDeclNode(0, std::string(name), new StringValueNode(std::string(value)), readOnly);
-}
-
 void DSContext::initBuiltinVar() {
     RootNode rootNode;
     // register boolean
@@ -249,56 +246,16 @@ void DSContext::initBuiltinVar() {
     // register DBus management object
     rootNode.addNode(new BindVarNode("DBus", this->ctx.getDBus()));
 
-    // env
-    rootNode.addNode(new ImportEnvNode(0, std::string("OLDPWD")));
-    rootNode.addNode(new ImportEnvNode(0, std::string("PWD")));
-
-    // set alias
-    rootNode.addNode(new TypeAliasNode("Int", "Int32"));
-    rootNode.addNode(new TypeAliasNode("Uint", "Uint32"));
-
-    // define writable variable
-    rootNode.addNode(newStringVar("PS1", "\\s-\\v\\$ "));
-    rootNode.addNode(newStringVar("PS2", "> "));
-
     // ignore error check (must be always success)
     this->checker.checkTypeRootNode(rootNode);
     rootNode.eval(this->ctx);
 }
 
-void DSContext::initBuiltinIface() {
-    static const char builtinIface[] = ""
-            "interface org.freedesktop.DBus.Peer {\n"
-            "    function Ping()\n"
-            "    function GetMachineId() : String\n"
-            "}\n"
-            "type-alias Peer org.freedesktop.DBus.Peer\n"
-            "\n"
-            "interface org.freedesktop.DBus.Introspectable {\n"
-            "    function Introspect() : String\n"
-            "}\n"
-            "type-alias Introspectable org.freedesktop.DBus.Introspectable\n"
-            "\n"
-            "interface org.freedesktop.DBus.Properties {\n"
-            "    function Get($iface : String, $property : String) : Variant\n"
-            "    function Set($iface : String, $property : String, $value : Variant)\n"
-            "    function GetAll($iface : String) : Map<String, Variant>\n"
-            "    function PropertiesChanged($hd : Func<Void, [String, Map<String, Variant>, Array<String>]>)\n"
-            "}\n"
-            "type-alias Properties org.freedesktop.DBus.Properties\n"
-            "\n"
-            "type-alias ObjectAttr Map<String, Map<String, Variant>>\n"
-            "interface org.freedesktop.DBus.ObjectManager {\n"
-            "    function GetManagedObjects() : Map<ObjectPath, ObjectAttr>\n"
-            "    function InterfacesAdded($hd : Func<Void, [ObjectPath, ObjectAttr]>)\n"
-            "    function InterfacesRemoved($hd : Func<Void, [ObjectPath, Array<String>]>)\n"
-            "}\n"
-            "type-alias ObjectManager org.freedesktop.DBus.ObjectManager\n";
-
-    Lexer lexer(builtinIface);
+void DSContext::loadEmbeddedScript() {
+    Lexer lexer(embed_script);
     unsigned int s = this->eval(0, lexer);
     if(s != DS_STATUS_SUCCESS) {
-        fatal("broken builtin iface\n");
+        fatal("broken embedded script\n");
     }
     this->ctx.getPool().commit();
 }
@@ -327,7 +284,7 @@ unsigned int DSContext::getShellLevel() {
 DSContext *DSContext_create() {
     DSContext *ctx = new DSContext();
     ctx->initBuiltinVar();
-    ctx->initBuiltinIface();
+    ctx->loadEmbeddedScript();
 
     // reset line number
     ctx->lineNum = 1;

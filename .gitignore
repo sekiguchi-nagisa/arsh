@@ -7,6 +7,7 @@ Release/
 
 # Auto-generated file
 src/config.h
+src/embed.h
 
 # Compiled Object files
 *.slo

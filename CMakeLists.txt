@@ -140,6 +140,19 @@ add_custom_target(gen_bind DEPENDS ${bind_src})
 add_dependencies(gen_bind gen_binding)
 
 
+#=======================================#
+#     generate embedded script file     #
+#=======================================#
+
+set(embed_src ${CMAKE_CURRENT_SOURCE_DIR}/src/embed.h)
+add_custom_command(OUTPUT ${embed_src}
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tools/src_to_str/src_to_str
+            -f ${CMAKE_CURRENT_SOURCE_DIR}/src/embed.ds
+            -o ${embed_src} -v embed_script)
+add_custom_target(embed_script DEPENDS ${embed_src})
+add_dependencies(embed_script src_to_str)
+
+
 #=================#
 #     libydsh     #
 #=================#
@@ -180,11 +193,12 @@ if(USE_DBUS)
 endif()
 
 
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/src_to_str)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_binding)
 
 set(YDSH_STATIC ydsh_static)
 add_library(${YDSH_STATIC} STATIC ${YDSH_SRC} ${lexer_src} ${bind_src})
-add_dependencies(${YDSH_STATIC} gen_lexer gen_binding gen_bind)
+add_dependencies(${YDSH_STATIC} gen_lexer gen_binding gen_bind embed_script)
 target_link_libraries(${YDSH_STATIC} ${HAVE_LIBDBUS})
 
 
