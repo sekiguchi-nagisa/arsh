@@ -46,8 +46,9 @@ public:
     }
 };
 
-constexpr unsigned int REQUIRE_ARG = 1 << 0;
-constexpr unsigned int IGNORE_REST = 1 << 1;
+constexpr unsigned int HAS_ARG     = 1 << 0;
+constexpr unsigned int REQUIRE     = 1 << 1;
+constexpr unsigned int IGNORE_REST = 1 << 2;
 
 constexpr char usageSuffix[] = " <arg>";
 
@@ -60,17 +61,21 @@ struct Option {
     unsigned int flag;
     const char *detail;
 
-    bool requireArg() const {
-        return misc::hasFlag(this->flag, REQUIRE_ARG);
+    bool hasArg() const {
+        return misc::hasFlag(this->flag, HAS_ARG);
     }
 
     bool ignoreRest() const {
         return misc::hasFlag(this->flag, IGNORE_REST);
     }
 
+    bool require() const {
+        return misc::hasFlag(this->flag, REQUIRE);
+    }
+
     unsigned int getUsageSize() const {
         return strlen(this->optionName) +
-               (misc::hasFlag(this->flag, REQUIRE_ARG) ? sizeof(usageSuffix) - 1 : 0);
+               (misc::hasFlag(this->flag, HAS_ARG) ? sizeof(usageSuffix) - 1 : 0);
     }
 
     std::vector<std::string> getDetails() const;
@@ -109,6 +114,7 @@ template<typename T, size_t N>
 int parseArgv(int argc, char **argv, const Option<T> (&options)[N], CmdLines<T> &cmdLines) {
     // register option
     misc::CStringHashMap<unsigned int> indexMap;
+    bool requireOptionMap[N];
     for(unsigned int i = 0; i < N; i++) {
         const char *optionName = options[i].optionName;
         if(optionName[0] != '-') {
@@ -117,6 +123,7 @@ int parseArgv(int argc, char **argv, const Option<T> (&options)[N], CmdLines<T> 
         if(!indexMap.insert(std::make_pair(optionName, i)).second) {
             throw ParseError("duplicated option", optionName);
         }
+        requireOptionMap[i] = options[i].require();
     }
 
     // parse
@@ -134,10 +141,11 @@ int parseArgv(int argc, char **argv, const Option<T> (&options)[N], CmdLines<T> 
             throw ParseError("illegal option", arg);
         }
 
-        const Option<T> &option = options[iter->second];
+        const unsigned int optionIndex = iter->second;
+        const Option<T> &option = options[optionIndex];
         const char *optionArg = empty;
 
-        if(option.requireArg()) {
+        if(option.hasArg()) {
             if(index + 1 < argc && argv[++index][0] != '-') {
                 optionArg = argv[index];
             } else {
@@ -145,10 +153,20 @@ int parseArgv(int argc, char **argv, const Option<T> (&options)[N], CmdLines<T> 
             }
         }
         cmdLines.push_back(std::make_pair(option.kind, optionArg));
+        if(requireOptionMap[optionIndex]) {
+            requireOptionMap[optionIndex] = false;
+        }
 
         if(option.ignoreRest()) {
             index++;
             break;
+        }
+    }
+
+    // check require option
+    for(unsigned int i = 0; i < N; i++) {
+        if(requireOptionMap[i]) {
+            throw ParseError("require option", options[i].optionName);
         }
     }
     return index;
@@ -186,7 +204,7 @@ std::ostream &operator<<(std::ostream &stream, const Option<T> (&options)[N]) {
         stream << std::endl;
         unsigned int size = option->getUsageSize();
         stream << "    " << option->optionName;
-        stream << (option->requireArg() ? usageSuffix : "");
+        stream << (option->hasArg() ? usageSuffix : "");
         for(unsigned int i = 0; i < maxSizeOfUsage - size; i++) {
             stream << ' ';
         }

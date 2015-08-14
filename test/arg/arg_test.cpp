@@ -133,7 +133,7 @@ TEST_F(ArgTest, fail3) {
 TEST_F(ArgTest, fail4) {
     static const Opt options[] = {
             {Kind::A, "-a", 0, "hogehjoge"},
-            {Kind::B, "-b", REQUIRE_ARG, "hogehjoge"},
+            {Kind::B, "-b", HAS_ARG, "hogehjoge"},
             {Kind::C, "-c", 0, "hogehjogef"},
             {Kind::D, "-d", 0, "hogehjoges"},
             {Kind::E, "-e", 0, "hogehjogee"},
@@ -149,7 +149,7 @@ TEST_F(ArgTest, fail4) {
 TEST_F(ArgTest, fail5) {
     static const Opt options[] = {
             {Kind::A, "-a", 0, "hogehjoge"},
-            {Kind::B, "-b", REQUIRE_ARG, "hogehjoge"},
+            {Kind::B, "-b", HAS_ARG, "hogehjoge"},
             {Kind::C, "-c", 0, "hogehjogef"},
             {Kind::D, "-d", 0, "hogehjoges"},
             {Kind::E, "-e", 0, "hogehjogee"},
@@ -162,10 +162,26 @@ TEST_F(ArgTest, fail5) {
     });
 }
 
+TEST_F(ArgTest, fail6) {
+    static const Opt options[] = {
+            {Kind::A, "-a", 0, "hogehjoge"},
+            {Kind::B, "-b", REQUIRE | HAS_ARG, "hogehjoge"},
+            {Kind::C, "-c", REQUIRE | HAS_ARG, "hogehjogef"},
+            {Kind::D, "-d", 0, "hogehjoges"},
+            {Kind::E, "-e", 0, "hogehjogee"},
+    };
+
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+
+        this->expectError(make_args("-a", "-b", "hoge", "-e", "huga"), options, "require option: -c");
+    });
+}
+
 TEST_F(ArgTest, success1) {
     static const Opt options[] = {
             {Kind::A, "-a", 0, "hogehjoge"},
-            {Kind::B, "-b", REQUIRE_ARG, "hogehjoge"},
+            {Kind::B, "-b", HAS_ARG, "hogehjoge"},
             {Kind::C, "-c", 0, "hogehjogef"},
             {Kind::D, "-d", 0, "hogehjoges"},
             {Kind::E, "-e", 0, "hogehjogee"},
@@ -188,7 +204,7 @@ TEST_F(ArgTest, success1) {
 TEST_F(ArgTest, success2) {
     static const Opt options[] = {
             {Kind::A, "-a", 0, "hogehjoge"},
-            {Kind::B, "-b", REQUIRE_ARG, "hogehjoge"},
+            {Kind::B, "-b", HAS_ARG, "hogehjoge"},
             {Kind::C, "-c", 0, "hogehjogef"},
             {Kind::D, "-d", 0, "hogehjoges"},
             {Kind::E, "-e", 0, "hogehjogee"},
@@ -209,7 +225,7 @@ TEST_F(ArgTest, success2) {
 TEST_F(ArgTest, succes3) {
     static const Opt options[] = {
             {Kind::A, "-a", 0, "hogehjoge"},
-            {Kind::B, "-b", REQUIRE_ARG, "hogehjoge"},
+            {Kind::B, "-b", HAS_ARG, "hogehjoge"},
             {Kind::C, "-c", 0, "hogehjogef"},
             {Kind::D, "-d", 0, "hogehjoges"},
             {Kind::E, "-e", 0, "hogehjogee"},
@@ -231,7 +247,7 @@ TEST_F(ArgTest, succes3) {
 TEST_F(ArgTest, success4) {
     static const Opt options[] = {
             {Kind::A, "-a", 0, "hogehjoge"},
-            {Kind::B, "-b", REQUIRE_ARG, "hogehjoge"},
+            {Kind::B, "-b", HAS_ARG, "hogehjoge"},
             {Kind::C, "-c", 0, "hogehjogef"},
             {Kind::D, "-d", 0, "hogehjoges"},
             {Kind::E, "-e", 0, "hogehjogee"},
@@ -252,7 +268,7 @@ TEST_F(ArgTest, success4) {
 TEST_F(ArgTest, success5) {
     static const Opt options[] = {
             {Kind::A, "-a", 0, "hogehjoge"},
-            {Kind::B, "-b", REQUIRE_ARG, "hogehjoge"},
+            {Kind::B, "-b", HAS_ARG, "hogehjoge"},
             {Kind::C, "-c", 0, "hogehjogef"},
             {Kind::D, "-d", 0, "hogehjoges"},
             {Kind::E, "-e", 0, "hogehjogee"},
@@ -275,7 +291,7 @@ TEST_F(ArgTest, success5) {
 TEST_F(ArgTest, success6) {
     static const Opt options[] = {
             {Kind::A, "-a", 0, "hogehjoge"},
-            {Kind::B, "-b", REQUIRE_ARG, "hogehjoge"},
+            {Kind::B, "-b", HAS_ARG, "hogehjoge"},
             {Kind::C, "-c", 0, "hogehjogef"},
             {Kind::D, "-d", IGNORE_REST, "hogehjoges"},
             {Kind::E, "-e", 0, "hogehjogee"},
@@ -301,9 +317,9 @@ TEST_F(ArgTest, success6) {
 TEST_F(ArgTest, success7) {
     static const Opt options[] = {
             {Kind::A, "-a", 0, "hogehjoge"},
-            {Kind::B, "-b", REQUIRE_ARG, "hogehjoge"},
+            {Kind::B, "-b", HAS_ARG, "hogehjoge"},
             {Kind::C, "-c", 0, "hogehjogef"},
-            {Kind::D, "-d", IGNORE_REST | REQUIRE_ARG, "hogehjoges"},
+            {Kind::D, "-d", IGNORE_REST | HAS_ARG, "hogehjoges"},
             {Kind::E, "-e", 0, "hogehjogee"},
     };
 

@@ -655,15 +655,15 @@ static void generateIface(Config &config) {
 } // namespace
 
 #define EACH_OPT(OP) \
-    OP(SYSTEM_BUS,  "--system",    0,           "use system bus") \
-    OP(SESSION_BUS, "--session",   0,           "use session bus (default)") \
-    OP(RECURSIVE,   "--recursive", 0,           "search interface from child object") \
-    OP(DEST,        "--dest",      REQUIRE_ARG, "destination service name (must be well-known name)") \
-    OP(OUTPUT,      "--output",    REQUIRE_ARG, "specify output directory (default is standard output)") \
-    OP(OVERWRITE,   "--overwrite", 0,           "if generated interface files have already existed, overwrite them") \
-    OP(HELP,        "--help",      0,           "show this help message") \
-    OP(XML_FILE,    "--xml",       REQUIRE_ARG | IGNORE_REST, "generate interface from specified xml. no introspection.(ignore some option)") \
-    OP(ALLOW_STD,   "--allow-std", 0,           "allow standard D-Bus interface generation")
+    OP(SYSTEM_BUS,  "--system",    0,       "use system bus") \
+    OP(SESSION_BUS, "--session",   0,       "use session bus (default)") \
+    OP(RECURSIVE,   "--recursive", 0,       "search interface from child object") \
+    OP(DEST,        "--dest",      HAS_ARG, "destination service name (must be well-known name)") \
+    OP(OUTPUT,      "--output",    HAS_ARG, "specify output directory (default is standard output)") \
+    OP(OVERWRITE,   "--overwrite", 0,       "if generated interface files have already existed, overwrite them") \
+    OP(HELP,        "--help",      0,       "show this help message") \
+    OP(XML_FILE,    "--xml",       HAS_ARG | IGNORE_REST, "generate interface from specified xml. no introspection.(ignore some option)") \
+    OP(ALLOW_STD,   "--allow-std", 0,       "allow standard D-Bus interface generation")
 
 enum class OptionSet : unsigned int {
 #define GEN_ENUM(E, S, F, D) E,

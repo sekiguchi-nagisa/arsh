@@ -70,9 +70,9 @@ static void segvHandler(int num) {
     OP(TRACE_EXIT,     "--trace-exit",        0, "trace execution process to exit command") \
     OP(VERSION,        "--version",           0, "show version and copyright") \
     OP(HELP,           "--help",              0, "show this help message") \
-    OP(COMMAND,        "-c",                  argv::REQUIRE_ARG | argv::IGNORE_REST, "evaluate argument") \
+    OP(COMMAND,        "-c",                  argv::HAS_ARG | argv::IGNORE_REST, "evaluate argument") \
     OP(NORC,           "--norc",              0, "not load ydshrc") \
-    OP(EXEC,           "-e",                  argv::REQUIRE_ARG | argv::IGNORE_REST, "execute builtin command (ignore some option)")
+    OP(EXEC,           "-e",                  argv::HAS_ARG | argv::IGNORE_REST, "execute builtin command (ignore some option)")
 
 enum OptionKind {
 #define GEN_ENUM(E, S, F, D) E,
