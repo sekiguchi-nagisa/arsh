@@ -52,9 +52,14 @@ public:
     /**
      * default initial size is equivalent to MINIMUM_CAPACITY
      */
-    explicit FlexBuffer(size_type initSize = MINIMUM_CAPACITY) :
+    explicit FlexBuffer(size_type initSize) :
             maxSize(initSize < MINIMUM_CAPACITY ? MINIMUM_CAPACITY : initSize),
             usedSize(0), data(new T[this->maxSize]) { }
+
+    /**
+     * for lazy allocation
+     */
+    FlexBuffer() : maxSize(0), usedSize(0), data(nullptr) { }
 
     FlexBuffer(const FlexBuffer<T, SIZE_T> &buffer) = delete;
 
@@ -109,14 +114,16 @@ public:
         this->usedSize = 0;
     }
 
+    /**
+     * capacity will be at least reservingSize.
+     */
+    void reserve(size_type reservingSize);
+
     T &operator[](size_type index) const {
         return this->data[index];
     }
 
     T &at(size_type index) const;
-
-private:
-    void reserve(size_type additionalSize);
 };
 
 // ########################
@@ -131,7 +138,7 @@ const typename FlexBuffer<T, SIZE_T>::size_type FlexBuffer<T, SIZE_T>::MAXIMUM_C
 
 template <typename T, typename SIZE_T>
 FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::operator+=(T value) {
-    this->reserve(1);
+    this->reserve(this->usedSize + 1);
     this->data[this->usedSize++] = value;
     return *this;
 }
@@ -143,18 +150,17 @@ FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::operator+=(const FlexBuffer<T, SIZ
 
 template <typename T, typename SIZE_T>
 FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::append(const T *value, size_type size) {
-    this->reserve(size);
+    this->reserve(this->usedSize + size);
     memcpy(this->data + this->usedSize, value, sizeof(T) * size);
     this->usedSize += size;
     return *this;
 }
 
 template <typename T, typename SIZE_T>
-void FlexBuffer<T, SIZE_T>::reserve(size_type additionalSize) {
-    const std::size_t needSize = this->usedSize + additionalSize;
-    if(needSize > this->maxSize) {
+void FlexBuffer<T, SIZE_T>::reserve(size_type reservingSize) {
+    if(reservingSize > this->maxSize) {
         std::size_t newSize = (this->maxSize == 0 ? MINIMUM_CAPACITY : this->maxSize);
-        while(newSize < needSize) {
+        while(newSize < reservingSize) {
             newSize += (newSize >> 1);
         }
 

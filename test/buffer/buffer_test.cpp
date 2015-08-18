@@ -11,21 +11,21 @@ TEST(BufferTest, case1) {
 
     ASSERT_NO_FATAL_FAILURE({
         ASSERT_EQ(0, buffer.size());
-        ASSERT_EQ(IBuffer::MINIMUM_CAPACITY, buffer.capacity());
+        ASSERT_EQ(0, buffer.capacity());
     });
 
     // append
-    for(unsigned int i = 0; i < 8; i++) {
+    for(unsigned int i = 0; i < IBuffer::MINIMUM_CAPACITY; i++) {
         buffer += i;
     }
 
     ASSERT_NO_FATAL_FAILURE({
-        ASSERT_EQ(8, buffer.size());
+        ASSERT_EQ(IBuffer::MINIMUM_CAPACITY, buffer.size());
         ASSERT_EQ(IBuffer::MINIMUM_CAPACITY, buffer.capacity());
     });
 
     // get
-    for(unsigned int i = 0; i < 8; i++) {
+    for(unsigned int i = 0; i < IBuffer::MINIMUM_CAPACITY; i++) {
         ASSERT_NO_FATAL_FAILURE({
             ASSERT_EQ(i, buffer[i]);
             ASSERT_EQ(i, buffer.at(i));
@@ -44,10 +44,14 @@ TEST(BufferTest, case1) {
     // out of range
     bool raied = false;
     try {
-        buffer.at(10) = 999;
+        buffer.at(buffer.size() + 2) = 999;
     } catch(const std::out_of_range &e) {
         raied = true;
-        ASSERT_NO_FATAL_FAILURE({ASSERT_STREQ("size is: 8, but index is: 10", e.what());});
+        std::string msg("size is: ");
+        msg += std::to_string(buffer.size());
+        msg += ", but index is: ";
+        msg += std::to_string(buffer.size() + 2);
+        ASSERT_NO_FATAL_FAILURE({ASSERT_STREQ(msg.c_str(), e.what());});
     }
     ASSERT_NO_FATAL_FAILURE({ASSERT_TRUE(raied);});
 }
@@ -55,23 +59,25 @@ TEST(BufferTest, case1) {
 TEST(BufferTest, case2) {
     IBuffer buffer;
 
-    for(unsigned int i = 0; i < 10; i++) {
+    unsigned int size = IBuffer::MINIMUM_CAPACITY + 2;
+    for(unsigned int i = 0; i < size; i++) {
         buffer += i;    // expand buffer.
     }
 
+    unsigned int cap = IBuffer::MINIMUM_CAPACITY + (IBuffer::MINIMUM_CAPACITY >> 1);
     ASSERT_NO_FATAL_FAILURE({
-        ASSERT_EQ(10, buffer.size());
-        ASSERT_EQ(12, buffer.capacity());
+        ASSERT_EQ(size, buffer.size());
+        ASSERT_EQ(cap, buffer.capacity());
     });
 
-    for(unsigned int i = 0; i < 10; i++)  {
+    for(unsigned int i = 0; i < size; i++)  {
         ASSERT_NO_FATAL_FAILURE({ASSERT_EQ(i, buffer[i]);});
     }
 
     ASSERT_NO_FATAL_FAILURE({
         buffer.clear();
         ASSERT_EQ(0, buffer.size());
-        ASSERT_EQ(12, buffer.capacity());
+        ASSERT_EQ(cap, buffer.capacity());
     });
 
     ASSERT_NO_FATAL_FAILURE({   // remove
