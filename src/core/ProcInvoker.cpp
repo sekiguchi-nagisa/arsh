@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 
 #include <cstdlib>
@@ -26,8 +27,89 @@
 #include "../misc/num.h"
 #include "../misc/debug.h"
 
+extern char **environ;
+
 namespace ydsh {
 namespace core {
+
+/**
+ * if cannot resolve path, return empty string and set errno.
+ */
+static std::string resolveFilePath(const char *fileName) {
+    // get path
+    const char *path = getenv("PATH");
+    if(path == nullptr) {
+        path = "/bin:/usr/bin:/usr/local/bin";
+    }
+
+    // resolve path
+    std::string resolvedPath;
+    for(unsigned int i = 0; !resolvedPath.empty() || path[i] != '\0'; i++) {
+        char ch = path[i];
+        bool stop = false;
+
+        if(ch == '\0') {
+            stop = true;
+        } else if(ch != ':') {
+            resolvedPath += ch;
+            continue;
+        }
+        if(resolvedPath.empty()) {
+            continue;
+        }
+
+        if(resolvedPath[resolvedPath.size() - 1] != '/') {
+            resolvedPath += '/';
+        }
+        resolvedPath += fileName;
+
+        if(resolvedPath[0] == '~') {
+            resolvedPath = RuntimeContext::expandTilde(resolvedPath.c_str());
+        }
+
+        struct stat st;
+        if(stat(resolvedPath.c_str(), &st) == 0 && (st.st_mode & S_IXUSR) == S_IXUSR) {
+            return resolvedPath;
+        }
+        resolvedPath.clear();
+
+        if(stop) {
+            break;
+        }
+    }
+
+    // not found
+    errno = ENOENT;
+    return resolvedPath;
+}
+
+/**
+ * first element of argv is file name.
+ * last element of argv is null.
+ * last element of envp is null.
+ * if envp is null, inherit current env.
+ * if progName is null, equivalent to argv[0].
+ *
+ * if execution success, not return.
+ */
+static void builtin_execvpe(char **argv, char *const *envp, const char *progName) {
+    const char *fileName = argv[0];
+    if(envp == nullptr) {
+        envp = environ;
+    }
+    if(progName != nullptr) {
+        argv[0] = const_cast<char *>(progName);
+    }
+
+    if(strchr(fileName, '/') == nullptr) {  // resolve file path
+        std::string path(resolveFilePath(fileName));
+        if(!path.empty()) {
+            execve(path.c_str(), argv, envp);
+        }
+    } else {
+        execve(fileName, argv, envp);
+    }
+}
 
 /**
  * for builtin command error message.
@@ -235,10 +317,9 @@ static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
         if(arg[0] != '-') {
             break;
         }
-//        if(strcmp(arg, "-c") == 0) {
-//            clearEnv = true;
-//        } else
-        if(strcmp(arg, "-a") == 0 && ++index < bctx.argc) {
+        if(strcmp(arg, "-c") == 0) {
+            clearEnv = true;
+        } else if(strcmp(arg, "-a") == 0 && ++index < bctx.argc) {
             progName = bctx.argv[index];
         } else {
             fprintf(bctx.fp_stderr, "%s: usage: %s [-c] [-a name] file [args ...]\n", bctx.argv[0], bctx.argv[0]);
@@ -246,18 +327,11 @@ static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
         }
     }
 
+    char *envp[] = {nullptr};
     if(index < bctx.argc) { // exec
-        if(progName == nullptr) {
-            progName = bctx.argv[index];
-        }
-
-        if(clearEnv) {
-
-        } else {
-            execvp(progName, bctx.argv + index);
-            fprintf(stderr, "-ydsh: exec: %s: %s\n", bctx.argv[index], strerror(errno));
-            return 1;
-        }
+        builtin_execvpe(const_cast<char **>(bctx.argv + index), clearEnv ? envp : nullptr, progName);
+        fprintf(stderr, "-ydsh: exec: %s: %s\n", bctx.argv[index], strerror(errno));
+        return 1;
     }
     return 0;
 }
@@ -799,7 +873,7 @@ EvalStatus ProcInvoker::invoke() {
             exit(cmd_ptr(this->ctx, bctx, raised));
         }
 
-        execvp(argv[0], argv);
+        builtin_execvpe(argv, nullptr, nullptr);
 
         ChildError e;
         e.errorNum = errno;
@@ -823,6 +897,7 @@ EvalStatus ProcInvoker::execBuiltinCommand(char *const argv[]) {
     BuiltinContext bctx(argv);
     bool raised = false;
     this->ctx->updateExitStatus(cmd_ptr(this->ctx, bctx, raised));
+
 
     // flush standard stream to prevent buffering.
     fflush(stdin);

@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-#include <libgen.h>
-
 #include <ctime>
+#include <pwd.h>
 
-#include "RuntimeContext.h"
 #include "../config.h"
+#include "RuntimeContext.h"
 #include "symbol.h"
 #include "../misc/debug.h"
 #include "../misc/files.h"
@@ -608,6 +607,36 @@ void RuntimeContext::interpretPromptString(const char *ps, std::string &output) 
         }
         output += ch;
     }
+}
+
+std::string RuntimeContext::expandTilde(const char *path) {
+    std::string expanded;
+    for(; *path != '/' && *path != '\0'; path++) {
+        expanded += *path;
+    }
+
+    // expand tilde
+    if(expanded.size() == 1) {
+        struct passwd *pw = getpwuid(getuid());
+        if(pw != nullptr) {
+            expanded = pw->pw_dir;
+        }
+    } else if(expanded == "~+") {
+        expanded = getenv("PWD");
+    } else if(expanded == "~-") {
+        expanded = getenv("OLDPWD");
+    } else {
+        struct passwd *pw = getpwnam(expanded.c_str() + 1);
+        if(pw != nullptr) {
+            expanded = pw->pw_dir;
+        }
+    }
+
+    // append rest
+    if(*path != '\0') {
+        expanded += path;
+    }
+    return expanded;
 }
 
 } // namespace core
