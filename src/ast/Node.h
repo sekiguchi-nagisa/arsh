@@ -792,25 +792,16 @@ public:
 class TildeNode : public Node {
 private:
     /**
-     * may be empty string.
+     * starts with '/'
      */
-    std::string prefix;
-
-    /**
-     * may be empty string or startswith '/'
-     */
-    std::string rest;
+    std::string value;
 
 public:
-    TildeNode(unsigned int lineNum, std::string &&prefix, std::string &&rest);
+    TildeNode(unsigned int lineNum, std::string &&value);
     ~TildeNode() = default;
 
-    const std::string &getPrefix() {
-        return this->prefix;
-    }
-
-    const std::string &getRest() {
-        return this->rest;
+    const std::string &getValue() {
+        return this->value;
     }
 
     void dump(Writer &writer) const;  // override

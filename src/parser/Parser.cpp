@@ -842,14 +842,10 @@ std::unique_ptr<CmdNode> Parser::parse_command() {
     this->expect(COMMAND, token);
     std::unique_ptr<CmdNode> node;
 
-    {
-        std::string rest;
-        std::string prefix;
-        if(this->checkTildeExpansion(token, prefix, rest)) {
-            node.reset(new CmdNode(new TildeNode(token.lineNum, std::move(prefix), std::move(rest))));
-        } else {
-            node.reset(new CmdNode(token.lineNum, this->lexer->toCmdArg(token)));
-        }
+    if(this->lexer->startsWith(token, '~')) {
+        node.reset(new CmdNode(new TildeNode(token.lineNum, this->lexer->toCmdArg(token))));
+    } else {
+        node.reset(new CmdNode(token.lineNum, this->lexer->toCmdArg(token)));
     }
 
     bool next = true;
@@ -923,12 +919,8 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool expandTilde) {
     case CMD_ARG_PART: {
         Token token;
         this->expect(CMD_ARG_PART, token);
-        if(expandTilde) {
-            std::string prefix;
-            std::string rest;
-            if(checkTildeExpansion(token, prefix, rest)) {
-                RET_NODE(new TildeNode(token.lineNum, std::move(prefix), std::move(rest)));
-            }
+        if(expandTilde && this->lexer->startsWith(token, '~')) {
+            RET_NODE(new TildeNode(token.lineNum, this->lexer->toCmdArg(token)));
         }
         RET_NODE(new StringValueNode(token.lineNum, this->lexer->toCmdArg(token)));
     }
@@ -949,47 +941,6 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool expandTilde) {
         return std::unique_ptr<Node>(nullptr);
     }
     }
-}
-
-bool Parser::checkTildeExpansion(const Token &token, std::string &prefix, std::string &rest) {
-    if(!this->lexer->startsWith(token, '~')) {
-        return false;
-    }
-
-    const unsigned int size = token.size;
-    prefix.clear();
-    rest.clear();
-
-    if(size == 1) {
-        return true;
-    }
-
-    char buf[size + 1];
-    this->lexer->copyTokenText(token, buf);
-    buf[size] = '\0';
-
-    unsigned int index = 1;
-    for(; buf[index] != '/' && index < size; index++) {
-        prefix += buf[index];
-    }
-
-    for(; index < size; index++) {
-        char ch = buf[index];
-        if(ch == '\\') {
-            char nextCh = buf[++index];
-            switch(nextCh) {
-            case '\n':
-            case '\r':
-                continue;
-            default:
-                ch = nextCh;
-                break;
-            }
-        }
-        rest += ch;
-    }
-
-    return true;
 }
 
 // expression

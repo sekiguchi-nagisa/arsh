@@ -1508,12 +1508,11 @@ EvalStatus RedirNode::eval(RuntimeContext &ctx) {
 // ##     TildeNode     ##
 // #######################
 
-TildeNode::TildeNode(unsigned int lineNum, std::string &&prefix, std::string &&rest) :
-        Node(lineNum), prefix(std::move(prefix)), rest(std::move(rest)) { }
+TildeNode::TildeNode(unsigned int lineNum, std::string &&value) :
+        Node(lineNum), value(std::move(value)) { }
 
 void TildeNode::dump(Writer &writer) const {
-    WRITE(prefix);
-    WRITE(rest);
+    WRITE(value);
 }
 
 void TildeNode::accept(NodeVisitor *visitor) {
@@ -1521,31 +1520,10 @@ void TildeNode::accept(NodeVisitor *visitor) {
 }
 
 std::string TildeNode::expand(bool isLastSegment) {
-    if(!isLastSegment && this->rest.empty()) {
-        std::string value("~");
-        value += this->prefix;
-        return value;
+    if(!isLastSegment && strchr(this->value.c_str(), '/') == nullptr) {
+        return this->value;
     }
-
-    unsigned int prefixSize = this->prefix.size();
-    std::string value;
-    if(prefixSize == 0) {
-        value += getenv("HOME");
-    } else if(prefixSize == 1 && this->prefix[0] == '+') {
-        value += getenv("PWD");
-    } else if(prefixSize == 1 && this->prefix[0] == '-') {
-        value += getenv("OLDPWD");
-    } else {
-        struct passwd *pw = getpwnam(this->prefix.c_str());
-        if(pw != nullptr) {
-            value += pw->pw_dir;
-        } else {
-            value += "~";
-            value += this->prefix;
-        }
-    }
-    value += this->rest;
-    return value;
+    return RuntimeContext::expandTilde(this->value.c_str());
 }
 
 EvalStatus TildeNode::eval(RuntimeContext &ctx) {
