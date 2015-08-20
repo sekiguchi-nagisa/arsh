@@ -412,46 +412,46 @@ ProcInvoker::ProcInvoker(RuntimeContext *ctx) :
 }
 
 void ProcInvoker::openProc() {
-    unsigned int argOffset = this->argArray.getUsedSize();
+    unsigned int argOffset = this->argArray.size();
     unsigned int redirOffset = this->redirOptions.size();
     this->procOffsets.push_back(std::make_pair(argOffset, redirOffset));
 }
 
 void ProcInvoker::closeProc() {
-    this->argArray.append(nullptr);
+    this->argArray.push_back(nullptr);
     this->redirOptions.push_back(std::make_pair(RedirectOP::DUMMY, nullptr));
 }
 
-void ProcInvoker::addCommandName(const char *name) {
-    this->argArray.append(name);
+void ProcInvoker::addCommandName(std::shared_ptr<DSObject> &&value) {
+    this->argArray.push_back(std::move(value));
 }
 
-void ProcInvoker::addArg(const std::shared_ptr<DSObject> &value, bool skipEmptyString) {
+void ProcInvoker::addArg(std::shared_ptr<DSObject> &&value, bool skipEmptyString) {
     DSType *valueType = value->getType();
     if(*valueType == *this->ctx->getPool().getStringType()) {
         std::shared_ptr<String_Object> obj = std::dynamic_pointer_cast<String_Object>(value);
         if(skipEmptyString && obj->empty()) {
             return;
         }
-        this->argArray.append(obj->getValue());
+        this->argArray.push_back(std::move(obj));
         return;
     }
 
     if(*valueType == *this->ctx->getPool().getStringArrayType()) {
         Array_Object *arrayObj = TYPE_AS(Array_Object, value);
         for(const std::shared_ptr<DSObject> &element : arrayObj->getValues()) {
-            this->argArray.append(std::dynamic_pointer_cast<String_Object>(element)->getValue());
+            this->argArray.push_back(element);
         }
     } else {
         fatal("illegal command parameter type: %s\n", this->ctx->getPool().getTypeName(*valueType).c_str());
     }
 }
 
-void ProcInvoker::addRedirOption(RedirectOP op, const std::shared_ptr<DSObject> &value) {
+void ProcInvoker::addRedirOption(RedirectOP op, std::shared_ptr<DSObject> &&value) {
     DSType *valueType = value->getType();
     if(*valueType == *this->ctx->getPool().getStringType()) {
         this->redirOptions.push_back(
-                std::make_pair(op, std::dynamic_pointer_cast<String_Object>(value)->getValue()));
+                std::make_pair(op, std::dynamic_pointer_cast<String_Object>(value)));
     } else {
         fatal("illegal command parameter type: %s\n", this->ctx->getPool().getTypeName(*valueType).c_str());
     }
@@ -467,8 +467,8 @@ static void closeAllPipe(int size, int pipefds[][2]) {
 /**
  * if failed, return non-zero value(errno)
  */
-static int redirectToFile(const char *fileName, const char *mode, int targetFD) {
-    FILE *fp = fopen(fileName, mode);
+static int redirectToFile(const std::shared_ptr<String_Object> &fileName, const char *mode, int targetFD) {
+    FILE *fp = fopen(fileName->getValue(), mode);
     if(fp == NULL) {
         return errno;
     }
@@ -490,7 +490,7 @@ bool ProcInvoker::redirect(unsigned int procIndex, int errorPipe) {
 
     unsigned int startIndex = this->procOffsets[procIndex].second;
     for(; this->redirOptions[startIndex].first != RedirectOP::DUMMY; startIndex++) {
-        const std::pair<RedirectOP, const char *> &pair = this->redirOptions[startIndex];
+        auto &pair = this->redirOptions[startIndex];
         switch(pair.first) {
         case IN_2_FILE: {
             CHECK_ERROR(redirectToFile(pair.second, "rb", STDIN_FILENO));
@@ -557,8 +557,9 @@ bool ProcInvoker::redirect(unsigned int procIndex, int errorPipe) {
  * write opend file pointer to openedFps.
  * if cannot open file, return errno.
  */
-static int redirectToFile(const char *fileName, const char *mode, FILE **targetFp, std::vector<FILE *> &openedFps) {
-    FILE *fp = fopen(fileName, mode);
+static int redirectToFile(const std::shared_ptr<String_Object> &fileName,
+                          const char *mode, FILE **targetFp, std::vector<FILE *> &openedFps) {
+    FILE *fp = fopen(fileName->getValue(), mode);
     if(fp == nullptr) {
         return errno;
     }
@@ -574,7 +575,7 @@ bool ProcInvoker::redirectBuiltin(std::vector<FILE *> &openedFps, BuiltinContext
     int occuredError = 0;
     unsigned int startIndex = this->procOffsets[0].second;  // procIndex must be 0
     for(; this->redirOptions[startIndex].first != RedirectOP::DUMMY; startIndex++) {
-        const std::pair<RedirectOP, const char *> &pair = this->redirOptions[startIndex];
+        auto &pair = this->redirOptions[startIndex];
         switch(pair.first) {
         case IN_2_FILE: {
             REDIRECT_TO(pair.second, "rb", bctx.fp_stdin);
@@ -641,24 +642,31 @@ ProcInvoker::builtin_command_t ProcInvoker::lookupBuiltinCommand(const char *com
     return iter->second;
 }
 
+std::shared_ptr<DSObject> *ProcInvoker::getARGV(unsigned int procIndex) {
+    return this->argArray.data() + this->procOffsets[procIndex].first;
+}
+
 EvalStatus ProcInvoker::invoke() {
     const unsigned int procSize = this->procOffsets.size();
 
     // check builtin command
     if(procSize == 1) {
-        char **argv = this->argArray.getRawData(this->procOffsets[0].first);
-        builtin_command_t cmd_ptr = this->lookupBuiltinCommand(argv[0]);
+        builtin_command_t cmd_ptr = this->lookupBuiltinCommand(this->getCommandName(0));
         if(cmd_ptr != nullptr && cmd_ptr != builtin_eval) {
-            BuiltinContext bctx = {
-                    .argc = 1, .argv = argv,
-                    .fp_stdin = stdin, .fp_stdout = stdout, .fp_stderr = stderr
-            };
-            for(; argv[bctx.argc] != nullptr; bctx.argc++);
+            std::shared_ptr<DSObject> *ptr = this->getARGV(0);
+            unsigned int argc = 1;
+            for(; ptr[argc] != nullptr; argc++);
+            char *argv[argc + 1];
+            for(unsigned int i = 0; i < argc; i++) {
+                argv[i] = const_cast<char *>(TYPE_AS(String_Object, ptr[i])->getValue());
+            }
+            argv[argc] = nullptr;
 
+            BuiltinContext bctx(argc, argv);
             bool raised = false;
 
             // for builtin-exec
-            if(strcmp(argv[0], "exec") == 0) {
+            if(strcmp(bctx.argv[0], "exec") == 0) {
                 if(!this->redirect(0, -1)) {
                     this->ctx->updateExitStatus(1);
                     return EvalStatus::THROW;
@@ -771,18 +779,22 @@ EvalStatus ProcInvoker::invoke() {
 
         closeAllPipe(procSize, pipefds);
 
-        char **argv = this->argArray.getRawData(this->procOffsets[procIndex].first);
+        // create argv
+        std::shared_ptr<DSObject> *ptr = this->getARGV(procIndex);
+        unsigned int argc = 1;
+        for(; ptr[argc] != nullptr; argc++);
+        char *argv[argc + 1];
+        for(unsigned int i = 0; i < argc; i++) {
+            argv[i] = const_cast<char *>(TYPE_AS(String_Object, ptr[i])->getValue());
+        }
+        argv[argc] = nullptr;
 
         // check builtin
         builtin_command_t cmd_ptr = this->lookupBuiltinCommand(argv[0]);
         if(cmd_ptr != nullptr) {
             closeAllPipe(procSize, selfpipes);
 
-            BuiltinContext bctx = {
-                    .argc = 1, .argv = argv,
-                    .fp_stdin = stdin, .fp_stdout = stdout, .fp_stderr = stderr
-            };
-            for(; argv[bctx.argc] != nullptr; bctx.argc++);
+            BuiltinContext bctx(argc, argv);
             bool raised = false;
             exit(cmd_ptr(this->ctx, bctx, raised));
         }
@@ -808,12 +820,7 @@ EvalStatus ProcInvoker::execBuiltinCommand(char *const argv[]) {
         return EvalStatus::SUCCESS;
     }
 
-    BuiltinContext bctx = {
-            .argc = 1, .argv = argv,
-            .fp_stdin = stdin, .fp_stdout = stdout, .fp_stderr = stderr
-    };
-    for(; argv[bctx.argc] != nullptr; bctx.argc++);
-
+    BuiltinContext bctx(argv);
     bool raised = false;
     this->ctx->updateExitStatus(cmd_ptr(this->ctx, bctx, raised));
 
@@ -826,13 +833,12 @@ EvalStatus ProcInvoker::execBuiltinCommand(char *const argv[]) {
 }
 
 const char *ProcInvoker::getCommandName(unsigned int procIndex) {
-    char **argv = this->argArray.getRawData(this->procOffsets[procIndex].first);
-    return argv[0];
+    return TYPE_AS(String_Object, this->getARGV(procIndex)[0])->getValue();
 }
 
 bool ProcInvoker::checkChildError(const std::pair<unsigned int, ChildError> &errorPair) {
     if(!errorPair.second) {
-        const std::pair<RedirectOP, const char *> &pair = this->redirOptions[errorPair.second.redirIndex];
+        auto &pair = this->redirOptions[errorPair.second.redirIndex];
 
         std::string msg;
         if(pair.first == RedirectOP::DUMMY) {  // execution error
@@ -841,8 +847,8 @@ bool ProcInvoker::checkChildError(const std::pair<unsigned int, ChildError> &err
             msg += ": ";
         } else {    // redirection error
             msg += "io redirection error: ";
-            if(pair.second != nullptr && strlen(pair.second) != 0) {
-                msg += pair.second;
+            if(pair.second != nullptr && pair.second->size() != 0) {
+                msg += pair.second->getValue();
                 msg += ": ";
             }
         }

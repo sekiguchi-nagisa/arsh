@@ -1417,7 +1417,7 @@ EvalStatus CmdArgNode::eval(RuntimeContext &ctx) {
         return s;
     }
 
-    ctx.getProcInvoker().addArg(ctx.peek(), this->isIgnorableEmptyString());
+    ctx.getProcInvoker().addArg(ctx.pop(), this->isIgnorableEmptyString());
     return EvalStatus::SUCCESS;
 }
 
@@ -1500,7 +1500,7 @@ EvalStatus RedirNode::eval(RuntimeContext &ctx) {
     if(s != EvalStatus::SUCCESS) {
         return s;
     }
-    ctx.getProcInvoker().addRedirOption(this->op, ctx.peek());
+    ctx.getProcInvoker().addRedirOption(this->op, ctx.pop());
     return EvalStatus::SUCCESS;
 }
 
@@ -1608,8 +1608,7 @@ EvalStatus CmdNode::eval(RuntimeContext &ctx) {
 
     EVAL(ctx, this->nameNode);
 
-    ctx.getProcInvoker().addCommandName(
-            TYPE_AS(String_Object, ctx.peek())->getValue());
+    ctx.getProcInvoker().addCommandName(ctx.pop());
 
     for(Node *node : this->argNodes) {
         EVAL(ctx, node);
@@ -1665,9 +1664,6 @@ void PipedCmdNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus PipedCmdNode::eval(RuntimeContext &ctx) {
-    const unsigned int oldIndex = ctx.getStackTopIndex();
-    ctx.getProcInvoker().clear();
-
     for(auto &node : this->cmdNodes) {
         EVAL(ctx, node);
     }
@@ -1675,12 +1671,7 @@ EvalStatus PipedCmdNode::eval(RuntimeContext &ctx) {
     ctx.pushCallFrame(this->lineNum);
     EvalStatus status = ctx.getProcInvoker().invoke();
     ctx.popCallFrame();
-
-    // pop command argument
-    const unsigned int curIndex = ctx.getStackTopIndex();
-    for(unsigned int i = curIndex; i > oldIndex; i--) {
-        ctx.popNoReturn();
-    }
+    ctx.getProcInvoker().clear();
 
     // push exit status
     if(*this->type == *ctx.getPool().getBooleanType()) {

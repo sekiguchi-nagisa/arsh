@@ -50,64 +50,9 @@ enum RedirectOP : unsigned int {
     DUMMY,
 };
 
-class ArgArray {
-private:
-    char **data;
-    unsigned int usedSize;
-    unsigned int size;
-
-public:
-    ArgArray(unsigned int size = 32) : data(new char*[size]), usedSize(0), size(size) { }
-
-    ~ArgArray() {
-        delete[] this->data;
-    }
-
-private:
-    void expand() {
-        unsigned int newSize = this->size * 2;
-        char **newData = new char *[newSize];
-        memcpy(newData, this->data, sizeof(char *) * this->size);
-        delete[] this->data;
-        this->data = newData;
-        this->size = newSize;
-    }
-
-public:
-    void append(const char *e) {
-        if(this->usedSize == this->size) {
-            this->expand();
-        }
-        this->data[this->usedSize++] = const_cast<char*>(e);
-    }
-
-    char *operator[](unsigned int index) {
-        assert(index < this->usedSize);
-        return this->data[index];
-    }
-
-    char **getRawData(unsigned int offset) {
-        assert(offset < this->usedSize);
-        return this->data + offset;
-    }
-
-    unsigned int getSize() const {
-        return this->size;
-    }
-
-    unsigned int getUsedSize() const {
-        return this->usedSize;
-    }
-
-    void clear() {
-        this->usedSize = 0;
-    }
-};
-
-
 /**
  * for builtin command argument.
- * following vairbales are read-only.
+ * following variables are read-only.
  */
 struct BuiltinContext {
     /**
@@ -125,6 +70,14 @@ struct BuiltinContext {
     FILE *fp_stdin;
     FILE *fp_stdout;
     FILE *fp_stderr;
+
+    BuiltinContext(int argc, char **argv) :
+            argc(argc), argv(argv), fp_stdin(stdin), fp_stdout(stdout), fp_stderr(stderr) { }
+
+    explicit BuiltinContext(char *const *argv) :
+            argc(1), argv(argv), fp_stdin(stdin), fp_stdout(stdout), fp_stderr(stderr) {
+        for(; this->argv[this->argc] != nullptr; this->argc++);
+    }
 };
 
 // for error reporting
@@ -188,9 +141,12 @@ private:
      */
     CStringHashMap<builtin_command_t> builtinMap;
 
-    ArgArray argArray;
+    /**
+     * commonly stored object is String_Object.
+     */
+    std::vector<std::shared_ptr<DSObject>> argArray;
 
-    std::vector<std::pair<RedirectOP, const char *>> redirOptions;
+    std::vector<std::pair<RedirectOP, std::shared_ptr<String_Object>>> redirOptions;
 
     /**
      * first is argument offset
@@ -214,9 +170,9 @@ public:
 
     void openProc();
     void closeProc();
-    void addCommandName(const char *name);
-    void addArg(const std::shared_ptr<DSObject> &value, bool skipEmptyString);
-    void addRedirOption(RedirectOP op, const std::shared_ptr<DSObject> &value);
+    void addCommandName(std::shared_ptr<DSObject> &&value);
+    void addArg(std::shared_ptr<DSObject> &&value, bool skipEmptyString);
+    void addRedirOption(RedirectOP op, std::shared_ptr<DSObject> &&value);
 
     EvalStatus invoke();
 
@@ -234,6 +190,8 @@ private:
      * return null, if not found builtin command.
      */
     builtin_command_t lookupBuiltinCommand(const char *commandName);
+
+    std::shared_ptr<DSObject> *getARGV(unsigned int procIndex);
 
     const char *getCommandName(unsigned int procIndex);
     bool checkChildError(const std::pair<unsigned int, ChildError> &errorPair);
