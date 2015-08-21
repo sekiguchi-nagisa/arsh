@@ -38,6 +38,8 @@
 
 #cmakedefine USE_TRACE_TOKEN
 
+#cmakedefine USE_DUMP_EXEC
+
 #cmakedefine USE_DBUS
 
 #endif //YDSH_CONFIG_H

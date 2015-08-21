@@ -22,6 +22,7 @@
 
 #include <cstdlib>
 
+#include "../config.h"
 #include "ProcInvoker.h"
 #include "RuntimeContext.h"
 #include "../misc/num.h"
@@ -101,14 +102,39 @@ static void builtin_execvpe(char **argv, char *const *envp, const char *progName
         argv[0] = const_cast<char *>(progName);
     }
 
+    std::string path;
     if(strchr(fileName, '/') == nullptr) {  // resolve file path
-        std::string path(resolveFilePath(fileName));
+        path = resolveFilePath(fileName);
         if(!path.empty()) {
-            execve(path.c_str(), argv, envp);
+            fileName = path.c_str();
         }
-    } else {
-        execve(fileName, argv, envp);
     }
+
+#ifdef USE_DUMP_EXEC
+    if(getenv("YDSH_DUMP_EXEC") != nullptr) {
+        std::cerr << getpid() << " execve(" << fileName << ", [";
+        for(unsigned int i = 0; argv[i] != nullptr; i++) {
+            if(i > 0) {
+                std::cerr << ", ";
+            }
+            std::cerr << argv[i];
+        }
+        std::cerr << "]";
+
+        if(strcmp(getenv("YDSH_DUMP_EXEC"), "env") == 0) {
+            std::cerr << ", [" << (envp == nullptr ? "null" : "");
+            for(unsigned int i = 0; envp != nullptr && envp[i] != nullptr; i++) {
+                if(i > 0) {
+                    std::cerr << ", ";
+                }
+                std::cerr << envp[i];
+            }
+            std::cerr << "]";
+        }
+        std::cerr << ")" << std::endl;
+    }
+#endif
+    execve(fileName, argv, envp);
 }
 
 /**
