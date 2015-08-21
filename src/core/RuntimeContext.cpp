@@ -16,6 +16,7 @@
 
 #include <ctime>
 #include <pwd.h>
+#include <libgen.h>
 
 #include "../config.h"
 #include "RuntimeContext.h"
