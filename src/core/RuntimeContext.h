@@ -198,6 +198,11 @@ public:
 
     void addScriptArg(const char *arg);
 
+    /**
+     * clear current script arg
+     */
+    void initScriptArg();
+
     const std::shared_ptr<Int_Object> &getExitStatus() {
         return this->exitStatus;
     }

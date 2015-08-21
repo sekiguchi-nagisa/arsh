@@ -89,6 +89,12 @@ void RuntimeContext::addScriptArg(const char *arg) {
             std::make_shared<String_Object>(this->pool.getStringType(), std::string(arg)));
 }
 
+void RuntimeContext::initScriptArg() {
+    this->scriptArgs = std::make_shared<Array_Object>(this->pool.getStringArrayType());
+    unsigned int index = this->getSpecialCharIndex("@");
+    this->setGlobal(index, this->scriptArgs);
+}
+
 void RuntimeContext::reserveGlobalVar(unsigned int size) {
     if(this->tableSize < size) {
         unsigned int newSize = this->tableSize;

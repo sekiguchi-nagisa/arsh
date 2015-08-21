@@ -343,6 +343,7 @@ unsigned int DSContext_getLineNum(DSContext *ctx) {
 }
 
 void DSContext_setArguments(DSContext *ctx, char *const argv[]) {
+    ctx->ctx.initScriptArg();
     for(unsigned int i = 0; argv[i] != nullptr; i++) {
         if(i == 0) {
             ctx->ctx.updateScriptName(argv[0]);
