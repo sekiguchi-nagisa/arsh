@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 
+ereport() {
+    echo trap error in $1
+    exit 1
+}
 
-trap "echo trap error; exit 1" ERR
+trap 'ereport $LINENO' ERR
 
 YDSH_BIN=$1
 

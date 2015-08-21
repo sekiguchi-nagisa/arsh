@@ -7,7 +7,13 @@ cleanup_tmpdir() {
     rm -rf $DIR
 }
 
-trap 'echo trap error; cleanup_tmpdir; exit 1' ERR
+ereport() {
+    echo trap error in $1
+    cleanup_tmpdir
+    exit 1
+}
+
+trap 'ereport $LINENO' ERR
 
 
 TARGET=$DIR/hoge.txt
