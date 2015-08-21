@@ -330,7 +330,7 @@ static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
     char *envp[] = {nullptr};
     if(index < bctx.argc) { // exec
         builtin_execvpe(const_cast<char **>(bctx.argv + index), clearEnv ? envp : nullptr, progName);
-        fprintf(stderr, "-ydsh: exec: %s: %s\n", bctx.argv[index], strerror(errno));
+        fprintf(bctx.fp_stderr, "-ydsh: exec: %s: %s\n", bctx.argv[index], strerror(errno));
         return 1;
     }
     return 0;
@@ -339,9 +339,24 @@ static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
 static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
     if(bctx.argc > 1) {
         execvp(bctx.argv[1], bctx.argv + 1);
-        fprintf(stderr, "-ydsh: eval: %s: %s\n", bctx.argv[1], strerror(errno));
+        fprintf(bctx.fp_stderr, "-ydsh: eval: %s: %s\n", bctx.argv[1], strerror(errno));
         return 1;
     }
+    return 0;
+}
+
+static int builtin_pwd(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+    //TODO: support LP option
+
+    size_t size = PATH_MAX;
+    char buf[size];
+    if(getcwd(buf, size) == nullptr) {
+        builtin_perror(bctx.fp_stderr, "-ydsh: pwd: .");
+        return 1;
+    }
+
+    fputs(buf, bctx.fp_stdout);
+    fputc('\n', bctx.fp_stdout);
     return 0;
 }
 
@@ -418,6 +433,8 @@ const struct {
                 "        \\\\    backslash\n"
                 "        \\[    begin of unprintable sequence\n"
                 "        \\]    end of unprintable sequence"},
+        {"pwd", builtin_pwd, "",
+                "    Print the current working directiry(absolute path)."},
         {"true", builtin_true, "",
                 "    Always success (exit status is 0)."},
 };

@@ -147,9 +147,6 @@ DSContext::DSContext() :
     setenv("SHLVL", std::to_string(originalShellLevel + 1).c_str(), 1);
 
     // set some env
-    std::string wd = getCurrentWorkingDir();
-    setenv("OLDPWD", wd.c_str(), 0);
-    setenv("PWD", wd.c_str(), 0);
     if(getenv("HOME") == nullptr) {
         struct passwd *pw = getpwuid(getuid());
         if(pw == nullptr) {
@@ -258,6 +255,10 @@ void DSContext::loadEmbeddedScript() {
         fatal("broken embedded script\n");
     }
     this->ctx.getPool().commit();
+
+    // rest some state
+    this->lineNum = 1;
+    this->ctx.updateExitStatus(0);
 }
 
 const unsigned int DSContext::originalShellLevel = getShellLevel();
@@ -285,10 +286,6 @@ DSContext *DSContext_create() {
     DSContext *ctx = new DSContext();
     ctx->initBuiltinVar();
     ctx->loadEmbeddedScript();
-
-    // reset line number
-    ctx->lineNum = 1;
-
     return ctx;
 }
 

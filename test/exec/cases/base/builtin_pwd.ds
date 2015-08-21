@@ -1,0 +1,14 @@
+#$test($status = 1)
+
+cd
+assert($PWD == "$(pwd)")
+
+# error (not found)
+let tmp_dir = "$(mktemp -d 2> /dev/null || mktemp -d -t lfreop)"
+
+
+assert(cd $tmp_dir)
+assert(rm -rf $tmp_dir)
+
+pwd # error
+assert($? != 0)
