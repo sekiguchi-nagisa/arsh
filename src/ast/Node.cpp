@@ -1642,6 +1642,17 @@ void PipedCmdNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus PipedCmdNode::eval(RuntimeContext &ctx) {
+    /**
+     * clear remained arguments of parent process.
+     * in following case, if we execute echo command in subshell,
+     * ProcInvoker still contains `cat', an argument pushed by parent shell.
+     *
+     * cat $(echo a b c)
+     *
+     * so, need to clear them before push arguments.
+     */
+    ctx.getProcInvoker().clear();
+
     for(auto &node : this->cmdNodes) {
         EVAL(ctx, node);
     }
