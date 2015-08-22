@@ -17,7 +17,6 @@
 #ifndef MISC_FILES_H
 #define MISC_FILES_H
 
-#include <unistd.h>
 #include <dirent.h>
 
 #include <cstdlib>
@@ -28,18 +27,6 @@
 
 namespace ydsh {
 namespace misc {
-
-/**
- * get current working directory. return empty string, if error happened.
- */
-inline std::string getCurrentWorkingDir() {
-    size_t size = PATH_MAX;
-    char buf[size];
-    if(getcwd(buf, size) == nullptr) {
-        return std::string();
-    }
-    return std::string(buf);
-}
 
 inline void getFileList(const char *dirPath, bool recursive, std::vector<std::string> &results) {
     std::list<std::string> dirList;

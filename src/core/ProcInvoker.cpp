@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
@@ -23,6 +22,7 @@
 #include <cstdlib>
 
 #include "../config.h"
+#include "system.h"
 #include "ProcInvoker.h"
 #include "RuntimeContext.h"
 #include "../misc/num.h"
@@ -65,7 +65,7 @@ static std::string resolveFilePath(const char *fileName) {
         resolvedPath += fileName;
 
         if(resolvedPath[0] == '~') {
-            resolvedPath = RuntimeContext::expandTilde(resolvedPath.c_str());
+            resolvedPath = expandTilde(resolvedPath.c_str());
         }
 
         struct stat st;
@@ -835,7 +835,7 @@ EvalStatus ProcInvoker::invoke() {
     // fork
     std::pair<unsigned int, ChildError> errorPair;
     unsigned int procIndex;
-    for(procIndex = 0; procIndex < procSize && (pid[procIndex] = fork()) > 0; procIndex++) {
+    for(procIndex = 0; procIndex < procSize && (pid[procIndex] = xfork()) > 0; procIndex++) {
         this->procCtxs.push_back(ProcInvoker::ProcContext(pid[procIndex]));
 
         // check error via self-pipe

@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include <unistd.h>
 #include <sys/wait.h>
 #include <pwd.h>
 
 #include <cassert>
 
+#include "../core/system.h"
 #include "../core/symbol.h"
 #include "../core/DSObject.h"
 #include "../core/RuntimeContext.h"
@@ -1523,7 +1523,7 @@ std::string TildeNode::expand(bool isLastSegment) {
     if(!isLastSegment && strchr(this->value.c_str(), '/') == nullptr) {
         return this->value;
     }
-    return RuntimeContext::expandTilde(this->value.c_str());
+    return expandTilde(this->value.c_str());
 }
 
 EvalStatus TildeNode::eval(RuntimeContext &ctx) {
@@ -1757,7 +1757,7 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
             exit(1);    //FIXME: throw exception
         }
 
-        pid_t pid = fork();
+        pid_t pid = xfork();
         if(pid > 0) {   // parent process
             close(pipefds[WRITE_PIPE]);
 

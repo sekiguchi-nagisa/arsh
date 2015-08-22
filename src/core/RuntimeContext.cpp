@@ -17,6 +17,7 @@
 #include <ctime>
 #include <pwd.h>
 #include <libgen.h>
+#include <unistd.h>
 
 #include "../config.h"
 #include "RuntimeContext.h"
@@ -616,7 +617,10 @@ void RuntimeContext::interpretPromptString(const char *ps, std::string &output) 
     }
 }
 
-std::string RuntimeContext::expandTilde(const char *path) {
+
+// implementation of some system util
+
+std::string expandTilde(const char *path) {
     std::string expanded;
     for(; *path != '/' && *path != '\0'; path++) {
         expanded += *path;
@@ -644,6 +648,10 @@ std::string RuntimeContext::expandTilde(const char *path) {
         expanded += path;
     }
     return expanded;
+}
+
+pid_t xfork(void) {
+    return fork();  //FIXME: reset signal setting
 }
 
 } // namespace core

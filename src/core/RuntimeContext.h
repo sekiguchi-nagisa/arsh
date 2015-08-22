@@ -523,11 +523,6 @@ public:
      * n is 1 or 2
      */
     void interpretPromptString(const char *ps, std::string &output);
-
-    /**
-     * path is starts with tilde.
-     */
-    static std::string expandTilde(const char *path);
 };
 
 } // namespace core
