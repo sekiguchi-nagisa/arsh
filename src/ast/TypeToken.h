@@ -33,11 +33,13 @@ private:
     unsigned int lineNum;
 
 public:
-    explicit TypeToken(unsigned int lineNum);
+    explicit TypeToken(unsigned int lineNum) : lineNum(lineNum) { }
 
     virtual ~TypeToken() = default;
 
-    unsigned int getLineNum();
+    unsigned int getLineNum() const {
+        return this->lineNum;
+    }
 
     /**
      * get token text
@@ -52,11 +54,17 @@ private:
     std::string typeName;
 
 public:
-    ClassTypeToken(unsigned int lineNum, std::string &&typeName);
+    ClassTypeToken(unsigned int lineNum, std::string &&typeName) :
+            TypeToken(lineNum), typeName(std::move(typeName)) { }
+
     ~ClassTypeToken() = default;
 
     std::string toTokenText() const;  // override
-    const std::string &getTokenText();
+
+    const std::string &getTokenText() const {
+        return this->typeName;
+    }
+
     void accept(TypeTokenVisitor *visitor); // override
 };
 
@@ -69,13 +77,21 @@ private:
     std::vector<TypeToken *> elementTypeTokens;
 
 public:
-    explicit ReifiedTypeToken(ClassTypeToken *templateTypeToken);
+    explicit ReifiedTypeToken(ClassTypeToken *templateTypeToken) :
+            TypeToken(templateTypeToken->getLineNum()),
+            templateTypeToken(templateTypeToken), elementTypeTokens() { }
 
     ~ReifiedTypeToken();
 
     void addElementTypeToken(TypeToken *type);
-    ClassTypeToken *getTemplate();
-    const std::vector<TypeToken *> &getElementTypeTokens();
+
+    ClassTypeToken *getTemplate() const {
+        return this->templateTypeToken;
+    }
+
+    const std::vector<TypeToken *> &getElementTypeTokens() const {
+        return this->elementTypeTokens;
+    }
 
     std::string toTokenText() const;  // override
     void accept(TypeTokenVisitor *visitor); // override
@@ -94,13 +110,21 @@ private:
     std::vector<TypeToken *> paramTypeTokens;
 
 public:
-    explicit FuncTypeToken(TypeToken *type);
+    explicit FuncTypeToken(TypeToken *returnTypeToken) :
+            TypeToken(returnTypeToken->getLineNum()),
+            returnTypeToken(returnTypeToken), paramTypeTokens() { }
 
     ~FuncTypeToken();
 
     void addParamTypeToken(TypeToken *type);
-    const std::vector<TypeToken *> &getParamTypeTokens();
-    TypeToken *getReturnTypeToken();
+
+    const std::vector<TypeToken *> &getParamTypeTokens() const {
+        return this->paramTypeTokens;
+    }
+
+    TypeToken *getReturnTypeToken() const {
+        return this->returnTypeToken;
+    }
 
     std::string toTokenText() const;  // override
     void accept(TypeTokenVisitor *visitor); // override
@@ -115,10 +139,14 @@ private:
     std::string name;
 
 public:
-    DBusInterfaceToken(unsigned int lineNum, std::string &&name);
+    DBusInterfaceToken(unsigned int lineNum, std::string &&name) :
+            TypeToken(lineNum), name(std::move(name)) { }
+
     ~DBusInterfaceToken() = default;
 
-    const std::string &getTokenText();
+    const std::string &getTokenText() const {
+        return this->name;
+    }
 
     std::string toTokenText() const; // override
     void accept(TypeTokenVisitor *visitor); // override
@@ -136,8 +164,14 @@ public:
     ~ReturnTypeToken();
 
     void addTypeToken(TypeToken *token);
-    const std::vector<TypeToken *> &getTypeTokens();
-    bool hasMultiReturn();
+
+    const std::vector<TypeToken *> &getTypeTokens() const {
+        return this->typeTokens;
+    }
+
+    bool hasMultiReturn() const {
+        return this->typeTokens.size() > 1;
+    }
 
     std::string toTokenText() const; // override
     void accept(TypeTokenVisitor *visitor); // override

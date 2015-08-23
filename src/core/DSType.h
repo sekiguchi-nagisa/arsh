@@ -64,22 +64,30 @@ public:
     /**
      * if true, can extend this type
      */
-    bool isExtendable() const;
+    bool isExtendable() const {
+        return hasFlag(this->attributeSet, EXTENDABLE);
+    }
 
     /**
      * if this type is VoidType, return true.
      */
-    bool isVoidType() const;
+    bool isVoidType() const {
+        return hasFlag(this->attributeSet, VOID_TYPE);
+    }
 
     /**
      * if this type is FunctionType, return true.
      */
-    bool isFuncType() const;
+    bool isFuncType() const {
+        return hasFlag(this->attributeSet, FUNC_TYPE);
+    }
 
     /**
      * if this type is InterfaceType, return true.
      */
-    bool isInterface() const;
+    bool isInterface() const {
+        return hasFlag(this->attributeSet, INTERFACE);
+    }
 
     /**
      * return true, if type is builtin type, reified type, tuple type, error type.
@@ -90,7 +98,9 @@ public:
      * get super type of this type.
      * return null, if has no super type(ex. AnyType, VoidType).
      */
-    DSType *getSuperType() const;
+    DSType *getSuperType() const {
+        return this->superType;
+    }
 
     /**
      * return null, if has no constructor
@@ -130,8 +140,13 @@ public:
 
     virtual void accept(TypeVisitor *visitor) = 0;
 
-    bool operator==(const DSType &type);
-    bool operator!=(const DSType &type);
+    bool operator==(const DSType &type) const {
+        return (unsigned long) this == (unsigned long) &type;
+    }
+
+    bool operator!=(const DSType &type) const {
+        return (unsigned long) this != (unsigned long) &type;
+    }
 
     /**
      * check inheritance of target type.
@@ -155,16 +170,24 @@ private:
 
 public:
     FunctionType(DSType *superType,
-                 DSType *returnType, std::vector<DSType *> &&paramTypes);
+                 DSType *returnType, std::vector<DSType *> &&paramTypes) :
+            DSType(false, superType, false),
+            returnType(returnType), paramTypes(std::move(paramTypes)) {
+        setFlag(this->attributeSet, FUNC_TYPE);
+    }
 
     ~FunctionType() = default;
 
-    DSType *getReturnType();
+    DSType *getReturnType() const {
+        return this->returnType;
+    }
 
     /**
      * may be empty vector, if has no parameter (getParamSize() == 0)
      */
-    const std::vector<DSType *> &getParamTypes();
+    const std::vector<DSType *> &getParamTypes() const {
+        return this->paramTypes;
+    }
 
     /**
      * lookup from super type
@@ -276,11 +299,15 @@ public:
     /**
      * super type is AnyType or VariantType.
      */
-    ReifiedType(native_type_info_t *info, DSType *superType, std::vector<DSType *> &&elementTypes);
+    ReifiedType(native_type_info_t *info, DSType *superType, std::vector<DSType *> &&elementTypes) :
+            BuiltinType(false, superType, info, false), elementTypes(std::move(elementTypes)) { }
 
     ~ReifiedType() = default;
 
-    const std::vector<DSType *> &getElementTypes();
+    const std::vector<DSType *> &getElementTypes() const {
+        return this->elementTypes;
+    }
+
     void accept(TypeVisitor *visitor); // override
 
 private:
@@ -308,7 +335,10 @@ public:
     TupleType(DSType *superType, std::vector<DSType *> &&types);
     ~TupleType();
 
-    const std::vector<DSType *> &getTypes();
+    const std::vector<DSType *> &getTypes() const {
+        return this->types;
+    }
+
     MethodHandle *getConstructorHandle(TypePool *typePool); // override
     MethodRef *getConstructor();    // override
 
@@ -368,7 +398,10 @@ public:
     /**
      * superType is always AnyType.
      */
-    explicit InterfaceType(DSType *superType);
+    explicit InterfaceType(DSType *superType) :
+            DSType(false, superType, false), fieldHandleMap(), methodHandleMap() {
+        setFlag(this->attributeSet, INTERFACE);
+    }
 
     ~InterfaceType();
 
@@ -395,7 +428,9 @@ private:
     static std::shared_ptr<MethodRef> initRef;
 
 public:
-    explicit ErrorType(DSType *superType);
+    explicit ErrorType(DSType *superType) :
+            DSType(true, superType, false), constructorHandle() { }
+
     ~ErrorType();
 
     MethodHandle *getConstructorHandle(TypePool *typePool); // override
@@ -447,17 +482,26 @@ private:
      */
     native_type_info_t *info;
 public:
-    TypeTemplate(std::string &&name, std::vector<DSType*> &&elementTypes, native_type_info_t *info);
+    TypeTemplate(std::string &&name, std::vector<DSType*> &&elementTypes, native_type_info_t *info) :
+            name(std::move(name)), acceptableTypes(std::move(elementTypes)), info(info) { }
 
     ~TypeTemplate() = default;
 
-    const std::string &getName();
+    const std::string &getName() const {
+        return this->name;
+    }
 
-    unsigned int getElementTypeSize();
+    unsigned int getElementTypeSize() const {
+        return this->acceptableTypes.size();
+    }
 
-    native_type_info_t *getInfo();
+    native_type_info_t *getInfo() const {
+        return this->info;
+    }
 
-    const std::vector<DSType *> &getAcceptableTypes();
+    const std::vector<DSType *> &getAcceptableTypes() const {
+        return this->acceptableTypes;
+    }
 };
 
 } // namespace core

@@ -49,45 +49,72 @@ private:
     flag8_set_t attributeSet;
 
 public:
-    FieldHandle(DSType *fieldType, unsigned int fieldIndex, bool readOnly);
-    virtual ~FieldHandle() = default;
-
-    virtual DSType *getFieldType(TypePool *typePool);
-    unsigned int getFieldIndex();
-    std::string toString() const;
-    void setAttribute(flag8_t attribute);
-    void unsetAttribute(flag8_t attribute);
-
-    /**
-     * if includes targetAttr, return true.
-     */
-    bool hasAttribute(flag8_t targetAttr) const;
-
-    /**
-     * equivalent to this->hasAttribute(READ_ONLY).
-     */
-    bool isReadOnly() const;
-
-    /**
-     * equivalent to this->hasAttribute(GLOBAL).
-     */
-    bool isGlobal() const;
-
-    bool isEnv() const;
-
-    /**
-     * if true, is FunctionHandle, equivalent to dynamic_cast<FunctionHandle*>(handle) != 0
-     */
-    bool isFuncHandle() const;
-
-    bool withinInterface() const;
-
     // attribute definition
     static constexpr flag8_t READ_ONLY   = 1 << 0;
     static constexpr flag8_t GLOBAL      = 1 << 1;
     static constexpr flag8_t ENV         = 1 << 2;
     static constexpr flag8_t FUNC_HANDLE = 1 << 3;
     static constexpr flag8_t INTERFACE   = 1 << 4;
+
+    FieldHandle(DSType *fieldType, unsigned int fieldIndex, bool readOnly) :
+            fieldType(fieldType), fieldIndex(fieldIndex), attributeSet(0) {
+        if(readOnly) {
+            this->setAttribute(READ_ONLY);
+        }
+    }
+
+    virtual ~FieldHandle() = default;
+
+    virtual DSType *getFieldType(TypePool *typePool);
+
+    unsigned int getFieldIndex() const {
+        return this->fieldIndex;
+    }
+
+    std::string toString() const;
+    void setAttribute(flag8_t attribute) {
+        setFlag(this->attributeSet, attribute);
+    }
+
+    void unsetAttribute(flag8_t attribute) {
+        unsetFlag(this->attributeSet, attribute);
+    }
+
+    /**
+     * if includes targetAttr, return true.
+     */
+    bool hasAttribute(flag8_t targetAttr) const {
+        return hasFlag(this->attributeSet, targetAttr);
+    }
+
+    /**
+     * equivalent to this->hasAttribute(READ_ONLY).
+     */
+    bool isReadOnly() const {
+        return this->hasAttribute(READ_ONLY);
+    }
+
+    /**
+     * equivalent to this->hasAttribute(GLOBAL).
+     */
+    bool isGlobal() const {
+        return this->hasAttribute(GLOBAL);
+    }
+
+    bool isEnv() const {
+        return this->hasAttribute(ENV);
+    }
+
+    /**
+     * if true, is FunctionHandle, equivalent to dynamic_cast<FunctionHandle*>(handle) != 0
+     */
+    bool isFuncHandle() const {
+        return this->hasAttribute(FUNC_HANDLE);
+    }
+
+    bool withinInterface() const {
+        return this->hasAttribute(INTERFACE);
+    }
 };
 
 /**
@@ -110,14 +137,21 @@ protected:
     std::vector<bool> defaultValues;
 
 public:
-    FunctionHandle(DSType *returnType, const std::vector<DSType *> &paramTypes, unsigned int fieldIndex);
+    FunctionHandle(DSType *returnType, const std::vector<DSType *> &paramTypes, unsigned int fieldIndex) :
+            FieldHandle(0, fieldIndex, true),
+            returnType(returnType), paramTypes(paramTypes), paramIndexMap(), defaultValues() {
+        this->setAttribute(FUNC_HANDLE);
+    }
+
     ~FunctionHandle() = default;
 
     DSType *getFieldType(TypePool *typePool);   // override
 
     FunctionType *getFuncType(TypePool *typePool);
 
-    DSType *getReturnType();
+    DSType *getReturnType() const {
+        return this->returnType;
+    }
 
     const std::vector<DSType *> &getParamTypes();
 
@@ -157,16 +191,37 @@ protected:
     MethodHandle *next;
 
 public:
-    explicit MethodHandle(int methodIndex);
+    explicit MethodHandle(int methodIndex) :
+            methodIndex(methodIndex), attributeSet(),
+            returnType(), recvType(), paramTypes(), next() { }
+
     ~MethodHandle();
 
-    unsigned int getMethodIndex();
-    void setReturnType(DSType *type);
-    DSType *getReturnType();
-    void setRecvType(DSType *type);
-    DSType *getRecvType();
+    unsigned int getMethodIndex() const {
+        return this->methodIndex;
+    }
+
+    void setReturnType(DSType *type) {
+        this->returnType = type;
+    }
+
+    DSType *getReturnType() const {
+        return this->returnType;
+    }
+
+    void setRecvType(DSType *type) {
+        this->recvType = type;
+    }
+
+    DSType *getRecvType() const {
+        return this->recvType;
+    }
+
     void addParamType(DSType *type);
-    const std::vector<DSType *> &getParamTypes();
+
+    const std::vector<DSType *> &getParamTypes() const {
+        return this->paramTypes;
+    }
 
     /**
      * initialize internal types.
@@ -177,14 +232,30 @@ public:
     /**
      * return always true, after call init().
      */
-    bool initalized();
+    bool initalized() const {
+        return this->returnType != 0;
+    }
 
-    void setNext(MethodHandle *handle);
-    MethodHandle *getNext();
+    void setNext(MethodHandle *handle) {
+        this->next = handle;
+    }
 
-    void setAttribute(flag8_t attribute);
-    bool isInterfaceMethod();
-    bool hasMultipleReturnType();
+    MethodHandle *getNext() const {
+        return this->next;
+    }
+
+    void setAttribute(flag8_t attribute) {
+        setFlag(this->attributeSet, attribute);
+    }
+
+    bool isInterfaceMethod() const {
+        return hasFlag(this->attributeSet, INTERFACE);
+    }
+
+    bool hasMultipleReturnType() const {
+        return hasFlag(this->attributeSet, MULTI_RETURN);
+    }
+
     bool isSignal();
 
     static constexpr flag8_t INTERFACE    = 1 << 0;

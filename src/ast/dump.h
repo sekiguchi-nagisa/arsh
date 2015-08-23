@@ -50,7 +50,8 @@ private:
     unsigned int indentLevel;
 
 public:
-    Writer(std::ostream &stream, core::TypePool &pool);
+    Writer(std::ostream &stream, core::TypePool &pool) :
+            stream(stream), pool(pool), indentLevel(0) { }
 
     ~Writer() = default;
 

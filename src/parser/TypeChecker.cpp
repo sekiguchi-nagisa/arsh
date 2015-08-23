@@ -25,36 +25,9 @@
 namespace ydsh {
 namespace parser {
 
-// ##############################
-// ##     HandleOrFuncType     ##
-// ##############################
-
-HandleOrFuncType::HandleOrFuncType(FunctionHandle *handle) :
-        hasHandle(true), handle(handle) {
-}
-
-HandleOrFuncType::HandleOrFuncType(FunctionType *funcType) :
-        hasHandle(false), funcType(funcType) {
-}
-
-bool HandleOrFuncType::treatAsHandle() {
-    return this->hasHandle;
-}
-
-FunctionHandle *HandleOrFuncType::getHandle() {
-    return this->hasHandle ? this->handle : 0;
-}
-
-FunctionType *HandleOrFuncType::getFuncType() {
-    return this->hasHandle ? 0 : this->funcType;
-}
-
 // ###########################
 // ##     TypeGenerator     ##
 // ###########################
-
-TypeGenerator::TypeGenerator(TypePool *pool) : pool(pool), type(0) {
-}
 
 DSType *TypeGenerator::generateTypeAndThrow(TypeToken *token) throw(TypeCheckError) {
     try {

@@ -25,13 +25,6 @@ namespace core {
 // ##     Scope     ##
 // ###################
 
-Scope::Scope() : Scope(0) {
-}
-
-Scope::Scope(unsigned int curVarIndex) :
-        curVarIndex(curVarIndex), handleMap() {
-}
-
 Scope::~Scope() {
     for(const std::pair<std::string, FieldHandle *> &pair : this->handleMap) {
         delete pair.second;
@@ -50,10 +43,6 @@ bool Scope::addFieldHandle(const std::string &symbolName, FieldHandle *handle) {
     }
     this->curVarIndex++;
     return true;
-}
-
-unsigned int Scope::getCurVarIndex() {
-    return this->curVarIndex;
 }
 
 void Scope::deleteHandle(const std::string &symbolName) {

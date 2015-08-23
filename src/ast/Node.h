@@ -58,18 +58,23 @@ protected:
     DSType *type;
 
 public:
-    explicit Node(unsigned int lineNum);
+    explicit Node(unsigned int lineNum) :
+            lineNum(lineNum), type() { }
 
     virtual ~Node() = default;
 
-    unsigned int getLineNum() const;
+    unsigned int getLineNum() const {
+        return this->lineNum;
+    }
 
     virtual void setType(DSType *type);
 
     /**
      * return null, before type checking
      */
-    DSType *getType() const;
+    DSType *getType() const {
+        return this->type;
+    }
 
     /**
      * for CmdContextNode, normally do nothing
@@ -91,7 +96,7 @@ public:
      */
     virtual void inRightHandleSide();
 
-    virtual bool isBlockEndNode();
+    virtual bool isBlockEndNode() const;
 
     virtual void setSourceName(const char *sourceName);
     virtual const char *getSourceName();
@@ -123,24 +128,47 @@ private:
     DSValue value;
 
 private:
-    IntValueNode(unsigned int lineNum, IntKind kind, int value);
+    IntValueNode(unsigned int lineNum, IntKind kind, int value) :
+            Node(lineNum), kind(kind), tempValue(value), value() { }
 
 public:
-    IntValueNode(unsigned int lineNum, int value);
-    static IntValueNode *newByte(unsigned int lineNum, unsigned char value);
-    static IntValueNode *newInt16(unsigned int lineNum, short value);
-    static IntValueNode *newUint16(unsigned int lineNum, unsigned short value);
-    static IntValueNode *newInt32(unsigned int lineNum, int value);
-    static IntValueNode *newUint32(unsigned int lineNum, unsigned int value);
+    IntValueNode(unsigned int lineNum, int value) :
+            IntValueNode(lineNum, INT32, value) { }
 
-    IntKind getKind();
+    static IntValueNode *newByte(unsigned int lineNum, unsigned char value) {
+        return new IntValueNode(lineNum, BYTE, (int) value);
+    }
 
-    int getTempValue();
+    static IntValueNode *newInt16(unsigned int lineNum, short value) {
+        return new IntValueNode(lineNum, INT16, (int) value);
+    }
+
+    static IntValueNode *newUint16(unsigned int lineNum, unsigned short value) {
+        return new IntValueNode(lineNum, UINT16, (int) value);
+    }
+
+    static IntValueNode *newInt32(unsigned int lineNum, int value) {
+        return new IntValueNode(lineNum, INT32, value);
+    }
+
+    static IntValueNode *newUint32(unsigned int lineNum, unsigned int value) {
+        return new IntValueNode(lineNum, UINT32, (int) value);
+    }
+
+    IntKind getKind() const {
+        return this->kind;
+    }
+
+    int getTempValue() const {
+        return this->tempValue;
+    }
 
     /**
      * before type check, return empty pointer.
      */
-    const DSValue &getValue();
+    const DSValue &getValue() const {
+        return this->value;
+    }
 
     void setType(DSType *type); // override
     void dump(Writer &writer) const;  // override
@@ -156,19 +184,30 @@ private:
     DSValue value;
 
 public:
-    LongValueNode(unsigned int lineNum, long value, bool unsignedValue);
-    static LongValueNode *newInt64(unsigned int lineNum, long value);
-    static LongValueNode *newUint64(unsigned int lineNum, unsigned long value);
+    LongValueNode(unsigned int lineNum, long value, bool unsignedValue) :
+            Node(lineNum), tempValue(value), unsignedValue(unsignedValue), value() { }
+
+    static LongValueNode *newInt64(unsigned int lineNum, long value) {
+        return new LongValueNode(lineNum, value, false);
+    }
+
+    static LongValueNode *newUint64(unsigned int lineNum, unsigned long value) {
+        return new LongValueNode(lineNum, (long) value, true);
+    }
 
     /**
      * before type check, return empty pointer.
      */
-    const DSValue &getValue();
+    const DSValue &getValue() const {
+        return this->value;
+    }
 
     /**
      * if true, treat as unsigned int 64.
      */
-    bool isUnsignedValue();
+    bool isUnsignedValue() const {
+        return this->unsignedValue;
+    }
 
     void setType(DSType *type); // override
     void dump(Writer &writer) const;  // override
@@ -186,12 +225,15 @@ private:
     DSValue value;
 
 public:
-    FloatValueNode(unsigned int lineNum, double value);
+    FloatValueNode(unsigned int lineNum, double value) :
+            Node(lineNum), tempValue(value), value() { }
 
     /**
      * before type check, return empty pointer.
      */
-    const DSValue &getValue();
+    const DSValue &getValue() const {
+        return this->value;
+    }
 
     void setType(DSType *type); // override
     void dump(Writer &writer) const;  // override
@@ -215,16 +257,20 @@ public:
     /**
      * used for CommandNode. lineNum is always 0.
      */
-    explicit StringValueNode(std::string &&value);
+    explicit StringValueNode(std::string &&value) :
+            StringValueNode(0, std::move(value)) { }
 
-    StringValueNode(unsigned int lineNum, std::string &&value);
+    StringValueNode(unsigned int lineNum, std::string &&value) :
+            Node(lineNum), tempValue(std::move(value)), value() { }
 
-    virtual ~StringValueNode();
+    virtual ~StringValueNode() = default;
 
     /**
      * before type check, return empty pointer.
      */
-    const DSValue &getValue();
+    const DSValue &getValue() const {
+        return this->value;
+    }
 
     void setType(DSType *type); // override
     void dump(Writer &writer) const;  // override
@@ -234,7 +280,9 @@ public:
 
 class ObjectPathNode : public StringValueNode {
 public:
-    ObjectPathNode(unsigned int lineNum, std::string &&value);
+    ObjectPathNode(unsigned int lineNum, std::string &&value) :
+            StringValueNode(lineNum, std::move(value)) { }
+
     ~ObjectPathNode() = default;
 
     void accept(NodeVisitor *visitor); // override
@@ -245,13 +293,15 @@ private:
     std::vector<Node *> nodes;
 
 public:
-    explicit StringExprNode(unsigned int lineNum);
+    explicit StringExprNode(unsigned int lineNum) : Node(lineNum), nodes() { }
 
     ~StringExprNode();
 
     void addExprNode(Node *node);
 
-    const std::vector<Node *> &getExprNodes();
+    const std::vector<Node *> &getExprNodes() const {
+        return this->nodes;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
@@ -271,7 +321,9 @@ public:
 
     void setExprNode(unsigned int index, Node *node);
 
-    const std::vector<Node *> &getExprNodes();
+    const std::vector<Node *> &getExprNodes() const {
+        return this->nodes;
+    }
 
     void dump(Writer &writer) const; // override
     void accept(NodeVisitor *visitor);    //override
@@ -292,11 +344,15 @@ public:
 
     void setKeyNode(unsigned int index, Node *keyNode);
 
-    const std::vector<Node *> &getKeyNodes();
+    const std::vector<Node *> &getKeyNodes() const {
+        return this->keyNodes;
+    }
 
     void setValueNode(unsigned int index, Node *valueNode);
 
-    const std::vector<Node *> &getValueNodes();
+    const std::vector<Node *> &getValueNodes() const {
+        return this->valueNodes;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
@@ -317,7 +373,9 @@ public:
 
     void addNode(Node *node);
 
-    const std::vector<Node *> &getNodes();
+    const std::vector<Node *> &getNodes() const {
+        return this->nodes;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
@@ -336,15 +394,33 @@ protected:
     bool interface;
 
 public:
-    explicit AssignableNode(unsigned int lineNum);
+    explicit AssignableNode(unsigned int lineNum) :
+            Node(lineNum), index(0),
+            readOnly(false), global(false), env(false), interface(false) { }
+
     virtual ~AssignableNode() = default;
 
     void setAttribute(FieldHandle *handle);
-    bool isReadOnly() const;
-    bool isGlobal() const;
-    bool isEnv() const;
-    bool withinInterface() const;
-    unsigned int getIndex();
+
+    bool isReadOnly() const {
+        return this->readOnly;
+    }
+
+    bool isGlobal() const {
+        return this->global;
+    }
+
+    bool isEnv() const {
+        return this->env;
+    }
+
+    bool withinInterface() const {
+        return this->interface;
+    }
+
+    unsigned int getIndex() const {
+        return this->index;
+    }
 
     virtual void dump(Writer &writer) const;  // override
 };
@@ -354,10 +430,14 @@ private:
     std::string varName;
 
 public:
-    VarNode(unsigned int lineNum, std::string &&varName);
+    VarNode(unsigned int lineNum, std::string &&varName) :
+            AssignableNode(lineNum), varName(std::move(varName)) { }
+
     ~VarNode() = default;
 
-    const std::string &getVarName();
+    const std::string &getVarName() const {
+        return this->varName;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
@@ -368,7 +448,11 @@ public:
      * extract varName from varNode.
      * after extracting, delete varNode.
      */
-    static std::string extractVarNameAndDelete(VarNode *node);
+    static std::string extractVarNameAndDelete(VarNode *node) {
+        std::string name(std::move(node->varName));
+        delete node;
+        return name;
+    }
 };
 
 class AccessNode : public AssignableNode {
@@ -384,14 +468,31 @@ private:
     AdditionalOp additionalOp;
 
 public:
-    AccessNode(Node *recvNode, std::string &&fieldName);
+    AccessNode(Node *recvNode, std::string &&fieldName) :
+            AssignableNode(recvNode->getLineNum()), recvNode(recvNode),
+            fieldName(std::move(fieldName)), additionalOp(NOP) { }
+
     ~AccessNode();
 
-    Node *getRecvNode();
-    void setFieldName(const std::string &fieldName);
-    const std::string &getFieldName();
-    void setAdditionalOp(AdditionalOp op);
-    AdditionalOp getAdditionalOp();
+    Node *getRecvNode() const {
+        return this->recvNode;
+    }
+
+    void setFieldName(const std::string &fieldName) {
+        this->fieldName = fieldName;
+    }
+
+    const std::string &getFieldName() const {
+        return this->fieldName;
+    }
+
+    void setAdditionalOp(AdditionalOp op) {
+        this->additionalOp = op;
+    }
+
+    AdditionalOp getAdditionalOp() const {
+        return this->additionalOp;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
@@ -435,13 +536,19 @@ public:
 
     ~CastNode();
 
-    Node *getExprNode();
+    Node *getExprNode() const {
+        return this->exprNode;
+    }
 
     TypeToken *getTargetTypeToken() const;
 
-    void setOpKind(CastOp opKind);
+    void setOpKind(CastOp opKind) {
+        this->opKind = opKind;
+    }
 
-    CastOp getOpKind();
+    CastOp getOpKind() const {
+        return this->opKind;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    //override
@@ -470,21 +577,35 @@ private:
     InstanceOfOp opKind;
 
 public:
-    InstanceOfNode(Node *targetNode, TypeToken *typeToken);
+    InstanceOfNode(Node *targetNode, TypeToken *typeToken) :
+            Node(targetNode->getLineNum()), targetNode(targetNode), targetTypeToken(typeToken),
+            targetType(0), opKind(ALWAYS_FALSE) { }
 
     ~InstanceOfNode();
 
-    Node *getTargetNode();
+    Node *getTargetNode() const {
+        return this->targetNode;
+    }
 
-    TypeToken *getTargetTypeToken();
+    TypeToken *getTargetTypeToken() const {
+        return this->targetTypeToken;
+    }
 
-    void setTargetType(DSType *targetType);
+    void setTargetType(DSType *targetType) {
+        this->targetType = targetType;
+    }
 
-    DSType *getTargetType();
+    DSType *getTargetType() const {
+        return this->targetType;
+    }
 
-    void setOpKind(InstanceOfOp opKind);
+    void setOpKind(InstanceOfOp opKind) {
+        this->opKind = opKind;
+    }
 
-    InstanceOfOp getOpKind();
+    InstanceOfOp getOpKind() const {
+        return this->opKind;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    //override
@@ -496,7 +617,7 @@ private:
     std::vector<Node *> nodes;
 
 public:
-    ArgsNode();
+    ArgsNode() : Node(0), nodes() { }
 
     ~ArgsNode();
 
@@ -504,7 +625,9 @@ public:
 
     void setArg(unsigned int index, Node *argNode);
 
-    const std::vector<Node *> &getNodes();
+    const std::vector<Node *> &getNodes() const {
+        return this->nodes;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);   // override
@@ -519,10 +642,14 @@ protected:
     ArgsNode *argsNode;
 
 public:
-    CallNode(unsigned int lineNum, ArgsNode *argsNode);
+    CallNode(unsigned int lineNum, ArgsNode *argsNode) :
+            Node(lineNum), argsNode(argsNode) { }
+
     virtual ~CallNode();
 
-    ArgsNode *getArgsNode();
+    ArgsNode *getArgsNode() const {
+        return this->argsNode;
+    }
 };
 
 /**
@@ -533,10 +660,14 @@ private:
     Node *exprNode;
 
 public:
-    ApplyNode(Node *exprNode, ArgsNode *argsNode);
+    ApplyNode(Node *exprNode, ArgsNode *argsNode) :
+            CallNode(exprNode->getLineNum(), argsNode), exprNode(exprNode) { }
+
     ~ApplyNode();
 
-    Node *getExprNode();
+    Node *getExprNode() const {
+        return this->exprNode;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
@@ -552,19 +683,46 @@ private:
     flag8_set_t attributeSet;
 
 public:
-    MethodCallNode(Node *recvNode, std::string &&methodName);
-    MethodCallNode(Node *recvNode, std::string &&methodName, ArgsNode *argsNode);
+    MethodCallNode(Node *recvNode, std::string &&methodName) :
+            MethodCallNode(recvNode, std::move(methodName), new ArgsNode()) { }
+
+    MethodCallNode(Node *recvNode, std::string &&methodName, ArgsNode *argsNode) :
+            CallNode(recvNode->getLineNum(), argsNode),
+            recvNode(recvNode), methodName(std::move(methodName)), handle(), attributeSet() { }
+
     ~MethodCallNode();
 
-    void setRecvNode(Node *node);
-    Node *getRecvNode();
-    void setMethodName(std::string &&methodName);
-    const std::string &getMethodName();
+    void setRecvNode(Node *node) {
+        this->recvNode = node;
+    }
 
-    void setAttribute(flag8_t attribute);
-    bool hasAttribute(flag8_t attribute);
-    void setHandle(MethodHandle *handle);
-    MethodHandle *getHandle();
+    Node *getRecvNode() const {
+        return this->recvNode;
+    }
+
+    void setMethodName(std::string &&methodName) {
+        this->methodName = std::move(methodName);
+    }
+
+    const std::string &getMethodName() const {
+        return this->methodName;
+    }
+
+    void setAttribute(flag8_t attribute) {
+        setFlag(this->attributeSet, attribute);
+    }
+
+    bool hasAttribute(flag8_t attribute) const {
+        return hasFlag(this->attributeSet, attribute);
+    }
+
+    void setHandle(MethodHandle *handle) {
+        this->handle = handle;
+    }
+
+    MethodHandle *getHandle() const {
+        return this->handle;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
@@ -583,13 +741,18 @@ private:
     ArgsNode *argsNode;
 
 public:
-    NewNode(unsigned int lineNum, TypeToken *targetTypeToken, ArgsNode *argsNode);
+    NewNode(unsigned int lineNum, TypeToken *targetTypeToken, ArgsNode *argsNode) :
+            Node(lineNum), targetTypeToken(targetTypeToken), argsNode(argsNode) { }
 
     ~NewNode();
 
-    TypeToken *getTargetTypeToken();
+    TypeToken *getTargetTypeToken() const {
+        return this->targetTypeToken;
+    }
 
-    ArgsNode *getArgsNode();
+    ArgsNode *getArgsNode() const {
+        return this->argsNode;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);   // override
@@ -614,11 +777,18 @@ private:
     MethodCallNode *methodCallNode;
 
 public:
-    UnaryOpNode(TokenKind op, Node *exprNode);
+    UnaryOpNode(TokenKind op, Node *exprNode) :
+            Node(exprNode->getLineNum()), op(op), exprNode(exprNode), methodCallNode(0) { }
+
     ~UnaryOpNode();
 
-    Node *getExprNode();
-    void setExprNode(Node *exprNode);
+    Node *getExprNode() const {
+        return this->exprNode;
+    }
+
+    void setExprNode(Node *exprNode) {
+        this->exprNode = exprNode;
+    }
 
     /**
      * create ApplyNode and set to this->applyNode.
@@ -629,7 +799,9 @@ public:
     /**
      * return null, before call this->createApplyNode().
      */
-    MethodCallNode *getApplyNode();
+    MethodCallNode *getApplyNode() const {
+        return this->methodCallNode;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);   // override
@@ -659,19 +831,31 @@ private:
     MethodCallNode *methodCallNode;
 
 public:
-    BinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode);
+    BinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode) :
+            Node(leftNode->getLineNum()),
+            leftNode(leftNode), rightNode(rightNode), op(op), methodCallNode(0) { }
 
     ~BinaryOpNode();
 
-    Node *getLeftNode();
+    Node *getLeftNode() const {
+        return this->leftNode;
+    }
 
-    void setLeftNode(Node *leftNode);
+    void setLeftNode(Node *leftNode) {
+        this->leftNode = leftNode;
+    }
 
-    Node *getRightNode();
+    Node *getRightNode() const {
+        return this->rightNode;
+    }
 
-    void setRightNode(Node *rightNode);
+    void setRightNode(Node *rightNode) {
+        this->rightNode = rightNode;
+    }
 
-    TokenKind getOp();
+    TokenKind getOp() const {
+        return this->op;
+    }
 
     /**
      * create ApplyNode and set to this->applyNode.
@@ -682,7 +866,9 @@ public:
     /**
      * return null, before call this->createApplyNode().
      */
-    MethodCallNode *getApplyNode();
+    MethodCallNode *getApplyNode() const {
+        return this->methodCallNode;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);   // override
@@ -697,10 +883,14 @@ private:
     Node *exprNode;
 
 public:
-    GroupNode(unsigned int lineNum, Node *exprNode);
+    GroupNode(unsigned int lineNum, Node *exprNode) :
+            Node(lineNum), exprNode(exprNode) { }
+
     ~GroupNode();
 
-    Node *getExprNode();
+    Node *getExprNode() const {
+        return this->exprNode;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);   // override
@@ -722,11 +912,17 @@ public:
 
     ~CondOpNode();
 
-    Node *getLeftNode();
+    Node *getLeftNode() const {
+        return this->leftNode;
+    }
 
-    Node *getRightNode();
+    Node *getRightNode() const {
+        return this->rightNode;
+    }
 
-    bool isAndOp();
+    bool isAndOp() const {
+        return this->andOp;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    //override
@@ -741,13 +937,18 @@ private:
     std::vector<Node *> segmentNodes;
 
 public:
-    explicit CmdArgNode(Node *segmentNode);
+    explicit CmdArgNode(Node *segmentNode) :
+            Node(segmentNode->getLineNum()), segmentNodes() {
+        this->addSegmentNode(segmentNode);
+    }
 
     ~CmdArgNode();
 
     void addSegmentNode(Node *node);
 
-    const std::vector<Node *> &getSegmentNodes();
+    const std::vector<Node *> &getSegmentNodes() const {
+        return this->segmentNodes;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);  // override
@@ -796,7 +997,9 @@ private:
     std::string value;
 
 public:
-    TildeNode(unsigned int lineNum, std::string &&value);
+    TildeNode(unsigned int lineNum, std::string &&value) :
+            Node(lineNum), value(std::move(value)) { }
+
     ~TildeNode() = default;
 
     const std::string &getValue() {
@@ -827,16 +1030,24 @@ private:
     std::vector<Node *> argNodes;
 
 public:
-    CmdNode(unsigned int lineNum, std::string &&value);
-    explicit CmdNode(TildeNode *nameNode);
+    CmdNode(unsigned int lineNum, std::string &&value) :
+            Node(lineNum),
+            nameNode(new StringValueNode(lineNum, std::move(value))), argNodes() { }
+
+    explicit CmdNode(TildeNode *nameNode) :
+            Node(nameNode->getLineNum()), nameNode(nameNode), argNodes() { }
 
     ~CmdNode();
 
-    Node *getNameNode();
+    Node *getNameNode() const {
+        return this->nameNode;
+    }
 
     void addArgNode(CmdArgNode *node);
 
-    const std::vector<Node *> &getArgNodes();
+    const std::vector<Node *> &getArgNodes() const {
+        return this->argNodes;
+    }
 
     void addRedirOption(TokenKind kind, CmdArgNode *node);
     void addRedirOption(TokenKind kind);
@@ -852,13 +1063,24 @@ private:
     bool asBool;
 
 public:
-    explicit PipedCmdNode(CmdNode *node);
+    explicit PipedCmdNode(CmdNode *node) :
+            Node(node->getLineNum()), cmdNodes(), asBool(false) {
+        this->cmdNodes.push_back(node);
+    }
+
     ~PipedCmdNode();
 
     void addCmdNodes(CmdNode *node);
-    const std::vector<CmdNode *> &getCmdNodes();
+
+    const std::vector<CmdNode *> &getCmdNodes() const {
+        return this->cmdNodes;
+    }
+
     void inCondition(); // override
-    bool treatAsBool();
+
+    bool treatAsBool() const {
+        return this->asBool;
+    }
 
     void dump(Writer &writer) const; // override
     void accept(NodeVisitor *visitor);    //override
@@ -875,13 +1097,30 @@ private:
     flag8_set_t attributeSet;
 
 public:
-    explicit CmdContextNode(Node *exprNode);
+    explicit CmdContextNode(Node *exprNode) :
+            Node(exprNode->getLineNum()), exprNode(exprNode), attributeSet(0) {
+        if(dynamic_cast<CondOpNode *>(exprNode) != 0) {
+            this->setAttribute(CONDITION);
+        }
+    }
+
     ~CmdContextNode();
 
-    Node *getExprNode();
-    void setAttribute(flag8_t attribute);
-    void unsetAttribute(flag8_t attribute);
-    bool hasAttribute(flag8_t attribute);
+    Node *getExprNode() const {
+        return this->exprNode;
+    }
+
+    void setAttribute(flag8_t attribute) {
+        setFlag(this->attributeSet, attribute);
+    }
+
+    void unsetAttribute(flag8_t attribute) {
+        unsetFlag(this->attributeSet, attribute);
+    }
+
+    bool hasAttribute(flag8_t attribute) const {
+        return hasFlag(this->attributeSet, attribute);
+    }
 
     void inStringExprNode();    // override
     void inCmdArgNode();    // override
@@ -906,11 +1145,15 @@ private:
     Node *condNode;
 
 public:
-    AssertNode(unsigned int lineNum, Node *condNode);
+    AssertNode(unsigned int lineNum, Node *condNode) : Node(lineNum), condNode(condNode) {
+        this->condNode->inCondition();
+    }
 
     ~AssertNode();
 
-    Node *getCondNode();
+    Node *getCondNode() const {
+        return this->condNode;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
@@ -922,7 +1165,7 @@ private:
     std::list<Node *> nodeList;
 
 public:
-    explicit BlockNode(unsigned int lineNum);
+    explicit BlockNode(unsigned int lineNum) : Node(lineNum), nodeList() { }
 
     ~BlockNode();
 
@@ -930,7 +1173,9 @@ public:
 
     void insertNodeToFirst(Node *node);
 
-    const std::list<Node *> &getNodeList();
+    const std::list<Node *> &getNodeList() const {
+        return this->nodeList;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
@@ -942,15 +1187,19 @@ public:
  */
 class BlockEndNode : public Node {
 public:
-    explicit BlockEndNode(unsigned int lineNum);
+    explicit BlockEndNode(unsigned int lineNum) : Node(lineNum) { }
+
     virtual ~BlockEndNode() = default;
 
-    bool isBlockEndNode();  // override
+    bool isBlockEndNode() const { // override
+        return true;
+    }
 };
 
 class BreakNode : public BlockEndNode {
 public:
-    explicit BreakNode(unsigned int lineNum);
+    explicit BreakNode(unsigned int lineNum) : BlockEndNode(lineNum) { }
+
     ~BreakNode() = default;
 
     void dump(Writer &writer) const;  // override
@@ -960,7 +1209,8 @@ public:
 
 class ContinueNode : public BlockEndNode {
 public:
-    explicit ContinueNode(unsigned int lineNum);
+    explicit ContinueNode(unsigned int lineNum) : BlockEndNode(lineNum) { }
+
     ~ContinueNode() = default;
 
     void dump(Writer &writer) const;  // override
@@ -976,19 +1226,29 @@ private:
     unsigned int varIndex;
 
 public:
-    ExportEnvNode(unsigned int lineNum, std::string &&envName, Node *exprNode);
+    ExportEnvNode(unsigned int lineNum, std::string &&envName, Node *exprNode) :
+            Node(lineNum), envName(std::move(envName)), exprNode(exprNode),
+            global(false), varIndex(0) { }
 
     ~ExportEnvNode();
 
-    const std::string &getEnvName();
+    const std::string &getEnvName() const {
+        return this->envName;
+    }
 
-    Node *getExprNode();
+    Node *getExprNode() const {
+        return this->exprNode;
+    }
 
     void setAttribute(FieldHandle *handle);
 
-    bool isGlobal();
+    bool isGlobal() const {
+        return this->global;
+    }
 
-    unsigned int getVarIndex();
+    unsigned int getVarIndex() const {
+        return this->varIndex;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
@@ -1002,16 +1262,24 @@ private:
     unsigned int varIndex;
 
 public:
-    ImportEnvNode(unsigned int lineNum, std::string &&envName);
+    ImportEnvNode(unsigned int lineNum, std::string &&envName) :
+            Node(lineNum), envName(std::move(envName)), global(false), varIndex(0) { }
+
     ~ImportEnvNode() = default;
 
-    const std::string &getEnvName();
+    const std::string &getEnvName() const {
+        return this->envName;
+    }
 
     void setAttribute(FieldHandle *handle);
 
-    bool isGlobal();
+    bool isGlobal() const {
+        return this->global;
+    }
 
-    unsigned int getVarIndex();
+    unsigned int getVarIndex() const {
+        return this->varIndex;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
@@ -1024,12 +1292,22 @@ private:
     TypeToken *targetTypeToken;
 
 public:
-    TypeAliasNode(unsigned int lineNum, std::string &&alias, TypeToken *targetTypeToken);
-    TypeAliasNode(const char *alias, const char *targetTypeName);
+    TypeAliasNode(unsigned int lineNum, std::string &&alias, TypeToken *targetTypeToken) :
+            Node(lineNum), alias(std::move(alias)), targetTypeToken(targetTypeToken) { }
+
+    TypeAliasNode(const char *alias, const char *targetTypeName) :
+            Node(0), alias(std::string(alias)),
+            targetTypeToken(new ClassTypeToken(0, std::string(targetTypeName))) { }
+
     ~TypeAliasNode();
 
-    const std::string &getAlias();
-    TypeToken *getTargetTypeToken();
+    const std::string &getAlias() const {
+        return this->alias;
+    }
+
+    TypeToken *getTargetTypeToken() const {
+        return this->targetTypeToken;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
@@ -1065,13 +1343,21 @@ public:
 
     ~ForNode();
 
-    Node *getInitNode();
+    Node *getInitNode() const {
+        return this->initNode;
+    }
 
-    Node *getCondNode();
+    Node *getCondNode() const {
+        return this->condNode;
+    }
 
-    Node *getIterNode();
+    Node *getIterNode() const {
+        return this->iterNode;
+    }
 
-    BlockNode *getBlockNode();
+    BlockNode *getBlockNode() const {
+        return this->blockNode;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
@@ -1084,13 +1370,20 @@ private:
     BlockNode *blockNode;
 
 public:
-    WhileNode(unsigned int lineNum, Node *condNode, BlockNode *blockNode);
+    WhileNode(unsigned int lineNum, Node *condNode, BlockNode *blockNode) :
+            Node(lineNum), condNode(condNode), blockNode(blockNode) {
+        this->condNode->inCondition();
+    }
 
     ~WhileNode();
 
-    Node *getCondNode();
+    Node *getCondNode() const {
+        return this->condNode;
+    }
 
-    BlockNode *getBlockNode();
+    BlockNode *getBlockNode() const {
+        return this->blockNode;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    //override
@@ -1103,13 +1396,20 @@ private:
     Node *condNode;
 
 public:
-    DoWhileNode(unsigned int lineNum, BlockNode *blockNode, Node *condNode);
+    DoWhileNode(unsigned int lineNum, BlockNode *blockNode, Node *condNode) :
+            Node(lineNum), blockNode(blockNode), condNode(condNode) {
+        this->condNode->inCondition();
+    }
 
     ~DoWhileNode();
 
-    BlockNode *getBlockNode();
+    BlockNode *getBlockNode() const {
+        return this->blockNode;
+    }
 
-    Node *getCondNode();
+    Node *getCondNode() const {
+        return this->condNode;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);   //override
@@ -1137,17 +1437,27 @@ public:
 
     ~IfNode();
 
-    Node *getCondNode();
+    Node *getCondNode() const {
+        return this->condNode;
+    }
 
-    BlockNode *getThenNode();
+    BlockNode *getThenNode() const {
+        return this->thenNode;
+    }
 
     void addElifNode(Node *condNode, BlockNode *thenNode);
 
-    const std::vector<Node *> &getElifCondNodes();
+    const std::vector<Node *> &getElifCondNodes() const {
+        return this->elifCondNodes;
+    }
 
-    const std::vector<BlockNode *> &getElifThenNodes();
+    const std::vector<BlockNode *> &getElifThenNodes() const {
+        return this->elifThenNodes;
+    }
 
-    void addElseNode(BlockNode *elseNode);
+    void addElseNode(BlockNode *elseNode) {
+        this->elseNode = elseNode;
+    }
 
     /*
      * return EmptyBlockNode, if elseNode is null.
@@ -1164,13 +1474,17 @@ private:
     Node *exprNode;
 
 public:
-    ReturnNode(unsigned int lineNum, Node *exprNode);
+    ReturnNode(unsigned int lineNum, Node *exprNode) :
+            BlockEndNode(lineNum), exprNode(exprNode) { }
 
     explicit ReturnNode(unsigned int lineNum);
 
     ~ReturnNode();
 
-    Node *getExprNode();
+    Node *getExprNode() const {
+        return this->exprNode;
+    }
+
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
@@ -1181,11 +1495,14 @@ private:
     Node *exprNode;
 
 public:
-    ThrowNode(unsigned int lineNum, Node *exprNode);
+    ThrowNode(unsigned int lineNum, Node *exprNode) :
+            BlockEndNode(lineNum), exprNode(exprNode) { }
 
     ~ThrowNode();
 
-    Node *getExprNode();
+    Node *getExprNode() const {
+        return this->exprNode;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
@@ -1207,30 +1524,44 @@ private:
     BlockNode *blockNode;
 
 public:
-    CatchNode(unsigned int lineNum, std::string &&exceptionName,
-              BlockNode *blockNode);
+    CatchNode(unsigned int lineNum, std::string &&exceptionName, BlockNode *blockNode) :
+            CatchNode(lineNum, std::move(exceptionName), newAnyTypeToken(lineNum), blockNode) { }
 
     CatchNode(unsigned int lineNum, std::string &&exceptionName,
-              TypeToken *type, BlockNode *blockNode);
+              TypeToken *type, BlockNode *blockNode) :
+            Node(lineNum), exceptionName(std::move(exceptionName)),
+            typeToken(type), exceptionType(nullptr), varIndex(0), blockNode(blockNode) { }
 
     ~CatchNode();
 
-    const std::string &getExceptionName();
+    const std::string &getExceptionName() const {
+        return this->exceptionName;
+    }
 
-    TypeToken *getTypeToken();
+    TypeToken *getTypeToken() const {
+        return this->typeToken;
+    }
 
-    void setExceptionType(DSType *type);
+    void setExceptionType(DSType *type) {
+        this->exceptionType = type;
+    }
 
     /**
      * return null if has no exception type
      */
-    DSType *getExceptionType();
+    DSType *getExceptionType() const {
+        return this->exceptionType;
+    }
 
     void setAttribute(FieldHandle *handle);
 
-    unsigned int getVarIndex();
+    unsigned int getVarIndex() const {
+        return this->varIndex;
+    }
 
-    BlockNode *getBlockNode();
+    BlockNode *getBlockNode() const {
+        return this->blockNode;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
@@ -1252,15 +1583,20 @@ private:
     BlockNode *finallyNode;
 
 public:
-    TryNode(unsigned int lineNum, BlockNode *blockNode);
+    TryNode(unsigned int lineNum, BlockNode *blockNode) :
+            Node(lineNum), blockNode(blockNode), catchNodes(), finallyNode() { }
 
     ~TryNode();
 
-    BlockNode *getBlockNode();
+    BlockNode *getBlockNode() const {
+        return this->blockNode;
+    }
 
     void addCatchNode(CatchNode *catchNode);
 
-    const std::vector<CatchNode *> &getCatchNodes();
+    const std::vector<CatchNode *> &getCatchNodes() const {
+        return this->catchNodes;
+    }
 
     void addFinallyNode(BlockNode *finallyNode);
 
@@ -1284,17 +1620,27 @@ public:
 
     ~VarDeclNode();
 
-    const std::string &getVarName();
+    const std::string &getVarName() const {
+        return this->varName;
+    }
 
-    bool isReadOnly();
+    bool isReadOnly() const {
+        return this->readOnly;
+    }
 
     void setAttribute(FieldHandle *handle);
 
-    bool isGlobal();
+    bool isGlobal() const {
+        return this->global;
+    }
 
-    Node *getInitValueNode();
+    Node *getInitValueNode() const {
+        return this->initValueNode;
+    }
 
-    unsigned int getVarIndex();
+    unsigned int getVarIndex() const {
+        return this->varIndex;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
@@ -1317,24 +1663,42 @@ private:
     flag8_set_t attributeSet;
 
 public:
-    const static flag8_t SELF_ASSIGN = 1 << 0;
+    const static flag8_t SELF_ASSIGN  = 1 << 0;
     const static flag8_t FIELD_ASSIGN = 1 << 1;
 
-    AssignNode(Node *leftNode, Node *rightNode, bool selfAssign = false);
+    AssignNode(Node *leftNode, Node *rightNode, bool selfAssign = false) :
+            Node(leftNode->getLineNum()),
+            leftNode(leftNode), rightNode(rightNode), attributeSet(0) {
+        if(selfAssign) {
+            setFlag(this->attributeSet, SELF_ASSIGN);
+        }
+    }
 
     ~AssignNode();
 
-    Node *getLeftNode();
+    Node *getLeftNode() const {
+        return this->leftNode;
+    }
 
-    void setRightNode(Node *rightNode);
+    void setRightNode(Node *rightNode) {
+        this->rightNode = rightNode;
+    }
 
-    Node *getRightNode();
+    Node *getRightNode() const {
+        return this->rightNode;
+    }
 
-    void setAttribute(flag8_t flag);
+    void setAttribute(flag8_t flag) {
+        setFlag(this->attributeSet, flag);
+    }
 
-    bool isSelfAssignment();
+    bool isSelfAssignment() const {
+        return hasFlag(this->attributeSet, SELF_ASSIGN);
+    }
 
-    bool isFieldAssign();
+    bool isFieldAssign() const {
+        return hasFlag(this->attributeSet, FIELD_ASSIGN);
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);   // override
@@ -1372,11 +1736,25 @@ public:
     ElementSelfAssignNode(MethodCallNode *leftNode, BinaryOpNode *binaryNode);
     ~ElementSelfAssignNode();
 
-    Node *getRecvNode();
-    Node *getIndexNode();
-    BinaryOpNode *getBinaryNode();
-    MethodCallNode *getGetterNode();
-    MethodCallNode *getSetterNode();
+    Node *getRecvNode() const {
+        return this->recvNode;
+    }
+
+    Node *getIndexNode() const {
+        return this->indexNode;
+    }
+
+    BinaryOpNode *getBinaryNode() const {
+        return this->binaryNode;
+    }
+
+    MethodCallNode *getGetterNode() const {
+        return this->getterNode;
+    }
+
+    MethodCallNode *getSetterNode() const {
+        return this->setterNode;
+    }
 
     /**
      * add recv type of getterNode and setterNode
@@ -1426,40 +1804,67 @@ private:
     unsigned int varIndex;
 
 public:
-    FunctionNode(unsigned int lineNum, std::string &&funcName);
+    FunctionNode(unsigned int lineNum, std::string &&funcName) :
+            Node(lineNum), funcName(std::move(funcName)),
+            paramNodes(), paramTypeTokens(), returnTypeToken(), returnType(0),
+            blockNode(), maxVarNum(0), varIndex(0) { }
 
     ~FunctionNode();
 
-    const std::string &getFuncName();
+    const std::string &getFuncName() const {
+        return this->funcName;
+    }
 
     void addParamNode(VarNode *node, TypeToken *paramType);
 
-    const std::vector<VarNode *> &getParamNodes();
+    const std::vector<VarNode *> &getParamNodes() const {
+        return this->paramNodes;
+    }
 
-    const std::vector<TypeToken *> &getParamTypeTokens();
+    const std::vector<TypeToken *> &getParamTypeTokens() const {
+        return this->paramTypeTokens;
+    }
 
-    void setReturnTypeToken(TypeToken *typeToken);
+    void setReturnTypeToken(TypeToken *typeToken) {
+        this->returnTypeToken = typeToken;
+    }
 
     TypeToken *getReturnTypeToken();
 
-    void setReturnType(DSType *returnType);
+    void setReturnType(DSType *returnType) {
+        this->returnType = returnType;
+    }
 
-    DSType *getReturnType();
+    DSType *getReturnType() const {
+        return this->returnType;
+    }
 
-    void setBlockNode(BlockNode *blockNode);
+    void setBlockNode(BlockNode *blockNode) {
+        this->blockNode = blockNode;
+    }
 
     /**
      * return null before call setBlockNode()
      */
-    BlockNode *getBlockNode();
+    BlockNode *getBlockNode() const {
+        return this->blockNode;
+    }
 
-    void setMaxVarNum(unsigned int maxVarNum);
+    void setMaxVarNum(unsigned int maxVarNum) {
+        this->maxVarNum = maxVarNum;
+    }
 
-    unsigned int getMaxVarNum();
+    unsigned int getMaxVarNum() const {
+        return this->maxVarNum;
+    }
 
-    void setVarIndex(unsigned int varIndex);
+    void setVarIndex(unsigned int varIndex) {
+        this->varIndex = varIndex;
+    }
 
-    unsigned int getVarIndex();
+    unsigned int getVarIndex() const {
+        return this->varIndex;
+    }
 
     void setSourceName(const char *sourceName); // override
     const char *getSourceName(); // override
@@ -1478,20 +1883,34 @@ private:
     std::vector<TypeToken *> fieldTypeTokens;
 
 public:
-    InterfaceNode(unsigned int lineNum, std::string &&interfaceName);
+    InterfaceNode(unsigned int lineNum, std::string &&interfaceName) :
+            Node(lineNum), interfaceName(std::move(interfaceName)), methodDeclNodes(),
+            fieldDeclNodes(), fieldTypeTokens() { }
+
     ~InterfaceNode();
 
-    const std::string &getInterfaceName();
+    const std::string &getInterfaceName() const {
+        return this->interfaceName;
+    }
+
     void addMethodDeclNode(FunctionNode *methodDeclNode);
-    const std::vector<FunctionNode *> &getMethodDeclNodes();
+
+    const std::vector<FunctionNode *> &getMethodDeclNodes() const {
+        return this->methodDeclNodes;
+    }
 
     /**
      * initNode of node is null.
      */
     void addFieldDecl(VarDeclNode *node, TypeToken *typeToken);
 
-    const std::vector<VarDeclNode *> &getFieldDeclNodes();
-    const std::vector<TypeToken *> &getFieldTypeTokens();
+    const std::vector<VarDeclNode *> &getFieldDeclNodes() const {
+        return this->fieldDeclNodes;
+    }
+
+    const std::vector<TypeToken *> &getFieldTypeTokens() const {
+        return this->fieldTypeTokens;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
@@ -1511,13 +1930,25 @@ private:
     DSValue value;
 
 public:
-    BindVarNode(const char *name, const DSValue &value);
+    BindVarNode(const char *name, const DSValue &value) :
+            Node(0), varName(std::string(name)), varIndex(0), value(value) { }
+
     ~BindVarNode() = default;
 
-    const std::string &getVarName();
+    const std::string &getVarName() const {
+        return this->varName;
+    }
+
     void setAttribute(FieldHandle *handle);
-    unsigned int getVarIndex();
-    const DSValue &getValue();
+
+    unsigned int getVarIndex() const {
+        return this->varIndex;
+    }
+
+    const DSValue &getValue() const {
+        return this->value;
+    }
+
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
@@ -1525,8 +1956,8 @@ public:
 
 class EmptyNode : public Node {
 public:
-    EmptyNode();
-    explicit EmptyNode(unsigned int lineNum);
+    EmptyNode() : EmptyNode(0) { }
+    explicit EmptyNode(unsigned int lineNum) : Node(lineNum) { }
     ~EmptyNode() = default;
 
     void dump(Writer &writer) const;  // override
@@ -1536,7 +1967,7 @@ public:
 
 class DummyNode : public Node {
 public:
-    DummyNode();
+    DummyNode() : Node(0) { }
     ~DummyNode() = default;
 
     void dump(Writer &writer) const;  // override
@@ -1565,23 +1996,35 @@ private:
     unsigned int maxGVarNum;
 
 public:
+    explicit RootNode(const char *sourceName) :
+            Node(0), sourceName(sourceName), nodeList(), maxVarNum(0), maxGVarNum(0) { }
+
     RootNode();
-    explicit RootNode(const char *sourceName);
 
     ~RootNode();
 
     const char *getSourceName();    // override
     void addNode(Node *node);
 
-    const std::list<Node *> &getNodeList();
+    const std::list<Node *> &getNodeList() const {
+        return this->nodeList;
+    }
 
-    void setMaxVarNum(unsigned int maxVarNum);
+    void setMaxVarNum(unsigned int maxVarNum) {
+        this->maxVarNum = maxVarNum;
+    }
 
-    unsigned int getMaxVarNum() const;
+    unsigned int getMaxVarNum() const {
+        return this->maxVarNum;
+    }
 
-    void setMaxGVarNum(unsigned int maxGVarNum);
+    void setMaxGVarNum(unsigned int maxGVarNum) {
+        this->maxGVarNum = maxGVarNum;
+    }
 
-    unsigned int getMaxGVarNum() const;
+    unsigned int getMaxGVarNum() const {
+        return this->maxGVarNum;
+    }
 
     void dump(Writer &writer) const;    // override
     void accept(NodeVisitor *visitor);  // override

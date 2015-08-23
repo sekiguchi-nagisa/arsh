@@ -19,32 +19,11 @@
 namespace ydsh {
 namespace ast {
 
-// #######################
-// ##     TypeToken     ##
-// #######################
-
-TypeToken::TypeToken(unsigned int lineNum) :
-        lineNum(lineNum) {
-}
-
-unsigned int TypeToken::getLineNum() {
-    return this->lineNum;
-}
-
-
 // ############################
 // ##     ClassTypeToken     ##
 // ############################
 
-ClassTypeToken::ClassTypeToken(unsigned int lineNum, std::string &&typeName) :
-        TypeToken(lineNum), typeName(std::move(typeName)) {
-}
-
 std::string ClassTypeToken::toTokenText() const {
-    return this->typeName;
-}
-
-const std::string &ClassTypeToken::getTokenText() {
     return this->typeName;
 }
 
@@ -57,11 +36,6 @@ void ClassTypeToken::accept(TypeTokenVisitor *visitor) {
 // ##     ReifiedTypeToken     ##
 // ##############################
 
-ReifiedTypeToken::ReifiedTypeToken(ClassTypeToken *templateTypeToken) :
-        TypeToken(templateTypeToken->getLineNum()), templateTypeToken(templateTypeToken),
-        elementTypeTokens() {
-}
-
 ReifiedTypeToken::~ReifiedTypeToken() {
     delete this->templateTypeToken;
     for(TypeToken *t : this->elementTypeTokens) {
@@ -72,14 +46,6 @@ ReifiedTypeToken::~ReifiedTypeToken() {
 
 void ReifiedTypeToken::addElementTypeToken(TypeToken *type) {
     this->elementTypeTokens.push_back(type);
-}
-
-ClassTypeToken *ReifiedTypeToken::getTemplate() {
-    return this->templateTypeToken;
-}
-
-const std::vector<TypeToken *> &ReifiedTypeToken::getElementTypeTokens() {
-    return this->elementTypeTokens;
 }
 
 std::string ReifiedTypeToken::toTokenText() const {
@@ -105,11 +71,6 @@ void ReifiedTypeToken::accept(TypeTokenVisitor *visitor) {
 // ##     FuncTypeToken     ##
 // ###########################
 
-FuncTypeToken::FuncTypeToken(TypeToken *returnTypeToken) :
-        TypeToken(returnTypeToken->getLineNum()),
-        returnTypeToken(returnTypeToken), paramTypeTokens() {
-}
-
 FuncTypeToken::~FuncTypeToken() {
     delete this->returnTypeToken;
     this->returnTypeToken = 0;
@@ -122,14 +83,6 @@ FuncTypeToken::~FuncTypeToken() {
 
 void FuncTypeToken::addParamTypeToken(TypeToken *type) {
     this->paramTypeTokens.push_back(type);
-}
-
-const std::vector<TypeToken *> &FuncTypeToken::getParamTypeTokens() {
-    return this->paramTypeTokens;
-}
-
-TypeToken *FuncTypeToken::getReturnTypeToken() {
-    return this->returnTypeToken;
 }
 
 std::string FuncTypeToken::toTokenText() const {
@@ -159,14 +112,6 @@ void FuncTypeToken::accept(TypeTokenVisitor *visitor) {
 // ##     DBusInterfaceToken     ##
 // ################################
 
-DBusInterfaceToken::DBusInterfaceToken(unsigned int lineNum, std::string &&name) :
-        TypeToken(lineNum), name(std::move(name)) {
-}
-
-const std::string &DBusInterfaceToken::getTokenText() {
-    return this->name;
-}
-
 std::string DBusInterfaceToken::toTokenText() const {
     return this->name;
 }
@@ -193,14 +138,6 @@ ReturnTypeToken::~ReturnTypeToken() {
 
 void ReturnTypeToken::addTypeToken(TypeToken *token) {
     this->typeTokens.push_back(token);
-}
-
-const std::vector<TypeToken *> &ReturnTypeToken::getTypeTokens() {
-    return this->typeTokens;
-}
-
-bool ReturnTypeToken::hasMultiReturn() {
-    return this->typeTokens.size() > 1;
 }
 
 std::string ReturnTypeToken::toTokenText() const {

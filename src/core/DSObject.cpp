@@ -72,14 +72,6 @@ void DSValue::reset() noexcept {
 // ##     DSObject     ##
 // ######################
 
-DSObject::DSObject(DSType *type) :
-        type(type), refCount(0) {
-}
-
-DSType *DSObject::getType() {
-    return this->type;
-}
-
 void DSObject::setType(DSType *type) {  // do nothing.
 }
 
@@ -126,14 +118,6 @@ void DSObject::accept(ObjectVisitor *visitor) {
 // ##     Int_Object     ##
 // ########################
 
-Int_Object::Int_Object(DSType *type, int value) :
-        DSObject(type), value(value) {
-}
-
-int Int_Object::getValue() {
-    return this->value;
-}
-
 std::string Int_Object::toString(RuntimeContext &ctx) {
     if(*this->type == *ctx.getPool().getUint32Type()) {
         return std::to_string((unsigned int) this->value);
@@ -166,14 +150,6 @@ void Int_Object::accept(ObjectVisitor *visitor) {
 // ##     Long_Object     ##
 // #########################
 
-Long_Object::Long_Object(DSType *type, long value) :
-        DSObject(type), value(value) {
-}
-
-long Long_Object::getValue() {
-    return this->value;
-}
-
 std::string Long_Object::toString(RuntimeContext &ctx) {
     if(*this->type == *ctx.getPool().getUint64Type()) {
         return std::to_string((unsigned long) this->value);
@@ -197,14 +173,6 @@ void Long_Object::accept(ObjectVisitor *visitor) {
 // ##     Float_Object     ##
 // ##########################
 
-Float_Object::Float_Object(DSType *type, double value) :
-        DSObject(type), value(value) {
-}
-
-double Float_Object::getValue() {
-    return this->value;
-}
-
 std::string Float_Object::toString(RuntimeContext &ctx) {
     return std::to_string(this->value);
 }
@@ -226,14 +194,6 @@ void Float_Object::accept(ObjectVisitor *visitor) {
 // ##     Boolean_Object     ##
 // ############################
 
-Boolean_Object::Boolean_Object(DSType *type, bool value) :
-        DSObject(type), value(value) {
-}
-
-bool Boolean_Object::getValue() {
-    return this->value;
-}
-
 std::string Boolean_Object::toString(RuntimeContext &ctx) {
     return this->value ? "true" : "false";
 }
@@ -254,30 +214,6 @@ void Boolean_Object::accept(ObjectVisitor *visitor) {
 // ##     String_Object     ##
 // ###########################
 
-String_Object::String_Object(DSType *type, std::string &&value) :
-        DSObject(type), value(std::move(value)) {
-}
-
-String_Object::String_Object(DSType *type, const std::string &value) :
-        DSObject(type), value(value) {
-}
-
-String_Object::String_Object(DSType *type) :
-        DSObject(type), value() {
-}
-
-const char *String_Object::getValue() const {
-    return this->value.c_str();
-}
-
-unsigned int String_Object::size() const {
-    return this->value.size();
-}
-
-bool String_Object::empty() const {
-    return this->size() == 0;
-}
-
 std::string String_Object::toString(RuntimeContext &ctx) {
     return this->value;
 }
@@ -297,18 +233,6 @@ void String_Object::accept(ObjectVisitor *visitor) {
 // ##########################
 // ##     Array_Object     ##
 // ##########################
-
-Array_Object::Array_Object(DSType *type) :
-        DSObject(type), curIndex(0), values() {
-}
-
-Array_Object::Array_Object(DSType *type, std::vector<DSValue> &&values) :
-        DSObject(type), curIndex(0), values(std::move(values)) {
-}
-
-const std::vector<DSValue> &Array_Object::getValues() {
-    return this->values;
-}
 
 std::string Array_Object::toString(RuntimeContext &ctx) {
     std::string str("[");
@@ -335,18 +259,10 @@ void Array_Object::set(unsigned int index, const DSValue &obj) {
     this->values[index] = obj;
 }
 
-void Array_Object::initIterator() {
-    this->curIndex = 0;
-}
-
 const DSValue &Array_Object::nextElement() {
     unsigned int index = this->curIndex++;
     assert(index < this->values.size());
     return this->values[index];
-}
-
-bool Array_Object::hasNext() {
-    return this->curIndex < this->values.size();
 }
 
 DSValue Array_Object::interp(RuntimeContext &ctx) {
@@ -401,14 +317,6 @@ std::size_t GenHash::operator()(const DSValue &key) const {
 // ##     Map_Object     ##
 // ########################
 
-Map_Object::Map_Object(DSType *type) :
-        DSObject(type), valueMap() {
-}
-
-const HashMap &Map_Object::getValueMap() {
-    return this->valueMap;
-}
-
 void Map_Object::set(const DSValue &key, const DSValue &value) {
     this->valueMap[key] = value;
 }
@@ -462,10 +370,6 @@ void Map_Object::accept(ObjectVisitor *visitor) {
 // ##     BaseObject     ##
 // ########################
 
-BaseObject::BaseObject(DSType *type) :
-        DSObject(type), fieldTable(new DSValue[type->getFieldSize()]) {
-}
-
 BaseObject::~BaseObject() {
     delete[] this->fieldTable;
     this->fieldTable = 0;
@@ -479,10 +383,6 @@ DSValue *BaseObject::getFieldTable() {
 // ##     Tuple_Object     ##
 // ##########################
 
-Tuple_Object::Tuple_Object(DSType *type) :
-        BaseObject(type) {
-}
-
 std::string Tuple_Object::toString(RuntimeContext &ctx) {
     std::string str("(");
     unsigned int size = this->getElementSize();
@@ -494,10 +394,6 @@ std::string Tuple_Object::toString(RuntimeContext &ctx) {
     }
     str += ")";
     return str;
-}
-
-unsigned int Tuple_Object::getElementSize() {
-    return this->type->getFieldSize();
 }
 
 void Tuple_Object::set(unsigned int elementIndex, const DSValue &obj) {
@@ -563,14 +459,6 @@ unsigned int getOccuredLineNum(const std::vector<StackTraceElement> &elements) {
 // ##     Error_Object     ##
 // ##########################
 
-Error_Object::Error_Object(DSType *type, const DSValue &message) :
-        DSObject(type), message(message), name(), stackTrace() {
-}
-
-Error_Object::Error_Object(DSType *type, DSValue &&message) :
-        DSObject(type), message(std::move(message)), name(), stackTrace() {
-}
-
 std::string Error_Object::toString(RuntimeContext &ctx) {
     std::string str("Error(");
     str += std::to_string((long) this);
@@ -578,10 +466,6 @@ std::string Error_Object::toString(RuntimeContext &ctx) {
     str += TYPE_AS(String_Object, this->message)->getValue();
     str += ")";
     return str;
-}
-
-const DSValue &Error_Object::getMessage() {
-    return this->message;
 }
 
 void Error_Object::printStackTrace(RuntimeContext &ctx) {
@@ -601,10 +485,6 @@ const DSValue &Error_Object::getName(RuntimeContext &ctx) {
                 ctx.getPool().getStringType(), ctx.getPool().getTypeName(*this->type));
     }
     return this->name;
-}
-
-const std::vector<StackTraceElement> &Error_Object::getStackTrace() {
-    return this->stackTrace;
 }
 
 void Error_Object::accept(ObjectVisitor *visitor) {
@@ -632,10 +512,6 @@ void Error_Object::createStackTrace(RuntimeContext &ctx) {
 // ##     FuncObject     ##
 // ########################
 
-FuncObject::FuncObject() :
-        DSObject(0) {
-}
-
 void FuncObject::setType(DSType *type) {
     if(this->type == 0) {
         assert(dynamic_cast<FunctionType *>(type) != 0);
@@ -643,26 +519,14 @@ void FuncObject::setType(DSType *type) {
     }
 }
 
-FunctionType *FuncObject::getFuncType() {
-    return static_cast<FunctionType *>(this->type);
-}
-
 
 // ############################
 // ##     UserFuncObject     ##
 // ############################
 
-UserFuncObject::UserFuncObject(FunctionNode *funcNode) :
-        FuncObject(), funcNode(funcNode) {
-}
-
 UserFuncObject::~UserFuncObject() {
     delete this->funcNode;
-    this->funcNode = 0;
-}
-
-FunctionNode *UserFuncObject::getFuncNode() {
-    return this->funcNode;
+    this->funcNode = nullptr;
 }
 
 std::string UserFuncObject::toString(RuntimeContext &ctx) {
@@ -697,10 +561,6 @@ void UserFuncObject::accept(ObjectVisitor *visitor) {
 // #############################
 // ##     NativeMethodRef     ##
 // #############################
-
-NativeMethodRef::NativeMethodRef(native_func_t func_ptr) :
-        MethodRef(), func_ptr(func_ptr) {
-}
 
 bool NativeMethodRef::invoke(RuntimeContext &ctx) {
     return this->func_ptr(ctx);

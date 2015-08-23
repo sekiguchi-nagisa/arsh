@@ -40,15 +40,21 @@ private:
     };
 
 public:
-    HandleOrFuncType(FunctionHandle *handle);
+    HandleOrFuncType(FunctionHandle *handle) : hasHandle(true), handle(handle) { }
 
-    HandleOrFuncType(FunctionType *funcType);
+    HandleOrFuncType(FunctionType *funcType) : hasHandle(false), funcType(funcType) { }
 
-    bool treatAsHandle();
+    bool treatAsHandle() const {
+        return this->hasHandle;
+    }
 
-    FunctionHandle *getHandle();
+    FunctionHandle *getHandle() const {
+        return this->hasHandle ? this->handle : nullptr;
+    }
 
-    FunctionType *getFuncType();
+    FunctionType *getFuncType() const {
+        return this->hasHandle ? nullptr : this->funcType;
+    }
 };
 
 enum CoercionKind {
@@ -65,7 +71,7 @@ private:
     DSType *type;
 
 public:
-    explicit TypeGenerator(TypePool *pool);
+    explicit TypeGenerator(TypePool *pool) : pool(pool), type(nullptr) { }
     ~TypeGenerator() = default;
 
     /**

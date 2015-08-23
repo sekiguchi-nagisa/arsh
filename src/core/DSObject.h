@@ -110,13 +110,16 @@ protected:
     friend class DSValue;
 
 public:
-    explicit DSObject(DSType *type);
+    explicit DSObject(DSType *type) : type(type), refCount(0) { }
+
     virtual ~DSObject() = default;
 
     /**
      * get object type
      */
-    DSType *getType();
+    DSType *getType() const {
+        return this->type;
+    }
 
     unsigned int getRefcount() const {
         return this->refCount;
@@ -174,10 +177,13 @@ private:
     int value;
 
 public:
-    Int_Object(DSType *type, int value);
+    Int_Object(DSType *type, int value) : DSObject(type), value(value) { }
+
     ~Int_Object() = default;
 
-    int getValue();
+    int getValue() const {
+        return this->value;
+    }
 
     std::string toString(RuntimeContext &ctx); // override
     bool equals(const DSValue &obj);  // override
@@ -190,10 +196,13 @@ private:
     long value;
 
 public:
-    Long_Object(DSType *type, long value);
+    Long_Object(DSType *type, long value) : DSObject(type), value(value) { }
+
     ~Long_Object() = default;
 
-    long getValue();
+    long getValue() const {
+        return this->value;
+    }
 
     std::string toString(RuntimeContext &ctx); // override
     bool equals(const DSValue &obj);  // override
@@ -206,10 +215,13 @@ private:
     double value;
 
 public:
-    Float_Object(DSType *type, double value);
+    Float_Object(DSType *type, double value) : DSObject(type), value(value) { }
+
     ~Float_Object() = default;
 
-    double getValue();
+    double getValue() const {
+        return this->value;
+    }
 
     std::string toString(RuntimeContext &ctx); // override
     bool equals(const DSValue &obj);  // override
@@ -222,10 +234,13 @@ private:
     bool value;
 
 public:
-    Boolean_Object(DSType *type, bool value);
+    Boolean_Object(DSType *type, bool value) : DSObject(type), value(value) { }
+
     ~Boolean_Object() = default;
 
-    bool getValue();
+    bool getValue() const {
+        return this->value;
+    }
 
     std::string toString(RuntimeContext &ctx); // override
     bool equals(const DSValue &obj);  // override
@@ -238,21 +253,30 @@ private:
     std::string value;
 
 public:
-    String_Object(DSType *type, std::string &&value);
+    String_Object(DSType *type, std::string &&value) :
+            DSObject(type), value(std::move(value)) { }
 
-    String_Object(DSType *type, const std::string &value);
+    String_Object(DSType *type, const std::string &value) :
+            DSObject(type), value(value) { }
 
-    explicit String_Object(DSType *type);
+    explicit String_Object(DSType *type) : DSObject(type), value() { }
+
     ~String_Object() = default;
 
-    const char *getValue() const;
+    const char *getValue() const {
+        return this->value.c_str();
+    }
 
     /**
      * equivalent to strlen(this->getValue())
      */
-    unsigned int size() const;
+    unsigned int size() const {
+        return this->value.size();
+    }
 
-    bool empty() const;
+    bool empty() const {
+        return this->size() == 0;
+    }
 
     std::string toString(RuntimeContext &ctx); // override
 
@@ -267,20 +291,31 @@ private:
     std::vector<DSValue> values;
 
 public:
-    explicit Array_Object(DSType *type);
-    Array_Object(DSType *type, std::vector<DSValue> &&values);
+    explicit Array_Object(DSType *type) : DSObject(type), curIndex(0), values() { }
+
+    Array_Object(DSType *type, std::vector<DSValue> &&values) :
+            DSObject(type), curIndex(0), values(std::move(values)) { }
+
     ~Array_Object() = default;
 
-    const std::vector<DSValue> &getValues();
+    const std::vector<DSValue> &getValues() const {
+        return this->values;
+    }
 
     std::string toString(RuntimeContext &ctx); // override
     void append(DSValue &&obj);
     void append(const DSValue &obj);
     void set(unsigned int index, const DSValue &obj);
 
-    void initIterator();
+    void initIterator() {
+        this->curIndex = 0;
+    }
+
     const DSValue &nextElement();
-    bool hasNext();
+
+    bool hasNext() const {
+        return this->curIndex < this->values.size();
+    }
 
     DSValue interp(RuntimeContext &ctx); // override
     DSValue commandArg(RuntimeContext &ctx); // override
@@ -303,10 +338,13 @@ private:
     HashMap::const_iterator iter;
 
 public:
-    explicit Map_Object(DSType *type);
+    explicit Map_Object(DSType *type) : DSObject(type), valueMap() { }
+
     ~Map_Object() = default;
 
-    const HashMap &getValueMap();
+    const HashMap &getValueMap() const {
+        return this->valueMap;
+    }
 
     void set(const DSValue &key, const DSValue &value);
     void add(std::pair<DSValue, DSValue> &&entry);
@@ -323,18 +361,24 @@ protected:
     DSValue *fieldTable;
 
 public:
-    explicit BaseObject(DSType *type);
+    explicit BaseObject(DSType *type) :
+            DSObject(type), fieldTable(new DSValue[type->getFieldSize()]) { }
+
     virtual ~BaseObject();
 
     DSValue *getFieldTable(); // override
 };
 
 struct Tuple_Object : public BaseObject {
-    explicit Tuple_Object(DSType *type);
+    explicit Tuple_Object(DSType *type) : BaseObject(type) { }
+
     ~Tuple_Object() = default;
 
     std::string toString(RuntimeContext &ctx); // override
-    unsigned int getElementSize();
+
+    unsigned int getElementSize() const {
+        return this->type->getFieldSize();
+    }
 
     void set(unsigned int elementIndex, const DSValue &obj);
 
@@ -357,6 +401,7 @@ public:
 
     StackTraceElement(const char *sourceName, unsigned int lineNum, std::string &&callerName) :
             sourceName(sourceName), lineNum(lineNum), callerName(std::move(callerName)) { }
+
     ~StackTraceElement() = default;
 
     const char *getSourceName() const {
@@ -384,13 +429,19 @@ private:
     std::vector<StackTraceElement> stackTrace;
 
 public:
-    Error_Object(DSType *type, const DSValue &message);
-    Error_Object(DSType *type, DSValue &&message);
+    Error_Object(DSType *type, const DSValue &message) :
+            DSObject(type), message(message), name(), stackTrace() { }
+
+    Error_Object(DSType *type, DSValue &&message) :
+            DSObject(type), message(std::move(message)), name(), stackTrace() { }
+
     ~Error_Object() = default;
 
     std::string toString(RuntimeContext &ctx); // override
 
-    const DSValue &getMessage();
+    const DSValue &getMessage() const {
+        return this->message;
+    }
 
     /**
      * print stack trace to stderr
@@ -399,7 +450,9 @@ public:
 
     const DSValue &getName(RuntimeContext &ctx);
 
-    const std::vector<StackTraceElement> &getStackTrace();
+    const std::vector<StackTraceElement> &getStackTrace() const {
+        return this->stackTrace;
+    }
 
     void accept(ObjectVisitor *visitor); // override
 
@@ -415,8 +468,7 @@ private:
 };
 
 struct DummyObject : public DSObject {
-    DummyObject() : DSObject(0) {
-    }
+    DummyObject() : DSObject(0) { }
 
     ~DummyObject() = default;
 
@@ -426,7 +478,7 @@ struct DummyObject : public DSObject {
 };
 
 struct FuncObject : public DSObject {
-    FuncObject();
+    FuncObject() : DSObject(0) { }
 
     virtual ~FuncObject() = default;
 
@@ -436,7 +488,9 @@ struct FuncObject : public DSObject {
      * equivalent to dynamic_cast<FunctionType*>(getType())
      * may be null, before call setType()
      */
-    FunctionType *getFuncType();
+    FunctionType *getFuncType() {
+        return static_cast<FunctionType *>(this->type);
+    }
 
     /**
      * invoke function.
@@ -454,11 +508,14 @@ private:
     ast::FunctionNode *funcNode;
 
 public:
-    explicit UserFuncObject(ast::FunctionNode *funcNode);
+    explicit UserFuncObject(ast::FunctionNode *funcNode) :
+            FuncObject(), funcNode(funcNode) { }
 
     ~UserFuncObject();
 
-    ast::FunctionNode *getFuncNode();
+    ast::FunctionNode *getFuncNode() {
+        return this->funcNode;
+    }
 
     std::string toString(RuntimeContext &ctx); // override
     bool invoke(RuntimeContext &ctx); // override
@@ -480,15 +537,14 @@ private:
     native_func_t func_ptr;
 
 public:
-    explicit NativeMethodRef(native_func_t func_ptr);
+    explicit NativeMethodRef(native_func_t func_ptr) : MethodRef(), func_ptr(func_ptr) { }
     ~NativeMethodRef() = default;
 
     bool invoke(RuntimeContext &ctx);   // override
 };
 
 struct ProxyObject : public DSObject {
-    explicit ProxyObject(DSType *type) : DSObject(type) {
-    }
+    explicit ProxyObject(DSType *type) : DSObject(type) { }
 
     virtual ~ProxyObject() = default;
 

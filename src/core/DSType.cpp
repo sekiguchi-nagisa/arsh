@@ -38,28 +38,8 @@ DSType::DSType(bool extendable, DSType *superType, bool isVoid) :
     }
 }
 
-bool DSType::isExtendable() const {
-    return hasFlag(this->attributeSet, EXTENDABLE);
-}
-
-bool DSType::isVoidType() const {
-    return hasFlag(this->attributeSet, VOID_TYPE);
-}
-
-bool DSType::isFuncType() const {
-    return hasFlag(this->attributeSet, FUNC_TYPE);
-}
-
-bool DSType::isInterface() const {
-    return hasFlag(this->attributeSet, INTERFACE);
-}
-
 bool DSType::isBuiltinType() const {
     return false;
-}
-
-DSType *DSType::getSuperType() const {
-    return this->superType;
 }
 
 MethodHandle *DSType::getConstructorHandle(TypePool *typePool) {
@@ -86,14 +66,6 @@ MethodHandle *DSType::lookupMethodHandle(TypePool *typePool, const std::string &
     return 0;
 }
 
-bool DSType::operator==(const DSType &type) {
-    return (unsigned long) this == (unsigned long) &type;
-}
-
-bool DSType::operator!=(const DSType &type) {
-    return (unsigned long) this != (unsigned long) &type;
-}
-
 bool DSType::isSameOrBaseTypeOf(DSType *targetType) {
     if(*this == *targetType) {
         return true;
@@ -112,21 +84,6 @@ void DSType::copyAllMethodRef(std::vector<std::shared_ptr<MethodRef>> &methodTab
 // ##########################
 // ##     FunctionType     ##
 // ##########################
-
-FunctionType::FunctionType(DSType *superType, DSType *returnType,
-                           std::vector<DSType *> &&paramTypes) :
-        DSType(false, superType, false),
-        returnType(returnType), paramTypes(std::move(paramTypes)) {
-    setFlag(this->attributeSet, FUNC_TYPE);
-}
-
-DSType *FunctionType::getReturnType() {
-    return this->returnType;
-}
-
-const std::vector<DSType *> &FunctionType::getParamTypes() {
-    return this->paramTypes;
-}
 
 MethodHandle *FunctionType::lookupMethodHandle(TypePool *typePool, const std::string &methodName) {
     return this->superType->lookupMethodHandle(typePool, methodName);
@@ -250,11 +207,6 @@ void BuiltinType::initMethodHandle(MethodHandle *handle, TypePool *typePool, Nat
 // ##     ReifiedType     ##
 // #########################
 
-ReifiedType::ReifiedType(native_type_info_t *info, DSType *superType,
-                         std::vector<DSType *> &&elementTypes) :
-        BuiltinType(false, superType, info, false), elementTypes(std::move(elementTypes)) {
-}
-
 void ReifiedType::initMethodHandle(MethodHandle *handle, TypePool *typePool, NativeFuncInfo *info) {
     switch(this->elementTypes.size()) {
     case 1:
@@ -266,10 +218,6 @@ void ReifiedType::initMethodHandle(MethodHandle *handle, TypePool *typePool, Nat
     default:
         fatal("element size must be 1 or 2\n");
     }
-}
-
-const std::vector<DSType *> &ReifiedType::getElementTypes() {
-    return this->elementTypes;
 }
 
 void ReifiedType::accept(TypeVisitor *visitor) {
@@ -299,10 +247,6 @@ TupleType::~TupleType() {
 
     delete this->constructorHandle;
     this->constructorHandle = 0;
-}
-
-const std::vector<DSType *> &TupleType::getTypes() {
-    return this->types;
 }
 
 MethodHandle *TupleType::getConstructorHandle(TypePool *typePool) {
@@ -373,11 +317,6 @@ bool CollectionType::isSameOrBaseTypeOf(DSType *targetType) {
 // ###########################
 // ##     InterfaceType     ##
 // ###########################
-
-InterfaceType::InterfaceType(DSType *superType) :
-        DSType(false, superType, false), fieldHandleMap(), methodHandleMap() {
-    setFlag(this->attributeSet, INTERFACE);
-}
 
 InterfaceType::~InterfaceType() {
     for(auto &pair : this->fieldHandleMap) {
@@ -453,10 +392,6 @@ void InterfaceType::accept(TypeVisitor *visitor) {
 // ##     ErrorType     ##
 // #######################
 
-ErrorType::ErrorType(DSType *superType) :
-        DSType(true, superType, false), constructorHandle() {
-}
-
 ErrorType::~ErrorType() {
     delete this->constructorHandle;
     this->constructorHandle = 0;
@@ -510,30 +445,6 @@ void ErrorType::registerFuncInfo(NativeFuncInfo *info) {
         funcInfo = info;
         initRef.reset(new NativeMethodRef(info->func_ptr));
     }
-}
-
-// ##########################
-// ##     TypeTemplate     ##
-// ##########################
-
-TypeTemplate::TypeTemplate(std::string &&name, std::vector<DSType *> &&elementTypes, native_type_info_t *info) :
-        name(std::move(name)), acceptableTypes(std::move(elementTypes)), info(info) {
-}
-
-const std::string &TypeTemplate::getName() {
-    return this->name;
-}
-
-unsigned int TypeTemplate::getElementTypeSize() {
-    return this->acceptableTypes.size();
-}
-
-native_type_info_t *TypeTemplate::getInfo() {
-    return this->info;
-}
-
-const std::vector<DSType *> &TypeTemplate::getAcceptableTypes() {
-    return this->acceptableTypes;
 }
 
 } // namespace core

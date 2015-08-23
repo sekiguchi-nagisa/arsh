@@ -33,9 +33,10 @@ public:
     /**
      * equivalent to Scope(0)
      */
-    Scope();
+    Scope() : Scope(0) { }
 
-    explicit Scope(unsigned int curVarIndex);
+    explicit Scope(unsigned int curVarIndex) :
+            curVarIndex(curVarIndex), handleMap() { }
 
     ~Scope();
 
@@ -50,7 +51,9 @@ public:
      */
     bool addFieldHandle(const std::string &symbolName, FieldHandle *handle);
 
-    unsigned int getCurVarIndex();
+    unsigned int getCurVarIndex() const {
+        return this->curVarIndex;
+    }
 
     /**
      * remove handle from handleMap, and delete it.

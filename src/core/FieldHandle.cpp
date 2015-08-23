@@ -27,19 +27,8 @@ namespace core {
 // ##     FieldHandle     ##
 // #########################
 
-FieldHandle::FieldHandle(DSType *fieldType, unsigned int fieldIndex, bool readOnly) :
-        fieldType(fieldType), fieldIndex(fieldIndex), attributeSet(0) {
-    if(readOnly) {
-        this->setAttribute(READ_ONLY);
-    }
-}
-
 DSType *FieldHandle::getFieldType(TypePool *typePool) {
     return this->fieldType;
-}
-
-unsigned int FieldHandle::getFieldIndex() {
-    return this->fieldIndex;
 }
 
 std::string FieldHandle::toString() const {
@@ -69,48 +58,10 @@ std::string FieldHandle::toString() const {
     return str;
 }
 
-void FieldHandle::setAttribute(flag8_t attribute) {
-    setFlag(this->attributeSet, attribute);
-}
-
-void FieldHandle::unsetAttribute(flag8_t attribute) {
-    unsetFlag(this->attributeSet, attribute);
-}
-
-bool FieldHandle::hasAttribute(flag8_t targetAttr) const {
-    return hasFlag(this->attributeSet, targetAttr);
-}
-
-bool FieldHandle::isReadOnly() const {
-    return this->hasAttribute(READ_ONLY);
-}
-
-bool FieldHandle::isGlobal() const {
-    return this->hasAttribute(GLOBAL);
-}
-
-bool FieldHandle::isEnv() const {
-    return this->hasAttribute(ENV);
-}
-
-bool FieldHandle::isFuncHandle() const {
-    return this->hasAttribute(FUNC_HANDLE);
-}
-
-bool FieldHandle::withinInterface() const {
-    return this->hasAttribute(INTERFACE);
-}
-
 
 // ############################
 // ##     FunctionHandle     ##
 // ############################
-
-FunctionHandle::FunctionHandle(DSType *returnType, const std::vector<DSType *> &paramTypes, unsigned int fieldIndex) :
-        FieldHandle(0, fieldIndex, true),
-        returnType(returnType), paramTypes(paramTypes), paramIndexMap(), defaultValues() {
-    this->setAttribute(FUNC_HANDLE);
-}
 
 DSType *FunctionHandle::getFieldType(TypePool *typePool) {
     if(this->fieldType == 0) {
@@ -121,10 +72,6 @@ DSType *FunctionHandle::getFieldType(TypePool *typePool) {
 
 FunctionType *FunctionHandle::getFuncType(TypePool *typePool) {
     return static_cast<FunctionType *>(this->getFieldType(typePool));
-}
-
-DSType *FunctionHandle::getReturnType() {
-    return this->returnType;
 }
 
 const std::vector<DSType *> &FunctionHandle::getParamTypes() {
@@ -162,42 +109,13 @@ bool FunctionHandle::hasDefaultValue(unsigned int paramIndex) {
 // ##     MethodHandle     ##
 // ##########################
 
-MethodHandle::MethodHandle(int methodIndex) :
-        methodIndex(methodIndex), attributeSet(),
-        returnType(), recvType(), paramTypes(), next() {
-}
-
 MethodHandle::~MethodHandle() {
     delete this->next;
-    this->next = 0;
-}
-
-unsigned int MethodHandle::getMethodIndex() {
-    return this->methodIndex;
-}
-
-void MethodHandle::setReturnType(DSType *type) {
-    this->returnType = type;
-}
-
-DSType *MethodHandle::getReturnType() {
-    return this->returnType;
-}
-
-void MethodHandle::setRecvType(DSType *type) {
-    this->recvType = type;
-}
-
-DSType *MethodHandle::getRecvType() {
-    return this->recvType;
+    this->next = nullptr;
 }
 
 void MethodHandle::addParamType(DSType *type) {
     this->paramTypes.push_back(type);
-}
-
-const std::vector<DSType *> &MethodHandle::getParamTypes() {
-    return this->paramTypes;
 }
 
 static inline unsigned int decodeNum(const char *&pos) {
@@ -283,30 +201,6 @@ void MethodHandle::init(TypePool *typePool, NativeFuncInfo *info,
 //        bool defaultValue = ((this->defaultValueFlag & mask) == mask);
 //        handle->addParamName(std::string(this->paramNames[i]), defaultValue);
 //    }
-}
-
-bool MethodHandle::initalized() {
-    return this->returnType != 0;
-}
-
-void MethodHandle::setNext(MethodHandle *handle) {
-    this->next = handle;
-}
-
-MethodHandle *MethodHandle::getNext() {
-    return this->next;
-}
-
-void MethodHandle::setAttribute(flag8_t attribute) {
-    setFlag(this->attributeSet, attribute);
-}
-
-bool MethodHandle::isInterfaceMethod() {
-    return hasFlag(this->attributeSet, INTERFACE);
-}
-
-bool MethodHandle::hasMultipleReturnType() {
-    return hasFlag(this->attributeSet, MULTI_RETURN);
 }
 
 bool MethodHandle::isSignal() {
