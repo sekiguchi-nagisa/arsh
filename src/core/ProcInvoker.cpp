@@ -535,28 +535,27 @@ void ProcInvoker::openProc() {
 }
 
 void ProcInvoker::closeProc() {
-    this->argArray.push_back(nullptr);
-    this->redirOptions.push_back(std::make_pair(RedirectOP::DUMMY, nullptr));
+    this->argArray.push_back(DSValue());
+    this->redirOptions.push_back(std::make_pair(RedirectOP::DUMMY, DSValue()));
 }
 
-void ProcInvoker::addCommandName(std::shared_ptr<DSObject> &&value) {
+void ProcInvoker::addCommandName(DSValue &&value) {
     this->argArray.push_back(std::move(value));
 }
 
-void ProcInvoker::addArg(std::shared_ptr<DSObject> &&value, bool skipEmptyString) {
+void ProcInvoker::addArg(DSValue &&value, bool skipEmptyString) {
     DSType *valueType = value->getType();
     if(*valueType == *this->ctx->getPool().getStringType()) {
-        std::shared_ptr<String_Object> obj = std::dynamic_pointer_cast<String_Object>(value);
-        if(skipEmptyString && obj->empty()) {
+        if(skipEmptyString && TYPE_AS(String_Object, value)->empty()) {
             return;
         }
-        this->argArray.push_back(std::move(obj));
+        this->argArray.push_back(std::move(value));
         return;
     }
 
     if(*valueType == *this->ctx->getPool().getStringArrayType()) {
         Array_Object *arrayObj = TYPE_AS(Array_Object, value);
-        for(const std::shared_ptr<DSObject> &element : arrayObj->getValues()) {
+        for(auto &element : arrayObj->getValues()) {
             this->argArray.push_back(element);
         }
     } else {
@@ -564,11 +563,10 @@ void ProcInvoker::addArg(std::shared_ptr<DSObject> &&value, bool skipEmptyString
     }
 }
 
-void ProcInvoker::addRedirOption(RedirectOP op, std::shared_ptr<DSObject> &&value) {
+void ProcInvoker::addRedirOption(RedirectOP op, DSValue &&value) {
     DSType *valueType = value->getType();
     if(*valueType == *this->ctx->getPool().getStringType()) {
-        this->redirOptions.push_back(
-                std::make_pair(op, std::dynamic_pointer_cast<String_Object>(value)));
+        this->redirOptions.push_back(std::make_pair(op, value));
     } else {
         fatal("illegal command parameter type: %s\n", this->ctx->getPool().getTypeName(*valueType).c_str());
     }
@@ -584,8 +582,8 @@ static void closeAllPipe(int size, int pipefds[][2]) {
 /**
  * if failed, return non-zero value(errno)
  */
-static int redirectToFile(const std::shared_ptr<String_Object> &fileName, const char *mode, int targetFD) {
-    FILE *fp = fopen(fileName->getValue(), mode);
+static int redirectToFile(const DSValue &fileName, const char *mode, int targetFD) {
+    FILE *fp = fopen(TYPE_AS(String_Object, fileName)->getValue(), mode);
     if(fp == NULL) {
         return errno;
     }
@@ -674,9 +672,9 @@ bool ProcInvoker::redirect(unsigned int procIndex, int errorPipe) {
  * write opend file pointer to openedFps.
  * if cannot open file, return errno.
  */
-static int redirectToFile(const std::shared_ptr<String_Object> &fileName,
+static int redirectToFile(const DSValue &fileName,
                           const char *mode, FILE **targetFp, std::vector<FILE *> &openedFps) {
-    FILE *fp = fopen(fileName->getValue(), mode);
+    FILE *fp = fopen(TYPE_AS(String_Object, fileName)->getValue(), mode);
     if(fp == nullptr) {
         return errno;
     }
@@ -759,7 +757,7 @@ ProcInvoker::builtin_command_t ProcInvoker::lookupBuiltinCommand(const char *com
     return iter->second;
 }
 
-std::shared_ptr<DSObject> *ProcInvoker::getARGV(unsigned int procIndex) {
+DSValue *ProcInvoker::getARGV(unsigned int procIndex) {
     return this->argArray.data() + this->procOffsets[procIndex].first;
 }
 
@@ -770,9 +768,9 @@ EvalStatus ProcInvoker::invoke() {
     if(procSize == 1) {
         builtin_command_t cmd_ptr = this->lookupBuiltinCommand(this->getCommandName(0));
         if(cmd_ptr != nullptr && cmd_ptr != builtin_eval) {
-            std::shared_ptr<DSObject> *ptr = this->getARGV(0);
+            DSValue *ptr = this->getARGV(0);
             unsigned int argc = 1;
-            for(; ptr[argc] != nullptr; argc++);
+            for(; ptr[argc].get() != nullptr; argc++);
             char *argv[argc + 1];
             for(unsigned int i = 0; i < argc; i++) {
                 argv[i] = const_cast<char *>(TYPE_AS(String_Object, ptr[i])->getValue());
@@ -897,9 +895,9 @@ EvalStatus ProcInvoker::invoke() {
         closeAllPipe(procSize, pipefds);
 
         // create argv
-        std::shared_ptr<DSObject> *ptr = this->getARGV(procIndex);
+        DSValue *ptr = this->getARGV(procIndex);
         unsigned int argc = 1;
-        for(; ptr[argc] != nullptr; argc++);
+        for(; ptr[argc]; argc++);
         char *argv[argc + 1];
         for(unsigned int i = 0; i < argc; i++) {
             argv[i] = const_cast<char *>(TYPE_AS(String_Object, ptr[i])->getValue());
@@ -965,8 +963,8 @@ bool ProcInvoker::checkChildError(const std::pair<unsigned int, ChildError> &err
             msg += ": ";
         } else {    // redirection error
             msg += "io redirection error: ";
-            if(pair.second != nullptr && pair.second->size() != 0) {
-                msg += pair.second->getValue();
+            if(pair.second && TYPE_AS(String_Object, pair.second)->size() != 0) {
+                msg += TYPE_AS(String_Object, pair.second)->getValue();
                 msg += ": ";
             }
         }

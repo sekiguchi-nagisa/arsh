@@ -79,7 +79,7 @@ struct DSContext {
      * get exit status of recently executed command.(also exit command)
      */
     int getExitStatus() {
-        return this->ctx.getExitStatus()->getValue();
+        return TYPE_AS(Int_Object, this->ctx.getExitStatus())->getValue();
     }
 
     const ReportingListener &getReportingListener() {
@@ -394,7 +394,7 @@ const char *DSContext_getPrompt(DSContext *ctx, unsigned int n) {
     }
 
     unsigned int index = handle->getFieldIndex();
-    const std::shared_ptr<DSObject> &obj = ctx->ctx.getGlobal(index);
+    const DSValue &obj = ctx->ctx.getGlobal(index);
     if(dynamic_cast<String_Object *>(obj.get()) == nullptr) {
         return empty;
     }

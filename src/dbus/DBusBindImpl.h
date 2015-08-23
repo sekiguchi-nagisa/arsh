@@ -27,8 +27,7 @@ namespace ydsh {
 namespace core {
 
 // represent for SystemBus, SessionBus, or specific bus.
-class Bus_ObjectImpl : public Bus_Object,
-                        public std::enable_shared_from_this<Bus_ObjectImpl> {
+class Bus_ObjectImpl : public Bus_Object {
 private:
     DBusConnection *conn;
 
@@ -60,10 +59,12 @@ public:
     bool listNames(RuntimeContext &ctx, bool activeName);    // override
 };
 
-class Service_ObjectImpl : public Service_Object,
-                            public std::enable_shared_from_this<Service_ObjectImpl> {
+class Service_ObjectImpl : public Service_Object {
 private:
-    std::shared_ptr<Bus_ObjectImpl> bus;
+    /**
+     * must be Bus_ObjectImpl
+     */
+    DSValue bus;
 
     /**
      * service name of destination process.
@@ -76,16 +77,16 @@ private:
     std::string uniqueName;
 
 public:
-    Service_ObjectImpl(DSType *type, const std::shared_ptr<Bus_ObjectImpl> &bus,
+    Service_ObjectImpl(DSType *type, const DSValue &bus,
                        std::string &&serviceName, std::string &&uniqueName);
     ~Service_ObjectImpl() = default;
 
-    const std::shared_ptr<Bus_ObjectImpl> &getBus() const {
+    const DSValue &getBus() const {
         return this->bus;
     }
 
     DBusConnection *getConnection() const {
-        return this->bus->getConnection();
+        return TYPE_AS(Bus_ObjectImpl, this->bus)->getConnection();
     }
 
     const char *getServiceName() const {
@@ -97,13 +98,21 @@ public:
     }
 
     std::string toString(RuntimeContext &ctx); // override
-    bool object(RuntimeContext &ctx, const std::shared_ptr<String_Object> &objectPath); // override
+    bool object(RuntimeContext &ctx, const DSValue &objectPath); // override
 };
 
 class DBus_ObjectImpl : public DBus_Object {
 private:
-    std::shared_ptr<Bus_ObjectImpl> systemBus;
-    std::shared_ptr<Bus_ObjectImpl> sessionBus;
+    /**
+     * must be Bus_ObjectImpl
+     */
+    DSValue systemBus;
+
+    /**
+     * must be Bus_ObjectImpl
+     */
+    DSValue sessionBus;
+
     MessageBuilder builder;
 
 public:
@@ -113,14 +122,14 @@ public:
     /**
      * return null, before call getSystemBus(ctx)
      */
-    const std::shared_ptr<Bus_ObjectImpl> &getSystemBus() {
+    const DSValue &getSystemBus() {
         return this->systemBus;
     }
 
     /**
      * return null, before call getSessionBus(ctx)
      */
-    const std::shared_ptr<Bus_ObjectImpl> &getSessionBus() {
+    const DSValue &getSessionBus() {
         return this->sessionBus;
     }
 
@@ -132,10 +141,10 @@ public:
     bool getSessionBus(RuntimeContext &ctx);    // override
 
     bool waitSignal(RuntimeContext &ctx);   // override
-    bool getServiceFromProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy);  // override
-    bool getObjectPathFromProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy);   // override
-    bool getIfaceListFromProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy);    // override
-    bool introspectProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy); // override
+    bool getServiceFromProxy(RuntimeContext &ctx, const DSValue &proxy);  // override
+    bool getObjectPathFromProxy(RuntimeContext &ctx, const DSValue &proxy);   // override
+    bool getIfaceListFromProxy(RuntimeContext &ctx, const DSValue &proxy);    // override
+    bool introspectProxy(RuntimeContext &ctx, const DSValue &proxy); // override
 };
 
 /**
@@ -152,14 +161,21 @@ struct SignalSelectorHash {
     std::size_t operator() (const SignalSelector &key) const;
 };
 
-typedef std::unordered_map<SignalSelector, std::shared_ptr<FuncObject>,
+typedef std::unordered_map<SignalSelector, DSValue,
         SignalSelectorHash, SignalSelectorComparator> HandlerMap;
 
 // represent for D-Bus object.
 class DBusProxy_Object : public ProxyObject {
 private:
-    std::shared_ptr<Service_ObjectImpl> srv;
-    std::shared_ptr<String_Object> objectPath;
+    /**
+     * must be Service_ObjectImpl
+     */
+    DSValue srv;
+
+    /**
+     * must be String_Object
+     */
+    DSValue objectPath;
 
     /**
      * contains having interface name.
@@ -167,13 +183,16 @@ private:
     std::unordered_set<std::string> ifaceSet;
 
     /**
-     * contains signal handler
+     * contains signal handler(handler is FuncObject)
      */
     HandlerMap handerMap;
 
 public:
-    DBusProxy_Object(DSType *type, const std::shared_ptr<DSObject> &srcObj,
-                     const std::shared_ptr<String_Object> &objectPath);
+    /**
+     * objectPath must be String_Object
+     */
+    DBusProxy_Object(DSType *type, const DSValue &srcObj, const DSValue &objectPath);
+
     ~DBusProxy_Object() = default;
 
     std::string toString(RuntimeContext &ctx); // override
@@ -185,9 +204,13 @@ public:
     bool invokeSetter(RuntimeContext &ctx, DSType *recvType,
                       const std::string &fieldName, DSType *fieldType);    // override
 
-    const std::shared_ptr<Service_ObjectImpl> &getService();
-    const std::shared_ptr<String_Object> &getObjectPath();
-    std::shared_ptr<Array_Object> createIfaceList(RuntimeContext &ctx);
+    const DSValue &getService();
+    const DSValue &getObjectPath();
+
+    /**
+     * return Array_Object
+     */
+    DSValue createIfaceList(RuntimeContext &ctx);
 
     /**
      * lookup signal handler and push stack top. return func type of found handler.
@@ -221,7 +244,7 @@ private:
     /**
      * obj must be FuncObject
      */
-    void addHandler(const std::string &ifaceName, const std::string &methodName, const std::shared_ptr<DSObject> &obj);
+    void addHandler(const std::string &ifaceName, const std::string &methodName, const DSValue &obj);
 };
 
 } // namespace core

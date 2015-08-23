@@ -20,20 +20,94 @@
 #include <ostream>
 #include <memory>
 
-#include "../ast/Node.h"
 #include "DSType.h"
+
+namespace ydsh {
+namespace ast {
+
+class FunctionNode;
+
+}
+}
 
 namespace ydsh {
 namespace  core {
 
-using namespace ydsh::ast;
-
+class DSObject;
 class String_Object;
 struct ObjectVisitor;
+
+class DSValue {
+private:
+    /**
+     * may be null
+     */
+    DSObject *obj;
+
+public:
+    /**
+     * obj may be null
+     */
+    explicit DSValue(DSObject *obj) noexcept;
+
+    /**
+     * equivalent to DSValue(nullptr)
+     */
+    constexpr DSValue() noexcept: obj(nullptr) { }
+
+    constexpr DSValue(std::nullptr_t) noexcept: DSValue() { }
+
+    DSValue(const DSValue &value) noexcept : DSValue(value.obj) { }
+
+    /**
+     * not increment refCount
+     */
+    DSValue(DSValue &&value) noexcept : obj(value.obj) { value.obj = nullptr; }
+
+    ~DSValue();
+
+    DSValue &operator=(const DSValue &value) noexcept;
+    DSValue &operator=(DSValue &&value) noexcept;
+
+    /**
+     * release current pointer.
+     */
+    void reset() noexcept;
+
+    DSObject *get() const noexcept {
+        return this->obj;
+    }
+
+    DSObject &operator*() const noexcept {
+        return *this->obj;
+    }
+
+    DSObject *operator->() const noexcept {
+        return this->obj;
+    }
+
+    explicit operator bool() const noexcept {
+        return this->obj != nullptr;
+    }
+
+    void swap(DSValue &value) noexcept {
+        std::swap(this->obj, value.obj);
+    }
+
+    template <typename T, typename ...A>
+    static DSValue create(A &&...args) {
+        static_assert(std::is_base_of<DSObject, T>::value, "must be subtype of DSObject");
+
+        return DSValue(new T(std::forward<A>(args)...));
+    };
+};
 
 class DSObject {
 protected:
     DSType *type;
+    unsigned int refCount;
+
+    friend class DSValue;
 
 public:
     explicit DSObject(DSType *type);
@@ -44,12 +118,16 @@ public:
      */
     DSType *getType();
 
+    unsigned int getRefcount() const {
+        return this->refCount;
+    }
+
     /**
      * for FuncObject.
      */
     virtual void setType(DSType *type);
 
-    virtual std::shared_ptr<DSObject> *getFieldTable();
+    virtual DSValue *getFieldTable();
 
     /**
      * for printing
@@ -59,22 +137,24 @@ public:
     /**
      * EQ method implementation.
      */
-    virtual bool equals(const std::shared_ptr<DSObject> &obj);
+    virtual bool equals(const DSValue &obj);
 
     /**
      * STR method implementation.
+     * return String_Object
      */
-    std::shared_ptr<String_Object> str(RuntimeContext &ctx);
+    DSValue str(RuntimeContext &ctx);
 
     /**
      * for interpolation
+     * return String_Object
      */
-    virtual std::shared_ptr<String_Object> interp(RuntimeContext &ctx);
+    virtual DSValue interp(RuntimeContext &ctx);
 
     /**
      * for command argument.
      */
-    virtual std::shared_ptr<DSObject> commandArg(RuntimeContext &ctx);
+    virtual DSValue commandArg(RuntimeContext &ctx);
 
     /**
      * for Map_Object
@@ -100,7 +180,7 @@ public:
     int getValue();
 
     std::string toString(RuntimeContext &ctx); // override
-    bool equals(const std::shared_ptr<DSObject> &obj);  // override
+    bool equals(const DSValue &obj);  // override
     size_t hash();  // override
     void accept(ObjectVisitor *visitor); // override
 };
@@ -116,7 +196,7 @@ public:
     long getValue();
 
     std::string toString(RuntimeContext &ctx); // override
-    bool equals(const std::shared_ptr<DSObject> &obj);  // override
+    bool equals(const DSValue &obj);  // override
     size_t hash();  // override
     void accept(ObjectVisitor *visitor); // override
 };
@@ -132,7 +212,7 @@ public:
     double getValue();
 
     std::string toString(RuntimeContext &ctx); // override
-    bool equals(const std::shared_ptr<DSObject> &obj);  // override
+    bool equals(const DSValue &obj);  // override
     size_t hash();  // override
     void accept(ObjectVisitor *visitor); // override
 };
@@ -148,7 +228,7 @@ public:
     bool getValue();
 
     std::string toString(RuntimeContext &ctx); // override
-    bool equals(const std::shared_ptr<DSObject> &obj);  // override
+    bool equals(const DSValue &obj);  // override
     size_t hash();  // override
     void accept(ObjectVisitor *visitor); // override
 };
@@ -176,7 +256,7 @@ public:
 
     std::string toString(RuntimeContext &ctx); // override
 
-    bool equals(const std::shared_ptr<DSObject> &obj);  // override
+    bool equals(const DSValue &obj);  // override
     size_t hash();  // override
     void accept(ObjectVisitor *visitor); // override
 };
@@ -184,39 +264,38 @@ public:
 class Array_Object : public DSObject {
 private:
     unsigned int curIndex;
-    std::vector<std::shared_ptr<DSObject>> values;
+    std::vector<DSValue> values;
 
 public:
     explicit Array_Object(DSType *type);
-    Array_Object(DSType *type, std::vector<std::shared_ptr<DSObject>> &&values);
+    Array_Object(DSType *type, std::vector<DSValue> &&values);
     ~Array_Object() = default;
 
-    const std::vector<std::shared_ptr<DSObject>> &getValues();
+    const std::vector<DSValue> &getValues();
 
     std::string toString(RuntimeContext &ctx); // override
-    void append(std::shared_ptr<DSObject> &&obj);
-    void append(const std::shared_ptr<DSObject> &obj);
-    void set(unsigned int index, const std::shared_ptr<DSObject> &obj);
+    void append(DSValue &&obj);
+    void append(const DSValue &obj);
+    void set(unsigned int index, const DSValue &obj);
 
     void initIterator();
-    const std::shared_ptr<DSObject> &nextElement();
+    const DSValue &nextElement();
     bool hasNext();
 
-    std::shared_ptr<String_Object> interp(RuntimeContext &ctx); // override
-    std::shared_ptr<DSObject> commandArg(RuntimeContext &ctx); // override
+    DSValue interp(RuntimeContext &ctx); // override
+    DSValue commandArg(RuntimeContext &ctx); // override
     void accept(ObjectVisitor *visitor); // override
 };
 
 struct KeyCompare {
-    bool operator() (const std::shared_ptr<DSObject> &x,
-                     const std::shared_ptr<DSObject> &y) const;
+    bool operator() (const DSValue &x, const DSValue &y) const;
 };
 
 struct GenHash {
-    std::size_t operator() (const std::shared_ptr<DSObject> &key) const;
+    std::size_t operator() (const DSValue &key) const;
 };
 
-typedef std::unordered_map<std::shared_ptr<DSObject>, std::shared_ptr<DSObject>, GenHash, KeyCompare> HashMap;
+typedef std::unordered_map<DSValue, DSValue, GenHash, KeyCompare> HashMap;
 
 class Map_Object : public DSObject {
 private:
@@ -229,10 +308,10 @@ public:
 
     const HashMap &getValueMap();
 
-    void set(const std::shared_ptr<DSObject> &key, const std::shared_ptr<DSObject> &value);
-    void add(std::pair<std::shared_ptr<DSObject>, std::shared_ptr<DSObject>> &&entry);
+    void set(const DSValue &key, const DSValue &value);
+    void add(std::pair<DSValue, DSValue> &&entry);
     void initIterator();
-    std::shared_ptr<DSObject> nextElement(RuntimeContext &ctx);
+    DSValue nextElement(RuntimeContext &ctx);
     bool hasNext();
 
     std::string toString(RuntimeContext &ctx); // override
@@ -241,13 +320,13 @@ public:
 
 class BaseObject : public DSObject {
 protected:
-    std::shared_ptr<DSObject> *fieldTable;
+    DSValue *fieldTable;
 
 public:
     explicit BaseObject(DSType *type);
     virtual ~BaseObject();
 
-    std::shared_ptr<DSObject> *getFieldTable(); // override
+    DSValue *getFieldTable(); // override
 };
 
 struct Tuple_Object : public BaseObject {
@@ -257,12 +336,12 @@ struct Tuple_Object : public BaseObject {
     std::string toString(RuntimeContext &ctx); // override
     unsigned int getElementSize();
 
-    void set(unsigned int elementIndex, const std::shared_ptr<DSObject> &obj);
+    void set(unsigned int elementIndex, const DSValue &obj);
 
-    const std::shared_ptr<DSObject> &get(unsigned int elementIndex);
+    const DSValue &get(unsigned int elementIndex);
 
-    std::shared_ptr<String_Object> interp(RuntimeContext &ctx); // override
-    std::shared_ptr<DSObject> commandArg(RuntimeContext &ctx); // override
+    DSValue interp(RuntimeContext &ctx); // override
+    DSValue commandArg(RuntimeContext &ctx); // override
     void accept(ObjectVisitor *visitor); // override
 };
 
@@ -300,25 +379,25 @@ unsigned int getOccuredLineNum(const std::vector<StackTraceElement> &elements);
 
 class Error_Object : public DSObject {
 private:
-    std::shared_ptr<DSObject> message;
-    std::shared_ptr<DSObject> name;
+    DSValue message;
+    DSValue name;
     std::vector<StackTraceElement> stackTrace;
 
 public:
-    Error_Object(DSType *type, const std::shared_ptr<DSObject> &message);
-    Error_Object(DSType *type, std::shared_ptr<DSObject> &&message);
+    Error_Object(DSType *type, const DSValue &message);
+    Error_Object(DSType *type, DSValue &&message);
     ~Error_Object() = default;
 
     std::string toString(RuntimeContext &ctx); // override
 
-    const std::shared_ptr<DSObject> &getMessage();
+    const DSValue &getMessage();
 
     /**
      * print stack trace to stderr
      */
     void printStackTrace(RuntimeContext &ctx);
 
-    const std::shared_ptr<DSObject> &getName(RuntimeContext &ctx);
+    const DSValue &getName(RuntimeContext &ctx);
 
     const std::vector<StackTraceElement> &getStackTrace();
 
@@ -327,11 +406,9 @@ public:
     /**
      * create new Error_Object and create stack trace
      */
-    static std::shared_ptr<Error_Object> newError(RuntimeContext &ctx, DSType *type,
-                                                  const std::shared_ptr<DSObject> &message);
+    static DSValue newError(RuntimeContext &ctx, DSType *type, const DSValue &message);
 
-    static std::shared_ptr<Error_Object> newError(RuntimeContext &ctx, DSType *type,
-                                                  std::shared_ptr<DSObject> &&message);
+    static DSValue newError(RuntimeContext &ctx, DSType *type, DSValue &&message);
 
 private:
     void createStackTrace(RuntimeContext &ctx);
@@ -374,14 +451,14 @@ struct FuncObject : public DSObject {
  */
 class UserFuncObject : public FuncObject {
 private:
-    FunctionNode *funcNode;
+    ast::FunctionNode *funcNode;
 
 public:
-    explicit UserFuncObject(FunctionNode *funcNode);
+    explicit UserFuncObject(ast::FunctionNode *funcNode);
 
     ~UserFuncObject();
 
-    FunctionNode *getFuncNode();
+    ast::FunctionNode *getFuncNode();
 
     std::string toString(RuntimeContext &ctx); // override
     bool invoke(RuntimeContext &ctx); // override
@@ -454,10 +531,10 @@ struct DBus_Object : public DSObject {
     virtual bool waitSignal(RuntimeContext &ctx);
 
     bool supportDBus();
-    virtual bool getServiceFromProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy);
-    virtual bool getObjectPathFromProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy);
-    virtual bool getIfaceListFromProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy);
-    virtual bool introspectProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy);
+    virtual bool getServiceFromProxy(RuntimeContext &ctx, const DSValue &proxy);
+    virtual bool getObjectPathFromProxy(RuntimeContext &ctx, const DSValue &proxy);
+    virtual bool getIfaceListFromProxy(RuntimeContext &ctx, const DSValue &proxy);
+    virtual bool introspectProxy(RuntimeContext &ctx, const DSValue &proxy);
 
     static DBus_Object *newDBus_Object(TypePool *typePool);
 };
@@ -474,7 +551,10 @@ struct Service_Object : public DSObject {
     explicit Service_Object(DSType *type);
     virtual ~Service_Object() = default;
 
-    virtual bool object(RuntimeContext &ctx, const std::shared_ptr<String_Object> &objectPath);
+    /**
+     * objectPath is String_Object
+     */
+    virtual bool object(RuntimeContext &ctx, const DSValue &objectPath);
 };
 
 struct ObjectVisitor {

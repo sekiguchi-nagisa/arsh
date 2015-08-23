@@ -75,8 +75,7 @@ void CommonErrorListener::handleTypeError(const std::string &sourceName,
 
 #undef STREAM
 
-void CommonErrorListener::handleRuntimeError(const TypePool &pool,
-                        const std::shared_ptr<DSObject> &raisedObj) noexcept {
+void CommonErrorListener::handleRuntimeError(const TypePool &pool, const DSValue &raisedObj) noexcept {
     // do nothing
 }
 
@@ -121,8 +120,7 @@ void ReportingListener::handleTypeError(const std::string &sourceName,
     this->messageKind = e.getKind();
 }
 
-void ReportingListener::handleRuntimeError(const TypePool &pool,
-                                           const std::shared_ptr<DSObject> &raisedObj) noexcept {
+void ReportingListener::handleRuntimeError(const TypePool &pool, const DSValue &raisedObj) noexcept {
     if(!pool.getInternalStatus()->isSameOrBaseTypeOf(raisedObj->getType())) {
         this->messageKind = pool.getTypeName(*raisedObj->getType()).c_str();
     }

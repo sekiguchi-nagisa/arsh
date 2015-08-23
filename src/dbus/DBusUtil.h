@@ -85,7 +85,7 @@ private:
 public:
     explicit MessageBuilder(TypePool *pool);
     ~MessageBuilder();
-    void appendArg(DBusMessageIter *iter, DSType *argType, const std::shared_ptr<DSObject> &arg);
+    void appendArg(DBusMessageIter *iter, DSType *argType, const DSValue &arg);
 
     void visitFunctionType(FunctionType *type) override;
     void visitBuiltinType(BuiltinType *type) override;

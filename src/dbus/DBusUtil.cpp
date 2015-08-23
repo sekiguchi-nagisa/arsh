@@ -139,7 +139,7 @@ MessageBuilder::~MessageBuilder() {
 }
 
 
-void MessageBuilder::appendArg(DBusMessageIter *iter, DSType *argType, const std::shared_ptr<DSObject> &arg) {
+void MessageBuilder::appendArg(DBusMessageIter *iter, DSType *argType, const DSValue &arg) {
     this->iter = iter;
     if(this->typeMap == nullptr) {
         this->typeMap = new BaseTypeDescriptorMap(this->pool);

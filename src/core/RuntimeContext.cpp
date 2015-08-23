@@ -40,13 +40,13 @@ RuntimeContext::RuntimeContext() :
         trueObj(new Boolean_Object(this->pool.getBooleanType(), true)),
         falseObj(new Boolean_Object(this->pool.getBooleanType(), false)),
         dummy(new DummyObject()),
-        scriptName(std::make_shared<String_Object>(this->pool.getStringType(), std::string("ydsh"))),
-        scriptArgs(std::make_shared<Array_Object>(this->pool.getStringArrayType())),
-        exitStatus(std::make_shared<Int_Object>(this->pool.getInt32Type(), 0)),
+        scriptName(DSValue::create<String_Object>(this->pool.getStringType(), std::string("ydsh"))),
+        scriptArgs(DSValue::create<Array_Object>(this->pool.getStringArrayType())),
+        exitStatus(DSValue::create<Int_Object>(this->pool.getInt32Type(), 0)),
         dbus(DBus_Object::newDBus_Object(&this->pool)),
-        globalVarTable(new std::shared_ptr<DSObject>[DEFAULT_TABLE_SIZE]),
+        globalVarTable(new DSValue[DEFAULT_TABLE_SIZE]),
         tableSize(DEFAULT_TABLE_SIZE), thrownObject(),
-        localStack(new std::shared_ptr<DSObject>[DEFAULT_LOCAL_SIZE]),
+        localStack(new DSValue[DEFAULT_LOCAL_SIZE]),
         localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0),
         localVarOffset(0), offsetStack(), toplevelPrinting(false), assertion(true),
         handle_STR(0), handle_INTERP(0), handle_CMD_ARG(0), handle_bt(0),
@@ -80,18 +80,18 @@ std::string RuntimeContext::getIfaceDir() {
 }
 
 void RuntimeContext::updateScriptName(const char *name) {
-    this->scriptName = std::make_shared<String_Object>(this->pool.getStringType(), std::string(name));
+    this->scriptName = DSValue::create<String_Object>(this->pool.getStringType(), std::string(name));
     unsigned int index = this->getSpecialCharIndex("0");
     this->setGlobal(index, this->scriptName);
 }
 
 void RuntimeContext::addScriptArg(const char *arg) {
-    this->scriptArgs->append(
-            std::make_shared<String_Object>(this->pool.getStringType(), std::string(arg)));
+    TYPE_AS(Array_Object, this->scriptArgs)->append(
+            DSValue::create<String_Object>(this->pool.getStringType(), std::string(arg)));
 }
 
 void RuntimeContext::initScriptArg() {
-    this->scriptArgs = std::make_shared<Array_Object>(this->pool.getStringArrayType());
+    this->scriptArgs = DSValue::create<Array_Object>(this->pool.getStringArrayType());
     unsigned int index = this->getSpecialCharIndex("@");
     this->setGlobal(index, this->scriptArgs);
 }
@@ -102,9 +102,9 @@ void RuntimeContext::reserveGlobalVar(unsigned int size) {
         do {
             newSize *= 2;
         } while(newSize < size);
-        auto newTable = new std::shared_ptr<DSObject>[newSize];
+        DSValue *newTable = new DSValue[newSize];
         for(unsigned int i = 0; i < this->tableSize; i++) {
-            newTable[i] = this->globalVarTable[i];
+            newTable[i] = std::move(this->globalVarTable[i]);
         }
         delete[] this->globalVarTable;
         this->globalVarTable = newTable;
@@ -120,12 +120,12 @@ void RuntimeContext::reserveLocalVar(unsigned int size) {
 }
 
 void RuntimeContext::throwError(DSType *errorType, const char *message) {
-    this->thrownObject = Error_Object::newError(*this, errorType, std::make_shared<String_Object>(
+    this->thrownObject = Error_Object::newError(*this, errorType, DSValue::create<String_Object>(
             this->pool.getStringType(), std::string(message)));
 }
 
 void RuntimeContext::throwError(DSType *errorType, std::string &&message) {
-    this->thrownObject = Error_Object::newError(*this, errorType, std::make_shared<String_Object>(
+    this->thrownObject = Error_Object::newError(*this, errorType, DSValue::create<String_Object>(
             this->pool.getStringType(), message));
 }
 
@@ -134,9 +134,9 @@ void RuntimeContext::expandLocalStack(unsigned int needSize) {
     do {
         newSize *= 2;
     } while(newSize < needSize);
-    auto newTable = new std::shared_ptr<DSObject>[newSize];
+    auto newTable = new DSValue[newSize];
     for(unsigned int i = 0; i < this->localStackSize; i++) {
-        newTable[i] = this->localStack[i];
+        newTable[i] = std::move(this->localStack[i]);
     }
     delete[] this->localStack;
     this->localStack = newTable;
@@ -162,7 +162,7 @@ EvalStatus RuntimeContext::applyFuncObject(unsigned int lineNum, bool returnType
     this->popCallFrame();
 
     // restore stack state
-    std::shared_ptr<DSObject> returnValue;
+    DSValue returnValue;
     if(!returnTypeIsVoid) {
         returnValue = std::move(this->localStack[this->stackTopIndex]);
     }
@@ -211,7 +211,7 @@ EvalStatus RuntimeContext::callMethod(unsigned int lineNum, const std::string &m
     this->popCallFrame();
 
     // restore stack state
-    std::shared_ptr<DSObject> returnValue;
+    DSValue returnValue;
     if(!handle->getReturnType()->isVoidType()) {
         returnValue = std::move(this->localStack[this->stackTopIndex]);
     }
@@ -379,12 +379,12 @@ EvalStatus RuntimeContext::checkAssertion(unsigned int lineNum) {
 void RuntimeContext::importEnv(const std::string &envName, unsigned int index, bool isGlobal) {
     if(isGlobal) {
         this->globalVarTable[index] =
-                std::make_shared<String_Object>(this->pool.getStringType(),
-                                                std::string(getenv(envName.c_str())));
+                DSValue::create<String_Object>(this->pool.getStringType(),
+                                               std::string(getenv(envName.c_str())));
     } else {
         this->localStack[this->localVarOffset + index] =
-                std::make_shared<String_Object>(this->pool.getStringType(),
-                                                std::string(getenv(envName.c_str())));
+                DSValue::create<String_Object>(this->pool.getStringType(),
+                                               std::string(getenv(envName.c_str())));
     }
 }
 
@@ -455,7 +455,7 @@ void RuntimeContext::updateWorkingDir(bool OLDPWD_only) {
         if(cwd != nullptr && strcmp(cwd, oldpwd) != 0) {
             setenv(env_PWD, cwd, 1);
             this->setGlobal(this->handle_PWD->getFieldIndex(),
-                            std::make_shared<String_Object>(this->pool.getStringType(), std::string(cwd)));
+                            DSValue::create<String_Object>(this->pool.getStringType(), std::string(cwd)));
         }
     }
 }
@@ -469,7 +469,7 @@ const char *RuntimeContext::registerSourceName(const char *sourceName) {
 }
 
 void RuntimeContext::updateExitStatus(unsigned int status) {
-    this->exitStatus = std::make_shared<Int_Object>(this->pool.getInt32Type(), status);
+    this->exitStatus = DSValue::create<Int_Object>(this->pool.getInt32Type(), status);
     unsigned int index = this->getSpecialCharIndex("?");
     this->setGlobal(index, this->exitStatus);
 }
@@ -546,7 +546,7 @@ void RuntimeContext::interpretPromptString(const char *ps, std::string &output) 
                 ch = '\r';
                 break;
             case 's':
-                output += this->getScriptName()->getValue();
+                output += TYPE_AS(String_Object, this->getScriptName())->getValue();
                 continue;
             case 't': {
                 format2digit(local->tm_hour, output);

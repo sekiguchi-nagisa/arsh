@@ -23,15 +23,14 @@
 
 #include "../misc/flag_util.hpp"
 #include "../parser/TokenKind.h"
+#include "../core/DSObject.h"
 #include "TypeToken.h"
 
 namespace ydsh {
 namespace core {
 
-class DSType;
 class FieldHandle;
 class MethodHandle;
-class DSObject;
 class RuntimeContext;
 enum class EvalStatus : unsigned int;
 enum RedirectOP : unsigned int;
@@ -121,7 +120,7 @@ private:
     /**
      * initialized after type check.
      */
-    std::shared_ptr<DSObject> value;
+    DSValue value;
 
 private:
     IntValueNode(unsigned int lineNum, IntKind kind, int value);
@@ -141,7 +140,7 @@ public:
     /**
      * before type check, return empty pointer.
      */
-    std::shared_ptr<DSObject> getValue();
+    const DSValue &getValue();
 
     void setType(DSType *type); // override
     void dump(Writer &writer) const;  // override
@@ -154,7 +153,7 @@ private:
     long tempValue;
     bool unsignedValue;
 
-    std::shared_ptr<DSObject> value;
+    DSValue value;
 
 public:
     LongValueNode(unsigned int lineNum, long value, bool unsignedValue);
@@ -164,7 +163,7 @@ public:
     /**
      * before type check, return empty pointer.
      */
-    const std::shared_ptr<DSObject> &getValue();
+    const DSValue &getValue();
 
     /**
      * if true, treat as unsigned int 64.
@@ -184,7 +183,7 @@ private:
     /**
      * initialized after type check.
      */
-    std::shared_ptr<DSObject> value;
+    DSValue value;
 
 public:
     FloatValueNode(unsigned int lineNum, double value);
@@ -192,7 +191,7 @@ public:
     /**
      * before type check, return empty pointer.
      */
-    std::shared_ptr<DSObject> getValue();
+    const DSValue &getValue();
 
     void setType(DSType *type); // override
     void dump(Writer &writer) const;  // override
@@ -210,7 +209,7 @@ protected:
     /**
      * initialized after type check.
      */
-    std::shared_ptr<DSObject> value;
+    DSValue value;
 
 public:
     /**
@@ -225,7 +224,7 @@ public:
     /**
      * before type check, return empty pointer.
      */
-    std::shared_ptr<DSObject> getValue();
+    const DSValue &getValue();
 
     void setType(DSType *type); // override
     void dump(Writer &writer) const;  // override
@@ -1509,16 +1508,16 @@ class BindVarNode : public Node {
 private:
     std::string varName;
     unsigned int varIndex;
-    std::shared_ptr<DSObject> value;
+    DSValue value;
 
 public:
-    BindVarNode(const char *name, const std::shared_ptr<DSObject> &value);
+    BindVarNode(const char *name, const DSValue &value);
     ~BindVarNode() = default;
 
     const std::string &getVarName();
     void setAttribute(FieldHandle *handle);
     unsigned int getVarIndex();
-    const std::shared_ptr<DSObject> &getValue();
+    const DSValue &getValue();
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override

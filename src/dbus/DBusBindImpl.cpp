@@ -44,43 +44,43 @@ static void unrefMessage(DBusMessage *msg) {
 }
 
 //FIXME: empty array
-static std::shared_ptr<DSObject> decodeMessageIter(RuntimeContext &ctx, DBusMessageIter *iter) {
+static DSValue decodeMessageIter(RuntimeContext &ctx, DBusMessageIter *iter) {
     int dbusType = dbus_message_iter_get_arg_type(iter);
     switch(dbusType) {
     case DBUS_TYPE_BYTE: {
         unsigned char value;
         dbus_message_iter_get_basic(iter, &value);
-        return std::make_shared<Int_Object>(ctx.getPool().getByteType(), value);
+        return DSValue::create<Int_Object>(ctx.getPool().getByteType(), value);
     };
     case DBUS_TYPE_INT16: {
         dbus_int16_t value;
         dbus_message_iter_get_basic(iter, &value);
-        return std::make_shared<Int_Object>(ctx.getPool().getInt16Type(), value);
+        return DSValue::create<Int_Object>(ctx.getPool().getInt16Type(), value);
     };
     case DBUS_TYPE_UINT16: {
         dbus_uint16_t value;
         dbus_message_iter_get_basic(iter, &value);
-        return std::make_shared<Int_Object>(ctx.getPool().getUint16Type(), value);
+        return DSValue::create<Int_Object>(ctx.getPool().getUint16Type(), value);
     };
     case DBUS_TYPE_INT32: {
         dbus_int32_t value;
         dbus_message_iter_get_basic(iter, &value);
-        return std::make_shared<Int_Object>(ctx.getPool().getInt32Type(), value);
+        return DSValue::create<Int_Object>(ctx.getPool().getInt32Type(), value);
     };
     case DBUS_TYPE_UINT32: {
         dbus_uint32_t value;
         dbus_message_iter_get_basic(iter, &value);
-        return std::make_shared<Int_Object>(ctx.getPool().getUint32Type(), value);
+        return DSValue::create<Int_Object>(ctx.getPool().getUint32Type(), value);
     };
     case DBUS_TYPE_INT64: {
         dbus_int64_t value;
         dbus_message_iter_get_basic(iter, &value);
-        return std::make_shared<Long_Object>(ctx.getPool().getInt64Type(), value);
+        return DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value);
     };
     case DBUS_TYPE_UINT64: {
         dbus_uint64_t value;
         dbus_message_iter_get_basic(iter, &value);
-        return std::make_shared<Long_Object>(ctx.getPool().getUint64Type(), value);
+        return DSValue::create<Long_Object>(ctx.getPool().getUint64Type(), value);
     };
     case DBUS_TYPE_BOOLEAN: {
         dbus_bool_t value;
@@ -90,21 +90,21 @@ static std::shared_ptr<DSObject> decodeMessageIter(RuntimeContext &ctx, DBusMess
     case DBUS_TYPE_DOUBLE: {
         double value;
         dbus_message_iter_get_basic(iter, &value);
-        return std::make_shared<Float_Object>(ctx.getPool().getFloatType(), value);
+        return DSValue::create<Float_Object>(ctx.getPool().getFloatType(), value);
     };
     case DBUS_TYPE_STRING: {
         const char *value;
         dbus_message_iter_get_basic(iter, &value);
-        return std::make_shared<String_Object>(ctx.getPool().getStringType(), std::string(value));
+        return DSValue::create<String_Object>(ctx.getPool().getStringType(), std::string(value));
     };
     case DBUS_TYPE_OBJECT_PATH: {
         const char *value;
         dbus_message_iter_get_basic(iter, &value);
-        return std::make_shared<String_Object>(ctx.getPool().getObjectPathType(), std::string(value));
+        return DSValue::create<String_Object>(ctx.getPool().getObjectPathType(), std::string(value));
     };
     case DBUS_TYPE_UNIX_FD: {
         fatal("unsupported dbus type: UNIX_FD");
-        return std::shared_ptr<DSObject>(nullptr);
+        return DSValue();
     };
     case DBUS_TYPE_ARRAY: {
         int elementType = dbus_message_iter_get_element_type(iter);
@@ -117,11 +117,11 @@ static std::shared_ptr<DSObject> decodeMessageIter(RuntimeContext &ctx, DBusMess
                 mapDesc += desc;
                 dbus_free(desc);
                 DSType *mapType = decodeTypeDescriptor(&ctx.getPool(), mapDesc.c_str());
-                return std::make_shared<Map_Object>(mapType);
+                return DSValue::create<Map_Object>(mapType);
             }
 
             int firstElementType = DBUS_TYPE_INVALID;
-            std::vector<std::pair<std::shared_ptr<DSObject>, std::shared_ptr<DSObject>>> entries;
+            std::vector<std::pair<DSValue, DSValue>> entries;
             do {
                 DBusMessageIter entryIter;
                 dbus_message_iter_recurse(&subIter, &entryIter);
@@ -139,12 +139,12 @@ static std::shared_ptr<DSObject> decodeMessageIter(RuntimeContext &ctx, DBusMess
             types[1] = firstElementType == DBUS_TYPE_VARIANT ?
                        ctx.getPool().getVariantType() : entries.back().second->getType();
 
-            auto map = std::make_shared<Map_Object>(
+            auto map = DSValue::create<Map_Object>(
                     ctx.getPool().createAndGetReifiedTypeIfUndefined(
                             ctx.getPool().getMapTemplate(), std::move(types)));
             unsigned int size = entries.size();
             for(unsigned int i = 0; i < size; i++) {
-                map->add(std::move(entries[i]));
+                TYPE_AS(Map_Object, map)->add(std::move(entries[i]));
             }
             return std::move(map);
         } else {    // array
@@ -153,19 +153,19 @@ static std::shared_ptr<DSObject> decodeMessageIter(RuntimeContext &ctx, DBusMess
                 std::vector<DSType *> types(1);
                 types[0] = decodeTypeDescriptor(&ctx.getPool(), desc);
                 dbus_free(desc);
-                return std::make_shared<Array_Object>(
+                return DSValue::create<Array_Object>(
                         ctx.getPool().createAndGetReifiedTypeIfUndefined(
                                 ctx.getPool().getArrayTemplate(), std::move(types)));
             }
 
-            std::vector<std::shared_ptr<DSObject>> values;
+            std::vector<DSValue> values;
             do {
                 values.push_back(decodeMessageIter(ctx, &subIter));
             } while(dbus_message_iter_next(&subIter));
             std::vector<DSType *> types(1);
             types[0] = elementType == DBUS_TYPE_VARIANT ? ctx.getPool().getVariantType() : values[0]->getType();
 
-            return std::make_shared<Array_Object>(
+            return DSValue::create<Array_Object>(
                     ctx.getPool().createAndGetReifiedTypeIfUndefined(
                             ctx.getPool().getArrayTemplate(), std::move(types)), std::move(values));
         }
@@ -176,16 +176,16 @@ static std::shared_ptr<DSObject> decodeMessageIter(RuntimeContext &ctx, DBusMess
         dbus_message_iter_recurse(iter, &subIter);
 
         std::vector<DSType *> types;
-        std::vector<std::shared_ptr<DSObject>> values;
+        std::vector<DSValue> values;
         do {
             values.push_back(decodeMessageIter(ctx, &subIter));
             types.push_back(values.back()->getType());
         } while(dbus_message_iter_next(&subIter));
         DSType *tupleType = ctx.getPool().createAndGetTupleTypeIfUndefined(std::move(types));
-        std::shared_ptr<Tuple_Object> tuple(new Tuple_Object(tupleType));
+        DSValue tuple(new Tuple_Object(tupleType));
         unsigned int size = values.size();
         for(unsigned int i = 0; i < size; i++) {
-            tuple->set(i, values[i]);
+            TYPE_AS(Tuple_Object, tuple)->set(i, values[i]);
         }
         return std::move(tuple);
     };
@@ -196,7 +196,7 @@ static std::shared_ptr<DSObject> decodeMessageIter(RuntimeContext &ctx, DBusMess
     };
     default:
         fatal("unsupported dbus type: %c\n", (char) dbusType);
-        return std::shared_ptr<DSObject>(nullptr);
+        return DSValue();
     }
 }
 
@@ -205,7 +205,7 @@ static std::shared_ptr<DSObject> decodeMessageIter(RuntimeContext &ctx, DBusMess
  * after decoding, unref message.
  * return false, if illegal message.(ex. mismatch type)
  */
-static bool decodeAndUnrefMessage(std::vector<std::shared_ptr<DSObject>> &values, RuntimeContext &ctx,
+static bool decodeAndUnrefMessage(std::vector<DSValue> &values, RuntimeContext &ctx,
                                   const std::vector<DSType *> &types, DBusMessage *msg) {
     DBusMessageIter iter;
     dbus_message_iter_init(msg, &iter);
@@ -240,11 +240,11 @@ static bool decodeAndUnrefMessage(std::vector<std::shared_ptr<DSObject>> &values
     return true;
 }
 
-static std::shared_ptr<DSObject> decodeAndUnrefMessage(RuntimeContext &ctx,
-                                                       const std::vector<DSType *> &types, DBusMessage *msg) {
-    std::vector<std::shared_ptr<DSObject>> values;
+static DSValue decodeAndUnrefMessage(RuntimeContext &ctx,
+                                     const std::vector<DSType *> &types, DBusMessage *msg) {
+    std::vector<DSValue> values;
     if(!decodeAndUnrefMessage(values, ctx, types, msg)) {
-        return std::shared_ptr<DSObject>();
+        return DSValue();
     }
 
     unsigned int size = values.size();
@@ -254,22 +254,21 @@ static std::shared_ptr<DSObject> decodeAndUnrefMessage(RuntimeContext &ctx,
         return std::move(values[0]);
     }
 
-    std::shared_ptr<Tuple_Object> tuple(
-            new Tuple_Object(ctx.getPool().createAndGetTupleTypeIfUndefined(std::vector<DSType *>(types))));
+    DSValue tuple(new Tuple_Object(
+            ctx.getPool().createAndGetTupleTypeIfUndefined(std::vector<DSType *>(types))));
     for(unsigned int i = 0; i < size; i++) {
-        tuple->set(i, values[i]);
+        TYPE_AS(Tuple_Object, tuple)->set(i, values[i]);
     }
     return std::move(tuple);
 }
 
-static std::shared_ptr<DSObject> decodeAndUnrefMessage(RuntimeContext &ctx, DSType *type, DBusMessage *msg) {
+static DSValue decodeAndUnrefMessage(RuntimeContext &ctx, DSType *type, DBusMessage *msg) {
     std::vector<DSType *> types(1);
     types[0] = type;
     return decodeAndUnrefMessage(ctx, types, msg);
 }
 
-static void appendArg(RuntimeContext &ctx, DBusMessageIter *iter,
-                      DSType *argType, const std::shared_ptr<DSObject> &arg) {
+static void appendArg(RuntimeContext &ctx, DBusMessageIter *iter, DSType *argType, const DSValue &arg) {
     DBus_ObjectImpl *dbus = TYPE_AS(DBus_ObjectImpl, ctx.getDBus());
     dbus->getBuilder().appendArg(iter, argType, arg);
 }
@@ -363,8 +362,8 @@ bool Bus_ObjectImpl::service(RuntimeContext &ctx, std::string &&serviceName) {
     unrefMessage(reply);
 
     // init service object
-    ctx.push(std::make_shared<Service_ObjectImpl>(
-            ctx.getPool().getServiceType(), this->shared_from_this(),
+    ctx.push(DSValue::create<Service_ObjectImpl>(
+            ctx.getPool().getServiceType(), DSValue(this),
             std::move(serviceName), std::move(uniqueName)));
     return true;
 }
@@ -393,7 +392,7 @@ bool Bus_ObjectImpl::listNames(RuntimeContext &ctx, bool activeName) {
 // ##     Service_ObjectImpl     ##
 // ################################
 
-Service_ObjectImpl::Service_ObjectImpl(DSType *type, const std::shared_ptr<Bus_ObjectImpl> &bus,
+Service_ObjectImpl::Service_ObjectImpl(DSType *type, const DSValue &bus,
                                        std::string &&serviceName, std::string &&uniqueName) :
         Service_Object(type), bus(bus), serviceName(std::move(serviceName)), uniqueName(std::move(uniqueName)) {
 }
@@ -402,12 +401,11 @@ std::string Service_ObjectImpl::toString(RuntimeContext &ctx) {
     return this->serviceName;
 }
 
-bool Service_ObjectImpl::object(RuntimeContext &ctx, const std::shared_ptr<String_Object> &objectPath) {
-    std::shared_ptr<DBusProxy_Object> obj(
-            new DBusProxy_Object(ctx.getPool().getDBusObjectType(), this->shared_from_this(), objectPath));
+bool Service_ObjectImpl::object(RuntimeContext &ctx, const DSValue &objectPath) {
+    DSValue obj(new DBusProxy_Object(ctx.getPool().getDBusObjectType(), DSValue(this), objectPath));
 
     // first call Introspection and resolve interface type.
-    if(!obj->doIntrospection(ctx)) {
+    if(!TYPE_AS(DBusProxy_Object, obj)->doIntrospection(ctx)) {
         return false;
     }
 
@@ -429,8 +427,8 @@ DBus_ObjectImpl::DBus_ObjectImpl(TypePool *typePool) :
 
 bool DBus_ObjectImpl::getSystemBus(RuntimeContext &ctx) {
     if(!this->systemBus) {
-        this->systemBus = std::make_shared<Bus_ObjectImpl>(ctx.getPool().getBusType(), true);
-        if(!this->systemBus->initConnection(ctx, true)) {
+        this->systemBus = DSValue::create<Bus_ObjectImpl>(ctx.getPool().getBusType(), true);
+        if(!TYPE_AS(Bus_ObjectImpl, this->systemBus)->initConnection(ctx, true)) {
             return false;
         }
     }
@@ -440,8 +438,8 @@ bool DBus_ObjectImpl::getSystemBus(RuntimeContext &ctx) {
 
 bool DBus_ObjectImpl::getSessionBus(RuntimeContext &ctx) {
     if(!this->sessionBus) {
-        this->sessionBus = std::make_shared<Bus_ObjectImpl>(ctx.getPool().getBusType(), false);
-        if(!this->sessionBus->initConnection(ctx, false)) {
+        this->sessionBus = DSValue::create<Bus_ObjectImpl>(ctx.getPool().getBusType(), false);
+        if(!TYPE_AS(Bus_ObjectImpl, this->sessionBus)->initConnection(ctx, false)) {
             return false;
         }
     }
@@ -454,8 +452,11 @@ bool DBus_ObjectImpl::waitSignal(RuntimeContext &ctx) {
     proxies.push_back(TYPE_AS(DBusProxy_Object, ctx.getLocal(1)));
 
     // add signal match rule
-    DBusConnection *conn =
-            (proxies[0]->isBelongToSystemBus() ? this->systemBus : this->sessionBus)->getConnection();
+    Bus_ObjectImpl *busObj =
+            TYPE_AS(Bus_ObjectImpl, proxies[0]->isBelongToSystemBus() ? this->systemBus : this->sessionBus);
+    DBusConnection *conn = busObj->getConnection();
+
+
     std::vector<std::string> ruleList;
     proxies[0]->createSignalMatchRule(ruleList);
 
@@ -516,7 +517,7 @@ bool DBus_ObjectImpl::waitSignal(RuntimeContext &ctx) {
         FunctionType *handlerType = matchedProxy->lookupHandler(ctx, ifaceName, methodName);
         if(handlerType != nullptr) {
             // invoke signal handler.
-            std::vector<std::shared_ptr<DSObject>> values;
+            std::vector<DSValue> values;
             decodeAndUnrefMessage(values, ctx, handlerType->getParamTypes(), message);
 
             // push to stack
@@ -535,28 +536,30 @@ bool DBus_ObjectImpl::waitSignal(RuntimeContext &ctx) {
     return true;
 }
 
-bool DBus_ObjectImpl::getServiceFromProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy) {
+bool DBus_ObjectImpl::getServiceFromProxy(RuntimeContext &ctx, const DSValue &proxy) {
     ctx.push(TYPE_AS(DBusProxy_Object, proxy)->getService());
     return true;
 }
 
-bool DBus_ObjectImpl::getObjectPathFromProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy) {
+bool DBus_ObjectImpl::getObjectPathFromProxy(RuntimeContext &ctx, const DSValue &proxy) {
     ctx.push(TYPE_AS(DBusProxy_Object, proxy)->getObjectPath());
     return true;
 }
 
-bool DBus_ObjectImpl::getIfaceListFromProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy) {
+bool DBus_ObjectImpl::getIfaceListFromProxy(RuntimeContext &ctx, const DSValue &proxy) {
     ctx.push(TYPE_AS(DBusProxy_Object, proxy)->createIfaceList(ctx));
     return true;
 }
 
-bool DBus_ObjectImpl::introspectProxy(RuntimeContext &ctx, const std::shared_ptr<DSObject> &proxy) {
+bool DBus_ObjectImpl::introspectProxy(RuntimeContext &ctx, const DSValue &proxy) {
     DBusProxy_Object *obj = TYPE_AS(DBusProxy_Object, proxy);
     auto msg = dbus_message_new_method_call(
-            obj->getService()->getServiceName(), obj->getObjectPath()->getValue(),
+            TYPE_AS(Service_ObjectImpl, obj->getService())->getServiceName(),
+            TYPE_AS(String_Object, obj->getObjectPath())->getValue(),
             "org.freedesktop.DBus.Introspectable", "Introspect");
     bool status;
-    auto reply = sendAndUnrefMessage(ctx, obj->getService()->getConnection(), msg, status);
+    auto reply = sendAndUnrefMessage(
+            ctx, TYPE_AS(Service_ObjectImpl, obj->getService())->getConnection(), msg, status);
     if(!status) {
         return false;
     }
@@ -594,18 +597,16 @@ std::size_t SignalSelectorHash::operator()(const SignalSelector &key) const {
 // ##     DBusProxy_Object     ##
 // ##############################
 
-DBusProxy_Object::DBusProxy_Object(DSType *type, const std::shared_ptr<DSObject> &srcObj,
-                                   const std::shared_ptr<String_Object> &objectPath) :
-        ProxyObject(type), srv(std::dynamic_pointer_cast<Service_ObjectImpl>(srcObj)),
-        objectPath(objectPath), ifaceSet(), handerMap() {
+DBusProxy_Object::DBusProxy_Object(DSType *type, const DSValue &srcObj, const DSValue &objectPath) :
+        ProxyObject(type), srv(srcObj), objectPath(objectPath), ifaceSet(), handerMap() {
     assert(this->srv);
 }
 
 std::string DBusProxy_Object::toString(RuntimeContext &ctx) {
     std::string str("[dest=");
-    str += this->srv->getServiceName();
+    str += TYPE_AS(Service_ObjectImpl, this->srv)->getServiceName();
     str += ", path=";
-    str += this->objectPath->getValue();
+    str += TYPE_AS(String_Object, this->objectPath)->getValue();
     str += ", iface=";
     unsigned int count = 0;
     for(auto &iter : this->ifaceSet) {
@@ -693,7 +694,7 @@ bool DBusProxy_Object::doIntrospection(RuntimeContext &ctx) {
 
     if(this->ifaceSet.empty()) {
         std::string msg = ("illegal object path: ");
-        msg += this->objectPath->getValue();
+        msg += TYPE_AS(String_Object, this->objectPath)->getValue();
         reportDBusError(ctx, DBUS_ERROR_UNKNOWN_OBJECT, std::move(msg));
         return false;
     }
@@ -728,7 +729,7 @@ bool DBusProxy_Object::invokeMethod(RuntimeContext &ctx, const std::string &meth
 
     // decode result
     if(retMsg != nullptr) {
-        std::shared_ptr<DSObject> result(nullptr);
+        DSValue result;
         if(handle->hasMultipleReturnType()) {
             result = decodeAndUnrefMessage(ctx, static_cast<TupleType *>(handle->getReturnType())->getTypes(), retMsg);
         } else {
@@ -802,21 +803,21 @@ bool DBusProxy_Object::invokeSetter(RuntimeContext &ctx, DSType *recvType,
     return status;
 }
 
-const std::shared_ptr<Service_ObjectImpl> &DBusProxy_Object::getService() {
+const DSValue &DBusProxy_Object::getService() {
     return this->srv;
 }
 
-const std::shared_ptr<String_Object> &DBusProxy_Object::getObjectPath() {
+const DSValue &DBusProxy_Object::getObjectPath() {
     return this->objectPath;
 }
 
-std::shared_ptr<Array_Object> DBusProxy_Object::createIfaceList(RuntimeContext &ctx) {
-    std::vector<std::shared_ptr<DSObject>> list(this->ifaceSet.size());
+DSValue DBusProxy_Object::createIfaceList(RuntimeContext &ctx) {
+    std::vector<DSValue> list(this->ifaceSet.size());
     unsigned int i = 0;
     for(auto &value : this->ifaceSet) {
-        list[i++] = std::make_shared<String_Object>(ctx.getPool().getStringType(), value);
+        list[i++] = DSValue::create<String_Object>(ctx.getPool().getStringType(), value);
     }
-    return std::make_shared<Array_Object>(ctx.getPool().getStringArrayType(), std::move(list));
+    return DSValue::create<Array_Object>(ctx.getPool().getStringArrayType(), std::move(list));
 }
 
 FunctionType *DBusProxy_Object::lookupHandler(RuntimeContext &ctx,
@@ -826,12 +827,12 @@ FunctionType *DBusProxy_Object::lookupHandler(RuntimeContext &ctx,
         return nullptr;
     }
     ctx.push(iter->second);
-    return iter->second->getFuncType();
+    return TYPE_AS(FuncObject, iter->second)->getFuncType();
 }
 
 bool DBusProxy_Object::matchObject(const char *serviceName, const char *objectPath) {
-    return strcmp(serviceName, this->srv->getUniqueName()) == 0 &&
-           strcmp(objectPath, this->objectPath->getValue()) == 0;
+    return strcmp(serviceName, TYPE_AS(Service_ObjectImpl, this->srv)->getUniqueName()) == 0 &&
+           strcmp(objectPath, TYPE_AS(String_Object, this->objectPath)->getValue()) == 0;
 }
 
 static inline void quote(std::string &str, const std::string &value) {
@@ -851,9 +852,9 @@ void DBusProxy_Object::createSignalMatchRule(std::vector<std::string> &ruleList)
         std::string rule("type=");
         quote(rule, "signal");
         rule += ", sender=";
-        quote(rule, this->srv->getServiceName());
+        quote(rule, TYPE_AS(Service_ObjectImpl, this->srv)->getServiceName());
         rule += ", path=";
-        quote(rule, this->objectPath->getValue());
+        quote(rule, TYPE_AS(String_Object, this->objectPath)->getValue());
         rule += ", interface=";
         quote(rule, pair.first.first);
         rule += ", member=";
@@ -864,12 +865,14 @@ void DBusProxy_Object::createSignalMatchRule(std::vector<std::string> &ruleList)
 }
 
 bool DBusProxy_Object::isBelongToSystemBus() {
-    return this->srv->getBus()->isSystemBus();
+    return TYPE_AS(Bus_ObjectImpl,
+                   TYPE_AS(Service_ObjectImpl, this->srv)->getBus())->isSystemBus();
 }
 
 DBusMessage *DBusProxy_Object::newMethodCallMsg(const char *ifaceName, const char *methodName) {
     return dbus_message_new_method_call(
-            this->srv->getServiceName(), this->objectPath->getValue(), ifaceName, methodName);
+            TYPE_AS(Service_ObjectImpl, this->srv)->getServiceName(),
+            TYPE_AS(String_Object, this->objectPath)->getValue(), ifaceName, methodName);
 }
 
 DBusMessage *DBusProxy_Object::newMethodCallMsg(const std::string &ifaceName, const std::string &methodName) {
@@ -877,13 +880,12 @@ DBusMessage *DBusProxy_Object::newMethodCallMsg(const std::string &ifaceName, co
 }
 
 DBusMessage *DBusProxy_Object::sendMessage(RuntimeContext &ctx, DBusMessage *sendMsg, bool &status) {
-    return sendAndUnrefMessage(ctx, this->srv->getConnection(), sendMsg, status);
+    return sendAndUnrefMessage(ctx, TYPE_AS(Service_ObjectImpl, this->srv)->getConnection(), sendMsg, status);
 }
 
 void DBusProxy_Object::addHandler(const std::string &ifaceName,
-                                  const std::string &methodName, const std::shared_ptr<DSObject> &obj) {
-    this->handerMap[std::make_pair(ifaceName.c_str(), methodName.c_str())] =
-            std::dynamic_pointer_cast<FuncObject>(obj);
+                                  const std::string &methodName, const DSValue &obj) {
+    this->handerMap[std::make_pair(ifaceName.c_str(), methodName.c_str())] = obj;
 }
 
 } // namespace core

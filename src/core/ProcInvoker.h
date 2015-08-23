@@ -144,9 +144,12 @@ private:
     /**
      * commonly stored object is String_Object.
      */
-    std::vector<std::shared_ptr<DSObject>> argArray;
+    std::vector<DSValue> argArray;
 
-    std::vector<std::pair<RedirectOP, std::shared_ptr<String_Object>>> redirOptions;
+    /**
+     * pair's second must be String_Object
+     */
+    std::vector<std::pair<RedirectOP, DSValue>> redirOptions;
 
     /**
      * first is argument offset
@@ -170,9 +173,9 @@ public:
 
     void openProc();
     void closeProc();
-    void addCommandName(std::shared_ptr<DSObject> &&value);
-    void addArg(std::shared_ptr<DSObject> &&value, bool skipEmptyString);
-    void addRedirOption(RedirectOP op, std::shared_ptr<DSObject> &&value);
+    void addCommandName(DSValue &&value);
+    void addArg(DSValue &&value, bool skipEmptyString);
+    void addRedirOption(RedirectOP op, DSValue &&value);
 
     EvalStatus invoke();
 
@@ -191,7 +194,7 @@ private:
      */
     builtin_command_t lookupBuiltinCommand(const char *commandName);
 
-    std::shared_ptr<DSObject> *getARGV(unsigned int procIndex);
+    DSValue *getARGV(unsigned int procIndex);
 
     const char *getCommandName(unsigned int procIndex);
     bool checkChildError(const std::pair<unsigned int, ChildError> &errorPair);

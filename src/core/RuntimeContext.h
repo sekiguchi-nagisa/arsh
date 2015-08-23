@@ -20,12 +20,16 @@
 #include <vector>
 #include <iostream>
 
+#include "../ast/Node.h"
 #include "DSObject.h"
 #include "SymbolTable.h"
 #include "ProcInvoker.h"
 
 namespace ydsh {
 namespace core {
+
+using namespace ydsh::ast;
+using namespace ydsh::ast;
 
 enum class EvalStatus : unsigned int {
     SUCCESS,
@@ -41,38 +45,49 @@ private:
     TypePool pool;
     SymbolTable symbolTable;
 
-    std::shared_ptr<Boolean_Object> trueObj;
-    std::shared_ptr<Boolean_Object> falseObj;
+    /**
+     * must be Boolean_Object
+     */
+    DSValue trueObj;
+
+    /**
+     * must be Boolean_Object
+     */
+    DSValue falseObj;
 
     /**
      * for pseudo object allocation (used for builtin constructor call)
      */
-    std::shared_ptr<DSObject> dummy;
+    DSValue dummy;
 
     /**
      * represent shell or shell script name. ($0)
+     * must be String_Object
      */
-    std::shared_ptr<String_Object> scriptName;
+    DSValue scriptName;
 
     /**
      * contains script argument(exclude script name). ($@)
+     * must be Array_Object
      */
-    std::shared_ptr<Array_Object> scriptArgs;
+    DSValue scriptArgs;
 
     /**
      * contains exit status of most recent executed process. ($?)
+     * must be Int_Object
      */
-    std::shared_ptr<Int_Object> exitStatus;
+    DSValue exitStatus;
 
     /**
      * management object for dbus related function
+     * must be DBus_Object
      */
-    std::shared_ptr<DBus_Object> dbus;
+    DSValue dbus;
 
     /**
      * contains global variables(or function)
      */
-    std::shared_ptr<DSObject> *globalVarTable;
+    DSValue *globalVarTable;
 
     /**
      * size of global variable table.
@@ -82,12 +97,12 @@ private:
     /**
      * if not null ptr, thrown exception.
      */
-    std::shared_ptr<DSObject> thrownObject;
+    DSValue thrownObject;
 
     /**
      * contains operand or local variable
      */
-    std::shared_ptr<DSObject> *localStack;
+    DSValue *localStack;
 
     unsigned int localStackSize;
 
@@ -152,7 +167,7 @@ private:
     /**
      * contains currently evaluating FunctionNode or RootNode
      */
-    std::vector<ast::Node *> funcContextStack;
+    std::vector<Node *> funcContextStack;
 
     /**
      * contains line number and funcContextStack index.
@@ -180,19 +195,19 @@ public:
         return this->symbolTable;
     }
 
-    const std::shared_ptr<Boolean_Object> &getTrueObj() {
+    const DSValue &getTrueObj() {
         return this->trueObj;
     }
 
-    const std::shared_ptr<Boolean_Object> &getFalseObj() {
+    const DSValue &getFalseObj() {
         return this->falseObj;
     }
 
-    const std::shared_ptr<String_Object> &getScriptName() {
+    const DSValue &getScriptName() {
         return this->scriptName;
     }
 
-    const std::shared_ptr<Array_Object> &getScriptArgs() {
+    const DSValue &getScriptArgs() {
         return this->scriptArgs;
     }
 
@@ -203,13 +218,13 @@ public:
      */
     void initScriptArg();
 
-    const std::shared_ptr<Int_Object> &getExitStatus() {
+    const DSValue &getExitStatus() {
         return this->exitStatus;
     }
 
     void updateScriptName(const char *name);
 
-    const std::shared_ptr<DBus_Object> &getDBus() {
+    const DSValue &getDBus() {
         return this->dbus;
     }
 
@@ -229,7 +244,7 @@ public:
         this->assertion = assertion;
     }
 
-    const std::shared_ptr<DSObject> &getThrownObject() {
+    const DSValue &getThrownObject() {
         return this->thrownObject;
     }
 
@@ -287,21 +302,21 @@ public:
     }
 
     // operand manipulation
-    void push(const std::shared_ptr<DSObject> &value) {
+    void push(const DSValue &value) {
         if(++this->stackTopIndex >= this->localStackSize) {
             this->expandLocalStack(this->stackTopIndex);
         }
         this->localStack[this->stackTopIndex] = value;
     }
 
-    void push(std::shared_ptr<DSObject> &&value) {
+    void push(DSValue &&value) {
         if(++this->stackTopIndex >= this->localStackSize) {
             this->expandLocalStack(this->stackTopIndex);
         }
         this->localStack[this->stackTopIndex] = std::move(value);
     }
 
-    std::shared_ptr<DSObject> pop() {
+    DSValue pop() {
         return std::move(this->localStack[this->stackTopIndex--]);
     }
 
@@ -309,7 +324,7 @@ public:
         this->localStack[this->stackTopIndex--].reset();
     }
 
-    const std::shared_ptr<DSObject> &peek() {
+    const DSValue &peek() {
         return this->localStack[this->stackTopIndex];
     }
 
@@ -342,15 +357,15 @@ public:
         this->push(this->globalVarTable[index]);
     }
 
-    void setGlobal(unsigned int index, const std::shared_ptr<DSObject> &obj) {
+    void setGlobal(unsigned int index, const DSValue &obj) {
         this->globalVarTable[index] = obj;
     }
 
-    void setGlobal(unsigned int index, std::shared_ptr<DSObject> &&obj) {
+    void setGlobal(unsigned int index, DSValue &&obj) {
         this->globalVarTable[index] = std::move(obj);
     }
 
-    const std::shared_ptr<DSObject> &getGlobal(unsigned int index) {
+    const DSValue &getGlobal(unsigned int index) {
         return this->globalVarTable[index];
     }
 
@@ -362,18 +377,18 @@ public:
         this->push(this->localStack[this->localVarOffset + index]);
     }
 
-    void setLocal(unsigned int index, std::shared_ptr<DSObject> &&obj) {
+    void setLocal(unsigned int index, DSValue &&obj) {
         this->localStack[this->localVarOffset + index] = std::move(obj);
     }
 
-    const std::shared_ptr<DSObject> &getLocal(unsigned int index) {
+    const DSValue &getLocal(unsigned int index) {
         return this->localStack[this->localVarOffset + index];
     }
 
     // field manipulation
 
     void storeField(unsigned int index) {
-        std::shared_ptr<DSObject> value(this->pop());
+        DSValue value(this->pop());
         this->pop()->getFieldTable()[index] = std::move(value);
     }
 
@@ -483,7 +498,7 @@ public:
         this->throwError(this->pool.getOutOfRangeErrorType(), std::move(message));
     }
 
-    void pushFuncContext(ast::Node *node) {
+    void pushFuncContext(Node *node) {
         this->funcContextStack.push_back(node);
     }
 

@@ -75,14 +75,14 @@ static inline bool byte_plus(RuntimeContext &ctx) {
 static inline bool byte_minus(RuntimeContext &ctx) {
     SUPPRESS_WARNING(byte_minus);
     short value = -TYPE_AS(Int_Object, LOCAL(0))->getValue();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getInt16Type(), value));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getInt16Type(), value));
 }
 
 //!bind: function $OP_NOT($this : Byte) : Byte
 static inline bool byte_not(RuntimeContext &ctx) {
     SUPPRESS_WARNING(byte_not);
     unsigned char value = ~TYPE_AS(Int_Object, LOCAL(0))->getValue();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getByteType(), value));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getByteType(), value));
 }
 
 
@@ -100,14 +100,14 @@ static inline bool int16_plus(RuntimeContext &ctx) {
 static inline bool int16_minus(RuntimeContext &ctx) {
     SUPPRESS_WARNING(int16_minus);
     short value = -TYPE_AS(Int_Object, LOCAL(0))->getValue();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getInt16Type(), value));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getInt16Type(), value));
 }
 
 //!bind: function $OP_NOT($this : Int16) : Int16
 static inline bool int16_not(RuntimeContext &ctx) {
     SUPPRESS_WARNING(int16_not);
     short value = ~TYPE_AS(Int_Object, LOCAL(0))->getValue();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getInt16Type(), value));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getInt16Type(), value));
 }
 
 
@@ -125,14 +125,14 @@ static inline bool uint16_plus(RuntimeContext &ctx) {
 static inline bool uint16_minus(RuntimeContext &ctx) {
     SUPPRESS_WARNING(uint16_minus);
     int value = -TYPE_AS(Int_Object, LOCAL(0))->getValue();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getInt32Type(), value));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getInt32Type(), value));
 }
 
 //!bind: function $OP_NOT($this : Uint16) : Uint16
 static inline bool uint16_not(RuntimeContext &ctx) {
     SUPPRESS_WARNING(uint16_not);
     unsigned short value = ~TYPE_AS(Int_Object, LOCAL(0))->getValue();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getUint16Type(), value));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getUint16Type(), value));
 }
 
 
@@ -152,14 +152,14 @@ static inline bool int_plus(RuntimeContext & ctx) {
 static inline bool int_minus(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_minus);
     int value = -TYPE_AS(Int_Object, LOCAL(0))->getValue();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getIntType(), value));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getIntType(), value));
 }
 
 //!bind: function $OP_NOT($this : Int32) : Int32
 static inline bool int_not(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_not);
     int value = ~TYPE_AS(Int_Object, LOCAL(0))->getValue();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getIntType(), value));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getIntType(), value));
 }
 
 
@@ -172,7 +172,7 @@ static inline bool int_2_int_add(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_add);
     int value = TYPE_AS(Int_Object, LOCAL(0))->getValue()
                 + TYPE_AS(Int_Object, LOCAL(1))->getValue();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getIntType(), value));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getIntType(), value));
 }
 
 //!bind: function $OP_SUB($this : Int32, $target : Int32) : Int32
@@ -180,7 +180,7 @@ static inline bool int_2_int_sub(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_sub);
     int value = TYPE_AS(Int_Object, LOCAL(0))->getValue()
                 - TYPE_AS(Int_Object, LOCAL(1))->getValue();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getIntType(), value));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getIntType(), value));
 }
 
 //!bind: function $OP_MUL($this : Int32, $target : Int32) : Int32
@@ -188,7 +188,7 @@ static inline bool int_2_int_mul(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_mul);
     int value = TYPE_AS(Int_Object, LOCAL(0))->getValue()
                 * TYPE_AS(Int_Object, LOCAL(1))->getValue();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getIntType(), value));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getIntType(), value));
 }
 
 //!bind: function $OP_DIV($this : Int32, $target : Int32) : Int32
@@ -200,7 +200,7 @@ static inline bool int_2_int_div(RuntimeContext & ctx) {
         return false;
     }
     int value = left / right;
-    RET(std::make_shared<Int_Object>(ctx.getPool().getIntType(), value));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getIntType(), value));
 }
 
 //!bind: function $OP_MOD($this : Int32, $target : Int32) : Int32
@@ -212,7 +212,7 @@ static inline bool int_2_int_mod(RuntimeContext & ctx) {
         return false;
     }
     int value = left % right;
-    RET(std::make_shared<Int_Object>(ctx.getPool().getIntType(), value));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getIntType(), value));
 }
 
 //   =====  equality  =====
@@ -270,7 +270,7 @@ static inline bool int_2_int_and(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_and);
     int value = TYPE_AS(Int_Object, LOCAL(0))->getValue()
                 & TYPE_AS(Int_Object, LOCAL(1))->getValue();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getIntType(), value));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getIntType(), value));
 }
 
 //!bind: function $OP_OR($this : Int32, $target : Int32) : Int32
@@ -278,7 +278,7 @@ static inline bool int_2_int_or(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_or);
     int value = TYPE_AS(Int_Object, LOCAL(0))->getValue()
                 | TYPE_AS(Int_Object, LOCAL(1))->getValue();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getIntType(), value));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getIntType(), value));
 }
 
 //!bind: function $OP_XOR($this : Int32, $target : Int32) : Int32
@@ -286,7 +286,7 @@ static inline bool int_2_int_xor(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_xor);
     int value = TYPE_AS(Int_Object, LOCAL(0))->getValue()
                 ^TYPE_AS(Int_Object, LOCAL(1))->getValue();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getIntType(), value));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getIntType(), value));
 }
 
 
@@ -307,14 +307,14 @@ static inline bool uint_minus(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_minus);
     long value = TYPE_AS(Int_Object, LOCAL(0))->getValue();
     value = -value;
-    RET(std::make_shared<Long_Object>(ctx.getPool().getInt64Type(), value));
+    RET(DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value));
 }
 
 //!bind: function $OP_NOT($this : Uint32) : Uint32
 static inline bool uint_not(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_not);
     unsigned int value = ~TYPE_AS(Int_Object, LOCAL(0))->getValue();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getUint32Type(), value));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getUint32Type(), value));
 }
 
 
@@ -327,7 +327,7 @@ static inline bool uint_2_uint_add(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_add);
     unsigned int value = (unsigned int) TYPE_AS(Int_Object, LOCAL(0))->getValue()
                 + (unsigned int) TYPE_AS(Int_Object, LOCAL(1))->getValue();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getUint32Type(), value));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getUint32Type(), value));
 }
 
 //!bind: function $OP_SUB($this : Uint32, $target : Uint32) : Uint32
@@ -335,7 +335,7 @@ static inline bool uint_2_uint_sub(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_sub);
     unsigned int value = (unsigned int) TYPE_AS(Int_Object, LOCAL(0))->getValue()
                 - (unsigned int) TYPE_AS(Int_Object, LOCAL(1))->getValue();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getUint32Type(), value));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getUint32Type(), value));
 }
 
 //!bind: function $OP_MUL($this : Uint32, $target : Uint32) : Uint32
@@ -343,7 +343,7 @@ static inline bool uint_2_uint_mul(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_mul);
     unsigned int value = (unsigned int) TYPE_AS(Int_Object, LOCAL(0))->getValue()
                 * (unsigned int) TYPE_AS(Int_Object, LOCAL(1))->getValue();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getUint32Type(), value));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getUint32Type(), value));
 }
 
 //!bind: function $OP_DIV($this : Uint32, $target : Uint32) : Uint32
@@ -355,7 +355,7 @@ static inline bool uint_2_uint_div(RuntimeContext & ctx) {
         return false;
     }
     unsigned int value = left / right;
-    RET(std::make_shared<Int_Object>(ctx.getPool().getUint32Type(), value));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getUint32Type(), value));
 }
 
 //!bind: function $OP_MOD($this : Uint32, $target : Uint32) : Uint32
@@ -367,7 +367,7 @@ static inline bool uint_2_uint_mod(RuntimeContext & ctx) {
         return false;
     }
     unsigned int value = left % right;
-    RET(std::make_shared<Int_Object>(ctx.getPool().getUint32Type(), value));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getUint32Type(), value));
 }
 
 //   =====  equality  =====
@@ -425,7 +425,7 @@ static inline bool uint_2_uint_and(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_and);
     unsigned int value = (unsigned int) TYPE_AS(Int_Object, LOCAL(0))->getValue()
                 &(unsigned int) TYPE_AS(Int_Object, LOCAL(1))->getValue();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getUint32Type(), value));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getUint32Type(), value));
 }
 
 //!bind: function $OP_OR($this : Uint32, $target : Uint32) : Uint32
@@ -433,7 +433,7 @@ static inline bool uint_2_uint_or(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_or);
     unsigned int value = (unsigned int) TYPE_AS(Int_Object, LOCAL(0))->getValue()
                 | (unsigned int) TYPE_AS(Int_Object, LOCAL(1))->getValue();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getUint32Type(), value));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getUint32Type(), value));
 }
 
 //!bind: function $OP_XOR($this : Uint32, $target : Uint32) : Uint32
@@ -441,7 +441,7 @@ static inline bool uint_2_uint_xor(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_xor);
     unsigned int value = (unsigned int) TYPE_AS(Int_Object, LOCAL(0))->getValue()
                 ^ (unsigned int) TYPE_AS(Int_Object, LOCAL(1))->getValue();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getUint32Type(), value));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getUint32Type(), value));
 }
 
 // ###################
@@ -460,14 +460,14 @@ static inline bool int64_plus(RuntimeContext & ctx) {
 static inline bool int64_minus(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_minus);
     long value = -TYPE_AS(Long_Object, LOCAL(0))->getValue();
-    RET(std::make_shared<Long_Object>(ctx.getPool().getInt64Type(), value));
+    RET(DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value));
 }
 
 //!bind: function $OP_NOT($this : Int64) : Int64
 static inline bool int64_not(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_not);
     long value = ~TYPE_AS(Long_Object, LOCAL(0))->getValue();
-    RET(std::make_shared<Long_Object>(ctx.getPool().getInt64Type(), value));
+    RET(DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value));
 }
 
 
@@ -480,7 +480,7 @@ static inline bool int64_2_int64_add(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_add);
     long value = TYPE_AS(Long_Object, LOCAL(0))->getValue()
                 + TYPE_AS(Long_Object, LOCAL(1))->getValue();
-    RET(std::make_shared<Long_Object>(ctx.getPool().getInt64Type(), value));
+    RET(DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value));
 }
 
 //!bind: function $OP_SUB($this : Int64, $target : Int64) : Int64
@@ -488,7 +488,7 @@ static inline bool int64_2_int64_sub(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_sub);
     long value = TYPE_AS(Long_Object, LOCAL(0))->getValue()
                 - TYPE_AS(Long_Object, LOCAL(1))->getValue();
-    RET(std::make_shared<Long_Object>(ctx.getPool().getInt64Type(), value));
+    RET(DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value));
 }
 
 //!bind: function $OP_MUL($this : Int64, $target : Int64) : Int64
@@ -496,7 +496,7 @@ static inline bool int64_2_int64_mul(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_mul);
     long value = TYPE_AS(Long_Object, LOCAL(0))->getValue()
                 * TYPE_AS(Long_Object, LOCAL(1))->getValue();
-    RET(std::make_shared<Long_Object>(ctx.getPool().getInt64Type(), value));
+    RET(DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value));
 }
 
 //!bind: function $OP_DIV($this : Int64, $target : Int64) : Int64
@@ -508,7 +508,7 @@ static inline bool int64_2_int64_div(RuntimeContext & ctx) {
         return false;
     }
     long value = left / right;
-    RET(std::make_shared<Long_Object>(ctx.getPool().getInt64Type(), value));
+    RET(DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value));
 }
 
 //!bind: function $OP_MOD($this : Int64, $target : Int64) : Int64
@@ -520,7 +520,7 @@ static inline bool int64_2_int64_mod(RuntimeContext & ctx) {
         return false;
     }
     long value = left % right;
-    RET(std::make_shared<Long_Object>(ctx.getPool().getInt64Type(), value));
+    RET(DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value));
 }
 
 //   =====  equality  =====
@@ -578,7 +578,7 @@ static inline bool int64_2_int64_and(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_and);
     long value = TYPE_AS(Long_Object, LOCAL(0))->getValue()
                 & TYPE_AS(Long_Object, LOCAL(1))->getValue();
-    RET(std::make_shared<Long_Object>(ctx.getPool().getInt64Type(), value));
+    RET(DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value));
 }
 
 //!bind: function $OP_OR($this : Int64, $target : Int64) : Int64
@@ -586,7 +586,7 @@ static inline bool int64_2_int64_or(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_or);
     long value = TYPE_AS(Long_Object, LOCAL(0))->getValue()
                 | TYPE_AS(Long_Object, LOCAL(1))->getValue();
-    RET(std::make_shared<Long_Object>(ctx.getPool().getInt64Type(), value));
+    RET(DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value));
 }
 
 //!bind: function $OP_XOR($this : Int64, $target : Int64) : Int64
@@ -594,7 +594,7 @@ static inline bool int64_2_int64_xor(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_xor);
     long value = TYPE_AS(Long_Object, LOCAL(0))->getValue()
                 ^TYPE_AS(Long_Object, LOCAL(1))->getValue();
-    RET(std::make_shared<Long_Object>(ctx.getPool().getInt64Type(), value));
+    RET(DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value));
 }
 
 // ####################
@@ -613,14 +613,14 @@ static inline bool uint64_plus(RuntimeContext & ctx) {
 static inline bool uint64_minus(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_minus);
     unsigned long value = -TYPE_AS(Long_Object, LOCAL(0))->getValue();
-    RET(std::make_shared<Long_Object>(ctx.getPool().getUint64Type(), value));
+    RET(DSValue::create<Long_Object>(ctx.getPool().getUint64Type(), value));
 }
 
 //!bind: function $OP_NOT($this : Uint64) : Uint64
 static inline bool uint64_not(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_not);
     unsigned long value = ~TYPE_AS(Long_Object, LOCAL(0))->getValue();
-    RET(std::make_shared<Long_Object>(ctx.getPool().getUint64Type(), value));
+    RET(DSValue::create<Long_Object>(ctx.getPool().getUint64Type(), value));
 }
 
 
@@ -633,7 +633,7 @@ static inline bool uint64_2_uint64_add(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_add);
     unsigned long value = (unsigned long) TYPE_AS(Long_Object, LOCAL(0))->getValue()
                  + (unsigned long) TYPE_AS(Long_Object, LOCAL(1))->getValue();
-    RET(std::make_shared<Long_Object>(ctx.getPool().getUint64Type(), value));
+    RET(DSValue::create<Long_Object>(ctx.getPool().getUint64Type(), value));
 }
 
 //!bind: function $OP_SUB($this : Uint64, $target : Uint64) : Uint64
@@ -641,7 +641,7 @@ static inline bool uint64_2_uint64_sub(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_sub);
     unsigned long value = (unsigned long) TYPE_AS(Long_Object, LOCAL(0))->getValue()
                  - (unsigned long) TYPE_AS(Long_Object, LOCAL(1))->getValue();
-    RET(std::make_shared<Long_Object>(ctx.getPool().getUint64Type(), value));
+    RET(DSValue::create<Long_Object>(ctx.getPool().getUint64Type(), value));
 }
 
 //!bind: function $OP_MUL($this : Uint64, $target : Uint64) : Uint64
@@ -649,7 +649,7 @@ static inline bool uint64_2_uint64_mul(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_mul);
     unsigned long value = (unsigned long) TYPE_AS(Long_Object, LOCAL(0))->getValue()
                  * (unsigned long) TYPE_AS(Long_Object, LOCAL(1))->getValue();
-    RET(std::make_shared<Long_Object>(ctx.getPool().getUint64Type(), value));
+    RET(DSValue::create<Long_Object>(ctx.getPool().getUint64Type(), value));
 }
 
 //!bind: function $OP_DIV($this : Uint64, $target : Uint64) : Uint64
@@ -661,7 +661,7 @@ static inline bool uint64_2_uint64_div(RuntimeContext & ctx) {
         return false;
     }
     unsigned long value = left / right;
-    RET(std::make_shared<Long_Object>(ctx.getPool().getUint64Type(), value));
+    RET(DSValue::create<Long_Object>(ctx.getPool().getUint64Type(), value));
 }
 
 //!bind: function $OP_MOD($this : Uint64, $target : Uint64) : Uint64
@@ -673,7 +673,7 @@ static inline bool uint64_2_uint64_mod(RuntimeContext & ctx) {
         return false;
     }
     unsigned long value = left % right;
-    RET(std::make_shared<Long_Object>(ctx.getPool().getUint64Type(), value));
+    RET(DSValue::create<Long_Object>(ctx.getPool().getUint64Type(), value));
 }
 
 //   =====  equality  =====
@@ -731,7 +731,7 @@ static inline bool uint64_2_uint64_and(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_and);
     unsigned long value = (unsigned long) TYPE_AS(Long_Object, LOCAL(0))->getValue()
                  & (unsigned long) TYPE_AS(Long_Object, LOCAL(1))->getValue();
-    RET(std::make_shared<Long_Object>(ctx.getPool().getUint64Type(), value));
+    RET(DSValue::create<Long_Object>(ctx.getPool().getUint64Type(), value));
 }
 
 //!bind: function $OP_OR($this : Uint64, $target : Uint64) : Uint64
@@ -739,7 +739,7 @@ static inline bool uint64_2_uint64_or(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_or);
     unsigned long value = (unsigned long) TYPE_AS(Long_Object, LOCAL(0))->getValue()
                  | (unsigned long) TYPE_AS(Long_Object, LOCAL(1))->getValue();
-    RET(std::make_shared<Long_Object>(ctx.getPool().getUint64Type(), value));
+    RET(DSValue::create<Long_Object>(ctx.getPool().getUint64Type(), value));
 }
 
 //!bind: function $OP_XOR($this : Uint64, $target : Uint64) : Uint64
@@ -747,7 +747,7 @@ static inline bool uint64_2_uint64_xor(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_xor);
     unsigned long value = (unsigned long) TYPE_AS(Long_Object, LOCAL(0))->getValue()
                  ^ (unsigned long) TYPE_AS(Long_Object, LOCAL(1))->getValue();
-    RET(std::make_shared<Long_Object>(ctx.getPool().getUint64Type(), value));
+    RET(DSValue::create<Long_Object>(ctx.getPool().getUint64Type(), value));
 }
 
 
@@ -767,7 +767,7 @@ static inline bool float_plus(RuntimeContext & ctx) {
 static inline bool float_minus(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_minus);
     double value = -TYPE_AS(Float_Object, LOCAL(0))->getValue();
-    RET(std::make_shared<Float_Object>(ctx.getPool().getFloatType(), value));
+    RET(DSValue::create<Float_Object>(ctx.getPool().getFloatType(), value));
 }
 
 // =====  binary op  =====
@@ -779,7 +779,7 @@ static inline bool float_2_float_add(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_add);
     double value = TYPE_AS(Float_Object, LOCAL(0))->getValue()
                    + TYPE_AS(Float_Object, LOCAL(1))->getValue();
-    RET(std::make_shared<Float_Object>(ctx.getPool().getFloatType(), value));
+    RET(DSValue::create<Float_Object>(ctx.getPool().getFloatType(), value));
 }
 
 //!bind: function $OP_SUB($this : Float, $target : Float) : Float
@@ -787,7 +787,7 @@ static inline bool float_2_float_sub(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_sub);
     double value = TYPE_AS(Float_Object, LOCAL(0))->getValue()
                    - TYPE_AS(Float_Object, LOCAL(1))->getValue();
-    RET(std::make_shared<Float_Object>(ctx.getPool().getFloatType(), value));
+    RET(DSValue::create<Float_Object>(ctx.getPool().getFloatType(), value));
 }
 
 //!bind: function $OP_MUL($this : Float, $target : Float) : Float
@@ -795,7 +795,7 @@ static inline bool float_2_float_mul(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_mul);
     double value = TYPE_AS(Float_Object, LOCAL(0))->getValue()
                    * TYPE_AS(Float_Object, LOCAL(1))->getValue();
-    RET(std::make_shared<Float_Object>(ctx.getPool().getFloatType(), value));
+    RET(DSValue::create<Float_Object>(ctx.getPool().getFloatType(), value));
 }
 
 //!bind: function $OP_DIV($this : Float, $target : Float) : Float
@@ -807,7 +807,7 @@ static inline bool float_2_float_div(RuntimeContext & ctx) {
         return false;
     }
     double value = left / right;
-    RET(std::make_shared<Float_Object>(ctx.getPool().getFloatType(), value));
+    RET(DSValue::create<Float_Object>(ctx.getPool().getFloatType(), value));
 }
 
 //   =====  equality  =====
@@ -900,7 +900,7 @@ static inline bool string_add(RuntimeContext &ctx) {
 
     std::string str(TYPE_AS(String_Object, LOCAL(0))->getValue());
     str += TYPE_AS(String_Object, ctx.peek())->getValue();
-    RET(std::make_shared<String_Object>(ctx.getPool().getStringType(), std::move(str)));
+    RET(DSValue::create<String_Object>(ctx.getPool().getStringType(), std::move(str)));
 }
 
 //!bind: function $OP_EQ($this : String, $target : String) : Boolean
@@ -921,7 +921,7 @@ static inline bool string_ne(RuntimeContext &ctx) {
 static inline bool string_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_size);
     int size = TYPE_AS(String_Object, LOCAL(0))->size();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getInt32Type(), size));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getInt32Type(), size));
 }
 
 //!bind: function empty($this : String) : Boolean
@@ -954,7 +954,7 @@ static inline bool objectpath_ne(RuntimeContext &ctx) {
 static inline bool objectpath_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(objectpath_size);
     int size = TYPE_AS(String_Object, LOCAL(0))->size();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getInt32Type(), size));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getInt32Type(), size));
 }
 
 
@@ -966,7 +966,7 @@ static inline bool objectpath_size(RuntimeContext &ctx) {
 static inline bool array_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_init);
     DSType *type = LOCAL(0)->getType();
-    ctx.setLocal(0, std::make_shared<Array_Object>(type));
+    ctx.setLocal(0, DSValue::create<Array_Object>(type));
     return true;
 }
 
@@ -1026,7 +1026,7 @@ static inline bool array_set(RuntimeContext &ctx) {
 static inline bool array_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_size);
     int size = TYPE_AS(Array_Object, LOCAL(0))->getValues().size();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getInt32Type(), size));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getInt32Type(), size));
 }
 
 //!bind: function empty($this : Array<T0>) : Boolean
@@ -1070,7 +1070,7 @@ static inline bool array_hasNext(RuntimeContext &ctx) {
 static inline bool map_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_init);
     DSType *type = LOCAL(0)->getType();
-    ctx.setLocal(0, std::make_shared<Map_Object>(type));
+    ctx.setLocal(0, DSValue::create<Map_Object>(type));
     return true;
 }
 
@@ -1101,7 +1101,7 @@ static inline bool map_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_size);
     Map_Object *obj = TYPE_AS(Map_Object, LOCAL(0));
     int value = obj->getValueMap().size();
-    RET(std::make_shared<Int_Object>(ctx.getPool().getInt32Type(), value));
+    RET(DSValue::create<Int_Object>(ctx.getPool().getInt32Type(), value));
 }
 
 //!bind: function empty($this : Map<T0, T1>) : Boolean
@@ -1153,7 +1153,7 @@ static inline bool map_hasNext(RuntimeContext &ctx) {
 static inline bool tuple_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(tuple_init);
     DSType *type = LOCAL(0)->getType();
-    ctx.setLocal(0, std::make_shared<Tuple_Object>(type));
+    ctx.setLocal(0, DSValue::create<Tuple_Object>(type));
     TYPE_AS(Tuple_Object, LOCAL(0))->set(0, LOCAL(1));
     return true;
 }
@@ -1167,7 +1167,7 @@ static inline bool tuple_init(RuntimeContext &ctx) {
 static inline bool error_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(error_init);
     DSType *type = LOCAL(0)->getType();
-    ctx.setLocal(0, std::shared_ptr<DSObject>(Error_Object::newError(ctx, type, LOCAL(1))));
+    ctx.setLocal(0, DSValue(Error_Object::newError(ctx, type, LOCAL(1))));
     return true;
 }
 
@@ -1272,7 +1272,7 @@ static inline bool bus_listActiveNames(RuntimeContext &ctx) {
 //!bind: function object($this : Service, $path : ObjectPath) : DBusObject
 static inline bool service_object(RuntimeContext &ctx) {
     SUPPRESS_WARNING(service_object);
-    return TYPE_AS(Service_Object, LOCAL(0))->object(ctx, std::dynamic_pointer_cast<String_Object>(LOCAL(1)));
+    return TYPE_AS(Service_Object, LOCAL(0))->object(ctx, LOCAL(1));
 }
 
 

@@ -26,6 +26,7 @@
 #include "../core/FieldHandle.h"
 #include "../misc/debug.h"
 #include "dump.h"
+#include "Node.h"
 
 // helper macro
 #define EVAL(ctx, node) \
@@ -123,13 +124,13 @@ int IntValueNode::getTempValue() {
     return this->tempValue;
 }
 
-std::shared_ptr<DSObject> IntValueNode::getValue() {
+const DSValue &IntValueNode::getValue() {
     return this->value;
 }
 
 void IntValueNode::setType(DSType *type) {
     this->type = type;
-    this->value.reset(new Int_Object(this->type, this->tempValue));
+    this->value = DSValue::create<Int_Object>(this->type, this->tempValue);
 }
 
 void IntValueNode::dump(Writer &writer) const {
@@ -167,7 +168,7 @@ LongValueNode *LongValueNode::newUint64(unsigned int lineNum, unsigned long valu
     return new LongValueNode(lineNum, (long) value, true);
 }
 
-const std::shared_ptr<DSObject> &LongValueNode::getValue() {
+const DSValue &LongValueNode::getValue() {
     return this->value;
 }
 
@@ -177,7 +178,7 @@ bool LongValueNode::isUnsignedValue() {
 
 void LongValueNode::setType(DSType *type) {
     this->type = type;
-    this->value.reset(new Long_Object(this->type, this->tempValue));
+    this->value = DSValue::create<Long_Object>(this->type, this->tempValue);
 }
 
 void LongValueNode::dump(Writer &writer) const {
@@ -209,13 +210,13 @@ FloatValueNode::FloatValueNode(unsigned int lineNum, double value) :
         Node(lineNum), tempValue(value), value() {
 }
 
-std::shared_ptr<DSObject> FloatValueNode::getValue() {
+const DSValue &FloatValueNode::getValue() {
     return this->value;
 }
 
 void FloatValueNode::setType(DSType *type) {
     this->type = type;
-    this->value.reset(new Float_Object(this->type, this->tempValue));
+    this->value = DSValue::create<Float_Object>(this->type, this->tempValue);
 }
 
 void FloatValueNode::dump(Writer &writer) const {
@@ -252,14 +253,13 @@ StringValueNode::StringValueNode(unsigned int lineNum, std::string &&value) :
 StringValueNode::~StringValueNode() {
 }
 
-std::shared_ptr<DSObject> StringValueNode::getValue() {
+const DSValue &StringValueNode::getValue() {
     return this->value;
 }
 
 void StringValueNode::setType(DSType *type) {
     this->type = type;
-    this->value.reset(
-            new String_Object(this->type, std::move(this->tempValue)));
+    this->value = DSValue::create<String_Object>(this->type, std::move(this->tempValue));
 }
 
 void StringValueNode::dump(Writer &writer) const {
@@ -330,7 +330,7 @@ void StringExprNode::accept(NodeVisitor *visitor) {
 EvalStatus StringExprNode::eval(RuntimeContext &ctx) {
     unsigned int size = this->nodes.size();
     if(size == 0) {
-        ctx.push(std::make_shared<String_Object>(this->type));
+        ctx.push(DSValue::create<String_Object>(this->type));
     } else if(size == 1) {
         EVAL(ctx, this->nodes[0]);
         if(*this->nodes[0]->getType() != *ctx.getPool().getStringType()) {
@@ -348,7 +348,7 @@ EvalStatus StringExprNode::eval(RuntimeContext &ctx) {
             }
             str += TYPE_AS(String_Object, ctx.pop())->getValue();
         }
-        ctx.push(std::make_shared<String_Object>(this->type, std::move(str)));
+        ctx.push(DSValue::create<String_Object>(this->type, std::move(str)));
     }
     return EvalStatus::SUCCESS;
 }
@@ -390,10 +390,10 @@ void ArrayNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus ArrayNode::eval(RuntimeContext &ctx) {
-    auto value = std::make_shared<Array_Object>(this->type);
+    auto value = DSValue::create<Array_Object>(this->type);
     for(Node *node : this->nodes) {
         EVAL(ctx, node);
-        value->append(ctx.pop());
+        TYPE_AS(Array_Object, value)->append(ctx.pop());
     }
     ctx.push(std::move(value));
     return EvalStatus::SUCCESS;
@@ -451,14 +451,14 @@ void MapNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus MapNode::eval(RuntimeContext &ctx) {
-    auto map = std::make_shared<Map_Object>(this->type);
+    auto map = DSValue::create<Map_Object>(this->type);
     unsigned int size = this->keyNodes.size();
     for(unsigned int i = 0; i < size; i++) {
         EVAL(ctx, this->keyNodes[i]);
         auto key = ctx.pop();
         EVAL(ctx, this->valueNodes[i]);
         auto value = ctx.pop();
-        map->set(key, value);
+        TYPE_AS(Map_Object, map)->set(key, value);
     }
     ctx.push(std::move(map));
     return EvalStatus::SUCCESS;
@@ -499,10 +499,10 @@ void TupleNode::accept(NodeVisitor *visitor) {
 
 EvalStatus TupleNode::eval(RuntimeContext &ctx) {
     unsigned int size = this->nodes.size();
-    auto value = std::make_shared<Tuple_Object>(this->type);
+    auto value = DSValue::create<Tuple_Object>(this->type);
     for(unsigned int i = 0; i < size; i++) {
         EVAL(ctx, this->nodes[i]);
-        value->set(i, ctx.pop());
+        TYPE_AS(Tuple_Object, value)->set(i, ctx.pop());
     }
     ctx.push(std::move(value));
     return EvalStatus::SUCCESS;
@@ -773,7 +773,7 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
         if(*this->exprNode->getType() != *ctx.getPool().getInt32Type()) {
             afterValue = (unsigned int) value;
         }
-        ctx.push(std::make_shared<Float_Object>(this->type, afterValue));
+        ctx.push(DSValue::create<Float_Object>(this->type, afterValue));
         break;
     }
     case FLOAT_TO_INT: {
@@ -783,7 +783,7 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
             unsigned int temp = value;
             afterValue = temp;
         }
-        ctx.push(std::make_shared<Int_Object>(this->type, afterValue));
+        ctx.push(DSValue::create<Int_Object>(this->type, afterValue));
         break;
     }
     case INT_TO_LONG: {
@@ -792,7 +792,7 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
         if(*this->exprNode->getType() != *ctx.getPool().getInt32Type()) {
             afterValue = (unsigned int) value;
         }
-        ctx.push(std::make_shared<Long_Object>(this->type, afterValue));
+        ctx.push(DSValue::create<Long_Object>(this->type, afterValue));
         break;
     };
     case LONG_TO_INT: {
@@ -802,7 +802,7 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
             unsigned int temp = value;
             afterValue = temp;
         }
-        ctx.push(std::make_shared<Int_Object>(this->type, afterValue));
+        ctx.push(DSValue::create<Int_Object>(this->type, afterValue));
         break;
     };
     case LONG_TO_FLOAT: {
@@ -811,7 +811,7 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
         if(*this->exprNode->getType() == *ctx.getPool().getUint64Type()) {
             afterValue = (unsigned long) value;
         }
-        ctx.push(std::make_shared<Float_Object>(this->type, afterValue));
+        ctx.push(DSValue::create<Float_Object>(this->type, afterValue));
         break;
     };
     case FLOAT_TO_LONG: {
@@ -821,17 +821,17 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
             unsigned long temp = (unsigned long) value;
             afterValue = temp;
         }
-        ctx.push(std::make_shared<Long_Object>(this->type, afterValue));
+        ctx.push(DSValue::create<Long_Object>(this->type, afterValue));
         break;
     };
     case COPY_INT: {
         int value = TYPE_AS(Int_Object, ctx.pop())->getValue();
-        ctx.push(std::make_shared<Int_Object>(this->type, value));
+        ctx.push(DSValue::create<Int_Object>(this->type, value));
         break;
     };
     case COPY_LONG: {
         long value = TYPE_AS(Long_Object, ctx.pop())->getValue();
-        ctx.push(std::make_shared<Long_Object>(this->type, value));
+        ctx.push(DSValue::create<Long_Object>(this->type, value));
         break;
     };
     case TO_STRING: {
@@ -1450,7 +1450,7 @@ EvalStatus CmdArgNode::evalImpl(RuntimeContext &ctx) {
         }
         str += TYPE_AS(String_Object, ctx.pop())->getValue();
     }
-    ctx.push(std::make_shared<String_Object>(ctx.getPool().getStringType(), std::move(str)));
+    ctx.push(DSValue::create<String_Object>(ctx.getPool().getStringType(), std::move(str)));
     return EvalStatus::SUCCESS;
 }
 
@@ -1527,7 +1527,7 @@ std::string TildeNode::expand(bool isLastSegment) {
 }
 
 EvalStatus TildeNode::eval(RuntimeContext &ctx) {
-    ctx.push(std::make_shared<String_Object>(ctx.getPool().getStringType(), this->expand()));
+    ctx.push(DSValue::create<String_Object>(ctx.getPool().getStringType(), this->expand()));
     return EvalStatus::SUCCESS;
 }
 
@@ -1664,7 +1664,7 @@ EvalStatus PipedCmdNode::eval(RuntimeContext &ctx) {
 
     // push exit status
     if(*this->type == *ctx.getPool().getBooleanType()) {
-        if(ctx.getExitStatus()->getValue() == 0) {
+        if(TYPE_AS(Int_Object, ctx.getExitStatus())->getValue() == 0) {
             ctx.push(ctx.getTrueObj());
         } else {
             ctx.push(ctx.getFalseObj());
@@ -1761,7 +1761,7 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
         if(pid > 0) {   // parent process
             close(pipefds[WRITE_PIPE]);
 
-            std::shared_ptr<DSObject> obj;
+            DSValue obj;
 
             if(*this->type == *ctx.getPool().getStringType()) {  // capture stdout as String
                 static const int bufSize = 256;
@@ -1781,7 +1781,7 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
                     str.erase(pos + 1);
                 }
 
-                obj.reset(new String_Object(this->type, std::move(str)));
+                obj = DSValue::create<String_Object>(this->type, std::move(str));
             } else {    // capture stdout as String Array
                 static const int bufSize = 256;
                 char buf[bufSize];
@@ -1796,7 +1796,7 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
                         case '\t':
                         case '\n': {
                             if(!str.empty()) {
-                                array->append(std::make_shared<String_Object>(
+                                array->append(DSValue::create<String_Object>(
                                         ctx.getPool().getStringType(), std::move(str)));
                                 str = "";
                             }
@@ -1810,11 +1810,11 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
                     }
                 }
                 if(!str.empty()) {
-                    array->append(std::make_shared<String_Object>(
+                    array->append(DSValue::create<String_Object>(
                             ctx.getPool().getStringType(), std::move(str)));
                 }
 
-                obj.reset(array);
+                obj = DSValue(array);
             }
             close(pipefds[READ_PIPE]);
 
@@ -3043,7 +3043,7 @@ void FunctionNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus FunctionNode::eval(RuntimeContext &ctx) {
-    ctx.setGlobal(this->varIndex, std::shared_ptr<DSObject>(new UserFuncObject(this)));
+    ctx.setGlobal(this->varIndex, DSValue::create<UserFuncObject>(this));
     return EvalStatus::REMOVE;
 }
 
@@ -3127,7 +3127,7 @@ EvalStatus InterfaceNode::eval(RuntimeContext &ctx) {
 // ##     BindVarNode     ##
 // #########################
 
-BindVarNode::BindVarNode(const char *name, const std::shared_ptr<DSObject> &value) :
+BindVarNode::BindVarNode(const char *name, const DSValue &value) :
         Node(0), varName(std::string(name)), varIndex(0), value(value) {
 }
 
@@ -3143,7 +3143,7 @@ unsigned int BindVarNode::getVarIndex() {
     return this->varIndex;
 }
 
-const std::shared_ptr<DSObject> &BindVarNode::getValue() {
+const DSValue &BindVarNode::getValue() {
     return this->value;
 }
 

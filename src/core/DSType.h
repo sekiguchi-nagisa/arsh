@@ -34,8 +34,6 @@ using namespace ydsh::misc;
 
 struct TypeVisitor;
 
-class DSObject;
-struct FuncObject;
 struct MethodRef;
 
 class FieldHandle;
