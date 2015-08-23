@@ -55,7 +55,7 @@ public:
      */
     constexpr DSValue() noexcept: obj(nullptr) { }
 
-    constexpr DSValue(std::nullptr_t) noexcept: DSValue() { }
+    constexpr DSValue(std::nullptr_t) noexcept: obj(nullptr) { }
 
     DSValue(const DSValue &value) noexcept : DSValue(value.obj) { }
 
