@@ -1040,10 +1040,6 @@ EvalStatus CmdArgNode::eval(RuntimeContext &ctx) {
 EvalStatus CmdArgNode::evalImpl(RuntimeContext &ctx) {
     if(this->segmentNodes.size() == 1) {
         EVAL(ctx, this->segmentNodes[0]);
-        DSType *type = this->segmentNodes[0]->getType();
-        if(*type != *ctx.getPool().getStringType() && *type != *ctx.getPool().getStringArrayType()) {
-            return ctx.toCmdArg(this->lineNum);
-        }
         return EvalStatus::SUCCESS;
     }
 
@@ -1056,14 +1052,7 @@ EvalStatus CmdArgNode::evalImpl(RuntimeContext &ctx) {
     }
 
     for(; index < size; index++) {
-        Node *node = this->segmentNodes[index];
-        EVAL(ctx, node);
-        DSType *type = node->getType();
-        if(*type != *ctx.getPool().getStringType()) {
-            if(ctx.toCmdArg(this->lineNum) != EvalStatus::SUCCESS) {
-                return EvalStatus::THROW;
-            }
-        }
+        EVAL(ctx, this->segmentNodes[index]);
         str += TYPE_AS(String_Object, ctx.pop())->getValue();
     }
     ctx.push(DSValue::create<String_Object>(ctx.getPool().getStringType(), std::move(str)));

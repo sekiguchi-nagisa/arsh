@@ -1,4 +1,4 @@
-# not allow collection type (Array, Map, Tuple type) in redirection target
+# not allow String Array type in redirection target
 
 #$test($result = 'type', $lineNum = 6, $errorKind = 'Unacceptable', $status = 1)
 

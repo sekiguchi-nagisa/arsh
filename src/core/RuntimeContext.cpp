@@ -49,8 +49,7 @@ RuntimeContext::RuntimeContext() :
         localStack(new DSValue[DEFAULT_LOCAL_SIZE]),
         localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0),
         localVarOffset(0), offsetStack(), toplevelPrinting(false), assertion(true),
-        handle_STR(0), handle_INTERP(0), handle_CMD_ARG(0), handle_bt(0),
-        handle_OLDPWD(0), handle_PWD(0),
+        handle_STR(0), handle_INTERP(0), handle_bt(0), handle_OLDPWD(0), handle_PWD(0),
         readFiles(), funcContextStack(), callStack(), procInvoker(this) {
     this->readFiles.push_back(std::string("(stdin)"));
 }
@@ -285,16 +284,6 @@ EvalStatus RuntimeContext::toInterp(unsigned int lineNum) {
                 lookupMethodHandle(&this->pool, methodName);
     }
     return this->callMethod(lineNum, methodName, this->handle_INTERP);
-}
-
-EvalStatus RuntimeContext::toCmdArg(unsigned int lineNum) {
-    static const std::string methodName(OP_CMD_ARG);
-
-    if(this->handle_CMD_ARG == nullptr) {
-        this->handle_CMD_ARG = this->pool.getAnyType()->
-                lookupMethodHandle(&this->pool, methodName);
-    }
-    return this->callMethod(lineNum, methodName, this->handle_CMD_ARG);
 }
 
 void RuntimeContext::reportError() {

@@ -142,11 +142,6 @@ private:
     MethodHandle *handle_INTERP;
 
     /**
-     * for command argument
-     */
-    MethodHandle *handle_CMD_ARG;
-
-    /**
      * for error reporting
      */
     MethodHandle *handle_bt;
@@ -456,11 +451,6 @@ public:
      * call __INTERP__
      */
     EvalStatus toInterp(unsigned int lineNum);
-
-    /**
-     * call __CMD_ARG__
-     */
-    EvalStatus toCmdArg(unsigned int lineNum);
 
     /**
      * report thrown object error message.

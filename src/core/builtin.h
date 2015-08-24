@@ -54,12 +54,6 @@ static inline bool to_interp(RuntimeContext & ctx) {
     RET(LOCAL(0)->interp(ctx));
 }
 
-//!bind: function $OP_CMD_ARG($this : Any) : Any
-static inline bool to_cmd_arg(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(to_cmd_arg);
-    RET(LOCAL(0)->commandArg(ctx));
-}
-
 
 // ##################
 // ##     Byte     ##
@@ -1061,6 +1055,12 @@ static inline bool array_hasNext(RuntimeContext &ctx) {
     RET_BOOL(TYPE_AS(Array_Object, LOCAL(0))->hasNext());
 }
 
+//!bind: function $OP_CMD_ARG($this : Array<T0>) : Array<String>
+static inline bool array_cmdArg(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_cmdArg);
+    RET(LOCAL(0)->commandArg(ctx));
+}
+
 
 // #################
 // ##     Map     ##
@@ -1156,6 +1156,12 @@ static inline bool tuple_init(RuntimeContext &ctx) {
     ctx.setLocal(0, DSValue::create<Tuple_Object>(type));
     TYPE_AS(Tuple_Object, LOCAL(0))->set(0, LOCAL(1));
     return true;
+}
+
+//!bind: function $OP_CMD_ARG($this : Tuple<>) : Array<String>
+static inline bool tuple_cmdArg(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(tuple_cmdArg);
+    RET(LOCAL(0)->commandArg(ctx));
 }
 
 

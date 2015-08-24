@@ -17,6 +17,7 @@
 #include <cassert>
 #include <vector>
 
+#include "../core/symbol.h"
 #include "../core/DSObject.h"
 #include "../core/TypeLookupError.h"
 #include "../misc/debug.h"
@@ -836,14 +837,38 @@ void TypeChecker::visitCmdNode(CmdNode *node) {
 }
 
 void TypeChecker::visitCmdArgNode(CmdArgNode *node) {
-    for(Node *exprNode : node->getSegmentNodes()) {
-        this->checkType(exprNode);
+    const unsigned int size = node->getSegmentNodes().size();
+    for(unsigned int i = 0; i < size; i++) {
+        Node *exprNode = node->getSegmentNodes()[i];
+        DSType *segmentType = this->checkType(exprNode);
+
+        if(*segmentType != *this->typePool->getStringType() &&
+           *segmentType != *this->typePool->getStringArrayType()) {    // call __STR__ or __CMD__ARG
+            // first try lookup __CMD_ARG__ method
+            std::string methodName(OP_CMD_ARG);
+            MethodHandle *handle = segmentType->lookupMethodHandle(this->typePool, methodName);
+
+            if(handle == nullptr || (*handle->getReturnType() != *this->typePool->getStringType() &&
+                    *handle->getReturnType() != *this->typePool->getStringArrayType())) { // if not found, lookup __STR__
+                methodName = OP_STR;
+                handle = segmentType->lookupMethodHandle(this->typePool, methodName);
+            }
+
+            // create MethodCallNode and check type
+            MethodCallNode *callNode = new MethodCallNode(exprNode, std::move(methodName));
+            this->checkTypeArgsNode(handle, callNode->getArgsNode());
+            callNode->setHandle(handle);
+            callNode->setType(handle->getReturnType());
+
+            // overwrite segmentNode
+            node->setSegmentNode(i, callNode);
+        }
     }
 
-    // not allow Collection type(Array, Map, Tuple)
+    // not allow String Array type
     if(node->getSegmentNodes().size() > 1) {
         for(Node *exprNode : node->getSegmentNodes()) {
-            this->checkType(nullptr, exprNode, this->typePool->getCollectionType());
+            this->checkType(nullptr, exprNode, this->typePool->getStringArrayType());
         }
     }
     node->setType(this->typePool->getAnyType());   //FIXME
@@ -851,12 +876,11 @@ void TypeChecker::visitCmdArgNode(CmdArgNode *node) {
 
 void TypeChecker::visitRedirNode(RedirNode *node) {
     CmdArgNode *argNode = node->getTargetNode();
+    this->checkType(argNode);
 
-    this->checkTypeAsStatement(argNode);
-
-    // not allow Collection type
+    // not allow String Array type
     if(argNode->getSegmentNodes().size() == 1) {
-        this->checkType(nullptr, argNode->getSegmentNodes()[0], this->typePool->getCollectionType());
+        this->checkType(nullptr, argNode->getSegmentNodes()[0], this->typePool->getStringArrayType());
     }
 
     node->setType(this->typePool->getAnyType());   //FIXME

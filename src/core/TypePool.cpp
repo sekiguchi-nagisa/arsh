@@ -134,8 +134,7 @@ TypePool::TypePool() :
         internalStatus(), shellExit(), assertFail(),
         templateMap(8),
         arrayTemplate(), mapTemplate(), tupleTemplate(),
-        collectionType(), stringArrayType(),
-        envSet(), envCache(), precisionMap() {
+        stringArrayType(), envSet(), envCache(), precisionMap() {
 
     // initialize type
     this->anyType = this->initBuiltinType("Any", true, 0, info_AnyType());
@@ -190,9 +189,6 @@ TypePool::TypePool() :
 
     elements = std::vector<DSType *>();
     this->tupleTemplate = this->initTypeTemplate("Tuple", std::move(elements), info_TupleType());   // pseudo template.
-
-    // init collection type
-    this->collectionType = this->typeMap.addType(std::string("%Collection%"), new CollectionType(this->anyType));
 
     // init string array type(for command argument)
     std::vector<DSType *> types(1);

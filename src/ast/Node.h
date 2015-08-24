@@ -949,6 +949,10 @@ public:
     const std::vector<Node *> &getSegmentNodes() const {
         return this->segmentNodes;
     }
+    
+    void setSegmentNode(unsigned int index, Node *segmentNode) {
+        this->segmentNodes[index] = segmentNode;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);  // override

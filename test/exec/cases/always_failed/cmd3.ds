@@ -3,4 +3,4 @@
 #$test($result = 'type', $lineNum = 6, $errorKind = 'Unacceptable', $status = 1)
 
 
-echo hello${[34, 54]}   # illegal concatenation.
+echo hello${(34, 54)}   # illegal concatenation.
