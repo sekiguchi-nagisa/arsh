@@ -31,43 +31,6 @@ namespace core {
 
 using namespace ydsh::ast;
 
-// #####################
-// ##     DSValue     ##
-// #####################
-
-DSValue::DSValue(DSObject *obj) noexcept : obj(obj) {
-    if(this->obj != nullptr) {
-        this->obj->refCount++;
-    }
-}
-
-DSValue::~DSValue() {
-    if(this->obj != nullptr) {
-        if(--this->obj->refCount == 0) {
-            delete this->obj;
-        }
-        this->obj = nullptr;
-    }
-}
-
-DSValue &DSValue::operator=(const DSValue &value) noexcept {
-    DSValue tmp(value);
-    this->swap(tmp);
-    return *this;
-}
-
-DSValue &DSValue::operator=(DSValue &&value) noexcept {
-    DSValue tmp(std::move(value));
-    this->swap(tmp);
-    return *this;
-}
-
-void DSValue::reset() noexcept {
-    DSValue tmp;
-    this->swap(tmp);
-}
-
-
 // ######################
 // ##     DSObject     ##
 // ######################

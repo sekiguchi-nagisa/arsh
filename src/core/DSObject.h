@@ -33,74 +33,9 @@ class FunctionNode;
 namespace ydsh {
 namespace  core {
 
-class DSObject;
+class DSValue;
 class String_Object;
 struct ObjectVisitor;
-
-class DSValue {
-private:
-    /**
-     * may be null
-     */
-    DSObject *obj;
-
-public:
-    /**
-     * obj may be null
-     */
-    explicit DSValue(DSObject *obj) noexcept;
-
-    /**
-     * equivalent to DSValue(nullptr)
-     */
-    constexpr DSValue() noexcept: obj(nullptr) { }
-
-    constexpr DSValue(std::nullptr_t) noexcept: obj(nullptr) { }
-
-    DSValue(const DSValue &value) noexcept : DSValue(value.obj) { }
-
-    /**
-     * not increment refCount
-     */
-    DSValue(DSValue &&value) noexcept : obj(value.obj) { value.obj = nullptr; }
-
-    ~DSValue();
-
-    DSValue &operator=(const DSValue &value) noexcept;
-    DSValue &operator=(DSValue &&value) noexcept;
-
-    /**
-     * release current pointer.
-     */
-    void reset() noexcept;
-
-    DSObject *get() const noexcept {
-        return this->obj;
-    }
-
-    DSObject &operator*() const noexcept {
-        return *this->obj;
-    }
-
-    DSObject *operator->() const noexcept {
-        return this->obj;
-    }
-
-    explicit operator bool() const noexcept {
-        return this->obj != nullptr;
-    }
-
-    void swap(DSValue &value) noexcept {
-        std::swap(this->obj, value.obj);
-    }
-
-    template <typename T, typename ...A>
-    static DSValue create(A &&...args) {
-        static_assert(std::is_base_of<DSObject, T>::value, "must be subtype of DSObject");
-
-        return DSValue(new T(std::forward<A>(args)...));
-    };
-};
 
 class DSObject {
 protected:
@@ -170,6 +105,94 @@ public:
     virtual bool introspect(RuntimeContext &ctx, DSType *targetType);
 
     virtual void accept(ObjectVisitor *visitor);
+};
+
+class DSValue {
+private:
+    /**
+     * may be null
+     */
+    DSObject *obj;
+
+public:
+    /**
+     * obj may be null
+     */
+    explicit DSValue(DSObject *obj) noexcept : obj(obj) {
+        if(this->obj != nullptr) {
+            this->obj->refCount++;
+        }
+    }
+
+    /**
+     * equivalent to DSValue(nullptr)
+     */
+    constexpr DSValue() noexcept: obj(nullptr) { }
+
+    constexpr DSValue(std::nullptr_t) noexcept: obj(nullptr) { }
+
+    DSValue(const DSValue &value) noexcept : DSValue(value.obj) { }
+
+    /**
+     * not increment refCount
+     */
+    DSValue(DSValue &&value) noexcept : obj(value.obj) { value.obj = nullptr; }
+
+    ~DSValue() {
+        if(this->obj != nullptr) {
+            if(--this->obj->refCount == 0) {
+                delete this->obj;
+            }
+            this->obj = nullptr;
+        }
+    }
+
+    DSValue &operator=(const DSValue &value) noexcept {
+        DSValue tmp(value);
+        this->swap(tmp);
+        return *this;
+    }
+
+    DSValue &operator=(DSValue &&value) noexcept {
+        DSValue tmp(std::move(value));
+        this->swap(tmp);
+        return *this;
+    }
+
+    /**
+     * release current pointer.
+     */
+    void reset() noexcept {
+        DSValue tmp;
+        this->swap(tmp);
+    }
+
+    DSObject *get() const noexcept {
+        return this->obj;
+    }
+
+    DSObject &operator*() const noexcept {
+        return *this->obj;
+    }
+
+    DSObject *operator->() const noexcept {
+        return this->obj;
+    }
+
+    explicit operator bool() const noexcept {
+        return this->obj != nullptr;
+    }
+
+    void swap(DSValue &value) noexcept {
+        std::swap(this->obj, value.obj);
+    }
+
+    template <typename T, typename ...A>
+    static DSValue create(A &&...args) {
+        static_assert(std::is_base_of<DSObject, T>::value, "must be subtype of DSObject");
+
+        return DSValue(new T(std::forward<A>(args)...));
+    };
 };
 
 class Int_Object : public DSObject {
