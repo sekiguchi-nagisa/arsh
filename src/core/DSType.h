@@ -271,10 +271,10 @@ public:
 
     virtual ~BuiltinType();
 
-    MethodHandle *getConstructorHandle(TypePool *typePool); // override
-    MethodRef *getConstructor();   // override.
+    virtual MethodHandle *getConstructorHandle(TypePool *typePool); // override
+    virtual MethodRef *getConstructor();   // override.
     MethodHandle *lookupMethodHandle(TypePool *typePool, const std::string &methodName);  // override
-    FieldHandle *findHandle(const std::string &fieldName); // override
+    virtual FieldHandle *findHandle(const std::string &fieldName); // override
     virtual void accept(TypeVisitor *visitor); // override
     bool isBuiltinType() const; // override
     unsigned int getMethodSize(); // override
@@ -289,7 +289,7 @@ private:
  * not support override.
  */
 class ReifiedType : public BuiltinType {
-private:
+protected:
     /**
      * size is 1 or 2.
      */
@@ -302,50 +302,31 @@ public:
     ReifiedType(native_type_info_t *info, DSType *superType, std::vector<DSType *> &&elementTypes) :
             BuiltinType(false, superType, info, false), elementTypes(std::move(elementTypes)) { }
 
-    ~ReifiedType() = default;
+    virtual ~ReifiedType() = default;
 
     const std::vector<DSType *> &getElementTypes() const {
         return this->elementTypes;
     }
 
-    void accept(TypeVisitor *visitor); // override
+    virtual void accept(TypeVisitor *visitor); // override
 
-private:
+protected:
     void initMethodHandle(MethodHandle *handle, TypePool *typePool, NativeFuncInfo *info); // override
 };
 
 
-class TupleType : public DSType {
+class TupleType : public ReifiedType {
 private:
-    std::vector<DSType *> types;
     std::unordered_map<std::string, FieldHandle *> fieldHandleMap;
-
-    /**
-     * may be null, if has more than two element.
-     */
-    MethodHandle *constructorHandle;
-
-    static NativeFuncInfo *funcInfo;
-    static std::shared_ptr<MethodRef> initRef;
 
 public:
     /**
      * superType is AnyType ot VariantType
      */
-    TupleType(DSType *superType, std::vector<DSType *> &&types);
+    TupleType(native_type_info_t *info, DSType *superType, std::vector<DSType *> &&types);
     ~TupleType();
 
-    const std::vector<DSType *> &getTypes() const {
-        return this->types;
-    }
-
     MethodHandle *getConstructorHandle(TypePool *typePool); // override
-    MethodRef *getConstructor();    // override
-
-    /**
-     * return always true.
-     */
-    bool isBuiltinType() const; // override
 
     /**
      * return types.size()
@@ -355,11 +336,6 @@ public:
     FieldHandle *lookupFieldHandle(TypePool *typePool, const std::string &fieldName); // override
     FieldHandle *findHandle(const std::string &fieldName); // override
     void accept(TypeVisitor *visitor); // override
-
-    /**
-     * call only once.
-     */
-    static void registerFuncInfo(NativeFuncInfo *info);
 };
 
 /**

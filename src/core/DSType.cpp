@@ -208,16 +208,7 @@ void BuiltinType::initMethodHandle(MethodHandle *handle, TypePool *typePool, Nat
 // #########################
 
 void ReifiedType::initMethodHandle(MethodHandle *handle, TypePool *typePool, NativeFuncInfo *info) {
-    switch(this->elementTypes.size()) {
-    case 1:
-        handle->init(typePool, info, this->elementTypes[0]);
-        break;
-    case 2:
-        handle->init(typePool, info, this->elementTypes[0], this->elementTypes[1]);
-        break;
-    default:
-        fatal("element size must be 1 or 2\n");
-    }
+    handle->init(typePool, info, &this->elementTypes);
 }
 
 void ReifiedType::accept(TypeVisitor *visitor) {
@@ -228,13 +219,12 @@ void ReifiedType::accept(TypeVisitor *visitor) {
 // ##     TupleType     ##
 // #######################
 
-TupleType::TupleType(DSType *superType, std::vector<DSType *> &&types) :
-        DSType(false, superType, false), types(std::move(types)),
-        fieldHandleMap(), constructorHandle() {
-    unsigned int size = this->types.size();
+TupleType::TupleType(native_type_info_t *info, DSType *superType, std::vector<DSType *> &&types) :
+        ReifiedType(info, superType, std::move(types)), fieldHandleMap() {
+    unsigned int size = this->elementTypes.size();
     unsigned int baseIndex = this->superType->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {
-        FieldHandle *handle = new FieldHandle(this->types[i], i + baseIndex, false);
+        FieldHandle *handle = new FieldHandle(this->elementTypes[i], i + baseIndex, false);
         this->fieldHandleMap.insert(std::make_pair("_" + std::to_string(i), handle));
     }
 }
@@ -244,29 +234,19 @@ TupleType::~TupleType() {
         delete pair.second;
     }
     this->fieldHandleMap.clear();
-
-    delete this->constructorHandle;
-    this->constructorHandle = 0;
 }
 
 MethodHandle *TupleType::getConstructorHandle(TypePool *typePool) {
-    if(this->types.size() == 1 && this->constructorHandle == 0) {
+    if(this->elementTypes.size() == 1 && this->constructorHandle == nullptr) {
         this->constructorHandle = new MethodHandle(0);
-        this->constructorHandle->init(typePool, funcInfo, this->types[0]);
+        this->initMethodHandle(this->constructorHandle, typePool, this->info->initInfo);
+        this->constructor.reset(new NativeMethodRef(this->info->initInfo->func_ptr));
     }
     return this->constructorHandle;
 }
 
-MethodRef *TupleType::getConstructor() {
-    return initRef.get();
-}
-
-bool TupleType::isBuiltinType() const {
-    return true;
-}
-
 unsigned int TupleType::getFieldSize() {
-    return this->types.size();
+    return this->elementTypes.size();
 }
 
 FieldHandle *TupleType::lookupFieldHandle(TypePool *typePool, const std::string &fieldName) {
@@ -287,16 +267,6 @@ FieldHandle *TupleType::findHandle(const std::string &fieldName) {
 
 void TupleType::accept(TypeVisitor *visitor) {
     visitor->visitTupleType(this);
-}
-
-NativeFuncInfo *TupleType::funcInfo = 0;
-std::shared_ptr<MethodRef> TupleType::initRef;
-
-void TupleType::registerFuncInfo(NativeFuncInfo *info) {
-    if(funcInfo == 0) {
-        funcInfo = info;
-        initRef.reset(new NativeMethodRef(info->func_ptr));
-    }
 }
 
 // ############################

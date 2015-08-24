@@ -170,9 +170,6 @@ TypePool::TypePool() :
     this->errorType = this->initBuiltinType("Error", true, this->anyType, info_ErrorType());
     this->taskType = this->initBuiltinType("Task", false, this->anyType, info_Dummy());
 
-    // register NativeFuncInfo to TupleType
-    TupleType::registerFuncInfo(info_TupleType()->initInfo);
-
     // register NativeFuncInfo to ErrorType
     ErrorType::registerFuncInfo(info_ErrorType()->initInfo);
 
@@ -192,7 +189,7 @@ TypePool::TypePool() :
     this->mapTemplate = this->initTypeTemplate("Map", std::move(elements), info_MapType());
 
     elements = std::vector<DSType *>();
-    this->tupleTemplate = this->initTypeTemplate("Tuple", std::move(elements), 0);   // pseudo template.
+    this->tupleTemplate = this->initTypeTemplate("Tuple", std::move(elements), info_TupleType());   // pseudo template.
 
     // init collection type
     this->collectionType = this->typeMap.addType(std::string("%Collection%"), new CollectionType(this->anyType));
@@ -276,7 +273,8 @@ DSType *TypePool::createAndGetTupleTypeIfUndefined(std::vector<DSType *> &&eleme
     DSType *type = this->typeMap.getType(typeName);
     if(type == nullptr) {
         DSType *superType = this->asVariantType(elementTypes) ? this->variantType : this->anyType;
-        return this->typeMap.addType(std::move(typeName), new TupleType(superType, std::move(elementTypes)));
+        return this->typeMap.addType(std::move(typeName),
+                                     new TupleType(this->tupleTemplate->getInfo(), superType, std::move(elementTypes)));
     }
     return type;
 }

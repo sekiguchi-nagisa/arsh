@@ -747,13 +747,15 @@ std::unique_ptr<TypeToken> Parser::parse_type() {
         auto type(ReifiedTypeToken::newReifiedTypeToken(this->lexer->toTokenText(token)));
         this->expect(TYPE_OPEN);
 
-        unsigned int count = 0;
-        do {
-            if(count++ > 0) {
-                this->expect(COMMA);
-            }
-            type->addElement(this->parse_type());
-        } while(this->curToken.kind == COMMA);
+        if(this->curToken.kind != TYPE_CLOSE) {
+            unsigned int count = 0;
+            do {
+                if(count++ > 0) {
+                    this->expect(COMMA);
+                }
+                type->addElement(this->parse_type());
+            } while(this->curToken.kind == COMMA);
+        }
 
         this->expect(TYPE_CLOSE);
 

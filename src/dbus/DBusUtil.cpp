@@ -104,7 +104,7 @@ void DescriptorBuilder::visitReifiedType(ReifiedType *type) {
 
 void DescriptorBuilder::visitTupleType(TupleType *type) {
     this->append(DBUS_STRUCT_BEGIN_CHAR);
-    for(DSType *elementType : type->getTypes()) {
+    for(DSType *elementType : type->getElementTypes()) {
         elementType->accept(this);
     }
     this->append(DBUS_STRUCT_END_CHAR);
@@ -291,7 +291,7 @@ void MessageBuilder::visitTupleType(TupleType *type) {
     Tuple_Object *tupleObj = static_cast<Tuple_Object *>(this->peek());
     unsigned int size = tupleObj->getElementSize();
     for(unsigned int i = 0; i < size; i++) {
-        this->append(type->getTypes()[i], tupleObj->get(i).get());
+        this->append(type->getElementTypes()[i], tupleObj->get(i).get());
     }
 
     this->iter = curIter;

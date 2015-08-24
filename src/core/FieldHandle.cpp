@@ -123,7 +123,7 @@ static inline unsigned int decodeNum(const char *&pos) {
 }
 
 static DSType *decodeType(TypePool *typePool, const char *&pos,
-                          DSType *elementType0, DSType *elementType1) {
+                          const std::vector<DSType *> *types) {
     switch(*(pos++)) {
 #define GEN_CASE(ENUM) case ENUM: return typePool->get##ENUM##Type();
     EACH_HANDLE_INFO_TYPE(GEN_CASE)
@@ -133,7 +133,7 @@ static DSType *decodeType(TypePool *typePool, const char *&pos,
         unsigned int size = decodeNum(pos);
         assert(size == 1);
         std::vector<DSType *> elementTypes(size);
-        elementTypes[0] = decodeType(typePool, pos, elementType0, elementType1);
+        elementTypes[0] = decodeType(typePool, pos, types);
         return typePool->createAndGetReifiedTypeIfUndefined(t, std::move(elementTypes));
     }
     case Map: {
@@ -142,17 +142,26 @@ static DSType *decodeType(TypePool *typePool, const char *&pos,
         assert(size == 2);
         std::vector<DSType *> elementTypes(size);
         for(unsigned int i = 0; i < size; i++) {
-            elementTypes[i] = decodeType(typePool, pos, elementType0, elementType1);
+            elementTypes[i] = decodeType(typePool, pos, types);
         }
         return typePool->createAndGetReifiedTypeIfUndefined(t, std::move(elementTypes));
     }
     case Tuple: {
         unsigned int size = decodeNum(pos);
-        std::vector<DSType *> elementTypes(size);
-        for(unsigned int i = 0; i < size; i++) {
-            elementTypes[i] = decodeType(typePool, pos, elementType0, elementType1);
+        if(size == 0) { // variable length type
+            size = types->size();
+            std::vector<DSType *> elementTypes(size);
+            for(unsigned int i = 0; i < size; i++) {
+                elementTypes[i] = (*types)[i];
+            }
+            return typePool->createAndGetTupleTypeIfUndefined(std::move(elementTypes));
+        } else {
+            std::vector<DSType *> elementTypes(size);
+            for(unsigned int i = 0; i < size; i++) {
+                elementTypes[i] = decodeType(typePool, pos, types);
+            }
+            return typePool->createAndGetTupleTypeIfUndefined(std::move(elementTypes));
         }
-        return typePool->createAndGetTupleTypeIfUndefined(std::move(elementTypes));
     };
     case P_N0:
     case P_N1:
@@ -166,9 +175,9 @@ static DSType *decodeType(TypePool *typePool, const char *&pos,
         fatal("must be type\n");
         break;
     case T0:
-        return elementType0;
+        return (*types)[0];
     case T1:
-        return elementType1;
+        return (*types)[1];
     default:
         fatal("broken handle info\n");
     }
@@ -176,10 +185,10 @@ static DSType *decodeType(TypePool *typePool, const char *&pos,
 }
 
 void MethodHandle::init(TypePool *typePool, NativeFuncInfo *info,
-                        DSType *elementType0, DSType *elementType1) {
+                        const std::vector<DSType *> *types) {
     // init return type
     const char *pos = info->handleInfo;
-    this->returnType = decodeType(typePool, pos, elementType0, elementType1);
+    this->returnType = decodeType(typePool, pos, types);
 
     /**
      * init param types
@@ -187,9 +196,9 @@ void MethodHandle::init(TypePool *typePool, NativeFuncInfo *info,
     unsigned int paramSize = decodeNum(pos);
     for(unsigned int i = 0; i < paramSize; i++) {
         if(i == 0) {
-            this->recvType = decodeType(typePool, pos, elementType0, elementType1);
+            this->recvType = decodeType(typePool, pos, types);
         } else {
-            this->paramTypes.push_back(decodeType(typePool, pos, elementType0, elementType1));
+            this->paramTypes.push_back(decodeType(typePool, pos,types));
         }
     }
 
