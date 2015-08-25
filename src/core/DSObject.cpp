@@ -73,10 +73,6 @@ bool DSObject::introspect(RuntimeContext &ctx, DSType *targetType) {
     return targetType->isSameOrBaseTypeOf(this->type);
 }
 
-void DSObject::accept(ObjectVisitor *visitor) {
-    visitor->visitDefault(this);
-}
-
 // ########################
 // ##     Int_Object     ##
 // ########################
@@ -105,10 +101,6 @@ size_t Int_Object::hash() {
     return std::hash<int>()(this->value);
 }
 
-void Int_Object::accept(ObjectVisitor *visitor) {
-    visitor->visitInt_Object(this);
-}
-
 // #########################
 // ##     Long_Object     ##
 // #########################
@@ -128,10 +120,6 @@ size_t Long_Object::hash() {
     return std::hash<long>()(this->value);
 }
 
-void Long_Object::accept(ObjectVisitor *visitor) {
-    visitor->visitLong_Object(this);
-}
-
 // ##########################
 // ##     Float_Object     ##
 // ##########################
@@ -146,10 +134,6 @@ bool Float_Object::equals(const DSValue &obj) {
 
 size_t Float_Object::hash() {
     return std::hash<double>()(this->value);
-}
-
-void Float_Object::accept(ObjectVisitor *visitor) {
-    visitor->visitFloat_Object(this);
 }
 
 
@@ -169,10 +153,6 @@ size_t Boolean_Object::hash() {
     return std::hash<bool>()(this->value);
 }
 
-void Boolean_Object::accept(ObjectVisitor *visitor) {
-    visitor->visitBoolean_Object(this);
-}
-
 // ###########################
 // ##     String_Object     ##
 // ###########################
@@ -187,10 +167,6 @@ bool String_Object::equals(const DSValue &obj) {
 
 size_t String_Object::hash() {
     return std::hash<std::string>()(this->value);
-}
-
-void String_Object::accept(ObjectVisitor *visitor) {
-    visitor->visitString_Object(this);
 }
 
 // ##########################
@@ -264,10 +240,6 @@ DSValue Array_Object::commandArg(RuntimeContext &ctx) {
     return result;
 }
 
-void Array_Object::accept(ObjectVisitor *visitor) {
-    visitor->visitArray_Object(this);
-}
-
 bool KeyCompare::operator()(const DSValue &x, const DSValue &y) const {
     return x->equals(y);
 }
@@ -323,10 +295,6 @@ std::string Map_Object::toString(RuntimeContext &ctx) {
     }
     str += "}";
     return str;
-}
-
-void Map_Object::accept(ObjectVisitor *visitor) {
-    visitor->visitMap_Object(this);
 }
 
 // ########################
@@ -400,10 +368,6 @@ DSValue Tuple_Object::commandArg(RuntimeContext &ctx) {
     return result;
 }
 
-void Tuple_Object::accept(ObjectVisitor *visitor) {
-    visitor->visitTuple_Object(this);
-}
-
 // ###############################
 // ##     StackTraceElement     ##
 // ###############################
@@ -450,10 +414,6 @@ const DSValue &Error_Object::getName(RuntimeContext &ctx) {
     return this->name;
 }
 
-void Error_Object::accept(ObjectVisitor *visitor) {
-    visitor->visitError_Object(this);
-}
-
 DSValue Error_Object::newError(RuntimeContext &ctx, DSType *type, const DSValue &message) {
     auto obj = DSValue::create<Error_Object>(type, message);
     TYPE_AS(Error_Object, obj)->createStackTrace(ctx);
@@ -475,6 +435,11 @@ void Error_Object::createStackTrace(RuntimeContext &ctx) {
 // ##     FuncObject     ##
 // ########################
 
+FuncObject::~FuncObject() {
+    delete this->funcNode;
+    this->funcNode = nullptr;
+}
+
 void FuncObject::setType(DSType *type) {
     if(this->type == 0) {
         assert(dynamic_cast<FunctionType *>(type) != 0);
@@ -482,24 +447,14 @@ void FuncObject::setType(DSType *type) {
     }
 }
 
-
-// ############################
-// ##     UserFuncObject     ##
-// ############################
-
-UserFuncObject::~UserFuncObject() {
-    delete this->funcNode;
-    this->funcNode = nullptr;
-}
-
-std::string UserFuncObject::toString(RuntimeContext &ctx) {
+std::string FuncObject::toString(RuntimeContext &ctx) {
     std::string str("function(");
     str += this->funcNode->getFuncName();
     str += ")";
     return str;
 }
 
-bool UserFuncObject::invoke(RuntimeContext &ctx) {  //TODO: default param
+bool FuncObject::invoke(RuntimeContext &ctx) {  //TODO: default param
     // change stackTopIndex
     ctx.pushFuncContext(this->funcNode);
     ctx.reserveLocalVar(ctx.getLocalVarOffset() + this->funcNode->getMaxVarNum());
@@ -515,18 +470,6 @@ bool UserFuncObject::invoke(RuntimeContext &ctx) {  //TODO: default param
         fatal("illegal eval status: %d\n", s);
         return false;
     }
-}
-
-void UserFuncObject::accept(ObjectVisitor *visitor) {
-    visitor->visitUserFuncObject(this);
-}
-
-// #############################
-// ##     NativeMethodRef     ##
-// #############################
-
-bool NativeMethodRef::invoke(RuntimeContext &ctx) {
-    return this->func_ptr(ctx);
 }
 
 // #########################

@@ -103,8 +103,6 @@ public:
      * check if this type is instance of targetType.
      */
     virtual bool introspect(RuntimeContext &ctx, DSType *targetType);
-
-    virtual void accept(ObjectVisitor *visitor);
 };
 
 class DSValue {
@@ -211,7 +209,6 @@ public:
     std::string toString(RuntimeContext &ctx); // override
     bool equals(const DSValue &obj);  // override
     size_t hash();  // override
-    void accept(ObjectVisitor *visitor); // override
 };
 
 class Long_Object : public DSObject {
@@ -230,7 +227,6 @@ public:
     std::string toString(RuntimeContext &ctx); // override
     bool equals(const DSValue &obj);  // override
     size_t hash();  // override
-    void accept(ObjectVisitor *visitor); // override
 };
 
 class Float_Object : public DSObject {
@@ -249,7 +245,6 @@ public:
     std::string toString(RuntimeContext &ctx); // override
     bool equals(const DSValue &obj);  // override
     size_t hash();  // override
-    void accept(ObjectVisitor *visitor); // override
 };
 
 class Boolean_Object : public DSObject {
@@ -268,7 +263,6 @@ public:
     std::string toString(RuntimeContext &ctx); // override
     bool equals(const DSValue &obj);  // override
     size_t hash();  // override
-    void accept(ObjectVisitor *visitor); // override
 };
 
 class String_Object : public DSObject {
@@ -305,7 +299,6 @@ public:
 
     bool equals(const DSValue &obj);  // override
     size_t hash();  // override
-    void accept(ObjectVisitor *visitor); // override
 };
 
 class Array_Object : public DSObject {
@@ -342,7 +335,6 @@ public:
 
     DSValue interp(RuntimeContext &ctx); // override
     DSValue commandArg(RuntimeContext &ctx); // override
-    void accept(ObjectVisitor *visitor); // override
 };
 
 struct KeyCompare {
@@ -376,7 +368,6 @@ public:
     bool hasNext();
 
     std::string toString(RuntimeContext &ctx); // override
-    void accept(ObjectVisitor *visitor); // override
 };
 
 class BaseObject : public DSObject {
@@ -409,7 +400,6 @@ struct Tuple_Object : public BaseObject {
 
     DSValue interp(RuntimeContext &ctx); // override
     DSValue commandArg(RuntimeContext &ctx); // override
-    void accept(ObjectVisitor *visitor); // override
 };
 
 class StackTraceElement {
@@ -477,8 +467,6 @@ public:
         return this->stackTrace;
     }
 
-    void accept(ObjectVisitor *visitor); // override
-
     /**
      * create new Error_Object and create stack trace
      */
@@ -500,12 +488,22 @@ struct DummyObject : public DSObject {
     }
 };
 
-struct FuncObject : public DSObject {
-    FuncObject() : DSObject(0) { }
+/*
+ * for user defined function
+ */
+class FuncObject : public DSObject {
+private:
+    ast::FunctionNode *funcNode;
 
-    virtual ~FuncObject() = default;
+public:
+    explicit FuncObject(ast::FunctionNode *funcNode) :
+            DSObject(0), funcNode(funcNode) { }
 
-    void setType(DSType *type); // override
+    ~FuncObject();
+
+    ast::FunctionNode *getFuncNode() {
+        return this->funcNode;
+    }
 
     /**
      * equivalent to dynamic_cast<FunctionType*>(getType())
@@ -515,55 +513,16 @@ struct FuncObject : public DSObject {
         return static_cast<FunctionType *>(this->type);
     }
 
+    void setType(DSType *type); // override
+
+    std::string toString(RuntimeContext &ctx); // override
+
     /**
      * invoke function.
      * return true, if invocation success.
      * return false, if thrown exception.
      */
-    virtual bool invoke(RuntimeContext &ctx) = 0;
-};
-
-/*
- * for user defined function
- */
-class UserFuncObject : public FuncObject {
-private:
-    ast::FunctionNode *funcNode;
-
-public:
-    explicit UserFuncObject(ast::FunctionNode *funcNode) :
-            FuncObject(), funcNode(funcNode) { }
-
-    ~UserFuncObject();
-
-    ast::FunctionNode *getFuncNode() {
-        return this->funcNode;
-    }
-
-    std::string toString(RuntimeContext &ctx); // override
-    bool invoke(RuntimeContext &ctx); // override
-    void accept(ObjectVisitor *visitor); // override
-};
-
-/**
- * reference of method. for method call, constructor call.
- */
-struct MethodRef {
-    MethodRef() = default;
-    virtual ~MethodRef() = default;
-
-    virtual bool invoke(RuntimeContext &ctx) = 0;
-};
-
-class NativeMethodRef : public MethodRef {
-private:
-    native_func_t func_ptr;
-
-public:
-    explicit NativeMethodRef(native_func_t func_ptr) : MethodRef(), func_ptr(func_ptr) { }
-    ~NativeMethodRef() = default;
-
-    bool invoke(RuntimeContext &ctx);   // override
+    bool invoke(RuntimeContext &ctx);
 };
 
 struct ProxyObject : public DSObject {
@@ -634,22 +593,6 @@ struct Service_Object : public DSObject {
      * objectPath is String_Object
      */
     virtual bool object(RuntimeContext &ctx, const DSValue &objectPath);
-};
-
-struct ObjectVisitor {
-    virtual ~ObjectVisitor() = default;
-
-    virtual void visitDefault(DSObject *obj) = 0;
-    virtual void visitInt_Object(Int_Object *obj) = 0;
-    virtual void visitLong_Object(Long_Object *obj) = 0;
-    virtual void visitFloat_Object(Float_Object *obj) = 0;
-    virtual void visitBoolean_Object(Boolean_Object *obj) = 0;
-    virtual void visitString_Object(String_Object *obj) = 0;
-    virtual void visitArray_Object(Array_Object *obj) = 0;
-    virtual void visitMap_Object(Map_Object *obj) = 0;
-    virtual void visitTuple_Object(Tuple_Object *obj) = 0;
-    virtual void visitError_Object(Error_Object *obj) = 0;
-    virtual void visitUserFuncObject(UserFuncObject *obj) = 0;
 };
 
 } // namespace core

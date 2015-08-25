@@ -2237,7 +2237,7 @@ void FunctionNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus FunctionNode::eval(RuntimeContext &ctx) {
-    ctx.setGlobal(this->varIndex, DSValue::create<UserFuncObject>(this));
+    ctx.setGlobal(this->varIndex, DSValue::create<FuncObject>(this));
     return EvalStatus::REMOVE;
 }
 

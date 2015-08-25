@@ -34,13 +34,32 @@ using namespace ydsh::misc;
 
 struct TypeVisitor;
 
-struct MethodRef;
-
 class FieldHandle;
 class MethodHandle;
 
 class RuntimeContext;
 typedef bool (*native_func_t)(RuntimeContext &);
+
+/**
+ * reference of method. for method call, constructor call.
+ */
+class MethodRef {
+private:
+    native_func_t func_ptr;
+
+public:
+    MethodRef() : func_ptr(nullptr) { }
+    explicit MethodRef(native_func_t func_ptr) : func_ptr(func_ptr) { }
+    ~MethodRef() = default;
+
+    explicit operator bool() const {
+        return this->func_ptr != nullptr;
+    }
+
+    bool invoke(RuntimeContext &ctx) const {
+        return this->func_ptr(ctx);
+    }
+};
 
 class DSType {
 protected:
@@ -110,7 +129,7 @@ public:
     /**
      * return null, if has no constructor
      */
-    virtual MethodRef *getConstructor();
+    virtual const MethodRef *getConstructor();
 
     /**
      * get size of the all fields(include superType fieldSize).
@@ -156,7 +175,7 @@ public:
     virtual bool isSameOrBaseTypeOf(DSType *targetType);
 
     virtual MethodRef *getMethodRef(unsigned int methodIndex);
-    virtual void copyAllMethodRef(std::vector<std::shared_ptr<MethodRef>> &methodTable);
+    virtual void copyAllMethodRef(std::vector<MethodRef> &methodTable);
 };
 
 class FunctionType : public DSType {
@@ -257,10 +276,10 @@ protected:
     /**
      * may be null, if has no constructor
      */
-    std::shared_ptr<MethodRef> constructor;
+    MethodRef constructor;
 
     std::unordered_map<std::string, MethodHandle *> methodHandleMap;
-    std::vector<std::shared_ptr<MethodRef>> methodTable;
+    std::vector<MethodRef> methodTable;
 
 public:
     /**
@@ -272,14 +291,14 @@ public:
     virtual ~BuiltinType();
 
     virtual MethodHandle *getConstructorHandle(TypePool *typePool); // override
-    virtual MethodRef *getConstructor();   // override.
+    const MethodRef *getConstructor();   // override.
     MethodHandle *lookupMethodHandle(TypePool *typePool, const std::string &methodName);  // override
     virtual FieldHandle *findHandle(const std::string &fieldName); // override
     virtual void accept(TypeVisitor *visitor); // override
     bool isBuiltinType() const; // override
     unsigned int getMethodSize(); // override
     MethodRef *getMethodRef(unsigned int methodIndex); // override
-    void copyAllMethodRef(std::vector<std::shared_ptr<MethodRef>> &methodTable); // override
+    void copyAllMethodRef(std::vector<MethodRef> &methodTable); // override
 
 private:
     virtual void initMethodHandle(MethodHandle *handle, TypePool *typePool, NativeFuncInfo *info);
@@ -378,7 +397,7 @@ private:
     MethodHandle *constructorHandle;
 
     static NativeFuncInfo *funcInfo;
-    static std::shared_ptr<MethodRef> initRef;
+    static MethodRef initRef;
 
 public:
     explicit ErrorType(DSType *superType) :
@@ -387,7 +406,7 @@ public:
     ~ErrorType();
 
     MethodHandle *getConstructorHandle(TypePool *typePool); // override
-    MethodRef *getConstructor();    // override
+    const MethodRef *getConstructor();    // override
 
     /**
      * return always true.
