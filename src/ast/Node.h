@@ -303,6 +303,10 @@ public:
         return this->nodes;
     }
 
+    void setExprNode(unsigned int index, Node *exprNode) {
+        this->nodes[index] = exprNode;
+    }
+
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override

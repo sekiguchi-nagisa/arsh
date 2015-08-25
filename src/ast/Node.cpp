@@ -221,19 +221,10 @@ EvalStatus StringExprNode::eval(RuntimeContext &ctx) {
         ctx.push(DSValue::create<String_Object>(this->type));
     } else if(size == 1) {
         EVAL(ctx, this->nodes[0]);
-        if(*this->nodes[0]->getType() != *ctx.getPool().getStringType()) {
-            return ctx.toInterp(this->nodes[0]->getLineNum());
-        }
     } else {
         std::string str;
         for(Node *node : this->nodes) {
             EVAL(ctx, node);
-            if(*node->getType() != *ctx.getPool().getStringType()) {
-                EvalStatus status = ctx.toInterp(node->getLineNum());
-                if(status != EvalStatus::SUCCESS) {
-                    return status;
-                }
-            }
             str += TYPE_AS(String_Object, ctx.pop())->getValue();
         }
         ctx.push(DSValue::create<String_Object>(this->type, std::move(str)));

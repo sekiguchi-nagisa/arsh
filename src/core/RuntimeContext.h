@@ -137,11 +137,6 @@ private:
     MethodHandle *handle_STR;
 
     /**
-     * for string interpolation
-     */
-    MethodHandle *handle_INTERP;
-
-    /**
      * for error reporting
      */
     MethodHandle *handle_bt;
@@ -446,11 +441,6 @@ public:
      * cast stack top value to String
      */
     EvalStatus toString(unsigned int lineNum);
-
-    /**
-     * call __INTERP__
-     */
-    EvalStatus toInterp(unsigned int lineNum);
 
     /**
      * report thrown object error message.

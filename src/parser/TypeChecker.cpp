@@ -559,8 +559,24 @@ void TypeChecker::visitObjectPathNode(ObjectPathNode *node) {
 }
 
 void TypeChecker::visitStringExprNode(StringExprNode *node) {
-    for(Node *exprNode : node->getExprNodes()) {
-        this->checkType(exprNode);
+    const unsigned int size = node->getExprNodes().size();
+    for(unsigned int i = 0; i < size; i++) {
+        Node *exprNode = node->getExprNodes()[i];
+        DSType *exprType = this->checkType(exprNode);
+        if(*exprType != *this->typePool->getStringType()) { // call __INTERP__()
+            std::string methodName(OP_INTERP);
+            MethodHandle *handle = exprType->lookupMethodHandle(this->typePool, methodName);
+            assert(handle != nullptr);
+
+            MethodCallNode *callNode = new MethodCallNode(exprNode, std::move(methodName));
+
+            // check type argument
+            this->checkTypeArgsNode(handle, callNode->getArgsNode());
+            callNode->setHandle(handle);
+            callNode->setType(handle->getReturnType());
+
+            node->setExprNode(i, callNode);
+        }
     }
     node->setType(this->typePool->getStringType());
 }
