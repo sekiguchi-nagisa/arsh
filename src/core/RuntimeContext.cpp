@@ -19,6 +19,7 @@
 #include <libgen.h>
 #include <unistd.h>
 #include <cstring>
+#include <dirent.h>
 
 #include "../config.h"
 #include "RuntimeContext.h"
