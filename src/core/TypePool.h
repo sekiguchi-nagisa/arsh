@@ -164,6 +164,9 @@ private:
     DSType *typeCastErrorType;
     DSType *dbusErrorType;
 
+    // for errno
+    DSType *systemErrorType;
+
     /**
      * for internal status reporting.
      * they are pseudo type, so must not use it from shell
@@ -335,6 +338,10 @@ public:
 
     DSType *getDBusErrorType() const {
         return this->dbusErrorType;
+    }
+
+    DSType *getSystemErrorType() const {
+        return this->systemErrorType;
     }
 
     // for internal status reporting

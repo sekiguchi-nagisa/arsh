@@ -266,6 +266,19 @@ public:
     void throwError(DSType *errorType, std::string &&message);
 
     /**
+     * convert errno to SystemError.
+     * errorNum must not be 0.
+     */
+    void throwSystemError(int errorNum);
+
+    /**
+     * convert errno to SystemError.
+     * errorNum must not be 0.
+     * format message '%s: %s', message, strerror(errorNum)
+     */
+    void throwSystemError(int errorNum, std::string &&message);
+
+    /**
      * pop and set to throwObject
      */
     void storeThrowObject() {

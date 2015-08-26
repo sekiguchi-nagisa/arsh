@@ -387,18 +387,15 @@ unsigned int getOccuredLineNum(const std::vector<StackTraceElement> &elements) {
 // ##########################
 
 std::string Error_Object::toString(RuntimeContext &ctx) {
-    std::string str("Error(");
-    str += std::to_string((long) this);
-    str += ", ";
+    std::string str(ctx.getPool().getTypeName(*this->type));
+    str += ": ";
     str += TYPE_AS(String_Object, this->message)->getValue();
-    str += ")";
     return str;
 }
 
 void Error_Object::printStackTrace(RuntimeContext &ctx) {
     // print header
-    std::cerr << ctx.getPool().getTypeName(*this->type) << ": "
-    << TYPE_AS(String_Object, this->message)->getValue() << std::endl;
+    std::cerr << this->toString(ctx) << std::endl;
 
     // print stack trace
     for(auto &s : this->stackTrace) {

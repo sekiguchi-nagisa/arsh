@@ -960,16 +960,13 @@ bool ProcInvoker::checkChildError(const std::pair<unsigned int, ChildError> &err
         if(pair.first == RedirectOP::DUMMY) {  // execution error
             msg += "execution error: ";
             msg += this->getCommandName(errorPair.first);
-            msg += ": ";
         } else {    // redirection error
             msg += "io redirection error: ";
             if(pair.second && TYPE_AS(String_Object, pair.second)->size() != 0) {
                 msg += TYPE_AS(String_Object, pair.second)->getValue();
-                msg += ": ";
             }
         }
-        msg += strerror(errorPair.second.errorNum);
-        this->ctx->throwError(this->ctx->getPool().getErrorType(), std::move(msg));
+        this->ctx->throwSystemError(errorPair.second.errorNum, std::move(msg));
         return false;
     }
     return true;

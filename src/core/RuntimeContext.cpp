@@ -18,6 +18,7 @@
 #include <pwd.h>
 #include <libgen.h>
 #include <unistd.h>
+#include <cstring>
 
 #include "../config.h"
 #include "RuntimeContext.h"
@@ -127,6 +128,21 @@ void RuntimeContext::throwError(DSType *errorType, std::string &&message) {
     this->thrownObject = Error_Object::newError(*this, errorType, DSValue::create<String_Object>(
             this->pool.getStringType(), message));
 }
+
+void RuntimeContext::throwSystemError(int errorNum, std::string &&message) {
+    if(errorNum == 0) {
+        fatal("errno is not 0\n");
+    }
+
+    std::string str(std::move(message));
+    str += ": ";
+    str += strerror(errorNum);
+
+    this->thrownObject = Error_Object::newError(
+            *this, this->pool.getSystemErrorType(), DSValue::create<String_Object>(
+            this->pool.getStringType(), std::move(str)));
+}
+
 
 void RuntimeContext::expandLocalStack(unsigned int needSize) {
     unsigned int newSize = this->localStackSize;

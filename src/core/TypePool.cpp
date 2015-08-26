@@ -131,7 +131,7 @@ TypePool::TypePool() :
         dbusType(), busType(), serviceType(), dbusObjectType(),
         arithmeticErrorType(), outOfRangeErrorType(),
         keyNotFoundErrorType(), typeCastErrorType(), dbusErrorType(),
-        internalStatus(), shellExit(), assertFail(),
+        systemErrorType(), internalStatus(), shellExit(), assertFail(),
         templateMap(8),
         arrayTemplate(), mapTemplate(), tupleTemplate(),
         stringArrayType(), envSet(), envCache(), precisionMap() {
@@ -201,6 +201,7 @@ TypePool::TypePool() :
     this->keyNotFoundErrorType = this->initErrorType("KeyNotFoundError", this->errorType);
     this->typeCastErrorType = this->initErrorType("TypeCastError", this->errorType);
     this->dbusErrorType = this->initErrorType("DBusError", this->errorType);
+    this->systemErrorType = this->initErrorType("SystemError", this->errorType);
 
     this->registerDBusErrorTypes();
 

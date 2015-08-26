@@ -6,6 +6,7 @@ try {
     __gets < $a
     assert($false)
 } catch($e : Error) {   # not found file
+    assert($e is SystemError)   # derived from errno
     assert(echo ${$e.message()} | grep "io redirection error: $a:")
 }
 
@@ -17,6 +18,7 @@ try {
     hfjhei94fg | grep ds
     assert($false)
 } catch($e : Error) {
+    assert($e is SystemError)
     assert(echo ${$e.message()} | grep "execution error: hfjhei94fg:")
 }
 
@@ -24,6 +26,7 @@ try {
     ls | grepfe4
     assert($false)
 } catch($e : Error) {
+    assert($e is SystemError)
     assert(echo ${$e.message()} | grep "execution error: grepfe4:")
 }
 
@@ -34,5 +37,6 @@ try {
     cat < $a
     assert($false)
 } catch($e : Error) {
+    assert($e is SystemError)
     assert(echo ${$e.message()} | grep "io redirection error: $a:")
 }
