@@ -24,7 +24,6 @@
 #include "RuntimeContext.h"
 #include "symbol.h"
 #include "../misc/debug.h"
-#include "../misc/files.h"
 
 namespace ydsh {
 namespace core {
@@ -137,10 +136,7 @@ void RuntimeContext::throwSystemError(int errorNum, std::string &&message) {
     std::string str(std::move(message));
     str += ": ";
     str += strerror(errorNum);
-
-    this->thrownObject = Error_Object::newError(
-            *this, this->pool.getSystemErrorType(), DSValue::create<String_Object>(
-            this->pool.getStringType(), std::move(str)));
+    this->throwError(this->pool.getSystemErrorType(), std::move(str));
 }
 
 
@@ -372,24 +368,23 @@ EvalStatus RuntimeContext::checkAssertion(unsigned int lineNum) {
 }
 
 void RuntimeContext::importEnv(const std::string &envName, unsigned int index, bool isGlobal) {
+    DSValue value(new String_Object(
+            this->pool.getStringType(), std::string(getenv(envName.c_str()))));
+
     if(isGlobal) {
-        this->globalVarTable[index] =
-                DSValue::create<String_Object>(this->pool.getStringType(),
-                                               std::string(getenv(envName.c_str())));
+        this->setGlobal(index, std::move(value));
     } else {
-        this->localStack[this->localVarOffset + index] =
-                DSValue::create<String_Object>(this->pool.getStringType(),
-                                               std::string(getenv(envName.c_str())));
+        this->setLocal(index, std::move(value));
     }
 }
 
 void RuntimeContext::exportEnv(const std::string &envName, unsigned int index, bool isGlobal) {
     setenv(envName.c_str(),
-           TYPE_AS(String_Object, this->peek())->getValue(), 1);   //FIXME: check return value and throw
+           TYPE_AS(String_Object, this->peek())->getValue(), 1);    //FIXME: check return value and throw
     if(isGlobal) {
-        this->globalVarTable[index] = this->pop();
+        this->storeGlobal(index);
     } else {
-        this->localStack[this->localVarOffset + index] = this->pop();
+        this->storeLocal(index);
     }
 }
 
