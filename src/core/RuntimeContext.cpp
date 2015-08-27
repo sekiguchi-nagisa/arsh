@@ -22,6 +22,7 @@
 
 #include <ctime>
 #include <cstring>
+#include <dirent.h>
 
 #include "../config.h"
 #include "RuntimeContext.h"
