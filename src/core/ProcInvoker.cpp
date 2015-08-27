@@ -83,7 +83,7 @@ static std::string resolveFilePath(const char *fileName) {
 }
 
 /**
- * first element of argv is file name.
+ * first element of argv is executing file name.
  * last element of argv is null.
  * last element of envp is null.
  * if envp is null, inherit current env.
@@ -93,20 +93,25 @@ static std::string resolveFilePath(const char *fileName) {
  */
 static void builtin_execvpe(char **argv, char *const *envp, const char *progName) {
     const char *fileName = argv[0];
-    if(envp == nullptr) {
-        envp = environ;
-    }
     if(progName != nullptr) {
         argv[0] = const_cast<char *>(progName);
     }
 
+    // resolve file path
     std::string path;
-    if(strchr(fileName, '/') == nullptr) {  // resolve file path
+    if(strchr(fileName, '/') == nullptr) {
         path = resolveFilePath(fileName);
         if(!path.empty()) {
             fileName = path.c_str();
         }
     }
+
+    // set env
+    setenv("_", fileName, 1);
+    if(envp == nullptr) {
+        envp = environ;
+    }
+
 
 #ifdef USE_DUMP_EXEC
     if(getenv("YDSH_DUMP_EXEC") != nullptr) {
@@ -133,6 +138,7 @@ static void builtin_execvpe(char **argv, char *const *envp, const char *progName
     }
 #endif
 
+    // reset signal setting
     struct sigaction ignore_act;
     ignore_act.sa_handler = SIG_DFL;
     ignore_act.sa_flags = 0;
@@ -140,10 +146,11 @@ static void builtin_execvpe(char **argv, char *const *envp, const char *progName
 
     sigaction(SIGINT, &ignore_act, NULL);
     sigaction(SIGQUIT, &ignore_act, NULL);
-    sigaction(SIGSTOP, &ignore_act, NULL);  //FIXME: foreground job
+    sigaction(SIGSTOP, &ignore_act, NULL);
     sigaction(SIGCONT, &ignore_act, NULL);
-    sigaction(SIGTSTP, &ignore_act, NULL);  //FIXME: background job
+    sigaction(SIGTSTP, &ignore_act, NULL);
 
+    // exev
     execve(fileName, argv, envp);
 }
 
@@ -365,8 +372,12 @@ static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
 
     char *envp[] = {nullptr};
     if(index < bctx.argc) { // exec
+        const char *old = getenv("_");  // save current _
         builtin_execvpe(const_cast<char **>(bctx.argv + index), clearEnv ? envp : nullptr, progName);
         fprintf(bctx.fp_stderr, "-ydsh: exec: %s: %s\n", bctx.argv[index], strerror(errno));
+        if(old != nullptr) {    // restore
+            setenv("_", old, 1);
+        }
         return 1;
     }
     return 0;
@@ -374,7 +385,7 @@ static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
 
 static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
     if(bctx.argc > 1) {
-        execvp(bctx.argv[1], bctx.argv + 1);
+        builtin_execvpe(const_cast<char **>(bctx.argv + 1), nullptr, bctx.argv[1]);
         fprintf(bctx.fp_stderr, "-ydsh: eval: %s: %s\n", bctx.argv[1], strerror(errno));
         return 1;
     }
