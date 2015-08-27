@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-#include <ctime>
 #include <pwd.h>
 #include <libgen.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
+#include <ctime>
 #include <cstring>
 
 #include "../config.h"
@@ -605,6 +608,14 @@ void RuntimeContext::interpretPromptString(const char *ps, std::string &output) 
         }
         output += ch;
     }
+}
+
+pid_t RuntimeContext::xwaitpid(pid_t pid, int &status, int options) {
+    pid_t ret = waitpid(pid, &status, options);
+    if(WIFSIGNALED(status)) {
+        fputc('\n', stdout);
+    }
+    return ret;
 }
 
 

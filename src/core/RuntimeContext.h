@@ -17,6 +17,8 @@
 #ifndef CORE_RUNTIMECONTEXT_H_
 #define CORE_RUNTIMECONTEXT_H_
 
+#include <unistd.h>
+
 #include <vector>
 #include <iostream>
 
@@ -531,7 +533,24 @@ public:
      * n is 1 or 2
      */
     void interpretPromptString(const char *ps, std::string &output);
+
+    /**
+     * waitpid wrapper.
+     */
+    pid_t xwaitpid(pid_t pid, int &status, int options);
 };
+
+// some system util
+
+/**
+ * path is starts with tilde.
+ */
+std::string expandTilde(const char *path);
+
+/**
+ * after fork, reset signal setting in child process.
+ */
+pid_t xfork(void);
 
 } // namespace core
 } // namespace ydsh

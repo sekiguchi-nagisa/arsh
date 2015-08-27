@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-#include <sys/types.h>
-#include <sys/wait.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <signal.h>
 
 #include <cstdlib>
 
 #include "../config.h"
-#include "system.h"
 #include "ProcInvoker.h"
 #include "RuntimeContext.h"
 #include "../misc/num.h"
@@ -134,6 +132,18 @@ static void builtin_execvpe(char **argv, char *const *envp, const char *progName
         std::cerr << ")" << std::endl;
     }
 #endif
+
+    struct sigaction ignore_act;
+    ignore_act.sa_handler = SIG_DFL;
+    ignore_act.sa_flags = 0;
+    sigemptyset(&ignore_act.sa_mask);
+
+    sigaction(SIGINT, &ignore_act, NULL);
+    sigaction(SIGQUIT, &ignore_act, NULL);
+    sigaction(SIGSTOP, &ignore_act, NULL);  //FIXME: foreground job
+    sigaction(SIGCONT, &ignore_act, NULL);
+    sigaction(SIGTSTP, &ignore_act, NULL);  //FIXME: background job
+
     execve(fileName, argv, envp);
 }
 
@@ -863,7 +873,7 @@ EvalStatus ProcInvoker::invoke() {
         const unsigned int actualProcSize = this->procCtxs.size();
         for(unsigned int i = 0; i < actualProcSize; i++) {
             int status;
-            waitpid(pid[i], &status, 0);
+            this->ctx->xwaitpid(pid[i], status, 0);
             if(WIFEXITED(status)) {
                 this->procCtxs[i].set(ExitKind::NORMAL, WEXITSTATUS(status));
             }

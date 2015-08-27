@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-#include <sys/wait.h>
 #include <pwd.h>
 
 #include <cassert>
 
-#include "../core/system.h"
 #include "../core/symbol.h"
 #include "../core/DSObject.h"
 #include "../core/RuntimeContext.h"
@@ -1361,7 +1359,7 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
 
             // wait exit
             int status;
-            waitpid(pid, &status, 0);
+            ctx.xwaitpid(pid, status, 0);
 
             // push object
             ctx.push(std::move(obj));

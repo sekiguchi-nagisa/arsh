@@ -44,7 +44,7 @@ static void handler(int num) {
     siglongjmp(jmp_ctx, 1);
 }
 
-static void setupSignalHandler() {
+static void installSIGINT_Handler() {
     // set sigint
     struct sigaction act;
     act.sa_handler = handler;
@@ -55,13 +55,15 @@ static void setupSignalHandler() {
         perror("setup signal handeler failed\n");
         exit(1);
     }
+}
 
-    // ignore some signal
+static void ignoreSignal() {
     struct sigaction ignore_act;
     ignore_act.sa_handler = SIG_IGN;
     ignore_act.sa_flags = 0;
     sigemptyset(&ignore_act.sa_mask);
 
+    sigaction(SIGINT, &ignore_act, NULL);
     sigaction(SIGQUIT, &ignore_act, NULL);
     sigaction(SIGSTOP, &ignore_act, NULL);  //FIXME: foreground job
     sigaction(SIGCONT, &ignore_act, NULL);
@@ -77,7 +79,7 @@ static HistEvent event;
 std::string lineBuf;
 
 static void initEditLine(const char *progName) {
-    setupSignalHandler();
+    ignoreSignal();
 
     el = el_init(progName, stdin, stdout, stderr);
     el_set(el, EL_PROMPT, prompt);
@@ -152,6 +154,8 @@ static const char *readLineImpl() {
 }
 
 static const char *readLine() {
+    installSIGINT_Handler();
+
     if(sigsetjmp(jmp_ctx, 1) != 0) {
         if(gotsig == SIGINT) {
             printf("\n");
@@ -184,6 +188,8 @@ void exec_interactive(const char *progName, DSContext *ctx) {   // never return
     int exitStatus = 0;
 
     for(unsigned int lineNum = 1; (line = readLine()) != 0; lineNum = DSContext_getLineNum(ctx)) {
+        ignoreSignal();
+
         DSContext_setLineNum(ctx, lineNum);
         DSStatus *status;
         int ret = DSContext_eval(ctx, line, &status);
