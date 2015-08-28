@@ -262,14 +262,6 @@ TEST_F(TypeTest, pool) {
 
         ASSERT_TRUE(this->pool.getType(typeName) == nullptr);
         ASSERT_TRUE(this->pool.getType(alias) == nullptr);
-
-        // env
-        std::string envName("GGGGG");
-        this->pool.addEnv(envName);
-        ASSERT_TRUE(this->pool.hasEnv(envName));
-        this->pool.abort();
-
-        ASSERT_FALSE(this->pool.hasEnv(envName));
     });
 }
 

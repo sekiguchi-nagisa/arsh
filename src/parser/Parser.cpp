@@ -543,8 +543,14 @@ std::unique_ptr<Node> Parser::parse_statement() {
         this->expect(IMPORT_ENV);
         Token token;
         this->expect(IDENTIFIER, token);
+        std::unique_ptr<Node> defaultValueNode;
+        if(!HAS_NL() && CUR_KIND() == COLON) {
+            NEXT_TOKEN();   // consume :
+            defaultValueNode = this->parse_expression();
+        }
+
         std::unique_ptr<Node> node(
-                new ImportEnvNode(n, this->lexer->toName(token)));
+                new ImportEnvNode(n, this->lexer->toName(token), defaultValueNode.release()));
         this->parse_statementEnd();
         return node;
     }

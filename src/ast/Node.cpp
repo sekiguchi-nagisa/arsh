@@ -1515,6 +1515,11 @@ EvalStatus ExportEnvNode::eval(RuntimeContext &ctx) {
 // ##     ImportEnvNode     ##
 // ###########################
 
+ImportEnvNode::~ImportEnvNode() {
+    delete this->defaultValueNode;
+    this->defaultValueNode = nullptr;
+}
+
 void ImportEnvNode::setAttribute(FieldHandle *handle) {
     this->global = handle->isGlobal();
     this->varIndex = handle->getFieldIndex();
@@ -1522,6 +1527,7 @@ void ImportEnvNode::setAttribute(FieldHandle *handle) {
 
 void ImportEnvNode::dump(Writer &writer) const {
     WRITE(envName);
+    WRITE_PTR(defaultValueNode);
     WRITE_PRIM(global);
     WRITE_PRIM(varIndex);
 }
@@ -1531,8 +1537,11 @@ void ImportEnvNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus ImportEnvNode::eval(RuntimeContext &ctx) {
-    ctx.importEnv(this->envName, this->varIndex, this->global);
-    return EvalStatus::SUCCESS;
+    bool hasDefault = this->getDefaultValueNode() != nullptr;
+    if(hasDefault) {
+        EVAL(ctx, this->defaultValueNode);
+    }
+    return ctx.importEnv(this->lineNum, this->envName, this->varIndex, this->global, hasDefault);
 }
 
 // ###########################

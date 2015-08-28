@@ -478,7 +478,8 @@ public:
     /**
      * get environment variable and set to local variable
      */
-    void importEnv(const std::string &envName, unsigned int index, bool isGlobal);
+    EvalStatus importEnv(unsigned int lineNum, const std::string &envName,
+                         unsigned int index, bool isGlobal, bool hasDefault);
 
     /**
      * put stack top value to environment variable.

@@ -190,9 +190,6 @@ private:
      */
     DSType *stringArrayType;
 
-    std::unordered_set<std::string> envSet;
-    std::vector<const std::string *> envCache;
-
     /**
      * for integer widening
      */
@@ -433,10 +430,6 @@ public:
      */
     std::string toFunctionTypeName(DSType *returnType, const std::vector<DSType *> &paramTypes);
 
-    bool hasEnv(const std::string &envName);
-
-    void addEnv(const std::string &envName);
-
     static constexpr int INT64_PRECISION = 50;
     static constexpr int INT32_PRECISION = 40;
     static constexpr int INT16_PRECISION = 30;
@@ -459,8 +452,6 @@ public:
     void abort();
 
 private:
-    void initEnvSet();
-
     DSType *initBuiltinType(const char *typeName, bool extendable,
                             DSType *superType, native_type_info_t *info, bool isVoid = false);
 

@@ -129,7 +129,7 @@ void RuntimeContext::throwError(DSType *errorType, const char *message) {
 
 void RuntimeContext::throwError(DSType *errorType, std::string &&message) {
     this->thrownObject = Error_Object::newError(*this, errorType, DSValue::create<String_Object>(
-            this->pool.getStringType(), message));
+            this->pool.getStringType(), std::move(message)));
 }
 
 void RuntimeContext::throwSystemError(int errorNum, std::string &&message) {
@@ -371,15 +371,34 @@ EvalStatus RuntimeContext::checkAssertion(unsigned int lineNum) {
     return EvalStatus::SUCCESS;
 }
 
-void RuntimeContext::importEnv(const std::string &envName, unsigned int index, bool isGlobal) {
-    DSValue value(new String_Object(
-            this->pool.getStringType(), std::string(getenv(envName.c_str()))));
+EvalStatus RuntimeContext::importEnv(unsigned int lineNum, const std::string &envName,
+                                     unsigned int index, bool isGlobal, bool hasDefault) {
+    const char *env = getenv(envName.c_str());
+    if(hasDefault) {
+        DSValue value = this->pop();
+        if(env == nullptr) {
+            setenv(envName.c_str(), TYPE_AS(String_Object, value)->getValue(), 1);
+        }
+    }
+
+    env = getenv(envName.c_str());
+    if(env == nullptr) {
+        std::string str("undefined environmental variable: ");
+        str += envName;
+        this->pushCallFrame(lineNum);
+        this->throwSystemError(EINVAL, std::move(str));
+        this->popCallFrame();
+        return EvalStatus::THROW;
+    }
+
+    DSValue value(new String_Object(this->pool.getStringType(), std::string(env)));
 
     if(isGlobal) {
         this->setGlobal(index, std::move(value));
     } else {
         this->setLocal(index, std::move(value));
     }
+    return EvalStatus::SUCCESS;
 }
 
 void RuntimeContext::exportEnv(const std::string &envName, unsigned int index, bool isGlobal) {

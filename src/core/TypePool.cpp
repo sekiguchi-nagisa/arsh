@@ -134,7 +134,7 @@ TypePool::TypePool() :
         systemErrorType(), internalStatus(), shellExit(), assertFail(),
         templateMap(8),
         arrayTemplate(), mapTemplate(), tupleTemplate(),
-        stringArrayType(), envSet(), envCache(), precisionMap() {
+        stringArrayType(), precisionMap() {
 
     // initialize type
     this->anyType = this->initBuiltinType("Any", true, 0, info_AnyType());
@@ -393,21 +393,6 @@ std::string TypePool::toFunctionTypeName(DSType *returnType, const std::vector<D
     return funcTypeName;
 }
 
-bool TypePool::hasEnv(const std::string &envName) {
-    if(this->envSet.empty()) {
-        this->initEnvSet();
-    }
-    return this->envSet.find(envName) != this->envSet.end();
-}
-
-void TypePool::addEnv(const std::string &envName) {
-    if(this->envSet.empty()) {
-        this->initEnvSet();
-    }
-    auto pair = this->envSet.insert(envName);
-    this->envCache.push_back(&*pair.first);
-}
-
 constexpr int TypePool::INT64_PRECISION;
 constexpr int TypePool::INT32_PRECISION;
 constexpr int TypePool::INT16_PRECISION;
@@ -441,35 +426,10 @@ int TypePool::getIntPrecision(DSType *type) {
 
 void TypePool::commit() {
     this->typeMap.commit();
-    this->envCache.clear();
 }
 
 void TypePool::abort() {
     this->typeMap.abort();
-
-    // remove env
-    for(auto ptr : this->envCache) {
-        auto iter = this->envSet.find(*ptr);
-        if(iter != this->envSet.end()) {
-            this->envSet.erase(iter);
-        }
-    }
-    this->envCache.clear();
-}
-
-void TypePool::initEnvSet() {
-    for(unsigned int i = 0; environ[i] != NULL; i++) {
-        char *env = environ[i];
-        std::string str;
-        for(unsigned int j = 0; env[j] != '\0'; j++) {
-            char ch = env[j];
-            if(ch == '=') {
-                break;
-            }
-            str += ch;
-        }
-        this->envSet.insert(std::move(str));
-    }
 }
 
 DSType *TypePool::initBuiltinType(const char *typeName, bool extendable,

@@ -971,27 +971,20 @@ void TypeChecker::visitExportEnvNode(ExportEnvNode *node) {
             this->addEntryAndThrowIfDefined(node, node->getEnvName(), stringType, false);
     handle->setAttribute(FieldHandle::ENV);
 
-    // add env to type pool
-    this->typePool->addEnv(node->getEnvName());
-
     node->setAttribute(handle);
     this->checkType(stringType, node->getExprNode());
     node->setType(this->typePool->getVoidType());
 }
 
 void TypeChecker::visitImportEnvNode(ImportEnvNode *node) {
-    // check env existence
-    if(!this->typePool->hasEnv(node->getEnvName())) {
-        E_UndefinedEnv(node, node->getEnvName());
-    }
-
     DSType *stringType = this->typePool->getStringType();
     FieldHandle *handle =
             this->addEntryAndThrowIfDefined(node, node->getEnvName(), stringType, false);
     handle->setAttribute(FieldHandle::ENV);
 
-    // add env to type pool
-    this->typePool->addEnv(node->getEnvName());
+    if(node->getDefaultValueNode() != nullptr) {
+        this->checkType(this->typePool->getStringType(), node->getDefaultValueNode());
+    }
 
     node->setAttribute(handle);
     node->setType(this->typePool->getVoidType());

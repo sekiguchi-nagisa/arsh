@@ -1266,17 +1266,34 @@ public:
 class ImportEnvNode : public Node {
 private:
     std::string envName;
+
+    /**
+     * may be null if has no default value.
+     */
+    Node *defaultValueNode;
+
     bool global;
     unsigned int varIndex;
 
 public:
-    ImportEnvNode(unsigned int lineNum, std::string &&envName) :
-            Node(lineNum), envName(std::move(envName)), global(false), varIndex(0) { }
+    /**
+     * defaultValueNode may be null
+     */
+    ImportEnvNode(unsigned int lineNum, std::string &&envName, Node *defaultValueNode) :
+            Node(lineNum), envName(std::move(envName)),
+            defaultValueNode(defaultValueNode), global(false), varIndex(0) { }
 
-    ~ImportEnvNode() = default;
+    ~ImportEnvNode();
 
     const std::string &getEnvName() const {
         return this->envName;
+    }
+
+    /**
+     * may be null
+     */
+    Node *getDefaultValueNode() const {
+        return this->defaultValueNode;
     }
 
     void setAttribute(FieldHandle *handle);
