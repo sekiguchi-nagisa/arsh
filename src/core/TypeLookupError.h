@@ -42,34 +42,13 @@ namespace ydsh {
 namespace core {
 
 class TypeLookupError {
-public:
-    enum ErrorKind0 {
-#define GEN_ENUM(ENUM, STR) ENUM,
-        EACH_TL_ERROR0(GEN_ENUM)
-#undef GEN_ENUM
-    };
-
-    enum ErrorKind1 {
-#define GEN_ENUM(ENUM, STR) ENUM,
-        EACH_TL_ERROR1(GEN_ENUM)
-#undef GEN_ENUM
-    };
-
-    enum ErrorKind3 {
-#define GEN_ENUM(ENUM, STR1, STR2, STR3) ENUM,
-        EACH_TL_ERROR3(GEN_ENUM)
-#undef GEN_ENUM
-    };
-
 private:
     const char *kind;
     std::string message;
 
 public:
-    explicit TypeLookupError(TypeLookupError::ErrorKind0 k);
-    TypeLookupError(TypeLookupError::ErrorKind1 k, const std::string &arg1);
-    TypeLookupError(TypeLookupError::ErrorKind3 k, const std::string &arg1,
-                    const std::string &arg2, const std::string &arg3);
+    TypeLookupError(const char *kind, std::string &&message) :
+            kind(kind), message(std::move(message)) { }
 
     ~TypeLookupError() = default;
 
@@ -93,52 +72,118 @@ public:
     }
 };
 
-std::ostream &operator<<(std::ostream &stream, TypeLookupError::ErrorKind0 kind);
-std::ostream &operator<<(std::ostream &stream, TypeLookupError::ErrorKind1 kind);
-std::ostream &operator<<(std::ostream &stream, TypeLookupError::ErrorKind3 kind);
+class ErrorMessage {
+protected:
+    const char *kind;
 
-struct ErrorRaiser0 {
-    TypeLookupError::ErrorKind0 kind;
+public:
+    constexpr explicit ErrorMessage(const char *kind) : kind(kind) { }
 
-    void operator()() const throw(TypeLookupError) {
-        throw TypeLookupError(this->kind);
+    ErrorMessage(const ErrorMessage &e) = delete;
+    ErrorMessage(ErrorMessage &&e) = delete;
+
+    ~ErrorMessage() = default;
+
+    ErrorMessage &operator=(const ErrorMessage &e) = delete;
+    ErrorMessage &operator=(ErrorMessage &&e) = delete;
+
+    const char *getKind() const {
+        return this->kind;
     }
-
-    const char *str() const;
 };
 
-struct ErrorRaiser1 {
-    TypeLookupError::ErrorKind1 kind;
+class ErrorMessage0 : public ErrorMessage {
+private:
+    const char *msgPart1;
 
-    void operator()(const std::string &arg1) const throw(TypeLookupError) {
-        throw TypeLookupError(this->kind, arg1);
+public:
+    constexpr ErrorMessage0(const char *kind, const char *msgPart1) :
+            ErrorMessage(kind), msgPart1(msgPart1) { }
+
+    ErrorMessage0(const ErrorMessage0 &e) = delete;
+    ErrorMessage0(ErrorMessage0 &&e) = delete;
+
+    ~ErrorMessage0() = default;
+
+    ErrorMessage0 &operator=(const ErrorMessage0 &e) = delete;
+    ErrorMessage0 &operator=(ErrorMessage0 &&e) = delete;
+
+    const char *getMsgPart1() const {
+        return this->msgPart1;
     }
 
-    const char *str() const;
+    void operator()() const throw(TypeLookupError);
 };
 
-struct ErrorRaiser3 {
-    TypeLookupError::ErrorKind3 kind;
+class ErrorMessage1 : public ErrorMessage {
+private:
+    const char *msgPart1;
 
-    void operator()(const std::string &arg1,
-                    const std::string &arg2, const std::string &arg3) const throw(TypeLookupError) {
-        throw TypeLookupError(this->kind, arg1, arg2, arg3);
+public:
+    constexpr ErrorMessage1(const char *kind, const char *msgPart1) :
+            ErrorMessage(kind), msgPart1(msgPart1) { }
+
+    ErrorMessage1(const ErrorMessage0 &e) = delete;
+    ErrorMessage1(ErrorMessage0 &&e) = delete;
+
+    ~ErrorMessage1() = default;
+
+    ErrorMessage1 &operator=(const ErrorMessage1 &e) = delete;
+    ErrorMessage1 &operator=(ErrorMessage1 &&e) = delete;
+
+    const char *getMsgPart1() const {
+        return this->msgPart1;
     }
 
-    const char *str() const;
+    void operator()(const std::string &arg1) const throw(TypeLookupError);
+};
+
+class ErrorMessage3 : public ErrorMessage {
+private:
+    const char *msgPart1;
+    const char *msgPart2;
+    const char *msgPart3;
+
+public:
+    constexpr ErrorMessage3(const char *kind, const char *msgPart1,
+                            const char *msgPart2, const char *msgPart3) :
+            ErrorMessage(kind), msgPart1(msgPart1), msgPart2(msgPart2), msgPart3(msgPart3) { }
+
+    ErrorMessage3(const ErrorMessage3 &e) = delete;
+    ErrorMessage3(ErrorMessage3 &&e) = delete;
+
+    ~ErrorMessage3() = default;
+
+    ErrorMessage3 &operator=(const ErrorMessage3 &e) = delete;
+    ErrorMessage3 &operator=(ErrorMessage3 &&e) = delete;
+
+    const char *getMsgPart1() const {
+        return this->msgPart1;
+    }
+
+    const char *getMsgPart2() const {
+        return this->msgPart2;
+    }
+
+    const char *getMsgPart3() const {
+        return this->msgPart3;
+    }
+
+    void operator()(const std::string &arg1, const std::string &arg2,
+                    const std::string &arg3) const throw(TypeLookupError);
 };
 
 // define function objects for error reporting
 
-#define GEN_VAR(ENUM, S1) extern ErrorRaiser0 E_##ENUM;
+#define GEN_VAR(ENUM, S1) constexpr ErrorMessage0 E_##ENUM(#ENUM, S1);
     EACH_TL_ERROR0(GEN_VAR)
 #undef GEN_VAR
 
-#define GEN_VAR(ENUM, S1) extern ErrorRaiser1 E_##ENUM;
+#define GEN_VAR(ENUM, S1) constexpr ErrorMessage1 E_##ENUM(#ENUM, S1);
     EACH_TL_ERROR1(GEN_VAR)
 #undef GEN_VAR
 
-#define GEN_VAR(ENUM, S1, S2, S3) extern ErrorRaiser3 E_##ENUM;
+#define GEN_VAR(ENUM, S1, S2, S3) constexpr ErrorMessage3 E_##ENUM(#ENUM, S1, S2, S3);
     EACH_TL_ERROR3(GEN_VAR);
 #undef GEN_VAR
 

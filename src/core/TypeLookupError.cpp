@@ -20,103 +20,38 @@
 namespace ydsh {
 namespace core {
 
-// for message
-struct MsgTuple1 {
-    const char *kindStr;
-    const char *msg1;
-};
+// ###########################
+// ##     ErrorMessage0     ##
+// ###########################
 
-static MsgTuple1 errorTuple0[] = {
-#define GEN_MSG(ENUM, S1) {#ENUM, S1},
-        EACH_TL_ERROR0(GEN_MSG)
-#undef GEN_MSG
-};
-
-static MsgTuple1 errorTuple1[] = {
-#define GEN_MSG(ENUM, S1) {#ENUM, S1},
-        EACH_TL_ERROR1(GEN_MSG)
-#undef GEN_MSG
-};
-
-struct MsgTuple3 {
-    const char *kindStr;
-    const char *msg1;
-    const char *msg2;
-    const char *msg3;
-};
-
-static MsgTuple3 errorTuple3[] = {
-#define GEN_MSG(ENUM, S1, S2, S3) {#ENUM, S1, S2, S3},
-        EACH_TL_ERROR3(GEN_MSG)
-#undef GEN_MSG
-};
-
-
-// #############################
-// ##     TypeLookupError     ##
-// #############################
-
-TypeLookupError::TypeLookupError(TypeLookupError::ErrorKind0 k) :
-        kind(errorTuple0[k].kindStr), message(errorTuple0[k].msg1) {
+void ErrorMessage0::operator()() const throw(TypeLookupError) {
+    throw TypeLookupError(this->kind, std::string(this->msgPart1));
 }
 
-TypeLookupError::TypeLookupError(TypeLookupError::ErrorKind1 k, const std::string &arg1) :
-        kind(errorTuple1[k].kindStr), message(errorTuple1[k].msg1) {
-    this->message += arg1;
+// ###########################
+// ##     ErrorMessage1     ##
+// ###########################
+
+void ErrorMessage1::operator()(const std::string &arg1) const throw(TypeLookupError) {
+    std::string str(this->msgPart1);
+    str += arg1;
+    throw TypeLookupError(this->kind, std::move(str));
 }
 
-TypeLookupError::TypeLookupError(TypeLookupError::ErrorKind3 k, const std::string &arg1,
-                                 const std::string &arg2, const std::string &arg3) :
-        kind(errorTuple3[k].kindStr), message(errorTuple3[k].msg1) {
-    this->message += arg1;
-    this->message += errorTuple3[k].msg2;
-    this->message += arg2;
-    this->message += errorTuple3[k].msg3;
-    this->message += arg3;
+// ###########################
+// ##     ErrorMessage3     ##
+// ###########################
 
+void ErrorMessage3::operator()(const std::string &arg1, const std::string &arg2,
+                const std::string &arg3) const throw(TypeLookupError) {
+    std::string str(this->msgPart1);
+    str += arg1;
+    str += this->msgPart2;
+    str += arg2;
+    str += this->msgPart3;
+    str += arg3;
+    throw TypeLookupError(this->kind, std::move(str));
 }
-
-std::ostream &operator<<(std::ostream &stream, TypeLookupError::ErrorKind0 kind) {
-    stream << errorTuple0[kind].kindStr;
-    return stream;
-}
-
-std::ostream &operator<<(std::ostream &stream, TypeLookupError::ErrorKind1 kind) {
-    stream << errorTuple1[kind].kindStr;
-    return stream;
-}
-
-std::ostream &operator<<(std::ostream &stream, TypeLookupError::ErrorKind3 kind) {
-    stream << errorTuple3[kind].kindStr;
-    return stream;
-}
-
-// ErrorRaiser
-const char* ErrorRaiser0::str() const {
-    return errorTuple0[this->kind].kindStr;
-}
-
-const char* ErrorRaiser1::str() const {
-    return errorTuple1[this->kind].kindStr;
-}
-
-const char* ErrorRaiser3::str() const {
-    return errorTuple3[this->kind].kindStr;
-}
-
-
-#define GEN_VAR(ENUM, S1) ErrorRaiser0 E_##ENUM = { TypeLookupError::ENUM };
-    EACH_TL_ERROR0(GEN_VAR)
-#undef GEN_VAR
-
-#define GEN_VAR(ENUM, S1) ErrorRaiser1 E_##ENUM = { TypeLookupError::ENUM };
-    EACH_TL_ERROR1(GEN_VAR)
-#undef GEN_VAR
-
-#define GEN_VAR(ENUM, S1, S2, S3) ErrorRaiser3 E_##ENUM = { TypeLookupError::ENUM };
-EACH_TL_ERROR3(GEN_VAR)
-#undef GEN_VAR
-
 
 #undef IN_SRC_FILE
 

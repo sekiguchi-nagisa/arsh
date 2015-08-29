@@ -75,31 +75,6 @@ namespace parser {
  * for type error reporting
  */
 class TypeCheckError {
-public:
-    enum ErrorKind0 {
-#define GEN_ENUM(ENUM, S1) ENUM,
-        EACH_TC_ERROR0(GEN_ENUM)
-#undef GEN_ENUM
-    };
-
-    enum ErrorKind1 {
-#define GEN_ENUM(ENUM, S1) ENUM,
-        EACH_TC_ERROR1(GEN_ENUM)
-#undef GEN_ENUM
-    };
-
-    enum ErrorKind2 {
-#define GEN_ENUM(ENUM, S1, S2) ENUM,
-        EACH_TC_ERROR2(GEN_ENUM)
-#undef GEN_ENUM
-    };
-
-    enum ErrorKind3 {
-#define GEN_ENUM(ENUM, S1, S2, S3) ENUM,
-        EACH_TC_ERROR3(GEN_ENUM)
-#undef GEN_ENUM
-    };
-
 private:
     /**
      * line number of error node
@@ -111,14 +86,11 @@ private:
     std::string message;
 
 public:
-    TypeCheckError(unsigned int lineNum, TypeCheckError::ErrorKind0 k);
-    TypeCheckError(unsigned int lineNum, TypeCheckError::ErrorKind1 k, const std::string &arg1);
-    TypeCheckError(unsigned int lineNum, TypeCheckError::ErrorKind2 k, const std::string &arg1,
-                   const std::string &arg2);
-    TypeCheckError(unsigned int lineNum, TypeCheckError::ErrorKind3 k, const std::string &arg1,
-                   const std::string &arg2, const std::string &arg3);
+    TypeCheckError(unsigned int lineNum, const char *kind, std::string &&message) :
+            lineNum(lineNum), kind(kind), message(std::move(message)) { }
 
-    TypeCheckError(unsigned int lineNum, core::TypeLookupError &e);
+    TypeCheckError(unsigned int lineNum, core::TypeLookupError &e) :
+            lineNum(lineNum), kind(e.getKind()), message(e.moveMessage()) { }
 
     ~TypeCheckError() = default;
 
@@ -139,60 +111,152 @@ public:
     }
 };
 
-std::ostream &operator<<(std::ostream &stream, TypeCheckError::ErrorKind0 kind);
-std::ostream &operator<<(std::ostream &stream, TypeCheckError::ErrorKind1 kind);
-std::ostream &operator<<(std::ostream &stream, TypeCheckError::ErrorKind2 kind);
-std::ostream &operator<<(std::ostream &stream, TypeCheckError::ErrorKind3 kind);
+class ErrorMessage {
+protected:
+    const char *kind;
 
-struct ErrorRaiser0 {
-    TypeCheckError::ErrorKind0 kind;
+public:
+    constexpr explicit ErrorMessage(const char *kind) : kind(kind) { }
+
+    ErrorMessage(const ErrorMessage &e) = delete;
+    ErrorMessage(ErrorMessage &&e) = delete;
+
+    ~ErrorMessage() = default;
+
+    ErrorMessage &operator=(const ErrorMessage &e) = delete;
+    ErrorMessage &operator=(ErrorMessage &&e) = delete;
+
+    const char *getKind() const {
+        return this->kind;
+    }
+};
+
+class ErrorMessage0 : public ErrorMessage {
+private:
+    const char *msgPart1;
+
+public:
+    constexpr ErrorMessage0(const char *kind, const char *msgPart1) :
+            ErrorMessage(kind), msgPart1(msgPart1) { }
+
+    ErrorMessage0(const ErrorMessage0 &e) = delete;
+    ErrorMessage0(ErrorMessage0 &&e) = delete;
+
+    ~ErrorMessage0() = default;
+
+    ErrorMessage0 &operator=(const ErrorMessage0 &e) = delete;
+    ErrorMessage0 &operator=(ErrorMessage0 &&e) = delete;
+
+    const char *getMsgPart1() const {
+        return this->msgPart1;
+    }
 
     void operator()(ast::Node *node) const throw(TypeCheckError);
-
-    const char *str() const;
 };
 
-struct ErrorRaiser1 {
-    TypeCheckError::ErrorKind1 kind;
+class ErrorMessage1 : public ErrorMessage {
+private:
+    const char *msgPart1;
+
+public:
+    constexpr ErrorMessage1(const char *kind, const char *msgPart1) :
+            ErrorMessage(kind), msgPart1(msgPart1) { }
+
+    ErrorMessage1(const ErrorMessage0 &e) = delete;
+    ErrorMessage1(ErrorMessage0 &&e) = delete;
+
+    ~ErrorMessage1() = default;
+
+    ErrorMessage1 &operator=(const ErrorMessage1 &e) = delete;
+    ErrorMessage1 &operator=(ErrorMessage1 &&e) = delete;
+
+    const char *getMsgPart1() const {
+        return this->msgPart1;
+    }
 
     void operator()(ast::Node *node, const std::string &arg1) const throw(TypeCheckError);
-
-    const char *str() const;
 };
 
-struct ErrorRaiser2 {
-    TypeCheckError::ErrorKind2 kind;
+class ErrorMessage2 : public ErrorMessage {
+private:
+    const char *msgPart1;
+    const char *msgPart2;
+
+public:
+    constexpr ErrorMessage2(const char *kind, const char *msgPart1,
+                            const char *msgPart2) :
+            ErrorMessage(kind), msgPart1(msgPart1), msgPart2(msgPart2) { }
+
+    ErrorMessage2(const ErrorMessage2 &e) = delete;
+    ErrorMessage2(ErrorMessage2 &&e) = delete;
+
+    ~ErrorMessage2() = default;
+
+    ErrorMessage2 &operator=(const ErrorMessage2 &e) = delete;
+    ErrorMessage2 &operator=(ErrorMessage2 &&e) = delete;
+
+    const char *getMsgPart1() const {
+        return this->msgPart1;
+    }
+
+    const char *getMsgPart2() const {
+        return this->msgPart2;
+    }
 
     void operator()(ast::Node *node, const std::string &arg1,
                     const std::string &arg2) const throw(TypeCheckError);
-
-    const char *str() const;
 };
 
-struct ErrorRaiser3 {
-    TypeCheckError::ErrorKind3 kind;
+class ErrorMessage3 : public ErrorMessage {
+private:
+    const char *msgPart1;
+    const char *msgPart2;
+    const char *msgPart3;
+
+public:
+    constexpr ErrorMessage3(const char *kind, const char *msgPart1,
+                            const char *msgPart2, const char *msgPart3) :
+            ErrorMessage(kind), msgPart1(msgPart1), msgPart2(msgPart2), msgPart3(msgPart3) { }
+
+    ErrorMessage3(const ErrorMessage3 &e) = delete;
+    ErrorMessage3(ErrorMessage3 &&e) = delete;
+
+    ~ErrorMessage3() = default;
+
+    ErrorMessage3 &operator=(const ErrorMessage3 &e) = delete;
+    ErrorMessage3 &operator=(ErrorMessage3 &&e) = delete;
+
+    const char *getMsgPart1() const {
+        return this->msgPart1;
+    }
+
+    const char *getMsgPart2() const {
+        return this->msgPart2;
+    }
+
+    const char *getMsgPart3() const {
+        return this->msgPart3;
+    }
 
     void operator()(ast::Node *node, const std::string &arg1,
                     const std::string &arg2, const std::string &arg3) const throw(TypeCheckError);
-
-    const char *str() const;
 };
 
 // define function object for error reporting
 
-#define GEN_VAR(ENUM, S1) extern ErrorRaiser0 E_##ENUM;
+#define GEN_VAR(ENUM, S1) constexpr ErrorMessage0 E_##ENUM(#ENUM, S1);
 EACH_TC_ERROR0(GEN_VAR)
 #undef GEN_VAR
 
-#define GEN_VAR(ENUM, S1) extern ErrorRaiser1 E_##ENUM;
+#define GEN_VAR(ENUM, S1) constexpr ErrorMessage1 E_##ENUM(#ENUM, S1);
 EACH_TC_ERROR1(GEN_VAR)
 #undef GEN_VAR
 
-#define GEN_VAR(ENUM, S1, S2) extern ErrorRaiser2 E_##ENUM;
+#define GEN_VAR(ENUM, S1, S2) constexpr ErrorMessage2 E_##ENUM(#ENUM, S1, S2);
 EACH_TC_ERROR2(GEN_VAR)
 #undef GEN_VAR
 
-#define GEN_VAR(ENUM, S1, S2, S3) extern ErrorRaiser3 E_##ENUM;
+#define GEN_VAR(ENUM, S1, S2, S3) constexpr ErrorMessage3 E_##ENUM(#ENUM, S1, S2, S3);
 EACH_TC_ERROR3(GEN_VAR)
 #undef GEN_VAR
 

@@ -23,168 +23,51 @@
 namespace ydsh {
 namespace parser {
 
-struct MsgTuple1 {
-    const char *kindStr;
-    const char *msg1;
-};
+// ###########################
+// ##     ErrorMessage0     ##
+// ###########################
 
-static MsgTuple1 errorTuple0[] = {
-#define GEN_MSG(ENUM, S1) {#ENUM, S1},
-    EACH_TC_ERROR0(GEN_MSG)
-#undef GEN_MSG
-};
-
-static MsgTuple1 errorTuple1[] = {
-#define GEN_MSG(ENUM, S1) {#ENUM, S1},
-        EACH_TC_ERROR1(GEN_MSG)
-#undef GEN_MSG
-};
-
-struct MsgTuple2 {
-    const char *kindStr;
-    const char *msg1;
-    const char *msg2;
-};
-
-static MsgTuple2 errorTuple2[] = {
-#define GEN_MSG(ENUM, S1, S2) {#ENUM, S1, S2},
-        EACH_TC_ERROR2(GEN_MSG)
-#undef GEN_MSG
-};
-
-struct MsgTuple3 {
-    const char *kindStr;
-    const char *msg1;
-    const char *msg2;
-    const char *msg3;
-};
-
-static MsgTuple3 errorTuple3[] = {
-#define GEN_MSG(ENUM, S1, S2, S3) {#ENUM, S1, S2, S3},
-        EACH_TC_ERROR3(GEN_MSG)
-#undef GEN_MSG
-};
-
-
-// ############################
-// ##     TypeCheckError     ##
-// ############################
-
-TypeCheckError::TypeCheckError(unsigned int lineNum, TypeCheckError::ErrorKind0 k) :
-        lineNum(lineNum), kind(errorTuple0[k].kindStr), message(errorTuple0[k].msg1) {
+void ErrorMessage0::operator()(ast::Node *node) const throw(TypeCheckError) {
+    throw TypeCheckError(node->getLineNum(), this->kind, std::string(this->msgPart1));
 }
 
-TypeCheckError::TypeCheckError(unsigned int lineNum, TypeCheckError::ErrorKind1 k, const std::string &arg1) :
-        lineNum(lineNum), kind(errorTuple1[k].kindStr), message(errorTuple1[k].msg1) {
-    this->message += arg1;
+// ###########################
+// ##     ErrorMessage1     ##
+// ###########################
+
+void ErrorMessage1::operator()(ast::Node *node, const std::string &arg1) const throw(TypeCheckError) {
+    std::string str(this->msgPart1);
+    str += arg1;
+    throw TypeCheckError(node->getLineNum(), this->kind, std::move(str));
 }
 
-TypeCheckError::TypeCheckError(unsigned int lineNum, TypeCheckError::ErrorKind2 k, const std::string &arg1,
-                               const std::string &arg2) :
-        lineNum(lineNum), kind(errorTuple2[k].kindStr), message(errorTuple2[k].msg1) {
-    this->message += arg1;
-    this->message += errorTuple2[k].msg2;
-    this->message += arg2;
+// ###########################
+// ##     ErrorMessage2     ##
+// ###########################
+
+void ErrorMessage2::operator()(ast::Node *node, const std::string &arg1,
+                               const std::string &arg2) const throw(TypeCheckError) {
+    std::string str(this->msgPart1);
+    str += arg1;
+    str += this->msgPart2;
+    str += arg2;
+    throw TypeCheckError(node->getLineNum(), this->kind, std::move(str));
 }
 
-TypeCheckError::TypeCheckError(unsigned int lineNum, TypeCheckError::ErrorKind3 k, const std::string &arg1,
-                               const std::string &arg2, const std::string &arg3) :
-        lineNum(lineNum), kind(errorTuple3[k].kindStr), message(errorTuple3[k].msg1) {
-    this->message += arg1;
-    this->message += errorTuple3[k].msg2;
-    this->message += arg2;
-    this->message += errorTuple3[k].msg3;
-    this->message += arg3;
+// ###########################
+// ##     ErrorMessage3     ##
+// ###########################
+
+void ErrorMessage3::operator()(ast::Node *node, const std::string &arg1,
+                               const std::string &arg2, const std::string &arg3) const throw(TypeCheckError) {
+    std::string str(this->msgPart1);
+    str += arg1;
+    str += this->msgPart2;
+    str += arg2;
+    str += this->msgPart3;
+    str += arg3;
+    throw TypeCheckError(node->getLineNum(), this->kind, std::move(str));
 }
-
-TypeCheckError::TypeCheckError(unsigned int lineNum, core::TypeLookupError &e) :
-        lineNum(lineNum), kind(e.getKind()), message(e.moveMessage()) {
-}
-
-std::ostream &operator<<(std::ostream &stream, TypeCheckError::ErrorKind0 kind) {
-    stream << errorTuple0[kind].kindStr;
-    return stream;
-}
-
-std::ostream &operator<<(std::ostream &stream, TypeCheckError::ErrorKind1 kind) {
-    stream << errorTuple1[kind].kindStr;
-    return stream;
-}
-
-std::ostream &operator<<(std::ostream &stream, TypeCheckError::ErrorKind2 kind) {
-    stream << errorTuple2[kind].kindStr;
-    return stream;
-}
-
-std::ostream &operator<<(std::ostream &stream, TypeCheckError::ErrorKind3 kind) {
-    stream << errorTuple3[kind].kindStr;
-    return stream;
-}
-
-// ##########################
-// ##     ErrorRaiser0     ##
-// ##########################
-
-void ErrorRaiser0::operator()(ast::Node *node) const throw(TypeCheckError) {
-    throw TypeCheckError(node->getLineNum(), this->kind);
-}
-
-const char* ErrorRaiser0::str() const {
-    return errorTuple0[this->kind].kindStr;
-}
-
-// ##########################
-// ##     ErrorRaiser1     ##
-// ##########################
-
-void ErrorRaiser1::operator()(ast::Node *node, const std::string &arg1) const throw(TypeCheckError) {
-    throw TypeCheckError(node->getLineNum(), this->kind, arg1);
-}
-
-const char* ErrorRaiser1::str() const {
-    return errorTuple1[this->kind].kindStr;
-}
-
-// ##########################
-// ##     ErrorRaiser2     ##
-// ##########################
-void ErrorRaiser2::operator()(ast::Node *node, const std::string &arg1,
-                              const std::string &arg2) const throw(TypeCheckError) {
-    throw TypeCheckError(node->getLineNum(), this->kind, arg1, arg2);
-}
-
-const char* ErrorRaiser2::str() const {
-    return errorTuple2[this->kind].kindStr;
-}
-
-// ##########################
-// ##     ErrorRaiser3     ##
-// ##########################
-void ErrorRaiser3::operator()(ast::Node *node, const std::string &arg1,
-                              const std::string &arg2, const std::string &arg3) const throw(TypeCheckError) {
-    throw TypeCheckError(node->getLineNum(), this->kind, arg1, arg2, arg3);
-}
-
-const char* ErrorRaiser3::str() const {
-    return errorTuple3[this->kind].kindStr;
-}
-
-#define GEN_VAR(ENUM, S1) ErrorRaiser0 E_##ENUM = { TypeCheckError::ENUM };
-    EACH_TC_ERROR0(GEN_VAR)
-#undef GEN_VAR
-
-#define GEN_VAR(ENUM, S1) ErrorRaiser1 E_##ENUM = { TypeCheckError::ENUM };
-    EACH_TC_ERROR1(GEN_VAR)
-#undef GEN_VAR
-
-#define GEN_VAR(ENUM, S1, S2) ErrorRaiser2 E_##ENUM = { TypeCheckError::ENUM };
-    EACH_TC_ERROR2(GEN_VAR)
-#undef GEN_VAR
-
-#define GEN_VAR(ENUM, S1, S2, S3) ErrorRaiser3 E_##ENUM = { TypeCheckError::ENUM };
-    EACH_TC_ERROR3(GEN_VAR)
-#undef GEN_VAR
-
 
 #undef IN_SRC_FILE
 
