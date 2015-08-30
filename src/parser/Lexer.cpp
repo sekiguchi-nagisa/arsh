@@ -16,7 +16,7 @@
 
 #include <cmath>
 
-#include "../misc/debug.h"
+#include "../misc/fatal.h"
 #include "../misc/num.h"
 #include "Lexer.h"
 

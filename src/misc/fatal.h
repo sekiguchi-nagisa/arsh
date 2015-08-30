@@ -21,20 +21,7 @@
 #include <cstdlib>
 #include <cstring>
 
-#ifndef NDEBUG
-#define DEBUG_ON 1
-#else
-#define DEBUG_ON 0
-#endif
-
 #define __FILE_NAME__ (strrchr(__FILE__, '/') != nullptr ? ((const char *)strrchr(__FILE__, '/') + 1) : __FILE__)
-
-#define debugp(fmt, ...) \
-    do {\
-        if(DEBUG_ON) {\
-            fprintf(stdout, "%s:%d:%s(): " fmt, __FILE__, __LINE__, __func__, ## __VA_ARGS__);\
-        }\
-    } while(0)
 
 /**
  * report error and abort.

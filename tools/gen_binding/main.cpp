@@ -22,7 +22,7 @@
 #include <unordered_map>
 
 #include <core/handle_info.h>
-#include <misc/debug.h>
+#include <misc/fatal.h>
 #include <DescLexer.h>
 
 namespace {

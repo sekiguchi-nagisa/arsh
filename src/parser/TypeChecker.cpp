@@ -20,7 +20,7 @@
 #include "../core/symbol.h"
 #include "../core/DSObject.h"
 #include "../core/TypeLookupError.h"
-#include "../misc/debug.h"
+#include "../misc/fatal.h"
 #include "TypeChecker.h"
 
 namespace ydsh {

@@ -24,7 +24,7 @@ extern "C" {
 #include <string>
 
 #include <ydsh/ydsh.h>
-#include "misc/debug.h"
+#include "misc/fatal.h"
 
 static DSContext *dsContext;
 

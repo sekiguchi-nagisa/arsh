@@ -25,7 +25,7 @@
 #include <cassert>
 
 #include <misc/argv.hpp>
-#include <misc/debug.h>
+#include <misc/fatal.h>
 
 namespace {
 

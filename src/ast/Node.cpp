@@ -22,7 +22,7 @@
 #include "../core/DSObject.h"
 #include "../core/RuntimeContext.h"
 #include "../core/FieldHandle.h"
-#include "../misc/debug.h"
+#include "../misc/fatal.h"
 #include "dump.h"
 #include "Node.h"
 

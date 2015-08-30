@@ -17,7 +17,7 @@
 #include "ErrorListener.h"
 #include "DSObject.h"
 #include "TypePool.h"
-#include "../misc/debug.h"
+#include "../misc/fatal.h"
 #include "../misc/term.h"
 
 namespace ydsh {

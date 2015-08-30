@@ -15,7 +15,7 @@
  */
 
 #include "Parser.h"
-#include "../misc/debug.h"
+#include "../misc/fatal.h"
 
 
 // helper macro

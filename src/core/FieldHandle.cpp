@@ -18,7 +18,7 @@
 
 #include "FieldHandle.h"
 #include "DSType.h"
-#include "../misc/debug.h"
+#include "../misc/fatal.h"
 
 namespace ydsh {
 namespace core {

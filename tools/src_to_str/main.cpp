@@ -19,7 +19,7 @@
 #include <algorithm>
 
 #include <misc/argv.hpp>
-#include <misc/debug.h>
+#include <misc/fatal.h>
 
 using namespace ydsh::argv;
 

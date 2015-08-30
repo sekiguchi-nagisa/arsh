@@ -19,7 +19,7 @@
 #include <unordered_set>
 
 #include "directive_parser.h"
-#include <misc/debug.h>
+#include <misc/fatal.h>
 
 namespace ydsh {
 namespace directive {

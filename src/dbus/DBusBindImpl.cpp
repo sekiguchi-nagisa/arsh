@@ -19,7 +19,7 @@
 
 #include "DBusBindImpl.h"
 #include "../core/FieldHandle.h"
-#include "../misc/debug.h"
+#include "../misc/fatal.h"
 
 namespace ydsh {
 namespace core {
@@ -463,7 +463,7 @@ bool DBus_ObjectImpl::waitSignal(RuntimeContext &ctx) {
     DBusError error;
     dbus_error_init(&error);
     for(auto &rule : ruleList) {
-        debugp("match rule: %s\n", rule.c_str());
+//        debugp("match rule: %s\n", rule.c_str());
         dbus_bus_add_match(conn, rule.c_str(), &error);
         if(dbus_error_is_set(&error)) {
             reportDBusError(ctx, error);
@@ -477,29 +477,29 @@ bool DBus_ObjectImpl::waitSignal(RuntimeContext &ctx) {
         dbus_connection_read_write(conn, 1000);
         DBusMessage *message = dbus_connection_pop_message(conn);
 
-        debugp("timeout\n");
+//        debugp("timeout\n");
         if(message == nullptr) {
             continue;
         }
 
-        debugp("receive message\n");
+//        debugp("receive message\n");
 
         if(dbus_message_get_type(message) != DBUS_MESSAGE_TYPE_SIGNAL) {
             fatal("must be signal\n");
             return false;
         }
 
-        debugp("receive signal\n");
+//        debugp("receive signal\n");
 
         // check service name and object path
         const char *srv = dbus_message_get_sender(message);
-        debugp("sender = %s\n", srv);
+//        debugp("sender = %s\n", srv);
         const char *path = dbus_message_get_path(message);
-        debugp("path = %s\n", path);
+//        debugp("path = %s\n", path);
         const char *ifaceName = dbus_message_get_interface(message);
-        debugp("interface name = %s\n", ifaceName);
+//        debugp("interface name = %s\n", ifaceName);
         const char *methodName = dbus_message_get_member(message);
-        debugp("method name = %s\n", methodName);
+//        debugp("method name = %s\n", methodName);
 
         DBusProxy_Object *matchedProxy = nullptr;
         for(auto *p : proxies) {
@@ -509,7 +509,7 @@ bool DBus_ObjectImpl::waitSignal(RuntimeContext &ctx) {
             }
         }
         if(matchedProxy == nullptr) {
-            debugp("not found matched proxy\n");
+//            debugp("not found matched proxy\n");
             unrefMessage(message);
             continue;
         }

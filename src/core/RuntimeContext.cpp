@@ -27,7 +27,7 @@
 #include "../config.h"
 #include "RuntimeContext.h"
 #include "symbol.h"
-#include "../misc/debug.h"
+#include "../misc/fatal.h"
 
 namespace ydsh {
 namespace core {

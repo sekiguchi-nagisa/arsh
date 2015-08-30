@@ -19,7 +19,7 @@
 #include "DSType.h"
 #include "DSObject.h"
 #include "FieldHandle.h"
-#include "../misc/debug.h"
+#include "../misc/fatal.h"
 
 namespace ydsh {
 namespace core {

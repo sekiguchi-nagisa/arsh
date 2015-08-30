@@ -24,7 +24,7 @@
 #include "ProcInvoker.h"
 #include "RuntimeContext.h"
 #include "../misc/num.h"
-#include "../misc/debug.h"
+#include "../misc/fatal.h"
 
 extern char **environ;
 

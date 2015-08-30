@@ -2,7 +2,7 @@
 
 #include <ast/Node.h>
 #include <parser/Parser.h>
-#include <misc/debug.h>
+#include <misc/fatal.h>
 
 using namespace ydsh::parser;
 

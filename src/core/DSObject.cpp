@@ -19,7 +19,7 @@
 #include "DSObject.h"
 #include "RuntimeContext.h"
 #include "../ast/Node.h"
-#include "../misc/debug.h"
+#include "../misc/fatal.h"
 #include "../config.h"
 
 #ifdef USE_DBUS

@@ -17,7 +17,7 @@
 #include <cassert>
 
 #include <misc/num.h>
-#include <misc/debug.h>
+#include <misc/fatal.h>
 #include "directive_lexer.h"
 
 namespace ydsh {

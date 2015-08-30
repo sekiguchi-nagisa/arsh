@@ -27,7 +27,7 @@
 #include "parser/TypeChecker.h"
 #include "core/RuntimeContext.h"
 #include "core/ErrorListener.h"
-#include "misc/debug.h"
+#include "misc/fatal.h"
 #include "misc/num.h"
 
 
