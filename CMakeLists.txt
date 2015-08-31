@@ -53,11 +53,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11")
 #     set extra option     #
 #++++++++++++++++++++++++++#
 
-option(USE_TRACE_TOKEN "trace generated token" OFF)
-show_option(USE_TRACE_TOKEN)
-
-option(USE_DUMP_EXEC "dump executing command" OFF)
-show_option(USE_DUMP_EXEC)
+option(USE_LOGGING "enable internal logging" OFF)
+show_option(USE_LOGGING)
 
 option(USE_DBUS "support D-Bus" ON)
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")

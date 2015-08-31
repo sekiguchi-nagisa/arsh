@@ -18,7 +18,7 @@
 #include <cstring>
 
 #include "DBusBindImpl.h"
-#include "../core/FieldHandle.h"
+#include "../core/logger.h"
 #include "../misc/fatal.h"
 
 namespace ydsh {
@@ -463,7 +463,7 @@ bool DBus_ObjectImpl::waitSignal(RuntimeContext &ctx) {
     DBusError error;
     dbus_error_init(&error);
     for(auto &rule : ruleList) {
-//        debugp("match rule: %s\n", rule.c_str());
+        LOG(TRACE_SIGNAL, "match rule: ");
         dbus_bus_add_match(conn, rule.c_str(), &error);
         if(dbus_error_is_set(&error)) {
             reportDBusError(ctx, error);
@@ -476,30 +476,30 @@ bool DBus_ObjectImpl::waitSignal(RuntimeContext &ctx) {
     while(true) {
         dbus_connection_read_write(conn, 1000);
         DBusMessage *message = dbus_connection_pop_message(conn);
-
-//        debugp("timeout\n");
+        LOG(TRACE_SIGNAL, "timeout");
         if(message == nullptr) {
             continue;
         }
 
-//        debugp("receive message\n");
+        LOG(TRACE_SIGNAL, "receive message");
 
         if(dbus_message_get_type(message) != DBUS_MESSAGE_TYPE_SIGNAL) {
             fatal("must be signal\n");
             return false;
         }
 
-//        debugp("receive signal\n");
+        LOG(TRACE_SIGNAL, "receive signal");
 
         // check service name and object path
         const char *srv = dbus_message_get_sender(message);
-//        debugp("sender = %s\n", srv);
+        LOG(TRACE_SIGNAL, "sender = " << srv);
         const char *path = dbus_message_get_path(message);
-//        debugp("path = %s\n", path);
+        LOG(TRACE_SIGNAL, "path = " << path);
         const char *ifaceName = dbus_message_get_interface(message);
-//        debugp("interface name = %s\n", ifaceName);
+        LOG(TRACE_SIGNAL, "interface name = " << ifaceName);
         const char *methodName = dbus_message_get_member(message);
-//        debugp("method name = %s\n", methodName);
+        LOG(TRACE_SIGNAL, "method name = " << methodName);
+
 
         DBusProxy_Object *matchedProxy = nullptr;
         for(auto *p : proxies) {
@@ -509,7 +509,7 @@ bool DBus_ObjectImpl::waitSignal(RuntimeContext &ctx) {
             }
         }
         if(matchedProxy == nullptr) {
-//            debugp("not found matched proxy\n");
+            LOG(TRACE_SIGNAL, "not found matched proxy");
             unrefMessage(message);
             continue;
         }

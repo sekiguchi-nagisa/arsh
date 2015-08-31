@@ -20,7 +20,7 @@
 
 #include <cstdlib>
 
-#include "../config.h"
+#include "logger.h"
 #include "ProcInvoker.h"
 #include "RuntimeContext.h"
 #include "../misc/num.h"
@@ -113,30 +113,16 @@ static void builtin_execvpe(char **argv, char *const *envp, const char *progName
     }
 
 
-#ifdef USE_DUMP_EXEC
-    if(getenv("YDSH_DUMP_EXEC") != nullptr) {
-        std::cerr << getpid() << " execve(" << fileName << ", [";
+    LOG_L(DUMP_EXEC, [&](std::ostream &stream) {
+        stream << "execve(" << fileName << ", [";
         for(unsigned int i = 0; argv[i] != nullptr; i++) {
             if(i > 0) {
-                std::cerr << ", ";
+                stream << ", ";
             }
-            std::cerr << argv[i];
+            stream << argv[i];
         }
-        std::cerr << "]";
-
-        if(strcmp(getenv("YDSH_DUMP_EXEC"), "env") == 0) {
-            std::cerr << ", [" << (envp == nullptr ? "null" : "");
-            for(unsigned int i = 0; envp != nullptr && envp[i] != nullptr; i++) {
-                if(i > 0) {
-                    std::cerr << ", ";
-                }
-                std::cerr << envp[i];
-            }
-            std::cerr << "]";
-        }
-        std::cerr << ")" << std::endl;
-    }
-#endif
+        stream << "]" << ")";
+    });
 
     // reset signal setting
     struct sigaction ignore_act;

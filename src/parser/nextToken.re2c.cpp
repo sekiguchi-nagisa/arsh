@@ -15,7 +15,7 @@
  */
 
 #include <parser/Lexer.h>
-#include <config.h>
+#include <core/logger.h>
 
 #ifdef USE_TRACE_TOKEN
 #include <iostream>
@@ -312,12 +312,10 @@ void Lexer::nextToken(Token &token) {
     this->prevSpace = foundSpace;
     this->prevMode = prevMode;
 
-#ifdef USE_TRACE_TOKEN
-    if(getenv("YDSH_TRACE_TOKEN") != nullptr) {
-        std::cerr << "nextToken(): " << token << ", text = " << this->toTokenText(token) << std::endl;
-        std::cerr << "   lexer mode: " << this->getLexerModeName() << std::endl;
-    }
-#endif
+    LOG(TRACE_TOKEN,
+        token << ", text = " << this->toTokenText(token) << std::endl
+                     << "   lexer mode: " << this->getLexerModeName()
+    );
     return;
 }
 

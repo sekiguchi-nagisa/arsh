@@ -14,30 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_CONFIG_H
-#define YDSH_CONFIG_H
+#ifndef YDSH_LOGGER_H_H
+#define YDSH_LOGGER_H_H
 
-// some system information
+#include "../config.h"
+#include "../misc/logger_base.hpp"
 
-#define X_INFO_SYSTEM  "${CMAKE_SYSTEM}"
+DEFINE_LOGGING_POLICY("YDSH_", "APPENDER", TRACE_TOKEN, DUMP_EXEC, TRACE_SIGNAL);
 
-#define X_INFO_CPP     "${CMAKE_CXX_COMPILER_ID}"
-
-#define X_INFO_CPP_V   "${CMAKE_CXX_COMPILER_VERSION}"
-
-#define X_INFO_VERSION "${YDSH_VERSION}"
-
-#define X_INFO_MAJOR_VERSION   ${YDSH_MAJOR_VERSION}
-
-#define X_INFO_MINOR_VERSION   ${YDSH_MINOR_VERSION}
-
-#define X_INFO_PATCH_VERSION   ${YDSH_PATCH_VERSION}
-
-
-// extra option
-
-#cmakedefine USE_LOGGING
-
-#cmakedefine USE_DBUS
-
-#endif //YDSH_CONFIG_H
+#endif //YDSH_LOGGER_H_H
