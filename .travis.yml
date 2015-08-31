@@ -19,7 +19,7 @@ addons:
 before_install:
   - mkdir build
   - cd ./build
-  - cmake .. -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DUSE_DBUS=off -DUSE_TRACE_TOKEN=on -DUSE_DUMP_EXEC=on
+  - cmake .. -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DUSE_DBUS=off -DUSE_LOGGING=on
 
 install: 
  - make
