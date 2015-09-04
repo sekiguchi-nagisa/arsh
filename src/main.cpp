@@ -45,6 +45,26 @@ static void loadRC(DSContext *ctx) {
     }
 }
 
+static const char *statusLogPath = nullptr;
+
+template <typename F, F func, typename ...T>
+static int invoke(DSContext **ctx, T&& ... args) {
+    DSStatus *status;
+    int ret = func(*ctx, std::forward<T>(args)..., &status);
+    if(statusLogPath != nullptr) {
+        FILE *fp = fopen(statusLogPath, "w");
+        if(fp != nullptr) {
+            fprintf(fp, "type=%d lineNum=%d kind=%s\n",
+                    DSStatus_getType(status), DSStatus_getErrorLineNum(status), DSStatus_getErrorKind(status));
+        }
+    }
+    DSStatus_free(&status);
+    DSContext_delete(ctx);
+    return ret;
+};
+
+#define INVOKE(F) invoke<decltype(DSContext_ ## F), DSContext_ ## F>
+
 static void segvHandler(int num) {
     // write message
     char msg[] = "+++++ catch Segmentation fault +++++\n";
@@ -72,7 +92,8 @@ static void segvHandler(int num) {
     OP(HELP,           "--help",              0, "show this help message") \
     OP(COMMAND,        "-c",                  argv::HAS_ARG | argv::IGNORE_REST, "evaluate argument") \
     OP(NORC,           "--norc",              0, "not load ydshrc") \
-    OP(EXEC,           "-e",                  argv::HAS_ARG | argv::IGNORE_REST, "execute builtin command (ignore some option)")
+    OP(EXEC,           "-e",                  argv::HAS_ARG | argv::IGNORE_REST, "execute builtin command (ignore some option)") \
+    OP(STATUS_LOG,     "--status-log",        argv::HAS_ARG, "write execution status to specified file (ignored in interactive mode)")
 
 enum OptionKind {
 #define GEN_ENUM(E, S, F, D) E,
@@ -167,6 +188,9 @@ int main(int argc, char **argv) {
             execBuiltin = true;
             restIndex--;
             break;
+        case STATUS_LOG:
+            statusLogPath = cmdLine.second;
+            break;
         }
     }
 
@@ -178,17 +202,13 @@ int main(int argc, char **argv) {
 
     // execute builtin command
     if(execBuiltin) {
-        int ret = DSContext_exec(ctx, shellArgs, nullptr);
-        DSContext_delete(&ctx);
-        return ret;
+        return INVOKE(exec)(&ctx, (char **)shellArgs);
     }
 
     // evaluate argument
     if(evalArg != nullptr) {    // command line mode
         DSContext_setArguments(ctx, shellArgs);
-        int ret = DSContext_eval(ctx, evalArg, nullptr);
-        DSContext_delete(&ctx);
-        return ret;
+        return INVOKE(eval)(&ctx, evalArg);
     }
 
     // execute
@@ -201,13 +221,9 @@ int main(int argc, char **argv) {
         }
 
         DSContext_setArguments(ctx, shellArgs);
-        int ret = DSContext_loadAndEval(ctx, scriptName, fp, nullptr);
-        DSContext_delete(&ctx);
-        return ret;
+        return INVOKE(loadAndEval)(&ctx, scriptName, fp);
     } else if(isatty(STDIN_FILENO) == 0) {  // pipe line mode
-        int ret = DSContext_loadAndEval(ctx, nullptr, stdin, nullptr);
-        DSContext_delete(&ctx);
-        return ret;
+        return INVOKE(loadAndEval)(&ctx, nullptr, stdin);
     } else {    // interactive mode
         std::cout << DSContext_getVersion() << std::endl;
         std::cout << DSContext_getCopyright() << std::endl;
