@@ -835,12 +835,6 @@ bool DBusProxy_Object::matchObject(const char *serviceName, const char *objectPa
            strcmp(objectPath, TYPE_AS(String_Object, this->objectPath)->getValue()) == 0;
 }
 
-static inline void quote(std::string &str, const std::string &value) {
-    str += "'";
-    str += value;
-    str += "'";
-}
-
 static inline void quote(std::string &str, const char *value) {
     str += "'";
     str += value;

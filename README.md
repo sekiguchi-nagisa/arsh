@@ -11,7 +11,7 @@ Language specification is subject to change without notice.
 * Linux x64
 * cmake 2.8+
 * make
-* g++ (need c++11 support)
+* clang3.4 or later (need c++11 support)
 * libedit (need unicode support. see http://thrysoee.dk/editline/)
 * libdbus 1.8.x
 * libxml2 (for D-Bus introspection)
@@ -19,9 +19,8 @@ Language specification is subject to change without notice.
 ## How to use
 
 ```
-$ mkdir build
+$ ./setup.sh
 $ cd build
-$ cmake ..
 $ make
 ```
 if not need D-Bus support,
