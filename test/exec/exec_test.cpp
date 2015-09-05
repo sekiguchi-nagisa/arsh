@@ -126,7 +126,17 @@ public:
     virtual ~ExecTest() = default;
 
     virtual void SetUp() {
-        this->tmpFileName = tmpnam(nullptr);
+        const char *tmpdir = getenv("TMPDIR");
+        if(tmpdir == nullptr) {
+            tmpdir = "/tmp";
+        }
+        unsigned int size = 512;
+        char name[size];
+        snprintf(name, size, "%s/exec_test_tmpXXXXXX", tmpdir);
+
+        int fd = mkstemp(name);
+        close(fd);
+        this->tmpFileName = name;
         this->targetName = this->GetParam();
     }
 
@@ -172,16 +182,16 @@ public:
         }
 
         // execute
-        std::cerr << cmd << std::endl;
         int ret = system(cmd.c_str());
         ret = WEXITSTATUS(ret);
 
         // get internal status
         std::ifstream input(this->getTmpFileName());
-        ASSERT_TRUE(input);
+        ASSERT_FALSE(!input);
 
         std::string line;
         std::getline(input, line);
+        ASSERT_FALSE(line.empty());
 
         unsigned int type;
         unsigned int lineNum;

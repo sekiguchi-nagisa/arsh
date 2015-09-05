@@ -56,6 +56,7 @@ static int invoke(DSContext **ctx, T&& ... args) {
         if(fp != nullptr) {
             fprintf(fp, "type=%d lineNum=%d kind=%s\n",
                     DSStatus_getType(status), DSStatus_getErrorLineNum(status), DSStatus_getErrorKind(status));
+            fclose(fp);
         }
     }
     DSStatus_free(&status);
