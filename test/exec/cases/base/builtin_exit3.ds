@@ -1,7 +1,7 @@
-#$test($result = 'exit', $status = 6543, $lineNum = 6)
+#$test($result = 'exit', $status = 65, $lineNum = 6)
 
 # exit in block
 
 if($true) {
-    exit 6543
+    exit 65
 }

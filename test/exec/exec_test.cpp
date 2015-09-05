@@ -1,7 +1,10 @@
 #include <gtest/gtest.h>
 
+#include <fstream>
+
 #include <ydsh/ydsh.h>
 #include <misc/files.h>
+#include <misc/num.h>
 #include <directive.h>
 #include <config.h>
 
@@ -10,57 +13,129 @@
 #define EXEC_TEST_DIR "."
 #endif
 
+#ifndef BIN_PATH
+#define BIN_PATH "./ydsh"
+#endif
+
 using namespace ydsh;
 using namespace ydsh::directive;
 using namespace ydsh::misc;
 
+// parse config(key = value)
+
+bool isSpace(char ch) {
+    switch(ch) {
+    case ' ':
+    case '\t':
+    case '\r':
+    case '\n':
+        return true;
+    default:
+        return false;
+    }
+}
+
+void consumeSpace(const std::string &src, unsigned int &index) {
+    for(; index < src.size(); index++) {
+        if(!isSpace(src[index])) {
+            return;
+        }
+    }
+}
+
+int extract(const std::string &src, unsigned int &index, unsigned int &first) {
+    consumeSpace(src, index);
+
+    std::string buf;
+    for(; index < src.size(); index++) {
+        char ch = src[index];
+        if(!isdigit(ch)) {
+            break;
+        }
+        buf += ch;
+    }
+    int status;
+    long value = convertToInt64(buf.c_str(), status, false);
+    if(status != 0 || value < 0 || value > UINT32_MAX) {
+        return 1;
+    }
+    first = (unsigned int) value;
+    return 0;
+}
+
+int extract(const std::string &src, unsigned int &index, std::string &first) {
+    consumeSpace(src, index);
+
+    for(; index < src.size(); index++) {
+        char ch = src[index];
+        if(isSpace(ch)) {
+            break;
+        }
+        first += ch;
+    }
+    return 0;
+}
+
+int extract(const std::string &src, unsigned int &index, const char *first) {
+    consumeSpace(src, index);
+
+    for(unsigned int i = 0; first[i] != '\0'; i++) {
+        if(index >= src.size()) {
+            return 1;   // not match
+        }
+        if(src[index++] != first[i]) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int parseImpl(const std::string &src, unsigned int &index) {
+    consumeSpace(src, index);
+    return index - src.size();
+}
+
+template <typename F, typename ...T>
+int parseImpl(const std::string &src, unsigned int &index, F &&first, T&& ...args) {
+    int ret = extract(src, index, std::forward<F>(first));
+    return ret == 0 ? parseImpl(src, index, std::forward<T>(args)...) : ret;
+}
+
+template <typename ...T>
+int parse(const std::string &src, T&& ...args) {
+    unsigned int index = 0;
+    return parseImpl(src, index, std::forward<T>(args)...);
+}
+
+template <typename ...T>
+int parse(const char *src, T&& ...args) {
+    std::string str(src);
+    return parse(str, std::forward<T>(args)...);
+}
+
+
+
 class ExecTest : public ::testing::TestWithParam<std::string> {
 private:
+    std::string tmpFileName;
     std::string targetName;
-    DSContext *ctx;
-
-    /**
-     * save some env
-     */
-    std::vector<std::pair<std::string, std::string>> envList;
 
 public:
-    ExecTest() : targetName(), ctx(), envList() {
-    }
+    ExecTest() : tmpFileName(), targetName() { }
 
     virtual ~ExecTest() = default;
 
-
-    virtual void saveEnv(const char *envName) {
-        const char *value = getenv(envName);
-        if(value != nullptr) {
-            this->envList.push_back(std::make_pair(envName, value));
-        }
-    }
-
-    virtual void restoreAllEnv() {
-        for(auto &pair : this->envList) {
-            setenv(pair.first.c_str(), pair.second.c_str(), 1);
-        }
-    }
-
     virtual void SetUp() {
-        // save env
-        this->saveEnv("HOME");
-        this->saveEnv("PATH");
-        this->saveEnv("OLDPWD");
-        this->saveEnv("PWD");
-        this->saveEnv("TMPDIR");
-
+        this->tmpFileName = tmpnam(nullptr);
         this->targetName = this->GetParam();
-        this->ctx = DSContext_create();
     }
 
     virtual void TearDown() {
-        this->targetName.clear();
-        DSContext_delete(&this->ctx);
+        remove(this->tmpFileName.c_str());
+    }
 
-        this->restoreAllEnv();
+    virtual const std::string &getTmpFileName() {
+        return this->tmpFileName;
     }
 
     virtual const std::string &getSourceName() {
@@ -84,24 +159,42 @@ public:
             return; // do nothing
         }
 
-
         const char *scriptName = this->getSourceName().c_str();
-        FILE *fp = fopen(scriptName, "rb");
-        ASSERT_TRUE(fp != nullptr);
+        std::string cmd(BIN_PATH);
+        cmd += " --status-log ";
+        cmd += this->getTmpFileName();
 
         // set argument
         std::unique_ptr<char *[]> argv = d.getAsArgv(scriptName);
-        DSContext_setArguments(this->ctx, argv.get());
+        for(unsigned int i = 0; argv[i] != nullptr; i++) {
+            cmd += " ";
+            cmd += argv[i];
+        }
 
         // execute
-        DSStatus *status;
-        int ret = DSContext_loadAndEval(this->ctx, scriptName, fp, &status);
+        std::cerr << cmd << std::endl;
+        int ret = system(cmd.c_str());
+        ret = WEXITSTATUS(ret);
+
+        // get internal status
+        std::ifstream input(this->getTmpFileName());
+        ASSERT_TRUE(input);
+
+        std::string line;
+        std::getline(input, line);
+
+        unsigned int type;
+        unsigned int lineNum;
+        std::string kind;
+
+        int r = parse(line, "type", "=", type, "lineNum", "=", lineNum, "kind", "=", kind);
+        ASSERT_EQ(0, r);
 
         // check status
-        ASSERT_EQ(d.getResult(), DSStatus_getType(status));
-        ASSERT_EQ(d.getLineNum(), DSStatus_getErrorLineNum(status));
+        ASSERT_EQ(d.getResult(), type);
+        ASSERT_EQ(d.getLineNum(), lineNum);
         ASSERT_EQ(d.getStatus(), ret);
-        ASSERT_STREQ(d.getErrorKind().c_str(), DSStatus_getErrorKind(status));
+        ASSERT_EQ(d.getErrorKind(), kind);
     }
 };
 
@@ -136,6 +229,39 @@ std::unique_ptr<char *[]> make_argv(const char *name, T ...args) {
     return ptr;
 }
 
+TEST(Base, case1) {
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+
+        std::string line("type=3 lineNum=1 kind=SystemError");
+        unsigned int type;
+        unsigned int lineNum;
+        std::string kind;
+
+        int ret = parse(line, "type", "=", type, "lineNum", "=", lineNum, "kind", "=", kind);
+        ASSERT_EQ(0, ret);
+        ASSERT_EQ(3, type);
+        ASSERT_EQ(1, lineNum);
+        ASSERT_EQ("SystemError", kind);
+    });
+}
+
+TEST(Base, case2) {
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+
+        std::string line("type=0 lineNum=0 kind=");
+        unsigned int type;
+        unsigned int lineNum;
+        std::string kind;
+
+        int ret = parse(line, "type", "=", type, "lineNum", "=", lineNum, "kind", "=", kind);
+        ASSERT_EQ(0, ret);
+        ASSERT_EQ(0, type);
+        ASSERT_EQ(0, lineNum);
+        ASSERT_EQ("", kind);
+    });
+}
 
 
 TEST(BuiltinExecTest, case1) {
