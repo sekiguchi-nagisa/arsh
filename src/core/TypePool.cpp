@@ -295,9 +295,9 @@ FunctionType *TypePool::createAndGetFuncTypeIfUndefined(DSType *returnType, std:
 InterfaceType *TypePool::createAndGetInterfaceTypeIfUndefined(const std::string &interfaceName) {
     DSType *type = this->typeMap.getType(interfaceName);
     if(type == nullptr) {
-        InterfaceType *type = new InterfaceType(this->dbusObjectType);
-        this->typeMap.addType(std::string(interfaceName), type);
-        return type;
+        InterfaceType *ifaceType = new InterfaceType(this->dbusObjectType);
+        this->typeMap.addType(std::string(interfaceName), ifaceType);
+        return ifaceType;
     }
     assert(type->isInterface());
 
@@ -307,9 +307,9 @@ InterfaceType *TypePool::createAndGetInterfaceTypeIfUndefined(const std::string 
 DSType *TypePool::createAndGetErrorTypeIfUndefined(const std::string &errorName, DSType *superType) {
     DSType *type = this->typeMap.getType(errorName);
     if(type == nullptr) {
-        DSType *type = new ErrorType(superType);
-        this->typeMap.addType(std::string(errorName), type);
-        return type;
+        DSType *errorType = new ErrorType(superType);
+        this->typeMap.addType(std::string(errorName), errorType);
+        return errorType;
     }
     return type;
 }

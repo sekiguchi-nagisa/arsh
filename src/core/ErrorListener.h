@@ -116,7 +116,7 @@ private:
     const char *messageKind;
 
 public:
-    ReportingListener();
+    ReportingListener() : lineNum(0), messageKind("") { }
     ~ReportingListener() = default;
 
     unsigned int getLineNum() const {

@@ -19,7 +19,6 @@
 
 #include "dump.h"
 #include "../ast/Node.h"
-#include "../core/TypePool.h"
 #include "../misc/fatal.h"
 
 #define OUT (this->stream)

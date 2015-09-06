@@ -1198,9 +1198,9 @@ void TypeChecker::visitFunctionNode(FunctionNode *node) {   //TODO: named parame
 
     for(unsigned int i = 0; i < paramSize; i++) { // register parameter
         VarNode *paramNode = node->getParamNodes()[i];
-        FieldHandle *handle = this->addEntryAndThrowIfDefined(
+        FieldHandle *fieldHandle = this->addEntryAndThrowIfDefined(
                 paramNode, paramNode->getVarName(), paramTypes[i], false);
-        paramNode->setAttribute(handle);
+        paramNode->setAttribute(fieldHandle);
     }
     this->checkBlockEndExistence(node->getBlockNode(), returnType);
     this->checkTypeWithCurrentBlockScope(node->getBlockNode());

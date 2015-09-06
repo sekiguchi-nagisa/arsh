@@ -270,12 +270,6 @@ public:
     /**
      * convert errno to SystemError.
      * errorNum must not be 0.
-     */
-    void throwSystemError(int errorNum);
-
-    /**
-     * convert errno to SystemError.
-     * errorNum must not be 0.
      * format message '%s: %s', message, strerror(errorNum)
      */
     void throwSystemError(int errorNum, std::string &&message);
@@ -433,7 +427,7 @@ public:
     }
 
     void pushCallFrame(unsigned int lineNum) {
-        unsigned long index = ((unsigned long) (this->funcContextStack.size() - 1)) << 32;
+        unsigned long index = (this->funcContextStack.size() - 1) << 32;
         this->callStack.push_back(index | (unsigned long) lineNum);
     }
 
@@ -523,7 +517,6 @@ public:
 
     void exitShell(unsigned int status);
 
-    void registerSpecialChar(const std::string &varName, unsigned int index);
     unsigned int getSpecialCharIndex(const char *varName);
 
     ProcInvoker &getProcInvoker() {

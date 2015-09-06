@@ -219,21 +219,21 @@ static bool decodeAndUnrefMessage(std::vector<DSValue> &values, RuntimeContext &
     // check type
     unsigned int size = values.size();
     if(types.size() != size) {
-        std::string msg = "mismatched return value number, require size is: ";
-        msg += std::to_string(types.size());
-        msg += ", but is: ";
-        msg += std::to_string(values.size());
-        reportDBusError(ctx, DBUS_ERROR_INVALID_SIGNATURE, std::move(msg));
+        std::string str = "mismatched return value number, require size is: ";
+        str += std::to_string(types.size());
+        str += ", but is: ";
+        str += std::to_string(values.size());
+        reportDBusError(ctx, DBUS_ERROR_INVALID_SIGNATURE, std::move(str));
         return false;
     }
 
     for(unsigned int i = 0; i < size; i++) {
         if(!types[i]->isSameOrBaseTypeOf(values[i]->getType())) {
-            std::string msg = "require type is: ";
-            msg += ctx.getPool().getTypeName(*types[i]);
-            msg += ", but is: ";
-            msg += ctx.getPool().getTypeName(*values[i]->getType());
-            reportDBusError(ctx, DBUS_ERROR_INVALID_SIGNATURE, std::move(msg));
+            std::string str = "require type is: ";
+            str += ctx.getPool().getTypeName(*types[i]);
+            str += ", but is: ";
+            str += ctx.getPool().getTypeName(*values[i]->getType());
+            reportDBusError(ctx, DBUS_ERROR_INVALID_SIGNATURE, std::move(str));
             return false;
         }
     }
@@ -693,9 +693,9 @@ bool DBusProxy_Object::doIntrospection(RuntimeContext &ctx) {
     unrefMessage(ret);
 
     if(this->ifaceSet.empty()) {
-        std::string msg = ("illegal object path: ");
-        msg += TYPE_AS(String_Object, this->objectPath)->getValue();
-        reportDBusError(ctx, DBUS_ERROR_UNKNOWN_OBJECT, std::move(msg));
+        std::string str = ("illegal object path: ");
+        str += TYPE_AS(String_Object, this->objectPath)->getValue();
+        reportDBusError(ctx, DBUS_ERROR_UNKNOWN_OBJECT, std::move(str));
         return false;
     }
     return true;

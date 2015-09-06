@@ -2024,7 +2024,7 @@ public:
     explicit RootNode(const char *sourceName) :
             Node(0), sourceName(sourceName), nodeList(), maxVarNum(0), maxGVarNum(0) { }
 
-    RootNode();
+    RootNode() : RootNode("") { }
 
     ~RootNode();
 

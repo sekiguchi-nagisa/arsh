@@ -16,15 +16,11 @@
 
 #include <pwd.h>
 
-#include <cassert>
-
 #include "../core/symbol.h"
 #include "../core/DSObject.h"
 #include "../core/RuntimeContext.h"
-#include "../core/FieldHandle.h"
 #include "../misc/fatal.h"
 #include "dump.h"
-#include "Node.h"
 
 // helper macro
 #define EVAL(ctx, node) \
@@ -61,8 +57,7 @@ bool Node::isBlockEndNode() const {
 void Node::setSourceName(const char *sourceName) { } // do nothing
 
 const char *Node::getSourceName() {
-    static const char empty[] = "";
-    return empty;
+    return "";
 }
 
 // ##########################
@@ -2357,12 +2352,6 @@ EvalStatus DummyNode::eval(RuntimeContext &ctx) {
 // ######################
 // ##     RootNode     ##
 // ######################
-
-RootNode::RootNode() :
-        RootNode(0) {
-    static const char empty[] = "";
-    this->sourceName = empty;
-}
 
 RootNode::~RootNode() {
     for(Node *n : this->nodeList) {

@@ -300,7 +300,7 @@ public:
     MethodRef *getMethodRef(unsigned int methodIndex); // override
     void copyAllMethodRef(std::vector<MethodRef> &methodTable); // override
 
-private:
+protected:
     virtual void initMethodHandle(MethodHandle *handle, TypePool *typePool, NativeFuncInfo *info);
 };
 

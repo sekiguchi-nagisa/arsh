@@ -83,11 +83,6 @@ void CommonErrorListener::handleRuntimeError(const TypePool &pool, const DSValue
 // ##     ReportingListener     ##
 // ###############################
 
-ReportingListener::ReportingListener() : lineNum(0), messageKind() {
-    static char empty[] = "";
-    this->messageKind = empty;
-}
-
 void ReportingListener::handleParseError(Lexer &lexer,
                                          const std::string &sourceName, const ParseError &e) noexcept {
 #define EACH_ERROR(E) \

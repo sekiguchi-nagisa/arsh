@@ -544,8 +544,8 @@ void RuntimeContext::interpretPromptString(const char *ps, std::string &output) 
                 ch = '\033';
                 break;
             case 'h': {
-                for(unsigned int i = 0; hostName[i] != '\0' && hostName[i] != '.'; i++) {
-                    output += hostName[i];
+                for(unsigned int j = 0; hostName[j] != '\0' && hostName[j] != '.'; j++) {
+                    output += hostName[j];
                 }
                 continue;
             }
