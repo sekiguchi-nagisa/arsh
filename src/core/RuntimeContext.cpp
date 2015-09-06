@@ -123,8 +123,7 @@ void RuntimeContext::reserveLocalVar(unsigned int size) {
 }
 
 void RuntimeContext::throwError(DSType *errorType, const char *message) {
-    this->thrownObject = Error_Object::newError(*this, errorType, DSValue::create<String_Object>(
-            this->pool.getStringType(), std::string(message)));
+    this->throwError(errorType, std::string(message));
 }
 
 void RuntimeContext::throwError(DSType *errorType, std::string &&message) {

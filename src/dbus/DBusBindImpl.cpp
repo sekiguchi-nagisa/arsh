@@ -25,16 +25,14 @@ namespace ydsh {
 namespace core {
 
 // helper util
-static void reportDBusError(RuntimeContext &ctx, DBusError &error) {
-    std::string name(error.name);
-    DSType *type = ctx.getPool().createAndGetErrorTypeIfUndefined(name, ctx.getPool().getDBusErrorType());
-    ctx.throwError(type, error.message);
-}
-
 static void reportDBusError(RuntimeContext &ctx, const char *dbusErrorName, std::string &&message) {
     std::string name(dbusErrorName);
     DSType *type = ctx.getPool().createAndGetErrorTypeIfUndefined(name, ctx.getPool().getDBusErrorType());
     ctx.throwError(type, std::move(message));
+}
+
+static void reportDBusError(RuntimeContext &ctx, DBusError &error) {
+    reportDBusError(ctx, error.name, std::string(error.message));
 }
 
 static void unrefMessage(DBusMessage *msg) {
@@ -463,7 +461,7 @@ bool DBus_ObjectImpl::waitSignal(RuntimeContext &ctx) {
     DBusError error;
     dbus_error_init(&error);
     for(auto &rule : ruleList) {
-        LOG(TRACE_SIGNAL, "match rule: ");
+        LOG(TRACE_SIGNAL, "match rule: " << rule);
         dbus_bus_add_match(conn, rule.c_str(), &error);
         if(dbus_error_is_set(&error)) {
             reportDBusError(ctx, error);

@@ -1,17 +1,11 @@
 # builtin variable definition
 
-if(check_env PWD) {} else {
-    export-env PWD = "$(pwd)"
-}
-if(check_env OLDPWD) {} else {
-    export-env OLDPWD = "$(pwd)"
-}
+import-env OLDPWD : "$(pwd)"
+import-env PWD : "$(pwd)"
+
 if(check_env PATH) {} else {
     export-env PATH = '/bin:/usr/bin:/usr/local/bin'
 }
-
-import-env OLDPWD
-import-env PWD
 
 type-alias Int Int32
 type-alias Uint Uint32
