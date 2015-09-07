@@ -20,6 +20,7 @@
 #include <unistd.h>
 
 #include <iostream>
+#include <fstream>
 #include <type_traits>
 #include <string>
 #include <cstring>
@@ -35,7 +36,11 @@ class Logger {
 private:
     static_assert(std::is_enum<E>::value, "must be enum type");
 
-    std::ostream *stream;
+    std::ostream *appender;
+
+    /**
+     * if true, delete stream
+     */
     bool close;
 
     /**
@@ -43,16 +48,13 @@ private:
      */
     const bool *whiteList;
 
-    Logger() : stream(nullptr), close(false), whiteList(nullptr) {
-        this->stream = &std::cerr;
-        this->whiteList = P::init();
-    }
+    Logger();
 
 public:
     ~Logger() {
         if(this->close) {
-            delete this->stream;
-            this->stream = nullptr;
+            delete this->appender;
+            this->appender = nullptr;
         }
     }
 
@@ -73,8 +75,25 @@ public:
 };
 
 template <typename P, typename E>
+Logger<P, E>::Logger() :
+        appender(&std::cerr), close(false), whiteList(P::init()) {
+    const char *path = getenv(P::appenderPath());
+    if(path != nullptr) {
+        std::ostream *os = new std::ofstream(path);
+        if(!(*os)) {
+            delete os;
+            os = nullptr;
+        }
+        if(os != nullptr) {
+            this->appender = os;
+            this->close = true;
+        }
+    }
+}
+
+template <typename P, typename E>
 std::ostream &Logger<P, E>::header(const char *funcName) {
-    std::ostream &stream = *instance().stream;
+    std::ostream &stream = *instance().appender;
 
     time_t timer = time(nullptr);
     struct tm *local = localtime(&timer);
@@ -162,6 +181,7 @@ struct LoggingPolicy {\
         static bool policyList[sizeof((Policy[]){ __VA_ARGS__ }) / sizeof(Policy)];\
         return initPolicy(PREFIX, policyList, #__VA_ARGS__);\
     }\
+    static const char *appenderPath() { return PREFIX APPENDER; }\
 };\
 }\
 typedef __detail_log::Logger<__detail_log::LoggingPolicy, __detail_log::LoggingPolicy::Policy> Logger;\
