@@ -65,33 +65,33 @@ enum CoercionKind {
     INVALID_COERCION,   // illegal coercion.
 };
 
-class TypeGenerator : public TypeTokenVisitor {
-private:
-    TypePool *pool;
-    DSType *type;
-
-public:
-    explicit TypeGenerator(TypePool *pool) : pool(pool), type(nullptr) { }
-    ~TypeGenerator() = default;
-
-    /**
-     * entry point.
-     * generate DSType from TypeToken.
-     */
-    DSType *generateTypeAndThrow(TypeToken *token) throw(TypeCheckError);
-
-    void visitClassTypeToken(ClassTypeToken *token);    // overrode
-    void visitReifiedTypeToken(ReifiedTypeToken *token);    // override
-    void visitFuncTypeToken(FuncTypeToken *token);  // override
-    void visitDBusInterfaceToken(DBusInterfaceToken *token);    // override
-    void visitReturnTypeToken(ReturnTypeToken *token);  // override
-
-private:
-    DSType *generateType(TypeToken *token);
-};
-
-
 class TypeChecker : public NodeVisitor {
+public:
+    class TypeGenerator : public TypeTokenVisitor {
+    private:
+        TypePool *pool;
+        DSType *type;
+
+    public:
+        explicit TypeGenerator(TypePool *pool) : pool(pool), type(nullptr) { }
+        ~TypeGenerator() = default;
+
+        /**
+         * entry point.
+         * generate DSType from TypeToken.
+         */
+        DSType *generateTypeAndThrow(TypeToken *token) throw(TypeCheckError);
+
+        void visitClassTypeToken(ClassTypeToken *token);    // overrode
+        void visitReifiedTypeToken(ReifiedTypeToken *token);    // override
+        void visitFuncTypeToken(FuncTypeToken *token);  // override
+        void visitDBusInterfaceToken(DBusInterfaceToken *token);    // override
+        void visitReturnTypeToken(ReturnTypeToken *token);  // override
+
+    private:
+        DSType *generateType(TypeToken *token);
+    };
+
 private:
     /**
      * for type lookup

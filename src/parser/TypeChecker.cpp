@@ -30,7 +30,7 @@ namespace parser {
 // ##     TypeGenerator     ##
 // ###########################
 
-DSType *TypeGenerator::generateTypeAndThrow(TypeToken *token) throw(TypeCheckError) {
+DSType *TypeChecker::TypeGenerator::generateTypeAndThrow(TypeToken *token) throw(TypeCheckError) {
     try {
         return this->generateType(token);
     } catch(TypeLookupError &e) {
@@ -39,11 +39,11 @@ DSType *TypeGenerator::generateTypeAndThrow(TypeToken *token) throw(TypeCheckErr
     }
 }
 
-void TypeGenerator::visitClassTypeToken(ClassTypeToken *token) {
+void TypeChecker::TypeGenerator::visitClassTypeToken(ClassTypeToken *token) {
     this->type = this->pool->getTypeAndThrowIfUndefined(token->getTokenText());
 }
 
-void TypeGenerator::visitReifiedTypeToken(ReifiedTypeToken *token) {
+void TypeChecker::TypeGenerator::visitReifiedTypeToken(ReifiedTypeToken *token) {
     unsigned int size = token->getElementTypeTokens().size();
     TypeTemplate *typeTemplate = this->pool->getTypeTemplate(token->getTemplate()->getTokenText());
     std::vector<DSType *> elementTypes(size);
@@ -53,7 +53,7 @@ void TypeGenerator::visitReifiedTypeToken(ReifiedTypeToken *token) {
     this->type = this->pool->createAndGetReifiedTypeIfUndefined(typeTemplate, std::move(elementTypes));
 }
 
-void TypeGenerator::visitFuncTypeToken(FuncTypeToken *token) {
+void TypeChecker::TypeGenerator::visitFuncTypeToken(FuncTypeToken *token) {
     DSType *returnType = this->generateType(token->getReturnTypeToken());
     unsigned int size = token->getParamTypeTokens().size();
     std::vector<DSType *> paramTypes(size);
@@ -63,11 +63,11 @@ void TypeGenerator::visitFuncTypeToken(FuncTypeToken *token) {
     this->type = this->pool->createAndGetFuncTypeIfUndefined(returnType, std::move(paramTypes));
 }
 
-void TypeGenerator::visitDBusInterfaceToken(DBusInterfaceToken *token) {
+void TypeChecker::TypeGenerator::visitDBusInterfaceToken(DBusInterfaceToken *token) {
     this->type = this->pool->getDBusInterfaceType(token->getTokenText());
 }
 
-void TypeGenerator::visitReturnTypeToken(ReturnTypeToken *token) {
+void TypeChecker::TypeGenerator::visitReturnTypeToken(ReturnTypeToken *token) {
     unsigned int size = token->getTypeTokens().size();
     if(size == 1) {
         this->type = this->generateType(token->getTypeTokens()[0]);
@@ -81,7 +81,7 @@ void TypeGenerator::visitReturnTypeToken(ReturnTypeToken *token) {
     this->type = this->pool->createAndGetTupleTypeIfUndefined(std::move(types));
 }
 
-DSType *TypeGenerator::generateType(TypeToken *token) {
+DSType *TypeChecker::TypeGenerator::generateType(TypeToken *token) {
     token->accept(this);
     return this->type;
 }

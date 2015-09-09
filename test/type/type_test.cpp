@@ -129,7 +129,7 @@ public:
         SCOPED_TRACE("");
         try {
             TypeToken *ptr = tok.get();
-            return TypeGenerator(&this->pool).generateTypeAndThrow(ptr);
+            return TypeChecker::TypeGenerator(&this->pool).generateTypeAndThrow(ptr);
         } catch(const TypeCheckError &e) {
             std::cerr << e.getMessage() << std::endl;
             return nullptr;
