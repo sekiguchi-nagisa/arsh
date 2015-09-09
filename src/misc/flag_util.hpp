@@ -29,21 +29,21 @@ typedef unsigned int flag32_set_t;
 typedef unsigned int flag32_t;
 
 template <typename T>
-void setFlag(T &set, T flag) {
+inline void setFlag(T &set, T flag) {
     static_assert(std::is_unsigned<T>::value, "must be unsigned type");
 
     set |= flag;
 }
 
 template <typename T>
-void unsetFlag(T &set, T flag) {
+inline void unsetFlag(T &set, T flag) {
     static_assert(std::is_unsigned<T>::value, "must be unsigned type");
 
     set &= ~flag;
 }
 
 template <typename T>
-bool hasFlag(T set, T flag) {
+inline bool hasFlag(T set, T flag) {
     static_assert(std::is_unsigned<T>::value, "must be unsigned type");
 
     return (set & flag) == flag;

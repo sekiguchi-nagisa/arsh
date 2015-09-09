@@ -25,34 +25,36 @@
 #include <string>
 #include <cstring>
 #include <ctime>
-#include <functional>
+
+#include "flag_util.hpp"
 
 namespace ydsh {
 namespace log {
 namespace __detail_log {
+
+inline unsigned int mask(unsigned int index) {
+    return 1 << (index + 1);
+}
 
 template <typename P, typename E>
 class Logger {
 private:
     static_assert(std::is_enum<E>::value, "must be enum type");
 
+    static constexpr unsigned int CLOSE_APPENDER = 1 << 0;
+
     std::ostream *appender;
 
     /**
-     * if true, delete stream
+     * if least significant bit is set, close appender
      */
-    bool close;
-
-    /**
-     * not delete it
-     */
-    const bool *whiteList;
+    unsigned int whiteList;
 
     Logger();
 
 public:
     ~Logger() {
-        if(this->close) {
+        if(ydsh::misc::hasFlag(this->whiteList, CLOSE_APPENDER)) {
             delete this->appender;
             this->appender = nullptr;
         }
@@ -64,7 +66,7 @@ public:
     }
 
     static bool checkPolicy(E e) {
-        return instance().whiteList[e];
+        return ydsh::misc::hasFlag(instance().whiteList, mask(e));
     }
 
     static std::ostream &format2digit(std::ostream &stream, int num) {
@@ -75,8 +77,7 @@ public:
 };
 
 template <typename P, typename E>
-Logger<P, E>::Logger() :
-        appender(&std::cerr), close(false), whiteList(P::init()) {
+Logger<P, E>::Logger() : appender(&std::cerr), whiteList(P::init()) {
     const char *path = getenv(P::appenderPath());
     if(path != nullptr) {
         std::ostream *os = new std::ofstream(path);
@@ -86,7 +87,7 @@ Logger<P, E>::Logger() :
         }
         if(os != nullptr) {
             this->appender = os;
-            this->close = true;
+            ydsh::misc::setFlag(this->whiteList, CLOSE_APPENDER);
         }
     }
 }
@@ -110,10 +111,10 @@ std::ostream &Logger<P, E>::header(const char *funcName) {
 
 
 template <unsigned int N>
-bool *initPolicy(const char *prefix, bool (&policyList)[N], const char *arg) {
-    for(unsigned int i = 0; i < N; i++) {
-        policyList[i] = false;
-    }
+unsigned int initPolicy(const char *prefix, const char *arg) {
+    static_assert(N < 32, "not allow more than 31 policy");
+
+    unsigned int policySet = 0;
 
     // parse arg
     const unsigned int prefixSize = strlen(prefix);
@@ -125,16 +126,21 @@ bool *initPolicy(const char *prefix, bool (&policyList)[N], const char *arg) {
             continue;
         }
         if(ch == ',') {
-            policyList[indexCount++] = getenv(buf.c_str()) != nullptr;
+            if(getenv(buf.c_str()) != nullptr) {
+                ydsh::misc::setFlag(policySet, mask(indexCount));
+            }
+            indexCount++;
             buf = prefix;
         } else {
             buf += ch;
         }
     }
     if(buf.size() > prefixSize) {
-        policyList[indexCount] = getenv(buf.c_str()) != nullptr;
+        if(getenv(buf.c_str()) != nullptr) {
+            ydsh::misc::setFlag(policySet, mask(indexCount));
+        }
     }
-    return policyList;
+    return policySet;
 }
 
 } // namespace __detail_log
@@ -177,9 +183,8 @@ constexpr bool enableLogging = false;
 namespace ydsh { namespace log { namespace __detail_log {\
 struct LoggingPolicy {\
     enum Policy { __VA_ARGS__ };\
-    static bool *init() { \
-        static bool policyList[sizeof((Policy[]){ __VA_ARGS__ }) / sizeof(Policy)];\
-        return initPolicy(PREFIX, policyList, #__VA_ARGS__);\
+    static unsigned int init() { \
+        return initPolicy<sizeof((Policy[]){ __VA_ARGS__ }) / sizeof(Policy)>(PREFIX, #__VA_ARGS__);\
     }\
     static const char *appenderPath() { return PREFIX APPENDER; }\
 };\
