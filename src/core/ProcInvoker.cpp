@@ -19,6 +19,7 @@
 #include <signal.h>
 
 #include <cstdlib>
+#include <cstdarg>
 
 #include "logger.h"
 #include "ProcInvoker.h"
@@ -141,15 +142,183 @@ static void builtin_execvpe(char **argv, char *const *envp, const char *progName
 }
 
 /**
- * for builtin command error message.
+ * if errorNum is not 0, include strerror(errorNum)
  */
-static void builtin_perror(FILE *fp, const char *prefix) {
-    fprintf(fp, "%s: %s\n", prefix, strerror(errno));
+static void builtin_perror(const BuiltinContext &bctx, int errorNum, const char *fmt, ...) {
+    FILE *fp = bctx.fp_stderr;
+
+    fprintf(fp, "-ydsh: %s: ", bctx.argv[0]);
+    va_list arg;
+    va_start(arg, fmt);
+
+    vfprintf(fp, fmt, arg);
+
+    va_end(arg);
+
+    if(errorNum != 0) {
+        fprintf(fp, ": %s", strerror(errorNum));
+    }
+    fputc('\n', fp);
 }
 
-// builtin command definition
+#define PERROR(bctx, fmt, ...) builtin_perror(bctx, errno, fmt, ## __VA_ARGS__ )
 
+
+// builtin command definition
+static int builtin___gets(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
+static int builtin___puts(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
+static int builtin_cd(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
+static int builtin_check_env(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
+static int builtin_echo(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
+static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
+static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
+static int builtin_exit(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
+static int builtin_false(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
 static int builtin_help(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
+static int builtin_ps_intrp(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
+static int builtin_pwd(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
+static int builtin_true(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
+
+const struct {
+    const char *commandName;
+    ProcInvoker::builtin_command_t cmd_ptr;
+    const char *usage;
+    const char *detail;
+} builtinCommands[] {
+        {"__gets", builtin___gets, "",
+                "    Read standard input and write to standard output."},
+        {"__puts", builtin___puts, "[-1] [arg1] [-2] [arg2]",
+                "    Print specified argument to standard output/error and print new line.\n"
+                "    Options:\n"
+                "        -1    print to standard output\n"
+                "        -2    print to standard error"},
+        {"cd", builtin_cd, "[dir]",
+                "    Changing the current directory to DIR.  The Environment variable\n"
+                "    HOME is the default DIR.  A null directory name is the same as\n"
+                "    the current directory."},
+        {"check_env", builtin_check_env, "[variable ...]",
+                "    Check existence of specified environmental variables.\n"
+                "    If all of variables are exist and not empty string, exit with 0."},
+        {"echo", builtin_echo, "[-ne]",
+                "    Print argument to standard output and print new line.\n"
+                "    Options:\n"
+                "        -n    not print new line\n"
+                "        -e    interpret some escape sequence\n"
+                "                  \\\\    backslash\n"
+                "                  \\a    bell\n"
+                "                  \\b    backspace\n"
+                "                  \\c    ignore subsequent string\n"
+                "                  \\e    escape sequence\n"
+                "                  \\f    form feed\n"
+                "                  \\n    newline\n"
+                "                  \\r    carriage return\n"
+                "                  \\t    horizontal tab\n"
+                "                  \\v    vertical tab"},
+        {"eval", builtin_eval, "[args ...]",
+                "    evaluate ARGS as command."},
+        {"exec", builtin_exec, "[-c] [-a name] file [args ...]",
+                "    Execute FILE and replace this shell with specified program.\n"
+                "    If FILE is not specified, the redirections take effect in this shell.\n"
+                "    Options:\n"
+                "        -c    cleaner environmental variable\n"
+                "        -a    specify set program name(default is FILE)"},
+        {"exit", builtin_exit, "[n]",
+                "    Exit the shell with a status of N.  If N is omitted, the exit\n"
+                "    status is 0."},
+        {"false", builtin_false, "",
+                "    Always failure (exit status is 1)."},
+        {"help", builtin_help, "[-s] [pattern ...]",
+                "    Display helpful information about builtin commands."},
+        {"ps_intrp", builtin_ps_intrp, "[prompt string]",
+                "    Interpret prompt string.\n"
+                "    Escape Sequence:\n"
+                "        \\a    bell\n"
+                "        \\d    date\n"
+                "        \\e    escape sequence\n"
+                "        \\h    host name\n"
+                "        \\H    fully qualified host name\n"
+                "        \\n    newline\n"
+                "        \\r    carriage return\n"
+                "        \\s    shell name ($0)\n"
+                "        \\t    24 hour notation (HH:MM:SS)\n"
+                "        \\T    12 hour notation (HH:MM:SS)\n"
+                "        \\@    12 hour notation with AM/PM\n"
+                "        \\u    user name\n"
+                "        \\v    version\n"
+                "        \\V    version with patch level\n"
+                "        \\w    current directory\n"
+                "        \\W    base name of current directory\n"
+                "        \\$    # if uid is 0, otherwise $\n"
+                "        \\\\    backslash\n"
+                "        \\[    begin of unprintable sequence\n"
+                "        \\]    end of unprintable sequence"},
+        {"pwd", builtin_pwd, "",
+                "    Print the current working directiry(absolute path)."},
+        {"true", builtin_true, "",
+                "    Always success (exit status is 0)."},
+};
+
+template<typename T, size_t N>
+static constexpr size_t sizeOfArray(const T (&array)[N]) {
+    return N;
+}
+
+
+static void printAllUsage(FILE *fp) {
+    unsigned int size = sizeOfArray(builtinCommands);
+    for(unsigned int i = 0; i < size; i++) {
+        fprintf(fp, "%s %s\n", builtinCommands[i].commandName, builtinCommands[i].usage);
+    }
+}
+
+/**
+ * if not found command, return false.
+ */
+static bool printUsage(FILE *fp, const char *commandName, bool isShortHelp = true) {
+    unsigned int size = sizeOfArray(builtinCommands);
+    for(unsigned int i = 0; i < size; i++) {
+        if(strcmp(commandName, builtinCommands[i].commandName) == 0) {
+            fprintf(fp, "%s: %s %s\n", commandName, commandName, builtinCommands[i].usage);
+            if(!isShortHelp) {
+                fprintf(fp, "%s\n", builtinCommands[i].detail);
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+static int builtin_help(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+    if(bctx.argc == 1) {
+        printAllUsage(bctx.fp_stdout);
+        return 0;
+    }
+    bool isShortHelp = false;
+    bool foundValidCommand = false;
+    for(int i = 1; i < bctx.argc; i++) {
+        const char *arg = bctx.argv[i];
+        if(strcmp(arg, "-s") == 0 && bctx.argc == 2) {
+            printAllUsage(bctx.fp_stdout);
+            foundValidCommand = true;
+        } else if(strcmp(arg, "-s") == 0 && i == 1) {
+            isShortHelp = true;
+        } else {
+            if(printUsage(bctx.fp_stdout, arg, isShortHelp)) {
+                foundValidCommand = true;
+            }
+        }
+    }
+    if(!foundValidCommand) {
+        fprintf(bctx.fp_stderr,
+                "-ydsh: help: no help topics match `%s'.  Try `help help'.\n", bctx.argv[bctx.argc - 1]);
+        return 1;
+    }
+    return 0;
+}
+
+inline static void showUsage(const BuiltinContext &bctx) {
+    printUsage(bctx.fp_stderr, bctx.argv[0]);
+}
 
 static int builtin_cd(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
     bool OLDPWD_only = true;
@@ -161,9 +330,7 @@ static int builtin_cd(RuntimeContext *ctx, const BuiltinContext &bctx, bool &rai
     if(destDir != nullptr && strlen(destDir) != 0) {
         OLDPWD_only = false;
         if(chdir(destDir) != 0) {
-            std::string msg("-ydsh: cd: ");
-            msg += destDir;
-            builtin_perror(bctx.fp_stderr, msg.c_str());
+            PERROR(bctx, "%s", destDir);
             return 1;
         }
     }
@@ -174,7 +341,7 @@ static int builtin_cd(RuntimeContext *ctx, const BuiltinContext &bctx, bool &rai
 
 static int builtin_check_env(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
     if(bctx.argc == 1) {
-        fprintf(bctx.fp_stderr, "%s: usage: %s [variable ...]\n", bctx.argv[0], bctx.argv[0]);
+        showUsage(bctx);
         return 1;
     }
     for(int i = 1; i < bctx.argc; i++) {
@@ -327,7 +494,7 @@ static int builtin___puts(RuntimeContext *ctx, const BuiltinContext &bctx, bool 
  */
 static int builtin_ps_intrp(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
     if(bctx.argc != 2) {
-        fprintf(bctx.fp_stderr, "%s: usage: %s [prompt string]\n", bctx.argv[0], bctx.argv[0]);
+        showUsage(bctx);
         return 1;
     }
     std::string str;
@@ -351,7 +518,7 @@ static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
         } else if(strcmp(arg, "-a") == 0 && ++index < bctx.argc) {
             progName = bctx.argv[index];
         } else {
-            fprintf(bctx.fp_stderr, "%s: usage: %s [-c] [-a name] file [args ...]\n", bctx.argv[0], bctx.argv[0]);
+            showUsage(bctx);
             return 1;
         }
     }
@@ -360,7 +527,7 @@ static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
     if(index < bctx.argc) { // exec
         const char *old = getenv("_");  // save current _
         builtin_execvpe(const_cast<char **>(bctx.argv + index), clearEnv ? envp : nullptr, progName);
-        fprintf(bctx.fp_stderr, "-ydsh: exec: %s: %s\n", bctx.argv[index], strerror(errno));
+        PERROR(bctx, "%s", bctx.argv[index]);
         if(old != nullptr) {    // restore
             setenv("_", old, 1);
         }
@@ -372,7 +539,7 @@ static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
 static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
     if(bctx.argc > 1) {
         builtin_execvpe(const_cast<char **>(bctx.argv + 1), nullptr, bctx.argv[1]);
-        fprintf(bctx.fp_stderr, "-ydsh: eval: %s: %s\n", bctx.argv[1], strerror(errno));
+        PERROR(bctx, "%s", bctx.argv[1]);
         return 1;
     }
     return 0;
@@ -384,140 +551,12 @@ static int builtin_pwd(RuntimeContext *ctx, const BuiltinContext &bctx, bool &ra
     size_t size = PATH_MAX;
     char buf[size];
     if(getcwd(buf, size) == nullptr) {
-        builtin_perror(bctx.fp_stderr, "-ydsh: pwd: .");
+        PERROR(bctx, ".");
         return 1;
     }
 
     fputs(buf, bctx.fp_stdout);
     fputc('\n', bctx.fp_stdout);
-    return 0;
-}
-
-const struct {
-    const char *commandName;
-    ProcInvoker::builtin_command_t cmd_ptr;
-    const char *usage;
-    const char *detail;
-} builtinCommands[] {
-        {"__gets", builtin___gets, "",
-                "    Read standard input and write to standard output."},
-        {"__puts", builtin___puts, "[-1] [arg1] [-2] [arg2]",
-                "    Print specified argument to standard output/error and print new line.\n"
-                "    Options:\n"
-                "        -1    print to standard output\n"
-                "        -2    print to standard error"},
-        {"cd", builtin_cd, "[dir]",
-                "    Changing the current directory to DIR.  The Environment variable\n"
-                "    HOME is the default DIR.  A null directory name is the same as\n"
-                "    the current directory."},
-        {"check_env", builtin_check_env, "[variable ...]",
-                "    Check existence of specified environmental variables.\n"
-                "    If all of variables are exist and not empty string, exit with 0."},
-        {"echo", builtin_echo, "[-ne]",
-                "    Print argument to standard output and print new line.\n"
-                "    Options:\n"
-                "        -n    not print new line\n"
-                "        -e    interpret some escape sequence\n"
-                "                  \\\\    backslash\n"
-                "                  \\a    bell\n"
-                "                  \\b    backspace\n"
-                "                  \\c    ignore subsequent string\n"
-                "                  \\e    escape sequence\n"
-                "                  \\f    form feed\n"
-                "                  \\n    newline\n"
-                "                  \\r    carriage return\n"
-                "                  \\t    horizontal tab\n"
-                "                  \\v    vertical tab"},
-        {"eval", builtin_eval, "[args ...]",
-                "    evaluate ARGS as command."},
-        {"exec", builtin_exec, "[-c] [-a name] file [args ...]",
-                "    Execute FILE and replace this shell with specified program.\n"
-                "    If FILE is not specified, the redirections take effect in this shell.\n"
-                "    Options:\n"
-                "        -c    cleaner environmental variable\n"
-                "        -a    specify set program name(default is FILE)"},
-        {"exit", builtin_exit, "[n]",
-                "    Exit the shell with a status of N.  If N is omitted, the exit\n"
-                "    status is 0."},
-        {"false", builtin_false, "",
-                "    Always failure (exit status is 1)."},
-        {"help", builtin_help, "[-s] [pattern ...]",
-                "    Display helpful information about builtin commands."},
-        {"ps_intrp", builtin_ps_intrp, "[prompt string]",
-                "    Interpret prompt string.\n"
-                "    Escape Sequence:\n"
-                "        \\a    bell\n"
-                "        \\d    date\n"
-                "        \\e    escape sequence\n"
-                "        \\h    host name\n"
-                "        \\H    fully qualified host name\n"
-                "        \\n    newline\n"
-                "        \\r    carriage return\n"
-                "        \\s    shell name ($0)\n"
-                "        \\t    24 hour notation (HH:MM:SS)\n"
-                "        \\T    12 hour notation (HH:MM:SS)\n"
-                "        \\@    12 hour notation with AM/PM\n"
-                "        \\u    user name\n"
-                "        \\v    version\n"
-                "        \\V    version with patch level\n"
-                "        \\w    current directory\n"
-                "        \\W    base name of current directory\n"
-                "        \\$    # if uid is 0, otherwise $\n"
-                "        \\\\    backslash\n"
-                "        \\[    begin of unprintable sequence\n"
-                "        \\]    end of unprintable sequence"},
-        {"pwd", builtin_pwd, "",
-                "    Print the current working directiry(absolute path)."},
-        {"true", builtin_true, "",
-                "    Always success (exit status is 0)."},
-};
-
-template<typename T, size_t N>
-static constexpr size_t sizeOfArray(const T (&array)[N]) {
-    return N;
-}
-
-
-static void printAllUsage(FILE *fp) {
-    unsigned int size = sizeOfArray(builtinCommands);
-    for(unsigned int i = 0; i < size; i++) {
-        fprintf(fp, "%s %s\n", builtinCommands[i].commandName, builtinCommands[i].usage);
-    }
-}
-
-static int builtin_help(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
-    if(bctx.argc == 1) {
-        printAllUsage(bctx.fp_stdout);
-        return 0;
-    }
-    bool isShortHelp = false;
-    bool foundValidCommand = false;
-    for(int i = 1; i < bctx.argc; i++) {
-        const char *arg = bctx.argv[i];
-        if(strcmp(arg, "-s") == 0 && bctx.argc == 2) {
-            printAllUsage(bctx.fp_stdout);
-            foundValidCommand = true;
-        } else if(strcmp(arg, "-s") == 0 && i == 1) {
-            isShortHelp = true;
-        } else {
-            unsigned int size = sizeOfArray(builtinCommands);
-            for(unsigned int j = 0; j < size; j++) {
-                if(strcmp(arg, builtinCommands[j].commandName) == 0) {
-                    foundValidCommand = true;
-                    fprintf(bctx.fp_stdout, "%s: %s %s\n", arg, arg, builtinCommands[j].usage);
-                    if(!isShortHelp) {
-                        fprintf(bctx.fp_stdout, "%s\n", builtinCommands[j].detail);
-                    }
-                    break;
-                }
-            }
-        }
-    }
-    if(!foundValidCommand) {
-        fprintf(bctx.fp_stderr,
-                "-ydsh: help: no help topics match `%s'.  Try `help help'.\n", bctx.argv[bctx.argc - 1]);
-        return 1;
-    }
     return 0;
 }
 
