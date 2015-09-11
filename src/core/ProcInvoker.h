@@ -71,13 +71,8 @@ struct BuiltinContext {
     FILE *fp_stdout;
     FILE *fp_stderr;
 
-    BuiltinContext(int argc, char **argv) :
-            argc(argc), argv(argv), fp_stdin(stdin), fp_stdout(stdout), fp_stderr(stderr) { }
-
-    explicit BuiltinContext(char *const *argv) :
-            argc(1), argv(argv), fp_stdin(stdin), fp_stdout(stdout), fp_stderr(stderr) {
-        for(; this->argv[this->argc] != nullptr; this->argc++);
-    }
+    BuiltinContext(int argc, char **argv, int stdin_fd, int stdout_fd, int stderr_fd);
+    explicit BuiltinContext(char *const *argv, int stdin_fd, int stdout_fd, int stderr_fd);
 };
 
 // for error reporting
@@ -186,8 +181,7 @@ public:
     EvalStatus execBuiltinCommand(char *const argv[]);
 
 private:
-    bool redirect(unsigned int procIndex, int errorPipe);
-    bool redirectBuiltin(std::vector<FILE *> &openedFps, BuiltinContext &bctx);
+    bool redirect(unsigned int procIndex, int errorPipe, int stdin_fd, int stdout_fd, int stderr_fd);
 
     /**
      * return null, if not found builtin command.

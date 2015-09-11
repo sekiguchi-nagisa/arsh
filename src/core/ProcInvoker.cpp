@@ -561,6 +561,22 @@ static int builtin_pwd(RuntimeContext *ctx, const BuiltinContext &bctx, bool &ra
 }
 
 
+// ############################
+// ##     BuiltinContext     ##
+// ############################
+
+BuiltinContext::BuiltinContext(int argc, char **argv, int stdin_fd, int stdout_fd, int stderr_fd) :
+        argc(argc), argv(argv),
+        fp_stdin(fdopen(stdin_fd, "r")),
+        fp_stdout(fdopen(stdout_fd, "w")),
+        fp_stderr(fdopen(stderr_fd, "w")) { }
+
+BuiltinContext::BuiltinContext(char *const *argv, int stdin_fd, int stdout_fd, int stderr_fd) :
+        BuiltinContext(1, const_cast<char **>(argv), stdin_fd, stdout_fd, stderr_fd) {
+    for(; this->argv[this->argc] != nullptr; this->argc++);
+}
+
+
 // #########################
 // ##     ProcInvoker     ##
 // #########################
@@ -644,7 +660,7 @@ static int redirectToFile(const DSValue &fileName, const char *mode, int targetF
  * if errorPipe is -1, report error and return false.
  * if errorPipe is not -1, report error and exit 1
  */
-bool ProcInvoker::redirect(unsigned int procIndex, int errorPipe) {
+bool ProcInvoker::redirect(unsigned int procIndex, int errorPipe, int stdin_fd, int stdout_fd, int stderr_fd) {
 #define CHECK_ERROR(result) do { occuredError = (result); if(occuredError != 0) { goto ERR; } } while(0)
 
     int occuredError = 0;
@@ -654,41 +670,41 @@ bool ProcInvoker::redirect(unsigned int procIndex, int errorPipe) {
         auto &pair = this->redirOptions[startIndex];
         switch(pair.first) {
         case IN_2_FILE: {
-            CHECK_ERROR(redirectToFile(pair.second, "rb", STDIN_FILENO));
+            CHECK_ERROR(redirectToFile(pair.second, "rb", stdin_fd));
             break;
         };
         case OUT_2_FILE: {
-            CHECK_ERROR(redirectToFile(pair.second, "wb", STDOUT_FILENO));
+            CHECK_ERROR(redirectToFile(pair.second, "wb", stdout_fd));
             break;
         };
         case OUT_2_FILE_APPEND: {
-            CHECK_ERROR(redirectToFile(pair.second, "ab", STDOUT_FILENO));
+            CHECK_ERROR(redirectToFile(pair.second, "ab", stdout_fd));
             break;
         };
         case ERR_2_FILE: {
-            CHECK_ERROR(redirectToFile(pair.second, "wb", STDERR_FILENO));
+            CHECK_ERROR(redirectToFile(pair.second, "wb", stderr_fd));
             break;
         };
         case ERR_2_FILE_APPEND: {
-            CHECK_ERROR(redirectToFile(pair.second, "ab", STDERR_FILENO));
+            CHECK_ERROR(redirectToFile(pair.second, "ab", stderr_fd));
             break;
         };
         case MERGE_ERR_2_OUT_2_FILE: {
-            CHECK_ERROR(redirectToFile(pair.second, "wb", STDOUT_FILENO));
-            dup2(STDOUT_FILENO, STDERR_FILENO);
+            CHECK_ERROR(redirectToFile(pair.second, "wb", stdout_fd));
+            dup2(stdout_fd, stderr_fd);
             break;
         };
         case MERGE_ERR_2_OUT_2_FILE_APPEND: {
-            CHECK_ERROR(redirectToFile(pair.second, "ab", STDOUT_FILENO));
-            dup2(STDOUT_FILENO, STDERR_FILENO);
+            CHECK_ERROR(redirectToFile(pair.second, "ab", stdout_fd));
+            dup2(stdout_fd, stderr_fd);
             break;
         };
         case MERGE_ERR_2_OUT: {
-            dup2(STDOUT_FILENO, STDERR_FILENO);
+            dup2(stdout_fd, stderr_fd);
             break;
         };
         case MERGE_OUT_2_ERR: {
-            dup2(STDERR_FILENO, STDOUT_FILENO);
+            dup2(stderr_fd, stdout_fd);
             break;
         };
         default:
@@ -711,88 +727,6 @@ bool ProcInvoker::redirect(unsigned int procIndex, int errorPipe) {
     return true;
 
 #undef CHECK_ERROR
-}
-
-/**
- * open file and get file descriptor.
- * write opend file pointer to openedFps.
- * if cannot open file, return errno.
- */
-static int redirectToFile(const DSValue &fileName,
-                          const char *mode, FILE **targetFp, std::vector<FILE *> &openedFps) {
-    FILE *fp = fopen(TYPE_AS(String_Object, fileName)->getValue(), mode);
-    if(fp == nullptr) {
-        return errno;
-    }
-    openedFps.push_back(fp);
-    *targetFp = fp;
-    return 0;
-}
-
-bool ProcInvoker::redirectBuiltin(std::vector<FILE *> &openedFps, BuiltinContext &bctx) {
-#define REDIRECT_TO(name, mode, targetFD) \
-    do { occuredError = redirectToFile(name, mode, &targetFD, openedFps); if(occuredError != 0) { goto ERR; } } while(false)
-
-    int occuredError = 0;
-    unsigned int startIndex = this->procOffsets[0].second;  // procIndex must be 0
-    for(; this->redirOptions[startIndex].first != RedirectOP::DUMMY; startIndex++) {
-        auto &pair = this->redirOptions[startIndex];
-        switch(pair.first) {
-        case IN_2_FILE: {
-            REDIRECT_TO(pair.second, "rb", bctx.fp_stdin);
-            break;
-        };
-        case OUT_2_FILE: {
-            REDIRECT_TO(pair.second, "wb", bctx.fp_stdout);
-            break;
-        };
-        case OUT_2_FILE_APPEND: {
-            REDIRECT_TO(pair.second, "ab", bctx.fp_stdout);
-            break;
-        };
-        case ERR_2_FILE: {
-            REDIRECT_TO(pair.second, "wb", bctx.fp_stderr);
-            break;
-        };
-        case ERR_2_FILE_APPEND: {
-            REDIRECT_TO(pair.second, "ab", bctx.fp_stderr);
-            break;
-        };
-        case MERGE_ERR_2_OUT_2_FILE: {
-            REDIRECT_TO(pair.second, "wb", bctx.fp_stdout);
-            bctx.fp_stderr = bctx.fp_stdout;
-            break;
-        };
-        case MERGE_ERR_2_OUT_2_FILE_APPEND: {
-            REDIRECT_TO(pair.second, "ab", bctx.fp_stdout);
-            bctx.fp_stderr = bctx.fp_stdout;
-            break;
-        };
-        case MERGE_ERR_2_OUT: {
-            bctx.fp_stderr = bctx.fp_stdout;
-            break;
-        };
-        case MERGE_OUT_2_ERR: {
-            bctx.fp_stdout = bctx.fp_stderr;
-            break;
-        };
-        default:
-            fatal("unsupported redir option: %d\n", pair.first);
-        }
-    }
-
-    ERR:
-    if(occuredError != 0) {
-        ChildError e;
-
-        e.redirIndex = startIndex;
-        e.errorNum = occuredError;
-        return this->checkChildError(std::make_pair(0, e)); // return false
-    }
-
-    return true;
-
-#undef REDIRECT_TO
 }
 
 ProcInvoker::builtin_command_t ProcInvoker::lookupBuiltinCommand(const char *commandName) {
@@ -823,36 +757,23 @@ EvalStatus ProcInvoker::invoke() {
             }
             argv[argc] = nullptr;
 
-            BuiltinContext bctx(argc, argv);
-            bool raised = false;
+            bool callExec = strcmp(argv[0], "exec") == 0;
+            int stdin_fd = callExec ? STDIN_FILENO : dup(STDIN_FILENO);
+            int stdout_fd = callExec ? STDOUT_FILENO : dup(STDOUT_FILENO);
+            int stderr_fd = callExec ? STDERR_FILENO : dup(STDERR_FILENO);
 
-            // for builtin-exec
-            if(strcmp(bctx.argv[0], "exec") == 0) {
-                if(!this->redirect(0, -1)) {
-                    this->ctx->updateExitStatus(1);
-                    return EvalStatus::THROW;
-                }
-                this->ctx->updateExitStatus(cmd_ptr(this->ctx, bctx, raised));
-                return EvalStatus::SUCCESS;
-            }
-
-            // for other builtin command
-            std::vector<FILE *> fps;
-            if(!this->redirectBuiltin(fps, bctx)) {
+            if(!this->redirect(0, -1, stdin_fd, stdout_fd, stderr_fd)) {
                 this->ctx->updateExitStatus(1);
-                raised = true;
-            } else {
-                this->ctx->updateExitStatus(cmd_ptr(this->ctx, bctx, raised));
+                return EvalStatus::THROW;
             }
 
-            for(FILE *fp : fps) {
-                fclose(fp);
-            }
+            BuiltinContext bctx(argc, argv, stdin_fd, stdout_fd, stderr_fd);
+            bool raised = false;
+            this->ctx->updateExitStatus(cmd_ptr(this->ctx, bctx, raised));
 
-            // flush standard stream to prevent buffering.
-            fflush(stdin);
-            fflush(stdout);
-            fflush(stderr);
+            fclose(bctx.fp_stdin);
+            fclose(bctx.fp_stdout);
+            fclose(bctx.fp_stderr);
 
             return raised ? EvalStatus::THROW : EvalStatus::SUCCESS;
         }
@@ -936,7 +857,7 @@ EvalStatus ProcInvoker::invoke() {
             }
         }
 
-        this->redirect(procIndex, selfpipes[procIndex][WRITE_PIPE]);
+        this->redirect(procIndex, selfpipes[procIndex][WRITE_PIPE], STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO);
 
         closeAllPipe(procSize, pipefds);
 
@@ -955,7 +876,7 @@ EvalStatus ProcInvoker::invoke() {
         if(cmd_ptr != nullptr) {
             closeAllPipe(procSize, selfpipes);
 
-            BuiltinContext bctx(argc, argv);
+            BuiltinContext bctx(argc, argv, STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO);
             bool raised = false;
             exit(cmd_ptr(this->ctx, bctx, raised));
         }
@@ -981,15 +902,13 @@ EvalStatus ProcInvoker::execBuiltinCommand(char *const argv[]) {
         return EvalStatus::SUCCESS;
     }
 
-    BuiltinContext bctx(argv);
+    BuiltinContext bctx(argv, dup(STDIN_FILENO), dup(STDOUT_FILENO), dup(STDERR_FILENO));
     bool raised = false;
     this->ctx->updateExitStatus(cmd_ptr(this->ctx, bctx, raised));
 
-
-    // flush standard stream to prevent buffering.
-    fflush(stdin);
-    fflush(stdout);
-    fflush(stderr);
+    fclose(bctx.fp_stdin);
+    fclose(bctx.fp_stdout);
+    fclose(bctx.fp_stderr);
 
     return raised ? EvalStatus::THROW : EvalStatus::SUCCESS;
 }
