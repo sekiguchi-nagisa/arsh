@@ -23,9 +23,14 @@ echo hello world > $TARGET
 
 YDSH_BIN=$1
 
+# builtin
 $YDSH_BIN -c "__gets < $TARGET" | grep 'hello world'
 
+# external
 $YDSH_BIN -c "grep < $TARGET 'hello world'" | grep 'hello world'
+
+# eval
+$YDSH_BIN -c "eval grep < $TARGET 'hello world'" | grep 'hello world'
 
 $YDSH_BIN -c "__gets" < $TARGET | grep 'hello world'
 

@@ -39,5 +39,12 @@ $YDSH_BIN -c "sh -c 'echo DEF 1>&2' 2>> $TARGET"
 test "$(cat $TARGET)" = "$(echo 123 && echo DEF)"
 
 
+# eval
+$YDSH_BIN -c "eval sh -c 'echo 123 1>&2' 2> $TARGET"
+test "$(cat $TARGET)" = "$(echo 123)"
+
+$YDSH_BIN -c "eval sh -c 'echo DEF 1>&2' 2>> $TARGET"
+test "$(cat $TARGET)" = "$(echo 123 && echo DEF)"
+
 cleanup_tmpdir
 exit 0

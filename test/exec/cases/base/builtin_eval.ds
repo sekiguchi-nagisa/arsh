@@ -1,0 +1,9 @@
+# eval builtin command
+
+eval check_env HOME
+assert($? != 0)
+
+
+# eval external command
+
+assert(eval ls)
