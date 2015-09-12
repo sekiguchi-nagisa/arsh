@@ -148,15 +148,20 @@ static void builtin_perror(const BuiltinContext &bctx, int errorNum, const char 
     FILE *fp = bctx.fp_stderr;
 
     fprintf(fp, "-ydsh: %s: ", bctx.argv[0]);
-    va_list arg;
-    va_start(arg, fmt);
 
-    vfprintf(fp, fmt, arg);
+    if(strcmp(fmt, "") != 0) {
+        va_list arg;
+        va_start(arg, fmt);
 
-    va_end(arg);
+        vfprintf(fp, fmt, arg);
+
+        va_end(arg);
+
+        fputs(": ", fp);
+    }
 
     if(errorNum != 0) {
-        fprintf(fp, ": %s", strerror(errorNum));
+        fprintf(fp, "%s", strerror(errorNum));
     }
     fputc('\n', fp);
 }
@@ -538,9 +543,15 @@ static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
 
 static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
     if(bctx.argc > 1) {
-        builtin_execvpe(const_cast<char **>(bctx.argv + 1), nullptr, bctx.argv[1]);
-        PERROR(bctx, "%s", bctx.argv[1]);
-        return 1;
+        int status;
+        BuiltinContext nbctx(1, bctx);
+        ctx->getProcInvoker().forkAndExec(nbctx, status);
+        if(WIFEXITED(status)) {
+            return WEXITSTATUS(status);
+        }
+        if(WIFSIGNALED(status)) {
+            return WTERMSIG(status);
+        }
     }
     return 0;
 }
@@ -574,6 +585,12 @@ BuiltinContext::BuiltinContext(int argc, char **argv, int stdin_fd, int stdout_f
 BuiltinContext::BuiltinContext(char *const *argv, int stdin_fd, int stdout_fd, int stderr_fd) :
         BuiltinContext(1, const_cast<char **>(argv), stdin_fd, stdout_fd, stderr_fd) {
     for(; this->argv[this->argc] != nullptr; this->argc++);
+}
+
+BuiltinContext::BuiltinContext(int offset, const BuiltinContext &bctx) :
+        argc(bctx.argc - offset), argv(bctx.argv + offset),
+        fp_stdin(bctx.fp_stdin), fp_stdout(bctx.fp_stdout), fp_stderr(bctx.fp_stderr) {
+    assert(offset < bctx.argc);
 }
 
 
@@ -747,7 +764,7 @@ EvalStatus ProcInvoker::invoke() {
     // check builtin command
     if(procSize == 1) {
         builtin_command_t cmd_ptr = this->lookupBuiltinCommand(this->getCommandName(0));
-        if(cmd_ptr != nullptr && cmd_ptr != builtin_eval) {
+        if(cmd_ptr != nullptr) {
             DSValue *ptr = this->getARGV(0);
             unsigned int argc = 1;
             for(; ptr[argc].get() != nullptr; argc++);
@@ -911,6 +928,25 @@ EvalStatus ProcInvoker::execBuiltinCommand(char *const argv[]) {
     fclose(bctx.fp_stderr);
 
     return raised ? EvalStatus::THROW : EvalStatus::SUCCESS;
+}
+
+void ProcInvoker::forkAndExec(const BuiltinContext &bctx, int &status) {
+    pid_t pid = xfork();
+    if(pid == -1) {
+        perror("child process error");
+        exit(1);
+    } else if(pid == 0) {   // child
+        // replace standard stream to bctx
+        dup2(fileno(bctx.fp_stdin), STDIN_FILENO);
+        dup2(fileno(bctx.fp_stdout), STDOUT_FILENO);
+        dup2(fileno(bctx.fp_stderr), STDERR_FILENO);
+
+        builtin_execvpe(const_cast<char **>(bctx.argv), nullptr, nullptr);
+        PERROR(bctx, "");
+        exit(1);
+    } else {    // parent process
+        this->ctx->xwaitpid(pid, status, 0);
+    }
 }
 
 const char *ProcInvoker::getCommandName(unsigned int procIndex) {

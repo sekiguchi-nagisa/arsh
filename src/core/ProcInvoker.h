@@ -73,6 +73,12 @@ struct BuiltinContext {
 
     BuiltinContext(int argc, char **argv, int stdin_fd, int stdout_fd, int stderr_fd);
     explicit BuiltinContext(char *const *argv, int stdin_fd, int stdout_fd, int stderr_fd);
+
+    /**
+     * offset must be under bctx.argc.
+     * copy file pointer
+     */
+    BuiltinContext(int offset, const BuiltinContext &bctx);
 };
 
 // for error reporting
@@ -179,6 +185,11 @@ public:
      * last element of argv is null.
      */
     EvalStatus execBuiltinCommand(char *const argv[]);
+
+    /**
+     * write status to status (same of wait's status).
+     */
+    void forkAndExec(const BuiltinContext &bctx, int &status);
 
 private:
     bool redirect(unsigned int procIndex, int errorPipe, int stdin_fd, int stdout_fd, int stderr_fd);
