@@ -35,10 +35,10 @@ namespace core {
 /**
  * if cannot resolve path, return empty string and set errno.
  */
-static std::string resolveFilePath(const char *fileName) {
+static std::string resolveFilePath(const char *fileName, bool useDefaultPath) {
     // get path
     const char *path = getenv("PATH");
-    if(path == nullptr) {
+    if(path == nullptr || useDefaultPath) {
         path = "/bin:/usr/bin:/usr/local/bin";
     }
 
@@ -92,7 +92,7 @@ static std::string resolveFilePath(const char *fileName) {
  *
  * if execution success, not return.
  */
-static void builtin_execvpe(char **argv, char *const *envp, const char *progName) {
+static void builtin_execvpe(char **argv, char *const *envp, const char *progName, bool useDefaultPath = false) {
     const char *fileName = argv[0];
     if(progName != nullptr) {
         argv[0] = const_cast<char *>(progName);
@@ -101,7 +101,7 @@ static void builtin_execvpe(char **argv, char *const *envp, const char *progName
     // resolve file path
     std::string path;
     if(strchr(fileName, '/') == nullptr) {
-        path = resolveFilePath(fileName);
+        path = resolveFilePath(fileName, useDefaultPath);
         if(!path.empty()) {
             fileName = path.c_str();
         }
@@ -174,6 +174,7 @@ static int builtin___gets(RuntimeContext *ctx, const BuiltinContext &bctx, bool 
 static int builtin___puts(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
 static int builtin_cd(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
 static int builtin_check_env(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
+static int builtin_command(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
 static int builtin_echo(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
 static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
 static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
@@ -204,6 +205,11 @@ const struct {
         {"check_env", builtin_check_env, "[variable ...]",
                 "    Check existence of specified environmental variables.\n"
                 "    If all of variables are exist and not empty string, exit with 0."},
+        {"command", builtin_command, "[-pVv] command [arg ...]",
+                "    Execute COMMAND with ARGS excepting user defined command.\n"
+                        "    If -p option is specified, search command from default PATH.\n"
+                        "    If -V or -v option are specifed, print description of COMMAND.\n"
+                        "    -V option shows more detailed information."},
         {"echo", builtin_echo, "[-ne]",
                 "    Print argument to standard output and print new line.\n"
                 "    Options:\n"
@@ -571,6 +577,80 @@ static int builtin_pwd(RuntimeContext *ctx, const BuiltinContext &bctx, bool &ra
     return 0;
 }
 
+static int builtin_command(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+    int index = 1;
+    bool useDefaultPath = false;
+
+    /**
+     * if 0, ignore
+     * if 1, show description
+     * if 2, show detailed description
+     */
+    unsigned char showDesc = 0;
+
+    for(; index < bctx.argc; index++) {
+        const char *arg = bctx.argv[index];
+        if(arg[0] != '-') {
+            break;
+        } else if(strcmp(arg, "-p") == 0) {
+            useDefaultPath = true;
+        } else if(strcmp(arg, "-v") == 0) {
+            showDesc = 1;
+        } else if(strcmp(arg, "-V") == 0) {
+            showDesc = 2;
+        } else {
+            builtin_perror(bctx, 0, "%s: invalid option", arg);
+            showUsage(bctx);
+            return 1;
+        }
+    }
+
+    if(index < bctx.argc) {
+        auto &invoker = ctx->getProcInvoker();
+        if(showDesc == 0) { // execute command
+            BuiltinContext nbctx(index, bctx);
+            auto *cmd = invoker.lookupBuiltinCommand(bctx.argv[index]);
+            if(cmd != nullptr) {
+                return cmd(ctx, nbctx, raised);
+            } else {
+                int status;
+                ctx->getProcInvoker().forkAndExec(nbctx, status, useDefaultPath);
+                if(WIFEXITED(status)) {
+                    return WEXITSTATUS(status);
+                }
+                if(WIFSIGNALED(status)) {
+                    return WTERMSIG(status);
+                }
+            }
+        } else {
+            for(; index < bctx.argc; index++) {
+                const char *commandName = bctx.argv[index];
+                if(invoker.lookupBuiltinCommand(commandName) != nullptr) {
+                    fputs(commandName, bctx.fp_stdout);
+                    if(showDesc == 2) {
+                        fputs(" is shell builtin command", bctx.fp_stdout);
+                    }
+                    fputc('\n', bctx.fp_stdout);
+                    continue;
+                }
+                std::string path(resolveFilePath(commandName, false));
+                if(!path.empty()) {
+                    if(showDesc == 1) {
+                        fprintf(bctx.fp_stdout, "%s\n", path.c_str());
+                    } else {
+                        fprintf(bctx.fp_stdout, "%s is %s\n", commandName, path.c_str());
+                    }
+                    continue;
+                }
+                if(showDesc == 2) {
+                    PERROR(bctx, "%s", commandName);
+                }
+            }
+        }
+    }
+    return 0;
+}
+
 
 // ############################
 // ##     BuiltinContext     ##
@@ -930,7 +1010,7 @@ EvalStatus ProcInvoker::execBuiltinCommand(char *const argv[]) {
     return raised ? EvalStatus::THROW : EvalStatus::SUCCESS;
 }
 
-void ProcInvoker::forkAndExec(const BuiltinContext &bctx, int &status) {
+void ProcInvoker::forkAndExec(const BuiltinContext &bctx, int &status, bool useDefaultPath) {
     pid_t pid = xfork();
     if(pid == -1) {
         perror("child process error");
@@ -941,7 +1021,7 @@ void ProcInvoker::forkAndExec(const BuiltinContext &bctx, int &status) {
         dup2(fileno(bctx.fp_stdout), STDOUT_FILENO);
         dup2(fileno(bctx.fp_stderr), STDERR_FILENO);
 
-        builtin_execvpe(const_cast<char **>(bctx.argv), nullptr, nullptr);
+        builtin_execvpe(const_cast<char **>(bctx.argv), nullptr, nullptr, useDefaultPath);
         PERROR(bctx, "");
         exit(1);
     } else {    // parent process

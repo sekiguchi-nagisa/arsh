@@ -1,0 +1,26 @@
+# execute builtin command
+assert(command ps_intrp "")
+
+# execute external command
+assert(ls)
+
+# execute external command using default path
+import-env PATH
+var OLD_PATH = $PATH
+
+$PATH = ""
+
+command ls
+assert($? != 0)
+
+assert(command -p ls)
+
+$PATH = $OLD_PATH
+
+# show command information
+assert("$(command -v ls)" == "$(which ls)")
+assert("$(command -v cd)" == "cd")
+
+# show detailed information
+assert("$(command -V ls)" == "ls is $(which ls)")
+assert("$(command -V cd)" == "cd is shell builtin command")

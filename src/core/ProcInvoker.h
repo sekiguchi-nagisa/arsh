@@ -187,17 +187,17 @@ public:
     EvalStatus execBuiltinCommand(char *const argv[]);
 
     /**
-     * write status to status (same of wait's status).
-     */
-    void forkAndExec(const BuiltinContext &bctx, int &status);
-
-private:
-    bool redirect(unsigned int procIndex, int errorPipe, int stdin_fd, int stdout_fd, int stderr_fd);
-
-    /**
      * return null, if not found builtin command.
      */
     builtin_command_t lookupBuiltinCommand(const char *commandName);
+
+    /**
+     * write status to status (same of wait's status).
+     */
+    void forkAndExec(const BuiltinContext &bctx, int &status, bool useDefaultPath = false);
+
+private:
+    bool redirect(unsigned int procIndex, int errorPipe, int stdin_fd, int stdout_fd, int stderr_fd);
 
     DSValue *getARGV(unsigned int procIndex);
 
