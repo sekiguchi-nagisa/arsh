@@ -658,9 +658,9 @@ static int builtin_command(RuntimeContext *ctx, const BuiltinContext &bctx, bool
 
 BuiltinContext::BuiltinContext(int argc, char **argv, int stdin_fd, int stdout_fd, int stderr_fd) :
         argc(argc), argv(argv),
-        fp_stdin(fdopen(stdin_fd, "r")),
-        fp_stdout(fdopen(stdout_fd, "w")),
-        fp_stderr(fdopen(stderr_fd, "w")) { }
+        fp_stdin(stdin_fd == STDIN_FILENO ? stdin : fdopen(stdin_fd, "r")),
+        fp_stdout(stdout_fd == STDOUT_FILENO ? stdout : fdopen(stdout_fd, "w")),
+        fp_stderr(stderr_fd == STDERR_FILENO ? stderr : fdopen(stderr_fd, "w")) { }
 
 BuiltinContext::BuiltinContext(char *const *argv, int stdin_fd, int stdout_fd, int stderr_fd) :
         BuiltinContext(1, const_cast<char **>(argv), stdin_fd, stdout_fd, stderr_fd) {
@@ -853,11 +853,12 @@ EvalStatus ProcInvoker::invoke() {
                 argv[i] = const_cast<char *>(TYPE_AS(String_Object, ptr[i])->getValue());
             }
             argv[argc] = nullptr;
-
-            bool callExec = strcmp(argv[0], "exec") == 0;
-            int stdin_fd = callExec ? STDIN_FILENO : dup(STDIN_FILENO);
-            int stdout_fd = callExec ? STDOUT_FILENO : dup(STDOUT_FILENO);
-            int stderr_fd = callExec ? STDERR_FILENO : dup(STDERR_FILENO);
+            
+            bool dupFD = strcmp(argv[0], "exec") != 0
+                         && this->redirOptions[this->procOffsets[0].second].first != RedirectOP::DUMMY;
+            int stdin_fd = dupFD ? dup(STDIN_FILENO) : STDIN_FILENO;
+            int stdout_fd = dupFD ? dup(STDOUT_FILENO) : STDOUT_FILENO;
+            int stderr_fd = dupFD ? dup(STDERR_FILENO) : STDERR_FILENO;
 
             if(!this->redirect(0, -1, stdin_fd, stdout_fd, stderr_fd)) {
                 this->ctx->updateExitStatus(1);
@@ -868,9 +869,15 @@ EvalStatus ProcInvoker::invoke() {
             bool raised = false;
             this->ctx->updateExitStatus(cmd_ptr(this->ctx, bctx, raised));
 
-            fclose(bctx.fp_stdin);
-            fclose(bctx.fp_stdout);
-            fclose(bctx.fp_stderr);
+            if(dupFD) {
+                fclose(bctx.fp_stdin);
+                fclose(bctx.fp_stdout);
+                fclose(bctx.fp_stderr);
+            } else {    // flush standard stream
+                fflush(bctx.fp_stdin);
+                fflush(bctx.fp_stdout);
+                fflush(bctx.fp_stderr);
+            }
 
             return raised ? EvalStatus::THROW : EvalStatus::SUCCESS;
         }
