@@ -27,6 +27,7 @@
 #include "parser/TypeChecker.h"
 #include "core/RuntimeContext.h"
 #include "core/ErrorListener.h"
+#include "core/symbol.h"
 #include "misc/fatal.h"
 #include "misc/num.h"
 
@@ -227,12 +228,12 @@ unsigned int DSContext::eval(const char *sourceName, Lexer &lexer) {
 void DSContext::initBuiltinVar() {
     RootNode rootNode;
     // register boolean
-    rootNode.addNode(new BindVarNode("TRUE", this->ctx.getTrueObj()));
-    rootNode.addNode(new BindVarNode("True", this->ctx.getTrueObj()));
-    rootNode.addNode(new BindVarNode("true", this->ctx.getTrueObj()));
-    rootNode.addNode(new BindVarNode("FALSE", this->ctx.getFalseObj()));
-    rootNode.addNode(new BindVarNode("False", this->ctx.getFalseObj()));
-    rootNode.addNode(new BindVarNode("false", this->ctx.getFalseObj()));
+    rootNode.addNode(new BindVarNode(VAR_TRUE, this->ctx.getTrueObj()));
+    rootNode.addNode(new BindVarNode("True",   this->ctx.getTrueObj()));
+    rootNode.addNode(new BindVarNode("true",   this->ctx.getTrueObj()));
+    rootNode.addNode(new BindVarNode(VAR_FALSE, this->ctx.getFalseObj()));
+    rootNode.addNode(new BindVarNode("False",   this->ctx.getFalseObj()));
+    rootNode.addNode(new BindVarNode("false",   this->ctx.getFalseObj()));
 
     // register special char
     rootNode.addNode(new BindVarNode("0", this->ctx.getScriptName()));
@@ -378,10 +379,10 @@ const char *DSContext_getPrompt(DSContext *ctx, unsigned int n) {
     bool usePS1 = true;
     switch(n) {
     case 1:
-        handle = ctx->ctx.getSymbolTable().lookupHandle("PS1");
+        handle = ctx->ctx.getSymbolTable().lookupHandle(VAR_PS1);
         break;
     case 2:
-        handle = ctx->ctx.getSymbolTable().lookupHandle("PS2");
+        handle = ctx->ctx.getSymbolTable().lookupHandle(VAR_PS2);
         usePS1 = false;
         break;
     default:

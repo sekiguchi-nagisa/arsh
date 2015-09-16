@@ -24,6 +24,7 @@
 #include "logger.h"
 #include "ProcInvoker.h"
 #include "RuntimeContext.h"
+#include "symbol.h"
 #include "../misc/num.h"
 #include "../misc/fatal.h"
 
@@ -39,7 +40,7 @@ static std::string resolveFilePath(const char *fileName, bool useDefaultPath) {
     // get path
     const char *path = getenv("PATH");
     if(path == nullptr || useDefaultPath) {
-        path = "/bin:/usr/bin:/usr/local/bin";
+        path = VAR_DEFAULT_PATH;
     }
 
     // resolve path
