@@ -50,7 +50,7 @@ constexpr unsigned int HAS_ARG     = 1 << 0;
 constexpr unsigned int REQUIRE     = 1 << 1;
 constexpr unsigned int IGNORE_REST = 1 << 2;
 
-constexpr char usageSuffix[] = " <arg>";
+constexpr const char *usageSuffix = " <arg>";
 
 template<typename T>
 struct Option {
@@ -75,7 +75,7 @@ struct Option {
 
     unsigned int getUsageSize() const {
         return strlen(this->optionName) +
-               (misc::hasFlag(this->flag, HAS_ARG) ? sizeof(usageSuffix) - 1 : 0);
+               (misc::hasFlag(this->flag, HAS_ARG) ? strlen(usageSuffix) - 1 : 0);
     }
 
     std::vector<std::string> getDetails() const;
@@ -127,8 +127,6 @@ int parseArgv(int argc, char **argv, const Option<T> (&options)[N], CmdLines<T> 
     }
 
     // parse
-    static char empty[] = "";
-
     int index = 1;
     for(; index < argc; index++) {
         const char *arg = argv[index];
@@ -143,7 +141,7 @@ int parseArgv(int argc, char **argv, const Option<T> (&options)[N], CmdLines<T> 
 
         const unsigned int optionIndex = iter->second;
         const Option<T> &option = options[optionIndex];
-        const char *optionArg = empty;
+        const char *optionArg = "";
 
         if(option.hasArg()) {
             if(index + 1 < argc && argv[++index][0] != '-') {

@@ -130,7 +130,11 @@
     OP(MOD_ASSIGN)
 
 
-#define E_ALTER(alt) this->alternative(alt)
+#define E_ALTER(...) \
+do { \
+    const TokenKind alters[] = { __VA_ARGS__ };\
+    this->alternative(alters);\
+} while(false)
 
 // for check converted number range
 #define CONVERT_TO_NUM(out, token, func) \
@@ -193,11 +197,6 @@ void Parser::refetch(unsigned int lineNum, unsigned int startPos, LexerMode mode
 }
 
 std::unique_ptr<Node> Parser::parse_toplevelStatement() {
-    static TokenKind alters[] = {
-            EACH_LA_toplevelStatement(GEN_LA_ALTER)
-            DUMMY
-    };
-
     bool redo = this->lexer->getPrevMode() != yycSTMT;
 
     START:
@@ -220,7 +219,10 @@ std::unique_ptr<Node> Parser::parse_toplevelStatement() {
             this->refetch(this->curToken.lineNum, this->curToken.startPos, yycSTMT);
             goto START;
         }
-        E_ALTER(alters);
+        E_ALTER(
+                EACH_LA_toplevelStatement(GEN_LA_ALTER)
+                DUMMY
+        );
         return std::unique_ptr<Node>(nullptr);
     }
 }
@@ -298,13 +300,6 @@ std::unique_ptr<Node> Parser::parse_interface() {
     std::unique_ptr<InterfaceNode> node(new InterfaceNode(n, this->lexer->toTokenText(token)));
     this->expect(LBC);
 
-    static TokenKind alters[] = {
-            FUNCTION,
-            VAR,
-            LET,
-            DUMMY,
-    };
-
     bool next = true;
     unsigned int count = 0;
     while(next) {
@@ -338,7 +333,12 @@ std::unique_ptr<Node> Parser::parse_interface() {
             }
             next = false;
             if(count == 0) {
-                E_ALTER(alters);
+                E_ALTER(
+                        FUNCTION,
+                        VAR,
+                        LET,
+                        DUMMY,
+                );
             }
             break;
         }
@@ -370,13 +370,6 @@ void Parser::restoreLexerState(const Token &prevToken) {
 }
 
 std::unique_ptr<TypeToken> Parser::parse_typeName() {
-    static TokenKind alters[] = {
-            EACH_LA_typeName(GEN_LA_ALTER)
-            FUNC,
-            TYPE_PATH,
-            DUMMY
-    };
-
     // change lexer state to TYPE
     this->lexer->pushLexerMode(yycTYPE);
     NEXT_TOKEN();
@@ -449,17 +442,17 @@ std::unique_ptr<TypeToken> Parser::parse_typeName() {
         return std::unique_ptr<TypeToken>(new DBusInterfaceToken(token.lineNum, this->lexer->toTokenText(token)));
     };
     default:
-        E_ALTER(alters);
+        E_ALTER(
+                EACH_LA_typeName(GEN_LA_ALTER)
+                FUNC,
+                TYPE_PATH,
+                DUMMY
+        );
         return std::unique_ptr<TypeToken>(nullptr);
     }
 }
 
 std::unique_ptr<Node> Parser::parse_statement() {
-    static TokenKind alters[] = {
-            EACH_LA_statement(GEN_LA_ALTER)
-            DUMMY
-    };
-
     bool redo = this->lexer->getPrevMode() != yycSTMT;
 
     START:
@@ -651,7 +644,10 @@ std::unique_ptr<Node> Parser::parse_statement() {
             this->refetch(this->curToken.lineNum, this->curToken.startPos, yycSTMT);
             goto START;
         }
-        E_ALTER(alters);
+        E_ALTER(
+                EACH_LA_statement(GEN_LA_ALTER)
+                DUMMY
+        );
         return std::unique_ptr<Node>(nullptr);
     }
     }
@@ -683,11 +679,6 @@ std::unique_ptr<BlockNode> Parser::parse_block() {
 }
 
 std::unique_ptr<Node> Parser::parse_variableDeclaration() {
-    static TokenKind alters[] = {
-            EACH_LA_varDecl(GEN_LA_ALTER)
-            DUMMY
-    };
-
     switch(CUR_KIND()) {
     EACH_LA_varDecl(GEN_LA_CASE) {
         bool readOnly = this->consume() != VAR;
@@ -701,7 +692,10 @@ std::unique_ptr<Node> Parser::parse_variableDeclaration() {
                                  this->parse_commandOrExpression().release(), readOnly));
     }
     default:
-        E_ALTER(alters);
+        E_ALTER(
+                EACH_LA_varDecl(GEN_LA_ALTER)
+                DUMMY
+        );
         return std::unique_ptr<Node>(nullptr);
     }
 }
@@ -874,11 +868,6 @@ std::unique_ptr<CmdNode> Parser::parse_command() {
 }
 
 void Parser::parse_redirOption(std::unique_ptr<CmdNode> &node) {
-    static TokenKind alters[] = {
-            EACH_LA_redir(GEN_LA_ALTER)
-            DUMMY
-    };
-
     switch(CUR_KIND()) {
     EACH_LA_redirFile(GEN_LA_CASE) {
         TokenKind kind = this->consume();
@@ -891,7 +880,10 @@ void Parser::parse_redirOption(std::unique_ptr<CmdNode> &node) {
         break;
     };
     default:
-        E_ALTER(alters);
+        E_ALTER(
+                EACH_LA_redir(GEN_LA_ALTER)
+                DUMMY
+        );
         break;
     }
 }
@@ -916,11 +908,6 @@ std::unique_ptr<CmdArgNode> Parser::parse_cmdArg() {
 }
 
 std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool expandTilde) {
-    static TokenKind alters[] = {
-            EACH_LA_cmdArg(GEN_LA_ALTER)
-            DUMMY
-    };
-
     switch(CUR_KIND()) {
     case CMD_ARG_PART: {
         Token token;
@@ -943,7 +930,10 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool expandTilde) {
         return this->parse_interpolation();
     }
     default: {
-        E_ALTER(alters);
+        E_ALTER(
+                EACH_LA_cmdArg(GEN_LA_ALTER)
+                DUMMY
+        );
         return std::unique_ptr<Node>(nullptr);
     }
     }
@@ -951,24 +941,17 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool expandTilde) {
 
 // expression
 std::unique_ptr<Node> Parser::parse_commandOrExpression() {
-#define EACH_LA_condExpr(OP) \
-    OP(COMMAND) \
-    EACH_LA_expression(OP)
-
-    static TokenKind alters[] = {
-            EACH_LA_condExpr(GEN_LA_ALTER)
-            DUMMY
-    };
-
-#undef EACH_LA_condExpr
-
     switch(CUR_KIND()) {
     case COMMAND:
         return this->parse_commandListExpression();
     EACH_LA_expression(GEN_LA_CASE)
         return this->parse_expression();
     default:
-        E_ALTER(alters);
+        E_ALTER(
+                EACH_LA_expression(GEN_LA_ALTER)
+                COMMAND,
+                DUMMY
+        );
         return std::unique_ptr<Node>(nullptr);
     }
 }
@@ -1079,11 +1062,6 @@ std::unique_ptr<Node> Parser::parse_memberExpression() {
 }
 
 std::unique_ptr<Node> Parser::parse_primaryExpression() {
-    static TokenKind alters[] = {
-            EACH_LA_primary(GEN_LA_ALTER)
-            DUMMY
-    };
-
     unsigned int n = LN();
     switch(CUR_KIND()) {
     case NEW: {
@@ -1241,7 +1219,10 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         return std::move(node);
     }
     default:
-        E_ALTER(alters);
+        E_ALTER(
+                EACH_LA_primary(GEN_LA_ALTER)
+                DUMMY
+        );
         return std::unique_ptr<Node>(nullptr);
     }
 }
@@ -1320,11 +1301,6 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
 }
 
 std::unique_ptr<Node> Parser::parse_interpolation() {
-    static TokenKind alters[] = {
-            EACH_LA_interpolation(GEN_LA_ALTER)
-            DUMMY
-    };
-
     switch(CUR_KIND()) {
     case APPLIED_NAME: {
         return this->parse_appliedName();
@@ -1339,7 +1315,10 @@ std::unique_ptr<Node> Parser::parse_interpolation() {
         return node;
     }
     default: {
-        E_ALTER(alters);
+        E_ALTER(
+                EACH_LA_interpolation(GEN_LA_ALTER)
+                DUMMY
+        );
         return std::unique_ptr<Node>(nullptr);
     }
     }
