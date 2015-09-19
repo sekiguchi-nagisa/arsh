@@ -527,7 +527,7 @@ int RuntimeContext::execUserDefinedCommand(UserDefinedCmdNode *node, DSValue *ar
     this->initScriptArg();
 
     // copy arguments
-    for(unsigned int index = 1; !argv[index]; index++) {
+    for(unsigned int index = 1; argv[index]; index++) {
         TYPE_AS(Array_Object, this->scriptArgs)->append(std::move(argv[index]));
     }
 
