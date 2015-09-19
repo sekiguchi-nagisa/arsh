@@ -257,6 +257,7 @@ void Lexer::nextToken(Token &token) {
       <CMD> ESTRING_LITERAL    { COUNT_NEW_LINE(); RET(STRING_LITERAL); }
       <CMD> ["]                { PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
       <CMD> ")"                { POP_MODE(); POP_MODE(); RET(RP); }
+      <CMD> "("                { PUSH_MODE(CMD); RET(LP); }
       <CMD> [ \t]+             { FIND_SPACE(); }
       <CMD> "\\" [\r\n]        { INC_LINE_NUM(); FIND_SPACE(); }
 

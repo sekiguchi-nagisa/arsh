@@ -170,6 +170,7 @@ public:
     void visitElementSelfAssignNode(ElementSelfAssignNode *node) { this->visitDefault(node); }
     void visitFunctionNode(FunctionNode *node) { this->visitDefault(node); }
     void visitInterfaceNode(InterfaceNode *node) { this->visitDefault(node); }
+    void visitUserDefinedCmdNode(UserDefinedCmdNode *node) { this->visitDefault(node); }
     void visitBindVarNode(BindVarNode *node) { this->visitDefault(node); }
     void visitEmptyNode(EmptyNode *node) { this->visitDefault(node); }
     void visitDummyNode(DummyNode *node) { this->visitDefault(node); }

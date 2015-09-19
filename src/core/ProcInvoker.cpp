@@ -968,6 +968,13 @@ EvalStatus ProcInvoker::invoke() {
 
         // create argv
         DSValue *ptr = this->getARGV(procIndex);
+
+        // check user defined command
+        UserDefinedCmdNode *udcNode = this->ctx->lookupUserDefinedCommand(this->getCommandName(procIndex));
+        if(udcNode != nullptr) {
+            exit(this->ctx->execUserDefinedCommand(udcNode, ptr));
+        }
+
         unsigned int argc = 1;
         for(; ptr[argc]; argc++);
         char *argv[argc + 1];
@@ -976,7 +983,7 @@ EvalStatus ProcInvoker::invoke() {
         }
         argv[argc] = nullptr;
 
-        // check builtin
+        // check builtin command
         builtin_command_t cmd_ptr = this->lookupBuiltinCommand(argv[0]);
         if(cmd_ptr != nullptr) {
             closeAllPipe(procSize, selfpipes);
@@ -986,6 +993,7 @@ EvalStatus ProcInvoker::invoke() {
             exit(cmd_ptr(this->ctx, bctx, raised));
         }
 
+        // exec external command
         builtin_execvpe(argv, nullptr, nullptr);
 
         ChildError e;

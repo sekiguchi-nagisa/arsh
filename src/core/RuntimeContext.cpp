@@ -54,7 +54,7 @@ RuntimeContext::RuntimeContext() :
         localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0),
         localVarOffset(0), offsetStack(), toplevelPrinting(false), assertion(true),
         handle_STR(0), handle_bt(0), handle_OLDPWD(0), handle_PWD(0),
-        readFiles(), funcContextStack(), callStack(), procInvoker(this) {
+        readFiles(), funcContextStack(), callStack(), procInvoker(this), udcMap() {
     this->readFiles.push_back(std::string("(stdin)"));
 }
 
@@ -64,6 +64,11 @@ RuntimeContext::~RuntimeContext() {
 
     delete[] this->localStack;
     this->localStack = 0;
+
+    for(auto &pair : this->udcMap) {
+        delete pair.second;
+    }
+    this->udcMap.clear();
 }
 
 std::string RuntimeContext::getConfigRootDir() {
@@ -318,13 +323,16 @@ void RuntimeContext::fillInStackTrace(std::vector<StackTraceElement> &stackTrace
         unsigned long lineNum = frame & highOrderMask;
 
         std::string callerName;
-        FunctionNode *funcNode = dynamic_cast<FunctionNode *>(node);
-        if(funcNode != 0) {
+        if(dynamic_cast<FunctionNode *>(node) != nullptr) {
             callerName += "function ";
-            callerName += funcNode->getFuncName();
+            callerName += static_cast<FunctionNode *>(node)->getFuncName();
+        } else if(dynamic_cast<UserDefinedCmdNode *>(node) != nullptr) {
+            callerName += "user-defined-command ";
+            callerName += static_cast<UserDefinedCmdNode *>(node)->getCommandName();
         } else {
             callerName += "<toplevel>";
         }
+
 
         stackTrace.push_back(StackTraceElement(sourceName, lineNum, std::move(callerName)));
     }
@@ -499,6 +507,62 @@ unsigned int RuntimeContext::getSpecialCharIndex(const char *varName) {
         fatal("undefined special character: %s\n", varName);
     }
     return handle->getFieldIndex();
+}
+
+void RuntimeContext::addUserDefinedCommand(UserDefinedCmdNode *node) {
+    if(!this->udcMap.insert(std::make_pair(node->getCommandName().c_str(), node)).second) {
+        fatal("undefined defined command: %s\n", node->getCommandName().c_str());
+    }
+}
+
+UserDefinedCmdNode *RuntimeContext::lookupUserDefinedCommand(const char *commandName) {
+    auto iter = this->udcMap.find(commandName);
+    if(iter != this->udcMap.end()) {
+        return iter->second;
+    }
+    return nullptr;
+}
+
+int RuntimeContext::execUserDefinedCommand(UserDefinedCmdNode *node, DSValue *argv) {
+    this->initScriptArg();
+
+    // copy arguments
+    for(unsigned int index = 1; !argv[index]; index++) {
+        TYPE_AS(Array_Object, this->scriptArgs)->append(std::move(argv[index]));
+    }
+
+    // clear procInvoker
+    this->procInvoker.clear();
+
+    this->pushFuncContext(node);
+    EvalStatus s = node->getBlockNode()->eval(*this);
+    this->popFuncContext();
+
+    // get exit status
+    switch(s) {
+    case EvalStatus::SUCCESS:
+        return TYPE_AS(Int_Object, this->getExitStatus())->getValue();
+    case EvalStatus::RETURN:
+        return TYPE_AS(Int_Object, this->pop())->getValue();
+    case EvalStatus::THROW: {
+        DSType *thrownType = this->getThrownObject()->getType();
+        if(this->pool.getInternalStatus()->isSameOrBaseTypeOf(thrownType)) {
+            if(*thrownType == *this->pool.getShellExit()) {
+                return TYPE_AS(Int_Object, this->getExitStatus())->getValue();
+            }
+            if(*thrownType == *this->pool.getAssertFail()) {
+                this->loadThrownObject();
+                TYPE_AS(Error_Object, this->pop())->printStackTrace(*this);
+                return 1;
+            }
+        }
+        this->reportError();
+        return 1;
+    }
+    default:
+        fatal("broken user defined command\n");
+    }
+    return 0;
 }
 
 static void format2digit(int num, std::string &out) {

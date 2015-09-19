@@ -168,6 +168,12 @@ private:
 
     ProcInvoker procInvoker;
 
+    /**
+     * contains user defined command node.
+     * must delete it's contents
+     */
+    CStringHashMap<UserDefinedCmdNode *> udcMap;
+
     static const char *configRootDir;
     static const char *typeDefDir;
 
@@ -522,6 +528,21 @@ public:
     ProcInvoker &getProcInvoker() {
         return this->procInvoker;
     }
+
+    void addUserDefinedCommand(UserDefinedCmdNode *node);
+
+    /**
+     * if not found, return null
+     */
+    UserDefinedCmdNode *lookupUserDefinedCommand(const char *commandName);
+
+    /**
+     * must call in child process.
+     * argv represents array.
+     * the first element of ptr is command name(equivalent to node->getcommandName()).
+     * the last element of ptr is null.
+     */
+    int execUserDefinedCommand(UserDefinedCmdNode *node, DSValue *argv);
 
     /**
      * n is 1 or 2

@@ -338,6 +338,7 @@ public:
     void visitElementSelfAssignNode(ElementSelfAssignNode *node); // override
     void visitFunctionNode(FunctionNode *node); // override
     void visitInterfaceNode(InterfaceNode *node); // override
+    void visitUserDefinedCmdNode(UserDefinedCmdNode *node); // override
     void visitBindVarNode(BindVarNode *node); // override
     void visitEmptyNode(EmptyNode *node); // override
     void visitDummyNode(DummyNode *node); // override

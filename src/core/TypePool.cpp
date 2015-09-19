@@ -126,7 +126,7 @@ TypePool::TypePool() :
         byteType(), int16Type(), uint16Type(),
         int32Type(), uint32Type(), int64Type(), uint64Type(),
         floatType(), boolType(), stringType(),
-        errorType(), taskType(), baseFuncType(),
+        errorType(), taskType(), baseFuncType(), procType(),
         objectPathType(), unixFDType(), proxyType(),
         dbusType(), busType(), serviceType(), dbusObjectType(),
         arithmeticErrorType(), outOfRangeErrorType(),
@@ -134,7 +134,7 @@ TypePool::TypePool() :
         systemErrorType(), internalStatus(), shellExit(), assertFail(),
         templateMap(8),
         arrayTemplate(), mapTemplate(), tupleTemplate(),
-        stringArrayType(), precisionMap() {
+        stringArrayType(), precisionMap(), udcSet() {
 
     // initialize type
     this->anyType = this->initBuiltinType("Any", true, 0, info_AnyType());
@@ -168,14 +168,13 @@ TypePool::TypePool() :
 
     this->errorType = this->initBuiltinType("Error", true, this->anyType, info_ErrorType());
     this->taskType = this->initBuiltinType("Task", false, this->anyType, info_Dummy());
+    this->baseFuncType = this->initBuiltinType("Func", false, this->anyType, info_Dummy());
+
+    // pseudo type for command type checking
+    this->procType = this->initBuiltinType("%Proc%", false, this->anyType, info_Dummy());
 
     // register NativeFuncInfo to ErrorType
     ErrorType::registerFuncInfo(info_ErrorType()->initInfo);
-
-    /**
-     * hidden from script
-     */
-    this->baseFuncType = this->initBuiltinType("Func", false, this->anyType, info_Dummy());
 
     // initialize type template
     std::vector<DSType *> elements;
@@ -422,6 +421,10 @@ int TypePool::getIntPrecision(DSType *type) {
         return INVALID_PRECISION;
     }
     return iter->second;
+}
+
+bool TypePool::addUserDefnedCommandNme(const std::string &cmdName) {
+    return this->udcSet.insert(cmdName).second;
 }
 
 void TypePool::commit() {

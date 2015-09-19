@@ -849,7 +849,7 @@ void TypeChecker::visitCmdNode(CmdNode *node) {
     for(auto *argNode : node->getArgNodes()) {
         this->checkType(argNode);
     }
-    node->setType(this->typePool->getVoidType());   // FIXME
+    node->setType(this->typePool->getProcType());
 }
 
 void TypeChecker::visitCmdArgNode(CmdArgNode *node) {
@@ -907,8 +907,8 @@ void TypeChecker::visitTildeNode(TildeNode *node) {
 }
 
 void TypeChecker::visitPipedCmdNode(PipedCmdNode *node) {
-    for(CmdNode *procNode : node->getCmdNodes()) {
-        this->checkTypeAsStatement(procNode);   // always void
+    for(auto *cmdNode : node->getCmdNodes()) {
+        this->checkType(this->typePool->getProcType(), cmdNode);
     }
     if(node->treatAsBool() || this->cmdContextStack.back()->hasAttribute(CmdContextNode::CONDITION)) {
         node->setType(this->typePool->getBooleanType());
@@ -1063,7 +1063,7 @@ void TypeChecker::visitIfNode(IfNode *node) {
 void TypeChecker::visitReturnNode(ReturnNode *node) {
     this->checkAndThrowIfInsideFinally(node);
     DSType *returnType = this->getCurrentReturnType();
-    if(returnType == 0) {
+    if(returnType == nullptr) {
         E_InsideFunc(node);
     }
     DSType *exprType = this->checkType(returnType, node->getExprNode());
@@ -1209,6 +1209,19 @@ void TypeChecker::visitFunctionNode(FunctionNode *node) {   //TODO: named parame
     node->setMaxVarNum(this->symbolTable.getMaxVarIndex());
     this->symbolTable.exitFunc();
     this->popReturnType();
+    node->setType(this->typePool->getVoidType());
+}
+
+void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode *node) {
+    this->pushReturnType(this->typePool->getIntType());    // pseudo return type
+    this->symbolTable.enterFunc();
+    this->checkTypeWithNewBlockScope(node->getBlockNode());
+    this->symbolTable.exitFunc();
+    this->popReturnType();
+
+    if(!this->typePool->addUserDefnedCommandNme(node->getCommandName())) {
+        E_DefinedCmd(node, node->getCommandName());
+    }
     node->setType(this->typePool->getVoidType());
 }
 

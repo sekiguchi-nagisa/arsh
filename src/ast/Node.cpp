@@ -1172,13 +1172,13 @@ EvalStatus CmdNode::eval(RuntimeContext &ctx) {
 // ##########################
 
 PipedCmdNode::~PipedCmdNode() {
-    for(CmdNode *p : this->cmdNodes) {
+    for(auto *p : this->cmdNodes) {
         delete p;
     }
     this->cmdNodes.clear();
 }
 
-void PipedCmdNode::addCmdNodes(CmdNode *node) {
+void PipedCmdNode::addCmdNodes(Node *node) {
     this->cmdNodes.push_back(node);
 }
 
@@ -1187,11 +1187,7 @@ void PipedCmdNode::inCondition() {
 }
 
 void PipedCmdNode::dump(Writer &writer) const {
-    std::vector<Node *> cmdNodes;
-    for(CmdNode *node : this->cmdNodes) {
-        cmdNodes.push_back(node);
-    }
-
+    WRITE_PRIM(asBool);
     WRITE(cmdNodes);
 }
 
@@ -2296,6 +2292,37 @@ void InterfaceNode::accept(NodeVisitor *visitor) {
 
 EvalStatus InterfaceNode::eval(RuntimeContext &ctx) {
     return EvalStatus::SUCCESS;    // do nothing
+}
+
+// ################################
+// ##     UserDefinedCmdNode     ##
+// ################################
+
+UserDefinedCmdNode::~UserDefinedCmdNode() {
+    delete this->blockNode;
+    this->blockNode = nullptr;
+}
+
+void UserDefinedCmdNode::setSourceName(const char *sourceName) {
+    this->sourceName = sourceName;
+}
+
+const char *UserDefinedCmdNode::getSourceName() {
+    return this->sourceName;
+}
+
+void UserDefinedCmdNode::dump(Writer &writer) const {
+    WRITE(commandName);
+    WRITE_PTR(blockNode);
+}
+
+void UserDefinedCmdNode::accept(NodeVisitor *visitor) {
+    visitor->visitUserDefinedCmdNode(this);
+}
+
+EvalStatus UserDefinedCmdNode::eval(RuntimeContext &ctx) {
+    ctx.addUserDefinedCommand(this);
+    return EvalStatus::REMOVE;
 }
 
 // #########################

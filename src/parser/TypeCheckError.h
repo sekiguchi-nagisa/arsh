@@ -47,7 +47,7 @@
     E(NoIterator       , "not support iterator: ") \
     E(UnfoundNamedParam, "undefined parameter name: ") \
     E(DupNamedArg      , "found duplicated named argument: ") \
-    E(UndefinedEnv     , "undefined environment variable: ") \
+    E(DefinedCmd       , "already defined command: ") \
     E(Unimplemented    , "unimplemented type checker api: ")
 
 #define EACH_TC_ERROR2(E) \

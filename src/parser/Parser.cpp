@@ -800,7 +800,11 @@ std::unique_ptr<CatchNode> Parser::parse_catchStatement() {
 
 // command
 std::unique_ptr<Node> Parser::parse_commandListExpression() {
-    RET_NODE(new CmdContextNode(this->parse_orListCommand().release()));
+    std::unique_ptr<Node> node(this->parse_orListCommand());
+    if(dynamic_cast<UserDefinedCmdNode *>(node.get()) != nullptr) {
+        return node;
+    }
+    RET_NODE(new CmdContextNode(node.release()));
 }
 
 std::unique_ptr<Node> Parser::parse_orListCommand() {
@@ -826,7 +830,12 @@ std::unique_ptr<Node> Parser::parse_andListCommand() {
 }
 
 std::unique_ptr<Node> Parser::parse_pipedCommand() {
-    std::unique_ptr<PipedCmdNode> node(new PipedCmdNode(this->parse_command().release()));
+    std::unique_ptr<Node> cmdNode(this->parse_command());
+    if(dynamic_cast<UserDefinedCmdNode*>(cmdNode.get()) != nullptr) {
+        return cmdNode;
+    }
+
+    std::unique_ptr<PipedCmdNode> node(new PipedCmdNode(cmdNode.release()));
 
     if(CUR_KIND() == PIPE) {
         while(CUR_KIND() == PIPE) {
@@ -837,9 +846,18 @@ std::unique_ptr<Node> Parser::parse_pipedCommand() {
     return std::move(node);
 }
 
-std::unique_ptr<CmdNode> Parser::parse_command() {
+std::unique_ptr<Node> Parser::parse_command() {
     Token token;
     this->expect(COMMAND, token);
+
+    if(CUR_KIND() == LP) {  // command definition
+        this->expect(LP);
+        this->expect(RP);
+        RET_NODE(new UserDefinedCmdNode(token.lineNum, this->lexer->toCmdArg(token),
+                                        this->parse_block().release()));
+    }
+
+
     std::unique_ptr<CmdNode> node;
 
     if(this->lexer->startsWith(token, '~')) {
@@ -864,7 +882,7 @@ std::unique_ptr<CmdNode> Parser::parse_command() {
             break;
         }
     }
-    return node;
+    return std::move(node);
 }
 
 void Parser::parse_redirOption(std::unique_ptr<CmdNode> &node) {

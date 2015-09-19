@@ -95,7 +95,7 @@ private:
 
     std::unique_ptr<Node> parse_pipedCommand();
 
-    std::unique_ptr<CmdNode> parse_command();
+    std::unique_ptr<Node> parse_command();
 
     void parse_redirOption(std::unique_ptr<CmdNode> &node);
 

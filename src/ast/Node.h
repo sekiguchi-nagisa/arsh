@@ -1067,20 +1067,20 @@ public:
 
 class PipedCmdNode : public Node {    //TODO: background ...etc
 private:
-    std::vector<CmdNode *> cmdNodes;
+    std::vector<Node *> cmdNodes;
     bool asBool;
 
 public:
-    explicit PipedCmdNode(CmdNode *node) :
+    explicit PipedCmdNode(Node *node) :
             Node(node->getLineNum()), cmdNodes(), asBool(false) {
         this->cmdNodes.push_back(node);
     }
 
     ~PipedCmdNode();
 
-    void addCmdNodes(CmdNode *node);
+    void addCmdNodes(Node *node);
 
-    const std::vector<CmdNode *> &getCmdNodes() const {
+    const std::vector<Node *> &getCmdNodes() const {
         return this->cmdNodes;
     }
 
@@ -1942,6 +1942,36 @@ public:
     EvalStatus eval(RuntimeContext &ctx); // override
 };
 
+class UserDefinedCmdNode : public Node {
+private:
+    std::string commandName;
+
+    BlockNode *blockNode;
+
+    const char *sourceName;
+
+public:
+    UserDefinedCmdNode(unsigned int lineNum, std::string &&commandName, BlockNode *blockNode) :
+            Node(lineNum), commandName(std::move(commandName)), blockNode(blockNode), sourceName(0) { }
+
+    ~UserDefinedCmdNode();
+
+    const std::string &getCommandName() const {
+        return this->commandName;
+    }
+
+    BlockNode *getBlockNode() const {
+        return this->blockNode;
+    }
+
+    void setSourceName(const char *sourceName); // override
+    const char *getSourceName(); // override
+
+    void dump(Writer &writer) const;  // override
+    void accept(NodeVisitor *visitor);    // override
+    EvalStatus eval(RuntimeContext &ctx); // override
+};
+
 // class ClassNode
 // class ConstructorNode
 
@@ -2130,6 +2160,7 @@ struct NodeVisitor {
     virtual void visitElementSelfAssignNode(ElementSelfAssignNode *node) = 0;
     virtual void visitFunctionNode(FunctionNode *node) = 0;
     virtual void visitInterfaceNode(InterfaceNode *node) = 0;
+    virtual void visitUserDefinedCmdNode(UserDefinedCmdNode *node) = 0;
     virtual void visitBindVarNode(BindVarNode *node) = 0;
     virtual void visitEmptyNode(EmptyNode *node) = 0;
     virtual void visitDummyNode(DummyNode *node) = 0;

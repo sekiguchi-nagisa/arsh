@@ -122,6 +122,7 @@ private:
     DSType *errorType;
     DSType *taskType;
     DSType *baseFuncType;
+    DSType *procType;
 
     /**
      * for D-Bus object path
@@ -194,6 +195,11 @@ private:
      * for integer widening
      */
     std::unordered_map<unsigned long, int> precisionMap;
+
+    /**
+     * contain user defined command name.
+     */
+    std::unordered_set<std::string> udcSet;
 
 public:
     TypePool();
@@ -282,6 +288,10 @@ public:
 
     DSType *getBaseFuncType() const {
         return this->baseFuncType;
+    }
+
+    DSType *getProcType() const {
+        return this->procType;
     }
 
     DSType *getObjectPathType() const {
@@ -441,13 +451,15 @@ public:
      */
     int getIntPrecision(DSType *type);
 
+    bool addUserDefnedCommandNme(const std::string &cmdName);
+
     /**
-     * commit changed state(type, env)
+     * commit changed state(type)
      */
     void commit();
 
     /**
-     * abort changed state(type, env)
+     * abort changed state(type)
      */
     void abort();
 
