@@ -550,14 +550,48 @@ static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
 
 static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
     if(bctx.argc > 1) {
-        int status;
-        BuiltinContext nbctx(1, bctx);
-        ctx->getProcInvoker().forkAndExec(nbctx, status);
-        if(WIFEXITED(status)) {
-            return WEXITSTATUS(status);
-        }
-        if(WIFSIGNALED(status)) {
-            return WTERMSIG(status);
+        pid_t pid = xfork();
+        if(pid == -1) {
+            perror("child process error");
+            exit(1);
+        } else if(pid == 0) {   // child
+            // replace standard stream to bctx
+            dup2(fileno(bctx.fp_stdin), STDIN_FILENO);
+            dup2(fileno(bctx.fp_stdout), STDOUT_FILENO);
+            dup2(fileno(bctx.fp_stderr), STDERR_FILENO);
+
+            // exec user-defined command
+            UserDefinedCmdNode *udcNode = ctx->lookupUserDefinedCommand(bctx.argv[1]);
+            if(udcNode != nullptr) {
+                // prepare arguments
+                const unsigned int size = bctx.argc;
+                DSValue *argv = new DSValue[size];
+                for(unsigned int i = 1; i < bctx.argc; i++) {
+                    argv[i - 1] = DSValue::create<String_Object>(
+                            ctx->getPool().getStringType(), std::string(bctx.argv[i])
+                    );
+                }
+                argv[size - 1] = nullptr;
+
+                int r = ctx->execUserDefinedCommand(udcNode, argv);
+                delete[] argv;
+                exit(r);
+            }
+
+            // exec external command
+            builtin_execvpe(const_cast<char **>(bctx.argv + 1), nullptr, nullptr, false);
+            BuiltinContext nbctx(1, bctx);
+            PERROR(nbctx, "");
+            exit(1);
+        } else {    // parent process
+            int status;
+            ctx->xwaitpid(pid, status, 0);
+            if(WIFEXITED(status)) {
+                return WEXITSTATUS(status);
+            }
+            if(WIFSIGNALED(status)) {
+                return WTERMSIG(status);
+            }
         }
     }
     return 0;
@@ -626,14 +660,27 @@ static int builtin_command(RuntimeContext *ctx, const BuiltinContext &bctx, bool
         } else {
             for(; index < bctx.argc; index++) {
                 const char *commandName = bctx.argv[index];
-                if(invoker.lookupBuiltinCommand(commandName) != nullptr) {
+                // check user defined command
+                if(ctx->lookupUserDefinedCommand(commandName) != nullptr) {
                     fputs(commandName, bctx.fp_stdout);
                     if(showDesc == 2) {
-                        fputs(" is shell builtin command", bctx.fp_stdout);
+                        fputs(" is an user-defined command", bctx.fp_stdout);
                     }
                     fputc('\n', bctx.fp_stdout);
                     continue;
                 }
+
+                // check builtin
+                if(invoker.lookupBuiltinCommand(commandName) != nullptr) {
+                    fputs(commandName, bctx.fp_stdout);
+                    if(showDesc == 2) {
+                        fputs(" is a shell builtin command", bctx.fp_stdout);
+                    }
+                    fputc('\n', bctx.fp_stdout);
+                    continue;
+                }
+
+                // check external command
                 std::string path(resolveFilePath(commandName, false));
                 if(!path.empty()) {
                     if(showDesc == 1) {
@@ -972,6 +1019,7 @@ EvalStatus ProcInvoker::invoke() {
         // check user defined command
         UserDefinedCmdNode *udcNode = this->ctx->lookupUserDefinedCommand(this->getCommandName(procIndex));
         if(udcNode != nullptr) {
+            closeAllPipe(procSize, selfpipes);
             exit(this->ctx->execUserDefinedCommand(udcNode, ptr));
         }
 

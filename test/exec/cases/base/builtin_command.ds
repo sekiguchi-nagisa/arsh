@@ -17,10 +17,16 @@ assert(command -p ls)
 
 $PATH = $OLD_PATH
 
+hoge() {
+    echo $@
+}
+
 # show command information
 assert("$(command -v ls)" == "$(which ls)")
 assert("$(command -v cd)" == "cd")
+assert("$(command -v hoge)" == "hoge")
 
 # show detailed information
 assert("$(command -V ls)" == "ls is $(which ls)")
-assert("$(command -V cd)" == "cd is shell builtin command")
+assert("$(command -V cd)" == "cd is a shell builtin command")
+assert("$(command -V hoge)" == "hoge is an user-defined command")
