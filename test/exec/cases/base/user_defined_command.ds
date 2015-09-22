@@ -1,3 +1,5 @@
+#$test($result = 'type', $errorKind = 'DefinedCmd', $lineNum = 58, $status = 1)
+
 # exit status
 
 hoge() {
@@ -36,8 +38,23 @@ echo2() {
 
 assert("$(echo2 a b c)" == "a b c")
 
-ls() {
- command ls $@
+
+# command override
+## override builtin
+cd() {
+    echo hello
 }
 
-assert(ls)
+assert("$(cd)" == "hello")
+
+## override external
+ls() {
+    command ls $@
+}
+
+assert("$(ls)" == "$(command ls)")
+
+## override user-defined command
+echo2() {
+    echo hello world: $@
+}

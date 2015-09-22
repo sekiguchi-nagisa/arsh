@@ -892,7 +892,8 @@ EvalStatus ProcInvoker::invoke() {
     // check builtin command
     if(procSize == 1) {
         builtin_command_t cmd_ptr = this->lookupBuiltinCommand(this->getCommandName(0));
-        if(cmd_ptr != nullptr) {
+        if(cmd_ptr != nullptr &&
+                this->ctx->lookupUserDefinedCommand(this->getCommandName(0)) == nullptr) {
             DSValue *ptr = this->getARGV(0);
             unsigned int argc = 1;
             for(; ptr[argc].get() != nullptr; argc++);
