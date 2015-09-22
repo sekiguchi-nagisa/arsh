@@ -75,7 +75,7 @@ struct Option {
 
     unsigned int getUsageSize() const {
         return strlen(this->optionName) +
-               (misc::hasFlag(this->flag, HAS_ARG) ? strlen(usageSuffix) - 1 : 0);
+               (misc::hasFlag(this->flag, HAS_ARG) ? strlen(usageSuffix) : 0);
     }
 
     std::vector<std::string> getDetails() const;
