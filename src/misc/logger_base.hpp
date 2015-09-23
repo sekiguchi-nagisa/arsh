@@ -122,17 +122,23 @@ unsigned int initPolicy(const char *prefix, const char *arg) {
     std::string buf(prefix);
     for(unsigned int i = 0; arg[i] != '\0'; i++) {
         char ch = arg[i];
-        if(ch == ' ') {
+        switch(ch) {
+        case ' ':
+        case '\t':
+        case '\r':
+        case '\n':
             continue;
-        }
-        if(ch == ',') {
+        case ',': {
             if(getenv(buf.c_str()) != nullptr) {
                 ydsh::misc::setFlag(policySet, mask(indexCount));
             }
             indexCount++;
             buf = prefix;
-        } else {
+            break;
+        }
+        default:
             buf += ch;
+            break;
         }
     }
     if(buf.size() > prefixSize) {
