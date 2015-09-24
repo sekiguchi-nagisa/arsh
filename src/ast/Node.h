@@ -2167,6 +2167,65 @@ struct NodeVisitor {
     virtual void visitRootNode(RootNode *node) = 0;
 };
 
+struct BaseVisitor : public NodeVisitor {
+    virtual ~BaseVisitor() = default;
+
+    virtual void visitDefault(Node *node) = 0;
+
+    virtual void visitIntValueNode(IntValueNode *node) { this->visitDefault(node); }
+    virtual void visitLongValueNode(LongValueNode *node) { this->visitDefault(node); }
+    virtual void visitFloatValueNode(FloatValueNode *node) { this->visitDefault(node); }
+    virtual void visitStringValueNode(StringValueNode *node) { this->visitDefault(node); }
+    virtual void visitObjectPathNode(ObjectPathNode *node) { this->visitDefault(node); }
+    virtual void visitStringExprNode(StringExprNode *node) { this->visitDefault(node); }
+    virtual void visitArrayNode(ArrayNode *node) { this->visitDefault(node); }
+    virtual void visitMapNode(MapNode *node) { this->visitDefault(node); }
+    virtual void visitTupleNode(TupleNode *node) { this->visitDefault(node); }
+    virtual void visitVarNode(VarNode *node) { this->visitDefault(node); }
+    virtual void visitAccessNode(AccessNode *node) { this->visitDefault(node); }
+    virtual void visitCastNode(CastNode *node) { this->visitDefault(node); }
+    virtual void visitInstanceOfNode(InstanceOfNode *node) { this->visitDefault(node); }
+    virtual void visitUnaryOpNode(UnaryOpNode *node) { this->visitDefault(node); }
+    virtual void visitBinaryOpNode(BinaryOpNode *node) { this->visitDefault(node); }
+    virtual void visitArgsNode(ArgsNode *node) { this->visitDefault(node); }
+    virtual void visitApplyNode(ApplyNode *node) { this->visitDefault(node); }
+    virtual void visitMethodCallNode(MethodCallNode *node) { this->visitDefault(node); }
+    virtual void visitNewNode(NewNode *node) { this->visitDefault(node); }
+    virtual void visitGroupNode(GroupNode *node) { this->visitDefault(node); }
+    virtual void visitCondOpNode(CondOpNode *node) { this->visitDefault(node); }
+    virtual void visitCmdNode(CmdNode *node) { this->visitDefault(node); }
+    virtual void visitCmdArgNode(CmdArgNode *node) { this->visitDefault(node); }
+    virtual void visitRedirNode(RedirNode *node) { this->visitDefault(node); }
+    virtual void visitTildeNode(TildeNode *node) { this->visitDefault(node); }
+    virtual void visitPipedCmdNode(PipedCmdNode *node) { this->visitDefault(node); }
+    virtual void visitCmdContextNode(CmdContextNode *node) { this->visitDefault(node); }
+    virtual void visitAssertNode(AssertNode *node) { this->visitDefault(node); }
+    virtual void visitBlockNode(BlockNode *node) { this->visitDefault(node); }
+    virtual void visitBreakNode(BreakNode *node) { this->visitDefault(node); }
+    virtual void visitContinueNode(ContinueNode *node) { this->visitDefault(node); }
+    virtual void visitExportEnvNode(ExportEnvNode *node) { this->visitDefault(node); }
+    virtual void visitImportEnvNode(ImportEnvNode *node) { this->visitDefault(node); }
+    virtual void visitTypeAliasNode(TypeAliasNode *node) { this->visitDefault(node); }
+    virtual void visitForNode(ForNode *node) { this->visitDefault(node); }
+    virtual void visitWhileNode(WhileNode *node) { this->visitDefault(node); }
+    virtual void visitDoWhileNode(DoWhileNode *node) { this->visitDefault(node); }
+    virtual void visitIfNode(IfNode *node) { this->visitDefault(node); }
+    virtual void visitReturnNode(ReturnNode *node) { this->visitDefault(node); }
+    virtual void visitThrowNode(ThrowNode *node) { this->visitDefault(node); }
+    virtual void visitCatchNode(CatchNode *node) { this->visitDefault(node); }
+    virtual void visitTryNode(TryNode *node) { this->visitDefault(node); }
+    virtual void visitVarDeclNode(VarDeclNode *node) { this->visitDefault(node); }
+    virtual void visitAssignNode(AssignNode *node) { this->visitDefault(node); }
+    virtual void visitElementSelfAssignNode(ElementSelfAssignNode *node) { this->visitDefault(node); }
+    virtual void visitFunctionNode(FunctionNode *node) { this->visitDefault(node); }
+    virtual void visitInterfaceNode(InterfaceNode *node) { this->visitDefault(node); }
+    virtual void visitUserDefinedCmdNode(UserDefinedCmdNode *node) { this->visitDefault(node); }
+    virtual void visitBindVarNode(BindVarNode *node) { this->visitDefault(node); }
+    virtual void visitEmptyNode(EmptyNode *node) { this->visitDefault(node); }
+    virtual void visitDummyNode(DummyNode *node) { this->visitDefault(node); }
+    virtual void visitRootNode(RootNode *node) { this->visitDefault(node); }
+};
+
 } // namespace ast
 } // namespace ydsh
 

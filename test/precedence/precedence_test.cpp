@@ -43,7 +43,7 @@ static std::vector<std::string> tokenize(const char *str) {
     return tokens;
 }
 
-class PrettyPrinter : public NodeVisitor {
+class PrettyPrinter : public BaseVisitor {
 private:
     std::vector<std::string> out;
 
@@ -72,26 +72,15 @@ public:
         this->append(")");
     }
 
-    void visitDefault(Node *node) {
+    void visitDefault(Node *node) { // override
         fatal("unsupported\n");
     }
 
-    void visitIntValueNode(IntValueNode *node) {
+    void visitIntValueNode(IntValueNode *node) {    // override
         this->append(std::to_string(node->getTempValue()));
     }
 
-    void visitLongValueNode(LongValueNode *node) { this->visitDefault(node); }
-    void visitFloatValueNode(FloatValueNode *node) { this->visitDefault(node); }
-    void visitStringValueNode(StringValueNode *node) { this->visitDefault(node); }
-    void visitObjectPathNode(ObjectPathNode *node) { this->visitDefault(node); }
-    void visitStringExprNode(StringExprNode *node) { this->visitDefault(node); }
-    void visitArrayNode(ArrayNode *node) { this->visitDefault(node); }
-    void visitMapNode(MapNode *node) { this->visitDefault(node); }
-    void visitTupleNode(TupleNode *node) { this->visitDefault(node); }
-    void visitVarNode(VarNode *node) { this->visitDefault(node); }
-    void visitAccessNode(AccessNode *node) { this->visitDefault(node); }
-
-    void visitCastNode(CastNode *node) {
+    void visitCastNode(CastNode *node) {    // override
         this->open();
         this->visit(node->getExprNode());
         this->append("as");
@@ -99,7 +88,7 @@ public:
         this->close();
     }
 
-    void visitInstanceOfNode(InstanceOfNode *node) {
+    void visitInstanceOfNode(InstanceOfNode *node) {    // override
         this->open();
         this->visit(node->getTargetNode());
         this->append("is");
@@ -107,9 +96,7 @@ public:
         this->close();
     }
 
-    void visitUnaryOpNode(UnaryOpNode *node) { this->visitDefault(node); }
-
-    void visitBinaryOpNode(BinaryOpNode *node) {
+    void visitBinaryOpNode(BinaryOpNode *node) {    // override
         this->open();
         this->visit(node->getLeftNode());
         this->append(TO_NAME(node->getOp()));
@@ -117,18 +104,13 @@ public:
         this->close();
     }
 
-    void visitArgsNode(ArgsNode *node) { this->visitDefault(node); }
-    void visitApplyNode(ApplyNode *node) { this->visitDefault(node); }
-    void visitMethodCallNode(MethodCallNode *node) { this->visitDefault(node); }
-    void visitNewNode(NewNode *node) { this->visitDefault(node); }
-
-    void visitGroupNode(GroupNode *node) {
+    void visitGroupNode(GroupNode *node) {    // override
         this->open();
         this->visit(node->getExprNode());
         this->close();
     }
 
-    void visitCondOpNode(CondOpNode *node) {
+    void visitCondOpNode(CondOpNode *node) {    // override
         this->open();
         this->visit(node->getLeftNode());
         this->append(node->isAndOp() ? "&&" : "||");
@@ -136,30 +118,7 @@ public:
         this->close();
     }
 
-    void visitCmdNode(CmdNode *node) { this->visitDefault(node); }
-    void visitCmdArgNode(CmdArgNode *node) { this->visitDefault(node); }
-    void visitRedirNode(RedirNode *node) { this->visitDefault(node); }
-    void visitTildeNode(TildeNode *node) { this->visitDefault(node); }
-    void visitPipedCmdNode(PipedCmdNode *node) { this->visitDefault(node); }
-    void visitCmdContextNode(CmdContextNode *node) { this->visitDefault(node); }
-    void visitAssertNode(AssertNode *node) { this->visitDefault(node); }
-    void visitBlockNode(BlockNode *node) { this->visitDefault(node); }
-    void visitBreakNode(BreakNode *node) { this->visitDefault(node); }
-    void visitContinueNode(ContinueNode *node) { this->visitDefault(node); }
-    void visitExportEnvNode(ExportEnvNode *node) { this->visitDefault(node); }
-    void visitImportEnvNode(ImportEnvNode *node) { this->visitDefault(node); }
-    void visitTypeAliasNode(TypeAliasNode *node) { this->visitDefault(node); }
-    void visitForNode(ForNode *node) { this->visitDefault(node); }
-    void visitWhileNode(WhileNode *node) { this->visitDefault(node); }
-    void visitDoWhileNode(DoWhileNode *node) { this->visitDefault(node); }
-    void visitIfNode(IfNode *node) { this->visitDefault(node); }
-    void visitReturnNode(ReturnNode *node) { this->visitDefault(node); }
-    void visitThrowNode(ThrowNode *node) { this->visitDefault(node); }
-    void visitCatchNode(CatchNode *node) { this->visitDefault(node); }
-    void visitTryNode(TryNode *node) { this->visitDefault(node); }
-    void visitVarDeclNode(VarDeclNode *node) { this->visitDefault(node); }
-
-    void visitAssignNode(AssignNode *node) {
+    void visitAssignNode(AssignNode *node) {    // override
         this->open();
         this->visit(node->getLeftNode());
         this->append("=");
@@ -167,15 +126,7 @@ public:
         this->close();
     }
 
-    void visitElementSelfAssignNode(ElementSelfAssignNode *node) { this->visitDefault(node); }
-    void visitFunctionNode(FunctionNode *node) { this->visitDefault(node); }
-    void visitInterfaceNode(InterfaceNode *node) { this->visitDefault(node); }
-    void visitUserDefinedCmdNode(UserDefinedCmdNode *node) { this->visitDefault(node); }
-    void visitBindVarNode(BindVarNode *node) { this->visitDefault(node); }
-    void visitEmptyNode(EmptyNode *node) { this->visitDefault(node); }
-    void visitDummyNode(DummyNode *node) { this->visitDefault(node); }
-
-    void visitRootNode(RootNode *node) {
+    void visitRootNode(RootNode *node) {    // override
         if(node->getNodeList().size() != 1) {
             fatal("must be 1\n");
         }
