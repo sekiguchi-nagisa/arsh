@@ -21,6 +21,7 @@
 #include "../core/DSObject.h"
 #include "../core/TypeLookupError.h"
 #include "../misc/fatal.h"
+#include "NodeVerifier.h"
 #include "TypeChecker.h"
 
 namespace ydsh {
@@ -1248,6 +1249,10 @@ void TypeChecker::visitDummyNode(DummyNode *node) {
 void TypeChecker::visitRootNode(RootNode *node) {
     this->symbolTable.commit();
     this->typePool->commit();
+
+    // verify node
+    ToplevelStatementVerifier().visit(node);
+
 
     for(Node *targetNode : node->getNodeList()) {
         this->checkTypeAsStatement(targetNode);

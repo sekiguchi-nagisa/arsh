@@ -23,18 +23,19 @@
 #include "../core/TypeLookupError.h"
 
 #define EACH_TC_ERROR0(E) \
-    E(Unresolved    , "having unresolved type") \
-    E(InsideLoop    , "only available inside loop statement") \
-    E(UnfoundReturn , "not found return statement") \
-    E(Unreachable   , "found unreachable code") \
-    E(InsideFunc    , "only available inside function") \
-    E(NotNeedExpr   , "not need expression") \
-    E(Assignable    , "require assignable node") \
-    E(ReadOnly      , "read only value") \
-    E(InsideFinally , "unavailable inside finally block") \
-    E(UnneedNamedArg, "not need named argument") \
-    E(NeedNamedArg  , "need named argument") \
-    E(NoDefaultValue, "has no default value")
+    E(Unresolved     , "having unresolved type") \
+    E(InsideLoop     , "only available inside loop statement") \
+    E(UnfoundReturn  , "not found return statement") \
+    E(Unreachable    , "found unreachable code") \
+    E(InsideFunc     , "only available inside function") \
+    E(NotNeedExpr    , "not need expression") \
+    E(Assignable     , "require assignable node") \
+    E(ReadOnly       , "read only value") \
+    E(InsideFinally  , "unavailable inside finally block") \
+    E(UnneedNamedArg , "not need named argument") \
+    E(NeedNamedArg   , "need named argument") \
+    E(NoDefaultValue , "has no default value") \
+    E(OutsideToplevel, "only available toplevel scope")
 
 #define EACH_TC_ERROR1(E) \
     E(DefinedSymbol    , "already defined symbol: ") \

@@ -1,0 +1,7 @@
+#$test($result = 'type', $errorKind = 'OutsideToplevel', $lineNum = 4, $status = 1)
+
+hoge() {
+    hoge2() {
+        echo hello
+    }
+}
