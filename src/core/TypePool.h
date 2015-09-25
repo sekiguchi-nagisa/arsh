@@ -451,7 +451,7 @@ public:
      */
     int getIntPrecision(DSType *type);
 
-    bool addUserDefnedCommandNme(const std::string &cmdName);
+    bool addUserDefnedCommandName(const std::string &cmdName);
 
     /**
      * commit changed state(type)

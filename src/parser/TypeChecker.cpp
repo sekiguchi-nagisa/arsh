@@ -1220,7 +1220,7 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode *node) {
     this->symbolTable.exitFunc();
     this->popReturnType();
 
-    if(!this->typePool->addUserDefnedCommandNme(node->getCommandName())) {
+    if(!this->typePool->addUserDefnedCommandName(node->getCommandName())) {
         E_DefinedCmd(node, node->getCommandName());
     }
     node->setType(this->typePool->getVoidType());

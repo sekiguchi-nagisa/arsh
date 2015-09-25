@@ -423,7 +423,7 @@ int TypePool::getIntPrecision(DSType *type) {
     return iter->second;
 }
 
-bool TypePool::addUserDefnedCommandNme(const std::string &cmdName) {
+bool TypePool::addUserDefnedCommandName(const std::string &cmdName) {
     return this->udcSet.insert(cmdName).second;
 }
 
