@@ -273,7 +273,7 @@ const struct {
 
 template<typename T, size_t N>
 static constexpr size_t sizeOfArray(const T (&array)[N]) {
-    return N;
+    return sizeof(array) != 0 ? N : 0;
 }
 
 
