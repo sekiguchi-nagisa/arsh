@@ -130,12 +130,12 @@ const char *DSContext_getCopyright();
 void DSStatus_free(DSStatus **status);
 
 
-#define DS_STATUS_SUCCESS         0
-#define DS_STATUS_PARSE_ERROR     1
-#define DS_STATUS_TYPE_ERROR      2
-#define DS_STATUS_RUNTIME_ERROR   3
-#define DS_STATUS_ASSERTION_ERROR 4
-#define DS_STATUS_EXIT            5
+#define DS_STATUS_SUCCESS         ((unsigned int) 0)
+#define DS_STATUS_PARSE_ERROR     ((unsigned int) 1)
+#define DS_STATUS_TYPE_ERROR      ((unsigned int) 2)
+#define DS_STATUS_RUNTIME_ERROR   ((unsigned int) 3)
+#define DS_STATUS_ASSERTION_ERROR ((unsigned int) 4)
+#define DS_STATUS_EXIT            ((unsigned int) 5)
 
 /**
  * return type of status.

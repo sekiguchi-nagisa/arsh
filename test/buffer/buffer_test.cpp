@@ -10,8 +10,8 @@ TEST(BufferTest, case1) {
     IBuffer buffer;
 
     ASSERT_NO_FATAL_FAILURE({
-        ASSERT_EQ(0, buffer.size());
-        ASSERT_EQ(0, buffer.capacity());
+        ASSERT_EQ(0u, buffer.size());
+        ASSERT_EQ(0u, buffer.capacity());
     });
 
     // append
@@ -35,10 +35,10 @@ TEST(BufferTest, case1) {
     // set
     ASSERT_NO_FATAL_FAILURE({
         buffer[5] = 90;
-        ASSERT_EQ(90, buffer[5]);
-        ASSERT_EQ(3, ++buffer[2]);
-        ASSERT_EQ(0, buffer[0]++);
-        ASSERT_EQ(1, buffer[0]);
+        ASSERT_EQ(90u, buffer[5]);
+        ASSERT_EQ(3u, ++buffer[2]);
+        ASSERT_EQ(0u, buffer[0]++);
+        ASSERT_EQ(1u, buffer[0]);
     });
 
     // out of range
@@ -76,21 +76,21 @@ TEST(BufferTest, case2) {
 
     ASSERT_NO_FATAL_FAILURE({
         buffer.clear();
-        ASSERT_EQ(0, buffer.size());
+        ASSERT_EQ(0u, buffer.size());
         ASSERT_EQ(cap, buffer.capacity());
     });
 
     ASSERT_NO_FATAL_FAILURE({   // remove
         delete[] buffer.remove();
-        ASSERT_EQ(0, buffer.size());
-        ASSERT_EQ(0, buffer.capacity());
+        ASSERT_EQ(0u, buffer.size());
+        ASSERT_EQ(0u, buffer.capacity());
         ASSERT_TRUE(buffer.get() == nullptr);
     });
 
     unsigned int v[] = {10, 20, 30};
     ASSERT_NO_FATAL_FAILURE({   // reuse
         buffer.append(v, sizeof(v) / sizeof(unsigned int));
-        ASSERT_EQ(3, buffer.size());
+        ASSERT_EQ(3u, buffer.size());
         ASSERT_EQ(IBuffer::MINIMUM_CAPACITY, buffer.capacity());
         ASSERT_EQ(v[0], buffer[0]);
         ASSERT_EQ(v[1], buffer[1]);
@@ -112,8 +112,8 @@ TEST(BufferTest, case3) {
     ByteBuffer buffer2(std::move(buffer));
 
     ASSERT_NO_FATAL_FAILURE({   // after move
-        ASSERT_EQ(0, buffer.size());
-        ASSERT_EQ(0, buffer.capacity());
+        ASSERT_EQ(0u, buffer.size());
+        ASSERT_EQ(0u, buffer.capacity());
         ASSERT_TRUE(buffer.get() == nullptr);
 
         ASSERT_EQ(len, buffer2.size());

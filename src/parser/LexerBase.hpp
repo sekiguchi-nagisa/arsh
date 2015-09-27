@@ -113,7 +113,7 @@ protected:
     bool zeroCopyBuf;
 
     static constexpr unsigned int DEFAULT_SIZE = 256;
-    static constexpr unsigned int DEFAULT_READ_SIZE = 128;
+    static constexpr int DEFAULT_READ_SIZE = 128;
 
 private:
     LexerBase() :

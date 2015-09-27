@@ -3,6 +3,7 @@
 #include <ast/Node.h>
 #include <parser/Parser.h>
 #include <misc/fatal.h>
+#include <misc/unused.h>
 
 using namespace ydsh::parser;
 
@@ -73,6 +74,7 @@ public:
     }
 
     void visitDefault(Node *node) { // override
+        UNUSED(node);
         fatal("unsupported\n");
     }
 

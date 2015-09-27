@@ -19,6 +19,7 @@
 #include "TypePool.h"
 #include "../misc/fatal.h"
 #include "../misc/term.h"
+#include "../misc/unused.h"
 
 namespace ydsh {
 
@@ -76,7 +77,8 @@ void CommonErrorListener::handleTypeError(const std::string &sourceName,
 #undef STREAM
 
 void CommonErrorListener::handleRuntimeError(const TypePool &pool, const DSValue &raisedObj) noexcept {
-    // do nothing
+    UNUSED(pool);
+    UNUSED(raisedObj);  // do nothing
 }
 
 // ###############################
@@ -85,6 +87,9 @@ void CommonErrorListener::handleRuntimeError(const TypePool &pool, const DSValue
 
 void ReportingListener::handleParseError(Lexer &lexer,
                                          const std::string &sourceName, const ParseError &e) noexcept {
+    UNUSED(lexer);
+    UNUSED(sourceName);
+
 #define EACH_ERROR(E) \
     E(TokenMismatched  , 0) \
     E(NoViableAlter    , 1) \
@@ -111,6 +116,8 @@ void ReportingListener::handleParseError(Lexer &lexer,
 
 void ReportingListener::handleTypeError(const std::string &sourceName,
                                         const TypeCheckError &e) noexcept {
+    UNUSED(sourceName);
+
     this->lineNum = e.getLineNum();
     this->messageKind = e.getKind();
 }

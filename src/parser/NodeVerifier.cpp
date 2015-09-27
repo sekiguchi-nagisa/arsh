@@ -15,6 +15,7 @@
  */
 
 #include "NodeVerifier.h"
+#include "../misc/unused.h"
 
 namespace ydsh {
 namespace parser {
@@ -30,7 +31,7 @@ void ToplevelStatementVerifier::visit(Node *node) {
 }
 
 void ToplevelStatementVerifier::visitDefault(Node *node) {
-    // do nothing
+    UNUSED(node);   // do nothing
 }
 
 void ToplevelStatementVerifier::visitPipedCmdNode(PipedCmdNode *node) {

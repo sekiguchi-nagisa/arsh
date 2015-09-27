@@ -27,6 +27,7 @@
 #include "symbol.h"
 #include "../misc/num.h"
 #include "../misc/fatal.h"
+#include "../misc/unused.h"
 
 extern char **environ;
 
@@ -301,6 +302,9 @@ static bool printUsage(FILE *fp, const char *commandName, bool isShortHelp = tru
 }
 
 static int builtin_help(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+    UNUSED(ctx);
+    UNUSED(raised);
+
     if(bctx.argc == 1) {
         printAllUsage(bctx.fp_stdout);
         return 0;
@@ -333,6 +337,9 @@ inline static void showUsage(const BuiltinContext &bctx) {
 }
 
 static int builtin_cd(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+    UNUSED(ctx);
+    UNUSED(raised);
+
     bool OLDPWD_only = true;
     const char *destDir = getenv("HOME");
 
@@ -352,6 +359,9 @@ static int builtin_cd(RuntimeContext *ctx, const BuiltinContext &bctx, bool &rai
 }
 
 static int builtin_check_env(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+    UNUSED(ctx);
+    UNUSED(raised);
+
     if(bctx.argc == 1) {
         showUsage(bctx);
         return 1;
@@ -381,6 +391,9 @@ static int builtin_exit(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
 }
 
 static int builtin_echo(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+    UNUSED(ctx);
+    UNUSED(raised);
+
     FILE *fp = bctx.fp_stdout;  // not close it.
     int argc = bctx.argc;
     char *const *argv = bctx.argv;
@@ -462,10 +475,18 @@ static int builtin_echo(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
 }
 
 static int builtin_true(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+    UNUSED(ctx);
+    UNUSED(bctx);
+    UNUSED(raised);
+
     return 0;
 }
 
 static int builtin_false(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+    UNUSED(ctx);
+    UNUSED(bctx);
+    UNUSED(raised);
+
     return 1;
 }
 
@@ -473,6 +494,9 @@ static int builtin_false(RuntimeContext *ctx, const BuiltinContext &bctx, bool &
  * for stdin redirection test
  */
 static int builtin___gets(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+    UNUSED(ctx);
+    UNUSED(raised);
+
     unsigned int bufSize = 256;
     char buf[bufSize];
     int readSize;
@@ -486,6 +510,9 @@ static int builtin___gets(RuntimeContext *ctx, const BuiltinContext &bctx, bool 
  * for stdout/stderr redirection test
  */
 static int builtin___puts(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+    UNUSED(ctx);
+    UNUSED(raised);
+
     for(int index = 1; index < bctx.argc; index++) {
         const char *arg = bctx.argv[index];
         if(strcmp("-1", arg) == 0 && ++index < bctx.argc) {
@@ -505,6 +532,8 @@ static int builtin___puts(RuntimeContext *ctx, const BuiltinContext &bctx, bool 
  * for prompt string debugging
  */
 static int builtin_ps_intrp(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+    UNUSED(raised);
+
     if(bctx.argc != 2) {
         showUsage(bctx);
         return 1;
@@ -517,6 +546,9 @@ static int builtin_ps_intrp(RuntimeContext *ctx, const BuiltinContext &bctx, boo
 }
 
 static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+    UNUSED(ctx);
+    UNUSED(raised);
+
     int index = 1;
     bool clearEnv = false;
     const char *progName = nullptr;
@@ -549,6 +581,8 @@ static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
 }
 
 static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+    UNUSED(raised);
+
     if(bctx.argc > 1) {
         pid_t pid = xfork();
         if(pid == -1) {
@@ -566,7 +600,7 @@ static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
                 // prepare arguments
                 const unsigned int size = bctx.argc;
                 DSValue *argv = new DSValue[size];
-                for(unsigned int i = 1; i < bctx.argc; i++) {
+                for(int i = 1; i < bctx.argc; i++) {
                     argv[i - 1] = DSValue::create<String_Object>(
                             ctx->getPool().getStringType(), std::string(bctx.argv[i])
                     );
@@ -598,6 +632,9 @@ static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
 }
 
 static int builtin_pwd(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+    UNUSED(ctx);
+    UNUSED(raised);
+
     //TODO: support LP option
 
     size_t size = PATH_MAX;
@@ -982,7 +1019,7 @@ EvalStatus ProcInvoker::invoke() {
         // wait for exit
         const unsigned int actualProcSize = this->procCtxs.size();
         for(unsigned int i = 0; i < actualProcSize; i++) {
-            int status;
+            int status = 0;
             this->ctx->xwaitpid(pid[i], status, 0);
             if(WIFEXITED(status)) {
                 this->procCtxs[i].set(ExitKind::NORMAL, WEXITSTATUS(status));

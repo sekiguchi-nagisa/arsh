@@ -26,6 +26,7 @@
 
 #include <misc/argv.hpp>
 #include <misc/fatal.h>
+#include <misc/unused.h>
 
 namespace {
 
@@ -447,6 +448,12 @@ static void handler_startElementNs(void *ctx, const xmlChar *localname,
                                    const xmlChar *prefix, const xmlChar *URI,
                                    int nb_namespaces, const xmlChar **namespaces,
                                    int nb_attributes, int nb_defaulted, const xmlChar **attributes) {
+    UNUSED(prefix);
+    UNUSED(URI);
+    UNUSED(nb_namespaces);
+    UNUSED(namespaces);
+    UNUSED(nb_defaulted);
+
     SAXHandlerContext *hctx = (SAXHandlerContext *) ctx;
 
     std::string elementName(str(localname));
@@ -529,6 +536,9 @@ static void handler_startElementNs(void *ctx, const xmlChar *localname,
  * ctx is actually
  */
 static void handler_endElementNs(void *ctx, const xmlChar* localname, const xmlChar* prefix, const xmlChar* URI) {
+    UNUSED(prefix);
+    UNUSED(URI);
+
     SAXHandlerContext *hctx = (SAXHandlerContext *) ctx;
 
     std::string elementName(str(localname));
@@ -551,7 +561,9 @@ static void handler_endElementNs(void *ctx, const xmlChar* localname, const xmlC
 
 
 static void handler_characters(void *ctx, const xmlChar *ch, int len) {
-    // do nothing
+    UNUSED(ctx);
+    UNUSED(ch);
+    UNUSED(len);    // do nothing
 }
 
 static std::string introspect(const Config &config) {

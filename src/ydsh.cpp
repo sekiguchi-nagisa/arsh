@@ -67,11 +67,11 @@ struct DSContext {
         this->listener = listener;
     }
 
-    ErrorListener * const getErrorListener() const {
+    ErrorListener *getErrorListener() const {
         return this->listener;
     }
 
-    ErrorListener * const getDefaultListener() const {
+    ErrorListener *getDefaultListener() const {
         return &clistener;
     }
 

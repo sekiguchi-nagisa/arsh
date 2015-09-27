@@ -20,6 +20,7 @@
 #include "DBusBindImpl.h"
 #include "../core/logger.h"
 #include "../misc/fatal.h"
+#include "../misc/unused.h"
 
 namespace ydsh {
 namespace core {
@@ -396,6 +397,7 @@ Service_ObjectImpl::Service_ObjectImpl(DSType *type, const DSValue &bus,
 }
 
 std::string Service_ObjectImpl::toString(RuntimeContext &ctx) {
+    UNUSED(ctx);
     return this->serviceName;
 }
 
@@ -601,6 +603,8 @@ DBusProxy_Object::DBusProxy_Object(DSType *type, const DSValue &srcObj, const DS
 }
 
 std::string DBusProxy_Object::toString(RuntimeContext &ctx) {
+    UNUSED(ctx);
+
     std::string str("[dest=");
     str += TYPE_AS(Service_ObjectImpl, this->srv)->getServiceName();
     str += ", path=";
@@ -778,6 +782,8 @@ bool DBusProxy_Object::invokeGetter(RuntimeContext &ctx, DSType *recvType,
 
 bool DBusProxy_Object::invokeSetter(RuntimeContext &ctx, DSType *recvType,
                                     const std::string &fieldName, DSType *fieldType) {
+    UNUSED(fieldType);
+
     DBusMessage *msg = this->newMethodCallMsg("org.freedesktop.DBus.Properties", "Set");
 
     // append arg

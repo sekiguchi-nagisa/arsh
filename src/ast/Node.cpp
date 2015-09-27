@@ -20,6 +20,7 @@
 #include "../core/DSObject.h"
 #include "../core/RuntimeContext.h"
 #include "../misc/fatal.h"
+#include "../misc/unused.h"
 #include "dump.h"
 
 // helper macro
@@ -54,7 +55,9 @@ bool Node::isBlockEndNode() const {
     return false;
 }
 
-void Node::setSourceName(const char *sourceName) { } // do nothing
+void Node::setSourceName(const char *sourceName) {
+    UNUSED(sourceName);
+} // do nothing
 
 const char *Node::getSourceName() {
     return "";
@@ -1447,13 +1450,16 @@ EvalStatus BlockNode::eval(RuntimeContext &ctx) {
 // ##     BreakNode     ##
 // #######################
 
-void BreakNode::dump(Writer &writer) const { } // do nothing
+void BreakNode::dump(Writer &writer) const {
+    UNUSED(writer);
+} // do nothing
 
 void BreakNode::accept(NodeVisitor *visitor) {
     visitor->visitBreakNode(this);
 }
 
 EvalStatus BreakNode::eval(RuntimeContext &ctx) {
+    UNUSED(ctx);
     return EvalStatus::BREAK;
 }
 
@@ -1461,13 +1467,16 @@ EvalStatus BreakNode::eval(RuntimeContext &ctx) {
 // ##     ContinueNode     ##
 // ##########################
 
-void ContinueNode::dump(Writer &writer) const { } // do nothing
+void ContinueNode::dump(Writer &writer) const {
+    UNUSED(writer);
+} // do nothing
 
 void ContinueNode::accept(NodeVisitor *visitor) {
     visitor->visitContinueNode(this);
 }
 
 EvalStatus ContinueNode::eval(RuntimeContext &ctx) {
+    UNUSED(ctx);
     return EvalStatus::CONTINUE;
 }
 
@@ -1554,6 +1563,7 @@ void TypeAliasNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus TypeAliasNode::eval(RuntimeContext &ctx) {
+    UNUSED(ctx);
     return EvalStatus::SUCCESS;    // do nothing.
 }
 
@@ -2291,6 +2301,7 @@ void InterfaceNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus InterfaceNode::eval(RuntimeContext &ctx) {
+    UNUSED(ctx);
     return EvalStatus::SUCCESS;    // do nothing
 }
 
@@ -2352,13 +2363,16 @@ EvalStatus BindVarNode::eval(RuntimeContext &ctx) {
 // ##     EmptyNode     ##
 // #######################
 
-void EmptyNode::dump(Writer &writer) const { } // do nothing
+void EmptyNode::dump(Writer &writer) const {
+    UNUSED(writer);
+} // do nothing
 
 void EmptyNode::accept(NodeVisitor *visitor) {
     visitor->visitEmptyNode(this);
 }
 
 EvalStatus EmptyNode::eval(RuntimeContext &ctx) {
+    UNUSED(ctx);
     return EvalStatus::SUCCESS; // do nothing
 }
 
@@ -2366,13 +2380,16 @@ EvalStatus EmptyNode::eval(RuntimeContext &ctx) {
 // ##     DummyNode     ##
 // #######################
 
-void DummyNode::dump(Writer &writer) const { } // do nothing
+void DummyNode::dump(Writer &writer) const {
+    UNUSED(writer);
+} // do nothing
 
 void DummyNode::accept(NodeVisitor *visitor) {
     visitor->visitDummyNode(this);
 }
 
 EvalStatus DummyNode::eval(RuntimeContext &ctx) {
+    UNUSED(ctx);
     return EvalStatus::SUCCESS; // do nothing
 }
 

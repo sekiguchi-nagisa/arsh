@@ -21,6 +21,7 @@
 #include "../core/DSObject.h"
 #include "../core/TypeLookupError.h"
 #include "../misc/fatal.h"
+#include "../misc/unused.h"
 #include "NodeVerifier.h"
 #include "TypeChecker.h"
 
@@ -515,7 +516,7 @@ bool TypeChecker::checkLong2Int(int beforePrecision, int afterPrecision) {
 
 // visitor api
 void TypeChecker::visitIntValueNode(IntValueNode *node) {
-    DSType *type = this->typePool->getIntType();
+    DSType *type;
     switch(node->getKind()) {
     case IntValueNode::BYTE:
         type = this->typePool->getByteType();
@@ -786,7 +787,7 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode *node) {
 }
 
 void TypeChecker::visitArgsNode(ArgsNode *node) {
-    // not call it
+    UNUSED(node);   // not call it
 }
 
 void TypeChecker::visitApplyNode(ApplyNode *node) {
@@ -1243,7 +1244,7 @@ void TypeChecker::visitEmptyNode(EmptyNode *node) {
 }
 
 void TypeChecker::visitDummyNode(DummyNode *node) {
-    // do nothing.
+    UNUSED(node);   // do nothing.
 }
 
 void TypeChecker::visitRootNode(RootNode *node) {

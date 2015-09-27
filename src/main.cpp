@@ -22,6 +22,7 @@
 
 #include <ydsh/ydsh.h>
 #include "misc/argv.hpp"
+#include "misc/unused.h"
 
 using namespace ydsh;
 
@@ -67,6 +68,8 @@ static int invoke(DSContext **ctx, T&& ... args) {
 #define INVOKE(F) invoke<decltype(DSContext_ ## F), DSContext_ ## F>
 
 static void segvHandler(int num) {
+    UNUSED(num);
+
     // write message
     char msg[] = "+++++ catch Segmentation fault +++++\n";
     write(STDERR_FILENO, msg, strlen(msg));

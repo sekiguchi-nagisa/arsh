@@ -39,8 +39,8 @@ TEST_F(DirectiveTest, empty1) {
         SCOPED_TRACE("");
         this->parse("#!/usr/bin/ydsh", true);
         ASSERT_EQ(DS_STATUS_SUCCESS, this->getDirective().getResult());
-        ASSERT_EQ(0, this->getDirective().getParams().size());
-        ASSERT_EQ(0, this->getDirective().getLineNum());
+        ASSERT_EQ(0u, this->getDirective().getParams().size());
+        ASSERT_EQ(0u, this->getDirective().getLineNum());
         ASSERT_EQ(RunCondition::IGNORE, this->getDirective().getIfHaveDBus());
         ASSERT_STREQ("", this->getDirective().getErrorKind().c_str());
     });
@@ -51,8 +51,8 @@ TEST_F(DirectiveTest, empty2) {
         SCOPED_TRACE("");
         this->parse("fhreuifre", true);
         ASSERT_EQ(DS_STATUS_SUCCESS, this->getDirective().getResult());
-        ASSERT_EQ(0, this->getDirective().getParams().size());
-        ASSERT_EQ(0, this->getDirective().getLineNum());
+        ASSERT_EQ(0u, this->getDirective().getParams().size());
+        ASSERT_EQ(0u, this->getDirective().getLineNum());
         ASSERT_EQ(RunCondition::IGNORE, this->getDirective().getIfHaveDBus());
         ASSERT_STREQ("", this->getDirective().getErrorKind().c_str());
     });
@@ -254,7 +254,7 @@ TEST_F(DirectiveTest, param) {
         SCOPED_TRACE("");
         this->parse("#$test($params = ['1', 'hello'])", true);
         ASSERT_EQ(DS_STATUS_SUCCESS, this->getDirective().getResult());
-        ASSERT_EQ(2, this->getDirective().getParams().size());
+        ASSERT_EQ(2u, this->getDirective().getParams().size());
         ASSERT_STREQ("1", this->getDirective().getParams()[0].c_str());
         ASSERT_STREQ("hello", this->getDirective().getParams()[1].c_str());
     });
@@ -264,7 +264,7 @@ TEST_F(DirectiveTest, status) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->parse("#$test($status = 23)", true);
-        ASSERT_EQ(23, this->getDirective().getStatus());
+        ASSERT_EQ(23u, this->getDirective().getStatus());
     });
 }
 
@@ -272,7 +272,7 @@ TEST_F(DirectiveTest, lineNum) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->parse("#$test($lineNum = 9)", true);
-        ASSERT_EQ(9, this->getDirective().getLineNum());
+        ASSERT_EQ(9u, this->getDirective().getLineNum());
     });
 }
 

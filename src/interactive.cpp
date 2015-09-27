@@ -25,6 +25,7 @@ extern "C" {
 
 #include <ydsh/ydsh.h>
 #include "misc/fatal.h"
+#include "misc/unused.h"
 
 static DSContext *dsContext;
 
@@ -32,6 +33,8 @@ static DSContext *dsContext;
 static bool continuation = false;
 
 static char *prompt(EditLine *el) {
+    UNUSED(el);
+
     return (char *)DSContext_getPrompt(dsContext, continuation ? 2 : 1);
 }
 

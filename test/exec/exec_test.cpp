@@ -5,6 +5,7 @@
 #include <ydsh/ydsh.h>
 #include <misc/files.h>
 #include <misc/num.h>
+#include <misc/unused.h>
 #include <directive.h>
 #include <config.h>
 
@@ -203,7 +204,7 @@ public:
         // check status
         ASSERT_EQ(d.getResult(), type);
         ASSERT_EQ(d.getLineNum(), lineNum);
-        ASSERT_EQ(d.getStatus(), ret);
+        ASSERT_EQ(d.getStatus(), static_cast<unsigned int>(ret));
         ASSERT_EQ(d.getErrorKind(), kind);
     }
 };
@@ -218,7 +219,9 @@ TEST_P(ExecTest, baseTest) {
 INSTANTIATE_TEST_CASE_P(ExecTest, ExecTest, ::testing::ValuesIn(getFileList(EXEC_TEST_DIR, true)));
 
 
-void addArg(std::vector<char *> &out) { }
+void addArg(std::vector<char *> &out) {
+    UNUSED(out);
+}
 
 template <typename... T>
 void addArg(std::vector<char *> &out, const char *first, T ...rest) {
@@ -250,8 +253,8 @@ TEST(Base, case1) {
 
         int ret = parse(line, "type", "=", type, "lineNum", "=", lineNum, "kind", "=", kind);
         ASSERT_EQ(0, ret);
-        ASSERT_EQ(3, type);
-        ASSERT_EQ(1, lineNum);
+        ASSERT_EQ(3u, type);
+        ASSERT_EQ(1u, lineNum);
         ASSERT_EQ("SystemError", kind);
     });
 }
@@ -267,8 +270,8 @@ TEST(Base, case2) {
 
         int ret = parse(line, "type", "=", type, "lineNum", "=", lineNum, "kind", "=", kind);
         ASSERT_EQ(0, ret);
-        ASSERT_EQ(0, type);
-        ASSERT_EQ(0, lineNum);
+        ASSERT_EQ(0u, type);
+        ASSERT_EQ(0u, lineNum);
         ASSERT_EQ("", kind);
     });
 }
@@ -316,7 +319,7 @@ TEST(BuiltinExecTest, case3) {
         int ret = DSContext_exec(ctx, make_argv("exit", "12").get(), &s);
         ASSERT_EQ(12, ret);
         ASSERT_EQ(DS_STATUS_EXIT, DSStatus_getType(s));
-        ASSERT_EQ(0, DSStatus_getErrorLineNum(s));  // error line num is always 0.
+        ASSERT_EQ(0u, DSStatus_getErrorLineNum(s));  // error line num is always 0.
 
         DSStatus_free(&s);
         DSContext_delete(&ctx);

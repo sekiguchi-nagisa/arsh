@@ -19,6 +19,7 @@
 #include "FieldHandle.h"
 #include "DSType.h"
 #include "../misc/fatal.h"
+#include "../misc/unused.h"
 
 namespace ydsh {
 namespace core {
@@ -28,6 +29,7 @@ namespace core {
 // #########################
 
 DSType *FieldHandle::getFieldType(TypePool *typePool) {
+    UNUSED(typePool);
     return this->fieldType;
 }
 

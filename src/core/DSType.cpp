@@ -20,6 +20,7 @@
 #include "DSObject.h"
 #include "FieldHandle.h"
 #include "../misc/fatal.h"
+#include "../misc/unused.h"
 
 namespace ydsh {
 namespace core {
@@ -43,6 +44,7 @@ bool DSType::isBuiltinType() const {
 }
 
 MethodHandle *DSType::getConstructorHandle(TypePool *typePool) {
+    UNUSED(typePool);
     return nullptr;
 }
 
@@ -59,10 +61,14 @@ unsigned int DSType::getMethodSize() {
 }
 
 FieldHandle *DSType::lookupFieldHandle(TypePool *typePool, const std::string &fieldName) {
+    UNUSED(typePool);
+    UNUSED(fieldName);
     return nullptr;
 }
 
 MethodHandle *DSType::lookupMethodHandle(TypePool *typePool, const std::string &methodName) {
+    UNUSED(typePool);
+    UNUSED(methodName);
     return nullptr;
 }
 
@@ -79,6 +85,7 @@ MethodRef *DSType::getMethodRef(unsigned int methodIndex) {
 }
 
 void DSType::copyAllMethodRef(std::vector<MethodRef> &methodTable) {
+    UNUSED(methodTable);
 }
 
 // ##########################

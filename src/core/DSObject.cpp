@@ -20,6 +20,7 @@
 #include "RuntimeContext.h"
 #include "../ast/Node.h"
 #include "../misc/fatal.h"
+#include "../misc/unused.h"
 #include "../config.h"
 
 #ifdef USE_DBUS
@@ -36,6 +37,7 @@ using namespace ydsh::ast;
 // ######################
 
 void DSObject::setType(DSType *type) {  // do nothing.
+    UNUSED(type);
 }
 
 DSValue *DSObject::getFieldTable() {
@@ -43,6 +45,8 @@ DSValue *DSObject::getFieldTable() {
 }
 
 std::string DSObject::toString(RuntimeContext &ctx) {
+    UNUSED(ctx);
+
     std::string str("DSObject(");
     str += std::to_string((long) this);
     str += ")";
@@ -70,6 +74,7 @@ size_t DSObject::hash() {
 }
 
 bool DSObject::introspect(RuntimeContext &ctx, DSType *targetType) {
+    UNUSED(ctx);
     return targetType->isSameOrBaseTypeOf(this->type);
 }
 
@@ -125,6 +130,7 @@ size_t Long_Object::hash() {
 // ##########################
 
 std::string Float_Object::toString(RuntimeContext &ctx) {
+    UNUSED(ctx);
     return std::to_string(this->value);
 }
 
@@ -142,6 +148,7 @@ size_t Float_Object::hash() {
 // ############################
 
 std::string Boolean_Object::toString(RuntimeContext &ctx) {
+    UNUSED(ctx);
     return this->value ? "true" : "false";
 }
 
@@ -158,6 +165,7 @@ size_t Boolean_Object::hash() {
 // ###########################
 
 std::string String_Object::toString(RuntimeContext &ctx) {
+    UNUSED(ctx);
     return this->value;
 }
 
@@ -445,6 +453,7 @@ void FuncObject::setType(DSType *type) {
 }
 
 std::string FuncObject::toString(RuntimeContext &ctx) {
+    UNUSED(ctx);
     std::string str("function(");
     str += this->funcNode->getFuncName();
     str += ")";
@@ -501,21 +510,25 @@ bool DBus_Object::supportDBus() {
 }
 
 bool DBus_Object::getServiceFromProxy(RuntimeContext &ctx, const DSValue &proxy) {
+    UNUSED(proxy);
     ctx.throwError(ctx.getPool().getErrorType(), "not support method");
     return false;
 }
 
 bool DBus_Object::getObjectPathFromProxy(RuntimeContext &ctx, const DSValue &proxy) {
+    UNUSED(proxy);
     ctx.throwError(ctx.getPool().getErrorType(), "not support method");
     return false;
 }
 
 bool DBus_Object::getIfaceListFromProxy(RuntimeContext &ctx, const DSValue &proxy) {
+    UNUSED(proxy);
     ctx.throwError(ctx.getPool().getErrorType(), "not support method");
     return false;
 }
 
 bool DBus_Object::introspectProxy(RuntimeContext &ctx, const DSValue &proxy) {
+    UNUSED(proxy);
     ctx.throwError(ctx.getPool().getErrorType(), "not support method");
     return false;
 }
@@ -536,11 +549,13 @@ Bus_Object::Bus_Object(DSType *type) : DSObject(type) {
 }
 
 bool Bus_Object::service(RuntimeContext &ctx, std::string &&serviceName) {
+    UNUSED(serviceName);
     ctx.throwError(ctx.getPool().getErrorType(), "not support D-Bus service object");
     return false;
 }
 
 bool Bus_Object::listNames(RuntimeContext &ctx, bool activeName) {
+    UNUSED(activeName);
     ctx.throwError(ctx.getPool().getErrorType(), "not support listNames method");
     return false;
 }
@@ -553,6 +568,7 @@ Service_Object::Service_Object(DSType *type) : DSObject(type) {
 }
 
 bool Service_Object::object(RuntimeContext &ctx, const DSValue &objectPath) {
+    UNUSED(objectPath);
     ctx.throwError(ctx.getPool().getErrorType(), "not support D-Bus proxy object");
     return false;
 }

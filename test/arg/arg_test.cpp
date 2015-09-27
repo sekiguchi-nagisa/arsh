@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <misc/argv.hpp>
+#include <misc/unused.h>
 
 using namespace ydsh::argv;
 
@@ -13,7 +14,8 @@ typedef CmdLines<Kind> CL;
 
 typedef std::vector<const char *> RestArgs;
 
-void addArg(std::vector<std::string> &ars) {
+void addArg(std::vector<std::string> &args) {
+    UNUSED(args);
 }
 
 template <typename... T>
@@ -192,12 +194,12 @@ TEST_F(ArgTest, success1) {
 
         CL cl;
         this->parse(make_args("-a", "-b", "ae"), options, cl);
-        ASSERT_EQ(2, cl.size());
+        ASSERT_EQ(2u, cl.size());
         ASSERT_EQ(Kind::A, cl[0].first);
         ASSERT_EQ(Kind::B, cl[1].first);
         ASSERT_STREQ("ae", cl[1].second);
 
-        ASSERT_EQ(0, this->rest.size());
+        ASSERT_EQ(0u, this->rest.size());
     });
 }
 
@@ -215,10 +217,10 @@ TEST_F(ArgTest, success2) {
 
         CL cl;
         this->parse(make_args("-a"), options, cl);
-        ASSERT_EQ(1, cl.size());
+        ASSERT_EQ(1u, cl.size());
         ASSERT_EQ(Kind::A, cl[0].first);
 
-        ASSERT_EQ(0, this->rest.size());
+        ASSERT_EQ(0u, this->rest.size());
     });
 }
 
@@ -238,9 +240,9 @@ TEST_F(ArgTest, succes3) {
         std::vector<std::string> args;
         args.push_back("<dummy>");
         this->parse(args, options, cl);
-        ASSERT_EQ(0, cl.size());
+        ASSERT_EQ(0u, cl.size());
 
-        ASSERT_EQ(0, this->rest.size());
+        ASSERT_EQ(0u, this->rest.size());
     });
 }
 
@@ -258,9 +260,9 @@ TEST_F(ArgTest, success4) {
 
         CL cl;
         this->parse(make_args("ae"), options, cl);
-        ASSERT_EQ(0, cl.size());
+        ASSERT_EQ(0u, cl.size());
 
-        ASSERT_EQ(1, this->rest.size());
+        ASSERT_EQ(1u, this->rest.size());
         ASSERT_STREQ("ae", this->rest[0]);
     });
 }
@@ -279,9 +281,9 @@ TEST_F(ArgTest, success5) {
 
         CL cl;
         this->parse(make_args("ae", "he", "-a"), options, cl);
-        ASSERT_EQ(0, cl.size());
+        ASSERT_EQ(0u, cl.size());
 
-        ASSERT_EQ(3, this->rest.size());
+        ASSERT_EQ(3u, this->rest.size());
         ASSERT_STREQ("ae", this->rest[0]);
         ASSERT_STREQ("he", this->rest[1]);
         ASSERT_STREQ("-a", this->rest[2]);
@@ -302,14 +304,14 @@ TEST_F(ArgTest, success6) {
 
         CL cl;
         this->parse(make_args("-b", "he", "-a", "-d", "-e"), options, cl);
-        ASSERT_EQ(3, cl.size());
+        ASSERT_EQ(3u, cl.size());
         ASSERT_EQ(Kind::B, cl[0].first);
         ASSERT_STREQ("he", cl[0].second);
         ASSERT_EQ(Kind::A, cl[1].first);
         ASSERT_STREQ("", cl[1].second);
         ASSERT_EQ(Kind::D, cl[2].first);
 
-        ASSERT_EQ(1, this->rest.size());
+        ASSERT_EQ(1u, this->rest.size());
         ASSERT_STREQ("-e", this->rest[0]);
     });
 }
@@ -328,7 +330,7 @@ TEST_F(ArgTest, success7) {
 
         CL cl;
         this->parse(make_args("-b", "he", "-a", "-d", "e", "-f", "hu"), options, cl);
-        ASSERT_EQ(3, cl.size());
+        ASSERT_EQ(3u, cl.size());
         ASSERT_EQ(Kind::B, cl[0].first);
         ASSERT_STREQ("he", cl[0].second);
         ASSERT_EQ(Kind::A, cl[1].first);
@@ -336,7 +338,7 @@ TEST_F(ArgTest, success7) {
         ASSERT_EQ(Kind::D, cl[2].first);
         ASSERT_STREQ("e", cl[2].second);
 
-        ASSERT_EQ(2, this->rest.size());
+        ASSERT_EQ(2u, this->rest.size());
         ASSERT_STREQ("-f", this->rest[0]);
         ASSERT_STREQ("hu", this->rest[1]);
      });

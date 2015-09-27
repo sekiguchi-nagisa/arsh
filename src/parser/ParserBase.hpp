@@ -21,6 +21,7 @@
 #include <ostream>
 
 #include "LexerBase.hpp"
+#include "../misc/unused.h"
 
 namespace ydsh {
 namespace parser_base {
@@ -144,8 +145,8 @@ public:
 
 template<typename T>
 std::ostream &operator<<(std::ostream &stream, const InvalidTokenError<T> &e) {
-    stream << "invalid token";
-    return stream;
+    UNUSED(e);
+    return stream << "invalid token";
 }
 
 } // namespace __parser_error
