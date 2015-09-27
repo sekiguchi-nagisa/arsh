@@ -62,9 +62,7 @@ private:
     std::string message;
 
 public:
-    explicit ProcessingError(const char *message) :
-            message(message) {
-    }
+    explicit ProcessingError(const char *message) : message(message) { }
 
     ~ProcessingError() = default;
 
@@ -77,7 +75,7 @@ public:
  * for processing error reporting
  */
 static void error(const char *fmt, ...) {
-    const static unsigned int size = 128;
+    const unsigned int size = 128;
     static char buf[size];  // error message must be under size.
 
     // formate message
@@ -131,8 +129,8 @@ const std::string &HandleInfoMap::getName(HandleInfo info) {
     }
     fatal("not found handle info: %s\n", toTypeInfoName(info).c_str());
 
-    const static std::string empty("");
-    return empty;
+    static std::string str;
+    return str;
 }
 
 HandleInfo HandleInfoMap::getInfo(const std::string &name) {
@@ -286,9 +284,7 @@ public:
     /**
      * not call it directory.
      */
-    explicit CommonTypeToken(HandleInfo info) :
-            info(info) {
-    }
+    explicit CommonTypeToken(HandleInfo info) : info(info) { }
 
     ~CommonTypeToken() = default;
 
@@ -322,8 +318,7 @@ private:
     std::vector<std::unique_ptr<TypeToken>> elements;
 
     ReifiedTypeToken(std::unique_ptr<CommonTypeToken> &&type, unsigned int elementSize) :
-            typeTemp(type.release()), requiredSize(elementSize), elements() {
-    }
+            typeTemp(type.release()), requiredSize(elementSize), elements() { }
 
 public:
     ~ReifiedTypeToken() = default;
@@ -539,7 +534,7 @@ public:
      * open file and parse.
      * after parsing, write results to elements.
      */
-    static void parse(char *fileName, std::vector<std::unique_ptr<Element>> &elements);
+    static void parse(const char *fileName, std::vector<std::unique_ptr<Element>> &elements);
 
 private:
     static bool isDescriptor(const std::string &line);
@@ -571,7 +566,7 @@ private:
     void printParseError(const ParseError &e);
 };
 
-void Parser::parse(char *fileName, std::vector<std::unique_ptr<Element>> &elements) {
+void Parser::parse(const char *fileName, std::vector<std::unique_ptr<Element>> &elements) {
     std::ifstream input(fileName);
     if(!input) {
         fatal("cannot open file: %s\n", fileName);
@@ -626,7 +621,7 @@ bool Parser::isDescriptor(const std::string &line) {
         }
     }
 
-    static const char prefix[] = "//!bind:";
+    const char *prefix = "//!bind:";
     for(unsigned int i = 0; prefix[i] != '\0'; i++) {
         if(pos >= size) {
             return false;
@@ -811,7 +806,7 @@ void Parser::printParseError(const ParseError &e) {
 #define OUT(fmt, ...) \
     do {\
         fprintf(fp, fmt, ## __VA_ARGS__);\
-    } while(0)
+    } while(false)
 
 
 struct TypeBind {
@@ -827,8 +822,7 @@ struct TypeBind {
 
     explicit TypeBind(HandleInfo info) :
             info(info), name(HandleInfoMap::getInstance().getName(info)),
-            initElement(), funcElements() {
-    }
+            initElement(), funcElements() { }
 
     ~TypeBind() = default;
 };
@@ -917,8 +911,8 @@ int main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    char *inputFileName = argv[1];
-    char *outputFileName = argv[2];
+    const char *inputFileName = argv[1];
+    const char *outputFileName = argv[2];
 
     std::vector<std::unique_ptr<Element>> elements;
     Parser::parse(inputFileName, elements);
