@@ -132,10 +132,10 @@ MessageBuilder::MessageBuilder(TypePool *pool) :
 
 MessageBuilder::~MessageBuilder() {
     delete this->typeMap;
-    this->typeMap = 0;
+    this->typeMap = nullptr;
 
     delete this->descBuilder;
-    this->descBuilder = 0;
+    this->descBuilder = nullptr;
 }
 
 
@@ -147,7 +147,7 @@ void MessageBuilder::appendArg(DBusMessageIter *iter, DSType *argType, const DSV
 
     this->append(argType, arg.get());
 
-    this->iter = 0;
+    this->iter = nullptr;
 }
 
 void MessageBuilder::visitFunctionType(FunctionType *type) {

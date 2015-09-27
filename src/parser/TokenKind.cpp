@@ -30,8 +30,7 @@ const char *toString(TokenKind kind) {
 }
 
 std::ostream &operator<<(std::ostream &stream, TokenKind kind) {
-    stream << toString(kind);
-    return stream;
+    return stream << toString(kind);
 }
 
 unsigned int getPrecedence(TokenKind kind) {

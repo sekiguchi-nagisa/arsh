@@ -327,7 +327,7 @@ DSType *TypePool::getDBusInterfaceType(const std::string &typeName) {
         }
 
         InterfaceNode *ifaceNode = dynamic_cast<InterfaceNode *>(rootNode.getNodeList().front());
-        if(ifaceNode == 0) {
+        if(ifaceNode == nullptr) {
             E_NoDBusInterface(typeName);
         }
         return TypeChecker::resolveInterface(this, ifaceNode);

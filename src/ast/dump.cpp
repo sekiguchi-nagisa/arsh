@@ -87,7 +87,7 @@ void Writer::write(const char *fieldName, const std::vector<TypeToken *> &toks) 
             OUT << ", ";
         }
         TypeToken *tok = toks[i];
-        OUT << (tok == 0 ? "(null)" : tok->toTokenText());
+        OUT << (tok == nullptr ? "(null)" : tok->toTokenText());
     }
     OUT << std::endl;
 }
@@ -121,14 +121,14 @@ void Writer::writeNodeHeader(const Node &node) {
     int status;
 
     char *className = abi::__cxa_demangle(info.name(), 0, 0, &status);
-    if(className == 0 || status != 0) {
+    if(className == nullptr || status != 0) {
         fatal("demangle typeinfo failed: %s\n", info.name());
     }
     DSType *type = node.getType();
 
     this->writeIndent();
     OUT << "@" << className << " (lineNum: " << node.getLineNum()
-    << ", type: " << (type != 0 ? this->pool.getTypeName(*type) : "(null)")
+    << ", type: " << (type != nullptr ? this->pool.getTypeName(*type) : "(null)")
     << ")" << std::endl;
 
     // free demangled name

@@ -39,7 +39,7 @@ void DSObject::setType(DSType *type) {  // do nothing.
 }
 
 DSValue *DSObject::getFieldTable() {
-    return 0;
+    return nullptr;
 }
 
 std::string DSObject::toString(RuntimeContext &ctx) {
@@ -303,7 +303,7 @@ std::string Map_Object::toString(RuntimeContext &ctx) {
 
 BaseObject::~BaseObject() {
     delete[] this->fieldTable;
-    this->fieldTable = 0;
+    this->fieldTable = nullptr;
 }
 
 DSValue *BaseObject::getFieldTable() {
@@ -438,8 +438,8 @@ FuncObject::~FuncObject() {
 }
 
 void FuncObject::setType(DSType *type) {
-    if(this->type == 0) {
-        assert(dynamic_cast<FunctionType *>(type) != 0);
+    if(this->type == nullptr) {
+        assert(dynamic_cast<FunctionType *>(type) != nullptr);
         this->type = type;
     }
 }

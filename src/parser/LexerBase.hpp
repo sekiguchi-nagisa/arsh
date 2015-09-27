@@ -143,7 +143,7 @@ public:
     virtual ~LexerBase() {
         if(!this->zeroCopyBuf) {
             delete[] this->buf;
-            this->buf = 0;
+            this->buf = nullptr;
         }
     }
 

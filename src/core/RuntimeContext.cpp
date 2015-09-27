@@ -53,17 +53,17 @@ RuntimeContext::RuntimeContext() :
         localStack(new DSValue[DEFAULT_LOCAL_SIZE]),
         localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0),
         localVarOffset(0), offsetStack(), toplevelPrinting(false), assertion(true),
-        handle_STR(0), handle_bt(0), handle_OLDPWD(0), handle_PWD(0),
+        handle_STR(nullptr), handle_bt(nullptr), handle_OLDPWD(nullptr), handle_PWD(nullptr),
         readFiles(), funcContextStack(), callStack(), procInvoker(this), udcMap() {
     this->readFiles.push_back(std::string("(stdin)"));
 }
 
 RuntimeContext::~RuntimeContext() {
     delete[] this->globalVarTable;
-    this->globalVarTable = 0;
+    this->globalVarTable = nullptr;
 
     delete[] this->localStack;
-    this->localStack = 0;
+    this->localStack = nullptr;
 
     for(auto &pair : this->udcMap) {
         delete pair.second;
@@ -481,7 +481,7 @@ void RuntimeContext::updateWorkingDir(bool OLDPWD_only) {
 }
 
 const char *RuntimeContext::registerSourceName(const char *sourceName) {
-    if(sourceName == 0) {
+    if(sourceName == nullptr) {
         return this->readFiles[defaultFileNameIndex].c_str();
     }
     this->readFiles.push_back(std::string(sourceName));

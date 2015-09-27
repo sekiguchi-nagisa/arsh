@@ -34,7 +34,7 @@ Scope::~Scope() {
 
 FieldHandle *Scope::lookupHandle(const std::string &symbolName) {
     auto iter = this->handleMap.find(symbolName);
-    return iter != this->handleMap.end() ? iter->second : 0;
+    return iter != this->handleMap.end() ? iter->second : nullptr;
 }
 
 bool Scope::addFieldHandle(const std::string &symbolName, FieldHandle *handle) {
@@ -72,7 +72,7 @@ SymbolTable::~SymbolTable() {
 FieldHandle *SymbolTable::lookupHandle(const std::string &symbolName) {
     for(int index = this->scopes.size() - 1; index > -1; index--) {
         FieldHandle *handle = this->scopes[index]->lookupHandle(symbolName);
-        if(handle != 0) {
+        if(handle != nullptr) {
             return handle;
         }
     }
@@ -83,7 +83,7 @@ FieldHandle *SymbolTable::registerHandle(const std::string &symbolName, DSType *
     FieldHandle *handle = new FieldHandle(type, this->scopes.back()->getCurVarIndex(), readOnly);
     if(!this->scopes.back()->addFieldHandle(symbolName, handle)) {
         delete handle;
-        return 0;
+        return nullptr;
     }
     if(this->inGlobalScope()) {
         handle->setAttribute(FieldHandle::GLOBAL);
@@ -98,7 +98,7 @@ FunctionHandle *SymbolTable::registerFuncHandle(const std::string &funcName, DST
     FunctionHandle *handle = new FunctionHandle(returnType, paramTypes, this->scopes.back()->getCurVarIndex());
     if(!this->scopes.back()->addFieldHandle(funcName, handle)) {
         delete handle;
-        return 0;
+        return nullptr;
     }
     handle->setAttribute(FieldHandle::GLOBAL);
     this->handleCache.push_back(funcName);

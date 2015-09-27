@@ -64,7 +64,7 @@ std::string FieldHandle::toString() const {
 // ############################
 
 DSType *FunctionHandle::getFieldType(TypePool *typePool) {
-    if(this->fieldType == 0) {
+    if(this->fieldType == nullptr) {
         this->fieldType = typePool->createAndGetFuncTypeIfUndefined(this->returnType, std::move(this->paramTypes));
     }
     return this->fieldType;

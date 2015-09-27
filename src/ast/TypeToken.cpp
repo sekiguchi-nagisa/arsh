@@ -73,7 +73,7 @@ void ReifiedTypeToken::accept(TypeTokenVisitor *visitor) {
 
 FuncTypeToken::~FuncTypeToken() {
     delete this->returnTypeToken;
-    this->returnTypeToken = 0;
+    this->returnTypeToken = nullptr;
 
     for(TypeToken *t : this->paramTypeTokens) {
         delete t;
