@@ -15,11 +15,10 @@
  */
 
 #include <iostream>
-#include <cxxabi.h>
 
 #include "dump.h"
 #include "../ast/Node.h"
-#include "../misc/fatal.h"
+#include "../misc/demangle.hpp"
 
 #define OUT (this->stream)
 
@@ -117,22 +116,13 @@ void Writer::writeIndent() {
 }
 
 void Writer::writeNodeHeader(const Node &node) {
-    const std::type_info &info = typeid(node);
-    int status;
-
-    char *className = abi::__cxa_demangle(info.name(), 0, 0, &status);
-    if(className == nullptr || status != 0) {
-        fatal("demangle typeinfo failed: %s\n", info.name());
-    }
+    std::string className = misc::Demangle()(typeid(node));
     DSType *type = node.getType();
 
     this->writeIndent();
     OUT << "@" << className << " (lineNum: " << node.getLineNum()
     << ", type: " << (type != nullptr ? this->pool.getTypeName(*type) : "(null)")
     << ")" << std::endl;
-
-    // free demangled name
-    free(className);
 }
 
 void Writer::writeName(const char *fieldName) {
