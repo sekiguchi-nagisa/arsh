@@ -17,11 +17,10 @@ addons:
       - libdbus-1-dev
 
 before_install:
-  - mkdir build
-  - cd ./build
-  - cmake .. -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DUSE_DBUS=off -DUSE_LOGGING=on
+  - ./setup.sh -DCMAKE_BUILD_TYPE=DEBUG -DUSE_DBUS=off -DUSE_LOGGING=on -DUSE_SAFE_CAST=on
 
-install: 
+install:
+ - cd build
  - make
 
 script:

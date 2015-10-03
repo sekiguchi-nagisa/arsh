@@ -79,7 +79,7 @@ struct DSContext {
      * get exit status of recently executed command.(also exit command)
      */
     int getExitStatus() {
-        return TYPE_AS(Int_Object, this->ctx.getExitStatus())->getValue();
+        return typeAs<Int_Object>(this->ctx.getExitStatus())->getValue();
     }
 
     const ReportingListener &getReportingListener() {
@@ -208,13 +208,13 @@ unsigned int DSContext::eval(const char *sourceName, Lexer &lexer) {
             if(*thrownType == *this->ctx.getPool().getShellExit()) {
                 if(hasFlag(this->option, DS_OPTION_TRACE_EXIT)) {
                     this->ctx.loadThrownObject();
-                    TYPE_AS(Error_Object, this->ctx.pop())->printStackTrace(this->ctx);
+                    typeAs<Error_Object>(this->ctx.pop())->printStackTrace(this->ctx);
                 }
                 return DS_STATUS_EXIT;
             }
             if(*thrownType == *this->ctx.getPool().getAssertFail()) {
                 this->ctx.loadThrownObject();
-                TYPE_AS(Error_Object, this->ctx.pop())->printStackTrace(this->ctx);
+                typeAs<Error_Object>(this->ctx.pop())->printStackTrace(this->ctx);
                 return DS_STATUS_ASSERTION_ERROR;
             }
         }
@@ -400,7 +400,7 @@ const char *DSContext_getPrompt(DSContext *ctx, unsigned int n) {
     }
 
     ctx->ctx.interpretPromptString(
-            TYPE_AS(String_Object, obj)->getValue(), usePS1 ? ctx->ps1 : ctx->ps2);
+            typeAs<String_Object>(obj)->getValue(), usePS1 ? ctx->ps1 : ctx->ps2);
 
     return (usePS1 ? ctx->ps1 : ctx->ps2).c_str();
 }

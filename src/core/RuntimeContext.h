@@ -398,7 +398,7 @@ public:
     }
 
     EvalStatus storeField(DSType *recvType, const std::string &fieldName, DSType *fieldType) {
-        bool status = TYPE_AS(ProxyObject, this->localStack[this->stackTopIndex - 1])->
+        bool status = typeAs<ProxyObject>(this->localStack[this->stackTopIndex - 1])->
                 invokeSetter(*this, recvType, fieldName, fieldType);
         // pop receiver
         this->popNoReturn();
@@ -414,7 +414,7 @@ public:
     }
 
     EvalStatus loadField(DSType *recvType, const std::string &fieldName, DSType *fieldType) {
-        bool status = TYPE_AS(ProxyObject, this->pop())->
+        bool status = typeAs<ProxyObject>(this->pop())->
                 invokeGetter(*this, recvType, fieldName, fieldType);
         return status ? EvalStatus::SUCCESS : EvalStatus::THROW;
     }
@@ -427,7 +427,7 @@ public:
     }
 
     EvalStatus dupAndLoadField(DSType *recvType, const std::string &fieldName, DSType *fieldType) {
-        bool status = TYPE_AS(ProxyObject, this->localStack[this->stackTopIndex])->
+        bool status = typeAs<ProxyObject>(this->localStack[this->stackTopIndex])->
                 invokeGetter(*this, recvType, fieldName, fieldType);
         return status ? EvalStatus::SUCCESS : EvalStatus::THROW;
     }

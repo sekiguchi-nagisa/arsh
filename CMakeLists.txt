@@ -65,6 +65,9 @@ show_option(USE_DBUS)
 option(USE_IFACE_GEN "D-Bus interface generater" ON)
 show_option(USE_IFACE_GEN)
 
+option(USE_SAFE_CAST "check object cast" OFF)
+show_option(USE_SAFE_CAST)
+
 
 #++++++++++++++++++++++#
 #     find libedit     #

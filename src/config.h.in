@@ -40,4 +40,6 @@
 
 #cmakedefine USE_DBUS
 
+#cmakedefine USE_SAFE_CAST
+
 #endif //YDSH_CONFIG_H

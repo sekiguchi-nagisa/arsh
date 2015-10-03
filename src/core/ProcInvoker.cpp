@@ -790,7 +790,7 @@ void ProcInvoker::addCommandName(DSValue &&value) {
 void ProcInvoker::addArg(DSValue &&value, bool skipEmptyString) {
     DSType *valueType = value->getType();
     if(*valueType == *this->ctx->getPool().getStringType()) {
-        if(skipEmptyString && TYPE_AS(String_Object, value)->empty()) {
+        if(skipEmptyString && typeAs<String_Object>(value)->empty()) {
             return;
         }
         this->argArray.push_back(std::move(value));
@@ -798,7 +798,7 @@ void ProcInvoker::addArg(DSValue &&value, bool skipEmptyString) {
     }
 
     if(*valueType == *this->ctx->getPool().getStringArrayType()) {
-        Array_Object *arrayObj = TYPE_AS(Array_Object, value);
+        Array_Object *arrayObj = typeAs<Array_Object>(value);
         for(auto &element : arrayObj->getValues()) {
             this->argArray.push_back(element);
         }
@@ -827,7 +827,7 @@ static void closeAllPipe(int size, int pipefds[][2]) {
  * if failed, return non-zero value(errno)
  */
 static int redirectToFile(const DSValue &fileName, const char *mode, int targetFD) {
-    FILE *fp = fopen(TYPE_AS(String_Object, fileName)->getValue(), mode);
+    FILE *fp = fopen(typeAs<String_Object>(fileName)->getValue(), mode);
     if(fp == NULL) {
         return errno;
     }
@@ -936,7 +936,7 @@ EvalStatus ProcInvoker::invoke() {
             for(; ptr[argc].get() != nullptr; argc++);
             char *argv[argc + 1];
             for(unsigned int i = 0; i < argc; i++) {
-                argv[i] = const_cast<char *>(TYPE_AS(String_Object, ptr[i])->getValue());
+                argv[i] = const_cast<char *>(typeAs<String_Object>(ptr[i])->getValue());
             }
             argv[argc] = nullptr;
             
@@ -1065,7 +1065,7 @@ EvalStatus ProcInvoker::invoke() {
         for(; ptr[argc]; argc++);
         char *argv[argc + 1];
         for(unsigned int i = 0; i < argc; i++) {
-            argv[i] = const_cast<char *>(TYPE_AS(String_Object, ptr[i])->getValue());
+            argv[i] = const_cast<char *>(typeAs<String_Object>(ptr[i])->getValue());
         }
         argv[argc] = nullptr;
 
@@ -1132,7 +1132,7 @@ void ProcInvoker::forkAndExec(const BuiltinContext &bctx, int &status, bool useD
 }
 
 const char *ProcInvoker::getCommandName(unsigned int procIndex) {
-    return TYPE_AS(String_Object, this->getARGV(procIndex)[0])->getValue();
+    return typeAs<String_Object>(this->getARGV(procIndex)[0])->getValue();
 }
 
 bool ProcInvoker::checkChildError(const std::pair<unsigned int, ChildError> &errorPair) {
@@ -1145,8 +1145,8 @@ bool ProcInvoker::checkChildError(const std::pair<unsigned int, ChildError> &err
             msg += this->getCommandName(errorPair.first);
         } else {    // redirection error
             msg += "io redirection error: ";
-            if(pair.second && TYPE_AS(String_Object, pair.second)->size() != 0) {
-                msg += TYPE_AS(String_Object, pair.second)->getValue();
+            if(pair.second && typeAs<String_Object>(pair.second)->size() != 0) {
+                msg += typeAs<String_Object>(pair.second)->getValue();
             }
         }
         this->ctx->throwSystemError(errorPair.second.errorNum, std::move(msg));

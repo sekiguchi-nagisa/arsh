@@ -19,8 +19,11 @@
 
 #include <ostream>
 #include <memory>
+#include <iostream>
 
 #include "DSType.h"
+#include "../config.h"
+#include "../misc/demangle.hpp"
 
 namespace ydsh {
 namespace ast {
@@ -192,6 +195,29 @@ public:
         return DSValue(new T(std::forward<A>(args)...));
     };
 };
+
+#ifdef USE_SAFE_CAST
+constexpr bool useSafeCast = true;
+#else
+constexpr bool useSafeCast = false;
+#endif
+
+template <typename T>
+inline T *typeAs(const DSValue &value) noexcept {
+    static_assert(std::is_base_of<DSObject, T>::value, "must be subtype of DSObject");
+
+    if(useSafeCast) {
+        auto *r = dynamic_cast<T*>(value.get());
+        if(r == nullptr) {
+            std::cerr << "target type is: " << misc::Demangle()(typeid(T))
+            << ", but actual is: " << misc::Demangle()(typeid(*value)) << std::endl;
+            abort();
+        }
+        return r;
+    } else {
+        return static_cast<T*>(value.get());
+    }
+}
 
 class Int_Object : public DSObject {
 private:
@@ -597,16 +623,5 @@ struct Service_Object : public DSObject {
 
 } // namespace core
 } // namespace ydsh
-
-
-// helper macro for object manipulation
-/**
- * get raw pointer from shared_ptr and cast it.
- */
-#ifndef NDEBUG
-#define TYPE_AS(t, s_obj) dynamic_cast<t*>((s_obj).get())
-#else
-#define TYPE_AS(t, s_obj) static_cast<t*>((s_obj).get())
-#endif
 
 #endif /* CORE_DSOBJECT_H_ */

@@ -86,7 +86,7 @@ public:
     }
 
     DBusConnection *getConnection() const {
-        return TYPE_AS(Bus_ObjectImpl, this->bus)->getConnection();
+        return typeAs<Bus_ObjectImpl>(this->bus)->getConnection();
     }
 
     const char *getServiceName() const {

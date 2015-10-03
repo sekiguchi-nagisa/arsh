@@ -77,7 +77,7 @@ void IntValueNode::dump(Writer &writer) const {
     if(this->type == nullptr) {
         writer.write(NAME(value), "(null)");
     } else {
-        Int_Object *obj = TYPE_AS(Int_Object, this->value);
+        Int_Object *obj = typeAs<Int_Object>(this->value);
         writer.write(NAME(value), std::to_string(obj->getValue()));
     }
 }
@@ -106,7 +106,7 @@ void LongValueNode::dump(Writer &writer) const {
     if(this->type == nullptr) {
         writer.write(NAME(value), "(null)");
     } else {
-        Long_Object *obj = TYPE_AS(Long_Object, this->value);
+        Long_Object *obj = typeAs<Long_Object>(this->value);
         writer.write(NAME(value), std::to_string(obj->getValue()));
     }
 }
@@ -135,7 +135,7 @@ void FloatValueNode::dump(Writer &writer) const {
     if(this->type == nullptr) {
         writer.write(NAME(value), "(null)");
     } else {
-        Float_Object *obj = TYPE_AS(Float_Object, this->value);
+        Float_Object *obj = typeAs<Float_Object>(this->value);
         writer.write(NAME(value), std::to_string(obj->getValue()));
     }
 }
@@ -164,7 +164,7 @@ void StringValueNode::dump(Writer &writer) const {
         writer.write(NAME(value), "");
 
     } else {
-        String_Object *obj = TYPE_AS(String_Object, this->value);
+        String_Object *obj = typeAs<String_Object>(this->value);
         writer.write(NAME(tempValue), "");
         writer.write(NAME(value), obj->getValue());
     }
@@ -221,7 +221,7 @@ EvalStatus StringExprNode::eval(RuntimeContext &ctx) {
         std::string str;
         for(Node *node : this->nodes) {
             EVAL(ctx, node);
-            str += TYPE_AS(String_Object, ctx.pop())->getValue();
+            str += typeAs<String_Object>(ctx.pop())->getValue();
         }
         ctx.push(DSValue::create<String_Object>(this->type, std::move(str)));
     }
@@ -264,7 +264,7 @@ EvalStatus ArrayNode::eval(RuntimeContext &ctx) {
     auto value = DSValue::create<Array_Object>(this->type);
     for(Node *node : this->nodes) {
         EVAL(ctx, node);
-        TYPE_AS(Array_Object, value)->append(ctx.pop());
+        typeAs<Array_Object>(value)->append(ctx.pop());
     }
     ctx.push(std::move(value));
     return EvalStatus::SUCCESS;
@@ -321,7 +321,7 @@ EvalStatus MapNode::eval(RuntimeContext &ctx) {
         auto key = ctx.pop();
         EVAL(ctx, this->valueNodes[i]);
         auto value = ctx.pop();
-        TYPE_AS(Map_Object, map)->set(key, value);
+        typeAs<Map_Object>(map)->set(key, value);
     }
     ctx.push(std::move(map));
     return EvalStatus::SUCCESS;
@@ -361,7 +361,7 @@ EvalStatus TupleNode::eval(RuntimeContext &ctx) {
     auto value = DSValue::create<Tuple_Object>(this->type);
     for(unsigned int i = 0; i < size; i++) {
         EVAL(ctx, this->nodes[i]);
-        TYPE_AS(Tuple_Object, value)->set(i, ctx.pop());
+        typeAs<Tuple_Object>(value)->set(i, ctx.pop());
     }
     ctx.push(std::move(value));
     return EvalStatus::SUCCESS;
@@ -552,7 +552,7 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
     case NOP:
         break;
     case INT_TO_FLOAT: {
-        int value = TYPE_AS(Int_Object, ctx.pop())->getValue();
+        int value = typeAs<Int_Object>(ctx.pop())->getValue();
         double afterValue = value;
         if(*this->exprNode->getType() != *ctx.getPool().getInt32Type()) {
             afterValue = (unsigned int) value;
@@ -561,7 +561,7 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
         break;
     }
     case FLOAT_TO_INT: {
-        double value = TYPE_AS(Float_Object, ctx.pop())->getValue();
+        double value = typeAs<Float_Object>(ctx.pop())->getValue();
         int afterValue = value;
         if(*this->type == *ctx.getPool().getUint32Type()) {
             unsigned int temp = value;
@@ -571,7 +571,7 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
         break;
     }
     case INT_TO_LONG: {
-        int value = TYPE_AS(Int_Object, ctx.pop())->getValue();
+        int value = typeAs<Int_Object>(ctx.pop())->getValue();
         long afterValue = (long) value;
         if(*this->exprNode->getType() != *ctx.getPool().getInt32Type()) {
             afterValue = (unsigned int) value;
@@ -580,7 +580,7 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
         break;
     };
     case LONG_TO_INT: {
-        long value = TYPE_AS(Long_Object, ctx.pop())->getValue();
+        long value = typeAs<Long_Object>(ctx.pop())->getValue();
         int afterValue = value;
         if(*this->type == *ctx.getPool().getUint32Type()) {
             unsigned int temp = value;
@@ -590,7 +590,7 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
         break;
     };
     case LONG_TO_FLOAT: {
-        long value = TYPE_AS(Long_Object, ctx.pop())->getValue();
+        long value = typeAs<Long_Object>(ctx.pop())->getValue();
         double afterValue = value;
         if(*this->exprNode->getType() == *ctx.getPool().getUint64Type()) {
             afterValue = (unsigned long) value;
@@ -599,7 +599,7 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
         break;
     };
     case FLOAT_TO_LONG: {
-        double value = TYPE_AS(Float_Object, ctx.pop())->getValue();
+        double value = typeAs<Float_Object>(ctx.pop())->getValue();
         long afterValue = (long) value;
         if(*this->type == *ctx.getPool().getUint64Type()) {
             unsigned long temp = (unsigned long) value;
@@ -609,12 +609,12 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
         break;
     };
     case COPY_INT: {
-        int value = TYPE_AS(Int_Object, ctx.pop())->getValue();
+        int value = typeAs<Int_Object>(ctx.pop())->getValue();
         ctx.push(DSValue::create<Int_Object>(this->type, value));
         break;
     };
     case COPY_LONG: {
-        long value = TYPE_AS(Long_Object, ctx.pop())->getValue();
+        long value = typeAs<Long_Object>(ctx.pop())->getValue();
         ctx.push(DSValue::create<Long_Object>(this->type, value));
         break;
     };
@@ -973,14 +973,14 @@ EvalStatus CondOpNode::eval(RuntimeContext &ctx) {
     EVAL(ctx, this->leftNode);
 
     if(this->andOp) {   // and
-        if(TYPE_AS(Boolean_Object, ctx.peek())->getValue()) {
+        if(typeAs<Boolean_Object>(ctx.peek())->getValue()) {
             ctx.popNoReturn();
             return this->rightNode->eval(ctx);
         } else {
             return EvalStatus::SUCCESS;
         }
     } else {    // or
-        if(TYPE_AS(Boolean_Object, ctx.peek())->getValue()) {
+        if(typeAs<Boolean_Object>(ctx.peek())->getValue()) {
             return EvalStatus::SUCCESS;
         } else {
             ctx.popNoReturn();
@@ -1040,7 +1040,7 @@ EvalStatus CmdArgNode::evalImpl(RuntimeContext &ctx) {
 
     for(; index < size; index++) {
         EVAL(ctx, this->segmentNodes[index]);
-        str += TYPE_AS(String_Object, ctx.pop())->getValue();
+        str += typeAs<String_Object>(ctx.pop())->getValue();
     }
     ctx.push(DSValue::create<String_Object>(ctx.getPool().getStringType(), std::move(str)));
     return EvalStatus::SUCCESS;
@@ -1221,7 +1221,7 @@ EvalStatus PipedCmdNode::eval(RuntimeContext &ctx) {
 
     // push exit status
     if(*this->type == *ctx.getPool().getBooleanType()) {
-        if(TYPE_AS(Int_Object, ctx.getExitStatus())->getValue() == 0) {
+        if(typeAs<Int_Object>(ctx.getExitStatus())->getValue() == 0) {
             ctx.push(ctx.getTrueObj());
         } else {
             ctx.push(ctx.getFalseObj());
@@ -1618,7 +1618,7 @@ EvalStatus ForNode::eval(RuntimeContext &ctx) {
 
     CONTINUE:
     EVAL(ctx, this->condNode);
-    if(TYPE_AS(Boolean_Object, ctx.pop())->getValue()) {
+    if(typeAs<Boolean_Object>(ctx.pop())->getValue()) {
         EvalStatus status = this->blockNode->eval(ctx);
         switch(status) {
         case EvalStatus::BREAK:
@@ -1659,7 +1659,7 @@ void WhileNode::accept(NodeVisitor *visitor) {
 EvalStatus WhileNode::eval(RuntimeContext &ctx) {
     CONTINUE:
     EVAL(ctx, this->condNode);
-    if(TYPE_AS(Boolean_Object, ctx.pop())->getValue()) {
+    if(typeAs<Boolean_Object>(ctx.pop())->getValue()) {
         EvalStatus status = this->blockNode->eval(ctx);
         switch(status) {
         case EvalStatus::BREAK:
@@ -1710,7 +1710,7 @@ EvalStatus DoWhileNode::eval(RuntimeContext &ctx) {
     }
 
     EVAL(ctx, this->condNode);
-    if(TYPE_AS(Boolean_Object, ctx.pop())->getValue()) {
+    if(typeAs<Boolean_Object>(ctx.pop())->getValue()) {
         goto CONTINUE;
     }
 
@@ -1808,14 +1808,14 @@ EvalStatus IfNode::eval(RuntimeContext &ctx) {
     EVAL(ctx, this->condNode);
 
     // then block
-    if(TYPE_AS(Boolean_Object, ctx.pop())->getValue()) {
+    if(typeAs<Boolean_Object>(ctx.pop())->getValue()) {
         return this->thenNode->eval(ctx);
     }
 
     unsigned int size = this->elifCondNodes.size();
     for(unsigned i = 0; i < size; i++) {    // elif
         EVAL(ctx, this->elifCondNodes[i]);
-        if(TYPE_AS(Boolean_Object, ctx.pop())->getValue()) {
+        if(typeAs<Boolean_Object>(ctx.pop())->getValue()) {
             return this->elifThenNodes[i]->eval(ctx);
         }
     }

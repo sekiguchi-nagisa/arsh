@@ -143,7 +143,7 @@ static DSValue decodeMessageIter(RuntimeContext &ctx, DBusMessageIter *iter) {
                             ctx.getPool().getMapTemplate(), std::move(types)));
             unsigned int size = entries.size();
             for(unsigned int i = 0; i < size; i++) {
-                TYPE_AS(Map_Object, map)->add(std::move(entries[i]));
+                typeAs<Map_Object>(map)->add(std::move(entries[i]));
             }
             return std::move(map);
         } else {    // array
@@ -184,7 +184,7 @@ static DSValue decodeMessageIter(RuntimeContext &ctx, DBusMessageIter *iter) {
         DSValue tuple(new Tuple_Object(tupleType));
         unsigned int size = values.size();
         for(unsigned int i = 0; i < size; i++) {
-            TYPE_AS(Tuple_Object, tuple)->set(i, values[i]);
+            typeAs<Tuple_Object>(tuple)->set(i, values[i]);
         }
         return std::move(tuple);
     };
@@ -256,7 +256,7 @@ static DSValue decodeAndUnrefMessage(RuntimeContext &ctx,
     DSValue tuple(new Tuple_Object(
             ctx.getPool().createAndGetTupleTypeIfUndefined(std::vector<DSType *>(types))));
     for(unsigned int i = 0; i < size; i++) {
-        TYPE_AS(Tuple_Object, tuple)->set(i, values[i]);
+        typeAs<Tuple_Object>(tuple)->set(i, values[i]);
     }
     return std::move(tuple);
 }
@@ -268,7 +268,7 @@ static DSValue decodeAndUnrefMessage(RuntimeContext &ctx, DSType *type, DBusMess
 }
 
 static void appendArg(RuntimeContext &ctx, DBusMessageIter *iter, DSType *argType, const DSValue &arg) {
-    DBus_ObjectImpl *dbus = TYPE_AS(DBus_ObjectImpl, ctx.getDBus());
+    DBus_ObjectImpl *dbus = typeAs<DBus_ObjectImpl>(ctx.getDBus());
     dbus->getBuilder().appendArg(iter, argType, arg);
 }
 
@@ -405,7 +405,7 @@ bool Service_ObjectImpl::object(RuntimeContext &ctx, const DSValue &objectPath) 
     DSValue obj(new DBusProxy_Object(ctx.getPool().getDBusObjectType(), DSValue(this), objectPath));
 
     // first call Introspection and resolve interface type.
-    if(!TYPE_AS(DBusProxy_Object, obj)->doIntrospection(ctx)) {
+    if(!typeAs<DBusProxy_Object>(obj)->doIntrospection(ctx)) {
         return false;
     }
 
@@ -428,7 +428,7 @@ DBus_ObjectImpl::DBus_ObjectImpl(TypePool *typePool) :
 bool DBus_ObjectImpl::getSystemBus(RuntimeContext &ctx) {
     if(!this->systemBus) {
         this->systemBus = DSValue::create<Bus_ObjectImpl>(ctx.getPool().getBusType(), true);
-        if(!TYPE_AS(Bus_ObjectImpl, this->systemBus)->initConnection(ctx, true)) {
+        if(!typeAs<Bus_ObjectImpl>(this->systemBus)->initConnection(ctx, true)) {
             return false;
         }
     }
@@ -439,7 +439,7 @@ bool DBus_ObjectImpl::getSystemBus(RuntimeContext &ctx) {
 bool DBus_ObjectImpl::getSessionBus(RuntimeContext &ctx) {
     if(!this->sessionBus) {
         this->sessionBus = DSValue::create<Bus_ObjectImpl>(ctx.getPool().getBusType(), false);
-        if(!TYPE_AS(Bus_ObjectImpl, this->sessionBus)->initConnection(ctx, false)) {
+        if(!typeAs<Bus_ObjectImpl>(this->sessionBus)->initConnection(ctx, false)) {
             return false;
         }
     }
@@ -449,11 +449,11 @@ bool DBus_ObjectImpl::getSessionBus(RuntimeContext &ctx) {
 
 bool DBus_ObjectImpl::waitSignal(RuntimeContext &ctx) {
     std::vector<DBusProxy_Object *> proxies;
-    proxies.push_back(TYPE_AS(DBusProxy_Object, ctx.getLocal(1)));
+    proxies.push_back(typeAs<DBusProxy_Object>(ctx.getLocal(1)));
 
     // add signal match rule
     Bus_ObjectImpl *busObj =
-            TYPE_AS(Bus_ObjectImpl, proxies[0]->isBelongToSystemBus() ? this->systemBus : this->sessionBus);
+            typeAs<Bus_ObjectImpl>(proxies[0]->isBelongToSystemBus() ? this->systemBus : this->sessionBus);
     DBusConnection *conn = busObj->getConnection();
 
 
@@ -537,29 +537,29 @@ bool DBus_ObjectImpl::waitSignal(RuntimeContext &ctx) {
 }
 
 bool DBus_ObjectImpl::getServiceFromProxy(RuntimeContext &ctx, const DSValue &proxy) {
-    ctx.push(TYPE_AS(DBusProxy_Object, proxy)->getService());
+    ctx.push(typeAs<DBusProxy_Object>(proxy)->getService());
     return true;
 }
 
 bool DBus_ObjectImpl::getObjectPathFromProxy(RuntimeContext &ctx, const DSValue &proxy) {
-    ctx.push(TYPE_AS(DBusProxy_Object, proxy)->getObjectPath());
+    ctx.push(typeAs<DBusProxy_Object>(proxy)->getObjectPath());
     return true;
 }
 
 bool DBus_ObjectImpl::getIfaceListFromProxy(RuntimeContext &ctx, const DSValue &proxy) {
-    ctx.push(TYPE_AS(DBusProxy_Object, proxy)->createIfaceList(ctx));
+    ctx.push(typeAs<DBusProxy_Object>(proxy)->createIfaceList(ctx));
     return true;
 }
 
 bool DBus_ObjectImpl::introspectProxy(RuntimeContext &ctx, const DSValue &proxy) {
-    DBusProxy_Object *obj = TYPE_AS(DBusProxy_Object, proxy);
+    DBusProxy_Object *obj = typeAs<DBusProxy_Object>(proxy);
     auto msg = dbus_message_new_method_call(
-            TYPE_AS(Service_ObjectImpl, obj->getService())->getServiceName(),
-            TYPE_AS(String_Object, obj->getObjectPath())->getValue(),
+            typeAs<Service_ObjectImpl>(obj->getService())->getServiceName(),
+            typeAs<String_Object>(obj->getObjectPath())->getValue(),
             "org.freedesktop.DBus.Introspectable", "Introspect");
     bool status;
     auto reply = sendAndUnrefMessage(
-            ctx, TYPE_AS(Service_ObjectImpl, obj->getService())->getConnection(), msg, status);
+            ctx, typeAs<Service_ObjectImpl>(obj->getService())->getConnection(), msg, status);
     if(!status) {
         return false;
     }
@@ -606,9 +606,9 @@ std::string DBusProxy_Object::toString(RuntimeContext &ctx) {
     UNUSED(ctx);
 
     std::string str("[dest=");
-    str += TYPE_AS(Service_ObjectImpl, this->srv)->getServiceName();
+    str += typeAs<Service_ObjectImpl>(this->srv)->getServiceName();
     str += ", path=";
-    str += TYPE_AS(String_Object, this->objectPath)->getValue();
+    str += typeAs<String_Object>(this->objectPath)->getValue();
     str += ", iface=";
     unsigned int count = 0;
     for(auto &iter : this->ifaceSet) {
@@ -696,7 +696,7 @@ bool DBusProxy_Object::doIntrospection(RuntimeContext &ctx) {
 
     if(this->ifaceSet.empty()) {
         std::string str = ("illegal object path: ");
-        str += TYPE_AS(String_Object, this->objectPath)->getValue();
+        str += typeAs<String_Object>(this->objectPath)->getValue();
         reportDBusError(ctx, DBUS_ERROR_UNKNOWN_OBJECT, std::move(str));
         return false;
     }
@@ -831,12 +831,12 @@ FunctionType *DBusProxy_Object::lookupHandler(RuntimeContext &ctx,
         return nullptr;
     }
     ctx.push(iter->second);
-    return TYPE_AS(FuncObject, iter->second)->getFuncType();
+    return typeAs<FuncObject>(iter->second)->getFuncType();
 }
 
 bool DBusProxy_Object::matchObject(const char *serviceName, const char *objectPath) {
-    return strcmp(serviceName, TYPE_AS(Service_ObjectImpl, this->srv)->getUniqueName()) == 0 &&
-           strcmp(objectPath, TYPE_AS(String_Object, this->objectPath)->getValue()) == 0;
+    return strcmp(serviceName, typeAs<Service_ObjectImpl>(this->srv)->getUniqueName()) == 0 &&
+           strcmp(objectPath, typeAs<String_Object>(this->objectPath)->getValue()) == 0;
 }
 
 static inline void quote(std::string &str, const char *value) {
@@ -850,9 +850,9 @@ void DBusProxy_Object::createSignalMatchRule(std::vector<std::string> &ruleList)
         std::string rule("type=");
         quote(rule, "signal");
         rule += ", sender=";
-        quote(rule, TYPE_AS(Service_ObjectImpl, this->srv)->getServiceName());
+        quote(rule, typeAs<Service_ObjectImpl>(this->srv)->getServiceName());
         rule += ", path=";
-        quote(rule, TYPE_AS(String_Object, this->objectPath)->getValue());
+        quote(rule, typeAs<String_Object>(this->objectPath)->getValue());
         rule += ", interface=";
         quote(rule, pair.first.first);
         rule += ", member=";
@@ -863,14 +863,13 @@ void DBusProxy_Object::createSignalMatchRule(std::vector<std::string> &ruleList)
 }
 
 bool DBusProxy_Object::isBelongToSystemBus() {
-    return TYPE_AS(Bus_ObjectImpl,
-                   TYPE_AS(Service_ObjectImpl, this->srv)->getBus())->isSystemBus();
+    return typeAs<Bus_ObjectImpl>(typeAs<Service_ObjectImpl>(this->srv)->getBus())->isSystemBus();
 }
 
 DBusMessage *DBusProxy_Object::newMethodCallMsg(const char *ifaceName, const char *methodName) {
     return dbus_message_new_method_call(
-            TYPE_AS(Service_ObjectImpl, this->srv)->getServiceName(),
-            TYPE_AS(String_Object, this->objectPath)->getValue(), ifaceName, methodName);
+            typeAs<Service_ObjectImpl>(this->srv)->getServiceName(),
+            typeAs<String_Object>(this->objectPath)->getValue(), ifaceName, methodName);
 }
 
 DBusMessage *DBusProxy_Object::newMethodCallMsg(const std::string &ifaceName, const std::string &methodName) {
@@ -878,7 +877,7 @@ DBusMessage *DBusProxy_Object::newMethodCallMsg(const std::string &ifaceName, co
 }
 
 DBusMessage *DBusProxy_Object::sendMessage(RuntimeContext &ctx, DBusMessage *sendMsg, bool &status) {
-    return sendAndUnrefMessage(ctx, TYPE_AS(Service_ObjectImpl, this->srv)->getConnection(), sendMsg, status);
+    return sendAndUnrefMessage(ctx, typeAs<Service_ObjectImpl>(this->srv)->getConnection(), sendMsg, status);
 }
 
 void DBusProxy_Object::addHandler(const std::string &ifaceName,

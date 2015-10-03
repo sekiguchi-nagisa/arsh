@@ -128,7 +128,7 @@ void ReportingListener::handleRuntimeError(const TypePool &pool, const DSValue &
     }
 
     if(dynamic_cast<Error_Object *>(raisedObj.get()) != nullptr) {
-        Error_Object *obj = TYPE_AS(Error_Object, raisedObj);
+        Error_Object *obj = typeAs<Error_Object>(raisedObj);
         this->lineNum = getOccuredLineNum(obj->getStackTrace());
     }
 }

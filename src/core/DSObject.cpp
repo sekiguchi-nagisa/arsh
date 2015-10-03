@@ -19,9 +19,7 @@
 #include "DSObject.h"
 #include "RuntimeContext.h"
 #include "../ast/Node.h"
-#include "../misc/fatal.h"
 #include "../misc/unused.h"
-#include "../config.h"
 
 #ifdef USE_DBUS
 #include "../dbus/DBusBind.h"
@@ -99,7 +97,7 @@ std::string Int_Object::toString(RuntimeContext &ctx) {
 }
 
 bool Int_Object::equals(const DSValue &obj) {
-    return this->value == TYPE_AS(Int_Object, obj)->value;
+    return this->value == typeAs<Int_Object>(obj)->value;
 }
 
 size_t Int_Object::hash() {
@@ -118,7 +116,7 @@ std::string Long_Object::toString(RuntimeContext &ctx) {
 }
 
 bool Long_Object::equals(const DSValue &obj) {
-    return this->value == TYPE_AS(Long_Object, obj)->value;
+    return this->value == typeAs<Long_Object>(obj)->value;
 }
 
 size_t Long_Object::hash() {
@@ -135,7 +133,7 @@ std::string Float_Object::toString(RuntimeContext &ctx) {
 }
 
 bool Float_Object::equals(const DSValue &obj) {
-    return this->value == TYPE_AS(Float_Object, obj)->value;
+    return this->value == typeAs<Float_Object>(obj)->value;
 }
 
 size_t Float_Object::hash() {
@@ -153,7 +151,7 @@ std::string Boolean_Object::toString(RuntimeContext &ctx) {
 }
 
 bool Boolean_Object::equals(const DSValue &obj) {
-    return this->value == TYPE_AS(Boolean_Object, obj)->value;
+    return this->value == typeAs<Boolean_Object>(obj)->value;
 }
 
 size_t Boolean_Object::hash() {
@@ -170,7 +168,7 @@ std::string String_Object::toString(RuntimeContext &ctx) {
 }
 
 bool String_Object::equals(const DSValue &obj) {
-    return this->value == TYPE_AS(String_Object, obj)->value;
+    return this->value == typeAs<String_Object>(obj)->value;
 }
 
 size_t String_Object::hash() {
@@ -223,7 +221,7 @@ DSValue Array_Object::interp(RuntimeContext &ctx) {
         if(i > 0) {
             str += " ";
         }
-        str += TYPE_AS(String_Object, this->values[i]->interp(ctx))->getValue();
+        str += typeAs<String_Object>(this->values[i]->interp(ctx))->getValue();
     }
     return DSValue::create<String_Object>(ctx.getPool().getStringType(), std::move(str));
 }
@@ -235,11 +233,11 @@ DSValue Array_Object::commandArg(RuntimeContext &ctx) {
 
         DSType *tempType = temp->getType();
         if(*tempType == *ctx.getPool().getStringType()) {
-            TYPE_AS(Array_Object, result)->values.push_back(std::move(temp));
+            typeAs<Array_Object>(result)->values.push_back(std::move(temp));
         } else if(*tempType == *ctx.getPool().getStringArrayType()) {
-            Array_Object *tempArray = TYPE_AS(Array_Object, temp);
+            Array_Object *tempArray = typeAs<Array_Object>(temp);
             for(auto &tempValue : tempArray->values) {
-                TYPE_AS(Array_Object, result)->values.push_back(tempValue);
+                typeAs<Array_Object>(result)->values.push_back(tempValue);
             }
         } else {
             fatal("illegal command argument type: %s\n", ctx.getPool().getTypeName(*tempType).c_str());
@@ -279,8 +277,8 @@ DSValue Map_Object::nextElement(RuntimeContext &ctx) {
 
     DSValue entry(
             new Tuple_Object(ctx.getPool().createAndGetTupleTypeIfUndefined(std::move(types))));
-    TYPE_AS(Tuple_Object, entry)->set(0, this->iter->first);
-    TYPE_AS(Tuple_Object, entry)->set(1, this->iter->second);
+    typeAs<Tuple_Object>(entry)->set(0, this->iter->first);
+    typeAs<Tuple_Object>(entry)->set(1, this->iter->second);
     this->iter++;
 
     return std::move(entry);
@@ -350,7 +348,7 @@ DSValue Tuple_Object::interp(RuntimeContext &ctx) {
         if(i > 0) {
             str += " ";
         }
-        str += TYPE_AS(String_Object, this->fieldTable[i]->str(ctx))->getValue();
+        str += typeAs<String_Object>(this->fieldTable[i]->str(ctx))->getValue();
     }
     return DSValue::create<String_Object>(ctx.getPool().getStringType(), std::move(str));
 }
@@ -363,11 +361,11 @@ DSValue Tuple_Object::commandArg(RuntimeContext &ctx) {
 
         DSType *tempType = temp->getType();
         if(*tempType == *ctx.getPool().getStringType()) {
-            TYPE_AS(Array_Object, result)->append(std::move(temp));
+            typeAs<Array_Object>(result)->append(std::move(temp));
         } else if(*tempType == *ctx.getPool().getStringArrayType()) {
-            Array_Object *tempArray = TYPE_AS(Array_Object, temp);
+            Array_Object *tempArray = typeAs<Array_Object>(temp);
             for(auto &tempValue : tempArray->getValues()) {
-                TYPE_AS(Array_Object, result)->append(tempValue);
+                typeAs<Array_Object>(result)->append(tempValue);
             }
         } else {
             fatal("illegal command argument type: %s\n", ctx.getPool().getTypeName(*tempType).c_str());
@@ -397,7 +395,7 @@ unsigned int getOccuredLineNum(const std::vector<StackTraceElement> &elements) {
 std::string Error_Object::toString(RuntimeContext &ctx) {
     std::string str(ctx.getPool().getTypeName(*this->type));
     str += ": ";
-    str += TYPE_AS(String_Object, this->message)->getValue();
+    str += typeAs<String_Object>(this->message)->getValue();
     return str;
 }
 
@@ -421,13 +419,13 @@ const DSValue &Error_Object::getName(RuntimeContext &ctx) {
 
 DSValue Error_Object::newError(RuntimeContext &ctx, DSType *type, const DSValue &message) {
     auto obj = DSValue::create<Error_Object>(type, message);
-    TYPE_AS(Error_Object, obj)->createStackTrace(ctx);
+    typeAs<Error_Object>(obj)->createStackTrace(ctx);
     return std::move(obj);
 }
 
 DSValue Error_Object::newError(RuntimeContext &ctx, DSType *type, DSValue &&message) {
     auto obj = DSValue::create<Error_Object>(type, std::move(message));
-    TYPE_AS(Error_Object, obj)->createStackTrace(ctx);
+    typeAs<Error_Object>(obj)->createStackTrace(ctx);
     return std::move(obj);
 }
 

@@ -94,7 +94,7 @@ void RuntimeContext::updateScriptName(const char *name) {
 }
 
 void RuntimeContext::addScriptArg(const char *arg) {
-    TYPE_AS(Array_Object, this->scriptArgs)->append(
+    typeAs<Array_Object>(this->scriptArgs)->append(
             DSValue::create<String_Object>(this->pool.getStringType(), std::string(arg)));
 }
 
@@ -176,8 +176,7 @@ EvalStatus RuntimeContext::applyFuncObject(unsigned int lineNum, bool returnType
     // call function
     this->saveAndSetOffset(savedStackTopIndex + 2);
     this->pushCallFrame(lineNum);
-    bool status = TYPE_AS(FuncObject,
-                          this->localStack[savedStackTopIndex + 1])->invoke(*this);
+    bool status = typeAs<FuncObject>(this->localStack[savedStackTopIndex + 1])->invoke(*this);
     this->popCallFrame();
 
     // restore stack state
@@ -223,7 +222,7 @@ EvalStatus RuntimeContext::callMethod(unsigned int lineNum, const std::string &m
         status = this->localStack[savedStackTopIndex + 1]->
                 getType()->getMethodRef(handle->getMethodIndex())->invoke(*this);
     } else {    // call proxy method
-        status = TYPE_AS(ProxyObject, this->localStack[savedStackTopIndex + 1])->
+        status = typeAs<ProxyObject>(this->localStack[savedStackTopIndex + 1])->
                 invokeMethod(*this, methodName, handle);
     }
 
@@ -369,7 +368,7 @@ void RuntimeContext::instanceOf(DSType *targetType) {
 }
 
 EvalStatus RuntimeContext::checkAssertion(unsigned int lineNum) {
-    if(!TYPE_AS(Boolean_Object, this->pop())->getValue()) {
+    if(!typeAs<Boolean_Object>(this->pop())->getValue()) {
         this->pushCallFrame(lineNum);
         this->throwError(this->pool.getAssertFail(), "");
         this->popCallFrame();
@@ -384,7 +383,7 @@ EvalStatus RuntimeContext::importEnv(unsigned int lineNum, const std::string &en
     if(hasDefault) {
         DSValue value = this->pop();
         if(env == nullptr) {
-            setenv(envName.c_str(), TYPE_AS(String_Object, value)->getValue(), 1);
+            setenv(envName.c_str(), typeAs<String_Object>(value)->getValue(), 1);
         }
     }
 
@@ -410,7 +409,7 @@ EvalStatus RuntimeContext::importEnv(unsigned int lineNum, const std::string &en
 
 void RuntimeContext::exportEnv(const std::string &envName, unsigned int index, bool isGlobal) {
     setenv(envName.c_str(),
-           TYPE_AS(String_Object, this->peek())->getValue(), 1);    //FIXME: check return value and throw
+           typeAs<String_Object>(this->peek())->getValue(), 1);    //FIXME: check return value and throw
     if(isGlobal) {
         this->storeGlobal(index);
     } else {
@@ -464,7 +463,7 @@ void RuntimeContext::updateWorkingDir(bool OLDPWD_only) {
     this->setGlobal(this->handle_OLDPWD->getFieldIndex(),
                     this->getGlobal(this->handle_PWD->getFieldIndex()));
     const char *oldpwd =
-            TYPE_AS(String_Object, this->getGlobal(this->handle_OLDPWD->getFieldIndex()))->getValue();
+            typeAs<String_Object>(this->getGlobal(this->handle_OLDPWD->getFieldIndex()))->getValue();
     setenv(env_OLDPWD, oldpwd, 1);
 
     // update PWD
@@ -528,7 +527,7 @@ int RuntimeContext::execUserDefinedCommand(UserDefinedCmdNode *node, DSValue *ar
 
     // copy arguments
     for(unsigned int index = 1; argv[index]; index++) {
-        TYPE_AS(Array_Object, this->scriptArgs)->append(std::move(argv[index]));
+        typeAs<Array_Object>(this->scriptArgs)->append(std::move(argv[index]));
     }
 
     // clear procInvoker
@@ -541,18 +540,18 @@ int RuntimeContext::execUserDefinedCommand(UserDefinedCmdNode *node, DSValue *ar
     // get exit status
     switch(s) {
     case EvalStatus::SUCCESS:
-        return TYPE_AS(Int_Object, this->getExitStatus())->getValue();
+        return typeAs<Int_Object>(this->getExitStatus())->getValue();
     case EvalStatus::RETURN:
-        return TYPE_AS(Int_Object, this->pop())->getValue();
+        return typeAs<Int_Object>(this->pop())->getValue();
     case EvalStatus::THROW: {
         DSType *thrownType = this->getThrownObject()->getType();
         if(this->pool.getInternalStatus()->isSameOrBaseTypeOf(thrownType)) {
             if(*thrownType == *this->pool.getShellExit()) {
-                return TYPE_AS(Int_Object, this->getExitStatus())->getValue();
+                return typeAs<Int_Object>(this->getExitStatus())->getValue();
             }
             if(*thrownType == *this->pool.getAssertFail()) {
                 this->loadThrownObject();
-                TYPE_AS(Error_Object, this->pop())->printStackTrace(*this);
+                typeAs<Error_Object>(this->pop())->printStackTrace(*this);
                 return 1;
             }
         }
@@ -622,7 +621,7 @@ void RuntimeContext::interpretPromptString(const char *ps, std::string &output) 
                 ch = '\r';
                 break;
             case 's':
-                output += TYPE_AS(String_Object, this->getScriptName())->getValue();
+                output += typeAs<String_Object>(this->getScriptName())->getValue();
                 continue;
             case 't': {
                 format2digit(local->tm_hour, output);
