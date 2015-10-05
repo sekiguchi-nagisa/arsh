@@ -15,7 +15,6 @@
  */
 
 #include "Parser.h"
-#include "../misc/fatal.h"
 
 
 // helper macro
@@ -56,8 +55,7 @@
     OP(APPLIED_NAME) \
     OP(SPECIAL_NAME) \
     OP(LP) \
-    OP(LB) \
-    OP(LBC)
+    OP(LB)
 
 #define EACH_LA_expression(OP) \
     OP(NOT) \
@@ -1200,41 +1198,37 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         }
         return node;
     }
-    case LB: {
+    case LB: {  // array or map
         this->expect(LB);
-        std::unique_ptr<ArrayNode> node(
-                new ArrayNode(n, this->parse_expression().release()));
-        while(CUR_KIND() == COMMA) {
-            this->expect(COMMA);
-            node->addExprNode(this->parse_expression().release());
-        }
-        this->expect(RB);
-        return std::move(node);
-    }
-    case LBC: {
-        this->expect(LBC);
+
         std::unique_ptr<Node> keyNode(this->parse_expression());
 
-        this->noNewLine();
-        this->expect(COLON);
-        this->noNewLine();
-
-        std::unique_ptr<Node> valueNode(this->parse_expression());
-        std::unique_ptr<MapNode> node(
-                new MapNode(n, keyNode.release(), valueNode.release()));
-        while(CUR_KIND() == COMMA) {
-            this->expect(COMMA);
-            keyNode = this->parse_expression();
-
-            this->noNewLine();
+        std::unique_ptr<Node> node;
+        if(CUR_KIND() == COLON) {   // map
             this->expect(COLON);
-            this->noNewLine();
 
-            valueNode = this->parse_expression();
-            node->addEntry(keyNode.release(), valueNode.release());
+            std::unique_ptr<Node> valueNode(this->parse_expression());
+            std::unique_ptr<MapNode> mapNode(
+                    new MapNode(n, keyNode.release(), valueNode.release()));
+            while(CUR_KIND() == COMMA) {
+                this->expect(COMMA);
+                keyNode = this->parse_expression();
+                this->expect(COLON);
+                valueNode = this->parse_expression();
+                mapNode->addEntry(keyNode.release(), valueNode.release());
+            }
+            node = std::move(mapNode);
+        } else {    // array
+            std::unique_ptr<ArrayNode> arrayNode(new ArrayNode(n, keyNode.release()));
+            while(CUR_KIND() == COMMA) {
+                this->expect(COMMA);
+                arrayNode->addExprNode(this->parse_expression().release());
+            }
+            node = std::move(arrayNode);
         }
-        this->expect(RBC);
-        return std::move(node);
+
+        this->expect(RB);
+        return node;
     }
     default:
         E_ALTER(

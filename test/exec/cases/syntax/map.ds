@@ -1,0 +1,20 @@
+# allow newline around colon and comma
+
+assert( [
+
+        "34"
+
+              :
+                    54
+
+                        ,
+
+
+                        'hfeirua'
+
+
+        :
+
+   -65
+   ] is Map<String, Int>
+      )

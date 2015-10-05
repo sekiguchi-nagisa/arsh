@@ -1,0 +1,25 @@
+# allow newline around comma
+
+assert
+   (
+
+       [
+  23,
+    43
+
+
+         ,   5    ,
+
+
+           56
+
+
+     ,
+
+
+54
+     ] is
+            Array<Int>
+
+
+         )

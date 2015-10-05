@@ -24,8 +24,8 @@ assert($g1 is Array<Uint>)
 assert($g1 is Array<Uint32>)
 assert($g2 is Array<String>)
 
-var g4 = {"a" : 1, "b" : 2}
-var g5 = {"a" : "aa", "b" : "bb"}
+var g4 = ["a" : 1, "b" : 2]
+var g5 = ["a" : "aa", "b" : "bb"]
 assert($g4 is Map<String, Int>)
 assert($g5 is Map<String, String>)
 assert(not($g5 is Map<Int, String>))

@@ -1,4 +1,4 @@
-var a = {"a" : 1}
+var a = ["a" : 1]
 assert($a["a"] is Int32)
 assert($a["a"] == 1)
 
@@ -25,7 +25,7 @@ assert($b.size() == 1)
 assert($b[34] == 34.56)
 
 # iterator
-var c = {"a" : 23, "d" : 43, "e" : 4}
+var c = ["a" : 23, "d" : 43, "e" : 4]
 try {
     for(var i = $c.__ITERATOR__(); $true; $i.__NEXT__()) {
         echo in iterator
@@ -45,9 +45,9 @@ assert($count == 3)
 
 
 # inheritance
-assert({23 : $true} is Map<Int, Boolean>)
-assert({"fr" : 34.2} is Variant)
-assert({"fre" : 32} is Any)
+assert([23 : $true] is Map<Int, Boolean>)
+assert(["fr" : 34.2] is Variant)
+assert(["fre" : 32] is Any)
 
 assert(new Map<Byte, Any>() is Map<Byte, Any>)
 assert(not(new Map<Byte, Any>() is Variant))

@@ -6,7 +6,7 @@ Int
 echo $a
 assert(not $a)
 
-$a = {"23" : (23, $true, 23.4)} is 
+$a = ["23" : (23, $true, 23.4)] is
 Map<
 String
   
