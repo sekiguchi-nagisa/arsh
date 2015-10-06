@@ -1,4 +1,3 @@
-# not allow newline before return type
 
 function f($a
      :
@@ -7,7 +6,15 @@ function f($a
             ,
             Int
         >
-) :
+
+        ,
+            $b
+                :
+
+
+          Boolean
+)
+  :
     Int
 
     {
@@ -23,6 +30,10 @@ assert($f is
             ,
             Int
             >
+
+        ,
+
+              Boolean
             ]
         >
 )

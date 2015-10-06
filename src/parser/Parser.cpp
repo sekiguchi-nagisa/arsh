@@ -249,13 +249,12 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
 
         node->addParamNode(nameNode.release(), type.release());
 
-        while(!HAS_NL() && CUR_KIND() == COMMA) {
+        while(CUR_KIND() == COMMA) {
             this->expect(COMMA);
             this->expect(APPLIED_NAME, token);
 
             nameNode.reset(new VarNode(token.lineNum, this->lexer->toName(token)));
 
-            this->noNewLine();
             this->expect(COLON, false);
 
             type = this->parse_typeName();
@@ -266,7 +265,7 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
 
     this->expect(RP);
 
-    if(!HAS_NL() && CUR_KIND() == COLON) {
+    if(CUR_KIND() == COLON) {
         this->expect(COLON, false);
         std::unique_ptr<ReturnTypeToken> type(new ReturnTypeToken(this->parse_typeName().release()));
         while(CUR_KIND() == COMMA) {
