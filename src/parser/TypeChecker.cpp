@@ -206,13 +206,12 @@ DSType *TypeChecker::checkType(DSType *requiredType, Node *targetNode,
     return nullptr;
 }
 
-Node *TypeChecker::checkTypeAndResolveCoercion(DSType *requiredType, Node *targetNode) {
+void TypeChecker::checkTypeWithCoercion(DSType *requiredType, Node * &targetNode) {
     TypePool *pool = this->typePool;
     this->checkType(requiredType, targetNode, pool->getVoidType(), true);
     if(this->coercionKind != INVALID_COERCION) {
-        return this->resolveCoercion(this->coercionKind, requiredType, targetNode);
+        targetNode = this->resolveCoercion(this->coercionKind, requiredType, targetNode);
     }
-    return targetNode;
 }
 
 bool TypeChecker::checkCoercion(DSType *requiredType, DSType *targetType) {
@@ -420,8 +419,7 @@ void TypeChecker::checkTypeArgsNode(const std::vector<DSType *> &paramTypes, Arg
 
     // check type each node
     for(unsigned int i = startIndex; i < size; i++) {
-        argsNode->setArg(i - startIndex,
-                         this->checkTypeAndResolveCoercion(paramTypes[i], argsNode->getNodes()[i - startIndex]));
+        this->checkTypeWithCoercion(paramTypes[i], argsNode->refNodes()[i - startIndex]);
     }
 }
 
@@ -438,8 +436,7 @@ void TypeChecker::checkTypeArgsNode(MethodHandle *handle, ArgsNode *argsNode) { 
 
         // check type each node
         for(unsigned int i = 0; i < paramSize; i++) {
-            argsNode->setArg(i, this->checkTypeAndResolveCoercion(
-                    handle->getParamTypes()[i], argsNode->getNodes()[i]));
+            this->checkTypeWithCoercion(handle->getParamTypes()[i], argsNode->refNodes()[i]);
         }
     } while(handle->getNext() != nullptr);
 }
@@ -590,8 +587,7 @@ void TypeChecker::visitArrayNode(ArrayNode *node) {
     DSType *elementType = this->checkType(firstElementNode);
 
     for(unsigned int i = 1; i < size; i++) {
-        node->setExprNode(i, this->checkTypeAndResolveCoercion(elementType,
-                                                               node->getExprNodes()[i]));
+        this->checkTypeWithCoercion(elementType, node->refExprNodes()[i]);
     }
 
     TypeTemplate *arrayTemplate = this->typePool->getArrayTemplate();
@@ -609,10 +605,8 @@ void TypeChecker::visitMapNode(MapNode *node) {
     DSType *valueType = this->checkType(firstValueNode);
 
     for(unsigned int i = 1; i < size; i++) {
-        node->setKeyNode(
-                i, this->checkTypeAndResolveCoercion(keyType, node->getKeyNodes()[i]));
-        node->setValueNode(
-                i, this->checkTypeAndResolveCoercion(valueType, node->getValueNodes()[i]));
+        this->checkTypeWithCoercion(keyType, node->refKeyNodes()[i]);
+        this->checkTypeWithCoercion(valueType, node->refValueNodes()[i]);
     }
 
     TypeTemplate *mapTemplate = this->typePool->getMapTemplate();
@@ -1156,7 +1150,7 @@ void TypeChecker::visitAssignNode(AssignNode *node) {
             accessNode->setAdditionalOp(AccessNode::DUP_RECV);
         }
     }
-    node->setRightNode(this->checkTypeAndResolveCoercion(leftType, node->getRightNode()));
+    this->checkTypeWithCoercion(leftType, node->refRightNode());
     node->setType(this->typePool->getVoidType());
 }
 

@@ -248,10 +248,6 @@ void ArrayNode::addExprNode(Node *node) {
     this->nodes.push_back(node);
 }
 
-void ArrayNode::setExprNode(unsigned int index, Node *node) {
-    this->nodes[index] = node;
-}
-
 void ArrayNode::dump(Writer &writer) const {
     WRITE(nodes);
 }
@@ -294,14 +290,6 @@ MapNode::~MapNode() {
 void MapNode::addEntry(Node *keyNode, Node *valueNode) {
     this->keyNodes.push_back(keyNode);
     this->valueNodes.push_back(valueNode);
-}
-
-void MapNode::setKeyNode(unsigned int index, Node *keyNode) {
-    this->keyNodes[index] = keyNode;
-}
-
-void MapNode::setValueNode(unsigned int index, Node *valueNode) {
-    this->valueNodes[index] = valueNode;
 }
 
 void MapNode::dump(Writer &writer) const {
@@ -702,10 +690,6 @@ ArgsNode::~ArgsNode() {
 
 void ArgsNode::addArg(Node *argNode) {  //TODO: named argument
     this->nodes.push_back(argNode);
-}
-
-void ArgsNode::setArg(unsigned int index, Node *argNode) {
-    this->nodes[index] = argNode;
 }
 
 void ArgsNode::dump(Writer &writer) const {
@@ -2116,7 +2100,7 @@ ElementSelfAssignNode::ElementSelfAssignNode(MethodCallNode *leftNode, BinaryOpN
     this->recvNode = leftNode->getRecvNode();
     leftNode->setRecvNode(nullptr);
     this->indexNode = leftNode->getArgsNode()->getNodes()[0];
-    leftNode->getArgsNode()->setArg(0, nullptr);
+    leftNode->getArgsNode()->refNodes()[0] = nullptr;
     delete leftNode;
 
     // init getter node

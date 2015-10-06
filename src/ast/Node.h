@@ -323,9 +323,11 @@ public:
 
     void addExprNode(Node *node);
 
-    void setExprNode(unsigned int index, Node *node);
-
     const std::vector<Node *> &getExprNodes() const {
+        return this->nodes;
+    }
+
+    std::vector<Node *> &refExprNodes() {
         return this->nodes;
     }
 
@@ -346,15 +348,19 @@ public:
 
     void addEntry(Node *keyNode, Node *valueNode);
 
-    void setKeyNode(unsigned int index, Node *keyNode);
-
     const std::vector<Node *> &getKeyNodes() const {
         return this->keyNodes;
     }
 
-    void setValueNode(unsigned int index, Node *valueNode);
+    std::vector<Node *> &refKeyNodes() {
+        return this->keyNodes;
+    }
 
     const std::vector<Node *> &getValueNodes() const {
+        return this->valueNodes;
+    }
+
+    std::vector<Node *> &refValueNodes() {
         return this->valueNodes;
     }
 
@@ -627,9 +633,11 @@ public:
 
     void addArg(Node *argNode);
 
-    void setArg(unsigned int index, Node *argNode);
-
     const std::vector<Node *> &getNodes() const {
+        return this->nodes;
+    }
+
+    std::vector<Node *> &refNodes() {
         return this->nodes;
     }
 
@@ -1705,11 +1713,11 @@ public:
         return this->leftNode;
     }
 
-    void setRightNode(Node *rightNode) {
-        this->rightNode = rightNode;
+    Node *getRightNode() const {
+        return this->rightNode;
     }
 
-    Node *getRightNode() const {
+    Node * &refRightNode() {
         return this->rightNode;
     }
 

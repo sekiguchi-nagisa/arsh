@@ -179,7 +179,7 @@ private:
      * if requireType is FloatType and targetNode->getType() is IntType,
      * wrap targetNode with CastNode.
      */
-    Node *checkTypeAndResolveCoercion(DSType *requiredType, Node *targetNode);
+    void checkTypeWithCoercion(DSType *requiredType, Node * &targetNode);
 
     bool checkCoercion(DSType *requiredType, DSType *targetType);
 
