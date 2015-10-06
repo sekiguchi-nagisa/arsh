@@ -1193,6 +1193,10 @@ public:
         return this->nodeList;
     }
 
+    std::list<Node *> &refNodeList() {
+        return this->nodeList;
+    }
+
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
@@ -1380,11 +1384,19 @@ public:
         return this->initNode;
     }
 
+    Node *&refInitNode() {
+        return this->initNode;
+    }
+
     Node *getCondNode() const {
         return this->condNode;
     }
 
     Node *getIterNode() const {
+        return this->iterNode;
+    }
+
+    Node * &refIterNode() {
         return this->iterNode;
     }
 
@@ -2017,6 +2029,33 @@ public:
     EvalStatus eval(RuntimeContext &ctx); // override
 };
 
+/**
+ * pseudo node for pop operation
+ */
+class PopNode : public Node {
+private:
+    /**
+     * always typed node(not void type)
+     */
+    Node *exprNode;
+
+public:
+    PopNode(Node *exprNode, DSType *voidType) :
+            Node(exprNode->getLineNum()), exprNode(exprNode) {
+        this->setType(voidType);
+    }
+
+    ~PopNode();
+
+    Node *getExprNode() const {
+        return this->exprNode;
+    }
+
+    void dump(Writer &writer) const;  // override
+    void accept(NodeVisitor *visitor);    // override
+    EvalStatus eval(RuntimeContext &ctx); // override
+};
+
 class EmptyNode : public Node {
 public:
     EmptyNode() : EmptyNode(0) { }
@@ -2170,6 +2209,7 @@ struct NodeVisitor {
     virtual void visitInterfaceNode(InterfaceNode *node) = 0;
     virtual void visitUserDefinedCmdNode(UserDefinedCmdNode *node) = 0;
     virtual void visitBindVarNode(BindVarNode *node) = 0;
+    virtual void visitPopNode(PopNode *node) = 0;
     virtual void visitEmptyNode(EmptyNode *node) = 0;
     virtual void visitDummyNode(DummyNode *node) = 0;
     virtual void visitRootNode(RootNode *node) = 0;
@@ -2229,6 +2269,7 @@ struct BaseVisitor : public NodeVisitor {
     virtual void visitInterfaceNode(InterfaceNode *node) { this->visitDefault(node); }
     virtual void visitUserDefinedCmdNode(UserDefinedCmdNode *node) { this->visitDefault(node); }
     virtual void visitBindVarNode(BindVarNode *node) { this->visitDefault(node); }
+    virtual void visitPopNode(PopNode *node) { this->visitDefault(node); }
     virtual void visitEmptyNode(EmptyNode *node) { this->visitDefault(node); }
     virtual void visitDummyNode(DummyNode *node) { this->visitDefault(node); }
     virtual void visitRootNode(RootNode *node) { this->visitDefault(node); }

@@ -1420,9 +1420,6 @@ void BlockNode::accept(NodeVisitor *visitor) {
 EvalStatus BlockNode::eval(RuntimeContext &ctx) {
     for(Node *node : this->nodeList) {
         EvalStatus status = node->eval(ctx);
-        if(!node->getType()->isVoidType()) {
-            ctx.popNoReturn();
-        }
         if(status != EvalStatus::SUCCESS) {
             return status;
         }
@@ -2340,6 +2337,29 @@ void BindVarNode::accept(NodeVisitor *visitor) {
 
 EvalStatus BindVarNode::eval(RuntimeContext &ctx) {
     ctx.setGlobal(this->varIndex, this->value);
+    return EvalStatus::SUCCESS;
+}
+
+// #####################
+// ##     PopNode     ##
+// #####################
+
+PopNode::~PopNode() {
+    delete this->exprNode;
+    this->exprNode = nullptr;
+}
+
+void PopNode::dump(Writer &writer) const {
+    WRITE_PTR(exprNode);
+}
+
+void PopNode::accept(NodeVisitor *visitor) {
+    visitor->visitPopNode(this);
+}
+
+EvalStatus PopNode::eval(RuntimeContext &ctx) {
+    EVAL(ctx, this->exprNode);
+    ctx.popNoReturn();
     return EvalStatus::SUCCESS;
 }
 

@@ -143,9 +143,11 @@ DSType *TypeChecker::resolveInterface(TypePool *typePool, InterfaceNode *node) {
 }
 
 // type check entry point
-
-DSType *TypeChecker::checkTypeAsStatement(Node *targetNode) {
-    return this->checkType(nullptr, targetNode, nullptr);
+void TypeChecker::checkTypeAsStatement(Node *&targetNode, bool isToplevel) {
+    DSType *resolvedType = this->checkType(nullptr, targetNode, nullptr);
+    if(!resolvedType->isVoidType() && !isToplevel) {
+        targetNode = new PopNode(targetNode, this->typePool->getVoidType());
+    }
 }
 
 DSType *TypeChecker::checkType(Node *targetNode) {
@@ -916,7 +918,7 @@ void TypeChecker::visitPipedCmdNode(PipedCmdNode *node) {
 void TypeChecker::visitCmdContextNode(CmdContextNode *node) {   //TODO: attribute
     // check type condNode
     this->cmdContextStack.push_back(node);
-    this->checkTypeAsStatement(node->getExprNode());
+    this->checkType(nullptr, node->getExprNode(), nullptr);
     this->cmdContextStack.pop_back();
 
     DSType *type = this->typePool->getVoidType();
@@ -939,7 +941,7 @@ void TypeChecker::visitAssertNode(AssertNode *node) {
 void TypeChecker::visitBlockNode(BlockNode *node) {
     int count = 0;
     int size = node->getNodeList().size();
-    for(Node *targetNode : node->getNodeList()) {
+    for(Node * &targetNode : node->refNodeList()) {
         this->checkTypeAsStatement(targetNode);
         if(targetNode->isBlockEndNode() && (count != size - 1)) {
             E_Unreachable(node);
@@ -1000,9 +1002,9 @@ void TypeChecker::visitTypeAliasNode(TypeAliasNode *node) {
 void TypeChecker::visitForNode(ForNode *node) {
     this->symbolTable.enterScope();
 
-    this->checkTypeAsStatement(node->getInitNode());
+    this->checkTypeAsStatement(node->refInitNode());
     this->checkType(this->typePool->getBooleanType(), node->getCondNode());
-    this->checkTypeAsStatement(node->getIterNode());
+    this->checkTypeAsStatement(node->refIterNode());
 
     this->enterLoop();
     this->checkTypeWithCurrentBlockScope(node->getBlockNode());
@@ -1097,7 +1099,7 @@ void TypeChecker::visitTryNode(TryNode *node) {
     this->checkTypeWithNewBlockScope(node->getBlockNode());
     // check type catch block
     for(CatchNode *c : node->getCatchNodes()) {
-        this->checkTypeAsStatement(c);
+        this->checkType(this->typePool->getVoidType(), c);
     }
 
     // check type finally block, may be empty node
@@ -1165,7 +1167,7 @@ void TypeChecker::visitElementSelfAssignNode(ElementSelfAssignNode *node) {
     node->getBinaryNode()->getLeftNode()->setType(elementType);
     this->checkType(node->getBinaryNode());
     node->getSetterNode()->getArgsNode()->getNodes()[1]->setType(elementType);
-    this->checkTypeAsStatement(node->getSetterNode());
+    this->checkType(this->typePool->getVoidType(), node->getSetterNode());
 
     node->setType(this->typePool->getVoidType());
 }
@@ -1233,6 +1235,10 @@ void TypeChecker::visitBindVarNode(BindVarNode *node) {
     node->setType(this->typePool->getVoidType());
 }
 
+void TypeChecker::visitPopNode(PopNode *node) {
+    UNUSED(node);   // do nothing
+}
+
 void TypeChecker::visitEmptyNode(EmptyNode *node) {
     node->setType(this->typePool->getVoidType());
 }
@@ -1250,7 +1256,7 @@ void TypeChecker::visitRootNode(RootNode *node) {
 
 
     for(Node *targetNode : node->getNodeList()) {
-        this->checkTypeAsStatement(targetNode);
+        this->checkTypeAsStatement(targetNode, true);
     }
     node->setMaxVarNum(this->symbolTable.getMaxVarIndex());
     node->setMaxGVarNum(this->symbolTable.getMaxGVarIndex());

@@ -139,11 +139,12 @@ private:
     // base type check entry point
 
     /**
-     * check type.
+     * check type
      * if node type is void type, always success.
-     * return resolved type.
+     * if resolved type is not void type, wrap targetNode with PopNode.
+     * if isToplevel is true, not wrap targetNode.
      */
-    DSType *checkTypeAsStatement(Node *targetNode);
+    void checkTypeAsStatement(Node *&targetNode, bool isToplevel = false);
 
     /**
      * check node type.
@@ -340,6 +341,7 @@ public:
     void visitInterfaceNode(InterfaceNode *node); // override
     void visitUserDefinedCmdNode(UserDefinedCmdNode *node); // override
     void visitBindVarNode(BindVarNode *node); // override
+    void visitPopNode(PopNode *node);   // override
     void visitEmptyNode(EmptyNode *node); // override
     void visitDummyNode(DummyNode *node); // override
     void visitRootNode(RootNode *node); // override
