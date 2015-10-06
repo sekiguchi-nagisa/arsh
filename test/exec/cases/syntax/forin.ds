@@ -1,0 +1,16 @@
+var array = new Array<Int>()
+
+for
+   (
+      $a
+           in
+           [1, 2]
+              )
+              {
+     $array.add($a)
+       }
+
+
+assert($array.size() == 2)
+assert($array[0] == 1)
+assert($array[1] == 2)

@@ -1,0 +1,10 @@
+
+export-env
+      AAAA
+
+            =
+
+             'hello world'
+
+
+assert($AAAA == "hello world")

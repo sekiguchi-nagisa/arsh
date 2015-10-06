@@ -1,4 +1,7 @@
-function f($a :
+# not allow newline before return type
+
+function f($a
+     :
         Tuple<
             Int
             ,
