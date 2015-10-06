@@ -289,7 +289,7 @@ bool Map_Object::hasNext() {
 }
 
 std::string Map_Object::toString(RuntimeContext &ctx) {
-    std::string str("{");
+    std::string str("[");
     unsigned int count = 0;
     for(auto &iter : this->valueMap) {
         if(count++ > 0) {
@@ -299,7 +299,7 @@ std::string Map_Object::toString(RuntimeContext &ctx) {
         str += " : ";
         str += iter.second->toString(ctx);
     }
-    str += "}";
+    str += "]";
     return str;
 }
 
