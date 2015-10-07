@@ -35,7 +35,8 @@
     E(UnneedNamedArg , "not need named argument") \
     E(NeedNamedArg   , "need named argument") \
     E(NoDefaultValue , "has no default value") \
-    E(OutsideToplevel, "only available toplevel scope")
+    E(OutsideToplevel, "only available toplevel scope") \
+    E(NotCallable    , "Func type object is not callable")
 
 #define EACH_TC_ERROR1(E) \
     E(DefinedSymbol    , "already defined symbol: ") \

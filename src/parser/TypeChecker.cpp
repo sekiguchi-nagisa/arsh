@@ -375,6 +375,9 @@ HandleOrFuncType TypeChecker::resolveCallee(Node *recvNode) {
 
     FunctionType *funcType =
             dynamic_cast<FunctionType *>(this->checkType(this->typePool->getBaseFuncType(), recvNode));
+    if(funcType == nullptr) {
+        E_NotCallable(recvNode);
+    }
     return HandleOrFuncType(funcType);
 }
 
@@ -393,8 +396,12 @@ HandleOrFuncType TypeChecker::resolveCallee(VarNode *recvNode) {
     DSType *type = handle->getFieldType(this->typePool);
     FunctionType *funcType = dynamic_cast<FunctionType *>(type);
     if(funcType == nullptr) {
-        E_Required(recvNode, this->typePool->getTypeName(*this->typePool->getBaseFuncType()),
-                   this->typePool->getTypeName(*type));
+        if(*this->typePool->getBaseFuncType() == *type) {
+            E_NotCallable(recvNode);
+        } else {
+            E_Required(recvNode, this->typePool->getTypeName(*this->typePool->getBaseFuncType()),
+                       this->typePool->getTypeName(*type));
+        }
     }
     return HandleOrFuncType(funcType);
 }

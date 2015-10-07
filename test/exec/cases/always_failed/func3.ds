@@ -1,0 +1,7 @@
+#$test($result = 'type', $lineNum = 7, $errorKind = 'NotCallable', $status = 1)
+
+function f() {
+    hello
+}
+
+($f as Func)() # not apply Func type object
