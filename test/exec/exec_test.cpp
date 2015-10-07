@@ -7,7 +7,6 @@
 #include <misc/num.h>
 #include <misc/unused.h>
 #include <directive.h>
-#include <config.h>
 
 
 #ifndef EXEC_TEST_DIR
@@ -162,10 +161,7 @@ public:
         ASSERT_TRUE(s);
 
         // check run condition
-        RunCondition haveDBus = RunCondition::FALSE;
-#ifdef USE_DBUS
-        haveDBus = RunCondition::TRUE;
-#endif
+        RunCondition haveDBus = DSContext_supportDBus() ? RunCondition::TRUE : RunCondition::FALSE;
         if(d.getIfHaveDBus() != RunCondition::IGNORE && haveDBus != d.getIfHaveDBus()) {
             return; // do nothing
         }

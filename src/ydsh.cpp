@@ -399,11 +399,7 @@ const char *DSContext_getPrompt(DSContext *ctx, unsigned int n) {
 }
 
 int DSContext_supportDBus() {
-#ifdef USE_DBUS
-    return 1;
-#else
-    return 0;
-#endif
+    return hasFlag(DSContext_getFeatureBit(), DS_FEATURE_DBUS) ? 1 : 0;
 }
 
 unsigned int DSContext_getMajorVersion() {
@@ -427,6 +423,22 @@ const char *DSContext_getCopyright() {
     return "Copyright (C) 2015 Nagisa Sekiguchi";
 }
 
+unsigned int DSContext_getFeatureBit() {
+    unsigned int featureBit = 0;
+
+#ifdef USE_LOGGING
+    setFlag(featureBit, DS_FEATURE_LOGGING);
+#endif
+
+#ifdef USE_DBUS
+    setFlag(featureBit, DS_FEATURE_DBUS);
+#endif
+
+#ifdef USE_SAFE_CAST
+    setFlag(featureBit, DS_FEATURE_SAFE_CAST);
+#endif
+    return featureBit;
+}
 
 // ######################
 // ##     DSStatus     ##

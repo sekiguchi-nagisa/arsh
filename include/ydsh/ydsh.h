@@ -119,6 +119,13 @@ const char *DSContext_getVersion();
 
 const char *DSContext_getCopyright();
 
+// for feature detection
+#define DS_FEATURE_LOGGING   ((unsigned int)(1 << 0))
+#define DS_FEATURE_DBUS      ((unsigned int)(1 << 1))
+#define DS_FEATURE_SAFE_CAST ((unsigned int)(1 << 2))
+
+unsigned int DSContext_getFeatureBit();
+
 
 /**********************/
 /**     DSStatus     **/

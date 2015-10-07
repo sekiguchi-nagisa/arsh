@@ -67,6 +67,25 @@ static int invoke(DSContext **ctx, T&& ... args) {
 
 #define INVOKE(F) invoke<decltype(DSContext_ ## F), DSContext_ ## F>
 
+static void showFeature(std::ostream &stream) {
+    const struct {
+        const unsigned int featureFlag;
+        const char *name;
+    } set[] {
+            {DS_FEATURE_LOGGING, "USE_LOGGING"},
+            {DS_FEATURE_DBUS, "USE_DBUS"},
+            {DS_FEATURE_SAFE_CAST, "USE_SAFE_CAST"},
+            {0, nullptr},   // sentinel
+    };
+
+    const unsigned int featureBit = DSContext_getFeatureBit();
+    for(unsigned int i = 0; set[i].name != nullptr; i++) {
+        if(ydsh::misc::hasFlag(featureBit, set[i].featureFlag)) {
+            stream << set[i].name << std::endl;
+        }
+    }
+}
+
 static void segvHandler(int num) {
     UNUSED(num);
 
@@ -97,7 +116,8 @@ static void segvHandler(int num) {
     OP(COMMAND,        "-c",                  argv::HAS_ARG | argv::IGNORE_REST, "evaluate argument") \
     OP(NORC,           "--norc",              0, "not load ydshrc") \
     OP(EXEC,           "-e",                  argv::HAS_ARG | argv::IGNORE_REST, "execute builtin command (ignore some option)") \
-    OP(STATUS_LOG,     "--status-log",        argv::HAS_ARG, "write execution status to specified file (ignored in interactive mode)")
+    OP(STATUS_LOG,     "--status-log",        argv::HAS_ARG, "write execution status to specified file (ignored in interactive mode)") \
+    OP(FEATURE,        "--feature",           0, "show available features")
 
 enum OptionKind {
 #define GEN_ENUM(E, S, F, D) E,
@@ -195,6 +215,9 @@ int main(int argc, char **argv) {
         case STATUS_LOG:
             statusLogPath = cmdLine.second;
             break;
+        case FEATURE:
+            showFeature(std::cout);
+            return 0;
         }
     }
 
