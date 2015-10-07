@@ -227,13 +227,6 @@ unsigned int DSContext::eval(const char *sourceName, Lexer &lexer) {
 
 void DSContext::initBuiltinVar() {
     RootNode rootNode;
-    // register boolean
-    rootNode.addNode(new BindVarNode(VAR_TRUE, this->ctx.getTrueObj()));
-    rootNode.addNode(new BindVarNode("True",   this->ctx.getTrueObj()));
-    rootNode.addNode(new BindVarNode("true",   this->ctx.getTrueObj()));
-    rootNode.addNode(new BindVarNode(VAR_FALSE, this->ctx.getFalseObj()));
-    rootNode.addNode(new BindVarNode("False",   this->ctx.getFalseObj()));
-    rootNode.addNode(new BindVarNode("false",   this->ctx.getFalseObj()));
 
     // register special char
     rootNode.addNode(new BindVarNode("0", this->ctx.getScriptName()));

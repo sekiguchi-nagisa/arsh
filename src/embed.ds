@@ -13,6 +13,15 @@ type-alias Uint Uint32
 var PS1 = '\s-\v\$ '
 var PS2 = '> '
 
+# define boolean constant
+let TRUE = true
+let True = $TRUE
+let true = $True
+
+let FALSE = false
+let False = $FALSE
+let false = $False
+
 
 # builtin D-Bus interface
 

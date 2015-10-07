@@ -125,7 +125,7 @@ int main(int argc, char **argv) {
     fprintf(fp, "#ifndef %s\n", headerName.c_str());
     fprintf(fp, "#define %s\n", headerName.c_str());
     fputs("\n", fp);
-    fprintf(fp, "static char %s[] = \"\"\n", varName);
+    fprintf(fp, "static const char *%s = \"\"\n", varName);
     while(std::getline(input, line)) {
         fprintf(fp, "    \"%s\\n\"\n", escape(line).c_str());
     }
