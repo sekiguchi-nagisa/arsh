@@ -1016,49 +1016,42 @@ void TypeChecker::visitForNode(ForNode *node) {
     this->enterLoop();
     this->checkTypeWithCurrentBlockScope(node->getBlockNode());
     this->exitLoop();
-
+    
     this->symbolTable.exitScope();
     node->setType(this->typePool->getVoidType());
 }
 
 void TypeChecker::visitWhileNode(WhileNode *node) {
-    this->symbolTable.enterScope(); // while cond and while block is same scope.
-
     this->checkType(this->typePool->getBooleanType(), node->getCondNode());
-
     this->enterLoop();
-    this->checkTypeWithCurrentBlockScope(node->getBlockNode());
+    this->checkTypeWithNewBlockScope(node->getBlockNode());
     this->exitLoop();
-
-    this->symbolTable.exitScope();
     node->setType(this->typePool->getVoidType());
 }
 
 void TypeChecker::visitDoWhileNode(DoWhileNode *node) {
-    this->symbolTable.enterScope(); // do-while cond and block is same scope
-
     this->enterLoop();
+    this->symbolTable.enterScope();
     this->checkTypeWithCurrentBlockScope(node->getBlockNode());
-    this->exitLoop();
 
+    /**
+     * block node and cond node is same scope.
+     */
     this->checkType(this->typePool->getBooleanType(), node->getCondNode());
 
     this->symbolTable.exitScope();
+    this->exitLoop();
     node->setType(this->typePool->getVoidType());
 }
 
 void TypeChecker::visitIfNode(IfNode *node) {
-    this->symbolTable.enterScope(); // if cond and if block is same scope.
     this->checkType(this->typePool->getBooleanType(), node->getCondNode());
-    this->checkTypeWithCurrentBlockScope(node->getThenNode());
-    this->symbolTable.exitScope();
+    this->checkTypeWithNewBlockScope(node->getThenNode());
 
     unsigned int size = node->getElifCondNodes().size();
     for(unsigned int i = 0; i < size; i++) {
-        this->symbolTable.enterScope(); // elif cond and elif block is same scope.
         this->checkType(this->typePool->getBooleanType(), node->getElifCondNodes()[i]);
-        this->checkTypeWithCurrentBlockScope(node->getElifThenNodes()[i]);
-        this->symbolTable.exitScope();
+        this->checkTypeWithNewBlockScope(node->getElifThenNodes()[i]);
     }
 
     this->checkTypeWithNewBlockScope(node->getElseNode());
