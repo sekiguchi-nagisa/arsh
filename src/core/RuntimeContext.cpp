@@ -15,7 +15,6 @@
  */
 
 #include <pwd.h>
-#include <libgen.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -27,7 +26,6 @@
 #include "../config.h"
 #include "RuntimeContext.h"
 #include "symbol.h"
-#include "../misc/fatal.h"
 
 namespace ydsh {
 namespace core {
@@ -571,6 +569,10 @@ static void format2digit(int num, std::string &out) {
     out += std::to_string(num);
 }
 
+static std::string basename(const std::string &path) {
+    return path.substr(path.find_last_of('/') + 1);
+}
+
 void RuntimeContext::interpretPromptString(const char *ps, std::string &output) {
     output.clear();
 
@@ -621,7 +623,7 @@ void RuntimeContext::interpretPromptString(const char *ps, std::string &output) 
                 ch = '\r';
                 break;
             case 's':
-                output += typeAs<String_Object>(this->getScriptName())->getValue();
+                output += basename(typeAs<String_Object>(this->getScriptName())->getValue());
                 continue;
             case 't': {
                 format2digit(local->tm_hour, output);
@@ -671,9 +673,23 @@ void RuntimeContext::interpretPromptString(const char *ps, std::string &output) 
                 output += c != nullptr ? c : "";
                 continue;
             }
-            case 'W': 
-                output += basename(getenv("PWD"));
+            case 'W':  {
+                const char *cwd = getenv("PWD");
+                if(cwd == nullptr) {
+                    continue;
+                }
+                if(strcmp(cwd, "/") == 0) {
+                    output += cwd;
+                } else {
+                    std::string name(basename(getenv("PWD")));
+                    if(getenv("HOME") != nullptr && name == basename(getenv("HOME"))) {
+                        output += "~";
+                    } else {
+                        output += name;
+                    }
+                }
                 continue;
+            }
             case '$':
                 ch = (getuid() == 0 ? '#' : '$');
                 break;
