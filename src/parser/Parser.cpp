@@ -65,6 +65,7 @@
 
 #define EACH_LA_statement(OP) \
     OP(ASSERT) \
+    OP(LBC) \
     OP(BREAK) \
     OP(CONTINUE) \
     OP(DO) \
@@ -467,6 +468,9 @@ std::unique_ptr<Node> Parser::parse_statement() {
         this->expect(RP);
         this->parse_statementEnd();
         return node;
+    }
+    case LBC: {
+        return this->parse_block();
     }
     case BREAK: {
         unsigned int n = LN();

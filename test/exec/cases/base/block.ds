@@ -1,0 +1,16 @@
+
+var a = 45
+{
+    assert($a == 45)
+    let a = "h"
+    assert($a == "h")
+    var b = $true
+    assert($b)
+
+    { assert($b); assert($a == "h"); }
+}
+
+assert($a == 45)
+
+var b = 1
+assert($b == 1)
