@@ -105,12 +105,12 @@ FunctionHandle *SymbolTable::registerFuncHandle(const std::string &funcName, DST
     return handle;
 }
 
-void SymbolTable::enterScope() {
+void SymbolTable::enterScope(flag8_set_t attribute) {
     unsigned int index = this->scopes.back()->getCurVarIndex();
     if(this->inGlobalScope()) {
         index = 0;
     }
-    this->scopes.push_back(new Scope(index));
+    this->scopes.push_back(new Scope(index, attribute));
 }
 
 void SymbolTable::exitScope() {
@@ -170,6 +170,10 @@ unsigned int SymbolTable::getMaxGVarIndex() {
 
 bool SymbolTable::inGlobalScope() {
     return this->scopes.size() == 1;
+}
+
+flag8_set_t SymbolTable::getScopeAttribute() {
+    return this->scopes.back()->getAttribute();
 }
 
 } // namespace core

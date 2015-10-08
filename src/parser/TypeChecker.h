@@ -140,14 +140,6 @@ private:
     // base type check entry point
 
     /**
-     * check type
-     * if node type is void type, always success.
-     * if resolved type is not void type, wrap targetNode with PopNode.
-     * if isToplevel is true, not wrap targetNode.
-     */
-    void checkTypeAsStatement(Node *&targetNode, bool isToplevel = false);
-
-    /**
      * check node type.
      * if node type is void type, throw exception.
      * return resolved type.
@@ -194,17 +186,6 @@ private:
     bool checkCoercion(CoercionKind &kind, DSType *requiredType, DSType *targetType);
 
     Node *resolveCoercion(CoercionKind kind, DSType *requiredType, Node *targetNode);
-
-    /**
-     * create new symbol table and check type each node within block.
-     * after type checking, remove current symbol table
-     */
-    void checkTypeWithNewBlockScope(BlockNode *blockNode);
-
-    /**
-     * check type each node within block in current block scope
-     */
-    void checkTypeWithCurrentBlockScope(BlockNode *blockNode);
 
     FieldHandle *addEntryAndThrowIfDefined(Node *node, const std::string &symbolName, DSType *type, bool readOnly);
 
