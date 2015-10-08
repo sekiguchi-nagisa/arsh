@@ -512,6 +512,7 @@ void CastNode::dump(Writer &writer) const {
 
 #define EACH_ENUM(OP, out) \
     OP(NOP, out) \
+    OP(TO_VOID, out) \
     OP(INT_TO_FLOAT, out) \
     OP(FLOAT_TO_INT, out) \
     OP(INT_TO_LONG, out) \
@@ -538,6 +539,9 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
 
     switch(this->opKind) {
     case NOP:
+        break;
+    case TO_VOID:
+        ctx.popNoReturn();
         break;
     case INT_TO_FLOAT: {
         int value = typeAs<Int_Object>(ctx.pop())->getValue();
@@ -2337,29 +2341,6 @@ void BindVarNode::accept(NodeVisitor *visitor) {
 
 EvalStatus BindVarNode::eval(RuntimeContext &ctx) {
     ctx.setGlobal(this->varIndex, this->value);
-    return EvalStatus::SUCCESS;
-}
-
-// #####################
-// ##     PopNode     ##
-// #####################
-
-PopNode::~PopNode() {
-    delete this->exprNode;
-    this->exprNode = nullptr;
-}
-
-void PopNode::dump(Writer &writer) const {
-    WRITE_PTR(exprNode);
-}
-
-void PopNode::accept(NodeVisitor *visitor) {
-    visitor->visitPopNode(this);
-}
-
-EvalStatus PopNode::eval(RuntimeContext &ctx) {
-    EVAL(ctx, this->exprNode);
-    ctx.popNoReturn();
     return EvalStatus::SUCCESS;
 }
 

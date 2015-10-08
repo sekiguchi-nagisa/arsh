@@ -146,7 +146,7 @@ DSType *TypeChecker::resolveInterface(TypePool *typePool, InterfaceNode *node) {
 void TypeChecker::checkTypeAsStatement(Node *&targetNode, bool isToplevel) {
     DSType *resolvedType = this->checkType(nullptr, targetNode, nullptr);
     if(!resolvedType->isVoidType() && !isToplevel) {
-        targetNode = new PopNode(targetNode, this->typePool->getVoidType());
+        targetNode = CastNode::newTypedCastNode(targetNode, this->typePool->getVoidType(), CastNode::TO_VOID);
     }
 }
 
@@ -209,8 +209,7 @@ DSType *TypeChecker::checkType(DSType *requiredType, Node *targetNode,
 }
 
 void TypeChecker::checkTypeWithCoercion(DSType *requiredType, Node * &targetNode) {
-    TypePool *pool = this->typePool;
-    this->checkType(requiredType, targetNode, pool->getVoidType(), true);
+    this->checkType(requiredType, targetNode, nullptr, true);
     if(this->coercionKind != INVALID_COERCION) {
         targetNode = this->resolveCoercion(this->coercionKind, requiredType, targetNode);
     }
@@ -221,6 +220,11 @@ bool TypeChecker::checkCoercion(DSType *requiredType, DSType *targetType) {
 }
 
 bool TypeChecker::checkCoercion(CoercionKind &kind, DSType *requiredType, DSType *targetType) {
+    if(*requiredType == *this->typePool->getVoidType()) {
+        kind = CoercionKind::TO_VOID;
+        return true;
+    }
+
     int targetPrecision = this->typePool->getIntPrecision(targetType);
 
     if(targetPrecision == TypePool::INVALID_PRECISION) {
@@ -245,6 +249,9 @@ bool TypeChecker::checkCoercion(CoercionKind &kind, DSType *requiredType, DSType
 Node *TypeChecker::resolveCoercion(CoercionKind kind, DSType *requiredType, Node *targetNode) {
     CastNode::CastOp op;
     switch(kind) {
+    case TO_VOID:
+        op = CastNode::TO_VOID;
+        break;
     case INT_2_FLOAT:
         op = CastNode::INT_TO_FLOAT;
         break;
@@ -1233,10 +1240,6 @@ void TypeChecker::visitBindVarNode(BindVarNode *node) {
             this->addEntryAndThrowIfDefined(node, node->getVarName(), valueType, true);
     node->setAttribute(handle);
     node->setType(this->typePool->getVoidType());
-}
-
-void TypeChecker::visitPopNode(PopNode *node) {
-    UNUSED(node);   // do nothing
 }
 
 void TypeChecker::visitEmptyNode(EmptyNode *node) {

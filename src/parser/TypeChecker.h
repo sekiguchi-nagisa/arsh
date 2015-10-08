@@ -58,6 +58,7 @@ public:
 };
 
 enum CoercionKind {
+    TO_VOID,            // pop evaulated value.
     INT_2_FLOAT,        // int(except for Int64, Uint64) to float
     INT_2_LONG,         // int(except for Int64, Uint64) to long(Int64, Uint64)
     INT_NOP,            // int(except for Int64, Uin64) to int(except for Int64, Uint64)
@@ -176,9 +177,11 @@ private:
                       DSType *unacceptableType, bool allowCoercion = false);
 
     /**
-     * after type checking,
-     * if requireType is FloatType and targetNode->getType() is IntType,
+     * after type checking.
+     * requiredType is not null.
+     * if requiredType is FloatType and targetNode->getType() is IntType,
      * wrap targetNode with CastNode.
+     * if requiredType is VoidType, wrap targetNode with CastNode
      */
     void checkTypeWithCoercion(DSType *requiredType, Node * &targetNode);
 
@@ -341,7 +344,6 @@ public:
     void visitInterfaceNode(InterfaceNode *node); // override
     void visitUserDefinedCmdNode(UserDefinedCmdNode *node); // override
     void visitBindVarNode(BindVarNode *node); // override
-    void visitPopNode(PopNode *node);   // override
     void visitEmptyNode(EmptyNode *node); // override
     void visitDummyNode(DummyNode *node); // override
     void visitRootNode(RootNode *node); // override
