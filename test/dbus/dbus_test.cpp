@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <dbus/DBusBindImpl.h>
-#include <core/TypeLookupError.h>
+#include <core/TypeLookupError.hpp>
 
 using namespace ydsh::core;
 
