@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_MESSAGETEMPLATE_H
-#define YDSH_MESSAGETEMPLATE_H
+#ifndef YDSH_MESSAGETEMPLATE_HPP
+#define YDSH_MESSAGETEMPLATE_HPP
 
 #include <stdexcept>
+#include <string>
 
 namespace ydsh {
 namespace core {
@@ -28,12 +29,6 @@ protected:
     const char *value;
 
 public:
-    MessageTemplate() = delete;
-    MessageTemplate(const MessageTemplate &o) = delete;
-    MessageTemplate(MessageTemplate &&o) = delete;
-
-    ~MessageTemplate() = default;
-
     constexpr MessageTemplate(const char *kind, const char *value) :
             kind(kind), value(value) { }
 
@@ -45,11 +40,20 @@ public:
         return this->value;
     }
 
-    void formatImpl(std::string &str, unsigned int &index, const std::string &arg) const;
-    void formatImpl(std::string &str, unsigned int &index) const;
+    void formatImpl(std::string &str, unsigned int &index, const std::string &arg) const {
+        for(; this->value[index] != '\0'; index++) {
+            const char ch = this->value[index];
+            if(ch == '%') {
+                str += arg;
+            } else {
+                str += ch;
+            }
+        }
+    }
 
     void formatNext(std::string &str, unsigned int &index) const {
-        this->formatImpl(str, index);
+        std::string arg;
+        this->formatImpl(str, index, arg);
     }
 
     template <typename ... T>
@@ -67,32 +71,13 @@ public:
     }
 };
 
-class StringWrapper {
-private:
-    const char *const str;
-    const std::size_t _size; // not contains terminate char
-
-public:
-    template <std::size_t N>
-    constexpr StringWrapper(const char (&text)[N]) : str(text), _size(N - 1) {}
-
-    constexpr char operator[](std::size_t index) const {
-        return index < this->_size ? str[index] : throw std::out_of_range("");
-    }
-
-    constexpr std::size_t size() const {
-        return this->_size;
-    }
-};
-
-constexpr unsigned int computeParamSize(StringWrapper s, unsigned int index = 0) {
-    return index >= s.size() ? 0 :
+constexpr unsigned int computeParamSize(const char *s, unsigned int index = 0) {
+    return s[index] == '\0' ? 0 :
            (s[index] == '%' ? 1 : 0) + computeParamSize(s, index + 1);
-
 }
 
 
 } // namespace core
 } // namespace ydsh
 
-#endif //YDSH_MESSAGETEMPLATE_H
+#endif //YDSH_MESSAGETEMPLATE_HPP

@@ -20,7 +20,7 @@
 #include <string>
 #include <ostream>
 
-#include "MessageTemplate.h"
+#include "MessageTemplate.hpp"
 
 namespace ydsh {
 namespace core {
