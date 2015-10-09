@@ -19,7 +19,7 @@
 
 #include "../core/symbol.h"
 #include "../core/DSObject.h"
-#include "../core/TypeLookupError.h"
+#include "../core/TypeLookupError.hpp"
 #include "../misc/fatal.h"
 #include "../misc/unused.h"
 #include "NodeVerifier.h"

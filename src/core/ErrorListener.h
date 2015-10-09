@@ -21,7 +21,7 @@
 #include <ostream>
 #include <memory>
 
-#include "../parser/TypeCheckError.h"
+#include "../parser/TypeCheckError.hpp"
 #include "../parser/Parser.h"
 
 namespace ydsh {

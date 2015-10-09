@@ -22,7 +22,7 @@
 #include "../core/DSType.h"
 #include "../core/FieldHandle.h"
 #include "../core/SymbolTable.h"
-#include "TypeCheckError.h"
+#include "TypeCheckError.hpp"
 
 namespace ydsh {
 namespace parser {

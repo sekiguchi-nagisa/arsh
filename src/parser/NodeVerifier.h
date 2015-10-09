@@ -18,7 +18,7 @@
 #define YDSH_NODEVERIFIER_H
 
 #include "../ast/Node.h"
-#include "TypeCheckError.h"
+#include "TypeCheckError.hpp"
 
 namespace ydsh {
 namespace parser {

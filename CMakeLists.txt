@@ -180,15 +180,14 @@ set(YDSH_SRC
     src/core/ProcInvoker.cpp
     src/core/RuntimeContext.cpp
     src/core/SymbolTable.cpp
-    src/core/TypeLookupError.cpp
     src/core/TypePool.cpp
     src/core/ErrorListener.cpp
+    src/core/MessageTemplate.cpp
     src/parser/Lexer.cpp
     src/parser/Parser.cpp
     src/parser/TokenKind.cpp
     src/parser/NodeVerifier.cpp
-    src/parser/TypeChecker.cpp
-    src/parser/TypeCheckError.cpp)
+    src/parser/TypeChecker.cpp)
 
 if(USE_DBUS)
     set(YDSH_SRC ${YDSH_SRC}

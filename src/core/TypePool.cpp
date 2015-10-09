@@ -15,7 +15,7 @@
  */
 
 #include "TypePool.h"
-#include "TypeLookupError.h"
+#include "TypeLookupError.hpp"
 #include "bind.h"
 #include "../parser/Parser.h"
 #include "../parser/TypeChecker.h"
