@@ -168,6 +168,8 @@ private:
     DSType *checkType(DSType *requiredType, Node *targetNode,
                       DSType *unacceptableType, bool allowCoercion = false);
 
+    void checkTypeWithCurrentScope(BlockNode *blockNode);
+
     /**
      * after type checking.
      * requiredType is not null.

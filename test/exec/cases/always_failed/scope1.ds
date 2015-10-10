@@ -1,0 +1,6 @@
+# top level
+
+#$test($result = 'type', $lineNum = 6, $errorKind = 'DefinedSymbol', $status = 1)
+
+var a = 34
+var a = $true

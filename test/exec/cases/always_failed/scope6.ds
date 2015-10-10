@@ -1,0 +1,7 @@
+# function
+
+#$test($result = 'type', $lineNum = 6, $errorKind = 'DefinedSymbol', $status = 1)
+
+function f($a : Int) {
+    let a = $true
+}

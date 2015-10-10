@@ -1,0 +1,9 @@
+# block statement
+
+#$test($result = 'type', $lineNum = 8, $errorKind = 'DefinedSymbol', $status = 1)
+
+var a = 34
+{
+    var a = $true
+    var a = 3
+}

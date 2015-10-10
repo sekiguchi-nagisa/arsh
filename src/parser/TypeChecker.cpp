@@ -201,6 +201,20 @@ DSType *TypeChecker::checkType(DSType *requiredType, Node *targetNode,
     return nullptr;
 }
 
+void TypeChecker::checkTypeWithCurrentScope(BlockNode *blockNode) {
+    int count = 0;
+    int size = blockNode->getNodeList().size();
+    for(Node * &targetNode : blockNode->refNodeList()) {
+        this->checkTypeWithCoercion(this->typePool->getVoidType(), targetNode);
+
+        if(targetNode->isBlockEndNode() && (count != size - 1)) {
+            E_Unreachable(blockNode);
+        }
+        count++;
+    }
+    blockNode->setType(this->typePool->getVoidType());
+}
+
 void TypeChecker::checkTypeWithCoercion(DSType *requiredType, Node * &targetNode) {
     this->checkType(requiredType, targetNode, nullptr, true);
     if(this->coercionKind != INVALID_COERCION) {
@@ -936,26 +950,9 @@ void TypeChecker::visitAssertNode(AssertNode *node) {
 }
 
 void TypeChecker::visitBlockNode(BlockNode *node) {
-    const bool newScope = !hasFlag(this->symbolTable.getScopeAttribute(), SymbolTable::MERGED);
-    if(newScope) {
-        this->symbolTable.enterScope();
-    }
-
-    int count = 0;
-    int size = node->getNodeList().size();
-    for(Node * &targetNode : node->refNodeList()) {
-        this->checkTypeWithCoercion(this->typePool->getVoidType(), targetNode);
-
-        if(targetNode->isBlockEndNode() && (count != size - 1)) {
-            E_Unreachable(node);
-        }
-        count++;
-    }
-
-    if(newScope) {
-        this->symbolTable.exitScope();
-    }
-    node->setType(this->typePool->getVoidType());
+    this->symbolTable.enterScope();
+    this->checkTypeWithCurrentScope(node);
+    this->symbolTable.exitScope();
 }
 
 void TypeChecker::visitBreakNode(BreakNode *node) {
@@ -1007,14 +1004,14 @@ void TypeChecker::visitTypeAliasNode(TypeAliasNode *node) {
 }
 
 void TypeChecker::visitForNode(ForNode *node) {
-    this->symbolTable.enterScope(SymbolTable::MERGED);
+    this->symbolTable.enterScope();
 
     this->checkTypeWithCoercion(this->typePool->getVoidType(), node->refInitNode());
     this->checkType(this->typePool->getBooleanType(), node->getCondNode());
     this->checkTypeWithCoercion(this->typePool->getVoidType(), node->refIterNode());
 
     this->enterLoop();
-    this->checkType(this->typePool->getVoidType(), node->getBlockNode());
+    this->checkTypeWithCurrentScope(node->getBlockNode());
     this->exitLoop();
     
     this->symbolTable.exitScope();
@@ -1030,9 +1027,9 @@ void TypeChecker::visitWhileNode(WhileNode *node) {
 }
 
 void TypeChecker::visitDoWhileNode(DoWhileNode *node) {
-    this->symbolTable.enterScope(SymbolTable::MERGED);
+    this->symbolTable.enterScope();
     this->enterLoop();
-    this->checkType(this->typePool->getVoidType(), node->getBlockNode());
+    this->checkTypeWithCurrentScope(node->getBlockNode());
     this->exitLoop();
 
     /**
@@ -1086,11 +1083,11 @@ void TypeChecker::visitCatchNode(CatchNode *node) {
     /**
      * check type catch block
      */
-    this->symbolTable.enterScope(SymbolTable::MERGED);
+    this->symbolTable.enterScope();
     FieldHandle *handle = this->addEntryAndThrowIfDefined(node,
                                                           node->getExceptionName(), exceptionType, true);
     node->setAttribute(handle);
-    this->checkType(this->typePool->getVoidType(), node->getBlockNode());
+    this->checkTypeWithCurrentScope(node->getBlockNode());
     this->symbolTable.exitScope();
     node->setType(this->typePool->getVoidType());
 }
@@ -1192,7 +1189,7 @@ void TypeChecker::visitFunctionNode(FunctionNode *node) {   //TODO: named parame
     // check type func body
     this->pushReturnType(returnType);
     this->symbolTable.enterFunc();
-    this->symbolTable.enterScope(SymbolTable::MERGED);
+    this->symbolTable.enterScope();
 
     for(unsigned int i = 0; i < paramSize; i++) { // register parameter
         VarNode *paramNode = node->getParamNodes()[i];
@@ -1201,7 +1198,7 @@ void TypeChecker::visitFunctionNode(FunctionNode *node) {   //TODO: named parame
         paramNode->setAttribute(fieldHandle);
     }
     this->checkBlockEndExistence(node->getBlockNode(), returnType);
-    this->checkType(this->typePool->getVoidType(), node->getBlockNode());
+    this->checkTypeWithCurrentScope(node->getBlockNode());
     this->symbolTable.exitScope();
 
     node->setMaxVarNum(this->symbolTable.getMaxVarIndex());

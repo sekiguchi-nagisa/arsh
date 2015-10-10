@@ -26,8 +26,6 @@ namespace core {
 
 class Scope {
 private:
-    const flag8_set_t attribute;
-
     unsigned int curVarIndex;
     std::unordered_map<std::string, FieldHandle *> handleMap;
 
@@ -37,8 +35,8 @@ public:
      */
     Scope() : Scope(0) { }
 
-    Scope(unsigned int curVarIndex, flag8_set_t attribute = 0) :
-            attribute(attribute), curVarIndex(curVarIndex), handleMap() { }
+    Scope(unsigned int curVarIndex) :
+            curVarIndex(curVarIndex), handleMap() { }
 
     ~Scope();
 
@@ -57,10 +55,6 @@ public:
         return this->curVarIndex;
     }
 
-    flag8_set_t getAttribute() const {
-        return this->attribute;
-    }
-
     /**
      * remove handle from handleMap, and delete it.
      */
@@ -68,10 +62,6 @@ public:
 };
 
 class SymbolTable {
-public:
-    // for scope attribute
-    const static flag8_t MERGED = 1 << 0;    // if set, you can merge inner scope to this scope.
-
 private:
     std::vector<std::string> handleCache;
 
@@ -109,7 +99,7 @@ public:
     /**
      * create new local scope.
      */
-    void enterScope(flag8_set_t attribute = 0);
+    void enterScope();
 
     /**
      * delete current local scope.
@@ -147,8 +137,6 @@ public:
     unsigned int getMaxGVarIndex();
 
     bool inGlobalScope();
-
-    flag8_set_t getScopeAttribute();
 };
 
 } // namespace core

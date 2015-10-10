@@ -1,0 +1,11 @@
+# nested block
+
+#$test($result = 'type', $lineNum = 9, $errorKind = 'DefinedSymbol', $status = 1)
+
+{
+    var a = 5
+    {
+        var a = ""
+        var a = 12.3
+    }
+}

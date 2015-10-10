@@ -1,0 +1,16 @@
+var a = 12
+do {
+    assert($a is Int)
+    var a = ""
+    assert($a is String)
+    {
+        $a = "a"
+        var a = "hello"
+        $a = "word"
+        {
+            var a = "aaaa"
+        }
+        assert($a == "word")
+    }
+    assert($a == "a")
+} while($false)
