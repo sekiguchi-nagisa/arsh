@@ -487,7 +487,6 @@ public:
     void exportEnv(const std::string &envName, unsigned int index, bool isGlobal);
 
     bool checkZeroDiv(int right);
-    bool checkZeroDiv(double right);
     bool checkZeroMod(int right);
 
     void throwOutOfRangeError(std::string &&message) {

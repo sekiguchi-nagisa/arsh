@@ -55,6 +55,24 @@ assert(3.14 + (6i64 as Float) == 9.14)
 assert((6u64 as Float) + 3.14 == 9.14)
 assert(3.14 + (6u64 as Float) == 9.14)
 
+
+# nan, inf, finite
+let nan = 0.0 / 0.0   # nan
+let inf = 23.0 / 0.0 # inf
+
+assert(not 34.0.isNan())
+assert($nan.isNan())
+assert(not $inf.isNan())
+
+assert(not 23.0.isInf())
+assert($inf.isInf())
+assert(not $nan.isInf())
+
+assert(34.0.isFinite())
+assert(not $nan.isFinite())
+assert(not $inf.isFinite())
+
+
 # inheritance
 assert(3.14 is Float)
 assert(3.14 is Variant)

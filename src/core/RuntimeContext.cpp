@@ -423,14 +423,6 @@ bool RuntimeContext::checkZeroDiv(int right) {
     return true;
 }
 
-bool RuntimeContext::checkZeroDiv(double right) {
-    if(right == 0) {
-        this->throwError(this->pool.getArithmeticErrorType(), "zero division");
-        return false;
-    }
-    return true;
-}
-
 bool RuntimeContext::checkZeroMod(int right) {
     if(right == 0) {
         this->throwError(this->pool.getArithmeticErrorType(), "zero module");

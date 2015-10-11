@@ -797,9 +797,6 @@ static inline bool float_2_float_div(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_div);
     double left = typeAs<Float_Object>(LOCAL(0))->getValue();
     double right = typeAs<Float_Object>(LOCAL(1))->getValue();
-    if(!ctx.checkZeroDiv(right)) {
-        return false;
-    }
     double value = left / right;
     RET(DSValue::create<Float_Object>(ctx.getPool().getFloatType(), value));
 }
@@ -850,6 +847,29 @@ static inline bool float_2_float_ge(RuntimeContext & ctx) {
     bool r = typeAs<Float_Object>(LOCAL(0))->getValue()
              >= typeAs<Float_Object>(LOCAL(1))->getValue();
     RET_BOOL(r);
+}
+
+// =====  additional float op  ======
+
+//!bind: function isNan($this : Float): Boolean
+static inline bool float_isNan(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(float_isNan);
+    double value = typeAs<Float_Object>(LOCAL(0))->getValue();
+    RET_BOOL(isnan(value));
+}
+
+//!bind: function isInf($this : Float): Boolean
+static inline bool float_isInf(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(float_isInf);
+    double value = typeAs<Float_Object>(LOCAL(0))->getValue();
+    RET_BOOL(isinf(value));
+}
+
+//!bind: function isFinite($this : Float): Boolean
+static inline bool float_isFinite(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(float_isFinite);
+    double value = typeAs<Float_Object>(LOCAL(0))->getValue();
+    RET_BOOL(isfinite(value));
 }
 
 
