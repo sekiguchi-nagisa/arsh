@@ -43,11 +43,6 @@ public:
     void parse(Lexer &lexer, RootNode &rootNode);
 
 private:
-    /**
-     * if has new line, throw exception.
-     */
-    void noNewLine();
-
     void alternative(const TokenKind *kinds);
 
     // parser rule definition.
@@ -160,18 +155,6 @@ public:
 };
 
 std::ostream &operator<<(std::ostream &stream, const OutOfRangeNumError &e);
-
-class UnexpectedNewLineError : public ParseError {
-public:
-    UnexpectedNewLineError(Token errorToken) : ParseError(errorToken) {}
-    ~UnexpectedNewLineError() = default;
-
-    bool operator==(const UnexpectedNewLineError &e) {
-        return this->errorToken == e.errorToken;
-    }
-};
-
-std::ostream &operator<<(std::ostream &stream, const UnexpectedNewLineError &e);
 
 } // namespace parser
 } // namespace ydsh

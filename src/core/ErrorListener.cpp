@@ -35,8 +35,7 @@ static std::ostream &format(std::ostream &stream, const ParseError &e) {
     E(TokenMismatchedError) \
     E(NoViableAlterError) \
     E(InvalidTokenError) \
-    E(OutOfRangeNumError) \
-    E(UnexpectedNewLineError)
+    E(OutOfRangeNumError)
 
 #define DISPATCH(E) if(dynamic_cast<const E *>(&e) != nullptr) { \
     stream << *static_cast<const E *>(&e); return stream; }
@@ -94,8 +93,7 @@ void ReportingListener::handleParseError(Lexer &lexer,
     E(TokenMismatched  , 0) \
     E(NoViableAlter    , 1) \
     E(InvalidToken     , 2) \
-    E(OutOfRangeNum    , 3) \
-    E(UnexpectedNewLine, 4)
+    E(OutOfRangeNum    , 3)
 
     static const char *strs[] = {
 #define GEN_STR(K, N) #K,

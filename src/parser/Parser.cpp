@@ -165,12 +165,6 @@ void Parser::parse(Lexer &lexer, RootNode &rootNode) {
     this->parse_toplevel(rootNode);
 }
 
-void Parser::noNewLine() {
-    if(HAS_NL()) {
-        throw UnexpectedNewLineError(this->curToken);
-    }
-}
-
 void Parser::alternative(const TokenKind *kinds) {
     std::vector<TokenKind> alters;
     for(unsigned int i = 0; kinds[i] != DUMMY; i++) {
@@ -400,37 +394,36 @@ std::unique_ptr<TypeToken> Parser::parse_typeName() {
     case FUNC: {
         Token token;
         this->expect(FUNC, token);
-        if(CUR_KIND() != TYPE_OPEN) {
+        if(!HAS_NL() && CUR_KIND() == TYPE_OPEN) {
+            this->expect(TYPE_OPEN, false);
+
+            // parse return type
+            std::unique_ptr<FuncTypeToken> func(
+                    new FuncTypeToken(this->parse_typeName().release()));
+
+            if(CUR_KIND() == TYPE_SEP) {   // ,[
+                this->expect(TYPE_SEP);
+                this->expect(PTYPE_OPEN, false);
+
+                // parse first arg type
+                func->addParamTypeToken(this->parse_typeName().release());
+
+                // rest arg type
+                while(CUR_KIND() == TYPE_SEP) {
+                    this->expect(TYPE_SEP, false);
+                    func->addParamTypeToken(this->parse_typeName().release());
+                }
+                this->expect(PTYPE_CLOSE);
+            }
+
+            this->expect(TYPE_CLOSE, token);
+
+            this->restoreLexerState(token);
+            return std::move(func);
+        } else {
             this->restoreLexerState(token);
             return std::unique_ptr<TypeToken>(new ClassTypeToken(token.lineNum, this->lexer->toName(token)));
         }
-
-        this->noNewLine();
-        this->expect(TYPE_OPEN, false);
-
-        // parse return type
-        std::unique_ptr<FuncTypeToken> func(
-                new FuncTypeToken(this->parse_typeName().release()));
-
-        if(CUR_KIND() == TYPE_SEP) {   // ,[
-            this->expect(TYPE_SEP);
-            this->expect(PTYPE_OPEN, false);
-
-            // parse first arg type
-            func->addParamTypeToken(this->parse_typeName().release());
-
-            // rest arg type
-            while(CUR_KIND() == TYPE_SEP) {
-                this->expect(TYPE_SEP, false);
-                func->addParamTypeToken(this->parse_typeName().release());
-            }
-            this->expect(PTYPE_CLOSE);
-        }
-
-        this->expect(TYPE_CLOSE, token);
-
-        this->restoreLexerState(token);
-        return std::move(func);
     }
     case TYPE_PATH: {
         Token token;
@@ -1362,11 +1355,6 @@ bool parse(const char *sourceName, RootNode &rootNode) {
 // parser error
 std::ostream &operator<<(std::ostream &stream, const OutOfRangeNumError &e) {
     stream << "out of range: " << e.getTokenKind();
-    return stream;
-}
-
-std::ostream &operator<<(std::ostream &stream, const UnexpectedNewLineError &e) {
-    stream << "unexpected new line before: " << e.getTokenKind();
     return stream;
 }
 
