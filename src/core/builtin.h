@@ -855,21 +855,21 @@ static inline bool float_2_float_ge(RuntimeContext & ctx) {
 static inline bool float_isNan(RuntimeContext &ctx) {
     SUPPRESS_WARNING(float_isNan);
     double value = typeAs<Float_Object>(LOCAL(0))->getValue();
-    RET_BOOL(isnan(value));
+    RET_BOOL(std::isnan(value));
 }
 
 //!bind: function isInf($this : Float): Boolean
 static inline bool float_isInf(RuntimeContext &ctx) {
     SUPPRESS_WARNING(float_isInf);
     double value = typeAs<Float_Object>(LOCAL(0))->getValue();
-    RET_BOOL(isinf(value));
+    RET_BOOL(std::isinf(value));
 }
 
 //!bind: function isFinite($this : Float): Boolean
 static inline bool float_isFinite(RuntimeContext &ctx) {
     SUPPRESS_WARNING(float_isFinite);
     double value = typeAs<Float_Object>(LOCAL(0))->getValue();
-    RET_BOOL(isfinite(value));
+    RET_BOOL(std::isfinite(value));
 }
 
 
