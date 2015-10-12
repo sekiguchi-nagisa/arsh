@@ -331,7 +331,7 @@ bool TypeChecker::findBlockEnd(BlockNode *blockNode) {
 }
 
 void TypeChecker::checkBlockEndExistence(BlockNode *blockNode, DSType *returnType) {
-    Node *endNode = blockNode->getNodeList().back();    // may be null if empty block
+    Node *endNode = blockNode->getNodeList().empty() ? nullptr : blockNode->getNodeList().back();
 
     if(*returnType == *this->typePool->getVoidType() &&
             (endNode == nullptr || !endNode->isBlockEndNode())) {
