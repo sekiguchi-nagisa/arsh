@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef AST_TYPETOKEN_H_
-#define AST_TYPETOKEN_H_
+#ifndef YDSH_TYPETOKEN_H
+#define YDSH_TYPETOKEN_H
 
 #include <string>
 #include <vector>
@@ -196,4 +196,4 @@ struct TypeTokenVisitor {
 } // namespace ast
 } // namespace ydsh
 
-#endif /* AST_TYPETOKEN_H_ */
+#endif //YDSH_TYPETOKEN_H

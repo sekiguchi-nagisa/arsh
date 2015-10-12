@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef AST_DUMP_H_
-#define AST_DUMP_H_
+#ifndef YDSH_DUMP_H
+#define YDSH_DUMP_H
 
 #define NAME(f) #f
 
@@ -135,4 +135,4 @@ void dumpAST(std::ostream &out, TypePool &pool, const RootNode &rootNode);
     } while(false)
 
 
-#endif /* AST_DUMP_H_ */
+#endif //YDSH_DUMP_H

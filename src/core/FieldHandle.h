@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CORE_FIELDHANDLE_H_
-#define CORE_FIELDHANDLE_H_
+#ifndef YDSH_FIELDHANDLE_H
+#define YDSH_FIELDHANDLE_H
 
 #include <string>
 #include <vector>
@@ -265,4 +265,4 @@ public:
 } // namespace core
 } // namespace ydsh
 
-#endif /* CORE_FIELDHANDLE_H_ */
+#endif //YDSH_FIELDHANDLE_H

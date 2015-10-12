@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef PARSER_TYPECHECKER_H_
-#define PARSER_TYPECHECKER_H_
+#ifndef YDSH_TYPECHECKER_H
+#define YDSH_TYPECHECKER_H
 
 #include "../ast/Node.h"
 #include "../core/TypePool.h"
@@ -335,4 +335,4 @@ public:
 } // namespace parser
 } // namespace ydsh
 
-#endif /* PARSER_TYPECHECKER_H_ */
+#endif //YDSH_TYPECHECKER_H

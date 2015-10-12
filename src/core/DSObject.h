@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CORE_DSOBJECT_H_
-#define CORE_DSOBJECT_H_
+#ifndef YDSH_DSOBJECT_H
+#define YDSH_DSOBJECT_H
 
 #include <ostream>
 #include <memory>
@@ -624,4 +624,4 @@ struct Service_Object : public DSObject {
 } // namespace core
 } // namespace ydsh
 
-#endif /* CORE_DSOBJECT_H_ */
+#endif //YDSH_DSOBJECT_H

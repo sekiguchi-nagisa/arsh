@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef PARSER_PARSER_H_
-#define PARSER_PARSER_H_
+#ifndef YDSH_PARSER_H
+#define YDSH_PARSER_H
 
 #include <memory>
 #include <utility>
@@ -159,4 +159,4 @@ std::ostream &operator<<(std::ostream &stream, const OutOfRangeNumError &e);
 } // namespace parser
 } // namespace ydsh
 
-#endif /* PARSER_PARSER_H_ */
+#endif //YDSH_PARSER_H

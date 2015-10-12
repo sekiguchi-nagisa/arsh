@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CORE_DSTYPE_H_
-#define CORE_DSTYPE_H_
+#ifndef YDSH_DSTYPE_H
+#define YDSH_DSTYPE_H
 
 #include <unordered_map>
 #include <vector>
@@ -479,4 +479,4 @@ public:
 } // namespace core
 } // namespace ydsh
 
-#endif /* CORE_DSTYPE_H_ */
+#endif //YDSH_DSTYPE_H

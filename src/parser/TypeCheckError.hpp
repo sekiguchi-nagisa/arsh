@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef PARSER_TYPECHECKERROR_HPP_
-#define PARSER_TYPECHECKERROR_HPP_
+#ifndef YDSH_TYPECHECKERROR_HPP
+#define YDSH_TYPECHECKERROR_HPP
 
 #include <string>
 #include <vector>
@@ -122,4 +122,4 @@ DEFINE_TC_ERROR(BinaryOp         , "undefined operator: % % %");
 } // namespace ydsh
 
 
-#endif /* PARSER_TYPECHECKERROR_HPP_ */
+#endif //YDSH_TYPECHECKERROR_HPP

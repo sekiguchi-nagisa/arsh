@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CORE_BIND_H_
-#define CORE_BIND_H_
+#ifndef YDSH_BIND_H
+#define YDSH_BIND_H
 
 #include "DSType.h"
 
@@ -53,4 +53,4 @@ native_type_info_t *info_TupleType();
 } // namespace core
 } // namespace ydsh
 
-#endif /* CORE_BIND_H_ */
+#endif //YDSH_BIND_H

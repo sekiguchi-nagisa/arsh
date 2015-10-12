@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CORE_TYPEPOOL_H_
-#define CORE_TYPEPOOL_H_
+#ifndef YDSH_TYPEPOOL_H
+#define YDSH_TYPEPOOL_H
 
 #include <string>
 #include <vector>
@@ -485,4 +485,4 @@ private:
 } // namespace core
 } // namespace ydsh
 
-#endif /* CORE_TYPEPOOL_H_ */
+#endif //YDSH_TYPEPOOL_H

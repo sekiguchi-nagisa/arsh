@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CORE_SYMBOLTABLE_H_
-#define CORE_SYMBOLTABLE_H_
+#ifndef YDSH_SYMBOLTABLE_H
+#define YDSH_SYMBOLTABLE_H
 
 #include "TypePool.h"
 #include "DSType.h"
@@ -142,4 +142,4 @@ public:
 } // namespace core
 } // namespace ydsh
 
-#endif /* CORE_SYMBOLTABLE_H_ */
+#endif //YDSH_SYMBOLTABLE_H

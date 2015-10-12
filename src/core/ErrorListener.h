@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef EXE_ERRORLISTENER_H_
-#define EXE_ERRORLISTENER_H_
+#ifndef YDSH_ERRORLISTENER_H
+#define YDSH_ERRORLISTENER_H
 
 #include <vector>
 #include <ostream>
@@ -136,4 +136,4 @@ public:
 
 } // namespace ydsh
 
-#endif /* EXE_ERRORLISTENER_H_ */
+#endif //YDSH_ERRORLISTENER_H

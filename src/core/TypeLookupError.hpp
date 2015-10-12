@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CORE_TYPELOOKUPERROR_HPP_
-#define CORE_TYPELOOKUPERROR_HPP_
+#ifndef YDSH_TYPELOOKUPERROR_HPP
+#define YDSH_TYPELOOKUPERROR_HPP
 
 #include <string>
 #include <ostream>
@@ -92,4 +92,4 @@ DEFINE_TL_ERROR(UnmatchElement , "not match type element, % requires % type elem
 } // namespace ydsh
 
 
-#endif /* CORE_TYPELOOKUPERROR_HPP_ */
+#endif //YDSH_TYPELOOKUPERROR_HPP

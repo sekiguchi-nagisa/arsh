@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef MISC_NUM_H
-#define MISC_NUM_H
+#ifndef YDSH_NUM_H
+#define YDSH_NUM_H
 
 #include <climits>
 #include <cerrno>
@@ -123,4 +123,4 @@ inline double convertToDouble(const char *str, int &status, bool skipIllegalChar
 } // namespace ydsh
 
 
-#endif //MISC_NUM_H
+#endif //YDSH_NUM_H

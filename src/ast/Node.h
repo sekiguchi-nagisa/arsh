@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef AST_NODE_H_
-#define AST_NODE_H_
+#ifndef YDSH_NODE_H
+#define YDSH_NODE_H
 
 #include <utility>
 #include <list>
@@ -2250,4 +2250,4 @@ struct BaseVisitor : public NodeVisitor {
 } // namespace ast
 } // namespace ydsh
 
-#endif /* AST_NODE_H_ */
+#endif //YDSH_NODE_H

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CORE_RUNTIMECONTEXT_H_
-#define CORE_RUNTIMECONTEXT_H_
+#ifndef YDSH_RUNTIMECONTEXT_H
+#define YDSH_RUNTIMECONTEXT_H
 
 #include <unistd.h>
 
@@ -569,4 +569,4 @@ pid_t xfork(void);
 } // namespace core
 } // namespace ydsh
 
-#endif /* CORE_RUNTIMECONTEXT_H_ */
+#endif //YDSH_RUNTIMECONTEXT_H

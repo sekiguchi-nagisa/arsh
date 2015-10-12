@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef PARSER_LEXER_H_
-#define PARSER_LEXER_H_
+#ifndef YDSH_LEXER_H
+#define YDSH_LEXER_H
 
 #include <cstdlib>
 #include <cstdint>
@@ -194,4 +194,4 @@ public:
 } // namespace parser
 } // namespace ydsh
 
-#endif /* PARSER_LEXER_H_ */
+#endif //YDSH_LEXER_H

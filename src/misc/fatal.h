@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef MISC_DEBUG_H_
-#define MISC_DEBUG_H_
+#ifndef YDSH_FATAL_H
+#define YDSH_FATAL_H
 
 #include <cstdio>
 #include <cstdlib>
@@ -33,4 +33,4 @@
     } while(0)
 
 
-#endif /* MISC_DEBUG_H_ */
+#endif //YDSH_FATAL_H

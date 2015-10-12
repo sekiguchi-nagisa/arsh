@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CORE_BUILTIN_CPP_
-#define CORE_BUILTIN_CPP_
+#ifndef YDSH_BUILTIN_H
+#define YDSH_BUILTIN_H
 
 #include <cmath>
 
@@ -1307,4 +1307,4 @@ static inline bool service_object(RuntimeContext &ctx) {
 
 
 
-#endif /* CORE_BUILTIN_CPP_ */
+#endif //YDSH_BUILTIN_H
