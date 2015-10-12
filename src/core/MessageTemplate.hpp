@@ -45,6 +45,8 @@ public:
             const char ch = this->value[index];
             if(ch == '%') {
                 str += arg;
+                index++;
+                break;
             } else {
                 str += ch;
             }
