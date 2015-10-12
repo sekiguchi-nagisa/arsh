@@ -23,6 +23,9 @@ function void() {
 
 assert($void is Func<Void>)
 
+function empty(){}
+assert($empty is Func<Void>)
+
 function f($obj :
             Func<
                Int,

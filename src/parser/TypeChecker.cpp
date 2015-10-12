@@ -20,7 +20,6 @@
 #include "../core/symbol.h"
 #include "../core/DSObject.h"
 #include "../core/TypeLookupError.hpp"
-#include "../misc/fatal.h"
 #include "../misc/unused.h"
 #include "NodeVerifier.h"
 #include "TypeChecker.h"
@@ -332,9 +331,10 @@ bool TypeChecker::findBlockEnd(BlockNode *blockNode) {
 }
 
 void TypeChecker::checkBlockEndExistence(BlockNode *blockNode, DSType *returnType) {
-    Node *endNode = blockNode->getNodeList().back();
+    Node *endNode = blockNode->getNodeList().back();    // may be null if empty block
 
-    if(*returnType == *this->typePool->getVoidType() && !endNode->isBlockEndNode()) {
+    if(*returnType == *this->typePool->getVoidType() &&
+            (endNode == nullptr || !endNode->isBlockEndNode())) {
         /**
          * insert return node to block end
          */
