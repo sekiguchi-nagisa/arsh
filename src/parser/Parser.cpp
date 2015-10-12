@@ -474,7 +474,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
     }
     case CONTINUE: {
         unsigned int n = LN();
-        this->expect(BREAK);
+        this->expect(CONTINUE);
         std::unique_ptr<Node> node(new ContinueNode(n));
         this->parse_statementEnd();
         return node;

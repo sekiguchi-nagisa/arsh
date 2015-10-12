@@ -1,0 +1,7 @@
+# block
+
+#$test($result = 'type', $lineNum = 6, $errorKind = 'InsideFunc', $status = 1)
+
+{
+    return 34
+}

@@ -1,0 +1,16 @@
+# finally
+
+#$test($result = 'type', $lineNum = 12, $errorKind = 'InsideFinally', $status = 1)
+
+function f() : Boolean {
+    for(var i = 10; $i > -1; $i--) {
+        try {
+            10 / $i
+        } catch($e : ArithmeticError) {
+            $e.backtrace()
+        } finally {
+            continue
+        }
+    }
+    return $true
+}

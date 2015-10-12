@@ -1,0 +1,15 @@
+# finally
+
+#$test($result = 'type', $lineNum = 11, $errorKind = 'InsideFinally', $status = 1)
+
+function f() : Boolean {
+    try {
+        23 / 0
+    } catch($e) {
+    } finally {
+        if(34 != 9) {
+            throw new Error("error")
+        }
+    }
+    return $true
+}

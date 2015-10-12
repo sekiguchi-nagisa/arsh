@@ -1,0 +1,14 @@
+# finally
+
+#$test($result = 'type', $lineNum = 11, $errorKind = 'InsideFinally', $status = 1)
+
+function f() : Int {
+    try {
+        12 / 0
+    } catch($e :  Error) {
+        $e.backtrace()
+    } finally {
+        return 34
+    }
+    return 4
+}
