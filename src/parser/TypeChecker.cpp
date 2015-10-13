@@ -168,7 +168,7 @@ DSType *TypeChecker::checkType(DSType *requiredType, Node *targetNode,
      */
     DSType *type = targetNode->getType();
     if(type == nullptr) {
-        E_Unresolved(targetNode);
+        fatal("having unresolved type\n");
     }
 
     /**

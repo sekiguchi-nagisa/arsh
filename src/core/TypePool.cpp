@@ -231,7 +231,7 @@ DSType *TypePool::getTypeAndThrowIfUndefined(const std::string &typeName) {
 TypeTemplate *TypePool::getTypeTemplate(const std::string &typeName) {
     auto iter = this->templateMap.find(typeName);
     if(iter == this->templateMap.end()) {
-        E_NotGenericBase(typeName);
+        E_NotTemplate(typeName);
     }
     return iter->second;
 }

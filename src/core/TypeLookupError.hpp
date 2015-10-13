@@ -74,13 +74,9 @@ public:
 
 #define DEFINE_TL_ERROR(NAME, MSG) constexpr TLErrorMessage<computeParamSize(MSG)> E_##NAME(#NAME, MSG)
 
-DEFINE_TL_ERROR(TupleElement   , "Tuple type require at least 2 type element");
-DEFINE_TL_ERROR(NotUseGeneric  , "not directly use generic base type: %");
+DEFINE_TL_ERROR(TupleElement   , "tuple type require at least 2 type element");
 DEFINE_TL_ERROR(UndefinedType  , "undefined type: %");
-DEFINE_TL_ERROR(NotGenericBase , "unsupported type template: %");
-DEFINE_TL_ERROR(NotPrimitive   , "not primitive type: %");
-DEFINE_TL_ERROR(NotClass       , "not class type: %");
-DEFINE_TL_ERROR(Nonheritable   , "nonheritable type: %");
+DEFINE_TL_ERROR(NotTemplate    , "illegal type template: %");
 DEFINE_TL_ERROR(DefinedType    , "already defined type: %");
 DEFINE_TL_ERROR(InvalidElement , "invalid type element: %");
 DEFINE_TL_ERROR(NoDBusInterface, "not found dbus interface: %");

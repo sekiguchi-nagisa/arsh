@@ -84,18 +84,14 @@ public:
 
 #define DEFINE_TC_ERROR(NAME, MSG) constexpr TCErrorMessage<core::computeParamSize(MSG)> E_##NAME(#NAME, MSG)
 
-DEFINE_TC_ERROR(Unresolved       , "having unresolved type");
 DEFINE_TC_ERROR(InsideLoop       , "only available inside loop statement");
 DEFINE_TC_ERROR(UnfoundReturn    , "not found return statement");
 DEFINE_TC_ERROR(Unreachable      , "found unreachable code");
 DEFINE_TC_ERROR(InsideFunc       , "only available inside function");
 DEFINE_TC_ERROR(NotNeedExpr      , "not need expression");
 DEFINE_TC_ERROR(Assignable       , "require assignable node");
-DEFINE_TC_ERROR(ReadOnly         , "read only value");
+DEFINE_TC_ERROR(ReadOnly         , "read only symbol");
 DEFINE_TC_ERROR(InsideFinally    , "unavailable inside finally block");
-DEFINE_TC_ERROR(UnneedNamedArg   , "not need named argument");
-DEFINE_TC_ERROR(NeedNamedArg     , "need named argument");
-DEFINE_TC_ERROR(NoDefaultValue   , "has no default value");
 DEFINE_TC_ERROR(OutsideToplevel  , "only available toplevel scope");
 DEFINE_TC_ERROR(NotCallable      , "Func type object is not callable");
 DEFINE_TC_ERROR(DefinedSymbol    , "already defined symbol: %");
@@ -105,16 +101,10 @@ DEFINE_TC_ERROR(UndefinedField   , "undefined field: %");
 DEFINE_TC_ERROR(UndefinedMethod  , "undefined method: %");
 DEFINE_TC_ERROR(UndefinedInit    , "undefined constructor: %");
 DEFINE_TC_ERROR(Unacceptable     , "unacceptable type: %");
-DEFINE_TC_ERROR(NoIterator       , "not support iterator: %");
-DEFINE_TC_ERROR(UnfoundNamedParam, "undefined parameter name: %");
-DEFINE_TC_ERROR(DupNamedArg      , "found duplicated named argument: %");
 DEFINE_TC_ERROR(DefinedCmd       , "already defined command: %");
-DEFINE_TC_ERROR(Unimplemented    , "unimplemented type checker api: %");
 DEFINE_TC_ERROR(Required         , "require %, but is %");
 DEFINE_TC_ERROR(CastOp           , "unsupported cast op: % -> %");
-DEFINE_TC_ERROR(UnaryOp          , "undefined operator: % %");
 DEFINE_TC_ERROR(UnmatchParam     , "not match parameter, require size is %, but is %");
-DEFINE_TC_ERROR(BinaryOp         , "undefined operator: % % %");
 
 #undef DEFINE_TC_ERROR
 
