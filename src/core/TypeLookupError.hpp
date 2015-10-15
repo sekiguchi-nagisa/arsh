@@ -74,7 +74,6 @@ public:
 
 #define DEFINE_TL_ERROR(NAME, MSG) constexpr TLErrorMessage<computeParamSize(MSG)> E_##NAME(#NAME, MSG)
 
-DEFINE_TL_ERROR(TupleElement   , "tuple type require at least 2 type element");
 DEFINE_TL_ERROR(UndefinedType  , "undefined type: %");
 DEFINE_TL_ERROR(NotTemplate    , "illegal type template: %");
 DEFINE_TL_ERROR(DefinedType    , "already defined type: %");

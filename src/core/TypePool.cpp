@@ -262,7 +262,7 @@ DSType *TypePool::createAndGetTupleTypeIfUndefined(std::vector<DSType *> &&eleme
     this->checkElementTypes(elementTypes);
 
     if(elementTypes.size() == 0) {
-        E_TupleElement();
+        fatal("Tuple type reauire at least 1 element\n");
     }
 
     std::string typeName(this->toTupleTypeName(elementTypes));
