@@ -1,12 +1,72 @@
-function func() {
-	var num = 1
-	while ($true) {
-		$num = $num + 1
-		if($num == 3) {
-			break
-		}
-	}
-	assert($num == 3)
+# break in while
+var num = 1
+while($true) {
+    $num ++
+    if($num == 3) {
+        break
+    }
+}
+assert($num == 3)
+
+
+# break in do-while
+$num = 1
+do {
+    $num++
+    if($num == 3) {
+        break
+    }
+} while($true)
+assert($num == 3)
+
+
+# break in for
+var i = 0;
+for(; $i < 10; $i++) {
+    if($i == 4) {
+        break
+    }
+}
+assert($i == 4)
+
+
+# break in for-in
+for($a in [1, 2, 3, 4]) {
+    $i = $a
+    if($i == 3) {
+        break
+    }
+}
+assert($i == 3)
+
+
+# nested
+$num = 0
+for(var i = 1; $i <= 10; $i++) {
+    var b = $false
+    for(var j = 1; $j <= 10; $j++) {
+        $num = $i * $j
+        if($num > 50) {
+            $b = $true
+            break
+        }
+    }
+    if($b) {
+        assert($num > 50)
+    }
 }
 
-$func()
+
+for($i = 0; $i < 5; $i++) {
+    if($true) {
+        if($true) {
+            if($true) {
+                if($i == 3) {
+                    break
+                }
+            }
+        }
+    }
+    assert($i != 3)
+}
+assert($i == 3)

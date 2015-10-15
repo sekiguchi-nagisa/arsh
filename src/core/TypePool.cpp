@@ -241,12 +241,15 @@ DSType *TypePool::createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate,
     if(this->tupleTemplate->getName() == typeTemplate->getName()) {
         return this->createAndGetTupleTypeIfUndefined(std::move(elementTypes));
     }
-    this->checkElementTypes(typeTemplate, elementTypes);
 
+    // check element type size
     if(typeTemplate->getElementTypeSize() != elementTypes.size()) {
         E_UnmatchElement(typeTemplate->getName(),
                          std::to_string(typeTemplate->getElementTypeSize()), std::to_string(elementTypes.size()));
     }
+
+    // check each element type
+    this->checkElementTypes(typeTemplate, elementTypes);
 
     std::string typeName(this->toReifiedTypeName(typeTemplate, elementTypes));
     DSType *type = this->typeMap.getType(typeName);
