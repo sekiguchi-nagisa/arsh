@@ -83,29 +83,6 @@ const std::vector<DSType *> &FunctionHandle::getParamTypes() {
     return this->paramTypes;
 }
 
-bool FunctionHandle::addParamName(const std::string &paramName, bool defaultValue) {
-    unsigned int size = this->paramIndexMap.size();
-    if(size >= this->paramTypes.size()) {
-        return false;
-    }
-
-    if(!this->paramIndexMap.insert(std::make_pair(paramName, size)).second) {
-        return false;
-    }
-    this->defaultValues.push_back(defaultValue);
-
-    return true;
-}
-
-int FunctionHandle::getParamIndex(const std::string &paramName) {
-    auto iter = this->paramIndexMap.find(paramName);
-    return iter != this->paramIndexMap.end() ? iter->second : -1;
-}
-
-bool FunctionHandle::hasDefaultValue(unsigned int paramIndex) {
-    return paramIndex < this->defaultValues.size()
-           && this->defaultValues[paramIndex];
-}
 
 // ##########################
 // ##     MethodHandle     ##
@@ -203,15 +180,6 @@ void MethodHandle::init(TypePool *typePool, NativeFuncInfo *info,
             this->paramTypes.push_back(decodeType(typePool, pos,types));
         }
     }
-
-//    /**
-//     * init default value map
-//     */
-//    for(unsigned int i = 0; i < paramSize; i++) {
-//        unsigned int mask = (1 << i);
-//        bool defaultValue = ((this->defaultValueFlag & mask) == mask);
-//        handle->addParamName(std::string(this->paramNames[i]), defaultValue);
-//    }
 }
 
 bool MethodHandle::isSignal() {

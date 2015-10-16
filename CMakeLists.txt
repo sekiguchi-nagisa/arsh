@@ -41,7 +41,6 @@ endif()
 #     set some variable      #
 #++++++++++++++++++++++++++++#
 
-set(CMAKE_VERBOSE_MAKEFILE 1)
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_BUILD_TYPE Release)
 endif()

@@ -512,12 +512,12 @@ public:
         str += this->toFuncName();
         str += ", ";
         str += this->toSerializedHandle();
-        str += ", ";
-        str += this->toParamNames();
+//        str += ", ";
+//        str += this->toParamNames();
         str += ", ";
         str += this->getActualFuncName();
-        str += ", ";
-        str += std::to_string((int) this->toDefaultFlag());
+//        str += ", ";
+//        str += std::to_string((int) this->toDefaultFlag());
         str += "}";
         return str;
     }

@@ -231,18 +231,10 @@ struct NativeFuncInfo {
      */
     char handleInfo[32];
 
-    const char *paramNames[8];
-
     /**
      * bool func(RuntimeContext &ctx)
      */
     native_func_t func_ptr;
-
-    /**
-     * if arg1, arg3, arg4 has default value, then (00001101).
-     * support up to 8 arguments.
-     */
-    unsigned char defaultValueFlag;
 };
 
 struct native_type_info_t {

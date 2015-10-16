@@ -126,20 +126,10 @@ protected:
     DSType *returnType;
     std::vector<DSType *> paramTypes;
 
-    /**
-     * contains parameter name and parameter index pair
-     */
-    std::unordered_map<std::string, unsigned int> paramIndexMap;
-
-    /**
-     * if true, has default value
-     */
-    std::vector<bool> defaultValues;
-
 public:
     FunctionHandle(DSType *returnType, const std::vector<DSType *> &paramTypes, unsigned int fieldIndex) :
             FieldHandle(0, fieldIndex, true),
-            returnType(returnType), paramTypes(paramTypes), paramIndexMap(), defaultValues() {
+            returnType(returnType), paramTypes(paramTypes) {
         this->setAttribute(FUNC_HANDLE);
     }
 
@@ -154,21 +144,6 @@ public:
     }
 
     const std::vector<DSType *> &getParamTypes();
-
-    /**
-     * return true if success, otherwise return false
-     */
-    bool addParamName(const std::string &paramName, bool defaultValue);
-
-    /**
-     * get index of parameter. if has no parameter, return -1
-     */
-    int getParamIndex(const std::string &paramName);
-
-    /**
-     * return true if the parameter of the index has default value, otherwise(not have, out of index) reurn false
-     */
-    bool hasDefaultValue(unsigned int paramIndex);
 };
 
 class MethodHandle {
