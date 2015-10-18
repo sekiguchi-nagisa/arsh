@@ -71,10 +71,10 @@ protected:
     DSType *superType;
 
 public:
-    const static flag8_t EXTENDABLE = 1 << 0;
-    const static flag8_t VOID_TYPE  = 1 << 1;
-    const static flag8_t FUNC_TYPE  = 1 << 2;
-    const static flag8_t INTERFACE  = 1 << 3;
+    static constexpr flag8_t EXTENDABLE = 1 << 0;
+    static constexpr flag8_t VOID_TYPE  = 1 << 1;
+    static constexpr flag8_t FUNC_TYPE  = 1 << 2;
+    static constexpr flag8_t INTERFACE  = 1 << 3;
 
     DSType(bool extendable, DSType *superType, bool isVoid = false);
 

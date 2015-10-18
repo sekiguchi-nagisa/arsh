@@ -366,8 +366,6 @@ void DSContext_unsetOption(DSContext *ctx, unsigned int optionSet) {
 }
 
 const char *DSContext_getPrompt(DSContext *ctx, unsigned int n) {
-    static char empty[] = "";
-
     FieldHandle *handle = nullptr;
     bool usePS1 = true;
     switch(n) {
@@ -383,13 +381,13 @@ const char *DSContext_getPrompt(DSContext *ctx, unsigned int n) {
     }
 
     if(handle == nullptr) {
-        return empty;
+        return "";
     }
 
     unsigned int index = handle->getFieldIndex();
     const DSValue &obj = ctx->ctx.getGlobal(index);
     if(dynamic_cast<String_Object *>(obj.get()) == nullptr) {
-        return empty;
+        return "";
     }
 
     ctx->ctx.interpretPromptString(

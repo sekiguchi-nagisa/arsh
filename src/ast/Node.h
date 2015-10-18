@@ -741,8 +741,8 @@ public:
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 
-    const static flag8_t INDEX = 1 << 0;
-    const static flag8_t ICALL = 1 << 1;
+    static constexpr flag8_t INDEX = 1 << 0;
+    static constexpr flag8_t ICALL = 1 << 1;
 };
 
 /**
@@ -1148,11 +1148,11 @@ public:
     void accept(NodeVisitor *visitor);    //override
     EvalStatus eval(RuntimeContext &ctx); // override
 
-    const static flag8_t BACKGROUND = 1 << 0;
-    const static flag8_t FORK       = 1 << 1;
-    const static flag8_t STR_CAP    = 1 << 2;
-    const static flag8_t ARRAY_CAP  = 1 << 3;
-    const static flag8_t CONDITION  = 1 << 4;
+    static constexpr flag8_t BACKGROUND = 1 << 0;
+    static constexpr flag8_t FORK       = 1 << 1;
+    static constexpr flag8_t STR_CAP    = 1 << 2;
+    static constexpr flag8_t ARRAY_CAP  = 1 << 3;
+    static constexpr flag8_t CONDITION  = 1 << 4;
 };
 
 // statement definition
@@ -1817,7 +1817,7 @@ public:
     EvalStatus eval(RuntimeContext &ctx); // override
 };
 
-class FunctionNode : public Node {    //FIXME: named parameter
+class FunctionNode : public Node {
 private:
     std::string funcName;
 
@@ -1992,9 +1992,6 @@ public:
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
-
-// class ClassNode
-// class ConstructorNode
 
 /**
  * define builtin global variable.
