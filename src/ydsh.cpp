@@ -28,7 +28,6 @@
 #include "core/RuntimeContext.h"
 #include "core/ErrorListener.h"
 #include "core/symbol.h"
-#include "misc/fatal.h"
 #include "misc/num.h"
 
 

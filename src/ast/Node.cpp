@@ -19,7 +19,6 @@
 #include "../core/symbol.h"
 #include "../core/DSObject.h"
 #include "../core/RuntimeContext.h"
-#include "../misc/fatal.h"
 #include "../misc/unused.h"
 #include "dump.h"
 

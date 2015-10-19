@@ -19,7 +19,6 @@
 
 #include "DBusBindImpl.h"
 #include "../core/logger.h"
-#include "../misc/fatal.h"
 #include "../misc/unused.h"
 
 namespace ydsh {

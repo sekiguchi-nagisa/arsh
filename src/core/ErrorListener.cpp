@@ -15,11 +15,7 @@
  */
 
 #include "ErrorListener.h"
-#include "DSObject.h"
-#include "TypePool.h"
-#include "../misc/fatal.h"
 #include "../misc/term.h"
-#include "../misc/unused.h"
 
 namespace ydsh {
 

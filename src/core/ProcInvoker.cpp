@@ -26,7 +26,6 @@
 #include "RuntimeContext.h"
 #include "symbol.h"
 #include "../misc/num.h"
-#include "../misc/fatal.h"
 #include "../misc/unused.h"
 
 extern char **environ;

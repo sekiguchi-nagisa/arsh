@@ -18,7 +18,6 @@
 
 #include "DSObject.h"
 #include "RuntimeContext.h"
-#include "../ast/Node.h"
 #include "../misc/unused.h"
 
 #ifdef USE_DBUS

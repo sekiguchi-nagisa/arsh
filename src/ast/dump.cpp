@@ -18,7 +18,6 @@
 
 #include "dump.h"
 #include "../ast/Node.h"
-#include "../misc/demangle.hpp"
 
 #define OUT (this->stream)
 

@@ -19,7 +19,6 @@
 #include "DSType.h"
 #include "DSObject.h"
 #include "FieldHandle.h"
-#include "../misc/fatal.h"
 #include "../misc/unused.h"
 
 namespace ydsh {
