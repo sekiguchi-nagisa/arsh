@@ -21,6 +21,7 @@
 
 #include "RuntimeContext.h"
 #include "DSObject.h"
+#include "../misc/utf8.hpp"
 
 // helper macro
 #define LOCAL(index) (ctx.getLocal(index))
@@ -943,6 +944,46 @@ static inline bool string_empty(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_empty);
     bool empty = typeAs<String_Object>(LOCAL(0))->empty();
     RET_BOOL(empty);
+}
+
+//!bind: function $OP_ITER($this : String) : StringIter
+static inline bool string_iter(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_iter);
+    String_Object *str = typeAs<String_Object>(LOCAL(0));
+    RET(DSValue::create<StringIter_Object>(ctx.getPool().getStringIterType(), str));
+}
+
+
+// ########################
+// ##     StringIter     ##
+// ########################
+
+//!bind: function $OP_NEXT($this : StringIter) : String
+static inline bool stringIter_next(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(stringIter_next);
+    auto strIter = typeAs<StringIter_Object>(LOCAL(0));
+    auto strObj = typeAs<String_Object>(strIter->strObj);
+    if(strIter->curIndex >= strObj->size()) {
+        ctx.throwError(ctx.getPool().getOutOfRangeErrorType(), "string iterator reach end of string");
+        return false;
+    }
+    unsigned int curIndex = strIter->curIndex;
+    strIter->curIndex = misc::UTF8Util::getNextPos(curIndex, strObj->getValue()[curIndex]);
+    if(strIter->curIndex > strObj->size()) {
+        fatal("broken string iterator\n");
+    }
+
+    unsigned int size = strIter->curIndex - curIndex;
+    RET(DSValue::create<String_Object>(
+            ctx.getPool().getStringType(), std::string(strObj->getValue() + curIndex, size)));
+}
+
+//!bind: function $OP_HAS_NEXT($this : StringIter) : Boolean
+static inline bool stringIter_hasNext(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(stringIter_hasNext);
+    auto strIter = typeAs<StringIter_Object>(LOCAL(0));
+    bool r = strIter->curIndex < typeAs<String_Object>(strIter->strObj)->size();
+    RET_BOOL(r);
 }
 
 

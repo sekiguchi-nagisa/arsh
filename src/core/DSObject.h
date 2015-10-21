@@ -328,6 +328,14 @@ public:
     size_t hash();  // override
 };
 
+struct StringIter_Object : public DSObject {
+    unsigned int curIndex;
+    DSValue strObj;
+
+    StringIter_Object(DSType *type, String_Object *str) :
+            DSObject(type), curIndex(0), strObj(DSValue(str)) { }
+};
+
 class Array_Object : public DSObject {
 private:
     unsigned int curIndex;

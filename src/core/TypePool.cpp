@@ -169,6 +169,7 @@ TypePool::TypePool() :
     this->errorType = this->initBuiltinType("Error", true, this->anyType, info_ErrorType());
     this->taskType = this->initBuiltinType("Task", false, this->anyType, info_Dummy());
     this->baseFuncType = this->initBuiltinType("Func", false, this->anyType, info_Dummy());
+    this->stringIterType = this->initBuiltinType("%StringIter%", false, this->anyType, info_StringIterType());
 
     // pseudo type for command type checking
     this->procType = this->initBuiltinType("%Proc%", false, this->anyType, info_Dummy());

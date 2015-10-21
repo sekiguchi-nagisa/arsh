@@ -1,3 +1,4 @@
+# Array for-in
 var a = [1, 2, 3, 5, 7]
 var i = 0
 
@@ -9,6 +10,7 @@ for($val in $a) {
 assert($i == 5)
 
 
+# Map for-in
 var b = ["a" : 1,
             "b" : 2,
             "c" : 3,
@@ -21,3 +23,12 @@ for($e in $b) {
     $i++
 }
 assert($i == 4)
+
+# String for-in
+var r = ['あ', '0', '漢', '　']
+$i = 0
+for($a in "あ0漢　") {
+    assert($a == $r[$i])
+    $i++
+}
+assert($i == $r.size())

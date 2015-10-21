@@ -123,6 +123,7 @@ private:
     DSType *taskType;
     DSType *baseFuncType;
     DSType *procType;
+    DSType *stringIterType;
 
     /**
      * for D-Bus object path
@@ -292,6 +293,10 @@ public:
 
     DSType *getProcType() const {
         return this->procType;
+    }
+
+    DSType *getStringIterType() const {
+        return this->stringIterType;
     }
 
     DSType *getObjectPathType() const {

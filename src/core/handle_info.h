@@ -41,7 +41,8 @@ namespace core {
     OP(Service) \
     OP(DBusObject) \
     OP(Error) \
-    OP(Proxy)
+    OP(Proxy) \
+    OP(StringIter)
 
 // type template
 #define EACH_HANDLE_INFO_TYPE_TEMP(OP) \
