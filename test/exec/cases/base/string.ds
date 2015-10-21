@@ -19,6 +19,9 @@ assert('a\rb' == "a\rb")
 assert("".empty())
 assert("".size() == 0)
 assert("".size() is Int32)
+assert("hello".count() is Int32)
+assert("hello".count() == "hello".size())
+assert("あいうえお90".count() == 7)
 
 $str = "はるのサクラ"
 #$str = $str.replace("はるの", "うずまき")
@@ -27,16 +30,34 @@ $str = "はるのサクラ"
 var a = "hello world"
 assert($a.size() == 11)
 assert($a == "hello" + ' ' + "world")
-#assert($a.get(2) == "l")
-#assert($a.sliceFrom(3) == "lo world")
-#assert($a.sliceTo(3) == "hel")
-#assert($a.slice(1, 3) == "el")
-#assert(not $a.equals("hf"))
+
+assert("12あ90灘"[0] == "1")
+assert("12あ90灘"[1] == "2")
+assert("12あ90灘"[2] == 'あ')
+assert("12あ90灘"[5] == '灘')
+
+assert($a.slice(0, 4) == "hell");
+assert($a.slice(-3, -1) == "rl");
+try { assert("01234".slice(4, 3) == "A"); } catch($e) { assert($e is OutOfRangeError); }
+try { assert("01234".slice(2, 100) == "A"); } catch($e) { assert($e is OutOfRangeError); }
+try { assert("01234".slice(5, 5) == "A"); } catch($e) { assert($e is OutOfRangeError); }
+try { assert("01234".slice(-1, 2) == "A"); } catch($e) { assert($e is OutOfRangeError); }
+try { assert("01234".slice(-134, -5) == "A"); } catch($e) { assert($e is OutOfRangeError); }
+
+assert("012345".sliceFrom(3) == "345")
+assert("012345".sliceFrom(-4) == "2345")
+try { assert("012345".sliceFrom(-9) == "A"); } catch($e) { assert($e is OutOfRangeError); }
+try { assert("012345".sliceFrom(6) == "A"); } catch($e) { assert($e is OutOfRangeError); }
+
+assert("012345".sliceTo(3) == "012")
+assert("012345".sliceTo(-4) == "01")
+try { assert("012345".sliceTo(-9) == "A"); } catch($e) { assert($e is OutOfRangeError); }
+try { assert("012345".sliceTo(9) == "A"); } catch($e) { assert($e is OutOfRangeError); }
+
 #assert(not $a.startsWith("hoge"))
 #assert($a.endsWith("rld"))
 #assert($a.indexOf("q") == -1)
 #assert($a.lastIndexOf("l") == 9)
-#assert($a.clone() == $a)
 
 var b = "aaa"
 var c = 'ccc'

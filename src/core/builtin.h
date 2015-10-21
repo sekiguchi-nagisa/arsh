@@ -946,6 +946,102 @@ static inline bool string_empty(RuntimeContext &ctx) {
     RET_BOOL(empty);
 }
 
+//!bind: function count($this : String) : Int32
+static inline bool string_count(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_count);
+    const char *ptr = typeAs<String_Object>(LOCAL(0))->getValue();
+    const unsigned int size = typeAs<String_Object>(LOCAL(0))->size();
+    unsigned int count = 0;
+    for(unsigned int i = 0; i < size; i = misc::UTF8Util::getNextPos(i, ptr[i])) {
+        count++;
+    }
+    RET(DSValue::create<Int_Object>(ctx.getPool().getInt32Type(), count));
+}
+
+//!bind: function $OP_GET($this : String, $index : Int32) : String
+static inline bool string_get(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_get);
+    auto strObj = typeAs<String_Object>(LOCAL(0));
+    const int pos = typeAs<Int_Object>(LOCAL(1))->getValue();
+    const unsigned int size = strObj->size();
+
+    if(pos >= 0 && static_cast<unsigned int>(pos) < size) {
+        const unsigned int limit = pos;
+        unsigned int index = 0;
+        unsigned int count = 0;
+        for(; index < size; index = misc::UTF8Util::getNextPos(index, strObj->getValue()[index])) {
+            if(count == limit) {
+                break;
+            }
+            count++;
+        }
+        if(count == limit) {
+            unsigned int nextIndex = misc::UTF8Util::getNextPos(index, strObj->getValue()[index]);
+            RET(DSValue::create<String_Object>(
+                    ctx.getPool().getStringType(), std::string(strObj->getValue() + index, nextIndex - index)));
+        }
+    }
+
+    std::string msg("size is ");
+    msg += std::to_string(size);
+    msg += ", but code position is ";
+    msg += std::to_string(pos);
+    ctx.throwOutOfRangeError(std::move(msg));
+    return false;
+}
+
+/**
+ * startIndex is inclusive.
+ * stopIndex is exclusive.
+ */
+static bool sliceImpl(RuntimeContext &ctx, String_Object *strObj, int startIndex, int stopIndex) {
+    const unsigned int size = strObj->size();
+
+    // resolve actual index
+    startIndex = (startIndex < 0 ? size : 0) + startIndex;
+    stopIndex = (stopIndex < 0 ? size : 0) + stopIndex;
+
+    // check range
+    if(startIndex > stopIndex || startIndex < 0 || startIndex >= static_cast<int>(size) ||
+       stopIndex < 0 || stopIndex > static_cast<int>(size)) {
+        std::string msg("size is ");
+        msg += std::to_string(size);
+        msg += ", but range is [";
+        msg += std::to_string(startIndex);
+        msg += ", ";
+        msg += std::to_string(stopIndex);
+        msg += ")";
+        ctx.throwOutOfRangeError(std::move(msg));
+        return false;
+    }
+
+    RET(DSValue::create<String_Object>(
+            ctx.getPool().getStringType(),
+            std::string(strObj->getValue() + startIndex, stopIndex - startIndex)));
+}
+
+//!bind: function slice($this : String, $start : Int32, $stop : Int32) : String
+static inline bool string_slice(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_slice);
+    return sliceImpl(ctx, typeAs<String_Object>(LOCAL(0)),
+                     typeAs<Int_Object>(LOCAL(1))->getValue(),
+                     typeAs<Int_Object>(LOCAL(2))->getValue());
+}
+
+//!bind: function sliceFrom($this : String, $start : Int32) : String
+static inline bool string_sliceFrom(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_sliceFrom);
+    auto strObj = typeAs<String_Object>(LOCAL(0));
+    return sliceImpl(ctx, strObj, typeAs<Int_Object>(LOCAL(1))->getValue(), strObj->size());
+}
+
+//!bind: function sliceTo($this : String, $stop : Int32) : String
+static inline bool string_sliceTo(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_sliceTo);
+    auto strObj = typeAs<String_Object>(LOCAL(0));
+    return sliceImpl(ctx, strObj, 0, typeAs<Int_Object>(LOCAL(1))->getValue());
+}
+
 //!bind: function $OP_ITER($this : String) : StringIter
 static inline bool string_iter(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_iter);
@@ -964,7 +1060,7 @@ static inline bool stringIter_next(RuntimeContext &ctx) {
     auto strIter = typeAs<StringIter_Object>(LOCAL(0));
     auto strObj = typeAs<String_Object>(strIter->strObj);
     if(strIter->curIndex >= strObj->size()) {
-        ctx.throwError(ctx.getPool().getOutOfRangeErrorType(), "string iterator reach end of string");
+        ctx.throwOutOfRangeError(std::string("string iterator reach end of string"));
         return false;
     }
     unsigned int curIndex = strIter->curIndex;

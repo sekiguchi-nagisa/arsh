@@ -30,7 +30,7 @@ private:
     static const unsigned char utf8SkipData[];
 
 public:
-    static unsigned char * const* getUTF8SkipData() {
+    static const unsigned char *getUTF8SkipData() {
         return utf8SkipData;
     }
 
