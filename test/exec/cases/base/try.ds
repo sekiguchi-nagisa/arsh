@@ -1,40 +1,43 @@
+# basic try-catch
+
 try {
-	1 / 0
-	assert($false)
+    1 / 0
+    assert($false)
 } catch($e : OutOfRangeError) {
-	assert($false)
+    assert($false)
 } catch($e : ArithmeticError) {
-	assert($true)
+    assert($true)
 } catch($e : Error) {
-	assert($false)
+    assert($false)
 }
 
 try {
-	[12][3]
+    [12][3]
 } catch($e : KeyNotFoundError) {
-	assert($false)
+    assert($false)
 } catch($e) {
-	assert($true)
+    assert($true)
 }
 
+# try-catch-finally
 var flag = $false
 function f($a : Boolean): Int {
-	$flag = $false
-	try {
-		if($a) {
-			1 / 0
-		}
-		return 100
-	}
-	catch($e) {
-		assert($e is Error)
-		assert($e is ArithmeticError)
-		return -100
-	}
-	finally {
-		$flag = $true
-	}
-	return 0
+    $flag = $false
+    try {
+        if($a) {
+            1 / 0
+        }
+        return 100
+    }
+    catch($e) {
+        assert($e is Error)
+        assert($e is ArithmeticError)
+        return -100
+    }
+    finally {
+        $flag = $true
+    }
+    return 0
 }
 
 assert($f($true) == -100)
@@ -42,21 +45,70 @@ assert($flag)
 assert($f($false) == 100)
 assert($flag)
 
+# try-finally
+$flag = $false
+var j = 0
+for(var i = 0; $i < 10; $i++) {
+    try {
+        if($i == 5) {
+            $flag = $true
+            break
+        }
+    } finally {
+        $j = $i
+    }
+}
+assert($flag && $j == 5)
+
 # nested finally
 function g() : Int {
-	var i = 0
-	try {
-		try {
-			return $i
-		} finally {
-			assert($i == 0)
-			$i++
-		}
-	} finally {
-		assert($i == 1)
-		$i++
-	}
-	return 99
+    var i = 0
+    try {
+        try {
+            return $i
+        } finally {
+            assert($i == 0)
+            $i++
+        }
+    } finally {
+        assert($i == 1)
+        $i++
+    }
+    return 99
+}
+assert($g() == 0)
+
+$j = 0
+try {
+    try {
+        1 / 0
+        assert($false)
+    } catch($e : OutOfRangeError) {
+        assert($false)
+    } finally {
+        $j++
+    }
+} catch($e : ArithmeticError) {
+    assert($j == 1)
+    $j++
+} finally {
+    assert($j == 2)
+    $j++
+}
+assert($j == 3)
+
+# throw in finally
+function h() {
+    try {
+        1 / 0   # ArithmeticError
+    } finally {
+        [12][34] # ignore previously raised error
+        assert($false)
+    }
 }
 
-assert($g() == 0)
+try {
+    $h()
+} catch($e) {
+    assert($e is OutOfRangeError)
+}

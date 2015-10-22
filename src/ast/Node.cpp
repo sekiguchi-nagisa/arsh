@@ -1955,11 +1955,11 @@ EvalStatus TryNode::eval(RuntimeContext &ctx) {
             if(catchNode->getExceptionType()->isSameOrBaseTypeOf(thrownType)) {
                 ctx.loadThrownObject();
                 status = catchNode->eval(ctx);
-                // eval finally
-                EVAL(ctx, this->finallyNode);
-                return status;
+                break;
             }
         }
+        // eval finally
+        EVAL(ctx, this->finallyNode);
     }
     return status;
 }
