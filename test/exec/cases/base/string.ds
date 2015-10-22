@@ -35,6 +35,7 @@ assert("12あ90灘"[0] == "1")
 assert("12あ90灘"[1] == "2")
 assert("12あ90灘"[2] == 'あ')
 assert("12あ90灘"[5] == '灘')
+try { "12あ90灘"[6]; assert($false); } catch($e) { assert($e is OutOfRangeError); }
 
 assert($a.slice(0, 4) == "hell");
 assert($a.slice(-3, -1) == "rl");

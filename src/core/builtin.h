@@ -975,7 +975,7 @@ static inline bool string_get(RuntimeContext &ctx) {
             }
             count++;
         }
-        if(count == limit) {
+        if(count == limit && index < size) {
             unsigned int nextIndex = misc::UTF8Util::getNextPos(index, strObj->getValue()[index]);
             RET(DSValue::create<String_Object>(
                     ctx.getPool().getStringType(), std::string(strObj->getValue() + index, nextIndex - index)));
