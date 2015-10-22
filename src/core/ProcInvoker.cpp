@@ -171,20 +171,20 @@ static void builtin_perror(const BuiltinContext &bctx, int errorNum, const char 
 
 
 // builtin command definition
-static int builtin___gets(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
-static int builtin___puts(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
-static int builtin_cd(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
-static int builtin_check_env(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
-static int builtin_command(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
-static int builtin_echo(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
-static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
-static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
-static int builtin_exit(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
-static int builtin_false(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
-static int builtin_help(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
-static int builtin_ps_intrp(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
-static int builtin_pwd(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
-static int builtin_true(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
+static int builtin___gets(RuntimeContext *ctx, const BuiltinContext &bctx);
+static int builtin___puts(RuntimeContext *ctx, const BuiltinContext &bctx);
+static int builtin_cd(RuntimeContext *ctx, const BuiltinContext &bctx);
+static int builtin_check_env(RuntimeContext *ctx, const BuiltinContext &bctx);
+static int builtin_command(RuntimeContext *ctx, const BuiltinContext &bctx);
+static int builtin_echo(RuntimeContext *ctx, const BuiltinContext &bctx);
+static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx);
+static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx);
+static int builtin_exit(RuntimeContext *ctx, const BuiltinContext &bctx);
+static int builtin_false(RuntimeContext *ctx, const BuiltinContext &bctx);
+static int builtin_help(RuntimeContext *ctx, const BuiltinContext &bctx);
+static int builtin_ps_intrp(RuntimeContext *ctx, const BuiltinContext &bctx);
+static int builtin_pwd(RuntimeContext *ctx, const BuiltinContext &bctx);
+static int builtin_true(RuntimeContext *ctx, const BuiltinContext &bctx);
 
 const struct {
     const char *commandName;
@@ -300,9 +300,8 @@ static bool printUsage(FILE *fp, const char *commandName, bool isShortHelp = tru
     return false;
 }
 
-static int builtin_help(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+static int builtin_help(RuntimeContext *ctx, const BuiltinContext &bctx) {
     UNUSED(ctx);
-    UNUSED(raised);
 
     if(bctx.argc == 1) {
         printAllUsage(bctx.fp_stdout);
@@ -335,9 +334,8 @@ inline static void showUsage(const BuiltinContext &bctx) {
     printUsage(bctx.fp_stderr, bctx.argv[0]);
 }
 
-static int builtin_cd(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+static int builtin_cd(RuntimeContext *ctx, const BuiltinContext &bctx) {
     UNUSED(ctx);
-    UNUSED(raised);
 
     bool OLDPWD_only = true;
     const char *destDir = getenv("HOME");
@@ -357,9 +355,8 @@ static int builtin_cd(RuntimeContext *ctx, const BuiltinContext &bctx, bool &rai
     return 0;
 }
 
-static int builtin_check_env(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+static int builtin_check_env(RuntimeContext *ctx, const BuiltinContext &bctx) {
     UNUSED(ctx);
-    UNUSED(raised);
 
     if(bctx.argc == 1) {
         showUsage(bctx);
@@ -374,7 +371,7 @@ static int builtin_check_env(RuntimeContext *ctx, const BuiltinContext &bctx, bo
     return 0;
 }
 
-static int builtin_exit(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+static int builtin_exit(RuntimeContext *ctx, const BuiltinContext &bctx) {
     int ret = 0;
     if(bctx.argc > 1) {
         const char *num = bctx.argv[1];
@@ -385,13 +382,11 @@ static int builtin_exit(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
         }
     }
     ctx->exitShell(ret);
-    raised = true;
     return ret;
 }
 
-static int builtin_echo(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+static int builtin_echo(RuntimeContext *ctx, const BuiltinContext &bctx) {
     UNUSED(ctx);
-    UNUSED(raised);
 
     FILE *fp = bctx.fp_stdout;  // not close it.
     int argc = bctx.argc;
@@ -473,18 +468,16 @@ static int builtin_echo(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
     return 0;
 }
 
-static int builtin_true(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+static int builtin_true(RuntimeContext *ctx, const BuiltinContext &bctx) {
     UNUSED(ctx);
     UNUSED(bctx);
-    UNUSED(raised);
 
     return 0;
 }
 
-static int builtin_false(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+static int builtin_false(RuntimeContext *ctx, const BuiltinContext &bctx) {
     UNUSED(ctx);
     UNUSED(bctx);
-    UNUSED(raised);
 
     return 1;
 }
@@ -492,9 +485,8 @@ static int builtin_false(RuntimeContext *ctx, const BuiltinContext &bctx, bool &
 /**
  * for stdin redirection test
  */
-static int builtin___gets(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+static int builtin___gets(RuntimeContext *ctx, const BuiltinContext &bctx) {
     UNUSED(ctx);
-    UNUSED(raised);
 
     unsigned int bufSize = 256;
     char buf[bufSize];
@@ -508,9 +500,8 @@ static int builtin___gets(RuntimeContext *ctx, const BuiltinContext &bctx, bool 
 /**
  * for stdout/stderr redirection test
  */
-static int builtin___puts(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+static int builtin___puts(RuntimeContext *ctx, const BuiltinContext &bctx) {
     UNUSED(ctx);
-    UNUSED(raised);
 
     for(int index = 1; index < bctx.argc; index++) {
         const char *arg = bctx.argv[index];
@@ -530,9 +521,7 @@ static int builtin___puts(RuntimeContext *ctx, const BuiltinContext &bctx, bool 
 /**
  * for prompt string debugging
  */
-static int builtin_ps_intrp(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
-    UNUSED(raised);
-
+static int builtin_ps_intrp(RuntimeContext *ctx, const BuiltinContext &bctx) {
     if(bctx.argc != 2) {
         showUsage(bctx);
         return 1;
@@ -544,9 +533,8 @@ static int builtin_ps_intrp(RuntimeContext *ctx, const BuiltinContext &bctx, boo
     return 0;
 }
 
-static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx) {
     UNUSED(ctx);
-    UNUSED(raised);
 
     int index = 1;
     bool clearEnv = false;
@@ -579,9 +567,7 @@ static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
     return 0;
 }
 
-static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
-    UNUSED(raised);
-
+static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx) {
     if(bctx.argc > 1) {
         pid_t pid = xfork();
         if(pid == -1) {
@@ -630,9 +616,8 @@ static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx, bool &r
     return 0;
 }
 
-static int builtin_pwd(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+static int builtin_pwd(RuntimeContext *ctx, const BuiltinContext &bctx) {
     UNUSED(ctx);
-    UNUSED(raised);
 
     //TODO: support LP option
 
@@ -648,7 +633,7 @@ static int builtin_pwd(RuntimeContext *ctx, const BuiltinContext &bctx, bool &ra
     return 0;
 }
 
-static int builtin_command(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised) {
+static int builtin_command(RuntimeContext *ctx, const BuiltinContext &bctx) {
     int index = 1;
     bool useDefaultPath = false;
 
@@ -682,7 +667,7 @@ static int builtin_command(RuntimeContext *ctx, const BuiltinContext &bctx, bool
             BuiltinContext nbctx(index, bctx);
             auto *cmd = invoker.lookupBuiltinCommand(bctx.argv[index]);
             if(cmd != nullptr) {
-                return cmd(ctx, nbctx, raised);
+                return cmd(ctx, nbctx);
             } else {
                 int status;
                 ctx->getProcInvoker().forkAndExec(nbctx, status, useDefaultPath);
@@ -951,8 +936,7 @@ EvalStatus ProcInvoker::invoke() {
             }
 
             BuiltinContext bctx(argc, argv, stdin_fd, stdout_fd, stderr_fd);
-            bool raised = false;
-            this->ctx->updateExitStatus(cmd_ptr(this->ctx, bctx, raised));
+            this->ctx->updateExitStatus(cmd_ptr(this->ctx, bctx));
 
             if(dupFD) {
                 fclose(bctx.fp_stdin);
@@ -964,7 +948,7 @@ EvalStatus ProcInvoker::invoke() {
                 fflush(bctx.fp_stderr);
             }
 
-            return raised ? EvalStatus::THROW : EvalStatus::SUCCESS;
+            return EvalStatus::SUCCESS;
         }
     }
 
@@ -1074,8 +1058,7 @@ EvalStatus ProcInvoker::invoke() {
             closeAllPipe(procSize, selfpipes);
 
             BuiltinContext bctx(argc, argv, STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO);
-            bool raised = false;
-            exit(cmd_ptr(this->ctx, bctx, raised));
+            exit(cmd_ptr(this->ctx, bctx));
         }
 
         // exec external command
@@ -1092,23 +1075,20 @@ EvalStatus ProcInvoker::invoke() {
     }
 }
 
-EvalStatus ProcInvoker::execBuiltinCommand(char *const argv[]) {
+void ProcInvoker::execBuiltinCommand(char *const argv[]) {
     builtin_command_t cmd_ptr = this->lookupBuiltinCommand(argv[0]);
     if(cmd_ptr == nullptr) {
         fprintf(stderr, "ydsh: %s: not builtin command\n", argv[0]);
         this->ctx->updateExitStatus(1);
-        return EvalStatus::SUCCESS;
+        return;
     }
 
     BuiltinContext bctx(argv, dup(STDIN_FILENO), dup(STDOUT_FILENO), dup(STDERR_FILENO));
-    bool raised = false;
-    this->ctx->updateExitStatus(cmd_ptr(this->ctx, bctx, raised));
+    this->ctx->updateExitStatus(cmd_ptr(this->ctx, bctx));
 
     fclose(bctx.fp_stdin);
     fclose(bctx.fp_stdout);
     fclose(bctx.fp_stderr);
-
-    return raised ? EvalStatus::THROW : EvalStatus::SUCCESS;
 }
 
 void ProcInvoker::forkAndExec(const BuiltinContext &bctx, int &status, bool useDefaultPath) {

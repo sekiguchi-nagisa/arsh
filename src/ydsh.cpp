@@ -323,9 +323,9 @@ int DSContext_loadAndEval(DSContext *ctx, const char *sourceName, FILE *fp, DSSt
 }
 
 int DSContext_exec(DSContext *ctx, char *const argv[], DSStatus **status) {
-    EvalStatus es;
+    EvalStatus es = EvalStatus::SUCCESS;
     try {
-        es = ctx->ctx.getProcInvoker().execBuiltinCommand(argv);
+        ctx->ctx.getProcInvoker().execBuiltinCommand(argv);
     } catch(const InternalError &e) {
         es = EvalStatus::THROW;
     }

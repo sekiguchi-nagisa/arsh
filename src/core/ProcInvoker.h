@@ -106,10 +106,9 @@ struct ChildError {
 class ProcInvoker {
 public:
     /**
-     * if some error happened(ex. exit), raised will be true.
      * return exit status.
      */
-    typedef int (*builtin_command_t)(RuntimeContext *ctx, const BuiltinContext &bctx, bool &raised);
+    typedef int (*builtin_command_t)(RuntimeContext *ctx, const BuiltinContext &bctx);
 
 private:
     enum ExitKind : unsigned int {
@@ -185,7 +184,7 @@ public:
      * last element of argv is null.
      * if execute exit command, throw InternalError.
      */
-    EvalStatus execBuiltinCommand(char *const argv[]);
+    void execBuiltinCommand(char *const argv[]);
 
     /**
      * return null, if not found builtin command.
