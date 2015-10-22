@@ -1,0 +1,9 @@
+# assert in try-finally
+
+#$test($result = 'assert', $lineNum = 6, $status = 1)
+
+try {
+    assert($false)
+} finally {
+    1 / 0   # unreachable code
+}

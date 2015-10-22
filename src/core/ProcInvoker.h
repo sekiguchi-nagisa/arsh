@@ -183,6 +183,7 @@ public:
     /**
      * first element of argv is command name.
      * last element of argv is null.
+     * if execute exit command, throw InternalError.
      */
     EvalStatus execBuiltinCommand(char *const argv[]);
 

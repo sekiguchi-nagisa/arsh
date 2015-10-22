@@ -199,7 +199,14 @@ unsigned int DSContext::eval(const char *sourceName, Lexer &lexer) {
     }
 
     // eval
-    if(rootNode.eval(this->ctx) != EvalStatus::SUCCESS) {
+    EvalStatus s;
+    try {
+        s = rootNode.eval(this->ctx);
+    } catch(const InternalError &e) {
+        s = EvalStatus::THROW;
+    }
+
+    if(s != EvalStatus::SUCCESS) {
         this->listener->handleRuntimeError(this->ctx.getPool(), this->ctx.getThrownObject());
 
         DSType *thrownType = this->ctx.getThrownObject()->getType();
@@ -316,8 +323,15 @@ int DSContext_loadAndEval(DSContext *ctx, const char *sourceName, FILE *fp, DSSt
 }
 
 int DSContext_exec(DSContext *ctx, char *const argv[], DSStatus **status) {
+    EvalStatus es;
+    try {
+        es = ctx->ctx.getProcInvoker().execBuiltinCommand(argv);
+    } catch(const InternalError &e) {
+        es = EvalStatus::THROW;
+    }
+
     unsigned int s = DS_STATUS_SUCCESS;
-    if(ctx->ctx.getProcInvoker().execBuiltinCommand(argv) != EvalStatus::SUCCESS) {
+    if(es != EvalStatus::SUCCESS) {
         DSType *thrownType = ctx->ctx.getThrownObject()->getType();
         if(*thrownType == *ctx->ctx.getPool().getShellExit()) {
             s = DS_STATUS_EXIT;

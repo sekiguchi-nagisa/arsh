@@ -501,10 +501,10 @@ public:
         this->funcContextStack.pop_back();
     }
 
-    void clearCallStack() {
-        this->funcContextStack.clear();
-        this->callStack.clear();
-    }
+    /**
+     * reset call stack, local var offset, thrown object.
+     */
+    void resetState();
 
     /**
      * update OLDPWD and PWD
@@ -565,6 +565,9 @@ std::string expandTilde(const char *path);
  * after fork, reset signal setting in child process.
  */
 pid_t xfork(void);
+
+// for internal status reporting
+struct InternalError {};
 
 } // namespace core
 } // namespace ydsh

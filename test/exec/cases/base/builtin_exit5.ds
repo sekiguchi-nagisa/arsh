@@ -1,0 +1,9 @@
+# exit in try-finally
+
+#$test($result = 'exit', $status = 9, $lineNum = 6)
+
+try {
+    exit 9
+} finally {
+    1 / 0   # unreachable code
+}

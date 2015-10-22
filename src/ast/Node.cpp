@@ -2409,7 +2409,7 @@ void RootNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus RootNode::eval(RuntimeContext &ctx) {
-    ctx.clearCallStack();
+    ctx.resetState();
 
     ctx.pushFuncContext(this);
     ctx.reserveGlobalVar(this->maxGVarNum);

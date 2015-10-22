@@ -370,7 +370,7 @@ EvalStatus RuntimeContext::checkAssertion(unsigned int lineNum) {
         this->pushCallFrame(lineNum);
         this->throwError(this->pool.getAssertFail(), "");
         this->popCallFrame();
-        return EvalStatus::THROW;
+        throw InternalError();
     }
     return EvalStatus::SUCCESS;
 }
@@ -431,6 +431,14 @@ bool RuntimeContext::checkZeroMod(int right) {
     return true;
 }
 
+void RuntimeContext::resetState() {
+    this->funcContextStack.clear();
+    this->callStack.clear();
+    this->localVarOffset = 0;
+    this->offsetStack.clear();
+    this->thrownObject.reset();
+}
+
 void RuntimeContext::updateWorkingDir(bool OLDPWD_only) {
     // check handle
     const char *env_OLDPWD = "OLDPWD";
@@ -486,7 +494,9 @@ void RuntimeContext::updateExitStatus(unsigned int status) {
 void RuntimeContext::exitShell(unsigned int status) {
     std::string str("terminated by exit ");
     str += std::to_string(status);
+    this->updateExitStatus(status);
     this->throwError(this->pool.getShellExit(), std::move(str));
+    throw InternalError();
 }
 
 unsigned int RuntimeContext::getSpecialCharIndex(const char *varName) {
@@ -524,7 +534,13 @@ int RuntimeContext::execUserDefinedCommand(UserDefinedCmdNode *node, DSValue *ar
     this->procInvoker.clear();
 
     this->pushFuncContext(node);
-    EvalStatus s = node->getBlockNode()->eval(*this);
+    EvalStatus s;
+    try {
+        s = node->getBlockNode()->eval(*this);
+    } catch(const InternalError &e) {
+        s = EvalStatus::THROW;
+    }
+
     this->popFuncContext();
 
     // get exit status
