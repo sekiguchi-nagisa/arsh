@@ -201,7 +201,7 @@ public:
     /**
      * initialize internal types.
      */
-    void init(TypePool *typePool, NativeFuncInfo *info,
+    void init(TypePool *typePool, NativeFuncInfo &info,
               const std::vector<DSType *> *types = 0);
 
     /**

@@ -229,7 +229,7 @@ struct NativeFuncInfo {
     /**
      * serialized function handle
      */
-    char handleInfo[32];
+    char handleInfo[24];
 
     /**
      * bool func(RuntimeContext &ctx)
@@ -239,16 +239,24 @@ struct NativeFuncInfo {
 
 struct native_type_info_t {
     /**
-     * may be null, if has no constructor.
+     * may be 0.
      */
-    NativeFuncInfo *initInfo;
+    const unsigned int constructorSize;
 
-    /**
-     * up to 24
-     */
     const unsigned int methodSize;
 
     NativeFuncInfo funcInfos[24];
+
+    NativeFuncInfo &getMethodInfo(unsigned int index) {
+        return this->funcInfos[this->constructorSize + index];
+    }
+
+    /**
+     * not call it if constructorSize is 0
+     */
+    NativeFuncInfo &getInitInfo() {
+        return this->funcInfos[0];
+    }
 };
 
 /**
@@ -258,7 +266,7 @@ struct native_type_info_t {
  */
 class BuiltinType : public DSType {
 protected:
-    native_type_info_t *info;
+    native_type_info_t &info;
 
     /**
      * may be null, if has no constructor.
@@ -278,7 +286,7 @@ public:
      * actually superType is BuiltinType.
      */
     BuiltinType(bool extendable, DSType *superType,
-                native_type_info_t *info, bool isVoid);
+                native_type_info_t &info, bool isVoid);
 
     virtual ~BuiltinType();
 
@@ -293,7 +301,7 @@ public:
     void copyAllMethodRef(std::vector<MethodRef> &methodTable); // override
 
 protected:
-    virtual void initMethodHandle(MethodHandle *handle, TypePool *typePool, NativeFuncInfo *info);
+    virtual void initMethodHandle(MethodHandle *handle, TypePool *typePool, NativeFuncInfo &info);
 };
 
 /**
@@ -310,7 +318,7 @@ public:
     /**
      * super type is AnyType or VariantType.
      */
-    ReifiedType(native_type_info_t *info, DSType *superType, std::vector<DSType *> &&elementTypes) :
+    ReifiedType(native_type_info_t &info, DSType *superType, std::vector<DSType *> &&elementTypes) :
             BuiltinType(false, superType, info, false), elementTypes(std::move(elementTypes)) { }
 
     virtual ~ReifiedType() = default;
@@ -322,7 +330,7 @@ public:
     virtual void accept(TypeVisitor *visitor); // override
 
 protected:
-    void initMethodHandle(MethodHandle *handle, TypePool *typePool, NativeFuncInfo *info); // override
+    void initMethodHandle(MethodHandle *handle, TypePool *typePool, NativeFuncInfo &info); // override
 };
 
 
@@ -334,7 +342,7 @@ public:
     /**
      * superType is AnyType ot VariantType
      */
-    TupleType(native_type_info_t *info, DSType *superType, std::vector<DSType *> &&types);
+    TupleType(native_type_info_t &info, DSType *superType, std::vector<DSType *> &&types);
     ~TupleType();
 
     MethodHandle *getConstructorHandle(TypePool *typePool); // override
@@ -418,7 +426,7 @@ public:
     /**
      * call only once.
      */
-    static void registerFuncInfo(NativeFuncInfo *info);
+    static void registerFuncInfo(NativeFuncInfo &info);
 };
 
 struct TypeVisitor {
@@ -441,12 +449,10 @@ private:
 
     std::vector<DSType*> acceptableTypes;
 
-    /**
-     * may be null, if Tuple template
-     */
-    native_type_info_t *info;
+    native_type_info_t &info;
+
 public:
-    TypeTemplate(std::string &&name, std::vector<DSType*> &&elementTypes, native_type_info_t *info) :
+    TypeTemplate(std::string &&name, std::vector<DSType*> &&elementTypes, native_type_info_t &info) :
             name(std::move(name)), acceptableTypes(std::move(elementTypes)), info(info) { }
 
     ~TypeTemplate() = default;
@@ -459,7 +465,7 @@ public:
         return this->acceptableTypes.size();
     }
 
-    native_type_info_t *getInfo() const {
+    native_type_info_t &getInfo() const {
         return this->info;
     }
 

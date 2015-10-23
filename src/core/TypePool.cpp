@@ -175,7 +175,7 @@ TypePool::TypePool() :
     this->procType = this->initBuiltinType("%Proc%", false, this->anyType, info_Dummy());
 
     // register NativeFuncInfo to ErrorType
-    ErrorType::registerFuncInfo(info_ErrorType()->initInfo);
+    ErrorType::registerFuncInfo(info_ErrorType().getInitInfo());
 
     // initialize type template
     std::vector<DSType *> elements;
@@ -440,14 +440,14 @@ void TypePool::abort() {
 }
 
 DSType *TypePool::initBuiltinType(const char *typeName, bool extendable,
-                                  DSType *superType, native_type_info_t *info, bool isVoid) {
+                                  DSType *superType, native_type_info_t &info, bool isVoid) {
     // create and register type
     return this->typeMap.addType(
             std::string(typeName), new BuiltinType(extendable, superType, info, isVoid));
 }
 
 TypeTemplate *TypePool::initTypeTemplate(const char *typeName,
-                                         std::vector<DSType *> &&elementTypes, native_type_info_t *info) {
+                                         std::vector<DSType *> &&elementTypes, native_type_info_t &info) {
     return this->templateMap.insert(
             std::make_pair(typeName, new TypeTemplate(std::string(typeName),
                                                       std::move(elementTypes), info))).first->second;

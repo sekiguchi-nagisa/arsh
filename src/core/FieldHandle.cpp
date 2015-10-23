@@ -163,10 +163,10 @@ static DSType *decodeType(TypePool *typePool, const char *&pos,
     return 0;
 }
 
-void MethodHandle::init(TypePool *typePool, NativeFuncInfo *info,
+void MethodHandle::init(TypePool *typePool, NativeFuncInfo &info,
                         const std::vector<DSType *> *types) {
     // init return type
-    const char *pos = info->handleInfo;
+    const char *pos = info.handleInfo;
     this->returnType = decodeType(typePool, pos, types);
 
     /**

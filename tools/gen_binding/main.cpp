@@ -871,29 +871,28 @@ static void gencode(const char *outFileName, const std::vector<TypeBind *> &bind
     OUT("\n");
 
     // generate dummy
-    OUT("native_type_info_t *info_Dummy() {\n");
+    OUT("native_type_info_t &info_Dummy() {\n");
     OUT("    static native_type_info_t info = {0, 0, {}};\n");
-    OUT("    return &info;\n");
+    OUT("    return info;\n");
     OUT("}\n");
     OUT("\n");
 
     // generate type binding
     for(TypeBind *bind : binds) {
-        OUT("native_type_info_t *info_%sType() {\n", bind->name.c_str());
-        if(bind->initElement != 0) {
-            OUT("    static NativeFuncInfo initInfo = %s;\n",
-                bind->initElement->toString().c_str());
-        }
+        OUT("native_type_info_t &info_%sType() {\n", bind->name.c_str());
         OUT("    static native_type_info_t info = {\n");
-        OUT("        .initInfo = %s,\n", (bind->initElement == 0 ? "0" : "&initInfo"));
+        OUT("        .constructorSize = %d,\n", (bind->initElement == nullptr ? 0 : 1));
         OUT("        .methodSize = %ld,\n", bind->funcElements.size());
         OUT("        .funcInfos = {\n");
+        if(bind->initElement != nullptr) {
+            OUT("            %s,\n", bind->initElement->toString().c_str());
+        }
         for(Element *e : bind->funcElements) {
             OUT("            %s,\n", e->toString().c_str());
         }
         OUT("        }\n");
         OUT("    };\n");
-        OUT("    return &info;\n");
+        OUT("    return info;\n");
         OUT("}\n");
         OUT("\n");
     }
