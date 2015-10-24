@@ -63,10 +63,10 @@ try { assert("012345".sliceTo(9) == "A"); } catch($e) { assert($e is OutOfRangeE
 var b = "aaa"
 var c = 'ccc'
 
-#assert($b < $c)
-#assert($b <= $c)
-#assert(not($b > $c))
-#assert(not($b >= $c))
+assert($b < $c)
+assert($b <= $c)
+assert(not($b > $c))
+assert(not($b >= $c))
 
 # string interpolation
 $a = "西暦${1900 + 114}年"

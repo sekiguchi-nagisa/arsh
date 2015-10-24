@@ -932,6 +932,38 @@ static inline bool string_ne(RuntimeContext &ctx) {
     RET_BOOL(r);
 }
 
+//!bind: function $OP_LT($this : String, $target : String) : Boolean
+static inline bool string_lt(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_lt);
+    bool r = strcmp(typeAs<String_Object>(LOCAL(0))->getValue(),
+                    typeAs<String_Object>(LOCAL(1))->getValue()) < 0;
+    RET_BOOL(r);
+}
+
+//!bind: function $OP_GT($this : String, $target : String) : Boolean
+static inline bool string_gt(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_gt);
+    bool r = strcmp(typeAs<String_Object>(LOCAL(0))->getValue(),
+                    typeAs<String_Object>(LOCAL(1))->getValue()) > 0;
+    RET_BOOL(r);
+}
+
+//!bind: function $OP_LE($this : String, $target : String) : Boolean
+static inline bool string_le(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_le);
+    bool r = strcmp(typeAs<String_Object>(LOCAL(0))->getValue(),
+                    typeAs<String_Object>(LOCAL(1))->getValue()) <= 0;
+    RET_BOOL(r);
+}
+
+//!bind: function $OP_GE($this : String, $target : String) : Boolean
+static inline bool string_ge(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_ge);
+    bool r = strcmp(typeAs<String_Object>(LOCAL(0))->getValue(),
+                    typeAs<String_Object>(LOCAL(1))->getValue()) >= 0;
+    RET_BOOL(r);
+}
+
 //!bind: function size($this : String) : Int32
 static inline bool string_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_size);
