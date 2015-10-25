@@ -75,16 +75,16 @@ constexpr const char *OP_RE_NE = "__RE_NE__";    // !~
 constexpr const char *OP_GET = "__GET__";      // []
 constexpr const char *OP_SET = "__SET__";      // [] =
 
-// iterator
-constexpr const char *OP_ITER = "__ITERATOR__"; // must be Func<Any> type
-constexpr const char *OP_NEXT = "__NEXT__";  // must be Func<Any> type
-constexpr const char *OP_HAS_NEXT = "__HAS_NEXT__";  // must be Func<Boolean> type
+// iterator (for-in)
+constexpr const char *OP_ITER = "__ITERATOR__";
+constexpr const char *OP_NEXT = "__NEXT__";
+constexpr const char *OP_HAS_NEXT = "__HAS_NEXT__";
 
 // to string
-constexpr const char *OP_STR = "__STR__";    // for string cast
+constexpr const char *OP_STR = "__STR__";    // for string cast or command argument
 constexpr const char *OP_INTERP = "__INTERP__";    // for interpolation
 
-// to command argument(string or string array)
+// to command argument
 constexpr const char *OP_CMD_ARG = "__CMD_ARG__";  // for command argument
 
 } // namespace core

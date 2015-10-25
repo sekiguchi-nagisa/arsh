@@ -76,7 +76,7 @@ public:
     void operator()(ast::Node *node, T && ... args) const throw(TypeCheckError) {
         static_assert(N == sizeof ... (T), "invalid parameter size");
 
-        throw TypeCheckError(node->getLineNum(), this->kind, this->format(std::forward<T &&>(args)...));
+        throw TypeCheckError(node->getLineNum(), this->kind, this->format(std::forward<T>(args)...));
     }
 };
 

@@ -61,14 +61,14 @@ public:
     template <typename ... T>
     void formatNext(std::string &str, unsigned int &index, const std::string &arg, T && ... args) const {
         this->formatImpl(str, index, arg);
-        this->formatNext(str, index, std::forward<T &&>(args)...);
+        this->formatNext(str, index, std::forward<T>(args)...);
     }
 
     template <typename ... T>
     std::string format(T && ... args) const {
         unsigned int index = 0;
         std::string str;
-        this->formatNext(str, index, std::forward<T &&>(args)...);
+        this->formatNext(str, index, std::forward<T>(args)...);
         return str;
     }
 };

@@ -66,7 +66,7 @@ public:
     void operator()(T && ... args) const throw(TypeLookupError) {
         static_assert(N == sizeof ... (T), "invalid parameter size");
 
-        throw TypeLookupError(this->kind, this->format(std::forward<T&&>(args)...));
+        throw TypeLookupError(this->kind, this->format(std::forward<T>(args)...));
     }
 };
 
