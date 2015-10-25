@@ -44,8 +44,8 @@ function test($a : String) : Boolean {
         echo not found file: $a 1>&2
         exit 1
     }
-    var r = valgrind -v --leak-check=full $bin $a 2>&1 > /dev/null | __gets | grep "definitely lost: 0" > /dev/null
-    return $r
+    var r = valgrind -v --leak-check=full $bin $a 2>&1 > /dev/null | __gets | grep "blocks are definitely lost" > /dev/null
+    return not $r
 }
 
 
