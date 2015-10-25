@@ -21,7 +21,6 @@
 #include "../core/DSObject.h"
 #include "../core/TypeLookupError.hpp"
 #include "../misc/unused.h"
-#include "NodeVerifier.h"
 #include "TypeChecker.h"
 
 namespace ydsh {
@@ -94,11 +93,25 @@ DSType *TypeChecker::TypeGenerator::generateType(TypeToken *token) {
 
 TypeChecker::TypeChecker(TypePool &typePool, SymbolTable &symbolTable) :
         typePool(&typePool), symbolTable(symbolTable), typeGen(this->typePool), curReturnType(0),
-        loopDepth(0), finallyDepth(0), cmdContextStack(), coercionKind(INVALID_COERCION) {
+        visitingDepth(0), loopDepth(0), finallyDepth(0),
+        cmdContextStack(), coercionKind(INVALID_COERCION) {
 }
 
 void TypeChecker::checkTypeRootNode(RootNode &rootNode) {
     rootNode.accept(this);
+}
+
+void TypeChecker::recover(bool abortType) {
+    this->symbolTable.abort();
+    if(abortType) {
+        this->typePool->abort();
+    }
+
+    this->curReturnType = nullptr;
+    this->visitingDepth = 0;
+    this->loopDepth = 0;
+    this->finallyDepth = 0;
+    this->cmdContextStack.clear();
 }
 
 DSType *TypeChecker::resolveInterface(TypePool *typePool, InterfaceNode *node) {
@@ -158,7 +171,9 @@ DSType *TypeChecker::checkType(DSType *requiredType, Node *targetNode,
      * try type check.
      */
     if(targetNode->getType() == nullptr) {
+        this->visitingDepth++;
         targetNode->accept(this);
+        this->visitingDepth--;
     }
 
     /**
@@ -287,14 +302,6 @@ FieldHandle *TypeChecker::addEntryAndThrowIfDefined(Node *node, const std::strin
     return handle;
 }
 
-void TypeChecker::enterLoop() {
-    this->loopDepth++;
-}
-
-void TypeChecker::exitLoop() {
-    this->loopDepth--;
-}
-
 void TypeChecker::checkAndThrowIfOutOfLoop(Node *node) {
     if(this->loopDepth > 0) {
         return;
@@ -409,32 +416,6 @@ HandleOrFuncType TypeChecker::resolveCallee(VarNode *recvNode) {
     return HandleOrFuncType(funcType);
 }
 
-void TypeChecker::checkTypeArgsNode(FunctionHandle *handle, ArgsNode *argsNode, bool isFuncCall) {
-    const std::vector<DSType *> &paramTypes = handle->getParamTypes();
-    this->checkTypeArgsNode(paramTypes, argsNode, isFuncCall);
-}
-
-void TypeChecker::checkTypeArgsNode(FunctionType *funcType, ArgsNode *argsNode, bool isFuncCall) {
-    this->checkTypeArgsNode(funcType->getParamTypes(), argsNode, isFuncCall);
-}
-
-void TypeChecker::checkTypeArgsNode(const std::vector<DSType *> &paramTypes, ArgsNode *argsNode, bool isFuncCall) {
-    const unsigned int startIndex = isFuncCall ? 0 : 1;
-    unsigned int size = paramTypes.size();
-    unsigned int argSize = argsNode->getNodes().size();
-    // check param size
-    if(size - startIndex != argSize) {
-        E_UnmatchParam(argsNode,
-                       std::to_string(size - startIndex),
-                       std::to_string(argSize));
-    }
-
-    // check type each node
-    for(unsigned int i = startIndex; i < size; i++) {
-        this->checkTypeWithCoercion(paramTypes[i], argsNode->refNodes()[i - startIndex]);
-    }
-}
-
 void TypeChecker::checkTypeArgsNode(MethodHandle *handle, ArgsNode *argsNode) { //FIXME: method overloading
     unsigned int argSize = argsNode->getNodes().size();
     do {
@@ -451,18 +432,6 @@ void TypeChecker::checkTypeArgsNode(MethodHandle *handle, ArgsNode *argsNode) { 
             this->checkTypeWithCoercion(handle->getParamTypes()[i], argsNode->refNodes()[i]);
         }
     } while(handle->getNext() != nullptr);
-}
-
-void TypeChecker::recover(bool abortType) {
-    this->symbolTable.abort();
-    if(abortType) {
-        this->typePool->abort();
-    }
-
-    this->curReturnType = nullptr;
-    this->loopDepth = 0;
-    this->finallyDepth = 0;
-    this->cmdContextStack.clear();
 }
 
 // for type cast
@@ -524,6 +493,11 @@ bool TypeChecker::checkLong2Int(int beforePrecision, int afterPrecision) {
 
 
 // visitor api
+void TypeChecker::visit(Node *node) {
+    UNUSED(node);
+    fatal("unsupported\n");
+}
+
 void TypeChecker::visitIntValueNode(IntValueNode *node) {
     DSType *type;
     switch(node->getKind()) {
@@ -803,16 +777,25 @@ void TypeChecker::visitApplyNode(ApplyNode *node) {
     Node *exprNode = node->getExprNode();
     HandleOrFuncType hf = this->resolveCallee(exprNode);
 
-    /**
-     * check type arg nodes
-     */
-    if(hf.treatAsHandle()) {
-        this->checkTypeArgsNode(hf.getHandle(), node->getArgsNode(), true);
-        node->setType(hf.getHandle()->getReturnType());
-    } else {
-        this->checkTypeArgsNode(hf.getFuncType(), node->getArgsNode(), true);
-        node->setType(hf.getFuncType()->getReturnType());
+    // resolve param types
+    auto &paramTypes = hf.treatAsHandle() ? hf.getHandle()->getParamTypes() :
+                       hf.getFuncType()->getParamTypes();
+    unsigned int size = paramTypes.size();
+    unsigned int argSize = node->getArgsNode()->getNodes().size();
+    // check param size
+    if(size != argSize) {
+        E_UnmatchParam(node->getArgsNode(),
+                       std::to_string(size),
+                       std::to_string(argSize));
     }
+
+    // check type each node
+    for(unsigned int i = 0; i < size; i++) {
+        this->checkTypeWithCoercion(paramTypes[i], node->getArgsNode()->refNodes()[i]);
+    }
+
+    // set return type
+    node->setType(hf.treatAsHandle() ? hf.getHandle()->getReturnType() : hf.getFuncType()->getReturnType());
 }
 
 void TypeChecker::visitMethodCallNode(MethodCallNode *node) {
@@ -1207,6 +1190,10 @@ void TypeChecker::visitFunctionNode(FunctionNode *node) {   //TODO: named parame
 }
 
 void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode *node) {
+    if(!this->isTopLevel()) {   // only available toplevel scope
+        E_OutsideToplevel(node);
+    }
+
     this->pushReturnType(this->typePool->getIntType());    // pseudo return type
     this->symbolTable.enterFunc();
     this->checkType(this->typePool->getVoidType(), node->getBlockNode());
@@ -1242,9 +1229,6 @@ void TypeChecker::visitDummyNode(DummyNode *node) {
 void TypeChecker::visitRootNode(RootNode *node) {
     this->symbolTable.commit();
     this->typePool->commit();
-
-    // verify node
-    ToplevelStatementVerifier().visit(node);
 
     for(Node *targetNode : node->getNodeList()) {
         this->checkType(nullptr, targetNode, nullptr);

@@ -184,7 +184,6 @@ set(YDSH_SRC
     src/parser/Lexer.cpp
     src/parser/Parser.cpp
     src/parser/TokenKind.cpp
-    src/parser/NodeVerifier.cpp
     src/parser/TypeChecker.cpp)
 
 if(USE_DBUS)

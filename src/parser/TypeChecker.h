@@ -66,7 +66,7 @@ enum CoercionKind {
     INVALID_COERCION,   // illegal coercion.
 };
 
-class TypeChecker : public NodeVisitor {
+class TypeChecker : protected NodeVisitor {
 public:
     class TypeGenerator : public TypeTokenVisitor {
     private:
@@ -107,6 +107,8 @@ private:
      */
     DSType *curReturnType;
 
+    int visitingDepth;
+
     /**
      * represents loop block depth. (if 0, outside loop block)
      */
@@ -133,6 +135,11 @@ public:
      * type checker entry point
      */
     void checkTypeRootNode(RootNode &rootNode);
+
+    /**
+     * abort symbol table and TypePool when error happened
+     */
+    void recover(bool abortType = true);
 
     static DSType *resolveInterface(TypePool *typePool, InterfaceNode *node);
 
@@ -191,9 +198,17 @@ private:
 
     FieldHandle *addEntryAndThrowIfDefined(Node *node, const std::string &symbolName, DSType *type, bool readOnly);
 
-    void enterLoop();
+    bool isTopLevel() const {
+        return this->visitingDepth == 1;
+    }
 
-    void exitLoop();
+    void enterLoop() {
+        this->loopDepth++;
+    }
+
+    void exitLoop() {
+        this->loopDepth--;
+    }
 
     /**
      * check node inside loop.
@@ -243,12 +258,8 @@ private:
     HandleOrFuncType resolveCallee(VarNode *recvNode);
 
     // helper for argument type checking
-    void checkTypeArgsNode(FunctionHandle *handle, ArgsNode *argsNode, bool isFuncCall);
-    void checkTypeArgsNode(FunctionType *funcType, ArgsNode *argsNode, bool isFuncCall);
-    void checkTypeArgsNode(const std::vector<DSType *> &paramTypes, ArgsNode *argsNode, bool isFuncCall);
     void checkTypeArgsNode(MethodHandle *handle, ArgsNode *argsNode);
 
-public:
     // for type cast
     bool checkInt2Float(int beforePrecision, DSType *afterType);
     bool checkFloat2Int(DSType *beforeType, int afterPrecision);
@@ -271,13 +282,8 @@ public:
     bool checkInt2Long(int beforePrecision, int afterPrecision);
     bool checkLong2Int(int beforePrecision, int afterPrecision);
 
-
-    /**
-     * abort symbol table and TypePool when error happened
-     */
-    void recover(bool abortType = true);
-
     // visitor api
+    void visit(Node *node); // override
     void visitIntValueNode(IntValueNode *node); // override
     void visitLongValueNode(LongValueNode *node); // override
     void visitFloatValueNode(FloatValueNode *node); // override

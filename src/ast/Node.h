@@ -2123,7 +2123,7 @@ Node *createBinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode);
 struct NodeVisitor {
     virtual ~NodeVisitor() = default;
 
-    void visit(Node *node) { node->accept(this); }
+    virtual void visit(Node *node) { node->accept(this); }
     virtual void visitIntValueNode(IntValueNode *node) = 0;
     virtual void visitLongValueNode(LongValueNode *node) = 0;
     virtual void visitFloatValueNode(FloatValueNode *node) = 0;
