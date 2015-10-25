@@ -30,6 +30,23 @@ namespace parser {
 
 using namespace ydsh::ast;
 
+class ArgsWrapper {
+private:
+    std::vector<Node *> nodes;
+
+public:
+    ArgsWrapper() = default;
+    ArgsWrapper(const ArgsWrapper &a) = delete;
+    ArgsWrapper(ArgsWrapper &&a) = default;
+    ~ArgsWrapper();
+
+    ArgsWrapper &operator=(const ArgsWrapper &) = delete;
+
+    void addArgNode(std::unique_ptr<Node> &&node);
+    std::vector<Node *> remove();
+};
+
+
 class Parser : public ydsh::parser_base::ParserBase<TokenKind, Lexer> {
 public:
     Parser() = default;
@@ -119,7 +136,7 @@ private:
 
     std::unique_ptr<Node> parse_stringLiteral();
 
-    std::unique_ptr<ArgsNode> parse_arguments();
+    ArgsWrapper parse_arguments();
 
     std::unique_ptr<Node> parse_stringExpression();
 

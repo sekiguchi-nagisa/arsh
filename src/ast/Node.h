@@ -623,41 +623,17 @@ public:
     EvalStatus eval(RuntimeContext &ctx); // override
 };
 
-class ArgsNode : public Node {
-private:
-    std::vector<Node *> nodes;
-
-public:
-    ArgsNode() : Node(0), nodes() { }
-
-    ~ArgsNode();
-
-    void addArg(Node *argNode);
-
-    const std::vector<Node *> &getNodes() const {
-        return this->nodes;
-    }
-
-    std::vector<Node *> &refNodes() {
-        return this->nodes;
-    }
-
-    void dump(Writer &writer) const;  // override
-    void accept(NodeVisitor *visitor);   // override
-    EvalStatus eval(RuntimeContext &ctx); // override
-};
-
 /**
  * for function object apply
  */
 class ApplyNode : public Node {
 private:
     Node *exprNode;
-    ArgsNode *argsNode;
+    std::vector<Node *> argNodes;
 
 public:
-    ApplyNode(Node *exprNode, ArgsNode *argsNode) :
-            Node(exprNode->getLineNum()), exprNode(exprNode), argsNode(argsNode) { }
+    ApplyNode(Node *exprNode, std::vector<Node *> &&argNodes) :
+            Node(exprNode->getLineNum()), exprNode(exprNode), argNodes(std::move(argNodes)) { }
 
     ~ApplyNode();
 
@@ -665,8 +641,12 @@ public:
         return this->exprNode;
     }
 
-    ArgsNode *getArgsNode() const {
-        return this->argsNode;
+    const std::vector<Node *> &getArgNodes() {
+        return this->argNodes;
+    }
+
+    std::vector<Node *> &refArgNodes() {
+        return this->argNodes;
     }
 
     void dump(Writer &writer) const;  // override
@@ -678,7 +658,7 @@ class MethodCallNode : public Node {
 private:
     Node *recvNode;
     std::string methodName;
-    ArgsNode *argsNode;
+    std::vector<Node *> argNodes;
 
     MethodHandle *handle;
 
@@ -686,11 +666,12 @@ private:
 
 public:
     MethodCallNode(Node *recvNode, std::string &&methodName) :
-            MethodCallNode(recvNode, std::move(methodName), new ArgsNode()) { }
+            MethodCallNode(recvNode, std::move(methodName), std::vector<Node *>()) { }
 
-    MethodCallNode(Node *recvNode, std::string &&methodName, ArgsNode *argsNode) :
+    MethodCallNode(Node *recvNode, std::string &&methodName, std::vector<Node *> &&argNodes) :
             Node(recvNode->getLineNum()),
-            recvNode(recvNode), methodName(std::move(methodName)), argsNode(argsNode), handle(), attributeSet() { }
+            recvNode(recvNode), methodName(std::move(methodName)),
+            argNodes(std::move(argNodes)), handle(), attributeSet() { }
 
     ~MethodCallNode();
 
@@ -710,8 +691,12 @@ public:
         return this->methodName;
     }
 
-    ArgsNode *getArgsNode() const {
-        return this->argsNode;
+    const std::vector<Node *> &getArgNodes() const {
+        return this->argNodes;
+    }
+
+    std::vector<Node *> &refArgNodes() {
+        return this->argNodes;
     }
 
     void setAttribute(flag8_t attribute) {
@@ -744,11 +729,11 @@ public:
 class NewNode : public Node {
 private:
     TypeToken *targetTypeToken;
-    ArgsNode *argsNode;
+    std::vector<Node *> argNodes;
 
 public:
-    NewNode(unsigned int lineNum, TypeToken *targetTypeToken, ArgsNode *argsNode) :
-            Node(lineNum), targetTypeToken(targetTypeToken), argsNode(argsNode) { }
+    NewNode(unsigned int lineNum, TypeToken *targetTypeToken, std::vector<Node *> &&argNodes) :
+            Node(lineNum), targetTypeToken(targetTypeToken), argNodes(std::move(argNodes)) { }
 
     ~NewNode();
 
@@ -756,8 +741,12 @@ public:
         return this->targetTypeToken;
     }
 
-    ArgsNode *getArgsNode() const {
-        return this->argsNode;
+    const std::vector<Node *> &getArgNodes() const {
+        return this->argNodes;
+    }
+
+    std::vector<Node *> &refArgNodes() {
+        return this->argNodes;
     }
 
     void dump(Writer &writer) const;  // override
@@ -2108,7 +2097,7 @@ TokenKind resolveAssignOp(TokenKind op);
 /**
  * create ApplyNode or MethodCallNode.
  */
-Node *createCallNode(Node *recvNode, ArgsNode *argsNode);
+Node *createCallNode(Node *recvNode, std::vector<Node *> &&argNodes);
 
 ForNode *createForInNode(unsigned int lineNum, VarNode *varNode, Node *exprNode, BlockNode *blockNode);
 
@@ -2139,7 +2128,6 @@ struct NodeVisitor {
     virtual void visitInstanceOfNode(InstanceOfNode *node) = 0;
     virtual void visitUnaryOpNode(UnaryOpNode *node) = 0;
     virtual void visitBinaryOpNode(BinaryOpNode *node) = 0;
-    virtual void visitArgsNode(ArgsNode *node) = 0;
     virtual void visitApplyNode(ApplyNode *node) = 0;
     virtual void visitMethodCallNode(MethodCallNode *node) = 0;
     virtual void visitNewNode(NewNode *node) = 0;
@@ -2198,7 +2186,6 @@ struct BaseVisitor : public NodeVisitor {
     virtual void visitInstanceOfNode(InstanceOfNode *node) { this->visitDefault(node); }
     virtual void visitUnaryOpNode(UnaryOpNode *node) { this->visitDefault(node); }
     virtual void visitBinaryOpNode(BinaryOpNode *node) { this->visitDefault(node); }
-    virtual void visitArgsNode(ArgsNode *node) { this->visitDefault(node); }
     virtual void visitApplyNode(ApplyNode *node) { this->visitDefault(node); }
     virtual void visitMethodCallNode(MethodCallNode *node) { this->visitDefault(node); }
     virtual void visitNewNode(NewNode *node) { this->visitDefault(node); }

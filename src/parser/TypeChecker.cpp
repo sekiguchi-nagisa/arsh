@@ -416,20 +416,18 @@ HandleOrFuncType TypeChecker::resolveCallee(VarNode *recvNode) {
     return HandleOrFuncType(funcType);
 }
 
-void TypeChecker::checkTypeArgsNode(MethodHandle *handle, ArgsNode *argsNode) { //FIXME: method overloading
-    unsigned int argSize = argsNode->getNodes().size();
+void TypeChecker::checkTypeArgsNode(Node *node, MethodHandle *handle, std::vector<Node *> &argNodes) { //FIXME: method overloading
+    unsigned int argSize = argNodes.size();
     do {
         // check param size
         unsigned int paramSize = handle->getParamTypes().size();
         if(paramSize != argSize) {
-            E_UnmatchParam(argsNode,
-                           std::to_string(paramSize),
-                           std::to_string(argSize));
+            E_UnmatchParam(node, std::to_string(paramSize), std::to_string(argSize));
         }
 
         // check type each node
         for(unsigned int i = 0; i < paramSize; i++) {
-            this->checkTypeWithCoercion(handle->getParamTypes()[i], argsNode->refNodes()[i]);
+            this->checkTypeWithCoercion(handle->getParamTypes()[i], argNodes[i]);
         }
     } while(handle->getNext() != nullptr);
 }
@@ -556,7 +554,7 @@ void TypeChecker::visitStringExprNode(StringExprNode *node) {
             MethodCallNode *callNode = new MethodCallNode(exprNode, std::move(methodName));
 
             // check type argument
-            this->checkTypeArgsNode(handle, callNode->getArgsNode());
+            this->checkTypeArgsNode(node, handle, callNode->refArgNodes());
             callNode->setHandle(handle);
             callNode->setType(handle->getReturnType());
 
@@ -766,10 +764,6 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode *node) {
     node->setType(this->checkType(applyNode));
 }
 
-void TypeChecker::visitArgsNode(ArgsNode *node) {
-    UNUSED(node);   // not call it
-}
-
 void TypeChecker::visitApplyNode(ApplyNode *node) {
     /**
      * resolve handle
@@ -781,17 +775,15 @@ void TypeChecker::visitApplyNode(ApplyNode *node) {
     auto &paramTypes = hf.treatAsHandle() ? hf.getHandle()->getParamTypes() :
                        hf.getFuncType()->getParamTypes();
     unsigned int size = paramTypes.size();
-    unsigned int argSize = node->getArgsNode()->getNodes().size();
+    unsigned int argSize = node->getArgNodes().size();
     // check param size
     if(size != argSize) {
-        E_UnmatchParam(node->getArgsNode(),
-                       std::to_string(size),
-                       std::to_string(argSize));
+        E_UnmatchParam(node, std::to_string(size), std::to_string(argSize));
     }
 
     // check type each node
     for(unsigned int i = 0; i < size; i++) {
-        this->checkTypeWithCoercion(paramTypes[i], node->getArgsNode()->refNodes()[i]);
+        this->checkTypeWithCoercion(paramTypes[i], node->refArgNodes()[i]);
     }
 
     // set return type
@@ -806,7 +798,7 @@ void TypeChecker::visitMethodCallNode(MethodCallNode *node) {
     }
 
     // check type argument
-    this->checkTypeArgsNode(handle, node->getArgsNode());
+    this->checkTypeArgsNode(node, handle, node->refArgNodes());
 
     node->setHandle(handle);
     node->setType(handle->getReturnType());
@@ -819,7 +811,7 @@ void TypeChecker::visitNewNode(NewNode *node) {
         E_UndefinedInit(node, this->typePool->getTypeName(*type));
     }
 
-    this->checkTypeArgsNode(handle, node->getArgsNode());
+    this->checkTypeArgsNode(node, handle, node->refArgNodes());
     node->setType(type);
 }
 
@@ -863,7 +855,7 @@ void TypeChecker::visitCmdArgNode(CmdArgNode *node) {
 
             // create MethodCallNode and check type
             MethodCallNode *callNode = new MethodCallNode(exprNode, std::move(methodName));
-            this->checkTypeArgsNode(handle, callNode->getArgsNode());
+            this->checkTypeArgsNode(node, handle, callNode->refArgNodes());
             callNode->setHandle(handle);
             callNode->setType(handle->getReturnType());
 
@@ -1145,7 +1137,7 @@ void TypeChecker::visitElementSelfAssignNode(ElementSelfAssignNode *node) {
     DSType *elementType = this->checkType(node->getGetterNode());
     node->getBinaryNode()->getLeftNode()->setType(elementType);
     this->checkType(node->getBinaryNode());
-    node->getSetterNode()->getArgsNode()->getNodes()[1]->setType(elementType);
+    node->getSetterNode()->getArgNodes()[1]->setType(elementType);
     this->checkType(this->typePool->getVoidType(), node->getSetterNode());
 
     node->setType(this->typePool->getVoidType());

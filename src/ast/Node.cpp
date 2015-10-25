@@ -680,48 +680,22 @@ EvalStatus InstanceOfNode::eval(RuntimeContext &ctx) {
     return EvalStatus::SUCCESS;
 }
 
-// ######################
-// ##     ArgsNode     ##
-// ######################
-
-ArgsNode::~ArgsNode() {
-    for(Node *node : this->nodes) {
-        delete node;
-    }
-    this->nodes.clear();
-}
-
-void ArgsNode::addArg(Node *argNode) {  //TODO: named argument
-    this->nodes.push_back(argNode);
-}
-
-void ArgsNode::dump(Writer &writer) const {
-    WRITE(nodes);
-}
-
-void ArgsNode::accept(NodeVisitor *visitor) {
-    visitor->visitArgsNode(this);
-}
-
-EvalStatus ArgsNode::eval(RuntimeContext &ctx) {
-    for(Node *node : this->nodes) {
-        EVAL(ctx, node);
-    }
-    return EvalStatus::SUCCESS;
-}
-
 // #######################
 // ##     ApplyNode     ##
 // #######################
 
 ApplyNode::~ApplyNode() {
     delete this->exprNode;
-    delete this->argsNode;
+
+    for(Node *n : this->argNodes) {
+        delete n;
+    }
+    this->argNodes.clear();
 }
 
 void ApplyNode::dump(Writer &writer) const {
     WRITE_PTR(exprNode);
-    WRITE_PTR(argsNode);
+    WRITE(argNodes);
 }
 
 void ApplyNode::accept(NodeVisitor *visitor) {
@@ -737,13 +711,15 @@ void ApplyNode::accept(NodeVisitor *visitor) {
  *                       |    new offset    |   |        |
  */
 EvalStatus ApplyNode::eval(RuntimeContext &ctx) {
-    unsigned int actualParamSize = this->argsNode->getNodes().size();
+    unsigned int actualParamSize = this->getArgNodes().size();
 
     // push func object
     EVAL(ctx, this->exprNode);
 
-    // push arguments.
-    EVAL(ctx, this->argsNode);
+    // push arguments
+    for(Node *argNode : this->argNodes) {
+        EVAL(ctx, argNode);
+    }
 
     // call function
     return ctx.applyFuncObject(this->lineNum, this->type->isVoidType(), actualParamSize);
@@ -755,7 +731,11 @@ EvalStatus ApplyNode::eval(RuntimeContext &ctx) {
 
 MethodCallNode::~MethodCallNode() {
     delete this->recvNode;
-    delete this->argsNode;
+
+    for(Node *n : this->argNodes) {
+        delete n;
+    }
+    this->argNodes.clear();
 }
 
 void MethodCallNode::dump(Writer &writer) const {
@@ -764,7 +744,7 @@ void MethodCallNode::dump(Writer &writer) const {
     unsigned int methodIndex =
             this->handle != nullptr ? this->handle->getMethodIndex() : 0;
     WRITE_PRIM(methodIndex);
-    WRITE_PTR(argsNode);
+    WRITE(argNodes);
 
 #define EACH_FLAG(OP, out, set) \
     OP(INDEX, out, set) \
@@ -782,7 +762,11 @@ void MethodCallNode::accept(NodeVisitor *visitor) {
 
 EvalStatus MethodCallNode::eval(RuntimeContext &ctx) {
     EVAL(ctx, this->recvNode);
-    EVAL(ctx, this->argsNode);
+
+    // push arguments
+    for(Node *argNode : this->argNodes) {
+        EVAL(ctx, argNode);
+    }
 
     return ctx.callMethod(this->lineNum, this->methodName, this->handle);
 }
@@ -795,13 +779,15 @@ NewNode::~NewNode() {
     delete this->targetTypeToken;
     this->targetTypeToken = nullptr;
 
-    delete this->argsNode;
-    this->argsNode = nullptr;
+    for(Node *n : this->argNodes) {
+        delete n;
+    }
+    this->argNodes.clear();
 }
 
 void NewNode::dump(Writer &writer) const {
     WRITE_PTR(targetTypeToken);
-    WRITE_PTR(argsNode);
+    WRITE(argNodes);
 }
 
 void NewNode::accept(NodeVisitor *visitor) {
@@ -809,12 +795,14 @@ void NewNode::accept(NodeVisitor *visitor) {
 }
 
 EvalStatus NewNode::eval(RuntimeContext &ctx) {
-    unsigned int paramSize = this->argsNode->getNodes().size();
+    unsigned int paramSize = this->argNodes.size();
 
     ctx.newDSObject(this->type);
 
-    // push param
-    EVAL(ctx, this->argsNode);
+    // push arguments
+    for(Node *argNode : this->argNodes) {
+        EVAL(ctx, argNode);
+    }
 
     // call constructor
     return ctx.callConstructor(this->lineNum, paramSize);
@@ -873,7 +861,7 @@ BinaryOpNode::~BinaryOpNode() {
 
 MethodCallNode *BinaryOpNode::createApplyNode() {
     this->methodCallNode = new MethodCallNode(this->leftNode, resolveBinaryOpName(this->op));
-    this->methodCallNode->getArgsNode()->addArg(this->rightNode);
+    this->methodCallNode->refArgNodes().push_back(this->rightNode);
 
     // assign null to prevent double free.
     this->leftNode = nullptr;
@@ -2091,18 +2079,18 @@ ElementSelfAssignNode::ElementSelfAssignNode(MethodCallNode *leftNode, BinaryOpN
     // init recv, indexNode
     this->recvNode = leftNode->getRecvNode();
     leftNode->setRecvNode(nullptr);
-    this->indexNode = leftNode->getArgsNode()->getNodes()[0];
-    leftNode->getArgsNode()->refNodes()[0] = nullptr;
+    this->indexNode = leftNode->getArgNodes()[0];
+    leftNode->refArgNodes()[0] = nullptr;
     delete leftNode;
 
     // init getter node
     this->getterNode = new MethodCallNode(new DummyNode(), std::string(OP_GET));
-    this->getterNode->getArgsNode()->addArg(new DummyNode());
+    this->getterNode->refArgNodes().push_back(new DummyNode());
 
     // init setter node
     this->setterNode = new MethodCallNode(new DummyNode(), std::string(OP_SET));
-    this->setterNode->getArgsNode()->addArg(new DummyNode());
-    this->setterNode->getArgsNode()->addArg(new DummyNode());
+    this->setterNode->refArgNodes().push_back(new DummyNode());
+    this->setterNode->refArgNodes().push_back(new DummyNode());
 }
 
 ElementSelfAssignNode::~ElementSelfAssignNode() {
@@ -2128,8 +2116,8 @@ void ElementSelfAssignNode::setRecvType(DSType *type) {
 }
 
 void ElementSelfAssignNode::setIndexType(DSType *type) {
-    this->getterNode->getArgsNode()->getNodes()[0]->setType(type);
-    this->setterNode->getArgsNode()->getNodes()[0]->setType(type);
+    this->getterNode->refArgNodes()[0]->setType(type);
+    this->setterNode->refArgNodes()[0]->setType(type);
 }
 
 void ElementSelfAssignNode::dump(Writer &writer) const {
@@ -2512,13 +2500,13 @@ TokenKind resolveAssignOp(TokenKind op) {
     }
 }
 
-Node *createCallNode(Node *recvNode, ArgsNode *argsNode) {
+Node *createCallNode(Node *recvNode, std::vector<Node *> &&argNodes) {
     AccessNode *accessNode = dynamic_cast<AccessNode *>(recvNode);
     if(accessNode != nullptr) { // treat as method call
         auto pair = AccessNode::split(accessNode);
-        return new MethodCallNode(pair.first, std::move(pair.second), argsNode);
+        return new MethodCallNode(pair.first, std::move(pair.second), std::move(argNodes));
     }
-    return new ApplyNode(recvNode, argsNode);
+    return new ApplyNode(recvNode, std::move(argNodes));
 }
 
 ForNode *createForInNode(unsigned int lineNum, VarNode *varNode, Node *exprNode, BlockNode *blockNode) {
@@ -2558,7 +2546,7 @@ Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode) {
         MethodCallNode *indexNode = dynamic_cast<MethodCallNode *>(leftNode);
         if(indexNode != nullptr && indexNode->hasAttribute(MethodCallNode::INDEX)) {
             indexNode->setMethodName(std::string(OP_SET));
-            indexNode->getArgsNode()->addArg(rightNode);
+            indexNode->refArgNodes().push_back(rightNode);
             return indexNode;
         } else {
             // assign to variable or field
@@ -2583,7 +2571,7 @@ Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode) {
 Node *createIndexNode(Node *recvNode, Node *indexNode) {
     MethodCallNode *methodCallNode = new MethodCallNode(recvNode, std::string(OP_GET));
     methodCallNode->setAttribute(MethodCallNode::INDEX);
-    methodCallNode->getArgsNode()->addArg(indexNode);
+    methodCallNode->refArgNodes().push_back(indexNode);
     return methodCallNode;
 }
 

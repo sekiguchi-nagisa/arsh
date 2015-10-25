@@ -151,6 +151,26 @@ do { \
 namespace ydsh {
 namespace parser {
 
+// #########################
+// ##     ArgsWrapper     ##
+// #########################
+
+ArgsWrapper::~ArgsWrapper() {
+    for(Node *n : this->nodes) {
+        delete n;
+    }
+    this->nodes.clear();
+}
+
+void ArgsWrapper::addArgNode(std::unique_ptr<Node> &&node) {
+    nodes.push_back(node.release());
+}
+
+std::vector<Node *> ArgsWrapper::remove() {
+    return std::move(this->nodes);
+}
+
+
 // ####################
 // ##     Parser     ##
 // ####################
@@ -1055,8 +1075,8 @@ std::unique_ptr<Node> Parser::parse_memberExpression() {
             break;
         }
         case LP: {
-            std::unique_ptr<ArgsNode> args(this->parse_arguments());
-            node.reset(createCallNode(node.release(), args.release()));
+            ArgsWrapper args(this->parse_arguments());
+            node.reset(createCallNode(node.release(), std::move(args).remove()));
             break;
         }
         default: {
@@ -1074,8 +1094,8 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     case NEW: {
         this->expect(NEW, false);
         std::unique_ptr<TypeToken> type(this->parse_typeName());
-        std::unique_ptr<ArgsNode> args(this->parse_arguments());
-        RET_NODE(new NewNode(n, type.release(), args.release()));
+        ArgsWrapper args(this->parse_arguments());
+        RET_NODE(new NewNode(n, type.release(), std::move(args).remove()));
     }
     case INT_LITERAL: {
         Token token;
@@ -1248,16 +1268,16 @@ std::unique_ptr<Node> Parser::parse_stringLiteral() {
     RET_NODE(new StringValueNode(token.lineNum, this->lexer->singleToString(token)));
 }
 
-std::unique_ptr<ArgsNode> Parser::parse_arguments() {
+ArgsWrapper Parser::parse_arguments() {
     this->expect(LP);
 
-    std::unique_ptr<ArgsNode> node(new ArgsNode());
+    ArgsWrapper args;
     switch(CUR_KIND()) {
     EACH_LA_expression(GEN_LA_CASE) {
-        node->addArg(this->parse_expression().release());
+        args.addArgNode(this->parse_expression());
         while(CUR_KIND() == COMMA) {
             this->expect(COMMA);
-            node->addArg(this->parse_expression().release());
+            args.addArgNode(this->parse_expression());
         }
         break;
     }
@@ -1266,7 +1286,7 @@ std::unique_ptr<ArgsNode> Parser::parse_arguments() {
     }
 
     this->expect(RP);
-    return node;
+    return std::move(args);
 }
 
 std::unique_ptr<Node> Parser::parse_stringExpression() {

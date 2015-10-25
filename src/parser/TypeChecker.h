@@ -258,7 +258,7 @@ private:
     HandleOrFuncType resolveCallee(VarNode *recvNode);
 
     // helper for argument type checking
-    void checkTypeArgsNode(MethodHandle *handle, ArgsNode *argsNode);
+    void checkTypeArgsNode(Node *node, MethodHandle *handle, std::vector<Node *> &argNodes);
 
     // for type cast
     bool checkInt2Float(int beforePrecision, DSType *afterType);
@@ -299,7 +299,6 @@ private:
     void visitInstanceOfNode(InstanceOfNode *node); // override
     void visitUnaryOpNode(UnaryOpNode *node); // override
     void visitBinaryOpNode(BinaryOpNode *node); // override
-    void visitArgsNode(ArgsNode *node); // override
     void visitApplyNode(ApplyNode *node); // override
     void visitMethodCallNode(MethodCallNode *node); // override
     void visitNewNode(NewNode *node); // override
