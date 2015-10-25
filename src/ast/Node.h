@@ -648,33 +648,16 @@ public:
 };
 
 /**
- * super type of NewNode, ApplyNode, MethodCallNode
+ * for function object apply
  */
-class CallNode : public Node {
-protected:
+class ApplyNode : public Node {
+private:
+    Node *exprNode;
     ArgsNode *argsNode;
 
 public:
-    CallNode(unsigned int lineNum, ArgsNode *argsNode) :
-            Node(lineNum), argsNode(argsNode) { }
-
-    virtual ~CallNode();
-
-    ArgsNode *getArgsNode() const {
-        return this->argsNode;
-    }
-};
-
-/**
- * for function object apply
- */
-class ApplyNode : public CallNode {
-private:
-    Node *exprNode;
-
-public:
     ApplyNode(Node *exprNode, ArgsNode *argsNode) :
-            CallNode(exprNode->getLineNum(), argsNode), exprNode(exprNode) { }
+            Node(exprNode->getLineNum()), exprNode(exprNode), argsNode(argsNode) { }
 
     ~ApplyNode();
 
@@ -682,15 +665,21 @@ public:
         return this->exprNode;
     }
 
+    ArgsNode *getArgsNode() const {
+        return this->argsNode;
+    }
+
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
 
-class MethodCallNode : public CallNode {
+class MethodCallNode : public Node {
 private:
     Node *recvNode;
     std::string methodName;
+    ArgsNode *argsNode;
+
     MethodHandle *handle;
 
     flag8_set_t attributeSet;
@@ -700,8 +689,8 @@ public:
             MethodCallNode(recvNode, std::move(methodName), new ArgsNode()) { }
 
     MethodCallNode(Node *recvNode, std::string &&methodName, ArgsNode *argsNode) :
-            CallNode(recvNode->getLineNum(), argsNode),
-            recvNode(recvNode), methodName(std::move(methodName)), handle(), attributeSet() { }
+            Node(recvNode->getLineNum()),
+            recvNode(recvNode), methodName(std::move(methodName)), argsNode(argsNode), handle(), attributeSet() { }
 
     ~MethodCallNode();
 
@@ -719,6 +708,10 @@ public:
 
     const std::string &getMethodName() const {
         return this->methodName;
+    }
+
+    ArgsNode *getArgsNode() const {
+        return this->argsNode;
     }
 
     void setAttribute(flag8_t attribute) {
@@ -2115,7 +2108,7 @@ TokenKind resolveAssignOp(TokenKind op);
 /**
  * create ApplyNode or MethodCallNode.
  */
-CallNode *createCallNode(Node *recvNode, ArgsNode *argsNode);
+Node *createCallNode(Node *recvNode, ArgsNode *argsNode);
 
 ForNode *createForInNode(unsigned int lineNum, VarNode *varNode, Node *exprNode, BlockNode *blockNode);
 

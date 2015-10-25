@@ -710,21 +710,13 @@ EvalStatus ArgsNode::eval(RuntimeContext &ctx) {
     return EvalStatus::SUCCESS;
 }
 
-// ######################
-// ##     CallNode     ##
-// ######################
-
-CallNode::~CallNode() {
-    delete this->argsNode;
-    this->argsNode = nullptr;
-}
-
 // #######################
 // ##     ApplyNode     ##
 // #######################
 
 ApplyNode::~ApplyNode() {
     delete this->exprNode;
+    delete this->argsNode;
 }
 
 void ApplyNode::dump(Writer &writer) const {
@@ -763,7 +755,7 @@ EvalStatus ApplyNode::eval(RuntimeContext &ctx) {
 
 MethodCallNode::~MethodCallNode() {
     delete this->recvNode;
-    this->recvNode = nullptr;
+    delete this->argsNode;
 }
 
 void MethodCallNode::dump(Writer &writer) const {
@@ -2520,7 +2512,7 @@ TokenKind resolveAssignOp(TokenKind op) {
     }
 }
 
-CallNode *createCallNode(Node *recvNode, ArgsNode *argsNode) {
+Node *createCallNode(Node *recvNode, ArgsNode *argsNode) {
     AccessNode *accessNode = dynamic_cast<AccessNode *>(recvNode);
     if(accessNode != nullptr) { // treat as method call
         auto pair = AccessNode::split(accessNode);
