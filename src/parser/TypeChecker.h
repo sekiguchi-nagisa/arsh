@@ -108,14 +108,14 @@ private:
     DSType *curReturnType;
 
     /**
-     * contains state which represents for within loop block
+     * represents loop block depth. (if 0, outside loop block)
      */
-    std::vector<bool> loopContextStack;
+    int loopDepth;
 
     /**
-     * contains state which represents for within finally block
+     * represents finally block depth. (if 0, outside finally block)
      */
-    std::vector<bool> finallyContextStack;
+    int finallyDepth;
 
     std::vector<CmdContextNode *> cmdContextStack;
 

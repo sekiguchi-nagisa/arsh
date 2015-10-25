@@ -94,8 +94,7 @@ DSType *TypeChecker::TypeGenerator::generateType(TypeToken *token) {
 
 TypeChecker::TypeChecker(TypePool &typePool, SymbolTable &symbolTable) :
         typePool(&typePool), symbolTable(symbolTable), typeGen(this->typePool), curReturnType(0),
-        loopContextStack(), finallyContextStack(),
-        cmdContextStack(), coercionKind(INVALID_COERCION) {
+        loopDepth(0), finallyDepth(0), cmdContextStack(), coercionKind(INVALID_COERCION) {
 }
 
 void TypeChecker::checkTypeRootNode(RootNode &rootNode) {
@@ -289,15 +288,15 @@ FieldHandle *TypeChecker::addEntryAndThrowIfDefined(Node *node, const std::strin
 }
 
 void TypeChecker::enterLoop() {
-    this->loopContextStack.push_back(true);
+    this->loopDepth++;
 }
 
 void TypeChecker::exitLoop() {
-    this->loopContextStack.pop_back();
+    this->loopDepth--;
 }
 
 void TypeChecker::checkAndThrowIfOutOfLoop(Node *node) {
-    if(!this->loopContextStack.empty() && this->loopContextStack.back()) {
+    if(this->loopDepth > 0) {
         return;
     }
     E_InsideLoop(node);
@@ -361,7 +360,7 @@ DSType *TypeChecker::getCurrentReturnType() {
 }
 
 void TypeChecker::checkAndThrowIfInsideFinally(BlockEndNode *node) {
-    if(!this->finallyContextStack.empty() && this->finallyContextStack.back()) {
+    if(this->finallyDepth > 0) {
         E_InsideFinally(node);
     }
 }
@@ -461,8 +460,8 @@ void TypeChecker::recover(bool abortType) {
     }
 
     this->curReturnType = nullptr;
-    this->loopContextStack.clear();
-    this->finallyContextStack.clear();
+    this->loopDepth = 0;
+    this->finallyDepth = 0;
     this->cmdContextStack.clear();
 }
 
@@ -1100,9 +1099,9 @@ void TypeChecker::visitTryNode(TryNode *node) {
     }
 
     // check type finally block, may be empty node
-    this->finallyContextStack.push_back(true);
+    this->finallyDepth++;
     this->checkType(this->typePool->getVoidType(), node->getFinallyNode());
-    this->finallyContextStack.pop_back();
+    this->finallyDepth--;
 
     /**
      * verify catch block order
