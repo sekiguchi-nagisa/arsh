@@ -24,6 +24,8 @@
 namespace ydsh {
 namespace core {
 
+extern NativeFuncInfo *const nativeFuncInfoTable;
+
 // ####################
 // ##     DSType     ##
 // ####################
@@ -103,12 +105,28 @@ void FunctionType::accept(TypeVisitor *visitor) {
     visitor->visitFunctionType(this);
 }
 
+// ################################
+// ##     native_type_info_t     ##
+// ################################
+
+NativeFuncInfo &native_type_info_t::getMethodInfo(unsigned int index) {
+    return nativeFuncInfoTable[this->offset + this->constructorSize + index];
+}
+
+/**
+ * not call it if constructorSize is 0
+ */
+NativeFuncInfo &native_type_info_t::getInitInfo() {
+    return nativeFuncInfoTable[this->offset];
+}
+
+
 // #########################
 // ##     BuiltinType     ##
 // #########################
 
 BuiltinType::BuiltinType(bool extendable, DSType *superType,
-                         native_type_info_t &info, bool isVoid) :
+                         native_type_info_t info, bool isVoid) :
         DSType(extendable, superType, isVoid),
         info(info), constructorHandle(), constructor(), methodHandleMap(),
         methodTable(superType != nullptr ? superType->getMethodSize() + info.methodSize : info.methodSize) {
@@ -225,7 +243,7 @@ void ReifiedType::accept(TypeVisitor *visitor) {
 // ##     TupleType     ##
 // #######################
 
-TupleType::TupleType(native_type_info_t &info, DSType *superType, std::vector<DSType *> &&types) :
+TupleType::TupleType(native_type_info_t info, DSType *superType, std::vector<DSType *> &&types) :
         ReifiedType(info, superType, std::move(types)), fieldHandleMap() {
     unsigned int size = this->elementTypes.size();
     unsigned int baseIndex = this->superType->getFieldSize();

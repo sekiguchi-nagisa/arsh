@@ -470,10 +470,10 @@ public:
 
 private:
     DSType *initBuiltinType(const char *typeName, bool extendable,
-                            DSType *superType, native_type_info_t &info, bool isVoid = false);
+                            DSType *superType, native_type_info_t info, bool isVoid = false);
 
     TypeTemplate *initTypeTemplate(const char *typeName,
-                                   std::vector<DSType*> &&elementTypes, native_type_info_t &info);
+                                   std::vector<DSType*> &&elementTypes, native_type_info_t info);
 
     DSType *initErrorType(const char *typeName, DSType *superType);
 

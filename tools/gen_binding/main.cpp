@@ -864,37 +864,48 @@ static void gencode(const char *outFileName, const std::vector<TypeBind *> &bind
     OUT("#include <core/bind.h>\n");
     OUT("#include <core/builtin.h>\n");
     OUT("#include <core/symbol.h>\n");
-    OUT("#include <core/DSType.h>\n");
     OUT("\n");
     OUT("namespace ydsh {\n");
     OUT("namespace core {\n");
     OUT("\n");
 
+    // generate NativeFuncInfo table
+    OUT("static NativeFuncInfo infoTable[] = {\n");
+    OUT("    {nullptr, {0}, nullptr},\n");
+    for(TypeBind *bind : binds) {
+        if(bind->initElement != nullptr) {
+            OUT("    %s,\n", bind->initElement->toString().c_str());
+        }
+        for(Element *e : bind->funcElements) {
+            OUT("    %s,\n", e->toString().c_str());
+        }
+    }
+    OUT("};\n");
+    OUT("NativeFuncInfo *nativeFuncInfoTable = infoTable;\n");
+    OUT("\n");
+
     // generate dummy
-    OUT("native_type_info_t &info_Dummy() {\n");
-    OUT("    static native_type_info_t info = {0, 0, {}};\n");
-    OUT("    return info;\n");
+    OUT("native_type_info_t info_Dummy() {\n");
+    OUT("    return { .offset = 0, .constructorSize = 0, .methodSize = 0 };\n");
     OUT("}\n");
     OUT("\n");
 
-    // generate type binding
+    unsigned int offsetCount = 1;
+
+    // generate each native_type_info_t
     for(TypeBind *bind : binds) {
-        OUT("native_type_info_t &info_%sType() {\n", bind->name.c_str());
-        OUT("    static native_type_info_t info = {\n");
-        OUT("        .constructorSize = %d,\n", (bind->initElement == nullptr ? 0 : 1));
-        OUT("        .methodSize = %ld,\n", bind->funcElements.size());
-        OUT("        .funcInfos = {\n");
-        if(bind->initElement != nullptr) {
-            OUT("            %s,\n", bind->initElement->toString().c_str());
-        }
-        for(Element *e : bind->funcElements) {
-            OUT("            %s,\n", e->toString().c_str());
-        }
-        OUT("        }\n");
-        OUT("    };\n");
-        OUT("    return info;\n");
+        unsigned int constructorSize = bind->initElement != nullptr ? 1 : 0;
+        unsigned int methodSize = bind->funcElements.size();
+
+        OUT("native_type_info_t info_%sType() {\n", bind->name.c_str());
+        OUT("    return { .offset = %d, .constructorSize = %d, .methodSize = %d };\n",
+            bind->initElement == nullptr && bind->funcElements.empty() ? 0 : offsetCount,
+            constructorSize, methodSize);
         OUT("}\n");
         OUT("\n");
+
+        offsetCount += constructorSize;
+        offsetCount += methodSize;
     }
 
     OUT("} // namespace core\n");
