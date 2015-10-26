@@ -18,6 +18,7 @@
 #define YDSH_BUILTIN_H
 
 #include <cmath>
+#include <cstring>
 
 #include "RuntimeContext.h"
 #include "DSObject.h"
@@ -1072,6 +1073,72 @@ static inline bool string_sliceTo(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_sliceTo);
     auto strObj = typeAs<String_Object>(LOCAL(0));
     return sliceImpl(ctx, strObj, 0, typeAs<Int_Object>(LOCAL(1))->getValue());
+}
+
+static bool startsWith(const char *thisStr, const char *targetStr, int offset) {
+    if(offset < 0) {
+        return false;
+    }
+
+    for(unsigned int i = static_cast<unsigned int>(offset); targetStr[i] != '\0'; i++) {
+        if(thisStr[i] != targetStr[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+//!bind: function startsWith($this : String, $target : String) : Boolean
+static inline bool string_startsWith(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_startsWith);
+    auto thisObj = typeAs<String_Object>(LOCAL(0));
+    auto targetObj = typeAs<String_Object>(LOCAL(1));
+
+    bool r = startsWith(thisObj->getValue(), targetObj->getValue(), 0);
+    RET_BOOL(r);
+}
+
+//!bind: function endsWith($this : String, $target : String) : Boolean
+static inline bool string_endsWith(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_endsWith);
+    auto thisObj = typeAs<String_Object>(LOCAL(0));
+    auto targetObj = typeAs<String_Object>(LOCAL(1));
+
+    bool r = startsWith(thisObj->getValue(), targetObj->getValue(), thisObj->size() - targetObj->size());
+    RET_BOOL(r);
+}
+
+//!bind: function indexOf($this : String, $target : String) : Int32
+static inline bool string_indexOf(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_indexOf);
+    const char *thisStr = typeAs<String_Object>(LOCAL(0))->getValue();
+    const char *targetStr = typeAs<String_Object>(LOCAL(1))->getValue();
+
+    const char *ptr = strstr(thisStr, targetStr);
+    int index = -1;
+    if(ptr != nullptr) {
+        index = ptr - thisStr;
+    }
+    RET(DSValue::create<Int_Object>(ctx.getPool().getIntType(), index));
+}
+
+//!bind: function lastIndexOf($this : String, $target : String) : Int32
+static inline bool string_lastIndexOf(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_lastIndexOf);
+    const char *thisStr = typeAs<String_Object>(LOCAL(0))->getValue();
+    const char *targetStr = typeAs<String_Object>(LOCAL(1))->getValue();
+
+    int index = -1;
+    const char *ptr = thisStr;
+    while(true) {
+        ptr = strstr(ptr, targetStr);
+        if(ptr == nullptr) {
+            break;
+        }
+        index = ptr - thisStr;
+        ptr++;
+    }
+    RET(DSValue::create<Int_Object>(ctx.getPool().getIntType(), index));
 }
 
 //!bind: function $OP_ITER($this : String) : StringIter

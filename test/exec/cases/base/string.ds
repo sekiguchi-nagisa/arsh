@@ -55,10 +55,15 @@ assert("012345".sliceTo(-4) == "01")
 try { assert("012345".sliceTo(-9) == "A"); } catch($e) { assert($e is OutOfRangeError); }
 try { assert("012345".sliceTo(9) == "A"); } catch($e) { assert($e is OutOfRangeError); }
 
-#assert(not $a.startsWith("hoge"))
-#assert($a.endsWith("rld"))
-#assert($a.indexOf("q") == -1)
-#assert($a.lastIndexOf("l") == 9)
+assert(not $a.startsWith("hoge"))
+assert("あ345".startsWith("あ"))
+assert($a.endsWith("rld"))
+assert("あ345空".endsWith("5空"))
+assert($a.indexOf("q") == -1)
+assert("0123ああ".indexOf("あ") == 4)
+assert($a.lastIndexOf("l") == 9)
+assert("00000".lastIndexOf("00") == 3)
+assert("00000".lastIndexOf("6") == -1)
 
 var b = "aaa"
 var c = 'ccc'
