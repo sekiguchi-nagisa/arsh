@@ -57,13 +57,45 @@ try { assert("012345".sliceTo(9) == "A"); } catch($e) { assert($e is OutOfRangeE
 
 assert(not $a.startsWith("hoge"))
 assert("あ345".startsWith("あ"))
+assert("".startsWith(""))
+assert("a".startsWith(""))
+
 assert($a.endsWith("rld"))
 assert("あ345空".endsWith("5空"))
+assert("".endsWith(""))
+assert("a".endsWith(""))
+
 assert($a.indexOf("q") == -1)
 assert("0123ああ".indexOf("あ") == 4)
+assert("0123ああ".indexOf("") == 0)
+assert("".indexOf("") == 0)
+
 assert($a.lastIndexOf("l") == 9)
 assert("00000".lastIndexOf("00") == 3)
 assert("00000".lastIndexOf("6") == -1)
+assert("0123".lastIndexOf("") == 3)
+assert("".lastIndexOf("") == 0)
+
+var sa = "hello world !!".split(" ")
+assert($sa.size() == 3)
+assert($sa[0] == "hello")
+assert($sa[1] == "world")
+assert($sa[2] == "!!")
+$sa = "こんばんわ".split("ん")
+assert($sa.size() == 3)
+assert($sa[0] == "こ")
+assert($sa[1] == "ば")
+assert($sa[2] == "わ")
+$sa = "hello".split("@")
+assert($sa.size() == 1)
+assert($sa[0] == "hello")
+$sa = "hello".split("")
+assert($sa.size() == 1)
+assert($sa[0] == "hello")
+$sa = "".split("")
+assert($sa.size() == 1)
+assert($sa[0] == "")
+
 
 var b = "aaa"
 var c = 'ccc'

@@ -1130,15 +1130,44 @@ static inline bool string_lastIndexOf(RuntimeContext &ctx) {
 
     int index = -1;
     const char *ptr = thisStr;
-    while(true) {
+    do {
         ptr = strstr(ptr, targetStr);
         if(ptr == nullptr) {
             break;
         }
         index = ptr - thisStr;
         ptr++;
-    }
+    } while(*ptr != '\0');
     RET(DSValue::create<Int_Object>(ctx.getPool().getIntType(), index));
+}
+
+//!bind: function split($this : String, $delim : String) : Array<String>
+static inline bool string_split(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_split);
+    const char *thisStr = typeAs<String_Object>(LOCAL(0))->getValue();
+    const char *delimStr = typeAs<String_Object>(LOCAL(1))->getValue();
+    const unsigned int delimSize = typeAs<String_Object>(LOCAL(1))->size();
+
+    auto results = DSValue::create<Array_Object>(ctx.getPool().getStringArrayType());
+    auto ptr = typeAs<Array_Object>(results);
+
+    const char *remain = thisStr;
+    while(delimSize > 0) {
+        const char *ret = strstr(remain, delimStr);
+        if(ret == nullptr) {
+            break;
+        }
+        ptr->append(DSValue::create<String_Object>(ctx.getPool().getStringType(), std::string(remain, ret - remain)));
+        remain = ret + delimSize;
+    }
+
+    if(remain == thisStr) {
+        ptr->append(LOCAL(0));
+    } else if(*remain != '\0') {
+        ptr->append(DSValue::create<String_Object>(ctx.getPool().getStringType(), std::string(remain)));
+    }
+
+    RET(std::move(results));
 }
 
 //!bind: function $OP_ITER($this : String) : StringIter
