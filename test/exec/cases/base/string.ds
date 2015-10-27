@@ -96,6 +96,28 @@ $sa = "".split("")
 assert($sa.size() == 1)
 assert($sa[0] == "")
 
+assert(not "-1".toUint32()._1)
+assert("4294967295".toUint32()._0 == 4294967295u32)
+assert(not "4294967296".toUint32()._1)
+
+assert("-2147483648".toInt32()._0 == -1 - 2147483647i32)
+assert(not "-2147483649".toInt32()._1)
+assert("2147483647".toInt32()._0 == 2147483647i32)
+assert(not "2147483648".toInt32()._1)
+
+assert("18446744073709551615".toUint64()._0 == 18446744073709551615u64)
+assert(not "18446744073709551616".toUint64()._1)
+
+assert("-9223372036854775808".toInt64()._0 == -1 - 9223372036854775807i64)
+assert(not "-9223372036854775809".toInt64()._1)
+assert("9223372036854775807".toInt64()._0 == 9223372036854775807i64)
+assert(not "9223372036854775808".toInt64()._1)
+
+assert("3".toFloat()._0 == 3.0)
+assert("-3.14e+3".toFloat()._0 == -3.14E+3)
+assert("Nan".toFloat()._0.isNan())
+assert("INF".toFloat()._0.isInf())
+
 
 var b = "aaa"
 var c = 'ccc'

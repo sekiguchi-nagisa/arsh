@@ -23,6 +23,7 @@
 #include "RuntimeContext.h"
 #include "DSObject.h"
 #include "../misc/utf8.hpp"
+#include "../misc/num.h"
 
 // helper macro
 #define LOCAL(index) (ctx.getLocal(index))
@@ -1168,6 +1169,84 @@ static inline bool string_split(RuntimeContext &ctx) {
     }
 
     RET(std::move(results));
+}
+
+static bool createResult(RuntimeContext &ctx, DSValue &&value, bool success) {
+    // get tuple type
+    std::vector<DSType *> types(2);
+    types[0] = value.get()->getType();
+    types[1] = ctx.getPool().getBooleanType();
+    DSType *tupleType = ctx.getPool().createAndGetTupleTypeIfUndefined(std::move(types));
+
+    // create result
+    DSValue tuple = DSValue::create<Tuple_Object>(tupleType);
+    auto *ptr = typeAs<Tuple_Object>(tuple);
+    ptr->set(0, value);
+    ptr->set(1, success ? ctx.getTrueObj() : ctx.getFalseObj());
+
+    RET(std::move(tuple));
+}
+
+//!bind: function toInt32($this : String) : Tuple<Int32, Boolean>
+static inline bool string_toInt32(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_toInt32);
+    const char *str = typeAs<String_Object>(LOCAL(0))->getValue();
+    int status = 0;
+    long value = convertToInt64(str, status, false);
+
+    // range check
+    if(status != 0 || value > INT32_MAX || value < INT32_MIN) {
+        status = 1;
+        value = 0;
+    }
+    return createResult(ctx, DSValue::create<Int_Object>(
+            ctx.getPool().getInt32Type(), (int)value), status == 0);
+}
+
+//!bind: function toUint32($this : String) : Tuple<Uint32, Boolean>
+static inline bool string_toUint32(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_toUint32);
+    const char *str = typeAs<String_Object>(LOCAL(0))->getValue();
+    int status = 0;
+    long value = convertToInt64(str, status, false);
+
+    // range check
+    if(status != 0 || value > UINT32_MAX || value < 0) {
+        status = 1;
+        value = 0;
+    }
+    return createResult(ctx, DSValue::create<Int_Object>(
+            ctx.getPool().getUint32Type(), (unsigned int)value), status == 0);
+}
+
+//!bind: function toInt64($this : String) : Tuple<Int64, Boolean>
+static inline bool string_toInt64(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_toInt64);
+    const char *str = typeAs<String_Object>(LOCAL(0))->getValue();
+    int status = 0;
+    long value = convertToInt64(str, status, false);
+
+    return createResult(ctx, DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value), status == 0);
+}
+
+//!bind: function toUint64($this : String) : Tuple<Uint64, Boolean>
+static inline bool string_toUint64(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_toUint64);
+    const char *str = typeAs<String_Object>(LOCAL(0))->getValue();
+    int status = 0;
+    unsigned long value = convertToUint64(str, status, false);
+
+    return createResult(ctx, DSValue::create<Long_Object>(ctx.getPool().getUint64Type(), value), status == 0);
+}
+
+//!bind: function toFloat($this : String) : Tuple<Float, Boolean>
+static inline bool string_toFloat(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_toFloat);
+    const char *str = typeAs<String_Object>(LOCAL(0))->getValue();
+    int status = 0;
+    double value = convertToDouble(str, status, false);
+
+    return createResult(ctx, DSValue::create<Float_Object>(ctx.getPool().getFloatType(), value), status == 0);
 }
 
 //!bind: function $OP_ITER($this : String) : StringIter
