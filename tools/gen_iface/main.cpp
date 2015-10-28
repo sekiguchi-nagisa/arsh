@@ -26,7 +26,6 @@
 
 #include <misc/argv.hpp>
 #include <misc/fatal.h>
-#include <misc/unused.h>
 
 namespace {
 
@@ -445,15 +444,9 @@ public:
  * ctx is actually
  */
 static void handler_startElementNs(void *ctx, const xmlChar *localname,
-                                   const xmlChar *prefix, const xmlChar *URI,
-                                   int nb_namespaces, const xmlChar **namespaces,
-                                   int nb_attributes, int nb_defaulted, const xmlChar **attributes) {
-    UNUSED(prefix);
-    UNUSED(URI);
-    UNUSED(nb_namespaces);
-    UNUSED(namespaces);
-    UNUSED(nb_defaulted);
-
+                                   const xmlChar *, const xmlChar *,
+                                   int, const xmlChar **,
+                                   int nb_attributes, int, const xmlChar **attributes) {
     SAXHandlerContext *hctx = (SAXHandlerContext *) ctx;
 
     std::string elementName(str(localname));
@@ -535,10 +528,7 @@ static void handler_startElementNs(void *ctx, const xmlChar *localname,
 /**
  * ctx is actually
  */
-static void handler_endElementNs(void *ctx, const xmlChar* localname, const xmlChar* prefix, const xmlChar* URI) {
-    UNUSED(prefix);
-    UNUSED(URI);
-
+static void handler_endElementNs(void *ctx, const xmlChar* localname, const xmlChar*, const xmlChar*) {
     SAXHandlerContext *hctx = (SAXHandlerContext *) ctx;
 
     std::string elementName(str(localname));
@@ -560,10 +550,7 @@ static void handler_endElementNs(void *ctx, const xmlChar* localname, const xmlC
 }
 
 
-static void handler_characters(void *ctx, const xmlChar *ch, int len) {
-    UNUSED(ctx);
-    UNUSED(ch);
-    UNUSED(len);    // do nothing
+static void handler_characters(void *, const xmlChar *, int) {  // do nothing
 }
 
 static std::string introspect(const Config &config) {

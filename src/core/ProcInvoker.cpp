@@ -26,7 +26,6 @@
 #include "RuntimeContext.h"
 #include "symbol.h"
 #include "../misc/num.h"
-#include "../misc/unused.h"
 
 extern char **environ;
 
@@ -271,8 +270,8 @@ const struct {
 };
 
 template<typename T, size_t N>
-static constexpr size_t sizeOfArray(const T (&array)[N]) {
-    return sizeof(array) != 0 ? N : 0;
+static constexpr size_t sizeOfArray(const T (&)[N]) {
+    return N;
 }
 
 
@@ -300,9 +299,7 @@ static bool printUsage(FILE *fp, const char *commandName, bool isShortHelp = tru
     return false;
 }
 
-static int builtin_help(RuntimeContext *ctx, const BuiltinContext &bctx) {
-    UNUSED(ctx);
-
+static int builtin_help(RuntimeContext *, const BuiltinContext &bctx) {
     if(bctx.argc == 1) {
         printAllUsage(bctx.fp_stdout);
         return 0;
@@ -335,8 +332,6 @@ inline static void showUsage(const BuiltinContext &bctx) {
 }
 
 static int builtin_cd(RuntimeContext *ctx, const BuiltinContext &bctx) {
-    UNUSED(ctx);
-
     bool OLDPWD_only = true;
     const char *destDir = getenv("HOME");
 
@@ -355,9 +350,7 @@ static int builtin_cd(RuntimeContext *ctx, const BuiltinContext &bctx) {
     return 0;
 }
 
-static int builtin_check_env(RuntimeContext *ctx, const BuiltinContext &bctx) {
-    UNUSED(ctx);
-
+static int builtin_check_env(RuntimeContext *, const BuiltinContext &bctx) {
     if(bctx.argc == 1) {
         showUsage(bctx);
         return 1;
@@ -385,9 +378,7 @@ static int builtin_exit(RuntimeContext *ctx, const BuiltinContext &bctx) {
     return ret;
 }
 
-static int builtin_echo(RuntimeContext *ctx, const BuiltinContext &bctx) {
-    UNUSED(ctx);
-
+static int builtin_echo(RuntimeContext *, const BuiltinContext &bctx) {
     FILE *fp = bctx.fp_stdout;  // not close it.
     int argc = bctx.argc;
     char *const *argv = bctx.argv;
@@ -468,26 +459,18 @@ static int builtin_echo(RuntimeContext *ctx, const BuiltinContext &bctx) {
     return 0;
 }
 
-static int builtin_true(RuntimeContext *ctx, const BuiltinContext &bctx) {
-    UNUSED(ctx);
-    UNUSED(bctx);
-
+static int builtin_true(RuntimeContext *, const BuiltinContext &) {
     return 0;
 }
 
-static int builtin_false(RuntimeContext *ctx, const BuiltinContext &bctx) {
-    UNUSED(ctx);
-    UNUSED(bctx);
-
+static int builtin_false(RuntimeContext *, const BuiltinContext &) {
     return 1;
 }
 
 /**
  * for stdin redirection test
  */
-static int builtin___gets(RuntimeContext *ctx, const BuiltinContext &bctx) {
-    UNUSED(ctx);
-
+static int builtin___gets(RuntimeContext *, const BuiltinContext &bctx) {
     unsigned int bufSize = 256;
     char buf[bufSize];
     int readSize;
@@ -500,9 +483,7 @@ static int builtin___gets(RuntimeContext *ctx, const BuiltinContext &bctx) {
 /**
  * for stdout/stderr redirection test
  */
-static int builtin___puts(RuntimeContext *ctx, const BuiltinContext &bctx) {
-    UNUSED(ctx);
-
+static int builtin___puts(RuntimeContext *, const BuiltinContext &bctx) {
     for(int index = 1; index < bctx.argc; index++) {
         const char *arg = bctx.argv[index];
         if(strcmp("-1", arg) == 0 && ++index < bctx.argc) {
@@ -533,9 +514,7 @@ static int builtin_ps_intrp(RuntimeContext *ctx, const BuiltinContext &bctx) {
     return 0;
 }
 
-static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx) {
-    UNUSED(ctx);
-
+static int builtin_exec(RuntimeContext *, const BuiltinContext &bctx) {
     int index = 1;
     bool clearEnv = false;
     const char *progName = nullptr;
@@ -616,9 +595,7 @@ static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx) {
     return 0;
 }
 
-static int builtin_pwd(RuntimeContext *ctx, const BuiltinContext &bctx) {
-    UNUSED(ctx);
-
+static int builtin_pwd(RuntimeContext *, const BuiltinContext &bctx) {
     //TODO: support LP option
 
     size_t size = PATH_MAX;

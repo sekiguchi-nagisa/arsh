@@ -2,7 +2,6 @@
 
 #include <parser/Lexer.h>
 #include <core/DSType.h>
-#include <misc/unused.h>
 
 #ifndef LEXER_TEST_DIR
 #define LEXER_TEST_DIR "./"
@@ -103,8 +102,7 @@ public:
 
 typedef std::vector<std::pair<TokenKind, const char *>> ExpectedList;
 
-void addPair(ExpectedList &list) {
-    UNUSED(list);
+void addPair(ExpectedList &) {
 }
 
 template <typename ...T>

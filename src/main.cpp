@@ -22,7 +22,6 @@
 
 #include <ydsh/ydsh.h>
 #include "misc/argv.hpp"
-#include "misc/unused.h"
 
 using namespace ydsh;
 
@@ -86,9 +85,7 @@ static void showFeature(std::ostream &stream) {
     }
 }
 
-static void segvHandler(int num) {
-    UNUSED(num);
-
+static void segvHandler(int) {
     // write message
     char msg[] = "+++++ catch Segmentation fault +++++\n";
     write(STDERR_FILENO, msg, strlen(msg));

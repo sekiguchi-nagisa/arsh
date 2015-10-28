@@ -71,20 +71,14 @@ void CommonErrorListener::handleTypeError(const std::string &sourceName,
 
 #undef STREAM
 
-void CommonErrorListener::handleRuntimeError(const TypePool &pool, const DSValue &raisedObj) noexcept {
-    UNUSED(pool);
-    UNUSED(raisedObj);  // do nothing
-}
+void CommonErrorListener::handleRuntimeError(const TypePool &, const DSValue &) noexcept {
+}// do nothing
 
 // ###############################
 // ##     ReportingListener     ##
 // ###############################
 
-void ReportingListener::handleParseError(Lexer &lexer,
-                                         const std::string &sourceName, const ParseError &e) noexcept {
-    UNUSED(lexer);
-    UNUSED(sourceName);
-
+void ReportingListener::handleParseError(Lexer &, const std::string &, const ParseError &e) noexcept {
 #define EACH_ERROR(E) \
     E(TokenMismatched  , 0) \
     E(NoViableAlter    , 1) \
@@ -108,10 +102,7 @@ void ReportingListener::handleParseError(Lexer &lexer,
 #undef EACH_ERROR
 }
 
-void ReportingListener::handleTypeError(const std::string &sourceName,
-                                        const TypeCheckError &e) noexcept {
-    UNUSED(sourceName);
-
+void ReportingListener::handleTypeError(const std::string &, const TypeCheckError &e) noexcept {
     this->lineNum = e.getLineNum();
     this->messageKind = e.getKind();
 }

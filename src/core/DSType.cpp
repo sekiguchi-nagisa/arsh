@@ -19,7 +19,6 @@
 #include "DSType.h"
 #include "DSObject.h"
 #include "FieldHandle.h"
-#include "../misc/unused.h"
 
 namespace ydsh {
 namespace core {
@@ -44,8 +43,7 @@ bool DSType::isBuiltinType() const {
     return false;
 }
 
-MethodHandle *DSType::getConstructorHandle(TypePool *typePool) {
-    UNUSED(typePool);
+MethodHandle *DSType::getConstructorHandle(TypePool *) {
     return nullptr;
 }
 
@@ -61,15 +59,11 @@ unsigned int DSType::getMethodSize() {
     return this->superType != nullptr ? this->superType->getMethodSize() : 0;
 }
 
-FieldHandle *DSType::lookupFieldHandle(TypePool *typePool, const std::string &fieldName) {
-    UNUSED(typePool);
-    UNUSED(fieldName);
+FieldHandle *DSType::lookupFieldHandle(TypePool *, const std::string &) {
     return nullptr;
 }
 
-MethodHandle *DSType::lookupMethodHandle(TypePool *typePool, const std::string &methodName) {
-    UNUSED(typePool);
-    UNUSED(methodName);
+MethodHandle *DSType::lookupMethodHandle(TypePool *, const std::string &) {
     return nullptr;
 }
 
@@ -85,8 +79,7 @@ MethodRef *DSType::getMethodRef(unsigned int methodIndex) {
     return this->superType != nullptr ? this->superType->getMethodRef(methodIndex) : 0;
 }
 
-void DSType::copyAllMethodRef(std::vector<MethodRef> &methodTable) {
-    UNUSED(methodTable);
+void DSType::copyAllMethodRef(std::vector<MethodRef> &) {
 }
 
 // ##########################

@@ -5,7 +5,6 @@
 #include <ydsh/ydsh.h>
 #include <misc/files.h>
 #include <misc/num.h>
-#include <misc/unused.h>
 #include <directive.h>
 
 
@@ -215,8 +214,7 @@ TEST_P(ExecTest, baseTest) {
 INSTANTIATE_TEST_CASE_P(ExecTest, ExecTest, ::testing::ValuesIn(getFileList(EXEC_TEST_DIR, true)));
 
 
-void addArg(std::vector<char *> &out) {
-    UNUSED(out);
+void addArg(std::vector<char *> &) {
 }
 
 template <typename... T>

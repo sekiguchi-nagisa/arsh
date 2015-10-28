@@ -20,7 +20,6 @@
 #include "../core/symbol.h"
 #include "../core/DSObject.h"
 #include "../core/TypeLookupError.hpp"
-#include "../misc/unused.h"
 #include "TypeChecker.h"
 
 namespace ydsh {
@@ -491,8 +490,7 @@ bool TypeChecker::checkLong2Int(int beforePrecision, int afterPrecision) {
 
 
 // visitor api
-void TypeChecker::visit(Node *node) {
-    UNUSED(node);
+void TypeChecker::visit(Node *) {
     fatal("unsupported\n");
 }
 
@@ -1226,9 +1224,8 @@ void TypeChecker::visitEmptyNode(EmptyNode *node) {
     node->setType(this->typePool->getVoidType());
 }
 
-void TypeChecker::visitDummyNode(DummyNode *node) {
-    UNUSED(node);   // do nothing.
-}
+void TypeChecker::visitDummyNode(DummyNode *) {
+}   // do nothing
 
 void TypeChecker::visitRootNode(RootNode *node) {
     this->symbolTable.commit();

@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 
 #include <misc/argv.hpp>
-#include <misc/unused.h>
 
 using namespace ydsh::argv;
 
@@ -14,8 +13,7 @@ typedef CmdLines<Kind> CL;
 
 typedef std::vector<const char *> RestArgs;
 
-void addArg(std::vector<std::string> &args) {
-    UNUSED(args);
+void addArg(std::vector<std::string> &) {
 }
 
 template <typename... T>

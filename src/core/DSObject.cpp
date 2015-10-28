@@ -18,7 +18,6 @@
 
 #include "DSObject.h"
 #include "RuntimeContext.h"
-#include "../misc/unused.h"
 
 #ifdef USE_DBUS
 #include "../dbus/DBusBind.h"
@@ -33,17 +32,14 @@ using namespace ydsh::ast;
 // ##     DSObject     ##
 // ######################
 
-void DSObject::setType(DSType *type) {  // do nothing.
-    UNUSED(type);
+void DSObject::setType(DSType *) {  // do nothing.
 }
 
 DSValue *DSObject::getFieldTable() {
     return nullptr;
 }
 
-std::string DSObject::toString(RuntimeContext &ctx) {
-    UNUSED(ctx);
-
+std::string DSObject::toString(RuntimeContext &) {
     std::string str("DSObject(");
     str += std::to_string((long) this);
     str += ")";
@@ -70,8 +66,7 @@ size_t DSObject::hash() {
     return std::hash<long>()((long) this);
 }
 
-bool DSObject::introspect(RuntimeContext &ctx, DSType *targetType) {
-    UNUSED(ctx);
+bool DSObject::introspect(RuntimeContext &, DSType *targetType) {
     return targetType->isSameOrBaseTypeOf(this->type);
 }
 
@@ -126,8 +121,7 @@ size_t Long_Object::hash() {
 // ##     Float_Object     ##
 // ##########################
 
-std::string Float_Object::toString(RuntimeContext &ctx) {
-    UNUSED(ctx);
+std::string Float_Object::toString(RuntimeContext &) {
     return std::to_string(this->value);
 }
 
@@ -144,8 +138,7 @@ size_t Float_Object::hash() {
 // ##     Boolean_Object     ##
 // ############################
 
-std::string Boolean_Object::toString(RuntimeContext &ctx) {
-    UNUSED(ctx);
+std::string Boolean_Object::toString(RuntimeContext &) {
     return this->value ? "true" : "false";
 }
 
@@ -161,8 +154,7 @@ size_t Boolean_Object::hash() {
 // ##     String_Object     ##
 // ###########################
 
-std::string String_Object::toString(RuntimeContext &ctx) {
-    UNUSED(ctx);
+std::string String_Object::toString(RuntimeContext &) {
     return this->value;
 }
 
@@ -449,8 +441,7 @@ void FuncObject::setType(DSType *type) {
     }
 }
 
-std::string FuncObject::toString(RuntimeContext &ctx) {
-    UNUSED(ctx);
+std::string FuncObject::toString(RuntimeContext &) {
     std::string str("function(");
     str += this->funcNode->getFuncName();
     str += ")";
@@ -506,26 +497,22 @@ bool DBus_Object::supportDBus() {
 #endif
 }
 
-bool DBus_Object::getServiceFromProxy(RuntimeContext &ctx, const DSValue &proxy) {
-    UNUSED(proxy);
+bool DBus_Object::getServiceFromProxy(RuntimeContext &ctx, const DSValue &) {
     ctx.throwError(ctx.getPool().getErrorType(), "not support method");
     return false;
 }
 
-bool DBus_Object::getObjectPathFromProxy(RuntimeContext &ctx, const DSValue &proxy) {
-    UNUSED(proxy);
+bool DBus_Object::getObjectPathFromProxy(RuntimeContext &ctx, const DSValue &) {
     ctx.throwError(ctx.getPool().getErrorType(), "not support method");
     return false;
 }
 
-bool DBus_Object::getIfaceListFromProxy(RuntimeContext &ctx, const DSValue &proxy) {
-    UNUSED(proxy);
+bool DBus_Object::getIfaceListFromProxy(RuntimeContext &ctx, const DSValue &) {
     ctx.throwError(ctx.getPool().getErrorType(), "not support method");
     return false;
 }
 
-bool DBus_Object::introspectProxy(RuntimeContext &ctx, const DSValue &proxy) {
-    UNUSED(proxy);
+bool DBus_Object::introspectProxy(RuntimeContext &ctx, const DSValue &) {
     ctx.throwError(ctx.getPool().getErrorType(), "not support method");
     return false;
 }
@@ -545,14 +532,12 @@ DBus_Object *DBus_Object::newDBus_Object(TypePool *typePool) {
 Bus_Object::Bus_Object(DSType *type) : DSObject(type) {
 }
 
-bool Bus_Object::service(RuntimeContext &ctx, std::string &&serviceName) {
-    UNUSED(serviceName);
+bool Bus_Object::service(RuntimeContext &ctx, std::string &&) {
     ctx.throwError(ctx.getPool().getErrorType(), "not support D-Bus service object");
     return false;
 }
 
-bool Bus_Object::listNames(RuntimeContext &ctx, bool activeName) {
-    UNUSED(activeName);
+bool Bus_Object::listNames(RuntimeContext &ctx, bool) {
     ctx.throwError(ctx.getPool().getErrorType(), "not support listNames method");
     return false;
 }
@@ -564,8 +549,7 @@ bool Bus_Object::listNames(RuntimeContext &ctx, bool activeName) {
 Service_Object::Service_Object(DSType *type) : DSObject(type) {
 }
 
-bool Service_Object::object(RuntimeContext &ctx, const DSValue &objectPath) {
-    UNUSED(objectPath);
+bool Service_Object::object(RuntimeContext &ctx, const DSValue &) {
     ctx.throwError(ctx.getPool().getErrorType(), "not support D-Bus proxy object");
     return false;
 }

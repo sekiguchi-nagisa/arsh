@@ -20,7 +20,6 @@
 
 #include "directive_parser.h"
 #include <misc/fatal.h>
-#include <misc/unused.h>
 
 namespace ydsh {
 namespace directive {
@@ -470,13 +469,11 @@ bool DirectiveInitializer::operator()(const std::unique_ptr<DirectiveNode> &node
     return true;
 }
 
-void DirectiveInitializer::visitDirectiveNode(DirectiveNode &node) {
-    UNUSED(node);
+void DirectiveInitializer::visitDirectiveNode(DirectiveNode &) {
     fatal("unsupported: visitDirectibeNode\n");
 }
 
-void DirectiveInitializer::visitAttributeNode(AttributeNode &node) {
-    UNUSED(node);
+void DirectiveInitializer::visitAttributeNode(AttributeNode &) {
     fatal("unsupported: visitAttributeNode\n");
 }
 
