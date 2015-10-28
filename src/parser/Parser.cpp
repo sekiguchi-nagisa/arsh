@@ -64,6 +64,9 @@
     EACH_LA_primary(OP)
 
 #define EACH_LA_statement(OP) \
+    OP(FUNCTION) \
+    OP(INTERFACE) \
+    OP(TYPE_ALIAS) \
     OP(ASSERT) \
     OP(LBC) \
     OP(BREAK) \
@@ -82,12 +85,6 @@
     OP(COMMAND) \
     OP(LINE_END) \
     EACH_LA_expression(OP)
-
-#define EACH_LA_toplevelStatement(OP) \
-    OP(FUNCTION) \
-    OP(INTERFACE) \
-    OP(TYPE_ALIAS) \
-    EACH_LA_statement(OP)
 
 #define EACH_LA_typeName(OP) \
     OP(IDENTIFIER)
@@ -197,7 +194,7 @@ void Parser::alternative(const TokenKind *kinds) {
 
 void Parser::parse_toplevel(RootNode &rootNode) {
     while(CUR_KIND() != EOS) {
-        rootNode.addNode(this->parse_toplevelStatement().release());
+        rootNode.addNode(this->parse_statement().release());
     }
     this->expect(EOS);
 }
@@ -207,37 +204,6 @@ void Parser::refetch(unsigned int lineNum, unsigned int startPos, LexerMode mode
     this->lexer->setPos(startPos);
     this->lexer->setLexerMode(mode);
     NEXT_TOKEN();
-}
-
-std::unique_ptr<Node> Parser::parse_toplevelStatement() {
-    bool redo = this->lexer->getPrevMode() != yycSTMT;
-
-    START:
-    switch(CUR_KIND()) {
-    case FUNCTION: {
-        return this->parse_function();
-    }
-    case INTERFACE: {
-        return this->parse_interface();
-    };
-    case TYPE_ALIAS: {
-        return this->parse_typeAlias();
-    };
-    EACH_LA_statement(GEN_LA_CASE) {
-        return this->parse_statement();
-    }
-    default:
-        if(redo) {
-            redo = false;
-            this->refetch(this->curToken.lineNum, this->curToken.startPos, yycSTMT);
-            goto START;
-        }
-        E_ALTER(
-                EACH_LA_toplevelStatement(GEN_LA_ALTER)
-                DUMMY
-        );
-        return std::unique_ptr<Node>(nullptr);
-    }
 }
 
 std::unique_ptr<Node> Parser::parse_function() {
@@ -472,6 +438,15 @@ std::unique_ptr<Node> Parser::parse_statement() {
         this->expect(LINE_END);
         RET_NODE(new EmptyNode(n));
     }
+    case FUNCTION: {
+        return this->parse_function();
+    }
+    case INTERFACE: {
+        return this->parse_interface();
+    }
+    case TYPE_ALIAS: {
+        return this->parse_typeAlias();
+    }
     case ASSERT: {
         unsigned int n = LN();
         this->expect(ASSERT);
@@ -668,6 +643,8 @@ std::unique_ptr<Node> Parser::parse_statement() {
 void Parser::parse_statementEnd() {
     switch(CUR_KIND()) {
     case EOS:
+    case RBC:
+        break;
     case LINE_END:
         NEXT_TOKEN();
         break;

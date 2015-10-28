@@ -967,6 +967,10 @@ void TypeChecker::visitImportEnvNode(ImportEnvNode *node) {
 }
 
 void TypeChecker::visitTypeAliasNode(TypeAliasNode *node) {
+    if(!this->isTopLevel()) {   // only available toplevel scope
+        E_OutsideToplevel(node);
+    }
+
     TypeToken *typeToken = node->getTargetTypeToken();
     try {
         this->typePool->setAlias(node->getAlias(), this->toType(typeToken));
@@ -1143,7 +1147,11 @@ void TypeChecker::visitElementSelfAssignNode(ElementSelfAssignNode *node) {
     node->setType(this->typePool->getVoidType());
 }
 
-void TypeChecker::visitFunctionNode(FunctionNode *node) {   //TODO: named parameter
+void TypeChecker::visitFunctionNode(FunctionNode *node) {
+    if(!this->isTopLevel()) {   // only available toplevel scope
+        E_OutsideToplevel(node);
+    }
+
     // resolve return type, param type
     DSType *returnType = this->toType(node->getReturnTypeToken());
     unsigned int paramSize = node->getParamTypeTokens().size();
@@ -1199,6 +1207,10 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode *node) {
 }
 
 void TypeChecker::visitInterfaceNode(InterfaceNode *node) {
+    if(!this->isTopLevel()) {   // only available toplevel scope
+        E_OutsideToplevel(node);
+    }
+
     resolveInterface(this->typePool, node);
 }
 
