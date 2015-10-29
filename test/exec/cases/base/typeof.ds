@@ -1,0 +1,26 @@
+assert(12 is typeof
+  (
+     23 + 43
+     )
+     )
+
+assert([$true] is typeof(["".empty()]))
+
+assert([34: "3"] is Map<
+   typeof
+
+     (
+        0
+          )
+           ,
+
+
+               typeof
+
+               (
+
+               23 as
+
+               typeof('')
+               )
+               >)

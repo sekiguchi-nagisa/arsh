@@ -114,6 +114,7 @@
     TOKEN(FUNC                               , "Func") \
     TOKEN(IN                                 , "in") \
     TOKEN(IS                                 , "is") \
+    TOKEN(TYPEOF                             , "typeof") \
     /* identifier. */\
     TOKEN(IDENTIFIER                         , "<Identifier>") \
     /* accessor */\

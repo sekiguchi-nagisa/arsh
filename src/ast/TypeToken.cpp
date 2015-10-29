@@ -15,6 +15,7 @@
  */
 
 #include "TypeToken.h"
+#include "Node.h"
 
 namespace ydsh {
 namespace ast {
@@ -154,6 +155,26 @@ std::string ReturnTypeToken::toTokenText() const {
 
 void ReturnTypeToken::accept(TypeTokenVisitor *visitor) {
     visitor->visitReturnTypeToken(this);
+}
+
+// #########################
+// ##     TypeOfToken     ##
+// #########################
+
+TypeOfToken::TypeOfToken(Node *exprNode) :
+        TypeToken(exprNode->getLineNum()), exprNode(exprNode) { }
+
+TypeOfToken::~TypeOfToken() {
+    delete this->exprNode;
+    this->exprNode = nullptr;
+}
+
+std::string TypeOfToken::toTokenText() const {
+    return std::string("typeof(*)");
+}
+
+void TypeOfToken::accept(TypeTokenVisitor *visitor) {
+    visitor->visitTypeOfToken(this);
 }
 
 

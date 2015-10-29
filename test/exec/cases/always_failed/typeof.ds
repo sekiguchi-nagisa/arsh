@@ -1,0 +1,6 @@
+#$test($result = 'type', $lineNum = 6, $errorKind = 'Unacceptable', $status = 1)
+
+function f() {
+}
+
+assert($f is Func<typeof($f())>)    # not allow void expression

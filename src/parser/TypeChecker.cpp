@@ -80,6 +80,13 @@ void TypeChecker::TypeGenerator::visitReturnTypeToken(ReturnTypeToken *token) {
     this->type = this->pool->createAndGetTupleTypeIfUndefined(std::move(types));
 }
 
+void TypeChecker::TypeGenerator::visitTypeOfToken(TypeOfToken *token) {
+    if(this->checker == nullptr) {  // not support typeof operator(in D-Bus interface loading)
+        E_DisallowTypeof(token->getExprNode());
+    }
+    this->type = this->checker->checkType(token->getExprNode());
+}
+
 DSType *TypeChecker::TypeGenerator::generateType(TypeToken *token) {
     token->accept(this);
     return this->type;
@@ -91,7 +98,7 @@ DSType *TypeChecker::TypeGenerator::generateType(TypeToken *token) {
 // #########################
 
 TypeChecker::TypeChecker(TypePool &typePool, SymbolTable &symbolTable) :
-        typePool(&typePool), symbolTable(symbolTable), typeGen(this->typePool), curReturnType(0),
+        typePool(&typePool), symbolTable(symbolTable), typeGen(this), curReturnType(0),
         visitingDepth(0), loopDepth(0), finallyDepth(0),
         cmdContextStack(), coercionKind(INVALID_COERCION) {
 }
@@ -115,7 +122,11 @@ void TypeChecker::recover(bool abortType) {
 
 DSType *TypeChecker::resolveInterface(TypePool *typePool, InterfaceNode *node) {
     TypeGenerator typeGen(typePool);
+    return resolveInterface(typePool, typeGen, node);
+}
 
+DSType *TypeChecker::resolveInterface(TypePool *typePool,
+                                      TypeChecker::TypeGenerator &typeGen, InterfaceNode *node) {
     InterfaceType *type = typePool->createAndGetInterfaceTypeIfUndefined(node->getInterfaceName());
 
     // create field handle
@@ -1208,8 +1219,7 @@ void TypeChecker::visitInterfaceNode(InterfaceNode *node) {
     if(!this->isTopLevel()) {   // only available toplevel scope
         E_OutsideToplevel(node);
     }
-
-    resolveInterface(this->typePool, node);
+    resolveInterface(this->typePool, this->typeGen, node);
 }
 
 void TypeChecker::visitBindVarNode(BindVarNode *node) {

@@ -77,6 +77,11 @@ private:
     void restoreLexerState(const Token &prevToken);
 
     /**
+     * not call it directory
+     */
+    std::unique_ptr<TypeToken> parse_basicOrReifiedType(Token &token);
+
+    /**
      * not call NETX_TOKEN, before call it.
      */
     std::unique_ptr<TypeToken> parse_typeName();

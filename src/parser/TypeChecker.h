@@ -71,10 +71,16 @@ public:
     class TypeGenerator : public TypeTokenVisitor {
     private:
         TypePool *pool;
+        TypeChecker *checker;
         DSType *type;
 
     public:
-        explicit TypeGenerator(TypePool *pool) : pool(pool), type(nullptr) { }
+        explicit TypeGenerator(TypePool *pool)
+                : pool(pool), checker(nullptr), type(nullptr) { }
+
+        explicit TypeGenerator(TypeChecker *checker)
+                : pool(checker->typePool), checker(checker), type(nullptr) { }
+
         ~TypeGenerator() = default;
 
         /**
@@ -88,6 +94,7 @@ public:
         void visitFuncTypeToken(FuncTypeToken *token);  // override
         void visitDBusInterfaceToken(DBusInterfaceToken *token);    // override
         void visitReturnTypeToken(ReturnTypeToken *token);  // override
+        void visitTypeOfToken(TypeOfToken *token); // override
 
     private:
         DSType *generateType(TypeToken *token);
@@ -142,6 +149,7 @@ public:
     void recover(bool abortType = true);
 
     static DSType *resolveInterface(TypePool *typePool, InterfaceNode *node);
+    static DSType *resolveInterface(TypePool *typePool, TypeGenerator &typeGen, InterfaceNode *node);
 
 private:
     // base type check entry point

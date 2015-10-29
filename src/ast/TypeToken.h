@@ -24,6 +24,7 @@ namespace ydsh {
 namespace ast {
 
 struct TypeTokenVisitor;
+class Node;
 
 /**
  * represent for parsed type.
@@ -177,6 +178,22 @@ public:
     void accept(TypeTokenVisitor *visitor); // override
 };
 
+class TypeOfToken : public TypeToken {
+private:
+    Node *exprNode;
+
+public:
+    TypeOfToken(Node *exprNode);
+    ~TypeOfToken();
+
+    Node *getExprNode() const {
+        return this->exprNode;
+    }
+
+    std::string toTokenText() const; // override
+    void accept(TypeTokenVisitor *visitor); // override
+};
+
 TypeToken *newAnyTypeToken(unsigned int lineNum = 0);
 
 TypeToken *newVoidTypeToken(unsigned int lineNum = 0);
@@ -190,6 +207,7 @@ struct TypeTokenVisitor {
     virtual void visitFuncTypeToken(FuncTypeToken *token) = 0;
     virtual void visitDBusInterfaceToken(DBusInterfaceToken *token) = 0;
     virtual void visitReturnTypeToken(ReturnTypeToken *token) = 0;
+    virtual void visitTypeOfToken(TypeOfToken *token) = 0;
 };
 
 

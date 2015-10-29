@@ -94,6 +94,7 @@ DEFINE_TC_ERROR(ReadOnly         , "read only symbol");
 DEFINE_TC_ERROR(InsideFinally    , "unavailable inside finally block");
 DEFINE_TC_ERROR(OutsideToplevel  , "only available toplevel scope");
 DEFINE_TC_ERROR(NotCallable      , "Func type object is not callable");
+DEFINE_TC_ERROR(DisallowTypeof   , "not allow typeof operator");
 DEFINE_TC_ERROR(DefinedSymbol    , "already defined symbol: %");
 DEFINE_TC_ERROR(DefinedField     , "already defiend field: %");
 DEFINE_TC_ERROR(UndefinedSymbol  , "undefined symbol: %");

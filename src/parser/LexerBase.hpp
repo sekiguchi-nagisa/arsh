@@ -187,6 +187,12 @@ public:
         return this->buf[token.startPos] == ch;
     }
 
+    bool equals(const TokenBase &token, const char *str) const {
+        assert(this->withinRange(token));
+        return strlen(str) == token.size &&
+                memcmp(this->buf + token.startPos, str, token.size) == 0;
+    }
+
     std::string formatLineMarker(const TokenBase &lineToken, const TokenBase &token) const;
 
 private:

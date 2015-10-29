@@ -86,9 +86,6 @@
     OP(LINE_END) \
     EACH_LA_expression(OP)
 
-#define EACH_LA_typeName(OP) \
-    OP(IDENTIFIER)
-
 #define EACH_LA_varDecl(OP) \
     OP(VAR) \
     OP(LET)
@@ -348,34 +345,55 @@ void Parser::restoreLexerState(const Token &prevToken) {
     NEXT_TOKEN();
 }
 
+std::unique_ptr<TypeToken> Parser::parse_basicOrReifiedType(Token &token) {
+    auto typeToken = uniquify<ClassTypeToken>(token.lineNum, this->lexer->toName(token));
+    if(!HAS_NL() && CUR_KIND() == TYPE_OPEN) {
+        this->expect(TYPE_OPEN, false);
+
+        auto reified = uniquify<ReifiedTypeToken>(typeToken.release());
+        reified->addElementTypeToken(this->parse_typeName().release());
+
+        while(CUR_KIND() == TYPE_SEP) {
+            this->expect(TYPE_SEP, false);
+            reified->addElementTypeToken(this->parse_typeName().release());
+        }
+        this->expect(TYPE_CLOSE, token);
+
+        this->restoreLexerState(token);
+        return std::move(reified);
+    }
+
+    this->restoreLexerState(token);
+    return std::move(typeToken);
+}
+
 std::unique_ptr<TypeToken> Parser::parse_typeName() {
     // change lexer state to TYPE
     this->lexer->pushLexerMode(yycTYPE);
     NEXT_TOKEN();
 
     switch(CUR_KIND()) {
-    EACH_LA_typeName(GEN_LA_CASE) {
+    case IDENTIFIER: {
         Token token;
         this->expect(IDENTIFIER, token);
-        auto typeToken = uniquify<ClassTypeToken>(token.lineNum, this->lexer->toName(token));
-        if(!HAS_NL() && CUR_KIND() == TYPE_OPEN) {
-            this->expect(TYPE_OPEN, false);
+        return this->parse_basicOrReifiedType(token);
+    }
+    case TYPEOF: {
+        Token token;
+        this->expect(TYPEOF, token);
+        if(CUR_KIND() == TYPE_OTHER && this->lexer->equals(this->curToken, "(")) {  // treat as typeof operator
+            this->expect(TYPE_OTHER, false);
+            this->lexer->pushLexerMode(yycEXPR);
+            NEXT_TOKEN();
 
-            auto reified = uniquify<ReifiedTypeToken>(typeToken.release());
-            reified->addElementTypeToken(this->parse_typeName().release());
+            std::unique_ptr<Node> exprNode(this->parse_expression());
 
-            while(CUR_KIND() == TYPE_SEP) {
-                this->expect(TYPE_SEP, false);
-                reified->addElementTypeToken(this->parse_typeName().release());
-            }
-            this->expect(TYPE_CLOSE, token);
+            this->expect(RP, token, false);
 
             this->restoreLexerState(token);
-            return std::move(reified);
+            return uniquify<TypeOfToken>(std::move(exprNode).release());
         }
-
-        this->restoreLexerState(token);
-        return std::move(typeToken);
+        return this->parse_basicOrReifiedType(token);
     }
     case FUNC: {
         Token token;
@@ -415,11 +433,12 @@ std::unique_ptr<TypeToken> Parser::parse_typeName() {
         this->expect(TYPE_PATH, token);
         this->restoreLexerState(token);
         return uniquify<DBusInterfaceToken>(token.lineNum, this->lexer->toTokenText(token));
-    };
+    }
     default:
         E_ALTER(
-                EACH_LA_typeName(GEN_LA_ALTER)
+                IDENTIFIER,
                 FUNC,
+                TYPEOF,
                 TYPE_PATH,
                 DUMMY
         );
@@ -851,11 +870,11 @@ std::unique_ptr<Node> Parser::parse_command() {
         EACH_LA_cmdArg(GEN_LA_CASE) {
             node->addArgNode(this->parse_cmdArg().release());
             break;
-        };
+        }
         EACH_LA_redir(GEN_LA_CASE) {
             this->parse_redirOption(node);
             break;
-        };
+        }
         default:
             next = false;
             break;
@@ -870,12 +889,12 @@ void Parser::parse_redirOption(std::unique_ptr<CmdNode> &node) {
         TokenKind kind = this->consume();
         node->addRedirOption(kind, this->parse_cmdArg().release());
         break;
-    };
+    }
     EACH_LA_redirNoFile(GEN_LA_CASE) {
         TokenKind kind = this->consume();
         node->addRedirOption(kind);
         break;
-    };
+    }
     default:
         E_ALTER(
                 EACH_LA_redir(GEN_LA_ALTER)
@@ -969,19 +988,19 @@ std::unique_ptr<Node> Parser::parse_expression(std::unique_ptr<Node> &&leftNode,
             std::unique_ptr<TypeToken> type(this->parse_typeName());
             node = uniquify<CastNode>(node.release(), type.release());
             break;
-        };
+        }
         case IS: {
             this->expect(IS, false);
             std::unique_ptr<TypeToken> type(this->parse_typeName());
             node = uniquify<InstanceOfNode>(node.release(), type.release());
             break;
-        };
+        }
         EACH_LA_assign(GEN_LA_CASE) {
             TokenKind op = this->consume();
             auto rightNode(this->parse_commandOrExpression());
             node.reset(createBinaryOpNode(node.release(), op, rightNode.release()));
             break;
-        };
+        }
         default: {
             TokenKind op = this->consume();
             std::unique_ptr<Node> rightNode(this->parse_unaryExpression());
@@ -990,7 +1009,7 @@ std::unique_ptr<Node> Parser::parse_expression(std::unique_ptr<Node> &&leftNode,
             }
             node.reset(createBinaryOpNode(node.release(), op, rightNode.release()));
             break;
-        };
+        }
         }
     }
     return node;

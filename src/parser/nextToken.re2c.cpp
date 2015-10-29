@@ -281,6 +281,7 @@ void Lexer::nextToken(Token &token) {
       <TYPE> VAR_NAME ("." VAR_NAME)+
                                { RET(TYPE_PATH); }
       <TYPE> "Func"            { RET(FUNC); }
+      <TYPE> "typeof"          { RET(TYPEOF); }
       <TYPE> VAR_NAME          { RET(IDENTIFIER); }
       <TYPE> "<"               { RET(TYPE_OPEN); }
       <TYPE> ">"               { RET(TYPE_CLOSE); }
