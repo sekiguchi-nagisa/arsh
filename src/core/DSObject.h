@@ -110,17 +110,25 @@ public:
 
 class DSValue {
 private:
-    /**
-     * may be null
-     */
-    DSObject *obj;
+    union {
+        /**
+         * may be null
+         */
+        DSObject *obj;
+
+        /**
+         * if most significant bit is 0, represents DSObject' pointer(may be nullptr).
+         * otherwise, represents native pointer, number ... etc
+         */
+        long val;
+    };
 
 public:
     /**
      * obj may be null
      */
     explicit DSValue(DSObject *obj) noexcept : obj(obj) {
-        if(this->obj != nullptr) {
+        if(this->val > 0) {
             this->obj->refCount++;
         }
     }
@@ -140,7 +148,7 @@ public:
     DSValue(DSValue &&value) noexcept : obj(value.obj) { value.obj = nullptr; }
 
     ~DSValue() {
-        if(this->obj != nullptr) {
+        if(this->val > 0) {
             if(--this->obj->refCount == 0) {
                 delete this->obj;
             }
@@ -184,6 +192,13 @@ public:
         return this->obj != nullptr;
     }
 
+    /**
+     * if represents DSObject(may be nullptr), return true.
+     */
+    bool isObject() const noexcept {
+        return this->val >= 0;
+    }
+
     void swap(DSValue &value) noexcept {
         std::swap(this->obj, value.obj);
     }
@@ -207,6 +222,10 @@ inline T *typeAs(const DSValue &value) noexcept {
     static_assert(std::is_base_of<DSObject, T>::value, "must be subtype of DSObject");
 
     if(useSafeCast) {
+        if(!value.isObject()) {
+            std::cerr << "must be represent DSObject" << std::endl;
+            abort();
+        }
         auto *r = dynamic_cast<T*>(value.get());
         if(r == nullptr) {
             DSObject &v = *value;
