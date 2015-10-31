@@ -42,7 +42,7 @@ enum class EvalStatus : unsigned int {
     REMOVE,
 };
 
-class RuntimeContext {
+class RuntimeContext : private misc::NonCopyable<RuntimeContext> {
 private:
     TypePool pool;
     SymbolTable symbolTable;

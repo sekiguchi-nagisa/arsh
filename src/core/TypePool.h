@@ -22,6 +22,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "../misc/NonCopyable.hpp"
+
 namespace ydsh {
 namespace core {
 
@@ -31,7 +33,7 @@ class InterfaceType;
 class TypeTemplate;
 struct native_type_info_t;
 
-class TypeMap {
+class TypeMap : private misc::NonCopyable<TypeMap> {
 private:
     std::unordered_map<std::string, DSType *> typeMapImpl;
     std::unordered_map<unsigned long, const std::string *> typeNameMap;
@@ -86,7 +88,7 @@ private:
     void removeType(const std::string &typeName);
 };
 
-class TypePool {
+class TypePool : private misc::NonCopyable<TypePool> {
 private:
     TypeMap typeMap;
 

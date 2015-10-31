@@ -21,7 +21,8 @@
 #include <cassert>
 
 #include "DSObject.h"
-#include "misc/hash.hpp"
+#include "../misc/hash.hpp"
+#include "../misc/NonCopyable.hpp"
 
 namespace ydsh {
 namespace core {
@@ -54,7 +55,7 @@ enum RedirectOP : unsigned int {
  * for builtin command argument.
  * following variables are read-only.
  */
-struct BuiltinContext {
+struct BuiltinContext : private misc::NonCopyable<BuiltinContext> {
     /**
      * number of argv, exclude last element
      */
@@ -103,7 +104,7 @@ struct ChildError {
 };
 
 
-class ProcInvoker {
+class ProcInvoker : private misc::NonCopyable<ProcInvoker> {
 public:
     /**
      * return exit status.

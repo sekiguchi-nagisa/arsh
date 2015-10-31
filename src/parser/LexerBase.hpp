@@ -135,10 +135,7 @@ public:
      */
     explicit LexerBase(const char *src);
 
-    /**
-     * not allow copy constructor
-     */
-    explicit LexerBase(const LexerBase<T> &buffer);
+    explicit LexerBase(const LexerBase &buffer) = delete;
 
     virtual ~LexerBase() {
         if(!this->zeroCopyBuf) {
@@ -146,6 +143,8 @@ public:
             this->buf = nullptr;
         }
     }
+
+    LexerBase &operator=(const LexerBase &o) = delete;
 
     /**
      * get current reading position.
