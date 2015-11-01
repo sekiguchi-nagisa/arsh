@@ -225,14 +225,13 @@ private:
      */
     void checkAndThrowIfOutOfLoop(Node *node);
 
-    bool findBlockEnd(BlockNode *blockNode);
-
     /**
-     * check block end (return, throw) existence in function block
+     * check block end (return, throw) existence in function block.
+     * blockNode must be typed.
      * blockNode is function block.
      * returnType is function return type.
      */
-    void checkBlockEndExistence(BlockNode *blockNode, DSType *returnType);
+    void checkTerminalNodeExistence(BlockNode *blockNode, DSType *returnType);
 
     void pushReturnType(DSType *returnType);
 

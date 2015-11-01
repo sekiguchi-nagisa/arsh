@@ -96,7 +96,7 @@ public:
      */
     virtual void inRightHandleSide();
 
-    virtual bool isBlockEndNode() const;
+    virtual bool isTerminalNode() const;
 
     virtual void setSourceName(const char *sourceName);
     virtual const char *getSourceName();
@@ -1180,6 +1180,8 @@ public:
         return this->nodeList;
     }
 
+    bool isTerminalNode() const; // overrdie
+
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
@@ -1194,7 +1196,7 @@ public:
 
     virtual ~BlockEndNode() = default;
 
-    bool isBlockEndNode() const { // override
+    bool isTerminalNode() const { // override
         return true;
     }
 };
@@ -1457,6 +1459,8 @@ private:
      */
     BlockNode *elseNode;
 
+    bool terminal;
+
 public:
     /**
      * elseNode may be null
@@ -1491,6 +1495,14 @@ public:
      * return EmptyBlockNode, if elseNode is null.
      */
     BlockNode *getElseNode();
+
+    void setTerminal(bool terminal) {
+        this->terminal = terminal;
+    }
+
+    bool isTerminalNode() const {   // override
+        return this->terminal;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
@@ -1610,9 +1622,11 @@ private:
      */
     BlockNode *finallyNode;
 
+    bool terminal;
+
 public:
     TryNode(unsigned int lineNum, BlockNode *blockNode) :
-            Node(lineNum), blockNode(blockNode), catchNodes(), finallyNode() { }
+            Node(lineNum), blockNode(blockNode), catchNodes(), finallyNode(), terminal(false) { }
 
     ~TryNode();
 
@@ -1629,6 +1643,14 @@ public:
     void addFinallyNode(BlockNode *finallyNode);
 
     BlockNode *getFinallyNode();
+
+    void setTerminal(bool terminal) {
+        this->terminal = terminal;
+    }
+
+    bool isTerminalNode() const {   // override
+        return this->terminal;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override

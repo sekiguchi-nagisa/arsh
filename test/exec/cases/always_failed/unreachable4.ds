@@ -1,0 +1,6 @@
+#$test($result = 'type', $status = 1, $errorKind = 'Unreachable', $lineNum = 5)
+
+while($true) {
+    break
+    assert($false)
+}

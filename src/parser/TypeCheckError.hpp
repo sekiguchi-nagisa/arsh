@@ -86,7 +86,7 @@ public:
 
 DEFINE_TC_ERROR(InsideLoop       , "only available inside loop statement");
 DEFINE_TC_ERROR(UnfoundReturn    , "not found return statement");
-DEFINE_TC_ERROR(Unreachable      , "found unreachable code");
+DEFINE_TC_ERROR(Unreachable      , "unreachable code");
 DEFINE_TC_ERROR(InsideFunc       , "only available inside function");
 DEFINE_TC_ERROR(NotNeedExpr      , "not need expression");
 DEFINE_TC_ERROR(Assignable       , "require assignable node");

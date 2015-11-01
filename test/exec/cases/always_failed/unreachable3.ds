@@ -1,0 +1,15 @@
+#$test($result = 'type', $status = 1, $errorKind = 'Unreachable', $lineNum = 15)
+
+try {
+    if($true) {
+        if($true) {
+            throw 34
+        }
+    }
+    throw 2
+} catch($e) {
+    throw 45
+} finally {
+    echo hello
+}
+assert($false)

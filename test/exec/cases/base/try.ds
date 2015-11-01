@@ -37,7 +37,6 @@ function f($a : Boolean): Int {
     finally {
         $flag = $true
     }
-    return 0
 }
 
 assert($f($true) == -100)
@@ -74,7 +73,6 @@ function g() : Int {
         assert($i == 1)
         $i++
     }
-    return 99
 }
 assert($g() == 0)
 

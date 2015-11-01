@@ -49,7 +49,7 @@ void Node::inCondition() { }  // do nothing
 
 void Node::inRightHandleSide() { }   // do nothing
 
-bool Node::isBlockEndNode() const {
+bool Node::isTerminalNode() const {
     return false;
 }
 
@@ -1390,6 +1390,10 @@ void BlockNode::insertNodeToFirst(Node *node) {
     this->nodeList.push_front(node);
 }
 
+bool BlockNode::isTerminalNode() const {
+    return !this->nodeList.empty() && this->nodeList.back()->isTerminalNode();
+}
+
 void BlockNode::dump(Writer &writer) const {
     WRITE(nodeList);
 }
@@ -1702,7 +1706,7 @@ static void resolveIfIsStatement(Node *condNode, BlockNode *blockNode) {
 
 IfNode::IfNode(unsigned int lineNum, Node *condNode, BlockNode *thenNode) :
         Node(lineNum), condNode(condNode), thenNode(thenNode),
-        elifCondNodes(), elifThenNodes(), elseNode(nullptr) {
+        elifCondNodes(), elifThenNodes(), elseNode(nullptr), terminal(false) {
     this->condNode->inCondition();
 
     resolveIfIsStatement(this->condNode, this->thenNode);
@@ -1754,6 +1758,7 @@ void IfNode::dump(Writer &writer) const {
     WRITE(elifThenNodes);
 
     WRITE_PTR(elseNode);
+    WRITE_PRIM(terminal);
 }
 
 void IfNode::accept(NodeVisitor *visitor) {

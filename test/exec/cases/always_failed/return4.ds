@@ -1,0 +1,11 @@
+# finally
+
+#$test($result = 'type', $lineNum = 10, $errorKind = 'NotNeedExpr', $status = 1)
+
+function g() {
+    echo hello
+}
+
+function f() {
+    return $g()
+}

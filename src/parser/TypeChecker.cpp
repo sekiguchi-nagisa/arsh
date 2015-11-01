@@ -225,15 +225,13 @@ DSType *TypeChecker::checkType(DSType *requiredType, Node *targetNode,
 }
 
 void TypeChecker::checkTypeWithCurrentScope(BlockNode *blockNode) {
-    int count = 0;
-    int size = blockNode->getNodeList().size();
+    bool prevIsTerminal = false;
     for(Node * &targetNode : blockNode->refNodeList()) {
-        this->checkTypeWithCoercion(this->typePool->getVoidType(), targetNode);
-
-        if(targetNode->isBlockEndNode() && (count != size - 1)) {
-            E_Unreachable(blockNode);
+        if(prevIsTerminal) {
+            E_Unreachable(targetNode);
         }
-        count++;
+        this->checkTypeWithCoercion(this->typePool->getVoidType(), targetNode);
+        prevIsTerminal = targetNode->isTerminalNode();
     }
     blockNode->setType(this->typePool->getVoidType());
 }
@@ -319,45 +317,16 @@ void TypeChecker::checkAndThrowIfOutOfLoop(Node *node) {
     E_InsideLoop(node);
 }
 
-bool TypeChecker::findBlockEnd(BlockNode *blockNode) {
-    if(blockNode->getNodeList().size() == 0) {
-        return false;
-    }
-    Node *endNode = blockNode->getNodeList().back();
-    if(endNode->isBlockEndNode()) {
-        return true;
-    }
-
-    /**
-     * if endNode is IfNode, search recursively
-     */
-    IfNode *ifNode = dynamic_cast<IfNode *>(endNode);
-    if(ifNode != nullptr) {
-        if(!this->findBlockEnd(ifNode->getThenNode())) {
-            return false;
-        }
-        for(BlockNode *elifThenNode : ifNode->getElifThenNodes()) {
-            if(!this->findBlockEnd(elifThenNode)) {
-                return false;
-            }
-        }
-        return this->findBlockEnd(ifNode->getElseNode());
-    }
-    return false;
-}
-
-void TypeChecker::checkBlockEndExistence(BlockNode *blockNode, DSType *returnType) {
+void TypeChecker::checkTerminalNodeExistence(BlockNode *blockNode, DSType *returnType) {
+    assert(blockNode->getType() != nullptr);
     Node *endNode = blockNode->getNodeList().empty() ? nullptr : blockNode->getNodeList().back();
-
-    if(*returnType == *this->typePool->getVoidType() &&
-            (endNode == nullptr || !endNode->isBlockEndNode())) {
+    if(returnType->isVoidType() && (endNode == nullptr || !endNode->isTerminalNode())) {
         /**
          * insert return node to block end
          */
         blockNode->addNode(new ReturnNode(0, new EmptyNode()));
-        return;
     }
-    if(!this->findBlockEnd(blockNode)) {
+    if(!blockNode->getNodeList().back()->isTerminalNode()) {
         E_UnfoundReturn(blockNode);
     }
 }
@@ -1032,13 +1001,22 @@ void TypeChecker::visitIfNode(IfNode *node) {
     this->checkType(this->typePool->getBooleanType(), node->getCondNode());
     this->checkType(this->typePool->getVoidType(), node->getThenNode());
 
-    unsigned int size = node->getElifCondNodes().size();
+    const unsigned int size = node->getElifCondNodes().size();
     for(unsigned int i = 0; i < size; i++) {
         this->checkType(this->typePool->getBooleanType(), node->getElifCondNodes()[i]);
         this->checkType(this->typePool->getVoidType(), node->getElifThenNodes()[i]);
     }
 
     this->checkType(this->typePool->getVoidType(), node->getElseNode());
+
+    // check if terminal node
+    bool terminal = node->getThenNode()->isTerminalNode()
+                        && node->getElseNode()->isTerminalNode();
+    for(unsigned int i = 0; i < size && terminal; i++) {
+        terminal = node->getElifThenNodes()[i]->isTerminalNode();
+    }
+    node->setTerminal(terminal);
+
     node->setType(this->typePool->getVoidType());
 }
 
@@ -1094,7 +1072,7 @@ void TypeChecker::visitTryNode(TryNode *node) {
     /**
      * verify catch block order
      */
-    int size = node->getCatchNodes().size();
+    const int size = node->getCatchNodes().size();
     for(int i = 0; i < size - 1; i++) {
         DSType *curType = node->getCatchNodes()[i]->getExceptionType();
         CatchNode *nextNode = node->getCatchNodes()[i + 1];
@@ -1103,6 +1081,14 @@ void TypeChecker::visitTryNode(TryNode *node) {
             E_Unreachable(nextNode);
         }
     }
+
+    // check if terminal node
+    bool terminal = node->getBlockNode()->isTerminalNode();
+    for(int i = 0; i < size && terminal; i++) {
+        terminal = node->getCatchNodes()[i]->getBlockNode()->isTerminalNode();
+    }
+    node->setTerminal(terminal);
+
     node->setType(this->typePool->getVoidType());
 }
 
@@ -1177,24 +1163,29 @@ void TypeChecker::visitFunctionNode(FunctionNode *node) {
     }
     node->setVarIndex(handle->getFieldIndex());
 
-    // check type func body
+    // prepare type checking
     this->pushReturnType(returnType);
     this->symbolTable.enterFunc();
     this->symbolTable.enterScope();
 
-    for(unsigned int i = 0; i < paramSize; i++) { // register parameter
+    // register parameter
+    for(unsigned int i = 0; i < paramSize; i++) {
         VarNode *paramNode = node->getParamNodes()[i];
         FieldHandle *fieldHandle = this->addEntryAndThrowIfDefined(
                 paramNode, paramNode->getVarName(), paramTypes[i], false);
         paramNode->setAttribute(fieldHandle);
     }
-    this->checkBlockEndExistence(node->getBlockNode(), returnType);
+
+    // check type func body
     this->checkTypeWithCurrentScope(node->getBlockNode());
     this->symbolTable.exitScope();
 
     node->setMaxVarNum(this->symbolTable.getMaxVarIndex());
     this->symbolTable.exitFunc();
     this->popReturnType();
+
+    this->checkTerminalNodeExistence(node->getBlockNode(), returnType);
+
     node->setType(this->typePool->getVoidType());
 }
 
@@ -1241,9 +1232,15 @@ void TypeChecker::visitRootNode(RootNode *node) {
     this->symbolTable.commit();
     this->typePool->commit();
 
+    bool prevIsTerminal = false;
     for(Node *targetNode : node->getNodeList()) {
+        if(prevIsTerminal) {
+            E_Unreachable(targetNode);
+        }
         this->checkType(nullptr, targetNode, nullptr);
+        prevIsTerminal = targetNode->isTerminalNode();
     }
+
     node->setMaxVarNum(this->symbolTable.getMaxVarIndex());
     node->setMaxGVarNum(this->symbolTable.getMaxGVarIndex());
     node->setType(this->typePool->getVoidType());
