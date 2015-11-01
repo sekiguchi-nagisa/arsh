@@ -534,6 +534,8 @@ int RuntimeContext::execUserDefinedCommand(UserDefinedCmdNode *node, DSValue *ar
     this->procInvoker.clear();
 
     this->pushFuncContext(node);
+    this->reserveLocalVar(this->getLocalVarOffset() + node->getMaxVarNum());
+
     EvalStatus s;
     try {
         s = node->getBlockNode()->eval(*this);

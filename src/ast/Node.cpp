@@ -1914,6 +1914,7 @@ void TryNode::dump(Writer &writer) const {
     WRITE(catchNodes);
 
     WRITE_PTR(finallyNode);
+    WRITE_PRIM(terminal);
 }
 
 void TryNode::accept(NodeVisitor *visitor) {
@@ -2286,6 +2287,7 @@ const char *UserDefinedCmdNode::getSourceName() {
 void UserDefinedCmdNode::dump(Writer &writer) const {
     WRITE(commandName);
     WRITE_PTR(blockNode);
+    WRITE_PRIM(maxVarNum);
 }
 
 void UserDefinedCmdNode::accept(NodeVisitor *visitor) {

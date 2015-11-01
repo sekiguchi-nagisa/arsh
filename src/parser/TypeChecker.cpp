@@ -1196,7 +1196,11 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode *node) {
 
     this->pushReturnType(this->typePool->getIntType());    // pseudo return type
     this->symbolTable.enterFunc();
+
+    // check type command body
     this->checkType(this->typePool->getVoidType(), node->getBlockNode());
+
+    node->setMaxVarNum(this->symbolTable.getMaxVarIndex());
     this->symbolTable.exitFunc();
     this->popReturnType();
 

@@ -1975,9 +1975,12 @@ private:
 
     const char *sourceName;
 
+    unsigned int maxVarNum;
+
 public:
     UserDefinedCmdNode(unsigned int lineNum, std::string &&commandName, BlockNode *blockNode) :
-            Node(lineNum), commandName(std::move(commandName)), blockNode(blockNode), sourceName(0) { }
+            Node(lineNum), commandName(std::move(commandName)),
+            blockNode(blockNode), sourceName(0), maxVarNum(0) { }
 
     ~UserDefinedCmdNode();
 
@@ -1991,6 +1994,14 @@ public:
 
     void setSourceName(const char *sourceName); // override
     const char *getSourceName(); // override
+
+    void setMaxVarNum(unsigned int maxVarNum) {
+        this->maxVarNum = maxVarNum;
+    }
+
+    unsigned int getMaxVarNum() const {
+        return this->maxVarNum;
+    }
 
     void dump(Writer &writer) const;  // override
     void accept(NodeVisitor *visitor);    // override
