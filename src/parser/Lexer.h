@@ -35,11 +35,13 @@
 namespace ydsh {
 namespace parser {
 
-typedef enum {
+enum LexerMode{
 #define GEN_ENUM(ENUM) ENUM,
     EACH_LEXER_MODE(GEN_ENUM)
 #undef GEN_ENUM
-} LexerMode;
+};
+
+const char *toModeName(LexerMode mode);
 
 typedef ydsh::parser_base::Token<TokenKind> Token;
 
@@ -63,8 +65,6 @@ private:
     bool prevSpace;
 
     LexerMode prevMode;
-
-    static const char *lexerModeNames[];
 
 public:
     explicit Lexer(const char *source) :
@@ -114,8 +114,8 @@ public:
         this->modeStack.pop_back();
     }
 
-    const char *getLexerModeName() const {
-        return lexerModeNames[this->modeStack.back()];
+    LexerMode getLexerMode() const {
+        return this->modeStack.back();
     }
 
     static bool isInvalidToken(TokenKind kind) {

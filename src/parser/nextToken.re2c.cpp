@@ -316,7 +316,7 @@ void Lexer::nextToken(Token &token) {
 
     LOG(TRACE_TOKEN,
         token << ", text = " << this->toTokenText(token) << std::endl
-                     << "   lexer mode: " << this->getLexerModeName()
+                     << "   lexer mode: " << toModeName(this->getLexerMode())
     );
     return;
 }
