@@ -224,6 +224,11 @@ LexerBase<T>::LexerBase(FILE *fp) : LexerBase<T>() {
 template<bool T>
 LexerBase<T>::LexerBase(const char *src) : LexerBase<T>() {
     this->bufSize = strlen(src) + 1;
+    if(this->bufSize == 1) {    // empty string
+        src = "\n";
+        this->bufSize = 2;
+    }
+
     this->zeroCopyBuf = src[this->bufSize - 2] == '\n';
 
     if(this->zeroCopyBuf) {
