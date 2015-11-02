@@ -288,10 +288,11 @@ void Lexer::nextToken(Token &token) {
       <TYPE> ","               { RET(TYPE_SEP); }
       <TYPE> "["               { RET(PTYPE_OPEN); }
       <TYPE> "]"               { RET(PTYPE_CLOSE); }
+      <TYPE> "\000"            { REACH_EOS();}
       <TYPE> OTHER             { RET(TYPE_OTHER); }
 
 
-      <STMT,EXPR,NAME,DSTRING,CMD,TYPE> "\000" { REACH_EOS();}
+      <STMT,EXPR,NAME,DSTRING,CMD> "\000" { REACH_EOS();}
       <STMT,EXPR,NAME,DSTRING,CMD> OTHER  { RET(INVALID); }
     */
 
