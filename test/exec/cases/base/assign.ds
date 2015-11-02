@@ -1,0 +1,53 @@
+# global
+var a = 0
+$a += 1
+assert($a == 1)
+$a *= 2
+assert($a == 2)
+$a /= 2
+assert($a == 1)
+$a %= 1
+assert($a == 0)
+$a -= 1
+assert($a == -1)
+
+# local
+{
+    var a = 0
+    $a += 1
+    assert($a == 1)
+    $a *= 2
+    assert($a == 2)
+    $a /= 2
+    assert($a == 1)
+    $a %= 1
+    assert($a == 0)
+    $a -= 1
+    assert($a == -1)
+}
+
+# field
+var t = new Tuple<Int>(0)
+$t._0 += 1
+assert($t._0 == 1)
+$t._0 *= 2
+assert($t._0 == 2)
+$t._0 /= 2
+assert($t._0 == 1)
+$t._0 %= 1
+assert($t._0 == 0)
+$t._0 -= 1
+assert($t._0 == -1)
+
+# indexer
+var i = [0]
+$i[0] += 1
+assert($i[0] == 1)
+$i[0] *= 2
+assert($i[0] == 2)
+$i[0] /= 2
+assert($i[0] == 1)
+$i[0] %= 1
+assert($i[0] == 0)
+$i[0] -= 1
+assert($i[0] == -1)

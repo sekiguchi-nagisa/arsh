@@ -1,0 +1,21 @@
+var count = 0
+
+function f() : Boolean {
+    $count++
+    return $true
+}
+
+# conditional and
+assert($true && $f())
+assert($count == 1)
+
+assert(not ($false && $f()))    # short circuit
+assert($count == 1)
+
+
+# conditional or
+assert($false || $f())
+assert($count == 2)
+
+assert($true || $f())   # short circuit
+assert($count == 2)
