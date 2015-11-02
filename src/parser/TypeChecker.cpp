@@ -99,8 +99,7 @@ DSType *TypeChecker::TypeGenerator::generateType(TypeToken *token) {
 
 TypeChecker::TypeChecker(TypePool &typePool, SymbolTable &symbolTable) :
         typePool(&typePool), symbolTable(symbolTable), typeGen(this), curReturnType(0),
-        visitingDepth(0), loopDepth(0), finallyDepth(0),
-        cmdContextStack(), coercionKind(INVALID_COERCION) {
+        visitingDepth(0), loopDepth(0), finallyDepth(0), cmdContextStack() {
 }
 
 void TypeChecker::checkTypeRootNode(RootNode &rootNode) {
@@ -172,10 +171,13 @@ DSType *TypeChecker::checkType(DSType *requiredType, Node *targetNode) {
     return this->checkType(requiredType, targetNode, nullptr);
 }
 
-DSType *TypeChecker::checkType(DSType *requiredType, Node *targetNode,
-                               DSType *unacceptableType, bool allowCoercion) {
-    this->coercionKind = INVALID_COERCION;
+DSType *TypeChecker::checkType(DSType *requiredType, Node *targetNode, DSType *unacceptableType) {
+    CoercionKind kind = CoercionKind::NOP;
+    return this->checkType(requiredType, targetNode, unacceptableType, kind);
+}
 
+DSType *TypeChecker::checkType(DSType *requiredType, Node *targetNode,
+                               DSType *unacceptableType, CoercionKind &kind) {
     /**
      * if target node is expr node and type is null,
      * try type check.
@@ -215,7 +217,7 @@ DSType *TypeChecker::checkType(DSType *requiredType, Node *targetNode,
     /**
      * check coercion
      */
-    if(allowCoercion && this->checkCoercion(requiredType, type)) {
+    if(kind == CoercionKind::INVALID_COERCION && this->checkCoercion(kind, requiredType, type)) {
         return type;
     }
 
@@ -237,14 +239,11 @@ void TypeChecker::checkTypeWithCurrentScope(BlockNode *blockNode) {
 }
 
 void TypeChecker::checkTypeWithCoercion(DSType *requiredType, Node * &targetNode) {
-    this->checkType(requiredType, targetNode, nullptr, true);
-    if(this->coercionKind != INVALID_COERCION) {
-        targetNode = this->resolveCoercion(this->coercionKind, requiredType, targetNode);
+    CoercionKind kind = CoercionKind::INVALID_COERCION;
+    this->checkType(requiredType, targetNode, nullptr, kind);
+    if(kind != CoercionKind::INVALID_COERCION && kind != CoercionKind::NOP) {
+        this->resolveCoercion(kind, requiredType, targetNode);
     }
-}
-
-bool TypeChecker::checkCoercion(DSType *requiredType, DSType *targetType) {
-    return this->checkCoercion(this->coercionKind, requiredType, targetType);
 }
 
 bool TypeChecker::checkCoercion(CoercionKind &kind, DSType *requiredType, DSType *targetType) {
@@ -262,43 +261,42 @@ bool TypeChecker::checkCoercion(CoercionKind &kind, DSType *requiredType, DSType
     int requiredPrecision = this->typePool->getIntPrecision(requiredType);
 
     if(this->checkInt2Float(targetPrecision, requiredType)) {
-        kind = INT_2_FLOAT;
+        kind = CoercionKind::INT_2_FLOAT;
         return true;
     } else if(this->checkInt2Long(targetPrecision, requiredPrecision)) {
-        kind = INT_2_LONG;
+        kind = CoercionKind::INT_2_LONG;
         return true;
     } else if(this->checkInt2IntWidening(targetPrecision, requiredPrecision)) {
-        kind = INT_NOP;
+        kind = CoercionKind::INT_NOP;
         return true;
     }
     return false;
 }
 
-Node *TypeChecker::resolveCoercion(CoercionKind kind, DSType *requiredType, Node *targetNode) {
+void TypeChecker::resolveCoercion(CoercionKind kind, DSType *requiredType, Node * &targetNode) {
     CastNode::CastOp op;
     switch(kind) {
-    case TO_VOID:
+    case CoercionKind::TO_VOID:
         op = CastNode::TO_VOID;
         break;
-    case INT_2_FLOAT:
+    case CoercionKind::INT_2_FLOAT:
         op = CastNode::INT_TO_FLOAT;
         break;
-    case INT_2_LONG:
+    case CoercionKind::INT_2_LONG:
         op = CastNode::INT_TO_LONG;
         break;
-    case INT_NOP:
+    case CoercionKind::INT_NOP:
         op = CastNode::COPY_INT;
         break;
-    case LONG_NOP:
+    case CoercionKind::LONG_NOP:
         op = CastNode::COPY_LONG;
         break;
     default:
         fatal("unsupported int coercion: %s -> %s\n",
               this->typePool->getTypeName(*targetNode->getType()).c_str(),
               this->typePool->getTypeName(*requiredType).c_str());
-        return nullptr;
     }
-    return CastNode::newTypedCastNode(targetNode, requiredType, op);
+    targetNode = CastNode::newTypedCastNode(targetNode, requiredType, op);
 }
 
 FieldHandle *TypeChecker::addEntryAndThrowIfDefined(Node *node, const std::string &symbolName, DSType *type,
@@ -732,10 +730,10 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode *node) {
        leftPrecision < TypePool::INT32_PRECISION &&
        rightPrecision > TypePool::INVALID_PRECISION &&
        rightPrecision < TypePool::INT32_PRECISION) {   // int widening
-        node->setLeftNode(this->resolveCoercion(INT_NOP, this->typePool->getInt32Type(), node->getLeftNode()));
-        node->setRightNode(this->resolveCoercion(INT_NOP, this->typePool->getInt32Type(), node->getRightNode()));
+        this->resolveCoercion(CoercionKind::INT_NOP, this->typePool->getInt32Type(), node->refLeftNode());
+        this->resolveCoercion(CoercionKind::INT_NOP, this->typePool->getInt32Type(), node->refRightNode());
     } else if(leftPrecision != rightPrecision && this->checkCoercion(kind, rightType, leftType)) {    // cast left
-        node->setLeftNode(this->resolveCoercion(kind, rightType, node->getLeftNode()));
+        this->resolveCoercion(kind, rightType, node->refLeftNode());
     }
 
     MethodCallNode *applyNode = node->createApplyNode();

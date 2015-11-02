@@ -836,16 +836,16 @@ public:
         return this->leftNode;
     }
 
-    void setLeftNode(Node *leftNode) {
-        this->leftNode = leftNode;
+    Node *&refLeftNode() {
+        return this->leftNode;
     }
 
     Node *getRightNode() const {
         return this->rightNode;
     }
 
-    void setRightNode(Node *rightNode) {
-        this->rightNode = rightNode;
+    Node *&refRightNode() {
+        return this->rightNode;
     }
 
     TokenKind getOp() const {

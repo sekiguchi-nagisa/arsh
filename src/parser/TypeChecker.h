@@ -57,13 +57,14 @@ public:
     }
 };
 
-enum CoercionKind {
+enum class CoercionKind : unsigned char {
     TO_VOID,            // pop evaulated value.
     INT_2_FLOAT,        // int(except for Int64, Uint64) to float
     INT_2_LONG,         // int(except for Int64, Uint64) to long(Int64, Uint64)
     INT_NOP,            // int(except for Int64, Uin64) to int(except for Int64, Uint64)
     LONG_NOP,           // long(Int64, Uint64) to long(Int64, Uint64)
     INVALID_COERCION,   // illegal coercion.
+    NOP,                // not allow coercion
 };
 
 class TypeChecker : protected NodeVisitor {
@@ -128,11 +129,6 @@ private:
 
     std::vector<CmdContextNode *> cmdContextStack;
 
-    /**
-     * for type coercion
-     */
-    CoercionKind coercionKind;
-
 public:
     TypeChecker(TypePool &typePool, SymbolTable &symbolTable);
 
@@ -180,8 +176,13 @@ private:
      * and if unacceptableType is equivalent to node type, throw exception.
      * return resolved type.
      */
+    DSType *checkType(DSType *requiredType, Node *targetNode, DSType *unacceptableType);
+
+    /**
+     * root method of checkType
+     */
     DSType *checkType(DSType *requiredType, Node *targetNode,
-                      DSType *unacceptableType, bool allowCoercion = false);
+                      DSType *unacceptableType, CoercionKind &kind);
 
     void checkTypeWithCurrentScope(BlockNode *blockNode);
 
@@ -194,15 +195,13 @@ private:
      */
     void checkTypeWithCoercion(DSType *requiredType, Node * &targetNode);
 
-    bool checkCoercion(DSType *requiredType, DSType *targetType);
-
     /**
      * for int type conversion.
      * return true if allow target type to required type implicit cast.
      */
     bool checkCoercion(CoercionKind &kind, DSType *requiredType, DSType *targetType);
 
-    Node *resolveCoercion(CoercionKind kind, DSType *requiredType, Node *targetNode);
+    void resolveCoercion(CoercionKind kind, DSType *requiredType, Node * &targetNode);
 
     FieldHandle *addEntryAndThrowIfDefined(Node *node, const std::string &symbolName, DSType *type, bool readOnly);
 
