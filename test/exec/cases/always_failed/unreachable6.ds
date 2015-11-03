@@ -1,0 +1,9 @@
+#$test($result = 'type', $status = 1, $errorKind = 'Unreachable', $lineNum = 7)
+
+try {
+    throw new OutOfRangeError("")
+} catch($e : Error) {
+    assert($true)
+} catch($e : OutOfRangeError) {
+    assert($false)
+}

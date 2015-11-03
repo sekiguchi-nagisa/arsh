@@ -1,0 +1,3 @@
+#$test($result = 'type', $lineNum = 3, $errorKind = 'Assignable', $status = 1)
+
+"hello" = "hello"
