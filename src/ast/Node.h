@@ -2121,9 +2121,9 @@ public:
 
 // helper function for node creation
 
-std::string resolveUnaryOpName(TokenKind op);
+const char *resolveUnaryOpName(TokenKind op);
 
-std::string resolveBinaryOpName(TokenKind op);
+const char *resolveBinaryOpName(TokenKind op);
 
 TokenKind resolveAssignOp(TokenKind op);
 

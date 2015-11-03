@@ -42,7 +42,6 @@ ReifiedTypeToken::~ReifiedTypeToken() {
     for(TypeToken *t : this->elementTypeTokens) {
         delete t;
     }
-    this->elementTypeTokens.clear();
 }
 
 void ReifiedTypeToken::addElementTypeToken(TypeToken *type) {
@@ -74,12 +73,10 @@ void ReifiedTypeToken::accept(TypeTokenVisitor *visitor) {
 
 FuncTypeToken::~FuncTypeToken() {
     delete this->returnTypeToken;
-    this->returnTypeToken = nullptr;
 
     for(TypeToken *t : this->paramTypeTokens) {
         delete t;
     }
-    this->paramTypeTokens.clear();
 }
 
 void FuncTypeToken::addParamTypeToken(TypeToken *type) {
@@ -134,7 +131,6 @@ ReturnTypeToken::~ReturnTypeToken() {
     for(auto t : this->typeTokens) {
         delete t;
     }
-    this->typeTokens.clear();
 }
 
 void ReturnTypeToken::addTypeToken(TypeToken *token) {
@@ -166,7 +162,6 @@ TypeOfToken::TypeOfToken(Node *exprNode) :
 
 TypeOfToken::~TypeOfToken() {
     delete this->exprNode;
-    this->exprNode = nullptr;
 }
 
 std::string TypeOfToken::toTokenText() const {

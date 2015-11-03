@@ -1508,7 +1508,7 @@ TEST_F(LexerTest_Lv1, COND_OR3) {
     });
 }
 
-TEST_F(LexerTest_Lv1, RE_MATCH1) {
+TEST_F(LexerTest_Lv1, MATCH1) {
     const char *text = "=~";
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
@@ -1517,16 +1517,16 @@ TEST_F(LexerTest_Lv1, RE_MATCH1) {
     });
 }
 
-TEST_F(LexerTest_Lv1, RE_MATCH2) {
+TEST_F(LexerTest_Lv1, MATCH2) {
     const char *text = "=~";
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text, yycEXPR);
-        EXPECT(RE_MATCH, text, EOS, "");
+        EXPECT(MATCH, text, EOS, "");
     });
 }
 
-TEST_F(LexerTest_Lv1, RE_UNMATCH1) {
+TEST_F(LexerTest_Lv1, UNMATCH1) {
     const char *text = "!~";
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
@@ -1535,12 +1535,12 @@ TEST_F(LexerTest_Lv1, RE_UNMATCH1) {
     });
 }
 
-TEST_F(LexerTest_Lv1, RE_UNMATCH2) {
+TEST_F(LexerTest_Lv1, UNMATCH2) {
     const char *text = "!~";
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text, yycEXPR);
-        EXPECT(RE_UNMATCH, text, EOS, "");
+        EXPECT(UNMATCH, text, EOS, "");
     });
 }
 

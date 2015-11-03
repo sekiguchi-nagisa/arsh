@@ -97,8 +97,8 @@
     TOKEN(XOR                                , "^") \
     TOKEN(COND_AND                           , "&&") \
     TOKEN(COND_OR                            , "||") \
-    TOKEN(RE_MATCH                           , "=~") \
-    TOKEN(RE_UNMATCH                         , "!~") \
+    TOKEN(MATCH                              , "=~") \
+    TOKEN(UNMATCH                            , "!~") \
     /* suffix op */\
     TOKEN(INC                                , "++") \
     TOKEN(DEC                                , "--") \

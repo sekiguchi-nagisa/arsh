@@ -29,7 +29,6 @@ Scope::~Scope() {
     for(const std::pair<std::string, FieldHandle *> &pair : this->handleMap) {
         delete pair.second;
     }
-    this->handleMap.clear();
 }
 
 FieldHandle *Scope::lookupHandle(const std::string &symbolName) {
@@ -66,7 +65,6 @@ SymbolTable::~SymbolTable() {
     for(Scope *scope : this->scopes) {
         delete scope;
     }
-    this->scopes.clear();
 }
 
 FieldHandle *SymbolTable::lookupHandle(const std::string &symbolName) {

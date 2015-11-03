@@ -192,7 +192,6 @@ StringExprNode::~StringExprNode() {
     for(Node *e : this->nodes) {
         delete e;
     }
-    this->nodes.clear();
 }
 
 void StringExprNode::addExprNode(Node *node) {
@@ -238,7 +237,6 @@ ArrayNode::~ArrayNode() {
     for(Node *e : this->nodes) {
         delete e;
     }
-    this->nodes.clear();
 }
 
 void ArrayNode::addExprNode(Node *node) {
@@ -277,11 +275,10 @@ MapNode::~MapNode() {
     for(Node *e : this->keyNodes) {
         delete e;
     }
-    this->keyNodes.clear();
+
     for(Node *e : this->valueNodes) {
         delete e;
     }
-    this->valueNodes.clear();
 }
 
 void MapNode::addEntry(Node *keyNode, Node *valueNode) {
@@ -326,7 +323,6 @@ TupleNode::~TupleNode() {
     for(Node *node : this->nodes) {
         delete node;
     }
-    this->nodes.clear();
 }
 
 void TupleNode::addNode(Node *node) {
@@ -404,7 +400,6 @@ EvalStatus VarNode::eval(RuntimeContext &ctx) {
 
 AccessNode::~AccessNode() {
     delete this->recvNode;
-    this->recvNode = nullptr;
 }
 
 void AccessNode::dump(Writer &writer) const {
@@ -485,11 +480,9 @@ CastNode::CastNode(Node *exprNode, TypeToken *type, bool dupTypeToken) :
 
 CastNode::~CastNode() {
     delete this->exprNode;
-    this->exprNode = nullptr;
 
     if((long) this->targetTypeToken >= 0) {
         delete this->targetTypeToken;
-        this->targetTypeToken = nullptr;
     }
 }
 
@@ -567,7 +560,7 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
         }
         ctx.push(DSValue::create<Long_Object>(this->type, afterValue));
         break;
-    };
+    }
     case LONG_TO_INT: {
         long value = typeAs<Long_Object>(ctx.pop())->getValue();
         int afterValue = value;
@@ -577,7 +570,7 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
         }
         ctx.push(DSValue::create<Int_Object>(this->type, afterValue));
         break;
-    };
+    }
     case LONG_TO_FLOAT: {
         long value = typeAs<Long_Object>(ctx.pop())->getValue();
         double afterValue = value;
@@ -586,7 +579,7 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
         }
         ctx.push(DSValue::create<Float_Object>(this->type, afterValue));
         break;
-    };
+    }
     case FLOAT_TO_LONG: {
         double value = typeAs<Float_Object>(ctx.pop())->getValue();
         long afterValue = (long) value;
@@ -596,23 +589,23 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
         }
         ctx.push(DSValue::create<Long_Object>(this->type, afterValue));
         break;
-    };
+    }
     case COPY_INT: {
         int value = typeAs<Int_Object>(ctx.pop())->getValue();
         ctx.push(DSValue::create<Int_Object>(this->type, value));
         break;
-    };
+    }
     case COPY_LONG: {
         long value = typeAs<Long_Object>(ctx.pop())->getValue();
         ctx.push(DSValue::create<Long_Object>(this->type, value));
         break;
-    };
+    }
     case TO_STRING: {
         return ctx.toString(this->getLineNum());
-    };
+    }
     case CHECK_CAST: {
         return ctx.checkCast(this->lineNum, this->type) ? EvalStatus::SUCCESS : EvalStatus::THROW;
-    };
+    }
     default:
         fatal("unsupported cast op\n");
     }
@@ -633,10 +626,7 @@ CastNode *CastNode::newTypedCastNode(Node *targetNode, DSType *type, CastNode::C
 
 InstanceOfNode::~InstanceOfNode() {
     delete this->targetNode;
-    this->targetNode = nullptr;
-
     delete this->targetTypeToken;
-    this->targetTypeToken = nullptr;
 }
 
 void InstanceOfNode::dump(Writer &writer) const {
@@ -688,7 +678,6 @@ ApplyNode::~ApplyNode() {
     for(Node *n : this->argNodes) {
         delete n;
     }
-    this->argNodes.clear();
 }
 
 void ApplyNode::dump(Writer &writer) const {
@@ -733,7 +722,6 @@ MethodCallNode::~MethodCallNode() {
     for(Node *n : this->argNodes) {
         delete n;
     }
-    this->argNodes.clear();
 }
 
 void MethodCallNode::dump(Writer &writer) const {
@@ -775,12 +763,10 @@ EvalStatus MethodCallNode::eval(RuntimeContext &ctx) {
 
 NewNode::~NewNode() {
     delete this->targetTypeToken;
-    this->targetTypeToken = nullptr;
 
     for(Node *n : this->argNodes) {
         delete n;
     }
-    this->argNodes.clear();
 }
 
 void NewNode::dump(Writer &writer) const {
@@ -812,10 +798,7 @@ EvalStatus NewNode::eval(RuntimeContext &ctx) {
 
 UnaryOpNode::~UnaryOpNode() {
     delete this->exprNode;
-    this->exprNode = nullptr;
-
     delete this->methodCallNode;
-    this->methodCallNode = nullptr;
 }
 
 MethodCallNode *UnaryOpNode::createApplyNode() {
@@ -848,13 +831,8 @@ EvalStatus UnaryOpNode::eval(RuntimeContext &ctx) {
 
 BinaryOpNode::~BinaryOpNode() {
     delete this->leftNode;
-    this->leftNode = nullptr;
-
     delete this->rightNode;
-    this->rightNode = nullptr;
-
     delete this->methodCallNode;
-    this->methodCallNode = nullptr;
 }
 
 MethodCallNode *BinaryOpNode::createApplyNode() {
@@ -889,7 +867,6 @@ EvalStatus BinaryOpNode::eval(RuntimeContext &ctx) {
 
 GroupNode::~GroupNode() {
     delete this->exprNode;
-    this->exprNode = nullptr;
 }
 
 void GroupNode::dump(Writer &writer) const {
@@ -917,10 +894,7 @@ CondOpNode::CondOpNode(Node *leftNode, Node *rightNode, bool isAndOp) :
 
 CondOpNode::~CondOpNode() {
     delete this->leftNode;
-    this->leftNode = nullptr;
-
     delete this->rightNode;
-    this->rightNode = nullptr;
 }
 
 void CondOpNode::dump(Writer &writer) const {
@@ -963,7 +937,6 @@ CmdArgNode::~CmdArgNode() {
     for(Node *e : this->segmentNodes) {
         delete e;
     }
-    this->segmentNodes.clear();
 }
 
 void CmdArgNode::addSegmentNode(Node *node) {
@@ -1091,12 +1064,10 @@ EvalStatus TildeNode::eval(RuntimeContext &ctx) {
 
 CmdNode::~CmdNode() {
     delete this->nameNode;
-    this->nameNode = nullptr;
 
     for(auto *e : this->argNodes) {
         delete e;
     }
-    this->argNodes.clear();
 }
 
 void CmdNode::addArgNode(CmdArgNode *node) {
@@ -1143,7 +1114,6 @@ PipedCmdNode::~PipedCmdNode() {
     for(auto *p : this->cmdNodes) {
         delete p;
     }
-    this->cmdNodes.clear();
 }
 
 void PipedCmdNode::addCmdNodes(Node *node) {
@@ -1202,7 +1172,6 @@ EvalStatus PipedCmdNode::eval(RuntimeContext &ctx) {
 
 CmdContextNode::~CmdContextNode() {
     delete this->exprNode;
-    this->exprNode = nullptr;
 }
 
 void CmdContextNode::inStringExprNode() {
@@ -1352,7 +1321,6 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
 
 AssertNode::~AssertNode() {
     delete this->condNode;
-    this->condNode = nullptr;
 }
 
 void AssertNode::dump(Writer &writer) const {
@@ -1379,7 +1347,6 @@ BlockNode::~BlockNode() {
     for(Node *n : this->nodeList) {
         delete n;
     }
-    this->nodeList.clear();
 }
 
 void BlockNode::addNode(Node *node) {
@@ -1448,7 +1415,6 @@ EvalStatus ContinueNode::eval(RuntimeContext &) {
 
 ExportEnvNode::~ExportEnvNode() {
     delete this->exprNode;
-    this->exprNode = nullptr;
 }
 
 void ExportEnvNode::setAttribute(FieldHandle *handle) {
@@ -1479,7 +1445,6 @@ EvalStatus ExportEnvNode::eval(RuntimeContext &ctx) {
 
 ImportEnvNode::~ImportEnvNode() {
     delete this->defaultValueNode;
-    this->defaultValueNode = nullptr;
 }
 
 void ImportEnvNode::setAttribute(FieldHandle *handle) {
@@ -1512,7 +1477,6 @@ EvalStatus ImportEnvNode::eval(RuntimeContext &ctx) {
 
 TypeAliasNode::~TypeAliasNode() {
     delete this->targetTypeToken;
-    this->targetTypeToken = nullptr;
 }
 
 void TypeAliasNode::dump(Writer &writer) const {
@@ -1551,16 +1515,9 @@ ForNode::ForNode(unsigned int lineNum, Node *initNode, Node *condNode, Node *ite
 
 ForNode::~ForNode() {
     delete this->initNode;
-    this->initNode = nullptr;
-
     delete this->condNode;
-    this->condNode = nullptr;
-
     delete this->iterNode;
-    this->iterNode = nullptr;
-
     delete this->blockNode;
-    this->blockNode = nullptr;
 }
 
 void ForNode::dump(Writer &writer) const {
@@ -1602,10 +1559,7 @@ EvalStatus ForNode::eval(RuntimeContext &ctx) {
 
 WhileNode::~WhileNode() {
     delete this->condNode;
-    this->condNode = nullptr;
-
     delete this->blockNode;
-    this->blockNode = nullptr;
 }
 
 void WhileNode::dump(Writer &writer) const {
@@ -1642,10 +1596,7 @@ EvalStatus WhileNode::eval(RuntimeContext &ctx) {
 
 DoWhileNode::~DoWhileNode() {
     delete this->blockNode;
-    this->blockNode = nullptr;
-
     delete this->condNode;
-    this->condNode = nullptr;
 }
 
 void DoWhileNode::dump(Writer &writer) const {
@@ -1714,21 +1665,15 @@ IfNode::IfNode(unsigned int lineNum, Node *condNode, BlockNode *thenNode) :
 
 IfNode::~IfNode() {
     delete this->condNode;
-    this->condNode = nullptr;
-
     delete this->thenNode;
-    this->thenNode = nullptr;
 
     unsigned int size = this->elifCondNodes.size();
     for(unsigned int i = 0; i < size; i++) {
         delete this->elifCondNodes[i];
         delete this->elifThenNodes[i];
     }
-    this->elifCondNodes.clear();
-    this->elifThenNodes.clear();
 
     delete this->elseNode;
-    this->elseNode = nullptr;
 }
 
 void IfNode::addElifNode(Node *condNode, BlockNode *thenNode) {
@@ -1796,7 +1741,6 @@ ReturnNode::ReturnNode(unsigned int lineNum) :
 
 ReturnNode::~ReturnNode() {
     delete this->exprNode;
-    this->exprNode = nullptr;
 }
 
 void ReturnNode::dump(Writer &writer) const {
@@ -1818,7 +1762,6 @@ EvalStatus ReturnNode::eval(RuntimeContext &ctx) {
 
 ThrowNode::~ThrowNode() {
     delete this->exprNode;
-    this->exprNode = nullptr;
 }
 
 void ThrowNode::dump(Writer &writer) const {
@@ -1841,10 +1784,7 @@ EvalStatus ThrowNode::eval(RuntimeContext &ctx) {
 
 CatchNode::~CatchNode() {
     delete this->typeToken;
-    this->typeToken = nullptr;
-
     delete this->blockNode;
-    this->blockNode = nullptr;
 }
 
 void CatchNode::setAttribute(FieldHandle *handle) {
@@ -1875,15 +1815,12 @@ EvalStatus CatchNode::eval(RuntimeContext &ctx) {
 
 TryNode::~TryNode() {
     delete this->blockNode;
-    this->blockNode = nullptr;
 
     for(CatchNode *n : this->catchNodes) {
         delete n;
     }
-    this->catchNodes.clear();
 
     delete this->finallyNode;
-    this->finallyNode = nullptr;
 }
 
 void TryNode::addCatchNode(CatchNode *catchNode) {
@@ -1957,7 +1894,6 @@ VarDeclNode::VarDeclNode(unsigned int lineNum, std::string &&varName, Node *init
 
 VarDeclNode::~VarDeclNode() {
     delete this->initValueNode;
-    this->initValueNode = 0;
 }
 
 void VarDeclNode::setAttribute(FieldHandle *handle) {
@@ -1993,10 +1929,7 @@ EvalStatus VarDeclNode::eval(RuntimeContext &ctx) {
 
 AssignNode::~AssignNode() {
     delete this->leftNode;
-    this->leftNode = nullptr;
-
     delete this->rightNode;
-    this->rightNode = nullptr;
 }
 
 void AssignNode::dump(Writer &writer) const {
@@ -2094,19 +2027,10 @@ ElementSelfAssignNode::ElementSelfAssignNode(MethodCallNode *leftNode, BinaryOpN
 
 ElementSelfAssignNode::~ElementSelfAssignNode() {
     delete this->recvNode;
-    this->recvNode = nullptr;
-
     delete this->indexNode;
-    this->indexNode = nullptr;
-
     delete this->getterNode;
-    this->getterNode = nullptr;
-
     delete this->setterNode;
-    this->setterNode = nullptr;
-
     delete this->binaryNode;
-    this->binaryNode = nullptr;
 }
 
 void ElementSelfAssignNode::setRecvType(DSType *type) {
@@ -2151,18 +2075,13 @@ FunctionNode::~FunctionNode() {
     for(VarNode *n : this->paramNodes) {
         delete n;
     }
-    this->paramNodes.clear();
 
     for(TypeToken *t : this->paramTypeTokens) {
         delete t;
     }
-    this->paramTypeTokens.clear();
 
     delete this->returnTypeToken;
-    this->returnTypeToken = nullptr;
-
     delete this->blockNode;
-    this->blockNode = nullptr;
 }
 
 void FunctionNode::addParamNode(VarNode *node, TypeToken *paramType) {
@@ -2220,17 +2139,14 @@ InterfaceNode::~InterfaceNode() {
     for(FunctionNode *node : this->methodDeclNodes) {
         delete node;
     }
-    this->methodDeclNodes.clear();
 
     for(VarDeclNode *node : this->fieldDeclNodes) {
         delete node;
     }
-    this->fieldDeclNodes.clear();
 
     for(TypeToken *t : this->fieldTypeTokens) {
         delete t;
     }
-    this->fieldTypeTokens.clear();
 }
 
 void InterfaceNode::addMethodDeclNode(FunctionNode *methodDeclNode) {
@@ -2273,7 +2189,6 @@ EvalStatus InterfaceNode::eval(RuntimeContext &) {
 
 UserDefinedCmdNode::~UserDefinedCmdNode() {
     delete this->blockNode;
-    this->blockNode = nullptr;
 }
 
 void UserDefinedCmdNode::setSourceName(const char *sourceName) {
@@ -2360,7 +2275,6 @@ RootNode::~RootNode() {
     for(Node *n : this->nodeList) {
         delete n;
     }
-    this->nodeList.clear();
 }
 
 const char *RootNode::getSourceName() {
@@ -2401,14 +2315,14 @@ EvalStatus RootNode::eval(RuntimeContext &ctx) {
                 ctx.popNoReturn();
             }
             break;
-        };
+        }
         case EvalStatus::THROW: {
             return status;
-        };
+        }
         case EvalStatus::REMOVE: {
             iter = this->nodeList.erase(iter);
             continue;
-        };
+        }
         default:
             fatal("illegal EvalStatus: %d\n", status);
             break;
@@ -2420,56 +2334,57 @@ EvalStatus RootNode::eval(RuntimeContext &ctx) {
 
 // for node creation
 
-std::string resolveUnaryOpName(TokenKind op) {
-    if(op == PLUS) {    // +
-        return std::string(OP_PLUS);
-    } else if(op == MINUS) {    // -
-        return std::string(OP_MINUS);
-    } else if(op == NOT) {  // not
-        return std::string(OP_NOT);
-    } else {
+const char *resolveUnaryOpName(TokenKind op) {
+    switch(op) {
+    case PLUS:  // +
+        return OP_PLUS;
+    case MINUS: // -
+        return OP_MINUS;
+    case NOT:   // not
+        return OP_NOT;
+    default:
         fatal("unsupported unary op: %s\n", TO_NAME(op));
-        return std::string("");
+        return nullptr;
     }
 }
 
-std::string resolveBinaryOpName(TokenKind op) {
+const char *resolveBinaryOpName(TokenKind op) {
     switch(op) {
     case PLUS:
-        return std::string(OP_ADD);
+        return OP_ADD;
     case MINUS:
-        return std::string(OP_SUB);
+        return OP_SUB;
     case MUL:
-        return std::string(OP_MUL);
+        return OP_MUL;
     case DIV:
-        return std::string(OP_DIV);
+        return OP_DIV;
     case MOD:
-        return std::string(OP_MOD);
+        return OP_MOD;
     case EQ:
-        return std::string(OP_EQ);
+        return OP_EQ;
     case NE:
-        return std::string(OP_NE);
+        return OP_NE;
     case LA:
-        return std::string(OP_LT);
+        return OP_LT;
     case RA:
-        return std::string(OP_GT);
+        return OP_GT;
     case LE:
-        return std::string(OP_LE);
+        return OP_LE;
     case GE:
-        return std::string(OP_GE);
+        return OP_GE;
     case AND:
-        return std::string(OP_AND);
+        return OP_AND;
     case OR:
-        return std::string(OP_OR);
+        return OP_OR;
     case XOR:
-        return std::string(OP_XOR);
-    case RE_MATCH:
-        return std::string(OP_RE_EQ);
-    case RE_UNMATCH:
-        return std::string(OP_RE_NE);
+        return OP_XOR;
+    case MATCH:
+        return OP_MATCH;
+    case UNMATCH:
+        return OP_UNMATCH;
     default:
         fatal("unsupported binary op: %s\n", TO_NAME(op));
-        return std::string("");
+        return nullptr;
     }
 }
 

@@ -144,12 +144,10 @@ BuiltinType::BuiltinType(bool extendable, DSType *superType,
 
 BuiltinType::~BuiltinType() {
     delete this->constructorHandle;
-    this->constructorHandle = nullptr;
 
     for(std::pair<std::string, MethodHandle *> pair : this->methodHandleMap) {
         delete pair.second;
     }
-    this->methodHandleMap.clear();
 }
 
 MethodHandle *BuiltinType::getConstructorHandle(TypePool *typePool) {
@@ -250,7 +248,6 @@ TupleType::~TupleType() {
     for(auto pair : this->fieldHandleMap) {
         delete pair.second;
     }
-    this->fieldHandleMap.clear();
 }
 
 MethodHandle *TupleType::getConstructorHandle(TypePool *typePool) {
@@ -295,12 +292,10 @@ InterfaceType::~InterfaceType() {
     for(auto &pair : this->fieldHandleMap) {
         delete pair.second;
     }
-    this->fieldHandleMap.clear();
 
     for(auto &pair : this->methodHandleMap) {
         delete pair.second;
     }
-    this->methodHandleMap.clear();
 }
 
 FieldHandle *InterfaceType::newFieldHandle(const std::string &fieldName, DSType *fieldType, bool readOnly) {
@@ -367,7 +362,6 @@ void InterfaceType::accept(TypeVisitor *visitor) {
 
 ErrorType::~ErrorType() {
     delete this->constructorHandle;
-    this->constructorHandle = nullptr;
 }
 
 NativeFuncInfo *ErrorType::funcInfo = nullptr;

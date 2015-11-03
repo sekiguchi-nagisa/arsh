@@ -150,7 +150,6 @@ ArgsWrapper::~ArgsWrapper() {
     for(Node *n : this->nodes) {
         delete n;
     }
-    this->nodes.clear();
 }
 
 void ArgsWrapper::addArgNode(std::unique_ptr<Node> &&node) {

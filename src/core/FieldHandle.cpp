@@ -88,7 +88,6 @@ const std::vector<DSType *> &FunctionHandle::getParamTypes() {
 
 MethodHandle::~MethodHandle() {
     delete this->next;
-    this->next = nullptr;
 }
 
 void MethodHandle::addParamType(DSType *type) {
@@ -139,7 +138,7 @@ static DSType *decodeType(TypePool *typePool, const char *&pos,
             }
             return typePool->createAndGetTupleTypeIfUndefined(std::move(elementTypes));
         }
-    };
+    }
     case P_N0:
     case P_N1:
     case P_N2:

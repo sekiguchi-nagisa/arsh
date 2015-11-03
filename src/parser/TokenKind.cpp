@@ -57,8 +57,8 @@ unsigned int getPrecedence(TokenKind kind) {
     case GE:
     case EQ:
     case NE:
-    case RE_MATCH:
-    case RE_UNMATCH:
+    case MATCH:
+    case UNMATCH:
         return 160;
     case COND_AND:
         return 140;

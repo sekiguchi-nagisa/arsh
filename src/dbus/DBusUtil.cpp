@@ -132,10 +132,7 @@ MessageBuilder::MessageBuilder(TypePool *pool) :
 
 MessageBuilder::~MessageBuilder() {
     delete this->typeMap;
-    this->typeMap = nullptr;
-
     delete this->descBuilder;
-    this->descBuilder = nullptr;
 }
 
 
@@ -161,61 +158,61 @@ void MessageBuilder::visitBuiltinType(BuiltinType *type) {
         dbus_int64_t value = (dbus_int64_t) (static_cast<Long_Object *>(this->peek()))->getValue();
         dbus_message_iter_append_basic(this->iter, dbusType, &value);
         return;
-    };
+    }
     case DBUS_TYPE_UINT64: {
         dbus_uint64_t value = (static_cast<Long_Object *>(this->peek()))->getValue();
         dbus_message_iter_append_basic(this->iter, dbusType, &value);
         return;
-    };
+    }
     case DBUS_TYPE_INT32: {
         dbus_int32_t value = (static_cast<Int_Object *>(this->peek()))->getValue();
         dbus_message_iter_append_basic(this->iter, dbusType, &value);
         return;
-    };
+    }
     case DBUS_TYPE_UINT32: {
         dbus_uint32_t value = (static_cast<Int_Object *>(this->peek()))->getValue();
         dbus_message_iter_append_basic(this->iter, dbusType, &value);
         return;
-    };
+    }
     case DBUS_TYPE_INT16: {
         dbus_int16_t value = (static_cast<Int_Object *>(this->peek()))->getValue();
         dbus_message_iter_append_basic(this->iter, dbusType, &value);
         return;
-    };
+    }
     case DBUS_TYPE_UINT16: {
         dbus_uint16_t value = (static_cast<Int_Object *>(this->peek()))->getValue();
         dbus_message_iter_append_basic(this->iter, dbusType, &value);
         return;
-    };
+    }
     case DBUS_TYPE_BYTE: {
         unsigned char value = (static_cast<Int_Object *>(this->peek()))->getValue();
         dbus_message_iter_append_basic(this->iter, dbusType, &value);
         return;
-    };
+    }
     case DBUS_TYPE_DOUBLE: {
         double value = (static_cast<Float_Object *>(this->peek()))->getValue();
         dbus_message_iter_append_basic(this->iter, dbusType, &value);
         return;
-    };
+    }
     case DBUS_TYPE_BOOLEAN: {
         dbus_bool_t value = (static_cast<Boolean_Object *>(this->peek()))->getValue() ? TRUE : FALSE;
         dbus_message_iter_append_basic(this->iter, dbusType, &value);
         return;
-    };
+    }
     case DBUS_TYPE_STRING: {
         const char *value = (static_cast<String_Object *>(this->peek()))->getValue();
         dbus_message_iter_append_basic(this->iter, dbusType, &value);
         return;
-    };
+    }
     case DBUS_TYPE_OBJECT_PATH: {
         const char *value = (static_cast<String_Object *>(this->peek()))->getValue();
         dbus_message_iter_append_basic(this->iter, dbusType, &value);
         return;
-    };
+    }
     case DBUS_TYPE_UNIX_FD: {
         fatal("unsupported dbus type: UNIX_FD\n");
         break;
-    };
+    }
     default:
         if(*type == *this->pool->getVariantType()) {    //variant
             DSType *actualType = this->peek()->getType();
@@ -380,17 +377,17 @@ static DSType *decodeTypeDescriptorImpl(TypePool *pool, const char *&desc) {
             types[0] = decodeTypeDescriptorImpl(pool, desc);
             return pool->createAndGetReifiedTypeIfUndefined(pool->getArrayTemplate(), std::move(types));
         }
-    };
+    }
     case DBUS_STRUCT_BEGIN_CHAR: {  // Tuple
         std::vector<DSType *> types;
         do {
             types.push_back(decodeTypeDescriptorImpl(pool, desc));
         } while(*desc != DBUS_STRUCT_END_CHAR);
         return pool->createAndGetTupleTypeIfUndefined(std::move(types));
-    };
+    }
     case DBUS_TYPE_VARIANT: {
         return pool->getVariantType();
-    };
+    }
     default:
         fatal("unsupported dbus type: %c", kind);
         return nullptr;

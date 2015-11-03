@@ -300,7 +300,6 @@ std::string Map_Object::toString(RuntimeContext &ctx) {
 
 BaseObject::~BaseObject() {
     delete[] this->fieldTable;
-    this->fieldTable = nullptr;
 }
 
 DSValue *BaseObject::getFieldTable() {
@@ -431,7 +430,6 @@ void Error_Object::createStackTrace(RuntimeContext &ctx) {
 
 FuncObject::~FuncObject() {
     delete this->funcNode;
-    this->funcNode = nullptr;
 }
 
 void FuncObject::setType(DSType *type) {

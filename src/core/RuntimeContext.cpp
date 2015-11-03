@@ -58,15 +58,11 @@ RuntimeContext::RuntimeContext() :
 
 RuntimeContext::~RuntimeContext() {
     delete[] this->globalVarTable;
-    this->globalVarTable = nullptr;
-
     delete[] this->localStack;
-    this->localStack = nullptr;
 
     for(auto &pair : this->udcMap) {
         delete pair.second;
     }
-    this->udcMap.clear();
 }
 
 std::string RuntimeContext::getConfigRootDir() {

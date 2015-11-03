@@ -68,8 +68,8 @@ constexpr const char *OP_AND = "__AND__";      // &
 constexpr const char *OP_OR = "__OR__";       // |
 constexpr const char *OP_XOR = "__XOR__";      // ^
 
-constexpr const char *OP_RE_EQ = "__RE_EQ__";    // =~
-constexpr const char *OP_RE_NE = "__RE_NE__";    // !~
+constexpr const char *OP_MATCH   = "__MATCH__";    // =~
+constexpr const char *OP_UNMATCH = "__UNMATCH__";    // !~
 
 // indexer op
 constexpr const char *OP_GET = "__GET__";      // []

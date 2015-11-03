@@ -38,9 +38,6 @@ TypeMap::~TypeMap() {
             delete pair.second;
         }
     }
-    this->typeMapImpl.clear();
-    this->typeNameMap.clear();
-    this->typeCache.clear();
 }
 
 

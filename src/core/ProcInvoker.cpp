@@ -815,41 +815,41 @@ bool ProcInvoker::redirect(unsigned int procIndex, int errorPipe, int stdin_fd, 
         case IN_2_FILE: {
             CHECK_ERROR(redirectToFile(pair.second, "rb", stdin_fd));
             break;
-        };
+        }
         case OUT_2_FILE: {
             CHECK_ERROR(redirectToFile(pair.second, "wb", stdout_fd));
             break;
-        };
+        }
         case OUT_2_FILE_APPEND: {
             CHECK_ERROR(redirectToFile(pair.second, "ab", stdout_fd));
             break;
-        };
+        }
         case ERR_2_FILE: {
             CHECK_ERROR(redirectToFile(pair.second, "wb", stderr_fd));
             break;
-        };
+        }
         case ERR_2_FILE_APPEND: {
             CHECK_ERROR(redirectToFile(pair.second, "ab", stderr_fd));
             break;
-        };
+        }
         case MERGE_ERR_2_OUT_2_FILE: {
             CHECK_ERROR(redirectToFile(pair.second, "wb", stdout_fd));
             dup2(stdout_fd, stderr_fd);
             break;
-        };
+        }
         case MERGE_ERR_2_OUT_2_FILE_APPEND: {
             CHECK_ERROR(redirectToFile(pair.second, "ab", stdout_fd));
             dup2(stdout_fd, stderr_fd);
             break;
-        };
+        }
         case MERGE_ERR_2_OUT: {
             dup2(stdout_fd, stderr_fd);
             break;
-        };
+        }
         case MERGE_OUT_2_ERR: {
             dup2(stderr_fd, stdout_fd);
             break;
-        };
+        }
         default:
             fatal("unsupported redir option: %d\n", pair.first);
         }

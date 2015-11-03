@@ -212,8 +212,8 @@ void Lexer::nextToken(Token &token) {
       <EXPR> "^"               { RET(XOR); }
       <EXPR> "&&"              { RET(COND_AND); }
       <EXPR> "||"              { RET(COND_OR); }
-      <EXPR> "=~"              { RET(RE_MATCH); }
-      <EXPR> "!~"              { RET(RE_UNMATCH); }
+      <EXPR> "=~"              { RET(MATCH); }
+      <EXPR> "!~"              { RET(UNMATCH); }
 
       <EXPR> "++"              { RET(INC); }
       <EXPR> "--"              { RET(DEC); }

@@ -48,61 +48,61 @@ static DSValue decodeMessageIter(RuntimeContext &ctx, DBusMessageIter *iter) {
         unsigned char value;
         dbus_message_iter_get_basic(iter, &value);
         return DSValue::create<Int_Object>(ctx.getPool().getByteType(), value);
-    };
+    }
     case DBUS_TYPE_INT16: {
         dbus_int16_t value;
         dbus_message_iter_get_basic(iter, &value);
         return DSValue::create<Int_Object>(ctx.getPool().getInt16Type(), value);
-    };
+    }
     case DBUS_TYPE_UINT16: {
         dbus_uint16_t value;
         dbus_message_iter_get_basic(iter, &value);
         return DSValue::create<Int_Object>(ctx.getPool().getUint16Type(), value);
-    };
+    }
     case DBUS_TYPE_INT32: {
         dbus_int32_t value;
         dbus_message_iter_get_basic(iter, &value);
         return DSValue::create<Int_Object>(ctx.getPool().getInt32Type(), value);
-    };
+    }
     case DBUS_TYPE_UINT32: {
         dbus_uint32_t value;
         dbus_message_iter_get_basic(iter, &value);
         return DSValue::create<Int_Object>(ctx.getPool().getUint32Type(), value);
-    };
+    }
     case DBUS_TYPE_INT64: {
         dbus_int64_t value;
         dbus_message_iter_get_basic(iter, &value);
         return DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value);
-    };
+    }
     case DBUS_TYPE_UINT64: {
         dbus_uint64_t value;
         dbus_message_iter_get_basic(iter, &value);
         return DSValue::create<Long_Object>(ctx.getPool().getUint64Type(), value);
-    };
+    }
     case DBUS_TYPE_BOOLEAN: {
         dbus_bool_t value;
         dbus_message_iter_get_basic(iter, &value);
         return value == TRUE ? ctx.getTrueObj() : ctx.getFalseObj();
-    };
+    }
     case DBUS_TYPE_DOUBLE: {
         double value;
         dbus_message_iter_get_basic(iter, &value);
         return DSValue::create<Float_Object>(ctx.getPool().getFloatType(), value);
-    };
+    }
     case DBUS_TYPE_STRING: {
         const char *value;
         dbus_message_iter_get_basic(iter, &value);
         return DSValue::create<String_Object>(ctx.getPool().getStringType(), std::string(value));
-    };
+    }
     case DBUS_TYPE_OBJECT_PATH: {
         const char *value;
         dbus_message_iter_get_basic(iter, &value);
         return DSValue::create<String_Object>(ctx.getPool().getObjectPathType(), std::string(value));
-    };
+    }
     case DBUS_TYPE_UNIX_FD: {
         fatal("unsupported dbus type: UNIX_FD");
         return DSValue();
-    };
+    }
     case DBUS_TYPE_ARRAY: {
         int elementType = dbus_message_iter_get_element_type(iter);
         DBusMessageIter subIter;
@@ -167,7 +167,7 @@ static DSValue decodeMessageIter(RuntimeContext &ctx, DBusMessageIter *iter) {
                             ctx.getPool().getArrayTemplate(), std::move(types)), std::move(values));
         }
 
-    };
+    }
     case DBUS_TYPE_STRUCT: {
         DBusMessageIter subIter;
         dbus_message_iter_recurse(iter, &subIter);
@@ -185,12 +185,12 @@ static DSValue decodeMessageIter(RuntimeContext &ctx, DBusMessageIter *iter) {
             typeAs<Tuple_Object>(tuple)->set(i, values[i]);
         }
         return std::move(tuple);
-    };
+    }
     case DBUS_TYPE_VARIANT: {
         DBusMessageIter subIter;
         dbus_message_iter_recurse(iter, &subIter);
         return decodeMessageIter(ctx, &subIter);
-    };
+    }
     default:
         fatal("unsupported dbus type: %c\n", (char) dbusType);
         return DSValue();
