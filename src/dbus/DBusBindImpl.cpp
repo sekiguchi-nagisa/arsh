@@ -143,7 +143,7 @@ static DSValue decodeMessageIter(RuntimeContext &ctx, DBusMessageIter *iter) {
             for(unsigned int i = 0; i < size; i++) {
                 typeAs<Map_Object>(map)->add(std::move(entries[i]));
             }
-            return std::move(map);
+            return map;
         } else {    // array
             if(!dbus_message_iter_has_next(&subIter)) { //empty array
                 char *desc = dbus_message_iter_get_signature(&subIter);
@@ -184,7 +184,7 @@ static DSValue decodeMessageIter(RuntimeContext &ctx, DBusMessageIter *iter) {
         for(unsigned int i = 0; i < size; i++) {
             typeAs<Tuple_Object>(tuple)->set(i, values[i]);
         }
-        return std::move(tuple);
+        return tuple;
     }
     case DBUS_TYPE_VARIANT: {
         DBusMessageIter subIter;
@@ -256,7 +256,7 @@ static DSValue decodeAndUnrefMessage(RuntimeContext &ctx,
     for(unsigned int i = 0; i < size; i++) {
         typeAs<Tuple_Object>(tuple)->set(i, values[i]);
     }
-    return std::move(tuple);
+    return tuple;
 }
 
 static DSValue decodeAndUnrefMessage(RuntimeContext &ctx, DSType *type, DBusMessage *msg) {

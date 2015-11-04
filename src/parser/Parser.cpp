@@ -254,7 +254,7 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
         node->setReturnTypeToken(type.release());
     }
 
-    return std::move(node);
+    return node;
 }
 
 std::unique_ptr<Node> Parser::parse_interface() {
@@ -1273,7 +1273,7 @@ ArgsWrapper Parser::parse_arguments() {
     }
 
     this->expect(RP);
-    return std::move(args);
+    return args;
 }
 
 std::unique_ptr<Node> Parser::parse_stringExpression() {

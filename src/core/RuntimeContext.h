@@ -284,7 +284,7 @@ public:
      * pop and set to throwObject
      */
     void storeThrowObject() {
-        this->thrownObject = std::move(this->pop());
+        this->thrownObject = this->pop();
     }
 
     /**
@@ -355,7 +355,7 @@ public:
 
     // variable manipulation
     void storeGlobal(unsigned int index) {
-        this->globalVarTable[index] = std::move(this->pop());
+        this->globalVarTable[index] = this->pop();
     }
 
     void loadGlobal(unsigned int index) {
@@ -375,7 +375,7 @@ public:
     }
 
     void storeLocal(unsigned int index) {
-        this->localStack[this->localVarOffset + index] = std::move(this->pop());
+        this->localStack[this->localVarOffset + index] = this->pop();
     }
 
     void loadLocal(unsigned int index) {

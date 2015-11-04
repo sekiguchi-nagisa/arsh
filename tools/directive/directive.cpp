@@ -43,7 +43,7 @@ std::string TypeImpl::getRealName() {
         str += this->childs[i]->getRealName();
     }
     str += ">";
-    return std::move(str);
+    return str;
 }
 
 bool TypeImpl::operator==(const TypeImpl &t) const {
@@ -74,7 +74,7 @@ std::shared_ptr<TypeImpl> TypeImpl::create(const char *name) {
 std::shared_ptr<TypeImpl> TypeImpl::create(const char *name, const std::shared_ptr<TypeImpl> &child) {
     auto value(std::make_shared<TypeImpl>(name, 1));
     value->childs[0] = child;
-    return std::move(value);
+    return value;
 }
 
 // #####################

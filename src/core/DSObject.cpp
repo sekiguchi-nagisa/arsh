@@ -272,7 +272,7 @@ DSValue Map_Object::nextElement(RuntimeContext &ctx) {
     typeAs<Tuple_Object>(entry)->set(1, this->iter->second);
     this->iter++;
 
-    return std::move(entry);
+    return entry;
 }
 
 bool Map_Object::hasNext() {
@@ -410,13 +410,13 @@ const DSValue &Error_Object::getName(RuntimeContext &ctx) {
 DSValue Error_Object::newError(RuntimeContext &ctx, DSType *type, const DSValue &message) {
     auto obj = DSValue::create<Error_Object>(type, message);
     typeAs<Error_Object>(obj)->createStackTrace(ctx);
-    return std::move(obj);
+    return obj;
 }
 
 DSValue Error_Object::newError(RuntimeContext &ctx, DSType *type, DSValue &&message) {
     auto obj = DSValue::create<Error_Object>(type, std::move(message));
     typeAs<Error_Object>(obj)->createStackTrace(ctx);
-    return std::move(obj);
+    return obj;
 }
 
 void Error_Object::createStackTrace(RuntimeContext &ctx) {
