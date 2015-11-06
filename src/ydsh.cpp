@@ -231,16 +231,37 @@ unsigned int DSContext::eval(const char *sourceName, Lexer &lexer) {
     return DS_STATUS_SUCCESS;
 }
 
+static void defineBuiltin(RootNode &rootNode, const char *varName, DSValue &&value) {
+    rootNode.addNode(new BindVarNode(varName, std::move(value)));
+}
+
 void DSContext::initBuiltinVar() {
     RootNode rootNode;
 
-    // register special char
-    rootNode.addNode(new BindVarNode("0", this->ctx.getScriptName()));
-    rootNode.addNode(new BindVarNode("@", this->ctx.getScriptArgs()));
-    rootNode.addNode(new BindVarNode("?", this->ctx.getExitStatus()));
+    /**
+     * management object for D-Bus related function
+     * must be DBus_Object
+     */
+    defineBuiltin(rootNode, "DBus", DSValue(DBus_Object::newDBus_Object(&this->ctx.getPool())));
 
-    // register DBus management object
-    rootNode.addNode(new BindVarNode("DBus", this->ctx.getDBus()));
+    /**
+     * contains script argument(exclude script name). ($@)
+     * must be Array_Object
+     */
+    defineBuiltin(rootNode, "@", DSValue::create<Array_Object>(this->ctx.getPool().getStringArrayType()));
+
+    /**
+     * contains exit status of most recent executed process. ($?)
+     * must be Int_Object
+     */
+    defineBuiltin(rootNode, "?", DSValue::create<Int_Object>(this->ctx.getPool().getInt32Type(), 0));
+
+    /**
+     * represent shell or shell script name.
+     * must be String_Object
+     */
+    defineBuiltin(rootNode, "0", DSValue::create<String_Object>(this->ctx.getPool().getStringType(), "ydsh"));
+
 
     // ignore error check (must be always success)
     this->checker.checkTypeRootNode(rootNode);

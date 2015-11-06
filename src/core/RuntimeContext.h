@@ -42,6 +42,16 @@ enum class EvalStatus : unsigned int {
     REMOVE,
 };
 
+/**
+ * enum order is corresponding to builtin variable declaration order.
+ */
+enum class BuiltinVarOffset : unsigned int {
+    DBUS,           // DBus
+    ARGS,           // @
+    EXIT_STATUS,    // ?
+    POS_0,          // 0 (for script name)
+};
+
 class RuntimeContext : private misc::NonCopyable<RuntimeContext> {
 private:
     TypePool pool;
@@ -61,30 +71,6 @@ private:
      * for pseudo object allocation (used for builtin constructor call)
      */
     DSValue dummy;
-
-    /**
-     * represent shell or shell script name. ($0)
-     * must be String_Object
-     */
-    DSValue scriptName;
-
-    /**
-     * contains script argument(exclude script name). ($@)
-     * must be Array_Object
-     */
-    DSValue scriptArgs;
-
-    /**
-     * contains exit status of most recent executed process. ($?)
-     * must be Int_Object
-     */
-    DSValue exitStatus;
-
-    /**
-     * management object for dbus related function
-     * must be DBus_Object
-     */
-    DSValue dbus;
 
     /**
      * contains global variables(or function)
@@ -201,12 +187,16 @@ public:
         return this->falseObj;
     }
 
+    unsigned int getBuiltinVarIndex(BuiltinVarOffset offset) const {
+        return static_cast<unsigned int>(offset);
+    }
+
     const DSValue &getScriptName() {
-        return this->scriptName;
+        return this->getGlobal(this->getBuiltinVarIndex(BuiltinVarOffset::POS_0));
     }
 
     const DSValue &getScriptArgs() {
-        return this->scriptArgs;
+        return this->getGlobal(this->getBuiltinVarIndex(BuiltinVarOffset::ARGS));
     }
 
     void addScriptArg(const char *arg);
@@ -217,14 +207,10 @@ public:
     void initScriptArg();
 
     const DSValue &getExitStatus() {
-        return this->exitStatus;
+        return this->getGlobal(this->getBuiltinVarIndex(BuiltinVarOffset::EXIT_STATUS));
     }
 
     void updateScriptName(const char *name);
-
-    const DSValue &getDBus() {
-        return this->dbus;
-    }
 
     bool isToplevelPrinting() {
         return this->toplevelPrinting;
@@ -521,8 +507,6 @@ public:
     void updateExitStatus(unsigned int status);
 
     void exitShell(unsigned int status);
-
-    unsigned int getSpecialCharIndex(const char *varName);
 
     ProcInvoker &getProcInvoker() {
         return this->procInvoker;

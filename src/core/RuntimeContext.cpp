@@ -42,10 +42,6 @@ RuntimeContext::RuntimeContext() :
         trueObj(new Boolean_Object(this->pool.getBooleanType(), true)),
         falseObj(new Boolean_Object(this->pool.getBooleanType(), false)),
         dummy(new DummyObject()),
-        scriptName(DSValue::create<String_Object>(this->pool.getStringType(), std::string("ydsh"))),
-        scriptArgs(DSValue::create<Array_Object>(this->pool.getStringArrayType())),
-        exitStatus(DSValue::create<Int_Object>(this->pool.getInt32Type(), 0)),
-        dbus(DBus_Object::newDBus_Object(&this->pool)),
         globalVarTable(new DSValue[DEFAULT_TABLE_SIZE]),
         tableSize(DEFAULT_TABLE_SIZE), thrownObject(),
         localStack(new DSValue[DEFAULT_LOCAL_SIZE]),
@@ -82,20 +78,18 @@ std::string RuntimeContext::getIfaceDir() {
 }
 
 void RuntimeContext::updateScriptName(const char *name) {
-    this->scriptName = DSValue::create<String_Object>(this->pool.getStringType(), std::string(name));
-    unsigned int index = this->getSpecialCharIndex("0");
-    this->setGlobal(index, this->scriptName);
+    unsigned int index = static_cast<unsigned int>(BuiltinVarOffset::POS_0);
+    this->setGlobal(index, DSValue::create<String_Object>(this->pool.getStringType(), std::string(name)));
 }
 
 void RuntimeContext::addScriptArg(const char *arg) {
-    typeAs<Array_Object>(this->scriptArgs)->append(
+    typeAs<Array_Object>(this->getScriptArgs())->append(
             DSValue::create<String_Object>(this->pool.getStringType(), std::string(arg)));
 }
 
 void RuntimeContext::initScriptArg() {
-    this->scriptArgs = DSValue::create<Array_Object>(this->pool.getStringArrayType());
-    unsigned int index = this->getSpecialCharIndex("@");
-    this->setGlobal(index, this->scriptArgs);
+    unsigned int index = this->getBuiltinVarIndex(BuiltinVarOffset::ARGS);
+    this->setGlobal(index, DSValue::create<Array_Object>(this->pool.getStringArrayType()));
 }
 
 void RuntimeContext::reserveGlobalVar(unsigned int size) {
@@ -482,9 +476,8 @@ const char *RuntimeContext::registerSourceName(const char *sourceName) {
 }
 
 void RuntimeContext::updateExitStatus(unsigned int status) {
-    this->exitStatus = DSValue::create<Int_Object>(this->pool.getInt32Type(), status);
-    unsigned int index = this->getSpecialCharIndex("?");
-    this->setGlobal(index, this->exitStatus);
+    unsigned int index = this->getBuiltinVarIndex(BuiltinVarOffset::EXIT_STATUS);
+    this->setGlobal(index, DSValue::create<Int_Object>(this->pool.getInt32Type(), status));
 }
 
 void RuntimeContext::exitShell(unsigned int status) {
@@ -493,15 +486,6 @@ void RuntimeContext::exitShell(unsigned int status) {
     this->updateExitStatus(status);
     this->throwError(this->pool.getShellExit(), std::move(str));
     throw InternalError();
-}
-
-unsigned int RuntimeContext::getSpecialCharIndex(const char *varName) {
-    std::string name(varName);
-    FieldHandle *handle = this->symbolTable.lookupHandle(name);
-    if(handle == nullptr || !handle->isGlobal() || !handle->isReadOnly()) {
-        fatal("undefined special character: %s\n", varName);
-    }
-    return handle->getFieldIndex();
 }
 
 void RuntimeContext::addUserDefinedCommand(UserDefinedCmdNode *node) {
@@ -523,7 +507,7 @@ int RuntimeContext::execUserDefinedCommand(UserDefinedCmdNode *node, DSValue *ar
 
     // copy arguments
     for(unsigned int index = 1; argv[index]; index++) {
-        typeAs<Array_Object>(this->scriptArgs)->append(std::move(argv[index]));
+        typeAs<Array_Object>(this->getScriptArgs())->append(std::move(argv[index]));
     }
 
     // clear procInvoker

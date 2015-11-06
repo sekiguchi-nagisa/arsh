@@ -2021,6 +2021,9 @@ public:
     BindVarNode(const char *name, const DSValue &value) :
             Node(0), varName(std::string(name)), varIndex(0), value(value) { }
 
+    BindVarNode(const char *name, DSValue &&value) :
+            Node(0), varName(std::string(name)), varIndex(0), value(std::move(value)) { }
+
     ~BindVarNode() = default;
 
     const std::string &getVarName() const {
