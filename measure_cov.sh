@@ -16,18 +16,15 @@ clear_cmake_cache() {
 
 # check command
 check_cmd lcov
-check_cmd gcov
-check_cmd genhtml
 
 # create build directory
 
-mkdir build-coverage
+mkdir -p build-coverage
 cd build-coverage
 clear_cmake_cache
 
 # setup
 cmake ..
-
 
 # build with coverage
 clear_cmake_cache
@@ -42,9 +39,3 @@ make -j2
 # run test
 lcov --directory . --zerocounters
 ctest
-
-# generate coverage report
-OUTPUT="coverage_report"
-lcov --directory . --capture --output-file ${OUTPUT}.info
-lcov --remove ${OUTPUT}.info 'test/*' 'tools/*' '/usr/include/*' --output-file ${OUTPUT}-cleaned.info
-genhtml -o ${OUTPUT} ${OUTPUT}-cleaned.info
