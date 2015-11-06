@@ -78,7 +78,7 @@ std::string RuntimeContext::getIfaceDir() {
 }
 
 void RuntimeContext::updateScriptName(const char *name) {
-    unsigned int index = static_cast<unsigned int>(BuiltinVarOffset::POS_0);
+    unsigned int index = this->getBuiltinVarIndex(BuiltinVarOffset::POS_0);
     this->setGlobal(index, DSValue::create<String_Object>(this->pool.getStringType(), std::string(name)));
 }
 
@@ -403,22 +403,6 @@ void RuntimeContext::exportEnv(const std::string &envName, unsigned int index, b
     } else {
         this->storeLocal(index);
     }
-}
-
-bool RuntimeContext::checkZeroDiv(int right) {
-    if(right == 0) {
-        this->throwError(this->pool.getArithmeticErrorType(), "zero division");
-        return false;
-    }
-    return true;
-}
-
-bool RuntimeContext::checkZeroMod(int right) {
-    if(right == 0) {
-        this->throwError(this->pool.getArithmeticErrorType(), "zero module");
-        return false;
-    }
-    return true;
 }
 
 void RuntimeContext::resetState() {

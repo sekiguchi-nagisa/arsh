@@ -476,13 +476,6 @@ public:
      */
     void exportEnv(const std::string &envName, unsigned int index, bool isGlobal);
 
-    bool checkZeroDiv(int right);
-    bool checkZeroMod(int right);
-
-    void throwOutOfRangeError(std::string &&message) {
-        this->throwError(this->pool.getOutOfRangeErrorType(), std::move(message));
-    }
-
     void pushFuncContext(Node *node) {
         this->funcContextStack.push_back(node);
     }

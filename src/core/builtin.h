@@ -188,12 +188,28 @@ static inline bool int_2_int_mul(RuntimeContext & ctx) {
     RET(DSValue::create<Int_Object>(ctx.getPool().getIntType(), value));
 }
 
+static bool checkZeroDiv(RuntimeContext &ctx, int right) {
+    if(right == 0) {
+        ctx.throwError(ctx.getPool().getArithmeticErrorType(), "zero division");
+        return false;
+    }
+    return true;
+}
+
+static bool checkZeroMod(RuntimeContext &ctx, int right) {
+    if(right == 0) {
+        ctx.throwError(ctx.getPool().getArithmeticErrorType(), "zero module");
+        return false;
+    }
+    return true;
+}
+
 //!bind: function $OP_DIV($this : Int32, $target : Int32) : Int32
 static inline bool int_2_int_div(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_div);
     int left = typeAs<Int_Object>(LOCAL(0))->getValue();
     int right = typeAs<Int_Object>(LOCAL(1))->getValue();
-    if(!ctx.checkZeroDiv(right)) {
+    if(!checkZeroDiv(ctx, right)) {
         return false;
     }
     int value = left / right;
@@ -205,7 +221,7 @@ static inline bool int_2_int_mod(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_mod);
     int left = typeAs<Int_Object>(LOCAL(0))->getValue();
     int right = typeAs<Int_Object>(LOCAL(1))->getValue();
-    if(!ctx.checkZeroMod(right)) {
+    if(!checkZeroMod(ctx, right)) {
         return false;
     }
     int value = left % right;
@@ -348,7 +364,7 @@ static inline bool uint_2_uint_div(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_div);
     unsigned int left = typeAs<Int_Object>(LOCAL(0))->getValue();
     unsigned int right = typeAs<Int_Object>(LOCAL(1))->getValue();
-    if(!ctx.checkZeroDiv((int) right)) {
+    if(!checkZeroDiv(ctx, (int) right)) {
         return false;
     }
     unsigned int value = left / right;
@@ -360,7 +376,7 @@ static inline bool uint_2_uint_mod(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_mod);
     unsigned int left = typeAs<Int_Object>(LOCAL(0))->getValue();
     unsigned int right = typeAs<Int_Object>(LOCAL(1))->getValue();
-    if(!ctx.checkZeroMod((int) right)) {
+    if(!checkZeroMod(ctx, (int) right)) {
         return false;
     }
     unsigned int value = left % right;
@@ -501,7 +517,7 @@ static inline bool int64_2_int64_div(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_div);
     long left = typeAs<Long_Object>(LOCAL(0))->getValue();
     long right = typeAs<Long_Object>(LOCAL(1))->getValue();
-    if(!ctx.checkZeroDiv((int) right)) {
+    if(!checkZeroDiv(ctx, (int) right)) {
         return false;
     }
     long value = left / right;
@@ -513,7 +529,7 @@ static inline bool int64_2_int64_mod(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_mod);
     long left = typeAs<Long_Object>(LOCAL(0))->getValue();
     long right = typeAs<Long_Object>(LOCAL(1))->getValue();
-    if(!ctx.checkZeroMod((int) right)) {
+    if(!checkZeroMod(ctx, (int) right)) {
         return false;
     }
     long value = left % right;
@@ -654,7 +670,7 @@ static inline bool uint64_2_uint64_div(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_div);
     unsigned long left = (unsigned long) typeAs<Long_Object>(LOCAL(0))->getValue();
     unsigned long right = (unsigned long) typeAs<Long_Object>(LOCAL(1))->getValue();
-    if(!ctx.checkZeroDiv((int) right)) {
+    if(!checkZeroDiv(ctx, (int) right)) {
         return false;
     }
     unsigned long value = left / right;
@@ -666,7 +682,7 @@ static inline bool uint64_2_uint64_mod(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_mod);
     unsigned long left = (unsigned long) typeAs<Long_Object>(LOCAL(0))->getValue();
     unsigned long right = (unsigned long) typeAs<Long_Object>(LOCAL(1))->getValue();
-    if(!ctx.checkZeroMod((int) right)) {
+    if(!checkZeroMod(ctx, (int) right)) {
         return false;
     }
     unsigned long value = left % right;
@@ -992,6 +1008,10 @@ static inline bool string_count(RuntimeContext &ctx) {
     RET(DSValue::create<Int_Object>(ctx.getPool().getInt32Type(), count));
 }
 
+static void throwOutOfRangeError(RuntimeContext &ctx, std::string &&message) {
+    ctx.throwError(ctx.getPool().getOutOfRangeErrorType(), std::move(message));
+}
+
 //!bind: function $OP_GET($this : String, $index : Int32) : String
 static inline bool string_get(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_get);
@@ -1020,7 +1040,7 @@ static inline bool string_get(RuntimeContext &ctx) {
     msg += std::to_string(size);
     msg += ", but code position is ";
     msg += std::to_string(pos);
-    ctx.throwOutOfRangeError(std::move(msg));
+    throwOutOfRangeError(ctx, std::move(msg));
     return false;
 }
 
@@ -1045,7 +1065,7 @@ static bool sliceImpl(RuntimeContext &ctx, String_Object *strObj, int startIndex
         msg += ", ";
         msg += std::to_string(stopIndex);
         msg += ")";
-        ctx.throwOutOfRangeError(std::move(msg));
+        throwOutOfRangeError(ctx, std::move(msg));
         return false;
     }
 
@@ -1267,7 +1287,7 @@ static inline bool stringIter_next(RuntimeContext &ctx) {
     auto strIter = typeAs<StringIter_Object>(LOCAL(0));
     auto strObj = typeAs<String_Object>(strIter->strObj);
     if(strIter->curIndex >= strObj->size()) {
-        ctx.throwOutOfRangeError(std::string("string iterator reach end of string"));
+        throwOutOfRangeError(ctx, std::string("string iterator reach end of string"));
         return false;
     }
     unsigned int curIndex = strIter->curIndex;
@@ -1347,7 +1367,7 @@ static bool checkRange(RuntimeContext &ctx, int index, int size) {
         message += std::to_string(size);
         message += ", but index is ";
         message += std::to_string(index);
-        ctx.throwOutOfRangeError(std::move(message));
+        throwOutOfRangeError(ctx, std::move(message));
         return false;
     }
     return true;
