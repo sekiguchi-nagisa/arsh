@@ -212,6 +212,10 @@ public:
 
     void updateScriptName(const char *name);
 
+    const DSValue &getDBus() {
+        return this->getGlobal(this->getBuiltinVarIndex(BuiltinVarOffset::DBUS));
+    }
+
     bool isToplevelPrinting() {
         return this->toplevelPrinting;
     }
