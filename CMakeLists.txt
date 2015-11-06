@@ -48,6 +48,14 @@ endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -std=c++11")
 
 
+#+++++++++++++++++++++++++++++++++#
+#     set coverage build type     #
+#+++++++++++++++++++++++++++++++++#
+
+set(CMAKE_C_FLAGS_COVERAGE "${CMAKE_C_FLAGS_DEBUG} -fprofile-arcs -ftest-coverage")
+set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_DEBUG} -fprofile-arcs -ftest-coverage")
+
+
 #++++++++++++++++++++++++++#
 #     set extra option     #
 #++++++++++++++++++++++++++#
