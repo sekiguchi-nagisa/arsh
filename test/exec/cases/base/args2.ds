@@ -1,8 +1,13 @@
-# ignore empty string argument
+# contains empty string argument
 
 #$test($result = 'SUCCESS', $params = ['', 'a', '', '', 'b', 'c', ''])
 
-assert($@.size() == 3)
-assert($@[0] == "a")
-assert($@[1] == "b")
-assert($@[2] == "c")
+echo ${$@.size()}
+assert($@.size() == 7)
+assert($@[0] == "")
+assert($@[1] == "a")
+assert($@[2] == "")
+assert($@[3] == "")
+assert($@[4] == "b")
+assert($@[5] == "c")
+assert($@[6] == "")

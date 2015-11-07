@@ -79,7 +79,6 @@ unsigned int DSContext_getLineNum(DSContext *ctx);
 /**
  * first element of argv must be source name and not empty string.
  * last element of argv must be null.
- * empty string argument will be ignored.
  */
 void DSContext_setArguments(DSContext *ctx, char *const argv[]);
 

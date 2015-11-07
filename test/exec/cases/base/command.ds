@@ -91,6 +91,9 @@ assert($? == 0)
 echo ${["a", "2"]} | grep 'a 2'         # Array
 assert($? == 0)
 
+test "$(echo ${["", "a", "", "b"]})" = "a b"   # String Array(ignore empty string)
+assert($? == 0)
+
 echo ${(1, "a", $true)} | grep '1 a true' # Tuple
 assert($? == 0)
 

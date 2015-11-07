@@ -761,6 +761,9 @@ void ProcInvoker::addArg(DSValue &&value, bool skipEmptyString) {
     if(*valueType == *this->ctx->getPool().getStringArrayType()) {
         Array_Object *arrayObj = typeAs<Array_Object>(value);
         for(auto &element : arrayObj->getValues()) {
+            if(typeAs<String_Object>(element)->empty()) {
+                continue;
+            }
             this->argArray.push_back(element);
         }
     } else {

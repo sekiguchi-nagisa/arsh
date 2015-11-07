@@ -374,7 +374,7 @@ void DSContext_setArguments(DSContext *ctx, char *const argv[]) {
     for(unsigned int i = 0; argv[i] != nullptr; i++) {
         if(i == 0) {
             ctx->ctx.updateScriptName(argv[0]);
-        } else if(strcmp(argv[i], "") != 0) {
+        } else {
             ctx->ctx.addScriptArg(argv[i]);
         }
     }
