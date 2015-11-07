@@ -971,6 +971,37 @@ TEST_F(LexerTest_Lv1, specialName7) {
     });
 }
 
+TEST_F(LexerTest_Lv1, specialName8) {
+    const char *text = "$#";
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(text);
+        EXPECT(SPECIAL_NAME, text, EOS, "");
+        this->assertLexerMode(yycEXPR);
+    });
+}
+
+TEST_F(LexerTest_Lv1, specialName9) {
+    const char *text = "$6";
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(text, yycEXPR);
+        EXPECT(SPECIAL_NAME, text, EOS, "");
+        this->assertLexerMode(yycEXPR);
+    });
+}
+
+TEST_F(LexerTest_Lv1, specialName10) {
+    const char *text = "${9}";
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(text);
+        this->lexer->pushLexerMode(yycCMD);
+        EXPECT(SPECIAL_NAME, text, LINE_END, "\n", EOS, "");
+        this->assertLexerMode(yycSTMT);
+    });
+}
+
 
 /**
  * brace test

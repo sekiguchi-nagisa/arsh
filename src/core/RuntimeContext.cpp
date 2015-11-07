@@ -92,6 +92,35 @@ void RuntimeContext::initScriptArg() {
     this->setGlobal(index, DSValue::create<Array_Object>(this->pool.getStringArrayType()));
 }
 
+void RuntimeContext::finalizeScritArg() {
+    unsigned int index = this->getBuiltinVarIndex(BuiltinVarOffset::ARGS);
+    auto *array = typeAs<Array_Object>(this->getGlobal(index));
+
+    // update argument size
+    const unsigned int size = array->getValues().size();
+    index = this->getBuiltinVarIndex(BuiltinVarOffset::ARGS_SIZE);
+    this->setGlobal(index, DSValue::create<Int_Object>(this->pool.getInt32Type(), size));
+
+    unsigned int limit = 9;
+    if(size < limit) {
+        limit = size;
+    }
+
+    // update positional parameter
+    for(index = 0; index < limit; index++) {
+        unsigned int i = this->getBuiltinVarIndex(BuiltinVarOffset::POS_1) + index;
+        this->setGlobal(i, array->getValues()[index]);
+    }
+
+    if(index < 9) {
+        auto empty = DSValue::create<String_Object>(this->pool.getStringType(), "");
+        for(; index < 9; index++) {
+            unsigned int i = this->getBuiltinVarIndex(BuiltinVarOffset::POS_1) + index;
+            this->setGlobal(i, empty);
+        }
+    }
+}
+
 void RuntimeContext::reserveGlobalVar(unsigned int size) {
     if(this->tableSize < size) {
         unsigned int newSize = this->tableSize;
@@ -487,12 +516,12 @@ UserDefinedCmdNode *RuntimeContext::lookupUserDefinedCommand(const char *command
 }
 
 int RuntimeContext::execUserDefinedCommand(UserDefinedCmdNode *node, DSValue *argv) {
-    this->initScriptArg();
-
     // copy arguments
+    this->initScriptArg();
     for(unsigned int index = 1; argv[index]; index++) {
         typeAs<Array_Object>(this->getScriptArgs())->append(std::move(argv[index]));
     }
+    this->finalizeScritArg();
 
     // clear procInvoker
     this->procInvoker.clear();

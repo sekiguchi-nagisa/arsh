@@ -235,6 +235,10 @@ static void defineBuiltin(RootNode &rootNode, const char *varName, DSValue &&val
     rootNode.addNode(new BindVarNode(varName, std::move(value)));
 }
 
+static void defineBuiltin(RootNode &rootNode, const char *varName, const DSValue &value) {
+    rootNode.addNode(new BindVarNode(varName, value));
+}
+
 void DSContext::initBuiltinVar() {
     RootNode rootNode;
 
@@ -251,6 +255,12 @@ void DSContext::initBuiltinVar() {
     defineBuiltin(rootNode, "@", DSValue::create<Array_Object>(this->ctx.getPool().getStringArrayType()));
 
     /**
+     * contains size of argument. ($#)
+     * must be Int_Object
+     */
+    defineBuiltin(rootNode, "#", DSValue::create<Int_Object>(this->ctx.getPool().getInt32Type(), 0));
+
+    /**
      * contains exit status of most recent executed process. ($?)
      * must be Int_Object
      */
@@ -261,6 +271,14 @@ void DSContext::initBuiltinVar() {
      * must be String_Object
      */
     defineBuiltin(rootNode, "0", DSValue::create<String_Object>(this->ctx.getPool().getStringType(), "ydsh"));
+
+    /**
+     * initialize positional parameter
+     */
+    auto empty = DSValue::create<String_Object>(this->ctx.getPool().getStringType(), "");
+    for(unsigned int i = 0; i < 9; i++) {
+        defineBuiltin(rootNode, std::to_string(i + 1).c_str(), empty);
+    }
 
 
     // ignore error check (must be always success)
@@ -378,6 +396,7 @@ void DSContext_setArguments(DSContext *ctx, char *const argv[]) {
             ctx->ctx.addScriptArg(argv[i]);
         }
     }
+    ctx->ctx.finalizeScritArg();
 }
 
 static void setOptionImpl(DSContext *ctx, flag32_set_t flagSet, bool set) {
