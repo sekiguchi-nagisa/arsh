@@ -174,7 +174,9 @@ public:
         std::unique_ptr<char *[]> argv = d.getAsArgv(scriptName);
         for(unsigned int i = 0; argv[i] != nullptr; i++) {
             cmd += " ";
+            cmd += '"';
             cmd += argv[i];
+            cmd += '"';
         }
 
         // execute
