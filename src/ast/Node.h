@@ -46,7 +46,7 @@ using namespace ydsh::parser;
 using namespace ydsh::misc;
 
 struct NodeVisitor;
-class Writer;
+class NodeDumper;
 
 class Node {
 protected:
@@ -101,7 +101,7 @@ public:
     virtual void setSourceName(const char *sourceName);
     virtual const char *getSourceName();
 
-    virtual void dump(Writer &writer) const = 0;
+    virtual void dump(NodeDumper &dumper) const = 0;
     virtual void accept(NodeVisitor *visitor) = 0;
     virtual EvalStatus eval(RuntimeContext &ctx) = 0;
 };
@@ -171,7 +171,7 @@ public:
     }
 
     void setType(DSType *type); // override
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -210,7 +210,7 @@ public:
     }
 
     void setType(DSType *type); // override
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -236,7 +236,7 @@ public:
     }
 
     void setType(DSType *type); // override
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -273,7 +273,7 @@ public:
     }
 
     void setType(DSType *type); // override
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     virtual void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -307,7 +307,7 @@ public:
         this->nodes[index] = exprNode;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -331,7 +331,7 @@ public:
         return this->nodes;
     }
 
-    void dump(Writer &writer) const; // override
+    void dump(NodeDumper &dumper) const; // override
     void accept(NodeVisitor *visitor);    //override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -364,7 +364,7 @@ public:
         return this->valueNodes;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -387,7 +387,7 @@ public:
         return this->nodes;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -432,7 +432,7 @@ public:
         return this->index;
     }
 
-    virtual void dump(Writer &writer) const;  // override
+    virtual void dump(NodeDumper &dumper) const;  // override
 };
 
 class VarNode : public AssignableNode {
@@ -449,7 +449,7 @@ public:
         return this->varName;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 
@@ -504,7 +504,7 @@ public:
         return this->additionalOp;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 
@@ -561,7 +561,7 @@ public:
         return this->opKind;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    //override
     EvalStatus eval(RuntimeContext &ctx); // override
 
@@ -618,7 +618,7 @@ public:
         return this->opKind;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    //override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -649,7 +649,7 @@ public:
         return this->argNodes;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -715,7 +715,7 @@ public:
         return this->handle;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 
@@ -749,7 +749,7 @@ public:
         return this->argNodes;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);   // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -798,7 +798,7 @@ public:
         return this->methodCallNode;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);   // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -865,7 +865,7 @@ public:
         return this->methodCallNode;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);   // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -887,7 +887,7 @@ public:
         return this->exprNode;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);   // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -919,7 +919,7 @@ public:
         return this->andOp;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    //override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -949,7 +949,7 @@ public:
         this->segmentNodes[index] = segmentNode;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);  // override
     EvalStatus eval(RuntimeContext &ctx); // override
 
@@ -979,7 +979,7 @@ public:
         return this->targetNode;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);  // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -1005,7 +1005,7 @@ public:
         return this->value;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);  // override
 
     /**
@@ -1051,7 +1051,7 @@ public:
     void addRedirOption(TokenKind kind, CmdArgNode *node);
     void addRedirOption(TokenKind kind);
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    //override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -1081,7 +1081,7 @@ public:
         return this->asBool;
     }
 
-    void dump(Writer &writer) const; // override
+    void dump(NodeDumper &dumper) const; // override
     void accept(NodeVisitor *visitor);    //override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -1126,7 +1126,7 @@ public:
     void inCondition(); // override
     void inRightHandleSide();   // override
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    //override
     EvalStatus eval(RuntimeContext &ctx); // override
 
@@ -1154,7 +1154,7 @@ public:
         return this->condNode;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -1182,7 +1182,7 @@ public:
 
     bool isTerminalNode() const; // overrdie
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -1207,7 +1207,7 @@ public:
 
     ~BreakNode() = default;
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -1218,7 +1218,7 @@ public:
 
     ~ContinueNode() = default;
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -1255,7 +1255,7 @@ public:
         return this->varIndex;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -1303,7 +1303,7 @@ public:
         return this->varIndex;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -1331,7 +1331,7 @@ public:
         return this->targetTypeToken;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -1389,7 +1389,7 @@ public:
         return this->blockNode;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -1415,7 +1415,7 @@ public:
         return this->blockNode;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    //override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -1441,7 +1441,7 @@ public:
         return this->condNode;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);   //override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -1504,7 +1504,7 @@ public:
         return this->terminal;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -1525,7 +1525,7 @@ public:
         return this->exprNode;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -1544,7 +1544,7 @@ public:
         return this->exprNode;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -1603,7 +1603,7 @@ public:
         return this->blockNode;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -1652,7 +1652,7 @@ public:
         return this->terminal;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -1692,7 +1692,7 @@ public:
         return this->varIndex;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -1750,7 +1750,7 @@ public:
         return hasFlag(this->attributeSet, FIELD_ASSIGN);
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);   // override
     EvalStatus eval(RuntimeContext &ctx); // override
 
@@ -1816,7 +1816,7 @@ public:
      */
     void setIndexType(DSType *type);
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);   // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -1919,7 +1919,7 @@ public:
     void setSourceName(const char *sourceName); // override
     const char *getSourceName(); // override
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -1962,7 +1962,7 @@ public:
         return this->fieldTypeTokens;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -2003,7 +2003,7 @@ public:
         return this->maxVarNum;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -2040,7 +2040,7 @@ public:
         return this->value;
     }
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -2051,7 +2051,7 @@ public:
     explicit EmptyNode(unsigned int lineNum) : Node(lineNum) { }
     ~EmptyNode() = default;
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -2061,7 +2061,7 @@ public:
     DummyNode() : Node(0) { }
     ~DummyNode() = default;
 
-    void dump(Writer &writer) const;  // override
+    void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor *visitor);   // override
     EvalStatus eval(RuntimeContext &ctx); // override
 };
@@ -2117,7 +2117,7 @@ public:
         return this->maxGVarNum;
     }
 
-    void dump(Writer &writer) const;    // override
+    void dump(NodeDumper &dumper) const;    // override
     void accept(NodeVisitor *visitor);  // override
     EvalStatus eval(RuntimeContext &ctx);   // override
 };

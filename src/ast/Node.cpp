@@ -19,7 +19,7 @@
 #include "../core/symbol.h"
 #include "../core/DSObject.h"
 #include "../core/RuntimeContext.h"
-#include "dump.h"
+#include "NodeDumper.h"
 
 // helper macro
 #define EVAL(ctx, node) \
@@ -69,13 +69,13 @@ void IntValueNode::setType(DSType *type) {
     this->value = DSValue::create<Int_Object>(this->type, this->tempValue);
 }
 
-void IntValueNode::dump(Writer &writer) const {
-    WRITE_PRIM(tempValue);
+void IntValueNode::dump(NodeDumper &dumper) const {
+    DUMP_PRIM(tempValue);
     if(this->type == nullptr) {
-        writer.write(NAME(value), "(null)");
+        dumper.dump(NAME(value), "(null)");
     } else {
         Int_Object *obj = typeAs<Int_Object>(this->value);
-        writer.write(NAME(value), std::to_string(obj->getValue()));
+        dumper.dump(NAME(value), std::to_string(obj->getValue()));
     }
 }
 
@@ -97,14 +97,14 @@ void LongValueNode::setType(DSType *type) {
     this->value = DSValue::create<Long_Object>(this->type, this->tempValue);
 }
 
-void LongValueNode::dump(Writer &writer) const {
-    WRITE_PRIM(tempValue);
-    WRITE_PRIM(unsignedValue);
+void LongValueNode::dump(NodeDumper &dumper) const {
+    DUMP_PRIM(tempValue);
+    DUMP_PRIM(unsignedValue);
     if(this->type == nullptr) {
-        writer.write(NAME(value), "(null)");
+        dumper.dump(NAME(value), "(null)");
     } else {
         Long_Object *obj = typeAs<Long_Object>(this->value);
-        writer.write(NAME(value), std::to_string(obj->getValue()));
+        dumper.dump(NAME(value), std::to_string(obj->getValue()));
     }
 }
 
@@ -127,13 +127,13 @@ void FloatValueNode::setType(DSType *type) {
     this->value = DSValue::create<Float_Object>(this->type, this->tempValue);
 }
 
-void FloatValueNode::dump(Writer &writer) const {
-    WRITE_PRIM(tempValue);
+void FloatValueNode::dump(NodeDumper &dumper) const {
+    DUMP_PRIM(tempValue);
     if(this->type == nullptr) {
-        writer.write(NAME(value), "(null)");
+        dumper.dump(NAME(value), "(null)");
     } else {
         Float_Object *obj = typeAs<Float_Object>(this->value);
-        writer.write(NAME(value), std::to_string(obj->getValue()));
+        dumper.dump(NAME(value), std::to_string(obj->getValue()));
     }
 }
 
@@ -155,15 +155,15 @@ void StringValueNode::setType(DSType *type) {
     this->value = DSValue::create<String_Object>(this->type, std::move(this->tempValue));
 }
 
-void StringValueNode::dump(Writer &writer) const {
+void StringValueNode::dump(NodeDumper &dumper) const {
     if(this->type == nullptr) {
-        writer.write(NAME(tempValue), this->tempValue);
-        writer.write(NAME(value), "");
+        dumper.dump(NAME(tempValue), this->tempValue);
+        dumper.dump(NAME(value), "");
 
     } else {
         String_Object *obj = typeAs<String_Object>(this->value);
-        writer.write(NAME(tempValue), "");
-        writer.write(NAME(value), obj->getValue());
+        dumper.dump(NAME(tempValue), "");
+        dumper.dump(NAME(value), obj->getValue());
     }
 }
 
@@ -199,8 +199,8 @@ void StringExprNode::addExprNode(Node *node) {
     this->nodes.push_back(node);
 }
 
-void StringExprNode::dump(Writer &writer) const {
-    WRITE(nodes);
+void StringExprNode::dump(NodeDumper &dumper) const {
+    DUMP(nodes);
 }
 
 void StringExprNode::accept(NodeVisitor *visitor) {
@@ -243,8 +243,8 @@ void ArrayNode::addExprNode(Node *node) {
     this->nodes.push_back(node);
 }
 
-void ArrayNode::dump(Writer &writer) const {
-    WRITE(nodes);
+void ArrayNode::dump(NodeDumper &dumper) const {
+    DUMP(nodes);
 }
 
 void ArrayNode::accept(NodeVisitor *visitor) {
@@ -286,9 +286,9 @@ void MapNode::addEntry(Node *keyNode, Node *valueNode) {
     this->valueNodes.push_back(valueNode);
 }
 
-void MapNode::dump(Writer &writer) const {
-    WRITE(keyNodes);
-    WRITE(valueNodes);
+void MapNode::dump(NodeDumper &dumper) const {
+    DUMP(keyNodes);
+    DUMP(valueNodes);
 }
 
 void MapNode::accept(NodeVisitor *visitor) {
@@ -329,8 +329,8 @@ void TupleNode::addNode(Node *node) {
     this->nodes.push_back(node);
 }
 
-void TupleNode::dump(Writer &writer) const {
-    WRITE(nodes);
+void TupleNode::dump(NodeDumper &dumper) const {
+    DUMP(nodes);
 }
 
 void TupleNode::accept(NodeVisitor *visitor) {
@@ -360,21 +360,21 @@ void AssignableNode::setAttribute(FieldHandle *handle) {
     this->interface = handle->withinInterface();
 }
 
-void AssignableNode::dump(Writer &writer) const {
-    WRITE_PRIM(index);
-    WRITE_PRIM(readOnly);
-    WRITE_PRIM(global);
-    WRITE_PRIM(env);
-    WRITE_PRIM(interface);
+void AssignableNode::dump(NodeDumper &dumper) const {
+    DUMP_PRIM(index);
+    DUMP_PRIM(readOnly);
+    DUMP_PRIM(global);
+    DUMP_PRIM(env);
+    DUMP_PRIM(interface);
 }
 
 // #####################
 // ##     VarNode     ##
 // #####################
 
-void VarNode::dump(Writer &writer) const {
-    WRITE(varName);
-    AssignableNode::dump(writer);
+void VarNode::dump(NodeDumper &dumper) const {
+    DUMP(varName);
+    AssignableNode::dump(dumper);
 }
 
 void VarNode::accept(NodeVisitor *visitor) {
@@ -402,10 +402,10 @@ AccessNode::~AccessNode() {
     delete this->recvNode;
 }
 
-void AccessNode::dump(Writer &writer) const {
-    WRITE_PTR(recvNode);
-    WRITE(fieldName);
-    AssignableNode::dump(writer);
+void AccessNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(recvNode);
+    DUMP(fieldName);
+    AssignableNode::dump(dumper);
 
 #define EACH_ENUM(OP, out) \
     OP(NOP, out) \
@@ -413,7 +413,7 @@ void AccessNode::dump(Writer &writer) const {
 
     std::string str;
     DECODE_ENUM(str, this->additionalOp, EACH_ENUM);
-    writer.write(NAME(addtionalOp), str);
+    dumper.dump(NAME(addtionalOp), str);
 #undef EACH_ENUM
 }
 
@@ -495,10 +495,10 @@ TypeToken *CastNode::getTargetTypeToken() const {
     return this->targetTypeToken;
 }
 
-void CastNode::dump(Writer &writer) const {
-    WRITE_PTR(exprNode);
+void CastNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(exprNode);
     TypeToken *targetTypeToken = this->getTargetTypeToken();
-    WRITE_PTR(targetTypeToken);
+    DUMP_PTR(targetTypeToken);
 
 #define EACH_ENUM(OP, out) \
     OP(NOP, out) \
@@ -516,7 +516,7 @@ void CastNode::dump(Writer &writer) const {
 
     std::string str;
     DECODE_ENUM(str, this->opKind, EACH_ENUM);
-    writer.write(NAME(opKind), str);
+    dumper.dump(NAME(opKind), str);
 #undef EACH_ENUM
 }
 
@@ -629,10 +629,10 @@ InstanceOfNode::~InstanceOfNode() {
     delete this->targetTypeToken;
 }
 
-void InstanceOfNode::dump(Writer &writer) const {
-    WRITE_PTR(targetNode);
-    WRITE_PTR(targetTypeToken);
-    WRITE_PTR(targetType);
+void InstanceOfNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(targetNode);
+    DUMP_PTR(targetTypeToken);
+    DUMP_PTR(targetType);
 
 #define EACH_ENUM(OP, out) \
     OP(ALWAYS_FALSE, out) \
@@ -641,7 +641,7 @@ void InstanceOfNode::dump(Writer &writer) const {
 
     std::string val;
     DECODE_ENUM(val, this->opKind, EACH_ENUM);
-    writer.write(NAME(opKind), val);
+    dumper.dump(NAME(opKind), val);
 #undef EACH_ENUM
 }
 
@@ -680,9 +680,9 @@ ApplyNode::~ApplyNode() {
     }
 }
 
-void ApplyNode::dump(Writer &writer) const {
-    WRITE_PTR(exprNode);
-    WRITE(argNodes);
+void ApplyNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(exprNode);
+    DUMP(argNodes);
 }
 
 void ApplyNode::accept(NodeVisitor *visitor) {
@@ -724,13 +724,13 @@ MethodCallNode::~MethodCallNode() {
     }
 }
 
-void MethodCallNode::dump(Writer &writer) const {
-    WRITE_PTR(recvNode);
-    WRITE(methodName);
+void MethodCallNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(recvNode);
+    DUMP(methodName);
     unsigned int methodIndex =
             this->handle != nullptr ? this->handle->getMethodIndex() : 0;
-    WRITE_PRIM(methodIndex);
-    WRITE(argNodes);
+    DUMP_PRIM(methodIndex);
+    DUMP(argNodes);
 
 #define EACH_FLAG(OP, out, set) \
     OP(INDEX, out, set) \
@@ -738,7 +738,7 @@ void MethodCallNode::dump(Writer &writer) const {
 
     std::string str;
     DECODE_BITSET(str, this->attributeSet, EACH_FLAG);
-    writer.write(NAME(attributeSet), str);
+    dumper.dump(NAME(attributeSet), str);
 #undef EACH_FLAG
 }
 
@@ -769,9 +769,9 @@ NewNode::~NewNode() {
     }
 }
 
-void NewNode::dump(Writer &writer) const {
-    WRITE_PTR(targetTypeToken);
-    WRITE(argNodes);
+void NewNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(targetTypeToken);
+    DUMP(argNodes);
 }
 
 void NewNode::accept(NodeVisitor *visitor) {
@@ -810,10 +810,10 @@ MethodCallNode *UnaryOpNode::createApplyNode() {
     return this->methodCallNode;
 }
 
-void UnaryOpNode::dump(Writer &writer) const {
-    writer.write(NAME(op), TO_NAME(op));
-    WRITE_PTR(exprNode);
-    WRITE_PTR(methodCallNode);
+void UnaryOpNode::dump(NodeDumper &dumper) const {
+    dumper.dump(NAME(op), TO_NAME(op));
+    DUMP_PTR(exprNode);
+    DUMP_PTR(methodCallNode);
 }
 
 void UnaryOpNode::accept(NodeVisitor *visitor) {
@@ -846,11 +846,11 @@ MethodCallNode *BinaryOpNode::createApplyNode() {
     return this->methodCallNode;
 }
 
-void BinaryOpNode::dump(Writer &writer) const {
-    WRITE_PTR(leftNode);
-    WRITE_PTR(rightNode);
-    writer.write(NAME(op), TO_NAME(op));
-    WRITE_PTR(methodCallNode);
+void BinaryOpNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(leftNode);
+    DUMP_PTR(rightNode);
+    dumper.dump(NAME(op), TO_NAME(op));
+    DUMP_PTR(methodCallNode);
 }
 
 void BinaryOpNode::accept(NodeVisitor *visitor) {
@@ -869,8 +869,8 @@ GroupNode::~GroupNode() {
     delete this->exprNode;
 }
 
-void GroupNode::dump(Writer &writer) const {
-    WRITE_PTR(exprNode);
+void GroupNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(exprNode);
 }
 
 void GroupNode::accept(NodeVisitor *visitor) {
@@ -897,10 +897,10 @@ CondOpNode::~CondOpNode() {
     delete this->rightNode;
 }
 
-void CondOpNode::dump(Writer &writer) const {
-    WRITE_PTR(leftNode);
-    WRITE_PTR(rightNode);
-    WRITE_PRIM(andOp);
+void CondOpNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(leftNode);
+    DUMP_PTR(rightNode);
+    DUMP_PRIM(andOp);
 }
 
 void CondOpNode::accept(NodeVisitor *visitor) {
@@ -944,8 +944,8 @@ void CmdArgNode::addSegmentNode(Node *node) {
     this->segmentNodes.push_back(node);
 }
 
-void CmdArgNode::dump(Writer &writer) const {
-    WRITE(segmentNodes);
+void CmdArgNode::dump(NodeDumper &dumper) const {
+    DUMP(segmentNodes);
 }
 
 void CmdArgNode::accept(NodeVisitor *visitor) {
@@ -1010,15 +1010,15 @@ RedirNode::~RedirNode() {
     delete this->targetNode;
 }
 
-void RedirNode::dump(Writer &writer) const {
+void RedirNode::dump(NodeDumper &dumper) const {
     static const char *redirOpStr[] = {
 #define GEN_STR(ENUM, STR) #ENUM,
             EACH_RedirectOP(GEN_STR)
 #undef GEN_STR
     };
 
-    writer.write(NAME(op), redirOpStr[this->op]);
-    WRITE_PTR(targetNode);
+    dumper.dump(NAME(op), redirOpStr[this->op]);
+    DUMP_PTR(targetNode);
 }
 
 void RedirNode::accept(NodeVisitor *visitor) {
@@ -1038,8 +1038,8 @@ EvalStatus RedirNode::eval(RuntimeContext &ctx) {
 // ##     TildeNode     ##
 // #######################
 
-void TildeNode::dump(Writer &writer) const {
-    WRITE(value);
+void TildeNode::dump(NodeDumper &dumper) const {
+    DUMP(value);
 }
 
 void TildeNode::accept(NodeVisitor *visitor) {
@@ -1082,9 +1082,9 @@ void CmdNode::addRedirOption(TokenKind kind) {
     this->addRedirOption(kind, new CmdArgNode(new StringValueNode(std::string(""))));
 }
 
-void CmdNode::dump(Writer &writer) const {
-    WRITE_PTR(nameNode);
-    WRITE(argNodes);
+void CmdNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(nameNode);
+    DUMP(argNodes);
 }
 
 void CmdNode::accept(NodeVisitor *visitor) {
@@ -1124,9 +1124,9 @@ void PipedCmdNode::inCondition() {
     this->asBool = true;
 }
 
-void PipedCmdNode::dump(Writer &writer) const {
-    WRITE_PRIM(asBool);
-    WRITE(cmdNodes);
+void PipedCmdNode::dump(NodeDumper &dumper) const {
+    DUMP_PRIM(asBool);
+    DUMP(cmdNodes);
 }
 
 void PipedCmdNode::accept(NodeVisitor *visitor) {
@@ -1192,8 +1192,8 @@ void CmdContextNode::inRightHandleSide() {
     this->setAttribute(CONDITION);
 }
 
-void CmdContextNode::dump(Writer &writer) const {
-    WRITE_PTR(exprNode);
+void CmdContextNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(exprNode);
 
 #define EACH_FLAG(OP, out, set) \
     OP(BACKGROUND, out, set) \
@@ -1204,7 +1204,7 @@ void CmdContextNode::dump(Writer &writer) const {
 
     std::string value;
     DECODE_BITSET(value, this->attributeSet, EACH_FLAG);
-    writer.write(NAME(attributeSet), value);
+    dumper.dump(NAME(attributeSet), value);
 
 #undef EACH_FLAG
 }
@@ -1323,8 +1323,8 @@ AssertNode::~AssertNode() {
     delete this->condNode;
 }
 
-void AssertNode::dump(Writer &writer) const {
-    WRITE_PTR(condNode);
+void AssertNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(condNode);
 }
 
 void AssertNode::accept(NodeVisitor *visitor) {
@@ -1361,8 +1361,8 @@ bool BlockNode::isTerminalNode() const {
     return !this->nodeList.empty() && this->nodeList.back()->isTerminalNode();
 }
 
-void BlockNode::dump(Writer &writer) const {
-    WRITE(nodeList);
+void BlockNode::dump(NodeDumper &dumper) const {
+    DUMP(nodeList);
 }
 
 void BlockNode::accept(NodeVisitor *visitor) {
@@ -1383,7 +1383,7 @@ EvalStatus BlockNode::eval(RuntimeContext &ctx) {
 // ##     BreakNode     ##
 // #######################
 
-void BreakNode::dump(Writer &) const {
+void BreakNode::dump(NodeDumper &) const {
 } // do nothing
 
 void BreakNode::accept(NodeVisitor *visitor) {
@@ -1398,7 +1398,7 @@ EvalStatus BreakNode::eval(RuntimeContext &) {
 // ##     ContinueNode     ##
 // ##########################
 
-void ContinueNode::dump(Writer &) const {
+void ContinueNode::dump(NodeDumper &) const {
 } // do nothing
 
 void ContinueNode::accept(NodeVisitor *visitor) {
@@ -1422,11 +1422,11 @@ void ExportEnvNode::setAttribute(FieldHandle *handle) {
     this->varIndex = handle->getFieldIndex();
 }
 
-void ExportEnvNode::dump(Writer &writer) const {
-    WRITE(envName);
-    WRITE_PTR(exprNode);
-    WRITE_PRIM(global);
-    WRITE_PRIM(varIndex);
+void ExportEnvNode::dump(NodeDumper &dumper) const {
+    DUMP(envName);
+    DUMP_PTR(exprNode);
+    DUMP_PRIM(global);
+    DUMP_PRIM(varIndex);
 }
 
 void ExportEnvNode::accept(NodeVisitor *visitor) {
@@ -1452,11 +1452,11 @@ void ImportEnvNode::setAttribute(FieldHandle *handle) {
     this->varIndex = handle->getFieldIndex();
 }
 
-void ImportEnvNode::dump(Writer &writer) const {
-    WRITE(envName);
-    WRITE_PTR(defaultValueNode);
-    WRITE_PRIM(global);
-    WRITE_PRIM(varIndex);
+void ImportEnvNode::dump(NodeDumper &dumper) const {
+    DUMP(envName);
+    DUMP_PTR(defaultValueNode);
+    DUMP_PRIM(global);
+    DUMP_PRIM(varIndex);
 }
 
 void ImportEnvNode::accept(NodeVisitor *visitor) {
@@ -1479,9 +1479,9 @@ TypeAliasNode::~TypeAliasNode() {
     delete this->targetTypeToken;
 }
 
-void TypeAliasNode::dump(Writer &writer) const {
-    WRITE(alias);
-    WRITE_PTR(targetTypeToken);
+void TypeAliasNode::dump(NodeDumper &dumper) const {
+    DUMP(alias);
+    DUMP_PTR(targetTypeToken);
 }
 
 void TypeAliasNode::accept(NodeVisitor *visitor) {
@@ -1520,11 +1520,11 @@ ForNode::~ForNode() {
     delete this->blockNode;
 }
 
-void ForNode::dump(Writer &writer) const {
-    WRITE_PTR(initNode);
-    WRITE_PTR(condNode);
-    WRITE_PTR(iterNode);
-    WRITE_PTR(blockNode);
+void ForNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(initNode);
+    DUMP_PTR(condNode);
+    DUMP_PTR(iterNode);
+    DUMP_PTR(blockNode);
 }
 
 void ForNode::accept(NodeVisitor *visitor) {
@@ -1562,9 +1562,9 @@ WhileNode::~WhileNode() {
     delete this->blockNode;
 }
 
-void WhileNode::dump(Writer &writer) const {
-    WRITE_PTR(condNode);
-    WRITE_PTR(blockNode);
+void WhileNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(condNode);
+    DUMP_PTR(blockNode);
 }
 
 void WhileNode::accept(NodeVisitor *visitor) {
@@ -1599,9 +1599,9 @@ DoWhileNode::~DoWhileNode() {
     delete this->condNode;
 }
 
-void DoWhileNode::dump(Writer &writer) const {
-    WRITE_PTR(blockNode);
-    WRITE_PTR(condNode);
+void DoWhileNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(blockNode);
+    DUMP_PTR(condNode);
 }
 
 void DoWhileNode::accept(NodeVisitor *visitor) {
@@ -1691,19 +1691,19 @@ BlockNode *IfNode::getElseNode() {
     return this->elseNode;
 }
 
-void IfNode::dump(Writer &writer) const {
-    WRITE_PTR(condNode);
-    WRITE_PTR(thenNode);
-    WRITE(elifCondNodes);
+void IfNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(condNode);
+    DUMP_PTR(thenNode);
+    DUMP(elifCondNodes);
 
     std::vector<Node *> elifThenNodes;
     for(BlockNode *elifThenNode : this->elifThenNodes) {
         elifThenNodes.push_back(elifThenNode);
     }
-    WRITE(elifThenNodes);
+    DUMP(elifThenNodes);
 
-    WRITE_PTR(elseNode);
-    WRITE_PRIM(terminal);
+    DUMP_PTR(elseNode);
+    DUMP_PRIM(terminal);
 }
 
 void IfNode::accept(NodeVisitor *visitor) {
@@ -1743,8 +1743,8 @@ ReturnNode::~ReturnNode() {
     delete this->exprNode;
 }
 
-void ReturnNode::dump(Writer &writer) const {
-    WRITE_PTR(exprNode);
+void ReturnNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(exprNode);
 }
 
 void ReturnNode::accept(NodeVisitor *visitor) {
@@ -1764,8 +1764,8 @@ ThrowNode::~ThrowNode() {
     delete this->exprNode;
 }
 
-void ThrowNode::dump(Writer &writer) const {
-    WRITE_PTR(exprNode);
+void ThrowNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(exprNode);
 }
 
 void ThrowNode::accept(NodeVisitor *visitor) {
@@ -1791,12 +1791,12 @@ void CatchNode::setAttribute(FieldHandle *handle) {
     this->varIndex = handle->getFieldIndex();
 }
 
-void CatchNode::dump(Writer &writer) const {
-    WRITE(exceptionName);
-    WRITE_PTR(typeToken);
-    WRITE_PTR(exceptionType);
-    WRITE_PTR(blockNode);
-    WRITE_PRIM(varIndex);
+void CatchNode::dump(NodeDumper &dumper) const {
+    DUMP(exceptionName);
+    DUMP_PTR(typeToken);
+    DUMP_PTR(exceptionType);
+    DUMP_PTR(blockNode);
+    DUMP_PRIM(varIndex);
 }
 
 void CatchNode::accept(NodeVisitor *visitor) {
@@ -1841,17 +1841,17 @@ BlockNode *TryNode::getFinallyNode() {
     return this->finallyNode;
 }
 
-void TryNode::dump(Writer &writer) const {
-    WRITE_PTR(blockNode);
+void TryNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(blockNode);
 
     std::vector<Node *> catchNodes;
     for(CatchNode *node : this->catchNodes) {
         catchNodes.push_back(node);
     }
-    WRITE(catchNodes);
+    DUMP(catchNodes);
 
-    WRITE_PTR(finallyNode);
-    WRITE_PRIM(terminal);
+    DUMP_PTR(finallyNode);
+    DUMP_PRIM(terminal);
 }
 
 void TryNode::accept(NodeVisitor *visitor) {
@@ -1901,12 +1901,12 @@ void VarDeclNode::setAttribute(FieldHandle *handle) {
     this->varIndex = handle->getFieldIndex();
 }
 
-void VarDeclNode::dump(Writer &writer) const {
-    WRITE(varName);
-    WRITE_PRIM(readOnly);
-    WRITE_PRIM(global);
-    WRITE_PRIM(varIndex);
-    WRITE_PTR(initValueNode);
+void VarDeclNode::dump(NodeDumper &dumper) const {
+    DUMP(varName);
+    DUMP_PRIM(readOnly);
+    DUMP_PRIM(global);
+    DUMP_PRIM(varIndex);
+    DUMP_PTR(initValueNode);
 }
 
 void VarDeclNode::accept(NodeVisitor *visitor) {
@@ -1932,9 +1932,9 @@ AssignNode::~AssignNode() {
     delete this->rightNode;
 }
 
-void AssignNode::dump(Writer &writer) const {
-    WRITE_PTR(leftNode);
-    WRITE_PTR(rightNode);
+void AssignNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(leftNode);
+    DUMP_PTR(rightNode);
 
 #define EACH_FLAG(OP, out, set) \
     OP(SELF_ASSIGN, out, set) \
@@ -1942,7 +1942,7 @@ void AssignNode::dump(Writer &writer) const {
 
     std::string value;
     DECODE_BITSET(value, this->attributeSet, EACH_FLAG);
-    writer.write(NAME(attributeSet), value);
+    dumper.dump(NAME(attributeSet), value);
 
 #undef EACH_FLAG
 }
@@ -2043,12 +2043,12 @@ void ElementSelfAssignNode::setIndexType(DSType *type) {
     this->setterNode->refArgNodes()[0]->setType(type);
 }
 
-void ElementSelfAssignNode::dump(Writer &writer) const {
-    WRITE_PTR(recvNode);
-    WRITE_PTR(indexNode);
-    WRITE_PTR(getterNode);
-    WRITE_PTR(setterNode);
-    WRITE_PTR(binaryNode);
+void ElementSelfAssignNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(recvNode);
+    DUMP_PTR(indexNode);
+    DUMP_PTR(getterNode);
+    DUMP_PTR(setterNode);
+    DUMP_PTR(binaryNode);
 }
 
 void ElementSelfAssignNode::accept(NodeVisitor *visitor) {
@@ -2104,22 +2104,22 @@ const char *FunctionNode::getSourceName() {
     return this->sourceName;
 }
 
-void FunctionNode::dump(Writer &writer) const {
-    WRITE(funcName);
+void FunctionNode::dump(NodeDumper &dumper) const {
+    DUMP(funcName);
 
     std::vector<Node *> paramNodes;
     for(VarNode *node : this->paramNodes) {
         paramNodes.push_back(node);
     }
 
-    WRITE(paramNodes);
-    WRITE(paramTypeTokens);
-    WRITE_PTR(returnTypeToken);
-    WRITE_PTR(returnType);
-    WRITE_PTR(blockNode);
-    WRITE_PRIM(maxVarNum);
-    WRITE_PRIM(varIndex);
-    WRITE(sourceName);
+    DUMP(paramNodes);
+    DUMP(paramTypeTokens);
+    DUMP_PTR(returnTypeToken);
+    DUMP_PTR(returnType);
+    DUMP_PTR(blockNode);
+    DUMP_PRIM(maxVarNum);
+    DUMP_PRIM(varIndex);
+    DUMP(sourceName);
 }
 
 void FunctionNode::accept(NodeVisitor *visitor) {
@@ -2158,21 +2158,21 @@ void InterfaceNode::addFieldDecl(VarDeclNode *node, TypeToken *typeToken) {
     this->fieldTypeTokens.push_back(typeToken);
 }
 
-void InterfaceNode::dump(Writer &writer) const {
-    WRITE(interfaceName);
+void InterfaceNode::dump(NodeDumper &dumper) const {
+    DUMP(interfaceName);
 
     std::vector<Node *> methodDeclNodes;
     for(FunctionNode *funcNode : this->methodDeclNodes) {
         methodDeclNodes.push_back(funcNode);
     }
-    WRITE(methodDeclNodes);
+    DUMP(methodDeclNodes);
 
     std::vector<Node *> fieldDeclNodes;
     for(VarDeclNode *node : this->fieldDeclNodes) {
         fieldDeclNodes.push_back(node);
     }
-    WRITE(fieldDeclNodes);
-    WRITE(fieldTypeTokens);
+    DUMP(fieldDeclNodes);
+    DUMP(fieldTypeTokens);
 }
 
 void InterfaceNode::accept(NodeVisitor *visitor) {
@@ -2199,10 +2199,10 @@ const char *UserDefinedCmdNode::getSourceName() {
     return this->sourceName;
 }
 
-void UserDefinedCmdNode::dump(Writer &writer) const {
-    WRITE(commandName);
-    WRITE_PTR(blockNode);
-    WRITE_PRIM(maxVarNum);
+void UserDefinedCmdNode::dump(NodeDumper &dumper) const {
+    DUMP(commandName);
+    DUMP_PTR(blockNode);
+    DUMP_PRIM(maxVarNum);
 }
 
 void UserDefinedCmdNode::accept(NodeVisitor *visitor) {
@@ -2222,9 +2222,9 @@ void BindVarNode::setAttribute(FieldHandle *handle) {
     this->varIndex = handle->getFieldIndex();
 }
 
-void BindVarNode::dump(Writer &writer) const {
-    WRITE(varName);
-    WRITE_PRIM(varIndex);
+void BindVarNode::dump(NodeDumper &dumper) const {
+    DUMP(varName);
+    DUMP_PRIM(varIndex);
     //FIXME: value
 }
 
@@ -2241,7 +2241,7 @@ EvalStatus BindVarNode::eval(RuntimeContext &ctx) {
 // ##     EmptyNode     ##
 // #######################
 
-void EmptyNode::dump(Writer &) const {
+void EmptyNode::dump(NodeDumper &) const {
 } // do nothing
 
 void EmptyNode::accept(NodeVisitor *visitor) {
@@ -2256,7 +2256,7 @@ EvalStatus EmptyNode::eval(RuntimeContext &) {
 // ##     DummyNode     ##
 // #######################
 
-void DummyNode::dump(Writer &) const {
+void DummyNode::dump(NodeDumper &) const {
 } // do nothing
 
 void DummyNode::accept(NodeVisitor *visitor) {
@@ -2286,11 +2286,11 @@ void RootNode::addNode(Node *node) {
     this->nodeList.push_back(node);
 }
 
-void RootNode::dump(Writer &writer) const {
-    WRITE(nodeList);
-    WRITE(sourceName);
-    WRITE_PRIM(maxVarNum);
-    WRITE_PRIM(maxGVarNum);
+void RootNode::dump(NodeDumper &dumper) const {
+    DUMP(nodeList);
+    DUMP(sourceName);
+    DUMP_PRIM(maxVarNum);
+    DUMP_PRIM(maxGVarNum);
 }
 
 void RootNode::accept(NodeVisitor *visitor) {

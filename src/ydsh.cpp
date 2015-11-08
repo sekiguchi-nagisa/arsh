@@ -21,7 +21,7 @@
 #include "config.h"
 #include "embed.h"
 
-#include "ast/dump.h"
+#include "ast/NodeDumper.h"
 #include "parser/Lexer.h"
 #include "parser/Parser.h"
 #include "parser/TypeChecker.h"
@@ -170,7 +170,7 @@ unsigned int DSContext::eval(const char *sourceName, Lexer &lexer) {
 
         if(hasFlag(this->option, DS_OPTION_DUMP_UAST)) {
             std::cout << "### dump untyped AST ###" << std::endl;
-            dumpAST(std::cout, this->ctx.getPool(), rootNode);
+            NodeDumper::dump(std::cout, this->ctx.getPool(), rootNode);
             std::cout << std::endl;
         }
     } catch(const ParseError &e) {
@@ -185,7 +185,7 @@ unsigned int DSContext::eval(const char *sourceName, Lexer &lexer) {
 
         if(hasFlag(this->option, DS_OPTION_DUMP_AST)) {
             std::cout << "### dump typed AST ###" << std::endl;
-            dumpAST(std::cout, this->ctx.getPool(), rootNode);
+            NodeDumper::dump(std::cout, this->ctx.getPool(), rootNode);
             std::cout << std::endl;
         }
     } catch(const TypeCheckError &e) {

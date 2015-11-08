@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_DUMP_H
-#define YDSH_DUMP_H
+#ifndef YDSH_NODEDUMPER_H
+#define YDSH_NODEDUMPER_H
 
 #define NAME(f) #f
 
@@ -42,7 +42,7 @@ class Node;
 class TypeToken;
 class RootNode;
 
-class Writer {
+class NodeDumper {
 private:
     std::ostream &stream;
     TypePool &pool;
@@ -50,39 +50,46 @@ private:
     unsigned int indentLevel;
 
 public:
-    Writer(std::ostream &stream, core::TypePool &pool) :
+    NodeDumper(std::ostream &stream, core::TypePool &pool) :
             stream(stream), pool(pool), indentLevel(0) { }
 
-    ~Writer() = default;
+    ~NodeDumper() = default;
 
     /**
-     * write field
+     * dump field
      */
-    void write(const char *fieldName, const char *value);
+    void dump(const char *fieldName, const char *value);
 
-    void write(const char *fieldName, const std::string &value);
+    void dump(const char *fieldName, const std::string &value);
 
-    void write(const char *fieldName, const std::vector<Node *> &nodes);
+    void dump(const char *fieldName, const std::vector<Node *> &nodes);
 
-    void write(const char *fieldName, const std::list<Node *> &nodes);
+    void dump(const char *fieldName, const std::list<Node *> &nodes);
 
     /**
-     * write node with indent
+     * dump node with indent
      */
-    void write(const char *fieldName, const Node &node);
+    void dump(const char *fieldName, const Node &node);
 
-    void write(const char *fieldName, const TypeToken &tok);
+    void dump(const char *fieldName, const TypeToken &tok);
 
-    void write(const char *fieldName, const DSType &type);
+    void dump(const char *fieldName, const DSType &type);
 
-    void write(const char *fieldName, const std::vector<TypeToken *> &toks);
+    void dump(const char *fieldName, const std::vector<TypeToken *> &toks);
 
-    void writeNull(const char *fieldName);
+    void dumpNull(const char *fieldName);
 
     /**
-     * write node without indent
+     * dump node without indent
      */
-    void write(const Node &node);
+    void dump(const Node &node);
+
+    /**
+     * entry point
+     */
+    void operator()(const RootNode &rootNode);
+
+    static void dump(std::ostream &out, TypePool &pool, const RootNode &rootNode);
 
 private:
     void enterIndent();
@@ -96,21 +103,18 @@ private:
     void writeName(const char *fieldName);
 };
 
-// entry point
-void dumpAST(std::ostream &out, TypePool &pool, const RootNode &rootNode);
-
 } // namespace ast
 } // namespace ydsh
 
 // helper macro definition
-#define WRITE(field)  writer.write(NAME(field), field)
-#define WRITE_PRIM(field) writer.write(NAME(field), std::to_string(field))
-#define WRITE_PTR(field) \
+#define DUMP(field)  dumper.dump(NAME(field), field)
+#define DUMP_PRIM(field) dumper.dump(NAME(field), std::to_string(field))
+#define DUMP_PTR(field) \
     do {\
         if(field == nullptr) {\
-            writer.writeNull(NAME(field));\
+            dumper.dumpNull(NAME(field));\
         } else {\
-            writer.write(NAME(field), *field);\
+            dumper.dump(NAME(field), *field);\
         }\
     } while(false)
 
@@ -135,4 +139,4 @@ void dumpAST(std::ostream &out, TypePool &pool, const RootNode &rootNode);
     } while(false)
 
 
-#endif //YDSH_DUMP_H
+#endif //YDSH_NODEDUMPER_H

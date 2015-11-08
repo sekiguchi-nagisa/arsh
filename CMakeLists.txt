@@ -178,7 +178,7 @@ endif()
 
 set(YDSH_SRC
     src/ydsh.cpp
-    src/ast/dump.cpp
+    src/ast/NodeDumper.cpp
     src/ast/Node.cpp
     src/ast/TypeToken.cpp
     src/core/DSObject.cpp
