@@ -161,7 +161,7 @@ TypePool::TypePool() :
     this->dbusType = this->initBuiltinType("DBus", false, this->anyType, info_DBusType());
     this->busType = this->initBuiltinType("Bus", false, this->anyType, info_BusType());
     this->serviceType = this->initBuiltinType("Service", false, this->anyType, info_ServiceType());
-    this->dbusObjectType = this->initBuiltinType("DBusObject", false, this->proxyType, info_Dummy());
+    this->dbusObjectType = this->initBuiltinType("DBusObject", false, this->proxyType, info_DBusObjectType());
 
     this->errorType = this->initBuiltinType("Error", true, this->anyType, info_ErrorType());
     this->taskType = this->initBuiltinType("Task", false, this->anyType, info_Dummy());
