@@ -141,7 +141,7 @@ TypePool::TypePool() :
     /**
      * hidden from script.
      */
-    this->valueType = this->initBuiltinType("%Value%", true, this->variantType, info_Dummy());
+    this->valueType = this->initBuiltinType("Value%%", true, this->variantType, info_Dummy());
 
     this->byteType = this->initBuiltinType("Byte", false, this->valueType, info_ByteType());
     this->int16Type = this->initBuiltinType("Int16", false, this->valueType, info_Int16Type());
@@ -166,10 +166,10 @@ TypePool::TypePool() :
     this->errorType = this->initBuiltinType("Error", true, this->anyType, info_ErrorType());
     this->taskType = this->initBuiltinType("Task", false, this->anyType, info_Dummy());
     this->baseFuncType = this->initBuiltinType("Func", false, this->anyType, info_Dummy());
-    this->stringIterType = this->initBuiltinType("%StringIter%", false, this->anyType, info_StringIterType());
+    this->stringIterType = this->initBuiltinType("StringIter%%", false, this->anyType, info_StringIterType());
 
     // pseudo type for command type checking
-    this->procType = this->initBuiltinType("%Proc%", false, this->anyType, info_Dummy());
+    this->procType = this->initBuiltinType("Proc%%", false, this->anyType, info_Dummy());
 
     // register NativeFuncInfo to ErrorType
     ErrorType::registerFuncInfo(info_ErrorType().getInitInfo());
@@ -203,7 +203,7 @@ TypePool::TypePool() :
     this->registerDBusErrorTypes();
 
     // init internal status type
-    this->internalStatus = this->initBuiltinType("%internal status%", false, 0, info_Dummy());
+    this->internalStatus = this->initBuiltinType("internal status%%", false, 0, info_Dummy());
     this->shellExit = this->initBuiltinType("Shell Exit", false, this->internalStatus, info_Dummy());
     this->assertFail = this->initBuiltinType("Assertion Error", false, this->internalStatus, info_Dummy());
 

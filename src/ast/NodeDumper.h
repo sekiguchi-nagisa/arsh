@@ -94,11 +94,11 @@ public:
 private:
     void enterIndent();
 
-    void exitIndent();
+    void leaveIndent();
 
-    void writeIndent();
+    void indent();
 
-    void writeNodeHeader(const Node &node);
+    void dumpNodeHeader(const Node &node, bool inArray = false);
 
     void writeName(const char *fieldName);
 };

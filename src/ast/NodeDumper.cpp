@@ -19,8 +19,6 @@
 #include "NodeDumper.h"
 #include "../ast/Node.h"
 
-#define OUT (this->stream)
-
 namespace ydsh {
 namespace ast {
 
@@ -31,39 +29,65 @@ void NodeDumper::dump(const char *fieldName, const char *value) {
 
 void NodeDumper::dump(const char *fieldName, const std::string &value) {
     this->writeName(fieldName);
-    OUT << value << std::endl;
+
+    this->stream << '"';
+    for(char ch : value) {
+        bool escape = true;
+        switch(ch) {
+        case '\t':
+            ch = 't';
+            break;
+        case '\r':
+            ch = 'r';
+            break;
+        case '\n':
+            ch = 'n';
+            break;
+        case '"':
+            ch = '"';
+            break;
+        default:
+            escape = false;
+            break;
+        }
+        if(escape) {
+            this->stream << '\\';
+        }
+        this->stream << ch;
+    }
+    this->stream << '"' << std::endl;
 }
 
 void NodeDumper::dump(const char *fieldName, const std::vector<Node *> &nodes) {
     this->writeName(fieldName);
-    OUT << std::endl;
+    this->stream << std::endl;
 
     this->enterIndent();
     for(Node *node : nodes) {
-        this->writeIndent();
-        OUT << "- ";
-        this->writeNodeHeader(*node);
+        this->indent();
+        this->stream << "- ";
+        this->dumpNodeHeader(*node, true);
         this->enterIndent();
         node->dump(*this);
-        this->exitIndent();
+        this->leaveIndent();
     }
-    this->exitIndent();
+    this->leaveIndent();
 }
 
 void NodeDumper::dump(const char *fieldName, const std::list<Node *> &nodes) {
     this->writeName(fieldName);
-    OUT << std::endl;
+    this->stream << std::endl;
 
     this->enterIndent();
     for(Node *node : nodes) {
-        this->writeIndent();
-        OUT << "- ";
-        this->writeNodeHeader(*node);
+        this->indent();
+        this->stream << "- ";
+        this->dumpNodeHeader(*node, true);
         this->enterIndent();
         node->dump(*this);
-        this->exitIndent();
+        this->leaveIndent();
     }
-    this->exitIndent();
+    this->leaveIndent();
 }
 
 void NodeDumper::dump(const char *fieldName, const Node &node) {
@@ -71,43 +95,41 @@ void NodeDumper::dump(const char *fieldName, const Node &node) {
     this->writeName(fieldName);
 
     // write node body
-    OUT << std::endl;
+    this->stream << std::endl;
     this->enterIndent();
     this->dump(node);
-    this->exitIndent();
+    this->leaveIndent();
 }
 
 void NodeDumper::dump(const char *fieldName, const TypeToken &tok) {
     this->writeName(fieldName);
-    OUT << tok.toTokenText() << std::endl;
+    this->stream << tok.toTokenText() << std::endl;
 }
 
 void NodeDumper::dump(const char *fieldName, const DSType &type) {
     this->writeName(fieldName);
-    OUT << this->pool.getTypeName(type) << std::endl;
+    this->stream << this->pool.getTypeName(type) << std::endl;
 }
 
 void NodeDumper::dump(const char *fieldName, const std::vector<TypeToken *> &toks) {
     this->writeName(fieldName);
-    unsigned int size = toks.size();
-    for(unsigned int i = 0; i < size; i++) {
-        if(i > 0) {
-            OUT << ", ";
-        }
-        TypeToken *tok = toks[i];
-        OUT << (tok == nullptr ? "(null)" : tok->toTokenText());
+    this->stream << std::endl;
+    this->enterIndent();
+    for(auto t : toks) {
+        this->indent();
+        this->stream << "- " << (t == nullptr ? "" : t->toTokenText()) << std::endl;
     }
-    OUT << std::endl;
+    this->leaveIndent();
 }
 
 void NodeDumper::dumpNull(const char *fieldName) {
     this->writeName(fieldName);
-    OUT << "(null)" << std::endl;
+    this->stream << std::endl;
 }
 
 void NodeDumper::dump(const Node &node) {
-    this->writeIndent();
-    this->writeNodeHeader(node);
+    this->indent();
+    this->dumpNodeHeader(node);
     node.dump(*this);
 }
 
@@ -115,28 +137,39 @@ void NodeDumper::enterIndent() {
     this->indentLevel++;
 }
 
-void NodeDumper::exitIndent() {
+void NodeDumper::leaveIndent() {
     this->indentLevel--;
 }
 
-void NodeDumper::writeIndent() {
+void NodeDumper::indent() {
     for(unsigned int i = 0; i < this->indentLevel; i++) {
-        OUT << "  ";
+        this->stream << "  ";
     }
 }
 
-void NodeDumper::writeNodeHeader(const Node &node) {
+void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
     std::string className = misc::Demangle()(typeid(node));
     DSType *type = node.getType();
 
-    OUT << "@Node: " << className << " (lineNum: " << node.getLineNum()
-    << ", type: " << (type != nullptr ? this->pool.getTypeName(*type) : "(null)")
-    << ")" << std::endl;
+    this->stream << "<Node>: " << std::endl;
+    this->enterIndent();
+    if(inArray) {
+        this->enterIndent();
+    }
+
+    this->indent(); this->stream << "<typeid>: " << className << std::endl;
+    this->indent(); this->stream << "lineNum: " << node.getLineNum() << std::endl;
+    this->indent(); this->stream << "type: " <<
+            (type != nullptr ? this->pool.getTypeName(*type) : "") << std::endl;
+
+    this->leaveIndent();
+    if(inArray) {
+        this->leaveIndent();
+    }
 }
 
 void NodeDumper::writeName(const char *fieldName) {
-    this->writeIndent();
-    OUT << fieldName << ": ";
+    this->indent(); this->stream << fieldName << ": ";
 }
 
 void NodeDumper::operator()(const RootNode &rootNode) {
