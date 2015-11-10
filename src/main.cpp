@@ -27,9 +27,15 @@ using namespace ydsh;
 
 void exec_interactive(const char *progName, DSContext *ctx);
 
-static void loadRC(DSContext *ctx) {
-    std::string path(getenv("HOME"));
-    path += "/.ydshrc";
+static void loadRC(DSContext *ctx, const char *rcfile) {
+    std::string path;
+    if(rcfile != nullptr) {
+        path += rcfile;
+    } else {
+        path += getenv("HOME");
+        path += "/.ydshrc";
+    }
+
     FILE *fp = fopen(path.c_str(), "rb");
     if(fp == NULL) {
         return; // not read
@@ -111,10 +117,11 @@ static void segvHandler(int) {
     OP(VERSION,        "--version",           0, "show version and copyright") \
     OP(HELP,           "--help",              0, "show this help message") \
     OP(COMMAND,        "-c",                  argv::HAS_ARG | argv::IGNORE_REST, "evaluate argument") \
-    OP(NORC,           "--norc",              0, "not load ydshrc") \
+    OP(NORC,           "--norc",              0, "not load rc file (only available interactive mode)") \
     OP(EXEC,           "-e",                  argv::HAS_ARG | argv::IGNORE_REST, "execute builtin command (ignore some option)") \
     OP(STATUS_LOG,     "--status-log",        argv::HAS_ARG, "write execution status to specified file (ignored in interactive mode)") \
-    OP(FEATURE,        "--feature",           0, "show available features")
+    OP(FEATURE,        "--feature",           0, "show available features") \
+    OP(RC_FILE,        "--rcfile",            argv::HAS_ARG, "load specified rc file (only available interactive mode)")
 
 enum OptionKind {
 #define GEN_ENUM(E, S, F, D) E,
@@ -170,6 +177,7 @@ int main(int argc, char **argv) {
     const char *evalArg = nullptr;
     bool execBuiltin = false;
     bool userc = true;
+    const char *rcfile = nullptr;
 
     for(auto &cmdLine : cmdLines) {
         switch(cmdLine.first) {
@@ -215,6 +223,9 @@ int main(int argc, char **argv) {
         case FEATURE:
             showFeature(std::cout);
             return 0;
+        case RC_FILE:
+            rcfile = cmdLine.second;
+            break;
         }
     }
 
@@ -252,7 +263,7 @@ int main(int argc, char **argv) {
         std::cout << DSContext_getVersion() << std::endl;
         std::cout << DSContext_getCopyright() << std::endl;
         if(userc) {
-            loadRC(ctx);
+            loadRC(ctx, rcfile);
         }
 
         exec_interactive(argv[0], ctx);
