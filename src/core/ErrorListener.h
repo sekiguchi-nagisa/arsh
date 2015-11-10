@@ -30,13 +30,8 @@ namespace core {
 class DSValue;
 class TypePool;
 
-} // namespace core
-} // namespace ydsh
-
-
-namespace ydsh {
-
 using namespace ydsh::parser;
+
 
 struct ErrorListener {
     virtual ~ErrorListener() = default;
@@ -56,43 +51,28 @@ private:
 
 public:
     ProxyErrorListener() = default;
+
     ~ProxyErrorListener() = default;
 
     void handleParseError(Lexer &lexer,
-                          const std::string &sourceName, const ParseError &e) noexcept { // override
-        for(ErrorListener *l : this->listeners) {
-            l->handleParseError(lexer, sourceName, e);
-        }
-    }
+                          const std::string &sourceName, const ParseError &e) noexcept; // override
 
-    void handleTypeError(const std::string &sourceName, const TypeCheckError &e) noexcept {    // override
-        for(ErrorListener *l : this->listeners) {
-            l->handleTypeError(sourceName, e);
-        }
-    }
+    void handleTypeError(const std::string &sourceName, const TypeCheckError &e) noexcept;    // override
 
-    void handleRuntimeError(const TypePool &pool, const DSValue &raisedObj) noexcept {  // override
-        for(ErrorListener *l : this->listeners) {
-            l->handleRuntimeError(pool, raisedObj);
-        }
-    }
+    void handleRuntimeError(const TypePool &pool, const DSValue &raisedObj) noexcept;  // override
 
-    void addListener(ErrorListener * const listener) {
-        this->listeners.push_back(listener);
-    }
+    void addListener(ErrorListener *const listener);
 };
 
 
 class CommonErrorListener : public ErrorListener {
 private:
-    /**
-     *  not delete it.
-     */
-    std::ostream * const stream;
+    std::ostream &stream;
 
 public:
-    CommonErrorListener();
-    explicit CommonErrorListener(std::ostream &stream);
+    CommonErrorListener() : stream(std::cerr) { }
+
+    explicit CommonErrorListener(std::ostream &stream) : stream(stream) { }
 
     ~CommonErrorListener() = default;
 
@@ -117,6 +97,7 @@ private:
 
 public:
     ReportingListener() : lineNum(0), messageKind("") { }
+
     ~ReportingListener() = default;
 
     unsigned int getLineNum() const {
@@ -134,6 +115,7 @@ public:
     void handleRuntimeError(const TypePool &pool, const DSValue &raisedObj) noexcept;    // override
 };
 
+} // namespace core
 } // namespace ydsh
 
 #endif //YDSH_ERRORLISTENER_H

@@ -18,13 +18,11 @@
 #include "../misc/term.h"
 
 namespace ydsh {
+namespace core {
 
 // #################################
 // ##     CommonErrorListener     ##
 // #################################
-
-CommonErrorListener::CommonErrorListener() : CommonErrorListener(std::cerr) { }
-CommonErrorListener::CommonErrorListener(std::ostream &stream) : stream(&stream) { }
 
 static std::ostream &format(std::ostream &stream, const ParseError &e) {
 #define EACH_ERROR(E) \
@@ -52,27 +50,52 @@ static std::ostream &formatErrorLine(std::ostream &stream, Lexer &lexer, const T
     return stream;
 }
 
-#define STREAM (*this->stream)
-
 void CommonErrorListener::handleParseError(Lexer &lexer,
                                            const std::string &sourceName, const ParseError &e) noexcept {
-    STREAM << sourceName << ":" << e.getLineNum() << ":"
+    this->stream << sourceName << ":" << e.getLineNum() << ":"
     << misc::TermColor::Magenta << " [syntax error] " << misc::reset;
-    format(STREAM, e) << std::endl;
-    formatErrorLine(STREAM, lexer, e.getErrorToken()) << std::endl;
+    format(this->stream, e) << std::endl;
+    formatErrorLine(this->stream, lexer, e.getErrorToken()) << std::endl;
 }
 
 void CommonErrorListener::handleTypeError(const std::string &sourceName,
                                           const TypeCheckError &e) noexcept {
-    STREAM << sourceName << ":" << e.getLineNum() << ":"
+    this->stream << sourceName << ":" << e.getLineNum() << ":"
     << misc::TermColor::Magenta << " [semantic error] " << misc::reset
     << e.getMessage() << std::endl;
 }
 
-#undef STREAM
-
 void CommonErrorListener::handleRuntimeError(const TypePool &, const DSValue &) noexcept {
 }// do nothing
+
+
+// ################################
+// ##     ProxyErrorListener     ##
+// ################################
+
+void ProxyErrorListener::handleParseError(Lexer &lexer,
+                      const std::string &sourceName, const ParseError &e) noexcept {
+    for(ErrorListener *l : this->listeners) {
+        l->handleParseError(lexer, sourceName, e);
+    }
+}
+
+void ProxyErrorListener::handleTypeError(const std::string &sourceName, const TypeCheckError &e) noexcept {
+    for(ErrorListener *l : this->listeners) {
+        l->handleTypeError(sourceName, e);
+    }
+}
+
+void ProxyErrorListener::handleRuntimeError(const TypePool &pool, const DSValue &raisedObj) noexcept {
+    for(ErrorListener *l : this->listeners) {
+        l->handleRuntimeError(pool, raisedObj);
+    }
+}
+
+void ProxyErrorListener::addListener(ErrorListener *const listener) {
+    this->listeners.push_back(listener);
+}
+
 
 // ###############################
 // ##     ReportingListener     ##
@@ -118,4 +141,5 @@ void ReportingListener::handleRuntimeError(const TypePool &pool, const DSValue &
     }
 }
 
+} // namespace core
 } // namespace ydsh
