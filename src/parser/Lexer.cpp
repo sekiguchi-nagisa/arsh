@@ -213,15 +213,6 @@ std::string Lexer::toName(const Token &token) const {
     return name;
 }
 
-char Lexer::toInt8(const Token &token, int &status) const {
-    long value = this->toInt64(token, status);
-    if(value > INT8_MAX || value < INT8_MIN) {
-        status = 1;
-        return 0;
-    }
-    return (char) value;
-}
-
 unsigned char Lexer::toUint8(const Token &token, int &status) const {
     long value = this->toInt64(token, status);
     if(value > UINT8_MAX || value < 0) {

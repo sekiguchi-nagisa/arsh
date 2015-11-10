@@ -169,8 +169,6 @@ public:
     /**
      * if converted number is out of range, status is 1.
      */
-    char toInt8(const Token &token, int &status) const;
-
     unsigned char toUint8(const Token &token, int &status) const;
     short toInt16(const Token &token, int &status) const;
     unsigned short toUint16(const Token &token, int &status) const;
