@@ -79,8 +79,8 @@ void IntValueNode::dump(NodeDumper &dumper) const {
     }
 }
 
-void IntValueNode::accept(NodeVisitor *visitor) {
-    visitor->visitIntValueNode(this);
+void IntValueNode::accept(NodeVisitor &visitor) {
+    visitor.visitIntValueNode(*this);
 }
 
 EvalStatus IntValueNode::eval(RuntimeContext &ctx) {
@@ -108,8 +108,8 @@ void LongValueNode::dump(NodeDumper &dumper) const {
     }
 }
 
-void LongValueNode::accept(NodeVisitor *visitor) {
-    visitor->visitLongValueNode(this);
+void LongValueNode::accept(NodeVisitor &visitor) {
+    visitor.visitLongValueNode(*this);
 }
 
 EvalStatus LongValueNode::eval(RuntimeContext &ctx) {
@@ -137,8 +137,8 @@ void FloatValueNode::dump(NodeDumper &dumper) const {
     }
 }
 
-void FloatValueNode::accept(NodeVisitor *visitor) {
-    visitor->visitFloatValueNode(this);
+void FloatValueNode::accept(NodeVisitor &visitor) {
+    visitor.visitFloatValueNode(*this);
 }
 
 EvalStatus FloatValueNode::eval(RuntimeContext &ctx) {
@@ -167,8 +167,8 @@ void StringValueNode::dump(NodeDumper &dumper) const {
     }
 }
 
-void StringValueNode::accept(NodeVisitor *visitor) {
-    visitor->visitStringValueNode(this);
+void StringValueNode::accept(NodeVisitor &visitor) {
+    visitor.visitStringValueNode(*this);
 }
 
 EvalStatus StringValueNode::eval(RuntimeContext &ctx) {
@@ -180,8 +180,8 @@ EvalStatus StringValueNode::eval(RuntimeContext &ctx) {
 // ##     ObjectPathNode     ##
 // ############################
 
-void ObjectPathNode::accept(NodeVisitor *visitor) {
-    visitor->visitObjectPathNode(this);
+void ObjectPathNode::accept(NodeVisitor &visitor) {
+    visitor.visitObjectPathNode(*this);
 }
 
 // ############################
@@ -203,8 +203,8 @@ void StringExprNode::dump(NodeDumper &dumper) const {
     DUMP(nodes);
 }
 
-void StringExprNode::accept(NodeVisitor *visitor) {
-    visitor->visitStringExprNode(this);
+void StringExprNode::accept(NodeVisitor &visitor) {
+    visitor.visitStringExprNode(*this);
 }
 
 EvalStatus StringExprNode::eval(RuntimeContext &ctx) {
@@ -247,8 +247,8 @@ void ArrayNode::dump(NodeDumper &dumper) const {
     DUMP(nodes);
 }
 
-void ArrayNode::accept(NodeVisitor *visitor) {
-    visitor->visitArrayNode(this);
+void ArrayNode::accept(NodeVisitor &visitor) {
+    visitor.visitArrayNode(*this);
 }
 
 EvalStatus ArrayNode::eval(RuntimeContext &ctx) {
@@ -291,8 +291,8 @@ void MapNode::dump(NodeDumper &dumper) const {
     DUMP(valueNodes);
 }
 
-void MapNode::accept(NodeVisitor *visitor) {
-    visitor->visitMapNode(this);
+void MapNode::accept(NodeVisitor &visitor) {
+    visitor.visitMapNode(*this);
 }
 
 EvalStatus MapNode::eval(RuntimeContext &ctx) {
@@ -333,8 +333,8 @@ void TupleNode::dump(NodeDumper &dumper) const {
     DUMP(nodes);
 }
 
-void TupleNode::accept(NodeVisitor *visitor) {
-    visitor->visitTupleNode(this);
+void TupleNode::accept(NodeVisitor &visitor) {
+    visitor.visitTupleNode(*this);
 }
 
 EvalStatus TupleNode::eval(RuntimeContext &ctx) {
@@ -377,8 +377,8 @@ void VarNode::dump(NodeDumper &dumper) const {
     AssignableNode::dump(dumper);
 }
 
-void VarNode::accept(NodeVisitor *visitor) {
-    visitor->visitVarNode(this);
+void VarNode::accept(NodeVisitor &visitor) {
+    visitor.visitVarNode(*this);
 }
 
 EvalStatus VarNode::eval(RuntimeContext &ctx) {
@@ -417,8 +417,8 @@ void AccessNode::dump(NodeDumper &dumper) const {
 #undef EACH_ENUM
 }
 
-void AccessNode::accept(NodeVisitor *visitor) {
-    visitor->visitAccessNode(this);
+void AccessNode::accept(NodeVisitor &visitor) {
+    visitor.visitAccessNode(*this);
 }
 
 EvalStatus AccessNode::eval(RuntimeContext &ctx) {
@@ -520,8 +520,8 @@ void CastNode::dump(NodeDumper &dumper) const {
 #undef EACH_ENUM
 }
 
-void CastNode::accept(NodeVisitor *visitor) {
-    visitor->visitCastNode(this);
+void CastNode::accept(NodeVisitor &visitor) {
+    visitor.visitCastNode(*this);
 }
 
 EvalStatus CastNode::eval(RuntimeContext &ctx) {
@@ -645,8 +645,8 @@ void InstanceOfNode::dump(NodeDumper &dumper) const {
 #undef EACH_ENUM
 }
 
-void InstanceOfNode::accept(NodeVisitor *visitor) {
-    visitor->visitInstanceOfNode(this);
+void InstanceOfNode::accept(NodeVisitor &visitor) {
+    visitor.visitInstanceOfNode(*this);
 }
 
 EvalStatus InstanceOfNode::eval(RuntimeContext &ctx) {
@@ -685,8 +685,8 @@ void ApplyNode::dump(NodeDumper &dumper) const {
     DUMP(argNodes);
 }
 
-void ApplyNode::accept(NodeVisitor *visitor) {
-    visitor->visitApplyNode(this);
+void ApplyNode::accept(NodeVisitor &visitor) {
+    visitor.visitApplyNode(*this);
 }
 
 /**
@@ -742,8 +742,8 @@ void MethodCallNode::dump(NodeDumper &dumper) const {
 #undef EACH_FLAG
 }
 
-void MethodCallNode::accept(NodeVisitor *visitor) {
-    visitor->visitMethodCallNode(this);
+void MethodCallNode::accept(NodeVisitor &visitor) {
+    visitor.visitMethodCallNode(*this);
 }
 
 EvalStatus MethodCallNode::eval(RuntimeContext &ctx) {
@@ -774,8 +774,8 @@ void NewNode::dump(NodeDumper &dumper) const {
     DUMP(argNodes);
 }
 
-void NewNode::accept(NodeVisitor *visitor) {
-    visitor->visitNewNode(this);
+void NewNode::accept(NodeVisitor &visitor) {
+    visitor.visitNewNode(*this);
 }
 
 EvalStatus NewNode::eval(RuntimeContext &ctx) {
@@ -816,8 +816,8 @@ void UnaryOpNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(methodCallNode);
 }
 
-void UnaryOpNode::accept(NodeVisitor *visitor) {
-    visitor->visitUnaryOpNode(this);
+void UnaryOpNode::accept(NodeVisitor &visitor) {
+    visitor.visitUnaryOpNode(*this);
 }
 
 EvalStatus UnaryOpNode::eval(RuntimeContext &ctx) {
@@ -853,8 +853,8 @@ void BinaryOpNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(methodCallNode);
 }
 
-void BinaryOpNode::accept(NodeVisitor *visitor) {
-    visitor->visitBinaryOpNode(this);
+void BinaryOpNode::accept(NodeVisitor &visitor) {
+    visitor.visitBinaryOpNode(*this);
 }
 
 EvalStatus BinaryOpNode::eval(RuntimeContext &ctx) {
@@ -873,8 +873,8 @@ void GroupNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
 }
 
-void GroupNode::accept(NodeVisitor *visitor) {
-    visitor->visitGroupNode(this);
+void GroupNode::accept(NodeVisitor &visitor) {
+    visitor.visitGroupNode(*this);
 }
 
 EvalStatus GroupNode::eval(RuntimeContext &ctx) {
@@ -903,8 +903,8 @@ void CondOpNode::dump(NodeDumper &dumper) const {
     DUMP_PRIM(andOp);
 }
 
-void CondOpNode::accept(NodeVisitor *visitor) {
-    visitor->visitCondOpNode(this);
+void CondOpNode::accept(NodeVisitor &visitor) {
+    visitor.visitCondOpNode(*this);
 }
 
 EvalStatus CondOpNode::eval(RuntimeContext &ctx) {
@@ -948,8 +948,8 @@ void CmdArgNode::dump(NodeDumper &dumper) const {
     DUMP(segmentNodes);
 }
 
-void CmdArgNode::accept(NodeVisitor *visitor) {
-    visitor->visitCmdArgNode(this);
+void CmdArgNode::accept(NodeVisitor &visitor) {
+    visitor.visitCmdArgNode(*this);
 }
 
 EvalStatus CmdArgNode::eval(RuntimeContext &ctx) {
@@ -1021,8 +1021,8 @@ void RedirNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(targetNode);
 }
 
-void RedirNode::accept(NodeVisitor *visitor) {
-    visitor->visitRedirNode(this);
+void RedirNode::accept(NodeVisitor &visitor) {
+    visitor.visitRedirNode(*this);
 }
 
 EvalStatus RedirNode::eval(RuntimeContext &ctx) {
@@ -1042,8 +1042,8 @@ void TildeNode::dump(NodeDumper &dumper) const {
     DUMP(value);
 }
 
-void TildeNode::accept(NodeVisitor *visitor) {
-    visitor->visitTildeNode(this);
+void TildeNode::accept(NodeVisitor &visitor) {
+    visitor.visitTildeNode(*this);
 }
 
 std::string TildeNode::expand(bool isLastSegment) {
@@ -1087,8 +1087,8 @@ void CmdNode::dump(NodeDumper &dumper) const {
     DUMP(argNodes);
 }
 
-void CmdNode::accept(NodeVisitor *visitor) {
-    visitor->visitCmdNode(this);
+void CmdNode::accept(NodeVisitor &visitor) {
+    visitor.visitCmdNode(*this);
 }
 
 EvalStatus CmdNode::eval(RuntimeContext &ctx) {
@@ -1129,8 +1129,8 @@ void PipedCmdNode::dump(NodeDumper &dumper) const {
     DUMP(cmdNodes);
 }
 
-void PipedCmdNode::accept(NodeVisitor *visitor) {
-    visitor->visitPipedCmdNode(this);
+void PipedCmdNode::accept(NodeVisitor &visitor) {
+    visitor.visitPipedCmdNode(*this);
 }
 
 EvalStatus PipedCmdNode::eval(RuntimeContext &ctx) {
@@ -1209,8 +1209,8 @@ void CmdContextNode::dump(NodeDumper &dumper) const {
 #undef EACH_FLAG
 }
 
-void CmdContextNode::accept(NodeVisitor *visitor) {
-    visitor->visitCmdContextNode(this);
+void CmdContextNode::accept(NodeVisitor &visitor) {
+    visitor.visitCmdContextNode(*this);
 }
 
 EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
@@ -1327,8 +1327,8 @@ void AssertNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(condNode);
 }
 
-void AssertNode::accept(NodeVisitor *visitor) {
-    visitor->visitAssertNode(this);
+void AssertNode::accept(NodeVisitor &visitor) {
+    visitor.visitAssertNode(*this);
 }
 
 EvalStatus AssertNode::eval(RuntimeContext &ctx) {
@@ -1365,8 +1365,8 @@ void BlockNode::dump(NodeDumper &dumper) const {
     DUMP(nodeList);
 }
 
-void BlockNode::accept(NodeVisitor *visitor) {
-    visitor->visitBlockNode(this);
+void BlockNode::accept(NodeVisitor &visitor) {
+    visitor.visitBlockNode(*this);
 }
 
 EvalStatus BlockNode::eval(RuntimeContext &ctx) {
@@ -1386,8 +1386,8 @@ EvalStatus BlockNode::eval(RuntimeContext &ctx) {
 void BreakNode::dump(NodeDumper &) const {
 } // do nothing
 
-void BreakNode::accept(NodeVisitor *visitor) {
-    visitor->visitBreakNode(this);
+void BreakNode::accept(NodeVisitor &visitor) {
+    visitor.visitBreakNode(*this);
 }
 
 EvalStatus BreakNode::eval(RuntimeContext &) {
@@ -1401,8 +1401,8 @@ EvalStatus BreakNode::eval(RuntimeContext &) {
 void ContinueNode::dump(NodeDumper &) const {
 } // do nothing
 
-void ContinueNode::accept(NodeVisitor *visitor) {
-    visitor->visitContinueNode(this);
+void ContinueNode::accept(NodeVisitor &visitor) {
+    visitor.visitContinueNode(*this);
 }
 
 EvalStatus ContinueNode::eval(RuntimeContext &) {
@@ -1429,8 +1429,8 @@ void ExportEnvNode::dump(NodeDumper &dumper) const {
     DUMP_PRIM(varIndex);
 }
 
-void ExportEnvNode::accept(NodeVisitor *visitor) {
-    visitor->visitExportEnvNode(this);
+void ExportEnvNode::accept(NodeVisitor &visitor) {
+    visitor.visitExportEnvNode(*this);
 }
 
 EvalStatus ExportEnvNode::eval(RuntimeContext &ctx) {
@@ -1459,8 +1459,8 @@ void ImportEnvNode::dump(NodeDumper &dumper) const {
     DUMP_PRIM(varIndex);
 }
 
-void ImportEnvNode::accept(NodeVisitor *visitor) {
-    visitor->visitImportEnvNode(this);
+void ImportEnvNode::accept(NodeVisitor &visitor) {
+    visitor.visitImportEnvNode(*this);
 }
 
 EvalStatus ImportEnvNode::eval(RuntimeContext &ctx) {
@@ -1484,8 +1484,8 @@ void TypeAliasNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(targetTypeToken);
 }
 
-void TypeAliasNode::accept(NodeVisitor *visitor) {
-    visitor->visitTypeAliasNode(this);
+void TypeAliasNode::accept(NodeVisitor &visitor) {
+    visitor.visitTypeAliasNode(*this);
 }
 
 EvalStatus TypeAliasNode::eval(RuntimeContext &) {
@@ -1527,8 +1527,8 @@ void ForNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(blockNode);
 }
 
-void ForNode::accept(NodeVisitor *visitor) {
-    visitor->visitForNode(this);
+void ForNode::accept(NodeVisitor &visitor) {
+    visitor.visitForNode(*this);
 }
 
 EvalStatus ForNode::eval(RuntimeContext &ctx) {
@@ -1567,8 +1567,8 @@ void WhileNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(blockNode);
 }
 
-void WhileNode::accept(NodeVisitor *visitor) {
-    visitor->visitWhileNode(this);
+void WhileNode::accept(NodeVisitor &visitor) {
+    visitor.visitWhileNode(*this);
 }
 
 EvalStatus WhileNode::eval(RuntimeContext &ctx) {
@@ -1604,8 +1604,8 @@ void DoWhileNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(condNode);
 }
 
-void DoWhileNode::accept(NodeVisitor *visitor) {
-    visitor->visitDoWhileNode(this);
+void DoWhileNode::accept(NodeVisitor &visitor) {
+    visitor.visitDoWhileNode(*this);
 }
 
 EvalStatus DoWhileNode::eval(RuntimeContext &ctx) {
@@ -1706,8 +1706,8 @@ void IfNode::dump(NodeDumper &dumper) const {
     DUMP_PRIM(terminal);
 }
 
-void IfNode::accept(NodeVisitor *visitor) {
-    visitor->visitIfNode(this);
+void IfNode::accept(NodeVisitor &visitor) {
+    visitor.visitIfNode(*this);
 }
 
 EvalStatus IfNode::eval(RuntimeContext &ctx) {
@@ -1747,8 +1747,8 @@ void ReturnNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
 }
 
-void ReturnNode::accept(NodeVisitor *visitor) {
-    visitor->visitReturnNode(this);
+void ReturnNode::accept(NodeVisitor &visitor) {
+    visitor.visitReturnNode(*this);
 }
 
 EvalStatus ReturnNode::eval(RuntimeContext &ctx) {
@@ -1768,8 +1768,8 @@ void ThrowNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
 }
 
-void ThrowNode::accept(NodeVisitor *visitor) {
-    visitor->visitThrowNode(this);
+void ThrowNode::accept(NodeVisitor &visitor) {
+    visitor.visitThrowNode(*this);
 }
 
 EvalStatus ThrowNode::eval(RuntimeContext &ctx) {
@@ -1799,8 +1799,8 @@ void CatchNode::dump(NodeDumper &dumper) const {
     DUMP_PRIM(varIndex);
 }
 
-void CatchNode::accept(NodeVisitor *visitor) {
-    visitor->visitCatchNode(this);
+void CatchNode::accept(NodeVisitor &visitor) {
+    visitor.visitCatchNode(*this);
 }
 
 EvalStatus CatchNode::eval(RuntimeContext &ctx) {
@@ -1854,8 +1854,8 @@ void TryNode::dump(NodeDumper &dumper) const {
     DUMP_PRIM(terminal);
 }
 
-void TryNode::accept(NodeVisitor *visitor) {
-    visitor->visitTryNode(this);
+void TryNode::accept(NodeVisitor &visitor) {
+    visitor.visitTryNode(*this);
 }
 
 EvalStatus TryNode::eval(RuntimeContext &ctx) {
@@ -1909,8 +1909,8 @@ void VarDeclNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(initValueNode);
 }
 
-void VarDeclNode::accept(NodeVisitor *visitor) {
-    visitor->visitVarDeclNode(this);
+void VarDeclNode::accept(NodeVisitor &visitor) {
+    visitor.visitVarDeclNode(*this);
 }
 
 EvalStatus VarDeclNode::eval(RuntimeContext &ctx) {
@@ -1947,8 +1947,8 @@ void AssignNode::dump(NodeDumper &dumper) const {
 #undef EACH_FLAG
 }
 
-void AssignNode::accept(NodeVisitor *visitor) {
-    visitor->visitAssignNode(this);
+void AssignNode::accept(NodeVisitor &visitor) {
+    visitor.visitAssignNode(*this);
 }
 
 EvalStatus AssignNode::eval(RuntimeContext &ctx) {
@@ -2051,8 +2051,8 @@ void ElementSelfAssignNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(binaryNode);
 }
 
-void ElementSelfAssignNode::accept(NodeVisitor *visitor) {
-    visitor->visitElementSelfAssignNode(this);
+void ElementSelfAssignNode::accept(NodeVisitor &visitor) {
+    visitor.visitElementSelfAssignNode(*this);
 }
 
 EvalStatus ElementSelfAssignNode::eval(RuntimeContext &ctx) {
@@ -2122,8 +2122,8 @@ void FunctionNode::dump(NodeDumper &dumper) const {
     DUMP(sourceName);
 }
 
-void FunctionNode::accept(NodeVisitor *visitor) {
-    visitor->visitFunctionNode(this);
+void FunctionNode::accept(NodeVisitor &visitor) {
+    visitor.visitFunctionNode(*this);
 }
 
 EvalStatus FunctionNode::eval(RuntimeContext &ctx) {
@@ -2175,8 +2175,8 @@ void InterfaceNode::dump(NodeDumper &dumper) const {
     DUMP(fieldTypeTokens);
 }
 
-void InterfaceNode::accept(NodeVisitor *visitor) {
-    visitor->visitInterfaceNode(this);
+void InterfaceNode::accept(NodeVisitor &visitor) {
+    visitor.visitInterfaceNode(*this);
 }
 
 EvalStatus InterfaceNode::eval(RuntimeContext &) {
@@ -2205,8 +2205,8 @@ void UserDefinedCmdNode::dump(NodeDumper &dumper) const {
     DUMP_PRIM(maxVarNum);
 }
 
-void UserDefinedCmdNode::accept(NodeVisitor *visitor) {
-    visitor->visitUserDefinedCmdNode(this);
+void UserDefinedCmdNode::accept(NodeVisitor &visitor) {
+    visitor.visitUserDefinedCmdNode(*this);
 }
 
 EvalStatus UserDefinedCmdNode::eval(RuntimeContext &ctx) {
@@ -2228,8 +2228,8 @@ void BindVarNode::dump(NodeDumper &dumper) const {
     //FIXME: value
 }
 
-void BindVarNode::accept(NodeVisitor *visitor) {
-    visitor->visitBindVarNode(this);
+void BindVarNode::accept(NodeVisitor &visitor) {
+    visitor.visitBindVarNode(*this);
 }
 
 EvalStatus BindVarNode::eval(RuntimeContext &ctx) {
@@ -2244,8 +2244,8 @@ EvalStatus BindVarNode::eval(RuntimeContext &ctx) {
 void EmptyNode::dump(NodeDumper &) const {
 } // do nothing
 
-void EmptyNode::accept(NodeVisitor *visitor) {
-    visitor->visitEmptyNode(this);
+void EmptyNode::accept(NodeVisitor &visitor) {
+    visitor.visitEmptyNode(*this);
 }
 
 EvalStatus EmptyNode::eval(RuntimeContext &) {
@@ -2259,8 +2259,8 @@ EvalStatus EmptyNode::eval(RuntimeContext &) {
 void DummyNode::dump(NodeDumper &) const {
 } // do nothing
 
-void DummyNode::accept(NodeVisitor *visitor) {
-    visitor->visitDummyNode(this);
+void DummyNode::accept(NodeVisitor &visitor) {
+    visitor.visitDummyNode(*this);
 }
 
 EvalStatus DummyNode::eval(RuntimeContext &) {
@@ -2293,8 +2293,8 @@ void RootNode::dump(NodeDumper &dumper) const {
     DUMP_PRIM(maxGVarNum);
 }
 
-void RootNode::accept(NodeVisitor *visitor) {
-    visitor->visitRootNode(this);
+void RootNode::accept(NodeVisitor &visitor) {
+    visitor.visitRootNode(*this);
 }
 
 EvalStatus RootNode::eval(RuntimeContext &ctx) {

@@ -52,7 +52,7 @@ public:
     ~PrettyPrinter() = default;
 
     std::vector<std::string> operator()(RootNode &rootNode) {
-        this->visitRootNode(&rootNode);
+        this->visitRootNode(rootNode);
         return std::move(this->out);
     }
 
@@ -72,66 +72,66 @@ public:
         this->append(")");
     }
 
-    void visitDefault(Node *) { // override
+    void visitDefault(Node &) { // override
         fatal("unsupported\n");
     }
 
-    void visitIntValueNode(IntValueNode *node) {    // override
-        this->append(std::to_string(node->getTempValue()));
+    void visitIntValueNode(IntValueNode &node) {    // override
+        this->append(std::to_string(node.getTempValue()));
     }
 
-    void visitCastNode(CastNode *node) {    // override
+    void visitCastNode(CastNode &node) {    // override
         this->open();
-        this->visit(node->getExprNode());
+        this->visit(*node.getExprNode());
         this->append("as");
-        this->append(node->getTargetTypeToken()->toTokenText());
+        this->append(node.getTargetTypeToken()->toTokenText());
         this->close();
     }
 
-    void visitInstanceOfNode(InstanceOfNode *node) {    // override
+    void visitInstanceOfNode(InstanceOfNode &node) {    // override
         this->open();
-        this->visit(node->getTargetNode());
+        this->visit(*node.getTargetNode());
         this->append("is");
-        this->append(node->getTargetTypeToken()->toTokenText());
+        this->append(node.getTargetTypeToken()->toTokenText());
         this->close();
     }
 
-    void visitBinaryOpNode(BinaryOpNode *node) {    // override
+    void visitBinaryOpNode(BinaryOpNode &node) {    // override
         this->open();
-        this->visit(node->getLeftNode());
-        this->append(TO_NAME(node->getOp()));
-        this->visit(node->getRightNode());
+        this->visit(*node.getLeftNode());
+        this->append(TO_NAME(node.getOp()));
+        this->visit(*node.getRightNode());
         this->close();
     }
 
-    void visitGroupNode(GroupNode *node) {    // override
+    void visitGroupNode(GroupNode &node) {    // override
         this->open();
-        this->visit(node->getExprNode());
+        this->visit(*node.getExprNode());
         this->close();
     }
 
-    void visitCondOpNode(CondOpNode *node) {    // override
+    void visitCondOpNode(CondOpNode &node) {    // override
         this->open();
-        this->visit(node->getLeftNode());
-        this->append(node->isAndOp() ? "&&" : "||");
-        this->visit(node->getRightNode());
+        this->visit(*node.getLeftNode());
+        this->append(node.isAndOp() ? "&&" : "||");
+        this->visit(*node.getRightNode());
         this->close();
     }
 
-    void visitAssignNode(AssignNode *node) {    // override
+    void visitAssignNode(AssignNode &node) {    // override
         this->open();
-        this->visit(node->getLeftNode());
+        this->visit(*node.getLeftNode());
         this->append("=");
-        this->visit(node->getRightNode());
+        this->visit(*node.getRightNode());
         this->close();
     }
 
-    void visitRootNode(RootNode *node) {    // override
-        if(node->getNodeList().size() != 1) {
+    void visitRootNode(RootNode &node) {    // override
+        if(node.getNodeList().size() != 1) {
             fatal("must be 1\n");
         }
 
-        this->visit(node->getNodeList().front());
+        this->visit(*node.getNodeList().front());
     }
 };
 
