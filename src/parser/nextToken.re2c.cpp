@@ -304,7 +304,7 @@ void Lexer::nextToken(Token &token) {
     goto RET;
 
     EOS:
-    token.lineNum = n;
+    token.lineNum = n - 1;
     token.kind = EOS;
     token.startPos = this->limit - this->buf;
     token.size = 0;
