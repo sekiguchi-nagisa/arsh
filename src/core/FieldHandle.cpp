@@ -27,7 +27,7 @@ namespace core {
 // ##     FieldHandle     ##
 // #########################
 
-DSType *FieldHandle::getFieldType(TypePool *) {
+DSType *FieldHandle::getFieldType(TypePool &) {
     return this->fieldType;
 }
 
@@ -63,14 +63,14 @@ std::string FieldHandle::toString() const {
 // ##     FunctionHandle     ##
 // ############################
 
-DSType *FunctionHandle::getFieldType(TypePool *typePool) {
+DSType *FunctionHandle::getFieldType(TypePool &typePool) {
     if(this->fieldType == nullptr) {
-        this->fieldType = typePool->createAndGetFuncTypeIfUndefined(this->returnType, std::move(this->paramTypes));
+        this->fieldType = typePool.createAndGetFuncTypeIfUndefined(this->returnType, std::move(this->paramTypes));
     }
     return this->fieldType;
 }
 
-FunctionType *FunctionHandle::getFuncType(TypePool *typePool) {
+FunctionType *FunctionHandle::getFuncType(TypePool &typePool) {
     return static_cast<FunctionType *>(this->getFieldType(typePool));
 }
 
@@ -98,29 +98,29 @@ static inline unsigned int decodeNum(const char *&pos) {
     return (unsigned int) (*(pos++) - P_N0);
 }
 
-static DSType *decodeType(TypePool *typePool, const char *&pos,
+static DSType *decodeType(TypePool &typePool, const char *&pos,
                           const std::vector<DSType *> *types) {
     switch(*(pos++)) {
-#define GEN_CASE(ENUM) case ENUM: return typePool->get##ENUM##Type();
+#define GEN_CASE(ENUM) case ENUM: return typePool.get##ENUM##Type();
     EACH_HANDLE_INFO_TYPE(GEN_CASE)
 #undef GEN_CASE
     case Array: {
-        TypeTemplate *t = typePool->getArrayTemplate();
+        TypeTemplate *t = typePool.getArrayTemplate();
         unsigned int size = decodeNum(pos);
         assert(size == 1);
         std::vector<DSType *> elementTypes(size);
         elementTypes[0] = decodeType(typePool, pos, types);
-        return typePool->createAndGetReifiedTypeIfUndefined(t, std::move(elementTypes));
+        return typePool.createAndGetReifiedTypeIfUndefined(t, std::move(elementTypes));
     }
     case Map: {
-        TypeTemplate *t = typePool->getMapTemplate();
+        TypeTemplate *t = typePool.getMapTemplate();
         unsigned int size = decodeNum(pos);
         assert(size == 2);
         std::vector<DSType *> elementTypes(size);
         for(unsigned int i = 0; i < size; i++) {
             elementTypes[i] = decodeType(typePool, pos, types);
         }
-        return typePool->createAndGetReifiedTypeIfUndefined(t, std::move(elementTypes));
+        return typePool.createAndGetReifiedTypeIfUndefined(t, std::move(elementTypes));
     }
     case Tuple: {
         unsigned int size = decodeNum(pos);
@@ -130,13 +130,13 @@ static DSType *decodeType(TypePool *typePool, const char *&pos,
             for(unsigned int i = 0; i < size; i++) {
                 elementTypes[i] = (*types)[i];
             }
-            return typePool->createAndGetTupleTypeIfUndefined(std::move(elementTypes));
+            return typePool.createAndGetTupleTypeIfUndefined(std::move(elementTypes));
         } else {
             std::vector<DSType *> elementTypes(size);
             for(unsigned int i = 0; i < size; i++) {
                 elementTypes[i] = decodeType(typePool, pos, types);
             }
-            return typePool->createAndGetTupleTypeIfUndefined(std::move(elementTypes));
+            return typePool.createAndGetTupleTypeIfUndefined(std::move(elementTypes));
         }
     }
     case P_N0:
@@ -160,7 +160,7 @@ static DSType *decodeType(TypePool *typePool, const char *&pos,
     return 0;
 }
 
-void MethodHandle::init(TypePool *typePool, NativeFuncInfo &info,
+void MethodHandle::init(TypePool &typePool, NativeFuncInfo &info,
                         const std::vector<DSType *> *types) {
     // init return type
     const char *pos = info.handleInfo;

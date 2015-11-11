@@ -71,12 +71,17 @@ class TypeChecker : protected NodeVisitor {
 public:
     class TypeGenerator : public TypeTokenVisitor {
     private:
-        TypePool *pool;
+        TypePool &pool;
+
+        /**
+         * may be null
+         */
         TypeChecker *checker;
+
         DSType *type;
 
     public:
-        explicit TypeGenerator(TypePool *pool)
+        explicit TypeGenerator(TypePool &pool)
                 : pool(pool), checker(nullptr), type(nullptr) { }
 
         explicit TypeGenerator(TypeChecker *checker)
@@ -105,7 +110,7 @@ private:
     /**
      * for type lookup
      */
-    TypePool *typePool;
+    TypePool &typePool;
 
     SymbolTable &symbolTable;
     TypeGenerator typeGen;
@@ -144,8 +149,8 @@ public:
      */
     void recover(bool abortType = true);
 
-    static DSType *resolveInterface(TypePool *typePool, InterfaceNode *node);
-    static DSType *resolveInterface(TypePool *typePool, TypeGenerator &typeGen, InterfaceNode *node);
+    static DSType *resolveInterface(TypePool &typePool, InterfaceNode *node);
+    static DSType *resolveInterface(TypePool &typePool, TypeGenerator &typeGen, InterfaceNode *node);
 
 private:
     // base type check entry point

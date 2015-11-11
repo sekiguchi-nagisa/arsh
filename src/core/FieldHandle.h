@@ -65,7 +65,7 @@ public:
 
     virtual ~FieldHandle() = default;
 
-    virtual DSType *getFieldType(TypePool *typePool);
+    virtual DSType *getFieldType(TypePool &typePool);
 
     unsigned int getFieldIndex() const {
         return this->fieldIndex;
@@ -135,9 +135,9 @@ public:
 
     ~FunctionHandle() = default;
 
-    DSType *getFieldType(TypePool *typePool);   // override
+    DSType *getFieldType(TypePool &typePool);   // override
 
-    FunctionType *getFuncType(TypePool *typePool);
+    FunctionType *getFuncType(TypePool &typePool);
 
     DSType *getReturnType() const {
         return this->returnType;
@@ -201,7 +201,7 @@ public:
     /**
      * initialize internal types.
      */
-    void init(TypePool *typePool, NativeFuncInfo &info,
+    void init(TypePool &typePool, NativeFuncInfo &info,
               const std::vector<DSType *> *types = 0);
 
     /**

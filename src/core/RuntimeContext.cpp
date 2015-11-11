@@ -307,7 +307,7 @@ EvalStatus RuntimeContext::toString(unsigned int lineNum) {
 
     if(this->handle_STR == nullptr) {
         this->handle_STR = this->pool.getAnyType()->
-                lookupMethodHandle(&this->pool, methodName);
+                lookupMethodHandle(this->pool, methodName);
     }
     return this->callMethod(lineNum, methodName, this->handle_STR);
 }
@@ -318,7 +318,7 @@ void RuntimeContext::reportError() {
         static const std::string methodName("backtrace");
 
         if(this->handle_bt == nullptr) {
-            this->handle_bt = this->pool.getErrorType()->lookupMethodHandle(&this->pool, methodName);
+            this->handle_bt = this->pool.getErrorType()->lookupMethodHandle(this->pool, methodName);
         }
         this->loadThrownObject();
         this->callMethod(0, methodName, this->handle_bt);

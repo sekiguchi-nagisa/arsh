@@ -43,7 +43,7 @@ bool DSType::isBuiltinType() const {
     return false;
 }
 
-MethodHandle *DSType::getConstructorHandle(TypePool *) {
+MethodHandle *DSType::getConstructorHandle(TypePool &) {
     return nullptr;
 }
 
@@ -59,11 +59,11 @@ unsigned int DSType::getMethodSize() {
     return this->superType != nullptr ? this->superType->getMethodSize() : 0;
 }
 
-FieldHandle *DSType::lookupFieldHandle(TypePool *, const std::string &) {
+FieldHandle *DSType::lookupFieldHandle(TypePool &, const std::string &) {
     return nullptr;
 }
 
-MethodHandle *DSType::lookupMethodHandle(TypePool *, const std::string &) {
+MethodHandle *DSType::lookupMethodHandle(TypePool &, const std::string &) {
     return nullptr;
 }
 
@@ -86,7 +86,7 @@ void DSType::copyAllMethodRef(std::vector<MethodRef> &) {
 // ##     FunctionType     ##
 // ##########################
 
-MethodHandle *FunctionType::lookupMethodHandle(TypePool *typePool, const std::string &methodName) {
+MethodHandle *FunctionType::lookupMethodHandle(TypePool &typePool, const std::string &methodName) {
     return this->superType->lookupMethodHandle(typePool, methodName);
 }
 
@@ -150,7 +150,7 @@ BuiltinType::~BuiltinType() {
     }
 }
 
-MethodHandle *BuiltinType::getConstructorHandle(TypePool *typePool) {
+MethodHandle *BuiltinType::getConstructorHandle(TypePool &typePool) {
     if(this->constructorHandle == nullptr && this->info.constructorSize != 0) {
         this->constructorHandle = new MethodHandle(0);
         this->initMethodHandle(this->constructorHandle, typePool, this->info.getInitInfo());
@@ -163,7 +163,7 @@ const MethodRef *BuiltinType::getConstructor() {
     return &this->constructor;
 }
 
-MethodHandle *BuiltinType::lookupMethodHandle(TypePool *typePool, const std::string &methodName) {
+MethodHandle *BuiltinType::lookupMethodHandle(TypePool &typePool, const std::string &methodName) {
     auto iter = this->methodHandleMap.find(methodName);
     if(iter == this->methodHandleMap.end()) {
         return this->superType != nullptr ? this->superType->lookupMethodHandle(typePool, methodName) : 0;
@@ -214,7 +214,7 @@ void BuiltinType::copyAllMethodRef(std::vector<MethodRef> &methodTable) {
     }
 }
 
-void BuiltinType::initMethodHandle(MethodHandle *handle, TypePool *typePool, NativeFuncInfo &info) {
+void BuiltinType::initMethodHandle(MethodHandle *handle, TypePool &typePool, NativeFuncInfo &info) {
     handle->init(typePool, info);
 }
 
@@ -222,7 +222,7 @@ void BuiltinType::initMethodHandle(MethodHandle *handle, TypePool *typePool, Nat
 // ##     ReifiedType     ##
 // #########################
 
-void ReifiedType::initMethodHandle(MethodHandle *handle, TypePool *typePool, NativeFuncInfo &info) {
+void ReifiedType::initMethodHandle(MethodHandle *handle, TypePool &typePool, NativeFuncInfo &info) {
     handle->init(typePool, info, &this->elementTypes);
 }
 
@@ -250,7 +250,7 @@ TupleType::~TupleType() {
     }
 }
 
-MethodHandle *TupleType::getConstructorHandle(TypePool *typePool) {
+MethodHandle *TupleType::getConstructorHandle(TypePool &typePool) {
     if(this->elementTypes.size() == 1 && this->constructorHandle == nullptr) {
         this->constructorHandle = new MethodHandle(0);
         this->initMethodHandle(this->constructorHandle, typePool, this->info.getInitInfo());
@@ -263,7 +263,7 @@ unsigned int TupleType::getFieldSize() {
     return this->elementTypes.size();
 }
 
-FieldHandle *TupleType::lookupFieldHandle(TypePool *typePool, const std::string &fieldName) {
+FieldHandle *TupleType::lookupFieldHandle(TypePool &typePool, const std::string &fieldName) {
     auto iter = this->fieldHandleMap.find(fieldName);
     if(iter == this->fieldHandleMap.end()) {
         return this->superType->lookupFieldHandle(typePool, fieldName);
@@ -330,7 +330,7 @@ unsigned int InterfaceType::getMethodSize() {
     return this->superType->getMethodSize() + this->methodHandleMap.size();
 }
 
-FieldHandle *InterfaceType::lookupFieldHandle(TypePool *typePool, const std::string &fieldName) {
+FieldHandle *InterfaceType::lookupFieldHandle(TypePool &typePool, const std::string &fieldName) {
     auto iter = this->fieldHandleMap.find(fieldName);
     if(iter == this->fieldHandleMap.end()) {
         return this->superType->lookupFieldHandle(typePool, fieldName);
@@ -338,7 +338,7 @@ FieldHandle *InterfaceType::lookupFieldHandle(TypePool *typePool, const std::str
     return iter->second;
 }
 
-MethodHandle *InterfaceType::lookupMethodHandle(TypePool *typePool, const std::string &methodName) {
+MethodHandle *InterfaceType::lookupMethodHandle(TypePool &typePool, const std::string &methodName) {
     auto iter = this->methodHandleMap.find(methodName);
     if(iter == this->methodHandleMap.end()) {
         return this->superType->lookupMethodHandle(typePool, methodName);
@@ -367,7 +367,7 @@ ErrorType::~ErrorType() {
 NativeFuncInfo *ErrorType::funcInfo = nullptr;
 MethodRef ErrorType::initRef;
 
-MethodHandle *ErrorType::getConstructorHandle(TypePool *typePool) {
+MethodHandle *ErrorType::getConstructorHandle(TypePool &typePool) {
     if(this->constructorHandle == nullptr) {
         this->constructorHandle = new MethodHandle(0);
         this->constructorHandle->init(typePool, *funcInfo);
@@ -388,11 +388,11 @@ unsigned int ErrorType::getFieldSize() {
     return this->superType->getFieldSize();
 }
 
-FieldHandle *ErrorType::lookupFieldHandle(TypePool *typePool, const std::string &fieldName) {
+FieldHandle *ErrorType::lookupFieldHandle(TypePool &typePool, const std::string &fieldName) {
     return this->superType->lookupFieldHandle(typePool, fieldName);
 }
 
-MethodHandle *ErrorType::lookupMethodHandle(TypePool *typePool, const std::string &methodName) {
+MethodHandle *ErrorType::lookupMethodHandle(TypePool &typePool, const std::string &methodName) {
     return this->superType->lookupMethodHandle(typePool, methodName);
 }
 
