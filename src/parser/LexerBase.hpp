@@ -25,6 +25,7 @@
 #include <type_traits>
 
 #include "../misc/utf8.hpp"
+#include "../misc/noncopyable.h"
 
 namespace ydsh {
 namespace parser_base {
@@ -122,6 +123,8 @@ private:
             endOfFile(false), endOfString(false), zeroCopyBuf(false) { }
 
 public:
+    NON_COPYABLE(LexerBase);
+
     /**
      * FILE must be opened with binary mode.
      * insert newline if not terminated by it.
@@ -135,15 +138,11 @@ public:
      */
     explicit LexerBase(const char *src);
 
-    explicit LexerBase(const LexerBase &buffer) = delete;
-
     virtual ~LexerBase() {
         if(!this->zeroCopyBuf) {
             delete[] this->buf;
         }
     }
-
-    LexerBase &operator=(const LexerBase &o) = delete;
 
     /**
      * get current reading position.

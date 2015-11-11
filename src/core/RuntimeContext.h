@@ -55,7 +55,7 @@ enum class BuiltinVarOffset : unsigned int {
     /*POS_2, POS_3, POS_4, POS_5, POS_6, POS_7, POS_8, POS_9, */
 };
 
-class RuntimeContext : private misc::NonCopyable<RuntimeContext> {
+class RuntimeContext {
 private:
     TypePool pool;
     SymbolTable symbolTable;
@@ -167,6 +167,8 @@ private:
     static const char *typeDefDir;
 
 public:
+    NON_COPYABLE(RuntimeContext);
+
     RuntimeContext();
 
     ~RuntimeContext();

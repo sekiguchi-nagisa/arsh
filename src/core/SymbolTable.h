@@ -24,12 +24,14 @@
 namespace ydsh {
 namespace core {
 
-class Scope : private misc::NonCopyable<Scope> {
+class Scope {
 private:
     unsigned int curVarIndex;
     std::unordered_map<std::string, FieldHandle *> handleMap;
 
 public:
+    NON_COPYABLE(Scope);
+
     /**
      * equivalent to Scope(0)
      */
@@ -61,7 +63,7 @@ public:
     void deleteHandle(const std::string &symbolName);
 };
 
-class SymbolTable : private misc::NonCopyable<SymbolTable> {
+class SymbolTable {
 private:
     std::vector<std::string> handleCache;
 
@@ -76,6 +78,8 @@ private:
     std::vector<unsigned int> maxVarIndexStack;
 
 public:
+    NON_COPYABLE(SymbolTable);
+
     SymbolTable();
 
     ~SymbolTable();

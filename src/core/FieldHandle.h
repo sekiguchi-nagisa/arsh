@@ -22,6 +22,7 @@
 #include <unordered_map>
 
 #include "../misc/flag_util.hpp"
+#include "../misc/noncopyable.h"
 
 namespace ydsh {
 namespace core {
@@ -55,6 +56,8 @@ public:
     static constexpr flag8_t ENV         = 1 << 2;
     static constexpr flag8_t FUNC_HANDLE = 1 << 3;
     static constexpr flag8_t INTERFACE   = 1 << 4;
+
+    NON_COPYABLE(FieldHandle);
 
     FieldHandle(DSType *fieldType, unsigned int fieldIndex, bool readOnly) :
             fieldType(fieldType), fieldIndex(fieldIndex), attributeSet(0) {
@@ -166,6 +169,8 @@ protected:
     MethodHandle *next;
 
 public:
+    NON_COPYABLE(MethodHandle);
+
     explicit MethodHandle(int methodIndex) :
             methodIndex(methodIndex), attributeSet(),
             returnType(), recvType(), paramTypes(), next() { }

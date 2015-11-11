@@ -76,6 +76,8 @@ public:
     static constexpr flag8_t FUNC_TYPE  = 1 << 2;
     static constexpr flag8_t INTERFACE  = 1 << 3;
 
+    NON_COPYABLE(DSType);
+
     DSType(bool extendable, DSType *superType, bool isVoid = false);
 
     virtual ~DSType() = default;

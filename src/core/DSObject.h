@@ -48,6 +48,8 @@ protected:
     friend class DSValue;
 
 public:
+    NON_COPYABLE(DSObject);
+
     explicit DSObject(DSType *type) : type(type), refCount(0) { }
 
     virtual ~DSObject() = default;

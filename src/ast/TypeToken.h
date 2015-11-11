@@ -20,6 +20,8 @@
 #include <string>
 #include <vector>
 
+#include "../misc/noncopyable.h"
+
 namespace ydsh {
 namespace ast {
 
@@ -34,6 +36,8 @@ private:
     unsigned int lineNum;
 
 public:
+    NON_COPYABLE(TypeToken);
+
     explicit TypeToken(unsigned int lineNum) : lineNum(lineNum) { }
 
     virtual ~TypeToken() = default;

@@ -17,25 +17,10 @@
 #ifndef YDSH_NONCOPYABLE_HPP
 #define YDSH_NONCOPYABLE_HPP
 
-namespace ydsh {
-namespace misc {
 
-/**
- * for non-copyable class.
- * if define non-copyable class, inherit this class as private
- */
-template <typename Derived>
-class NonCopyable {
-protected:
-    NonCopyable() = default;
-    ~NonCopyable() = default;
+#define NON_COPYABLE(TypeName) \
+    TypeName(const TypeName &) = delete; \
+    TypeName &operator=(const TypeName &e) = delete
 
-private:
-    NonCopyable(const NonCopyable &o);
-    NonCopyable &operator=(const NonCopyable &o);
-};
-
-} // namespace misc
-} // namespace ydsh
 
 #endif //YDSH_NONCOPYABLE_HPP

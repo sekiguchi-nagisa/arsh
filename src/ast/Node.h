@@ -22,6 +22,7 @@
 #include <memory>
 
 #include "../misc/flag_util.hpp"
+#include "../misc/noncopyable.h"
 #include "../parser/TokenKind.h"
 #include "../core/DSObject.h"
 #include "TypeToken.h"
@@ -58,6 +59,8 @@ protected:
     DSType *type;
 
 public:
+    NON_COPYABLE(Node);
+
     explicit Node(unsigned int lineNum) :
             lineNum(lineNum), type() { }
 

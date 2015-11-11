@@ -22,7 +22,7 @@
 
 #include "DSObject.h"
 #include "../misc/hash.hpp"
-#include "../misc/NonCopyable.hpp"
+#include "../misc/noncopyable.h"
 
 namespace ydsh {
 namespace core {
@@ -55,7 +55,7 @@ enum RedirectOP : unsigned int {
  * for builtin command argument.
  * following variables are read-only.
  */
-struct BuiltinContext : private misc::NonCopyable<BuiltinContext> {
+struct BuiltinContext {
     /**
      * number of argv, exclude last element
      */
@@ -80,6 +80,8 @@ struct BuiltinContext : private misc::NonCopyable<BuiltinContext> {
      * copy file pointer
      */
     BuiltinContext(int offset, const BuiltinContext &bctx);
+
+    NON_COPYABLE(BuiltinContext);
 };
 
 // for error reporting
@@ -104,7 +106,7 @@ struct ChildError {
 };
 
 
-class ProcInvoker : private misc::NonCopyable<ProcInvoker> {
+class ProcInvoker {
 public:
     /**
      * return exit status.
@@ -162,6 +164,8 @@ private:
     std::vector<ProcContext> procCtxs;
 
 public:
+    NON_COPYABLE(ProcInvoker);
+
     ProcInvoker(RuntimeContext *ctx);
     ~ProcInvoker() = default;
 
