@@ -38,7 +38,7 @@ private:
     bool systemBus;
 
 public:
-    Bus_ObjectImpl(DSType *type, bool systemBus);
+    Bus_ObjectImpl(DSType &type, bool systemBus);
     ~Bus_ObjectImpl();
 
     /**
@@ -77,7 +77,7 @@ private:
     std::string uniqueName;
 
 public:
-    Service_ObjectImpl(DSType *type, const DSValue &bus,
+    Service_ObjectImpl(DSType &type, const DSValue &bus,
                        std::string &&serviceName, std::string &&uniqueName);
     ~Service_ObjectImpl() = default;
 
@@ -191,7 +191,7 @@ public:
     /**
      * objectPath must be String_Object
      */
-    DBusProxy_Object(DSType *type, const DSValue &srcObj, const DSValue &objectPath);
+    DBusProxy_Object(DSType &type, const DSValue &srcObj, const DSValue &objectPath);
 
     ~DBusProxy_Object() = default;
 

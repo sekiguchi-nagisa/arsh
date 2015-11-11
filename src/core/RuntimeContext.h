@@ -269,9 +269,9 @@ public:
     /**
      * for internal error reporting.
      */
-    void throwError(DSType *errorType, const char *message);
+    void throwError(DSType &errorType, const char *message);
 
-    void throwError(DSType *errorType, std::string &&message);
+    void throwError(DSType &errorType, std::string &&message);
 
     /**
      * convert errno to SystemError.

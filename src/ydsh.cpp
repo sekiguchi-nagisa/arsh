@@ -209,16 +209,16 @@ unsigned int DSContext::eval(const char *sourceName, Lexer &lexer) {
     if(s != EvalStatus::SUCCESS) {
         this->listener->handleRuntimeError(this->ctx.getPool(), this->ctx.getThrownObject());
 
-        DSType *thrownType = this->ctx.getThrownObject()->getType();
-        if(this->ctx.getPool().getInternalStatus()->isSameOrBaseTypeOf(thrownType)) {
-            if(*thrownType == *this->ctx.getPool().getShellExit()) {
+        DSType &thrownType = *this->ctx.getThrownObject()->getType();
+        if(this->ctx.getPool().getInternalStatus().isSameOrBaseTypeOf(thrownType)) {
+            if(thrownType == this->ctx.getPool().getShellExit()) {
                 if(hasFlag(this->option, DS_OPTION_TRACE_EXIT)) {
                     this->ctx.loadThrownObject();
                     typeAs<Error_Object>(this->ctx.pop())->printStackTrace(this->ctx);
                 }
                 return DS_STATUS_EXIT;
             }
-            if(*thrownType == *this->ctx.getPool().getAssertFail()) {
+            if(thrownType == this->ctx.getPool().getAssertFail()) {
                 this->ctx.loadThrownObject();
                 typeAs<Error_Object>(this->ctx.pop())->printStackTrace(this->ctx);
                 return DS_STATUS_ASSERTION_ERROR;
@@ -372,7 +372,7 @@ int DSContext_exec(DSContext *ctx, char *const argv[], DSStatus **status) {
     unsigned int s = DS_STATUS_SUCCESS;
     if(es != EvalStatus::SUCCESS) {
         DSType *thrownType = ctx->ctx.getThrownObject()->getType();
-        if(*thrownType == *ctx->ctx.getPool().getShellExit()) {
+        if(*thrownType == ctx->ctx.getPool().getShellExit()) {
             s = DS_STATUS_EXIT;
         }
     }

@@ -67,7 +67,7 @@ size_t DSObject::hash() {
 }
 
 bool DSObject::introspect(RuntimeContext &, DSType *targetType) {
-    return targetType->isSameOrBaseTypeOf(this->type);
+    return targetType->isSameOrBaseTypeOf(*this->type);
 }
 
 // ########################
@@ -75,16 +75,16 @@ bool DSObject::introspect(RuntimeContext &, DSType *targetType) {
 // ########################
 
 std::string Int_Object::toString(RuntimeContext &ctx) {
-    if(*this->type == *ctx.getPool().getUint32Type()) {
+    if(*this->type == ctx.getPool().getUint32Type()) {
         return std::to_string((unsigned int) this->value);
     }
-    if(*this->type == *ctx.getPool().getInt16Type()) {
+    if(*this->type == ctx.getPool().getInt16Type()) {
         return std::to_string((short) this->value);
     }
-    if(*this->type == *ctx.getPool().getUint16Type()) {
+    if(*this->type == ctx.getPool().getUint16Type()) {
         return std::to_string((unsigned short) this->value);
     }
-    if(*this->type == *ctx.getPool().getByteType()) {
+    if(*this->type == ctx.getPool().getByteType()) {
         return std::to_string((unsigned char) this->value);
     }
     return std::to_string(this->value);
@@ -103,7 +103,7 @@ size_t Int_Object::hash() {
 // #########################
 
 std::string Long_Object::toString(RuntimeContext &ctx) {
-    if(*this->type == *ctx.getPool().getUint64Type()) {
+    if(*this->type == ctx.getPool().getUint64Type()) {
         return std::to_string((unsigned long) this->value);
     }
     return std::to_string(this->value);
@@ -223,9 +223,9 @@ DSValue Array_Object::commandArg(RuntimeContext &ctx) {
         DSValue temp(e->commandArg(ctx));
 
         DSType *tempType = temp->getType();
-        if(*tempType == *ctx.getPool().getStringType()) {
+        if(*tempType == ctx.getPool().getStringType()) {
             typeAs<Array_Object>(result)->values.push_back(std::move(temp));
-        } else if(*tempType == *ctx.getPool().getStringArrayType()) {
+        } else if(*tempType == ctx.getPool().getStringArrayType()) {
             Array_Object *tempArray = typeAs<Array_Object>(temp);
             for(auto &tempValue : tempArray->values) {
                 typeAs<Array_Object>(result)->values.push_back(tempValue);
@@ -267,7 +267,7 @@ DSValue Map_Object::nextElement(RuntimeContext &ctx) {
     types[1] = this->iter->second->getType();
 
     DSValue entry(
-            new Tuple_Object(ctx.getPool().createAndGetTupleTypeIfUndefined(std::move(types))));
+            new Tuple_Object(ctx.getPool().createTupleType(std::move(types))));
     typeAs<Tuple_Object>(entry)->set(0, this->iter->first);
     typeAs<Tuple_Object>(entry)->set(1, this->iter->second);
     this->iter++;
@@ -350,9 +350,9 @@ DSValue Tuple_Object::commandArg(RuntimeContext &ctx) {
         DSValue temp(this->fieldTable[i]->commandArg(ctx));
 
         DSType *tempType = temp->getType();
-        if(*tempType == *ctx.getPool().getStringType()) {
+        if(*tempType == ctx.getPool().getStringType()) {
             typeAs<Array_Object>(result)->append(std::move(temp));
-        } else if(*tempType == *ctx.getPool().getStringArrayType()) {
+        } else if(*tempType == ctx.getPool().getStringArrayType()) {
             Array_Object *tempArray = typeAs<Array_Object>(temp);
             for(auto &tempValue : tempArray->getValues()) {
                 typeAs<Array_Object>(result)->append(tempValue);
@@ -407,13 +407,13 @@ const DSValue &Error_Object::getName(RuntimeContext &ctx) {
     return this->name;
 }
 
-DSValue Error_Object::newError(RuntimeContext &ctx, DSType *type, const DSValue &message) {
+DSValue Error_Object::newError(RuntimeContext &ctx, DSType &type, const DSValue &message) {
     auto obj = DSValue::create<Error_Object>(type, message);
     typeAs<Error_Object>(obj)->createStackTrace(ctx);
     return obj;
 }
 
-DSValue Error_Object::newError(RuntimeContext &ctx, DSType *type, DSValue &&message) {
+DSValue Error_Object::newError(RuntimeContext &ctx, DSType &type, DSValue &&message) {
     auto obj = DSValue::create<Error_Object>(type, std::move(message));
     typeAs<Error_Object>(obj)->createStackTrace(ctx);
     return obj;
@@ -527,7 +527,7 @@ DBus_Object *DBus_Object::newDBus_Object(TypePool *typePool) {
 // ##     Bus_Object     ##
 // ########################
 
-Bus_Object::Bus_Object(DSType *type) : DSObject(type) {
+Bus_Object::Bus_Object(DSType &type) : DSObject(type) {
 }
 
 bool Bus_Object::service(RuntimeContext &ctx, std::string &&) {
@@ -544,7 +544,7 @@ bool Bus_Object::listNames(RuntimeContext &ctx, bool) {
 // ##     Service_Object     ##
 // ############################
 
-Service_Object::Service_Object(DSType *type) : DSObject(type) {
+Service_Object::Service_Object(DSType &type) : DSObject(type) {
 }
 
 bool Service_Object::object(RuntimeContext &ctx, const DSValue &) {

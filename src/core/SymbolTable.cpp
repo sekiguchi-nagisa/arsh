@@ -77,8 +77,8 @@ FieldHandle *SymbolTable::lookupHandle(const std::string &symbolName) {
     return 0;
 }
 
-FieldHandle *SymbolTable::registerHandle(const std::string &symbolName, DSType *type, bool readOnly) {
-    FieldHandle *handle = new FieldHandle(type, this->scopes.back()->getCurVarIndex(), readOnly);
+FieldHandle *SymbolTable::registerHandle(const std::string &symbolName, DSType &type, bool readOnly) {
+    FieldHandle *handle = new FieldHandle(&type, this->scopes.back()->getCurVarIndex(), readOnly);
     if(!this->scopes.back()->addFieldHandle(symbolName, handle)) {
         delete handle;
         return nullptr;
@@ -90,10 +90,10 @@ FieldHandle *SymbolTable::registerHandle(const std::string &symbolName, DSType *
     return handle;
 }
 
-FunctionHandle *SymbolTable::registerFuncHandle(const std::string &funcName, DSType *returnType,
+FunctionHandle *SymbolTable::registerFuncHandle(const std::string &funcName, DSType &returnType,
                                                 const std::vector<DSType *> &paramTypes) {
     assert(this->inGlobalScope());
-    FunctionHandle *handle = new FunctionHandle(returnType, paramTypes, this->scopes.back()->getCurVarIndex());
+    FunctionHandle *handle = new FunctionHandle(&returnType, paramTypes, this->scopes.back()->getCurVarIndex());
     if(!this->scopes.back()->addFieldHandle(funcName, handle)) {
         delete handle;
         return nullptr;

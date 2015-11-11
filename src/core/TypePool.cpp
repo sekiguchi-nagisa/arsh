@@ -68,13 +68,13 @@ const std::string &TypeMap::getTypeName(const DSType &type) const {
     return *iter->second;
 }
 
-bool TypeMap::setAlias(std::string &&alias, DSType *targetType) {
+bool TypeMap::setAlias(std::string &&alias, DSType &targetType) {
     static const unsigned long tag = 1L << 63;
 
     /**
      * use tagged pointer to prevent double free.
      */
-    DSType *taggedPtr = (DSType *) (tag | (unsigned long) targetType);
+    DSType *taggedPtr = (DSType *) (tag | (unsigned long) &targetType);
     auto pair = this->typeMapImpl.insert(std::make_pair(std::move(alias), taggedPtr));
     this->typeCache.push_back(&pair.first->first);
     return pair.second;
@@ -190,7 +190,7 @@ TypePool::TypePool() :
     // init string array type(for command argument)
     std::vector<DSType *> types(1);
     types[0] = this->stringType;
-    this->stringArrayType = this->createAndGetReifiedTypeIfUndefined(this->arrayTemplate, std::move(types));
+    this->stringArrayType = &this->createReifiedType(this->getArrayTemplate(), std::move(types));
 
     // init some error type
     this->arithmeticErrorType = this->initErrorType("ArithmeticError", this->errorType);
@@ -218,32 +218,26 @@ TypePool::~TypePool() {
     this->templateMap.clear();
 }
 
-DSType *TypePool::getTypeAndThrowIfUndefined(const std::string &typeName) {
+DSType &TypePool::getTypeAndThrowIfUndefined(const std::string &typeName) {
     DSType *type = this->getType(typeName);
     if(type == 0) {
         E_UndefinedType(typeName);
     }
-    return type;
+    return *type;
 }
 
-TypeTemplate *TypePool::getTypeTemplate(const std::string &typeName) {
+const TypeTemplate &TypePool::getTypeTemplate(const std::string &typeName) {
     auto iter = this->templateMap.find(typeName);
     if(iter == this->templateMap.end()) {
         E_NotTemplate(typeName);
     }
-    return iter->second;
+    return *iter->second;
 }
 
-DSType *TypePool::createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate,
-                                                     std::vector<DSType *> &&elementTypes) {
-    if(this->tupleTemplate->getName() == typeTemplate->getName()) {
-        return this->createAndGetTupleTypeIfUndefined(std::move(elementTypes));
-    }
-
-    // check element type size
-    if(typeTemplate->getElementTypeSize() != elementTypes.size()) {
-        E_UnmatchElement(typeTemplate->getName(),
-                         std::to_string(typeTemplate->getElementTypeSize()), std::to_string(elementTypes.size()));
+DSType &TypePool::createReifiedType(const TypeTemplate &typeTemplate,
+                                    std::vector<DSType *> &&elementTypes) {
+    if(this->tupleTemplate->getName() == typeTemplate.getName()) {
+        return this->createTupleType(std::move(elementTypes));
     }
 
     // check each element type
@@ -253,13 +247,13 @@ DSType *TypePool::createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate,
     DSType *type = this->typeMap.getType(typeName);
     if(type == nullptr) {
         DSType *superType = this->asVariantType(elementTypes) ? this->variantType : this->anyType;
-        return this->typeMap.addType(std::move(typeName),
-                                     new ReifiedType(typeTemplate->getInfo(), superType, std::move(elementTypes)));
+        return *this->typeMap.addType(std::move(typeName),
+                                     new ReifiedType(typeTemplate.getInfo(), superType, std::move(elementTypes)));
     }
-    return type;
+    return *type;
 }
 
-DSType *TypePool::createAndGetTupleTypeIfUndefined(std::vector<DSType *> &&elementTypes) {
+DSType &TypePool::createTupleType(std::vector<DSType *> &&elementTypes) {
     this->checkElementTypes(elementTypes);
 
     if(elementTypes.size() == 0) {
@@ -270,51 +264,51 @@ DSType *TypePool::createAndGetTupleTypeIfUndefined(std::vector<DSType *> &&eleme
     DSType *type = this->typeMap.getType(typeName);
     if(type == nullptr) {
         DSType *superType = this->asVariantType(elementTypes) ? this->variantType : this->anyType;
-        return this->typeMap.addType(std::move(typeName),
+        return *this->typeMap.addType(std::move(typeName),
                                      new TupleType(this->tupleTemplate->getInfo(), superType, std::move(elementTypes)));
     }
-    return type;
+    return *type;
 }
 
-FunctionType *TypePool::createAndGetFuncTypeIfUndefined(DSType *returnType, std::vector<DSType *> &&paramTypes) {
+FunctionType &TypePool::createFuncType(DSType *returnType, std::vector<DSType *> &&paramTypes) {
     this->checkElementTypes(paramTypes);
 
     std::string typeName(toFunctionTypeName(returnType, paramTypes));
     DSType *type = this->typeMap.getType(typeName);
     if(type == nullptr) {
         FunctionType *funcType =
-                new FunctionType(this->getBaseFuncType(), returnType, std::move(paramTypes));
+                new FunctionType(&this->getBaseFuncType(), returnType, std::move(paramTypes));
         this->typeMap.addType(std::move(typeName), funcType);
-        return funcType;
+        return *funcType;
     }
     assert(type->isFuncType());
 
-    return static_cast<FunctionType *>(type);
+    return *static_cast<FunctionType *>(type);
 }
 
-InterfaceType *TypePool::createAndGetInterfaceTypeIfUndefined(const std::string &interfaceName) {
+InterfaceType &TypePool::createInterfaceType(const std::string &interfaceName) {
     DSType *type = this->typeMap.getType(interfaceName);
     if(type == nullptr) {
         InterfaceType *ifaceType = new InterfaceType(this->dbusObjectType);
         this->typeMap.addType(std::string(interfaceName), ifaceType);
-        return ifaceType;
+        return *ifaceType;
     }
     assert(type->isInterface());
 
-    return static_cast<InterfaceType *>(type);
+    return *static_cast<InterfaceType *>(type);
 }
 
-DSType *TypePool::createAndGetErrorTypeIfUndefined(const std::string &errorName, DSType *superType) {
+DSType &TypePool::createErrorType(const std::string &errorName, DSType &superType) {
     DSType *type = this->typeMap.getType(errorName);
     if(type == nullptr) {
-        DSType *errorType = new ErrorType(superType);
+        DSType *errorType = new ErrorType(&superType);
         this->typeMap.addType(std::string(errorName), errorType);
-        return errorType;
+        return *errorType;
     }
-    return type;
+    return *type;
 }
 
-DSType *TypePool::getDBusInterfaceType(const std::string &typeName) {
+DSType &TypePool::getDBusInterfaceType(const std::string &typeName) {
     DSType *type = this->typeMap.getType(typeName);
     if(type == nullptr) {
         // load dbus interface
@@ -331,16 +325,16 @@ DSType *TypePool::getDBusInterfaceType(const std::string &typeName) {
         if(ifaceNode == nullptr) {
             E_NoDBusInterface(typeName);
         }
-        return TypeChecker::resolveInterface(*this, ifaceNode);
+        return *TypeChecker::resolveInterface(*this, ifaceNode);
     }
-    return type;
+    return *type;
 }
 
-void TypePool::setAlias(const std::string &alias, DSType *targetType) {
+void TypePool::setAlias(const std::string &alias, DSType &targetType) {
     this->setAlias(alias.c_str(), targetType);
 }
 
-void TypePool::setAlias(const char *alias, DSType *targetType) {
+void TypePool::setAlias(const char *alias, DSType &targetType) {
     if(!this->typeMap.setAlias(std::string(alias), targetType)) {
         E_DefinedType(alias);
     }
@@ -350,8 +344,8 @@ const std::string &TypePool::getTypeName(const DSType &type) const {
     return this->typeMap.getTypeName(type);
 }
 
-std::string TypePool::toReifiedTypeName(TypeTemplate *typeTemplate, const std::vector<DSType *> &elementTypes) {
-    return this->toReifiedTypeName(typeTemplate->getName(), elementTypes);
+std::string TypePool::toReifiedTypeName(const TypeTemplate &typeTemplate, const std::vector<DSType *> &elementTypes) {
+    return this->toReifiedTypeName(typeTemplate.getName(), elementTypes);
 }
 
 std::string TypePool::toReifiedTypeName(const std::string &name, const std::vector<DSType *> &elementTypes) {
@@ -399,25 +393,25 @@ constexpr int TypePool::INT16_PRECISION;
 constexpr int TypePool::BYTE_PRECISION;
 constexpr int TypePool::INVALID_PRECISION;
 
-int TypePool::getIntPrecision(DSType *type) {
+int TypePool::getIntPrecision(const DSType &type) {
     if(this->precisionMap.empty()) {    // init precision map
         // int64, uint64
-        this->precisionMap.insert(std::make_pair((unsigned long) this->getInt64Type(), INT64_PRECISION));
-        this->precisionMap.insert(std::make_pair((unsigned long) this->getUint64Type(), INT64_PRECISION));
+        this->precisionMap.insert(std::make_pair((unsigned long) this->int64Type, INT64_PRECISION));
+        this->precisionMap.insert(std::make_pair((unsigned long) this->uint64Type, INT64_PRECISION));
 
         // int32, uint32
-        this->precisionMap.insert(std::make_pair((unsigned long) this->getInt32Type(), INT32_PRECISION));
-        this->precisionMap.insert(std::make_pair((unsigned long) this->getUint32Type(), INT32_PRECISION));
+        this->precisionMap.insert(std::make_pair((unsigned long) this->int32Type, INT32_PRECISION));
+        this->precisionMap.insert(std::make_pair((unsigned long) this->uint32Type, INT32_PRECISION));
 
         // int16, uint16
-        this->precisionMap.insert(std::make_pair((unsigned long) this->getInt16Type(), INT16_PRECISION));
-        this->precisionMap.insert(std::make_pair((unsigned long) this->getUint16Type(), INT16_PRECISION));
+        this->precisionMap.insert(std::make_pair((unsigned long) this->int16Type, INT16_PRECISION));
+        this->precisionMap.insert(std::make_pair((unsigned long) this->uint16Type, INT16_PRECISION));
 
         // byte
-        this->precisionMap.insert(std::make_pair((unsigned long) this->getByteType(), BYTE_PRECISION));
+        this->precisionMap.insert(std::make_pair((unsigned long) this->byteType, BYTE_PRECISION));
     }
 
-    auto iter = this->precisionMap.find((unsigned long) type);
+    auto iter = this->precisionMap.find((unsigned long) &type);
     if(iter == this->precisionMap.end()) {
         return INVALID_PRECISION;
     }
@@ -462,10 +456,16 @@ void TypePool::checkElementTypes(const std::vector<DSType *> &elementTypes) {
     }
 }
 
-void TypePool::checkElementTypes(TypeTemplate *t, const std::vector<DSType *> &elementTypes) {
-    unsigned int size = elementTypes.size();
+void TypePool::checkElementTypes(const TypeTemplate &t, const std::vector<DSType *> &elementTypes) {
+    const unsigned int size = elementTypes.size();
+
+    // check element type size
+    if(t.getElementTypeSize() != size) {
+        E_UnmatchElement(t.getName(), std::to_string(t.getElementTypeSize()), std::to_string(size));
+    }
+
     for(unsigned int i = 0; i < size; i++) {
-        if(!t->getAcceptableTypes()[i]->isSameOrBaseTypeOf(elementTypes[i])) {
+        if(!t.getAcceptableTypes()[i]->isSameOrBaseTypeOf(*elementTypes[i])) {
             E_InvalidElement(this->getTypeName(*elementTypes[i]));
         }
     }
@@ -473,7 +473,7 @@ void TypePool::checkElementTypes(TypeTemplate *t, const std::vector<DSType *> &e
 
 bool TypePool::asVariantType(const std::vector<DSType *> &elementTypes) {
     for(DSType *type : elementTypes) {
-        if(!this->variantType->isSameOrBaseTypeOf(type)) {
+        if(!this->variantType->isSameOrBaseTypeOf(*type)) {
             return false;
         }
     }
@@ -530,7 +530,7 @@ void TypePool::registerDBusErrorTypes() {
     OP("InconsistentMessage") \
     OP("InteractiveAuthorizationRequired")
 
-#define ADD_ERROR(E) this->setAlias(E, this->initErrorType("org.freedesktop.DBus.Error." E, this->dbusErrorType));
+#define ADD_ERROR(E) this->setAlias(E, *this->initErrorType("org.freedesktop.DBus.Error." E, this->dbusErrorType));
 
     EACH_DBUS_ERROR(ADD_ERROR)
 

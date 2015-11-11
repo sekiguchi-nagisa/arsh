@@ -37,8 +37,8 @@ namespace ast {
 // ##     Node     ##
 // ##################
 
-void Node::setType(DSType *type) {
-    this->type = type;
+void Node::setType(DSType &type) {
+    this->type = &type;
 }
 
 void Node::inStringExprNode() { } // do nothing
@@ -64,9 +64,9 @@ const char *Node::getSourceName() {
 // ##     IntValueNode     ##
 // ##########################
 
-void IntValueNode::setType(DSType *type) {
-    this->type = type;
-    this->value = DSValue::create<Int_Object>(this->type, this->tempValue);
+void IntValueNode::setType(DSType &type) {
+    this->type = &type;
+    this->value = DSValue::create<Int_Object>(*this->type, this->tempValue);
 }
 
 void IntValueNode::dump(NodeDumper &dumper) const {
@@ -92,9 +92,9 @@ EvalStatus IntValueNode::eval(RuntimeContext &ctx) {
 // ##     LongValueNode     ##
 // ###########################
 
-void LongValueNode::setType(DSType *type) {
-    this->type = type;
-    this->value = DSValue::create<Long_Object>(this->type, this->tempValue);
+void LongValueNode::setType(DSType &type) {
+    this->type = &type;
+    this->value = DSValue::create<Long_Object>(*this->type, this->tempValue);
 }
 
 void LongValueNode::dump(NodeDumper &dumper) const {
@@ -122,9 +122,9 @@ EvalStatus LongValueNode::eval(RuntimeContext &ctx) {
 // ##     FloatValueNode     ##
 // ############################
 
-void FloatValueNode::setType(DSType *type) {
-    this->type = type;
-    this->value = DSValue::create<Float_Object>(this->type, this->tempValue);
+void FloatValueNode::setType(DSType &type) {
+    this->type = &type;
+    this->value = DSValue::create<Float_Object>(*this->type, this->tempValue);
 }
 
 void FloatValueNode::dump(NodeDumper &dumper) const {
@@ -150,9 +150,9 @@ EvalStatus FloatValueNode::eval(RuntimeContext &ctx) {
 // ##     StringValueNode    ##
 // ############################
 
-void StringValueNode::setType(DSType *type) {
-    this->type = type;
-    this->value = DSValue::create<String_Object>(this->type, std::move(this->tempValue));
+void StringValueNode::setType(DSType &type) {
+    this->type = &type;
+    this->value = DSValue::create<String_Object>(*this->type, std::move(this->tempValue));
 }
 
 void StringValueNode::dump(NodeDumper &dumper) const {
@@ -210,7 +210,7 @@ void StringExprNode::accept(NodeVisitor &visitor) {
 EvalStatus StringExprNode::eval(RuntimeContext &ctx) {
     unsigned int size = this->nodes.size();
     if(size == 0) {
-        ctx.push(DSValue::create<String_Object>(this->type));
+        ctx.push(DSValue::create<String_Object>(*this->type));
     } else if(size == 1) {
         EVAL(ctx, this->nodes[0]);
     } else {
@@ -219,7 +219,7 @@ EvalStatus StringExprNode::eval(RuntimeContext &ctx) {
             EVAL(ctx, node);
             str += typeAs<String_Object>(ctx.pop())->getValue();
         }
-        ctx.push(DSValue::create<String_Object>(this->type, std::move(str)));
+        ctx.push(DSValue::create<String_Object>(*this->type, std::move(str)));
     }
     return EvalStatus::SUCCESS;
 }
@@ -252,7 +252,7 @@ void ArrayNode::accept(NodeVisitor &visitor) {
 }
 
 EvalStatus ArrayNode::eval(RuntimeContext &ctx) {
-    auto value = DSValue::create<Array_Object>(this->type);
+    auto value = DSValue::create<Array_Object>(*this->type);
     for(Node *node : this->nodes) {
         EVAL(ctx, node);
         typeAs<Array_Object>(value)->append(ctx.pop());
@@ -296,7 +296,7 @@ void MapNode::accept(NodeVisitor &visitor) {
 }
 
 EvalStatus MapNode::eval(RuntimeContext &ctx) {
-    auto map = DSValue::create<Map_Object>(this->type);
+    auto map = DSValue::create<Map_Object>(*this->type);
     unsigned int size = this->keyNodes.size();
     for(unsigned int i = 0; i < size; i++) {
         EVAL(ctx, this->keyNodes[i]);
@@ -339,7 +339,7 @@ void TupleNode::accept(NodeVisitor &visitor) {
 
 EvalStatus TupleNode::eval(RuntimeContext &ctx) {
     unsigned int size = this->nodes.size();
-    auto value = DSValue::create<Tuple_Object>(this->type);
+    auto value = DSValue::create<Tuple_Object>(*this->type);
     for(unsigned int i = 0; i < size; i++) {
         EVAL(ctx, this->nodes[i]);
         typeAs<Tuple_Object>(value)->set(i, ctx.pop());
@@ -427,7 +427,7 @@ EvalStatus AccessNode::eval(RuntimeContext &ctx) {
     switch(this->additionalOp) {
     case NOP: {
         if(this->withinInterface()) {
-            return ctx.loadField(this->recvNode->getType(), this->fieldName, this->type);
+            return ctx.loadField(&this->recvNode->getType(), this->fieldName, this->type);
         }
 
         ctx.loadField(this->getIndex());
@@ -438,7 +438,7 @@ EvalStatus AccessNode::eval(RuntimeContext &ctx) {
     }
     case DUP_RECV: {
         if(this->withinInterface()) {
-            return ctx.dupAndLoadField(this->recvNode->getType(), this->fieldName, this->type);
+            return ctx.dupAndLoadField(&this->recvNode->getType(), this->fieldName, this->type);
         }
 
         ctx.dupAndLoadField(this->getIndex());
@@ -536,68 +536,68 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
     case INT_TO_FLOAT: {
         int value = typeAs<Int_Object>(ctx.pop())->getValue();
         double afterValue = value;
-        if(*this->exprNode->getType() != *ctx.getPool().getInt32Type()) {
+        if(this->exprNode->getType() != ctx.getPool().getInt32Type()) {
             afterValue = (unsigned int) value;
         }
-        ctx.push(DSValue::create<Float_Object>(this->type, afterValue));
+        ctx.push(DSValue::create<Float_Object>(*this->type, afterValue));
         break;
     }
     case FLOAT_TO_INT: {
         double value = typeAs<Float_Object>(ctx.pop())->getValue();
         int afterValue = value;
-        if(*this->type == *ctx.getPool().getUint32Type()) {
+        if(*this->type == ctx.getPool().getUint32Type()) {
             unsigned int temp = value;
             afterValue = temp;
         }
-        ctx.push(DSValue::create<Int_Object>(this->type, afterValue));
+        ctx.push(DSValue::create<Int_Object>(*this->type, afterValue));
         break;
     }
     case INT_TO_LONG: {
         int value = typeAs<Int_Object>(ctx.pop())->getValue();
         long afterValue = (long) value;
-        if(*this->exprNode->getType() != *ctx.getPool().getInt32Type()) {
+        if(this->exprNode->getType() != ctx.getPool().getInt32Type()) {
             afterValue = (unsigned int) value;
         }
-        ctx.push(DSValue::create<Long_Object>(this->type, afterValue));
+        ctx.push(DSValue::create<Long_Object>(*this->type, afterValue));
         break;
     }
     case LONG_TO_INT: {
         long value = typeAs<Long_Object>(ctx.pop())->getValue();
         int afterValue = value;
-        if(*this->type == *ctx.getPool().getUint32Type()) {
+        if(*this->type == ctx.getPool().getUint32Type()) {
             unsigned int temp = value;
             afterValue = temp;
         }
-        ctx.push(DSValue::create<Int_Object>(this->type, afterValue));
+        ctx.push(DSValue::create<Int_Object>(*this->type, afterValue));
         break;
     }
     case LONG_TO_FLOAT: {
         long value = typeAs<Long_Object>(ctx.pop())->getValue();
         double afterValue = value;
-        if(*this->exprNode->getType() == *ctx.getPool().getUint64Type()) {
+        if(this->exprNode->getType() == ctx.getPool().getUint64Type()) {
             afterValue = (unsigned long) value;
         }
-        ctx.push(DSValue::create<Float_Object>(this->type, afterValue));
+        ctx.push(DSValue::create<Float_Object>(*this->type, afterValue));
         break;
     }
     case FLOAT_TO_LONG: {
         double value = typeAs<Float_Object>(ctx.pop())->getValue();
         long afterValue = (long) value;
-        if(*this->type == *ctx.getPool().getUint64Type()) {
+        if(*this->type == ctx.getPool().getUint64Type()) {
             unsigned long temp = (unsigned long) value;
             afterValue = temp;
         }
-        ctx.push(DSValue::create<Long_Object>(this->type, afterValue));
+        ctx.push(DSValue::create<Long_Object>(*this->type, afterValue));
         break;
     }
     case COPY_INT: {
         int value = typeAs<Int_Object>(ctx.pop())->getValue();
-        ctx.push(DSValue::create<Int_Object>(this->type, value));
+        ctx.push(DSValue::create<Int_Object>(*this->type, value));
         break;
     }
     case COPY_LONG: {
         long value = typeAs<Long_Object>(ctx.pop())->getValue();
-        ctx.push(DSValue::create<Long_Object>(this->type, value));
+        ctx.push(DSValue::create<Long_Object>(*this->type, value));
         break;
     }
     case TO_STRING: {
@@ -612,8 +612,8 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
     return EvalStatus::SUCCESS;
 }
 
-CastNode *CastNode::newTypedCastNode(Node *targetNode, DSType *type, CastNode::CastOp op) {
-    assert(targetNode->getType() != nullptr);
+CastNode *CastNode::newTypedCastNode(Node *targetNode, DSType &type, CastNode::CastOp op) {
+    assert(!targetNode->isUntyped());
     CastNode *castNode = new CastNode(targetNode, nullptr);
     castNode->setOpKind(op);
     castNode->setType(type);
@@ -1155,7 +1155,7 @@ EvalStatus PipedCmdNode::eval(RuntimeContext &ctx) {
     ctx.getProcInvoker().clear();
 
     // push exit status
-    if(*this->type == *ctx.getPool().getBooleanType()) {
+    if(*this->type == ctx.getPool().getBooleanType()) {
         if(typeAs<Int_Object>(ctx.getExitStatus())->getValue() == 0) {
             ctx.push(ctx.getTrueObj());
         } else {
@@ -1230,7 +1230,7 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
 
             DSValue obj;
 
-            if(*this->type == *ctx.getPool().getStringType()) {  // capture stdout as String
+            if(*this->type == ctx.getPool().getStringType()) {  // capture stdout as String
                 static const int bufSize = 256;
                 char buf[bufSize + 1];
                 int readSize = 0;
@@ -1248,13 +1248,13 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
                     str.erase(pos + 1);
                 }
 
-                obj = DSValue::create<String_Object>(this->type, std::move(str));
+                obj = DSValue::create<String_Object>(*this->type, std::move(str));
             } else {    // capture stdout as String Array
                 static const int bufSize = 256;
                 char buf[bufSize];
                 int readSize;
                 std::string str;
-                Array_Object *array = new Array_Object(this->type);
+                Array_Object *array = new Array_Object(*this->type);
                 while((readSize = read(pipefds[READ_PIPE], buf, bufSize)) > 0) {
                     for(int i = 0; i < readSize; i++) {
                         char ch = buf[i];
@@ -1298,7 +1298,7 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
             close(pipefds[WRITE_PIPE]);
 
             if(this->exprNode->eval(ctx) == EvalStatus::THROW) {
-                if(ctx.getPool().getErrorType()->isSameOrBaseTypeOf(ctx.getThrownObject()->getType())) {
+                if(ctx.getPool().getErrorType().isSameOrBaseTypeOf(*ctx.getThrownObject()->getType())) {
                     ctx.reportError();
                 }
                 exit(1);
@@ -1866,7 +1866,7 @@ EvalStatus TryNode::eval(RuntimeContext &ctx) {
         EVAL(ctx, this->finallyNode);
         return status;
     } else {   // eval catch
-        DSType *thrownType = ctx.getThrownObject()->getType();
+        DSType &thrownType = *ctx.getThrownObject()->getType();
         for(CatchNode *catchNode : this->catchNodes) {
             if(catchNode->getExceptionType()->isSameOrBaseTypeOf(thrownType)) {
                 ctx.loadThrownObject();
@@ -1965,8 +1965,8 @@ EvalStatus AssignNode::eval(RuntimeContext &ctx) {
 
         if(assignableNode->withinInterface()) {
             AccessNode *accessNode = static_cast<AccessNode *>(this->leftNode);
-            return ctx.storeField(accessNode->getRecvNode()->getType(),
-                                  accessNode->getFieldName(), accessNode->getType());
+            return ctx.storeField(&accessNode->getRecvNode()->getType(),
+                                  accessNode->getFieldName(), &accessNode->getType());
         }
         ctx.storeField(index);
     } else {
@@ -2033,12 +2033,12 @@ ElementSelfAssignNode::~ElementSelfAssignNode() {
     delete this->binaryNode;
 }
 
-void ElementSelfAssignNode::setRecvType(DSType *type) {
+void ElementSelfAssignNode::setRecvType(DSType &type) {
     this->getterNode->getRecvNode()->setType(type);
     this->setterNode->getRecvNode()->setType(type);
 }
 
-void ElementSelfAssignNode::setIndexType(DSType *type) {
+void ElementSelfAssignNode::setIndexType(DSType &type) {
     this->getterNode->refArgNodes()[0]->setType(type);
     this->setterNode->refArgNodes()[0]->setType(type);
 }
@@ -2310,8 +2310,8 @@ EvalStatus RootNode::eval(RuntimeContext &ctx) {
         switch(status) {
         case EvalStatus::SUCCESS: {
             if(ctx.isToplevelPrinting()) {
-                ctx.printStackTop(node->getType());
-            } else if(!node->getType()->isVoidType()) {
+                ctx.printStackTop(&node->getType());
+            } else if(!node->getType().isVoidType()) {
                 ctx.popNoReturn();
             }
             break;

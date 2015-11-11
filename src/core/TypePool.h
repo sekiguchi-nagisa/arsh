@@ -67,7 +67,7 @@ public:
     /**
      * return false, if duplicated
      */
-    bool setAlias(std::string &&alias, DSType *targetType);
+    bool setAlias(std::string &&alias, DSType &targetType);
 
     /**
      * clear typeCache.
@@ -216,176 +216,176 @@ public:
     /**
      * get any type (root class of ydsh class)
      */
-    DSType *getAnyType() const {
-        return this->anyType;
+    DSType &getAnyType() const {
+        return *this->anyType;
     }
 
     /**
      * get void type (pseudo class representing for void)
      */
-    DSType *getVoidType() const {
-        return this->voidType;
+    DSType &getVoidType() const {
+        return *this->voidType;
     }
 
-    DSType *getVariantType() const {
-        return this->variantType;
+    DSType &getVariantType() const {
+        return *this->variantType;
     }
 
-    DSType *getValueType() const {
-        return this->valueType;
+    DSType &getValueType() const {
+        return *this->valueType;
     }
 
     /**
      * int is 32bit.
      */
-    DSType *getIntType() const {
+    DSType &getIntType() const {
         return this->getInt32Type();
     }
 
-    DSType *getByteType() const {
-        return this->byteType;
+    DSType &getByteType() const {
+        return *this->byteType;
     }
 
-    DSType *getInt16Type() const {
-        return this->int16Type;
+    DSType &getInt16Type() const {
+        return *this->int16Type;
     }
 
-    DSType *getUint16Type() const {
-        return this->uint16Type;
+    DSType &getUint16Type() const {
+        return *this->uint16Type;
     }
 
-    DSType *getInt32Type() const {
-        return this->int32Type;
+    DSType &getInt32Type() const {
+        return *this->int32Type;
     }
 
-    DSType *getUint32Type() const {
-        return this->uint32Type;
+    DSType &getUint32Type() const {
+        return *this->uint32Type;
     }
 
-    DSType *getInt64Type() const {
-        return this->int64Type;
+    DSType &getInt64Type() const {
+        return *this->int64Type;
     }
 
-    DSType *getUint64Type() const {
-        return this->uint64Type;
+    DSType &getUint64Type() const {
+        return *this->uint64Type;
     }
 
     /**
      * float is 64bit.
      */
-    DSType *getFloatType() const {
-        return this->floatType;
+    DSType &getFloatType() const {
+        return *this->floatType;
     }
 
-    DSType *getBooleanType() const {
-        return this->boolType;
+    DSType &getBooleanType() const {
+        return *this->boolType;
     }
 
-    DSType *getStringType() const {
-        return this->stringType;
+    DSType &getStringType() const {
+        return *this->stringType;
     }
 
-    DSType *getErrorType() const {
-        return this->errorType;
+    DSType &getErrorType() const {
+        return *this->errorType;
     }
 
-    DSType *getTaskType() const {
-        return this->taskType;
+    DSType &getTaskType() const {
+        return *this->taskType;
     }
 
-    DSType *getBaseFuncType() const {
-        return this->baseFuncType;
+    DSType &getBaseFuncType() const {
+        return *this->baseFuncType;
     }
 
-    DSType *getProcType() const {
-        return this->procType;
+    DSType &getProcType() const {
+        return *this->procType;
     }
 
-    DSType *getStringIterType() const {
-        return this->stringIterType;
+    DSType &getStringIterType() const {
+        return *this->stringIterType;
     }
 
-    DSType *getObjectPathType() const {
-        return this->objectPathType;
+    DSType &getObjectPathType() const {
+        return *this->objectPathType;
     }
 
-    DSType *getUnixFDType() const {
-        return this->unixFDType;
+    DSType &getUnixFDType() const {
+        return *this->unixFDType;
     }
 
-    DSType *getProxyType() const {
-        return this->proxyType;
+    DSType &getProxyType() const {
+        return *this->proxyType;
     }
 
-    DSType *getDBusType() const {
-        return this->dbusType;
+    DSType &getDBusType() const {
+        return *this->dbusType;
     }
 
-    DSType *getBusType() const {
-        return this->busType;
+    DSType &getBusType() const {
+        return *this->busType;
     }
 
-    DSType *getServiceType() const {
-        return this->serviceType;
+    DSType &getServiceType() const {
+        return *this->serviceType;
     }
 
-    DSType *getDBusObjectType() const {
-        return this->dbusObjectType;
+    DSType &getDBusObjectType() const {
+        return *this->dbusObjectType;
     }
 
-    DSType *getStringArrayType() const {
-        return this->stringArrayType;
+    DSType &getStringArrayType() const {
+        return *this->stringArrayType;
     }
 
     // for error
-    DSType *getArithmeticErrorType() const {
-        return this->arithmeticErrorType;
+    DSType &getArithmeticErrorType() const {
+        return *this->arithmeticErrorType;
     }
 
-    DSType *getOutOfRangeErrorType() const {
-        return this->outOfRangeErrorType;
+    DSType &getOutOfRangeErrorType() const {
+        return *this->outOfRangeErrorType;
     }
 
-    DSType *getKeyNotFoundErrorType() const {
-        return this->keyNotFoundErrorType;
+    DSType &getKeyNotFoundErrorType() const {
+        return *this->keyNotFoundErrorType;
     }
 
-    DSType *getTypeCastErrorType() const {
-        return this->typeCastErrorType;
+    DSType &getTypeCastErrorType() const {
+        return *this->typeCastErrorType;
     }
 
-    DSType *getDBusErrorType() const {
-        return this->dbusErrorType;
+    DSType &getDBusErrorType() const {
+        return *this->dbusErrorType;
     }
 
-    DSType *getSystemErrorType() const {
-        return this->systemErrorType;
+    DSType &getSystemErrorType() const {
+        return *this->systemErrorType;
     }
 
     // for internal status reporting
-    DSType *getInternalStatus() const {
-        return this->internalStatus;
+    DSType &getInternalStatus() const {
+        return *this->internalStatus;
     }
 
-    DSType *getShellExit() const {
-        return this->shellExit;
+    DSType &getShellExit() const {
+        return *this->shellExit;
     }
 
-    DSType *getAssertFail() const {
-        return this->assertFail;
+    DSType &getAssertFail() const {
+        return *this->assertFail;
     }
 
     // for reified type.
-    TypeTemplate *getArrayTemplate() const {
-        return this->arrayTemplate;
+    const TypeTemplate &getArrayTemplate() const {
+        return *this->arrayTemplate;
     }
 
-    TypeTemplate *getMapTemplate() const {
-        return this->mapTemplate;
+    const TypeTemplate &getMapTemplate() const {
+        return *this->mapTemplate;
     }
 
-    TypeTemplate *getTupleTemplate() const {
-        return this->tupleTemplate;
+    const TypeTemplate &getTupleTemplate() const {
+        return *this->tupleTemplate;
     }
 
     // for type lookup
@@ -401,38 +401,38 @@ public:
      * get type except template type.
      * if type is undefined, throw exception
      */
-    DSType *getTypeAndThrowIfUndefined(const std::string &typeName);
+    DSType &getTypeAndThrowIfUndefined(const std::string &typeName);
 
     /**
      * get template type.
      * if template type is not found, throw exception
      */
-    TypeTemplate *getTypeTemplate(const std::string &typeName);
+    const TypeTemplate &getTypeTemplate(const std::string &typeName);
 
     /**
-     * if type template is Tuple, call createAndGetTupleTypeIfUndefined()
+     * if type template is Tuple, call createTupleType()
      */
-    DSType *createAndGetReifiedTypeIfUndefined(TypeTemplate *typeTemplate, std::vector<DSType *> &&elementTypes);
+    DSType &createReifiedType(const TypeTemplate &typeTemplate, std::vector<DSType *> &&elementTypes);
 
-    DSType *createAndGetTupleTypeIfUndefined(std::vector<DSType *> &&elementTypes);
+    DSType &createTupleType(std::vector<DSType *> &&elementTypes);
 
-    FunctionType *createAndGetFuncTypeIfUndefined(DSType *returnType, std::vector<DSType *> &&paramTypes);
+    FunctionType &createFuncType(DSType *returnType, std::vector<DSType *> &&paramTypes);
 
-    InterfaceType *createAndGetInterfaceTypeIfUndefined(const std::string &interfaceName);
+    InterfaceType &createInterfaceType(const std::string &interfaceName);
 
-    DSType *createAndGetErrorTypeIfUndefined(const std::string &errorName, DSType *superType);
+    DSType &createErrorType(const std::string &errorName, DSType &superType);
 
     /**
      * if not found type, search directory /etc/ydsh/dbus/
      */
-    DSType *getDBusInterfaceType(const std::string &typeName);
+    DSType &getDBusInterfaceType(const std::string &typeName);
 
     /**
      * set type name alias. if alias name has already defined, report error.
      */
-    void setAlias(const std::string &alias, DSType *targetType);
+    void setAlias(const std::string &alias, DSType &targetType);
 
-    void setAlias(const char *alias, DSType *targetType);
+    void setAlias(const char *alias, DSType &targetType);
 
     const std::string &getTypeName(const DSType &type) const;
 
@@ -440,7 +440,7 @@ public:
      * create reified type name
      * equivalent to toReifiedTypeName(typeTemplate->getName(), elementTypes)
      */
-    std::string toReifiedTypeName(TypeTemplate *typeTemplate, const std::vector<DSType *> &elementTypes);
+    std::string toReifiedTypeName(const TypeTemplate &typeTemplate, const std::vector<DSType *> &elementTypes);
 
     std::string toReifiedTypeName(const std::string &name, const std::vector<DSType *> &elementTypes);
 
@@ -460,7 +460,7 @@ public:
     /**
      * get integer precision. if type is not int type, return INVALID_PRECISION.
      */
-    int getIntPrecision(DSType *type);
+    int getIntPrecision(const DSType &type);
 
     bool addUserDefnedCommandName(const std::string &cmdName);
 
@@ -484,7 +484,7 @@ private:
     DSType *initErrorType(const char *typeName, DSType *superType);
 
     void checkElementTypes(const std::vector<DSType *> &elementTypes);
-    void checkElementTypes(TypeTemplate *t, const std::vector<DSType *> &elementTypes);
+    void checkElementTypes(const TypeTemplate &t, const std::vector<DSType *> &elementTypes);
     bool asVariantType(const std::vector<DSType *> &elementTypes);
 
     /**

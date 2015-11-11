@@ -181,23 +181,23 @@ public:
         return this->methodIndex;
     }
 
-    void setReturnType(DSType *type) {
-        this->returnType = type;
+    void setReturnType(DSType &type) {
+        this->returnType = &type;
     }
 
     DSType *getReturnType() const {
         return this->returnType;
     }
 
-    void setRecvType(DSType *type) {
-        this->recvType = type;
+    void setRecvType(DSType &type) {
+        this->recvType = &type;
     }
 
     DSType *getRecvType() const {
         return this->recvType;
     }
 
-    void addParamType(DSType *type);
+    void addParamType(DSType &type);
 
     const std::vector<DSType *> &getParamTypes() const {
         return this->paramTypes;

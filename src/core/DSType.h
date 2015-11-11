@@ -174,7 +174,7 @@ public:
      * if this type is equivalent to target type or
      * the super type of target type, return true.
      */
-    virtual bool isSameOrBaseTypeOf(DSType *targetType);
+    virtual bool isSameOrBaseTypeOf(const DSType &targetType) const;
 
     virtual MethodRef *getMethodRef(unsigned int methodIndex);
     virtual void copyAllMethodRef(std::vector<MethodRef> &methodTable);
@@ -379,7 +379,7 @@ public:
     /**
      * return null, if found duplicated field
      */
-    FieldHandle *newFieldHandle(const std::string &fieldName, DSType *fieldType, bool readOnly);
+    FieldHandle *newFieldHandle(const std::string &fieldName, DSType &fieldType, bool readOnly);
 
     MethodHandle *newMethodHandle(const std::string &methodName);
 

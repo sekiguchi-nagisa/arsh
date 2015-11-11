@@ -41,7 +41,7 @@ public:
     /**
      * return DBUS_TYPE_INVALID, if not base type.
      */
-    int getDescriptor(DSType *type);
+    int getDescriptor(DSType &type);
 };
 
 
@@ -58,7 +58,7 @@ public:
     DescriptorBuilder(TypePool *pool, BaseTypeDescriptorMap *typeMap);
     ~DescriptorBuilder() = default;
 
-    const char *buildDescriptor(DSType *type);
+    const char *buildDescriptor(DSType &type);
 
     void visitFunctionType(FunctionType *type) override;
     void visitBuiltinType(BuiltinType *type) override;
@@ -85,7 +85,7 @@ private:
 public:
     explicit MessageBuilder(TypePool *pool);
     ~MessageBuilder();
-    void appendArg(DBusMessageIter *iter, DSType *argType, const DSValue &arg);
+    void appendArg(DBusMessageIter *iter, DSType &argType, const DSValue &arg);
 
     void visitFunctionType(FunctionType *type) override;
     void visitBuiltinType(BuiltinType *type) override;
@@ -110,7 +110,7 @@ private:
     void closeContainerIter(DBusMessageIter *parentIter, DBusMessageIter *subIter);
 };
 
-DSType *decodeTypeDescriptor(TypePool *pool, const char *desc);
+DSType &decodeTypeDescriptor(TypePool *pool, const char *desc);
 
 } // namespace core
 } // namespace ydsh

@@ -70,13 +70,17 @@ public:
         return this->lineNum;
     }
 
-    virtual void setType(DSType *type);
+    virtual void setType(DSType &type);
 
     /**
-     * return null, before type checking
+     * must not call it before type checking
      */
-    DSType *getType() const {
-        return this->type;
+    DSType &getType() const {
+        return *this->type;
+    }
+
+    bool isUntyped() const {
+        return this->type == nullptr;
     }
 
     /**
@@ -173,7 +177,7 @@ public:
         return this->value;
     }
 
-    void setType(DSType *type); // override
+    void setType(DSType &type); // override
     void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor &visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
@@ -212,7 +216,7 @@ public:
         return this->unsignedValue;
     }
 
-    void setType(DSType *type); // override
+    void setType(DSType &type); // override
     void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor &visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
@@ -238,7 +242,7 @@ public:
         return this->value;
     }
 
-    void setType(DSType *type); // override
+    void setType(DSType &type); // override
     void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor &visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
@@ -275,7 +279,7 @@ public:
         return this->value;
     }
 
-    void setType(DSType *type); // override
+    void setType(DSType &type); // override
     void dump(NodeDumper &dumper) const;  // override
     virtual void accept(NodeVisitor &visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
@@ -573,7 +577,7 @@ public:
      * targetNode must be typed node.
      * type is after casted value type.
      */
-    static CastNode *newTypedCastNode(Node *targetNode, DSType *type, CastOp op);
+    static CastNode *newTypedCastNode(Node *targetNode, DSType &type, CastOp op);
 };
 
 class InstanceOfNode : public Node {
@@ -605,8 +609,8 @@ public:
         return this->targetTypeToken;
     }
 
-    void setTargetType(DSType *targetType) {
-        this->targetType = targetType;
+    void setTargetType(DSType &targetType) {
+        this->targetType = &targetType;
     }
 
     DSType *getTargetType() const {
@@ -1585,8 +1589,8 @@ public:
         return this->typeToken;
     }
 
-    void setExceptionType(DSType *type) {
-        this->exceptionType = type;
+    void setExceptionType(DSType &type) {
+        this->exceptionType = &type;
     }
 
     /**
@@ -1812,12 +1816,12 @@ public:
     /**
      * add recv type of getterNode and setterNode
      */
-    void setRecvType(DSType *type);
+    void setRecvType(DSType &type);
 
     /**
      * add index type of getterNode and setterNode.
      */
-    void setIndexType(DSType *type);
+    void setIndexType(DSType &type);
 
     void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor &visitor);   // override

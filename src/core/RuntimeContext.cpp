@@ -144,11 +144,11 @@ void RuntimeContext::reserveLocalVar(unsigned int size) {
     this->stackTopIndex = size;
 }
 
-void RuntimeContext::throwError(DSType *errorType, const char *message) {
+void RuntimeContext::throwError(DSType &errorType, const char *message) {
     this->throwError(errorType, std::string(message));
 }
 
-void RuntimeContext::throwError(DSType *errorType, std::string &&message) {
+void RuntimeContext::throwError(DSType &errorType, std::string &&message) {
     this->thrownObject = Error_Object::newError(*this, errorType, DSValue::create<String_Object>(
             this->pool.getStringType(), std::move(message)));
 }
@@ -306,19 +306,18 @@ EvalStatus RuntimeContext::toString(unsigned int lineNum) {
     static const std::string methodName(OP_STR);
 
     if(this->handle_STR == nullptr) {
-        this->handle_STR = this->pool.getAnyType()->
-                lookupMethodHandle(this->pool, methodName);
+        this->handle_STR = this->pool.getAnyType().lookupMethodHandle(this->pool, methodName);
     }
     return this->callMethod(lineNum, methodName, this->handle_STR);
 }
 
 void RuntimeContext::reportError() {
     std::cerr << "[runtime error]" << std::endl;
-    if(this->pool.getErrorType()->isSameOrBaseTypeOf(this->thrownObject->getType())) {
+    if(this->pool.getErrorType().isSameOrBaseTypeOf(*this->thrownObject->getType())) {
         static const std::string methodName("backtrace");
 
         if(this->handle_bt == nullptr) {
-            this->handle_bt = this->pool.getErrorType()->lookupMethodHandle(this->pool, methodName);
+            this->handle_bt = this->pool.getErrorType().lookupMethodHandle(this->pool, methodName);
         }
         this->loadThrownObject();
         this->callMethod(0, methodName, this->handle_bt);
@@ -545,12 +544,12 @@ int RuntimeContext::execUserDefinedCommand(UserDefinedCmdNode *node, DSValue *ar
     case EvalStatus::RETURN:
         return typeAs<Int_Object>(this->pop())->getValue();
     case EvalStatus::THROW: {
-        DSType *thrownType = this->getThrownObject()->getType();
-        if(this->pool.getInternalStatus()->isSameOrBaseTypeOf(thrownType)) {
-            if(*thrownType == *this->pool.getShellExit()) {
+        DSType &thrownType = *this->getThrownObject()->getType();
+        if(this->pool.getInternalStatus().isSameOrBaseTypeOf(thrownType)) {
+            if(thrownType == this->pool.getShellExit()) {
                 return typeAs<Int_Object>(this->getExitStatus())->getValue();
             }
-            if(*thrownType == *this->pool.getAssertFail()) {
+            if(thrownType == this->pool.getAssertFail()) {
                 this->loadThrownObject();
                 typeAs<Error_Object>(this->pop())->printStackTrace(*this);
                 return 1;

@@ -1195,8 +1195,8 @@ static bool createResult(RuntimeContext &ctx, DSValue &&value, bool success) {
     // get tuple type
     std::vector<DSType *> types(2);
     types[0] = value.get()->getType();
-    types[1] = ctx.getPool().getBooleanType();
-    DSType *tupleType = ctx.getPool().createAndGetTupleTypeIfUndefined(std::move(types));
+    types[1] = &ctx.getPool().getBooleanType();
+    auto &tupleType = ctx.getPool().createTupleType(std::move(types));
 
     // create result
     DSValue tuple = DSValue::create<Tuple_Object>(tupleType);
@@ -1344,7 +1344,7 @@ static inline bool objectpath_size(RuntimeContext &ctx) {
 static inline bool array_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_init);
     DSType *type = LOCAL(0)->getType();
-    ctx.setLocal(0, DSValue::create<Array_Object>(type));
+    ctx.setLocal(0, DSValue::create<Array_Object>(*type));
     return true;
 }
 
@@ -1454,7 +1454,7 @@ static inline bool array_cmdArg(RuntimeContext &ctx) {
 static inline bool map_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_init);
     DSType *type = LOCAL(0)->getType();
-    ctx.setLocal(0, DSValue::create<Map_Object>(type));
+    ctx.setLocal(0, DSValue::create<Map_Object>(*type));
     return true;
 }
 
@@ -1537,7 +1537,7 @@ static inline bool map_hasNext(RuntimeContext &ctx) {
 static inline bool tuple_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(tuple_init);
     DSType *type = LOCAL(0)->getType();
-    ctx.setLocal(0, DSValue::create<Tuple_Object>(type));
+    ctx.setLocal(0, DSValue::create<Tuple_Object>(*type));
     typeAs<Tuple_Object>(LOCAL(0))->set(0, LOCAL(1));
     return true;
 }
@@ -1557,7 +1557,7 @@ static inline bool tuple_cmdArg(RuntimeContext &ctx) {
 static inline bool error_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(error_init);
     DSType *type = LOCAL(0)->getType();
-    ctx.setLocal(0, DSValue(Error_Object::newError(ctx, type, LOCAL(1))));
+    ctx.setLocal(0, DSValue(Error_Object::newError(ctx, *type, LOCAL(1))));
     return true;
 }
 

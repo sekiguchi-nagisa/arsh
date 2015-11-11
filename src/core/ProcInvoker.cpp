@@ -750,7 +750,7 @@ void ProcInvoker::addCommandName(DSValue &&value) {
 
 void ProcInvoker::addArg(DSValue &&value, bool skipEmptyString) {
     DSType *valueType = value->getType();
-    if(*valueType == *this->ctx->getPool().getStringType()) {
+    if(*valueType == this->ctx->getPool().getStringType()) {
         if(skipEmptyString && typeAs<String_Object>(value)->empty()) {
             return;
         }
@@ -758,7 +758,7 @@ void ProcInvoker::addArg(DSValue &&value, bool skipEmptyString) {
         return;
     }
 
-    if(*valueType == *this->ctx->getPool().getStringArrayType()) {
+    if(*valueType == this->ctx->getPool().getStringArrayType()) {
         Array_Object *arrayObj = typeAs<Array_Object>(value);
         for(auto &element : arrayObj->getValues()) {
             if(typeAs<String_Object>(element)->empty()) {
@@ -773,7 +773,7 @@ void ProcInvoker::addArg(DSValue &&value, bool skipEmptyString) {
 
 void ProcInvoker::addRedirOption(RedirectOP op, DSValue &&value) {
     DSType *valueType = value->getType();
-    if(*valueType == *this->ctx->getPool().getStringType()) {
+    if(*valueType == this->ctx->getPool().getStringType()) {
         this->redirOptions.push_back(std::make_pair(op, value));
     } else {
         fatal("illegal command parameter type: %s\n", this->ctx->getPool().getTypeName(*valueType).c_str());

@@ -26,7 +26,7 @@ namespace core {
 // helper util
 static void reportDBusError(RuntimeContext &ctx, const char *dbusErrorName, std::string &&message) {
     std::string name(dbusErrorName);
-    DSType *type = ctx.getPool().createAndGetErrorTypeIfUndefined(name, ctx.getPool().getDBusErrorType());
+    auto &type = ctx.getPool().createErrorType(name, ctx.getPool().getDBusErrorType());
     ctx.throwError(type, std::move(message));
 }
 
@@ -113,7 +113,7 @@ static DSValue decodeMessageIter(RuntimeContext &ctx, DBusMessageIter *iter) {
                 std::string mapDesc("a");
                 mapDesc += desc;
                 dbus_free(desc);
-                DSType *mapType = decodeTypeDescriptor(&ctx.getPool(), mapDesc.c_str());
+                auto &mapType = decodeTypeDescriptor(&ctx.getPool(), mapDesc.c_str());
                 return DSValue::create<Map_Object>(mapType);
             }
 
@@ -134,10 +134,10 @@ static DSValue decodeMessageIter(RuntimeContext &ctx, DBusMessageIter *iter) {
             std::vector<DSType *> types(2);
             types[0] = entries.back().first->getType();
             types[1] = firstElementType == DBUS_TYPE_VARIANT ?
-                       ctx.getPool().getVariantType() : entries.back().second->getType();
+                       &ctx.getPool().getVariantType() : entries.back().second->getType();
 
             auto map = DSValue::create<Map_Object>(
-                    ctx.getPool().createAndGetReifiedTypeIfUndefined(
+                    ctx.getPool().createReifiedType(
                             ctx.getPool().getMapTemplate(), std::move(types)));
             unsigned int size = entries.size();
             for(unsigned int i = 0; i < size; i++) {
@@ -148,10 +148,10 @@ static DSValue decodeMessageIter(RuntimeContext &ctx, DBusMessageIter *iter) {
             if(!dbus_message_iter_has_next(&subIter)) { //empty array
                 char *desc = dbus_message_iter_get_signature(&subIter);
                 std::vector<DSType *> types(1);
-                types[0] = decodeTypeDescriptor(&ctx.getPool(), desc);
+                types[0] = &decodeTypeDescriptor(&ctx.getPool(), desc);
                 dbus_free(desc);
                 return DSValue::create<Array_Object>(
-                        ctx.getPool().createAndGetReifiedTypeIfUndefined(
+                        ctx.getPool().createReifiedType(
                                 ctx.getPool().getArrayTemplate(), std::move(types)));
             }
 
@@ -160,10 +160,10 @@ static DSValue decodeMessageIter(RuntimeContext &ctx, DBusMessageIter *iter) {
                 values.push_back(decodeMessageIter(ctx, &subIter));
             } while(dbus_message_iter_next(&subIter));
             std::vector<DSType *> types(1);
-            types[0] = elementType == DBUS_TYPE_VARIANT ? ctx.getPool().getVariantType() : values[0]->getType();
+            types[0] = elementType == DBUS_TYPE_VARIANT ? &ctx.getPool().getVariantType() : values[0]->getType();
 
             return DSValue::create<Array_Object>(
-                    ctx.getPool().createAndGetReifiedTypeIfUndefined(
+                    ctx.getPool().createReifiedType(
                             ctx.getPool().getArrayTemplate(), std::move(types)), std::move(values));
         }
 
@@ -178,7 +178,7 @@ static DSValue decodeMessageIter(RuntimeContext &ctx, DBusMessageIter *iter) {
             values.push_back(decodeMessageIter(ctx, &subIter));
             types.push_back(values.back()->getType());
         } while(dbus_message_iter_next(&subIter));
-        DSType *tupleType = ctx.getPool().createAndGetTupleTypeIfUndefined(std::move(types));
+        auto &tupleType = ctx.getPool().createTupleType(std::move(types));
         DSValue tuple(new Tuple_Object(tupleType));
         unsigned int size = values.size();
         for(unsigned int i = 0; i < size; i++) {
@@ -225,7 +225,7 @@ static bool decodeAndUnrefMessage(std::vector<DSValue> &values, RuntimeContext &
     }
 
     for(unsigned int i = 0; i < size; i++) {
-        if(!types[i]->isSameOrBaseTypeOf(values[i]->getType())) {
+        if(!types[i]->isSameOrBaseTypeOf(*values[i]->getType())) {
             std::string str = "require type is: ";
             str += ctx.getPool().getTypeName(*types[i]);
             str += ", but is: ";
@@ -252,26 +252,26 @@ static DSValue decodeAndUnrefMessage(RuntimeContext &ctx,
     }
 
     DSValue tuple(new Tuple_Object(
-            ctx.getPool().createAndGetTupleTypeIfUndefined(std::vector<DSType *>(types))));
+            ctx.getPool().createTupleType(std::vector<DSType *>(types))));
     for(unsigned int i = 0; i < size; i++) {
         typeAs<Tuple_Object>(tuple)->set(i, values[i]);
     }
     return tuple;
 }
 
-static DSValue decodeAndUnrefMessage(RuntimeContext &ctx, DSType *type, DBusMessage *msg) {
+static DSValue decodeAndUnrefMessage(RuntimeContext &ctx, DSType &type, DBusMessage *msg) {
     std::vector<DSType *> types(1);
-    types[0] = type;
+    types[0] = &type;
     return decodeAndUnrefMessage(ctx, types, msg);
 }
 
-static void appendArg(RuntimeContext &ctx, DBusMessageIter *iter, DSType *argType, const DSValue &arg) {
+static void appendArg(RuntimeContext &ctx, DBusMessageIter *iter, DSType &argType, const DSValue &arg) {
     DBus_ObjectImpl *dbus = typeAs<DBus_ObjectImpl>(ctx.getDBus());
     dbus->getBuilder().appendArg(iter, argType, arg);
 }
 
 static void appendArg(RuntimeContext &ctx, DBusMessageIter *iter,
-                      DSType *argType, unsigned int index) {
+                      DSType &argType, unsigned int index) {
     appendArg(ctx, iter, argType, ctx.getLocal(index));
 }
 
@@ -302,7 +302,7 @@ static DBusMessage *sendAndUnrefMessage(RuntimeContext &ctx,
 // ##     Bus_ObjectImpl     ##
 // ############################
 
-Bus_ObjectImpl::Bus_ObjectImpl(DSType *type, bool systemBus) :
+Bus_ObjectImpl::Bus_ObjectImpl(DSType &type, bool systemBus) :
         Bus_Object(type), conn(), systemBus(systemBus) {
 }
 
@@ -389,7 +389,7 @@ bool Bus_ObjectImpl::listNames(RuntimeContext &ctx, bool activeName) {
 // ##     Service_ObjectImpl     ##
 // ################################
 
-Service_ObjectImpl::Service_ObjectImpl(DSType *type, const DSValue &bus,
+Service_ObjectImpl::Service_ObjectImpl(DSType &type, const DSValue &bus,
                                        std::string &&serviceName, std::string &&uniqueName) :
         Service_Object(type), bus(bus), serviceName(std::move(serviceName)), uniqueName(std::move(uniqueName)) {
 }
@@ -594,7 +594,7 @@ std::size_t SignalSelectorHash::operator()(const SignalSelector &key) const {
 // ##     DBusProxy_Object     ##
 // ##############################
 
-DBusProxy_Object::DBusProxy_Object(DSType *type, const DSValue &srcObj, const DSValue &objectPath) :
+DBusProxy_Object::DBusProxy_Object(DSType &type, const DSValue &srcObj, const DSValue &objectPath) :
         ProxyObject(type), srv(srcObj), objectPath(objectPath), ifaceSet(), handerMap() {
     assert(this->srv);
 }
@@ -714,7 +714,7 @@ bool DBusProxy_Object::invokeMethod(RuntimeContext &ctx, const std::string &meth
 
     unsigned int paramSize = handle->getParamTypes().size();
     for(unsigned int i = 0; i < paramSize; i++) {
-        appendArg(ctx, &iter, handle->getParamTypes()[i], i + 1);
+        appendArg(ctx, &iter, *handle->getParamTypes()[i], i + 1);
     }
 
     // send message
@@ -731,11 +731,11 @@ bool DBusProxy_Object::invokeMethod(RuntimeContext &ctx, const std::string &meth
             result = decodeAndUnrefMessage(ctx, static_cast<TupleType *>(handle->getReturnType())->getElementTypes(), retMsg);
         } else {
             DSType *type = handle->getReturnType();
-            if(*type == *ctx.getPool().getVoidType()) {
+            if(*type == ctx.getPool().getVoidType()) {
                 unrefMessage(retMsg);
                 return true;
             }
-            result = decodeAndUnrefMessage(ctx, handle->getReturnType(), retMsg);
+            result = decodeAndUnrefMessage(ctx, *handle->getReturnType(), retMsg);
         }
         if(!result) {
             return false;
@@ -767,7 +767,7 @@ bool DBusProxy_Object::invokeGetter(RuntimeContext &ctx, DSType *recvType,
     }
 
     // decode result
-    auto result(decodeAndUnrefMessage(ctx, fieldType, ret));
+    auto result(decodeAndUnrefMessage(ctx, *fieldType, ret));
     if(!result) {
         return false;
     }

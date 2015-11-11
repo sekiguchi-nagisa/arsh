@@ -80,60 +80,53 @@ public:
     virtual void TearDown() {
     }
 
-    virtual void assertTypeName(const char *typeName, DSType *type) {
+    virtual void assertTypeName(const char *typeName, DSType &type) {
         SCOPED_TRACE("");
 
         std::string name(typeName);
         // assert type name
-        ASSERT_EQ(name, this->pool.getTypeName(*type));
+        ASSERT_EQ(name, this->pool.getTypeName(type));
 
         // assert type
-        ASSERT_TRUE(*type == *this->pool.getType(name));
+        ASSERT_TRUE(type == *this->pool.getType(name));
     }
 
-    virtual void assertSuperType(DSType *type, DSType *superType) {
+    virtual void assertSuperType(DSType &type, DSType &superType) {
         SCOPED_TRACE("");
 
-        ASSERT_TRUE(type != nullptr);
-        ASSERT_TRUE(superType != nullptr);
-        DSType *actualSuperType = type->getSuperType();
+        DSType *actualSuperType = type.getSuperType();
         ASSERT_TRUE(actualSuperType != nullptr);
-        ASSERT_EQ(this->pool.getTypeName(*actualSuperType), this->pool.getTypeName(*superType));
-        ASSERT_TRUE(*actualSuperType == *superType);
+        ASSERT_EQ(this->pool.getTypeName(*actualSuperType), this->pool.getTypeName(superType));
+        ASSERT_TRUE(*actualSuperType == superType);
     }
 
-    virtual void assertAlias(const char *aliasName, DSType *type) {
+    virtual void assertAlias(const char *aliasName, DSType &type) {
         SCOPED_TRACE("");
 
         std::string name(aliasName);
-        ASSERT_NE(name, this->pool.getTypeName(*type));
+        ASSERT_NE(name, this->pool.getTypeName(type));
 
         this->pool.setAlias(name, type);
         ASSERT_TRUE(this->pool.getType(name) != nullptr);
-        ASSERT_TRUE(*this->pool.getType(name) == *type);
+        ASSERT_TRUE(*this->pool.getType(name) == type);
     }
 
-    virtual void assertTemplateName(const char *templateName, TypeTemplate *t, unsigned int size) {
+    virtual void assertTemplateName(const char *templateName, const TypeTemplate &t, unsigned int size) {
         SCOPED_TRACE("");
 
         std::string name(templateName);
-        ASSERT_EQ(name, t->getName());
+        ASSERT_EQ(name, t.getName());
 
-        TypeTemplate *gotten = this->pool.getTypeTemplate(name);
-        ASSERT_EQ(size, t->getElementTypeSize());
-        ASSERT_EQ(size, gotten->getElementTypeSize());
-        ASSERT_TRUE((unsigned long)this->pool.getTypeTemplate(name) == (unsigned long)t);
+        auto &gotten = this->pool.getTypeTemplate(name);
+        ASSERT_EQ(size, t.getElementTypeSize());
+        ASSERT_EQ(size, gotten.getElementTypeSize());
+        ASSERT_TRUE((unsigned long)&this->pool.getTypeTemplate(name) == (unsigned long)&t);
     }
 
-    virtual DSType *toType(std::unique_ptr<TypeToken> &&tok) {
+    virtual DSType &toType(std::unique_ptr<TypeToken> &&tok) {
         SCOPED_TRACE("");
-        try {
-            TypeToken *ptr = tok.get();
-            return TypeChecker::TypeGenerator(this->pool).generateTypeAndThrow(ptr);
-        } catch(const TypeCheckError &e) {
-            std::cerr << e.getMessage() << std::endl;
-            return nullptr;
-        }
+        TypeToken *ptr = tok.get();
+        return TypeChecker::TypeGenerator(this->pool).generateTypeAndThrow(ptr);
     }
 };
 
@@ -177,8 +170,8 @@ TEST_F(TypeTest, superType) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
 
-        ASSERT_TRUE(this->pool.getAnyType()->getSuperType() == nullptr);
-        ASSERT_TRUE(this->pool.getVoidType()->getSuperType() == nullptr);
+        ASSERT_TRUE(this->pool.getAnyType().getSuperType() == nullptr);
+        ASSERT_TRUE(this->pool.getVoidType().getSuperType() == nullptr);
 
         this->assertSuperType(this->pool.getVariantType(), this->pool.getAnyType());
         this->assertSuperType(this->pool.getValueType(), this->pool.getVariantType());
@@ -212,7 +205,7 @@ TEST_F(TypeTest, alias) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->assertAlias("Int", this->pool.getInt32Type());
-        this->assertAlias("Int_2", this->pool.getType(std::string("Int")));
+        this->assertAlias("Int_2", *this->pool.getType(std::string("Int")));
     });
 }
 
@@ -254,8 +247,8 @@ TEST_F(TypeTest, pool) {
         SCOPED_TRACE("");
 
         // type
-        DSType *t = this->toType(array(type("Int32")));
-        std::string typeName = this->pool.getTypeName(*t);
+        auto &t = this->toType(array(type("Int32")));
+        std::string typeName = this->pool.getTypeName(t);
         std::string alias = "IArray";
         this->assertAlias(alias.c_str(), t);
         this->pool.abort();

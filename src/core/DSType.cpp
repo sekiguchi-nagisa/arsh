@@ -67,12 +67,12 @@ MethodHandle *DSType::lookupMethodHandle(TypePool &, const std::string &) {
     return nullptr;
 }
 
-bool DSType::isSameOrBaseTypeOf(DSType *targetType) {
-    if(*this == *targetType) {
+bool DSType::isSameOrBaseTypeOf(const DSType &targetType) const {
+    if(*this == targetType) {
         return true;
     }
-    DSType *superType = targetType->getSuperType();
-    return superType != nullptr && this->isSameOrBaseTypeOf(superType);
+    DSType *superType = targetType.getSuperType();
+    return superType != nullptr && this->isSameOrBaseTypeOf(*superType);
 }
 
 MethodRef *DSType::getMethodRef(unsigned int methodIndex) {
@@ -298,9 +298,9 @@ InterfaceType::~InterfaceType() {
     }
 }
 
-FieldHandle *InterfaceType::newFieldHandle(const std::string &fieldName, DSType *fieldType, bool readOnly) {
+FieldHandle *InterfaceType::newFieldHandle(const std::string &fieldName, DSType &fieldType, bool readOnly) {
     // field index is always 0.
-    FieldHandle *handle = new FieldHandle(fieldType, 0, readOnly);
+    FieldHandle *handle = new FieldHandle(&fieldType, 0, readOnly);
     handle->setAttribute(FieldHandle::INTERFACE);
     auto pair = this->fieldHandleMap.insert(std::make_pair(fieldName, handle));
     if(pair.second) {
@@ -371,7 +371,7 @@ MethodHandle *ErrorType::getConstructorHandle(TypePool &typePool) {
     if(this->constructorHandle == nullptr) {
         this->constructorHandle = new MethodHandle(0);
         this->constructorHandle->init(typePool, *funcInfo);
-        this->constructorHandle->setRecvType(this);
+        this->constructorHandle->setRecvType(*this);
     }
     return this->constructorHandle;
 }

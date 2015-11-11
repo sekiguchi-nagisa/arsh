@@ -26,69 +26,56 @@ public:
     virtual void TearDown() {
     }
 
-    virtual DSType *newArrayType(DSType *elementType) {
+    virtual DSType &newArrayType(DSType &elementType) {
         SCOPED_TRACE("");
 
         std::vector<DSType *> types(1);
-        types[0] = elementType;
+        types[0] = &elementType;
 
-        try {
-            return this->pool->createAndGetReifiedTypeIfUndefined(
-                    this->pool->getArrayTemplate(), std::move(types));
-        } catch(const TypeLookupError &e) {
-            return nullptr;
-        }
+        return this->pool->createReifiedType(
+                this->pool->getArrayTemplate(), std::move(types));
     }
 
-    virtual DSType *newMapType(DSType *keyType, DSType *valueType) {
+    virtual DSType &newMapType(DSType &keyType, DSType &valueType) {
         SCOPED_TRACE("");
 
         std::vector<DSType *> types(2);
-        types[0] = keyType;
-        types[1] = valueType;
+        types[0] = &keyType;
+        types[1] = &valueType;
 
-        try {
-            return this->pool->createAndGetReifiedTypeIfUndefined(
-                    this->pool->getMapTemplate(), std::move(types));
-        } catch(const TypeLookupError &e) {
-            return nullptr;
-        }
+        return this->pool->createReifiedType(
+                this->pool->getMapTemplate(), std::move(types));
     }
 
-    virtual DSType *newTupleType(DSType *type1) {
+    virtual DSType &newTupleType(DSType &type1) {
         std::vector<DSType *> types(1);
-        types[0] = type1;
+        types[0] = &type1;
         return this->newTupleType(types);
     }
 
-    virtual DSType *newTupleType(DSType *type1, DSType *type2) {
+    virtual DSType &newTupleType(DSType &type1, DSType &type2) {
         std::vector<DSType *> types(2);
-        types[0] = type1;
-        types[1] = type2;
+        types[0] = &type1;
+        types[1] = &type2;
         return this->newTupleType(types);
     }
 
-    virtual DSType *newTupleType(DSType *type1, DSType *type2, DSType *type3) {
+    virtual DSType &newTupleType(DSType &type1, DSType &type2, DSType &type3) {
         std::vector<DSType *> types(3);
-        types[0] = type1;
-        types[1] = type2;
-        types[2] = type3;
+        types[0] = &type1;
+        types[1] = &type2;
+        types[2] = &type3;
         return this->newTupleType(types);
     }
 
 
-    virtual DSType *newTupleType(const std::vector<DSType *> &types) {
-        try {
-            return this->pool->createAndGetTupleTypeIfUndefined(std::vector<DSType *>(types));
-        } catch(const TypeLookupError &e) {
-            return nullptr;
-        }
+    virtual DSType &newTupleType(const std::vector<DSType *> &types) {
+        return this->pool->createTupleType(std::vector<DSType *>(types));
     }
 
 
 
-    virtual void assertDesc(const char *expected, DSType *type) {
-        ASSERT_TRUE(type != nullptr);
+    virtual void assertDesc(const char *expected, DSType &type) {
         const char *actual = this->builder.buildDescriptor(type);
         ASSERT_STREQ(expected, actual);
     }

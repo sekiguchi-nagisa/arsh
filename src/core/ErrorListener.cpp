@@ -131,7 +131,7 @@ void ReportingListener::handleTypeError(const std::string &, const TypeCheckErro
 }
 
 void ReportingListener::handleRuntimeError(const TypePool &pool, const DSValue &raisedObj) noexcept {
-    if(!pool.getInternalStatus()->isSameOrBaseTypeOf(raisedObj->getType())) {
+    if(!pool.getInternalStatus().isSameOrBaseTypeOf(*raisedObj->getType())) {
         this->messageKind = pool.getTypeName(*raisedObj->getType()).c_str();
     }
 

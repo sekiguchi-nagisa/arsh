@@ -93,7 +93,7 @@ public:
          * entry point.
          * generate DSType from TypeToken.
          */
-        DSType *generateTypeAndThrow(TypeToken *token) throw(TypeCheckError);
+        DSType &generateTypeAndThrow(TypeToken *token) throw(TypeCheckError);
 
         void visitClassTypeToken(ClassTypeToken *token);    // overrode
         void visitReifiedTypeToken(ReifiedTypeToken *token);    // override
@@ -103,7 +103,7 @@ public:
         void visitTypeOfToken(TypeOfToken *token); // override
 
     private:
-        DSType *generateType(TypeToken *token);
+        DSType &generateType(TypeToken *token);
     };
 
 private:
@@ -160,16 +160,15 @@ private:
      * if node type is void type, throw exception.
      * return resolved type.
      */
-    DSType *checkType(Node *targetNode);
+    DSType &checkType(Node *targetNode);
 
     /**
      * check node type
-     * requiredType is not null
      *
      * if requiredType is not equivalent to node type, throw exception.
      * return resolved type.
      */
-    DSType *checkType(DSType *requiredType, Node *targetNode);
+    DSType &checkType(DSType &requiredType, Node *targetNode);
 
     /**
      * check node type
@@ -181,12 +180,12 @@ private:
      * and if unacceptableType is equivalent to node type, throw exception.
      * return resolved type.
      */
-    DSType *checkType(DSType *requiredType, Node *targetNode, DSType *unacceptableType);
+    DSType &checkType(DSType *requiredType, Node *targetNode, DSType *unacceptableType);
 
     /**
      * root method of checkType
      */
-    DSType *checkType(DSType *requiredType, Node *targetNode,
+    DSType &checkType(DSType *requiredType, Node *targetNode,
                       DSType *unacceptableType, CoercionKind &kind);
 
     void checkTypeWithCurrentScope(BlockNode *blockNode);
@@ -198,17 +197,17 @@ private:
      * wrap targetNode with CastNode.
      * if requiredType is VoidType, wrap targetNode with CastNode
      */
-    void checkTypeWithCoercion(DSType *requiredType, Node * &targetNode);
+    void checkTypeWithCoercion(DSType &requiredType, Node * &targetNode);
 
     /**
      * for int type conversion.
      * return true if allow target type to required type implicit cast.
      */
-    bool checkCoercion(CoercionKind &kind, DSType *requiredType, DSType *targetType);
+    bool checkCoercion(CoercionKind &kind, DSType &requiredType, DSType &targetType);
 
-    void resolveCoercion(CoercionKind kind, DSType *requiredType, Node * &targetNode);
+    void resolveCoercion(CoercionKind kind, DSType &requiredType, Node * &targetNode);
 
-    FieldHandle *addEntryAndThrowIfDefined(Node &node, const std::string &symbolName, DSType *type, bool readOnly);
+    FieldHandle *addEntryAndThrowIfDefined(Node &node, const std::string &symbolName, DSType &type, bool readOnly);
 
     bool isTopLevel() const {
         return this->visitingDepth == 1;
@@ -235,9 +234,9 @@ private:
      * blockNode is function block.
      * returnType is function return type.
      */
-    void checkTerminalNodeExistence(BlockNode &blockNode, DSType *returnType);
+    void checkTerminalNodeExistence(BlockNode &blockNode, DSType &returnType);
 
-    void pushReturnType(DSType *returnType);
+    void pushReturnType(DSType &returnType);
 
     /**
      * return null, if outside of function
@@ -256,7 +255,7 @@ private:
     /**
      * convert TypeToken to DSType..
      */
-    DSType *toType(TypeToken *typeToken);
+    DSType &toType(TypeToken *typeToken);
 
     /**
      * check type ApplyNode and resolve callee(handle or function type).
@@ -272,10 +271,10 @@ private:
     void checkTypeArgsNode(Node &node, MethodHandle *handle, std::vector<Node *> &argNodes);
 
     // for type cast
-    bool checkInt2Float(int beforePrecision, DSType *afterType);
-    bool checkFloat2Int(DSType *beforeType, int afterPrecision);
-    bool checkLong2Float(int beforePrecision, DSType *afterType);
-    bool checkFloat2Long(DSType *beforeType, int afterPrecision);
+    bool checkInt2Float(int beforePrecision, const DSType &afterType);
+    bool checkFloat2Int(const DSType &beforeType, int afterPrecision);
+    bool checkLong2Float(int beforePrecision, const DSType &afterType);
+    bool checkFloat2Long(const DSType &beforeType, int afterPrecision);
 
     /**
      * check to higher precision int type.

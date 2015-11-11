@@ -50,6 +50,7 @@ protected:
 public:
     NON_COPYABLE(DSObject);
 
+    explicit DSObject(DSType &type) : type(&type), refCount(0) { }
     explicit DSObject(DSType *type) : type(type), refCount(0) { }
 
     virtual ~DSObject() = default;
@@ -246,7 +247,7 @@ private:
     int value;
 
 public:
-    Int_Object(DSType *type, int value) : DSObject(type), value(value) { }
+    Int_Object(DSType &type, int value) : DSObject(type), value(value) { }
 
     ~Int_Object() = default;
 
@@ -264,7 +265,7 @@ private:
     long value;
 
 public:
-    Long_Object(DSType *type, long value) : DSObject(type), value(value) { }
+    Long_Object(DSType &type, long value) : DSObject(type), value(value) { }
 
     ~Long_Object() = default;
 
@@ -282,7 +283,7 @@ private:
     double value;
 
 public:
-    Float_Object(DSType *type, double value) : DSObject(type), value(value) { }
+    Float_Object(DSType &type, double value) : DSObject(type), value(value) { }
 
     ~Float_Object() = default;
 
@@ -300,7 +301,7 @@ private:
     bool value;
 
 public:
-    Boolean_Object(DSType *type, bool value) : DSObject(type), value(value) { }
+    Boolean_Object(DSType &type, bool value) : DSObject(type), value(value) { }
 
     ~Boolean_Object() = default;
 
@@ -318,13 +319,13 @@ private:
     std::string value;
 
 public:
-    String_Object(DSType *type, std::string &&value) :
+    String_Object(DSType &type, std::string &&value) :
             DSObject(type), value(std::move(value)) { }
 
-    String_Object(DSType *type, const std::string &value) :
+    String_Object(DSType &type, const std::string &value) :
             DSObject(type), value(value) { }
 
-    explicit String_Object(DSType *type) : DSObject(type), value() { }
+    explicit String_Object(DSType &type) : DSObject(type), value() { }
 
     ~String_Object() = default;
 
@@ -353,7 +354,7 @@ struct StringIter_Object : public DSObject {
     unsigned int curIndex;
     DSValue strObj;
 
-    StringIter_Object(DSType *type, String_Object *str) :
+    StringIter_Object(DSType &type, String_Object *str) :
             DSObject(type), curIndex(0), strObj(DSValue(str)) { }
 };
 
@@ -363,9 +364,9 @@ private:
     std::vector<DSValue> values;
 
 public:
-    explicit Array_Object(DSType *type) : DSObject(type), curIndex(0), values() { }
+    explicit Array_Object(DSType &type) : DSObject(type), curIndex(0), values() { }
 
-    Array_Object(DSType *type, std::vector<DSValue> &&values) :
+    Array_Object(DSType &type, std::vector<DSValue> &&values) :
             DSObject(type), curIndex(0), values(std::move(values)) { }
 
     ~Array_Object() = default;
@@ -409,7 +410,7 @@ private:
     HashMap::const_iterator iter;
 
 public:
-    explicit Map_Object(DSType *type) : DSObject(type), valueMap() { }
+    explicit Map_Object(DSType &type) : DSObject(type), valueMap() { }
 
     ~Map_Object() = default;
 
@@ -431,8 +432,8 @@ protected:
     DSValue *fieldTable;
 
 public:
-    explicit BaseObject(DSType *type) :
-            DSObject(type), fieldTable(new DSValue[type->getFieldSize()]) { }
+    explicit BaseObject(DSType &type) :
+            DSObject(type), fieldTable(new DSValue[type.getFieldSize()]) { }
 
     virtual ~BaseObject();
 
@@ -440,7 +441,7 @@ public:
 };
 
 struct Tuple_Object : public BaseObject {
-    explicit Tuple_Object(DSType *type) : BaseObject(type) { }
+    explicit Tuple_Object(DSType &type) : BaseObject(type) { }
 
     ~Tuple_Object() = default;
 
@@ -498,10 +499,10 @@ private:
     std::vector<StackTraceElement> stackTrace;
 
 public:
-    Error_Object(DSType *type, const DSValue &message) :
+    Error_Object(DSType &type, const DSValue &message) :
             DSObject(type), message(message), name(), stackTrace() { }
 
-    Error_Object(DSType *type, DSValue &&message) :
+    Error_Object(DSType &type, DSValue &&message) :
             DSObject(type), message(std::move(message)), name(), stackTrace() { }
 
     ~Error_Object() = default;
@@ -526,16 +527,16 @@ public:
     /**
      * create new Error_Object and create stack trace
      */
-    static DSValue newError(RuntimeContext &ctx, DSType *type, const DSValue &message);
+    static DSValue newError(RuntimeContext &ctx, DSType &type, const DSValue &message);
 
-    static DSValue newError(RuntimeContext &ctx, DSType *type, DSValue &&message);
+    static DSValue newError(RuntimeContext &ctx, DSType &type, DSValue &&message);
 
 private:
     void createStackTrace(RuntimeContext &ctx);
 };
 
 struct DummyObject : public DSObject {
-    DummyObject() : DSObject(0) { }
+    DummyObject() : DSObject(nullptr) { }
 
     ~DummyObject() = default;
 
@@ -553,7 +554,7 @@ private:
 
 public:
     explicit FuncObject(ast::FunctionNode *funcNode) :
-            DSObject(0), funcNode(funcNode) { }
+            DSObject(nullptr), funcNode(funcNode) { }
 
     ~FuncObject();
 
@@ -582,7 +583,7 @@ public:
 };
 
 struct ProxyObject : public DSObject {
-    explicit ProxyObject(DSType *type) : DSObject(type) { }
+    explicit ProxyObject(DSType &type) : DSObject(type) { }
 
     virtual ~ProxyObject() = default;
 
@@ -634,7 +635,7 @@ struct DBus_Object : public DSObject {
 };
 
 struct Bus_Object : public DSObject {
-    explicit Bus_Object(DSType *type);
+    explicit Bus_Object(DSType &type);
     virtual ~Bus_Object() = default;
 
     virtual bool service(RuntimeContext &ctx, std::string &&serviceName);
@@ -642,7 +643,7 @@ struct Bus_Object : public DSObject {
 };
 
 struct Service_Object : public DSObject {
-    explicit Service_Object(DSType *type);
+    explicit Service_Object(DSType &type);
     virtual ~Service_Object() = default;
 
     /**
