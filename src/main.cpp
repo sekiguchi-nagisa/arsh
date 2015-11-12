@@ -121,7 +121,8 @@ static void segvHandler(int) {
     OP(EXEC,           "-e",                  argv::HAS_ARG | argv::IGNORE_REST, "execute builtin command (ignore some option)") \
     OP(STATUS_LOG,     "--status-log",        argv::HAS_ARG, "write execution status to specified file (ignored in interactive mode)") \
     OP(FEATURE,        "--feature",           0, "show available features") \
-    OP(RC_FILE,        "--rcfile",            argv::HAS_ARG, "load specified rc file (only available interactive mode)")
+    OP(RC_FILE,        "--rcfile",            argv::HAS_ARG, "load specified rc file (only available interactive mode)") \
+    OP(QUIET,          "--quiet",             0, "suppress startup message (only available interactive mode)")
 
 enum OptionKind {
 #define GEN_ENUM(E, S, F, D) E,
@@ -178,6 +179,7 @@ int main(int argc, char **argv) {
     bool execBuiltin = false;
     bool userc = true;
     const char *rcfile = nullptr;
+    bool quiet = false;
 
     for(auto &cmdLine : cmdLines) {
         switch(cmdLine.first) {
@@ -226,6 +228,9 @@ int main(int argc, char **argv) {
         case RC_FILE:
             rcfile = cmdLine.second;
             break;
+        case QUIET:
+            quiet = true;
+            break;
         }
     }
 
@@ -260,8 +265,10 @@ int main(int argc, char **argv) {
     } else if(isatty(STDIN_FILENO) == 0) {  // pipe line mode
         return INVOKE(loadAndEval)(&ctx, nullptr, stdin);
     } else {    // interactive mode
-        std::cout << DSContext_getVersion() << std::endl;
-        std::cout << DSContext_getCopyright() << std::endl;
+        if(!quiet) {
+            std::cout << DSContext_getVersion() << std::endl;
+            std::cout << DSContext_getCopyright() << std::endl;
+        }
         if(userc) {
             loadRC(ctx, rcfile);
         }
