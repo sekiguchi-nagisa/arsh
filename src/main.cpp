@@ -122,7 +122,8 @@ static void segvHandler(int) {
     OP(STATUS_LOG,     "--status-log",        argv::HAS_ARG, "write execution status to specified file (ignored in interactive mode)") \
     OP(FEATURE,        "--feature",           0, "show available features") \
     OP(RC_FILE,        "--rcfile",            argv::HAS_ARG, "load specified rc file (only available interactive mode)") \
-    OP(QUIET,          "--quiet",             0, "suppress startup message (only available interactive mode)")
+    OP(QUIET,          "--quiet",             0, "suppress startup message (only available interactive mode)") \
+    OP(SET_ARGS,       "-s",                  argv::IGNORE_REST, "set arguments and read command from standard input")
 
 enum OptionKind {
 #define GEN_ENUM(E, S, F, D) E,
@@ -137,6 +138,13 @@ static const argv::Option<OptionKind> options[] = {
 };
 
 #undef EACH_OPT
+
+enum class InvocationKind {
+    FROM_FILE,
+    FROM_STDIN,
+    FROM_STRING,
+    BUILTIN,
+};
 
 int main(int argc, char **argv) {
     // init alternative stack (for signal handler)
@@ -175,8 +183,8 @@ int main(int argc, char **argv) {
     }
 
     DSContext *ctx = DSContext_create();
+    InvocationKind invocationKind = InvocationKind::FROM_FILE;
     const char *evalText = nullptr;
-    bool execBuiltin = false;
     bool userc = true;
     const char *rcfile = nullptr;
     bool quiet = false;
@@ -210,13 +218,14 @@ int main(int argc, char **argv) {
             std::cout << options << std::endl;
             return 0;
         case COMMAND:
+            invocationKind = InvocationKind::FROM_STRING;
             evalText = cmdLine.second;
             break;
         case NORC:
             userc = false;
             break;
         case EXEC:
-            execBuiltin = true;
+            invocationKind = InvocationKind::BUILTIN;
             restIndex--;
             break;
         case STATUS_LOG:
@@ -231,6 +240,9 @@ int main(int argc, char **argv) {
         case QUIET:
             quiet = true;
             break;
+        case SET_ARGS:
+            invocationKind = InvocationKind::FROM_STDIN;
+            break;
         }
     }
 
@@ -240,20 +252,13 @@ int main(int argc, char **argv) {
     memcpy(shellArgs, argv + restIndex, sizeof(char *) * size);
     shellArgs[size] = nullptr;
 
-    // execute builtin command
-    if(execBuiltin) {
-        return INVOKE(exec)(&ctx, (char **)shellArgs);
-    }
-
-    // evaluate argument
-    if(evalText != nullptr) {    // command line mode
-        DSContext_setShellName(ctx, shellArgs[0]);
-        DSContext_setArguments(ctx, size == 0 ? nullptr : shellArgs + 1);
-        return INVOKE(eval)(&ctx, evalText);
+    if(invocationKind == InvocationKind::FROM_FILE && size == 0) {
+        invocationKind = InvocationKind::FROM_STDIN;
     }
 
     // execute
-    if(size > 0) {   // script mode
+    switch(invocationKind) {
+    case InvocationKind::FROM_FILE: {
         const char *scriptName = shellArgs[0];
         FILE *fp = fopen(scriptName, "rb");
         if(fp == NULL) {
@@ -264,18 +269,32 @@ int main(int argc, char **argv) {
         DSContext_setShellName(ctx, scriptName);
         DSContext_setArguments(ctx, shellArgs + 1);
         return INVOKE(loadAndEval)(&ctx, scriptName, fp);
-    } else if(isatty(STDIN_FILENO) == 0) {  // pipe line mode
-        return INVOKE(loadAndEval)(&ctx, nullptr, stdin);
-    } else {    // interactive mode
-        if(!quiet) {
-            std::cout << DSContext_getVersion() << std::endl;
-            std::cout << DSContext_getCopyright() << std::endl;
-        }
-        if(userc) {
-            loadRC(ctx, rcfile);
-        }
-
-        exec_interactive(argv[0], ctx);
     }
-    return 0;
+    case InvocationKind::FROM_STDIN: {
+        DSContext_setArguments(ctx, shellArgs);
+
+        if(isatty(STDIN_FILENO) == 0) {  // pipe line mode
+            return INVOKE(loadAndEval)(&ctx, nullptr, stdin);
+        } else {    // interactive mode
+            if(!quiet) {
+                std::cout << DSContext_getVersion() << std::endl;
+                std::cout << DSContext_getCopyright() << std::endl;
+            }
+            if(userc) {
+                loadRC(ctx, rcfile);
+            }
+
+            exec_interactive(argv[0], ctx);
+            return 0;
+        }
+    }
+    case InvocationKind::FROM_STRING: {
+        DSContext_setShellName(ctx, shellArgs[0]);
+        DSContext_setArguments(ctx, size == 0 ? nullptr : shellArgs + 1);
+        return INVOKE(eval)(&ctx, evalText);
+    }
+    case InvocationKind::BUILTIN: {
+        return INVOKE(exec)(&ctx, (char **)shellArgs);
+    }
+    }
 }
