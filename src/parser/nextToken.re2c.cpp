@@ -44,8 +44,8 @@
 
 #define MODE(m) \
     do {\
-        if(this->modeStack.size() > 0) {\
-            this->modeStack[this->modeStack.size() - 1] = yyc ## m;\
+        if(!this->modeStack.empty()) {\
+            this->modeStack.back() = yyc ## m;\
         } else {\
             ERROR();\
         }\
@@ -58,7 +58,7 @@
  */
 #define COUNT_NEW_LINE() \
     do {\
-        unsigned int stopPos = this->getPos();\
+        const unsigned int stopPos = this->getPos();\
         for(unsigned int i = startPos; i < stopPos; ++i) {\
             if(this->buf[i] == '\n') { ++this->lineNum; } \
         }\

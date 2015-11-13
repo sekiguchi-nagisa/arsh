@@ -35,7 +35,7 @@
 namespace ydsh {
 namespace parser {
 
-enum LexerMode{
+enum LexerMode : unsigned char {
 #define GEN_ENUM(ENUM) ENUM,
     EACH_LEXER_MODE(GEN_ENUM)
 #undef GEN_ENUM
