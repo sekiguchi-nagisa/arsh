@@ -387,14 +387,20 @@ unsigned int DSContext_getLineNum(DSContext *ctx) {
     return ctx->lineNum;
 }
 
-void DSContext_setArguments(DSContext *ctx, char *const argv[]) {
+void DSContext_setShellName(DSContext *ctx, const char *shellName) {
+    if(shellName != nullptr) {
+        ctx->ctx.updateScriptName(shellName);
+    }
+}
+
+void DSContext_setArguments(DSContext *ctx, char *const args[]) {
+    if(args == nullptr) {
+        return;
+    }
+
     ctx->ctx.initScriptArg();
-    for(unsigned int i = 0; argv[i] != nullptr; i++) {
-        if(i == 0) {
-            ctx->ctx.updateScriptName(argv[0]);
-        } else {
-            ctx->ctx.addScriptArg(argv[i]);
-        }
+    for(unsigned int i = 0; args[i] != nullptr; i++) {
+        ctx->ctx.addScriptArg(args[i]);
     }
     ctx->ctx.finalizeScritArg();
 }

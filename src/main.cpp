@@ -175,7 +175,7 @@ int main(int argc, char **argv) {
     }
 
     DSContext *ctx = DSContext_create();
-    const char *evalArg = nullptr;
+    const char *evalText = nullptr;
     bool execBuiltin = false;
     bool userc = true;
     const char *rcfile = nullptr;
@@ -210,7 +210,7 @@ int main(int argc, char **argv) {
             std::cout << options << std::endl;
             return 0;
         case COMMAND:
-            evalArg = cmdLine.second;
+            evalText = cmdLine.second;
             break;
         case NORC:
             userc = false;
@@ -246,9 +246,10 @@ int main(int argc, char **argv) {
     }
 
     // evaluate argument
-    if(evalArg != nullptr) {    // command line mode
-        DSContext_setArguments(ctx, shellArgs);
-        return INVOKE(eval)(&ctx, evalArg);
+    if(evalText != nullptr) {    // command line mode
+        DSContext_setShellName(ctx, shellArgs[0]);
+        DSContext_setArguments(ctx, size == 0 ? nullptr : shellArgs + 1);
+        return INVOKE(eval)(&ctx, evalText);
     }
 
     // execute
@@ -260,7 +261,8 @@ int main(int argc, char **argv) {
             return 1;
         }
 
-        DSContext_setArguments(ctx, shellArgs);
+        DSContext_setShellName(ctx, scriptName);
+        DSContext_setArguments(ctx, shellArgs + 1);
         return INVOKE(loadAndEval)(&ctx, scriptName, fp);
     } else if(isatty(STDIN_FILENO) == 0) {  // pipe line mode
         return INVOKE(loadAndEval)(&ctx, nullptr, stdin);
