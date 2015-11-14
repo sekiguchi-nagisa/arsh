@@ -197,11 +197,17 @@ void Parser::parse_toplevel(RootNode &rootNode) {
     this->expect(EOS);
 }
 
-void Parser::refetch(unsigned int lineNum, unsigned int startPos, LexerMode mode) {
-    this->lexer->setLineNum(lineNum);
-    this->lexer->setPos(startPos);
+void Parser::refetch(LexerMode mode) {
+    this->lexer->setLineNum(this->curToken.lineNum);
+    this->lexer->setPos(this->curToken.startPos);
     this->lexer->setLexerMode(mode);
-    NEXT_TOKEN();
+    this->fetchNext();
+}
+
+void Parser::expectAfter(TokenKind kind, LexerMode mode) {
+    this->expect(kind, false);
+    this->lexer->setLexerMode(mode);
+    this->fetchNext();
 }
 
 std::unique_ptr<Node> Parser::parse_function() {
@@ -279,7 +285,7 @@ std::unique_ptr<Node> Parser::parse_interface() {
     for(bool next = true; next && CUR_KIND() != RBC;) {
         // set lexer mode
         if(this->lexer->getPrevMode() != yycSTMT) {
-            this->refetch(this->curToken.lineNum, this->curToken.startPos, yycSTMT);
+            this->refetch(yycSTMT);
         }
 
         switch(CUR_KIND()) {
@@ -379,7 +385,7 @@ std::unique_ptr<TypeToken> Parser::parse_typeName() {
         this->expect(TYPEOF, token);
         if(CUR_KIND() == TYPE_OTHER && this->lexer->equals(this->curToken, "(")) {  // treat as typeof operator
             this->expect(TYPE_OTHER, false);
-            this->lexer->pushLexerMode(yycEXPR);
+            this->lexer->pushLexerMode(yycSTMT);
             NEXT_TOKEN();
 
             std::unique_ptr<Node> exprNode(this->parse_expression());
@@ -443,9 +449,10 @@ std::unique_ptr<TypeToken> Parser::parse_typeName() {
 }
 
 std::unique_ptr<Node> Parser::parse_statement() {
-    bool redo = this->lexer->getPrevMode() != yycSTMT;
+    if(this->lexer->getPrevMode() != yycSTMT) {
+        this->refetch(yycSTMT);
+    }
 
-    START:
     switch(CUR_KIND()) {
     case LINE_END: {
         unsigned int n = LN();
@@ -535,7 +542,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
         this->expect(IDENTIFIER, token);
         std::unique_ptr<Node> defaultValueNode;
         if(!HAS_NL() && CUR_KIND() == COLON) {
-            NEXT_TOKEN();   // consume :
+            this->expectAfter(COLON, yycSTMT);
             defaultValueNode = this->parse_expression();
         }
 
@@ -629,11 +636,6 @@ std::unique_ptr<Node> Parser::parse_statement() {
         return node;
     }
     default: {
-        if(redo) {
-            redo = false;
-            this->refetch(this->curToken.lineNum, this->curToken.startPos, yycSTMT);
-            goto START;
-        }
         E_ALTER(
                 EACH_LA_statement(GEN_LA_ALTER)
                 DUMMY
@@ -770,7 +772,7 @@ std::unique_ptr<CatchNode> Parser::parse_catchStatement() {
     Token token;
     this->expect(APPLIED_NAME, token);
     std::unique_ptr<TypeToken> typeToken;
-    if(!HAS_NL() && CUR_KIND() == COLON) {
+    if(CUR_KIND() == COLON) {
         this->expect(COLON, false);
         typeToken = this->parse_typeName();
     }
@@ -1188,7 +1190,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
 
         std::unique_ptr<Node> node;
         if(CUR_KIND() == COLON) {   // map
-            this->expect(COLON);
+            this->expectAfter(COLON, yycSTMT);
 
             std::unique_ptr<Node> valueNode(this->parse_expression());
             std::unique_ptr<MapNode> mapNode(
@@ -1196,7 +1198,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
             while(CUR_KIND() == COMMA) {
                 this->expect(COMMA);
                 keyNode = this->parse_expression();
-                this->expect(COLON);
+                this->expectAfter(COLON, yycSTMT);
                 valueNode = this->parse_expression();
                 mapNode->addEntry(keyNode.release(), valueNode.release());
             }

@@ -138,82 +138,80 @@ void Lexer::nextToken(Token &token) {
     /*!re2c
       <STMT> "assert"          { RET(ASSERT); }
       <STMT> "break"           { RET(BREAK); }
-      <EXPR> "catch"           { RET(CATCH); }
+      <STMT> "catch"           { RET(CATCH); }
       <STMT> "class"           { MODE(NAME); RET(CLASS); }
       <STMT> "continue"        { RET(CONTINUE); }
       <STMT> "do"              { RET(DO); }
-      <EXPR> "elif"            { RET(ELIF); }
-      <EXPR> "else"            { RET(ELSE); }
+      <STMT> "elif"            { RET(ELIF); }
+      <STMT> "else"            { RET(ELSE); }
       <STMT> "export-env"      { MODE(NAME); RET(EXPORT_ENV); }
-      <EXPR> "finally"         { RET(FINALLY); }
+      <STMT> "finally"         { RET(FINALLY); }
       <STMT> "for"             { RET(FOR); }
       <STMT> "function"        { MODE(NAME); RET(FUNCTION); }
       <STMT> "if"              { RET(IF); }
       <STMT> "import-env"      { MODE(NAME); RET(IMPORT_ENV); }
       <STMT> "interface"       { RET(INTERFACE); }
       <STMT> "let"             { MODE(NAME); RET(LET); }
-      <STMT,EXPR> "new"        { MODE(EXPR); RET(NEW); }
-      <STMT,EXPR> "not"        { RET(NOT); }
+      <STMT> "new"             { MODE(EXPR); RET(NEW); }
+      <STMT> "not"             { RET(NOT); }
       <STMT> "return"          { RET(RETURN); }
       <STMT> "try"             { RET(TRY); }
       <STMT> "throw"           { RET(THROW); }
       <STMT> "type-alias"      { MODE(NAME); RET(TYPE_ALIAS);}
       <STMT> "var"             { MODE(NAME); RET(VAR); }
-      <STMT,EXPR> "while"      { RET(WHILE); }
+      <STMT> "while"           { RET(WHILE); }
 
-      <STMT,EXPR> "+"          { RET(PLUS); }
-      <STMT,EXPR> "-"          { RET(MINUS); }
+      <STMT,EXPR> "+"          { MODE(STMT); RET(PLUS); }
+      <STMT,EXPR> "-"          { MODE(STMT); RET(MINUS); }
 
-      <STMT,EXPR> NUM          { MODE(EXPR); RET(INT_LITERAL); }
-      <STMT,EXPR> NUM "b"      { MODE(EXPR); RET(BYTE_LITERAL); }
-      <STMT,EXPR> NUM "i16"    { MODE(EXPR); RET(INT16_LITERAL); }
-      <STMT,EXPR> NUM "i32"    { MODE(EXPR); RET(INT32_LITERAL); }
-      <STMT,EXPR> NUM "i64"    { MODE(EXPR); RET(INT64_LITERAL); }
-      <STMT,EXPR> NUM "u16"    { MODE(EXPR); RET(UINT16_LITERAL); }
-      <STMT,EXPR> NUM "u32"    { MODE(EXPR); RET(UINT32_LITERAL); }
-      <STMT,EXPR> NUM "u64"    { MODE(EXPR); RET(UINT64_LITERAL); }
-      <STMT,EXPR> FLOAT        { MODE(EXPR); RET(FLOAT_LITERAL); }
-      <STMT,EXPR> STRING_LITERAL
-                               { COUNT_NEW_LINE(); MODE(EXPR); RET(STRING_LITERAL); }
-      <STMT,EXPR> ESTRING_LITERAL
-                               { COUNT_NEW_LINE(); MODE(EXPR); RET(STRING_LITERAL); }
-      <STMT,EXPR> "p" ['] PATH_CHARS [']
+      <STMT> NUM               { MODE(EXPR); RET(INT_LITERAL); }
+      <STMT> NUM "b"           { MODE(EXPR); RET(BYTE_LITERAL); }
+      <STMT> NUM "i16"         { MODE(EXPR); RET(INT16_LITERAL); }
+      <STMT> NUM "i32"         { MODE(EXPR); RET(INT32_LITERAL); }
+      <STMT> NUM "i64"         { MODE(EXPR); RET(INT64_LITERAL); }
+      <STMT> NUM "u16"         { MODE(EXPR); RET(UINT16_LITERAL); }
+      <STMT> NUM "u32"         { MODE(EXPR); RET(UINT32_LITERAL); }
+      <STMT> NUM "u64"         { MODE(EXPR); RET(UINT64_LITERAL); }
+      <STMT> FLOAT             { MODE(EXPR); RET(FLOAT_LITERAL); }
+      <STMT> STRING_LITERAL    { COUNT_NEW_LINE(); MODE(EXPR); RET(STRING_LITERAL); }
+      <STMT> ESTRING_LITERAL   { COUNT_NEW_LINE(); MODE(EXPR); RET(STRING_LITERAL); }
+      <STMT> "p" ['] PATH_CHARS [']
                                { MODE(EXPR); RET(PATH_LITERAL); }
-      <STMT,EXPR> ["]          { MODE(EXPR); PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
-      <STMT,EXPR> "$("         { MODE(EXPR); PUSH_MODE(STMT); RET(START_SUB_CMD); }
+      <STMT> ["]               { MODE(EXPR); PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
+      <STMT> "$("              { MODE(EXPR); PUSH_MODE(STMT); RET(START_SUB_CMD); }
 
-      <STMT,EXPR> APPLIED_NAME { MODE(EXPR); RET(APPLIED_NAME); }
-      <STMT,EXPR> SPECIAL_NAME { MODE(EXPR); RET(SPECIAL_NAME); }
+      <STMT> APPLIED_NAME      { MODE(EXPR); RET(APPLIED_NAME); }
+      <STMT> SPECIAL_NAME      { MODE(EXPR); RET(SPECIAL_NAME); }
 
       <STMT,EXPR> "("          { MODE(EXPR); PUSH_MODE(STMT); RET(LP); }
       <STMT,EXPR> ")"          { POP_MODE(); RET(RP); }
-      <STMT,EXPR> "["          { MODE(EXPR); RET(LB); }
+      <STMT,EXPR> "["          { MODE(STMT); RET(LB); }
       <STMT,EXPR> "]"          { MODE(EXPR); RET(RB); }
-      <STMT,EXPR> "{"          { MODE(EXPR); PUSH_MODE(STMT); RET(LBC); }
+      <STMT,EXPR> "{"          { MODE(STMT); PUSH_MODE(STMT); RET(LBC); }
       <STMT,EXPR> "}"          { POP_MODE(); RET(RBC); }
 
       <STMT> CMD_START_CHAR CMD_CHAR*
                                { PUSH_MODE(CMD); COUNT_NEW_LINE(); RET(COMMAND); }
 
       <EXPR> ":"               { RET(COLON); }
-      <EXPR> ","               { RET(COMMA); }
+      <EXPR> ","               { MODE(STMT); RET(COMMA); }
 
-      <EXPR> "*"               { RET(MUL); }
-      <EXPR> "/"               { RET(DIV); }
-      <EXPR> "%"               { RET(MOD); }
-      <EXPR> "<"               { RET(LA); }
-      <EXPR> ">"               { RET(RA); }
-      <EXPR> "<="              { RET(LE); }
-      <EXPR> ">="              { RET(GE); }
-      <EXPR> "=="              { RET(EQ); }
-      <EXPR> "!="              { RET(NE); }
-      <EXPR> "&"               { RET(AND); }
-      <EXPR> "|"               { RET(OR); }
-      <EXPR> "^"               { RET(XOR); }
-      <EXPR> "&&"              { RET(COND_AND); }
-      <EXPR> "||"              { RET(COND_OR); }
-      <EXPR> "=~"              { RET(MATCH); }
-      <EXPR> "!~"              { RET(UNMATCH); }
+      <EXPR> "*"               { MODE(STMT); RET(MUL); }
+      <EXPR> "/"               { MODE(STMT); RET(DIV); }
+      <EXPR> "%"               { MODE(STMT); RET(MOD); }
+      <EXPR> "<"               { MODE(STMT); RET(LA); }
+      <EXPR> ">"               { MODE(STMT); RET(RA); }
+      <EXPR> "<="              { MODE(STMT); RET(LE); }
+      <EXPR> ">="              { MODE(STMT); RET(GE); }
+      <EXPR> "=="              { MODE(STMT); RET(EQ); }
+      <EXPR> "!="              { MODE(STMT); RET(NE); }
+      <EXPR> "&"               { MODE(STMT); RET(AND); }
+      <EXPR> "|"               { MODE(STMT); RET(OR); }
+      <EXPR> "^"               { MODE(STMT); RET(XOR); }
+      <EXPR> "&&"              { MODE(STMT); RET(COND_AND); }
+      <EXPR> "||"              { MODE(STMT); RET(COND_OR); }
+      <EXPR> "=~"              { MODE(STMT); RET(MATCH); }
+      <EXPR> "!~"              { MODE(STMT); RET(UNMATCH); }
 
       <EXPR> "++"              { RET(INC); }
       <EXPR> "--"              { RET(DEC); }
@@ -226,10 +224,10 @@ void Lexer::nextToken(Token &token) {
       <EXPR> "%="              { MODE(STMT); RET(MOD_ASSIGN); }
 
       <EXPR> "as"              { RET(AS); }
-      <EXPR> "in"              { RET(IN); }
       <EXPR> "is"              { RET(IS); }
+      <EXPR> "in"              { MODE(STMT); RET(IN); }
 
-      <EXPR,NAME> VAR_NAME     { MODE(EXPR); RET(IDENTIFIER); }
+      <NAME> VAR_NAME          { MODE(EXPR); RET(IDENTIFIER); }
       <EXPR> "."               { MODE(NAME); RET(ACCESSOR); }
 
       <STMT,EXPR> LINE_END     { MODE(STMT); RET(LINE_END); }
@@ -248,7 +246,7 @@ void Lexer::nextToken(Token &token) {
       <DSTRING,CMD> INNER_NAME { RET(APPLIED_NAME); }
       <DSTRING,CMD> INNER_SPECIAL_NAME
                                { RET(SPECIAL_NAME); }
-      <DSTRING,CMD> "${"       { PUSH_MODE(EXPR); RET(START_INTERP); }
+      <DSTRING,CMD> "${"       { PUSH_MODE(STMT); RET(START_INTERP); }
       <DSTRING,CMD> "$("       { PUSH_MODE(STMT); RET(START_SUB_CMD); }
 
       <CMD> CMD_ARG_START_CHAR CMD_CHAR*

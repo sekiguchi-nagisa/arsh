@@ -1,0 +1,4 @@
+#$test($result = 'throw', $lineNum = 4, $errorKind = 'SystemError', $status = 1)
+
+try {}
+catch% # recognized as command 'catch%'

@@ -5,7 +5,9 @@ try {
     assert($false)
 } catch($e : OutOfRangeError) {
     assert($false)
-} catch($e : ArithmeticError) {
+} catch($e
+     :
+       ArithmeticError) {
     assert($true)
 } catch($e : Error) {
     assert($false)

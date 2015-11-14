@@ -154,11 +154,11 @@
 namespace ydsh {
 namespace parser {
 
-typedef enum {
+enum TokenKind : unsigned int {
 #define GEN_ENUM(ENUM, STR) ENUM,
     EACH_TOKEN(GEN_ENUM)
 #undef GEN_ENUM
-} TokenKind;
+};
 
 const char *toString(TokenKind kind);
 
