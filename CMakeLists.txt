@@ -83,6 +83,14 @@ show_option(USE_SAFE_CAST)
 check_header(HAVE_HISTEDIT_H "histedit.h")
 find_library(HAVE_LIBEDIT NAMES edit)
 
+#++++++++++++++++++++++++#
+#     find libcurses     #
+#++++++++++++++++++++++++#
+
+find_library(HAVE_LIBCURSES NAMES curses)
+if(NOT ${HAVE_LIBCURSES})
+    find_library(HAVE_LIBCURSES NAMES ncurses) 
+endif()
 
 #++++++++++++++++++++++#
 #     find libdbus     #
@@ -222,7 +230,7 @@ endif()
 #==============#
 
 add_executable(${BIN_NAME} src/main.cpp src/interactive.cpp)
-target_link_libraries(${BIN_NAME} ${YDSH_STATIC} ${HAVE_LIBEDIT})
+target_link_libraries(${BIN_NAME} ${YDSH_STATIC} ${HAVE_LIBEDIT} ${HAVE_LIBCURSES})
 
 install(TARGETS ${BIN_NAME} RUNTIME DESTINATION bin)
 
