@@ -24,6 +24,18 @@ $b.add($true)
 assert($b.size() == 1)
 assert($b[0])
 
+$b.clear()
+assert($b.empty())
+
+# stack op
+$b.push($true)
+assert($b.size() == 1)
+assert($b.peek())
+assert($b.pop())
+assert($b.empty())
+try { $b.pop(); assert($false) } catch($e) { assert($e is OutOfRangeError) }
+
+
 # iterator
 var c = [23, 32]
 try {

@@ -375,6 +375,10 @@ public:
         return this->values;
     }
 
+    std::vector<DSValue> &refValues() {
+        return this->values;
+    }
+
     std::string toString(RuntimeContext &ctx); // override
     void append(DSValue &&obj);
     void append(const DSValue &obj);
@@ -415,6 +419,10 @@ public:
     ~Map_Object() = default;
 
     const HashMap &getValueMap() const {
+        return this->valueMap;
+    }
+
+    HashMap &refValueMap() {
         return this->valueMap;
     }
 

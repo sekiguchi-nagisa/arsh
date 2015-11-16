@@ -15,6 +15,13 @@ assert(not $a.empty())
 assert($a.find("b"))
 assert(not $a.find("c"))
 
+assert($a.put("c", -19))
+assert(not $a.put("c", 789))
+
+assert(not $a.remove("333"))
+assert($a.remove("c"))
+assert(not $a.find("c"))
+
 
 var b = new Map<Int, Float>()
 assert($b.size() == 0)
@@ -23,6 +30,10 @@ assert($b.empty())
 $b[34] = 34.56
 assert($b.size() == 1)
 assert($b[34] == 34.56)
+
+$b.clear()
+assert($b.empty())
+assert(not $b.find(34))
 
 # iterator
 var c = ["a" : 23, "d" : 43, "e" : 4]

@@ -1008,8 +1008,12 @@ static inline bool string_count(RuntimeContext &ctx) {
     RET(DSValue::create<Int_Object>(ctx.getPool().getInt32Type(), count));
 }
 
-static void throwOutOfRangeError(RuntimeContext &ctx, std::string &&message) {
+/**
+ * return always false.
+ */
+static bool throwOutOfRangeError(RuntimeContext &ctx, std::string &&message) {
     ctx.throwError(ctx.getPool().getOutOfRangeErrorType(), std::move(message));
+    return false;
 }
 
 //!bind: function $OP_GET($this : String, $index : Int32) : String
@@ -1040,8 +1044,7 @@ static inline bool string_get(RuntimeContext &ctx) {
     msg += std::to_string(size);
     msg += ", but code position is ";
     msg += std::to_string(pos);
-    throwOutOfRangeError(ctx, std::move(msg));
-    return false;
+    return throwOutOfRangeError(ctx, std::move(msg));
 }
 
 /**
@@ -1065,8 +1068,7 @@ static bool sliceImpl(RuntimeContext &ctx, String_Object *strObj, int startIndex
         msg += ", ";
         msg += std::to_string(stopIndex);
         msg += ")";
-        throwOutOfRangeError(ctx, std::move(msg));
-        return false;
+        return throwOutOfRangeError(ctx, std::move(msg));
     }
 
     RET(DSValue::create<String_Object>(
@@ -1287,8 +1289,7 @@ static inline bool stringIter_next(RuntimeContext &ctx) {
     auto strIter = typeAs<StringIter_Object>(LOCAL(0));
     auto strObj = typeAs<String_Object>(strIter->strObj);
     if(strIter->curIndex >= strObj->size()) {
-        throwOutOfRangeError(ctx, std::string("string iterator reach end of string"));
-        return false;
+        return throwOutOfRangeError(ctx, std::string("string iterator reach end of string"));
     }
     unsigned int curIndex = strIter->curIndex;
     strIter->curIndex = misc::UTF8Util::getNextPos(curIndex, strObj->getValue()[curIndex]);
@@ -1353,8 +1354,7 @@ static inline bool array_add(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_add);
     Array_Object *obj = typeAs<Array_Object>(LOCAL(0));
     if(obj->getValues().size() == INT32_MAX) {
-        ctx.throwError(ctx.getPool().getOutOfRangeErrorType(), "reach Array size limit");
-        return false;
+        return throwOutOfRangeError(ctx, std::string("reach Array size limit"));
     }
     obj->append(LOCAL(1));
     RET(LOCAL(0));
@@ -1367,8 +1367,7 @@ static bool checkRange(RuntimeContext &ctx, int index, int size) {
         message += std::to_string(size);
         message += ", but index is ";
         message += std::to_string(index);
-        throwOutOfRangeError(ctx, std::move(message));
-        return false;
+        return throwOutOfRangeError(ctx, std::move(message));
     }
     return true;
 }
@@ -1400,6 +1399,34 @@ static inline bool array_set(RuntimeContext &ctx) {
     return true;
 }
 
+//!bind: function peek($this : Array<T0>) : T0
+static inline bool array_peek(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_peek);
+    Array_Object *obj = typeAs<Array_Object>(LOCAL(0));
+    if(obj->getValues().empty()) {
+        return throwOutOfRangeError(ctx, std::string("Array size is 0"));
+    }
+
+    DSValue poped = obj->refValues().back();
+    RET(std::move(poped));
+}
+
+//!bind: function push($this : Array<T0>, $value : T0) : Void
+static inline bool array_push(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_push);
+    return array_add(ctx);
+}
+
+//!bind: function pop($this : Array<T0>) : T0
+static inline bool array_pop(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_pop);
+    bool r = array_peek(ctx);
+    if(r) {
+        typeAs<Array_Object>(LOCAL(0))->refValues().pop_back();
+    }
+    return r;
+}
+
 //!bind: function size($this : Array<T0>) : Int32
 static inline bool array_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_size);
@@ -1414,6 +1441,15 @@ static inline bool array_empty(RuntimeContext &ctx) {
     RET_BOOL(empty);
 }
 
+//!bind: function clear($this : Array<T0>) : Void
+static inline bool array_clear(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_clear);
+    Array_Object *obj = typeAs<Array_Object>(LOCAL(0));
+    obj->initIterator();
+    obj->refValues().clear();
+    RET_BOOL(true);
+}
+
 //!bind: function $OP_ITER($this : Array<T0>) : Array<T0>
 static inline bool array_iter(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_iter);
@@ -1426,9 +1462,7 @@ static inline bool array_next(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_next);
     Array_Object *obj = typeAs<Array_Object>(LOCAL(0));
     if(!obj->hasNext()) {
-        ctx.throwError(ctx.getPool().getOutOfRangeErrorType(),
-                       "array iterator has already reached end");
-        return false;
+        return throwOutOfRangeError(ctx, std::string("array iterator has already reached end"));
     }
     RET(obj->nextElement());
 }
@@ -1480,6 +1514,14 @@ static inline bool map_set(RuntimeContext &ctx) {
     return true;
 }
 
+//!bind: function put($this : Map<T0, T1>, $key : T0, $value : T1) : Boolean
+static inline bool map_put(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(map_put);
+    Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
+    auto pair = obj->refValueMap().insert(std::make_pair(LOCAL(1), LOCAL(2)));
+    RET_BOOL(pair.second);
+}
+
 //!bind: function size($this : Map<T0, T1>) : Int32
 static inline bool map_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_size);
@@ -1504,6 +1546,23 @@ static inline bool map_find(RuntimeContext &ctx) {
     RET_BOOL(iter != obj->getValueMap().end());
 }
 
+//!bind: function remove($this : Map<T0, T1>, $key : T0) : Boolean
+static inline bool map_remove(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(map_remove);
+    Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
+    unsigned int size = obj->refValueMap().erase(LOCAL(1));
+    RET_BOOL(size == 1);
+}
+
+//!bind: function clear($this : Map<T0, T1>) : Void
+static inline bool map_clear(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(map_clear);
+    Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
+    obj->initIterator();
+    obj->refValueMap().clear();
+    RET_BOOL(true);
+}
+
 //!bind: function $OP_ITER($this : Map<T0, T1>) : Map<T0, T1>
 static inline bool map_iter(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_iter);
@@ -1516,9 +1575,7 @@ static inline bool map_next(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_next);
     Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
     if(!obj->hasNext()) {
-        ctx.throwError(ctx.getPool().getOutOfRangeErrorType(),
-                       "map iterator has already reached end");
-        return false;
+        return throwOutOfRangeError(ctx, std::string("map iterator has already reached end"));
     }
     RET(obj->nextElement(ctx));
 }
