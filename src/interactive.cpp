@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-extern "C" {
 #include <histedit.h>
-}
 
+#include <clocale>
 #include <csetjmp>
 #include <csignal>
 #include <cstring>
@@ -80,6 +79,8 @@ std::string lineBuf;
 
 static void initEditLine(const char *progName) {
     ignoreSignal();
+
+    setlocale(LC_ALL, "");
 
     el = el_init(progName, stdin, stdout, stderr);
     el_set(el, EL_PROMPT, prompt);
