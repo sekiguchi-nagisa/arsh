@@ -39,7 +39,7 @@ namespace ast {
 using namespace ydsh::core;
 
 class Node;
-class TypeToken;
+class TypeNode;
 class RootNode;
 
 class NodeDumper {
@@ -71,11 +71,7 @@ public:
      */
     void dump(const char *fieldName, const Node &node);
 
-    void dump(const char *fieldName, const TypeToken &tok);
-
     void dump(const char *fieldName, const DSType &type);
-
-    void dump(const char *fieldName, const std::vector<TypeToken *> &toks);
 
     void dumpNull(const char *fieldName);
 

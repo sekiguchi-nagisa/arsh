@@ -25,7 +25,6 @@
 #include "../misc/noncopyable.h"
 #include "../parser/TokenKind.h"
 #include "../core/DSObject.h"
-#include "TypeToken.h"
 
 namespace ydsh {
 namespace core {
@@ -112,6 +111,168 @@ public:
     virtual void accept(NodeVisitor &visitor) = 0;
     virtual EvalStatus eval(RuntimeContext &ctx) = 0;
 };
+
+// type definition
+/**
+ * represent for parsed type.
+ */
+class TypeNode : public Node {
+public:
+    explicit TypeNode(unsigned int lineNum) : Node(lineNum) { }
+
+    virtual ~TypeNode() = default;
+
+    virtual void dump(NodeDumper &dumper) const = 0;
+    virtual void accept(NodeVisitor &visitor) = 0;
+
+    EvalStatus eval(RuntimeContext &ctx);   // override
+};
+
+class BaseTypeNode : public TypeNode {
+private:
+    std::string typeName;
+
+public:
+    BaseTypeNode(unsigned int lineNum, std::string &&typeName) :
+            TypeNode(lineNum), typeName(std::move(typeName)) { }
+
+    ~BaseTypeNode() = default;
+
+    const std::string &getTokenText() const {
+        return this->typeName;
+    }
+
+    void dump(NodeDumper &dumper) const; // override
+    void accept(NodeVisitor &visitor); // override
+};
+
+/**
+ * for reified type and tuple type
+ */
+class ReifiedTypeNode : public TypeNode {
+private:
+    BaseTypeNode *templateTypeNode;
+    std::vector<TypeNode *> elementTypeNodes;
+
+public:
+    explicit ReifiedTypeNode(BaseTypeNode *templateTypeNode) :
+            TypeNode(templateTypeNode->getLineNum()),
+            templateTypeNode(templateTypeNode), elementTypeNodes() { }
+
+    ~ReifiedTypeNode();
+
+    void addElementTypeNode(TypeNode *typeNode);
+
+    BaseTypeNode *getTemplate() const {
+        return this->templateTypeNode;
+    }
+
+    const std::vector<TypeNode *> &getElementTypeNodes() const {
+        return this->elementTypeNodes;
+    }
+
+    void dump(NodeDumper &dumper) const; // override
+    void accept(NodeVisitor &visitor); // override
+};
+
+class FuncTypeNode : public TypeNode {
+private:
+    TypeNode *returnTypeNode;
+
+    /**
+     * may be empty vector, if has no parameter
+     */
+    std::vector<TypeNode *> paramTypeNodes;
+
+public:
+    explicit FuncTypeNode(TypeNode *returnTypeNode) :
+            TypeNode(returnTypeNode->getLineNum()),
+            returnTypeNode(returnTypeNode), paramTypeNodes() { }
+
+    ~FuncTypeNode();
+
+    void addParamTypeNode(TypeNode *typeNode);
+
+    const std::vector<TypeNode *> &getParamTypeNodes() const {
+        return this->paramTypeNodes;
+    }
+
+    TypeNode *getReturnTypeNode() const {
+        return this->returnTypeNode;
+    }
+
+    void dump(NodeDumper &dumper) const; // override
+    void accept(NodeVisitor &visitor); // override
+};
+
+class DBusIfaceTypeNode : public TypeNode {
+private:
+    /**
+     * must be valid interface name.
+     * ex. org.freedesktop.NetworkManager
+     */
+    std::string name;
+
+public:
+    DBusIfaceTypeNode(unsigned int lineNum, std::string &&name) :
+            TypeNode(lineNum), name(std::move(name)) { }
+
+    ~DBusIfaceTypeNode() = default;
+
+    const std::string &getTokenText() const {
+        return this->name;
+    }
+
+    void dump(NodeDumper &dumper) const; // override
+    void accept(NodeVisitor &visitor); // override
+};
+
+/**
+ * for multiple return type
+ */
+class ReturnTypeNode : public TypeNode {
+private:
+    std::vector<TypeNode *> typeNodes;
+
+public:
+    explicit ReturnTypeNode(TypeNode *typeNode);
+    ~ReturnTypeNode();
+
+    void addTypeNode(TypeNode *typeNode);
+
+    const std::vector<TypeNode *> &getTypeNodes() const {
+        return this->typeNodes;
+    }
+
+    bool hasMultiReturn() const {
+        return this->typeNodes.size() > 1;
+    }
+
+    void dump(NodeDumper &dumper) const; // override
+    void accept(NodeVisitor &visitor); // override
+};
+
+class TypeOfNode : public TypeNode {
+private:
+    Node *exprNode;
+
+public:
+    TypeOfNode(Node *exprNode);
+    ~TypeOfNode();
+
+    Node *getExprNode() const {
+        return this->exprNode;
+    }
+
+    void dump(NodeDumper &dumper) const; // override
+    void accept(NodeVisitor &visitor); // override
+};
+
+TypeNode *newAnyTypeNode(unsigned int lineNum = 0);
+
+TypeNode *newVoidTypeNode(unsigned int lineNum = 0);
+
+
 
 // expression definition
 
@@ -545,12 +706,12 @@ private:
     /**
      * may be tagged pointer
      */
-    TypeToken *targetTypeToken;
+    TypeNode *targetTypeNode;
 
     CastOp opKind;
 
 public:
-    CastNode(Node *exprNode, TypeToken *type, bool dupTypeToken = false);
+    CastNode(Node *exprNode, TypeNode *type, bool dupTypeToken = false);
 
     ~CastNode();
 
@@ -558,7 +719,7 @@ public:
         return this->exprNode;
     }
 
-    TypeToken *getTargetTypeToken() const;
+    TypeNode *getTargetTypeNode() const;
 
     void setOpKind(CastOp opKind) {
         this->opKind = opKind;
@@ -590,14 +751,13 @@ public:
 
 private:
     Node *targetNode;
-    TypeToken *targetTypeToken;
-    DSType *targetType;
+    TypeNode *targetTypeNode;
     InstanceOfOp opKind;
 
 public:
-    InstanceOfNode(Node *targetNode, TypeToken *typeToken) :
-            Node(targetNode->getLineNum()), targetNode(targetNode), targetTypeToken(typeToken),
-            targetType(0), opKind(ALWAYS_FALSE) { }
+    InstanceOfNode(Node *targetNode, TypeNode *typeNode) :
+            Node(targetNode->getLineNum()), targetNode(targetNode),
+            targetTypeNode(typeNode), opKind(ALWAYS_FALSE) { }
 
     ~InstanceOfNode();
 
@@ -605,16 +765,8 @@ public:
         return this->targetNode;
     }
 
-    TypeToken *getTargetTypeToken() const {
-        return this->targetTypeToken;
-    }
-
-    void setTargetType(DSType &targetType) {
-        this->targetType = &targetType;
-    }
-
-    DSType *getTargetType() const {
-        return this->targetType;
+    TypeNode *getTargetTypeNode() const {
+        return this->targetTypeNode;
     }
 
     void setOpKind(InstanceOfOp opKind) {
@@ -735,17 +887,17 @@ public:
  */
 class NewNode : public Node {
 private:
-    TypeToken *targetTypeToken;
+    TypeNode *targetTypeNode;
     std::vector<Node *> argNodes;
 
 public:
-    NewNode(unsigned int lineNum, TypeToken *targetTypeToken, std::vector<Node *> &&argNodes) :
-            Node(lineNum), targetTypeToken(targetTypeToken), argNodes(std::move(argNodes)) { }
+    NewNode(unsigned int lineNum, TypeNode *targetTypeNode, std::vector<Node *> &&argNodes) :
+            Node(lineNum), targetTypeNode(targetTypeNode), argNodes(std::move(argNodes)) { }
 
     ~NewNode();
 
-    TypeToken *getTargetTypeToken() const {
-        return this->targetTypeToken;
+    TypeNode *getTargetTypeNode() const {
+        return this->targetTypeNode;
     }
 
     const std::vector<Node *> &getArgNodes() const {
@@ -1318,15 +1470,15 @@ public:
 class TypeAliasNode : public Node {
 private:
     std::string alias;
-    TypeToken *targetTypeToken;
+    TypeNode *targetTypeNode;
 
 public:
-    TypeAliasNode(unsigned int lineNum, std::string &&alias, TypeToken *targetTypeToken) :
-            Node(lineNum), alias(std::move(alias)), targetTypeToken(targetTypeToken) { }
+    TypeAliasNode(unsigned int lineNum, std::string &&alias, TypeNode *targetTypeNode) :
+            Node(lineNum), alias(std::move(alias)), targetTypeNode(targetTypeNode) { }
 
     TypeAliasNode(const char *alias, const char *targetTypeName) :
             Node(0), alias(std::string(alias)),
-            targetTypeToken(new ClassTypeToken(0, std::string(targetTypeName))) { }
+            targetTypeNode(new BaseTypeNode(0, std::string(targetTypeName))) { }
 
     ~TypeAliasNode();
 
@@ -1334,8 +1486,8 @@ public:
         return this->alias;
     }
 
-    TypeToken *getTargetTypeToken() const {
-        return this->targetTypeToken;
+    TypeNode *getTargetTypeNode() const {
+        return this->targetTypeNode;
     }
 
     void dump(NodeDumper &dumper) const;  // override
@@ -1559,12 +1711,7 @@ public:
 class CatchNode : public Node {
 private:
     std::string exceptionName;
-    TypeToken *typeToken;
-
-    /**
-     * may be null, if has no type annotation.
-     */
-    DSType *exceptionType;
+    TypeNode *typeNode;
 
     unsigned int varIndex;
 
@@ -1572,12 +1719,12 @@ private:
 
 public:
     CatchNode(unsigned int lineNum, std::string &&exceptionName, BlockNode *blockNode) :
-            CatchNode(lineNum, std::move(exceptionName), newAnyTypeToken(lineNum), blockNode) { }
+            CatchNode(lineNum, std::move(exceptionName), newAnyTypeNode(lineNum), blockNode) { }
 
     CatchNode(unsigned int lineNum, std::string &&exceptionName,
-              TypeToken *type, BlockNode *blockNode) :
+              TypeNode *typeNode, BlockNode *blockNode) :
             Node(lineNum), exceptionName(std::move(exceptionName)),
-            typeToken(type), exceptionType(nullptr), varIndex(0), blockNode(blockNode) { }
+            typeNode(typeNode), varIndex(0), blockNode(blockNode) { }
 
     ~CatchNode();
 
@@ -1585,19 +1732,8 @@ public:
         return this->exceptionName;
     }
 
-    TypeToken *getTypeToken() const {
-        return this->typeToken;
-    }
-
-    void setExceptionType(DSType &type) {
-        this->exceptionType = &type;
-    }
-
-    /**
-     * return null if has no exception type
-     */
-    DSType *getExceptionType() const {
-        return this->exceptionType;
+    TypeNode *getTypeNode() const {
+        return this->typeNode;
     }
 
     void setAttribute(FieldHandle *handle);
@@ -1840,11 +1976,9 @@ private:
     /**
      * type token of each parameter
      */
-    std::vector<TypeToken *> paramTypeTokens;
+    std::vector<TypeNode *> paramTypeNodes;
 
-    TypeToken *returnTypeToken;
-
-    DSType *returnType;
+    TypeNode *returnTypeNode;
 
     BlockNode *blockNode;
 
@@ -1863,7 +1997,7 @@ private:
 public:
     FunctionNode(unsigned int lineNum, std::string &&funcName) :
             Node(lineNum), funcName(std::move(funcName)),
-            paramNodes(), paramTypeTokens(), returnTypeToken(), returnType(0),
+            paramNodes(), paramTypeNodes(), returnTypeNode(),
             blockNode(), maxVarNum(0), varIndex(0) { }
 
     ~FunctionNode();
@@ -1872,29 +2006,21 @@ public:
         return this->funcName;
     }
 
-    void addParamNode(VarNode *node, TypeToken *paramType);
+    void addParamNode(VarNode *node, TypeNode *paramType);
 
     const std::vector<VarNode *> &getParamNodes() const {
         return this->paramNodes;
     }
 
-    const std::vector<TypeToken *> &getParamTypeTokens() const {
-        return this->paramTypeTokens;
+    const std::vector<TypeNode *> &getParamTypeNodes() const {
+        return this->paramTypeNodes;
     }
 
-    void setReturnTypeToken(TypeToken *typeToken) {
-        this->returnTypeToken = typeToken;
+    void setReturnTypeToken(TypeNode *typeToken) {
+        this->returnTypeNode = typeToken;
     }
 
-    TypeToken *getReturnTypeToken();
-
-    void setReturnType(DSType *returnType) {
-        this->returnType = returnType;
-    }
-
-    DSType *getReturnType() const {
-        return this->returnType;
-    }
+    TypeNode *getReturnTypeToken();
 
     void setBlockNode(BlockNode *blockNode) {
         this->blockNode = blockNode;
@@ -1937,12 +2063,12 @@ private:
 
     std::vector<FunctionNode *> methodDeclNodes;
     std::vector<VarDeclNode *> fieldDeclNodes;
-    std::vector<TypeToken *> fieldTypeTokens;
+    std::vector<TypeNode *> fieldTypeNodes;
 
 public:
     InterfaceNode(unsigned int lineNum, std::string &&interfaceName) :
             Node(lineNum), interfaceName(std::move(interfaceName)), methodDeclNodes(),
-            fieldDeclNodes(), fieldTypeTokens() { }
+            fieldDeclNodes(), fieldTypeNodes() { }
 
     ~InterfaceNode();
 
@@ -1959,14 +2085,14 @@ public:
     /**
      * initNode of node is null.
      */
-    void addFieldDecl(VarDeclNode *node, TypeToken *typeToken);
+    void addFieldDecl(VarDeclNode *node, TypeNode *typeNode);
 
     const std::vector<VarDeclNode *> &getFieldDeclNodes() const {
         return this->fieldDeclNodes;
     }
 
-    const std::vector<TypeToken *> &getFieldTypeTokens() const {
-        return this->fieldTypeTokens;
+    const std::vector<TypeNode *> &getFieldTypeNodes() const {
+        return this->fieldTypeNodes;
     }
 
     void dump(NodeDumper &dumper) const;  // override
@@ -2156,6 +2282,12 @@ struct NodeVisitor {
     virtual ~NodeVisitor() = default;
 
     virtual void visit(Node &node) { node.accept(*this); }
+    virtual void visitBaseTypeNode(BaseTypeNode &node) = 0;
+    virtual void visitReifiedTypeNode(ReifiedTypeNode &node) = 0;
+    virtual void visitFuncTypeNode(FuncTypeNode &node) = 0;
+    virtual void visitDBusIfaceTypeNode(DBusIfaceTypeNode &node) = 0;
+    virtual void visitReturnTypeNode(ReturnTypeNode &node) = 0;
+    virtual void visitTypeOfNode(TypeOfNode &node) = 0;
     virtual void visitIntValueNode(IntValueNode &node) = 0;
     virtual void visitLongValueNode(LongValueNode &node) = 0;
     virtual void visitFloatValueNode(FloatValueNode &node) = 0;
@@ -2214,6 +2346,12 @@ struct BaseVisitor : public NodeVisitor {
 
     virtual void visitDefault(Node &node) = 0;
 
+    virtual void visitBaseTypeNode(BaseTypeNode &node) { this->visitDefault(node); }
+    virtual void visitReifiedTypeNode(ReifiedTypeNode &node) { this->visitDefault(node); }
+    virtual void visitFuncTypeNode(FuncTypeNode &node) { this->visitDefault(node); }
+    virtual void visitDBusIfaceTypeNode(DBusIfaceTypeNode &node) { this->visitDefault(node); }
+    virtual void visitReturnTypeNode(ReturnTypeNode &node) { this->visitDefault(node); }
+    virtual void visitTypeOfNode(TypeOfNode &node) { this->visitDefault(node); }
     virtual void visitIntValueNode(IntValueNode &node) { this->visitDefault(node); }
     virtual void visitLongValueNode(LongValueNode &node) { this->visitDefault(node); }
     virtual void visitFloatValueNode(FloatValueNode &node) { this->visitDefault(node); }

@@ -23,7 +23,6 @@
 #include "ParserBase.hpp"
 #include "Lexer.h"
 #include "../ast/Node.h"
-#include "../ast/TypeToken.h"
 
 namespace ydsh {
 namespace parser {
@@ -85,12 +84,12 @@ private:
     /**
      * not call it directory
      */
-    std::unique_ptr<TypeToken> parse_basicOrReifiedType(Token &token);
+    std::unique_ptr<TypeNode> parse_basicOrReifiedType(Token &token);
 
     /**
      * not call NETX_TOKEN, before call it.
      */
-    std::unique_ptr<TypeToken> parse_typeName();
+    std::unique_ptr<TypeNode> parse_typeName();
 
     std::unique_ptr<Node> parse_statement();
 

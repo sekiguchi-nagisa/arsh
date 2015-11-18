@@ -2,65 +2,64 @@
 
 #include <core/TypePool.h>
 #include <core/DSType.h>
-#include <ast/TypeToken.h>
 #include <parser/TypeChecker.h>
 
 using namespace ydsh::core;
 using namespace ydsh::ast;
 
 // helper method for type token generation
-std::unique_ptr<TypeToken> addRestElements(std::unique_ptr<ReifiedTypeToken> &&reified) {
+std::unique_ptr<TypeNode> addRestElements(std::unique_ptr<ReifiedTypeNode> &&reified) {
     return std::move(reified);
 }
 
 template <typename... T>
-std::unique_ptr<TypeToken> addRestElements(std::unique_ptr<ReifiedTypeToken> &&reified,
-                                           std::unique_ptr<TypeToken>&& type, T&&... rest) {
-    reified->addElementTypeToken(type.release());
+std::unique_ptr<TypeNode> addRestElements(std::unique_ptr<ReifiedTypeNode> &&reified,
+                                          std::unique_ptr<TypeNode>&& type, T&&... rest) {
+    reified->addElementTypeNode(type.release());
     return addRestElements(std::move(reified), std::forward<T>(rest)...);
 }
 
 
 template <typename... T>
-std::unique_ptr<TypeToken> reified(const char *name, std::unique_ptr<TypeToken> &&first, T&&... rest) {
-    std::unique_ptr<ReifiedTypeToken> reified(
-            new ReifiedTypeToken(new ClassTypeToken(0, std::string(name))));
-    reified->addElementTypeToken(first.release());
+std::unique_ptr<TypeNode> reified(const char *name, std::unique_ptr<TypeNode> &&first, T&&... rest) {
+    std::unique_ptr<ReifiedTypeNode> reified(
+            new ReifiedTypeNode(new BaseTypeNode(0, std::string(name))));
+    reified->addElementTypeNode(first.release());
     return addRestElements(std::move(reified), std::forward<T>(rest)...);
 }
 
 
-std::unique_ptr<TypeToken> addParamType(std::unique_ptr<FuncTypeToken> &&func) {
+std::unique_ptr<TypeNode> addParamType(std::unique_ptr<FuncTypeNode> &&func) {
     return std::move(func);
 }
 
 template <typename... T>
-std::unique_ptr<TypeToken> addParamType(std::unique_ptr<FuncTypeToken> &&func,
-                                        std::unique_ptr<TypeToken>&& type, T&&... rest) {
-    func->addParamTypeToken(type.release());
+std::unique_ptr<TypeNode> addParamType(std::unique_ptr<FuncTypeNode> &&func,
+                                       std::unique_ptr<TypeNode>&& type, T&&... rest) {
+    func->addParamTypeNode(type.release());
     return addParamType(std::move(func), std::forward<T>(rest)...);
 }
 
 template <typename... T>
-std::unique_ptr<TypeToken> func(std::unique_ptr<TypeToken> &&returnType, T&&... paramTypes) {
-    std::unique_ptr<FuncTypeToken> func(new FuncTypeToken(returnType.release()));
+std::unique_ptr<TypeNode> func(std::unique_ptr<TypeNode> &&returnType, T&&... paramTypes) {
+    std::unique_ptr<FuncTypeNode> func(new FuncTypeNode(returnType.release()));
     return addParamType(std::move(func), std::forward<T>(paramTypes)...);
 }
 
-inline std::unique_ptr<TypeToken> type(const char *name, unsigned int lineNum = 0) {
-    return std::unique_ptr<TypeToken>(new ClassTypeToken(lineNum, std::string(name)));
+inline std::unique_ptr<TypeNode> type(const char *name, unsigned int lineNum = 0) {
+    return std::unique_ptr<TypeNode>(new BaseTypeNode(lineNum, std::string(name)));
 }
 
-inline std::unique_ptr<TypeToken> array(std::unique_ptr<TypeToken> &&type) {
+inline std::unique_ptr<TypeNode> array(std::unique_ptr<TypeNode> &&type) {
     return reified("Array", std::move(type));
 }
 
-inline std::unique_ptr<TypeToken> map(std::unique_ptr<TypeToken> &&keyType, std::unique_ptr<TypeToken> &&valueType) {
+inline std::unique_ptr<TypeNode> map(std::unique_ptr<TypeNode> &&keyType, std::unique_ptr<TypeNode> &&valueType) {
     return reified("Map", std::move(keyType), std::move(valueType));
 }
 
 template <typename... T>
-std::unique_ptr<TypeToken> tuple(std::unique_ptr<TypeToken> &&first, T&&... rest) {
+std::unique_ptr<TypeNode> tuple(std::unique_ptr<TypeNode> &&first, T&&... rest) {
     return reified("Tuple", std::move(first), std::forward<T>(rest)...);
 }
 
@@ -123,9 +122,9 @@ public:
         ASSERT_TRUE((unsigned long)&this->pool.getTypeTemplate(name) == (unsigned long)&t);
     }
 
-    virtual DSType &toType(std::unique_ptr<TypeToken> &&tok) {
+    virtual DSType &toType(std::unique_ptr<TypeNode> &&tok) {
         SCOPED_TRACE("");
-        TypeToken *ptr = tok.get();
+        TypeNode *ptr = tok.get();
         return TypeChecker::TypeGenerator(this->pool).generateTypeAndThrow(ptr);
     }
 };

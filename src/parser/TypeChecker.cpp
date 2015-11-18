@@ -29,67 +29,78 @@ namespace parser {
 // ##     TypeGenerator     ##
 // ###########################
 
-DSType &TypeChecker::TypeGenerator::generateTypeAndThrow(TypeToken *token) throw(TypeCheckError) {
+DSType &TypeChecker::TypeGenerator::generateTypeAndThrow(TypeNode *typeNode) throw(TypeCheckError) {
     try {
-        return this->generateType(token);
+        return this->generateType(typeNode);
     } catch(TypeLookupError &e) {
-        unsigned int lineNum = token->getLineNum();
+        unsigned int lineNum = typeNode->getLineNum();
         throw TypeCheckError(lineNum, e);
     }
 }
 
-void TypeChecker::TypeGenerator::visitClassTypeToken(ClassTypeToken *token) {
-    this->type = &this->pool.getTypeAndThrowIfUndefined(token->getTokenText());
+void TypeChecker::TypeGenerator::visitDefault(Node &) {
+    fatal("unsupported\n");
 }
 
-void TypeChecker::TypeGenerator::visitReifiedTypeToken(ReifiedTypeToken *token) {
-    unsigned int size = token->getElementTypeTokens().size();
-    auto &typeTemplate = this->pool.getTypeTemplate(token->getTemplate()->getTokenText());
+void TypeChecker::TypeGenerator::visitBaseTypeNode(BaseTypeNode &typeNode) {
+    DSType &type = this->pool.getTypeAndThrowIfUndefined(typeNode.getTokenText());
+    typeNode.setType(type);
+}
+
+void TypeChecker::TypeGenerator::visitReifiedTypeNode(ReifiedTypeNode &typeNode) {
+    unsigned int size = typeNode.getElementTypeNodes().size();
+    auto &typeTemplate = this->pool.getTypeTemplate(typeNode.getTemplate()->getTokenText());
     std::vector<DSType *> elementTypes(size);
     for(unsigned int i = 0; i < size; i++) {
-        elementTypes[i] = &this->generateType(token->getElementTypeTokens()[i]);
+        elementTypes[i] = &this->generateType(typeNode.getElementTypeNodes()[i]);
     }
-    this->type = &this->pool.createReifiedType(typeTemplate, std::move(elementTypes));
+    DSType &type = this->pool.createReifiedType(typeTemplate, std::move(elementTypes));
+    typeNode.setType(type);
 }
 
-void TypeChecker::TypeGenerator::visitFuncTypeToken(FuncTypeToken *token) {
-    auto &returnType = this->generateType(token->getReturnTypeToken());
-    unsigned int size = token->getParamTypeTokens().size();
+void TypeChecker::TypeGenerator::visitFuncTypeNode(FuncTypeNode &typeNode) {
+    auto &returnType = this->generateType(typeNode.getReturnTypeNode());
+    unsigned int size = typeNode.getParamTypeNodes().size();
     std::vector<DSType *> paramTypes(size);
     for(unsigned int i = 0; i < size; i++) {
-        paramTypes[i] = &this->generateType(token->getParamTypeTokens()[i]);
+        paramTypes[i] = &this->generateType(typeNode.getParamTypeNodes()[i]);
     }
-    this->type = &this->pool.createFuncType(&returnType, std::move(paramTypes));
+    DSType &type = this->pool.createFuncType(&returnType, std::move(paramTypes));
+    typeNode.setType(type);
 }
 
-void TypeChecker::TypeGenerator::visitDBusInterfaceToken(DBusInterfaceToken *token) {
-    this->type = &this->pool.getDBusInterfaceType(token->getTokenText());
+void TypeChecker::TypeGenerator::visitDBusIfaceTypeNode(DBusIfaceTypeNode &typeNode) {
+    DSType &type = this->pool.getDBusInterfaceType(typeNode.getTokenText());
+    typeNode.setType(type);
 }
 
-void TypeChecker::TypeGenerator::visitReturnTypeToken(ReturnTypeToken *token) {
-    unsigned int size = token->getTypeTokens().size();
+void TypeChecker::TypeGenerator::visitReturnTypeNode(ReturnTypeNode &typeNode) {
+    unsigned int size = typeNode.getTypeNodes().size();
     if(size == 1) {
-        this->type = &this->generateType(token->getTypeTokens()[0]);
+        DSType &type = this->generateType(typeNode.getTypeNodes()[0]);
+        typeNode.setType(type);
         return;
     }
 
     std::vector<DSType *> types(size);
     for(unsigned int i = 0; i < size; i++) {
-        types[i] = &this->generateType(token->getTypeTokens()[i]);
+        types[i] = &this->generateType(typeNode.getTypeNodes()[i]);
     }
-    this->type = &this->pool.createTupleType(std::move(types));
+    DSType &type = this->pool.createTupleType(std::move(types));
+    typeNode.setType(type);
 }
 
-void TypeChecker::TypeGenerator::visitTypeOfToken(TypeOfToken *token) {
+void TypeChecker::TypeGenerator::visitTypeOfNode(TypeOfNode &typeNode) {
     if(this->checker == nullptr) {  // not support typeof operator(in D-Bus interface loading)
-        E_DisallowTypeof(*token->getExprNode());
+        E_DisallowTypeof(*typeNode.getExprNode());
     }
-    this->type = &this->checker->checkType(token->getExprNode());
+   DSType &type = this->checker->checkType(typeNode.getExprNode());
+    typeNode.setType(type);
 }
 
-DSType &TypeChecker::TypeGenerator::generateType(TypeToken *token) {
-    token->accept(this);
-    return *this->type;
+DSType &TypeChecker::TypeGenerator::generateType(TypeNode *typeNode) {
+    typeNode->accept(*this);
+    return typeNode->getType();
 }
 
 
@@ -132,7 +143,7 @@ DSType *TypeChecker::resolveInterface(TypePool &typePool,
     unsigned int fieldSize = node->getFieldDeclNodes().size();
     for(unsigned int i = 0; i < fieldSize; i++) {
         VarDeclNode *fieldDeclNode = node->getFieldDeclNodes()[i];
-        auto &fieldType = typeGen.generateTypeAndThrow(node->getFieldTypeTokens()[i]);
+        auto &fieldType = typeGen.generateTypeAndThrow(node->getFieldTypeNodes()[i]);
         FieldHandle *handle = type.newFieldHandle(
                 fieldDeclNode->getVarName(), fieldType, fieldDeclNode->isReadOnly());
         if(handle == nullptr) {
@@ -146,14 +157,14 @@ DSType *TypeChecker::resolveInterface(TypePool &typePool,
         handle->setRecvType(type);
         handle->setReturnType(typeGen.generateTypeAndThrow(funcNode->getReturnTypeToken()));
         // resolve multi return
-        ReturnTypeToken *rToken = dynamic_cast<ReturnTypeToken *>(funcNode->getReturnTypeToken());
+        ReturnTypeNode *rToken = dynamic_cast<ReturnTypeNode *>(funcNode->getReturnTypeToken());
         if(rToken != nullptr && rToken->hasMultiReturn()) {
             handle->setAttribute(MethodHandle::MULTI_RETURN);
         }
 
         unsigned int paramSize = funcNode->getParamNodes().size();
         for(unsigned int i = 0; i < paramSize; i++) {
-            handle->addParamType(typeGen.generateTypeAndThrow(funcNode->getParamTypeTokens()[i]));
+            handle->addParamType(typeGen.generateTypeAndThrow(funcNode->getParamTypeNodes()[i]));
         }
     }
 
@@ -349,7 +360,7 @@ void TypeChecker::checkAndThrowIfInsideFinally(BlockEndNode &node) {
     }
 }
 
-DSType &TypeChecker::toType(TypeToken *typeToken) {
+DSType &TypeChecker::toType(TypeNode *typeToken) {
     return this->typeGen.generateTypeAndThrow(typeToken);
 }
 
@@ -469,6 +480,30 @@ bool TypeChecker::checkLong2Int(int beforePrecision, int afterPrecision) {
 
 // visitor api
 void TypeChecker::visit(Node &) {
+    fatal("unsupported\n");
+}
+
+void TypeChecker::visitBaseTypeNode(BaseTypeNode &) {
+    fatal("unsupported\n");
+}
+
+void TypeChecker::visitReifiedTypeNode(ReifiedTypeNode &) {
+    fatal("unsupported\n");
+}
+
+void TypeChecker::visitFuncTypeNode(FuncTypeNode &) {
+    fatal("unsupported\n");
+}
+
+void TypeChecker::visitDBusIfaceTypeNode(DBusIfaceTypeNode &) {
+    fatal("unsupported\n");
+}
+
+void TypeChecker::visitReturnTypeNode(ReturnTypeNode &) {
+    fatal("unsupported\n");
+}
+
+void TypeChecker::visitTypeOfNode(TypeOfNode &) {
     fatal("unsupported\n");
 }
 
@@ -605,7 +640,7 @@ void TypeChecker::visitAccessNode(AccessNode &node) {
 
 void TypeChecker::visitCastNode(CastNode &node) {
     auto &exprType = this->checkType(node.getExprNode());
-    auto &targetType = this->toType(node.getTargetTypeToken());
+    auto &targetType = this->toType(node.getTargetTypeNode());
     node.setType(targetType);
 
     // resolve cast op
@@ -692,9 +727,7 @@ void TypeChecker::visitCastNode(CastNode &node) {
 
 void TypeChecker::visitInstanceOfNode(InstanceOfNode &node) {
     auto &exprType = this->checkType(node.getTargetNode());
-    auto &targetType = this->toType(node.getTargetTypeToken());
-    node.setTargetType(targetType);
-
+    auto &targetType = this->toType(node.getTargetTypeNode());
 
     if(targetType.isSameOrBaseTypeOf(exprType)) {
         node.setOpKind(InstanceOfNode::ALWAYS_TRUE);
@@ -777,7 +810,7 @@ void TypeChecker::visitMethodCallNode(MethodCallNode &node) {
 }
 
 void TypeChecker::visitNewNode(NewNode &node) {
-    auto &type = this->toType(node.getTargetTypeToken());
+    auto &type = this->toType(node.getTargetTypeNode());
     MethodHandle *handle = type.getConstructorHandle(this->typePool);
     if(handle == nullptr) {
         E_UndefinedInit(node, this->typePool.getTypeName(type));
@@ -943,7 +976,7 @@ void TypeChecker::visitTypeAliasNode(TypeAliasNode &node) {
         E_OutsideToplevel(node);
     }
 
-    TypeToken *typeToken = node.getTargetTypeToken();
+    TypeNode *typeToken = node.getTargetTypeNode();
     try {
         this->typePool.setAlias(node.getAlias(), this->toType(typeToken));
         node.setType(this->typePool.getVoidType());
@@ -1036,8 +1069,7 @@ void TypeChecker::visitThrowNode(ThrowNode &node) {
 }
 
 void TypeChecker::visitCatchNode(CatchNode &node) {
-    auto &exceptionType = this->toType(node.getTypeToken());
-    node.setExceptionType(exceptionType);
+    auto &exceptionType = this->toType(node.getTypeNode());
 
     /**
      * check type catch block
@@ -1068,10 +1100,10 @@ void TypeChecker::visitTryNode(TryNode &node) {
      */
     const int size = node.getCatchNodes().size();
     for(int i = 0; i < size - 1; i++) {
-        DSType *curType = node.getCatchNodes()[i]->getExceptionType();
+        DSType &curType = node.getCatchNodes()[i]->getTypeNode()->getType();
         CatchNode *nextNode = node.getCatchNodes()[i + 1];
-        DSType *nextType = nextNode->getExceptionType();
-        if(curType->isSameOrBaseTypeOf(*nextType)) {
+        DSType &nextType = nextNode->getTypeNode()->getType();
+        if(curType.isSameOrBaseTypeOf(nextType)) {
             E_Unreachable(*nextNode);
         }
     }
@@ -1143,10 +1175,10 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
 
     // resolve return type, param type
     auto &returnType = this->toType(node.getReturnTypeToken());
-    unsigned int paramSize = node.getParamTypeTokens().size();
+    unsigned int paramSize = node.getParamTypeNodes().size();
     std::vector<DSType *> paramTypes(paramSize);
     for(unsigned int i = 0; i < paramSize; i++) {
-        paramTypes[i] = &this->toType(node.getParamTypeTokens()[i]);
+        paramTypes[i] = &this->toType(node.getParamTypeNodes()[i]);
     }
 
     // register function handle

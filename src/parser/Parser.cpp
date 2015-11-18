@@ -230,7 +230,7 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
         auto nameNode = uniquify<VarNode>(token.lineNum, this->lexer->toName(token));
         this->expect(COLON, false);
 
-        std::unique_ptr<TypeToken> type(this->parse_typeName());
+        std::unique_ptr<TypeNode> type(this->parse_typeName());
 
         node->addParamNode(nameNode.release(), type.release());
 
@@ -252,10 +252,10 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
 
     if(CUR_KIND() == COLON) {
         this->expect(COLON, false);
-        auto type = uniquify<ReturnTypeToken>(this->parse_typeName().release());
+        auto type = uniquify<ReturnTypeNode>(this->parse_typeName().release());
         while(CUR_KIND() == COMMA) {
             this->expect(COMMA, false);
-            type->addTypeToken(this->parse_typeName().release());
+            type->addTypeNode(this->parse_typeName().release());
         }
         node->setReturnTypeToken(type.release());
     }
@@ -347,17 +347,17 @@ void Parser::restoreLexerState(const Token &prevToken) {
     NEXT_TOKEN();
 }
 
-std::unique_ptr<TypeToken> Parser::parse_basicOrReifiedType(Token &token) {
-    auto typeToken = uniquify<ClassTypeToken>(token.lineNum, this->lexer->toName(token));
+std::unique_ptr<TypeNode> Parser::parse_basicOrReifiedType(Token &token) {
+    auto typeToken = uniquify<BaseTypeNode>(token.lineNum, this->lexer->toName(token));
     if(!HAS_NL() && CUR_KIND() == TYPE_OPEN) {
         this->expect(TYPE_OPEN, false);
 
-        auto reified = uniquify<ReifiedTypeToken>(typeToken.release());
-        reified->addElementTypeToken(this->parse_typeName().release());
+        auto reified = uniquify<ReifiedTypeNode>(typeToken.release());
+        reified->addElementTypeNode(this->parse_typeName().release());
 
         while(CUR_KIND() == TYPE_SEP) {
             this->expect(TYPE_SEP, false);
-            reified->addElementTypeToken(this->parse_typeName().release());
+            reified->addElementTypeNode(this->parse_typeName().release());
         }
         this->expect(TYPE_CLOSE, token);
 
@@ -369,7 +369,7 @@ std::unique_ptr<TypeToken> Parser::parse_basicOrReifiedType(Token &token) {
     return std::move(typeToken);
 }
 
-std::unique_ptr<TypeToken> Parser::parse_typeName() {
+std::unique_ptr<TypeNode> Parser::parse_typeName() {
     // change lexer state to TYPE
     this->lexer->pushLexerMode(yycTYPE);
     NEXT_TOKEN();
@@ -393,7 +393,7 @@ std::unique_ptr<TypeToken> Parser::parse_typeName() {
             this->expect(RP, token, false);
 
             this->restoreLexerState(token);
-            return uniquify<TypeOfToken>(std::move(exprNode).release());
+            return uniquify<TypeOfNode>(std::move(exprNode).release());
         }
         return this->parse_basicOrReifiedType(token);
     }
@@ -404,19 +404,19 @@ std::unique_ptr<TypeToken> Parser::parse_typeName() {
             this->expect(TYPE_OPEN, false);
 
             // parse return type
-            auto func = uniquify<FuncTypeToken>(this->parse_typeName().release());
+            auto func = uniquify<FuncTypeNode>(this->parse_typeName().release());
 
             if(CUR_KIND() == TYPE_SEP) {   // ,[
                 this->expect(TYPE_SEP);
                 this->expect(PTYPE_OPEN, false);
 
                 // parse first arg type
-                func->addParamTypeToken(this->parse_typeName().release());
+                func->addParamTypeNode(this->parse_typeName().release());
 
                 // rest arg type
                 while(CUR_KIND() == TYPE_SEP) {
                     this->expect(TYPE_SEP, false);
-                    func->addParamTypeToken(this->parse_typeName().release());
+                    func->addParamTypeNode(this->parse_typeName().release());
                 }
                 this->expect(PTYPE_CLOSE);
             }
@@ -427,14 +427,14 @@ std::unique_ptr<TypeToken> Parser::parse_typeName() {
             return std::move(func);
         } else {
             this->restoreLexerState(token);
-            return uniquify<ClassTypeToken>(token.lineNum, this->lexer->toName(token));
+            return uniquify<BaseTypeNode>(token.lineNum, this->lexer->toName(token));
         }
     }
     case TYPE_PATH: {
         Token token;
         this->expect(TYPE_PATH, token);
         this->restoreLexerState(token);
-        return uniquify<DBusInterfaceToken>(token.lineNum, this->lexer->toTokenText(token));
+        return uniquify<DBusIfaceTypeNode>(token.lineNum, this->lexer->toTokenText(token));
     }
     default:
         E_ALTER(
@@ -444,7 +444,7 @@ std::unique_ptr<TypeToken> Parser::parse_typeName() {
                 TYPE_PATH,
                 DUMMY
         );
-        return std::unique_ptr<TypeToken>(nullptr);
+        return std::unique_ptr<TypeNode>(nullptr);
     }
 }
 
@@ -771,7 +771,7 @@ std::unique_ptr<CatchNode> Parser::parse_catchStatement() {
     this->expect(LP);
     Token token;
     this->expect(APPLIED_NAME, token);
-    std::unique_ptr<TypeToken> typeToken;
+    std::unique_ptr<TypeNode> typeToken;
     if(CUR_KIND() == COLON) {
         this->expect(COLON, false);
         typeToken = this->parse_typeName();
@@ -972,13 +972,13 @@ std::unique_ptr<Node> Parser::parse_expression(std::unique_ptr<Node> &&leftNode,
         switch(CUR_KIND()) {
         case AS: {
             this->expect(AS, false);
-            std::unique_ptr<TypeToken> type(this->parse_typeName());
+            std::unique_ptr<TypeNode> type(this->parse_typeName());
             node = uniquify<CastNode>(node.release(), type.release());
             break;
         }
         case IS: {
             this->expect(IS, false);
-            std::unique_ptr<TypeToken> type(this->parse_typeName());
+            std::unique_ptr<TypeNode> type(this->parse_typeName());
             node = uniquify<InstanceOfNode>(node.release(), type.release());
             break;
         }
@@ -1067,7 +1067,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     switch(CUR_KIND()) {
     case NEW: {
         this->expect(NEW, false);
-        std::unique_ptr<TypeToken> type(this->parse_typeName());
+        std::unique_ptr<TypeNode> type(this->parse_typeName());
         ArgsWrapper args(this->parse_arguments());
         return uniquify<NewNode>(n, type.release(), std::move(args).remove());
     }

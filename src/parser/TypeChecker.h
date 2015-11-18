@@ -69,7 +69,7 @@ enum class CoercionKind : unsigned char {
 
 class TypeChecker : protected NodeVisitor {
 public:
-    class TypeGenerator : public TypeTokenVisitor {
+    class TypeGenerator : public BaseVisitor {
     private:
         TypePool &pool;
 
@@ -78,32 +78,32 @@ public:
          */
         TypeChecker *checker;
 
-        DSType *type;
-
     public:
         explicit TypeGenerator(TypePool &pool)
-                : pool(pool), checker(nullptr), type(nullptr) { }
+                : pool(pool), checker(nullptr) { }
 
         explicit TypeGenerator(TypeChecker *checker)
-                : pool(checker->typePool), checker(checker), type(nullptr) { }
+                : pool(checker->typePool), checker(checker) { }
 
         ~TypeGenerator() = default;
 
         /**
          * entry point.
-         * generate DSType from TypeToken.
+         * generate DSType from TypeNode.
          */
-        DSType &generateTypeAndThrow(TypeToken *token) throw(TypeCheckError);
+        DSType &generateTypeAndThrow(TypeNode *typeNode) throw(TypeCheckError);
 
-        void visitClassTypeToken(ClassTypeToken *token);    // overrode
-        void visitReifiedTypeToken(ReifiedTypeToken *token);    // override
-        void visitFuncTypeToken(FuncTypeToken *token);  // override
-        void visitDBusInterfaceToken(DBusInterfaceToken *token);    // override
-        void visitReturnTypeToken(ReturnTypeToken *token);  // override
-        void visitTypeOfToken(TypeOfToken *token); // override
+        void visitDefault(Node &node); // override
+
+        void visitBaseTypeNode(BaseTypeNode &typeNode);    // overrode
+        void visitReifiedTypeNode(ReifiedTypeNode &typeNode);    // override
+        void visitFuncTypeNode(FuncTypeNode &typeNode);  // override
+        void visitDBusIfaceTypeNode(DBusIfaceTypeNode &typeNode);    // override
+        void visitReturnTypeNode(ReturnTypeNode &typeNode);  // override
+        void visitTypeOfNode(TypeOfNode &typeNode); // override
 
     private:
-        DSType &generateType(TypeToken *token);
+        DSType &generateType(TypeNode *typeNode);
     };
 
 private:
@@ -255,7 +255,7 @@ private:
     /**
      * convert TypeToken to DSType..
      */
-    DSType &toType(TypeToken *typeToken);
+    DSType &toType(TypeNode *typeToken);
 
     /**
      * check type ApplyNode and resolve callee(handle or function type).
@@ -294,6 +294,12 @@ private:
 
     // visitor api
     void visit(Node &node); // override
+    void visitBaseTypeNode(BaseTypeNode &typeNode);    // overrode
+    void visitReifiedTypeNode(ReifiedTypeNode &typeNode);    // override
+    void visitFuncTypeNode(FuncTypeNode &typeNode);  // override
+    void visitDBusIfaceTypeNode(DBusIfaceTypeNode &typeNode);    // override
+    void visitReturnTypeNode(ReturnTypeNode &typeNode);  // override
+    void visitTypeOfNode(TypeOfNode &typeNode); // override
     void visitIntValueNode(IntValueNode &node); // override
     void visitLongValueNode(LongValueNode &node); // override
     void visitFloatValueNode(FloatValueNode &node); // override

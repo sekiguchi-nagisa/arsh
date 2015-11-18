@@ -60,6 +60,160 @@ const char *Node::getSourceName() {
     return "";
 }
 
+// ######################
+// ##     TypeNode     ##
+// ######################
+
+EvalStatus TypeNode::eval(RuntimeContext &) {
+    fatal("evaluation of TypeNode is unsupported\n");
+}
+
+// ##########################
+// ##     BaseTypeNode     ##
+// ##########################
+
+void BaseTypeNode::dump(NodeDumper &dumper) const {
+    DUMP(typeName);
+}
+
+void BaseTypeNode::accept(NodeVisitor &visitor) {
+    visitor.visitBaseTypeNode(*this);
+}
+
+
+// #############################
+// ##     ReifiedTypeNode     ##
+// #############################
+
+ReifiedTypeNode::~ReifiedTypeNode() {
+    delete this->templateTypeNode;
+    for(TypeNode *t : this->elementTypeNodes) {
+        delete t;
+    }
+}
+
+void ReifiedTypeNode::addElementTypeNode(TypeNode *typeNode) {
+    this->elementTypeNodes.push_back(typeNode);
+}
+
+void ReifiedTypeNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(templateTypeNode);
+
+    std::vector<Node *> elementTypeNodes;
+    for(auto &t : this->elementTypeNodes) {
+        elementTypeNodes.push_back(t);
+    }
+
+    DUMP(elementTypeNodes);
+}
+
+void ReifiedTypeNode::accept(NodeVisitor &visitor) {
+    visitor.visitReifiedTypeNode(*this);
+}
+
+
+// ##########################
+// ##     FuncTypeNode     ##
+// ##########################
+
+FuncTypeNode::~FuncTypeNode() {
+    delete this->returnTypeNode;
+
+    for(TypeNode *t : this->paramTypeNodes) {
+        delete t;
+    }
+}
+
+void FuncTypeNode::addParamTypeNode(TypeNode *typeNode) {
+    this->paramTypeNodes.push_back(typeNode);
+}
+
+void FuncTypeNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(returnTypeNode);
+
+    std::vector<Node *> paramTypeNodes;
+    for(auto &t : this->paramTypeNodes) {
+        paramTypeNodes.push_back(t);
+    }
+    DUMP(paramTypeNodes);
+}
+
+void FuncTypeNode::accept(NodeVisitor &visitor) {
+    visitor.visitFuncTypeNode(*this);
+}
+
+// ###############################
+// ##     DBusIfaceTypeNode     ##
+// ###############################
+
+void DBusIfaceTypeNode::dump(NodeDumper &dumper) const {
+    DUMP(name);
+}
+
+void DBusIfaceTypeNode::accept(NodeVisitor &visitor) {
+    visitor.visitDBusIfaceTypeNode(*this);
+}
+
+// ############################
+// ##     ReturnTypeNode     ##
+// ############################
+
+ReturnTypeNode::ReturnTypeNode(TypeNode *typeNode) :
+        TypeNode(typeNode->getLineNum()), typeNodes() {
+    this->addTypeNode(typeNode);
+}
+
+ReturnTypeNode::~ReturnTypeNode() {
+    for(auto t : this->typeNodes) {
+        delete t;
+    }
+}
+
+void ReturnTypeNode::addTypeNode(TypeNode *typeNode) {
+    this->typeNodes.push_back(typeNode);
+}
+
+void ReturnTypeNode::dump(NodeDumper &dumper) const {
+    std::vector<Node *> typeNodes;
+    for(auto &t : this->typeNodes) {
+        typeNodes.push_back(t);
+    }
+    DUMP(typeNodes);
+}
+
+void ReturnTypeNode::accept(NodeVisitor &visitor) {
+    visitor.visitReturnTypeNode(*this);
+}
+
+// ########################
+// ##     TypeOfNode     ##
+// ########################
+
+TypeOfNode::TypeOfNode(Node *exprNode) :
+        TypeNode(exprNode->getLineNum()), exprNode(exprNode) { }
+
+TypeOfNode::~TypeOfNode() {
+    delete this->exprNode;
+}
+
+void TypeOfNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(exprNode);
+}
+
+void TypeOfNode::accept(NodeVisitor &visitor) {
+    visitor.visitTypeOfNode(*this);
+}
+
+
+TypeNode *newAnyTypeNode(unsigned int lineNum) {
+    return new BaseTypeNode(lineNum, std::string("Any"));
+}
+
+TypeNode *newVoidTypeNode(unsigned int lineNum) {
+    return new BaseTypeNode(lineNum, std::string("Void"));
+}
+
+
 // ##########################
 // ##     IntValueNode     ##
 // ##########################
@@ -465,39 +619,39 @@ std::pair<Node *, std::string> AccessNode::split(AccessNode *accessNode) {
 // ##     CastNode     ##
 // ######################
 
-CastNode::CastNode(Node *exprNode, TypeToken *type, bool dupTypeToken) :
-        Node(exprNode->getLineNum()), exprNode(exprNode), targetTypeToken(nullptr),
+CastNode::CastNode(Node *exprNode, TypeNode *type, bool dupTypeToken) :
+        Node(exprNode->getLineNum()), exprNode(exprNode), targetTypeNode(nullptr),
         opKind(NOP) {
     static const unsigned long tag = (unsigned long) 1L << 63;
 
     if(dupTypeToken) {
-        TypeToken *tok = (TypeToken *) (tag | (unsigned long) type);
-        this->targetTypeToken = tok;
+        TypeNode *tok = (TypeNode *) (tag | (unsigned long) type);
+        this->targetTypeNode = tok;
     } else {
-        this->targetTypeToken = type;
+        this->targetTypeNode = type;
     }
 }
 
 CastNode::~CastNode() {
     delete this->exprNode;
 
-    if((long) this->targetTypeToken >= 0) {
-        delete this->targetTypeToken;
+    if((long) this->targetTypeNode >= 0) {
+        delete this->targetTypeNode;
     }
 }
 
-TypeToken *CastNode::getTargetTypeToken() const {
+TypeNode *CastNode::getTargetTypeNode() const {
     static const unsigned long mask = ~(1L << 63);
-    if((long) this->targetTypeToken < 0) {
-        TypeToken *tok = (TypeToken *) (mask & (unsigned long) this->targetTypeToken);
+    if((long) this->targetTypeNode < 0) {
+        TypeNode *tok = (TypeNode *) (mask & (unsigned long) this->targetTypeNode);
         return tok;
     }
-    return this->targetTypeToken;
+    return this->targetTypeNode;
 }
 
 void CastNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
-    TypeToken *targetTypeToken = this->getTargetTypeToken();
+    TypeNode *targetTypeToken = this->getTargetTypeNode();
     DUMP_PTR(targetTypeToken);
 
 #define EACH_ENUM(OP, out) \
@@ -626,13 +780,12 @@ CastNode *CastNode::newTypedCastNode(Node *targetNode, DSType &type, CastNode::C
 
 InstanceOfNode::~InstanceOfNode() {
     delete this->targetNode;
-    delete this->targetTypeToken;
+    delete this->targetTypeNode;
 }
 
 void InstanceOfNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(targetNode);
-    DUMP_PTR(targetTypeToken);
-    DUMP_PTR(targetType);
+    DUMP_PTR(targetTypeNode);
 
 #define EACH_ENUM(OP, out) \
     OP(ALWAYS_FALSE, out) \
@@ -654,7 +807,7 @@ EvalStatus InstanceOfNode::eval(RuntimeContext &ctx) {
 
     switch(this->opKind) {
     case INSTANCEOF:
-        ctx.instanceOf(this->targetType);
+        ctx.instanceOf(&this->targetTypeNode->getType());
         break;
     case ALWAYS_TRUE:
         ctx.popNoReturn();
@@ -762,7 +915,7 @@ EvalStatus MethodCallNode::eval(RuntimeContext &ctx) {
 // #####################
 
 NewNode::~NewNode() {
-    delete this->targetTypeToken;
+    delete this->targetTypeNode;
 
     for(Node *n : this->argNodes) {
         delete n;
@@ -770,7 +923,7 @@ NewNode::~NewNode() {
 }
 
 void NewNode::dump(NodeDumper &dumper) const {
-    DUMP_PTR(targetTypeToken);
+    DUMP_PTR(targetTypeNode);
     DUMP(argNodes);
 }
 
@@ -1476,12 +1629,12 @@ EvalStatus ImportEnvNode::eval(RuntimeContext &ctx) {
 // ###########################
 
 TypeAliasNode::~TypeAliasNode() {
-    delete this->targetTypeToken;
+    delete this->targetTypeNode;
 }
 
 void TypeAliasNode::dump(NodeDumper &dumper) const {
     DUMP(alias);
-    DUMP_PTR(targetTypeToken);
+    DUMP_PTR(targetTypeNode);
 }
 
 void TypeAliasNode::accept(NodeVisitor &visitor) {
@@ -1649,7 +1802,7 @@ static void resolveIfIsStatement(Node *condNode, BlockNode *blockNode) {
     }
 
     VarNode *exprNode = new VarNode(isNode->getLineNum(), std::string(varNode->getVarName()));
-    CastNode *castNode = new CastNode(exprNode, isNode->getTargetTypeToken(), true);
+    CastNode *castNode = new CastNode(exprNode, isNode->getTargetTypeNode(), true);
     VarDeclNode *declNode =
             new VarDeclNode(isNode->getLineNum(), std::string(varNode->getVarName()), castNode, true);
     blockNode->insertNodeToFirst(declNode);
@@ -1783,7 +1936,7 @@ EvalStatus ThrowNode::eval(RuntimeContext &ctx) {
 // #######################
 
 CatchNode::~CatchNode() {
-    delete this->typeToken;
+    delete this->typeNode;
     delete this->blockNode;
 }
 
@@ -1793,8 +1946,7 @@ void CatchNode::setAttribute(FieldHandle *handle) {
 
 void CatchNode::dump(NodeDumper &dumper) const {
     DUMP(exceptionName);
-    DUMP_PTR(typeToken);
-    DUMP_PTR(exceptionType);
+    DUMP_PTR(typeNode);
     DUMP_PTR(blockNode);
     DUMP_PRIM(varIndex);
 }
@@ -1868,7 +2020,7 @@ EvalStatus TryNode::eval(RuntimeContext &ctx) {
     } else {   // eval catch
         DSType &thrownType = *ctx.getThrownObject()->getType();
         for(CatchNode *catchNode : this->catchNodes) {
-            if(catchNode->getExceptionType()->isSameOrBaseTypeOf(thrownType)) {
+            if(catchNode->getTypeNode()->getType().isSameOrBaseTypeOf(thrownType)) {
                 ctx.loadThrownObject();
                 status = catchNode->eval(ctx);
                 break;
@@ -2076,24 +2228,24 @@ FunctionNode::~FunctionNode() {
         delete n;
     }
 
-    for(TypeToken *t : this->paramTypeTokens) {
+    for(TypeNode *t : this->paramTypeNodes) {
         delete t;
     }
 
-    delete this->returnTypeToken;
+    delete this->returnTypeNode;
     delete this->blockNode;
 }
 
-void FunctionNode::addParamNode(VarNode *node, TypeToken *paramType) {
+void FunctionNode::addParamNode(VarNode *node, TypeNode *paramType) {
     this->paramNodes.push_back(node);
-    this->paramTypeTokens.push_back(paramType);
+    this->paramTypeNodes.push_back(paramType);
 }
 
-TypeToken *FunctionNode::getReturnTypeToken() {
-    if(this->returnTypeToken == nullptr) {
-        this->returnTypeToken = newVoidTypeToken();
+TypeNode *FunctionNode::getReturnTypeToken() {
+    if(this->returnTypeNode == nullptr) {
+        this->returnTypeNode = newVoidTypeNode();
     }
-    return this->returnTypeToken;
+    return this->returnTypeNode;
 }
 
 void FunctionNode::setSourceName(const char *sourceName) {
@@ -2111,11 +2263,15 @@ void FunctionNode::dump(NodeDumper &dumper) const {
     for(VarNode *node : this->paramNodes) {
         paramNodes.push_back(node);
     }
-
     DUMP(paramNodes);
-    DUMP(paramTypeTokens);
-    DUMP_PTR(returnTypeToken);
-    DUMP_PTR(returnType);
+
+    std::vector<Node *> paramTypeNodes;
+    for(auto &t : this->paramTypeNodes) {
+        paramTypeNodes.push_back(t);
+    }
+    DUMP(paramTypeNodes);
+
+    DUMP_PTR(returnTypeNode);
     DUMP_PTR(blockNode);
     DUMP_PRIM(maxVarNum);
     DUMP_PRIM(varIndex);
@@ -2144,7 +2300,7 @@ InterfaceNode::~InterfaceNode() {
         delete node;
     }
 
-    for(TypeToken *t : this->fieldTypeTokens) {
+    for(TypeNode *t : this->fieldTypeNodes) {
         delete t;
     }
 }
@@ -2153,9 +2309,9 @@ void InterfaceNode::addMethodDeclNode(FunctionNode *methodDeclNode) {
     this->methodDeclNodes.push_back(methodDeclNode);
 }
 
-void InterfaceNode::addFieldDecl(VarDeclNode *node, TypeToken *typeToken) {
+void InterfaceNode::addFieldDecl(VarDeclNode *node, TypeNode *typeToken) {
     this->fieldDeclNodes.push_back(node);
-    this->fieldTypeTokens.push_back(typeToken);
+    this->fieldTypeNodes.push_back(typeToken);
 }
 
 void InterfaceNode::dump(NodeDumper &dumper) const {
@@ -2172,7 +2328,12 @@ void InterfaceNode::dump(NodeDumper &dumper) const {
         fieldDeclNodes.push_back(node);
     }
     DUMP(fieldDeclNodes);
-    DUMP(fieldTypeTokens);
+
+    std::vector<Node *> fieldTypeNodes;
+    for(auto &t : this->fieldTypeNodes) {
+        fieldTypeNodes.push_back(t);
+    }
+    DUMP(fieldTypeNodes);
 }
 
 void InterfaceNode::accept(NodeVisitor &visitor) {

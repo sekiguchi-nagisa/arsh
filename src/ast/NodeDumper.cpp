@@ -101,25 +101,9 @@ void NodeDumper::dump(const char *fieldName, const Node &node) {
     this->leaveIndent();
 }
 
-void NodeDumper::dump(const char *fieldName, const TypeToken &tok) {
-    this->writeName(fieldName);
-    this->stream << tok.toTokenText() << std::endl;
-}
-
 void NodeDumper::dump(const char *fieldName, const DSType &type) {
     this->writeName(fieldName);
     this->stream << this->pool.getTypeName(type) << std::endl;
-}
-
-void NodeDumper::dump(const char *fieldName, const std::vector<TypeToken *> &toks) {
-    this->writeName(fieldName);
-    this->stream << std::endl;
-    this->enterIndent();
-    for(auto t : toks) {
-        this->indent();
-        this->stream << "- " << (t == nullptr ? "" : t->toTokenText()) << std::endl;
-    }
-    this->leaveIndent();
 }
 
 void NodeDumper::dumpNull(const char *fieldName) {

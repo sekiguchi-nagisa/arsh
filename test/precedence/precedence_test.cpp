@@ -84,7 +84,7 @@ public:
         this->open();
         this->visit(*node.getExprNode());
         this->append("as");
-        this->append(node.getTargetTypeToken()->toTokenText());
+        this->append(dynamic_cast<BaseTypeNode *>(node.getTargetTypeNode())->getTokenText()); //FIXME:
         this->close();
     }
 
@@ -92,7 +92,7 @@ public:
         this->open();
         this->visit(*node.getTargetNode());
         this->append("is");
-        this->append(node.getTargetTypeToken()->toTokenText());
+        this->append(dynamic_cast<BaseTypeNode *>(node.getTargetTypeNode())->getTokenText());  //FIXME:
         this->close();
     }
 
