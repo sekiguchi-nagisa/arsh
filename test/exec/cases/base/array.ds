@@ -1,5 +1,5 @@
 var a = ["3", "43", "d"]
-$a.add("hello")
+assert($a.add("hello") is Array<String>)
 
 assert($a[0] is String)
 assert($a[0] == "3")
@@ -23,6 +23,10 @@ assert($b.empty() == $true)
 $b.add($true)
 assert($b.size() == 1)
 assert($b[0])
+
+assert($b.swap(0, $false))
+assert($b[0] != $true)
+try { $b.swap(3, $true); assert($false) } catch($e) { assert($e is OutOfRangeError) }
 
 $b.clear()
 assert($b.empty())

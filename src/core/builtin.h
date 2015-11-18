@@ -1349,17 +1349,6 @@ static inline bool array_init(RuntimeContext &ctx) {
     return true;
 }
 
-//!bind: function add($this : Array<T0>, $value : T0) : Array<T0>
-static inline bool array_add(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(array_add);
-    Array_Object *obj = typeAs<Array_Object>(LOCAL(0));
-    if(obj->getValues().size() == INT32_MAX) {
-        return throwOutOfRangeError(ctx, std::string("reach Array size limit"));
-    }
-    obj->append(LOCAL(1));
-    RET(LOCAL(0));
-}
-
 // check index range and throw exception.
 static bool checkRange(RuntimeContext &ctx, int index, int size) {
     if(index < 0 || index >= size) {
@@ -1414,7 +1403,12 @@ static inline bool array_peek(RuntimeContext &ctx) {
 //!bind: function push($this : Array<T0>, $value : T0) : Void
 static inline bool array_push(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_push);
-    return array_add(ctx);
+    Array_Object *obj = typeAs<Array_Object>(LOCAL(0));
+    if(obj->getValues().size() == INT32_MAX) {
+        return throwOutOfRangeError(ctx, std::string("reach Array size limit"));
+    }
+    obj->append(LOCAL(1));
+    RET_BOOL(true);
 }
 
 //!bind: function pop($this : Array<T0>) : T0
@@ -1425,6 +1419,29 @@ static inline bool array_pop(RuntimeContext &ctx) {
         typeAs<Array_Object>(LOCAL(0))->refValues().pop_back();
     }
     return r;
+}
+
+//!bind: function add($this : Array<T0>, $value : T0) : Array<T0>
+static inline bool array_add(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_add);
+    bool r = array_push(ctx);
+    if(!r) {
+        return false;
+    }
+    RET(LOCAL(0));
+}
+
+//!bind: function swap($this : Array<T0>, $index : Int32, $value : T0) : T0
+static inline bool array_swap(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_swap);
+    auto *obj = typeAs<Array_Object>(LOCAL(0));
+    int index = typeAs<Int_Object>(LOCAL(1))->getValue();
+    if(!checkRange(ctx, index, obj->getValues().size())) {
+        return false;
+    }
+    DSValue value = LOCAL(2);
+    std::swap(obj->refValues()[index], value);
+    RET(std::move(value));
 }
 
 //!bind: function size($this : Array<T0>) : Int32
@@ -1552,6 +1569,23 @@ static inline bool map_remove(RuntimeContext &ctx) {
     Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
     unsigned int size = obj->refValueMap().erase(LOCAL(1));
     RET_BOOL(size == 1);
+}
+
+//!bind: function swap($this : Map<T0, T1>, $key : T0, $value : T1) : T1
+static inline bool map_swap(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(map_swap);
+    auto *obj = typeAs<Map_Object>(LOCAL(0));
+    auto iter = obj->refValueMap().find(LOCAL(1));
+    if(iter == obj->refValueMap().end()) {
+        std::string msg("not found key: ");
+        msg += LOCAL(1)->toString(ctx);
+        ctx.throwError(ctx.getPool().getKeyNotFoundErrorType(), std::move(msg));
+        return false;
+    }
+
+    DSValue value = LOCAL(2);
+    std::swap(iter->second, value);
+    RET(std::move(value));
 }
 
 //!bind: function clear($this : Map<T0, T1>) : Void
