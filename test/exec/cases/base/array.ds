@@ -6,9 +6,11 @@ assert($a[0] == "3")
 assert($a[1] == "43")
 assert($a[2] == "d")
 assert($a[3] == "hello")
+try { $a[5]; assert($false) } catch($e) { assert($e is OutOfRangeError) }
 
 $a[2] = "ho"
 assert($a[2] == "ho")
+try { $a[5] = "hoge"; assert($false) } catch($e) { assert($e is OutOfRangeError) }
 
 assert($a.empty() == $false)
 assert($a.size() is Int)
@@ -38,7 +40,7 @@ assert($b.peek())
 assert($b.pop())
 assert($b.empty())
 try { $b.pop(); assert($false) } catch($e) { assert($e is OutOfRangeError) }
-
+try { $b.peek(); assert($false) } catch($e) { assert($e is OutOfRangeError) }
 
 # iterator
 var c = [23, 32]

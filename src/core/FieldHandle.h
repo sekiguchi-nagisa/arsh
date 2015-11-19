@@ -74,7 +74,6 @@ public:
         return this->fieldIndex;
     }
 
-    std::string toString() const;
     void setAttribute(flag8_t attribute) {
         setFlag(this->attributeSet, attribute);
     }

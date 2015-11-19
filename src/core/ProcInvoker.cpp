@@ -147,21 +147,21 @@ static void builtin_execvpe(char **argv, char *const *envp, const char *progName
 static void builtin_perror(const BuiltinContext &bctx, int errorNum, const char *fmt, ...) {
     FILE *fp = bctx.fp_stderr;
 
-    fprintf(fp, "-ydsh: %s: ", bctx.argv[0]);
+    fprintf(fp, "-ydsh: %s", bctx.argv[0]);
 
     if(strcmp(fmt, "") != 0) {
+        fputs(": ", fp);
+
         va_list arg;
         va_start(arg, fmt);
 
         vfprintf(fp, fmt, arg);
 
         va_end(arg);
-
-        fputs(": ", fp);
     }
 
     if(errorNum != 0) {
-        fprintf(fp, "%s", strerror(errorNum));
+        fprintf(fp, ": %s", strerror(errorNum));
     }
     fputc('\n', fp);
 }
@@ -655,11 +655,13 @@ static int builtin_command(RuntimeContext *ctx, const BuiltinContext &bctx) {
                     return WTERMSIG(status);
                 }
             }
-        } else {
+        } else {    // show command description
+            unsigned int successCount = 0;
             for(; index < bctx.argc; index++) {
                 const char *commandName = bctx.argv[index];
                 // check user defined command
                 if(ctx->lookupUserDefinedCommand(commandName) != nullptr) {
+                    successCount++;
                     fputs(commandName, bctx.fp_stdout);
                     if(showDesc == 2) {
                         fputs(" is an user-defined command", bctx.fp_stdout);
@@ -668,8 +670,9 @@ static int builtin_command(RuntimeContext *ctx, const BuiltinContext &bctx) {
                     continue;
                 }
 
-                // check builtin
+                // check builtin command
                 if(invoker.lookupBuiltinCommand(commandName) != nullptr) {
+                    successCount++;
                     fputs(commandName, bctx.fp_stdout);
                     if(showDesc == 2) {
                         fputs(" is a shell builtin command", bctx.fp_stdout);
@@ -681,6 +684,7 @@ static int builtin_command(RuntimeContext *ctx, const BuiltinContext &bctx) {
                 // check external command
                 std::string path(resolveFilePath(commandName, false));
                 if(!path.empty()) {
+                    successCount++;
                     if(showDesc == 1) {
                         fprintf(bctx.fp_stdout, "%s\n", path.c_str());
                     } else {
@@ -692,6 +696,7 @@ static int builtin_command(RuntimeContext *ctx, const BuiltinContext &bctx) {
                     PERROR(bctx, "%s", commandName);
                 }
             }
+            return successCount > 0 ? 0 : 1;
         }
     }
     return 0;

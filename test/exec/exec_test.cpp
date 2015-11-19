@@ -6,6 +6,7 @@
 #include <misc/files.h>
 #include <misc/num.h>
 #include <directive.h>
+#include <config.h>
 
 
 #ifndef EXEC_TEST_DIR
@@ -319,6 +320,31 @@ TEST(BuiltinExecTest, case3) {
 
         DSStatus_free(&s);
         DSContext_delete(&ctx);
+    });
+}
+
+TEST(API, case1) {
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+
+        ASSERT_EQ((unsigned int)X_INFO_MAJOR_VERSION, DSContext_getMajorVersion());
+        ASSERT_EQ((unsigned int)X_INFO_MINOR_VERSION, DSContext_getMinorVersion());
+        ASSERT_EQ((unsigned int)X_INFO_PATCH_VERSION, DSContext_getPatchVersion());
+    });
+}
+
+TEST(API, case2) {
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+
+        DSContext *ctx = DSContext_create();
+        ASSERT_EQ(1u, DSContext_getLineNum(ctx));
+        DSContext_eval(ctx, "12 + 32\n $true\n", nullptr);
+        ASSERT_EQ(3u, DSContext_getLineNum(ctx));
+
+        DSContext_setLineNum(ctx, 49);
+        DSContext_eval(ctx, "23", nullptr);
+        ASSERT_EQ(50u, DSContext_getLineNum(ctx));
     });
 }
 

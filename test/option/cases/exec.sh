@@ -22,4 +22,26 @@ if [ $? != 34 ]; then
     exit 1
 fi
 
-exit 0
+# builtin-exec
+$YDSH_BIN -e exec # do nothing
+if [ $? != 0 ]; then
+    exit 1
+fi
+
+$YDSH_BIN -e exec echo hello
+if [ $? != 0 ]; then
+    exit 1
+fi
+
+$YDSH_BIN -e exec -a hoge echo hello
+if [ $? != 0 ]; then
+    exit 1
+fi
+
+$YDSH_BIN -e exec -c $YDSH_BIN -c 'assert(printenv SHLVL | grep 1)'
+if [ $? != 0 ]; then
+    exit 1
+fi
+
+$YDSH_BIN -e exec -u    # invalid option
+test $? != 0

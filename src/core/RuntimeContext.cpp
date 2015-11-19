@@ -89,7 +89,7 @@ void RuntimeContext::addScriptArg(const char *arg) {
 
 void RuntimeContext::initScriptArg() {
     unsigned int index = this->getBuiltinVarIndex(BuiltinVarOffset::ARGS);
-    this->setGlobal(index, DSValue::create<Array_Object>(this->pool.getStringArrayType()));
+    typeAs<Array_Object>(this->getGlobal(index))->refValues().clear();
 }
 
 void RuntimeContext::finalizeScritArg() {

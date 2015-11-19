@@ -13,6 +13,9 @@ assert($? == 0)
 echo hello | grep hello
 assert($? == 0)
 
+echo hello | __gets | grep hello    # more pipe
+assert($? == 0)
+
 echo hello | grep workd
 assert($? != 0)     # $? indicates last command of pipe
 

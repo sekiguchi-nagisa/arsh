@@ -17,3 +17,7 @@ help hugew gkrtp
 assert($? != 0)
 
 assert(help huga cd hoge)
+
+# all help
+assert("$(help)".split($'\n').size() == 14)
+assert("$(help -s)".split($'\n').size() == 14)

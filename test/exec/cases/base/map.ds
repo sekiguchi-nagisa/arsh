@@ -1,6 +1,7 @@
 var a = ["a" : 1]
 assert($a["a"] is Int32)
 assert($a["a"] == 1)
+try { $a["b"]; assert($false) } catch($e) { assert($e is KeyNotFoundError) }
 
 $a["a"] = 54
 assert($a["a"] == 54)

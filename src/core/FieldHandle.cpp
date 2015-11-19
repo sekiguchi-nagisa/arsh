@@ -31,33 +31,6 @@ DSType *FieldHandle::getFieldType(TypePool &) {
     return this->fieldType;
 }
 
-std::string FieldHandle::toString() const {
-    std::string str("{");
-
-    str += "fieldIndex = ";
-    str += std::to_string(this->fieldIndex);
-    str += ", attributeSet = ";
-
-    unsigned int count = 0;
-#define EACH_ATTRIBUTE(OP) \
-    OP(READ_ONLY) \
-    OP(GLOBAL) \
-    OP(ENV) \
-    OP(FUNC_HANDLE) \
-    OP(INTERFACE)
-
-#define DECODE_ATTR(ATTR) \
-    if(this->hasAttribute(ATTR)) { if(count++ > 0) { str += " | "; } str += #ATTR; }
-
-    EACH_ATTRIBUTE(DECODE_ATTR)
-
-#undef DECODE_ATTR
-#undef EACH_ATTRIBUTE
-
-    str += "}";
-    return str;
-}
-
 
 // ############################
 // ##     FunctionHandle     ##

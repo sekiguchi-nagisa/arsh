@@ -1,0 +1,40 @@
+
+# throw
+f() {
+    try { hgferayfaer; }
+    catch($e : OutOfRangeError){}
+}
+
+var t = $false
+try {
+    f
+    $t = not $t
+} catch($e) {}
+assert($t)
+assert($? == 1)
+
+# assert
+g() {
+    assert($false)
+}
+
+g
+assert($? == 1)
+
+# exit
+h() {
+    exit 34
+}
+h
+assert($? == 34)
+
+# return
+i() {
+    if($false) {
+        return 34
+    }
+    return 0
+}
+
+i
+assert($? == 0)

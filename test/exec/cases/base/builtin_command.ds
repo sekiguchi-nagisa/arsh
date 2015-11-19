@@ -2,7 +2,7 @@
 assert(command ps_intrp "")
 
 # execute external command
-assert(ls)
+assert(command ls)
 
 # execute external command using default path
 import-env PATH
@@ -21,12 +21,36 @@ hoge() {
     echo $@
 }
 
+# execute invalid command
+assert(command hoge 2>&1 | grep '^-ydsh: hoge: No such file or directory$')
+
 # show command information
-assert("$(command -v ls)" == "$(which ls)")
-assert("$(command -v cd)" == "cd")
-assert("$(command -v hoge)" == "hoge")
+assert("$(command -v ls)" == "$(which ls)") # external command
+assert("$(command -v cd)" == "cd")          # builtin
+assert("$(command -v hoge)" == "hoge")      # user-defined-command
+
+assert("$(command -v hfiureaf)" == "")      # invalid
+command -v hfueirf
+assert($? != 0)
+
+assert(command -v hferure cd hoge fjer)     # multiple
+command -v hferure fhaueirnv
+assert($? != 0)
 
 # show detailed information
-assert("$(command -V ls)" == "ls is $(which ls)")
-assert("$(command -V cd)" == "cd is a shell builtin command")
-assert("$(command -V hoge)" == "hoge is an user-defined command")
+assert("$(command -V ls)" == "ls is $(which ls)")                   # external
+assert("$(command -V cd)" == "cd is a shell builtin command")       # builtin
+assert("$(command -V hoge)" == "hoge is an user-defined command")   # user-defined
+
+assert("$(command -V hfiureaf 2>&1)" ==
+       "-ydsh: command: hfiureaf: No such file or directory")       # invalid
+command -V hfueirf
+assert($? != 0)
+
+assert(command -V hferure cd hoge fjer)                             # multiple
+command -V hferure fhaueirnv
+assert($? != 0)
+
+# invalid
+assert(command -i 2>&1 | grep '^-ydsh: command: -i: invalid option$')
+assert(command) # do nothing, but success
