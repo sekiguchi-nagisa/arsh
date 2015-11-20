@@ -4,12 +4,17 @@ sudo: false
 
 compiler:
   - clang
+  - gcc
 
 addons:
   apt:
+    sources:
+      - ubuntu-toolchain-r-test
     packages:
       - cmake
       - clang-3.4
+      - gcc-4.8
+      - g++-4.8
       - libxml2-dev
       - libdbus-1-3
       - libdbus-1-dev
