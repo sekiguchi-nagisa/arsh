@@ -25,7 +25,7 @@
 
 using namespace ydsh;
 
-void exec_interactive(const char *progName, DSContext *ctx);
+void exec_interactive(DSContext *ctx);
 
 static void loadRC(DSContext *ctx, const char *rcfile) {
     std::string path;
@@ -49,6 +49,9 @@ static void loadRC(DSContext *ctx, const char *rcfile) {
         DSContext_delete(&ctx);
         exit(ret);
     }
+
+    // reset line num
+    DSContext_setLineNum(ctx, 1);
 }
 
 static const char *statusLogPath = nullptr;
@@ -284,7 +287,7 @@ int main(int argc, char **argv) {
                 loadRC(ctx, rcfile);
             }
 
-            exec_interactive(argv[0], ctx);
+            exec_interactive(ctx);
             return 0;
         }
     }

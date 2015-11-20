@@ -14,100 +14,37 @@
  * limitations under the License.
  */
 
-#include <histedit.h>
-
 #include <clocale>
 #include <csetjmp>
 #include <csignal>
 #include <cstring>
 #include <string>
+#include <cerrno>
+#include <memory>
+
+#include <linenoise.h>
+#include <encodings/utf8.h>
 
 #include <ydsh/ydsh.h>
 #include "misc/fatal.h"
 
 static DSContext *dsContext;
 
-// for prompt
-static bool continuation = false;
-
-static char *prompt(EditLine *) {
-    return (char *)DSContext_getPrompt(dsContext, continuation ? 2 : 1);
-}
-
-// for signal handler
-static sigjmp_buf jmp_ctx;
-static volatile sig_atomic_t gotsig = 0;
-
-static void handler(int num) {
-    gotsig = num;
-    siglongjmp(jmp_ctx, 1);
-}
-
-static void installSIGINT_Handler() {
-    // set sigint
-    struct sigaction act;
-    act.sa_handler = handler;
-    act.sa_flags = 0;
-    sigfillset(&act.sa_mask);
-
-    if(sigaction(SIGINT, &act, NULL) < 0) {
-        perror("setup signal handeler failed\n");
-        exit(1);
+struct Deleter {
+    void operator()(char *ptr) {
+        free(ptr);
     }
-}
+};
 
-static void ignoreSignal() {
-    struct sigaction ignore_act;
-    ignore_act.sa_handler = SIG_IGN;
-    ignore_act.sa_flags = 0;
-    sigemptyset(&ignore_act.sa_mask);
+typedef std::unique_ptr<char, Deleter> StrWrapper;
 
-    sigaction(SIGINT, &ignore_act, NULL);
-    sigaction(SIGQUIT, &ignore_act, NULL);
-    sigaction(SIGSTOP, &ignore_act, NULL);  //FIXME: foreground job
-    sigaction(SIGCONT, &ignore_act, NULL);
-    sigaction(SIGTSTP, &ignore_act, NULL);  //FIXME: background job
-}
-
-// for editline
-static EditLine *el;
-static History *ydsh_history;
-static HistEvent event;
-
-// contains previous read line
-std::string lineBuf;
-
-static void initEditLine(const char *progName) {
-    ignoreSignal();
-
-    setlocale(LC_ALL, "");
-
-    el = el_init(progName, stdin, stdout, stderr);
-    el_set(el, EL_PROMPT, prompt);
-    el_set(el, EL_EDITOR, "emacs");
-    el_set(el, EL_SIGNAL, 1);
-
-    ydsh_history = history_init();
-    if(ydsh_history == 0) {
-        fatal("editline history initialization failed\n");
-    }
-
-    history(ydsh_history, &event, H_SETSIZE, 200);
-    el_set(el, EL_HIST, history, ydsh_history);
-}
-
-static void endEditLine() {
-    history_end(ydsh_history);
-    el_end(el);
-}
-
-
-static inline bool isSkipLine(const char *line, int count) {
+static inline bool isSkipLine(const StrWrapper &line) {
     if(line == nullptr) {
         return false;
     }
-    for(int i = 0; i < count; i++) {
-        switch(line[i]) {
+    const char *ptr = line.get();
+    for(int i = 0; ptr[i] != '\0'; i++) {
+        switch(ptr[i]) {
         case ' ':
         case '\t':
         case '\r':
@@ -120,92 +57,88 @@ static inline bool isSkipLine(const char *line, int count) {
     return true;
 }
 
-static bool checkLineContinuation(const char *line) {
-    if(line == 0) {
+static bool checkLineContinuation(const StrWrapper &line) {
+    if(line == nullptr) {
         return false;
     }
-    unsigned int size = strlen(line);
-    for(unsigned int i = 0; i < size; i++) {
-        if(line[i] == '\\' && i + 1 < size && line[i + 1] == '\n') {
+    const char *ptr = line.get();
+    for(unsigned int i = 0; ptr[i] != '\0'; i++) {
+        if(ptr[i] == '\\' && ptr[i + 1] == '\0') {
             return true;
         }
     }
     return false;
 }
 
-static void addHistory() {
-    std::string target("\\\n");
-    std::string buf(lineBuf);
-    std::string::size_type pos = buf.find(target);
-    while(pos != std::string::npos) {
-        buf.replace(pos, target.size(), "");
-        pos = buf.find(target, pos);
-    }
-    history(ydsh_history, &event, H_ENTER, buf.c_str());
-}
+static bool readLine(std::string &line) {
+    line.clear();
 
-static const char *readLineImpl() {
-    int count;
-    const char *line;
-
-    do {
-        line = el_gets(el, &count);
-    } while(isSkipLine(line, count));
-    return line;
-}
-
-static const char *readLine() {
-    installSIGINT_Handler();
-
-    if(sigsetjmp(jmp_ctx, 1) != 0) {
-        if(gotsig == SIGINT) {
-            printf("\n");
+    bool continuation = false;
+    while(true) {
+        errno = 0;
+        auto str = StrWrapper(linenoise(DSContext_getPrompt(dsContext, continuation ? 2 : 1)));
+        if(isSkipLine(str)) {
+            continue;
         }
-        gotsig = 0;
+
+        if(str == nullptr) {
+            if(errno == EAGAIN) {
+                continue;
+            }
+            return false;
+        }
+        line += str.get();
+        continuation = checkLineContinuation(str);
+        if(continuation) {
+            line.pop_back(); // remove '\\'
+            continue;
+        }
+        break;
     }
 
-    lineBuf = std::string();
-    const char *line;
-    do {
-        line = readLineImpl();
-        if(line == 0) {
-            return line;
-        }
-        lineBuf += line;
-        continuation = true;
-    } while(checkLineContinuation(line));
-
-    continuation = false;
-    addHistory();
-    return lineBuf.c_str();
+    linenoiseHistoryAdd(line.c_str());
+    line += '\n';    // terminate newline
+    return true;
 }
 
-void exec_interactive(const char *progName, DSContext *ctx) {   // never return
-    initEditLine(progName);
+static void ignoreSignal() {
+    struct sigaction ignore_act;
+    ignore_act.sa_handler = SIG_IGN;
+    ignore_act.sa_flags = 0;
+    sigemptyset(&ignore_act.sa_mask);
+
+    sigaction(SIGINT, &ignore_act, NULL);
+    sigaction(SIGQUIT, &ignore_act, NULL);
+    sigaction(SIGCONT, &ignore_act, NULL);
+    sigaction(SIGTSTP, &ignore_act, NULL);  //FIXME: job control
+}
+
+void exec_interactive(DSContext *ctx) {   // never return
+    setlocale(LC_ALL, "");
+
+    linenoiseSetEncodingFunctions(
+            linenoiseUtf8PrevCharLen,
+            linenoiseUtf8NextCharLen,
+            linenoiseUtf8ReadCode);
+
     DSContext_setOption(ctx, DS_OPTION_TOPLEVEL);
     dsContext = ctx;
 
-    const char *line;
     int exitStatus = 0;
-
-    for(unsigned int lineNum = 1; (line = readLine()) != 0; lineNum = DSContext_getLineNum(ctx)) {
+    std::string line;
+    while(readLine(line)) {
         ignoreSignal();
-
-        DSContext_setLineNum(ctx, lineNum);
         DSStatus *status;
-        int ret = DSContext_eval(ctx, line, &status);
+        int ret = DSContext_eval(ctx, line.c_str(), &status);
         unsigned int type = DSStatus_getType(status);
         DSStatus_free(&status);
         if(type == DS_STATUS_ASSERTION_ERROR || type == DS_STATUS_EXIT) {
             exitStatus = ret;
-            goto END;
+            break;
         }
     }
-    printf("\n");
 
-    END:
     DSContext_delete(&ctx);
-    endEditLine();
     exit(exitStatus);
 }
 

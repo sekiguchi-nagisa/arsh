@@ -1,0 +1,4 @@
+[submodule "lib/linenoise"]
+	path = lib/linenoise
+    url = https://github.com/sekiguchi-nagisa/linenoise.git
+    ignore = dirty

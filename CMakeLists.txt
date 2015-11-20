@@ -77,22 +77,6 @@ show_option(USE_SAFE_CAST)
 
 
 #++++++++++++++++++++++#
-#     find libedit     #
-#++++++++++++++++++++++#
-
-check_header(HAVE_HISTEDIT_H "histedit.h")
-find_library(HAVE_LIBEDIT NAMES edit)
-
-#++++++++++++++++++++++++#
-#     find libcurses     #
-#++++++++++++++++++++++++#
-
-find_library(HAVE_LIBCURSES NAMES curses)
-if(NOT ${HAVE_LIBCURSES})
-    find_library(HAVE_LIBCURSES NAMES ncurses) 
-endif()
-
-#++++++++++++++++++++++#
 #     find libdbus     #
 #++++++++++++++++++++++#
 
@@ -108,6 +92,12 @@ if(USE_DBUS)
     set(CMAKE_LIBRARY_PATH "/usr/lib/x86_64-linux-gnu")
     find_library(HAVE_LIBDBUS NAMES dbus-1)
 endif()
+
+#++++++++++++++++++++++++#
+#     init submodule     #
+#++++++++++++++++++++++++#
+
+execute_process(COMMAND git submodule update --init)
 
 
 #+++++++++++++++++++++++++++#
@@ -210,6 +200,7 @@ endif()
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/src_to_str)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_binding)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/linenoise)
 
 set(YDSH_STATIC ydsh_static)
 add_library(${YDSH_STATIC} STATIC ${YDSH_SRC} ${lexer_src} ${bind_src})
@@ -228,8 +219,9 @@ endif()
 #     ydsh     #
 #==============#
 
+include_directories(lib/linenoise)
 add_executable(${BIN_NAME} src/main.cpp src/interactive.cpp)
-target_link_libraries(${BIN_NAME} ${YDSH_STATIC} ${HAVE_LIBEDIT} ${HAVE_LIBCURSES})
+target_link_libraries(${BIN_NAME} ${YDSH_STATIC} linenoise)
 
 install(TARGETS ${BIN_NAME} RUNTIME DESTINATION bin)
 

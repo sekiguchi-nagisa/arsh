@@ -12,7 +12,6 @@ Language specification is subject to change without notice.
 * cmake 2.8+
 * make
 * clang3.4 or later (need c++11 support)
-* libedit (need unicode support. see http://thrysoee.dk/editline/)
 * libdbus 1.8.x
 * libxml2 (for D-Bus introspection)
 
