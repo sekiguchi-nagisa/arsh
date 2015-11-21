@@ -1038,13 +1038,26 @@ TEST_F(LexerTest_Lv1, LB2) {
     });
 }
 
+TEST_F(LexerTest_Lv1, LB3) {
+    const char *text = "[";
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(text);
+        this->lexer->pushLexerMode(yycCMD);
+        EXPECT(LB, text, EOS, "");
+        this->assertLexerMode(yycSTMT);
+        this->lexer->popLexerMode();
+        this->assertLexerMode(yycCMD);
+    });
+}
+
+
 TEST_F(LexerTest_Lv1, RB1) {
     const char *text = "]";
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(RB, text, EOS, "");
-        this->assertLexerMode(yycEXPR);
+        EXPECT(INVALID, text);
     });
 }
 
@@ -1052,9 +1065,21 @@ TEST_F(LexerTest_Lv1, RB2) {
     const char *text = "]";
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->initLexer(text, yycEXPR);
+        this->initLexer(text);
+        this->lexer->pushLexerMode(yycEXPR);
         EXPECT(RB, text, EOS, "");
-        this->assertLexerMode(yycEXPR);
+        this->assertLexerMode(yycSTMT);
+    });
+}
+
+TEST_F(LexerTest_Lv1, RB3) {
+    const char *text = "]";
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(text);
+        this->lexer->pushLexerMode(yycSTMT);
+        EXPECT(RB, text, EOS, "");
+        this->assertLexerMode(yycSTMT);
     });
 }
 

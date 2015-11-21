@@ -140,9 +140,7 @@ private:
 
     std::unique_ptr<Node> parse_primaryExpression();
 
-    std::unique_ptr<Node> parse_appliedName();
-
-    std::unique_ptr<Node> parse_specialName();
+    std::unique_ptr<Node> parse_appliedName(bool asSpecialName = false);
 
     std::unique_ptr<Node> parse_stringLiteral();
 
@@ -150,7 +148,7 @@ private:
 
     std::unique_ptr<Node> parse_stringExpression();
 
-    std::unique_ptr<Node> parse_interpolation();
+    std::unique_ptr<Node> parse_interpolation(bool asCmdArg = false);
 
     std::unique_ptr<Node> parse_commandSubstitution();
 };

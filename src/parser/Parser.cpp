@@ -930,7 +930,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool expandTilde) {
         return this->parse_commandSubstitution();
     }
     EACH_LA_interpolation(GEN_LA_CASE) {
-        return this->parse_interpolation();
+        return this->parse_interpolation(true);
     }
     default: {
         E_ALTER(
@@ -1158,7 +1158,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         return this->parse_appliedName();
     }
     case SPECIAL_NAME: {
-        return this->parse_specialName();
+        return this->parse_appliedName(true);
     }
     case LP: {  // group or tuple
         this->expect(LP);
@@ -1224,15 +1224,9 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     }
 }
 
-std::unique_ptr<Node> Parser::parse_appliedName() {
+std::unique_ptr<Node> Parser::parse_appliedName(bool asSpecialName) {
     Token token;
-    this->expect(APPLIED_NAME, token);
-    return uniquify<VarNode>(token.lineNum, this->lexer->toName(token));
-}
-
-std::unique_ptr<Node> Parser::parse_specialName() {
-    Token token;
-    this->expect(SPECIAL_NAME, token);
+    this->expect(asSpecialName ? SPECIAL_NAME : APPLIED_NAME, token);
     return uniquify<VarNode>(token.lineNum, this->lexer->toName(token));
 }
 
@@ -1296,13 +1290,18 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
     return std::move(node);
 }
 
-std::unique_ptr<Node> Parser::parse_interpolation() {
+std::unique_ptr<Node> Parser::parse_interpolation(bool asCmdArg) {
     switch(CUR_KIND()) {
-    case APPLIED_NAME: {
-        return this->parse_appliedName();
-    }
+    case APPLIED_NAME:
     case SPECIAL_NAME: {
-        return this->parse_specialName();
+        auto node(this->parse_appliedName(CUR_KIND() == SPECIAL_NAME));
+        if(asCmdArg && CUR_KIND() == LB) {
+            this->expect(LB);
+            auto indexNode(this->parse_expression());
+            this->expect(RB);
+            node.reset(createIndexNode(node.release(), indexNode.release()));
+        }
+        return node;
     }
     case START_INTERP: {
         this->expect(START_INTERP);

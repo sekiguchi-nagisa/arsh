@@ -115,6 +115,17 @@ assert($? == 0)
 echo "\\$true/hoge" | grep '\\true/hoge'   # escape
 assert($? == 0)
 
+var array = [1, 2]
+echo hello$array[0]world | grep 'hello1world'   # subscript
+assert($? == 0)
+
+echo hello$array[23 - 24 + 2]world | grep 'hello2world'   # subscript
+assert($? == 0)
+
+$@.push("world")
+echo hello' '$@[0] | grep 'hello world'   # subscript
+assert($? == 0)
+
 
 # command substitution
 

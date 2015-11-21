@@ -185,8 +185,8 @@ void Lexer::nextToken(Token &token) {
 
       <STMT,EXPR> "("          { MODE(EXPR); PUSH_MODE(STMT); RET(LP); }
       <STMT,EXPR> ")"          { POP_MODE(); RET(RP); }
-      <STMT,EXPR> "["          { MODE(STMT); RET(LB); }
-      <STMT,EXPR> "]"          { MODE(EXPR); RET(RB); }
+      <STMT,EXPR> "["          { MODE(EXPR); PUSH_MODE(STMT); RET(LB); }
+      <STMT,EXPR> "]"          { POP_MODE(); RET(RB); }
       <STMT,EXPR> "{"          { MODE(STMT); PUSH_MODE(STMT); RET(LBC); }
       <STMT,EXPR> "}"          { POP_MODE(); RET(RBC); }
 
@@ -256,6 +256,7 @@ void Lexer::nextToken(Token &token) {
       <CMD> ["]                { PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
       <CMD> ")"                { POP_MODE(); POP_MODE(); RET(RP); }
       <CMD> "("                { PUSH_MODE(CMD); RET(LP); }
+      <CMD> "["                { PUSH_MODE(STMT); RET(LB); }
       <CMD> [ \t]+             { FIND_SPACE(); }
       <CMD> "\\" [\r\n]        { INC_LINE_NUM(); FIND_SPACE(); }
 
