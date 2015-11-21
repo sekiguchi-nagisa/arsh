@@ -1302,10 +1302,7 @@ EvalStatus PipedCmdNode::eval(RuntimeContext &ctx) {
         EVAL(ctx, node);
     }
 
-    ctx.pushCallFrame(this->lineNum);
-    EvalStatus status = ctx.getProcInvoker().invoke();
-    ctx.popCallFrame();
-    ctx.getProcInvoker().clear();
+    EvalStatus status = ctx.callPipedCommand(this->lineNum);
 
     // push exit status
     if(*this->type == ctx.getPool().getBooleanType()) {

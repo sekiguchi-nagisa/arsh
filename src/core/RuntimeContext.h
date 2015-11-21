@@ -519,6 +519,8 @@ public:
         return this->procInvoker;
     }
 
+    EvalStatus callPipedCommand(unsigned int lineNum);
+
     void addUserDefinedCommand(UserDefinedCmdNode *node);
 
     /**
