@@ -186,12 +186,12 @@ void RuntimeContext::expandLocalStack(unsigned int needSize) {
  * +-----------+---------+--------+   +--------+
  *                       | offset |   |        |
  */
-EvalStatus RuntimeContext::applyFuncObject(unsigned int lineNum, bool returnTypeIsVoid, unsigned int paramSize) {
+EvalStatus RuntimeContext::applyFuncObject(unsigned int startPos, bool returnTypeIsVoid, unsigned int paramSize) {
     unsigned int savedStackTopIndex = this->stackTopIndex - paramSize - 1;
 
     // call function
     this->saveAndSetOffset(savedStackTopIndex + 2);
-    this->pushCallFrame(lineNum);
+    this->pushCallFrame(startPos);
     bool status = typeAs<FuncObject>(this->localStack[savedStackTopIndex + 1])->invoke(*this);
     this->popCallFrame();
 
@@ -220,7 +220,7 @@ EvalStatus RuntimeContext::applyFuncObject(unsigned int lineNum, bool returnType
  * +-----------+------------------+   +--------+
  *             | offset           |   |        |
  */
-EvalStatus RuntimeContext::callMethod(unsigned int lineNum, const std::string &methodName, MethodHandle *handle) {
+EvalStatus RuntimeContext::callMethod(unsigned int startPos, const std::string &methodName, MethodHandle *handle) {
     /**
      * include receiver
      */
@@ -230,7 +230,7 @@ EvalStatus RuntimeContext::callMethod(unsigned int lineNum, const std::string &m
 
     // call method
     this->saveAndSetOffset(savedStackTopIndex + 1);
-    this->pushCallFrame(lineNum);
+    this->pushCallFrame(startPos);
 
     bool status;
     // check method handle type
@@ -278,12 +278,12 @@ void RuntimeContext::newDSObject(DSType *type) {
  * +-----------+------------------+   +--------+
  *             |    new offset    |
  */
-EvalStatus RuntimeContext::callConstructor(unsigned int lineNum, unsigned int paramSize) {
+EvalStatus RuntimeContext::callConstructor(unsigned int startPos, unsigned int paramSize) {
     unsigned int savedStackTopIndex = this->stackTopIndex - paramSize;
 
     // call constructor
     this->saveAndSetOffset(savedStackTopIndex);
-    this->pushCallFrame(lineNum);
+    this->pushCallFrame(startPos);
     bool status =
             this->localStack[savedStackTopIndex]->getType()->getConstructor()->invoke(*this);
     this->popCallFrame();
@@ -301,13 +301,13 @@ EvalStatus RuntimeContext::callConstructor(unsigned int lineNum, unsigned int pa
     }
 }
 
-EvalStatus RuntimeContext::toString(unsigned int lineNum) {
+EvalStatus RuntimeContext::toString(unsigned int startPos) {
     static const std::string methodName(OP_STR);
 
     if(this->handle_STR == nullptr) {
         this->handle_STR = this->pool.getAnyType().lookupMethodHandle(this->pool, methodName);
     }
-    return this->callMethod(lineNum, methodName, this->handle_STR);
+    return this->callMethod(startPos, methodName, this->handle_STR);
 }
 
 void RuntimeContext::reportError() {
@@ -334,7 +334,7 @@ void RuntimeContext::fillInStackTrace(std::vector<StackTraceElement> &stackTrace
         unsigned long funcCtxIndex = (frame & lowOrderMask) >> 32;
         auto *node = this->callableContextStack[funcCtxIndex];
         const char *sourceName = node->getSourceName();
-        unsigned long lineNum = frame & highOrderMask;
+        unsigned long startPos = frame & highOrderMask;
 
         std::string callerName;
         if(dynamic_cast<FunctionNode *>(node) != nullptr) {
@@ -348,7 +348,8 @@ void RuntimeContext::fillInStackTrace(std::vector<StackTraceElement> &stackTrace
         }
 
 
-        stackTrace.push_back(StackTraceElement(sourceName, lineNum, std::move(callerName)));
+        stackTrace.push_back(StackTraceElement(
+                sourceName, node->getSourceInfoPtr()->getLineNum(startPos), std::move(callerName)));
     }
 }
 
@@ -359,14 +360,14 @@ void RuntimeContext::printStackTop(DSType *stackTopType) {
     }
 }
 
-bool RuntimeContext::checkCast(unsigned int lineNum, DSType *targetType) {
+bool RuntimeContext::checkCast(unsigned int startPos, DSType *targetType) {
     if(!this->peek()->introspect(*this, targetType)) {
         DSType *stackTopType = this->pop()->getType();
         std::string str("cannot cast ");
         str += this->pool.getTypeName(*stackTopType);
         str += " to ";
         str += this->pool.getTypeName(*targetType);
-        this->pushCallFrame(lineNum);
+        this->pushCallFrame(startPos);
         this->throwError(this->pool.getTypeCastErrorType(), std::move(str));
         this->popCallFrame();
         return false;
@@ -382,9 +383,9 @@ void RuntimeContext::instanceOf(DSType *targetType) {
     }
 }
 
-EvalStatus RuntimeContext::checkAssertion(unsigned int lineNum) {
+EvalStatus RuntimeContext::checkAssertion(unsigned int startPos) {
     if(!typeAs<Boolean_Object>(this->pop())->getValue()) {
-        this->pushCallFrame(lineNum);
+        this->pushCallFrame(startPos);
         this->throwError(this->pool.getAssertFail(), "");
         this->popCallFrame();
         throw InternalError();
@@ -392,7 +393,7 @@ EvalStatus RuntimeContext::checkAssertion(unsigned int lineNum) {
     return EvalStatus::SUCCESS;
 }
 
-EvalStatus RuntimeContext::importEnv(unsigned int lineNum, const std::string &envName,
+EvalStatus RuntimeContext::importEnv(unsigned int startPos, const std::string &envName,
                                      unsigned int index, bool isGlobal, bool hasDefault) {
     const char *env = getenv(envName.c_str());
     if(hasDefault) {
@@ -406,7 +407,7 @@ EvalStatus RuntimeContext::importEnv(unsigned int lineNum, const std::string &en
     if(env == nullptr) {
         std::string str("undefined environmental variable: ");
         str += envName;
-        this->pushCallFrame(lineNum);
+        this->pushCallFrame(startPos);
         this->throwSystemError(EINVAL, std::move(str));
         this->popCallFrame();
         return EvalStatus::THROW;
@@ -491,8 +492,8 @@ void RuntimeContext::exitShell(unsigned int status) {
     throw InternalError();
 }
 
-EvalStatus RuntimeContext::callPipedCommand(unsigned int lineNum) {
-    this->pushCallFrame(lineNum);
+EvalStatus RuntimeContext::callPipedCommand(unsigned int startPos) {
+    this->pushCallFrame(startPos);
     EvalStatus status = this->procInvoker.invoke();
     this->popCallFrame();
     this->procInvoker.clear();

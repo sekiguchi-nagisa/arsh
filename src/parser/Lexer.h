@@ -48,13 +48,39 @@ class SourceInfo {
 private:
     std::string sourceName;
 
+    /**
+     * default value is 1.
+     */
+    unsigned int lineNumOffset;
+
+    /**
+     * contains newline character position.
+     */
+    std::vector<unsigned int> lineNumTable;
+
 public:
-    explicit SourceInfo(const char *sourceName) : sourceName(sourceName) { }
+    explicit SourceInfo(const char *sourceName) :
+            sourceName(sourceName), lineNumOffset(1), lineNumTable() { }
     ~SourceInfo() = default;
 
     const std::string &getSourceName() const {
         return this->sourceName;
     }
+
+    void setLineNumOffset(unsigned int offset) {
+        this->lineNumOffset = offset;
+    }
+
+    unsigned int getLineNumOffset() const {
+        return this->lineNumOffset;
+    }
+
+    const std::vector<unsigned int> &getLineNumTable() const {
+        return this->lineNumTable;
+    }
+
+    void addNewlineCharPos(unsigned int pos);
+    unsigned int getLineNum(unsigned int pos) const;
 };
 
 typedef std::shared_ptr<SourceInfo> SourceInfoPtr;
@@ -63,12 +89,7 @@ typedef ydsh::parser_base::Token<TokenKind> Token;
 
 class Lexer : public ydsh::parser_base::LexerBase {
 private:
-    SourceInfoPtr sourceInfoPtr;
-
-    /**
-     * initial value is 1.
-     */
-    unsigned int lineNum;
+    SourceInfoPtr srcInfoPtr;
 
     /**
      * default mode is yycSTMT
@@ -86,15 +107,15 @@ private:
 
 public:
     Lexer(const char *sourceName, const char *source) :
-            LexerBase(source), sourceInfoPtr(std::make_shared<SourceInfo>(sourceName)),
-            lineNum(1), modeStack(1, yycSTMT), prevNewLine(false), prevSpace(false), prevMode(yycSTMT) {}
+            LexerBase(source), srcInfoPtr(std::make_shared<SourceInfo>(sourceName)),
+            modeStack(1, yycSTMT), prevNewLine(false), prevSpace(false), prevMode(yycSTMT) {}
 
     /**
      * FILE must be opened with binary mode.
      */
     Lexer(const char *sourceName, FILE *fp) :
-            LexerBase(fp), sourceInfoPtr(std::make_shared<SourceInfo>(sourceName)),
-            lineNum(1), modeStack(1, yycSTMT), prevNewLine(false), prevSpace(false), prevMode(yycSTMT) {}
+            LexerBase(fp), srcInfoPtr(std::make_shared<SourceInfo>(sourceName)),
+            modeStack(1, yycSTMT), prevNewLine(false), prevSpace(false), prevMode(yycSTMT) {}
 
     ~Lexer() = default;
 
@@ -113,16 +134,14 @@ public:
     }
 
     const SourceInfoPtr &getSourceInfoPtr() const {
-        return this->sourceInfoPtr;
+        return this->srcInfoPtr;
     }
 
     void setLineNum(unsigned int lineNum) {
-        this->lineNum = lineNum;
+        this->srcInfoPtr->setLineNumOffset(lineNum);
     }
 
-    unsigned int getLineNum() const {
-        return this->lineNum;
-    }
+    unsigned int getLineNum() const;
 
     void setLexerMode(LexerMode mode) {
         this->modeStack[this->modeStack.size() - 1] = mode;

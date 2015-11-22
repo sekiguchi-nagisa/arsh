@@ -37,6 +37,12 @@ namespace ast {
 // ##     Node     ##
 // ##################
 
+void Node::updateSize(unsigned int startPos, unsigned int size) {
+    if(startPos > this->startPos) {
+        this->size = startPos + size - this->startPos;
+    }
+}
+
 void Node::setType(DSType &type) {
     this->type = &type;
 }
@@ -152,7 +158,7 @@ void DBusIfaceTypeNode::accept(NodeVisitor &visitor) {
 // ############################
 
 ReturnTypeNode::ReturnTypeNode(TypeNode *typeNode) :
-        TypeNode(typeNode->getLineNum()), typeNodes() {
+        TypeNode(typeNode->getStartPos(), typeNode->getSize()), typeNodes() {
     this->addTypeNode(typeNode);
 }
 
@@ -164,6 +170,7 @@ ReturnTypeNode::~ReturnTypeNode() {
 
 void ReturnTypeNode::addTypeNode(TypeNode *typeNode) {
     this->typeNodes.push_back(typeNode);
+    this->updateSize(typeNode->getStartPos(), typeNode->getSize());
 }
 
 void ReturnTypeNode::dump(NodeDumper &dumper) const {
@@ -182,8 +189,10 @@ void ReturnTypeNode::accept(NodeVisitor &visitor) {
 // ##     TypeOfNode     ##
 // ########################
 
-TypeOfNode::TypeOfNode(Node *exprNode) :
-        TypeNode(exprNode->getLineNum()), exprNode(exprNode) { }
+TypeOfNode::TypeOfNode(unsigned int startPos, Node *exprNode) :
+        TypeNode(startPos, 0), exprNode(exprNode) {
+    this->updateSize(exprNode->getStartPos(), exprNode->getSize());
+}
 
 TypeOfNode::~TypeOfNode() {
     delete this->exprNode;
@@ -198,12 +207,14 @@ void TypeOfNode::accept(NodeVisitor &visitor) {
 }
 
 
-TypeNode *newAnyTypeNode(unsigned int lineNum) {
-    return new BaseTypeNode(lineNum, std::string("Any"));
+TypeNode *newAnyTypeNode() {
+    parser_base::TokenBase token = {0, 0};
+    return new BaseTypeNode(token, std::string("Any"));
 }
 
-TypeNode *newVoidTypeNode(unsigned int lineNum) {
-    return new BaseTypeNode(lineNum, std::string("Void"));
+TypeNode *newVoidTypeNode() {
+    parser_base::TokenBase token = {0, 0};
+    return new BaseTypeNode(token, std::string("Void"));
 }
 
 
@@ -375,8 +386,8 @@ EvalStatus StringExprNode::eval(RuntimeContext &ctx) {
 // ##     ArrayNode     ##
 // #######################
 
-ArrayNode::ArrayNode(unsigned int lineNum, Node *node) :
-        Node(lineNum), nodes() {
+ArrayNode::ArrayNode(unsigned int startPos, Node *node) :
+        Node(startPos, 0), nodes() {
     this->nodes.push_back(node);
 }
 
@@ -412,8 +423,8 @@ EvalStatus ArrayNode::eval(RuntimeContext &ctx) {
 // ##     MapNode     ##
 // #####################
 
-MapNode::MapNode(unsigned int lineNum, Node *keyNode, Node *valueNode) :
-        Node(lineNum), keyNodes(), valueNodes() {
+MapNode::MapNode(unsigned int startPos, Node *keyNode, Node *valueNode) :
+        Node(startPos, 0), keyNodes(), valueNodes() {
     this->keyNodes.push_back(keyNode);
     this->valueNodes.push_back(valueNode);
 }
@@ -460,8 +471,8 @@ EvalStatus MapNode::eval(RuntimeContext &ctx) {
 // ##     TupleNode     ##
 // #######################
 
-TupleNode::TupleNode(unsigned int lineNum, Node *leftNode, Node *rightNode) :
-        Node(lineNum), nodes(2) {
+TupleNode::TupleNode(unsigned int startPos, Node *leftNode, Node *rightNode) :
+        Node(startPos, 0), nodes(2) {
     this->nodes[0] = leftNode;
     this->nodes[1] = rightNode;
 }
@@ -613,7 +624,7 @@ std::pair<Node *, std::string> AccessNode::split(AccessNode *accessNode) {
 // ######################
 
 CastNode::CastNode(Node *exprNode, TypeNode *type, bool dupTypeToken) :
-        Node(exprNode->getLineNum()), exprNode(exprNode), targetTypeNode(nullptr),
+        Node(exprNode->getStartPos(), 0), exprNode(exprNode), targetTypeNode(nullptr),
         opKind(NOP) {
     static const unsigned long tag = (unsigned long) 1L << 63;
 
@@ -622,6 +633,11 @@ CastNode::CastNode(Node *exprNode, TypeNode *type, bool dupTypeToken) :
         this->targetTypeNode = tok;
     } else {
         this->targetTypeNode = type;
+    }
+
+    if(this->getTargetTypeNode() != nullptr) {
+        this->updateSize(this->getTargetTypeNode()->getStartPos(),
+                         this->getTargetTypeNode()->getSize());
     }
 }
 
@@ -748,10 +764,10 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
         break;
     }
     case TO_STRING: {
-        return ctx.toString(this->getLineNum());
+        return ctx.toString(this->getStartPos());
     }
     case CHECK_CAST: {
-        return ctx.checkCast(this->lineNum, this->type) ? EvalStatus::SUCCESS : EvalStatus::THROW;
+        return ctx.checkCast(this->startPos, this->type) ? EvalStatus::SUCCESS : EvalStatus::THROW;
     }
     default:
         fatal("unsupported cast op\n");
@@ -770,6 +786,12 @@ CastNode *CastNode::newTypedCastNode(Node *targetNode, DSType &type, CastNode::C
 // ############################
 // ##     InstanceOfNode     ##
 // ############################
+
+InstanceOfNode::InstanceOfNode(Node *targetNode, TypeNode *typeNode) :
+    Node(targetNode->getStartPos(), 0), targetNode(targetNode),
+    targetTypeNode(typeNode), opKind(ALWAYS_FALSE) {
+    this->updateSize(typeNode->getStartPos(), typeNode->getSize());
+}
 
 InstanceOfNode::~InstanceOfNode() {
     delete this->targetNode;
@@ -818,6 +840,15 @@ EvalStatus InstanceOfNode::eval(RuntimeContext &ctx) {
 // ##     ApplyNode     ##
 // #######################
 
+ApplyNode::ApplyNode(Node *exprNode, std::vector<Node *> &&argNodes) :
+        Node(exprNode->getStartPos(), exprNode->getSize()),
+        exprNode(exprNode), argNodes(std::move(argNodes)) {
+    if(!this->argNodes.empty()) {
+        this->updateSize(this->argNodes.back()->getStartPos(),
+                         this->argNodes.back()->getSize());
+    }
+}
+
 ApplyNode::~ApplyNode() {
     delete this->exprNode;
 
@@ -855,12 +886,22 @@ EvalStatus ApplyNode::eval(RuntimeContext &ctx) {
     }
 
     // call function
-    return ctx.applyFuncObject(this->lineNum, this->type->isVoidType(), actualParamSize);
+    return ctx.applyFuncObject(this->startPos, this->type->isVoidType(), actualParamSize);
 }
 
 // ############################
 // ##     MethodCallNode     ##
 // ############################
+
+MethodCallNode::MethodCallNode(Node *recvNode, std::string &&methodName, std::vector<Node *> &&argNodes) :
+        Node(recvNode->getStartPos(), recvNode->getSize()),
+        recvNode(recvNode), methodName(std::move(methodName)),
+        argNodes(std::move(argNodes)), handle(), attributeSet() {
+    if(!this->argNodes.empty()) {
+        this->updateSize(this->argNodes.back()->getStartPos(),
+                         this->argNodes.back()->getSize());
+    }
+}
 
 MethodCallNode::~MethodCallNode() {
     delete this->recvNode;
@@ -900,12 +941,20 @@ EvalStatus MethodCallNode::eval(RuntimeContext &ctx) {
         EVAL(ctx, argNode);
     }
 
-    return ctx.callMethod(this->lineNum, this->methodName, this->handle);
+    return ctx.callMethod(this->startPos, this->methodName, this->handle);
 }
 
 // #####################
 // ##     NewNode     ##
 // #####################
+
+NewNode::NewNode(unsigned int startPos, TypeNode *targetTypeNode, std::vector<Node *> &&argNodes) :
+        Node(startPos, 0), targetTypeNode(targetTypeNode), argNodes(std::move(argNodes)) {
+    if(!this->argNodes.empty()) {
+        this->updateSize(this->argNodes.back()->getStartPos(),
+                         this->argNodes.back()->getSize());
+    }
+}
 
 NewNode::~NewNode() {
     delete this->targetTypeNode;
@@ -935,7 +984,7 @@ EvalStatus NewNode::eval(RuntimeContext &ctx) {
     }
 
     // call constructor
-    return ctx.callConstructor(this->lineNum, paramSize);
+    return ctx.callConstructor(this->startPos, paramSize);
 }
 
 // #########################
@@ -1033,9 +1082,10 @@ EvalStatus GroupNode::eval(RuntimeContext &ctx) {
 // ########################
 
 CondOpNode::CondOpNode(Node *leftNode, Node *rightNode, bool isAndOp) :
-        Node(leftNode->getLineNum()), leftNode(leftNode), rightNode(rightNode), andOp(isAndOp) {
+        Node(leftNode->getStartPos(), 0), leftNode(leftNode), rightNode(rightNode), andOp(isAndOp) {
     this->leftNode->inCondition();
     this->rightNode->inCondition();
+    this->updateSize(rightNode->getStartPos(), rightNode->getSize());
 }
 
 CondOpNode::~CondOpNode() {
@@ -1088,6 +1138,7 @@ CmdArgNode::~CmdArgNode() {
 void CmdArgNode::addSegmentNode(Node *node) {
     node->inCmdArgNode();
     this->segmentNodes.push_back(node);
+    this->updateSize(node->getStartPos(), node->getSize());
 }
 
 void CmdArgNode::dump(NodeDumper &dumper) const {
@@ -1141,7 +1192,7 @@ bool CmdArgNode::isIgnorableEmptyString() {
 // #######################
 
 RedirNode::RedirNode(TokenKind kind, CmdArgNode *node) :
-        Node(0), op(RedirectOP::DUMMY), targetNode(node) {
+        Node(node->getStartPos(), node->getSize()), op(RedirectOP::DUMMY), targetNode(node) {
     switch(kind) {
 #define GEN_CASE(ENUM, STR) case REDIR_##ENUM : this->op = RedirectOP::ENUM; break;
     EACH_RedirectOP(GEN_CASE)
@@ -1218,14 +1269,16 @@ CmdNode::~CmdNode() {
 
 void CmdNode::addArgNode(CmdArgNode *node) {
     this->argNodes.push_back(node);
+    this->updateSize(node->getStartPos(), node->getSize());
 }
 
 void CmdNode::addRedirOption(TokenKind kind, CmdArgNode *node) {
     this->argNodes.push_back(new RedirNode(kind, node));
+    this->updateSize(node->getStartPos(), node->getSize());
 }
 
-void CmdNode::addRedirOption(TokenKind kind) {
-    this->addRedirOption(kind, new CmdArgNode(new StringValueNode(std::string(""))));
+void CmdNode::addRedirOption(TokenKind kind, const parser_base::TokenBase &token) {
+    this->addRedirOption(kind, new CmdArgNode(new StringValueNode(token, std::string(""))));
 }
 
 void CmdNode::dump(NodeDumper &dumper) const {
@@ -1264,6 +1317,7 @@ PipedCmdNode::~PipedCmdNode() {
 
 void PipedCmdNode::addCmdNodes(Node *node) {
     this->cmdNodes.push_back(node);
+    this->updateSize(node->getStartPos(), node->getSize());
 }
 
 void PipedCmdNode::inCondition() {
@@ -1295,7 +1349,7 @@ EvalStatus PipedCmdNode::eval(RuntimeContext &ctx) {
         EVAL(ctx, node);
     }
 
-    EvalStatus status = ctx.callPipedCommand(this->lineNum);
+    EvalStatus status = ctx.callPipedCommand(this->startPos);
 
     // push exit status
     if(*this->type == ctx.getPool().getBooleanType()) {
@@ -1477,7 +1531,7 @@ void AssertNode::accept(NodeVisitor &visitor) {
 EvalStatus AssertNode::eval(RuntimeContext &ctx) {
     if(ctx.isAssertion()) {
         EVAL(ctx, this->condNode);
-        return ctx.checkAssertion(this->condNode->getLineNum());
+        return ctx.checkAssertion(this->condNode->getStartPos());
     }
     return EvalStatus::SUCCESS;
 }
@@ -1611,7 +1665,7 @@ EvalStatus ImportEnvNode::eval(RuntimeContext &ctx) {
     if(hasDefault) {
         EVAL(ctx, this->defaultValueNode);
     }
-    return ctx.importEnv(this->lineNum, this->envName, this->varIndex, this->global, hasDefault);
+    return ctx.importEnv(this->startPos, this->envName, this->varIndex, this->global, hasDefault);
 }
 
 // ###########################
@@ -1639,21 +1693,25 @@ EvalStatus TypeAliasNode::eval(RuntimeContext &) {
 // ##     ForNode     ##
 // #####################
 
-ForNode::ForNode(unsigned int lineNum, Node *initNode, Node *condNode, Node *iterNode, BlockNode *blockNode) :
-        Node(lineNum), initNode(initNode), condNode(condNode),
+ForNode::ForNode(unsigned int startPos, Node *initNode,
+                 Node *condNode, Node *iterNode, BlockNode *blockNode) :
+        Node(startPos, 0), initNode(initNode), condNode(condNode),
         iterNode(iterNode), blockNode(blockNode) {
     if(this->initNode == nullptr) {
         this->initNode = new EmptyNode();
     }
 
     if(this->condNode == nullptr) {
-        this->condNode = new VarNode(lineNum, std::string(VAR_TRUE));
+        parser_base::TokenBase token = {startPos, 1};
+        this->condNode = new VarNode(token, std::string(VAR_TRUE));
     }
     this->condNode->inCondition();
 
     if(this->iterNode == nullptr) {
         this->iterNode = new EmptyNode();
     }
+
+    this->updateSize(blockNode->getStartPos(), blockNode->getSize());
 }
 
 ForNode::~ForNode() {
@@ -1791,19 +1849,21 @@ static void resolveIfIsStatement(Node *condNode, BlockNode *blockNode) {
         return;
     }
 
-    VarNode *exprNode = new VarNode(isNode->getLineNum(), std::string(varNode->getVarName()));
+    parser_base::TokenBase dummy = {isNode->getStartPos(), 1};
+    VarNode *exprNode = new VarNode(dummy, std::string(varNode->getVarName()));
     CastNode *castNode = new CastNode(exprNode, isNode->getTargetTypeNode(), true);
     VarDeclNode *declNode =
-            new VarDeclNode(isNode->getLineNum(), std::string(varNode->getVarName()), castNode, true);
+            new VarDeclNode(isNode->getStartPos(), std::string(varNode->getVarName()), castNode, true);
     blockNode->insertNodeToFirst(declNode);
 }
 
-IfNode::IfNode(unsigned int lineNum, Node *condNode, BlockNode *thenNode) :
-        Node(lineNum), condNode(condNode), thenNode(thenNode),
+IfNode::IfNode(unsigned int startPos, Node *condNode, BlockNode *thenNode) :
+        Node(startPos, 0), condNode(condNode), thenNode(thenNode),
         elifCondNodes(), elifThenNodes(), elseNode(nullptr), terminal(false) {
     this->condNode->inCondition();
 
     resolveIfIsStatement(this->condNode, this->thenNode);
+    this->updateSize(thenNode->getStartPos(), thenNode->getSize());
 }
 
 IfNode::~IfNode() {
@@ -1823,6 +1883,7 @@ void IfNode::addElifNode(Node *condNode, BlockNode *thenNode) {
     condNode->inCondition();
     this->elifCondNodes.push_back(condNode);
     this->elifThenNodes.push_back(thenNode);
+    this->updateSize(thenNode->getStartPos(), thenNode->getSize());
 
     resolveIfIsStatement(condNode, thenNode);
 }
@@ -1878,9 +1939,8 @@ EvalStatus IfNode::eval(RuntimeContext &ctx) {
 // ##     ReturnNode     ##
 // ########################
 
-ReturnNode::ReturnNode(unsigned int lineNum) :
-        ReturnNode(lineNum, new EmptyNode(lineNum)) {
-}
+ReturnNode::ReturnNode(const parser_base::TokenBase &token) :
+        BlockEndNode(token.startPos, token.size), exprNode(new EmptyNode(token)) { }
 
 ReturnNode::~ReturnNode() {
     delete this->exprNode;
@@ -1967,6 +2027,7 @@ TryNode::~TryNode() {
 
 void TryNode::addCatchNode(CatchNode *catchNode) {
     this->catchNodes.push_back(catchNode);
+    this->updateSize(catchNode->getStartPos(), catchNode->getSize());
 }
 
 void TryNode::addFinallyNode(BlockNode *finallyNode) {
@@ -1974,6 +2035,7 @@ void TryNode::addFinallyNode(BlockNode *finallyNode) {
         delete this->finallyNode;
     }
     this->finallyNode = finallyNode;
+    this->updateSize(finallyNode->getSize(), finallyNode->getSize());
 }
 
 BlockNode *TryNode::getFinallyNode() {
@@ -2026,11 +2088,12 @@ EvalStatus TryNode::eval(RuntimeContext &ctx) {
 // ##     VarDeclNode     ##
 // #########################
 
-VarDeclNode::VarDeclNode(unsigned int lineNum, std::string &&varName, Node *initValueNode, bool readOnly) :
-        Node(lineNum), varName(std::move(varName)), readOnly(readOnly), global(false),
+VarDeclNode::VarDeclNode(unsigned int startPos, std::string &&varName, Node *initValueNode, bool readOnly) :
+        Node(startPos, 0), varName(std::move(varName)), readOnly(readOnly), global(false),
         varIndex(0), initValueNode(initValueNode) {
     if(this->initValueNode != nullptr) {
         this->initValueNode->inRightHandleSide();
+        this->updateSize(initValueNode->getStartPos(), initValueNode->getSize());
     }
 }
 
@@ -2147,9 +2210,11 @@ std::pair<Node *, Node *> AssignNode::split(AssignNode *node) {
 // ###################################
 
 ElementSelfAssignNode::ElementSelfAssignNode(MethodCallNode *leftNode, BinaryOpNode *binaryNode) :
-        Node(leftNode->getLineNum()),
+        Node(leftNode->getStartPos(), 0),
         recvNode(), indexNode(),
         getterNode(), setterNode(), binaryNode(binaryNode) {
+    this->updateSize(binaryNode->getStartPos(), binaryNode->getSize());
+
     // init recv, indexNode
     this->recvNode = leftNode->getRecvNode();
     leftNode->setRecvNode(nullptr);
@@ -2294,6 +2359,7 @@ void InterfaceNode::addMethodDeclNode(FunctionNode *methodDeclNode) {
 void InterfaceNode::addFieldDecl(VarDeclNode *node, TypeNode *typeToken) {
     this->fieldDeclNodes.push_back(node);
     this->fieldTypeNodes.push_back(typeToken);
+    this->updateSize(typeToken->getStartPos(), typeToken->getSize());
 }
 
 void InterfaceNode::dump(NodeDumper &dumper) const {
@@ -2550,30 +2616,32 @@ Node *createCallNode(Node *recvNode, std::vector<Node *> &&argNodes) {
     return new ApplyNode(recvNode, std::move(argNodes));
 }
 
-ForNode *createForInNode(unsigned int lineNum, VarNode *varNode, Node *exprNode, BlockNode *blockNode) {
+ForNode *createForInNode(unsigned int startPos, VarNode *varNode, Node *exprNode, BlockNode *blockNode) {
+    parser_base::TokenBase dummy = {startPos, 1};
+
     // create for-init
     MethodCallNode *call_iter = new MethodCallNode(exprNode, std::string(OP_ITER));
     std::string reset_var_name(std::to_string(rand()));
-    VarDeclNode *reset_varDecl = new VarDeclNode(lineNum, std::string(reset_var_name), call_iter, true);
+    VarDeclNode *reset_varDecl = new VarDeclNode(startPos, std::string(reset_var_name), call_iter, true);
 
     // create for-cond
-    VarNode *reset_var = new VarNode(lineNum, std::string(reset_var_name));
+    VarNode *reset_var = new VarNode(dummy, std::string(reset_var_name));
     MethodCallNode *call_hasNext = new MethodCallNode(reset_var, std::string(OP_HAS_NEXT));
 
     // create forIn-init
-    reset_var = new VarNode(lineNum, std::string(reset_var_name));
+    reset_var = new VarNode(dummy, std::string(reset_var_name));
     MethodCallNode *call_next = new MethodCallNode(reset_var, std::string(OP_NEXT));
-    VarDeclNode *init_var = new VarDeclNode(lineNum,
+    VarDeclNode *init_var = new VarDeclNode(startPos,
                                             VarNode::extractVarNameAndDelete(varNode), call_next, false);
 
     // insert init to block
     blockNode->insertNodeToFirst(init_var);
 
-    return new ForNode(lineNum, reset_varDecl, call_hasNext, nullptr, blockNode);
+    return new ForNode(startPos, reset_varDecl, call_hasNext, nullptr, blockNode);
 }
 
-Node *createSuffixNode(Node *leftNode, TokenKind op) {
-    return createAssignNode(leftNode, op, new IntValueNode(leftNode->getLineNum(), 1));
+Node *createSuffixNode(Node *leftNode, TokenKind op, const parser_base::TokenBase &token) {
+    return createAssignNode(leftNode, op, new IntValueNode(token, 1));
 }
 
 Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode) {

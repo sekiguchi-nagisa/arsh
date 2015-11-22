@@ -15,6 +15,7 @@
  */
 
 #include <cmath>
+#include <algorithm>
 
 #include "../misc/fatal.h"
 #include "../misc/num.h"
@@ -36,6 +37,26 @@ const char *toModeName(LexerMode mode) {
     return lexerModeNames[mode];
 }
 
+// ########################
+// ##     SourceInfo     ##
+// ########################
+
+void SourceInfo::addNewlineCharPos(unsigned int pos) {
+    if(this->lineNumTable.empty()) {
+        this->lineNumTable.push_back(pos);
+    } else if(pos > this->lineNumTable.back()) {
+        this->lineNumTable.push_back(pos);
+    }
+}
+
+unsigned int SourceInfo::getLineNum(unsigned int pos) const {
+    auto iter = std::lower_bound(this->lineNumTable.begin(), this->lineNumTable.end(), pos);
+    if(this->lineNumTable.end() == iter) {
+        return this->lineNumTable.size() + this->lineNumOffset;
+    }
+    return iter - this->lineNumTable.begin() + this->lineNumOffset;
+}
+
 // ###################
 // ##     Lexer     ##
 // ###################
@@ -45,6 +66,11 @@ void Lexer::setPos(unsigned int pos) {
         fatal("too large position: %u\n", pos);
     }
     this->cursor = this->buf + pos;
+}
+
+unsigned int Lexer::getLineNum() const {
+    return this->srcInfoPtr->getLineNumOffset() +
+            this->srcInfoPtr->getLineNumTable().size();
 }
 
 Token Lexer::getLineToken(const Token &token, bool skipEOS) const {

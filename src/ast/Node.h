@@ -51,7 +51,8 @@ class NodeDumper;
 
 class Node {
 protected:
-    unsigned int lineNum;
+    unsigned int startPos;
+    unsigned int size;
 
     /**
      * initial value is null.
@@ -61,14 +62,31 @@ protected:
 public:
     NON_COPYABLE(Node);
 
-    explicit Node(unsigned int lineNum) :
-            lineNum(lineNum), type() { }
+    explicit Node(const parser_base::TokenBase &token) :
+            Node(token.startPos, token.size) { }
+
+    Node(unsigned int startPos, unsigned int size) :
+            startPos(startPos), size(size), type() { }
 
     virtual ~Node() = default;
 
-    unsigned int getLineNum() const {
-        return this->lineNum;
+    unsigned int getStartPos() const {
+        return this->startPos;
     }
+
+    unsigned int getSize() const {
+        return this->size;
+    }
+
+    void setSize(unsigned int size) {
+        this->size = size;
+    }
+
+    void updateSize(const parser_base::TokenBase &token) {
+        this->updateSize(token.startPos, token.size);
+    }
+
+    void updateSize(unsigned int startPos, unsigned int size);
 
     virtual void setType(DSType &type);
 
@@ -116,7 +134,7 @@ public:
  */
 class TypeNode : public Node {
 public:
-    explicit TypeNode(unsigned int lineNum) : Node(lineNum) { }
+    TypeNode(unsigned int startPos, unsigned int size) : Node(startPos, size) { }
 
     virtual ~TypeNode() = default;
 
@@ -131,8 +149,8 @@ private:
     std::string typeName;
 
 public:
-    BaseTypeNode(unsigned int lineNum, std::string &&typeName) :
-            TypeNode(lineNum), typeName(std::move(typeName)) { }
+    BaseTypeNode(const parser_base::TokenBase &token, std::string &&typeName) :
+            TypeNode(token.startPos, size), typeName(std::move(typeName)) { }
 
     ~BaseTypeNode() = default;
 
@@ -154,7 +172,7 @@ private:
 
 public:
     explicit ReifiedTypeNode(BaseTypeNode *templateTypeNode) :
-            TypeNode(templateTypeNode->getLineNum()),
+            TypeNode(templateTypeNode->getStartPos(), templateTypeNode->getSize()),
             templateTypeNode(templateTypeNode), elementTypeNodes() { }
 
     ~ReifiedTypeNode();
@@ -183,8 +201,8 @@ private:
     std::vector<TypeNode *> paramTypeNodes;
 
 public:
-    explicit FuncTypeNode(TypeNode *returnTypeNode) :
-            TypeNode(returnTypeNode->getLineNum()),
+    FuncTypeNode(unsigned int startPos, TypeNode *returnTypeNode) :
+            TypeNode(startPos, 0),
             returnTypeNode(returnTypeNode), paramTypeNodes() { }
 
     ~FuncTypeNode();
@@ -212,8 +230,8 @@ private:
     std::string name;
 
 public:
-    DBusIfaceTypeNode(unsigned int lineNum, std::string &&name) :
-            TypeNode(lineNum), name(std::move(name)) { }
+    DBusIfaceTypeNode(const parser_base::TokenBase &token, std::string &&name) :
+            TypeNode(token.startPos, token.size), name(std::move(name)) { }
 
     ~DBusIfaceTypeNode() = default;
 
@@ -255,7 +273,7 @@ private:
     Node *exprNode;
 
 public:
-    TypeOfNode(Node *exprNode);
+    TypeOfNode(unsigned int startPos, Node *exprNode);
     ~TypeOfNode();
 
     Node *getExprNode() const {
@@ -266,9 +284,9 @@ public:
     void accept(NodeVisitor &visitor); // override
 };
 
-TypeNode *newAnyTypeNode(unsigned int lineNum = 0);
+TypeNode *newAnyTypeNode();
 
-TypeNode *newVoidTypeNode(unsigned int lineNum = 0);
+TypeNode *newVoidTypeNode();
 
 
 
@@ -294,31 +312,31 @@ private:
     DSValue value;
 
 private:
-    IntValueNode(unsigned int lineNum, IntKind kind, int value) :
-            Node(lineNum), kind(kind), tempValue(value), value() { }
+    IntValueNode(const parser_base::TokenBase &token, IntKind kind, int value) :
+            Node(token), kind(kind), tempValue(value), value() { }
 
 public:
-    IntValueNode(unsigned int lineNum, int value) :
-            IntValueNode(lineNum, INT32, value) { }
+    IntValueNode(const parser_base::TokenBase &token, int value) :
+            IntValueNode(token, INT32, value) { }
 
-    static IntValueNode *newByte(unsigned int lineNum, unsigned char value) {
-        return new IntValueNode(lineNum, BYTE, (int) value);
+    static IntValueNode *newByte(const parser_base::TokenBase &token, unsigned char value) {
+        return new IntValueNode(token, BYTE, (int) value);
     }
 
-    static IntValueNode *newInt16(unsigned int lineNum, short value) {
-        return new IntValueNode(lineNum, INT16, (int) value);
+    static IntValueNode *newInt16(const parser_base::TokenBase &token, short value) {
+        return new IntValueNode(token, INT16, (int) value);
     }
 
-    static IntValueNode *newUint16(unsigned int lineNum, unsigned short value) {
-        return new IntValueNode(lineNum, UINT16, (int) value);
+    static IntValueNode *newUint16(const parser_base::TokenBase &token, unsigned short value) {
+        return new IntValueNode(token, UINT16, (int) value);
     }
 
-    static IntValueNode *newInt32(unsigned int lineNum, int value) {
-        return new IntValueNode(lineNum, INT32, value);
+    static IntValueNode *newInt32(const parser_base::TokenBase &token, int value) {
+        return new IntValueNode(token, INT32, value);
     }
 
-    static IntValueNode *newUint32(unsigned int lineNum, unsigned int value) {
-        return new IntValueNode(lineNum, UINT32, (int) value);
+    static IntValueNode *newUint32(const parser_base::TokenBase &token, unsigned int value) {
+        return new IntValueNode(token, UINT32, (int) value);
     }
 
     IntKind getKind() const {
@@ -350,15 +368,15 @@ private:
     DSValue value;
 
 public:
-    LongValueNode(unsigned int lineNum, long value, bool unsignedValue) :
-            Node(lineNum), tempValue(value), unsignedValue(unsignedValue), value() { }
+    LongValueNode(const parser_base::TokenBase &token, long value, bool unsignedValue) :
+            Node(token), tempValue(value), unsignedValue(unsignedValue), value() { }
 
-    static LongValueNode *newInt64(unsigned int lineNum, long value) {
-        return new LongValueNode(lineNum, value, false);
+    static LongValueNode *newInt64(const parser_base::TokenBase &token, long value) {
+        return new LongValueNode(token, value, false);
     }
 
-    static LongValueNode *newUint64(unsigned int lineNum, unsigned long value) {
-        return new LongValueNode(lineNum, (long) value, true);
+    static LongValueNode *newUint64(const parser_base::TokenBase &token, unsigned long value) {
+        return new LongValueNode(token, (long) value, true);
     }
 
     /**
@@ -391,8 +409,8 @@ private:
     DSValue value;
 
 public:
-    FloatValueNode(unsigned int lineNum, double value) :
-            Node(lineNum), tempValue(value), value() { }
+    FloatValueNode(const parser_base::TokenBase &token, double value) :
+            Node(token), tempValue(value), value() { }
 
     /**
      * before type check, return empty pointer.
@@ -424,10 +442,10 @@ public:
      * used for CommandNode. lineNum is always 0.
      */
     explicit StringValueNode(std::string &&value) :
-            StringValueNode(0, std::move(value)) { }
+            Node(0, 0), tempValue(std::move(value)), value() { }
 
-    StringValueNode(unsigned int lineNum, std::string &&value) :
-            Node(lineNum), tempValue(std::move(value)), value() { }
+    StringValueNode(const parser_base::TokenBase &token, std::string &&value) :
+            Node(token), tempValue(std::move(value)), value() { }
 
     virtual ~StringValueNode() = default;
 
@@ -446,8 +464,8 @@ public:
 
 class ObjectPathNode : public StringValueNode {
 public:
-    ObjectPathNode(unsigned int lineNum, std::string &&value) :
-            StringValueNode(lineNum, std::move(value)) { }
+    ObjectPathNode(const parser_base::TokenBase &token, std::string &&value) :
+            StringValueNode(token, std::move(value)) { }
 
     ~ObjectPathNode() = default;
 
@@ -459,7 +477,7 @@ private:
     std::vector<Node *> nodes;
 
 public:
-    explicit StringExprNode(unsigned int lineNum) : Node(lineNum), nodes() { }
+    explicit StringExprNode(unsigned int startPos) : Node(startPos, 1), nodes() { }
 
     ~StringExprNode();
 
@@ -483,7 +501,7 @@ private:
     std::vector<Node *> nodes;
 
 public:
-    ArrayNode(unsigned int lineNum, Node *node);
+    ArrayNode(unsigned int startPos, Node *node);
 
     ~ArrayNode();
 
@@ -508,7 +526,7 @@ private:
     std::vector<Node *> valueNodes;
 
 public:
-    MapNode(unsigned int lineNum, Node *keyNode, Node *valueNode);
+    MapNode(unsigned int startPos, Node *keyNode, Node *valueNode);
 
     ~MapNode();
 
@@ -543,7 +561,7 @@ private:
     std::vector<Node *> nodes;
 
 public:
-    TupleNode(unsigned int lineNum, Node *leftNode, Node *rightNode);
+    TupleNode(unsigned int startPos, Node *leftNode, Node *rightNode);
 
     ~TupleNode();
 
@@ -570,8 +588,8 @@ protected:
     bool interface;
 
 public:
-    explicit AssignableNode(unsigned int lineNum) :
-            Node(lineNum), index(0),
+    explicit AssignableNode(unsigned int startPos, unsigned int size) :
+            Node(startPos, size), index(0),
             readOnly(false), global(false), env(false), interface(false) { }
 
     virtual ~AssignableNode() = default;
@@ -606,8 +624,8 @@ private:
     std::string varName;
 
 public:
-    VarNode(unsigned int lineNum, std::string &&varName) :
-            AssignableNode(lineNum), varName(std::move(varName)) { }
+    VarNode(const parser_base::TokenBase &token, std::string &&varName) :
+            AssignableNode(token.startPos, token.size), varName(std::move(varName)) { }
 
     ~VarNode() = default;
 
@@ -645,8 +663,8 @@ private:
 
 public:
     AccessNode(Node *recvNode, std::string &&fieldName) :
-            AssignableNode(recvNode->getLineNum()), recvNode(recvNode),
-            fieldName(std::move(fieldName)), additionalOp(NOP) { }
+            AssignableNode(recvNode->getStartPos(), recvNode->getSize()),
+            recvNode(recvNode), fieldName(std::move(fieldName)), additionalOp(NOP) { }
 
     ~AccessNode();
 
@@ -753,9 +771,7 @@ private:
     InstanceOfOp opKind;
 
 public:
-    InstanceOfNode(Node *targetNode, TypeNode *typeNode) :
-            Node(targetNode->getLineNum()), targetNode(targetNode),
-            targetTypeNode(typeNode), opKind(ALWAYS_FALSE) { }
+    InstanceOfNode(Node *targetNode, TypeNode *typeNode);
 
     ~InstanceOfNode();
 
@@ -789,8 +805,7 @@ private:
     std::vector<Node *> argNodes;
 
 public:
-    ApplyNode(Node *exprNode, std::vector<Node *> &&argNodes) :
-            Node(exprNode->getLineNum()), exprNode(exprNode), argNodes(std::move(argNodes)) { }
+    ApplyNode(Node *exprNode, std::vector<Node *> &&argNodes);
 
     ~ApplyNode();
 
@@ -825,10 +840,7 @@ public:
     MethodCallNode(Node *recvNode, std::string &&methodName) :
             MethodCallNode(recvNode, std::move(methodName), std::vector<Node *>()) { }
 
-    MethodCallNode(Node *recvNode, std::string &&methodName, std::vector<Node *> &&argNodes) :
-            Node(recvNode->getLineNum()),
-            recvNode(recvNode), methodName(std::move(methodName)),
-            argNodes(std::move(argNodes)), handle(), attributeSet() { }
+    MethodCallNode(Node *recvNode, std::string &&methodName, std::vector<Node *> &&argNodes);
 
     ~MethodCallNode();
 
@@ -889,8 +901,7 @@ private:
     std::vector<Node *> argNodes;
 
 public:
-    NewNode(unsigned int lineNum, TypeNode *targetTypeNode, std::vector<Node *> &&argNodes) :
-            Node(lineNum), targetTypeNode(targetTypeNode), argNodes(std::move(argNodes)) { }
+    NewNode(unsigned int startPos, TypeNode *targetTypeNode, std::vector<Node *> &&argNodes);
 
     ~NewNode();
 
@@ -929,8 +940,10 @@ private:
     MethodCallNode *methodCallNode;
 
 public:
-    UnaryOpNode(TokenKind op, Node *exprNode) :
-            Node(exprNode->getLineNum()), op(op), exprNode(exprNode), methodCallNode(0) { }
+    UnaryOpNode(unsigned int startPos, TokenKind op, Node *exprNode) :
+            Node(startPos, 0), op(op), exprNode(exprNode), methodCallNode(0) {
+        this->updateSize(exprNode->getStartPos(), exprNode->getSize());
+    }
 
     ~UnaryOpNode();
 
@@ -984,8 +997,10 @@ private:
 
 public:
     BinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode) :
-            Node(leftNode->getLineNum()),
-            leftNode(leftNode), rightNode(rightNode), op(op), methodCallNode(0) { }
+            Node(leftNode->getStartPos(), 0),
+            leftNode(leftNode), rightNode(rightNode), op(op), methodCallNode(0) {
+        this->updateSize(rightNode->getStartPos(), rightNode->getSize());
+    }
 
     ~BinaryOpNode();
 
@@ -1035,8 +1050,8 @@ private:
     Node *exprNode;
 
 public:
-    GroupNode(unsigned int lineNum, Node *exprNode) :
-            Node(lineNum), exprNode(exprNode) { }
+    GroupNode(unsigned int startPos, Node *exprNode) :
+            Node(startPos, 0), exprNode(exprNode) { }
 
     ~GroupNode();
 
@@ -1090,7 +1105,7 @@ private:
 
 public:
     explicit CmdArgNode(Node *segmentNode) :
-            Node(segmentNode->getLineNum()), segmentNodes() {
+            Node(segmentNode->getStartPos(), 0), segmentNodes() {
         this->addSegmentNode(segmentNode);
     }
 
@@ -1153,8 +1168,8 @@ private:
     std::string value;
 
 public:
-    TildeNode(unsigned int lineNum, std::string &&value) :
-            Node(lineNum), value(std::move(value)) { }
+    TildeNode(const parser_base::TokenBase &token, std::string &&value) :
+            Node(token), value(std::move(value)) { }
 
     ~TildeNode() = default;
 
@@ -1186,12 +1201,12 @@ private:
     std::vector<Node *> argNodes;
 
 public:
-    CmdNode(unsigned int lineNum, std::string &&value) :
-            Node(lineNum),
-            nameNode(new StringValueNode(lineNum, std::move(value))), argNodes() { }
+    CmdNode(const parser_base::TokenBase &token, std::string &&value) :
+            Node(token),
+            nameNode(new StringValueNode(token, std::move(value))), argNodes() { }
 
     explicit CmdNode(TildeNode *nameNode) :
-            Node(nameNode->getLineNum()), nameNode(nameNode), argNodes() { }
+            Node(nameNode->getStartPos(), nameNode->getSize()), nameNode(nameNode), argNodes() { }
 
     ~CmdNode();
 
@@ -1206,7 +1221,7 @@ public:
     }
 
     void addRedirOption(TokenKind kind, CmdArgNode *node);
-    void addRedirOption(TokenKind kind);
+    void addRedirOption(TokenKind kind, const parser_base::TokenBase &token);
 
     void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor &visitor);    //override
@@ -1220,7 +1235,7 @@ private:
 
 public:
     explicit PipedCmdNode(Node *node) :
-            Node(node->getLineNum()), cmdNodes(), asBool(false) {
+            Node(node->getStartPos(), node->getSize()), cmdNodes(), asBool(false) {
         this->cmdNodes.push_back(node);
     }
 
@@ -1254,7 +1269,8 @@ private:
 
 public:
     explicit CmdContextNode(Node *exprNode) :
-            Node(exprNode->getLineNum()), exprNode(exprNode), attributeSet(0) {
+            Node(exprNode->getStartPos(), exprNode->getSize()),
+            exprNode(exprNode), attributeSet(0) {
         if(dynamic_cast<CondOpNode *>(exprNode) != 0) {
             this->setAttribute(CONDITION);
         }
@@ -1301,7 +1317,8 @@ private:
     Node *condNode;
 
 public:
-    AssertNode(unsigned int lineNum, Node *condNode) : Node(lineNum), condNode(condNode) {
+    AssertNode(unsigned int startPos, Node *condNode) :
+            Node(startPos, 0), condNode(condNode) {
         this->condNode->inCondition();
     }
 
@@ -1321,7 +1338,7 @@ private:
     std::list<Node *> nodeList;
 
 public:
-    explicit BlockNode(unsigned int lineNum) : Node(lineNum), nodeList() { }
+    explicit BlockNode(unsigned int startPos) : Node(startPos, 1), nodeList() { }
 
     ~BlockNode();
 
@@ -1349,7 +1366,7 @@ public:
  */
 class BlockEndNode : public Node {
 public:
-    explicit BlockEndNode(unsigned int lineNum) : Node(lineNum) { }
+    BlockEndNode(unsigned int startPos, unsigned int size) : Node(startPos, size) { }
 
     virtual ~BlockEndNode() = default;
 
@@ -1360,7 +1377,8 @@ public:
 
 class BreakNode : public BlockEndNode {
 public:
-    explicit BreakNode(unsigned int lineNum) : BlockEndNode(lineNum) { }
+    explicit BreakNode(const parser_base::TokenBase &token) :
+            BlockEndNode(token.startPos, token.size) { }
 
     ~BreakNode() = default;
 
@@ -1371,7 +1389,8 @@ public:
 
 class ContinueNode : public BlockEndNode {
 public:
-    explicit ContinueNode(unsigned int lineNum) : BlockEndNode(lineNum) { }
+    explicit ContinueNode(const parser_base::TokenBase &token) :
+            BlockEndNode(token.startPos, token.size) { }
 
     ~ContinueNode() = default;
 
@@ -1388,9 +1407,11 @@ private:
     unsigned int varIndex;
 
 public:
-    ExportEnvNode(unsigned int lineNum, std::string &&envName, Node *exprNode) :
-            Node(lineNum), envName(std::move(envName)), exprNode(exprNode),
-            global(false), varIndex(0) { }
+    ExportEnvNode(unsigned int startPos, std::string &&envName, Node *exprNode) :
+            Node(startPos, 0), envName(std::move(envName)), exprNode(exprNode),
+            global(false), varIndex(0) {
+        this->updateSize(exprNode->getStartPos(), exprNode->getSize());
+    }
 
     ~ExportEnvNode();
 
@@ -1433,14 +1454,20 @@ public:
     /**
      * defaultValueNode may be null
      */
-    ImportEnvNode(unsigned int lineNum, std::string &&envName, Node *defaultValueNode) :
-            Node(lineNum), envName(std::move(envName)),
-            defaultValueNode(defaultValueNode), global(false), varIndex(0) { }
+    ImportEnvNode(unsigned int startPos, std::string &&envName) :
+            Node(startPos, 0), envName(std::move(envName)),
+            defaultValueNode(nullptr), global(false), varIndex(0) { }
 
     ~ImportEnvNode();
 
     const std::string &getEnvName() const {
         return this->envName;
+    }
+
+    void setDefaultValueNode(Node *node) {
+        this->defaultValueNode = node;
+        this->updateSize(this->defaultValueNode->getStartPos(),
+                         this->defaultValueNode->getSize());
     }
 
     /**
@@ -1471,12 +1498,10 @@ private:
     TypeNode *targetTypeNode;
 
 public:
-    TypeAliasNode(unsigned int lineNum, std::string &&alias, TypeNode *targetTypeNode) :
-            Node(lineNum), alias(std::move(alias)), targetTypeNode(targetTypeNode) { }
-
-    TypeAliasNode(const char *alias, const char *targetTypeName) :
-            Node(0), alias(std::string(alias)),
-            targetTypeNode(new BaseTypeNode(0, std::string(targetTypeName))) { }
+    TypeAliasNode(unsigned int startPos, std::string &&alias, TypeNode *targetTypeNode) :
+            Node(startPos, 0), alias(std::move(alias)), targetTypeNode(targetTypeNode) {
+        this->updateSize(targetTypeNode->getStartPos(), targetTypeNode->getSize());
+    }
 
     ~TypeAliasNode();
 
@@ -1518,7 +1543,7 @@ public:
      * condNode may be null.
      * iterNode may be null.
      */
-    ForNode(unsigned int lineNum, Node *initNode, Node *condNode, Node *iterNode, BlockNode *blockNode);
+    ForNode(unsigned int startPos, Node *initNode, Node *condNode, Node *iterNode, BlockNode *blockNode);
 
     ~ForNode();
 
@@ -1557,9 +1582,10 @@ private:
     BlockNode *blockNode;
 
 public:
-    WhileNode(unsigned int lineNum, Node *condNode, BlockNode *blockNode) :
-            Node(lineNum), condNode(condNode), blockNode(blockNode) {
+    WhileNode(unsigned int startPos, Node *condNode, BlockNode *blockNode) :
+            Node(startPos, 0), condNode(condNode), blockNode(blockNode) {
         this->condNode->inCondition();
+        this->updateSize(blockNode->getStartPos(), blockNode->getSize());
     }
 
     ~WhileNode();
@@ -1583,8 +1609,8 @@ private:
     Node *condNode;
 
 public:
-    DoWhileNode(unsigned int lineNum, BlockNode *blockNode, Node *condNode) :
-            Node(lineNum), blockNode(blockNode), condNode(condNode) {
+    DoWhileNode(unsigned int startPos, BlockNode *blockNode, Node *condNode) :
+            Node(startPos, 0), blockNode(blockNode), condNode(condNode) {
         this->condNode->inCondition();
     }
 
@@ -1622,7 +1648,7 @@ public:
     /**
      * elseNode may be null
      */
-    IfNode(unsigned int lineNum, Node *condNode, BlockNode *thenNode);
+    IfNode(unsigned int startPos, Node *condNode, BlockNode *thenNode);
 
     ~IfNode();
 
@@ -1646,6 +1672,7 @@ public:
 
     void addElseNode(BlockNode *elseNode) {
         this->elseNode = elseNode;
+        this->updateSize(elseNode->getStartPos(), elseNode->getSize());
     }
 
     /*
@@ -1671,10 +1698,12 @@ private:
     Node *exprNode;
 
 public:
-    ReturnNode(unsigned int lineNum, Node *exprNode) :
-            BlockEndNode(lineNum), exprNode(exprNode) { }
+    ReturnNode(unsigned int startPos, Node *exprNode) :
+            BlockEndNode(startPos, 0), exprNode(exprNode) {
+        this->updateSize(exprNode->getStartPos(), exprNode->getSize());
+    }
 
-    explicit ReturnNode(unsigned int lineNum);
+    explicit ReturnNode(const parser_base::TokenBase &token);
 
     ~ReturnNode();
 
@@ -1692,8 +1721,10 @@ private:
     Node *exprNode;
 
 public:
-    ThrowNode(unsigned int lineNum, Node *exprNode) :
-            BlockEndNode(lineNum), exprNode(exprNode) { }
+    ThrowNode(unsigned int startPos, Node *exprNode) :
+            BlockEndNode(startPos, 0), exprNode(exprNode) {
+        this->updateSize(exprNode->getStartPos(), exprNode->getSize());
+    }
 
     ~ThrowNode();
 
@@ -1716,13 +1747,15 @@ private:
     BlockNode *blockNode;
 
 public:
-    CatchNode(unsigned int lineNum, std::string &&exceptionName, BlockNode *blockNode) :
-            CatchNode(lineNum, std::move(exceptionName), newAnyTypeNode(lineNum), blockNode) { }
+    CatchNode(unsigned int startPos, std::string &&exceptionName, BlockNode *blockNode) :
+            CatchNode(startPos, std::move(exceptionName), newAnyTypeNode(), blockNode) { }
 
-    CatchNode(unsigned int lineNum, std::string &&exceptionName,
+    CatchNode(unsigned int startPos, std::string &&exceptionName,
               TypeNode *typeNode, BlockNode *blockNode) :
-            Node(lineNum), exceptionName(std::move(exceptionName)),
-            typeNode(typeNode), varIndex(0), blockNode(blockNode) { }
+            Node(startPos, 0), exceptionName(std::move(exceptionName)),
+            typeNode(typeNode), varIndex(0), blockNode(blockNode) {
+        this->updateSize(blockNode->getStartPos(), blockNode->getSize());
+    }
 
     ~CatchNode();
 
@@ -1766,8 +1799,10 @@ private:
     bool terminal;
 
 public:
-    TryNode(unsigned int lineNum, BlockNode *blockNode) :
-            Node(lineNum), blockNode(blockNode), catchNodes(), finallyNode(), terminal(false) { }
+    TryNode(unsigned int startPos, BlockNode *blockNode) :
+            Node(startPos, 0), blockNode(blockNode), catchNodes(), finallyNode(), terminal(false) {
+        this->updateSize(blockNode->getStartPos(), blockNode->getSize());
+    }
 
     ~TryNode();
 
@@ -1807,7 +1842,7 @@ private:
     Node *initValueNode;
 
 public:
-    VarDeclNode(unsigned int lineNum, std::string &&varName, Node *initValueNode, bool readOnly);
+    VarDeclNode(unsigned int startPos, std::string &&varName, Node *initValueNode, bool readOnly);
 
     ~VarDeclNode();
 
@@ -1858,11 +1893,12 @@ public:
     const static flag8_t FIELD_ASSIGN = 1 << 1;
 
     AssignNode(Node *leftNode, Node *rightNode, bool selfAssign = false) :
-            Node(leftNode->getLineNum()),
+            Node(leftNode->getStartPos(), 0),
             leftNode(leftNode), rightNode(rightNode), attributeSet(0) {
         if(selfAssign) {
             setFlag(this->attributeSet, SELF_ASSIGN);
         }
+        this->updateSize(rightNode->getStartPos(), rightNode->getSize());
     }
 
     ~AssignNode();
@@ -1967,10 +2003,10 @@ protected:
     SourceInfoPtr srcInfoPtr;
 
 public:
-    CallableNode(unsigned int lineNum, const SourceInfoPtr &srcInfoPtr) :
-            Node(lineNum), srcInfoPtr(srcInfoPtr) { }
+    CallableNode(unsigned int startPos, const SourceInfoPtr &srcInfoPtr) :
+            Node(startPos, 0), srcInfoPtr(srcInfoPtr) { }
 
-    CallableNode() : Node(0), srcInfoPtr(nullptr) { }
+    CallableNode() : Node(0, 0), srcInfoPtr(nullptr) { }
 
     virtual ~CallableNode() = default;
 
@@ -2016,9 +2052,9 @@ private:
     unsigned int varIndex;
 
 public:
-    FunctionNode(unsigned int lineNum, const SourceInfoPtr &srcInfoPtr,
+    FunctionNode(unsigned int startPos, const SourceInfoPtr &srcInfoPtr,
                  std::string &&funcName) :
-            CallableNode(lineNum, srcInfoPtr), funcName(std::move(funcName)),
+            CallableNode(startPos, srcInfoPtr), funcName(std::move(funcName)),
             paramNodes(), paramTypeNodes(), returnTypeNode(),
             blockNode(), maxVarNum(0), varIndex(0) { }
 
@@ -2040,12 +2076,14 @@ public:
 
     void setReturnTypeToken(TypeNode *typeToken) {
         this->returnTypeNode = typeToken;
+        this->updateSize(typeToken->getStartPos(), typeToken->getSize());
     }
 
     TypeNode *getReturnTypeToken();
 
     void setBlockNode(BlockNode *blockNode) {
         this->blockNode = blockNode;
+        this->updateSize(blockNode->getStartPos(), blockNode->getSize());
     }
 
     /**
@@ -2085,8 +2123,8 @@ private:
     std::vector<TypeNode *> fieldTypeNodes;
 
 public:
-    InterfaceNode(unsigned int lineNum, std::string &&interfaceName) :
-            Node(lineNum), interfaceName(std::move(interfaceName)), methodDeclNodes(),
+    InterfaceNode(unsigned int startPos, std::string &&interfaceName) :
+            Node(startPos, 0), interfaceName(std::move(interfaceName)), methodDeclNodes(),
             fieldDeclNodes(), fieldTypeNodes() { }
 
     ~InterfaceNode();
@@ -2128,10 +2166,12 @@ private:
     unsigned int maxVarNum;
 
 public:
-    UserDefinedCmdNode(unsigned int lineNum, const SourceInfoPtr &srcInfoPtr,
+    UserDefinedCmdNode(unsigned int startPos, const SourceInfoPtr &srcInfoPtr,
                        std::string &&commandName, BlockNode *blockNode) :
-            CallableNode(lineNum, srcInfoPtr), commandName(std::move(commandName)),
-            blockNode(blockNode), maxVarNum(0) { }
+            CallableNode(startPos, srcInfoPtr), commandName(std::move(commandName)),
+            blockNode(blockNode), maxVarNum(0) {
+        this->updateSize(blockNode->getStartPos(), blockNode->getSize());
+    }
 
     ~UserDefinedCmdNode();
 
@@ -2167,10 +2207,10 @@ private:
 
 public:
     BindVarNode(const char *name, const DSValue &value) :
-            Node(0), varName(std::string(name)), varIndex(0), value(value) { }
+            Node(0, 0), varName(std::string(name)), varIndex(0), value(value) { }
 
     BindVarNode(const char *name, DSValue &&value) :
-            Node(0), varName(std::string(name)), varIndex(0), value(std::move(value)) { }
+            Node(0, 0), varName(std::string(name)), varIndex(0), value(std::move(value)) { }
 
     ~BindVarNode() = default;
 
@@ -2195,8 +2235,9 @@ public:
 
 class EmptyNode : public Node {
 public:
-    EmptyNode() : EmptyNode(0) { }
-    explicit EmptyNode(unsigned int lineNum) : Node(lineNum) { }
+    EmptyNode() : Node(0, 0) { }
+    EmptyNode(const parser_base::TokenBase &token) :
+            Node(token.startPos, token.size) { }
     ~EmptyNode() = default;
 
     void dump(NodeDumper &dumper) const;  // override
@@ -2206,7 +2247,7 @@ public:
 
 class DummyNode : public Node {
 public:
-    DummyNode() : Node(0) { }
+    DummyNode() : Node(0, 0) { }
     ~DummyNode() = default;
 
     void dump(NodeDumper &dumper) const;  // override
@@ -2277,9 +2318,9 @@ TokenKind resolveAssignOp(TokenKind op);
  */
 Node *createCallNode(Node *recvNode, std::vector<Node *> &&argNodes);
 
-ForNode *createForInNode(unsigned int lineNum, VarNode *varNode, Node *exprNode, BlockNode *blockNode);
+ForNode *createForInNode(unsigned int startPos, VarNode *varNode, Node *exprNode, BlockNode *blockNode);
 
-Node *createSuffixNode(Node *leftNode, TokenKind op);
+Node *createSuffixNode(Node *leftNode, TokenKind op, const parser_base::TokenBase &token);
 
 Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode);
 

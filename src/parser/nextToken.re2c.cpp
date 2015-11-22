@@ -51,8 +51,6 @@
         }\
     } while(0)
 
-#define INC_LINE_NUM() ++this->lineNum
-
 /*
  * count new line and increment lineNum.
  */
@@ -60,7 +58,8 @@
     do {\
         const unsigned int stopPos = this->getPos();\
         for(unsigned int i = startPos; i < stopPos; ++i) {\
-            if(this->buf[i] == '\n') { ++this->lineNum; } \
+            if(this->buf[i] == '\n') \
+            { this->srcInfoPtr->addNewlineCharPos(i); } \
         }\
     } while(0)
 
@@ -132,7 +131,6 @@ void Lexer::nextToken(Token &token) {
     LexerMode prevMode = this->modeStack.back();
 
     INIT:
-    unsigned int n = this->lineNum;
     unsigned int startPos = this->getPos();
     TokenKind kind = INVALID;
     /*!re2c
@@ -239,7 +237,7 @@ void Lexer::nextToken(Token &token) {
       <STMT,EXPR,NAME,TYPE> [ \t]+
                                { SKIP(); }
       <STMT,EXPR,NAME,TYPE> "\\" [\r\n]
-                               { INC_LINE_NUM(); SKIP(); }
+                               { COUNT_NEW_LINE(); SKIP(); }
 
       <DSTRING> ["]            { POP_MODE(); RET(CLOSE_DQUOTE);}
       <DSTRING> DQUOTE_CHAR+   { COUNT_NEW_LINE(); RET(STR_ELEMENT);}
@@ -258,7 +256,7 @@ void Lexer::nextToken(Token &token) {
       <CMD> "("                { PUSH_MODE(CMD); RET(LP); }
       <CMD> "["                { PUSH_MODE(STMT); RET(LB); }
       <CMD> [ \t]+             { FIND_SPACE(); }
-      <CMD> "\\" [\r\n]        { INC_LINE_NUM(); FIND_SPACE(); }
+      <CMD> "\\" [\r\n]        { COUNT_NEW_LINE(); FIND_SPACE(); }
 
       <CMD> "<"                { RET(REDIR_IN_2_FILE); }
       <CMD> (">" | "1>")       { RET(REDIR_OUT_2_FILE); }
@@ -296,14 +294,12 @@ void Lexer::nextToken(Token &token) {
     */
 
     END:
-    token.lineNum = n;
     token.kind = kind;
     token.startPos = startPos;
     token.size = this->getPos() - startPos;
     goto RET;
 
     EOS:
-    token.lineNum = n - 1;
     token.kind = EOS;
     token.startPos = this->limit - this->buf;
     token.size = 0;

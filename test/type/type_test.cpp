@@ -22,8 +22,9 @@ std::unique_ptr<TypeNode> addRestElements(std::unique_ptr<ReifiedTypeNode> &&rei
 
 template <typename... T>
 std::unique_ptr<TypeNode> reified(const char *name, std::unique_ptr<TypeNode> &&first, T&&... rest) {
+    ydsh::parser_base::TokenBase dummy = {0, 1};
     std::unique_ptr<ReifiedTypeNode> reified(
-            new ReifiedTypeNode(new BaseTypeNode(0, std::string(name))));
+            new ReifiedTypeNode(new BaseTypeNode(dummy, std::string(name))));
     reified->addElementTypeNode(first.release());
     return addRestElements(std::move(reified), std::forward<T>(rest)...);
 }
@@ -42,12 +43,13 @@ std::unique_ptr<TypeNode> addParamType(std::unique_ptr<FuncTypeNode> &&func,
 
 template <typename... T>
 std::unique_ptr<TypeNode> func(std::unique_ptr<TypeNode> &&returnType, T&&... paramTypes) {
-    std::unique_ptr<FuncTypeNode> func(new FuncTypeNode(returnType.release()));
+    std::unique_ptr<FuncTypeNode> func(new FuncTypeNode(0, returnType.release()));
     return addParamType(std::move(func), std::forward<T>(paramTypes)...);
 }
 
 inline std::unique_ptr<TypeNode> type(const char *name, unsigned int lineNum = 0) {
-    return std::unique_ptr<TypeNode>(new BaseTypeNode(lineNum, std::string(name)));
+    ydsh::parser_base::TokenBase dummy = {lineNum, 1};
+    return std::unique_ptr<TypeNode>(new BaseTypeNode(dummy, std::string(name)));
 }
 
 inline std::unique_ptr<TypeNode> array(std::unique_ptr<TypeNode> &&type) {

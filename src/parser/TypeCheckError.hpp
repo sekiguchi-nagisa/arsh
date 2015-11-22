@@ -31,26 +31,23 @@ namespace parser {
  */
 class TypeCheckError {
 private:
-    /**
-     * line number of error node
-     */
-    unsigned int lineNum;
+    unsigned int startPos;
 
     const char *kind;
 
     std::string message;
 
 public:
-    TypeCheckError(unsigned int lineNum, const char *kind, std::string &&message) :
-            lineNum(lineNum), kind(kind), message(std::move(message)) { }
+    TypeCheckError(unsigned int startPos, const char *kind, std::string &&message) :
+            startPos(startPos), kind(kind), message(std::move(message)) { }
 
-    TypeCheckError(unsigned int lineNum, core::TypeLookupError &e) :
-            lineNum(lineNum), kind(e.getKind()), message(e.moveMessage()) { }
+    TypeCheckError(unsigned int startPos, core::TypeLookupError &e) :
+            startPos(startPos), kind(e.getKind()), message(e.moveMessage()) { }
 
     ~TypeCheckError() = default;
 
-    unsigned int getLineNum() const {
-        return this->lineNum;
+    unsigned int getStartPos() const {
+        return this->startPos;
     }
 
     const char *getKind() const {
@@ -76,7 +73,7 @@ public:
     void operator()(const ast::Node &node, T && ... args) const throw(TypeCheckError) {
         static_assert(N == sizeof ... (T), "invalid parameter size");
 
-        throw TypeCheckError(node.getLineNum(), this->kind, this->format(std::forward<T>(args)...));
+        throw TypeCheckError(node.getStartPos(), this->kind, this->format(std::forward<T>(args)...));
     }
 };
 

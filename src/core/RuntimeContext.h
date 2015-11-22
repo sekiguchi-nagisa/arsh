@@ -148,7 +148,7 @@ private:
     std::vector<CallableNode *> callableContextStack;
 
     /**
-     * contains line number and funcContextStack index.
+     * contains startPos and callableContextStack index.
      */
     std::vector<unsigned long> callStack;
 
@@ -429,17 +429,17 @@ public:
         return status ? EvalStatus::SUCCESS : EvalStatus::THROW;
     }
 
-    void pushCallFrame(unsigned int lineNum) {
+    void pushCallFrame(unsigned int startPos) {
         unsigned long index = (this->callableContextStack.size() - 1) << 32;
-        this->callStack.push_back(index | (unsigned long) lineNum);
+        this->callStack.push_back(index | (unsigned long) startPos);
     }
 
     void popCallFrame() {
         this->callStack.pop_back();
     }
 
-    EvalStatus applyFuncObject(unsigned int lineNum, bool returnTypeIsVoid, unsigned int paramSize);
-    EvalStatus callMethod(unsigned int lineNum, const std::string &methodName, MethodHandle *handle);
+    EvalStatus applyFuncObject(unsigned int startPos, bool returnTypeIsVoid, unsigned int paramSize);
+    EvalStatus callMethod(unsigned int startPos, const std::string &methodName, MethodHandle *handle);
 
     /**
      * allocate new DSObject on stack top.
@@ -447,12 +447,12 @@ public:
      */
     void newDSObject(DSType *type);
 
-    EvalStatus callConstructor(unsigned int lineNum, unsigned int paramSize);
+    EvalStatus callConstructor(unsigned int startPos, unsigned int paramSize);
 
     /**
      * cast stack top value to String
      */
-    EvalStatus toString(unsigned int lineNum);
+    EvalStatus toString(unsigned int startPos);
 
     /**
      * report thrown object error message.
@@ -466,16 +466,16 @@ public:
 
     void printStackTop(DSType *stackTopType);
 
-    bool checkCast(unsigned int lineNum, DSType *targetType);
+    bool checkCast(unsigned int startPos, DSType *targetType);
 
     void instanceOf(DSType *targetType);
 
-    EvalStatus checkAssertion(unsigned int lineNum);
+    EvalStatus checkAssertion(unsigned int startPos);
 
     /**
      * get environment variable and set to local variable
      */
-    EvalStatus importEnv(unsigned int lineNum, const std::string &envName,
+    EvalStatus importEnv(unsigned int startPos, const std::string &envName,
                          unsigned int index, bool isGlobal, bool hasDefault);
 
     /**
@@ -509,7 +509,7 @@ public:
         return this->procInvoker;
     }
 
-    EvalStatus callPipedCommand(unsigned int lineNum);
+    EvalStatus callPipedCommand(unsigned int startPos);
 
     void addUserDefinedCommand(UserDefinedCmdNode *node);
 

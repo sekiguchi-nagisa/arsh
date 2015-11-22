@@ -185,7 +185,7 @@ unsigned int DSContext::eval(Lexer &lexer) {
             std::cout << std::endl;
         }
     } catch(const TypeCheckError &e) {
-        this->listener->handleTypeError(lexer.getSourceInfoPtr()->getSourceName(), e);
+        this->listener->handleTypeError(lexer, e);
         this->checker.recover();
         return DS_STATUS_TYPE_ERROR;
     }

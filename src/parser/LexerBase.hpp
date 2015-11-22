@@ -118,8 +118,8 @@ protected:
 
 private:
     LexerBase() :
-            fp(0), bufSize(0), buf(0), cursor(0),
-            limit(0), marker(0), ctxMarker(0),
+            fp(nullptr), bufSize(0), buf(nullptr), cursor(nullptr),
+            limit(nullptr), marker(nullptr), ctxMarker(nullptr),
             endOfFile(false), endOfString(false), zeroCopyBuf(false) { }
 
 public:
