@@ -1,0 +1,11 @@
+#$test($result = 'type', $errorKind = 'DefinedCmd', $lineNum = 9, $status = 1)
+
+hoge() {
+    echo hello
+}
+
+
+## override user-defined command
+hoge() {
+    echo hello world: $@
+}
