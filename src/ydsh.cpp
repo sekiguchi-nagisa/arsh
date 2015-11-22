@@ -85,10 +85,7 @@ struct DSContext {
         return this->reportingListener;
     }
 
-    /**
-     * sourceName is null, if read stdin.
-     */
-    unsigned int eval(const char *sourceName, Lexer &lexer);
+    unsigned int eval(Lexer &lexer);
 
     /**
      * call only once.
@@ -158,10 +155,9 @@ DSContext::DSContext() :
 
 CommonErrorListener DSContext::clistener;
 
-unsigned int DSContext::eval(const char *sourceName, Lexer &lexer) {
-    sourceName = this->ctx.registerSourceName(sourceName);
+unsigned int DSContext::eval(Lexer &lexer) {
     lexer.setLineNum(this->lineNum);
-    RootNode rootNode(sourceName);
+    RootNode rootNode;
 
     // parse
     try {
@@ -174,7 +170,7 @@ unsigned int DSContext::eval(const char *sourceName, Lexer &lexer) {
             std::cout << std::endl;
         }
     } catch(const ParseError &e) {
-        this->listener->handleParseError(lexer, sourceName, e);
+        this->listener->handleParseError(lexer, e);
         this->lineNum = lexer.getLineNum();
         return DS_STATUS_PARSE_ERROR;
     }
@@ -189,7 +185,7 @@ unsigned int DSContext::eval(const char *sourceName, Lexer &lexer) {
             std::cout << std::endl;
         }
     } catch(const TypeCheckError &e) {
-        this->listener->handleTypeError(sourceName, e);
+        this->listener->handleTypeError(lexer.getSourceInfoPtr()->getSourceName(), e);
         this->checker.recover();
         return DS_STATUS_TYPE_ERROR;
     }
@@ -287,8 +283,8 @@ void DSContext::initBuiltinVar() {
 }
 
 void DSContext::loadEmbeddedScript() {
-    Lexer lexer(embed_script);
-    unsigned int s = this->eval(0, lexer);
+    Lexer lexer("(embed)", embed_script);
+    unsigned int s = this->eval(lexer);
     if(s != DS_STATUS_SUCCESS) {
         fatal("broken embedded script\n");
     }
@@ -349,15 +345,15 @@ static int createStatus(unsigned int type, DSContext *ctx, DSStatus **status) {
     return ret;
 }
 
-int DSContext_eval(DSContext *ctx, const char *source, DSStatus **status) {
-    Lexer lexer(source);
-    unsigned int s = ctx->eval(0, lexer);
+int DSContext_eval(DSContext *ctx, const char *sourceName, const char *source, DSStatus **status) {
+    Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName, source);
+    unsigned int s = ctx->eval(lexer);
     return createStatus(s, ctx, status);
 }
 
 int DSContext_loadAndEval(DSContext *ctx, const char *sourceName, FILE *fp, DSStatus **status) {
-    Lexer lexer(fp);
-    unsigned int s = ctx->eval(sourceName, lexer);
+    Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName, fp);
+    unsigned int s = ctx->eval(lexer);
     return createStatus(s, ctx, status);
 }
 

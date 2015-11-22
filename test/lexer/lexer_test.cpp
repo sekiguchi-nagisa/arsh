@@ -51,7 +51,7 @@ public:
 
     // for test
     virtual void initLexer(const char *text) {
-        this->lexer = new Lexer(text);
+        this->lexer = new Lexer("(string)", text);
     }
 
     virtual void initLexer(const char *text, LexerMode mode) {
@@ -1971,7 +1971,7 @@ TEST_F(LexerTest_Lv1, SPACE4) {
 TEST(LexerTest_Lv2, NEW_LINE) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        Lexer lexer("  \n  \n   assert  \n ");
+        Lexer lexer("(string)", "  \n  \n   assert  \n ");
         Token t;
         TokenKind k;
         lexer.nextToken(t);

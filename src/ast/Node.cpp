@@ -53,13 +53,6 @@ bool Node::isTerminalNode() const {
     return false;
 }
 
-void Node::setSourceName(const char *) {
-} // do nothing
-
-const char *Node::getSourceName() {
-    return "";
-}
-
 // ######################
 // ##     TypeNode     ##
 // ######################
@@ -2245,14 +2238,6 @@ TypeNode *FunctionNode::getReturnTypeToken() {
     return this->returnTypeNode;
 }
 
-void FunctionNode::setSourceName(const char *sourceName) {
-    this->sourceName = sourceName;
-}
-
-const char *FunctionNode::getSourceName() {
-    return this->sourceName;
-}
-
 void FunctionNode::dump(NodeDumper &dumper) const {
     DUMP(funcName);
 
@@ -2272,7 +2257,7 @@ void FunctionNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(blockNode);
     DUMP_PRIM(maxVarNum);
     DUMP_PRIM(varIndex);
-    DUMP(sourceName);
+    dumper.dump("sourceName", this->srcInfoPtr->getSourceName());
 }
 
 void FunctionNode::accept(NodeVisitor &visitor) {
@@ -2349,18 +2334,11 @@ UserDefinedCmdNode::~UserDefinedCmdNode() {
     delete this->blockNode;
 }
 
-void UserDefinedCmdNode::setSourceName(const char *sourceName) {
-    this->sourceName = sourceName;
-}
-
-const char *UserDefinedCmdNode::getSourceName() {
-    return this->sourceName;
-}
-
 void UserDefinedCmdNode::dump(NodeDumper &dumper) const {
     DUMP(commandName);
     DUMP_PTR(blockNode);
     DUMP_PRIM(maxVarNum);
+    dumper.dump("sourceName", this->srcInfoPtr->getSourceName());
 }
 
 void UserDefinedCmdNode::accept(NodeVisitor &visitor) {
@@ -2435,18 +2413,13 @@ RootNode::~RootNode() {
     }
 }
 
-const char *RootNode::getSourceName() {
-    return this->sourceName;
-}
-
 void RootNode::addNode(Node *node) {
-    node->setSourceName(this->sourceName);
     this->nodeList.push_back(node);
 }
 
 void RootNode::dump(NodeDumper &dumper) const {
     DUMP(nodeList);
-    DUMP(sourceName);
+    dumper.dump("sourceName", this->srcInfoPtr->getSourceName());
     DUMP_PRIM(maxVarNum);
     DUMP_PRIM(maxGVarNum);
 }

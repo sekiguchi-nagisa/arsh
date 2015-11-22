@@ -24,6 +24,7 @@
 #include "../misc/flag_util.hpp"
 #include "../misc/noncopyable.h"
 #include "../parser/TokenKind.h"
+#include "../parser/Lexer.h"
 #include "../core/DSObject.h"
 
 namespace ydsh {
@@ -103,9 +104,6 @@ public:
     virtual void inRightHandleSide();
 
     virtual bool isTerminalNode() const;
-
-    virtual void setSourceName(const char *sourceName);
-    virtual const char *getSourceName();
 
     virtual void dump(NodeDumper &dumper) const = 0;
     virtual void accept(NodeVisitor &visitor) = 0;
@@ -1964,7 +1962,32 @@ public:
     EvalStatus eval(RuntimeContext &ctx); // override
 };
 
-class FunctionNode : public Node {
+class CallableNode : public Node {
+protected:
+    SourceInfoPtr srcInfoPtr;
+
+public:
+    CallableNode(unsigned int lineNum, const SourceInfoPtr &srcInfoPtr) :
+            Node(lineNum), srcInfoPtr(srcInfoPtr) { }
+
+    CallableNode() : Node(0), srcInfoPtr(nullptr) { }
+
+    virtual ~CallableNode() = default;
+
+    const SourceInfoPtr &getSourceInfoPtr() const {
+        return this->srcInfoPtr;
+    }
+
+    void setSourceInfoPtr(const SourceInfoPtr &srcInfoPtr) {
+        this->srcInfoPtr = srcInfoPtr;
+    }
+
+    const char *getSourceName() const {
+        return this->srcInfoPtr->getSourceName().c_str();
+    }
+};
+
+class FunctionNode : public CallableNode {
 private:
     std::string funcName;
 
@@ -1982,8 +2005,6 @@ private:
 
     BlockNode *blockNode;
 
-    const char *sourceName;
-
     /**
      * maximum number of local variable in function
      */
@@ -1995,8 +2016,9 @@ private:
     unsigned int varIndex;
 
 public:
-    FunctionNode(unsigned int lineNum, std::string &&funcName) :
-            Node(lineNum), funcName(std::move(funcName)),
+    FunctionNode(unsigned int lineNum, const SourceInfoPtr &srcInfoPtr,
+                 std::string &&funcName) :
+            CallableNode(lineNum, srcInfoPtr), funcName(std::move(funcName)),
             paramNodes(), paramTypeNodes(), returnTypeNode(),
             blockNode(), maxVarNum(0), varIndex(0) { }
 
@@ -2049,9 +2071,6 @@ public:
         return this->varIndex;
     }
 
-    void setSourceName(const char *sourceName); // override
-    const char *getSourceName(); // override
-
     void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor &visitor);    // override
     EvalStatus eval(RuntimeContext &ctx); // override
@@ -2100,20 +2119,19 @@ public:
     EvalStatus eval(RuntimeContext &ctx); // override
 };
 
-class UserDefinedCmdNode : public Node {
+class UserDefinedCmdNode : public CallableNode {
 private:
     std::string commandName;
 
     BlockNode *blockNode;
 
-    const char *sourceName;
-
     unsigned int maxVarNum;
 
 public:
-    UserDefinedCmdNode(unsigned int lineNum, std::string &&commandName, BlockNode *blockNode) :
-            Node(lineNum), commandName(std::move(commandName)),
-            blockNode(blockNode), sourceName(0), maxVarNum(0) { }
+    UserDefinedCmdNode(unsigned int lineNum, const SourceInfoPtr &srcInfoPtr,
+                       std::string &&commandName, BlockNode *blockNode) :
+            CallableNode(lineNum, srcInfoPtr), commandName(std::move(commandName)),
+            blockNode(blockNode), maxVarNum(0) { }
 
     ~UserDefinedCmdNode();
 
@@ -2124,9 +2142,6 @@ public:
     BlockNode *getBlockNode() const {
         return this->blockNode;
     }
-
-    void setSourceName(const char *sourceName); // override
-    const char *getSourceName(); // override
 
     void setMaxVarNum(unsigned int maxVarNum) {
         this->maxVarNum = maxVarNum;
@@ -2203,12 +2218,10 @@ public:
  * Root Node of AST.
  * this class is not inheritance of Node
  */
-class RootNode : public Node {    //FIXME:
-public:
-    const char *sourceName;
+class RootNode : public CallableNode {    //FIXME:
+private:
     std::list<Node *> nodeList;
 
-private:
     /**
      * max number of local variable.
      */
@@ -2220,14 +2233,10 @@ private:
     unsigned int maxGVarNum;
 
 public:
-    explicit RootNode(const char *sourceName) :
-            Node(0), sourceName(sourceName), nodeList(), maxVarNum(0), maxGVarNum(0) { }
-
-    RootNode() : RootNode("") { }
+    RootNode() : CallableNode(), nodeList(), maxVarNum(0), maxGVarNum(0) { }
 
     ~RootNode();
 
-    const char *getSourceName();    // override
     void addNode(Node *node);
 
     const std::list<Node *> &getNodeList() const {

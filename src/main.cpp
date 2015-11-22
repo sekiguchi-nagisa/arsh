@@ -294,7 +294,7 @@ int main(int argc, char **argv) {
     case InvocationKind::FROM_STRING: {
         DSContext_setShellName(ctx, shellArgs[0]);
         DSContext_setArguments(ctx, size == 0 ? nullptr : shellArgs + 1);
-        return INVOKE(eval)(&ctx, evalText);
+        return INVOKE(eval)(&ctx, "(string)", evalText);
     }
     case InvocationKind::BUILTIN: {
         return INVOKE(exec)(&ctx, (char **)shellArgs);

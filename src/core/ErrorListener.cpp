@@ -50,10 +50,9 @@ static std::ostream &formatErrorLine(std::ostream &stream, Lexer &lexer, const T
     return stream;
 }
 
-void CommonErrorListener::handleParseError(Lexer &lexer,
-                                           const std::string &sourceName, const ParseError &e) noexcept {
-    this->stream << sourceName << ":" << e.getLineNum() << ":"
-    << misc::TermColor::Magenta << " [syntax error] " << misc::reset;
+void CommonErrorListener::handleParseError(Lexer &lexer, const ParseError &e) noexcept {
+    this->stream << lexer.getSourceInfoPtr()->getSourceName() << ":" << e.getLineNum()
+    << ":" << misc::TermColor::Magenta << " [syntax error] " << misc::reset;
     format(this->stream, e) << std::endl;
     formatErrorLine(this->stream, lexer, e.getErrorToken()) << std::endl;
 }
@@ -73,10 +72,9 @@ void CommonErrorListener::handleRuntimeError(const TypePool &, const DSValue &) 
 // ##     ProxyErrorListener     ##
 // ################################
 
-void ProxyErrorListener::handleParseError(Lexer &lexer,
-                      const std::string &sourceName, const ParseError &e) noexcept {
+void ProxyErrorListener::handleParseError(Lexer &lexer, const ParseError &e) noexcept {
     for(ErrorListener *l : this->listeners) {
-        l->handleParseError(lexer, sourceName, e);
+        l->handleParseError(lexer, e);
     }
 }
 
@@ -101,7 +99,7 @@ void ProxyErrorListener::addListener(ErrorListener *const listener) {
 // ##     ReportingListener     ##
 // ###############################
 
-void ReportingListener::handleParseError(Lexer &, const std::string &, const ParseError &e) noexcept {
+void ReportingListener::handleParseError(Lexer &, const ParseError &e) noexcept {
 #define EACH_ERROR(E) \
     E(TokenMismatched  , 0) \
     E(NoViableAlter    , 1) \

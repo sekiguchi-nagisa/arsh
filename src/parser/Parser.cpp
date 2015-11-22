@@ -177,6 +177,7 @@ void Parser::parse(Lexer &lexer, RootNode &rootNode) {
     NEXT_TOKEN();
 
     // start parsing
+    rootNode.setSourceInfoPtr(this->lexer->getSourceInfoPtr());
     this->parse_toplevel(rootNode);
 }
 
@@ -222,7 +223,7 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
     this->expect(FUNCTION);
     Token token;
     this->expect(IDENTIFIER, token);
-    auto node = uniquify<FunctionNode>(n, this->lexer->toName(token));
+    auto node = uniquify<FunctionNode>(n, this->lexer->getSourceInfoPtr(), this->lexer->toName(token));
     this->expect(LP);
 
     if(CUR_KIND() == APPLIED_NAME) {
@@ -840,8 +841,9 @@ std::unique_ptr<Node> Parser::parse_command() {
     if(CUR_KIND() == LP) {  // command definition
         this->expect(LP);
         this->expect(RP);
-        return uniquify<UserDefinedCmdNode>(token.lineNum, this->lexer->toCmdArg(token),
-                                            this->parse_block().release());
+        return uniquify<UserDefinedCmdNode>(
+                token.lineNum, this->lexer->getSourceInfoPtr(), this->lexer->toCmdArg(token),
+                this->parse_block().release());
     }
 
 
@@ -1333,7 +1335,7 @@ bool parse(const char *sourceName, RootNode &rootNode) {
         return false;
     }
 
-    Lexer lexer(fp);
+    Lexer lexer(sourceName, fp);
     Parser parser;
 
     try {

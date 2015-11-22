@@ -142,13 +142,10 @@ private:
      */
     FieldHandle *handle_PWD;
 
-    static const unsigned int defaultFileNameIndex = 0;
-    std::vector<std::string> readFiles;
-
     /**
-     * contains currently evaluating FunctionNode or RootNode
+     * contains currently evaluating CallabeNode
      */
-    std::vector<Node *> funcContextStack;
+    std::vector<CallableNode *> callableContextStack;
 
     /**
      * contains line number and funcContextStack index.
@@ -433,7 +430,7 @@ public:
     }
 
     void pushCallFrame(unsigned int lineNum) {
-        unsigned long index = (this->funcContextStack.size() - 1) << 32;
+        unsigned long index = (this->callableContextStack.size() - 1) << 32;
         this->callStack.push_back(index | (unsigned long) lineNum);
     }
 
@@ -486,12 +483,12 @@ public:
      */
     void exportEnv(const std::string &envName, unsigned int index, bool isGlobal);
 
-    void pushFuncContext(Node *node) {
-        this->funcContextStack.push_back(node);
+    void pushFuncContext(CallableNode *node) {
+        this->callableContextStack.push_back(node);
     }
 
     void popFuncContext() {
-        this->funcContextStack.pop_back();
+        this->callableContextStack.pop_back();
     }
 
     /**
@@ -503,13 +500,6 @@ public:
      * update OLDPWD and PWD
      */
     void updateWorkingDir(bool OLDPWD_only);
-
-    /**
-     * register source name to readFiles.
-     * return pointer of added name.
-     * sourceName is null, if source is stdin.
-     */
-    const char *registerSourceName(const char *sourceName);
 
     void updateExitStatus(unsigned int status);
 

@@ -47,17 +47,20 @@ void DSContext_delete(DSContext **ctx);
 
 /**
  * evaluate string.
+ * if sourceName is null, source name is treated as standard input.
+ * source must not be null.
  * if status is not null, write status and you can call DSStatus_free() to release object.
  * if terminated by exit command or terminated normally,
  * return exit status of most recently executed command(include exit).
  * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
  */
-int DSContext_eval(DSContext *ctx, const char *source, DSStatus **status);
+int DSContext_eval(DSContext *ctx, const char *sourceName, const char *source, DSStatus **status);
 
 /**
  * evaluate file content.
  * if sourceName is null, source name is treated as standard input.
  * fp must be opened binary mode.
+ * if status is not null, write status and you can call DSStatus_free() to release object.
  * if terminated by exit command or terminated normally,
  * return exit status of most recently executed command(include exit).
  * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
@@ -68,6 +71,7 @@ int DSContext_loadAndEval(DSContext *ctx, const char *sourceName, FILE *fp, DSSt
  * execute builtin command.
  * first element of argv must be command name.
  * last element of argv must be null.
+ * if status is not null, write status and you can call DSStatus_free() to release object.
  * return exit status of executed command.
  * if command not found, return 1.
  */

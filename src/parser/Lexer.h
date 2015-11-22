@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <cstdint>
 #include <vector>
+#include <memory>
 
 #include "TokenKind.h"
 #include "LexerBase.hpp"
@@ -43,10 +44,27 @@ enum LexerMode : unsigned char {
 
 const char *toModeName(LexerMode mode);
 
+class SourceInfo {
+private:
+    std::string sourceName;
+
+public:
+    explicit SourceInfo(const char *sourceName) : sourceName(sourceName) { }
+    ~SourceInfo() = default;
+
+    const std::string &getSourceName() const {
+        return this->sourceName;
+    }
+};
+
+typedef std::shared_ptr<SourceInfo> SourceInfoPtr;
+
 typedef ydsh::parser_base::Token<TokenKind> Token;
 
 class Lexer : public ydsh::parser_base::LexerBase {
 private:
+    SourceInfoPtr sourceInfoPtr;
+
     /**
      * initial value is 1.
      */
@@ -67,15 +85,15 @@ private:
     LexerMode prevMode;
 
 public:
-    explicit Lexer(const char *source) :
-            LexerBase(source),
+    Lexer(const char *sourceName, const char *source) :
+            LexerBase(source), sourceInfoPtr(std::make_shared<SourceInfo>(sourceName)),
             lineNum(1), modeStack(1, yycSTMT), prevNewLine(false), prevSpace(false), prevMode(yycSTMT) {}
 
     /**
      * FILE must be opened with binary mode.
      */
-    explicit Lexer(FILE *fp) :
-            LexerBase(fp),
+    Lexer(const char *sourceName, FILE *fp) :
+            LexerBase(fp), sourceInfoPtr(std::make_shared<SourceInfo>(sourceName)),
             lineNum(1), modeStack(1, yycSTMT), prevNewLine(false), prevSpace(false), prevMode(yycSTMT) {}
 
     ~Lexer() = default;
@@ -92,6 +110,10 @@ public:
 
     LexerMode getPrevMode() const {
         return this->prevMode;
+    }
+
+    const SourceInfoPtr &getSourceInfoPtr() const {
+        return this->sourceInfoPtr;
     }
 
     void setLineNum(unsigned int lineNum) {

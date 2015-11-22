@@ -165,7 +165,7 @@ public:
         ASSERT_TRUE(input != nullptr);
 
         // parse
-        Lexer lexer(input);
+        Lexer lexer("(string)", input);
         RootNode rootNode;
         Parser parser;
         try {

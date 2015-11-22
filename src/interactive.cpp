@@ -129,7 +129,7 @@ void exec_interactive(DSContext *ctx) {   // never return
     while(readLine(line)) {
         ignoreSignal();
         DSStatus *status;
-        int ret = DSContext_eval(ctx, line.c_str(), &status);
+        int ret = DSContext_eval(ctx, nullptr, line.c_str(), &status);
         unsigned int type = DSStatus_getType(status);
         DSStatus_free(&status);
         if(type == DS_STATUS_ASSERTION_ERROR || type == DS_STATUS_EXIT) {

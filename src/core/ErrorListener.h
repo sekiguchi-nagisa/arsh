@@ -36,8 +36,7 @@ using namespace ydsh::parser;
 struct ErrorListener {
     virtual ~ErrorListener() = default;
 
-    virtual void handleParseError(Lexer &lexer,
-                                  const std::string &sourceName, const ParseError &e) noexcept = 0;
+    virtual void handleParseError(Lexer &lexer, const ParseError &e) noexcept = 0;
 
     virtual void handleTypeError(const std::string &sourceName,
                                  const TypeCheckError &e) noexcept = 0;
@@ -54,8 +53,7 @@ public:
 
     ~ProxyErrorListener() = default;
 
-    void handleParseError(Lexer &lexer,
-                          const std::string &sourceName, const ParseError &e) noexcept; // override
+    void handleParseError(Lexer &lexer, const ParseError &e) noexcept; // override
 
     void handleTypeError(const std::string &sourceName, const TypeCheckError &e) noexcept;    // override
 
@@ -76,8 +74,7 @@ public:
 
     ~CommonErrorListener() = default;
 
-    void handleParseError(Lexer &lexer,
-                          const std::string &sourceName, const ParseError &e) noexcept; // override
+    void handleParseError(Lexer &lexer, const ParseError &e) noexcept; // override
     void handleTypeError(const std::string &sourceName,
                          const TypeCheckError &e) noexcept; // override
     void handleRuntimeError(const TypePool &pool, const DSValue &raisedObj) noexcept;    // override
@@ -108,8 +105,7 @@ public:
         return this->messageKind;
     }
 
-    void handleParseError(Lexer &lexer,
-                          const std::string &sourceName, const ParseError &e) noexcept; // override
+    void handleParseError(Lexer &lexer, const ParseError &e) noexcept; // override
     void handleTypeError(const std::string &sourceName,
                          const TypeCheckError &e) noexcept; // override
     void handleRuntimeError(const TypePool &pool, const DSValue &raisedObj) noexcept;    // override

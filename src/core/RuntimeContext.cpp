@@ -48,8 +48,7 @@ RuntimeContext::RuntimeContext() :
         localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0),
         localVarOffset(0), offsetStack(), toplevelPrinting(false), assertion(true),
         handle_STR(nullptr), handle_bt(nullptr), handle_OLDPWD(nullptr), handle_PWD(nullptr),
-        readFiles(), funcContextStack(), callStack(), procInvoker(this), udcMap() {
-    this->readFiles.push_back(std::string("(stdin)"));
+        callableContextStack(), callStack(), procInvoker(this), udcMap() {
 }
 
 RuntimeContext::~RuntimeContext() {
@@ -333,7 +332,7 @@ void RuntimeContext::fillInStackTrace(std::vector<StackTraceElement> &stackTrace
     for(auto iter = this->callStack.rbegin(); iter != this->callStack.rend(); ++iter) {
         unsigned long frame = *iter;
         unsigned long funcCtxIndex = (frame & lowOrderMask) >> 32;
-        Node *node = this->funcContextStack[funcCtxIndex];
+        auto *node = this->callableContextStack[funcCtxIndex];
         const char *sourceName = node->getSourceName();
         unsigned long lineNum = frame & highOrderMask;
 
@@ -434,7 +433,7 @@ void RuntimeContext::exportEnv(const std::string &envName, unsigned int index, b
 }
 
 void RuntimeContext::resetState() {
-    this->funcContextStack.clear();
+    this->callableContextStack.clear();
     this->callStack.clear();
     this->localVarOffset = 0;
     this->offsetStack.clear();
@@ -477,14 +476,6 @@ void RuntimeContext::updateWorkingDir(bool OLDPWD_only) {
                             DSValue::create<String_Object>(this->pool.getStringType(), std::string(cwd)));
         }
     }
-}
-
-const char *RuntimeContext::registerSourceName(const char *sourceName) {
-    if(sourceName == nullptr) {
-        return this->readFiles[defaultFileNameIndex].c_str();
-    }
-    this->readFiles.push_back(std::string(sourceName));
-    return this->readFiles.back().c_str();
 }
 
 void RuntimeContext::updateExitStatus(unsigned int status) {

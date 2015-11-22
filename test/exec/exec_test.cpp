@@ -339,11 +339,11 @@ TEST(API, case2) {
 
         DSContext *ctx = DSContext_create();
         ASSERT_EQ(1u, DSContext_getLineNum(ctx));
-        DSContext_eval(ctx, "12 + 32\n $true\n", nullptr);
+        DSContext_eval(ctx, nullptr, "12 + 32\n $true\n", nullptr);
         ASSERT_EQ(3u, DSContext_getLineNum(ctx));
 
         DSContext_setLineNum(ctx, 49);
-        DSContext_eval(ctx, "23", nullptr);
+        DSContext_eval(ctx, nullptr, "23", nullptr);
         ASSERT_EQ(50u, DSContext_getLineNum(ctx));
     });
 }
