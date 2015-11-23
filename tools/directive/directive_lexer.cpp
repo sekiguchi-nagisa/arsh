@@ -58,7 +58,7 @@ long Lexer::toInt64(const Token &token, int &status) const {
 
     char str[token.size + 1];
     for(unsigned int i = 0; i < token.size; i++) {
-        str[i] = this->buf[token.startPos + i];
+        str[i] = this->buf[token.pos + i];
     }
     str[token.size] = '\0';
 
@@ -77,7 +77,7 @@ std::string Lexer::toName(const Token &token) const {
     std::string name;
     name.reserve(token.size);
     for(unsigned int i = 0; i < token.size; i++) {
-        char ch = this->buf[token.startPos + i];
+        char ch = this->buf[token.pos + i];
         switch(ch) {
         case '$':
         case '{':
@@ -98,9 +98,9 @@ std::string Lexer::toString(const Token &token) const {
     str.reserve(token.size);
     unsigned int size = token.size - 1;
     for(unsigned int i = 1; i < size; i++) {
-        char ch = this->buf[token.startPos + i];
+        char ch = this->buf[token.pos + i];
         if(ch == '\\') {    // handle escape sequence
-            char nextCh = this->buf[token.startPos + ++i];
+            char nextCh = this->buf[token.pos + ++i];
             switch(nextCh) {
             case 'b' :
                 ch = '\b';

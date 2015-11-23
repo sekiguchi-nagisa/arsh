@@ -76,12 +76,12 @@ TokenKind Lexer::nextToken(Token & token) {
     */
 
     END:
-    token.startPos = startPos;
+    token.pos = startPos;
     token.size = this->getPos() - startPos;
     return kind;
 
     EOS:
-    token.startPos = this->limit - this->buf;
+    token.pos = this->limit - this->buf;
     token.size = 0;
     return EOS;
 }

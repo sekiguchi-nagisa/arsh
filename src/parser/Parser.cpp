@@ -18,13 +18,15 @@
 
 
 // helper macro
-#define NEXT_TOKEN() this->fetchNext()
+#define NEXT_TOKEN() (this->fetchNext())
 
-#define HAS_NL() this->lexer->isPrevNewLine()
+#define HAS_NL() (this->lexer->isPrevNewLine())
 
-#define HAS_SPACE() this->lexer->isPrevSpace()
+#define HAS_SPACE() (this->lexer->isPrevSpace())
 
-#define CUR_KIND() this->curKind
+#define CUR_KIND() (this->curKind)
+
+#define START_POS() (this->curToken.pos)
 
 #define GEN_LA_CASE(CASE) case CASE:
 #define GEN_LA_ALTER(CASE) CASE,
@@ -197,7 +199,7 @@ void Parser::parse_toplevel(RootNode &rootNode) {
 }
 
 void Parser::refetch(LexerMode mode) {
-    this->lexer->setPos(this->curToken.startPos);
+    this->lexer->setPos(START_POS());
     this->lexer->setLexerMode(mode);
     this->fetchNext();
 }
@@ -216,7 +218,7 @@ std::unique_ptr<Node> Parser::parse_function() {
 }
 
 std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
-    unsigned int startPos = this->curToken.startPos;
+    unsigned int startPos = START_POS();
     this->expect(FUNCTION);
     Token token = this->expect(IDENTIFIER);
     auto node = uniquify<FunctionNode>(startPos, this->lexer->getSourceInfoPtr(), this->lexer->toName(token));
@@ -262,7 +264,7 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
 }
 
 std::unique_ptr<Node> Parser::parse_interface() {
-    unsigned int startPos = this->curToken.startPos;
+    unsigned int startPos = START_POS();
 
     this->expect(INTERFACE, false);
 
@@ -288,7 +290,7 @@ std::unique_ptr<Node> Parser::parse_interface() {
         switch(CUR_KIND()) {
         case VAR:
         case LET: {
-            startPos = this->curToken.startPos;
+            startPos = START_POS();
             bool readOnly = this->consume() == LET;
             token = this->expect(IDENTIFIER);
             this->expect(COLON, false);
@@ -328,7 +330,7 @@ std::unique_ptr<Node> Parser::parse_interface() {
 }
 
 std::unique_ptr<Node> Parser::parse_typeAlias() {
-    unsigned int startPos = this->curToken.startPos;
+    unsigned int startPos = START_POS();
     this->expect(TYPE_ALIAS);
     Token token = this->expect(IDENTIFIER, false);
     auto typeToken(this->parse_typeName());
@@ -337,7 +339,7 @@ std::unique_ptr<Node> Parser::parse_typeAlias() {
 }
 
 void Parser::restoreLexerState(Token prevToken) {
-    unsigned int pos = prevToken.startPos + prevToken.size;
+    unsigned int pos = prevToken.pos + prevToken.size;
     this->lexer->setPos(pos);
     this->lexer->popLexerMode();
     NEXT_TOKEN();
@@ -383,7 +385,7 @@ std::unique_ptr<TypeNode> Parser::parse_typeName() {
             this->lexer->pushLexerMode(yycSTMT);
             NEXT_TOKEN();
 
-            unsigned int startPos = token.startPos;
+            unsigned int startPos = token.pos;
             std::unique_ptr<Node> exprNode(this->parse_expression());
 
             token = this->expect(RP, false);
@@ -399,7 +401,7 @@ std::unique_ptr<TypeNode> Parser::parse_typeName() {
             this->expect(TYPE_OPEN, false);
 
             // parse return type
-            auto func = uniquify<FuncTypeNode>(token.startPos, this->parse_typeName().release());
+            auto func = uniquify<FuncTypeNode>(token.pos, this->parse_typeName().release());
 
             if(CUR_KIND() == TYPE_SEP) {   // ,[
                 this->expect(TYPE_SEP);
@@ -465,7 +467,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
     case ASSERT: {
         Token token = this->expect(ASSERT);
         this->expect(LP);
-        auto node = uniquify<AssertNode>(token.startPos, this->parse_commandOrExpression().release());
+        auto node = uniquify<AssertNode>(token.pos, this->parse_commandOrExpression().release());
         token = this->expect(RP);
         node->updateSize(token);
         this->parse_statementEnd();
@@ -487,7 +489,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
         return std::move(node);
     }
     case EXPORT_ENV: {
-        unsigned int startPos = this->curToken.startPos;
+        unsigned int startPos = START_POS();
         this->expect(EXPORT_ENV);
         Token token = this->expect(IDENTIFIER);
         std::string name(this->lexer->toName(token));
@@ -501,7 +503,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
         return this->parse_forStatement();
     }
     case IF: {
-        unsigned int startPos = this->curToken.startPos;
+        unsigned int startPos = START_POS();
         this->expect(IF);
         this->expect(LP);
         std::unique_ptr<Node> condNode(this->parse_commandOrExpression());
@@ -528,7 +530,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
         return std::move(ifNode);
     }
     case IMPORT_ENV: {
-        unsigned int startPos = this->curToken.startPos;
+        unsigned int startPos = START_POS();
         this->expect(IMPORT_ENV);
         Token token = this->expect(IDENTIFIER);
         auto node = uniquify<ImportEnvNode>(startPos, this->lexer->toName(token));
@@ -555,7 +557,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
             break;
         }
         if(!HAS_NL() && next) {
-            node = uniquify<ReturnNode>(token.startPos, this->parse_expression().release());
+            node = uniquify<ReturnNode>(token.pos, this->parse_expression().release());
         } else {
             node = uniquify<ReturnNode>(token);
         }
@@ -563,14 +565,14 @@ std::unique_ptr<Node> Parser::parse_statement() {
         return node;
     }
     case THROW: {
-        unsigned int startPos = this->curToken.startPos;
+        unsigned int startPos = START_POS();
         this->expect(THROW);
         auto node = uniquify<ThrowNode>(startPos, this->parse_expression().release());
         this->parse_statementEnd();
         return std::move(node);
     }
     case WHILE: {
-        unsigned int startPos = this->curToken.startPos;
+        unsigned int startPos = START_POS();
         this->expect(WHILE);
         this->expect(LP);
         std::unique_ptr<Node> condNode(this->parse_commandOrExpression());
@@ -580,7 +582,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
         return uniquify<WhileNode>(startPos, condNode.release(), blockNode.release());
     }
     case DO: {
-        unsigned int startPos = this->curToken.startPos;
+        unsigned int startPos = START_POS();
         this->expect(DO);
         std::unique_ptr<BlockNode> blockNode(this->parse_block());
         this->expect(WHILE);
@@ -593,7 +595,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
         return std::move(node);
     }
     case TRY: {
-        unsigned int startPos = this->curToken.startPos;
+        unsigned int startPos = START_POS();
         this->expect(TRY);
         auto tryNode = uniquify<TryNode>(startPos, this->parse_block().release());
 
@@ -654,7 +656,7 @@ void Parser::parse_statementEnd() {
 
 std::unique_ptr<BlockNode> Parser::parse_block() {
     Token token = this->expect(LBC);
-    auto blockNode = uniquify<BlockNode>(token.startPos);
+    auto blockNode = uniquify<BlockNode>(token.pos);
     while(CUR_KIND() != RBC) {
         blockNode->addNode(this->parse_statement().release());
     }
@@ -666,7 +668,7 @@ std::unique_ptr<BlockNode> Parser::parse_block() {
 std::unique_ptr<Node> Parser::parse_variableDeclaration() {
     switch(CUR_KIND()) {
     EACH_LA_varDecl(GEN_LA_CASE) {
-        unsigned int startPos = this->curToken.startPos;
+        unsigned int startPos = START_POS();
         bool readOnly = this->consume() != VAR;
 
         Token token = this->expect(IDENTIFIER);
@@ -685,7 +687,7 @@ std::unique_ptr<Node> Parser::parse_variableDeclaration() {
 }
 
 std::unique_ptr<Node> Parser::parse_forStatement() {
-    unsigned int startPos = this->curToken.startPos;
+    unsigned int startPos = START_POS();
     this->expect(FOR);
     this->expect(LP);
 
@@ -757,7 +759,7 @@ std::unique_ptr<Node> Parser::parse_forIter() {
 }
 
 std::unique_ptr<CatchNode> Parser::parse_catchStatement() {
-    unsigned int startPos = this->curToken.startPos;
+    unsigned int startPos = START_POS();
     this->expect(CATCH);
     this->expect(LP);
     Token token = this->expect(APPLIED_NAME);
@@ -830,7 +832,7 @@ std::unique_ptr<Node> Parser::parse_command() {
         this->expect(LP);
         this->expect(RP);
         return uniquify<UserDefinedCmdNode>(
-                token.startPos, this->lexer->getSourceInfoPtr(), this->lexer->toCmdArg(token),
+                token.pos, this->lexer->getSourceInfoPtr(), this->lexer->toCmdArg(token),
                 this->parse_block().release());
     }
 
@@ -996,7 +998,7 @@ std::unique_ptr<Node> Parser::parse_unaryExpression() {
     case PLUS:
     case MINUS:
     case NOT: {
-        unsigned int startPos = this->curToken.startPos;
+        unsigned int startPos = START_POS();
         TokenKind op = this->consume();
         return uniquify<UnaryOpNode>(startPos, op, this->parse_unaryExpression().release());
     }
@@ -1056,7 +1058,7 @@ std::unique_ptr<Node> Parser::parse_memberExpression() {
 std::unique_ptr<Node> Parser::parse_primaryExpression() {
     switch(CUR_KIND()) {
     case NEW: {
-        unsigned int startPos = this->curToken.startPos;
+        unsigned int startPos = START_POS();
         this->expect(NEW, false);
         std::unique_ptr<TypeNode> type(this->parse_typeName());
         ArgsWrapper args(this->parse_arguments());
@@ -1134,7 +1136,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         /**
          * skip prefix 'p'
          */
-        token.startPos++;
+        token.pos++;
         token.size--;
         return uniquify<ObjectPathNode>(token, this->lexer->singleToString(token));
     }
@@ -1157,7 +1159,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
             this->expect(COMMA);
             std::unique_ptr<Node> rightNode(this->parse_expression());
             std::unique_ptr<TupleNode> tuple(
-                    new TupleNode(token.startPos, node.release(), rightNode.release()));
+                    new TupleNode(token.pos, node.release(), rightNode.release()));
 
             while(CUR_KIND() == COMMA) {
                 this->expect(COMMA);
@@ -1165,7 +1167,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
             }
             node.reset(tuple.release());
         } else {
-            node = uniquify<GroupNode>(token.startPos, node.release());
+            node = uniquify<GroupNode>(token.pos, node.release());
         }
 
         token = this->expect(RP);
@@ -1183,7 +1185,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
 
             std::unique_ptr<Node> valueNode(this->parse_expression());
             std::unique_ptr<MapNode> mapNode(
-                    new MapNode(token.startPos, keyNode.release(), valueNode.release()));
+                    new MapNode(token.pos, keyNode.release(), valueNode.release()));
             while(CUR_KIND() == COMMA) {
                 this->expect(COMMA);
                 keyNode = this->parse_expression();
@@ -1193,7 +1195,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
             }
             node = std::move(mapNode);
         } else {    // array
-            auto arrayNode = uniquify<ArrayNode>(token.startPos, keyNode.release());
+            auto arrayNode = uniquify<ArrayNode>(token.pos, keyNode.release());
             while(CUR_KIND() == COMMA) {
                 this->expect(COMMA);
                 arrayNode->addExprNode(this->parse_expression().release());
@@ -1247,7 +1249,7 @@ ArgsWrapper Parser::parse_arguments() {
 
 std::unique_ptr<Node> Parser::parse_stringExpression() {
     Token token = this->expect(OPEN_DQUOTE);
-    std::unique_ptr<StringExprNode> node(new StringExprNode(token.startPos));
+    std::unique_ptr<StringExprNode> node(new StringExprNode(token.pos));
 
     for(bool next = true; next;) {
         switch(CUR_KIND()) {
@@ -1333,8 +1335,7 @@ bool parse(const char *sourceName, RootNode &rootNode) {
 
 // parser error
 std::ostream &operator<<(std::ostream &stream, const OutOfRangeNumError &e) {
-    stream << "out of range: " << e.getTokenKind();
-    return stream;
+    return stream << "out of range: " << e.getTokenKind();
 }
 
 } // namespace parser

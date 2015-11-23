@@ -22,7 +22,7 @@ TEST(LineNumTest, case2) {
 
 TEST(LineNumTest, case3) {
     SourceInfo info("dummy");
-    info.addNewlineCharPos(5);
+    info.addNewlinePos(5);
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         ASSERT_EQ(1u, info.getLineNum(3));
@@ -34,8 +34,8 @@ TEST(LineNumTest, case3) {
 
 TEST(LineNumTest, case4) {
     SourceInfo info("dummy");
-    info.addNewlineCharPos(5);
-    info.addNewlineCharPos(4);  // overwrite
+    info.addNewlinePos(5);
+    info.addNewlinePos(4);  // overwrite
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         ASSERT_EQ(1u, info.getLineNum(3));
@@ -51,7 +51,7 @@ TEST(LineNumTest, case5) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         ASSERT_EQ(4u, info.getLineNum(5));
-        info.addNewlineCharPos(10);
+        info.addNewlinePos(10);
         ASSERT_EQ(4u, info.getLineNum(5));
         ASSERT_EQ(5u, info.getLineNum(13));
     });

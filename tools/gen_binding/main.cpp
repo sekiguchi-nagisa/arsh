@@ -543,7 +543,7 @@ private:
 
     std::string toName(const Token &token) {
         Token t = token;
-        t.startPos++;
+        t.pos++;
         t.size--;
         return this->lexer->toTokenText(t);
     }
@@ -604,7 +604,7 @@ void Parser::parse(const char *fileName, std::vector<std::unique_ptr<Element>> &
             parser.printParseError(e);
             std::cerr << line << std::endl;
             Token lineToken;
-            lineToken.startPos = 0;
+            lineToken.pos = 0;
             lineToken.size = line.size();
             std::cerr << parser.lexer->formatLineMarker(lineToken, e.getErrorToken()) << std::endl;
             exit(EXIT_FAILURE);

@@ -34,11 +34,11 @@ namespace ydsh {
 namespace parser_base {
 
 struct Token {
-    unsigned int startPos;
+    unsigned int pos;
     unsigned int size;
 
     bool operator==(const Token &token) const {
-        return this->startPos == token.startPos && this->size == token.size;
+        return this->pos == token.pos && this->size == token.size;
     }
 
     bool operator!=(const Token &token) const {
@@ -47,7 +47,7 @@ struct Token {
 };
 
 inline std::ostream &operator<<(std::ostream &stream, const Token &token) {
-    return stream << "(pos = " << token.startPos << ", size = " << token.size << ")";
+    return stream << "(pos = " << token.pos << ", size = " << token.size << ")";
 }
 
 namespace __detail_srcinfo {
@@ -90,12 +90,12 @@ public:
         return this->lineNumTable;
     }
 
-    void addNewlineCharPos(unsigned int pos);
+    void addNewlinePos(unsigned int pos);
     unsigned int getLineNum(unsigned int pos) const;
 };
 
 template <bool T>
-void SourceInfo<T>::addNewlineCharPos(unsigned int pos) {
+void SourceInfo<T>::addNewlinePos(unsigned int pos) {
     if(this->lineNumTable.empty()) {
         this->lineNumTable.push_back(pos);
     } else if(pos > this->lineNumTable.back()) {
@@ -235,8 +235,8 @@ public:
     }
 
     bool withinRange(Token token) const {
-        return token.startPos < this->getUsedSize()
-               && token.startPos + token.size <= this->getUsedSize();
+        return token.pos < this->getUsedSize()
+               && token.pos + token.size <= this->getUsedSize();
     }
 
     /**
@@ -244,7 +244,7 @@ public:
      */
     std::string toTokenText(Token token) const {
         assert(this->withinRange(token));
-        return std::string((char *) (this->buf + token.startPos), token.size);
+        return std::string((char *) (this->buf + token.pos), token.size);
     }
 
     /**
@@ -252,18 +252,18 @@ public:
      */
     void copyTokenText(Token token, char *buf) const {
         assert(this->withinRange(token));
-        memcpy(buf, (char *)this->buf + token.startPos, token.size);
+        memcpy(buf, (char *)this->buf + token.pos, token.size);
     }
 
     bool startsWith(Token token, char ch) const {
         assert(this->withinRange(token));
-        return this->buf[token.startPos] == ch;
+        return this->buf[token.pos] == ch;
     }
 
     bool equals(Token token, const char *str) const {
         assert(this->withinRange(token));
         return strlen(str) == token.size &&
-                memcmp(this->buf + token.startPos, str, token.size) == 0;
+                memcmp(this->buf + token.pos, str, token.size) == 0;
     }
 
     std::string formatLineMarker(Token lineToken, Token token) const;
@@ -323,20 +323,20 @@ LexerBase<T>::LexerBase(const char *sourceName, const char *src) : LexerBase(sou
 
 template<bool T>
 std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token) const {
-    assert(lineToken.startPos <= token.startPos);
+    assert(lineToken.pos <= token.pos);
 
     std::string marker;
-    for(unsigned int i = lineToken.startPos; i < token.startPos; i++) {
+    for(unsigned int i = lineToken.pos; i < token.pos; i++) {
         marker += " ";
     }
-    const unsigned int stopPos = token.size + token.startPos;
-    for(unsigned int i = token.startPos; i < stopPos;) {
+    const unsigned int stopPos = token.size + token.pos;
+    for(unsigned int i = token.pos; i < stopPos;) {
         unsigned int prev = i;
         i = misc::UTF8Util::getNextPos(i, this->buf[i]);
         if(i - prev == 1) { // ascii
-            marker += (prev == token.startPos ? "^" : "~");
+            marker += (prev == token.pos ? "^" : "~");
         } else {
-            marker += (prev == token.startPos ? "^~" : "~~");
+            marker += (prev == token.pos ? "^~" : "~~");
         }
     }
     return marker;

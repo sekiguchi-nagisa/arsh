@@ -1936,7 +1936,7 @@ EvalStatus IfNode::eval(RuntimeContext &ctx) {
 // ########################
 
 ReturnNode::ReturnNode(Token token) :
-        BlockEndNode(token.startPos, token.size), exprNode(new EmptyNode(token)) { }
+        BlockEndNode(token.pos, token.size), exprNode(new EmptyNode(token)) { }
 
 ReturnNode::~ReturnNode() {
     delete this->exprNode;

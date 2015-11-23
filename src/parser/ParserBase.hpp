@@ -70,8 +70,8 @@ public:
 
 template<typename T>
 std::ostream &operator<<(std::ostream &stream, const TokenMismatchedError<T> &e) {
-    stream << "mismatched token: " << e.getTokenKind() << ", expected: " << e.getExpectedKind();
-    return stream;
+    return stream << "mismatched token: "
+           << e.getTokenKind() << ", expected: " << e.getExpectedKind();
 }
 
 

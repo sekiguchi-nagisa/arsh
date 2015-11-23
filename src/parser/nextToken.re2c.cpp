@@ -59,7 +59,7 @@
         const unsigned int stopPos = this->getPos();\
         for(unsigned int i = startPos; i < stopPos; ++i) {\
             if(this->buf[i] == '\n') \
-            { this->srcInfoPtr->addNewlineCharPos(i); } \
+            { this->srcInfoPtr->addNewlinePos(i); } \
         }\
     } while(0)
 
@@ -294,13 +294,13 @@ TokenKind Lexer::nextToken(Token &token) {
     */
 
     END:
-    token.startPos = startPos;
+    token.pos = startPos;
     token.size = this->getPos() - startPos;
     goto RET;
 
     EOS:
     kind = EOS;
-    token.startPos = this->limit - this->buf;
+    token.pos = this->limit - this->buf;
     token.size = 0;
     goto RET;
 

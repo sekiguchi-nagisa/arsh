@@ -63,7 +63,7 @@ public:
     NON_COPYABLE(Node);
 
     explicit Node(Token token) :
-            Node(token.startPos, token.size) { }
+            Node(token.pos, token.size) { }
 
     Node(unsigned int startPos, unsigned int size) :
             startPos(startPos), size(size), type() { }
@@ -83,7 +83,7 @@ public:
     }
 
     void updateSize(Token token) {
-        this->updateSize(token.startPos, token.size);
+        this->updateSize(token.pos, token.size);
     }
 
     void updateSize(unsigned int startPos, unsigned int size);
@@ -150,7 +150,7 @@ private:
 
 public:
     BaseTypeNode(Token token, std::string &&typeName) :
-            TypeNode(token.startPos, size), typeName(std::move(typeName)) { }
+            TypeNode(token.pos, token.size), typeName(std::move(typeName)) { }
 
     ~BaseTypeNode() = default;
 
@@ -231,7 +231,7 @@ private:
 
 public:
     DBusIfaceTypeNode(Token token, std::string &&name) :
-            TypeNode(token.startPos, token.size), name(std::move(name)) { }
+            TypeNode(token.pos, token.size), name(std::move(name)) { }
 
     ~DBusIfaceTypeNode() = default;
 
@@ -625,7 +625,7 @@ private:
 
 public:
     VarNode(Token token, std::string &&varName) :
-            AssignableNode(token.startPos, token.size), varName(std::move(varName)) { }
+            AssignableNode(token.pos, token.size), varName(std::move(varName)) { }
 
     ~VarNode() = default;
 
@@ -1378,7 +1378,7 @@ public:
 class BreakNode : public BlockEndNode {
 public:
     explicit BreakNode(Token token) :
-            BlockEndNode(token.startPos, token.size) { }
+            BlockEndNode(token.pos, token.size) { }
 
     ~BreakNode() = default;
 
@@ -1390,7 +1390,7 @@ public:
 class ContinueNode : public BlockEndNode {
 public:
     explicit ContinueNode(Token token) :
-            BlockEndNode(token.startPos, token.size) { }
+            BlockEndNode(token.pos, token.size) { }
 
     ~ContinueNode() = default;
 
@@ -2237,7 +2237,7 @@ class EmptyNode : public Node {
 public:
     EmptyNode() : Node(0, 0) { }
     EmptyNode(Token token) :
-            Node(token.startPos, token.size) { }
+            Node(token.pos, token.size) { }
     ~EmptyNode() = default;
 
     void dump(NodeDumper &dumper) const;  // override

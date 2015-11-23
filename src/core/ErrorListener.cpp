@@ -51,7 +51,7 @@ static std::ostream &formatErrorLine(std::ostream &stream, const Lexer &lexer, c
 }
 
 void CommonErrorListener::handleParseError(const Lexer &lexer, const ParseError &e) noexcept {
-    unsigned int lineNum = lexer.getSourceInfoPtr()->getLineNum(e.getErrorToken().startPos);
+    unsigned int lineNum = lexer.getSourceInfoPtr()->getLineNum(e.getErrorToken().pos);
     if(e.getTokenKind() == EOS) {
         lineNum--;
     }
@@ -124,7 +124,7 @@ void ReportingListener::handleParseError(const Lexer &lexer, const ParseError &e
 
 #undef DISPATCH
 
-    this->lineNum = lexer.getSourceInfoPtr()->getLineNum(e.getErrorToken().startPos);
+    this->lineNum = lexer.getSourceInfoPtr()->getLineNum(e.getErrorToken().pos);
     if(e.getTokenKind() == EOS) {
         this->lineNum--;
     }

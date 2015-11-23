@@ -49,7 +49,7 @@ void Lexer::setPos(unsigned int pos) {
 
 Token Lexer::getLineToken(Token token, bool skipEOS) const {
     if(skipEOS && token.size == 0) {
-        unsigned int startIndex = token.startPos;
+        unsigned int startIndex = token.pos;
         for(; startIndex > 0; startIndex--) {
             char ch = this->buf[startIndex];
             if(ch == ' ' || ch == '\t' || ch == '\n' || ch == '\000') {
@@ -61,7 +61,7 @@ Token Lexer::getLineToken(Token token, bool skipEOS) const {
             break;
         }
         Token skippedToken;
-        skippedToken.startPos = startIndex;
+        skippedToken.pos = startIndex;
         skippedToken.size = 0;
         return this->getLineTokenImpl(skippedToken);
     }
@@ -73,9 +73,9 @@ Token Lexer::getLineTokenImpl(Token token) const {
 
     // find start index of line.
     unsigned int startIndex;
-    for(startIndex = token.startPos; startIndex > 0; startIndex--) {
+    for(startIndex = token.pos; startIndex > 0; startIndex--) {
         if(this->buf[startIndex] == '\n') {
-            startIndex += (startIndex == token.startPos) ? 0 : 1;
+            startIndex += (startIndex == token.pos) ? 0 : 1;
             break;
         }
     }
@@ -83,13 +83,13 @@ Token Lexer::getLineTokenImpl(Token token) const {
     // find stop index of line
     unsigned int stopIndex;
     unsigned int usedSize = this->getUsedSize();
-    for(stopIndex = token.startPos + token.size; stopIndex < usedSize; stopIndex++) {
+    for(stopIndex = token.pos + token.size; stopIndex < usedSize; stopIndex++) {
         if(this->buf[stopIndex] == '\n') {
             break;
         }
     }
     Token lineToken;
-    lineToken.startPos = startIndex;
+    lineToken.pos = startIndex;
     lineToken.size = stopIndex - startIndex;
     return lineToken;
 }
@@ -100,7 +100,7 @@ std::string Lexer::singleToString(Token token) const {
     }
 
     Token trimed = token;
-    trimed.startPos++;
+    trimed.pos++;
     trimed.size -= 2;
 
     return this->toTokenText(trimed);
@@ -112,8 +112,8 @@ std::string Lexer::escapedSingleToString(Token token) const {
     std::string str;
     str.reserve(token.size - 3);
 
-    const unsigned int stopPos = token.startPos + token.size - 1; // ignore suffix "'"
-    for(unsigned int i = token.startPos + 2; i < stopPos; i++) {  // ignore prefix "$'"
+    const unsigned int stopPos = token.pos + token.size - 1; // ignore suffix "'"
+    for(unsigned int i = token.pos + 2; i < stopPos; i++) {  // ignore prefix "$'"
         char ch = this->buf[i];
         if(ch == '\\' && i + 1 < stopPos) {
             switch(this->buf[++i]) {
@@ -148,8 +148,8 @@ std::string Lexer::doubleElementToString(Token token) const {
     std::string str;
     str.reserve(token.size);
 
-    const unsigned int stopPos = token.startPos + token.size;
-    for(unsigned int i = token.startPos; i < stopPos; i++) {
+    const unsigned int stopPos = token.pos + token.size;
+    for(unsigned int i = token.pos; i < stopPos; i++) {
         char ch = this->buf[i];
         if(ch == '\\' && i + 1 < stopPos) {
             char next = this->buf[++i];
@@ -176,9 +176,9 @@ std::string Lexer::toCmdArg(Token token) const {
     str.reserve(token.size);
 
     for(unsigned int i = 0; i < token.size; i++) {
-        char ch = this->buf[token.startPos + i];
+        char ch = this->buf[token.pos + i];
         if(ch == '\\') {
-            char nextCh = this->buf[token.startPos + ++i];
+            char nextCh = this->buf[token.pos + ++i];
             switch(nextCh) {
             case '\n':
             case '\r':
@@ -199,7 +199,7 @@ std::string Lexer::toName(Token token) const {
     std::string name;
     name.reserve(token.size);
     for(unsigned int i = 0; i < token.size; i++) {
-        char ch = this->buf[token.startPos + i];
+        char ch = this->buf[token.pos + i];
         switch(ch) {
         case '$':
         case '{':
@@ -267,7 +267,7 @@ long Lexer::toInt64(Token token, int &status) const {
 
     char str[token.size + 1];
     for(unsigned int i = 0; i < token.size; i++) {
-        str[i] = this->buf[token.startPos + i];
+        str[i] = this->buf[token.pos + i];
     }
     str[token.size] = '\0';
 
@@ -285,7 +285,7 @@ unsigned long Lexer::toUint64(Token token, int &status) const {
 
     char str[token.size + 1];
     for(unsigned int i = 0; i < token.size; i++) {
-        str[i] = this->buf[token.startPos + i];
+        str[i] = this->buf[token.pos + i];
     }
     str[token.size] = '\0';
 
@@ -303,7 +303,7 @@ double Lexer::toDouble(Token token, int &status) const {
 
     char str[token.size + 1];
     for(unsigned int i = 0; i < token.size; i++) {
-        str[i] = this->buf[token.startPos + i];
+        str[i] = this->buf[token.pos + i];
     }
     str[token.size] = '\0';
 
