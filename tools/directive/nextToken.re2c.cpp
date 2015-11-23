@@ -26,7 +26,7 @@
 namespace ydsh {
 namespace directive {
 
-void Lexer::nextToken(Token & token) {
+TokenKind Lexer::nextToken(Token & token) {
     /*!re2c
       re2c:define:YYCTYPE = "unsigned char";
       re2c:define:YYCURSOR = this->cursor;
@@ -78,14 +78,12 @@ void Lexer::nextToken(Token & token) {
     END:
     token.startPos = startPos;
     token.size = this->getPos() - startPos;
-    token.kind = kind;
-    return;
+    return kind;
 
     EOS:
     token.startPos = this->limit - this->buf;
     token.size = 0;
-    token.kind = EOS;
-    return;
+    return EOS;
 }
 
 } // namespace directive

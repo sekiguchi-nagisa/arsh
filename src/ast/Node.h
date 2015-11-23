@@ -62,7 +62,7 @@ protected:
 public:
     NON_COPYABLE(Node);
 
-    explicit Node(const parser_base::TokenBase &token) :
+    explicit Node(Token token) :
             Node(token.startPos, token.size) { }
 
     Node(unsigned int startPos, unsigned int size) :
@@ -82,7 +82,7 @@ public:
         this->size = size;
     }
 
-    void updateSize(const parser_base::TokenBase &token) {
+    void updateSize(Token token) {
         this->updateSize(token.startPos, token.size);
     }
 
@@ -149,7 +149,7 @@ private:
     std::string typeName;
 
 public:
-    BaseTypeNode(const parser_base::TokenBase &token, std::string &&typeName) :
+    BaseTypeNode(Token token, std::string &&typeName) :
             TypeNode(token.startPos, size), typeName(std::move(typeName)) { }
 
     ~BaseTypeNode() = default;
@@ -230,7 +230,7 @@ private:
     std::string name;
 
 public:
-    DBusIfaceTypeNode(const parser_base::TokenBase &token, std::string &&name) :
+    DBusIfaceTypeNode(Token token, std::string &&name) :
             TypeNode(token.startPos, token.size), name(std::move(name)) { }
 
     ~DBusIfaceTypeNode() = default;
@@ -312,30 +312,30 @@ private:
     DSValue value;
 
 private:
-    IntValueNode(const parser_base::TokenBase &token, IntKind kind, int value) :
+    IntValueNode(Token token, IntKind kind, int value) :
             Node(token), kind(kind), tempValue(value), value() { }
 
 public:
-    IntValueNode(const parser_base::TokenBase &token, int value) :
+    IntValueNode(Token token, int value) :
             IntValueNode(token, INT32, value) { }
 
-    static IntValueNode *newByte(const parser_base::TokenBase &token, unsigned char value) {
+    static IntValueNode *newByte(Token token, unsigned char value) {
         return new IntValueNode(token, BYTE, (int) value);
     }
 
-    static IntValueNode *newInt16(const parser_base::TokenBase &token, short value) {
+    static IntValueNode *newInt16(Token token, short value) {
         return new IntValueNode(token, INT16, (int) value);
     }
 
-    static IntValueNode *newUint16(const parser_base::TokenBase &token, unsigned short value) {
+    static IntValueNode *newUint16(Token token, unsigned short value) {
         return new IntValueNode(token, UINT16, (int) value);
     }
 
-    static IntValueNode *newInt32(const parser_base::TokenBase &token, int value) {
+    static IntValueNode *newInt32(Token token, int value) {
         return new IntValueNode(token, INT32, value);
     }
 
-    static IntValueNode *newUint32(const parser_base::TokenBase &token, unsigned int value) {
+    static IntValueNode *newUint32(Token token, unsigned int value) {
         return new IntValueNode(token, UINT32, (int) value);
     }
 
@@ -368,14 +368,14 @@ private:
     DSValue value;
 
 public:
-    LongValueNode(const parser_base::TokenBase &token, long value, bool unsignedValue) :
+    LongValueNode(Token token, long value, bool unsignedValue) :
             Node(token), tempValue(value), unsignedValue(unsignedValue), value() { }
 
-    static LongValueNode *newInt64(const parser_base::TokenBase &token, long value) {
+    static LongValueNode *newInt64(Token token, long value) {
         return new LongValueNode(token, value, false);
     }
 
-    static LongValueNode *newUint64(const parser_base::TokenBase &token, unsigned long value) {
+    static LongValueNode *newUint64(Token token, unsigned long value) {
         return new LongValueNode(token, (long) value, true);
     }
 
@@ -409,7 +409,7 @@ private:
     DSValue value;
 
 public:
-    FloatValueNode(const parser_base::TokenBase &token, double value) :
+    FloatValueNode(Token token, double value) :
             Node(token), tempValue(value), value() { }
 
     /**
@@ -444,7 +444,7 @@ public:
     explicit StringValueNode(std::string &&value) :
             Node(0, 0), tempValue(std::move(value)), value() { }
 
-    StringValueNode(const parser_base::TokenBase &token, std::string &&value) :
+    StringValueNode(Token token, std::string &&value) :
             Node(token), tempValue(std::move(value)), value() { }
 
     virtual ~StringValueNode() = default;
@@ -464,7 +464,7 @@ public:
 
 class ObjectPathNode : public StringValueNode {
 public:
-    ObjectPathNode(const parser_base::TokenBase &token, std::string &&value) :
+    ObjectPathNode(Token token, std::string &&value) :
             StringValueNode(token, std::move(value)) { }
 
     ~ObjectPathNode() = default;
@@ -624,7 +624,7 @@ private:
     std::string varName;
 
 public:
-    VarNode(const parser_base::TokenBase &token, std::string &&varName) :
+    VarNode(Token token, std::string &&varName) :
             AssignableNode(token.startPos, token.size), varName(std::move(varName)) { }
 
     ~VarNode() = default;
@@ -1168,7 +1168,7 @@ private:
     std::string value;
 
 public:
-    TildeNode(const parser_base::TokenBase &token, std::string &&value) :
+    TildeNode(Token token, std::string &&value) :
             Node(token), value(std::move(value)) { }
 
     ~TildeNode() = default;
@@ -1201,7 +1201,7 @@ private:
     std::vector<Node *> argNodes;
 
 public:
-    CmdNode(const parser_base::TokenBase &token, std::string &&value) :
+    CmdNode(Token token, std::string &&value) :
             Node(token),
             nameNode(new StringValueNode(token, std::move(value))), argNodes() { }
 
@@ -1221,7 +1221,7 @@ public:
     }
 
     void addRedirOption(TokenKind kind, CmdArgNode *node);
-    void addRedirOption(TokenKind kind, const parser_base::TokenBase &token);
+    void addRedirOption(TokenKind kind, Token token);
 
     void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor &visitor);    //override
@@ -1377,7 +1377,7 @@ public:
 
 class BreakNode : public BlockEndNode {
 public:
-    explicit BreakNode(const parser_base::TokenBase &token) :
+    explicit BreakNode(Token token) :
             BlockEndNode(token.startPos, token.size) { }
 
     ~BreakNode() = default;
@@ -1389,7 +1389,7 @@ public:
 
 class ContinueNode : public BlockEndNode {
 public:
-    explicit ContinueNode(const parser_base::TokenBase &token) :
+    explicit ContinueNode(Token token) :
             BlockEndNode(token.startPos, token.size) { }
 
     ~ContinueNode() = default;
@@ -1703,7 +1703,7 @@ public:
         this->updateSize(exprNode->getStartPos(), exprNode->getSize());
     }
 
-    explicit ReturnNode(const parser_base::TokenBase &token);
+    explicit ReturnNode(Token token);
 
     ~ReturnNode();
 
@@ -2236,7 +2236,7 @@ public:
 class EmptyNode : public Node {
 public:
     EmptyNode() : Node(0, 0) { }
-    EmptyNode(const parser_base::TokenBase &token) :
+    EmptyNode(Token token) :
             Node(token.startPos, token.size) { }
     ~EmptyNode() = default;
 
@@ -2320,7 +2320,7 @@ Node *createCallNode(Node *recvNode, std::vector<Node *> &&argNodes);
 
 ForNode *createForInNode(unsigned int startPos, VarNode *varNode, Node *exprNode, BlockNode *blockNode);
 
-Node *createSuffixNode(Node *leftNode, TokenKind op, const parser_base::TokenBase &token);
+Node *createSuffixNode(Node *leftNode, TokenKind op, Token token);
 
 Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode);
 

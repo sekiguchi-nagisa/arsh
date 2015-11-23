@@ -26,7 +26,7 @@
 #define ERROR() do { RET(INVALID); } while(0)
 
 
-void DescLexer::nextToken(Token &token) {
+DescTokenKind DescLexer::nextToken(Token &token) {
     /*!re2c
       re2c:define:YYCTYPE = "unsigned char";
       re2c:define:YYCURSOR = this->cursor;
@@ -79,14 +79,12 @@ void DescLexer::nextToken(Token &token) {
     END:
     token.startPos = startPos;
     token.size = this->getPos() - startPos;
-    token.kind = kind;
-    return;
+    return kind;
 
     EOS:
     token.startPos = this->limit - this->buf;
     token.size = 0;
-    token.kind = EOS;
-    return;
+    return EOS;
 }
 
 const char *toString(DescTokenKind kind) {

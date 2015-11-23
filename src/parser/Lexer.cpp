@@ -15,7 +15,6 @@
  */
 
 #include <cmath>
-#include <algorithm>
 
 #include "../misc/fatal.h"
 #include "../misc/num.h"
@@ -37,26 +36,6 @@ const char *toModeName(LexerMode mode) {
     return lexerModeNames[mode];
 }
 
-// ########################
-// ##     SourceInfo     ##
-// ########################
-
-void SourceInfo::addNewlineCharPos(unsigned int pos) {
-    if(this->lineNumTable.empty()) {
-        this->lineNumTable.push_back(pos);
-    } else if(pos > this->lineNumTable.back()) {
-        this->lineNumTable.push_back(pos);
-    }
-}
-
-unsigned int SourceInfo::getLineNum(unsigned int pos) const {
-    auto iter = std::lower_bound(this->lineNumTable.begin(), this->lineNumTable.end(), pos);
-    if(this->lineNumTable.end() == iter) {
-        return this->lineNumTable.size() + this->lineNumOffset;
-    }
-    return iter - this->lineNumTable.begin() + this->lineNumOffset;
-}
-
 // ###################
 // ##     Lexer     ##
 // ###################
@@ -68,12 +47,7 @@ void Lexer::setPos(unsigned int pos) {
     this->cursor = this->buf + pos;
 }
 
-unsigned int Lexer::getLineNum() const {
-    return this->srcInfoPtr->getLineNumOffset() +
-            this->srcInfoPtr->getLineNumTable().size();
-}
-
-Token Lexer::getLineToken(const Token &token, bool skipEOS) const {
+Token Lexer::getLineToken(Token token, bool skipEOS) const {
     if(skipEOS && token.size == 0) {
         unsigned int startIndex = token.startPos;
         for(; startIndex > 0; startIndex--) {
@@ -94,7 +68,7 @@ Token Lexer::getLineToken(const Token &token, bool skipEOS) const {
     return this->getLineTokenImpl(token);
 }
 
-Token Lexer::getLineTokenImpl(const Token &token) const {
+Token Lexer::getLineTokenImpl(Token token) const {
     assert(this->withinRange(token));
 
     // find start index of line.
@@ -120,7 +94,7 @@ Token Lexer::getLineTokenImpl(const Token &token) const {
     return lineToken;
 }
 
-std::string Lexer::singleToString(const Token &token) const {
+std::string Lexer::singleToString(Token token) const {
     if(this->startsWith(token, '$')) {
         return this->escapedSingleToString(token);
     }
@@ -132,7 +106,7 @@ std::string Lexer::singleToString(const Token &token) const {
     return this->toTokenText(trimed);
 }
 
-std::string Lexer::escapedSingleToString(const Token &token) const {
+std::string Lexer::escapedSingleToString(Token token) const {
     assert(this->withinRange(token));
 
     std::string str;
@@ -168,7 +142,7 @@ std::string Lexer::escapedSingleToString(const Token &token) const {
     return str;
 }
 
-std::string Lexer::doubleElementToString(const Token &token) const {
+std::string Lexer::doubleElementToString(Token token) const {
     assert(this->withinRange(token));
 
     std::string str;
@@ -195,7 +169,7 @@ std::string Lexer::doubleElementToString(const Token &token) const {
     return str;
 }
 
-std::string Lexer::toCmdArg(const Token &token) const {
+std::string Lexer::toCmdArg(Token token) const {
     assert(this->withinRange(token));
 
     std::string str;
@@ -219,7 +193,7 @@ std::string Lexer::toCmdArg(const Token &token) const {
     return str;
 }
 
-std::string Lexer::toName(const Token &token) const {
+std::string Lexer::toName(Token token) const {
     assert(this->withinRange(token));
 
     std::string name;
@@ -239,7 +213,7 @@ std::string Lexer::toName(const Token &token) const {
     return name;
 }
 
-unsigned char Lexer::toUint8(const Token &token, int &status) const {
+unsigned char Lexer::toUint8(Token token, int &status) const {
     long value = this->toInt64(token, status);
     if(value > UINT8_MAX || value < 0) {
         status = 1;
@@ -248,7 +222,7 @@ unsigned char Lexer::toUint8(const Token &token, int &status) const {
     return (unsigned char) value;
 }
 
-short Lexer::toInt16(const Token &token, int &status) const {
+short Lexer::toInt16(Token token, int &status) const {
     long value = this->toInt64(token, status);
     if(value > INT16_MAX || value < INT16_MIN) {
         status = 1;
@@ -257,7 +231,7 @@ short Lexer::toInt16(const Token &token, int &status) const {
     return (short) value;
 }
 
-unsigned short Lexer::toUint16(const Token &token, int &status) const {
+unsigned short Lexer::toUint16(Token token, int &status) const {
     long value = this->toInt64(token, status);
     if(value > UINT16_MAX || value < 0) {
         status = 1;
@@ -266,11 +240,11 @@ unsigned short Lexer::toUint16(const Token &token, int &status) const {
     return (unsigned short) value;
 }
 
-int Lexer::toInt(const Token &token, int &status) const {
+int Lexer::toInt(Token token, int &status) const {
     return this->toInt32(token, status);
 }
 
-int Lexer::toInt32(const Token &token, int &status) const {
+int Lexer::toInt32(Token token, int &status) const {
     long value = this->toInt64(token, status);
     if(value > INT32_MAX || value < INT32_MIN) {
         status = 1;
@@ -279,7 +253,7 @@ int Lexer::toInt32(const Token &token, int &status) const {
     return (int) value;
 }
 
-unsigned int Lexer::toUint32(const Token &token, int &status) const {
+unsigned int Lexer::toUint32(Token token, int &status) const {
     long value = this->toInt64(token, status);
     if(value > UINT32_MAX || value < 0) {
         status = 1;
@@ -288,7 +262,7 @@ unsigned int Lexer::toUint32(const Token &token, int &status) const {
     return (unsigned int) value;
 }
 
-long Lexer::toInt64(const Token &token, int &status) const {
+long Lexer::toInt64(Token token, int &status) const {
     assert(this->withinRange(token));
 
     char str[token.size + 1];
@@ -306,7 +280,7 @@ long Lexer::toInt64(const Token &token, int &status) const {
     return value;
 }
 
-unsigned long Lexer::toUint64(const Token &token, int &status) const {
+unsigned long Lexer::toUint64(Token token, int &status) const {
     assert(this->withinRange(token));
 
     char str[token.size + 1];
@@ -324,7 +298,7 @@ unsigned long Lexer::toUint64(const Token &token, int &status) const {
     return value;
 }
 
-double Lexer::toDouble(const Token &token, int &status) const {
+double Lexer::toDouble(Token token, int &status) const {
     assert(this->withinRange(token));
 
     char str[token.size + 1];

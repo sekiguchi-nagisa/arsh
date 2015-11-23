@@ -54,14 +54,14 @@ EACH_DESC_TOKEN(GEN_ENUM)
 #undef GEN_ENUM
 };
 
-typedef ydsh::parser_base::Token<DescTokenKind> Token;
+typedef ydsh::parser_base::Token Token;
 
 class DescLexer : public ydsh::parser_base::LexerBase {
 public:
-    DescLexer(const char *line) : LexerBase(line) {}
+    DescLexer(const char *line) : LexerBase("(descripter)", line) {}
     ~DescLexer() = default;
 
-    void nextToken(Token &token);
+    DescTokenKind nextToken(Token &token);
 
     static bool isInvalidToken(DescTokenKind kind) {
         return kind == INVALID;

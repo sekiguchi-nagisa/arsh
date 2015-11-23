@@ -79,7 +79,7 @@ private:
     std::unique_ptr<Node> parse_interface();
     std::unique_ptr<Node> parse_typeAlias();
 
-    void restoreLexerState(const Token &prevToken);
+    void restoreLexerState(Token prevToken);
 
     /**
      * not call it directory
@@ -170,7 +170,7 @@ typedef Parser::InvalidTokenError InvalidTokenError;
 
 class OutOfRangeNumError : public ParseError {
 public:
-    OutOfRangeNumError(Token errorToken) : ParseError(errorToken) {}
+    OutOfRangeNumError(TokenKind  kind, Token errorToken) : ParseError(kind, errorToken) {}
 
     ~OutOfRangeNumError() = default;
 

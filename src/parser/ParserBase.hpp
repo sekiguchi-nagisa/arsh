@@ -30,23 +30,21 @@ namespace __parser_error {
 template<typename T>
 class ParseError {
 protected:
-    Token<T> errorToken;
+    T kind;
+    Token errorToken;
 
 public:
-    ParseError(Token<T> errorToken) : errorToken(errorToken) { }
+    ParseError(T kind, Token errorToken) :
+            kind(kind), errorToken(errorToken) { }
 
     virtual ~ParseError() = default;
 
-    const Token<T> &getErrorToken() const {
+    const Token &getErrorToken() const {
         return this->errorToken;
     }
 
     T getTokenKind() const {
-        return this->errorToken.kind;
-    }
-
-    unsigned int getLineNum() const {
-        return this->errorToken.lineNum;
+        return this->kind;
     }
 };
 
@@ -56,8 +54,8 @@ private:
     T expected;
 
 public:
-    TokenMismatchedError(Token<T> errrorToken, T expected) :
-            ParseError<T>(errrorToken), expected(expected) { }
+    TokenMismatchedError(T kind, Token errrorToken, T expected) :
+            ParseError<T>(kind, errrorToken), expected(expected) { }
 
     ~TokenMismatchedError() = default;
 
@@ -83,8 +81,8 @@ private:
     std::vector<T> alters;
 
 public:
-    NoViableAlterError(Token<T> errorToken, std::vector<T> &&alters) :
-            ParseError<T>(errorToken), alters(std::move(alters)) { }
+    NoViableAlterError(T kind, Token errorToken, std::vector<T> &&alters) :
+            ParseError<T>(kind, errorToken), alters(std::move(alters)) { }
 
     ~NoViableAlterError() = default;
 
@@ -133,7 +131,7 @@ std::ostream &operator<<(std::ostream &stream, const NoViableAlterError<T> &e) {
 template<typename T>
 class InvalidTokenError : public ParseError<T> {
 public:
-    InvalidTokenError(Token<T> errorToken) : ParseError<T>(errorToken) { }
+    InvalidTokenError(T kind, Token errorToken) : ParseError<T>(kind, errorToken) { }
 
     ~InvalidTokenError() = default;
 
@@ -160,7 +158,8 @@ public:
 
 protected:
     LexerImpl *lexer;
-    Token<T> curToken;
+    T curKind;
+    Token curToken;
 
 public:
     ParserBase() = default;
@@ -169,12 +168,10 @@ public:
 
 protected:
     void fetchNext() {
-        this->lexer->nextToken(this->curToken);
+        this->curKind = this->lexer->nextToken(this->curToken);
     }
 
-    void expect(T kind, bool fetchNext = true);
-
-    void expect(T kind, Token<T> &token, bool fetchNext = true);
+    Token expect(T kind, bool fetchNext = true);
 
     T consume();
 
@@ -186,45 +183,33 @@ protected:
 // ########################
 
 template<typename T, typename LexerImpl>
-void ParserBase<T, LexerImpl>::expect(T kind, bool fetchNext) {
-    if(this->curToken.kind != kind) {
-        if(LexerImpl::isInvalidToken(this->curToken.kind)) {
-            throw InvalidTokenError(this->curToken);
+Token ParserBase<T, LexerImpl>::expect(T kind, bool fetchNext) {
+    if(this->curKind != kind) {
+        if(LexerImpl::isInvalidToken(this->curKind)) {
+            throw InvalidTokenError(this->curKind, this->curToken);
         }
-        throw TokenMismatchedError(this->curToken, kind);
+        throw TokenMismatchedError(this->curKind, this->curToken, kind);
     }
+    Token token = this->curToken;
     if(fetchNext) {
         this->fetchNext();
     }
-}
-
-template<typename T, typename LexerImpl>
-void ParserBase<T, LexerImpl>::expect(T kind, Token<T> &token, bool fetchNext) {
-    if(this->curToken.kind != kind) {
-        if(LexerImpl::isInvalidToken(this->curToken.kind)) {
-            throw InvalidTokenError(this->curToken);
-        }
-        throw TokenMismatchedError(this->curToken, kind);
-    }
-    token = this->curToken;
-    if(fetchNext) {
-        this->fetchNext();
-    }
+    return token;
 }
 
 template<typename T, typename LexerImpl>
 T ParserBase<T, LexerImpl>::consume() {
-    T kind = this->curToken.kind;
+    T kind = this->curKind;
     this->fetchNext();
     return kind;
 }
 
 template<typename T, typename LexerImpl>
 void ParserBase<T, LexerImpl>::alternativeError(std::vector<T> &&alters) {
-    if(LexerImpl::isInvalidToken(this->curToken.kind)) {
-        throw InvalidTokenError(this->curToken);
+    if(LexerImpl::isInvalidToken(this->curKind)) {
+        throw InvalidTokenError(this->curKind, this->curToken);
     }
-    throw NoViableAlterError(this->curToken, std::move(alters));
+    throw NoViableAlterError(this->curKind, this->curToken, std::move(alters));
 }
 
 } //namespace parser_base

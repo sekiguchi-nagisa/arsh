@@ -19,8 +19,6 @@
 
 #include <cstdlib>
 #include <cstdint>
-#include <vector>
-#include <memory>
 
 #include "TokenKind.h"
 #include "LexerBase.hpp"
@@ -44,53 +42,12 @@ enum LexerMode : unsigned char {
 
 const char *toModeName(LexerMode mode);
 
-class SourceInfo {
-private:
-    std::string sourceName;
-
-    /**
-     * default value is 1.
-     */
-    unsigned int lineNumOffset;
-
-    /**
-     * contains newline character position.
-     */
-    std::vector<unsigned int> lineNumTable;
-
-public:
-    explicit SourceInfo(const char *sourceName) :
-            sourceName(sourceName), lineNumOffset(1), lineNumTable() { }
-    ~SourceInfo() = default;
-
-    const std::string &getSourceName() const {
-        return this->sourceName;
-    }
-
-    void setLineNumOffset(unsigned int offset) {
-        this->lineNumOffset = offset;
-    }
-
-    unsigned int getLineNumOffset() const {
-        return this->lineNumOffset;
-    }
-
-    const std::vector<unsigned int> &getLineNumTable() const {
-        return this->lineNumTable;
-    }
-
-    void addNewlineCharPos(unsigned int pos);
-    unsigned int getLineNum(unsigned int pos) const;
-};
-
-typedef std::shared_ptr<SourceInfo> SourceInfoPtr;
-
-typedef ydsh::parser_base::Token<TokenKind> Token;
+typedef ydsh::parser_base::Token Token;
+typedef ydsh::parser_base::SourceInfo SourceInfo;
+typedef ydsh::parser_base::SourceInfoPtr SourceInfoPtr;
 
 class Lexer : public ydsh::parser_base::LexerBase {
 private:
-    SourceInfoPtr srcInfoPtr;
-
     /**
      * default mode is yycSTMT
      */
@@ -107,14 +64,14 @@ private:
 
 public:
     Lexer(const char *sourceName, const char *source) :
-            LexerBase(source), srcInfoPtr(std::make_shared<SourceInfo>(sourceName)),
+            LexerBase(sourceName, source),
             modeStack(1, yycSTMT), prevNewLine(false), prevSpace(false), prevMode(yycSTMT) {}
 
     /**
      * FILE must be opened with binary mode.
      */
     Lexer(const char *sourceName, FILE *fp) :
-            LexerBase(fp), srcInfoPtr(std::make_shared<SourceInfo>(sourceName)),
+            LexerBase(sourceName, fp),
             modeStack(1, yycSTMT), prevNewLine(false), prevSpace(false), prevMode(yycSTMT) {}
 
     ~Lexer() = default;
@@ -132,16 +89,6 @@ public:
     LexerMode getPrevMode() const {
         return this->prevMode;
     }
-
-    const SourceInfoPtr &getSourceInfoPtr() const {
-        return this->srcInfoPtr;
-    }
-
-    void setLineNum(unsigned int lineNum) {
-        this->srcInfoPtr->setLineNumOffset(lineNum);
-    }
-
-    unsigned int getLineNum() const;
 
     void setLexerMode(LexerMode mode) {
         this->modeStack[this->modeStack.size() - 1] = mode;
@@ -168,66 +115,66 @@ public:
      * write next token to token.
      * return the kind of next token.
      */
-    void nextToken(Token &token);
+    TokenKind nextToken(Token &token);
 
     // some token api
 
     /**
      * get line token which token belongs to.
      */
-    Token getLineToken(const Token &token, bool skipEOS = false) const;
+    Token getLineToken(Token token, bool skipEOS = false) const;
 
-    Token getLineTokenImpl(const Token &token) const;
+    Token getLineTokenImpl(Token token) const;
 
     // token to value converting api.
 
     /**
      * convert single quote string literal token to string.
      */
-    std::string singleToString(const Token &token) const;
+    std::string singleToString(Token token) const;
 
     /**
      * convert escaped single quote string literal token to string.
      */
-    std::string escapedSingleToString(const Token &token) const;
+    std::string escapedSingleToString(Token token) const;
 
     /**
      * convert double quote string element token to string.
      */
-    std::string doubleElementToString(const Token &token) const;
+    std::string doubleElementToString(Token token) const;
 
     /**
      * convert token to command argument
      */
-    std::string toCmdArg(const Token &token) const;
+    std::string toCmdArg(Token token) const;
 
     /**
      * convert token to name(remove '$' char)
      * ex. $hoge, ${hoge}, hoge
      */
-    std::string toName(const Token &token) const;
+    std::string toName(Token token) const;
 
     /**
      * if converted number is out of range, status is 1.
      */
-    unsigned char toUint8(const Token &token, int &status) const;
-    short toInt16(const Token &token, int &status) const;
-    unsigned short toUint16(const Token &token, int &status) const;
+    unsigned char toUint8(Token token, int &status) const;
+    short toInt16(Token token, int &status) const;
+    unsigned short toUint16(Token token, int &status) const;
 
     /**
      * equivalent to toInt32().
      */
-    int toInt(const Token &token, int &status) const;
+    int toInt(Token token, int &status) const;
 
-    int toInt32(const Token &token, int &status) const;
-    unsigned int toUint32(const Token &token, int &status) const;
-    long toInt64(const Token &token, int &status) const;
-    unsigned long toUint64(const Token &token, int &status) const;
+    int toInt32(Token token, int &status) const;
+    unsigned int toUint32(Token token, int &status) const;
+    long toInt64(Token token, int &status) const;
+    unsigned long toUint64(Token token, int &status) const;
 
     /**
      * if converted number is out of range, status is 1.
      */
-    double toDouble(const Token &token, int &status) const;
+    double toDouble(Token token, int &status) const;
 };
 
 } // namespace parser

@@ -82,7 +82,7 @@
 namespace ydsh {
 namespace parser {
 
-void Lexer::nextToken(Token &token) {
+TokenKind Lexer::nextToken(Token &token) {
     /*!re2c
       re2c:define:YYGETCONDITION = YYGETCONDITION;
       re2c:define:YYCTYPE = "unsigned char";
@@ -294,13 +294,12 @@ void Lexer::nextToken(Token &token) {
     */
 
     END:
-    token.kind = kind;
     token.startPos = startPos;
     token.size = this->getPos() - startPos;
     goto RET;
 
     EOS:
-    token.kind = EOS;
+    kind = EOS;
     token.startPos = this->limit - this->buf;
     token.size = 0;
     goto RET;
@@ -311,10 +310,10 @@ void Lexer::nextToken(Token &token) {
     this->prevMode = prevMode;
 
     LOG(TRACE_TOKEN,
-        token << ", text = " << this->toTokenText(token) << std::endl
+        kind << ", " << token << ", text = " << this->toTokenText(token) << std::endl
                      << "   lexer mode: " << toModeName(this->getLexerMode())
     );
-    return;
+    return kind;
 }
 
 } // namespace parser

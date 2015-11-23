@@ -71,8 +71,7 @@ private:
         TokenKind k;
         do {
             SCOPED_TRACE("");
-            this->lexer->nextToken(t);
-            k = t.kind;
+            k = this->lexer->nextToken(t);
             this->tokens.push_back(std::make_pair(k, t));
         } while(k != EOS && k != INVALID);
     }
@@ -1973,19 +1972,14 @@ TEST(LexerTest_Lv2, NEW_LINE) {
         SCOPED_TRACE("");
         Lexer lexer("(string)", "  \n  \n   assert  \n ");
         Token t;
-        TokenKind k;
-        lexer.nextToken(t);
-        k = t.kind;
+        TokenKind k = lexer.nextToken(t);
         ASSERT_STREQ(TO_NAME(ASSERT), TO_NAME(k));
         ASSERT_TRUE(lexer.isPrevNewLine());
 
-        lexer.nextToken(t);
-        k = t.kind;
+        k = lexer.nextToken(t);
         ASSERT_STREQ(TO_NAME(EOS), TO_NAME(k));
         ASSERT_TRUE(lexer.isPrevNewLine());
-
-        lexer.nextToken(t);
-        k = t.kind;
+        k = lexer.nextToken(t);
         ASSERT_STREQ(TO_NAME(EOS), TO_NAME(k));
         ASSERT_FALSE(lexer.isPrevNewLine());
     });

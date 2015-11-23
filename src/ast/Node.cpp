@@ -208,13 +208,11 @@ void TypeOfNode::accept(NodeVisitor &visitor) {
 
 
 TypeNode *newAnyTypeNode() {
-    parser_base::TokenBase token = {0, 0};
-    return new BaseTypeNode(token, std::string("Any"));
+    return new BaseTypeNode({0, 0}, std::string("Any"));
 }
 
 TypeNode *newVoidTypeNode() {
-    parser_base::TokenBase token = {0, 0};
-    return new BaseTypeNode(token, std::string("Void"));
+    return new BaseTypeNode({0, 0}, std::string("Void"));
 }
 
 
@@ -1277,7 +1275,7 @@ void CmdNode::addRedirOption(TokenKind kind, CmdArgNode *node) {
     this->updateSize(node->getStartPos(), node->getSize());
 }
 
-void CmdNode::addRedirOption(TokenKind kind, const parser_base::TokenBase &token) {
+void CmdNode::addRedirOption(TokenKind kind, Token token) {
     this->addRedirOption(kind, new CmdArgNode(new StringValueNode(token, std::string(""))));
 }
 
@@ -1702,8 +1700,7 @@ ForNode::ForNode(unsigned int startPos, Node *initNode,
     }
 
     if(this->condNode == nullptr) {
-        parser_base::TokenBase token = {startPos, 1};
-        this->condNode = new VarNode(token, std::string(VAR_TRUE));
+        this->condNode = new VarNode({startPos, 1}, std::string(VAR_TRUE));
     }
     this->condNode->inCondition();
 
@@ -1849,8 +1846,7 @@ static void resolveIfIsStatement(Node *condNode, BlockNode *blockNode) {
         return;
     }
 
-    parser_base::TokenBase dummy = {isNode->getStartPos(), 1};
-    VarNode *exprNode = new VarNode(dummy, std::string(varNode->getVarName()));
+    VarNode *exprNode = new VarNode({isNode->getStartPos(), 1}, std::string(varNode->getVarName()));
     CastNode *castNode = new CastNode(exprNode, isNode->getTargetTypeNode(), true);
     VarDeclNode *declNode =
             new VarDeclNode(isNode->getStartPos(), std::string(varNode->getVarName()), castNode, true);
@@ -1939,7 +1935,7 @@ EvalStatus IfNode::eval(RuntimeContext &ctx) {
 // ##     ReturnNode     ##
 // ########################
 
-ReturnNode::ReturnNode(const parser_base::TokenBase &token) :
+ReturnNode::ReturnNode(Token token) :
         BlockEndNode(token.startPos, token.size), exprNode(new EmptyNode(token)) { }
 
 ReturnNode::~ReturnNode() {
@@ -2617,7 +2613,7 @@ Node *createCallNode(Node *recvNode, std::vector<Node *> &&argNodes) {
 }
 
 ForNode *createForInNode(unsigned int startPos, VarNode *varNode, Node *exprNode, BlockNode *blockNode) {
-    parser_base::TokenBase dummy = {startPos, 1};
+    Token dummy = {startPos, 1};
 
     // create for-init
     MethodCallNode *call_iter = new MethodCallNode(exprNode, std::string(OP_ITER));
@@ -2640,7 +2636,7 @@ ForNode *createForInNode(unsigned int startPos, VarNode *varNode, Node *exprNode
     return new ForNode(startPos, reset_varDecl, call_hasNext, nullptr, blockNode);
 }
 
-Node *createSuffixNode(Node *leftNode, TokenKind op, const parser_base::TokenBase &token) {
+Node *createSuffixNode(Node *leftNode, TokenKind op, Token token) {
     return createAssignNode(leftNode, op, new IntValueNode(token, 1));
 }
 

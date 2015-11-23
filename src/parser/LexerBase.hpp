@@ -23,6 +23,9 @@
 #include <string>
 #include <ostream>
 #include <type_traits>
+#include <vector>
+#include <memory>
+#include <algorithm>
 
 #include "../misc/utf8.hpp"
 #include "../misc/noncopyable.h"
@@ -30,33 +33,90 @@
 namespace ydsh {
 namespace parser_base {
 
-struct TokenBase {
+struct Token {
     unsigned int startPos;
     unsigned int size;
-};
 
-template<typename T>
-struct Token : public TokenBase {
-    static_assert(std::is_enum<T>::value, "must be enum type");
-
-    unsigned int lineNum;
-    T kind;
-
-    bool operator==(const Token<T> &token) {
-        return this->lineNum == token.lineNum && this->kind == token.kind &&
-               this->startPos == token.startPos && this->size == token.size;
+    bool operator==(const Token &token) const {
+        return this->startPos == token.startPos && this->size == token.size;
     }
 
-    bool operator!=(const Token<T> &token) const {
+    bool operator!=(const Token &token) const {
         return !(*this == token);
     }
 };
 
-template <typename T>
-std::ostream &operator<<(std::ostream &stream, const Token<T> &token) {
-    return stream << "{ lineNum = " << token.lineNum << ", kind = " << token.kind
-           << ", startPos = " << token.startPos << ", size = " << token.size << " }";
+inline std::ostream &operator<<(std::ostream &stream, const Token &token) {
+    return stream << "(pos = " << token.startPos << ", size = " << token.size << ")";
 }
+
+namespace __detail_srcinfo {
+
+template <bool T>
+class SourceInfo {
+private:
+    static_assert(T, "not allowed instantiation");
+
+    std::string sourceName;
+
+    /**
+     * default value is 1.
+     */
+    unsigned int lineNumOffset;
+
+    /**
+     * contains newline character position.
+     */
+    std::vector<unsigned int> lineNumTable;
+
+public:
+    explicit SourceInfo(const char *sourceName) :
+            sourceName(sourceName), lineNumOffset(1), lineNumTable() { }
+    ~SourceInfo() = default;
+
+    const std::string &getSourceName() const {
+        return this->sourceName;
+    }
+
+    void setLineNumOffset(unsigned int offset) {
+        this->lineNumOffset = offset;
+    }
+
+    unsigned int getLineNumOffset() const {
+        return this->lineNumOffset;
+    }
+
+    const std::vector<unsigned int> &getLineNumTable() const {
+        return this->lineNumTable;
+    }
+
+    void addNewlineCharPos(unsigned int pos);
+    unsigned int getLineNum(unsigned int pos) const;
+};
+
+template <bool T>
+void SourceInfo<T>::addNewlineCharPos(unsigned int pos) {
+    if(this->lineNumTable.empty()) {
+        this->lineNumTable.push_back(pos);
+    } else if(pos > this->lineNumTable.back()) {
+        this->lineNumTable.push_back(pos);
+    }
+}
+
+template <bool T>
+unsigned int SourceInfo<T>::getLineNum(unsigned int pos) const {
+    auto iter = std::lower_bound(this->lineNumTable.begin(), this->lineNumTable.end(), pos);
+    if(this->lineNumTable.end() == iter) {
+        return this->lineNumTable.size() + this->lineNumOffset;
+    }
+    return iter - this->lineNumTable.begin() + this->lineNumOffset;
+}
+
+} // namespace __detail_srcinfo
+
+typedef __detail_srcinfo::SourceInfo<true> SourceInfo;
+typedef std::shared_ptr<SourceInfo> SourceInfoPtr;
+
 
 namespace __detail {
 
@@ -67,6 +127,8 @@ template<bool T>
 class LexerBase {
 protected:
     static_assert(T, "not allowed instantiation");
+
+    SourceInfoPtr srcInfoPtr;
 
     /**
      * may be null, if input source is string. not closed it.
@@ -117,7 +179,8 @@ protected:
     static constexpr int DEFAULT_READ_SIZE = 128;
 
 private:
-    LexerBase() :
+    explicit LexerBase(const char *sourceName) :
+            srcInfoPtr(std::make_shared<SourceInfo>(sourceName)),
             fp(nullptr), bufSize(0), buf(nullptr), cursor(nullptr),
             limit(nullptr), marker(nullptr), ctxMarker(nullptr),
             endOfFile(false), endOfString(false), zeroCopyBuf(false) { }
@@ -129,19 +192,32 @@ public:
      * FILE must be opened with binary mode.
      * insert newline if not terminated by it.
      */
-    explicit LexerBase(FILE *fp);
+    LexerBase(const char *sourceName, FILE *fp);
 
     /**
      * must be null terminated.
      * if the last character of string(exclude null character) is newline, not copy it.
      * otherwise, copy it.
      */
-    explicit LexerBase(const char *src);
+    LexerBase(const char *sourceName, const char *src);
 
     virtual ~LexerBase() {
         if(!this->zeroCopyBuf) {
             delete[] this->buf;
         }
+    }
+
+    const SourceInfoPtr &getSourceInfoPtr() const {
+        return this->srcInfoPtr;
+    }
+
+    void setLineNum(unsigned int lineNum) {
+        this->srcInfoPtr->setLineNumOffset(lineNum);
+    }
+
+    unsigned int getLineNum() const {
+        return this->srcInfoPtr->getLineNumOffset() +
+               this->srcInfoPtr->getLineNumTable().size();
     }
 
     /**
@@ -158,7 +234,7 @@ public:
         return this->limit - this->buf + 1;
     }
 
-    bool withinRange(const TokenBase &token) const {
+    bool withinRange(Token token) const {
         return token.startPos < this->getUsedSize()
                && token.startPos + token.size <= this->getUsedSize();
     }
@@ -166,7 +242,7 @@ public:
     /**
      * get text of token.
      */
-    std::string toTokenText(const TokenBase &token) const {
+    std::string toTokenText(Token token) const {
         assert(this->withinRange(token));
         return std::string((char *) (this->buf + token.startPos), token.size);
     }
@@ -174,23 +250,23 @@ public:
     /**
      * buf size must be equivalent to base.size
      */
-    void copyTokenText(const TokenBase &token, char *buf) const {
+    void copyTokenText(Token token, char *buf) const {
         assert(this->withinRange(token));
         memcpy(buf, (char *)this->buf + token.startPos, token.size);
     }
 
-    bool startsWith(const TokenBase &token, char ch) const {
+    bool startsWith(Token token, char ch) const {
         assert(this->withinRange(token));
         return this->buf[token.startPos] == ch;
     }
 
-    bool equals(const TokenBase &token, const char *str) const {
+    bool equals(Token token, const char *str) const {
         assert(this->withinRange(token));
         return strlen(str) == token.size &&
                 memcmp(this->buf + token.startPos, str, token.size) == 0;
     }
 
-    std::string formatLineMarker(const TokenBase &lineToken, const TokenBase &token) const;
+    std::string formatLineMarker(Token lineToken, Token token) const;
 
 private:
     /**
@@ -210,7 +286,7 @@ protected:
 // #######################
 
 template<bool T>
-LexerBase<T>::LexerBase(FILE *fp) : LexerBase<T>() {
+LexerBase<T>::LexerBase(const char *sourceName, FILE *fp) : LexerBase(sourceName) {
     this->fp = fp;
     this->bufSize = DEFAULT_SIZE;
     this->buf = new unsigned char[this->bufSize];
@@ -220,7 +296,7 @@ LexerBase<T>::LexerBase(FILE *fp) : LexerBase<T>() {
 }
 
 template<bool T>
-LexerBase<T>::LexerBase(const char *src) : LexerBase<T>() {
+LexerBase<T>::LexerBase(const char *sourceName, const char *src) : LexerBase(sourceName) {
     this->bufSize = strlen(src) + 1;
     if(this->bufSize == 1) {    // empty string
         src = "\n";
@@ -246,7 +322,7 @@ LexerBase<T>::LexerBase(const char *src) : LexerBase<T>() {
 }
 
 template<bool T>
-std::string LexerBase<T>::formatLineMarker(const TokenBase &lineToken, const TokenBase &token) const {
+std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token) const {
     assert(lineToken.startPos <= token.startPos);
 
     std::string marker;

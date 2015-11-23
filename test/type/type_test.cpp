@@ -6,6 +6,7 @@
 
 using namespace ydsh::core;
 using namespace ydsh::ast;
+using namespace ydsh::parser;
 
 // helper method for type token generation
 std::unique_ptr<TypeNode> addRestElements(std::unique_ptr<ReifiedTypeNode> &&reified) {
@@ -22,9 +23,8 @@ std::unique_ptr<TypeNode> addRestElements(std::unique_ptr<ReifiedTypeNode> &&rei
 
 template <typename... T>
 std::unique_ptr<TypeNode> reified(const char *name, std::unique_ptr<TypeNode> &&first, T&&... rest) {
-    ydsh::parser_base::TokenBase dummy = {0, 1};
     std::unique_ptr<ReifiedTypeNode> reified(
-            new ReifiedTypeNode(new BaseTypeNode(dummy, std::string(name))));
+            new ReifiedTypeNode(new BaseTypeNode({0, 1}, std::string(name))));
     reified->addElementTypeNode(first.release());
     return addRestElements(std::move(reified), std::forward<T>(rest)...);
 }
@@ -48,8 +48,7 @@ std::unique_ptr<TypeNode> func(std::unique_ptr<TypeNode> &&returnType, T&&... pa
 }
 
 inline std::unique_ptr<TypeNode> type(const char *name, unsigned int lineNum = 0) {
-    ydsh::parser_base::TokenBase dummy = {lineNum, 1};
-    return std::unique_ptr<TypeNode>(new BaseTypeNode(dummy, std::string(name)));
+    return std::unique_ptr<TypeNode>(new BaseTypeNode({lineNum, 1}, std::string(name)));
 }
 
 inline std::unique_ptr<TypeNode> array(std::unique_ptr<TypeNode> &&type) {

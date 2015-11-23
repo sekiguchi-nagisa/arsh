@@ -523,6 +523,8 @@ public:
     }
 };
 
+#define CUR_KIND() this->curKind
+
 class Parser : public ydsh::parser_base::ParserBase<DescTokenKind, DescLexer> {
 private:
     Parser() = default;
@@ -639,7 +641,7 @@ std::unique_ptr<Element> Parser::parse_descriptor(const std::string &line) {
 
     this->expect(DESC_PREFIX);
 
-    switch(this->curToken.kind) {
+    switch(CUR_KIND()) {
     case FUNC:
         return this->parse_funcDesc();
     case INIT:
@@ -661,16 +663,14 @@ std::unique_ptr<Element> Parser::parse_funcDesc() {
     std::unique_ptr<Element> element;
 
     // parser function name
-    switch(this->curToken.kind) {
+    switch(CUR_KIND()) {
     case IDENTIFIER: {
-        Token token;
-        this->expect(IDENTIFIER, token);
+        Token token = this->expect(IDENTIFIER);
         element = Element::newFuncElement(this->lexer->toTokenText(token), false);
         break;
     }
     case VAR_NAME: {
-        Token token;
-        this->expect(VAR_NAME, token);
+        Token token = this->expect(VAR_NAME);
         element = Element::newFuncElement(this->toName(token), true);
         break;
     }
@@ -712,10 +712,9 @@ void Parser::parse_params(const std::unique_ptr<Element> &element) {
             this->expect(COMMA);
         }
 
-        Token token;
-        this->expect(VAR_NAME, token);
+        Token token = this->expect(VAR_NAME);
         bool hasDefault = false;
-        if(this->curToken.kind == OPT) {
+        if(CUR_KIND() == OPT) {
             this->expect(OPT);
             hasDefault = true;
         }
@@ -723,14 +722,13 @@ void Parser::parse_params(const std::unique_ptr<Element> &element) {
         std::unique_ptr<TypeToken> type(this->parse_type());
 
         element->addParam(this->toName(token), hasDefault, std::move(type));
-    } while(this->curToken.kind == COMMA);
+    } while(CUR_KIND() == COMMA);
 }
 
 std::unique_ptr<TypeToken> Parser::parse_type() {
-    switch(this->curToken.kind) {
+    switch(CUR_KIND()) {
     case IDENTIFIER: {
-        Token token;
-        this->expect(IDENTIFIER, token);
+        Token token = this->expect(IDENTIFIER);
         return CommonTypeToken::newTypeToken(this->lexer->toTokenText(token));
     };
     case ARRAY:
@@ -742,14 +740,14 @@ std::unique_ptr<TypeToken> Parser::parse_type() {
         auto type(ReifiedTypeToken::newReifiedTypeToken(this->lexer->toTokenText(token)));
         this->expect(TYPE_OPEN);
 
-        if(this->curToken.kind != TYPE_CLOSE) {
+        if(CUR_KIND() != TYPE_CLOSE) {
             unsigned int count = 0;
             do {
                 if(count++ > 0) {
                     this->expect(COMMA);
                 }
                 type->addElement(this->parse_type());
-            } while(this->curToken.kind == COMMA);
+            } while(CUR_KIND() == COMMA);
         }
 
         this->expect(TYPE_CLOSE);
@@ -775,8 +773,7 @@ void Parser::parse_funcDecl(const std::string &line, std::unique_ptr<Element> &e
     this->expect(INLINE);
     this->expect(BOOL);
 
-    Token token;
-    this->expect(IDENTIFIER, token);
+    Token token = this->expect(IDENTIFIER);
     std::string str(this->lexer->toTokenText(token));
     element->setActualFuncName(std::move(str));
 

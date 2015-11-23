@@ -51,17 +51,17 @@ const char *toString(TokenKind kind);
 
 std::ostream &operator<<(std::ostream &stream, TokenKind);
 
-typedef ydsh::parser_base::Token<TokenKind> Token;
+typedef ydsh::parser_base::Token Token;
 
 class Lexer : public ydsh::parser_base::LexerBase {
 private:
     unsigned int lineNum;
 
 public:
-    explicit Lexer(const char *src) : LexerBase(src) { }
+    explicit Lexer(const char *src) : LexerBase("(directive)", src) { }
     ~Lexer() = default;
 
-    void nextToken(Token &token);
+    TokenKind nextToken(Token &token);
 
     int toInt(const Token &token, int &status) const;
     long toInt64(const Token &token, int &status) const;
