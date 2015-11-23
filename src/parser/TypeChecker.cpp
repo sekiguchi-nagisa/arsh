@@ -33,8 +33,7 @@ DSType &TypeChecker::TypeGenerator::generateTypeAndThrow(TypeNode *typeNode) thr
     try {
         return this->generateType(typeNode);
     } catch(TypeLookupError &e) {
-        unsigned int startPos = typeNode->getStartPos();
-        throw TypeCheckError(startPos, e);
+        throw TypeCheckError(typeNode->getToken(), e);
     }
 }
 
@@ -981,8 +980,7 @@ void TypeChecker::visitTypeAliasNode(TypeAliasNode &node) {
         this->typePool.setAlias(node.getAlias(), this->toType(typeToken));
         node.setType(this->typePool.getVoidType());
     } catch(TypeLookupError &e) {
-        unsigned int startPos = typeToken->getStartPos();
-        throw TypeCheckError(startPos, e);
+        throw TypeCheckError(typeToken->getToken(), e);
     }
 }
 

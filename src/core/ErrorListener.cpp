@@ -62,12 +62,12 @@ void CommonErrorListener::handleParseError(const Lexer &lexer, const ParseError 
     formatErrorLine(this->stream, lexer, e.getErrorToken()) << std::endl;
 }
 
-void CommonErrorListener::handleTypeError(const Lexer &lexer,
-                                          const TypeCheckError &e) noexcept {
+void CommonErrorListener::handleTypeError(const Lexer &lexer, const TypeCheckError &e) noexcept {
     this->stream << lexer.getSourceInfoPtr()->getSourceName() << ":"
     << lexer.getSourceInfoPtr()->getLineNum(e.getStartPos()) << ":"
     << misc::TermColor::Magenta << " [semantic error] " << misc::reset
     << e.getMessage() << std::endl;
+    formatErrorLine(this->stream, lexer, e.getToken()) << std::endl;
 }
 
 void CommonErrorListener::handleRuntimeError(const TypePool &, const DSValue &) noexcept {

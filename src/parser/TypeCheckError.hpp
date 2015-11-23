@@ -31,23 +31,27 @@ namespace parser {
  */
 class TypeCheckError {
 private:
-    unsigned int startPos;
+    Token token;
 
     const char *kind;
 
     std::string message;
 
 public:
-    TypeCheckError(unsigned int startPos, const char *kind, std::string &&message) :
-            startPos(startPos), kind(kind), message(std::move(message)) { }
+    TypeCheckError(Token token, const char *kind, std::string &&message) :
+            token(token), kind(kind), message(std::move(message)) { }
 
-    TypeCheckError(unsigned int startPos, core::TypeLookupError &e) :
-            startPos(startPos), kind(e.getKind()), message(e.moveMessage()) { }
+    TypeCheckError(Token token, core::TypeLookupError &e) :
+            token(token), kind(e.getKind()), message(e.moveMessage()) { }
 
     ~TypeCheckError() = default;
 
     unsigned int getStartPos() const {
-        return this->startPos;
+        return this->token.pos;
+    }
+
+    Token getToken() const {
+        return this->token;
     }
 
     const char *getKind() const {
@@ -73,7 +77,7 @@ public:
     void operator()(const ast::Node &node, T && ... args) const throw(TypeCheckError) {
         static_assert(N == sizeof ... (T), "invalid parameter size");
 
-        throw TypeCheckError(node.getStartPos(), this->kind, this->format(std::forward<T>(args)...));
+        throw TypeCheckError(node.getToken(), this->kind, this->format(std::forward<T>(args)...));
     }
 };
 
