@@ -334,7 +334,7 @@ void TypeChecker::checkTerminalNodeExistence(BlockNode &blockNode, DSType &retur
          */
         blockNode.addNode(new ReturnNode(0, new EmptyNode()));
     }
-    if(!blockNode.getNodeList().back()->isTerminalNode()) {
+    if(blockNode.getNodeList().empty() || !blockNode.getNodeList().back()->isTerminalNode()) {
         E_UnfoundReturn(blockNode);
     }
 }
