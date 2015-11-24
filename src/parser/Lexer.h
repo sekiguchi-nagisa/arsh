@@ -91,7 +91,7 @@ public:
     }
 
     void setLexerMode(LexerMode mode) {
-        this->modeStack[this->modeStack.size() - 1] = mode;
+        this->modeStack.back() = mode;
     }
 
     void pushLexerMode(LexerMode mode) {

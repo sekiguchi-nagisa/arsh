@@ -78,7 +78,7 @@ public:
         return this->token.size;
     }
 
-    void updateSize(Token token);
+    void updateToken(Token token);
 
     virtual void setType(DSType &type);
 
@@ -934,7 +934,7 @@ private:
 public:
     UnaryOpNode(unsigned int startPos, TokenKind op, Node *exprNode) :
             Node({startPos, 0}), op(op), exprNode(exprNode), methodCallNode(0) {
-        this->updateSize(exprNode->getToken());
+        this->updateToken(exprNode->getToken());
     }
 
     ~UnaryOpNode();
@@ -991,7 +991,7 @@ public:
     BinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode) :
             Node(leftNode->getToken()),
             leftNode(leftNode), rightNode(rightNode), op(op), methodCallNode(0) {
-        this->updateSize(rightNode->getToken());
+        this->updateToken(rightNode->getToken());
     }
 
     ~BinaryOpNode();
@@ -1399,7 +1399,7 @@ public:
     ExportEnvNode(unsigned int startPos, std::string &&envName, Node *exprNode) :
             Node({startPos, 0}), envName(std::move(envName)), exprNode(exprNode),
             global(false), varIndex(0) {
-        this->updateSize(exprNode->getToken());
+        this->updateToken(exprNode->getToken());
     }
 
     ~ExportEnvNode();
@@ -1455,7 +1455,7 @@ public:
 
     void setDefaultValueNode(Node *node) {
         this->defaultValueNode = node;
-        this->updateSize(this->defaultValueNode->getToken());
+        this->updateToken(this->defaultValueNode->getToken());
     }
 
     /**
@@ -1488,7 +1488,7 @@ private:
 public:
     TypeAliasNode(unsigned int startPos, std::string &&alias, TypeNode *targetTypeNode) :
             Node({startPos, 0}), alias(std::move(alias)), targetTypeNode(targetTypeNode) {
-        this->updateSize(targetTypeNode->getToken());
+        this->updateToken(targetTypeNode->getToken());
     }
 
     ~TypeAliasNode();
@@ -1573,7 +1573,7 @@ public:
     WhileNode(unsigned int startPos, Node *condNode, BlockNode *blockNode) :
             Node({startPos, 0}), condNode(condNode), blockNode(blockNode) {
         this->condNode->inCondition();
-        this->updateSize(blockNode->getToken());
+        this->updateToken(blockNode->getToken());
     }
 
     ~WhileNode();
@@ -1660,7 +1660,7 @@ public:
 
     void addElseNode(BlockNode *elseNode) {
         this->elseNode = elseNode;
-        this->updateSize(elseNode->getToken());
+        this->updateToken(elseNode->getToken());
     }
 
     /*
@@ -1688,7 +1688,7 @@ private:
 public:
     ReturnNode(unsigned int startPos, Node *exprNode) :
             BlockEndNode({startPos, 0}), exprNode(exprNode) {
-        this->updateSize(exprNode->getToken());
+        this->updateToken(exprNode->getToken());
     }
 
     explicit ReturnNode(Token token);
@@ -1711,7 +1711,7 @@ private:
 public:
     ThrowNode(unsigned int startPos, Node *exprNode) :
             BlockEndNode({startPos, 0}), exprNode(exprNode) {
-        this->updateSize(exprNode->getToken());
+        this->updateToken(exprNode->getToken());
     }
 
     ~ThrowNode();
@@ -1742,7 +1742,7 @@ public:
               TypeNode *typeNode, BlockNode *blockNode) :
             Node({startPos, 0}), exceptionName(std::move(exceptionName)),
             typeNode(typeNode), varIndex(0), blockNode(blockNode) {
-        this->updateSize(blockNode->getToken());
+        this->updateToken(blockNode->getToken());
     }
 
     ~CatchNode();
@@ -1789,7 +1789,7 @@ private:
 public:
     TryNode(unsigned int startPos, BlockNode *blockNode) :
             Node({startPos, 0}), blockNode(blockNode), catchNodes(), finallyNode(), terminal(false) {
-        this->updateSize(blockNode->getToken());
+        this->updateToken(blockNode->getToken());
     }
 
     ~TryNode();
@@ -1886,7 +1886,7 @@ public:
         if(selfAssign) {
             setFlag(this->attributeSet, SELF_ASSIGN);
         }
-        this->updateSize(rightNode->getToken());
+        this->updateToken(rightNode->getToken());
     }
 
     ~AssignNode();
@@ -2064,14 +2064,14 @@ public:
 
     void setReturnTypeToken(TypeNode *typeToken) {
         this->returnTypeNode = typeToken;
-        this->updateSize(typeToken->getToken());
+        this->updateToken(typeToken->getToken());
     }
 
     TypeNode *getReturnTypeToken();
 
     void setBlockNode(BlockNode *blockNode) {
         this->blockNode = blockNode;
-        this->updateSize(blockNode->getToken());
+        this->updateToken(blockNode->getToken());
     }
 
     /**
@@ -2158,7 +2158,7 @@ public:
                        std::string &&commandName, BlockNode *blockNode) :
             CallableNode(startPos, srcInfoPtr), commandName(std::move(commandName)),
             blockNode(blockNode), maxVarNum(0) {
-        this->updateSize(blockNode->getToken());
+        this->updateToken(blockNode->getToken());
     }
 
     ~UserDefinedCmdNode();

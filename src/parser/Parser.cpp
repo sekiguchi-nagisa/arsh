@@ -247,7 +247,7 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
         }
     }
 
-    node->updateSize(this->curToken);
+    node->updateToken(this->curToken);
     this->expect(RP);
 
     if(CUR_KIND() == COLON) {
@@ -323,7 +323,7 @@ std::unique_ptr<Node> Parser::parse_interface() {
     }
 
     token = this->expect(RBC);
-    node->updateSize(token);
+    node->updateToken(token);
     this->parse_statementEnd();
 
     return std::move(node);
@@ -345,7 +345,7 @@ void Parser::restoreLexerState(Token prevToken) {
     NEXT_TOKEN();
 }
 
-std::unique_ptr<TypeNode> Parser::parse_basicOrReifiedType(Token &token) {
+std::unique_ptr<TypeNode> Parser::parse_basicOrReifiedType(Token token) {
     auto typeToken = uniquify<BaseTypeNode>(token, this->lexer->toName(token));
     if(!HAS_NL() && CUR_KIND() == TYPE_OPEN) {
         this->expect(TYPE_OPEN, false);
@@ -358,7 +358,7 @@ std::unique_ptr<TypeNode> Parser::parse_basicOrReifiedType(Token &token) {
             reified->addElementTypeNode(this->parse_typeName().release());
         }
         token = this->expect(TYPE_CLOSE);
-        reified->updateSize(token);
+        reified->updateToken(token);
 
         this->restoreLexerState(token);
         return std::move(reified);
@@ -419,7 +419,7 @@ std::unique_ptr<TypeNode> Parser::parse_typeName() {
             }
 
             token = this->expect(TYPE_CLOSE);
-            func->updateSize(token);
+            func->updateToken(token);
 
             this->restoreLexerState(token);
             return std::move(func);
@@ -469,7 +469,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
         this->expect(LP);
         auto node = uniquify<AssertNode>(token.pos, this->parse_commandOrExpression().release());
         token = this->expect(RP);
-        node->updateSize(token);
+        node->updateToken(token);
         this->parse_statementEnd();
         return std::move(node);
     }
@@ -534,7 +534,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
         this->expect(IMPORT_ENV);
         Token token = this->expect(IDENTIFIER);
         auto node = uniquify<ImportEnvNode>(startPos, this->lexer->toName(token));
-        node->updateSize(token);
+        node->updateToken(token);
         if(!HAS_NL() && CUR_KIND() == COLON) {
             this->expectAfter(COLON, yycSTMT);
             node->setDefaultValueNode(this->parse_expression().release());
@@ -590,7 +590,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
         std::unique_ptr<Node> condNode(this->parse_commandOrExpression());
         Token token = this->expect(RP);
         auto node = uniquify<DoWhileNode>(startPos, blockNode.release(), condNode.release());
-        node->updateSize(token);
+        node->updateToken(token);
         this->parse_statementEnd();
         return std::move(node);
     }
@@ -661,7 +661,7 @@ std::unique_ptr<BlockNode> Parser::parse_block() {
         blockNode->addNode(this->parse_statement().release());
     }
     token = this->expect(RBC);
-    blockNode->updateSize(token);
+    blockNode->updateToken(token);
     return blockNode;
 }
 
@@ -1031,7 +1031,7 @@ std::unique_ptr<Node> Parser::parse_memberExpression() {
             Token token = this->expect(IDENTIFIER);
             std::string name(this->lexer->toName(token));
             node = uniquify<AccessNode>(node.release(), std::move(name));
-            node->updateSize(token);
+            node->updateToken(token);
             break;
         }
         case LB: {
@@ -1171,7 +1171,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         }
 
         token = this->expect(RP);
-        node->updateSize(token);
+        node->updateToken(token);
         return node;
     }
     case LB: {  // array or map
@@ -1204,7 +1204,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         }
 
         token = this->expect(RB);
-        node->updateSize(token);
+        node->updateToken(token);
         return node;
     }
     default:
@@ -1275,7 +1275,7 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
     }
 
     token = this->expect(CLOSE_DQUOTE);
-    node->updateSize(token);
+    node->updateToken(token);
     return std::move(node);
 }
 

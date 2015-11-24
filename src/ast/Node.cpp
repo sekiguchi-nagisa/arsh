@@ -37,7 +37,7 @@ namespace ast {
 // ##     Node     ##
 // ##################
 
-void Node::updateSize(Token token) {
+void Node::updateToken(Token token) {
     if(token.pos > this->token.pos) {
         this->token.size = token.pos + token.size - this->token.pos;
     }
@@ -170,7 +170,7 @@ ReturnTypeNode::~ReturnTypeNode() {
 
 void ReturnTypeNode::addTypeNode(TypeNode *typeNode) {
     this->typeNodes.push_back(typeNode);
-    this->updateSize(typeNode->getToken());
+    this->updateToken(typeNode->getToken());
 }
 
 void ReturnTypeNode::dump(NodeDumper &dumper) const {
@@ -191,7 +191,7 @@ void ReturnTypeNode::accept(NodeVisitor &visitor) {
 
 TypeOfNode::TypeOfNode(unsigned int startPos, Node *exprNode) :
         TypeNode({startPos, 0}), exprNode(exprNode) {
-    this->updateSize(exprNode->getToken());
+    this->updateToken(exprNode->getToken());
 }
 
 TypeOfNode::~TypeOfNode() {
@@ -634,7 +634,7 @@ CastNode::CastNode(Node *exprNode, TypeNode *type, bool dupTypeToken) :
     }
 
     if(this->getTargetTypeNode() != nullptr) {
-        this->updateSize(this->getTargetTypeNode()->getToken());
+        this->updateToken(this->getTargetTypeNode()->getToken());
     }
 }
 
@@ -787,7 +787,7 @@ CastNode *CastNode::newTypedCastNode(Node *targetNode, DSType &type, CastNode::C
 InstanceOfNode::InstanceOfNode(Node *targetNode, TypeNode *typeNode) :
     Node(targetNode->getToken()), targetNode(targetNode),
     targetTypeNode(typeNode), opKind(ALWAYS_FALSE) {
-    this->updateSize(typeNode->getToken());
+    this->updateToken(typeNode->getToken());
 }
 
 InstanceOfNode::~InstanceOfNode() {
@@ -841,7 +841,7 @@ ApplyNode::ApplyNode(Node *exprNode, std::vector<Node *> &&argNodes) :
         Node(exprNode->getToken()),
         exprNode(exprNode), argNodes(std::move(argNodes)) {
     if(!this->argNodes.empty()) {
-        this->updateSize(this->argNodes.back()->getToken());
+        this->updateToken(this->argNodes.back()->getToken());
     }
 }
 
@@ -894,7 +894,7 @@ MethodCallNode::MethodCallNode(Node *recvNode, std::string &&methodName, std::ve
         recvNode(recvNode), methodName(std::move(methodName)),
         argNodes(std::move(argNodes)), handle(), attributeSet() {
     if(!this->argNodes.empty()) {
-        this->updateSize(this->argNodes.back()->getToken());
+        this->updateToken(this->argNodes.back()->getToken());
     }
 }
 
@@ -946,7 +946,7 @@ EvalStatus MethodCallNode::eval(RuntimeContext &ctx) {
 NewNode::NewNode(unsigned int startPos, TypeNode *targetTypeNode, std::vector<Node *> &&argNodes) :
         Node({startPos, 0}), targetTypeNode(targetTypeNode), argNodes(std::move(argNodes)) {
     if(!this->argNodes.empty()) {
-        this->updateSize(this->argNodes.back()->getToken());
+        this->updateToken(this->argNodes.back()->getToken());
     }
 }
 
@@ -1079,7 +1079,7 @@ CondOpNode::CondOpNode(Node *leftNode, Node *rightNode, bool isAndOp) :
         Node(leftNode->getToken()), leftNode(leftNode), rightNode(rightNode), andOp(isAndOp) {
     this->leftNode->inCondition();
     this->rightNode->inCondition();
-    this->updateSize(rightNode->getToken());
+    this->updateToken(rightNode->getToken());
 }
 
 CondOpNode::~CondOpNode() {
@@ -1132,7 +1132,7 @@ CmdArgNode::~CmdArgNode() {
 void CmdArgNode::addSegmentNode(Node *node) {
     node->inCmdArgNode();
     this->segmentNodes.push_back(node);
-    this->updateSize(node->getToken());
+    this->updateToken(node->getToken());
 }
 
 void CmdArgNode::dump(NodeDumper &dumper) const {
@@ -1263,12 +1263,12 @@ CmdNode::~CmdNode() {
 
 void CmdNode::addArgNode(CmdArgNode *node) {
     this->argNodes.push_back(node);
-    this->updateSize(node->getToken());
+    this->updateToken(node->getToken());
 }
 
 void CmdNode::addRedirOption(TokenKind kind, CmdArgNode *node) {
     this->argNodes.push_back(new RedirNode(kind, node));
-    this->updateSize(node->getToken());
+    this->updateToken(node->getToken());
 }
 
 void CmdNode::addRedirOption(TokenKind kind, Token token) {
@@ -1311,7 +1311,7 @@ PipedCmdNode::~PipedCmdNode() {
 
 void PipedCmdNode::addCmdNodes(Node *node) {
     this->cmdNodes.push_back(node);
-    this->updateSize(node->getToken());
+    this->updateToken(node->getToken());
 }
 
 void PipedCmdNode::inCondition() {
@@ -1704,7 +1704,7 @@ ForNode::ForNode(unsigned int startPos, Node *initNode,
         this->iterNode = new EmptyNode();
     }
 
-    this->updateSize(blockNode->getToken());
+    this->updateToken(blockNode->getToken());
 }
 
 ForNode::~ForNode() {
@@ -1855,7 +1855,7 @@ IfNode::IfNode(unsigned int startPos, Node *condNode, BlockNode *thenNode) :
     this->condNode->inCondition();
 
     resolveIfIsStatement(this->condNode, this->thenNode);
-    this->updateSize(thenNode->getToken());
+    this->updateToken(thenNode->getToken());
 }
 
 IfNode::~IfNode() {
@@ -1875,7 +1875,7 @@ void IfNode::addElifNode(Node *condNode, BlockNode *thenNode) {
     condNode->inCondition();
     this->elifCondNodes.push_back(condNode);
     this->elifThenNodes.push_back(thenNode);
-    this->updateSize(thenNode->getToken());
+    this->updateToken(thenNode->getToken());
 
     resolveIfIsStatement(condNode, thenNode);
 }
@@ -2019,7 +2019,7 @@ TryNode::~TryNode() {
 
 void TryNode::addCatchNode(CatchNode *catchNode) {
     this->catchNodes.push_back(catchNode);
-    this->updateSize(catchNode->getToken());
+    this->updateToken(catchNode->getToken());
 }
 
 void TryNode::addFinallyNode(BlockNode *finallyNode) {
@@ -2027,7 +2027,7 @@ void TryNode::addFinallyNode(BlockNode *finallyNode) {
         delete this->finallyNode;
     }
     this->finallyNode = finallyNode;
-    this->updateSize(finallyNode->getToken());
+    this->updateToken(finallyNode->getToken());
 }
 
 BlockNode *TryNode::getFinallyNode() {
@@ -2085,7 +2085,7 @@ VarDeclNode::VarDeclNode(unsigned int startPos, std::string &&varName, Node *ini
         varIndex(0), initValueNode(initValueNode) {
     if(this->initValueNode != nullptr) {
         this->initValueNode->inRightHandleSide();
-        this->updateSize(initValueNode->getToken());
+        this->updateToken(initValueNode->getToken());
     }
 }
 
@@ -2205,7 +2205,7 @@ ElementSelfAssignNode::ElementSelfAssignNode(MethodCallNode *leftNode, BinaryOpN
         Node(leftNode->getToken()),
         recvNode(), indexNode(),
         getterNode(), setterNode(), binaryNode(binaryNode) {
-    this->updateSize(binaryNode->getToken());
+    this->updateToken(binaryNode->getToken());
 
     // init recv, indexNode
     this->recvNode = leftNode->getRecvNode();
@@ -2351,7 +2351,7 @@ void InterfaceNode::addMethodDeclNode(FunctionNode *methodDeclNode) {
 void InterfaceNode::addFieldDecl(VarDeclNode *node, TypeNode *typeToken) {
     this->fieldDeclNodes.push_back(node);
     this->fieldTypeNodes.push_back(typeToken);
-    this->updateSize(typeToken->getToken());
+    this->updateToken(typeToken->getToken());
 }
 
 void InterfaceNode::dump(NodeDumper &dumper) const {

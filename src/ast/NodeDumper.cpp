@@ -141,7 +141,7 @@ void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
     }
 
     this->indent(); this->stream << "<typeid>: " << className << std::endl;
-    this->indent(); this->stream << "startPos: " << node.getStartPos() << std::endl;
+    this->indent(); this->stream << "pos: " << node.getStartPos() << std::endl;
     this->indent(); this->stream << "size: " << node.getSize() << std::endl;
     this->indent(); this->stream << "type: " <<
             (!node.isUntyped() ? this->pool.getTypeName(node.getType()) : "") << std::endl;

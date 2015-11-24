@@ -52,9 +52,9 @@
     } while(0)
 
 /*
- * count new line and increment lineNum.
+ * update line number table
  */
-#define COUNT_NEW_LINE() \
+#define UPDATE_LN() \
     do {\
         const unsigned int stopPos = this->getPos();\
         for(unsigned int i = startPos; i < stopPos; ++i) {\
@@ -171,8 +171,8 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT> NUM "u32"         { MODE(EXPR); RET(UINT32_LITERAL); }
       <STMT> NUM "u64"         { MODE(EXPR); RET(UINT64_LITERAL); }
       <STMT> FLOAT             { MODE(EXPR); RET(FLOAT_LITERAL); }
-      <STMT> STRING_LITERAL    { COUNT_NEW_LINE(); MODE(EXPR); RET(STRING_LITERAL); }
-      <STMT> ESTRING_LITERAL   { COUNT_NEW_LINE(); MODE(EXPR); RET(STRING_LITERAL); }
+      <STMT> STRING_LITERAL    { UPDATE_LN(); MODE(EXPR); RET(STRING_LITERAL); }
+      <STMT> ESTRING_LITERAL   { UPDATE_LN(); MODE(EXPR); RET(STRING_LITERAL); }
       <STMT> "p" ['] PATH_CHARS [']
                                { MODE(EXPR); RET(PATH_LITERAL); }
       <STMT> ["]               { MODE(EXPR); PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
@@ -189,7 +189,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT,EXPR> "}"          { POP_MODE(); RET(RBC); }
 
       <STMT> CMD_START_CHAR CMD_CHAR*
-                               { PUSH_MODE(CMD); COUNT_NEW_LINE(); RET(COMMAND); }
+                               { PUSH_MODE(CMD); UPDATE_LN(); RET(COMMAND); }
 
       <EXPR> ":"               { RET(COLON); }
       <EXPR> ","               { MODE(STMT); RET(COMMA); }
@@ -230,17 +230,17 @@ TokenKind Lexer::nextToken(Token &token) {
 
       <STMT,EXPR> LINE_END     { MODE(STMT); RET(LINE_END); }
       <STMT,EXPR,NAME,TYPE> NEW_LINE
-                               { COUNT_NEW_LINE(); FIND_NEW_LINE(); }
+                               { UPDATE_LN(); FIND_NEW_LINE(); }
 
       <STMT,EXPR,NAME,CMD,TYPE> COMMENT
                                { SKIP(); }
       <STMT,EXPR,NAME,TYPE> [ \t]+
                                { SKIP(); }
       <STMT,EXPR,NAME,TYPE> "\\" [\r\n]
-                               { COUNT_NEW_LINE(); SKIP(); }
+                               { UPDATE_LN(); SKIP(); }
 
-      <DSTRING> ["]            { POP_MODE(); RET(CLOSE_DQUOTE);}
-      <DSTRING> DQUOTE_CHAR+   { COUNT_NEW_LINE(); RET(STR_ELEMENT);}
+      <DSTRING> ["]            { POP_MODE(); RET(CLOSE_DQUOTE); }
+      <DSTRING> DQUOTE_CHAR+   { UPDATE_LN(); RET(STR_ELEMENT); }
       <DSTRING,CMD> INNER_NAME { RET(APPLIED_NAME); }
       <DSTRING,CMD> INNER_SPECIAL_NAME
                                { RET(SPECIAL_NAME); }
@@ -248,15 +248,15 @@ TokenKind Lexer::nextToken(Token &token) {
       <DSTRING,CMD> "$("       { PUSH_MODE(STMT); RET(START_SUB_CMD); }
 
       <CMD> CMD_ARG_START_CHAR CMD_CHAR*
-                               { COUNT_NEW_LINE();  RET(CMD_ARG_PART); }
-      <CMD> STRING_LITERAL     { COUNT_NEW_LINE(); RET(STRING_LITERAL); }
-      <CMD> ESTRING_LITERAL    { COUNT_NEW_LINE(); RET(STRING_LITERAL); }
+                               { UPDATE_LN();  RET(CMD_ARG_PART); }
+      <CMD> STRING_LITERAL     { UPDATE_LN(); RET(STRING_LITERAL); }
+      <CMD> ESTRING_LITERAL    { UPDATE_LN(); RET(STRING_LITERAL); }
       <CMD> ["]                { PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
       <CMD> ")"                { POP_MODE(); POP_MODE(); RET(RP); }
       <CMD> "("                { PUSH_MODE(CMD); RET(LP); }
       <CMD> "["                { PUSH_MODE(STMT); RET(LB); }
       <CMD> [ \t]+             { FIND_SPACE(); }
-      <CMD> "\\" [\r\n]        { COUNT_NEW_LINE(); FIND_SPACE(); }
+      <CMD> "\\" [\r\n]        { UPDATE_LN(); FIND_SPACE(); }
 
       <CMD> "<"                { RET(REDIR_IN_2_FILE); }
       <CMD> (">" | "1>")       { RET(REDIR_OUT_2_FILE); }
@@ -273,7 +273,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <CMD> "||"               { POP_MODE(); MODE(STMT); RET(OR_LIST); }
       <CMD> "&&"               { POP_MODE(); MODE(STMT); RET(AND_LIST); }
       <CMD> LINE_END           { POP_MODE(); MODE(STMT); RET(LINE_END); }
-      <CMD> NEW_LINE           { POP_MODE(); MODE(STMT); COUNT_NEW_LINE(); RET(LINE_END); }
+      <CMD> NEW_LINE           { POP_MODE(); MODE(STMT); UPDATE_LN(); RET(LINE_END); }
 
       <TYPE> VAR_NAME ("." VAR_NAME)+
                                { RET(TYPE_PATH); }

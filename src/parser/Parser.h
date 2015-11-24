@@ -84,7 +84,7 @@ private:
     /**
      * not call it directory
      */
-    std::unique_ptr<TypeNode> parse_basicOrReifiedType(Token &token);
+    std::unique_ptr<TypeNode> parse_basicOrReifiedType(Token token);
 
     /**
      * not call NETX_TOKEN, before call it.
