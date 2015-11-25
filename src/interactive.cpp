@@ -109,7 +109,6 @@ static void ignoreSignal() {
 
     sigaction(SIGINT, &ignore_act, NULL);
     sigaction(SIGQUIT, &ignore_act, NULL);
-    sigaction(SIGCONT, &ignore_act, NULL);
     sigaction(SIGTSTP, &ignore_act, NULL);  //FIXME: job control
 }
 

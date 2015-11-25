@@ -22,6 +22,7 @@
 #include <ctime>
 #include <cstring>
 #include <dirent.h>
+#include <csignal>
 
 #include "../config.h"
 #include "RuntimeContext.h"
@@ -752,7 +753,19 @@ std::string expandTilde(const char *path) {
 }
 
 pid_t xfork(void) {
-    return fork();  //FIXME: reset signal setting
+    pid_t pid = fork();
+    if(pid == 0) {  // child process
+        struct sigaction act;
+        act.sa_handler = SIG_DFL;
+
+        /**
+         * reset signal behavior
+         */
+        sigaction(SIGINT, &act, NULL);
+        sigaction(SIGQUIT, &act, NULL);
+        sigaction(SIGTSTP, &act, NULL);
+    }
+    return pid;
 }
 
 } // namespace core
