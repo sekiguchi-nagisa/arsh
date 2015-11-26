@@ -20,24 +20,27 @@
 #include <unistd.h>
 
 #include <iostream>
+#include <cstring>
 
 namespace ydsh {
 namespace misc {
 
+inline bool isSupportedTerminal(int fd) {
+    const char *term = getenv("TERM");
+    return isatty(fd) != 0 && term != nullptr && strcmp(term, "xterm") == 0;
+}
+
 /**
- * if stream is cout or cerr, and the file descriptor indicates tty, return true
+ * if stream is cout or cerr,
+ * and the file descriptor indicates supported terminal, return true
  */
-inline bool isTerminal(const std::ostream &stream) {
-    // check stdout
-    if(&stream == &std::cout && isatty(STDOUT_FILENO) != 0) {
-        return true;
+inline bool isSupportedTerminal(const std::ostream &stream) {
+    if(&stream == &std::cout) { // check stdout
+        return isSupportedTerminal(STDOUT_FILENO);
     }
-
-    // check stderr
-    if(&stream == &std::cerr && isatty(STDERR_FILENO) != 0) {
-        return true;
+    if(&stream == &std::cerr) { // check stderr
+        return isSupportedTerminal(STDERR_FILENO);
     }
-
     return false;
 }
 
@@ -53,14 +56,14 @@ enum class TermColor : unsigned int {   // ansi color code
 };
 
 inline std::ostream &operator<<(std::ostream &stream, TermColor color) {
-    if(isTerminal(stream)) {
+    if(isSupportedTerminal(stream)) {
         stream << "\033[" << static_cast<unsigned int>(color) << "m";
     }
     return stream;
 }
 
 inline std::ostream &reset(std::ostream &stream) {
-    if(isTerminal(stream)) {
+    if(isSupportedTerminal(stream)) {
         stream << "\033[0m";
     }
     return stream;
