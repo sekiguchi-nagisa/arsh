@@ -27,28 +27,23 @@ class UTF8Util {
 private:
     static_assert(T, "not allowed instantiation");
 
-    static const unsigned char utf8SkipData[];
-
 public:
-    static const unsigned char *getUTF8SkipData() {
-        return utf8SkipData;
-    }
-
     static unsigned int getNextPos(unsigned int pos, unsigned char ch) {
-        return pos + utf8SkipData[ch];
+        return pos + getByteSize(ch);
     }
-};
 
-template <bool T>
-const unsigned char UTF8Util<T>::utf8SkipData[] = {
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-        3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 1, 1, 1, 1, 1, 1, 1, 1,
+    static unsigned int getByteSize(unsigned char ch) {
+        if((ch & 0x80) == 0) {
+            return 1;
+        } else if((ch & 0xE0) == 0xC0) {
+            return 2;
+        } else if((ch & 0xF0) == 0xE0) {
+            return 3;
+        } else if((ch & 0xF8) == 0xF0) {
+            return 4;
+        }
+        return 1;
+    }
 };
 
 } // namespace __detail
