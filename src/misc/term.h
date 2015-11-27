@@ -25,9 +25,12 @@
 namespace ydsh {
 namespace misc {
 
+/**
+ * not allow dumb terminal
+ */
 inline bool isSupportedTerminal(int fd) {
     const char *term = getenv("TERM");
-    return isatty(fd) != 0 && term != nullptr && strcmp(term, "xterm") == 0;
+    return isatty(fd) != 0 && term != nullptr && strcmp(term, "dumb") != 0;
 }
 
 /**
