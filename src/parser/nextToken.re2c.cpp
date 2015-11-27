@@ -163,6 +163,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT,EXPR> "-"          { MODE(STMT); RET(MINUS); }
 
       <STMT> NUM               { MODE(EXPR); RET(INT_LITERAL); }
+      <STMT> NUM "u"           { MODE(EXPR); RET(UINT_LITERAL); }
       <STMT> NUM "b"           { MODE(EXPR); RET(BYTE_LITERAL); }
       <STMT> NUM "i16"         { MODE(EXPR); RET(INT16_LITERAL); }
       <STMT> NUM "i32"         { MODE(EXPR); RET(INT32_LITERAL); }

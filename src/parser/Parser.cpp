@@ -40,6 +40,7 @@
 #define EACH_LA_primary(OP) \
     OP(NEW) \
     OP(INT_LITERAL) \
+    OP(UINT_LITERAL) \
     OP(BYTE_LITERAL) \
     OP(INT16_LITERAL) \
     OP(UINT16_LITERAL) \
@@ -1070,6 +1071,13 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         int value;
         CONVERT_TO_NUM(value, kind, token, this->lexer->toInt);
         return uniquify<IntValueNode>(token, value);
+    }
+    case UINT_LITERAL: {
+        TokenKind kind = CUR_KIND();
+        Token token = this->expect(UINT_LITERAL);
+        unsigned int value;
+        CONVERT_TO_NUM(value, kind, token, this->lexer->toUint32);
+        return std::unique_ptr<Node>(IntValueNode::newUint32(token, value));
     }
     case BYTE_LITERAL: {
         TokenKind kind = CUR_KIND();

@@ -38,6 +38,8 @@ assert($u32 is Uint)
 assert($u32 is Uint32)
 assert(0u32 is Uint32)
 assert(+0u32 is Uint32)
+assert(4294967295u is Uint32)
+assert(+4294967295u is Uint)
 assert(4294967295u32 is Uint32)
 assert(+4294967295u32 is Uint)
 
