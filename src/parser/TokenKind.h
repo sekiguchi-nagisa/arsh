@@ -91,9 +91,9 @@
     TOKEN(GE                                 , ">=") \
     TOKEN(EQ                                 , "==") \
     TOKEN(NE                                 , "!=") \
-    TOKEN(AND                                , "&") \
-    TOKEN(OR                                 , "|") \
-    TOKEN(XOR                                , "^") \
+    TOKEN(AND                                , "-and") \
+    TOKEN(OR                                 , "-or") \
+    TOKEN(XOR                                , "-xor") \
     TOKEN(COND_AND                           , "&&") \
     TOKEN(COND_OR                            , "||") \
     TOKEN(MATCH                              , "=~") \

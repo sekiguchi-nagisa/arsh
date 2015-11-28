@@ -204,9 +204,9 @@ TokenKind Lexer::nextToken(Token &token) {
       <EXPR> ">="              { MODE(STMT); RET(GE); }
       <EXPR> "=="              { MODE(STMT); RET(EQ); }
       <EXPR> "!="              { MODE(STMT); RET(NE); }
-      <EXPR> "&"               { MODE(STMT); RET(AND); }
-      <EXPR> "|"               { MODE(STMT); RET(OR); }
-      <EXPR> "^"               { MODE(STMT); RET(XOR); }
+      <EXPR> "-and"            { MODE(STMT); RET(AND); }
+      <EXPR> "-or"             { MODE(STMT); RET(OR); }
+      <EXPR> "-xor"            { MODE(STMT); RET(XOR); }
       <EXPR> "&&"              { MODE(STMT); RET(COND_AND); }
       <EXPR> "||"              { MODE(STMT); RET(COND_OR); }
       <EXPR> "=~"              { MODE(STMT); RET(MATCH); }

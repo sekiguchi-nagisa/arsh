@@ -1389,21 +1389,30 @@ TEST_F(LexerTest_Lv1, NE2) {
 }
 
 TEST_F(LexerTest_Lv1, AND1) {
-    const char *text = "&";
+    const char *text = "-and";
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(INVALID, "&");
+        EXPECT(MINUS, "-", COMMAND, "and", LINE_END, "\n", EOS, "");
     });
 }
 
 TEST_F(LexerTest_Lv1, AND2) {
-    const char *text = "&";
+    const char *text = "-and";
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text, yycEXPR);
         EXPECT(AND, text, EOS, "");
         this->assertLexerMode(yycSTMT);
+    });
+}
+
+TEST_F(LexerTest_Lv1, AND3) {
+    const char *text = "&";
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(text, yycEXPR);
+        EXPECT(INVALID, "&");
     });
 }
 
@@ -1418,21 +1427,30 @@ TEST_F(LexerTest_Lv1, BG) {
 }
 
 TEST_F(LexerTest_Lv1, OR1) {
-    const char *text = "|";
+    const char *text = "-or";
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(INVALID, "|");
+        EXPECT(MINUS, "-", COMMAND, "or", LINE_END, "\n", EOS, "");
     });
 }
 
 TEST_F(LexerTest_Lv1, OR2) {
-    const char *text = "|";
+    const char *text = "-or";
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text, yycEXPR);
         EXPECT(OR, text, EOS, "");
         this->assertLexerMode(yycSTMT);
+    });
+}
+
+TEST_F(LexerTest_Lv1, OR3) {    // invalid
+    const char *text = "|";
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(text, yycEXPR);
+        EXPECT(INVALID, "|");
     });
 }
 
@@ -1448,21 +1466,30 @@ TEST_F(LexerTest_Lv1, PIPE) {
 }
 
 TEST_F(LexerTest_Lv1, XOR1) {
-    const char *text = "^";
+    const char *text = "-xor";
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, text, LINE_END, "\n", EOS, "");
+        EXPECT(MINUS, "-", COMMAND, "xor", LINE_END, "\n", EOS, "");
     });
 }
 
 TEST_F(LexerTest_Lv1, XOR2) {
-    const char *text = "^";
+    const char *text = "-xor";
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text, yycEXPR);
         EXPECT(XOR, text, EOS, "");
         this->assertLexerMode(yycSTMT);
+    });
+}
+
+TEST_F(LexerTest_Lv1, XOR3) {   // invalid
+    const char *text = "^";
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(text, yycEXPR);
+        EXPECT(INVALID, "^");
     });
 }
 
