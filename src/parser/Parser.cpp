@@ -39,8 +39,6 @@
 
 #define EACH_LA_primary(OP) \
     OP(NEW) \
-    OP(INT_LITERAL) \
-    OP(UINT_LITERAL) \
     OP(BYTE_LITERAL) \
     OP(INT16_LITERAL) \
     OP(UINT16_LITERAL) \
@@ -1065,20 +1063,6 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         ArgsWrapper args(this->parse_arguments());
         return uniquify<NewNode>(startPos, type.release(), std::move(args).remove());
     }
-    case INT_LITERAL: {
-        TokenKind kind = CUR_KIND();
-        Token token = this->expect(INT_LITERAL);
-        int value;
-        CONVERT_TO_NUM(value, kind, token, this->lexer->toInt);
-        return uniquify<IntValueNode>(token, value);
-    }
-    case UINT_LITERAL: {
-        TokenKind kind = CUR_KIND();
-        Token token = this->expect(UINT_LITERAL);
-        unsigned int value;
-        CONVERT_TO_NUM(value, kind, token, this->lexer->toUint32);
-        return std::unique_ptr<Node>(IntValueNode::newUint32(token, value));
-    }
     case BYTE_LITERAL: {
         TokenKind kind = CUR_KIND();
         Token token = this->expect(BYTE_LITERAL);
@@ -1154,11 +1138,9 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     case START_SUB_CMD: {
         return this->parse_commandSubstitution();
     }
-    case APPLIED_NAME: {
-        return this->parse_appliedName();
-    }
+    case APPLIED_NAME:
     case SPECIAL_NAME: {
-        return this->parse_appliedName(true);
+        return this->parse_appliedName(CUR_KIND() == SPECIAL_NAME);
     }
     case LP: {  // group or tuple
         Token token = this->expect(LP);

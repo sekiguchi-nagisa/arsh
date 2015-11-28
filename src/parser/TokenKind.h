@@ -53,8 +53,6 @@
     TOKEN(PLUS                               , "+") \
     TOKEN(MINUS                              , "-") \
     /* literal */\
-    TOKEN(INT_LITERAL                        , "<Int Literal>") /* equivalent to int32 */\
-    TOKEN(UINT_LITERAL                       , "<Uint Literal>") /* equivalent to uint32 */\
     TOKEN(BYTE_LITERAL                       , "<Byte Literal>") \
     TOKEN(INT16_LITERAL                      , "<Int16 Literal>") \
     TOKEN(UINT16_LITERAL                     , "<Uint16 Literal>") \

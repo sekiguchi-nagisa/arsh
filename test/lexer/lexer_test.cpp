@@ -405,7 +405,7 @@ TEST_F(LexerTest_Lv1, int_literal1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(INT_LITERAL, text, EOS, "");
+        EXPECT(INT32_LITERAL, text, EOS, "");
         this->assertLexerMode(yycEXPR);
     });
 }
@@ -415,7 +415,7 @@ TEST_F(LexerTest_Lv1, int_literal2) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(INT_LITERAL, text, EOS, "");
+        EXPECT(INT32_LITERAL, text, EOS, "");
         this->assertLexerMode(yycEXPR);
     });
 }
@@ -425,7 +425,7 @@ TEST_F(LexerTest_Lv1, int_literal3) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(INT_LITERAL, text, EOS, "");
+        EXPECT(INT32_LITERAL, text, EOS, "");
         this->assertLexerMode(yycEXPR);
     });
 }
@@ -435,7 +435,7 @@ TEST_F(LexerTest_Lv1, int_literal4) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(INT_LITERAL, text, EOS, "");
+        EXPECT(INT32_LITERAL, text, EOS, "");
         this->assertLexerMode(yycEXPR);
     });
 }
@@ -446,7 +446,7 @@ TEST_F(LexerTest_Lv1, invaild_int_literal1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(INT_LITERAL, "0", INVALID, "1");
+        EXPECT(INT32_LITERAL, "0", INVALID, "1");
     });
 }
 
@@ -455,7 +455,7 @@ TEST_F(LexerTest_Lv1, invalid_int_literal2) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(MINUS, "-", INT_LITERAL, "23", EOS, "");
+        EXPECT(MINUS, "-", INT32_LITERAL, "23", EOS, "");
     });
 }
 
@@ -525,7 +525,7 @@ TEST_F(LexerTest_Lv1, invalid_float_literal2) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(INT_LITERAL, "0", INVALID, "0");
+        EXPECT(INT32_LITERAL, "0", INVALID, "0");
     });
 }
 
@@ -651,15 +651,6 @@ TEST_F(LexerTest_Lv1, invalid_path_iteral1) {
         EXPECT(COMMAND, "p", STRING_LITERAL, "'hoge'", LINE_END, "\n", EOS, "");
     });
 }
-
-//TEST_F(LexerTest_Lv1, invalid_path_iteral2) {
-//    const char *text = "p'hoge'";
-//    ASSERT_NO_FATAL_FAILURE({
-//        SCOPED_TRACE("");
-//        this->initLexer(text, yycEXPR);
-//        EXPECT(IDENTIFIER, "p", STRING_LITERAL, "'hoge'", EOS, "");
-//    });
-//}
 
 
 TEST_F(LexerTest_Lv1, string_expr1) {
