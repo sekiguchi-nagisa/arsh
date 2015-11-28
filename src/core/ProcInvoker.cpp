@@ -20,6 +20,7 @@
 
 #include <cstdlib>
 #include <cstdarg>
+#include <unordered_map>
 
 #include "logger.h"
 #include "ProcInvoker.h"
@@ -183,6 +184,7 @@ static int builtin_false(RuntimeContext *ctx, const BuiltinContext &bctx);
 static int builtin_help(RuntimeContext *ctx, const BuiltinContext &bctx);
 static int builtin_ps_intrp(RuntimeContext *ctx, const BuiltinContext &bctx);
 static int builtin_pwd(RuntimeContext *ctx, const BuiltinContext &bctx);
+static int builtin_test(RuntimeContext *ctx, const BuiltinContext &bctx);
 static int builtin_true(RuntimeContext *ctx, const BuiltinContext &bctx);
 
 const struct {
@@ -267,6 +269,33 @@ const struct {
                 "    Print the current working directiry(absolute path)."},
         {"true", builtin_true, "",
                 "    Always success (exit status is 0)."},
+        {"test", builtin_test, "[expr]",
+                "    Unary or Binary expressions.\n"
+                "    If expression is true, return 0\n"
+                "    If expression is false, return 1\n"
+                "    If operand or operator is invalid, return 2\n"
+                "    String operators:\n"
+                "        -z STRING      check if string is empty\n"
+                "        -n STRING\n"
+                "        STRING         check if string is not empty\n"
+                "        STRING1 = STRING2\n"
+                "        STRING1 == STRING2\n"
+                "                       check if strings are equal\n"
+                "        STRING1 != STRING2\n"
+                "                       check if strings are not equal\n"
+                "        STRING1 < STRING2\n"
+                "                       check if STRING1 is less than STRING2 with dictionary order\n"
+                "        STRING1 > STRING2\n"
+                "                       check if STRING2 is greater than STRING2 with dictionary order\n"
+                "    Integer operators:\n"
+                "        INT1 -eq INT2  check if integers are equal\n"
+                "        INT1 -ne INT2  check if integers are not equal\n"
+                "        INT1 -lt INT2  check if INT1 is less than INT2\n"
+                "        INT1 -gt INT2  check if INT1 is greater than INT2\n"
+                "        INT1 -le INT2  check if INT1 is less than or equal to INT2\n"
+                "        INT1 -ge INT2  check if INT1 is greater than or equal to INT2\n"
+                "\n"
+                "    Integer value is signed int 64."},
 };
 
 template<typename T, size_t N>
@@ -700,6 +729,149 @@ static int builtin_command(RuntimeContext *ctx, const BuiltinContext &bctx) {
         }
     }
     return 0;
+}
+
+enum class BinaryOp : unsigned int {
+    INVALID,
+    STR_EQ,
+    STR_NE,
+    STR_LT,
+    STR_GT,
+    EQ,
+    NE,
+    LT,
+    GT,
+    LE,
+    GE,
+};
+
+static int builtin_test(RuntimeContext *, const BuiltinContext &bctx) {
+    static std::unordered_map<std::string, BinaryOp> binaryOpMap;
+#define ADD_OP(s, op) binaryOpMap.insert(std::make_pair(s, op))
+    if(binaryOpMap.empty()) {   // initialize binary operator map
+        ADD_OP("=", BinaryOp::STR_EQ);
+        ADD_OP("==", BinaryOp::STR_EQ);
+        ADD_OP("!=", BinaryOp::STR_NE);
+        ADD_OP("<", BinaryOp::STR_LT);
+        ADD_OP(">", BinaryOp::STR_GT);
+        ADD_OP("-eq", BinaryOp::EQ);
+        ADD_OP("-ne", BinaryOp::NE);
+        ADD_OP("-lt", BinaryOp::LT);
+        ADD_OP("-gt", BinaryOp::GT);
+        ADD_OP("-le", BinaryOp::LE);
+        ADD_OP("-ge", BinaryOp::GE);
+    }
+#undef ADD_OP
+
+
+
+    bool result = false;
+    const int argSize = bctx.argc - 1;
+
+    switch(argSize) {
+    case 0: {
+        result = false;
+        break;
+    }
+    case 1: {
+        result = strlen(bctx.argv[1]) != 0; // check if string is not empty
+        break;
+    }
+    case 2: {   // unary op
+        const char *op = bctx.argv[1];
+        const char *value = bctx.argv[2];
+        if(strlen(op) != 2 || op[0] != '-') {
+            builtin_perror(bctx, 0, "%s: invalid unary operator", op);
+            return 2;
+        }
+
+        const char opKind = op[1];  // ignore -
+        switch(opKind) {
+        case 'z': { // check if string is empty
+            result = strlen(value) == 0;
+            break;
+        }
+        case 'n': { // check if string not empty
+            result = strlen(value) != 0;
+            break;
+        }
+        default: {
+            builtin_perror(bctx, 0, "%s: invalid unary operator", op);
+            return 2;
+        }
+        }
+        break;
+    }
+    case 3: {   // binary op
+        const char *left = bctx.argv[1];
+        const char *op = bctx.argv[2];
+        const char *right = bctx.argv[3];
+
+        auto iter = binaryOpMap.find(op);
+        const BinaryOp opKind = iter != binaryOpMap.end() ? iter->second : BinaryOp::INVALID;
+        switch(opKind) {
+        case BinaryOp::STR_EQ: {
+            result = strcmp(left, right) == 0;
+            break;
+        }
+        case BinaryOp::STR_NE: {
+            result = strcmp(left, right) != 0;
+            break;
+        }
+        case BinaryOp::STR_LT: {
+            result = strcmp(left, right) < 0;
+            break;
+        }
+        case BinaryOp::STR_GT: {
+            result = strcmp(left, right) > 0;
+            break;
+        }
+        case BinaryOp::EQ:
+        case BinaryOp::NE:
+        case BinaryOp::LT:
+        case BinaryOp::GT:
+        case BinaryOp::LE:
+        case BinaryOp::GE: {
+            int s = 0;
+            long n1 = convertToInt64(left, s, false);
+            if(s != 0) {
+                builtin_perror(bctx, 0, "%s: must be integer", left);
+                return 2;
+            }
+
+            long n2 = convertToInt64(right, s, false);
+            if(s != 0) {
+                builtin_perror(bctx, 0, "%s: must be integer", right);
+                return 2;
+            }
+            if(opKind == BinaryOp::EQ) {
+                result = n1 == n2;
+            } else if(opKind == BinaryOp::NE) {
+                result = n1 != n2;
+            } else if(opKind == BinaryOp::LT) {
+                result = n1 < n2;
+            } else if(opKind == BinaryOp::GT) {
+                result = n1 > n2;
+             } else if(opKind == BinaryOp::LE) {
+                result = n1 <= n2;
+            } else if(opKind == BinaryOp::GE) {
+                result = n1 >= n2;
+            }
+            break;
+        }
+        case BinaryOp::INVALID: {
+            builtin_perror(bctx, 0, "%s: invalid binary operator", op);
+            return 2;
+        }
+        }
+        break;
+    }
+    default: {
+        builtin_perror(bctx, 0, "too many arguments");
+        return 2;
+    }
+    }
+    return result ? 0 : 1;
 }
 
 

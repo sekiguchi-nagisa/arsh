@@ -1,0 +1,86 @@
+# not args
+test
+assert($? == 1) # always 1
+
+# string op
+# check not empty
+test hoge
+assert($? == 0)
+
+test ""
+assert($? == 1)
+
+test -n hoge
+assert($? == 0)
+
+test -n ''
+assert($? == 1)
+
+# check empty
+test -z ""
+assert($? == 0)
+
+test -z hfoe
+assert($? == 1)
+
+# compare
+test AA "<" BBB
+assert($? == 0)
+
+test bb "<" a
+assert($? == 1)
+
+test aaa ">" bbb
+assert($? == 1)
+
+test bbb ">" aa
+assert($? == 0)
+
+
+# integer op
+# bad integer
+test u -ne 34
+assert($? == 2)
+
+test 23.o -lt 45    # not allow float
+assert($? == 2)
+
+test 9223372036854775808 -gt 1  # singed integer 64
+assert($? == 2)
+
+test -9223372036854775809 -lt 1
+assert($? == 2)
+
+test 23 -eq 23
+assert($? == 0)
+
+test 23 -eq -4
+assert($? == 1)
+
+test -9 -ne 00
+assert($? == 0)
+
+test -90 -ne -0090
+assert($? == 1)
+
+test -9223372036854775808 -lt 23456767
+assert($? == 0)
+
+test 9223372036854775807 -gt 1245
+assert($? == 0)
+
+test -9223372036854775808 -le -9223372036854775808
+assert($? == 0)
+
+test 9223372036854775807 -ge 9223372036854775807
+assert($? == 0)
+
+
+# invalid option
+test 34 -h 34
+assert($? == 2)
+
+test 34 = 34 45
+assert($? == 2)
+
+true
