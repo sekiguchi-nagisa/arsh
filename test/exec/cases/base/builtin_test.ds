@@ -36,6 +36,15 @@ assert($? == 1)
 test bbb ">" aa
 assert($? == 0)
 
+test aa = "aa"
+assert($? == 0)
+
+test aa == "a"
+assert($?  == 1)
+
+test aa '!=' 2
+assert($? == 0)
+
 
 # integer op
 # bad integer
@@ -76,11 +85,100 @@ test 9223372036854775807 -ge 9223372036854775807
 assert($? == 0)
 
 
+# file operator
+test -a hogeuhfaer
+assert($? == 1)
+
+test -a .
+assert($? == 0)
+
+test -e ..
+assert($? == 0)
+
+test -b .
+assert($? == 1)
+
+var blk = $(df . | grep /dev)[0]
+test -b $blk
+assert($? == 0)
+
+test -c ..
+assert($? == 1)
+
+test -c /dev/null
+assert($? == 0)
+
+test -d .
+assert($? == 0)
+
+test -f $0
+assert($? == 0)
+
+test -g .
+assert($? == 1)
+
+test -h /dev/stdin
+assert($? == 0)
+
+test -L /dev/stdout
+assert($? == 0)
+
+test -k .
+assert($? == 1)
+
+var pipe = "hogefaefpdew_pipe"
+mkfifo $pipe
+test -p $pipe
+assert($? == 0)
+rm -f $pipe
+
+test -r /
+assert($? == 0)
+
+test -s .
+assert($? == 0)
+
+touch $pipe
+test -s $pipe
+assert($? == 1)
+rm -f $pipe
+
+test -S .
+assert($? == 1)
+
+test -t 45
+assert($? == 1)
+
+touch $pipe
+test -u $pipe
+assert($? == 1)
+
+test -w $pipe
+assert($? == 0)
+
+chmod +x $pipe
+test -x $pipe
+assert($? == 0)
+
+test -O $pipe
+assert($? == 0)
+
+test -G $pipe
+assert($? == 0)
+
+rm -f $pipe
+
 # invalid option
 test 34 -h 34
 assert($? == 2)
 
 test 34 = 34 45
+assert($? == 2)
+
+test -9 hfueir
+assert($? == 2)
+
+test hoge hoge
 assert($? == 2)
 
 true

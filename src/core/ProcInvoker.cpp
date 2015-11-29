@@ -274,6 +274,7 @@ const struct {
                 "    If expression is true, return 0\n"
                 "    If expression is false, return 1\n"
                 "    If operand or operator is invalid, return 2\n"
+                "\n"
                 "    String operators:\n"
                 "        -z STRING      check if string is empty\n"
                 "        -n STRING\n"
@@ -295,7 +296,29 @@ const struct {
                 "        INT1 -le INT2  check if INT1 is less than or equal to INT2\n"
                 "        INT1 -ge INT2  check if INT1 is greater than or equal to INT2\n"
                 "\n"
-                "    Integer value is signed int 64."},
+                "    Integer value is signed int 64.\n"
+                "\n"
+                "    File operators:\n"
+                "        -a FILE\n"
+                "        -e FILE        check if file exists\n"
+                "        -b FILE        check if file is block device\n"
+                "        -c FILE        check if file is character device\n"
+                "        -d FILE        check if file is a directory\n"
+                "        -f FILE        check if file is a regular file\n"
+                "        -g FILE        check if file has set-group-id bit\n"
+                "        -h FILE\n"
+                "        -L FILE        check if file is a symbolic link\n"
+                "        -k FILE        check if file has sticky bit\n"
+                "        -p FILE        check if file is a named pipe\n"
+                "        -r FILE        check if file is readbale\n"
+                "        -s FILE        check if file is not empty\n"
+                "        -S FILE        check if file is a socket\n"
+                "        -t FD          check if file descriptor is a terminal\n"
+                "        -u FILE        check if file has set-user-id bit\n"
+                "        -w FILE        check if file is writable\n"
+                "        -x FILE        check if file is executable\n"
+                "        -O FILE        check if file is effectively owned by user\n"
+                "        -G FILE        check if file is effectively owned by group"},
 };
 
 template<typename T, size_t N>
@@ -745,6 +768,20 @@ enum class BinaryOp : unsigned int {
     GE,
 };
 
+/**
+ * if cannot open file, return always 0.
+ */
+static mode_t getStMode(const char *fileName) {
+    struct stat st;
+    if(stat(fileName, &st) != 0) {
+        return 0;
+    }
+    return st.st_mode;
+}
+
+#define S_IS_PERM_(mode, flag) (((mode) & (flag)) == (flag))
+
+
 static int builtin_test(RuntimeContext *, const BuiltinContext &bctx) {
     static std::unordered_map<std::string, BinaryOp> binaryOpMap;
 #define ADD_OP(s, op) binaryOpMap.insert(std::make_pair(s, op))
@@ -793,6 +830,90 @@ static int builtin_test(RuntimeContext *, const BuiltinContext &bctx) {
         }
         case 'n': { // check if string not empty
             result = strlen(value) != 0;
+            break;
+        }
+        case 'a':
+        case 'e': {
+            result = access(value, F_OK) == 0;  // check if file exists
+            break;
+        }
+        case 'b': {
+            result = S_ISBLK(getStMode(value)); // check if file is block device
+            break;
+        }
+        case 'c': {
+            result = S_ISCHR(getStMode(value)); // check if file is character device
+            break;
+        }
+        case 'd': {
+            result = S_ISDIR(getStMode(value)); // chedck if file is directory
+            break;
+        }
+        case 'f': {
+            result = S_ISREG(getStMode(value)); // check if file is regular file.
+            break;
+        }
+        case 'g': {
+            result = S_IS_PERM_(getStMode(value), S_ISUID); // check if file has set-uid-bit
+            break;
+        }
+        case 'h':
+        case 'L': {
+            mode_t mode = 0;
+            struct stat st;
+            if(lstat(value, &st) == 0) {
+                mode = st.st_mode;
+            }
+            result = S_ISLNK(mode); // check if file is symbolic-link
+            break;
+        }
+        case 'k': {
+            result = S_IS_PERM_(getStMode(value), S_ISVTX); // check if file has sticky bit
+            break;
+        }
+        case 'p': {
+            result = S_ISFIFO(getStMode(value));    // check if file is a named pipe
+            break;
+        }
+        case 'r': {
+            result = access(value, R_OK) == 0;  // check if file is readable
+            break;
+        }
+        case 's': {
+            struct stat st;
+            result = stat(value, &st) == 0 && st.st_size != 0;  // check if file is not empty
+            break;
+        }
+        case 'S': {
+            result = S_ISSOCK(getStMode(value));    // check file is a socket
+            break;
+        }
+        case 't': {
+            int s;
+            long n = convertToInt64(value, s, false);
+            result = s == 0 && n >= INT32_MIN && n <= INT32_MAX && isatty(n) != 0;  //  check if FD is a terminal
+            break;
+        }
+        case 'u': {
+            result = S_IS_PERM_(getStMode(value), S_ISUID); // check file has set-user-id bit
+            break;
+        }
+        case 'w': {
+            result = access(value, W_OK) == 0;   // check if file is writable
+            break;
+        }
+        case 'x': {
+            result = access(value, X_OK) == 0;  // check if file is exxcutable
+            break;
+        }
+        case 'O': {
+            struct stat st;
+            result = stat(value, &st) == 0 && st.st_uid == geteuid();   // check if file is effectively owned
+            break;
+        }
+        case 'G': {
+            struct stat st;
+            result = stat(value, &st) == 0 && st.st_gid == getegid();   // check if file is effectively owned by group
             break;
         }
         default: {
