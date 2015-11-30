@@ -200,7 +200,6 @@ endif()
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/src_to_str)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_binding)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/linenoise)
 
 set(YDSH_STATIC ydsh_static)
 add_library(${YDSH_STATIC} STATIC ${YDSH_SRC} ${lexer_src} ${bind_src})
@@ -220,8 +219,12 @@ endif()
 #==============#
 
 include_directories(lib/linenoise)
-add_executable(${BIN_NAME} src/main.cpp src/interactive.cpp)
-target_link_libraries(${BIN_NAME} ${YDSH_STATIC} linenoise)
+add_executable(${BIN_NAME}
+        src/main.cpp
+        src/interactive.cpp
+        lib/linenoise/linenoise.c
+        lib/linenoise/encodings/utf8.c)
+target_link_libraries(${BIN_NAME} ${YDSH_STATIC})
 
 install(TARGETS ${BIN_NAME} RUNTIME DESTINATION bin)
 
