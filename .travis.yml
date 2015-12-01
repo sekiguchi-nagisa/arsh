@@ -20,7 +20,7 @@ addons:
       - libdbus-1-dev
 
 before_install:
-  - ./setup.sh -DCMAKE_BUILD_TYPE=DEBUG -DUSE_DBUS=off -DUSE_LOGGING=on -DUSE_SAFE_CAST=on
+  - ./setup.sh -DCMAKE_BUILD_TYPE=DEBUG -DUSE_DBUS=off
 
 install:
  - cd build

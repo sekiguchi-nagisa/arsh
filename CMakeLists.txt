@@ -60,9 +60,6 @@ set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_DEBUG} -fprofile-arcs -ftest-cov
 #     set extra option     #
 #++++++++++++++++++++++++++#
 
-option(USE_LOGGING "enable internal logging" OFF)
-show_option(USE_LOGGING)
-
 option(USE_DBUS "support D-Bus" ON)
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
     set(USE_DBUS OFF)
@@ -72,7 +69,16 @@ show_option(USE_DBUS)
 option(USE_IFACE_GEN "D-Bus interface generater" ON)
 show_option(USE_IFACE_GEN)
 
+option(USE_LOGGING "enable internal logging" OFF)
 option(USE_SAFE_CAST "check object cast" OFF)
+
+string(TOLOWER "${CMAKE_BUILD_TYPE}" lower_type)
+if("${lower_type}" STREQUAL "debug")
+    set(USE_LOGGING ON)
+    set(USE_SAFE_CAST ON)
+endif()
+
+show_option(USE_LOGGING)
 show_option(USE_SAFE_CAST)
 
 
