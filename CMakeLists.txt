@@ -66,9 +66,6 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
 endif()
 show_option(USE_DBUS)
 
-option(USE_IFACE_GEN "D-Bus interface generater" ON)
-show_option(USE_IFACE_GEN)
-
 option(USE_LOGGING "enable internal logging" OFF)
 option(USE_SAFE_CAST "check object cast" OFF)
 
@@ -206,18 +203,13 @@ endif()
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/src_to_str)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_binding)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/directive)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_iface)
 
 set(YDSH_STATIC ydsh_static)
 add_library(${YDSH_STATIC} STATIC ${YDSH_SRC} ${lexer_src} ${bind_src})
 add_dependencies(${YDSH_STATIC} gen_lexer gen_binding gen_bind embed_script)
 target_link_libraries(${YDSH_STATIC} ${HAVE_LIBDBUS})
-
-
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/directive)
-
-if(USE_IFACE_GEN)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_iface)
-endif()
 
 
 #==============#

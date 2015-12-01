@@ -26,8 +26,3 @@ if not need D-Bus support,
 ```
 $ cmake .. -DUSE_DBUS=off
 ```
-
-if not need iface_gen, (D-Bus interface definition generater)
-```
-$ cmake .. -DUSE_IFACE_GEN=off
-```
