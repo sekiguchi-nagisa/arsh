@@ -114,8 +114,8 @@ configure_file(src/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/src/config.h)
 #     build re2c    #
 #+++++++++++++++++++#
 
-set(RE2C_V "0.14.3")
-set(RE2C_URL "http://sourceforge.net/projects/re2c/files/re2c/${RE2C_V}/re2c-${RE2C_V}.tar.gz")
+set(RE2C_V "0.15.3")
+set(RE2C_URL "https://github.com/skvadrik/re2c/releases/download/${RE2C_V}/re2c-${RE2C_V}.tar.gz")
 set(RE2C_PATH ${CMAKE_CURRENT_BINARY_DIR}/re2c-${RE2C_V}.tar.gz)
 set(RE2C_DIR ${CMAKE_CURRENT_BINARY_DIR}/re2c-${RE2C_V})
 
@@ -133,7 +133,8 @@ endif()
 
 set(lexer_src ${CMAKE_CURRENT_BINARY_DIR}/nextToken.cpp)
 add_custom_command(OUTPUT ${lexer_src}
-    COMMAND ${RE2C_DIR}/re2c -c -8 -o ${lexer_src} ${CMAKE_CURRENT_SOURCE_DIR}/src/parser/nextToken.re2c.cpp
+    COMMAND ${RE2C_DIR}/re2c -W -Werror -c -8 -o ${lexer_src}
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/parser/nextToken.re2c.cpp
 )
 add_custom_target(gen_lexer DEPENDS ${lexer_src})
 

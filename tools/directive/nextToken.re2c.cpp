@@ -44,8 +44,6 @@ TokenKind Lexer::nextToken(Token & token) {
       NUM = "0" | [1-9] [0-9]*;
       SQUOTE_CHAR = [^\r\n'\\\000] | '\\' [btnfr'\\];
       DQUOTE_CHAR = [^\r\n"\\\000] | '\\' [btnfr"\\];
-
-      OTHER = .;
     */
 
     INIT:
@@ -72,7 +70,7 @@ TokenKind Lexer::nextToken(Token & token) {
       [ \t\r\n]+           { SKIP(); }
       "\000"               { REACH_EOS(); }
 
-      OTHER                { RET(INVALID); }
+      *                    { RET(INVALID); }
     */
 
     END:

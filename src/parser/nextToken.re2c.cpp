@@ -123,7 +123,6 @@ TokenKind Lexer::nextToken(Token &token) {
       LINE_END = ";";
       NEW_LINE = [\r\n][ \t\r\n]*;
       COMMENT = "#" [^\r\n\000]*;
-      OTHER = . ;
     */
 
     bool foundNewLine = false;
@@ -287,11 +286,11 @@ TokenKind Lexer::nextToken(Token &token) {
       <TYPE> "["               { RET(PTYPE_OPEN); }
       <TYPE> "]"               { RET(PTYPE_CLOSE); }
       <TYPE> "\000"            { REACH_EOS();}
-      <TYPE> OTHER             { RET(TYPE_OTHER); }
+      <TYPE> *                 { RET(TYPE_OTHER); }
 
 
       <STMT,EXPR,NAME,DSTRING,CMD> "\000" { REACH_EOS();}
-      <STMT,EXPR,NAME,DSTRING,CMD> OTHER  { RET(INVALID); }
+      <STMT,EXPR,NAME,DSTRING,CMD> *      { RET(INVALID); }
     */
 
     END:

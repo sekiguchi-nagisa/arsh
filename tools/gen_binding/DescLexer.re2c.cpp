@@ -41,7 +41,6 @@ DescTokenKind DescLexer::nextToken(Token &token) {
       re2c:indent:string = "    ";
 
       IDENTIFIER = [_a-zA-Z][_a-zA-Z0-9]*;
-      OTHER = .;
     */
 
     INIT:
@@ -73,7 +72,7 @@ DescTokenKind DescLexer::nextToken(Token &token) {
       [ \t\r\n]+             { SKIP(); }
       "\000"                 { REACH_EOS(); }
 
-      OTHER                  { RET(INVALID); }
+      *                      { RET(INVALID); }
     */
 
     END:
