@@ -529,6 +529,7 @@ static int builtin___gets(RuntimeContext *, const BuiltinContext &bctx) {
     while((readSize = fread(buf, sizeof(char), bufSize, bctx.fp_stdin)) > 0) {
         fwrite(buf, sizeof(char), readSize, bctx.fp_stdout);
     }
+    clearerr(bctx.fp_stdin);    // clear eof flag
     return 0;
 }
 
