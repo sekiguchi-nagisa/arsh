@@ -19,6 +19,7 @@
 #include <string>
 #include <cerrno>
 #include <memory>
+#include <cstdlib>
 
 #include <linenoise.h>
 #include <encodings/utf8.h>
