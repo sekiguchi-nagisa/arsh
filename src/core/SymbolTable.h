@@ -45,7 +45,7 @@ public:
     /**
      * return null, if not exist.
      */
-    FieldHandle *lookupHandle(const std::string &symbolName);
+    FieldHandle *lookupHandle(const std::string &symbolName) const;
 
     /**
      * add FieldHandle. if adding success, increment curVarIndex.
@@ -87,7 +87,7 @@ public:
     /**
      * return null, if not found.
      */
-    FieldHandle *lookupHandle(const std::string &symbolName);
+    FieldHandle *lookupHandle(const std::string &symbolName) const;
 
     /**
      * return null, if found duplicated handle.
@@ -133,14 +133,14 @@ public:
     /**
      * max number of local variable index.
      */
-    unsigned int getMaxVarIndex();
+    unsigned int getMaxVarIndex() const;
 
     /**
      * max number of global variable index.
      */
-    unsigned int getMaxGVarIndex();
+    unsigned int getMaxGVarIndex() const;
 
-    bool inGlobalScope();
+    bool inGlobalScope() const;
 };
 
 } // namespace core

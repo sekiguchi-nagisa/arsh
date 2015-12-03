@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#include <clocale>
-#include <csetjmp>
 #include <csignal>
 #include <cstring>
 #include <string>
@@ -26,7 +24,6 @@
 #include <encodings/utf8.h>
 
 #include <ydsh/ydsh.h>
-#include "misc/fatal.h"
 
 static DSContext *dsContext;
 
@@ -38,7 +35,7 @@ struct Deleter {
 
 typedef std::unique_ptr<char, Deleter> StrWrapper;
 
-static inline bool isSkipLine(const StrWrapper &line) {
+static bool isSkipLine(const StrWrapper &line) {
     if(line == nullptr) {
         return false;
     }
@@ -113,8 +110,6 @@ static void ignoreSignal() {
 }
 
 void exec_interactive(DSContext *ctx) {   // never return
-    setlocale(LC_ALL, "");
-
     linenoiseSetEncodingFunctions(
             linenoiseUtf8PrevCharLen,
             linenoiseUtf8NextCharLen,

@@ -31,7 +31,7 @@ Scope::~Scope() {
     }
 }
 
-FieldHandle *Scope::lookupHandle(const std::string &symbolName) {
+FieldHandle *Scope::lookupHandle(const std::string &symbolName) const {
     auto iter = this->handleMap.find(symbolName);
     return iter != this->handleMap.end() ? iter->second : nullptr;
 }
@@ -67,7 +67,7 @@ SymbolTable::~SymbolTable() {
     }
 }
 
-FieldHandle *SymbolTable::lookupHandle(const std::string &symbolName) {
+FieldHandle *SymbolTable::lookupHandle(const std::string &symbolName) const {
     for(int index = this->scopes.size() - 1; index > -1; index--) {
         FieldHandle *handle = this->scopes[index]->lookupHandle(symbolName);
         if(handle != nullptr) {
@@ -157,16 +157,16 @@ void SymbolTable::abort() {
     }
 }
 
-unsigned int SymbolTable::getMaxVarIndex() {
+unsigned int SymbolTable::getMaxVarIndex() const {
     return this->maxVarIndexStack.back();
 }
 
-unsigned int SymbolTable::getMaxGVarIndex() {
+unsigned int SymbolTable::getMaxGVarIndex() const {
     assert(this->inGlobalScope());
     return this->scopes.back()->getCurVarIndex();
 }
 
-bool SymbolTable::inGlobalScope() {
+bool SymbolTable::inGlobalScope() const {
     return this->scopes.size() == 1;
 }
 

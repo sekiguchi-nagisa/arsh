@@ -71,22 +71,23 @@ protected:
     DSType *superType;
 
 public:
-    static constexpr flag8_t EXTENDABLE = 1 << 0;
-    static constexpr flag8_t VOID_TYPE  = 1 << 1;
-    static constexpr flag8_t FUNC_TYPE  = 1 << 2;
-    static constexpr flag8_t INTERFACE  = 1 << 3;
+    static constexpr flag8_t EXTENDIBLE   = 1 << 0;
+    static constexpr flag8_t VOID_TYPE    = 1 << 1;
+    static constexpr flag8_t FUNC_TYPE    = 1 << 2;
+    static constexpr flag8_t INTERFACE    = 1 << 3;
+    static constexpr flag8_t BUILTIN_TYPE = 1 << 4;
 
     NON_COPYABLE(DSType);
 
-    DSType(bool extendable, DSType *superType, bool isVoid = false);
+    DSType(bool extendible, DSType *superType, bool isVoid = false);
 
     virtual ~DSType() = default;
 
     /**
      * if true, can extend this type
      */
-    bool isExtendable() const {
-        return hasFlag(this->attributeSet, EXTENDABLE);
+    bool isExtendible() const {
+        return hasFlag(this->attributeSet, EXTENDIBLE);
     }
 
     /**
@@ -113,7 +114,9 @@ public:
     /**
      * return true, if type is builtin type, reified type, tuple type, error type.
      */
-    virtual bool isBuiltinType() const;
+    bool isBuiltinType() const {
+        return hasFlag(this->attributeSet, BUILTIN_TYPE);
+    }
 
     /**
      * get super type of this type.
@@ -294,7 +297,6 @@ public:
     MethodHandle *lookupMethodHandle(TypePool &typePool, const std::string &methodName);  // override
     virtual FieldHandle *findHandle(const std::string &fieldName); // override
     virtual void accept(TypeVisitor *visitor); // override
-    bool isBuiltinType() const; // override
     unsigned int getMethodSize(); // override
     MethodRef *getMethodRef(unsigned int methodIndex); // override
     void copyAllMethodRef(std::vector<MethodRef> &methodTable); // override
@@ -387,7 +389,7 @@ public:
     unsigned int getMethodSize();   // override
     FieldHandle *lookupFieldHandle(TypePool &typePool, const std::string &fieldName);   // override
     MethodHandle *lookupMethodHandle(TypePool &typePool, const std::string &methodName); // override
-    FieldHandle *findHandle(const std::string &fieldName); // overrdie
+    FieldHandle *findHandle(const std::string &fieldName); // override
     void accept(TypeVisitor *visitor); // override
 };
 
@@ -400,17 +402,14 @@ private:
 
 public:
     explicit ErrorType(DSType *superType) :
-            DSType(true, superType, false), constructorHandle() { }
+            DSType(true, superType, false), constructorHandle() {
+        setFlag(this->attributeSet, BUILTIN_TYPE);
+    }
 
     ~ErrorType();
 
     MethodHandle *getConstructorHandle(TypePool &typePool); // override
     const MethodRef *getConstructor();    // override
-
-    /**
-     * return always true.
-     */
-    bool isBuiltinType() const; // override
 
     /**
      * return types.size()

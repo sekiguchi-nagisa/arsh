@@ -120,10 +120,9 @@ public:
 };
 
 /**
- * represent for function. used from DSType or SymbolTable.
- * function handle belongs to global scope is always treated as function.
+ * represent for function. used from SymbolTable.
  */
-class FunctionHandle : public FieldHandle {  //FIXME:
+class FunctionHandle : public FieldHandle {
 protected:
     DSType *returnType;
     std::vector<DSType *> paramTypes;
@@ -138,8 +137,6 @@ public:
     ~FunctionHandle() = default;
 
     DSType *getFieldType(TypePool &typePool);   // override
-
-    FunctionType *getFuncType(TypePool &typePool);
 
     DSType *getReturnType() const {
         return this->returnType;
@@ -206,13 +203,13 @@ public:
      * initialize internal types.
      */
     void init(TypePool &typePool, NativeFuncInfo &info,
-              const std::vector<DSType *> *types = 0);
+              const std::vector<DSType *> *types = nullptr);
 
     /**
      * return always true, after call init().
      */
-    bool initalized() const {
-        return this->returnType != 0;
+    bool initialized() const {
+        return this->returnType != nullptr;
     }
 
     void setNext(MethodHandle *handle) {
@@ -235,7 +232,7 @@ public:
         return hasFlag(this->attributeSet, MULTI_RETURN);
     }
 
-    bool isSignal();
+    bool isSignal() const;
 
     static constexpr flag8_t INTERFACE    = 1 << 0;
     static constexpr flag8_t MULTI_RETURN = 1 << 1;

@@ -29,18 +29,14 @@ extern NativeFuncInfo *const nativeFuncInfoTable;
 // ##     DSType     ##
 // ####################
 
-DSType::DSType(bool extendable, DSType *superType, bool isVoid) :
+DSType::DSType(bool extendible, DSType *superType, bool isVoid) :
         attributeSet(0), superType(superType) {
-    if(extendable) {
-        setFlag(this->attributeSet, EXTENDABLE);
+    if(extendible) {
+        setFlag(this->attributeSet, EXTENDIBLE);
     }
     if(isVoid) {
         setFlag(this->attributeSet, VOID_TYPE);
     }
-}
-
-bool DSType::isBuiltinType() const {
-    return false;
 }
 
 MethodHandle *DSType::getConstructorHandle(TypePool &) {
@@ -140,6 +136,8 @@ BuiltinType::BuiltinType(bool extendable, DSType *superType,
         // set to method table
         this->methodTable[methodIndex] = MethodRef(this->info.getMethodInfo(i).func_ptr);
     }
+
+    setFlag(this->attributeSet, BUILTIN_TYPE);
 }
 
 BuiltinType::~BuiltinType() {
@@ -170,7 +168,7 @@ MethodHandle *BuiltinType::lookupMethodHandle(TypePool &typePool, const std::str
     }
 
     MethodHandle *handle = iter->second;
-    if(!handle->initalized()) { // init handle
+    if(!handle->initialized()) { // init handle
         unsigned int baseIndex = this->superType != nullptr ? this->superType->getMethodSize() : 0;
         unsigned int infoIndex = handle->getMethodIndex() - baseIndex;
         this->initMethodHandle(handle, typePool, this->info.getMethodInfo(infoIndex));
@@ -188,10 +186,6 @@ FieldHandle *BuiltinType::findHandle(const std::string &fieldName) { // override
 
 void BuiltinType::accept(TypeVisitor *visitor) {
     visitor->visitBuiltinType(this);
-}
-
-bool BuiltinType::isBuiltinType() const {
-    return true;
 }
 
 unsigned int BuiltinType::getMethodSize() {
@@ -378,10 +372,6 @@ MethodHandle *ErrorType::getConstructorHandle(TypePool &typePool) {
 
 const MethodRef *ErrorType::getConstructor() {
     return &initRef;
-}
-
-bool ErrorType::isBuiltinType() const {
-    return true;
 }
 
 unsigned int ErrorType::getFieldSize() {

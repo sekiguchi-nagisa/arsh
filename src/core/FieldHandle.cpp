@@ -43,10 +43,6 @@ DSType *FunctionHandle::getFieldType(TypePool &typePool) {
     return this->fieldType;
 }
 
-FunctionType *FunctionHandle::getFuncType(TypePool &typePool) {
-    return static_cast<FunctionType *>(this->getFieldType(typePool));
-}
-
 const std::vector<DSType *> &FunctionHandle::getParamTypes() {
     if(this->fieldType != nullptr) {
         return static_cast<FunctionType *>(this->fieldType)->getParamTypes();
@@ -152,7 +148,7 @@ void MethodHandle::init(TypePool &typePool, NativeFuncInfo &info,
     }
 }
 
-bool MethodHandle::isSignal() {
+bool MethodHandle::isSignal() const {
     return this->isInterfaceMethod() && this->paramTypes.size() == 1 &&
            this->paramTypes[0]->isFuncType() && this->returnType->isVoidType();
 }

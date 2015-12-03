@@ -349,10 +349,6 @@ DSType *TypeChecker::popReturnType() {
     return returnType;
 }
 
-DSType *TypeChecker::getCurrentReturnType() {
-    return this->curReturnType;
-}
-
 void TypeChecker::checkAndThrowIfInsideFinally(BlockEndNode &node) {
     if(this->finallyDepth > 0) {
         E_InsideFinally(node);
@@ -420,57 +416,57 @@ void TypeChecker::checkTypeArgsNode(Node &node, MethodHandle *handle, std::vecto
 }
 
 // for type cast
-bool TypeChecker::checkInt2Float(int beforePrecision, const DSType &afterType) {
+bool TypeChecker::checkInt2Float(int beforePrecision, const DSType &afterType) const {
     return beforePrecision > TypePool::INVALID_PRECISION &&
            beforePrecision < TypePool::INT64_PRECISION &&
             afterType == this->typePool.getFloatType();
 }
 
-bool TypeChecker::checkFloat2Int(const DSType &beforeType, int afterPrecision) {
+bool TypeChecker::checkFloat2Int(const DSType &beforeType, int afterPrecision) const {
     return beforeType == this->typePool.getFloatType() &&
             afterPrecision > TypePool::INVALID_PRECISION &&
             afterPrecision < TypePool::INT64_PRECISION;
 }
 
-bool TypeChecker::checkLong2Float(int beforePrecision, const DSType &afterType) {
+bool TypeChecker::checkLong2Float(int beforePrecision, const DSType &afterType) const {
     return beforePrecision == TypePool::INT64_PRECISION &&
             afterType == this->typePool.getFloatType();
 }
 
-bool TypeChecker::checkFloat2Long(const DSType &beforeType, int afterPrecision) {
+bool TypeChecker::checkFloat2Long(const DSType &beforeType, int afterPrecision) const {
     return beforeType == this->typePool.getFloatType() &&
             afterPrecision == TypePool::INT64_PRECISION;
 }
 
-bool TypeChecker::checkInt2IntWidening(int beforePrecision, int afterPrecision) {
+bool TypeChecker::checkInt2IntWidening(int beforePrecision, int afterPrecision) const {
     return beforePrecision > TypePool::INVALID_PRECISION &&
            afterPrecision < TypePool::INT64_PRECISION &&
            beforePrecision < afterPrecision;
 }
 
-bool TypeChecker::checkInt2IntNarrowing(int beforePrecision, int afterPrecision) {
+bool TypeChecker::checkInt2IntNarrowing(int beforePrecision, int afterPrecision) const {
     return beforePrecision < TypePool::INT64_PRECISION &&
            afterPrecision > TypePool::INVALID_PRECISION &&
            beforePrecision > afterPrecision;
 }
 
-bool TypeChecker::checkInt2Int(int beforePrecision, int afterPrecision) {
+bool TypeChecker::checkInt2Int(int beforePrecision, int afterPrecision) const {
     return beforePrecision == TypePool::INT32_PRECISION &&
            beforePrecision == afterPrecision;
 }
 
-bool TypeChecker::checkLong2Long(int beforePrecision, int afterPrecision) {
+bool TypeChecker::checkLong2Long(int beforePrecision, int afterPrecision) const {
     return beforePrecision == TypePool::INT64_PRECISION &&
            beforePrecision == afterPrecision;
 }
 
-bool TypeChecker::checkInt2Long(int beforePrecision, int afterPrecision) {
+bool TypeChecker::checkInt2Long(int beforePrecision, int afterPrecision) const {
     return beforePrecision > TypePool::INVALID_PRECISION &&
            afterPrecision == TypePool::INT64_PRECISION &&
            beforePrecision < afterPrecision;
 }
 
-bool TypeChecker::checkLong2Int(int beforePrecision, int afterPrecision) {
+bool TypeChecker::checkLong2Int(int beforePrecision, int afterPrecision) const {
     return beforePrecision == TypePool::INT64_PRECISION &&
            afterPrecision > TypePool::INVALID_PRECISION &&
            beforePrecision > afterPrecision;

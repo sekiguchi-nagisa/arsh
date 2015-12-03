@@ -246,7 +246,9 @@ private:
     /**
      * return null, if outside of function
      */
-    DSType *getCurrentReturnType();
+    DSType *getCurrentReturnType() const {
+        return this->curReturnType;
+    }
 
     void checkAndThrowIfInsideFinally(BlockEndNode &node);
 
@@ -271,26 +273,26 @@ private:
     void checkTypeArgsNode(Node &node, MethodHandle *handle, std::vector<Node *> &argNodes);
 
     // for type cast
-    bool checkInt2Float(int beforePrecision, const DSType &afterType);
-    bool checkFloat2Int(const DSType &beforeType, int afterPrecision);
-    bool checkLong2Float(int beforePrecision, const DSType &afterType);
-    bool checkFloat2Long(const DSType &beforeType, int afterPrecision);
+    bool checkInt2Float(int beforePrecision, const DSType &afterType) const;
+    bool checkFloat2Int(const DSType &beforeType, int afterPrecision) const;
+    bool checkLong2Float(int beforePrecision, const DSType &afterType) const;
+    bool checkFloat2Long(const DSType &beforeType, int afterPrecision) const;
 
     /**
      * check to higher precision int type.
      */
-    bool checkInt2IntWidening(int beforePrecision, int afterPrecision);
+    bool checkInt2IntWidening(int beforePrecision, int afterPrecision) const;
 
-    bool checkInt2IntNarrowing(int beforePrecision, int afterPrecision);
+    bool checkInt2IntNarrowing(int beforePrecision, int afterPrecision) const;
 
     /**
      * some precision cast
      */
-    bool checkInt2Int(int beforePrecision, int afterPrecision);
+    bool checkInt2Int(int beforePrecision, int afterPrecision) const;
 
-    bool checkLong2Long(int beforePrecision, int afterPrecision);
-    bool checkInt2Long(int beforePrecision, int afterPrecision);
-    bool checkLong2Int(int beforePrecision, int afterPrecision);
+    bool checkLong2Long(int beforePrecision, int afterPrecision) const;
+    bool checkInt2Long(int beforePrecision, int afterPrecision) const;
+    bool checkLong2Int(int beforePrecision, int afterPrecision) const;
 
     // visitor api
     void visit(Node &node); // override
