@@ -36,10 +36,10 @@ struct Deleter {
 
 typedef std::unique_ptr<char, Deleter> StrWrapper;
 
+/**
+ * line is not nullptr
+ */
 static bool isSkipLine(const StrWrapper &line) {
-    if(line == nullptr) {
-        return false;
-    }
     const char *ptr = line.get();
     for(int i = 0; ptr[i] != '\0'; i++) {
         switch(ptr[i]) {
@@ -55,10 +55,10 @@ static bool isSkipLine(const StrWrapper &line) {
     return true;
 }
 
+/**
+ * line is not nullptr
+ */
 static bool checkLineContinuation(const StrWrapper &line) {
-    if(line == nullptr) {
-        return false;
-    }
     const char *ptr = line.get();
     for(unsigned int i = 0; ptr[i] != '\0'; i++) {
         if(ptr[i] == '\\' && ptr[i + 1] == '\0') {
@@ -75,15 +75,15 @@ static bool readLine(std::string &line) {
     while(true) {
         errno = 0;
         auto str = StrWrapper(linenoise(DSContext_getPrompt(dsContext, continuation ? 2 : 1)));
-        if(isSkipLine(str)) {
-            continue;
-        }
-
         if(str == nullptr) {
             if(errno == EAGAIN) {
                 continue;
             }
             return false;
+        }
+
+        if(isSkipLine(str)) {
+            continue;
         }
         line += str.get();
         continuation = checkLineContinuation(str);
