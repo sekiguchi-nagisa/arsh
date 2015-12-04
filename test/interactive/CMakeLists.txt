@@ -1,3 +1,13 @@
+#+++++++++++++++++++++++++++++#
+#     find expect command     #
+#+++++++++++++++++++++++++++++#
+
+execute_process(COMMAND which expect RESULT_VARIABLE status)
+if(NOT (${status} EQUAL 0))
+    message(FATAL_ERROR "not found expect command")
+endif()
+
+
 #==========================#
 #     interactive_test     #
 #==========================#
