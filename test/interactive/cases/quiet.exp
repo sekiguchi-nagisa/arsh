@@ -1,0 +1,44 @@
+#!/usr/bin/env expect
+
+# --norc, --quiet option
+
+set bin_name [lindex $argv 0]
+spawn ${bin_name} --norc --quiet
+
+set CTRLD \004
+set timeout 1
+
+expect {
+    "ydsh-*" {
+        send "12\r"
+    }
+}
+
+expect {
+    "(Int32) 12" {
+    }
+    default {
+        send_error "mismatch"
+        exit 1
+    }
+}
+
+expect {
+    "ydsh-*" {
+        send $CTRLD
+    }
+    default {
+        send_error "mismatch prompt"
+        exit 1
+    }
+}
+
+expect default
+catch wait result
+set os_error [ lindex $result 2 ]
+if { $os_error == -1 } {
+    send_error "execution failed"
+    exit 1
+}
+set status [ lindex $result 3]
+exit $status

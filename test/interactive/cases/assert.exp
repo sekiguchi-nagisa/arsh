@@ -1,0 +1,28 @@
+#!/usr/bin/env expect
+
+# terminal after assertion failed.
+
+set bin_name [lindex $argv 0]
+spawn ${bin_name} --norc --quiet
+
+set timeout 1
+
+expect {
+    "ydsh-*" {
+        send "assert(1 == 2)\r"
+    }
+}
+
+expect default
+catch wait result
+set os_error [ lindex $result 2 ]
+if { $os_error == -1 } {
+    send_error "execution failed"
+    exit 1
+}
+set status [ lindex $result 3]
+if { $status != 1 } {
+    send_error "mismatch exit status"
+    exit 1
+}
+exit 0

@@ -1,0 +1,32 @@
+#!/usr/bin/env expect
+
+# when call exit command from RC file, terminate
+
+set bin_name [lindex $argv 0]
+set workdir [lindex $argv 1]
+spawn ${bin_name} --rcfile "$workdir/rcfile2"
+
+set timeout 1
+
+expect {
+    "ydsh, version*" {
+    }
+}
+
+expect {
+    "Copyright*" {
+    }
+}
+
+catch wait result
+set os_error [ lindex $result 2 ]
+if { $os_error == -1 } {
+    send_error "execution failed"
+    exit 1
+}
+set status [ lindex $result 3]
+if { $status != 10 } {
+    send_error "execution failed"
+    exit 1
+}
+exit 0

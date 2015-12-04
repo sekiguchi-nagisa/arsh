@@ -1,0 +1,36 @@
+#!/usr/bin/env expect
+
+# specify RC file
+
+set bin_name [lindex $argv 0]
+set workdir [lindex $argv 1]
+spawn ${bin_name} --rcfile "$workdir/rcfile1"
+
+set CTRLD \004
+set timeout 1
+
+expect {
+    "ydsh, version*" {
+        exp_continue
+    }
+    "Copyright*" {
+        exp_continue
+    }
+    "ydsh-*" {
+        send "assert(\$RC_VAR == 'rc file'); exit 23\r"
+    }
+}
+
+expect default
+catch wait result
+set os_error [ lindex $result 2 ]
+if { $os_error == -1 } {
+    send_error "execution failed"
+    exit 1
+}
+set status [ lindex $result 3]
+if { $status != 23 } {
+    send_error "execution failed"
+    exit 1
+}
+exit 0

@@ -1,0 +1,4 @@
+# for interactive test
+# dummy RC file
+
+let RC_VAR = "rc file"

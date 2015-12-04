@@ -1,0 +1,41 @@
+#!/usr/bin/env expect
+
+# skip empty line
+
+set bin_name [lindex $argv 0]
+spawn ${bin_name} --norc
+
+set CTRLD \004
+set timeout 1
+
+expect {
+    "ydsh, version*" {
+        exp_continue
+    }
+    "Copyright*" {
+        exp_continue
+    }
+    "ydsh-*" {
+        send "    \t    \r"
+    }
+}
+
+expect {
+    "ydsh-*" {
+        send $CTRLD
+    }
+    default {
+        send_error "mismatch prompt"
+        exit 1
+    }
+}
+
+expect default
+catch wait result
+set os_error [ lindex $result 2 ]
+if { $os_error == -1 } {
+    send_error "execution failed"
+    exit 1
+}
+set status [ lindex $result 3]
+exit $status

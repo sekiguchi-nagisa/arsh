@@ -1,0 +1,4 @@
+# for interactive test
+# dummy RC file
+
+exit 10  # exit after loading RC file
