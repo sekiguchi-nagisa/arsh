@@ -16,6 +16,7 @@
 
 #include <cstring>
 #include <pwd.h>
+#include <iostream>
 
 #include <ydsh/ydsh.h>
 #include "config.h"
@@ -26,9 +27,9 @@
 #include "parser/Parser.h"
 #include "parser/TypeChecker.h"
 #include "core/RuntimeContext.h"
-#include "core/ErrorListener.h"
 #include "core/symbol.h"
 #include "misc/num.h"
+#include "misc/term.h"
 
 
 using namespace ydsh;
@@ -42,14 +43,6 @@ struct DSContext {
     TypeChecker checker;
     unsigned int lineNum;
 
-    /*
-     * not delete it.
-     */
-    ErrorListener *listener;
-
-    ProxyErrorListener proxy;
-    ReportingListener reportingListener;
-
     // option
     flag32_set_t option;
 
@@ -59,20 +52,22 @@ struct DSContext {
     std::string ps1;
     std::string ps2;
 
+    struct {
+        /**
+         * kind of execution status.
+         */
+        unsigned int type;
+
+        /**
+         * for error location.
+         */
+        unsigned int lineNum;
+
+        const char *errorKind;
+    } execStatus;
+
     DSContext();
     ~DSContext() = default;
-
-    void setErrorListener(ErrorListener * const listener) {
-        this->listener = listener;
-    }
-
-    ErrorListener *getErrorListener() const {
-        return this->listener;
-    }
-
-    ErrorListener *getDefaultListener() const {
-        return &clistener;
-    }
 
     /**
      * get exit status of recently executed command.(also exit command)
@@ -81,11 +76,22 @@ struct DSContext {
         return typeAs<Int_Object>(this->ctx.getExitStatus())->getValue();
     }
 
-    const ReportingListener &getReportingListener() {
-        return this->reportingListener;
+    void resetStatus() {
+        this->execStatus.type = DS_STATUS_SUCCESS;
+        this->execStatus.lineNum = 0;
+        this->execStatus.errorKind = "";
     }
 
-    unsigned int eval(Lexer &lexer);
+    void updateStatus(unsigned int type, unsigned int lineNum, const char *errorKind) {
+        this->execStatus.type = type;
+        this->execStatus.lineNum = lineNum;
+        this->execStatus.errorKind = errorKind;
+    }
+
+    void handleParseError(const Lexer &lexer, const ParseError &e);
+    void handleTypeError(const Lexer &lexer, const TypeCheckError &e);
+
+    int eval(Lexer &lexer);
 
     /**
      * call only once.
@@ -97,8 +103,6 @@ struct DSContext {
      */
     void loadEmbeddedScript();
 
-    static CommonErrorListener clistener;
-
     static const unsigned int originalShellLevel;
 
     /**
@@ -107,37 +111,14 @@ struct DSContext {
     static unsigned int getShellLevel();
 };
 
-struct DSStatus {
-    /**
-     * kind of execution status.
-     */
-    unsigned int type;
-
-    /**
-     * for error location.
-     */
-    unsigned int lineNum;
-
-    const char *errorKind;
-
-    DSStatus(unsigned int type, unsigned int lineNum, const char *errorKind) :
-            type(type), lineNum(lineNum), errorKind(errorKind) { }
-
-    ~DSStatus() = default;
-};
-
 
 // #######################
 // ##     DSContext     ##
 // #######################
 
 DSContext::DSContext() :
-        ctx(), parser(), checker(this->ctx.getPool(), this->ctx.getSymbolTable()), lineNum(1),
-        listener(0), proxy(), reportingListener(), option(0), ps1(), ps2() {
-    // set error listener
-    this->setErrorListener(&this->proxy);
-    this->proxy.addListener(this->getDefaultListener());
-    this->proxy.addListener(&this->reportingListener);
+        ctx(), parser(), checker(this->ctx.getPool(), this->ctx.getSymbolTable()),
+        lineNum(1), option(0), ps1(), ps2(), execStatus() {
 
     // update shell level
     setenv("SHLVL", std::to_string(originalShellLevel + 1).c_str(), 1);
@@ -153,9 +134,93 @@ DSContext::DSContext() :
     }
 }
 
-CommonErrorListener DSContext::clistener;
+static std::ostream &format(std::ostream &stream, const ParseError &e) {
+#define EACH_ERROR(E) \
+    E(TokenMismatchedError) \
+    E(NoViableAlterError) \
+    E(InvalidTokenError) \
+    E(OutOfRangeNumError)
 
-unsigned int DSContext::eval(Lexer &lexer) {
+#define DISPATCH(E) if(dynamic_cast<const E *>(&e) != nullptr) { \
+    stream << *static_cast<const E *>(&e); return stream; }
+
+    EACH_ERROR(DISPATCH)
+
+    fatal("unsupported parse error kind\n");
+    return stream;
+
+#undef DISPATCH
+#undef EACH_ERROR
+}
+
+static std::ostream &formatErrorLine(std::ostream &stream, const Lexer &lexer, const Token &errorToken) {
+    Token lineToken = lexer.getLineToken(errorToken, true);
+    stream << misc::TermColor::Cyan << lexer.toTokenText(lineToken) << misc::reset << std::endl;
+    stream << misc::TermColor::Green << lexer.formatLineMarker(lineToken, errorToken) << misc::reset;
+    return stream;
+}
+
+void DSContext::handleParseError(const Lexer &lexer, const ParseError &e) {
+    /**
+     * show parse error message
+     */
+    unsigned int errorLineNum = lexer.getSourceInfoPtr()->getLineNum(e.getErrorToken().pos);
+    if(e.getTokenKind() == EOS) {
+        errorLineNum--;
+    }
+
+    std::cerr << lexer.getSourceInfoPtr()->getSourceName() << ":" << errorLineNum << ":"
+    << misc::TermColor::Magenta << " [syntax error] " << misc::reset;
+    format(std::cerr, e) << std::endl;
+    formatErrorLine(std::cerr, lexer, e.getErrorToken()) << std::endl;
+
+    /**
+     * update execution status
+     */
+#define EACH_ERROR(E) \
+    E(TokenMismatched  , 0) \
+    E(NoViableAlter    , 1) \
+    E(InvalidToken     , 2) \
+    E(OutOfRangeNum    , 3)
+
+    static const char *strs[] = {
+#define GEN_STR(K, N) #K,
+            EACH_ERROR(GEN_STR)
+#undef GEN_STR
+    };
+
+#define DISPATCH(K, N) if(dynamic_cast<const K##Error *>(&e) != nullptr) { kind = strs[N]; }
+
+    const char *kind = "";
+    EACH_ERROR(DISPATCH)
+
+#undef DISPATCH
+
+#undef EACH_ERROR
+
+    this->updateStatus(DS_STATUS_PARSE_ERROR, errorLineNum, kind);
+}
+
+void DSContext::handleTypeError(const Lexer &lexer, const TypeCheckError &e) {
+    /**
+     * show type error message
+     */
+    std::cerr << lexer.getSourceInfoPtr()->getSourceName() << ":"
+    << lexer.getSourceInfoPtr()->getLineNum(e.getStartPos()) << ":"
+    << misc::TermColor::Magenta << " [semantic error] " << misc::reset
+    << e.getMessage() << std::endl;
+    formatErrorLine(std::cerr, lexer, e.getToken()) << std::endl;
+
+    /**
+     * update execution status
+     */
+    this->updateStatus(DS_STATUS_TYPE_ERROR,
+                       lexer.getSourceInfoPtr()->getLineNum(e.getStartPos()), e.getKind());
+}
+
+int DSContext::eval(Lexer &lexer) {
+    this->resetStatus();
+
     lexer.setLineNum(this->lineNum);
     RootNode rootNode;
 
@@ -170,9 +235,9 @@ unsigned int DSContext::eval(Lexer &lexer) {
             std::cout << std::endl;
         }
     } catch(const ParseError &e) {
-        this->listener->handleParseError(lexer, e);
+        this->handleParseError(lexer, e);
         this->lineNum = lexer.getLineNum();
-        return DS_STATUS_PARSE_ERROR;
+        return 1;
     }
 
     // type check
@@ -185,13 +250,13 @@ unsigned int DSContext::eval(Lexer &lexer) {
             std::cout << std::endl;
         }
     } catch(const TypeCheckError &e) {
-        this->listener->handleTypeError(lexer, e);
+        this->handleTypeError(lexer, e);
         this->checker.recover();
-        return DS_STATUS_TYPE_ERROR;
+        return 1;
     }
 
     if(hasFlag(this->option, DS_OPTION_PARSE_ONLY)) {
-        return DS_STATUS_SUCCESS;
+        return 0;
     }
 
     // eval
@@ -203,28 +268,37 @@ unsigned int DSContext::eval(Lexer &lexer) {
     }
 
     if(s != EvalStatus::SUCCESS) {
-        this->listener->handleRuntimeError(this->ctx.getPool(), this->ctx.getThrownObject());
+        unsigned int errorLineNum = 0;
+        DSValue thrownObj = this->ctx.getThrownObject();
+        if(dynamic_cast<Error_Object *>(thrownObj.get()) != nullptr) {
+            Error_Object *obj = typeAs<Error_Object>(thrownObj);
+            errorLineNum = getOccuredLineNum(obj->getStackTrace());
+        }
 
-        DSType &thrownType = *this->ctx.getThrownObject()->getType();
+        DSType &thrownType = *thrownObj->getType();
         if(this->ctx.getPool().getInternalStatus().isSameOrBaseTypeOf(thrownType)) {
             if(thrownType == this->ctx.getPool().getShellExit()) {
                 if(hasFlag(this->option, DS_OPTION_TRACE_EXIT)) {
                     this->ctx.loadThrownObject();
                     typeAs<Error_Object>(this->ctx.pop())->printStackTrace(this->ctx);
                 }
-                return DS_STATUS_EXIT;
+                this->updateStatus(DS_STATUS_EXIT, errorLineNum, "");
+                return this->getExitStatus();
             }
             if(thrownType == this->ctx.getPool().getAssertFail()) {
                 this->ctx.loadThrownObject();
                 typeAs<Error_Object>(this->ctx.pop())->printStackTrace(this->ctx);
-                return DS_STATUS_ASSERTION_ERROR;
+                this->updateStatus(DS_STATUS_ASSERTION_ERROR, errorLineNum, "");
+                return 1;
             }
         }
         this->ctx.reportError();
         this->checker.recover(false);
-        return DS_STATUS_RUNTIME_ERROR;
+        this->updateStatus(DS_STATUS_RUNTIME_ERROR, errorLineNum,
+                           this->ctx.getPool().getTypeName(*thrownObj->getType()).c_str());
+        return 1;
     }
-    return DS_STATUS_SUCCESS;
+    return this->getExitStatus();
 }
 
 static void defineBuiltin(RootNode &rootNode, const char *varName, DSValue &&value) {
@@ -284,8 +358,8 @@ void DSContext::initBuiltinVar() {
 
 void DSContext::loadEmbeddedScript() {
     Lexer lexer("(embed)", embed_script);
-    unsigned int s = this->eval(lexer);
-    if(s != DS_STATUS_SUCCESS) {
+    this->eval(lexer);
+    if(this->execStatus.type != DS_STATUS_SUCCESS) {
         fatal("broken embedded script\n");
     }
     this->ctx.getPool().commit();
@@ -330,34 +404,19 @@ void DSContext_delete(DSContext **ctx) {
     }
 }
 
-static int createStatus(unsigned int type, DSContext *ctx, DSStatus **status) {
-    int ret = 1;
-    unsigned int lineNum = ctx->getReportingListener().getLineNum();
-    const char *errorKind = ctx->getReportingListener().getMessageKind();
-
-    if(type == DS_STATUS_SUCCESS || type == DS_STATUS_EXIT) {
-        ret = ctx->getExitStatus();
-    }
-
-    if(status != nullptr) {
-        *status = new DSStatus(type, lineNum, errorKind);
-    }
-    return ret;
-}
-
-int DSContext_eval(DSContext *ctx, const char *sourceName, const char *source, DSStatus **status) {
+int DSContext_eval(DSContext *ctx, const char *sourceName, const char *source) {
     Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName, source);
-    unsigned int s = ctx->eval(lexer);
-    return createStatus(s, ctx, status);
+    return ctx->eval(lexer);
 }
 
-int DSContext_loadAndEval(DSContext *ctx, const char *sourceName, FILE *fp, DSStatus **status) {
+int DSContext_loadAndEval(DSContext *ctx, const char *sourceName, FILE *fp) {
     Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName, fp);
-    unsigned int s = ctx->eval(lexer);
-    return createStatus(s, ctx, status);
+    return ctx->eval(lexer);
 }
 
-int DSContext_exec(DSContext *ctx, char *const argv[], DSStatus **status) {
+int DSContext_exec(DSContext *ctx, char *const argv[]) {
+    ctx->resetStatus();
+
     EvalStatus es = EvalStatus::SUCCESS;
     try {
         ctx->ctx.getProcInvoker().execBuiltinCommand(argv);
@@ -365,21 +424,20 @@ int DSContext_exec(DSContext *ctx, char *const argv[], DSStatus **status) {
         es = EvalStatus::THROW;
     }
 
-    unsigned int s = DS_STATUS_SUCCESS;
     if(es != EvalStatus::SUCCESS) {
         DSType *thrownType = ctx->ctx.getThrownObject()->getType();
         if(*thrownType == ctx->ctx.getPool().getShellExit()) {
-            s = DS_STATUS_EXIT;
+            ctx->execStatus.type = DS_STATUS_EXIT;
         }
     }
-    return createStatus(s, ctx, status);
+    return ctx->getExitStatus();
 }
 
 void DSContext_setLineNum(DSContext *ctx, unsigned int lineNum) {
     ctx->lineNum = lineNum;
 }
 
-unsigned int DSContext_getLineNum(DSContext *ctx) {
+unsigned int DSContext_lineNum(DSContext *ctx) {
     return ctx->lineNum;
 }
 
@@ -420,7 +478,7 @@ void DSContext_unsetOption(DSContext *ctx, unsigned int optionSet) {
     setOptionImpl(ctx, optionSet, false);
 }
 
-const char *DSContext_getPrompt(DSContext *ctx, unsigned int n) {
+const char *DSContext_prompt(DSContext *ctx, unsigned int n) {
     FieldHandle *handle = nullptr;
     bool usePS1 = true;
     switch(n) {
@@ -452,31 +510,31 @@ const char *DSContext_getPrompt(DSContext *ctx, unsigned int n) {
 }
 
 int DSContext_supportDBus() {
-    return hasFlag(DSContext_getFeatureBit(), DS_FEATURE_DBUS) ? 1 : 0;
+    return hasFlag(DSContext_featureBit(), DS_FEATURE_DBUS) ? 1 : 0;
 }
 
-unsigned int DSContext_getMajorVersion() {
+unsigned int DSContext_majorVersion() {
     return X_INFO_MAJOR_VERSION;
 }
 
-unsigned int DSContext_getMinorVersion() {
+unsigned int DSContext_minorVersion() {
     return X_INFO_MINOR_VERSION;
 }
 
-unsigned int DSContext_getPatchVersion() {
+unsigned int DSContext_patchVersion() {
     return X_INFO_PATCH_VERSION;
 }
 
-const char *DSContext_getVersion() {
+const char *DSContext_version() {
     return "ydsh, version " X_INFO_VERSION
             " (" X_INFO_SYSTEM "), build by " X_INFO_CPP " " X_INFO_CPP_V;
 }
 
-const char *DSContext_getCopyright() {
+const char *DSContext_copyright() {
     return "Copyright (C) 2015 Nagisa Sekiguchi";
 }
 
-unsigned int DSContext_getFeatureBit() {
+unsigned int DSContext_featureBit() {
     unsigned int featureBit = 0;
 
 #ifdef USE_LOGGING
@@ -493,25 +551,14 @@ unsigned int DSContext_getFeatureBit() {
     return featureBit;
 }
 
-// ######################
-// ##     DSStatus     ##
-// ######################
-
-void DSStatus_free(DSStatus **status) {
-    if(status != nullptr) {
-        delete (*status);
-        *status = nullptr;
-    }
+unsigned int DSContext_status(DSContext *ctx) {
+    return ctx->execStatus.type;
 }
 
-unsigned int DSStatus_getType(DSStatus *status) {
-    return status->type;
+unsigned int DSContext_errorLineNum(DSContext *ctx) {
+    return ctx->execStatus.lineNum;
 }
 
-unsigned int DSStatus_getErrorLineNum(DSStatus *status) {
-    return status->lineNum;
-}
-
-const char *DSStatus_getErrorKind(DSStatus *status) {
-    return status->errorKind;
+const char *DSContext_errorKind(DSContext *ctx) {
+    return ctx->execStatus.errorKind;
 }

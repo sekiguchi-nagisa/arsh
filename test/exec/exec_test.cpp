@@ -279,13 +279,12 @@ TEST(BuiltinExecTest, case1) {
         SCOPED_TRACE("");
 
         DSContext *ctx = DSContext_create();
-        DSStatus *s;
 
-        int ret = DSContext_exec(ctx, make_argv("echo", "hello").get(), &s);
+        int ret = DSContext_exec(ctx, make_argv("echo", "hello").get());
         ASSERT_EQ(0, ret);
-        ASSERT_EQ(DS_STATUS_SUCCESS, DSStatus_getType(s));
+        ASSERT_EQ(DS_STATUS_SUCCESS, DSContext_status(ctx));
+        ASSERT_STREQ("", DSContext_errorKind(ctx));
 
-        DSStatus_free(&s);
         DSContext_delete(&ctx);
     });
 }
@@ -295,13 +294,12 @@ TEST(BuiltinExecTest, case2) {
         SCOPED_TRACE("");
 
         DSContext *ctx = DSContext_create();
-        DSStatus *s;
 
-        int ret = DSContext_exec(ctx, make_argv("fheruifh", "hello").get(), &s);
+        int ret = DSContext_exec(ctx, make_argv("fheruifh", "hello").get());
         ASSERT_EQ(1, ret);
-        ASSERT_EQ(DS_STATUS_SUCCESS, DSStatus_getType(s));  // if command not found, still success.
+        ASSERT_EQ(DS_STATUS_SUCCESS, DSContext_status(ctx));  // if command not found, still success.
+        ASSERT_STREQ("", DSContext_errorKind(ctx));
 
-        DSStatus_free(&s);
         DSContext_delete(&ctx);
     });
 }
@@ -311,14 +309,13 @@ TEST(BuiltinExecTest, case3) {
         SCOPED_TRACE("");
 
         DSContext *ctx = DSContext_create();
-        DSStatus *s;
 
-        int ret = DSContext_exec(ctx, make_argv("exit", "12").get(), &s);
+        int ret = DSContext_exec(ctx, make_argv("exit", "12").get());
         ASSERT_EQ(12, ret);
-        ASSERT_EQ(DS_STATUS_EXIT, DSStatus_getType(s));
-        ASSERT_EQ(0u, DSStatus_getErrorLineNum(s));  // error line num is always 0.
+        ASSERT_EQ(DS_STATUS_EXIT, DSContext_status(ctx));
+        ASSERT_EQ(0u, DSContext_errorLineNum(ctx));  // error line num is always 0.
+        ASSERT_STREQ("", DSContext_errorKind(ctx));
 
-        DSStatus_free(&s);
         DSContext_delete(&ctx);
     });
 }
@@ -327,9 +324,9 @@ TEST(API, case1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
 
-        ASSERT_EQ((unsigned int)X_INFO_MAJOR_VERSION, DSContext_getMajorVersion());
-        ASSERT_EQ((unsigned int)X_INFO_MINOR_VERSION, DSContext_getMinorVersion());
-        ASSERT_EQ((unsigned int)X_INFO_PATCH_VERSION, DSContext_getPatchVersion());
+        ASSERT_EQ((unsigned int)X_INFO_MAJOR_VERSION, DSContext_majorVersion());
+        ASSERT_EQ((unsigned int)X_INFO_MINOR_VERSION, DSContext_minorVersion());
+        ASSERT_EQ((unsigned int)X_INFO_PATCH_VERSION, DSContext_patchVersion());
     });
 }
 
@@ -338,13 +335,13 @@ TEST(API, case2) {
         SCOPED_TRACE("");
 
         DSContext *ctx = DSContext_create();
-        ASSERT_EQ(1u, DSContext_getLineNum(ctx));
-        DSContext_eval(ctx, nullptr, "12 + 32\n $true\n", nullptr);
-        ASSERT_EQ(3u, DSContext_getLineNum(ctx));
+        ASSERT_EQ(1u, DSContext_lineNum(ctx));
+        DSContext_eval(ctx, nullptr, "12 + 32\n $true\n");
+        ASSERT_EQ(3u, DSContext_lineNum(ctx));
 
         DSContext_setLineNum(ctx, 49);
-        DSContext_eval(ctx, nullptr, "23", nullptr);
-        ASSERT_EQ(50u, DSContext_getLineNum(ctx));
+        DSContext_eval(ctx, nullptr, "23");
+        ASSERT_EQ(50u, DSContext_lineNum(ctx));
     });
 }
 

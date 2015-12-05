@@ -26,9 +26,6 @@ extern "C" {
 struct DSContext;
 typedef struct DSContext DSContext;
 
-struct DSStatus;
-typedef struct DSStatus DSStatus;
-
 
 /***********************/
 /**     DSContext     **/
@@ -49,36 +46,33 @@ void DSContext_delete(DSContext **ctx);
  * evaluate string.
  * if sourceName is null, source name is treated as standard input.
  * source must not be null.
- * if status is not null, write status and you can call DSStatus_free() to release object.
  * if terminated by exit command or terminated normally,
  * return exit status of most recently executed command(include exit).
  * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
  */
-int DSContext_eval(DSContext *ctx, const char *sourceName, const char *source, DSStatus **status);
+int DSContext_eval(DSContext *ctx, const char *sourceName, const char *source);
 
 /**
  * evaluate file content.
  * if sourceName is null, source name is treated as standard input.
  * fp must be opened binary mode.
- * if status is not null, write status and you can call DSStatus_free() to release object.
  * if terminated by exit command or terminated normally,
  * return exit status of most recently executed command(include exit).
  * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
  */
-int DSContext_loadAndEval(DSContext *ctx, const char *sourceName, FILE *fp, DSStatus **status);
+int DSContext_loadAndEval(DSContext *ctx, const char *sourceName, FILE *fp);
 
 /**
  * execute builtin command.
  * first element of argv must be command name.
  * last element of argv must be null.
- * if status is not null, write status and you can call DSStatus_free() to release object.
  * return exit status of executed command.
  * if command not found, return 1.
  */
-int DSContext_exec(DSContext *ctx, char *const argv[], DSStatus **status);
+int DSContext_exec(DSContext *ctx, char *const argv[]);
 
 void DSContext_setLineNum(DSContext *ctx, unsigned int lineNum);
-unsigned int DSContext_getLineNum(DSContext *ctx);
+unsigned int DSContext_lineNum(DSContext *ctx);
 
 /**
  * set shell name ($0).
@@ -109,7 +103,7 @@ void DSContext_unsetOption(DSContext *ctx, unsigned int optionSet);
  * if n is 2, return secondary prompt.
  * otherwise, return empty string.
  */
-const char *DSContext_getPrompt(DSContext *ctx, unsigned int n);
+const char *DSContext_prompt(DSContext *ctx, unsigned int n);
 
 /**
  * return 1 if support D-Bus.
@@ -118,35 +112,25 @@ const char *DSContext_getPrompt(DSContext *ctx, unsigned int n);
 int DSContext_supportDBus();
 
 // for version information
-unsigned int DSContext_getMajorVersion();
-unsigned int DSContext_getMinorVersion();
-unsigned int DSContext_getPatchVersion();
+unsigned int DSContext_majorVersion();
+unsigned int DSContext_minorVersion();
+unsigned int DSContext_patchVersion();
 
 /**
  * get version string (include some build information)
  */
-const char *DSContext_getVersion();
+const char *DSContext_version();
 
-const char *DSContext_getCopyright();
+const char *DSContext_copyright();
 
 // for feature detection
 #define DS_FEATURE_LOGGING   ((unsigned int) (1 << 0))
 #define DS_FEATURE_DBUS      ((unsigned int) (1 << 1))
 #define DS_FEATURE_SAFE_CAST ((unsigned int) (1 << 2))
 
-unsigned int DSContext_getFeatureBit();
+unsigned int DSContext_featureBit();
 
-
-/**********************/
-/**     DSStatus     **/
-/**********************/
-
-/**
- * delete DSStatus. after release object, assign null to status.
- */
-void DSStatus_free(DSStatus **status);
-
-
+// for execution status
 #define DS_STATUS_SUCCESS         ((unsigned int) 0)
 #define DS_STATUS_PARSE_ERROR     ((unsigned int) 1)
 #define DS_STATUS_TYPE_ERROR      ((unsigned int) 2)
@@ -158,20 +142,20 @@ void DSStatus_free(DSStatus **status);
  * return type of status.
  * see DS_STATUS_* macro.
  */
-unsigned int DSStatus_getType(DSStatus *status);
+unsigned int DSContext_status(DSContext *ctx);
 
 /**
  * return line number of error location.
  * if type is DS_STATUS_SUCCESS, return always 0.
  */
-unsigned int DSStatus_getErrorLineNum(DSStatus *status);
+unsigned int DSContext_errorLineNum(DSContext *ctx);
 
 /**
  * if type is DS_STATUS_PARSE_ERROR or DS_STATUS_TYPE_ERROR, return error kind.
  * if type is DS_STATUS_RUNTIME_ERROR return raised type name.
  * otherwise, return always empty string.
  */
-const char *DSStatus_getErrorKind(DSStatus *status);
+const char *DSContext_errorKind(DSContext *ctx);
 
 
 #ifdef __cplusplus

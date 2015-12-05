@@ -25,7 +25,7 @@
 
 using namespace ydsh;
 
-void exec_interactive(DSContext *ctx);
+int exec_interactive(DSContext *ctx);
 
 static void loadRC(DSContext *ctx, const char *rcfile) {
     std::string path;
@@ -40,12 +40,10 @@ static void loadRC(DSContext *ctx, const char *rcfile) {
     if(fp == NULL) {
         return; // not read
     }
-    DSStatus *s;
-    int ret = DSContext_loadAndEval(ctx, path.c_str(), fp, &s);
-    int type = DSStatus_getType(s);
-    DSStatus_free(&s);
+    int ret = DSContext_loadAndEval(ctx, path.c_str(), fp);
+    int status = DSContext_status(ctx);
     fclose(fp);
-    if(type != DS_STATUS_SUCCESS) {
+    if(status != DS_STATUS_SUCCESS) {
         DSContext_delete(&ctx);
         exit(ret);
     }
@@ -58,17 +56,15 @@ static const char *statusLogPath = nullptr;
 
 template <typename F, F func, typename ...T>
 static int invoke(DSContext **ctx, T&& ... args) {
-    DSStatus *status;
-    int ret = func(*ctx, std::forward<T>(args)..., &status);
+    int ret = func(*ctx, std::forward<T>(args)...);
     if(statusLogPath != nullptr) {
         FILE *fp = fopen(statusLogPath, "w");
         if(fp != nullptr) {
             fprintf(fp, "type=%d lineNum=%d kind=%s\n",
-                    DSStatus_getType(status), DSStatus_getErrorLineNum(status), DSStatus_getErrorKind(status));
+                    DSContext_status(*ctx), DSContext_errorLineNum(*ctx), DSContext_errorKind(*ctx));
             fclose(fp);
         }
     }
-    DSStatus_free(&status);
     DSContext_delete(ctx);
     return ret;
 };
@@ -86,7 +82,7 @@ static void showFeature(std::ostream &stream) {
             {0, nullptr},   // sentinel
     };
 
-    const unsigned int featureBit = DSContext_getFeatureBit();
+    const unsigned int featureBit = DSContext_featureBit();
     for(unsigned int i = 0; set[i].name != nullptr; i++) {
         if(ydsh::misc::hasFlag(featureBit, set[i].featureFlag)) {
             stream << set[i].name << std::endl;
@@ -180,7 +176,7 @@ int main(int argc, char **argv) {
         restIndex = argv::parseArgv(argc, argv, options, cmdLines);
     } catch(const argv::ParseError &e) {
         std::cerr << e.getMessage() << std::endl;
-        std::cerr << DSContext_getVersion() << std::endl;
+        std::cerr << DSContext_version() << std::endl;
         std::cerr << options << std::endl;
         return 1;
     }
@@ -213,11 +209,11 @@ int main(int argc, char **argv) {
             DSContext_setOption(ctx, DS_OPTION_TRACE_EXIT);
             break;
         case VERSION:
-            std::cout << DSContext_getVersion() << std::endl;
-            std::cout << DSContext_getCopyright() << std::endl;
+            std::cout << DSContext_version() << std::endl;
+            std::cout << DSContext_copyright() << std::endl;
             return 0;
         case HELP:
-            std::cout << DSContext_getVersion() << std::endl;
+            std::cout << DSContext_version() << std::endl;
             std::cout << options << std::endl;
             return 0;
         case COMMAND:
@@ -280,15 +276,14 @@ int main(int argc, char **argv) {
             return INVOKE(loadAndEval)(&ctx, nullptr, stdin);
         } else {    // interactive mode
             if(!quiet) {
-                std::cout << DSContext_getVersion() << std::endl;
-                std::cout << DSContext_getCopyright() << std::endl;
+                std::cout << DSContext_version() << std::endl;
+                std::cout << DSContext_copyright() << std::endl;
             }
             if(userc) {
                 loadRC(ctx, rcfile);
             }
 
-            exec_interactive(ctx);
-            return 0;
+            return exec_interactive(ctx);
         }
     }
     case InvocationKind::FROM_STRING: {

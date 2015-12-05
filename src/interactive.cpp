@@ -74,7 +74,7 @@ static bool readLine(std::string &line) {
     bool continuation = false;
     while(true) {
         errno = 0;
-        auto str = StrWrapper(linenoise(DSContext_getPrompt(dsContext, continuation ? 2 : 1)));
+        auto str = StrWrapper(linenoise(DSContext_prompt(dsContext, continuation ? 2 : 1)));
         if(str == nullptr) {
             if(errno == EAGAIN) {
                 continue;
@@ -110,7 +110,10 @@ static void ignoreSignal() {
     sigaction(SIGTSTP, &ignore_act, NULL);  //FIXME: job control
 }
 
-void exec_interactive(DSContext *ctx) {   // never return
+/**
+ * after execution, delete ctx
+ */
+int exec_interactive(DSContext *ctx) {   // never return
     linenoiseSetEncodingFunctions(
             linenoiseUtf8PrevCharLen,
             linenoiseUtf8NextCharLen,
@@ -123,10 +126,8 @@ void exec_interactive(DSContext *ctx) {   // never return
     std::string line;
     while(readLine(line)) {
         ignoreSignal();
-        DSStatus *status;
-        int ret = DSContext_eval(ctx, nullptr, line.c_str(), &status);
-        unsigned int type = DSStatus_getType(status);
-        DSStatus_free(&status);
+        int ret = DSContext_eval(ctx, nullptr, line.c_str());
+        unsigned int type = DSContext_status(ctx);
         if(type == DS_STATUS_ASSERTION_ERROR || type == DS_STATUS_EXIT) {
             exitStatus = ret;
             break;
@@ -134,6 +135,6 @@ void exec_interactive(DSContext *ctx) {   // never return
     }
 
     DSContext_delete(&ctx);
-    exit(exitStatus);
+    return exitStatus;
 }
 

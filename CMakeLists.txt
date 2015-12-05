@@ -189,7 +189,6 @@ set(YDSH_SRC
     src/core/RuntimeContext.cpp
     src/core/SymbolTable.cpp
     src/core/TypePool.cpp
-    src/core/ErrorListener.cpp
     src/parser/Lexer.cpp
     src/parser/Parser.cpp
     src/parser/TokenKind.cpp
