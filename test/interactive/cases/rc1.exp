@@ -10,13 +10,7 @@ set CTRLD \004
 set timeout 1
 
 expect {
-    "ydsh, version*" {
-        exp_continue
-    }
-    "Copyright*" {
-        exp_continue
-    }
-    "ydsh-*" {
+    "\\$ $" {
         send "assert(\$RC_VAR == 'rc file'); exit 23\r"
     }
 }

@@ -9,14 +9,12 @@ set CTRLD \004
 set timeout 1
 
 expect {
-    "ydsh, version*" {
-        exp_continue
-    }
-    "Copyright*" {
-        exp_continue
-    }
-    "ydsh-*" {
+    -re "\\$ $" {
         send "12\r"
+    }
+    default {
+        send_error "mismatch first prompt"
+        exit 1    
     }
 }
 
@@ -30,7 +28,7 @@ expect {
 }
 
 expect {
-    "ydsh-*" {
+    -re "\\$ $" {
         send $CTRLD
     }
     default {

@@ -2,21 +2,19 @@
 
 # set argument
 
-set bin_name [lindex $argv 0]
-spawn ${bin_name} --norc -s hello
 
 set CTRLD \004
-set timeout 1
+
+set bin_name [lindex $argv 0]
+spawn ${bin_name} --quiet --norc -s hello
 
 expect {
-    "ydsh, version*" {
-        exp_continue
-    }
-    "Copyright*" {
-        exp_continue
-    }
-    "ydsh-*" {
+    -re "\\$ $" {
         send "assert(\$1 == 'hello'); exit 0\r"
+    }
+    default {
+        send_error "mismatch prompt"
+        exit 1
     }
 }
 

@@ -6,16 +6,10 @@ set bin_name [lindex $argv 0]
 spawn ${bin_name} --norc
 
 set CTRLD \004
-set timeout 1
+set timeout 2
 
 expect {
-    "ydsh, version*" {
-        exp_continue
-    }
-    "Copyright*" {
-        exp_continue
-    }
-    "ydsh-*" {
+    -re "\\$ $" {
         send "12\r"
     }
 }
@@ -30,7 +24,7 @@ expect {
 }
 
 expect {
-    "ydsh-*" {
+    "\\$ $" {
         send $CTRLD
     }
     default {

@@ -9,12 +9,11 @@ spawn ${bin_name} --rcfile "$workdir/rcfile2"
 set timeout 1
 
 expect {
-    "ydsh, version*" {
+    -re "ydsh, version .+$" {
     }
-}
-
-expect {
-    "Copyright*" {
+    default {
+        send_error "mismatch"
+        exit 1
     }
 }
 

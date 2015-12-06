@@ -8,7 +8,7 @@ spawn ${bin_name} --norc --quiet
 set timeout 1
 
 expect {
-    "ydsh-*" {
+    "\\$ $" {
         send "exit 30\r"
     }
 }

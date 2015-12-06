@@ -9,7 +9,7 @@ set CTRLD \004
 set timeout 1
 
 expect {
-    "ydsh-*" {
+    "\\$ $" {
         send "12\r"
     }
 }
@@ -24,7 +24,7 @@ expect {
 }
 
 expect {
-    "ydsh-*" {
+    "\\$ $" {
         send $CTRLD
     }
     default {

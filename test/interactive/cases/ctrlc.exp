@@ -10,20 +10,14 @@ set CTRLC \003
 set timeout 1
 
 expect {
-    "ydsh, version*" {
-        exp_continue
-    }
-    "Copyright*" {
-        exp_continue
-    }
-    "ydsh-*" {
+    "\\$ $" {
         send "hello"
         send $CTRLC
     }
 }
 
 expect {
-    "ydsh-*" {
+    "\\$ $" {
         send $CTRLD
     }
     default {
