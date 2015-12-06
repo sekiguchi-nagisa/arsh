@@ -8,8 +8,12 @@ spawn ${bin_name} --norc --quiet
 set timeout 1
 
 expect {
-    "\\$ $" {
+    -re "\\$ $" {
         send "assert(1 == 2)\r"
+    }
+    default {
+        send_error "mismatch prompt"
+        exit 1
     }
 }
 

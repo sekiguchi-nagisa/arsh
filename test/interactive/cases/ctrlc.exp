@@ -3,21 +3,24 @@
 # ctrl-c
 
 set bin_name [lindex $argv 0]
-spawn ${bin_name} --norc
+spawn ${bin_name} --quiet --norc
 
 set CTRLD \004
 set CTRLC \003
-set timeout 1
 
 expect {
-    "\\$ $" {
+    -re "\\$ $" {
         send "hello"
         send $CTRLC
+    }
+    default {
+        send_error "mismatch first prompt"
+        exit 1
     }
 }
 
 expect {
-    "\\$ $" {
+    -re "\\$ $" {
         send $CTRLD
     }
     default {

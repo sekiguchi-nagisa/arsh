@@ -12,6 +12,10 @@ expect {
     -re "\\$ $" {
         send "12\r"
     }
+    default {
+        send_error "mismatch first prompt"
+        exit 1
+    }
 }
 
 expect {
@@ -24,7 +28,7 @@ expect {
 }
 
 expect {
-    "\\$ $" {
+    -re "\\$ $" {
         send $CTRLD
     }
     default {

@@ -4,14 +4,18 @@
 
 set bin_name [lindex $argv 0]
 set workdir [lindex $argv 1]
-spawn ${bin_name} --rcfile "$workdir/rcfile1"
+spawn ${bin_name} --quiet --rcfile "$workdir/rcfile1"
 
 set CTRLD \004
 set timeout 1
 
 expect {
-    "\\$ $" {
+    -re ".+\\$ $" {
         send "assert(\$RC_VAR == 'rc file'); exit 23\r"
+    }
+    default {
+        send_error "mismatch prompt"
+        exit 1
     }
 }
 

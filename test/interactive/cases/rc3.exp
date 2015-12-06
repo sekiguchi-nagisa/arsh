@@ -6,7 +6,6 @@ set bin_name [lindex $argv 0]
 spawn ${bin_name} --rcfile hogehfuaeriv
 
 set CTRLD \004
-set timeout 1
 
 expect {
     -re "\\$ $" {

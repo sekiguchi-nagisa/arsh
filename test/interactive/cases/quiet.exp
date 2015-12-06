@@ -6,11 +6,14 @@ set bin_name [lindex $argv 0]
 spawn ${bin_name} --norc --quiet
 
 set CTRLD \004
-set timeout 1
 
 expect {
-    "\\$ $" {
+    -re "\\$ $" {
         send "12\r"
+    }
+    default {
+        send_error "mismatch first prompt"
+        exit 1
     }
 }
 
@@ -24,7 +27,7 @@ expect {
 }
 
 expect {
-    "\\$ $" {
+    -re "\\$ $" {
         send $CTRLD
     }
     default {
