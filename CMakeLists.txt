@@ -133,7 +133,8 @@ endif()
 
 set(lexer_src ${CMAKE_CURRENT_BINARY_DIR}/nextToken.cpp)
 add_custom_command(OUTPUT ${lexer_src}
-    COMMAND ${RE2C_DIR}/re2c -W -Werror -c -8 -o ${lexer_src}
+    COMMAND ${RE2C_DIR}/re2c -W -Werror -c -8
+            -s -t ${CMAKE_CURRENT_SOURCE_DIR}/src/parser/yycond.h -o ${lexer_src}
             ${CMAKE_CURRENT_SOURCE_DIR}/src/parser/nextToken.re2c.cpp
 )
 add_custom_target(gen_lexer DEPENDS ${lexer_src})

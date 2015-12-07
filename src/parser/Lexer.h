@@ -23,22 +23,10 @@
 #include "TokenKind.h"
 #include "LexerBase.hpp"
 
-#define EACH_LEXER_MODE(OP) \
-    OP(yycSTMT) \
-    OP(yycEXPR) \
-    OP(yycNAME) \
-    OP(yycDSTRING) \
-    OP(yycCMD) \
-    OP(yycTYPE)
-
 namespace ydsh {
 namespace parser {
 
-enum LexerMode : unsigned char {
-#define GEN_ENUM(ENUM) ENUM,
-    EACH_LEXER_MODE(GEN_ENUM)
-#undef GEN_ENUM
-};
+#include "yycond.h"
 
 const char *toModeName(LexerMode mode);
 

@@ -84,6 +84,7 @@ namespace parser {
 
 TokenKind Lexer::nextToken(Token &token) {
     /*!re2c
+      re2c:define:YYCONDTYPE = "LexerMode";
       re2c:define:YYGETCONDITION = YYGETCONDITION;
       re2c:define:YYCTYPE = "unsigned char";
       re2c:define:YYCURSOR = this->cursor;

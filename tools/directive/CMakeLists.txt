@@ -4,7 +4,7 @@
 
 set(dLexer_src ${CMAKE_CURRENT_BINARY_DIR}/nextToken.cpp)
 add_custom_command(OUTPUT ${dLexer_src}
-    COMMAND ${RE2C_DIR}/re2c -W -Werror -8 -o ${dLexer_src} ${CMAKE_CURRENT_SOURCE_DIR}/nextToken.re2c.cpp
+    COMMAND ${RE2C_DIR}/re2c -W -Werror -8 -s -o ${dLexer_src} ${CMAKE_CURRENT_SOURCE_DIR}/nextToken.re2c.cpp
 )
 add_custom_target(gen_directive_lexer DEPENDS ${dLexer_src})
 

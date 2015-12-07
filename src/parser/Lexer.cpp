@@ -26,14 +26,20 @@ namespace parser {
 using namespace ydsh::misc;
 
 const char *toModeName(LexerMode mode) {
-    static const char *lexerModeNames[] = {
-#define GEN_NAME(ENUM) #ENUM,
-            EACH_LEXER_MODE(GEN_NAME)
-#undef GEN_NAME
-#undef EACH_LEXER_MODE
-    };
-
-    return lexerModeNames[mode];
+    switch(mode) {
+    case yycSTMT:
+        return "STMT";
+    case yycEXPR:
+        return "EXPR";
+    case yycNAME:
+        return "NAME";
+    case yycTYPE:
+        return "TYPE";
+    case yycCMD:
+        return "CMD";
+    case yycDSTRING:
+        return "DSTRING";
+    }
 }
 
 // ###################

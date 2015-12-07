@@ -8,6 +8,7 @@ Release/
 # Auto-generated file
 src/config.h
 src/embed.h
+src/parser/yycond.h
 
 # Compiled Object files
 *.slo
