@@ -126,7 +126,7 @@ static DSType *decodeType(TypePool &typePool, const char *&pos,
     default:
         fatal("broken handle info\n");
     }
-    return 0;
+    return nullptr;
 }
 
 void MethodHandle::init(TypePool &typePool, NativeFuncInfo &info,

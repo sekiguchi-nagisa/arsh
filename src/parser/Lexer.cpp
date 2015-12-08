@@ -246,10 +246,6 @@ unsigned short Lexer::toUint16(Token token, int &status) const {
     return (unsigned short) value;
 }
 
-int Lexer::toInt(Token token, int &status) const {
-    return this->toInt32(token, status);
-}
-
 int Lexer::toInt32(Token token, int &status) const {
     long value = this->toInt64(token, status);
     if(value > INT32_MAX || value < INT32_MIN) {

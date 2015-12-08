@@ -288,7 +288,7 @@ void DirectiveParser::parse_string(std::unique_ptr<Node> &node) {
 
 void DirectiveParser::parse_boolean(std::unique_ptr<Node> &node) {
     Token token;
-    bool value = true;
+    bool value;
     if(CUR_KIND() == TRUE_LITERAL) {
         token = this->expect(TRUE_LITERAL);
         value = true;

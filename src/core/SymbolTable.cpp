@@ -68,13 +68,13 @@ SymbolTable::~SymbolTable() {
 }
 
 FieldHandle *SymbolTable::lookupHandle(const std::string &symbolName) const {
-    for(int index = this->scopes.size() - 1; index > -1; index--) {
-        FieldHandle *handle = this->scopes[index]->lookupHandle(symbolName);
+    for(auto iter = this->scopes.crbegin(); iter != this->scopes.crend(); ++iter) {
+        FieldHandle *handle = (*iter)->lookupHandle(symbolName);
         if(handle != nullptr) {
             return handle;
         }
     }
-    return 0;
+    return nullptr;
 }
 
 FieldHandle *SymbolTable::registerHandle(const std::string &symbolName, DSType &type, bool readOnly) {
@@ -116,7 +116,7 @@ void SymbolTable::exitScope() {
     Scope *scope = this->scopes.back();
     unsigned int varIndex = scope->getCurVarIndex();
     if(varIndex > this->maxVarIndexStack.back()) {
-        this->maxVarIndexStack[this->maxVarIndexStack.size() - 1] = varIndex;
+        this->maxVarIndexStack.back() = varIndex;
     }
 
     this->scopes.pop_back();

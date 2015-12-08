@@ -76,9 +76,9 @@ public:
  */
 static void error(const char *fmt, ...) {
     const unsigned int size = 128;
-    static char buf[size];  // error message must be under size.
+    char buf[size];  // error message must be under size.
 
-    // formate message
+    // format message
     va_list args;
     va_start(args, fmt);
     vsnprintf(buf, size, fmt, args);
@@ -523,7 +523,7 @@ public:
     }
 };
 
-#define CUR_KIND() this->curKind
+#define CUR_KIND() (this->curKind)
 
 class Parser : public ydsh::parser_base::ParserBase<DescTokenKind, DescLexer> {
 private:
@@ -730,7 +730,7 @@ std::unique_ptr<TypeToken> Parser::parse_type() {
     case IDENTIFIER: {
         Token token = this->expect(IDENTIFIER);
         return CommonTypeToken::newTypeToken(this->lexer->toTokenText(token));
-    };
+    }
     case ARRAY:
     case MAP:
     case TUPLE: {
@@ -753,7 +753,7 @@ std::unique_ptr<TypeToken> Parser::parse_type() {
         this->expect(TYPE_CLOSE);
 
         return std::unique_ptr<TypeToken>(type.release());
-    };
+    }
     default:
         std::vector<DescTokenKind> alters;
         alters.push_back(IDENTIFIER);
