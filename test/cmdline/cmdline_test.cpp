@@ -3,8 +3,8 @@
 #include <misc/files.h>
 
 
-#ifndef OPTION_TEST_DIR
-#define OPTION_TEST_DIR "."
+#ifndef CMDLINE_TEST_DIR
+#define CMDLINE_TEST_DIR "."
 #endif
 
 #ifndef BIN_PATH
@@ -13,13 +13,13 @@
 
 using namespace ydsh::misc;
 
-class OptionTest : public ::testing::TestWithParam<std::string> {
+class CmdlineTest : public ::testing::TestWithParam<std::string> {
 private:
     std::string targetName;
 
 public:
-    OptionTest() = default;
-    virtual ~OptionTest() = default;
+    CmdlineTest() = default;
+    virtual ~CmdlineTest() = default;
 
     virtual void SetUp() {
         this->targetName = this->GetParam();
@@ -41,14 +41,14 @@ public:
 };
 
 
-TEST_P(OptionTest, base) {
+TEST_P(CmdlineTest, base) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->doTest();
     });
 }
 
-INSTANTIATE_TEST_CASE_P(OptionTest, OptionTest, ::testing::ValuesIn(getFileList(OPTION_TEST_DIR, true)));
+INSTANTIATE_TEST_CASE_P(CmdlineTest, CmdlineTest, ::testing::ValuesIn(getFileList(CMDLINE_TEST_DIR, true)));
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
