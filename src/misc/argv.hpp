@@ -90,7 +90,7 @@ std::vector<std::string> Option<T>::getDetails() const {
         if(ch == '\n') {
             if(!buf.empty()) {
                 bufs.push_back(std::move(buf));
-                buf.clear();
+                buf = "";
             }
         } else {
             buf += ch;
