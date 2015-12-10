@@ -212,7 +212,7 @@ const struct {
                         "    If -p option is specified, search command from default PATH.\n"
                         "    If -V or -v option are specifed, print description of COMMAND.\n"
                         "    -V option shows more detailed information."},
-        {"echo", builtin_echo, "[-ne]",
+        {"echo", builtin_echo, "[-neE] [arg ...]",
                 "    Print argument to standard output and print new line.\n"
                 "    Options:\n"
                 "        -n    not print new line\n"
@@ -226,7 +226,8 @@ const struct {
                 "                  \\n    newline\n"
                 "                  \\r    carriage return\n"
                 "                  \\t    horizontal tab\n"
-                "                  \\v    vertical tab"},
+                "                  \\v    vertical tab\n"
+                "        -E    disable escape sequence interpretation"},
         {"eval", builtin_eval, "[args ...]",
                 "    evaluate ARGS as command."},
         {"exec", builtin_exec, "[-c] [-a name] file [args ...]",
@@ -445,6 +446,8 @@ static int builtin_echo(RuntimeContext *, const BuiltinContext &bctx) {
             newline = false;
         } else if(strcmp(argv[index], "-e") == 0) {
             interpEscape = true;
+        } else if(strcmp(argv[index], "-E") == 0) {
+            interpEscape = false;
         } else {
             break;
         }

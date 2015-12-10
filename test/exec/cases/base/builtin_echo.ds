@@ -5,8 +5,13 @@ world")
 
 assert("$(echo -n hello && echo world)" == "helloworld")
 
+# interpret escape sequence
 assert("$(echo -e 'hello\c' world)" == "hello")
+assert("$(echo -e 'hello\t\nworld')" == $'hello\t\nworld')
+
+# disable interpretation
+assert("$(echo -e -E 'hello\t\nworld')" == 'hello\t\nworld')
 
 
-assert(help echo | grep 'echo: echo \[-ne]')
+assert(help echo | grep 'echo: echo \[-neE] \[arg ...]')
 assert(help echo | grep 'Print argument to standard output and print new line.')
