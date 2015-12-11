@@ -1062,12 +1062,15 @@ static int builtin_read(RuntimeContext *ctx, const BuiltinContext &bctx) {  //FI
         }
     }
 
+    // clear old variable before read
+    ctx->setGlobal(ctx->getBuiltinVarIndex(BuiltinVarOffset::REPLY), ctx->getEmptyStrObj());    // clear REPLY
+    typeAs<Map_Object>(ctx->getGlobal(
+            ctx->getBuiltinVarIndex(BuiltinVarOffset::REPLY_VAR)))->refValueMap().clear();      // clear reply
+
+
     const int varSize = bctx.argc - index;  // if zero, store line to REPLY
     const unsigned int varIndex = ctx->getBuiltinVarIndex(
                     varSize == 0 ? BuiltinVarOffset::REPLY : BuiltinVarOffset::REPLY_VAR);
-    if(varSize != 0) {
-        typeAs<Map_Object>(ctx->getGlobal(varIndex))->refValueMap().clear();
-    }
     std::string strBuf;
 
     // check if field separator has spaces
