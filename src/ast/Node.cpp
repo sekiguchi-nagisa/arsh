@@ -1404,6 +1404,28 @@ void CmdContextNode::accept(NodeVisitor &visitor) {
     visitor.visitCmdContextNode(*this);
 }
 
+static bool isSpace(int ch) {
+    return ch == ' ' || ch == '\t' || ch == '\n';
+}
+
+static bool isFieldSep(const char *ifs, int ch) {
+    for(unsigned int i = 0; ifs[i] != '\0'; i++) {
+        if(ifs[i] == ch) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool hasSpace(const char *ifs) {
+    for(unsigned int i = 0; ifs[i] != '\0'; i++) {
+        if(isSpace(ifs[i])) {
+            return true;
+        }
+    }
+    return false;
+}
+
 EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
     if(this->hasAttribute(FORK) &&
        (this->hasAttribute(STR_CAP) || this->hasAttribute(ARRAY_CAP))) {
@@ -1441,33 +1463,46 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
 
                 obj = DSValue::create<String_Object>(*this->type, std::move(str));
             } else {    // capture stdout as String Array
+                const char *ifs = ctx.getIFS();
+                unsigned int skipCount = 1;
+
                 static const int bufSize = 256;
                 char buf[bufSize];
                 int readSize;
                 std::string str;
                 Array_Object *array = new Array_Object(*this->type);
+
                 while((readSize = read(pipefds[READ_PIPE], buf, bufSize)) > 0) {
                     for(int i = 0; i < readSize; i++) {
                         char ch = buf[i];
-                        switch(ch) {
-                        case ' ':
-                        case '\t':
-                        case '\n': {
-                            if(!str.empty()) {
-                                array->append(DSValue::create<String_Object>(
-                                        ctx.getPool().getStringType(), std::move(str)));
-                                str = "";
+                        bool fieldSep = isFieldSep(ifs, ch);
+                        if(fieldSep && skipCount > 0) {
+                            if(isSpace(ch)) {
+                                continue;
                             }
-                            break;
+                            if(--skipCount == 1) {
+                                continue;
+                            }
                         }
-                        default: {
-                            str += ch;
-                            break;
+                        skipCount = 0;
+                        if(fieldSep) {
+                            array->append(DSValue::create<String_Object>(
+                                    ctx.getPool().getStringType(), std::move(str)));
+                            str = "";
+                            skipCount = isSpace(ch) ? 2 : 1;
+                            continue;
                         }
-                        }
+                        str += ch;
                     }
                 }
-                if(!str.empty()) {
+
+                // remove last newline
+                while(!str.empty() && str.back() == '\n') {
+                    str.pop_back();
+                }
+
+                // append remain
+                if(!str.empty() || !hasSpace(ifs)) {
                     array->append(DSValue::create<String_Object>(
                             ctx.getPool().getStringType(), std::move(str)));
                 }

@@ -27,7 +27,7 @@ fi
 
 
 # no splitting.
-# if not specify separator, use default separator (tab, white space, newline)
+# if not specify separator, use IFS
 echo -e ' \t  hello world \t \t  ' |
   $YDSH_BIN -c 'read; assert($REPLY == "hello world"); assert($reply.empty())'
 
@@ -61,7 +61,7 @@ fi
 
 
 # splitting
-# use default separator
+# use IFS
 # remove first and last spaces
 echo -e '   \t hello   world    ' |
   $YDSH_BIN -c \
@@ -76,7 +76,7 @@ fi
 
 
 # splitting
-# use default separator
+# use IFS
 # remove first and last spaces
 # splitted variables are less than specified them, set empty string.
 echo -e '   \t hello   world    ' |
@@ -93,7 +93,7 @@ fi
 
 
 # splitting
-# use default separator
+# use IFS
 # remove first and last spaces
 echo -e '   \t hello   world  !!  ' |
   $YDSH_BIN -c \

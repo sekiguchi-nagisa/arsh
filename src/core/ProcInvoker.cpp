@@ -274,7 +274,7 @@ const struct {
                 "    Options:\n"
                 "        -r    disable backslash escape\n"
                 "        -p    specify prompt string\n"
-                "        -f    specify field separator"},
+                "        -f    specify field separator (if not, use IFS)"},
         {"true", builtin_true, "",
                 "    Always success (exit status is 0)."},
         {"test", builtin_test, "[expr]",
@@ -1022,10 +1022,10 @@ static bool isFieldSep(const char *ifs, int ch) {
     return false;
 }
 
-static int builtin_read(RuntimeContext *ctx, const BuiltinContext &bctx) {  //FIXME: timeout, no echo
+static int builtin_read(RuntimeContext *ctx, const BuiltinContext &bctx) {  //FIXME: timeout, no echo, UTF-8
     int index = 1;
     const char *prompt = "";
-    const char *ifs = " \t\n";    //FIXME: UTF-8
+    const char *ifs = nullptr;
     bool backslash = true;
 
     for(; index < bctx.argc; index++) {
@@ -1062,6 +1062,11 @@ static int builtin_read(RuntimeContext *ctx, const BuiltinContext &bctx) {  //FI
         }
     }
 
+    // check ifs
+    if(ifs == nullptr) {
+        ifs = ctx->getIFS();
+    }
+
     // clear old variable before read
     ctx->setGlobal(ctx->getBuiltinVarIndex(BuiltinVarOffset::REPLY), ctx->getEmptyStrObj());    // clear REPLY
     typeAs<Map_Object>(ctx->getGlobal(
@@ -1072,14 +1077,6 @@ static int builtin_read(RuntimeContext *ctx, const BuiltinContext &bctx) {  //FI
     const unsigned int varIndex = ctx->getBuiltinVarIndex(
                     varSize == 0 ? BuiltinVarOffset::REPLY : BuiltinVarOffset::REPLY_VAR);
     std::string strBuf;
-
-    // check if field separator has spaces
-    bool hasSpace = false;
-    for(unsigned int i = 0; ifs[i] != '\0'; i++) {
-        if((hasSpace = isSpace(ifs[i]))) {
-            break;
-        }
-    }
 
     // show prompt
     if(isatty(fileno(bctx.fp_stdin)) != 0) {
@@ -1127,6 +1124,14 @@ static int builtin_read(RuntimeContext *ctx, const BuiltinContext &bctx) {  //FI
 
     // remove last spaces
     if(!strBuf.empty()) {
+        // check if field separator has spaces
+        bool hasSpace = false;
+        for(unsigned int i = 0; ifs[i] != '\0'; i++) {
+            if((hasSpace = isSpace(ifs[i]))) {
+                break;
+            }
+        }
+
         if(hasSpace) {
             while(!strBuf.empty() && isSpace(strBuf.back())) {
                 strBuf.pop_back();

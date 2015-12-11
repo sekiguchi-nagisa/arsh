@@ -49,7 +49,8 @@ RuntimeContext::RuntimeContext() :
         localStack(new DSValue[DEFAULT_LOCAL_SIZE]),
         localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0),
         localVarOffset(0), offsetStack(), toplevelPrinting(false), assertion(true),
-        handle_STR(nullptr), handle_bt(nullptr), handle_OLDPWD(nullptr), handle_PWD(nullptr),
+        handle_STR(nullptr), handle_bt(nullptr),
+        handle_OLDPWD(nullptr), handle_PWD(nullptr), handle_IFS(nullptr),
         callableContextStack(), callStack(), procInvoker(this), udcMap() {
 }
 
@@ -478,6 +479,16 @@ void RuntimeContext::updateWorkingDir(bool OLDPWD_only) {
                             DSValue::create<String_Object>(this->pool.getStringType(), std::string(cwd)));
         }
     }
+}
+
+const char *RuntimeContext::getIFS() {
+    if(this->handle_IFS == nullptr) {
+        this->handle_IFS = this->symbolTable.lookupHandle("IFS");
+        if(this->handle_IFS == nullptr) {
+            fatal("broken IFS\n");
+        }
+    }
+    return typeAs<String_Object>(this->getGlobal(this->handle_IFS->getFieldIndex()))->getValue();
 }
 
 void RuntimeContext::updateExitStatus(unsigned int status) {

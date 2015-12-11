@@ -10,6 +10,7 @@ if(check_env PATH) {} else {
 type-alias Int Int32
 type-alias Uint Uint32
 
+var IFS = $' \t\n'
 var PS1 = '\s-\v\$ '
 var PS2 = '> '
 

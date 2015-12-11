@@ -150,6 +150,11 @@ private:
     FieldHandle *handle_PWD;
 
     /**
+     * for field splitting (read command, command substitution)
+     */
+    FieldHandle *handle_IFS;
+
+    /**
      * contains currently evaluating CallabeNode
      */
     std::vector<CallableNode *> callableContextStack;
@@ -511,6 +516,8 @@ public:
      * update OLDPWD and PWD
      */
     void updateWorkingDir(bool OLDPWD_only);
+
+    const char *getIFS();
 
     void updateExitStatus(unsigned int status);
 

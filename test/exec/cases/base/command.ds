@@ -136,9 +136,6 @@ echo a b
 assert($(echo a b).size() == 2)
 assert($(echo a b)[1] == 'b')
 assert($(echo).size() == 0)
-assert($(echo -e '    \n  \t   ').size() == 0)   # ignore space and newline
-assert($(echo -e '  b  \n  \t   ').size() == 1)
-assert($(echo -e '  b  \n  \t   ')[0] == 'b')
 
 var d = $(ls)
 assert(not ($d is String))

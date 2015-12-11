@@ -1,0 +1,69 @@
+let old = $IFS
+
+# default (space, tab, newline)
+var a  = $(echo -n 'hello   world')
+assert($a.size() == 2)
+assert($a[0] == "hello")
+assert($a[1] == "world")
+
+# terminate with newline
+$a = $(echo -e '  \t \n\t hello   world\n')
+assert($a.size() == 2)
+assert($a[0] == "hello")
+assert($a[1] == "world")
+
+# terminate with separator
+$a = $(echo -e -n '   hello   world   \n    ')
+assert($a.size() == 2)
+assert($a[0] == "hello")
+assert($a[1] == "world")
+
+# empty
+$a = $(echo)
+assert($a.empty())
+$a = $(echo -n)
+assert($a.empty())
+
+
+# specify separator
+$IFS = '12'
+$a = $(echo -n 'hello1world2!!')
+assert($a.size() == 3)
+assert($a[0] == "hello")
+assert($a[1] == "world")
+assert($a[2] == "!!")
+
+# separator sequence
+$a = $(echo 'hello121world!!')
+assert($a.size() == 4)
+assert($a[0] == "hello")
+assert($a[1].empty())
+assert($a[2].empty())
+assert($a[3] == "world!!")
+
+# separator (first and last character)
+$a = $(echo -n '1hello2world2')
+assert($a.size() == 4)
+assert($a[0].empty())
+assert($a[1] == "hello")
+assert($a[2] == "world")
+assert($a[3].empty())
+
+
+# combine spaces
+$IFS = $' \t12'
+$a = $(echo -e '   \t  1hello   12   world  1   ')
+assert($a.size() == 4)
+assert($a[0].empty())
+assert($a[1] == "hello")
+assert($a[2].empty())
+assert($a[3] == "world")
+
+# combine spaces
+$IFS = $' \t12'
+$a = $(echo -e '   \t  1hello   1  2   world  1')
+assert($a.size() == 4)
+assert($a[0].empty())
+assert($a[1] == "hello")
+assert($a[2].empty())
+assert($a[3] == "world")
