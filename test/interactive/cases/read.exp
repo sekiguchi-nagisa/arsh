@@ -1,0 +1,60 @@
+#!/usr/bin/env expect
+
+# builtin read command
+
+set bin_name [lindex $argv 0]
+spawn ${bin_name} --norc --quiet
+
+expect {
+    -re "\\$ $" {
+        send "read -p \$PS2;\r"
+    }
+    default {
+        send_error "mismatch 1 prompt"
+        exit 1
+    }
+}
+
+expect {
+    -re "> $" {
+        send "hello\r"
+    }
+    default {
+        send_error "mismatch 2 prompt"
+        exit 1
+    }
+}
+
+expect {
+    -re "\\$ $" {
+        send "assert(\$REPLY == \"hello\")\r"
+    }
+    default {
+        send_error "mismatch 3 prompt"
+        exit 1
+    }
+}
+
+expect {
+    -re "\\$ $" {
+        send "exit\r"
+    }
+    default {
+        send_error "mismatch 4 prompt"
+        exit 1
+    }
+}
+
+expect default
+catch wait result
+set os_error [ lindex $result 2 ]
+if { $os_error == -1 } {
+    send_error "execution failed"
+    exit 1
+}
+set status [ lindex $result 3]
+if { $status != 0 } {
+    send_error "mismatch exit status"
+    exit 1
+}
+exit 0

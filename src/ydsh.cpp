@@ -319,6 +319,23 @@ void DSContext::initBuiltinVar() {
     defineBuiltin(rootNode, "DBus", DSValue(DBus_Object::newDBus_Object(&this->ctx.getPool())));
 
     /**
+     * default variable for read command.
+     * must be String_Object
+     */
+    defineBuiltin(rootNode, "REPLY", DSValue::create<String_Object>(this->ctx.getPool().getStringType()));
+
+    std::vector<DSType *> types(2);
+    types[0] = &this->ctx.getPool().getStringType();
+    types[1] = types[0];
+
+    /**
+     * holding read variable.
+     * must be Map_Object
+     */
+    defineBuiltin(rootNode, "reply", DSValue::create<Map_Object>(
+            this->ctx.getPool().createReifiedType(this->ctx.getPool().getMapTemplate(), std::move(types))));
+
+    /**
      * contains script argument(exclude script name). ($@)
      * must be Array_Object
      */

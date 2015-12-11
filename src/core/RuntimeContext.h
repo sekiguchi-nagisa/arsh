@@ -47,6 +47,8 @@ enum class EvalStatus : unsigned int {
  */
 enum class BuiltinVarOffset : unsigned int {
     DBUS,           // DBus
+    REPLY,          // REPLY (for read command)
+    REPLY_VAR,      // reply (fo read command)
     ARGS,           // @
     ARGS_SIZE,      // #
     EXIT_STATUS,    // ?

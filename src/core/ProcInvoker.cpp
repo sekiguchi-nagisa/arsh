@@ -184,6 +184,7 @@ static int builtin_false(RuntimeContext *ctx, const BuiltinContext &bctx);
 static int builtin_help(RuntimeContext *ctx, const BuiltinContext &bctx);
 static int builtin_ps_intrp(RuntimeContext *ctx, const BuiltinContext &bctx);
 static int builtin_pwd(RuntimeContext *ctx, const BuiltinContext &bctx);
+static int builtin_read(RuntimeContext *ctx, const BuiltinContext &bctx);
 static int builtin_test(RuntimeContext *ctx, const BuiltinContext &bctx);
 static int builtin_true(RuntimeContext *ctx, const BuiltinContext &bctx);
 
@@ -268,6 +269,12 @@ const struct {
                 "        \\]    end of unprintable sequence"},
         {"pwd", builtin_pwd, "",
                 "    Print the current working directiry(absolute path)."},
+        {"read", builtin_read, "[-r] [-p prompt] [-f field separator] [name ...]",
+                "    Read from standard input.\n"
+                "    Options:\n"
+                "        -r    disable backslash escape\n"
+                "        -p    specify prompt string\n"
+                "        -f    specify field separator"},
         {"true", builtin_true, "",
                 "    Always success (exit status is 0)."},
         {"test", builtin_test, "[expr]",
@@ -997,6 +1004,151 @@ static int builtin_test(RuntimeContext *, const BuiltinContext &bctx) {
     }
     }
     return result ? 0 : 1;
+}
+
+/**
+ * only allow ascii space
+ */
+static bool isSpace(int ch) {
+    return ch == ' ' || ch == '\t' || ch == '\n';
+}
+
+static bool isFieldSep(const char *ifs, int ch) {
+    for(unsigned int i = 0; ifs[i] != '\0'; i++) {
+        if(ifs[i] == ch) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static int builtin_read(RuntimeContext *ctx, const BuiltinContext &bctx) {  //FIXME: timeout, no echo
+    int index = 1;
+    const char *prompt = "";
+    const char *ifs = " \t\n";    //FIXME: UTF-8
+    bool backslash = true;
+
+    for(; index < bctx.argc; index++) {
+        const char *arg = bctx.argv[index];
+        if(strlen(arg) != 2 || arg[0] != '-') {
+            break;
+        }
+        const char op = arg[1]; // ignore '-'
+        switch(op) {
+        case 'p': {
+            if(index + 1 < bctx.argc) {
+                prompt = bctx.argv[++index];
+                break;
+            }
+            builtin_perror(bctx, 0, "%s: option require argument", arg);
+            return 2;
+        }
+        case 'f': {
+            if(index + 1 < bctx.argc) {
+                ifs = bctx.argv[++index];
+                break;
+            }
+            builtin_perror(bctx, 0, "%s: option require argument", arg);
+            return 2;
+        }
+        case 'r': {
+            backslash = false;
+            break;
+        }
+        default: {
+            builtin_perror(bctx, 0, "%s: invalid option", arg);
+            return 2;
+        }
+        }
+    }
+
+    const int varSize = bctx.argc - index;  // if zero, store line to REPLY
+    const unsigned int varIndex = ctx->getBuiltinVarIndex(
+                    varSize == 0 ? BuiltinVarOffset::REPLY : BuiltinVarOffset::REPLY_VAR);
+    if(varSize != 0) {
+        typeAs<Map_Object>(ctx->getGlobal(varIndex))->refValueMap().clear();
+    }
+    std::string strBuf;
+
+    // check if field separator has spaces
+    bool hasSpace = false;
+    for(unsigned int i = 0; ifs[i] != '\0'; i++) {
+        if((hasSpace = isSpace(ifs[i]))) {
+            break;
+        }
+    }
+
+    // show prompt
+    if(isatty(fileno(bctx.fp_stdin)) != 0) {
+        fputs(prompt, bctx.fp_stdout);
+        fflush(bctx.fp_stdout);
+    }
+
+    // read line
+    unsigned int skipCount = 1;
+    int ch;
+    for(bool prevIsBackslash = false; (ch = fgetc(bctx.fp_stdin)) != EOF;
+            prevIsBackslash = backslash && ch == '\\' && !prevIsBackslash) {
+        if(ch == '\n') {
+            if(prevIsBackslash) {
+                continue;
+            } else {
+                break;
+            }
+        } else if(ch == '\\' && !prevIsBackslash && backslash) {
+            continue;
+        }
+
+        bool fieldSep = isFieldSep(ifs, ch) && !prevIsBackslash;
+        if(fieldSep && skipCount > 0) {
+            if(isSpace(ch)) {
+                continue;
+            }
+            if(--skipCount == 1) {
+                continue;
+            }
+        }
+        skipCount = 0;
+        if(fieldSep && index < bctx.argc - 1) {
+            auto obj = typeAs<Map_Object>(ctx->getGlobal(varIndex));
+            auto varObj = DSValue::create<String_Object>(ctx->getPool().getStringType(), bctx.argv[index]);
+            auto valueObj = DSValue::create<String_Object>(ctx->getPool().getStringType(), std::move(strBuf));
+            std::swap(obj->refValueMap()[std::move(varObj)], valueObj);
+            strBuf = "";
+            index++;
+            skipCount = isSpace(ch) ? 2 : 1;
+            continue;
+        }
+        strBuf += ch;
+    }
+
+    // remove last spaces
+    if(!strBuf.empty()) {
+        if(hasSpace) {
+            while(!strBuf.empty() && isSpace(strBuf.back())) {
+                strBuf.pop_back();
+            }
+        }
+    }
+
+    if(varSize == 0) {
+        ctx->setGlobal(varIndex,
+                       DSValue::create<String_Object>(ctx->getPool().getStringType(), std::move(strBuf)));
+    }
+
+    // set rest variable
+    for(; index < bctx.argc; index++) {
+        auto obj = typeAs<Map_Object>(ctx->getGlobal(varIndex));
+        auto varObj = DSValue::create<String_Object>(ctx->getPool().getStringType(), bctx.argv[index]);
+        auto valueObj = DSValue::create<String_Object>(ctx->getPool().getStringType(), std::move(strBuf));
+        std::swap(obj->refValueMap()[std::move(varObj)], valueObj);
+        strBuf = "";
+    }
+
+    if(ch == EOF) {
+        clearerr(bctx.fp_stdin);
+    }
+    return ch == EOF ? 1 : 0;
 }
 
 
