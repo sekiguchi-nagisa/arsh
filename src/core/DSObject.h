@@ -325,8 +325,6 @@ public:
     String_Object(DSType &type, const std::string &value) :
             DSObject(type), value(value) { }
 
-    explicit String_Object(DSType &type) : DSObject(type), value() { }
-
     ~String_Object() = default;
 
     const char *getValue() const {

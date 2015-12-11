@@ -42,6 +42,7 @@ RuntimeContext::RuntimeContext() :
         pool(), symbolTable(),
         trueObj(new Boolean_Object(this->pool.getBooleanType(), true)),
         falseObj(new Boolean_Object(this->pool.getBooleanType(), false)),
+        emptyStrObj(new String_Object(this->pool.getStringType(), std::string())),
         dummy(new DummyObject()),
         globalVarTable(new DSValue[DEFAULT_TABLE_SIZE]),
         tableSize(DEFAULT_TABLE_SIZE), thrownObject(),
@@ -113,10 +114,9 @@ void RuntimeContext::finalizeScritArg() {
     }
 
     if(index < 9) {
-        auto empty = DSValue::create<String_Object>(this->pool.getStringType(), "");
         for(; index < 9; index++) {
             unsigned int i = this->getBuiltinVarIndex(BuiltinVarOffset::POS_1) + index;
-            this->setGlobal(i, empty);
+            this->setGlobal(i, this->getEmptyStrObj());
         }
     }
 }

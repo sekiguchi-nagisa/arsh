@@ -73,6 +73,11 @@ private:
     DSValue falseObj;
 
     /**
+     * must be String_Object
+     */
+    DSValue emptyStrObj;
+
+    /**
      * for pseudo object allocation (used for builtin constructor call)
      */
     DSValue dummy;
@@ -183,12 +188,16 @@ public:
         return this->symbolTable;
     }
 
-    const DSValue &getTrueObj() {
+    const DSValue &getTrueObj() const {
         return this->trueObj;
     }
 
-    const DSValue &getFalseObj() {
+    const DSValue &getFalseObj() const {
         return this->falseObj;
+    }
+
+    const DSValue &getEmptyStrObj() const {
+        return this->emptyStrObj;
     }
 
     unsigned int getBuiltinVarIndex(BuiltinVarOffset offset) const {

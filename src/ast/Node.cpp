@@ -366,7 +366,7 @@ void StringExprNode::accept(NodeVisitor &visitor) {
 EvalStatus StringExprNode::eval(RuntimeContext &ctx) {
     unsigned int size = this->nodes.size();
     if(size == 0) {
-        ctx.push(DSValue::create<String_Object>(*this->type));
+        ctx.push(ctx.getEmptyStrObj());
     } else if(size == 1) {
         EVAL(ctx, this->nodes[0]);
     } else {

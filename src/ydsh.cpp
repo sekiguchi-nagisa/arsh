@@ -322,7 +322,7 @@ void DSContext::initBuiltinVar() {
      * default variable for read command.
      * must be String_Object
      */
-    defineBuiltin(rootNode, "REPLY", DSValue::create<String_Object>(this->ctx.getPool().getStringType()));
+    defineBuiltin(rootNode, "REPLY", this->ctx.getEmptyStrObj());
 
     std::vector<DSType *> types(2);
     types[0] = &this->ctx.getPool().getStringType();
@@ -362,9 +362,8 @@ void DSContext::initBuiltinVar() {
     /**
      * initialize positional parameter
      */
-    auto empty = DSValue::create<String_Object>(this->ctx.getPool().getStringType(), "");
     for(unsigned int i = 0; i < 9; i++) {
-        defineBuiltin(rootNode, std::to_string(i + 1).c_str(), empty);
+        defineBuiltin(rootNode, std::to_string(i + 1).c_str(), this->ctx.getEmptyStrObj());
     }
 
 
