@@ -1,13 +1,13 @@
 #!/usr/bin/env ydsh
 
 # check argument
-if($@.size() != 2) {
+if($# != 2) {
     echo usage: $0 "[target binary] [test case dir]" 1>&2
     exit 1
 }
 
-let bin = $@[0]
-let dir = $@[1]
+let bin = $0
+let dir = $1
 
 test -x $bin
 if($? != 0) {
@@ -22,22 +22,6 @@ if($? != 0) {
     exit 1
 }
 
-function __test_each($data : Array<String>, $test : Func<Boolean, [String]>): Boolean {
-    var c = 0
-    let size = $data.size()
-    for(var i = 0; $i < $size; $i++) {
-        var t = $data[$i]
-        if($test($t)) {
-            $c++
-            echo -e "\\e[32m[OK]\\e[0m" $t
-        } else {
-            echo -e "\\e[35m[NG]\\e[0m" $t
-        }
-    }
-    echo ++++ result "[$c/$size]" ++++
-    return $c == $size
-}
-
 function test($a : String) : Boolean {
     test -f $a
     if($? != 0) {
@@ -48,6 +32,20 @@ function test($a : String) : Boolean {
     return not $r
 }
 
+function __test_each($data : Array<String>, $test : typeof($test)): Boolean {
+    var c = 0
+    let size = $data.size()
+    for($t in $data) {
+        if($test($t)) {
+            $c++
+            echo -e '\e[32m[OK]\e[0m' $t
+        } else {
+            echo -e '\e[35m[NG]\e[0m' $t
+        }
+    }
+    echo ++++ result "[$c/$size]" ++++
+    return $c == $size
+}
 
 if($__test_each($(find $dir -name "*.ds" | sort), $test)) {
     exit 0
