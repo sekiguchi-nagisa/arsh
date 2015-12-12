@@ -13,7 +13,7 @@ Language specification is subject to change without notice.
 * make
 * expect (for testing)
 * clang3.4 or later (need c++11 support)
-* libdbus 1.8.x
+* libdbus 1.6.x or later
 * libxml2 (for D-Bus introspection)
 
 ## How to use

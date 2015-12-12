@@ -1,10 +1,10 @@
 language: cpp
 
-sudo: false
+sudo: required
+dist: trusty
 
 compiler:
   - clang
-  - gcc
 
 addons:
   apt:
@@ -18,10 +18,11 @@ addons:
       - libxml2-dev
       - libdbus-1-3
       - libdbus-1-dev
+      - libdbus-glib-1-dev
       - expect
 
 before_install:
-  - ./setup.sh -DCMAKE_BUILD_TYPE=DEBUG -DUSE_DBUS=off
+  - ./setup.sh -DCMAKE_BUILD_TYPE=DEBUG
 
 install:
  - cd build
