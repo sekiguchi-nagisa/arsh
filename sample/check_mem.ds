@@ -6,8 +6,8 @@ if($# != 2) {
     exit 1
 }
 
-let bin = $0
-let dir = $1
+let bin = $1
+let dir = $2
 
 test -x $bin
 if($? != 0) {
