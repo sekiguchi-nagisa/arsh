@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
     sigfillset(&act.sa_mask);
 
     if(sigaction(SIGSEGV, &act, nullptr) < 0) {
-        perror("setup signal handeler failed\n");
+        perror("setup signal handler failed\n");
         return 1;
     }
 

@@ -211,7 +211,7 @@ const struct {
         {"command", builtin_command, "[-pVv] command [arg ...]",
                 "    Execute COMMAND with ARGS excepting user defined command.\n"
                         "    If -p option is specified, search command from default PATH.\n"
-                        "    If -V or -v option are specifed, print description of COMMAND.\n"
+                        "    If -V or -v option are specified, print description of COMMAND.\n"
                         "    -V option shows more detailed information."},
         {"echo", builtin_echo, "[-neE] [arg ...]",
                 "    Print argument to standard output and print new line.\n"
@@ -268,7 +268,7 @@ const struct {
                 "        \\[    begin of unprintable sequence\n"
                 "        \\]    end of unprintable sequence"},
         {"pwd", builtin_pwd, "",
-                "    Print the current working directiry(absolute path)."},
+                "    Print the current working directory(absolute path)."},
         {"read", builtin_read, "[-r] [-p prompt] [-f field separator] [name ...]",
                 "    Read from standard input.\n"
                 "    Options:\n"
@@ -318,7 +318,7 @@ const struct {
                 "        -L FILE        check if file is a symbolic link\n"
                 "        -k FILE        check if file has sticky bit\n"
                 "        -p FILE        check if file is a named pipe\n"
-                "        -r FILE        check if file is readbale\n"
+                "        -r FILE        check if file is readable\n"
                 "        -s FILE        check if file is not empty\n"
                 "        -S FILE        check if file is a socket\n"
                 "        -t FD          check if file descriptor is a terminal\n"
