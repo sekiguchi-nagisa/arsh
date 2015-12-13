@@ -31,11 +31,54 @@ namespace parser {
 const char *toModeName(LexerMode mode);
 
 typedef ydsh::parser_base::Token Token;
-typedef ydsh::parser_base::SourceInfo SourceInfo;
-typedef ydsh::parser_base::SourceInfoPtr SourceInfoPtr;
+
+
+class SourceInfo {
+private:
+    std::string sourceName;
+
+    /**
+     * default value is 1.
+     */
+    unsigned int lineNumOffset;
+
+    /**
+     * contains newline character position.
+     */
+    std::vector<unsigned int> lineNumTable;
+
+public:
+    explicit SourceInfo(const char *sourceName) :
+            sourceName(sourceName), lineNumOffset(1), lineNumTable() { }
+    ~SourceInfo() = default;
+
+    const std::string &getSourceName() const {
+        return this->sourceName;
+    }
+
+    void setLineNumOffset(unsigned int offset) {
+        this->lineNumOffset = offset;
+    }
+
+    unsigned int getLineNumOffset() const {
+        return this->lineNumOffset;
+    }
+
+    const std::vector<unsigned int> &getLineNumTable() const {
+        return this->lineNumTable;
+    }
+
+    void addNewlinePos(unsigned int pos);
+    unsigned int getLineNum(unsigned int pos) const;
+};
+
+typedef std::shared_ptr<SourceInfo> SourceInfoPtr;
+
 
 class Lexer : public ydsh::parser_base::LexerBase {
 private:
+    SourceInfoPtr srcInfoPtr;
+
     /**
      * default mode is yycSTMT
      */
@@ -52,19 +95,34 @@ private:
 
 public:
     Lexer(const char *sourceName, const char *source) :
-            LexerBase(sourceName, source),
+            LexerBase(source),
+            srcInfoPtr(std::make_shared<SourceInfo>(sourceName)),
             modeStack(1, yycSTMT), prevNewLine(false), prevSpace(false), prevMode(yycSTMT) {}
 
     /**
      * FILE must be opened with binary mode.
      */
     Lexer(const char *sourceName, FILE *fp) :
-            LexerBase(sourceName, fp),
+            LexerBase(fp),
+            srcInfoPtr(std::make_shared<SourceInfo>(sourceName)),
             modeStack(1, yycSTMT), prevNewLine(false), prevSpace(false), prevMode(yycSTMT) {}
 
     ~Lexer() = default;
 
     void setPos(unsigned int pos);
+
+    const SourceInfoPtr &getSourceInfoPtr() const {
+        return this->srcInfoPtr;
+    }
+
+    void setLineNum(unsigned int lineNum) {
+        this->srcInfoPtr->setLineNumOffset(lineNum);
+    }
+
+    unsigned int getLineNum() const {
+        return this->srcInfoPtr->getLineNumOffset() +
+               this->srcInfoPtr->getLineNumTable().size();
+    }
 
     bool isPrevNewLine() const {
         return this->prevNewLine;

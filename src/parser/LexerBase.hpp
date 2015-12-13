@@ -50,74 +50,6 @@ inline std::ostream &operator<<(std::ostream &stream, const Token &token) {
     return stream << "(pos = " << token.pos << ", size = " << token.size << ")";
 }
 
-namespace __detail_srcinfo {
-
-template <bool T>
-class SourceInfo {
-private:
-    static_assert(T, "not allowed instantiation");
-
-    std::string sourceName;
-
-    /**
-     * default value is 1.
-     */
-    unsigned int lineNumOffset;
-
-    /**
-     * contains newline character position.
-     */
-    std::vector<unsigned int> lineNumTable;
-
-public:
-    explicit SourceInfo(const char *sourceName) :
-            sourceName(sourceName), lineNumOffset(1), lineNumTable() { }
-    ~SourceInfo() = default;
-
-    const std::string &getSourceName() const {
-        return this->sourceName;
-    }
-
-    void setLineNumOffset(unsigned int offset) {
-        this->lineNumOffset = offset;
-    }
-
-    unsigned int getLineNumOffset() const {
-        return this->lineNumOffset;
-    }
-
-    const std::vector<unsigned int> &getLineNumTable() const {
-        return this->lineNumTable;
-    }
-
-    void addNewlinePos(unsigned int pos);
-    unsigned int getLineNum(unsigned int pos) const;
-};
-
-template <bool T>
-void SourceInfo<T>::addNewlinePos(unsigned int pos) {
-    if(this->lineNumTable.empty()) {
-        this->lineNumTable.push_back(pos);
-    } else if(pos > this->lineNumTable.back()) {
-        this->lineNumTable.push_back(pos);
-    }
-}
-
-template <bool T>
-unsigned int SourceInfo<T>::getLineNum(unsigned int pos) const {
-    auto iter = std::lower_bound(this->lineNumTable.begin(), this->lineNumTable.end(), pos);
-    if(this->lineNumTable.end() == iter) {
-        return this->lineNumTable.size() + this->lineNumOffset;
-    }
-    return iter - this->lineNumTable.begin() + this->lineNumOffset;
-}
-
-} // namespace __detail_srcinfo
-
-typedef __detail_srcinfo::SourceInfo<true> SourceInfo;
-typedef std::shared_ptr<SourceInfo> SourceInfoPtr;
-
-
 namespace __detail {
 
 /**
@@ -127,8 +59,6 @@ template<bool T>
 class LexerBase {
 protected:
     static_assert(T, "not allowed instantiation");
-
-    SourceInfoPtr srcInfoPtr;
 
     /**
      * may be null, if input source is string. not closed it.
@@ -179,8 +109,7 @@ protected:
     static constexpr int DEFAULT_READ_SIZE = 128;
 
 private:
-    explicit LexerBase(const char *sourceName) :
-            srcInfoPtr(std::make_shared<SourceInfo>(sourceName)),
+    LexerBase() :
             fp(nullptr), bufSize(0), buf(nullptr), cursor(nullptr),
             limit(nullptr), marker(nullptr), ctxMarker(nullptr),
             endOfFile(false), endOfString(false), zeroCopyBuf(false) { }
@@ -192,34 +121,23 @@ public:
      * FILE must be opened with binary mode.
      * insert newline if not terminated by it.
      */
-    LexerBase(const char *sourceName, FILE *fp);
+    explicit LexerBase(FILE *fp);
 
     /**
      * must be null terminated.
      * if the last character of string(exclude null character) is newline, not copy it.
      * otherwise, copy it.
      */
-    LexerBase(const char *sourceName, const char *src);
+    explicit LexerBase(const char *src);
 
-    virtual ~LexerBase() {
+protected:
+    ~LexerBase() {
         if(!this->zeroCopyBuf) {
             delete[] this->buf;
         }
     }
 
-    const SourceInfoPtr &getSourceInfoPtr() const {
-        return this->srcInfoPtr;
-    }
-
-    void setLineNum(unsigned int lineNum) {
-        this->srcInfoPtr->setLineNumOffset(lineNum);
-    }
-
-    unsigned int getLineNum() const {
-        return this->srcInfoPtr->getLineNumOffset() +
-               this->srcInfoPtr->getLineNumTable().size();
-    }
-
+public:
     /**
      * get current reading position.
      */
@@ -274,6 +192,11 @@ private:
      */
     void expandBuf(unsigned int needSize);
 
+    /**
+     * swap new buffer and old one, after swapping, update some pointers and bufSize
+     */
+    void swapBuffer(unsigned char *&newBuf, unsigned int &newSize);
+
 protected:
     /**
      * fill buffer. called from this->nextToken().
@@ -286,7 +209,7 @@ protected:
 // #######################
 
 template<bool T>
-LexerBase<T>::LexerBase(const char *sourceName, FILE *fp) : LexerBase(sourceName) {
+LexerBase<T>::LexerBase(FILE *fp) : LexerBase() {
     this->fp = fp;
     this->bufSize = DEFAULT_SIZE;
     this->buf = new unsigned char[this->bufSize];
@@ -296,7 +219,7 @@ LexerBase<T>::LexerBase(const char *sourceName, FILE *fp) : LexerBase(sourceName
 }
 
 template<bool T>
-LexerBase<T>::LexerBase(const char *sourceName, const char *src) : LexerBase(sourceName) {
+LexerBase<T>::LexerBase(const char *src) : LexerBase() {
     this->bufSize = strlen(src) + 1;
     if(this->bufSize == 1) {    // empty string
         src = "\n";
@@ -351,19 +274,32 @@ void LexerBase<T>::expandBuf(unsigned int needSize) {
         do {
             newSize += (newSize >> 1);
         } while(newSize < size);
-        unsigned int pos = this->getPos();
-        unsigned int markerPos = this->marker - this->buf;
-        unsigned int ctxMarkerPos = this->ctxMarker - this->buf;
+
+        // swap to new buffer
         unsigned char *newBuf = new unsigned char[newSize];
         memcpy(newBuf, this->buf, sizeof(unsigned char) * usedSize);
-        delete[] this->buf;
-        this->buf = newBuf;
-        this->bufSize = newSize;
-        this->cursor = this->buf + pos;
-        this->limit = this->buf + usedSize - 1;
-        this->marker = this->buf + markerPos;
-        this->ctxMarker = this->buf + ctxMarkerPos;
+        this->swapBuffer(newBuf, newSize);
+        delete[] newBuf;
     }
+}
+
+template <bool T>
+void LexerBase<T>::swapBuffer(unsigned char *&newBuf, unsigned int &newSize) {
+    // save position
+    const unsigned int usedSize = this->getUsedSize();
+    const unsigned int pos = this->getPos();
+    const unsigned int markerPos = this->marker - this->buf;
+    const unsigned int ctxMarkerPos = this->ctxMarker - this->buf;
+
+    // swap
+    std::swap(this->buf, newBuf);
+    std::swap(this->bufSize, newSize);
+
+    // restore position
+    this->cursor = this->buf + pos;
+    this->limit = this->buf + usedSize - 1;
+    this->marker = this->buf + markerPos;
+    this->ctxMarker = this->buf + ctxMarkerPos;
 }
 
 template<bool T>

@@ -164,9 +164,9 @@ protected:
 public:
     ParserBase() = default;
 
-    virtual ~ParserBase() = default;
-
 protected:
+    ~ParserBase() = default;
+
     void fetchNext() {
         this->curKind = this->lexer->nextToken(this->curToken);
     }

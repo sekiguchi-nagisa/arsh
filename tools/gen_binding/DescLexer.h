@@ -58,7 +58,7 @@ typedef ydsh::parser_base::Token Token;
 
 class DescLexer : public ydsh::parser_base::LexerBase {
 public:
-    DescLexer(const char *line) : LexerBase("(descripter)", line) {}
+    DescLexer(const char *line) : LexerBase(line) {}
     ~DescLexer() = default;
 
     DescTokenKind nextToken(Token &token);

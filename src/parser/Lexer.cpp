@@ -42,6 +42,27 @@ const char *toModeName(LexerMode mode) {
     }
 }
 
+// ########################
+// ##     SourceInfo     ##
+// ########################
+
+void SourceInfo::addNewlinePos(unsigned int pos) {
+    if(this->lineNumTable.empty()) {
+        this->lineNumTable.push_back(pos);
+    } else if(pos > this->lineNumTable.back()) {
+        this->lineNumTable.push_back(pos);
+    }
+}
+
+unsigned int SourceInfo::getLineNum(unsigned int pos) const {
+    auto iter = std::lower_bound(this->lineNumTable.begin(), this->lineNumTable.end(), pos);
+    if(this->lineNumTable.end() == iter) {
+        return this->lineNumTable.size() + this->lineNumOffset;
+    }
+    return iter - this->lineNumTable.begin() + this->lineNumOffset;
+}
+
+
 // ###################
 // ##     Lexer     ##
 // ###################

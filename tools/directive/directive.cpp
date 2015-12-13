@@ -167,8 +167,7 @@ bool DirectiveParser::operator()(const char *sourceName, std::istream &input, Di
             DirectiveInitializer()(node, d);
             return true;
         } catch(const ParseError &e) {
-            std::cerr << sourceName << ":"
-            << lexer.getSourceInfoPtr()->getLineNum(e.getErrorToken().pos) << ": [syntax error] ";
+            std::cerr << sourceName << ":" << lexer.getLineNum() << ": [syntax error] ";
             if(dynamic_cast<const TokenMismatchedError *>(&e)) {
                 std::cerr << *static_cast<const TokenMismatchedError *>(&e) << std::endl;
             } else if(dynamic_cast<const NoViableAlterError *>(&e)) {
@@ -184,8 +183,7 @@ bool DirectiveParser::operator()(const char *sourceName, std::istream &input, Di
             std::cerr << this->lexer->formatLineMarker(lineToken, e.getErrorToken()) << std::endl;
             return false;
         } catch(const SemanticError &e) {
-            std::cerr << sourceName << ":"
-            << lexer.getSourceInfoPtr()->getLineNum(e.getErrorToken().pos) << ": [semantic error] ";
+            std::cerr << sourceName << ":" << lexer.getLineNum() << ": [semantic error] ";
             std::cerr << e.getMessage() << std::endl;
 
             std::cerr << src << std::endl;
