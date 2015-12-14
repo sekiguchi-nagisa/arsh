@@ -57,8 +57,7 @@ public:
 };
 
 template <unsigned int N>
-class TLErrorMessage : public MessageTemplate {
-public:
+struct TLErrorMessage : public MessageTemplate {
     constexpr TLErrorMessage(const char *kind, const char *value) :
             MessageTemplate(kind, value) { }
 

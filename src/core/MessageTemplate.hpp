@@ -32,6 +32,10 @@ public:
     constexpr MessageTemplate(const char *kind, const char *value) :
             kind(kind), value(value) { }
 
+protected:
+    ~MessageTemplate() = default;
+
+public:
     const char *getKind() const {
         return this->kind;
     }

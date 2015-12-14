@@ -68,8 +68,7 @@ public:
 };
 
 template <unsigned int N>
-class TCErrorMessage : public core::MessageTemplate {
-public:
+struct TCErrorMessage : public core::MessageTemplate {
     constexpr TCErrorMessage(const char *kind, const char *value) :
             MessageTemplate(kind, value) { }
 
