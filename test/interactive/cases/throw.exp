@@ -1,14 +1,33 @@
 #!/usr/bin/env expect
 
-# terminal after assertion failed.
+# throw exception, but not terminate.
 
 set bin_name [lindex $argv 0]
 spawn ${bin_name} --norc --quiet
 
+set CTRLD \004
 
 expect {
     -re "\\$ $" {
-        send "assert(1 == 2)\r"
+        send "1 / 0\r"
+    }
+    default {
+        send_error "mismatch prompt"
+        exit 1
+    }
+}
+
+expect {
+    "\[runtime error\]" {
+    }
+    default {
+        send_error "mismatch"
+    }
+}
+
+expect {
+    -re "\\$ $" {
+        send $CTRLD
     }
     default {
         send_error "mismatch prompt"
@@ -24,7 +43,7 @@ if { $os_error == -1 } {
     exit 1
 }
 set status [ lindex $result 3]
-if { $status != 1 } {
+if { $status != 0 } {
     send_error "mismatch exit status"
     exit 1
 }
