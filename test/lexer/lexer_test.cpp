@@ -2003,6 +2003,18 @@ TEST(LexerTest_Lv2, NEW_LINE) {
     });
 }
 
+TEST(LexerTest_Lv3, IllegalChar) {
+    SCOPED_TRACE("");
+
+    unsigned char str[] = {0x82, 0};    // broken UTF-8 code
+
+    Lexer lexer("(string)", (char *)str);
+    Token t;
+    TokenKind k = lexer.nextToken(t);
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(TO_NAME(INVALID), TO_NAME(k)));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
