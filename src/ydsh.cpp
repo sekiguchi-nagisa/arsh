@@ -17,6 +17,7 @@
 #include <cstring>
 #include <pwd.h>
 #include <iostream>
+#include <clocale>
 
 #include <ydsh/ydsh.h>
 #include "config.h"
@@ -119,6 +120,8 @@ struct DSContext {
 DSContext::DSContext() :
         ctx(), parser(), checker(this->ctx.getPool(), this->ctx.getSymbolTable()),
         lineNum(1), option(0), ps1(), ps2(), execStatus() {
+    // set locale
+    setlocale(LC_ALL, "");
 
     // update shell level
     setenv("SHLVL", std::to_string(originalShellLevel + 1).c_str(), 1);

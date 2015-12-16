@@ -221,8 +221,7 @@ include_directories(lib/linenoise)
 add_executable(${BIN_NAME}
         src/main.cpp
         src/interactive.cpp
-        lib/linenoise/linenoise.c
-        lib/linenoise/encodings/utf8.c)
+        lib/linenoise/linenoise.c)
 target_link_libraries(${BIN_NAME} ${YDSH_STATIC})
 
 install(TARGETS ${BIN_NAME} RUNTIME DESTINATION bin)

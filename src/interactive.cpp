@@ -22,9 +22,9 @@
 #include <cstdlib>
 
 #include <linenoise.h>
-#include <encodings/utf8.h>
 
 #include <ydsh/ydsh.h>
+#include "misc/unicode.hpp"
 
 static DSContext *dsContext;
 
@@ -110,14 +110,104 @@ static void ignoreSignal() {
     sigaction(SIGTSTP, &ignore_act, NULL);  //FIXME: job control
 }
 
+
+// for linenoise encoding function
+using namespace ydsh::misc;
+
+static std::size_t prevUtf8CharLen(const char *buf, int pos) {
+    int end = pos--;
+    while(pos >= 0 && ((unsigned char)buf[pos] & 0xC0) == 0x80) {
+        pos--;
+    }
+    return end - pos;
+}
+
+static std::size_t encoding_nextCharLen(const char *buf, std::size_t bufSize,
+                                        std::size_t pos, std::size_t *columSize) {
+    std::size_t startPos = pos;
+    int codePoint = 0;
+    unsigned int byteSize = UnicodeUtil::utf8ToCodePoint(buf + pos, bufSize - pos, codePoint);
+    int width = UnicodeUtil::localeAwareWidth(codePoint);
+    if(width < 1) {
+        return 0;
+    }
+
+    if(columSize != nullptr) {
+        *columSize = width;
+    }
+    pos += byteSize;
+
+    // skip next combining character
+    while(pos < bufSize) {
+        byteSize = UnicodeUtil::utf8ToCodePoint(buf + pos, bufSize - pos, codePoint);
+        if(UnicodeUtil::localeAwareWidth(codePoint) > 0) {
+            break;
+        }
+        pos += byteSize;
+    }
+    return pos - startPos;
+}
+
+static std::size_t encoding_prevCharLen(const char *buf, std::size_t,
+                                        std::size_t pos, std::size_t *columSize) {
+    std::size_t end = pos;
+    while (pos > 0) {
+        std::size_t len = prevUtf8CharLen(buf, pos);
+        pos -= len;
+        int codePoint = UnicodeUtil::utf8ToCodePoint(buf + pos, len);
+        int width = UnicodeUtil::localeAwareWidth(codePoint);
+        if(width > 0) {
+            if(columSize != nullptr) {
+                *columSize = width;
+            }
+            return end - pos;
+        }
+    }
+    return 0;
+}
+
+
+static std::size_t encoding_readCode(int fd, char *buf, std::size_t bufSize, int *codePoint) {
+    if(bufSize < 1) {
+        return -1;
+    }
+
+    std::size_t readSize = read(fd, &buf[0], 1);
+    if(readSize <= 0) {
+        return readSize;
+    }
+
+    unsigned int byteSize = UnicodeUtil::utf8ByteSize(buf[0]);
+    switch(byteSize) {
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+        break;
+    default:
+        return -1;
+    }
+
+    if(byteSize > 1) {
+        if(bufSize < byteSize) {
+            return -1;
+        }
+        readSize = read(fd, &buf[1], byteSize - 1);
+        if(readSize <= 0) {
+            return readSize;
+        }
+    }
+    return UnicodeUtil::utf8ToCodePoint(buf, bufSize, *codePoint);
+}
+
 /**
  * after execution, delete ctx
  */
 int exec_interactive(DSContext *ctx) {   // never return
     linenoiseSetEncodingFunctions(
-            linenoiseUtf8PrevCharLen,
-            linenoiseUtf8NextCharLen,
-            linenoiseUtf8ReadCode);
+            encoding_prevCharLen,
+            encoding_nextCharLen,
+            encoding_readCode);
 
     DSContext_setOption(ctx, DS_OPTION_TOPLEVEL);
     dsContext = ctx;
