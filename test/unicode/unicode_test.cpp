@@ -114,6 +114,38 @@ TEST_F(UnicodeTest, multi) {
     ASSERT_NO_FATAL_FAILURE(this->assertWidth(1, "ｱ", true));
 }
 
+TEST_F(UnicodeTest, multi2) {
+    SCOPED_TRACE("");
+
+    int code = 0;
+    this->toCodePoint("◯", code);
+
+    // C
+    const char *r = nullptr;
+    r = setlocale(LC_CTYPE, "C");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(r != nullptr));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, UnicodeUtil::localeAwareWidth(code)));
+
+    // ja
+    r = setlocale(LC_CTYPE, "ja_JP.UTF-8");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(r != nullptr));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, UnicodeUtil::localeAwareWidth(code)));
+
+    // zh
+    r = setlocale(LC_CTYPE, "zh_CN.UTF-8");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(r != nullptr));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, UnicodeUtil::localeAwareWidth(code)));
+
+    // ko
+    r = setlocale(LC_CTYPE, "ko_KR.UTF-8");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(r != nullptr));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, UnicodeUtil::localeAwareWidth(code)));
+
+
+    // reset locale
+    setlocale(LC_ALL, "");
+}
+
 
 
 int main(int argc, char **argv) {

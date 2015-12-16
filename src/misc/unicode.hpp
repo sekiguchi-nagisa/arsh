@@ -18,6 +18,7 @@
 #define YDSH_UNICODE_HPP
 
 #include <algorithm>
+#include <clocale>
 
 namespace ydsh {
 namespace misc {
@@ -178,6 +179,25 @@ struct UnicodeUtil {
 
 #undef BINARY_SEARCH
         return 1;
+    }
+
+    /**
+     * if LC_CTYPE is CJK, call width(codePoint, TWO_WIDTH)
+     */
+    static int localeAwareWidth(int codePoint) {
+        static const char *cjk[] = {"ja", "zh", "ko"};
+
+        auto e = ONE_WIDTH;
+        const char *ctype = setlocale(LC_CTYPE, nullptr);
+        if(ctype != nullptr) {
+            for(unsigned int i = 0; i < (sizeof(cjk) / sizeof(const char *)); i++) {
+                if(strstr(ctype, cjk[i]) != nullptr) {
+                    e = TWO_WIDTH;
+                    break;
+                }
+            }
+        }
+        return width(codePoint, e);
     }
 };
 
