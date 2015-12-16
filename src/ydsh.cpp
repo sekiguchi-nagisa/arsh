@@ -122,6 +122,7 @@ DSContext::DSContext() :
         lineNum(1), option(0), ps1(), ps2(), execStatus() {
     // set locale
     setlocale(LC_ALL, "");
+    setlocale(LC_MESSAGES, "C");
 
     // update shell level
     setenv("SHLVL", std::to_string(originalShellLevel + 1).c_str(), 1);

@@ -21,6 +21,8 @@
 #include <memory>
 #include <cstdlib>
 
+#include <unistd.h>
+
 #include <linenoise.h>
 
 #include <ydsh/ydsh.h>
