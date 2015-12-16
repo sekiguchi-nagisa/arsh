@@ -27,7 +27,7 @@
 #include <memory>
 #include <algorithm>
 
-#include "../misc/utf8.hpp"
+#include "../misc/unicode.hpp"
 #include "../misc/noncopyable.h"
 
 namespace ydsh {
@@ -255,7 +255,7 @@ std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token) const {
     const unsigned int stopPos = token.size + token.pos;
     for(unsigned int i = token.pos; i < stopPos;) {
         unsigned int prev = i;
-        i = misc::UTF8Util::getNextPos(i, this->buf[i]);
+        i = misc::UnicodeUtil::utf8NextPos(i, this->buf[i]);
         if(i - prev == 1) { // ascii
             marker += (prev == token.pos ? "^" : "~");
         } else {

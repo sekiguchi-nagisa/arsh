@@ -56,3 +56,9 @@ TEST(LineNumTest, case5) {
         ASSERT_EQ(5u, info.getLineNum(13));
     });
 }
+
+
+int main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}

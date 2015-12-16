@@ -22,7 +22,7 @@
 
 #include "RuntimeContext.h"
 #include "DSObject.h"
-#include "../misc/utf8.hpp"
+#include "../misc/unicode.hpp"
 #include "../misc/num.h"
 
 // helper macro
@@ -1002,7 +1002,7 @@ static inline bool string_count(RuntimeContext &ctx) {
     const char *ptr = typeAs<String_Object>(LOCAL(0))->getValue();
     const unsigned int size = typeAs<String_Object>(LOCAL(0))->size();
     unsigned int count = 0;
-    for(unsigned int i = 0; i < size; i = misc::UTF8Util::getNextPos(i, ptr[i])) {
+    for(unsigned int i = 0; i < size; i = misc::UnicodeUtil::utf8NextPos(i, ptr[i])) {
         count++;
     }
     RET(DSValue::create<Int_Object>(ctx.getPool().getInt32Type(), count));
@@ -1027,14 +1027,14 @@ static inline bool string_get(RuntimeContext &ctx) {
         const unsigned int limit = pos;
         unsigned int index = 0;
         unsigned int count = 0;
-        for(; index < size; index = misc::UTF8Util::getNextPos(index, strObj->getValue()[index])) {
+        for(; index < size; index = misc::UnicodeUtil::utf8NextPos(index, strObj->getValue()[index])) {
             if(count == limit) {
                 break;
             }
             count++;
         }
         if(count == limit && index < size) {
-            unsigned int nextIndex = misc::UTF8Util::getNextPos(index, strObj->getValue()[index]);
+            unsigned int nextIndex = misc::UnicodeUtil::utf8NextPos(index, strObj->getValue()[index]);
             RET(DSValue::create<String_Object>(
                     ctx.getPool().getStringType(), std::string(strObj->getValue() + index, nextIndex - index)));
         }
@@ -1292,7 +1292,7 @@ static inline bool stringIter_next(RuntimeContext &ctx) {
         return throwOutOfRangeError(ctx, std::string("string iterator reach end of string"));
     }
     unsigned int curIndex = strIter->curIndex;
-    strIter->curIndex = misc::UTF8Util::getNextPos(curIndex, strObj->getValue()[curIndex]);
+    strIter->curIndex = misc::UnicodeUtil::utf8NextPos(curIndex, strObj->getValue()[curIndex]);
     if(strIter->curIndex > strObj->size()) {
         fatal("broken string iterator\n");
     }

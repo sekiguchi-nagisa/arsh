@@ -1,0 +1,71 @@
+#!/usr/bin/env ydsh
+
+let out = "../${$@[0]}"
+let work_dir = "unicode-temp"
+
+write() {
+    echo $@ >> $out
+}
+
+function table($n : String, $v : typeof([""])) {
+    write -n "static const struct Interval $n[] = {"
+    var i = 0
+    for($e in $v) {
+        if($i % 4 == 0) { write -n -e "\n   "; }
+        write -n " $e"
+        $i++
+    }
+    write
+    write "};"
+    write
+}
+
+
+if(test -d $work_dir) {} else {
+    mkdir $work_dir
+}
+
+cd $work_dir
+
+if(test -f UnicodeData.txt) {} else {
+    wget http://www.unicode.org/Public/UCD/latest/ucd/UnicodeData.txt
+}
+
+if(test -f EastAsianWidth.txt) {} else {
+    wget http://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt
+}
+
+if(test -d uniset) {} else{
+    assert(git clone https://github.com/depp/uniset.git)
+}
+
+cd uniset
+assert(autoreconf -i && ./configure && make)
+cd ../
+
+## generate code
+echo "generate file: $out"
+
+export-env UNICODE_DIR = "."
+let g = "AUTO_GENERATED_$(echo $(basename $out) | tr '[a-z.]' '[A-Z_]')"
+
+echo "/* this is a auto-generated file by using sample/$(basename $0)  */" > $out
+write "/*"
+cat EastAsianWidth.txt | head -n 2 >> $out
+write "*/"
+write "#ifndef $g"
+write "#define $g"
+write ""
+write "struct Interval {"
+write "    int begin;"
+write "    int end;"
+write "};"
+write ""
+
+$IFS = $'\n'
+$table("zero_width_table", $(./uniset/uniset --32 cat:Me,Mn,Cf + U+1160..U+11FF - U+00AD | grep -v plane))
+$table("two_width_table", $(./uniset/uniset --32 eaw:F,W - cat:Me,Mn,Cf | grep -v plane))
+$table("ambiguous_width_table", $(./uniset/uniset --32 eaw:A - cat:Me,Mn,Cf | grep -v plane))
+write "#endif //$g"
+
+echo code generation success
