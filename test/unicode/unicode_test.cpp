@@ -43,6 +43,12 @@ public:
         ASSERT_EQ(size, UnicodeUtil::utf8ByteSize(str[0]));
     }
 
+    void assertCodePoint(const int expect, const char *str) {
+        int code = 0;
+        this->toCodePoint(str, code);
+        ASSERT_EQ(expect, code);
+    }
+
     void assertWidth(const int width, const char *str, bool ambiguousWidth2 = false) {
         SCOPED_TRACE("");
 
@@ -84,6 +90,17 @@ TEST_F(UnicodeTest, base) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, UnicodeUtil::width(' ')));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, UnicodeUtil::width('\\')));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, UnicodeUtil::width('~')));
+}
+
+TEST_F(UnicodeTest, codePoint) {
+    SCOPED_TRACE("");
+
+    ASSERT_NO_FATAL_FAILURE(this->assertCodePoint(0, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertCodePoint(0x40, "@"));
+    ASSERT_NO_FATAL_FAILURE(this->assertCodePoint(0x7E, "~"));
+    ASSERT_NO_FATAL_FAILURE(this->assertCodePoint(0x0150, "Ő"));
+    ASSERT_NO_FATAL_FAILURE(this->assertCodePoint(0x305F, "た"));
+    ASSERT_NO_FATAL_FAILURE(this->assertCodePoint(0x25E56, "𥹖"));
 }
 
 TEST_F(UnicodeTest, multi) {

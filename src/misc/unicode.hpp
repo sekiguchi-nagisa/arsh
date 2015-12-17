@@ -125,7 +125,7 @@ struct UnicodeUtil {
     /**
      * get width of unicode code point.
      * return -1, if control character.
-     * return 0, if combining character.
+     * return 0, if combining character or null character.
      * return 2, if wide width character.
      * return 1, otherwise.
      *
@@ -146,7 +146,8 @@ struct UnicodeUtil {
             return -1;
         }
 
-        // search zero-width (combining) character
+
+#define BINARY_SEARCH(t, v) (std::binary_search(t, t + sizeof(t) / sizeof(Interval), v, Comparator()))
         struct Comparator {
             bool operator()(const Interval &l, int r) const {
                 return l.end < r;
@@ -157,8 +158,7 @@ struct UnicodeUtil {
             }
         };
 
-#define BINARY_SEARCH(t, v) (std::binary_search(t, t + sizeof(t) / sizeof(Interval), v, Comparator()))
-
+        // search zero-width (combining) character
         if(BINARY_SEARCH(zero_width_table, codePoint)) {
             return 0;
         }
