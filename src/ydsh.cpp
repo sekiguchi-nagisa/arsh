@@ -396,7 +396,7 @@ unsigned int DSContext::getShellLevel() {
     unsigned int level = 0;
     if(shlvl != nullptr) {
         int status;
-        long value = ydsh::misc::convertToInt64(shlvl, status, false);
+        long value = ydsh::misc::convertToInt64(shlvl, status);
         if(status != 0) {
             level = 0;
         } else {

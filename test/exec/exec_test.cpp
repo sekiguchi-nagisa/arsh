@@ -4,7 +4,6 @@
 
 #include <ydsh/ydsh.h>
 #include <misc/files.h>
-#include <misc/num.h>
 #include <directive.h>
 #include <config.h>
 
@@ -54,9 +53,8 @@ int extract(const std::string &src, unsigned int &index, unsigned int &first) {
         }
         buf += ch;
     }
-    int status;
-    long value = convertToInt64(buf.c_str(), status, false);
-    if(status != 0 || value < 0 || value > UINT32_MAX) {
+    long value = std::stol(buf);
+    if(value < 0 || value > UINT32_MAX) {
         return 1;
     }
     first = (unsigned int) value;

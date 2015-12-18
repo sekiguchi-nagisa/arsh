@@ -64,7 +64,6 @@ public:
     TokenKind nextToken(Token &token);
 
     int toInt(const Token &token, int &status) const;
-    long toInt64(const Token &token, int &status) const;
     std::string toName(const Token &token) const;
     std::string toString(const Token &token) const;
 

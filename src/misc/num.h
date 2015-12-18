@@ -31,7 +31,7 @@ namespace misc {
  * if cannot convert, status is -1.
  * if found illegal character, status is -2.
  */
-inline long convertToInt64(const char *str, int &status, bool skipIllegalChar) {
+inline long convertToInt64(const char *str, int &status, bool skipIllegalChar = false) {
     errno = 0;
 
     // convert to int
@@ -61,7 +61,7 @@ inline long convertToInt64(const char *str, int &status, bool skipIllegalChar) {
  * if cannot convert, status is -1.
  * if found illegal character, status is -2.
  */
-inline unsigned long convertToUint64(const char *str, int &status, bool skipIllegalChar) {
+inline unsigned long convertToUint64(const char *str, int &status, bool skipIllegalChar = false) {
     errno = 0;
 
     // convert to int
@@ -91,7 +91,7 @@ inline unsigned long convertToUint64(const char *str, int &status, bool skipIlle
  * if cannot convert, status is -1.
  * if found illegal character, status is -2.
  */
-inline double convertToDouble(const char *str, int &status, bool skipIllegalChar) {
+inline double convertToDouble(const char *str, int &status, bool skipIllegalChar = false) {
     errno = 0;
 
     // convert to double

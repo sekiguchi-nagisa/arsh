@@ -330,7 +330,7 @@ double Lexer::toDouble(Token token, int &status) const {
     }
     str[token.size] = '\0';
 
-    double value = convertToDouble(str, status, false);
+    double value = convertToDouble(str, status);
     if(status == -1) {
         fatal("cannot convert to double: %s\n", str);
     } else if(status == -2) {

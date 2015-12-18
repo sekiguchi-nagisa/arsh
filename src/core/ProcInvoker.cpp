@@ -429,7 +429,7 @@ static int builtin_exit(RuntimeContext *ctx, const BuiltinContext &bctx) {
     if(bctx.argc > 1) {
         const char *num = bctx.argv[1];
         int status;
-        long value = convertToInt64(num, status, false);
+        long value = convertToInt64(num, status);
         if(status == 0) {
             ret = value;
         }
@@ -901,7 +901,7 @@ static int builtin_test(RuntimeContext *, const BuiltinContext &bctx) {
         }
         case 't': {
             int s;
-            long n = convertToInt64(value, s, false);
+            long n = convertToInt64(value, s);
             result = s == 0 && n >= INT32_MIN && n <= INT32_MAX && isatty(n) != 0;  //  check if FD is a terminal
             break;
         }
@@ -965,13 +965,13 @@ static int builtin_test(RuntimeContext *, const BuiltinContext &bctx) {
         case BinaryOp::LE:
         case BinaryOp::GE: {
             int s = 0;
-            long n1 = convertToInt64(left, s, false);
+            long n1 = convertToInt64(left, s);
             if(s != 0) {
                 builtin_perror(bctx, 0, "%s: must be integer", left);
                 return 2;
             }
 
-            long n2 = convertToInt64(right, s, false);
+            long n2 = convertToInt64(right, s);
             if(s != 0) {
                 builtin_perror(bctx, 0, "%s: must be integer", right);
                 return 2;

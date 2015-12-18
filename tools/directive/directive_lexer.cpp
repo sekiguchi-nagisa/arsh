@@ -16,7 +16,6 @@
 
 #include <cassert>
 
-#include <misc/num.h>
 #include <misc/fatal.h>
 #include "directive_lexer.h"
 
@@ -45,30 +44,21 @@ std::ostream &operator<<(std::ostream &stream, TokenKind kind) {
 // ##################
 
 int Lexer::toInt(const Token &token, int &status) const {
-    long value = this->toInt64(token, status);
+    assert(this->withinRange(token));
+    status = 0;
+
+    std::string str;
+    for(unsigned int i = 0; i < token.size; i++) {
+        str += (char)this->buf[token.pos + i];
+    }
+
+    // covert to int
+    long value = std::stol(str);
     if(value > INT32_MAX || value < INT32_MIN) {
         status = 1;
         return 0;
     }
     return (int) value;
-}
-
-long Lexer::toInt64(const Token &token, int &status) const {
-    assert(this->withinRange(token));
-
-    char str[token.size + 1];
-    for(unsigned int i = 0; i < token.size; i++) {
-        str[i] = this->buf[token.pos + i];
-    }
-    str[token.size] = '\0';
-
-    long value = convertToInt64(str, status, true);
-    if(status == -1) {
-        fatal("cannot covert to int: %s\n", str);
-    } else if(status == -2) {
-        fatal("found illegal character in num: %s\n", str);
-    }
-    return value;
 }
 
 std::string Lexer::toName(const Token &token) const {
