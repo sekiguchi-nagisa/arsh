@@ -40,29 +40,7 @@ struct UnicodeUtil {
     /**
      * if b is illegal start byte of UTF-8, return always 0.
      */
-    static unsigned int utf8ByteSize(unsigned char b) {
-        static const unsigned char table[256] = {
-                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-
-                2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-                2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-                3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-                4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0,
-        };
-        return table[b];
-    }
+    static unsigned int utf8ByteSize(unsigned char b);
 
     /**
      * if illegal UTF-8 code, return -1.
@@ -79,43 +57,7 @@ struct UnicodeUtil {
      * if illegal UTF-8 code, write -1 and return 0.
      * otherwise, return byte size of UTF-8.
      */
-    static unsigned int utf8ToCodePoint(const char *const buf, std::size_t bufSize, int &codePoint) {
-        if(bufSize > 0) {
-            switch(utf8ByteSize(buf[0])) {
-            case 1:
-                codePoint = buf[0];
-                return 1;
-            case 2:
-                if(bufSize >= 2) {
-                    codePoint = (((unsigned long)(buf[0] & 0x1F)) << 6) |
-                            ((unsigned long)(buf[1] & 0x3F));
-                    return 2;
-                }
-                break;
-            case 3:
-                if(bufSize >= 3) {
-                    codePoint = (((unsigned long)(buf[0] & 0x0F)) << 12) |
-                            (((unsigned long)(buf[1] & 0x3F)) << 6) |
-                            ((unsigned long)(buf[2] & 0x3F));
-                    return 3;
-                }
-                break;
-            case 4:
-                if(bufSize >= 4) {
-                    codePoint = (((unsigned long)(buf[0] & 0x07)) << 18) |
-                            (((unsigned long)(buf[1] & 0x3F)) << 12) |
-                            (((unsigned long)(buf[2] & 0x3F)) << 6) |
-                            ((unsigned long)(buf[3] & 0x3F));
-                    return 4;
-                }
-                break;
-            default:
-                break;
-            }
-        }
-        codePoint = -1;
-        return 0;
-    }
+    static unsigned int utf8ToCodePoint(const char *const buf, std::size_t bufSize, int &codePoint);
 
     enum AmbiguousCharWidth {
         ONE_WIDTH,
@@ -131,75 +73,150 @@ struct UnicodeUtil {
      *
      * codePoint must be unicode code point.
      */
-    static int width(int codePoint, AmbiguousCharWidth ambiguousCharWidth = ONE_WIDTH) {
-#include "unicode_width.h"
-
-        if(codePoint == 0) {
-            return 0;   // null character width is 0
-        }
-
-        if(codePoint >= 32 && codePoint < 127) {    // ascii printable character
-            return 1;
-        }
-
-        if(codePoint < 32 || (codePoint >= 0x7F && codePoint < 0xA0)) { // control character
-            return -1;
-        }
-
-
-#define BINARY_SEARCH(t, v) (std::binary_search(t, t + sizeof(t) / sizeof(Interval), v, Comparator()))
-        struct Comparator {
-            bool operator()(const Interval &l, int r) const {
-                return l.end < r;
-            }
-
-            bool operator()(int l, const Interval &r) const {
-                return l < r.begin;
-            }
-        };
-
-        // search zero-width (combining) character
-        if(BINARY_SEARCH(zero_width_table, codePoint)) {
-            return 0;
-        }
-
-        // search ambiguous width character
-        if(ambiguousCharWidth == TWO_WIDTH && BINARY_SEARCH(ambiguous_width_table, codePoint)) {
-            return 2;
-        }
-
-        // search two width character
-        if(codePoint < 0x1100) {
-            return 1;
-        }
-
-        if(BINARY_SEARCH(two_width_table, codePoint)) {
-            return 2;
-        }
-
-#undef BINARY_SEARCH
-        return 1;
-    }
+    static int width(int codePoint, AmbiguousCharWidth ambiguousCharWidth = ONE_WIDTH);
 
     /**
      * if LC_CTYPE is CJK, call width(codePoint, TWO_WIDTH)
      */
-    static int localeAwareWidth(int codePoint) {
-        static const char *cjk[] = {"ja", "zh", "ko"};
+    static int localeAwareWidth(int codePoint);
+};
 
-        auto e = ONE_WIDTH;
-        const char *ctype = setlocale(LC_CTYPE, nullptr);
-        if(ctype != nullptr) {
-            for(unsigned int i = 0; i < (sizeof(cjk) / sizeof(const char *)); i++) {
-                if(strstr(ctype, cjk[i]) != nullptr) {
-                    e = TWO_WIDTH;
-                    break;
-                }
+
+// #########################
+// ##     UnicodeUtil     ##
+// #########################
+
+template <bool T>
+unsigned int UnicodeUtil<T>::utf8ByteSize(unsigned char b) {
+    static const unsigned char table[256] = {
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+
+            2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+            2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+            3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+            4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0,
+    };
+    return table[b];
+}
+
+template <bool T>
+unsigned int UnicodeUtil<T>::utf8ToCodePoint(const char *const buf, std::size_t bufSize, int &codePoint) {
+    if(bufSize > 0) {
+        switch(utf8ByteSize(buf[0])) {
+        case 1:
+            codePoint = buf[0];
+            return 1;
+        case 2:
+            if(bufSize >= 2) {
+                codePoint = (((unsigned long)(buf[0] & 0x1F)) << 6) |
+                            ((unsigned long)(buf[1] & 0x3F));
+                return 2;
+            }
+            break;
+        case 3:
+            if(bufSize >= 3) {
+                codePoint = (((unsigned long)(buf[0] & 0x0F)) << 12) |
+                            (((unsigned long)(buf[1] & 0x3F)) << 6) |
+                            ((unsigned long)(buf[2] & 0x3F));
+                return 3;
+            }
+            break;
+        case 4:
+            if(bufSize >= 4) {
+                codePoint = (((unsigned long)(buf[0] & 0x07)) << 18) |
+                            (((unsigned long)(buf[1] & 0x3F)) << 12) |
+                            (((unsigned long)(buf[2] & 0x3F)) << 6) |
+                            ((unsigned long)(buf[3] & 0x3F));
+                return 4;
+            }
+            break;
+        default:
+            break;
+        }
+    }
+    codePoint = -1;
+    return 0;
+}
+
+template <bool T>
+int UnicodeUtil<T>::width(int codePoint, AmbiguousCharWidth ambiguousCharWidth) {
+#include "unicode_width.h"
+
+    if(codePoint == 0) {
+        return 0;   // null character width is 0
+    }
+
+    if(codePoint >= 32 && codePoint < 127) {    // ascii printable character
+        return 1;
+    }
+
+    if(codePoint < 32 || (codePoint >= 0x7F && codePoint < 0xA0)) { // control character
+        return -1;
+    }
+
+
+#define BINARY_SEARCH(t, v) (std::binary_search(t, t + sizeof(t) / sizeof(Interval), v, Comparator()))
+    struct Comparator {
+        bool operator()(const Interval &l, int r) const {
+            return l.end < r;
+        }
+
+        bool operator()(int l, const Interval &r) const {
+            return l < r.begin;
+        }
+    };
+
+    // search zero-width (combining) character
+    if(BINARY_SEARCH(zero_width_table, codePoint)) {
+        return 0;
+    }
+
+    // search ambiguous width character
+    if(ambiguousCharWidth == TWO_WIDTH && BINARY_SEARCH(ambiguous_width_table, codePoint)) {
+        return 2;
+    }
+
+    // search two width character
+    if(codePoint < 0x1100) {
+        return 1;
+    }
+
+    if(BINARY_SEARCH(two_width_table, codePoint)) {
+        return 2;
+    }
+
+#undef BINARY_SEARCH
+    return 1;
+}
+
+template <bool T>
+int UnicodeUtil<T>::localeAwareWidth(int codePoint) {
+    static const char *cjk[] = {"ja", "zh", "ko"};
+
+    auto e = ONE_WIDTH;
+    const char *ctype = setlocale(LC_CTYPE, nullptr);
+    if(ctype != nullptr) {
+        for(unsigned int i = 0; i < (sizeof(cjk) / sizeof(const char *)); i++) {
+            if(strstr(ctype, cjk[i]) != nullptr) {
+                e = TWO_WIDTH;
+                break;
             }
         }
-        return width(codePoint, e);
     }
-};
+    return width(codePoint, e);
+}
 
 } // namespace __detail_unicode
 
