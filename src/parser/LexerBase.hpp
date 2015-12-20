@@ -250,15 +250,26 @@ std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token) const {
 
     std::string marker;
     for(unsigned int i = lineToken.pos; i < token.pos; i++) {
-        marker += " ";
+        if(this->buf[i] == '\t') {
+            marker += "\t";
+        } else {
+            marker += " ";
+        }
     }
     const unsigned int stopPos = token.size + token.pos;
     for(unsigned int i = token.pos; i < stopPos;) {
         unsigned int prev = i;
-        i = misc::UnicodeUtil::utf8NextPos(i, this->buf[i]);
-        if(i - prev == 1) { // ascii
+        int code = 0;
+        i += misc::UnicodeUtil::utf8ToCodePoint((char *)(this->buf + i), this->getUsedSize() - i, code);
+        assert(code > -1);
+        if(code == '\t') {
+            marker += "\t";
+            continue;
+        }
+        int width = misc::UnicodeUtil::localeAwareWidth(code);
+        if(width == 1) {
             marker += (prev == token.pos ? "^" : "~");
-        } else {
+        } else if(width == 2) {
             marker += (prev == token.pos ? "^~" : "~~");
         }
     }
