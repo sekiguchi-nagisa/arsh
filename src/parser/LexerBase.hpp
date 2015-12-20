@@ -249,11 +249,19 @@ std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token) const {
     assert(lineToken.pos <= token.pos);
 
     std::string marker;
-    for(unsigned int i = lineToken.pos; i < token.pos; i++) {
-        if(this->buf[i] == '\t') {
+    for(unsigned int i = lineToken.pos; i < token.pos;) {
+        int code = 0;
+        i += misc::UnicodeUtil::utf8ToCodePoint((char *)(this->buf + i), this->getUsedSize() - i, code);
+        assert(code > -1);
+        if(code == '\t') {
             marker += "\t";
-        } else {
+            continue;
+        }
+        int width = misc::UnicodeUtil::localeAwareWidth(code);
+        if(width == 1) {
             marker += " ";
+        } else if(width == 2) {
+            marker += "  ";
         }
     }
     const unsigned int stopPos = token.size + token.pos;
