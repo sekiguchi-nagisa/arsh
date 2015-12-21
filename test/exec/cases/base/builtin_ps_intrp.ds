@@ -13,6 +13,9 @@ assert("$(ps_intrp '\r')" == "$(echo -e '\r')")
 assert("$(ps_intrp '\s')" == "$(basename $0)")
 assert("$(ps_intrp '\u')" == "$(whoami)")
 assert("$(ps_intrp '\w')" == $PWD)
+assert("$(ps_intrp '\0101\066')" == "A6")    # octal number
+assert("$(ps_intrp '\x09\x7E')" == $'\t~')   # hex number
+assert("$(ps_intrp '\x9\x7e')" == $'\t~')    # hex number
 
 var u = "$(ps_intrp '\$')"
 if("$(id -u)" == "$(id -u root)") { # root

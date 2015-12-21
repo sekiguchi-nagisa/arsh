@@ -228,6 +228,8 @@ const struct {
                 "                  \\r    carriage return\n"
                 "                  \\t    horizontal tab\n"
                 "                  \\v    vertical tab\n"
+                "                  \\0nnn N is octal number.  NNN can be 0 to 3 number\n"
+                "                  \\xnn  N is hex number.  NN can be 1 to 3 number\n"
                 "        -E    disable escape sequence interpretation"},
         {"eval", builtin_eval, "[args ...]",
                 "    evaluate ARGS as command."},
@@ -266,7 +268,9 @@ const struct {
                 "        \\$    # if uid is 0, otherwise $\n"
                 "        \\\\    backslash\n"
                 "        \\[    begin of unprintable sequence\n"
-                "        \\]    end of unprintable sequence"},
+                "        \\]    end of unprintable sequence\n"
+                "        \\0nnn N is octal number.  NNN can be 0 to 3 number\n"
+                "        \\xnn  N is hex number.  NN can be 1 to 3 number"},
         {"pwd", builtin_pwd, "",
                 "    Print the current working directory(absolute path)."},
         {"read", builtin_read, "[-r] [-p prompt] [-f field separator] [name ...]",
@@ -438,6 +442,26 @@ static int builtin_exit(RuntimeContext *ctx, const BuiltinContext &bctx) {
     return ret;
 }
 
+static bool isOctal(char ch) {
+    return ch >= '0' && ch < '8';
+}
+
+static bool isHex(char ch) {
+    return (ch >= '0' && ch <= '9') ||
+            (ch >= 'A' && ch <= 'F') || (ch >= 'a' && ch <= 'f');
+}
+
+static int toHex(char ch) {
+    if(ch >= '0' && ch <= '9') {
+        return ch - '0';
+    } else if(ch >= 'a' && ch <= 'f') {
+        return 10 + (ch - 'a');
+    } else if(ch >= 'A' && ch <= 'F') {
+        return 10 + (ch - 'A');
+    }
+    return 0;
+}
+
 static int builtin_echo(RuntimeContext *, const BuiltinContext &bctx) {
     FILE *fp = bctx.fp_stdout;  // not close it.
     int argc = bctx.argc;
@@ -506,6 +530,32 @@ static int builtin_echo(RuntimeContext *, const BuiltinContext &bctx) {
                 case 'v':
                     ch = '\v';
                     break;
+                case '0': {
+                    int v = 0;
+                    for(unsigned int c = 0; c < 3; c++) {
+                        if(isOctal(arg[i + 1])) {
+                            v *= 8;
+                            v += arg[++i] - '0';
+                        } else {
+                            break;
+                        }
+                    }
+                    ch = (char) v;
+                    break;
+                }
+                case 'x': {
+                    if(isHex(arg[i + 1])) {
+                        int v = toHex(arg[++i]);
+                        if(isHex(arg[i + 1])) {
+                            v *= 16;
+                            v += toHex(arg[++i]);
+                        }
+                        ch = (char) v;
+                        break;
+                    }
+                    i--;
+                    break;
+                }
                 default:
                     i--;
                     break;

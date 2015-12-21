@@ -587,6 +587,26 @@ static std::string basename(const std::string &path) {
     return path.substr(path.find_last_of('/') + 1);
 }
 
+static bool isOctal(char ch) {
+    return ch >= '0' && ch < '8';
+}
+
+static bool isHex(char ch) {
+    return (ch >= '0' && ch <= '9') ||
+           (ch >= 'A' && ch <= 'F') || (ch >= 'a' && ch <= 'f');
+}
+
+static int toHex(char ch) {
+    if(ch >= '0' && ch <= '9') {
+        return ch - '0';
+    } else if(ch >= 'a' && ch <= 'f') {
+        return 10 + (ch - 'a');
+    } else if(ch >= 'A' && ch <= 'F') {
+        return 10 + (ch - 'A');
+    }
+    return 0;
+}
+
 void RuntimeContext::interpretPromptString(const char *ps, std::string &output) {
     output.clear();
 
@@ -713,6 +733,32 @@ void RuntimeContext::interpretPromptString(const char *ps, std::string &output) 
             case '[':
             case ']':
                 continue;
+            case '0': {
+                int v = 0;
+                for(unsigned int c = 0; c < 3; c++) {
+                    if(isOctal(ps[i + 1])) {
+                        v *= 8;
+                        v += ps[++i] - '0';
+                    } else {
+                        break;
+                    }
+                }
+                ch = (char) v;
+                break;
+            }
+            case 'x': {
+                if(isHex(ps[i + 1])) {
+                    int v = toHex(ps[++i]);
+                    if(isHex(ps[i + 1])) {
+                        v *= 16;
+                        v += toHex(ps[++i]);
+                    }
+                    ch = (char) v;
+                    break;
+                }
+                i--;
+                break;
+            }
             default:
                 i--;
                 break;
