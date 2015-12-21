@@ -133,7 +133,7 @@ do { \
     do {\
         int status;\
         out = func(token, status);\
-        if(status != 0) { throw OutOfRangeNumError(kind, token); }\
+        if(status != 0) { throw TokenFormatError(kind, token, "out of range"); }\
     } while(0)
 
 #define PRECEDENCE() getPrecedence(CUR_KIND())
@@ -1324,8 +1324,8 @@ bool parse(const char *sourceName, RootNode &rootNode) {
 }
 
 // parser error
-std::ostream &operator<<(std::ostream &stream, const OutOfRangeNumError &e) {
-    return stream << "out of range: " << e.getTokenKind();
+std::ostream &operator<<(std::ostream &stream, const TokenFormatError &e) {
+    return stream << e.getMessage() << ": " << e.getTokenKind();
 }
 
 } // namespace parser

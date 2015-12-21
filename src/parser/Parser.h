@@ -168,18 +168,26 @@ typedef Parser::NoViableAlterError NoViableAlterError;
 typedef Parser::InvalidTokenError InvalidTokenError;
 
 
-class OutOfRangeNumError : public ParseError {
+class TokenFormatError : public ParseError {
+private:
+    std::string message;
+
 public:
-    OutOfRangeNumError(TokenKind  kind, Token errorToken) : ParseError(kind, errorToken) {}
+    TokenFormatError(TokenKind  kind, Token errorToken, const char *message) :
+            ParseError(kind, errorToken), message(message) {}
 
-    ~OutOfRangeNumError() = default;
+    ~TokenFormatError() = default;
 
-    bool operator==(const OutOfRangeNumError &e) {
+    const std::string &getMessage() const {
+        return this->message;
+    }
+
+    bool operator==(const TokenFormatError &e) {
         return this->errorToken == e.errorToken;
     }
 };
 
-std::ostream &operator<<(std::ostream &stream, const OutOfRangeNumError &e);
+std::ostream &operator<<(std::ostream &stream, const TokenFormatError &e);
 
 } // namespace parser
 } // namespace ydsh

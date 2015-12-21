@@ -143,7 +143,7 @@ static std::ostream &format(std::ostream &stream, const ParseError &e) {
     E(TokenMismatchedError) \
     E(NoViableAlterError) \
     E(InvalidTokenError) \
-    E(OutOfRangeNumError)
+    E(TokenFormatError)
 
 #define DISPATCH(E) if(dynamic_cast<const E *>(&e) != nullptr) { \
     stream << *static_cast<const E *>(&e); return stream; }
@@ -182,10 +182,10 @@ void DSContext::handleParseError(const Lexer &lexer, const ParseError &e) {
      * update execution status
      */
 #define EACH_ERROR(E) \
-    E(TokenMismatched  , 0) \
-    E(NoViableAlter    , 1) \
-    E(InvalidToken     , 2) \
-    E(OutOfRangeNum    , 3)
+    E(TokenMismatched, 0) \
+    E(NoViableAlter  , 1) \
+    E(InvalidToken   , 2) \
+    E(TokenFormat    , 3)
 
     static const char *strs[] = {
 #define GEN_STR(K, N) #K,
