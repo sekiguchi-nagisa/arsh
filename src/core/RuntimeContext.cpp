@@ -27,6 +27,7 @@
 #include "../config.h"
 #include "RuntimeContext.h"
 #include "symbol.h"
+#include "../misc/num.h"
 
 namespace ydsh {
 namespace core {
@@ -585,26 +586,6 @@ static void format2digit(int num, std::string &out) {
 
 static std::string basename(const std::string &path) {
     return path.substr(path.find_last_of('/') + 1);
-}
-
-static bool isOctal(char ch) {
-    return ch >= '0' && ch < '8';
-}
-
-static bool isHex(char ch) {
-    return (ch >= '0' && ch <= '9') ||
-           (ch >= 'A' && ch <= 'F') || (ch >= 'a' && ch <= 'f');
-}
-
-static int toHex(char ch) {
-    if(ch >= '0' && ch <= '9') {
-        return ch - '0';
-    } else if(ch >= 'a' && ch <= 'f') {
-        return 10 + (ch - 'a');
-    } else if(ch >= 'A' && ch <= 'F') {
-        return 10 + (ch - 'A');
-    }
-    return 0;
 }
 
 void RuntimeContext::interpretPromptString(const char *ps, std::string &output) {

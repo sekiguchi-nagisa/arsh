@@ -442,26 +442,6 @@ static int builtin_exit(RuntimeContext *ctx, const BuiltinContext &bctx) {
     return ret;
 }
 
-static bool isOctal(char ch) {
-    return ch >= '0' && ch < '8';
-}
-
-static bool isHex(char ch) {
-    return (ch >= '0' && ch <= '9') ||
-            (ch >= 'A' && ch <= 'F') || (ch >= 'a' && ch <= 'f');
-}
-
-static int toHex(char ch) {
-    if(ch >= '0' && ch <= '9') {
-        return ch - '0';
-    } else if(ch >= 'a' && ch <= 'f') {
-        return 10 + (ch - 'a');
-    } else if(ch >= 'A' && ch <= 'F') {
-        return 10 + (ch - 'A');
-    }
-    return 0;
-}
-
 static int builtin_echo(RuntimeContext *, const BuiltinContext &bctx) {
     FILE *fp = bctx.fp_stdout;  // not close it.
     int argc = bctx.argc;

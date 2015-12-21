@@ -121,23 +121,24 @@ Token Lexer::getLineTokenImpl(Token token) const {
     return lineToken;
 }
 
-std::string Lexer::singleToString(Token token) const {
+bool Lexer::singleToString(Token token, std::string &out) const {
     if(this->startsWith(token, '$')) {
-        return this->escapedSingleToString(token);
+        return this->escapedSingleToString(token, out);
     }
 
     Token trimed = token;
     trimed.pos++;
     trimed.size -= 2;
 
-    return this->toTokenText(trimed);
+    out = this->toTokenText(trimed);
+    return true;
 }
 
-std::string Lexer::escapedSingleToString(Token token) const {
+bool Lexer::escapedSingleToString(Token token, std::string &out) const {
     assert(this->withinRange(token));
 
-    std::string str;
-    str.reserve(token.size - 3);
+    out.clear();
+    out.reserve(token.size - 3);
 
     const unsigned int stopPos = token.pos + token.size - 1; // ignore suffix "'"
     for(unsigned int i = token.pos + 2; i < stopPos; i++) {  // ignore prefix "$'"
@@ -159,14 +160,39 @@ std::string Lexer::escapedSingleToString(Token token) const {
             case '\\':
                 ch = '\\';
                 break;
+            case 'x':
+                if(i + 1 < stopPos && isHex(this->buf[i + 1])) {
+                    int v = toHex(this->buf[++i]);
+                    if(i + 1 < stopPos && isHex(this->buf[i + 1])) {
+                        v *= 16;
+                        v += toHex(this->buf[++i]);
+                        ch = (char) v;
+                        break;
+                    }
+                }
+                return false;
             default:
+                if(isOctal(this->buf[i])) {
+                    int v = this->buf[i] - '0';
+                    if(i + 1 < stopPos && isOctal(this->buf[i + 1])) {
+                        v *= 8;
+                        v += this->buf[++i] - '0';
+                        if(i + 1 < stopPos && isOctal(this->buf[i + 1])) {
+                            v *= 8;
+                            v += this->buf[++i] - '0';
+                            ch = (char) v;
+                            break;
+                        }
+                    }
+                    return false;
+                }
                 --i;
                 break;
             }
         }
-        str += ch;
+        out += ch;
     }
-    return str;
+    return true;
 }
 
 std::string Lexer::doubleElementToString(Token token) const {

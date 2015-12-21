@@ -1130,7 +1130,9 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
          */
         token.pos++;
         token.size--;
-        return uniquify<ObjectPathNode>(token, this->lexer->singleToString(token));
+        std::string str;
+        this->lexer->singleToString(token, str);    // always success
+        return uniquify<ObjectPathNode>(token, std::move(str));
     }
     case OPEN_DQUOTE: {
         return this->parse_stringExpression();
@@ -1213,7 +1215,12 @@ std::unique_ptr<Node> Parser::parse_appliedName(bool asSpecialName) {
 
 std::unique_ptr<Node> Parser::parse_stringLiteral() {
     Token token = this->expect(STRING_LITERAL);
-    return uniquify<StringValueNode>(token, this->lexer->singleToString(token));
+    std::string str;
+    bool s = this->lexer->singleToString(token, str);
+    if(!s) {
+        throw TokenFormatError(STRING_LITERAL, token, "illegal escape sequence");
+    }
+    return uniquify<StringValueNode>(token, std::move(str));
 }
 
 ArgsWrapper Parser::parse_arguments() {

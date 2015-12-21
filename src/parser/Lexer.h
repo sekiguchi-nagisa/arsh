@@ -176,13 +176,15 @@ public:
 
     /**
      * convert single quote string literal token to string.
+     * if token is illegal format(ex. illegal escape sequence), return false.
      */
-    std::string singleToString(Token token) const;
+    bool singleToString(Token token, std::string &out) const;
 
     /**
      * convert escaped single quote string literal token to string.
+     * if token is illegal format(ex. illegal escape sequence), return false.
      */
-    std::string escapedSingleToString(Token token) const;
+    bool escapedSingleToString(Token token, std::string &out) const;
 
     /**
      * convert double quote string element token to string.
