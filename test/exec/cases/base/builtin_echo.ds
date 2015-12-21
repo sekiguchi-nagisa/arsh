@@ -11,6 +11,8 @@ assert("$(echo -e 'hello\t\nworld')" == $'hello\t\nworld')
 assert("$(echo -e '\0101\066')" == "A6")    # octal number
 assert("$(echo -e '\x09\x7E')" == $'\t~')   # hex number
 assert("$(echo -e '\x9\x7e')" == $'\t~')    # hex number
+assert("$(echo -e '\xG')" == '\xG')
+assert("$(echo -e '\0')".empty())
 
 
 # disable interpretation

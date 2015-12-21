@@ -229,7 +229,7 @@ const struct {
                 "                  \\t    horizontal tab\n"
                 "                  \\v    vertical tab\n"
                 "                  \\0nnn N is octal number.  NNN can be 0 to 3 number\n"
-                "                  \\xnn  N is hex number.  NN can be 1 to 3 number\n"
+                "                  \\xnn  N is hex number.  NN can be 1 to 2 number\n"
                 "        -E    disable escape sequence interpretation"},
         {"eval", builtin_eval, "[args ...]",
                 "    evaluate ARGS as command."},
@@ -270,7 +270,7 @@ const struct {
                 "        \\[    begin of unprintable sequence\n"
                 "        \\]    end of unprintable sequence\n"
                 "        \\0nnn N is octal number.  NNN can be 0 to 3 number\n"
-                "        \\xnn  N is hex number.  NN can be 1 to 3 number"},
+                "        \\xnn  N is hex number.  NN can be 1 to 2 number"},
         {"pwd", builtin_pwd, "",
                 "    Print the current working directory(absolute path)."},
         {"read", builtin_read, "[-r] [-p prompt] [-f field separator] [name ...]",
