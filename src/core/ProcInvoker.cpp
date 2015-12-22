@@ -279,8 +279,6 @@ const struct {
                 "        -r    disable backslash escape\n"
                 "        -p    specify prompt string\n"
                 "        -f    specify field separator (if not, use IFS)"},
-        {"true", builtin_true, "",
-                "    Always success (exit status is 0)."},
         {"test", builtin_test, "[expr]",
                 "    Unary or Binary expressions.\n"
                 "    If expression is true, return 0\n"
@@ -331,6 +329,8 @@ const struct {
                 "        -x FILE        check if file is executable\n"
                 "        -O FILE        check if file is effectively owned by user\n"
                 "        -G FILE        check if file is effectively owned by group"},
+        {"true", builtin_true, "",
+                "    Always success (exit status is 0)."},
 };
 
 template<typename T, size_t N>
