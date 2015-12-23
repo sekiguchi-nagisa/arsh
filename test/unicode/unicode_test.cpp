@@ -58,6 +58,16 @@ public:
         auto e = ambiguousWidth2 ? UnicodeUtil::TWO_WIDTH : UnicodeUtil::ONE_WIDTH;
         ASSERT_EQ(width, UnicodeUtil::width(codePoint, e));
     }
+
+    void assertIllegal(const char *const buf, unsigned int bufSize) {
+        SCOPED_TRACE("");
+
+        int codePoint = 0;
+        ASSERT_EQ(0u, UnicodeUtil::utf8ToCodePoint(buf, bufSize, codePoint));
+        ASSERT_EQ(-1, codePoint);
+
+        ASSERT_EQ(-1, UnicodeUtil::utf8ToCodePoint(buf, bufSize));
+    }
 };
 
 TEST_F(UnicodeTest, size) {
@@ -161,6 +171,39 @@ TEST_F(UnicodeTest, multi2) {
 
     // reset locale
     setlocale(LC_ALL, "");
+}
+
+TEST_F(UnicodeTest, illegal) {
+    SCOPED_TRACE("");
+
+    // 2byte
+    {
+        char b[] = {static_cast<char>(200)};
+        ASSERT_NO_FATAL_FAILURE(this->assertIllegal(b, 1));
+    }
+
+    // 3byte
+    {
+        char b[] = {static_cast<char>(238), 32};
+        ASSERT_NO_FATAL_FAILURE(this->assertIllegal(b, 1));
+    }
+
+    // 4byte
+    {
+        char b[] = {static_cast<char>(243), 32};
+        ASSERT_NO_FATAL_FAILURE(this->assertIllegal(b, 1));
+    }
+
+    // illegal byte
+    {
+        char b[] = {static_cast<char>(144)};
+        ASSERT_NO_FATAL_FAILURE(this->assertIllegal(b, 1));
+    }
+
+    {
+        char b[] = {static_cast<char>(253)};
+        ASSERT_NO_FATAL_FAILURE(this->assertIllegal(b, 1));
+    }
 }
 
 
