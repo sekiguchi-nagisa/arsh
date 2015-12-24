@@ -67,7 +67,7 @@ static int invoke(DSContext **ctx, T&& ... args) {
     }
     DSContext_delete(ctx);
     return ret;
-};
+}
 
 #define INVOKE(F) invoke<decltype(DSContext_ ## F), DSContext_ ## F>
 
@@ -79,11 +79,10 @@ static void showFeature(std::ostream &stream) {
             {DS_FEATURE_LOGGING, "USE_LOGGING"},
             {DS_FEATURE_DBUS, "USE_DBUS"},
             {DS_FEATURE_SAFE_CAST, "USE_SAFE_CAST"},
-            {0, nullptr},   // sentinel
     };
 
     const unsigned int featureBit = DSContext_featureBit();
-    for(unsigned int i = 0; set[i].name != nullptr; i++) {
+    for(unsigned int i = 0; i < (sizeof(set) / sizeof(set[0])); i++) {
         if(ydsh::misc::hasFlag(featureBit, set[i].featureFlag)) {
             stream << set[i].name << std::endl;
         }

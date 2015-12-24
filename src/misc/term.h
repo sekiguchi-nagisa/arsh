@@ -18,6 +18,7 @@
 #define YDSH_TERM_H
 
 #include <unistd.h>
+#include <strings.h>
 
 #include <iostream>
 #include <cstring>
@@ -30,7 +31,7 @@ namespace misc {
  */
 inline bool isSupportedTerminal(int fd) {
     const char *term = getenv("TERM");
-    return isatty(fd) != 0 && term != nullptr && strcmp(term, "dumb") != 0;
+    return isatty(fd) != 0 && term != nullptr && strcasecmp(term, "dumb") != 0;
 }
 
 /**

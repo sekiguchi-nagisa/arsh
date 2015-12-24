@@ -180,13 +180,7 @@ static std::size_t encoding_readCode(int fd, char *buf, std::size_t bufSize, int
     }
 
     unsigned int byteSize = UnicodeUtil::utf8ByteSize(buf[0]);
-    switch(byteSize) {
-    case 1:
-    case 2:
-    case 3:
-    case 4:
-        break;
-    default:
+    if(byteSize < 1 || byteSize > 4) {
         return -1;
     }
 
@@ -205,7 +199,7 @@ static std::size_t encoding_readCode(int fd, char *buf, std::size_t bufSize, int
 /**
  * after execution, delete ctx
  */
-int exec_interactive(DSContext *ctx) {   // never return
+int exec_interactive(DSContext *ctx) {
     linenoiseSetEncodingFunctions(
             encoding_prevCharLen,
             encoding_nextCharLen,
