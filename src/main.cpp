@@ -122,7 +122,8 @@ static void segvHandler(int) {
     OP(FEATURE,        "--feature",           0, "show available features") \
     OP(RC_FILE,        "--rcfile",            argv::HAS_ARG, "load specified rc file (only available interactive mode)") \
     OP(QUIET,          "--quiet",             0, "suppress startup message (only available interactive mode)") \
-    OP(SET_ARGS,       "-s",                  argv::IGNORE_REST, "set arguments and read command from standard input")
+    OP(SET_ARGS,       "-s",                  argv::IGNORE_REST, "set arguments and read command from standard input") \
+    OP(INTERACTIVE,    "-i",                  0, "run interactive mode")
 
 enum OptionKind {
 #define GEN_ENUM(E, S, F, D) E,
@@ -187,6 +188,7 @@ int main(int argc, char **argv) {
     bool userc = true;
     const char *rcfile = nullptr;
     bool quiet = false;
+    bool forceInteractive = false;
 
     for(auto &cmdLine : cmdLines) {
         switch(cmdLine.first) {
@@ -242,6 +244,9 @@ int main(int argc, char **argv) {
         case SET_ARGS:
             invocationKind = InvocationKind::FROM_STDIN;
             break;
+        case INTERACTIVE:
+            forceInteractive = true;
+            break;
         }
     }
 
@@ -272,7 +277,7 @@ int main(int argc, char **argv) {
     case InvocationKind::FROM_STDIN: {
         DSContext_setArguments(ctx, shellArgs);
 
-        if(isatty(STDIN_FILENO) == 0) {  // pipe line mode
+        if(isatty(STDIN_FILENO) == 0 && !forceInteractive) {  // pipe line mode
             return INVOKE(loadAndEval)(&ctx, nullptr, stdin);
         } else {    // interactive mode
             if(!quiet) {
