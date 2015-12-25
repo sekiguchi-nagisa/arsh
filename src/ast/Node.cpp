@@ -2668,7 +2668,7 @@ ForNode *createForInNode(unsigned int startPos, VarNode *varNode, Node *exprNode
 }
 
 Node *createSuffixNode(Node *leftNode, TokenKind op, Token token) {
-    return createAssignNode(leftNode, op, new IntValueNode(token, 1));
+    return createAssignNode(leftNode, op, IntValueNode::newByte(token, 1));
 }
 
 Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode) {
