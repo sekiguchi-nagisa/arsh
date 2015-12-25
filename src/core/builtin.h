@@ -19,6 +19,7 @@
 
 #include <cmath>
 #include <cstring>
+#include <type_traits>
 
 #include "RuntimeContext.h"
 #include "DSObject.h"
@@ -40,6 +41,112 @@
 
 namespace ydsh {
 namespace core {
+
+template <typename T>
+using ObjTypeStub = typename std::conditional<
+        std::is_same<double, T>::value,
+        Float_Object,
+        typename std::conditional<std::is_same<long, T>::value || std::is_same<unsigned long, T>::value,
+                Long_Object, Int_Object>::type>::type;
+
+
+// for binary op
+#define EACH_BASIC_OP(OP) \
+    OP(ADD, +) \
+    OP(SUB, -) \
+    OP(MUL, *) \
+    OP(AND, &) \
+    OP(OR,  |) \
+    OP(XOR, ^)
+
+#define EACH_RELATE_OP(OP) \
+    OP(LT, <) \
+    OP(GT, >) \
+    OP(LE, <=) \
+    OP(GE, >=)
+
+#define EACH_UNARY_OP(OP) \
+    OP(MINUS, -) \
+    OP(NOT, ~)
+
+
+#define GEN_BASIC_OP(NAME, OPERATOR) \
+template <typename T> \
+static inline bool basic_##NAME(RuntimeContext &ctx) { \
+    using ObjType = ObjTypeStub<T>; \
+    auto left = (T) typeAs<ObjType>(LOCAL(0))->getValue(); \
+    auto right = (T) typeAs<ObjType>(LOCAL(1))->getValue(); \
+    T result = left OPERATOR right; \
+    RET(DSValue::create<ObjType>(*(typeAs<ObjType>(LOCAL(0))->getType()), result)); \
+}
+
+#define GEN_RELATE_OP(NAME, OPERATOR) \
+template <typename T> \
+static inline bool relate_##NAME(RuntimeContext &ctx) { \
+    using ObjType = ObjTypeStub<T>; \
+    auto left = (T) typeAs<ObjType>(LOCAL(0))->getValue(); \
+    auto right = (T) typeAs<ObjType>(LOCAL(1))->getValue(); \
+    bool result = left OPERATOR right; \
+    RET_BOOL(result); \
+}
+
+#define GEN_UNARY_OP(NAME, OPERATOR) \
+template <typename T> \
+static inline bool unary_##NAME(RuntimeContext &ctx) { \
+    using ObjType = ObjTypeStub<T>; \
+    auto right = (T) typeAs<ObjType>(LOCAL(0))->getValue(); \
+    T result = OPERATOR right; \
+    RET(DSValue::create<ObjType>(*(typeAs<ObjType>(LOCAL(0))->getType()), result)); \
+}
+
+
+EACH_BASIC_OP(GEN_BASIC_OP)
+
+EACH_RELATE_OP(GEN_RELATE_OP)
+
+EACH_UNARY_OP(GEN_UNARY_OP)
+
+
+static inline bool checkZeroDiv(RuntimeContext &ctx, int right) {
+    if(right == 0) {
+        ctx.throwError(ctx.getPool().getArithmeticErrorType(), "zero division");
+        return false;
+    }
+    return true;
+}
+
+static inline bool checkZeroMod(RuntimeContext &ctx, int right) {
+    if(right == 0) {
+        ctx.throwError(ctx.getPool().getArithmeticErrorType(), "zero module");
+        return false;
+    }
+    return true;
+}
+
+template <typename T>
+static inline bool basic_div(RuntimeContext &ctx) {
+    using ObjType = ObjTypeStub<T>;
+    auto left = (T) typeAs<ObjType>(LOCAL(0))->getValue();
+    auto right = (T) typeAs<ObjType>(LOCAL(1))->getValue();
+    if(!checkZeroDiv(ctx, (int) right)) {
+        return false;
+    }
+    T result = left / right;
+    RET(DSValue::create<ObjType>(*(typeAs<ObjType>(LOCAL(0))->getType()), result));
+}
+
+template <typename T>
+static inline bool basic_mod(RuntimeContext &ctx) {
+    using ObjType = ObjTypeStub<T>;
+    auto left = (T) typeAs<ObjType>(LOCAL(0))->getValue();
+    auto right = (T) typeAs<ObjType>(LOCAL(1))->getValue();
+    if(!checkZeroMod(ctx, (int) right)) {
+        return false;
+    }
+    T result = left % right;
+    RET(DSValue::create<ObjType>(*(typeAs<ObjType>(LOCAL(0))->getType()), result));
+}
+
 
 // #################
 // ##     Any     ##
@@ -78,8 +185,7 @@ static inline bool byte_minus(RuntimeContext &ctx) {
 //!bind: function $OP_NOT($this : Byte) : Byte
 static inline bool byte_not(RuntimeContext &ctx) {
     SUPPRESS_WARNING(byte_not);
-    unsigned char value = ~typeAs<Int_Object>(LOCAL(0))->getValue();
-    RET(DSValue::create<Int_Object>(ctx.getPool().getByteType(), value));
+    return unary_NOT<unsigned char>(ctx);
 }
 
 
@@ -103,8 +209,7 @@ static inline bool int16_minus(RuntimeContext &ctx) {
 //!bind: function $OP_NOT($this : Int16) : Int16
 static inline bool int16_not(RuntimeContext &ctx) {
     SUPPRESS_WARNING(int16_not);
-    short value = ~typeAs<Int_Object>(LOCAL(0))->getValue();
-    RET(DSValue::create<Int_Object>(ctx.getPool().getInt16Type(), value));
+    return unary_NOT<short>(ctx);
 }
 
 
@@ -128,8 +233,7 @@ static inline bool uint16_minus(RuntimeContext &ctx) {
 //!bind: function $OP_NOT($this : Uint16) : Uint16
 static inline bool uint16_not(RuntimeContext &ctx) {
     SUPPRESS_WARNING(uint16_not);
-    unsigned short value = ~typeAs<Int_Object>(LOCAL(0))->getValue();
-    RET(DSValue::create<Int_Object>(ctx.getPool().getUint16Type(), value));
+    return unary_NOT<unsigned short>(ctx);
 }
 
 
@@ -148,15 +252,13 @@ static inline bool int_plus(RuntimeContext & ctx) {
 //!bind: function $OP_MINUS($this : Int32) : Int32
 static inline bool int_minus(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_minus);
-    int value = -typeAs<Int_Object>(LOCAL(0))->getValue();
-    RET(DSValue::create<Int_Object>(ctx.getPool().getIntType(), value));
+    return unary_MINUS<int>(ctx);
 }
 
 //!bind: function $OP_NOT($this : Int32) : Int32
 static inline bool int_not(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_not);
-    int value = ~typeAs<Int_Object>(LOCAL(0))->getValue();
-    RET(DSValue::create<Int_Object>(ctx.getPool().getIntType(), value));
+    return unary_NOT<int>(ctx);
 }
 
 
@@ -167,65 +269,31 @@ static inline bool int_not(RuntimeContext & ctx) {
 //!bind: function $OP_ADD($this : Int32, $target : Int32) : Int32
 static inline bool int_2_int_add(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_add);
-    int value = typeAs<Int_Object>(LOCAL(0))->getValue()
-                + typeAs<Int_Object>(LOCAL(1))->getValue();
-    RET(DSValue::create<Int_Object>(ctx.getPool().getIntType(), value));
+    return basic_ADD<int>(ctx);
 }
 
 //!bind: function $OP_SUB($this : Int32, $target : Int32) : Int32
 static inline bool int_2_int_sub(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_sub);
-    int value = typeAs<Int_Object>(LOCAL(0))->getValue()
-                - typeAs<Int_Object>(LOCAL(1))->getValue();
-    RET(DSValue::create<Int_Object>(ctx.getPool().getIntType(), value));
+    return basic_SUB<int>(ctx);
 }
 
 //!bind: function $OP_MUL($this : Int32, $target : Int32) : Int32
 static inline bool int_2_int_mul(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_mul);
-    int value = typeAs<Int_Object>(LOCAL(0))->getValue()
-                * typeAs<Int_Object>(LOCAL(1))->getValue();
-    RET(DSValue::create<Int_Object>(ctx.getPool().getIntType(), value));
-}
-
-static bool checkZeroDiv(RuntimeContext &ctx, int right) {
-    if(right == 0) {
-        ctx.throwError(ctx.getPool().getArithmeticErrorType(), "zero division");
-        return false;
-    }
-    return true;
-}
-
-static bool checkZeroMod(RuntimeContext &ctx, int right) {
-    if(right == 0) {
-        ctx.throwError(ctx.getPool().getArithmeticErrorType(), "zero module");
-        return false;
-    }
-    return true;
+    return basic_MUL<int>(ctx);
 }
 
 //!bind: function $OP_DIV($this : Int32, $target : Int32) : Int32
 static inline bool int_2_int_div(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_div);
-    int left = typeAs<Int_Object>(LOCAL(0))->getValue();
-    int right = typeAs<Int_Object>(LOCAL(1))->getValue();
-    if(!checkZeroDiv(ctx, right)) {
-        return false;
-    }
-    int value = left / right;
-    RET(DSValue::create<Int_Object>(ctx.getPool().getIntType(), value));
+    return basic_div<int>(ctx);
 }
 
 //!bind: function $OP_MOD($this : Int32, $target : Int32) : Int32
 static inline bool int_2_int_mod(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_mod);
-    int left = typeAs<Int_Object>(LOCAL(0))->getValue();
-    int right = typeAs<Int_Object>(LOCAL(1))->getValue();
-    if(!checkZeroMod(ctx, right)) {
-        return false;
-    }
-    int value = left % right;
-    RET(DSValue::create<Int_Object>(ctx.getPool().getIntType(), value));
+    return basic_mod<int>(ctx);
 }
 
 //   =====  equality  =====
@@ -247,33 +315,25 @@ static inline bool int_2_int_ne(RuntimeContext & ctx) {
 //!bind: function $OP_LT($this : Int32, $target : Int32) : Boolean
 static inline bool int_2_int_lt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_lt);
-    bool r = typeAs<Int_Object>(LOCAL(0))->getValue()
-             < typeAs<Int_Object>(LOCAL(1))->getValue();
-    RET_BOOL(r);
+    return relate_LT<int>(ctx);
 }
 
 //!bind: function $OP_GT($this : Int32, $target : Int32) : Boolean
 static inline bool int_2_int_gt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_gt);
-    bool r = typeAs<Int_Object>(LOCAL(0))->getValue()
-             > typeAs<Int_Object>(LOCAL(1))->getValue();
-    RET_BOOL(r);
+    return relate_GT<int>(ctx);
 }
 
 //!bind: function $OP_LE($this : Int32, $target : Int32) : Boolean
 static inline bool int_2_int_le(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_le);
-    bool r = typeAs<Int_Object>(LOCAL(0))->getValue()
-             <= typeAs<Int_Object>(LOCAL(1))->getValue();
-    RET_BOOL(r);
+    return relate_LE<int>(ctx);
 }
 
 //!bind: function $OP_GE($this : Int32, $target : Int32) : Boolean
 static inline bool int_2_int_ge(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_ge);
-    bool r = typeAs<Int_Object>(LOCAL(0))->getValue()
-             >= typeAs<Int_Object>(LOCAL(1))->getValue();
-    RET_BOOL(r);
+    return relate_GE<int>(ctx);
 }
 
 //   =====  logical  =====
@@ -281,25 +341,19 @@ static inline bool int_2_int_ge(RuntimeContext & ctx) {
 //!bind: function $OP_AND($this : Int32, $target : Int32) : Int32
 static inline bool int_2_int_and(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_and);
-    int value = typeAs<Int_Object>(LOCAL(0))->getValue()
-                & typeAs<Int_Object>(LOCAL(1))->getValue();
-    RET(DSValue::create<Int_Object>(ctx.getPool().getIntType(), value));
+    return basic_AND<int>(ctx);
 }
 
 //!bind: function $OP_OR($this : Int32, $target : Int32) : Int32
 static inline bool int_2_int_or(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_or);
-    int value = typeAs<Int_Object>(LOCAL(0))->getValue()
-                | typeAs<Int_Object>(LOCAL(1))->getValue();
-    RET(DSValue::create<Int_Object>(ctx.getPool().getIntType(), value));
+    return basic_OR<int>(ctx);
 }
 
 //!bind: function $OP_XOR($this : Int32, $target : Int32) : Int32
 static inline bool int_2_int_xor(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_xor);
-    int value = typeAs<Int_Object>(LOCAL(0))->getValue()
-                ^ typeAs<Int_Object>(LOCAL(1))->getValue();
-    RET(DSValue::create<Int_Object>(ctx.getPool().getIntType(), value));
+    return basic_XOR<int>(ctx);
 }
 
 
@@ -326,8 +380,7 @@ static inline bool uint_minus(RuntimeContext & ctx) {
 //!bind: function $OP_NOT($this : Uint32) : Uint32
 static inline bool uint_not(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_not);
-    unsigned int value = ~typeAs<Int_Object>(LOCAL(0))->getValue();
-    RET(DSValue::create<Int_Object>(ctx.getPool().getUint32Type(), value));
+    return unary_NOT<unsigned int>(ctx);
 }
 
 
@@ -338,49 +391,31 @@ static inline bool uint_not(RuntimeContext & ctx) {
 //!bind: function $OP_ADD($this : Uint32, $target : Uint32) : Uint32
 static inline bool uint_2_uint_add(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_add);
-    unsigned int value = (unsigned int) typeAs<Int_Object>(LOCAL(0))->getValue()
-                + (unsigned int) typeAs<Int_Object>(LOCAL(1))->getValue();
-    RET(DSValue::create<Int_Object>(ctx.getPool().getUint32Type(), value));
+    return basic_ADD<unsigned int>(ctx);
 }
 
 //!bind: function $OP_SUB($this : Uint32, $target : Uint32) : Uint32
 static inline bool uint_2_uint_sub(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_sub);
-    unsigned int value = (unsigned int) typeAs<Int_Object>(LOCAL(0))->getValue()
-                - (unsigned int) typeAs<Int_Object>(LOCAL(1))->getValue();
-    RET(DSValue::create<Int_Object>(ctx.getPool().getUint32Type(), value));
+    return basic_SUB<unsigned int>(ctx);
 }
 
 //!bind: function $OP_MUL($this : Uint32, $target : Uint32) : Uint32
 static inline bool uint_2_uint_mul(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_mul);
-    unsigned int value = (unsigned int) typeAs<Int_Object>(LOCAL(0))->getValue()
-                * (unsigned int) typeAs<Int_Object>(LOCAL(1))->getValue();
-    RET(DSValue::create<Int_Object>(ctx.getPool().getUint32Type(), value));
+    return basic_MUL<unsigned int>(ctx);
 }
 
 //!bind: function $OP_DIV($this : Uint32, $target : Uint32) : Uint32
 static inline bool uint_2_uint_div(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_div);
-    unsigned int left = typeAs<Int_Object>(LOCAL(0))->getValue();
-    unsigned int right = typeAs<Int_Object>(LOCAL(1))->getValue();
-    if(!checkZeroDiv(ctx, (int) right)) {
-        return false;
-    }
-    unsigned int value = left / right;
-    RET(DSValue::create<Int_Object>(ctx.getPool().getUint32Type(), value));
+    return basic_div<unsigned int>(ctx);
 }
 
 //!bind: function $OP_MOD($this : Uint32, $target : Uint32) : Uint32
 static inline bool uint_2_uint_mod(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_mod);
-    unsigned int left = typeAs<Int_Object>(LOCAL(0))->getValue();
-    unsigned int right = typeAs<Int_Object>(LOCAL(1))->getValue();
-    if(!checkZeroMod(ctx, (int) right)) {
-        return false;
-    }
-    unsigned int value = left % right;
-    RET(DSValue::create<Int_Object>(ctx.getPool().getUint32Type(), value));
+    return basic_mod<unsigned int>(ctx);
 }
 
 //   =====  equality  =====
@@ -402,33 +437,25 @@ static inline bool uint_2_uint_ne(RuntimeContext & ctx) {
 //!bind: function $OP_LT($this : Uint32, $target : Uint32) : Boolean
 static inline bool uint_2_uint_lt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_lt);
-    bool r = (unsigned int) typeAs<Int_Object>(LOCAL(0))->getValue()
-             < (unsigned int) typeAs<Int_Object>(LOCAL(1))->getValue();
-    RET_BOOL(r);
+    return relate_LT<unsigned int>(ctx);
 }
 
 //!bind: function $OP_GT($this : Uint32, $target : Uint32) : Boolean
 static inline bool uint_2_uint_gt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_gt);
-    bool r = (unsigned int) typeAs<Int_Object>(LOCAL(0))->getValue()
-             > (unsigned int) typeAs<Int_Object>(LOCAL(1))->getValue();
-    RET_BOOL(r);
+    return relate_GT<unsigned int>(ctx);
 }
 
 //!bind: function $OP_LE($this : Uint32, $target : Uint32) : Boolean
 static inline bool uint_2_uint_le(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_le);
-    bool r = (unsigned int) typeAs<Int_Object>(LOCAL(0))->getValue()
-             <= (unsigned int) typeAs<Int_Object>(LOCAL(1))->getValue();
-    RET_BOOL(r);
+    return relate_LE<unsigned int>(ctx);
 }
 
 //!bind: function $OP_GE($this : Uint32, $target : Uint32) : Boolean
 static inline bool uint_2_uint_ge(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_ge);
-    bool r = (unsigned int) typeAs<Int_Object>(LOCAL(0))->getValue()
-             >= (unsigned int) typeAs<Int_Object>(LOCAL(1))->getValue();
-    RET_BOOL(r);
+    return relate_GE<unsigned int>(ctx);
 }
 
 //   =====  logical  =====
@@ -436,25 +463,19 @@ static inline bool uint_2_uint_ge(RuntimeContext & ctx) {
 //!bind: function $OP_AND($this : Uint32, $target : Uint32) : Uint32
 static inline bool uint_2_uint_and(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_and);
-    unsigned int value = (unsigned int) typeAs<Int_Object>(LOCAL(0))->getValue()
-                &(unsigned int) typeAs<Int_Object>(LOCAL(1))->getValue();
-    RET(DSValue::create<Int_Object>(ctx.getPool().getUint32Type(), value));
+    return basic_AND<unsigned int>(ctx);
 }
 
 //!bind: function $OP_OR($this : Uint32, $target : Uint32) : Uint32
 static inline bool uint_2_uint_or(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_or);
-    unsigned int value = (unsigned int) typeAs<Int_Object>(LOCAL(0))->getValue()
-                | (unsigned int) typeAs<Int_Object>(LOCAL(1))->getValue();
-    RET(DSValue::create<Int_Object>(ctx.getPool().getUint32Type(), value));
+    return basic_OR<unsigned int>(ctx);
 }
 
 //!bind: function $OP_XOR($this : Uint32, $target : Uint32) : Uint32
 static inline bool uint_2_uint_xor(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_xor);
-    unsigned int value = (unsigned int) typeAs<Int_Object>(LOCAL(0))->getValue()
-                ^ (unsigned int) typeAs<Int_Object>(LOCAL(1))->getValue();
-    RET(DSValue::create<Int_Object>(ctx.getPool().getUint32Type(), value));
+    return basic_XOR<unsigned int>(ctx);
 }
 
 // ###################
@@ -472,15 +493,13 @@ static inline bool int64_plus(RuntimeContext & ctx) {
 //!bind: function $OP_MINUS($this : Int64) : Int64
 static inline bool int64_minus(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_minus);
-    long value = -typeAs<Long_Object>(LOCAL(0))->getValue();
-    RET(DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value));
+    return unary_MINUS<long>(ctx);
 }
 
 //!bind: function $OP_NOT($this : Int64) : Int64
 static inline bool int64_not(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_not);
-    long value = ~typeAs<Long_Object>(LOCAL(0))->getValue();
-    RET(DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value));
+    return unary_NOT<long>(ctx);
 }
 
 
@@ -491,49 +510,31 @@ static inline bool int64_not(RuntimeContext & ctx) {
 //!bind: function $OP_ADD($this : Int64, $target : Int64) : Int64
 static inline bool int64_2_int64_add(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_add);
-    long value = typeAs<Long_Object>(LOCAL(0))->getValue()
-                + typeAs<Long_Object>(LOCAL(1))->getValue();
-    RET(DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value));
+    return basic_ADD<long>(ctx);
 }
 
 //!bind: function $OP_SUB($this : Int64, $target : Int64) : Int64
 static inline bool int64_2_int64_sub(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_sub);
-    long value = typeAs<Long_Object>(LOCAL(0))->getValue()
-                - typeAs<Long_Object>(LOCAL(1))->getValue();
-    RET(DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value));
+    return basic_SUB<long>(ctx);
 }
 
 //!bind: function $OP_MUL($this : Int64, $target : Int64) : Int64
 static inline bool int64_2_int64_mul(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_mul);
-    long value = typeAs<Long_Object>(LOCAL(0))->getValue()
-                * typeAs<Long_Object>(LOCAL(1))->getValue();
-    RET(DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value));
+    return basic_MUL<long>(ctx);
 }
 
 //!bind: function $OP_DIV($this : Int64, $target : Int64) : Int64
 static inline bool int64_2_int64_div(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_div);
-    long left = typeAs<Long_Object>(LOCAL(0))->getValue();
-    long right = typeAs<Long_Object>(LOCAL(1))->getValue();
-    if(!checkZeroDiv(ctx, (int) right)) {
-        return false;
-    }
-    long value = left / right;
-    RET(DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value));
+    return basic_div<long>(ctx);
 }
 
 //!bind: function $OP_MOD($this : Int64, $target : Int64) : Int64
 static inline bool int64_2_int64_mod(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_mod);
-    long left = typeAs<Long_Object>(LOCAL(0))->getValue();
-    long right = typeAs<Long_Object>(LOCAL(1))->getValue();
-    if(!checkZeroMod(ctx, (int) right)) {
-        return false;
-    }
-    long value = left % right;
-    RET(DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value));
+    return basic_mod<long>(ctx);
 }
 
 //   =====  equality  =====
@@ -555,33 +556,25 @@ static inline bool int64_2_int64_ne(RuntimeContext & ctx) {
 //!bind: function $OP_LT($this : Int64, $target : Int64) : Boolean
 static inline bool int64_2_int64_lt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_lt);
-    bool r = typeAs<Long_Object>(LOCAL(0))->getValue()
-             < typeAs<Long_Object>(LOCAL(1))->getValue();
-    RET_BOOL(r);
+    return relate_LT<long>(ctx);
 }
 
 //!bind: function $OP_GT($this : Int64, $target : Int64) : Boolean
 static inline bool int64_2_int64_gt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_gt);
-    bool r = typeAs<Long_Object>(LOCAL(0))->getValue()
-             > typeAs<Long_Object>(LOCAL(1))->getValue();
-    RET_BOOL(r);
+    return relate_GT<long>(ctx);
 }
 
 //!bind: function $OP_LE($this : Int64, $target : Int64) : Boolean
 static inline bool int64_2_int64_le(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_le);
-    bool r = typeAs<Long_Object>(LOCAL(0))->getValue()
-             <= typeAs<Long_Object>(LOCAL(1))->getValue();
-    RET_BOOL(r);
+    return relate_LE<long>(ctx);
 }
 
 //!bind: function $OP_GE($this : Int64, $target : Int64) : Boolean
 static inline bool int64_2_int64_ge(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_ge);
-    bool r = typeAs<Long_Object>(LOCAL(0))->getValue()
-             >= typeAs<Long_Object>(LOCAL(1))->getValue();
-    RET_BOOL(r);
+    return relate_GE<long>(ctx);
 }
 
 //   =====  logical  =====
@@ -589,25 +582,19 @@ static inline bool int64_2_int64_ge(RuntimeContext & ctx) {
 //!bind: function $OP_AND($this : Int64, $target : Int64) : Int64
 static inline bool int64_2_int64_and(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_and);
-    long value = typeAs<Long_Object>(LOCAL(0))->getValue()
-                & typeAs<Long_Object>(LOCAL(1))->getValue();
-    RET(DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value));
+    return basic_AND<long>(ctx);
 }
 
 //!bind: function $OP_OR($this : Int64, $target : Int64) : Int64
 static inline bool int64_2_int64_or(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_or);
-    long value = typeAs<Long_Object>(LOCAL(0))->getValue()
-                | typeAs<Long_Object>(LOCAL(1))->getValue();
-    RET(DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value));
+    return basic_OR<long>(ctx);
 }
 
 //!bind: function $OP_XOR($this : Int64, $target : Int64) : Int64
 static inline bool int64_2_int64_xor(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_xor);
-    long value = typeAs<Long_Object>(LOCAL(0))->getValue()
-                ^ typeAs<Long_Object>(LOCAL(1))->getValue();
-    RET(DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value));
+    return basic_XOR<long>(ctx);
 }
 
 // ####################
@@ -625,15 +612,13 @@ static inline bool uint64_plus(RuntimeContext & ctx) {
 //!bind: function $OP_MINUS($this : Uint64) : Uint64
 static inline bool uint64_minus(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_minus);
-    unsigned long value = -typeAs<Long_Object>(LOCAL(0))->getValue();
-    RET(DSValue::create<Long_Object>(ctx.getPool().getUint64Type(), value));
+    return unary_MINUS<unsigned long>(ctx);
 }
 
 //!bind: function $OP_NOT($this : Uint64) : Uint64
 static inline bool uint64_not(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_not);
-    unsigned long value = ~typeAs<Long_Object>(LOCAL(0))->getValue();
-    RET(DSValue::create<Long_Object>(ctx.getPool().getUint64Type(), value));
+    return unary_NOT<unsigned long>(ctx);
 }
 
 
@@ -644,49 +629,31 @@ static inline bool uint64_not(RuntimeContext & ctx) {
 //!bind: function $OP_ADD($this : Uint64, $target : Uint64) : Uint64
 static inline bool uint64_2_uint64_add(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_add);
-    unsigned long value = (unsigned long) typeAs<Long_Object>(LOCAL(0))->getValue()
-                 + (unsigned long) typeAs<Long_Object>(LOCAL(1))->getValue();
-    RET(DSValue::create<Long_Object>(ctx.getPool().getUint64Type(), value));
+    return basic_ADD<unsigned long>(ctx);
 }
 
 //!bind: function $OP_SUB($this : Uint64, $target : Uint64) : Uint64
 static inline bool uint64_2_uint64_sub(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_sub);
-    unsigned long value = (unsigned long) typeAs<Long_Object>(LOCAL(0))->getValue()
-                 - (unsigned long) typeAs<Long_Object>(LOCAL(1))->getValue();
-    RET(DSValue::create<Long_Object>(ctx.getPool().getUint64Type(), value));
+    return basic_SUB<unsigned long>(ctx);
 }
 
 //!bind: function $OP_MUL($this : Uint64, $target : Uint64) : Uint64
 static inline bool uint64_2_uint64_mul(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_mul);
-    unsigned long value = (unsigned long) typeAs<Long_Object>(LOCAL(0))->getValue()
-                 * (unsigned long) typeAs<Long_Object>(LOCAL(1))->getValue();
-    RET(DSValue::create<Long_Object>(ctx.getPool().getUint64Type(), value));
+    return basic_MUL<unsigned long>(ctx);
 }
 
 //!bind: function $OP_DIV($this : Uint64, $target : Uint64) : Uint64
 static inline bool uint64_2_uint64_div(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_div);
-    unsigned long left = (unsigned long) typeAs<Long_Object>(LOCAL(0))->getValue();
-    unsigned long right = (unsigned long) typeAs<Long_Object>(LOCAL(1))->getValue();
-    if(!checkZeroDiv(ctx, (int) right)) {
-        return false;
-    }
-    unsigned long value = left / right;
-    RET(DSValue::create<Long_Object>(ctx.getPool().getUint64Type(), value));
+    return basic_div<unsigned long>(ctx);
 }
 
 //!bind: function $OP_MOD($this : Uint64, $target : Uint64) : Uint64
 static inline bool uint64_2_uint64_mod(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_mod);
-    unsigned long left = (unsigned long) typeAs<Long_Object>(LOCAL(0))->getValue();
-    unsigned long right = (unsigned long) typeAs<Long_Object>(LOCAL(1))->getValue();
-    if(!checkZeroMod(ctx, (int) right)) {
-        return false;
-    }
-    unsigned long value = left % right;
-    RET(DSValue::create<Long_Object>(ctx.getPool().getUint64Type(), value));
+    return basic_mod<unsigned long>(ctx);
 }
 
 //   =====  equality  =====
@@ -708,33 +675,25 @@ static inline bool uint64_2_uint64_ne(RuntimeContext & ctx) {
 //!bind: function $OP_LT($this : Uint64, $target : Uint64) : Boolean
 static inline bool uint64_2_uint64_lt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_lt);
-    bool r = (unsigned long) typeAs<Long_Object>(LOCAL(0))->getValue()
-             < (unsigned long) typeAs<Long_Object>(LOCAL(1))->getValue();
-    RET_BOOL(r);
+    return relate_LT<unsigned long>(ctx);
 }
 
 //!bind: function $OP_GT($this : Uint64, $target : Uint64) : Boolean
 static inline bool uint64_2_uint64_gt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_gt);
-    bool r = (unsigned long) typeAs<Long_Object>(LOCAL(0))->getValue()
-             > (unsigned long) typeAs<Long_Object>(LOCAL(1))->getValue();
-    RET_BOOL(r);
+    return relate_GT<unsigned long>(ctx);
 }
 
 //!bind: function $OP_LE($this : Uint64, $target : Uint64) : Boolean
 static inline bool uint64_2_uint64_le(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_le);
-    bool r = (unsigned long) typeAs<Long_Object>(LOCAL(0))->getValue()
-             <= (unsigned long) typeAs<Long_Object>(LOCAL(1))->getValue();
-    RET_BOOL(r);
+    return relate_LE<unsigned long>(ctx);
 }
 
 //!bind: function $OP_GE($this : Uint64, $target : Uint64) : Boolean
 static inline bool uint64_2_uint64_ge(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_ge);
-    bool r = (unsigned long) typeAs<Long_Object>(LOCAL(0))->getValue()
-             >= (unsigned long) typeAs<Long_Object>(LOCAL(1))->getValue();
-    RET_BOOL(r);
+    return relate_GE<unsigned long>(ctx);
 }
 
 //   =====  logical  =====
@@ -742,25 +701,19 @@ static inline bool uint64_2_uint64_ge(RuntimeContext & ctx) {
 //!bind: function $OP_AND($this : Uint64, $target : Uint64) : Uint64
 static inline bool uint64_2_uint64_and(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_and);
-    unsigned long value = (unsigned long) typeAs<Long_Object>(LOCAL(0))->getValue()
-                 & (unsigned long) typeAs<Long_Object>(LOCAL(1))->getValue();
-    RET(DSValue::create<Long_Object>(ctx.getPool().getUint64Type(), value));
+    return basic_AND<unsigned long>(ctx);
 }
 
 //!bind: function $OP_OR($this : Uint64, $target : Uint64) : Uint64
 static inline bool uint64_2_uint64_or(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_or);
-    unsigned long value = (unsigned long) typeAs<Long_Object>(LOCAL(0))->getValue()
-                 | (unsigned long) typeAs<Long_Object>(LOCAL(1))->getValue();
-    RET(DSValue::create<Long_Object>(ctx.getPool().getUint64Type(), value));
+    return basic_OR<unsigned long>(ctx);
 }
 
 //!bind: function $OP_XOR($this : Uint64, $target : Uint64) : Uint64
 static inline bool uint64_2_uint64_xor(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_xor);
-    unsigned long value = (unsigned long) typeAs<Long_Object>(LOCAL(0))->getValue()
-                 ^ (unsigned long) typeAs<Long_Object>(LOCAL(1))->getValue();
-    RET(DSValue::create<Long_Object>(ctx.getPool().getUint64Type(), value));
+    return basic_XOR<unsigned long>(ctx);
 }
 
 
@@ -779,8 +732,7 @@ static inline bool float_plus(RuntimeContext & ctx) {
 //!bind: function $OP_MINUS($this : Float) : Float
 static inline bool float_minus(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_minus);
-    double value = -typeAs<Float_Object>(LOCAL(0))->getValue();
-    RET(DSValue::create<Float_Object>(ctx.getPool().getFloatType(), value));
+    return unary_MINUS<double>(ctx);
 }
 
 // =====  binary op  =====
@@ -790,25 +742,19 @@ static inline bool float_minus(RuntimeContext & ctx) {
 //!bind: function $OP_ADD($this : Float, $target : Float) : Float
 static inline bool float_2_float_add(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_add);
-    double value = typeAs<Float_Object>(LOCAL(0))->getValue()
-                   + typeAs<Float_Object>(LOCAL(1))->getValue();
-    RET(DSValue::create<Float_Object>(ctx.getPool().getFloatType(), value));
+    return basic_ADD<double>(ctx);
 }
 
 //!bind: function $OP_SUB($this : Float, $target : Float) : Float
 static inline bool float_2_float_sub(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_sub);
-    double value = typeAs<Float_Object>(LOCAL(0))->getValue()
-                   - typeAs<Float_Object>(LOCAL(1))->getValue();
-    RET(DSValue::create<Float_Object>(ctx.getPool().getFloatType(), value));
+    return basic_SUB<double>(ctx);
 }
 
 //!bind: function $OP_MUL($this : Float, $target : Float) : Float
 static inline bool float_2_float_mul(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_mul);
-    double value = typeAs<Float_Object>(LOCAL(0))->getValue()
-                   * typeAs<Float_Object>(LOCAL(1))->getValue();
-    RET(DSValue::create<Float_Object>(ctx.getPool().getFloatType(), value));
+    return basic_MUL<double>(ctx);
 }
 
 //!bind: function $OP_DIV($this : Float, $target : Float) : Float
@@ -839,33 +785,25 @@ static inline bool float_2_float_ne(RuntimeContext & ctx) {
 //!bind: function $OP_LT($this : Float, $target : Float) : Boolean
 static inline bool float_2_float_lt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_lt);
-    bool r = typeAs<Float_Object>(LOCAL(0))->getValue()
-             < typeAs<Float_Object>(LOCAL(1))->getValue();
-    RET_BOOL(r);
+    return relate_LT<double>(ctx);
 }
 
 //!bind: function $OP_GT($this : Float, $target : Float) : Boolean
 static inline bool float_2_float_gt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_gt);
-    bool r = typeAs<Float_Object>(LOCAL(0))->getValue()
-             > typeAs<Float_Object>(LOCAL(1))->getValue();
-    RET_BOOL(r);
+    return relate_GT<double>(ctx);
 }
 
 //!bind: function $OP_LE($this : Float, $target : Float) : Boolean
 static inline bool float_2_float_le(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_le);
-    bool r = typeAs<Float_Object>(LOCAL(0))->getValue()
-             <= typeAs<Float_Object>(LOCAL(1))->getValue();
-    RET_BOOL(r);
+    return relate_LE<double>(ctx);
 }
 
 //!bind: function $OP_GE($this : Float, $target : Float) : Boolean
 static inline bool float_2_float_ge(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_ge);
-    bool r = typeAs<Float_Object>(LOCAL(0))->getValue()
-             >= typeAs<Float_Object>(LOCAL(1))->getValue();
-    RET_BOOL(r);
+    return relate_GE<double>(ctx);
 }
 
 // =====  additional float op  ======
