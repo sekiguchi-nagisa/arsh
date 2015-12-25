@@ -59,7 +59,8 @@ assert(18446744073709551615u64 is Uint64)
 assert(+18446744073709551615u64 is Uint64)
 
 # Byte op
-assert(-12b is Int16)
+assert(-12b is Byte)
+assert(-1b == 255b)
 assert(+ 23b is Byte)
 assert(not 23b is Byte)
 
@@ -69,7 +70,8 @@ assert(- 23i16 is Int16)
 assert(not 43i16 is Int16)
 
 # Uint16 op
-assert(- 23u16 is Int32)
+assert(- 23u16 is Uint16)
+assert(-200u16 == 65336)
 assert(+ 34u16 is Uint16)
 assert(not 34u16 is Uint16)
 
@@ -113,7 +115,8 @@ assert((1 -xor 2) is Int32)
 assert((1 -xor 2) == 3)
 
 # Uint32 op
-assert(-12u32 is Int64)
+assert(-12u32 is Uint32)
+assert(-20000u32 == 4294947296u32)
 
 assert((12u32 + 3u32) is Uint32)
 assert(12u32 + 3u32 == 15u32)

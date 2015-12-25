@@ -175,11 +175,10 @@ static inline bool byte_plus(RuntimeContext &ctx) {
     RET(LOCAL(0));
 }
 
-//!bind: function $OP_MINUS($this: Byte) : Int16
+//!bind: function $OP_MINUS($this: Byte) : Byte
 static inline bool byte_minus(RuntimeContext &ctx) {
     SUPPRESS_WARNING(byte_minus);
-    short value = -typeAs<Int_Object>(LOCAL(0))->getValue();
-    RET(DSValue::create<Int_Object>(ctx.getPool().getInt16Type(), value));
+    return unary_MINUS<unsigned char>(ctx);
 }
 
 //!bind: function $OP_NOT($this : Byte) : Byte
@@ -202,8 +201,7 @@ static inline bool int16_plus(RuntimeContext &ctx) {
 //!bind: function $OP_MINUS($this: Int16) : Int16
 static inline bool int16_minus(RuntimeContext &ctx) {
     SUPPRESS_WARNING(int16_minus);
-    short value = -typeAs<Int_Object>(LOCAL(0))->getValue();
-    RET(DSValue::create<Int_Object>(ctx.getPool().getInt16Type(), value));
+    return unary_MINUS<short>(ctx);
 }
 
 //!bind: function $OP_NOT($this : Int16) : Int16
@@ -223,11 +221,10 @@ static inline bool uint16_plus(RuntimeContext &ctx) {
     RET(LOCAL(0));
 }
 
-//!bind: function $OP_MINUS($this: Uint16) : Int32
+//!bind: function $OP_MINUS($this: Uint16) : Uint16
 static inline bool uint16_minus(RuntimeContext &ctx) {
     SUPPRESS_WARNING(uint16_minus);
-    int value = -typeAs<Int_Object>(LOCAL(0))->getValue();
-    RET(DSValue::create<Int_Object>(ctx.getPool().getInt32Type(), value));
+    return unary_MINUS<unsigned short>(ctx);
 }
 
 //!bind: function $OP_NOT($this : Uint16) : Uint16
@@ -369,12 +366,10 @@ static inline bool uint_plus(RuntimeContext & ctx) {
     RET(LOCAL(0));
 }
 
-//!bind: function $OP_MINUS($this : Uint32) : Int64
+//!bind: function $OP_MINUS($this : Uint32) : Uint32
 static inline bool uint_minus(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_minus);
-    long value = typeAs<Int_Object>(LOCAL(0))->getValue();
-    value = -value;
-    RET(DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value));
+    return unary_MINUS<unsigned int>(ctx);
 }
 
 //!bind: function $OP_NOT($this : Uint32) : Uint32
