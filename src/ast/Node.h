@@ -303,24 +303,20 @@ private:
      */
     DSValue value;
 
-private:
     IntValueNode(Token token, IntKind kind, int value) :
             Node(token), kind(kind), tempValue(value), value() { }
 
 public:
-    IntValueNode(Token token, int value) :
-            IntValueNode(token, INT32, value) { }
-
     static IntValueNode *newByte(Token token, unsigned char value) {
-        return new IntValueNode(token, BYTE, (int) value);
+        return new IntValueNode(token, BYTE, value);
     }
 
     static IntValueNode *newInt16(Token token, short value) {
-        return new IntValueNode(token, INT16, (int) value);
+        return new IntValueNode(token, INT16, value);
     }
 
     static IntValueNode *newUint16(Token token, unsigned short value) {
-        return new IntValueNode(token, UINT16, (int) value);
+        return new IntValueNode(token, UINT16, value);
     }
 
     static IntValueNode *newInt32(Token token, int value) {
@@ -328,8 +324,10 @@ public:
     }
 
     static IntValueNode *newUint32(Token token, unsigned int value) {
-        return new IntValueNode(token, UINT32, (int) value);
+        return new IntValueNode(token, UINT32, value);
     }
+
+    ~IntValueNode() = default;
 
     IntKind getKind() const {
         return this->kind;
@@ -359,17 +357,19 @@ private:
 
     DSValue value;
 
-public:
     LongValueNode(Token token, long value, bool unsignedValue) :
             Node(token), tempValue(value), unsignedValue(unsignedValue), value() { }
 
+public:
     static LongValueNode *newInt64(Token token, long value) {
         return new LongValueNode(token, value, false);
     }
 
     static LongValueNode *newUint64(Token token, unsigned long value) {
-        return new LongValueNode(token, (long) value, true);
+        return new LongValueNode(token, value, true);
     }
+
+    ~LongValueNode() = default;
 
     /**
      * before type check, return empty pointer.

@@ -76,16 +76,7 @@ bool DSObject::introspect(RuntimeContext &, DSType *targetType) {
 
 std::string Int_Object::toString(RuntimeContext &ctx) {
     if(*this->type == ctx.getPool().getUint32Type()) {
-        return std::to_string((unsigned int) this->value);
-    }
-    if(*this->type == ctx.getPool().getInt16Type()) {
-        return std::to_string((short) this->value);
-    }
-    if(*this->type == ctx.getPool().getUint16Type()) {
-        return std::to_string((unsigned short) this->value);
-    }
-    if(*this->type == ctx.getPool().getByteType()) {
-        return std::to_string((unsigned char) this->value);
+        return std::to_string(static_cast<unsigned int>(this->value));
     }
     return std::to_string(this->value);
 }
@@ -104,7 +95,7 @@ size_t Int_Object::hash() {
 
 std::string Long_Object::toString(RuntimeContext &ctx) {
     if(*this->type == ctx.getPool().getUint64Type()) {
-        return std::to_string((unsigned long) this->value);
+        return std::to_string(static_cast<unsigned long>(this->value));
     }
     return std::to_string(this->value);
 }

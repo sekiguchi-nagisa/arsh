@@ -272,7 +272,7 @@ unsigned char Lexer::toUint8(Token token, int &status) const {
         status = 1;
         return 0;
     }
-    return (unsigned char) value;
+    return static_cast<unsigned char>(value);
 }
 
 short Lexer::toInt16(Token token, int &status) const {
@@ -281,7 +281,7 @@ short Lexer::toInt16(Token token, int &status) const {
         status = 1;
         return 0;
     }
-    return (short) value;
+    return static_cast<short>(value);
 }
 
 unsigned short Lexer::toUint16(Token token, int &status) const {
@@ -290,7 +290,7 @@ unsigned short Lexer::toUint16(Token token, int &status) const {
         status = 1;
         return 0;
     }
-    return (unsigned short) value;
+    return static_cast<unsigned short>(value);
 }
 
 int Lexer::toInt32(Token token, int &status) const {
@@ -299,7 +299,7 @@ int Lexer::toInt32(Token token, int &status) const {
         status = 1;
         return 0;
     }
-    return (int) value;
+    return static_cast<int>(value);
 }
 
 unsigned int Lexer::toUint32(Token token, int &status) const {
@@ -308,7 +308,7 @@ unsigned int Lexer::toUint32(Token token, int &status) const {
         status = 1;
         return 0;
     }
-    return (unsigned int) value;
+    return static_cast<unsigned int>(value);
 }
 
 long Lexer::toInt64(Token token, int &status) const {

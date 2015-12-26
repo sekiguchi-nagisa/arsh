@@ -1,10 +1,12 @@
 cmake_minimum_required(VERSION 2.8)
 
+include(CheckTypeSize)
+
 project(ydsh)
 
-#++++++++++++++++++++++#
-#     helper macro     #
-#++++++++++++++++++++++#
+#++++++++++++++++++++++++++++++++++#
+#     helper macro or function     #
+#++++++++++++++++++++++++++++++++++#
 
 macro(check_header VAR NAME)
     find_path(${VAR} ${NAME})
@@ -16,6 +18,14 @@ endmacro()
 
 macro(show_option OPTION)
     message(STATUS "extra option - ${OPTION}=${${OPTION}}")
+endmacro()
+
+macro(assert_type_size TYPE SIZE VAR)
+    check_type_size(${TYPE} ${VAR})
+    message(STATUS "sizeof ${TYPE}: ${${VAR}}")
+    if(NOT ("${SIZE}" STREQUAL "${${VAR}}"))
+        message(FATAL_ERROR "expect ${SIZE}")
+    endif()
 endmacro()
 
 
@@ -77,6 +87,17 @@ endif()
 
 show_option(USE_LOGGING)
 show_option(USE_SAFE_CAST)
+
+
+#++++++++++++++++++++++++++++#
+#     check integer size     #
+#++++++++++++++++++++++++++++#
+
+assert_type_size(char 1 SIZEOF_CHAR)
+assert_type_size(short 2 SIZEOF_SHORT)
+assert_type_size(int 4 SIZEOF_INT)
+assert_type_size(long 8 SIZEOF_LONG)
+assert_type_size("void *" 8 SIZEOF_PTR)
 
 
 #++++++++++++++++++++++#
