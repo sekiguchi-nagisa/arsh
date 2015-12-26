@@ -1,0 +1,35 @@
+## Specification of Integer cast (narrowing, widening)
+
+Byte, Int16 and Uint16 integer is internally represented by 32bit.
+
+
+| b/a        | **Byte**   | **Int16**  | **Uint16** | **Int32**  | **Uint32** | **Int64**  | **Uint64** | **Float**  |
+|------------|------------|------------|------------|------------|------------|------------|------------|------------|
+| **Byte**   |   --       |   (1)      |   (1)      |   (1)      |   (1)      |   (5)      |   (5)      |   (9)      |
+| **Int16**  |   (2)      |   --       |   (3)      |   (1)      |   (1)      |   (7)      |   (7)      |   (10)     |
+| **Uint16** |   (2)      |   (4)      |   --       |   (1)      |   (1)      |   (5)      |   (5)      |   (9)      |
+| **Int32**  |   (2)      |   (4)      |   (3)      |   --       |   (1)      |   (7)      |   (7)      |   (10)     |
+| **Uint32** |   (2)      |   (4)      |   (3)      |   (1)      |   --       |   (5)      |   (5)      |   (9)      |
+| **Int64**  |   (8)+(2)  |   (8)+(4)  |   (8)+(3)  |   (8)      |   (8)      |   --       |   (6)      |   (12)     |
+| **Uint64** |   (8)+(2)  |   (8)+(4)  |   (8)+(3)  |   (8)      |   (8)      |   (6)      |   --       |   (11)     |
+| **Float**  |   (15)+(2) |   (16)+(4) |   (15)+(3) |   (14)     |   (13)     |   (16)     |   (15)     |   --       |
+
+
+1. do nothing (copy Int_Object).
+2. fill higher bits (8th ~ 31th) with 0.
+3. fill higher bits (16th ~ 31th) with 0.
+4. fill higher bits (16th ~ 31th) with 0, and then if 15th bit is 1, fill higher bits with 1.
+5. create Long_Object.
+6. do nothing (copy Long_Object).
+7. create Long_Object, and there two subcases depending on the most significant bit (31th bit).
+   *  if the bit is 0, create Long_Object.
+   *  if the bit is 1, create Long_Object and fill higher bits (32th ~ 63th) with 1.
+8. fill higher bits (32th ~ 63th) with 0 and create Int_Object.
+9. unsigned int 32 to double.
+10. signed int 32 to double.
+11. unsigned int 64 to double.
+12. signed int 64 to double.
+13. double to unsigned int 32
+14. double to signed int 32.
+15. double to unsigned int 64.
+16. double to signed int 64.
