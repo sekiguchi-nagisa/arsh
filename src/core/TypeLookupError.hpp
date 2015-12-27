@@ -77,7 +77,7 @@ DEFINE_TL_ERROR(UndefinedType  , "undefined type: %");
 DEFINE_TL_ERROR(NotTemplate    , "illegal type template: %");
 DEFINE_TL_ERROR(DefinedType    , "already defined type: %");
 DEFINE_TL_ERROR(InvalidElement , "invalid type element: %");
-DEFINE_TL_ERROR(NoDBusInterface, "not found dbus interface: %");
+DEFINE_TL_ERROR(NoDBusInterface, "not found D-Bus interface: %");
 DEFINE_TL_ERROR(UnmatchElement , "not match type element, % requires % type element, but is %");
 
 #undef DEFINE_TL_ERROR
