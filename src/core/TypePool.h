@@ -202,6 +202,11 @@ private:
     std::unordered_map<unsigned long, int> precisionMap;
 
     /**
+     * for number cast op
+     */
+    std::unordered_map<unsigned long, unsigned char> numTypeIndexMap;
+
+    /**
      * contain user defined command name.
      */
     std::unordered_set<std::string> udcSet;
@@ -461,6 +466,11 @@ public:
      * get integer precision. if type is not int type, return INVALID_PRECISION.
      */
     int getIntPrecision(const DSType &type);
+
+    /**
+     * if type is not number type, return -1.
+     */
+    int getNumTypeIndex(const DSType &type);
 
     bool addUserDefnedCommandName(const std::string &cmdName);
 

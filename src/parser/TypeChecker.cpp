@@ -227,7 +227,8 @@ DSType &TypeChecker::checkType(DSType *requiredType, Node *targetNode,
     /**
      * check coercion
      */
-    if(kind == CoercionKind::INVALID_COERCION && this->checkCoercion(kind, *requiredType, type)) {
+    if(kind == CoercionKind::INVALID_COERCION && this->checkCoercion(*requiredType, type)) {
+        kind = CoercionKind::PERFORM_COERCION;
         return type;
     }
 
@@ -252,61 +253,30 @@ void TypeChecker::checkTypeWithCoercion(DSType &requiredType, Node * &targetNode
     CoercionKind kind = CoercionKind::INVALID_COERCION;
     this->checkType(&requiredType, targetNode, nullptr, kind);
     if(kind != CoercionKind::INVALID_COERCION && kind != CoercionKind::NOP) {
-        this->resolveCoercion(kind, requiredType, targetNode);
+        this->resolveCoercion(requiredType, targetNode);
     }
 }
 
-bool TypeChecker::checkCoercion(CoercionKind &kind, DSType &requiredType, DSType &targetType) {
-    if(requiredType == this->typePool.getVoidType()) {
-        kind = CoercionKind::TO_VOID;
+bool TypeChecker::checkCoercion(const DSType &requiredType, const DSType &targetType) {
+    if(requiredType == this->typePool.getVoidType()) {  // pop stack top
         return true;
     }
 
+    // int widening or float cast
     int targetPrecision = this->typePool.getIntPrecision(targetType);
-
-    if(targetPrecision == TypePool::INVALID_PRECISION) {
-        return false;
-    }
-
-    int requiredPrecision = this->typePool.getIntPrecision(requiredType);
-
-    if(this->checkInt2Float(targetPrecision, requiredType)) {
-        kind = CoercionKind::INT_2_FLOAT;
-        return true;
-    } else if(this->checkInt2Long(targetPrecision, requiredPrecision)) {
-        kind = CoercionKind::INT_2_LONG;
-        return true;
-    } else if(this->checkInt2IntWidening(targetPrecision, requiredPrecision)) {
-        kind = CoercionKind::INT_NOP;
-        return true;
+    if(targetPrecision > TypePool::INVALID_PRECISION) {
+        int requiredPrecision = this->typePool.getIntPrecision(requiredType);
+        if(requiredType == this->typePool.getFloatType() && targetPrecision < TypePool::INT64_PRECISION) {
+            return true;    // check int (except for Int64, Uint64) to float cast
+        } else if(targetPrecision < requiredPrecision && requiredPrecision <= TypePool::INT64_PRECISION) {
+            return true;    // check int widening
+        }
     }
     return false;
 }
 
-void TypeChecker::resolveCoercion(CoercionKind kind, DSType &requiredType, Node * &targetNode) {
-    CastNode::CastOp op;
-    switch(kind) {
-    case CoercionKind::TO_VOID:
-        op = CastNode::TO_VOID;
-        break;
-    case CoercionKind::INT_2_FLOAT:
-        op = CastNode::INT_TO_FLOAT;
-        break;
-    case CoercionKind::INT_2_LONG:
-        op = CastNode::INT_TO_LONG;
-        break;
-    case CoercionKind::INT_NOP:
-        op = CastNode::COPY_INT;
-        break;
-    case CoercionKind::LONG_NOP:
-        op = CastNode::COPY_LONG;
-        break;
-    default:
-        fatal("unsupported int coercion: %s -> %s\n",
-              this->typePool.getTypeName(targetNode->getType()).c_str(),
-              this->typePool.getTypeName(requiredType).c_str());
-    }
-    targetNode = CastNode::newTypedCastNode(targetNode, requiredType, op);
+void TypeChecker::resolveCoercion(DSType &requiredType, Node * &targetNode) {
+    targetNode = CastNode::newTypedCastNode(this->typePool, targetNode, requiredType);
 }
 
 FieldHandle *TypeChecker::addEntryAndThrowIfDefined(Node &node, const std::string &symbolName, DSType &type,
@@ -414,64 +384,6 @@ void TypeChecker::checkTypeArgsNode(Node &node, MethodHandle *handle, std::vecto
         }
     } while(handle->getNext() != nullptr);  //FIXME: method overloading
 }
-
-// for type cast
-bool TypeChecker::checkInt2Float(int beforePrecision, const DSType &afterType) const {
-    return beforePrecision > TypePool::INVALID_PRECISION &&
-           beforePrecision < TypePool::INT64_PRECISION &&
-            afterType == this->typePool.getFloatType();
-}
-
-bool TypeChecker::checkFloat2Int(const DSType &beforeType, int afterPrecision) const {
-    return beforeType == this->typePool.getFloatType() &&
-            afterPrecision > TypePool::INVALID_PRECISION &&
-            afterPrecision < TypePool::INT64_PRECISION;
-}
-
-bool TypeChecker::checkLong2Float(int beforePrecision, const DSType &afterType) const {
-    return beforePrecision == TypePool::INT64_PRECISION &&
-            afterType == this->typePool.getFloatType();
-}
-
-bool TypeChecker::checkFloat2Long(const DSType &beforeType, int afterPrecision) const {
-    return beforeType == this->typePool.getFloatType() &&
-            afterPrecision == TypePool::INT64_PRECISION;
-}
-
-bool TypeChecker::checkInt2IntWidening(int beforePrecision, int afterPrecision) const {
-    return beforePrecision > TypePool::INVALID_PRECISION &&
-           afterPrecision < TypePool::INT64_PRECISION &&
-           beforePrecision < afterPrecision;
-}
-
-bool TypeChecker::checkInt2IntNarrowing(int beforePrecision, int afterPrecision) const {
-    return beforePrecision < TypePool::INT64_PRECISION &&
-           afterPrecision > TypePool::INVALID_PRECISION &&
-           beforePrecision > afterPrecision;
-}
-
-bool TypeChecker::checkInt2Int(int beforePrecision, int afterPrecision) const {
-    return beforePrecision == TypePool::INT32_PRECISION &&
-           beforePrecision == afterPrecision;
-}
-
-bool TypeChecker::checkLong2Long(int beforePrecision, int afterPrecision) const {
-    return beforePrecision == TypePool::INT64_PRECISION &&
-           beforePrecision == afterPrecision;
-}
-
-bool TypeChecker::checkInt2Long(int beforePrecision, int afterPrecision) const {
-    return beforePrecision > TypePool::INVALID_PRECISION &&
-           afterPrecision == TypePool::INT64_PRECISION &&
-           beforePrecision < afterPrecision;
-}
-
-bool TypeChecker::checkLong2Int(int beforePrecision, int afterPrecision) const {
-    return beforePrecision == TypePool::INT64_PRECISION &&
-           afterPrecision > TypePool::INVALID_PRECISION &&
-           beforePrecision > afterPrecision;
-}
-
 
 // visitor api
 void TypeChecker::visit(Node &) {
@@ -639,85 +551,9 @@ void TypeChecker::visitCastNode(CastNode &node) {
     node.setType(targetType);
 
     // resolve cast op
-
-    /**
-     * nop
-     */
-    if(targetType.isSameOrBaseTypeOf(exprType)) {
-        return;
+    if(!node.resolveCastOp(this->typePool)) {
+        E_CastOp(node, this->typePool.getTypeName(exprType), this->typePool.getTypeName(targetType));
     }
-
-    // int cast
-    int exprPrecision = this->typePool.getIntPrecision(exprType);
-    int targetPrecision = this->typePool.getIntPrecision(targetType);
-
-    if(this->checkInt2Float(exprPrecision, targetType)) {
-        node.setOpKind(CastNode::INT_TO_FLOAT);
-        return;
-    }
-
-    if(this->checkFloat2Int(exprType, targetPrecision)) {
-        node.setOpKind(CastNode::FLOAT_TO_INT);
-        return;;
-    }
-
-    if(this->checkLong2Float(exprPrecision, targetType)) {
-        node.setOpKind(CastNode::LONG_TO_FLOAT);
-        return;
-    }
-
-    if(this->checkFloat2Long(exprType, targetPrecision)) {
-        node.setOpKind(CastNode::FLOAT_TO_LONG);
-        return;
-    }
-
-    if(this->checkInt2IntWidening(exprPrecision, targetPrecision)) {
-        node.setOpKind(CastNode::COPY_INT);
-        return;
-    }
-
-    if(this->checkInt2IntNarrowing(exprPrecision, targetPrecision)) {
-        node.setOpKind(CastNode::COPY_INT);
-        return;
-    }
-
-    if(this->checkInt2Int(exprPrecision, targetPrecision)) {
-        node.setOpKind(CastNode::COPY_INT);
-        return;
-    }
-
-    if(this->checkLong2Long(exprPrecision, targetPrecision)) {
-        node.setOpKind(CastNode::COPY_LONG);
-        return;
-    }
-
-    if(this->checkInt2Long(exprPrecision, targetPrecision)) {
-        node.setOpKind(CastNode::INT_TO_LONG);
-        return;
-    }
-
-    if(this->checkLong2Int(exprPrecision, targetPrecision)) {
-        node.setOpKind(CastNode::LONG_TO_INT);
-        return;
-    }
-
-    /**
-     * to string
-     */
-    if(targetType == this->typePool.getStringType()) {
-        node.setOpKind(CastNode::TO_STRING);
-        return;
-    }
-
-    /**
-     * check cast
-     */
-    if(exprType.isSameOrBaseTypeOf(targetType)) {
-        node.setOpKind(CastNode::CHECK_CAST);
-        return;
-    }
-
-    E_CastOp(node, this->typePool.getTypeName(exprType), this->typePool.getTypeName(targetType));
 }
 
 void TypeChecker::visitInstanceOfNode(InstanceOfNode &node) {
@@ -747,17 +583,15 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
     int leftPrecision = this->typePool.getIntPrecision(leftType);
     int rightPrecision = this->typePool.getIntPrecision(rightType);
 
-    CoercionKind kind = CoercionKind::INVALID_COERCION;
-
     // check int cats
     if(leftPrecision > TypePool::INVALID_PRECISION &&
        leftPrecision < TypePool::INT32_PRECISION &&
        rightPrecision > TypePool::INVALID_PRECISION &&
        rightPrecision < TypePool::INT32_PRECISION) {   // int widening
-        this->resolveCoercion(CoercionKind::INT_NOP, this->typePool.getInt32Type(), node.refLeftNode());
-        this->resolveCoercion(CoercionKind::INT_NOP, this->typePool.getInt32Type(), node.refRightNode());
-    } else if(leftPrecision != rightPrecision && this->checkCoercion(kind, rightType, leftType)) {    // cast left
-        this->resolveCoercion(kind, rightType, node.refLeftNode());
+        this->resolveCoercion(this->typePool.getInt32Type(), node.refLeftNode());
+        this->resolveCoercion(this->typePool.getInt32Type(), node.refRightNode());
+    } else if(leftPrecision != rightPrecision && this->checkCoercion(rightType, leftType)) {    // cast left
+        this->resolveCoercion(rightType, node.refLeftNode());
     }
 
     MethodCallNode *applyNode = node.createApplyNode();

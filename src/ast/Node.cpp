@@ -623,7 +623,7 @@ std::pair<Node *, std::string> AccessNode::split(AccessNode *accessNode) {
 
 CastNode::CastNode(Node *exprNode, TypeNode *type, bool dupTypeToken) :
         Node(exprNode->getToken()), exprNode(exprNode), targetTypeNode(nullptr),
-        opKind(NOP) {
+        opKind(NO_CAST), numCastOp(NOP) {
     static const unsigned long tag = (unsigned long) 1L << 63;
 
     if(dupTypeToken) {
@@ -655,22 +655,69 @@ TypeNode *CastNode::getTargetTypeNode() const {
     return this->targetTypeNode;
 }
 
+bool CastNode::resolveCastOp(TypePool &pool) {
+    auto &exprType = this->exprNode->getType();
+    auto &targetType = this->getType();
+
+    /**
+     * nop
+     */
+    if(targetType.isSameOrBaseTypeOf(exprType)) {
+        return true;
+    }
+
+    /**
+     * number cast
+     */
+    int beforeIndex = pool.getNumTypeIndex(exprType);
+    int afterIndex = pool.getNumTypeIndex(targetType);
+    if(beforeIndex > -1 && afterIndex > -1) {
+        static const unsigned short table[8][8] = {
+                {NOP,           COPY_INT,        COPY_INT,        COPY_INT, COPY_INT, NEW_LONG,   NEW_LONG,   U32_TO_D},
+                {TO_B,          NOP,             TO_U16,          COPY_INT, COPY_INT, I_NEW_LONG, I_NEW_LONG, I32_TO_D},
+                {TO_B,          TO_I16,          NOP,             COPY_INT, COPY_INT, NEW_LONG,   NEW_LONG,   U32_TO_D},
+                {TO_B,          TO_I16,          TO_U16,          NOP,      COPY_INT, I_NEW_LONG, I_NEW_LONG, I32_TO_D},
+                {TO_B,          TO_I16,          TO_U16,          COPY_INT, NOP,      NEW_LONG,   NEW_LONG,   U32_TO_D},
+                {NEW_INT|TO_B,  NEW_INT|TO_I16,  NEW_INT|TO_U16,  NEW_INT,  NEW_INT,  NOP,        COPY_LONG,  I64_TO_D},
+                {NEW_INT|TO_B,  NEW_INT|TO_I16,  NEW_INT|TO_U16,  NEW_INT,  NEW_INT,  COPY_LONG,  NOP,        U64_TO_D},
+                {D_TO_U64|TO_B, D_TO_I64|TO_I16, D_TO_U64|TO_U16, D_TO_I32, D_TO_U32, D_TO_I64,   D_TO_U64,   NOP},
+        };
+
+        assert(beforeIndex >= 0 && beforeIndex <= 8);
+        assert(afterIndex >= 0 && afterIndex <= 8);
+        this->setOpKind(CastNode::NUM_CAST);
+        this->numCastOp = table[beforeIndex][afterIndex];
+        return true;
+    }
+
+    /**
+     * to string
+     */
+    if(targetType == pool.getStringType()) {
+        this->setOpKind(CastNode::TO_STRING);
+        return true;
+    }
+
+    /**
+     * check cast
+     */
+    if(exprType.isSameOrBaseTypeOf(targetType)) {
+        this->setOpKind(CastNode::CHECK_CAST);
+        return true;
+    }
+
+    return false;
+}
+
 void CastNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
     TypeNode *targetTypeToken = this->getTargetTypeNode();
     DUMP_PTR(targetTypeToken);
 
 #define EACH_ENUM(OP, out) \
-    OP(NOP, out) \
+    OP(NO_CAST, out) \
     OP(TO_VOID, out) \
-    OP(INT_TO_FLOAT, out) \
-    OP(FLOAT_TO_INT, out) \
-    OP(INT_TO_LONG, out) \
-    OP(LONG_TO_INT, out) \
-    OP(LONG_TO_FLOAT, out) \
-    OP(FLOAT_TO_LONG, out) \
-    OP(COPY_INT, out) \
-    OP(COPY_LONG, out) \
+    OP(NUM_CAST, out) \
     OP(TO_STRING, out) \
     OP(CHECK_CAST, out)
 
@@ -678,6 +725,31 @@ void CastNode::dump(NodeDumper &dumper) const {
     DECODE_ENUM(str, this->opKind, EACH_ENUM);
     dumper.dump(NAME(opKind), str);
 #undef EACH_ENUM
+
+#define EACH_FLAG(OP, out, set) \
+    OP(NOP       , out, set) \
+    OP(COPY_INT  , out, set) \
+    OP(TO_B      , out, set) \
+    OP(TO_U16    , out, set) \
+    OP(TO_I16    , out, set) \
+    OP(NEW_LONG  , out, set) \
+    OP(COPY_LONG , out, set) \
+    OP(I_NEW_LONG, out, set) \
+    OP(NEW_INT   , out, set) \
+    OP(U32_TO_D  , out, set) \
+    OP(I32_TO_D  , out, set) \
+    OP(U64_TO_D  , out, set) \
+    OP(I64_TO_D  , out, set) \
+    OP(D_TO_U32  , out, set) \
+    OP(D_TO_I32  , out, set) \
+    OP(D_TO_U64  , out, set) \
+    OP(D_TO_I64  , out, set)
+
+    str = "";
+    DECODE_BITSET(str, this->numCastOp, EACH_FLAG);
+#undef EACH_FLAG
+
+    dumper.dump(NAME(numCastOp), str);
 }
 
 void CastNode::accept(NodeVisitor &visitor) {
@@ -688,76 +760,119 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
     EVAL(ctx, this->exprNode);
 
     switch(this->opKind) {
-    case NOP:
+    case NO_CAST:
         break;
     case TO_VOID:
         ctx.popNoReturn();
         break;
-    case INT_TO_FLOAT: {
-        int value = typeAs<Int_Object>(ctx.pop())->getValue();
-        double afterValue = value;
-        if(this->exprNode->getType() != ctx.getPool().getInt32Type()) {
-            afterValue = (unsigned int) value;
+    case NUM_CAST: {
+        for(int i = 15; i > -1; i--) {  //FIXME: split cast node
+            unsigned short flag = (1 << i);
+            if(!hasFlag(this->numCastOp, flag)) {
+                continue;
+            }
+            NumberCastOp op = static_cast<NumberCastOp>(flag);
+            switch(op) {
+            case NOP:
+                break;  // do nothing
+            case COPY_INT: {
+                int v = typeAs<Int_Object>(ctx.pop())->getValue();
+                ctx.push(DSValue::create<Int_Object>(*this->type, v));
+                break;
+            }
+            case TO_B: {
+                unsigned int v = typeAs<Int_Object>(ctx.pop())->getValue();
+                v &= 0xFF;  // fill higher bits (8th ~ 31) with 0
+                ctx.push(DSValue::create<Int_Object>(*this->type, v));
+                break;
+            }
+            case TO_U16: {
+                unsigned int v = typeAs<Int_Object>(ctx.pop())->getValue();
+                v &= 0xFFFF;    // fill higher bits (16th ~ 31th) with 0
+                ctx.push(DSValue::create<Int_Object>(*this->type, v));
+                break;
+            }
+            case TO_I16: {
+                unsigned int v = typeAs<Int_Object>(ctx.pop())->getValue();
+                v &= 0xFFFF;    // fill higher bits (16th ~ 31th) with 0
+                if(v & 0x8000) {    // if 15th bit is 1, fill higher bits with 1
+                    v &= 0xFFFF0000;
+                }
+                ctx.push(DSValue::create<Int_Object>(*this->type, v));
+                break;
+            }
+            case NEW_LONG: {
+                unsigned int v = typeAs<Int_Object>(ctx.pop())->getValue();
+                unsigned long l = v;
+                ctx.push(DSValue::create<Long_Object>(*this->type, l));
+                break;
+            }
+            case COPY_LONG: {
+                long v = typeAs<Long_Object>(ctx.pop())->getValue();
+                ctx.push(DSValue::create<Long_Object>(*this->type, v));
+                break;
+            }
+            case I_NEW_LONG: {
+                int v = typeAs<Int_Object>(ctx.pop())->getValue();
+                long l = v;
+                ctx.push(DSValue::create<Long_Object>(*this->type, l));
+                break;
+            }
+            case NEW_INT: {
+                unsigned long l = typeAs<Long_Object>(ctx.pop())->getValue();
+                unsigned int v = static_cast<unsigned int>(l);
+                ctx.push(DSValue::create<Int_Object>(*this->type, v));
+                break;
+            }
+            case U32_TO_D: {
+                unsigned int v = typeAs<Int_Object>(ctx.pop())->getValue();
+                double d = static_cast<double>(v);
+                ctx.push(DSValue::create<Float_Object>(*this->type, d));
+                break;
+            }
+            case I32_TO_D: {
+                int v = typeAs<Int_Object>(ctx.pop())->getValue();
+                double d = static_cast<double>(v);
+                ctx.push(DSValue::create<Float_Object>(*this->type, d));
+                break;
+            }
+            case U64_TO_D: {
+                unsigned long v = typeAs<Long_Object>(ctx.pop())->getValue();
+                double d = static_cast<double>(v);
+                ctx.push(DSValue::create<Float_Object>(*this->type, d));
+                break;
+            }
+            case I64_TO_D: {
+                long v = typeAs<Long_Object>(ctx.pop())->getValue();
+                double d = static_cast<double>(v);
+                ctx.push(DSValue::create<Float_Object>(*this->type, d));
+                break;
+            }
+            case D_TO_U32: {
+                double d = typeAs<Float_Object>(ctx.pop())->getValue();
+                unsigned int v = static_cast<unsigned int>(d);
+                ctx.push(DSValue::create<Int_Object>(*this->type, v));
+                break;
+            }
+            case D_TO_I32: {
+                double d = typeAs<Float_Object>(ctx.pop())->getValue();
+                int v = static_cast<int>(d);
+                ctx.push(DSValue::create<Int_Object>(*this->type, v));
+                break;
+            }
+            case D_TO_U64: {
+                double d = typeAs<Float_Object>(ctx.pop())->getValue();
+                unsigned long v = static_cast<unsigned long>(d);
+                ctx.push(DSValue::create<Long_Object>(*this->type, v));
+                break;
+            }
+            case D_TO_I64:
+                double d = typeAs<Float_Object>(ctx.pop())->getValue();
+                long v = static_cast<long>(d);
+                ctx.push(DSValue::create<Long_Object>(*this->type, v));
+                break;
+            }
         }
-        ctx.push(DSValue::create<Float_Object>(*this->type, afterValue));
-        break;
-    }
-    case FLOAT_TO_INT: {
-        double value = typeAs<Float_Object>(ctx.pop())->getValue();
-        int afterValue = value;
-        if(*this->type == ctx.getPool().getUint32Type()) {
-            unsigned int temp = value;
-            afterValue = temp;
-        }
-        ctx.push(DSValue::create<Int_Object>(*this->type, afterValue));
-        break;
-    }
-    case INT_TO_LONG: {
-        int value = typeAs<Int_Object>(ctx.pop())->getValue();
-        long afterValue = (long) value;
-        if(this->exprNode->getType() != ctx.getPool().getInt32Type()) {
-            afterValue = (unsigned int) value;
-        }
-        ctx.push(DSValue::create<Long_Object>(*this->type, afterValue));
-        break;
-    }
-    case LONG_TO_INT: {
-        long value = typeAs<Long_Object>(ctx.pop())->getValue();
-        int afterValue = value;
-        if(*this->type == ctx.getPool().getUint32Type()) {
-            unsigned int temp = value;
-            afterValue = temp;
-        }
-        ctx.push(DSValue::create<Int_Object>(*this->type, afterValue));
-        break;
-    }
-    case LONG_TO_FLOAT: {
-        long value = typeAs<Long_Object>(ctx.pop())->getValue();
-        double afterValue = value;
-        if(this->exprNode->getType() == ctx.getPool().getUint64Type()) {
-            afterValue = (unsigned long) value;
-        }
-        ctx.push(DSValue::create<Float_Object>(*this->type, afterValue));
-        break;
-    }
-    case FLOAT_TO_LONG: {
-        double value = typeAs<Float_Object>(ctx.pop())->getValue();
-        long afterValue = (long) value;
-        if(*this->type == ctx.getPool().getUint64Type()) {
-            unsigned long temp = (unsigned long) value;
-            afterValue = temp;
-        }
-        ctx.push(DSValue::create<Long_Object>(*this->type, afterValue));
-        break;
-    }
-    case COPY_INT: {
-        int value = typeAs<Int_Object>(ctx.pop())->getValue();
-        ctx.push(DSValue::create<Int_Object>(*this->type, value));
-        break;
-    }
-    case COPY_LONG: {
-        long value = typeAs<Long_Object>(ctx.pop())->getValue();
-        ctx.push(DSValue::create<Long_Object>(*this->type, value));
         break;
     }
     case TO_STRING: {
@@ -766,19 +881,24 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
     case CHECK_CAST: {
         return ctx.checkCast(this->getStartPos(), this->type) ? EvalStatus::SUCCESS : EvalStatus::THROW;
     }
-    default:
-        fatal("unsupported cast op\n");
     }
     return EvalStatus::SUCCESS;
 }
 
-CastNode *CastNode::newTypedCastNode(Node *targetNode, DSType &type, CastNode::CastOp op) {
+CastNode *CastNode::newTypedCastNode(TypePool &pool, Node *targetNode, DSType &type) {
     assert(!targetNode->isUntyped());
     CastNode *castNode = new CastNode(targetNode, nullptr);
-    castNode->setOpKind(op);
     castNode->setType(type);
+    if(type == pool.getVoidType()) {
+        castNode->setOpKind(CastNode::TO_VOID);
+    } else {
+        bool s = castNode->resolveCastOp(pool);
+        (void) s;   // do nothing
+        assert(s);
+    }
     return castNode;
 }
+
 
 // ############################
 // ##     InstanceOfNode     ##

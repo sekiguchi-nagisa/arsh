@@ -58,11 +58,7 @@ public:
 };
 
 enum class CoercionKind : unsigned char {
-    TO_VOID,            // pop evaulated value.
-    INT_2_FLOAT,        // int(except for Int64, Uint64) to float
-    INT_2_LONG,         // int(except for Int64, Uint64) to long(Int64, Uint64)
-    INT_NOP,            // int(except for Int64, Uin64) to int(except for Int64, Uint64)
-    LONG_NOP,           // long(Int64, Uint64) to long(Int64, Uint64)
+    PERFORM_COERCION,
     INVALID_COERCION,   // illegal coercion.
     NOP,                // not allow coercion
 };
@@ -203,9 +199,9 @@ private:
      * for int type conversion.
      * return true if allow target type to required type implicit cast.
      */
-    bool checkCoercion(CoercionKind &kind, DSType &requiredType, DSType &targetType);
+    bool checkCoercion(const DSType &requiredType, const DSType &targetType);
 
-    void resolveCoercion(CoercionKind kind, DSType &requiredType, Node * &targetNode);
+    void resolveCoercion(DSType &requiredType, Node * &targetNode);
 
     FieldHandle *addEntryAndThrowIfDefined(Node &node, const std::string &symbolName, DSType &type, bool readOnly);
 
@@ -271,28 +267,6 @@ private:
 
     // helper for argument type checking
     void checkTypeArgsNode(Node &node, MethodHandle *handle, std::vector<Node *> &argNodes);
-
-    // for type cast
-    bool checkInt2Float(int beforePrecision, const DSType &afterType) const;
-    bool checkFloat2Int(const DSType &beforeType, int afterPrecision) const;
-    bool checkLong2Float(int beforePrecision, const DSType &afterType) const;
-    bool checkFloat2Long(const DSType &beforeType, int afterPrecision) const;
-
-    /**
-     * check to higher precision int type.
-     */
-    bool checkInt2IntWidening(int beforePrecision, int afterPrecision) const;
-
-    bool checkInt2IntNarrowing(int beforePrecision, int afterPrecision) const;
-
-    /**
-     * some precision cast
-     */
-    bool checkInt2Int(int beforePrecision, int afterPrecision) const;
-
-    bool checkLong2Long(int beforePrecision, int afterPrecision) const;
-    bool checkInt2Long(int beforePrecision, int afterPrecision) const;
-    bool checkLong2Int(int beforePrecision, int afterPrecision) const;
 
     // visitor api
     void visit(Node &node); // override

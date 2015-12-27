@@ -694,18 +694,34 @@ public:
 class CastNode : public Node {
 public:
     enum CastOp {
-        NOP,
+        NO_CAST,
         TO_VOID,
-        INT_TO_FLOAT,
-        FLOAT_TO_INT,
-        INT_TO_LONG,
-        LONG_TO_INT,
-        LONG_TO_FLOAT,
-        FLOAT_TO_LONG,
-        COPY_INT,
-        COPY_LONG,
+        NUM_CAST,
         TO_STRING,
         CHECK_CAST,
+    };
+
+    /**
+     * number cast op
+     */
+    enum NumberCastOp : unsigned short {
+        NOP        = 0,
+        COPY_INT   = 1 << 0,
+        TO_B       = 1 << 1,
+        TO_U16     = 1 << 2,
+        TO_I16     = 1 << 3,
+        NEW_LONG   = 1 << 4,
+        COPY_LONG  = 1 << 5,
+        I_NEW_LONG = 1 << 6,
+        NEW_INT    = 1 << 7,
+        U32_TO_D   = 1 << 8,
+        I32_TO_D   = 1 << 9,
+        U64_TO_D   = 1 << 10,
+        I64_TO_D   = 1 << 11,
+        D_TO_U32   = 1 << 12,
+        D_TO_I32   = 1 << 13,
+        D_TO_U64   = 1 << 14,
+        D_TO_I64   = 1 << 15,
     };
 
 private:
@@ -717,6 +733,11 @@ private:
     TypeNode *targetTypeNode;
 
     CastOp opKind;
+
+    /**
+     * additional op for number cast.
+     */
+    unsigned short numCastOp;
 
 public:
     CastNode(Node *exprNode, TypeNode *type, bool dupTypeToken = false);
@@ -737,6 +758,16 @@ public:
         return this->opKind;
     }
 
+    unsigned short getNumberCastOp() const {
+        return this->numCastOp;
+    }
+
+    /**
+     * this node must be typed.
+     * not allow void cast.
+     */
+    bool resolveCastOp(TypePool &pool);
+
     void dump(NodeDumper &dumper) const;  // override
     void accept(NodeVisitor &visitor);    //override
     EvalStatus eval(RuntimeContext &ctx); // override
@@ -746,7 +777,7 @@ public:
      * targetNode must be typed node.
      * type is after casted value type.
      */
-    static CastNode *newTypedCastNode(Node *targetNode, DSType &type, CastOp op);
+    static CastNode *newTypedCastNode(TypePool &pool, Node *targetNode, DSType &type);
 };
 
 class InstanceOfNode : public Node {

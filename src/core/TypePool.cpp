@@ -131,7 +131,7 @@ TypePool::TypePool() :
         systemErrorType(), internalStatus(), shellExit(), assertFail(),
         templateMap(8),
         arrayTemplate(), mapTemplate(), tupleTemplate(),
-        stringArrayType(), precisionMap(), udcSet() {
+        stringArrayType(), precisionMap(), numTypeIndexMap(), udcSet() {
 
     // initialize type
     this->anyType = this->initBuiltinType("Any", true, 0, info_AnyType());
@@ -414,6 +414,27 @@ int TypePool::getIntPrecision(const DSType &type) {
     auto iter = this->precisionMap.find((unsigned long) &type);
     if(iter == this->precisionMap.end()) {
         return INVALID_PRECISION;
+    }
+    return iter->second;
+}
+
+int TypePool::getNumTypeIndex(const DSType &type) {
+    if(this->numTypeIndexMap.empty()) {
+#define ADD(type, index) this->numTypeIndexMap.insert(std::make_pair((unsigned long) (type), index))
+        ADD(this->byteType,   0);
+        ADD(this->int16Type,  1);
+        ADD(this->uint16Type, 2);
+        ADD(this->int32Type,  3);
+        ADD(this->uint32Type, 4);
+        ADD(this->int64Type,  5);
+        ADD(this->uint64Type, 6);
+        ADD(this->floatType,  7);
+#undef ADD
+    }
+
+    auto iter = this->numTypeIndexMap.find((unsigned long) &type);
+    if(iter == this->numTypeIndexMap.end()) {
+        return -1;
     }
     return iter->second;
 }

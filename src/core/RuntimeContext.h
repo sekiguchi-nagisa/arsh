@@ -539,7 +539,7 @@ public:
     /**
      * must call in child process.
      * argv represents array.
-     * the first element of ptr is command name(equivalent to node->getcommandName()).
+     * the first element of ptr is command name(equivalent to node->getCommandName()).
      * the last element of ptr is null.
      */
     int execUserDefinedCommand(UserDefinedCmdNode *node, DSValue *argv);
