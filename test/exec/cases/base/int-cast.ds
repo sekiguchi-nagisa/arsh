@@ -1,0 +1,101 @@
+################
+#     Byte     #
+################
+
+var b = 1b
+assert($b is Byte)
+
+# to Byte
+assert($b as Byte is Byte)
+assert($b as Byte as String == '1')
+
+# to Int16
+$b = 3b
+assert($b as Int16 is Int16)
+assert($b as Int16 as String == '3')
+$b = 255b
+assert($b as Int16 as String == '255')
+
+# to Uint16
+$b = 98b
+assert($b as Uint16 is Uint16)
+assert($b as Uint16 as String == '98')
+$b = 255b
+assert($b as Uint16 as String == '255')
+
+# to Int32
+$b = 62b
+assert($b as Int32 is Int32)
+assert($b as Int32 as String == '62')
+$b = 255b
+assert($b as Int32 as String == '255')
+
+# to Uint32
+assert($b as Uint32 is Uint32)
+assert($b as Uint32 as String == '255')
+
+# to Int64
+assert($b as Int64 is Int64)
+assert($b as Int64 as String == '255')
+
+# to Uint64
+assert($b as Uint64 is Uint64)
+assert($b as Uint64 as String == '255')
+
+# to Float
+assert($b as Float is Float)
+assert($b as Float as String == '255.000000')
+
+
+#################
+#     Int16     #
+#################
+
+var i16 = 43i16
+assert($i16 is Int16)
+
+# to Byte
+assert($i16 as Byte is Byte)
+assert($i16 as Byte as String == '43')
+$i16 = -1i16
+assert($i16 as Byte as String == '255')
+
+# to Int16
+assert($i16 as Int16 is Int16)
+assert($i16 as Int16 as String == '-1')
+
+# to Uint16
+assert($i16 as Uint16 is Uint16)
+assert($i16 as Uint16 as String == '65535')
+$i16 = 12345i16
+assert($i16 as Uint16 as String == '12345')
+
+# to Int32
+assert($i16 as Int32 is Int32)
+assert($i16 as Int32 as String == '12345')
+$i16 = -1i16
+assert($i16 as Int32 as String == '-1')
+
+# to Uint32
+assert($i16 as Uint32 is Uint32)
+assert($i16 as Uint32 as String == '4294967295')
+$i16 = 9876i16
+assert($i16 as Uint32 as String == '9876')
+
+# to Int64
+assert($i16 as Int64 is Int64)
+assert($i16 as Int64 as String == '9876')
+$i16 = -2i16
+assert($i16 as Int64 as String == '-2')
+
+# to Uint64
+assert($i16 as Uint64 is Uint64)
+assert($i16 as Uint64 as String == '18446744073709551614')
+$i16 = 735i16
+assert($i16 as Uint64 as String == '735')
+
+# to Float
+assert($i16 as Float is Float)
+assert($i16 as Float as String == '735.000000')
+$i16 = -1i16
+assert($i16 as Float as String == '-1.000000')
