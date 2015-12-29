@@ -796,7 +796,7 @@ EvalStatus CastNode::eval(RuntimeContext &ctx) {
                 unsigned int v = typeAs<Int_Object>(ctx.pop())->getValue();
                 v &= 0xFFFF;    // fill higher bits (16th ~ 31th) with 0
                 if(v & 0x8000) {    // if 15th bit is 1, fill higher bits with 1
-                    v &= 0xFFFF0000;
+                    v |= 0xFFFF0000;
                 }
                 ctx.push(DSValue::create<Int_Object>(*this->type, v));
                 break;

@@ -99,3 +99,158 @@ assert($i16 as Float is Float)
 assert($i16 as Float as String == '735.000000')
 $i16 = -1i16
 assert($i16 as Float as String == '-1.000000')
+
+
+##################
+#     Uint16     #
+##################
+
+var u16 = 73u16
+assert($u16 is Uint16)
+
+# to Byte
+assert($u16 as Byte is Byte)
+assert($u16 as Byte as String == '73')
+$u16 = 4081u16
+assert($u16 as Byte as String == '241')
+
+# to Int16
+assert($u16 as Int16 is Int16)
+assert($u16 as Int16 as String == '4081')
+$u16 = 65535u16
+assert($u16 as Int16 as String == '-1')
+
+# to Uint16
+assert($u16 as Uint16 is Uint16)
+assert($u16 as Uint16 as String == '65535')
+
+# to Int32
+assert($u16 as Int32 is Int32)
+assert($u16 as Int32 as String == '65535')
+
+# to Uint32
+assert($u16 as Uint32 is Uint32)
+assert($u16 as Uint32 as String == '65535')
+
+# to Int64
+assert($u16 as Int64 is Int64)
+assert($u16 as Int64 as String == '65535')
+
+# to Uint64
+assert($u16 as Uint64 is Uint64)
+assert($u16 as Uint64 as String == '65535')
+
+# to Float
+assert($u16 as Float is Float)
+assert($u16 as Float as String == '65535.000000')
+
+
+#################
+#     Int32     #
+#################
+
+var i32 = -1i32
+assert($i32 is Int32)
+
+# to Byte
+assert($i32 as Byte is Byte)
+assert($i32 as Byte as String == '255')
+$i32 = 254
+assert($i32 as Byte as String == '254')
+
+# to Int16
+assert($i32 as Int16 is Int16)
+assert($i32 as Int16 as String == '254')
+$i32 = -65536
+assert($i32 as Int16 as String == '0')
+$i32 = -1
+assert($i32 as Int16 as String == '-1')
+
+# to Uint16
+assert($i32 as Uint16 is Uint16)
+assert($i32 as Uint16 as String == '65535')
+$i32 = 7892
+assert($i32 as Uint16 as String == '7892')
+
+# to Int32
+assert($i32 as Int32 is Int32)
+assert($i32 as Int32 as String == '7892')
+$i32 = -976
+assert($i32 as Int32 as String == '-976')
+
+# to Uint32
+$i32 = -1
+assert($i32 as Uint32 is Uint32)
+assert($i32 as Uint32 as String == '4294967295')
+$i32 = 847654
+assert($i32 as Uint32 as String == '847654')
+
+# to Int64
+assert($i32 as Int64 is Int64)
+assert($i32 as Int64 as String == '847654')
+$i32 = -1
+assert($i32 as Int64 as String == '-1')
+
+# to Uint64
+assert($i32 as Uint64 is Uint64)
+assert($i32 as Uint64 as String == '18446744073709551615')
+$i32 = 725901
+assert($i32 as Uint64 as String == '725901')
+
+# to Float
+assert($i32 as Float is Float)
+assert($i32 as Float as String == '725901.000000')
+$i32 = -2345
+assert($i32 as Float as String == '-2345.000000')
+
+
+##################
+#     Uint32     #
+##################
+
+var u32 = 255u
+assert($u32 is Uint32)
+
+# to Byte
+assert($u32 as Byte is Byte)
+assert($u32 as Byte as String == '255')
+$u32 = 1048575u
+assert($u32 as Byte as String == '255')
+
+# to Int16
+assert($u32 as Int16 is Int16)
+assert($u32 as Int16 as String == '-1')
+$u32 = 3458u
+assert($u32 as Int16 as String == '3458')
+
+# to Uint16
+assert($u32 as Uint16 is Uint16)
+assert($u32 as Uint16 as String == '3458')
+$u32 = 1048575u
+assert($u32 as Uint16 as String == '65535')
+
+# to Int32
+assert($u32 as Int32 is Int32)
+assert($u32 as Int32 as String == '1048575')
+$u32 = 4294967295u
+assert($u32 as Int32 as String == '-1')
+
+# to Uint32
+assert($u32 as Uint32 is Uint32)
+assert($u32 as Uint32 as String == '4294967295')
+$u32 = 666666u
+assert($u32 as Uint32 as String == '666666')
+
+# to Int64
+assert($u32 as Int64 is Int64)
+assert($u32 as Int64 as String == '666666')
+$u32 = 4294967295u
+assert($u32 as Int64 as String == '4294967295')
+
+# to Uint64
+assert($u32 as Uint64 is Uint64)
+assert($u32 as Uint64 as String == '4294967295')
+
+# to Float
+assert($u32 as Float is Float)
+assert($u32 as Float as String == '4294967295.000000')
