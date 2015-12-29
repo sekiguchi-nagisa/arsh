@@ -1974,9 +1974,11 @@ private:
     MethodCallNode *setterNode;
 
     /**
-     * left node is dummy node.
+     * before type checking, rightNode is BinaryOpNode.
+     * after type checking, rightNode may be CastNode.
+     * if rightNode is BinaryOpNode, left node is dummy node.
      */
-    BinaryOpNode *binaryNode;
+    Node *rightNode;
 
 public:
     ElementSelfAssignNode(MethodCallNode *leftNode, BinaryOpNode *binaryNode);
@@ -1990,8 +1992,15 @@ public:
         return this->indexNode;
     }
 
-    BinaryOpNode *getBinaryNode() const {
-        return this->binaryNode;
+    /**
+     * may be BinaryOpNode or CastNode
+     */
+    Node *getRightNode() const {
+        return this->rightNode;
+    }
+
+    Node * &refRightNode() {
+        return this->rightNode;
     }
 
     MethodCallNode *getGetterNode() const {

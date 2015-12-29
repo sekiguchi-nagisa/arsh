@@ -2359,7 +2359,7 @@ std::pair<Node *, Node *> AssignNode::split(AssignNode *node) {
 ElementSelfAssignNode::ElementSelfAssignNode(MethodCallNode *leftNode, BinaryOpNode *binaryNode) :
         Node(leftNode->getToken()),
         recvNode(), indexNode(),
-        getterNode(), setterNode(), binaryNode(binaryNode) {
+        getterNode(), setterNode(), rightNode(binaryNode) {
     this->updateToken(binaryNode->getToken());
 
     // init recv, indexNode
@@ -2384,7 +2384,7 @@ ElementSelfAssignNode::~ElementSelfAssignNode() {
     delete this->indexNode;
     delete this->getterNode;
     delete this->setterNode;
-    delete this->binaryNode;
+    delete this->rightNode;
 }
 
 void ElementSelfAssignNode::setRecvType(DSType &type) {
@@ -2402,7 +2402,7 @@ void ElementSelfAssignNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(indexNode);
     DUMP_PTR(getterNode);
     DUMP_PTR(setterNode);
-    DUMP_PTR(binaryNode);
+    DUMP_PTR(rightNode);
 }
 
 void ElementSelfAssignNode::accept(NodeVisitor &visitor) {
@@ -2415,7 +2415,7 @@ EvalStatus ElementSelfAssignNode::eval(RuntimeContext &ctx) {
     ctx.dup2();
 
     EVAL(ctx, this->getterNode);
-    EVAL(ctx, this->binaryNode);
+    EVAL(ctx, this->rightNode);
 
     return this->setterNode->eval(ctx);
 }

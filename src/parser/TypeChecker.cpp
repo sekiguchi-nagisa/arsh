@@ -975,8 +975,14 @@ void TypeChecker::visitAssignNode(AssignNode &node) {
         if(accessNode != nullptr) {
             accessNode->setAdditionalOp(AccessNode::DUP_RECV);
         }
+        auto &rightType = this->checkType(node.getRightNode());
+        if(leftType != rightType) { // convert right hand-side type to left type
+            node.refRightNode() = CastNode::newTypedCastNode(this->typePool, node.refRightNode(), leftType);
+        }
+    } else {
+        this->checkTypeWithCoercion(leftType, node.refRightNode());
     }
-    this->checkTypeWithCoercion(leftType, node.refRightNode());
+
     node.setType(this->typePool.getVoidType());
 }
 
@@ -988,8 +994,14 @@ void TypeChecker::visitElementSelfAssignNode(ElementSelfAssignNode &node) {
     node.setIndexType(indexType);
 
     auto &elementType = this->checkType(node.getGetterNode());
-    node.getBinaryNode()->getLeftNode()->setType(elementType);
-    this->checkType(node.getBinaryNode());
+    static_cast<BinaryOpNode *>(node.getRightNode())->getLeftNode()->setType(elementType);
+
+    // convert right hand-side type to element type
+    auto &rightType = this->checkType(node.getRightNode());
+    if(elementType != rightType) {
+        node.refRightNode() = CastNode::newTypedCastNode(this->typePool, node.refRightNode(), elementType);
+    }
+
     node.getSetterNode()->getArgNodes()[1]->setType(elementType);
     this->checkType(this->typePool.getVoidType(), node.getSetterNode());
 

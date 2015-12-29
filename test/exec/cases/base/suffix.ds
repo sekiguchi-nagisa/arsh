@@ -6,6 +6,11 @@ assert($a == 1)
 $a--
 assert($a == 0)
 
+var b = 0b
+assert($b == 0b)
+$b++
+assert($b == 1)
+
 var s = "he"
 $s++
 assert($s == "he1")
@@ -22,6 +27,11 @@ assert($f == 13)
     $a--
     assert($a == 0)
 
+    var b = 0b
+    assert($b == 0b)
+    $b++
+    assert($b == 1)
+
     var s = "he"
     $s++
     assert($s == "he1")
@@ -32,14 +42,16 @@ assert($f == 13)
 }
 
 # field
-var t = (0, 1.2, "a")
+var t = (0, 1.2, "a", 1u32)
 $t._0++
 $t._1++
 $t._2++
+$t._3++
 
 assert($t._0 == 1)
 assert($t._1 == 2.2)
 assert($t._2 == "a1")
+assert($t._3 == 2u)
 
 # indexer
 var i = [0]
@@ -47,3 +59,7 @@ $i[0]++
 assert($i[0] == 1)
 $i[0]--
 assert($i[0] == 0)
+
+var ii = [1i16]
+$ii[0]++
+assert($ii[0] == 2)
