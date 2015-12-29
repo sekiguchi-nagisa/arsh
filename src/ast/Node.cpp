@@ -680,7 +680,7 @@ bool CastNode::resolveCastOp(TypePool &pool) {
                 {TO_B,          TO_I16,          TO_U16,          COPY_INT, NOP,      NEW_LONG,   NEW_LONG,   U32_TO_D},
                 {NEW_INT|TO_B,  NEW_INT|TO_I16,  NEW_INT|TO_U16,  NEW_INT,  NEW_INT,  NOP,        COPY_LONG,  I64_TO_D},
                 {NEW_INT|TO_B,  NEW_INT|TO_I16,  NEW_INT|TO_U16,  NEW_INT,  NEW_INT,  COPY_LONG,  NOP,        U64_TO_D},
-                {D_TO_U64|TO_B, D_TO_I64|TO_I16, D_TO_U64|TO_U16, D_TO_I32, D_TO_U32, D_TO_I64,   D_TO_U64,   NOP},
+                {D_TO_U32|TO_B, D_TO_I32|TO_I16, D_TO_U32|TO_U16, D_TO_I32, D_TO_U32, D_TO_I64,   D_TO_U64,   NOP},
         };
 
         assert(beforeIndex >= 0 && beforeIndex <= 8);

@@ -254,3 +254,169 @@ assert($u32 as Uint64 as String == '4294967295')
 # to Float
 assert($u32 as Float is Float)
 assert($u32 as Float as String == '4294967295.000000')
+
+
+#################
+#     Int64     #
+#################
+
+var i64 = -1i64
+assert($i64 is Int64)
+
+# to Byte
+assert($i64 as Byte is Byte)
+assert($i64 as Byte as String == '255')
+$i64 = 234i64
+assert($i64 as Byte as String == '234')
+
+# to Int16
+assert($i64 as Int16 is Int16)
+assert($i64 as Int16 as String == '234')
+$i64 = -1i64
+assert($i64 as Int16 as String == '-1')
+$i64 = 15728646i64
+assert($i64 as Int16 as String == '6')
+
+# to Uint16
+assert($i64 as Uint16 is Uint16)
+assert($i64 as Uint16 as String == '6')
+$i64 = -1i64
+assert($i64 as Uint16 as String == '65535')
+
+# to Int32
+assert($i64 as Int32 is Int32)
+assert($i64 as Int32 as String == '-1')
+$i64 = 12345i64
+assert($i64 as Int32 as String == '12345')
+$i64 = 1030792151049i64
+assert($i64 as Int32 as String == '9')
+
+# to Uint32
+assert($i64 as Uint32 is Uint32)
+assert($i64 as Uint32 as String == '9')
+$i64 = 2345555i64
+assert($i64 as Uint32 as String == '2345555')
+$i64 = -1i64
+assert($i64 as Uint32 as String == '4294967295')
+
+# to Int64
+assert($i64 as Int64 is Int64)
+assert($i64 as Int64 as String == '-1')
+
+# to Float
+assert($i64 as Float is Float)
+assert($i64 as Float as String == '-1.000000')
+$i64 = 7865i64
+assert($i64 as Float as String == '7865.000000')
+$i64 = -12344
+assert($i64 as Float as String == '-12344.000000')
+
+
+##################
+#     Uint64     #
+##################
+
+var u64 = 29u64
+assert($u64 is Uint64)
+
+# to Byte
+assert($u64 as Byte is Byte)
+assert($u64 as Byte as String == '29')
+$u64 = 72056494526300167u64
+assert($u64 as Byte as String == '7')
+
+# to Int16
+assert($u64 as Int16 is Int16)
+assert($u64 as Int16 as String == '7')
+$u64 = 72057594037927935u64
+assert($u64 as Int16 as String == '-1')
+
+# to Uint16
+assert($u64 as Uint16 is Uint16)
+assert($u64 as Uint16 as String == '65535')
+$u64 = 72056494526300167u64
+assert($u64 as Uint16 as String == '7')
+
+# to Int32
+assert($u64 as Int32 is Int32)
+$u64 = 72057594037927935u64
+assert($u64 as Int32 as String == '-1')
+$u64 = 72056494526300167u64
+assert($u64 as Int32 as String == '7')
+
+# to Uint32
+assert($u64 as Uint32 is Uint32)
+assert($u64 as Uint32 as String == '7')
+$u64 = 72057594037927935u64
+assert($u64 as Uint32 as String == '4294967295')
+
+# to Int64
+assert($u64 as Int64 is Int64)
+assert($u64 as Int64 as String == '72057594037927935')
+$u64 = 18446744073709551615u64
+assert($u64 as Int64 as String == '-1')
+
+# to Uint64
+assert($u64 as Uint64 is Uint64)
+assert($u64 as Uint64 as String == '18446744073709551615')
+
+# to Float
+assert($u64 as Float is Float)
+$u64 = 88888888u64
+assert($u64 as Float as String == '88888888.000000')
+
+
+#################
+#     Float     #
+#################
+
+var f = -1.0
+assert($f is Float)
+
+# to Byte
+assert($f as Byte is Byte)
+assert($f as Byte as String == '255')
+$f = 234.7
+assert($f as Byte as String == '234')
+
+# to Int16
+assert($f as Int16 is Int16)
+assert($f as Int16 as String == '234')
+$f = -1.3
+assert($f as Int16 as String == '-1')
+$f = 8191.00450
+assert($f as Int16 as String == '8191')
+
+# to Uint16
+assert($f as Uint16 is Uint16)
+assert($f as Uint16 as String == '8191')
+$f = -1.0000345
+assert($f as Uint16 as String == '65535')
+
+# to Int32
+assert($f as Int32 is Int32)
+assert($f as Int32 as String == '-1')
+$f = 65535.9234
+assert($f as Int32 as String == '65535')
+
+# to Uint32
+assert($f as Uint32 is Uint32)
+assert($f as Uint32 as String == '65535')
+$f = -1.3456706
+assert($f as Uint32 as String == '4294967295')
+
+# to Int64
+assert($f as Int64 is Int64)
+assert($f as Int64 as String == '-1')
+$f = 999999.045343
+assert($f as Int64 as String == '999999')
+
+# to Uint64
+assert($f as Uint64 is Uint64)
+assert($f as Uint64 as String == '999999')
+$f = -1.23456
+assert($f as Uint64 as String == '18446744073709551615')
+
+# to Float
+assert($f as Float is Float)
+assert($f as Float as String == '-1.234560')
