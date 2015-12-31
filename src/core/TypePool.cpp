@@ -420,16 +420,20 @@ int TypePool::getIntPrecision(const DSType &type) {
 
 int TypePool::getNumTypeIndex(const DSType &type) {
     if(this->numTypeIndexMap.empty()) {
-#define ADD(type, index) this->numTypeIndexMap.insert(std::make_pair((unsigned long) (type), index))
-        ADD(this->byteType,   0);
-        ADD(this->int16Type,  1);
-        ADD(this->uint16Type, 2);
-        ADD(this->int32Type,  3);
-        ADD(this->uint32Type, 4);
-        ADD(this->int64Type,  5);
-        ADD(this->uint64Type, 6);
-        ADD(this->floatType,  7);
-#undef ADD
+        std::pair<unsigned long, int> table[] = {
+                {(unsigned long) this->byteType,   0},
+                {(unsigned long) this->int16Type,  1},
+                {(unsigned long) this->uint16Type, 2},
+                {(unsigned long) this->int32Type,  3},
+                {(unsigned long) this->uint32Type, 4},
+                {(unsigned long) this->int64Type,  5},
+                {(unsigned long) this->uint64Type, 6},
+                {(unsigned long) this->floatType,  7},
+        };
+
+        for(unsigned int i = 0; i < (sizeof(table) / sizeof(table[0])); i++) {
+            this->numTypeIndexMap.insert(table[i]);
+        }
     }
 
     auto iter = this->numTypeIndexMap.find((unsigned long) &type);
@@ -502,61 +506,61 @@ bool TypePool::asVariantType(const std::vector<DSType *> &elementTypes) {
 }
 
 void TypePool::registerDBusErrorTypes() {
-#define EACH_DBUS_ERROR(OP) \
-    OP("Failed") \
-    OP("NoMemory") \
-    OP("ServiceUnknown") \
-    OP("NameHasNoOwner") \
-    OP("NoReply") \
-    OP("IOError") \
-    OP("BadAddress") \
-    OP("NotSupported") \
-    OP("LimitsExceeded") \
-    OP("AccessDenied") \
-    OP("AuthFailed") \
-    OP("NoServer") \
-    OP("Timeout") \
-    OP("NoNetwork") \
-    OP("AddressInUse") \
-    OP("Disconnected") \
-    OP("InvalidArgs") \
-    OP("FileNotFound") \
-    OP("FileExists") \
-    OP("UnknownMethod") \
-    OP("UnknownObject") \
-    OP("UnknownInterface") \
-    OP("UnknownProperty") \
-    OP("PropertyReadOnly") \
-    OP("TimedOut") \
-    OP("MatchRuleNotFound") \
-    OP("MatchRuleInvalid") \
-    OP("Spawn.ExecFailed") \
-    OP("Spawn.ForkFailed") \
-    OP("Spawn.ChildExited") \
-    OP("Spawn.ChildSignaled") \
-    OP("Spawn.Failed") \
-    OP("Spawn.FailedToSetup") \
-    OP("Spawn.ConfigInvalid") \
-    OP("Spawn.ServiceNotValid") \
-    OP("Spawn.ServiceNotFound") \
-    OP("Spawn.PermissionsInvalid") \
-    OP("Spawn.FileInvalid") \
-    OP("Spawn.NoMemory") \
-    OP("UnixProcessIdUnknown") \
-    OP("InvalidSignature") \
-    OP("InvalidFileContent") \
-    OP("SELinuxSecurityContextUnknown") \
-    OP("AdtAuditDataUnknown") \
-    OP("ObjectPathInUse") \
-    OP("InconsistentMessage") \
-    OP("InteractiveAuthorizationRequired")
+    static const char *table[] = {
+            "Failed",
+            "NoMemory",
+            "ServiceUnknown",
+            "NameHasNoOwner",
+            "NoReply",
+            "IOError",
+            "BadAddress",
+            "NotSupported",
+            "LimitsExceeded",
+            "AccessDenied",
+            "AuthFailed",
+            "NoServer",
+            "Timeout",
+            "NoNetwork",
+            "AddressInUse",
+            "Disconnected",
+            "InvalidArgs",
+            "FileNotFound",
+            "FileExists",
+            "UnknownMethod",
+            "UnknownObject",
+            "UnknownInterface",
+            "UnknownProperty",
+            "PropertyReadOnly",
+            "TimedOut",
+            "MatchRuleNotFound",
+            "MatchRuleInvalid",
+            "Spawn.ExecFailed",
+            "Spawn.ForkFailed",
+            "Spawn.ChildExited",
+            "Spawn.ChildSignaled",
+            "Spawn.Failed",
+            "Spawn.FailedToSetup",
+            "Spawn.ConfigInvalid",
+            "Spawn.ServiceNotValid",
+            "Spawn.ServiceNotFound",
+            "Spawn.PermissionsInvalid",
+            "Spawn.FileInvalid",
+            "Spawn.NoMemory",
+            "UnixProcessIdUnknown",
+            "InvalidSignature",
+            "InvalidFileContent",
+            "SELinuxSecurityContextUnknown",
+            "AdtAuditDataUnknown",
+            "ObjectPathInUse",
+            "InconsistentMessage",
+            "InteractiveAuthorizationRequired",
+    };
 
-#define ADD_ERROR(E) this->setAlias(E, *this->initErrorType("org.freedesktop.DBus.Error." E, this->dbusErrorType));
-
-    EACH_DBUS_ERROR(ADD_ERROR)
-
-#undef ADD_ERROR
-#undef EACH_DBUS_ERROR
+    for(unsigned int i = 0; i < (sizeof(table) / sizeof(table[0])); i++) {
+        std::string s = "org.freedesktop.DBus.Error.";
+        s += table[i];
+        this->setAlias(table[i], this->createErrorType(s, *this->dbusErrorType));
+    }
 }
 
 } // namespace core
