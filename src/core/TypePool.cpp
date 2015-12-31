@@ -118,70 +118,60 @@ void TypeMap::removeType(const std::string &typeName) {
 // ######################
 
 TypePool::TypePool() :
-        typeMap(),
-        anyType(), voidType(), variantType(), valueType(),
-        byteType(), int16Type(), uint16Type(),
-        int32Type(), uint32Type(), int64Type(), uint64Type(),
-        floatType(), boolType(), stringType(),
-        errorType(), taskType(), baseFuncType(), procType(),
-        objectPathType(), unixFDType(), proxyType(),
-        dbusType(), busType(), serviceType(), dbusObjectType(),
-        arithmeticErrorType(), outOfRangeErrorType(),
-        keyNotFoundErrorType(), typeCastErrorType(), dbusErrorType(),
-        systemErrorType(), internalStatus(), shellExit(), assertFail(),
+        typeMap(), typeTable(new DSType*[__SIZE_OF_DS_TYPE__]()),
         templateMap(8),
         arrayTemplate(), mapTemplate(), tupleTemplate(),
-        stringArrayType(), precisionMap(), numTypeIndexMap(), udcSet() {
+        precisionMap(), numTypeIndexMap(), udcSet() {
 
     // initialize type
-    this->anyType = this->initBuiltinType("Any", true, 0, info_AnyType());
-    this->voidType = this->initBuiltinType("Void", false, 0, info_VoidType(), true);
-    this->variantType = this->initBuiltinType("Variant", false, this->anyType, info_Dummy());
+    this->initBuiltinType(Any, "Any", true, info_AnyType());
+    this->initBuiltinType(Void, "Void", false, info_VoidType(), true);
+    this->initBuiltinType(Variant, "Variant", false, this->getAnyType(), info_Dummy());
 
     /**
      * hidden from script.
      */
-    this->valueType = this->initBuiltinType("Value%%", true, this->variantType, info_Dummy());
+    this->initBuiltinType(Value__, "Value%%", true, this->getVariantType(), info_Dummy());
 
-    this->byteType = this->initBuiltinType("Byte", false, this->valueType, info_ByteType());
-    this->int16Type = this->initBuiltinType("Int16", false, this->valueType, info_Int16Type());
-    this->uint16Type = this->initBuiltinType("Uint16", false, this->valueType, info_Uint16Type());
-    this->int32Type = this->initBuiltinType("Int32", false, this->valueType, info_Int32Type());
-    this->uint32Type = this->initBuiltinType("Uint32", false, this->valueType, info_Uint32Type());
-    this->int64Type = this->initBuiltinType("Int64", false, this->valueType, info_Int64Type());
-    this->uint64Type = this->initBuiltinType("Uint64", false, this->valueType, info_Uint64Type());
+    this->initBuiltinType(Byte, "Byte", false, this->getValueType(), info_ByteType());
+    this->initBuiltinType(Int16, "Int16", false, this->getValueType(), info_Int16Type());
+    this->initBuiltinType(Uint16, "Uint16", false, this->getValueType(), info_Uint16Type());
+    this->initBuiltinType(Int32, "Int32", false, this->getValueType(), info_Int32Type());
+    this->initBuiltinType(Uint32, "Uint32", false, this->getValueType(), info_Uint32Type());
+    this->initBuiltinType(Int64, "Int64", false, this->getValueType(), info_Int64Type());
+    this->initBuiltinType(Uint64, "Uint64", false, this->getValueType(), info_Uint64Type());
 
-    this->floatType = this->initBuiltinType("Float", false, this->valueType, info_FloatType());
-    this->boolType = this->initBuiltinType("Boolean", false, this->valueType, info_BooleanType());
-    this->stringType = this->initBuiltinType("String", false, this->valueType, info_StringType());
+    this->initBuiltinType(Float, "Float", false, this->getValueType(), info_FloatType());
+    this->initBuiltinType(Boolean, "Boolean", false, this->getValueType(), info_BooleanType());
+    this->initBuiltinType(String, "String", false, this->getValueType(), info_StringType());
 
-    this->objectPathType = this->initBuiltinType("ObjectPath", false, this->valueType, info_ObjectPathType());
-    this->unixFDType = this->initBuiltinType("UnixFD", false, this->uint32Type, info_UnixFDType());
-    this->proxyType = this->initBuiltinType("Proxy", false, this->anyType, info_ProxyType());
-    this->dbusType = this->initBuiltinType("DBus", false, this->anyType, info_DBusType());
-    this->busType = this->initBuiltinType("Bus", false, this->anyType, info_BusType());
-    this->serviceType = this->initBuiltinType("Service", false, this->anyType, info_ServiceType());
-    this->dbusObjectType = this->initBuiltinType("DBusObject", false, this->proxyType, info_DBusObjectType());
+    this->initBuiltinType(ObjectPath, "ObjectPath", false, this->getValueType(), info_ObjectPathType());
+    this->initBuiltinType(UnixFD, "UnixFD", false, this->getUint32Type(), info_UnixFDType());
+    this->initBuiltinType(Proxy, "Proxy", false, this->getAnyType(), info_ProxyType());
+    this->initBuiltinType(DBus, "DBus", false, this->getAnyType(), info_DBusType());
+    this->initBuiltinType(Bus, "Bus", false, this->getAnyType(), info_BusType());
+    this->initBuiltinType(Service, "Service", false, this->getAnyType(), info_ServiceType());
+    this->initBuiltinType(DBusObject, "DBusObject", false, this->getProxyType(), info_DBusObjectType());
 
-    this->errorType = this->initBuiltinType("Error", true, this->anyType, info_ErrorType());
-    this->taskType = this->initBuiltinType("Task", false, this->anyType, info_Dummy());
-    this->baseFuncType = this->initBuiltinType("Func", false, this->anyType, info_Dummy());
-    this->stringIterType = this->initBuiltinType("StringIter%%", false, this->anyType, info_StringIterType());
+    this->initBuiltinType(Error, "Error", true, this->getAnyType(), info_ErrorType());
+    this->initBuiltinType(Task, "Task", false, this->getAnyType(), info_Dummy());
+    this->initBuiltinType(Func, "Func", false, this->getAnyType(), info_Dummy());
+    this->initBuiltinType(StringIter__, "StringIter%%", false, this->getAnyType(), info_StringIterType());
 
     // pseudo type for command type checking
-    this->procType = this->initBuiltinType("Proc%%", false, this->anyType, info_Dummy());
+    this->initBuiltinType(Proc__, "Proc%%", false, this->getAnyType(), info_Dummy());
 
     // register NativeFuncInfo to ErrorType
     ErrorType::registerFuncInfo(info_ErrorType().getInitInfo());
 
     // initialize type template
     std::vector<DSType *> elements;
-    elements.push_back(this->anyType);
+    elements.push_back(&this->getAnyType());
     this->arrayTemplate = this->initTypeTemplate("Array", std::move(elements), info_ArrayType());
 
     elements = std::vector<DSType *>();
-    elements.push_back(this->valueType);
-    elements.push_back(this->anyType);
+    elements.push_back(&this->getValueType());
+    elements.push_back(&this->getAnyType());
     this->mapTemplate = this->initTypeTemplate("Map", std::move(elements), info_MapType());
 
     elements = std::vector<DSType *>();
@@ -189,29 +179,30 @@ TypePool::TypePool() :
 
     // init string array type(for command argument)
     std::vector<DSType *> types(1);
-    types[0] = this->stringType;
-    this->stringArrayType = &this->createReifiedType(this->getArrayTemplate(), std::move(types));
+    types[0] = &this->getStringType();
+    this->setToTypeTable(StringArray, &this->createReifiedType(this->getArrayTemplate(), std::move(types)));
 
     // init some error type
-    this->arithmeticErrorType = this->initErrorType("ArithmeticError", this->errorType);
-    this->outOfRangeErrorType = this->initErrorType("OutOfRangeError", this->errorType);
-    this->keyNotFoundErrorType = this->initErrorType("KeyNotFoundError", this->errorType);
-    this->typeCastErrorType = this->initErrorType("TypeCastError", this->errorType);
-    this->dbusErrorType = this->initErrorType("DBusError", this->errorType);
-    this->systemErrorType = this->initErrorType("SystemError", this->errorType);
+    this->initErrorType(ArithmeticError, "ArithmeticError", this->getErrorType());
+    this->initErrorType(OutOfRangeError, "OutOfRangeError", this->getErrorType());
+    this->initErrorType(KeyNotFoundError, "KeyNotFoundError", this->getErrorType());
+    this->initErrorType(TypeCastError, "TypeCastError", this->getErrorType());
+    this->initErrorType(DBusError, "DBusError", this->getErrorType());
+    this->initErrorType(SystemError, "SystemError", this->getErrorType());
 
     this->registerDBusErrorTypes();
 
     // init internal status type
-    this->internalStatus = this->initBuiltinType("internal status%%", false, 0, info_Dummy());
-    this->shellExit = this->initBuiltinType("Shell Exit", false, this->internalStatus, info_Dummy());
-    this->assertFail = this->initBuiltinType("Assertion Error", false, this->internalStatus, info_Dummy());
+    this->initBuiltinType(InternalStatus__, "internal status%%", false, info_Dummy());
+    this->initBuiltinType(ShellExit__, "Shell Exit", false, this->getInternalStatus(), info_Dummy());
+    this->initBuiltinType(AssertFail__, "Assertion Error", false, this->getInternalStatus(), info_Dummy());
 
     // commit generated type
     this->typeMap.commit();
 }
 
 TypePool::~TypePool() {
+    delete[] this->typeTable;
     for(const std::pair<std::string, TypeTemplate *> &pair : this->templateMap) {
         delete pair.second;
     }
@@ -246,7 +237,7 @@ DSType &TypePool::createReifiedType(const TypeTemplate &typeTemplate,
     std::string typeName(this->toReifiedTypeName(typeTemplate, elementTypes));
     DSType *type = this->typeMap.getType(typeName);
     if(type == nullptr) {
-        DSType *superType = this->asVariantType(elementTypes) ? this->variantType : this->anyType;
+        DSType *superType = this->asVariantType(elementTypes) ? &this->getVariantType() : &this->getAnyType();
         return *this->typeMap.addType(std::move(typeName),
                                      new ReifiedType(typeTemplate.getInfo(), superType, std::move(elementTypes)));
     }
@@ -257,13 +248,13 @@ DSType &TypePool::createTupleType(std::vector<DSType *> &&elementTypes) {
     this->checkElementTypes(elementTypes);
 
     if(elementTypes.size() == 0) {
-        fatal("Tuple type reauire at least 1 element\n");
+        fatal("Tuple type require at least 1 element\n");
     }
 
     std::string typeName(this->toTupleTypeName(elementTypes));
     DSType *type = this->typeMap.getType(typeName);
     if(type == nullptr) {
-        DSType *superType = this->asVariantType(elementTypes) ? this->variantType : this->anyType;
+        DSType *superType = this->asVariantType(elementTypes) ? &this->getVariantType() : &this->getAnyType();
         return *this->typeMap.addType(std::move(typeName),
                                      new TupleType(this->tupleTemplate->getInfo(), superType, std::move(elementTypes)));
     }
@@ -289,7 +280,7 @@ FunctionType &TypePool::createFuncType(DSType *returnType, std::vector<DSType *>
 InterfaceType &TypePool::createInterfaceType(const std::string &interfaceName) {
     DSType *type = this->typeMap.getType(interfaceName);
     if(type == nullptr) {
-        InterfaceType *ifaceType = new InterfaceType(this->dbusObjectType);
+        InterfaceType *ifaceType = new InterfaceType(&this->getDBusObjectType());
         this->typeMap.addType(std::string(interfaceName), ifaceType);
         return *ifaceType;
     }
@@ -396,19 +387,19 @@ constexpr int TypePool::INVALID_PRECISION;
 int TypePool::getIntPrecision(const DSType &type) {
     if(this->precisionMap.empty()) {    // init precision map
         // int64, uint64
-        this->precisionMap.insert(std::make_pair((unsigned long) this->int64Type, INT64_PRECISION));
-        this->precisionMap.insert(std::make_pair((unsigned long) this->uint64Type, INT64_PRECISION));
+        this->precisionMap.insert(std::make_pair((unsigned long) &this->getInt64Type(), INT64_PRECISION));
+        this->precisionMap.insert(std::make_pair((unsigned long) &this->getUint64Type(), INT64_PRECISION));
 
         // int32, uint32
-        this->precisionMap.insert(std::make_pair((unsigned long) this->int32Type, INT32_PRECISION));
-        this->precisionMap.insert(std::make_pair((unsigned long) this->uint32Type, INT32_PRECISION));
+        this->precisionMap.insert(std::make_pair((unsigned long) &this->getInt32Type(), INT32_PRECISION));
+        this->precisionMap.insert(std::make_pair((unsigned long) &this->getUint32Type(), INT32_PRECISION));
 
         // int16, uint16
-        this->precisionMap.insert(std::make_pair((unsigned long) this->int16Type, INT16_PRECISION));
-        this->precisionMap.insert(std::make_pair((unsigned long) this->uint16Type, INT16_PRECISION));
+        this->precisionMap.insert(std::make_pair((unsigned long) &this->getInt16Type(), INT16_PRECISION));
+        this->precisionMap.insert(std::make_pair((unsigned long) &this->getUint16Type(), INT16_PRECISION));
 
         // byte
-        this->precisionMap.insert(std::make_pair((unsigned long) this->byteType, BYTE_PRECISION));
+        this->precisionMap.insert(std::make_pair((unsigned long) &this->getByteType(), BYTE_PRECISION));
     }
 
     auto iter = this->precisionMap.find((unsigned long) &type);
@@ -421,14 +412,14 @@ int TypePool::getIntPrecision(const DSType &type) {
 int TypePool::getNumTypeIndex(const DSType &type) {
     if(this->numTypeIndexMap.empty()) {
         std::pair<unsigned long, int> table[] = {
-                {(unsigned long) this->byteType,   0},
-                {(unsigned long) this->int16Type,  1},
-                {(unsigned long) this->uint16Type, 2},
-                {(unsigned long) this->int32Type,  3},
-                {(unsigned long) this->uint32Type, 4},
-                {(unsigned long) this->int64Type,  5},
-                {(unsigned long) this->uint64Type, 6},
-                {(unsigned long) this->floatType,  7},
+                {(unsigned long) &this->getByteType(),   0},
+                {(unsigned long) &this->getInt16Type(),  1},
+                {(unsigned long) &this->getUint16Type(), 2},
+                {(unsigned long) &this->getInt32Type(),  3},
+                {(unsigned long) &this->getUint32Type(), 4},
+                {(unsigned long) &this->getInt64Type(),  5},
+                {(unsigned long) &this->getUint64Type(), 6},
+                {(unsigned long) &this->getFloatType(),  7},
         };
 
         for(unsigned int i = 0; i < (sizeof(table) / sizeof(table[0])); i++) {
@@ -455,11 +446,29 @@ void TypePool::abort() {
     this->typeMap.abort();
 }
 
-DSType *TypePool::initBuiltinType(const char *typeName, bool extendable,
-                                  DSType *superType, native_type_info_t info, bool isVoid) {
+void TypePool::setToTypeTable(DS_TYPE TYPE, DSType *type) {
+    assert(this->typeTable[TYPE] == nullptr && type != nullptr);
+    this->typeTable[TYPE] = type;
+}
+
+void TypePool::initBuiltinType(DS_TYPE TYPE, const char *typeName, bool extendable,
+                               native_type_info_t info, bool isVoid) {
     // create and register type
-    return this->typeMap.addType(
-            std::string(typeName), new BuiltinType(extendable, superType, info, isVoid));
+    DSType *type = this->typeMap.addType(
+            std::string(typeName), new BuiltinType(extendable, nullptr, info, isVoid));
+
+    // set to typeTable
+    this->setToTypeTable(TYPE, type);
+}
+
+void TypePool::initBuiltinType(DS_TYPE TYPE, const char *typeName, bool extendable,
+                               DSType &superType, native_type_info_t info) {
+    // create and register type
+    DSType *type = this->typeMap.addType(
+            std::string(typeName), new BuiltinType(extendable, &superType, info, false));
+
+    // set to typeTable
+    this->setToTypeTable(TYPE, type);
 }
 
 TypeTemplate *TypePool::initTypeTemplate(const char *typeName,
@@ -469,13 +478,14 @@ TypeTemplate *TypePool::initTypeTemplate(const char *typeName,
                                                       std::move(elementTypes), info))).first->second;
 }
 
-DSType *TypePool::initErrorType(const char *typeName, DSType *superType) {
-    return this->typeMap.addType(std::string(typeName), new ErrorType(superType));
+void TypePool::initErrorType(DS_TYPE TYPE, const char *typeName, DSType &superType) {
+    DSType *type = this->typeMap.addType(std::string(typeName), new ErrorType(&superType));
+    this->setToTypeTable(TYPE, type);
 }
 
 void TypePool::checkElementTypes(const std::vector<DSType *> &elementTypes) {
     for(DSType *type : elementTypes) {
-        if(*type == *this->voidType) {
+        if(*type == this->getVoidType()) {
             E_InvalidElement(this->getTypeName(*type));
         }
     }
@@ -498,7 +508,7 @@ void TypePool::checkElementTypes(const TypeTemplate &t, const std::vector<DSType
 
 bool TypePool::asVariantType(const std::vector<DSType *> &elementTypes) {
     for(DSType *type : elementTypes) {
-        if(!this->variantType->isSameOrBaseTypeOf(*type)) {
+        if(!this->getVariantType().isSameOrBaseTypeOf(*type)) {
             return false;
         }
     }
@@ -559,7 +569,7 @@ void TypePool::registerDBusErrorTypes() {
     for(unsigned int i = 0; i < (sizeof(table) / sizeof(table[0])); i++) {
         std::string s = "org.freedesktop.DBus.Error.";
         s += table[i];
-        this->setAlias(table[i], this->createErrorType(s, *this->dbusErrorType));
+        this->setAlias(table[i], this->createErrorType(s, this->getDBusErrorType()));
     }
 }
 
