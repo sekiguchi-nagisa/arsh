@@ -523,9 +523,57 @@ public:
     }
 };
 
+class ParseError {
+private:
+    Token errorToken;
+    std::string message;
+
+public:
+    ParseError(Token token, std::string &&message) : errorToken(token), message(std::move(message)) {}
+    ~ParseError() = default;
+
+    const Token &getErrorToken() const {
+        return this->errorToken;
+    }
+
+    const std::string &getMessage() const {
+        return this->message;
+    }
+};
+
+struct ParserErrorListener {
+    static void reportTokenMismatchedError(DescTokenKind kind, Token errorToken, DescTokenKind expected) {
+        std::string message = "mismatched token: ";
+        message += toString(kind);
+        message += ", expected: ";
+        message += toString(expected);
+
+        throw ParseError(errorToken, std::move(message));
+    }
+
+    static void reportNoViableAlterError(DescTokenKind kind, Token errorToken, std::vector<DescTokenKind> &&alters) {
+        std::string message = "no viable alternative: ";
+        message += toString(kind);
+        message += ", expected: ";
+        unsigned int count = 0;
+        for(auto &a : alters) {
+            if(count++ > 0) {
+                message += ", ";
+            }
+            message += toString(a);
+        }
+
+        throw ParseError(errorToken, std::move(message));
+    }
+
+    static void reportInvalidTokenError(DescTokenKind, Token errorToken) {
+        throw ParseError(errorToken, std::string("invalid token"));
+    }
+};
+
 #define CUR_KIND() (this->curKind)
 
-class Parser : public ydsh::parser_base::ParserBase<DescTokenKind, DescLexer> {
+class Parser : public ydsh::parser_base::ParserBase<DescTokenKind, DescLexer, ParserErrorListener> {
 private:
     Parser() = default;
 
@@ -564,8 +612,6 @@ private:
     std::unique_ptr<TypeToken> parse_type();
 
     void parse_funcDecl(const std::string &line, std::unique_ptr<Element> &element);
-
-    void printParseError(const ParseError &e);
 };
 
 void Parser::parse(const char *fileName, std::vector<std::unique_ptr<Element>> &elements) {
@@ -600,8 +646,7 @@ void Parser::parse(const char *fileName, std::vector<std::unique_ptr<Element>> &
             std::cerr << line << std::endl;
             exit(EXIT_FAILURE);
         } catch(const ParseError &e) {
-            std::cerr << fileName << ":" << lineNum << ": [error] ";
-            parser.printParseError(e);
+            std::cerr << fileName << ":" << lineNum << ": [error] " << e.getMessage() << std::endl;
             std::cerr << line << std::endl;
             Token lineToken;
             lineToken.pos = 0;
@@ -783,21 +828,6 @@ void Parser::parse_funcDecl(const std::string &line, std::unique_ptr<Element> &e
     this->expect(IDENTIFIER);
     this->expect(RP);
     this->expect(LBC);
-}
-
-void Parser::printParseError(const ParseError &e) {
-#define EACH_TYPE(OP) \
-    OP(TokenMismatchedError) \
-    OP(NoViableAlterError) \
-    OP(InvalidTokenError)
-
-#define PRINT(OP) if(dynamic_cast<const OP *>(&e) != nullptr) { \
-    std::cerr << *static_cast<const OP *>(&e) << std::endl; return; }
-
-    EACH_TYPE(PRINT)
-
-#undef PRINT
-#undef EACH_TYPE
 }
 
 #define OUT(fmt, ...) \

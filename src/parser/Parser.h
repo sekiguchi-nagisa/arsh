@@ -45,8 +45,128 @@ public:
     std::vector<Node *> remove();
 };
 
+class ParseError {
+protected:
+    TokenKind kind;
+    Token errorToken;
+    const char *errorKind;
 
-class Parser : public ydsh::parser_base::ParserBase<TokenKind, Lexer> {
+public:
+    ParseError(TokenKind kind, Token errorToken, const char *errorKind) :
+            kind(kind), errorToken(errorToken), errorKind(errorKind) { }
+
+    virtual ~ParseError() = default;
+
+    const Token &getErrorToken() const {
+        return this->errorToken;
+    }
+
+    TokenKind getTokenKind() const {
+        return this->kind;
+    }
+
+    const char *getErrorKind() const {
+        return this->errorKind;
+    }
+
+    virtual std::ostream &printMessage(std::ostream &stream) const = 0;
+};
+
+inline std::ostream &operator<<(std::ostream &stream, const ParseError &e) {
+    return e.printMessage(stream);
+}
+
+class TokenMismatchedError : public ParseError {
+private:
+    TokenKind expected;
+
+public:
+    TokenMismatchedError(TokenKind kind, Token errrorToken, TokenKind expected) :
+            ParseError(kind, errrorToken, "TokenMismatched"), expected(expected) { }
+
+    ~TokenMismatchedError() = default;
+
+    TokenKind getExpectedKind() const {
+        return this->expected;
+    }
+
+    bool operator==(const TokenMismatchedError &e) {
+        return this->errorToken == e.errorToken && this->expected == e.expected;
+    }
+
+    std::ostream &printMessage(std::ostream &stream) const;  // override
+};
+
+class NoViableAlterError : public ParseError {
+private:
+    std::vector<TokenKind> alters;
+
+public:
+    NoViableAlterError(TokenKind kind, Token errorToken, std::vector<TokenKind> &&alters) :
+            ParseError(kind, errorToken, "NoViableAlter"), alters(std::move(alters)) { }
+
+    ~NoViableAlterError() = default;
+
+    const std::vector<TokenKind> &getAlters() const {
+        return this->alters;
+    }
+
+    bool operator==(const NoViableAlterError &e);
+
+    std::ostream &printMessage(std::ostream &stream) const;  // override
+};
+
+class InvalidTokenError : public ParseError {
+public:
+    InvalidTokenError(TokenKind kind, Token errorToken) :
+            ParseError(kind, errorToken, "InvalidToken") { }
+
+    ~InvalidTokenError() = default;
+
+    bool operator==(const InvalidTokenError &e) {
+        return this->errorToken == e.errorToken;
+    }
+
+    std::ostream &printMessage(std::ostream &stream) const; // override
+};
+
+class TokenFormatError : public ParseError {
+private:
+    std::string message;
+
+public:
+    TokenFormatError(TokenKind  kind, Token errorToken, const char *message) :
+            ParseError(kind, errorToken, "TokenFormat"), message(message) {}
+
+    ~TokenFormatError() = default;
+
+    const std::string &getMessage() const {
+        return this->message;
+    }
+
+    bool operator==(const TokenFormatError &e) {
+        return this->errorToken == e.errorToken;
+    }
+
+    std::ostream &printMessage(std::ostream &stream) const; // override
+};
+
+struct ParserErrorListener {
+    static void reportTokenMismatchedError(TokenKind kind, Token errorToken, TokenKind expected) {
+        throw TokenMismatchedError(kind, errorToken, expected);
+    }
+
+    static void reportNoViableAlterError(TokenKind kind, Token errorToken, std::vector<TokenKind> &&alters) {
+        throw NoViableAlterError(kind, errorToken, std::move(alters));
+    }
+
+    static void reportInvalidTokenError(TokenKind kind, Token errorToken) {
+        throw InvalidTokenError(kind, errorToken);
+    }
+};
+
+
+class Parser : public ydsh::parser_base::ParserBase<TokenKind, Lexer, ParserErrorListener> {
 public:
     Parser() = default;
 
@@ -160,34 +280,6 @@ private:
  */
 bool parse(const char *sourceName, RootNode &rootNode);
 
-// for parser error
-
-typedef Parser::ParseError ParseError;
-typedef Parser::TokenMismatchedError TokenMismatchedError;
-typedef Parser::NoViableAlterError NoViableAlterError;
-typedef Parser::InvalidTokenError InvalidTokenError;
-
-
-class TokenFormatError : public ParseError {
-private:
-    std::string message;
-
-public:
-    TokenFormatError(TokenKind  kind, Token errorToken, const char *message) :
-            ParseError(kind, errorToken), message(message) {}
-
-    ~TokenFormatError() = default;
-
-    const std::string &getMessage() const {
-        return this->message;
-    }
-
-    bool operator==(const TokenFormatError &e) {
-        return this->errorToken == e.errorToken;
-    }
-};
-
-std::ostream &operator<<(std::ostream &stream, const TokenFormatError &e);
 
 } // namespace parser
 } // namespace ydsh

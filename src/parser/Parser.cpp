@@ -164,6 +164,67 @@ static inline std::unique_ptr<T> uniquify(A &&... args) {
     return std::unique_ptr<T>(new T(std::forward<A>(args)...));
 };
 
+// ##################################
+// ##     TokenMismatchedError     ##
+// ##################################
+
+std::ostream &TokenMismatchedError::printMessage(std::ostream &stream) const {
+    return stream << "mismatched token: "
+           << this->getTokenKind() << ", expected: " << this->getExpectedKind();
+}
+
+// ################################
+// ##     NoViableAlterError     ##
+// ################################
+
+bool NoViableAlterError::operator==(const NoViableAlterError &e) {
+    if(this->errorToken != e.errorToken) {
+        return false;
+    }
+
+    // check size
+    unsigned int size = this->alters.size();
+    if(size != e.alters.size()) {
+        return false;
+    }
+
+    // check each alters
+    for(unsigned int i = 0; i < size; i++) {
+        if(this->alters[i] != e.alters[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+std::ostream &NoViableAlterError::printMessage(std::ostream &stream) const {
+    stream << "no viable alternative: " << this->getTokenKind() << ", expected: ";
+    unsigned int count = 0;
+    for(auto &a : this->getAlters()) {
+        if(count++ > 0) {
+            stream << ", ";
+        }
+        stream << a;
+    }
+    return stream;
+}
+
+// ###############################
+// ##     InvalidTokenError     ##
+// ###############################
+
+std::ostream &InvalidTokenError::printMessage(std::ostream &stream) const {
+    return stream << "invalid token";
+}
+
+// ##############################
+// ##     TokenFormatError     ##
+// ##############################
+
+std::ostream &TokenFormatError::printMessage(std::ostream &stream) const {
+    return stream << this->getMessage() << ": " << this->getTokenKind();
+}
+
 
 // ####################
 // ##     Parser     ##
@@ -1328,11 +1389,6 @@ bool parse(const char *sourceName, RootNode &rootNode) {
         return false;   //FIXME: display error message.
     }
     return true;
-}
-
-// parser error
-std::ostream &operator<<(std::ostream &stream, const TokenFormatError &e) {
-    return stream << e.getMessage() << ": " << e.getTokenKind();
 }
 
 } // namespace parser

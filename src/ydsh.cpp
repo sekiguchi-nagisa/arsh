@@ -138,25 +138,6 @@ DSContext::DSContext() :
     }
 }
 
-static std::ostream &format(std::ostream &stream, const ParseError &e) {
-#define EACH_ERROR(E) \
-    E(TokenMismatchedError) \
-    E(NoViableAlterError) \
-    E(InvalidTokenError) \
-    E(TokenFormatError)
-
-#define DISPATCH(E) if(dynamic_cast<const E *>(&e) != nullptr) { \
-    stream << *static_cast<const E *>(&e); return stream; }
-
-    EACH_ERROR(DISPATCH)
-
-    fatal("unsupported parse error kind\n");
-    return stream;
-
-#undef DISPATCH
-#undef EACH_ERROR
-}
-
 static std::ostream &formatErrorLine(std::ostream &stream, const Lexer &lexer, const Token &errorToken) {
     Token lineToken = lexer.getLineToken(errorToken, true);
     stream << misc::TermColor::Cyan << lexer.toTokenText(lineToken) << misc::reset << std::endl;
@@ -174,35 +155,13 @@ void DSContext::handleParseError(const Lexer &lexer, const ParseError &e) {
     }
 
     std::cerr << lexer.getSourceInfoPtr()->getSourceName() << ":" << errorLineNum << ":"
-    << misc::TermColor::Magenta << " [syntax error] " << misc::reset;
-    format(std::cerr, e) << std::endl;
+    << misc::TermColor::Magenta << " [syntax error] " << misc::reset << e << std::endl;
     formatErrorLine(std::cerr, lexer, e.getErrorToken()) << std::endl;
 
     /**
      * update execution status
      */
-#define EACH_ERROR(E) \
-    E(TokenMismatched, 0) \
-    E(NoViableAlter  , 1) \
-    E(InvalidToken   , 2) \
-    E(TokenFormat    , 3)
-
-    static const char *strs[] = {
-#define GEN_STR(K, N) #K,
-            EACH_ERROR(GEN_STR)
-#undef GEN_STR
-    };
-
-#define DISPATCH(K, N) if(dynamic_cast<const K##Error *>(&e) != nullptr) { kind = strs[N]; }
-
-    const char *kind = "";
-    EACH_ERROR(DISPATCH)
-
-#undef DISPATCH
-
-#undef EACH_ERROR
-
-    this->updateStatus(DS_STATUS_PARSE_ERROR, errorLineNum, kind);
+    this->updateStatus(DS_STATUS_PARSE_ERROR, errorLineNum, e.getErrorKind());
 }
 
 void DSContext::handleTypeError(const Lexer &lexer, const TypeCheckError &e) {

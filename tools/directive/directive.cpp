@@ -125,6 +125,41 @@ bool TypeEnv::hasType(const std::string &name) {
 }
 
 
+// #################################
+// ##     ParserErrorListener     ##
+// #################################
+
+void ParserErrorListener::reportTokenMismatchedError(TokenKind kind,
+                                                           Token errorToken, TokenKind expected) {
+    std::string message = "mismatched token: ";
+    message += toString(kind);
+    message += ", expected: ";
+    message += toString(expected);
+
+    throw ParseError(errorToken, std::move(message));
+}
+
+void ParserErrorListener::reportNoViableAlterError(TokenKind kind,
+                                                         Token errorToken, std::vector<TokenKind> &&alters) {
+    std::string message = "no viable alternative: ";
+    message += toString(kind);
+    message += ", expected: ";
+    unsigned int count = 0;
+    for(auto &a : alters) {
+        if(count++ > 0) {
+            message += ", ";
+        }
+        message += toString(a);
+    }
+
+    throw ParseError(errorToken, std::move(message));
+}
+
+void ParserErrorListener::reportInvalidTokenError(TokenKind, Token errorToken) {
+    throw ParseError(errorToken, std::string("invalid token"));
+}
+
+
 // #############################
 // ##     DirectiveParser     ##
 // #############################
@@ -167,14 +202,14 @@ bool DirectiveParser::operator()(const char *sourceName, std::istream &input, Di
             DirectiveInitializer()(node, d);
             return true;
         } catch(const ParseError &e) {
-            std::cerr << sourceName << ":" << lexer.getLineNum() << ": [syntax error] ";
-            if(dynamic_cast<const TokenMismatchedError *>(&e)) {
-                std::cerr << *static_cast<const TokenMismatchedError *>(&e) << std::endl;
-            } else if(dynamic_cast<const NoViableAlterError *>(&e)) {
-                std::cerr << *static_cast<const NoViableAlterError *>(&e) << std::endl;
-            } else if(dynamic_cast<const InvalidTokenError *>(&e)) {
-                std::cerr << *static_cast<const InvalidTokenError *>(&e) << std::endl;
-            }
+            std::cerr << sourceName << ":" << lexer.getLineNum() << ": [syntax error] " << e.getMessage() << std::endl;
+//            if(dynamic_cast<const TokenMismatchedError *>(&e)) {
+//                std::cerr << *static_cast<const TokenMismatchedError *>(&e) << std::endl;
+//            } else if(dynamic_cast<const NoViableAlterError *>(&e)) {
+//                std::cerr << *static_cast<const NoViableAlterError *>(&e) << std::endl;
+//            } else if(dynamic_cast<const InvalidTokenError *>(&e)) {
+//                std::cerr << *static_cast<const InvalidTokenError *>(&e) << std::endl;
+//            }
 
             std::cerr << src << std::endl;
             Token lineToken;

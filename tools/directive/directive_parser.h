@@ -260,6 +260,24 @@ public:
     }
 };
 
+class ParseError {
+private:
+    Token errorToken;
+    std::string message;
+
+public:
+    ParseError(const Token &token, std::string &&message) :
+            errorToken(token), message(std::move(message)) {}
+    ~ParseError()= default;
+
+    const Token &getErrorToken() const {
+        return this->errorToken;
+    }
+
+    const std::string &getMessage() const {
+        return this->message;
+    }
+};
 
 class SemanticError {
 private:
@@ -282,12 +300,18 @@ public:
     }
 };
 
+struct ParserErrorListener {
+    static void reportTokenMismatchedError(TokenKind kind, Token errorToken, TokenKind expected);
+    static void reportNoViableAlterError(TokenKind kind, Token errorToken, std::vector<TokenKind> &&alters);
+    static void reportInvalidTokenError(TokenKind kind, Token errorToken);
+};
+
 /**
  * ex. $test($result = "SUCCESS", $args = ['sd', '32'])
  *
  * test directive use subset of ydsh lexical rule.
  */
-class DirectiveParser : public ydsh::parser_base::ParserBase<TokenKind, Lexer> {
+class DirectiveParser : public ydsh::parser_base::ParserBase<TokenKind, Lexer, ParserErrorListener> {
 public:
     DirectiveParser() = default;
     ~DirectiveParser() = default;
