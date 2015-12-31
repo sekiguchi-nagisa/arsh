@@ -177,26 +177,6 @@ std::ostream &TokenMismatchedError::printMessage(std::ostream &stream) const {
 // ##     NoViableAlterError     ##
 // ################################
 
-bool NoViableAlterError::operator==(const NoViableAlterError &e) {
-    if(this->errorToken != e.errorToken) {
-        return false;
-    }
-
-    // check size
-    unsigned int size = this->alters.size();
-    if(size != e.alters.size()) {
-        return false;
-    }
-
-    // check each alters
-    for(unsigned int i = 0; i < size; i++) {
-        if(this->alters[i] != e.alters[i]) {
-            return false;
-        }
-    }
-    return true;
-}
-
 std::ostream &NoViableAlterError::printMessage(std::ostream &stream) const {
     stream << "no viable alternative: " << this->getTokenKind() << ", expected: ";
     unsigned int count = 0;
@@ -851,8 +831,8 @@ std::unique_ptr<Node> Parser::parse_commandListExpression() {
 std::unique_ptr<Node> Parser::parse_orListCommand() {
     std::unique_ptr<Node> node(this->parse_andListCommand());
 
-    while(CUR_KIND() == OR_LIST) {
-        this->expect(OR_LIST);
+    while(CUR_KIND() == COND_OR) {
+        this->expect(COND_OR);
         std::unique_ptr<Node> rightNode(this->parse_andListCommand());
         node = uniquify<CondOpNode>(node.release(), rightNode.release(), false);
     }
@@ -862,8 +842,8 @@ std::unique_ptr<Node> Parser::parse_orListCommand() {
 std::unique_ptr<Node> Parser::parse_andListCommand() {
     std::unique_ptr<Node> node(this->parse_pipedCommand());
 
-    while(CUR_KIND() == AND_LIST) {
-        this->expect(AND_LIST);
+    while(CUR_KIND() == COND_AND) {
+        this->expect(COND_AND);
         std::unique_ptr<Node> rightNode(this->parse_pipedCommand());
         node = uniquify<CondOpNode>(node.release(), rightNode.release(), true);
     }

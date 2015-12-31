@@ -1518,7 +1518,7 @@ TEST_F(LexerTest_Lv1, COND_AND3) {
         SCOPED_TRACE("");
         this->initLexer(text);
         this->lexer->pushLexerMode(yycCMD);
-        EXPECT(AND_LIST, text, EOS, "");
+        EXPECT(COND_AND, text, EOS, "");
         this->assertLexerMode(yycSTMT);
     });
 }
@@ -1548,7 +1548,7 @@ TEST_F(LexerTest_Lv1, COND_OR3) {
         SCOPED_TRACE("");
         this->initLexer(text);
         this->lexer->pushLexerMode(yycCMD);
-        EXPECT(OR_LIST, text, EOS, "");
+        EXPECT(COND_OR, text, EOS, "");
         this->assertLexerMode(yycSTMT);
     });
 }

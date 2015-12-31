@@ -23,13 +23,13 @@
 #endif
 
 // helper macro definition.
-#define RET(k) do { kind = k; goto END; } while(0)
+#define RET(k) do { kind = k; goto END; } while(false)
 
-#define REACH_EOS() do { this->endOfString = true; goto EOS; } while(0)
+#define REACH_EOS() do { this->endOfString = true; goto EOS; } while(false)
 
 #define SKIP() goto INIT
 
-#define ERROR() do { RET(INVALID); } while(0)
+#define ERROR() do { RET(INVALID); } while(false)
 
 #define POP_MODE() \
     do {\
@@ -38,7 +38,7 @@
         } else {\
             ERROR();\
         }\
-    } while(0)
+    } while(false)
 
 #define PUSH_MODE(m) this->modeStack.push_back(yyc ## m)
 
@@ -49,7 +49,7 @@
         } else {\
             ERROR();\
         }\
-    } while(0)
+    } while(false)
 
 /*
  * update line number table
@@ -61,19 +61,19 @@
             if(this->buf[i] == '\n') \
             { this->srcInfoPtr->addNewlinePos(i); } \
         }\
-    } while(0)
+    } while(false)
 
 #define FIND_NEW_LINE() \
     do {\
         foundNewLine = true;\
         SKIP();\
-    } while(0)
+    } while(false)
 
 #define FIND_SPACE() \
     do {\
         foundSpace = true;\
         SKIP();\
-    } while(0)
+    } while(false)
 
 
 
@@ -271,8 +271,8 @@ TokenKind Lexer::nextToken(Token &token) {
 
       <CMD> "|"                { POP_MODE(); MODE(STMT); RET(PIPE); }
       <CMD> "&"                { RET(BACKGROUND); }
-      <CMD> "||"               { POP_MODE(); MODE(STMT); RET(OR_LIST); }
-      <CMD> "&&"               { POP_MODE(); MODE(STMT); RET(AND_LIST); }
+      <CMD> "||"               { POP_MODE(); MODE(STMT); RET(COND_OR); }
+      <CMD> "&&"               { POP_MODE(); MODE(STMT); RET(COND_AND); }
       <CMD> LINE_END           { POP_MODE(); MODE(STMT); RET(LINE_END); }
       <CMD> NEW_LINE           { POP_MODE(); MODE(STMT); UPDATE_LN(); RET(LINE_END); }
 

@@ -90,10 +90,6 @@ public:
         return this->expected;
     }
 
-    bool operator==(const TokenMismatchedError &e) {
-        return this->errorToken == e.errorToken && this->expected == e.expected;
-    }
-
     std::ostream &printMessage(std::ostream &stream) const;  // override
 };
 
@@ -111,8 +107,6 @@ public:
         return this->alters;
     }
 
-    bool operator==(const NoViableAlterError &e);
-
     std::ostream &printMessage(std::ostream &stream) const;  // override
 };
 
@@ -122,10 +116,6 @@ public:
             ParseError(kind, errorToken, "InvalidToken") { }
 
     ~InvalidTokenError() = default;
-
-    bool operator==(const InvalidTokenError &e) {
-        return this->errorToken == e.errorToken;
-    }
 
     std::ostream &printMessage(std::ostream &stream) const; // override
 };
@@ -142,10 +132,6 @@ public:
 
     const std::string &getMessage() const {
         return this->message;
-    }
-
-    bool operator==(const TokenFormatError &e) {
-        return this->errorToken == e.errorToken;
     }
 
     std::ostream &printMessage(std::ostream &stream) const; // override

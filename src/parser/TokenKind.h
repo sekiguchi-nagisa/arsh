@@ -139,8 +139,6 @@
     TOKEN(REDIR_MERGE_OUT_2_ERR              , "1>&2") \
     TOKEN(PIPE                               , "|") \
     TOKEN(BACKGROUND                         , "&") \
-    TOKEN(OR_LIST                            , "||") \
-    TOKEN(AND_LIST                           , "&&") \
     /* type  */\
     TOKEN(TYPE_OPEN                          , "<") /* < */\
     TOKEN(TYPE_CLOSE                         , ">") /* > */\
