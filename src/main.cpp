@@ -16,6 +16,8 @@
 
 #include <iostream>
 
+#include <unistd.h>
+
 #include <ydsh/ydsh.h>
 #include "misc/argv.hpp"
 
