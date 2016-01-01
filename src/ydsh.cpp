@@ -18,6 +18,10 @@
 #include <pwd.h>
 #include <iostream>
 #include <clocale>
+#include <csignal>
+
+#include <unistd.h>
+#include <execinfo.h>
 
 #include <ydsh/ydsh.h>
 #include "config.h"
@@ -365,11 +369,60 @@ unsigned int DSContext::getShellLevel() {
     return level;
 }
 
+static void segvHandler(int, siginfo_t *info, void *) {
+    // write message
+    long addr = (long)info->si_addr;
+    if(addr > 0) { // stack over flow
+        char msg[] = "+++++ detect Stack Overflow +++++\n";
+        write(STDERR_FILENO, msg, strlen(msg));
+    } else {
+        char msg[] = "+++++ detect Segmentation fault +++++\n";
+        write(STDERR_FILENO, msg, strlen(msg));
+    }
+
+    // get backtrace
+    const unsigned int size = 128;
+    void *buf[size];
+
+    int retSize = backtrace(buf, size);
+    backtrace_symbols_fd(buf, retSize, STDERR_FILENO);
+    fsync(STDERR_FILENO);
+
+    abort();
+}
+
+static void installSEGVHandler() {
+    // init alternative stack (for signal handler)
+    static char altStack[SIGSTKSZ];
+    stack_t ss;
+    ss.ss_sp = altStack;
+    ss.ss_size = SIGSTKSZ;
+    ss.ss_flags = 0;
+
+    if(sigaltstack(&ss, nullptr) == -1) {
+        perror("sigaltstack failed\n");
+        exit(1);
+    }
+
+    // set signal handler for SIGSEGV
+    struct sigaction act;
+    act.sa_sigaction = segvHandler;
+    act.sa_flags = SA_ONSTACK | SA_SIGINFO;
+    sigfillset(&act.sa_mask);
+
+    if(sigaction(SIGSEGV, &act, nullptr) < 0) {
+        perror("setup signal handler failed\n");
+        exit(1);
+    }
+}
+
 // #####################################
 // ##     public api of DSContext     ##
 // #####################################
 
 DSContext *DSContext_create() {
+    installSEGVHandler();
+
     DSContext *ctx = new DSContext();
     ctx->initBuiltinVar();
     ctx->loadEmbeddedScript();

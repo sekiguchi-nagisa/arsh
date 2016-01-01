@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-#include <unistd.h>
-#include <execinfo.h>
-
-#include <csignal>
 #include <iostream>
 
 #include <ydsh/ydsh.h>
@@ -89,22 +85,6 @@ static void showFeature(std::ostream &stream) {
     }
 }
 
-static void segvHandler(int) {
-    // write message
-    char msg[] = "+++++ catch Segmentation fault +++++\n";
-    write(STDERR_FILENO, msg, strlen(msg));
-
-    // get backtrace
-    const unsigned int size = 128;
-    void *buf[size];
-
-    int retSize = backtrace(buf, size);
-    backtrace_symbols_fd(buf, retSize, STDERR_FILENO);
-    fsync(STDERR_FILENO);
-
-    abort();
-}
-
 #define EACH_OPT(OP) \
     OP(DUMP_UAST,      "--dump-untyped-ast",  0, "dump abstract syntax tree (before type checking)") \
     OP(DUMP_AST,       "--dump-ast",          0, "dump abstract syntax tree (after type checking)") \
@@ -146,30 +126,6 @@ enum class InvocationKind {
 };
 
 int main(int argc, char **argv) {
-    // init alternative stack (for signal handler)
-    static char altStack[SIGSTKSZ];
-    stack_t ss;
-    ss.ss_sp = altStack;
-    ss.ss_size = SIGSTKSZ;
-    ss.ss_flags = 0;
-
-    if(sigaltstack(&ss, nullptr) == -1) {
-        perror("sigaltstack failed\n");
-        return 1;
-    }
-
-    // set signal handler for SIGSEGV
-    struct sigaction act;
-    act.sa_handler = segvHandler;
-    act.sa_flags = SA_ONSTACK;
-    sigfillset(&act.sa_mask);
-
-    if(sigaction(SIGSEGV, &act, nullptr) < 0) {
-        perror("setup signal handler failed\n");
-        return 1;
-    }
-
-
     argv::CmdLines<OptionKind> cmdLines;
     int restIndex = argc;
     try {
