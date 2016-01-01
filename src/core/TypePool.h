@@ -126,6 +126,7 @@ public:
         TypeCastError,
         DBusError,
         SystemError,    // for errno
+        StackOverflowError,
 
         /**
          * for internal status reporting.
@@ -321,6 +322,10 @@ public:
 
     DSType &getSystemErrorType() const {
         return *this->typeTable[SystemError];
+    }
+
+    DSType &getStackOverflowErrorType() const {
+        return *this->typeTable[StackOverflowError];
     }
 
     // for internal status reporting

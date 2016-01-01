@@ -166,6 +166,11 @@ void RuntimeContext::throwSystemError(int errorNum, std::string &&message) {
     this->throwError(this->pool.getSystemErrorType(), std::move(str));
 }
 
+void RuntimeContext::raiseCircularReferenceError() {
+    this->throwError(this->pool.getStackOverflowErrorType(), "caused by circular reference");
+    throw NativeMethodError();
+}
+
 
 void RuntimeContext::expandLocalStack(unsigned int needSize) {
     unsigned int newSize = this->localStackSize;
@@ -236,13 +241,17 @@ EvalStatus RuntimeContext::callMethod(unsigned int startPos, const std::string &
     this->pushCallFrame(startPos);
 
     bool status;
-    // check method handle type
-    if(!handle->isInterfaceMethod()) {  // call virtual method
-        status = this->localStack[savedStackTopIndex + 1]->
-                getType()->getMethodRef(handle->getMethodIndex())->invoke(*this);
-    } else {    // call proxy method
-        status = typeAs<ProxyObject>(this->localStack[savedStackTopIndex + 1])->
-                invokeMethod(*this, methodName, handle);
+    try {
+        // check method handle type
+        if(!handle->isInterfaceMethod()) {  // call virtual method
+            status = this->localStack[savedStackTopIndex + 1]->
+                    getType()->getMethodRef(handle->getMethodIndex())->invoke(*this);
+        } else {    // call proxy method
+            status = typeAs<ProxyObject>(this->localStack[savedStackTopIndex + 1])->
+                    invokeMethod(*this, methodName, handle);
+        }
+    } catch(const NativeMethodError &e) {
+        status = false;
     }
 
     this->popCallFrame();
@@ -324,7 +333,12 @@ void RuntimeContext::reportError() {
         this->loadThrownObject();
         this->callMethod(0, methodName, this->handle_bt);
     } else {
-        std::cerr << this->thrownObject->toString(*this) << std::endl;
+        this->loadThrownObject();
+        if(this->toString(0) != EvalStatus::SUCCESS) {
+            std::cerr << "cannot obtain string representation" << std::endl;
+        } else {
+            std::cerr << typeAs<String_Object>(this->pop())->getValue() << std::endl;
+        }
     }
 }
 
@@ -358,8 +372,12 @@ void RuntimeContext::fillInStackTrace(std::vector<StackTraceElement> &stackTrace
 
 void RuntimeContext::printStackTop(DSType *stackTopType) {
     if(!stackTopType->isVoidType()) {
-        std::cout << "(" << this->pool.getTypeName(*stackTopType)
-        << ") " << this->pop()->toString(*this) << std::endl;
+        if(this->toString(0) != EvalStatus::SUCCESS) {
+            std::cerr << "cannot obtain string representation" << std::endl;
+        } else {
+            std::cout << "(" << this->pool.getTypeName(*stackTopType) << ") "
+            << typeAs<String_Object>(this->pop())->getValue() << std::endl;
+        }
     }
 }
 

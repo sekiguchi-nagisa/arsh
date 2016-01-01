@@ -161,7 +161,7 @@ static inline bool to_str(RuntimeContext & ctx) {
 //!bind: function $OP_INTERP($this : Any) : String
 static inline bool to_interp(RuntimeContext & ctx) {
     SUPPRESS_WARNING(to_interp);
-    RET(LOCAL(0)->interp(ctx));
+    RET(LOCAL(0)->interp(ctx, nullptr));
 }
 
 
@@ -1426,7 +1426,7 @@ static inline bool array_hasNext(RuntimeContext &ctx) {
 //!bind: function $OP_CMD_ARG($this : Array<T0>) : Array<String>
 static inline bool array_cmdArg(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_cmdArg);
-    RET(LOCAL(0)->commandArg(ctx));
+    RET(LOCAL(0)->commandArg(ctx, nullptr));
 }
 
 
@@ -1449,7 +1449,7 @@ static inline bool map_get(RuntimeContext &ctx) {
     auto iter = obj->getValueMap().find(LOCAL(1));
     if(iter == obj->getValueMap().end()) {
         std::string msg("not found key: ");
-        msg += LOCAL(1)->toString(ctx);
+        msg += LOCAL(1)->toString(ctx, nullptr);
         ctx.throwError(ctx.getPool().getKeyNotFoundErrorType(), std::move(msg));
         return false;
     }
@@ -1511,7 +1511,7 @@ static inline bool map_swap(RuntimeContext &ctx) {
     auto iter = obj->refValueMap().find(LOCAL(1));
     if(iter == obj->refValueMap().end()) {
         std::string msg("not found key: ");
-        msg += LOCAL(1)->toString(ctx);
+        msg += LOCAL(1)->toString(ctx, nullptr);
         ctx.throwError(ctx.getPool().getKeyNotFoundErrorType(), std::move(msg));
         return false;
     }
@@ -1569,7 +1569,7 @@ static inline bool tuple_init(RuntimeContext &ctx) {
 //!bind: function $OP_CMD_ARG($this : Tuple<>) : Array<String>
 static inline bool tuple_cmdArg(RuntimeContext &ctx) {
     SUPPRESS_WARNING(tuple_cmdArg);
-    RET(LOCAL(0)->commandArg(ctx));
+    RET(LOCAL(0)->commandArg(ctx, nullptr));
 }
 
 

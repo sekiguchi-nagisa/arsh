@@ -1,0 +1,27 @@
+
+var a = new Tuple<Any>(0)
+var b = new Map<Int, Any>()
+var c = new Array<Any>()
+
+$a._0 = $a
+$b[0] = $c
+$c.push(34)
+$c.push($b)
+
+
+# to string
+try { $a as String; assert($false); } catch($e) { assert($e is StackOverflowError) }
+try { $b as String; assert($false); } catch($e) { assert($e is StackOverflowError) }
+try { $c as String; assert($false); } catch($e) { assert($e is StackOverflowError) }
+
+
+# to command argument
+try { echo $a; assert($false); } catch($e) { assert($e is StackOverflowError) }
+try { echo $b; assert($false); } catch($e) { assert($e is StackOverflowError) }
+try { echo $c; assert($false); } catch($e) { assert($e is StackOverflowError) }
+
+
+# string interpolation
+try { "$a"; assert($false); } catch($e) { assert($e is StackOverflowError) }
+try { "$b"; assert($false); } catch($e) { assert($e is StackOverflowError) }
+try { "$c"; assert($false); } catch($e) { assert($e is StackOverflowError) }

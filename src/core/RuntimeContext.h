@@ -294,6 +294,11 @@ public:
     void throwSystemError(int errorNum, std::string &&message);
 
     /**
+     * create StackOverflowError and throw NativeMethodError
+     */
+    void raiseCircularReferenceError();
+
+    /**
      * pop and set to throwObject
      */
     void storeThrowObject() {
@@ -569,6 +574,9 @@ pid_t xfork(void);
 
 // for internal status reporting
 struct InternalError {};
+
+// for native method exception (ex. StackOverflow)
+struct NativeMethodError {};
 
 } // namespace core
 } // namespace ydsh

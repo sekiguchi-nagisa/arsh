@@ -189,6 +189,7 @@ TypePool::TypePool() :
     this->initErrorType(TypeCastError, "TypeCastError", this->getErrorType());
     this->initErrorType(DBusError, "DBusError", this->getErrorType());
     this->initErrorType(SystemError, "SystemError", this->getErrorType());
+    this->initErrorType(StackOverflowError, "StackOverflowError", this->getErrorType());
 
     this->registerDBusErrorTypes();
 
