@@ -136,7 +136,7 @@ public:
 
     ~FunctionHandle() = default;
 
-    DSType *getFieldType(TypePool &typePool);   // override
+    DSType *getFieldType(TypePool &typePool) override;
 
     DSType *getReturnType() const {
         return this->returnType;

@@ -216,10 +216,10 @@ public:
     /**
      * lookup from super type
      */
-    MethodHandle *lookupMethodHandle(TypePool &typePool, const std::string &methodName);    // override
+    MethodHandle *lookupMethodHandle(TypePool &typePool, const std::string &methodName) override;
 
-    FieldHandle *findHandle(const std::string &fieldName);  // override
-    void accept(TypeVisitor *visitor); // override
+    FieldHandle *findHandle(const std::string &fieldName) override;
+    void accept(TypeVisitor *visitor) override;
 };
 
 /**
@@ -292,14 +292,14 @@ public:
 
     virtual ~BuiltinType();
 
-    virtual MethodHandle *getConstructorHandle(TypePool &typePool); // override
-    const MethodRef *getConstructor();   // override.
-    MethodHandle *lookupMethodHandle(TypePool &typePool, const std::string &methodName);  // override
-    virtual FieldHandle *findHandle(const std::string &fieldName); // override
-    virtual void accept(TypeVisitor *visitor); // override
-    unsigned int getMethodSize(); // override
-    MethodRef *getMethodRef(unsigned int methodIndex); // override
-    void copyAllMethodRef(std::vector<MethodRef> &methodTable); // override
+    virtual MethodHandle *getConstructorHandle(TypePool &typePool) override;
+    const MethodRef *getConstructor() override;
+    MethodHandle *lookupMethodHandle(TypePool &typePool, const std::string &methodName) override;
+    virtual FieldHandle *findHandle(const std::string &fieldName) override;
+    virtual void accept(TypeVisitor *visitor) override;
+    unsigned int getMethodSize() override;
+    MethodRef *getMethodRef(unsigned int methodIndex) override;
+    void copyAllMethodRef(std::vector<MethodRef> &methodTable) override;
 
 protected:
     virtual void initMethodHandle(MethodHandle *handle, TypePool &typePool, NativeFuncInfo &info);
@@ -328,10 +328,9 @@ public:
         return this->elementTypes;
     }
 
-    virtual void accept(TypeVisitor *visitor); // override
-
+    virtual void accept(TypeVisitor *visitor) override;
 protected:
-    void initMethodHandle(MethodHandle *handle, TypePool &typePool, NativeFuncInfo &info); // override
+    void initMethodHandle(MethodHandle *handle, TypePool &typePool, NativeFuncInfo &info) override;
 };
 
 
@@ -346,16 +345,16 @@ public:
     TupleType(native_type_info_t info, DSType *superType, std::vector<DSType *> &&types);
     ~TupleType();
 
-    MethodHandle *getConstructorHandle(TypePool &typePool); // override
+    MethodHandle *getConstructorHandle(TypePool &typePool) override;
 
     /**
      * return types.size()
      */
-    unsigned int getFieldSize(); // override
+    unsigned int getFieldSize() override;
 
-    FieldHandle *lookupFieldHandle(TypePool &typePool, const std::string &fieldName); // override
-    FieldHandle *findHandle(const std::string &fieldName); // override
-    void accept(TypeVisitor *visitor); // override
+    FieldHandle *lookupFieldHandle(TypePool &typePool, const std::string &fieldName) override;
+    FieldHandle *findHandle(const std::string &fieldName) override;
+    void accept(TypeVisitor *visitor) override;
 };
 
 
@@ -385,12 +384,12 @@ public:
 
     MethodHandle *newMethodHandle(const std::string &methodName);
 
-    unsigned int getFieldSize();    // override
-    unsigned int getMethodSize();   // override
-    FieldHandle *lookupFieldHandle(TypePool &typePool, const std::string &fieldName);   // override
-    MethodHandle *lookupMethodHandle(TypePool &typePool, const std::string &methodName); // override
-    FieldHandle *findHandle(const std::string &fieldName); // override
-    void accept(TypeVisitor *visitor); // override
+    unsigned int getFieldSize() override;
+    unsigned int getMethodSize() override;
+    FieldHandle *lookupFieldHandle(TypePool &typePool, const std::string &fieldName) override;
+    MethodHandle *lookupMethodHandle(TypePool &typePool, const std::string &methodName) override;
+    FieldHandle *findHandle(const std::string &fieldName) override;
+    void accept(TypeVisitor *visitor) override;
 };
 
 class ErrorType : public DSType {
@@ -408,19 +407,18 @@ public:
 
     ~ErrorType();
 
-    MethodHandle *getConstructorHandle(TypePool &typePool); // override
-    const MethodRef *getConstructor();    // override
+    MethodHandle *getConstructorHandle(TypePool &typePool) override;
+    const MethodRef *getConstructor() override;
 
     /**
      * return types.size()
      */
-    unsigned int getFieldSize(); // override
+    unsigned int getFieldSize() override;
 
-    FieldHandle *lookupFieldHandle(TypePool &typePool, const std::string &fieldName); // override
-    MethodHandle *lookupMethodHandle(TypePool &typePool, const std::string &methodName);    // override
-    FieldHandle *findHandle(const std::string &fieldName); // override
-    void accept(TypeVisitor *visitor); // override
-
+    FieldHandle *lookupFieldHandle(TypePool &typePool, const std::string &fieldName) override;
+    MethodHandle *lookupMethodHandle(TypePool &typePool, const std::string &methodName) override;
+    FieldHandle *findHandle(const std::string &fieldName) override;
+    void accept(TypeVisitor *visitor) override;
     /**
      * call only once.
      */

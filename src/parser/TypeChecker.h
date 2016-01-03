@@ -89,14 +89,14 @@ public:
          */
         DSType &generateTypeAndThrow(TypeNode *typeNode) throw(TypeCheckError);
 
-        void visitDefault(Node &node); // override
+        void visitDefault(Node &node) override;
 
-        void visitBaseTypeNode(BaseTypeNode &typeNode);    // overrode
-        void visitReifiedTypeNode(ReifiedTypeNode &typeNode);    // override
-        void visitFuncTypeNode(FuncTypeNode &typeNode);  // override
-        void visitDBusIfaceTypeNode(DBusIfaceTypeNode &typeNode);    // override
-        void visitReturnTypeNode(ReturnTypeNode &typeNode);  // override
-        void visitTypeOfNode(TypeOfNode &typeNode); // override
+        void visitBaseTypeNode(BaseTypeNode &typeNode) override;
+        void visitReifiedTypeNode(ReifiedTypeNode &typeNode) override;
+        void visitFuncTypeNode(FuncTypeNode &typeNode) override;
+        void visitDBusIfaceTypeNode(DBusIfaceTypeNode &typeNode) override;
+        void visitReturnTypeNode(ReturnTypeNode &typeNode) override;
+        void visitTypeOfNode(TypeOfNode &typeNode) override;
 
     private:
         DSType &generateType(TypeNode *typeNode);
@@ -269,64 +269,64 @@ private:
     void checkTypeArgsNode(Node &node, MethodHandle *handle, std::vector<Node *> &argNodes);
 
     // visitor api
-    void visit(Node &node); // override
-    void visitBaseTypeNode(BaseTypeNode &typeNode);    // overrode
-    void visitReifiedTypeNode(ReifiedTypeNode &typeNode);    // override
-    void visitFuncTypeNode(FuncTypeNode &typeNode);  // override
-    void visitDBusIfaceTypeNode(DBusIfaceTypeNode &typeNode);    // override
-    void visitReturnTypeNode(ReturnTypeNode &typeNode);  // override
-    void visitTypeOfNode(TypeOfNode &typeNode); // override
-    void visitIntValueNode(IntValueNode &node); // override
-    void visitLongValueNode(LongValueNode &node); // override
-    void visitFloatValueNode(FloatValueNode &node); // override
-    void visitStringValueNode(StringValueNode &node); // override
-    void visitObjectPathNode(ObjectPathNode &node); // override
-    void visitStringExprNode(StringExprNode &node); // override
-    void visitArrayNode(ArrayNode &node); // override
-    void visitMapNode(MapNode &node); // override
-    void visitTupleNode(TupleNode &node); // override
-    void visitVarNode(VarNode &node); // override
-    void visitAccessNode(AccessNode &node); // override
-    void visitCastNode(CastNode &node); // override
-    void visitInstanceOfNode(InstanceOfNode &node); // override
-    void visitUnaryOpNode(UnaryOpNode &node); // override
-    void visitBinaryOpNode(BinaryOpNode &node); // override
-    void visitApplyNode(ApplyNode &node); // override
-    void visitMethodCallNode(MethodCallNode &node); // override
-    void visitNewNode(NewNode &node); // override
-    void visitGroupNode(GroupNode &node); // override
-    void visitCondOpNode(CondOpNode &node); // override
-    void visitCmdNode(CmdNode &node); // override
-    void visitCmdArgNode(CmdArgNode &node); // override
-    void visitRedirNode(RedirNode &node); // override
-    void visitTildeNode(TildeNode &node); // override
-    void visitPipedCmdNode(PipedCmdNode &node); // override
-    void visitCmdContextNode(CmdContextNode &node); // override
-    void visitAssertNode(AssertNode &node); // override
-    void visitBlockNode(BlockNode &node); // override
-    void visitBreakNode(BreakNode &node); // override
-    void visitContinueNode(ContinueNode &node); // override
-    void visitExportEnvNode(ExportEnvNode &node); // override
-    void visitImportEnvNode(ImportEnvNode &node); // override
-    void visitTypeAliasNode(TypeAliasNode &node); // override
-    void visitForNode(ForNode &node); // override
-    void visitWhileNode(WhileNode &node); // override
-    void visitDoWhileNode(DoWhileNode &node); // override
-    void visitIfNode(IfNode &node); // override
-    void visitReturnNode(ReturnNode &node); // override
-    void visitThrowNode(ThrowNode &node); // override
-    void visitCatchNode(CatchNode &node); // override
-    void visitTryNode(TryNode &node); // override
-    void visitVarDeclNode(VarDeclNode &node); // override
-    void visitAssignNode(AssignNode &node); // override
-    void visitElementSelfAssignNode(ElementSelfAssignNode &node); // override
-    void visitFunctionNode(FunctionNode &node); // override
-    void visitInterfaceNode(InterfaceNode &node); // override
-    void visitUserDefinedCmdNode(UserDefinedCmdNode &node); // override
-    void visitBindVarNode(BindVarNode &node); // override
-    void visitEmptyNode(EmptyNode &node); // override
-    void visitDummyNode(DummyNode &node); // override
-    void visitRootNode(RootNode &node); // override
+    void visit(Node &node) override;
+    void visitBaseTypeNode(BaseTypeNode &typeNode) override;
+    void visitReifiedTypeNode(ReifiedTypeNode &typeNode) override;
+    void visitFuncTypeNode(FuncTypeNode &typeNode) override;
+    void visitDBusIfaceTypeNode(DBusIfaceTypeNode &typeNode) override;
+    void visitReturnTypeNode(ReturnTypeNode &typeNode) override;
+    void visitTypeOfNode(TypeOfNode &typeNode) override;
+    void visitIntValueNode(IntValueNode &node) override;
+    void visitLongValueNode(LongValueNode &node) override;
+    void visitFloatValueNode(FloatValueNode &node) override;
+    void visitStringValueNode(StringValueNode &node) override;
+    void visitObjectPathNode(ObjectPathNode &node) override;
+    void visitStringExprNode(StringExprNode &node) override;
+    void visitArrayNode(ArrayNode &node) override;
+    void visitMapNode(MapNode &node) override;
+    void visitTupleNode(TupleNode &node) override;
+    void visitVarNode(VarNode &node) override;
+    void visitAccessNode(AccessNode &node) override;
+    void visitCastNode(CastNode &node) override;
+    void visitInstanceOfNode(InstanceOfNode &node) override;
+    void visitUnaryOpNode(UnaryOpNode &node) override;
+    void visitBinaryOpNode(BinaryOpNode &node) override;
+    void visitApplyNode(ApplyNode &node) override;
+    void visitMethodCallNode(MethodCallNode &node) override;
+    void visitNewNode(NewNode &node) override;
+    void visitGroupNode(GroupNode &node) override;
+    void visitCondOpNode(CondOpNode &node) override;
+    void visitCmdNode(CmdNode &node) override;
+    void visitCmdArgNode(CmdArgNode &node) override;
+    void visitRedirNode(RedirNode &node) override;
+    void visitTildeNode(TildeNode &node) override;
+    void visitPipedCmdNode(PipedCmdNode &node) override;
+    void visitCmdContextNode(CmdContextNode &node) override;
+    void visitAssertNode(AssertNode &node) override;
+    void visitBlockNode(BlockNode &node) override;
+    void visitBreakNode(BreakNode &node) override;
+    void visitContinueNode(ContinueNode &node) override;
+    void visitExportEnvNode(ExportEnvNode &node) override;
+    void visitImportEnvNode(ImportEnvNode &node) override;
+    void visitTypeAliasNode(TypeAliasNode &node) override;
+    void visitForNode(ForNode &node) override;
+    void visitWhileNode(WhileNode &node) override;
+    void visitDoWhileNode(DoWhileNode &node) override;
+    void visitIfNode(IfNode &node) override;
+    void visitReturnNode(ReturnNode &node) override;
+    void visitThrowNode(ThrowNode &node) override;
+    void visitCatchNode(CatchNode &node) override;
+    void visitTryNode(TryNode &node) override;
+    void visitVarDeclNode(VarDeclNode &node) override;
+    void visitAssignNode(AssignNode &node) override;
+    void visitElementSelfAssignNode(ElementSelfAssignNode &node) override;
+    void visitFunctionNode(FunctionNode &node) override;
+    void visitInterfaceNode(InterfaceNode &node) override;
+    void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override;
+    void visitBindVarNode(BindVarNode &node) override;
+    void visitEmptyNode(EmptyNode &node) override;
+    void visitDummyNode(DummyNode &node) override;
+    void visitRootNode(RootNode &node) override;
 };
 
 } // namespace parser

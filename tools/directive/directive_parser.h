@@ -156,7 +156,7 @@ public:
         return this->nodes;
     }
 
-    void accept(NodeVisitor &visitor) { // override
+    void accept(NodeVisitor &visitor) override {
         visitor.visitDirectiveNode(*this);
     }
 };
@@ -183,7 +183,7 @@ public:
         return this->attrNode;
     }
 
-    void accept(NodeVisitor &visitor) {  // override
+    void accept(NodeVisitor &visitor) override {
         visitor.visitAttributeNode(*this);
     }
 };
@@ -200,7 +200,7 @@ public:
         return this->value;
     }
 
-    void accept(NodeVisitor &visitor) { // override
+    void accept(NodeVisitor &visitor) override {
         visitor.visitNumberNode(*this);
     }
 };
@@ -217,7 +217,7 @@ public:
         return this->value;
     }
 
-    void accept(NodeVisitor &visitor) { // override
+    void accept(NodeVisitor &visitor) override {
         visitor.visitStringNode(*this);
     }
 };
@@ -234,7 +234,7 @@ public:
         return this->value;
     }
 
-    void accept(NodeVisitor &visitor) { // override
+    void accept(NodeVisitor &visitor) override {
         visitor.visitBooleanNode(*this);
     }
 };
@@ -255,7 +255,7 @@ public:
         return this->values;
     }
 
-    void accept(NodeVisitor &visitor) { // override
+    void accept(NodeVisitor &visitor) override {
         visitor.visitArrayNode(*this);
     }
 };
@@ -347,12 +347,12 @@ public:
      */
     bool operator()(const std::unique_ptr<DirectiveNode> &node, Directive &d);
 
-    void visitDirectiveNode(DirectiveNode &node);   // override
-    void visitAttributeNode(AttributeNode &node);   // override
-    void visitNumberNode(NumberNode &node); // override
-    void visitStringNode(StringNode &node); // override
-    void visitBooleanNode(BooleanNode &node);   // override
-    void visitArrayNode(ArrayNode &node);   // override
+    void visitDirectiveNode(DirectiveNode &node) override;
+    void visitAttributeNode(AttributeNode &node) override;
+    void visitNumberNode(NumberNode &node) override;
+    void visitStringNode(StringNode &node) override;
+    void visitBooleanNode(BooleanNode &node) override;
+    void visitArrayNode(ArrayNode &node) override;
 
 private:
     Type checkType(Node &node);

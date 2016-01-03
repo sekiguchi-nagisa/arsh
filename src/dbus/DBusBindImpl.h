@@ -55,8 +55,8 @@ public:
         return this->systemBus;
     }
 
-    bool service(RuntimeContext &ctx, std::string &&serviceName); // override
-    bool listNames(RuntimeContext &ctx, bool activeName);    // override
+    bool service(RuntimeContext &ctx, std::string &&serviceName) override;
+    bool listNames(RuntimeContext &ctx, bool activeName) override;
 };
 
 class Service_ObjectImpl : public Service_Object {
@@ -97,8 +97,8 @@ public:
         return this->uniqueName.c_str();
     }
 
-    std::string toString(RuntimeContext &ctx, VisitedSet *set); // override
-    bool object(RuntimeContext &ctx, const DSValue &objectPath); // override
+    std::string toString(RuntimeContext &ctx, VisitedSet *set) override;
+    bool object(RuntimeContext &ctx, const DSValue &objectPath) override;
 };
 
 class DBus_ObjectImpl : public DBus_Object {
@@ -137,14 +137,14 @@ public:
         return this->builder;
     }
 
-    bool getSystemBus(RuntimeContext &ctx); // override
-    bool getSessionBus(RuntimeContext &ctx);    // override
+    bool getSystemBus(RuntimeContext &ctx) override;
+    bool getSessionBus(RuntimeContext &ctx) override;
 
-    bool waitSignal(RuntimeContext &ctx);   // override
-    bool getServiceFromProxy(RuntimeContext &ctx, const DSValue &proxy);  // override
-    bool getObjectPathFromProxy(RuntimeContext &ctx, const DSValue &proxy);   // override
-    bool getIfaceListFromProxy(RuntimeContext &ctx, const DSValue &proxy);    // override
-    bool introspectProxy(RuntimeContext &ctx, const DSValue &proxy); // override
+    bool waitSignal(RuntimeContext &ctx) override;
+    bool getServiceFromProxy(RuntimeContext &ctx, const DSValue &proxy) override;
+    bool getObjectPathFromProxy(RuntimeContext &ctx, const DSValue &proxy) override;
+    bool getIfaceListFromProxy(RuntimeContext &ctx, const DSValue &proxy) override;
+    bool introspectProxy(RuntimeContext &ctx, const DSValue &proxy) override;
 };
 
 /**
@@ -195,14 +195,14 @@ public:
 
     ~DBusProxy_Object() = default;
 
-    std::string toString(RuntimeContext &ctx, VisitedSet *set); // override
-    bool introspect(RuntimeContext &ctx, DSType *targetType); // override
+    std::string toString(RuntimeContext &ctx, VisitedSet *set) override;
+    bool introspect(RuntimeContext &ctx, DSType *targetType) override;
 
-    bool invokeMethod(RuntimeContext &ctx, const std::string &methodName, MethodHandle *handle);    // override
+    bool invokeMethod(RuntimeContext &ctx, const std::string &methodName, MethodHandle *handle) override;
     bool invokeGetter(RuntimeContext &ctx,DSType *recvType,
-                      const std::string &fieldName, DSType *fieldType);    // override
+                      const std::string &fieldName, DSType *fieldType) override;
     bool invokeSetter(RuntimeContext &ctx, DSType *recvType,
-                      const std::string &fieldName, DSType *fieldType);    // override
+                      const std::string &fieldName, DSType *fieldType) override;
 
     const DSValue &getService();
     const DSValue &getObjectPath();

@@ -288,11 +288,11 @@ public:
 
     ~CommonTypeToken() = default;
 
-    void serialize(HandleInfoSerializer &s) {    // override
+    void serialize(HandleInfoSerializer &s) override {
         s.add(this->info);
     }
 
-    bool isType(HandleInfo info) {    // override
+    bool isType(HandleInfo info) override {
         return this->info == info;
     }
 
@@ -327,9 +327,9 @@ public:
         this->elements.push_back(std::move(type));
     }
 
-    void serialize(HandleInfoSerializer &s);    // override
+    void serialize(HandleInfoSerializer &s) override;
 
-    bool isType(HandleInfo info) {    // override
+    bool isType(HandleInfo info) override {
         return this->typeTemp->isType(info);
     }
 

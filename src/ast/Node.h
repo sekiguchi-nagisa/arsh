@@ -130,10 +130,10 @@ public:
 
     virtual ~TypeNode() = default;
 
-    virtual void dump(NodeDumper &dumper) const = 0;
-    virtual void accept(NodeVisitor &visitor) = 0;
+    virtual void dump(NodeDumper &dumper) const override = 0;
+    virtual void accept(NodeVisitor &visitor) override = 0;
 
-    EvalStatus eval(RuntimeContext &ctx);   // override
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class BaseTypeNode : public TypeNode {
@@ -150,8 +150,8 @@ public:
         return this->typeName;
     }
 
-    void dump(NodeDumper &dumper) const; // override
-    void accept(NodeVisitor &visitor); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
 };
 
 /**
@@ -179,8 +179,8 @@ public:
         return this->elementTypeNodes;
     }
 
-    void dump(NodeDumper &dumper) const; // override
-    void accept(NodeVisitor &visitor); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
 };
 
 class FuncTypeNode : public TypeNode {
@@ -209,8 +209,8 @@ public:
         return this->returnTypeNode;
     }
 
-    void dump(NodeDumper &dumper) const; // override
-    void accept(NodeVisitor &visitor); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
 };
 
 class DBusIfaceTypeNode : public TypeNode {
@@ -231,8 +231,8 @@ public:
         return this->name;
     }
 
-    void dump(NodeDumper &dumper) const; // override
-    void accept(NodeVisitor &visitor); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
 };
 
 /**
@@ -256,8 +256,8 @@ public:
         return this->typeNodes.size() > 1;
     }
 
-    void dump(NodeDumper &dumper) const; // override
-    void accept(NodeVisitor &visitor); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
 };
 
 class TypeOfNode : public TypeNode {
@@ -272,8 +272,8 @@ public:
         return this->exprNode;
     }
 
-    void dump(NodeDumper &dumper) const; // override
-    void accept(NodeVisitor &visitor); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
 };
 
 TypeNode *newAnyTypeNode();
@@ -344,10 +344,10 @@ public:
         return this->value;
     }
 
-    void setType(DSType &type); // override
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void setType(DSType &type) override;
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class LongValueNode : public Node {
@@ -385,10 +385,10 @@ public:
         return this->unsignedValue;
     }
 
-    void setType(DSType &type); // override
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void setType(DSType &type) override;
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class FloatValueNode : public Node {
@@ -411,10 +411,10 @@ public:
         return this->value;
     }
 
-    void setType(DSType &type); // override
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void setType(DSType &type) override;
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class StringValueNode : public Node {
@@ -448,10 +448,10 @@ public:
         return this->value;
     }
 
-    void setType(DSType &type); // override
-    void dump(NodeDumper &dumper) const;  // override
-    virtual void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void setType(DSType &type) override;
+    void dump(NodeDumper &dumper) const override;
+    virtual void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class ObjectPathNode : public StringValueNode {
@@ -461,7 +461,7 @@ public:
 
     ~ObjectPathNode() = default;
 
-    void accept(NodeVisitor &visitor); // override
+    void accept(NodeVisitor &visitor) override;
 };
 
 class StringExprNode : public Node {
@@ -483,9 +483,9 @@ public:
         this->nodes[index] = exprNode;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class ArrayNode : public Node {
@@ -507,9 +507,9 @@ public:
         return this->nodes;
     }
 
-    void dump(NodeDumper &dumper) const; // override
-    void accept(NodeVisitor &visitor);    //override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class MapNode : public Node {
@@ -540,9 +540,9 @@ public:
         return this->valueNodes;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class TupleNode : public Node {
@@ -563,9 +563,9 @@ public:
         return this->nodes;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 /**
@@ -608,7 +608,7 @@ public:
         return this->index;
     }
 
-    virtual void dump(NodeDumper &dumper) const;  // override
+    virtual void dump(NodeDumper &dumper) const override;
 };
 
 class VarNode : public AssignableNode {
@@ -625,9 +625,9 @@ public:
         return this->varName;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 
     // for ArgsNode
     /**
@@ -680,9 +680,9 @@ public:
         return this->additionalOp;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 
     /**
      * extract recvNode, and fieldName.
@@ -768,9 +768,9 @@ public:
      */
     bool resolveCastOp(TypePool &pool);
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    //override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 
     /**
      * for implicit cast.
@@ -814,9 +814,9 @@ public:
         return this->opKind;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    //override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 /**
@@ -844,9 +844,9 @@ public:
         return this->argNodes;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class MethodCallNode : public Node {
@@ -907,9 +907,9 @@ public:
         return this->handle;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 
     static constexpr flag8_t INDEX = 1 << 0;
     static constexpr flag8_t ICALL = 1 << 1;
@@ -940,9 +940,9 @@ public:
         return this->argNodes;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);   // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 /**
@@ -991,9 +991,9 @@ public:
         return this->methodCallNode;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);   // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 /**
@@ -1060,9 +1060,9 @@ public:
         return this->methodCallNode;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);   // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 /**
@@ -1082,9 +1082,9 @@ public:
         return this->exprNode;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);   // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class CondOpNode : public Node {
@@ -1114,9 +1114,9 @@ public:
         return this->andOp;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    //override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 /**
@@ -1144,9 +1144,9 @@ public:
         this->segmentNodes[index] = segmentNode;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);  // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 
     EvalStatus evalImpl(RuntimeContext &ctx);
 
@@ -1174,9 +1174,9 @@ public:
         return this->targetNode;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);  // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 /**
@@ -1200,15 +1200,15 @@ public:
         return this->value;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);  // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
 
     /**
      * if isLastSegment is true, segment nodes size is 1.
      */
     std::string expand(bool isLastSegment = true);
 
-    EvalStatus eval(RuntimeContext &ctx); // override
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class CmdNode : public Node {
@@ -1246,9 +1246,9 @@ public:
     void addRedirOption(TokenKind kind, CmdArgNode *node);
     void addRedirOption(TokenKind kind, Token token);
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    //override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class PipedCmdNode : public Node {    //TODO: background ...etc
@@ -1270,15 +1270,15 @@ public:
         return this->cmdNodes;
     }
 
-    void inCondition(); // override
+    void inCondition() override;
 
     bool treatAsBool() const {
         return this->asBool;
     }
 
-    void dump(NodeDumper &dumper) const; // override
-    void accept(NodeVisitor &visitor);    //override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class CmdContextNode : public Node {
@@ -1316,14 +1316,14 @@ public:
         return hasFlag(this->attributeSet, attribute);
     }
 
-    void inStringExprNode();    // override
-    void inCmdArgNode();    // override
-    void inCondition(); // override
-    void inRightHandleSide();   // override
+    void inStringExprNode() override;
+    void inCmdArgNode() override;
+    void inCondition() override;
+    void inRightHandleSide() override;
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    //override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 
     static constexpr flag8_t BACKGROUND = 1 << 0;
     static constexpr flag8_t FORK       = 1 << 1;
@@ -1350,9 +1350,9 @@ public:
         return this->condNode;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class BlockNode : public Node {
@@ -1376,11 +1376,11 @@ public:
         return this->nodeList;
     }
 
-    bool isTerminalNode() const; // overrdie
+    bool isTerminalNode() const override;
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 /**
@@ -1392,7 +1392,7 @@ public:
 
     virtual ~BlockEndNode() = default;
 
-    bool isTerminalNode() const { // override
+    bool isTerminalNode() const override {
         return true;
     }
 };
@@ -1403,9 +1403,9 @@ public:
 
     ~BreakNode() = default;
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class ContinueNode : public BlockEndNode {
@@ -1414,9 +1414,9 @@ public:
 
     ~ContinueNode() = default;
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class ExportEnvNode : public Node {
@@ -1453,9 +1453,9 @@ public:
         return this->varIndex;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class ImportEnvNode : public Node {
@@ -1506,9 +1506,9 @@ public:
         return this->varIndex;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class TypeAliasNode : public Node {
@@ -1532,9 +1532,9 @@ public:
         return this->targetTypeNode;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class ForNode : public Node {
@@ -1590,9 +1590,9 @@ public:
         return this->blockNode;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class WhileNode : public Node {
@@ -1617,9 +1617,9 @@ public:
         return this->blockNode;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    //override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class DoWhileNode : public Node {
@@ -1643,9 +1643,9 @@ public:
         return this->condNode;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);   //override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class IfNode : public Node {
@@ -1703,13 +1703,13 @@ public:
         this->terminal = terminal;
     }
 
-    bool isTerminalNode() const {   // override
+    bool isTerminalNode() const override {
         return this->terminal;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class ReturnNode : public BlockEndNode {
@@ -1730,9 +1730,9 @@ public:
         return this->exprNode;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class ThrowNode : public BlockEndNode {
@@ -1751,9 +1751,9 @@ public:
         return this->exprNode;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class CatchNode : public Node {
@@ -1796,9 +1796,9 @@ public:
         return this->blockNode;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class TryNode : public Node {
@@ -1843,13 +1843,13 @@ public:
         this->terminal = terminal;
     }
 
-    bool isTerminalNode() const {   // override
+    bool isTerminalNode() const override {
         return this->terminal;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class VarDeclNode : public Node {
@@ -1887,9 +1887,9 @@ public:
         return this->varIndex;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 /**
@@ -1946,9 +1946,9 @@ public:
         return hasFlag(this->attributeSet, FIELD_ASSIGN);
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);   // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 
     /**
      * for ArgsNode
@@ -2021,9 +2021,9 @@ public:
      */
     void setIndexType(DSType &type);
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);   // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class CallableNode : public Node {
@@ -2137,9 +2137,9 @@ public:
         return this->varIndex;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class InterfaceNode : public Node {
@@ -2180,9 +2180,9 @@ public:
         return this->fieldTypeNodes;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class UserDefinedCmdNode : public CallableNode {
@@ -2219,9 +2219,9 @@ public:
         return this->maxVarNum;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 /**
@@ -2256,9 +2256,9 @@ public:
         return this->value;
     }
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class EmptyNode : public Node {
@@ -2267,9 +2267,9 @@ public:
     EmptyNode(Token token) : Node(token) { }
     ~EmptyNode() = default;
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);    // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class DummyNode : public Node {
@@ -2277,9 +2277,9 @@ public:
     DummyNode() : Node({0, 0}) { }
     ~DummyNode() = default;
 
-    void dump(NodeDumper &dumper) const;  // override
-    void accept(NodeVisitor &visitor);   // override
-    EvalStatus eval(RuntimeContext &ctx); // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 /**
@@ -2327,9 +2327,9 @@ public:
         return this->maxGVarNum;
     }
 
-    void dump(NodeDumper &dumper) const;    // override
-    void accept(NodeVisitor &visitor);  // override
-    EvalStatus eval(RuntimeContext &ctx);   // override
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 // helper function for node creation
@@ -2423,63 +2423,63 @@ struct BaseVisitor : public NodeVisitor {
 
     virtual void visitDefault(Node &node) = 0;
 
-    virtual void visitBaseTypeNode(BaseTypeNode &node) { this->visitDefault(node); }
-    virtual void visitReifiedTypeNode(ReifiedTypeNode &node) { this->visitDefault(node); }
-    virtual void visitFuncTypeNode(FuncTypeNode &node) { this->visitDefault(node); }
-    virtual void visitDBusIfaceTypeNode(DBusIfaceTypeNode &node) { this->visitDefault(node); }
-    virtual void visitReturnTypeNode(ReturnTypeNode &node) { this->visitDefault(node); }
-    virtual void visitTypeOfNode(TypeOfNode &node) { this->visitDefault(node); }
-    virtual void visitIntValueNode(IntValueNode &node) { this->visitDefault(node); }
-    virtual void visitLongValueNode(LongValueNode &node) { this->visitDefault(node); }
-    virtual void visitFloatValueNode(FloatValueNode &node) { this->visitDefault(node); }
-    virtual void visitStringValueNode(StringValueNode &node) { this->visitDefault(node); }
-    virtual void visitObjectPathNode(ObjectPathNode &node) { this->visitDefault(node); }
-    virtual void visitStringExprNode(StringExprNode &node) { this->visitDefault(node); }
-    virtual void visitArrayNode(ArrayNode &node) { this->visitDefault(node); }
-    virtual void visitMapNode(MapNode &node) { this->visitDefault(node); }
-    virtual void visitTupleNode(TupleNode &node) { this->visitDefault(node); }
-    virtual void visitVarNode(VarNode &node) { this->visitDefault(node); }
-    virtual void visitAccessNode(AccessNode &node) { this->visitDefault(node); }
-    virtual void visitCastNode(CastNode &node) { this->visitDefault(node); }
-    virtual void visitInstanceOfNode(InstanceOfNode &node) { this->visitDefault(node); }
-    virtual void visitUnaryOpNode(UnaryOpNode &node) { this->visitDefault(node); }
-    virtual void visitBinaryOpNode(BinaryOpNode &node) { this->visitDefault(node); }
-    virtual void visitApplyNode(ApplyNode &node) { this->visitDefault(node); }
-    virtual void visitMethodCallNode(MethodCallNode &node) { this->visitDefault(node); }
-    virtual void visitNewNode(NewNode &node) { this->visitDefault(node); }
-    virtual void visitGroupNode(GroupNode &node) { this->visitDefault(node); }
-    virtual void visitCondOpNode(CondOpNode &node) { this->visitDefault(node); }
-    virtual void visitCmdNode(CmdNode &node) { this->visitDefault(node); }
-    virtual void visitCmdArgNode(CmdArgNode &node) { this->visitDefault(node); }
-    virtual void visitRedirNode(RedirNode &node) { this->visitDefault(node); }
-    virtual void visitTildeNode(TildeNode &node) { this->visitDefault(node); }
-    virtual void visitPipedCmdNode(PipedCmdNode &node) { this->visitDefault(node); }
-    virtual void visitCmdContextNode(CmdContextNode &node) { this->visitDefault(node); }
-    virtual void visitAssertNode(AssertNode &node) { this->visitDefault(node); }
-    virtual void visitBlockNode(BlockNode &node) { this->visitDefault(node); }
-    virtual void visitBreakNode(BreakNode &node) { this->visitDefault(node); }
-    virtual void visitContinueNode(ContinueNode &node) { this->visitDefault(node); }
-    virtual void visitExportEnvNode(ExportEnvNode &node) { this->visitDefault(node); }
-    virtual void visitImportEnvNode(ImportEnvNode &node) { this->visitDefault(node); }
-    virtual void visitTypeAliasNode(TypeAliasNode &node) { this->visitDefault(node); }
-    virtual void visitForNode(ForNode &node) { this->visitDefault(node); }
-    virtual void visitWhileNode(WhileNode &node) { this->visitDefault(node); }
-    virtual void visitDoWhileNode(DoWhileNode &node) { this->visitDefault(node); }
-    virtual void visitIfNode(IfNode &node) { this->visitDefault(node); }
-    virtual void visitReturnNode(ReturnNode &node) { this->visitDefault(node); }
-    virtual void visitThrowNode(ThrowNode &node) { this->visitDefault(node); }
-    virtual void visitCatchNode(CatchNode &node) { this->visitDefault(node); }
-    virtual void visitTryNode(TryNode &node) { this->visitDefault(node); }
-    virtual void visitVarDeclNode(VarDeclNode &node) { this->visitDefault(node); }
-    virtual void visitAssignNode(AssignNode &node) { this->visitDefault(node); }
-    virtual void visitElementSelfAssignNode(ElementSelfAssignNode &node) { this->visitDefault(node); }
-    virtual void visitFunctionNode(FunctionNode &node) { this->visitDefault(node); }
-    virtual void visitInterfaceNode(InterfaceNode &node) { this->visitDefault(node); }
-    virtual void visitUserDefinedCmdNode(UserDefinedCmdNode &node) { this->visitDefault(node); }
-    virtual void visitBindVarNode(BindVarNode &node) { this->visitDefault(node); }
-    virtual void visitEmptyNode(EmptyNode &node) { this->visitDefault(node); }
-    virtual void visitDummyNode(DummyNode &node) { this->visitDefault(node); }
-    virtual void visitRootNode(RootNode &node) { this->visitDefault(node); }
+    virtual void visitBaseTypeNode(BaseTypeNode &node) override { this->visitDefault(node); }
+    virtual void visitReifiedTypeNode(ReifiedTypeNode &node) override { this->visitDefault(node); }
+    virtual void visitFuncTypeNode(FuncTypeNode &node) override { this->visitDefault(node); }
+    virtual void visitDBusIfaceTypeNode(DBusIfaceTypeNode &node) override { this->visitDefault(node); }
+    virtual void visitReturnTypeNode(ReturnTypeNode &node) override { this->visitDefault(node); }
+    virtual void visitTypeOfNode(TypeOfNode &node) override { this->visitDefault(node); }
+    virtual void visitIntValueNode(IntValueNode &node) override { this->visitDefault(node); }
+    virtual void visitLongValueNode(LongValueNode &node) override { this->visitDefault(node); }
+    virtual void visitFloatValueNode(FloatValueNode &node) override { this->visitDefault(node); }
+    virtual void visitStringValueNode(StringValueNode &node) override { this->visitDefault(node); }
+    virtual void visitObjectPathNode(ObjectPathNode &node) override { this->visitDefault(node); }
+    virtual void visitStringExprNode(StringExprNode &node) override { this->visitDefault(node); }
+    virtual void visitArrayNode(ArrayNode &node) override { this->visitDefault(node); }
+    virtual void visitMapNode(MapNode &node) override { this->visitDefault(node); }
+    virtual void visitTupleNode(TupleNode &node) override { this->visitDefault(node); }
+    virtual void visitVarNode(VarNode &node) override { this->visitDefault(node); }
+    virtual void visitAccessNode(AccessNode &node) override { this->visitDefault(node); }
+    virtual void visitCastNode(CastNode &node) override { this->visitDefault(node); }
+    virtual void visitInstanceOfNode(InstanceOfNode &node) override { this->visitDefault(node); }
+    virtual void visitUnaryOpNode(UnaryOpNode &node) override { this->visitDefault(node); }
+    virtual void visitBinaryOpNode(BinaryOpNode &node) override { this->visitDefault(node); }
+    virtual void visitApplyNode(ApplyNode &node) override { this->visitDefault(node); }
+    virtual void visitMethodCallNode(MethodCallNode &node) override { this->visitDefault(node); }
+    virtual void visitNewNode(NewNode &node) override { this->visitDefault(node); }
+    virtual void visitGroupNode(GroupNode &node) override { this->visitDefault(node); }
+    virtual void visitCondOpNode(CondOpNode &node) override { this->visitDefault(node); }
+    virtual void visitCmdNode(CmdNode &node) override { this->visitDefault(node); }
+    virtual void visitCmdArgNode(CmdArgNode &node) override { this->visitDefault(node); }
+    virtual void visitRedirNode(RedirNode &node) override { this->visitDefault(node); }
+    virtual void visitTildeNode(TildeNode &node) override { this->visitDefault(node); }
+    virtual void visitPipedCmdNode(PipedCmdNode &node) override { this->visitDefault(node); }
+    virtual void visitCmdContextNode(CmdContextNode &node) override { this->visitDefault(node); }
+    virtual void visitAssertNode(AssertNode &node) override { this->visitDefault(node); }
+    virtual void visitBlockNode(BlockNode &node) override { this->visitDefault(node); }
+    virtual void visitBreakNode(BreakNode &node) override { this->visitDefault(node); }
+    virtual void visitContinueNode(ContinueNode &node) override { this->visitDefault(node); }
+    virtual void visitExportEnvNode(ExportEnvNode &node) override { this->visitDefault(node); }
+    virtual void visitImportEnvNode(ImportEnvNode &node) override { this->visitDefault(node); }
+    virtual void visitTypeAliasNode(TypeAliasNode &node) override { this->visitDefault(node); }
+    virtual void visitForNode(ForNode &node) override { this->visitDefault(node); }
+    virtual void visitWhileNode(WhileNode &node) override { this->visitDefault(node); }
+    virtual void visitDoWhileNode(DoWhileNode &node) override { this->visitDefault(node); }
+    virtual void visitIfNode(IfNode &node) override { this->visitDefault(node); }
+    virtual void visitReturnNode(ReturnNode &node) override { this->visitDefault(node); }
+    virtual void visitThrowNode(ThrowNode &node) override { this->visitDefault(node); }
+    virtual void visitCatchNode(CatchNode &node) override { this->visitDefault(node); }
+    virtual void visitTryNode(TryNode &node) override { this->visitDefault(node); }
+    virtual void visitVarDeclNode(VarDeclNode &node) override { this->visitDefault(node); }
+    virtual void visitAssignNode(AssignNode &node) override { this->visitDefault(node); }
+    virtual void visitElementSelfAssignNode(ElementSelfAssignNode &node) override { this->visitDefault(node); }
+    virtual void visitFunctionNode(FunctionNode &node) override { this->visitDefault(node); }
+    virtual void visitInterfaceNode(InterfaceNode &node) override { this->visitDefault(node); }
+    virtual void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override { this->visitDefault(node); }
+    virtual void visitBindVarNode(BindVarNode &node) override { this->visitDefault(node); }
+    virtual void visitEmptyNode(EmptyNode &node) override { this->visitDefault(node); }
+    virtual void visitDummyNode(DummyNode &node) override { this->visitDefault(node); }
+    virtual void visitRootNode(RootNode &node) override { this->visitDefault(node); }
 };
 
 } // namespace ast

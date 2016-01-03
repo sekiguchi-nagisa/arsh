@@ -362,7 +362,7 @@ T *cast(Node &node) {
 
 // for attribute initialization
 struct StatusHandler : public AttributeHandler {
-    void operator()(Node &node, Directive &d) { // override
+    void operator()(Node &node, Directive &d)  override {
         d.setStatus(cast<NumberNode>(node)->getValue());
     }
 };
@@ -410,13 +410,13 @@ struct ResultHandler : public AttributeHandler {
 #undef EACH_STATUS
     }
 
-    void operator()(Node &node, Directive &d) { // override
+    void operator()(Node &node, Directive &d) override {
         d.setResult(this->resolveStatus(*cast<StringNode>(node)));
     }
 };
 
 struct ParamsHandler : public AttributeHandler {
-    void operator()(Node &node, Directive &d) { // override
+    void operator()(Node &node, Directive &d) override {
         auto value = cast<ArrayNode>(node);
         for(auto &e : value->getValues()) {
             d.appendParam(cast<StringNode>(*e)->getValue());
@@ -425,19 +425,19 @@ struct ParamsHandler : public AttributeHandler {
 };
 
 struct LineNumHandler : public AttributeHandler {
-    void operator()(Node &node, Directive &d) { // override
+    void operator()(Node &node, Directive &d) override {
         d.setLineNum(cast<NumberNode>(node)->getValue());
     }
 };
 
 struct IfHaveDBusHandler : public AttributeHandler {
-    void operator()(Node &node, Directive &d) { // override
+    void operator()(Node &node, Directive &d) override {
         d.setIfHaveDBus(cast<BooleanNode>(node)->getValue());
     }
 };
 
 struct ErrorKindHandler : public AttributeHandler {
-    void operator()(Node &node, Directive &d) { // override
+    void operator()(Node &node, Directive &d) override {
         d.setErrorKind(cast<StringNode>(node)->getValue());
     }
 };
