@@ -394,7 +394,7 @@ Service_ObjectImpl::Service_ObjectImpl(DSType &type, const DSValue &bus,
         Service_Object(type), bus(bus), serviceName(std::move(serviceName)), uniqueName(std::move(uniqueName)) {
 }
 
-std::string Service_ObjectImpl::toString(RuntimeContext &) {
+std::string Service_ObjectImpl::toString(RuntimeContext &, VisitedSet *) {
     return this->serviceName;
 }
 
@@ -599,7 +599,7 @@ DBusProxy_Object::DBusProxy_Object(DSType &type, const DSValue &srcObj, const DS
     assert(this->srv);
 }
 
-std::string DBusProxy_Object::toString(RuntimeContext &) {
+std::string DBusProxy_Object::toString(RuntimeContext &, VisitedSet *) {
     std::string str("[dest=");
     str += typeAs<Service_ObjectImpl>(this->srv)->getServiceName();
     str += ", path=";

@@ -97,7 +97,7 @@ public:
         return this->uniqueName.c_str();
     }
 
-    std::string toString(RuntimeContext &ctx); // override
+    std::string toString(RuntimeContext &ctx, VisitedSet *set); // override
     bool object(RuntimeContext &ctx, const DSValue &objectPath); // override
 };
 
@@ -195,7 +195,7 @@ public:
 
     ~DBusProxy_Object() = default;
 
-    std::string toString(RuntimeContext &ctx); // override
+    std::string toString(RuntimeContext &ctx, VisitedSet *set); // override
     bool introspect(RuntimeContext &ctx, DSType *targetType); // override
 
     bool invokeMethod(RuntimeContext &ctx, const std::string &methodName, MethodHandle *handle);    // override
