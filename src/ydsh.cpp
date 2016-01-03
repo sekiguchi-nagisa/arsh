@@ -563,7 +563,7 @@ const char *DSContext_version() {
 }
 
 const char *DSContext_copyright() {
-    return "Copyright (C) 2015 Nagisa Sekiguchi";
+    return "Copyright (C) 2015-2016 Nagisa Sekiguchi";
 }
 
 unsigned int DSContext_featureBit() {
