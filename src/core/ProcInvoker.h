@@ -105,6 +105,62 @@ struct ChildError {
     }
 };
 
+class ProcState {
+public:
+    enum ExitKind : unsigned int {
+        NORMAL,
+        INTR,
+    };
+
+private:
+    unsigned int __argOffset;
+
+    /**
+     * if not have redirect option, offset is 0.
+     */
+    unsigned int __redirOffset;
+
+    ExitKind __kind;
+    pid_t __pid;
+    int __exitStatus;
+
+public:
+    ProcState() = default;
+    ProcState(unsigned int argOffset, unsigned int redirOffset) :
+            __argOffset(argOffset), __redirOffset(redirOffset),
+            __kind(NORMAL), __pid(0), __exitStatus(0) { }
+
+    ~ProcState() = default;
+
+    void set(ExitKind kind, int exitStatus) {
+        this->__kind = kind;
+        this->__exitStatus = exitStatus;
+    }
+
+    void setPid(pid_t pid) {
+        this->__pid = pid;
+    }
+
+    unsigned int argOffset() const {
+        return this->__argOffset;
+    }
+
+    unsigned int redirOffset() const {
+        return this->__redirOffset;
+    }
+
+    ExitKind kind() const {
+        return this->__kind;
+    }
+
+    pid_t pid() const {
+        return this->__pid;
+    }
+
+    int exitStatus() const {
+        return this->__exitStatus;
+    }
+};
 
 class ProcInvoker {
 public:
@@ -114,25 +170,6 @@ public:
     typedef int (*builtin_command_t)(RuntimeContext *ctx, const BuiltinContext &bctx);
 
 private:
-    enum ExitKind : unsigned int {
-        NORMAL,
-        INTR,
-    };
-
-    struct ProcContext{
-        ExitKind kind;
-        int pid;
-        int exitStatus;
-
-        ProcContext() = default;
-        explicit ProcContext(int pid) : kind(ExitKind::NORMAL), pid(pid), exitStatus(0) { }
-        ~ProcContext() = default;
-
-        void set(ExitKind kind, int exitStatus) {
-            this->kind = kind;
-            this->exitStatus = exitStatus;
-        }
-    };
 
     /**
      * not delete it
@@ -154,14 +191,7 @@ private:
      */
     std::vector<std::pair<RedirectOP, DSValue>> redirOptions;
 
-    /**
-     * first is argument offset
-     * second is redirect option offset.
-     * if not have redirect option, second is 0.
-     */
-    std::vector<std::pair<unsigned int, unsigned int>> procOffsets;
-
-    std::vector<ProcContext> procCtxs;
+    std::vector<ProcState> procStates;
 
 public:
     NON_COPYABLE(ProcInvoker);
@@ -172,8 +202,7 @@ public:
     void clear() {
         this->argArray.clear();
         this->redirOptions.clear();
-        this->procOffsets.clear();
-        this->procCtxs.clear();
+        this->procStates.clear();
     }
 
     void openProc();

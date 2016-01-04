@@ -1217,7 +1217,7 @@ BuiltinContext::BuiltinContext(int offset, const BuiltinContext &bctx) :
 // #########################
 
 ProcInvoker::ProcInvoker(RuntimeContext *ctx) :
-        ctx(ctx), builtinMap(), argArray(), redirOptions(), procOffsets(), procCtxs() {
+        ctx(ctx), builtinMap(), argArray(), redirOptions(), procStates() {
     // register builtin command
     unsigned int size = sizeOfArray(builtinCommands);
     for(unsigned int i = 0; i < size; i++) {
@@ -1228,7 +1228,7 @@ ProcInvoker::ProcInvoker(RuntimeContext *ctx) :
 void ProcInvoker::openProc() {
     unsigned int argOffset = this->argArray.size();
     unsigned int redirOffset = this->redirOptions.size();
-    this->procOffsets.push_back(std::make_pair(argOffset, redirOffset));
+    this->procStates.push_back(ProcState(argOffset, redirOffset));
 }
 
 void ProcInvoker::closeProc() {
@@ -1299,11 +1299,11 @@ static int redirectToFile(const DSValue &fileName, const char *mode, int targetF
  * if errorPipe is not -1, report error and exit 1
  */
 bool ProcInvoker::redirect(unsigned int procIndex, int errorPipe, int stdin_fd, int stdout_fd, int stderr_fd) {
-#define CHECK_ERROR(result) do { occuredError = (result); if(occuredError != 0) { goto ERR; } } while(0)
+#define CHECK_ERROR(result) do { occurredError = (result); if(occurredError != 0) { goto ERR; } } while(0)
 
-    int occuredError = 0;
+    int occurredError = 0;
 
-    unsigned int startIndex = this->procOffsets[procIndex].second;
+    unsigned int startIndex = this->procStates[procIndex].redirOffset();
     for(; this->redirOptions[startIndex].first != RedirectOP::DUMMY; startIndex++) {
         auto &pair = this->redirOptions[startIndex];
         switch(pair.first) {
@@ -1351,10 +1351,10 @@ bool ProcInvoker::redirect(unsigned int procIndex, int errorPipe, int stdin_fd, 
     }
 
     ERR:
-    if(occuredError != 0) {
+    if(occurredError != 0) {
         ChildError e;
         e.redirIndex = startIndex;
-        e.errorNum = occuredError;
+        e.errorNum = occurredError;
 
         if(errorPipe == -1) {
             return this->checkChildError(std::make_pair(0, e)); // return false
@@ -1376,11 +1376,11 @@ ProcInvoker::builtin_command_t ProcInvoker::lookupBuiltinCommand(const char *com
 }
 
 DSValue *ProcInvoker::getARGV(unsigned int procIndex) {
-    return this->argArray.data() + this->procOffsets[procIndex].first;
+    return this->argArray.data() + this->procStates[procIndex].argOffset();
 }
 
 EvalStatus ProcInvoker::invoke() {
-    const unsigned int procSize = this->procOffsets.size();
+    const unsigned int procSize = this->procStates.size();
 
     // check builtin command
     if(procSize == 1) {
@@ -1397,7 +1397,7 @@ EvalStatus ProcInvoker::invoke() {
             argv[argc] = nullptr;
             
             bool dupFD = strcmp(argv[0], "exec") != 0
-                         && this->redirOptions[this->procOffsets[0].second].first != RedirectOP::DUMMY;
+                         && this->redirOptions[this->procStates[0].redirOffset()].first != RedirectOP::DUMMY;
             int stdin_fd = dupFD ? dup(STDIN_FILENO) : STDIN_FILENO;
             int stdout_fd = dupFD ? dup(STDOUT_FILENO) : STDOUT_FILENO;
             int stderr_fd = dupFD ? dup(STDERR_FILENO) : STDERR_FILENO;
@@ -1424,7 +1424,6 @@ EvalStatus ProcInvoker::invoke() {
         }
     }
 
-    pid_t pid[procSize];
     int pipefds[procSize][2];
     int selfpipes[procSize][2];
     for(unsigned int i = 0; i < procSize; i++) {
@@ -1443,10 +1442,11 @@ EvalStatus ProcInvoker::invoke() {
     }
 
     // fork
+    pid_t pid;
     std::pair<unsigned int, ChildError> errorPair;
     unsigned int procIndex;
-    for(procIndex = 0; procIndex < procSize && (pid[procIndex] = xfork()) > 0; procIndex++) {
-        this->procCtxs.push_back(ProcInvoker::ProcContext(pid[procIndex]));
+    for(procIndex = 0; procIndex < procSize && (pid = xfork()) > 0; procIndex++) {
+        this->procStates[procIndex].setPid(pid);
 
         // check error via self-pipe
         int readSize;
@@ -1472,21 +1472,21 @@ EvalStatus ProcInvoker::invoke() {
         closeAllPipe(procSize, selfpipes);
 
         // wait for exit
-        const unsigned int actualProcSize = this->procCtxs.size();
+        const unsigned int actualProcSize = this->procStates.size();
         for(unsigned int i = 0; i < actualProcSize; i++) {
             int status = 0;
-            this->ctx->xwaitpid(pid[i], status, 0);
+            this->ctx->xwaitpid(this->procStates[i].pid(), status, 0);
             if(WIFEXITED(status)) {
-                this->procCtxs[i].set(ExitKind::NORMAL, WEXITSTATUS(status));
+                this->procStates[i].set(ProcState::NORMAL, WEXITSTATUS(status));
             }
             if(WIFSIGNALED(status)) {
-                this->procCtxs[i].set(ExitKind::INTR, WTERMSIG(status));
+                this->procStates[i].set(ProcState::INTR, WTERMSIG(status));
             }
         }
 
-        this->ctx->updateExitStatus(this->procCtxs[actualProcSize - 1].exitStatus);
+        this->ctx->updateExitStatus(this->procStates[actualProcSize - 1].exitStatus());
         return this->checkChildError(errorPair) ? EvalStatus::SUCCESS : EvalStatus::THROW ;
-    } else if(pid[procIndex] == 0) { // child process
+    } else if(this->procStates[procIndex].pid() == 0) { // child process
         if(procIndex == 0) {    // first process
             if(procSize > 1) {
                 dup2(pipefds[procIndex][WRITE_PIPE], STDOUT_FILENO);
