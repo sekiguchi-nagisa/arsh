@@ -1405,11 +1405,9 @@ void CmdNode::accept(NodeVisitor &visitor) {
 }
 
 EvalStatus CmdNode::eval(RuntimeContext &ctx) {
-    ctx.getProcInvoker().openProc();
-
     EVAL(ctx, this->nameNode);
 
-    ctx.getProcInvoker().addCommandName(ctx.pop());
+    ctx.getProcInvoker().openProc(ctx.pop());
 
     for(Node *node : this->argNodes) {
         EVAL(ctx, node);

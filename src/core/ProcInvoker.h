@@ -25,6 +25,14 @@
 #include "../misc/noncopyable.h"
 
 namespace ydsh {
+namespace ast {
+
+class UserDefinedCmdNode;
+
+}
+}
+
+namespace ydsh {
 namespace core {
 
 class RuntimeContext;
@@ -84,6 +92,11 @@ struct BuiltinContext {
     NON_COPYABLE(BuiltinContext);
 };
 
+/**
+ * return exit status.
+ */
+typedef int (*builtin_command_t)(RuntimeContext *ctx, const BuiltinContext &bctx);
+
 // for error reporting
 struct ChildError {
     /**
@@ -107,6 +120,12 @@ struct ChildError {
 
 class ProcState {
 public:
+    enum ProcKind : unsigned int {
+        EXTERNAL,
+        BUILTIN,
+        USER_DEFINED,
+    };
+
     enum ExitKind : unsigned int {
         NORMAL,
         INTR,
@@ -120,23 +139,44 @@ private:
      */
     unsigned int __redirOffset;
 
+    ProcKind __procKind;
+
+    union {
+        void *__dummy;
+        ast::UserDefinedCmdNode *__udcNode;
+        builtin_command_t __builtinCmd;
+    };
+
+
+    /**
+     * following fields are valid, if parent process.
+     */
+
     ExitKind __kind;
     pid_t __pid;
     int __exitStatus;
 
 public:
     ProcState() = default;
-    ProcState(unsigned int argOffset, unsigned int redirOffset) :
+
+    ProcState(unsigned int argOffset, unsigned int redirOffset, ProcKind procKind, void *ptr) :
             __argOffset(argOffset), __redirOffset(redirOffset),
+            __procKind(procKind), __dummy(ptr),
             __kind(NORMAL), __pid(0), __exitStatus(0) { }
 
     ~ProcState() = default;
 
+    /**
+     * only called, if parent process.
+     */
     void set(ExitKind kind, int exitStatus) {
         this->__kind = kind;
         this->__exitStatus = exitStatus;
     }
 
+    /**
+     * only called, if parent process.
+     */
     void setPid(pid_t pid) {
         this->__pid = pid;
     }
@@ -147,6 +187,18 @@ public:
 
     unsigned int redirOffset() const {
         return this->__redirOffset;
+    }
+
+    ProcKind procKind() const {
+        return this->__procKind;
+    }
+
+    ast::UserDefinedCmdNode *udcNode() const {
+        return this->__udcNode;
+    }
+
+    builtin_command_t builtinCmd() const {
+        return this->__builtinCmd;
     }
 
     ExitKind kind() const {
@@ -163,12 +215,6 @@ public:
 };
 
 class ProcInvoker {
-public:
-    /**
-     * return exit status.
-     */
-    typedef int (*builtin_command_t)(RuntimeContext *ctx, const BuiltinContext &bctx);
-
 private:
 
     /**
@@ -205,9 +251,12 @@ public:
         this->procStates.clear();
     }
 
-    void openProc();
+    /**
+     * value must be String_Object and it represents command name.
+     */
+    void openProc(DSValue &&value);
+
     void closeProc();
-    void addCommandName(DSValue &&value);
     void addArg(DSValue &&value, bool skipEmptyString);
     void addRedirOption(RedirectOP op, DSValue &&value);
 

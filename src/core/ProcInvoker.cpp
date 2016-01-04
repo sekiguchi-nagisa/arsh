@@ -190,7 +190,7 @@ static int builtin_true(RuntimeContext *ctx, const BuiltinContext &bctx);
 
 const struct {
     const char *commandName;
-    ProcInvoker::builtin_command_t cmd_ptr;
+    builtin_command_t cmd_ptr;
     const char *usage;
     const char *detail;
 } builtinCommands[] {
@@ -1225,19 +1225,40 @@ ProcInvoker::ProcInvoker(RuntimeContext *ctx) :
     }
 }
 
-void ProcInvoker::openProc() {
+void ProcInvoker::openProc(DSValue &&value) {
+    // resolve proc kind (external command, builtin command or user-defined command)
+    const char *commandName = typeAs<String_Object>(value)->getValue();
+    ProcState::ProcKind procKind = ProcState::EXTERNAL;
+    void *ptr = nullptr;
+
+    // first, check user-defined command
+    {
+        UserDefinedCmdNode *udcNode = this->ctx->lookupUserDefinedCommand(commandName);
+        if(udcNode != nullptr) {
+            procKind = ProcState::ProcKind::USER_DEFINED;
+            ptr = udcNode;
+        }
+    }
+
+    // second, check builtin command
+    if(ptr == nullptr) {
+        builtin_command_t bcmd = this->lookupBuiltinCommand(commandName);
+        if(bcmd != nullptr) {
+            procKind = ProcState::ProcKind::BUILTIN;
+            ptr = (void *)bcmd;
+        }
+    }
+
     unsigned int argOffset = this->argArray.size();
     unsigned int redirOffset = this->redirOptions.size();
-    this->procStates.push_back(ProcState(argOffset, redirOffset));
+    this->procStates.push_back(ProcState(argOffset, redirOffset, procKind, ptr));
+
+    this->argArray.push_back(std::move(value));
 }
 
 void ProcInvoker::closeProc() {
     this->argArray.push_back(DSValue());
     this->redirOptions.push_back(std::make_pair(RedirectOP::DUMMY, DSValue()));
-}
-
-void ProcInvoker::addCommandName(DSValue &&value) {
-    this->argArray.push_back(std::move(value));
 }
 
 void ProcInvoker::addArg(DSValue &&value, bool skipEmptyString) {
@@ -1367,7 +1388,7 @@ bool ProcInvoker::redirect(unsigned int procIndex, int errorPipe, int stdin_fd, 
 #undef CHECK_ERROR
 }
 
-ProcInvoker::builtin_command_t ProcInvoker::lookupBuiltinCommand(const char *commandName) {
+builtin_command_t ProcInvoker::lookupBuiltinCommand(const char *commandName) {
     auto iter = this->builtinMap.find(commandName);
     if(iter == this->builtinMap.end()) {
         return nullptr;
@@ -1384,9 +1405,8 @@ EvalStatus ProcInvoker::invoke() {
 
     // check builtin command
     if(procSize == 1) {
-        builtin_command_t cmd_ptr = this->lookupBuiltinCommand(this->getCommandName(0));
-        if(cmd_ptr != nullptr &&
-                this->ctx->lookupUserDefinedCommand(this->getCommandName(0)) == nullptr) {
+        if(this->procStates[0].procKind() == ProcState::ProcKind::BUILTIN) {
+            builtin_command_t cmd_ptr = this->procStates[0].builtinCmd();
             DSValue *ptr = this->getARGV(0);
             unsigned int argc = 1;
             for(; ptr[argc].get() != nullptr; argc++);
@@ -1486,7 +1506,7 @@ EvalStatus ProcInvoker::invoke() {
 
         this->ctx->updateExitStatus(this->procStates[actualProcSize - 1].exitStatus());
         return this->checkChildError(errorPair) ? EvalStatus::SUCCESS : EvalStatus::THROW ;
-    } else if(this->procStates[procIndex].pid() == 0) { // child process
+    } else if(pid == 0) { // child process
         if(procIndex == 0) {    // first process
             if(procSize > 1) {
                 dup2(pipefds[procIndex][WRITE_PIPE], STDOUT_FILENO);
@@ -1496,7 +1516,7 @@ EvalStatus ProcInvoker::invoke() {
             dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
             dup2(pipefds[procIndex][WRITE_PIPE], STDOUT_FILENO);
         }
-        if(procIndex == procSize - 1) { // last proc
+        if(procIndex == procSize - 1) { // last process
             if(procSize > 1) {
                 dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
             }
@@ -1506,41 +1526,41 @@ EvalStatus ProcInvoker::invoke() {
 
         closeAllPipe(procSize, pipefds);
 
-        // create argv
+        /**
+         * invoke command
+         */
+        const auto &procState = this->procStates[procIndex];
         DSValue *ptr = this->getARGV(procIndex);
-
-        // check user defined command
-        UserDefinedCmdNode *udcNode = this->ctx->lookupUserDefinedCommand(this->getCommandName(procIndex));
-        if(udcNode != nullptr) {
+        const auto procKind = procState.procKind();
+        if(procKind == ProcState::ProcKind::USER_DEFINED) { // invoke user-defined command
+            UserDefinedCmdNode *udcNode = procState.udcNode();
             closeAllPipe(procSize, selfpipes);
             exit(this->ctx->execUserDefinedCommand(udcNode, ptr));
+        } else {
+            // create argv
+            unsigned int argc = 1;
+            for(; ptr[argc]; argc++);
+            char *argv[argc + 1];
+            for(unsigned int i = 0; i < argc; i++) {
+                argv[i] = const_cast<char *>(typeAs<String_Object>(ptr[i])->getValue());
+            }
+            argv[argc] = nullptr;
+
+            if(procKind == ProcState::ProcKind::BUILTIN) {  // invoke builtin command
+                builtin_command_t cmd_ptr = procState.builtinCmd();
+                closeAllPipe(procSize, selfpipes);
+                BuiltinContext bctx(argc, argv, STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO);
+                exit(cmd_ptr(this->ctx, bctx));
+            } else {    // invoke external command
+                builtin_execvpe(argv, nullptr, nullptr);
+
+                ChildError e;
+                e.errorNum = errno;
+
+                write(selfpipes[procIndex][WRITE_PIPE], &e, sizeof(ChildError));
+                exit(1);
+            }
         }
-
-        unsigned int argc = 1;
-        for(; ptr[argc]; argc++);
-        char *argv[argc + 1];
-        for(unsigned int i = 0; i < argc; i++) {
-            argv[i] = const_cast<char *>(typeAs<String_Object>(ptr[i])->getValue());
-        }
-        argv[argc] = nullptr;
-
-        // check builtin command
-        builtin_command_t cmd_ptr = this->lookupBuiltinCommand(argv[0]);
-        if(cmd_ptr != nullptr) {
-            closeAllPipe(procSize, selfpipes);
-
-            BuiltinContext bctx(argc, argv, STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO);
-            exit(cmd_ptr(this->ctx, bctx));
-        }
-
-        // exec external command
-        builtin_execvpe(argv, nullptr, nullptr);
-
-        ChildError e;
-        e.errorNum = errno;
-
-        write(selfpipes[procIndex][WRITE_PIPE], &e, sizeof(ChildError));
-        exit(1);
     } else {
         perror("child process error");
         exit(1);
