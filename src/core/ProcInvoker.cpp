@@ -123,20 +123,8 @@ static void builtin_execvpe(char **argv, char *const *envp, const char *progName
             }
             stream << argv[i];
         }
-        stream << "]" << ")";
+        stream << "])";
     });
-
-    // reset signal setting
-    struct sigaction ignore_act;
-    ignore_act.sa_handler = SIG_DFL;
-    ignore_act.sa_flags = 0;
-    sigemptyset(&ignore_act.sa_mask);
-
-    sigaction(SIGINT, &ignore_act, NULL);
-    sigaction(SIGQUIT, &ignore_act, NULL);
-    sigaction(SIGSTOP, &ignore_act, NULL);
-    sigaction(SIGCONT, &ignore_act, NULL);
-    sigaction(SIGTSTP, &ignore_act, NULL);
 
     // exev
     execve(fileName, argv, envp);
