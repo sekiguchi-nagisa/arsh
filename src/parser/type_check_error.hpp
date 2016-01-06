@@ -21,7 +21,7 @@
 #include <vector>
 
 #include "../core/type_lookup_error.hpp"
-#include "../ast/Node.h"
+#include "../ast/node.h"
 
 namespace ydsh {
 namespace parser {
