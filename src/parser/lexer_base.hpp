@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_LEXERBASE_HPP
-#define YDSH_LEXERBASE_HPP
+#ifndef YDSH_PARSER_LEXER_BASE_HPP
+#define YDSH_PARSER_LEXER_BASE_HPP
 
 #include <cstdio>
 #include <cstring>
@@ -356,4 +356,4 @@ typedef __detail::LexerBase<true> LexerBase;
 } // namespace parser_base
 } // namespace ydsh
 
-#endif //YDSH_LEXERBASE_HPP
+#endif //YDSH_PARSER_LEXER_BASE_HPP

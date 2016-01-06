@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOKENKIND_H
-#define YDSH_TOKENKIND_H
+#ifndef YDSH_PARSER_TOKEN_KIND_H
+#define YDSH_PARSER_TOKEN_KIND_H
 
 #include <ostream>
 
@@ -179,4 +179,4 @@ unsigned int getPrecedence(TokenKind kind);
 } // namespace parser
 } // namespace ydsh
 
-#endif //YDSH_TOKENKIND_H
+#endif //YDSH_PARSER_TOKEN_KIND_H

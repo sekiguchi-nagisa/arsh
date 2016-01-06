@@ -22,6 +22,7 @@
 #include <unordered_map>
 
 #include <core/handle_info.h>
+#include <parser/parser_base.hpp>
 #include <misc/fatal.h>
 #include <DescLexer.h>
 

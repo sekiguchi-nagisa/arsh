@@ -16,8 +16,8 @@
 
 #include <iostream>
 
-#include "NodeDumper.h"
-#include "../ast/Node.h"
+#include "node_dumper.h"
+#include "node.h"
 
 namespace ydsh {
 namespace ast {

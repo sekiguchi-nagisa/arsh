@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "TokenKind.h"
+#include "token_kind.h"
 
 namespace ydsh {
 namespace parser {

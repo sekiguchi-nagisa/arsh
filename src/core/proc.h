@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_PROCINVOKER_H
-#define YDSH_PROCINVOKER_H
+#ifndef YDSH_CORE_PROC_H
+#define YDSH_CORE_PROC_H
 
 #include <cstring>
 #include <cassert>
 
-#include "DSObject.h"
+#include "object.h"
 #include "../misc/hash.hpp"
 #include "../misc/noncopyable.h"
 
@@ -293,4 +293,4 @@ private:
 } // namespace ydsh
 
 
-#endif //YDSH_PROCINVOKER_H
+#endif //YDSH_CORE_PROC_H

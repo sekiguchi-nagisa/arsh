@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_HANDLE_INFO_H
-#define YDSH_HANDLE_INFO_H
+#ifndef YDSH_CORE_HANDLE_INFO_H
+#define YDSH_CORE_HANDLE_INFO_H
 
 namespace ydsh {
 namespace core {
@@ -92,4 +92,4 @@ enum HandleInfo : char {
 } // namespace core
 } // namespace ydsh
 
-#endif //YDSH_HANDLE_INFO_H
+#endif //YDSH_CORE_HANDLE_INFO_H

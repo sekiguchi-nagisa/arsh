@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_DSTYPE_H
-#define YDSH_DSTYPE_H
+#ifndef YDSH_CORE_TYPE_H
+#define YDSH_CORE_TYPE_H
 
 #include <unordered_map>
 #include <vector>
@@ -25,7 +25,7 @@
 
 #include "../misc/flag_util.hpp"
 #include "handle_info.h"
-#include "TypePool.h"
+#include "type_pool.h"
 
 namespace ydsh {
 namespace core {
@@ -473,4 +473,4 @@ public:
 } // namespace core
 } // namespace ydsh
 
-#endif //YDSH_DSTYPE_H
+#endif //YDSH_CORE_TYPE_H

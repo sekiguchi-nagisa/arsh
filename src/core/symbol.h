@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_SYMBOL_H
-#define YDSH_SYMBOL_H
+#ifndef YDSH_CORE_SYMBOL_H
+#define YDSH_CORE_SYMBOL_H
 
 namespace ydsh {
 namespace core {
@@ -90,4 +90,4 @@ constexpr const char *OP_CMD_ARG = "__CMD_ARG__";  // for command argument
 } // namespace core
 } // namespace ydsh
 
-#endif //YDSH_SYMBOL_H
+#endif //YDSH_CORE_SYMBOL_H

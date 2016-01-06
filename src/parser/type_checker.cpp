@@ -18,9 +18,9 @@
 #include <vector>
 
 #include "../core/symbol.h"
-#include "../core/DSObject.h"
-#include "../core/TypeLookupError.hpp"
-#include "TypeChecker.h"
+#include "../core/object.h"
+#include "../core/type_lookup_error.hpp"
+#include "type_checker.h"
 
 namespace ydsh {
 namespace parser {

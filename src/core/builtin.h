@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_BUILTIN_H
-#define YDSH_BUILTIN_H
+#ifndef YDSH_CORE_BUILTIN_H
+#define YDSH_CORE_BUILTIN_H
 
 #include <cmath>
 #include <cstring>
 #include <type_traits>
 
-#include "RuntimeContext.h"
-#include "DSObject.h"
+#include "context.h"
+#include "object.h"
 #include "../misc/unicode.hpp"
 #include "../misc/num.h"
 
@@ -1695,4 +1695,4 @@ static inline bool service_object(RuntimeContext &ctx) {
 
 
 
-#endif //YDSH_BUILTIN_H
+#endif //YDSH_CORE_BUILTIN_H

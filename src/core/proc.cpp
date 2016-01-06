@@ -23,8 +23,8 @@
 #include <unordered_map>
 
 #include "logger.h"
-#include "ProcInvoker.h"
-#include "RuntimeContext.h"
+#include "proc.h"
+#include "context.h"
 #include "symbol.h"
 #include "../misc/num.h"
 

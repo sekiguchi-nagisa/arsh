@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_DSOBJECT_H
-#define YDSH_DSOBJECT_H
+#ifndef YDSH_CORE_OBJECT_H
+#define YDSH_CORE_OBJECT_H
 
 #include <ostream>
 #include <memory>
 #include <iostream>
 #include <unordered_set>
 
-#include "DSType.h"
+#include "type.h"
 #include "../config.h"
 #include "../misc/demangle.hpp"
 
@@ -664,4 +664,4 @@ struct Service_Object : public DSObject {
 } // namespace core
 } // namespace ydsh
 
-#endif //YDSH_DSOBJECT_H
+#endif //YDSH_CORE_OBJECT_H

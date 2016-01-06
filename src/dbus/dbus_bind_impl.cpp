@@ -17,7 +17,7 @@
 #include <cassert>
 #include <cstring>
 
-#include "DBusBindImpl.h"
+#include "dbus_bind_impl.h"
 #include "../core/logger.h"
 
 namespace ydsh {

@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_RUNTIMECONTEXT_H
-#define YDSH_RUNTIMECONTEXT_H
+#ifndef YDSH_CORE_CONTEXT_H
+#define YDSH_CORE_CONTEXT_H
 
 #include <unistd.h>
 
 #include <vector>
 #include <iostream>
 
-#include "../ast/Node.h"
-#include "DSObject.h"
-#include "SymbolTable.h"
-#include "ProcInvoker.h"
+#include "../ast/node.h"
+#include "object.h"
+#include "symbol_table.h"
+#include "proc.h"
 
 namespace ydsh {
 namespace core {
@@ -581,4 +581,4 @@ struct NativeMethodError {};
 } // namespace core
 } // namespace ydsh
 
-#endif //YDSH_RUNTIMECONTEXT_H
+#endif //YDSH_CORE_CONTEXT_H

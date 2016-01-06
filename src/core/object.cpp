@@ -17,11 +17,11 @@
 #include <cassert>
 #include <memory>
 
-#include "DSObject.h"
-#include "RuntimeContext.h"
+#include "object.h"
+#include "context.h"
 
 #ifdef USE_DBUS
-#include "../dbus/DBusBind.h"
+#include "../dbus/dbus_bind.h"
 #endif
 
 namespace ydsh {

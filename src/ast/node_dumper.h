@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_NODEDUMPER_H
-#define YDSH_NODEDUMPER_H
+#ifndef YDSH_AST_NODE_DUMPER_H
+#define YDSH_AST_NODE_DUMPER_H
 
 #define NAME(f) #f
 
@@ -135,4 +135,4 @@ private:
     } while(false)
 
 
-#endif //YDSH_NODEDUMPER_H
+#endif //YDSH_AST_NODE_DUMPER_H

@@ -201,25 +201,25 @@ if(USE_DBUS)
 endif()
 
 set(YDSH_SRC
-    src/ydsh.cpp
-    src/ast/NodeDumper.cpp
-    src/ast/Node.cpp
-    src/core/DSObject.cpp
-    src/core/DSType.cpp
-    src/core/FieldHandle.cpp
-    src/core/ProcInvoker.cpp
-    src/core/RuntimeContext.cpp
-    src/core/SymbolTable.cpp
-    src/core/TypePool.cpp
-    src/parser/Lexer.cpp
-    src/parser/Parser.cpp
-    src/parser/TokenKind.cpp
-    src/parser/TypeChecker.cpp)
+        src/ydsh.cpp
+        src/ast/node_dumper.cpp
+        src/ast/node.cpp
+        src/core/object.cpp
+        src/core/type.cpp
+        src/core/handle.cpp
+        src/core/proc.cpp
+        src/core/context.cpp
+        src/core/symbol_table.cpp
+        src/core/type_pool.cpp
+        src/parser/lexer.cpp
+        src/parser/parser.cpp
+        src/parser/token_kind.cpp
+        src/parser/type_checker.cpp)
 
 if(USE_DBUS)
     set(YDSH_SRC ${YDSH_SRC}
-        src/dbus/DBusBindImpl.cpp
-        src/dbus/DBusUtil.cpp)
+            src/dbus/dbus_bind_impl.cpp
+            src/dbus/dbus_util.cpp)
 endif()
 
 

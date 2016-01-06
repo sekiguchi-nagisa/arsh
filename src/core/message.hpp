@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_MESSAGETEMPLATE_HPP
-#define YDSH_MESSAGETEMPLATE_HPP
+#ifndef YDSH_CORE_MESSAGE_HPP
+#define YDSH_CORE_MESSAGE_HPP
 
 #include <stdexcept>
 #include <string>
@@ -86,4 +86,4 @@ constexpr unsigned int computeParamSize(const char *s, unsigned int index = 0) {
 } // namespace core
 } // namespace ydsh
 
-#endif //YDSH_MESSAGETEMPLATE_HPP
+#endif //YDSH_CORE_MESSAGE_HPP

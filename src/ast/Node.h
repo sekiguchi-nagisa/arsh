@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_NODE_H
-#define YDSH_NODE_H
+#ifndef YDSH_AST_NODE_H
+#define YDSH_AST_NODE_H
 
 #include <utility>
 #include <list>
@@ -23,9 +23,9 @@
 
 #include "../misc/flag_util.hpp"
 #include "../misc/noncopyable.h"
-#include "../parser/TokenKind.h"
-#include "../parser/Lexer.h"
-#include "../core/DSObject.h"
+#include "../parser/token_kind.h"
+#include "../parser/lexer.h"
+#include "../core/object.h"
 
 namespace ydsh {
 namespace core {
@@ -2485,4 +2485,4 @@ struct BaseVisitor : public NodeVisitor {
 } // namespace ast
 } // namespace ydsh
 
-#endif //YDSH_NODE_H
+#endif //YDSH_AST_NODE_H

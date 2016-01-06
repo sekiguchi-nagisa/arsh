@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_DBUSBIND_H
-#define YDSH_DBUSBIND_H
+#ifndef YDSH_DBUS_DBUS_BIND_H
+#define YDSH_DBUS_DBUS_BIND_H
 
 namespace ydsh {
 namespace core {
@@ -28,4 +28,4 @@ DBus_Object *newDBusObject(TypePool *pool);
 } // namespace core
 } // namespace ydsh
 
-#endif //YDSH_DBUSBIND_H
+#endif //YDSH_DBUS_DBUS_BIND_H

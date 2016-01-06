@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_BIND_H
-#define YDSH_BIND_H
+#ifndef YDSH_CORE_BIND_H
+#define YDSH_CORE_BIND_H
 
-#include "DSType.h"
+#include "type.h"
 
 namespace ydsh {
 namespace core {
@@ -55,4 +55,4 @@ native_type_info_t info_TupleType();
 } // namespace core
 } // namespace ydsh
 
-#endif //YDSH_BIND_H
+#endif //YDSH_CORE_BIND_H

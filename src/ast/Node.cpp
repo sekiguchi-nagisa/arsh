@@ -17,9 +17,9 @@
 #include <pwd.h>
 
 #include "../core/symbol.h"
-#include "../core/DSObject.h"
-#include "../core/RuntimeContext.h"
-#include "NodeDumper.h"
+#include "../core/object.h"
+#include "../core/context.h"
+#include "node_dumper.h"
 
 // helper macro
 #define EVAL(ctx, node) \

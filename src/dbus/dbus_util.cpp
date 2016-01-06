@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "DBusUtil.h"
+#include "dbus_util.h"
 #include "../misc/fatal.h"
 
 namespace ydsh {

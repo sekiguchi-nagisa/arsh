@@ -16,9 +16,9 @@
 
 #include <cassert>
 
-#include "DSType.h"
-#include "DSObject.h"
-#include "FieldHandle.h"
+#include "type.h"
+#include "object.h"
+#include "handle.h"
 
 namespace ydsh {
 namespace core {

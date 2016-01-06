@@ -16,8 +16,8 @@
 
 #include <cassert>
 
-#include "FieldHandle.h"
-#include "DSType.h"
+#include "handle.h"
+#include "type.h"
 #include "../misc/fatal.h"
 
 namespace ydsh {

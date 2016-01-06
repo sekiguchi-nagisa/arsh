@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef YDSH_DBUSUTIL_H
-#define YDSH_DBUSUTIL_H
+#ifndef YDSH_DBUS_DBUS_UTIL_H
+#define YDSH_DBUS_DBUS_UTIL_H
 
 extern "C" {
 #include <dbus/dbus.h>
 }
 
-#include "../core/DSType.h"
-#include "../core/DSObject.h"
-#include "../core/TypePool.h"
+#include "../core/type.h"
+#include "../core/object.h"
+#include "../core/type_pool.h"
 
 namespace ydsh {
 namespace core {
@@ -116,4 +116,4 @@ DSType &decodeTypeDescriptor(TypePool *pool, const char *desc);
 } // namespace ydsh
 
 
-#endif //YDSH_DBUSUTIL_H
+#endif //YDSH_DBUS_DBUS_UTIL_H

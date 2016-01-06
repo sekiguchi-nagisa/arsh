@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_LEXER_H
-#define YDSH_LEXER_H
+#ifndef YDSH_PARSER_LEXER_H
+#define YDSH_PARSER_LEXER_H
 
 #include <cstdlib>
 #include <cstdint>
 
-#include "TokenKind.h"
-#include "LexerBase.hpp"
+#include "token_kind.h"
+#include "lexer_base.hpp"
 
 namespace ydsh {
 namespace parser {
@@ -222,4 +222,4 @@ public:
 } // namespace parser
 } // namespace ydsh
 
-#endif //YDSH_LEXER_H
+#endif //YDSH_PARSER_LEXER_H

@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_LOGGER_H
-#define YDSH_LOGGER_H
+#ifndef YDSH_CORE_LOGGER_H
+#define YDSH_CORE_LOGGER_H
 
 #include "../config.h"
 #include "../misc/logger_base.hpp"
 
 DEFINE_LOGGING_POLICY("YDSH_", "APPENDER", TRACE_TOKEN, DUMP_EXEC, TRACE_SIGNAL);
 
-#endif //YDSH_LOGGER_H
+#endif //YDSH_CORE_LOGGER_H

@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_PARSERBASE_HPP
-#define YDSH_PARSERBASE_HPP
+#ifndef YDSH_PARSER_PARSER_BASE_HPP
+#define YDSH_PARSER_PARSER_BASE_HPP
 
 #include <vector>
 #include <ostream>
 
-#include "LexerBase.hpp"
+#include "lexer_base.hpp"
 
 namespace ydsh {
 namespace parser_base {
@@ -87,4 +87,4 @@ void ParserBase<T, LexerImpl, EListener>::alternativeError(std::vector<T> &&alte
 } //namespace ydsh
 
 
-#endif //YDSH_PARSERBASE_HPP
+#endif //YDSH_PARSER_PARSER_BASE_HPP

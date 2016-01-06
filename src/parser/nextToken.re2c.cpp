@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <parser/Lexer.h>
+#include <parser/lexer.h>
 #include <core/logger.h>
 
 #ifdef USE_TRACE_TOKEN

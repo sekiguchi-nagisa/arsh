@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_PARSER_H
-#define YDSH_PARSER_H
+#ifndef YDSH_PARSER_PARSER_H
+#define YDSH_PARSER_PARSER_H
 
 #include <memory>
 #include <utility>
 
-#include "ParserBase.hpp"
-#include "Lexer.h"
-#include "../ast/Node.h"
+#include "parser_base.hpp"
+#include "lexer.h"
+#include "../ast/node.h"
 
 namespace ydsh {
 namespace parser {
@@ -270,4 +270,4 @@ bool parse(const char *sourceName, RootNode &rootNode);
 } // namespace parser
 } // namespace ydsh
 
-#endif //YDSH_PARSER_H
+#endif //YDSH_PARSER_PARSER_H

@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TYPECHECKERROR_HPP
-#define YDSH_TYPECHECKERROR_HPP
+#ifndef YDSH_PARSER_TYPE_CHECK_ERROR_HPP
+#define YDSH_PARSER_TYPE_CHECK_ERROR_HPP
 
 #include <string>
 #include <vector>
 
-#include "../core/TypeLookupError.hpp"
+#include "../core/type_lookup_error.hpp"
 #include "../ast/Node.h"
 
 namespace ydsh {
@@ -113,4 +113,4 @@ DEFINE_TC_ERROR(UnmatchParam     , "not match parameter, require size is %, but 
 } // namespace ydsh
 
 
-#endif //YDSH_TYPECHECKERROR_HPP
+#endif //YDSH_PARSER_TYPE_CHECK_ERROR_HPP

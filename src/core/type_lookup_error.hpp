@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TYPELOOKUPERROR_HPP
-#define YDSH_TYPELOOKUPERROR_HPP
+#ifndef YDSH_CORE_TYPE_LOOKUP_ERROR_HPP
+#define YDSH_CORE_TYPE_LOOKUP_ERROR_HPP
 
 #include <string>
 #include <ostream>
 
-#include "MessageTemplate.hpp"
+#include "message.hpp"
 
 namespace ydsh {
 namespace core {
@@ -86,4 +86,4 @@ DEFINE_TL_ERROR(UnmatchElement , "not match type element, % requires % type elem
 } // namespace ydsh
 
 
-#endif //YDSH_TYPELOOKUPERROR_HPP
+#endif //YDSH_CORE_TYPE_LOOKUP_ERROR_HPP

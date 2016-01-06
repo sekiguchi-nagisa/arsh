@@ -23,7 +23,7 @@
 
 #include "directive.h"
 #include "directive_lexer.h"
-#include <parser/ParserBase.hpp>
+#include <parser/parser_base.hpp>
 
 namespace ydsh {
 namespace directive {

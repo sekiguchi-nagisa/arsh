@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include "TypePool.h"
-#include "TypeLookupError.hpp"
+#include "type_pool.h"
+#include "type_lookup_error.hpp"
 #include "bind.h"
-#include "../parser/Parser.h"
-#include "../parser/TypeChecker.h"
-#include "RuntimeContext.h"
+#include "../parser/parser.h"
+#include "../parser/type_checker.h"
+#include "context.h"
 
 extern char **environ;
 

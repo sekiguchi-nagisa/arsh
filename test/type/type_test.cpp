@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-#include <core/TypePool.h>
-#include <core/DSType.h>
-#include <parser/TypeChecker.h>
+#include <core/type_pool.h>
+#include <core/type.h>
+#include <parser/type_checker.h>
 
 using namespace ydsh::core;
 using namespace ydsh::ast;

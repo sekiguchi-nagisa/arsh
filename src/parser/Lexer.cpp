@@ -18,7 +18,7 @@
 
 #include "../misc/fatal.h"
 #include "../misc/num.h"
-#include "Lexer.h"
+#include "lexer.h"
 
 namespace ydsh {
 namespace parser {

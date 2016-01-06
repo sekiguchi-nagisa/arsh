@@ -16,7 +16,7 @@
 
 #include <cassert>
 
-#include "SymbolTable.h"
+#include "symbol_table.h"
 
 namespace ydsh {
 namespace core {

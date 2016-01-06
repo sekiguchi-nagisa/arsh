@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#ifndef DBUS_DBUSBIND_H
-#define DBUS_DBUSBIND_H
+#ifndef YDSH_DBUS_DBUS_BIND_IMPL_H
+#define YDSH_DBUS_DBUS_BIND_IMPL_H
 
 #include <unordered_set>
 
-#include "../core/DSObject.h"
-#include "../core/RuntimeContext.h"
-#include "DBusUtil.h"
+#include "../core/object.h"
+#include "../core/context.h"
+#include "dbus_util.h"
 
 namespace ydsh {
 namespace core {
@@ -251,4 +251,4 @@ private:
 } // namespace ydsh
 
 
-#endif //DBUS_DBUSBIND_H
+#endif //YDSH_DBUS_DBUS_BIND_IMPL_H

@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_SYMBOLTABLE_H
-#define YDSH_SYMBOLTABLE_H
+#ifndef YDSH_CORE_SYMBOL_TABLE_H
+#define YDSH_CORE_SYMBOL_TABLE_H
 
-#include "TypePool.h"
-#include "DSType.h"
-#include "FieldHandle.h"
+#include "type_pool.h"
+#include "type.h"
+#include "handle.h"
 
 namespace ydsh {
 namespace core {
@@ -146,4 +146,4 @@ public:
 } // namespace core
 } // namespace ydsh
 
-#endif //YDSH_SYMBOLTABLE_H
+#endif //YDSH_CORE_SYMBOL_TABLE_H

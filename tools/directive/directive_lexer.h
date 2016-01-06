@@ -19,7 +19,7 @@
 
 #include <ostream>
 
-#include <parser/LexerBase.hpp>
+#include <parser/lexer_base.hpp>
 
 #define EACH_TOKEN(TOKEN) \
     TOKEN(DUMMY) \

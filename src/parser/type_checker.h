@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TYPECHECKER_H
-#define YDSH_TYPECHECKER_H
+#ifndef YDSH_PARSER_TYPE_CHECKER_H
+#define YDSH_PARSER_TYPE_CHECKER_H
 
-#include "../ast/Node.h"
-#include "../core/TypePool.h"
-#include "../core/DSType.h"
-#include "../core/FieldHandle.h"
-#include "../core/SymbolTable.h"
-#include "TypeCheckError.hpp"
+#include "../ast/node.h"
+#include "../core/type_pool.h"
+#include "../core/type.h"
+#include "../core/handle.h"
+#include "../core/symbol_table.h"
+#include "type_check_error.hpp"
 
 namespace ydsh {
 namespace parser {
@@ -332,4 +332,4 @@ private:
 } // namespace parser
 } // namespace ydsh
 
-#endif //YDSH_TYPECHECKER_H
+#endif //YDSH_PARSER_TYPE_CHECKER_H
