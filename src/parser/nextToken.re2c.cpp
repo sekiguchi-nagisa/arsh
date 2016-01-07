@@ -119,7 +119,8 @@ TokenKind Lexer::nextToken(Token &token) {
 
       CMD_START_CHAR     = "\\" [^\r\n\000] | [^ \t\r\n\\;'"`|&<>(){}$#![\]+\-0-9\000];
       CMD_CHAR           = "\\" [^\000]     | [^ \t\r\n\\;'"`|&<>(){}$#![\]\000];
-      CMD_ARG_START_CHAR = "\\" [^\r\n\000] | [^ \t\r\n\\;'"`|&<>(){}$#![\]\000];
+      CMD_ARG_START_CHAR = "\\" [^\r\n\000] | [^ \t\r\n\\;'"`|&<>(){}$#!\000];
+      CMD_ARG_CHAR       = "\\" [^\000]     | [^ \t\r\n\\;'"`|&<>(){}$#!\000];
 
       LINE_END = ";";
       NEW_LINE = [\r\n][ \t\r\n]*;
@@ -248,14 +249,15 @@ TokenKind Lexer::nextToken(Token &token) {
       <DSTRING,CMD> "${"       { PUSH_MODE(STMT); RET(START_INTERP); }
       <DSTRING,CMD> "$("       { PUSH_MODE(STMT); RET(START_SUB_CMD); }
 
-      <CMD> CMD_ARG_START_CHAR CMD_CHAR*
+      <CMD> CMD_ARG_START_CHAR CMD_ARG_CHAR*
                                { UPDATE_LN();  RET(CMD_ARG_PART); }
       <CMD> STRING_LITERAL     { UPDATE_LN(); RET(STRING_LITERAL); }
       <CMD> ESTRING_LITERAL    { UPDATE_LN(); RET(STRING_LITERAL); }
       <CMD> ["]                { PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
+      <CMD> APPLIED_NAME "["   { PUSH_MODE(STMT); RET(APPLIED_NAME_WITH_BRACKET); }
+      <CMD> SPECIAL_NAME "["   { PUSH_MODE(STMT); RET(SPECIAL_NAME_WITH_BRACKET); }
       <CMD> ")"                { POP_MODE(); POP_MODE(); RET(RP); }
       <CMD> "("                { PUSH_MODE(CMD); RET(LP); }
-      <CMD> "["                { PUSH_MODE(STMT); RET(LB); }
       <CMD> [ \t]+             { FIND_SPACE(); }
       <CMD> "\\" [\r\n]        { UPDATE_LN(); FIND_SPACE(); }
 

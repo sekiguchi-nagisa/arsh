@@ -127,6 +127,8 @@
     TOKEN(START_INTERP                       , "${") \
     /* command argument */\
     TOKEN(CMD_ARG_PART                       , "<Argument Part>") \
+    TOKEN(APPLIED_NAME_WITH_BRACKET          , "<$ Name[>") \
+    TOKEN(SPECIAL_NAME_WITH_BRACKET          , "<$ Char[>") \
     /* redir op */\
     TOKEN(REDIR_IN_2_FILE                    , "<") \
     TOKEN(REDIR_OUT_2_FILE                   , "1>") \

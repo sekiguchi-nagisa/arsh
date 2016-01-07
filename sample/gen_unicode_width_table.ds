@@ -47,7 +47,7 @@ cd ../
 echo "generate file: $out"
 
 export-env UNICODE_DIR = "."
-let g = "AUTO_GENERATED_$(echo $(basename $out) | tr '[a-z.]' '[A-Z_]')"
+let g = "AUTO_GENERATED_$(echo $(basename $out) | tr [a-z.] [A-Z_])"
 
 echo "/* this is a auto-generated file by using sample/$(basename $0)  */" > $out
 write "/*"

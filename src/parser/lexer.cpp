@@ -254,9 +254,13 @@ std::string Lexer::toName(Token token) const {
     for(unsigned int i = 0; i < token.size; i++) {
         char ch = this->buf[token.pos + i];
         switch(ch) {
+        /**
+         * ex. $true, ${true}, $@[
+         */
         case '$':
         case '{':
         case '}':
+        case '[':
             continue;
         default:
             name += ch;

@@ -37,6 +37,11 @@
     OP(SPECIAL_NAME) \
     OP(START_INTERP)
 
+#define EACH_LA_paramExpansion(OP) \
+    OP(APPLIED_NAME_WITH_BRACKET) \
+    OP(SPECIAL_NAME_WITH_BRACKET) \
+    EACH_LA_interpolation(OP)
+
 #define EACH_LA_primary(OP) \
     OP(NEW) \
     OP(BYTE_LITERAL) \
@@ -111,7 +116,7 @@
     OP(STRING_LITERAL) \
     OP(OPEN_DQUOTE) \
     OP(START_SUB_CMD) \
-    EACH_LA_interpolation(OP)
+    EACH_LA_paramExpansion(OP)
 
 #define EACH_LA_assign(OP) \
     OP(ASSIGN) \
@@ -960,8 +965,8 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool expandTilde) {
     case START_SUB_CMD: {
         return this->parse_commandSubstitution();
     }
-    EACH_LA_interpolation(GEN_LA_CASE) {
-        return this->parse_interpolation(true);
+    EACH_LA_paramExpansion(GEN_LA_CASE) {
+        return this->parse_paramExpansion();
     }
     default: {
         E_ALTER(
@@ -1317,18 +1322,11 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
     return std::move(node);
 }
 
-std::unique_ptr<Node> Parser::parse_interpolation(bool asCmdArg) {
+std::unique_ptr<Node> Parser::parse_interpolation() {
     switch(CUR_KIND()) {
     case APPLIED_NAME:
     case SPECIAL_NAME: {
-        auto node(this->parse_appliedName(CUR_KIND() == SPECIAL_NAME));
-        if(asCmdArg && CUR_KIND() == LB) {
-            this->expect(LB);
-            auto indexNode(this->parse_expression());
-            this->expect(RB);
-            node.reset(createIndexNode(node.release(), indexNode.release()));
-        }
-        return node;
+        return this->parse_appliedName(CUR_KIND() == SPECIAL_NAME);
     }
     case START_INTERP: {
         this->expect(START_INTERP);
@@ -1343,6 +1341,22 @@ std::unique_ptr<Node> Parser::parse_interpolation(bool asCmdArg) {
         );
         return std::unique_ptr<Node>(nullptr);
     }
+    }
+}
+
+std::unique_ptr<Node> Parser::parse_paramExpansion() {
+    switch(CUR_KIND()) {
+    case APPLIED_NAME_WITH_BRACKET:
+    case SPECIAL_NAME_WITH_BRACKET: {
+        Token token = this->curToken;
+        this->fetchNext();
+        auto node =  uniquify<VarNode>(token, this->lexer->toName(token));
+        auto indexNode(this->parse_expression());
+        this->expect(RB);
+        return std::unique_ptr<Node>(createIndexNode(node.release(), indexNode.release()));
+    }
+    default:
+        return this->parse_interpolation();
     }
 }
 

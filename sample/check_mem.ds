@@ -43,7 +43,7 @@ function __test_each($data : Array<String>, $test : typeof($test)): Boolean {
             echo -e '\e[35m[NG]\e[0m' $t
         }
     }
-    echo ++++ result "[$c/$size]" ++++
+    echo ++++ result [$c/$size] ++++
     return $c == $size
 }
 

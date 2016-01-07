@@ -254,7 +254,9 @@ private:
 
     std::unique_ptr<Node> parse_stringExpression();
 
-    std::unique_ptr<Node> parse_interpolation(bool asCmdArg = false);
+    std::unique_ptr<Node> parse_interpolation();
+
+    std::unique_ptr<Node> parse_paramExpansion();
 
     std::unique_ptr<Node> parse_commandSubstitution();
 };

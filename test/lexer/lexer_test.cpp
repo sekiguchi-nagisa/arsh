@@ -843,6 +843,17 @@ TEST_F(LexerTest_Lv1, appliedName7) {
     });
 }
 
+TEST_F(LexerTest_Lv1, appliedName8) {
+    const char *text = "$hello[";
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(text);
+        this->lexer->pushLexerMode(yycCMD);
+        EXPECT(APPLIED_NAME_WITH_BRACKET, text, EOS, "");
+        this->assertLexerMode(yycSTMT);
+    });
+}
+
 // special name
 TEST_F(LexerTest_Lv1, specialName1) {
     const char *text = "$@";
@@ -949,6 +960,28 @@ TEST_F(LexerTest_Lv1, specialName10) {
     });
 }
 
+TEST_F(LexerTest_Lv1, specialName11) {
+    const char *text = "$2[";
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(text);
+        this->lexer->pushLexerMode(yycCMD);
+        EXPECT(SPECIAL_NAME_WITH_BRACKET, text, EOS, "");
+        this->assertLexerMode(yycSTMT);
+    });
+}
+
+TEST_F(LexerTest_Lv1, specialName12) {
+    const char *text = "$?[";
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(text);
+        this->lexer->pushLexerMode(yycCMD);
+        EXPECT(SPECIAL_NAME_WITH_BRACKET, text, EOS, "");
+        this->assertLexerMode(yycSTMT);
+    });
+}
+
 
 /**
  * brace test
@@ -1025,19 +1058,6 @@ TEST_F(LexerTest_Lv1, LB2) {
         this->initLexer(text, yycEXPR);
         EXPECT(LB, text, EOS, "");
         this->assertLexerMode(yycSTMT);
-    });
-}
-
-TEST_F(LexerTest_Lv1, LB3) {
-    const char *text = "[";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        this->lexer->pushLexerMode(yycCMD);
-        EXPECT(LB, text, EOS, "");
-        this->assertLexerMode(yycSTMT);
-        this->lexer->popLexerMode();
-        this->assertLexerMode(yycCMD);
     });
 }
 
@@ -1173,6 +1193,17 @@ TEST_F(LexerTest_Lv1, CMD5) {
         SCOPED_TRACE("");
         this->initLexer(text);
         EXPECT(EOS, "");
+    });
+}
+
+
+TEST_F(LexerTest_Lv1, CMD_ARG1) {   // allow  '[' and ']'
+    const char *text = "[[][";
+    ASSERT_NO_FATAL_FAILURE({
+        SCOPED_TRACE("");
+        this->initLexer(text);
+        this->lexer->pushLexerMode(yycCMD);
+        EXPECT(CMD_ARG_PART, text, LINE_END, "\n", EOS, "");
     });
 }
 
