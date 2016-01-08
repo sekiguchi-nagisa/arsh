@@ -217,11 +217,6 @@ public:
 class PipelineEvaluator {
 private:
     /**
-     * builtin command name and pointer.
-     */
-    static CStringHashMap<builtin_command_t> builtinMap;
-
-    /**
      * not delete it
      */
     RuntimeContext *ctx;
@@ -241,7 +236,9 @@ private:
 public:
     NON_COPYABLE(PipelineEvaluator);
 
-    PipelineEvaluator(RuntimeContext *ctx);
+    PipelineEvaluator(RuntimeContext *ctx) :
+            ctx(ctx), argArray(), redirOptions(), procStates() { }
+
     ~PipelineEvaluator() = default;
 
     void clear() {
@@ -269,11 +266,6 @@ public:
     void execBuiltinCommand(char *const argv[]);
 
     /**
-     * return null, if not found builtin command.
-     */
-    static builtin_command_t lookupBuiltinCommand(const char *commandName);
-
-    /**
      * write status to status (same of wait's status).
      */
     void forkAndExec(const BuiltinContext &bctx, int &status, bool useDefaultPath = false);
@@ -283,7 +275,6 @@ private:
 
     DSValue *getARGV(unsigned int procIndex);
 
-    const char *getCommandName(unsigned int procIndex);
     bool checkChildError(const std::pair<unsigned int, ChildError> &errorPair);
 };
 

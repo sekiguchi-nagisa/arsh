@@ -326,6 +326,29 @@ static constexpr size_t sizeOfArray(const T (&)[N]) {
     return N;
 }
 
+/**
+ * return null, if not found builtin command.
+ */
+static builtin_command_t lookupBuiltinCommand(const char *commandName) {
+    /**
+     * builtin command name and pointer.
+     */
+    static CStringHashMap<builtin_command_t> builtinMap;
+
+    // register builtin command
+    if(builtinMap.empty()) {
+        unsigned int size = sizeOfArray(builtinCommands);
+        for(unsigned int i = 0; i < size; i++) {
+            builtinMap.insert(std::make_pair(builtinCommands[i].commandName, builtinCommands[i].cmd_ptr));
+        }
+    }
+
+    auto iter = builtinMap.find(commandName);
+    if(iter == builtinMap.end()) {
+        return nullptr;
+    }
+    return iter->second;
+}
 
 static void printAllUsage(FILE *fp) {
     unsigned int size = sizeOfArray(builtinCommands);
@@ -720,10 +743,9 @@ static int builtin_command(RuntimeContext *ctx, const BuiltinContext &bctx) {
     }
 
     if(index < bctx.argc) {
-        auto &invoker = ctx->getProcInvoker();
         if(showDesc == 0) { // execute command
             BuiltinContext nbctx(index, bctx);
-            auto *cmd = invoker.lookupBuiltinCommand(bctx.argv[index]);
+            auto *cmd = lookupBuiltinCommand(bctx.argv[index]);
             if(cmd != nullptr) {
                 return cmd(ctx, nbctx);
             } else {
@@ -752,7 +774,7 @@ static int builtin_command(RuntimeContext *ctx, const BuiltinContext &bctx) {
                 }
 
                 // check builtin command
-                if(invoker.lookupBuiltinCommand(commandName) != nullptr) {
+                if(lookupBuiltinCommand(commandName) != nullptr) {
                     successCount++;
                     fputs(commandName, bctx.fp_stdout);
                     if(showDesc == 2) {
@@ -1204,11 +1226,6 @@ BuiltinContext::BuiltinContext(int offset, const BuiltinContext &bctx) :
 // ##     PipelineEvaluator     ##
 // ###############################
 
-CStringHashMap<builtin_command_t> PipelineEvaluator::builtinMap;
-
-PipelineEvaluator::PipelineEvaluator(RuntimeContext *ctx) :
-        ctx(ctx), argArray(), redirOptions(), procStates() { }
-
 void PipelineEvaluator::openProc(DSValue &&value) {
     // resolve proc kind (external command, builtin command or user-defined command)
     const char *commandName = typeAs<String_Object>(value)->getValue();
@@ -1370,22 +1387,6 @@ bool PipelineEvaluator::redirect(unsigned int procIndex, int errorPipe, int stdi
     return true;
 
 #undef CHECK_ERROR
-}
-
-builtin_command_t PipelineEvaluator::lookupBuiltinCommand(const char *commandName) {
-    // register builtin command
-    if(builtinMap.empty()) {
-        unsigned int size = sizeOfArray(builtinCommands);
-        for(unsigned int i = 0; i < size; i++) {
-            builtinMap.insert(std::make_pair(builtinCommands[i].commandName, builtinCommands[i].cmd_ptr));
-        }
-    }
-
-    auto iter = builtinMap.find(commandName);
-    if(iter == builtinMap.end()) {
-        return nullptr;
-    }
-    return iter->second;
 }
 
 DSValue *PipelineEvaluator::getARGV(unsigned int procIndex) {
@@ -1594,10 +1595,6 @@ void PipelineEvaluator::forkAndExec(const BuiltinContext &bctx, int &status, boo
     }
 }
 
-const char *PipelineEvaluator::getCommandName(unsigned int procIndex) {
-    return typeAs<String_Object>(this->getARGV(procIndex)[0])->getValue();
-}
-
 bool PipelineEvaluator::checkChildError(const std::pair<unsigned int, ChildError> &errorPair) {
     if(!errorPair.second) {
         auto &pair = this->redirOptions[errorPair.second.redirIndex];
@@ -1605,7 +1602,7 @@ bool PipelineEvaluator::checkChildError(const std::pair<unsigned int, ChildError
         std::string msg;
         if(pair.first == RedirectOP::DUMMY) {  // execution error
             msg += "execution error: ";
-            msg += this->getCommandName(errorPair.first);
+            msg += typeAs<String_Object>(this->getARGV(errorPair.first)[0])->getValue();
         } else {    // redirection error
             msg += "io redirection error: ";
             if(pair.second && typeAs<String_Object>(pair.second)->size() != 0) {
