@@ -1200,20 +1200,16 @@ BuiltinContext::BuiltinContext(int offset, const BuiltinContext &bctx) :
 }
 
 
-// #########################
-// ##     ProcInvoker     ##
-// #########################
+// ###############################
+// ##     PipelineEvaluator     ##
+// ###############################
 
-ProcInvoker::ProcInvoker(RuntimeContext *ctx) :
-        ctx(ctx), builtinMap(), argArray(), redirOptions(), procStates() {
-    // register builtin command
-    unsigned int size = sizeOfArray(builtinCommands);
-    for(unsigned int i = 0; i < size; i++) {
-        this->builtinMap.insert(std::make_pair(builtinCommands[i].commandName, builtinCommands[i].cmd_ptr));
-    }
-}
+CStringHashMap<builtin_command_t> PipelineEvaluator::builtinMap;
 
-void ProcInvoker::openProc(DSValue &&value) {
+PipelineEvaluator::PipelineEvaluator(RuntimeContext *ctx) :
+        ctx(ctx), argArray(), redirOptions(), procStates() { }
+
+void PipelineEvaluator::openProc(DSValue &&value) {
     // resolve proc kind (external command, builtin command or user-defined command)
     const char *commandName = typeAs<String_Object>(value)->getValue();
     ProcState::ProcKind procKind = ProcState::EXTERNAL;
@@ -1230,7 +1226,7 @@ void ProcInvoker::openProc(DSValue &&value) {
 
     // second, check builtin command
     if(ptr == nullptr) {
-        builtin_command_t bcmd = this->lookupBuiltinCommand(commandName);
+        builtin_command_t bcmd = lookupBuiltinCommand(commandName);
         if(bcmd != nullptr) {
             procKind = ProcState::ProcKind::BUILTIN;
             ptr = (void *)bcmd;
@@ -1244,12 +1240,12 @@ void ProcInvoker::openProc(DSValue &&value) {
     this->argArray.push_back(std::move(value));
 }
 
-void ProcInvoker::closeProc() {
+void PipelineEvaluator::closeProc() {
     this->argArray.push_back(DSValue());
     this->redirOptions.push_back(std::make_pair(RedirectOP::DUMMY, DSValue()));
 }
 
-void ProcInvoker::addArg(DSValue &&value, bool skipEmptyString) {
+void PipelineEvaluator::addArg(DSValue &&value, bool skipEmptyString) {
     DSType *valueType = value->getType();
     if(*valueType == this->ctx->getPool().getStringType()) {
         if(skipEmptyString && typeAs<String_Object>(value)->empty()) {
@@ -1272,7 +1268,7 @@ void ProcInvoker::addArg(DSValue &&value, bool skipEmptyString) {
     }
 }
 
-void ProcInvoker::addRedirOption(RedirectOP op, DSValue &&value) {
+void PipelineEvaluator::addRedirOption(RedirectOP op, DSValue &&value) {
     DSType *valueType = value->getType();
     if(*valueType == this->ctx->getPool().getStringType()) {
         this->redirOptions.push_back(std::make_pair(op, value));
@@ -1307,7 +1303,7 @@ static int redirectToFile(const DSValue &fileName, const char *mode, int targetF
  * if errorPipe is -1, report error and return false.
  * if errorPipe is not -1, report error and exit 1
  */
-bool ProcInvoker::redirect(unsigned int procIndex, int errorPipe, int stdin_fd, int stdout_fd, int stderr_fd) {
+bool PipelineEvaluator::redirect(unsigned int procIndex, int errorPipe, int stdin_fd, int stdout_fd, int stderr_fd) {
 #define CHECK_ERROR(result) do { occurredError = (result); if(occurredError != 0) { goto ERR; } } while(0)
 
     int occurredError = 0;
@@ -1376,19 +1372,27 @@ bool ProcInvoker::redirect(unsigned int procIndex, int errorPipe, int stdin_fd, 
 #undef CHECK_ERROR
 }
 
-builtin_command_t ProcInvoker::lookupBuiltinCommand(const char *commandName) {
-    auto iter = this->builtinMap.find(commandName);
-    if(iter == this->builtinMap.end()) {
+builtin_command_t PipelineEvaluator::lookupBuiltinCommand(const char *commandName) {
+    // register builtin command
+    if(builtinMap.empty()) {
+        unsigned int size = sizeOfArray(builtinCommands);
+        for(unsigned int i = 0; i < size; i++) {
+            builtinMap.insert(std::make_pair(builtinCommands[i].commandName, builtinCommands[i].cmd_ptr));
+        }
+    }
+
+    auto iter = builtinMap.find(commandName);
+    if(iter == builtinMap.end()) {
         return nullptr;
     }
     return iter->second;
 }
 
-DSValue *ProcInvoker::getARGV(unsigned int procIndex) {
+DSValue *PipelineEvaluator::getARGV(unsigned int procIndex) {
     return this->argArray.data() + this->procStates[procIndex].argOffset();
 }
 
-EvalStatus ProcInvoker::invoke() {
+EvalStatus PipelineEvaluator::invoke() {
     const unsigned int procSize = this->procStates.size();
 
     // check builtin command
@@ -1555,8 +1559,8 @@ EvalStatus ProcInvoker::invoke() {
     }
 }
 
-void ProcInvoker::execBuiltinCommand(char *const argv[]) {
-    builtin_command_t cmd_ptr = this->lookupBuiltinCommand(argv[0]);
+void PipelineEvaluator::execBuiltinCommand(char *const argv[]) {
+    builtin_command_t cmd_ptr = lookupBuiltinCommand(argv[0]);
     if(cmd_ptr == nullptr) {
         fprintf(stderr, "ydsh: %s: not builtin command\n", argv[0]);
         this->ctx->updateExitStatus(1);
@@ -1571,7 +1575,7 @@ void ProcInvoker::execBuiltinCommand(char *const argv[]) {
     fclose(bctx.fp_stderr);
 }
 
-void ProcInvoker::forkAndExec(const BuiltinContext &bctx, int &status, bool useDefaultPath) {
+void PipelineEvaluator::forkAndExec(const BuiltinContext &bctx, int &status, bool useDefaultPath) {
     pid_t pid = xfork();
     if(pid == -1) {
         perror("child process error");
@@ -1590,11 +1594,11 @@ void ProcInvoker::forkAndExec(const BuiltinContext &bctx, int &status, bool useD
     }
 }
 
-const char *ProcInvoker::getCommandName(unsigned int procIndex) {
+const char *PipelineEvaluator::getCommandName(unsigned int procIndex) {
     return typeAs<String_Object>(this->getARGV(procIndex)[0])->getValue();
 }
 
-bool ProcInvoker::checkChildError(const std::pair<unsigned int, ChildError> &errorPair) {
+bool PipelineEvaluator::checkChildError(const std::pair<unsigned int, ChildError> &errorPair) {
     if(!errorPair.second) {
         auto &pair = this->redirOptions[errorPair.second.redirIndex];
 

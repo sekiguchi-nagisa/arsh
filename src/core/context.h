@@ -164,7 +164,7 @@ private:
      */
     std::vector<unsigned long> callStack;
 
-    ProcInvoker procInvoker;
+    PipelineEvaluator procInvoker;
 
     /**
      * contains user defined command node.
@@ -528,7 +528,7 @@ public:
 
     void exitShell(unsigned int status);
 
-    ProcInvoker &getProcInvoker() {
+    PipelineEvaluator &getProcInvoker() {
         return this->procInvoker;
     }
 

@@ -214,18 +214,17 @@ public:
     }
 };
 
-class ProcInvoker {
+class PipelineEvaluator {
 private:
+    /**
+     * builtin command name and pointer.
+     */
+    static CStringHashMap<builtin_command_t> builtinMap;
 
     /**
      * not delete it
      */
     RuntimeContext *ctx;
-
-    /**
-     * builtin command name and pointer.
-     */
-    CStringHashMap<builtin_command_t> builtinMap;
 
     /**
      * commonly stored object is String_Object.
@@ -240,10 +239,10 @@ private:
     std::vector<ProcState> procStates;
 
 public:
-    NON_COPYABLE(ProcInvoker);
+    NON_COPYABLE(PipelineEvaluator);
 
-    ProcInvoker(RuntimeContext *ctx);
-    ~ProcInvoker() = default;
+    PipelineEvaluator(RuntimeContext *ctx);
+    ~PipelineEvaluator() = default;
 
     void clear() {
         this->argArray.clear();
@@ -272,7 +271,7 @@ public:
     /**
      * return null, if not found builtin command.
      */
-    builtin_command_t lookupBuiltinCommand(const char *commandName);
+    static builtin_command_t lookupBuiltinCommand(const char *commandName);
 
     /**
      * write status to status (same of wait's status).
