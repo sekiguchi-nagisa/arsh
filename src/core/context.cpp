@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 
 #include <ctime>
 #include <cstring>
@@ -31,6 +32,92 @@
 
 namespace ydsh {
 namespace core {
+
+// ###########################
+// ##     FilePathCache     ##
+// ###########################
+
+FilePathCache::~FilePathCache() {
+    for(auto &pair : this->map) {
+        delete pair.first;
+    }
+}
+
+const char *FilePathCache::searchPath(const char *fileName, bool useDefaultPath) {
+    // if found '/', return fileName
+    if(strchr(fileName, '/') != nullptr) {
+        return fileName;
+    }
+
+    // search cache
+    auto iter = this->map.find(fileName);
+    if(iter != this->map.end()) {
+        return iter->second.c_str();
+    }
+
+    // get PATH
+    const char *path = getenv("PATH");
+    if(path == nullptr || useDefaultPath) {
+        path = VAR_DEFAULT_PATH;
+    }
+
+    // resolve path
+    std::string resolvedPath;
+    for(unsigned int i = 0; !resolvedPath.empty() || path[i] != '\0'; i++) {
+        char ch = path[i];
+        bool stop = false;
+
+        if(ch == '\0') {
+            stop = true;
+        } else if(ch != ':') {
+            resolvedPath += ch;
+            continue;
+        }
+        if(resolvedPath.empty()) {
+            continue;
+        }
+
+        if(resolvedPath.back() != '/') {
+            resolvedPath += '/';
+        }
+        resolvedPath += fileName;
+
+        if(resolvedPath[0] == '~') {
+            resolvedPath = expandTilde(resolvedPath.c_str());
+        }
+
+        struct stat st;
+        if(stat(resolvedPath.c_str(), &st) == 0 && (st.st_mode & S_IXUSR) == S_IXUSR) {
+            // set to cache
+            if(this->map.size() == MAX_CACHE_SIZE) {
+                delete this->map.begin()->first;
+                this->map.erase(this->map.begin());
+            }
+            auto pair = this->map.insert(std::make_pair(strdup(fileName), std::move(resolvedPath)));
+            assert(pair.second);
+            return pair.first->second.c_str();
+        }
+        resolvedPath.clear();
+
+        if(stop) {
+            break;
+        }
+    }
+
+    // not found
+    return nullptr;
+}
+
+void FilePathCache::removePath(const char *fileName) {
+    if(fileName != nullptr) {
+        auto iter = this->map.find(fileName);
+        if(iter != this->map.end()) {
+            delete iter->first;
+            this->map.erase(iter);
+        }
+    }
+}
+
 
 // ############################
 // ##     RuntimeContext     ##
@@ -52,7 +139,7 @@ RuntimeContext::RuntimeContext() :
         localVarOffset(0), offsetStack(), toplevelPrinting(false), assertion(true),
         handle_STR(nullptr), handle_bt(nullptr),
         handle_OLDPWD(nullptr), handle_PWD(nullptr), handle_IFS(nullptr),
-        callableContextStack(), callStack(), procInvoker(this), udcMap() {
+        callableContextStack(), callStack(), procInvoker(this), udcMap(), pathCache() {
 }
 
 RuntimeContext::~RuntimeContext() {

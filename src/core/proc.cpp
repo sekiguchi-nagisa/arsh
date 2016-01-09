@@ -34,89 +34,25 @@ namespace ydsh {
 namespace core {
 
 /**
- * if cannot resolve path, return empty string and set errno.
+ * if filePath is null, not execute and set ENOENT.
+ * argv is not null.
+ * envp may be null.
+ * if success, not return.
  */
-static std::string resolveFilePath(const char *fileName, bool useDefaultPath) {
-    // get path
-    const char *path = getenv("PATH");
-    if(path == nullptr || useDefaultPath) {
-        path = VAR_DEFAULT_PATH;
-    }
-
-    // resolve path
-    std::string resolvedPath;
-    for(unsigned int i = 0; !resolvedPath.empty() || path[i] != '\0'; i++) {
-        char ch = path[i];
-        bool stop = false;
-
-        if(ch == '\0') {
-            stop = true;
-        } else if(ch != ':') {
-            resolvedPath += ch;
-            continue;
-        }
-        if(resolvedPath.empty()) {
-            continue;
-        }
-
-        if(resolvedPath[resolvedPath.size() - 1] != '/') {
-            resolvedPath += '/';
-        }
-        resolvedPath += fileName;
-
-        if(resolvedPath[0] == '~') {
-            resolvedPath = expandTilde(resolvedPath.c_str());
-        }
-
-        struct stat st;
-        if(stat(resolvedPath.c_str(), &st) == 0 && (st.st_mode & S_IXUSR) == S_IXUSR) {
-            return resolvedPath;
-        }
-        resolvedPath.clear();
-
-        if(stop) {
-            break;
-        }
-    }
-
-    // not found
-    errno = ENOENT;
-    return resolvedPath;
-}
-
-/**
- * first element of argv is executing file name.
- * last element of argv is null.
- * last element of envp is null.
- * if envp is null, inherit current env.
- * if progName is null, equivalent to argv[0].
- *
- * if execution success, not return.
- */
-static void builtin_execvpe(char **argv, char *const *envp, const char *progName, bool useDefaultPath = false) {
-    const char *fileName = argv[0];
-    if(progName != nullptr) {
-        argv[0] = const_cast<char *>(progName);
-    }
-
-    // resolve file path
-    std::string path;
-    if(strchr(fileName, '/') == nullptr) {
-        path = resolveFilePath(fileName, useDefaultPath);
-        if(!path.empty()) {
-            fileName = path.c_str();
-        }
+static void xexecve(const char *filePath, char **argv, char *const *envp) {
+    if(filePath == nullptr) {
+        errno = ENOENT;
+        return;
     }
 
     // set env
-    setenv("_", fileName, 1);
+    setenv("_", filePath, 1);
     if(envp == nullptr) {
         envp = environ;
     }
 
-
     LOG_L(DUMP_EXEC, [&](std::ostream &stream) {
-        stream << "execve(" << fileName << ", [";
+        stream << "execve(" << filePath << ", [";
         for(unsigned int i = 0; argv[i] != nullptr; i++) {
             if(i > 0) {
                 stream << ", ";
@@ -126,8 +62,8 @@ static void builtin_execvpe(char **argv, char *const *envp, const char *progName
         stream << "])";
     });
 
-    // exev
-    execve(fileName, argv, envp);
+    // execute external command
+    execve(filePath, argv, envp);
 }
 
 /**
@@ -618,7 +554,7 @@ static int builtin_ps_intrp(RuntimeContext *ctx, const BuiltinContext &bctx) {
     return 0;
 }
 
-static int builtin_exec(RuntimeContext *, const BuiltinContext &bctx) {
+static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx) {
     int index = 1;
     bool clearEnv = false;
     const char *progName = nullptr;
@@ -640,7 +576,13 @@ static int builtin_exec(RuntimeContext *, const BuiltinContext &bctx) {
     char *envp[] = {nullptr};
     if(index < bctx.argc) { // exec
         const char *old = getenv("_");  // save current _
-        builtin_execvpe(const_cast<char **>(bctx.argv + index), clearEnv ? envp : nullptr, progName);
+        char **argv = const_cast<char **>(bctx.argv + index);
+        const char *filePath = ctx->getPathCache().searchPath(argv[0]);
+        if(progName != nullptr) {
+            argv[0] = const_cast<char *>(progName);
+        }
+
+        xexecve(filePath, argv, clearEnv ? envp : nullptr);
         PERROR(bctx, "%s", bctx.argv[index]);
         if(old != nullptr) {    // restore
             setenv("_", old, 1);
@@ -681,7 +623,9 @@ static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx) {
             }
 
             // exec external command
-            builtin_execvpe(const_cast<char **>(bctx.argv + 1), nullptr, nullptr, false);
+            char **argv = const_cast<char **>(bctx.argv + 1);
+            const char *filePath = ctx->getPathCache().searchPath(argv[0]);
+            xexecve(filePath, argv, nullptr);
             BuiltinContext nbctx(1, bctx);
             PERROR(nbctx, "");
             exit(1);
@@ -785,13 +729,13 @@ static int builtin_command(RuntimeContext *ctx, const BuiltinContext &bctx) {
                 }
 
                 // check external command
-                std::string path(resolveFilePath(commandName, false));
-                if(!path.empty()) {
+                const char *path = ctx->getPathCache().searchPath(commandName);
+                if(path != nullptr) {
                     successCount++;
                     if(showDesc == 1) {
-                        fprintf(bctx.fp_stdout, "%s\n", path.c_str());
+                        fprintf(bctx.fp_stdout, "%s\n", path);
                     } else {
-                        fprintf(bctx.fp_stdout, "%s is %s\n", commandName, path.c_str());
+                        fprintf(bctx.fp_stdout, "%s is %s\n", commandName, path);
                     }
                     continue;
                 }
@@ -1255,6 +1199,11 @@ void PipelineEvaluator::openProc(DSValue &&value) {
         }
     }
 
+    // resolve external command path
+    if(ptr == nullptr) {
+        ptr = (void *)this->ctx->getPathCache().searchPath(commandName);
+    }
+
     unsigned int argOffset = this->argArray.size();
     unsigned int redirOffset = this->redirOptions.size();
     this->procStates.push_back(ProcState(argOffset, redirOffset, procKind, ptr));
@@ -1479,6 +1428,10 @@ EvalStatus PipelineEvaluator::invoke() {
             errorPair.first = procIndex;
             errorPair.second = childError;
 
+            if(childError.errorNum == ENOENT) { // if file not found, remove path cache
+                const char *cmdName = this->getCommandName(procIndex);
+                this->ctx->getPathCache().removePath(cmdName);
+            }
             procIndex = procSize;
             break;
         }
@@ -1550,7 +1503,7 @@ EvalStatus PipelineEvaluator::invoke() {
                 BuiltinContext bctx(argc, argv, STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO);
                 exit(cmd_ptr(this->ctx, bctx));
             } else {    // invoke external command
-                builtin_execvpe(argv, nullptr, nullptr);
+                xexecve(procState.filePath(), argv, nullptr);
 
                 ChildError e;
                 e.errorNum = errno;
@@ -1592,12 +1545,18 @@ void PipelineEvaluator::forkAndExec(const BuiltinContext &bctx, int &status, boo
         dup2(fileno(bctx.fp_stdout), STDOUT_FILENO);
         dup2(fileno(bctx.fp_stderr), STDERR_FILENO);
 
-        builtin_execvpe(const_cast<char **>(bctx.argv), nullptr, nullptr, useDefaultPath);
+        const char *filePath = this->ctx->getPathCache().searchPath(bctx.argv[0], useDefaultPath);
+
+        xexecve(filePath, const_cast<char **>(bctx.argv), nullptr);
         PERROR(bctx, "");
         exit(1);
     } else {    // parent process
         this->ctx->xwaitpid(pid, status, 0);
     }
+}
+
+const char *PipelineEvaluator::getCommandName(unsigned int procIndex) {
+    return typeAs<String_Object>(this->getARGV(procIndex)[0])->getValue();
 }
 
 bool PipelineEvaluator::checkChildError(const std::pair<unsigned int, ChildError> &errorPair) {
@@ -1607,7 +1566,7 @@ bool PipelineEvaluator::checkChildError(const std::pair<unsigned int, ChildError
         std::string msg;
         if(pair.first == RedirectOP::DUMMY) {  // execution error
             msg += "execution error: ";
-            msg += typeAs<String_Object>(this->getARGV(errorPair.first)[0])->getValue();
+            msg += this->getCommandName(errorPair.first);
         } else {    // redirection error
             msg += "io redirection error: ";
             if(pair.second && typeAs<String_Object>(pair.second)->size() != 0) {

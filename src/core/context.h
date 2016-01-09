@@ -57,6 +57,26 @@ enum class BuiltinVarOffset : unsigned int {
     /*POS_2, POS_3, POS_4, POS_5, POS_6, POS_7, POS_8, POS_9, */
 };
 
+class FilePathCache {
+private:
+    CStringHashMap<std::string> map;
+
+    static constexpr unsigned int MAX_CACHE_SIZE = 100;
+
+public:
+    FilePathCache() = default;
+
+    ~FilePathCache();
+
+    /**
+     * search file path by using PATH
+     * if cannot resolve path (file not found), return null.
+     */
+    const char *searchPath(const char *fileName, bool useDefaultPath = false);
+
+    void removePath(const char *fileName);
+};
+
 class RuntimeContext {
 private:
     TypePool pool;
@@ -171,6 +191,11 @@ private:
      * must delete it's contents
      */
     CStringHashMap<UserDefinedCmdNode *> udcMap;
+
+    /**
+     * cache searched result.
+     */
+    FilePathCache pathCache;
 
     static const char *configRootDir;
     static const char *typeDefDir;
@@ -530,6 +555,10 @@ public:
 
     PipelineEvaluator &getProcInvoker() {
         return this->procInvoker;
+    }
+
+    FilePathCache &getPathCache() {
+        return this->pathCache;
     }
 
     EvalStatus callPipedCommand(unsigned int startPos);

@@ -145,6 +145,7 @@ private:
         void *__dummy;
         ast::UserDefinedCmdNode *__udcNode;
         builtin_command_t __builtinCmd;
+        const char *__filePath;   // may be null if not found file
     };
 
 
@@ -199,6 +200,10 @@ public:
 
     builtin_command_t builtinCmd() const {
         return this->__builtinCmd;
+    }
+
+    const char *filePath() const {
+        return this->__filePath;
     }
 
     ExitKind kind() const {
@@ -274,6 +279,7 @@ private:
     bool redirect(unsigned int procIndex, int errorPipe, int stdin_fd, int stdout_fd, int stderr_fd);
 
     DSValue *getARGV(unsigned int procIndex);
+    const char *getCommandName(unsigned int procIndex);
 
     bool checkChildError(const std::pair<unsigned int, ChildError> &errorPair);
 };
