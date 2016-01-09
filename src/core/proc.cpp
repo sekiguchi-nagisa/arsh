@@ -834,24 +834,29 @@ static mode_t getStMode(const char *fileName) {
 
 
 static int builtin_test(RuntimeContext *, const BuiltinContext &bctx) {
-    static std::unordered_map<std::string, BinaryOp> binaryOpMap;
-#define ADD_OP(s, op) binaryOpMap.insert(std::make_pair(s, op))
-    if(binaryOpMap.empty()) {   // initialize binary operator map
-        ADD_OP("=", BinaryOp::STR_EQ);
-        ADD_OP("==", BinaryOp::STR_EQ);
-        ADD_OP("!=", BinaryOp::STR_NE);
-        ADD_OP("<", BinaryOp::STR_LT);
-        ADD_OP(">", BinaryOp::STR_GT);
-        ADD_OP("-eq", BinaryOp::EQ);
-        ADD_OP("-ne", BinaryOp::NE);
-        ADD_OP("-lt", BinaryOp::LT);
-        ADD_OP("-gt", BinaryOp::GT);
-        ADD_OP("-le", BinaryOp::LE);
-        ADD_OP("-ge", BinaryOp::GE);
+    static CStringHashMap<BinaryOp> binaryOpMap;
+    if(binaryOpMap.empty()) {
+        static const struct {
+            const char *k;
+            BinaryOp op;
+        } table[] = {
+                {"=", BinaryOp::STR_EQ},
+                {"==", BinaryOp::STR_EQ},
+                {"!=", BinaryOp::STR_NE},
+                {"<", BinaryOp::STR_LT},
+                {">", BinaryOp::STR_GT},
+                {"-eq", BinaryOp::EQ},
+                {"-ne", BinaryOp::NE},
+                {"-lt", BinaryOp::LT},
+                {"-gt", BinaryOp::GT},
+                {"-le", BinaryOp::LE},
+                {"-ge", BinaryOp::GE},
+        };
+
+        for(unsigned int i = 0; i < sizeOfArray(table); i++) {
+            binaryOpMap.insert(std::make_pair(table[i].k, table[i].op));
+        }
     }
-#undef ADD_OP
-
-
 
     bool result = false;
     const int argSize = bctx.argc - 1;

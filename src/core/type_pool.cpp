@@ -112,6 +112,11 @@ void TypeMap::removeType(const std::string &typeName) {
     }
 }
 
+template<typename T, size_t N>
+static constexpr size_t sizeOfArray(const T (&)[N]) {
+    return N;
+}
+
 
 // ######################
 // ##     TypePool     ##
@@ -387,20 +392,27 @@ constexpr int TypePool::INVALID_PRECISION;
 
 int TypePool::getIntPrecision(const DSType &type) {
     if(this->precisionMap.empty()) {    // init precision map
-        // int64, uint64
-        this->precisionMap.insert(std::make_pair((unsigned long) &this->getInt64Type(), INT64_PRECISION));
-        this->precisionMap.insert(std::make_pair((unsigned long) &this->getUint64Type(), INT64_PRECISION));
+        static const struct {
+            DS_TYPE TYPE;
+            int precision;
+        } table[] = {
+                // Int64, Uint64
+                {Int64, INT64_PRECISION},
+                {Uint64, INT64_PRECISION},
+                // Int32, Uint32
+                {Int32, INT32_PRECISION},
+                {Uint32, INT32_PRECISION},
+                // Int16, Uint16
+                {Int16, INT16_PRECISION},
+                {Uint16, INT16_PRECISION},
+                // Byte
+                {Byte, BYTE_PRECISION},
+        };
 
-        // int32, uint32
-        this->precisionMap.insert(std::make_pair((unsigned long) &this->getInt32Type(), INT32_PRECISION));
-        this->precisionMap.insert(std::make_pair((unsigned long) &this->getUint32Type(), INT32_PRECISION));
-
-        // int16, uint16
-        this->precisionMap.insert(std::make_pair((unsigned long) &this->getInt16Type(), INT16_PRECISION));
-        this->precisionMap.insert(std::make_pair((unsigned long) &this->getUint16Type(), INT16_PRECISION));
-
-        // byte
-        this->precisionMap.insert(std::make_pair((unsigned long) &this->getByteType(), BYTE_PRECISION));
+        for(unsigned int i = 0; i < sizeOfArray(table); i++) {
+            this->precisionMap.insert(
+                    std::make_pair((unsigned long) this->typeTable[table[i].TYPE], table[i].precision));
+        }
     }
 
     auto iter = this->precisionMap.find((unsigned long) &type);
@@ -412,19 +424,19 @@ int TypePool::getIntPrecision(const DSType &type) {
 
 int TypePool::getNumTypeIndex(const DSType &type) {
     if(this->numTypeIndexMap.empty()) {
-        std::pair<unsigned long, int> table[] = {
-                {(unsigned long) &this->getByteType(),   0},
-                {(unsigned long) &this->getInt16Type(),  1},
-                {(unsigned long) &this->getUint16Type(), 2},
-                {(unsigned long) &this->getInt32Type(),  3},
-                {(unsigned long) &this->getUint32Type(), 4},
-                {(unsigned long) &this->getInt64Type(),  5},
-                {(unsigned long) &this->getUint64Type(), 6},
-                {(unsigned long) &this->getFloatType(),  7},
+        static const DS_TYPE table[] = {
+                Byte,   // 0
+                Int16,  // 1
+                Uint16, // 2
+                Int32,  // 3
+                Uint32, // 4
+                Int64,  // 5
+                Uint64, // 6
+                Float,  // 7
         };
 
-        for(unsigned int i = 0; i < (sizeof(table) / sizeof(table[0])); i++) {
-            this->numTypeIndexMap.insert(table[i]);
+        for(unsigned int i = 0; i < sizeOfArray(table); i++) {
+            this->numTypeIndexMap.insert(std::make_pair((unsigned long) this->typeTable[table[i]], i));
         }
     }
 
@@ -567,7 +579,7 @@ void TypePool::registerDBusErrorTypes() {
             "InteractiveAuthorizationRequired",
     };
 
-    for(unsigned int i = 0; i < (sizeof(table) / sizeof(table[0])); i++) {
+    for(unsigned int i = 0; i < sizeOfArray(table); i++) {
         std::string s = "org.freedesktop.DBus.Error.";
         s += table[i];
         this->setAlias(table[i], this->createErrorType(s, this->getDBusErrorType()));
