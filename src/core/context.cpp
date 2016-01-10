@@ -43,21 +43,23 @@ FilePathCache::~FilePathCache() {
     }
 }
 
-const char *FilePathCache::searchPath(const char *fileName, bool useDefaultPath) {
+const char *FilePathCache::searchPath(const char *fileName, unsigned char option) {
     // if found '/', return fileName
     if(strchr(fileName, '/') != nullptr) {
         return fileName;
     }
 
     // search cache
-    auto iter = this->map.find(fileName);
-    if(iter != this->map.end()) {
-        return iter->second.c_str();
+    if(!hasFlag(option, DIRECT_SEARCH)) {
+        auto iter = this->map.find(fileName);
+        if(iter != this->map.end()) {
+            return iter->second.c_str();
+        }
     }
 
     // get PATH
     const char *path = getenv("PATH");
-    if(path == nullptr || useDefaultPath) {
+    if(path == nullptr || hasFlag(option, USE_DEFAULT_PATH)) {
         path = VAR_DEFAULT_PATH;
     }
 
@@ -88,14 +90,19 @@ const char *FilePathCache::searchPath(const char *fileName, bool useDefaultPath)
 
         struct stat st;
         if(stat(resolvedPath.c_str(), &st) == 0 && (st.st_mode & S_IXUSR) == S_IXUSR) {
-            // set to cache
-            if(this->map.size() == MAX_CACHE_SIZE) {
-                delete this->map.begin()->first;
-                this->map.erase(this->map.begin());
+            if(hasFlag(option, DIRECT_SEARCH)) {
+                this->prevPath = std::move(resolvedPath);
+                return this->prevPath.c_str();
+            } else {
+                // set to cache
+                if(this->map.size() == MAX_CACHE_SIZE) {
+                    delete this->map.begin()->first;
+                    this->map.erase(this->map.begin());
+                }
+                auto pair = this->map.insert(std::make_pair(strdup(fileName), std::move(resolvedPath)));
+                assert(pair.second);
+                return pair.first->second.c_str();
             }
-            auto pair = this->map.insert(std::make_pair(strdup(fileName), std::move(resolvedPath)));
-            assert(pair.second);
-            return pair.first->second.c_str();
         }
         resolvedPath.clear();
 

@@ -1545,7 +1545,8 @@ void PipelineEvaluator::forkAndExec(const BuiltinContext &bctx, int &status, boo
         dup2(fileno(bctx.fp_stdout), STDOUT_FILENO);
         dup2(fileno(bctx.fp_stderr), STDERR_FILENO);
 
-        const char *filePath = this->ctx->getPathCache().searchPath(bctx.argv[0], useDefaultPath);
+        const char *filePath = this->ctx->getPathCache().searchPath(
+                bctx.argv[0], useDefaultPath ? FilePathCache::USE_DEFAULT_PATH : 0);
 
         xexecve(filePath, const_cast<char **>(bctx.argv), nullptr);
         PERROR(bctx, "");

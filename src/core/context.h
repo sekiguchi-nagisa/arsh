@@ -59,6 +59,11 @@ enum class BuiltinVarOffset : unsigned int {
 
 class FilePathCache {
 private:
+    /**
+     * contains previously resolved path (for directive search)
+     */
+    std::string prevPath;
+
     CStringHashMap<std::string> map;
 
     static constexpr unsigned int MAX_CACHE_SIZE = 100;
@@ -68,11 +73,14 @@ public:
 
     ~FilePathCache();
 
+    static constexpr unsigned char USE_DEFAULT_PATH = 1 << 0;
+    static constexpr unsigned char DIRECT_SEARCH    = 1 << 1;
+
     /**
      * search file path by using PATH
      * if cannot resolve path (file not found), return null.
      */
-    const char *searchPath(const char *fileName, bool useDefaultPath = false);
+    const char *searchPath(const char *fileName, unsigned char option = 0);
 
     void removePath(const char *fileName);
 };
