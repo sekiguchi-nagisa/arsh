@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_LOGGER_BASE_HPP
-#define YDSH_LOGGER_BASE_HPP
+#ifndef YDSH_MISC_LOGGER_BASE_HPP
+#define YDSH_MISC_LOGGER_BASE_HPP
 
 #include <unistd.h>
 
@@ -198,4 +198,4 @@ struct LoggingPolicy {\
 typedef __detail_log::Logger<__detail_log::LoggingPolicy, __detail_log::LoggingPolicy::Policy> Logger;\
 }}
 
-#endif //YDSH_LOGGER_BASE_HPP
+#endif //YDSH_MISC_LOGGER_BASE_HPP

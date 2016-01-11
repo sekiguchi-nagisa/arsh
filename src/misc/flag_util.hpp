@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_FLAG_UTIL_H
-#define YDSH_FLAG_UTIL_H
+#ifndef YDSH_MISC_FLAG_UTIL_H
+#define YDSH_MISC_FLAG_UTIL_H
 
 #include <type_traits>
 
@@ -53,4 +53,4 @@ inline bool hasFlag(T set, T flag) {
 } // namespace ydsh
 
 
-#endif //YDSH_FLAG_UTIL_H
+#endif //YDSH_MISC_FLAG_UTIL_H

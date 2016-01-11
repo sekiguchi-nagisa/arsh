@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_BUFFER_HPP
-#define YDSH_BUFFER_HPP
+#ifndef YDSH_MISC_BUFFER_HPP
+#define YDSH_MISC_BUFFER_HPP
 
 #include <cstring>
 #include <type_traits>
@@ -203,4 +203,4 @@ typedef FlexBuffer<char> ByteBuffer;
 } // namespace ydsh
 
 
-#endif //YDSH_BUFFER_HPP
+#endif //YDSH_MISC_BUFFER_HPP

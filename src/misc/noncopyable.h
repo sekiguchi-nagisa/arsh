@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_NONCOPYABLE_HPP
-#define YDSH_NONCOPYABLE_HPP
+#ifndef YDSH_MISC_NONCOPYABLE_HPP
+#define YDSH_MISC_NONCOPYABLE_HPP
 
 
 #define NON_COPYABLE(TypeName) \
@@ -23,4 +23,4 @@
     TypeName &operator=(const TypeName &e) = delete
 
 
-#endif //YDSH_NONCOPYABLE_HPP
+#endif //YDSH_MISC_NONCOPYABLE_HPP

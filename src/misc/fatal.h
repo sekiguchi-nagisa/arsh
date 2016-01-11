@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_FATAL_H
-#define YDSH_FATAL_H
+#ifndef YDSH_MISC_FATAL_H
+#define YDSH_MISC_FATAL_H
 
 #include <cstdio>
 #include <cstdlib>
@@ -33,4 +33,4 @@
     } while(0)
 
 
-#endif //YDSH_FATAL_H
+#endif //YDSH_MISC_FATAL_H

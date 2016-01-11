@@ -132,6 +132,9 @@ private:
 
     unsigned int localStackSize;
 
+    static constexpr unsigned int DEFAULT_TABLE_SIZE = 32;
+    static constexpr unsigned int DEFAULT_LOCAL_SIZE = 256;
+
     /**
      * initial value is 0. increment index before push
      */

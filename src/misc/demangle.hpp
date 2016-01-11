@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_DEMANGLE_HPP
-#define YDSH_DEMANGLE_HPP
+#ifndef YDSH_MISC_DEMANGLE_HPP
+#define YDSH_MISC_DEMANGLE_HPP
 
 #include <string>
 #include <cxxabi.h>
@@ -57,4 +57,4 @@ typedef __detail_demangle::Demangle<true> Demangle;
 } // namespace misc
 } // namespace ydsh
 
-#endif //YDSH_DEMANGLE_HPP
+#endif //YDSH_MISC_DEMANGLE_HPP

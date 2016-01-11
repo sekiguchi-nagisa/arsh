@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_ARGV_HPP
-#define YDSH_ARGV_HPP
+#ifndef YDSH_MISC_ARGV_HPP
+#define YDSH_MISC_ARGV_HPP
 
 #include <cstring>
 #include <type_traits>
@@ -223,4 +223,4 @@ std::ostream &operator<<(std::ostream &stream, const Option<T> (&options)[N]) {
 } // namespace argv
 } // namespace ydsh
 
-#endif //YDSH_ARGV_HPP
+#endif //YDSH_MISC_ARGV_HPP

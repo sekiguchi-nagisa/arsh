@@ -130,9 +130,6 @@ void FilePathCache::removePath(const char *fileName) {
 // ##     RuntimeContext     ##
 // ############################
 
-#define DEFAULT_TABLE_SIZE 32
-#define DEFAULT_LOCAL_SIZE 256
-
 RuntimeContext::RuntimeContext() :
         pool(), symbolTable(),
         trueObj(new Boolean_Object(this->pool.getBooleanType(), true)),

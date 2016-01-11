@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_NUM_H
-#define YDSH_NUM_H
+#ifndef YDSH_MISC_NUM_H
+#define YDSH_MISC_NUM_H
 
 #include <climits>
 #include <cerrno>
@@ -143,4 +143,4 @@ inline int toHex(char ch) {
 } // namespace ydsh
 
 
-#endif //YDSH_NUM_H
+#endif //YDSH_MISC_NUM_H

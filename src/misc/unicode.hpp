@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_UNICODE_HPP
-#define YDSH_UNICODE_HPP
+#ifndef YDSH_MISC_UNICODE_HPP
+#define YDSH_MISC_UNICODE_HPP
 
 #include <algorithm>
 #include <clocale>
@@ -226,4 +226,4 @@ typedef __detail_unicode::UnicodeUtil<true> UnicodeUtil;
 } // namespace misc
 } // namespace ydsh
 
-#endif //YDSH_UNICODE_HPP
+#endif //YDSH_MISC_UNICODE_HPP

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TERM_H
-#define YDSH_TERM_H
+#ifndef YDSH_MISC_TERM_H
+#define YDSH_MISC_TERM_H
 
 #include <unistd.h>
 #include <strings.h>
@@ -76,4 +76,4 @@ inline std::ostream &reset(std::ostream &stream) {
 } // namespace misc
 } // namespace ydsh
 
-#endif //YDSH_TERM_H
+#endif //YDSH_MISC_TERM_H

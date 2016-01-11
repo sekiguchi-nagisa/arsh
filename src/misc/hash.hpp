@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_HASH_HPP
-#define YDSH_HASH_HPP
+#ifndef YDSH_MISC_HASH_HPP
+#define YDSH_MISC_HASH_HPP
 
 #include <cstring>
 #include <unordered_map>
@@ -47,4 +47,4 @@ using CStringHashMap = std::unordered_map<const char *, T, CStringHash, CStringC
 } // namespace ydsh
 
 
-#endif //YDSH_HASH_HPP
+#endif //YDSH_MISC_HASH_HPP

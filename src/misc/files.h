@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_FILES_H
-#define YDSH_FILES_H
+#ifndef YDSH_MISC_FILES_H
+#define YDSH_MISC_FILES_H
 
 #include <dirent.h>
 
@@ -75,4 +75,4 @@ inline std::vector<std::string> getFileList(const char *dirPath, bool recursive 
 } // namespace misc
 } // namespace ydsh
 
-#endif //YDSH_FILES_H
+#endif //YDSH_MISC_FILES_H
