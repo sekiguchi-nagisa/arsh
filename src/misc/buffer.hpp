@@ -21,6 +21,8 @@
 #include <type_traits>
 #include <exception>
 
+#include "noncopyable.h"
+
 namespace ydsh {
 namespace misc {
 
@@ -37,7 +39,7 @@ public:
     static const size_type MAXIMUM_CAPACITY;
 
 private:
-    static_assert(std::is_unsigned<SIZE_T>::value, "need unsinged type");
+    static_assert(std::is_unsigned<SIZE_T>::value, "need unsigned type");
 
     static_assert(std::is_enum<T>::value ||
                   std::is_arithmetic<T>::value ||
@@ -49,6 +51,8 @@ private:
     T *data;
 
 public:
+    NON_COPYABLE(FlexBuffer);
+
     /**
      * default initial size is equivalent to MINIMUM_CAPACITY
      */
@@ -61,19 +65,12 @@ public:
      */
     FlexBuffer() : maxSize(0), usedSize(0), data(nullptr) { }
 
-    FlexBuffer(const FlexBuffer<T, SIZE_T> &buffer) = delete;
-
     FlexBuffer(FlexBuffer<T, SIZE_T> &&buffer) :
-            maxSize(buffer.maxSize), usedSize(buffer.usedSize), data(buffer.remove()) { }
+            maxSize(buffer.maxSize), usedSize(buffer.usedSize), data(extract(std::move(buffer))) { }
 
     ~FlexBuffer() {
         delete[] this->data;
-        this->data = nullptr;
     }
-
-    FlexBuffer<T, SIZE_T> &operator=(const FlexBuffer<T, SIZE_T> &buffer) = delete;
-    FlexBuffer<T, SIZE_T> &operator=(FlexBuffer<T, SIZE_T> &&buffer) = delete;
-    FlexBuffer<T, SIZE_T> &operator+=(FlexBuffer<T, SIZE_T> &&buffer) = delete;
 
     FlexBuffer<T, SIZE_T> &operator+=(T value);
 
@@ -81,6 +78,9 @@ public:
      * buffer.data is not equivalent to this.data.
      */
     FlexBuffer<T, SIZE_T> &operator+=(const FlexBuffer<T, SIZE_T> &buffer);
+
+    FlexBuffer<T, SIZE_T> &operator=(FlexBuffer<T, SIZE_T> &&buffer) noexcept ;
+    FlexBuffer<T, SIZE_T> &operator+=(FlexBuffer<T, SIZE_T> &&buffer);
 
     /**
      * value is not equivalent to this.data.
@@ -99,19 +99,14 @@ public:
         return this->data;
     }
 
-    /**
-     * extract data. after call it, maxSize and usedSize is 0, and data is null.
-     */
-    T *remove() {
-        this->maxSize = 0;
-        this->usedSize = 0;
-        T *ptr = this->data;
-        this->data = nullptr;
-        return ptr;
-    }
-
     void clear() {
         this->usedSize = 0;
+    }
+
+    void swap(FlexBuffer<T, SIZE_T> &buf) noexcept {
+        std::swap(this->usedSize, buf.usedSize);
+        std::swap(this->maxSize, buf.maxSize);
+        std::swap(this->data, buf.data);
     }
 
     /**
@@ -119,11 +114,22 @@ public:
      */
     void reserve(size_type reservingSize);
 
-    T &operator[](size_type index) const {
+    T &operator[](size_type index) const noexcept {
         return this->data[index];
     }
 
     T &at(size_type index) const;
+
+    /**
+     * extract data. after call it, maxSize and usedSize is 0, and data is null.
+     */
+    static T *extract(FlexBuffer<T, SIZE_T> &&buf) noexcept {
+        buf.maxSize = 0;
+        buf.usedSize = 0;
+        T *ptr = buf.data;
+        buf.data = nullptr;
+        return ptr;
+    };
 };
 
 // ########################
@@ -149,7 +155,24 @@ FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::operator+=(const FlexBuffer<T, SIZ
 }
 
 template <typename T, typename SIZE_T>
+FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::operator=(FlexBuffer<T, SIZE_T> &&buffer) noexcept {
+    FlexBuffer<T, SIZE_T> tmp(std::move(buffer));
+    this->swap(tmp);
+    return *this;
+};
+
+template <typename T, typename SIZE_T>
+FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::operator+=(FlexBuffer<T, SIZE_T> &&buffer) {
+    FlexBuffer<T, SIZE_T> tmp(std::move(buffer));
+    *this += tmp;
+    return *this;
+};
+
+template <typename T, typename SIZE_T>
 FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::append(const T *value, size_type size) {
+    if(this->data == value) {
+        throw std::invalid_argument("appending own buffer");
+    }
     this->reserve(this->usedSize + size);
     memcpy(this->data + this->usedSize, value, sizeof(T) * size);
     this->usedSize += size;
