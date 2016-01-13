@@ -580,6 +580,10 @@ unsigned int DSContext_featureBit() {
 #ifdef USE_SAFE_CAST
     setFlag(featureBit, DS_FEATURE_SAFE_CAST);
 #endif
+
+#ifdef USE_FIXED_TIME
+    setFlag(featureBit, DS_FEATURE_FIXED_TIME);
+#endif
     return featureBit;
 }
 

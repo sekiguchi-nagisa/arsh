@@ -32,7 +32,8 @@ cmake .. -DCMAKE_C_COMPILER=clang \
          -DCMAKE_CXX_COMPILER=clang++ \
          -DCMAKE_BUILD_TYPE=coverage \
          -DUSE_SAFE_CAST=ON \
-         -DUSE_LOGGING=ON
+         -DUSE_LOGGING=ON \
+         -DUSE_FIXED_TIME=ON
 make clean
 make -j2
 

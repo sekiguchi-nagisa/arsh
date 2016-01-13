@@ -20,7 +20,6 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 
-#include <ctime>
 #include <cstring>
 #include <dirent.h>
 #include <csignal>
@@ -29,6 +28,7 @@
 #include "context.h"
 #include "symbol.h"
 #include "../misc/num.h"
+#include "../misc/time.h"
 
 namespace ydsh {
 namespace core {
@@ -700,15 +700,14 @@ static std::string basename(const std::string &path) {
 void RuntimeContext::interpretPromptString(const char *ps, std::string &output) {
     output.clear();
 
-    time_t timer = time(nullptr);
-    struct tm *local = localtime(&timer);
+    struct tm *local = misc::getLocalTime();
 
     static const char *wdays[] = {
             "Sun", "Mon", "Tue", "Wed", "Thurs", "Fri", "Sat"
     };
 
-    unsigned int hostNameSize = 256;    // in linux environment, HOST_NAME_MAX is 64
-    char hostName[hostNameSize];
+    const unsigned int hostNameSize = 128;    // in linux environment, HOST_NAME_MAX is 64
+    static char hostName[hostNameSize];
     if(gethostname(hostName, hostNameSize) !=  0) {
         hostName[0] = '\0';
     }

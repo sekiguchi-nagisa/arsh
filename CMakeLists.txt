@@ -78,15 +78,18 @@ show_option(USE_DBUS)
 
 option(USE_LOGGING "enable internal logging" OFF)
 option(USE_SAFE_CAST "check object cast" OFF)
+option(USE_FIXED_TIME "enable fixed time source" OFF)
 
 string(TOLOWER "${CMAKE_BUILD_TYPE}" lower_type)
 if("${lower_type}" STREQUAL "debug")
     set(USE_LOGGING ON)
     set(USE_SAFE_CAST ON)
+    set(USE_FIXED_TIME ON)
 endif()
 
 show_option(USE_LOGGING)
 show_option(USE_SAFE_CAST)
+show_option(USE_FIXED_TIME)
 
 
 #++++++++++++++++++++++++++++#

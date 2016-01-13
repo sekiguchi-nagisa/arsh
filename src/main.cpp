@@ -70,19 +70,17 @@ static int invoke(DSContext **ctx, T&& ... args) {
 #define INVOKE(F) invoke<decltype(DSContext_ ## F), DSContext_ ## F>
 
 static void showFeature(std::ostream &stream) {
-    const struct {
-        const unsigned int featureFlag;
-        const char *name;
-    } set[] {
-            {DS_FEATURE_LOGGING, "USE_LOGGING"},
-            {DS_FEATURE_DBUS, "USE_DBUS"},
-            {DS_FEATURE_SAFE_CAST, "USE_SAFE_CAST"},
+    static const char *featureNames[] = {
+            "USE_LOGGING",
+            "USE_DBUS",
+            "USE_SAFE_CAST",
+            "USE_FIXED_TIME"
     };
 
     const unsigned int featureBit = DSContext_featureBit();
-    for(unsigned int i = 0; i < (sizeof(set) / sizeof(set[0])); i++) {
-        if(ydsh::misc::hasFlag(featureBit, set[i].featureFlag)) {
-            stream << set[i].name << std::endl;
+    for(unsigned int i = 0; i < (sizeof(featureNames) / sizeof(featureNames[0])); i++) {
+        if(ydsh::misc::hasFlag(featureBit, static_cast<unsigned int>(1 << i))) {
+            stream << featureNames[i] << std::endl;
         }
     }
 }
