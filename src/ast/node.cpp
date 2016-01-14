@@ -1269,7 +1269,7 @@ EvalStatus CmdArgNode::eval(RuntimeContext &ctx) {
         return s;
     }
 
-    ctx.getProcInvoker().addArg(ctx.pop(), this->isIgnorableEmptyString());
+    ctx.activePipeline().addArg(ctx.pop(), this->isIgnorableEmptyString());
     return EvalStatus::SUCCESS;
 }
 
@@ -1341,7 +1341,7 @@ EvalStatus RedirNode::eval(RuntimeContext &ctx) {
     if(s != EvalStatus::SUCCESS) {
         return s;
     }
-    ctx.getProcInvoker().addRedirOption(this->op, ctx.pop());
+    ctx.activePipeline().addRedirOption(this->op, ctx.pop());
     return EvalStatus::SUCCESS;
 }
 
@@ -1407,13 +1407,13 @@ void CmdNode::accept(NodeVisitor &visitor) {
 EvalStatus CmdNode::eval(RuntimeContext &ctx) {
     EVAL(ctx, this->nameNode);
 
-    ctx.getProcInvoker().openProc(ctx.pop());
+    ctx.activePipeline().openProc(ctx.pop());
 
     for(Node *node : this->argNodes) {
         EVAL(ctx, node);
     }
 
-    ctx.getProcInvoker().closeProc();
+    ctx.activePipeline().closeProc();
     return EvalStatus::SUCCESS;
 }
 
@@ -1455,7 +1455,7 @@ EvalStatus PipedCmdNode::eval(RuntimeContext &ctx) {
      *
      * so, need to clear them before push arguments.
      */
-    ctx.getProcInvoker().clear();
+    ctx.activePipeline().clear();
 
     for(auto &node : this->cmdNodes) {
         EVAL(ctx, node);

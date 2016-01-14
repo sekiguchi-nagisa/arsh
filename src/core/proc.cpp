@@ -592,6 +592,31 @@ static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx) {
     return 0;
 }
 
+/**
+ * write status to status (same of wait's status).
+ */
+static void forkAndExec(RuntimeContext *ctx, const BuiltinContext &bctx, int &status, bool useDefaultPath = false) {
+    pid_t pid = xfork();
+    if(pid == -1) {
+        perror("child process error");
+        exit(1);
+    } else if(pid == 0) {   // child
+        // replace standard stream to bctx
+        dup2(fileno(bctx.fp_stdin), STDIN_FILENO);
+        dup2(fileno(bctx.fp_stdout), STDOUT_FILENO);
+        dup2(fileno(bctx.fp_stderr), STDERR_FILENO);
+
+        const char *filePath = ctx->getPathCache().searchPath(
+                bctx.argv[0], useDefaultPath ? FilePathCache::USE_DEFAULT_PATH : 0);
+
+        xexecve(filePath, const_cast<char **>(bctx.argv), nullptr);
+        PERROR(bctx, "");
+        exit(1);
+    } else {    // parent process
+        ctx->xwaitpid(pid, status, 0);
+    }
+}
+
 static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx) {
     if(bctx.argc > 1) {
         pid_t pid = xfork();
@@ -694,7 +719,7 @@ static int builtin_command(RuntimeContext *ctx, const BuiltinContext &bctx) {
                 return cmd(ctx, nbctx);
             } else {
                 int status;
-                ctx->getProcInvoker().forkAndExec(nbctx, status, useDefaultPath);
+                forkAndExec(ctx, nbctx, status, useDefaultPath);
                 if(WIFEXITED(status)) {
                     return WEXITSTATUS(status);
                 }
@@ -1347,7 +1372,7 @@ DSValue *PipelineEvaluator::getARGV(unsigned int procIndex) {
     return this->argArray.data() + this->procStates[procIndex].argOffset();
 }
 
-EvalStatus PipelineEvaluator::invoke() {
+EvalStatus PipelineEvaluator::evalPipeline() {
     const unsigned int procSize = this->procStates.size();
 
     // check builtin command
@@ -1518,42 +1543,20 @@ EvalStatus PipelineEvaluator::invoke() {
     }
 }
 
-void PipelineEvaluator::execBuiltinCommand(char *const argv[]) {
+void RuntimeContext::execBuiltinCommand(char *const argv[]) {
     builtin_command_t cmd_ptr = lookupBuiltinCommand(argv[0]);
     if(cmd_ptr == nullptr) {
         fprintf(stderr, "ydsh: %s: not builtin command\n", argv[0]);
-        this->ctx->updateExitStatus(1);
+        this->updateExitStatus(1);
         return;
     }
 
-    BuiltinContext bctx(argv, dup(STDIN_FILENO), dup(STDOUT_FILENO), dup(STDERR_FILENO));
-    this->ctx->updateExitStatus(cmd_ptr(this->ctx, bctx));
+    BuiltinContext bctx(argv, ::dup(STDIN_FILENO), ::dup(STDOUT_FILENO), ::dup(STDERR_FILENO));
+    this->updateExitStatus(cmd_ptr(this, bctx));
 
     fclose(bctx.fp_stdin);
     fclose(bctx.fp_stdout);
     fclose(bctx.fp_stderr);
-}
-
-void PipelineEvaluator::forkAndExec(const BuiltinContext &bctx, int &status, bool useDefaultPath) {
-    pid_t pid = xfork();
-    if(pid == -1) {
-        perror("child process error");
-        exit(1);
-    } else if(pid == 0) {   // child
-        // replace standard stream to bctx
-        dup2(fileno(bctx.fp_stdin), STDIN_FILENO);
-        dup2(fileno(bctx.fp_stdout), STDOUT_FILENO);
-        dup2(fileno(bctx.fp_stderr), STDERR_FILENO);
-
-        const char *filePath = this->ctx->getPathCache().searchPath(
-                bctx.argv[0], useDefaultPath ? FilePathCache::USE_DEFAULT_PATH : 0);
-
-        xexecve(filePath, const_cast<char **>(bctx.argv), nullptr);
-        PERROR(bctx, "");
-        exit(1);
-    } else {    // parent process
-        this->ctx->xwaitpid(pid, status, 0);
-    }
 }
 
 const char *PipelineEvaluator::getCommandName(unsigned int procIndex) {

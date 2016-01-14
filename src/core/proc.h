@@ -261,19 +261,7 @@ public:
     void addArg(DSValue &&value, bool skipEmptyString);
     void addRedirOption(RedirectOP op, DSValue &&value);
 
-    EvalStatus invoke();
-
-    /**
-     * first element of argv is command name.
-     * last element of argv is null.
-     * if execute exit command, throw InternalError.
-     */
-    void execBuiltinCommand(char *const argv[]);
-
-    /**
-     * write status to status (same of wait's status).
-     */
-    void forkAndExec(const BuiltinContext &bctx, int &status, bool useDefaultPath = false);
+    EvalStatus evalPipeline();
 
 private:
     bool redirect(unsigned int procIndex, int errorPipe, int stdin_fd, int stdout_fd, int stderr_fd);

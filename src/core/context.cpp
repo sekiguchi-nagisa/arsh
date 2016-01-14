@@ -143,7 +143,7 @@ RuntimeContext::RuntimeContext() :
         localVarOffset(0), offsetStack(), toplevelPrinting(false), assertion(true),
         handle_STR(nullptr), handle_bt(nullptr),
         handle_OLDPWD(nullptr), handle_PWD(nullptr), handle_IFS(nullptr),
-        callableContextStack(), callStack(), procInvoker(this), udcMap(), pathCache() {
+        callableContextStack(), callStack(), pipelineEvaluator(this), udcMap(), pathCache() {
 }
 
 RuntimeContext::~RuntimeContext() {
@@ -616,9 +616,9 @@ void RuntimeContext::exitShell(unsigned int status) {
 
 EvalStatus RuntimeContext::callPipedCommand(unsigned int startPos) {
     this->pushCallFrame(startPos);
-    EvalStatus status = this->procInvoker.invoke();
+    EvalStatus status = this->activePipeline().evalPipeline();
     this->popCallFrame();
-    this->procInvoker.clear();
+    this->activePipeline().clear();
     return status;
 }
 
@@ -645,7 +645,7 @@ int RuntimeContext::execUserDefinedCommand(UserDefinedCmdNode *node, DSValue *ar
     this->finalizeScritArg();
 
     // clear procInvoker
-    this->procInvoker.clear();
+    this->activePipeline().clear();
 
     this->pushFuncContext(node);
     this->reserveLocalVar(this->getLocalVarOffset() + node->getMaxVarNum());

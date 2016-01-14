@@ -451,7 +451,7 @@ int DSContext_exec(DSContext *ctx, char *const argv[]) {
 
     EvalStatus es = EvalStatus::SUCCESS;
     try {
-        ctx->ctx.getProcInvoker().execBuiltinCommand(argv);
+        ctx->ctx.execBuiltinCommand(argv);
     } catch(const InternalError &e) {
         es = EvalStatus::THROW;
     }

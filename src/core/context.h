@@ -186,7 +186,7 @@ private:
     FieldHandle *handle_IFS;
 
     /**
-     * contains currently evaluating CallabeNode
+     * contains currently evaluating CallableNode
      */
     std::vector<CallableNode *> callableContextStack;
 
@@ -195,7 +195,7 @@ private:
      */
     std::vector<unsigned long> callStack;
 
-    PipelineEvaluator procInvoker;
+    PipelineEvaluator pipelineEvaluator;
 
     /**
      * contains user defined command node.
@@ -564,8 +564,8 @@ public:
 
     void exitShell(unsigned int status);
 
-    PipelineEvaluator &getProcInvoker() {
-        return this->procInvoker;
+    PipelineEvaluator &activePipeline() {
+        return this->pipelineEvaluator;
     }
 
     FilePathCache &getPathCache() {
@@ -598,6 +598,15 @@ public:
      * waitpid wrapper.
      */
     pid_t xwaitpid(pid_t pid, int &status, int options);
+
+    // for command invocation
+
+    /**
+     * first element of argv is command name.
+     * last element of argv is null.
+     * if execute exit command, throw InternalError.
+     */
+    void execBuiltinCommand(char *const argv[]);
 };
 
 // some system util
