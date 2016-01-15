@@ -81,7 +81,7 @@ option(USE_SAFE_CAST "check object cast" OFF)
 option(USE_FIXED_TIME "enable fixed time source" OFF)
 
 string(TOLOWER "${CMAKE_BUILD_TYPE}" lower_type)
-if("${lower_type}" STREQUAL "debug")
+if(("${lower_type}" STREQUAL "debug") OR ("${lower_type}" STREQUAL "coverage"))
     set(USE_LOGGING ON)
     set(USE_SAFE_CAST ON)
     set(USE_FIXED_TIME ON)
@@ -249,15 +249,6 @@ add_executable(${BIN_NAME}
 target_link_libraries(${BIN_NAME} ${YDSH_STATIC})
 
 install(TARGETS ${BIN_NAME} RUNTIME DESTINATION bin)
-
-
-#==================#
-#     run_test     #
-#==================#
-
-enable_testing()
-add_subdirectory(test)
-add_custom_target(run_test COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure)
 
 
 #+++++++++++++++++++++++++#

@@ -29,7 +29,7 @@ install:
  - make
 
 script:
-  - make run_test
+  - ctest --output-on-failure
 
 notifications:
   emails:
