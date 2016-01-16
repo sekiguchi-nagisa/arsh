@@ -34,7 +34,6 @@
 #include "core/context.h"
 #include "core/symbol.h"
 #include "misc/num.h"
-#include "misc/term.h"
 
 
 using namespace ydsh;
@@ -142,11 +141,49 @@ DSContext::DSContext() :
     }
 }
 
-static std::ostream &formatErrorLine(std::ostream &stream, const Lexer &lexer, const Token &errorToken) {
-    Token lineToken = lexer.getLineToken(errorToken, true);
-    stream << misc::TermColor::Cyan << lexer.toTokenText(lineToken) << misc::reset << std::endl;
-    stream << misc::TermColor::Green << lexer.formatLineMarker(lineToken, errorToken) << misc::reset;
+/**
+ * not allow dumb terminal
+ */
+static bool isSupportedTerminal(int fd) {
+    const char *term = getenv("TERM");
+    return term != nullptr && strcasecmp(term, "dumb") != 0 && isatty(fd) != 0;
+}
+
+enum class TermColor : int {   // ansi color code
+    NOP     = -1,
+    Reset   = 0,
+    // actual term color
+    Black   = 30,
+    Red     = 31,
+    Green   = 32,
+    Yellow  = 33,
+    Blue    = 34,
+    Magenta = 35,
+    Cyan    = 36,
+    White   = 37,
+};
+
+static TermColor color(TermColor color, bool isatty) {
+    return isatty ? color : TermColor::NOP;
+}
+
+static std::ostream &operator<<(std::ostream &stream, TermColor color) {
+    if(color != TermColor::NOP) {
+        stream << "\033[" << static_cast<unsigned int>(color) << "m";
+    }
     return stream;
+}
+
+static void formatErrorLine(bool isatty, const Lexer &lexer, const Token &errorToken) {
+    Token lineToken = lexer.getLineToken(errorToken, true);
+
+    // print error line
+    std::cerr << color(TermColor::Cyan, isatty) << lexer.toTokenText(lineToken)
+    << color(TermColor::Reset, isatty) << std::endl;
+
+    // print line marker
+    std::cerr << color(TermColor::Green, isatty) << lexer.formatLineMarker(lineToken, errorToken)
+    << color(TermColor::Reset, isatty) << std::endl;
 }
 
 void DSContext::handleParseError(const Lexer &lexer, const ParseError &e) {
@@ -158,9 +195,11 @@ void DSContext::handleParseError(const Lexer &lexer, const ParseError &e) {
         errorLineNum--;
     }
 
+    const bool isatty = isSupportedTerminal(STDERR_FILENO);
+
     std::cerr << lexer.getSourceInfoPtr()->getSourceName() << ":" << errorLineNum << ":"
-    << misc::TermColor::Magenta << " [syntax error] " << misc::reset << e << std::endl;
-    formatErrorLine(std::cerr, lexer, e.getErrorToken()) << std::endl;
+    << color(TermColor::Magenta, isatty) << " [syntax error] " << color(TermColor::Reset, isatty) << e << std::endl;
+    formatErrorLine(isatty, lexer, e.getErrorToken());
 
     /**
      * update execution status
@@ -169,14 +208,17 @@ void DSContext::handleParseError(const Lexer &lexer, const ParseError &e) {
 }
 
 void DSContext::handleTypeError(const Lexer &lexer, const TypeCheckError &e) {
+    unsigned int errorLineNum = lexer.getSourceInfoPtr()->getLineNum(e.getStartPos());
+
+    const bool isatty = isSupportedTerminal(STDERR_FILENO);
+
     /**
      * show type error message
      */
-    std::cerr << lexer.getSourceInfoPtr()->getSourceName() << ":"
-    << lexer.getSourceInfoPtr()->getLineNum(e.getStartPos()) << ":"
-    << misc::TermColor::Magenta << " [semantic error] " << misc::reset
+    std::cerr << lexer.getSourceInfoPtr()->getSourceName() << ":" << errorLineNum << ":"
+    << color(TermColor::Magenta, isatty) << " [semantic error] " << color(TermColor::Reset, isatty)
     << e.getMessage() << std::endl;
-    formatErrorLine(std::cerr, lexer, e.getToken()) << std::endl;
+    formatErrorLine(isatty, lexer, e.getToken());
 
     /**
      * update execution status
