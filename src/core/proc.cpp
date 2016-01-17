@@ -293,21 +293,29 @@ static void printAllUsage(FILE *fp) {
     }
 }
 
+static bool startsWith(const char *prefix, const char *target) {
+    const unsigned int prefixSize = strlen(prefix);
+    const unsigned int targetSize = strlen(target);
+    return prefixSize <= targetSize && strncmp(prefix, target, prefixSize) == 0;
+}
+
 /**
  * if not found command, return false.
  */
-static bool printUsage(FILE *fp, const char *commandName, bool isShortHelp = true) {
+static bool printUsage(FILE *fp, const char *prefix, bool isShortHelp = true) {
     unsigned int size = sizeOfArray(builtinCommands);
+    bool matched = false;
     for(unsigned int i = 0; i < size; i++) {
-        if(strcmp(commandName, builtinCommands[i].commandName) == 0) {
-            fprintf(fp, "%s: %s %s\n", commandName, commandName, builtinCommands[i].usage);
+        const char *cmdName = builtinCommands[i].commandName;
+        if(startsWith(prefix, cmdName)) {
+            fprintf(fp, "%s: %s %s\n", cmdName, cmdName, builtinCommands[i].usage);
             if(!isShortHelp) {
                 fprintf(fp, "%s\n", builtinCommands[i].detail);
             }
-            return true;
+            matched = true;
         }
     }
-    return false;
+    return matched;
 }
 
 static int builtin_help(RuntimeContext *, const BuiltinContext &bctx) {

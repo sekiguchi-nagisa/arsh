@@ -1,5 +1,6 @@
 assert(help help | grep 'help: help \[-s] \[pattern ...]')
 assert(help help | grep 'Display helpful information about builtin commands.')
+assert(help __ | grep '__gets: __gets' && help __ | grep '__puts: __puts')  # prefix match
 
 # -s option
 assert(help -s help | grep 'help: help \[-s] \[pattern ...]')
