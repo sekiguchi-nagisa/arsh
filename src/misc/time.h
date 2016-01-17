@@ -25,20 +25,19 @@
 namespace ydsh {
 namespace misc {
 
+inline struct tm *getLocalTime() {
 #ifdef USE_FIXED_TIME
     constexpr bool useFixedTime = true;
 #else
     constexpr bool useFixedTime = false;
 #endif
 
-/**
- * environmental variable for specifying time.
- * the specified time is treated as UTC.
- */
-constexpr const char *timeSource = "TIME_SOURCE";
+    /**
+     * environmental variable for specifying time.
+     * the specified time is treated as UTC.
+     */
+    constexpr const char *timeSource = "TIME_SOURCE";
 
-
-inline struct tm *getLocalTime() {
     if(useFixedTime && getenv(timeSource) != nullptr) {
         const char *src = getenv(timeSource);
         struct tm tm;

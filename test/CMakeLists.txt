@@ -34,6 +34,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/redirect)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cmdline)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/interactive)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/unicode)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/time)
 
 if(USE_DBUS)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dbus)

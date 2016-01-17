@@ -343,6 +343,16 @@ TEST(API, case2) {
     });
 }
 
+TEST(API, case3) {
+    SCOPED_TRACE("");
+
+    DSContext *ctx = DSContext_create();
+    DSContext_eval(ctx, nullptr, "$PS1 = 'hello>'; $PS2 = 'second>'");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("hello>", DSContext_prompt(ctx, 1)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("second>", DSContext_prompt(ctx, 2)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("", DSContext_prompt(ctx, 5)));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
