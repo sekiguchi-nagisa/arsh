@@ -43,30 +43,30 @@ FilePathCache::~FilePathCache() {
     }
 }
 
-const char *FilePathCache::searchPath(const char *fileName, unsigned char option) {
+const char *FilePathCache::searchPath(const char *cmdName, unsigned char option) {
     // if found '/', return fileName
-    if(strchr(fileName, '/') != nullptr) {
-        return fileName;
+    if(strchr(cmdName, '/') != nullptr) {
+        return cmdName;
     }
 
     // search cache
     if(!hasFlag(option, DIRECT_SEARCH)) {
-        auto iter = this->map.find(fileName);
+        auto iter = this->map.find(cmdName);
         if(iter != this->map.end()) {
             return iter->second.c_str();
         }
     }
 
     // get PATH
-    const char *path = getenv("PATH");
-    if(path == nullptr || hasFlag(option, USE_DEFAULT_PATH)) {
-        path = VAR_DEFAULT_PATH;
+    const char *pathPrefix = getenv("PATH");
+    if(pathPrefix == nullptr || hasFlag(option, USE_DEFAULT_PATH)) {
+        pathPrefix = VAR_DEFAULT_PATH;
     }
 
     // resolve path
     std::string resolvedPath;
-    for(unsigned int i = 0; !resolvedPath.empty() || path[i] != '\0'; i++) {
-        char ch = path[i];
+    for(unsigned int i = 0; !resolvedPath.empty() || pathPrefix[i] != '\0'; i++) {
+        char ch = pathPrefix[i];
         bool stop = false;
 
         if(ch == '\0') {
@@ -82,7 +82,7 @@ const char *FilePathCache::searchPath(const char *fileName, unsigned char option
         if(resolvedPath.back() != '/') {
             resolvedPath += '/';
         }
-        resolvedPath += fileName;
+        resolvedPath += cmdName;
 
         if(resolvedPath[0] == '~') {
             resolvedPath = expandTilde(resolvedPath.c_str());
@@ -99,7 +99,7 @@ const char *FilePathCache::searchPath(const char *fileName, unsigned char option
                     delete this->map.begin()->first;
                     this->map.erase(this->map.begin());
                 }
-                auto pair = this->map.insert(std::make_pair(strdup(fileName), std::move(resolvedPath)));
+                auto pair = this->map.insert(std::make_pair(strdup(cmdName), std::move(resolvedPath)));
                 assert(pair.second);
                 return pair.first->second.c_str();
             }
@@ -115,14 +115,18 @@ const char *FilePathCache::searchPath(const char *fileName, unsigned char option
     return nullptr;
 }
 
-void FilePathCache::removePath(const char *fileName) {
-    if(fileName != nullptr) {
-        auto iter = this->map.find(fileName);
+void FilePathCache::removePath(const char *cmdName) {
+    if(cmdName != nullptr) {
+        auto iter = this->map.find(cmdName);
         if(iter != this->map.end()) {
             delete iter->first;
             this->map.erase(iter);
         }
     }
+}
+
+bool FilePathCache::isCached(const char *cmdName) const {
+    return this->map.find(cmdName) != this->map.end();
 }
 
 

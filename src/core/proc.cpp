@@ -762,11 +762,13 @@ static int builtin_command(RuntimeContext *ctx, const BuiltinContext &bctx) {
                 }
 
                 // check external command
-                const char *path = ctx->getPathCache().searchPath(commandName);
+                const char *path = ctx->getPathCache().searchPath(commandName, FilePathCache::DIRECT_SEARCH);
                 if(path != nullptr) {
                     successCount++;
                     if(showDesc == 1) {
                         fprintf(bctx.fp_stdout, "%s\n", path);
+                    } else if(ctx->getPathCache().isCached(commandName)) {
+                        fprintf(bctx.fp_stdout, "%s is hashed (%s)\n", commandName, path);
                     } else {
                         fprintf(bctx.fp_stdout, "%s is %s\n", commandName, path);
                     }

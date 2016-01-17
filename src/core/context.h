@@ -80,9 +80,11 @@ public:
      * search file path by using PATH
      * if cannot resolve path (file not found), return null.
      */
-    const char *searchPath(const char *fileName, unsigned char option = 0);
+    const char *searchPath(const char *cmdName, unsigned char option = 0);
 
-    void removePath(const char *fileName);
+    void removePath(const char *cmdName);
+
+    bool isCached(const char *cmdName) const;
 };
 
 class RuntimeContext {
