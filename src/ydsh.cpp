@@ -50,11 +50,8 @@ struct DSContext {
     // option
     flag32_set_t option;
 
-    /**
-     * for prompt
-     */
-    std::string ps1;
-    std::string ps2;
+    // previously computed prompt
+    std::string prompt;
 
     struct {
         /**
@@ -122,7 +119,7 @@ struct DSContext {
 
 DSContext::DSContext() :
         ctx(), parser(), checker(this->ctx.getPool(), this->ctx.getSymbolTable()),
-        lineNum(1), option(0), ps1(), ps2(), execStatus() {
+        lineNum(1), option(0), prompt(), execStatus() {
     // set locale
     setlocale(LC_ALL, "");
     setlocale(LC_MESSAGES, "C");
@@ -553,34 +550,23 @@ void DSContext_unsetOption(DSContext *ctx, unsigned int optionSet) {
 }
 
 const char *DSContext_prompt(DSContext *ctx, unsigned int n) {
-    FieldHandle *handle = nullptr;
-    bool usePS1 = true;
+    const char *psName = nullptr;
     switch(n) {
     case 1:
-        handle = ctx->ctx.getSymbolTable().lookupHandle(VAR_PS1);
+        psName = VAR_PS1;
         break;
     case 2:
-        handle = ctx->ctx.getSymbolTable().lookupHandle(VAR_PS2);
-        usePS1 = false;
+        psName = VAR_PS2;
         break;
     default:
-        break;
-    }
-
-    if(handle == nullptr) {
         return "";
     }
 
-    unsigned int index = handle->getFieldIndex();
+    unsigned int index = ctx->ctx.getSymbolTable().lookupHandle(psName)->getFieldIndex();
     const DSValue &obj = ctx->ctx.getGlobal(index);
-    if(dynamic_cast<String_Object *>(obj.get()) == nullptr) {
-        return "";
-    }
 
-    ctx->ctx.interpretPromptString(
-            typeAs<String_Object>(obj)->getValue(), usePS1 ? ctx->ps1 : ctx->ps2);
-
-    return (usePS1 ? ctx->ps1 : ctx->ps2).c_str();
+    ctx->ctx.interpretPromptString(typeAs<String_Object>(obj)->getValue(), ctx->prompt);
+    return ctx->prompt.c_str();
 }
 
 int DSContext_supportDBus() {
