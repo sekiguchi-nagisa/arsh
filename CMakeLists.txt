@@ -251,6 +251,14 @@ target_link_libraries(${BIN_NAME} ${YDSH_STATIC})
 install(TARGETS ${BIN_NAME} RUNTIME DESTINATION bin)
 
 
+#++++++++++++++++++++#
+#     setup test     #
+#++++++++++++++++++++#
+
+enable_testing()
+add_subdirectory(test)
+
+
 #+++++++++++++++++++++++++#
 #     show enviroment     #
 #+++++++++++++++++++++++++#
