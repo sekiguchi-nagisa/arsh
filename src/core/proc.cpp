@@ -562,6 +562,9 @@ static int builtin_ps_intrp(RuntimeContext *ctx, const BuiltinContext &bctx) {
     return 0;
 }
 
+/**
+ * if execution failed, terminate immediately
+ */
 static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx) {
     int index = 1;
     bool clearEnv = false;
@@ -595,7 +598,7 @@ static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx) {
         if(old != nullptr) {    // restore
             setenv("_", old, 1);
         }
-        return 1;
+        exit(1);
     }
     return 0;
 }
