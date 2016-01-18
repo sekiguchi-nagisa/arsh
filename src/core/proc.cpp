@@ -160,6 +160,7 @@ const struct {
         {"exec", builtin_exec, "[-c] [-a name] file [args ...]",
                 "    Execute FILE and replace this shell with specified program.\n"
                 "    If FILE is not specified, the redirections take effect in this shell.\n"
+                "    IF FILE execution fail, terminate this shell immediately\n"
                 "    Options:\n"
                 "        -c    cleaner environmental variable\n"
                 "        -a    specify set program name(default is FILE)"},
@@ -562,9 +563,6 @@ static int builtin_ps_intrp(RuntimeContext *ctx, const BuiltinContext &bctx) {
     return 0;
 }
 
-/**
- * if execution failed, terminate immediately
- */
 static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx) {
     int index = 1;
     bool clearEnv = false;
@@ -584,20 +582,16 @@ static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx) {
         }
     }
 
-    char *envp[] = {nullptr};
     if(index < bctx.argc) { // exec
-        const char *old = getenv("_");  // save current _
         char **argv = const_cast<char **>(bctx.argv + index);
-        const char *filePath = ctx->getPathCache().searchPath(argv[0]);
+        const char *filePath = ctx->getPathCache().searchPath(argv[0], FilePathCache::DIRECT_SEARCH);
         if(progName != nullptr) {
             argv[0] = const_cast<char *>(progName);
         }
 
+        char *envp[] = {nullptr};
         xexecve(filePath, argv, clearEnv ? envp : nullptr);
         PERROR(bctx, "%s", bctx.argv[index]);
-        if(old != nullptr) {    // restore
-            setenv("_", old, 1);
-        }
         exit(1);
     }
     return 0;
