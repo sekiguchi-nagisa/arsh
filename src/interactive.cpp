@@ -200,6 +200,10 @@ static std::size_t encoding_readCode(int fd, char *buf, std::size_t bufSize, int
  * after execution, delete ctx
  */
 int exec_interactive(DSContext *ctx) {
+    *linenoiseInputFD() = dup(STDIN_FILENO);
+    *linenoiseOutputFD() = dup(STDOUT_FILENO);
+    *linenoiseErrorFD() = dup(STDERR_FILENO);
+
     linenoiseSetEncodingFunctions(
             encoding_prevCharLen,
             encoding_nextCharLen,
