@@ -313,7 +313,7 @@ TokenKind Lexer::nextToken(Token &token) {
     this->prevMode = prevMode;
 
     LOG(TRACE_TOKEN,
-        kind << ", " << token << ", text = " << this->toTokenText(token) << std::endl
+        toString(kind) << ", " << token << ", text = " << this->toTokenText(token) << std::endl
                      << "   lexer mode: " << toModeName(this->getLexerMode())
     );
     return kind;

@@ -69,6 +69,4 @@ public:
 
 const char *toString(DescTokenKind kind);
 
-std::ostream &operator<<(std::ostream &stream, DescTokenKind kind);
-
 #endif //TOOLS_DESCLEXER_H

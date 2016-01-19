@@ -195,7 +195,8 @@ void DSContext::handleParseError(const Lexer &lexer, const ParseError &e) {
     const bool isatty = isSupportedTerminal(STDERR_FILENO);
 
     std::cerr << lexer.getSourceInfoPtr()->getSourceName() << ":" << errorLineNum << ":"
-    << color(TermColor::Magenta, isatty) << " [syntax error] " << color(TermColor::Reset, isatty) << e << std::endl;
+    << color(TermColor::Magenta, isatty) << " [syntax error] " << color(TermColor::Reset, isatty)
+    << e.getMessage() << std::endl;
     formatErrorLine(isatty, lexer, e.getErrorToken());
 
     /**

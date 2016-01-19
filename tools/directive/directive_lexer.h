@@ -49,8 +49,6 @@ typedef enum {
 
 const char *toString(TokenKind kind);
 
-std::ostream &operator<<(std::ostream &stream, TokenKind);
-
 typedef ydsh::parser_base::Token Token;
 
 class Lexer : public ydsh::parser_base::LexerBase {

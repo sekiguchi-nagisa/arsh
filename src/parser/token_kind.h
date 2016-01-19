@@ -161,8 +161,6 @@ enum TokenKind : unsigned int {
 
 const char *toString(TokenKind kind);
 
-std::ostream &operator<<(std::ostream &stream, TokenKind kind);
-
 #define TO_NAME(kind) toString(kind)
 
 

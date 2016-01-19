@@ -19,18 +19,13 @@
 namespace ydsh {
 namespace parser {
 
-static const char *TOKEN_KIND_STRING[] = {
-#define GEN_NAME(ENUM, STR) STR,
-        EACH_TOKEN(GEN_NAME)
-#undef GEN_NAME
-};
-
 const char *toString(TokenKind kind) {
-    return TOKEN_KIND_STRING[kind];
-}
-
-std::ostream &operator<<(std::ostream &stream, TokenKind kind) {
-    return stream << toString(kind);
+    static const char *table[] = {
+#define GEN_NAME(ENUM, STR) STR,
+            EACH_TOKEN(GEN_NAME)
+#undef GEN_NAME
+    };
+    return table[kind];
 }
 
 unsigned int getPrecedence(TokenKind kind) {

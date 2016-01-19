@@ -524,57 +524,11 @@ public:
     }
 };
 
-class ParseError {
-private:
-    Token errorToken;
-    std::string message;
-
-public:
-    ParseError(Token token, std::string &&message) : errorToken(token), message(std::move(message)) {}
-    ~ParseError() = default;
-
-    const Token &getErrorToken() const {
-        return this->errorToken;
-    }
-
-    const std::string &getMessage() const {
-        return this->message;
-    }
-};
-
-struct ParserErrorListener {
-    static void reportTokenMismatchedError(DescTokenKind kind, Token errorToken, DescTokenKind expected) {
-        std::string message = "mismatched token: ";
-        message += toString(kind);
-        message += ", expected: ";
-        message += toString(expected);
-
-        throw ParseError(errorToken, std::move(message));
-    }
-
-    static void reportNoViableAlterError(DescTokenKind kind, Token errorToken, std::vector<DescTokenKind> &&alters) {
-        std::string message = "no viable alternative: ";
-        message += toString(kind);
-        message += ", expected: ";
-        unsigned int count = 0;
-        for(auto &a : alters) {
-            if(count++ > 0) {
-                message += ", ";
-            }
-            message += toString(a);
-        }
-
-        throw ParseError(errorToken, std::move(message));
-    }
-
-    static void reportInvalidTokenError(DescTokenKind, Token errorToken) {
-        throw ParseError(errorToken, std::string("invalid token"));
-    }
-};
+using ParseError = ydsh::parser_base::ParseError<DescTokenKind>;
 
 #define CUR_KIND() (this->curKind)
 
-class Parser : public ydsh::parser_base::ParserBase<DescTokenKind, DescLexer, ParserErrorListener> {
+class Parser : public ydsh::parser_base::ParserBase<DescTokenKind, DescLexer> {
 private:
     Parser() = default;
 

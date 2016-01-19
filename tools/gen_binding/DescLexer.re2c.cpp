@@ -88,14 +88,10 @@ DescTokenKind DescLexer::nextToken(Token &token) {
 
 const char *toString(DescTokenKind kind) {
     static const char *names[] = {
-            #define GEN_NAME(TOK) #TOK,
+#define GEN_NAME(TOK) #TOK,
             EACH_DESC_TOKEN(GEN_NAME)
-            #undef GEN_NAME
+#undef GEN_NAME
     };
 
     return names[kind];
-}
-
-std::ostream &operator<<(std::ostream &stream, DescTokenKind kind) {
-    return stream << toString(kind);
 }

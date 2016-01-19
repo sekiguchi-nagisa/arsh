@@ -24,18 +24,13 @@ namespace directive {
 
 using namespace ydsh::misc;
 
-static const char *TOKEN_KIND_STR[] = {
-#define GEN_STR(ENUM) "<" #ENUM ">",
-    EACH_TOKEN(GEN_STR)
-#undef GEN_STR
-};
-
 const char *toString(TokenKind kind) {
-    return TOKEN_KIND_STR[kind];
-}
-
-std::ostream &operator<<(std::ostream &stream, TokenKind kind) {
-    return stream << toString(kind);
+    static const char *table[] = {
+#define GEN_STR(ENUM) "<" #ENUM ">",
+            EACH_TOKEN(GEN_STR)
+#undef GEN_STR
+    };
+    return table[kind];
 }
 
 // ##################

@@ -138,7 +138,7 @@ do { \
     do {\
         int status;\
         out = func(token, status);\
-        if(status != 0) { throw TokenFormatError(kind, token, "out of range"); }\
+        if(status != 0) { raiseTokenFormatError(kind, token, "out of range"); }\
     } while(0)
 
 #define PRECEDENCE() getPrecedence(CUR_KIND())
@@ -169,45 +169,12 @@ static inline std::unique_ptr<T> uniquify(A &&... args) {
     return std::unique_ptr<T>(new T(std::forward<A>(args)...));
 };
 
-// ##################################
-// ##     TokenMismatchedError     ##
-// ##################################
+static void raiseTokenFormatError(TokenKind kind, Token token, const char *msg) {
+    std::string message(msg);
+    message += ": ";
+    message += toString(kind);
 
-std::ostream &TokenMismatchedError::printMessage(std::ostream &stream) const {
-    return stream << "mismatched token: "
-           << this->getTokenKind() << ", expected: " << this->getExpectedKind();
-}
-
-// ################################
-// ##     NoViableAlterError     ##
-// ################################
-
-std::ostream &NoViableAlterError::printMessage(std::ostream &stream) const {
-    stream << "no viable alternative: " << this->getTokenKind() << ", expected: ";
-    unsigned int count = 0;
-    for(auto &a : this->getAlters()) {
-        if(count++ > 0) {
-            stream << ", ";
-        }
-        stream << a;
-    }
-    return stream;
-}
-
-// ###############################
-// ##     InvalidTokenError     ##
-// ###############################
-
-std::ostream &InvalidTokenError::printMessage(std::ostream &stream) const {
-    return stream << "invalid token";
-}
-
-// ##############################
-// ##     TokenFormatError     ##
-// ##############################
-
-std::ostream &TokenFormatError::printMessage(std::ostream &stream) const {
-    return stream << this->getMessage() << ": " << this->getTokenKind();
+    throw ParseError(kind, token, "TokenFormat", std::move(message));
 }
 
 
@@ -693,7 +660,7 @@ void Parser::parse_statementEnd() {
         break;
     default:
         if(!HAS_NL()) {
-            throw TokenMismatchedError(CUR_KIND(), this->curToken, NEW_LINE);
+            this->raiseTokenMismatchedError(CUR_KIND(), this->curToken, NEW_LINE);
         }
         break;
     }
@@ -1264,7 +1231,7 @@ std::unique_ptr<Node> Parser::parse_stringLiteral() {
     std::string str;
     bool s = this->lexer->singleToString(token, str);
     if(!s) {
-        throw TokenFormatError(STRING_LITERAL, token, "illegal escape sequence");
+        raiseTokenFormatError(STRING_LITERAL, token, "illegal escape sequence");
     }
     return uniquify<StringValueNode>(token, std::move(str));
 }
