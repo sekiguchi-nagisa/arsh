@@ -660,7 +660,7 @@ void Parser::parse_statementEnd() {
         break;
     default:
         if(!HAS_NL()) {
-            this->raiseTokenMismatchedError(CUR_KIND(), this->curToken, NEW_LINE);
+            raiseTokenMismatchedError(CUR_KIND(), this->curToken, NEW_LINE);
         }
         break;
     }

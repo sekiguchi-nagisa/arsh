@@ -80,9 +80,9 @@ protected:
 
     void alternativeError(std::vector<T> &&alters) const;
 
-    void raiseTokenMismatchedError(T kind, Token errorToken, T expected) const;
-    void raiseNoViableAlterError(T kind, Token errorToken, std::vector<T> &&alters) const;
-    void raiseInvalidTokenError(T kind, Token errorToken) const;
+    static void raiseTokenMismatchedError(T kind, Token errorToken, T expected);
+    static void raiseNoViableAlterError(T kind, Token errorToken, std::vector<T> &&alters);
+    static void raiseInvalidTokenError(T kind, Token errorToken);
 };
 
 // ########################
@@ -93,9 +93,9 @@ template<typename T, typename LexerImpl>
 Token ParserBase<T, LexerImpl>::expect(T kind, bool fetchNext) {
     if(this->curKind != kind) {
         if(LexerImpl::isInvalidToken(this->curKind)) {
-            this->raiseInvalidTokenError(this->curKind, this->curToken);
+            raiseInvalidTokenError(this->curKind, this->curToken);
         }
-        this->raiseTokenMismatchedError(this->curKind, this->curToken, kind);
+        raiseTokenMismatchedError(this->curKind, this->curToken, kind);
     }
     Token token = this->curToken;
     if(fetchNext) {
@@ -114,13 +114,13 @@ T ParserBase<T, LexerImpl>::consume() {
 template<typename T, typename LexerImpl>
 void ParserBase<T, LexerImpl>::alternativeError(std::vector<T> &&alters) const {
     if(LexerImpl::isInvalidToken(this->curKind)) {
-        this->raiseInvalidTokenError(this->curKind, this->curToken);
+        raiseInvalidTokenError(this->curKind, this->curToken);
     }
-    this->raiseNoViableAlterError(this->curKind, this->curToken, std::move(alters));
+    raiseNoViableAlterError(this->curKind, this->curToken, std::move(alters));
 }
 
 template<typename T, typename LexerImpl>
-void ParserBase<T, LexerImpl>::raiseTokenMismatchedError(T kind, Token errorToken, T expected) const {
+void ParserBase<T, LexerImpl>::raiseTokenMismatchedError(T kind, Token errorToken, T expected) {
     std::string message("mismatched token: ");
     message += toString(kind);
     message += ", expected: ";
@@ -130,7 +130,7 @@ void ParserBase<T, LexerImpl>::raiseTokenMismatchedError(T kind, Token errorToke
 }
 
 template<typename T, typename LexerImpl>
-void ParserBase<T, LexerImpl>::raiseNoViableAlterError(T kind, Token errorToken, std::vector<T> &&alters) const {
+void ParserBase<T, LexerImpl>::raiseNoViableAlterError(T kind, Token errorToken, std::vector<T> &&alters) {
     std::string message = "no viable alternative: ";
     message += toString(kind);
     message += ", expected: ";
@@ -146,7 +146,7 @@ void ParserBase<T, LexerImpl>::raiseNoViableAlterError(T kind, Token errorToken,
 }
 
 template<typename T, typename LexerImpl>
-void ParserBase<T, LexerImpl>::raiseInvalidTokenError(T kind, Token errorToken) const {
+void ParserBase<T, LexerImpl>::raiseInvalidTokenError(T kind, Token errorToken) {
     throw ParseError<T>(kind, errorToken, "InvalidToken", std::string("invalid token"));
 }
 
