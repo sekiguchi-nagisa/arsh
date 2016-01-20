@@ -78,10 +78,11 @@ protected:
 
     T consume();
 
-    void alternativeError(std::vector<T> &&alters) const;
+    void alternativeError(const unsigned int size, const T *const alters) const;
 
     static void raiseTokenMismatchedError(T kind, Token errorToken, T expected);
-    static void raiseNoViableAlterError(T kind, Token errorToken, std::vector<T> &&alters);
+    static void raiseNoViableAlterError(T kind, Token errorToken,
+                                        const unsigned int size, const T *const alters);
     static void raiseInvalidTokenError(T kind, Token errorToken);
 };
 
@@ -112,11 +113,11 @@ T ParserBase<T, LexerImpl>::consume() {
 }
 
 template<typename T, typename LexerImpl>
-void ParserBase<T, LexerImpl>::alternativeError(std::vector<T> &&alters) const {
+void ParserBase<T, LexerImpl>::alternativeError(const unsigned int size, const T *const alters) const {
     if(LexerImpl::isInvalidToken(this->curKind)) {
         raiseInvalidTokenError(this->curKind, this->curToken);
     }
-    raiseNoViableAlterError(this->curKind, this->curToken, std::move(alters));
+    raiseNoViableAlterError(this->curKind, this->curToken, size, alters);
 }
 
 template<typename T, typename LexerImpl>
@@ -130,16 +131,18 @@ void ParserBase<T, LexerImpl>::raiseTokenMismatchedError(T kind, Token errorToke
 }
 
 template<typename T, typename LexerImpl>
-void ParserBase<T, LexerImpl>::raiseNoViableAlterError(T kind, Token errorToken, std::vector<T> &&alters) {
+void ParserBase<T, LexerImpl>::raiseNoViableAlterError(T kind, Token errorToken,
+                                                       const unsigned int size, const T *const alters) {
     std::string message = "no viable alternative: ";
     message += toString(kind);
-    message += ", expected: ";
-    unsigned int count = 0;
-    for(auto &a : alters) {
-        if(count++ > 0) {
-            message += ", ";
+    if(size > 0 && alters != nullptr) {
+        message += ", expected: ";
+        for(unsigned int i = 0; i < size; i++) {
+            if(i > 0) {
+                message += ", ";
+            }
+            message += toString(alters[i]);
         }
-        message += toString(a);
     }
 
     throw ParseError<T>(kind, errorToken, "NoViableAlter", std::move(message));

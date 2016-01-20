@@ -224,15 +224,6 @@ void DirectiveParser::parse_attribute(std::unique_ptr<AttributeNode> &node) {
 }
 
 void DirectiveParser::parse_value(std::unique_ptr<Node> &value) {
-#define EACH_LA_value(OP) \
-    OP(INT_LITERAL) \
-    OP(STRING_LITERAL) \
-    OP(TRUE_LITERAL) \
-    OP(FALSE_LITERAL) \
-    OP(ARRAY_OPEN)
-
-#define GEN_LA_ALTER(K) alters.push_back(K);
-
     switch(CUR_KIND()) {
     case INT_LITERAL:
         this->parse_number(value);
@@ -248,15 +239,21 @@ void DirectiveParser::parse_value(std::unique_ptr<Node> &value) {
         this->parse_array(value);
         return;
     default:
-        std::vector<TokenKind> alters;
-        EACH_LA_value(GEN_LA_ALTER)
-        this->alternativeError(std::move(alters));
+        const TokenKind alters[] = {
+#define EACH_LA_value(OP) \
+    OP(INT_LITERAL) \
+    OP(STRING_LITERAL) \
+    OP(TRUE_LITERAL) \
+    OP(FALSE_LITERAL) \
+    OP(ARRAY_OPEN)
+#define GEN_LA_value(OP) OP,
+                EACH_LA_value(GEN_LA_value)
+#undef GEN_LA_value
+#undef EACH_LA_value
+        };
+        this->alternativeError(sizeof(alters) / sizeof(alters[0]), alters);
         return;
     }
-
-
-#undef GEN_LA_ALTER
-#undef EACH_LA_value
 }
 
 void DirectiveParser::parse_number(std::unique_ptr<Node> &node) {

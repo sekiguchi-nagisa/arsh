@@ -647,10 +647,10 @@ std::unique_ptr<Element> Parser::parse_descriptor(const std::string &line) {
     case INIT:
         return this->parse_initDesc();
     default: {
-        std::vector<DescTokenKind> alters;
-        alters.push_back(FUNC);
-        alters.push_back(INIT);
-        this->alternativeError(std::move(alters));
+        const DescTokenKind alters[] = {
+                FUNC, INIT,
+        };
+        this->alternativeError(2, alters);
         break;
     }
     }
@@ -675,10 +675,10 @@ std::unique_ptr<Element> Parser::parse_funcDesc() {
         break;
     }
     default: {
-        std::vector<DescTokenKind> alters;
-        alters.push_back(IDENTIFIER);
-        alters.push_back(VAR_NAME);
-        this->alternativeError(std::move(alters));
+        const DescTokenKind alters[] = {
+                IDENTIFIER, VAR_NAME,
+        };
+        this->alternativeError(2, alters);
         return std::unique_ptr<Element>(nullptr);
     }
     }
@@ -755,12 +755,14 @@ std::unique_ptr<TypeToken> Parser::parse_type() {
         return std::unique_ptr<TypeToken>(type.release());
     }
     default:
-        std::vector<DescTokenKind> alters;
-        alters.push_back(IDENTIFIER);
-        alters.push_back(ARRAY);
-        alters.push_back(MAP);
-        alters.push_back(TUPLE);
-        this->alternativeError(std::move(alters));
+        const DescTokenKind alters[] = {
+                IDENTIFIER,
+                ARRAY,
+                MAP,
+                TUPLE,
+        };
+        this->alternativeError(sizeof(alters) / sizeof(alters[0]), alters);
+
         return std::unique_ptr<TypeToken>();
     }
 }

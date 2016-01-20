@@ -60,8 +60,6 @@ public:
     void parse(Lexer &lexer, RootNode &rootNode);
 
 private:
-    void alternative(const TokenKind *kinds);
-
     // parser rule definition.
     void parse_toplevel(RootNode &rootNode);
 

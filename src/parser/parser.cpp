@@ -130,7 +130,7 @@
 #define E_ALTER(...) \
 do { \
     const TokenKind alters[] = { __VA_ARGS__ };\
-    this->alternative(alters);\
+    this->alternativeError(sizeof(alters) / sizeof(alters[0]), alters);\
 } while(false)
 
 // for check converted number range
@@ -191,14 +191,6 @@ void Parser::parse(Lexer &lexer, RootNode &rootNode) {
     // start parsing
     rootNode.setSourceInfoPtr(this->lexer->getSourceInfoPtr());
     this->parse_toplevel(rootNode);
-}
-
-void Parser::alternative(const TokenKind *kinds) {
-    std::vector<TokenKind> alters;
-    for(unsigned int i = 0; kinds[i] != DUMMY; i++) {
-        alters.push_back(kinds[i]);
-    }
-    this->alternativeError(std::move(alters));
 }
 
 // parse rule definition
@@ -326,12 +318,7 @@ std::unique_ptr<Node> Parser::parse_interface() {
         }
     }
     if(count == 0) {
-        E_ALTER(
-                FUNCTION,
-                VAR,
-                LET,
-                DUMMY,
-        );
+        E_ALTER(FUNCTION, VAR, LET);
     }
 
     token = this->expect(RBC);
@@ -450,8 +437,7 @@ std::unique_ptr<TypeNode> Parser::parse_typeName() {
                 IDENTIFIER,
                 FUNC,
                 TYPEOF,
-                TYPE_PATH,
-                DUMMY
+                TYPE_PATH
         );
         return std::unique_ptr<TypeNode>(nullptr);
     }
@@ -641,10 +627,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
         return node;
     }
     default: {
-        E_ALTER(
-                EACH_LA_statement(GEN_LA_ALTER)
-                DUMMY
-        );
+        E_ALTER(EACH_LA_statement(GEN_LA_ALTER));
         return std::unique_ptr<Node>(nullptr);
     }
     }
@@ -690,10 +673,7 @@ std::unique_ptr<Node> Parser::parse_variableDeclaration() {
                                      this->parse_commandOrExpression().release(), readOnly);
     }
     default:
-        E_ALTER(
-                EACH_LA_varDecl(GEN_LA_ALTER)
-                DUMMY
-        );
+        E_ALTER(EACH_LA_varDecl(GEN_LA_ALTER));
         return std::unique_ptr<Node>(nullptr);
     }
 }
@@ -890,7 +870,6 @@ void Parser::parse_redirOption(std::unique_ptr<CmdNode> &node) {
     default:
         E_ALTER(
                 EACH_LA_redir(GEN_LA_ALTER)
-                DUMMY
         );
         break;
     }
@@ -936,10 +915,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool expandTilde) {
         return this->parse_paramExpansion();
     }
     default: {
-        E_ALTER(
-                EACH_LA_cmdArg(GEN_LA_ALTER)
-                DUMMY
-        );
+        E_ALTER(EACH_LA_cmdArg(GEN_LA_ALTER));
         return std::unique_ptr<Node>(nullptr);
     }
     }
@@ -955,8 +931,7 @@ std::unique_ptr<Node> Parser::parse_commandOrExpression() {
     default:
         E_ALTER(
                 EACH_LA_expression(GEN_LA_ALTER)
-                COMMAND,
-                DUMMY
+                COMMAND
         );
         return std::unique_ptr<Node>(nullptr);
     }
@@ -1213,10 +1188,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         return node;
     }
     default:
-        E_ALTER(
-                EACH_LA_primary(GEN_LA_ALTER)
-                DUMMY
-        );
+        E_ALTER(EACH_LA_primary(GEN_LA_ALTER));
         return std::unique_ptr<Node>(nullptr);
     }
 }
@@ -1302,10 +1274,7 @@ std::unique_ptr<Node> Parser::parse_interpolation() {
         return node;
     }
     default: {
-        E_ALTER(
-                EACH_LA_interpolation(GEN_LA_ALTER)
-                DUMMY
-        );
+        E_ALTER(EACH_LA_interpolation(GEN_LA_ALTER));
         return std::unique_ptr<Node>(nullptr);
     }
     }

@@ -20,7 +20,6 @@
 #include <ostream>
 
 #define EACH_TOKEN(TOKEN) \
-    TOKEN(DUMMY                              , "<Dummy>") /* for sentinel value. not use it as token kind */\
     TOKEN(INVALID                            , "<Invalid>") \
     TOKEN(EOS                                , "<EOS>") \
     /* token kind definition. */\
