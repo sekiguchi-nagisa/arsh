@@ -18,8 +18,6 @@
 
 
 // helper macro
-#define NEXT_TOKEN() (this->fetchNext())
-
 #define HAS_NL() (this->lexer->isPrevNewLine())
 
 #define HAS_SPACE() (this->lexer->isPrevSpace())
@@ -139,7 +137,10 @@ do { \
         int status;\
         out = func(token, status);\
         if(status != 0) { raiseTokenFormatError(kind, token, "out of range"); }\
-    } while(0)
+    } while(false)
+
+#define PUSH_LEXER_MODE(mode) \
+    do { this->lexer->pushLexerMode((mode)); this->fetchNext(); } while(false)
 
 #define PRECEDENCE() getPrecedence(CUR_KIND())
 
@@ -182,20 +183,11 @@ void Parser::parse(Lexer &lexer, RootNode &rootNode) {
     this->lexer = &lexer;
 
     // first, fetch token.
-    NEXT_TOKEN();
+    this->fetchNext();
 
     // start parsing
     rootNode.setSourceInfoPtr(this->lexer->getSourceInfoPtr());
     this->parse_toplevel(rootNode);
-}
-
-// parse rule definition
-
-void Parser::parse_toplevel(RootNode &rootNode) {
-    while(CUR_KIND() != EOS) {
-        rootNode.addNode(this->parse_statement().release());
-    }
-    this->expect(EOS);
 }
 
 void Parser::refetch(LexerMode mode) {
@@ -204,10 +196,27 @@ void Parser::refetch(LexerMode mode) {
     this->fetchNext();
 }
 
+void Parser::restoreLexerState(Token prevToken) {
+    unsigned int pos = prevToken.pos + prevToken.size;
+    this->lexer->setPos(pos);
+    this->lexer->popLexerMode();
+    this->fetchNext();
+}
+
 void Parser::expectAndChangeMode(TokenKind kind, LexerMode mode) {
     this->expect(kind, false);
     this->lexer->setLexerMode(mode);
     this->fetchNext();
+}
+
+
+// parse rule definition
+
+void Parser::parse_toplevel(RootNode &rootNode) {
+    while(CUR_KIND() != EOS) {
+        rootNode.addNode(this->parse_statement().release());
+    }
+    this->expect(EOS);
 }
 
 std::unique_ptr<Node> Parser::parse_function() {
@@ -269,8 +278,7 @@ std::unique_ptr<Node> Parser::parse_interface() {
     this->expect(INTERFACE, false);
 
     // enter TYPE mode
-    this->lexer->pushLexerMode(yycTYPE);
-    NEXT_TOKEN();
+    PUSH_LEXER_MODE(yycTYPE);
 
     Token token = this->expect(TYPE_PATH);
 
@@ -333,13 +341,6 @@ std::unique_ptr<Node> Parser::parse_typeAlias() {
     return uniquify<TypeAliasNode>(startPos, this->lexer->toTokenText(token), typeToken.release());
 }
 
-void Parser::restoreLexerState(Token prevToken) {
-    unsigned int pos = prevToken.pos + prevToken.size;
-    this->lexer->setPos(pos);
-    this->lexer->popLexerMode();
-    NEXT_TOKEN();
-}
-
 std::unique_ptr<TypeNode> Parser::parse_basicOrReifiedType(Token token) {
     auto typeToken = uniquify<BaseTypeNode>(token, this->lexer->toName(token));
     if(!HAS_NL() && CUR_KIND() == TYPE_OPEN) {
@@ -365,8 +366,7 @@ std::unique_ptr<TypeNode> Parser::parse_basicOrReifiedType(Token token) {
 
 std::unique_ptr<TypeNode> Parser::parse_typeName() {
     // change lexer state to TYPE
-    this->lexer->pushLexerMode(yycTYPE);
-    NEXT_TOKEN();
+    PUSH_LEXER_MODE(yycTYPE);
 
     switch(CUR_KIND()) {
     case IDENTIFIER: {
@@ -377,8 +377,7 @@ std::unique_ptr<TypeNode> Parser::parse_typeName() {
         Token token = this->expect(TYPEOF);
         if(CUR_KIND() == TYPE_OTHER && this->lexer->equals(this->curToken, "(")) {  // treat as typeof operator
             this->expect(TYPE_OTHER, false);
-            this->lexer->pushLexerMode(yycSTMT);
-            NEXT_TOKEN();
+            PUSH_LEXER_MODE(yycSTMT);
 
             unsigned int startPos = token.pos;
             std::unique_ptr<Node> exprNode(this->parse_expression());
@@ -635,7 +634,7 @@ void Parser::parse_statementEnd() {
     case RBC:
         break;
     case LINE_END:
-        NEXT_TOKEN();
+        this->consume();
         break;
     default:
         if(!HAS_NL()) {
@@ -860,7 +859,7 @@ void Parser::parse_redirOption(std::unique_ptr<CmdNode> &node) {
     }
     EACH_LA_redirNoFile(GEN_LA_CASE) {
         node->addRedirOption(CUR_KIND(), this->curToken);
-        this->fetchNext();
+        this->consume();
         break;
     }
     default:
@@ -1281,7 +1280,7 @@ std::unique_ptr<Node> Parser::parse_paramExpansion() {
     case APPLIED_NAME_WITH_BRACKET:
     case SPECIAL_NAME_WITH_BRACKET: {
         Token token = this->curToken;
-        this->fetchNext();
+        this->consume();
         auto node =  uniquify<VarNode>(token, this->lexer->toName(token));
         auto indexNode(this->parse_expression());
         this->expect(RB);

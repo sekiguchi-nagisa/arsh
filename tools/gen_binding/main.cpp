@@ -735,7 +735,7 @@ std::unique_ptr<TypeToken> Parser::parse_type() {
     case MAP:
     case TUPLE: {
         auto token = this->curToken;
-        this->fetchNext();
+        this->consume();
 
         auto type(ReifiedTypeToken::newReifiedTypeToken(this->lexer->toTokenText(token)));
         this->expect(TYPE_OPEN);

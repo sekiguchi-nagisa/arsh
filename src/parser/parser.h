@@ -62,25 +62,25 @@ public:
     void parse(Lexer &lexer, RootNode &rootNode);
 
 private:
-    // parser rule definition.
-    void parse_toplevel(RootNode &rootNode);
-
     /**
      * change lexer mode and refetch.
      */
     void refetch(LexerMode mode);
+
+    void restoreLexerState(Token prevToken);
 
     /**
      * after matching token, change lexer mode and fetchNext.
      */
     void expectAndChangeMode(TokenKind kind, LexerMode mode);
 
+    // parser rule definition.
+    void parse_toplevel(RootNode &rootNode);
+
     std::unique_ptr<Node> parse_function();
     std::unique_ptr<FunctionNode> parse_funcDecl();
     std::unique_ptr<Node> parse_interface();
     std::unique_ptr<Node> parse_typeAlias();
-
-    void restoreLexerState(Token prevToken);
 
     /**
      * not call it directory

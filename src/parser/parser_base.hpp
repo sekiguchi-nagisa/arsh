@@ -70,6 +70,9 @@ public:
 protected:
     ~ParserBase() = default;
 
+    /**
+     * low level api. not directly use it.
+     */
     void fetchNext() {
         this->curKind = this->lexer->nextToken(this->curToken);
     }
