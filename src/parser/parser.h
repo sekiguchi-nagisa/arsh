@@ -34,15 +34,17 @@ private:
     std::vector<Node *> nodes;
 
 public:
+    NON_COPYABLE(ArgsWrapper);
+
     ArgsWrapper() = default;
-    ArgsWrapper(const ArgsWrapper &a) = delete;
     ArgsWrapper(ArgsWrapper &&a) = default;
     ~ArgsWrapper();
 
-    ArgsWrapper &operator=(const ArgsWrapper &) = delete;
-
     void addArgNode(std::unique_ptr<Node> &&node);
-    std::vector<Node *> remove();
+
+    static std::vector<Node *> extract(ArgsWrapper &&argsWrapper) {
+        return std::move(argsWrapper.nodes);
+    }
 };
 
 using ParseError = ydsh::parser_base::ParseError<TokenKind>;
@@ -71,7 +73,7 @@ private:
     /**
      * after matching token, change lexer mode and fetchNext.
      */
-    void expectAfter(TokenKind kind, LexerMode mode);
+    void expectAndChangeMode(TokenKind kind, LexerMode mode);
 
     std::unique_ptr<Node> parse_function();
     std::unique_ptr<FunctionNode> parse_funcDecl();
@@ -86,7 +88,7 @@ private:
     std::unique_ptr<TypeNode> parse_basicOrReifiedType(Token token);
 
     /**
-     * not call NETX_TOKEN, before call it.
+     * not call NEXT_TOKEN, before call it.
      */
     std::unique_ptr<TypeNode> parse_typeName();
 

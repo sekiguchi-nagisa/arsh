@@ -160,10 +160,6 @@ void ArgsWrapper::addArgNode(std::unique_ptr<Node> &&node) {
     nodes.push_back(node.release());
 }
 
-std::vector<Node *> ArgsWrapper::remove() {
-    return std::move(this->nodes);
-}
-
 template <typename T, typename ... A>
 static inline std::unique_ptr<T> uniquify(A &&... args) {
     return std::unique_ptr<T>(new T(std::forward<A>(args)...));
@@ -208,7 +204,7 @@ void Parser::refetch(LexerMode mode) {
     this->fetchNext();
 }
 
-void Parser::expectAfter(TokenKind kind, LexerMode mode) {
+void Parser::expectAndChangeMode(TokenKind kind, LexerMode mode) {
     this->expect(kind, false);
     this->lexer->setLexerMode(mode);
     this->fetchNext();
@@ -534,7 +530,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
         auto node = uniquify<ImportEnvNode>(startPos, this->lexer->toName(token));
         node->updateToken(token);
         if(!HAS_NL() && CUR_KIND() == COLON) {
-            this->expectAfter(COLON, yycSTMT);
+            this->expectAndChangeMode(COLON, yycSTMT);
             node->setDefaultValueNode(this->parse_expression().release());
         }
 
@@ -1030,7 +1026,7 @@ std::unique_ptr<Node> Parser::parse_memberExpression() {
         }
         case LP: {
             ArgsWrapper args(this->parse_arguments());
-            node.reset(createCallNode(node.release(), std::move(args).remove()));
+            node.reset(createCallNode(node.release(), ArgsWrapper::extract(std::move(args))));
             break;
         }
         default: {
@@ -1049,7 +1045,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         this->expect(NEW, false);
         std::unique_ptr<TypeNode> type(this->parse_typeName());
         ArgsWrapper args(this->parse_arguments());
-        return uniquify<NewNode>(startPos, type.release(), std::move(args).remove());
+        return uniquify<NewNode>(startPos, type.release(), ArgsWrapper::extract(std::move(args)));
     }
     case BYTE_LITERAL: {
         TokenKind kind = CUR_KIND();
@@ -1161,7 +1157,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
 
         std::unique_ptr<Node> node;
         if(CUR_KIND() == COLON) {   // map
-            this->expectAfter(COLON, yycSTMT);
+            this->expectAndChangeMode(COLON, yycSTMT);
 
             std::unique_ptr<Node> valueNode(this->parse_expression());
             std::unique_ptr<MapNode> mapNode(
@@ -1169,7 +1165,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
             while(CUR_KIND() == COMMA) {
                 this->expect(COMMA);
                 keyNode = this->parse_expression();
-                this->expectAfter(COLON, yycSTMT);
+                this->expectAndChangeMode(COLON, yycSTMT);
                 valueNode = this->parse_expression();
                 mapNode->addEntry(keyNode.release(), valueNode.release());
             }
