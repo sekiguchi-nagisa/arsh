@@ -138,7 +138,7 @@ configure_file(src/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/src/config.h)
 #     build re2c    #
 #+++++++++++++++++++#
 
-set(RE2C_V "0.15.3")
+set(RE2C_V "0.16")
 set(RE2C_URL "https://github.com/skvadrik/re2c/releases/download/${RE2C_V}/re2c-${RE2C_V}.tar.gz")
 set(RE2C_PATH ${CMAKE_CURRENT_BINARY_DIR}/re2c-${RE2C_V}.tar.gz)
 set(RE2C_DIR ${CMAKE_CURRENT_BINARY_DIR}/re2c-${RE2C_V})
