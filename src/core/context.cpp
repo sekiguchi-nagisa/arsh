@@ -562,17 +562,13 @@ void RuntimeContext::updateWorkingDir(bool OLDPWD_only) {
     const char *env_OLDPWD = "OLDPWD";
     if(this->handle_OLDPWD == nullptr) {
         this->handle_OLDPWD = this->symbolTable.lookupHandle(env_OLDPWD);
-        if(this->handle_OLDPWD == nullptr || !this->handle_OLDPWD->isEnv()) {
-            fatal("broken env: %s\n", env_OLDPWD);
-        }
+        assert(this->handle_OLDPWD != nullptr && this->handle_OLDPWD->isEnv());
     }
 
     const char *env_PWD = "PWD";
     if(this->handle_PWD == nullptr) {
         this->handle_PWD = this->symbolTable.lookupHandle(env_PWD);
-        if(this->handle_PWD == nullptr || !this->handle_PWD->isEnv()) {
-            fatal("broken env: %s\n", env_PWD);
-        }
+        assert(this->handle_PWD != nullptr && this->handle_PWD->isEnv());
     }
 
     // update OLDPWD
@@ -598,9 +594,7 @@ void RuntimeContext::updateWorkingDir(bool OLDPWD_only) {
 const char *RuntimeContext::getIFS() {
     if(this->handle_IFS == nullptr) {
         this->handle_IFS = this->symbolTable.lookupHandle("IFS");
-        if(this->handle_IFS == nullptr) {
-            fatal("broken IFS\n");
-        }
+        assert(this->handle_IFS != nullptr);
     }
     return typeAs<String_Object>(this->getGlobal(this->handle_IFS->getFieldIndex()))->getValue();
 }

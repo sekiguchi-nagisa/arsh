@@ -19,6 +19,7 @@
 #include <iostream>
 #include <clocale>
 #include <csignal>
+#include <cstdlib>
 
 #include <unistd.h>
 #include <execinfo.h>
@@ -132,7 +133,7 @@ DSContext::DSContext() :
         struct passwd *pw = getpwuid(getuid());
         if(pw == nullptr) {
             perror("getpwuid failed\n");
-            fatal();
+            exit(1);
         }
         setenv("HOME", pw->pw_dir, 1);
     }
