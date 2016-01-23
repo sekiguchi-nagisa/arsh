@@ -1,3 +1,0 @@
-#$test($result = 'type', $errorKind = 'UnfoundReturn', $lineNum = 3, $status = 1)
-
-function f($a : Int) : String {}

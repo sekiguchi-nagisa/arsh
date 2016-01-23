@@ -1,9 +1,9 @@
-#$test($result = 'type', $lineNum = 9, $errorKind = 'NotCallable', $status = 1)
+#$test($result = 'type', $errorKind = 'UnfoundReturn', $lineNum = 3, $status = 1)
 
-function f() {
-    hello
+function f($a : Int) : String {
+    if($a == 3) {
+        return ""
+    } elif($a > 3) {
+        return "hello"
+    }
 }
-
-var a = $f as Func
-
-$a() # not apply Func type object
