@@ -24,7 +24,7 @@
 #include <dirent.h>
 #include <csignal>
 
-#include "../config.h"
+#include <config.h>
 #include "context.h"
 #include "symbol.h"
 #include "../misc/num.h"

@@ -25,8 +25,8 @@
 #include <execinfo.h>
 
 #include <ydsh/ydsh.h>
-#include "config.h"
-#include "embed.h"
+#include <config.h>
+#include <embed.h>
 
 #include "ast/node_dumper.h"
 #include "parser/lexer.h"

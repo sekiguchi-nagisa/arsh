@@ -20,7 +20,7 @@
 #include <ctime>
 #include <cstring>
 
-#include "config.h"
+#include <config.h>
 
 namespace ydsh {
 namespace misc {

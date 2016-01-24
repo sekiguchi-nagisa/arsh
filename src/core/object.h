@@ -23,7 +23,7 @@
 #include <unordered_set>
 
 #include "type.h"
-#include "../config.h"
+#include <config.h>
 #include "../misc/demangle.hpp"
 
 namespace ydsh {

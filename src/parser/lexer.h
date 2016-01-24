@@ -26,7 +26,7 @@
 namespace ydsh {
 namespace parser {
 
-#include "yycond.h"
+#include <yycond.h>
 
 const char *toModeName(LexerMode mode);
 

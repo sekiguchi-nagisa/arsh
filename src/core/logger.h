@@ -17,7 +17,7 @@
 #ifndef YDSH_CORE_LOGGER_H
 #define YDSH_CORE_LOGGER_H
 
-#include "../config.h"
+#include <config.h>
 #include "../misc/logger_base.hpp"
 
 DEFINE_LOGGING_POLICY("YDSH_", "APPENDER", TRACE_TOKEN, DUMP_EXEC, TRACE_SIGNAL);

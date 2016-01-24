@@ -131,7 +131,8 @@ execute_process(COMMAND git submodule update --init)
 #     generate config.h     #
 #+++++++++++++++++++++++++++#
 
-configure_file(src/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/src/config.h)
+configure_file(src/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/src/config.h)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/src)
 
 
 #+++++++++++++++++++#
@@ -158,7 +159,7 @@ endif()
 set(lexer_src ${CMAKE_CURRENT_BINARY_DIR}/nextToken.cpp)
 add_custom_command(OUTPUT ${lexer_src}
     COMMAND ${RE2C_DIR}/re2c -W -Werror -c -8
-            -s -t ${CMAKE_CURRENT_SOURCE_DIR}/src/parser/yycond.h -o ${lexer_src}
+            -s -t ${CMAKE_CURRENT_BINARY_DIR}/src/yycond.h -o ${lexer_src}
             ${CMAKE_CURRENT_SOURCE_DIR}/src/parser/nextToken.re2c.cpp
 )
 add_custom_target(gen_lexer DEPENDS ${lexer_src})
@@ -181,7 +182,7 @@ add_dependencies(gen_bind gen_binding)
 #     generate embedded script file     #
 #=======================================#
 
-set(embed_src ${CMAKE_CURRENT_SOURCE_DIR}/src/embed.h)
+set(embed_src ${CMAKE_CURRENT_BINARY_DIR}/src/embed.h)
 add_custom_command(OUTPUT ${embed_src}
     COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tools/src_to_str/src_to_str
             -f ${CMAKE_CURRENT_SOURCE_DIR}/src/embed.ds
