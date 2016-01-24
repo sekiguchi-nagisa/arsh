@@ -1203,11 +1203,9 @@ BuiltinContext::BuiltinContext(int offset, const BuiltinContext &bctx) :
 }
 
 
-// ###############################
-// ##     PipelineEvaluator     ##
-// ###############################
+void RuntimeContext::openProc() {
+    DSValue value = this->pop();
 
-void PipelineEvaluator::openProc(DSValue &&value) {
     // resolve proc kind (external command, builtin command or user-defined command)
     const char *commandName = typeAs<String_Object>(value)->getValue();
     ProcState::ProcKind procKind = ProcState::EXTERNAL;
@@ -1215,7 +1213,7 @@ void PipelineEvaluator::openProc(DSValue &&value) {
 
     // first, check user-defined command
     {
-        UserDefinedCmdNode *udcNode = this->ctx->lookupUserDefinedCommand(commandName);
+        UserDefinedCmdNode *udcNode = this->lookupUserDefinedCommand(commandName);
         if(udcNode != nullptr) {
             procKind = ProcState::ProcKind::USER_DEFINED;
             ptr = udcNode;
@@ -1233,52 +1231,61 @@ void PipelineEvaluator::openProc(DSValue &&value) {
 
     // resolve external command path
     if(ptr == nullptr) {
-        ptr = (void *)this->ctx->getPathCache().searchPath(commandName);
+        ptr = (void *)this->getPathCache().searchPath(commandName);
     }
 
-    unsigned int argOffset = this->argArray.size();
-    unsigned int redirOffset = this->redirOptions.size();
-    this->procStates.push_back(ProcState(argOffset, redirOffset, procKind, ptr));
+    auto &pipeline = this->activePipeline();
+    unsigned int argOffset = pipeline.getArgArray().size();
+    unsigned int redirOffset = pipeline.getRedirOptions().size();
+    pipeline.getProcStates().push_back(ProcState(argOffset, redirOffset, procKind, ptr));
 
-    this->argArray.push_back(std::move(value));
+    pipeline.getArgArray().push_back(std::move(value));
 }
 
-void PipelineEvaluator::closeProc() {
-    this->argArray.push_back(DSValue());
-    this->redirOptions.push_back(std::make_pair(RedirectOP::DUMMY, DSValue()));
+void RuntimeContext::closeProc() {
+    auto &pipeline = this->activePipeline();
+    pipeline.getArgArray().push_back(DSValue());
+    pipeline.getRedirOptions().push_back(std::make_pair(RedirectOP::DUMMY, DSValue()));
 }
 
-void PipelineEvaluator::addArg(DSValue &&value, bool skipEmptyString) {
+void RuntimeContext::addArg(bool skipEmptyString) {
+    DSValue value = this->pop();
     DSType *valueType = value->getType();
-    if(*valueType == this->ctx->getPool().getStringType()) {
+    if(*valueType == this->getPool().getStringType()) {
         if(skipEmptyString && typeAs<String_Object>(value)->empty()) {
             return;
         }
-        this->argArray.push_back(std::move(value));
+        this->activePipeline().getArgArray().push_back(std::move(value));
         return;
     }
 
-    if(*valueType == this->ctx->getPool().getStringArrayType()) {
+    if(*valueType == this->getPool().getStringArrayType()) {
         Array_Object *arrayObj = typeAs<Array_Object>(value);
         for(auto &element : arrayObj->getValues()) {
             if(typeAs<String_Object>(element)->empty()) {
                 continue;
             }
-            this->argArray.push_back(element);
+            this->activePipeline().getArgArray().push_back(element);
         }
     } else {
-        fatal("illegal command parameter type: %s\n", this->ctx->getPool().getTypeName(*valueType).c_str());
+        fatal("illegal command parameter type: %s\n", this->getPool().getTypeName(*valueType).c_str());
     }
 }
 
-void PipelineEvaluator::addRedirOption(RedirectOP op, DSValue &&value) {
+void RuntimeContext::addRedirOption(RedirectOP op) {
+    DSValue value = this->pop();
     DSType *valueType = value->getType();
-    if(*valueType == this->ctx->getPool().getStringType()) {
-        this->redirOptions.push_back(std::make_pair(op, value));
+    if(*valueType == this->getPool().getStringType()) {
+        this->activePipeline().getRedirOptions().push_back(std::make_pair(op, value));
     } else {
-        fatal("illegal command parameter type: %s\n", this->ctx->getPool().getTypeName(*valueType).c_str());
+        fatal("illegal command parameter type: %s\n", this->getPool().getTypeName(*valueType).c_str());
     }
 }
+
+
+// ###############################
+// ##     PipelineEvaluator     ##
+// ###############################
 
 static void closeAllPipe(int size, int pipefds[][2]) {
     for(int i = 0; i < size; i++) {
@@ -1306,7 +1313,8 @@ static int redirectToFile(const DSValue &fileName, const char *mode, int targetF
  * if errorPipe is -1, report error and return false.
  * if errorPipe is not -1, report error and exit 1
  */
-bool PipelineEvaluator::redirect(unsigned int procIndex, int errorPipe, int stdin_fd, int stdout_fd, int stderr_fd) {
+bool PipelineEvaluator::redirect(RuntimeContext &ctx, unsigned int procIndex,
+                                 int errorPipe, int stdin_fd, int stdout_fd, int stderr_fd) {
 #define CHECK_ERROR(result) do { occurredError = (result); if(occurredError != 0) { goto ERR; } } while(0)
 
     int occurredError = 0;
@@ -1365,7 +1373,7 @@ bool PipelineEvaluator::redirect(unsigned int procIndex, int errorPipe, int stdi
         e.errorNum = occurredError;
 
         if(errorPipe == -1) {
-            return this->checkChildError(std::make_pair(0, e)); // return false
+            return this->checkChildError(ctx, std::make_pair(0, e)); // return false
         }
         write(errorPipe, &e, sizeof(ChildError));
         exit(0);
@@ -1379,7 +1387,7 @@ DSValue *PipelineEvaluator::getARGV(unsigned int procIndex) {
     return this->argArray.data() + this->procStates[procIndex].argOffset();
 }
 
-EvalStatus PipelineEvaluator::evalPipeline() {
+EvalStatus PipelineEvaluator::evalPipeline(RuntimeContext &ctx) {
     const unsigned int procSize = this->procStates.size();
 
     // check builtin command
@@ -1401,13 +1409,13 @@ EvalStatus PipelineEvaluator::evalPipeline() {
             int stdout_fd = dupFD ? dup(STDOUT_FILENO) : STDOUT_FILENO;
             int stderr_fd = dupFD ? dup(STDERR_FILENO) : STDERR_FILENO;
 
-            if(!this->redirect(0, -1, stdin_fd, stdout_fd, stderr_fd)) {
-                this->ctx->updateExitStatus(1);
+            if(!this->redirect(ctx, 0, -1, stdin_fd, stdout_fd, stderr_fd)) {
+                ctx.updateExitStatus(1);
                 return EvalStatus::THROW;
             }
 
             BuiltinContext bctx(argc, argv, stdin_fd, stdout_fd, stderr_fd);
-            this->ctx->updateExitStatus(cmd_ptr(this->ctx, bctx));
+            ctx.updateExitStatus(cmd_ptr(&ctx, bctx));
 
             if(dupFD) {
                 fclose(bctx.fp_stdin);
@@ -1462,7 +1470,7 @@ EvalStatus PipelineEvaluator::evalPipeline() {
 
             if(childError.errorNum == ENOENT) { // if file not found, remove path cache
                 const char *cmdName = this->getCommandName(procIndex);
-                this->ctx->getPathCache().removePath(cmdName);
+                ctx.getPathCache().removePath(cmdName);
             }
             procIndex = procSize;
             break;
@@ -1478,7 +1486,7 @@ EvalStatus PipelineEvaluator::evalPipeline() {
         const unsigned int actualProcSize = this->procStates.size();
         for(unsigned int i = 0; i < actualProcSize; i++) {
             int status = 0;
-            this->ctx->xwaitpid(this->procStates[i].pid(), status, 0);
+            ctx.xwaitpid(this->procStates[i].pid(), status, 0);
             if(WIFEXITED(status)) {
                 this->procStates[i].set(ProcState::NORMAL, WEXITSTATUS(status));
             }
@@ -1487,8 +1495,8 @@ EvalStatus PipelineEvaluator::evalPipeline() {
             }
         }
 
-        this->ctx->updateExitStatus(this->procStates[actualProcSize - 1].exitStatus());
-        return this->checkChildError(errorPair) ? EvalStatus::SUCCESS : EvalStatus::THROW ;
+        ctx.updateExitStatus(this->procStates[actualProcSize - 1].exitStatus());
+        return this->checkChildError(ctx, errorPair) ? EvalStatus::SUCCESS : EvalStatus::THROW ;
     } else if(pid == 0) { // child process
         if(procIndex == 0) {    // first process
             if(procSize > 1) {
@@ -1505,7 +1513,8 @@ EvalStatus PipelineEvaluator::evalPipeline() {
             }
         }
 
-        this->redirect(procIndex, selfpipes[procIndex][WRITE_PIPE], STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO);
+        this->redirect(ctx, procIndex, selfpipes[procIndex][WRITE_PIPE],
+                       STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO);
 
         closeAllPipe(procSize, pipefds);
 
@@ -1518,7 +1527,7 @@ EvalStatus PipelineEvaluator::evalPipeline() {
         if(procKind == ProcState::ProcKind::USER_DEFINED) { // invoke user-defined command
             UserDefinedCmdNode *udcNode = procState.udcNode();
             closeAllPipe(procSize, selfpipes);
-            exit(this->ctx->execUserDefinedCommand(udcNode, ptr));
+            exit(ctx.execUserDefinedCommand(udcNode, ptr));
         } else {
             // create argv
             unsigned int argc = 1;
@@ -1533,7 +1542,7 @@ EvalStatus PipelineEvaluator::evalPipeline() {
                 builtin_command_t cmd_ptr = procState.builtinCmd();
                 closeAllPipe(procSize, selfpipes);
                 BuiltinContext bctx(argc, argv, STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO);
-                exit(cmd_ptr(this->ctx, bctx));
+                exit(cmd_ptr(&ctx, bctx));
             } else {    // invoke external command
                 xexecve(procState.filePath(), argv, nullptr);
 
@@ -1570,7 +1579,7 @@ const char *PipelineEvaluator::getCommandName(unsigned int procIndex) {
     return typeAs<String_Object>(this->getARGV(procIndex)[0])->getValue();
 }
 
-bool PipelineEvaluator::checkChildError(const std::pair<unsigned int, ChildError> &errorPair) {
+bool PipelineEvaluator::checkChildError(RuntimeContext &ctx, const std::pair<unsigned int, ChildError> &errorPair) {
     if(!errorPair.second) {
         auto &pair = this->redirOptions[errorPair.second.redirIndex];
 
@@ -1584,7 +1593,7 @@ bool PipelineEvaluator::checkChildError(const std::pair<unsigned int, ChildError
                 msg += typeAs<String_Object>(pair.second)->getValue();
             }
         }
-        this->ctx->throwSystemError(errorPair.second.errorNum, std::move(msg));
+        ctx.throwSystemError(errorPair.second.errorNum, std::move(msg));
         return false;
     }
     return true;

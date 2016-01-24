@@ -609,6 +609,23 @@ public:
      * if execute exit command, throw InternalError.
      */
     void execBuiltinCommand(char *const argv[]);
+
+    /**
+     * stack top value must be String_Object and it represents command name.
+     */
+    void openProc();
+
+    void closeProc();
+
+    /**
+     * stack top value must be String_Object or Array_Object.
+     */
+    void addArg(bool skipEmptyString);
+
+    /**
+     * stack top value must be String_Object.
+     */
+    void addRedirOption(RedirectOP op);
 };
 
 // some system util
@@ -621,7 +638,7 @@ std::string expandTilde(const char *path);
 /**
  * after fork, reset signal setting in child process.
  */
-pid_t xfork(void);
+pid_t xfork();
 
 // for internal status reporting
 struct InternalError {};

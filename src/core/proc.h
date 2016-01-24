@@ -222,9 +222,9 @@ public:
 class PipelineEvaluator {
 private:
     /**
-     * not delete it
+     * stack top index before pipeline evaluation.
      */
-    RuntimeContext *ctx;
+    unsigned int stacktopIndex;
 
     /**
      * commonly stored object is String_Object.
@@ -241,35 +241,47 @@ private:
 public:
     NON_COPYABLE(PipelineEvaluator);
 
-    PipelineEvaluator(RuntimeContext *ctx) :
-            ctx(ctx), argArray(), redirOptions(), procStates() { }
+    PipelineEvaluator() = default;
 
     ~PipelineEvaluator() = default;
 
+    void setStackTopIndex(unsigned int stackTopIndex) {
+        this->stacktopIndex = stackTopIndex;
+    }
+
+    unsigned int getStackTopIndex() const {
+        return this->stacktopIndex;
+    }
+
+    std::vector<DSValue> &getArgArray() {
+        return this->argArray;
+    }
+
+    std::vector<std::pair<RedirectOP, DSValue>> &getRedirOptions() {
+        return this->redirOptions;
+    }
+
+    std::vector<ProcState> &getProcStates() {
+        return this->procStates;
+    }
+
     void clear() {
+        this->stacktopIndex = 0;
         this->argArray.clear();
         this->redirOptions.clear();
         this->procStates.clear();
     }
 
-    /**
-     * value must be String_Object and it represents command name.
-     */
-    void openProc(DSValue &&value);
-
-    void closeProc();
-    void addArg(DSValue &&value, bool skipEmptyString);
-    void addRedirOption(RedirectOP op, DSValue &&value);
-
-    EvalStatus evalPipeline();
+    EvalStatus evalPipeline(RuntimeContext &ctx);
 
 private:
-    bool redirect(unsigned int procIndex, int errorPipe, int stdin_fd, int stdout_fd, int stderr_fd);
+    bool redirect(RuntimeContext &ctx, unsigned int procIndex,
+                  int errorPipe, int stdin_fd, int stdout_fd, int stderr_fd);
 
     DSValue *getARGV(unsigned int procIndex);
     const char *getCommandName(unsigned int procIndex);
 
-    bool checkChildError(const std::pair<unsigned int, ChildError> &errorPair);
+    bool checkChildError(RuntimeContext &ctx, const std::pair<unsigned int, ChildError> &errorPair);
 };
 
 

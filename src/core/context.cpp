@@ -147,7 +147,7 @@ RuntimeContext::RuntimeContext() :
         localVarOffset(0), offsetStack(), toplevelPrinting(false), assertion(true),
         handle_STR(nullptr), handle_bt(nullptr),
         handle_OLDPWD(nullptr), handle_PWD(nullptr), handle_IFS(nullptr),
-        callableContextStack(), callStack(), pipelineEvaluator(this), udcMap(), pathCache() {
+        callableContextStack(), callStack(), pipelineEvaluator(), udcMap(), pathCache() {
 }
 
 RuntimeContext::~RuntimeContext() {
@@ -614,8 +614,15 @@ void RuntimeContext::exitShell(unsigned int status) {
 
 EvalStatus RuntimeContext::callPipedCommand(unsigned int startPos) {
     this->pushCallFrame(startPos);
-    EvalStatus status = this->activePipeline().evalPipeline();
+    EvalStatus status = this->activePipeline().evalPipeline(*this);
     this->popCallFrame();
+
+    // pop stack top
+    const unsigned int oldIndex = this->activePipeline().getStackTopIndex();
+    for(unsigned int i = this->getStackTopIndex(); i > oldIndex; i--) {
+        this->popNoReturn();
+    }
+
     this->activePipeline().clear();
     return status;
 }
@@ -896,7 +903,7 @@ std::string expandTilde(const char *path) {
     return expanded;
 }
 
-pid_t xfork(void) {
+pid_t xfork() {
     pid_t pid = fork();
     if(pid == 0) {  // child process
         struct sigaction act;
