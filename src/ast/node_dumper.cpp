@@ -46,6 +46,9 @@ void NodeDumper::dump(const char *fieldName, const std::string &value) {
         case '"':
             ch = '"';
             break;
+        case '\\':
+            ch = '\\';
+            break;
         default:
             escape = false;
             break;
