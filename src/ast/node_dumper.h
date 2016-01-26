@@ -23,6 +23,7 @@
 #include <ostream>
 #include <vector>
 #include <list>
+#include <type_traits>
 
 namespace ydsh {
 namespace core {
@@ -99,11 +100,21 @@ private:
     void writeName(const char *fieldName);
 };
 
+template <typename T>
+inline std::vector<Node *> toNodes(const std::vector<T *> &nodes) {
+    static_assert(std::is_base_of<Node, T>::value, "must be subtype of Node");
+    std::vector<Node *> v;
+    for(const auto &e : nodes) {
+        v.push_back(e);
+    }
+    return v;
+}
+
 } // namespace ast
 } // namespace ydsh
 
 // helper macro definition
-#define DUMP(field)  dumper.dump(NAME(field), field)
+#define DUMP(field) dumper.dump(NAME(field), field)
 #define DUMP_PRIM(field) dumper.dump(NAME(field), std::to_string(field))
 #define DUMP_PTR(field) \
     do {\
@@ -114,25 +125,32 @@ private:
         }\
     } while(false)
 
-// not directly use it.
-#define GEN_ENUM_STR(ENUM, out) case ENUM: out = #ENUM; break;
+#define DUMP_NODES(field) dumper.dump(NAME(field), toNodes(field))
 
-#define DECODE_ENUM(out, val, EACH_ENUM) \
+
+// not directly use it.
+#define GEN_ENUM_STR(ENUM) case ENUM: ___str__ = #ENUM; break;
+
+#define DUMP_ENUM(val, EACH_ENUM) \
     do {\
+        const char *___str__ = nullptr;\
         switch(val) {\
-        EACH_ENUM(GEN_ENUM_STR, out)\
+        EACH_ENUM(GEN_ENUM_STR)\
         }\
+        dumper.dump(NAME(val), ___str__);\
     } while(false)
 
 // not directly use it.
-#define GEN_FLAG_STR(FLAG, out, set) \
-        if(((set) & FLAG) == FLAG) { if(c++ > 0) { out += " | "; } out += #FLAG; }
+#define GEN_FLAG_STR(FLAG) \
+        if((___set__ & FLAG)) { if(___count__++ > 0) { ___str__ += " | "; } ___str__ += #FLAG; }
 
-#define DECODE_BITSET(out, set, EACH_FLAG) \
+#define DUMP_BITSET(val, EACH_FLAG) \
     do {\
-        unsigned int c = 0;\
-        EACH_FLAG(GEN_FLAG_STR, out, set) \
+        unsigned int ___count__ = 0;\
+        std::string ___str__;\
+        auto ___set__ = val;\
+        EACH_FLAG(GEN_FLAG_STR)\
+        dumper.dump(NAME(val), ___str__);\
     } while(false)
-
 
 #endif //YDSH_AST_NODE_DUMPER_H

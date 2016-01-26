@@ -97,13 +97,7 @@ void ReifiedTypeNode::addElementTypeNode(TypeNode *typeNode) {
 
 void ReifiedTypeNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(templateTypeNode);
-
-    std::vector<Node *> elementTypeNodes;
-    for(auto &t : this->elementTypeNodes) {
-        elementTypeNodes.push_back(t);
-    }
-
-    DUMP(elementTypeNodes);
+    DUMP_NODES(elementTypeNodes);
 }
 
 void ReifiedTypeNode::accept(NodeVisitor &visitor) {
@@ -129,12 +123,7 @@ void FuncTypeNode::addParamTypeNode(TypeNode *typeNode) {
 
 void FuncTypeNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(returnTypeNode);
-
-    std::vector<Node *> paramTypeNodes;
-    for(auto &t : this->paramTypeNodes) {
-        paramTypeNodes.push_back(t);
-    }
-    DUMP(paramTypeNodes);
+    DUMP_NODES(paramTypeNodes);
 }
 
 void FuncTypeNode::accept(NodeVisitor &visitor) {
@@ -174,11 +163,7 @@ void ReturnTypeNode::addTypeNode(TypeNode *typeNode) {
 }
 
 void ReturnTypeNode::dump(NodeDumper &dumper) const {
-    std::vector<Node *> typeNodes;
-    for(auto &t : this->typeNodes) {
-        typeNodes.push_back(t);
-    }
-    DUMP(typeNodes);
+    DUMP_NODES(typeNodes);
 }
 
 void ReturnTypeNode::accept(NodeVisitor &visitor) {
@@ -563,13 +548,11 @@ void AccessNode::dump(NodeDumper &dumper) const {
     DUMP(fieldName);
     AssignableNode::dump(dumper);
 
-#define EACH_ENUM(OP, out) \
-    OP(NOP, out) \
-    OP(DUP_RECV, out)
+#define EACH_ENUM(OP) \
+    OP(NOP) \
+    OP(DUP_RECV)
 
-    std::string str;
-    DECODE_ENUM(str, this->additionalOp, EACH_ENUM);
-    dumper.dump(NAME(addtionalOp), str);
+    DUMP_ENUM(additionalOp, EACH_ENUM);
 #undef EACH_ENUM
 }
 
@@ -714,42 +697,37 @@ void CastNode::dump(NodeDumper &dumper) const {
     TypeNode *targetTypeToken = this->getTargetTypeNode();
     DUMP_PTR(targetTypeToken);
 
-#define EACH_ENUM(OP, out) \
-    OP(NO_CAST, out) \
-    OP(TO_VOID, out) \
-    OP(NUM_CAST, out) \
-    OP(TO_STRING, out) \
-    OP(CHECK_CAST, out)
+#define EACH_ENUM(OP) \
+    OP(NO_CAST) \
+    OP(TO_VOID) \
+    OP(NUM_CAST) \
+    OP(TO_STRING) \
+    OP(CHECK_CAST)
 
-    std::string str;
-    DECODE_ENUM(str, this->opKind, EACH_ENUM);
-    dumper.dump(NAME(opKind), str);
+    DUMP_ENUM(opKind, EACH_ENUM);
 #undef EACH_ENUM
 
-#define EACH_FLAG(OP, out, set) \
-    OP(NOP       , out, set) \
-    OP(COPY_INT  , out, set) \
-    OP(TO_B      , out, set) \
-    OP(TO_U16    , out, set) \
-    OP(TO_I16    , out, set) \
-    OP(NEW_LONG  , out, set) \
-    OP(COPY_LONG , out, set) \
-    OP(I_NEW_LONG, out, set) \
-    OP(NEW_INT   , out, set) \
-    OP(U32_TO_D  , out, set) \
-    OP(I32_TO_D  , out, set) \
-    OP(U64_TO_D  , out, set) \
-    OP(I64_TO_D  , out, set) \
-    OP(D_TO_U32  , out, set) \
-    OP(D_TO_I32  , out, set) \
-    OP(D_TO_U64  , out, set) \
-    OP(D_TO_I64  , out, set)
+#define EACH_FLAG(OP) \
+    OP(NOP) \
+    OP(COPY_INT) \
+    OP(TO_B) \
+    OP(TO_U16) \
+    OP(TO_I16) \
+    OP(NEW_LONG) \
+    OP(COPY_LONG) \
+    OP(I_NEW_LONG) \
+    OP(NEW_INT) \
+    OP(U32_TO_D) \
+    OP(I32_TO_D) \
+    OP(U64_TO_D) \
+    OP(I64_TO_D) \
+    OP(D_TO_U32) \
+    OP(D_TO_I32) \
+    OP(D_TO_U64) \
+    OP(D_TO_I64)
 
-    str = "";
-    DECODE_BITSET(str, this->numCastOp, EACH_FLAG);
+    DUMP_BITSET(numCastOp, EACH_FLAG);
 #undef EACH_FLAG
-
-    dumper.dump(NAME(numCastOp), str);
 }
 
 void CastNode::accept(NodeVisitor &visitor) {
@@ -919,14 +897,12 @@ void InstanceOfNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(targetNode);
     DUMP_PTR(targetTypeNode);
 
-#define EACH_ENUM(OP, out) \
-    OP(ALWAYS_FALSE, out) \
-    OP(ALWAYS_TRUE, out) \
-    OP(INSTANCEOF, out)
+#define EACH_ENUM(OP) \
+    OP(ALWAYS_FALSE) \
+    OP(ALWAYS_TRUE) \
+    OP(INSTANCEOF)
 
-    std::string val;
-    DECODE_ENUM(val, this->opKind, EACH_ENUM);
-    dumper.dump(NAME(opKind), val);
+    DUMP_ENUM(opKind, EACH_ENUM);
 #undef EACH_ENUM
 }
 
@@ -1034,13 +1010,12 @@ void MethodCallNode::dump(NodeDumper &dumper) const {
     DUMP_PRIM(methodIndex);
     DUMP(argNodes);
 
-#define EACH_FLAG(OP, out, set) \
-    OP(INDEX, out, set) \
-    OP(ICALL, out, set)
+#define EACH_FLAG(OP) \
+    OP(INDEX) \
+    OP(ICALL)
 
-    std::string str;
-    DECODE_BITSET(str, this->attributeSet, EACH_FLAG);
-    dumper.dump(NAME(attributeSet), str);
+    DUMP_BITSET(attributeSet, EACH_FLAG);
+
 #undef EACH_FLAG
 }
 
@@ -1505,17 +1480,14 @@ void CmdContextNode::inRightHandleSide() {
 void CmdContextNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
 
-#define EACH_FLAG(OP, out, set) \
-    OP(BACKGROUND, out, set) \
-    OP(FORK, out, set) \
-    OP(STR_CAP, out, set) \
-    OP(ARRAY_CAP, out, set) \
-    OP(CONDITION, out, set)
+#define EACH_FLAG(OP) \
+    OP(BACKGROUND) \
+    OP(FORK) \
+    OP(STR_CAP) \
+    OP(ARRAY_CAP) \
+    OP(CONDITION)
 
-    std::string value;
-    DECODE_BITSET(value, this->attributeSet, EACH_FLAG);
-    dumper.dump(NAME(attributeSet), value);
-
+    DUMP_BITSET(attributeSet, EACH_FLAG);
 #undef EACH_FLAG
 }
 
@@ -2045,12 +2017,7 @@ void IfNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(condNode);
     DUMP_PTR(thenNode);
     DUMP(elifCondNodes);
-
-    std::vector<Node *> elifThenNodes;
-    for(BlockNode *elifThenNode : this->elifThenNodes) {
-        elifThenNodes.push_back(elifThenNode);
-    }
-    DUMP(elifThenNodes);
+    DUMP_NODES(elifThenNodes);
 
     DUMP_PTR(elseNode);
     DUMP_PRIM(terminal);
@@ -2193,12 +2160,7 @@ BlockNode *TryNode::getFinallyNode() {
 
 void TryNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(blockNode);
-
-    std::vector<Node *> catchNodes;
-    for(CatchNode *node : this->catchNodes) {
-        catchNodes.push_back(node);
-    }
-    DUMP(catchNodes);
+    DUMP_NODES(catchNodes);
 
     DUMP_PTR(finallyNode);
     DUMP_PRIM(terminal);
@@ -2287,14 +2249,11 @@ void AssignNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(leftNode);
     DUMP_PTR(rightNode);
 
-#define EACH_FLAG(OP, out, set) \
-    OP(SELF_ASSIGN, out, set) \
-    OP(FIELD_ASSIGN, out, set)
+#define EACH_FLAG(OP) \
+    OP(SELF_ASSIGN) \
+    OP(FIELD_ASSIGN)
 
-    std::string value;
-    DECODE_BITSET(value, this->attributeSet, EACH_FLAG);
-    dumper.dump(NAME(attributeSet), value);
-
+    DUMP_BITSET(attributeSet, EACH_FLAG);
 #undef EACH_FLAG
 }
 
@@ -2451,18 +2410,8 @@ TypeNode *FunctionNode::getReturnTypeToken() {
 
 void FunctionNode::dump(NodeDumper &dumper) const {
     DUMP(funcName);
-
-    std::vector<Node *> paramNodes;
-    for(VarNode *node : this->paramNodes) {
-        paramNodes.push_back(node);
-    }
-    DUMP(paramNodes);
-
-    std::vector<Node *> paramTypeNodes;
-    for(auto &t : this->paramTypeNodes) {
-        paramTypeNodes.push_back(t);
-    }
-    DUMP(paramTypeNodes);
+    DUMP_NODES(paramNodes);
+    DUMP_NODES(paramTypeNodes);
 
     DUMP_PTR(returnTypeNode);
     DUMP_PTR(blockNode);
@@ -2510,24 +2459,9 @@ void InterfaceNode::addFieldDecl(VarDeclNode *node, TypeNode *typeToken) {
 
 void InterfaceNode::dump(NodeDumper &dumper) const {
     DUMP(interfaceName);
-
-    std::vector<Node *> methodDeclNodes;
-    for(FunctionNode *funcNode : this->methodDeclNodes) {
-        methodDeclNodes.push_back(funcNode);
-    }
-    DUMP(methodDeclNodes);
-
-    std::vector<Node *> fieldDeclNodes;
-    for(VarDeclNode *node : this->fieldDeclNodes) {
-        fieldDeclNodes.push_back(node);
-    }
-    DUMP(fieldDeclNodes);
-
-    std::vector<Node *> fieldTypeNodes;
-    for(auto &t : this->fieldTypeNodes) {
-        fieldTypeNodes.push_back(t);
-    }
-    DUMP(fieldTypeNodes);
+    DUMP_NODES(methodDeclNodes);
+    DUMP_NODES(fieldDeclNodes);
+    DUMP_NODES(fieldTypeNodes);
 }
 
 void InterfaceNode::accept(NodeVisitor &visitor) {
