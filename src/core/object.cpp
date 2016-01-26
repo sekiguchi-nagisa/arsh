@@ -312,7 +312,7 @@ DSValue Map_Object::nextElement(RuntimeContext &ctx) {
             new Tuple_Object(ctx.getPool().createTupleType(std::move(types))));
     typeAs<Tuple_Object>(entry)->set(0, this->iter->first);
     typeAs<Tuple_Object>(entry)->set(1, this->iter->second);
-    this->iter++;
+    ++this->iter;
 
     return entry;
 }

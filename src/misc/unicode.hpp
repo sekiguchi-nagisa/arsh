@@ -203,11 +203,10 @@ int UnicodeUtil<T>::width(int codePoint, AmbiguousCharWidth ambiguousCharWidth) 
 
 template <bool T>
 int UnicodeUtil<T>::localeAwareWidth(int codePoint) {
-    static const char *cjk[] = {"ja", "zh", "ko"};
-
     auto e = ONE_WIDTH;
     const char *ctype = setlocale(LC_CTYPE, nullptr);
     if(ctype != nullptr) {
+        static const char *cjk[] = {"ja", "zh", "ko"};
         for(unsigned int i = 0; i < (sizeof(cjk) / sizeof(const char *)); i++) {
             if(strstr(ctype, cjk[i]) != nullptr) {
                 e = TWO_WIDTH;

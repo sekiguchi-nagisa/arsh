@@ -174,7 +174,7 @@ static std::size_t encoding_readCode(int fd, char *buf, std::size_t bufSize, int
         return -1;
     }
 
-    std::size_t readSize = read(fd, &buf[0], 1);
+    int readSize = read(fd, &buf[0], 1);
     if(readSize <= 0) {
         return readSize;
     }

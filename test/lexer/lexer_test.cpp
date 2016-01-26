@@ -59,10 +59,6 @@ public:
         this->lexer->setLexerMode(mode);
     }
 
-    virtual const std::vector<std::pair<TokenKind, Token>> &getTokens() {
-        return this->tokens;
-    }
-
 private:
     virtual void tokenize() {
         SCOPED_TRACE("");

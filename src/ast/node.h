@@ -126,7 +126,7 @@ public:
  */
 class TypeNode : public Node {
 public:
-    TypeNode(Token token) : Node(token) { }
+    explicit TypeNode(Token token) : Node(token) { }
 
     virtual ~TypeNode() = default;
 
@@ -1388,7 +1388,7 @@ public:
  */
 class BlockEndNode : public Node {
 public:
-    BlockEndNode(Token token) : Node(token) { }
+    explicit BlockEndNode(Token token) : Node(token) { }
 
     virtual ~BlockEndNode() = default;
 
@@ -2264,7 +2264,7 @@ public:
 class EmptyNode : public Node {
 public:
     EmptyNode() : Node({0, 0}) { }
-    EmptyNode(Token token) : Node(token) { }
+    explicit EmptyNode(Token token) : Node(token) { }
     ~EmptyNode() = default;
 
     void dump(NodeDumper &dumper) const override;

@@ -317,10 +317,6 @@ struct SAXHandlerContext {
 
     ~SAXHandlerContext() = default;
 
-    const Config &getConfig() const {
-        return this->config;
-    }
-
     bool generatedPreviously(const std::string &ifaceName) {
         return !this->foundIfaceSet.insert(ifaceName).second;
     }
@@ -447,7 +443,7 @@ static void handler_startElementNs(void *ctx, const xmlChar *localname,
                                    const xmlChar *, const xmlChar *,
                                    int, const xmlChar **,
                                    int nb_attributes, int, const xmlChar **attributes) {
-    SAXHandlerContext *hctx = (SAXHandlerContext *) ctx;
+    SAXHandlerContext *hctx = reinterpret_cast<SAXHandlerContext *>(ctx);
 
     std::string elementName(str(localname));
     AttributeMap attrMap(nb_attributes, attributes);
@@ -529,7 +525,7 @@ static void handler_startElementNs(void *ctx, const xmlChar *localname,
  * ctx is actually
  */
 static void handler_endElementNs(void *ctx, const xmlChar* localname, const xmlChar*, const xmlChar*) {
-    SAXHandlerContext *hctx = (SAXHandlerContext *) ctx;
+    SAXHandlerContext *hctx = reinterpret_cast<SAXHandlerContext *>(ctx);
 
     std::string elementName(str(localname));
     if(elementName == "node") {
@@ -609,7 +605,7 @@ static void generateIface(Config &config) {
     saxHander.endElementNs = handler_endElementNs;
     saxHander.characters = handler_characters;
 
-    // for specifed xml file
+    // for specifying xml file
     if(!config.getXmlFileName().empty()) {
         FILE *fp = fopen(config.getXmlFileName().c_str(), "r");
         if(fp == nullptr) {
@@ -628,6 +624,7 @@ static void generateIface(Config &config) {
             fprintf(stderr, "broken xml\n");
             exit(1);
         }
+        fclose(fp);
         parse(handlerCtx, saxHander, xmlStr);
         return;
     }

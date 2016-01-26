@@ -38,10 +38,6 @@ public:
     ArgTest() = default;
     virtual ~ArgTest() = default;
 
-    virtual void SetUp() { }
-
-    virtual void TearDown() { }
-
     virtual void expectError(std::vector<std::string> args, const Opt (&options)[5], const char *expect) {
         int argc = args.size();
         char *argv[argc];

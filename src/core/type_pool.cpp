@@ -55,7 +55,7 @@ DSType *TypeMap::getType(const std::string &typeName) const {
     if(iter != this->typeMapImpl.end()) {
         DSType *type = iter->second;
         if(isAlias(type)) {   // if tagged pointer, mask tag
-            return (DSType *) (mask & (unsigned long) type);
+            return reinterpret_cast<DSType *>(mask & (unsigned long) type);
         }
         return type;
     }
@@ -74,7 +74,7 @@ bool TypeMap::setAlias(std::string &&alias, DSType &targetType) {
     /**
      * use tagged pointer to prevent double free.
      */
-    DSType *taggedPtr = (DSType *) (tag | (unsigned long) &targetType);
+    DSType *taggedPtr = reinterpret_cast<DSType *>(tag | (unsigned long) &targetType);
     auto pair = this->typeMapImpl.insert(std::make_pair(std::move(alias), taggedPtr));
     this->typeCache.push_back(&pair.first->first);
     return pair.second;

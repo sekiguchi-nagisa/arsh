@@ -882,7 +882,7 @@ static void gencode(const char *outFileName, const std::vector<TypeBind *> &bind
         unsigned int methodSize = bind->funcElements.size();
 
         OUT("native_type_info_t info_%sType() {\n", bind->name.c_str());
-        OUT("    return { .offset = %d, .constructorSize = %d, .methodSize = %d };\n",
+        OUT("    return { .offset = %u, .constructorSize = %u, .methodSize = %u };\n",
             bind->initElement == nullptr && bind->funcElements.empty() ? 0 : offsetCount,
             constructorSize, methodSize);
         OUT("}\n");

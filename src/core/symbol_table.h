@@ -37,7 +37,7 @@ public:
      */
     Scope() : Scope(0) { }
 
-    Scope(unsigned int curVarIndex) :
+    explicit Scope(unsigned int curVarIndex) :
             curVarIndex(curVarIndex), handleMap() { }
 
     ~Scope();

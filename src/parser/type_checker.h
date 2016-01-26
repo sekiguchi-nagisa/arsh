@@ -40,9 +40,9 @@ private:
     };
 
 public:
-    HandleOrFuncType(FunctionHandle *handle) : hasHandle(true), handle(handle) { }
+    explicit HandleOrFuncType(FunctionHandle *handle) : hasHandle(true), handle(handle) { }
 
-    HandleOrFuncType(FunctionType *funcType) : hasHandle(false), funcType(funcType) { }
+    explicit HandleOrFuncType(FunctionType *funcType) : hasHandle(false), funcType(funcType) { }
 
     bool treatAsHandle() const {
         return this->hasHandle;

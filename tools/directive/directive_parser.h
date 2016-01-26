@@ -114,7 +114,7 @@ protected:
     Type type;
 
 public:
-    Node(const Token &token) : token(token) {}
+    explicit Node(const Token &token) : token(token) {}
     virtual ~Node() = default;
 
     const Token &getToken() const {
@@ -244,7 +244,7 @@ private:
     std::vector<std::unique_ptr<Node>> values;
 
 public:
-    ArrayNode(const Token &token) : Node(token), values() {}
+    explicit ArrayNode(const Token &token) : Node(token), values() {}
     ~ArrayNode() = default;
 
     void appendNode(std::unique_ptr<Node> &&node) {

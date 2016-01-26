@@ -627,7 +627,7 @@ CastNode::CastNode(Node *exprNode, TypeNode *type, bool dupTypeToken) :
     static const unsigned long tag = (unsigned long) 1L << 63;
 
     if(dupTypeToken) {
-        TypeNode *tok = (TypeNode *) (tag | (unsigned long) type);
+        TypeNode *tok = reinterpret_cast<TypeNode *>(tag | (unsigned long) type);
         this->targetTypeNode = tok;
     } else {
         this->targetTypeNode = type;
@@ -649,7 +649,7 @@ CastNode::~CastNode() {
 TypeNode *CastNode::getTargetTypeNode() const {
     static const unsigned long mask = ~(1L << 63);
     if((long) this->targetTypeNode < 0) {
-        TypeNode *tok = (TypeNode *) (mask & (unsigned long) this->targetTypeNode);
+        TypeNode *tok = reinterpret_cast<TypeNode *>(mask & (unsigned long) this->targetTypeNode);
         return tok;
     }
     return this->targetTypeNode;
