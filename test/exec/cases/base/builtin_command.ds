@@ -5,6 +5,7 @@ assert(command ps_intrp "")
 assert(command ls)
 
 # execute external command using default path
+hash -r
 import-env PATH
 var OLD_PATH = $PATH
 
@@ -25,6 +26,7 @@ hoge() {
 assert(command hoge 2>&1 | grep '^-ydsh: hoge: No such file or directory$')
 
 # show command information
+hash -r
 assert("$(command -v ls)" == "$(which ls)") # external command
 assert("$(command -v cd)" == "cd")          # builtin
 assert("$(command -v hoge)" == "hoge")      # user-defined-command
@@ -38,6 +40,7 @@ command -v hferure fhaueirnv
 assert($? != 0)
 
 # show detailed information
+hash -r
 assert("$(command -V ls)" == "ls is $(which ls)")                   # external
 assert("$(command -V cd)" == "cd is a shell builtin command")       # builtin
 assert("$(command -V hoge)" == "hoge is an user-defined command")   # user-defined
