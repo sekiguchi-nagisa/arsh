@@ -85,6 +85,25 @@ public:
     void removePath(const char *cmdName);
 
     bool isCached(const char *cmdName) const;
+
+    /**
+     * clear all cache
+     */
+    void clear();
+
+    /**
+     * get begin iterator of map
+     */
+    CStringHashMap<std::string>::const_iterator cbegin() const {
+        return this->map.cbegin();
+    }
+
+    /**
+     * get end iterator of map
+     */
+    CStringHashMap<std::string>::const_iterator cend() const {
+        return this->map.cend();
+    }
 };
 
 class RuntimeContext {

@@ -129,6 +129,13 @@ bool FilePathCache::isCached(const char *cmdName) const {
     return this->map.find(cmdName) != this->map.end();
 }
 
+void FilePathCache::clear() {
+    for(auto &pair : this->map) {
+        delete pair.first;
+    }
+    this->map.clear();
+}
+
 
 // ############################
 // ##     RuntimeContext     ##

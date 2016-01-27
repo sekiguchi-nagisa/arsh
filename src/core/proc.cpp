@@ -105,6 +105,7 @@ static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx);
 static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx);
 static int builtin_exit(RuntimeContext *ctx, const BuiltinContext &bctx);
 static int builtin_false(RuntimeContext *ctx, const BuiltinContext &bctx);
+static int builtin_hash(RuntimeContext *ctx, const BuiltinContext &bctx);
 static int builtin_help(RuntimeContext *ctx, const BuiltinContext &bctx);
 static int builtin_ps_intrp(RuntimeContext *ctx, const BuiltinContext &bctx);
 static int builtin_pwd(RuntimeContext *ctx, const BuiltinContext &bctx);
@@ -169,6 +170,10 @@ const struct {
                 "    status is 0."},
         {"false", builtin_false, "",
                 "    Always failure (exit status is 1)."},
+        {"hash", builtin_hash, "[-r] [command ...]",
+                "    Cache file path of specified commands.  If -r option is supplied,\n"
+                "    removes specified command path (if not specified, remove all cache).\n"
+                "    If option is not supplied, display all cached path."},
         {"help", builtin_help, "[-s] [pattern ...]",
                 "    Display helpful information about builtin commands."},
         {"ps_intrp", builtin_ps_intrp, "[prompt string]",
@@ -1178,6 +1183,55 @@ static int builtin_read(RuntimeContext *ctx, const BuiltinContext &bctx) {  //FI
         clearerr(bctx.fp_stdin);
     }
     return ch == EOF ? 1 : 0;
+}
+
+static int builtin_hash(RuntimeContext *ctx, const BuiltinContext &bctx) {
+    bool remove = false;
+
+    // check option
+    int index = 1;
+    for(; index < bctx.argc; index++) {
+        const char *arg = bctx.argv[index];
+        if(arg[0] != '-') {
+            break;
+        }
+        if(strcmp(arg, "-r") == 0) {
+            remove = true;
+            index++;
+            break;
+        }
+        builtin_perror(bctx, 0, "%s: invalid option", arg);
+        return 2;
+    }
+
+    const bool hasNames = index < bctx.argc;
+    if(hasNames) {
+        for(; index < bctx.argc; index++) {
+            const char *name = bctx.argv[index];
+            if(remove) {
+                ctx->getPathCache().removePath(name);
+            } else {
+                if(ctx->getPathCache().searchPath(name) == nullptr) {
+                    builtin_perror(bctx, 0, "%s: not found", name);
+                    return 1;
+                }
+            }
+        }
+    } else {
+        if(remove) {    // remove all cache
+            ctx->getPathCache().clear();
+        } else {    // show all cache
+            const auto cend = ctx->getPathCache().cend();
+            if(ctx->getPathCache().cbegin() == cend) {
+                fputs("hash: file path cache is empty\n", bctx.fp_stdout);
+                return 0;
+            }
+            for(auto iter = ctx->getPathCache().cbegin(); iter != cend; ++iter) {
+                fprintf(bctx.fp_stdout, "%s=%s\n", iter->first, iter->second.c_str());
+            }
+        }
+    }
+    return 0;
 }
 
 

@@ -1,0 +1,39 @@
+# invalid option
+hash -e
+assert($? == 2)
+
+# show all cache (empty)
+assert("$(hash)" == "hash: file path cache is empty")
+
+# add cache
+hash ls cat ps
+assert($? == 0)
+assert(hash | grep "ls=")
+assert(hash | grep "cat=")
+assert(hash | grep "grep=") # 'grep' is cached due to call it previously
+assert(hash | grep "ps=")
+
+# add cache (not found)
+hash hfreiufre
+assert($? == 1)
+assert("$(hash hfreiufre 2>&1)" == "-ydsh: hash: hfreiufre: not found")
+
+# remove cache
+hash -r cat ps
+assert(hash | grep "ls=")
+assert(hash | grep "grep=")
+hash | grep "cat="
+assert($? != 0)
+hash | grep "ps="
+assert($? != 0)
+
+# remove cache (not found)
+hash -r hfeirufjae
+assert($? == 0)
+
+# remove all cache
+hash -r
+assert("$(hash)" == "hash: file path cache is empty")
+
+# remove all cache (empty)
+assert(hash -r)
