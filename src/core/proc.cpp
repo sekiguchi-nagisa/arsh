@@ -655,7 +655,14 @@ static void forkAndExec(RuntimeContext *ctx, const BuiltinContext &bctx, int &st
 }
 
 static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx) {
-    if(bctx.argc > 1) {
+    if(bctx.argc <= 1) {
+        return 0;
+    }
+
+    const char *cmdName = bctx.argv[1];
+    // user-defined command
+    UserDefinedCmdNode *udcNode = ctx->lookupUserDefinedCommand(cmdName);
+    if(udcNode != nullptr) {
         pid_t pid = xfork();
         if(pid == -1) {
             perror("child process error");
@@ -666,31 +673,18 @@ static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx) {
             dup2(fileno(bctx.fp_stdout), STDOUT_FILENO);
             dup2(fileno(bctx.fp_stderr), STDERR_FILENO);
 
-            // exec user-defined command
-            UserDefinedCmdNode *udcNode = ctx->lookupUserDefinedCommand(bctx.argv[1]);
-            if(udcNode != nullptr) {
-                // prepare arguments
-                const unsigned int size = bctx.argc;
-                DSValue *argv = new DSValue[size];
-                for(int i = 1; i < bctx.argc; i++) {
-                    argv[i - 1] = DSValue::create<String_Object>(
-                            ctx->getPool().getStringType(), std::string(bctx.argv[i])
-                    );
-                }
-                argv[size - 1] = nullptr;
-
-                int r = ctx->execUserDefinedCommand(udcNode, argv);
-                delete[] argv;
-                exit(r);
+            const unsigned int size = bctx.argc;
+            DSValue *argv = new DSValue[size];
+            for(int i = 1; i < bctx.argc; i++) {
+                argv[i - 1] = DSValue::create<String_Object>(
+                        ctx->getPool().getStringType(), std::string(bctx.argv[i])
+                );
             }
+            argv[size - 1] = nullptr;
 
-            // exec external command
-            char **argv = const_cast<char **>(bctx.argv + 1);
-            const char *filePath = ctx->getPathCache().searchPath(argv[0]);
-            xexecve(filePath, argv, nullptr);
-            BuiltinContext nbctx(1, bctx);
-            PERROR(nbctx, "");
-            exit(1);
+            int r = ctx->execUserDefinedCommand(udcNode, argv);
+            delete[] argv;
+            exit(r);
         } else {    // parent process
             int status;
             ctx->xwaitpid(pid, status, 0);
@@ -701,6 +695,24 @@ static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx) {
                 return WTERMSIG(status);
             }
         }
+        return 0;
+    }
+
+    // builtin command
+    BuiltinContext nbctx(1, bctx);
+    builtin_command_t builtinCmd = lookupBuiltinCommand(cmdName);
+    if(builtinCmd != nullptr) {
+        return builtinCmd(ctx, nbctx);
+    }
+
+    // external command
+    int status;
+    forkAndExec(ctx, nbctx, status);
+    if(WIFEXITED(status)) {
+        return WEXITSTATUS(status);
+    }
+    if(WIFSIGNALED(status)) {
+        return WTERMSIG(status);
     }
     return 0;
 }
@@ -1224,11 +1236,10 @@ static int builtin_hash(RuntimeContext *ctx, const BuiltinContext &bctx) {
         }
         if(strcmp(arg, "-r") == 0) {
             remove = true;
-            index++;
-            break;
+        } else {
+            builtin_perror(bctx, 0, "%s: invalid option", arg);
+            return 2;
         }
-        builtin_perror(bctx, 0, "%s: invalid option", arg);
-        return 2;
     }
 
     const bool hasNames = index < bctx.argc;
