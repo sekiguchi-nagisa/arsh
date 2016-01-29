@@ -47,6 +47,8 @@ enum class EvalStatus : unsigned int {
  */
 enum class BuiltinVarOffset : unsigned int {
     DBUS,           // DBus
+    OSTYPE,         // OSTYPE (utsname.sysname)
+    VERSION,        // YDSH_VERSION (equivalent to ps_intrp '\V')
     REPLY,          // REPLY (for read command)
     REPLY_VAR,      // reply (fo read command)
     ARGS,           // @

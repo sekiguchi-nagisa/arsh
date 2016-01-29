@@ -23,6 +23,7 @@
 
 #include <unistd.h>
 #include <execinfo.h>
+#include <sys/utsname.h>
 
 #include <ydsh/ydsh.h>
 #include <config.h>
@@ -325,6 +326,31 @@ void DSContext::initBuiltinVar() {
      * must be DBus_Object
      */
     defineBuiltin(rootNode, "DBus", DSValue(DBus_Object::newDBus_Object(&this->ctx.getPool())));
+
+    struct utsname name;
+    if(uname(&name) == -1) {
+        perror("cannot get utsname");
+        exit(1);
+    }
+
+    /**
+     * for os type detection.
+     * must be String_Object
+     */
+    defineBuiltin(rootNode, "OSTYPE", DSValue::create<String_Object>(
+            this->ctx.getPool().getStringType(), name.sysname));
+
+#define XSTR(V) #V
+#define STR(V) XSTR(V)
+    /**
+     * for version detection
+     * must be String_Object
+     */
+    defineBuiltin(rootNode, "YDSH_VERSION", DSValue::create<String_Object>(
+            this->ctx.getPool().getStringType(),
+            STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION) "." STR(X_INFO_PATCH_VERSION)));
+#undef XSTR
+#undef STR
 
     /**
      * default variable for read command.

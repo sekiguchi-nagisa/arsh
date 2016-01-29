@@ -17,6 +17,11 @@ assert("$(ps_intrp '\0101\066')" == "A6")    # octal number
 assert("$(ps_intrp '\x09\x7E')" == $'\t~')   # hex number
 assert("$(ps_intrp '\x9\x7e')" == $'\t~')    # hex number
 
+let V = "$(ps_intrp '\V')"
+let v = "$(ps_intrp '\v')"
+assert($V.startsWith($v))
+assert($V.startsWith($v + "."))
+
 var u = "$(ps_intrp '\$')"
 if("$(id -u)" == "$(id -u root)") { # root
     assert($u == '#')

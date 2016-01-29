@@ -1,0 +1,5 @@
+# for builtin variable or constant
+
+assert($OSTYPE == "$(uname -s)")
+
+assert($YDSH_VERSION == "$(ps_intrp '\V')")

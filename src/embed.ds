@@ -52,4 +52,3 @@ interface org.freedesktop.DBus.ObjectManager {
     function InterfacesRemoved($hd : Func<Void, [ObjectPath, Array<String>]>)
 }
 type-alias ObjectManager org.freedesktop.DBus.ObjectManager
-

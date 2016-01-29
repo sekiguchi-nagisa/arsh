@@ -790,17 +790,17 @@ void RuntimeContext::interpretPromptString(const char *ps, std::string &output) 
                 continue;
             }
             case 'v': {
-                output += std::to_string(X_INFO_MAJOR_VERSION);
-                output += ".";
-                output += std::to_string(X_INFO_MINOR_VERSION);
+#define XSTR(v) #v
+#define STR(v) XSTR(v)
+                output += STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION);
                 continue;
+#undef XSTR
+#undef STR
             }
             case 'V': {
-                output += std::to_string(X_INFO_MAJOR_VERSION);
-                output += ".";
-                output += std::to_string(X_INFO_MINOR_VERSION);
-                output += ".";
-                output += std::to_string(X_INFO_PATCH_VERSION);
+                const unsigned int index = this->getBuiltinVarIndex(BuiltinVarOffset::VERSION);
+                const char *str = typeAs<String_Object>(this->getGlobal(index))->getValue();
+                output += str;
                 continue;
             }
             case 'w': {
