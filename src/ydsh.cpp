@@ -388,6 +388,12 @@ void DSContext::initBuiltinVar() {
     defineBuiltin(rootNode, "?", DSValue::create<Int_Object>(this->ctx.getPool().getInt32Type(), 0));
 
     /**
+     * process id of root shell. ($$)
+     * must be Int_Object
+     */
+    defineBuiltin(rootNode, "$", DSValue::create<Int_Object>(this->ctx.getPool().getUint32Type(), getpid()));
+
+    /**
      * represent shell or shell script name.
      * must be String_Object
      */

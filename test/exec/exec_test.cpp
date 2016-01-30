@@ -340,6 +340,8 @@ TEST(API, case2) {
         DSContext_setLineNum(ctx, 49);
         DSContext_eval(ctx, nullptr, "23");
         ASSERT_EQ(50u, DSContext_lineNum(ctx));
+
+        DSContext_delete(&ctx);
     });
 }
 
@@ -351,6 +353,24 @@ TEST(API, case3) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("hello>", DSContext_prompt(ctx, 1)));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("second>", DSContext_prompt(ctx, 2)));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("", DSContext_prompt(ctx, 5)));
+
+    DSContext_delete(&ctx);
+}
+
+TEST(PID, case1) {
+    SCOPED_TRACE("");
+
+    pid_t pid = getpid();
+    DSContext *ctx = DSContext_create();
+    std::string src("assert($$ == ");
+    src += std::to_string(pid);
+    src += "u)";
+
+    int s = DSContext_eval(ctx, nullptr, src.c_str());
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, s));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_STATUS_SUCCESS, DSContext_status(ctx)));
+
+    DSContext_delete(&ctx);
 }
 
 int main(int argc, char **argv) {
