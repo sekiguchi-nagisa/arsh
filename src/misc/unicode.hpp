@@ -207,8 +207,8 @@ int UnicodeUtil<T>::localeAwareWidth(int codePoint) {
     const char *ctype = setlocale(LC_CTYPE, nullptr);
     if(ctype != nullptr) {
         static const char *cjk[] = {"ja", "zh", "ko"};
-        for(unsigned int i = 0; i < (sizeof(cjk) / sizeof(const char *)); i++) {
-            if(strstr(ctype, cjk[i]) != nullptr) {
+        for(const auto &l : cjk) {
+            if(strstr(ctype, l) != nullptr) {
                 e = TWO_WIDTH;
                 break;
             }

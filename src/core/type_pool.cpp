@@ -409,9 +409,9 @@ int TypePool::getIntPrecision(const DSType &type) {
                 {Byte, BYTE_PRECISION},
         };
 
-        for(unsigned int i = 0; i < sizeOfArray(table); i++) {
+        for(const auto &e : table) {
             this->precisionMap.insert(
-                    std::make_pair((unsigned long) this->typeTable[table[i].TYPE], table[i].precision));
+                    std::make_pair((unsigned long) this->typeTable[e.TYPE], e.precision));
         }
     }
 
@@ -579,10 +579,10 @@ void TypePool::registerDBusErrorTypes() {
             "InteractiveAuthorizationRequired",
     };
 
-    for(unsigned int i = 0; i < sizeOfArray(table); i++) {
+    for(const auto &e : table) {
         std::string s = "org.freedesktop.DBus.Error.";
-        s += table[i];
-        this->setAlias(table[i], this->createErrorType(s, this->getDBusErrorType()));
+        s += e;
+        this->setAlias(e, this->createErrorType(s, this->getDBusErrorType()));
     }
 }
 

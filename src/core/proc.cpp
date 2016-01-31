@@ -263,11 +263,6 @@ const struct {
                 "    Always success (exit status is 0)."},
 };
 
-template<typename T, size_t N>
-static constexpr size_t sizeOfArray(const T (&)[N]) {
-    return N;
-}
-
 /**
  * return null, if not found builtin command.
  */
@@ -279,9 +274,8 @@ static builtin_command_t lookupBuiltinCommand(const char *commandName) {
 
     // register builtin command
     if(builtinMap.empty()) {
-        unsigned int size = sizeOfArray(builtinCommands);
-        for(unsigned int i = 0; i < size; i++) {
-            builtinMap.insert(std::make_pair(builtinCommands[i].commandName, builtinCommands[i].cmd_ptr));
+        for(const auto &e : builtinCommands) {
+            builtinMap.insert(std::make_pair(e.commandName, e.cmd_ptr));
         }
     }
 
@@ -293,9 +287,8 @@ static builtin_command_t lookupBuiltinCommand(const char *commandName) {
 }
 
 static void printAllUsage(FILE *fp) {
-    unsigned int size = sizeOfArray(builtinCommands);
-    for(unsigned int i = 0; i < size; i++) {
-        fprintf(fp, "%s %s\n", builtinCommands[i].commandName, builtinCommands[i].usage);
+    for(const auto &e : builtinCommands) {
+        fprintf(fp, "%s %s\n", e.commandName, e.usage);
     }
 }
 
@@ -309,14 +302,13 @@ static bool startsWith(const char *prefix, const char *target) {
  * if not found command, return false.
  */
 static bool printUsage(FILE *fp, const char *prefix, bool isShortHelp = true) {
-    unsigned int size = sizeOfArray(builtinCommands);
     bool matched = false;
-    for(unsigned int i = 0; i < size; i++) {
-        const char *cmdName = builtinCommands[i].commandName;
+    for(const auto &e : builtinCommands) {
+        const char *cmdName = e.commandName;
         if(startsWith(prefix, cmdName)) {
-            fprintf(fp, "%s: %s %s\n", cmdName, cmdName, builtinCommands[i].usage);
+            fprintf(fp, "%s: %s %s\n", cmdName, cmdName, e.usage);
             if(!isShortHelp) {
-                fprintf(fp, "%s\n", builtinCommands[i].detail);
+                fprintf(fp, "%s\n", e.detail);
             }
             matched = true;
         }
@@ -873,8 +865,8 @@ static int builtin_test(RuntimeContext *, const BuiltinContext &bctx) {
                 {"-ge", BinaryOp::GE},
         };
 
-        for(unsigned int i = 0; i < sizeOfArray(table); i++) {
-            binaryOpMap.insert(std::make_pair(table[i].k, table[i].op));
+        for(const auto &e : table) {
+            binaryOpMap.insert(std::make_pair(e.k, e.op));
         }
     }
 

@@ -217,15 +217,15 @@ public:
     };
 };
 
-#ifdef USE_SAFE_CAST
-constexpr bool useSafeCast = true;
-#else
-constexpr bool useSafeCast = false;
-#endif
-
 template <typename T>
 inline T *typeAs(const DSValue &value) noexcept {
     static_assert(std::is_base_of<DSObject, T>::value, "must be subtype of DSObject");
+
+#ifdef USE_SAFE_CAST
+    constexpr bool useSafeCast = true;
+#else
+    constexpr bool useSafeCast = false;
+#endif
 
     if(useSafeCast) {
         if(!value.isObject()) {
