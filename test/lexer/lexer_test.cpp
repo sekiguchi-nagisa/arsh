@@ -1203,6 +1203,41 @@ TEST_F(LexerTest_Lv1, CMD_ARG1) {   // allow  '[' and ']'
     });
 }
 
+TEST_F(LexerTest_Lv1, CMD_ARG2) {
+    const char *text = "abcd";
+    SCOPED_TRACE("");
+
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycCMD);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, LINE_END, "\n", EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, CMD_ARG3) {
+    const char *text = "a2134:*";
+    SCOPED_TRACE("");
+
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycCMD);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, LINE_END, "\n", EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, CMD_ARG4) {
+    const char *text = "\\;あω𪗱";
+    SCOPED_TRACE("");
+
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycCMD);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, LINE_END, "\n", EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, CMD_ARG5) {
+    const char *text = "??\\\n";
+    SCOPED_TRACE("");
+
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycCMD);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, EOS, ""));
+}
 
 /**
  * test expr token in stmt mode.
@@ -1958,13 +1993,67 @@ TEST_F(LexerTest_Lv1, LINE_END1) {
     });
 }
 
-TEST_F(LexerTest_Lv1, COMMENT) {
+TEST_F(LexerTest_Lv1, LINE_END2) {
+    const char *text = ";";
+    SCOPED_TRACE("");
+
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycEXPR);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(LINE_END, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+}
+
+TEST_F(LexerTest_Lv1, LINE_END3) {
+    const char *text = ";";
+    SCOPED_TRACE("");
+
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycCMD);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(LINE_END, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+}
+
+TEST_F(LexerTest_Lv1, COMMENT1) {
     const char *text = "#fhreuvrei o";
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
         EXPECT(EOS, "");
     });
+}
+
+TEST_F(LexerTest_Lv1, COMMENT2) {
+    const char *text = "#ああ  あ";
+    SCOPED_TRACE("");
+
+    this->initLexer(text, yycEXPR);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, COMMENT3) {
+    const char *text = "#hello  \t  ";
+    SCOPED_TRACE("");
+
+    this->initLexer(text, yycNAME);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, COMMENT4) {
+    const char *text = "#hferu";
+    SCOPED_TRACE("");
+
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycTYPE);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, COMMENT5) {
+    const char *text = "#2345y;;::";
+    SCOPED_TRACE("");
+
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycCMD);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(LINE_END, "\n", EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, EMPTY) {
@@ -2010,6 +2099,23 @@ TEST_F(LexerTest_Lv1, SPACE4) {
         this->initLexer(text);
         EXPECT(COMMAND, "echo", LINE_END, "\n", EOS, "");
     });
+}
+
+TEST_F(LexerTest_Lv1, SPACE5) {
+    const char *text = "    \t   \n  \\\n\\\r ";
+    SCOPED_TRACE("");
+
+    this->initLexer(text, yycEXPR);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, SPACE6) {
+    const char *text = "     \t    \n  \\\n\\\r    \t";
+    SCOPED_TRACE("");
+
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycTYPE);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(EOS, ""));
 }
 
 TEST(LexerTest_Lv2, NEW_LINE) {
