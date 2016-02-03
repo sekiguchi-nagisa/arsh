@@ -119,8 +119,8 @@ TokenKind Lexer::nextToken(Token &token) {
 
       CMD_START_CHAR     = "\\" [^\r\n\000] | [^ \t\r\n\\;'"`|&<>(){}$#![\]+\-0-9\000];
       CMD_CHAR           = "\\" [^\000]     | [^ \t\r\n\\;'"`|&<>(){}$#![\]\000];
-      CMD_ARG_START_CHAR = "\\" [^\r\n\000] | [^ \t\r\n\\;'"`|&<>(){}$#!\000];
-      CMD_ARG_CHAR       = "\\" [^\000]     | [^ \t\r\n\\;'"`|&<>(){}$#!\000];
+      CMD_ARG_START_CHAR = "\\" [^\r\n\000] | [^ \t\r\n\\;'"`|&<>()$#!\000];
+      CMD_ARG_CHAR       = "\\" [^\000]     | [^ \t\r\n\\;'"`|&<>()$#!\000];
 
       LINE_END = ";";
       NEW_LINE = [\r\n][ \t\r\n]*;
