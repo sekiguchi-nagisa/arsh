@@ -1293,7 +1293,7 @@ private:
 public:
     explicit CmdContextNode(Node *exprNode) :
             Node(exprNode->getToken()), exprNode(exprNode), attributeSet(0) {
-        if(dynamic_cast<CondOpNode *>(exprNode) != 0) {
+        if(dynamic_cast<CondOpNode *>(exprNode) != nullptr) {
             this->setAttribute(CONDITION);
         }
     }
