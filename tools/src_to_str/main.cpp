@@ -24,7 +24,7 @@
 using namespace ydsh::argv;
 
 #define EACH_OPT(OP) \
-    OP(VAR_NAME,  "-v", HAS_ARG | REQUIRE,           "specify generated variable name") \
+    OP(VAR_NAME,  "-v", HAS_ARG | REQUIRE, "specify generated variable name") \
     OP(FILE_NAME, "-f", HAS_ARG | REQUIRE, "specify target file name") \
     OP(OUTPUT,    "-o", HAS_ARG | REQUIRE, "specify output header file name")
 
@@ -127,6 +127,11 @@ int main(int argc, char **argv) {
     fputs("\n", fp);
     fprintf(fp, "static const char *%s = \"\"\n", varName);
     while(std::getline(input, line)) {
+        // skip empty line and comment
+        if(line.empty() || line[0] == '#') {
+            continue;
+        }
+
         fprintf(fp, "    \"%s\\n\"\n", escape(line).c_str());
     }
     fprintf(fp, ";\n");
