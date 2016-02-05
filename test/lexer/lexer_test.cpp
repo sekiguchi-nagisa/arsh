@@ -1208,6 +1208,14 @@ TEST_F(LexerTest_Lv1, CMD7) {
     ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, LINE_END, "\n", EOS, ""));
 }
 
+TEST_F(LexerTest_Lv1, CMD8) {
+    const char *text = "d!!";
+    SCOPED_TRACE("");
+
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, LINE_END, "\n", EOS, ""));
+}
+
 
 TEST_F(LexerTest_Lv1, CMD_ARG1) {   // allow  '[' and ']'
     const char *text = "[[][";
@@ -1275,6 +1283,24 @@ TEST_F(LexerTest_Lv1, CMD_ARG7) {
 
 TEST_F(LexerTest_Lv1, CMD_ARG8) {
     const char *text = "ああ#";
+    SCOPED_TRACE("");
+
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycCMD);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, LINE_END, "\n", EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, CMD_ARG9) {
+    const char *text = "!hoge";
+    SCOPED_TRACE("");
+
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycCMD);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, LINE_END, "\n", EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, CMD_ARG10) {
+    const char *text = "qwwre!";
     SCOPED_TRACE("");
 
     this->initLexer(text);
