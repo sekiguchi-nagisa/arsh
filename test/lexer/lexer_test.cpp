@@ -1192,6 +1192,22 @@ TEST_F(LexerTest_Lv1, CMD5) {
     });
 }
 
+TEST_F(LexerTest_Lv1, CMD6) {
+    const char *text = "d#d";
+    SCOPED_TRACE("");
+
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, LINE_END, "\n", EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, CMD7) {
+    const char *text = "d#";
+    SCOPED_TRACE("");
+
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, LINE_END, "\n", EOS, ""));
+}
+
 
 TEST_F(LexerTest_Lv1, CMD_ARG1) {   // allow  '[' and ']'
     const char *text = "[[][";
@@ -1241,6 +1257,24 @@ TEST_F(LexerTest_Lv1, CMD_ARG5) {
 
 TEST_F(LexerTest_Lv1, CMD_ARG6) {
     const char *text = "{}}{";
+    SCOPED_TRACE("");
+
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycCMD);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, LINE_END, "\n", EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, CMD_ARG7) {
+    const char *text = "hfeiru#fr";
+    SCOPED_TRACE("");
+
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycCMD);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, LINE_END, "\n", EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, CMD_ARG8) {
+    const char *text = "ああ#";
     SCOPED_TRACE("");
 
     this->initLexer(text);
