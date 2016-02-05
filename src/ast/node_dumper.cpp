@@ -137,13 +137,13 @@ void NodeDumper::indent() {
 void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
     std::string className = misc::Demangle()(typeid(node));
 
-    this->stream << "<Node>: " << std::endl;
+    this->stream << "__Node: " << std::endl;
     this->enterIndent();
     if(inArray) {
         this->enterIndent();
     }
 
-    this->indent(); this->stream << "<typeid>: " << className << std::endl;
+    this->indent(); this->stream << "__typeid: " << className << std::endl;
     this->indent(); this->stream << "pos: " << node.getStartPos() << std::endl;
     this->indent(); this->stream << "size: " << node.getSize() << std::endl;
     this->indent(); this->stream << "type: " <<
