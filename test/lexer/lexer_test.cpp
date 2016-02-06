@@ -1216,6 +1216,13 @@ TEST_F(LexerTest_Lv1, CMD8) {
     ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, LINE_END, "\n", EOS, ""));
 }
 
+TEST_F(LexerTest_Lv1, CMD9) {
+    const char *text = "!hoge";
+    SCOPED_TRACE("");
+
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, LINE_END, "\n", EOS, ""));
+}
 
 TEST_F(LexerTest_Lv1, CMD_ARG1) {   // allow  '[' and ']'
     const char *text = "[[][";
@@ -1505,7 +1512,7 @@ TEST_F(LexerTest_Lv1, NE1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(INVALID, "!");
+        EXPECT(COMMAND, text, LINE_END, "\n", EOS, "");
     });
 }
 
@@ -1708,7 +1715,7 @@ TEST_F(LexerTest_Lv1, UNMATCH1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(INVALID, "!");
+        EXPECT(COMMAND, text, LINE_END, "\n", EOS, "");
     });
 }
 
