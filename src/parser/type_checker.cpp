@@ -197,14 +197,11 @@ DSType &TypeChecker::checkType(DSType *requiredType, Node *targetNode,
         targetNode->accept(*this);
         this->visitingDepth--;
     }
-
+    
     /**
-     * after type checking, if Node is still untyped,
-     * throw exception.
+     * after type checking, Node is not untyped.
      */
-    if(targetNode->isUntyped()) {
-        fatal("having unresolved type\n");
-    }
+    assert(!targetNode->isUntyped());
     auto &type = targetNode->getType();
 
     /**

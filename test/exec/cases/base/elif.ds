@@ -3,8 +3,9 @@ function func($num : Int32) : Int32 {
 		return $num * 10
 	} elif($num == 2) {
 		return $num * 100
+	} else {
+	    return $num * 100
 	}
-	return $num * 100
 }
 
 assert($func(1) == 10)
