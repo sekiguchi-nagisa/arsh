@@ -15,7 +15,7 @@
  */
 
 #include "type_pool.h"
-#include "type_lookup_error.hpp"
+#include "diagnosis.h"
 #include "bind.h"
 #include "../parser/parser.h"
 #include "../parser/type_checker.h"
@@ -218,7 +218,7 @@ TypePool::~TypePool() {
 DSType &TypePool::getTypeAndThrowIfUndefined(const std::string &typeName) {
     DSType *type = this->getType(typeName);
     if(type == 0) {
-        E_UndefinedType(typeName);
+        RAISE_TL_ERROR(UndefinedType, typeName);
     }
     return *type;
 }
@@ -226,7 +226,7 @@ DSType &TypePool::getTypeAndThrowIfUndefined(const std::string &typeName) {
 const TypeTemplate &TypePool::getTypeTemplate(const std::string &typeName) {
     auto iter = this->templateMap.find(typeName);
     if(iter == this->templateMap.end()) {
-        E_NotTemplate(typeName);
+        RAISE_TL_ERROR(NotTemplate, typeName);
     }
     return *iter->second;
 }
@@ -315,12 +315,12 @@ DSType &TypePool::getDBusInterfaceType(const std::string &typeName) {
 
         RootNode rootNode;
         if(!parse(ifacePath.c_str(), rootNode)) {
-            E_NoDBusInterface(typeName);
+            RAISE_TL_ERROR(NoDBusInterface, typeName);
         }
 
         InterfaceNode *ifaceNode = dynamic_cast<InterfaceNode *>(rootNode.getNodeList().front());
         if(ifaceNode == nullptr) {
-            E_NoDBusInterface(typeName);
+            RAISE_TL_ERROR(NoDBusInterface, typeName);
         }
         return *TypeChecker::resolveInterface(*this, ifaceNode);
     }
@@ -333,7 +333,7 @@ void TypePool::setAlias(const std::string &alias, DSType &targetType) {
 
 void TypePool::setAlias(const char *alias, DSType &targetType) {
     if(!this->typeMap.setAlias(std::string(alias), targetType)) {
-        E_DefinedType(alias);
+        RAISE_TL_ERROR(DefinedType, alias);
     }
 }
 
@@ -499,7 +499,7 @@ void TypePool::initErrorType(DS_TYPE TYPE, const char *typeName, DSType &superTy
 void TypePool::checkElementTypes(const std::vector<DSType *> &elementTypes) {
     for(DSType *type : elementTypes) {
         if(*type == this->getVoidType()) {
-            E_InvalidElement(this->getTypeName(*type));
+            RAISE_TL_ERROR(InvalidElement, this->getTypeName(*type));
         }
     }
 }
@@ -509,12 +509,12 @@ void TypePool::checkElementTypes(const TypeTemplate &t, const std::vector<DSType
 
     // check element type size
     if(t.getElementTypeSize() != size) {
-        E_UnmatchElement(t.getName(), std::to_string(t.getElementTypeSize()), std::to_string(size));
+        RAISE_TL_ERROR(UnmatchElement, t.getName(), std::to_string(t.getElementTypeSize()), std::to_string(size));
     }
 
     for(unsigned int i = 0; i < size; i++) {
         if(!t.getAcceptableTypes()[i]->isSameOrBaseTypeOf(*elementTypes[i])) {
-            E_InvalidElement(this->getTypeName(*elementTypes[i]));
+            RAISE_TL_ERROR(InvalidElement, this->getTypeName(*elementTypes[i]));
         }
     }
 }

@@ -22,7 +22,7 @@
 #include "../core/type.h"
 #include "../core/handle.h"
 #include "../core/symbol_table.h"
-#include "type_check_error.hpp"
+#include "../core/diagnosis.h"
 
 namespace ydsh {
 namespace parser {

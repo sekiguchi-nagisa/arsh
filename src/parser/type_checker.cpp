@@ -19,7 +19,6 @@
 
 #include "../core/symbol.h"
 #include "../core/object.h"
-#include "../core/type_lookup_error.hpp"
 #include "type_checker.h"
 
 namespace ydsh {
@@ -91,7 +90,7 @@ void TypeChecker::TypeGenerator::visitReturnTypeNode(ReturnTypeNode &typeNode) {
 
 void TypeChecker::TypeGenerator::visitTypeOfNode(TypeOfNode &typeNode) {
     if(this->checker == nullptr) {  // not support typeof operator(in D-Bus interface loading)
-        E_DisallowTypeof(*typeNode.getExprNode());
+        RAISE_TC_ERROR(DisallowTypeof, *typeNode.getExprNode());
     }
    DSType &type = this->checker->checkType(typeNode.getExprNode());
     typeNode.setType(type);
@@ -146,7 +145,7 @@ DSType *TypeChecker::resolveInterface(TypePool &typePool,
         FieldHandle *handle = type.newFieldHandle(
                 fieldDeclNode->getVarName(), fieldType, fieldDeclNode->isReadOnly());
         if(handle == nullptr) {
-            E_DefinedField(*fieldDeclNode, fieldDeclNode->getVarName());
+            RAISE_TC_ERROR(DefinedField, *fieldDeclNode, fieldDeclNode->getVarName());
         }
     }
 
@@ -209,7 +208,7 @@ DSType &TypeChecker::checkType(DSType *requiredType, Node *targetNode,
      */
     if(requiredType == nullptr) {
         if(unacceptableType != nullptr && unacceptableType->isSameOrBaseTypeOf(type)) {
-            E_Unacceptable(*targetNode, this->typePool.getTypeName(type));
+            RAISE_TC_ERROR(Unacceptable, *targetNode, this->typePool.getTypeName(type));
         }
         return type;
     }
@@ -229,7 +228,7 @@ DSType &TypeChecker::checkType(DSType *requiredType, Node *targetNode,
         return type;
     }
 
-    E_Required(*targetNode, this->typePool.getTypeName(*requiredType),
+    RAISE_TC_ERROR(Required, *targetNode, this->typePool.getTypeName(*requiredType),
                this->typePool.getTypeName(type));
     return type;    // unreachable
 }
@@ -238,7 +237,7 @@ void TypeChecker::checkTypeWithCurrentScope(BlockNode *blockNode) {
     bool prevIsTerminal = false;
     for(Node * &targetNode : blockNode->refNodeList()) {
         if(prevIsTerminal) {
-            E_Unreachable(*targetNode);
+            RAISE_TC_ERROR(Unreachable, *targetNode);
         }
         this->checkTypeWithCoercion(this->typePool.getVoidType(), targetNode);
         prevIsTerminal = targetNode->isTerminalNode();
@@ -280,7 +279,7 @@ FieldHandle *TypeChecker::addEntryAndThrowIfDefined(Node &node, const std::strin
                                                     bool readOnly) {
     FieldHandle *handle = this->symbolTable.registerHandle(symbolName, type, readOnly);
     if(handle == nullptr) {
-        E_DefinedSymbol(node, symbolName);
+        RAISE_TC_ERROR(DefinedSymbol, node, symbolName);
     }
     return handle;
 }
@@ -289,7 +288,7 @@ void TypeChecker::checkAndThrowIfOutOfLoop(Node &node) {
     if(this->loopDepth > 0) {
         return;
     }
-    E_InsideLoop(node);
+    RAISE_TC_ERROR(InsideLoop, node);
 }
 
 void TypeChecker::checkTerminalNodeExistence(BlockNode &blockNode, DSType &returnType) {
@@ -302,7 +301,7 @@ void TypeChecker::checkTerminalNodeExistence(BlockNode &blockNode, DSType &retur
         blockNode.addNode(new ReturnNode(0, new EmptyNode()));
     }
     if(blockNode.getNodeList().empty() || !blockNode.getNodeList().back()->isTerminalNode()) {
-        E_UnfoundReturn(blockNode);
+        RAISE_TC_ERROR(UnfoundReturn, blockNode);
     }
 }
 
@@ -318,7 +317,7 @@ DSType *TypeChecker::popReturnType() {
 
 void TypeChecker::checkAndThrowIfInsideFinally(BlockEndNode &node) {
     if(this->finallyDepth > 0) {
-        E_InsideFinally(node);
+        RAISE_TC_ERROR(InsideFinally, node);
     }
 }
 
@@ -336,7 +335,7 @@ HandleOrFuncType TypeChecker::resolveCallee(Node &recvNode) {
     FunctionType *funcType =
             dynamic_cast<FunctionType *>(&this->checkType(this->typePool.getBaseFuncType(), &recvNode));
     if(funcType == nullptr) {
-        E_NotCallable(recvNode);
+        RAISE_TC_ERROR(NotCallable, recvNode);
     }
     return HandleOrFuncType(funcType);
 }
@@ -344,7 +343,7 @@ HandleOrFuncType TypeChecker::resolveCallee(Node &recvNode) {
 HandleOrFuncType TypeChecker::resolveCallee(VarNode &recvNode) {
     FieldHandle *handle = this->symbolTable.lookupHandle(recvNode.getVarName());
     if(handle == nullptr) {
-        E_UndefinedSymbol(recvNode, recvNode.getVarName());
+        RAISE_TC_ERROR(UndefinedSymbol, recvNode, recvNode.getVarName());
     }
     recvNode.setAttribute(handle);
 
@@ -357,9 +356,9 @@ HandleOrFuncType TypeChecker::resolveCallee(VarNode &recvNode) {
     FunctionType *funcType = dynamic_cast<FunctionType *>(type);
     if(funcType == nullptr) {
         if(this->typePool.getBaseFuncType() == *type) {
-            E_NotCallable(recvNode);
+            RAISE_TC_ERROR(NotCallable, recvNode);
         } else {
-            E_Required(recvNode, this->typePool.getTypeName(this->typePool.getBaseFuncType()),
+            RAISE_TC_ERROR(Required, recvNode, this->typePool.getTypeName(this->typePool.getBaseFuncType()),
                        this->typePool.getTypeName(*type));
         }
     }
@@ -372,7 +371,7 @@ void TypeChecker::checkTypeArgsNode(Node &node, MethodHandle *handle, std::vecto
         // check param size
         unsigned int paramSize = handle->getParamTypes().size();
         if(paramSize != argSize) {
-            E_UnmatchParam(node, std::to_string(paramSize), std::to_string(argSize));
+            RAISE_TC_ERROR(UnmatchParam, node, std::to_string(paramSize), std::to_string(argSize));
         }
 
         // check type each node
@@ -524,7 +523,7 @@ void TypeChecker::visitTupleNode(TupleNode &node) {
 void TypeChecker::visitVarNode(VarNode &node) {
     FieldHandle *handle = this->symbolTable.lookupHandle(node.getVarName());
     if(handle == nullptr) {
-        E_UndefinedSymbol(node, node.getVarName());
+        RAISE_TC_ERROR(UndefinedSymbol, node, node.getVarName());
     }
 
     node.setAttribute(handle);
@@ -535,7 +534,7 @@ void TypeChecker::visitAccessNode(AccessNode &node) {
     auto &recvType = this->checkType(node.getRecvNode());
     FieldHandle *handle = recvType.lookupFieldHandle(this->typePool, node.getFieldName());
     if(handle == nullptr) {
-        E_UndefinedField(node, node.getFieldName());
+        RAISE_TC_ERROR(UndefinedField, node, node.getFieldName());
     }
 
     node.setAttribute(handle);
@@ -549,7 +548,7 @@ void TypeChecker::visitCastNode(CastNode &node) {
 
     // resolve cast op
     if(!node.resolveCastOp(this->typePool)) {
-        E_CastOp(node, this->typePool.getTypeName(exprType), this->typePool.getTypeName(targetType));
+        RAISE_TC_ERROR(CastOp, node, this->typePool.getTypeName(exprType), this->typePool.getTypeName(targetType));
     }
 }
 
@@ -609,7 +608,7 @@ void TypeChecker::visitApplyNode(ApplyNode &node) {
     unsigned int argSize = node.getArgNodes().size();
     // check param size
     if(size != argSize) {
-        E_UnmatchParam(node, std::to_string(size), std::to_string(argSize));
+        RAISE_TC_ERROR(UnmatchParam, node, std::to_string(size), std::to_string(argSize));
     }
 
     // check type each node
@@ -625,7 +624,7 @@ void TypeChecker::visitMethodCallNode(MethodCallNode &node) {
     auto &recvType = this->checkType(node.getRecvNode());
     MethodHandle *handle = recvType.lookupMethodHandle(this->typePool, node.getMethodName());
     if(handle == nullptr) {
-        E_UndefinedMethod(node, node.getMethodName());
+        RAISE_TC_ERROR(UndefinedMethod, node, node.getMethodName());
     }
 
     // check type argument
@@ -639,7 +638,7 @@ void TypeChecker::visitNewNode(NewNode &node) {
     auto &type = this->toType(node.getTargetTypeNode());
     MethodHandle *handle = type.getConstructorHandle(this->typePool);
     if(handle == nullptr) {
-        E_UndefinedInit(node, this->typePool.getTypeName(type));
+        RAISE_TC_ERROR(UndefinedInit, node, this->typePool.getTypeName(type));
     }
 
     this->checkTypeArgsNode(node, handle, node.refArgNodes());
@@ -799,7 +798,7 @@ void TypeChecker::visitImportEnvNode(ImportEnvNode &node) {
 
 void TypeChecker::visitTypeAliasNode(TypeAliasNode &node) {
     if(!this->isTopLevel()) {   // only available toplevel scope
-        E_OutsideToplevel(node);
+        RAISE_TC_ERROR(OutsideToplevel, node);
     }
 
     TypeNode *typeToken = node.getTargetTypeNode();
@@ -876,12 +875,12 @@ void TypeChecker::visitReturnNode(ReturnNode &node) {
     this->checkAndThrowIfInsideFinally(node);
     DSType *returnType = this->getCurrentReturnType();
     if(returnType == nullptr) {
-        E_InsideFunc(node);
+        RAISE_TC_ERROR(InsideFunc, node);
     }
     auto &exprType = this->checkType(*returnType, node.getExprNode());
     if(exprType == this->typePool.getVoidType()) {
         if(dynamic_cast<EmptyNode *>(node.getExprNode()) == nullptr) {
-            E_NotNeedExpr(node);
+            RAISE_TC_ERROR(NotNeedExpr, node);
         }
     }
     node.setType(this->typePool.getVoidType());
@@ -929,7 +928,7 @@ void TypeChecker::visitTryNode(TryNode &node) {
         CatchNode *nextNode = node.getCatchNodes()[i + 1];
         DSType &nextType = nextNode->getTypeNode()->getType();
         if(curType.isSameOrBaseTypeOf(nextType)) {
-            E_Unreachable(*nextNode);
+            RAISE_TC_ERROR(Unreachable, *nextNode);
         }
     }
 
@@ -954,12 +953,12 @@ void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
 void TypeChecker::visitAssignNode(AssignNode &node) {
     AssignableNode *leftNode = dynamic_cast<AssignableNode *>(node.getLeftNode());
     if(leftNode == nullptr) {
-        E_Assignable(node);
+        RAISE_TC_ERROR(Assignable, node);
     }
 
     auto &leftType = this->checkType(leftNode);
     if(leftNode->isReadOnly()) {
-        E_ReadOnly(node);
+        RAISE_TC_ERROR(ReadOnly, node);
     }
 
     if(dynamic_cast<AccessNode *>(leftNode) != nullptr) {
@@ -1007,7 +1006,7 @@ void TypeChecker::visitElementSelfAssignNode(ElementSelfAssignNode &node) {
 
 void TypeChecker::visitFunctionNode(FunctionNode &node) {
     if(!this->isTopLevel()) {   // only available toplevel scope
-        E_OutsideToplevel(node);
+        RAISE_TC_ERROR(OutsideToplevel, node);
     }
 
     // resolve return type, param type
@@ -1022,7 +1021,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     FunctionHandle *handle =
             this->symbolTable.registerFuncHandle(node.getFuncName(), returnType, paramTypes);
     if(handle == nullptr) {
-        E_DefinedSymbol(node, node.getFuncName());
+        RAISE_TC_ERROR(DefinedSymbol, node, node.getFuncName());
     }
     node.setVarIndex(handle->getFieldIndex());
 
@@ -1054,7 +1053,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
 
 void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     if(!this->isTopLevel()) {   // only available toplevel scope
-        E_OutsideToplevel(node);
+        RAISE_TC_ERROR(OutsideToplevel, node);
     }
 
     this->pushReturnType(this->typePool.getIntType());    // pseudo return type
@@ -1068,14 +1067,14 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     this->popReturnType();
 
     if(!this->typePool.addUserDefnedCommandName(node.getCommandName())) {
-        E_DefinedCmd(node, node.getCommandName());
+        RAISE_TC_ERROR(DefinedCmd, node, node.getCommandName());
     }
     node.setType(this->typePool.getVoidType());
 }
 
 void TypeChecker::visitInterfaceNode(InterfaceNode &node) {
     if(!this->isTopLevel()) {   // only available toplevel scope
-        E_OutsideToplevel(node);
+        RAISE_TC_ERROR(OutsideToplevel, node);
     }
     resolveInterface(this->typePool, this->typeGen, &node);
 }
@@ -1102,7 +1101,7 @@ void TypeChecker::visitRootNode(RootNode &node) {
     bool prevIsTerminal = false;
     for(Node *targetNode : node.getNodeList()) {
         if(prevIsTerminal) {
-            E_Unreachable(*targetNode);
+            RAISE_TC_ERROR(Unreachable, *targetNode);
         }
         this->checkType(nullptr, targetNode, nullptr);
         prevIsTerminal = targetNode->isTerminalNode();
