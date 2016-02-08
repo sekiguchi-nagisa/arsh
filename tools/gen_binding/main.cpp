@@ -651,7 +651,6 @@ std::unique_ptr<Element> Parser::parse_descriptor(const std::string &line) {
                 FUNC, INIT,
         };
         this->alternativeError(2, alters);
-        break;
     }
     }
     return std::unique_ptr<Element>(nullptr);
@@ -679,7 +678,6 @@ std::unique_ptr<Element> Parser::parse_funcDesc() {
                 IDENTIFIER, VAR_NAME,
         };
         this->alternativeError(2, alters);
-        return std::unique_ptr<Element>(nullptr);
     }
     }
 
@@ -762,8 +760,6 @@ std::unique_ptr<TypeToken> Parser::parse_type() {
                 TUPLE,
         };
         this->alternativeError(sizeof(alters) / sizeof(alters[0]), alters);
-
-        return std::unique_ptr<TypeToken>();
     }
 }
 

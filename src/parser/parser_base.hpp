@@ -81,11 +81,15 @@ protected:
 
     T consume();
 
-    void alternativeError(const unsigned int size, const T *const alters) const;
+    [[noreturn]]
+    void alternativeError(const unsigned int size, const T *const alters) const throw(ParseError<T>);
 
+    [[noreturn]]
     static void raiseTokenMismatchedError(T kind, Token errorToken, T expected);
+    [[noreturn]]
     static void raiseNoViableAlterError(T kind, Token errorToken,
                                         const unsigned int size, const T *const alters);
+    [[noreturn]]
     static void raiseInvalidTokenError(T kind, Token errorToken);
 };
 
@@ -116,7 +120,7 @@ T ParserBase<T, LexerImpl>::consume() {
 }
 
 template<typename T, typename LexerImpl>
-void ParserBase<T, LexerImpl>::alternativeError(const unsigned int size, const T *const alters) const {
+void ParserBase<T, LexerImpl>::alternativeError(const unsigned int size, const T *const alters) const throw(ParseError<T>) {
     if(LexerImpl::isInvalidToken(this->curKind)) {
         raiseInvalidTokenError(this->curKind, this->curToken);
     }

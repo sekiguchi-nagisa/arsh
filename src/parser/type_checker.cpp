@@ -197,7 +197,7 @@ DSType &TypeChecker::checkType(DSType *requiredType, Node *targetNode,
         targetNode->accept(*this);
         this->visitingDepth--;
     }
-    
+
     /**
      * after type checking, Node is not untyped.
      */

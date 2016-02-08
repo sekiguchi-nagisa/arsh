@@ -434,7 +434,6 @@ std::unique_ptr<TypeNode> Parser::parse_typeName() {
                 TYPEOF,
                 TYPE_PATH
         );
-        return std::unique_ptr<TypeNode>(nullptr);
     }
 }
 
@@ -623,7 +622,6 @@ std::unique_ptr<Node> Parser::parse_statement() {
     }
     default: {
         E_ALTER(EACH_LA_statement(GEN_LA_ALTER));
-        return std::unique_ptr<Node>(nullptr);
     }
     }
 }
@@ -669,7 +667,6 @@ std::unique_ptr<Node> Parser::parse_variableDeclaration() {
     }
     default:
         E_ALTER(EACH_LA_varDecl(GEN_LA_ALTER));
-        return std::unique_ptr<Node>(nullptr);
     }
 }
 
@@ -866,7 +863,6 @@ void Parser::parse_redirOption(std::unique_ptr<CmdNode> &node) {
         E_ALTER(
                 EACH_LA_redir(GEN_LA_ALTER)
         );
-        break;
     }
 }
 
@@ -911,7 +907,6 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool expandTilde) {
     }
     default: {
         E_ALTER(EACH_LA_cmdArg(GEN_LA_ALTER));
-        return std::unique_ptr<Node>(nullptr);
     }
     }
 }
@@ -928,7 +923,6 @@ std::unique_ptr<Node> Parser::parse_commandOrExpression() {
                 EACH_LA_expression(GEN_LA_ALTER)
                 COMMAND
         );
-        return std::unique_ptr<Node>(nullptr);
     }
 }
 
@@ -1184,7 +1178,6 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     }
     default:
         E_ALTER(EACH_LA_primary(GEN_LA_ALTER));
-        return std::unique_ptr<Node>(nullptr);
     }
 }
 
@@ -1270,7 +1263,6 @@ std::unique_ptr<Node> Parser::parse_interpolation() {
     }
     default: {
         E_ALTER(EACH_LA_interpolation(GEN_LA_ALTER));
-        return std::unique_ptr<Node>(nullptr);
     }
     }
 }

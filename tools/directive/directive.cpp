@@ -252,7 +252,6 @@ void DirectiveParser::parse_value(std::unique_ptr<Node> &value) {
 #undef EACH_LA_value
         };
         this->alternativeError(sizeof(alters) / sizeof(alters[0]), alters);
-        return;
     }
 }
 
