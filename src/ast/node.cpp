@@ -1537,9 +1537,15 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
             if(*this->type == ctx.getPool().getStringType()) {  // capture stdout as String
                 static const int bufSize = 256;
                 char buf[bufSize + 1];
-                int readSize = 0;
                 std::string str;
-                while((readSize = read(pipefds[READ_PIPE], buf, bufSize)) > 0) {
+                while(true) {
+                    int readSize = read(pipefds[READ_PIPE], buf, bufSize);
+                    if(readSize == -1 && (errno == EAGAIN || errno == EINTR)) {
+                        continue;
+                    }
+                    if(readSize <= 0) {
+                        break;
+                    }
                     buf[readSize] = '\0';
                     str += buf;
                 }
@@ -1559,11 +1565,19 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
 
                 static const int bufSize = 256;
                 char buf[bufSize];
-                int readSize;
                 std::string str;
-                Array_Object *array = new Array_Object(*this->type);
+                obj = DSValue::create<Array_Object>(*this->type);
+                Array_Object *array = typeAs<Array_Object>(obj);
 
-                while((readSize = read(pipefds[READ_PIPE], buf, bufSize)) > 0) {
+                while(true) {
+                    int readSize = read(pipefds[READ_PIPE], buf, bufSize);
+                    if(readSize == -1 && (errno == EINTR || errno == EAGAIN)) {
+                        continue;
+                    }
+                    if(readSize <= 0) {
+                        break;
+                    }
+
                     for(int i = 0; i < readSize; i++) {
                         char ch = buf[i];
                         bool fieldSep = isFieldSep(ifs, ch);
@@ -1597,8 +1611,6 @@ EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
                     array->append(DSValue::create<String_Object>(
                             ctx.getPool().getStringType(), std::move(str)));
                 }
-
-                obj = DSValue(array);
             }
             close(pipefds[READ_PIPE]);
 
