@@ -1079,6 +1079,14 @@ static bool isFieldSep(const char *ifs, int ch) {
     return false;
 }
 
+static int xfgetc(FILE *fp) {
+    int ch = 0;
+    do {
+        ch = fgetc(fp);
+    } while(ch == EOF && ferror(fp) != 0 && (errno == EAGAIN || errno == EINTR));
+    return ch;
+}
+
 static int builtin_read(RuntimeContext *ctx, const BuiltinContext &bctx) {  //FIXME: timeout, no echo, UTF-8
     int index = 1;
     const char *prompt = "";
@@ -1144,7 +1152,7 @@ static int builtin_read(RuntimeContext *ctx, const BuiltinContext &bctx) {  //FI
     // read line
     unsigned int skipCount = 1;
     int ch;
-    for(bool prevIsBackslash = false; (ch = fgetc(bctx.fp_stdin)) != EOF;
+    for(bool prevIsBackslash = false; (ch = xfgetc(bctx.fp_stdin)) != EOF;
             prevIsBackslash = backslash && ch == '\\' && !prevIsBackslash) {
         if(ch == '\n') {
             if(prevIsBackslash) {
