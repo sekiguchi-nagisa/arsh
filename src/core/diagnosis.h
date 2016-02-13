@@ -81,6 +81,9 @@ constexpr const char *getTLErrorMessage(TLError e) {
     return TL_ERROR_MSG_ARRAY[static_cast<unsigned int>(e)];
 }
 
+
+namespace __detail_tl_error {
+
 TypeLookupError createErrorImpl(TLError e, const std::string **v);
 
 
@@ -108,13 +111,14 @@ constexpr unsigned int computeParamSize(const char *s, unsigned int index = 0) {
            (s[index] == '%' ? 1 : 0) + computeParamSize(s, index + 1);
 }
 
+} // namespace __detail_tl_error
 
 } // namespace core
 } // namespace ydsh
 
 #define RAISE_TL_ERROR(e, ...) \
 do { \
-    using namespace ydsh::core;\
+    using namespace ydsh::core::__detail_tl_error;\
     throw createError<computeParamSize(getTLErrorMessage(TLError::e))>(TLError::e, ## __VA_ARGS__);\
 } while(false)
 
@@ -207,6 +211,9 @@ constexpr const char *getTCErrorMessage(TCError e) {
     return TC_ERROR_MSG_ARRAY[static_cast<unsigned int>(e)];
 }
 
+
+namespace __detail_tc_error {
+
 TypeCheckError createErrorImpl(TCError e, const ast::Node &node, const std::string **v);
 
 
@@ -216,7 +223,7 @@ inline TypeCheckError createTCErrorNext(TCError e, const ast::Node &node, const 
 
 template <typename ... T>
 inline TypeCheckError createTCErrorNext(TCError e, const ast::Node &node, const std::string **v,
-                                      unsigned int index, const std::string &arg, T && ... args) {
+                                        unsigned int index, const std::string &arg, T && ... args) {
     v[index] = &arg;
     return createTCErrorNext(e, node, v, index + 1, std::forward<T>(args)...);
 }
@@ -229,13 +236,16 @@ inline TypeCheckError createTCError(TCError e, const ast::Node &node, T && ... a
     return createTCErrorNext(e, node, v, 0, std::forward<T>(args)...);
 };
 
+} // namespace __detail_tc_error
+
 } // namespace parser
 } // namespace ydsh
 
 #define RAISE_TC_ERROR(e, node,  ...) \
 do { \
-    using namespace ydsh::parser;\
-    constexpr auto s = ydsh::core::computeParamSize(getTCErrorMessage(TCError::e));\
+    using namespace ydsh::parser::__detail_tc_error;\
+    using namespace ydsh::core::__detail_tl_error;\
+    constexpr auto s = computeParamSize(getTCErrorMessage(TCError::e));\
     throw createTCError<s>(TCError::e, node, ## __VA_ARGS__);\
 } while(false)
 

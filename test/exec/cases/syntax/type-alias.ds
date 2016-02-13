@@ -1,3 +1,7 @@
 type-alias catch Int
 
 assert(12 is catch) # allow any identifier
+
+type-alias typeof String
+
+assert("" is typeof)

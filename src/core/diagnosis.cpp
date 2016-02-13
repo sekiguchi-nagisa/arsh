@@ -42,9 +42,13 @@ static std::string formatMessage(const char *fmt, const std::string **v) {
     return str;
 }
 
+namespace __detail_tl_error {
+
 TypeLookupError createErrorImpl(TLError e, const std::string **v) {
     return TypeLookupError(getTLErrorKind(e), formatMessage(getTLErrorMessage(e), v));
 }
+
+} // namespace __detail_tl_error
 
 } // namespace core
 } // namespace ydsh
@@ -62,9 +66,13 @@ const char *getTCErrorKind(TCError e) {
     return table[static_cast<unsigned int>(e)];
 }
 
+namespace __detail_tc_error {
+
 TypeCheckError createErrorImpl(TCError e, const ast::Node &node, const std::string **v) {
     return TypeCheckError(node.getToken(), getTCErrorKind(e), core::formatMessage(getTCErrorMessage(e), v));
 }
+
+} // namespace __detail_tc_error
 
 } // namespace parser
 } // namespace ydsh
