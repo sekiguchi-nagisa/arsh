@@ -139,9 +139,8 @@ static DSValue decodeMessageIter(RuntimeContext &ctx, DBusMessageIter *iter) {
             auto map = DSValue::create<Map_Object>(
                     ctx.getPool().createReifiedType(
                             ctx.getPool().getMapTemplate(), std::move(types)));
-            unsigned int size = entries.size();
-            for(unsigned int i = 0; i < size; i++) {
-                typeAs<Map_Object>(map)->add(std::move(entries[i]));
+            for(auto &e : entries) {
+                typeAs<Map_Object>(map)->add(std::move(e));
             }
             return map;
         } else {    // array
@@ -518,7 +517,7 @@ bool DBus_ObjectImpl::waitSignal(RuntimeContext &ctx) {
             decodeAndUnrefMessage(values, ctx, handlerType->getParamTypes(), message);
 
             // push to stack
-            unsigned int size = values.size();
+            const unsigned int size = values.size();
             for(unsigned int i = 0; i < size; i++) {
                 ctx.push(std::move(values[i]));
             }

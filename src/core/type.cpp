@@ -230,8 +230,8 @@ void ReifiedType::accept(TypeVisitor *visitor) {
 
 TupleType::TupleType(native_type_info_t info, DSType *superType, std::vector<DSType *> &&types) :
         ReifiedType(info, superType, std::move(types)), fieldHandleMap() {
-    unsigned int size = this->elementTypes.size();
-    unsigned int baseIndex = this->superType->getFieldSize();
+    const unsigned int size = this->elementTypes.size();
+    const unsigned int baseIndex = this->superType->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {
         FieldHandle *handle = new FieldHandle(this->elementTypes[i], i + baseIndex, false);
         this->fieldHandleMap.insert(std::make_pair("_" + std::to_string(i), handle));

@@ -138,13 +138,10 @@ void MethodHandle::init(TypePool &typePool, NativeFuncInfo &info,
     /**
      * init param types
      */
-    unsigned int paramSize = decodeNum(pos);
-    for(unsigned int i = 0; i < paramSize; i++) {
-        if(i == 0) {
-            this->recvType = decodeType(typePool, pos, types);
-        } else {
-            this->paramTypes.push_back(decodeType(typePool, pos,types));
-        }
+    const unsigned int paramSize = decodeNum(pos);
+    this->recvType = decodeType(typePool, pos, types);
+    for(unsigned int i = 1; i < paramSize; i++) {
+        this->paramTypes.push_back(decodeType(typePool, pos,types));
     }
 }
 

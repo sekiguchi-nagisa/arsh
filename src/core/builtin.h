@@ -28,8 +28,8 @@
 
 // helper macro
 #define LOCAL(index) (ctx.getLocal(index))
-#define RET(value) do { ctx.push(value); return true; } while(0)
-#define RET_BOOL(value) do { ctx.push((value) ? ctx.getTrueObj() : ctx.getFalseObj()); return true; } while(0)
+#define RET(value) do { ctx.push(value); return true; } while(false)
+#define RET_BOOL(value) do { ctx.push((value) ? ctx.getTrueObj() : ctx.getFalseObj()); return true; } while(false)
 
 #define SUPPRESS_WARNING(a) (void)a
 
