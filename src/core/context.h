@@ -197,17 +197,17 @@ private:
     /**
      * for builtin cd command
      */
-    FieldHandle *handle_OLDPWD;
+    unsigned int OLDPWD_index;
 
     /**
      * for builtin cd command
      */
-    FieldHandle *handle_PWD;
+    unsigned int PWD_index;
 
     /**
      * for field splitting (read command, command substitution)
      */
-    FieldHandle *handle_IFS;
+    unsigned int IFS_index;
 
     /**
      * contains currently evaluating CallableNode

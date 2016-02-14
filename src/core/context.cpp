@@ -153,7 +153,7 @@ RuntimeContext::RuntimeContext() :
         localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0),
         localVarOffset(0), offsetStack(), toplevelPrinting(false), assertion(true),
         handle_STR(nullptr), handle_bt(nullptr),
-        handle_OLDPWD(nullptr), handle_PWD(nullptr), handle_IFS(nullptr),
+        OLDPWD_index(0), PWD_index(0), IFS_index(0),
         callableContextStack(), callStack(), pipelineEvaluator(), udcMap(), pathCache() {
 }
 
@@ -567,22 +567,23 @@ void RuntimeContext::resetState() {
 void RuntimeContext::updateWorkingDir(bool OLDPWD_only) {
     // check handle
     const char *env_OLDPWD = "OLDPWD";
-    if(this->handle_OLDPWD == nullptr) {
-        this->handle_OLDPWD = this->symbolTable.lookupHandle(env_OLDPWD);
-        assert(this->handle_OLDPWD != nullptr && this->handle_OLDPWD->isEnv());
+    if(this->OLDPWD_index == 0) {
+        auto handle = this->symbolTable.lookupHandle(env_OLDPWD);
+        this->OLDPWD_index = handle->getFieldIndex();
+        assert(handle != nullptr && handle->isEnv());
     }
 
     const char *env_PWD = "PWD";
-    if(this->handle_PWD == nullptr) {
-        this->handle_PWD = this->symbolTable.lookupHandle(env_PWD);
-        assert(this->handle_PWD != nullptr && this->handle_PWD->isEnv());
+    if(this->PWD_index == 0) {
+        auto handle = this->symbolTable.lookupHandle(env_PWD);
+        this->PWD_index = handle->getFieldIndex();
+        assert(handle != nullptr && handle->isEnv());
     }
 
     // update OLDPWD
-    this->setGlobal(this->handle_OLDPWD->getFieldIndex(),
-                    this->getGlobal(this->handle_PWD->getFieldIndex()));
+    this->setGlobal(this->OLDPWD_index, this->getGlobal(this->PWD_index));
     const char *oldpwd =
-            typeAs<String_Object>(this->getGlobal(this->handle_OLDPWD->getFieldIndex()))->getValue();
+            typeAs<String_Object>(this->getGlobal(this->OLDPWD_index))->getValue();
     setenv(env_OLDPWD, oldpwd, 1);
 
     // update PWD
@@ -592,18 +593,19 @@ void RuntimeContext::updateWorkingDir(bool OLDPWD_only) {
         char *cwd = getcwd(buf, size);
         if(cwd != nullptr && strcmp(cwd, oldpwd) != 0) {
             setenv(env_PWD, cwd, 1);
-            this->setGlobal(this->handle_PWD->getFieldIndex(),
+            this->setGlobal(this->PWD_index,
                             DSValue::create<String_Object>(this->pool.getStringType(), std::string(cwd)));
         }
     }
 }
 
 const char *RuntimeContext::getIFS() {
-    if(this->handle_IFS == nullptr) {
-        this->handle_IFS = this->symbolTable.lookupHandle("IFS");
-        assert(this->handle_IFS != nullptr);
+    if(this->IFS_index == 0) {
+        auto handle = this->symbolTable.lookupHandle("IFS");
+        this->IFS_index = handle->getFieldIndex();
+        assert(handle != nullptr);
     }
-    return typeAs<String_Object>(this->getGlobal(this->handle_IFS->getFieldIndex()))->getValue();
+    return typeAs<String_Object>(this->getGlobal(this->IFS_index))->getValue();
 }
 
 void RuntimeContext::updateExitStatus(unsigned int status) {
