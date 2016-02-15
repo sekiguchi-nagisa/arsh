@@ -380,7 +380,7 @@ std::unique_ptr<TypeNode> Parser::parse_typeName() {
             PUSH_LEXER_MODE(yycSTMT);
 
             unsigned int startPos = token.pos;
-            std::unique_ptr<Node> exprNode(this->parse_expression());
+            auto exprNode(this->parse_expression());
 
             token = this->expect(RP, false);
 
@@ -567,19 +567,19 @@ std::unique_ptr<Node> Parser::parse_statement() {
         unsigned int startPos = START_POS();
         this->expect(WHILE);
         this->expect(LP);
-        std::unique_ptr<Node> condNode(this->parse_commandOrExpression());
+        auto condNode(this->parse_commandOrExpression());
         this->expect(RP);
-        std::unique_ptr<BlockNode> blockNode(this->parse_block());
+        auto blockNode(this->parse_block());
         this->parse_statementEnd();
         return uniquify<WhileNode>(startPos, condNode.release(), blockNode.release());
     }
     case DO: {
         unsigned int startPos = START_POS();
         this->expect(DO);
-        std::unique_ptr<BlockNode> blockNode(this->parse_block());
+        auto blockNode(this->parse_block());
         this->expect(WHILE);
         this->expect(LP);
-        std::unique_ptr<Node> condNode(this->parse_commandOrExpression());
+        auto condNode(this->parse_commandOrExpression());
         Token token = this->expect(RP);
         auto node = uniquify<DoWhileNode>(startPos, blockNode.release(), condNode.release());
         node->updateToken(token);
@@ -606,17 +606,17 @@ std::unique_ptr<Node> Parser::parse_statement() {
     }
     case VAR:
     case LET: {
-        std::unique_ptr<Node> node(this->parse_variableDeclaration());
+        auto node(this->parse_variableDeclaration());
         this->parse_statementEnd();
         return node;
     }
     case COMMAND: {
-        std::unique_ptr<Node> node(this->parse_commandListExpression());
+        auto node(this->parse_commandListExpression());
         this->parse_statementEnd();
         return node;
     }
     EACH_LA_expression(GEN_LA_CASE) {
-        std::unique_ptr<Node> node(this->parse_expression());
+        auto node(this->parse_expression());
         this->parse_statementEnd();
         return node;
     }
