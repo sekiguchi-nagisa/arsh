@@ -1,0 +1,24 @@
+#!/usr/bin/env ydsh
+
+if($# != 2) {
+    echo usage: $0 [YDSH_BIN] [file]
+    exit 1
+}
+
+let YDSH_BIN = $1
+let FILE = $2
+
+if(test -x $YDSH_BIN) {} else {
+    echo $YDSH_BIN must be executable file
+    exit 1
+}
+
+if(eval $YDSH_BIN --feature | grep USE_LOGGING) {} else {
+    echo $YDSH_BIN needs USE_LOGGING feature
+    exit 1
+}
+
+export-env YDSH_APPENDER = $FILE
+export-env YDSH_DUMP_CONSOLE = "on"
+
+exec -a "$(basename $0)" $YDSH_BIN 
