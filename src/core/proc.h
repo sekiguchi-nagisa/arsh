@@ -97,6 +97,13 @@ struct BuiltinContext {
  */
 typedef int (*builtin_command_t)(RuntimeContext *ctx, const BuiltinContext &bctx);
 
+unsigned int getBuiltinCommandSize();
+
+/**
+ * if index is out of range, return null
+ */
+const char *getBultinCommandName(unsigned int index);
+
 // for error reporting
 struct ChildError {
     /**

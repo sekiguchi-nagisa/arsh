@@ -698,16 +698,61 @@ static std::vector<std::string> computePathList(const char *pathVal) {
     return result;
 }
 
+/**
+ * append candidates to results
+ */
+static void completeCommandName(const std::string &cmdName, std::vector<std::string> &results) {
+    // search builtin command
+    const unsigned int bsize = getBuiltinCommandSize();
+    for(unsigned int i = 0; i < bsize; i++) {
+        const char *name = getBultinCommandName(i);
+        const char *ptr = strstr(name, cmdName.c_str());
+        if(ptr != nullptr && ptr == name) {
+            results.push_back(name);
+        }
+    }
+
+
+    // search external command
+    const char *path = getenv("PATH");
+    if(path == nullptr) {
+        return;
+    }
+
+    auto pathList(computePathList(path));
+    for(const auto &p : pathList) {
+        DIR *dir = opendir(p.c_str());
+        if(dir == nullptr) {
+            continue;
+        }
+
+        dirent *entry;
+        while(true) {
+            entry = readdir(dir);
+            if(entry == nullptr) {
+                break;
+            }
+            if(entry->d_type == DT_REG || entry->d_type == DT_LNK || entry->d_type == DT_UNKNOWN) {
+                const char *name = entry->d_name;
+                const char *ptr = strstr(name, cmdName.c_str());
+                if(ptr != nullptr && ptr == name) {
+                    std::string fullpath(p);
+                    fullpath += '/';
+                    fullpath += name;
+                    if(access(fullpath.c_str(), X_OK) == 0) {
+                        results.push_back(name);
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 DSCandidates *DSContext_complete(DSContext *ctx, const char *buf, size_t cursor) {
     if(ctx == nullptr || buf == nullptr) {
         return nullptr;
     }
-
-    const char *path = getenv("PATH");
-    if(path == nullptr) {
-        return nullptr;
-    }
-
 
     // find command start index
     size_t startIndex = 0;
@@ -727,33 +772,7 @@ DSCandidates *DSContext_complete(DSContext *ctx, const char *buf, size_t cursor)
     std::string str(buf + startIndex, cursor - startIndex);
 
     DSCandidates *c = new DSCandidates();
-    auto pathList(computePathList(path));
-    for(const auto &p : pathList) {
-        DIR *dir = opendir(p.c_str());
-        if(dir == nullptr) {
-            continue;
-        }
-
-        dirent *entry;
-        while(true) {
-            entry = readdir(dir);
-            if(entry == nullptr) {
-                break;
-            }
-            if(entry->d_type == DT_REG) {
-                const char *name = entry->d_name;
-                const char *ptr = strstr(name, str.c_str());
-                if(ptr != nullptr && ptr == name) {
-                    std::string fullpath(p);
-                    fullpath += '/';
-                    fullpath += name;
-                    if(access(fullpath.c_str(), X_OK) == 0) {
-                        c->candidates.push_back(name);
-                    }
-                }
-            }
-        }
-    }
+    completeCommandName(str, c->candidates);
 
     // sort and deduplicate
     std::sort(c->candidates.begin(), c->candidates.end());

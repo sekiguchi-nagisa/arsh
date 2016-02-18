@@ -263,6 +263,20 @@ const struct {
                 "    Always success (exit status is 0)."},
 };
 
+unsigned int getBuiltinCommandSize() {
+    return sizeof(builtinCommands) / sizeof(builtinCommands[0]);
+}
+
+/**
+ * if index is out of range, return null
+ */
+const char *getBultinCommandName(unsigned int index) {
+    if(index >= getBuiltinCommandSize()) {
+        return nullptr;
+    }
+    return builtinCommands[index].commandName;
+}
+
 /**
  * return null, if not found builtin command.
  */
