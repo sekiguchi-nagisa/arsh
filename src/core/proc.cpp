@@ -971,7 +971,7 @@ static int builtin_test(RuntimeContext *, const BuiltinContext &bctx) {
             break;
         }
         case 'x': {
-            result = access(value, X_OK) == 0;  // check if file is exxcutable
+            result = access(value, X_OK) == 0;  // check if file is executable
             break;
         }
         case 'O': {

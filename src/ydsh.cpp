@@ -20,7 +20,9 @@
 #include <clocale>
 #include <csignal>
 #include <cstdlib>
+#include <algorithm>
 
+#include <dirent.h>
 #include <unistd.h>
 #include <execinfo.h>
 #include <sys/utsname.h>
@@ -659,4 +661,118 @@ unsigned int DSContext_errorLineNum(DSContext *ctx) {
 
 const char *DSContext_errorKind(DSContext *ctx) {
     return ctx->execStatus.errorKind;
+}
+
+// for input complete
+
+struct DSCandidates {
+    std::vector<std::string> candidates;
+};
+
+static std::vector<std::string> computePathList(const char *pathVal) {
+    std::vector<std::string> result;
+    std::string buf;
+    assert(pathVal != nullptr);
+
+    for(unsigned int i = 0; pathVal[i] != '\0'; i++) {
+        char ch = pathVal[i];
+        if(ch == ':') {
+            result.push_back(std::move(buf));
+            buf = "";
+        } else {
+            buf += ch;
+        }
+    }
+    if(!buf.empty()) {
+        result.push_back(std::move(buf));
+    }
+
+    // expand tilde
+    for(auto &s : result) {
+        if(s[0] == '~') {
+            std::string expanded = expandTilde(s.c_str());
+            std::swap(s, expanded);
+        }
+    }
+
+    return result;
+}
+
+DSCandidates *DSContext_complete(DSContext *ctx, const char *buf, size_t cursor) {
+    if(ctx == nullptr || buf == nullptr) {
+        return nullptr;
+    }
+
+    const char *path = getenv("PATH");
+    if(path == nullptr) {
+        return nullptr;
+    }
+
+
+    // find command start index
+    size_t startIndex = 0;
+    bool prevIsSpace = true;
+    for(size_t i = 0; i < cursor; i++) {
+        const char ch = buf[i];
+        if(ch == ' ') {
+            prevIsSpace = true;
+            continue;
+        } else {
+            if(prevIsSpace) {
+                startIndex = i;
+            }
+            prevIsSpace = false;
+        }
+    }
+    std::string str(buf + startIndex, cursor - startIndex);
+
+    DSCandidates *c = new DSCandidates();
+    auto pathList(computePathList(path));
+    for(const auto &p : pathList) {
+        DIR *dir = opendir(p.c_str());
+        if(dir == nullptr) {
+            continue;
+        }
+
+        dirent *entry;
+        do {
+            entry = readdir(dir);
+            if(entry == nullptr) {
+                break;
+            }
+            if(entry->d_type == DT_REG) {
+                const char *name = entry->d_name;
+                const char *ptr = strstr(name, str.c_str());
+                if(ptr != nullptr && ptr == name) {
+                    std::string fullpath(p);
+                    fullpath += '/';
+                    fullpath += name;
+                    if(access(fullpath.c_str(), X_OK) == 0) {
+                        c->candidates.push_back(name);
+                    }
+                }
+            }
+        } while(true);
+    }
+
+    std::sort(c->candidates.begin(), c->candidates.end());
+    return c;
+}
+
+size_t DSCandidates_size(const DSCandidates *c) {
+    return c == nullptr ? 0 : c->candidates.size();
+}
+
+const char *DSCandidates_get(const DSCandidates *c, size_t index) {
+    if(c == nullptr || index >= c->candidates.size()) {
+        return nullptr;
+    }
+    return c->candidates[index].c_str();
+}
+
+void DSCandidates_release(DSCandidates **c) {
+    if(c != nullptr) {
+        delete (*c);
+        *c = nullptr;
+    }
 }
