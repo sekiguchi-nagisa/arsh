@@ -735,7 +735,7 @@ DSCandidates *DSContext_complete(DSContext *ctx, const char *buf, size_t cursor)
         }
 
         dirent *entry;
-        do {
+        while(true) {
             entry = readdir(dir);
             if(entry == nullptr) {
                 break;
@@ -752,10 +752,12 @@ DSCandidates *DSContext_complete(DSContext *ctx, const char *buf, size_t cursor)
                     }
                 }
             }
-        } while(true);
+        }
     }
 
+    // sort and deduplicate
     std::sort(c->candidates.begin(), c->candidates.end());
+    c->candidates.erase(std::unique(c->candidates.begin(), c->candidates.end()), c->candidates.end());
     return c;
 }
 
