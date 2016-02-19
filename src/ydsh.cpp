@@ -698,16 +698,28 @@ static std::vector<std::string> computePathList(const char *pathVal) {
     return result;
 }
 
+static bool startsWith(const char *s1, const char *s2) {
+    return s1 != nullptr && s2 != nullptr && strstr(s1, s2) == s1;
+}
+
 /**
  * append candidates to results
  */
-static void completeCommandName(const std::string &cmdName, std::vector<std::string> &results) {
+static void completeCommandName(RuntimeContext &ctx, const std::string &token,
+                                std::vector<std::string> &results) {
+    // search user defined command
+    for(auto &e : ctx.getUdcMap()) {
+        const char *name = e.first;
+        if(startsWith(name, token.c_str())) {
+            results.push_back(name);
+        }
+    }
+
     // search builtin command
     const unsigned int bsize = getBuiltinCommandSize();
     for(unsigned int i = 0; i < bsize; i++) {
         const char *name = getBultinCommandName(i);
-        const char *ptr = strstr(name, cmdName.c_str());
-        if(ptr != nullptr && ptr == name) {
+        if(startsWith(name, token.c_str())) {
             results.push_back(name);
         }
     }
@@ -734,8 +746,7 @@ static void completeCommandName(const std::string &cmdName, std::vector<std::str
             }
             if(entry->d_type == DT_REG || entry->d_type == DT_LNK || entry->d_type == DT_UNKNOWN) {
                 const char *name = entry->d_name;
-                const char *ptr = strstr(name, cmdName.c_str());
-                if(ptr != nullptr && ptr == name) {
+                if(startsWith(name, token.c_str())) {
                     std::string fullpath(p);
                     fullpath += '/';
                     fullpath += name;
@@ -750,7 +761,7 @@ static void completeCommandName(const std::string &cmdName, std::vector<std::str
 
 
 DSCandidates *DSContext_complete(DSContext *ctx, const char *buf, size_t cursor) {
-    if(ctx == nullptr || buf == nullptr) {
+    if(ctx == nullptr || buf == nullptr || cursor == 0) {
         return nullptr;
     }
 
@@ -772,7 +783,7 @@ DSCandidates *DSContext_complete(DSContext *ctx, const char *buf, size_t cursor)
     std::string str(buf + startIndex, cursor - startIndex);
 
     DSCandidates *c = new DSCandidates();
-    completeCommandName(str, c->candidates);
+    completeCommandName(ctx->ctx, str, c->candidates);
 
     // sort and deduplicate
     std::sort(c->candidates.begin(), c->candidates.end());

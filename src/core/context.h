@@ -598,6 +598,10 @@ public:
 
     EvalStatus callPipedCommand(unsigned int startPos);
 
+    const CStringHashMap<UserDefinedCmdNode *> &getUdcMap() const {
+        return this->udcMap;
+    }
+
     void addUserDefinedCommand(UserDefinedCmdNode *node);
 
     /**
