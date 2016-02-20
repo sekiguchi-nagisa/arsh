@@ -38,6 +38,7 @@
 #include "core/context.h"
 #include "core/symbol.h"
 #include "misc/num.h"
+#include "misc/files.h"
 
 
 using namespace ydsh;
@@ -759,6 +760,76 @@ static void completeCommandName(RuntimeContext &ctx, const std::string &token,
     }
 }
 
+static void completeFileName(const std::string &token, std::vector<std::string> &results, bool onlyExec = true) {
+    auto s = token.find_last_of('/');
+
+    // complete tilde
+    if(token[0] == '~' && s == std::string::npos) {
+        for(struct passwd *entry = getpwent(); entry != nullptr; entry = getpwent()) {
+            std::string name("~");
+            name += entry->pw_name;
+            if(startsWith(name.c_str(), token.c_str())) {
+                name += '/';
+                results.push_back(std::move(name));
+            }
+        }
+        endpwent();
+        return;
+    }
+
+
+    // complete file name
+    std::string targetDir;
+    bool isRoot = s == 0;
+    if(isRoot) {
+        targetDir = "/";
+    } else if(s != std::string::npos) {
+        targetDir = token.substr(0, s);
+    }
+
+    std::string qualifiedDir = expandTilde(targetDir.c_str());
+    std::string qualifiedName = expandTilde(token.c_str());
+
+    DIR *dir = opendir(qualifiedDir.c_str());
+    if(dir == nullptr) {
+        return;
+    }
+
+    dirent *entry;
+    while(true) {
+        entry = readdir(dir);
+        if(entry == nullptr) {
+            break;
+        }
+
+        if(strcmp(entry->d_name, "..") == 0 || strcmp(entry->d_name, ".") == 0) {
+            continue;
+        }
+
+        std::string fullpath(qualifiedDir);
+        if(!isRoot) {
+            fullpath += '/';
+        }
+        fullpath += entry->d_name;
+        if(startsWith(fullpath.c_str(), qualifiedName.c_str())) {
+            if(onlyExec && S_ISREG(getStMode(fullpath.c_str()))
+               && access(fullpath.c_str(), X_OK) != 0) {
+                continue;
+            }
+
+            std::string name = targetDir;
+            if(!isRoot) {
+                name += '/';
+            }
+            name += entry->d_name;
+            if(S_ISDIR(getStMode(fullpath.c_str()))) {
+                name += '/';
+            }
+            results.push_back(std::move(name));
+        }
+    }
+}
+
 
 DSCandidates *DSContext_complete(DSContext *ctx, const char *buf, size_t cursor) {
     if(ctx == nullptr || buf == nullptr || cursor == 0) {
@@ -783,7 +854,11 @@ DSCandidates *DSContext_complete(DSContext *ctx, const char *buf, size_t cursor)
     std::string str(buf + startIndex, cursor - startIndex);
 
     DSCandidates *c = new DSCandidates();
-    completeCommandName(ctx->ctx, str, c->candidates);
+    if(str[0] == '~' || strchr(str.c_str(), '/') != nullptr) {
+        completeFileName(str, c->candidates);
+    } else {
+        completeCommandName(ctx->ctx, str, c->candidates);
+    }
 
     // sort and deduplicate
     std::sort(c->candidates.begin(), c->candidates.end());

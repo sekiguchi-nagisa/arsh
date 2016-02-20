@@ -18,6 +18,7 @@
 #define YDSH_MISC_FILES_H
 
 #include <dirent.h>
+#include <sys/stat.h>
 
 #include <cstdlib>
 #include <cstring>
@@ -71,6 +72,19 @@ inline std::vector<std::string> getFileList(const char *dirPath, bool recursive 
     getFileList(dirPath, recursive, fileList);
     return fileList;
 }
+
+/**
+ * if cannot open file, return always 0.
+ */
+inline mode_t getStMode(const char *fileName) {
+    struct stat st;
+    if(stat(fileName, &st) != 0) {
+        return 0;
+    }
+    return st.st_mode;
+}
+
+#define S_IS_PERM_(mode, flag) (((mode) & (flag)) == (flag))
 
 } // namespace misc
 } // namespace ydsh
