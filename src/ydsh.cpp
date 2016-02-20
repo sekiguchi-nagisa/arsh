@@ -787,10 +787,15 @@ static void completeFileName(const std::string &token, std::vector<std::string> 
         targetDir = token.substr(0, s);
     }
 
-    std::string qualifiedDir = expandTilde(targetDir.c_str());
-    std::string qualifiedName = expandTilde(token.c_str());
+    std::string qualifiedName;
+    if(token[0] == '~') {
+        targetDir = expandTilde(targetDir.c_str());
+        qualifiedName = expandTilde(token.c_str());
+    } else {
+        qualifiedName = token;
+    }
 
-    DIR *dir = opendir(qualifiedDir.c_str());
+    DIR *dir = opendir(targetDir.c_str());
     if(dir == nullptr) {
         return;
     }
@@ -806,22 +811,19 @@ static void completeFileName(const std::string &token, std::vector<std::string> 
             continue;
         }
 
-        std::string fullpath(qualifiedDir);
+        std::string fullpath(targetDir);
         if(!isRoot) {
             fullpath += '/';
         }
         fullpath += entry->d_name;
+
         if(startsWith(fullpath.c_str(), qualifiedName.c_str())) {
             if(onlyExec && S_ISREG(getStMode(fullpath.c_str()))
                && access(fullpath.c_str(), X_OK) != 0) {
                 continue;
             }
 
-            std::string name = targetDir;
-            if(!isRoot) {
-                name += '/';
-            }
-            name += entry->d_name;
+            std::string name = entry->d_name;
             if(S_ISDIR(getStMode(fullpath.c_str()))) {
                 name += '/';
             }
