@@ -57,15 +57,37 @@ public:
     }
 };
 
-template<typename T, typename LexerImpl>
+template <typename T>
+struct EmptyTokenTracker {
+    void operator()(T, Token) {}
+};
+
+template<typename T, typename LexerImpl, typename Tracker = EmptyTokenTracker<T>>
 class ParserBase {
 protected:
+    /**
+     * need 'T nextToken(Token)'
+     */
     LexerImpl *lexer;
+
     T curKind;
     Token curToken;
 
+    /**
+     * need 'void operator()(T, Token)'
+     */
+    Tracker *tracker;
+
 public:
-    ParserBase() = default;
+    ParserBase() : lexer(nullptr), curKind(), curToken(), tracker(nullptr) { }
+
+    void setTracker(Tracker *tracker) {
+        this->tracker = tracker;
+    }
+
+    Tracker *getTracker() {
+        return this->tracker;
+    }
 
 protected:
     ~ParserBase() = default;
@@ -75,6 +97,12 @@ protected:
      */
     void fetchNext() {
         this->curKind = this->lexer->nextToken(this->curToken);
+    }
+
+    void trace() {
+        if(this->tracker != nullptr) {
+            (*this->tracker)(this->curKind, this->curToken);
+        }
     }
 
     Token expect(T kind, bool fetchNext = true);
@@ -97,14 +125,15 @@ protected:
 // ##     ParserBase     ##
 // ########################
 
-template<typename T, typename LexerImpl>
-Token ParserBase<T, LexerImpl>::expect(T kind, bool fetchNext) {
+template<typename T, typename LexerImpl, typename Tracker>
+Token ParserBase<T, LexerImpl, Tracker>::expect(T kind, bool fetchNext) {
     if(this->curKind != kind) {
         if(LexerImpl::isInvalidToken(this->curKind)) {
             raiseInvalidTokenError(this->curKind, this->curToken);
         }
         raiseTokenMismatchedError(this->curKind, this->curToken, kind);
     }
+    this->trace();
     Token token = this->curToken;
     if(fetchNext) {
         this->fetchNext();
@@ -112,23 +141,25 @@ Token ParserBase<T, LexerImpl>::expect(T kind, bool fetchNext) {
     return token;
 }
 
-template<typename T, typename LexerImpl>
-T ParserBase<T, LexerImpl>::consume() {
+template<typename T, typename LexerImpl, typename Tracker>
+T ParserBase<T, LexerImpl, Tracker>::consume() {
     T kind = this->curKind;
+    this->trace();
     this->fetchNext();
     return kind;
 }
 
-template<typename T, typename LexerImpl>
-void ParserBase<T, LexerImpl>::alternativeError(const unsigned int size, const T *const alters) const throw(ParseError<T>) {
+template<typename T, typename LexerImpl, typename Tracker>
+void ParserBase<T, LexerImpl, Tracker>::alternativeError(
+        const unsigned int size, const T *const alters) const throw(ParseError<T>) {
     if(LexerImpl::isInvalidToken(this->curKind)) {
         raiseInvalidTokenError(this->curKind, this->curToken);
     }
     raiseNoViableAlterError(this->curKind, this->curToken, size, alters);
 }
 
-template<typename T, typename LexerImpl>
-void ParserBase<T, LexerImpl>::raiseTokenMismatchedError(T kind, Token errorToken, T expected) {
+template<typename T, typename LexerImpl, typename Tracker>
+void ParserBase<T, LexerImpl, Tracker>::raiseTokenMismatchedError(T kind, Token errorToken, T expected) {
     std::string message("mismatched token: ");
     message += toString(kind);
     message += ", expected: ";
@@ -137,8 +168,8 @@ void ParserBase<T, LexerImpl>::raiseTokenMismatchedError(T kind, Token errorToke
     throw ParseError<T>(kind, errorToken, "TokenMismatched", std::move(message));
 }
 
-template<typename T, typename LexerImpl>
-void ParserBase<T, LexerImpl>::raiseNoViableAlterError(T kind, Token errorToken,
+template<typename T, typename LexerImpl, typename Tracker>
+void ParserBase<T, LexerImpl, Tracker>::raiseNoViableAlterError(T kind, Token errorToken,
                                                        const unsigned int size, const T *const alters) {
     std::string message = "no viable alternative: ";
     message += toString(kind);
@@ -155,8 +186,8 @@ void ParserBase<T, LexerImpl>::raiseNoViableAlterError(T kind, Token errorToken,
     throw ParseError<T>(kind, errorToken, "NoViableAlter", std::move(message));
 }
 
-template<typename T, typename LexerImpl>
-void ParserBase<T, LexerImpl>::raiseInvalidTokenError(T kind, Token errorToken) {
+template<typename T, typename LexerImpl, typename Tracker>
+void ParserBase<T, LexerImpl, Tracker>::raiseInvalidTokenError(T kind, Token errorToken) {
     throw ParseError<T>(kind, errorToken, "InvalidToken", std::string("invalid token"));
 }
 

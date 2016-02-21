@@ -49,7 +49,22 @@ public:
 
 using ParseError = ydsh::parser_base::ParseError<TokenKind>;
 
-class Parser : public ydsh::parser_base::ParserBase<TokenKind, Lexer> {
+class TokenTracker {
+private:
+    std::vector<TokenKind> kinds;
+    std::vector<Token> tokens;
+
+public:
+    TokenTracker() = default;
+    ~TokenTracker() = default;
+
+    void operator()(TokenKind kind, Token token) {
+        this->kinds.push_back(kind);
+        this->tokens.push_back(token);
+    }
+};
+
+class Parser : public ydsh::parser_base::ParserBase<TokenKind, Lexer, TokenTracker> {
 public:
     Parser() = default;
 
