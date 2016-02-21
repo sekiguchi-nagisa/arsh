@@ -832,12 +832,13 @@ static void completeFileName(const std::string &token, std::vector<std::string> 
     }
 }
 
+enum class CompletorKind {
+    EMPTY,
+    CMD,
+    FILE,
+};
 
-DSCandidates *DSContext_complete(DSContext *ctx, const char *buf, size_t cursor) {
-    if(ctx == nullptr || buf == nullptr || cursor == 0) {
-        return nullptr;
-    }
-
+static CompletorKind selectCompletor(const char *buf, size_t cursor, std::string &tokenStr) {
     // find command start index
     size_t startIndex = 0;
     bool prevIsSpace = true;
@@ -853,13 +854,33 @@ DSCandidates *DSContext_complete(DSContext *ctx, const char *buf, size_t cursor)
             prevIsSpace = false;
         }
     }
-    std::string str(buf + startIndex, cursor - startIndex);
+
+    tokenStr = std::string(buf + startIndex, cursor - startIndex);
+
+    if(tokenStr[0] == '~' || strchr(tokenStr.c_str(), '/') != nullptr) {
+        return CompletorKind::FILE;
+    } else {
+        return CompletorKind::CMD;
+    }
+}
+
+
+DSCandidates *DSContext_complete(DSContext *ctx, const char *buf, size_t cursor) {
+    if(ctx == nullptr || buf == nullptr || cursor == 0) {
+        return nullptr;
+    }
 
     DSCandidates *c = new DSCandidates();
-    if(str[0] == '~' || strchr(str.c_str(), '/') != nullptr) {
-        completeFileName(str, c->candidates);
-    } else {
-        completeCommandName(ctx->ctx, str, c->candidates);
+    std::string tokenStr;
+    switch(selectCompletor(buf, cursor, tokenStr)) {
+    case CompletorKind::EMPTY:
+        break;  // do nothing
+    case CompletorKind::CMD:
+        completeCommandName(ctx->ctx, tokenStr, c->candidates);
+        break;
+    case CompletorKind::FILE:
+        completeFileName(tokenStr, c->candidates);
+        break;
     }
 
     // sort and deduplicate
