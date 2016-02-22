@@ -9,7 +9,7 @@ set CTRLD \004
 
 expect {
     -re "\\$ $" {
-        send "    \t    \r"
+        send "        \r"
     }
     default {
         send_error "mismatch first prompt"

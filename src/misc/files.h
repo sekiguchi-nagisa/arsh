@@ -61,6 +61,7 @@ inline void getFileList(const char *dirPath, bool recursive, std::vector<std::st
                 dirList.push_back(std::move(name));
             }
         } while(true);
+        closedir(dir);
     }
 }
 
