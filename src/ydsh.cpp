@@ -764,7 +764,7 @@ static void completeCommandName(RuntimeContext &ctx, const std::string &token,
 }
 
 static void completeFileName(const std::string &token, std::vector<std::string> &results, bool onlyExec = true) {
-    auto s = token.find_last_of('/');
+    const auto s = token.find_last_of('/');
 
     // complete tilde
     if(token[0] == '~' && s == std::string::npos) {
@@ -781,23 +781,30 @@ static void completeFileName(const std::string &token, std::vector<std::string> 
     }
 
     // complete file name
-    std::string targetDir = ".";
-    bool isRoot = s == 0;
-    if(isRoot) {
+
+    /**
+     * resolve directory path
+     */
+    std::string targetDir;
+    if(s == 0) {
         targetDir = "/";
     } else if(s != std::string::npos) {
         targetDir = token.substr(0, s);
+        if(targetDir[0] == '~') {
+            targetDir = expandTilde(targetDir.c_str());
+        }
+    } else {
+        targetDir = ".";
     }
 
-    std::string qualifiedName;
-    if(token[0] == '~') {
-        targetDir = expandTilde(targetDir.c_str());
-        qualifiedName = expandTilde(token.c_str());
-    } else if(s != std::string::npos) {
-        qualifiedName = token;
+    /**
+     * resolve name
+     */
+    std::string name;
+    if(s != std::string::npos) {
+        name = token.substr(s + 1);
     } else {
-        qualifiedName = "./";
-        qualifiedName += token;
+        name = token;
     }
 
     DIR *dir = opendir(targetDir.c_str());
@@ -812,19 +819,16 @@ static void completeFileName(const std::string &token, std::vector<std::string> 
             break;
         }
 
-        if(strcmp(entry->d_name, "..") == 0 || strcmp(entry->d_name, ".") == 0) {
-            continue;
-        }
+        if(startsWith(entry->d_name, name.c_str())) {
+            if(name.empty() && (strcmp(entry->d_name, "..") == 0 || strcmp(entry->d_name, ".") == 0)) {
+                continue;
+            }
 
-        std::string fullpath(targetDir);
-        if(!isRoot) {
+            std::string fullpath(targetDir);
             fullpath += '/';
-        }
-        fullpath += entry->d_name;
+            fullpath += entry->d_name;
 
-        if(startsWith(fullpath.c_str(), qualifiedName.c_str())) {
-            if(onlyExec && S_ISREG(getStMode(fullpath.c_str()))
-               && access(fullpath.c_str(), X_OK) != 0) {
+            if(onlyExec && S_ISREG(getStMode(fullpath.c_str())) && access(fullpath.c_str(), X_OK) != 0) {
                 continue;
             }
 
