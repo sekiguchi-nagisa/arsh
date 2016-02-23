@@ -857,9 +857,6 @@ enum class CompletorKind {
 };
 
 static bool isFileName(const std::string &str) {
-    if(str == "." || str == "..") {
-        return true;
-    }
     return !str.empty() && (str[0] == '~' || strchr(str.c_str(), '/') != nullptr);
 }
 
