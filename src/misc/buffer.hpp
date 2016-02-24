@@ -29,7 +29,7 @@ namespace misc {
 namespace __detail_flex_buffer {
 
 /**
- * only available primitive type or pointer type.
+ * only available POD type.
  */
 template <typename T, typename SIZE_T>
 class FlexBuffer {
@@ -41,14 +41,29 @@ public:
 private:
     static_assert(std::is_unsigned<SIZE_T>::value, "need unsigned type");
 
-    static_assert(std::is_enum<T>::value ||
-                  std::is_arithmetic<T>::value ||
-                  std::is_pointer<T>::value, "forbidden type");
+    static_assert(std::is_pod<T>::value, "forbidden type");
 
     size_type maxSize;
     size_type usedSize;
 
     T *data;
+
+    /**
+     * expand memory of old.
+     * if old is null, only allocate.
+     */
+    static T *allocArray(T *old, SIZE_T size) {
+        T *ptr = static_cast<T *>(realloc(old, sizeof(T) * size));
+        if(ptr == nullptr) {
+            throw std::bad_alloc();
+        }
+        return ptr;
+    }
+
+    /**
+     * if out of range, throw exception
+     */
+    void checkRange(size_type index) const;
 
 public:
     NON_COPYABLE(FlexBuffer);
@@ -58,7 +73,8 @@ public:
      */
     explicit FlexBuffer(size_type initSize) :
             maxSize(initSize < MINIMUM_CAPACITY ? MINIMUM_CAPACITY : initSize),
-            usedSize(0), data(new T[this->maxSize]) { }
+            usedSize(0),
+            data(allocArray(nullptr, this->maxSize)) { }
 
     /**
      * for lazy allocation
@@ -69,7 +85,7 @@ public:
             maxSize(buffer.maxSize), usedSize(buffer.usedSize), data(extract(std::move(buffer))) { }
 
     ~FlexBuffer() {
-        delete[] this->data;
+        free(this->data);
     }
 
     FlexBuffer<T, SIZE_T> &operator+=(T value);
@@ -114,14 +130,53 @@ public:
      */
     void reserve(size_type reservingSize);
 
-    T &operator[](size_type index) const noexcept {
+    T *begin() {
+        return this->data;
+    }
+
+    T *end() {
+        return this->data + this->usedSize;
+    }
+
+    const T *begin() const {
+        return this->data;
+    }
+
+    const T *end() const {
+        return this->data + this->usedSize;
+    }
+
+    T &front() {
+        return this->operator[](0);
+    }
+
+    const T &front() const {
+        return this->operator[](0);
+    }
+
+    T &back() {
+        return this->operator[](this->usedSize - 1);
+    }
+
+    const T &back() const {
+        return this->operator[](this->usedSize - 1);
+    }
+
+    T &operator[](size_type index) {
         return this->data[index];
     }
 
-    T &at(size_type index) const;
+    const T &operator[](size_type index) const {
+        return this->data[index];
+    }
+
+    T &at(size_type index);
+
+    const T &at(size_type index) const;
 
     /**
      * extract data. after call it, maxSize and usedSize is 0, and data is null.
+     * call free() to release returned pointer.
      */
     static T *extract(FlexBuffer<T, SIZE_T> &&buf) noexcept {
         buf.maxSize = 0;
@@ -141,6 +196,17 @@ const typename FlexBuffer<T, SIZE_T>::size_type FlexBuffer<T, SIZE_T>::MINIMUM_C
 
 template <typename T, typename SIZE_T>
 const typename FlexBuffer<T, SIZE_T>::size_type FlexBuffer<T, SIZE_T>::MAXIMUM_CAPACITY = static_cast<SIZE_T>(-1);
+
+template <typename T, typename SIZE_T>
+void FlexBuffer<T, SIZE_T>::checkRange(size_type index) const {
+    if(index >= this->usedSize) {
+        std::string str("size is: ");
+        str += std::to_string(this->usedSize);
+        str += ", but index is: ";
+        str += std::to_string(index);
+        throw std::out_of_range(str);
+    }
+}
 
 template <typename T, typename SIZE_T>
 FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::operator+=(T value) {
@@ -192,22 +258,19 @@ void FlexBuffer<T, SIZE_T>::reserve(size_type reservingSize) {
         }
 
         this->maxSize = newSize;
-        T *newData = new T[this->maxSize];
-        memcpy(newData, this->data, sizeof(T) * this->usedSize);
-        delete[] this->data;
-        this->data = newData;
+        this->data = allocArray(this->data, newSize);
     }
 }
 
 template <typename T, typename SIZE_T>
-T &FlexBuffer<T, SIZE_T>::at(size_type index) const {
-    if(index >= this->usedSize) {
-        std::string str("size is: ");
-        str += std::to_string(this->usedSize);
-        str += ", but index is: ";
-        str += std::to_string(index);
-        throw std::out_of_range(str);
-    }
+T &FlexBuffer<T, SIZE_T>::at(size_type index) {
+    this->checkRange(index);
+    return this->data[index];
+}
+
+template <typename T, typename SIZE_T>
+const T &FlexBuffer<T, SIZE_T>::at(size_type index) const {
+    this->checkRange(index);
     return this->data[index];
 }
 

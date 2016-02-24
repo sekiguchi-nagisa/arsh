@@ -174,6 +174,55 @@ TEST(BufferTest, case5) {
     buffer.append(v, size);
 }
 
+TEST(BufferTest, case6) {
+    IBuffer buffer;
+
+    buffer += 1;
+    buffer += 2;
+    buffer += 3;
+
+    // const iterator
+    auto &r = static_cast<const IBuffer &>(buffer);
+    unsigned int count = 1;
+    for(auto &e : r) {
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(count, e));
+        count++;
+    }
+
+    // iterator
+    for(auto &e : buffer) {
+        e++;
+    }
+
+    count = 2;
+    for(auto &e : r) {
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(count, e));
+        count++;
+    }
+
+    for(unsigned int i = 0; i < 3; i++) {   // test const at
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(i + 2, r.at(i)));
+    }
+
+    // test front, back
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, buffer.front()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, r.front()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, buffer.back()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, r.back()));
+}
+
+TEST(BufferTest, case7) {   // test append own
+    IBuffer buffer;
+    buffer += 23;
+    buffer += 43;
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_THROW(buffer += buffer, std::invalid_argument));
+
+    buffer += std::move(buffer);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, buffer.size()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(23u, buffer[0]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(43u, buffer[1]));
+}
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
