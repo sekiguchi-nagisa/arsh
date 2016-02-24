@@ -27,8 +27,11 @@
 #include <config.h>
 #include "context.h"
 #include "symbol.h"
+#include "logger.h"
+#include "../parser/parser.h"
 #include "../misc/num.h"
 #include "../misc/time.h"
+#include "../misc/files.h"
 
 namespace ydsh {
 namespace core {
@@ -878,6 +881,379 @@ pid_t RuntimeContext::xwaitpid(pid_t pid, int &status, int options) {
     }
     return ret;
 }
+
+// for input completion
+
+static void append(CStrBuffer &buf, const char *str) {
+    buf += strdup(str);
+}
+
+static void append(CStrBuffer &buf, const std::string &str) {
+    append(buf, str.c_str());
+}
+
+static std::vector<std::string> computePathList(const char *pathVal) {
+    std::vector<std::string> result;
+    std::string buf;
+    assert(pathVal != nullptr);
+
+    for(unsigned int i = 0; pathVal[i] != '\0'; i++) {
+        char ch = pathVal[i];
+        if(ch == ':') {
+            result.push_back(std::move(buf));
+            buf = "";
+        } else {
+            buf += ch;
+        }
+    }
+    if(!buf.empty()) {
+        result.push_back(std::move(buf));
+    }
+
+    // expand tilde
+    for(auto &s : result) {
+        if(s[0] == '~') {
+            std::string expanded = expandTilde(s.c_str());
+            std::swap(s, expanded);
+        }
+    }
+
+    return result;
+}
+
+static bool startsWith(const char *s1, const char *s2) {
+    return s1 != nullptr && s2 != nullptr && strstr(s1, s2) == s1;
+}
+
+/**
+ * append candidates to results.
+ * token may be empty string.
+ */
+static void completeCommandName(RuntimeContext &ctx, const std::string &token,
+                                CStrBuffer &results) {
+    // search user defined command
+    for(auto &e : ctx.getUdcMap()) {
+        const char *name = e.first;
+        if(startsWith(name, token.c_str())) {
+            append(results, name);
+        }
+    }
+
+    // search builtin command
+    const unsigned int bsize = getBuiltinCommandSize();
+    for(unsigned int i = 0; i < bsize; i++) {
+        const char *name = getBultinCommandName(i);
+        if(startsWith(name, token.c_str())) {
+            append(results, name);
+        }
+    }
+
+
+    // search external command
+    const char *path = getenv("PATH");
+    if(path == nullptr) {
+        return;
+    }
+
+    auto pathList(computePathList(path));
+    for(const auto &p : pathList) {
+        DIR *dir = opendir(p.c_str());
+        if(dir == nullptr) {
+            continue;
+        }
+
+        dirent *entry;
+        while(true) {
+            entry = readdir(dir);
+            if(entry == nullptr) {
+                break;
+            }
+            if(entry->d_type == DT_REG || entry->d_type == DT_LNK || entry->d_type == DT_UNKNOWN) {
+                const char *name = entry->d_name;
+                if(startsWith(name, token.c_str())) {
+                    std::string fullpath(p);
+                    fullpath += '/';
+                    fullpath += name;
+                    if(access(fullpath.c_str(), X_OK) == 0) {
+                        append(results, name);
+                    }
+                }
+            }
+        }
+        closedir(dir);
+    }
+}
+
+static void completeFileName(const std::string &token, CStrBuffer &results, bool onlyExec = true) {
+    const auto s = token.find_last_of('/');
+
+    // complete tilde
+    if(token[0] == '~' && s == std::string::npos) {
+        for(struct passwd *entry = getpwent(); entry != nullptr; entry = getpwent()) {
+            if(startsWith(entry->pw_name, token.c_str() + 1)) {
+                std::string name("~");
+                name += entry->pw_name;
+                name += '/';
+                append(results, name);
+            }
+        }
+        endpwent();
+        return;
+    }
+
+    // complete file name
+
+    /**
+     * resolve directory path
+     */
+    std::string targetDir;
+    if(s == 0) {
+        targetDir = "/";
+    } else if(s != std::string::npos) {
+        targetDir = token.substr(0, s);
+        if(targetDir[0] == '~') {
+            targetDir = expandTilde(targetDir.c_str());
+        }
+    } else {
+        targetDir = ".";
+    }
+
+    /**
+     * resolve name
+     */
+    std::string name;
+    if(s != std::string::npos) {
+        name = token.substr(s + 1);
+    } else {
+        name = token;
+    }
+
+    DIR *dir = opendir(targetDir.c_str());
+    if(dir == nullptr) {
+        return;
+    }
+
+    dirent *entry;
+    while(true) {
+        entry = readdir(dir);
+        if(entry == nullptr) {
+            break;
+        }
+
+        if(startsWith(entry->d_name, name.c_str())) {
+            if(name.empty() && (strcmp(entry->d_name, "..") == 0 || strcmp(entry->d_name, ".") == 0)) {
+                continue;
+            }
+
+            std::string fullpath(targetDir);
+            fullpath += '/';
+            fullpath += entry->d_name;
+
+            if(onlyExec && S_ISREG(getStMode(fullpath.c_str())) && access(fullpath.c_str(), X_OK) != 0) {
+                continue;
+            }
+
+            std::string name = entry->d_name;
+            if(S_ISDIR(getStMode(fullpath.c_str()))) {
+                name += '/';
+            }
+            append(results, name);
+        }
+    }
+    closedir(dir);
+}
+
+static void completeExpectedToken(const std::string &token, CStrBuffer &results) {
+    if(!token.empty()) {
+        append(results, token);
+    }
+}
+
+enum class CompletorKind {
+    NONE,
+    CMD,    // command name without '/'
+    QCMD,   // command name with '/'
+    FILE,
+    EXPECT,
+};
+
+static bool isFileName(const std::string &str) {
+    return !str.empty() && (str[0] == '~' || strchr(str.c_str(), '/') != nullptr);
+}
+
+static bool isRedirOp(TokenKind kind) {
+    switch(kind) {
+    case REDIR_IN_2_FILE:
+    case REDIR_OUT_2_FILE:
+    case REDIR_OUT_2_FILE_APPEND:
+    case REDIR_ERR_2_FILE:
+    case REDIR_ERR_2_FILE_APPEND:
+    case REDIR_MERGE_ERR_2_OUT_2_FILE:
+    case REDIR_MERGE_ERR_2_OUT_2_FILE_APPEND:
+    case REDIR_MERGE_ERR_2_OUT:
+    case REDIR_MERGE_OUT_2_ERR:
+        return true;
+    default:
+        return false;
+    }
+}
+
+static CompletorKind selectCompletor(const std::string &line, std::string &tokenStr) {
+    CompletorKind kind = CompletorKind::NONE;
+
+    const unsigned int cursor = line.size() - 1; //   ignore last newline
+
+    Lexer lexer("<line>", line.c_str());
+    TokenTracker tracker;
+    try {
+        Parser parser;
+        parser.setTracker(&tracker);
+        RootNode rootNode;
+        parser.parse(lexer, rootNode);
+
+        const auto &tokenPairs = tracker.getTokenPairs();
+        const unsigned int tokenSize = tokenPairs.size();
+
+        if(tokenSize > 2) {
+            unsigned int lastIndex = tokenSize - 1;
+            lastIndex--;    // skip EOS
+
+            if(tokenPairs[lastIndex].first == RBC) {
+                kind = CompletorKind::CMD;
+                goto END;
+            }
+
+            if(tokenPairs[lastIndex].first == TokenKind::LINE_END) {
+                if(lexer.toTokenText(tokenPairs[lastIndex].second) == ";") {    // terminate with ';'
+                    kind = CompletorKind::CMD;
+                    goto END;
+                }
+
+                lastIndex--; // skip LINE_END
+                TokenKind k = tokenPairs[lastIndex].first;
+                Token token = tokenPairs[lastIndex].second;
+
+                if(k == COMMAND) {
+                    if(token.pos + token.size == cursor) {
+                        tokenStr = lexer.toTokenText(token);
+                        kind = isFileName(tokenStr) ? CompletorKind::QCMD : CompletorKind::CMD;
+                        goto END;
+                    }
+                }
+
+                if(k == CMD_ARG_PART) {
+                    if(token.pos + token.size == cursor) {
+                        assert(lastIndex > 0);
+                        auto prevKind = tokenPairs[lastIndex - 1].first;
+                        auto prevToken = tokenPairs[lastIndex - 1].second;
+
+                        /**
+                         * if previous token is redir op,
+                         * or if spaces exist between current and previous
+                         */
+                        if(isRedirOp(prevKind) || prevToken.pos + prevToken.size < token.pos) {
+                            tokenStr = lexer.toTokenText(token);
+                            kind = CompletorKind::FILE;
+                            goto END;
+                        }
+                    }
+                }
+
+                if(token.pos + token.size < cursor) {
+                    kind = CompletorKind::FILE;
+                    goto END;
+                }
+            }
+        }
+    } catch(const ParseError &e) {
+        LOG(DUMP_CONSOLE, "error kind: " << e.getErrorKind());
+
+
+        if(strcmp(e.getErrorKind(), "NoViableAlter") == 0) {
+            if(strstr(e.getMessage().c_str(), toString(COMMAND)) != nullptr) {
+                kind = CompletorKind::CMD;
+                goto END;
+            }
+            if(strstr(e.getMessage().c_str(), toString(CMD_ARG_PART)) != nullptr) {
+                kind = CompletorKind::FILE;
+                goto END;
+            }
+        } else if(strcmp(e.getErrorKind(), "TokenMismatched") == 0) {
+            std::string t = "expected: ";
+            std::string expected = e.getMessage().substr(e.getMessage().find(t) + t.size());
+            LOG(DUMP_CONSOLE, "expected: " << expected);
+            if(expected.size() < 2 || (expected.front() != '<' && expected.back() != '>')) {
+                tokenStr = std::move(expected);
+                kind = CompletorKind::EXPECT;
+                goto END;
+            }
+        }
+    }
+
+    END:
+    LOG_L(DUMP_CONSOLE, [&](std::ostream &stream) {
+        stream << "token size: " << tracker.getTokenPairs().size() << std::endl;
+        for(auto &t : tracker.getTokenPairs()) {
+            stream << "kind: " << toString(t.first) << ", token: "
+            << t.second << ", text: " << lexer.toTokenText(t.second) << std::endl;
+        }
+
+        switch(kind) {
+        case CompletorKind::NONE:
+            stream << "ckind: NONE" << std::endl;
+            break;
+        case CompletorKind::CMD:
+            stream << "ckind: CMD" << std::endl;
+            break;
+        case CompletorKind::QCMD:
+            stream << "ckind: QCMD" << std::endl;
+            break;
+        case CompletorKind::FILE:
+            stream << "ckind: FILE" << std::endl;
+            break;
+        case CompletorKind::EXPECT:
+            stream << "ckind: EXPECT" << std::endl;
+            break;
+        }
+    });
+
+    return kind;
+}
+
+CStrBuffer RuntimeContext::completeLine(const std::string &line) {
+    assert(!line.empty() && line.back() == '\n');
+
+    CStrBuffer sbuf;
+    std::string tokenStr;
+    switch(selectCompletor(line, tokenStr)) {
+    case CompletorKind::NONE:
+        break;  // do nothing
+    case CompletorKind::CMD:
+        completeCommandName(*this, tokenStr, sbuf);
+        break;
+    case CompletorKind::QCMD:
+        completeFileName(tokenStr, sbuf);
+        break;
+    case CompletorKind::FILE:
+        completeFileName(tokenStr, sbuf, false);
+        break;
+    case CompletorKind::EXPECT:
+        completeExpectedToken(tokenStr, sbuf);
+        break;
+    }
+
+    // sort and deduplicate
+    std::sort(sbuf.begin(), sbuf.end(), [](char *x, char *y) {
+        return strcmp(x, y) < 0;
+    });
+    auto iter = std::unique(sbuf.begin(), sbuf.end(), [](char *x, char *y) {
+        return strcmp(x, y) == 0;
+    });
+    sbuf.erase(iter, sbuf.end());
+
+    return std::move(sbuf);
+}
+
 
 
 // implementation of some system util

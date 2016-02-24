@@ -101,6 +101,7 @@ static int builtin___puts(RuntimeContext *ctx, const BuiltinContext &bctx);
 static int builtin_cd(RuntimeContext *ctx, const BuiltinContext &bctx);
 static int builtin_check_env(RuntimeContext *ctx, const BuiltinContext &bctx);
 static int builtin_command(RuntimeContext *ctx, const BuiltinContext &bctx);
+static int builtin_complete(RuntimeContext *ctx, const BuiltinContext &bctx);
 static int builtin_echo(RuntimeContext *ctx, const BuiltinContext &bctx);
 static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx);
 static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx);
@@ -139,6 +140,8 @@ const struct {
                         "    If -p option is specified, search command from default PATH.\n"
                         "    If -V or -v option are specified, print description of COMMAND.\n"
                         "    -V option shows more detailed information."},
+        {"complete", builtin_complete, "[line]",
+                "    Show completion candidates."},
         {"echo", builtin_echo, "[-neE] [arg ...]",
                 "    Print argument to standard output and print new line.\n"
                 "    Options:\n"
@@ -1269,6 +1272,28 @@ static int builtin_hash(RuntimeContext *ctx, const BuiltinContext &bctx) {
                 fprintf(bctx.fp_stdout, "%s=%s\n", iter->first, iter->second.c_str());
             }
         }
+    }
+    return 0;
+}
+
+// for completor debugging
+static int builtin_complete(RuntimeContext *ctx, const BuiltinContext &bctx) {
+    if(bctx.argc != 2) {
+        showUsage(bctx);
+        return 1;
+    }
+
+    std::string line(bctx.argv[1]);
+    line += '\n';
+    auto c = ctx->completeLine(line);
+    for(const auto &e : c) {
+        fputs(e, bctx.fp_stdout);
+        fputc('\n', bctx.fp_stdout);
+    }
+
+    // free candidates
+    for(auto &e : c) {
+        free(e);
     }
     return 0;
 }

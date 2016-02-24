@@ -26,6 +26,7 @@
 #include "object.h"
 #include "symbol_table.h"
 #include "proc.h"
+#include "../misc/buffer.hpp"
 
 namespace ydsh {
 namespace core {
@@ -108,6 +109,8 @@ public:
         return this->map.cend();
     }
 };
+
+using CStrBuffer = misc::FlexBuffer<char *>;
 
 class RuntimeContext {
 private:
@@ -626,6 +629,12 @@ public:
      * waitpid wrapper.
      */
     pid_t xwaitpid(pid_t pid, int &status, int options);
+
+    /**
+     * return completion candidates.
+     * line must be terminate newline.
+     */
+    CStrBuffer completeLine(const std::string &line);
 
     // for command invocation
 

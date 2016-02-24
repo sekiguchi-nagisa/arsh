@@ -357,6 +357,22 @@ TEST(API, case3) {
     DSContext_delete(&ctx);
 }
 
+TEST(API, case4) {
+    SCOPED_TRACE("");
+
+    // null arguments
+    DSContext_complete(nullptr, nullptr, 1, nullptr);
+
+    DSContext *ctx = DSContext_create();
+    DSCandidates c;
+    DSContext_complete(ctx, "~", 1, &c);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(c.values != nullptr));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(c.size > 0));
+
+    DSCandidates_release(&c);
+    DSContext_delete(&ctx);
+}
+
 TEST(PID, case1) {
     SCOPED_TRACE("");
 
