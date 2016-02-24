@@ -139,7 +139,7 @@ TEST(BufferTest, case3) {
     });
 }
 
-typedef __detail_flex_buffer::FlexBuffer<const char *, unsigned char> StrBuffer;
+typedef FlexBuffer<const char *, unsigned char> StrBuffer;
 TEST(BufferTest, case4) {
     StrBuffer buffer;
 
