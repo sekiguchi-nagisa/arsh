@@ -66,6 +66,10 @@ private:
     }
 
     void moveElements(iterator src, iterator dest) {
+        if(src == dest) {
+            return;
+        }
+
         memmove(dest, src, sizeof(T) * (this->end() - src));
         if(src < dest) {
             this->usedSize += (dest - src);
@@ -202,8 +206,8 @@ public:
     iterator erase(const_iterator pos);
 
     /**
-     * first must not equivalent to this->end().
-     * first must be less than last.
+     * first must be last or less. (first <= last).
+     * last must be this->end() or less. (last <= this->end())
      * first is inclusive, last is exclusive.
      */
     iterator erase(const_iterator first, const_iterator last);
@@ -322,8 +326,8 @@ typename FlexBuffer<T, SIZE_T>::iterator FlexBuffer<T, SIZE_T>::erase(const_iter
 
 template <typename T, typename SIZE_T>
 typename FlexBuffer<T, SIZE_T>::iterator FlexBuffer<T, SIZE_T>::erase(const_iterator first, const_iterator last) {
-    assert(first < this->end());
-    assert(first < last);
+    assert(last <= this->end());
+    assert(first <= last);
 
     const size_type index = first - this->begin();
     iterator iter = this->begin() + index;

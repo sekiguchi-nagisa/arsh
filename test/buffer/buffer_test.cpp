@@ -322,6 +322,11 @@ TEST(BufferTest, case11) {
         ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(i, e));
         i++;
     }
+
+    buffer.erase(buffer.end(), buffer.end());
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, buffer.size()));
+    buffer.erase(buffer.begin() + 1, buffer.begin() + 1);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, buffer.size()));
 }
 
 
