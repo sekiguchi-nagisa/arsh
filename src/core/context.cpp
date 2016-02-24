@@ -1251,7 +1251,7 @@ CStrBuffer RuntimeContext::completeLine(const std::string &line) {
     });
     sbuf.erase(iter, sbuf.end());
 
-    return std::move(sbuf);
+    return sbuf;
 }
 
 
