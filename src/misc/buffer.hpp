@@ -20,6 +20,7 @@
 #include <cstring>
 #include <type_traits>
 #include <exception>
+#include <cassert>
 
 #include "noncopyable.h"
 
@@ -33,7 +34,12 @@ namespace misc {
 template <typename T, typename SIZE_T = unsigned int>
 class FlexBuffer {
 public:
-    typedef SIZE_T size_type;
+    using size_type = SIZE_T;
+    using iterator = T *;
+    using const_iterator = const T *;
+    using reference = T &;
+    using const_reference = const T &;
+
     static const size_type MINIMUM_CAPACITY;
     static const size_type MAXIMUM_CAPACITY;
 
@@ -57,6 +63,18 @@ private:
             throw std::bad_alloc();
         }
         return ptr;
+    }
+
+    void moveElements(iterator src, iterator dest) {
+        if(src == dest) {
+            return;
+        }
+        memmove(dest, src, sizeof(T) * (this->end() - src));
+        if(src < dest) {
+            this->usedSize += (dest - src);
+        } else {
+            this->usedSize -= (src - dest);
+        }
     }
 
     /**
@@ -129,49 +147,61 @@ public:
      */
     void reserve(size_type reservingSize);
 
-    T *begin() {
+    iterator begin() {
         return this->data;
     }
 
-    T *end() {
+    iterator end() {
         return this->data + this->usedSize;
     }
 
-    const T *begin() const {
+    const_iterator begin() const {
         return this->data;
     }
 
-    const T *end() const {
+    const_iterator end() const {
         return this->data + this->usedSize;
     }
 
-    T &front() {
+    reference front() {
         return this->operator[](0);
     }
 
-    const T &front() const {
+    const_reference front() const {
         return this->operator[](0);
     }
 
-    T &back() {
+    reference back() {
         return this->operator[](this->usedSize - 1);
     }
 
-    const T &back() const {
+    const_reference back() const {
         return this->operator[](this->usedSize - 1);
     }
 
-    T &operator[](size_type index) {
+    reference operator[](size_type index) {
         return this->data[index];
     }
 
-    const T &operator[](size_type index) const {
+    const_reference operator[](size_type index) const {
         return this->data[index];
     }
 
-    T &at(size_type index);
+    reference at(size_type index);
 
-    const T &at(size_type index) const;
+    const_reference at(size_type index) const;
+
+    /**
+     * pos must not equivalent to this->end().
+     */
+    iterator erase(const_iterator pos);
+
+    /**
+     * first must not equivalent to this->end().
+     * first must be less than last.
+     * first is inclusive, last is exclusive.
+     */
+    iterator erase(const_iterator first, const_iterator last);
 
     /**
      * extract data. after call it, maxSize and usedSize is 0, and data is null.
@@ -262,15 +292,40 @@ void FlexBuffer<T, SIZE_T>::reserve(size_type reservingSize) {
 }
 
 template <typename T, typename SIZE_T>
-T &FlexBuffer<T, SIZE_T>::at(size_type index) {
+typename FlexBuffer<T, SIZE_T>::reference FlexBuffer<T, SIZE_T>::at(size_type index) {
     this->checkRange(index);
     return this->data[index];
 }
 
 template <typename T, typename SIZE_T>
-const T &FlexBuffer<T, SIZE_T>::at(size_type index) const {
+typename FlexBuffer<T, SIZE_T>::const_reference FlexBuffer<T, SIZE_T>::at(size_type index) const {
     this->checkRange(index);
     return this->data[index];
+}
+
+template <typename T, typename SIZE_T>
+typename FlexBuffer<T, SIZE_T>::iterator FlexBuffer<T, SIZE_T>::erase(const_iterator pos) {
+    assert(pos < this->end());
+
+    const size_type index = pos - this->begin();
+    iterator iter = this->begin() + index;
+
+    this->moveElements(iter + 1, iter);
+
+    return iter;
+}
+
+template <typename T, typename SIZE_T>
+typename FlexBuffer<T, SIZE_T>::iterator FlexBuffer<T, SIZE_T>::erase(const_iterator first, const_iterator last) {
+    assert(first < this->end());
+    assert(first < last);
+
+    const size_type index = first - this->begin();
+    iterator iter = this->begin() + index;
+
+    this->moveElements(iter + (last - first), iter);
+
+    return iter;
 }
 
 typedef FlexBuffer<char> ByteBuffer;

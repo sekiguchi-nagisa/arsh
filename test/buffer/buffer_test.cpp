@@ -188,11 +188,13 @@ TEST(BufferTest, case6) {
         ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(count, e));
         count++;
     }
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, r.end() - r.begin()));
 
     // iterator
     for(auto &e : buffer) {
         e++;
     }
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, buffer.end() - buffer.begin()));
 
     count = 2;
     for(auto &e : r) {
@@ -223,6 +225,99 @@ TEST(BufferTest, case7) {   // test append own
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(23u, buffer[0]));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(43u, buffer[1]));
 }
+
+TEST(BufferTest, case8) {
+    IBuffer buffer;
+    for(unsigned int i = 0; i < 5; i++) {
+        buffer += i;
+    }
+
+    auto iter = buffer.erase(buffer.begin() + 2);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, buffer.size()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, *iter));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, iter - buffer.begin()));
+
+    buffer += 5;
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(5u, buffer.size()));
+
+    unsigned int r[] = {
+            0, 1, 3, 4, 5
+    };
+
+    unsigned int i = 0;
+    for(auto &e : buffer) {
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(r[i], e));
+        i++;
+    }
+}
+
+TEST(BufferTest, case9) {
+    IBuffer buffer;
+    for(unsigned int i = 0; i < 10; i++) {
+        buffer += i;
+    }
+
+    auto iter = buffer.erase(buffer.begin() + 2, buffer.begin() + 5);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(7u, buffer.size()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(5u, *iter));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, iter - buffer.begin()));
+
+    buffer += 10;
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(8u, buffer.size()));
+
+    unsigned int r[] = {
+            0, 1, 5, 6, 7, 8, 9, 10,
+    };
+
+    unsigned int i = 0;
+    for(auto &e : buffer) {
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(r[i], e));
+        i++;
+    }
+}
+
+TEST(BufferTest, case10) {
+    IBuffer buffer;
+    for(unsigned int i = 0; i < 10; i++) {
+        buffer += i;
+    }
+
+    auto iter = buffer.erase(buffer.begin(), buffer.begin() + 3);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(7u, buffer.size()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, *iter));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, iter - buffer.begin()));
+
+    buffer += 10;
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(8u, buffer.size()));
+
+    unsigned int i = 0;
+    for(auto &e : buffer) {
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(i + 3, e));
+        i++;
+    }
+}
+
+TEST(BufferTest, case11) {
+    IBuffer buffer;
+    for(unsigned int i = 0; i < 10; i++) {
+        buffer += i;
+    }
+
+    auto iter = buffer.erase(buffer.begin() + 3, buffer.end());
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, buffer.size()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(iter == buffer.end()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, iter - buffer.begin()));
+
+    buffer += 3;
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, buffer.size()));
+
+    unsigned int i = 0;
+    for(auto &e : buffer) {
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(i, e));
+        i++;
+    }
+}
+
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
