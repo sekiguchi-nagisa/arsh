@@ -197,14 +197,10 @@ static std::size_t encoding_readCode(int fd, char *buf, std::size_t bufSize, int
 }
 
 static void completeCallback(const char *buf, size_t cursor, linenoiseCompletions *lc) {
-    DSCandidates *c = DSContext_complete(dsContext, buf, cursor);
-    if(c != nullptr) {
-        const size_t size = DSCandidates_size(c);
-        for(size_t index = 0; index < size; index++) {
-            linenoiseAddCompletion(lc, DSCandidates_get(c, index));
-        }
-    }
-    DSCandidates_release(&c);
+    DSCandidates c;
+    DSContext_complete(dsContext, buf, cursor, &c);
+    lc->len = c.size;
+    lc->cvec = c.values;
 }
 
 /**

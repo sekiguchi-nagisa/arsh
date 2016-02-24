@@ -40,6 +40,7 @@
 #include "core/logger.h"
 #include "misc/num.h"
 #include "misc/files.h"
+#include "misc/buffer.hpp"
 
 
 using namespace ydsh;
@@ -667,9 +668,15 @@ const char *DSContext_errorKind(DSContext *ctx) {
 
 // for input complete
 
-struct DSCandidates {
-    std::vector<std::string> candidates;
-};
+using CStrBuffer = FlexBuffer<char *>;
+
+static void append(CStrBuffer &buf, const char *str) {
+    buf += strdup(str);
+}
+
+static void append(CStrBuffer &buf, const std::string &str) {
+    append(buf, str.c_str());
+}
 
 static std::vector<std::string> computePathList(const char *pathVal) {
     std::vector<std::string> result;
@@ -709,12 +716,12 @@ static bool startsWith(const char *s1, const char *s2) {
  * token may be empty string.
  */
 static void completeCommandName(RuntimeContext &ctx, const std::string &token,
-                                std::vector<std::string> &results) {
+                                CStrBuffer &results) {
     // search user defined command
     for(auto &e : ctx.getUdcMap()) {
         const char *name = e.first;
         if(startsWith(name, token.c_str())) {
-            results.push_back(name);
+            append(results, name);
         }
     }
 
@@ -723,7 +730,7 @@ static void completeCommandName(RuntimeContext &ctx, const std::string &token,
     for(unsigned int i = 0; i < bsize; i++) {
         const char *name = getBultinCommandName(i);
         if(startsWith(name, token.c_str())) {
-            results.push_back(name);
+            append(results, name);
         }
     }
 
@@ -754,7 +761,7 @@ static void completeCommandName(RuntimeContext &ctx, const std::string &token,
                     fullpath += '/';
                     fullpath += name;
                     if(access(fullpath.c_str(), X_OK) == 0) {
-                        results.push_back(name);
+                        append(results, name);
                     }
                 }
             }
@@ -763,17 +770,17 @@ static void completeCommandName(RuntimeContext &ctx, const std::string &token,
     }
 }
 
-static void completeFileName(const std::string &token, std::vector<std::string> &results, bool onlyExec = true) {
+static void completeFileName(const std::string &token, CStrBuffer &results, bool onlyExec = true) {
     const auto s = token.find_last_of('/');
 
     // complete tilde
     if(token[0] == '~' && s == std::string::npos) {
         for(struct passwd *entry = getpwent(); entry != nullptr; entry = getpwent()) {
-            std::string name("~");
-            name += entry->pw_name;
-            if(startsWith(name.c_str(), token.c_str())) {
+            if(startsWith(entry->pw_name, token.c_str() + 1)) {
+                std::string name("~");
+                name += entry->pw_name;
                 name += '/';
-                results.push_back(std::move(name));
+                append(results, name);
             }
         }
         endpwent();
@@ -836,15 +843,15 @@ static void completeFileName(const std::string &token, std::vector<std::string> 
             if(S_ISDIR(getStMode(fullpath.c_str()))) {
                 name += '/';
             }
-            results.push_back(std::move(name));
+            append(results, name);
         }
     }
     closedir(dir);
 }
 
-static void completeExpectedToken(const std::string &token, std::vector<std::string> &results) {
+static void completeExpectedToken(const std::string &token, CStrBuffer &results) {
     if(!token.empty()) {
-        results.push_back(token);
+        append(results, token);
     }
 }
 
@@ -1002,50 +1009,61 @@ static CompletorKind selectCompletor(const char *buf, size_t cursor, std::string
 }
 
 
-DSCandidates *DSContext_complete(DSContext *ctx, const char *buf, size_t cursor) {
-    if(ctx == nullptr || buf == nullptr || cursor == 0) {
-        return nullptr;
+void DSContext_complete(DSContext *ctx, const char *buf, size_t cursor, DSCandidates *c) {
+    if(c == nullptr) {
+        return;
     }
 
-    DSCandidates *c = new DSCandidates();
+    // init candidates
+    c->size = 0;
+    c->values = nullptr;
+
+    if(ctx == nullptr || buf == nullptr || cursor == 0) {
+        return;
+    }
+
+    CStrBuffer sbuf;
     std::string tokenStr;
     switch(selectCompletor(buf, cursor, tokenStr)) {
     case CompletorKind::NONE:
         break;  // do nothing
     case CompletorKind::CMD:
-        completeCommandName(ctx->ctx, tokenStr, c->candidates);
+        completeCommandName(ctx->ctx, tokenStr, sbuf);
         break;
     case CompletorKind::QCMD:
-        completeFileName(tokenStr, c->candidates);
+        completeFileName(tokenStr, sbuf);
         break;
     case CompletorKind::FILE:
-        completeFileName(tokenStr, c->candidates, false);
+        completeFileName(tokenStr, sbuf, false);
         break;
     case CompletorKind::EXPECT:
-        completeExpectedToken(tokenStr, c->candidates);
+        completeExpectedToken(tokenStr, sbuf);
         break;
     }
 
     // sort and deduplicate
-    std::sort(c->candidates.begin(), c->candidates.end());
-    c->candidates.erase(std::unique(c->candidates.begin(), c->candidates.end()), c->candidates.end());
-    return c;
+    std::sort(sbuf.begin(), sbuf.end(), [](char *x, char *y) {
+        return strcmp(x, y) < 0;
+    });
+    auto iter = std::unique(sbuf.begin(), sbuf.end(), [](char *x, char *y) {
+        return strcmp(x, y) == 0;
+    });
+    sbuf.erase(iter, sbuf.end());
+
+    // write to DSCandidates
+    c->size = sbuf.size();
+    c->values = CStrBuffer::extract(std::move(sbuf));
 }
 
-size_t DSCandidates_size(const DSCandidates *c) {
-    return c == nullptr ? 0 : c->candidates.size();
-}
-
-const char *DSCandidates_get(const DSCandidates *c, size_t index) {
-    if(c == nullptr || index >= c->candidates.size()) {
-        return nullptr;
-    }
-    return c->candidates[index].c_str();
-}
-
-void DSCandidates_release(DSCandidates **c) {
+void DSCandidates_release(DSCandidates *c) {
     if(c != nullptr) {
-        delete (*c);
-        *c = nullptr;
+        for(unsigned int i = 0; i < c->size; i++) {
+            free(c->values[i]);
+        }
+        c->size = 0;
+        if(c->values != nullptr) {
+            free(c->values);
+            c->values = nullptr;
+        }
     }
 }

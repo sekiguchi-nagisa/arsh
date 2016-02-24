@@ -159,36 +159,32 @@ unsigned int DSContext_errorLineNum(DSContext *ctx);
 const char *DSContext_errorKind(DSContext *ctx);
 
 // for input completion
-struct DSCandidates;
-typedef struct DSCandidates DSCandidates;
+typedef struct {
+    /**
+     * size of values.
+     */
+    unsigned int size;
+
+    /**
+     * if size is 0, it is null.
+     */
+    char **values;
+} DSCandidates;
 
 /**
- * return the candidates of possible token.
- * if buf is null, return null.
+ * fill the candidates of possible token.
+ * if buf or ctx is null, write 0 and null to c.
+ * if c is null, do nothing.
  * call DSCandidates_release() to release candidate.
  */
-DSCandidates *DSContext_complete(DSContext *ctx, const char *buf, size_t cursor);
-
-/**
- * get size of candidates.
- * if c is null, return 0.
- */
-size_t DSCandidates_size(const DSCandidates *c);
-
-/**
- * get a specified candidate.
- * if index is out of range, return null.
- * not return empty string.
- * if c is null, return null.
- */
-const char *DSCandidates_get(const DSCandidates *c, size_t index);
+void DSContext_complete(DSContext *ctx, const char *buf, size_t cursor, DSCandidates *c);
 
 /**
  * release buffer of candidates.
- * after call it, assign null.
+ * after call it, assign 0 and null to c.
  * if c is null, do nothing.
  */
-void DSCandidates_release(DSCandidates **c);
+void DSCandidates_release(DSCandidates *c);
 
 
 #ifdef __cplusplus
