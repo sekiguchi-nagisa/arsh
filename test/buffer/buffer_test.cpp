@@ -12,6 +12,7 @@ TEST(BufferTest, case1) {
     ASSERT_NO_FATAL_FAILURE({
         ASSERT_EQ(0u, buffer.size());
         ASSERT_EQ(0u, buffer.capacity());
+        ASSERT_TRUE(buffer.empty());
     });
 
     // append
@@ -211,6 +212,11 @@ TEST(BufferTest, case6) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, r.front()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, buffer.back()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, r.back()));
+
+    // test pop_back
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, buffer.size()));
+    buffer.pop_back();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, buffer.size()));
 }
 
 TEST(BufferTest, case7) {   // test append own

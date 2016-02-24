@@ -66,9 +66,6 @@ private:
     }
 
     void moveElements(iterator src, iterator dest) {
-        if(src == dest) {
-            return;
-        }
         memmove(dest, src, sizeof(T) * (this->end() - src));
         if(src < dest) {
             this->usedSize += (dest - src);
@@ -112,7 +109,7 @@ public:
      */
     FlexBuffer<T, SIZE_T> &operator+=(const FlexBuffer<T, SIZE_T> &buffer);
 
-    FlexBuffer<T, SIZE_T> &operator=(FlexBuffer<T, SIZE_T> &&buffer) noexcept ;
+    FlexBuffer<T, SIZE_T> &operator=(FlexBuffer<T, SIZE_T> &&buffer) noexcept;
     FlexBuffer<T, SIZE_T> &operator+=(FlexBuffer<T, SIZE_T> &&buffer);
 
     /**
@@ -126,6 +123,10 @@ public:
 
     size_type size() const {
         return this->usedSize;
+    }
+
+    bool empty() const {
+        return this->size() == 0;
     }
 
     const T *const get() const {
@@ -177,6 +178,10 @@ public:
 
     const_reference back() const {
         return this->operator[](this->usedSize - 1);
+    }
+
+    void pop_back() {
+        this->usedSize--;
     }
 
     reference operator[](size_type index) {
@@ -254,14 +259,14 @@ FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::operator=(FlexBuffer<T, SIZE_T> &&
     FlexBuffer<T, SIZE_T> tmp(std::move(buffer));
     this->swap(tmp);
     return *this;
-};
+}
 
 template <typename T, typename SIZE_T>
 FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::operator+=(FlexBuffer<T, SIZE_T> &&buffer) {
     FlexBuffer<T, SIZE_T> tmp(std::move(buffer));
     *this += tmp;
     return *this;
-};
+}
 
 template <typename T, typename SIZE_T>
 FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::append(const T *value, size_type size) {
