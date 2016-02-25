@@ -109,7 +109,7 @@ $assertArray($(file '.'), $(complete 'echo '))
 $assertArray(['../', './'], $(complete 'echo .'))
 $assertArray($(file '/' | grep '^b'), $(complete 'echo /b'))
 $assertArray($(file '/usr/bin'), $(complete 'echo > /usr/bin/'))
-#$assertArray($(file ~), $(complete 'echo 23 ~/'))
+$assertArray($(file ~), $(complete 'echo 23 ~/'))
 
 
 # complete expected token

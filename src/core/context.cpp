@@ -929,8 +929,7 @@ static bool startsWith(const char *s1, const char *s2) {
  * append candidates to results.
  * token may be empty string.
  */
-static void completeCommandName(RuntimeContext &ctx, const std::string &token,
-                                CStrBuffer &results) {
+static void completeCommandName(RuntimeContext &ctx, const std::string &token, CStrBuffer &results) {
     // search user defined command
     for(auto &e : ctx.getUdcMap()) {
         const char *name = e.first;
@@ -973,7 +972,7 @@ static void completeCommandName(RuntimeContext &ctx, const std::string &token,
                 std::string fullpath(p);
                 fullpath += '/';
                 fullpath += name;
-                if(S_ISREG(getStMode(fullpath.c_str())) &&access(fullpath.c_str(), X_OK) == 0) {
+                if(S_ISREG(getStMode(fullpath.c_str())) && access(fullpath.c_str(), X_OK) == 0) {
                     append(results, name);
                 }
             }
