@@ -1,9 +1,29 @@
+function assertEQ($a : typeof($@.size()), $b : typeof($@.size())) : Boolean {
+    if($a != $b) {
+        echo 1>&2 expect: $a, but actual: $b
+        return $false
+    }
+    return $true
+}
+
+function assertSEQ($a : String, $b : String) : Boolean {
+    if($a != $b) {
+        echo 1>&2 expect: $a, but actual: $b
+        return $false
+    }
+    return $true
+}
+
+
 function assertArray($x : Array<String>, $y : Array<String>) {
-    assert($x.size() == $y.size())
+    assert($assertEQ($x.size(), $y.size()))
 
     let size = $x.size()
     for(var i = 0; $i < $size; $i++) {
-        assert($x[$i] == $y[$i])
+        if(not $assertSEQ($x[$i], $y[$i])) {
+            for(var j = 0; $j < $size; $j++) { echo $x[$j] $y[$j]; }
+            assert($false)
+        }
     }
 }
 
@@ -37,7 +57,7 @@ cmd() {
 }
 
 ## perform sort command with 'C' locale
-export-env LC_COLLATE = 'C'
+export-env LC_ALL = 'C'
 $IFS = $'\n'
 
 
