@@ -968,15 +968,13 @@ static void completeCommandName(RuntimeContext &ctx, const std::string &token,
             if(entry == nullptr) {
                 break;
             }
-            if(entry->d_type == DT_REG || entry->d_type == DT_LNK || entry->d_type == DT_UNKNOWN) {
-                const char *name = entry->d_name;
-                if(startsWith(name, token.c_str())) {
-                    std::string fullpath(p);
-                    fullpath += '/';
-                    fullpath += name;
-                    if(access(fullpath.c_str(), X_OK) == 0) {
-                        append(results, name);
-                    }
+            const char *name = entry->d_name;
+            if(startsWith(name, token.c_str())) {
+                std::string fullpath(p);
+                fullpath += '/';
+                fullpath += name;
+                if(S_ISREG(getStMode(fullpath.c_str())) &&access(fullpath.c_str(), X_OK) == 0) {
+                    append(results, name);
                 }
             }
         }

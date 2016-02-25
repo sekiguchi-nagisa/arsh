@@ -1,0 +1,110 @@
+function assertArray($x : Array<String>, $y : Array<String>) {
+    assert($x.size() == $y.size())
+
+    let size = $x.size()
+    for(var i = 0; $i < $size; $i++) {
+        assert($x[$i] == $y[$i])
+    }
+}
+
+function comp($a : String, $path : String) : Array<String> {
+    import-env PATH
+    let old = $PATH
+    $PATH = $path
+
+    var r = $(complete $a)
+
+    $PATH = $old
+    return $r
+}
+
+cmd() {
+    echo cmd
+    help | cut -d ' ' -f 1
+    for($dir in $@) {
+        for($a in $(ls $dir)) {
+            var name = $dir + '/' + $a
+            if(test -f $name && test -x $name) {
+                echo $a
+            }
+        }
+    }
+}
+
+
+# error
+complete
+assert($? == 1)
+
+
+# empty string
+assert($(complete '').empty())
+assert($(complete '     ').empty())
+
+
+# complete command name
+$assertArray($(cmd /bin /usr/bin | sort | uniq | grep '^l'), $comp('l', '/bin:/usr/bin'))
+$assertArray($(cmd | sort | uniq | grep '^p'), $comp('p', ''))
+$assertArray($(cmd /bin /usr/bin | sort | uniq), $comp('{}', '/bin:/usr/bin'))
+$assertArray($(cmd /bin /usr/bin | sort | uniq), $comp('echo; ', '/bin:/usr/bin'))
+$assertArray($(cmd /bin /usr/bin ~/bin | sort | uniq), $comp('echo; ', '/bin:/usr/bin:~/bin'))
+
+
+# complete tilde
+user() {
+    basename ~ && cut -d: -f1 /etc/passwd | grep -v '#'
+}
+
+__tilde_each() {
+    while(read -f $'\n') {
+        echo '~'$REPLY/
+    }
+}
+
+tilde() {
+    user | sort | uniq | __tilde_each
+}
+
+$assertArray($(tilde), $(complete '~'))
+$assertArray($(tilde | grep '~r'), $(complete '~r'))
+
+
+# complete file name
+__file() {
+    let dir = $@[0]
+    for($a in $(ls -A $dir)) {
+        var name = $dir + '/' + $a
+        if(test -d $name) {
+            echo $a/
+        } else {
+            if($# > 1) {
+                if(test -f $name) {
+                    if(test -x $name) {} else {
+                        continue
+                    }
+                }
+            }
+            echo $a
+        }
+    }
+}
+
+file() {
+    __file $@ | sort | uniq
+}
+
+
+$assertArray($(ls -p /bin/ | sort), $(complete '/bin/'))
+$assertArray($(file '.' 1), $(complete './'))
+$assertArray($(file '.'), $(complete 'echo '))
+$assertArray(['../', './'], $(complete 'echo .'))
+$assertArray($(file '/' | grep '^b'), $(complete 'echo /b'))
+$assertArray($(file '/usr/bin'), $(complete 'echo > /usr/bin/'))
+$assertArray($(file ~), $(complete 'echo 23 ~/'))
+
+
+# complete expected token
+$assertArray([')'], $(complete 'for(var i = 0; $i < 23; $i++'))
+$assertArray(['='], $(complete 'var a'))
+
+true
