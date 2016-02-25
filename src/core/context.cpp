@@ -885,6 +885,17 @@ pid_t RuntimeContext::xwaitpid(pid_t pid, int &status, int options) {
 // for input completion
 
 static void append(CStrBuffer &buf, const char *str) {
+    // find inserting position
+    for(auto iter = buf.begin(); iter != buf.end(); ++iter) {
+        if(strcmp(str, *iter) <= 0) {
+            if(strcmp(str, *iter) < 0) {
+                buf.insert(iter, strdup(str));
+            }
+            return;
+        }
+    }
+
+    // not found, append to last
     buf += strdup(str);
 }
 
@@ -1238,16 +1249,6 @@ CStrBuffer RuntimeContext::completeLine(const std::string &line) {
         completeExpectedToken(tokenStr, sbuf);
         break;
     }
-
-    // sort and deduplicate
-    std::sort(sbuf.begin(), sbuf.end(), [](char *x, char *y) {
-        return strcmp(x, y) < 0;
-    });
-    auto iter = std::unique(sbuf.begin(), sbuf.end(), [](char *x, char *y) {
-        return strcmp(x, y) == 0;
-    });
-    sbuf.erase(iter, sbuf.end());
-
     return sbuf;
 }
 

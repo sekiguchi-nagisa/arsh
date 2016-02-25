@@ -330,6 +330,40 @@ TEST(BufferTest, case11) {
 }
 
 
+TEST(BufferTest, case12) {
+    IBuffer buffer;
+
+    // insert first
+    auto iter = buffer.insert(buffer.begin(), 1);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, buffer.size()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(buffer.begin(), iter));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, *iter));
+
+    iter = buffer.insert(buffer.begin(), 0);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, buffer.size()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(buffer.begin(), iter));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, *iter));
+
+    // insert last
+    iter = buffer.insert(buffer.end(), 3);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, buffer.size()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(buffer.end() - 1, iter));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, *iter));
+
+    // insert
+    iter = buffer.insert(buffer.begin() + 2, 2);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, buffer.size()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(buffer.begin() + 2, iter));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, *iter));
+
+    unsigned int count = 0;
+    for(auto &e : buffer) {
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(count, e));
+        count++;
+    }
+}
+
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

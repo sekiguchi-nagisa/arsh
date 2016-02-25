@@ -201,6 +201,12 @@ public:
     const_reference at(size_type index) const;
 
     /**
+     * pos (begin() <= pos <= end()).
+     * return position inserted element.
+     */
+    iterator insert(const_iterator pos, T value);
+
+    /**
      * pos must not equivalent to this->end().
      */
     iterator erase(const_iterator pos);
@@ -310,6 +316,20 @@ template <typename T, typename SIZE_T>
 typename FlexBuffer<T, SIZE_T>::const_reference FlexBuffer<T, SIZE_T>::at(size_type index) const {
     this->checkRange(index);
     return this->data[index];
+}
+
+template <typename T, typename SIZE_T>
+typename FlexBuffer<T, SIZE_T>::iterator FlexBuffer<T, SIZE_T>::insert(const_iterator pos, T value) {
+    assert(pos >= this->begin() && pos <= this->end());
+
+    const size_type index = pos - this->begin();
+    this->reserve(this->size() + 1);
+    iterator iter = this->begin() + index;
+
+    this->moveElements(iter, iter + 1);
+    this->data[index] = value;
+
+    return iter;
 }
 
 template <typename T, typename SIZE_T>

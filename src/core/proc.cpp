@@ -1289,10 +1289,7 @@ static int builtin_complete(RuntimeContext *ctx, const BuiltinContext &bctx) {
     for(const auto &e : c) {
         fputs(e, bctx.fp_stdout);
         fputc('\n', bctx.fp_stdout);
-    }
 
-    // free candidates
-    for(auto &e : c) {
         free(e);
     }
     return 0;
