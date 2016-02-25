@@ -42,7 +42,7 @@ namespace core {
 
 FilePathCache::~FilePathCache() {
     for(auto &pair : this->map) {
-        delete pair.first;
+        free(const_cast<char *>(pair.first));
     }
 }
 
@@ -99,7 +99,7 @@ const char *FilePathCache::searchPath(const char *cmdName, unsigned char option)
             } else {
                 // set to cache
                 if(this->map.size() == MAX_CACHE_SIZE) {
-                    delete this->map.begin()->first;
+                    free(const_cast<char *>(this->map.begin()->first));
                     this->map.erase(this->map.begin());
                 }
                 auto pair = this->map.insert(std::make_pair(strdup(cmdName), std::move(resolvedPath)));
