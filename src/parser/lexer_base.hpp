@@ -252,7 +252,9 @@ std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token) const {
     for(unsigned int i = lineToken.pos; i < token.pos;) {
         int code = 0;
         i += misc::UnicodeUtil::utf8ToCodePoint((char *)(this->buf + i), this->getUsedSize() - i, code);
-        assert(code > -1);
+        if(code < 0) {
+            return marker;
+        }
         if(code == '\t') {
             marker += "\t";
             continue;
@@ -269,7 +271,9 @@ std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token) const {
         unsigned int prev = i;
         int code = 0;
         i += misc::UnicodeUtil::utf8ToCodePoint((char *)(this->buf + i), this->getUsedSize() - i, code);
-        assert(code > -1);
+        if(code < 0) {
+            return marker;
+        }
         if(code == '\t') {
             marker += "\t";
             continue;

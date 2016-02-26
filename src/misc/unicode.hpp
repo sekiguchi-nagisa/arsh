@@ -66,6 +66,7 @@ struct UnicodeUtil {
 
     /**
      * get width of unicode code point.
+     * return -2, if codePoint is negate.
      * return -1, if control character.
      * return 0, if combining character or null character.
      * return 2, if wide width character.
@@ -154,6 +155,9 @@ template <bool T>
 int UnicodeUtil<T>::width(int codePoint, AmbiguousCharWidth ambiguousCharWidth) {
 #include "unicode_width.h"
 
+    if(codePoint < 0) {
+        return -2;
+    }
     if(codePoint == 0) {
         return 0;   // null character width is 0
     }

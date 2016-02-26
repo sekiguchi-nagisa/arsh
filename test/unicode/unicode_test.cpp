@@ -204,6 +204,9 @@ TEST_F(UnicodeTest, illegal) {
         char b[] = {static_cast<char>(253)};
         ASSERT_NO_FATAL_FAILURE(this->assertIllegal(b, 1));
     }
+
+    // illegal code point
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-2, UnicodeUtil::width(-1, UnicodeUtil::ONE_WIDTH)));
 }
 
 
@@ -212,6 +215,3 @@ int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
-
-
-
