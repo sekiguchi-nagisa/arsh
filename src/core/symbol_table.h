@@ -61,6 +61,16 @@ public:
      * remove handle from handleMap, and delete it.
      */
     void deleteHandle(const std::string &symbolName);
+
+    using const_iterator = std::unordered_map<std::string, FieldHandle *>::const_iterator;
+
+    const_iterator cbegin() const {
+        return this->handleMap.begin();
+    }
+
+    const_iterator cend() const {
+        return this->handleMap.end();
+    }
 };
 
 class SymbolTable {
@@ -141,6 +151,13 @@ public:
     unsigned int getMaxGVarIndex() const;
 
     bool inGlobalScope() const;
+
+    /**
+     * get const_iterator of global scope.
+     */
+    Scope::const_iterator cbeginGlobal() const;
+
+    Scope::const_iterator cendGlobal() const;
 };
 
 } // namespace core

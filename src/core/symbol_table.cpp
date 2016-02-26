@@ -170,5 +170,15 @@ bool SymbolTable::inGlobalScope() const {
     return this->scopes.size() == 1;
 }
 
+Scope::const_iterator SymbolTable::cbeginGlobal() const {
+    assert(this->inGlobalScope());
+    return this->scopes.back()->cbegin();
+}
+
+Scope::const_iterator SymbolTable::cendGlobal() const {
+    assert(this->inGlobalScope());
+    return this->scopes.back()->cend();
+}
+
 } // namespace core
 } // namespace ydsh

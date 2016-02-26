@@ -887,8 +887,9 @@ pid_t RuntimeContext::xwaitpid(pid_t pid, int &status, int options) {
 static void append(CStrBuffer &buf, const char *str) {
     // find inserting position
     for(auto iter = buf.begin(); iter != buf.end(); ++iter) {
-        if(strcmp(str, *iter) <= 0) {
-            if(strcmp(str, *iter) < 0) {
+        int r = strcmp(str, *iter);
+        if(r <= 0) {
+            if(r < 0) {
                 buf.insert(iter, strdup(str));
             }
             return;
@@ -1071,6 +1072,16 @@ static void completeFileName(const std::string &token, CStrBuffer &results, bool
     closedir(dir);
 }
 
+static void completeGlobalVarName(RuntimeContext &ctx, const std::string &token, CStrBuffer &results) {
+    const auto &symbolTable = ctx.getSymbolTable();
+
+    for(auto iter = symbolTable.cbeginGlobal(); iter != symbolTable.cendGlobal(); ++iter) {
+        if(!token.empty() && startsWith(iter->first.c_str(), token.c_str() + 1)) {
+            append(results, iter->first);
+        }
+    }
+}
+
 static void completeExpectedToken(const std::string &token, CStrBuffer &results) {
     if(!token.empty()) {
         append(results, token);
@@ -1082,6 +1093,7 @@ enum class CompletorKind {
     CMD,    // command name without '/'
     QCMD,   // command name with '/'
     FILE,
+    VAR,    // complete global variable name
     EXPECT,
 };
 
@@ -1141,6 +1153,14 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
                 TokenKind k = tokenPairs[lastIndex].first;
                 Token token = tokenPairs[lastIndex].second;
 
+                if(k == APPLIED_NAME || k == SPECIAL_NAME) {
+                    if(token.pos + token.size == cursor) {
+                        tokenStr = lexer.toTokenText(token);
+                        kind = CompletorKind::VAR;
+                        goto END;
+                    }
+                }
+
                 if(k == COMMAND) {
                     if(token.pos + token.size == cursor) {
                         tokenStr = lexer.toTokenText(token);
@@ -1195,6 +1215,15 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
                 kind = CompletorKind::EXPECT;
                 goto END;
             }
+        } else if(strcmp(e.getErrorKind(), "InvalidToken") == 0) {
+            Token token = e.getErrorToken();
+            std::string str = lexer.toTokenText(token);
+            if(str == "$" && token.pos + token.size == cursor &&
+                    strstr(e.getMessage().c_str(), toString(APPLIED_NAME)) != nullptr) {
+                tokenStr = std::move(str);
+                kind = CompletorKind::VAR;
+                goto END;
+            }
         }
     }
 
@@ -1218,6 +1247,9 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
             break;
         case CompletorKind::FILE:
             stream << "ckind: FILE" << std::endl;
+            break;
+        case CompletorKind::VAR:
+            stream << "ckind: VAR" << std::endl;
             break;
         case CompletorKind::EXPECT:
             stream << "ckind: EXPECT" << std::endl;
@@ -1244,6 +1276,9 @@ CStrBuffer RuntimeContext::completeLine(const std::string &line) {
         break;
     case CompletorKind::FILE:
         completeFileName(tokenStr, sbuf, false);
+        break;
+    case CompletorKind::VAR:
+        completeGlobalVarName(*this, tokenStr, sbuf);
         break;
     case CompletorKind::EXPECT:
         completeExpectedToken(tokenStr, sbuf);

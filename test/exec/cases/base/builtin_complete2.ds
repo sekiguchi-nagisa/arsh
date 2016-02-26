@@ -1,0 +1,42 @@
+function z1($a : typeof($@.size()), $b : typeof($@.size())) : Boolean {
+    if($a != $b) {
+        echo 1>&2 expect: $a, but actual: $b
+        return $false
+    }
+    return $true
+}
+
+function z2($a : String, $b : String) : Boolean {
+    if($a != $b) {
+        echo 1>&2 expect: $a, but actual: $b
+        return $false
+    }
+    return $true
+}
+
+
+function assertArray($x : Array<String>, $y : Array<String>) {
+    assert($z1($x.size(), $y.size()))
+
+    let size = $x.size()
+    for(var i = 0; $i < $size; $i++) {
+        if(not $z2($x[$i], $y[$i])) {
+            for(var j = 0; $j < $size; $j++) { echo $x[$j] $y[$j]; }
+            assert($false)
+        }
+    }
+}
+
+{
+    var gvars = [
+        '#', '$',
+        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+        '?', '@',
+        'DBus', 'FALSE', 'False', 'IFS', 'OLDPWD', 'OSTYPE',
+        'PS1', 'PS2', 'PWD', 'REPLY', 'TRUE', 'True',
+        'YDSH_VERSION', 'assertArray', 'false', 'reply', 'true', 'z1', 'z2'
+    ]
+
+    $assertArray($gvars, $(complete '$'))
+}
+
