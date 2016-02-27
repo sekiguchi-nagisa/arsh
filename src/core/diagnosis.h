@@ -72,7 +72,7 @@ enum class TLError : unsigned int {
 const char *getTLErrorKind(TLError e);
 
 constexpr const char *const TL_ERROR_MSG_ARRAY[] = {
-#define GEN_MSG(K, M) #M,
+#define GEN_MSG(K, M) M,
         EACH_TL_ERROR(GEN_MSG)
 #undef GEN_MSG
 };
@@ -202,7 +202,7 @@ enum class TCError : unsigned int {
 const char *getTCErrorKind(TCError e);
 
 constexpr const char *const TC_ERROR_MSG_ARRAY[] = {
-#define GEN_MSG(K, M) #M,
+#define GEN_MSG(K, M) M,
         EACH_TC_ERROR(GEN_MSG)
 #undef GEN_MSG
 };
