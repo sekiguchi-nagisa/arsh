@@ -27,6 +27,7 @@ function assertArray($x : Array<String>, $y : Array<String>) {
     }
 }
 
+# complete global variable name
 {
     var gvars = [
         '#', '$',
@@ -38,5 +39,22 @@ function assertArray($x : Array<String>, $y : Array<String>) {
     ]
 
     $assertArray($gvars, $(complete '$'))
+
+    var gvars2 = [
+        'PS1', 'PS2', 'PWD'
+    ]
+
+    $assertArray($gvars2, $(complete '$P'))
+    $assertArray(new Array<String>(), $(complete '$P '))
 }
 
+
+# no completion candidate
+$assertArray(new Array<String>(), $(complete '34'))
+$assertArray(new Array<String>(), $(complete '34 '))
+$assertArray(new Array<String>(), $(complete 'echo hello ${45}'))
+$assertArray(new Array<String>(), $(complete 'echo hello ${45}./'))
+$assertArray(new Array<String>(), $(complete 'var a = ;'))
+$assertArray(new Array<String>(), $(complete 'var 23'))
+$assertArray(new Array<String>(), $(complete '[  )'))
+$assertArray(new Array<String>(), $(complete 'var 23'))

@@ -77,6 +77,9 @@ $assertArray($(cmd | grep '^p'), $comp('p', ''))
 $assertArray($(cmd /bin /usr/bin), $comp('{}', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin), $comp('echo; ', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin ~/bin), $comp('echo; ', '/bin:/usr/bin:~/bin'))
+$assertArray($(cmd /bin /usr/bin), $comp('{', '/bin:/usr/bin'))
+$assertArray($(cmd /bin /usr/bin | grep '^l'), $comp('{l', '/bin:/usr/bin'))
+$assertArray($(cmd /bin /usr/bin), $comp('echo &&', '/bin:/usr/bin'))
 
 
 # complete tilde
@@ -130,6 +133,11 @@ $assertArray(['../', './'], $(complete 'echo .'))
 $assertArray($(file '/' | grep '^b'), $(complete 'echo /b'))
 $assertArray($(file '/usr/bin'), $(complete 'echo > /usr/bin/'))
 $assertArray($(file ~), $(complete 'echo 23 ~/'))
+$assertArray($(file '.'), $(complete '$(echo '))
+$assertArray($(file '.'), $(complete '{echo hello '))
+$assertArray($(file '.'), $(complete 'echo < '))
+$assertArray($(file '.'), $(complete 'echo >'))
+$assertArray($(file '.'), $(complete 'echo $TRUE '))
 
 
 # complete expected token

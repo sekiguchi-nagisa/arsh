@@ -1118,112 +1118,178 @@ static bool isRedirOp(TokenKind kind) {
     }
 }
 
+static CompletorKind selectWithCmd(const Lexer &lexer, const std::vector<std::pair<TokenKind, Token>> &tokenPairs,
+                                   unsigned int cursor, unsigned int lastIndex,
+                                   std::string &tokenStr, bool exactly = false) {
+    TokenKind kind = tokenPairs[lastIndex].first;
+    Token token = tokenPairs[lastIndex].second;
+
+    if(exactly && kind == LINE_END && lexer.toTokenText(token) != ";" && lastIndex > 0) {
+        lastIndex--;
+        kind = tokenPairs[lastIndex].first;
+        token = tokenPairs[lastIndex].second;
+    }
+
+    switch(kind) {
+    case COMMAND:
+        if(token.pos + token.size == cursor) {
+            tokenStr = lexer.toTokenText(token);
+            return isFileName(tokenStr) ? CompletorKind::QCMD : CompletorKind::CMD;
+        }
+        return CompletorKind::FILE;
+    case CMD_ARG_PART:
+        if(token.pos + token.size == cursor && lastIndex > 0) {
+            auto prevKind = tokenPairs[lastIndex - 1].first;
+            auto prevToken = tokenPairs[lastIndex - 1].second;
+
+            /**
+             * if previous token is redir op,
+             * or if spaces exist between current and previous
+             */
+            if(isRedirOp(prevKind) || prevToken.pos + prevToken.size < token.pos) {
+                tokenStr = lexer.toTokenText(token);
+                return CompletorKind::FILE;
+            }
+            return CompletorKind::NONE;
+        }
+        return CompletorKind::FILE;
+    default:
+        if(!exactly && token.pos + token.size < cursor) {
+            return CompletorKind::FILE;
+        }
+        return CompletorKind::NONE;
+    }
+}
+
 static CompletorKind selectCompletor(const std::string &line, std::string &tokenStr) {
     CompletorKind kind = CompletorKind::NONE;
 
     const unsigned int cursor = line.size() - 1; //   ignore last newline
 
+    // parse input line
     Lexer lexer("<line>", line.c_str());
     TokenTracker tracker;
     try {
-        Parser parser;
-        parser.setTracker(&tracker);
-        RootNode rootNode;
-        parser.parse(lexer, rootNode);
+        {
+            Parser parser;
+            parser.setTracker(&tracker);
+            RootNode rootNode;
+            parser.parse(lexer, rootNode);
+        }
 
         const auto &tokenPairs = tracker.getTokenPairs();
         const unsigned int tokenSize = tokenPairs.size();
 
-        if(tokenSize > 2) {
-            unsigned int lastIndex = tokenSize - 1;
-            lastIndex--;    // skip EOS
+        assert(tokenSize > 0);
 
-            if(tokenPairs[lastIndex].first == RBC) {
+        unsigned int lastIndex = tokenSize - 1;
+
+        if(lastIndex == 0) {
+            goto END;
+        }
+
+        lastIndex--; // skip EOS
+
+        switch(tokenPairs[lastIndex].first) {
+        case RBC:
+            kind = CompletorKind::CMD;
+            goto END;
+        case APPLIED_NAME:
+        case SPECIAL_NAME: {
+            Token token = tokenPairs[lastIndex].second;
+            if(token.pos + token.size == cursor) {
+                tokenStr = lexer.toTokenText(token);
+                kind = CompletorKind::VAR;
+                goto END;
+            }
+            break;
+        }
+        case LINE_END: {
+            if(lexer.toTokenText(tokenPairs[lastIndex].second) == ";") {    // terminate with ';'
                 kind = CompletorKind::CMD;
                 goto END;
             }
 
-            if(tokenPairs[lastIndex].first == TokenKind::LINE_END) {
-                if(lexer.toTokenText(tokenPairs[lastIndex].second) == ";") {    // terminate with ';'
+            lastIndex--; // skip LINE_END
+            kind = selectWithCmd(lexer, tokenPairs, cursor, lastIndex, tokenStr);
+            goto END;
+        }
+        default:
+            break;
+        }
+    } catch(const ParseError &e) {
+        LOG_L(DUMP_CONSOLE, [&](std::ostream &stream) {
+            stream << "error kind: " << e.getErrorKind() << std::endl;
+            stream << "kind: " << toString(e.getTokenKind())
+            << ", token: " << e.getErrorToken()
+            << ", text: " << lexer.toTokenText(e.getErrorToken()) << std::endl;
+        });
+
+        Token token = e.getErrorToken();
+        auto &tokenPairs = tracker.getTokenPairs();
+        if(token.pos + token.size < cursor) {
+            goto END;
+        }
+
+        switch(e.getTokenKind()) {
+        case EOS:
+        case LINE_END: {
+            if(lexer.toTokenText(token) == ";") {
+                goto END;
+            }
+
+            if(strcmp(e.getErrorKind(), "NoViableAlter") == 0) {
+                if(!tokenPairs.empty()) {
+                    kind = kind = selectWithCmd(lexer, tokenPairs, cursor, tokenPairs.size() - 1, tokenStr, true);
+                    if(kind != CompletorKind::NONE) {
+                        goto END;
+                    }
+                }
+
+                if(strstr(e.getMessage().c_str(), toString(COMMAND)) != nullptr) {
                     kind = CompletorKind::CMD;
                     goto END;
                 }
-
-                lastIndex--; // skip LINE_END
-                TokenKind k = tokenPairs[lastIndex].first;
-                Token token = tokenPairs[lastIndex].second;
-
-                if(k == APPLIED_NAME || k == SPECIAL_NAME) {
-                    if(token.pos + token.size == cursor) {
-                        tokenStr = lexer.toTokenText(token);
-                        kind = CompletorKind::VAR;
-                        goto END;
-                    }
-                }
-
-                if(k == COMMAND) {
-                    if(token.pos + token.size == cursor) {
-                        tokenStr = lexer.toTokenText(token);
-                        kind = isFileName(tokenStr) ? CompletorKind::QCMD : CompletorKind::CMD;
-                        goto END;
-                    }
-                }
-
-                if(k == CMD_ARG_PART) {
-                    if(token.pos + token.size == cursor) {
-                        assert(lastIndex > 0);
-                        auto prevKind = tokenPairs[lastIndex - 1].first;
-                        auto prevToken = tokenPairs[lastIndex - 1].second;
-
-                        /**
-                         * if previous token is redir op,
-                         * or if spaces exist between current and previous
-                         */
-                        if(isRedirOp(prevKind) || prevToken.pos + prevToken.size < token.pos) {
-                            tokenStr = lexer.toTokenText(token);
-                            kind = CompletorKind::FILE;
-                            goto END;
-                        }
-                    }
-                }
-
-                if(token.pos + token.size < cursor) {
+                if(strstr(e.getMessage().c_str(), toString(CMD_ARG_PART)) != nullptr) {
                     kind = CompletorKind::FILE;
                     goto END;
                 }
+            } else if(strcmp(e.getErrorKind(), "TokenMismatched") == 0) {
+                std::string t = "expected: ";
+                std::string expected = e.getMessage().substr(e.getMessage().find(t) + t.size());
+                LOG(DUMP_CONSOLE, "expected: " << expected);
+
+                if(!tokenPairs.empty()) {
+                    kind = kind = selectWithCmd(lexer, tokenPairs, cursor, tokenPairs.size() - 1, tokenStr, true);
+                    if(kind != CompletorKind::NONE) {
+                        goto END;
+                    }
+                }
+
+                if(expected.size() < 2 || (expected.front() != '<' && expected.back() != '>')) {
+                    tokenStr = std::move(expected);
+                    kind = CompletorKind::EXPECT;
+                    goto END;
+                }
+                if(expected == toString(COMMAND)) {
+                    kind = CompletorKind::CMD;
+                    goto END;
+                }
             }
+            break;
         }
-    } catch(const ParseError &e) {
-        LOG(DUMP_CONSOLE, "error kind: " << e.getErrorKind());
-
-
-        if(strcmp(e.getErrorKind(), "NoViableAlter") == 0) {
-            if(strstr(e.getMessage().c_str(), toString(COMMAND)) != nullptr) {
-                kind = CompletorKind::CMD;
-                goto END;
-            }
-            if(strstr(e.getMessage().c_str(), toString(CMD_ARG_PART)) != nullptr) {
-                kind = CompletorKind::FILE;
-                goto END;
-            }
-        } else if(strcmp(e.getErrorKind(), "TokenMismatched") == 0) {
-            std::string t = "expected: ";
-            std::string expected = e.getMessage().substr(e.getMessage().find(t) + t.size());
-            LOG(DUMP_CONSOLE, "expected: " << expected);
-            if(expected.size() < 2 || (expected.front() != '<' && expected.back() != '>')) {
-                tokenStr = std::move(expected);
-                kind = CompletorKind::EXPECT;
-                goto END;
-            }
-        } else if(strcmp(e.getErrorKind(), "InvalidToken") == 0) {
-            Token token = e.getErrorToken();
+        case INVALID: {
             std::string str = lexer.toTokenText(token);
             if(str == "$" && token.pos + token.size == cursor &&
-                    strstr(e.getMessage().c_str(), toString(APPLIED_NAME)) != nullptr) {
+               strstr(e.getMessage().c_str(), toString(APPLIED_NAME)) != nullptr) {
                 tokenStr = std::move(str);
                 kind = CompletorKind::VAR;
                 goto END;
             }
+            break;
+        }
+        default:
+            break;
         }
     }
 
@@ -1231,8 +1297,9 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
     LOG_L(DUMP_CONSOLE, [&](std::ostream &stream) {
         stream << "token size: " << tracker.getTokenPairs().size() << std::endl;
         for(auto &t : tracker.getTokenPairs()) {
-            stream << "kind: " << toString(t.first) << ", token: "
-            << t.second << ", text: " << lexer.toTokenText(t.second) << std::endl;
+            stream << "kind: " << toString(t.first)
+            << ", token: " << t.second
+            << ", text: " << lexer.toTokenText(t.second) << std::endl;
         }
 
         switch(kind) {
