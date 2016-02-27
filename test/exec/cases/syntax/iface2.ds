@@ -1,0 +1,5 @@
+#$test($result = 'parse', $lineNum = 4, $errorKind = 'NoViableAlter', $status = 1)
+
+interface org.hoge.hoge {
+    $a
+}

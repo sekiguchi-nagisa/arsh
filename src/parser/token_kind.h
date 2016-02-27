@@ -67,7 +67,6 @@
     /* applied name */\
     TOKEN(APPLIED_NAME                       , "<$ Name>") \
     TOKEN(SPECIAL_NAME                       , "<$ Char>") \
-    TOKEN(VAR_NAME                           , "<Variable Name>") \
     /* bracket */\
     TOKEN(LP                                 , "(") /* ( */\
     TOKEN(RP                                 , ")") /* ) */\

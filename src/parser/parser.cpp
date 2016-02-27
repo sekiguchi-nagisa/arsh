@@ -604,8 +604,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
         this->parse_statementEnd();
         return std::move(tryNode);
     }
-    case VAR:
-    case LET: {
+    EACH_LA_varDecl(GEN_LA_CASE) {
         auto node(this->parse_variableDeclaration());
         this->parse_statementEnd();
         return node;
@@ -654,20 +653,20 @@ std::unique_ptr<BlockNode> Parser::parse_block() {
 }
 
 std::unique_ptr<Node> Parser::parse_variableDeclaration() {
-    switch(CUR_KIND()) {
-    EACH_LA_varDecl(GEN_LA_CASE) {
-        unsigned int startPos = START_POS();
-        bool readOnly = this->consume() != VAR;
+    unsigned int startPos = START_POS();
+    bool readOnly = false;
+    if(CUR_KIND() == VAR) {
+        this->expect(VAR);
+    } else {
+        this->expect(LET);
+        readOnly = true;
+    }
 
-        Token token = this->expect(IDENTIFIER);
-        std::string name(this->lexer->toName(token));
-        this->expect(ASSIGN);
-        return uniquify<VarDeclNode>(startPos, std::move(name),
-                                     this->parse_commandOrExpression().release(), readOnly);
-    }
-    default:
-        E_ALTER(EACH_LA_varDecl(GEN_LA_ALTER));
-    }
+    Token token = this->expect(IDENTIFIER);
+    std::string name(this->lexer->toName(token));
+    this->expect(ASSIGN);
+    return uniquify<VarDeclNode>(startPos, std::move(name),
+                                 this->parse_commandOrExpression().release(), readOnly);
 }
 
 std::unique_ptr<Node> Parser::parse_forStatement() {
@@ -860,9 +859,7 @@ void Parser::parse_redirOption(std::unique_ptr<CmdNode> &node) {
         break;
     }
     default:
-        E_ALTER(
-                EACH_LA_redir(GEN_LA_ALTER)
-        );
+        E_ALTER(EACH_LA_redir(GEN_LA_ALTER));
     }
 }
 
@@ -1252,18 +1249,13 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
 std::unique_ptr<Node> Parser::parse_interpolation() {
     switch(CUR_KIND()) {
     case APPLIED_NAME:
-    case SPECIAL_NAME: {
+    case SPECIAL_NAME:
         return this->parse_appliedName(CUR_KIND() == SPECIAL_NAME);
-    }
-    case START_INTERP: {
+    default:
         this->expect(START_INTERP);
         std::unique_ptr<Node> node(this->parse_expression());
         this->expect(RBC);
         return node;
-    }
-    default: {
-        E_ALTER(EACH_LA_interpolation(GEN_LA_ALTER));
-    }
     }
 }
 
