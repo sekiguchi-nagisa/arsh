@@ -41,6 +41,41 @@ expect {
     }
 }
 
+# test multi byte character
+expect {
+    -re "\\$ $" {
+        send "''"
+        send $CTRL_F
+        send $CTRL_F
+        send $CTRL_B
+        send "い"
+        send $CTRL_B
+        send "あ"
+        send $CTRL_F
+        send "う"
+        send $CTRL_B
+        send $CTRL_B
+        send $CTRL_B
+        send $CTRL_B
+        send $CTRL_B
+        send $CTRL_B
+        send "\r"
+    }
+    default {
+        send_error "mismatch first prompt"
+        exit 1
+    }
+}
+
+expect {
+    "(String) あいう" {
+    }
+    default {
+        send_error "mismatch"
+        exit 1
+    }
+}
+
 expect {
     -re "\\$ $" {
         send $CTRLD

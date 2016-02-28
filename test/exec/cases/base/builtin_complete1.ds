@@ -143,5 +143,6 @@ $assertArray($(file '.'), $(complete 'echo $TRUE '))
 # complete expected token
 $assertArray([')'], $(complete 'for(var i = 0; $i < 23; $i++'))
 $assertArray(['='], $(complete 'var a'))
+$assertArray([')'], $(complete '$(echo $TRUE '))
 
 true
