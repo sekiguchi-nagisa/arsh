@@ -743,14 +743,23 @@ std::unique_ptr<Node> Parser::parse_forIter() {
 std::unique_ptr<CatchNode> Parser::parse_catchStatement() {
     unsigned int startPos = START_POS();
     this->expect(CATCH);
-    this->expect(LP);
+
+    bool paren = CUR_KIND() == LP;
+    if(paren) {
+        this->expect(LP);
+    }
+
     Token token = this->expect(APPLIED_NAME);
     std::unique_ptr<TypeNode> typeToken;
     if(CUR_KIND() == COLON) {
         this->expect(COLON, false);
         typeToken = this->parse_typeName();
     }
-    this->expect(RP);
+
+    if(paren) {
+        this->expect(RP);
+    }
+
     std::unique_ptr<BlockNode> blockNode(this->parse_block());
 
     if(typeToken) {

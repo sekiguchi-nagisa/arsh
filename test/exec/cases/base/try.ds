@@ -15,9 +15,9 @@ try {
 
 try {
     [12][3]
-} catch($e : KeyNotFoundError) {
+} catch $e : KeyNotFoundError {
     assert($false)
-} catch($e) {
+} catch $e {
     assert($true)
 }
 
