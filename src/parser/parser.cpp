@@ -672,35 +672,34 @@ std::unique_ptr<Node> Parser::parse_variableDeclaration() {
 std::unique_ptr<Node> Parser::parse_forStatement() {
     unsigned int startPos = START_POS();
     this->expect(FOR);
-    this->expect(LP);
 
-    std::unique_ptr<Node> initNode(this->parse_forInit());
+    if(CUR_KIND() == LP) {  // for
+        this->expect(LP);
 
-    if(dynamic_cast<VarNode *>(initNode.get()) != nullptr) { // treat as for-in
-        std::unique_ptr<VarNode> nameNode(static_cast<VarNode *>(initNode.release()));
+        std::unique_ptr<Node> initNode(this->parse_forInit());
+        this->expect(LINE_END);
 
+        std::unique_ptr<Node> condNode(this->parse_forCond());
+        this->expect(LINE_END);
+
+        std::unique_ptr<Node> iterNode(this->parse_forIter());
+
+        this->expect(RP);
+        std::unique_ptr<BlockNode> blockNode(this->parse_block());
+
+        this->parse_statementEnd();
+        return uniquify<ForNode>(startPos, initNode.release(), condNode.release(),
+                                 iterNode.release(), blockNode.release());
+    } else {    // for-in
+        Token token = this->expect(APPLIED_NAME);
+        auto nameNode = uniquify<VarNode>(token, this->lexer->toName(token));
         this->expect(IN);
         std::unique_ptr<Node> exprNode(this->parse_expression());
-        this->expect(RP);
         std::unique_ptr<BlockNode> blockNode(this->parse_block());
 
         return std::unique_ptr<Node>(
                 createForInNode(startPos, nameNode.release(), exprNode.release(), blockNode.release()));
     }
-
-    this->expect(LINE_END);
-
-    std::unique_ptr<Node> condNode(this->parse_forCond());
-    this->expect(LINE_END);
-
-    std::unique_ptr<Node> iterNode(this->parse_forIter());
-
-    this->expect(RP);
-    std::unique_ptr<BlockNode> blockNode(this->parse_block());
-
-    this->parse_statementEnd();
-    return uniquify<ForNode>(startPos, initNode.release(), condNode.release(),
-                             iterNode.release(), blockNode.release());
 }
 
 std::unique_ptr<Node> Parser::parse_forInit() {

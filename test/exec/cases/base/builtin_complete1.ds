@@ -42,8 +42,8 @@ __cmd() {
     echo cmd
     echo __cmd
     help | cut -d ' ' -f 1
-    for($dir in $@) {
-        for($a in $(ls $dir)) {
+    for $dir in $@ {
+        for $a in $(ls $dir) {
             var name = $dir + '/' + $a
             if(test -f $name && test -x $name) {
                 echo $a;
@@ -104,7 +104,7 @@ $assertArray($(tilde | grep '~r'), $(complete '~r'))
 # complete file name
 __file() {
     let dir = $@[0]
-    for($a in $(ls -A $dir)) {
+    for $a in $(ls -A $dir) {
         var name = $dir + '/' + $a
         if(test -d $name) {
             echo $a/

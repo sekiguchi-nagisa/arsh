@@ -1,11 +1,11 @@
 var array = new Array<Int>()
 
 for
-   (
+
       $a
            in
            [1, 2]
-              )
+
               {
      $array.add($a)
        }

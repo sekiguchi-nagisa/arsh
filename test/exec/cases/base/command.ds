@@ -144,7 +144,7 @@ var d = $(ls)
 assert(not ($d is String))
 assert($d is Array<String>)
 var i = 0;
-for($file in $(ls)) {
+for $file in $(ls) {
     assert($file == $d[$i])
     $i++
 }

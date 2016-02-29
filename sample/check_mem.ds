@@ -35,7 +35,7 @@ function test($a : String) : Boolean {
 function __test_each($data : Array<String>, $test : typeof($test)): Boolean {
     var c = 0
     let size = $data.size()
-    for($t in $data) {
+    for $t in $data {
         if($test($t)) {
             $c++
             echo -e '\e[32m[OK]\e[0m' $t

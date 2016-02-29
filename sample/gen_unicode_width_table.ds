@@ -10,7 +10,7 @@ write() {
 function table($n : String, $v : typeof([""])) {
     write -n "static const struct Interval $n[] = {"
     var i = 0
-    for($e in $v) {
+    for $e in $v {
         if($i % 4 == 0) { write -n -e "\n   "; }
         write -n " $e"
         $i++

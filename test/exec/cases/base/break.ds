@@ -31,7 +31,7 @@ assert($i == 4)
 
 
 # break in for-in
-for($a in [1, 2, 3, 4]) {
+for $a in [1, 2, 3, 4] {
     $i = $a
     if($i == 3) {
         break

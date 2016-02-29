@@ -51,7 +51,7 @@ assert($i == 10)
 # continue in for-in
 $i = 0
 var r = new Array<Int>()
-for($a in [1, 2, 3, 4]) {
+for $a in [1, 2, 3, 4] {
     if($a % 2 == 0) {
         continue
     }
