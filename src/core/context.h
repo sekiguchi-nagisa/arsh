@@ -198,16 +198,6 @@ private:
     MethodHandle *handle_bt;
 
     /**
-     * for builtin cd command
-     */
-    unsigned int OLDPWD_index;
-
-    /**
-     * for builtin cd command
-     */
-    unsigned int PWD_index;
-
-    /**
      * for field splitting (read command, command substitution)
      */
     unsigned int IFS_index;
@@ -566,6 +556,13 @@ public:
      * put stack top value to environment variable.
      */
     void exportEnv(const std::string &envName, unsigned int index, bool isGlobal);
+
+    /**
+     * update environmental variable
+     */
+    void updateEnv(unsigned int index, bool isGlobal);
+
+    void loadEnv(unsigned int index, bool isGlobal);
 
     void pushFuncContext(CallableNode *node) {
         this->callableContextStack.push_back(node);

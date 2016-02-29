@@ -155,8 +155,7 @@ RuntimeContext::RuntimeContext() :
         localStack(new DSValue[DEFAULT_LOCAL_SIZE]),
         localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0),
         localVarOffset(0), offsetStack(), toplevelPrinting(false), assertion(true),
-        handle_STR(nullptr), handle_bt(nullptr),
-        OLDPWD_index(0), PWD_index(0), IFS_index(0),
+        handle_STR(nullptr), handle_bt(nullptr), IFS_index(0),
         callableContextStack(), callStack(), pipelineEvaluator(), udcMap(), pathCache() {
 }
 
@@ -539,24 +538,60 @@ EvalStatus RuntimeContext::importEnv(unsigned int startPos, const std::string &e
         return EvalStatus::THROW;
     }
 
-    DSValue value(new String_Object(this->pool.getStringType(), std::string(env)));
+    DSValue name = DSValue::create<String_Object>(this->pool.getStringType(), envName);
 
     if(isGlobal) {
-        this->setGlobal(index, std::move(value));
+        this->setGlobal(index, std::move(name));
     } else {
-        this->setLocal(index, std::move(value));
+        this->setLocal(index, std::move(name));
     }
+
     return EvalStatus::SUCCESS;
 }
 
 void RuntimeContext::exportEnv(const std::string &envName, unsigned int index, bool isGlobal) {
-    setenv(envName.c_str(),
-           typeAs<String_Object>(this->peek())->getValue(), 1);    //FIXME: check return value and throw
+    // create string obejct for representing env name
+    this->push(DSValue::create<String_Object>(this->getPool().getStringType(), envName));
+
+    // store env name.
     if(isGlobal) {
         this->storeGlobal(index);
     } else {
         this->storeLocal(index);
     }
+
+    // update env
+    this->updateEnv(index, isGlobal);
+}
+
+void RuntimeContext::updateEnv(unsigned int index, bool isGlobal) {
+    // pop stack top and get env value
+    DSValue value = this->pop();
+
+    // load variable (representing env name)
+    if(isGlobal) {
+        this->loadGlobal(index);
+    } else {
+        this->loadLocal(index);
+    }
+
+    DSValue name = this->pop();
+    setenv(typeAs<String_Object>(name)->getValue(),
+           typeAs<String_Object>(value)->getValue(), 1);//FIXME: check return value and throw
+}
+
+void RuntimeContext::loadEnv(unsigned int index, bool isGlobal) {
+    // load variable (representing env name)
+    if(isGlobal) {
+        this->loadGlobal(index);
+    } else {
+        this->loadLocal(index);
+    }
+
+    DSValue name = this->pop();
+    const char *value = getenv(typeAs<String_Object>(name)->getValue());
+    assert(value != nullptr);
+    this->push(DSValue::create<String_Object>(this->getPool().getStringType(), value));
 }
 
 void RuntimeContext::resetState() {
@@ -570,23 +605,11 @@ void RuntimeContext::resetState() {
 void RuntimeContext::updateWorkingDir(bool OLDPWD_only) {
     // check handle
     const char *env_OLDPWD = "OLDPWD";
-    if(this->OLDPWD_index == 0) {
-        auto handle = this->symbolTable.lookupHandle(env_OLDPWD);
-        this->OLDPWD_index = handle->getFieldIndex();
-        assert(handle != nullptr && handle->isEnv());
-    }
-
     const char *env_PWD = "PWD";
-    if(this->PWD_index == 0) {
-        auto handle = this->symbolTable.lookupHandle(env_PWD);
-        this->PWD_index = handle->getFieldIndex();
-        assert(handle != nullptr && handle->isEnv());
-    }
 
     // update OLDPWD
-    this->setGlobal(this->OLDPWD_index, this->getGlobal(this->PWD_index));
-    const char *oldpwd =
-            typeAs<String_Object>(this->getGlobal(this->OLDPWD_index))->getValue();
+    const char *oldpwd = getenv(env_PWD);
+    assert(oldpwd != nullptr);
     setenv(env_OLDPWD, oldpwd, 1);
 
     // update PWD
@@ -596,8 +619,6 @@ void RuntimeContext::updateWorkingDir(bool OLDPWD_only) {
         char *cwd = getcwd(buf, size);
         if(cwd != nullptr && strcmp(cwd, oldpwd) != 0) {
             setenv(env_PWD, cwd, 1);
-            this->setGlobal(this->PWD_index,
-                            DSValue::create<String_Object>(this->pool.getStringType(), std::string(cwd)));
         }
     }
 }

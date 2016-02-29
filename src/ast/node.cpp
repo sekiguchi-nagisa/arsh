@@ -523,13 +523,17 @@ void VarNode::accept(NodeVisitor &visitor) {
 }
 
 EvalStatus VarNode::eval(RuntimeContext &ctx) {
-    if(this->isGlobal()) {
-        ctx.loadGlobal(this->getIndex());
+    if(this->isEnv()) {
+        ctx.loadEnv(this->getIndex(), this->isGlobal());
     } else {
-        ctx.loadLocal(this->getIndex());
-    }
-    if(this->type != nullptr && this->type->isFuncType()) {
-        ctx.peek()->setType(this->type);
+        if(this->isGlobal()) {
+            ctx.loadGlobal(this->getIndex());
+        } else {
+            ctx.loadLocal(this->getIndex());
+        }
+        if(this->type != nullptr && this->type->isFuncType()) {
+            ctx.peek()->setType(this->type);
+        }
     }
     return EvalStatus::SUCCESS;
 }
@@ -2299,7 +2303,7 @@ EvalStatus AssignNode::eval(RuntimeContext &ctx) {
         VarNode *varNode = static_cast<VarNode *>(this->leftNode);
 
         if(varNode->isEnv()) {
-            ctx.exportEnv(varNode->getVarName(), index, varNode->isGlobal());
+            ctx.updateEnv(index, varNode->isGlobal());
         } else {
             if(varNode->isGlobal()) {
                 ctx.storeGlobal(index);
