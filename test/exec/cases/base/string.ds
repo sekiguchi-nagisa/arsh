@@ -12,6 +12,7 @@ assert('a\b' == $'a\b')
 assert($'\101\066' == "A6")     # octal
 assert($'\x09\x7E' == $'\t~')  # hex
 assert($'\x09\x7e' == $'\t~')  # hex
+assert($'\r' == $'\x0D')    # hex
 assert('a
 b' == "a
 b")  # allow new line

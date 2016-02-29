@@ -13,9 +13,16 @@ assert("$(ps_intrp '\r')" == "$(echo -e '\r')")
 assert("$(ps_intrp '\s')" == "$(basename $0)")
 assert("$(ps_intrp '\u')" == "$(whoami)")
 assert("$(ps_intrp '\w')" == $PWD)
+
+$PWD = '/'
+assert("$(ps_intrp '\W')" == "/")
+cd ~
+assert("$(ps_intrp '\W')" == "~")
+
 assert("$(ps_intrp '\0101\066')" == "A6")    # octal number
 assert("$(ps_intrp '\x09\x7E')" == $'\t~')   # hex number
 assert("$(ps_intrp '\x9\x7e')" == $'\t~')    # hex number
+assert("$(ps_intrp '\xX')" == '\xX')         # invalid hex number
 
 let V = "$(ps_intrp '\V')"
 let v = "$(ps_intrp '\v')"
@@ -32,3 +39,13 @@ if("$(id -u)" == "$(id -u root)") { # root
 assert("$(ps_intrp '\\')" == "$(echo -e '\\')")
 ps_intrp '\a'   # bell
 assert("$(ps_intrp 'hoge')" == "hoge")
+assert("$(ps_intrp '\|')" == "\|")    # meaningless backslash
+
+# escape sequence
+var e = "$(ps_intrp '\[\e[32m\]')"
+assert($e.size() == 5)
+assert($e[0] == $'\033')
+assert($e[1] == '[')
+assert($e[2] == '3')
+assert($e[3] == '2')
+assert($e[4] == 'm')

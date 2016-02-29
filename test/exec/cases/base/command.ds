@@ -115,6 +115,9 @@ assert($? == 0)
 echo "\\$true/hoge" | grep '\\true/hoge'   # escape
 assert($? == 0)
 
+assert("$(echo 34\
+5)" == "345")                           # escape
+
 var array = [1, 2]
 echo hello$array[0]world | grep 'hello1world'   # subscript
 assert($? == 0)
@@ -232,6 +235,8 @@ assert($OLDPWD + "/false" == "$(echo ~-/$false)")
 assert("~-yfr" == "$(echo ~-yfr)")
 assert("~-true" == "$(echo ~-$true)")
 
+## expand to user home
+assert("$(cat /etc/passwd | grep ^root | cut -d : -f 6)" == "$(echo ~root)")
 
 # redirection (append)
 let DIR = "$(mktemp -d 2> /dev/null || mktemp -d -t hferui4g)"

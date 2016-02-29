@@ -710,7 +710,7 @@ static void format2digit(int num, std::string &out) {
     out += std::to_string(num);
 }
 
-static std::string basename(const std::string &path) {
+static std::string safeBasename(const std::string &path) {
     return path.substr(path.find_last_of('/') + 1);
 }
 
@@ -763,7 +763,7 @@ void RuntimeContext::interpretPromptString(const char *ps, std::string &output) 
                 ch = '\r';
                 break;
             case 's':
-                output += basename(typeAs<String_Object>(this->getScriptName())->getValue());
+                output += safeBasename(typeAs<String_Object>(this->getScriptName())->getValue());
                 continue;
             case 't': {
                 format2digit(local->tm_hour, output);
@@ -821,12 +821,18 @@ void RuntimeContext::interpretPromptString(const char *ps, std::string &output) 
                 if(strcmp(cwd, "/") == 0) {
                     output += cwd;
                 } else {
-                    std::string name(basename(getenv("PWD")));
-                    if(getenv("HOME") != nullptr && name == basename(getenv("HOME"))) {
+                    const char *home = getenv("HOME");
+                    char *realHOME = home != nullptr ? realpath(home, nullptr) : nullptr;
+                    char *realPWD = realpath(cwd, nullptr);
+
+                    if(realHOME != nullptr && strcmp(realHOME, realPWD) == 0) {
                         output += "~";
                     } else {
-                        output += name;
+                        output += safeBasename(cwd);
                     }
+
+                    free(realHOME);
+                    free(realPWD);
                 }
                 continue;
             }

@@ -76,6 +76,31 @@ expect {
     }
 }
 
+# combining character
+expect {
+    -re "\\$ $" {
+        send "\u0041\u0303"
+        send $CTRL_B
+        send "'"
+        send $CTRL_F
+        send "'"
+        send "\r"
+    }
+    default {
+        send_error "mismatch first prompt"
+        exit 1
+    }
+}
+
+expect {
+    "(String) \u0041\u0303" {
+    }
+    default {
+        send_error "mismatch"
+        exit 1
+    }
+}
+
 expect {
     -re "\\$ $" {
         send $CTRLD
