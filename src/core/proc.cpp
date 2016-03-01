@@ -670,6 +670,7 @@ static int builtin_eval(RuntimeContext *ctx, const int argc, char *const *argv) 
         if(pid == -1) {
             perror("child process error");
             exit(1);
+        } else if(pid == 0) {   // child
             const unsigned int size = argc;
             DSValue *argv2 = new DSValue[size];
             for(int i = 1; i < argc; i++) {
