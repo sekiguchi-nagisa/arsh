@@ -60,42 +60,9 @@ enum RedirectOP : unsigned int {
 };
 
 /**
- * for builtin command argument.
- * following variables are read-only.
- */
-struct BuiltinContext {
-    /**
-     * number of argv, exclude last element
-     */
-    int argc;
-
-    /**
-     * first element of argv is command name.
-     * last element of argv is null.
-     */
-    char *const *argv;
-
-    // not close theme
-    FILE *fp_stdin;
-    FILE *fp_stdout;
-    FILE *fp_stderr;
-
-    BuiltinContext(int argc, char **argv, int stdin_fd, int stdout_fd, int stderr_fd);
-    explicit BuiltinContext(char *const *argv, int stdin_fd, int stdout_fd, int stderr_fd);
-
-    /**
-     * offset must be under bctx.argc.
-     * copy file pointer
-     */
-    BuiltinContext(int offset, const BuiltinContext &bctx);
-
-    NON_COPYABLE(BuiltinContext);
-};
-
-/**
  * return exit status.
  */
-typedef int (*builtin_command_t)(RuntimeContext *ctx, const BuiltinContext &bctx);
+typedef int (*builtin_command_t)(RuntimeContext *ctx, const int argc, char *const *argv);
 
 unsigned int getBuiltinCommandSize();
 
@@ -282,8 +249,7 @@ public:
     EvalStatus evalPipeline(RuntimeContext &ctx);
 
 private:
-    bool redirect(RuntimeContext &ctx, unsigned int procIndex,
-                  int errorPipe, int stdin_fd, int stdout_fd, int stderr_fd);
+    bool redirect(RuntimeContext &ctx, unsigned int procIndex, int errorPipe);
 
     DSValue *getARGV(unsigned int procIndex);
     const char *getCommandName(unsigned int procIndex);

@@ -146,8 +146,8 @@ rm -f $pipe
 test -S .
 assert($? == 1)
 
-test -t 45
-assert($? == 1)
+test -t 0
+assert($? == 0)
 
 touch $pipe
 test -u $pipe

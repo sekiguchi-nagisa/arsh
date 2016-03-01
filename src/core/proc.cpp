@@ -70,50 +70,49 @@ static void xexecve(const char *filePath, char **argv, char *const *envp) {
 /**
  * if errorNum is not 0, include strerror(errorNum)
  */
-static void builtin_perror(const BuiltinContext &bctx, int errorNum, const char *fmt, ...) {
-    FILE *fp = bctx.fp_stderr;
-
-    fprintf(fp, "-ydsh: %s", bctx.argv[0]);
+static void builtin_perror(char *const *argv, int errorNum, const char *fmt, ...) {
+    const char *cmdName = argv[0];
+    fprintf(stderr, "-ydsh: %s", cmdName);
 
     if(strcmp(fmt, "") != 0) {
-        fputs(": ", fp);
+        fputs(": ", stderr);
 
         va_list arg;
         va_start(arg, fmt);
 
-        vfprintf(fp, fmt, arg);
+        vfprintf(stderr, fmt, arg);
 
         va_end(arg);
     }
 
     if(errorNum != 0) {
-        fprintf(fp, ": %s", strerror(errorNum));
+        fprintf(stderr, ": %s", strerror(errorNum));
     }
-    fputc('\n', fp);
+    fputc('\n', stderr);
 }
 
-#define PERROR(bctx, fmt, ...) builtin_perror(bctx, errno, fmt, ## __VA_ARGS__ )
+#define PERROR(argv, fmt, ...) builtin_perror(argv, errno, fmt, ## __VA_ARGS__ )
 
 
 // builtin command definition
-static int builtin___gets(RuntimeContext *ctx, const BuiltinContext &bctx);
-static int builtin___puts(RuntimeContext *ctx, const BuiltinContext &bctx);
-static int builtin_cd(RuntimeContext *ctx, const BuiltinContext &bctx);
-static int builtin_check_env(RuntimeContext *ctx, const BuiltinContext &bctx);
-static int builtin_command(RuntimeContext *ctx, const BuiltinContext &bctx);
-static int builtin_complete(RuntimeContext *ctx, const BuiltinContext &bctx);
-static int builtin_echo(RuntimeContext *ctx, const BuiltinContext &bctx);
-static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx);
-static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx);
-static int builtin_exit(RuntimeContext *ctx, const BuiltinContext &bctx);
-static int builtin_false(RuntimeContext *ctx, const BuiltinContext &bctx);
-static int builtin_hash(RuntimeContext *ctx, const BuiltinContext &bctx);
-static int builtin_help(RuntimeContext *ctx, const BuiltinContext &bctx);
-static int builtin_ps_intrp(RuntimeContext *ctx, const BuiltinContext &bctx);
-static int builtin_pwd(RuntimeContext *ctx, const BuiltinContext &bctx);
-static int builtin_read(RuntimeContext *ctx, const BuiltinContext &bctx);
-static int builtin_test(RuntimeContext *ctx, const BuiltinContext &bctx);
-static int builtin_true(RuntimeContext *ctx, const BuiltinContext &bctx);
+static int builtin___gets(RuntimeContext *ctx, const int argc, char *const *argv);
+static int builtin___puts(RuntimeContext *ctx, const int argc, char *const *argv);
+static int builtin_cd(RuntimeContext *ctx, const int argc, char *const *argv);
+static int builtin_check_env(RuntimeContext *ctx, const int argc, char *const *argv);
+static int builtin_command(RuntimeContext *ctx, const int argc, char *const *argv);
+static int builtin_complete(RuntimeContext *ctx, const int argc, char *const *argv);
+static int builtin_echo(RuntimeContext *ctx, const int argc, char *const *argv);
+static int builtin_eval(RuntimeContext *ctx, const int argc, char *const *argv);
+static int builtin_exec(RuntimeContext *ctx, const int argc, char *const *argv);
+static int builtin_exit(RuntimeContext *ctx, const int argc, char *const *argv);
+static int builtin_false(RuntimeContext *ctx, const int argc, char *const *argv);
+static int builtin_hash(RuntimeContext *ctx, const int argc, char *const *argv);
+static int builtin_help(RuntimeContext *ctx, const int argc, char *const *argv);
+static int builtin_ps_intrp(RuntimeContext *ctx, const int argc, char *const *argv);
+static int builtin_pwd(RuntimeContext *ctx, const int argc, char *const *argv);
+static int builtin_read(RuntimeContext *ctx, const int argc, char *const *argv);
+static int builtin_test(RuntimeContext *ctx, const int argc, char *const *argv);
+static int builtin_true(RuntimeContext *ctx, const int argc, char *const *argv);
 
 const struct {
     const char *commandName;
@@ -334,49 +333,48 @@ static bool printUsage(FILE *fp, const char *prefix, bool isShortHelp = true) {
     return matched;
 }
 
-static int builtin_help(RuntimeContext *, const BuiltinContext &bctx) {
-    if(bctx.argc == 1) {
-        printAllUsage(bctx.fp_stdout);
+static int builtin_help(RuntimeContext *, const int argc, char *const *argv) {
+    if(argc == 1) {
+        printAllUsage(stdout);
         return 0;
     }
     bool isShortHelp = false;
     bool foundValidCommand = false;
-    for(int i = 1; i < bctx.argc; i++) {
-        const char *arg = bctx.argv[i];
-        if(strcmp(arg, "-s") == 0 && bctx.argc == 2) {
-            printAllUsage(bctx.fp_stdout);
+    for(int i = 1; i < argc; i++) {
+        const char *arg = argv[i];
+        if(strcmp(arg, "-s") == 0 && argc == 2) {
+            printAllUsage(stdout);
             foundValidCommand = true;
         } else if(strcmp(arg, "-s") == 0 && i == 1) {
             isShortHelp = true;
         } else {
-            if(printUsage(bctx.fp_stdout, arg, isShortHelp)) {
+            if(printUsage(stdout, arg, isShortHelp)) {
                 foundValidCommand = true;
             }
         }
     }
     if(!foundValidCommand) {
-        fprintf(bctx.fp_stderr,
-                "-ydsh: help: no help topics match `%s'.  Try `help help'.\n", bctx.argv[bctx.argc - 1]);
+        fprintf(stderr, "-ydsh: help: no help topics match `%s'.  Try `help help'.\n", argv[argc - 1]);
         return 1;
     }
     return 0;
 }
 
-inline static void showUsage(const BuiltinContext &bctx) {
-    printUsage(bctx.fp_stderr, bctx.argv[0]);
+inline static void showUsage(char *const *argv) {
+    printUsage(stderr, argv[0]);
 }
 
-static int builtin_cd(RuntimeContext *ctx, const BuiltinContext &bctx) {
+static int builtin_cd(RuntimeContext *ctx, const int argc, char *const *argv) {
     bool OLDPWD_only = true;
     const char *destDir = getenv("HOME");
 
-    if(bctx.argc > 1) {
-        destDir = bctx.argv[1];
+    if(argc > 1) {
+        destDir = argv[1];
     }
     if(destDir != nullptr && strlen(destDir) != 0) {
         OLDPWD_only = false;
         if(chdir(destDir) != 0) {
-            PERROR(bctx, "%s", destDir);
+            PERROR(argv, "%s", destDir);
             return 1;
         }
     }
@@ -385,13 +383,13 @@ static int builtin_cd(RuntimeContext *ctx, const BuiltinContext &bctx) {
     return 0;
 }
 
-static int builtin_check_env(RuntimeContext *, const BuiltinContext &bctx) {
-    if(bctx.argc == 1) {
-        showUsage(bctx);
+static int builtin_check_env(RuntimeContext *, const int argc, char *const *argv) {
+    if(argc == 1) {
+        showUsage(argv);
         return 1;
     }
-    for(int i = 1; i < bctx.argc; i++) {
-        const char *env = getenv(bctx.argv[i]);
+    for(int i = 1; i < argc; i++) {
+        const char *env = getenv(argv[i]);
         if(env == nullptr || strlen(env) == 0) {
             return 1;
         }
@@ -399,10 +397,10 @@ static int builtin_check_env(RuntimeContext *, const BuiltinContext &bctx) {
     return 0;
 }
 
-static int builtin_exit(RuntimeContext *ctx, const BuiltinContext &bctx) {
+static int builtin_exit(RuntimeContext *ctx, const int argc, char *const *argv) {
     int ret = 0;
-    if(bctx.argc > 1) {
-        const char *num = bctx.argv[1];
+    if(argc > 1) {
+        const char *num = argv[1];
         int status;
         long value = convertToInt64(num, status);
         if(status == 0) {
@@ -413,10 +411,8 @@ static int builtin_exit(RuntimeContext *ctx, const BuiltinContext &bctx) {
     return ret;
 }
 
-static int builtin_echo(RuntimeContext *, const BuiltinContext &bctx) {
-    FILE *fp = bctx.fp_stdout;  // not close it.
-    int argc = bctx.argc;
-    char *const *argv = bctx.argv;
+static int builtin_echo(RuntimeContext *, const int argc, char *const *argv) {
+    FILE *fp = stdout;  // not close it.
 
     bool newline = true;
     bool interpEscape = false;
@@ -522,40 +518,42 @@ static int builtin_echo(RuntimeContext *, const BuiltinContext &bctx) {
     return 0;
 }
 
-static int builtin_true(RuntimeContext *, const BuiltinContext &) {
+static int builtin_true(RuntimeContext *, const int, char *const *) {
     return 0;
 }
 
-static int builtin_false(RuntimeContext *, const BuiltinContext &) {
+static int builtin_false(RuntimeContext *, const int, char *const *) {
     return 1;
 }
 
 /**
  * for stdin redirection test
  */
-static int builtin___gets(RuntimeContext *, const BuiltinContext &bctx) {
+static int builtin___gets(RuntimeContext *, const int, char *const *) {
     unsigned int bufSize = 256;
     char buf[bufSize];
     int readSize;
-    while((readSize = fread(buf, sizeof(char), bufSize, bctx.fp_stdin)) > 0) {
-        fwrite(buf, sizeof(char), readSize, bctx.fp_stdout);
+    while((readSize = fread(buf, sizeof(char), bufSize, stdin)) > 0) {
+        fwrite(buf, sizeof(char), readSize, stdout);
     }
-    clearerr(bctx.fp_stdin);    // clear eof flag
+    clearerr(stdin);    // clear eof flag
     return 0;
 }
 
 /**
  * for stdout/stderr redirection test
  */
-static int builtin___puts(RuntimeContext *, const BuiltinContext &bctx) {
-    for(int index = 1; index < bctx.argc; index++) {
-        const char *arg = bctx.argv[index];
-        if(strcmp("-1", arg) == 0 && ++index < bctx.argc) {
-            fputs(bctx.argv[index], bctx.fp_stdout);
-            fputc('\n', bctx.fp_stdout);
-        } else if(strcmp("-2", arg) == 0 && ++index < bctx.argc) {
-            fputs(bctx.argv[index], bctx.fp_stderr);
-            fputc('\n', bctx.fp_stderr);
+static int builtin___puts(RuntimeContext *, const int argc, char *const *argv) {
+    for(int index = 1; index < argc; index++) {
+        const char *arg = argv[index];
+        if(strcmp("-1", arg) == 0 && ++index < argc) {
+            fputs(argv[index], stdout);
+            fputc('\n', stdout);
+            fflush(stdout);
+        } else if(strcmp("-2", arg) == 0 && ++index < argc) {
+            fputs(argv[index], stderr);
+            fputc('\n', stderr);
+            fflush(stderr);
         } else {
             return 1;   // need option
         }
@@ -566,47 +564,47 @@ static int builtin___puts(RuntimeContext *, const BuiltinContext &bctx) {
 /**
  * for prompt string debugging
  */
-static int builtin_ps_intrp(RuntimeContext *ctx, const BuiltinContext &bctx) {
-    if(bctx.argc != 2) {
-        showUsage(bctx);
+static int builtin_ps_intrp(RuntimeContext *ctx, const int argc, char *const *argv) {
+    if(argc != 2) {
+        showUsage(argv);
         return 1;
     }
     std::string str;
-    ctx->interpretPromptString(bctx.argv[1], str);
-    fputs(str.c_str(), bctx.fp_stdout);
-    fputc('\n', bctx.fp_stdout);
+    ctx->interpretPromptString(argv[1], str);
+    fputs(str.c_str(), stdout);
+    fputc('\n', stdout);
     return 0;
 }
 
-static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx) {
+static int builtin_exec(RuntimeContext *ctx, const int argc, char *const *argv) {
     int index = 1;
     bool clearEnv = false;
     const char *progName = nullptr;
-    for(; index < bctx.argc; index++) {
-        const char *arg = bctx.argv[index];
+    for(; index < argc; index++) {
+        const char *arg = argv[index];
         if(arg[0] != '-') {
             break;
         }
         if(strcmp(arg, "-c") == 0) {
             clearEnv = true;
-        } else if(strcmp(arg, "-a") == 0 && ++index < bctx.argc) {
-            progName = bctx.argv[index];
+        } else if(strcmp(arg, "-a") == 0 && ++index < argc) {
+            progName = argv[index];
         } else {
-            showUsage(bctx);
+            showUsage(argv);
             return 1;
         }
     }
 
-    if(index < bctx.argc) { // exec
-        char **argv = const_cast<char **>(bctx.argv + index);
-        const char *filePath = ctx->getPathCache().searchPath(argv[0], FilePathCache::DIRECT_SEARCH);
+    if(index < argc) { // exec
+        char **argv2 = const_cast<char **>(argv + index);
+        const char *filePath = ctx->getPathCache().searchPath(argv2[0], FilePathCache::DIRECT_SEARCH);
         if(progName != nullptr) {
-            argv[0] = const_cast<char *>(progName);
+            argv2[0] = const_cast<char *>(progName);
         }
 
         char *envp[] = {nullptr};
-        xexecve(filePath, argv, clearEnv ? envp : nullptr);
-        PERROR(bctx, "%s", bctx.argv[index]);
+        xexecve(filePath, argv2, clearEnv ? envp : nullptr);
+        PERROR(argv, "%s", argv[index]);
         exit(1);
     }
     return 0;
@@ -615,7 +613,7 @@ static int builtin_exec(RuntimeContext *ctx, const BuiltinContext &bctx) {
 /**
  * write status to status (same of wait's status).
  */
-static void forkAndExec(RuntimeContext *ctx, const BuiltinContext &bctx, int &status, bool useDefaultPath = false) {
+static void forkAndExec(RuntimeContext *ctx, char *const *argv, int &status, bool useDefaultPath = false) {
     // setup self pipe
     int selfpipe[2];
     if(pipe(selfpipe) < 0) {
@@ -628,22 +626,17 @@ static void forkAndExec(RuntimeContext *ctx, const BuiltinContext &bctx, int &st
     }
 
     const char *filePath = ctx->getPathCache().searchPath(
-            bctx.argv[0], useDefaultPath ? FilePathCache::USE_DEFAULT_PATH : 0);
+            argv[0], useDefaultPath ? FilePathCache::USE_DEFAULT_PATH : 0);
 
     pid_t pid = xfork();
     if(pid == -1) {
         perror("child process error");
         exit(1);
     } else if(pid == 0) {   // child
-        // replace standard stream to bctx
-        dup2(fileno(bctx.fp_stdin), STDIN_FILENO);
-        dup2(fileno(bctx.fp_stdout), STDOUT_FILENO);
-        dup2(fileno(bctx.fp_stderr), STDERR_FILENO);
-
-        xexecve(filePath, const_cast<char **>(bctx.argv), nullptr);
+        xexecve(filePath, const_cast<char **>(argv), nullptr);
 
         int errnum = errno;
-        PERROR(bctx, "");
+        PERROR(argv, "");
         write(selfpipe[WRITE_PIPE], &errnum, sizeof(int));
         exit(1);
     } else {    // parent process
@@ -657,19 +650,19 @@ static void forkAndExec(RuntimeContext *ctx, const BuiltinContext &bctx, int &st
         }
         close(selfpipe[READ_PIPE]);
         if(readSize > 0 && errnum == ENOENT) {  // remove cached path
-            ctx->getPathCache().removePath(bctx.argv[0]);
+            ctx->getPathCache().removePath(argv[0]);
         }
 
         ctx->xwaitpid(pid, status, 0);
     }
 }
 
-static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx) {
-    if(bctx.argc <= 1) {
+static int builtin_eval(RuntimeContext *ctx, const int argc, char *const *argv) {
+    if(argc <= 1) {
         return 0;
     }
 
-    const char *cmdName = bctx.argv[1];
+    const char *cmdName = argv[1];
     // user-defined command
     UserDefinedCmdNode *udcNode = ctx->lookupUserDefinedCommand(cmdName);
     if(udcNode != nullptr) {
@@ -677,23 +670,17 @@ static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx) {
         if(pid == -1) {
             perror("child process error");
             exit(1);
-        } else if(pid == 0) {   // child
-            // replace standard stream to bctx
-            dup2(fileno(bctx.fp_stdin), STDIN_FILENO);
-            dup2(fileno(bctx.fp_stdout), STDOUT_FILENO);
-            dup2(fileno(bctx.fp_stderr), STDERR_FILENO);
-
-            const unsigned int size = bctx.argc;
-            DSValue *argv = new DSValue[size];
-            for(int i = 1; i < bctx.argc; i++) {
-                argv[i - 1] = DSValue::create<String_Object>(
-                        ctx->getPool().getStringType(), std::string(bctx.argv[i])
+            const unsigned int size = argc;
+            DSValue *argv2 = new DSValue[size];
+            for(int i = 1; i < argc; i++) {
+                argv2[i - 1] = DSValue::create<String_Object>(
+                        ctx->getPool().getStringType(), std::string(argv[i])
                 );
             }
-            argv[size - 1] = nullptr;
+            argv2[size - 1] = nullptr;
 
-            int r = ctx->execUserDefinedCommand(udcNode, argv);
-            delete[] argv;
+            int r = ctx->execUserDefinedCommand(udcNode, argv2);
+            delete[] argv2;
             exit(r);
         } else {    // parent process
             int status;
@@ -709,15 +696,16 @@ static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx) {
     }
 
     // builtin command
-    BuiltinContext nbctx(1, bctx);
+    int argc2 = argc - 1;
+    char *const *argv2 = argv + 1;
     builtin_command_t builtinCmd = lookupBuiltinCommand(cmdName);
     if(builtinCmd != nullptr) {
-        return builtinCmd(ctx, nbctx);
+        return builtinCmd(ctx, argc2, argv2);
     }
 
     // external command
     int status;
-    forkAndExec(ctx, nbctx, status);
+    forkAndExec(ctx, argv2, status);
     if(WIFEXITED(status)) {
         return WEXITSTATUS(status);
     }
@@ -727,22 +715,22 @@ static int builtin_eval(RuntimeContext *ctx, const BuiltinContext &bctx) {
     return 0;
 }
 
-static int builtin_pwd(RuntimeContext *, const BuiltinContext &bctx) {
+static int builtin_pwd(RuntimeContext *, const int, char *const *argv) {
     //TODO: support LP option
 
     size_t size = PATH_MAX;
     char buf[size];
     if(getcwd(buf, size) == nullptr) {
-        PERROR(bctx, ".");
+        PERROR(argv, ".");
         return 1;
     }
 
-    fputs(buf, bctx.fp_stdout);
-    fputc('\n', bctx.fp_stdout);
+    fputs(buf, stdout);
+    fputc('\n', stdout);
     return 0;
 }
 
-static int builtin_command(RuntimeContext *ctx, const BuiltinContext &bctx) {
+static int builtin_command(RuntimeContext *ctx, const int argc, char *const *argv) {
     int index = 1;
     bool useDefaultPath = false;
 
@@ -753,8 +741,8 @@ static int builtin_command(RuntimeContext *ctx, const BuiltinContext &bctx) {
      */
     unsigned char showDesc = 0;
 
-    for(; index < bctx.argc; index++) {
-        const char *arg = bctx.argv[index];
+    for(; index < argc; index++) {
+        const char *arg = argv[index];
         if(arg[0] != '-') {
             break;
         } else if(strcmp(arg, "-p") == 0) {
@@ -764,21 +752,22 @@ static int builtin_command(RuntimeContext *ctx, const BuiltinContext &bctx) {
         } else if(strcmp(arg, "-V") == 0) {
             showDesc = 2;
         } else {
-            builtin_perror(bctx, 0, "%s: invalid option", arg);
-            showUsage(bctx);
+            builtin_perror(argv, 0, "%s: invalid option", arg);
+            showUsage(argv);
             return 1;
         }
     }
 
-    if(index < bctx.argc) {
+    if(index < argc) {
         if(showDesc == 0) { // execute command
-            BuiltinContext nbctx(index, bctx);
-            auto *cmd = lookupBuiltinCommand(bctx.argv[index]);
+            char *const *argv2 = argv + index;
+            int argc2 = argc - index;
+            auto *cmd = lookupBuiltinCommand(argv[index]);
             if(cmd != nullptr) {
-                return cmd(ctx, nbctx);
+                return cmd(ctx, argc2, argv2);
             } else {
                 int status;
-                forkAndExec(ctx, nbctx, status, useDefaultPath);
+                forkAndExec(ctx, argv2, status, useDefaultPath);
                 if(WIFEXITED(status)) {
                     return WEXITSTATUS(status);
                 }
@@ -788,27 +777,27 @@ static int builtin_command(RuntimeContext *ctx, const BuiltinContext &bctx) {
             }
         } else {    // show command description
             unsigned int successCount = 0;
-            for(; index < bctx.argc; index++) {
-                const char *commandName = bctx.argv[index];
+            for(; index < argc; index++) {
+                const char *commandName = argv[index];
                 // check user defined command
                 if(ctx->lookupUserDefinedCommand(commandName) != nullptr) {
                     successCount++;
-                    fputs(commandName, bctx.fp_stdout);
+                    fputs(commandName, stdout);
                     if(showDesc == 2) {
-                        fputs(" is an user-defined command", bctx.fp_stdout);
+                        fputs(" is an user-defined command", stdout);
                     }
-                    fputc('\n', bctx.fp_stdout);
+                    fputc('\n', stdout);
                     continue;
                 }
 
                 // check builtin command
                 if(lookupBuiltinCommand(commandName) != nullptr) {
                     successCount++;
-                    fputs(commandName, bctx.fp_stdout);
+                    fputs(commandName, stdout);
                     if(showDesc == 2) {
-                        fputs(" is a shell builtin command", bctx.fp_stdout);
+                        fputs(" is a shell builtin command", stdout);
                     }
-                    fputc('\n', bctx.fp_stdout);
+                    fputc('\n', stdout);
                     continue;
                 }
 
@@ -817,16 +806,16 @@ static int builtin_command(RuntimeContext *ctx, const BuiltinContext &bctx) {
                 if(path != nullptr) {
                     successCount++;
                     if(showDesc == 1) {
-                        fprintf(bctx.fp_stdout, "%s\n", path);
+                        printf("%s\n", path);
                     } else if(ctx->getPathCache().isCached(commandName)) {
-                        fprintf(bctx.fp_stdout, "%s is hashed (%s)\n", commandName, path);
+                        printf("%s is hashed (%s)\n", commandName, path);
                     } else {
-                        fprintf(bctx.fp_stdout, "%s is %s\n", commandName, path);
+                        printf("%s is %s\n", commandName, path);
                     }
                     continue;
                 }
                 if(showDesc == 2) {
-                    PERROR(bctx, "%s", commandName);
+                    PERROR(argv, "%s", commandName);
                 }
             }
             return successCount > 0 ? 0 : 1;
@@ -849,7 +838,7 @@ enum class BinaryOp : unsigned int {
     GE,
 };
 
-static int builtin_test(RuntimeContext *, const BuiltinContext &bctx) {
+static int builtin_test(RuntimeContext *, const int argc, char *const *argv) {
     static CStringHashMap<BinaryOp> binaryOpMap;
     if(binaryOpMap.empty()) {
         static const struct {
@@ -875,7 +864,7 @@ static int builtin_test(RuntimeContext *, const BuiltinContext &bctx) {
     }
 
     bool result = false;
-    const int argSize = bctx.argc - 1;
+    const int argSize = argc - 1;
 
     switch(argSize) {
     case 0: {
@@ -883,14 +872,14 @@ static int builtin_test(RuntimeContext *, const BuiltinContext &bctx) {
         break;
     }
     case 1: {
-        result = strlen(bctx.argv[1]) != 0; // check if string is not empty
+        result = strlen(argv[1]) != 0; // check if string is not empty
         break;
     }
     case 2: {   // unary op
-        const char *op = bctx.argv[1];
-        const char *value = bctx.argv[2];
+        const char *op = argv[1];
+        const char *value = argv[2];
         if(strlen(op) != 2 || op[0] != '-') {
-            builtin_perror(bctx, 0, "%s: invalid unary operator", op);
+            builtin_perror(argv, 0, "%s: invalid unary operator", op);
             return 2;
         }
 
@@ -989,16 +978,16 @@ static int builtin_test(RuntimeContext *, const BuiltinContext &bctx) {
             break;
         }
         default: {
-            builtin_perror(bctx, 0, "%s: invalid unary operator", op);
+            builtin_perror(argv, 0, "%s: invalid unary operator", op);
             return 2;
         }
         }
         break;
     }
     case 3: {   // binary op
-        const char *left = bctx.argv[1];
-        const char *op = bctx.argv[2];
-        const char *right = bctx.argv[3];
+        const char *left = argv[1];
+        const char *op = argv[2];
+        const char *right = argv[3];
 
         auto iter = binaryOpMap.find(op);
         const BinaryOp opKind = iter != binaryOpMap.end() ? iter->second : BinaryOp::INVALID;
@@ -1028,13 +1017,13 @@ static int builtin_test(RuntimeContext *, const BuiltinContext &bctx) {
             int s = 0;
             long n1 = convertToInt64(left, s);
             if(s != 0) {
-                builtin_perror(bctx, 0, "%s: must be integer", left);
+                builtin_perror(argv, 0, "%s: must be integer", left);
                 return 2;
             }
 
             long n2 = convertToInt64(right, s);
             if(s != 0) {
-                builtin_perror(bctx, 0, "%s: must be integer", right);
+                builtin_perror(argv, 0, "%s: must be integer", right);
                 return 2;
             }
             if(opKind == BinaryOp::EQ) {
@@ -1053,14 +1042,14 @@ static int builtin_test(RuntimeContext *, const BuiltinContext &bctx) {
             break;
         }
         case BinaryOp::INVALID: {
-            builtin_perror(bctx, 0, "%s: invalid binary operator", op);
+            builtin_perror(argv, 0, "%s: invalid binary operator", op);
             return 2;
         }
         }
         break;
     }
     default: {
-        builtin_perror(bctx, 0, "too many arguments");
+        builtin_perror(argv, 0, "too many arguments");
         return 2;
     }
     }
@@ -1091,33 +1080,33 @@ static int xfgetc(FILE *fp) {
     return ch;
 }
 
-static int builtin_read(RuntimeContext *ctx, const BuiltinContext &bctx) {  //FIXME: timeout, no echo, UTF-8
+static int builtin_read(RuntimeContext *ctx, const int argc, char *const *argv) {  //FIXME: timeout, no echo, UTF-8
     int index = 1;
     const char *prompt = "";
     const char *ifs = nullptr;
     bool backslash = true;
 
-    for(; index < bctx.argc; index++) {
-        const char *arg = bctx.argv[index];
+    for(; index < argc; index++) {
+        const char *arg = argv[index];
         if(strlen(arg) != 2 || arg[0] != '-') {
             break;
         }
         const char op = arg[1]; // ignore '-'
         switch(op) {
         case 'p': {
-            if(index + 1 < bctx.argc) {
-                prompt = bctx.argv[++index];
+            if(index + 1 < argc) {
+                prompt = argv[++index];
                 break;
             }
-            builtin_perror(bctx, 0, "%s: option require argument", arg);
+            builtin_perror(argv, 0, "%s: option require argument", arg);
             return 2;
         }
         case 'f': {
-            if(index + 1 < bctx.argc) {
-                ifs = bctx.argv[++index];
+            if(index + 1 < argc) {
+                ifs = argv[++index];
                 break;
             }
-            builtin_perror(bctx, 0, "%s: option require argument", arg);
+            builtin_perror(argv, 0, "%s: option require argument", arg);
             return 2;
         }
         case 'r': {
@@ -1125,7 +1114,7 @@ static int builtin_read(RuntimeContext *ctx, const BuiltinContext &bctx) {  //FI
             break;
         }
         default: {
-            builtin_perror(bctx, 0, "%s: invalid option", arg);
+            builtin_perror(argv, 0, "%s: invalid option", arg);
             return 2;
         }
         }
@@ -1142,21 +1131,21 @@ static int builtin_read(RuntimeContext *ctx, const BuiltinContext &bctx) {  //FI
             ctx->getBuiltinVarIndex(BuiltinVarOffset::REPLY_VAR)))->refValueMap().clear();      // clear reply
 
 
-    const int varSize = bctx.argc - index;  // if zero, store line to REPLY
+    const int varSize = argc - index;  // if zero, store line to REPLY
     const unsigned int varIndex = ctx->getBuiltinVarIndex(
                     varSize == 0 ? BuiltinVarOffset::REPLY : BuiltinVarOffset::REPLY_VAR);
     std::string strBuf;
 
     // show prompt
-    if(isatty(fileno(bctx.fp_stdin)) != 0) {
-        fputs(prompt, bctx.fp_stdout);
-        fflush(bctx.fp_stdout);
+    if(isatty(fileno(stdin)) != 0) {
+        fputs(prompt, stdout);
+        fflush(stdout);
     }
 
     // read line
     unsigned int skipCount = 1;
     int ch;
-    for(bool prevIsBackslash = false; (ch = xfgetc(bctx.fp_stdin)) != EOF;
+    for(bool prevIsBackslash = false; (ch = xfgetc(stdin)) != EOF;
             prevIsBackslash = backslash && ch == '\\' && !prevIsBackslash) {
         if(ch == '\n') {
             if(prevIsBackslash) {
@@ -1178,9 +1167,9 @@ static int builtin_read(RuntimeContext *ctx, const BuiltinContext &bctx) {  //FI
             }
         }
         skipCount = 0;
-        if(fieldSep && index < bctx.argc - 1) {
+        if(fieldSep && index < argc - 1) {
             auto obj = typeAs<Map_Object>(ctx->getGlobal(varIndex));
-            auto varObj = DSValue::create<String_Object>(ctx->getPool().getStringType(), bctx.argv[index]);
+            auto varObj = DSValue::create<String_Object>(ctx->getPool().getStringType(), argv[index]);
             auto valueObj = DSValue::create<String_Object>(ctx->getPool().getStringType(), std::move(strBuf));
             std::swap(obj->refValueMap()[std::move(varObj)], valueObj);
             strBuf = "";
@@ -1214,47 +1203,47 @@ static int builtin_read(RuntimeContext *ctx, const BuiltinContext &bctx) {  //FI
     }
 
     // set rest variable
-    for(; index < bctx.argc; index++) {
+    for(; index < argc; index++) {
         auto obj = typeAs<Map_Object>(ctx->getGlobal(varIndex));
-        auto varObj = DSValue::create<String_Object>(ctx->getPool().getStringType(), bctx.argv[index]);
+        auto varObj = DSValue::create<String_Object>(ctx->getPool().getStringType(), argv[index]);
         auto valueObj = DSValue::create<String_Object>(ctx->getPool().getStringType(), std::move(strBuf));
         std::swap(obj->refValueMap()[std::move(varObj)], valueObj);
         strBuf = "";
     }
 
     if(ch == EOF) {
-        clearerr(bctx.fp_stdin);
+        clearerr(stdin);
     }
     return ch == EOF ? 1 : 0;
 }
 
-static int builtin_hash(RuntimeContext *ctx, const BuiltinContext &bctx) {
+static int builtin_hash(RuntimeContext *ctx, const int argc, char *const *argv) {
     bool remove = false;
 
     // check option
     int index = 1;
-    for(; index < bctx.argc; index++) {
-        const char *arg = bctx.argv[index];
+    for(; index < argc; index++) {
+        const char *arg = argv[index];
         if(arg[0] != '-') {
             break;
         }
         if(strcmp(arg, "-r") == 0) {
             remove = true;
         } else {
-            builtin_perror(bctx, 0, "%s: invalid option", arg);
+            builtin_perror(argv, 0, "%s: invalid option", arg);
             return 2;
         }
     }
 
-    const bool hasNames = index < bctx.argc;
+    const bool hasNames = index < argc;
     if(hasNames) {
-        for(; index < bctx.argc; index++) {
-            const char *name = bctx.argv[index];
+        for(; index < argc; index++) {
+            const char *name = argv[index];
             if(remove) {
                 ctx->getPathCache().removePath(name);
             } else {
                 if(ctx->getPathCache().searchPath(name) == nullptr) {
-                    builtin_perror(bctx, 0, "%s: not found", name);
+                    builtin_perror(argv, 0, "%s: not found", name);
                     return 1;
                 }
             }
@@ -1265,11 +1254,11 @@ static int builtin_hash(RuntimeContext *ctx, const BuiltinContext &bctx) {
         } else {    // show all cache
             const auto cend = ctx->getPathCache().cend();
             if(ctx->getPathCache().cbegin() == cend) {
-                fputs("hash: file path cache is empty\n", bctx.fp_stdout);
+                fputs("hash: file path cache is empty\n", stdout);
                 return 0;
             }
             for(auto iter = ctx->getPathCache().cbegin(); iter != cend; ++iter) {
-                fprintf(bctx.fp_stdout, "%s=%s\n", iter->first, iter->second.c_str());
+                printf("%s=%s\n", iter->first, iter->second.c_str());
             }
         }
     }
@@ -1277,46 +1266,23 @@ static int builtin_hash(RuntimeContext *ctx, const BuiltinContext &bctx) {
 }
 
 // for completor debugging
-static int builtin_complete(RuntimeContext *ctx, const BuiltinContext &bctx) {
-    if(bctx.argc != 2) {
-        showUsage(bctx);
+static int builtin_complete(RuntimeContext *ctx, const int argc, char *const *argv) {
+    if(argc != 2) {
+        showUsage(argv);
         return 1;
     }
 
-    std::string line(bctx.argv[1]);
+    std::string line(argv[1]);
     line += '\n';
     auto c = ctx->completeLine(line);
     for(const auto &e : c) {
-        fputs(e, bctx.fp_stdout);
-        fputc('\n', bctx.fp_stdout);
+        fputs(e, stdout);
+        fputc('\n', stdout);
 
         free(e);
     }
     return 0;
 }
-
-
-// ############################
-// ##     BuiltinContext     ##
-// ############################
-
-BuiltinContext::BuiltinContext(int argc, char **argv, int stdin_fd, int stdout_fd, int stderr_fd) :
-        argc(argc), argv(argv),
-        fp_stdin(stdin_fd == STDIN_FILENO ? stdin : fdopen(stdin_fd, "r")),
-        fp_stdout(stdout_fd == STDOUT_FILENO ? stdout : fdopen(stdout_fd, "w")),
-        fp_stderr(stderr_fd == STDERR_FILENO ? stderr : fdopen(stderr_fd, "w")) { }
-
-BuiltinContext::BuiltinContext(char *const *argv, int stdin_fd, int stdout_fd, int stderr_fd) :
-        BuiltinContext(1, const_cast<char **>(argv), stdin_fd, stdout_fd, stderr_fd) {
-    for(; this->argv[this->argc] != nullptr; this->argc++);
-}
-
-BuiltinContext::BuiltinContext(int offset, const BuiltinContext &bctx) :
-        argc(bctx.argc - offset), argv(bctx.argv + offset),
-        fp_stdin(bctx.fp_stdin), fp_stdout(bctx.fp_stdout), fp_stderr(bctx.fp_stderr) {
-    assert(offset < bctx.argc);
-}
-
 
 void RuntimeContext::openProc() {
     DSValue value = this->pop();
@@ -1428,8 +1394,7 @@ static int redirectToFile(const DSValue &fileName, const char *mode, int targetF
  * if errorPipe is -1, report error and return false.
  * if errorPipe is not -1, report error and exit 1
  */
-bool PipelineEvaluator::redirect(RuntimeContext &ctx, unsigned int procIndex,
-                                 int errorPipe, int stdin_fd, int stdout_fd, int stderr_fd) {
+bool PipelineEvaluator::redirect(RuntimeContext &ctx, unsigned int procIndex, int errorPipe) {
 #define CHECK_ERROR(result) do { occurredError = (result); if(occurredError != 0) { goto ERR; } } while(0)
 
     int occurredError = 0;
@@ -1439,41 +1404,41 @@ bool PipelineEvaluator::redirect(RuntimeContext &ctx, unsigned int procIndex,
         auto &pair = this->redirOptions[startIndex];
         switch(pair.first) {
         case IN_2_FILE: {
-            CHECK_ERROR(redirectToFile(pair.second, "rb", stdin_fd));
+            CHECK_ERROR(redirectToFile(pair.second, "rb", STDIN_FILENO));
             break;
         }
         case OUT_2_FILE: {
-            CHECK_ERROR(redirectToFile(pair.second, "wb", stdout_fd));
+            CHECK_ERROR(redirectToFile(pair.second, "wb", STDOUT_FILENO));
             break;
         }
         case OUT_2_FILE_APPEND: {
-            CHECK_ERROR(redirectToFile(pair.second, "ab", stdout_fd));
+            CHECK_ERROR(redirectToFile(pair.second, "ab", STDOUT_FILENO));
             break;
         }
         case ERR_2_FILE: {
-            CHECK_ERROR(redirectToFile(pair.second, "wb", stderr_fd));
+            CHECK_ERROR(redirectToFile(pair.second, "wb", STDERR_FILENO));
             break;
         }
         case ERR_2_FILE_APPEND: {
-            CHECK_ERROR(redirectToFile(pair.second, "ab", stderr_fd));
+            CHECK_ERROR(redirectToFile(pair.second, "ab", STDERR_FILENO));
             break;
         }
         case MERGE_ERR_2_OUT_2_FILE: {
-            CHECK_ERROR(redirectToFile(pair.second, "wb", stdout_fd));
-            dup2(stdout_fd, stderr_fd);
+            CHECK_ERROR(redirectToFile(pair.second, "wb", STDOUT_FILENO));
+            dup2(STDOUT_FILENO, STDERR_FILENO);
             break;
         }
         case MERGE_ERR_2_OUT_2_FILE_APPEND: {
-            CHECK_ERROR(redirectToFile(pair.second, "ab", stdout_fd));
-            dup2(stdout_fd, stderr_fd);
+            CHECK_ERROR(redirectToFile(pair.second, "ab", STDOUT_FILENO));
+            dup2(STDOUT_FILENO, STDERR_FILENO);
             break;
         }
         case MERGE_ERR_2_OUT: {
-            dup2(stdout_fd, stderr_fd);
+            dup2(STDOUT_FILENO, STDERR_FILENO);
             break;
         }
         case MERGE_OUT_2_ERR: {
-            dup2(stderr_fd, stdout_fd);
+            dup2(STDERR_FILENO, STDOUT_FILENO);
             break;
         }
         default:
@@ -1502,6 +1467,28 @@ DSValue *PipelineEvaluator::getARGV(unsigned int procIndex) {
     return this->argArray.data() + this->procStates[procIndex].argOffset();
 }
 
+static void saveStdFD(int (&origFds)[3]) {
+    origFds[0] = dup(STDIN_FILENO);
+    origFds[1] = dup(STDOUT_FILENO);
+    origFds[2] = dup(STDERR_FILENO);
+}
+
+static void restoreStdFD(int (&origFds)[3]) {
+    dup2(origFds[0], STDIN_FILENO);
+    dup2(origFds[1], STDOUT_FILENO);
+    dup2(origFds[2], STDERR_FILENO);
+
+    for(unsigned int i = 0; i < 3; i++) {
+        close(origFds[i]);
+    }
+}
+
+static void flushStdFD() {
+    fflush(stdin);
+    fflush(stdout);
+    fflush(stderr);
+}
+
 EvalStatus PipelineEvaluator::evalPipeline(RuntimeContext &ctx) {
     const unsigned int procSize = this->procStates.size();
 
@@ -1517,29 +1504,25 @@ EvalStatus PipelineEvaluator::evalPipeline(RuntimeContext &ctx) {
                 argv[i] = const_cast<char *>(typeAs<String_Object>(ptr[i])->getValue());
             }
             argv[argc] = nullptr;
-            
-            bool dupFD = strcmp(argv[0], "exec") != 0
-                         && this->redirOptions[this->procStates[0].redirOffset()].first != RedirectOP::DUMMY;
-            int stdin_fd = dupFD ? dup(STDIN_FILENO) : STDIN_FILENO;
-            int stdout_fd = dupFD ? dup(STDOUT_FILENO) : STDOUT_FILENO;
-            int stderr_fd = dupFD ? dup(STDERR_FILENO) : STDERR_FILENO;
 
-            if(!this->redirect(ctx, 0, -1, stdin_fd, stdout_fd, stderr_fd)) {
+            const bool restoreFD = strcmp(argv[0], "exec") != 0;
+
+            int origFDs[3];
+            if(restoreFD) {
+                saveStdFD(origFDs);
+            }
+
+            if(!this->redirect(ctx, 0, -1)) {
                 ctx.updateExitStatus(1);
                 return EvalStatus::THROW;
             }
 
-            BuiltinContext bctx(argc, argv, stdin_fd, stdout_fd, stderr_fd);
-            ctx.updateExitStatus(cmd_ptr(&ctx, bctx));
+            ctx.updateExitStatus(cmd_ptr(&ctx, argc, argv));
 
-            if(dupFD) {
-                fclose(bctx.fp_stdin);
-                fclose(bctx.fp_stdout);
-                fclose(bctx.fp_stderr);
-            } else {    // flush standard stream
-                fflush(bctx.fp_stdin);
-                fflush(bctx.fp_stdout);
-                fflush(bctx.fp_stderr);
+            // flush and restore
+            flushStdFD();
+            if(restoreFD) {
+                restoreStdFD(origFDs);
             }
 
             return EvalStatus::SUCCESS;
@@ -1628,8 +1611,7 @@ EvalStatus PipelineEvaluator::evalPipeline(RuntimeContext &ctx) {
             }
         }
 
-        this->redirect(ctx, procIndex, selfpipes[procIndex][WRITE_PIPE],
-                       STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO);
+        this->redirect(ctx, procIndex, selfpipes[procIndex][WRITE_PIPE]);
 
         closeAllPipe(procSize, pipefds);
 
@@ -1656,8 +1638,7 @@ EvalStatus PipelineEvaluator::evalPipeline(RuntimeContext &ctx) {
             if(procKind == ProcState::ProcKind::BUILTIN) {  // invoke builtin command
                 builtin_command_t cmd_ptr = procState.builtinCmd();
                 closeAllPipe(procSize, selfpipes);
-                BuiltinContext bctx(argc, argv, STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO);
-                exit(cmd_ptr(&ctx, bctx));
+                exit(cmd_ptr(&ctx, argc, argv));
             } else {    // invoke external command
                 xexecve(procState.filePath(), argv, nullptr);
 
@@ -1682,12 +1663,11 @@ void RuntimeContext::execBuiltinCommand(char *const argv[]) {
         return;
     }
 
-    BuiltinContext bctx(argv, ::dup(STDIN_FILENO), ::dup(STDOUT_FILENO), ::dup(STDERR_FILENO));
-    this->updateExitStatus(cmd_ptr(this, bctx));
+    int argc;
+    for(argc = 0; argv[argc] != nullptr; argc++);
 
-    fclose(bctx.fp_stdin);
-    fclose(bctx.fp_stdout);
-    fclose(bctx.fp_stderr);
+    this->updateExitStatus(cmd_ptr(this, argc, argv));
+    flushStdFD();
 }
 
 const char *PipelineEvaluator::getCommandName(unsigned int procIndex) {
