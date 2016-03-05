@@ -217,6 +217,9 @@ public:
      * if converted number is out of range, status is 1.
      */
     double toDouble(Token token, int &status) const;
+
+private:
+    bool isDecimal(Token token) const;
 };
 
 } // namespace parser

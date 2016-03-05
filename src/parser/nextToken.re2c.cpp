@@ -99,6 +99,10 @@ TokenKind Lexer::nextToken(Token &token) {
       re2c:indent:string = "    ";
 
       NUM = "0" | [1-9] [0-9]*;
+      OCTAL = "0o" [0-7]+;
+      HEX = "0x" [0-9a-fA-F]+;
+      INTEGER = NUM | OCTAL | HEX;
+      INTEGER_ = NUM | OCTAL "_" | HEX "_";
       DIGITS = [0-9]+;
       FLOAT_SUFFIX =  [eE] [+-]? NUM;
       FLOAT = NUM "." DIGITS FLOAT_SUFFIX?;
@@ -163,15 +167,15 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT,EXPR> "+"          { MODE(STMT); RET(PLUS); }
       <STMT,EXPR> "-"          { MODE(STMT); RET(MINUS); }
 
-      <STMT> NUM               { MODE(EXPR); RET(INT32_LITERAL); }
-      <STMT> NUM "u"           { MODE(EXPR); RET(UINT32_LITERAL); }
-      <STMT> NUM "b"           { MODE(EXPR); RET(BYTE_LITERAL); }
-      <STMT> NUM "i16"         { MODE(EXPR); RET(INT16_LITERAL); }
-      <STMT> NUM "i32"         { MODE(EXPR); RET(INT32_LITERAL); }
-      <STMT> NUM "i64"         { MODE(EXPR); RET(INT64_LITERAL); }
-      <STMT> NUM "u16"         { MODE(EXPR); RET(UINT16_LITERAL); }
-      <STMT> NUM "u32"         { MODE(EXPR); RET(UINT32_LITERAL); }
-      <STMT> NUM "u64"         { MODE(EXPR); RET(UINT64_LITERAL); }
+      <STMT> INTEGER           { MODE(EXPR); RET(INT32_LITERAL); }
+      <STMT> INTEGER_ "u"      { MODE(EXPR); RET(UINT32_LITERAL); }
+      <STMT> INTEGER_ "b"      { MODE(EXPR); RET(BYTE_LITERAL); }
+      <STMT> INTEGER_ "i16"    { MODE(EXPR); RET(INT16_LITERAL); }
+      <STMT> INTEGER_ "i32"    { MODE(EXPR); RET(INT32_LITERAL); }
+      <STMT> INTEGER_ "i64"    { MODE(EXPR); RET(INT64_LITERAL); }
+      <STMT> INTEGER_ "u16"    { MODE(EXPR); RET(UINT16_LITERAL); }
+      <STMT> INTEGER_ "u32"    { MODE(EXPR); RET(UINT32_LITERAL); }
+      <STMT> INTEGER_ "u64"    { MODE(EXPR); RET(UINT64_LITERAL); }
       <STMT> FLOAT             { MODE(EXPR); RET(FLOAT_LITERAL); }
       <STMT> STRING_LITERAL    { UPDATE_LN(); MODE(EXPR); RET(STRING_LITERAL); }
       <STMT> ESTRING_LITERAL   { UPDATE_LN(); MODE(EXPR); RET(STRING_LITERAL); }

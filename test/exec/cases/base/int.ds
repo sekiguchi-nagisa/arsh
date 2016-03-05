@@ -6,12 +6,30 @@ assert(0b is Byte)
 assert(+255b is Byte)
 assert(255b is Byte)
 
+assert(0xfF_b is Byte)
+assert(0xFF_b == 255b)
+assert(0x000_b is Byte)
+assert(0x0000_b == 0b)
+assert(0o377_b is Byte)
+assert(0o377_b == 255b)
+
 # Int16
 var i16 = -2334i16
 assert($i16 is Int16)
 assert(32767i16 is Int16)
 assert(+32767i16 is Int16)
 assert(-32767i16 is Int16)
+
+assert(0x7fff_i16 is Int16)
+assert(0x7FFF_i16 == 32767i16)
+assert(0x8000_i16 is Int16)
+assert(0x8000_i16 == -32767i16 - 1i16)
+assert(0xFFFF_i16 == -1i16)
+assert(0o77777_i16 is Int16)
+assert(0o77777_i16 == 32767i16)
+assert(0o100000_i16 is Int16)
+assert(0o100000_i16 == -32767i16 - 1i16)
+assert(0o177777_i16 == -1i16)
 
 # Uint16
 var u16 = 45243u16
@@ -20,6 +38,11 @@ assert(0u16 is Uint16)
 assert(+0u16 is Uint16)
 assert(65535u16 is Uint16)
 assert(+65535u16 is Uint16)
+
+assert(0xFFFF_u16 is Uint16)
+assert(0xFFFF_u16 == 65535u16)
+assert(0o177777_u16 is Uint16)
+assert(0o177777_u16 == 65535u16)
 
 # Int32
 var i32 = 23i32
@@ -32,6 +55,20 @@ assert(2147483647i32 is Int32)
 assert(-2147483647 is Int32)
 assert(-2147483647i32 is Int32)
 
+assert(0xFFFFFFFF is Int32)
+assert(0xFFFFFFFF_i32 is Int32)
+assert(0xfFFFfFfF == -1)
+assert(0x7fffffff is Int32)
+assert(0x7fffffff == 2147483647)
+assert(0x80000000_i32 is Int32)
+assert(0x80000000_i32 == -1 - 2147483647i32)
+assert(0o37777777777 is Int32)
+assert(0o37777777777_i32 == -1)
+assert(0o17777777777_i32 is Int32)
+assert(0o17777777777_i32 == 2147483647)
+assert(0o20000000000 is Int32)
+assert(0o20000000000_i32 == -1 - 2147483647i32)
+
 # Uint32
 var u32 = 43u32
 assert($u32 is Uint)
@@ -43,12 +80,32 @@ assert(+4294967295u is Uint)
 assert(4294967295u32 is Uint32)
 assert(+4294967295u32 is Uint)
 
+assert(0xFFFFFFFF_u is Uint32)
+assert(0xFFFFFFFF_u32 is Uint32)
+assert(0xFFFFFFFF_u32 == 4294967295u32)
+assert(0o37777777777_u is Uint32)
+assert(0o37777777777_u32 is Uint32)
+assert(0o37777777777_u32 == 4294967295u32)
+
 #Int64
 var i64 = 63457i64
 assert($i64 is Int64)
 assert(9223372036854775807i64 is Int64)
 assert(+9223372036854775807i64 is Int64)
 assert(-9223372036854775807i64 is Int64)
+
+assert(0xFFFFFFFFFFFFFFFF_i64 is Int64)
+assert(0xFFFFFFFFFFFFFFFF_i64 == -1i64)
+assert(0x7FFFFFFFFFFFFFFF_i64 is Int64)
+assert(0x7FFFFFFFFFFFFFFF_i64 == 9223372036854775807i64)
+assert(0x8000000000000000_i64 is Int64)
+assert(0x8000000000000000_i64 == -1i64 - 9223372036854775807i64)
+assert(0o1777777777777777777777_i64 is Int64)
+assert(0o1777777777777777777777_i64 == -1i64)
+assert(0o777777777777777777777_i64 is Int64)
+assert(0o777777777777777777777_i64 == 9223372036854775807i64)
+assert(0o1000000000000000000000_i64 is Int64)
+assert(0o1000000000000000000000_i64 == -1i64 - 9223372036854775807i64)
 
 # Uint64
 var u64 = 56345u64
@@ -57,6 +114,11 @@ assert(0u64 is Uint64)
 assert(+0u64 is Uint64)
 assert(18446744073709551615u64 is Uint64)
 assert(+18446744073709551615u64 is Uint64)
+
+assert(0xFFFFFFFFFFFFFFFF_u64 is Uint64)
+assert(0xFFFFFFFFFFFFFFFF_u64 == 18446744073709551615u64)
+assert(0o1777777777777777777777_u64 is Uint64)
+assert(0o1777777777777777777777_u64 == 18446744073709551615u64)
 
 # Byte op
 assert(-12b is Byte)

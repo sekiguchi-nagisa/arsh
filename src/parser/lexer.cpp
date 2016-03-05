@@ -279,12 +279,15 @@ unsigned char Lexer::toUint8(Token token, int &status) const {
 }
 
 short Lexer::toInt16(Token token, int &status) const {
-    long value = this->toInt64(token, status);
-    if(value > INT16_MAX || value < INT16_MIN) {
-        status = 1;
-        return 0;
+    if(this->isDecimal(token)) {
+        long value = this->toInt64(token, status);
+        if(value > INT16_MAX || value < INT16_MIN) {
+            status = 1;
+            return 0;
+        }
+        return static_cast<short>(value);
     }
-    return static_cast<short>(value);
+    return static_cast<short>(this->toUint16(token, status));
 }
 
 unsigned short Lexer::toUint16(Token token, int &status) const {
@@ -297,12 +300,15 @@ unsigned short Lexer::toUint16(Token token, int &status) const {
 }
 
 int Lexer::toInt32(Token token, int &status) const {
-    long value = this->toInt64(token, status);
-    if(value > INT32_MAX || value < INT32_MIN) {
-        status = 1;
-        return 0;
+    if(this->isDecimal(token)) {
+        long value = this->toInt64(token, status);
+        if(value > INT32_MAX || value < INT32_MIN) {
+            status = 1;
+            return 0;
+        }
+        return static_cast<int>(value);
     }
-    return static_cast<int>(value);
+    return static_cast<int>(this->toUint32(token, status));
 }
 
 unsigned int Lexer::toUint32(Token token, int &status) const {
@@ -315,21 +321,24 @@ unsigned int Lexer::toUint32(Token token, int &status) const {
 }
 
 long Lexer::toInt64(Token token, int &status) const {
-    assert(this->withinRange(token));
+    if(this->isDecimal(token)) {
+        assert(this->withinRange(token));
 
-    char str[token.size + 1];
-    for(unsigned int i = 0; i < token.size; i++) {
-        str[i] = this->buf[token.pos + i];
-    }
-    str[token.size] = '\0';
+        char str[token.size + 1];
+        for(unsigned int i = 0; i < token.size; i++) {
+            str[i] = this->buf[token.pos + i];
+        }
+        str[token.size] = '\0';
 
-    long value = convertToInt64(str, status, true);
-    if(status == -1) {
-        fatal("cannot covert to int: %s\n", str);
-    } else if(status == -2) {
-        fatal("found illegal character in num: %s\n", str);
+        long value = convertToInt64(str, status, true);
+        if(status == -1) {
+            fatal("cannot covert to int: %s\n", str);
+        } else if(status == -2) {
+            fatal("found illegal character in num: %s\n", str);
+        }
+        return value;
     }
-    return value;
+    return static_cast<long>(this->toUint64(token, status));
 }
 
 unsigned long Lexer::toUint64(Token token, int &status) const {
@@ -366,6 +375,17 @@ double Lexer::toDouble(Token token, int &status) const {
         fatal("found illegal character in num: %s\n", str);
     }
     return value;
+}
+
+bool Lexer::isDecimal(Token token) const {
+    assert(this->withinRange(token));
+    if(token.size > 2) {    // '0x' or '0o'
+        const char *str = reinterpret_cast<char *>(this->buf + token.pos);
+        if(str[0] == '0' && (str[1] == 'x' || str[1] == 'o')) {
+            return false;
+        }
+    }
+    return true;
 }
 
 } // namespace parser

@@ -34,9 +34,17 @@ namespace misc {
 inline long convertToInt64(const char *str, int &status, bool skipIllegalChar = false) {
     errno = 0;
 
+    int base = 10;
+    if(strstr(str, "0x") == str) {
+        base = 16;
+    } else if(strstr(str, "0o") == str) {
+        base = 8;
+        str += 2;   // skip '0o'
+    }
+
     // convert to int
     char *end;
-    const long value = strtol(str, &end, 10);
+    const long value = strtol(str, &end, base);
 
     // check error
     if(end == str) {
@@ -64,9 +72,17 @@ inline long convertToInt64(const char *str, int &status, bool skipIllegalChar = 
 inline unsigned long convertToUint64(const char *str, int &status, bool skipIllegalChar = false) {
     errno = 0;
 
+    int base = 10;
+    if(strstr(str, "0x") == str) {
+        base = 16;
+    } else if(strstr(str, "0o") == str) {
+        base = 8;
+        str += 2;   // skip '0o'
+    }
+
     // convert to int
     char *end;
-    const unsigned long long value = strtoull(str, &end, 10);
+    const unsigned long long value = strtoull(str, &end, base);
 
     // check error
     if(end == str) {
