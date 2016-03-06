@@ -242,18 +242,26 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
 
         node->addParamNode(nameNode.release(), type.release());
 
-        while(CUR_KIND() == COMMA) {
-            this->expect(COMMA);
-            token = this->expect(APPLIED_NAME);
+        for(bool next = true; next;) {
+            if(CUR_KIND() == COMMA) {
+                this->expect(COMMA);
+                token = this->expect(APPLIED_NAME);
 
-            nameNode = uniquify<VarNode>(token, this->lexer->toName(token));
+                nameNode = uniquify<VarNode>(token, this->lexer->toName(token));
 
-            this->expect(COLON, false);
+                this->expect(COLON, false);
 
-            type = this->parse_typeName();
+                type = this->parse_typeName();
 
-            node->addParamNode(nameNode.release(), type.release());
+                node->addParamNode(nameNode.release(), type.release());
+            } else if(CUR_KIND() == RP) {
+                next = false;
+            } else {
+                E_ALTER(COMMA, RP);
+            }
         }
+    } else if(CUR_KIND() != RP) {
+        E_ALTER(APPLIED_NAME, RP);
     }
 
     node->updateToken(this->curToken);
@@ -1134,10 +1142,15 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
             std::unique_ptr<Node> rightNode(this->parse_expression());
             std::unique_ptr<TupleNode> tuple(
                     new TupleNode(token.pos, node.release(), rightNode.release()));
-
-            while(CUR_KIND() == COMMA) {
-                this->expect(COMMA);
-                tuple->addNode(this->parse_expression().release());
+            for(bool next = true; next;) {
+                if(CUR_KIND() == COMMA) {
+                    this->expect(COMMA);
+                    tuple->addNode(this->parse_expression().release());
+                } else if(CUR_KIND() == RP) {
+                    next = false;
+                } else {
+                    E_ALTER(COMMA, RP);
+                }
             }
             node.reset(tuple.release());
         } else {
@@ -1160,19 +1173,31 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
             std::unique_ptr<Node> valueNode(this->parse_expression());
             std::unique_ptr<MapNode> mapNode(
                     new MapNode(token.pos, keyNode.release(), valueNode.release()));
-            while(CUR_KIND() == COMMA) {
-                this->expect(COMMA);
-                keyNode = this->parse_expression();
-                this->expectAndChangeMode(COLON, yycSTMT);
-                valueNode = this->parse_expression();
-                mapNode->addEntry(keyNode.release(), valueNode.release());
+            for(bool next = true; next;) {
+                if(CUR_KIND() == COMMA) {
+                    this->expect(COMMA);
+                    keyNode = this->parse_expression();
+                    this->expectAndChangeMode(COLON, yycSTMT);
+                    valueNode = this->parse_expression();
+                    mapNode->addEntry(keyNode.release(), valueNode.release());
+                } else if(CUR_KIND() == RB) {
+                    next = false;
+                } else {
+                    E_ALTER(COMMA, RB);
+                }
             }
             node = std::move(mapNode);
         } else {    // array
             auto arrayNode = uniquify<ArrayNode>(token.pos, keyNode.release());
-            while(CUR_KIND() == COMMA) {
-                this->expect(COMMA);
-                arrayNode->addExprNode(this->parse_expression().release());
+            for(bool next = true; next;) {
+                if(CUR_KIND() == COMMA) {
+                    this->expect(COMMA);
+                    arrayNode->addExprNode(this->parse_expression().release());
+                } else if(CUR_KIND() == RB) {
+                    next = false;
+                } else {
+                    E_ALTER(COMMA, RB);
+                }
             }
             node = std::move(arrayNode);
         }
@@ -1208,14 +1233,22 @@ ArgsWrapper Parser::parse_arguments() {
     switch(CUR_KIND()) {
     EACH_LA_expression(GEN_LA_CASE) {
         args.addArgNode(this->parse_expression());
-        while(CUR_KIND() == COMMA) {
-            this->expect(COMMA);
-            args.addArgNode(this->parse_expression());
+        for(bool next = true; next;) {
+            if(CUR_KIND() == COMMA) {
+                this->expect(COMMA);
+                args.addArgNode(this->parse_expression());
+            } else if(CUR_KIND() == RP) {
+                next = false;
+            } else {
+                E_ALTER(COMMA, RP);
+            }
         }
         break;
     }
-    default:  // no args
+    case RP:
         break;
+    default:  // no args
+        E_ALTER(EACH_LA_expression(GEN_LA_ALTER) RP);
     }
 
     this->expect(RP);
@@ -1242,10 +1275,11 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
             node->addExprNode(this->parse_commandSubstitution().release());
             break;
         }
-        default: {
+        case CLOSE_DQUOTE:
             next = false;
             break;
-        }
+        default:
+            E_ALTER(STR_ELEMENT, EACH_LA_interpolation(GEN_LA_ALTER) START_SUB_CMD, CLOSE_DQUOTE);
         }
     }
 
