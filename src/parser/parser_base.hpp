@@ -31,12 +31,18 @@ private:
     T kind;
     Token errorToken;
     const char *errorKind;
+    std::vector<T> expectedTokens;
     std::string message;
 
 public:
     ParseError(T kind, Token errorToken, const char *errorKind, std::string &&message) :
-            kind(kind), errorToken(errorToken),
-            errorKind(errorKind), message(std::move(message)) { }
+            kind(kind), errorToken(errorToken), errorKind(errorKind),
+            expectedTokens(), message(std::move(message)) { }
+
+    ParseError(T kind, Token errorToken, const char *errorKind,
+               std::vector<T> &&expectedTokens, std::string &&message) :
+            kind(kind), errorToken(errorToken), errorKind(errorKind),
+            expectedTokens(std::move(expectedTokens)), message(std::move(message)) { }
 
     ~ParseError() = default;
 
@@ -50,6 +56,10 @@ public:
 
     const char *getErrorKind() const {
         return this->errorKind;
+    }
+
+    const std::vector<T> &getExpectedTokens() const {
+        return this->expectedTokens;
     }
 
     const std::string &getMessage() const {
@@ -161,7 +171,10 @@ void ParserBase<T, LexerImpl, Tracker>::raiseTokenMismatchedError(T kind, Token 
     message += ", expected: ";
     message += toString(expected);
 
-    throw ParseError<T>(kind, errorToken, "TokenMismatched", std::move(message));
+    std::vector<T> expectedTokens(1);
+    expectedTokens[0] = expected;
+    throw ParseError<T>(kind, errorToken, "TokenMismatched",
+                        std::move(expectedTokens), std::move(message));
 }
 
 template<typename T, typename LexerImpl, typename Tracker>
@@ -183,7 +196,9 @@ void ParserBase<T, LexerImpl, Tracker>::raiseNoViableAlterError(T kind, Token er
         }
     }
 
-    throw ParseError<T>(kind, errorToken, "NoViableAlter", std::move(message));
+    std::vector<T> expectedTokens(alters, alters + size);
+    throw ParseError<T>(kind, errorToken, "NoViableAlter",
+                        std::move(expectedTokens), std::move(message));
 }
 
 template<typename T, typename LexerImpl, typename Tracker>
@@ -199,7 +214,9 @@ void ParserBase<T, LexerImpl, Tracker>::raiseInvalidTokenError(T kind, Token err
         }
     }
 
-    throw ParseError<T>(kind, errorToken, "InvalidToken", std::move(message));
+    std::vector<T> expectedTokens(alters, alters + size);
+    throw ParseError<T>(kind, errorToken, "InvalidToken",
+                        std::move(expectedTokens), std::move(message));
 }
 
 } //namespace parser_base

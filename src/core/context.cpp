@@ -1192,6 +1192,15 @@ static CompletorKind selectWithCmd(const Lexer &lexer, const std::vector<std::pa
     }
 }
 
+static bool findKind(const std::vector<TokenKind> &values, TokenKind kind) {
+    for(auto &e : values) {
+        if(e == kind) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static CompletorKind selectCompletor(const std::string &line, std::string &tokenStr) {
     CompletorKind kind = CompletorKind::NONE;
 
@@ -1276,21 +1285,20 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
                         goto END;
                     }
 
-                    if(!isNewline(lexer, tokenPairs.back())
-                       && strstr(e.getMessage().c_str(), toString(COMMAND)) != nullptr) {
+                    if(!isNewline(lexer, tokenPairs.back()) && findKind(e.getExpectedTokens(), COMMAND)) {
                         kind = CompletorKind::CMD;
                         goto END;
                     }
                 }
 
-                if(strstr(e.getMessage().c_str(), toString(CMD_ARG_PART)) != nullptr) {
+                if(findKind(e.getExpectedTokens(), CMD_ARG_PART)) {
                     kind = CompletorKind::FILE;
                     goto END;
                 }
             } else if(strcmp(e.getErrorKind(), "TokenMismatched") == 0) {
-                std::string t = "expected: ";
-                std::string expected = e.getMessage().substr(e.getMessage().find(t) + t.size());
-                LOG(DUMP_CONSOLE, "expected: " << expected);
+                assert(e.getExpectedTokens().size() > 0);
+                TokenKind expected = e.getExpectedTokens().back();
+                LOG(DUMP_CONSOLE, "expected: " << toString(expected));
 
                 if(!tokenPairs.empty()) {
                     kind = kind = selectWithCmd(lexer, tokenPairs, cursor, tokenPairs.size() - 1, tokenStr, true);
@@ -1299,12 +1307,13 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
                     }
                 }
 
-                if(expected.size() < 2 || (expected.front() != '<' && expected.back() != '>')) {
-                    tokenStr = std::move(expected);
+                std::string expectedStr = toString(expected);
+                if(expectedStr.size() < 2 || (expectedStr.front() != '<' && expectedStr.back() != '>')) {
+                    tokenStr = std::move(expectedStr);
                     kind = CompletorKind::EXPECT;
                     goto END;
                 }
-                if(expected == toString(COMMAND)) {
+                if(expected == COMMAND) {
                     kind = CompletorKind::CMD;
                     goto END;
                 }
@@ -1314,7 +1323,8 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
         case INVALID: {
             std::string str = lexer.toTokenText(token);
             if(str == "$" && token.pos + token.size == cursor &&
-               strstr(e.getMessage().c_str(), toString(APPLIED_NAME)) != nullptr) {
+                    findKind(e.getExpectedTokens(), APPLIED_NAME) &&
+                    findKind(e.getExpectedTokens(), SPECIAL_NAME)) {
                 tokenStr = std::move(str);
                 kind = CompletorKind::VAR;
                 goto END;

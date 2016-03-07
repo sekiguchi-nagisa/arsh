@@ -51,11 +51,12 @@ function assertArray($x : Array<String>, $y : Array<String>) {
 
 
 # no completion candidate
-$assertArray(new Array<String>(), $(complete '34'))
-$assertArray(new Array<String>(), $(complete '34 '))
-$assertArray(new Array<String>(), $(complete 'echo hello ${45}'))
-$assertArray(new Array<String>(), $(complete 'echo hello ${45}./'))
-$assertArray(new Array<String>(), $(complete 'var a = ;'))
-$assertArray(new Array<String>(), $(complete 'var 23'))
-$assertArray(new Array<String>(), $(complete '[  )'))
-$assertArray(new Array<String>(), $(complete 'var 23'))
+assert($(complete '34').empty())
+assert($(complete '34 ').empty())
+assert($(complete 'echo hello ${45}').empty())
+assert($(complete 'echo hello ${45}./').empty())
+assert($(complete 'var a = ;').empty())
+assert($(complete 'var 23').empty())
+assert($(complete '[  )').empty())
+assert($(complete 'var 23').empty())
+assert($(complete 'function f($').empty())
