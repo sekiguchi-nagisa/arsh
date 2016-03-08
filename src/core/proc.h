@@ -193,7 +193,7 @@ public:
     }
 };
 
-class PipelineEvaluator {
+class PipelineEvaluator : public DSObject {
 private:
     /**
      * stack top index before pipeline evaluation.
@@ -215,7 +215,7 @@ private:
 public:
     NON_COPYABLE(PipelineEvaluator);
 
-    PipelineEvaluator() = default;
+    PipelineEvaluator() : DSObject(nullptr) {}
 
     ~PipelineEvaluator() = default;
 

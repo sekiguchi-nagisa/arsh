@@ -212,7 +212,11 @@ private:
      */
     std::vector<unsigned long> callStack;
 
-    PipelineEvaluator pipelineEvaluator;
+    /**
+     * for caching object.
+     * must be PipelineEvaluator object.
+     */
+    DSValue pipelineEvaluator;
 
     /**
      * contains user defined command node.
@@ -588,15 +592,9 @@ public:
 
     void exitShell(unsigned int status);
 
-    PipelineEvaluator &activePipeline() {
-        return this->pipelineEvaluator;
-    }
-
     FilePathCache &getPathCache() {
         return this->pathCache;
     }
-
-    EvalStatus callPipedCommand(unsigned int startPos);
 
     const CStringHashMap<UserDefinedCmdNode *> &getUdcMap() const {
         return this->udcMap;
@@ -642,6 +640,13 @@ public:
      */
     void execBuiltinCommand(char *const argv[]);
 
+    void pushNewPipeline();
+
+    /**
+     * after call pipeline, pop stack.
+     */
+    PipelineEvaluator &activePipeline();
+
     /**
      * stack top value must be String_Object and it represents command name.
      */
@@ -658,6 +663,8 @@ public:
      * stack top value must be String_Object.
      */
     void addRedirOption(RedirectOP op);
+
+    EvalStatus callPipedCommand(unsigned int startPos);
 };
 
 // some system util

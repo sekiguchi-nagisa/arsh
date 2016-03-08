@@ -156,8 +156,8 @@ RuntimeContext::RuntimeContext() :
         localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0),
         localVarOffset(0), offsetStack(), toplevelPrinting(false), assertion(true),
         handle_STR(nullptr), handle_bt(nullptr), IFS_index(0),
-        callableContextStack(), callStack(), pipelineEvaluator(), udcMap(), pathCache() {
-}
+        callableContextStack(), callStack(),
+        pipelineEvaluator(DSValue::create<PipelineEvaluator>()), udcMap(), pathCache() { }
 
 RuntimeContext::~RuntimeContext() {
     delete[] this->globalVarTable;
@@ -645,21 +645,6 @@ void RuntimeContext::exitShell(unsigned int status) {
     throw InternalError();
 }
 
-EvalStatus RuntimeContext::callPipedCommand(unsigned int startPos) {
-    this->pushCallFrame(startPos);
-    EvalStatus status = this->activePipeline().evalPipeline(*this);
-    this->popCallFrame();
-
-    // pop stack top
-    const unsigned int oldIndex = this->activePipeline().getStackTopIndex();
-    for(unsigned int i = this->getStackTopIndex(); i > oldIndex; i--) {
-        this->popNoReturn();
-    }
-
-    this->activePipeline().clear();
-    return status;
-}
-
 void RuntimeContext::addUserDefinedCommand(UserDefinedCmdNode *node) {
     if(!this->udcMap.insert(std::make_pair(node->getCommandName().c_str(), node)).second) {
         fatal("undefined defined command: %s\n", node->getCommandName().c_str());
@@ -722,6 +707,34 @@ int RuntimeContext::execUserDefinedCommand(UserDefinedCmdNode *node, DSValue *ar
         fatal("broken user defined command\n");
     }
     return 0;
+}
+
+void RuntimeContext::pushNewPipeline() {
+    if(this->pipelineEvaluator.get()->getRefcount() == 1) { // reuse cached evaluator object
+        this->push(this->pipelineEvaluator);
+    } else {
+        this->push(DSValue::create<PipelineEvaluator>());
+    }
+}
+
+PipelineEvaluator &RuntimeContext::activePipeline() {
+    return *typeAs<PipelineEvaluator>(this->peek());
+}
+
+EvalStatus RuntimeContext::callPipedCommand(unsigned int startPos) {
+    this->pushCallFrame(startPos);
+    EvalStatus status = this->activePipeline().evalPipeline(*this);
+    this->popCallFrame();
+
+    // pop stack top
+    const unsigned int oldIndex = this->activePipeline().getStackTopIndex();
+    for(unsigned int i = this->getStackTopIndex(); i > oldIndex; i--) {
+        this->popNoReturn();
+    }
+
+    this->activePipeline().clear();
+    this->popNoReturn();
+    return status;
 }
 
 static void format2digit(int num, std::string &out) {
