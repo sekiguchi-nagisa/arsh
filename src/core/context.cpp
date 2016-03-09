@@ -149,9 +149,7 @@ RuntimeContext::RuntimeContext() :
         trueObj(new Boolean_Object(this->pool.getBooleanType(), true)),
         falseObj(new Boolean_Object(this->pool.getBooleanType(), false)),
         emptyStrObj(new String_Object(this->pool.getStringType(), std::string())),
-        dummy(new DummyObject()),
-        globalVarTable(new DSValue[DEFAULT_TABLE_SIZE]),
-        tableSize(DEFAULT_TABLE_SIZE), thrownObject(),
+        dummy(new DummyObject()), thrownObject(),
         localStack(new DSValue[DEFAULT_LOCAL_SIZE]),
         localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0),
         localVarOffset(0), offsetStack(), toplevelPrinting(false), assertion(true),
@@ -160,7 +158,6 @@ RuntimeContext::RuntimeContext() :
         pipelineEvaluator(DSValue::create<PipelineEvaluator>()), udcMap(), pathCache() { }
 
 RuntimeContext::~RuntimeContext() {
-    delete[] this->globalVarTable;
     delete[] this->localStack;
 
     for(auto &pair : this->udcMap) {
@@ -228,19 +225,8 @@ void RuntimeContext::finalizeScritArg() {
 }
 
 void RuntimeContext::reserveGlobalVar(unsigned int size) {
-    if(this->tableSize < size) {
-        unsigned int newSize = this->tableSize;
-        do {
-            newSize *= 2;
-        } while(newSize < size);
-        DSValue *newTable = new DSValue[newSize];
-        for(unsigned int i = 0; i < this->tableSize; i++) {
-            newTable[i] = std::move(this->globalVarTable[i]);
-        }
-        delete[] this->globalVarTable;
-        this->globalVarTable = newTable;
-        this->tableSize = newSize;
-    }
+    this->reserveLocalVar(size);
+    this->localVarOffset = size;
 }
 
 void RuntimeContext::reserveLocalVar(unsigned int size) {
@@ -279,7 +265,7 @@ void RuntimeContext::raiseCircularReferenceError() {
 void RuntimeContext::expandLocalStack(unsigned int needSize) {
     unsigned int newSize = this->localStackSize;
     do {
-        newSize *= 2;
+        newSize += (newSize >> 1);
     } while(newSize < needSize);
     auto newTable = new DSValue[newSize];
     for(unsigned int i = 0; i < this->localStackSize; i++) {

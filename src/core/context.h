@@ -138,28 +138,23 @@ private:
     DSValue dummy;
 
     /**
-     * contains global variables(or function)
-     */
-    DSValue *globalVarTable;
-
-    /**
-     * size of global variable table.
-     */
-    unsigned int tableSize;
-
-    /**
      * if not null ptr, thrown exception.
      */
     DSValue thrownObject;
 
     /**
-     * contains operand or local variable
+     * contains operand, global variable(may be function) or local variable.
+     *
+     * stack grow ==>
+     * +--------------+   +--------------+-------------+   +-------------+
+     * | global var 1 | ~ | global var N | local var 1 | ~ | local var N | ~
+     * +--------------+   +--------------+-------------+   +-------------+
+     * |          global variable        |         local variable        | operand stack
      */
     DSValue *localStack;
 
     unsigned int localStackSize;
 
-    static constexpr unsigned int DEFAULT_TABLE_SIZE = 32;
     static constexpr unsigned int DEFAULT_LOCAL_SIZE = 256;
 
     /**
@@ -326,7 +321,7 @@ public:
 
 
     /**
-     * if this->tableSize < size, expand globalVarTable.
+     * revserve global variable entry and set local variable offset.
      */
     void reserveGlobalVar(unsigned int size);
 
@@ -430,23 +425,23 @@ public:
 
     // variable manipulation
     void storeGlobal(unsigned int index) {
-        this->globalVarTable[index] = this->pop();
+        this->localStack[index] = this->pop();
     }
 
     void loadGlobal(unsigned int index) {
-        this->push(this->globalVarTable[index]);
+        this->push(this->localStack[index]);
     }
 
     void setGlobal(unsigned int index, const DSValue &obj) {
-        this->globalVarTable[index] = obj;
+        this->localStack[index] = obj;
     }
 
     void setGlobal(unsigned int index, DSValue &&obj) {
-        this->globalVarTable[index] = std::move(obj);
+        this->localStack[index] = std::move(obj);
     }
 
     const DSValue &getGlobal(unsigned int index) {
-        return this->globalVarTable[index];
+        return this->localStack[index];
     }
 
     void storeLocal(unsigned int index) {

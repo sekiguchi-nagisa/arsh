@@ -2586,7 +2586,7 @@ EvalStatus RootNode::eval(RuntimeContext &ctx) {
 
     ctx.pushFuncContext(this);
     ctx.reserveGlobalVar(this->maxGVarNum);
-    ctx.reserveLocalVar(this->maxVarNum);
+    ctx.reserveLocalVar(ctx.getLocalVarOffset() + this->maxVarNum);
 
     for(auto iter = this->nodeList.begin(); iter != this->nodeList.end();) {
         Node *node = *iter;
