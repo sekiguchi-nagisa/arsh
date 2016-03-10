@@ -784,7 +784,7 @@ std::unique_ptr<Node> Parser::parse_commandListExpression() {
     if(dynamic_cast<UserDefinedCmdNode *>(node.get()) != nullptr) {
         return node;
     }
-    return uniquify<CmdContextNode>(node.release());
+    return node;
 }
 
 std::unique_ptr<Node> Parser::parse_orListCommand() {
@@ -1272,7 +1272,9 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
             break;
         }
         case START_SUB_CMD: {
-            node->addExprNode(this->parse_commandSubstitution().release());
+            auto subNode(this->parse_commandSubstitution());
+            subNode->setStrExpr(true);
+            node->addExprNode(subNode.release());
             break;
         }
         case CLOSE_DQUOTE:
@@ -1317,12 +1319,11 @@ std::unique_ptr<Node> Parser::parse_paramExpansion() {
     }
 }
 
-std::unique_ptr<Node> Parser::parse_commandSubstitution() {
+std::unique_ptr<SubstitutionNode> Parser::parse_commandSubstitution() {
     this->expect(START_SUB_CMD);
-    std::unique_ptr<Node> node(this->parse_commandListExpression());
-    node->inCmdArgNode();
+    auto node(this->parse_commandListExpression());
     this->expect(RP);
-    return node;
+    return uniquify<SubstitutionNode>(node.release());
 }
 
 bool parse(const char *sourceName, RootNode &rootNode) {

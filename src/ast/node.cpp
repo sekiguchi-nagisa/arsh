@@ -47,14 +47,6 @@ void Node::setType(DSType &type) {
     this->type = &type;
 }
 
-void Node::inStringExprNode() { } // do nothing
-
-void Node::inCmdArgNode() { } // do nothing
-
-void Node::inCondition() { }  // do nothing
-
-void Node::inRightHandleSide() { }   // do nothing
-
 bool Node::isTerminalNode() const {
     return false;
 }
@@ -336,7 +328,6 @@ StringExprNode::~StringExprNode() {
 }
 
 void StringExprNode::addExprNode(Node *node) {
-    node->inStringExprNode();
     this->nodes.push_back(node);
 }
 
@@ -1176,8 +1167,6 @@ EvalStatus GroupNode::eval(RuntimeContext &ctx) {
 
 CondOpNode::CondOpNode(Node *leftNode, Node *rightNode, bool isAndOp) :
         Node(leftNode->getToken()), leftNode(leftNode), rightNode(rightNode), andOp(isAndOp) {
-    this->leftNode->inCondition();
-    this->rightNode->inCondition();
     this->updateToken(rightNode->getToken());
 }
 
@@ -1229,7 +1218,6 @@ CmdArgNode::~CmdArgNode() {
 }
 
 void CmdArgNode::addSegmentNode(Node *node) {
-    node->inCmdArgNode();
     this->segmentNodes.push_back(node);
     this->updateToken(node->getToken());
 }
@@ -1411,12 +1399,7 @@ void PipedCmdNode::addCmdNodes(Node *node) {
     this->updateToken(node->getToken());
 }
 
-void PipedCmdNode::inCondition() {
-    this->asBool = true;
-}
-
 void PipedCmdNode::dump(NodeDumper &dumper) const {
-    DUMP_PRIM(asBool);
     DUMP(cmdNodes);
 }
 
@@ -1434,60 +1417,31 @@ EvalStatus PipedCmdNode::eval(RuntimeContext &ctx) {
 
     EvalStatus status = ctx.callPipedCommand(this->getStartPos());
 
-    // push exit status
-    if(*this->type == ctx.getPool().getBooleanType()) {
-        if(typeAs<Int_Object>(ctx.getExitStatus())->getValue() == 0) {
-            ctx.push(ctx.getTrueObj());
-        } else {
-            ctx.push(ctx.getFalseObj());
-        }
+    // push exit status as boolean
+    if(typeAs<Int_Object>(ctx.getExitStatus())->getValue() == 0) {
+        ctx.push(ctx.getTrueObj());
+    } else {
+        ctx.push(ctx.getFalseObj());
     }
 
     return status;
 }
 
-// ###########################
-// ##     CmdContextNode    ##
-// ###########################
+// ##############################
+// ##     SubstitutionNode     ##
+// ##############################
 
-CmdContextNode::~CmdContextNode() {
+SubstitutionNode::~SubstitutionNode() {
     delete this->exprNode;
 }
 
-void CmdContextNode::inStringExprNode() {
-    this->setAttribute(STR_CAP);
-    this->setAttribute(FORK);
-}
-
-void CmdContextNode::inCmdArgNode() {
-    this->setAttribute(ARRAY_CAP);
-    this->setAttribute(FORK);
-}
-
-void CmdContextNode::inCondition() {
-    this->setAttribute(CONDITION);
-}
-
-void CmdContextNode::inRightHandleSide() {
-    this->setAttribute(CONDITION);
-}
-
-void CmdContextNode::dump(NodeDumper &dumper) const {
+void SubstitutionNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
-
-#define EACH_FLAG(OP) \
-    OP(BACKGROUND) \
-    OP(FORK) \
-    OP(STR_CAP) \
-    OP(ARRAY_CAP) \
-    OP(CONDITION)
-
-    DUMP_BITSET(attributeSet, EACH_FLAG);
-#undef EACH_FLAG
+    DUMP_PRIM(strExpr);
 }
 
-void CmdContextNode::accept(NodeVisitor &visitor) {
-    visitor.visitCmdContextNode(*this);
+void SubstitutionNode::accept(NodeVisitor &visitor) {
+    visitor.visitSubstitutionNode(*this);
 }
 
 static bool isSpace(int ch) {
@@ -1512,131 +1466,125 @@ static bool hasSpace(const char *ifs) {
     return false;
 }
 
-EvalStatus CmdContextNode::eval(RuntimeContext &ctx) {
-    if(this->hasAttribute(FORK) &&
-       (this->hasAttribute(STR_CAP) || this->hasAttribute(ARRAY_CAP))) {
-        // capture stdout
-        pid_t pipefds[2];
+EvalStatus SubstitutionNode::eval(RuntimeContext &ctx) {
+    // capture stdout
+    pid_t pipefds[2];
 
-        if(pipe(pipefds) < 0) {
-            perror("pipe creation failed\n");
-            exit(1);    //FIXME: throw exception
-        }
-
-        pid_t pid = xfork();
-        if(pid > 0) {   // parent process
-            close(pipefds[WRITE_PIPE]);
-
-            DSValue obj;
-
-            if(*this->type == ctx.getPool().getStringType()) {  // capture stdout as String
-                static const int bufSize = 256;
-                char buf[bufSize + 1];
-                std::string str;
-                while(true) {
-                    int readSize = read(pipefds[READ_PIPE], buf, bufSize);
-                    if(readSize == -1 && (errno == EAGAIN || errno == EINTR)) {
-                        continue;
-                    }
-                    if(readSize <= 0) {
-                        break;
-                    }
-                    buf[readSize] = '\0';
-                    str += buf;
-                }
-
-                // remove last newlines
-                std::string::size_type pos = str.find_last_not_of('\n');
-                if(pos == std::string::npos) {
-                    str.clear();
-                } else {
-                    str.erase(pos + 1);
-                }
-
-                obj = DSValue::create<String_Object>(*this->type, std::move(str));
-            } else {    // capture stdout as String Array
-                const char *ifs = ctx.getIFS();
-                unsigned int skipCount = 1;
-
-                static const int bufSize = 256;
-                char buf[bufSize];
-                std::string str;
-                obj = DSValue::create<Array_Object>(*this->type);
-                Array_Object *array = typeAs<Array_Object>(obj);
-
-                while(true) {
-                    int readSize = read(pipefds[READ_PIPE], buf, bufSize);
-                    if(readSize == -1 && (errno == EINTR || errno == EAGAIN)) {
-                        continue;
-                    }
-                    if(readSize <= 0) {
-                        break;
-                    }
-
-                    for(int i = 0; i < readSize; i++) {
-                        char ch = buf[i];
-                        bool fieldSep = isFieldSep(ifs, ch);
-                        if(fieldSep && skipCount > 0) {
-                            if(isSpace(ch)) {
-                                continue;
-                            }
-                            if(--skipCount == 1) {
-                                continue;
-                            }
-                        }
-                        skipCount = 0;
-                        if(fieldSep) {
-                            array->append(DSValue::create<String_Object>(
-                                    ctx.getPool().getStringType(), std::move(str)));
-                            str = "";
-                            skipCount = isSpace(ch) ? 2 : 1;
-                            continue;
-                        }
-                        str += ch;
-                    }
-                }
-
-                // remove last newline
-                while(!str.empty() && str.back() == '\n') {
-                    str.pop_back();
-                }
-
-                // append remain
-                if(!str.empty() || !hasSpace(ifs)) {
-                    array->append(DSValue::create<String_Object>(
-                            ctx.getPool().getStringType(), std::move(str)));
-                }
-            }
-            close(pipefds[READ_PIPE]);
-
-            // wait exit
-            int status;
-            ctx.xwaitpid(pid, status, 0);
-
-            // push object
-            ctx.push(std::move(obj));
-            return EvalStatus::SUCCESS;
-        } else if(pid == 0) {   // child process
-            dup2(pipefds[WRITE_PIPE], STDOUT_FILENO);
-            close(pipefds[READ_PIPE]);
-            close(pipefds[WRITE_PIPE]);
-
-            if(this->exprNode->eval(ctx) == EvalStatus::THROW) {
-                if(ctx.getPool().getErrorType().isSameOrBaseTypeOf(*ctx.getThrownObject()->getType())) {
-                    ctx.reportError();
-                }
-                exit(1);
-            } //FIXME: propagate error
-
-            exit(0);
-        } else {
-            perror("fork failed");
-            exit(1);    //FIXME: throw exception
-        }
+    if(pipe(pipefds) < 0) {
+        perror("pipe creation failed\n");
+        exit(1);    //FIXME: throw exception
     }
 
+    pid_t pid = xfork();
+    if(pid > 0) {   // parent process
+        close(pipefds[WRITE_PIPE]);
 
-    return this->exprNode->eval(ctx);
+        DSValue obj;
+
+        if(this->strExpr) {  // capture stdout as String
+            static const int bufSize = 256;
+            char buf[bufSize + 1];
+            std::string str;
+            while(true) {
+                int readSize = read(pipefds[READ_PIPE], buf, bufSize);
+                if(readSize == -1 && (errno == EAGAIN || errno == EINTR)) {
+                    continue;
+                }
+                if(readSize <= 0) {
+                    break;
+                }
+                buf[readSize] = '\0';
+                str += buf;
+            }
+
+            // remove last newlines
+            std::string::size_type pos = str.find_last_not_of('\n');
+            if(pos == std::string::npos) {
+                str.clear();
+            } else {
+                str.erase(pos + 1);
+            }
+
+            obj = DSValue::create<String_Object>(*this->type, std::move(str));
+        } else {    // capture stdout as String Array
+            const char *ifs = ctx.getIFS();
+            unsigned int skipCount = 1;
+
+            static const int bufSize = 256;
+            char buf[bufSize];
+            std::string str;
+            obj = DSValue::create<Array_Object>(*this->type);
+            Array_Object *array = typeAs<Array_Object>(obj);
+
+            while(true) {
+                int readSize = read(pipefds[READ_PIPE], buf, bufSize);
+                if(readSize == -1 && (errno == EINTR || errno == EAGAIN)) {
+                    continue;
+                }
+                if(readSize <= 0) {
+                    break;
+                }
+
+                for(int i = 0; i < readSize; i++) {
+                    char ch = buf[i];
+                    bool fieldSep = isFieldSep(ifs, ch);
+                    if(fieldSep && skipCount > 0) {
+                        if(isSpace(ch)) {
+                            continue;
+                        }
+                        if(--skipCount == 1) {
+                            continue;
+                        }
+                    }
+                    skipCount = 0;
+                    if(fieldSep) {
+                        array->append(DSValue::create<String_Object>(
+                                ctx.getPool().getStringType(), std::move(str)));
+                        str = "";
+                        skipCount = isSpace(ch) ? 2 : 1;
+                        continue;
+                    }
+                    str += ch;
+                }
+            }
+
+            // remove last newline
+            while(!str.empty() && str.back() == '\n') {
+                str.pop_back();
+            }
+
+            // append remain
+            if(!str.empty() || !hasSpace(ifs)) {
+                array->append(DSValue::create<String_Object>(
+                        ctx.getPool().getStringType(), std::move(str)));
+            }
+        }
+        close(pipefds[READ_PIPE]);
+
+        // wait exit
+        int status;
+        ctx.xwaitpid(pid, status, 0);
+
+        // push object
+        ctx.push(std::move(obj));
+        return EvalStatus::SUCCESS;
+    } else if(pid == 0) {   // child process
+        dup2(pipefds[WRITE_PIPE], STDOUT_FILENO);
+        close(pipefds[READ_PIPE]);
+        close(pipefds[WRITE_PIPE]);
+
+        if(this->exprNode->eval(ctx) == EvalStatus::THROW) {
+            if(ctx.getPool().getErrorType().isSameOrBaseTypeOf(*ctx.getThrownObject()->getType())) {
+                ctx.reportError();
+            }
+            exit(1);
+        } //FIXME: propagate error
+
+        exit(0);
+    } else {
+        perror("fork failed");
+        exit(1);    //FIXME: throw exception
+    }
 }
 
 // ########################
@@ -1831,7 +1779,6 @@ ForNode::ForNode(unsigned int startPos, Node *initNode,
     if(this->condNode == nullptr) {
         this->condNode = new VarNode({startPos, 1}, std::string(VAR_TRUE));
     }
-    this->condNode->inCondition();
 
     if(this->iterNode == nullptr) {
         this->iterNode = new EmptyNode();
@@ -1985,7 +1932,6 @@ static void resolveIfIsStatement(Node *condNode, BlockNode *blockNode) {
 IfNode::IfNode(unsigned int startPos, Node *condNode, BlockNode *thenNode) :
         Node({startPos, 0}), condNode(condNode), thenNode(thenNode),
         elifCondNodes(), elifThenNodes(), elseNode(nullptr), terminal(false) {
-    this->condNode->inCondition();
 
     resolveIfIsStatement(this->condNode, this->thenNode);
     this->updateToken(thenNode->getToken());
@@ -2005,7 +1951,6 @@ IfNode::~IfNode() {
 }
 
 void IfNode::addElifNode(Node *condNode, BlockNode *thenNode) {
-    condNode->inCondition();
     this->elifCondNodes.push_back(condNode);
     this->elifThenNodes.push_back(thenNode);
     this->updateToken(thenNode->getToken());
@@ -2207,7 +2152,6 @@ VarDeclNode::VarDeclNode(unsigned int startPos, std::string &&varName, Node *ini
         Node({startPos, 0}), varName(std::move(varName)), readOnly(readOnly), global(false),
         varIndex(0), initValueNode(initValueNode) {
     if(this->initValueNode != nullptr) {
-        this->initValueNode->inRightHandleSide();
         this->updateToken(initValueNode->getToken());
     }
 }
@@ -2732,8 +2676,6 @@ Node *createSuffixNode(Node *leftNode, TokenKind op, Token token) {
 }
 
 Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode) {
-    rightNode->inRightHandleSide();
-
     /*
      * basic assignment
      */

@@ -108,8 +108,7 @@ DSType &TypeChecker::TypeGenerator::generateType(TypeNode *typeNode) {
 
 TypeChecker::TypeChecker(TypePool &typePool, SymbolTable &symbolTable) :
         typePool(typePool), symbolTable(symbolTable), typeGen(this), curReturnType(0),
-        visitingDepth(0), loopDepth(0), finallyDepth(0), cmdContextStack() {
-}
+        visitingDepth(0), loopDepth(0), finallyDepth(0) { }
 
 void TypeChecker::checkTypeRootNode(RootNode &rootNode) {
     rootNode.accept(*this);
@@ -125,7 +124,6 @@ void TypeChecker::recover(bool abortType) {
     this->visitingDepth = 0;
     this->loopDepth = 0;
     this->finallyDepth = 0;
-    this->cmdContextStack.clear();
 }
 
 DSType *TypeChecker::resolveInterface(TypePool &typePool, InterfaceNode *node) {
@@ -723,29 +721,16 @@ void TypeChecker::visitPipedCmdNode(PipedCmdNode &node) {
     for(auto *cmdNode : node.getCmdNodes()) {
         this->checkType(this->typePool.getProcType(), cmdNode);
     }
-    if(node.treatAsBool() || this->cmdContextStack.back()->hasAttribute(CmdContextNode::CONDITION)) {
-        node.setType(this->typePool.getBooleanType());
-    } else {
-        node.setType(this->typePool.getVoidType());
-    }
+    node.setType(this->typePool.getBooleanType());
 }
 
-void TypeChecker::visitCmdContextNode(CmdContextNode &node) {   //TODO: attribute
-    // check type condNode
-    this->cmdContextStack.push_back(&node);
+void TypeChecker::visitSubstitutionNode(SubstitutionNode &node) {
     this->checkType(nullptr, node.getExprNode(), nullptr);
-    this->cmdContextStack.pop_back();
-
-    DSType *type = &this->typePool.getVoidType();
-
-    if(node.hasAttribute(CmdContextNode::STR_CAP)) {
-        type = &this->typePool.getStringType();
-    } else if(node.hasAttribute(CmdContextNode::ARRAY_CAP)) {
-        type = &this->typePool.getStringArrayType();
-    } else if(node.hasAttribute(CmdContextNode::CONDITION)) {
-        type = &this->typePool.getBooleanType();
+    if(node.isStrExpr()) {
+        node.setType(this->typePool.getStringType());
+    } else {
+        node.setType(this->typePool.getStringArrayType());
     }
-    node.setType(*type);
 }
 
 void TypeChecker::visitAssertNode(AssertNode &node) {
@@ -1099,11 +1084,15 @@ void TypeChecker::visitRootNode(RootNode &node) {
     this->typePool.commit();
 
     bool prevIsTerminal = false;
-    for(Node *targetNode : node.getNodeList()) {
+    for(auto &targetNode : node.refNodeList()) {
         if(prevIsTerminal) {
             RAISE_TC_ERROR(Unreachable, *targetNode);
         }
-        this->checkType(nullptr, targetNode, nullptr);
+        if(dynamic_cast<PipedCmdNode *>(targetNode) != nullptr) {   // pop stack top
+            this->checkTypeWithCoercion(this->typePool.getVoidType(), targetNode);
+        } else {
+            this->checkType(nullptr, targetNode, nullptr);
+        }
         prevIsTerminal = targetNode->isTerminalNode();
     }
 

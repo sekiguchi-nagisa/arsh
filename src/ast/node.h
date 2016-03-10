@@ -93,26 +93,6 @@ public:
         return this->type == nullptr;
     }
 
-    /**
-     * for CmdContextNode, normally do nothing
-     */
-    virtual void inStringExprNode();
-
-    /**
-     * for CmdContextNode, normally do nothing
-     */
-    virtual void inCmdArgNode();
-
-    /**
-     * for CmdContextNode, normally do nothing
-     */
-    virtual void inCondition();
-
-    /**
-     * for CmdContextNode, normally do nothing
-     */
-    virtual void inRightHandleSide();
-
     virtual bool isTerminalNode() const;
 
     virtual void dump(NodeDumper &dumper) const = 0;
@@ -1251,15 +1231,14 @@ public:
     EvalStatus eval(RuntimeContext &ctx) override;
 };
 
-class PipedCmdNode : public Node {    //TODO: background ...etc
+class PipedCmdNode : public Node {
 private:
     std::vector<Node *> cmdNodes;
-    bool asBool;
 
 public:
     explicit PipedCmdNode(Node *node) :
-            Node(node->getToken()), cmdNodes(), asBool(false) {
-        this->cmdNodes.push_back(node);
+            Node(node->getToken()), cmdNodes(1) {
+        this->cmdNodes[0] = node;
     }
 
     ~PipedCmdNode();
@@ -1270,66 +1249,44 @@ public:
         return this->cmdNodes;
     }
 
-    void inCondition() override;
-
-    bool treatAsBool() const {
-        return this->asBool;
-    }
-
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
     EvalStatus eval(RuntimeContext &ctx) override;
 };
 
-class CmdContextNode : public Node {
+/**
+ * for command substitution (ex. "$(echo)", $(echo) )
+ */
+class SubstitutionNode : public Node {
 private:
-    /**
-     * may PipedCmdNode, CondOpNode, CmdNode
-     */
     Node *exprNode;
 
-    flag8_set_t attributeSet;
+    /**
+     * if true, this node is within string expr node
+     */
+    bool strExpr;
 
 public:
-    explicit CmdContextNode(Node *exprNode) :
-            Node(exprNode->getToken()), exprNode(exprNode), attributeSet(0) {
-        if(dynamic_cast<CondOpNode *>(exprNode) != nullptr) {
-            this->setAttribute(CONDITION);
-        }
-    }
+    explicit SubstitutionNode(Node *exprNode) :
+            Node(exprNode->getToken()), exprNode(exprNode), strExpr(false) { }
 
-    ~CmdContextNode();
+    ~SubstitutionNode();
 
     Node *getExprNode() const {
         return this->exprNode;
     }
 
-    void setAttribute(flag8_t attribute) {
-        setFlag(this->attributeSet, attribute);
+    void setStrExpr(bool strExpr) {
+        this->strExpr = strExpr;
     }
 
-    void unsetAttribute(flag8_t attribute) {
-        unsetFlag(this->attributeSet, attribute);
+    bool isStrExpr() const {
+        return this->strExpr;
     }
-
-    bool hasAttribute(flag8_t attribute) const {
-        return hasFlag(this->attributeSet, attribute);
-    }
-
-    void inStringExprNode() override;
-    void inCmdArgNode() override;
-    void inCondition() override;
-    void inRightHandleSide() override;
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
     EvalStatus eval(RuntimeContext &ctx) override;
-
-    static constexpr flag8_t BACKGROUND = 1 << 0;
-    static constexpr flag8_t FORK       = 1 << 1;
-    static constexpr flag8_t STR_CAP    = 1 << 2;
-    static constexpr flag8_t ARRAY_CAP  = 1 << 3;
-    static constexpr flag8_t CONDITION  = 1 << 4;
 };
 
 // statement definition
@@ -1340,9 +1297,7 @@ private:
 
 public:
     AssertNode(unsigned int startPos, Node *condNode) :
-            Node({startPos, 0}), condNode(condNode) {
-        this->condNode->inCondition();
-    }
+            Node({startPos, 0}), condNode(condNode) { }
 
     ~AssertNode();
 
@@ -1603,7 +1558,6 @@ private:
 public:
     WhileNode(unsigned int startPos, Node *condNode, BlockNode *blockNode) :
             Node({startPos, 0}), condNode(condNode), blockNode(blockNode) {
-        this->condNode->inCondition();
         this->updateToken(blockNode->getToken());
     }
 
@@ -1629,9 +1583,7 @@ private:
 
 public:
     DoWhileNode(unsigned int startPos, BlockNode *blockNode, Node *condNode) :
-            Node({startPos, 0}), blockNode(blockNode), condNode(condNode) {
-        this->condNode->inCondition();
-    }
+            Node({startPos, 0}), blockNode(blockNode), condNode(condNode) { }
 
     ~DoWhileNode();
 
@@ -2311,6 +2263,10 @@ public:
         return this->nodeList;
     }
 
+    std::list<Node *> &refNodeList() {
+        return this->nodeList;
+    }
+
     void setMaxVarNum(unsigned int maxVarNum) {
         this->maxVarNum = maxVarNum;
     }
@@ -2390,7 +2346,7 @@ struct NodeVisitor {
     virtual void visitRedirNode(RedirNode &node) = 0;
     virtual void visitTildeNode(TildeNode &node) = 0;
     virtual void visitPipedCmdNode(PipedCmdNode &node) = 0;
-    virtual void visitCmdContextNode(CmdContextNode &node) = 0;
+    virtual void visitSubstitutionNode(SubstitutionNode &node) = 0;
     virtual void visitAssertNode(AssertNode &node) = 0;
     virtual void visitBlockNode(BlockNode &node) = 0;
     virtual void visitBreakNode(BreakNode &node) = 0;
@@ -2454,7 +2410,7 @@ struct BaseVisitor : public NodeVisitor {
     virtual void visitRedirNode(RedirNode &node) override { this->visitDefault(node); }
     virtual void visitTildeNode(TildeNode &node) override { this->visitDefault(node); }
     virtual void visitPipedCmdNode(PipedCmdNode &node) override { this->visitDefault(node); }
-    virtual void visitCmdContextNode(CmdContextNode &node) override { this->visitDefault(node); }
+    virtual void visitSubstitutionNode(SubstitutionNode &node) override { this->visitDefault(node); }
     virtual void visitAssertNode(AssertNode &node) override { this->visitDefault(node); }
     virtual void visitBlockNode(BlockNode &node) override { this->visitDefault(node); }
     virtual void visitBreakNode(BreakNode &node) override { this->visitDefault(node); }

@@ -170,7 +170,7 @@ private:
 
     std::unique_ptr<Node> parse_paramExpansion();
 
-    std::unique_ptr<Node> parse_commandSubstitution();
+    std::unique_ptr<SubstitutionNode> parse_commandSubstitution();
 };
 
 // for DBus interface loading

@@ -128,8 +128,6 @@ private:
      */
     int finallyDepth;
 
-    std::vector<CmdContextNode *> cmdContextStack;
-
 public:
     TypeChecker(TypePool &typePool, SymbolTable &symbolTable);
 
@@ -301,7 +299,7 @@ private:
     void visitRedirNode(RedirNode &node) override;
     void visitTildeNode(TildeNode &node) override;
     void visitPipedCmdNode(PipedCmdNode &node) override;
-    void visitCmdContextNode(CmdContextNode &node) override;
+    void visitSubstitutionNode(SubstitutionNode &node) override;
     void visitAssertNode(AssertNode &node) override;
     void visitBlockNode(BlockNode &node) override;
     void visitBreakNode(BreakNode &node) override;
