@@ -2296,11 +2296,6 @@ const char *resolveBinaryOpName(TokenKind op);
 
 TokenKind resolveAssignOp(TokenKind op);
 
-/**
- * create ApplyNode or MethodCallNode.
- */
-Node *createCallNode(Node *recvNode, std::vector<Node *> &&argNodes);
-
 ForNode *createForInNode(unsigned int startPos, VarNode *varNode, Node *exprNode, BlockNode *blockNode);
 
 Node *createSuffixNode(Node *leftNode, TokenKind op, Token token);

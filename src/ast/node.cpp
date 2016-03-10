@@ -2638,15 +2638,6 @@ TokenKind resolveAssignOp(TokenKind op) {
     }
 }
 
-Node *createCallNode(Node *recvNode, std::vector<Node *> &&argNodes) {
-    AccessNode *accessNode = dynamic_cast<AccessNode *>(recvNode);
-    if(accessNode != nullptr) { // treat as method call
-        auto pair = AccessNode::split(accessNode);
-        return new MethodCallNode(pair.first, std::move(pair.second), std::move(argNodes));
-    }
-    return new ApplyNode(recvNode, std::move(argNodes));
-}
-
 ForNode *createForInNode(unsigned int startPos, VarNode *varNode, Node *exprNode, BlockNode *blockNode) {
     Token dummy = {startPos, 1};
 

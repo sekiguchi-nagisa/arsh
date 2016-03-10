@@ -1019,8 +1019,14 @@ std::unique_ptr<Node> Parser::parse_memberExpression() {
             this->expect(ACCESSOR);
             Token token = this->expect(IDENTIFIER);
             std::string name(this->lexer->toName(token));
-            node = uniquify<AccessNode>(node.release(), std::move(name));
-            node->updateToken(token);
+            if(CUR_KIND() == LP && !HAS_NL()) {  // treat as method call
+                ArgsWrapper args(this->parse_arguments());
+                node = uniquify<MethodCallNode>(node.release(), std::move(name),
+                                                ArgsWrapper::extract(std::move(args)));
+            } else {    // treat as field access
+                node = uniquify<AccessNode>(node.release(), std::move(name));
+                node->updateToken(token);
+            }
             break;
         }
         case LB: {
@@ -1032,7 +1038,7 @@ std::unique_ptr<Node> Parser::parse_memberExpression() {
         }
         case LP: {
             ArgsWrapper args(this->parse_arguments());
-            node.reset(createCallNode(node.release(), ArgsWrapper::extract(std::move(args))));
+            node = uniquify<ApplyNode>(node.release(), ArgsWrapper::extract(std::move(args)));
             break;
         }
         default: {
