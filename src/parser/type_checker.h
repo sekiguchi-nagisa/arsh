@@ -292,7 +292,6 @@ private:
     void visitApplyNode(ApplyNode &node) override;
     void visitMethodCallNode(MethodCallNode &node) override;
     void visitNewNode(NewNode &node) override;
-    void visitGroupNode(GroupNode &node) override;
     void visitCondOpNode(CondOpNode &node) override;
     void visitCmdNode(CmdNode &node) override;
     void visitCmdArgNode(CmdArgNode &node) override;

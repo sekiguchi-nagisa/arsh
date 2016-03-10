@@ -104,12 +104,6 @@ public:
         this->close();
     }
 
-    void visitGroupNode(GroupNode &node) {    // override
-        this->open();
-        this->visit(*node.getExprNode());
-        this->close();
-    }
-
     void visitCondOpNode(CondOpNode &node) {    // override
         this->open();
         this->visit(*node.getLeftNode());
@@ -191,7 +185,7 @@ TEST_F(PrecedenceTest, base1) {
 TEST_F(PrecedenceTest, base2) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->equals("(  1  )", "(1)");
+        this->equals("  1  ", "(1)");
     });
 }
 

@@ -5,7 +5,7 @@ function __test_each($data : Array<String>, $test : Func<Boolean, [String]>): Bo
     let size = $data.size()
     for(var i = 0; $i < $size; $i++) {
         var t = $data[$i]
-        if($test($t)) {
+        if $test($t) {
             $c++
             echo "[OK]" $t
         } else {

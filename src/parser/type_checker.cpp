@@ -643,11 +643,6 @@ void TypeChecker::visitNewNode(NewNode &node) {
     node.setType(type);
 }
 
-void TypeChecker::visitGroupNode(GroupNode &node) {
-    auto &type = this->checkType(node.getExprNode());
-    node.setType(type);
-}
-
 void TypeChecker::visitCondOpNode(CondOpNode &node) {
     auto &booleanType = this->typePool.getBooleanType();
     this->checkType(booleanType, node.getLeftNode());

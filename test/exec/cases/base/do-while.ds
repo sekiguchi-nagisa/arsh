@@ -15,6 +15,6 @@ assert($i == $count)
 do {
 	let a = 23
 	$i++
-} while($i < $a)
+} while $i < $a
 
 assert($i == 23)

@@ -1045,28 +1045,6 @@ public:
     EvalStatus eval(RuntimeContext &ctx) override;
 };
 
-/**
- * represent for '(' expr ')'
- */
-class GroupNode : public Node {
-private:
-    Node *exprNode;
-
-public:
-    GroupNode(unsigned int startPos, Node *exprNode) :
-            Node({startPos, 0}), exprNode(exprNode) { }
-
-    ~GroupNode();
-
-    Node *getExprNode() const {
-        return this->exprNode;
-    }
-
-    void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
-};
-
 class CondOpNode : public Node {
 private:
     Node *leftNode;
@@ -2334,7 +2312,6 @@ struct NodeVisitor {
     virtual void visitApplyNode(ApplyNode &node) = 0;
     virtual void visitMethodCallNode(MethodCallNode &node) = 0;
     virtual void visitNewNode(NewNode &node) = 0;
-    virtual void visitGroupNode(GroupNode &node) = 0;
     virtual void visitCondOpNode(CondOpNode &node) = 0;
     virtual void visitCmdNode(CmdNode &node) = 0;
     virtual void visitCmdArgNode(CmdArgNode &node) = 0;
@@ -2398,7 +2375,6 @@ struct BaseVisitor : public NodeVisitor {
     virtual void visitApplyNode(ApplyNode &node) override { this->visitDefault(node); }
     virtual void visitMethodCallNode(MethodCallNode &node) override { this->visitDefault(node); }
     virtual void visitNewNode(NewNode &node) override { this->visitDefault(node); }
-    virtual void visitGroupNode(GroupNode &node) override { this->visitDefault(node); }
     virtual void visitCondOpNode(CondOpNode &node) override { this->visitDefault(node); }
     virtual void visitCmdNode(CmdNode &node) override { this->visitDefault(node); }
     virtual void visitCmdArgNode(CmdArgNode &node) override { this->visitDefault(node); }

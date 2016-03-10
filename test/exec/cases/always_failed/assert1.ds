@@ -2,4 +2,4 @@
 
 #$test($result = 'assert', $lineNum = 5, $status = 1)
 
-assert(12 == 6453)
+assert 12 == 6453

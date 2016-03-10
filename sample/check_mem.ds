@@ -1,7 +1,7 @@
 #!/usr/bin/env ydsh
 
 # check argument
-if($# != 2) {
+if $# != 2 {
     echo usage: $0 "[target binary] [test case dir]" 1>&2
     exit 1
 }
@@ -9,34 +9,30 @@ if($# != 2) {
 let bin = $1
 let dir = $2
 
-test -x $bin
-if($? != 0) {
+if not(test -x $bin) {
     echo not found executable file: $bin 1>&2
     exit 1
 }
 
 # check valgrind
-which valgrind
-if($? != 0) {
+if not(which valgrind) {
     echo need valgrind 1>&2
     exit 1
 }
 
 function test($a : String) : Boolean {
-    test -f $a
-    if($? != 0) {
+    if not(test -f $a) {
         echo not found file: $a 1>&2
         exit 1
     }
-    var r = valgrind -v --leak-check=full $bin $a 2>&1 > /dev/null | __gets | grep "blocks are definitely lost" > /dev/null
-    return not $r
+    return not(valgrind -v --leak-check=full $bin $a 2>&1 > /dev/null | __gets | grep "blocks are definitely lost" > /dev/null)
 }
 
 function __test_each($data : Array<String>, $test : typeof($test)): Boolean {
     var c = 0
     let size = $data.size()
     for $t in $data {
-        if($test($t)) {
+        if $test($t) {
             $c++
             echo -e '\e[32m[OK]\e[0m' $t
         } else {
@@ -47,7 +43,7 @@ function __test_each($data : Array<String>, $test : typeof($test)): Boolean {
     return $c == $size
 }
 
-if($__test_each($(find $dir -name "*.ds" | sort), $test)) {
+if $__test_each($(find $dir -name "*.ds" | sort), $test) {
     exit 0
 } else {
     exit 1

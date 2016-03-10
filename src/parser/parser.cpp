@@ -466,9 +466,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
     }
     case ASSERT: {
         Token token = this->expect(ASSERT);
-        this->expect(LP);
         auto node = uniquify<AssertNode>(token.pos, this->parse_commandOrExpression().release());
-        token = this->expect(RP);
         node->updateToken(token);
         this->parse_statementEnd();
         return std::move(node);
@@ -505,18 +503,14 @@ std::unique_ptr<Node> Parser::parse_statement() {
     case IF: {
         unsigned int startPos = START_POS();
         this->expect(IF);
-        this->expect(LP);
         std::unique_ptr<Node> condNode(this->parse_commandOrExpression());
-        this->expect(RP);
         std::unique_ptr<BlockNode> blockNode(this->parse_block());
         auto ifNode = uniquify<IfNode>(startPos, condNode.release(), blockNode.release());
 
         // parse elif
         while(CUR_KIND() == ELIF) {
             this->expect(ELIF);
-            this->expect(LP);
             condNode = this->parse_commandOrExpression();
-            this->expect(RP);
             blockNode = this->parse_block();
             ifNode->addElifNode(condNode.release(), blockNode.release());
         }
@@ -574,9 +568,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
     case WHILE: {
         unsigned int startPos = START_POS();
         this->expect(WHILE);
-        this->expect(LP);
         auto condNode(this->parse_commandOrExpression());
-        this->expect(RP);
         auto blockNode(this->parse_block());
         this->parse_statementEnd();
         return uniquify<WhileNode>(startPos, condNode.release(), blockNode.release());
@@ -586,11 +578,8 @@ std::unique_ptr<Node> Parser::parse_statement() {
         this->expect(DO);
         auto blockNode(this->parse_block());
         this->expect(WHILE);
-        this->expect(LP);
         auto condNode(this->parse_commandOrExpression());
-        Token token = this->expect(RP);
         auto node = uniquify<DoWhileNode>(startPos, blockNode.release(), condNode.release());
-        node->updateToken(token);
         this->parse_statementEnd();
         return std::move(node);
     }
@@ -1142,7 +1131,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     }
     case LP: {  // group or tuple
         Token token = this->expect(LP);
-        std::unique_ptr<Node> node(this->parse_expression());
+        std::unique_ptr<Node> node(this->parse_commandOrExpression());
         if(CUR_KIND() == COMMA) {   // tuple
             this->expect(COMMA);
             std::unique_ptr<Node> rightNode(this->parse_expression());
@@ -1159,8 +1148,6 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
                 }
             }
             node.reset(tuple.release());
-        } else {
-            node = uniquify<GroupNode>(token.pos, node.release());
         }
 
         token = this->expect(RP);

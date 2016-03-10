@@ -1140,27 +1140,6 @@ EvalStatus BinaryOpNode::eval(RuntimeContext &ctx) {
     return this->methodCallNode->eval(ctx);
 }
 
-// #######################
-// ##     GroupNode     ##
-// #######################
-
-GroupNode::~GroupNode() {
-    delete this->exprNode;
-}
-
-void GroupNode::dump(NodeDumper &dumper) const {
-    DUMP_PTR(exprNode);
-}
-
-void GroupNode::accept(NodeVisitor &visitor) {
-    visitor.visitGroupNode(*this);
-}
-
-EvalStatus GroupNode::eval(RuntimeContext &ctx) {
-    return this->exprNode->eval(ctx);
-}
-
-
 // ########################
 // ##     CondOpNode     ##
 // ########################
