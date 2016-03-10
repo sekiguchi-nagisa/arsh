@@ -810,8 +810,10 @@ void RuntimeContext::interpretPromptString(const char *ps, std::string &output) 
                 continue;
             }
             case 'u': {
-                const char *c = getenv("USER");
-                output += c != nullptr ? c : "";
+                struct passwd *pw = getpwuid(geteuid());
+                if(pw != nullptr) {
+                    output += pw->pw_name;
+                }
                 continue;
             }
             case 'v': {

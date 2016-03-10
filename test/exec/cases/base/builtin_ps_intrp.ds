@@ -12,6 +12,12 @@ assert("$(ps_intrp '\n')" == "$(echo -e '\n')")
 assert("$(ps_intrp '\r')" == "$(echo -e '\r')")
 assert("$(ps_intrp '\s')" == "$(basename $0)")
 assert("$(ps_intrp '\u')" == "$(whoami)")
+import-env USER
+let OLD_USER = $USER
+$USER=""
+assert("$(ps_intrp '\u')" == "$(whoami)")
+$USER = $OLD_USER
+
 assert("$(ps_intrp '\w')" == $PWD)
 
 $PWD = '/'

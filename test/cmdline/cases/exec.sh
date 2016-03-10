@@ -43,5 +43,10 @@ if [ $? != 0 ]; then
     exit 1
 fi
 
+$YDSH_BIN -e exec -c $YDSH_BIN -c 'assert(printenv PATH | grep /bin:/usr/bin:/usr/local/bin)'
+if [ $? != 0 ]; then
+    exit 1
+fi
+
 $YDSH_BIN -e exec -u    # invalid option
 test $? != 0

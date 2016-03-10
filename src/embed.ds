@@ -3,7 +3,7 @@
 import-env OLDPWD : "$(pwd)"
 import-env PWD : "$(pwd)"
 
-if(check_env PATH) {} else {
+if not(check_env PATH) {
     export-env PATH = '/bin:/usr/bin:/usr/local/bin'
 }
 
