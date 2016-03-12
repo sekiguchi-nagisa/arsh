@@ -70,8 +70,10 @@ static bool checkLineContinuation(const StrWrapper &line) {
     return false;
 }
 
-static bool readLine(std::string &line) {
-    line.clear();
+static std::string lineBuf;
+
+static const char *readLine() {
+    lineBuf.clear();
 
     bool continuation = false;
     while(true) {
@@ -81,24 +83,24 @@ static bool readLine(std::string &line) {
             if(errno == EAGAIN) {
                 continue;
             }
-            return false;
+            return nullptr;
         }
 
         if(isSkipLine(str)) {
             continue;
         }
-        line += str.get();
+        lineBuf += str.get();
         continuation = checkLineContinuation(str);
         if(continuation) {
-            line.pop_back(); // remove '\\'
+            lineBuf.pop_back(); // remove '\\'
             continue;
         }
         break;
     }
 
-    linenoiseHistoryAdd(line.c_str());
-    line += '\n';    // terminate newline
-    return true;
+    linenoiseHistoryAdd(lineBuf.c_str());
+    lineBuf += '\n';    // terminate newline
+    return lineBuf.c_str();
 }
 
 static void ignoreSignal() {
@@ -197,8 +199,13 @@ static std::size_t encoding_readCode(int fd, char *buf, std::size_t bufSize, int
 }
 
 static void completeCallback(const char *buf, size_t cursor, linenoiseCompletions *lc) {
+    std::string actualBuf(lineBuf);
+    size_t acutalCursor = actualBuf.size() + cursor;
+    actualBuf += buf;
+    actualBuf += '\n';
+
     DSCandidates c;
-    DSContext_complete(dsContext, buf, cursor, &c);
+    DSContext_complete(dsContext, actualBuf.c_str(), acutalCursor, &c);
     lc->len = c.size;
     lc->cvec = c.values;
 }
@@ -222,10 +229,9 @@ int exec_interactive(DSContext *ctx) {
     dsContext = ctx;
 
     int exitStatus = 0;
-    std::string line;
-    while(readLine(line)) {
+    for(const char *line = nullptr; (line = readLine()) != nullptr; ) {
         ignoreSignal();
-        int ret = DSContext_eval(ctx, nullptr, line.c_str());
+        int ret = DSContext_eval(ctx, nullptr, line);
         unsigned int type = DSContext_status(ctx);
         if(type == DS_STATUS_ASSERTION_ERROR || type == DS_STATUS_EXIT) {
             exitStatus = ret;
