@@ -81,6 +81,8 @@ static const char *readLine() {
         auto str = StrWrapper(linenoise(DSContext_prompt(dsContext, continuation ? 2 : 1)));
         if(str == nullptr) {
             if(errno == EAGAIN) {
+                continuation = false;
+                lineBuf.clear();
                 continue;
             }
             return nullptr;
