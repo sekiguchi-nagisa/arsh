@@ -96,6 +96,8 @@
     TOKEN(COND_OR                            , "||") \
     TOKEN(MATCH                              , "=~") \
     TOKEN(UNMATCH                            , "!~") \
+    /* ternary op */\
+    TOKEN(TERNARY                            , "?") \
     /* suffix op */\
     TOKEN(INC                                , "++") \
     TOKEN(DEC                                , "--") \

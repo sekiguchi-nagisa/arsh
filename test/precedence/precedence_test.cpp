@@ -72,15 +72,15 @@ public:
         this->append(")");
     }
 
-    void visitDefault(Node &) { // override
+    void visitDefault(Node &) override {
         fatal("unsupported\n");
     }
 
-    void visitIntValueNode(IntValueNode &node) {    // override
+    void visitIntValueNode(IntValueNode &node) override {
         this->append(std::to_string(node.getTempValue()));
     }
 
-    void visitCastNode(CastNode &node) {    // override
+    void visitCastNode(CastNode &node) override {
         this->open();
         this->visit(*node.getExprNode());
         this->append("as");
@@ -88,7 +88,7 @@ public:
         this->close();
     }
 
-    void visitInstanceOfNode(InstanceOfNode &node) {    // override
+    void visitInstanceOfNode(InstanceOfNode &node) override {
         this->open();
         this->visit(*node.getTargetNode());
         this->append("is");
@@ -96,7 +96,7 @@ public:
         this->close();
     }
 
-    void visitBinaryOpNode(BinaryOpNode &node) {    // override
+    void visitBinaryOpNode(BinaryOpNode &node) override {
         this->open();
         this->visit(*node.getLeftNode());
         this->append(TO_NAME(node.getOp()));
@@ -104,7 +104,7 @@ public:
         this->close();
     }
 
-    void visitCondOpNode(CondOpNode &node) {    // override
+    void visitCondOpNode(CondOpNode &node) override {
         this->open();
         this->visit(*node.getLeftNode());
         this->append(node.isAndOp() ? "&&" : "||");
@@ -112,7 +112,17 @@ public:
         this->close();
     }
 
-    void visitAssignNode(AssignNode &node) {    // override
+    void visitTernaryNode(TernaryNode &node) override {
+        this->open();
+        this->visit(*node.getCondNode());
+        this->append("?");
+        this->visit(*node.getLeftNode());
+        this->append(":");
+        this->visit(*node.getRightNode());
+        this->close();
+    }
+
+    void visitAssignNode(AssignNode &node) override {
         this->open();
         this->visit(*node.getLeftNode());
         this->append("=");
@@ -120,7 +130,7 @@ public:
         this->close();
     }
 
-    void visitRootNode(RootNode &node) {    // override
+    void visitRootNode(RootNode &node) override {
         if(node.getNodeList().size() != 1) {
             fatal("must be 1\n");
         }
@@ -251,6 +261,17 @@ TEST_F(PrecedenceTest, case8) {
         SCOPED_TRACE("");
         this->equals("(1 = (((2 == 3) && (4 + 5)) || 6))", "1 = 2 == 3 && 4 + 5 || 6");
     });
+}
+
+TEST_F(PrecedenceTest, case9) {
+    ASSERT_NO_FATAL_FAILURE(
+            this->equals("(1 = ((2 && 3) ? (4 || 5) : (6 = 7)))", "1 = 2 && 3 ? 4 || 5 : 6 = 7"));
+}
+
+TEST_F(PrecedenceTest, case10) {
+    ASSERT_NO_FATAL_FAILURE(
+            this->equals("((1 == 2) ? ((3 > 4) ? (5 + 6) : (7 -xor 8)) : (9 && 10))",
+                         "1 == 2 ? 3 > 4 ? 5 + 6 : 7 -xor 8 : 9 && 10"));
 }
 
 int main(int argc, char **argv) {

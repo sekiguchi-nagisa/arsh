@@ -650,6 +650,13 @@ void TypeChecker::visitCondOpNode(CondOpNode &node) {
     node.setType(booleanType);
 }
 
+void TypeChecker::visitTernaryNode(TernaryNode &node) {
+    this->checkType(this->typePool.getBooleanType(), node.getCondNode());
+    auto &leftType = this->checkType(node.getLeftNode());
+    this->checkTypeWithCoercion(leftType, node.refRightNode());
+    node.setType(leftType);
+}
+
 void TypeChecker::visitCmdNode(CmdNode &node) {
     this->checkType(this->typePool.getStringType(), node.getNameNode());
     for(auto *argNode : node.getArgNodes()) {

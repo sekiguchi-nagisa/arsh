@@ -897,10 +897,12 @@ std::unique_ptr<Node> Parser::parse_expression(std::unique_ptr<Node> &&leftNode,
             node = uniquify<InstanceOfNode>(node.release(), type.release());
             break;
         }
-        EACH_LA_assign(GEN_LA_CASE) {
-            TokenKind op = this->consume();
-            auto rightNode(this->parse_expression());
-            node.reset(createBinaryOpNode(node.release(), op, rightNode.release()));
+        case TERNARY: {
+            this->consume();
+            auto tleftNode(this->parse_expression());
+            this->expectAndChangeMode(COLON, yycSTMT);
+            auto trightNode(this->parse_expression());
+            node = uniquify<TernaryNode>(node.release(), tleftNode.release(), trightNode.release());
             break;
         }
         default: {

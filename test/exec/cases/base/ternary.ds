@@ -1,0 +1,19 @@
+assert(23 == 23 ? $true : false)
+assert(23 <= 1 ? $false : 23 != 54)
+
+var a = $true && 1 ==1 ? -1 : 1
+assert($a == -1)
+$a = $true && 1 != 1 ? -1 : 1
+assert($a == 1)
+
+# nested ternary
+function t($a : Int) : Int {
+    return $a <= 0 ?
+                $a == 0 ?
+                    0 : -1
+                : 1
+}
+
+assert($t(-31) == -1)
+assert($t(0) == 0)
+assert($t(223) == 1)

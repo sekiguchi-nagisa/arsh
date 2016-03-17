@@ -1,0 +1,4 @@
+#$test($result = 'type', $lineNum = 4, $errorKind = 'Required', $status = 1)
+
+var a = 45
+$true ? 23 : $a = 4

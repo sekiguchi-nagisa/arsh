@@ -1185,6 +1185,36 @@ EvalStatus CondOpNode::eval(RuntimeContext &ctx) {
     }
 }
 
+// #########################
+// ##     TernaryNode     ##
+// #########################
+
+TernaryNode::~TernaryNode() {
+    delete this->condNode;
+    delete this->leftNode;
+    delete this->rightNode;
+}
+
+void TernaryNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(condNode);
+    DUMP_PTR(leftNode);
+    DUMP_PTR(rightNode);
+}
+
+void TernaryNode::accept(NodeVisitor &visitor) {
+    visitor.visitTernaryNode(*this);
+}
+
+EvalStatus TernaryNode::eval(RuntimeContext &ctx) {
+    EVAL(ctx, this->condNode);
+
+    if(typeAs<Boolean_Object>(ctx.pop())->getValue()) {
+        return this->leftNode->eval(ctx);
+    } else {
+        return this->rightNode->eval(ctx);
+    }
+}
+
 
 // ########################
 // ##     CmdArgNode     ##
