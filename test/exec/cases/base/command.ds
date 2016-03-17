@@ -36,6 +36,7 @@ assert($? == 0)
 echo hello && ls hfeur
 assert($? != 0)
 
+
 echo hello || ls hfueruvif
 assert($? == 0)
 
@@ -195,6 +196,11 @@ assert($r)
 $r = ls t845 || ls ugrt8uje
 assert(not $r)
 
+$r = true && $true
+assert($r)
+
+$r = $false || not false
+assert($r)
 
 # conditional
 assert(echo hello)
@@ -207,6 +213,12 @@ if(echo) {
 } else {
     assert($false)
 }
+
+
+# arg
+function test($b : Boolean) : Boolean { return $b; }
+assert($test(true))
+assert($test(not false))
 
 
 # tilde expansion

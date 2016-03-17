@@ -1,0 +1,18 @@
+# allow new line before right-hand side
+
+$true ==
+    true
+
+true &&
+    34 == 34
+
+false ||
+    34 != 4
+
+var a = $true
+$a =
+     not true
+
+var b = 0
+$b +=
+          999

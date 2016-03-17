@@ -41,6 +41,7 @@
     EACH_LA_interpolation(OP)
 
 #define EACH_LA_primary(OP) \
+    OP(COMMAND) \
     OP(NEW) \
     OP(BYTE_LITERAL) \
     OP(INT16_LITERAL) \
@@ -84,7 +85,6 @@
     OP(THROW) \
     OP(VAR) \
     OP(WHILE) \
-    OP(COMMAND) \
     OP(LINE_END) \
     EACH_LA_expression(OP)
 
@@ -466,7 +466,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
     }
     case ASSERT: {
         Token token = this->expect(ASSERT);
-        auto node = uniquify<AssertNode>(token.pos, this->parse_commandOrExpression().release());
+        auto node = uniquify<AssertNode>(token.pos, this->parse_expression().release());
         node->updateToken(token);
         this->parse_statementEnd();
         return std::move(node);
@@ -503,14 +503,14 @@ std::unique_ptr<Node> Parser::parse_statement() {
     case IF: {
         unsigned int startPos = START_POS();
         this->expect(IF);
-        std::unique_ptr<Node> condNode(this->parse_commandOrExpression());
+        std::unique_ptr<Node> condNode(this->parse_expression());
         std::unique_ptr<BlockNode> blockNode(this->parse_block());
         auto ifNode = uniquify<IfNode>(startPos, condNode.release(), blockNode.release());
 
         // parse elif
         while(CUR_KIND() == ELIF) {
             this->expect(ELIF);
-            condNode = this->parse_commandOrExpression();
+            condNode = this->parse_expression();
             blockNode = this->parse_block();
             ifNode->addElifNode(condNode.release(), blockNode.release());
         }
@@ -568,7 +568,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
     case WHILE: {
         unsigned int startPos = START_POS();
         this->expect(WHILE);
-        auto condNode(this->parse_commandOrExpression());
+        auto condNode(this->parse_expression());
         auto blockNode(this->parse_block());
         this->parse_statementEnd();
         return uniquify<WhileNode>(startPos, condNode.release(), blockNode.release());
@@ -578,7 +578,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
         this->expect(DO);
         auto blockNode(this->parse_block());
         this->expect(WHILE);
-        auto condNode(this->parse_commandOrExpression());
+        auto condNode(this->parse_expression());
         auto node = uniquify<DoWhileNode>(startPos, blockNode.release(), condNode.release());
         this->parse_statementEnd();
         return std::move(node);
@@ -603,11 +603,6 @@ std::unique_ptr<Node> Parser::parse_statement() {
     }
     EACH_LA_varDecl(GEN_LA_CASE) {
         auto node(this->parse_variableDeclaration());
-        this->parse_statementEnd();
-        return node;
-    }
-    case COMMAND: {
-        auto node(this->parse_commandListExpression());
         this->parse_statementEnd();
         return node;
     }
@@ -663,7 +658,7 @@ std::unique_ptr<Node> Parser::parse_variableDeclaration() {
     std::string name(this->lexer->toName(token));
     this->expect(ASSIGN);
     return uniquify<VarDeclNode>(startPos, std::move(name),
-                                 this->parse_commandOrExpression().release(), readOnly);
+                                 this->parse_expression().release(), readOnly);
 }
 
 std::unique_ptr<Node> Parser::parse_forStatement() {
@@ -713,18 +708,13 @@ std::unique_ptr<Node> Parser::parse_forInit() {
 }
 
 std::unique_ptr<Node> Parser::parse_forCond() {
-#define EACH_LA_cmdOrExpr(OP) \
-    OP(COMMAND) \
-    EACH_LA_expression(OP)
-
     switch(CUR_KIND()) {
-    EACH_LA_cmdOrExpr(GEN_LA_CASE) {
-        return this->parse_commandOrExpression();
+    EACH_LA_expression(GEN_LA_CASE) {
+        return this->parse_expression();
     }
     default:
         return std::unique_ptr<Node>(nullptr);
     }
-#undef EACH_LA_cmdOrExpr
 }
 
 std::unique_ptr<Node> Parser::parse_forIter() {
@@ -768,36 +758,6 @@ std::unique_ptr<CatchNode> Parser::parse_catchStatement() {
 }
 
 // command
-std::unique_ptr<Node> Parser::parse_commandListExpression() {
-    std::unique_ptr<Node> node(this->parse_orListCommand());
-    if(dynamic_cast<UserDefinedCmdNode *>(node.get()) != nullptr) {
-        return node;
-    }
-    return node;
-}
-
-std::unique_ptr<Node> Parser::parse_orListCommand() {
-    std::unique_ptr<Node> node(this->parse_andListCommand());
-
-    while(CUR_KIND() == COND_OR) {
-        this->expect(COND_OR);
-        std::unique_ptr<Node> rightNode(this->parse_andListCommand());
-        node = uniquify<CondOpNode>(node.release(), rightNode.release(), false);
-    }
-    return node;
-}
-
-std::unique_ptr<Node> Parser::parse_andListCommand() {
-    std::unique_ptr<Node> node(this->parse_pipedCommand());
-
-    while(CUR_KIND() == COND_AND) {
-        this->expect(COND_AND);
-        std::unique_ptr<Node> rightNode(this->parse_pipedCommand());
-        node = uniquify<CondOpNode>(node.release(), rightNode.release(), true);
-    }
-    return node;
-}
-
 std::unique_ptr<Node> Parser::parse_pipedCommand() {
     std::unique_ptr<Node> cmdNode(this->parse_command());
     if(dynamic_cast<UserDefinedCmdNode*>(cmdNode.get()) != nullptr) {
@@ -902,7 +862,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool expandTilde) {
         return this->parse_stringExpression();
     }
     case START_SUB_CMD: {
-        return this->parse_commandSubstitution();
+        return this->parse_substitution();
     }
     EACH_LA_paramExpansion(GEN_LA_CASE) {
         return this->parse_paramExpansion();
@@ -914,20 +874,6 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool expandTilde) {
 }
 
 // expression
-std::unique_ptr<Node> Parser::parse_commandOrExpression() {
-    switch(CUR_KIND()) {
-    case COMMAND:
-        return this->parse_commandListExpression();
-    EACH_LA_expression(GEN_LA_CASE)
-        return this->parse_expression();
-    default:
-        E_ALTER(
-                EACH_LA_expression(GEN_LA_ALTER)
-                COMMAND
-        );
-    }
-}
-
 std::unique_ptr<Node> Parser::parse_expression() {
     return this->parse_expression(
             this->parse_unaryExpression(), getPrecedence(ASSIGN));
@@ -953,7 +899,7 @@ std::unique_ptr<Node> Parser::parse_expression(std::unique_ptr<Node> &&leftNode,
         }
         EACH_LA_assign(GEN_LA_CASE) {
             TokenKind op = this->consume();
-            auto rightNode(this->parse_commandOrExpression());
+            auto rightNode(this->parse_expression());
             node.reset(createBinaryOpNode(node.release(), op, rightNode.release()));
             break;
         }
@@ -1041,6 +987,8 @@ std::unique_ptr<Node> Parser::parse_memberExpression() {
 
 std::unique_ptr<Node> Parser::parse_primaryExpression() {
     switch(CUR_KIND()) {
+    case COMMAND:
+        return parse_pipedCommand();
     case NEW: {
         unsigned int startPos = START_POS();
         this->expect(NEW, false);
@@ -1123,7 +1071,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         return this->parse_stringExpression();
     }
     case START_SUB_CMD: {
-        return this->parse_commandSubstitution();
+        return this->parse_substitution();
     }
     case APPLIED_NAME:
     case SPECIAL_NAME: {
@@ -1131,7 +1079,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     }
     case LP: {  // group or tuple
         Token token = this->expect(LP);
-        std::unique_ptr<Node> node(this->parse_commandOrExpression());
+        std::unique_ptr<Node> node(this->parse_expression());
         if(CUR_KIND() == COMMA) {   // tuple
             this->expect(COMMA);
             std::unique_ptr<Node> rightNode(this->parse_expression());
@@ -1265,7 +1213,7 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
             break;
         }
         case START_SUB_CMD: {
-            auto subNode(this->parse_commandSubstitution());
+            auto subNode(this->parse_substitution());
             subNode->setStrExpr(true);
             node->addExprNode(subNode.release());
             break;
@@ -1312,9 +1260,9 @@ std::unique_ptr<Node> Parser::parse_paramExpansion() {
     }
 }
 
-std::unique_ptr<SubstitutionNode> Parser::parse_commandSubstitution() {
+std::unique_ptr<SubstitutionNode> Parser::parse_substitution() {
     this->expect(START_SUB_CMD);
-    auto node(this->parse_commandListExpression());
+    auto node(this->parse_expression());
     this->expect(RP);
     return uniquify<SubstitutionNode>(node.release());
 }
