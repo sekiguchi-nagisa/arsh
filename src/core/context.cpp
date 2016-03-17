@@ -730,8 +730,9 @@ static void format2digit(int num, std::string &out) {
     out += std::to_string(num);
 }
 
-static std::string safeBasename(const std::string &path) {
-    return path.substr(path.find_last_of('/') + 1);
+const char *safeBasename(const char *str) {
+    const char *ptr = strrchr(str, '/');
+    return ptr == nullptr ? str : ptr + 1;
 }
 
 void RuntimeContext::interpretPromptString(const char *ps, std::string &output) {
@@ -832,7 +833,14 @@ void RuntimeContext::interpretPromptString(const char *ps, std::string &output) 
             }
             case 'w': {
                 const char *c = getenv("PWD");
-                output += c != nullptr ? c : "";
+                if(c != nullptr) {
+                    const char *home = getenv("HOME");
+                    if(home != nullptr && strstr(c, home) == c) {
+                        output += '~';
+                        c += strlen(home);
+                    }
+                    output += c;
+                }
                 continue;
             }
             case 'W':  {

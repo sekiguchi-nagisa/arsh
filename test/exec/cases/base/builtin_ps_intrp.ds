@@ -1,5 +1,16 @@
 # for prompt string
 
+function dirname($s : String) : String {
+    import-env HOME
+    if $s.startsWith($HOME) {
+        var d = '~'
+        $d += $s.sliceFrom($HOME.size())
+        return $d
+    }
+    return $s;
+}
+
+
 # invalid
 ps_intrp
 assert($? != 0)
@@ -18,7 +29,7 @@ $USER=""
 assert("$(ps_intrp '\u')" == "$(whoami)")
 $USER = $OLD_USER
 
-assert("$(ps_intrp '\w')" == $PWD)
+assert("$(ps_intrp '\w')" == $dirname($PWD))
 
 $PWD = '/'
 assert("$(ps_intrp '\W')" == "/")
