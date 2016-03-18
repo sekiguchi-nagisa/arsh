@@ -1100,6 +1100,10 @@ public:
         return this->leftNode;
     }
 
+    Node *& refLeftNode() {
+        return this->leftNode;
+    }
+
     Node *getRightNode() {
         return this->rightNode;
     }
