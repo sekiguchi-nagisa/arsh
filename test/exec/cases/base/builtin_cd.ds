@@ -35,5 +35,18 @@ cd "$(echo)"    # not change PWD, but OLDPWD is changed
 assert($? == 0)
 assert($OLDPWD == $PWD)
 
+# option '-'
+assert("$(cd -)" == $OLDPWD)
+{
+    let OLDPWD2 = $OLDPWD
+    let PWD2 = $PWD
+    cd -
+    assert($OLDPWD == $PWD2)
+    assert($PWD == $OLDPWD2)
+    cd -
+    assert($OLDPWD == $OLDPWD2)
+    assert($PWD == $PWD2)
+}
 
-assert(help cd | grep 'cd: cd \[dir]')
+
+assert(help cd | grep 'cd: cd -LP \[dir]')

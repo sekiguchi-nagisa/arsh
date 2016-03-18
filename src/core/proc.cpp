@@ -127,10 +127,12 @@ const struct {
                 "    Options:\n"
                 "        -1    print to standard output\n"
                 "        -2    print to standard error"},
-        {"cd", builtin_cd, "[dir]",
+        {"cd", builtin_cd, "-LP [dir]",
                 "    Changing the current directory to DIR.  The Environment variable\n"
                 "    HOME is the default DIR.  A null directory name is the same as\n"
-                "    the current directory."},
+                "    the current directory. If -L is specified, use logical directory \n"
+                "    (with symbolic link). If -P is specified, use physical directory \n"
+                "    (without symbolic  link). Default is -L."},
         {"check_env", builtin_check_env, "[variable ...]",
                 "    Check existence of specified environmental variables.\n"
                 "    If all of variables are exist and not empty string, exit with 0."},
@@ -204,8 +206,11 @@ const struct {
                 "        \\]    end of unprintable sequence\n"
                 "        \\0nnn N is octal number.  NNN can be 0 to 3 number\n"
                 "        \\xnn  N is hex number.  NN can be 1 to 2 number"},
-        {"pwd", builtin_pwd, "",
-                "    Print the current working directory(absolute path)."},
+        {"pwd", builtin_pwd, "-LP",
+                "    Print the current working directory(absolute path).\n"
+                "    If -L specified, print logical working directory.\n"
+                "    If -P specified, print physical working directory\n"
+                "    (without symbolic link). Default is -L."},
         {"read", builtin_read, "[-r] [-p prompt] [-f field separator] [name ...]",
                 "    Read from standard input.\n"
                 "    Options:\n"
@@ -365,21 +370,40 @@ inline static void showUsage(char *const *argv) {
 }
 
 static int builtin_cd(RuntimeContext *ctx, const int argc, char *const *argv) {
-    bool OLDPWD_only = true;
-    const char *destDir = getenv(ENV_HOME);
+    bool useOldpwd = false;
+    bool useLogical = true;
 
-    if(argc > 1) {
-        destDir = argv[1];
-    }
-    if(destDir != nullptr && strlen(destDir) != 0) {
-        OLDPWD_only = false;
-        if(chdir(destDir) != 0) {
-            PERROR(argv, "%s", destDir);
-            return 1;
+    int index = 1;
+    for(; index < argc; index++) {
+        const char *arg = argv[index];
+        if(strcmp(arg, "-") == 0) {
+            useOldpwd = true;
+        } else if(strcmp(arg, "-P") == 0) {
+            useLogical = false;
+        } else if(strcmp(arg, "-L") == 0) {
+            useLogical = true;
+        } else {
+            break;
         }
     }
 
-    ctx->updateWorkingDir(OLDPWD_only);
+    const char *dest = nullptr;
+    if(useOldpwd) {
+        dest = getenv(ENV_OLDPWD);
+    } else if(index < argc) {
+        dest = argv[index];
+    } else {
+        dest = getenv(ENV_HOME);
+    }
+
+    if(useOldpwd && dest != nullptr) {
+        printf("%s\n", dest);
+    }
+
+    if(!ctx->changeWorkingDir(dest, useLogical)) {
+        PERROR(argv, "%s", dest);
+        return 1;
+    }
     return 0;
 }
 
@@ -716,17 +740,42 @@ static int builtin_eval(RuntimeContext *ctx, const int argc, char *const *argv) 
     return 0;
 }
 
-static int builtin_pwd(RuntimeContext *, const int, char *const *argv) {
-    //TODO: support LP option
+static int builtin_pwd(RuntimeContext *, const int argc, char *const *argv) {
+    bool useLogical = true;
 
-    size_t size = PATH_MAX;
-    char buf[size];
-    if(getcwd(buf, size) == nullptr) {
-        PERROR(argv, ".");
-        return 1;
+    int index = 1;
+    for(; index < argc; index++) {
+        const char *arg = argv[index];
+        if(arg[0] != '-') {
+            break;
+        }
+        if(strcmp(arg, "-L") == 0) {
+            useLogical = true;
+        } else if(strcmp(arg, "-P") == 0) {
+            useLogical = false;
+        } else {
+            builtin_perror(argv, 0, "%s: invalid option", arg);
+            showUsage(argv);
+            return 1;
+        }
     }
 
-    fputs(buf, stdout);
+    if(useLogical) {
+        const char *dir = RuntimeContext::getLogicalWorkingDir();
+        if(!S_ISDIR(getStMode(dir))) {
+            PERROR(argv, ".");
+            return 1;
+        }
+        fputs(dir, stdout);
+    } else {
+        size_t size = PATH_MAX;
+        char buf[size];
+        if(getcwd(buf, size) == nullptr) {
+            PERROR(argv, ".");
+            return 1;
+        }
+        fputs(buf, stdout);
+    }
     fputc('\n', stdout);
     return 0;
 }

@@ -224,6 +224,8 @@ private:
      */
     FilePathCache pathCache;
 
+    static std::string logicalWorkingDir;
+
     static const char *configRootDir;
     static const char *typeDefDir;
 
@@ -236,6 +238,10 @@ public:
 
     static std::string getConfigRootDir();
     static std::string getIfaceDir();
+
+    static const char *getLogicalWorkingDir() {
+        return logicalWorkingDir.c_str();
+    }
 
     TypePool &getPool() {
         return this->pool;
@@ -577,9 +583,10 @@ public:
     void resetState();
 
     /**
-     * update OLDPWD and PWD
+     * change current working directory and update OLDPWD, PWD.
+     * if dest is null, do nothing and return true.
      */
-    void updateWorkingDir(bool OLDPWD_only);
+    bool changeWorkingDir(const char *dest, const bool useLogical);
 
     const char *getIFS();
 

@@ -165,6 +165,90 @@ RuntimeContext::~RuntimeContext() {
     }
 }
 
+/**
+ * path must be full path
+ */
+static std::vector<std::string> createPathStack(const char *path) {
+    std::vector<std::string> stack;
+    if(*path == '/') {
+        stack.push_back("/");
+        path++;
+    }
+
+    for(const char *ptr = nullptr; (ptr = strchr(path, '/')) != nullptr;) {
+        const unsigned int size = ptr - path;
+        if(size == 0) {
+            path++;
+            continue;
+        }
+        stack.push_back(std::string(path, size));
+        path += size;
+    }
+    if(*path != '\0') {
+        stack.push_back(path);
+    }
+    return stack;
+}
+
+/**
+ * path is not null
+ */
+static std::string expandDots(const char *basePath, const char *path) {
+    assert(path != nullptr);
+    std::vector<std::string> resolvedPathStack;
+    auto pathStack(createPathStack(path));
+
+    // fill resolvedPathStack
+    if(!pathStack.empty() && pathStack.front() != "/") {
+        if(basePath != nullptr) {
+            resolvedPathStack = createPathStack(basePath);
+        } else {
+            size_t size = PATH_MAX;
+            char buf[size];
+            const char *cwd = getcwd(buf, size);
+            if(cwd != nullptr) {
+                resolvedPathStack = createPathStack(cwd);
+            }
+        }
+    }
+
+    for(auto &e : pathStack) {
+        if(e == "..") {
+            if(!resolvedPathStack.empty()) {
+                resolvedPathStack.pop_back();
+            }
+        } else if(e != ".") {
+            resolvedPathStack.push_back(std::move(e));
+        }
+    }
+
+    // create path
+    std::string str;
+    const unsigned int size = resolvedPathStack.size();
+    for(unsigned int i = 1; i < size; i++) {
+        str += '/';
+        str += std::move(resolvedPathStack[i]);
+    }
+    return str;
+}
+
+static std::string initLogicalWorkingDir() {
+    const char *dir = getenv(ENV_PWD);
+    if(dir == nullptr || !S_ISDIR(getStMode(dir))) {
+        size_t size = PATH_MAX;
+        char buf[size];
+        const char *cwd = getcwd(buf, size);
+        return std::string(cwd != nullptr ? cwd : "");
+    }
+    if(dir[0] == '/') {
+        return std::string(dir);
+    } else {
+        return expandDots(nullptr, dir);
+    }
+}
+
+std::string RuntimeContext::logicalWorkingDir = initLogicalWorkingDir();
+
 std::string RuntimeContext::getConfigRootDir() {
 #ifdef X_CONFIG_DIR
     return std::string(X_CONFIG_DIR);
@@ -588,21 +672,44 @@ void RuntimeContext::resetState() {
     this->thrownObject.reset();
 }
 
-void RuntimeContext::updateWorkingDir(bool OLDPWD_only) {
+bool RuntimeContext::changeWorkingDir(const char *dest, const bool useLogical) {
+    if(dest == nullptr) {
+        return true;
+    }
+
+    const bool tryChdir = strlen(dest) != 0;
+    std::string actualDest;
+    if(tryChdir) {
+        actualDest = expandDots(logicalWorkingDir.c_str(), dest);
+        if(useLogical) {
+            dest = actualDest.c_str();
+        }
+        if(chdir(dest) != 0) {
+            return false;
+        }
+    }
+
     // update OLDPWD
     const char *oldpwd = getenv(ENV_PWD);
     assert(oldpwd != nullptr);
     setenv(ENV_OLDPWD, oldpwd, 1);
 
     // update PWD
-    if(!OLDPWD_only) {
-        size_t size = PATH_MAX;
-        char buf[size];
-        char *cwd = getcwd(buf, size);
-        if(cwd != nullptr && strcmp(cwd, oldpwd) != 0) {
-            setenv(ENV_PWD, cwd, 1);
+    if(tryChdir) {
+        if(useLogical) {
+            setenv(ENV_PWD, actualDest.c_str(), 1);
+        } else {
+            size_t size = PATH_MAX;
+            char buf[size];
+            const char *cwd = getcwd(buf, size);
+            if(cwd != nullptr) {
+                setenv(ENV_PWD, cwd, 1);
+            }
         }
+
+        logicalWorkingDir = std::move(actualDest);
     }
+    return true;
 }
 
 const char *RuntimeContext::getIFS() {
