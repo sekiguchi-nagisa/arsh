@@ -87,6 +87,16 @@ constexpr const char *OP_INTERP = "__INTERP__";    // for interpolation
 // to command argument
 constexpr const char *OP_CMD_ARG = "__CMD_ARG__";  // for command argument
 
+// =====  environmental variable  =====
+
+constexpr const char *ENV_HOME = "HOME";
+constexpr const char *ENV_PWD = "PWD";
+constexpr const char *ENV_OLDPWD = "OLDPWD";
+constexpr const char *ENV_PATH = "PATH";
+constexpr const char *ENV_SHLVL = "SHLVL";
+constexpr const char *ENV_TERM = "TERM";
+
+
 } // namespace core
 } // namespace ydsh
 

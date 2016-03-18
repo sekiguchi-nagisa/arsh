@@ -130,16 +130,16 @@ DSContext::DSContext() :
     setlocale(LC_MESSAGES, "C");
 
     // update shell level
-    setenv("SHLVL", std::to_string(originalShellLevel + 1).c_str(), 1);
+    setenv(ENV_SHLVL, std::to_string(originalShellLevel + 1).c_str(), 1);
 
     // set some env
-    if(getenv("HOME") == nullptr) {
+    if(getenv(ENV_HOME) == nullptr) {
         struct passwd *pw = getpwuid(getuid());
         if(pw == nullptr) {
             perror("getpwuid failed\n");
             exit(1);
         }
-        setenv("HOME", pw->pw_dir, 1);
+        setenv(ENV_HOME, pw->pw_dir, 1);
     }
 }
 
@@ -147,7 +147,7 @@ DSContext::DSContext() :
  * not allow dumb terminal
  */
 static bool isSupportedTerminal(int fd) {
-    const char *term = getenv("TERM");
+    const char *term = getenv(ENV_TERM);
     return term != nullptr && strcasecmp(term, "dumb") != 0 && isatty(fd) != 0;
 }
 
@@ -431,7 +431,7 @@ void DSContext::loadEmbeddedScript() {
 const unsigned int DSContext::originalShellLevel = getShellLevel();
 
 unsigned int DSContext::getShellLevel() {
-    char *shlvl = getenv("SHLVL");
+    char *shlvl = getenv(ENV_SHLVL);
     unsigned int level = 0;
     if(shlvl != nullptr) {
         int status;

@@ -366,7 +366,7 @@ inline static void showUsage(char *const *argv) {
 
 static int builtin_cd(RuntimeContext *ctx, const int argc, char *const *argv) {
     bool OLDPWD_only = true;
-    const char *destDir = getenv("HOME");
+    const char *destDir = getenv(ENV_HOME);
 
     if(argc > 1) {
         destDir = argv[1];

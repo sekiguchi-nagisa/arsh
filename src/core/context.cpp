@@ -61,7 +61,7 @@ const char *FilePathCache::searchPath(const char *cmdName, unsigned char option)
     }
 
     // get PATH
-    const char *pathPrefix = getenv("PATH");
+    const char *pathPrefix = getenv(ENV_PATH);
     if(pathPrefix == nullptr || hasFlag(option, USE_DEFAULT_PATH)) {
         pathPrefix = VAR_DEFAULT_PATH;
     }
@@ -169,7 +169,7 @@ std::string RuntimeContext::getConfigRootDir() {
 #ifdef X_CONFIG_DIR
     return std::string(X_CONFIG_DIR);
 #else
-    std::string path(getenv("HOME"));
+    std::string path(getenv(ENV_HOME));
     path += "/.ydsh";
     return path;
 #endif
@@ -589,14 +589,10 @@ void RuntimeContext::resetState() {
 }
 
 void RuntimeContext::updateWorkingDir(bool OLDPWD_only) {
-    // check handle
-    const char *env_OLDPWD = "OLDPWD";
-    const char *env_PWD = "PWD";
-
     // update OLDPWD
-    const char *oldpwd = getenv(env_PWD);
+    const char *oldpwd = getenv(ENV_PWD);
     assert(oldpwd != nullptr);
-    setenv(env_OLDPWD, oldpwd, 1);
+    setenv(ENV_OLDPWD, oldpwd, 1);
 
     // update PWD
     if(!OLDPWD_only) {
@@ -604,7 +600,7 @@ void RuntimeContext::updateWorkingDir(bool OLDPWD_only) {
         char buf[size];
         char *cwd = getcwd(buf, size);
         if(cwd != nullptr && strcmp(cwd, oldpwd) != 0) {
-            setenv(env_PWD, cwd, 1);
+            setenv(ENV_PWD, cwd, 1);
         }
     }
 }
@@ -832,9 +828,9 @@ void RuntimeContext::interpretPromptString(const char *ps, std::string &output) 
                 continue;
             }
             case 'w': {
-                const char *c = getenv("PWD");
+                const char *c = getenv(ENV_PWD);
                 if(c != nullptr) {
-                    const char *home = getenv("HOME");
+                    const char *home = getenv(ENV_HOME);
                     if(home != nullptr && strstr(c, home) == c) {
                         output += '~';
                         c += strlen(home);
@@ -844,14 +840,14 @@ void RuntimeContext::interpretPromptString(const char *ps, std::string &output) 
                 continue;
             }
             case 'W':  {
-                const char *cwd = getenv("PWD");
+                const char *cwd = getenv(ENV_PWD);
                 if(cwd == nullptr) {
                     continue;
                 }
                 if(strcmp(cwd, "/") == 0) {
                     output += cwd;
                 } else {
-                    const char *home = getenv("HOME");
+                    const char *home = getenv(ENV_HOME);
                     char *realHOME = home != nullptr ? realpath(home, nullptr) : nullptr;
                     char *realPWD = realpath(cwd, nullptr);
 
@@ -997,7 +993,7 @@ static void completeCommandName(RuntimeContext &ctx, const std::string &token, C
 
 
     // search external command
-    const char *path = getenv("PATH");
+    const char *path = getenv(ENV_PATH);
     if(path == nullptr) {
         return;
     }
@@ -1423,9 +1419,9 @@ std::string expandTilde(const char *path) {
             expanded = pw->pw_dir;
         }
     } else if(expanded == "~+") {
-        expanded = getenv("PWD");
+        expanded = getenv(ENV_PWD);
     } else if(expanded == "~-") {
-        expanded = getenv("OLDPWD");
+        expanded = getenv(ENV_OLDPWD);
     } else {
         struct passwd *pw = getpwnam(expanded.c_str() + 1);
         if(pw != nullptr) {
