@@ -511,9 +511,7 @@ std::string FuncObject::toString(RuntimeContext &, VisitedSet *) {
 }
 
 bool FuncObject::invoke(RuntimeContext &ctx) {  //TODO: default param
-    // change stackTopIndex
     ctx.pushFuncContext(this->funcNode);
-    ctx.reserveLocalVar(ctx.getLocalVarOffset() + this->funcNode->getMaxVarNum());
 
     EvalStatus s = this->funcNode->getBlockNode()->eval(ctx);
     ctx.popFuncContext();

@@ -163,14 +163,14 @@ private:
     unsigned int stackTopIndex;
 
     /**
+     * indicate lower limit of stack top index (bottom <= top)
+     */
+    unsigned int stackBottomIndex;
+
+    /**
      * offset of current local variable index.
      */
     unsigned int localVarOffset;
-
-    /**
-     * for function call. save localVarOffset.
-     */
-    std::vector<unsigned int> offsetStack;
 
     /**
      * if true, print top level evaluated value.
@@ -372,15 +372,11 @@ public:
 
     void expandLocalStack(unsigned int needSize);
 
-    void saveAndSetOffset(unsigned int newOffset) {
-        this->offsetStack.push_back(this->localVarOffset);
-        this->localVarOffset = newOffset;
-    }
+    void unwindOperandStack();
 
-    void restoreOffset() {
-        this->localVarOffset = this->offsetStack.back();
-        this->offsetStack.pop_back();
-    }
+    void saveAndSetStackState(unsigned int stackTopOffset,
+                              unsigned int paramSize, unsigned int maxVarSize);
+    void restoreStackState();
 
     // operand manipulation
     void push(const DSValue &value) {

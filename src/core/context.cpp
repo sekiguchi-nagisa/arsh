@@ -151,8 +151,8 @@ RuntimeContext::RuntimeContext() :
         emptyStrObj(new String_Object(this->pool.getStringType(), std::string())),
         dummy(new DummyObject()), thrownObject(),
         localStack(new DSValue[DEFAULT_LOCAL_SIZE]),
-        localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0),
-        localVarOffset(0), offsetStack(), toplevelPrinting(false), assertion(true),
+        localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0), stackBottomIndex(0),
+        localVarOffset(0), toplevelPrinting(false), assertion(true),
         handle_STR(nullptr), handle_bt(nullptr), IFS_index(0),
         callableContextStack(), callStack(),
         pipelineEvaluator(DSValue::create<PipelineEvaluator>()), udcMap(), pathCache() { }
@@ -318,6 +318,7 @@ void RuntimeContext::reserveLocalVar(unsigned int size) {
         this->expandLocalStack(size);
     }
     this->stackTopIndex = size;
+    this->stackBottomIndex = size;
 }
 
 void RuntimeContext::throwError(DSType &errorType, const char *message) {
@@ -360,6 +361,54 @@ void RuntimeContext::expandLocalStack(unsigned int needSize) {
     this->localStackSize = newSize;
 }
 
+void RuntimeContext::unwindOperandStack() {
+    while(this->stackTopIndex > this->stackBottomIndex) {
+        this->popNoReturn();
+    }
+}
+
+void RuntimeContext::saveAndSetStackState(unsigned int stackTopOffset,
+                                          unsigned int paramSize, unsigned int maxVarSize) {
+    const unsigned int oldLocalVarOffset = this->localVarOffset;
+    const unsigned int oldStackBottomIndex = this->stackBottomIndex;
+    const unsigned int oldStackTopIndex = this->stackTopIndex - stackTopOffset;
+
+    // change stack state
+    this->localVarOffset = this->stackTopIndex - paramSize + 1;
+    this->reserveLocalVar(this->stackTopIndex + maxVarSize - paramSize + 3);
+
+    // push old state
+    this->localStack[this->stackTopIndex] = DSValue::createNum(oldLocalVarOffset);
+    this->localStack[this->stackTopIndex - 1] = DSValue::createNum(oldStackBottomIndex);
+    this->localStack[this->stackTopIndex - 2] = DSValue::createNum(oldStackTopIndex);
+}
+
+void RuntimeContext::restoreStackState() {
+    this->unwindOperandStack();
+
+    // pop old state
+    auto v = this->pop();
+    assert(v.kind() == DSValueKind::NUMBER);
+    const unsigned int oldLocalVarOffset = static_cast<unsigned int>(v.value());
+
+    v = this->pop();
+    assert(v.kind() == DSValueKind::NUMBER);
+    const unsigned int oldStackBottomIndex = static_cast<unsigned int>(v.value());
+
+    v = this->pop();
+    assert(v.kind() == DSValueKind::NUMBER);
+    const unsigned int oldStackTopIndex = static_cast<unsigned int>(v.value());
+
+    // restore state
+    this->localVarOffset = oldLocalVarOffset;
+    this->stackBottomIndex = oldStackBottomIndex;
+
+    // unwind local variable
+    while(this->stackTopIndex > oldStackTopIndex) {
+        this->popNoReturn();
+    }
+}
+
 /**
  * stack state in function apply    stack grow ===>
  *
@@ -369,26 +418,22 @@ void RuntimeContext::expandLocalStack(unsigned int needSize) {
  *                       | offset |   |        |
  */
 EvalStatus RuntimeContext::applyFuncObject(unsigned int startPos, bool returnTypeIsVoid, unsigned int paramSize) {
-    unsigned int savedStackTopIndex = this->stackTopIndex - paramSize - 1;
-
     // call function
-    this->saveAndSetOffset(savedStackTopIndex + 2);
+    auto *func = typeAs<FuncObject>(this->localStack[this->stackTopIndex - paramSize]);
+    this->saveAndSetStackState(paramSize + 1, paramSize, func->getFuncNode()->getMaxVarNum());
     this->pushCallFrame(startPos);
-    bool status = typeAs<FuncObject>(this->localStack[savedStackTopIndex + 1])->invoke(*this);
+    bool status = func->invoke(*this);
     this->popCallFrame();
 
     // restore stack state
     DSValue returnValue;
-    if(!returnTypeIsVoid) {
+    if(status && !returnTypeIsVoid) {
         returnValue = std::move(this->localStack[this->stackTopIndex]);
     }
 
-    this->restoreOffset();
-    for(unsigned int i = this->stackTopIndex; i > savedStackTopIndex; i--) {
-        this->popNoReturn();
-    }
+    this->restoreStackState();
 
-    if(returnValue) {
+    if(status && !returnTypeIsVoid) {
         this->push(std::move(returnValue));
     }
     return status ? EvalStatus::SUCCESS : EvalStatus::THROW;
@@ -407,21 +452,20 @@ EvalStatus RuntimeContext::callMethod(unsigned int startPos, const std::string &
      * include receiver
      */
     unsigned int paramSize = handle->getParamTypes().size() + 1;
-
-    unsigned int savedStackTopIndex = this->stackTopIndex - paramSize;
+    const unsigned int recvIndex = this->stackTopIndex - handle->getParamTypes().size();
 
     // call method
-    this->saveAndSetOffset(savedStackTopIndex + 1);
+    this->saveAndSetStackState(paramSize, paramSize, paramSize);
     this->pushCallFrame(startPos);
 
     bool status;
     try {
         // check method handle type
         if(!handle->isInterfaceMethod()) {  // call virtual method
-            status = this->localStack[savedStackTopIndex + 1]->
+            status = this->localStack[recvIndex]->
                     getType()->getMethodRef(handle->getMethodIndex())->invoke(*this);
         } else {    // call proxy method
-            status = typeAs<ProxyObject>(this->localStack[savedStackTopIndex + 1])->
+            status = typeAs<ProxyObject>(this->localStack[recvIndex])->
                     invokeMethod(*this, methodName, handle);
         }
     } catch(const NativeMethodError &e) {
@@ -432,16 +476,13 @@ EvalStatus RuntimeContext::callMethod(unsigned int startPos, const std::string &
 
     // restore stack state
     DSValue returnValue;
-    if(!handle->getReturnType()->isVoidType()) {
-        returnValue = std::move(this->localStack[this->stackTopIndex]);
+    if(status && !handle->getReturnType()->isVoidType()) {
+        returnValue = this->pop();
     }
 
-    this->restoreOffset();
-    for(unsigned int i = this->stackTopIndex; i > savedStackTopIndex; i--) {
-        this->popNoReturn();
-    }
+    this->restoreStackState();
 
-    if(returnValue) {
+    if(status && !handle->getReturnType()->isVoidType()) {
         this->push(std::move(returnValue));
     }
     return status ? EvalStatus::SUCCESS : EvalStatus::THROW;
@@ -465,20 +506,17 @@ void RuntimeContext::newDSObject(DSType *type) {
  *             |    new offset    |
  */
 EvalStatus RuntimeContext::callConstructor(unsigned int startPos, unsigned int paramSize) {
-    unsigned int savedStackTopIndex = this->stackTopIndex - paramSize;
+    const unsigned int recvIndex = this->stackTopIndex - paramSize;
 
     // call constructor
-    this->saveAndSetOffset(savedStackTopIndex);
+    this->saveAndSetStackState(paramSize, paramSize + 1, paramSize + 1);
     this->pushCallFrame(startPos);
     bool status =
-            this->localStack[savedStackTopIndex]->getType()->getConstructor()->invoke(*this);
+            this->localStack[recvIndex]->getType()->getConstructor()->invoke(*this);
     this->popCallFrame();
 
     // restore stack state
-    this->restoreOffset();
-    for(unsigned int i = this->stackTopIndex; i > savedStackTopIndex; i--) {
-        this->popNoReturn();
-    }
+    this->restoreStackState();
 
     if(status) {
         return EvalStatus::SUCCESS;
@@ -668,7 +706,6 @@ void RuntimeContext::resetState() {
     this->callableContextStack.clear();
     this->callStack.clear();
     this->localVarOffset = 0;
-    this->offsetStack.clear();
     this->thrownObject.reset();
 }
 
