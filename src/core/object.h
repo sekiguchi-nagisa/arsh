@@ -114,6 +114,11 @@ public:
     virtual bool introspect(RuntimeContext &ctx, DSType *targetType);
 };
 
+enum class DSValueKind : unsigned char {
+    OBJECT = 0,
+    NUMBER = 129,
+};
+
 class DSValue {
 private:
     union {
@@ -133,7 +138,9 @@ public:
     /**
      * obj may be null
      */
-    explicit DSValue(DSObject *obj) noexcept : obj(obj) {
+    explicit DSValue(DSObject *obj) noexcept : DSValue(reinterpret_cast<long>(obj)) { }
+
+    explicit DSValue(long val) noexcept : val(val) {
         if(this->val > 0) {
             this->obj->refCount++;
         }
@@ -182,6 +189,17 @@ public:
         this->swap(tmp);
     }
 
+    /**
+     * mask tag and get actual value.
+     */
+    long value() const noexcept {
+        return this->val & 0xFFFFFFFFFFFFFF;
+    }
+
+    DSValueKind kind() const noexcept {
+        return static_cast<DSValueKind>((this->val & 0xFF00000000000000) >> 56);
+    }
+
     DSObject *get() const noexcept {
         return this->obj;
     }
@@ -214,7 +232,12 @@ public:
         static_assert(std::is_base_of<DSObject, T>::value, "must be subtype of DSObject");
 
         return DSValue(new T(std::forward<A>(args)...));
-    };
+    }
+
+    static DSValue createNum(unsigned int v) {
+        unsigned long mask = static_cast<unsigned long>(DSValueKind::NUMBER) << 56;
+        return DSValue(mask | v);
+    }
 };
 
 template <typename T>
