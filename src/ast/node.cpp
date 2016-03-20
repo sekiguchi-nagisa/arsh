@@ -1418,7 +1418,6 @@ void PipedCmdNode::accept(NodeVisitor &visitor) {
 
 EvalStatus PipedCmdNode::eval(RuntimeContext &ctx) {
     ctx.pushNewPipeline();
-    ctx.activePipeline().setStackTopIndex(ctx.getStackTopIndex());
 
     for(auto &node : this->cmdNodes) {
         EVAL(ctx, node);
@@ -2051,7 +2050,7 @@ void ThrowNode::accept(NodeVisitor &visitor) {
 
 EvalStatus ThrowNode::eval(RuntimeContext &ctx) {
     EVAL(ctx, this->exprNode);
-    ctx.storeThrowObject();
+    ctx.throwError();
     return EvalStatus::THROW;
 }
 

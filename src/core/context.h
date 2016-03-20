@@ -338,6 +338,11 @@ public:
     void reserveLocalVar(unsigned int size);
 
     /**
+     * pop stack top and store to thrownObject.
+     */
+    void throwError();
+
+    /**
      * for internal error reporting.
      */
     void throwError(DSType &errorType, const char *message);
@@ -355,13 +360,6 @@ public:
      * create StackOverflowError and throw NativeMethodError
      */
     void raiseCircularReferenceError();
-
-    /**
-     * pop and set to throwObject
-     */
-    void storeThrowObject() {
-        this->thrownObject = this->pop();
-    }
 
     /**
      * get thrownObject and push to localStack

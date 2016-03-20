@@ -196,11 +196,6 @@ public:
 class PipelineEvaluator : public DSObject {
 private:
     /**
-     * stack top index before pipeline evaluation.
-     */
-    unsigned int stacktopIndex;
-
-    /**
      * commonly stored object is String_Object.
      */
     std::vector<DSValue> argArray;
@@ -219,14 +214,6 @@ public:
 
     ~PipelineEvaluator() = default;
 
-    void setStackTopIndex(unsigned int stackTopIndex) {
-        this->stacktopIndex = stackTopIndex;
-    }
-
-    unsigned int getStackTopIndex() const {
-        return this->stacktopIndex;
-    }
-
     std::vector<DSValue> &getArgArray() {
         return this->argArray;
     }
@@ -240,7 +227,6 @@ public:
     }
 
     void clear() {
-        this->stacktopIndex = 0;
         this->argArray.clear();
         this->redirOptions.clear();
         this->procStates.clear();

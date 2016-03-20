@@ -321,13 +321,19 @@ void RuntimeContext::reserveLocalVar(unsigned int size) {
     this->stackBottomIndex = size;
 }
 
+void RuntimeContext::throwError() {
+    this->thrownObject = this->pop();
+    this->unwindOperandStack();
+}
+
 void RuntimeContext::throwError(DSType &errorType, const char *message) {
     this->throwError(errorType, std::string(message));
 }
 
 void RuntimeContext::throwError(DSType &errorType, std::string &&message) {
-    this->thrownObject = Error_Object::newError(*this, errorType, DSValue::create<String_Object>(
-            this->pool.getStringType(), std::move(message)));
+    this->push(Error_Object::newError(*this, errorType, DSValue::create<String_Object>(
+            this->pool.getStringType(), std::move(message))));
+    this->throwError();
 }
 
 void RuntimeContext::throwSystemError(int errorNum, std::string &&message) {
@@ -837,6 +843,7 @@ int RuntimeContext::execUserDefinedCommand(UserDefinedCmdNode *node, DSValue *ar
 
 void RuntimeContext::pushNewPipeline() {
     if(this->pipelineEvaluator.get()->getRefcount() == 1) { // reuse cached evaluator object
+        typeAs<PipelineEvaluator>(this->pipelineEvaluator)->clear();
         this->push(this->pipelineEvaluator);
     } else {
         this->push(DSValue::create<PipelineEvaluator>());
@@ -852,14 +859,9 @@ EvalStatus RuntimeContext::callPipedCommand(unsigned int startPos) {
     EvalStatus status = this->activePipeline().evalPipeline(*this);
     this->popCallFrame();
 
-    // pop stack top
-    const unsigned int oldIndex = this->activePipeline().getStackTopIndex();
-    for(unsigned int i = this->getStackTopIndex(); i > oldIndex; i--) {
+    if(status != EvalStatus::THROW) {
         this->popNoReturn();
     }
-
-    this->activePipeline().clear();
-    this->popNoReturn();
     return status;
 }
 
