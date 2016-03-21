@@ -93,8 +93,6 @@ public:
         return this->type == nullptr;
     }
 
-    virtual bool isTerminalNode() const;
-
     virtual void dump(NodeDumper &dumper) const = 0;
     virtual void accept(NodeVisitor &visitor) = 0;
     virtual EvalStatus eval(RuntimeContext &ctx) = 0;
@@ -1349,8 +1347,6 @@ public:
         return this->nodeList;
     }
 
-    bool isTerminalNode() const override;
-
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
     EvalStatus eval(RuntimeContext &ctx) override;
@@ -1364,10 +1360,6 @@ public:
     explicit BlockEndNode(Token token) : Node(token) { }
 
     virtual ~BlockEndNode() = default;
-
-    bool isTerminalNode() const override {
-        return true;
-    }
 };
 
 class BreakNode : public BlockEndNode {
@@ -1631,8 +1623,6 @@ private:
      */
     BlockNode *elseNode;
 
-    bool terminal;
-
 public:
     /**
      * elseNode may be null
@@ -1668,14 +1658,6 @@ public:
      * return EmptyBlockNode, if elseNode is null.
      */
     BlockNode *getElseNode();
-
-    void setTerminal(bool terminal) {
-        this->terminal = terminal;
-    }
-
-    bool isTerminalNode() const override {
-        return this->terminal;
-    }
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
@@ -1785,11 +1767,9 @@ private:
      */
     BlockNode *finallyNode;
 
-    bool terminal;
-
 public:
     TryNode(unsigned int startPos, BlockNode *blockNode) :
-            Node({startPos, 0}), blockNode(blockNode), catchNodes(), finallyNode(), terminal(false) {
+            Node({startPos, 0}), blockNode(blockNode), catchNodes(), finallyNode() {
         this->updateToken(blockNode->getToken());
     }
 
@@ -1808,14 +1788,6 @@ public:
     void addFinallyNode(BlockNode *finallyNode);
 
     BlockNode *getFinallyNode();
-
-    void setTerminal(bool terminal) {
-        this->terminal = terminal;
-    }
-
-    bool isTerminalNode() const override {
-        return this->terminal;
-    }
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;

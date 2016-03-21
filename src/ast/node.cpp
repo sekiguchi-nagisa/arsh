@@ -47,10 +47,6 @@ void Node::setType(DSType &type) {
     this->type = &type;
 }
 
-bool Node::isTerminalNode() const {
-    return false;
-}
-
 // ######################
 // ##     TypeNode     ##
 // ######################
@@ -1637,10 +1633,6 @@ void BlockNode::insertNodeToFirst(Node *node) {
     this->nodeList.push_front(node);
 }
 
-bool BlockNode::isTerminalNode() const {
-    return !this->nodeList.empty() && this->nodeList.back()->isTerminalNode();
-}
-
 void BlockNode::dump(NodeDumper &dumper) const {
     DUMP(nodeList);
 }
@@ -1939,7 +1931,7 @@ static void resolveIfIsStatement(Node *condNode, BlockNode *blockNode) {
 
 IfNode::IfNode(unsigned int startPos, Node *condNode, BlockNode *thenNode) :
         Node({startPos, 0}), condNode(condNode), thenNode(thenNode),
-        elifCondNodes(), elifThenNodes(), elseNode(nullptr), terminal(false) {
+        elifCondNodes(), elifThenNodes(), elseNode(nullptr) {
 
     resolveIfIsStatement(this->condNode, this->thenNode);
     this->updateToken(thenNode->getToken());
@@ -1980,7 +1972,6 @@ void IfNode::dump(NodeDumper &dumper) const {
     DUMP_NODES(elifThenNodes);
 
     DUMP_PTR(elseNode);
-    DUMP_PRIM(terminal);
 }
 
 void IfNode::accept(NodeVisitor &visitor) {
@@ -2123,7 +2114,6 @@ void TryNode::dump(NodeDumper &dumper) const {
     DUMP_NODES(catchNodes);
 
     DUMP_PTR(finallyNode);
-    DUMP_PRIM(terminal);
 }
 
 void TryNode::accept(NodeVisitor &visitor) {

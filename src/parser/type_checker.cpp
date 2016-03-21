@@ -238,9 +238,9 @@ void TypeChecker::checkTypeWithCurrentScope(BlockNode *blockNode) {
             RAISE_TC_ERROR(Unreachable, *targetNode);
         }
         this->checkTypeWithCoercion(this->typePool.getVoidType(), targetNode);
-        prevIsTerminal = targetNode->isTerminalNode();
+        prevIsTerminal = targetNode->getType().isBottomType();
     }
-    blockNode->setType(this->typePool.getVoidType());
+    blockNode->setType(prevIsTerminal ? this->typePool.getBottomType() : this->typePool.getVoidType());
 }
 
 void TypeChecker::checkTypeWithCoercion(DSType &requiredType, Node * &targetNode) {
@@ -252,7 +252,7 @@ void TypeChecker::checkTypeWithCoercion(DSType &requiredType, Node * &targetNode
 }
 
 bool TypeChecker::checkCoercion(const DSType &requiredType, const DSType &targetType) {
-    if(requiredType == this->typePool.getVoidType()) {  // pop stack top
+    if(requiredType.isVoidType()) {  // pop stack top
         return true;
     }
 
@@ -291,14 +291,16 @@ void TypeChecker::checkAndThrowIfOutOfLoop(Node &node) {
 
 void TypeChecker::checkTerminalNodeExistence(BlockNode &blockNode, DSType &returnType) {
     assert(!blockNode.isUntyped());
-    Node *endNode = blockNode.getNodeList().empty() ? nullptr : blockNode.getNodeList().back();
-    if(returnType.isVoidType() && (endNode == nullptr || !endNode->isTerminalNode())) {
+    if(returnType.isVoidType() && !blockNode.getType().isBottomType()) {
         /**
          * insert return node to block end
          */
-        blockNode.addNode(new ReturnNode(0, new EmptyNode()));
+        ReturnNode *returnNode = new ReturnNode(0, new EmptyNode());
+        returnNode->setType(this->typePool.getBottomType());
+        blockNode.addNode(returnNode);
+        blockNode.setType(returnNode->getType());
     }
-    if(blockNode.getNodeList().empty() || !blockNode.getNodeList().back()->isTerminalNode()) {
+    if(!blockNode.getType().isBottomType()) {
         RAISE_TC_ERROR(UnfoundReturn, blockNode);
     }
 }
@@ -760,13 +762,13 @@ void TypeChecker::visitBlockNode(BlockNode &node) {
 void TypeChecker::visitBreakNode(BreakNode &node) {
     this->checkAndThrowIfInsideFinally(node);
     this->checkAndThrowIfOutOfLoop(node);
-    node.setType(this->typePool.getVoidType());
+    node.setType(this->typePool.getBottomType());
 }
 
 void TypeChecker::visitContinueNode(ContinueNode &node) {
     this->checkAndThrowIfInsideFinally(node);
     this->checkAndThrowIfOutOfLoop(node);
-    node.setType(this->typePool.getVoidType());
+    node.setType(this->typePool.getBottomType());
 }
 
 void TypeChecker::visitExportEnvNode(ExportEnvNode &node) {
@@ -859,14 +861,12 @@ void TypeChecker::visitIfNode(IfNode &node) {
     this->checkType(this->typePool.getVoidType(), node.getElseNode());
 
     // check if terminal node
-    bool terminal = node.getThenNode()->isTerminalNode()
-                    && node.getElseNode()->isTerminalNode();
+    bool terminal = node.getThenNode()->getType().isBottomType()
+                    && node.getElseNode()->getType().isBottomType();
     for(unsigned int i = 0; i < size && terminal; i++) {
-        terminal = node.getElifThenNodes()[i]->isTerminalNode();
+        terminal = node.getElifThenNodes()[i]->getType().isBottomType();
     }
-    node.setTerminal(terminal);
-
-    node.setType(this->typePool.getVoidType());
+    node.setType(terminal ? this->typePool.getBottomType() : this->typePool.getVoidType());
 }
 
 void TypeChecker::visitReturnNode(ReturnNode &node) {
@@ -881,13 +881,13 @@ void TypeChecker::visitReturnNode(ReturnNode &node) {
             RAISE_TC_ERROR(NotNeedExpr, node);
         }
     }
-    node.setType(this->typePool.getVoidType());
+    node.setType(this->typePool.getBottomType());
 }
 
 void TypeChecker::visitThrowNode(ThrowNode &node) {
     this->checkAndThrowIfInsideFinally(node);
     this->checkType(node.getExprNode());
-    node.setType(this->typePool.getVoidType());
+    node.setType(this->typePool.getBottomType());
 }
 
 void TypeChecker::visitCatchNode(CatchNode &node) {
@@ -931,13 +931,11 @@ void TypeChecker::visitTryNode(TryNode &node) {
     }
 
     // check if terminal node
-    bool terminal = node.getBlockNode()->isTerminalNode();
+    bool terminal = node.getBlockNode()->getType().isBottomType();
     for(int i = 0; i < size && terminal; i++) {
-        terminal = node.getCatchNodes()[i]->getBlockNode()->isTerminalNode();
+        terminal = node.getCatchNodes()[i]->getBlockNode()->getType().isBottomType();
     }
-    node.setTerminal(terminal);
-
-    node.setType(this->typePool.getVoidType());
+    node.setType(terminal ? this->typePool.getBottomType() : this->typePool.getVoidType());
 }
 
 void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
@@ -1101,12 +1099,12 @@ void TypeChecker::visitRootNode(RootNode &node) {
         if(prevIsTerminal) {
             RAISE_TC_ERROR(Unreachable, *targetNode);
         }
-        if(dynamic_cast<PipedCmdNode *>(targetNode) != nullptr) {   // pop stack top
+        if(dynamic_cast<PipedCmdNode *>(targetNode) != nullptr) {  // pop stack top
             this->checkTypeWithCoercion(this->typePool.getVoidType(), targetNode);
         } else {
             this->checkType(nullptr, targetNode, nullptr);
         }
-        prevIsTerminal = targetNode->isTerminalNode();
+        prevIsTerminal = targetNode->getType().isBottomType();
     }
 
     node.setMaxVarNum(this->symbolTable.getMaxVarIndex());

@@ -71,11 +71,12 @@ protected:
     flag8_set_t attributeSet;
 
 public:
-    static constexpr flag8_t EXTENDABLE   = 1 << 0;
-    static constexpr flag8_t VOID_TYPE    = 1 << 1; // Void
-    static constexpr flag8_t FUNC_TYPE    = 1 << 2; // function type
-    static constexpr flag8_t IFACE_TYPE   = 1 << 3; // interface
-    static constexpr flag8_t RECORD_TYPE  = 1 << 4; // indicate user defined type
+    static constexpr flag8_t EXTENDABLE  = 1 << 0;
+    static constexpr flag8_t VOID_TYPE   = 1 << 1;  // Void
+    static constexpr flag8_t FUNC_TYPE   = 1 << 2;  // function type
+    static constexpr flag8_t IFACE_TYPE  = 1 << 3;  // interface
+    static constexpr flag8_t RECORD_TYPE = 1 << 4;  // indicate user defined type
+    static constexpr flag8_t BOTTOM_TYPE = 1 << 5;  // Bottom
 
     NON_COPYABLE(DSType);
 
@@ -116,6 +117,10 @@ public:
 
     bool isRecordType() const {
         return hasFlag(this->attributeSet, RECORD_TYPE);
+    }
+
+    bool isBottomType() const {
+        return hasFlag(this->attributeSet, BOTTOM_TYPE);
     }
 
     /**

@@ -146,6 +146,7 @@ TEST_F(TypeTest, builtinName) {
 
         this->assertTypeName("Any", this->pool.getAnyType());
         this->assertTypeName("Void", this->pool.getVoidType());
+        this->assertTypeName("Bottom", this->pool.getBottomType());
 
         this->assertTypeName("Byte", this->pool.getByteType());
         this->assertTypeName("Int16", this->pool.getInt16Type());
@@ -182,6 +183,7 @@ TEST_F(TypeTest, superType) {
 
         ASSERT_TRUE(this->pool.getAnyType().getSuperType() == nullptr);
         ASSERT_TRUE(this->pool.getVoidType().getSuperType() == nullptr);
+        ASSERT_TRUE(this->pool.getBottomType().getSuperType() == nullptr);
 
         this->assertSuperType(this->pool.getVariantType(), this->pool.getAnyType());
         this->assertSuperType(this->pool.getValueType(), this->pool.getVariantType());
@@ -215,6 +217,7 @@ TEST_F(TypeTest, superType) {
 TEST_F(TypeTest, attribute) {
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDABLE, this->pool.getAnyType()));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::VOID_TYPE, this->pool.getVoidType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::BOTTOM_TYPE, this->pool.getBottomType()));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getVariantType()));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDABLE, this->pool.getValueType()));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getByteType()));
@@ -298,6 +301,19 @@ TEST_F(TypeTest, pool) {
         ASSERT_TRUE(this->pool.getType(typeName) == nullptr);
         ASSERT_TRUE(this->pool.getType(alias) == nullptr);
     });
+}
+
+TEST_F(TypeTest, api) {
+    ASSERT_NO_FATAL_FAILURE(
+            ASSERT_TRUE(this->pool.getAnyType().isSameOrBaseTypeOf(this->pool.getStringType())));
+    ASSERT_NO_FATAL_FAILURE(
+            ASSERT_FALSE(this->pool.getAnyType().isSameOrBaseTypeOf(this->pool.getVoidType())));
+    ASSERT_NO_FATAL_FAILURE(
+            ASSERT_TRUE(this->pool.getBooleanType().isSameOrBaseTypeOf(this->pool.getBottomType())));
+    ASSERT_NO_FATAL_FAILURE(
+            ASSERT_FALSE(this->pool.getBottomType().isSameOrBaseTypeOf(this->pool.getBooleanType())));
+    ASSERT_NO_FATAL_FAILURE(
+            ASSERT_TRUE(this->pool.getVoidType().isSameOrBaseTypeOf(this->pool.getBottomType())));
 }
 
 int main(int argc, char **argv) {

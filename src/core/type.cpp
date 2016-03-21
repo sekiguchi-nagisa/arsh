@@ -61,6 +61,9 @@ bool DSType::isSameOrBaseTypeOf(const DSType &targetType) const {
     if(*this == targetType) {
         return true;
     }
+    if(targetType.isBottomType()) {
+        return true;
+    }
     DSType *superType = targetType.getSuperType();
     return superType != nullptr && this->isSameOrBaseTypeOf(*superType);
 }
