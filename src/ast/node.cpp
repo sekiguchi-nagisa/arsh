@@ -2708,13 +2708,6 @@ Node *createBinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode) {
         return new CondOpNode(leftNode, rightNode, false);
     case COND_AND:
         return new CondOpNode(leftNode, rightNode, true);
-    case ASSIGN:
-    case ADD_ASSIGN:
-    case SUB_ASSIGN:
-    case MUL_ASSIGN:
-    case DIV_ASSIGN:
-    case MOD_ASSIGN:
-        return createAssignNode(leftNode, op, rightNode);
     default:
         return new BinaryOpNode(leftNode, op, rightNode);
     }

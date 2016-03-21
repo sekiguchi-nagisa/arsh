@@ -137,14 +137,14 @@ private:
 
     std::unique_ptr<Node> parse_cmdArgSeg(bool expandTilde = false);
 
+    std::unique_ptr<Node> parse_assignmentExpression();
+
     std::unique_ptr<Node> parse_expression();
 
     std::unique_ptr<Node> parse_expression(std::unique_ptr<Node> &&leftNode,
                                            unsigned int basePrecedence);
 
     std::unique_ptr<Node> parse_unaryExpression();
-
-    std::unique_ptr<Node> parse_suffixExpression();
 
     std::unique_ptr<Node> parse_memberExpression();
 

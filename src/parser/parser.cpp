@@ -607,7 +607,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
         return node;
     }
     EACH_LA_expression(GEN_LA_CASE) {
-        auto node(this->parse_expression());
+        auto node(this->parse_assignmentExpression());
         this->parse_statementEnd();
         return node;
     }
@@ -700,7 +700,7 @@ std::unique_ptr<Node> Parser::parse_forInit() {
         return this->parse_variableDeclaration();
     }
     EACH_LA_expression(GEN_LA_CASE) {
-        return this->parse_expression();
+        return this->parse_assignmentExpression();
     }
     default:
         return std::unique_ptr<Node>(nullptr);
@@ -720,7 +720,7 @@ std::unique_ptr<Node> Parser::parse_forCond() {
 std::unique_ptr<Node> Parser::parse_forIter() {
     switch(CUR_KIND()) {
     EACH_LA_expression(GEN_LA_CASE) {
-        return this->parse_expression();
+        return this->parse_assignmentExpression();
     }
     default:
         return std::unique_ptr<Node>(nullptr);
@@ -874,9 +874,35 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool expandTilde) {
 }
 
 // expression
+std::unique_ptr<Node> Parser::parse_assignmentExpression() {
+    auto node(this->parse_unaryExpression());
+    if(!HAS_NL()) {
+        switch(CUR_KIND()) {
+        EACH_LA_assign(GEN_LA_CASE) {
+            TokenKind op = this->consume();
+            auto rightNode(this->parse_expression());
+            node.reset(createAssignNode(node.release(), op, rightNode.release()));
+            break;
+        }
+        case INC:
+        case DEC: {
+            Token token = this->curToken;
+            TokenKind op = this->consume();
+            node.reset(createSuffixNode(node.release(), op, token));
+            break;
+        }
+        default:
+            node = this->parse_expression(std::move(node), getPrecedence(TERNARY));
+            break;
+        }
+    }
+    return node;
+}
+
+
 std::unique_ptr<Node> Parser::parse_expression() {
     return this->parse_expression(
-            this->parse_unaryExpression(), getPrecedence(ASSIGN));
+            this->parse_unaryExpression(), getPrecedence(TERNARY));
 }
 
 std::unique_ptr<Node> Parser::parse_expression(std::unique_ptr<Node> &&leftNode,
@@ -929,21 +955,8 @@ std::unique_ptr<Node> Parser::parse_unaryExpression() {
         return uniquify<UnaryOpNode>(startPos, op, this->parse_unaryExpression().release());
     }
     default: {
-        return this->parse_suffixExpression();
+        return this->parse_memberExpression();
     }
-    }
-}
-
-std::unique_ptr<Node> Parser::parse_suffixExpression() {
-    std::unique_ptr<Node> node(this->parse_memberExpression());
-
-    Token token = this->curToken;
-    switch(CUR_KIND()) {
-    case INC:
-    case DEC:
-        return std::unique_ptr<Node>(createSuffixNode(node.release(), this->consume(), token));
-    default:
-        return node;
     }
 }
 

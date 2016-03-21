@@ -61,13 +61,6 @@ unsigned int getPrecedence(TokenKind kind) {
         return 120;
     case TERNARY:
         return 100;
-    case ASSIGN:
-    case ADD_ASSIGN:
-    case SUB_ASSIGN:
-    case MUL_ASSIGN:
-    case DIV_ASSIGN:
-    case MOD_ASSIGN:
-        return 80;
     default:
         return 0;
     }
