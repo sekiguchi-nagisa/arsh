@@ -15,7 +15,7 @@ try {
 }
 
 try {
-    throw 23
+    $true ? throw 23 : 54
 } catch($e : Error) {
     assert($false)
 } catch($e) {

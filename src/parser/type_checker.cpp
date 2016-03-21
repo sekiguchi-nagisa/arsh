@@ -92,7 +92,10 @@ void TypeChecker::TypeGenerator::visitTypeOfNode(TypeOfNode &typeNode) {
     if(this->checker == nullptr) {  // not support typeof operator(in D-Bus interface loading)
         RAISE_TC_ERROR(DisallowTypeof, *typeNode.getExprNode());
     }
-   DSType &type = this->checker->checkType(typeNode.getExprNode());
+    DSType &type = this->checker->checkType(typeNode.getExprNode());
+    if(type.isBottomType()) {
+        RAISE_TC_ERROR(Unacceptable, *typeNode.getExprNode(), this->checker->typePool.getTypeName(type));
+    }
     typeNode.setType(type);
 }
 
@@ -205,7 +208,8 @@ DSType &TypeChecker::checkType(DSType *requiredType, Node *targetNode,
      * do not try type matching.
      */
     if(requiredType == nullptr) {
-        if(unacceptableType != nullptr && unacceptableType->isSameOrBaseTypeOf(type)) {
+        if(!type.isBottomType() && unacceptableType != nullptr &&
+                unacceptableType->isSameOrBaseTypeOf(type)) {
             RAISE_TC_ERROR(Unacceptable, *targetNode, this->typePool.getTypeName(type));
         }
         return type;
@@ -940,6 +944,10 @@ void TypeChecker::visitTryNode(TryNode &node) {
 
 void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
     auto &initValueType = this->checkType(node.getInitValueNode());
+    if(initValueType.isBottomType()) {
+        RAISE_TC_ERROR(Unacceptable, *node.getInitValueNode(), this->typePool.getTypeName(initValueType));
+    }
+
     FieldHandle *handle =
             this->addEntryAndThrowIfDefined(node, node.getVarName(), initValueType, node.isReadOnly());
     node.setAttribute(handle);

@@ -131,7 +131,7 @@ TypePool::TypePool() :
     // initialize type
     this->initBuiltinType(Any, "Any", true, info_AnyType());
     this->initBuiltinType(Void, "Void", false, info_Dummy());
-    this->initBuiltinType(Bottom, "Bottom", false, info_Dummy());
+    this->initBuiltinType(Bottom__, "Bottom%%", false, info_Dummy());
     this->initBuiltinType(Variant, "Variant", false, this->getAnyType(), info_Dummy());
 
     /**
@@ -472,7 +472,7 @@ void TypePool::initBuiltinType(DS_TYPE TYPE, const char *typeName, bool extendab
     if(TYPE == Void) {
         attribute |= DSType::VOID_TYPE;
     }
-    if(TYPE == Bottom) {
+    if(TYPE == Bottom__) {
         attribute |= DSType::BOTTOM_TYPE;
     }
 

@@ -95,7 +95,7 @@ public:
     enum DS_TYPE : unsigned int {
         Any,
         Void,
-        Bottom,
+        Bottom__,
         Variant,    // for base type of all of D-Bus related type.
         Value__,    // super type of value type(int, float, bool, string). not directly used it.
         Byte,       // unsigned int 8
@@ -191,7 +191,7 @@ public:
     }
 
     DSType &getBottomType() const {
-        return *this->typeTable[Bottom];
+        return *this->typeTable[Bottom__];
     }
 
     DSType &getVariantType() const {

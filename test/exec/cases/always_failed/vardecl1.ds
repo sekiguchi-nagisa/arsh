@@ -1,0 +1,4 @@
+#$test($result = 'type', $lineNum = 4, $errorKind = 'Unacceptable', $status = 1)
+
+function f() {}
+var a = $f()

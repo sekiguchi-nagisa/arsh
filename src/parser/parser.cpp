@@ -64,6 +64,7 @@
     OP(NOT) \
     OP(PLUS) \
     OP(MINUS) \
+    OP(THROW) \
     EACH_LA_primary(OP)
 
 #define EACH_LA_statement(OP) \
@@ -82,7 +83,6 @@
     OP(LET) \
     OP(RETURN) \
     OP(TRY) \
-    OP(THROW) \
     OP(VAR) \
     OP(WHILE) \
     OP(LINE_END) \
@@ -558,13 +558,6 @@ std::unique_ptr<Node> Parser::parse_statement() {
         this->parse_statementEnd();
         return node;
     }
-    case THROW: {
-        unsigned int startPos = START_POS();
-        this->expect(THROW);
-        auto node = uniquify<ThrowNode>(startPos, this->parse_expression().release());
-        this->parse_statementEnd();
-        return std::move(node);
-    }
     case WHILE: {
         unsigned int startPos = START_POS();
         this->expect(WHILE);
@@ -875,6 +868,10 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool expandTilde) {
 
 // expression
 std::unique_ptr<Node> Parser::parse_assignmentExpression() {
+    if(CUR_KIND() == THROW) {
+        return this->parse_expression();
+    }
+
     auto node(this->parse_unaryExpression());
     if(!HAS_NL()) {
         switch(CUR_KIND()) {
@@ -892,21 +889,25 @@ std::unique_ptr<Node> Parser::parse_assignmentExpression() {
             break;
         }
         default:
-            node = this->parse_expression(std::move(node), getPrecedence(TERNARY));
+            node = this->parse_binaryExpression(std::move(node), getPrecedence(TERNARY));
             break;
         }
     }
     return node;
 }
 
-
 std::unique_ptr<Node> Parser::parse_expression() {
-    return this->parse_expression(
+    if(CUR_KIND() == THROW) {
+        unsigned int startPos = START_POS();
+        this->expect(THROW);
+        return uniquify<ThrowNode>(startPos, this->parse_expression().release());
+    }
+    return this->parse_binaryExpression(
             this->parse_unaryExpression(), getPrecedence(TERNARY));
 }
 
-std::unique_ptr<Node> Parser::parse_expression(std::unique_ptr<Node> &&leftNode,
-                                               unsigned int basePrecedence) {
+std::unique_ptr<Node> Parser::parse_binaryExpression(std::unique_ptr<Node> &&leftNode,
+                                                     unsigned int basePrecedence) {
     std::unique_ptr<Node> node(std::move(leftNode));
     for(unsigned int p = PRECEDENCE();
         !HAS_NL() && p >= basePrecedence; p = PRECEDENCE()) {
@@ -935,7 +936,7 @@ std::unique_ptr<Node> Parser::parse_expression(std::unique_ptr<Node> &&leftNode,
             TokenKind op = this->consume();
             std::unique_ptr<Node> rightNode(this->parse_unaryExpression());
             for(unsigned int nextP = PRECEDENCE(); !HAS_NL() && nextP > p; nextP = PRECEDENCE()) {
-                rightNode = this->parse_expression(std::move(rightNode), nextP);
+                rightNode = this->parse_binaryExpression(std::move(rightNode), nextP);
             }
             node.reset(createBinaryOpNode(node.release(), op, rightNode.release()));
             break;

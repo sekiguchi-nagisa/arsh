@@ -146,7 +146,7 @@ TEST_F(TypeTest, builtinName) {
 
         this->assertTypeName("Any", this->pool.getAnyType());
         this->assertTypeName("Void", this->pool.getVoidType());
-        this->assertTypeName("Bottom", this->pool.getBottomType());
+        this->assertTypeName("Bottom%%", this->pool.getBottomType());
 
         this->assertTypeName("Byte", this->pool.getByteType());
         this->assertTypeName("Int16", this->pool.getInt16Type());

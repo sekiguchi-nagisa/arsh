@@ -141,8 +141,8 @@ private:
 
     std::unique_ptr<Node> parse_expression();
 
-    std::unique_ptr<Node> parse_expression(std::unique_ptr<Node> &&leftNode,
-                                           unsigned int basePrecedence);
+    std::unique_ptr<Node> parse_binaryExpression(std::unique_ptr<Node> &&leftNode,
+                                                 unsigned int basePrecedence);
 
     std::unique_ptr<Node> parse_unaryExpression();
 
