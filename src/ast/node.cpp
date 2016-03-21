@@ -675,7 +675,7 @@ bool CastNode::resolveCastOp(TypePool &pool) {
     /**
      * check cast
      */
-    if(exprType.isSameOrBaseTypeOf(targetType)) {
+    if(!targetType.isBottomType() && exprType.isSameOrBaseTypeOf(targetType)) {
         this->setOpKind(CastNode::CHECK_CAST);
         return true;
     }
