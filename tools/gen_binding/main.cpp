@@ -874,6 +874,11 @@ static void gencode(const char *outFileName, const std::vector<TypeBind *> &bind
 
     // generate each native_type_info_t
     for(TypeBind *bind : binds) {
+        if(bind->name == "Void") {
+            continue;   // skip Void due to having no elements.
+        }
+
+
         unsigned int constructorSize = bind->initElement != nullptr ? 1 : 0;
         unsigned int methodSize = bind->funcElements.size();
 

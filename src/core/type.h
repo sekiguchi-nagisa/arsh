@@ -63,31 +63,34 @@ public:
 
 class DSType {
 protected:
-    flag8_set_t attributeSet;
-
     /**
      * if this type is Void or Any type, superType is null
      */
     DSType *superType;
 
+    flag8_set_t attributeSet;
+
 public:
-    static constexpr flag8_t EXTENDIBLE   = 1 << 0;
-    static constexpr flag8_t VOID_TYPE    = 1 << 1;
-    static constexpr flag8_t FUNC_TYPE    = 1 << 2;
-    static constexpr flag8_t INTERFACE    = 1 << 3;
-    static constexpr flag8_t BUILTIN_TYPE = 1 << 4;
+    static constexpr flag8_t EXTENDABLE   = 1 << 0;
+    static constexpr flag8_t VOID_TYPE    = 1 << 1; // Void
+    static constexpr flag8_t FUNC_TYPE    = 1 << 2; // function type
+    static constexpr flag8_t IFACE_TYPE   = 1 << 3; // interface
+    static constexpr flag8_t RECORD_TYPE  = 1 << 4; // indicate user defined type
 
     NON_COPYABLE(DSType);
 
-    DSType(bool extendible, DSType *superType, bool isVoid = false);
+    /**
+     * not directly call it.
+     */
+    DSType(DSType *superType, flag8_set_t attribute);
 
     virtual ~DSType() = default;
 
     /**
      * if true, can extend this type
      */
-    bool isExtendible() const {
-        return hasFlag(this->attributeSet, EXTENDIBLE);
+    bool isExtendable() const {
+        return hasFlag(this->attributeSet, EXTENDABLE);
     }
 
     /**
@@ -108,14 +111,11 @@ public:
      * if this type is InterfaceType, return true.
      */
     bool isInterface() const {
-        return hasFlag(this->attributeSet, INTERFACE);
+        return hasFlag(this->attributeSet, IFACE_TYPE);
     }
 
-    /**
-     * return true, if type is builtin type, reified type, tuple type, error type.
-     */
-    bool isBuiltinType() const {
-        return hasFlag(this->attributeSet, BUILTIN_TYPE);
+    bool isRecordType() const {
+        return hasFlag(this->attributeSet, RECORD_TYPE);
     }
 
     /**
@@ -195,9 +195,8 @@ private:
 public:
     FunctionType(DSType *superType,
                  DSType *returnType, std::vector<DSType *> &&paramTypes) :
-            DSType(false, superType, false),
+            DSType(superType, DSType::FUNC_TYPE),
             returnType(returnType), paramTypes(std::move(paramTypes)) {
-        setFlag(this->attributeSet, FUNC_TYPE);
     }
 
     ~FunctionType() = default;
@@ -284,11 +283,7 @@ protected:
     std::vector<MethodRef> methodTable;
 
 public:
-    /**
-     * actually superType is BuiltinType.
-     */
-    BuiltinType(bool extendable, DSType *superType,
-                native_type_info_t info, bool isVoid);
+    BuiltinType(DSType *superType, native_type_info_t info, flag8_set_t attribute);
 
     virtual ~BuiltinType();
 
@@ -320,7 +315,7 @@ public:
      * super type is AnyType or VariantType.
      */
     ReifiedType(native_type_info_t info, DSType *superType, std::vector<DSType *> &&elementTypes) :
-            BuiltinType(false, superType, info, false), elementTypes(std::move(elementTypes)) { }
+            BuiltinType(superType, info, 0), elementTypes(std::move(elementTypes)) { }
 
     virtual ~ReifiedType() = default;
 
@@ -371,9 +366,7 @@ public:
      * superType is always AnyType.
      */
     explicit InterfaceType(DSType *superType) :
-            DSType(false, superType, false), fieldHandleMap(), methodHandleMap() {
-        setFlag(this->attributeSet, INTERFACE);
-    }
+            DSType(superType, DSType::IFACE_TYPE), fieldHandleMap(), methodHandleMap() { }
 
     ~InterfaceType();
 
@@ -401,9 +394,8 @@ private:
 
 public:
     explicit ErrorType(DSType *superType) :
-            DSType(true, superType, false), constructorHandle() {
-        setFlag(this->attributeSet, BUILTIN_TYPE);
-    }
+            DSType(superType, DSType::EXTENDABLE),
+            constructorHandle() { }
 
     ~ErrorType();
 

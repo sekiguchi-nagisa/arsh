@@ -130,7 +130,7 @@ TypePool::TypePool() :
 
     // initialize type
     this->initBuiltinType(Any, "Any", true, info_AnyType());
-    this->initBuiltinType(Void, "Void", false, info_VoidType(), true);
+    this->initBuiltinType(Void, "Void", false, info_Dummy());
     this->initBuiltinType(Variant, "Variant", false, this->getAnyType(), info_Dummy());
 
     /**
@@ -465,10 +465,15 @@ void TypePool::setToTypeTable(DS_TYPE TYPE, DSType *type) {
 }
 
 void TypePool::initBuiltinType(DS_TYPE TYPE, const char *typeName, bool extendable,
-                               native_type_info_t info, bool isVoid) {
+                               native_type_info_t info) {
     // create and register type
+    flag8_set_t attribute = extendable ? DSType::EXTENDABLE : 0;
+    if(TYPE == Void) {
+        attribute |= DSType::VOID_TYPE;
+    }
+
     DSType *type = this->typeMap.addType(
-            std::string(typeName), new BuiltinType(extendable, nullptr, info, isVoid));
+            std::string(typeName), new BuiltinType(nullptr, info, attribute));
 
     // set to typeTable
     this->setToTypeTable(TYPE, type);
@@ -478,7 +483,7 @@ void TypePool::initBuiltinType(DS_TYPE TYPE, const char *typeName, bool extendab
                                DSType &superType, native_type_info_t info) {
     // create and register type
     DSType *type = this->typeMap.addType(
-            std::string(typeName), new BuiltinType(extendable, &superType, info, false));
+            std::string(typeName), new BuiltinType(&superType, info, extendable ? DSType::EXTENDABLE : 0));
 
     // set to typeTable
     this->setToTypeTable(TYPE, type);

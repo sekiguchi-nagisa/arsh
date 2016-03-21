@@ -100,6 +100,15 @@ public:
         ASSERT_TRUE(*actualSuperType == superType);
     }
 
+    virtual void assertAttribute(flag8_set_t set, DSType &type) {
+        SCOPED_TRACE("");
+        ASSERT_EQ(hasFlag(set, DSType::EXTENDABLE), type.isExtendable());
+        ASSERT_EQ(hasFlag(set, DSType::VOID_TYPE), type.isVoidType());
+        ASSERT_EQ(hasFlag(set, DSType::FUNC_TYPE), type.isFuncType());
+        ASSERT_EQ(hasFlag(set, DSType::IFACE_TYPE), type.isInterface());
+        ASSERT_EQ(hasFlag(set, DSType::RECORD_TYPE), type.isRecordType());
+    }
+
     virtual void assertAlias(const char *aliasName, DSType &type) {
         SCOPED_TRACE("");
 
@@ -162,6 +171,7 @@ TEST_F(TypeTest, builtinName) {
         this->assertTypeName("OutOfRangeError", this->pool.getOutOfRangeErrorType());
         this->assertTypeName("KeyNotFoundError", this->pool.getKeyNotFoundErrorType());
         this->assertTypeName("TypeCastError", this->pool.getTypeCastErrorType());
+        this->assertTypeName("StackOverflowError", this->pool.getStackOverflowErrorType());
         this->assertTypeName("DBusError", this->pool.getDBusErrorType());
     });
 }
@@ -197,8 +207,40 @@ TEST_F(TypeTest, superType) {
         this->assertSuperType(this->pool.getOutOfRangeErrorType(), this->pool.getErrorType());
         this->assertSuperType(this->pool.getKeyNotFoundErrorType(), this->pool.getErrorType());
         this->assertSuperType(this->pool.getTypeCastErrorType(), this->pool.getErrorType());
+        this->assertSuperType(this->pool.getStackOverflowErrorType(), this->pool.getErrorType());
         this->assertSuperType(this->pool.getDBusErrorType(), this->pool.getErrorType());
     });
+}
+
+TEST_F(TypeTest, attribute) {
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDABLE, this->pool.getAnyType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::VOID_TYPE, this->pool.getVoidType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getVariantType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDABLE, this->pool.getValueType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getByteType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getInt16Type()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getUint16Type()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getInt32Type()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getUint32Type()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getInt64Type()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getUint64Type()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getBooleanType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getFloatType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getStringType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getObjectPathType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getUnixFDType()));
+
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getStringArrayType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDABLE, this->pool.getErrorType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDABLE, this->pool.getArithmeticErrorType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDABLE, this->pool.getOutOfRangeErrorType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDABLE, this->pool.getKeyNotFoundErrorType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDABLE, this->pool.getTypeCastErrorType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDABLE, this->pool.getStackOverflowErrorType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDABLE, this->pool.getDBusErrorType()));
+
+    ASSERT_NO_FATAL_FAILURE(
+            this->assertAttribute(DSType::FUNC_TYPE, this->toType(func(type("Int32")))));
 }
 
 TEST_F(TypeTest, alias) {

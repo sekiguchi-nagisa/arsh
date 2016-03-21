@@ -449,7 +449,7 @@ private:
     void setToTypeTable(DS_TYPE TYPE, DSType *type);
 
     void initBuiltinType(DS_TYPE TYPE, const char *typeName, bool extendable,
-                         native_type_info_t info, bool isVoid = false);
+                         native_type_info_t info);
 
     void initBuiltinType(DS_TYPE TYPE, const char *typeName, bool extendable,
                          DSType &superType, native_type_info_t info);

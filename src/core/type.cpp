@@ -29,14 +29,8 @@ extern NativeFuncInfo *const nativeFuncInfoTable;
 // ##     DSType     ##
 // ####################
 
-DSType::DSType(bool extendible, DSType *superType, bool isVoid) :
-        attributeSet(0), superType(superType) {
-    if(extendible) {
-        setFlag(this->attributeSet, EXTENDIBLE);
-    }
-    if(isVoid) {
-        setFlag(this->attributeSet, VOID_TYPE);
-    }
+DSType::DSType(DSType *superType, flag8_set_t attribute) :
+        superType(superType), attributeSet(attribute) {
 }
 
 MethodHandle *DSType::getConstructorHandle(TypePool &) {
@@ -114,9 +108,8 @@ NativeFuncInfo &native_type_info_t::getInitInfo() {
 // ##     BuiltinType     ##
 // #########################
 
-BuiltinType::BuiltinType(bool extendable, DSType *superType,
-                         native_type_info_t info, bool isVoid) :
-        DSType(extendable, superType, isVoid),
+BuiltinType::BuiltinType(DSType *superType, native_type_info_t info, flag8_set_t attribute) :
+        DSType(superType, attribute),
         info(info), constructorHandle(), constructor(), methodHandleMap(),
         methodTable(superType != nullptr ? superType->getMethodSize() + info.methodSize : info.methodSize) {
 
@@ -136,8 +129,6 @@ BuiltinType::BuiltinType(bool extendable, DSType *superType,
         // set to method table
         this->methodTable[methodIndex] = MethodRef(this->info.getMethodInfo(i).func_ptr);
     }
-
-    setFlag(this->attributeSet, BUILTIN_TYPE);
 }
 
 BuiltinType::~BuiltinType() {

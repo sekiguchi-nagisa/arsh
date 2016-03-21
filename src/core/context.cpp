@@ -495,7 +495,7 @@ EvalStatus RuntimeContext::callMethod(unsigned int startPos, const std::string &
 }
 
 void RuntimeContext::newDSObject(DSType *type) {
-    if(type->isBuiltinType()) {
+    if(!type->isRecordType()) {
         this->dummy->setType(type);
         this->push(this->dummy);
     } else {
