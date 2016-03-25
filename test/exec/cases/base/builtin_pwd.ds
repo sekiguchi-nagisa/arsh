@@ -16,5 +16,5 @@ assert($? != 0)
 assert(pwd --- 2>&1 | grep '\-ydsh: pwd: ---: invalid option')
 
 # help
-help pwd | grep "pwd: pwd -LP"
+help pwd | grep "pwd: pwd \[-LP]"
 assert($? == 0)

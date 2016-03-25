@@ -127,7 +127,7 @@ const struct {
                 "    Options:\n"
                 "        -1    print to standard output\n"
                 "        -2    print to standard error"},
-        {"cd", builtin_cd, "-LP [dir]",
+        {"cd", builtin_cd, "[-LP] [dir]",
                 "    Changing the current directory to DIR.  The Environment variable\n"
                 "    HOME is the default DIR.  A null directory name is the same as\n"
                 "    the current directory. If -L is specified, use logical directory \n"
@@ -206,7 +206,7 @@ const struct {
                 "        \\]    end of unprintable sequence\n"
                 "        \\0nnn N is octal number.  NNN can be 0 to 3 number\n"
                 "        \\xnn  N is hex number.  NN can be 1 to 2 number"},
-        {"pwd", builtin_pwd, "-LP",
+        {"pwd", builtin_pwd, "[-LP]",
                 "    Print the current working directory(absolute path).\n"
                 "    If -L specified, print logical working directory.\n"
                 "    If -P specified, print physical working directory\n"

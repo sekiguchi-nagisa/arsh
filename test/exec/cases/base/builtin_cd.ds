@@ -49,4 +49,4 @@ assert("$(cd -)" == $OLDPWD)
 }
 
 
-assert(help cd | grep 'cd: cd -LP \[dir]')
+assert(help cd | grep 'cd: cd \[-LP] \[dir]')
