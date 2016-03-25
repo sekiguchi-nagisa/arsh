@@ -1035,13 +1035,8 @@ static bool startsWith(const char *thisStr, const char *targetStr, int offset) {
     if(offset < 0) {
         return false;
     }
-
-    for(unsigned int i = static_cast<unsigned int>(offset); targetStr[i] != '\0'; i++) {
-        if(thisStr[i] != targetStr[i]) {
-            return false;
-        }
-    }
-    return true;
+    const char *str = thisStr + offset;
+    return strstr(str, targetStr) == str;
 }
 
 //!bind: function startsWith($this : String, $target : String) : Boolean
@@ -1085,15 +1080,17 @@ static inline bool string_lastIndexOf(RuntimeContext &ctx) {
     const char *targetStr = typeAs<String_Object>(LOCAL(1))->getValue();
 
     int index = -1;
-    const char *ptr = thisStr;
-    do {
+    for(const char *ptr = thisStr; *ptr != '\0'; ptr++) {
         ptr = strstr(ptr, targetStr);
         if(ptr == nullptr) {
             break;
         }
         index = ptr - thisStr;
-        ptr++;
-    } while(*ptr != '\0');
+    }
+
+    if(*thisStr == *targetStr && *thisStr == '\0') {
+        index = 0;
+    }
     RET(DSValue::create<Int_Object>(ctx.getPool().getIntType(), index));
 }
 
