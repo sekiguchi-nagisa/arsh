@@ -210,7 +210,7 @@ TypePool::TypePool() :
 
 TypePool::~TypePool() {
     delete[] this->typeTable;
-    for(const std::pair<std::string, TypeTemplate *> &pair : this->templateMap) {
+    for(auto &pair : this->templateMap) {
         delete pair.second;
     }
     this->templateMap.clear();

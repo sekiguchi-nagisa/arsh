@@ -26,7 +26,7 @@ namespace core {
 // ###################
 
 Scope::~Scope() {
-    for(const std::pair<std::string, FieldHandle *> &pair : this->handleMap) {
+    for(auto &pair : this->handleMap) {
         delete pair.second;
     }
 }
