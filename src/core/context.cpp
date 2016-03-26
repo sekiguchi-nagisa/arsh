@@ -723,8 +723,8 @@ bool RuntimeContext::changeWorkingDir(const char *dest, const bool useLogical) {
     const bool tryChdir = strlen(dest) != 0;
     std::string actualDest;
     if(tryChdir) {
-        actualDest = expandDots(logicalWorkingDir.c_str(), dest);
         if(useLogical) {
+            actualDest = expandDots(logicalWorkingDir.c_str(), dest);
             dest = actualDest.c_str();
         }
         if(chdir(dest) != 0) {
@@ -741,6 +741,7 @@ bool RuntimeContext::changeWorkingDir(const char *dest, const bool useLogical) {
     if(tryChdir) {
         if(useLogical) {
             setenv(ENV_PWD, actualDest.c_str(), 1);
+            logicalWorkingDir = std::move(actualDest);
         } else {
             size_t size = PATH_MAX;
             char buf[size];
@@ -748,9 +749,8 @@ bool RuntimeContext::changeWorkingDir(const char *dest, const bool useLogical) {
             if(cwd != nullptr) {
                 setenv(ENV_PWD, cwd, 1);
             }
+            logicalWorkingDir = cwd;
         }
-
-        logicalWorkingDir = std::move(actualDest);
     }
     return true;
 }

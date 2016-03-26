@@ -1,4 +1,7 @@
 
+# meaningless argument
+assert pwd johefre
+
 cd
 assert($PWD == "$(pwd)")
 

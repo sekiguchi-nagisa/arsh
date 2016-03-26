@@ -132,7 +132,7 @@ const struct {
                 "    HOME is the default DIR.  A null directory name is the same as\n"
                 "    the current directory. If -L is specified, use logical directory \n"
                 "    (with symbolic link). If -P is specified, use physical directory \n"
-                "    (without symbolic  link). Default is -L."},
+                "    (without symbolic link). Default is -L."},
         {"check_env", builtin_check_env, "[variable ...]",
                 "    Check existence of specified environmental variables.\n"
                 "    If all of variables are exist and not empty string, exit with 0."},
