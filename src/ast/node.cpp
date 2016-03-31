@@ -2550,7 +2550,7 @@ EvalStatus RootNode::eval(RuntimeContext &ctx) {
             continue;
         }
         default:
-            fatal("illegal EvalStatus: %d\n", status);
+            fatal("illegal EvalStatus: %u\n", static_cast<unsigned int>(status));
             break;
         }
         ++iter;

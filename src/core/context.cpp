@@ -1452,7 +1452,7 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
                 LOG(DUMP_CONSOLE, "expected: " << toString(expected));
 
                 if(!tokenPairs.empty()) {
-                    kind = kind = selectWithCmd(lexer, tokenPairs, cursor, tokenPairs.size() - 1, tokenStr, true);
+                    kind = selectWithCmd(lexer, tokenPairs, cursor, tokenPairs.size() - 1, tokenStr, true);
                     if(kind != CompletorKind::NONE) {
                         goto END;
                     }

@@ -521,7 +521,7 @@ bool FuncObject::invoke(RuntimeContext &ctx) {  //TODO: default param
     case EvalStatus::THROW:
         return false;
     default:
-        fatal("illegal eval status: %d\n", s);
+        fatal("illegal eval status: %u\n", static_cast<unsigned int>(s));
         return false;
     }
 }

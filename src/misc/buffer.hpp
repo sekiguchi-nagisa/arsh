@@ -133,7 +133,7 @@ public:
         return this->size() == 0;
     }
 
-    const T *const get() const {
+    const T *get() const {
         return this->data;
     }
 
