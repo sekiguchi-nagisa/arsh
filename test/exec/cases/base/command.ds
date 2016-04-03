@@ -153,6 +153,9 @@ for $file in $(ls) {
 echo $(echo a b c) | grep 'a b c'
 assert($? == 0)
 
+$(exit 7)
+assert($? == 7) # after substitution, update exit status
+
 
 ## as string
 assert("$(echo a b)" == "a b")
@@ -180,6 +183,9 @@ assert("$(ls -la 2>&1 > /dev/null)" == "")
 assert("$(echo $(echo hello   world    ))" == 'hello world')
 assert("hello
 world" == "$(echo hello && echo world)")  # and-list
+
+"$(exit 23)"
+assert($? == 23) # after substitution, update exit status
 
 
 # right handle side expression

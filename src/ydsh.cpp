@@ -79,7 +79,7 @@ struct DSContext {
      * get exit status of recently executed command.(also exit command)
      */
     int getExitStatus() {
-        return typeAs<Int_Object>(this->ctx.getExitStatus())->getValue();
+        return this->ctx.getExitStatus();
     }
 
     void resetStatus() {

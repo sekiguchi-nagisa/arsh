@@ -817,14 +817,14 @@ int RuntimeContext::execUserDefinedCommand(UserDefinedCmdNode *node, DSValue *ar
     // get exit status
     switch(s) {
     case EvalStatus::SUCCESS:
-        return typeAs<Int_Object>(this->getExitStatus())->getValue();
+        return this->getExitStatus();
     case EvalStatus::RETURN:
         return typeAs<Int_Object>(this->pop())->getValue();
     case EvalStatus::THROW: {
         DSType &thrownType = *this->getThrownObject()->getType();
         if(this->pool.getInternalStatus().isSameOrBaseTypeOf(thrownType)) {
             if(thrownType == this->pool.getShellExit()) {
-                return typeAs<Int_Object>(this->getExitStatus())->getValue();
+                return this->getExitStatus();
             }
             if(thrownType == this->pool.getAssertFail()) {
                 this->loadThrownObject();

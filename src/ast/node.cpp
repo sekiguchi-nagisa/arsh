@@ -1422,7 +1422,7 @@ EvalStatus PipedCmdNode::eval(RuntimeContext &ctx) {
     EvalStatus status = ctx.callPipedCommand(this->getStartPos());
 
     // push exit status as boolean
-    if(typeAs<Int_Object>(ctx.getExitStatus())->getValue() == 0) {
+    if(ctx.getExitStatus() == 0) {
         ctx.push(ctx.getTrueObj());
     } else {
         ctx.push(ctx.getFalseObj());
@@ -1568,6 +1568,12 @@ EvalStatus SubstitutionNode::eval(RuntimeContext &ctx) {
         // wait exit
         int status;
         ctx.xwaitpid(pid, status, 0);
+        if(WIFEXITED(status)) {
+            ctx.updateExitStatus(WEXITSTATUS(status));
+        }
+        if(WIFSIGNALED(status)) {
+            ctx.updateExitStatus(WTERMSIG(status));
+        }
 
         // push object
         ctx.push(std::move(obj));
@@ -1584,7 +1590,7 @@ EvalStatus SubstitutionNode::eval(RuntimeContext &ctx) {
             exit(1);
         } //FIXME: propagate error
 
-        exit(0);
+        exit(ctx.getExitStatus());
     } else {
         perror("fork failed");
         exit(1);    //FIXME: throw exception

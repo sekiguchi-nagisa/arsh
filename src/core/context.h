@@ -287,8 +287,9 @@ public:
      */
     void finalizeScritArg();
 
-    const DSValue &getExitStatus() {
-        return this->getGlobal(this->getBuiltinVarIndex(BuiltinVarOffset::EXIT_STATUS));
+    int getExitStatus() const {
+        return typeAs<Int_Object>(this->getGlobal(
+                this->getBuiltinVarIndex(BuiltinVarOffset::EXIT_STATUS)))->getValue();
     }
 
     void updateScriptName(const char *name);
@@ -440,7 +441,7 @@ public:
         this->localStack[index] = std::move(obj);
     }
 
-    const DSValue &getGlobal(unsigned int index) {
+    const DSValue &getGlobal(unsigned int index) const {
         return this->localStack[index];
     }
 
