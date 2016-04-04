@@ -1201,9 +1201,11 @@ static void completeFileName(const std::string &token, CStrBuffer &results, bool
         if(targetDir[0] == '~') {
             targetDir = expandTilde(targetDir.c_str());
         }
+        targetDir = expandDots(RuntimeContext::getLogicalWorkingDir(), targetDir.c_str());
     } else {
-        targetDir = ".";
+        targetDir = expandDots(RuntimeContext::getLogicalWorkingDir(), ".");
     }
+    LOG(DUMP_CONSOLE, "targetDir = " << targetDir);
 
     /**
      * resolve name
