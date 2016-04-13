@@ -15,10 +15,10 @@ matrix:
             - g++-4.8
             - libxml2-dev
             - libdbus-1-3
-            - libdbus-1-dev
             - libdbus-glib-1-dev
             - expect
 
+    # clang 3.5
     - os: linux
       sudo: required
       dist: trusty
@@ -27,16 +27,53 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.5
           packages:
-            - clang-3.4
+            - clang-3.5
             - libxml2-dev
             - libdbus-1-3
-            - libdbus-1-dev
             - libdbus-glib-1-dev
             - expect
+      env: CC_BIN=clang-3.5 CXX_BIN=clang++-3.5
+
+    # clang 3.6
+    - os: linux
+      sudo: required
+      dist: trusty
+      compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.6
+          packages:
+            - clang-3.6
+            - libxml2-dev
+            - libdbus-1-3
+            - libdbus-glib-1-dev
+            - expect
+      env: CC_BIN=clang-3.6 CXX_BIN=clang++-3.6
+
+    # clang 3.7
+    - os: linux
+      sudo: required
+      dist: trusty
+      compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.7
+          packages:
+            - clang-3.7
+            - libxml2-dev
+            - libdbus-1-3
+            - libdbus-glib-1-dev
+            - expect
+      env: CC_BIN=clang-3.7 CXX_BIN=clang++-3.7
 
 script:
-  - cmake -DCMAKE_BUILD_TYPE=DEBUG
+  - cmake -DCMAKE_C_COMPILER=$CC_BIN -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=DEBUG
   - make
   - ctest --output-on-failure
 
