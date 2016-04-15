@@ -1,0 +1,6 @@
+#$test($result = 'type', $errorKind = 'Unacceptable', $lineNum = 3, $status = 1)
+
+function f($a : Void) {
+    echo hello
+}
+$f

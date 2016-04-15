@@ -1018,7 +1018,11 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     unsigned int paramSize = node.getParamTypeNodes().size();
     std::vector<DSType *> paramTypes(paramSize);
     for(unsigned int i = 0; i < paramSize; i++) {
-        paramTypes[i] = &this->toType(node.getParamTypeNodes()[i]);
+        auto *type = &this->toType(node.getParamTypeNodes()[i]);
+        if(type->isVoidType()) {
+            RAISE_TC_ERROR(Unacceptable, *node.getParamTypeNodes()[i], this->typePool.getTypeName(*type));
+        }
+        paramTypes[i] = type;
     }
 
     // register function handle
