@@ -415,7 +415,7 @@ void TypeChecker::visitTypeOfNode(TypeOfNode &) {
 }
 
 void TypeChecker::visitIntValueNode(IntValueNode &node) {
-    DSType *type;
+    DSType *type = nullptr;
     switch(node.getKind()) {
     case IntValueNode::BYTE:
         type = &this->typePool.getByteType();

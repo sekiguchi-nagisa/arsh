@@ -39,6 +39,8 @@ const char *toModeName(LexerMode mode) {
         return "CMD";
     case yycDSTRING:
         return "DSTRING";
+    default:
+        return nullptr;
     }
 }
 
