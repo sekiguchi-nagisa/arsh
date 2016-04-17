@@ -52,9 +52,9 @@ static void loadRC(DSContext *ctx, const char *rcfile) {
 
 static const char *statusLogPath = nullptr;
 
-template <typename Functor, typename ... T>
-static int invoke(Functor func, DSContext **ctx, T && ... arg) {
-    int ret = func(*ctx, std::forward<T>(arg)...);
+template <typename F, F func, typename ...T>
+static int invoke(DSContext **ctx, T&& ... args) {
+    int ret = func(*ctx, std::forward<T>(args)...);
     if(statusLogPath != nullptr) {
         FILE *fp = fopen(statusLogPath, "w");
         if(fp != nullptr) {
@@ -66,6 +66,8 @@ static int invoke(Functor func, DSContext **ctx, T && ... arg) {
     DSContext_delete(ctx);
     return ret;
 }
+
+#define INVOKE(F) invoke<decltype(DSContext_ ## F), DSContext_ ## F>
 
 static void showFeature(std::ostream &stream) {
     static const char *featureNames[] = {
@@ -225,17 +227,13 @@ int main(int argc, char **argv) {
 
         DSContext_setShellName(ctx, scriptName);
         DSContext_setArguments(ctx, shellArgs + 1);
-        return invoke([](DSContext *ctx, const char *sourceName, FILE *fp) {
-            return DSContext_loadAndEval(ctx, sourceName, fp);
-        }, &ctx, scriptName, fp);
+        return INVOKE(loadAndEval)(&ctx, scriptName, fp);
     }
     case InvocationKind::FROM_STDIN: {
         DSContext_setArguments(ctx, shellArgs);
 
         if(isatty(STDIN_FILENO) == 0 && !forceInteractive) {  // pipe line mode
-            return invoke([](DSContext *ctx, const char *sourceName, FILE *fp) {
-                return DSContext_loadAndEval(ctx, sourceName, fp);
-            }, &ctx, nullptr, stdin);
+            return INVOKE(loadAndEval)(&ctx, nullptr, stdin);
         } else {    // interactive mode
             if(!quiet) {
                 std::cout << DSContext_version() << std::endl;
@@ -251,14 +249,10 @@ int main(int argc, char **argv) {
     case InvocationKind::FROM_STRING: {
         DSContext_setShellName(ctx, shellArgs[0]);
         DSContext_setArguments(ctx, size == 0 ? nullptr : shellArgs + 1);
-        return invoke([](DSContext *ctx, const char *sourceName, const char *source) {
-            return DSContext_eval(ctx, sourceName, source);
-        }, &ctx, "(string)", evalText);
+        return INVOKE(eval)(&ctx, "(string)", evalText);
     }
     case InvocationKind::BUILTIN: {
-        return invoke([](DSContext *ctx, char *const argv[]) {
-            return DSContext_exec(ctx, argv);
-        }, &ctx, (char **)shellArgs);
+        return INVOKE(exec)(&ctx, (char **)shellArgs);
     }
     }
 }
