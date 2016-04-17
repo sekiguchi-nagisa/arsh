@@ -67,7 +67,7 @@ static int invoke(DSContext **ctx, T&& ... args) {
     return ret;
 }
 
-#define INVOKE(F) invoke<decltype(DSContext_ ## F), DSContext_ ## F>
+#define INVOKE(F) invoke<decltype(&DSContext_ ## F), DSContext_ ## F>
 
 static void showFeature(std::ostream &stream) {
     static const char *featureNames[] = {
