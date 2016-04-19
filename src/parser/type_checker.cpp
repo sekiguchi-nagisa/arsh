@@ -232,7 +232,6 @@ DSType &TypeChecker::checkType(DSType *requiredType, Node *targetNode,
 
     RAISE_TC_ERROR(Required, *targetNode, this->typePool.getTypeName(*requiredType),
                this->typePool.getTypeName(type));
-    return type;    // unreachable
 }
 
 void TypeChecker::checkTypeWithCurrentScope(BlockNode *blockNode) {

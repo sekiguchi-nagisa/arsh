@@ -2,11 +2,13 @@ function func($x: Int) : Int {
     return $x * 2
 }
 
+# type inheritance of function
 assert($func is Func<Int, [Int]>)
 assert($func is Any)
 assert($func is Func) # function base type
 assert(not ($func is Variant))
 
+# apply function object
 function call() {
     var sub = $func
     assert($func(3) == 6)
@@ -17,15 +19,28 @@ assert($call is Func<Void>)
 
 $call()
 
+function caller() : Func<Void> {
+    return $call
+}
+assert($caller is Func<Func<Void>>)
+$caller()()
+
+# void function
 function void() {
     return
 }
-
 assert($void is Func<Void>)
 
+function void2() : Void {
+    return
+}
+assert($void2 is Func<Void>)
+
+# empty function
 function empty(){}
 assert($empty is Func<Void>)
 
+# complex function
 function f($obj :
             Func<
                Int,
@@ -37,6 +52,7 @@ function f($obj :
 assert($f is Func<Int, [Func<Int, [Int]>, Int]>)
 assert($f($func, 12) == 24)
 
+# multiple return type
 function make_pair($a : Float) : String, Int32 {
     var str = $a as String
     return ($str, $str.size())
