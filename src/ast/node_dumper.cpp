@@ -143,7 +143,7 @@ void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
         this->enterIndent();
     }
 
-    this->indent(); this->stream << "__typeid: " << className << std::endl;
+    this->indent(); this->stream << "__typeid: " << strrchr(className.c_str(), ':') + 1 << std::endl;
     this->indent(); this->stream << "pos: " << node.getStartPos() << std::endl;
     this->indent(); this->stream << "size: " << node.getSize() << std::endl;
     this->indent(); this->stream << "type: " <<
