@@ -779,7 +779,7 @@ void RuntimeContext::exitShell(unsigned int status) {
 
 void RuntimeContext::addUserDefinedCommand(UserDefinedCmdNode *node) {
     if(!this->udcMap.insert(std::make_pair(node->getCommandName().c_str(), node)).second) {
-        fatal("undefined defined command: %s\n", node->getCommandName().c_str());
+        fatal("undefined user defined command: %s\n", node->getCommandName().c_str());
     }
 }
 
