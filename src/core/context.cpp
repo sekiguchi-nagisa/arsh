@@ -152,10 +152,11 @@ RuntimeContext::RuntimeContext() :
         dummy(new DummyObject()), thrownObject(),
         localStack(new DSValue[DEFAULT_LOCAL_SIZE]),
         localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0), stackBottomIndex(0),
-        localVarOffset(0), toplevelPrinting(false), assertion(true),
+        localVarOffset(0), toplevelPrinting(false), assertion(true), traceExit(false),
         handle_STR(nullptr), handle_bt(nullptr), IFS_index(0),
         callableContextStack(), callStack(),
-        pipelineEvaluator(DSValue::create<PipelineEvaluator>()), udcMap(), pathCache() { }
+        pipelineEvaluator(DSValue::create<PipelineEvaluator>()),
+        udcMap(), pathCache(), terminationHook(nullptr) { }
 
 RuntimeContext::~RuntimeContext() {
     delete[] this->localStack;
@@ -627,7 +628,19 @@ EvalStatus RuntimeContext::checkAssertion(unsigned int startPos) {
         this->pushCallFrame(startPos);
         this->throwError(this->pool.getAssertFail(), "");
         this->popCallFrame();
-        throw InternalError();
+
+        // invoke termination hook
+        if(this->terminationHook != nullptr) {
+            const unsigned int lineNum =
+                    getOccuredLineNum(typeAs<Error_Object>(this->getThrownObject())->getStackTrace());
+            this->terminationHook(DS_STATUS_ASSERTION_ERROR, lineNum);
+        }
+
+        // print stack trace
+        this->loadThrownObject();
+        typeAs<Error_Object>(this->pop())->printStackTrace(*this);
+
+        exit(1);
     }
     return EvalStatus::SUCCESS;
 }
@@ -772,9 +785,22 @@ void RuntimeContext::updateExitStatus(unsigned int status) {
 void RuntimeContext::exitShell(unsigned int status) {
     std::string str("terminated by exit ");
     str += std::to_string(status);
-    this->updateExitStatus(status);
     this->throwError(this->pool.getShellExit(), std::move(str));
-    throw InternalError();
+
+    // invoke termination hook
+    if(this->terminationHook != nullptr) {
+        const unsigned int lineNum =
+                getOccuredLineNum(typeAs<Error_Object>(this->getThrownObject())->getStackTrace());
+        this->terminationHook(DS_STATUS_EXIT, lineNum);
+    }
+
+    // print stack trace
+    if(this->traceExit) {
+        this->loadThrownObject();
+        typeAs<Error_Object>(this->pop())->printStackTrace(*this);
+    }
+
+    exit(status);
 }
 
 void RuntimeContext::addUserDefinedCommand(UserDefinedCmdNode *node) {
@@ -805,12 +831,7 @@ int RuntimeContext::execUserDefinedCommand(UserDefinedCmdNode *node, DSValue *ar
     this->pushFuncContext(node);
     this->reserveLocalVar(this->getLocalVarOffset() + node->getMaxVarNum());
 
-    EvalStatus s;
-    try {
-        s = node->getBlockNode()->eval(*this);
-    } catch(const InternalError &e) {
-        s = EvalStatus::THROW;
-    }
+    EvalStatus s = node->getBlockNode()->eval(*this);
 
     this->popFuncContext();
 
@@ -821,17 +842,6 @@ int RuntimeContext::execUserDefinedCommand(UserDefinedCmdNode *node, DSValue *ar
     case EvalStatus::RETURN:
         return typeAs<Int_Object>(this->pop())->getValue();
     case EvalStatus::THROW: {
-        DSType &thrownType = *this->getThrownObject()->getType();
-        if(this->pool.getInternalStatus().isSameOrBaseTypeOf(thrownType)) {
-            if(thrownType == this->pool.getShellExit()) {
-                return this->getExitStatus();
-            }
-            if(thrownType == this->pool.getAssertFail()) {
-                this->loadThrownObject();
-                typeAs<Error_Object>(this->pop())->printStackTrace(*this);
-                return 1;
-            }
-        }
         this->reportError();
         return 1;
     }

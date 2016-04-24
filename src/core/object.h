@@ -521,6 +521,9 @@ public:
 
 std::ostream &operator<<(std::ostream &stream, const StackTraceElement &e);
 
+/**
+ * if stack trace elements is empty, return 0.
+ */
 unsigned int getOccuredLineNum(const std::vector<StackTraceElement> &elements);
 
 

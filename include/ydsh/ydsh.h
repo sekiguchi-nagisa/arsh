@@ -158,6 +158,18 @@ unsigned int DSContext_errorLineNum(DSContext *ctx);
  */
 const char *DSContext_errorKind(DSContext *ctx);
 
+// for termination hook
+/**
+ * status indicates execution status (DS_STATUS_ASSERTION_ERROR or DS_STATUS_EXIT).
+ */
+typedef void (*TerminationHook)(unsigned int status, unsigned int errorLineNum);
+
+/**
+ * when calling builtin exit command or raising assertion error, invoke hook and terminate immediately.
+ */
+void DSContext_addTerminationHook(DSContext *ctx, TerminationHook hook);
+
+
 // for input completion
 typedef struct {
     /**

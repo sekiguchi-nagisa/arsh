@@ -69,6 +69,16 @@ static int invoke(DSContext **ctx, T&& ... args) {
 
 #define INVOKE(F) invoke<decltype(&DSContext_ ## F), DSContext_ ## F>
 
+static void terminationHook(unsigned int status, unsigned int errorLineNum) {
+    if(statusLogPath != nullptr) {
+        FILE *fp = fopen(statusLogPath, "w");
+        if(fp != nullptr) {
+            fprintf(fp, "type=%d lineNum=%d kind=\n", status, errorLineNum);
+            fclose(fp);
+        }
+    }
+}
+
 static void showFeature(std::ostream &stream) {
     static const char *featureNames[] = {
             "USE_LOGGING",
@@ -138,6 +148,7 @@ int main(int argc, char **argv) {
     }
 
     DSContext *ctx = DSContext_create();
+    DSContext_addTerminationHook(ctx, terminationHook);
     InvocationKind invocationKind = InvocationKind::FROM_FILE;
     const char *evalText = nullptr;
     bool userc = true;
@@ -242,6 +253,9 @@ int main(int argc, char **argv) {
             if(userc) {
                 loadRC(ctx, rcfile);
             }
+
+            // ignore termination hook
+            DSContext_addTerminationHook(ctx, nullptr);
 
             return exec_interactive(ctx);
         }

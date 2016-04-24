@@ -302,22 +302,6 @@ TEST(BuiltinExecTest, case2) {
     });
 }
 
-TEST(BuiltinExecTest, case3) {
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-
-        DSContext *ctx = DSContext_create();
-
-        int ret = DSContext_exec(ctx, make_argv("exit", "12").get());
-        ASSERT_EQ(12, ret);
-        ASSERT_EQ(DS_STATUS_EXIT, DSContext_status(ctx));
-        ASSERT_EQ(0u, DSContext_errorLineNum(ctx));  // error line num is always 0.
-        ASSERT_STREQ("", DSContext_errorKind(ctx));
-
-        DSContext_delete(&ctx);
-    });
-}
-
 TEST(API, case1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");

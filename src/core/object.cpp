@@ -438,7 +438,7 @@ std::ostream &operator<<(std::ostream &stream, const StackTraceElement &e) {
 }
 
 unsigned int getOccuredLineNum(const std::vector<StackTraceElement> &elements) {
-    return elements.front().getLineNum();
+    return elements.empty() ? 0 : elements.front().getLineNum();
 }
 
 

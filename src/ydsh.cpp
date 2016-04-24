@@ -272,12 +272,7 @@ int DSContext::eval(Lexer &lexer) {
     }
 
     // eval
-    EvalStatus s;
-    try {
-        s = rootNode.eval(this->ctx);
-    } catch(const InternalError &e) {
-        s = EvalStatus::THROW;
-    }
+    EvalStatus s = rootNode.eval(this->ctx);
 
     if(s != EvalStatus::SUCCESS) {
         unsigned int errorLineNum = 0;
@@ -287,23 +282,6 @@ int DSContext::eval(Lexer &lexer) {
             errorLineNum = getOccuredLineNum(obj->getStackTrace());
         }
 
-        DSType &thrownType = *thrownObj->getType();
-        if(this->ctx.getPool().getInternalStatus().isSameOrBaseTypeOf(thrownType)) {
-            if(thrownType == this->ctx.getPool().getShellExit()) {
-                if(hasFlag(this->option, DS_OPTION_TRACE_EXIT)) {
-                    this->ctx.loadThrownObject();
-                    typeAs<Error_Object>(this->ctx.pop())->printStackTrace(this->ctx);
-                }
-                this->updateStatus(DS_STATUS_EXIT, errorLineNum, "");
-                return this->getExitStatus();
-            }
-            if(thrownType == this->ctx.getPool().getAssertFail()) {
-                this->ctx.loadThrownObject();
-                typeAs<Error_Object>(this->ctx.pop())->printStackTrace(this->ctx);
-                this->updateStatus(DS_STATUS_ASSERTION_ERROR, errorLineNum, "");
-                return 1;
-            }
-        }
         this->ctx.reportError();
         this->checker.recover(false);
         this->updateStatus(DS_STATUS_RUNTIME_ERROR, errorLineNum,
@@ -475,20 +453,7 @@ int DSContext_loadAndEval(DSContext *ctx, const char *sourceName, FILE *fp) {
 
 int DSContext_exec(DSContext *ctx, char *const argv[]) {
     ctx->resetStatus();
-
-    EvalStatus es = EvalStatus::SUCCESS;
-    try {
-        ctx->ctx.execBuiltinCommand(argv);
-    } catch(const InternalError &e) {
-        es = EvalStatus::THROW;
-    }
-
-    if(es != EvalStatus::SUCCESS) {
-        DSType *thrownType = ctx->ctx.getThrownObject()->getType();
-        if(*thrownType == ctx->ctx.getPool().getShellExit()) {
-            ctx->execStatus.type = DS_STATUS_EXIT;
-        }
-    }
+    ctx->ctx.execBuiltinCommand(argv);
     return ctx->getExitStatus();
 }
 
@@ -524,6 +489,9 @@ static void setOptionImpl(DSContext *ctx, flag32_set_t flagSet, bool set) {
     }
     if(hasFlag(flagSet, DS_OPTION_TOPLEVEL)) {
         ctx->ctx.setToplevelPrinting(set);
+    }
+    if(hasFlag(flagSet, DS_OPTION_TRACE_EXIT)) {
+        ctx->ctx.setTraceExit(set);
     }
 }
 
@@ -613,6 +581,10 @@ unsigned int DSContext_errorLineNum(DSContext *ctx) {
 
 const char *DSContext_errorKind(DSContext *ctx) {
     return ctx->execStatus.errorKind;
+}
+
+void DSContext_addTerminationHook(DSContext *ctx, TerminationHook hook) {
+    ctx->ctx.setTerminationHook(hook);
 }
 
 void DSContext_complete(DSContext *ctx, const char *buf, size_t cursor, DSCandidates *c) {

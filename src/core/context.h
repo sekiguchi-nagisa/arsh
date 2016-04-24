@@ -22,6 +22,8 @@
 #include <vector>
 #include <iostream>
 
+#include <ydsh/ydsh.h>
+
 #include "../ast/node.h"
 #include "object.h"
 #include "symbol_table.h"
@@ -31,7 +33,6 @@
 namespace ydsh {
 namespace core {
 
-using namespace ydsh::ast;
 using namespace ydsh::ast;
 
 enum class EvalStatus : unsigned int {
@@ -183,6 +184,11 @@ private:
     bool assertion;
 
     /**
+     * if true, print stack trace of builtin exit command.
+     */
+    bool traceExit;
+
+    /**
      * for string cast
      */
     MethodHandle *handle_STR;
@@ -223,6 +229,8 @@ private:
      * cache searched result.
      */
     FilePathCache pathCache;
+
+    TerminationHook terminationHook;
 
     static std::string logicalWorkingDir;
 
@@ -312,6 +320,14 @@ public:
 
     void setAssertion(bool assertion) {
         this->assertion = assertion;
+    }
+
+    bool isTraceExit() const {
+        return this->traceExit;
+    }
+
+    void setTraceExit(bool traceExit) {
+        this->traceExit = traceExit;
     }
 
     const DSValue &getThrownObject() {
@@ -662,6 +678,10 @@ public:
     void addRedirOption(RedirectOP op);
 
     EvalStatus callPipedCommand(unsigned int startPos);
+
+    void setTerminationHook(TerminationHook hook) {
+        this->terminationHook = hook;
+    }
 };
 
 // some system util
@@ -675,9 +695,6 @@ std::string expandTilde(const char *path);
  * after fork, reset signal setting in child process.
  */
 pid_t xfork();
-
-// for internal status reporting
-struct InternalError {};
 
 // for native method exception (ex. StackOverflow)
 struct NativeMethodError {};
