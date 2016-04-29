@@ -104,6 +104,35 @@ TEST(writer, api2) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0xFF, writer.code[3]));
 }
 
+TEST(writer, api3) {
+    ByteCodeWriter writer;
+
+    for(unsigned int i = 0; i < 4; i++) {
+        writer.code += 0;
+    }
+
+    // 8 bit
+    {
+        const unsigned char v = 68;
+        writer.write(0, v);
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(v, writer.read8(0)));
+    }
+
+    // 16 bit
+    {
+        const unsigned short v = 2784;
+        writer.write(1, v);
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(v, writer.read16(1)));
+    }
+
+    // 32 bit
+    {
+        const unsigned int v = 0x12345678;
+        writer.write(0, v);
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(v, writer.read32(0)));
+    }
+}
+
 TEST(writer, label1) {
     ByteCodeWriter writer;
 

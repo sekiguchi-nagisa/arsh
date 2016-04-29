@@ -136,6 +136,20 @@ struct ByteCodeWriter {
         }
     }
 
+    unsigned char read8(unsigned int index) const noexcept {
+        return this->code[index];
+    }
+
+    unsigned short read16(unsigned int index) const noexcept {
+        return this->read8(index) << 8 | this->read8(index + 1);
+    }
+
+    unsigned int read32(unsigned int index) const noexcept {
+        return this->read8(index) << 24 | this->read8(index + 1) << 16
+               | this->read8(index + 2) << 8 | this->read8(index + 3);
+    }
+
+
     void markLabel(unsigned int index, Label &label) {
         label.setIndex(index);
         this->labelMap[label];
