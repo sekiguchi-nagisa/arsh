@@ -1,0 +1,8 @@
+# within block
+
+#$test($result = 'type', $lineNum = 7, $errorKind = 'UselessBlock', $status = 1)
+
+{
+   $true
+   { }
+}

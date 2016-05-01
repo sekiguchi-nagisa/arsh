@@ -181,6 +181,9 @@ public:
     E(OutsideToplevel  , "only available top level scope") \
     E(NotCallable      , "Func type object is not directly callable") \
     E(DisallowTypeof   , "not allow typeof operator") \
+    E(UselessBlock     , "useless blocl") \
+    E(EmptyTry         , "empty try block") \
+    E(UselessTry       , "useless try block") \
     E(DefinedSymbol    , "already defined symbol: %") \
     E(DefinedField     , "already defined field: %") \
     E(UndefinedSymbol  , "undefined symbol: %") \

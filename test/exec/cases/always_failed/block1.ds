@@ -1,0 +1,5 @@
+# top level
+
+#$test($result = 'type', $lineNum = 5, $errorKind = 'UselessBlock', $status = 1)
+
+{     }

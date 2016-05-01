@@ -242,6 +242,12 @@ void TypeChecker::checkTypeWithCurrentScope(BlockNode *blockNode) {
         }
         this->checkTypeWithCoercion(this->typePool.getVoidType(), targetNode);
         prevIsTerminal = targetNode->getType().isBottomType();
+
+        // check empty block
+        BlockNode *b;
+        if((b = dynamic_cast<BlockNode *>(targetNode)) != nullptr && b->getNodeList().empty()) {
+            RAISE_TC_ERROR(UselessBlock, *targetNode);
+        }
     }
     blockNode->setType(prevIsTerminal ? this->typePool.getBottomType() : this->typePool.getVoidType());
 }
@@ -909,7 +915,15 @@ void TypeChecker::visitCatchNode(CatchNode &node) {
 }
 
 void TypeChecker::visitTryNode(TryNode &node) {
+    if(node.getCatchNodes().empty() && node.getFinallyNode()->getNodeList().empty()) {
+        RAISE_TC_ERROR(UselessTry, node);
+    }
+    if(node.getBlockNode()->getNodeList().empty()) {
+        RAISE_TC_ERROR(EmptyTry, *node.getBlockNode());
+    }
+
     this->checkType(this->typePool.getVoidType(), node.getBlockNode());
+
     // check type catch block
     for(CatchNode *c : node.getCatchNodes()) {
         this->checkType(this->typePool.getVoidType(), c);
@@ -1116,6 +1130,12 @@ void TypeChecker::visitRootNode(RootNode &node) {
             this->checkType(nullptr, targetNode, nullptr);
         }
         prevIsTerminal = targetNode->getType().isBottomType();
+
+        // check empty block
+        BlockNode *blockNode;
+        if((blockNode = dynamic_cast<BlockNode *>(targetNode)) != nullptr && blockNode->getNodeList().empty()) {
+            RAISE_TC_ERROR(UselessBlock, *targetNode);
+        }
     }
 
     node.setMaxVarNum(this->symbolTable.getMaxVarIndex());
