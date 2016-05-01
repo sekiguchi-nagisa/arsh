@@ -915,7 +915,7 @@ void TypeChecker::visitCatchNode(CatchNode &node) {
 }
 
 void TypeChecker::visitTryNode(TryNode &node) {
-    if(node.getCatchNodes().empty() && node.getFinallyNode()->getNodeList().empty()) {
+    if(node.getCatchNodes().empty() && node.getFinallyNode() == nullptr) {
         RAISE_TC_ERROR(UselessTry, node);
     }
     if(node.getBlockNode()->getNodeList().empty()) {
@@ -930,9 +930,15 @@ void TypeChecker::visitTryNode(TryNode &node) {
     }
 
     // check type finally block, may be empty node
-    this->finallyDepth++;
-    this->checkType(this->typePool.getVoidType(), node.getFinallyNode());
-    this->finallyDepth--;
+    if(node.getFinallyNode() != nullptr) {
+        this->finallyDepth++;
+        this->checkType(this->typePool.getVoidType(), node.getFinallyNode());
+        this->finallyDepth--;
+
+        if(node.getFinallyNode()->getNodeList().empty()) {
+            RAISE_TC_ERROR(UselessBlock, *node.getFinallyNode());
+        }
+    }
 
     /**
      * verify catch block order

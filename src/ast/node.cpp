@@ -2101,18 +2101,8 @@ void TryNode::addCatchNode(CatchNode *catchNode) {
 }
 
 void TryNode::addFinallyNode(BlockNode *finallyNode) {
-    if(this->finallyNode != nullptr) {
-        delete this->finallyNode;
-    }
     this->finallyNode = finallyNode;
     this->updateToken(finallyNode->getToken());
-}
-
-BlockNode *TryNode::getFinallyNode() {
-    if(this->finallyNode == nullptr) {
-        this->finallyNode = new BlockNode(0);
-    }
-    return this->finallyNode;
 }
 
 void TryNode::dump(NodeDumper &dumper) const {
@@ -2131,7 +2121,9 @@ EvalStatus TryNode::eval(RuntimeContext &ctx) {
     EvalStatus status = this->blockNode->eval(ctx);
 
     if(status != EvalStatus::THROW) {  // eval finally
-        EVAL(ctx, this->finallyNode);
+        if(this->finallyNode != nullptr) {
+            EVAL(ctx, this->finallyNode);
+        }
         return status;
     } else {   // eval catch
         DSType &thrownType = *ctx.getThrownObject()->getType();
@@ -2143,7 +2135,9 @@ EvalStatus TryNode::eval(RuntimeContext &ctx) {
             }
         }
         // eval finally
-        EVAL(ctx, this->finallyNode);
+        if(this->finallyNode != nullptr) {
+            EVAL(ctx, this->finallyNode);
+        }
     }
     return status;
 }

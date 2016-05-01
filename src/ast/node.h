@@ -1763,7 +1763,7 @@ private:
     std::vector<CatchNode *> catchNodes;
 
     /**
-     * may be EmptyBlockNode
+     * may be null
      */
     BlockNode *finallyNode;
 
@@ -1787,7 +1787,12 @@ public:
 
     void addFinallyNode(BlockNode *finallyNode);
 
-    BlockNode *getFinallyNode();
+    /**
+     * if has no finally block, return null
+     */
+    BlockNode *getFinallyNode() {
+        return this->finallyNode;
+    }
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
