@@ -363,6 +363,17 @@ TEST(BufferTest, case12) {
     }
 }
 
+TEST(BufferTest, case13) {
+    IBuffer buffer;
+    buffer += 45;
+
+    // assign
+    buffer.assign(8, 12345);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(9u, buffer.size()));
+    for(unsigned int i = 0; i < 8; i++) {
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(12345u, buffer[i + 1]));
+    }
+}
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

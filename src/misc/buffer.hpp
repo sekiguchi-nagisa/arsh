@@ -106,7 +106,7 @@ public:
         free(this->data);
     }
 
-    FlexBuffer<T, SIZE_T> &operator+=(T value);
+    FlexBuffer<T, SIZE_T> &operator+=(const T &value);
 
     /**
      * buffer.data is not equivalent to this.data.
@@ -204,7 +204,7 @@ public:
      * pos (begin() <= pos <= end()).
      * return position inserted element.
      */
-    iterator insert(const_iterator pos, T value);
+    iterator insert(const_iterator pos, const T &value);
 
     /**
      * pos must not equivalent to this->end().
@@ -217,6 +217,8 @@ public:
      * first is inclusive, last is exclusive.
      */
     iterator erase(const_iterator first, const_iterator last);
+
+    void assign(size_type n, const T &value);
 
     /**
      * extract data. after call it, maxSize and usedSize is 0, and data is null.
@@ -253,7 +255,7 @@ void FlexBuffer<T, SIZE_T>::checkRange(size_type index) const {
 }
 
 template <typename T, typename SIZE_T>
-FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::operator+=(T value) {
+FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::operator+=(const T &value) {
     this->reserve(this->usedSize + 1);
     this->data[this->usedSize++] = value;
     return *this;
@@ -319,7 +321,7 @@ typename FlexBuffer<T, SIZE_T>::const_reference FlexBuffer<T, SIZE_T>::at(size_t
 }
 
 template <typename T, typename SIZE_T>
-typename FlexBuffer<T, SIZE_T>::iterator FlexBuffer<T, SIZE_T>::insert(const_iterator pos, T value) {
+typename FlexBuffer<T, SIZE_T>::iterator FlexBuffer<T, SIZE_T>::insert(const_iterator pos, const T &value) {
     assert(pos >= this->begin() && pos <= this->end());
 
     const size_type index = pos - this->begin();
@@ -355,6 +357,14 @@ typename FlexBuffer<T, SIZE_T>::iterator FlexBuffer<T, SIZE_T>::erase(const_iter
     this->moveElements(iter + (last - first), iter);
 
     return iter;
+}
+
+template <typename T, typename SIZE_T>
+void FlexBuffer<T, SIZE_T>::assign(size_type n, const T &value) {
+    this->reserve(this->usedSize + n);
+    for(unsigned int i = 0; i < n; i++) {
+        this->data[this->usedSize++] = value;
+    }
 }
 
 typedef FlexBuffer<char> ByteBuffer;
