@@ -561,9 +561,6 @@ EvalStatus AccessNode::eval(RuntimeContext &ctx) {
         }
 
         ctx.loadField(this->getIndex());
-        if(this->type != nullptr && this->type->isFuncType()) {
-            ctx.peek()->setType(this->type);
-        }
         break;
     }
     case DUP_RECV: {
@@ -572,9 +569,6 @@ EvalStatus AccessNode::eval(RuntimeContext &ctx) {
         }
 
         ctx.dupAndLoadField(this->getIndex());
-        if(this->type != nullptr && this->type->isFuncType()) {
-            ctx.peek()->setType(this->type);
-        }
         break;
     }
     }
