@@ -608,7 +608,7 @@ void DSContext_complete(DSContext *ctx, const char *buf, size_t cursor, DSCandid
 
     // write to DSCandidates
     c->size = sbuf.size();
-    c->values = CStrBuffer::extract(std::move(sbuf));
+    c->values = extract(std::move(sbuf));
 }
 
 void DSCandidates_release(DSCandidates *c) {

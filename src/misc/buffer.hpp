@@ -222,13 +222,13 @@ public:
      * extract data. after call it, maxSize and usedSize is 0, and data is null.
      * call free() to release returned pointer.
      */
-    static T *extract(FlexBuffer<T, SIZE_T> &&buf) noexcept {
+    friend T *extract(FlexBuffer<T, SIZE_T> &&buf) noexcept {
         buf.maxSize = 0;
         buf.usedSize = 0;
         T *ptr = buf.data;
         buf.data = nullptr;
         return ptr;
-    };
+    }
 };
 
 // ########################
