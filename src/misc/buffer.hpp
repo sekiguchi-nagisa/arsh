@@ -121,23 +121,23 @@ public:
      */
     FlexBuffer<T, SIZE_T> &append(const T *value, size_type size);
 
-    size_type capacity() const {
+    size_type capacity() const noexcept {
         return this->maxSize;
     }
 
-    size_type size() const {
+    size_type size() const noexcept {
         return this->usedSize;
     }
 
-    bool empty() const {
+    bool empty() const noexcept {
         return this->size() == 0;
     }
 
-    const T *get() const {
+    const T *get() const noexcept {
         return this->data;
     }
 
-    void clear() {
+    void clear() noexcept {
         this->usedSize = 0;
     }
 
@@ -152,47 +152,47 @@ public:
      */
     void reserve(size_type reservingSize);
 
-    iterator begin() {
+    iterator begin() noexcept {
         return this->data;
     }
 
-    iterator end() {
+    iterator end() noexcept {
         return this->data + this->usedSize;
     }
 
-    const_iterator begin() const {
+    const_iterator begin() const noexcept {
         return this->data;
     }
 
-    const_iterator end() const {
+    const_iterator end() const noexcept {
         return this->data + this->usedSize;
     }
 
-    reference front() {
+    reference front() noexcept {
         return this->operator[](0);
     }
 
-    const_reference front() const {
+    const_reference front() const noexcept {
         return this->operator[](0);
     }
 
-    reference back() {
+    reference back() noexcept {
         return this->operator[](this->usedSize - 1);
     }
 
-    const_reference back() const {
+    const_reference back() const noexcept {
         return this->operator[](this->usedSize - 1);
     }
 
-    void pop_back() {
+    void pop_back() noexcept {
         this->usedSize--;
     }
 
-    reference operator[](size_type index) {
+    reference operator[](size_type index) noexcept {
         return this->data[index];
     }
 
-    const_reference operator[](size_type index) const {
+    const_reference operator[](size_type index) const noexcept {
         return this->data[index];
     }
 
