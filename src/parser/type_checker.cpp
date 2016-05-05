@@ -152,7 +152,7 @@ DSType *TypeChecker::resolveInterface(TypePool &typePool,
 
     // create method handle
     for(FunctionNode *funcNode : node->getMethodDeclNodes()) {
-        MethodHandle *handle = type.newMethodHandle(funcNode->getFuncName());
+        MethodHandle *handle = type.newMethodHandle(funcNode->getName());
         handle->setRecvType(type);
         handle->setReturnType(typeGen.generateTypeAndThrow(funcNode->getReturnTypeToken()));
         // resolve multi return
@@ -1046,9 +1046,9 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
 
     // register function handle
     FunctionHandle *handle =
-            this->symbolTable.registerFuncHandle(node.getFuncName(), returnType, paramTypes);
+            this->symbolTable.registerFuncHandle(node.getName(), returnType, paramTypes);
     if(handle == nullptr) {
-        RAISE_TC_ERROR(DefinedSymbol, node, node.getFuncName());
+        RAISE_TC_ERROR(DefinedSymbol, node, node.getName());
     }
     node.setVarIndex(handle->getFieldIndex());
 
@@ -1093,8 +1093,8 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     this->symbolTable.exitFunc();
     this->popReturnType();
 
-    if(!this->typePool.addUserDefnedCommandName(node.getCommandName())) {
-        RAISE_TC_ERROR(DefinedCmd, node, node.getCommandName());
+    if(!this->typePool.addUserDefnedCommandName(node.getName())) {
+        RAISE_TC_ERROR(DefinedCmd, node, node.getName());
     }
     node.setType(this->typePool.getVoidType());
 }

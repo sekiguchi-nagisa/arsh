@@ -2352,7 +2352,7 @@ TypeNode *FunctionNode::getReturnTypeToken() {
 }
 
 void FunctionNode::dump(NodeDumper &dumper) const {
-    DUMP(funcName);
+    DUMP(name);
     DUMP_NODES(paramNodes);
     DUMP_NODES(paramTypeNodes);
 
@@ -2424,7 +2424,7 @@ UserDefinedCmdNode::~UserDefinedCmdNode() {
 }
 
 void UserDefinedCmdNode::dump(NodeDumper &dumper) const {
-    DUMP(commandName);
+    DUMP(name);
     DUMP_PTR(blockNode);
     DUMP_PRIM(maxVarNum);
     dumper.dump("sourceName", this->srcInfoPtr->getSourceName());

@@ -1977,11 +1977,16 @@ class CallableNode : public Node {
 protected:
     SourceInfoPtr srcInfoPtr;
 
-public:
-    CallableNode(unsigned int startPos, const SourceInfoPtr &srcInfoPtr) :
-            Node({startPos, 0}), srcInfoPtr(srcInfoPtr) { }
+    /**
+     * if RootNode, name is empty.
+     */
+    std::string name;
 
-    CallableNode() : Node({0, 0}), srcInfoPtr(nullptr) { }
+public:
+    CallableNode(unsigned int startPos, const SourceInfoPtr &srcInfoPtr, std::string &&name) :
+            Node({startPos, 0}), srcInfoPtr(srcInfoPtr), name(std::move(name)) { }
+
+    CallableNode() : Node({0, 0}), srcInfoPtr(nullptr), name() { }
 
     virtual ~CallableNode() = default;
 
@@ -1996,12 +2001,14 @@ public:
     const char *getSourceName() const {
         return this->srcInfoPtr->getSourceName().c_str();
     }
+
+    const std::string &getName() const {
+        return this->name;
+    }
 };
 
 class FunctionNode : public CallableNode {
 private:
-    std::string funcName;
-
     /**
      * for parameter definition.
      */
@@ -2029,15 +2036,11 @@ private:
 public:
     FunctionNode(unsigned int startPos, const SourceInfoPtr &srcInfoPtr,
                  std::string &&funcName) :
-            CallableNode(startPos, srcInfoPtr), funcName(std::move(funcName)),
+            CallableNode(startPos, srcInfoPtr, std::move(funcName)),
             paramNodes(), paramTypeNodes(), returnTypeNode(),
             blockNode(), maxVarNum(0), varIndex(0) { }
 
     ~FunctionNode();
-
-    const std::string &getFuncName() const {
-        return this->funcName;
-    }
 
     void addParamNode(VarNode *node, TypeNode *paramType);
 
@@ -2134,8 +2137,6 @@ public:
 
 class UserDefinedCmdNode : public CallableNode {
 private:
-    std::string commandName;
-
     BlockNode *blockNode;
 
     unsigned int maxVarNum;
@@ -2143,16 +2144,12 @@ private:
 public:
     UserDefinedCmdNode(unsigned int startPos, const SourceInfoPtr &srcInfoPtr,
                        std::string &&commandName, BlockNode *blockNode) :
-            CallableNode(startPos, srcInfoPtr), commandName(std::move(commandName)),
+            CallableNode(startPos, srcInfoPtr, std::move(commandName)),
             blockNode(blockNode), maxVarNum(0) {
         this->updateToken(blockNode->getToken());
     }
 
     ~UserDefinedCmdNode();
-
-    const std::string &getCommandName() const {
-        return this->commandName;
-    }
 
     BlockNode *getBlockNode() const {
         return this->blockNode;

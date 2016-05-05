@@ -575,10 +575,10 @@ void RuntimeContext::fillInStackTrace(std::vector<StackTraceElement> &stackTrace
         std::string callerName;
         if(dynamic_cast<FunctionNode *>(node) != nullptr) {
             callerName += "function ";
-            callerName += static_cast<FunctionNode *>(node)->getFuncName();
+            callerName += node->getName();
         } else if(dynamic_cast<UserDefinedCmdNode *>(node) != nullptr) {
             callerName += "user-defined-command ";
-            callerName += static_cast<UserDefinedCmdNode *>(node)->getCommandName();
+            callerName += node->getName();
         } else {
             callerName += "<toplevel>";
         }
@@ -804,8 +804,8 @@ void RuntimeContext::exitShell(unsigned int status) {
 }
 
 void RuntimeContext::addUserDefinedCommand(UserDefinedCmdNode *node) {
-    if(!this->udcMap.insert(std::make_pair(node->getCommandName().c_str(), node)).second) {
-        fatal("undefined user defined command: %s\n", node->getCommandName().c_str());
+    if(!this->udcMap.insert(std::make_pair(node->getName().c_str(), node)).second) {
+        fatal("undefined user defined command: %s\n", node->getName().c_str());
     }
 }
 
