@@ -22,6 +22,7 @@
 
 #include "token_kind.h"
 #include "lexer_base.hpp"
+#include "../misc/shared.hpp"
 
 namespace ydsh {
 namespace parser {
@@ -35,6 +36,8 @@ typedef ydsh::parser_base::Token Token;
 
 class SourceInfo {
 private:
+    unsigned int refcount;
+
     std::string sourceName;
 
     /**
@@ -49,7 +52,7 @@ private:
 
 public:
     explicit SourceInfo(const char *sourceName) :
-            sourceName(sourceName), lineNumOffset(1), lineNumTable() { }
+            refcount(0), sourceName(sourceName), lineNumOffset(1), lineNumTable() { }
     ~SourceInfo() = default;
 
     const std::string &getSourceName() const {
@@ -70,10 +73,22 @@ public:
 
     void addNewlinePos(unsigned int pos);
     unsigned int getLineNum(unsigned int pos) const;
+
+    friend void intrusivePtr_addRef(SourceInfo *ptr) noexcept {
+        if(ptr != nullptr) {
+            ptr->refcount++;
+        }
+    }
+
+    friend void intrusivePtr_release(SourceInfo *ptr) noexcept {
+        if(ptr != nullptr && --ptr->refcount == 0) {
+            delete ptr;
+        }
+    }
 };
 
-typedef std::shared_ptr<SourceInfo> SourceInfoPtr;
-
+//typedef std::shared_ptr<SourceInfo> SourceInfoPtr;
+using SourceInfoPtr = misc::IntrusivePtr<SourceInfo>;
 
 class Lexer : public ydsh::parser_base::LexerBase {
 private:
@@ -96,7 +111,7 @@ private:
 public:
     Lexer(const char *sourceName, const char *source) :
             LexerBase(source),
-            srcInfoPtr(std::make_shared<SourceInfo>(sourceName)),
+            srcInfoPtr(misc::makeIntrusive<SourceInfo>(sourceName)),
             modeStack(1, yycSTMT), prevNewLine(false), prevSpace(false), prevMode(yycSTMT) {}
 
     /**
@@ -104,7 +119,7 @@ public:
      */
     Lexer(const char *sourceName, FILE *fp) :
             LexerBase(fp),
-            srcInfoPtr(std::make_shared<SourceInfo>(sourceName)),
+            srcInfoPtr(misc::makeIntrusive<SourceInfo>(sourceName)),
             modeStack(1, yycSTMT), prevNewLine(false), prevSpace(false), prevMode(yycSTMT) {}
 
     ~Lexer() = default;
