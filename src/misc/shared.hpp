@@ -21,12 +21,9 @@ namespace ydsh {
 namespace misc {
 
 template <typename T>
-class IntrusivePtr {
-protected:
+class IntrusivePtr final {
+private:
     T *ptr;
-
-    static void *operator new(std::size_t);
-    static void *operator new[](std::size_t);
 
 public:
     IntrusivePtr() noexcept : ptr(nullptr) { }
