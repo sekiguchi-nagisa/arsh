@@ -1929,48 +1929,28 @@ static void resolveIfIsStatement(Node *condNode, BlockNode *blockNode) {
     blockNode->insertNodeToFirst(declNode);
 }
 
-IfNode::IfNode(unsigned int startPos, Node *condNode, BlockNode *thenNode) :
-        Node({startPos, 0}), condNode(condNode), thenNode(thenNode),
-        elifCondNodes(), elifThenNodes(), elseNode(nullptr) {
+IfNode::IfNode(unsigned int startPos, Node *condNode, BlockNode *thenNode, Node *elseNode) :
+        Node({startPos, 0}), condNode(condNode), thenNode(thenNode), elseNode(elseNode) {
 
     resolveIfIsStatement(this->condNode, this->thenNode);
     this->updateToken(thenNode->getToken());
+    if(this->elseNode != nullptr) {
+        this->updateToken(this->elseNode->getToken());
+    }
+    if(this->elseNode == nullptr) {
+        this->elseNode = new EmptyNode(this->getToken());
+    }
 }
 
 IfNode::~IfNode() {
     delete this->condNode;
     delete this->thenNode;
-
-    unsigned int size = this->elifCondNodes.size();
-    for(unsigned int i = 0; i < size; i++) {
-        delete this->elifCondNodes[i];
-        delete this->elifThenNodes[i];
-    }
-
     delete this->elseNode;
-}
-
-void IfNode::addElifNode(Node *condNode, BlockNode *thenNode) {
-    this->elifCondNodes.push_back(condNode);
-    this->elifThenNodes.push_back(thenNode);
-    this->updateToken(thenNode->getToken());
-
-    resolveIfIsStatement(condNode, thenNode);
-}
-
-BlockNode *IfNode::getElseNode() {
-    if(this->elseNode == nullptr) {
-        this->elseNode = new BlockNode(0);
-    }
-    return this->elseNode;
 }
 
 void IfNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(condNode);
     DUMP_PTR(thenNode);
-    DUMP(elifCondNodes);
-    DUMP_NODES(elifThenNodes);
-
     DUMP_PTR(elseNode);
 }
 
@@ -1984,19 +1964,10 @@ EvalStatus IfNode::eval(RuntimeContext &ctx) {
 
     // then block
     if(typeAs<Boolean_Object>(ctx.pop())->getValue()) {
-        return this->thenNode->eval(ctx);
+        return this->thenNode->eval(ctx);   // then block
+    } else {
+        return this->elseNode->eval(ctx);   // else
     }
-
-    unsigned int size = this->elifCondNodes.size();
-    for(unsigned i = 0; i < size; i++) {    // elif
-        EVAL(ctx, this->elifCondNodes[i]);
-        if(typeAs<Boolean_Object>(ctx.pop())->getValue()) {
-            return this->elifThenNodes[i]->eval(ctx);
-        }
-    }
-
-    // else
-    return this->elseNode->eval(ctx);
 }
 
 // ########################

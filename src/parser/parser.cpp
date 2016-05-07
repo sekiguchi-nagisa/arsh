@@ -501,27 +501,9 @@ std::unique_ptr<Node> Parser::parse_statement() {
         return this->parse_forStatement();
     }
     case IF: {
-        unsigned int startPos = START_POS();
-        this->expect(IF);
-        std::unique_ptr<Node> condNode(this->parse_expression());
-        std::unique_ptr<BlockNode> blockNode(this->parse_block());
-        auto ifNode = uniquify<IfNode>(startPos, condNode.release(), blockNode.release());
-
-        // parse elif
-        while(CUR_KIND() == ELIF) {
-            this->expect(ELIF);
-            condNode = this->parse_expression();
-            blockNode = this->parse_block();
-            ifNode->addElifNode(condNode.release(), blockNode.release());
-        }
-
-        // parse else
-        if(CUR_KIND() == ELSE) {
-            this->expect(ELSE);
-            ifNode->addElseNode(this->parse_block().release());
-        }
+        auto node = this->parse_ifStatement();
         this->parse_statementEnd();
-        return std::move(ifNode);
+        return node;
     }
     case IMPORT_ENV: {
         unsigned int startPos = START_POS();
@@ -652,6 +634,29 @@ std::unique_ptr<Node> Parser::parse_variableDeclaration() {
     this->expect(ASSIGN);
     return uniquify<VarDeclNode>(startPos, std::move(name),
                                  this->parse_expression().release(), readOnly);
+}
+
+std::unique_ptr<Node> Parser::parse_ifStatement(bool asElif) {
+    unsigned int startPos = START_POS();
+    this->expect(asElif ? ELIF : IF);
+    std::unique_ptr<Node> condNode(this->parse_expression());
+    std::unique_ptr<BlockNode> thenNode(this->parse_block());
+
+    // parse else
+    std::unique_ptr<Node> elseNode;
+    switch(CUR_KIND()) {
+    case ELIF:
+        elseNode = this->parse_ifStatement(true);
+        break;
+    case ELSE:
+        this->expect(ELSE);
+        elseNode = this->parse_block();
+        break;
+    default:
+        break;
+    }
+
+    return uniquify<IfNode>(startPos, condNode.release(), thenNode.release(), elseNode.release());
 }
 
 std::unique_ptr<Node> Parser::parse_forStatement() {

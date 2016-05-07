@@ -1614,20 +1614,13 @@ class IfNode : public Node {
 private:
     Node *condNode;
     BlockNode *thenNode;
-
-    std::vector<Node *> elifCondNodes;
-    std::vector<BlockNode *> elifThenNodes;
-
-    /**
-     * may be null, if has no else block
-     */
-    BlockNode *elseNode;
+    Node *elseNode;
 
 public:
     /**
      * elseNode may be null
      */
-    IfNode(unsigned int startPos, Node *condNode, BlockNode *thenNode);
+    IfNode(unsigned int startPos, Node *condNode, BlockNode *thenNode, Node *elseNode);
 
     ~IfNode();
 
@@ -1639,25 +1632,9 @@ public:
         return this->thenNode;
     }
 
-    void addElifNode(Node *condNode, BlockNode *thenNode);
-
-    const std::vector<Node *> &getElifCondNodes() const {
-        return this->elifCondNodes;
+    Node *getElseNode() const {
+        return this->elseNode;
     }
-
-    const std::vector<BlockNode *> &getElifThenNodes() const {
-        return this->elifThenNodes;
-    }
-
-    void addElseNode(BlockNode *elseNode) {
-        this->elseNode = elseNode;
-        this->updateToken(elseNode->getToken());
-    }
-
-    /*
-     * return EmptyBlockNode, if elseNode is null.
-     */
-    BlockNode *getElseNode();
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;

@@ -860,21 +860,11 @@ void TypeChecker::visitDoWhileNode(DoWhileNode &node) {
 void TypeChecker::visitIfNode(IfNode &node) {
     this->checkType(this->typePool.getBooleanType(), node.getCondNode());
     this->checkType(this->typePool.getVoidType(), node.getThenNode());
-
-    const unsigned int size = node.getElifCondNodes().size();
-    for(unsigned int i = 0; i < size; i++) {
-        this->checkType(this->typePool.getBooleanType(), node.getElifCondNodes()[i]);
-        this->checkType(this->typePool.getVoidType(), node.getElifThenNodes()[i]);
-    }
-
     this->checkType(this->typePool.getVoidType(), node.getElseNode());
 
     // check if terminal node
     bool terminal = node.getThenNode()->getType().isBottomType()
                     && node.getElseNode()->getType().isBottomType();
-    for(unsigned int i = 0; i < size && terminal; i++) {
-        terminal = node.getElifThenNodes()[i]->getType().isBottomType();
-    }
     node.setType(terminal ? this->typePool.getBottomType() : this->typePool.getVoidType());
 }
 
