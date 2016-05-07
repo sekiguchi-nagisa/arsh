@@ -1338,7 +1338,7 @@ static inline bool array_push(RuntimeContext &ctx) {
         return throwOutOfRangeError(ctx, std::string("reach Array size limit"));
     }
     obj->append(LOCAL(1));
-    RET_BOOL(true);
+    return true;
 }
 
 //!bind: function pop($this : Array<T0>) : T0
@@ -1394,7 +1394,7 @@ static inline bool array_clear(RuntimeContext &ctx) {
     Array_Object *obj = typeAs<Array_Object>(LOCAL(0));
     obj->initIterator();
     obj->refValues().clear();
-    RET_BOOL(true);
+    return true;
 }
 
 //!bind: function $OP_ITER($this : Array<T0>) : Array<T0>
@@ -1524,7 +1524,7 @@ static inline bool map_clear(RuntimeContext &ctx) {
     Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
     obj->initIterator();
     obj->refValueMap().clear();
-    RET_BOOL(true);
+    return true;
 }
 
 //!bind: function $OP_ITER($this : Map<T0, T1>) : Map<T0, T1>
