@@ -823,7 +823,7 @@ FunctionType *DBusProxy_Object::lookupHandler(RuntimeContext &ctx,
         return nullptr;
     }
     ctx.push(iter->second);
-    return typeAs<FuncObject>(iter->second)->getFuncType();
+    return typeAs<OldFuncObject>(iter->second)->getFuncType();
 }
 
 bool DBusProxy_Object::matchObject(const char *serviceName, const char *objectPath) {

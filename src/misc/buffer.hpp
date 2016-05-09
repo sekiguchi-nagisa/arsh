@@ -369,6 +369,28 @@ void FlexBuffer<T, SIZE_T>::assign(size_type n, const T &value) {
 
 typedef FlexBuffer<char> ByteBuffer;
 
+// for byte reading
+inline unsigned char read8(const unsigned char *const code, unsigned int index) noexcept {
+    return code[index];
+}
+
+inline unsigned short read16(const unsigned char *const code, unsigned int index) noexcept {
+    return read8(code, index) << 8 | read8(code, index + 1);
+}
+
+inline unsigned int read32(const unsigned char *const code, unsigned int index) noexcept {
+    return read8(code, index) << 24 | read8(code, index + 1) << 16
+           | read8(code, index + 2) << 8 | read8(code, index + 3);
+}
+
+inline unsigned long read64(const unsigned char *const code, unsigned int index) noexcept {
+    unsigned long v = 0;
+    for(unsigned int i = 0; i < 8; i++) {
+        v |= static_cast<unsigned long>(read8(code, index + i)) << ((7 - i) * 8);
+    }
+    return v;
+}
+
 } // namespace misc
 } // namespace ydsh
 

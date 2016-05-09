@@ -2201,7 +2201,7 @@ EvalStatus AssignNode::eval(RuntimeContext &ctx) {
         VarNode *varNode = static_cast<VarNode *>(this->leftNode);
 
         if(varNode->isEnv()) {
-            ctx.updateEnv(index, varNode->isGlobal());
+            ctx.storeEnv(index, varNode->isGlobal());
         } else {
             if(varNode->isGlobal()) {
                 ctx.storeGlobal(index);
@@ -2339,7 +2339,7 @@ void FunctionNode::accept(NodeVisitor &visitor) {
 }
 
 EvalStatus FunctionNode::eval(RuntimeContext &ctx) {
-    ctx.setGlobal(this->varIndex, DSValue::create<FuncObject>(this));
+    ctx.setGlobal(this->varIndex, DSValue::create<OldFuncObject>(this));
     return EvalStatus::REMOVE;
 }
 

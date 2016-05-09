@@ -38,6 +38,8 @@
 #include "core/context.h"
 #include "core/symbol.h"
 #include "core/logger.h"
+#include "core/codegen.h"
+#include "core/vm.h"
 #include "misc/num.h"
 
 
@@ -124,7 +126,7 @@ struct DSContext {
 
 DSContext::DSContext() :
         ctx(), parser(), checker(this->ctx.getPool(), this->ctx.getSymbolTable()),
-        lineNum(1), option(0), prompt(), execStatus() {
+        lineNum(1), option(DS_OPTION_ASSERT), prompt(), execStatus() {
     // set locale
     setlocale(LC_ALL, "");
     setlocale(LC_MESSAGES, "C");
@@ -272,6 +274,14 @@ int DSContext::eval(Lexer &lexer) {
     }
 
     // eval
+    if(hasFlag(this->option, DS_OPTION_X_VM)) {
+        ByteCodeGenerator codegen(this->ctx.getPool(),
+                                  hasFlag(this->option, DS_OPTION_TOPLEVEL), hasFlag(this->option, DS_OPTION_ASSERT));
+        Callable c = codegen.generateToplevel(rootNode);
+        vmEval(this->ctx, c);
+        return 0;   // currently always 0.
+    }
+
     EvalStatus s = rootNode.eval(this->ctx);
 
     if(s != EvalStatus::SUCCESS) {
@@ -492,6 +502,9 @@ static void setOptionImpl(DSContext *ctx, flag32_set_t flagSet, bool set) {
     }
     if(hasFlag(flagSet, DS_OPTION_TRACE_EXIT)) {
         ctx->ctx.setTraceExit(set);
+    }
+    if(hasFlag(flagSet, DS_OPTION_X_VM)) {
+        ctx->ctx.setUseVM(set);
     }
 }
 

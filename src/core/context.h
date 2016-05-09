@@ -147,10 +147,19 @@ private:
      * contains operand, global variable(may be function) or local variable.
      *
      * stack grow ==>
-     * +--------------+   +--------------+-------------+   +-------------+
-     * | global var 1 | ~ | global var N | local var 1 | ~ | local var N | ~
-     * +--------------+   +--------------+-------------+   +-------------+
-     * |          global variable        |         local variable        | operand stack
+     * +--------+   +--------+-------+   +-------+
+     * | gvar 1 | ~ | gvar N | var 1 | ~ | var N | ~
+     * +--------+   +--------+-------+   +-------+
+     * |   global variable   |   local variable  | operand stack
+     *
+     *
+     * stack layout within callable
+     *
+     * stack grow ==>
+     *   +-----------------+   +-----------------+-----------+   +-------+----+---------------+------------------+----------------+
+     * ~ | var 1 (param 1) | ~ | var M (param M) | var M + 1 | ~ | var N | PC | stackTopIndex | stackBottomIndex | localVarOffset | ~
+     *   +-----------------+   +-----------------+-----------+   +-------+----+---------------+------------------+----------------+
+     *   |                           local variable                      |                 caller state                           | operand stack
      */
     DSValue *localStack;
 
@@ -174,6 +183,11 @@ private:
     unsigned int localVarOffset;
 
     /**
+     * indicate the index of currently evaluating op code.
+     */
+    unsigned int pc_;
+
+    /**
      * if true, print top level evaluated value.
      */
     bool toplevelPrinting;
@@ -187,6 +201,8 @@ private:
      * if true, print stack trace of builtin exit command.
      */
     bool traceExit;
+
+    bool useVM;
 
     /**
      * for string cast
@@ -212,6 +228,11 @@ private:
      * contains startPos and callableContextStack index.
      */
     std::vector<unsigned long> callStack;
+
+    /**
+     * contains currently evaluating callable.
+     */
+    std::vector<const Callable *> callableStack_;
 
     /**
      * for caching object.
@@ -330,6 +351,10 @@ public:
         this->traceExit = traceExit;
     }
 
+    void setUseVM(bool useVM) {
+        this->useVM = useVM;
+    }
+
     const DSValue &getThrownObject() {
         return this->thrownObject;
     }
@@ -342,9 +367,13 @@ public:
         return this->localVarOffset;
     }
 
+    unsigned int &pc() noexcept {
+        return this->pc_;
+    }
+
 
     /**
-     * revserve global variable entry and set local variable offset.
+     * reserve global variable entry and set local variable offset.
      */
     void reserveGlobalVar(unsigned int size);
 
@@ -528,8 +557,17 @@ public:
         this->callStack.pop_back();
     }
 
+    std::vector<const Callable *> &callableStack() noexcept {
+        return this->callableStack_;
+    }
+
     EvalStatus applyFuncObject(unsigned int startPos, bool returnTypeIsVoid, unsigned int paramSize);
+
+    void applyFuncObject(unsigned int paramSize);
+
     EvalStatus callMethod(unsigned int startPos, const std::string &methodName, MethodHandle *handle);
+
+    bool callMethod(unsigned short index, unsigned short paramSize);
 
     /**
      * allocate new DSObject on stack top.
@@ -538,6 +576,8 @@ public:
     void newDSObject(DSType *type);
 
     EvalStatus callConstructor(unsigned int startPos, unsigned int paramSize);
+
+    bool callConstructor(unsigned short paramSize);
 
     /**
      * cast stack top value to String
@@ -558,9 +598,14 @@ public:
 
     bool checkCast(unsigned int startPos, DSType *targetType);
 
+    bool checkCast(DSType *targetType);
+
+
     void instanceOf(DSType *targetType);
 
     EvalStatus checkAssertion(unsigned int startPos);
+
+    void checkAssertion();
 
     /**
      * get environment variable and set to local variable
@@ -576,9 +621,13 @@ public:
     /**
      * update environmental variable
      */
-    void updateEnv(unsigned int index, bool isGlobal);
+    void storeEnv(unsigned int index, bool isGlobal);
 
     void loadEnv(unsigned int index, bool isGlobal);
+
+    void importEnv(bool hasDefault);
+    void storeEnv();
+    void loadEnv();
 
     void pushFuncContext(CallableNode *node) {
         this->callableContextStack.push_back(node);

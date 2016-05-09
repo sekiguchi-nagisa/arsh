@@ -216,6 +216,8 @@ set(YDSH_SRC
         src/core/symbol_table.cpp
         src/core/type_pool.cpp
         src/core/diagnosis.cpp
+        src/core/codegen.cpp
+        src/core/vm.cpp
         src/parser/lexer.cpp
         src/parser/parser.cpp
         src/parser/token_kind.cpp

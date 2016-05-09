@@ -305,6 +305,7 @@ void TypeChecker::checkTerminalNodeExistence(BlockNode &blockNode, DSType &retur
          * insert return node to block end
          */
         ReturnNode *returnNode = new ReturnNode(0, new EmptyNode());
+        returnNode->getExprNode()->setType(this->typePool.getVoidType());
         returnNode->setType(this->typePool.getBottomType());
         blockNode.addNode(returnNode);
         blockNode.setType(returnNode->getType());

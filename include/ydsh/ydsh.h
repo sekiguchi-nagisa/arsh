@@ -94,6 +94,7 @@ void DSContext_setArguments(DSContext *ctx, char *const args[]);
 #define DS_OPTION_ASSERT     ((unsigned int) (1 << 3))
 #define DS_OPTION_TOPLEVEL   ((unsigned int) (1 << 4))
 #define DS_OPTION_TRACE_EXIT ((unsigned int) (1 << 5))
+#define DS_OPTION_X_VM       ((unsigned int) (1 << 6))  // future may be removed.
 
 void DSContext_setOption(DSContext *ctx, unsigned int optionSet);
 void DSContext_unsetOption(DSContext *ctx, unsigned int optionSet);

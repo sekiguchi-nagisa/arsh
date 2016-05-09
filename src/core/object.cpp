@@ -146,6 +146,10 @@ size_t Boolean_Object::hash() {
 // ##     String_Object     ##
 // ###########################
 
+void String_Object::append(DSValue &&obj) {
+    this->value += typeAs<String_Object>(obj)->value;
+}
+
 std::string String_Object::toString(RuntimeContext &, VisitedSet *) {
     return this->value;
 }
@@ -488,29 +492,29 @@ void Error_Object::createStackTrace(RuntimeContext &ctx) {
 }
 
 
-// ########################
-// ##     FuncObject     ##
-// ########################
+// ###########################
+// ##     OldFuncObject     ##
+// ###########################
 
-FuncObject::~FuncObject() {
+OldFuncObject::~OldFuncObject() {
     delete this->funcNode;
 }
 
-void FuncObject::setType(DSType *type) {
+void OldFuncObject::setType(DSType *type) {
     if(this->type == nullptr) {
         assert(dynamic_cast<FunctionType *>(type) != nullptr);
         this->type = type;
     }
 }
 
-std::string FuncObject::toString(RuntimeContext &, VisitedSet *) {
+std::string OldFuncObject::toString(RuntimeContext &, VisitedSet *) {
     std::string str("function(");
     str += this->funcNode->getName();
     str += ")";
     return str;
 }
 
-bool FuncObject::invoke(RuntimeContext &ctx) {  //TODO: default param
+bool OldFuncObject::invoke(RuntimeContext &ctx) {  //TODO: default param
     ctx.pushFuncContext(this->funcNode);
 
     EvalStatus s = this->funcNode->getBlockNode()->eval(ctx);
@@ -524,6 +528,35 @@ bool FuncObject::invoke(RuntimeContext &ctx) {  //TODO: default param
         fatal("illegal eval status: %u\n", static_cast<unsigned int>(s));
         return false;
     }
+}
+
+
+unsigned int getSourcePos(const SourcePosEntry *const entries, unsigned int index) {  //FIXME binary search
+    unsigned int i = 0;
+    for(; entries[i].address > 0; i++) {
+        if(index < entries[i].address) {
+            break;
+        }
+    }
+    return entries[i > 0 ? i - 1 : 0].pos;
+}
+
+// ########################
+// ##     FuncObject     ##
+// ########################
+
+void FuncObject::setType(DSType *type) {
+    if(this->type == nullptr) {
+        assert(dynamic_cast<FunctionType *>(type) != nullptr);
+        this->type = type;
+    }
+}
+
+std::string FuncObject::toString(RuntimeContext &, VisitedSet *) {
+    std::string str("function(");
+    str += this->callable.getName();
+    str += ")";
+    return str;
 }
 
 // #########################

@@ -25,6 +25,8 @@
 #include "type.h"
 #include <config.h>
 #include "../misc/demangle.hpp"
+#include "../misc/buffer.hpp"
+#include "../parser/lexer.h"
 
 namespace ydsh {
 namespace ast {
@@ -345,6 +347,9 @@ private:
     std::string value;
 
 public:
+    explicit String_Object(DSType &type) :
+            DSObject(type), value() { }
+
     String_Object(DSType &type, std::string &&value) :
             DSObject(type), value(std::move(value)) { }
 
@@ -367,6 +372,11 @@ public:
     bool empty() const {
         return this->size() == 0;
     }
+
+    /**
+     * for string expression
+     */
+    void append(DSValue &&obj);
 
     std::string toString(RuntimeContext &ctx, VisitedSet *visitedSet) override;
 
@@ -583,15 +593,15 @@ struct DummyObject : public DSObject {
 /*
  * for user defined function
  */
-class FuncObject : public DSObject {
+class OldFuncObject : public DSObject {
 private:
     ast::FunctionNode *funcNode;
 
 public:
-    explicit FuncObject(ast::FunctionNode *funcNode) :
+    explicit OldFuncObject(ast::FunctionNode *funcNode) :
             DSObject(nullptr), funcNode(funcNode) { }
 
-    ~FuncObject();
+    ~OldFuncObject();
 
     ast::FunctionNode *getFuncNode() {
         return this->funcNode;
@@ -616,6 +626,143 @@ public:
      */
     bool invoke(RuntimeContext &ctx);
 };
+
+enum class CallableKind : unsigned char {
+    TOPLEVEL,
+    FUNCTION,
+};
+
+struct SourcePosEntry {
+    unsigned int address;
+
+    /**
+     * indicating source position.
+     */
+    unsigned int pos;
+};
+
+/**
+ * entries must not be null
+ */
+unsigned int getSourcePos(const SourcePosEntry *const entries, unsigned int index);
+
+class Callable {
+private:
+    parser::SourceInfoPtr srcInfo;
+
+    /**
+     * if CallableKind is toplevel, it is null
+     */
+    char *name;
+
+    /**
+     * +----------------------+-------------------------------+
+     * | CallableKind (1byte) | local variable number (2byte) |
+     * +----------------------+-------------------------------+
+     *
+     * if indicate toplevel
+     *
+     * +----------------------+-------------------------------+--------------------------------+
+     * | CallableKind (1byte) | local variable number (2byte) | global variable number (2byte) |
+     * +----------------------+-------------------------------+--------------------------------+
+     *
+     */
+    unsigned char *code;
+
+    DSValue *constPool;
+
+    /**
+     * last element is sentinel ({0, 0})
+     */
+    SourcePosEntry *sourcePosEntries;
+
+
+public:
+    NON_COPYABLE(Callable);
+
+    Callable(const parser::SourceInfoPtr &srcInfo, const char *name, unsigned char *code,
+             DSValue *constPool, SourcePosEntry *sourcePosEntries) :
+            srcInfo(srcInfo), name(name == nullptr ? nullptr : strdup(name)), code(code),
+            constPool(constPool), sourcePosEntries(sourcePosEntries) { }
+
+    Callable(Callable &&c) :
+            srcInfo(c.srcInfo), name(c.name), code(c.code),
+            constPool(c.constPool), sourcePosEntries(c.sourcePosEntries) {
+        c.name = nullptr;
+        c.code = nullptr;
+        c.constPool = nullptr;
+        c.sourcePosEntries = nullptr;
+    }
+
+    ~Callable() {
+        free(this->name);
+        free(this->code);
+        delete[] this->constPool;
+        delete[] this->sourcePosEntries;
+    }
+
+    Callable &operator=(Callable &&c) noexcept {
+        Callable tmp(std::move(c));
+        std::swap(*this, tmp);
+        return *this;
+    }
+
+    const parser::SourceInfoPtr &getSrcInfo() const {
+        return this->srcInfo;
+    }
+
+    /**
+     * may be null.
+     */
+    const char *getName() const {
+        return this->name;
+    }
+
+    const unsigned char *getCode() const {
+        return this->code;
+    }
+
+    CallableKind getCallableKind() const {
+        return static_cast<CallableKind>(this->code[0]);
+    }
+
+    unsigned short getLocalVarNum() const {
+        return read16(this->code, 1);
+    }
+
+    unsigned short getGlobalVarNum() const {
+        assert(this->getCallableKind() == CallableKind::TOPLEVEL);
+        return read16(this->code, 3);
+    }
+
+    const DSValue *getConstPool() const {
+        return this->constPool;
+    }
+
+    const SourcePosEntry *getSourcePosEntries() const {
+        return this->sourcePosEntries;
+    }
+};
+
+class FuncObject : public DSObject {
+private:
+    Callable callable;
+
+public:
+    explicit FuncObject(Callable &&callable) :
+            DSObject(nullptr), callable(std::move(callable)) { }
+
+    ~FuncObject() = default;
+
+    const Callable &getCallable() const {
+        return this->callable;
+    }
+
+    void setType(DSType *type) override;
+
+    std::string toString(RuntimeContext &ctx, VisitedSet *visitedSet) override;
+};
+
 
 struct ProxyObject : public DSObject {
     explicit ProxyObject(DSType &type) : DSObject(type) { }
