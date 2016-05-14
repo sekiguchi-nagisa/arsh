@@ -220,6 +220,23 @@ struct ByteCodeWriter {
     }
 };
 
+class CatchBuilder {
+private:
+    IntrusivePtr<Label> begin;  // inclusive
+    IntrusivePtr<Label> end;    // exclusive
+    DSType *type;
+    unsigned int address;   // start index of catch block.
+
+public:
+    CatchBuilder() : begin(nullptr), end(nullptr), type(nullptr), address(0) { }
+    CatchBuilder(const IntrusivePtr<Label> &begin, const IntrusivePtr<Label> &end, DSType *type, unsigned int address) :
+            begin(begin), end(end), type(type), address(address) {}
+
+    ~CatchBuilder() = default;
+
+    ExceptionEntry toEntry() const;
+};
+
 class ByteCodeGenerator : protected NodeVisitor {
 private:
     TypePool &pool;
@@ -232,6 +249,7 @@ private:
     struct CallableBuilder : public ByteCodeWriter<true> {
         std::vector<DSValue> constBuffer;
         std::vector<SourcePosEntry> sourcePosEntries;
+        std::vector<CatchBuilder> catchBuilders;
 
         /**
          * first is break label, second is continue label
@@ -281,6 +299,11 @@ private:
      * for line number
      */
     void writeSourcePos(unsigned int pos);
+
+    /**
+     * begin and end have already been marked.
+     */
+    void catchException(const IntrusivePtr<Label> &begin, const IntrusivePtr<Label> &end, DSType *type);
 
     void initCallable(CallableKind kind, unsigned short localVarNum);
     void initToplevelCallable(const RootNode &node);

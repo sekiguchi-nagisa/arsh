@@ -62,7 +62,8 @@ namespace core {
     OP(RETURN, 0) \
     OP(RETURN_V, 0) \
     OP(BRANCH, 2) \
-    OP(GOTO, 4)
+    OP(GOTO, 4) \
+    OP(THROW, 0)
 
 enum class OpCode : unsigned char {
 #define GEN_OPCODE(CODE, N) CODE,

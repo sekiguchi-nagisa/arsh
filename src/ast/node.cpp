@@ -2012,7 +2012,7 @@ void ThrowNode::accept(NodeVisitor &visitor) {
 
 EvalStatus ThrowNode::eval(RuntimeContext &ctx) {
     EVAL(ctx, this->exprNode);
-    ctx.throwError();
+    ctx.throwException();
     return EvalStatus::THROW;
 }
 

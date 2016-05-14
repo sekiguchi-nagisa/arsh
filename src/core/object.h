@@ -646,6 +646,17 @@ struct SourcePosEntry {
  */
 unsigned int getSourcePos(const SourcePosEntry *const entries, unsigned int index);
 
+struct ExceptionEntry {
+    /**
+     * if null, indicate sentinel
+     */
+    DSType *type;
+
+    unsigned int begin; // inclusive
+    unsigned int end;   // exclusive
+    unsigned int dest;  // catch block address
+};
+
 class Callable {
 private:
     parser::SourceInfoPtr srcInfo;
@@ -676,22 +687,27 @@ private:
      */
     SourcePosEntry *sourcePosEntries;
 
+    /**
+     * lats element is sentinel.
+     */
+    ExceptionEntry *exceptionEntries;
 
 public:
     NON_COPYABLE(Callable);
 
     Callable(const parser::SourceInfoPtr &srcInfo, const char *name, unsigned char *code,
-             DSValue *constPool, SourcePosEntry *sourcePosEntries) :
+             DSValue *constPool, SourcePosEntry *sourcePosEntries, ExceptionEntry *exceptionEntries) :
             srcInfo(srcInfo), name(name == nullptr ? nullptr : strdup(name)), code(code),
-            constPool(constPool), sourcePosEntries(sourcePosEntries) { }
+            constPool(constPool), sourcePosEntries(sourcePosEntries), exceptionEntries(exceptionEntries) { }
 
     Callable(Callable &&c) :
             srcInfo(c.srcInfo), name(c.name), code(c.code),
-            constPool(c.constPool), sourcePosEntries(c.sourcePosEntries) {
+            constPool(c.constPool), sourcePosEntries(c.sourcePosEntries), exceptionEntries(c.exceptionEntries) {
         c.name = nullptr;
         c.code = nullptr;
         c.constPool = nullptr;
         c.sourcePosEntries = nullptr;
+        c.exceptionEntries = nullptr;
     }
 
     ~Callable() {
@@ -699,6 +715,7 @@ public:
         free(this->code);
         delete[] this->constPool;
         delete[] this->sourcePosEntries;
+        delete[] this->exceptionEntries;
     }
 
     Callable &operator=(Callable &&c) noexcept {
@@ -741,6 +758,10 @@ public:
 
     const SourcePosEntry *getSourcePosEntries() const {
         return this->sourcePosEntries;
+    }
+
+    const ExceptionEntry *getExceptionEntries() const {
+        return this->exceptionEntries;
     }
 };
 

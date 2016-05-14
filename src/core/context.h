@@ -384,9 +384,14 @@ public:
     void reserveLocalVar(unsigned int size);
 
     /**
+     * create and push error.
+     */
+    void pushNewError(DSType &errorType, std::string &&message);
+
+    /**
      * pop stack top and store to thrownObject.
      */
-    void throwError();
+    void throwException();
 
     /**
      * for internal error reporting.
@@ -412,6 +417,10 @@ public:
      */
     void loadThrownObject() {
         this->push(std::move(this->thrownObject));
+    }
+
+    void storeThrowObject() {
+        this->thrownObject = this->pop();
     }
 
     void expandLocalStack(unsigned int needSize);
@@ -590,7 +599,6 @@ public:
      */
     void reportError();
 
-
     // some runtime api
     void fillInStackTrace(std::vector<StackTraceElement> &stackTrace);
 
@@ -747,6 +755,9 @@ pid_t xfork();
 
 // for native method exception (ex. StackOverflow)
 struct NativeMethodError {};
+
+// for exception handling
+struct DSExcepton {};
 
 } // namespace core
 } // namespace ydsh

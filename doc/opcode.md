@@ -41,3 +41,4 @@
 | RETURN_V      | 0x24       |                                | value -> [empty]                             | return value from callable                         |
 | BRANCH        | 0x25       | 2: offset1 offset2             | value ->                                     | if value is false, branch to instruction at offset |
 | GOTO          | 0x26       | 4: byte1 ~ byte4               | [no change]                                  | go to instruction at a specified index             |
+| THROW         | 0x27       |                                | value -> [empty]                             | throw exception                                    |

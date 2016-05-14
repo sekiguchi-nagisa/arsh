@@ -32,8 +32,7 @@ namespace core {
 #define GET_CODE(ctx) (CALLABLE(ctx)->getCode())
 #define CONST_POOL(ctx) (CALLABLE(ctx)->getConstPool())
 
-static void evalImpl(RuntimeContext &ctx) {
-    START:
+static void skipHeader(RuntimeContext &ctx) {
     ctx.pc() = 0;
     if(CALLABLE(ctx)->getCallableKind() == CallableKind::TOPLEVEL) {
         unsigned short varNum = CALLABLE(ctx)->getLocalVarNum();
@@ -49,7 +48,9 @@ static void evalImpl(RuntimeContext &ctx) {
         ++ctx.pc(); // skip callable kind
         ++ctx.pc(); // skip local var num
     }
+}
 
+static void mainLoop(RuntimeContext &ctx) {
     while(true) {
         vmswitch(GET_CODE(ctx)[++ctx.pc()]) {
         vmcase(NOP) {
@@ -238,7 +239,8 @@ static void evalImpl(RuntimeContext &ctx) {
             unsigned short paramSize = read16(GET_CODE(ctx), ctx.pc() + 1);
             ctx.pc() += 2;
             ctx.applyFuncObject(paramSize);
-            goto START;
+            skipHeader(ctx);
+            break;
         }
         vmcase(RETURN) {
             ctx.restoreStackState();
@@ -266,16 +268,65 @@ static void evalImpl(RuntimeContext &ctx) {
             ctx.pc() = index - 1;
             break;
         }
+        vmcase(THROW) {
+            ctx.throwException();
+        }
         }
     }
 }
 
-void vmEval(RuntimeContext &ctx, Callable &callable) {
+/**
+ * if found exception handler, return true.
+ * otherwise return false.
+ */
+static bool handleException(RuntimeContext &ctx) {
+    while(!ctx.callableStack().empty()) {
+        if(ctx.pc() == 0) { // from native method
+            ctx.restoreStackState();
+            continue;
+        }
+
+        // search exception entry
+        const unsigned int occurredPC = ctx.pc();
+        const DSType *occurredType = ctx.getThrownObject()->getType();
+
+        for(unsigned int i = 0; CALLABLE(ctx)->getExceptionEntries()[i].type != nullptr; i++) {
+            const ExceptionEntry &entry = CALLABLE(ctx)->getExceptionEntries()[i];
+            if(occurredPC >= entry.begin && occurredPC < entry.end
+               && entry.type->isSameOrBaseTypeOf(*occurredType)) {
+                ctx.pc() = entry.dest - 1;
+                ctx.loadThrownObject();
+                return true;
+            }
+        }
+
+        // unwind stack
+        ctx.callableStack().pop_back();
+        if(ctx.callableStack().size() > 1) {
+            ctx.restoreStackState();
+        }
+    }
+    return false;
+}
+
+bool vmEval(RuntimeContext &ctx, Callable &callable) {
     ctx.resetState();
 
     ctx.callableStack().push_back(&callable);
-    evalImpl(ctx);
-    ctx.callableStack().clear();
+    skipHeader(ctx);
+
+    while(true) {
+        try {
+            mainLoop(ctx);
+            ctx.callableStack().clear();
+            return true;
+        } catch(const DSExcepton &) {
+            if(handleException(ctx)) {
+                continue;
+            }
+            return false;
+        }
+    }
 }
 
 } // namespace core

@@ -278,8 +278,21 @@ int DSContext::eval(Lexer &lexer) {
         ByteCodeGenerator codegen(this->ctx.getPool(),
                                   hasFlag(this->option, DS_OPTION_TOPLEVEL), hasFlag(this->option, DS_OPTION_ASSERT));
         Callable c = codegen.generateToplevel(rootNode);
-        vmEval(this->ctx, c);
-        return 0;   // currently always 0.
+        if(!vmEval(this->ctx, c)) {
+            unsigned int errorLineNum = 0;
+            DSValue thrownObj = this->ctx.getThrownObject();
+            if(dynamic_cast<Error_Object *>(thrownObj.get()) != nullptr) {
+                Error_Object *obj = typeAs<Error_Object>(thrownObj);
+                errorLineNum = getOccuredLineNum(obj->getStackTrace());
+            }
+//            this->ctx.reportError();
+            std::cerr << "[runtime error]" << std::endl << "FIXME" << std::endl;
+            this->checker.recover(false);
+            this->updateStatus(DS_STATUS_RUNTIME_ERROR, errorLineNum,
+                               this->ctx.getPool().getTypeName(*thrownObj->getType()).c_str());
+            return 1;
+        }
+        return this->getExitStatus();
     }
 
     EvalStatus s = rootNode.eval(this->ctx);

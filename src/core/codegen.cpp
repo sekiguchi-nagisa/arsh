@@ -21,6 +21,28 @@
 namespace ydsh {
 namespace core {
 
+// ##########################
+// ##     CatchBuilder     ##
+// ##########################
+
+ExceptionEntry CatchBuilder::toEntry() const {
+    assert(this->begin);
+    assert(this->end);
+
+    assert(this->begin->getIndex() > 0);
+    assert(this->end->getIndex() > 0);
+    assert(this->address > 0);
+    assert(this->type != nullptr);
+
+    return ExceptionEntry {
+            .type = this->type,
+            .begin = this->begin->getIndex(),
+            .end = this->end->getIndex(),
+            .dest = this->address,
+    };
+}
+
+
 // ###############################
 // ##     ByteCodeGenerator     ##
 // ###############################
@@ -131,6 +153,12 @@ void ByteCodeGenerator::writeSourcePos(unsigned int pos) {
         this->curBuilder().sourcePosEntries.push_back({index, pos});
     }
 }
+
+void ByteCodeGenerator::catchException(const IntrusivePtr<Label> &begin, const IntrusivePtr<Label> &end, DSType *type) {
+    const unsigned int index = this->curBuilder().codeBuffer.size();
+    this->curBuilder().catchBuilders.push_back(CatchBuilder(begin, end, type, index));
+}
+
 
 // visitor api
 void ByteCodeGenerator::visit(Node &node) {
@@ -585,16 +613,37 @@ void ByteCodeGenerator::visitReturnNode(ReturnNode &node) {
     }
 }
 
-void ByteCodeGenerator::visitThrowNode(ThrowNode &) {
-    fatal("unsupported\n"); //TODO
+void ByteCodeGenerator::visitThrowNode(ThrowNode &node) {
+    this->visit(*node.getExprNode());
+    this->write0byteIns(OpCode::THROW);
 }
 
-void ByteCodeGenerator::visitCatchNode(CatchNode &) {
-    fatal("unsupported\n"); //TODO
+void ByteCodeGenerator::visitCatchNode(CatchNode &node) {
+    this->write2byteIns(OpCode::STORE_LOCAL, node.getVarIndex());
+    this->visit(*node.getBlockNode());
 }
 
-void ByteCodeGenerator::visitTryNode(TryNode &) {
-    fatal("unsupported\n"); //TODO
+void ByteCodeGenerator::visitTryNode(TryNode &node) {
+    if(node.getFinallyNode() != nullptr) {
+        fatal("unimplemented finally\n");
+    }
+
+    auto beginLabel = makeIntrusive<Label>();
+    auto endLabel = makeIntrusive<Label>();
+    auto mergeLabel = makeIntrusive<Label>();
+
+    this->markLabel(beginLabel);
+    this->visit(*node.getBlockNode());
+    this->markLabel(endLabel);
+    this->writeJumpIns(mergeLabel);
+
+    for(auto &c : node.getCatchNodes()) {
+        this->catchException(beginLabel, endLabel, &c->getTypeNode()->getType());
+        this->visit(*c);
+        this->writeJumpIns(mergeLabel);
+    }
+
+    this->markLabel(mergeLabel);
 }
 
 void ByteCodeGenerator::visitVarDeclNode(VarDeclNode &node) {
@@ -726,7 +775,7 @@ Callable ByteCodeGenerator::finalizeCallable(const CallableNode &node) {
         constPool[i] = std::move(this->curBuilder().constBuffer[i]);
     }
 
-    // create line num entry
+    // create source pos entry
     const unsigned int lineNumEntrySize = this->curBuilder().sourcePosEntries.size();
     SourcePosEntry *entries = new SourcePosEntry[lineNumEntrySize + 1];
     for(unsigned int i = 0; i < lineNumEntrySize; i++) {
@@ -734,12 +783,25 @@ Callable ByteCodeGenerator::finalizeCallable(const CallableNode &node) {
     }
     entries[lineNumEntrySize] = {0, 0};  // sentinel
 
+    // create exception entry
+    const unsigned int exeptEntrySize = this->curBuilder().catchBuilders.size();
+    ExceptionEntry *except = new ExceptionEntry[exeptEntrySize + 1];
+    for(unsigned int i = 0; i < exeptEntrySize; i++) {
+        except[i] = this->curBuilder().catchBuilders[i].toEntry();
+    }
+    except[exeptEntrySize] = {
+            .type = nullptr,
+            .begin = 0,
+            .end = 0,
+            .dest = 0,
+    };  // sentinel
+
     // remove current builder
     delete this->builders.back();
     this->builders.pop_back();
 
     return Callable(node.getSourceInfoPtr(), node.getName().empty() ? nullptr : node.getName().c_str(),
-                    code, constPool, entries);
+                    code, constPool, entries, except);
 }
 
 Callable ByteCodeGenerator::generateToplevel(RootNode &node) {

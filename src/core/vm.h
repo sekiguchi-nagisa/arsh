@@ -25,7 +25,7 @@ namespace core {
 /**
  * entry point
  */
-void vmEval(RuntimeContext &ctx, Callable &callable);
+bool vmEval(RuntimeContext &ctx, Callable &callable);
 
 
 } // namespace core

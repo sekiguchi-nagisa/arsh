@@ -322,9 +322,18 @@ void RuntimeContext::reserveLocalVar(unsigned int size) {
     this->stackBottomIndex = size;
 }
 
-void RuntimeContext::throwError() {
+void RuntimeContext::pushNewError(DSType &errorType, std::string &&message) {
+    this->push(Error_Object::newError(*this, errorType, DSValue::create<String_Object>(
+            this->pool.getStringType(), std::move(message))));
+}
+
+void RuntimeContext::throwException() {
     this->thrownObject = this->pop();
-    this->unwindOperandStack();
+    if(this->useVM) {
+        throw DSExcepton();
+    } else {
+        this->unwindOperandStack();
+    }
 }
 
 void RuntimeContext::throwError(DSType &errorType, const char *message) {
@@ -332,9 +341,8 @@ void RuntimeContext::throwError(DSType &errorType, const char *message) {
 }
 
 void RuntimeContext::throwError(DSType &errorType, std::string &&message) {
-    this->push(Error_Object::newError(*this, errorType, DSValue::create<String_Object>(
-            this->pool.getStringType(), std::move(message))));
-    this->throwError();
+    this->pushNewError(errorType, std::move(message));
+    this->throwException();
 }
 
 void RuntimeContext::throwSystemError(int errorNum, std::string &&message) {
@@ -532,15 +540,9 @@ bool RuntimeContext::callMethod(unsigned short index, unsigned short paramSize) 
 
     this->saveAndSetStackState(actualParamSize, actualParamSize, actualParamSize);
 
-    bool status;
-    try {
-        status = this->localStack[recvIndex]->getType()->getMethodRef(index)->invoke(*this);
-    } catch(const NativeMethodError &e) {
-        status = false;
-    }
-
+    bool status = this->localStack[recvIndex]->getType()->getMethodRef(index)->invoke(*this);
     if(!status) {
-        fatal("exception raising is not implemented\n");
+        this->throwException();
     }
 
     bool hasRet = this->stackTopIndex > this->stackBottomIndex;
@@ -779,7 +781,8 @@ EvalStatus RuntimeContext::checkAssertion(unsigned int startPos) {
 
 void RuntimeContext::checkAssertion() {
     if(!typeAs<Boolean_Object>(this->pop())->getValue()) {
-        this->throwError(this->pool.getAssertFail(), "");
+        this->pushNewError(this->pool.getAssertFail(), "");
+        this->storeThrowObject();
 
         // invoke termination hook
         if(this->terminationHook != nullptr) {
@@ -973,7 +976,12 @@ void RuntimeContext::updateExitStatus(unsigned int status) {
 void RuntimeContext::exitShell(unsigned int status) {
     std::string str("terminated by exit ");
     str += std::to_string(status);
-    this->throwError(this->pool.getShellExit(), std::move(str));
+    if(this->useVM) {
+        this->pushNewError(this->pool.getShellExit(), std::move(str));
+        this->storeThrowObject();
+    } else {
+        this->throwError(this->pool.getShellExit(), std::move(str));
+    }
 
     // invoke termination hook
     if(this->terminationHook != nullptr) {
