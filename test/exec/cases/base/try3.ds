@@ -1,0 +1,28 @@
+# with function call
+
+function f($i : Int) {
+    var a = [1, 2]
+    throw $a[$i] / $i
+}
+
+function raise($f : Func<Void, [Int]>, $i : Int) {
+    try {
+        $f($i)
+    } catch $e : Int {
+        throw 'I'
+    } catch $e : ArithmeticError {
+        throw 'A'
+    } catch( $e : OutOfRangeError) {
+        throw 'O'
+    }
+}
+
+var c = 0
+for $i in ['A', 'I', 'O'] {
+    try {
+        $raise($f, $c)
+    } catch $e : String {
+        assert $e == $i
+    }
+    $c = $c + 1
+}

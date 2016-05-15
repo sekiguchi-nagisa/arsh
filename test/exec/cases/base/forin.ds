@@ -20,7 +20,7 @@ $i = 0;
 for $e in $b {
     assert($e is Tuple<String, Int>)
     assert($b[$e._0] == $e._1)
-    $i++
+    $i = $i + 1
 }
 assert($i == 4)
 
@@ -29,6 +29,6 @@ var r = ['あ', '0', '漢', '　']
 $i = 0
 for $a in "あ0漢　" {
     assert($a == $r[$i])
-    $i++
+    $i = $i + 1
 }
 assert($i == $r.size())

@@ -2,8 +2,8 @@ var a = 0
 let size = 5
 var i = 0
 while($i < $size) {
-	$a += $i
-	$i++
+	$a = $a + $i
+	$i = $i + 1
 }
 assert $a == 10
 
@@ -14,10 +14,10 @@ while($i < $size) {
 	$a = $i * 10 + $a
 	var j = 0
 	while $j < $size {
-		$a -= $j
-		$j++
+		$a = $a - $j
+		$j = $j + 1
 	}
-	$i++
+	$i = $i + 1
 }
 
 assert($a == 50)

@@ -1,16 +1,16 @@
 var i = 12
 var sum = 0
-for(var i = 0; $i < 5; $i++) {
-	$sum += $i
+for(var i = 0; $i < 5; $i = $i + 1) {
+	$sum = $sum + $i
 }
 assert($sum == 10)
 
 $sum = 0
 
-for(var i = 0; $i < 5; $i++) {
-	$sum += $i * 10
-	for(var j = 0; $j < 5; $j++) {
-		$sum  -= $j
+for(var i = 0; $i < 5; $i = $i + 1) {
+	$sum = $sum + $i * 10
+	for(var j = 0; $j < 5; $j = $j + 1) {
+		$sum  = $sum - $j
 	}
 }
 assert($sum == 50)
@@ -21,5 +21,5 @@ for(;;) {
 	if($c == 2) {
 		break
 	}
-	$c++
+	$c = $c + 1
 }

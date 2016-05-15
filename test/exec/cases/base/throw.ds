@@ -18,6 +18,8 @@ try {
     $true ? throw 23 : 54
 } catch($e : Error) {
     assert($false)
+} catch($e : String) {
+    assert($false)
 } catch($e) {
     assert($e is Int32)
     assert($e as Int == 23)

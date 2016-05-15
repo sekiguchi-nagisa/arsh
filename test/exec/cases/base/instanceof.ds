@@ -10,7 +10,7 @@ assert($c is Float)
 # func type
 function f($a : Int, $b : Error) {
 	var c = $a + 12
-	log $a
+	1/ 0
 	throw $b
 }
 

@@ -1,0 +1,50 @@
+# basic try-catch
+
+var c = 0
+try {
+    1 / 0
+    assert($false)
+} catch($e : OutOfRangeError) {
+    assert($false)
+} catch($e
+     :
+       ArithmeticError) {
+    assert($true)
+    $c = $c + 1
+} catch($e : Error) {
+    assert($false)
+}
+
+assert($c == 1)
+
+try {
+    [12][3]
+} catch $e : KeyNotFoundError {
+    assert($false)
+} catch $e {
+    assert($true)
+    $c = $c + 1
+}
+
+assert($c == 2)
+
+# nested try-catch
+try {
+    $c = 0
+    try {
+        1 / 0
+    } catch($e : OutOfRangeError) {
+        assert($false)
+    } catch($e : KeyNotFoundError) {
+        assert($false)
+    }
+} catch $e : Boolean {
+    assert $false
+} catch $e : ArithmeticError {
+    assert $true
+    $c = $c + 1
+} catch $e {
+    assert $false
+}
+
+assert $c == 1
