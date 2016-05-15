@@ -534,7 +534,7 @@ EvalStatus RuntimeContext::callMethod(unsigned int startPos, const std::string &
  * +-----------+------------------+   +--------+
  *             | offset           |   |        |
  */
-bool RuntimeContext::callMethod(unsigned short index, unsigned short paramSize) {
+void RuntimeContext::callMethod(unsigned short index, unsigned short paramSize) {
     const unsigned int actualParamSize = paramSize + 1; // include receiver
     const unsigned int recvIndex = this->stackTopIndex - paramSize;
 
@@ -556,8 +556,6 @@ bool RuntimeContext::callMethod(unsigned short index, unsigned short paramSize) 
     if(hasRet) {
         this->push(std::move(returnValue));
     }
-
-    return status;
 }
 
 void RuntimeContext::newDSObject(DSType *type) {
@@ -640,6 +638,26 @@ void RuntimeContext::reportError() {
         } else {
             std::cerr << typeAs<String_Object>(this->pop())->getValue() << std::endl;
         }
+    }
+}
+
+void RuntimeContext::handleUncaughtException() {
+    std::cerr << "[runtime error]" << std::endl;
+    unsigned int index;
+    const bool bt = this->pool.getErrorType().isSameOrBaseTypeOf(*this->thrownObject->getType());
+    if(bt) {
+        index = this->pool.getErrorType().lookupMethodHandle(this->pool, "backtrace")->getMethodIndex();
+    } else {
+        index = this->pool.getAnyType().lookupMethodHandle(this->pool, OP_STR)->getMethodIndex();
+    }
+    this->loadThrownObject();
+    try {
+        this->callMethod(index, 0);
+        if(!bt) {
+            std::cerr << typeAs<String_Object>(this->pop())->getValue() << std::endl;
+        }
+    } catch(const DSExcepton &) {
+        std::cerr << "cannot obtain string representation" << std::endl;
     }
 }
 

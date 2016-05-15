@@ -563,7 +563,7 @@ public:
 
     EvalStatus callMethod(unsigned int startPos, const std::string &methodName, MethodHandle *handle);
 
-    bool callMethod(unsigned short index, unsigned short paramSize);
+    void callMethod(unsigned short index, unsigned short paramSize);
 
     /**
      * allocate new DSObject on stack top.
@@ -585,6 +585,8 @@ public:
      * after error reporting, clear thrown object
      */
     void reportError();
+
+    void handleUncaughtException();
 
     // some runtime api
     void fillInStackTrace(std::vector<StackTraceElement> &stackTrace);

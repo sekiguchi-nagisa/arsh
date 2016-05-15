@@ -284,8 +284,7 @@ int DSContext::eval(Lexer &lexer) {
                 Error_Object *obj = typeAs<Error_Object>(thrownObj);
                 errorLineNum = getOccuredLineNum(obj->getStackTrace());
             }
-//            this->ctx.reportError();
-            std::cerr << "[runtime error]" << std::endl << "FIXME" << std::endl;
+            this->ctx.handleUncaughtException();
             this->checker.recover(false);
             this->updateStatus(DS_STATUS_RUNTIME_ERROR, errorLineNum,
                                this->ctx.getPool().getTypeName(*thrownObj->getType()).c_str());
