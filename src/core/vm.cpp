@@ -301,10 +301,10 @@ static bool handleException(RuntimeContext &ctx) {
         }
 
         // unwind stack
-        ctx.callableStack().pop_back();
         if(ctx.callableStack().size() > 1) {
             ctx.restoreStackState();
         }
+        ctx.callableStack().pop_back();
     }
     return false;
 }
