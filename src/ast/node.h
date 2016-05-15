@@ -797,6 +797,26 @@ public:
     EvalStatus eval(RuntimeContext &ctx) override;
 };
 
+class PrintNode : public Node {
+private:
+    Node *exprNode;
+
+public:
+    PrintNode(Node *exprNode);
+
+    ~PrintNode();
+
+    Node *getExprNode() {
+        return this->exprNode;
+    }
+
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+    EvalStatus eval(RuntimeContext &ctx) override;
+
+    static PrintNode *newTypedPrintNode(TypePool &pool, Node *exprNode);
+};
+
 /**
  * for function object apply
  */
@@ -2297,6 +2317,7 @@ struct NodeVisitor {
     virtual void visitVarNode(VarNode &node) = 0;
     virtual void visitAccessNode(AccessNode &node) = 0;
     virtual void visitCastNode(CastNode &node) = 0;
+    virtual void visitPrintNode(PrintNode &node) = 0;
     virtual void visitInstanceOfNode(InstanceOfNode &node) = 0;
     virtual void visitUnaryOpNode(UnaryOpNode &node) = 0;
     virtual void visitBinaryOpNode(BinaryOpNode &node) = 0;
@@ -2361,6 +2382,7 @@ struct BaseVisitor : public NodeVisitor {
     virtual void visitVarNode(VarNode &node) override { this->visitDefault(node); }
     virtual void visitAccessNode(AccessNode &node) override { this->visitDefault(node); }
     virtual void visitCastNode(CastNode &node) override { this->visitDefault(node); }
+    virtual void visitPrintNode(PrintNode &node) override { this->visitDefault(node); }
     virtual void visitInstanceOfNode(InstanceOfNode &node) override { this->visitDefault(node); }
     virtual void visitUnaryOpNode(UnaryOpNode &node) override { this->visitDefault(node); }
     virtual void visitBinaryOpNode(BinaryOpNode &node) override { this->visitDefault(node); }

@@ -915,6 +915,42 @@ EvalStatus InstanceOfNode::eval(RuntimeContext &ctx) {
 }
 
 // #######################
+// ##     PrintNode     ##
+// #######################
+
+PrintNode::PrintNode(Node *exprNode) : Node(exprNode->getToken()), exprNode(exprNode) { }
+
+PrintNode::~PrintNode() {
+    delete this->exprNode;
+}
+
+void PrintNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(exprNode);
+}
+
+void PrintNode::accept(NodeVisitor &visitor) {
+    visitor.visitPrintNode(*this);
+}
+
+EvalStatus PrintNode::eval(RuntimeContext &ctx) {
+    EVAL(ctx, this->exprNode);
+    auto s = ctx.toString(this->exprNode->getStartPos());
+    if(s != EvalStatus::SUCCESS) {
+        return s;
+    }
+    ctx.printStackTop(&this->exprNode->getType());
+    return EvalStatus::SUCCESS;
+}
+
+PrintNode *PrintNode::newTypedPrintNode(TypePool &pool, Node *exprNode) {
+    assert(!exprNode->isUntyped());
+    PrintNode *node = new PrintNode(exprNode);
+    node->setType(pool.getVoidType());
+    return node;
+}
+
+
+// #######################
 // ##     ApplyNode     ##
 // #######################
 
@@ -2500,11 +2536,6 @@ EvalStatus RootNode::eval(RuntimeContext &ctx) {
         EvalStatus status = node->eval(ctx);
         switch(status) {
         case EvalStatus::SUCCESS: {
-            if(ctx.isToplevelPrinting()) {
-                ctx.printStackTop(&node->getType());
-            } else if(!node->getType().isVoidType()) {
-                ctx.popNoReturn();
-            }
             break;
         }
         case EvalStatus::THROW: {

@@ -241,7 +241,6 @@ class ByteCodeGenerator : protected NodeVisitor {
 private:
     TypePool &pool;
 
-    bool toplevelPrinting;
     bool assertion;
 
     MethodHandle *handle_STR;
@@ -260,8 +259,8 @@ private:
     std::vector<CallableBuilder *> builders;
 
 public:
-    ByteCodeGenerator(TypePool &pool, bool toplevelPrinting, bool assertion) :
-            pool(pool), toplevelPrinting(toplevelPrinting), assertion(assertion),
+    ByteCodeGenerator(TypePool &pool, bool assertion) :
+            pool(pool), assertion(assertion),
             handle_STR(nullptr), builders() { }
 
     ~ByteCodeGenerator();
@@ -330,6 +329,7 @@ private:
     void visitAccessNode(AccessNode &node) override;
     void visitCastNode(CastNode &node) override;
     void visitInstanceOfNode(InstanceOfNode &node) override;
+    void visitPrintNode(PrintNode &node) override;
     void visitUnaryOpNode(UnaryOpNode &node) override;
     void visitBinaryOpNode(BinaryOpNode &node) override;
     void visitApplyNode(ApplyNode &node) override;

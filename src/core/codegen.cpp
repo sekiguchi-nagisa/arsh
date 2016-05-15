@@ -340,6 +340,12 @@ void ByteCodeGenerator::visitInstanceOfNode(InstanceOfNode &node) {
     }
 }
 
+void ByteCodeGenerator::visitPrintNode(PrintNode &node) {
+    this->visit(*node.getExprNode());
+    this->writeToString();
+    this->writeTypeIns(OpCode::PRINT, node.getExprNode()->getType());
+}
+
 void ByteCodeGenerator::visitUnaryOpNode(UnaryOpNode &node) {
     this->visit(*node.getApplyNode());
 }
@@ -734,14 +740,6 @@ void ByteCodeGenerator::visitDummyNode(DummyNode &) { } // do nothing
 void ByteCodeGenerator::visitRootNode(RootNode &rootNode) {
     for(auto &node : rootNode.refNodeList()) {
         this->visit(*node);
-
-        if(!node->getType().isVoidType()) {
-            if(this->toplevelPrinting) {
-                this->writeTypeIns(OpCode::PRINT, node->getType());
-            } else {
-                this->write0byteIns(OpCode::POP);
-            }
-        }
     }
 
     this->write0byteIns(OpCode::STOP_EVAL);

@@ -128,6 +128,8 @@ private:
      */
     int finallyDepth;
 
+    bool toplevelPrinting;
+
 public:
     TypeChecker(TypePool &typePool, SymbolTable &symbolTable);
 
@@ -142,6 +144,10 @@ public:
      * abort symbol table and TypePool when error happened
      */
     void recover(bool abortType = true);
+
+    void setToplevelPrinting(bool set) {
+        this->toplevelPrinting = set;
+    }
 
     static DSType *resolveInterface(TypePool &typePool, InterfaceNode *node);
     static DSType *resolveInterface(TypePool &typePool, TypeGenerator &typeGen, InterfaceNode *node);
@@ -287,6 +293,7 @@ private:
     void visitAccessNode(AccessNode &node) override;
     void visitCastNode(CastNode &node) override;
     void visitInstanceOfNode(InstanceOfNode &node) override;
+    void visitPrintNode(PrintNode &node) override;
     void visitUnaryOpNode(UnaryOpNode &node) override;
     void visitBinaryOpNode(BinaryOpNode &node) override;
     void visitApplyNode(ApplyNode &node) override;

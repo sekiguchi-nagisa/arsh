@@ -188,11 +188,6 @@ private:
     unsigned int pc_;
 
     /**
-     * if true, print top level evaluated value.
-     */
-    bool toplevelPrinting;
-
-    /**
      * if true, enable assertion.
      */
     bool assertion;
@@ -325,14 +320,6 @@ public:
 
     const DSValue &getDBus() {
         return this->getGlobal(this->getBuiltinVarIndex(BuiltinVarOffset::DBUS));
-    }
-
-    bool isToplevelPrinting() {
-        return this->toplevelPrinting;
-    }
-
-    void setToplevelPrinting(bool print) {
-        this->toplevelPrinting = print;
     }
 
     bool isAssertion() {

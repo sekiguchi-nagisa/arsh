@@ -275,8 +275,7 @@ int DSContext::eval(Lexer &lexer) {
 
     // eval
     if(hasFlag(this->option, DS_OPTION_X_VM)) {
-        ByteCodeGenerator codegen(this->ctx.getPool(),
-                                  hasFlag(this->option, DS_OPTION_TOPLEVEL), hasFlag(this->option, DS_OPTION_ASSERT));
+        ByteCodeGenerator codegen(this->ctx.getPool(), hasFlag(this->option, DS_OPTION_ASSERT));
         Callable c = codegen.generateToplevel(rootNode);
         if(!vmEval(this->ctx, c)) {
             unsigned int errorLineNum = 0;
@@ -511,7 +510,7 @@ static void setOptionImpl(DSContext *ctx, flag32_set_t flagSet, bool set) {
         ctx->ctx.setAssertion(set);
     }
     if(hasFlag(flagSet, DS_OPTION_TOPLEVEL)) {
-        ctx->ctx.setToplevelPrinting(set);
+        ctx->checker.setToplevelPrinting(set);
     }
     if(hasFlag(flagSet, DS_OPTION_TRACE_EXIT)) {
         ctx->ctx.setTraceExit(set);

@@ -152,7 +152,7 @@ RuntimeContext::RuntimeContext() :
         dummy(new DummyObject()), thrownObject(),
         localStack(new DSValue[DEFAULT_LOCAL_SIZE]),
         localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0), stackBottomIndex(0),
-        localVarOffset(0), pc_(0), toplevelPrinting(false), assertion(true), traceExit(false), useVM(false),
+        localVarOffset(0), pc_(0), assertion(true), traceExit(false), useVM(false),
         handle_STR(nullptr), handle_bt(nullptr), IFS_index(0),
         callableContextStack(), callStack(), callableStack_(),
         pipelineEvaluator(DSValue::create<PipelineEvaluator>()),
@@ -711,14 +711,9 @@ void RuntimeContext::fillInStackTrace(std::vector<StackTraceElement> &stackTrace
 }
 
 void RuntimeContext::printStackTop(DSType *stackTopType) {
-    if(!stackTopType->isVoidType()) {
-        if(this->toString(0) != EvalStatus::SUCCESS) {
-            std::cerr << "cannot obtain string representation" << std::endl;
-        } else {
-            std::cout << "(" << this->pool.getTypeName(*stackTopType) << ") "
-            << typeAs<String_Object>(this->pop())->getValue() << std::endl;
-        }
-    }
+    assert(!stackTopType->isVoidType());
+    std::cout << "(" << this->pool.getTypeName(*stackTopType) << ") "
+    << typeAs<String_Object>(this->pop())->getValue() << std::endl;
 }
 
 bool RuntimeContext::checkCast(unsigned int startPos, DSType *targetType) {

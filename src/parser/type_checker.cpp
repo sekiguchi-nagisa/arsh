@@ -111,7 +111,7 @@ DSType &TypeChecker::TypeGenerator::generateType(TypeNode *typeNode) {
 
 TypeChecker::TypeChecker(TypePool &typePool, SymbolTable &symbolTable) :
         typePool(typePool), symbolTable(symbolTable), typeGen(this), curReturnType(0),
-        visitingDepth(0), loopDepth(0), finallyDepth(0) { }
+        visitingDepth(0), loopDepth(0), finallyDepth(0), toplevelPrinting(false) { }
 
 void TypeChecker::checkTypeRootNode(RootNode &rootNode) {
     rootNode.accept(*this);
@@ -574,6 +574,11 @@ void TypeChecker::visitInstanceOfNode(InstanceOfNode &node) {
         node.setOpKind(InstanceOfNode::ALWAYS_FALSE);
     }
     node.setType(this->typePool.getBooleanType());
+}
+
+void TypeChecker::visitPrintNode(PrintNode &node) {
+    this->checkType(node.getExprNode());
+    node.setType(this->typePool.getVoidType());
 }
 
 void TypeChecker::visitUnaryOpNode(UnaryOpNode &node) {
@@ -1123,8 +1128,13 @@ void TypeChecker::visitRootNode(RootNode &node) {
         }
         if(dynamic_cast<PipedCmdNode *>(targetNode) != nullptr) {  // pop stack top
             this->checkTypeWithCoercion(this->typePool.getVoidType(), targetNode);
-        } else {
+        } else if(this->toplevelPrinting) {
             this->checkType(nullptr, targetNode, nullptr);
+            if(!targetNode->getType().isVoidType() && !targetNode->getType().isBottomType()) {
+                targetNode = PrintNode::newTypedPrintNode(this->typePool, targetNode);
+            }
+        } else {
+            this->checkTypeWithCoercion(this->typePool.getVoidType(), targetNode);
         }
         prevIsTerminal = targetNode->getType().isBottomType();
 
