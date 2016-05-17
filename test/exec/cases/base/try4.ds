@@ -1,0 +1,19 @@
+try {
+    34
+} finally {
+    while $true {
+        break;
+    }
+}
+
+try {
+    34
+} finally {
+    try {
+        $true
+    } catch $e {
+        while $true {
+            break;
+        }
+    }
+}

@@ -63,6 +63,18 @@ enum class CoercionKind : unsigned char {
     NOP,                // not allow coercion
 };
 
+struct FinallyVerifier : protected BaseVisitor {
+    void visitDefault(Node &node) override;
+    void visitBreakNode(BreakNode &node) override;
+    void visitContinueNode(ContinueNode &node) override;
+    void visitBlockNode(BlockNode &node) override;
+    void visitIfNode(IfNode &node) override;
+    void visitTryNode(TryNode &node) override;
+    void visitCatchNode(CatchNode &node) override;
+
+    void operator()(BlockNode &node);
+};
+
 class TypeChecker : protected NodeVisitor {
 public:
     class TypeGenerator : public BaseVisitor {

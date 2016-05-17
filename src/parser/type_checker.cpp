@@ -105,6 +105,47 @@ DSType &TypeChecker::TypeGenerator::generateType(TypeNode *typeNode) {
 }
 
 
+// #############################
+// ##     FinallyVerifier     ##
+// #############################
+
+void FinallyVerifier::visitDefault(Node &) { }  // do nothing
+
+void FinallyVerifier::visitBreakNode(BreakNode &node) {
+    RAISE_TC_ERROR(InsideFinally, node);
+}
+
+void FinallyVerifier::visitContinueNode(ContinueNode &node) {
+    RAISE_TC_ERROR(InsideFinally, node);
+}
+
+void FinallyVerifier::visitBlockNode(BlockNode &node) {
+    for(auto &e : node.getNodeList()) {
+        this->visit(*e);
+    }
+}
+
+void FinallyVerifier::visitIfNode(IfNode &node) {
+    this->visit(*node.getThenNode());
+    this->visit(*node.getElseNode());
+}
+
+void FinallyVerifier::visitTryNode(TryNode &node) {
+    this->visit(*node.getBlockNode());
+    for(auto &e : node.getCatchNodes()) {
+        this->visit(*e);
+    }
+}
+
+void FinallyVerifier::visitCatchNode(CatchNode &node) {
+    this->visit(*node.getBlockNode());
+}
+
+void FinallyVerifier::operator()(BlockNode &node) {
+    this->visit(node);
+}
+
+
 // #########################
 // ##     TypeChecker     ##
 // #########################
@@ -775,13 +816,11 @@ void TypeChecker::visitBlockNode(BlockNode &node) {
 }
 
 void TypeChecker::visitBreakNode(BreakNode &node) {
-    this->checkAndThrowIfInsideFinally(node);
     this->checkAndThrowIfOutOfLoop(node);
     node.setType(this->typePool.getBottomType());
 }
 
 void TypeChecker::visitContinueNode(ContinueNode &node) {
-    this->checkAndThrowIfInsideFinally(node);
     this->checkAndThrowIfOutOfLoop(node);
     node.setType(this->typePool.getBottomType());
 }
@@ -934,6 +973,8 @@ void TypeChecker::visitTryNode(TryNode &node) {
         if(node.getFinallyNode()->getNodeList().empty()) {
             RAISE_TC_ERROR(UselessBlock, *node.getFinallyNode());
         }
+
+        FinallyVerifier()(*node.getFinallyNode());
     }
 
     /**
