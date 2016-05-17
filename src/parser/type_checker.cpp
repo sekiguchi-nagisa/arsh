@@ -946,7 +946,7 @@ void TypeChecker::visitCatchNode(CatchNode &node) {
     node.setAttribute(handle);
     this->checkTypeWithCurrentScope(node.getBlockNode());
     this->symbolTable.exitScope();
-    node.setType(this->typePool.getVoidType());
+    node.setType(node.getBlockNode()->getType());
 }
 
 void TypeChecker::visitTryNode(TryNode &node) {
@@ -993,7 +993,7 @@ void TypeChecker::visitTryNode(TryNode &node) {
     // check if terminal node
     bool terminal = node.getBlockNode()->getType().isBottomType();
     for(int i = 0; i < size && terminal; i++) {
-        terminal = node.getCatchNodes()[i]->getBlockNode()->getType().isBottomType();
+        terminal = node.getCatchNodes()[i]->getType().isBottomType();
     }
     node.setType(terminal ? this->typePool.getBottomType() : this->typePool.getVoidType());
 }
