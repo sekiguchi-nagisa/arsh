@@ -159,6 +159,15 @@ void ByteCodeGenerator::catchException(const IntrusivePtr<Label> &begin, const I
     this->curBuilder().catchBuilders.push_back(CatchBuilder(begin, end, type, index));
 }
 
+void ByteCodeGenerator::enterFinally() {
+    for(auto iter = this->curBuilder().finallyLabels.rbegin();
+        iter != this->curBuilder().finallyLabels.rend(); ++iter) {
+        const unsigned int index = this->curBuilder().codeBuffer.size();
+        this->write4byteIns(OpCode::ENTER_FINALLY, 0);
+        this->curBuilder().writeLabel(index + 1, *iter, 0, ByteCodeWriter<true>::LabelTarget::_32);
+    }
+}
+
 
 // visitor api
 void ByteCodeGenerator::visit(Node &node) {
@@ -477,14 +486,24 @@ void ByteCodeGenerator::visitBlockNode(BlockNode &node) {
     }
 }
 
-void ByteCodeGenerator::visitBreakNode(BreakNode &) {
+void ByteCodeGenerator::visitBreakNode(BreakNode &node) {
     assert(!this->curBuilder().loopLabels.empty());
+
+    // add finally before jump
+    if(node.isLeavingBlock()) {
+        this->enterFinally();
+    }
 
     this->writeJumpIns(this->curBuilder().loopLabels.back().first);
 }
 
-void ByteCodeGenerator::visitContinueNode(ContinueNode &) {
+void ByteCodeGenerator::visitContinueNode(ContinueNode &node) {
     assert(!this->curBuilder().loopLabels.empty());
+
+    // add finally before jump
+    if(node.isLeavingBlock()) {
+        this->enterFinally();
+    }
 
     this->writeJumpIns(this->curBuilder().loopLabels.back().second);
 }
@@ -612,6 +631,9 @@ void ByteCodeGenerator::visitIfNode(IfNode &node) {
 void ByteCodeGenerator::visitReturnNode(ReturnNode &node) {
     this->visit(*node.getExprNode());
 
+    // add finally before return
+    this->enterFinally();
+
     if(node.getExprNode()->getType().isVoidType()) {
         this->write0byteIns(OpCode::RETURN);
     } else {
@@ -630,23 +652,43 @@ void ByteCodeGenerator::visitCatchNode(CatchNode &node) {
 }
 
 void ByteCodeGenerator::visitTryNode(TryNode &node) {
+    auto finallyLabel = makeIntrusive<Label>();
+
     if(node.getFinallyNode() != nullptr) {
-        fatal("unimplemented finally\n");
+        this->curBuilder().finallyLabels.push_back(finallyLabel);
     }
 
     auto beginLabel = makeIntrusive<Label>();
     auto endLabel = makeIntrusive<Label>();
     auto mergeLabel = makeIntrusive<Label>();
 
+    // generate try block
     this->markLabel(beginLabel);
     this->visit(*node.getBlockNode());
     this->markLabel(endLabel);
-    this->writeJumpIns(mergeLabel);
+    if(!node.getBlockNode()->getType().isBottomType()) {
+        this->enterFinally();
+        this->writeJumpIns(mergeLabel);
+    }
 
+    // generate catch
     for(auto &c : node.getCatchNodes()) {
         this->catchException(beginLabel, endLabel, &c->getTypeNode()->getType());
         this->visit(*c);
-        this->writeJumpIns(mergeLabel);
+        if(!c->getType().isBottomType()) {
+            this->enterFinally();
+            this->writeJumpIns(mergeLabel);
+        }
+    }
+
+    // generate finally
+    if(node.getFinallyNode() != nullptr) {
+        this->curBuilder().finallyLabels.pop_back();
+
+        this->markLabel(finallyLabel);
+        this->catchException(beginLabel, finallyLabel, &this->pool.getAnyType());
+        this->visit(*node.getFinallyNode());
+        this->write0byteIns(OpCode::EXIT_FINALLY);
     }
 
     this->markLabel(mergeLabel);

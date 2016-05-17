@@ -105,43 +105,51 @@ DSType &TypeChecker::TypeGenerator::generateType(TypeNode *typeNode) {
 }
 
 
-// #############################
-// ##     FinallyVerifier     ##
-// #############################
+// ##################################
+// ##     BlockLeavingDetector     ##
+// ##################################
 
-void FinallyVerifier::visitDefault(Node &) { }  // do nothing
+void BlockLeavingDetector::visitDefault(Node &) { }  // do nothing
 
-void FinallyVerifier::visitBreakNode(BreakNode &node) {
-    RAISE_TC_ERROR(InsideFinally, node);
+void BlockLeavingDetector::visitBreakNode(BreakNode &node) {
+    if(this->action == Action::RAISE) {
+        RAISE_TC_ERROR(InsideFinally, node);
+    } else {
+        node.setLeavingBlock(true);
+    }
 }
 
-void FinallyVerifier::visitContinueNode(ContinueNode &node) {
-    RAISE_TC_ERROR(InsideFinally, node);
+void BlockLeavingDetector::visitContinueNode(ContinueNode &node) {
+    if(this->action == Action::RAISE) {
+        RAISE_TC_ERROR(InsideFinally, node);
+    } else {
+        node.setLeavingBlock(true);
+    }
 }
 
-void FinallyVerifier::visitBlockNode(BlockNode &node) {
+void BlockLeavingDetector::visitBlockNode(BlockNode &node) {
     for(auto &e : node.getNodeList()) {
         this->visit(*e);
     }
 }
 
-void FinallyVerifier::visitIfNode(IfNode &node) {
+void BlockLeavingDetector::visitIfNode(IfNode &node) {
     this->visit(*node.getThenNode());
     this->visit(*node.getElseNode());
 }
 
-void FinallyVerifier::visitTryNode(TryNode &node) {
+void BlockLeavingDetector::visitTryNode(TryNode &node) {
     this->visit(*node.getBlockNode());
     for(auto &e : node.getCatchNodes()) {
         this->visit(*e);
     }
 }
 
-void FinallyVerifier::visitCatchNode(CatchNode &node) {
+void BlockLeavingDetector::visitCatchNode(CatchNode &node) {
     this->visit(*node.getBlockNode());
 }
 
-void FinallyVerifier::operator()(BlockNode &node) {
+void BlockLeavingDetector::operator()(BlockNode &node) {
     this->visit(node);
 }
 
@@ -959,9 +967,13 @@ void TypeChecker::visitTryNode(TryNode &node) {
 
     this->checkType(this->typePool.getVoidType(), node.getBlockNode());
 
+    BlockLeavingDetector detector(BlockLeavingDetector::MARK);
+    detector(*node.getBlockNode());
+
     // check type catch block
     for(CatchNode *c : node.getCatchNodes()) {
         this->checkType(this->typePool.getVoidType(), c);
+        detector(*c->getBlockNode());
     }
 
     // check type finally block, may be empty node
@@ -974,7 +986,7 @@ void TypeChecker::visitTryNode(TryNode &node) {
             RAISE_TC_ERROR(UselessBlock, *node.getFinallyNode());
         }
 
-        FinallyVerifier()(*node.getFinallyNode());
+        BlockLeavingDetector()(*node.getFinallyNode());
     }
 
     /**

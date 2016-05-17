@@ -26,7 +26,7 @@ assert($flag)
 # try-finally
 $flag = $false
 var j = 0
-for(var i = 0; $i < 10; $i++) {
+for(var i = 0; $i < 10; $i = $i + 1) {
     try {
         if($i == 5) {
             $flag = $true

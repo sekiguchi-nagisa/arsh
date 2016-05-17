@@ -63,7 +63,20 @@ enum class CoercionKind : unsigned char {
     NOP,                // not allow coercion
 };
 
-struct FinallyVerifier : protected BaseVisitor {
+class BlockLeavingDetector : protected BaseVisitor {
+public:
+    enum Action {
+        RAISE,
+        MARK,
+    };
+
+private:
+    Action action;
+
+public:
+    BlockLeavingDetector(Action action = Action::RAISE): action(action) {}
+
+private:
     void visitDefault(Node &node) override;
     void visitBreakNode(BreakNode &node) override;
     void visitContinueNode(ContinueNode &node) override;
@@ -72,6 +85,7 @@ struct FinallyVerifier : protected BaseVisitor {
     void visitTryNode(TryNode &node) override;
     void visitCatchNode(CatchNode &node) override;
 
+public:
     void operator()(BlockNode &node);
 };
 

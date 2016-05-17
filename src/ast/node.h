@@ -1376,10 +1376,21 @@ public:
  * base class for break, continue, return, throw node
  */
 class BlockEndNode : public Node {
+protected:
+    bool leavingBlock;
+
 public:
-    explicit BlockEndNode(Token token) : Node(token) { }
+    explicit BlockEndNode(Token token) : Node(token), leavingBlock(false) { }
 
     virtual ~BlockEndNode() = default;
+
+    void setLeavingBlock(bool leave) {
+        this->leavingBlock = leave;
+    }
+
+    bool isLeavingBlock() const {
+        return this->leavingBlock;
+    }
 };
 
 class BreakNode : public BlockEndNode {

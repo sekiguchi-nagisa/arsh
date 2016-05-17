@@ -271,6 +271,27 @@ static void mainLoop(RuntimeContext &ctx) {
         vmcase(THROW) {
             ctx.throwException();
         }
+        vmcase(ENTER_FINALLY) {
+            const unsigned int index = read32(GET_CODE(ctx), ctx.pc() + 1);
+            const unsigned int savedIndex = ctx.pc() + 4;
+            ctx.push(DSValue::createNum(savedIndex));
+            ctx.pc() = index - 1;
+            break;
+        }
+        vmcase(EXIT_FINALLY) {
+            switch(ctx.peek().kind()) {
+            case DSValueKind::OBJECT: {
+                ctx.throwException();
+                break;
+            }
+            case DSValueKind::NUMBER: {
+                unsigned int index = static_cast<unsigned int>(ctx.pop().value());
+                ctx.pc() = index;
+                break;
+            }
+            }
+            break;
+        }
         }
     }
 }

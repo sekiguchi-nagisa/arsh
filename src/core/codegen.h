@@ -254,6 +254,8 @@ private:
          * first is break label, second is continue label
          */
         std::vector<std::pair<IntrusivePtr<Label>, IntrusivePtr<Label>>> loopLabels;
+
+        std::vector<IntrusivePtr<Label>> finallyLabels;
     };
 
     std::vector<CallableBuilder *> builders;
@@ -303,6 +305,7 @@ private:
      * begin and end have already been marked.
      */
     void catchException(const IntrusivePtr<Label> &begin, const IntrusivePtr<Label> &end, DSType *type);
+    void enterFinally();
 
     void initCallable(CallableKind kind, unsigned short localVarNum);
     void initToplevelCallable(const RootNode &node);

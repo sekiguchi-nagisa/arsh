@@ -1691,8 +1691,9 @@ EvalStatus BlockNode::eval(RuntimeContext &ctx) {
 // ##     BreakNode     ##
 // #######################
 
-void BreakNode::dump(NodeDumper &) const {
-} // do nothing
+void BreakNode::dump(NodeDumper &dumper) const {
+    DUMP_PRIM(leavingBlock);
+}
 
 void BreakNode::accept(NodeVisitor &visitor) {
     visitor.visitBreakNode(*this);
@@ -1706,8 +1707,9 @@ EvalStatus BreakNode::eval(RuntimeContext &) {
 // ##     ContinueNode     ##
 // ##########################
 
-void ContinueNode::dump(NodeDumper &) const {
-} // do nothing
+void ContinueNode::dump(NodeDumper &dumper) const {
+    DUMP_PRIM(leavingBlock);
+}
 
 void ContinueNode::accept(NodeVisitor &visitor) {
     visitor.visitContinueNode(*this);
@@ -2018,6 +2020,7 @@ ReturnNode::~ReturnNode() {
 }
 
 void ReturnNode::dump(NodeDumper &dumper) const {
+    DUMP_PRIM(leavingBlock);
     DUMP_PTR(exprNode);
 }
 
@@ -2039,6 +2042,7 @@ ThrowNode::~ThrowNode() {
 }
 
 void ThrowNode::dump(NodeDumper &dumper) const {
+    DUMP_PRIM(leavingBlock);
     DUMP_PTR(exprNode);
 }
 
