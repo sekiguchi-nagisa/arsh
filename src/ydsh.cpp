@@ -277,6 +277,12 @@ int DSContext::eval(Lexer &lexer) {
     if(hasFlag(this->option, DS_OPTION_X_VM)) {
         ByteCodeGenerator codegen(this->ctx.getPool(), hasFlag(this->option, DS_OPTION_ASSERT));
         Callable c = codegen.generateToplevel(rootNode);
+
+        if(hasFlag(this->option, DS_OPTION_DUMP_CODE)) {
+            std::cout << "### dump compiled code ###" << std::endl;
+            dumpCode(std::cout, this->ctx.getPool(), c);
+        }
+
         if(!vmEval(this->ctx, c)) {
             unsigned int errorLineNum = 0;
             DSValue thrownObj = this->ctx.getThrownObject();

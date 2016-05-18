@@ -379,6 +379,11 @@ public:
     Callable generateToplevel(RootNode &node);
 };
 
+/**
+ * for debugging
+ */
+void dumpCode(std::ostream &stream, TypePool &pool, const Callable &c);
+
 
 } // namespace core
 } // namespace ydsh

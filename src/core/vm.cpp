@@ -40,14 +40,8 @@ static void skipHeader(RuntimeContext &ctx) {
 
         ctx.reserveGlobalVar(gvarNum);
         ctx.reserveLocalVar(ctx.getLocalVarOffset() + varNum);
-
-        ++ctx.pc(); // skip callable kind
-        ctx.pc() += 2; // skip local var num
-        ++ctx.pc(); // skip global var num
-    } else {
-        ++ctx.pc(); // skip callable kind
-        ++ctx.pc(); // skip local var num
     }
+    ctx.pc() += CALLABLE(ctx)->getCodeOffset() - 1;
 }
 
 static void mainLoop(RuntimeContext &ctx) {
@@ -232,7 +226,7 @@ static void mainLoop(RuntimeContext &ctx) {
             ctx.pc() += 2;
             unsigned short paramSize = read16(GET_CODE(ctx), ctx.pc() + 1);
             ctx.pc() += 2;
-            ctx.callMethod(index, paramSize);   //FIXME exception raising
+            ctx.callMethod(index, paramSize);
             break;
         }
         vmcase(CALL_FUNC) {

@@ -14,12 +14,39 @@
  * limitations under the License.
  */
 
+#include <iomanip>
+
 #include "codegen.h"
 #include "handle.h"
 #include "symbol.h"
 
 namespace ydsh {
 namespace core {
+
+unsigned int getByteSize(OpCode code) {
+    static unsigned char table[] = {
+#define GEN_BYTE_SIZE(CODE, N) N,
+            OPCODE_LIST(GEN_BYTE_SIZE)
+#undef GEN_BYTE_SIZE
+    };
+    return table[static_cast<unsigned char>(code)];
+}
+
+bool isTypeOp(OpCode code) {
+    switch(code) {
+    case OpCode::PRINT:
+    case OpCode::INSTANCE_OF:
+    case OpCode::CHECK_CAST:
+    case OpCode::NEW_ARRAY:
+    case OpCode::NEW_MAP:
+    case OpCode::NEW_TUPLE:
+    case OpCode::NEW:
+        assert(getByteSize(code) == 8);
+        return true;
+    default:
+        return false;
+    }
+}
 
 // ##########################
 // ##     CatchBuilder     ##
@@ -49,14 +76,8 @@ ExceptionEntry CatchBuilder::toEntry() const {
 
 #ifndef NDEBUG
 static bool checkByteSize(OpCode op, unsigned char size) {
-    static unsigned char table[] = {
-#define GEN_BYTE_SIZE(CODE, N) N,
-            OPCODE_LIST(GEN_BYTE_SIZE)
-#undef GEN_BYTE_SIZE
-    };
-    return table[static_cast<unsigned char>(op)] == size;
+    return getByteSize(op) == size;
 }
-
 #endif
 
 ByteCodeGenerator::~ByteCodeGenerator() {
@@ -99,8 +120,7 @@ void ByteCodeGenerator::write8byteIns(OpCode op, unsigned long v) {
 }
 
 void ByteCodeGenerator::writeTypeIns(OpCode op, const DSType &type) {
-    assert(op == OpCode::PRINT || op == OpCode::INSTANCE_OF || op == OpCode::CHECK_CAST
-           || op == OpCode::NEW_ARRAY || op == OpCode::NEW_MAP || op == OpCode::NEW_TUPLE || op == OpCode::NEW);
+    assert(isTypeOp(op));
     this->write8byteIns(op, reinterpret_cast<unsigned long>(&type));
 }
 
@@ -794,6 +814,7 @@ void ByteCodeGenerator::initCallable(CallableKind kind, unsigned short localVarN
 
     // generate header
     this->curBuilder().append8(static_cast<unsigned char>(kind));
+    this->curBuilder().append32(0);
     this->curBuilder().append16(localVarNum);
 }
 
@@ -806,6 +827,8 @@ Callable ByteCodeGenerator::finalizeCallable(const CallableNode &node) {
     this->curBuilder().finalize();
 
     // extract code
+    const unsigned int codeSize = this->curBuilder().codeBuffer.size();
+    this->curBuilder().write32(1, codeSize);
     unsigned char *code = extract(std::move(this->curBuilder().codeBuffer));
 
     // create constant pool
@@ -848,6 +871,100 @@ Callable ByteCodeGenerator::generateToplevel(RootNode &node) {
     this->initToplevelCallable(node);
     this->visit(node);
     return this->finalizeCallable(node);
+}
+
+static unsigned int digit(unsigned int n) {
+    unsigned int r = n;
+    do {
+        r /= 10;
+    } while(r > 0);
+    return r + 1;
+}
+
+void dumpCode(std::ostream &stream, TypePool &pool, const Callable &c) {
+    const unsigned int codeSize = c.getCodeSize();
+
+    stream << "Source File: " << c.getSrcInfo()->getSourceName() << std::endl;
+
+    stream << "Line Number Table:" << std::endl;
+    {
+        const unsigned int size = c.getSrcInfo()->getLineNumTable().size();
+        for(unsigned int i = 0; i < size; i++) {
+            stream << "  line " << std::setw(digit(size)) << (i + 1) <<
+                    ", pos " << c.getSrcInfo()->getLineNumTable()[i] << std::endl;
+        }
+    }
+
+    stream << "Callable: ";
+    switch(c.getCallableKind()) {
+    case CallableKind::TOPLEVEL:
+        stream << "top level";
+        break;
+    case CallableKind::FUNCTION:
+        stream << "function " << c.getName();
+        break;
+    }
+    stream << std::endl;
+    stream << "  code size: " << c.getCodeSize() << std::endl;
+    stream << "  number of local variable: " << c.getLocalVarNum() << std::endl;
+    if(c.getCallableKind() == CallableKind::TOPLEVEL) {
+        stream << "  number of global variable: " << c.getGlobalVarNum() << std::endl;
+    }
+
+    stream << "Code:" << std::endl;
+    {
+        static const char *opName[] = {
+#define GEN_NAME(CODE, N) #CODE,
+                OPCODE_LIST(GEN_NAME)
+#undef GEN_NAME
+        };
+
+        for(unsigned int i = c.getCodeOffset(); i < codeSize; i++) {
+            OpCode code = static_cast<OpCode>(c.getCode()[i]);
+            stream << "  " << std::setw(digit(codeSize)) <<
+                    std::resetiosflags(std::ios_base::floatfield) << i << ": "
+            << opName[static_cast<unsigned char>(code)];
+            if(isTypeOp(code)) {
+                unsigned long v = read64(c.getCode(), i + 1);
+                i += 8;
+                stream << "  " << pool.getTypeName(*reinterpret_cast<DSType *>(v));
+            } else {
+                if(code == OpCode::CALL_METHOD) {
+                    stream << "  " << read16(c.getCode(), i + 1) << "  " << read16(c.getCode(), i + 3);
+                } else {
+                    switch(getByteSize(code)) {
+                    case 1:
+                        stream << "  " << read8(c.getCode(), i + 1);
+                        break;
+                    case 2:
+                        stream << "  " << read16(c.getCode(), i + 1);
+                        break;
+                    case 4:
+                        stream << "  " << read32(c.getCode(), i + 1);
+                        break;
+                    default:
+                        break;  // do nothing
+                    }
+                }
+                i += getByteSize(code);
+            }
+            stream << std::endl;
+        }
+    }
+
+    stream << "SourcePosEntry:" << std::endl;
+    for(unsigned int i = 0; c.getSourcePosEntries()[i].address != 0; i++) {
+        const auto &e = c.getSourcePosEntries()[i];
+        stream << "  address: " << std::setw(digit(codeSize)) << std::resetiosflags(std::ios_base::floatfield) <<
+                e.address << ", pos: " << e.pos << std::endl;
+    }
+
+    stream << "ExceptionTable:" << std::endl;
+    for(unsigned int i = 0; c.getExceptionEntries()[i].type != nullptr; i++) {
+        const auto &e = c.getExceptionEntries()[i];
+        stream << "  begin: " << e.begin << ", end: " << e.end << ", type: "
+        << pool.getTypeName(*e.type) << ", dest: " << e.dest << std::endl;
+    }
 }
 
 

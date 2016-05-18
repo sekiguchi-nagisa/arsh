@@ -98,6 +98,7 @@ static void showFeature(std::ostream &stream) {
 #define EACH_OPT(OP) \
     OP(DUMP_UAST,      "--dump-untyped-ast",  0, "dump abstract syntax tree (before type checking)") \
     OP(DUMP_AST,       "--dump-ast",          0, "dump abstract syntax tree (after type checking)") \
+    OP(DUMP_CODE,      "--dump-code",         0, "dump compiled code") \
     OP(PARSE_ONLY,     "--parse-only",        0, "not evaluate, parse only") \
     OP(DISABLE_ASSERT, "--disable-assertion", 0, "disable assert statement") \
     OP(PRINT_TOPLEVEL, "--print-toplevel",    0, "print toplevel evaluated value") \
@@ -163,6 +164,9 @@ int main(int argc, char **argv) {
             break;
         case DUMP_AST:
             DSContext_setOption(ctx, DS_OPTION_DUMP_AST);
+            break;
+        case DUMP_CODE:
+            DSContext_setOption(ctx, DS_OPTION_DUMP_CODE);
             break;
         case PARSE_ONLY:
             DSContext_setOption(ctx, DS_OPTION_PARSE_ONLY);

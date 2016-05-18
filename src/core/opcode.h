@@ -73,6 +73,10 @@ enum class OpCode : unsigned char {
 #undef GEN_OPCODE
 };
 
+unsigned int getByteSize(OpCode code);
+
+bool isTypeOp(OpCode code);
+
 } // namespace core
 } // namespace ydsh
 

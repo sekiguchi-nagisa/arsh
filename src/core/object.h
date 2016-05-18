@@ -667,15 +667,15 @@ private:
     char *name;
 
     /**
-     * +----------------------+-------------------------------+
-     * | CallableKind (1byte) | local variable number (2byte) |
-     * +----------------------+-------------------------------+
+     * +----------------------+-------------------+-------------------------------+
+     * | CallableKind (1byte) | code size (4byte) | local variable number (2byte) |
+     * +----------------------+-------------------+-------------------------------+
      *
      * if indicate toplevel
      *
-     * +----------------------+-------------------------------+--------------------------------+
-     * | CallableKind (1byte) | local variable number (2byte) | global variable number (2byte) |
-     * +----------------------+-------------------------------+--------------------------------+
+     * +----------------------+-------------------+-------------------------------+--------------------------------+
+     * | CallableKind (1byte) | code size (4byte) | local variable number (2byte) | global variable number (2byte) |
+     * +----------------------+-------------------+-------------------------------+--------------------------------+
      *
      */
     unsigned char *code;
@@ -743,13 +743,21 @@ public:
         return static_cast<CallableKind>(this->code[0]);
     }
 
+    unsigned int getCodeSize() const {
+        return read32(this->code, 1);
+    }
+
     unsigned short getLocalVarNum() const {
-        return read16(this->code, 1);
+        return read16(this->code, 5);
     }
 
     unsigned short getGlobalVarNum() const {
         assert(this->getCallableKind() == CallableKind::TOPLEVEL);
-        return read16(this->code, 3);
+        return read16(this->code, 7);
+    }
+
+    unsigned int getCodeOffset() const {
+        return this->getCallableKind() == CallableKind::TOPLEVEL ? 9 : 7;
     }
 
     const DSValue *getConstPool() const {
