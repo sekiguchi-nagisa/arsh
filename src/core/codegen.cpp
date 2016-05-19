@@ -19,6 +19,7 @@
 #include "codegen.h"
 #include "handle.h"
 #include "symbol.h"
+#include "context.h"
 
 namespace ydsh {
 namespace core {
@@ -833,10 +834,11 @@ Callable ByteCodeGenerator::finalizeCallable(const CallableNode &node) {
 
     // create constant pool
     const unsigned int constSize = this->curBuilder().constBuffer.size();
-    DSValue *constPool = new DSValue[constSize];
+    DSValue *constPool = new DSValue[constSize + 1];
     for(unsigned int i = 0; i < constSize; i++) {
         constPool[i] = std::move(this->curBuilder().constBuffer[i]);
     }
+    constPool[constSize] = nullptr; // sentinel
 
     // create source pos entry
     const unsigned int lineNumEntrySize = this->curBuilder().sourcePosEntries.size();
@@ -874,26 +876,17 @@ Callable ByteCodeGenerator::generateToplevel(RootNode &node) {
 }
 
 static unsigned int digit(unsigned int n) {
-    unsigned int r = n;
-    do {
-        r /= 10;
-    } while(r > 0);
-    return r + 1;
+    unsigned int c;
+    for(c = 0; n > 0; c++) {
+        n /= 10;
+    }
+    return c;
 }
 
-void dumpCode(std::ostream &stream, TypePool &pool, const Callable &c) {
+
+static void dumpCodeImpl(std::ostream &stream, RuntimeContext &ctx, const Callable &c,
+                         std::vector<const Callable *> *list) {
     const unsigned int codeSize = c.getCodeSize();
-
-    stream << "Source File: " << c.getSrcInfo()->getSourceName() << std::endl;
-
-    stream << "Line Number Table:" << std::endl;
-    {
-        const unsigned int size = c.getSrcInfo()->getLineNumTable().size();
-        for(unsigned int i = 0; i < size; i++) {
-            stream << "  line " << std::setw(digit(size)) << (i + 1) <<
-                    ", pos " << c.getSrcInfo()->getLineNumTable()[i] << std::endl;
-        }
-    }
 
     stream << "Callable: ";
     switch(c.getCallableKind()) {
@@ -911,6 +904,15 @@ void dumpCode(std::ostream &stream, TypePool &pool, const Callable &c) {
         stream << "  number of global variable: " << c.getGlobalVarNum() << std::endl;
     }
 
+    stream << "Line Number Table:" << std::endl;
+    {
+        const unsigned int size = c.getSrcInfo()->getLineNumTable().size();
+        for(unsigned int i = 0; i < size; i++) {
+            stream << "  line " << std::setw(digit(size)) << (i + 1) <<
+            ", pos " << c.getSrcInfo()->getLineNumTable()[i] << std::endl;
+        }
+    }
+
     stream << "Code:" << std::endl;
     {
         static const char *opName[] = {
@@ -921,13 +923,12 @@ void dumpCode(std::ostream &stream, TypePool &pool, const Callable &c) {
 
         for(unsigned int i = c.getCodeOffset(); i < codeSize; i++) {
             OpCode code = static_cast<OpCode>(c.getCode()[i]);
-            stream << "  " << std::setw(digit(codeSize)) <<
-                    std::resetiosflags(std::ios_base::floatfield) << i << ": "
+            stream << "  " << std::setw(digit(codeSize)) << i << ": "
             << opName[static_cast<unsigned char>(code)];
             if(isTypeOp(code)) {
                 unsigned long v = read64(c.getCode(), i + 1);
                 i += 8;
-                stream << "  " << pool.getTypeName(*reinterpret_cast<DSType *>(v));
+                stream << "  " << ctx.getPool().getTypeName(*reinterpret_cast<DSType *>(v));
             } else {
                 if(code == OpCode::CALL_METHOD) {
                     stream << "  " << read16(c.getCode(), i + 1) << "  " << read16(c.getCode(), i + 3);
@@ -952,18 +953,55 @@ void dumpCode(std::ostream &stream, TypePool &pool, const Callable &c) {
         }
     }
 
-    stream << "SourcePosEntry:" << std::endl;
-    for(unsigned int i = 0; c.getSourcePosEntries()[i].address != 0; i++) {
-        const auto &e = c.getSourcePosEntries()[i];
-        stream << "  address: " << std::setw(digit(codeSize)) << std::resetiosflags(std::ios_base::floatfield) <<
-                e.address << ", pos: " << e.pos << std::endl;
+
+    stream << "Constant Pool:" << std::endl;
+    {
+        unsigned int constSize;
+        for(constSize = 0; c.getConstPool()[constSize]; constSize++);
+        for(unsigned int i = 0; c.getConstPool()[i]; i++) {
+            stream << "  " << std::setw(digit(constSize)) << i << ": ";
+            auto &v = c.getConstPool()[i];
+            switch(v.kind()) {
+            case DSValueKind::NUMBER:
+                stream << static_cast<unsigned long>(v.value());
+                break;
+            case DSValueKind::OBJECT:
+                if(list != nullptr && dynamic_cast<FuncObject *>(v.get()) != nullptr) {
+                    list->push_back(&static_cast<FuncObject *>(v.get())->getCallable());
+                }
+                stream << (v.get()->getType() != nullptr ? ctx.getPool().getTypeName(*v.get()->getType()) : "(null)")
+                << " " << v.get()->toString(ctx, nullptr);
+                break;
+            }
+            stream << std::endl;
+        }
     }
 
-    stream << "ExceptionTable:" << std::endl;
+
+    stream << "Source Pos Entry:" << std::endl;
+    for(unsigned int i = 0; c.getSourcePosEntries()[i].address != 0; i++) {
+        const auto &e = c.getSourcePosEntries()[i];
+        stream << "  address: " << std::setw(digit(codeSize)) <<
+        e.address << ", pos: " << e.pos << std::endl;
+    }
+
+    stream << "Exception Table:" << std::endl;
     for(unsigned int i = 0; c.getExceptionEntries()[i].type != nullptr; i++) {
         const auto &e = c.getExceptionEntries()[i];
         stream << "  begin: " << e.begin << ", end: " << e.end << ", type: "
-        << pool.getTypeName(*e.type) << ", dest: " << e.dest << std::endl;
+        << ctx.getPool().getTypeName(*e.type) << ", dest: " << e.dest << std::endl;
+    }
+}
+
+void dumpCode(std::ostream &stream, RuntimeContext &ctx, const Callable &c) {
+    stream << "Source File: " << c.getSrcInfo()->getSourceName() << std::endl;
+
+    std::vector<const Callable *> list;
+
+    dumpCodeImpl(stream, ctx, c, &list);
+    for(auto &e : list) {
+        stream << std::endl;
+        dumpCodeImpl(stream, ctx, *e, nullptr);
     }
 }
 

@@ -382,7 +382,7 @@ public:
 /**
  * for debugging
  */
-void dumpCode(std::ostream &stream, TypePool &pool, const Callable &c);
+void dumpCode(std::ostream &stream, RuntimeContext &ctx, const Callable &c);
 
 
 } // namespace core

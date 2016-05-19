@@ -680,6 +680,9 @@ private:
      */
     unsigned char *code;
 
+    /**
+     * last element is sentinel (nullptr)
+     */
     DSValue *constPool;
 
     /**

@@ -280,7 +280,7 @@ int DSContext::eval(Lexer &lexer) {
 
         if(hasFlag(this->option, DS_OPTION_DUMP_CODE)) {
             std::cout << "### dump compiled code ###" << std::endl;
-            dumpCode(std::cout, this->ctx.getPool(), c);
+            dumpCode(std::cout, this->ctx, c);
         }
 
         if(!vmEval(this->ctx, c)) {
