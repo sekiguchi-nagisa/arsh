@@ -650,7 +650,7 @@ struct ExceptionEntry {
     /**
      * if null, indicate sentinel
      */
-    DSType *type;
+    const DSType *type;
 
     unsigned int begin; // inclusive
     unsigned int end;   // exclusive

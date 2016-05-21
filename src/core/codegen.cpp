@@ -175,7 +175,7 @@ void ByteCodeGenerator::writeSourcePos(unsigned int pos) {
     }
 }
 
-void ByteCodeGenerator::catchException(const IntrusivePtr<Label> &begin, const IntrusivePtr<Label> &end, DSType *type) {
+void ByteCodeGenerator::catchException(const IntrusivePtr<Label> &begin, const IntrusivePtr<Label> &end, const DSType &type) {
     const unsigned int index = this->curBuilder().codeBuffer.size();
     this->curBuilder().catchBuilders.push_back(CatchBuilder(begin, end, type, index));
 }
@@ -694,7 +694,7 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
 
     // generate catch
     for(auto &c : node.getCatchNodes()) {
-        this->catchException(beginLabel, endLabel, &c->getTypeNode()->getType());
+        this->catchException(beginLabel, endLabel, c->getTypeNode()->getType());
         this->visit(*c);
         if(!c->getType().isBottomType()) {
             this->enterFinally();
@@ -707,7 +707,7 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
         this->curBuilder().finallyLabels.pop_back();
 
         this->markLabel(finallyLabel);
-        this->catchException(beginLabel, finallyLabel, &this->pool.getAnyType());
+        this->catchException(beginLabel, finallyLabel, this->pool.getAnyType());
         this->visit(*node.getFinallyNode());
         this->write0byteIns(OpCode::EXIT_FINALLY);
     }

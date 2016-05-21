@@ -224,13 +224,13 @@ class CatchBuilder {
 private:
     IntrusivePtr<Label> begin;  // inclusive
     IntrusivePtr<Label> end;    // exclusive
-    DSType *type;
+    const DSType *type;
     unsigned int address;   // start index of catch block.
 
 public:
     CatchBuilder() : begin(nullptr), end(nullptr), type(nullptr), address(0) { }
-    CatchBuilder(const IntrusivePtr<Label> &begin, const IntrusivePtr<Label> &end, DSType *type, unsigned int address) :
-            begin(begin), end(end), type(type), address(address) {}
+    CatchBuilder(const IntrusivePtr<Label> &begin, const IntrusivePtr<Label> &end, const DSType &type, unsigned int address) :
+            begin(begin), end(end), type(&type), address(address) {}
 
     ~CatchBuilder() = default;
 
@@ -304,7 +304,7 @@ private:
     /**
      * begin and end have already been marked.
      */
-    void catchException(const IntrusivePtr<Label> &begin, const IntrusivePtr<Label> &end, DSType *type);
+    void catchException(const IntrusivePtr<Label> &begin, const IntrusivePtr<Label> &end, const DSType &type);
     void enterFinally();
 
     void initCallable(CallableKind kind, unsigned short localVarNum);
