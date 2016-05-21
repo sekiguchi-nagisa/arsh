@@ -125,8 +125,7 @@ static constexpr size_t sizeOfArray(const T (&)[N]) {
 TypePool::TypePool() :
         typeMap(), typeTable(new DSType*[__SIZE_OF_DS_TYPE__]()),
         templateMap(8),
-        arrayTemplate(), mapTemplate(), tupleTemplate(),
-        precisionMap(), numTypeIndexMap(), udcSet() {
+        arrayTemplate(), mapTemplate(), tupleTemplate(), udcSet() {
 
     // initialize type
     this->initBuiltinType(Any, "Any", true, info_AnyType());
@@ -392,60 +391,53 @@ constexpr int TypePool::BYTE_PRECISION;
 constexpr int TypePool::INVALID_PRECISION;
 
 int TypePool::getIntPrecision(const DSType &type) {
-    if(this->precisionMap.empty()) {    // init precision map
-        static const struct {
-            DS_TYPE TYPE;
-            int precision;
-        } table[] = {
-                // Int64, Uint64
-                {Int64, INT64_PRECISION},
-                {Uint64, INT64_PRECISION},
-                // Int32, Uint32
-                {Int32, INT32_PRECISION},
-                {Uint32, INT32_PRECISION},
-                // Int16, Uint16
-                {Int16, INT16_PRECISION},
-                {Uint16, INT16_PRECISION},
-                // Byte
-                {Byte, BYTE_PRECISION},
-        };
+    static const struct {
+        DS_TYPE TYPE;
+        int precision;
+    } table[] = {
+            // Int64, Uint64
+            {Int64, INT64_PRECISION},
+            {Uint64, INT64_PRECISION},
+            // Int32, Uint32
+            {Int32, INT32_PRECISION},
+            {Uint32, INT32_PRECISION},
+            // Int16, Uint16
+            {Int16, INT16_PRECISION},
+            {Uint16, INT16_PRECISION},
+            // Byte
+            {Byte, BYTE_PRECISION},
+    };
 
-        for(const auto &e : table) {
-            this->precisionMap.insert(
-                    std::make_pair((unsigned long) this->typeTable[e.TYPE], e.precision));
+    for(unsigned int i = 0; i < sizeOfArray(table); i++) {
+        if(*this->typeTable[table[i].TYPE] == type) {
+            return table[i].precision;
         }
     }
-
-    auto iter = this->precisionMap.find((unsigned long) &type);
-    if(iter == this->precisionMap.end()) {
-        return INVALID_PRECISION;
-    }
-    return iter->second;
+    return INVALID_PRECISION;
 }
 
-int TypePool::getNumTypeIndex(const DSType &type) {
-    if(this->numTypeIndexMap.empty()) {
-        static const DS_TYPE table[] = {
-                Byte,   // 0
-                Int16,  // 1
-                Uint16, // 2
-                Int32,  // 3
-                Uint32, // 4
-                Int64,  // 5
-                Uint64, // 6
-                Float,  // 7
-        };
+static const TypePool::DS_TYPE numTypeTable[] = {
+        TypePool::Byte,   // 0
+        TypePool::Int16,  // 1
+        TypePool::Uint16, // 2
+        TypePool::Int32,  // 3
+        TypePool::Uint32, // 4
+        TypePool::Int64,  // 5
+        TypePool::Uint64, // 6
+        TypePool::Float,  // 7
+};
 
-        for(unsigned int i = 0; i < sizeOfArray(table); i++) {
-            this->numTypeIndexMap.insert(std::make_pair((unsigned long) this->typeTable[table[i]], i));
+int TypePool::getNumTypeIndex(const DSType &type) {
+    for(unsigned int i = 0; i < sizeOfArray(numTypeTable); i++) {
+        if(*this->typeTable[numTypeTable[i]] == type) {
+            return i;
         }
     }
+    return -1;
+}
 
-    auto iter = this->numTypeIndexMap.find((unsigned long) &type);
-    if(iter == this->numTypeIndexMap.end()) {
-        return -1;
-    }
-    return iter->second;
+DSType *TypePool::getByNumTypeIndex(unsigned int index) {
+    return index < sizeOfArray(numTypeTable) ? this->typeTable[numTypeTable[index]] : nullptr;
 }
 
 bool TypePool::addUserDefnedCommandName(const std::string &cmdName) {

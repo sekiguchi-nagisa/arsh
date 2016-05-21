@@ -155,16 +155,6 @@ private:
     TypeTemplate *tupleTemplate;
 
     /**
-     * for integer widening
-     */
-    std::unordered_map<unsigned long, int> precisionMap;
-
-    /**
-     * for number cast op
-     */
-    std::unordered_map<unsigned long, unsigned char> numTypeIndexMap;
-
-    /**
      * contain user defined command name.
      */
     std::unordered_set<std::string> udcSet;
@@ -437,6 +427,11 @@ public:
      * if type is not number type, return -1.
      */
     int getNumTypeIndex(const DSType &type);
+
+    /**
+     * if not found, return null.
+     */
+    DSType *getByNumTypeIndex(unsigned int index);
 
     bool addUserDefnedCommandName(const std::string &cmdName);
 
