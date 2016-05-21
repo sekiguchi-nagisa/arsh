@@ -65,7 +65,23 @@ namespace core {
     OP(GOTO, 4) \
     OP(THROW, 0) \
     OP(ENTER_FINALLY, 4) \
-    OP(EXIT_FINALLY, 0)
+    OP(EXIT_FINALLY, 0) \
+    OP(COPY_INT, 1) \
+    OP(TO_BYTE, 0) \
+    OP(TO_U16, 0) \
+    OP(TO_I16, 0) \
+    OP(NEW_LONG, 1) \
+    OP(COPY_LONG, 1) \
+    OP(I_NEW_LONG, 1) \
+    OP(NEW_INT, 1) \
+    OP(U32_TO_D, 0) \
+    OP(I32_TO_D, 0) \
+    OP(U64_TO_D, 0) \
+    OP(I64_TO_D, 0) \
+    OP(D_TO_U32, 0) \
+    OP(D_TO_I32, 0) \
+    OP(D_TO_U64, 0) \
+    OP(D_TO_I64, 0)
 
 enum class OpCode : unsigned char {
 #define GEN_OPCODE(CODE, N) CODE,

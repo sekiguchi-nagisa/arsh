@@ -286,6 +286,108 @@ static void mainLoop(RuntimeContext &ctx) {
             }
             break;
         }
+        vmcase(COPY_INT) {
+            DSType *type = ctx.getPool().getByNumTypeIndex(read8(GET_CODE(ctx), ++ctx.pc()));
+            int v = typeAs<Int_Object>(ctx.pop())->getValue();
+            ctx.push(DSValue::create<Int_Object>(*type, v));
+            break;
+        }
+        vmcase(TO_BYTE) {
+            unsigned int v = typeAs<Int_Object>(ctx.pop())->getValue();
+            v &= 0xFF;  // fill higher bits (8th ~ 31) with 0
+            ctx.push(DSValue::create<Int_Object>(ctx.getPool().getByteType(), v));
+            break;
+        }
+        vmcase(TO_U16) {
+            unsigned int v = typeAs<Int_Object>(ctx.pop())->getValue();
+            v &= 0xFFFF;    // fill higher bits (16th ~ 31th) with 0
+            ctx.push(DSValue::create<Int_Object>(ctx.getPool().getUint16Type(), v));
+            break;
+        }
+        vmcase(TO_I16) {
+            unsigned int v = typeAs<Int_Object>(ctx.pop())->getValue();
+            v &= 0xFFFF;    // fill higher bits (16th ~ 31th) with 0
+            if(v & 0x8000) {    // if 15th bit is 1, fill higher bits with 1
+                v |= 0xFFFF0000;
+            }
+            ctx.push(DSValue::create<Int_Object>(ctx.getPool().getInt16Type(), v));
+            break;
+        }
+        vmcase(NEW_LONG) {
+            DSType *type = ctx.getPool().getByNumTypeIndex(read8(GET_CODE(ctx), ++ctx.pc()));
+            unsigned int v = typeAs<Int_Object>(ctx.pop())->getValue();
+            unsigned long l = v;
+            ctx.push(DSValue::create<Long_Object>(*type, l));
+            break;
+        }
+        vmcase(COPY_LONG) {
+            DSType *type = ctx.getPool().getByNumTypeIndex(read8(GET_CODE(ctx), ++ctx.pc()));
+            long v = typeAs<Long_Object>(ctx.pop())->getValue();
+            ctx.push(DSValue::create<Long_Object>(*type, v));
+            break;
+        }
+        vmcase(I_NEW_LONG) {
+            DSType *type = ctx.getPool().getByNumTypeIndex(read8(GET_CODE(ctx), ++ctx.pc()));
+            int v = typeAs<Int_Object>(ctx.pop())->getValue();
+            long l = v;
+            ctx.push(DSValue::create<Long_Object>(*type, l));
+            break;
+        }
+        vmcase(NEW_INT) {
+            DSType *type = ctx.getPool().getByNumTypeIndex(read8(GET_CODE(ctx), ++ctx.pc()));
+            unsigned long l = typeAs<Long_Object>(ctx.pop())->getValue();
+            unsigned int v = static_cast<unsigned int>(l);
+            ctx.push(DSValue::create<Int_Object>(*type, v));
+            break;
+        }
+        vmcase(U32_TO_D) {
+            unsigned int v = typeAs<Int_Object>(ctx.pop())->getValue();
+            double d = static_cast<double>(v);
+            ctx.push(DSValue::create<Float_Object>(ctx.getPool().getFloatType(), d));
+            break;
+        }
+        vmcase(I32_TO_D) {
+            int v = typeAs<Int_Object>(ctx.pop())->getValue();
+            double d = static_cast<double>(v);
+            ctx.push(DSValue::create<Float_Object>(ctx.getPool().getFloatType(), d));
+            break;
+        }
+        vmcase(U64_TO_D) {
+            unsigned long v = typeAs<Long_Object>(ctx.pop())->getValue();
+            double d = static_cast<double>(v);
+            ctx.push(DSValue::create<Float_Object>(ctx.getPool().getFloatType(), d));
+            break;
+        }
+        vmcase(I64_TO_D) {
+            long v = typeAs<Long_Object>(ctx.pop())->getValue();
+            double d = static_cast<double>(v);
+            ctx.push(DSValue::create<Float_Object>(ctx.getPool().getFloatType(), d));
+            break;
+        }
+        vmcase(D_TO_U32) {
+            double d = typeAs<Float_Object>(ctx.pop())->getValue();
+            unsigned int v = static_cast<unsigned int>(d);
+            ctx.push(DSValue::create<Int_Object>(ctx.getPool().getUint32Type(), v));
+            break;
+        }
+        vmcase(D_TO_I32) {
+            double d = typeAs<Float_Object>(ctx.pop())->getValue();
+            int v = static_cast<int>(d);
+            ctx.push(DSValue::create<Int_Object>(ctx.getPool().getInt32Type(), v));
+            break;
+        }
+        vmcase(D_TO_U64) {
+            double d = typeAs<Float_Object>(ctx.pop())->getValue();
+            unsigned long v = static_cast<unsigned long>(d);
+            ctx.push(DSValue::create<Long_Object>(ctx.getPool().getUint64Type(), v));
+            break;
+        }
+        vmcase(D_TO_I64) {
+            double d = typeAs<Float_Object>(ctx.pop())->getValue();
+            long v = static_cast<long>(d);
+            ctx.push(DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), v));
+            break;
+        }
         }
     }
 }

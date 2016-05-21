@@ -433,7 +433,7 @@ public:
      */
     DSType *getByNumTypeIndex(unsigned int index);
 
-    bool addUserDefnedCommandName(const std::string &cmdName);
+    bool addUserDefinedCommandName(const std::string &cmdName);
 
     /**
      * commit changed state(type)

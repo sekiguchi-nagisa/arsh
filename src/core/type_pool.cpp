@@ -440,7 +440,7 @@ DSType *TypePool::getByNumTypeIndex(unsigned int index) {
     return index < sizeOfArray(numTypeTable) ? this->typeTable[numTypeTable[index]] : nullptr;
 }
 
-bool TypePool::addUserDefnedCommandName(const std::string &cmdName) {
+bool TypePool::addUserDefinedCommandName(const std::string &cmdName) {
     return this->udcSet.insert(cmdName).second;
 }
 

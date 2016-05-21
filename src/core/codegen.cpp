@@ -151,6 +151,71 @@ void ByteCodeGenerator::writeToString() {
     this->writeMethodCallIns(OpCode::CALL_METHOD, this->handle_STR->getMethodIndex(), 0);
 }
 
+void ByteCodeGenerator::writeNumCastIns(unsigned short v, const DSType &type) {
+    const int index = this->pool.getNumTypeIndex(type);
+    assert(index > -1);
+
+    for(int i = 15; i > -1; i--) {
+        unsigned short flag = (1 << i);
+        if(!hasFlag(v, flag)) {
+            continue;
+        }
+        auto op = static_cast<CastNode::NumberCastOp >(flag);
+        switch(op) {
+        case CastNode::NOP:
+            break;
+        case CastNode::COPY_INT:
+            this->write1byteIns(OpCode::COPY_INT, index);
+            break;
+        case CastNode::TO_B:
+            this->write0byteIns(OpCode::TO_BYTE);
+            break;
+        case CastNode::TO_U16:
+            this->write0byteIns(OpCode::TO_U16);
+            break;
+        case CastNode::TO_I16:
+            this->write0byteIns(OpCode::TO_I16);
+            break;
+        case CastNode::NEW_LONG:
+            this->write1byteIns(OpCode::NEW_LONG, index);
+            break;
+        case CastNode::COPY_LONG:
+            this->write1byteIns(OpCode::COPY_LONG, index);
+            break;
+        case CastNode::I_NEW_LONG:
+            this->write1byteIns(OpCode::I_NEW_LONG, index);
+            break;
+        case CastNode::NEW_INT:
+            this->write1byteIns(OpCode::NEW_INT, index);
+            break;
+        case CastNode::U32_TO_D:
+            this->write0byteIns(OpCode::U32_TO_D);
+            break;
+        case CastNode::I32_TO_D:
+            this->write0byteIns(OpCode::I32_TO_D);
+            break;
+        case CastNode::U64_TO_D:
+            this->write0byteIns(OpCode::U64_TO_D);
+            break;
+        case CastNode::I64_TO_D:
+            this->write0byteIns(OpCode::I64_TO_D);
+            break;
+        case CastNode::D_TO_U32:
+            this->write0byteIns(OpCode::D_TO_U32);
+            break;
+        case CastNode::D_TO_I32:
+            this->write0byteIns(OpCode::D_TO_I32);
+            break;
+        case CastNode::D_TO_U64:
+            this->write0byteIns(OpCode::D_TO_U64);
+            break;
+        case CastNode::D_TO_I64:
+            this->write0byteIns(OpCode::D_TO_I64);
+            break;
+        }
+    }
+}
+
 void ByteCodeGenerator::writeBranchIns(const IntrusivePtr<Label> &label) {    //FIXME check index size
     const unsigned int index = this->curBuilder().codeBuffer.size();
     this->write2byteIns(OpCode::BRANCH, 0);
@@ -339,7 +404,7 @@ void ByteCodeGenerator::visitCastNode(CastNode &node) {
         this->write0byteIns(OpCode::POP);
         break;
     case CastNode::NUM_CAST:
-        fatal("unsupported\n"); //FIXME number cast
+        this->writeNumCastIns(node.getNumberCastOp(), node.getType());
         break;
     case CastNode::TO_STRING:
         this->writeSourcePos(node.getStartPos());

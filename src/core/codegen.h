@@ -292,6 +292,7 @@ private:
     void writeConstant(const DSValue &value);
     void writeMethodCallIns(OpCode op, unsigned short index, unsigned short paramSize);
     void writeToString();
+    void writeNumCastIns(unsigned short op, const DSType &type);
     void writeBranchIns(const IntrusivePtr<Label> &label);
     void writeJumpIns(const IntrusivePtr<Label> &label);
     void markLabel(IntrusivePtr<Label> &label);
