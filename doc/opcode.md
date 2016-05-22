@@ -44,19 +44,22 @@
 | THROW         | 0x27       |                                | value -> [empty]                             | throw exception                                    |
 | ENTER_FINALLY | 0x28       | 4: byte1 ~ byte4               | -> value                                     | save current pc and go to instruction              |
 | EXIT_FINALLY  | 0x29       |                                | value ->                                     | pop stack top and go to instruction                |
-| COPY_INT      | 0x3A       | 1: byte1                       | value -> value                               | convert number (see. int-cast.md)                  |
-| TO_BYTE       | 0x3B       |                                | value -> value                               | convert number (see. int-cast.md)                  |
-| TO_U16        | 0x3C       |                                | value -> value                               | convert number (see. int-cast.md)                  |
-| TO_I16        | 0x3D       |                                | value -> value                               | convert number (see. int-cast.md)                  |
-| NEW_LONG      | 0x3E       | 1: byte1                       | value -> value                               | convert number (see. int-cast.md)                  |
-| COPY_LONG     | 0x3F       | 1: byte1                       | value -> value                               | convert number (see. int-cast.md)                  |
-| I_NEW_LONG    | 0x40       | 1: byte1                       | value -> value                               | convert number (see. int-cast.md)                  |
-| NEW_INT       | 0x41       | 1: byte1                       | value -> value                               | convert number (see. int-cast.md)                  |
-| U32_TO_D      | 0x42       |                                | value -> value                               | convert number (see. int-cast.md)                  |
-| I32_TO_D      | 0x43       |                                | value -> value                               | convert number (see. int-cast.md)                  |
-| U64_TO_D      | 0x44       |                                | value -> value                               | convert number (see. int-cast.md)                  |
-| I64_TO_D      | 0x45       |                                | value -> value                               | convert number (see. int-cast.md)                  |
-| D_TO_U32      | 0x46       |                                | value -> value                               | convert number (see. int-cast.md)                  |
-| D_TO_I32      | 0x47       |                                | value -> value                               | convert number (see. int-cast.md)                  |
-| D_TO_U64      | 0x48       |                                | value -> value                               | convert number (see. int-cast.md)                  |
-| D_TO_I64      | 0x49       |                                | value -> value                               | convert number (see. int-cast.md)                  |
+| COPY_INT      | 0x2A       | 1: byte1                       | value -> value                               | convert number (see. int-cast.md)                  |
+| TO_BYTE       | 0x2B       |                                | value -> value                               | convert number (see. int-cast.md)                  |
+| TO_U16        | 0x2C       |                                | value -> value                               | convert number (see. int-cast.md)                  |
+| TO_I16        | 0x2D       |                                | value -> value                               | convert number (see. int-cast.md)                  |
+| NEW_LONG      | 0x2E       | 1: byte1                       | value -> value                               | convert number (see. int-cast.md)                  |
+| COPY_LONG     | 0x2F       | 1: byte1                       | value -> value                               | convert number (see. int-cast.md)                  |
+| I_NEW_LONG    | 0x30       | 1: byte1                       | value -> value                               | convert number (see. int-cast.md)                  |
+| NEW_INT       | 0x31       | 1: byte1                       | value -> value                               | convert number (see. int-cast.md)                  |
+| U32_TO_D      | 0x32       |                                | value -> value                               | convert number (see. int-cast.md)                  |
+| I32_TO_D      | 0x33       |                                | value -> value                               | convert number (see. int-cast.md)                  |
+| U64_TO_D      | 0x34       |                                | value -> value                               | convert number (see. int-cast.md)                  |
+| I64_TO_D      | 0x35       |                                | value -> value                               | convert number (see. int-cast.md)                  |
+| D_TO_U32      | 0x36       |                                | value -> value                               | convert number (see. int-cast.md)                  |
+| D_TO_I32      | 0x37       |                                | value -> value                               | convert number (see. int-cast.md)                  |
+| D_TO_U64      | 0x38       |                                | value -> value                               | convert number (see. int-cast.md)                  |
+| D_TO_I64      | 0x39       |                                | value -> value                               | convert number (see. int-cast.md)                  |
+| EXIT_CHILD    | 0x3A       |                                | -> [empty]                                   | terminate current process                          |
+| CAPTURE_STR   | 0x3B       | 2: offset1 offset2             | -> value                                     | capture stdout as string                           |
+| CAPTURE_ARRAY | 0x3C       | 2: offset1 offset2             | -> value                                     | capture stdout as string array                     |

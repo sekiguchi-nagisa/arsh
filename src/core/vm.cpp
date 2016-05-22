@@ -44,6 +44,151 @@ static void skipHeader(RuntimeContext &ctx) {
     ctx.pc() += CALLABLE(ctx)->getCodeOffset() - 1;
 }
 
+static bool isSpace(int ch) {
+    return ch == ' ' || ch == '\t' || ch == '\n';
+}
+
+static bool isFieldSep(const char *ifs, int ch) {
+    for(unsigned int i = 0; ifs[i] != '\0'; i++) {
+        if(ifs[i] == ch) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool hasSpace(const char *ifs) {
+    for(unsigned int i = 0; ifs[i] != '\0'; i++) {
+        if(isSpace(ifs[i])) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static void forkAndCapture(bool isStr, RuntimeContext &ctx) {
+    const unsigned short offset = read16(GET_CODE(ctx), ctx.pc() + 1);
+
+    // capture stdout
+    pid_t pipefds[2];
+
+    if(pipe(pipefds) < 0) {
+        perror("pipe creation failed\n");
+        exit(1);    //FIXME: throw exception
+    }
+
+    pid_t pid = xfork();
+    if(pid > 0) {   // parent process
+        close(pipefds[WRITE_PIPE]);
+
+        DSValue obj;
+
+        if(isStr) {  // capture stdout as String
+            static const int bufSize = 256;
+            char buf[bufSize + 1];
+            std::string str;
+            while(true) {
+                int readSize = read(pipefds[READ_PIPE], buf, bufSize);
+                if(readSize == -1 && (errno == EAGAIN || errno == EINTR)) {
+                    continue;
+                }
+                if(readSize <= 0) {
+                    break;
+                }
+                buf[readSize] = '\0';
+                str += buf;
+            }
+
+            // remove last newlines
+            std::string::size_type pos = str.find_last_not_of('\n');
+            if(pos == std::string::npos) {
+                str.clear();
+            } else {
+                str.erase(pos + 1);
+            }
+
+            obj = DSValue::create<String_Object>(ctx.getPool().getStringType(), std::move(str));
+        } else {    // capture stdout as String Array
+            const char *ifs = ctx.getIFS();
+            unsigned int skipCount = 1;
+
+            static const int bufSize = 256;
+            char buf[bufSize];
+            std::string str;
+            obj = DSValue::create<Array_Object>(ctx.getPool().getStringArrayType());
+            Array_Object *array = typeAs<Array_Object>(obj);
+
+            while(true) {
+                int readSize = read(pipefds[READ_PIPE], buf, bufSize);
+                if(readSize == -1 && (errno == EINTR || errno == EAGAIN)) {
+                    continue;
+                }
+                if(readSize <= 0) {
+                    break;
+                }
+
+                for(int i = 0; i < readSize; i++) {
+                    char ch = buf[i];
+                    bool fieldSep = isFieldSep(ifs, ch);
+                    if(fieldSep && skipCount > 0) {
+                        if(isSpace(ch)) {
+                            continue;
+                        }
+                        if(--skipCount == 1) {
+                            continue;
+                        }
+                    }
+                    skipCount = 0;
+                    if(fieldSep) {
+                        array->append(DSValue::create<String_Object>(
+                                ctx.getPool().getStringType(), std::move(str)));
+                        str = "";
+                        skipCount = isSpace(ch) ? 2 : 1;
+                        continue;
+                    }
+                    str += ch;
+                }
+            }
+
+            // remove last newline
+            while(!str.empty() && str.back() == '\n') {
+                str.pop_back();
+            }
+
+            // append remain
+            if(!str.empty() || !hasSpace(ifs)) {
+                array->append(DSValue::create<String_Object>(
+                        ctx.getPool().getStringType(), std::move(str)));
+            }
+        }
+        close(pipefds[READ_PIPE]);
+
+        // wait exit
+        int status;
+        ctx.xwaitpid(pid, status, 0);
+        if(WIFEXITED(status)) {
+            ctx.updateExitStatus(WEXITSTATUS(status));
+        }
+        if(WIFSIGNALED(status)) {
+            ctx.updateExitStatus(WTERMSIG(status));
+        }
+
+        // push object
+        ctx.push(std::move(obj));
+
+        ctx.pc() += offset - 1;
+    } else if(pid == 0) {   // child process
+        dup2(pipefds[WRITE_PIPE], STDOUT_FILENO);
+        close(pipefds[READ_PIPE]);
+        close(pipefds[WRITE_PIPE]);
+
+        ctx.pc() += 2;
+    } else {
+        perror("fork failed");
+        exit(1);    //FIXME: throw exception
+    }
+}
+
 static void mainLoop(RuntimeContext &ctx) {
     while(true) {
         vmswitch(GET_CODE(ctx)[++ctx.pc()]) {
@@ -386,6 +531,22 @@ static void mainLoop(RuntimeContext &ctx) {
             double d = typeAs<Float_Object>(ctx.pop())->getValue();
             long v = static_cast<long>(d);
             ctx.push(DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), v));
+            break;
+        }
+        vmcase(EXIT_CHILD) {
+            if(ctx.peek()) {
+                ctx.handleUncaughtException(ctx.pop());
+                exit(1);
+            } else {
+                exit(ctx.getExitStatus());
+            }
+        }
+        vmcase(CAPTURE_STR) {
+            forkAndCapture(true, ctx);
+            break;
+        }
+        vmcase(CAPTURE_ARRAY) {
+            forkAndCapture(false, ctx);
             break;
         }
         }

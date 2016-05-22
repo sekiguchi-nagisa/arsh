@@ -641,16 +641,16 @@ void RuntimeContext::reportError() {
     }
 }
 
-void RuntimeContext::handleUncaughtException() {
+void RuntimeContext::handleUncaughtException(DSValue &&except) {
     std::cerr << "[runtime error]" << std::endl;
     unsigned int index;
-    const bool bt = this->pool.getErrorType().isSameOrBaseTypeOf(*this->thrownObject->getType());
+    const bool bt = this->pool.getErrorType().isSameOrBaseTypeOf(*except->getType());
     if(bt) {
         index = this->pool.getErrorType().lookupMethodHandle(this->pool, "backtrace")->getMethodIndex();
     } else {
         index = this->pool.getAnyType().lookupMethodHandle(this->pool, OP_STR)->getMethodIndex();
     }
-    this->loadThrownObject();
+    this->push(std::move(except));
     try {
         this->callMethod(index, 0);
         if(!bt) {

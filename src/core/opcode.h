@@ -81,7 +81,10 @@ namespace core {
     OP(D_TO_U32, 0) \
     OP(D_TO_I32, 0) \
     OP(D_TO_U64, 0) \
-    OP(D_TO_I64, 0)
+    OP(D_TO_I64, 0) \
+    OP(EXIT_CHILD, 0) \
+    OP(CAPTURE_STR, 2) \
+    OP(CAPTURE_ARRAY, 2)
 
 enum class OpCode : unsigned char {
 #define GEN_OPCODE(CODE, N) CODE,

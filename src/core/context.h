@@ -586,7 +586,7 @@ public:
      */
     void reportError();
 
-    void handleUncaughtException();
+    void handleUncaughtException(DSValue &&except);
 
     // some runtime api
     void fillInStackTrace(std::vector<StackTraceElement> &stackTrace);

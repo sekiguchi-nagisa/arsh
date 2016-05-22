@@ -290,7 +290,9 @@ int DSContext::eval(Lexer &lexer) {
                 Error_Object *obj = typeAs<Error_Object>(thrownObj);
                 errorLineNum = getOccuredLineNum(obj->getStackTrace());
             }
-            this->ctx.handleUncaughtException();
+
+            this->ctx.loadThrownObject();
+            this->ctx.handleUncaughtException(this->ctx.pop());
             this->checker.recover(false);
             this->updateStatus(DS_STATUS_RUNTIME_ERROR, errorLineNum,
                                this->ctx.getPool().getTypeName(*thrownObj->getType()).c_str());

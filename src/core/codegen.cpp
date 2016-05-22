@@ -216,10 +216,14 @@ void ByteCodeGenerator::writeNumCastIns(unsigned short v, const DSType &type) {
     }
 }
 
-void ByteCodeGenerator::writeBranchIns(const IntrusivePtr<Label> &label) {    //FIXME check index size
-    const unsigned int index = this->curBuilder().codeBuffer.size();
-    this->write2byteIns(OpCode::BRANCH, 0);
+void ByteCodeGenerator::writeBranchIns(OpCode op, const IntrusivePtr<Label> &label) {
+    const unsigned int index = this->curBuilder().codeBuffer.size();    //FIXME: check index range
+    this->write2byteIns(op, 0);
     this->curBuilder().writeLabel(index + 1, label, index, ByteCodeWriter<true>::LabelTarget::_16);
+}
+
+void ByteCodeGenerator::writeBranchIns(const IntrusivePtr<Label> &label) {
+    this->writeBranchIns(OpCode::BRANCH, label);
 }
 
 void ByteCodeGenerator::writeJumpIns(const IntrusivePtr<Label> &label) {
@@ -252,6 +256,10 @@ void ByteCodeGenerator::enterFinally() {
         this->write4byteIns(OpCode::ENTER_FINALLY, 0);
         this->curBuilder().writeLabel(index + 1, *iter, 0, ByteCodeWriter<true>::LabelTarget::_32);
     }
+}
+
+void ByteCodeGenerator::writeCaptureIns(bool isStr, const IntrusivePtr<Label> &label) {
+    this->writeBranchIns(isStr ? OpCode::CAPTURE_STR : OpCode::CAPTURE_ARRAY, label);
 }
 
 
@@ -551,8 +559,18 @@ void ByteCodeGenerator::visitPipedCmdNode(PipedCmdNode &) {
     fatal("unsupported\n"); //TODO
 }
 
-void ByteCodeGenerator::visitSubstitutionNode(SubstitutionNode &) {
-    fatal("unsupported\n"); //TODO
+void ByteCodeGenerator::visitSubstitutionNode(SubstitutionNode &node) {
+    auto beginLabel = makeIntrusive<Label>();
+    auto endLabel = makeIntrusive<Label>();
+    auto mergeLabel = makeIntrusive<Label>();
+
+    this->markLabel(beginLabel);
+    this->writeCaptureIns(node.isStrExpr(), mergeLabel);
+    this->visit(*node.getExprNode());
+    this->markLabel(endLabel);
+    this->catchException(beginLabel, endLabel, this->pool.getAnyType());
+    this->write0byteIns(OpCode::EXIT_CHILD);
+    this->markLabel(mergeLabel);
 }
 
 void ByteCodeGenerator::visitAssertNode(AssertNode &node) {

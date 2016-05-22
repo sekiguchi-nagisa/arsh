@@ -293,6 +293,7 @@ private:
     void writeMethodCallIns(OpCode op, unsigned short index, unsigned short paramSize);
     void writeToString();
     void writeNumCastIns(unsigned short op, const DSType &type);
+    void writeBranchIns(OpCode op, const IntrusivePtr<Label> &label);
     void writeBranchIns(const IntrusivePtr<Label> &label);
     void writeJumpIns(const IntrusivePtr<Label> &label);
     void markLabel(IntrusivePtr<Label> &label);
@@ -307,6 +308,7 @@ private:
      */
     void catchException(const IntrusivePtr<Label> &begin, const IntrusivePtr<Label> &end, const DSType &type);
     void enterFinally();
+    void writeCaptureIns(bool isStr, const IntrusivePtr<Label> &label);
 
     void initCallable(CallableKind kind, unsigned short localVarNum);
     void initToplevelCallable(const RootNode &node);
