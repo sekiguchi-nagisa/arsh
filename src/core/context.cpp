@@ -315,7 +315,7 @@ void RuntimeContext::reserveGlobalVar(unsigned int size) {
 }
 
 void RuntimeContext::reserveLocalVar(unsigned int size) {
-    if(size > this->localStackSize) {
+    if(size >= this->localStackSize) {
         this->expandLocalStack(size);
     }
     this->stackTopIndex = size;
