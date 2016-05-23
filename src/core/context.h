@@ -166,6 +166,7 @@ private:
     unsigned int localStackSize;
 
     static constexpr unsigned int DEFAULT_LOCAL_SIZE = 256;
+    static constexpr unsigned int MAXIMUM_LOCAL_SIZE = 2 * 1024 * 1024;
 
     /**
      * initial value is 0. increment index before push
@@ -373,12 +374,12 @@ public:
     /**
      * create and push error.
      */
-    void pushNewError(DSType &errorType, std::string &&message);
+    DSValue newError(DSType &errorType, std::string &&message);
 
     /**
      * pop stack top and store to thrownObject.
      */
-    void throwException();
+    void throwException(DSValue &&except);
 
     /**
      * for internal error reporting.
@@ -410,7 +411,10 @@ public:
         this->thrownObject = this->pop();
     }
 
-    void expandLocalStack(unsigned int needSize);
+    /**
+     * expand local stack size to stackTopIndex
+     */
+    void expandLocalStack();
 
     void unwindOperandStack();
 
@@ -421,14 +425,14 @@ public:
     // operand manipulation
     void push(const DSValue &value) {
         if(++this->stackTopIndex >= this->localStackSize) {
-            this->expandLocalStack(this->stackTopIndex);
+            this->expandLocalStack();
         }
         this->localStack[this->stackTopIndex] = value;
     }
 
     void push(DSValue &&value) {
         if(++this->stackTopIndex >= this->localStackSize) {
-            this->expandLocalStack(this->stackTopIndex);
+            this->expandLocalStack();
         }
         this->localStack[this->stackTopIndex] = std::move(value);
     }
@@ -447,7 +451,7 @@ public:
 
     void dup() {
         if(++this->stackTopIndex >= this->localStackSize) {
-            this->expandLocalStack(this->stackTopIndex);
+            this->expandLocalStack();
         }
         this->localStack[this->stackTopIndex] = this->localStack[this->stackTopIndex - 1];
     }
@@ -455,7 +459,7 @@ public:
     void dup2() {
         this->stackTopIndex += 2;
         if(this->stackTopIndex >= this->localStackSize) {
-            this->expandLocalStack(this->stackTopIndex);
+            this->expandLocalStack();
         }
         this->localStack[this->stackTopIndex] = this->localStack[this->stackTopIndex - 2];
         this->localStack[this->stackTopIndex - 1] = this->localStack[this->stackTopIndex - 3];
@@ -471,7 +475,8 @@ public:
     }
 
     void loadGlobal(unsigned int index) {
-        this->push(this->localStack[index]);
+        auto v(this->localStack[index]);
+        this->push(std::move(v));
     }
 
     void setGlobal(unsigned int index, const DSValue &obj) {
@@ -491,7 +496,8 @@ public:
     }
 
     void loadLocal(unsigned int index) {
-        this->push(this->localStack[this->localVarOffset + index]);
+        auto v(this->localStack[this->localVarOffset + index]);
+        this->push(std::move(v));
     }
 
     void setLocal(unsigned int index, DSValue &&obj) {
@@ -535,7 +541,8 @@ public:
      * dup stack top value and get field from it.
      */
     void dupAndLoadField(unsigned int index) {
-        this->push(this->peek()->getFieldTable()[index]);
+        auto v(this->peek()->getFieldTable()[index]);
+        this->push(std::move(v));
     }
 
     EvalStatus dupAndLoadField(DSType *recvType, const std::string &fieldName, DSType *fieldType) {

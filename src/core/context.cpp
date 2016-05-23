@@ -315,20 +315,20 @@ void RuntimeContext::reserveGlobalVar(unsigned int size) {
 }
 
 void RuntimeContext::reserveLocalVar(unsigned int size) {
-    if(size >= this->localStackSize) {
-        this->expandLocalStack(size);
-    }
     this->stackTopIndex = size;
+    if(size >= this->localStackSize) {
+        this->expandLocalStack();
+    }
     this->stackBottomIndex = size;
 }
 
-void RuntimeContext::pushNewError(DSType &errorType, std::string &&message) {
-    this->push(Error_Object::newError(*this, errorType, DSValue::create<String_Object>(
-            this->pool.getStringType(), std::move(message))));
+DSValue RuntimeContext::newError(DSType &errorType, std::string &&message) {
+    return Error_Object::newError(*this, errorType, DSValue::create<String_Object>(
+            this->pool.getStringType(), std::move(message)));
 }
 
-void RuntimeContext::throwException() {
-    this->thrownObject = this->pop();
+void RuntimeContext::throwException(DSValue &&except) {
+    this->thrownObject = std::move(except);
     if(this->useVM) {
         throw DSExcepton();
     } else {
@@ -341,8 +341,7 @@ void RuntimeContext::throwError(DSType &errorType, const char *message) {
 }
 
 void RuntimeContext::throwError(DSType &errorType, std::string &&message) {
-    this->pushNewError(errorType, std::move(message));
-    this->throwException();
+    this->throwException(this->newError(errorType, std::move(message)));
 }
 
 void RuntimeContext::throwSystemError(int errorNum, std::string &&message) {
@@ -362,7 +361,13 @@ void RuntimeContext::raiseCircularReferenceError() {
 }
 
 
-void RuntimeContext::expandLocalStack(unsigned int needSize) {
+void RuntimeContext::expandLocalStack() {
+    const unsigned int needSize = this->stackTopIndex;
+    if(needSize >= MAXIMUM_LOCAL_SIZE) {
+        this->stackTopIndex = this->localStackSize - 1;
+        this->throwError(this->pool.getStackOverflowErrorType(), "local stack size reaches limit");
+    }
+
     unsigned int newSize = this->localStackSize;
     do {
         newSize += (newSize >> 1);
@@ -390,8 +395,9 @@ void RuntimeContext::saveAndSetStackState(unsigned int stackTopOffset,
     const unsigned int oldPC = this->pc_;
 
     // change stack state
-    this->localVarOffset = this->stackTopIndex - paramSize + 1;
+    const unsigned int localVarOffset = this->stackTopIndex - paramSize + 1;
     this->reserveLocalVar(this->stackTopIndex + maxVarSize - paramSize + 4);
+    this->localVarOffset = localVarOffset;
     this->pc_ = 0;
 
     // push old state
@@ -542,7 +548,7 @@ void RuntimeContext::callMethod(unsigned short index, unsigned short paramSize) 
 
     bool status = this->localStack[recvIndex]->getType()->getMethodRef(index)->invoke(*this);
     if(!status) {
-        this->throwException();
+        this->throwException(this->pop());
     }
 
     bool hasRet = this->stackTopIndex > this->stackBottomIndex;
@@ -794,8 +800,7 @@ EvalStatus RuntimeContext::checkAssertion(unsigned int startPos) {
 
 void RuntimeContext::checkAssertion() {
     if(!typeAs<Boolean_Object>(this->pop())->getValue()) {
-        this->pushNewError(this->pool.getAssertFail(), "");
-        this->storeThrowObject();
+        this->thrownObject = this->newError(this->pool.getAssertFail(), "");
 
         // invoke termination hook
         if(this->terminationHook != nullptr) {
@@ -990,8 +995,7 @@ void RuntimeContext::exitShell(unsigned int status) {
     std::string str("terminated by exit ");
     str += std::to_string(status);
     if(this->useVM) {
-        this->pushNewError(this->pool.getShellExit(), std::move(str));
-        this->storeThrowObject();
+        this->thrownObject = this->newError(this->pool.getShellExit(), std::move(str));
     } else {
         this->throwError(this->pool.getShellExit(), std::move(str));
     }

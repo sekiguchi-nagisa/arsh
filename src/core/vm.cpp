@@ -408,7 +408,7 @@ static void mainLoop(RuntimeContext &ctx) {
             break;
         }
         vmcase(THROW) {
-            ctx.throwException();
+            ctx.throwException(ctx.pop());
         }
         vmcase(ENTER_FINALLY) {
             const unsigned int index = read32(GET_CODE(ctx), ctx.pc() + 1);
@@ -420,7 +420,7 @@ static void mainLoop(RuntimeContext &ctx) {
         vmcase(EXIT_FINALLY) {
             switch(ctx.peek().kind()) {
             case DSValueKind::OBJECT: {
-                ctx.throwException();
+                ctx.throwException(ctx.pop());
                 break;
             }
             case DSValueKind::NUMBER: {

@@ -2052,7 +2052,7 @@ void ThrowNode::accept(NodeVisitor &visitor) {
 
 EvalStatus ThrowNode::eval(RuntimeContext &ctx) {
     EVAL(ctx, this->exprNode);
-    ctx.throwException();
+    ctx.throwException(ctx.pop());
     return EvalStatus::THROW;
 }
 
