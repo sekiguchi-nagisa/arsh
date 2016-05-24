@@ -755,7 +755,7 @@ bool RuntimeContext::checkCast(unsigned int startPos, DSType *targetType) {
     return true;
 }
 
-bool RuntimeContext::checkCast(DSType *targetType) {
+void RuntimeContext::checkCast(DSType *targetType) {
     if(!this->peek()->introspect(*this, targetType)) {
         DSType *stackTopType = this->pop()->getType();
         std::string str("cannot cast ");
@@ -763,9 +763,7 @@ bool RuntimeContext::checkCast(DSType *targetType) {
         str += " to ";
         str += this->pool.getTypeName(*targetType);
         this->throwError(this->pool.getTypeCastErrorType(), std::move(str));
-        return false;
     }
-    return true;
 }
 
 void RuntimeContext::instanceOf(DSType *targetType) {

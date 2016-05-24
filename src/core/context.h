@@ -476,7 +476,7 @@ public:
 
     void loadGlobal(unsigned int index) {
         auto v(this->localStack[index]);
-        this->push(std::move(v));
+        this->push(std::move(v));   // localStack may be expanded.
     }
 
     void setGlobal(unsigned int index, const DSValue &obj) {
@@ -496,7 +496,7 @@ public:
     }
 
     void loadLocal(unsigned int index) {
-        auto v(this->localStack[this->localVarOffset + index]);
+        auto v(this->localStack[this->localVarOffset + index]); // localStack may be expanded.
         this->push(std::move(v));
     }
 
@@ -602,7 +602,7 @@ public:
 
     bool checkCast(unsigned int startPos, DSType *targetType);
 
-    bool checkCast(DSType *targetType);
+    void checkCast(DSType *targetType);
 
 
     void instanceOf(DSType *targetType);
