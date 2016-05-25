@@ -200,13 +200,13 @@ struct ByteCodeWriter {
                 switch(u.offsetLen) {
                 case LabelTarget::_8:
                     if(offset > UINT8_MAX) {
-                        fatal("offset is greater than UINT8_MA\n");
+                        fatal("offset is greater than UINT8_MAX\n");
                     }
                     this->write8(targetIndex, offset);
                     break;
                 case LabelTarget::_16:
                     if(offset > UINT16_MAX) {
-                        fatal("offset is greater than UINT16_MA\n");
+                        fatal("offset is greater than UINT16_MAX\n");
                     }
                     this->write16(targetIndex, offset);
                     break;

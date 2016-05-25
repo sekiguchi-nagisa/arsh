@@ -198,7 +198,7 @@ static void mainLoop(RuntimeContext &ctx) {
         vmcase(STOP_EVAL) {
             return;
         }
-        vmcase(ASSERT) {    //FIXME not work due to call frame
+        vmcase(ASSERT) {
             ctx.checkAssertion();
             break;
         }
@@ -217,7 +217,7 @@ static void mainLoop(RuntimeContext &ctx) {
         vmcase(CHECK_CAST) {
             unsigned long v = read64(GET_CODE(ctx), ctx.pc() + 1);
             ctx.pc() += 8;
-            ctx.checkCast(reinterpret_cast<DSType *>(v));    //FIXME exception raising
+            ctx.checkCast(reinterpret_cast<DSType *>(v));
             break;
         }
         vmcase(PUSH_TRUE) {

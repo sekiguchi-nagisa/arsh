@@ -281,7 +281,7 @@ void RuntimeContext::initScriptArg() {
     typeAs<Array_Object>(this->getGlobal(index))->refValues().clear();
 }
 
-void RuntimeContext::finalizeScritArg() {
+void RuntimeContext::finalizeScriptArg() {
     unsigned int index = this->getBuiltinVarIndex(BuiltinVarOffset::ARGS);
     auto *array = typeAs<Array_Object>(this->getGlobal(index));
 
@@ -1034,7 +1034,7 @@ int RuntimeContext::execUserDefinedCommand(UserDefinedCmdNode *node, DSValue *ar
     for(unsigned int index = 1; argv[index]; index++) {
         typeAs<Array_Object>(this->getScriptArgs())->append(std::move(argv[index]));
     }
-    this->finalizeScritArg();
+    this->finalizeScriptArg();
 
     // clear procInvoker
     this->activePipeline().clear();

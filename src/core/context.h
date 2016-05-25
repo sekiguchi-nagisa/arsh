@@ -310,7 +310,7 @@ public:
     /**
      * set argument to positional parameter
      */
-    void finalizeScritArg();
+    void finalizeScriptArg();
 
     int getExitStatus() const {
         return typeAs<Int_Object>(this->getGlobal(

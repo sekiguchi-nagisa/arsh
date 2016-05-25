@@ -509,7 +509,7 @@ void DSContext_setArguments(DSContext *ctx, char *const args[]) {
     for(unsigned int i = 0; args[i] != nullptr; i++) {
         ctx->ctx.addScriptArg(args[i]);
     }
-    ctx->ctx.finalizeScritArg();
+    ctx->ctx.finalizeScriptArg();
 }
 
 static void setOptionImpl(DSContext *ctx, flag32_set_t flagSet, bool set) {
