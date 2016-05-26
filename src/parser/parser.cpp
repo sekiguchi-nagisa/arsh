@@ -973,7 +973,7 @@ std::unique_ptr<Node> Parser::parse_unaryExpression() {
 }
 
 std::unique_ptr<Node> Parser::parse_memberExpression() {
-    std::unique_ptr<Node> node(this->parse_primaryExpression());
+    auto node(this->parse_primaryExpression());
 
     for(bool next = true; !HAS_NL() && next;) {
         switch(CUR_KIND()) {
@@ -993,7 +993,7 @@ std::unique_ptr<Node> Parser::parse_memberExpression() {
         }
         case LB: {
             this->expect(LB);
-            std::unique_ptr<Node> indexNode(this->parse_expression());
+            auto indexNode(this->parse_expression());
             this->expect(RB);
             node.reset(createIndexNode(node.release(), indexNode.release()));
             break;
@@ -1106,12 +1106,11 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     }
     case LP: {  // group or tuple
         Token token = this->expect(LP);
-        std::unique_ptr<Node> node(this->parse_expression());
+        auto node(this->parse_expression());
         if(CUR_KIND() == COMMA) {   // tuple
             this->expect(COMMA);
-            std::unique_ptr<Node> rightNode(this->parse_expression());
-            std::unique_ptr<TupleNode> tuple(
-                    new TupleNode(token.pos, node.release(), rightNode.release()));
+            auto rightNode(this->parse_expression());
+            auto tuple = uniquify<TupleNode>(token.pos, node.release(), rightNode.release());
             for(bool next = true; next;) {
                 if(CUR_KIND() == COMMA) {
                     this->expect(COMMA);
@@ -1132,15 +1131,14 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     case LB: {  // array or map
         Token token = this->expect(LB);
 
-        std::unique_ptr<Node> keyNode(this->parse_expression());
+        auto keyNode(this->parse_expression());
 
         std::unique_ptr<Node> node;
         if(CUR_KIND() == COLON) {   // map
             this->expectAndChangeMode(COLON, yycSTMT);
 
-            std::unique_ptr<Node> valueNode(this->parse_expression());
-            std::unique_ptr<MapNode> mapNode(
-                    new MapNode(token.pos, keyNode.release(), valueNode.release()));
+            auto valueNode(this->parse_expression());
+            auto mapNode = uniquify<MapNode>(token.pos, keyNode.release(), valueNode.release());
             for(bool next = true; next;) {
                 if(CUR_KIND() == COMMA) {
                     this->expect(COMMA);
@@ -1225,7 +1223,7 @@ ArgsWrapper Parser::parse_arguments() {
 
 std::unique_ptr<Node> Parser::parse_stringExpression() {
     Token token = this->expect(OPEN_DQUOTE);
-    std::unique_ptr<StringExprNode> node(new StringExprNode(token.pos));
+    auto node = uniquify<StringExprNode>(token.pos);
 
     for(bool next = true; next;) {
         switch(CUR_KIND()) {
@@ -1265,7 +1263,7 @@ std::unique_ptr<Node> Parser::parse_interpolation() {
         return this->parse_appliedName(CUR_KIND() == SPECIAL_NAME);
     default:
         this->expect(START_INTERP);
-        std::unique_ptr<Node> node(this->parse_expression());
+        auto node(this->parse_expression());
         this->expect(RBC);
         return node;
     }
