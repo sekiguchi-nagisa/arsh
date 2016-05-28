@@ -17,6 +17,8 @@
 #ifndef YDSH_CORE_CODEGEN_H
 #define YDSH_CORE_CODEGEN_H
 
+#include <cmath>
+
 #include "../ast/node.h"
 #include "object.h"
 #include "opcode.h"
