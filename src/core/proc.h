@@ -52,7 +52,7 @@ constexpr unsigned int WRITE_PIPE = 1;
     OP(MERGE_ERR_2_OUT, "2>&1") \
     OP(MERGE_OUT_2_ERR, "1>&2")
 
-enum RedirectOP : unsigned int {
+enum RedirectOP : unsigned char {
 #define GEN_ENUM(ENUM, STR) ENUM,
     EACH_RedirectOP(GEN_ENUM)
 #undef GEN_ENUM

@@ -732,6 +732,8 @@ public:
 
     EvalStatus callPipedCommand(unsigned int startPos);
 
+    void callPipeline();
+
     void setTerminationHook(TerminationHook hook) {
         this->terminationHook = hook;
     }

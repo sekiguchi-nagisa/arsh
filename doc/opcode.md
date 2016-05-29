@@ -60,6 +60,14 @@
 | D_TO_I32      | 0x37       |                                | value -> value                               | convert number (see. int-cast.md)                  |
 | D_TO_U64      | 0x38       |                                | value -> value                               | convert number (see. int-cast.md)                  |
 | D_TO_I64      | 0x39       |                                | value -> value                               | convert number (see. int-cast.md)                  |
-| EXIT_CHILD    | 0x3A       |                                | -> [empty]                                   | terminate current process                          |
-| CAPTURE_STR   | 0x3B       | 2: offset1 offset2             | -> value                                     | capture stdout as string                           |
-| CAPTURE_ARRAY | 0x3C       | 2: offset1 offset2             | -> value                                     | capture stdout as string array                     |
+| SUCCESS_CHILD | 0x3A       |                                | -> [terminate]                               | terminate current process                          |
+| FAILURE_CHILD | 0x3B       |                                | -> [terminate]                               | terminate current process                          |
+| CAPTURE_STR   | 0x3C       | 2: offset1 offset2             | -> value                                     | capture stdout as string                           |
+| CAPTURE_ARRAY | 0x3D       | 2: offset1 offset2             | -> value                                     | capture stdout as string array                     |
+| NEW_PIPELINE  | 0x3E       |                                | -> value                                     | create new pipeline                                |
+| CALL_PIPELINE | 0x3F       |                                | value -> value                               | call pipeline                                      |
+| OPEN_PROC     | 0x40       |                                | value1 value2 -> value1                      | initialize process                                 |
+| CLOSE_PROC    | 0x41       |                                | [no change]                                  | finalize process                                   |
+| ADD_CMD_ARG   | 0x42       | 1: byte1                       | value1 value2 -> value1                      | add stack top value as command argument            |
+| ADD_REDIR_OP  | 0x43       | 1: byte1                       | value1 value2 -> value1                      | add stack top value as redirection op              |
+| EXPAND_TILDE  | 0x44       |                                | value -> value                               | perform tilde expansion                            |

@@ -34,7 +34,7 @@ class FieldHandle;
 class MethodHandle;
 class RuntimeContext;
 enum class EvalStatus : unsigned int;
-enum RedirectOP : unsigned int;
+enum RedirectOP : unsigned char;
 
 }
 }

@@ -533,13 +533,12 @@ static void mainLoop(RuntimeContext &ctx) {
             ctx.push(DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), v));
             break;
         }
-        vmcase(EXIT_CHILD) {
-            if(ctx.peek()) {
-                ctx.handleUncaughtException(ctx.pop());
-                exit(1);
-            } else {
-                exit(ctx.getExitStatus());
-            }
+        vmcase(SUCCESS_CHILD) {
+            exit(ctx.getExitStatus());
+        }
+        vmcase(FAILURE_CHILD) {
+            ctx.handleUncaughtException(ctx.pop());
+            exit(1);
         }
         vmcase(CAPTURE_STR) {
             forkAndCapture(true, ctx);
@@ -547,6 +546,37 @@ static void mainLoop(RuntimeContext &ctx) {
         }
         vmcase(CAPTURE_ARRAY) {
             forkAndCapture(false, ctx);
+            break;
+        }
+        vmcase(NEW_PIPELINE) {
+            ctx.pushNewPipeline();
+            break;
+        }
+        vmcase(CALL_PIPELINE) {
+            ctx.callPipeline();
+            break;
+        }
+        vmcase(OPEN_PROC) {
+            ctx.openProc();
+            break;
+        }
+        vmcase(CLOSE_PROC) {
+            ctx.closeProc();
+            break;
+        }
+        vmcase(ADD_CMD_ARG) {
+            unsigned char v = read8(GET_CODE(ctx), ++ctx.pc());
+            ctx.addArg(v > 0);
+            break;
+        }
+        vmcase(ADD_REDIR_OP) {
+            unsigned char v = read8(GET_CODE(ctx), ++ctx.pc());
+            ctx.addRedirOption(static_cast<RedirectOP>(v));
+            break;
+        }
+        vmcase(EXPAND_TILDE) {
+            std::string str(expandTilde(typeAs<String_Object>(ctx.pop())->getValue()));
+            ctx.push(DSValue::create<String_Object>(ctx.getPool().getStringType(), std::move(str)));
             break;
         }
         }

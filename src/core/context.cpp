@@ -1086,6 +1086,18 @@ EvalStatus RuntimeContext::callPipedCommand(unsigned int startPos) {
     return status;
 }
 
+void RuntimeContext::callPipeline() {
+    this->activePipeline().evalPipeline(*this);
+    this->popNoReturn();    // pop pipeline
+
+    // push exit status as boolean
+    if(this->getExitStatus() == 0) {
+        this->push(this->getTrueObj());
+    } else {
+        this->push(this->getFalseObj());
+    }
+}
+
 static void format2digit(int num, std::string &out) {
     if(num < 10) {
         out += "0";

@@ -311,6 +311,8 @@ private:
     void catchException(const IntrusivePtr<Label> &begin, const IntrusivePtr<Label> &end, const DSType &type);
     void enterFinally();
     void writeCaptureIns(bool isStr, const IntrusivePtr<Label> &label);
+    void generateCmdArg(CmdArgNode &node);
+    void generateTilde(TildeNode &node, bool isLastSegment);
 
     void initCallable(CallableKind kind, unsigned short localVarNum);
     void initToplevelCallable(const RootNode &node);

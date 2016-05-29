@@ -82,9 +82,17 @@ namespace core {
     OP(D_TO_I32, 0) \
     OP(D_TO_U64, 0) \
     OP(D_TO_I64, 0) \
-    OP(EXIT_CHILD, 0) \
+    OP(SUCCESS_CHILD, 0) \
+    OP(FAILURE_CHILD, 0) \
     OP(CAPTURE_STR, 2) \
-    OP(CAPTURE_ARRAY, 2)
+    OP(CAPTURE_ARRAY, 2) \
+    OP(NEW_PIPELINE, 0) \
+    OP(CALL_PIPELINE, 0) \
+    OP(OPEN_PROC, 0) \
+    OP(CLOSE_PROC, 0) \
+    OP(ADD_CMD_ARG, 1) \
+    OP(ADD_REDIR_OP, 1) \
+    OP(EXPAND_TILDE, 0)
 
 enum class OpCode : unsigned char {
 #define GEN_OPCODE(CODE, N) CODE,

@@ -262,6 +262,37 @@ void ByteCodeGenerator::writeCaptureIns(bool isStr, const IntrusivePtr<Label> &l
     this->writeBranchIns(isStr ? OpCode::CAPTURE_STR : OpCode::CAPTURE_ARRAY, label);
 }
 
+void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
+    const unsigned int size = node.getSegmentNodes().size();
+
+    if(size == 1) {
+        this->visit(*node.getSegmentNodes()[0]);
+    } else {
+        this->write0byteIns(OpCode::NEW_STRING);
+
+        unsigned int index = 0;
+        if(dynamic_cast<TildeNode *>(node.getSegmentNodes()[0]) != nullptr) {
+            this->generateTilde(*static_cast<TildeNode *>(node.getSegmentNodes()[0]), false);
+            this->write0byteIns(OpCode::APPEND_STRING);
+            index++;
+        }
+
+        for(; index < size; index++) {
+            this->visit(*node.getSegmentNodes()[index]);
+            this->write0byteIns(OpCode::APPEND_STRING);
+        }
+    }
+}
+
+void ByteCodeGenerator::generateTilde(TildeNode &node, bool isLastSegment) {
+    this->writeConstant(DSValue::create<String_Object>(this->pool.getStringType(), node.getValue()));
+    if(!isLastSegment && strchr(node.getValue().c_str(), '/') == nullptr) {
+        return;
+    } else {
+        this->write0byteIns(OpCode::EXPAND_TILDE);
+    }
+}
+
 
 // visitor api
 void ByteCodeGenerator::visit(Node &node) {
@@ -539,24 +570,39 @@ void ByteCodeGenerator::visitTernaryNode(TernaryNode &node) {
 }
 
 
-void ByteCodeGenerator::visitCmdNode(CmdNode &) {
-    fatal("unsupported\n"); //TODO
+void ByteCodeGenerator::visitCmdNode(CmdNode &node) {
+    this->visit(*node.getNameNode());
+
+    this->write0byteIns(OpCode::OPEN_PROC);
+    for(auto &e : node.getArgNodes()) {
+        this->visit(*e);
+    }
+    this->write0byteIns(OpCode::CLOSE_PROC);
 }
 
-void ByteCodeGenerator::visitCmdArgNode(CmdArgNode &) {
-    fatal("unsupported\n"); //TODO
+void ByteCodeGenerator::visitCmdArgNode(CmdArgNode &node) {
+    this->generateCmdArg(node);
+    this->write1byteIns(OpCode::ADD_CMD_ARG, node.isIgnorableEmptyString() ? 1 : 0);
 }
 
-void ByteCodeGenerator::visitRedirNode(RedirNode &) {
-    fatal("unsupported\n"); //TODO
+void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
+    this->generateCmdArg(*node.getTargetNode());
+    this->write1byteIns(OpCode::ADD_REDIR_OP, node.getRedirectOP());
 }
 
-void ByteCodeGenerator::visitTildeNode(TildeNode &) {
-    fatal("unsupported\n"); //TODO
+void ByteCodeGenerator::visitTildeNode(TildeNode &node) {
+    this->generateTilde(node, true);
 }
 
-void ByteCodeGenerator::visitPipedCmdNode(PipedCmdNode &) {
-    fatal("unsupported\n"); //TODO
+void ByteCodeGenerator::visitPipedCmdNode(PipedCmdNode &node) {
+    this->write0byteIns(OpCode::NEW_PIPELINE);
+
+    for(auto &e : node.getCmdNodes()) {
+        this->visit(*e);
+    }
+
+    this->writeSourcePos(node.getStartPos());
+    this->write0byteIns(OpCode::CALL_PIPELINE);
 }
 
 void ByteCodeGenerator::visitSubstitutionNode(SubstitutionNode &node) {
@@ -568,8 +614,10 @@ void ByteCodeGenerator::visitSubstitutionNode(SubstitutionNode &node) {
     this->writeCaptureIns(node.isStrExpr(), mergeLabel);
     this->visit(*node.getExprNode());
     this->markLabel(endLabel);
+
+    this->write0byteIns(OpCode::SUCCESS_CHILD);
     this->catchException(beginLabel, endLabel, this->pool.getAnyType());
-    this->write0byteIns(OpCode::EXIT_CHILD);
+    this->write0byteIns(OpCode::FAILURE_CHILD);
     this->markLabel(mergeLabel);
 }
 

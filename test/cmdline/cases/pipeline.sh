@@ -17,7 +17,7 @@ echo -n '\' | $YDSH_BIN
 echo 'assert($0 == "ydsh" && $1 == "hoge" && $2 == "123")' | $YDSH_BIN -s hoge 123
 
 # force interactive
-test "$(echo '$true' | $YDSH_BIN -i --quiet)" = "(Boolean) true"
+test "$(echo '$true' | $YDSH_BIN -i --quiet --norc)" = "(Boolean) true"
 
 
 exit 0
