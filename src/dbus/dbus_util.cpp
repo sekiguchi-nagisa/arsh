@@ -15,7 +15,6 @@
  */
 
 #include "dbus_util.h"
-#include "../misc/fatal.h"
 
 namespace ydsh {
 namespace core {

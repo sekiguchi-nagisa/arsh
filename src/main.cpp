@@ -138,7 +138,7 @@ enum class InvocationKind {
 
 int main(int argc, char **argv) {
     argv::CmdLines<OptionKind> cmdLines;
-    int restIndex = argc;
+    int restIndex;
     try {
         restIndex = argv::parseArgv(argc, argv, options, cmdLines);
     } catch(const argv::ParseError &e) {

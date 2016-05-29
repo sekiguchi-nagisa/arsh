@@ -17,14 +17,10 @@
 #include <cstring>
 #include <pwd.h>
 #include <iostream>
-#include <clocale>
 #include <csignal>
-#include <cstdlib>
 #include <algorithm>
 
-#include <dirent.h>
 #include <unistd.h>
-#include <execinfo.h>
 #include <sys/utsname.h>
 
 #include <ydsh/ydsh.h>
@@ -283,36 +279,15 @@ int DSContext::eval(Lexer &lexer) {
 }
 
 int DSContext::eval(RootNode &rootNode) {
-    if(this->ctx.isUseVM()) {
-        ByteCodeGenerator codegen(this->ctx.getPool(), hasFlag(this->option, DS_OPTION_ASSERT));
-        Callable c = codegen.generateToplevel(rootNode);
+    ByteCodeGenerator codegen(this->ctx.getPool(), hasFlag(this->option, DS_OPTION_ASSERT));
+    Callable c = codegen.generateToplevel(rootNode);
 
-        if(hasFlag(this->option, DS_OPTION_DUMP_CODE)) {
-            std::cout << "### dump compiled code ###" << std::endl;
-            dumpCode(std::cout, this->ctx, c);
-        }
-
-        if(!vmEval(this->ctx, c)) {
-            unsigned int errorLineNum = 0;
-            DSValue thrownObj = this->ctx.getThrownObject();
-            if(dynamic_cast<Error_Object *>(thrownObj.get()) != nullptr) {
-                Error_Object *obj = typeAs<Error_Object>(thrownObj);
-                errorLineNum = getOccuredLineNum(obj->getStackTrace());
-            }
-
-            this->ctx.loadThrownObject();
-            this->ctx.handleUncaughtException(this->ctx.pop());
-            this->checker.recover(false);
-            this->updateStatus(DS_STATUS_RUNTIME_ERROR, errorLineNum,
-                               this->ctx.getPool().getTypeName(*thrownObj->getType()).c_str());
-            return 1;
-        }
-        return this->getExitStatus();
+    if(hasFlag(this->option, DS_OPTION_DUMP_CODE)) {
+        std::cout << "### dump compiled code ###" << std::endl;
+        dumpCode(std::cout, this->ctx, c);
     }
 
-    EvalStatus s = rootNode.eval(this->ctx);
-
-    if(s != EvalStatus::SUCCESS) {
+    if(!vmEval(this->ctx, c)) {
         unsigned int errorLineNum = 0;
         DSValue thrownObj = this->ctx.getThrownObject();
         if(dynamic_cast<Error_Object *>(thrownObj.get()) != nullptr) {
@@ -320,7 +295,8 @@ int DSContext::eval(RootNode &rootNode) {
             errorLineNum = getOccuredLineNum(obj->getStackTrace());
         }
 
-        this->ctx.reportError();
+        this->ctx.loadThrownObject();
+        this->ctx.handleUncaughtException(this->ctx.pop());
         this->checker.recover(false);
         this->updateStatus(DS_STATUS_RUNTIME_ERROR, errorLineNum,
                            this->ctx.getPool().getTypeName(*thrownObj->getType()).c_str());
@@ -467,9 +443,6 @@ unsigned int DSContext::getShellLevel() {
 
 DSContext *DSContext_create() {
     DSContext *ctx = new DSContext();
-    if(getenv("YDSH_ENABLE_VM") != nullptr) {
-        ctx->ctx.setUseVM(true);
-    }
     ctx->initBuiltinVar();
     ctx->loadEmbeddedScript();
     return ctx;

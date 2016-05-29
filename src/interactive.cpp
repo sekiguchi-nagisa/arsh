@@ -17,9 +17,7 @@
 #include <csignal>
 #include <cstring>
 #include <string>
-#include <cerrno>
 #include <memory>
-#include <cstdlib>
 
 #include <unistd.h>
 

@@ -198,32 +198,15 @@ private:
      */
     bool traceExit;
 
-    bool useVM;
-
     /**
      * for string cast
      */
     MethodHandle *handle_STR;
 
     /**
-     * for error reporting
-     */
-    MethodHandle *handle_bt;
-
-    /**
      * for field splitting (read command, command substitution)
      */
     unsigned int IFS_index;
-
-    /**
-     * contains currently evaluating CallableNode
-     */
-    std::vector<CallableNode *> callableContextStack;
-
-    /**
-     * contains startPos and callableContextStack index.
-     */
-    std::vector<unsigned long> callStack;
 
     /**
      * contains currently evaluating callable.
@@ -337,14 +320,6 @@ public:
 
     void setTraceExit(bool traceExit) {
         this->traceExit = traceExit;
-    }
-
-    void setUseVM(bool useVM) {
-        this->useVM = useVM;
-    }
-
-    bool isUseVM() const {
-        return this->useVM;
     }
 
     const DSValue &getThrownObject() {
@@ -519,26 +494,12 @@ public:
         this->pop()->getFieldTable()[index] = std::move(value);
     }
 
-    EvalStatus storeField(DSType *recvType, const std::string &fieldName, DSType *fieldType) {
-        bool status = typeAs<ProxyObject>(this->localStack[this->stackTopIndex - 1])->
-                invokeSetter(*this, recvType, fieldName, fieldType);
-        // pop receiver
-        this->popNoReturn();
-        return status ? EvalStatus::SUCCESS : EvalStatus::THROW;
-    }
-
     /**
      * get field from stack top value.
      */
     void loadField(unsigned int index) {
         this->localStack[this->stackTopIndex] =
                 this->localStack[this->stackTopIndex]->getFieldTable()[index];
-    }
-
-    EvalStatus loadField(DSType *recvType, const std::string &fieldName, DSType *fieldType) {
-        bool status = typeAs<ProxyObject>(this->pop())->
-                invokeGetter(*this, recvType, fieldName, fieldType);
-        return status ? EvalStatus::SUCCESS : EvalStatus::THROW;
     }
 
     /**
@@ -549,32 +510,14 @@ public:
         this->push(std::move(v));
     }
 
-    EvalStatus dupAndLoadField(DSType *recvType, const std::string &fieldName, DSType *fieldType) {
-        bool status = typeAs<ProxyObject>(this->localStack[this->stackTopIndex])->
-                invokeGetter(*this, recvType, fieldName, fieldType);
-        return status ? EvalStatus::SUCCESS : EvalStatus::THROW;
-    }
-
-    void pushCallFrame(unsigned int startPos) {
-        unsigned long index = (this->callableContextStack.size() - 1) << 32;
-        this->callStack.push_back(index | (unsigned long) startPos);
-    }
-
-    void popCallFrame() {
-        this->callStack.pop_back();
-    }
-
     std::vector<const Callable *> &callableStack() noexcept {
         return this->callableStack_;
     }
 
-    EvalStatus applyFuncObject(unsigned int startPos, bool returnTypeIsVoid, unsigned int paramSize);
-
     void applyFuncObject(unsigned int paramSize);
 
-    EvalStatus callMethod(unsigned int startPos, const std::string &methodName, MethodHandle *handle);
-
     void callMethod(unsigned short index, unsigned short paramSize);
+    void callToString();
 
     /**
      * allocate new DSObject on stack top.
@@ -582,20 +525,7 @@ public:
      */
     void newDSObject(DSType *type);
 
-    EvalStatus callConstructor(unsigned int startPos, unsigned int paramSize);
-
     bool callConstructor(unsigned short paramSize);
-
-    /**
-     * cast stack top value to String
-     */
-    EvalStatus toString(unsigned int startPos);
-
-    /**
-     * report thrown object error message.
-     * after error reporting, clear thrown object
-     */
-    void reportError();
 
     void handleUncaughtException(DSValue &&except);
 
@@ -604,46 +534,16 @@ public:
 
     void printStackTop(DSType *stackTopType);
 
-    bool checkCast(unsigned int startPos, DSType *targetType);
-
     void checkCast(DSType *targetType);
 
 
     void instanceOf(DSType *targetType);
 
-    EvalStatus checkAssertion(unsigned int startPos);
-
     void checkAssertion();
-
-    /**
-     * get environment variable and set to local variable
-     */
-    EvalStatus importEnv(unsigned int startPos, const std::string &envName,
-                         unsigned int index, bool isGlobal, bool hasDefault);
-
-    /**
-     * put stack top value to environment variable.
-     */
-    void exportEnv(const std::string &envName, unsigned int index, bool isGlobal);
-
-    /**
-     * update environmental variable
-     */
-    void storeEnv(unsigned int index, bool isGlobal);
-
-    void loadEnv(unsigned int index, bool isGlobal);
 
     void importEnv(bool hasDefault);
     void storeEnv();
     void loadEnv();
-
-    void pushFuncContext(CallableNode *node) {
-        this->callableContextStack.push_back(node);
-    }
-
-    void popFuncContext() {
-        this->callableContextStack.pop_back();
-    }
 
     /**
      * reset call stack, local var offset, thrown object.
@@ -669,8 +569,6 @@ public:
     const CStringHashMap<UserDefinedCmdNode *> &getUdcMap() const {
         return this->udcMap;
     }
-
-    void addUserDefinedCommand(UserDefinedCmdNode *node);
 
     /**
      * if not found, return null
@@ -733,8 +631,6 @@ public:
      * stack top value must be String_Object.
      */
     void addRedirOption(RedirectOP op);
-
-    EvalStatus callPipedCommand(unsigned int startPos);
 
     void callPipeline();
 

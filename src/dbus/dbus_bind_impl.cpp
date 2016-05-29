@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <cassert>
 #include <cstring>
 
 #include "dbus_bind_impl.h"
@@ -523,9 +522,11 @@ bool DBus_ObjectImpl::waitSignal(RuntimeContext &ctx) {
             }
 
             // apply handler
-            if(ctx.applyFuncObject(0, true, size) != EvalStatus::SUCCESS) {
-                return false;
-            }
+//            if(ctx.applyFuncObject(0, true, size) != EvalStatus::SUCCESS) {
+//                return false;
+//            }
+            //FIXME: use vm
+            fatal("unsupported\n");
         }
     }
 

@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#include <cassert>
-
 #include "type.h"
 #include "object.h"
 #include "handle.h"

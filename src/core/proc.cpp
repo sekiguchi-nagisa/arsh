@@ -16,7 +16,6 @@
 
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <signal.h>
 
 #include <cstdlib>
 #include <cstdarg>

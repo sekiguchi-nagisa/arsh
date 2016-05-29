@@ -860,9 +860,7 @@ static inline bool string_add(RuntimeContext &ctx) {
 
     // cats LOCAL(1) to string
     ctx.loadLocal(1);
-    if(ctx.toString(0) != EvalStatus::SUCCESS) {
-        return false;
-    }
+    ctx.callToString();
 
     std::string str(typeAs<String_Object>(LOCAL(0))->getValue());
     str += typeAs<String_Object>(ctx.peek())->getValue();

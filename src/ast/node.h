@@ -95,7 +95,6 @@ public:
 
     virtual void dump(NodeDumper &dumper) const = 0;
     virtual void accept(NodeVisitor &visitor) = 0;
-    virtual EvalStatus eval(RuntimeContext &ctx) = 0;
 };
 
 // type definition
@@ -110,8 +109,6 @@ public:
 
     virtual void dump(NodeDumper &dumper) const override = 0;
     virtual void accept(NodeVisitor &visitor) override = 0;
-
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class BaseTypeNode : public TypeNode {
@@ -325,7 +322,6 @@ public:
     void setType(DSType &type) override;
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class LongValueNode : public Node {
@@ -366,7 +362,6 @@ public:
     void setType(DSType &type) override;
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class FloatValueNode : public Node {
@@ -392,7 +387,6 @@ public:
     void setType(DSType &type) override;
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class StringValueNode : public Node {
@@ -429,7 +423,6 @@ public:
     void setType(DSType &type) override;
     void dump(NodeDumper &dumper) const override;
     virtual void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class ObjectPathNode : public StringValueNode {
@@ -463,7 +456,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class ArrayNode : public Node {
@@ -487,7 +479,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class MapNode : public Node {
@@ -520,7 +511,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class TupleNode : public Node {
@@ -543,7 +533,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 /**
@@ -605,7 +594,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 
     // for ArgsNode
     /**
@@ -660,7 +648,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 
     /**
      * extract recvNode, and fieldName.
@@ -748,7 +735,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 
     /**
      * for implicit cast.
@@ -794,7 +780,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class PrintNode : public Node {
@@ -812,7 +797,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 
     static PrintNode *newTypedPrintNode(TypePool &pool, Node *exprNode);
 };
@@ -844,7 +828,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class MethodCallNode : public Node {
@@ -907,7 +890,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 
     static constexpr flag8_t INDEX = 1 << 0;
     static constexpr flag8_t ICALL = 1 << 1;
@@ -940,7 +922,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 /**
@@ -991,7 +972,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 /**
@@ -1060,7 +1040,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class CondOpNode : public Node {
@@ -1092,7 +1071,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class TernaryNode : public Node {
@@ -1132,7 +1110,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 /**
@@ -1162,9 +1139,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
-
-    EvalStatus evalImpl(RuntimeContext &ctx);
 
     /**
      * if true, ignore evaluated empty string.
@@ -1192,7 +1166,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 /**
@@ -1223,8 +1196,6 @@ public:
      * if isLastSegment is true, segment nodes size is 1.
      */
     std::string expand(bool isLastSegment = true);
-
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class CmdNode : public Node {
@@ -1264,7 +1235,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class PipedCmdNode : public Node {
@@ -1287,7 +1257,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 /**
@@ -1322,7 +1291,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 // statement definition
@@ -1343,7 +1311,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class BlockNode : public Node {
@@ -1369,7 +1336,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 /**
@@ -1401,7 +1367,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class ContinueNode : public BlockEndNode {
@@ -1412,7 +1377,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class ExportEnvNode : public Node {
@@ -1451,7 +1415,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class ImportEnvNode : public Node {
@@ -1504,7 +1467,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class TypeAliasNode : public Node {
@@ -1530,7 +1492,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class ForNode : public Node {
@@ -1588,7 +1549,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class WhileNode : public Node {
@@ -1614,7 +1574,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class DoWhileNode : public Node {
@@ -1638,7 +1597,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class IfNode : public Node {
@@ -1669,7 +1627,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class ReturnNode : public BlockEndNode {
@@ -1692,7 +1649,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class ThrowNode : public BlockEndNode {
@@ -1713,7 +1669,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class CatchNode : public Node {
@@ -1758,7 +1713,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class TryNode : public Node {
@@ -1804,7 +1758,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class VarDeclNode : public Node {
@@ -1844,7 +1797,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 /**
@@ -1903,7 +1855,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 
     /**
      * for ArgsNode
@@ -1978,7 +1929,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class CallableNode : public Node {
@@ -2097,7 +2047,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class InterfaceNode : public Node {
@@ -2140,7 +2089,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class UserDefinedCmdNode : public CallableNode {
@@ -2173,7 +2121,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 /**
@@ -2210,7 +2157,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class EmptyNode : public Node {
@@ -2221,7 +2167,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 class DummyNode : public Node {
@@ -2231,7 +2176,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 /**
@@ -2285,7 +2229,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-    EvalStatus eval(RuntimeContext &ctx) override;
 };
 
 // helper function for node creation

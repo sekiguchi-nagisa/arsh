@@ -152,10 +152,9 @@ RuntimeContext::RuntimeContext() :
         dummy(new DummyObject()), thrownObject(),
         localStack(new DSValue[DEFAULT_LOCAL_SIZE]),
         localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0), stackBottomIndex(0),
-        localVarOffset(0), pc_(0), assertion(true), traceExit(false), useVM(false),
-        handle_STR(nullptr), handle_bt(nullptr), IFS_index(0),
-        callableContextStack(), callStack(), callableStack_(),
-        pipelineEvaluator(DSValue::create<PipelineEvaluator>()),
+        localVarOffset(0), pc_(0), assertion(true), traceExit(false),
+        handle_STR(nullptr), IFS_index(0),
+        callableStack_(), pipelineEvaluator(DSValue::create<PipelineEvaluator>()),
         udcMap(), pathCache(), terminationHook(nullptr) { }
 
 RuntimeContext::~RuntimeContext() {
@@ -329,11 +328,7 @@ DSValue RuntimeContext::newError(DSType &errorType, std::string &&message) {
 
 void RuntimeContext::throwException(DSValue &&except) {
     this->thrownObject = std::move(except);
-    if(this->useVM) {
-        throw DSExcepton();
-    } else {
-        this->unwindOperandStack();
-    }
+    throw DSExcepton();
 }
 
 void RuntimeContext::throwError(DSType &errorType, const char *message) {
@@ -447,89 +442,10 @@ void RuntimeContext::restoreStackState() {
  * +-----------+---------+--------+   +--------+
  *                       | offset |   |        |
  */
-EvalStatus RuntimeContext::applyFuncObject(unsigned int startPos, bool returnTypeIsVoid, unsigned int paramSize) {
-    // call function
-    auto *func = typeAs<OldFuncObject>(this->localStack[this->stackTopIndex - paramSize]);
-    this->saveAndSetStackState(paramSize + 1, paramSize, func->getFuncNode()->getMaxVarNum());
-    this->pushCallFrame(startPos);
-    bool status = func->invoke(*this);
-    this->popCallFrame();
-
-    // restore stack state
-    DSValue returnValue;
-    if(status && !returnTypeIsVoid) {
-        returnValue = std::move(this->localStack[this->stackTopIndex]);
-    }
-
-    this->restoreStackState();
-
-    if(status && !returnTypeIsVoid) {
-        this->push(std::move(returnValue));
-    }
-    return status ? EvalStatus::SUCCESS : EvalStatus::THROW;
-}
-
-/**
- * stack state in function apply    stack grow ===>
- *
- * +-----------+---------+--------+   +--------+
- * | stack top | funcObj | param1 | ~ | paramN |
- * +-----------+---------+--------+   +--------+
- *                       | offset |   |        |
- */
 void RuntimeContext::applyFuncObject(unsigned int paramSize) {
     auto *func = typeAs<FuncObject>(this->localStack[this->stackTopIndex - paramSize]);
     this->saveAndSetStackState(paramSize + 1, paramSize, func->getCallable().getLocalVarNum());
     this->callableStack_.push_back(&func->getCallable());
-}
-
-/**
- * stack state in method call    stack grow ===>
- *
- * +-----------+------------------+   +--------+
- * | stack top | param1(receiver) | ~ | paramN |
- * +-----------+------------------+   +--------+
- *             | offset           |   |        |
- */
-EvalStatus RuntimeContext::callMethod(unsigned int startPos, const std::string &methodName, MethodHandle *handle) {
-    /**
-     * include receiver
-     */
-    unsigned int paramSize = handle->getParamTypes().size() + 1;
-    const unsigned int recvIndex = this->stackTopIndex - handle->getParamTypes().size();
-
-    // call method
-    this->saveAndSetStackState(paramSize, paramSize, paramSize);
-    this->pushCallFrame(startPos);
-
-    bool status;
-    try {
-        // check method handle type
-        if(!handle->isInterfaceMethod()) {  // call virtual method
-            status = this->localStack[recvIndex]->
-                    getType()->getMethodRef(handle->getMethodIndex())->invoke(*this);
-        } else {    // call proxy method
-            status = typeAs<ProxyObject>(this->localStack[recvIndex])->
-                    invokeMethod(*this, methodName, handle);
-        }
-    } catch(const NativeMethodError &e) {
-        status = false;
-    }
-
-    this->popCallFrame();
-
-    // restore stack state
-    DSValue returnValue;
-    if(status && !handle->getReturnType()->isVoidType()) {
-        returnValue = this->pop();
-    }
-
-    this->restoreStackState();
-
-    if(status && !handle->getReturnType()->isVoidType()) {
-        this->push(std::move(returnValue));
-    }
-    return status ? EvalStatus::SUCCESS : EvalStatus::THROW;
 }
 
 /**
@@ -564,40 +480,19 @@ void RuntimeContext::callMethod(unsigned short index, unsigned short paramSize) 
     }
 }
 
+void RuntimeContext::callToString() {
+    if(this->handle_STR == nullptr) {
+        this->handle_STR = this->pool.getAnyType().lookupMethodHandle(this->pool, OP_STR);
+    }
+    this->callMethod(this->handle_STR->getMethodIndex(), 0);
+}
+
 void RuntimeContext::newDSObject(DSType *type) {
     if(!type->isRecordType()) {
         this->dummy->setType(type);
         this->push(this->dummy);
     } else {
         fatal("currently, DSObject allocation not supported\n");
-    }
-}
-
-/**
- * stack state in constructor call     stack grow ===>
- *
- * +-----------+------------------+   +--------+
- * | stack top | param1(receiver) | ~ | paramN |
- * +-----------+------------------+   +--------+
- *             |    new offset    |
- */
-EvalStatus RuntimeContext::callConstructor(unsigned int startPos, unsigned int paramSize) {
-    const unsigned int recvIndex = this->stackTopIndex - paramSize;
-
-    // call constructor
-    this->saveAndSetStackState(paramSize, paramSize + 1, paramSize + 1);
-    this->pushCallFrame(startPos);
-    bool status =
-            this->localStack[recvIndex]->getType()->getConstructor()->invoke(*this);
-    this->popCallFrame();
-
-    // restore stack state
-    this->restoreStackState();
-
-    if(status) {
-        return EvalStatus::SUCCESS;
-    } else {
-        return EvalStatus::THROW;
     }
 }
 
@@ -618,48 +513,17 @@ bool RuntimeContext::callConstructor(unsigned short paramSize) {
     return status;
 }
 
-EvalStatus RuntimeContext::toString(unsigned int startPos) {
-    static const std::string methodName(OP_STR);
-
-    if(this->handle_STR == nullptr) {
-        this->handle_STR = this->pool.getAnyType().lookupMethodHandle(this->pool, methodName);
-    }
-    return this->callMethod(startPos, methodName, this->handle_STR);
-}
-
-void RuntimeContext::reportError() {
-    std::cerr << "[runtime error]" << std::endl;
-    if(this->pool.getErrorType().isSameOrBaseTypeOf(*this->thrownObject->getType())) {
-        static const std::string methodName("backtrace");
-
-        if(this->handle_bt == nullptr) {
-            this->handle_bt = this->pool.getErrorType().lookupMethodHandle(this->pool, methodName);
-        }
-        this->loadThrownObject();
-        this->callMethod(0, methodName, this->handle_bt);
-    } else {
-        this->loadThrownObject();
-        if(this->toString(0) != EvalStatus::SUCCESS) {
-            std::cerr << "cannot obtain string representation" << std::endl;
-        } else {
-            std::cerr << typeAs<String_Object>(this->pop())->getValue() << std::endl;
-        }
-    }
-}
-
 void RuntimeContext::handleUncaughtException(DSValue &&except) {
     std::cerr << "[runtime error]" << std::endl;
-    unsigned int index;
     const bool bt = this->pool.getErrorType().isSameOrBaseTypeOf(*except->getType());
-    if(bt) {
-        index = this->pool.getErrorType().lookupMethodHandle(this->pool, "backtrace")->getMethodIndex();
-    } else {
-        index = this->pool.getAnyType().lookupMethodHandle(this->pool, OP_STR)->getMethodIndex();
-    }
     this->push(std::move(except));
     try {
-        this->callMethod(index, 0);
-        if(!bt) {
+        if(bt) {
+            unsigned int index =
+                    this->pool.getErrorType().lookupMethodHandle(this->pool, "backtrace")->getMethodIndex();
+            this->callMethod(index, 0);
+        } else {
+            this->callToString();
             std::cerr << typeAs<String_Object>(this->pop())->getValue() << std::endl;
         }
     } catch(const DSExcepton &) {
@@ -668,68 +532,40 @@ void RuntimeContext::handleUncaughtException(DSValue &&except) {
 }
 
 void RuntimeContext::fillInStackTrace(std::vector<StackTraceElement> &stackTrace) {
-    if(this->callableStack_.empty()) {  // old path
-        static const unsigned long lowOrderMask = ~((1L << 32) - 1);
-        static const unsigned long highOrderMask = ~(((1L << 32) - 1) << 32);
+    unsigned int callableDepth = this->callableStack_.size();
 
-        for(auto iter = this->callStack.rbegin(); iter != this->callStack.rend(); ++iter) {
-            unsigned long frame = *iter;
-            unsigned long funcCtxIndex = (frame & lowOrderMask) >> 32;
-            auto *node = this->callableContextStack[funcCtxIndex];
-            const char *sourceName = node->getSourceName();
-            unsigned long startPos = frame & highOrderMask;
+    unsigned int curPC = this->pc();
+    unsigned int curBottomIndex = this->stackBottomIndex;
 
-            std::string callerName;
-            if(dynamic_cast<FunctionNode *>(node) != nullptr) {
-                callerName += "function ";
-                callerName += node->getName();
-            } else if(dynamic_cast<UserDefinedCmdNode *>(node) != nullptr) {
-                callerName += "user-defined-command ";
-                callerName += node->getName();
-            } else {
-                callerName += "<toplevel>";
+    while(callableDepth) {
+        bool createElement = curPC > 0; // if PC is 0, within native method
+
+        if(createElement) {
+            // create stack element
+            auto &callable = this->callableStack()[--callableDepth];
+            const char *sourceName = callable->getSrcInfo()->getSourceName().c_str();
+            unsigned int pos = getSourcePos(callable->getSourcePosEntries(), curPC);
+
+            std::string callableName;
+            switch(callable->getCallableKind()) {
+            case CallableKind::TOPLEVEL:
+                callableName += "<toplevel>";
+                break;
+            case CallableKind::FUNCTION:
+                callableName += "function ";
+                callableName += callable->getName();
+                break;
             }
-
 
             stackTrace.push_back(StackTraceElement(
-                    sourceName, node->getSourceInfoPtr()->getLineNum(startPos), std::move(callerName)));
+                    sourceName, callable->getSrcInfo()->getLineNum(pos), std::move(callableName)));
         }
-    } else {    // vm path
-        unsigned int callableDepth = this->callableStack_.size();
 
-        unsigned int curPC = this->pc();
-        unsigned int curBottomIndex = this->stackBottomIndex;
-
-        while(callableDepth) {
-            bool createElement = curPC > 0; // if PC is 0, within native method
-
-            if(createElement) {
-                // create stack element
-                auto &callable = this->callableStack()[--callableDepth];
-                const char *sourceName = callable->getSrcInfo()->getSourceName().c_str();
-                unsigned int pos = getSourcePos(callable->getSourcePosEntries(), curPC);
-
-                std::string callableName;
-                switch(callable->getCallableKind()) {
-                case CallableKind::TOPLEVEL:
-                    callableName += "<toplevel>";
-                    break;
-                case CallableKind::FUNCTION:
-                    callableName += "function ";
-                    callableName += callable->getName();
-                    break;
-                }
-
-                stackTrace.push_back(StackTraceElement(
-                        sourceName, callable->getSrcInfo()->getLineNum(pos), std::move(callableName)));
-            }
-
-            // unwind state
-            if(callableDepth) {
-                const unsigned int offset = curBottomIndex;
-                curPC = static_cast<unsigned int>(this->localStack[offset - 3].value());
-                curBottomIndex = static_cast<unsigned int>(this->localStack[offset - 1].value());
-            }
+        // unwind state
+        if(callableDepth) {
+            const unsigned int offset = curBottomIndex;
+            curPC = static_cast<unsigned int>(this->localStack[offset - 3].value());
+            curBottomIndex = static_cast<unsigned int>(this->localStack[offset - 1].value());
         }
     }
 }
@@ -738,21 +574,6 @@ void RuntimeContext::printStackTop(DSType *stackTopType) {
     assert(!stackTopType->isVoidType());
     std::cout << "(" << this->pool.getTypeName(*stackTopType) << ") "
     << typeAs<String_Object>(this->pop())->getValue() << std::endl;
-}
-
-bool RuntimeContext::checkCast(unsigned int startPos, DSType *targetType) {
-    if(!this->peek()->introspect(*this, targetType)) {
-        DSType *stackTopType = this->pop()->getType();
-        std::string str("cannot cast ");
-        str += this->pool.getTypeName(*stackTopType);
-        str += " to ";
-        str += this->pool.getTypeName(*targetType);
-        this->pushCallFrame(startPos);
-        this->throwError(this->pool.getTypeCastErrorType(), std::move(str));
-        this->popCallFrame();
-        return false;
-    }
-    return true;
 }
 
 void RuntimeContext::checkCast(DSType *targetType) {
@@ -774,28 +595,6 @@ void RuntimeContext::instanceOf(DSType *targetType) {
     }
 }
 
-EvalStatus RuntimeContext::checkAssertion(unsigned int startPos) {
-    if(!typeAs<Boolean_Object>(this->pop())->getValue()) {
-        this->pushCallFrame(startPos);
-        this->throwError(this->pool.getAssertFail(), "");
-        this->popCallFrame();
-
-        // invoke termination hook
-        if(this->terminationHook != nullptr) {
-            const unsigned int lineNum =
-                    getOccuredLineNum(typeAs<Error_Object>(this->getThrownObject())->getStackTrace());
-            this->terminationHook(DS_STATUS_ASSERTION_ERROR, lineNum);
-        }
-
-        // print stack trace
-        this->loadThrownObject();
-        typeAs<Error_Object>(this->pop())->printStackTrace(*this);
-
-        exit(1);
-    }
-    return EvalStatus::SUCCESS;
-}
-
 void RuntimeContext::checkAssertion() {
     if(!typeAs<Boolean_Object>(this->pop())->getValue()) {
         this->thrownObject = this->newError(this->pool.getAssertFail(), "");
@@ -813,82 +612,6 @@ void RuntimeContext::checkAssertion() {
 
         exit(1);
     }
-}
-
-EvalStatus RuntimeContext::importEnv(unsigned int startPos, const std::string &envName,
-                                     unsigned int index, bool isGlobal, bool hasDefault) {
-    const char *env = getenv(envName.c_str());
-    if(hasDefault) {
-        DSValue value = this->pop();
-        if(env == nullptr) {
-            setenv(envName.c_str(), typeAs<String_Object>(value)->getValue(), 1);
-        }
-    }
-
-    env = getenv(envName.c_str());
-    if(env == nullptr) {
-        std::string str("undefined environmental variable: ");
-        str += envName;
-        this->pushCallFrame(startPos);
-        this->throwSystemError(EINVAL, std::move(str));
-        this->popCallFrame();
-        return EvalStatus::THROW;
-    }
-
-    DSValue name = DSValue::create<String_Object>(this->pool.getStringType(), envName);
-
-    if(isGlobal) {
-        this->setGlobal(index, std::move(name));
-    } else {
-        this->setLocal(index, std::move(name));
-    }
-
-    return EvalStatus::SUCCESS;
-}
-
-void RuntimeContext::exportEnv(const std::string &envName, unsigned int index, bool isGlobal) {
-    // create string obejct for representing env name
-    this->push(DSValue::create<String_Object>(this->getPool().getStringType(), envName));
-
-    // store env name.
-    if(isGlobal) {
-        this->storeGlobal(index);
-    } else {
-        this->storeLocal(index);
-    }
-
-    // update env
-    this->storeEnv(index, isGlobal);
-}
-
-void RuntimeContext::storeEnv(unsigned int index, bool isGlobal) {
-    // pop stack top and get env value
-    DSValue value = this->pop();
-
-    // load variable (representing env name)
-    if(isGlobal) {
-        this->loadGlobal(index);
-    } else {
-        this->loadLocal(index);
-    }
-
-    DSValue name = this->pop();
-    setenv(typeAs<String_Object>(name)->getValue(),
-           typeAs<String_Object>(value)->getValue(), 1);//FIXME: check return value and throw
-}
-
-void RuntimeContext::loadEnv(unsigned int index, bool isGlobal) {
-    // load variable (representing env name)
-    if(isGlobal) {
-        this->loadGlobal(index);
-    } else {
-        this->loadLocal(index);
-    }
-
-    DSValue name = this->pop();
-    const char *value = getenv(typeAs<String_Object>(name)->getValue());
-    assert(value != nullptr);
-    this->push(DSValue::create<String_Object>(this->getPool().getStringType(), value));
 }
 
 void RuntimeContext::importEnv(bool hasDefault) {
@@ -928,8 +651,6 @@ void RuntimeContext::loadEnv() {
 }
 
 void RuntimeContext::resetState() {
-    this->callableContextStack.clear();
-    this->callStack.clear();
     this->localVarOffset = 0;
     this->thrownObject.reset();
     this->callableStack_.clear();
@@ -992,11 +713,7 @@ void RuntimeContext::updateExitStatus(unsigned int status) {
 void RuntimeContext::exitShell(unsigned int status) {
     std::string str("terminated by exit ");
     str += std::to_string(status);
-    if(this->useVM) {
-        this->thrownObject = this->newError(this->pool.getShellExit(), std::move(str));
-    } else {
-        this->throwError(this->pool.getShellExit(), std::move(str));
-    }
+    this->thrownObject = this->newError(this->pool.getShellExit(), std::move(str));
 
     // invoke termination hook
     if(this->terminationHook != nullptr) {
@@ -1014,12 +731,6 @@ void RuntimeContext::exitShell(unsigned int status) {
     exit(status);
 }
 
-void RuntimeContext::addUserDefinedCommand(UserDefinedCmdNode *node) {
-    if(!this->udcMap.insert(std::make_pair(node->getName().c_str(), node)).second) {
-        fatal("undefined user defined command: %s\n", node->getName().c_str());
-    }
-}
-
 UserDefinedCmdNode *RuntimeContext::lookupUserDefinedCommand(const char *commandName) {
     auto iter = this->udcMap.find(commandName);
     if(iter != this->udcMap.end()) {
@@ -1028,37 +739,8 @@ UserDefinedCmdNode *RuntimeContext::lookupUserDefinedCommand(const char *command
     return nullptr;
 }
 
-int RuntimeContext::execUserDefinedCommand(UserDefinedCmdNode *node, DSValue *argv) {
-    // copy arguments
-    this->initScriptArg();
-    for(unsigned int index = 1; argv[index]; index++) {
-        typeAs<Array_Object>(this->getScriptArgs())->append(std::move(argv[index]));
-    }
-    this->finalizeScriptArg();
-
-    // clear procInvoker
-    this->activePipeline().clear();
-
-    this->pushFuncContext(node);
-    this->reserveLocalVar(this->getLocalVarOffset() + node->getMaxVarNum());
-
-    EvalStatus s = node->getBlockNode()->eval(*this);
-
-    this->popFuncContext();
-
-    // get exit status
-    switch(s) {
-    case EvalStatus::SUCCESS:
-        return this->getExitStatus();
-    case EvalStatus::RETURN:
-        return typeAs<Int_Object>(this->pop())->getValue();
-    case EvalStatus::THROW: {
-        this->reportError();
-        return 1;
-    }
-    default:
-        fatal("broken user defined command\n");
-    }
+int RuntimeContext::execUserDefinedCommand(UserDefinedCmdNode *, DSValue *) {
+    fatal("unsupported\n");
     return 0;
 }
 
@@ -1073,17 +755,6 @@ void RuntimeContext::pushNewPipeline() {
 
 PipelineEvaluator &RuntimeContext::activePipeline() {
     return *typeAs<PipelineEvaluator>(this->peek());
-}
-
-EvalStatus RuntimeContext::callPipedCommand(unsigned int startPos) {
-    this->pushCallFrame(startPos);
-    EvalStatus status = this->activePipeline().evalPipeline(*this);
-    this->popCallFrame();
-
-    if(status != EvalStatus::THROW) {
-        this->popNoReturn();
-    }
-    return status;
 }
 
 void RuntimeContext::callPipeline() {

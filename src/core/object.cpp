@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <cassert>
 #include <memory>
 
 #include "object.h"
@@ -514,20 +513,8 @@ std::string OldFuncObject::toString(RuntimeContext &, VisitedSet *) {
     return str;
 }
 
-bool OldFuncObject::invoke(RuntimeContext &ctx) {  //TODO: default param
-    ctx.pushFuncContext(this->funcNode);
-
-    EvalStatus s = this->funcNode->getBlockNode()->eval(ctx);
-    ctx.popFuncContext();
-    switch(s) {
-    case EvalStatus::RETURN:
-        return true;
-    case EvalStatus::THROW:
-        return false;
-    default:
-        fatal("illegal eval status: %u\n", static_cast<unsigned int>(s));
-        return false;
-    }
+bool OldFuncObject::invoke(RuntimeContext &) {  //TODO: default param
+    fatal("unsupported\n");
 }
 
 

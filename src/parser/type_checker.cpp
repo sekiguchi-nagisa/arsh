@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <cassert>
 #include <vector>
 
 #include "../core/symbol.h"
