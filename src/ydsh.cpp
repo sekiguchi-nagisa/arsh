@@ -77,51 +77,7 @@ struct DSContext {
     DSContext();
     ~DSContext() = default;
 
-    /**
-     * get exit status of recently executed command.(also exit command)
-     */
-    int getExitStatus() {
-        return this->ctx.getExitStatus();
-    }
-
-    void resetStatus() {
-        this->execStatus.type = DS_STATUS_SUCCESS;
-        this->execStatus.lineNum = 0;
-        this->execStatus.errorKind = "";
-    }
-
-    void updateStatus(unsigned int type, unsigned int lineNum, const char *errorKind) {
-        this->execStatus.type = type;
-        this->execStatus.lineNum = lineNum;
-        this->execStatus.errorKind = errorKind;
-    }
-
-    void handleParseError(const Lexer &lexer, const ParseError &e);
-    void handleTypeError(const Lexer &lexer, const TypeCheckError &e);
-
-    int eval(Lexer &lexer);
-
-    /**
-     * must be typed node.
-     */
-    int eval(RootNode &node);
-
-    /**
-     * call only once.
-     */
-    void initBuiltinVar();
-
-    /**
-     * call only once
-     */
-    void loadEmbeddedScript();
-
     static const unsigned int originalShellLevel;
-
-    /**
-     * if environmental variable SHLVL dose not exist, set 0.
-     */
-    static unsigned int getShellLevel();
 };
 
 
@@ -148,6 +104,25 @@ DSContext::DSContext() :
         }
         setenv(ENV_HOME, pw->pw_dir, 1);
     }
+}
+
+/**
+ * get exit status of recently executed command.(also exit command)
+ */
+static int getExitStatus(DSContext *dsctx) {
+    return dsctx->ctx.getExitStatus();
+}
+
+static void resetStatus(DSContext *dsctx) {
+    dsctx->execStatus.type = DS_STATUS_SUCCESS;
+    dsctx->execStatus.lineNum = 0;
+    dsctx->execStatus.errorKind = "";
+}
+
+static void updateStatus(DSContext *dsctx, unsigned int type, unsigned int lineNum, const char *errorKind) {
+    dsctx->execStatus.type = type;
+    dsctx->execStatus.lineNum = lineNum;
+    dsctx->execStatus.errorKind = errorKind;
 }
 
 /**
@@ -195,7 +170,7 @@ static void formatErrorLine(bool isatty, const Lexer &lexer, const Token &errorT
     << color(TermColor::Reset, isatty) << std::endl;
 }
 
-void DSContext::handleParseError(const Lexer &lexer, const ParseError &e) {
+static void handleParseError(DSContext *dsctx, const Lexer &lexer, const ParseError &e) {
     /**
      * show parse error message
      */
@@ -214,10 +189,10 @@ void DSContext::handleParseError(const Lexer &lexer, const ParseError &e) {
     /**
      * update execution status
      */
-    this->updateStatus(DS_STATUS_PARSE_ERROR, errorLineNum, e.getErrorKind());
+    updateStatus(dsctx, DS_STATUS_PARSE_ERROR, errorLineNum, e.getErrorKind());
 }
 
-void DSContext::handleTypeError(const Lexer &lexer, const TypeCheckError &e) {
+static void handleTypeError(DSContext *dsctx, const Lexer &lexer, const TypeCheckError &e) {
     unsigned int errorLineNum = lexer.getSourceInfoPtr()->getLineNum(e.getStartPos());
 
     const bool isatty = isSupportedTerminal(STDERR_FILENO);
@@ -233,100 +208,100 @@ void DSContext::handleTypeError(const Lexer &lexer, const TypeCheckError &e) {
     /**
      * update execution status
      */
-    this->updateStatus(DS_STATUS_TYPE_ERROR,
-                       lexer.getSourceInfoPtr()->getLineNum(e.getStartPos()), e.getKind());
+    updateStatus(dsctx, DS_STATUS_TYPE_ERROR,
+                 lexer.getSourceInfoPtr()->getLineNum(e.getStartPos()), e.getKind());
 }
 
-int DSContext::eval(Lexer &lexer) {
-    this->resetStatus();
-
-    lexer.setLineNum(this->lineNum);
-    RootNode rootNode;
-
-    // parse
-    try {
-        this->parser.parse(lexer, rootNode);
-        this->lineNum = lexer.getLineNum();
-
-        if(hasFlag(this->option, DS_OPTION_DUMP_UAST)) {
-            std::cout << "### dump untyped AST ###" << std::endl;
-            NodeDumper::dump(std::cout, this->ctx.getPool(), rootNode);
-            std::cout << std::endl;
-        }
-    } catch(const ParseError &e) {
-        this->handleParseError(lexer, e);
-        this->lineNum = lexer.getLineNum();
-        return 1;
-    }
-
-    // type check
-    try {
-        this->checker.checkTypeRootNode(rootNode);
-
-        if(hasFlag(this->option, DS_OPTION_DUMP_AST)) {
-            std::cout << "### dump typed AST ###" << std::endl;
-            NodeDumper::dump(std::cout, this->ctx.getPool(), rootNode);
-            std::cout << std::endl;
-        }
-    } catch(const TypeCheckError &e) {
-        this->handleTypeError(lexer, e);
-        this->checker.recover();
-        return 1;
-    }
-
-    if(hasFlag(this->option, DS_OPTION_PARSE_ONLY)) {
-        return 0;
-    }
-
-    // eval
-    return this->eval(rootNode);
-}
-
-int DSContext::eval(RootNode &rootNode) {
-    if(this->ctx.isUseVM()) {
-        ByteCodeGenerator codegen(this->ctx.getPool(), hasFlag(this->option, DS_OPTION_ASSERT));
+static int eval(DSContext *dsctx, RootNode &rootNode) {
+    if(dsctx->ctx.isUseVM()) {
+        ByteCodeGenerator codegen(dsctx->ctx.getPool(), hasFlag(dsctx->option, DS_OPTION_ASSERT));
         Callable c = codegen.generateToplevel(rootNode);
 
-        if(hasFlag(this->option, DS_OPTION_DUMP_CODE)) {
+        if(hasFlag(dsctx->option, DS_OPTION_DUMP_CODE)) {
             std::cout << "### dump compiled code ###" << std::endl;
-            dumpCode(std::cout, this->ctx, c);
+            dumpCode(std::cout, dsctx->ctx, c);
         }
 
-        if(!vmEval(this->ctx, c)) {
+        if(!vmEval(dsctx->ctx, c)) {
             unsigned int errorLineNum = 0;
-            DSValue thrownObj = this->ctx.getThrownObject();
+            DSValue thrownObj = dsctx->ctx.getThrownObject();
             if(dynamic_cast<Error_Object *>(thrownObj.get()) != nullptr) {
                 Error_Object *obj = typeAs<Error_Object>(thrownObj);
                 errorLineNum = getOccuredLineNum(obj->getStackTrace());
             }
 
-            this->ctx.loadThrownObject();
-            this->ctx.handleUncaughtException(this->ctx.pop());
-            this->checker.recover(false);
-            this->updateStatus(DS_STATUS_RUNTIME_ERROR, errorLineNum,
-                               this->ctx.getPool().getTypeName(*thrownObj->getType()).c_str());
+            dsctx->ctx.loadThrownObject();
+            dsctx->ctx.handleUncaughtException(dsctx->ctx.pop());
+            dsctx->checker.recover(false);
+            updateStatus(dsctx, DS_STATUS_RUNTIME_ERROR, errorLineNum,
+                         dsctx->ctx.getPool().getTypeName(*thrownObj->getType()).c_str());
             return 1;
         }
-        return this->getExitStatus();
+        return getExitStatus(dsctx);
     }
 
-    EvalStatus s = rootNode.eval(this->ctx);
+    EvalStatus s = rootNode.eval(dsctx->ctx);
 
     if(s != EvalStatus::SUCCESS) {
         unsigned int errorLineNum = 0;
-        DSValue thrownObj = this->ctx.getThrownObject();
+        DSValue thrownObj = dsctx->ctx.getThrownObject();
         if(dynamic_cast<Error_Object *>(thrownObj.get()) != nullptr) {
             Error_Object *obj = typeAs<Error_Object>(thrownObj);
             errorLineNum = getOccuredLineNum(obj->getStackTrace());
         }
 
-        this->ctx.reportError();
-        this->checker.recover(false);
-        this->updateStatus(DS_STATUS_RUNTIME_ERROR, errorLineNum,
-                           this->ctx.getPool().getTypeName(*thrownObj->getType()).c_str());
+        dsctx->ctx.reportError();
+        dsctx->checker.recover(false);
+        updateStatus(dsctx, DS_STATUS_RUNTIME_ERROR, errorLineNum,
+                     dsctx->ctx.getPool().getTypeName(*thrownObj->getType()).c_str());
         return 1;
     }
-    return this->getExitStatus();
+    return getExitStatus(dsctx);
+}
+
+static int eval(DSContext *dsctx, Lexer &lexer) {
+    resetStatus(dsctx);
+
+    lexer.setLineNum(dsctx->lineNum);
+    RootNode rootNode;
+
+    // parse
+    try {
+        dsctx->parser.parse(lexer, rootNode);
+        dsctx->lineNum = lexer.getLineNum();
+
+        if(hasFlag(dsctx->option, DS_OPTION_DUMP_UAST)) {
+            std::cout << "### dump untyped AST ###" << std::endl;
+            NodeDumper::dump(std::cout, dsctx->ctx.getPool(), rootNode);
+            std::cout << std::endl;
+        }
+    } catch(const ParseError &e) {
+        handleParseError(dsctx, lexer, e);
+        dsctx->lineNum = lexer.getLineNum();
+        return 1;
+    }
+
+    // type check
+    try {
+        dsctx->checker.checkTypeRootNode(rootNode);
+
+        if(hasFlag(dsctx->option, DS_OPTION_DUMP_AST)) {
+            std::cout << "### dump typed AST ###" << std::endl;
+            NodeDumper::dump(std::cout, dsctx->ctx.getPool(), rootNode);
+            std::cout << std::endl;
+        }
+    } catch(const TypeCheckError &e) {
+        handleTypeError(dsctx, lexer, e);
+        dsctx->checker.recover();
+        return 1;
+    }
+
+    if(hasFlag(dsctx->option, DS_OPTION_PARSE_ONLY)) {
+        return 0;
+    }
+
+    // eval
+    return eval(dsctx, rootNode);
 }
 
 static void defineBuiltin(RootNode &rootNode, const char *varName, DSValue &&value) {
@@ -337,14 +312,14 @@ static void defineBuiltin(RootNode &rootNode, const char *varName, const DSValue
     rootNode.addNode(new BindVarNode(varName, value));
 }
 
-void DSContext::initBuiltinVar() {
+static void initBuiltinVar(DSContext *dsctx) {
     RootNode rootNode;
 
     /**
      * management object for D-Bus related function
      * must be DBus_Object
      */
-    defineBuiltin(rootNode, "DBus", DSValue(DBus_Object::newDBus_Object(&this->ctx.getPool())));
+    defineBuiltin(rootNode, "DBus", DSValue(DBus_Object::newDBus_Object(&dsctx->ctx.getPool())));
 
     struct utsname name;
     if(uname(&name) == -1) {
@@ -357,7 +332,7 @@ void DSContext::initBuiltinVar() {
      * must be String_Object
      */
     defineBuiltin(rootNode, "OSTYPE", DSValue::create<String_Object>(
-            this->ctx.getPool().getStringType(), name.sysname));
+            dsctx->ctx.getPool().getStringType(), name.sysname));
 
 #define XSTR(V) #V
 #define STR(V) XSTR(V)
@@ -366,7 +341,7 @@ void DSContext::initBuiltinVar() {
      * must be String_Object
      */
     defineBuiltin(rootNode, "YDSH_VERSION", DSValue::create<String_Object>(
-            this->ctx.getPool().getStringType(),
+            dsctx->ctx.getPool().getStringType(),
             STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION) "." STR(X_INFO_PATCH_VERSION)));
 #undef XSTR
 #undef STR
@@ -375,10 +350,10 @@ void DSContext::initBuiltinVar() {
      * default variable for read command.
      * must be String_Object
      */
-    defineBuiltin(rootNode, "REPLY", this->ctx.getEmptyStrObj());
+    defineBuiltin(rootNode, "REPLY", dsctx->ctx.getEmptyStrObj());
 
     std::vector<DSType *> types(2);
-    types[0] = &this->ctx.getPool().getStringType();
+    types[0] = &dsctx->ctx.getPool().getStringType();
     types[1] = types[0];
 
     /**
@@ -386,67 +361,68 @@ void DSContext::initBuiltinVar() {
      * must be Map_Object
      */
     defineBuiltin(rootNode, "reply", DSValue::create<Map_Object>(
-            this->ctx.getPool().createReifiedType(this->ctx.getPool().getMapTemplate(), std::move(types))));
+            dsctx->ctx.getPool().createReifiedType(dsctx->ctx.getPool().getMapTemplate(), std::move(types))));
 
     /**
      * contains script argument(exclude script name). ($@)
      * must be Array_Object
      */
-    defineBuiltin(rootNode, "@", DSValue::create<Array_Object>(this->ctx.getPool().getStringArrayType()));
+    defineBuiltin(rootNode, "@", DSValue::create<Array_Object>(dsctx->ctx.getPool().getStringArrayType()));
 
     /**
      * contains size of argument. ($#)
      * must be Int_Object
      */
-    defineBuiltin(rootNode, "#", DSValue::create<Int_Object>(this->ctx.getPool().getInt32Type(), 0));
+    defineBuiltin(rootNode, "#", DSValue::create<Int_Object>(dsctx->ctx.getPool().getInt32Type(), 0));
 
     /**
      * contains exit status of most recent executed process. ($?)
      * must be Int_Object
      */
-    defineBuiltin(rootNode, "?", DSValue::create<Int_Object>(this->ctx.getPool().getInt32Type(), 0));
+    defineBuiltin(rootNode, "?", DSValue::create<Int_Object>(dsctx->ctx.getPool().getInt32Type(), 0));
 
     /**
      * process id of root shell. ($$)
      * must be Int_Object
      */
-    defineBuiltin(rootNode, "$", DSValue::create<Int_Object>(this->ctx.getPool().getUint32Type(), getpid()));
+    defineBuiltin(rootNode, "$", DSValue::create<Int_Object>(dsctx->ctx.getPool().getUint32Type(), getpid()));
 
     /**
      * represent shell or shell script name.
      * must be String_Object
      */
-    defineBuiltin(rootNode, "0", DSValue::create<String_Object>(this->ctx.getPool().getStringType(), "ydsh"));
+    defineBuiltin(rootNode, "0", DSValue::create<String_Object>(dsctx->ctx.getPool().getStringType(), "ydsh"));
 
     /**
      * initialize positional parameter
      */
     for(unsigned int i = 0; i < 9; i++) {
-        defineBuiltin(rootNode, std::to_string(i + 1).c_str(), this->ctx.getEmptyStrObj());
+        defineBuiltin(rootNode, std::to_string(i + 1).c_str(), dsctx->ctx.getEmptyStrObj());
     }
 
 
     // ignore error check (must be always success)
-    this->checker.checkTypeRootNode(rootNode);
-    this->eval(rootNode);
+    dsctx->checker.checkTypeRootNode(rootNode);
+    eval(dsctx, rootNode);
 }
 
-void DSContext::loadEmbeddedScript() {
+static void loadEmbeddedScript(DSContext *dsctx) {
     Lexer lexer("(embed)", embed_script);
-    this->eval(lexer);
-    if(this->execStatus.type != DS_STATUS_SUCCESS) {
+    eval(dsctx, lexer);
+    if(dsctx->execStatus.type != DS_STATUS_SUCCESS) {
         fatal("broken embedded script\n");
     }
-    this->ctx.getPool().commit();
+    dsctx->ctx.getPool().commit();
 
     // rest some state
-    this->lineNum = 1;
-    this->ctx.updateExitStatus(0);
+    dsctx->lineNum = 1;
+    dsctx->ctx.updateExitStatus(0);
 }
 
-const unsigned int DSContext::originalShellLevel = getShellLevel();
-
-unsigned int DSContext::getShellLevel() {
+/**
+ * if environmental variable SHLVL dose not exist, set 0.
+ */
+static unsigned int getShellLevel() {
     char *shlvl = getenv(ENV_SHLVL);
     unsigned int level = 0;
     if(shlvl != nullptr) {
@@ -461,6 +437,8 @@ unsigned int DSContext::getShellLevel() {
     return level;
 }
 
+const unsigned int DSContext::originalShellLevel = getShellLevel();
+
 // #####################################
 // ##     public api of DSContext     ##
 // #####################################
@@ -470,8 +448,8 @@ DSContext *DSContext_create() {
     if(getenv("YDSH_ENABLE_VM") != nullptr) {
         ctx->ctx.setUseVM(true);
     }
-    ctx->initBuiltinVar();
-    ctx->loadEmbeddedScript();
+    initBuiltinVar(ctx);
+    loadEmbeddedScript(ctx);
     return ctx;
 }
 
@@ -484,18 +462,18 @@ void DSContext_delete(DSContext **ctx) {
 
 int DSContext_eval(DSContext *ctx, const char *sourceName, const char *source) {
     Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName, source);
-    return ctx->eval(lexer);
+    return eval(ctx, lexer);
 }
 
 int DSContext_loadAndEval(DSContext *ctx, const char *sourceName, FILE *fp) {
     Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName, fp);
-    return ctx->eval(lexer);
+    return eval(ctx, lexer);
 }
 
 int DSContext_exec(DSContext *ctx, char *const argv[]) {
-    ctx->resetStatus();
+    resetStatus(ctx);
     ctx->ctx.execBuiltinCommand(argv);
-    return ctx->getExitStatus();
+    return getExitStatus(ctx);
 }
 
 void DSContext_setLineNum(DSContext *ctx, unsigned int lineNum) {
