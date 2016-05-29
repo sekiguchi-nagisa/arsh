@@ -651,9 +651,6 @@ std::string expandTilde(const char *path);
  */
 pid_t xfork();
 
-// for native method exception (ex. StackOverflow)
-struct NativeMethodError {};
-
 // for exception handling
 struct DSExcepton {};
 

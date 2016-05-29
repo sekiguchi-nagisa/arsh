@@ -352,7 +352,6 @@ void RuntimeContext::throwSystemError(int errorNum, std::string &&message) {
 
 void RuntimeContext::raiseCircularReferenceError() {
     this->throwError(this->pool.getStackOverflowErrorType(), "caused by circular reference");
-    throw NativeMethodError();
 }
 
 
