@@ -1,0 +1,13 @@
+function f() {
+    $f()
+}
+
+var c = 0
+try {
+    $f()
+    assert $false
+} catch $e {
+    assert $e is StackOverflowError
+    $c = $c + 1
+}
+assert $c == 1
