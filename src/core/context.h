@@ -343,6 +343,10 @@ public:
         this->useVM = useVM;
     }
 
+    bool isUseVM() const {
+        return this->useVM;
+    }
+
     const DSValue &getThrownObject() {
         return this->thrownObject;
     }

@@ -220,11 +220,6 @@ int main(int argc, char **argv) {
         }
     }
 
-    // enable experimental vm
-    if(getenv("YDSH_ENABLE_VM") != nullptr) {
-        DSContext_setOption(ctx, DS_OPTION_X_VM);
-    }
-
     // set rest argument
     const int size = argc - restIndex;
     char *shellArgs[size + 1];

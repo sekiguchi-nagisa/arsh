@@ -102,6 +102,11 @@ struct DSContext {
     int eval(Lexer &lexer);
 
     /**
+     * must be typed node.
+     */
+    int eval(RootNode &node);
+
+    /**
      * call only once.
      */
     void initBuiltinVar();
@@ -274,7 +279,11 @@ int DSContext::eval(Lexer &lexer) {
     }
 
     // eval
-    if(hasFlag(this->option, DS_OPTION_X_VM)) {
+    return this->eval(rootNode);
+}
+
+int DSContext::eval(RootNode &rootNode) {
+    if(this->ctx.isUseVM()) {
         ByteCodeGenerator codegen(this->ctx.getPool(), hasFlag(this->option, DS_OPTION_ASSERT));
         Callable c = codegen.generateToplevel(rootNode);
 
@@ -419,7 +428,7 @@ void DSContext::initBuiltinVar() {
 
     // ignore error check (must be always success)
     this->checker.checkTypeRootNode(rootNode);
-    rootNode.eval(this->ctx);
+    this->eval(rootNode);
 }
 
 void DSContext::loadEmbeddedScript() {
@@ -458,6 +467,9 @@ unsigned int DSContext::getShellLevel() {
 
 DSContext *DSContext_create() {
     DSContext *ctx = new DSContext();
+    if(getenv("YDSH_ENABLE_VM") != nullptr) {
+        ctx->ctx.setUseVM(true);
+    }
     ctx->initBuiltinVar();
     ctx->loadEmbeddedScript();
     return ctx;
@@ -521,9 +533,6 @@ static void setOptionImpl(DSContext *ctx, flag32_set_t flagSet, bool set) {
     }
     if(hasFlag(flagSet, DS_OPTION_TRACE_EXIT)) {
         ctx->ctx.setTraceExit(set);
-    }
-    if(hasFlag(flagSet, DS_OPTION_X_VM)) {
-        ctx->ctx.setUseVM(set);
     }
 }
 

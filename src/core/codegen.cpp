@@ -923,8 +923,9 @@ void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &) {
     fatal("unsupported\n"); //TODO
 }
 
-void ByteCodeGenerator::visitBindVarNode(BindVarNode &) {
-    fatal("unsupported\n"); //TODO
+void ByteCodeGenerator::visitBindVarNode(BindVarNode &node) {
+    this->writeConstant(node.getValue());
+    this->write2byteIns(OpCode::STORE_GLOBAL, node.getVarIndex());
 }
 
 void ByteCodeGenerator::visitEmptyNode(EmptyNode &) { } // do nothing
