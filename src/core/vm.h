@@ -20,15 +20,12 @@
 #include "context.h"
 
 namespace ydsh {
-namespace core {
 
 /**
  * entry point
  */
 bool vmEval(RuntimeContext &ctx, Callable &callable);
 
-
-} // namespace core
 } // namespace ydsh
 
 #endif //YDSH_CORE_VM_H

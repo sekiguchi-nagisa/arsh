@@ -145,7 +145,6 @@ do { \
 #define PRECEDENCE() getPrecedence(CUR_KIND())
 
 namespace ydsh {
-namespace parser {
 
 // #########################
 // ##     ArgsWrapper     ##
@@ -1309,5 +1308,4 @@ bool parse(const char *sourceName, RootNode &rootNode) {
     return true;
 }
 
-} // namespace parser
 } // namespace ydsh

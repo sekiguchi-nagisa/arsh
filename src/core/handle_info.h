@@ -18,7 +18,6 @@
 #define YDSH_CORE_HANDLE_INFO_H
 
 namespace ydsh {
-namespace core {
 
 // builtin type
 #define EACH_HANDLE_INFO_TYPE(OP) \
@@ -89,7 +88,6 @@ enum HandleInfo : char {
 #undef GEN_ENUM
 };
 
-} // namespace core
 } // namespace ydsh
 
 #endif //YDSH_CORE_HANDLE_INFO_H

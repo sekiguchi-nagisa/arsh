@@ -18,14 +18,12 @@
 #define YDSH_DBUS_DBUS_BIND_H
 
 namespace ydsh {
-namespace core {
 
 class TypePool;
 struct DBus_Object;
 
 DBus_Object *newDBusObject(TypePool *pool);
 
-} // namespace core
 } // namespace ydsh
 
 #endif //YDSH_DBUS_DBUS_BIND_H

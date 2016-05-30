@@ -21,7 +21,6 @@
 #include "../misc/fatal.h"
 
 namespace ydsh {
-namespace core {
 
 // #########################
 // ##     FieldHandle     ##
@@ -150,5 +149,4 @@ bool MethodHandle::isSignal() const {
            this->paramTypes[0]->isFuncType() && this->returnType->isVoidType();
 }
 
-} // namespace core
 } // namespace ydsh

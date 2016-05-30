@@ -18,7 +18,6 @@
 #include "opcode.h"
 
 namespace ydsh {
-namespace core {
 
 #define vmswitch(V) switch(static_cast<OpCode>(V))
 
@@ -637,5 +636,4 @@ bool vmEval(RuntimeContext &ctx, Callable &callable) {
     }
 }
 
-} // namespace core
 } // namespace ydsh

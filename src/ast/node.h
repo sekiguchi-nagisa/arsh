@@ -28,7 +28,6 @@
 #include "../core/object.h"
 
 namespace ydsh {
-namespace core {
 
 class FieldHandle;
 class MethodHandle;
@@ -37,13 +36,9 @@ enum class EvalStatus : unsigned int;
 enum RedirectOP : unsigned char;
 
 }
-}
 
 namespace ydsh {
-namespace ast {
 
-using namespace ydsh::core;
-using namespace ydsh::parser;
 using namespace ydsh::misc;
 
 struct NodeVisitor;
@@ -2435,7 +2430,6 @@ struct BaseVisitor : public NodeVisitor {
     virtual void visitRootNode(RootNode &node) override { this->visitDefault(node); }
 };
 
-} // namespace ast
 } // namespace ydsh
 
 #endif //YDSH_AST_NODE_H

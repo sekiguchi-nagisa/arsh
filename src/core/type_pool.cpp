@@ -24,9 +24,6 @@
 extern char **environ;
 
 namespace ydsh {
-namespace core {
-
-using namespace ydsh::ast;
 
 // #####################
 // ##     TypeMap     ##
@@ -587,5 +584,4 @@ void TypePool::registerDBusErrorTypes() {
     }
 }
 
-} // namespace core
 } // namespace ydsh

@@ -18,7 +18,6 @@
 #define YDSH_CORE_SYMBOL_H
 
 namespace ydsh {
-namespace core {
 
 /**
  * built-in symbol(builtin variable, magic method) definition
@@ -96,8 +95,6 @@ constexpr const char *ENV_PATH = "PATH";
 constexpr const char *ENV_SHLVL = "SHLVL";
 constexpr const char *ENV_TERM = "TERM";
 
-
-} // namespace core
 } // namespace ydsh
 
 #endif //YDSH_CORE_SYMBOL_H

@@ -4,9 +4,7 @@
 #include <core/type.h>
 #include <parser/type_checker.h>
 
-using namespace ydsh::core;
-using namespace ydsh::ast;
-using namespace ydsh::parser;
+using namespace ydsh;
 
 // helper method for type token generation
 std::unique_ptr<TypeNode> addRestElements(std::unique_ptr<ReifiedTypeNode> &&reified) {

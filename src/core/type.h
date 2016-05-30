@@ -28,7 +28,6 @@
 #include "type_pool.h"
 
 namespace ydsh {
-namespace core {
 
 using namespace ydsh::misc;
 
@@ -467,7 +466,6 @@ public:
     }
 };
 
-} // namespace core
 } // namespace ydsh
 
 #endif //YDSH_CORE_TYPE_H

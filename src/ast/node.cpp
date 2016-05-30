@@ -31,7 +31,6 @@
     } while(false)
 
 namespace ydsh {
-namespace ast {
 
 // ##################
 // ##     Node     ##
@@ -2713,5 +2712,4 @@ Node *createBinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode) {
     }
 }
 
-} // namespace ast
 } // namespace ydsh

@@ -22,7 +22,6 @@
 #include "type_checker.h"
 
 namespace ydsh {
-namespace parser {
 
 // ###########################
 // ##     TypeGenerator     ##
@@ -1203,5 +1202,4 @@ void TypeChecker::visitRootNode(RootNode &node) {
     node.setType(this->typePool.getVoidType());
 }
 
-} // namespace parser
 } // namespace ydsh

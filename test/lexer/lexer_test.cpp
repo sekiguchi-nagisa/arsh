@@ -7,8 +7,7 @@
 #define LEXER_TEST_DIR "./"
 #endif
 
-using namespace ydsh::core;
-using namespace ydsh::parser;
+using namespace ydsh;
 
 /**
  * ############################

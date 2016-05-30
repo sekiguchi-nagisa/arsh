@@ -21,7 +21,6 @@
 #include "handle.h"
 
 namespace ydsh {
-namespace core {
 
 extern NativeFuncInfo *const nativeFuncInfoTable;
 
@@ -398,5 +397,4 @@ void ErrorType::registerFuncInfo(NativeFuncInfo &info) {
     }
 }
 
-} // namespace core
 } // namespace ydsh

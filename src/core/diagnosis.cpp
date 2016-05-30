@@ -17,7 +17,6 @@
 #include "diagnosis.h"
 
 namespace ydsh {
-namespace core {
 
 const char *getTLErrorKind(TLError e) {
     const char *table[] = {
@@ -50,12 +49,10 @@ TypeLookupError createErrorImpl(TLError e, const std::string **v) {
 
 } // namespace __detail_tl_error
 
-} // namespace core
 } // namespace ydsh
 
 
 namespace ydsh {
-namespace parser {
 
 const char *getTCErrorKind(TCError e) {
     const char *table[] = {
@@ -68,11 +65,10 @@ const char *getTCErrorKind(TCError e) {
 
 namespace __detail_tc_error {
 
-TypeCheckError createErrorImpl(TCError e, const ast::Node &node, const std::string **v) {
-    return TypeCheckError(node.getToken(), getTCErrorKind(e), core::formatMessage(getTCErrorMessage(e), v));
+TypeCheckError createErrorImpl(TCError e, const Node &node, const std::string **v) {
+    return TypeCheckError(node.getToken(), getTCErrorKind(e), formatMessage(getTCErrorMessage(e), v));
 }
 
 } // namespace __detail_tc_error
 
-} // namespace parser
 } // namespace ydsh

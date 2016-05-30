@@ -25,7 +25,6 @@ extern "C" {
 #include "../core/type_pool.h"
 
 namespace ydsh {
-namespace core {
 
 /**
  * for base type descriptor
@@ -112,7 +111,6 @@ private:
 
 DSType &decodeTypeDescriptor(TypePool *pool, const char *desc);
 
-} // namespace core
 } // namespace ydsh
 
 

@@ -152,7 +152,6 @@
     TOKEN(TYPE_OTHER                         , "<Type Other>")
 
 namespace ydsh {
-namespace parser {
 
 enum TokenKind : unsigned int {
 #define GEN_ENUM(ENUM, STR) ENUM,
@@ -177,7 +176,6 @@ const char *toString(TokenKind kind);
  */
 unsigned int getPrecedence(TokenKind kind);
 
-} // namespace parser
 } // namespace ydsh
 
 #endif //YDSH_PARSER_TOKEN_KIND_H

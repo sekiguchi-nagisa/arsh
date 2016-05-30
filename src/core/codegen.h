@@ -26,10 +26,8 @@
 #include "../misc/shared.hpp"
 
 namespace ydsh {
-namespace core {
 
 using namespace ydsh::misc;
-using namespace ydsh::ast;
 
 class Label {
 private:
@@ -391,8 +389,6 @@ public:
  */
 void dumpCode(std::ostream &stream, RuntimeContext &ctx, const Callable &c);
 
-
-} // namespace core
 } // namespace ydsh
 
 #endif //YDSH_CORE_CODEGEN_H

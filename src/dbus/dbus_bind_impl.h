@@ -24,7 +24,6 @@
 #include "dbus_util.h"
 
 namespace ydsh {
-namespace core {
 
 // represent for SystemBus, SessionBus, or specific bus.
 class Bus_ObjectImpl : public Bus_Object {
@@ -247,7 +246,6 @@ private:
     void addHandler(const std::string &ifaceName, const std::string &methodName, const DSValue &obj);
 };
 
-} // namespace core
 } // namespace ydsh
 
 

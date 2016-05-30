@@ -2,7 +2,7 @@
 
 #include <parser/lexer.h>
 
-using namespace ydsh::parser;
+using namespace ydsh;
 
 TEST(LineNumTest, case1) {
     SourceInfo info("dummy");
