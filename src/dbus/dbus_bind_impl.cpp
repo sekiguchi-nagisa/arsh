@@ -20,7 +20,6 @@
 #include "../core/logger.h"
 
 namespace ydsh {
-namespace core {
 
 // helper util
 static void reportDBusError(RuntimeContext &ctx, const char *dbusErrorName, std::string &&message) {
@@ -878,5 +877,4 @@ void DBusProxy_Object::addHandler(const std::string &ifaceName,
     this->handerMap[std::make_pair(ifaceName.c_str(), methodName.c_str())] = obj;
 }
 
-} // namespace core
 } // namespace ydsh

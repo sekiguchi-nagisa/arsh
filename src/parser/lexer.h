@@ -25,7 +25,6 @@
 #include "../misc/shared.hpp"
 
 namespace ydsh {
-namespace parser {
 
 #include <yycond.h>
 
@@ -237,7 +236,6 @@ private:
     bool isDecimal(Token token) const;
 };
 
-} // namespace parser
 } // namespace ydsh
 
 #endif //YDSH_PARSER_LEXER_H

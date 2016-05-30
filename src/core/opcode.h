@@ -18,7 +18,6 @@
 #define YDSH_CORE_OPCODE_H
 
 namespace ydsh {
-namespace core {
 
 /**
  * see (doc/opcode.md)
@@ -104,7 +103,6 @@ unsigned int getByteSize(OpCode code);
 
 bool isTypeOp(OpCode code);
 
-} // namespace core
 } // namespace ydsh
 
 #endif //YDSH_CORE_OPCODE_H

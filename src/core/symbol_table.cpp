@@ -19,7 +19,6 @@
 #include "symbol_table.h"
 
 namespace ydsh {
-namespace core {
 
 // ###################
 // ##     Scope     ##
@@ -180,5 +179,4 @@ Scope::const_iterator SymbolTable::cendGlobal() const {
     return this->scopes.back()->cend();
 }
 
-} // namespace core
 } // namespace ydsh

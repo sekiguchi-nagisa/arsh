@@ -31,9 +31,6 @@
 #include "../misc/buffer.hpp"
 
 namespace ydsh {
-namespace core {
-
-using namespace ydsh::ast;
 
 enum class EvalStatus : unsigned int {
     SUCCESS,
@@ -654,7 +651,6 @@ pid_t xfork();
 // for exception handling
 struct DSExcepton {};
 
-} // namespace core
 } // namespace ydsh
 
 #endif //YDSH_CORE_CONTEXT_H

@@ -4,8 +4,7 @@
 #include <parser/parser.h>
 #include <misc/fatal.h>
 
-using namespace ydsh::parser;
-
+using namespace ydsh;
 
 static std::vector<std::string> tokenize(const char *str) {
     std::vector<std::string> tokens;

@@ -26,18 +26,13 @@
 #include <type_traits>
 
 namespace ydsh {
-namespace core {
 
 class TypePool;
 class DSType;
 
-}
 };
 
 namespace ydsh {
-namespace ast {
-
-using namespace ydsh::core;
 
 class Node;
 class TypeNode;
@@ -51,7 +46,7 @@ private:
     unsigned int indentLevel;
 
 public:
-    NodeDumper(std::ostream &stream, core::TypePool &pool) :
+    NodeDumper(std::ostream &stream, TypePool &pool) :
             stream(stream), pool(pool), indentLevel(0) { }
 
     ~NodeDumper() = default;
@@ -110,7 +105,6 @@ inline std::vector<Node *> toNodes(const std::vector<T *> &nodes) {
     return v;
 }
 
-} // namespace ast
 } // namespace ydsh
 
 // helper macro definition

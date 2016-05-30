@@ -28,7 +28,7 @@
 
 namespace {
 
-using namespace ydsh::core;
+using namespace ydsh;
 
 static HandleInfo toNum(unsigned int num) {
     // check range
@@ -846,7 +846,6 @@ static void gencode(const char *outFileName, const std::vector<TypeBind *> &bind
     OUT("#include <core/symbol.h>\n");
     OUT("\n");
     OUT("namespace ydsh {\n");
-    OUT("namespace core {\n");
     OUT("\n");
 
     // generate NativeFuncInfo table
@@ -893,7 +892,6 @@ static void gencode(const char *outFileName, const std::vector<TypeBind *> &bind
         offsetCount += methodSize;
     }
 
-    OUT("} // namespace core\n");
     OUT("} // namespace ydsh\n");
     fclose(fp);
 }

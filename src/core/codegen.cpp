@@ -21,7 +21,6 @@
 #include "context.h"
 
 namespace ydsh {
-namespace core {
 
 unsigned int getByteSize(OpCode code) {
     static unsigned char table[] = {
@@ -1136,6 +1135,4 @@ void dumpCode(std::ostream &stream, RuntimeContext &ctx, const Callable &c) {
     }
 }
 
-
-} // namespace core
 } // namespace ydsh

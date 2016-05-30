@@ -20,7 +20,6 @@
 #include <string>
 
 namespace ydsh {
-namespace core {
 
 // TypeLookupError
 
@@ -113,12 +112,11 @@ constexpr unsigned int computeParamSize(const char *s, unsigned int index = 0) {
 
 } // namespace __detail_tl_error
 
-} // namespace core
 } // namespace ydsh
 
 #define RAISE_TL_ERROR(e, ...) \
 do { \
-    using namespace ydsh::core::__detail_tl_error;\
+    using namespace ydsh::__detail_tl_error;\
     throw createError<computeParamSize(getTLErrorMessage(TLError::e))>(TLError::e, ## __VA_ARGS__);\
 } while(false)
 
@@ -126,7 +124,6 @@ do { \
 #include "../ast/node.h"
 
 namespace ydsh {
-namespace parser {
 
 /**
  * for type error reporting
@@ -143,7 +140,7 @@ public:
     TypeCheckError(Token token, const char *kind, std::string &&message) :
             token(token), kind(kind), message(std::move(message)) { }
 
-    TypeCheckError(Token token, core::TypeLookupError &e) :
+    TypeCheckError(Token token, TypeLookupError &e) :
             token(token), kind(e.getKind()), message(e.moveMessage()) { }
 
     ~TypeCheckError() = default;
@@ -217,15 +214,15 @@ constexpr const char *getTCErrorMessage(TCError e) {
 
 namespace __detail_tc_error {
 
-TypeCheckError createErrorImpl(TCError e, const ast::Node &node, const std::string **v);
+TypeCheckError createErrorImpl(TCError e, const Node &node, const std::string **v);
 
 
-inline TypeCheckError createTCErrorNext(TCError e, const ast::Node &node, const std::string **v, unsigned int) {
+inline TypeCheckError createTCErrorNext(TCError e, const Node &node, const std::string **v, unsigned int) {
     return createErrorImpl(e, node, v);
 }
 
 template <typename ... T>
-inline TypeCheckError createTCErrorNext(TCError e, const ast::Node &node, const std::string **v,
+inline TypeCheckError createTCErrorNext(TCError e, const Node &node, const std::string **v,
                                         unsigned int index, const std::string &arg, T && ... args) {
     v[index] = &arg;
     return createTCErrorNext(e, node, v, index + 1, std::forward<T>(args)...);
@@ -233,7 +230,7 @@ inline TypeCheckError createTCErrorNext(TCError e, const ast::Node &node, const 
 
 
 template <unsigned int N, typename ... T>
-inline TypeCheckError createTCError(TCError e, const ast::Node &node, T && ... args) {
+inline TypeCheckError createTCError(TCError e, const Node &node, T && ... args) {
     static_assert(N == sizeof ... (T), "invalid parameter size");
     const std::string *v[sizeof...(args)];
     return createTCErrorNext(e, node, v, 0, std::forward<T>(args)...);
@@ -241,13 +238,12 @@ inline TypeCheckError createTCError(TCError e, const ast::Node &node, T && ... a
 
 } // namespace __detail_tc_error
 
-} // namespace parser
 } // namespace ydsh
 
 #define RAISE_TC_ERROR(e, node,  ...) \
 do { \
-    using namespace ydsh::parser::__detail_tc_error;\
-    using namespace ydsh::core::__detail_tl_error;\
+    using namespace ydsh::__detail_tc_error;\
+    using namespace ydsh::__detail_tl_error;\
     constexpr auto s = computeParamSize(getTCErrorMessage(TCError::e));\
     throw createTCError<s>(TCError::e, node, ## __VA_ARGS__);\
 } while(false)

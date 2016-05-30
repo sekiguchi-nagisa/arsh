@@ -20,7 +20,6 @@
 #include "node.h"
 
 namespace ydsh {
-namespace ast {
 
 void NodeDumper::dump(const char *fieldName, const char *value) {
     std::string str(value);
@@ -168,5 +167,4 @@ void NodeDumper::dump(std::ostream &out, TypePool &pool, const RootNode &rootNod
     writer(rootNode);
 }
 
-} // namespace ast
 } // namespace ydsh

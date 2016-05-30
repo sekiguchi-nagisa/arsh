@@ -40,7 +40,6 @@
  */
 
 namespace ydsh {
-namespace core {
 
 template <typename T>
 using ObjTypeStub = typename std::conditional<
@@ -1685,7 +1684,6 @@ static inline bool service_object(RuntimeContext &ctx) {
 }
 
 
-} //namespace core
 } //namespace ydsh
 
 

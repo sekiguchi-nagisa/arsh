@@ -25,16 +25,8 @@
 #include "../misc/noncopyable.h"
 
 namespace ydsh {
-namespace ast {
 
 class UserDefinedCmdNode;
-
-}
-}
-
-namespace ydsh {
-namespace core {
-
 class RuntimeContext;
 enum class EvalStatus : unsigned int;
 
@@ -117,7 +109,7 @@ private:
 
     union {
         void *__dummy;
-        ast::UserDefinedCmdNode *__udcNode;
+        UserDefinedCmdNode *__udcNode;
         builtin_command_t __builtinCmd;
         const char *__filePath;   // may be null if not found file
     };
@@ -168,7 +160,7 @@ public:
         return this->__procKind;
     }
 
-    ast::UserDefinedCmdNode *udcNode() const {
+    UserDefinedCmdNode *udcNode() const {
         return this->__udcNode;
     }
 
@@ -243,8 +235,6 @@ private:
     bool checkChildError(RuntimeContext &ctx, const std::pair<unsigned int, ChildError> &errorPair);
 };
 
-
-} // namespace core
 } // namespace ydsh
 
 

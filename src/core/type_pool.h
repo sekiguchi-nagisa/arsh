@@ -25,7 +25,6 @@
 #include "../misc/noncopyable.h"
 
 namespace ydsh {
-namespace core {
 
 class DSType;
 class FunctionType;
@@ -469,7 +468,6 @@ private:
     void registerDBusErrorTypes();
 };
 
-} // namespace core
 } // namespace ydsh
 
 #endif //YDSH_CORE_TYPE_POOL_H

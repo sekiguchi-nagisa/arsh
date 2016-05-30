@@ -21,7 +21,6 @@
 #include "lexer.h"
 
 namespace ydsh {
-namespace parser {
 
 using namespace ydsh::misc;
 
@@ -390,5 +389,4 @@ bool Lexer::isDecimal(Token token) const {
     return true;
 }
 
-} // namespace parser
 } // namespace ydsh

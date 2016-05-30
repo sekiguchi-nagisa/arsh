@@ -24,9 +24,6 @@
 #endif
 
 namespace ydsh {
-namespace core {
-
-using namespace ydsh::ast;
 
 // ######################
 // ##     DSObject     ##
@@ -634,5 +631,4 @@ bool Service_Object::object(RuntimeContext &ctx, const DSValue &) {
     return false;
 }
 
-} // namespace core
 } // namespace ydsh

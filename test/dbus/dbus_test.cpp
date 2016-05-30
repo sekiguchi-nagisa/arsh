@@ -2,7 +2,7 @@
 
 #include <dbus/dbus_bind_impl.h>
 
-using namespace ydsh::core;
+using namespace ydsh;
 
 class DescriptorTest : public ::testing::Test {
 public:

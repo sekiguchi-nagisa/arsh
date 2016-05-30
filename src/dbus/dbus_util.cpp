@@ -17,7 +17,6 @@
 #include "dbus_util.h"
 
 namespace ydsh {
-namespace core {
 
 // ###################################
 // ##     BaseTypeDescriptorMap     ##
@@ -398,5 +397,4 @@ DSType &decodeTypeDescriptor(TypePool *pool, const char *desc) {
     return decodeTypeDescriptorImpl(pool, copyDesc);
 }
 
-} // namespace core
 } // namespace ydsh

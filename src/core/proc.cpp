@@ -31,7 +31,6 @@
 extern char **environ;
 
 namespace ydsh {
-namespace core {
 
 /**
  * if filePath is null, not execute and set ENOENT.
@@ -1743,6 +1742,4 @@ bool PipelineEvaluator::checkChildError(RuntimeContext &ctx, const std::pair<uns
     return true;
 }
 
-
-} // namespace core
 } // namespace ydsh

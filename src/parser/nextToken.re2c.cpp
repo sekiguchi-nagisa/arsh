@@ -80,7 +80,6 @@
 #define YYGETCONDITION() this->modeStack.back()
 
 namespace ydsh {
-namespace parser {
 
 TokenKind Lexer::nextToken(Token &token) {
     /*!re2c
@@ -325,5 +324,4 @@ TokenKind Lexer::nextToken(Token &token) {
     return kind;
 }
 
-} // namespace parser
 } // namespace ydsh

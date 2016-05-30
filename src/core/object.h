@@ -29,16 +29,8 @@
 #include "../parser/lexer.h"
 
 namespace ydsh {
-namespace ast {
 
 class FunctionNode;
-
-}
-}
-
-namespace ydsh {
-namespace  core {
-
 class DSValue;
 class String_Object;
 struct ObjectVisitor;
@@ -595,15 +587,15 @@ struct DummyObject : public DSObject {
  */
 class OldFuncObject : public DSObject {
 private:
-    ast::FunctionNode *funcNode;
+    FunctionNode *funcNode;
 
 public:
-    explicit OldFuncObject(ast::FunctionNode *funcNode) :
+    explicit OldFuncObject(FunctionNode *funcNode) :
             DSObject(nullptr), funcNode(funcNode) { }
 
     ~OldFuncObject();
 
-    ast::FunctionNode *getFuncNode() {
+    FunctionNode *getFuncNode() {
         return this->funcNode;
     }
 
@@ -659,7 +651,7 @@ struct ExceptionEntry {
 
 class Callable {
 private:
-    parser::SourceInfoPtr srcInfo;
+    SourceInfoPtr srcInfo;
 
     /**
      * if CallableKind is toplevel, it is null
@@ -698,7 +690,7 @@ private:
 public:
     NON_COPYABLE(Callable);
 
-    Callable(const parser::SourceInfoPtr &srcInfo, const char *name, unsigned char *code,
+    Callable(const SourceInfoPtr &srcInfo, const char *name, unsigned char *code,
              DSValue *constPool, SourcePosEntry *sourcePosEntries, ExceptionEntry *exceptionEntries) :
             srcInfo(srcInfo), name(name == nullptr ? nullptr : strdup(name)), code(code),
             constPool(constPool), sourcePosEntries(sourcePosEntries), exceptionEntries(exceptionEntries) { }
@@ -727,7 +719,7 @@ public:
         return *this;
     }
 
-    const parser::SourceInfoPtr &getSrcInfo() const {
+    const SourceInfoPtr &getSrcInfo() const {
         return this->srcInfo;
     }
 
@@ -866,7 +858,6 @@ struct Service_Object : public DSObject {
     virtual bool object(RuntimeContext &ctx, const DSValue &objectPath);
 };
 
-} // namespace core
 } // namespace ydsh
 
 #endif //YDSH_CORE_OBJECT_H

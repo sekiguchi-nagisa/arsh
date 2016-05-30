@@ -34,7 +34,6 @@
 #include "../misc/files.h"
 
 namespace ydsh {
-namespace core {
 
 // ###########################
 // ##     FilePathCache     ##
@@ -1505,5 +1504,4 @@ pid_t xfork() {
     return pid;
 }
 
-} // namespace core
 } // namespace ydsh

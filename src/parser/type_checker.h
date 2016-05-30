@@ -25,10 +25,6 @@
 #include "../core/diagnosis.h"
 
 namespace ydsh {
-namespace parser {
-
-using namespace ydsh::core;
-using namespace ydsh::ast;
 
 // for apply node type checking
 class HandleOrFuncType {
@@ -360,7 +356,6 @@ private:
     void visitRootNode(RootNode &node) override;
 };
 
-} // namespace parser
 } // namespace ydsh
 
 #endif //YDSH_PARSER_TYPE_CHECKER_H

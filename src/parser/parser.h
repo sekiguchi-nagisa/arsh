@@ -25,9 +25,6 @@
 #include "../ast/node.h"
 
 namespace ydsh {
-namespace parser {
-
-using namespace ydsh::ast;
 
 class ArgsWrapper {
 private:
@@ -174,8 +171,6 @@ private:
  */
 bool parse(const char *sourceName, RootNode &rootNode);
 
-
-} // namespace parser
 } // namespace ydsh
 
 #endif //YDSH_PARSER_PARSER_H

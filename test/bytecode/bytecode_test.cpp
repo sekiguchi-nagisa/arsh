@@ -2,8 +2,8 @@
 
 #include <core/codegen.h>
 
-using Label = ydsh::core::Label;
-using ByteCodeWriter = ydsh::core::ByteCodeWriter<true>;
+using Label = ydsh::Label;
+using ByteCodeWriter = ydsh::ByteCodeWriter<true>;
 
 TEST(writer, api1) {
     ByteCodeWriter writer;
@@ -192,21 +192,21 @@ TEST(writer, read) {
     {
         const unsigned char v = 68;
         writer.write(0, v);
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(v, ydsh::core::read8(writer.codeBuffer.get(), 0)));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(v, ydsh::read8(writer.codeBuffer.get(), 0)));
     }
 
     // 16 bit
     {
         const unsigned short v = 2784;
         writer.write(1, v);
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(v, ydsh::core::read16(writer.codeBuffer.get(), 1)));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(v, ydsh::read16(writer.codeBuffer.get(), 1)));
     }
 
     // 32 bit
     {
         const unsigned int v = 0x12345678;
         writer.write(0, v);
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(v, ydsh::core::read32(writer.codeBuffer.get(), 0)));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(v, ydsh::read32(writer.codeBuffer.get(), 0)));
     }
 
     // 64 bit
@@ -216,7 +216,7 @@ TEST(writer, read) {
     {
         const unsigned long v = static_cast<unsigned long>(-456789);
         writer.write(0, v);
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(v, ydsh::core::read64(writer.codeBuffer.get(), 0)));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(v, ydsh::read64(writer.codeBuffer.get(), 0)));
     }
 }
 

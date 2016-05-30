@@ -22,7 +22,6 @@
 #include "handle.h"
 
 namespace ydsh {
-namespace core {
 
 class Scope {
 private:
@@ -160,7 +159,6 @@ public:
     Scope::const_iterator cendGlobal() const;
 };
 
-} // namespace core
 } // namespace ydsh
 
 #endif //YDSH_CORE_SYMBOL_TABLE_H

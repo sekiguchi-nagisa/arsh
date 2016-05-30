@@ -20,7 +20,6 @@
 #include "type.h"
 
 namespace ydsh {
-namespace core {
 
 native_type_info_t info_Dummy();
 
@@ -51,7 +50,6 @@ native_type_info_t info_ArrayType();
 native_type_info_t info_MapType();
 native_type_info_t info_TupleType();
 
-} // namespace core
 } // namespace ydsh
 
 #endif //YDSH_CORE_BIND_H

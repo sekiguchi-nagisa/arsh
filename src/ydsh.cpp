@@ -40,9 +40,6 @@
 
 
 using namespace ydsh;
-using namespace ydsh::ast;
-using namespace ydsh::parser;
-using namespace ydsh::core;
 
 struct DSContext {
     RuntimeContext ctx;

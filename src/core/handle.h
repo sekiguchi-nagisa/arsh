@@ -25,7 +25,6 @@
 #include "../misc/noncopyable.h"
 
 namespace ydsh {
-namespace core {
 
 using namespace ydsh::misc;
 
@@ -238,7 +237,6 @@ public:
     static constexpr flag8_t MULTI_RETURN = 1 << 1;
 };
 
-} // namespace core
 } // namespace ydsh
 
 #endif //YDSH_CORE_HANDLE_H

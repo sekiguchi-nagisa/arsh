@@ -17,7 +17,6 @@
 #include "token_kind.h"
 
 namespace ydsh {
-namespace parser {
 
 const char *toString(TokenKind kind) {
     static const char *table[] = {
@@ -67,5 +66,4 @@ unsigned int getPrecedence(TokenKind kind) {
     }
 }
 
-} // namespace parser
 } // namespace ydsh
