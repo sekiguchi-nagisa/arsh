@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_MISC_SHARED_HPP
-#define YDSH_MISC_SHARED_HPP
+#ifndef YDSH_MISC_RESOURCE_HPP
+#define YDSH_MISC_RESOURCE_HPP
+
+#include <type_traits>
+
+#include "noncopyable.h"
 
 namespace ydsh {
 namespace misc {
@@ -77,7 +81,72 @@ inline IntrusivePtr<T> makeIntrusive(A ... arg) {
     return IntrusivePtr<T>(new T(std::forward<A>(arg)...));
 }
 
+template <typename R, typename D>
+class ScopedResource {
+private:
+    R resource;
+    D deleter;
+    bool deleteResource;
+
+public:
+    NON_COPYABLE(ScopedResource);
+
+    ScopedResource(R &&resource, D &&deleter) noexcept :
+            resource(std::move(resource)), deleter(std::move(deleter)), deleteResource(true) { }
+
+    ScopedResource(ScopedResource &&o) noexcept :
+            resource(std::move(o.resource)), deleter(std::move(o.deleter)), deleteResource(true) {
+        o.release();
+    }
+
+    ~ScopedResource() noexcept(this->reset()) {
+        this->reset();
+    }
+
+    ScopedResource &operator=(ScopedResource &&o) noexcept(this->reset()) {
+        this->reset();
+        this->resource = std::move(o.resource);
+        this->deleter = std::move(o.deleter);
+        this->deleteResource = true;
+        o.release();
+        return *this;
+    }
+
+
+    R const &get() const noexcept {
+        return this->resource;
+    }
+
+    D const &getDeleter() const noexcept {
+        return this->deleter;
+    }
+
+    void reset() noexcept(this->deleter(this->resource)) {
+        if(this->deleteResource) {
+            this->deleteResource = false;
+            this->deleter(this->resource);
+        }
+    }
+
+    void reset(R &&r) noexcept(this->reset()) {
+        this->reset();
+        this->resource = std::move(r);
+        this->deleteResource = true;
+    }
+
+    R const &release() noexcept {
+        this->deleteResource = false;
+        return this->get();
+    }
+};
+
+template <typename R, typename D>
+ScopedResource<R, typename std::remove_reference<D>::type> makeScopedResource(R &&r, D &&d) {
+    using ActualD = typename std::remove_reference<D>::type;
+    return ScopedResource<R, ActualD>(std::move(r), std::forward<ActualD>(d));
+};
+
 } // namespace misc
 } // namespace ydsh
 
-#endif //YDSH_MISC_SHARED_HPP
+#endif //YDSH_MISC_RESOURCE_HPP

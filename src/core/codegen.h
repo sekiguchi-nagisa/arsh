@@ -23,7 +23,7 @@
 #include "object.h"
 #include "opcode.h"
 #include "handle.h"
-#include "../misc/shared.hpp"
+#include "../misc/resource.hpp"
 
 namespace ydsh {
 
