@@ -22,7 +22,7 @@
 
 #include "token_kind.h"
 #include "lexer_base.hpp"
-#include "../misc/shared.hpp"
+#include "../misc/resource.hpp"
 
 namespace ydsh {
 
