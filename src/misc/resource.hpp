@@ -99,11 +99,11 @@ public:
         o.release();
     }
 
-    ~ScopedResource() noexcept(this->reset()) {
+    ~ScopedResource() noexcept {
         this->reset();
     }
 
-    ScopedResource &operator=(ScopedResource &&o) noexcept(this->reset()) {
+    ScopedResource &operator=(ScopedResource &&o) noexcept {
         this->reset();
         this->resource = std::move(o.resource);
         this->deleter = std::move(o.deleter);
@@ -121,14 +121,14 @@ public:
         return this->deleter;
     }
 
-    void reset() noexcept(this->deleter(this->resource)) {
+    void reset() noexcept {
         if(this->deleteResource) {
             this->deleteResource = false;
             this->deleter(this->resource);
         }
     }
 
-    void reset(R &&r) noexcept(this->reset()) {
+    void reset(R &&r) noexcept {
         this->reset();
         this->resource = std::move(r);
         this->deleteResource = true;
