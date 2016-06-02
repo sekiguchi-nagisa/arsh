@@ -22,8 +22,6 @@
 
 namespace ydsh {
 
-using namespace ydsh::misc;
-
 const char *toModeName(LexerMode mode) {
     switch(mode) {
     case yycSTMT:

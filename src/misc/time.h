@@ -23,7 +23,6 @@
 #include <config.h>
 
 namespace ydsh {
-namespace misc {
 
 inline struct tm *getLocalTime() {
 #ifdef USE_FIXED_TIME
@@ -70,7 +69,6 @@ inline struct tm *getLocalTime() {
     }
 }
 
-} // namespace misc
 } // namespace ydsh
 
 #endif //YDSH_MISC_TIME_H

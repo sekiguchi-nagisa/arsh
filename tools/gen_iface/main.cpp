@@ -409,7 +409,7 @@ static std::string decode(const std::string &desc) {
 
 class AttributeMap {
 private:
-    ydsh::misc::CStringHashMap<std::string> map;
+    ydsh::CStringHashMap<std::string> map;
 
 public:
     AttributeMap(int nb_attributes, const xmlChar **attributes) : map() {

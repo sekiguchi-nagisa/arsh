@@ -108,7 +108,7 @@ public:
     }
 };
 
-using CStrBuffer = misc::FlexBuffer<char *>;
+using CStrBuffer = FlexBuffer<char *>;
 
 class RuntimeContext {
 private:

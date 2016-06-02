@@ -1112,7 +1112,7 @@ const char *safeBasename(const char *str) {
 void RuntimeContext::interpretPromptString(const char *ps, std::string &output) {
     output.clear();
 
-    struct tm *local = misc::getLocalTime();
+    struct tm *local = getLocalTime();
 
     static const char *wdays[] = {
             "Sun", "Mon", "Tue", "Wed", "Thurs", "Fri", "Sat"

@@ -134,7 +134,7 @@ void NodeDumper::indent() {
 }
 
 void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
-    std::string className = misc::Demangle()(typeid(node));
+    std::string className = Demangle()(typeid(node));
 
     this->stream << "__Node: " << std::endl;
     this->enterIndent();

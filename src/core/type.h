@@ -29,8 +29,6 @@
 
 namespace ydsh {
 
-using namespace ydsh::misc;
-
 struct TypeVisitor;
 
 class FieldHandle;

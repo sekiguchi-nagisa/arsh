@@ -4,7 +4,7 @@
 
 #include <misc/unicode.hpp>
 
-using namespace ydsh::misc;
+using namespace ydsh;
 
 class UnicodeTest : public ::testing::Test {
 public:

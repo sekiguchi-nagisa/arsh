@@ -22,8 +22,6 @@
 namespace ydsh {
 namespace directive {
 
-using namespace ydsh::misc;
-
 const char *toString(TokenKind kind) {
     static const char *table[] = {
 #define GEN_STR(ENUM) "<" #ENUM ">",

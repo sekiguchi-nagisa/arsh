@@ -18,7 +18,6 @@
 
 using namespace ydsh;
 using namespace ydsh::directive;
-using namespace ydsh::misc;
 
 // parse config(key = value)
 

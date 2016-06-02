@@ -23,7 +23,6 @@
 #include "fatal.h"
 
 namespace ydsh {
-namespace misc {
 namespace __detail_demangle {
 
 template <bool T>
@@ -54,7 +53,6 @@ std::string Demangle<T>::operator()(const std::type_info &info) const {
 
 typedef __detail_demangle::Demangle<true> Demangle;
 
-} // namespace misc
 } // namespace ydsh
 
 #endif //YDSH_MISC_DEMANGLE_HPP

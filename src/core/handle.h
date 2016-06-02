@@ -26,8 +26,6 @@
 
 namespace ydsh {
 
-using namespace ydsh::misc;
-
 class TypePool;
 class DSType;
 class FunctionType;

@@ -530,8 +530,8 @@ void ByteCodeGenerator::visitNewNode(NewNode &node) {
 }
 
 void ByteCodeGenerator::visitCondOpNode(CondOpNode &node) {
-    auto elseLabel = ydsh::misc::makeIntrusive<Label>();
-    auto mergeLabel = ydsh::misc::makeIntrusive<Label>();
+    auto elseLabel = makeIntrusive<Label>();
+    auto mergeLabel = makeIntrusive<Label>();
 
     this->visit(*node.getLeftNode());
     this->writeBranchIns(elseLabel);
@@ -554,8 +554,8 @@ void ByteCodeGenerator::visitCondOpNode(CondOpNode &node) {
 }
 
 void ByteCodeGenerator::visitTernaryNode(TernaryNode &node) {
-    auto elseLabel = ydsh::misc::makeIntrusive<Label>();
-    auto mergeLabel = ydsh::misc::makeIntrusive<Label>();
+    auto elseLabel = makeIntrusive<Label>();
+    auto mergeLabel = makeIntrusive<Label>();
 
     this->visit(*node.getCondNode());
     this->writeBranchIns(elseLabel);

@@ -25,7 +25,6 @@
 #include "noncopyable.h"
 
 namespace ydsh {
-namespace misc {
 
 /**
  * only available POD type.
@@ -391,7 +390,6 @@ inline unsigned long read64(const unsigned char *const code, unsigned int index)
     return v;
 }
 
-} // namespace misc
 } // namespace ydsh
 
 

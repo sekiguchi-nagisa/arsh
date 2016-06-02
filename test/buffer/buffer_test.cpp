@@ -2,7 +2,7 @@
 
 #include <misc/buffer.hpp>
 
-using namespace ydsh::misc;
+using namespace ydsh;
 
 typedef FlexBuffer<unsigned int> IBuffer;
 

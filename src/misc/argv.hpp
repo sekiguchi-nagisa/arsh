@@ -62,20 +62,20 @@ struct Option {
     const char *detail;
 
     bool hasArg() const {
-        return misc::hasFlag(this->flag, HAS_ARG);
+        return hasFlag(this->flag, HAS_ARG);
     }
 
     bool ignoreRest() const {
-        return misc::hasFlag(this->flag, IGNORE_REST);
+        return hasFlag(this->flag, IGNORE_REST);
     }
 
     bool require() const {
-        return misc::hasFlag(this->flag, REQUIRE);
+        return hasFlag(this->flag, REQUIRE);
     }
 
     unsigned int getUsageSize() const {
         return strlen(this->optionName) +
-               (misc::hasFlag(this->flag, HAS_ARG) ? strlen(usageSuffix) : 0);
+                (hasFlag(this->flag, HAS_ARG) ? strlen(usageSuffix) : 0);
     }
 
     std::vector<std::string> getDetails() const;
@@ -113,7 +113,7 @@ using CmdLines = std::vector<std::pair<T, const char *>>;
 template<typename T, size_t N>
 int parseArgv(int argc, char **argv, const Option<T> (&options)[N], CmdLines<T> &cmdLines) {
     // register option
-    misc::CStringHashMap<unsigned int> indexMap;
+    CStringHashMap<unsigned int> indexMap;
     bool requireOptionMap[N];
     for(unsigned int i = 0; i < N; i++) {
         const char *optionName = options[i].optionName;
