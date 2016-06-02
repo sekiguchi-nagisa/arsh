@@ -116,7 +116,7 @@ static void ignoreSignal() {
 
 
 // for linenoise encoding function
-using namespace ydsh::misc;
+using namespace ydsh;
 
 static std::size_t prevUtf8CharLen(const char *buf, int pos) {
     int end = pos--;

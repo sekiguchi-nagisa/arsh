@@ -23,7 +23,6 @@
 #include <cstdlib>
 
 namespace ydsh {
-namespace misc {
 
 /**
  * if success, status is 0.
@@ -155,7 +154,6 @@ inline int toHex(char ch) {
     return 0;
 }
 
-} // namespace misc
 } // namespace ydsh
 
 

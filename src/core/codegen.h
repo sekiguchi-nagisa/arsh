@@ -27,8 +27,6 @@
 
 namespace ydsh {
 
-using namespace ydsh::misc;
-
 class Label {
 private:
     unsigned int refCount;

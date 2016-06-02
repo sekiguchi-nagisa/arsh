@@ -35,12 +35,6 @@ class RuntimeContext;
 enum class EvalStatus : unsigned int;
 enum RedirectOP : unsigned char;
 
-}
-
-namespace ydsh {
-
-using namespace ydsh::misc;
-
 struct NodeVisitor;
 class NodeDumper;
 

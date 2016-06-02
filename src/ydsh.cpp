@@ -400,7 +400,7 @@ static unsigned int getShellLevel() {
     unsigned int level = 0;
     if(shlvl != nullptr) {
         int status;
-        long value = ydsh::misc::convertToInt64(shlvl, status);
+        long value = convertToInt64(shlvl, status);
         if(status != 0) {
             level = 0;
         } else {

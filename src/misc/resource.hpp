@@ -22,7 +22,6 @@
 #include "noncopyable.h"
 
 namespace ydsh {
-namespace misc {
 
 template <typename T>
 class IntrusivePtr final {
@@ -146,7 +145,6 @@ ScopedResource<R, typename std::remove_reference<D>::type> makeScopedResource(R 
     return ScopedResource<R, ActualD>(std::move(r), std::forward<ActualD>(d));
 };
 
-} // namespace misc
 } // namespace ydsh
 
 #endif //YDSH_MISC_RESOURCE_HPP

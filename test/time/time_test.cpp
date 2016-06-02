@@ -6,7 +6,7 @@
 
 #include <misc/time.h>
 
-using namespace ydsh::misc;
+using namespace ydsh;
 
 class BaseTest : public ::testing::Test {
 public:

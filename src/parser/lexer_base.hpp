@@ -251,7 +251,7 @@ std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token) const {
     std::string marker;
     for(unsigned int i = lineToken.pos; i < token.pos;) {
         int code = 0;
-        i += misc::UnicodeUtil::utf8ToCodePoint((char *)(this->buf + i), this->getUsedSize() - i, code);
+        i += UnicodeUtil::utf8ToCodePoint((char *)(this->buf + i), this->getUsedSize() - i, code);
         if(code < 0) {
             return marker;
         }
@@ -259,7 +259,7 @@ std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token) const {
             marker += "\t";
             continue;
         }
-        int width = misc::UnicodeUtil::localeAwareWidth(code);
+        int width = UnicodeUtil::localeAwareWidth(code);
         if(width == 1) {
             marker += " ";
         } else if(width == 2) {
@@ -270,7 +270,7 @@ std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token) const {
     for(unsigned int i = token.pos; i < stopPos;) {
         unsigned int prev = i;
         int code = 0;
-        i += misc::UnicodeUtil::utf8ToCodePoint((char *)(this->buf + i), this->getUsedSize() - i, code);
+        i += UnicodeUtil::utf8ToCodePoint((char *)(this->buf + i), this->getUsedSize() - i, code);
         if(code < 0) {
             return marker;
         }
@@ -278,7 +278,7 @@ std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token) const {
             marker += "\t";
             continue;
         }
-        int width = misc::UnicodeUtil::localeAwareWidth(code);
+        int width = UnicodeUtil::localeAwareWidth(code);
         if(width == 1) {
             marker += (prev == token.pos ? "^" : "~");
         } else if(width == 2) {

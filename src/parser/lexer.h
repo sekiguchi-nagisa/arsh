@@ -87,7 +87,7 @@ public:
 };
 
 //typedef std::shared_ptr<SourceInfo> SourceInfoPtr;
-using SourceInfoPtr = misc::IntrusivePtr<SourceInfo>;
+using SourceInfoPtr = IntrusivePtr<SourceInfo>;
 
 class Lexer : public ydsh::parser_base::LexerBase {
 private:
@@ -110,7 +110,7 @@ private:
 public:
     Lexer(const char *sourceName, const char *source) :
             LexerBase(source),
-            srcInfoPtr(misc::makeIntrusive<SourceInfo>(sourceName)),
+            srcInfoPtr(makeIntrusive<SourceInfo>(sourceName)),
             modeStack(1, yycSTMT), prevNewLine(false), prevSpace(false), prevMode(yycSTMT) {}
 
     /**
@@ -118,7 +118,7 @@ public:
      */
     Lexer(const char *sourceName, FILE *fp) :
             LexerBase(fp),
-            srcInfoPtr(misc::makeIntrusive<SourceInfo>(sourceName)),
+            srcInfoPtr(makeIntrusive<SourceInfo>(sourceName)),
             modeStack(1, yycSTMT), prevNewLine(false), prevSpace(false), prevMode(yycSTMT) {}
 
     ~Lexer() = default;

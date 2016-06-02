@@ -21,7 +21,6 @@
 #include <unordered_map>
 
 namespace ydsh {
-namespace misc {
 
 struct CStringComparator {
     bool operator()(const char *x, const char *y) const {
@@ -42,8 +41,6 @@ struct CStringHash {
 template <typename T>
 using CStringHashMap = std::unordered_map<const char *, T, CStringHash, CStringComparator>;
 
-
-} // namespace misc
 } // namespace ydsh
 
 

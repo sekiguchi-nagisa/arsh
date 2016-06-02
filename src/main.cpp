@@ -89,7 +89,7 @@ static void showFeature(std::ostream &stream) {
 
     const unsigned int featureBit = DSContext_featureBit();
     for(unsigned int i = 0; i < (sizeof(featureNames) / sizeof(featureNames[0])); i++) {
-        if(ydsh::misc::hasFlag(featureBit, static_cast<unsigned int>(1 << i))) {
+        if(hasFlag(featureBit, static_cast<unsigned int>(1 << i))) {
             stream << featureNames[i] << std::endl;
         }
     }

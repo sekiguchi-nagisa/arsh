@@ -20,7 +20,6 @@
 #include <type_traits>
 
 namespace ydsh {
-namespace misc {
 
 typedef unsigned char flag8_set_t;
 typedef unsigned char flag8_t;
@@ -49,7 +48,6 @@ inline bool hasFlag(T set, T flag) {
     return (set & flag) == flag;
 }
 
-} // namespace misc
 } // namespace ydsh
 
 

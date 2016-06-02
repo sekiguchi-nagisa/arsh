@@ -12,7 +12,7 @@
 #endif
 
 
-using namespace ydsh::misc;
+using namespace ydsh;
 
 class RedirectTest : public ::testing::TestWithParam<std::string> {
 private:

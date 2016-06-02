@@ -27,7 +27,6 @@
 #include <string>
 
 namespace ydsh {
-namespace misc {
 
 inline void getFileList(const char *dirPath, bool recursive, std::vector<std::string> &results) {
     std::list<std::string> dirList;
@@ -87,7 +86,6 @@ inline mode_t getStMode(const char *fileName) {
 
 #define S_IS_PERM_(mode, flag) (((mode) & (flag)) == (flag))
 
-} // namespace misc
 } // namespace ydsh
 
 #endif //YDSH_MISC_FILES_H

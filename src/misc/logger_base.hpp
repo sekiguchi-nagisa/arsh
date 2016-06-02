@@ -54,7 +54,7 @@ private:
 
 public:
     ~Logger() {
-        if(ydsh::misc::hasFlag(this->whiteList, CLOSE_APPENDER)) {
+        if(ydsh::hasFlag(this->whiteList, CLOSE_APPENDER)) {
             delete this->appender;
             this->appender = nullptr;
         }
@@ -66,7 +66,7 @@ public:
     }
 
     static bool checkPolicy(E e) {
-        return ydsh::misc::hasFlag(instance().whiteList, mask(e));
+        return ydsh::hasFlag(instance().whiteList, mask(e));
     }
 
     static std::ostream &format2digit(std::ostream &stream, int num) {
@@ -87,7 +87,7 @@ Logger<P, E>::Logger() : appender(&std::cerr), whiteList(P::init()) {
         }
         if(os != nullptr) {
             this->appender = os;
-            ydsh::misc::setFlag(this->whiteList, CLOSE_APPENDER);
+            ydsh::setFlag(this->whiteList, CLOSE_APPENDER);
         }
     }
 }
@@ -130,7 +130,7 @@ unsigned int initPolicy(const char *prefix, const char *arg) {
             continue;
         case ',': {
             if(getenv(buf.c_str()) != nullptr) {
-                ydsh::misc::setFlag(policySet, mask(indexCount));
+                ydsh::setFlag(policySet, mask(indexCount));
             }
             indexCount++;
             buf = prefix;
@@ -143,7 +143,7 @@ unsigned int initPolicy(const char *prefix, const char *arg) {
     }
     if(buf.size() > prefixSize) {
         if(getenv(buf.c_str()) != nullptr) {
-            ydsh::misc::setFlag(policySet, mask(indexCount));
+            ydsh::setFlag(policySet, mask(indexCount));
         }
     }
     return policySet;

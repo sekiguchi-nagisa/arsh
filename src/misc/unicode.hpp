@@ -21,7 +21,6 @@
 #include <clocale>
 
 namespace ydsh {
-namespace misc {
 
 namespace __detail_unicode {
 
@@ -225,8 +224,6 @@ int UnicodeUtil<T>::localeAwareWidth(int codePoint) {
 
 typedef __detail_unicode::UnicodeUtil<true> UnicodeUtil;
 
-
-} // namespace misc
 } // namespace ydsh
 
 #endif //YDSH_MISC_UNICODE_HPP

@@ -15,7 +15,7 @@
 #define BIN_PATH "./ydsh"
 #endif
 
-using namespace ydsh::misc;
+using namespace ydsh;
 
 class InteractiveTest : public ::testing::TestWithParam<std::string> {
 private:
