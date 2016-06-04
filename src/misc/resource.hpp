@@ -122,7 +122,7 @@ public:
     void reset() noexcept {
         if(this->deleteResource) {
             this->deleteResource = false;
-            this->deleter(this->resource);
+            this->getDeleter()(this->resource);
         }
     }
 
