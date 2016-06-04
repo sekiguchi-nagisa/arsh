@@ -18,18 +18,39 @@
 
 #include "dbus_bind_impl.h"
 #include "../core/logger.h"
+#include "../misc/resource.hpp"
 
 namespace ydsh {
 
 // helper util
+struct DBusErrorDeleter {
+    void operator()(DBusError &e) const {
+        if(dbus_error_is_set(&e)) {
+            dbus_error_free(&e);
+        }
+    }
+};
+
+using ScopedDBusError = ScopedResource<DBusError, DBusErrorDeleter>;
+
+static DBusError *operator&(ScopedDBusError &e) {
+    return &const_cast<DBusError &>(e.get());
+}
+
+static ScopedDBusError newDBusError() {
+    auto e = makeScopedResource(DBusError(), DBusErrorDeleter());
+    dbus_error_init(&e);
+    return e;
+}
+
 static void reportDBusError(RuntimeContext &ctx, const char *dbusErrorName, std::string &&message) {
     std::string name(dbusErrorName);
     auto &type = ctx.getPool().createErrorType(name, ctx.getPool().getDBusErrorType());
     ctx.throwError(type, std::move(message));
 }
 
-static void reportDBusError(RuntimeContext &ctx, DBusError &error) {
-    reportDBusError(ctx, error.name, std::string(error.message));
+static void reportDBusError(RuntimeContext &ctx, ScopedDBusError &error) {
+    reportDBusError(ctx, error.get().name, std::string(error.get().message));
 }
 
 static void unrefMessage(DBusMessage *msg) {
@@ -275,8 +296,7 @@ static void appendArg(RuntimeContext &ctx, DBusMessageIter *iter,
 
 static DBusMessage *sendAndUnrefMessage(RuntimeContext &ctx,
                                         DBusConnection *conn, DBusMessage *sendMsg, bool &status) {
-    DBusError error;
-    dbus_error_init(&error);
+    auto error = newDBusError();
 
     status = false;
     DBusMessage *retMsg = dbus_connection_send_with_reply_and_block(
@@ -285,10 +305,7 @@ static DBusMessage *sendAndUnrefMessage(RuntimeContext &ctx,
 
     if(dbus_error_is_set(&error)) {
         reportDBusError(ctx, error);
-
-        dbus_error_free(&error);
         unrefMessage(retMsg);
-
         return nullptr;
     }
     status = true;
@@ -311,13 +328,11 @@ Bus_ObjectImpl::~Bus_ObjectImpl() {
 
 bool Bus_ObjectImpl::initConnection(RuntimeContext &ctx, bool systemBus) {
     // get connection
-    DBusError error;
-    dbus_error_init(&error);
+    auto error = newDBusError();
 
     this->conn = dbus_bus_get(systemBus ? DBUS_BUS_SYSTEM : DBUS_BUS_SESSION, &error);
     if(dbus_error_is_set(&error)) {
         reportDBusError(ctx, error);
-        dbus_error_free(&error);
         return false;
     }
 
@@ -454,14 +469,12 @@ bool DBus_ObjectImpl::waitSignal(RuntimeContext &ctx) {
     std::vector<std::string> ruleList;
     proxies[0]->createSignalMatchRule(ruleList);
 
-    DBusError error;
-    dbus_error_init(&error);
+    auto error = newDBusError();
     for(auto &rule : ruleList) {
         LOG(TRACE_SIGNAL, "match rule: " << rule);
         dbus_bus_add_match(conn, rule.c_str(), &error);
         if(dbus_error_is_set(&error)) {
             reportDBusError(ctx, error);
-            dbus_error_free(&error);
             return false;
         }
     }
