@@ -36,6 +36,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cmdline)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/interactive)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/unicode)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/time)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/resource)
 
 if(USE_DBUS)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dbus)

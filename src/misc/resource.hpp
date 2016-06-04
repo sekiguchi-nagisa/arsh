@@ -94,7 +94,7 @@ public:
             resource(std::move(resource)), deleter(std::move(deleter)), deleteResource(true) { }
 
     ScopedResource(ScopedResource &&o) noexcept :
-            resource(std::move(o.resource)), deleter(std::move(o.deleter)), deleteResource(true) {
+            resource(std::move(o.resource)), deleter(std::move(o.deleter)), deleteResource(o.deleteResource) {
         o.release();
     }
 
@@ -106,11 +106,10 @@ public:
         this->reset();
         this->resource = std::move(o.resource);
         this->deleter = std::move(o.deleter);
-        this->deleteResource = true;
+        this->deleteResource = o.deleteResource;
         o.release();
         return *this;
     }
-
 
     R const &get() const noexcept {
         return this->resource;
@@ -123,7 +122,7 @@ public:
     void reset() noexcept {
         if(this->deleteResource) {
             this->deleteResource = false;
-            this->deleter(this->resource);
+            this->getDeleter()(this->resource);
         }
     }
 
