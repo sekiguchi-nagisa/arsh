@@ -25,6 +25,16 @@
 
 namespace ydsh {
 
+struct DBusMessageDeleter {
+    void operator()(DBusMessage *msg) const {
+        if(msg != nullptr) {
+            dbus_message_unref(msg);
+        }
+    }
+};
+
+using ScopedDBusMessage = std::unique_ptr<DBusMessage, DBusMessageDeleter>;
+
 // represent for SystemBus, SessionBus, or specific bus.
 class Bus_ObjectImpl : public Bus_Object {
 private:
@@ -231,14 +241,14 @@ public:
     bool doIntrospection(RuntimeContext &ctx);
 
 private:
-    DBusMessage *newMethodCallMsg(const char *ifaceName, const char *methodName);
-    DBusMessage *newMethodCallMsg(const std::string &ifaceName, const std::string &methodName);
+    ScopedDBusMessage newMethodCallMsg(const char *ifaceName, const char *methodName);
+    ScopedDBusMessage newMethodCallMsg(const std::string &ifaceName, const std::string &methodName);
 
     /**
      * send message and unref send message.
      * return reply message.
      */
-    DBusMessage *sendMessage(RuntimeContext &ctx, DBusMessage *sendMsg, bool &status);
+    ScopedDBusMessage sendMessage(RuntimeContext &ctx, ScopedDBusMessage &&sendMsg);
 
     /**
      * obj must be FuncObject
