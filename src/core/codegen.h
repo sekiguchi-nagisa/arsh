@@ -309,6 +309,7 @@ private:
     void writeCaptureIns(bool isStr, const IntrusivePtr<Label> &label);
     void generateCmdArg(CmdArgNode &node);
     void generateTilde(TildeNode &node, bool isLastSegment);
+    void writePipelineIns(const std::vector<IntrusivePtr<Label>> &labels);
 
     void initCallable(CallableKind kind, unsigned short localVarNum);
     void initToplevelCallable(const RootNode &node);

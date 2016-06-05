@@ -86,12 +86,14 @@ namespace ydsh {
     OP(CAPTURE_STR, 2) \
     OP(CAPTURE_ARRAY, 2) \
     OP(NEW_PIPELINE, 0) \
-    OP(CALL_PIPELINE, 0) \
+    OP(CALL_PIPELINE, -1) \
     OP(OPEN_PROC, 0) \
     OP(CLOSE_PROC, 0) \
     OP(ADD_CMD_ARG, 1) \
     OP(ADD_REDIR_OP, 1) \
-    OP(EXPAND_TILDE, 0)
+    OP(EXPAND_TILDE, 0) \
+    OP(CALL_CMD, 1) \
+    OP(POP_PIPELINE, 0)
 
 enum class OpCode : unsigned char {
 #define GEN_OPCODE(CODE, N) CODE,
@@ -99,7 +101,7 @@ enum class OpCode : unsigned char {
 #undef GEN_OPCODE
 };
 
-unsigned int getByteSize(OpCode code);
+int getByteSize(OpCode code);
 
 bool isTypeOp(OpCode code);
 

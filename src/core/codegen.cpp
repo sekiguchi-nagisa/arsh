@@ -22,8 +22,8 @@
 
 namespace ydsh {
 
-unsigned int getByteSize(OpCode code) {
-    static unsigned char table[] = {
+int getByteSize(OpCode code) {
+    static char table[] = {
 #define GEN_BYTE_SIZE(CODE, N) N,
             OPCODE_LIST(GEN_BYTE_SIZE)
 #undef GEN_BYTE_SIZE
@@ -288,6 +288,21 @@ void ByteCodeGenerator::generateTilde(TildeNode &node, bool isLastSegment) {
         return;
     } else {
         this->write0byteIns(OpCode::EXPAND_TILDE);
+    }
+}
+
+void ByteCodeGenerator::writePipelineIns(const std::vector<IntrusivePtr<Label>> &labels) {
+    const unsigned int size = labels.size();
+    if(size > UINT8_MAX) {
+        fatal("reach limit\n");
+    }
+
+    const unsigned int offset = this->curBuilder().codeBuffer.size();
+    this->writeIns(OpCode::CALL_PIPELINE);
+    this->curBuilder().append8(size);
+    for(unsigned int i = 0; i < size; i++) {
+        this->curBuilder().append16(0);
+        this->curBuilder().writeLabel(offset + 2 + i * 2, labels[i], offset, ByteCodeWriter<true>::LabelTarget::_16);
     }
 }
 
@@ -593,14 +608,40 @@ void ByteCodeGenerator::visitTildeNode(TildeNode &node) {
 }
 
 void ByteCodeGenerator::visitPipedCmdNode(PipedCmdNode &node) {
+    const unsigned int size = node.getCmdNodes().size();
+    std::vector<IntrusivePtr<Label>> labels(size + 1);
+
     this->write0byteIns(OpCode::NEW_PIPELINE);
 
-    for(auto &e : node.getCmdNodes()) {
-        this->visit(*e);
+    for(unsigned int i = 0; i < size; i++) {
+        this->visit(*node.getCmdNodes()[i]);
+        labels[i] = makeIntrusive<Label>();
     }
+    labels[size] = makeIntrusive<Label>();
 
     this->writeSourcePos(node.getStartPos());
-    this->write0byteIns(OpCode::CALL_PIPELINE);
+    this->writePipelineIns(labels);
+
+    if(size == 1) {
+        this->markLabel(labels[0]);
+        this->write1byteIns(OpCode::CALL_CMD, 0);
+    } else {
+        auto begin = makeIntrusive<Label>();
+        auto end = makeIntrusive<Label>();
+
+        this->markLabel(begin);
+        for(unsigned int i = 0; i < size; i++) {
+            this->markLabel(labels[i]);
+            this->write1byteIns(OpCode::CALL_CMD, i);
+            this->write0byteIns(OpCode::SUCCESS_CHILD);
+        }
+        this->markLabel(end);
+        this->catchException(begin, end, this->pool.getAnyType());
+        this->write0byteIns(OpCode::FAILURE_CHILD);
+    }
+
+    this->markLabel(labels[size]);
+    this->write0byteIns(OpCode::POP_PIPELINE);
 }
 
 void ByteCodeGenerator::visitSubstitutionNode(SubstitutionNode &node) {

@@ -65,9 +65,11 @@
 | CAPTURE_STR   | 0x3C       | 2: offset1 offset2             | -> value                                     | capture stdout as string                           |
 | CAPTURE_ARRAY | 0x3D       | 2: offset1 offset2             | -> value                                     | capture stdout as string array                     |
 | NEW_PIPELINE  | 0x3E       |                                | -> value                                     | create new pipeline                                |
-| CALL_PIPELINE | 0x3F       |                                | value -> value                               | call pipeline                                      |
+| CALL_PIPELINE | 0x3F       | 1: len ...                     | [no change]                                  | call pipeline                                      |
 | OPEN_PROC     | 0x40       |                                | value1 value2 -> value1                      | initialize process                                 |
 | CLOSE_PROC    | 0x41       |                                | [no change]                                  | finalize process                                   |
 | ADD_CMD_ARG   | 0x42       | 1: byte1                       | value1 value2 -> value1                      | add stack top value as command argument            |
 | ADD_REDIR_OP  | 0x43       | 1: byte1                       | value1 value2 -> value1                      | add stack top value as redirection op              |
 | EXPAND_TILDE  | 0x44       |                                | value -> value                               | perform tilde expansion                            |
+| CALL_CMD      | 0x45       | 1: byte1                       | [no change]                                  | call command                                       |
+| POP_PIPELINE  | 0x46       |                                | value -> value                               | if last exit status is 0, push true value          |
