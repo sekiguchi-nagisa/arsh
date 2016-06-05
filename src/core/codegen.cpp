@@ -1101,12 +1101,13 @@ static void dumpCodeImpl(std::ostream &stream, RuntimeContext &ctx, const Callab
                 i += 8;
                 stream << "  " << ctx.getPool().getTypeName(*reinterpret_cast<DSType *>(v));
             } else {
+                const int byteSize = getByteSize(code);
                 if(code == OpCode::CALL_METHOD) {
                     stream << "  " << read16(c.getCode(), i + 1) << "  " << read16(c.getCode(), i + 3);
                 } else {
-                    switch(getByteSize(code)) {
+                    switch(byteSize) {
                     case 1:
-                        stream << "  " << read8(c.getCode(), i + 1);
+                        stream << "  " << static_cast<unsigned int>(read8(c.getCode(), i + 1));
                         break;
                     case 2:
                         stream << "  " << read16(c.getCode(), i + 1);
@@ -1114,11 +1115,23 @@ static void dumpCodeImpl(std::ostream &stream, RuntimeContext &ctx, const Callab
                     case 4:
                         stream << "  " << read32(c.getCode(), i + 1);
                         break;
+                    case -1: {
+                        unsigned int s = static_cast<unsigned int>(read8(c.getCode(), i + 1));
+                        stream << " " << s;
+                        for(unsigned int index = 0; index < s; index++) {
+                            stream << "  " << read16(c.getCode(), i + 2 + index * 2);
+                        }
+                        break;
+                    }
                     default:
                         break;  // do nothing
                     }
                 }
-                i += getByteSize(code);
+                if(byteSize >= 0) {
+                    i += byteSize;
+                } else {
+                    i += -1 * byteSize + 2 * read8(c.getCode(), i + 1);
+                }
             }
             stream << std::endl;
         }
