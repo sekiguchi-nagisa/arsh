@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include "vm.h"
 #include "opcode.h"
+#include "context.h"
 
 namespace ydsh {
 
