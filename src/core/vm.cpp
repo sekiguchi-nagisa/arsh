@@ -17,8 +17,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "vm.h"
 #include "opcode.h"
+#include "context.h"
 #include "logger.h"
 
 extern char **environ;

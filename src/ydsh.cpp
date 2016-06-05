@@ -35,9 +35,16 @@
 #include "core/symbol.h"
 #include "core/logger.h"
 #include "core/codegen.h"
-#include "core/vm.h"
 #include "misc/num.h"
 
+namespace ydsh {
+
+/**
+ * entry point
+ */
+bool vmEval(RuntimeContext &ctx, Callable &callable);
+
+} // namespace ydsh
 
 using namespace ydsh;
 
