@@ -31,8 +31,6 @@ namespace ydsh {
 
 class FieldHandle;
 class MethodHandle;
-class RuntimeContext;
-enum class EvalStatus : unsigned int;
 enum RedirectOP : unsigned char;
 
 struct NodeVisitor;
@@ -2082,6 +2080,7 @@ public:
 
 class UserDefinedCmdNode : public CallableNode {
 private:
+    unsigned int udcIndex;
     BlockNode *blockNode;
 
     unsigned int maxVarNum;
@@ -2090,11 +2089,19 @@ public:
     UserDefinedCmdNode(unsigned int startPos, const SourceInfoPtr &srcInfoPtr,
                        std::string &&commandName, BlockNode *blockNode) :
             CallableNode(startPos, srcInfoPtr, std::move(commandName)),
-            blockNode(blockNode), maxVarNum(0) {
+            udcIndex(0), blockNode(blockNode), maxVarNum(0) {
         this->updateToken(blockNode->getToken());
     }
 
     ~UserDefinedCmdNode();
+
+    unsigned int getUdcIndex() const {
+        return this->udcIndex;
+    }
+
+    void setUdcIndex(unsigned int index) {
+        this->udcIndex = index;
+    }
 
     BlockNode *getBlockNode() const {
         return this->blockNode;

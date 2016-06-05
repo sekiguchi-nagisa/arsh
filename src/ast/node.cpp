@@ -1606,6 +1606,7 @@ UserDefinedCmdNode::~UserDefinedCmdNode() {
 
 void UserDefinedCmdNode::dump(NodeDumper &dumper) const {
     DUMP(name);
+    DUMP_PRIM(udcIndex);
     DUMP_PTR(blockNode);
     DUMP_PRIM(maxVarNum);
     dumper.dump("sourceName", this->srcInfoPtr->getSourceName());

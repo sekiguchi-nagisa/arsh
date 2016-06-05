@@ -487,34 +487,6 @@ void Error_Object::createStackTrace(RuntimeContext &ctx) {
     ctx.fillInStackTrace(this->stackTrace);
 }
 
-
-// ###########################
-// ##     OldFuncObject     ##
-// ###########################
-
-OldFuncObject::~OldFuncObject() {
-    delete this->funcNode;
-}
-
-void OldFuncObject::setType(DSType *type) {
-    if(this->type == nullptr) {
-        assert(dynamic_cast<FunctionType *>(type) != nullptr);
-        this->type = type;
-    }
-}
-
-std::string OldFuncObject::toString(RuntimeContext &, VisitedSet *) {
-    std::string str("function(");
-    str += this->funcNode->getName();
-    str += ")";
-    return str;
-}
-
-bool OldFuncObject::invoke(RuntimeContext &) {  //TODO: default param
-    fatal("unsupported\n");
-}
-
-
 unsigned int getSourcePos(const SourcePosEntry *const entries, unsigned int index) {  //FIXME binary search
     unsigned int i = 0;
     for(; entries[i].address > 0; i++) {

@@ -74,7 +74,10 @@ public:
 
 class SymbolTable {
 private:
-    std::vector<std::string> handleCache;
+    /**
+     * if second is true, indicating handle.
+     */
+    std::vector<std::pair<std::string, bool>> handleCache;
 
     /**
      * first scope is always global scope.
@@ -85,6 +88,11 @@ private:
      * contains max number of variable index.
      */
     std::vector<unsigned int> maxVarIndexStack;
+
+    unsigned int udcIndex;
+
+    std::unordered_map<std::string, unsigned int> udcIndexMap;
+
 
 public:
     NON_COPYABLE(SymbolTable);
@@ -108,6 +116,11 @@ public:
      */
     FunctionHandle *registerFuncHandle(const std::string &funcName, DSType &returnType,
                                        const std::vector<DSType *> &paramTypes);
+
+    /**
+     * if already registered, return -1.
+     */
+    int registerUdc(const std::string &cmdName);
 
     /**
      * create new local scope.

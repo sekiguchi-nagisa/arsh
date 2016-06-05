@@ -28,42 +28,10 @@
 #include "../misc/num.h"
 #include "../misc/files.h"
 
-extern char **environ;
 
 namespace ydsh {
 
-/**
- * if filePath is null, not execute and set ENOENT.
- * argv is not null.
- * envp may be null.
- * if success, not return.
- */
-static void xexecve(const char *filePath, char **argv, char *const *envp) {
-    if(filePath == nullptr) {
-        errno = ENOENT;
-        return;
-    }
-
-    // set env
-    setenv("_", filePath, 1);
-    if(envp == nullptr) {
-        envp = environ;
-    }
-
-    LOG_L(DUMP_EXEC, [&](std::ostream &stream) {
-        stream << "execve(" << filePath << ", [";
-        for(unsigned int i = 0; argv[i] != nullptr; i++) {
-            if(i > 0) {
-                stream << ", ";
-            }
-            stream << argv[i];
-        }
-        stream << "])";
-    });
-
-    // execute external command
-    execve(filePath, argv, envp);
-}
+void xexecve(const char *filePath, char **argv, char *const *envp);
 
 /**
  * if errorNum is not 0, include strerror(errorNum)
@@ -276,34 +244,47 @@ unsigned int getBuiltinCommandSize() {
 /**
  * if index is out of range, return null
  */
-const char *getBultinCommandName(unsigned int index) {
+const char *getBuiltinCommandName(unsigned int index) {
     if(index >= getBuiltinCommandSize()) {
         return nullptr;
     }
     return builtinCommands[index].commandName;
 }
 
-/**
- * return null, if not found builtin command.
- */
-static builtin_command_t lookupBuiltinCommand(const char *commandName) {
-    /**
-     * builtin command name and pointer.
-     */
-    static CStringHashMap<builtin_command_t> builtinMap;
+int execBuiltinCommand(RuntimeContext *ctx, unsigned int index, const int argc, char *const *argv) {
+    return builtinCommands[index].cmd_ptr(ctx, argc, argv);
+}
 
-    // register builtin command
+template <typename T, std::size_t N>
+constexpr std::size_t arraySize(const T (&)[N]) {
+    return N;
+}
+
+int getBuiltinCommandIndex(const char *commandName) {
+    /**
+     * builtin command name and index.
+     */
+    static CStringHashMap<unsigned int> builtinMap;
+
     if(builtinMap.empty()) {
-        for(const auto &e : builtinCommands) {
-            builtinMap.insert(std::make_pair(e.commandName, e.cmd_ptr));
+        for(unsigned int i = 0; i < arraySize(builtinCommands); i++) {
+            builtinMap.insert(std::make_pair(builtinCommands[i].commandName, i));
         }
     }
 
     auto iter = builtinMap.find(commandName);
     if(iter == builtinMap.end()) {
-        return nullptr;
+        return -1;
     }
     return iter->second;
+}
+
+/**
+ * return null, if not found builtin command.
+ */
+builtin_command_t lookupBuiltinCommand(const char *commandName) {
+    int index = getBuiltinCommandIndex(commandName);
+    return index < 0 ? nullptr : builtinCommands[static_cast<unsigned int>(index)].cmd_ptr;
 }
 
 static void printAllUsage(FILE *fp) {
@@ -1330,416 +1311,6 @@ static int builtin_complete(RuntimeContext *ctx, const int argc, char *const *ar
         free(e);
     }
     return 0;
-}
-
-void RuntimeContext::openProc() {
-    DSValue value = this->pop();
-
-    // resolve proc kind (external command, builtin command or user-defined command)
-    const char *commandName = typeAs<String_Object>(value)->getValue();
-    ProcState::ProcKind procKind = ProcState::EXTERNAL;
-    void *ptr = nullptr;
-
-    // first, check user-defined command
-    {
-        UserDefinedCmdNode *udcNode = this->lookupUserDefinedCommand(commandName);
-        if(udcNode != nullptr) {
-            procKind = ProcState::ProcKind::USER_DEFINED;
-            ptr = udcNode;
-        }
-    }
-
-    // second, check builtin command
-    if(ptr == nullptr) {
-        builtin_command_t bcmd = lookupBuiltinCommand(commandName);
-        if(bcmd != nullptr) {
-            procKind = ProcState::ProcKind::BUILTIN;
-            ptr = (void *)bcmd;
-        }
-    }
-
-    // resolve external command path
-    if(ptr == nullptr) {
-        ptr = (void *)this->getPathCache().searchPath(commandName);
-    }
-
-    auto &pipeline = this->activePipeline();
-    unsigned int argOffset = pipeline.getArgArray().size();
-    unsigned int redirOffset = pipeline.getRedirOptions().size();
-    pipeline.getProcStates().push_back(ProcState(argOffset, redirOffset, procKind, ptr));
-
-    pipeline.getArgArray().push_back(std::move(value));
-}
-
-void RuntimeContext::closeProc() {
-    auto &pipeline = this->activePipeline();
-    pipeline.getArgArray().push_back(DSValue());
-    pipeline.getRedirOptions().push_back(std::make_pair(RedirectOP::DUMMY, DSValue()));
-}
-
-void RuntimeContext::addArg(bool skipEmptyString) {
-    DSValue value = this->pop();
-    DSType *valueType = value->getType();
-    if(*valueType == this->getPool().getStringType()) {
-        if(skipEmptyString && typeAs<String_Object>(value)->empty()) {
-            return;
-        }
-        this->activePipeline().getArgArray().push_back(std::move(value));
-        return;
-    }
-
-    if(*valueType == this->getPool().getStringArrayType()) {
-        Array_Object *arrayObj = typeAs<Array_Object>(value);
-        for(auto &element : arrayObj->getValues()) {
-            if(typeAs<String_Object>(element)->empty()) {
-                continue;
-            }
-            this->activePipeline().getArgArray().push_back(element);
-        }
-    } else {
-        fatal("illegal command parameter type: %s\n", this->getPool().getTypeName(*valueType).c_str());
-    }
-}
-
-void RuntimeContext::addRedirOption(RedirectOP op) {
-    DSValue value = this->pop();
-    DSType *valueType = value->getType();
-    if(*valueType == this->getPool().getStringType()) {
-        this->activePipeline().getRedirOptions().push_back(std::make_pair(op, value));
-    } else {
-        fatal("illegal command parameter type: %s\n", this->getPool().getTypeName(*valueType).c_str());
-    }
-}
-
-
-// ###############################
-// ##     PipelineEvaluator     ##
-// ###############################
-
-static void closeAllPipe(int size, int pipefds[][2]) {
-    for(int i = 0; i < size; i++) {
-        close(pipefds[i][0]);
-        close(pipefds[i][1]);
-    }
-}
-
-/**
- * if failed, return non-zero value(errno)
- */
-static int redirectToFile(const DSValue &fileName, const char *mode, int targetFD) {
-    FILE *fp = fopen(typeAs<String_Object>(fileName)->getValue(), mode);
-    if(fp == NULL) {
-        return errno;
-    }
-    int fd = fileno(fp);
-    dup2(fd, targetFD);
-    fclose(fp);
-    return 0;
-}
-
-/**
- * do redirection and report error.
- * if errorPipe is -1, report error and return false.
- * if errorPipe is not -1, report error and exit 1
- */
-bool PipelineEvaluator::redirect(RuntimeContext &ctx, unsigned int procIndex, int errorPipe) {
-#define CHECK_ERROR(result) do { occurredError = (result); if(occurredError != 0) { goto ERR; } } while(0)
-
-    int occurredError = 0;
-
-    unsigned int startIndex = this->procStates[procIndex].redirOffset();
-    for(; this->redirOptions[startIndex].first != RedirectOP::DUMMY; startIndex++) {
-        auto &pair = this->redirOptions[startIndex];
-        switch(pair.first) {
-        case IN_2_FILE: {
-            CHECK_ERROR(redirectToFile(pair.second, "rb", STDIN_FILENO));
-            break;
-        }
-        case OUT_2_FILE: {
-            CHECK_ERROR(redirectToFile(pair.second, "wb", STDOUT_FILENO));
-            break;
-        }
-        case OUT_2_FILE_APPEND: {
-            CHECK_ERROR(redirectToFile(pair.second, "ab", STDOUT_FILENO));
-            break;
-        }
-        case ERR_2_FILE: {
-            CHECK_ERROR(redirectToFile(pair.second, "wb", STDERR_FILENO));
-            break;
-        }
-        case ERR_2_FILE_APPEND: {
-            CHECK_ERROR(redirectToFile(pair.second, "ab", STDERR_FILENO));
-            break;
-        }
-        case MERGE_ERR_2_OUT_2_FILE: {
-            CHECK_ERROR(redirectToFile(pair.second, "wb", STDOUT_FILENO));
-            dup2(STDOUT_FILENO, STDERR_FILENO);
-            break;
-        }
-        case MERGE_ERR_2_OUT_2_FILE_APPEND: {
-            CHECK_ERROR(redirectToFile(pair.second, "ab", STDOUT_FILENO));
-            dup2(STDOUT_FILENO, STDERR_FILENO);
-            break;
-        }
-        case MERGE_ERR_2_OUT: {
-            dup2(STDOUT_FILENO, STDERR_FILENO);
-            break;
-        }
-        case MERGE_OUT_2_ERR: {
-            dup2(STDERR_FILENO, STDOUT_FILENO);
-            break;
-        }
-        default:
-            fatal("unsupported redir option: %d\n", pair.first);
-        }
-    }
-
-    ERR:
-    if(occurredError != 0) {
-        ChildError e;
-        e.redirIndex = startIndex;
-        e.errorNum = occurredError;
-
-        if(errorPipe == -1) {
-            return this->checkChildError(ctx, std::make_pair(0, e)); // return false
-        }
-        write(errorPipe, &e, sizeof(ChildError));
-        exit(0);
-    }
-    return true;
-
-#undef CHECK_ERROR
-}
-
-DSValue *PipelineEvaluator::getARGV(unsigned int procIndex) {
-    return this->argArray.data() + this->procStates[procIndex].argOffset();
-}
-
-static void saveStdFD(int (&origFds)[3]) {
-    origFds[0] = dup(STDIN_FILENO);
-    origFds[1] = dup(STDOUT_FILENO);
-    origFds[2] = dup(STDERR_FILENO);
-}
-
-static void restoreStdFD(int (&origFds)[3]) {
-    dup2(origFds[0], STDIN_FILENO);
-    dup2(origFds[1], STDOUT_FILENO);
-    dup2(origFds[2], STDERR_FILENO);
-
-    for(unsigned int i = 0; i < 3; i++) {
-        close(origFds[i]);
-    }
-}
-
-static void flushStdFD() {
-    fflush(stdin);
-    fflush(stdout);
-    fflush(stderr);
-}
-
-EvalStatus PipelineEvaluator::evalPipeline(RuntimeContext &ctx) {
-    const unsigned int procSize = this->procStates.size();
-
-    // check builtin command
-    if(procSize == 1) {
-        if(this->procStates[0].procKind() == ProcState::ProcKind::BUILTIN) {
-            builtin_command_t cmd_ptr = this->procStates[0].builtinCmd();
-            DSValue *ptr = this->getARGV(0);
-            unsigned int argc = 1;
-            for(; ptr[argc].get() != nullptr; argc++);
-            char *argv[argc + 1];
-            for(unsigned int i = 0; i < argc; i++) {
-                argv[i] = const_cast<char *>(typeAs<String_Object>(ptr[i])->getValue());
-            }
-            argv[argc] = nullptr;
-
-            const bool restoreFD = strcmp(argv[0], "exec") != 0;
-
-            int origFDs[3];
-            if(restoreFD) {
-                saveStdFD(origFDs);
-            }
-
-            if(!this->redirect(ctx, 0, -1)) {
-                ctx.updateExitStatus(1);
-                return EvalStatus::THROW;
-            }
-
-            ctx.updateExitStatus(cmd_ptr(&ctx, argc, argv));
-
-            // flush and restore
-            flushStdFD();
-            if(restoreFD) {
-                restoreStdFD(origFDs);
-            }
-
-            return EvalStatus::SUCCESS;
-        }
-    }
-
-    int pipefds[procSize][2];
-    int selfpipes[procSize][2];
-    for(unsigned int i = 0; i < procSize; i++) {
-        if(pipe(pipefds[i]) < 0) {  // create pipe
-            perror("pipe creation error");
-            exit(1);
-        }
-        if(pipe(selfpipes[i]) < 0) {    // create self-pipe for error reporting
-            perror("pipe creation error");
-            exit(1);
-        }
-        if(fcntl(selfpipes[i][WRITE_PIPE], F_SETFD, fcntl(selfpipes[i][WRITE_PIPE], F_GETFD) | FD_CLOEXEC)) {
-            perror("fcntl error");
-            exit(1);
-        }
-    }
-
-    // fork
-    pid_t pid;
-    std::pair<unsigned int, ChildError> errorPair;
-    unsigned int procIndex;
-    for(procIndex = 0; procIndex < procSize && (pid = xfork()) > 0; procIndex++) {
-        this->procStates[procIndex].setPid(pid);
-
-        // check error via self-pipe
-        int readSize;
-        ChildError childError;
-        close(selfpipes[procIndex][WRITE_PIPE]);
-        while((readSize = read(selfpipes[procIndex][READ_PIPE], &childError, sizeof(childError))) == -1) {
-            if(errno != EAGAIN && errno != EINTR) {
-                break;
-            }
-        }
-        if(readSize > 0 && !childError) {   // if error happened, stop forking.
-            errorPair.first = procIndex;
-            errorPair.second = childError;
-
-            if(childError.errorNum == ENOENT) { // if file not found, remove path cache
-                const char *cmdName = this->getCommandName(procIndex);
-                ctx.getPathCache().removePath(cmdName);
-            }
-            procIndex = procSize;
-            break;
-        }
-    }
-
-    if(procIndex == procSize) {   // parent process
-        // close unused pipe
-        closeAllPipe(procSize, pipefds);
-        closeAllPipe(procSize, selfpipes);
-
-        // wait for exit
-        const unsigned int actualProcSize = this->procStates.size();
-        for(unsigned int i = 0; i < actualProcSize; i++) {
-            int status = 0;
-            ctx.xwaitpid(this->procStates[i].pid(), status, 0);
-            if(WIFEXITED(status)) {
-                this->procStates[i].set(ProcState::NORMAL, WEXITSTATUS(status));
-            }
-            if(WIFSIGNALED(status)) {
-                this->procStates[i].set(ProcState::INTR, WTERMSIG(status));
-            }
-        }
-
-        ctx.updateExitStatus(this->procStates[actualProcSize - 1].exitStatus());
-        return this->checkChildError(ctx, errorPair) ? EvalStatus::SUCCESS : EvalStatus::THROW ;
-    } else if(pid == 0) { // child process
-        if(procIndex == 0) {    // first process
-            if(procSize > 1) {
-                dup2(pipefds[procIndex][WRITE_PIPE], STDOUT_FILENO);
-            }
-        }
-        if(procIndex > 0 && procIndex < procSize - 1) {   // other process.
-            dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
-            dup2(pipefds[procIndex][WRITE_PIPE], STDOUT_FILENO);
-        }
-        if(procIndex == procSize - 1) { // last process
-            if(procSize > 1) {
-                dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
-            }
-        }
-
-        this->redirect(ctx, procIndex, selfpipes[procIndex][WRITE_PIPE]);
-
-        closeAllPipe(procSize, pipefds);
-
-        /**
-         * invoke command
-         */
-        const auto &procState = this->procStates[procIndex];
-        DSValue *ptr = this->getARGV(procIndex);
-        const auto procKind = procState.procKind();
-        if(procKind == ProcState::ProcKind::USER_DEFINED) { // invoke user-defined command
-            UserDefinedCmdNode *udcNode = procState.udcNode();
-            closeAllPipe(procSize, selfpipes);
-            exit(ctx.execUserDefinedCommand(udcNode, ptr));
-        } else {
-            // create argv
-            unsigned int argc = 1;
-            for(; ptr[argc]; argc++);
-            char *argv[argc + 1];
-            for(unsigned int i = 0; i < argc; i++) {
-                argv[i] = const_cast<char *>(typeAs<String_Object>(ptr[i])->getValue());
-            }
-            argv[argc] = nullptr;
-
-            if(procKind == ProcState::ProcKind::BUILTIN) {  // invoke builtin command
-                builtin_command_t cmd_ptr = procState.builtinCmd();
-                closeAllPipe(procSize, selfpipes);
-                exit(cmd_ptr(&ctx, argc, argv));
-            } else {    // invoke external command
-                xexecve(procState.filePath(), argv, nullptr);
-
-                ChildError e;
-                e.errorNum = errno;
-
-                write(selfpipes[procIndex][WRITE_PIPE], &e, sizeof(ChildError));
-                exit(1);
-            }
-        }
-    } else {
-        perror("child process error");
-        exit(1);
-    }
-}
-
-void RuntimeContext::execBuiltinCommand(char *const argv[]) {
-    builtin_command_t cmd_ptr = lookupBuiltinCommand(argv[0]);
-    if(cmd_ptr == nullptr) {
-        fprintf(stderr, "ydsh: %s: not builtin command\n", argv[0]);
-        this->updateExitStatus(1);
-        return;
-    }
-
-    int argc;
-    for(argc = 0; argv[argc] != nullptr; argc++);
-
-    this->updateExitStatus(cmd_ptr(this, argc, argv));
-    flushStdFD();
-}
-
-const char *PipelineEvaluator::getCommandName(unsigned int procIndex) {
-    return typeAs<String_Object>(this->getARGV(procIndex)[0])->getValue();
-}
-
-bool PipelineEvaluator::checkChildError(RuntimeContext &ctx, const std::pair<unsigned int, ChildError> &errorPair) {
-    if(!errorPair.second) {
-        auto &pair = this->redirOptions[errorPair.second.redirIndex];
-
-        std::string msg;
-        if(pair.first == RedirectOP::DUMMY) {  // execution error
-            msg += "execution error: ";
-            msg += this->getCommandName(errorPair.first);
-        } else {    // redirection error
-            msg += "io redirection error: ";
-            if(pair.second && typeAs<String_Object>(pair.second)->size() != 0) {
-                msg += typeAs<String_Object>(pair.second)->getValue();
-            }
-        }
-        ctx.throwSystemError(errorPair.second.errorNum, std::move(msg));
-        return false;
-    }
-    return true;
 }
 
 } // namespace ydsh

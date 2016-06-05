@@ -153,7 +153,7 @@ RuntimeContext::RuntimeContext() :
         localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0), stackBottomIndex(0),
         localVarOffset(0), pc_(0), assertion(true), traceExit(false),
         handle_STR(nullptr), IFS_index(0),
-        callableStack_(), pipelineEvaluator(DSValue::create<PipelineEvaluator>()),
+        callableStack_(), pipelineEvaluator(nullptr),
         udcMap(), pathCache(), terminationHook(nullptr) { }
 
 RuntimeContext::~RuntimeContext() {
@@ -742,31 +742,6 @@ int RuntimeContext::execUserDefinedCommand(UserDefinedCmdNode *, DSValue *) {
     return 0;
 }
 
-void RuntimeContext::pushNewPipeline() {
-    if(this->pipelineEvaluator.get()->getRefcount() == 1) { // reuse cached evaluator object
-        typeAs<PipelineEvaluator>(this->pipelineEvaluator)->clear();
-        this->push(this->pipelineEvaluator);
-    } else {
-        this->push(DSValue::create<PipelineEvaluator>());
-    }
-}
-
-PipelineEvaluator &RuntimeContext::activePipeline() {
-    return *typeAs<PipelineEvaluator>(this->peek());
-}
-
-void RuntimeContext::callPipeline() {
-    this->activePipeline().evalPipeline(*this);
-    this->popNoReturn();    // pop pipeline
-
-    // push exit status as boolean
-    if(this->getExitStatus() == 0) {
-        this->push(this->getTrueObj());
-    } else {
-        this->push(this->getFalseObj());
-    }
-}
-
 static void format2digit(int num, std::string &out) {
     if(num < 10) {
         out += "0";
@@ -1033,7 +1008,7 @@ static void completeCommandName(RuntimeContext &ctx, const std::string &token, C
     // search builtin command
     const unsigned int bsize = getBuiltinCommandSize();
     for(unsigned int i = 0; i < bsize; i++) {
-        const char *name = getBultinCommandName(i);
+        const char *name = getBuiltinCommandName(i);
         if(startsWith(name, token.c_str())) {
             append(results, name);
         }

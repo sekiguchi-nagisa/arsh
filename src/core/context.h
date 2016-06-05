@@ -29,17 +29,10 @@
 #include "symbol_table.h"
 #include "proc.h"
 #include "../misc/buffer.hpp"
+#include "../misc/hash.hpp"
+#include "../misc/noncopyable.h"
 
 namespace ydsh {
-
-enum class EvalStatus : unsigned int {
-    SUCCESS,
-    BREAK,
-    CONTINUE,
-    THROW,
-    RETURN,
-    REMOVE,
-};
 
 /**
  * enum order is corresponding to builtin variable declaration order.
@@ -266,6 +259,10 @@ public:
 
     const DSValue &getEmptyStrObj() const {
         return this->emptyStrObj;
+    }
+
+    DSValue &getPipeline() {
+        return this->pipelineEvaluator;
     }
 
     unsigned int getBuiltinVarIndex(BuiltinVarOffset offset) const {
@@ -499,14 +496,6 @@ public:
                 this->localStack[this->stackTopIndex]->getFieldTable()[index];
     }
 
-    /**
-     * dup stack top value and get field from it.
-     */
-    void dupAndLoadField(unsigned int index) {
-        auto v(this->peek()->getFieldTable()[index]);
-        this->push(std::move(v));
-    }
-
     std::vector<const Callable *> &callableStack() noexcept {
         return this->callableStack_;
     }
@@ -604,32 +593,6 @@ public:
      * if execute exit command, throw InternalError.
      */
     void execBuiltinCommand(char *const argv[]);
-
-    void pushNewPipeline();
-
-    /**
-     * after call pipeline, pop stack.
-     */
-    PipelineEvaluator &activePipeline();
-
-    /**
-     * stack top value must be String_Object and it represents command name.
-     */
-    void openProc();
-
-    void closeProc();
-
-    /**
-     * stack top value must be String_Object or Array_Object.
-     */
-    void addArg(bool skipEmptyString);
-
-    /**
-     * stack top value must be String_Object.
-     */
-    void addRedirOption(RedirectOP op);
-
-    void callPipeline();
 
     void setTerminationHook(TerminationHook hook) {
         this->terminationHook = hook;

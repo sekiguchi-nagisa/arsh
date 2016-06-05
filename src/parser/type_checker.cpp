@@ -1140,9 +1140,11 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     this->symbolTable.exitFunc();
     this->popReturnType();
 
-    if(!this->typePool.addUserDefinedCommandName(node.getName())) {
+    int index;
+    if((index = this->symbolTable.registerUdc(node.getName())) < 0) {
         RAISE_TC_ERROR(DefinedCmd, node, node.getName());
     }
+    node.setUdcIndex(index);
     node.setType(this->typePool.getVoidType());
 }
 

@@ -582,43 +582,6 @@ struct DummyObject : public DSObject {
     }
 };
 
-/*
- * for user defined function
- */
-class OldFuncObject : public DSObject {
-private:
-    FunctionNode *funcNode;
-
-public:
-    explicit OldFuncObject(FunctionNode *funcNode) :
-            DSObject(nullptr), funcNode(funcNode) { }
-
-    ~OldFuncObject();
-
-    FunctionNode *getFuncNode() {
-        return this->funcNode;
-    }
-
-    /**
-     * equivalent to dynamic_cast<FunctionType*>(getType())
-     * may be null, before call setType()
-     */
-    FunctionType *getFuncType() {
-        return static_cast<FunctionType *>(this->type);
-    }
-
-    void setType(DSType *type) override;
-
-    std::string toString(RuntimeContext &ctx, VisitedSet *visitedSet) override;
-
-    /**
-     * invoke function.
-     * return true, if invocation success.
-     * return false, if thrown exception.
-     */
-    bool invoke(RuntimeContext &ctx);
-};
-
 enum class CallableKind : unsigned char {
     TOPLEVEL,
     FUNCTION,

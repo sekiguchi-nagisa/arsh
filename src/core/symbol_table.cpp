@@ -55,7 +55,7 @@ void Scope::deleteHandle(const std::string &symbolName) {
 // #########################
 
 SymbolTable::SymbolTable() :
-        handleCache(), scopes(), maxVarIndexStack() {
+        handleCache(), scopes(), maxVarIndexStack(), udcIndex(0), udcIndexMap() {
     this->scopes.push_back(new Scope());
     this->maxVarIndexStack.push_back(0);
 }
@@ -84,7 +84,7 @@ FieldHandle *SymbolTable::registerHandle(const std::string &symbolName, DSType &
     }
     if(this->inGlobalScope()) {
         handle->setAttribute(FieldHandle::GLOBAL);
-        this->handleCache.push_back(symbolName);
+        this->handleCache.push_back(std::make_pair(symbolName, true));
     }
     return handle;
 }
@@ -98,8 +98,17 @@ FunctionHandle *SymbolTable::registerFuncHandle(const std::string &funcName, DST
         return nullptr;
     }
     handle->setAttribute(FieldHandle::GLOBAL);
-    this->handleCache.push_back(funcName);
+    this->handleCache.push_back(std::make_pair(funcName, true));
     return handle;
+}
+
+int SymbolTable::registerUdc(const std::string &cmdName) {
+    auto pair = this->udcIndexMap.insert(std::make_pair(cmdName, this->udcIndex));
+    if(pair.second) {
+        this->handleCache.push_back(std::make_pair(cmdName, false));
+        return this->udcIndex++;
+    }
+    return -1;
 }
 
 void SymbolTable::enterScope() {
@@ -151,9 +160,19 @@ void SymbolTable::abort() {
 
     // remove cached entry
     assert(this->inGlobalScope());
-    for(const std::string &name : this->handleCache) {
-        this->scopes.back()->deleteHandle(name);
+    unsigned int oldUdcIndex = this->udcIndex;
+    for(auto &p : this->handleCache) {
+        if(p.second) {
+            this->scopes.back()->deleteHandle(p.first);
+        } else {
+            auto iter = this->udcIndexMap.find(p.first);
+            if(iter->second < oldUdcIndex) {
+                oldUdcIndex = iter->second;
+            }
+            this->udcIndexMap.erase(iter);
+        }
     }
+    this->udcIndex = oldUdcIndex;
 }
 
 unsigned int SymbolTable::getMaxVarIndex() const {
