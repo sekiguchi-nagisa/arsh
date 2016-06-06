@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include <ast/node.h>
-#include <parser/parser.h>
+#include <node.h>
+#include <parser.h>
 #include <misc/fatal.h>
 
 using namespace ydsh;

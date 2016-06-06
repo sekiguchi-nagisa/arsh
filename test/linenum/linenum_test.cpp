@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <parser/lexer.h>
+#include <lexer.h>
 
 using namespace ydsh;
 

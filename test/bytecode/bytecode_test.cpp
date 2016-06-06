@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <core/codegen.h>
+#include <codegen.h>
 
 using Label = ydsh::Label;
 using ByteCodeWriter = ydsh::ByteCodeWriter<true>;

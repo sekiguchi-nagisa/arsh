@@ -19,8 +19,8 @@
 
 #include <unordered_set>
 
-#include "../core/object.h"
-#include "../core/context.h"
+#include "object.h"
+#include "context.h"
 #include "dbus_util.h"
 
 namespace ydsh {

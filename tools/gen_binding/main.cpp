@@ -21,8 +21,8 @@
 #include <memory>
 #include <unordered_map>
 
-#include <core/handle_info.h>
-#include <parser/parser_base.hpp>
+#include <handle_info.h>
+#include <misc/parser_base.hpp>
 #include <misc/fatal.h>
 #include <DescLexer.h>
 
@@ -841,9 +841,9 @@ static void gencode(const char *outFileName, const std::vector<TypeBind *> &bind
     }
 
     // write header
-    OUT("#include <core/bind.h>\n");
-    OUT("#include <core/builtin.h>\n");
-    OUT("#include <core/symbol.h>\n");
+    OUT("#include <bind.h>\n");
+    OUT("#include <builtin.h>\n");
+    OUT("#include <symbol.h>\n");
     OUT("\n");
     OUT("namespace ydsh {\n");
     OUT("\n");
