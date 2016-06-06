@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include <parser/lexer.h>
-#include <core/type.h>
+#include <lexer.h>
+#include <type.h>
 
 #ifndef LEXER_TEST_DIR
 #define LEXER_TEST_DIR "./"

@@ -20,9 +20,9 @@ extern "C" {
 #include <dbus/dbus.h>
 }
 
-#include "../core/type.h"
-#include "../core/object.h"
-#include "../core/type_pool.h"
+#include "type.h"
+#include "object.h"
+#include "type_pool.h"
 
 namespace ydsh {
 

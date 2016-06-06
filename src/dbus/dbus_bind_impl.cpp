@@ -17,7 +17,7 @@
 #include <cstring>
 
 #include "dbus_bind_impl.h"
-#include "../core/logger.h"
+#include "../logger.h"
 #include "../misc/resource.hpp"
 
 namespace ydsh {

@@ -160,7 +160,7 @@ set(lexer_src ${CMAKE_CURRENT_BINARY_DIR}/nextToken.cpp)
 add_custom_command(OUTPUT ${lexer_src}
     COMMAND ${RE2C_DIR}/re2c -W -Werror -c -8
             -s -t ${CMAKE_CURRENT_BINARY_DIR}/src/yycond.h -o ${lexer_src}
-            ${CMAKE_CURRENT_SOURCE_DIR}/src/parser/nextToken.re2c.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/nextToken.re2c.cpp
 )
 add_custom_target(gen_lexer DEPENDS ${lexer_src})
 
@@ -172,7 +172,7 @@ add_custom_target(gen_lexer DEPENDS ${lexer_src})
 set(bind_src ${CMAKE_CURRENT_BINARY_DIR}/bind.cpp)
 add_custom_command(OUTPUT ${bind_src}
     COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tools/gen_binding/gen_binding
-            ${CMAKE_CURRENT_SOURCE_DIR}/src/core/builtin.h ${bind_src}
+        ${CMAKE_SOURCE_DIR}/src/builtin.h ${bind_src}
 )
 add_custom_target(gen_bind DEPENDS ${bind_src})
 add_dependencies(gen_bind gen_binding)
@@ -206,22 +206,22 @@ endif()
 
 set(YDSH_SRC
         src/ydsh.cpp
-        src/ast/node_dumper.cpp
-        src/ast/node.cpp
-        src/core/object.cpp
-        src/core/type.cpp
-        src/core/handle.cpp
-        src/core/proc.cpp
-        src/core/context.cpp
-        src/core/symbol_table.cpp
-        src/core/type_pool.cpp
-        src/core/diagnosis.cpp
-        src/core/codegen.cpp
-        src/core/vm.cpp
-        src/parser/lexer.cpp
-        src/parser/parser.cpp
-        src/parser/token_kind.cpp
-        src/parser/type_checker.cpp)
+        src/node_dumper.cpp
+        src/node.cpp
+        src/object.cpp
+        src/type.cpp
+        src/handle.cpp
+        src/proc.cpp
+        src/context.cpp
+        src/symbol_table.cpp
+        src/type_pool.cpp
+        src/diagnosis.cpp
+        src/codegen.cpp
+        src/vm.cpp
+        src/lexer.cpp
+        src/parser.cpp
+        src/token_kind.cpp
+        src/type_checker.cpp)
 
 if(USE_DBUS)
     set(YDSH_SRC ${YDSH_SRC}

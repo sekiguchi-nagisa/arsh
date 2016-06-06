@@ -27,14 +27,14 @@
 #include <config.h>
 #include <embed.h>
 
-#include "ast/node_dumper.h"
-#include "parser/lexer.h"
-#include "parser/parser.h"
-#include "parser/type_checker.h"
-#include "core/context.h"
-#include "core/symbol.h"
-#include "core/logger.h"
-#include "core/codegen.h"
+#include "node_dumper.h"
+#include "lexer.h"
+#include "parser.h"
+#include "type_checker.h"
+#include "context.h"
+#include "symbol.h"
+#include "logger.h"
+#include "codegen.h"
 #include "misc/num.h"
 
 namespace ydsh {
