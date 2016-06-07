@@ -17,7 +17,6 @@
 #ifndef YDSH_SYMBOL_TABLE_H
 #define YDSH_SYMBOL_TABLE_H
 
-#include "type_pool.h"
 #include "type.h"
 #include "handle.h"
 

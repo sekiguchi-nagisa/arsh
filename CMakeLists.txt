@@ -214,7 +214,6 @@ set(YDSH_SRC
         src/proc.cpp
         src/context.cpp
         src/symbol_table.cpp
-        src/type_pool.cpp
         src/diagnosis.cpp
         src/codegen.cpp
         src/vm.cpp
