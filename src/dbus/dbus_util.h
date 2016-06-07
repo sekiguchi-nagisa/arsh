@@ -22,7 +22,6 @@ extern "C" {
 
 #include "type.h"
 #include "object.h"
-#include "type_pool.h"
 
 namespace ydsh {
 

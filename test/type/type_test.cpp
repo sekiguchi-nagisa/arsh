@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 
-#include <type_pool.h>
 #include <type.h>
 #include <type_checker.h>
 

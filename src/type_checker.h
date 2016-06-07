@@ -18,7 +18,6 @@
 #define YDSH_TYPE_CHECKER_H
 
 #include "node.h"
-#include "type_pool.h"
 #include "type.h"
 #include "handle.h"
 #include "symbol_table.h"
