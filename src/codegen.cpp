@@ -143,14 +143,14 @@ void ByteCodeGenerator::writeMethodCallIns(OpCode op, unsigned short index, unsi
 
 void ByteCodeGenerator::writeToString() {
     if(this->handle_STR == nullptr) {
-        this->handle_STR = this->ctx.getPool().getAnyType().lookupMethodHandle(this->ctx.getPool(), std::string(OP_STR));
+        this->handle_STR = this->pool.getAnyType().lookupMethodHandle(this->pool, std::string(OP_STR));
     }
 
     this->writeMethodCallIns(OpCode::CALL_METHOD, this->handle_STR->getMethodIndex(), 0);
 }
 
 void ByteCodeGenerator::writeNumCastIns(unsigned short v, const DSType &type) {
-    const int index = this->ctx.getPool().getNumTypeIndex(type);
+    const int index = this->pool.getNumTypeIndex(type);
     assert(index > -1);
 
     for(int i = 15; i > -1; i--) {
@@ -283,7 +283,7 @@ void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
 }
 
 void ByteCodeGenerator::generateTilde(TildeNode &node, bool isLastSegment) {
-    this->writeConstant(DSValue::create<String_Object>(this->ctx.getPool().getStringType(), node.getValue()));
+    this->writeConstant(DSValue::create<String_Object>(this->pool.getStringType(), node.getValue()));
     if(!isLastSegment && strchr(node.getValue().c_str(), '/') == nullptr) {
         return;
     } else {
@@ -636,7 +636,7 @@ void ByteCodeGenerator::visitPipedCmdNode(PipedCmdNode &node) {
             this->write0byteIns(OpCode::SUCCESS_CHILD);
         }
         this->markLabel(end);
-        this->catchException(begin, end, this->ctx.getPool().getAnyType());
+        this->catchException(begin, end, this->pool.getAnyType());
         this->write0byteIns(OpCode::FAILURE_CHILD);
     }
 
@@ -655,7 +655,7 @@ void ByteCodeGenerator::visitSubstitutionNode(SubstitutionNode &node) {
     this->markLabel(endLabel);
 
     this->write0byteIns(OpCode::SUCCESS_CHILD);
-    this->catchException(beginLabel, endLabel, this->ctx.getPool().getAnyType());
+    this->catchException(beginLabel, endLabel, this->pool.getAnyType());
     this->write0byteIns(OpCode::FAILURE_CHILD);
     this->markLabel(mergeLabel);
 }
@@ -700,7 +700,7 @@ void ByteCodeGenerator::visitContinueNode(ContinueNode &node) {
 }
 
 void ByteCodeGenerator::visitExportEnvNode(ExportEnvNode &node) {
-    this->writeConstant(DSValue::create<String_Object>(this->ctx.getPool().getStringType(), node.getEnvName()));
+    this->writeConstant(DSValue::create<String_Object>(this->pool.getStringType(), node.getEnvName()));
     this->write0byteIns(OpCode::DUP);
     this->visit(*node.getExprNode());
     this->write0byteIns(OpCode::STORE_ENV);
@@ -713,7 +713,7 @@ void ByteCodeGenerator::visitExportEnvNode(ExportEnvNode &node) {
 }
 
 void ByteCodeGenerator::visitImportEnvNode(ImportEnvNode &node) {
-    this->writeConstant(DSValue::create<String_Object>(this->ctx.getPool().getStringType(), node.getEnvName()));
+    this->writeConstant(DSValue::create<String_Object>(this->pool.getStringType(), node.getEnvName()));
     this->write0byteIns(OpCode::DUP);
     const bool hashDefault = node.getDefaultValueNode() != nullptr;
     if(hashDefault) {
@@ -877,7 +877,7 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
         this->curBuilder().finallyLabels.pop_back();
 
         this->markLabel(finallyLabel);
-        this->catchException(beginLabel, finallyLabel, this->ctx.getPool().getAnyType());
+        this->catchException(beginLabel, finallyLabel, this->pool.getAnyType());
         this->visit(*node.getFinallyNode());
         this->write0byteIns(OpCode::EXIT_FINALLY);
     }
@@ -963,7 +963,8 @@ void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &) {
 }
 
 void ByteCodeGenerator::visitBindVarNode(BindVarNode &node) {
-    this->ctx.setGlobal(node.getVarIndex(), node.getValue());
+    this->writeConstant(node.getValue());
+    this->write2byteIns(OpCode::STORE_GLOBAL, node.getVarIndex());
 }
 
 void ByteCodeGenerator::visitEmptyNode(EmptyNode &) { } // do nothing

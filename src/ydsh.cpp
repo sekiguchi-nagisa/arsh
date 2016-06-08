@@ -213,7 +213,7 @@ static void handleTypeError(DSContext *dsctx, const Lexer &lexer, const TypeChec
 }
 
 static int eval(DSContext *dsctx, RootNode &rootNode) {
-    ByteCodeGenerator codegen(dsctx->ctx, hasFlag(dsctx->option, DS_OPTION_ASSERT));
+    ByteCodeGenerator codegen(dsctx->ctx.getPool(), hasFlag(dsctx->option, DS_OPTION_ASSERT));
     Callable c = codegen.generateToplevel(rootNode);
 
     if(hasFlag(dsctx->option, DS_OPTION_DUMP_CODE)) {
