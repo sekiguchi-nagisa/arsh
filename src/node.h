@@ -2223,11 +2223,7 @@ public:
     EvalStatus eval(RuntimeContext &ctx) override;
 };
 
-/**
- * Root Node of AST.
- * this class is not inheritance of Node
- */
-class RootNode : public CallableNode {    //FIXME:
+class RootNode : public CallableNode {
 private:
     std::list<Node *> nodeList;
 
