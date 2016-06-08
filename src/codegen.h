@@ -24,6 +24,7 @@
 #include "opcode.h"
 #include "handle.h"
 #include "misc/resource.hpp"
+#include "context.h"
 
 namespace ydsh {
 
@@ -237,7 +238,7 @@ public:
 
 class ByteCodeGenerator : protected NodeVisitor {
 private:
-    TypePool &pool;
+    RuntimeContext &ctx;
 
     bool assertion;
 
@@ -259,8 +260,8 @@ private:
     std::vector<CallableBuilder *> builders;
 
 public:
-    ByteCodeGenerator(TypePool &pool, bool assertion) :
-            pool(pool), assertion(assertion),
+    ByteCodeGenerator(RuntimeContext &ctx, bool assertion) :
+            ctx(ctx), assertion(assertion),
             handle_STR(nullptr), builders() { }
 
     ~ByteCodeGenerator();
