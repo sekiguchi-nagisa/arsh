@@ -50,10 +50,10 @@ enum class BuiltinVarOffset : unsigned int {
     VERSION,        // YDSH_VERSION (equivalent to ps_intrp '\V')
     REPLY,          // REPLY (for read command)
     REPLY_VAR,      // reply (fo read command)
-    ARGS,           // @
-    ARGS_SIZE,      // #
     EXIT_STATUS,    // ?
     PID,            // $
+    ARGS,           // @
+    ARGS_SIZE,      // #
     POS_0,          // 0 (for script name)
     POS_1,          // 1 (for argument)
     /*POS_2, POS_3, POS_4, POS_5, POS_6, POS_7, POS_8, POS_9, */

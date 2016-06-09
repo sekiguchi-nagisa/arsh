@@ -368,18 +368,6 @@ static void initBuiltinVar(DSContext *dsctx) {
             dsctx->ctx.getPool().createReifiedType(dsctx->ctx.getPool().getMapTemplate(), std::move(types))));
 
     /**
-     * contains script argument(exclude script name). ($@)
-     * must be Array_Object
-     */
-    defineBuiltin(rootNode, "@", DSValue::create<Array_Object>(dsctx->ctx.getPool().getStringArrayType()));
-
-    /**
-     * contains size of argument. ($#)
-     * must be Int_Object
-     */
-    defineBuiltin(rootNode, "#", DSValue::create<Int_Object>(dsctx->ctx.getPool().getInt32Type(), 0));
-
-    /**
      * contains exit status of most recent executed process. ($?)
      * must be Int_Object
      */
@@ -390,6 +378,18 @@ static void initBuiltinVar(DSContext *dsctx) {
      * must be Int_Object
      */
     defineBuiltin(rootNode, "$", DSValue::create<Int_Object>(dsctx->ctx.getPool().getUint32Type(), getpid()));
+
+    /**
+     * contains script argument(exclude script name). ($@)
+     * must be Array_Object
+     */
+    defineBuiltin(rootNode, "@", DSValue::create<Array_Object>(dsctx->ctx.getPool().getStringArrayType()));
+
+    /**
+     * contains size of argument. ($#)
+     * must be Int_Object
+     */
+    defineBuiltin(rootNode, "#", DSValue::create<Int_Object>(dsctx->ctx.getPool().getInt32Type(), 0));
 
     /**
      * represent shell or shell script name.
