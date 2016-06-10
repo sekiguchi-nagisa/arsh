@@ -41,6 +41,12 @@ function comp($a : String, $path : String) : Array<String> {
 __cmd() {
     echo cmd
     echo __cmd
+    echo user
+    echo __tilde_each
+    echo tilde
+    echo __file
+    echo file
+
     help | cut -d ' ' -f 1
     for $dir in $@ {
         for $a in $(ls $dir) {

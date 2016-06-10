@@ -1051,9 +1051,12 @@ static bool startsWith(const char *s1, const char *s2) {
 static void completeCommandName(RuntimeContext &ctx, const std::string &token, CStrBuffer &results) {
     // search user defined command
     for(auto iter = ctx.getSymbolTable().cbeginGlobal(); iter != ctx.getSymbolTable().cendGlobal(); ++iter) {
-        const char *name = iter->first.c_str() + strlen(SymbolTable::cmdSymbolPrefix);
-        if(startsWith(name, token.c_str())) {
-            append(results, name);
+        const char *name = iter->first.c_str();
+        if(startsWith(name, SymbolTable::cmdSymbolPrefix)) {
+            name += strlen(SymbolTable::cmdSymbolPrefix);
+            if(startsWith(name, token.c_str())) {
+                append(results, name);
+            }
         }
     }
 
