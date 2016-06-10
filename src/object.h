@@ -585,6 +585,7 @@ struct DummyObject : public DSObject {
 enum class CallableKind : unsigned char {
     TOPLEVEL,
     FUNCTION,
+    USER_DEFINED_CMD,
 };
 
 struct SourcePosEntry {

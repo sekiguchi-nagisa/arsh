@@ -37,18 +37,6 @@ namespace ydsh {
 #define GET_CODE(ctx) (CALLABLE(ctx)->getCode())
 #define CONST_POOL(ctx) (CALLABLE(ctx)->getConstPool())
 
-static void skipHeader(RuntimeContext &ctx) {
-    ctx.pc() = 0;
-    if(CALLABLE(ctx)->getCallableKind() == CallableKind::TOPLEVEL) {
-        unsigned short varNum = CALLABLE(ctx)->getLocalVarNum();
-        unsigned short gvarNum = CALLABLE(ctx)->getGlobalVarNum();
-
-        ctx.reserveGlobalVar(gvarNum);
-        ctx.reserveLocalVar(ctx.getLocalVarOffset() + varNum);
-    }
-    ctx.pc() += CALLABLE(ctx)->getCodeOffset() - 1;
-}
-
 /* for substitution */
 
 static bool isSpace(int ch) {
@@ -279,7 +267,7 @@ private:
 
     union {
         void *__dummy;
-        UserDefinedCmdNode *__udcNode;
+        FuncObject *__udcObj;
         builtin_command_t __builtinCmd;
         const char *__filePath;   // may be null if not found file
     };
@@ -330,8 +318,8 @@ public:
         return this->__procKind;
     }
 
-    UserDefinedCmdNode *udcNode() const {
-        return this->__udcNode;
+    FuncObject *udcObj() const {
+        return this->__udcObj;
     }
 
     builtin_command_t builtinCmd() const {
@@ -533,9 +521,10 @@ static void callCommand(RuntimeContext &ctx, unsigned short procIndex) {
     DSValue *ptr = pipeline.getARGV(procIndex);
     const auto procKind = procState.procKind();
     if(procKind == ProcState::ProcKind::USER_DEFINED) { // invoke user-defined command
-        UserDefinedCmdNode *udcNode = procState.udcNode();
+        auto *udcObj = procState.udcObj();
         closeAllPipe(procSize, pipeline.selfpipes);
-        exit(ctx.execUserDefinedCommand(udcNode, ptr));
+        ctx.callUserDefinedCommand(udcObj, ptr);
+        return;
     } else {
         // create argv
         unsigned int argc = 1;
@@ -547,9 +536,35 @@ static void callCommand(RuntimeContext &ctx, unsigned short procIndex) {
         argv[argc] = nullptr;
 
         if(procKind == ProcState::ProcKind::BUILTIN) {  // invoke builtin command
+            const bool inParent = procSize == 1 && procIndex == 0;
             builtin_command_t cmd_ptr = procState.builtinCmd();
-            closeAllPipe(procSize, pipeline.selfpipes);
-            exit(cmd_ptr(&ctx, argc, argv));
+            if(inParent) {
+                const bool restoreFD = strcmp(argv[0], "exec") != 0;
+
+                int origFDs[3];
+                if(restoreFD) {
+                    saveStdFD(origFDs);
+                }
+
+                pipeline.redirect(ctx, 0, -1);
+
+                const int pid = getpid();
+                ctx.updateExitStatus(cmd_ptr(&ctx, argc, argv));
+
+                if(pid == getpid()) {   // in parent process (if call command or eval, may be child)
+                    // flush and restore
+                    flushStdFD();
+                    if(restoreFD) {
+                        restoreStdFD(origFDs);
+                    }
+
+                    ctx.pc()++; // skip next instruction (EXIT_CHILD)
+                }
+            } else {
+                closeAllPipe(procSize, pipeline.selfpipes);
+                ctx.updateExitStatus(cmd_ptr(&ctx, argc, argv));
+            }
+            return;
         } else {    // invoke external command
             xexecve(procState.filePath(), argv, nullptr);
 
@@ -590,39 +605,10 @@ static void callPipeline(RuntimeContext &ctx) {
     const unsigned int procSize = pipeline.procStates.size();
 
     // check builtin command
-    if(procSize == 1) {
-        if(pipeline.procStates[0].procKind() == ProcState::ProcKind::BUILTIN) {
-            builtin_command_t cmd_ptr = pipeline.procStates[0].builtinCmd();
-            DSValue *ptr = pipeline.getARGV(0);
-            unsigned int argc = 1;
-            for(; ptr[argc].get() != nullptr; argc++);
-            char *argv[argc + 1];
-            for(unsigned int i = 0; i < argc; i++) {
-                argv[i] = const_cast<char *>(typeAs<String_Object>(ptr[i])->getValue());
-            }
-            argv[argc] = nullptr;
-
-            const bool restoreFD = strcmp(argv[0], "exec") != 0;
-
-            int origFDs[3];
-            if(restoreFD) {
-                saveStdFD(origFDs);
-            }
-
-            pipeline.redirect(ctx, 0, -1);
-
-            ctx.updateExitStatus(cmd_ptr(&ctx, argc, argv));
-
-            // flush and restore
-            flushStdFD();
-            if(restoreFD) {
-                restoreStdFD(origFDs);
-            }
-
-            // set pc to next instruction
-            ctx.pc() += read16(GET_CODE(ctx), ctx.pc() + 4) - 1;
-            return;
-        }
+    if(procSize == 1 && pipeline.procStates[0].procKind() == ProcState::ProcKind::BUILTIN) {
+        // set pc to next instruction
+        ctx.pc() += read16(GET_CODE(ctx), ctx.pc() + 2) - 1;
+        return;
     }
 
     int pipefds[procSize][2];
@@ -763,10 +749,10 @@ static void openProc(RuntimeContext &ctx) {
 
     // first, check user-defined command
     {
-        UserDefinedCmdNode *udcNode = ctx.lookupUserDefinedCommand(commandName);
-        if(udcNode != nullptr) {
+        auto *udcObj = ctx.lookupUserDefinedCommand(commandName);
+        if(udcObj != nullptr) {
             procKind = ProcState::ProcKind::USER_DEFINED;
-            ptr = udcNode;
+            ptr = udcObj;
         }
     }
 
@@ -1027,7 +1013,6 @@ static void mainLoop(RuntimeContext &ctx) {
             unsigned short paramSize = read16(GET_CODE(ctx), ctx.pc() + 1);
             ctx.pc() += 2;
             ctx.applyFuncObject(paramSize);
-            skipHeader(ctx);
             break;
         }
         vmcase(RETURN) {
@@ -1040,6 +1025,13 @@ static void mainLoop(RuntimeContext &ctx) {
             ctx.restoreStackState();
             ctx.callableStack().pop_back();
             ctx.push(std::move(v));
+            break;
+        }
+        vmcase(RETURN_UDC) {
+            auto v = ctx.pop();
+            ctx.restoreStackState();
+            ctx.callableStack().pop_back();
+            ctx.updateExitStatus(typeAs<Int_Object>(v)->getValue());
             break;
         }
         vmcase(BRANCH) {
@@ -1293,7 +1285,7 @@ bool vmEval(RuntimeContext &ctx, Callable &callable) {
     ctx.resetState();
 
     ctx.callableStack().push_back(&callable);
-    skipHeader(ctx);
+    ctx.skipHeader();
 
     while(true) {
         try {

@@ -210,12 +210,6 @@ private:
     DSValue pipelineEvaluator;
 
     /**
-     * contains user defined command node.
-     * must delete it's contents
-     */
-    CStringHashMap<UserDefinedCmdNode *> udcMap;
-
-    /**
      * cache searched result.
      */
     FilePathCache pathCache;
@@ -395,6 +389,8 @@ public:
                               unsigned int paramSize, unsigned int maxVarSize);
     void restoreStackState();
 
+    void skipHeader();
+
     // operand manipulation
     void push(const DSValue &value) {
         if(++this->stackTopIndex >= this->localStackSize) {
@@ -471,6 +467,10 @@ public:
     void loadLocal(unsigned int index) {
         auto v(this->localStack[this->localVarOffset + index]); // localStack may be expanded.
         this->push(std::move(v));
+    }
+
+    void setLocal(unsigned int index, const DSValue &obj) {
+        this->localStack[this->localVarOffset + index] = obj;
     }
 
     void setLocal(unsigned int index, DSValue &&obj) {
@@ -552,14 +552,10 @@ public:
         return this->pathCache;
     }
 
-    const CStringHashMap<UserDefinedCmdNode *> &getUdcMap() const {
-        return this->udcMap;
-    }
-
     /**
      * if not found, return null
      */
-    UserDefinedCmdNode *lookupUserDefinedCommand(const char *commandName);
+    FuncObject *lookupUserDefinedCommand(const char *commandName);
 
     /**
      * must call in child process.
@@ -568,6 +564,11 @@ public:
      * the last element of ptr is null.
      */
     int execUserDefinedCommand(UserDefinedCmdNode *node, DSValue *argv);
+
+    /**
+     * obj must indicate user-defined command.
+     */
+    void callUserDefinedCommand(const FuncObject *obj, DSValue *argv);
 
     /**
      * n is 1 or 2

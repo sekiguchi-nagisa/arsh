@@ -73,10 +73,7 @@ public:
 
 class SymbolTable {
 private:
-    /**
-     * if second is true, indicating handle.
-     */
-    std::vector<std::pair<std::string, bool>> handleCache;
+    std::vector<std::string> handleCache;
 
     /**
      * first scope is always global scope.
@@ -87,11 +84,6 @@ private:
      * contains max number of variable index.
      */
     std::vector<unsigned int> maxVarIndexStack;
-
-    unsigned int udcIndex;
-
-    std::unordered_map<std::string, unsigned int> udcIndexMap;
-
 
 public:
     NON_COPYABLE(SymbolTable);
@@ -117,9 +109,15 @@ public:
                                        const std::vector<DSType *> &paramTypes);
 
     /**
-     * if already registered, return -1.
+     * if already registered, return null.
+     * type must be any type
      */
-    int registerUdc(const std::string &cmdName);
+    FieldHandle *registerUdc(const std::string &cmdName, DSType &type);
+
+    /**
+     * if not found, return null.
+     */
+    FieldHandle *lookupUdc(const char *cmdName) const;
 
     /**
      * create new local scope.
@@ -169,6 +167,8 @@ public:
     Scope::const_iterator cbeginGlobal() const;
 
     Scope::const_iterator cendGlobal() const;
+
+    static constexpr const char *cmdSymbolPrefix = "%c";
 };
 
 } // namespace ydsh

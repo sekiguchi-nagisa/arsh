@@ -249,14 +249,6 @@ private:
      */
     void checkAndThrowIfOutOfLoop(Node &node);
 
-    /**
-     * check block end (return, throw) existence in function block.
-     * blockNode must be typed.
-     * blockNode is function block.
-     * returnType is function return type.
-     */
-    void checkTerminalNodeExistence(BlockNode &blockNode, DSType &returnType);
-
     void pushReturnType(DSType &returnType);
 
     /**

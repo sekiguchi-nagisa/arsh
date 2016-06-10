@@ -345,23 +345,6 @@ void TypeChecker::checkAndThrowIfOutOfLoop(Node &node) {
     RAISE_TC_ERROR(InsideLoop, node);
 }
 
-void TypeChecker::checkTerminalNodeExistence(BlockNode &blockNode, DSType &returnType) {
-    assert(!blockNode.isUntyped());
-    if(returnType.isVoidType() && !blockNode.getType().isBottomType()) {
-        /**
-         * insert return node to block end
-         */
-        ReturnNode *returnNode = new ReturnNode(0, new EmptyNode());
-        returnNode->getExprNode()->setType(this->typePool.getVoidType());
-        returnNode->setType(this->typePool.getBottomType());
-        blockNode.addNode(returnNode);
-        blockNode.setType(returnNode->getType());
-    }
-    if(!blockNode.getType().isBottomType()) {
-        RAISE_TC_ERROR(UnfoundReturn, blockNode);
-    }
-}
-
 void TypeChecker::pushReturnType(DSType &returnType) {
     this->curReturnType = &returnType;
 }
@@ -1120,7 +1103,16 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     this->symbolTable.exitFunc();
     this->popReturnType();
 
-    this->checkTerminalNodeExistence(*node.getBlockNode(), returnType);
+    // insert terminal node if not found
+    BlockNode *blockNode = node.getBlockNode();
+    if(returnType.isVoidType() && !blockNode->getType().isBottomType()) {
+        EmptyNode *emptyNode = new EmptyNode();
+        emptyNode->setType(this->typePool.getVoidType());
+        blockNode->addReturnNodeToLast(this->typePool, emptyNode);
+    }
+    if(!blockNode->getType().isBottomType()) {
+        RAISE_TC_ERROR(UnfoundReturn, *blockNode);
+    }
 
     node.setType(this->typePool.getVoidType());
 }
@@ -1130,21 +1122,41 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
         RAISE_TC_ERROR(OutsideToplevel, node);
     }
 
+    // register command name
+    FieldHandle *handle = this->symbolTable.registerUdc(node.getName(), this->typePool.getAnyType());
+    if(handle == nullptr) {
+        RAISE_TC_ERROR(DefinedCmd, node, node.getName());
+    }
+    node.setUdcIndex(handle->getFieldIndex());
+
     this->pushReturnType(this->typePool.getIntType());    // pseudo return type
     this->symbolTable.enterFunc();
+    this->symbolTable.enterScope();
+
+    // register special characters (@, #, 0, 1, ... 9)
+    this->addEntryAndThrowIfDefined(node, "@", this->typePool.getStringArrayType(), true);
+    this->addEntryAndThrowIfDefined(node, "#", this->typePool.getInt32Type(), true);
+    for(unsigned int i = 0; i < 10; i++) {
+        this->addEntryAndThrowIfDefined(node, std::to_string(i), this->typePool.getStringType(), true);
+    }
+
 
     // check type command body
-    this->checkType(this->typePool.getVoidType(), node.getBlockNode());
+    this->checkTypeWithCurrentScope(node.getBlockNode());
+    this->symbolTable.exitScope();
 
     node.setMaxVarNum(this->symbolTable.getMaxVarIndex());
     this->symbolTable.exitFunc();
     this->popReturnType();
 
-    int index;
-    if((index = this->symbolTable.registerUdc(node.getName())) < 0) {
-        RAISE_TC_ERROR(DefinedCmd, node, node.getName());
+    // insert return node if not found
+    if(node.getBlockNode()->getNodeList().empty() ||
+            !node.getBlockNode()->getNodeList().back()->getType().isBottomType()) {
+        VarNode *varNode = new VarNode({0, 1}, "?");
+        this->checkType(varNode);
+        node.getBlockNode()->addReturnNodeToLast(this->typePool, varNode);
     }
-    node.setUdcIndex(index);
+
     node.setType(this->typePool.getVoidType());
 }
 

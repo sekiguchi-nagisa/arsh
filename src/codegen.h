@@ -241,6 +241,11 @@ private:
 
     bool assertion;
 
+    /**
+     * if true, within user-defined command definition.
+     */
+    bool inUDC;
+
     MethodHandle *handle_STR;
 
     struct CallableBuilder : public ByteCodeWriter<true> {
@@ -260,7 +265,7 @@ private:
 
 public:
     ByteCodeGenerator(TypePool &pool, bool assertion) :
-            pool(pool), assertion(assertion),
+            pool(pool), assertion(assertion), inUDC(false),
             handle_STR(nullptr), builders() { }
 
     ~ByteCodeGenerator();

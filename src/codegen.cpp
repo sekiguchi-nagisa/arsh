@@ -625,6 +625,7 @@ void ByteCodeGenerator::visitPipedCmdNode(PipedCmdNode &node) {
     if(size == 1) {
         this->markLabel(labels[0]);
         this->write1byteIns(OpCode::CALL_CMD, 0);
+        this->write0byteIns(OpCode::SUCCESS_CHILD);
     } else {
         auto begin = makeIntrusive<Label>();
         auto end = makeIntrusive<Label>();
@@ -825,7 +826,10 @@ void ByteCodeGenerator::visitReturnNode(ReturnNode &node) {
     // add finally before return
     this->enterFinally();
 
-    if(node.getExprNode()->getType().isVoidType()) {
+    if(this->inUDC) {
+        assert(node.getExprNode()->getType() == this->pool.getInt32Type());
+        this->write0byteIns(OpCode::RETURN_UDC);
+    } else if(node.getExprNode()->getType().isVoidType()) {
         this->write0byteIns(OpCode::RETURN);
     } else {
         this->write0byteIns(OpCode::RETURN_V);
@@ -958,8 +962,17 @@ void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
 
 void ByteCodeGenerator::visitInterfaceNode(InterfaceNode &) { } // do nothing
 
-void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &) {
-    fatal("unsupported\n"); //TODO
+void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
+    this->inUDC = true;
+
+    this->initCallable(CallableKind::USER_DEFINED_CMD, node.getMaxVarNum());
+    this->visit(*node.getBlockNode());
+    auto func = DSValue::create<FuncObject>(this->finalizeCallable(node));
+
+    this->writeConstant(func);
+    this->write2byteIns(OpCode::STORE_GLOBAL, node.getUdcIndex());
+
+    this->inUDC = false;
 }
 
 void ByteCodeGenerator::visitBindVarNode(BindVarNode &node) {
@@ -1066,6 +1079,9 @@ static void dumpCodeImpl(std::ostream &stream, RuntimeContext &ctx, const Callab
         break;
     case CallableKind::FUNCTION:
         stream << "function " << c.getName();
+        break;
+    case CallableKind::USER_DEFINED_CMD:
+        stream << "command " << c.getName();
         break;
     }
     stream << std::endl;

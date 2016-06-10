@@ -1061,6 +1061,16 @@ void BlockNode::insertNodeToFirst(Node *node) {
     this->nodeList.push_front(node);
 }
 
+void BlockNode::addReturnNodeToLast(TypePool &pool, Node *exprNode) {
+    assert(!this->isUntyped() && !this->getType().isBottomType());
+    assert(!exprNode->isUntyped());
+
+    ReturnNode *returnNode = new ReturnNode(exprNode->getStartPos(), exprNode);
+    returnNode->setType(pool.getBottomType());
+    this->addNode(returnNode);
+    this->setType(returnNode->getType());
+}
+
 void BlockNode::dump(NodeDumper &dumper) const {
     DUMP(nodeList);
 }

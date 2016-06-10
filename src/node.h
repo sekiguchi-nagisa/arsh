@@ -1321,6 +1321,12 @@ public:
         return this->nodeList;
     }
 
+    /**
+     * this node and exprNode must be typed.
+     * this node must not be bottom type.
+     */
+    void addReturnNodeToLast(TypePool &pool, Node *exprNode);
+
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
 };

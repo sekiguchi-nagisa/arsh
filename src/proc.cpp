@@ -667,7 +667,7 @@ static int builtin_eval(RuntimeContext *ctx, const int argc, char *const *argv) 
 
     const char *cmdName = argv[1];
     // user-defined command
-    UserDefinedCmdNode *udcNode = ctx->lookupUserDefinedCommand(cmdName);
+    auto *udcNode = ctx->lookupUserDefinedCommand(cmdName);
     if(udcNode != nullptr) {
         pid_t pid = xfork();
         if(pid == -1) {
@@ -683,9 +683,8 @@ static int builtin_eval(RuntimeContext *ctx, const int argc, char *const *argv) 
             }
             argv2[size - 1] = nullptr;
 
-            int r = ctx->execUserDefinedCommand(udcNode, argv2);
+            ctx->callUserDefinedCommand(udcNode, argv2);
             delete[] argv2;
-            exit(r);
         } else {    // parent process
             int status;
             ctx->xwaitpid(pid, status, 0);

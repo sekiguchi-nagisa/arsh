@@ -154,14 +154,10 @@ RuntimeContext::RuntimeContext() :
         localVarOffset(0), pc_(0), assertion(true), traceExit(false),
         handle_STR(nullptr), IFS_index(0),
         callableStack_(), pipelineEvaluator(nullptr),
-        udcMap(), pathCache(), terminationHook(nullptr) { }
+        pathCache(), terminationHook(nullptr) { }
 
 RuntimeContext::~RuntimeContext() {
     delete[] this->localStack;
-
-    for(auto &pair : this->udcMap) {
-        delete pair.second;
-    }
 }
 
 /**
@@ -432,6 +428,19 @@ void RuntimeContext::restoreStackState() {
     }
 }
 
+void RuntimeContext::skipHeader() {
+    assert(!this->callableStack_.empty());
+    this->pc() = 0;
+    if(this->callableStack().back()->getCallableKind() == CallableKind::TOPLEVEL) {
+        unsigned short varNum = this->callableStack().back()->getLocalVarNum();
+        unsigned short gvarNum = this->callableStack().back()->getGlobalVarNum();
+
+        this->reserveGlobalVar(gvarNum);
+        this->reserveLocalVar(this->getLocalVarOffset() + varNum);
+    }
+    this->pc() += this->callableStack().back()->getCodeOffset() - 1;
+}
+
 /**
  * stack state in function apply    stack grow ===>
  *
@@ -444,6 +453,7 @@ void RuntimeContext::applyFuncObject(unsigned int paramSize) {
     auto *func = typeAs<FuncObject>(this->localStack[this->stackTopIndex - paramSize]);
     this->saveAndSetStackState(paramSize + 1, paramSize, func->getCallable().getLocalVarNum());
     this->callableStack_.push_back(&func->getCallable());
+    this->skipHeader();
 }
 
 /**
@@ -551,6 +561,10 @@ void RuntimeContext::fillInStackTrace(std::vector<StackTraceElement> &stackTrace
                 break;
             case CallableKind::FUNCTION:
                 callableName += "function ";
+                callableName += callable->getName();
+                break;
+            case CallableKind::USER_DEFINED_CMD:
+                callableName += "command ";
                 callableName += callable->getName();
                 break;
             }
@@ -729,17 +743,55 @@ void RuntimeContext::exitShell(unsigned int status) {
     exit(status);
 }
 
-UserDefinedCmdNode *RuntimeContext::lookupUserDefinedCommand(const char *commandName) {
-    auto iter = this->udcMap.find(commandName);
-    if(iter != this->udcMap.end()) {
-        return iter->second;
-    }
-    return nullptr;
+FuncObject *RuntimeContext::lookupUserDefinedCommand(const char *commandName) {
+    auto handle = this->symbolTable.lookupUdc(commandName);
+    return handle == nullptr ? nullptr : typeAs<FuncObject>(this->getGlobal(handle->getFieldIndex()));
 }
 
 int RuntimeContext::execUserDefinedCommand(UserDefinedCmdNode *, DSValue *) {
     fatal("unsupported\n");
     return 0;
+}
+
+/**
+ * stack state in function apply    stack grow ===>
+ *
+ * +-----------+-------+--------+
+ * | stack top | param |
+ * +-----------+-------+--------+
+ *             | offset|
+ */
+void RuntimeContext::callUserDefinedCommand(const FuncObject *obj, DSValue *argArray) {
+    // create parameter (@)
+    std::vector<DSValue> values;
+    for(int i = 1; argArray[i]; i++) {
+        values.push_back(std::move(argArray[i]));
+    }
+    this->push(DSValue::create<Array_Object>(this->pool.getStringArrayType(), std::move(values)));
+
+    // set stack stack
+    this->saveAndSetStackState(1, 1, obj->getCallable().getLocalVarNum());
+    this->callableStack_.push_back(&obj->getCallable());
+    this->skipHeader();
+
+    // set variable
+    auto argv = typeAs<Array_Object>(this->getLocal(0));
+    const unsigned int argSize = argv->getValues().size();
+    this->setLocal(1, DSValue::create<Int_Object>(this->pool.getInt32Type(), argSize));   // #
+    this->setLocal(2, this->getGlobal(this->getBuiltinVarIndex(BuiltinVarOffset::POS_0))); // 0
+    unsigned int limit = 9;
+    if(argSize < limit) {
+        limit = argSize;
+    }
+
+    unsigned int index;
+    for(index = 0; index < limit; index++) {
+        this->setLocal(index + 3, argv->getValues()[index]);
+    }
+
+    for(; index < 9; index++) {
+        this->setLocal(index + 3, this->getEmptyStrObj());  // set remain
+    }
 }
 
 static void format2digit(int num, std::string &out) {
@@ -998,8 +1050,8 @@ static bool startsWith(const char *s1, const char *s2) {
  */
 static void completeCommandName(RuntimeContext &ctx, const std::string &token, CStrBuffer &results) {
     // search user defined command
-    for(auto &e : ctx.getUdcMap()) {
-        const char *name = e.first;
+    for(auto iter = ctx.getSymbolTable().cbeginGlobal(); iter != ctx.getSymbolTable().cendGlobal(); ++iter) {
+        const char *name = iter->first.c_str() + strlen(SymbolTable::cmdSymbolPrefix);
         if(startsWith(name, token.c_str())) {
             append(results, name);
         }
@@ -1133,7 +1185,9 @@ static void completeGlobalVarName(RuntimeContext &ctx, const std::string &token,
     const auto &symbolTable = ctx.getSymbolTable();
 
     for(auto iter = symbolTable.cbeginGlobal(); iter != symbolTable.cendGlobal(); ++iter) {
-        if(!token.empty() && startsWith(iter->first.c_str(), token.c_str() + 1)) {
+        const char *varName = iter->first.c_str();
+        if(!token.empty() && !startsWith(varName, SymbolTable::cmdSymbolPrefix)
+           && startsWith(varName, token.c_str() + 1)) {
             append(results, iter->first);
         }
     }

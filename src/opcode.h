@@ -60,6 +60,7 @@ namespace ydsh {
     OP(CALL_FUNC, 2) \
     OP(RETURN, 0) \
     OP(RETURN_V, 0) \
+    OP(RETURN_UDC, 0) \
     OP(BRANCH, 2) \
     OP(GOTO, 4) \
     OP(THROW, 0) \
