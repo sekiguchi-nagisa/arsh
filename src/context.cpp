@@ -474,10 +474,7 @@ void RuntimeContext::callMethod(unsigned short index, unsigned short paramSize) 
 
     this->windStackFrame(actualParamSize, actualParamSize, nullptr);
 
-    bool status = this->callStack[recvIndex]->getType()->getMethodRef(index)->invoke(*this);
-    if(!status) {
-        this->throwException(this->pop());
-    }
+    this->callStack[recvIndex]->getType()->getMethodRef(index)->invoke(*this);
 
     bool hasRet = this->stackTopIndex > this->stackBottomIndex;
     DSValue returnValue;
@@ -516,13 +513,12 @@ void RuntimeContext::newDSObject(DSType *type) {
  * +-----------+------------------+   +--------+
  *             |    new offset    |
  */
-bool RuntimeContext::callConstructor(unsigned short paramSize) {
+void RuntimeContext::callConstructor(unsigned short paramSize) {
     const unsigned int recvIndex = this->stackTopIndex - paramSize;
 
     this->windStackFrame(paramSize, paramSize + 1, nullptr);
-    bool status = this->callStack[recvIndex]->getType()->getConstructor()->invoke(*this);
+    this->callStack[recvIndex]->getType()->getConstructor()->invoke(*this);
     this->unwindStackFrame();
-    return status;
 }
 
 void RuntimeContext::handleUncaughtException(DSValue &&except) {

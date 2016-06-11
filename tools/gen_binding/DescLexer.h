@@ -29,7 +29,7 @@
     OP(INIT)           /* constructor */\
     OP(STATIC)         /* static */\
     OP(INLINE)         /* inline */\
-    OP(BOOL)           /* bool */\
+    OP(VOID)           /* void */\
     OP(RCTX)           /* RuntimeContext */\
     OP(ARRAY)          /* Array */\
     OP(MAP)            /* Map */\

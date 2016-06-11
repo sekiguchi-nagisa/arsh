@@ -52,7 +52,7 @@ DescTokenKind DescLexer::nextToken(Token &token) {
       "constructor"          { RET(INIT); }
       "static"               { RET(STATIC); }
       "inline"               { RET(INLINE); }
-      "bool"                 { RET(BOOL);}
+      "void"                 { RET(VOID);}
       "RuntimeContext"       { RET(RCTX); }
       "Array"                { RET(ARRAY); }
       "Map"                  { RET(MAP); }

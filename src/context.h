@@ -500,7 +500,7 @@ public:
      */
     void newDSObject(DSType *type);
 
-    bool callConstructor(unsigned short paramSize);
+    void callConstructor(unsigned short paramSize);
 
     void handleUncaughtException(DSValue &&except);
 

@@ -769,7 +769,7 @@ void Parser::parse_funcDecl(const std::string &line, std::unique_ptr<Element> &e
 
     this->expect(STATIC);
     this->expect(INLINE);
-    this->expect(BOOL);
+    this->expect(VOID);
 
     Token token = this->expect(IDENTIFIER);
     std::string str(this->lexer->toTokenText(token));

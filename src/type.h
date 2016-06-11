@@ -36,7 +36,7 @@ class FieldHandle;
 class MethodHandle;
 
 class RuntimeContext;
-typedef bool (*native_func_t)(RuntimeContext &);
+typedef void (*native_func_t)(RuntimeContext &);
 
 /**
  * reference of method. for method call, constructor call.
@@ -54,8 +54,8 @@ public:
         return this->func_ptr != nullptr;
     }
 
-    bool invoke(RuntimeContext &ctx) const {
-        return this->func_ptr(ctx);
+    void invoke(RuntimeContext &ctx) const {
+        this->func_ptr(ctx);
     }
 };
 
