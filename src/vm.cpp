@@ -371,6 +371,7 @@ public:
         this->argArray.clear();
         this->redirOptions.clear();
         this->procStates.clear();
+        delete[] this->selfpipes;
     }
 
     void redirect(RuntimeContext &ctx, unsigned int procIndex, int errorPipe);
@@ -386,7 +387,7 @@ public:
 // ###########################
 
 PipelineState::~PipelineState() {
-    free(this->selfpipes);
+    delete[] this->selfpipes;
 }
 
 static void closeAllPipe(int size, int pipefds[][2]) {
@@ -581,7 +582,7 @@ static void callCommand(RuntimeContext &ctx, unsigned short procIndex) {
  * initialize pipe and selfpipe
  */
 static void initPipe(PipelineState &pipeline, unsigned int size, pipe_t *pipes) {
-    pipeline.selfpipes = static_cast<pipe_t *>(malloc(sizeof(pipe_t) * size));
+    pipeline.selfpipes = new pipe_t[size];
 
     for(unsigned int i = 0; i < size; i++) {
         if(pipe(pipes[i]) < 0) {  // create pipe
