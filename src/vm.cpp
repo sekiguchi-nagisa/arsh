@@ -37,6 +37,88 @@ namespace ydsh {
 #define GET_CODE(ctx) (CALLABLE(ctx)->getCode())
 #define CONST_POOL(ctx) (CALLABLE(ctx)->getConstPool())
 
+/* runtime api */
+static void printStackTop(RuntimeContext &ctx, DSType *stackTopType) {
+    assert(!stackTopType->isVoidType());
+    std::cout << "(" << ctx.getPool().getTypeName(*stackTopType) << ") "
+    << typeAs<String_Object>(ctx.pop())->getValue() << std::endl;
+}
+
+static void checkCast(RuntimeContext &ctx, DSType *targetType) {
+    if(!ctx.peek()->introspect(ctx, targetType)) {
+        DSType *stackTopType = ctx.pop()->getType();
+        std::string str("cannot cast ");
+        str += ctx.getPool().getTypeName(*stackTopType);
+        str += " to ";
+        str += ctx.getPool().getTypeName(*targetType);
+        ctx.throwError(ctx.getPool().getTypeCastErrorType(), std::move(str));
+    }
+}
+
+static void instanceOf(RuntimeContext &ctx, DSType *targetType) {
+    if(ctx.pop()->introspect(ctx, targetType)) {
+        ctx.push(ctx.getTrueObj());
+    } else {
+        ctx.push(ctx.getFalseObj());
+    }
+}
+
+static void checkAssertion(RuntimeContext &ctx) {
+    if(!typeAs<Boolean_Object>(ctx.pop())->getValue()) {
+        ctx.setThrownObject(ctx.newError(ctx.getPool().getAssertFail(), ""));
+
+        // invoke termination hook
+        if(ctx.getTerminationHook() != nullptr) {
+            const unsigned int lineNum =
+                    getOccuredLineNum(typeAs<Error_Object>(ctx.getThrownObject())->getStackTrace());
+            ctx.getTerminationHook()(DS_STATUS_ASSERTION_ERROR, lineNum);
+        }
+
+        // print stack trace
+        ctx.loadThrownObject();
+        typeAs<Error_Object>(ctx.pop())->printStackTrace(ctx);
+
+        exit(1);
+    }
+}
+
+static void importEnv(RuntimeContext &ctx, bool hasDefault) {
+    DSValue dValue;
+    if(hasDefault) {
+        dValue = ctx.pop();
+    }
+    DSValue nameObj(ctx.pop());
+    const char *name = typeAs<String_Object>(nameObj)->getValue();
+
+    const char *env = getenv(name);
+    if(hasDefault && env == nullptr) {
+        setenv(name, typeAs<String_Object>(dValue)->getValue(), 1);
+    }
+
+    env = getenv(name);
+    if(env == nullptr) {
+        std::string str("undefined environmental variable: ");
+        str += name;
+        ctx.throwSystemError(EINVAL, std::move(str)); //FIXME: exception
+    }
+}
+
+static void storeEnv(RuntimeContext &ctx) {
+    DSValue value(ctx.pop());
+    DSValue name(ctx.pop());
+
+    setenv(typeAs<String_Object>(name)->getValue(),
+           typeAs<String_Object>(value)->getValue(), 1);//FIXME: check return value and throw
+}
+
+static void loadEnv(RuntimeContext &ctx) {
+    DSValue name = ctx.pop();
+    const char *value = getenv(typeAs<String_Object>(name)->getValue());
+    assert(value != nullptr);
+    ctx.push(DSValue::create<String_Object>(ctx.getPool().getStringType(), value));
+}
+
+
 /* for substitution */
 
 static bool isSpace(int ch) {
@@ -839,25 +921,25 @@ static void mainLoop(RuntimeContext &ctx) {
             return;
         }
         vmcase(ASSERT) {
-            ctx.checkAssertion();
+            checkAssertion(ctx);
             break;
         }
         vmcase(PRINT) {
             unsigned long v = read64(GET_CODE(ctx), ctx.pc() + 1);
             ctx.pc() += 8;
-            ctx.printStackTop(reinterpret_cast<DSType *>(v));
+            printStackTop(ctx, reinterpret_cast<DSType *>(v));
             break;
         }
         vmcase(INSTANCE_OF) {
             unsigned long v = read64(GET_CODE(ctx), ctx.pc() + 1);
             ctx.pc() += 8;
-            ctx.instanceOf(reinterpret_cast<DSType *>(v));
+            instanceOf(ctx, reinterpret_cast<DSType *>(v));
             break;
         }
         vmcase(CHECK_CAST) {
             unsigned long v = read64(GET_CODE(ctx), ctx.pc() + 1);
             ctx.pc() += 8;
-            ctx.checkCast(reinterpret_cast<DSType *>(v));
+            checkCast(ctx, reinterpret_cast<DSType *>(v));
             break;
         }
         vmcase(PUSH_TRUE) {
@@ -929,15 +1011,15 @@ static void mainLoop(RuntimeContext &ctx) {
         }
         vmcase(IMPORT_ENV) {
             unsigned char b = read8(GET_CODE(ctx), ++ctx.pc());
-            ctx.importEnv(b > 0);
+            importEnv(ctx, b > 0);
             break;
         }
         vmcase(LOAD_ENV) {
-            ctx.loadEnv();
+            loadEnv(ctx);
             break;
         }
         vmcase(STORE_ENV) {
-            ctx.storeEnv();
+            storeEnv(ctx);
             break;
         }
         vmcase(POP) {

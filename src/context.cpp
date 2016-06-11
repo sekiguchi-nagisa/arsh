@@ -345,11 +345,6 @@ void RuntimeContext::throwSystemError(int errorNum, std::string &&message) {
     this->throwError(this->pool.getSystemErrorType(), std::move(str));
 }
 
-void RuntimeContext::raiseCircularReferenceError() {
-    this->throwError(this->pool.getStackOverflowErrorType(), "caused by circular reference");
-}
-
-
 void RuntimeContext::expandLocalStack() {
     const unsigned int needSize = this->stackTopIndex;
     if(needSize >= MAXIMUM_STACK_SIZE) {
@@ -587,86 +582,6 @@ void RuntimeContext::fillInStackTrace(std::vector<StackTraceElement> &stackTrace
             curBottomIndex = static_cast<unsigned int>(this->callStack[offset - 1].value());
         }
     }
-}
-
-void RuntimeContext::printStackTop(DSType *stackTopType) {
-    assert(!stackTopType->isVoidType());
-    std::cout << "(" << this->pool.getTypeName(*stackTopType) << ") "
-    << typeAs<String_Object>(this->pop())->getValue() << std::endl;
-}
-
-void RuntimeContext::checkCast(DSType *targetType) {
-    if(!this->peek()->introspect(*this, targetType)) {
-        DSType *stackTopType = this->pop()->getType();
-        std::string str("cannot cast ");
-        str += this->pool.getTypeName(*stackTopType);
-        str += " to ";
-        str += this->pool.getTypeName(*targetType);
-        this->throwError(this->pool.getTypeCastErrorType(), std::move(str));
-    }
-}
-
-void RuntimeContext::instanceOf(DSType *targetType) {
-    if(this->pop()->introspect(*this, targetType)) {
-        this->push(this->trueObj);
-    } else {
-        this->push(this->falseObj);
-    }
-}
-
-void RuntimeContext::checkAssertion() {
-    if(!typeAs<Boolean_Object>(this->pop())->getValue()) {
-        this->thrownObject = this->newError(this->pool.getAssertFail(), "");
-
-        // invoke termination hook
-        if(this->terminationHook != nullptr) {
-            const unsigned int lineNum =
-                    getOccuredLineNum(typeAs<Error_Object>(this->getThrownObject())->getStackTrace());
-            this->terminationHook(DS_STATUS_ASSERTION_ERROR, lineNum);
-        }
-
-        // print stack trace
-        this->loadThrownObject();
-        typeAs<Error_Object>(this->pop())->printStackTrace(*this);
-
-        exit(1);
-    }
-}
-
-void RuntimeContext::importEnv(bool hasDefault) {
-    DSValue dValue;
-    if(hasDefault) {
-        dValue = this->pop();
-    }
-    DSValue nameObj(this->pop());
-    const char *name = typeAs<String_Object>(nameObj)->getValue();
-
-    const char *env = getenv(name);
-    if(hasDefault && env == nullptr) {
-        setenv(name, typeAs<String_Object>(dValue)->getValue(), 1);
-    }
-
-    env = getenv(name);
-    if(env == nullptr) {
-        std::string str("undefined environmental variable: ");
-        str += name;
-        this->throwSystemError(EINVAL, std::move(str)); //FIXME: exception
-    }
-}
-
-void RuntimeContext::storeEnv() {
-    DSValue value(this->pop());
-    DSValue name(this->pop());
-
-    setenv(typeAs<String_Object>(name)->getValue(),
-           typeAs<String_Object>(value)->getValue(), 1);//FIXME: check return value and throw
-}
-
-void RuntimeContext::loadEnv() {
-    DSValue name = this->pop();
-    const char *value = getenv(typeAs<String_Object>(name)->getValue());
-    assert(value != nullptr);
-    this->push(DSValue::create<String_Object>(this->getPool().getStringType(), value));
 }
 
 void RuntimeContext::resetState() {

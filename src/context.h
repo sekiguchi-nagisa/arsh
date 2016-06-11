@@ -297,8 +297,12 @@ public:
         this->traceExit = traceExit;
     }
 
-    const DSValue &getThrownObject() {
+    const DSValue &getThrownObject() const {
         return this->thrownObject;
+    }
+
+    void setThrownObject(DSValue &&value) {
+        this->thrownObject = std::move(value);
     }
 
     unsigned int getStackTopIndex() {
@@ -348,11 +352,6 @@ public:
      * format message '%s: %s', message, strerror(errorNum)
      */
     void throwSystemError(int errorNum, std::string &&message);
-
-    /**
-     * create StackOverflowError and throw NativeMethodError
-     */
-    void raiseCircularReferenceError();
 
     /**
      * get thrownObject and push to callStack
@@ -508,19 +507,6 @@ public:
     // some runtime api
     void fillInStackTrace(std::vector<StackTraceElement> &stackTrace);
 
-    void printStackTop(DSType *stackTopType);
-
-    void checkCast(DSType *targetType);
-
-
-    void instanceOf(DSType *targetType);
-
-    void checkAssertion();
-
-    void importEnv(bool hasDefault);
-    void storeEnv();
-    void loadEnv();
-
     /**
      * reset call stack, local var offset, thrown object.
      */
@@ -579,6 +565,10 @@ public:
 
     void setTerminationHook(TerminationHook hook) {
         this->terminationHook = hook;
+    }
+
+    TerminationHook getTerminationHook() const {
+        return this->terminationHook;
     }
 };
 

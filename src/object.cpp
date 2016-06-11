@@ -176,7 +176,7 @@ static void checkCircularRef(RuntimeContext &ctx, VisitedSet * &visitedSet,
         }
     } else {
         if(visitedSet->find((unsigned long) thisPtr) != visitedSet->end()) {
-            ctx.raiseCircularReferenceError();
+            ctx.throwError(ctx.getPool().getStackOverflowErrorType(), "caused by circular reference");
         }
     }
 }
