@@ -748,11 +748,6 @@ FuncObject *RuntimeContext::lookupUserDefinedCommand(const char *commandName) {
     return handle == nullptr ? nullptr : typeAs<FuncObject>(this->getGlobal(handle->getFieldIndex()));
 }
 
-int RuntimeContext::execUserDefinedCommand(UserDefinedCmdNode *, DSValue *) {
-    fatal("unsupported\n");
-    return 0;
-}
-
 /**
  * stack state in function apply    stack grow ===>
  *

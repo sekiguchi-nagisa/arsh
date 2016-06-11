@@ -558,14 +558,6 @@ public:
     FuncObject *lookupUserDefinedCommand(const char *commandName);
 
     /**
-     * must call in child process.
-     * argv represents array.
-     * the first element of ptr is command name(equivalent to node->getCommandName()).
-     * the last element of ptr is null.
-     */
-    int execUserDefinedCommand(UserDefinedCmdNode *node, DSValue *argv);
-
-    /**
      * obj must indicate user-defined command.
      */
     void callUserDefinedCommand(const FuncObject *obj, DSValue *argv);
