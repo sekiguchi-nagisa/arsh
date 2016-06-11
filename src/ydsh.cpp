@@ -480,9 +480,6 @@ void DSContext_setArguments(DSContext *ctx, char *const args[]) {
 }
 
 static void setOptionImpl(DSContext *ctx, flag32_set_t flagSet, bool set) {
-    if(hasFlag(flagSet, DS_OPTION_ASSERT)) {
-        ctx->ctx.setAssertion(set);
-    }
     if(hasFlag(flagSet, DS_OPTION_TOPLEVEL)) {
         ctx->checker.setToplevelPrinting(set);
     }

@@ -149,9 +149,9 @@ RuntimeContext::RuntimeContext() :
         falseObj(new Boolean_Object(this->pool.getBooleanType(), false)),
         emptyStrObj(new String_Object(this->pool.getStringType(), std::string())),
         dummy(new DummyObject()), thrownObject(),
-        callStack(new DSValue[DEFAULT_LOCAL_SIZE]),
-        callStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0), stackBottomIndex(0),
-        localVarOffset(0), pc_(0), assertion(true), traceExit(false),
+        callStack(new DSValue[DEFAULT_STACK_SIZE]),
+        callStackSize(DEFAULT_STACK_SIZE), stackTopIndex(0), stackBottomIndex(0),
+        localVarOffset(0), pc_(0), traceExit(false),
         handle_STR(nullptr), IFS_index(0),
         callableStack_(), pipelineEvaluator(nullptr),
         pathCache(), terminationHook(nullptr) { }
@@ -352,7 +352,7 @@ void RuntimeContext::raiseCircularReferenceError() {
 
 void RuntimeContext::expandLocalStack() {
     const unsigned int needSize = this->stackTopIndex;
-    if(needSize >= MAXIMUM_LOCAL_SIZE) {
+    if(needSize >= MAXIMUM_STACK_SIZE) {
         this->stackTopIndex = this->callStackSize - 1;
         this->throwError(this->pool.getStackOverflowErrorType(), "local stack size reaches limit");
     }

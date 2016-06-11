@@ -155,8 +155,8 @@ private:
 
     unsigned int callStackSize;
 
-    static constexpr unsigned int DEFAULT_LOCAL_SIZE = 256;
-    static constexpr unsigned int MAXIMUM_LOCAL_SIZE = 2 * 1024 * 1024;
+    static constexpr unsigned int DEFAULT_STACK_SIZE = 256;
+    static constexpr unsigned int MAXIMUM_STACK_SIZE = 2 * 1024 * 1024;
 
     /**
      * initial value is 0. increment index before push
@@ -177,11 +177,6 @@ private:
      * indicate the index of currently evaluating op code.
      */
     unsigned int pc_;
-
-    /**
-     * if true, enable assertion.
-     */
-    bool assertion;
 
     /**
      * if true, print stack trace of builtin exit command.
@@ -292,14 +287,6 @@ public:
 
     const DSValue &getDBus() {
         return this->getGlobal(this->getBuiltinVarIndex(BuiltinVarOffset::DBUS));
-    }
-
-    bool isAssertion() {
-        return this->assertion;
-    }
-
-    void setAssertion(bool assertion) {
-        this->assertion = assertion;
     }
 
     bool isTraceExit() const {
