@@ -1169,11 +1169,11 @@ static void completeFileName(const std::string &token, CStrBuffer &results, bool
                 continue;
             }
 
-            std::string name = entry->d_name;
+            std::string fileName = entry->d_name;
             if(S_ISDIR(getStMode(fullpath.c_str()))) {
-                name += '/';
+                fileName += '/';
             }
-            append(results, name);
+            append(results, fileName);
         }
     }
     closedir(dir);

@@ -746,7 +746,7 @@ bool DBusProxy_Object::invokeSetter(RuntimeContext &ctx, DSType *recvType,
     appendArg(ctx, &iter, ctx.getPool().getVariantType(), ctx.peek());
 
     // call setter
-    auto ret = this->sendMessage(ctx, std::move(msg));
+    this->sendMessage(ctx, std::move(msg));
     return true;
 }
 
