@@ -1021,21 +1021,18 @@ static void mainLoop(RuntimeContext &ctx) {
             break;
         }
         vmcase(RETURN) {
-            ctx.restoreStackState();
-            ctx.callableStack().pop_back();
+            ctx.unwindStackFrame();
             break;
         }
         vmcase(RETURN_V) {
             DSValue v(ctx.pop());
-            ctx.restoreStackState();
-            ctx.callableStack().pop_back();
+            ctx.unwindStackFrame();
             ctx.push(std::move(v));
             break;
         }
         vmcase(RETURN_UDC) {
             auto v = ctx.pop();
-            ctx.restoreStackState();
-            ctx.callableStack().pop_back();
+            ctx.unwindStackFrame();
             ctx.updateExitStatus(typeAs<Int_Object>(v)->getValue());
             break;
         }
@@ -1258,30 +1255,26 @@ static void mainLoop(RuntimeContext &ctx) {
  */
 static bool handleException(RuntimeContext &ctx) {
     while(!ctx.callableStack().empty()) {
-        if(ctx.pc() == 0) { // from native method
-            ctx.restoreStackState();
-            continue;
-        }
+        if(CALLABLE(ctx) != nullptr) {  // may be null, if native method
+            // search exception entry
+            const unsigned int occurredPC = ctx.pc();
+            const DSType *occurredType = ctx.getThrownObject()->getType();
 
-        // search exception entry
-        const unsigned int occurredPC = ctx.pc();
-        const DSType *occurredType = ctx.getThrownObject()->getType();
-
-        for(unsigned int i = 0; CALLABLE(ctx)->getExceptionEntries()[i].type != nullptr; i++) {
-            const ExceptionEntry &entry = CALLABLE(ctx)->getExceptionEntries()[i];
-            if(occurredPC >= entry.begin && occurredPC < entry.end
-               && entry.type->isSameOrBaseTypeOf(*occurredType)) {
-                ctx.pc() = entry.dest - 1;
-                ctx.loadThrownObject();
-                return true;
+            for(unsigned int i = 0; CALLABLE(ctx)->getExceptionEntries()[i].type != nullptr; i++) {
+                const ExceptionEntry &entry = CALLABLE(ctx)->getExceptionEntries()[i];
+                if(occurredPC >= entry.begin && occurredPC < entry.end
+                   && entry.type->isSameOrBaseTypeOf(*occurredType)) {
+                    ctx.pc() = entry.dest - 1;
+                    ctx.clearOperandStack();
+                    ctx.loadThrownObject();
+                    return true;
+                }
             }
         }
-
-        // unwind stack
-        if(ctx.callableStack().size() > 1) {
-            ctx.restoreStackState();
+        if(ctx.callableStack().size() == 1) {
+            break;  // when top level
         }
-        ctx.callableStack().pop_back();
+        ctx.unwindStackFrame();
     }
     return false;
 }

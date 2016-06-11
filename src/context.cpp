@@ -149,15 +149,15 @@ RuntimeContext::RuntimeContext() :
         falseObj(new Boolean_Object(this->pool.getBooleanType(), false)),
         emptyStrObj(new String_Object(this->pool.getStringType(), std::string())),
         dummy(new DummyObject()), thrownObject(),
-        localStack(new DSValue[DEFAULT_LOCAL_SIZE]),
-        localStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0), stackBottomIndex(0),
+        callStack(new DSValue[DEFAULT_LOCAL_SIZE]),
+        callStackSize(DEFAULT_LOCAL_SIZE), stackTopIndex(0), stackBottomIndex(0),
         localVarOffset(0), pc_(0), assertion(true), traceExit(false),
         handle_STR(nullptr), IFS_index(0),
         callableStack_(), pipelineEvaluator(nullptr),
         pathCache(), terminationHook(nullptr) { }
 
 RuntimeContext::~RuntimeContext() {
-    delete[] this->localStack;
+    delete[] this->callStack;
 }
 
 /**
@@ -310,7 +310,7 @@ void RuntimeContext::reserveGlobalVar(unsigned int size) {
 
 void RuntimeContext::reserveLocalVar(unsigned int size) {
     this->stackTopIndex = size;
-    if(size >= this->localStackSize) {
+    if(size >= this->callStackSize) {
         this->expandLocalStack();
     }
     this->stackBottomIndex = size;
@@ -353,31 +353,33 @@ void RuntimeContext::raiseCircularReferenceError() {
 void RuntimeContext::expandLocalStack() {
     const unsigned int needSize = this->stackTopIndex;
     if(needSize >= MAXIMUM_LOCAL_SIZE) {
-        this->stackTopIndex = this->localStackSize - 1;
+        this->stackTopIndex = this->callStackSize - 1;
         this->throwError(this->pool.getStackOverflowErrorType(), "local stack size reaches limit");
     }
 
-    unsigned int newSize = this->localStackSize;
+    unsigned int newSize = this->callStackSize;
     do {
         newSize += (newSize >> 1);
     } while(newSize < needSize);
     auto newTable = new DSValue[newSize];
-    for(unsigned int i = 0; i < this->localStackSize; i++) {
-        newTable[i] = std::move(this->localStack[i]);
+    for(unsigned int i = 0; i < this->callStackSize; i++) {
+        newTable[i] = std::move(this->callStack[i]);
     }
-    delete[] this->localStack;
-    this->localStack = newTable;
-    this->localStackSize = newSize;
+    delete[] this->callStack;
+    this->callStack = newTable;
+    this->callStackSize = newSize;
 }
 
-void RuntimeContext::unwindOperandStack() {
+void RuntimeContext::clearOperandStack() {
     while(this->stackTopIndex > this->stackBottomIndex) {
         this->popNoReturn();
     }
 }
 
-void RuntimeContext::saveAndSetStackState(unsigned int stackTopOffset,
-                                          unsigned int paramSize, unsigned int maxVarSize) {
+void RuntimeContext::windStackFrame(unsigned int stackTopOffset,
+                    unsigned int paramSize, const Callable *callable) {
+    const unsigned int maxVarSize = callable == nullptr ? paramSize : callable->getLocalVarNum();
+
     const unsigned int oldLocalVarOffset = this->localVarOffset;
     const unsigned int oldStackBottomIndex = this->stackBottomIndex;
     const unsigned int oldStackTopIndex = this->stackTopIndex - stackTopOffset;
@@ -390,14 +392,20 @@ void RuntimeContext::saveAndSetStackState(unsigned int stackTopOffset,
     this->pc_ = 0;
 
     // push old state
-    this->localStack[this->stackTopIndex] = DSValue::createNum(oldLocalVarOffset);
-    this->localStack[this->stackTopIndex - 1] = DSValue::createNum(oldStackBottomIndex);
-    this->localStack[this->stackTopIndex - 2] = DSValue::createNum(oldStackTopIndex);
-    this->localStack[this->stackTopIndex - 3] = DSValue::createNum(oldPC);
+    this->callStack[this->stackTopIndex] = DSValue::createNum(oldLocalVarOffset);
+    this->callStack[this->stackTopIndex - 1] = DSValue::createNum(oldStackBottomIndex);
+    this->callStack[this->stackTopIndex - 2] = DSValue::createNum(oldStackTopIndex);
+    this->callStack[this->stackTopIndex - 3] = DSValue::createNum(oldPC);
+
+    // push callable
+    this->callableStack().push_back(callable);
+    if(callable != nullptr) {
+        this->skipHeader();
+    }
 }
 
-void RuntimeContext::restoreStackState() {
-    this->unwindOperandStack();
+void RuntimeContext::unwindStackFrame() {
+    this->clearOperandStack();
 
     // pop old state
     auto v = this->pop();
@@ -426,6 +434,9 @@ void RuntimeContext::restoreStackState() {
     while(this->stackTopIndex > oldStackTopIndex) {
         this->popNoReturn();
     }
+
+    // pop callable
+    this->callableStack().pop_back();
 }
 
 void RuntimeContext::skipHeader() {
@@ -450,10 +461,8 @@ void RuntimeContext::skipHeader() {
  *                       | offset |   |        |
  */
 void RuntimeContext::applyFuncObject(unsigned int paramSize) {
-    auto *func = typeAs<FuncObject>(this->localStack[this->stackTopIndex - paramSize]);
-    this->saveAndSetStackState(paramSize + 1, paramSize, func->getCallable().getLocalVarNum());
-    this->callableStack_.push_back(&func->getCallable());
-    this->skipHeader();
+    auto *func = typeAs<FuncObject>(this->callStack[this->stackTopIndex - paramSize]);
+    this->windStackFrame(paramSize + 1, paramSize, &func->getCallable());
 }
 
 /**
@@ -468,9 +477,9 @@ void RuntimeContext::callMethod(unsigned short index, unsigned short paramSize) 
     const unsigned int actualParamSize = paramSize + 1; // include receiver
     const unsigned int recvIndex = this->stackTopIndex - paramSize;
 
-    this->saveAndSetStackState(actualParamSize, actualParamSize, actualParamSize);
+    this->windStackFrame(actualParamSize, actualParamSize, nullptr);
 
-    bool status = this->localStack[recvIndex]->getType()->getMethodRef(index)->invoke(*this);
+    bool status = this->callStack[recvIndex]->getType()->getMethodRef(index)->invoke(*this);
     if(!status) {
         this->throwException(this->pop());
     }
@@ -481,7 +490,7 @@ void RuntimeContext::callMethod(unsigned short index, unsigned short paramSize) 
         returnValue = this->pop();
     }
 
-    this->restoreStackState();
+    this->unwindStackFrame();
 
     if(hasRet) {
         this->push(std::move(returnValue));
@@ -515,9 +524,9 @@ void RuntimeContext::newDSObject(DSType *type) {
 bool RuntimeContext::callConstructor(unsigned short paramSize) {
     const unsigned int recvIndex = this->stackTopIndex - paramSize;
 
-    this->saveAndSetStackState(paramSize, paramSize + 1, paramSize + 1);
-    bool status = this->localStack[recvIndex]->getType()->getConstructor()->invoke(*this);
-    this->restoreStackState();
+    this->windStackFrame(paramSize, paramSize + 1, nullptr);
+    bool status = this->callStack[recvIndex]->getType()->getConstructor()->invoke(*this);
+    this->unwindStackFrame();
     return status;
 }
 
@@ -546,11 +555,9 @@ void RuntimeContext::fillInStackTrace(std::vector<StackTraceElement> &stackTrace
     unsigned int curBottomIndex = this->stackBottomIndex;
 
     while(callableDepth) {
-        bool createElement = curPC > 0; // if PC is 0, within native method
-
-        if(createElement) {
-            // create stack element
-            auto &callable = this->callableStack()[--callableDepth];
+        auto &callable = this->callableStack()[--callableDepth];
+        if(callable != nullptr) {
+            // create stack trace element
             const char *sourceName = callable->getSrcInfo()->getSourceName().c_str();
             unsigned int pos = getSourcePos(callable->getSourcePosEntries(), curPC);
 
@@ -576,8 +583,8 @@ void RuntimeContext::fillInStackTrace(std::vector<StackTraceElement> &stackTrace
         // unwind state
         if(callableDepth) {
             const unsigned int offset = curBottomIndex;
-            curPC = static_cast<unsigned int>(this->localStack[offset - 3].value());
-            curBottomIndex = static_cast<unsigned int>(this->localStack[offset - 1].value());
+            curPC = static_cast<unsigned int>(this->callStack[offset - 3].value());
+            curBottomIndex = static_cast<unsigned int>(this->callStack[offset - 1].value());
         }
     }
 }
@@ -765,9 +772,7 @@ void RuntimeContext::callUserDefinedCommand(const FuncObject *obj, DSValue *argA
     this->push(DSValue::create<Array_Object>(this->pool.getStringArrayType(), std::move(values)));
 
     // set stack stack
-    this->saveAndSetStackState(1, 1, obj->getCallable().getLocalVarNum());
-    this->callableStack_.push_back(&obj->getCallable());
-    this->skipHeader();
+    this->windStackFrame(1, 1, &obj->getCallable());
 
     // set variable
     auto argv = typeAs<Array_Object>(this->getLocal(0));

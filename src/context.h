@@ -151,9 +151,9 @@ private:
      *   +-----------------+   +-----------------+-----------+   +-------+----+---------------+------------------+----------------+
      *   |                           local variable                      |                 caller state                           | operand stack
      */
-    DSValue *localStack;
+    DSValue *callStack;
 
-    unsigned int localStackSize;
+    unsigned int callStackSize;
 
     static constexpr unsigned int DEFAULT_LOCAL_SIZE = 256;
     static constexpr unsigned int MAXIMUM_LOCAL_SIZE = 2 * 1024 * 1024;
@@ -334,7 +334,7 @@ public:
 
     /**
      * set stackTopIndex.
-     * if this->localStackSize < size, expand localStack.
+     * if this->localStackSize < size, expand callStack.
      */
     void reserveLocalVar(unsigned int size);
 
@@ -368,7 +368,7 @@ public:
     void raiseCircularReferenceError();
 
     /**
-     * get thrownObject and push to localStack
+     * get thrownObject and push to callStack
      */
     void loadThrownObject() {
         this->push(std::move(this->thrownObject));
@@ -383,102 +383,105 @@ public:
      */
     void expandLocalStack();
 
-    void unwindOperandStack();
+    void clearOperandStack();
 
-    void saveAndSetStackState(unsigned int stackTopOffset,
-                              unsigned int paramSize, unsigned int maxVarSize);
-    void restoreStackState();
+    /**
+     * callable may be null, when call native method.
+     */
+    void windStackFrame(unsigned int stackTopOffset, unsigned int paramSize, const Callable *callable);
+
+    void unwindStackFrame();
 
     void skipHeader();
 
     // operand manipulation
     void push(const DSValue &value) {
-        if(++this->stackTopIndex >= this->localStackSize) {
+        if(++this->stackTopIndex >= this->callStackSize) {
             this->expandLocalStack();
         }
-        this->localStack[this->stackTopIndex] = value;
+        this->callStack[this->stackTopIndex] = value;
     }
 
     void push(DSValue &&value) {
-        if(++this->stackTopIndex >= this->localStackSize) {
+        if(++this->stackTopIndex >= this->callStackSize) {
             this->expandLocalStack();
         }
-        this->localStack[this->stackTopIndex] = std::move(value);
+        this->callStack[this->stackTopIndex] = std::move(value);
     }
 
     DSValue pop() {
-        return std::move(this->localStack[this->stackTopIndex--]);
+        return std::move(this->callStack[this->stackTopIndex--]);
     }
 
     void popNoReturn() {
-        this->localStack[this->stackTopIndex--].reset();
+        this->callStack[this->stackTopIndex--].reset();
     }
 
     const DSValue &peek() {
-        return this->localStack[this->stackTopIndex];
+        return this->callStack[this->stackTopIndex];
     }
 
     void dup() {
-        if(++this->stackTopIndex >= this->localStackSize) {
+        if(++this->stackTopIndex >= this->callStackSize) {
             this->expandLocalStack();
         }
-        this->localStack[this->stackTopIndex] = this->localStack[this->stackTopIndex - 1];
+        this->callStack[this->stackTopIndex] = this->callStack[this->stackTopIndex - 1];
     }
 
     void dup2() {
         this->stackTopIndex += 2;
-        if(this->stackTopIndex >= this->localStackSize) {
+        if(this->stackTopIndex >= this->callStackSize) {
             this->expandLocalStack();
         }
-        this->localStack[this->stackTopIndex] = this->localStack[this->stackTopIndex - 2];
-        this->localStack[this->stackTopIndex - 1] = this->localStack[this->stackTopIndex - 3];
+        this->callStack[this->stackTopIndex] = this->callStack[this->stackTopIndex - 2];
+        this->callStack[this->stackTopIndex - 1] = this->callStack[this->stackTopIndex - 3];
     }
 
     void swap() {
-        this->localStack[this->stackTopIndex].swap(this->localStack[this->stackTopIndex - 1]);
+        this->callStack[this->stackTopIndex].swap(this->callStack[this->stackTopIndex - 1]);
     }
 
     // variable manipulation
     void storeGlobal(unsigned int index) {
-        this->localStack[index] = this->pop();
+        this->callStack[index] = this->pop();
     }
 
     void loadGlobal(unsigned int index) {
-        auto v(this->localStack[index]);
-        this->push(std::move(v));   // localStack may be expanded.
+        auto v(this->callStack[index]);
+        this->push(std::move(v));   // callStack may be expanded.
     }
 
     void setGlobal(unsigned int index, const DSValue &obj) {
-        this->localStack[index] = obj;
+        this->callStack[index] = obj;
     }
 
     void setGlobal(unsigned int index, DSValue &&obj) {
-        this->localStack[index] = std::move(obj);
+        this->callStack[index] = std::move(obj);
     }
 
     const DSValue &getGlobal(unsigned int index) const {
-        return this->localStack[index];
+        return this->callStack[index];
     }
 
     void storeLocal(unsigned int index) {
-        this->localStack[this->localVarOffset + index] = this->pop();
+        this->callStack[this->localVarOffset + index] = this->pop();
     }
 
     void loadLocal(unsigned int index) {
-        auto v(this->localStack[this->localVarOffset + index]); // localStack may be expanded.
+        auto v(this->callStack[this->localVarOffset + index]); // callStack may be expanded.
         this->push(std::move(v));
     }
 
     void setLocal(unsigned int index, const DSValue &obj) {
-        this->localStack[this->localVarOffset + index] = obj;
+        this->callStack[this->localVarOffset + index] = obj;
     }
 
     void setLocal(unsigned int index, DSValue &&obj) {
-        this->localStack[this->localVarOffset + index] = std::move(obj);
+        this->callStack[this->localVarOffset + index] = std::move(obj);
     }
 
     const DSValue &getLocal(unsigned int index) {
-        return this->localStack[this->localVarOffset + index];
+        return this->callStack[this->localVarOffset + index];
     }
 
     // field manipulation
@@ -492,8 +495,8 @@ public:
      * get field from stack top value.
      */
     void loadField(unsigned int index) {
-        this->localStack[this->stackTopIndex] =
-                this->localStack[this->stackTopIndex]->getFieldTable()[index];
+        this->callStack[this->stackTopIndex] =
+                this->callStack[this->stackTopIndex]->getFieldTable()[index];
     }
 
     std::vector<const Callable *> &callableStack() noexcept {
