@@ -372,6 +372,7 @@ public:
         this->redirOptions.clear();
         this->procStates.clear();
         delete[] this->selfpipes;
+        this->selfpipes = nullptr;
     }
 
     void redirect(RuntimeContext &ctx, unsigned int procIndex, int errorPipe);
