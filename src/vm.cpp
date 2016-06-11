@@ -516,6 +516,9 @@ static PipelineState &activePipeline(RuntimeContext &ctx) {
 }
 
 static void callCommand(RuntimeContext &ctx, unsigned short procIndex) {
+    // reset exit status
+    ctx.updateExitStatus(0);
+
     auto &pipeline = activePipeline(ctx);
     const unsigned int procSize = pipeline.procStates.size();
 

@@ -30,12 +30,38 @@ hoge4() {
 hoge4
 assert($? == 6)
 
+hoge5() {
+    false
+}
+
+hoge5
+assert $? == 1
+
+hoge6() {
+    34  # if any commands are called, exit status is always 0.
+}
+hoge6
+assert $? == 0
+
 # argument
 echo2() {
     echo $@
 }
 
 assert("$(echo2 a b c)" == "a b c")
+
+let oldshell = $0
+echo3() {
+    assert $0 == $oldshell
+    assert $# == $@.size()
+}
+assert echo3 a b c
+
+echo4() {
+    echo $1 $2 $3 $4 $5 $6 $7 $8 $9
+}
+assert "$(echo4 1 2 3)" == "1 2 3"
+assert "$(echo4 1 2 3 4 5 6 7 8 9 10 11)" == "1 2 3 4 5 6 7 8 9"
 
 
 # command override
