@@ -50,9 +50,7 @@ DescTokenKind DescLexer::nextToken(Token &token) {
       "//!bind:"             { RET(DESC_PREFIX); }
       "function"             { RET(FUNC); }
       "constructor"          { RET(INIT); }
-      "static"               { RET(STATIC); }
-      "inline"               { RET(INLINE); }
-      "void"                 { RET(VOID);}
+      "YDSH_METHOD"          { RET(YDSH_METHOD); }
       "RuntimeContext"       { RET(RCTX); }
       "Array"                { RET(ARRAY); }
       "Map"                  { RET(MAP); }

@@ -767,9 +767,7 @@ void Parser::parse_funcDecl(const std::string &line, std::unique_ptr<Element> &e
     DescLexer lexer(line.c_str());
     this->init(lexer);
 
-    this->expect(STATIC);
-    this->expect(INLINE);
-    this->expect(VOID);
+    this->expect(YDSH_METHOD);
 
     Token token = this->expect(IDENTIFIER);
     std::string str(this->lexer->toTokenText(token));

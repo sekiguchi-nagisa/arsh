@@ -27,9 +27,7 @@
     OP(DESC_PREFIX)    /* //!bind: */\
     OP(FUNC)           /* function */\
     OP(INIT)           /* constructor */\
-    OP(STATIC)         /* static */\
-    OP(INLINE)         /* inline */\
-    OP(VOID)           /* void */\
+    OP(YDSH_METHOD)    /* YDSH_METHOD */\
     OP(RCTX)           /* RuntimeContext */\
     OP(ARRAY)          /* Array */\
     OP(MAP)            /* Map */\
