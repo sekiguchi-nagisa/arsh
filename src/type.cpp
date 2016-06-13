@@ -39,7 +39,7 @@ MethodHandle *DSType::getConstructorHandle(TypePool &) {
     return nullptr;
 }
 
-const MethodRef *DSType::getConstructor() {
+native_func_t DSType::getConstructor() {
     return nullptr;
 }
 
@@ -70,11 +70,11 @@ bool DSType::isSameOrBaseTypeOf(const DSType &targetType) const {
     return superType != nullptr && this->isSameOrBaseTypeOf(*superType);
 }
 
-MethodRef *DSType::getMethodRef(unsigned int methodIndex) {
+native_func_t DSType::getMethodRef(unsigned int methodIndex) {
     return this->superType != nullptr ? this->superType->getMethodRef(methodIndex) : 0;
 }
 
-void DSType::copyAllMethodRef(std::vector<MethodRef> &) {
+void DSType::copyAllMethodRef(std::vector<native_func_t> &) {
 }
 
 // ##########################
@@ -132,7 +132,7 @@ BuiltinType::BuiltinType(DSType *superType, native_type_info_t info, flag8_set_t
         this->methodHandleMap.insert(std::make_pair(std::string(funcInfo->funcName), handle));
 
         // set to method table
-        this->methodTable[methodIndex] = MethodRef(this->info.getMethodInfo(i).func_ptr);
+        this->methodTable[methodIndex] = this->info.getMethodInfo(i).func_ptr;
     }
 }
 
@@ -148,13 +148,13 @@ MethodHandle *BuiltinType::getConstructorHandle(TypePool &typePool) {
     if(this->constructorHandle == nullptr && this->info.constructorSize != 0) {
         this->constructorHandle = new MethodHandle(0);
         this->initMethodHandle(this->constructorHandle, typePool, this->info.getInitInfo());
-        this->constructor = MethodRef(this->info.getInitInfo().func_ptr);
+        this->constructor = this->info.getInitInfo().func_ptr;
     }
     return this->constructorHandle;
 }
 
-const MethodRef *BuiltinType::getConstructor() {
-    return &this->constructor;
+native_func_t BuiltinType::getConstructor() {
+    return this->constructor;
 }
 
 MethodHandle *BuiltinType::lookupMethodHandle(TypePool &typePool, const std::string &methodName) {
@@ -191,11 +191,11 @@ unsigned int BuiltinType::getMethodSize() {
     return this->methodHandleMap.size();
 }
 
-MethodRef *BuiltinType::getMethodRef(unsigned int methodIndex) {
-    return &this->methodTable[methodIndex];
+native_func_t BuiltinType::getMethodRef(unsigned int methodIndex) {
+    return this->methodTable[methodIndex];
 }
 
-void BuiltinType::copyAllMethodRef(std::vector<MethodRef> &methodTable) {
+void BuiltinType::copyAllMethodRef(std::vector<native_func_t> &methodTable) {
     unsigned int size = this->getMethodSize();
     assert(size <= methodTable.size());
 
@@ -244,7 +244,7 @@ MethodHandle *TupleType::getConstructorHandle(TypePool &typePool) {
     if(this->elementTypes.size() == 1 && this->constructorHandle == nullptr) {
         this->constructorHandle = new MethodHandle(0);
         this->initMethodHandle(this->constructorHandle, typePool, this->info.getInitInfo());
-        this->constructor = MethodRef(this->info.getInitInfo().func_ptr);
+        this->constructor = this->info.getInitInfo().func_ptr;
     }
     return this->constructorHandle;
 }
@@ -355,7 +355,7 @@ ErrorType::~ErrorType() {
 }
 
 NativeFuncInfo *ErrorType::funcInfo = nullptr;
-MethodRef ErrorType::initRef;
+native_func_t ErrorType::initRef;
 
 MethodHandle *ErrorType::getConstructorHandle(TypePool &typePool) {
     if(this->constructorHandle == nullptr) {
@@ -366,8 +366,8 @@ MethodHandle *ErrorType::getConstructorHandle(TypePool &typePool) {
     return this->constructorHandle;
 }
 
-const MethodRef *ErrorType::getConstructor() {
-    return &initRef;
+native_func_t ErrorType::getConstructor() {
+    return initRef;
 }
 
 unsigned int ErrorType::getFieldSize() {
@@ -396,7 +396,7 @@ void ErrorType::accept(TypeVisitor *visitor) {
 void ErrorType::registerFuncInfo(NativeFuncInfo &info) {
     if(funcInfo == nullptr) {
         funcInfo = &info;
-        initRef = MethodRef(info.func_ptr);
+        initRef = info.func_ptr;
     }
 }
 

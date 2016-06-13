@@ -474,7 +474,7 @@ void RuntimeContext::callMethod(unsigned short index, unsigned short paramSize) 
 
     this->windStackFrame(actualParamSize, actualParamSize, nullptr);
 
-    this->callStack[recvIndex]->getType()->getMethodRef(index)->invoke(*this);
+    this->callStack[recvIndex]->getType()->getMethodRef(index)(*this);
 
     bool hasRet = this->stackTopIndex > this->stackBottomIndex;
     DSValue returnValue;
@@ -517,7 +517,7 @@ void RuntimeContext::callConstructor(unsigned short paramSize) {
     const unsigned int recvIndex = this->stackTopIndex - paramSize;
 
     this->windStackFrame(paramSize, paramSize + 1, nullptr);
-    this->callStack[recvIndex]->getType()->getConstructor()->invoke(*this);
+    this->callStack[recvIndex]->getType()->getConstructor()(*this);
     this->unwindStackFrame();
 }
 
