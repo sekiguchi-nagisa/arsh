@@ -785,21 +785,21 @@ struct DBus_Object : public DSObject {
      * init and get Bus_ObjectImpl representing for system bus.
      * return false, if error happened
     */
-    virtual bool getSystemBus(RuntimeContext &ctx);
+    virtual DSValue getSystemBus(RuntimeContext &ctx);
 
     /**
      * init and get Bus_ObjectImpl representing for session bus.
      * return false, if error happened
      */
-    virtual bool getSessionBus(RuntimeContext &ctx);
+    virtual DSValue getSessionBus(RuntimeContext &ctx);
 
-    virtual bool waitSignal(RuntimeContext &ctx);
+    virtual void waitSignal(RuntimeContext &ctx);
 
     bool supportDBus();
-    virtual bool getServiceFromProxy(RuntimeContext &ctx, const DSValue &proxy);
-    virtual bool getObjectPathFromProxy(RuntimeContext &ctx, const DSValue &proxy);
-    virtual bool getIfaceListFromProxy(RuntimeContext &ctx, const DSValue &proxy);
-    virtual bool introspectProxy(RuntimeContext &ctx, const DSValue &proxy);
+    virtual DSValue getServiceFromProxy(RuntimeContext &ctx, const DSValue &proxy);
+    virtual DSValue getObjectPathFromProxy(RuntimeContext &ctx, const DSValue &proxy);
+    virtual DSValue getIfaceListFromProxy(RuntimeContext &ctx, const DSValue &proxy);
+    virtual DSValue introspectProxy(RuntimeContext &ctx, const DSValue &proxy);
 
     static DBus_Object *newDBus_Object(TypePool *typePool);
 };
@@ -808,8 +808,8 @@ struct Bus_Object : public DSObject {
     explicit Bus_Object(DSType &type);
     virtual ~Bus_Object() = default;
 
-    virtual bool service(RuntimeContext &ctx, std::string &&serviceName);
-    virtual bool listNames(RuntimeContext &ctx, bool activeName);
+    virtual DSValue service(RuntimeContext &ctx, std::string &&serviceName);
+    virtual DSValue listNames(RuntimeContext &ctx, bool activeName);
 };
 
 struct Service_Object : public DSObject {
@@ -819,7 +819,7 @@ struct Service_Object : public DSObject {
     /**
      * objectPath is String_Object
      */
-    virtual bool object(RuntimeContext &ctx, const DSValue &objectPath);
+    virtual DSValue object(RuntimeContext &ctx, const DSValue &objectPath);
 };
 
 } // namespace ydsh

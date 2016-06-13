@@ -474,17 +474,11 @@ void RuntimeContext::callMethod(unsigned short index, unsigned short paramSize) 
 
     this->windStackFrame(actualParamSize, actualParamSize, nullptr);
 
-    this->callStack[recvIndex]->getType()->getMethodRef(index)(*this);
-
-    bool hasRet = this->stackTopIndex > this->stackBottomIndex;
-    DSValue returnValue;
-    if(hasRet) {
-        returnValue = this->pop();
-    }
+    DSValue returnValue = this->callStack[recvIndex]->getType()->getMethodRef(index)(*this);
 
     this->unwindStackFrame();
 
-    if(hasRet) {
+    if(returnValue) {
         this->push(std::move(returnValue));
     }
 }

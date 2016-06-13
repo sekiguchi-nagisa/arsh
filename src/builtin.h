@@ -28,13 +28,13 @@
 
 // helper macro
 #define LOCAL(index) (ctx.getLocal(index))
-#define RET(value) do { ctx.push(value); return; } while(false)
-#define RET_BOOL(value) do { ctx.push((value) ? ctx.getTrueObj() : ctx.getFalseObj()); return; } while(false)
-#define RET_VOID return
+#define RET(value) return value
+#define RET_BOOL(value) return ((value) ? ctx.getTrueObj() : ctx.getFalseObj())
+#define RET_VOID return DSValue()
 
 #define SUPPRESS_WARNING(a) (void)a
 
-#define YDSH_METHOD static inline void
+#define YDSH_METHOD static inline DSValue
 
 /**
  *   //!bind: function <method name>($this : <receiver type>, $param1 : <type1>, $param2? : <type2>, ...) : <return type>
@@ -172,13 +172,13 @@ YDSH_METHOD byte_plus(RuntimeContext &ctx) {
 //!bind: function $OP_MINUS($this: Byte) : Byte
 YDSH_METHOD byte_minus(RuntimeContext &ctx) {
     SUPPRESS_WARNING(byte_minus);
-    unary_MINUS<unsigned char>(ctx);
+    RET(unary_MINUS<unsigned char>(ctx));
 }
 
 //!bind: function $OP_NOT($this : Byte) : Byte
 YDSH_METHOD byte_not(RuntimeContext &ctx) {
     SUPPRESS_WARNING(byte_not);
-    unary_NOT<unsigned char>(ctx);
+    RET(unary_NOT<unsigned char>(ctx));
 }
 
 
@@ -195,13 +195,13 @@ YDSH_METHOD int16_plus(RuntimeContext &ctx) {
 //!bind: function $OP_MINUS($this: Int16) : Int16
 YDSH_METHOD int16_minus(RuntimeContext &ctx) {
     SUPPRESS_WARNING(int16_minus);
-    unary_MINUS<short>(ctx);
+    RET(unary_MINUS<short>(ctx));
 }
 
 //!bind: function $OP_NOT($this : Int16) : Int16
 YDSH_METHOD int16_not(RuntimeContext &ctx) {
     SUPPRESS_WARNING(int16_not);
-    unary_NOT<short>(ctx);
+    RET(unary_NOT<short>(ctx));
 }
 
 
@@ -218,13 +218,13 @@ YDSH_METHOD uint16_plus(RuntimeContext &ctx) {
 //!bind: function $OP_MINUS($this: Uint16) : Uint16
 YDSH_METHOD uint16_minus(RuntimeContext &ctx) {
     SUPPRESS_WARNING(uint16_minus);
-    unary_MINUS<unsigned short>(ctx);
+    RET(unary_MINUS<unsigned short>(ctx));
 }
 
 //!bind: function $OP_NOT($this : Uint16) : Uint16
 YDSH_METHOD uint16_not(RuntimeContext &ctx) {
     SUPPRESS_WARNING(uint16_not);
-    unary_NOT<unsigned short>(ctx);
+    RET(unary_NOT<unsigned short>(ctx));
 }
 
 
@@ -243,13 +243,13 @@ YDSH_METHOD int_plus(RuntimeContext & ctx) {
 //!bind: function $OP_MINUS($this : Int32) : Int32
 YDSH_METHOD int_minus(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_minus);
-    unary_MINUS<int>(ctx);
+    RET(unary_MINUS<int>(ctx));
 }
 
 //!bind: function $OP_NOT($this : Int32) : Int32
 YDSH_METHOD int_not(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_not);
-    unary_NOT<int>(ctx);
+    RET(unary_NOT<int>(ctx));
 }
 
 
@@ -260,31 +260,31 @@ YDSH_METHOD int_not(RuntimeContext & ctx) {
 //!bind: function $OP_ADD($this : Int32, $target : Int32) : Int32
 YDSH_METHOD int_2_int_add(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_add);
-    basic_ADD<int>(ctx);
+    RET(basic_ADD<int>(ctx));
 }
 
 //!bind: function $OP_SUB($this : Int32, $target : Int32) : Int32
 YDSH_METHOD int_2_int_sub(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_sub);
-    basic_SUB<int>(ctx);
+    RET(basic_SUB<int>(ctx));
 }
 
 //!bind: function $OP_MUL($this : Int32, $target : Int32) : Int32
 YDSH_METHOD int_2_int_mul(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_mul);
-    basic_MUL<int>(ctx);
+    RET(basic_MUL<int>(ctx));
 }
 
 //!bind: function $OP_DIV($this : Int32, $target : Int32) : Int32
 YDSH_METHOD int_2_int_div(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_div);
-    basic_div<int>(ctx);
+    RET(basic_div<int>(ctx));
 }
 
 //!bind: function $OP_MOD($this : Int32, $target : Int32) : Int32
 YDSH_METHOD int_2_int_mod(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_mod);
-    basic_mod<int>(ctx);
+    RET(basic_mod<int>(ctx));
 }
 
 //   =====  equality  =====
@@ -306,25 +306,25 @@ YDSH_METHOD int_2_int_ne(RuntimeContext & ctx) {
 //!bind: function $OP_LT($this : Int32, $target : Int32) : Boolean
 YDSH_METHOD int_2_int_lt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_lt);
-    relate_LT<int>(ctx);
+    RET(relate_LT<int>(ctx));
 }
 
 //!bind: function $OP_GT($this : Int32, $target : Int32) : Boolean
 YDSH_METHOD int_2_int_gt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_gt);
-    relate_GT<int>(ctx);
+    RET(relate_GT<int>(ctx));
 }
 
 //!bind: function $OP_LE($this : Int32, $target : Int32) : Boolean
 YDSH_METHOD int_2_int_le(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_le);
-    relate_LE<int>(ctx);
+    RET(relate_LE<int>(ctx));
 }
 
 //!bind: function $OP_GE($this : Int32, $target : Int32) : Boolean
 YDSH_METHOD int_2_int_ge(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_ge);
-    relate_GE<int>(ctx);
+    RET(relate_GE<int>(ctx));
 }
 
 //   =====  logical  =====
@@ -332,19 +332,19 @@ YDSH_METHOD int_2_int_ge(RuntimeContext & ctx) {
 //!bind: function $OP_AND($this : Int32, $target : Int32) : Int32
 YDSH_METHOD int_2_int_and(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_and);
-    basic_AND<int>(ctx);
+    RET(basic_AND<int>(ctx));
 }
 
 //!bind: function $OP_OR($this : Int32, $target : Int32) : Int32
 YDSH_METHOD int_2_int_or(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_or);
-    basic_OR<int>(ctx);
+    RET(basic_OR<int>(ctx));
 }
 
 //!bind: function $OP_XOR($this : Int32, $target : Int32) : Int32
 YDSH_METHOD int_2_int_xor(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_xor);
-    basic_XOR<int>(ctx);
+    RET(basic_XOR<int>(ctx));
 }
 
 
@@ -363,13 +363,13 @@ YDSH_METHOD uint_plus(RuntimeContext & ctx) {
 //!bind: function $OP_MINUS($this : Uint32) : Uint32
 YDSH_METHOD uint_minus(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_minus);
-    unary_MINUS<unsigned int>(ctx);
+    RET(unary_MINUS<unsigned int>(ctx));
 }
 
 //!bind: function $OP_NOT($this : Uint32) : Uint32
 YDSH_METHOD uint_not(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_not);
-    unary_NOT<unsigned int>(ctx);
+    RET(unary_NOT<unsigned int>(ctx));
 }
 
 
@@ -380,31 +380,31 @@ YDSH_METHOD uint_not(RuntimeContext & ctx) {
 //!bind: function $OP_ADD($this : Uint32, $target : Uint32) : Uint32
 YDSH_METHOD uint_2_uint_add(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_add);
-    basic_ADD<unsigned int>(ctx);
+    RET(basic_ADD<unsigned int>(ctx));
 }
 
 //!bind: function $OP_SUB($this : Uint32, $target : Uint32) : Uint32
 YDSH_METHOD uint_2_uint_sub(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_sub);
-    basic_SUB<unsigned int>(ctx);
+    RET(basic_SUB<unsigned int>(ctx));
 }
 
 //!bind: function $OP_MUL($this : Uint32, $target : Uint32) : Uint32
 YDSH_METHOD uint_2_uint_mul(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_mul);
-    basic_MUL<unsigned int>(ctx);
+    RET(basic_MUL<unsigned int>(ctx));
 }
 
 //!bind: function $OP_DIV($this : Uint32, $target : Uint32) : Uint32
 YDSH_METHOD uint_2_uint_div(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_div);
-    basic_div<unsigned int>(ctx);
+    RET(basic_div<unsigned int>(ctx));
 }
 
 //!bind: function $OP_MOD($this : Uint32, $target : Uint32) : Uint32
 YDSH_METHOD uint_2_uint_mod(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_mod);
-    basic_mod<unsigned int>(ctx);
+    RET(basic_mod<unsigned int>(ctx));
 }
 
 //   =====  equality  =====
@@ -426,25 +426,25 @@ YDSH_METHOD uint_2_uint_ne(RuntimeContext & ctx) {
 //!bind: function $OP_LT($this : Uint32, $target : Uint32) : Boolean
 YDSH_METHOD uint_2_uint_lt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_lt);
-    relate_LT<unsigned int>(ctx);
+    RET(relate_LT<unsigned int>(ctx));
 }
 
 //!bind: function $OP_GT($this : Uint32, $target : Uint32) : Boolean
 YDSH_METHOD uint_2_uint_gt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_gt);
-    relate_GT<unsigned int>(ctx);
+    RET(relate_GT<unsigned int>(ctx));
 }
 
 //!bind: function $OP_LE($this : Uint32, $target : Uint32) : Boolean
 YDSH_METHOD uint_2_uint_le(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_le);
-    relate_LE<unsigned int>(ctx);
+    RET(relate_LE<unsigned int>(ctx));
 }
 
 //!bind: function $OP_GE($this : Uint32, $target : Uint32) : Boolean
 YDSH_METHOD uint_2_uint_ge(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_ge);
-    relate_GE<unsigned int>(ctx);
+    RET(relate_GE<unsigned int>(ctx));
 }
 
 //   =====  logical  =====
@@ -452,19 +452,19 @@ YDSH_METHOD uint_2_uint_ge(RuntimeContext & ctx) {
 //!bind: function $OP_AND($this : Uint32, $target : Uint32) : Uint32
 YDSH_METHOD uint_2_uint_and(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_and);
-    basic_AND<unsigned int>(ctx);
+    RET(basic_AND<unsigned int>(ctx));
 }
 
 //!bind: function $OP_OR($this : Uint32, $target : Uint32) : Uint32
 YDSH_METHOD uint_2_uint_or(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_or);
-    basic_OR<unsigned int>(ctx);
+    RET(basic_OR<unsigned int>(ctx));
 }
 
 //!bind: function $OP_XOR($this : Uint32, $target : Uint32) : Uint32
 YDSH_METHOD uint_2_uint_xor(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_xor);
-    basic_XOR<unsigned int>(ctx);
+    RET(basic_XOR<unsigned int>(ctx));
 }
 
 // ###################
@@ -482,13 +482,13 @@ YDSH_METHOD int64_plus(RuntimeContext & ctx) {
 //!bind: function $OP_MINUS($this : Int64) : Int64
 YDSH_METHOD int64_minus(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_minus);
-    unary_MINUS<long>(ctx);
+    RET(unary_MINUS<long>(ctx));
 }
 
 //!bind: function $OP_NOT($this : Int64) : Int64
 YDSH_METHOD int64_not(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_not);
-    unary_NOT<long>(ctx);
+    RET(unary_NOT<long>(ctx));
 }
 
 
@@ -499,31 +499,31 @@ YDSH_METHOD int64_not(RuntimeContext & ctx) {
 //!bind: function $OP_ADD($this : Int64, $target : Int64) : Int64
 YDSH_METHOD int64_2_int64_add(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_add);
-    basic_ADD<long>(ctx);
+    RET(basic_ADD<long>(ctx));
 }
 
 //!bind: function $OP_SUB($this : Int64, $target : Int64) : Int64
 YDSH_METHOD int64_2_int64_sub(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_sub);
-    basic_SUB<long>(ctx);
+    RET(basic_SUB<long>(ctx));
 }
 
 //!bind: function $OP_MUL($this : Int64, $target : Int64) : Int64
 YDSH_METHOD int64_2_int64_mul(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_mul);
-    basic_MUL<long>(ctx);
+    RET(basic_MUL<long>(ctx));
 }
 
 //!bind: function $OP_DIV($this : Int64, $target : Int64) : Int64
 YDSH_METHOD int64_2_int64_div(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_div);
-    basic_div<long>(ctx);
+    RET(basic_div<long>(ctx));
 }
 
 //!bind: function $OP_MOD($this : Int64, $target : Int64) : Int64
 YDSH_METHOD int64_2_int64_mod(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_mod);
-    basic_mod<long>(ctx);
+    RET(basic_mod<long>(ctx));
 }
 
 //   =====  equality  =====
@@ -545,25 +545,25 @@ YDSH_METHOD int64_2_int64_ne(RuntimeContext & ctx) {
 //!bind: function $OP_LT($this : Int64, $target : Int64) : Boolean
 YDSH_METHOD int64_2_int64_lt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_lt);
-    relate_LT<long>(ctx);
+    RET(relate_LT<long>(ctx));
 }
 
 //!bind: function $OP_GT($this : Int64, $target : Int64) : Boolean
 YDSH_METHOD int64_2_int64_gt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_gt);
-    relate_GT<long>(ctx);
+    RET(relate_GT<long>(ctx));
 }
 
 //!bind: function $OP_LE($this : Int64, $target : Int64) : Boolean
 YDSH_METHOD int64_2_int64_le(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_le);
-    relate_LE<long>(ctx);
+    RET(relate_LE<long>(ctx));
 }
 
 //!bind: function $OP_GE($this : Int64, $target : Int64) : Boolean
 YDSH_METHOD int64_2_int64_ge(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_ge);
-    relate_GE<long>(ctx);
+    RET(relate_GE<long>(ctx));
 }
 
 //   =====  logical  =====
@@ -571,19 +571,19 @@ YDSH_METHOD int64_2_int64_ge(RuntimeContext & ctx) {
 //!bind: function $OP_AND($this : Int64, $target : Int64) : Int64
 YDSH_METHOD int64_2_int64_and(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_and);
-    basic_AND<long>(ctx);
+    RET(basic_AND<long>(ctx));
 }
 
 //!bind: function $OP_OR($this : Int64, $target : Int64) : Int64
 YDSH_METHOD int64_2_int64_or(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_or);
-    basic_OR<long>(ctx);
+    RET(basic_OR<long>(ctx));
 }
 
 //!bind: function $OP_XOR($this : Int64, $target : Int64) : Int64
 YDSH_METHOD int64_2_int64_xor(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_xor);
-    basic_XOR<long>(ctx);
+    RET(basic_XOR<long>(ctx));
 }
 
 // ####################
@@ -601,13 +601,13 @@ YDSH_METHOD uint64_plus(RuntimeContext & ctx) {
 //!bind: function $OP_MINUS($this : Uint64) : Uint64
 YDSH_METHOD uint64_minus(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_minus);
-    unary_MINUS<unsigned long>(ctx);
+    RET(unary_MINUS<unsigned long>(ctx));
 }
 
 //!bind: function $OP_NOT($this : Uint64) : Uint64
 YDSH_METHOD uint64_not(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_not);
-    unary_NOT<unsigned long>(ctx);
+    RET(unary_NOT<unsigned long>(ctx));
 }
 
 
@@ -618,31 +618,31 @@ YDSH_METHOD uint64_not(RuntimeContext & ctx) {
 //!bind: function $OP_ADD($this : Uint64, $target : Uint64) : Uint64
 YDSH_METHOD uint64_2_uint64_add(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_add);
-    basic_ADD<unsigned long>(ctx);
+    RET(basic_ADD<unsigned long>(ctx));
 }
 
 //!bind: function $OP_SUB($this : Uint64, $target : Uint64) : Uint64
 YDSH_METHOD uint64_2_uint64_sub(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_sub);
-    basic_SUB<unsigned long>(ctx);
+    RET(basic_SUB<unsigned long>(ctx));
 }
 
 //!bind: function $OP_MUL($this : Uint64, $target : Uint64) : Uint64
 YDSH_METHOD uint64_2_uint64_mul(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_mul);
-    basic_MUL<unsigned long>(ctx);
+    RET(basic_MUL<unsigned long>(ctx));
 }
 
 //!bind: function $OP_DIV($this : Uint64, $target : Uint64) : Uint64
 YDSH_METHOD uint64_2_uint64_div(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_div);
-    basic_div<unsigned long>(ctx);
+    RET(basic_div<unsigned long>(ctx));
 }
 
 //!bind: function $OP_MOD($this : Uint64, $target : Uint64) : Uint64
 YDSH_METHOD uint64_2_uint64_mod(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_mod);
-    basic_mod<unsigned long>(ctx);
+    RET(basic_mod<unsigned long>(ctx));
 }
 
 //   =====  equality  =====
@@ -664,25 +664,25 @@ YDSH_METHOD uint64_2_uint64_ne(RuntimeContext & ctx) {
 //!bind: function $OP_LT($this : Uint64, $target : Uint64) : Boolean
 YDSH_METHOD uint64_2_uint64_lt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_lt);
-    relate_LT<unsigned long>(ctx);
+    RET(relate_LT<unsigned long>(ctx));
 }
 
 //!bind: function $OP_GT($this : Uint64, $target : Uint64) : Boolean
 YDSH_METHOD uint64_2_uint64_gt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_gt);
-    relate_GT<unsigned long>(ctx);
+    RET(relate_GT<unsigned long>(ctx));
 }
 
 //!bind: function $OP_LE($this : Uint64, $target : Uint64) : Boolean
 YDSH_METHOD uint64_2_uint64_le(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_le);
-    relate_LE<unsigned long>(ctx);
+    RET(relate_LE<unsigned long>(ctx));
 }
 
 //!bind: function $OP_GE($this : Uint64, $target : Uint64) : Boolean
 YDSH_METHOD uint64_2_uint64_ge(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_ge);
-    relate_GE<unsigned long>(ctx);
+    RET(relate_GE<unsigned long>(ctx));
 }
 
 //   =====  logical  =====
@@ -690,19 +690,19 @@ YDSH_METHOD uint64_2_uint64_ge(RuntimeContext & ctx) {
 //!bind: function $OP_AND($this : Uint64, $target : Uint64) : Uint64
 YDSH_METHOD uint64_2_uint64_and(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_and);
-    basic_AND<unsigned long>(ctx);
+    RET(basic_AND<unsigned long>(ctx));
 }
 
 //!bind: function $OP_OR($this : Uint64, $target : Uint64) : Uint64
 YDSH_METHOD uint64_2_uint64_or(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_or);
-    basic_OR<unsigned long>(ctx);
+    RET(basic_OR<unsigned long>(ctx));
 }
 
 //!bind: function $OP_XOR($this : Uint64, $target : Uint64) : Uint64
 YDSH_METHOD uint64_2_uint64_xor(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_xor);
-    basic_XOR<unsigned long>(ctx);
+    RET(basic_XOR<unsigned long>(ctx));
 }
 
 
@@ -721,7 +721,7 @@ YDSH_METHOD float_plus(RuntimeContext & ctx) {
 //!bind: function $OP_MINUS($this : Float) : Float
 YDSH_METHOD float_minus(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_minus);
-    unary_MINUS<double>(ctx);
+    RET(unary_MINUS<double>(ctx));
 }
 
 // =====  binary op  =====
@@ -731,19 +731,19 @@ YDSH_METHOD float_minus(RuntimeContext & ctx) {
 //!bind: function $OP_ADD($this : Float, $target : Float) : Float
 YDSH_METHOD float_2_float_add(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_add);
-    basic_ADD<double>(ctx);
+    RET(basic_ADD<double>(ctx));
 }
 
 //!bind: function $OP_SUB($this : Float, $target : Float) : Float
 YDSH_METHOD float_2_float_sub(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_sub);
-    basic_SUB<double>(ctx);
+    RET(basic_SUB<double>(ctx));
 }
 
 //!bind: function $OP_MUL($this : Float, $target : Float) : Float
 YDSH_METHOD float_2_float_mul(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_mul);
-    basic_MUL<double>(ctx);
+    RET(basic_MUL<double>(ctx));
 }
 
 //!bind: function $OP_DIV($this : Float, $target : Float) : Float
@@ -774,25 +774,25 @@ YDSH_METHOD float_2_float_ne(RuntimeContext & ctx) {
 //!bind: function $OP_LT($this : Float, $target : Float) : Boolean
 YDSH_METHOD float_2_float_lt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_lt);
-    relate_LT<double>(ctx);
+    RET(relate_LT<double>(ctx));
 }
 
 //!bind: function $OP_GT($this : Float, $target : Float) : Boolean
 YDSH_METHOD float_2_float_gt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_gt);
-    relate_GT<double>(ctx);
+    RET(relate_GT<double>(ctx));
 }
 
 //!bind: function $OP_LE($this : Float, $target : Float) : Boolean
 YDSH_METHOD float_2_float_le(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_le);
-    relate_LE<double>(ctx);
+    RET(relate_LE<double>(ctx));
 }
 
 //!bind: function $OP_GE($this : Float, $target : Float) : Boolean
 YDSH_METHOD float_2_float_ge(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_ge);
-    relate_GE<double>(ctx);
+    RET(relate_GE<double>(ctx));
 }
 
 // =====  additional float op  ======
@@ -969,13 +969,14 @@ YDSH_METHOD string_get(RuntimeContext &ctx) {
     msg += ", but code position is ";
     msg += std::to_string(pos);
     throwOutOfRangeError(ctx, std::move(msg));
+    RET_VOID;
 }
 
 /**
  * startIndex is inclusive.
  * stopIndex is exclusive.
  */
-static void sliceImpl(RuntimeContext &ctx, String_Object *strObj, int startIndex, int stopIndex) {
+static DSValue sliceImpl(RuntimeContext &ctx, String_Object *strObj, int startIndex, int stopIndex) {
     const unsigned int size = strObj->size();
 
     // resolve actual index
@@ -1003,23 +1004,23 @@ static void sliceImpl(RuntimeContext &ctx, String_Object *strObj, int startIndex
 //!bind: function slice($this : String, $start : Int32, $stop : Int32) : String
 YDSH_METHOD string_slice(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_slice);
-    sliceImpl(ctx, typeAs<String_Object>(LOCAL(0)),
+    RET(sliceImpl(ctx, typeAs<String_Object>(LOCAL(0)),
               typeAs<Int_Object>(LOCAL(1))->getValue(),
-              typeAs<Int_Object>(LOCAL(2))->getValue());
+              typeAs<Int_Object>(LOCAL(2))->getValue()));
 }
 
 //!bind: function sliceFrom($this : String, $start : Int32) : String
 YDSH_METHOD string_sliceFrom(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_sliceFrom);
     auto strObj = typeAs<String_Object>(LOCAL(0));
-    sliceImpl(ctx, strObj, typeAs<Int_Object>(LOCAL(1))->getValue(), strObj->size());
+    RET(sliceImpl(ctx, strObj, typeAs<Int_Object>(LOCAL(1))->getValue(), strObj->size()));
 }
 
 //!bind: function sliceTo($this : String, $stop : Int32) : String
 YDSH_METHOD string_sliceTo(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_sliceTo);
     auto strObj = typeAs<String_Object>(LOCAL(0));
-    sliceImpl(ctx, strObj, 0, typeAs<Int_Object>(LOCAL(1))->getValue());
+    RET(sliceImpl(ctx, strObj, 0, typeAs<Int_Object>(LOCAL(1))->getValue()));
 }
 
 static bool startsWith(const char *thisStr, const char *targetStr, int offset) {
@@ -1111,10 +1112,10 @@ YDSH_METHOD string_split(RuntimeContext &ctx) {
         ptr->append(DSValue::create<String_Object>(ctx.getPool().getStringType(), std::string(remain)));
     }
 
-    RET(std::move(results));
+    RET(results);
 }
 
-static void createResult(RuntimeContext &ctx, DSValue &&value, bool success) {
+static DSValue createResult(RuntimeContext &ctx, DSValue &&value, bool success) {
     // get tuple type
     std::vector<DSType *> types(2);
     types[0] = value.get()->getType();
@@ -1127,7 +1128,7 @@ static void createResult(RuntimeContext &ctx, DSValue &&value, bool success) {
     ptr->set(0, value);
     ptr->set(1, success ? ctx.getTrueObj() : ctx.getFalseObj());
 
-    RET(std::move(tuple));
+    RET(tuple);
 }
 
 //!bind: function toInt32($this : String) : Tuple<Int32, Boolean>
@@ -1142,7 +1143,7 @@ YDSH_METHOD string_toInt32(RuntimeContext &ctx) {
         status = 1;
         value = 0;
     }
-    createResult(ctx, DSValue::create<Int_Object>(ctx.getPool().getInt32Type(), (int)value), status == 0);
+    RET(createResult(ctx, DSValue::create<Int_Object>(ctx.getPool().getInt32Type(), (int)value), status == 0));
 }
 
 //!bind: function toUint32($this : String) : Tuple<Uint32, Boolean>
@@ -1157,7 +1158,7 @@ YDSH_METHOD string_toUint32(RuntimeContext &ctx) {
         status = 1;
         value = 0;
     }
-    createResult(ctx, DSValue::create<Int_Object>(ctx.getPool().getUint32Type(), (unsigned int)value), status == 0);
+    RET(createResult(ctx, DSValue::create<Int_Object>(ctx.getPool().getUint32Type(), (unsigned int)value), status == 0));
 }
 
 //!bind: function toInt64($this : String) : Tuple<Int64, Boolean>
@@ -1167,7 +1168,7 @@ YDSH_METHOD string_toInt64(RuntimeContext &ctx) {
     int status = 0;
     long value = convertToInt64(str, status, false);
 
-    createResult(ctx, DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value), status == 0);
+    RET(createResult(ctx, DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value), status == 0));
 }
 
 //!bind: function toUint64($this : String) : Tuple<Uint64, Boolean>
@@ -1177,7 +1178,7 @@ YDSH_METHOD string_toUint64(RuntimeContext &ctx) {
     int status = 0;
     unsigned long value = convertToUint64(str, status, false);
 
-    createResult(ctx, DSValue::create<Long_Object>(ctx.getPool().getUint64Type(), value), status == 0);
+    RET(createResult(ctx, DSValue::create<Long_Object>(ctx.getPool().getUint64Type(), value), status == 0));
 }
 
 //!bind: function toFloat($this : String) : Tuple<Float, Boolean>
@@ -1187,7 +1188,7 @@ YDSH_METHOD string_toFloat(RuntimeContext &ctx) {
     int status = 0;
     double value = convertToDouble(str, status, false);
 
-    createResult(ctx, DSValue::create<Float_Object>(ctx.getPool().getFloatType(), value), status == 0);
+    RET(createResult(ctx, DSValue::create<Float_Object>(ctx.getPool().getFloatType(), value), status == 0));
 }
 
 //!bind: function $OP_ITER($this : String) : StringIter
@@ -1208,7 +1209,7 @@ YDSH_METHOD stringIter_next(RuntimeContext &ctx) {
     auto strIter = typeAs<StringIter_Object>(LOCAL(0));
     auto strObj = typeAs<String_Object>(strIter->strObj);
     if(strIter->curIndex >= strObj->size()) {
-        return throwOutOfRangeError(ctx, std::string("string iterator reach end of string"));
+        throwOutOfRangeError(ctx, std::string("string iterator reach end of string"));
     }
     unsigned int curIndex = strIter->curIndex;
     strIter->curIndex = UnicodeUtil::utf8NextPos(curIndex, strObj->getValue()[curIndex]);
@@ -1265,6 +1266,7 @@ YDSH_METHOD array_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_init);
     DSType *type = LOCAL(0)->getType();
     ctx.setLocal(0, DSValue::create<Array_Object>(*type));
+    RET_VOID;
 }
 
 // check index range and throw exception.
@@ -1298,6 +1300,7 @@ YDSH_METHOD array_set(RuntimeContext &ctx) {
     int index = typeAs<Int_Object>(LOCAL(1))->getValue();
     checkRange(ctx, index, size);
     obj->set(index, LOCAL(2));
+    RET_VOID;
 }
 
 //!bind: function peek($this : Array<T0>) : T0
@@ -1307,9 +1310,7 @@ YDSH_METHOD array_peek(RuntimeContext &ctx) {
     if(obj->getValues().empty()) {
         throwOutOfRangeError(ctx, std::string("Array size is 0"));
     }
-
-    DSValue poped = obj->refValues().back();
-    RET(std::move(poped));
+    RET(obj->refValues().back());
 }
 
 //!bind: function push($this : Array<T0>, $value : T0) : Void
@@ -1320,13 +1321,15 @@ YDSH_METHOD array_push(RuntimeContext &ctx) {
         throwOutOfRangeError(ctx, std::string("reach Array size limit"));
     }
     obj->append(LOCAL(1));
+    RET_VOID;
 }
 
 //!bind: function pop($this : Array<T0>) : T0
 YDSH_METHOD array_pop(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_pop);
-    array_peek(ctx);
+    auto v = array_peek(ctx);
     typeAs<Array_Object>(LOCAL(0))->refValues().pop_back();
+    RET(v);
 }
 
 //!bind: function add($this : Array<T0>, $value : T0) : Array<T0>
@@ -1344,7 +1347,7 @@ YDSH_METHOD array_swap(RuntimeContext &ctx) {
     checkRange(ctx, index, obj->getValues().size());
     DSValue value = LOCAL(2);
     std::swap(obj->refValues()[index], value);
-    RET(std::move(value));
+    RET(value);
 }
 
 //!bind: function size($this : Array<T0>) : Int32
@@ -1367,6 +1370,7 @@ YDSH_METHOD array_clear(RuntimeContext &ctx) {
     Array_Object *obj = typeAs<Array_Object>(LOCAL(0));
     obj->initIterator();
     obj->refValues().clear();
+    RET_VOID;
 }
 
 //!bind: function $OP_ITER($this : Array<T0>) : Array<T0>
@@ -1408,6 +1412,7 @@ YDSH_METHOD map_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_init);
     DSType *type = LOCAL(0)->getType();
     ctx.setLocal(0, DSValue::create<Map_Object>(*type));
+    RET_VOID;
 }
 
 //!bind: function $OP_GET($this : Map<T0, T1>, $key : T0) : T1
@@ -1428,6 +1433,7 @@ YDSH_METHOD map_set(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_set);
     Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
     obj->set(LOCAL(1), LOCAL(2));
+    RET_VOID;
 }
 
 //!bind: function put($this : Map<T0, T1>, $key : T0, $value : T1) : Boolean
@@ -1483,7 +1489,7 @@ YDSH_METHOD map_swap(RuntimeContext &ctx) {
 
     DSValue value = LOCAL(2);
     std::swap(iter->second, value);
-    RET(std::move(value));
+    RET(value);
 }
 
 //!bind: function clear($this : Map<T0, T1>) : Void
@@ -1492,6 +1498,7 @@ YDSH_METHOD map_clear(RuntimeContext &ctx) {
     Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
     obj->initIterator();
     obj->refValueMap().clear();
+    RET_VOID;
 }
 
 //!bind: function $OP_ITER($this : Map<T0, T1>) : Map<T0, T1>
@@ -1527,6 +1534,7 @@ YDSH_METHOD tuple_init(RuntimeContext &ctx) {
     DSType *type = LOCAL(0)->getType();
     ctx.setLocal(0, DSValue::create<Tuple_Object>(*type));
     typeAs<Tuple_Object>(LOCAL(0))->set(0, LOCAL(1));
+    RET_VOID;
 }
 
 //!bind: function $OP_CMD_ARG($this : Tuple<>) : Array<String>
@@ -1545,6 +1553,7 @@ YDSH_METHOD error_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(error_init);
     DSType *type = LOCAL(0)->getType();
     ctx.setLocal(0, DSValue(Error_Object::newError(ctx, *type, LOCAL(1))));
+    RET_VOID;
 }
 
 //!bind: function message($this : Error) : String
@@ -1557,6 +1566,7 @@ YDSH_METHOD error_message(RuntimeContext &ctx) {
 YDSH_METHOD error_backtrace(RuntimeContext &ctx) {
     SUPPRESS_WARNING(error_backtrace);
     typeAs<Error_Object>(LOCAL(0))->printStackTrace(ctx);
+    RET_VOID;
 }
 
 //!bind: function name($this : Error) : String
@@ -1572,19 +1582,20 @@ YDSH_METHOD error_name(RuntimeContext &ctx) {
 //!bind: function systemBus($this : DBus) : Bus
 YDSH_METHOD dbus_systemBus(RuntimeContext &ctx) {
     SUPPRESS_WARNING(dbus_systemBus);
-    typeAs<DBus_Object>(LOCAL(0))->getSystemBus(ctx);
+    RET(typeAs<DBus_Object>(LOCAL(0))->getSystemBus(ctx));
 }
 
 //!bind: function sessionBus($this : DBus) : Bus
 YDSH_METHOD dbus_sessionBus(RuntimeContext &ctx) {
     SUPPRESS_WARNING(dbus_sessionBus);
-    typeAs<DBus_Object>(LOCAL(0))->getSessionBus(ctx);
+    RET(typeAs<DBus_Object>(LOCAL(0))->getSessionBus(ctx));
 }
 
 //!bind: function waitSignal($this : DBus, $obj : DBusObject) : Void
 YDSH_METHOD dbus_waitSignal(RuntimeContext &ctx) {
     SUPPRESS_WARNING(dbus_waitSignal);
     typeAs<DBus_Object>(LOCAL(0))->waitSignal(ctx);
+    RET_VOID;
 }
 
 //!bind: function available($this : DBus) : Boolean
@@ -1596,25 +1607,25 @@ YDSH_METHOD dbus_available(RuntimeContext &ctx) {
 //!bind: function getService($this : DBus, $proxy : DBusObject) : Service
 YDSH_METHOD dbus_getSrv(RuntimeContext &ctx) {
     SUPPRESS_WARNING(dbus_getSrv);
-    typeAs<DBus_Object>(LOCAL(0))->getServiceFromProxy(ctx, LOCAL(1));
+    RET(typeAs<DBus_Object>(LOCAL(0))->getServiceFromProxy(ctx, LOCAL(1)));
 }
 
 //!bind: function getObjectPath($this : DBus, $proxy : DBusObject) : ObjectPath
 YDSH_METHOD dbus_getPath(RuntimeContext &ctx) {
     SUPPRESS_WARNING(dbus_getPath);
-    typeAs<DBus_Object>(LOCAL(0))->getObjectPathFromProxy(ctx, LOCAL(1));
+    RET(typeAs<DBus_Object>(LOCAL(0))->getObjectPathFromProxy(ctx, LOCAL(1)));
 }
 
 //!bind: function getIfaces($this : DBus, $proxy : DBusObject) : Array<String>
 YDSH_METHOD dbus_getIface(RuntimeContext &ctx) {
     SUPPRESS_WARNING(dbus_getIface);
-    typeAs<DBus_Object>(LOCAL(0))->getIfaceListFromProxy(ctx, LOCAL(1));
+    RET(typeAs<DBus_Object>(LOCAL(0))->getIfaceListFromProxy(ctx, LOCAL(1)));
 }
 
 //!bind: function introspect($this : DBus, $proxy : DBusObject) : String
 YDSH_METHOD dbus_introspect(RuntimeContext &ctx) {
     SUPPRESS_WARNING(dbus_introspect);
-    typeAs<DBus_Object>(LOCAL(0))->introspectProxy(ctx, LOCAL(1));
+    RET(typeAs<DBus_Object>(LOCAL(0))->introspectProxy(ctx, LOCAL(1)));
 }
 
 // #################
@@ -1625,19 +1636,19 @@ YDSH_METHOD dbus_introspect(RuntimeContext &ctx) {
 YDSH_METHOD bus_service(RuntimeContext &ctx) {
     SUPPRESS_WARNING(bus_service);
     String_Object *strObj = typeAs<String_Object>(LOCAL(1));
-    typeAs<Bus_Object>(LOCAL(0))->service(ctx, std::string(strObj->getValue()));
+    RET(typeAs<Bus_Object>(LOCAL(0))->service(ctx, std::string(strObj->getValue())));
 }
 
 //!bind: function listNames($this : Bus) : Array<String>
 YDSH_METHOD bus_listNames(RuntimeContext &ctx) {
     SUPPRESS_WARNING(bus_listNames);
-    typeAs<Bus_Object>(LOCAL(0))->listNames(ctx, false);
+    RET(typeAs<Bus_Object>(LOCAL(0))->listNames(ctx, false));
 }
 
 //!bind: function listActiveNames($this : Bus) : Array<String>
 YDSH_METHOD bus_listActiveNames(RuntimeContext &ctx) {
     SUPPRESS_WARNING(bus_listActiveNames);
-    typeAs<Bus_Object>(LOCAL(0))->listNames(ctx, true);
+    RET(typeAs<Bus_Object>(LOCAL(0))->listNames(ctx, true));
 }
 
 // #####################
@@ -1647,7 +1658,7 @@ YDSH_METHOD bus_listActiveNames(RuntimeContext &ctx) {
 //!bind: function object($this : Service, $path : ObjectPath) : DBusObject
 YDSH_METHOD service_object(RuntimeContext &ctx) {
     SUPPRESS_WARNING(service_object);
-    typeAs<Service_Object>(LOCAL(0))->object(ctx, LOCAL(1));
+    RET(typeAs<Service_Object>(LOCAL(0))->object(ctx, LOCAL(1)));
 }
 
 

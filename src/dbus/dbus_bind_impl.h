@@ -52,9 +52,8 @@ public:
 
     /**
      * get DBusConnection.
-     * return false, if error happened.
      */
-    bool initConnection(RuntimeContext &ctx, bool systemBus);
+    void initConnection(RuntimeContext &ctx, bool systemBus);
 
     DBusConnection *getConnection() {
         return this->conn;
@@ -64,8 +63,8 @@ public:
         return this->systemBus;
     }
 
-    bool service(RuntimeContext &ctx, std::string &&serviceName) override;
-    bool listNames(RuntimeContext &ctx, bool activeName) override;
+    DSValue service(RuntimeContext &ctx, std::string &&serviceName) override;
+    DSValue listNames(RuntimeContext &ctx, bool activeName) override;
 };
 
 class Service_ObjectImpl : public Service_Object {
@@ -107,7 +106,7 @@ public:
     }
 
     std::string toString(RuntimeContext &ctx, VisitedSet *set) override;
-    bool object(RuntimeContext &ctx, const DSValue &objectPath) override;
+    DSValue object(RuntimeContext &ctx, const DSValue &objectPath) override;
 };
 
 class DBus_ObjectImpl : public DBus_Object {
@@ -146,14 +145,14 @@ public:
         return this->builder;
     }
 
-    bool getSystemBus(RuntimeContext &ctx) override;
-    bool getSessionBus(RuntimeContext &ctx) override;
+    DSValue getSystemBus(RuntimeContext &ctx) override;
+    DSValue getSessionBus(RuntimeContext &ctx) override;
 
-    bool waitSignal(RuntimeContext &ctx) override;
-    bool getServiceFromProxy(RuntimeContext &ctx, const DSValue &proxy) override;
-    bool getObjectPathFromProxy(RuntimeContext &ctx, const DSValue &proxy) override;
-    bool getIfaceListFromProxy(RuntimeContext &ctx, const DSValue &proxy) override;
-    bool introspectProxy(RuntimeContext &ctx, const DSValue &proxy) override;
+    void waitSignal(RuntimeContext &ctx) override;
+    DSValue getServiceFromProxy(RuntimeContext &ctx, const DSValue &proxy) override;
+    DSValue getObjectPathFromProxy(RuntimeContext &ctx, const DSValue &proxy) override;
+    DSValue getIfaceListFromProxy(RuntimeContext &ctx, const DSValue &proxy) override;
+    DSValue introspectProxy(RuntimeContext &ctx, const DSValue &proxy) override;
 };
 
 /**
@@ -238,7 +237,7 @@ public:
     /**
      * call only once
      */
-    bool doIntrospection(RuntimeContext &ctx);
+    void doIntrospection(RuntimeContext &ctx);
 
 private:
     ScopedDBusMessage newMethodCallMsg(const char *ifaceName, const char *methodName);

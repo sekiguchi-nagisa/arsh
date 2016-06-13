@@ -523,19 +523,18 @@ DBus_Object::DBus_Object(TypePool *typePool) :
         DSObject(typePool->getDBusType()) {
 }
 
-bool DBus_Object::getSystemBus(RuntimeContext &ctx) {
+DSValue DBus_Object::getSystemBus(RuntimeContext &ctx) {
     ctx.throwError(ctx.getPool().getErrorType(), "unsupported feature");
-    return false;
+    return DSValue();
 }
 
-bool DBus_Object::getSessionBus(RuntimeContext &ctx) {
+DSValue DBus_Object::getSessionBus(RuntimeContext &ctx) {
     ctx.throwError(ctx.getPool().getErrorType(), "unsupported feature");
-    return false;
+    return DSValue();
 }
 
-bool DBus_Object::waitSignal(RuntimeContext &ctx) {
+void DBus_Object::waitSignal(RuntimeContext &ctx) {
     ctx.throwError(ctx.getPool().getErrorType(), "not support waitSignal method");
-    return false;
 }
 
 bool DBus_Object::supportDBus() {
@@ -546,24 +545,24 @@ bool DBus_Object::supportDBus() {
 #endif
 }
 
-bool DBus_Object::getServiceFromProxy(RuntimeContext &ctx, const DSValue &) {
+DSValue DBus_Object::getServiceFromProxy(RuntimeContext &ctx, const DSValue &) {
     ctx.throwError(ctx.getPool().getErrorType(), "not support method");
-    return false;
+    return DSValue();
 }
 
-bool DBus_Object::getObjectPathFromProxy(RuntimeContext &ctx, const DSValue &) {
+DSValue DBus_Object::getObjectPathFromProxy(RuntimeContext &ctx, const DSValue &) {
     ctx.throwError(ctx.getPool().getErrorType(), "not support method");
-    return false;
+    return DSValue();
 }
 
-bool DBus_Object::getIfaceListFromProxy(RuntimeContext &ctx, const DSValue &) {
+DSValue DBus_Object::getIfaceListFromProxy(RuntimeContext &ctx, const DSValue &) {
     ctx.throwError(ctx.getPool().getErrorType(), "not support method");
-    return false;
+    return DSValue();
 }
 
-bool DBus_Object::introspectProxy(RuntimeContext &ctx, const DSValue &) {
+DSValue DBus_Object::introspectProxy(RuntimeContext &ctx, const DSValue &) {
     ctx.throwError(ctx.getPool().getErrorType(), "not support method");
-    return false;
+    return DSValue();
 }
 
 DBus_Object *DBus_Object::newDBus_Object(TypePool *typePool) {
@@ -581,14 +580,14 @@ DBus_Object *DBus_Object::newDBus_Object(TypePool *typePool) {
 Bus_Object::Bus_Object(DSType &type) : DSObject(type) {
 }
 
-bool Bus_Object::service(RuntimeContext &ctx, std::string &&) {
+DSValue Bus_Object::service(RuntimeContext &ctx, std::string &&) {
     ctx.throwError(ctx.getPool().getErrorType(), "not support D-Bus service object");
-    return false;
+    return DSValue();
 }
 
-bool Bus_Object::listNames(RuntimeContext &ctx, bool) {
+DSValue Bus_Object::listNames(RuntimeContext &ctx, bool) {
     ctx.throwError(ctx.getPool().getErrorType(), "not support listNames method");
-    return false;
+    return DSValue();
 }
 
 // ############################
@@ -598,9 +597,9 @@ bool Bus_Object::listNames(RuntimeContext &ctx, bool) {
 Service_Object::Service_Object(DSType &type) : DSObject(type) {
 }
 
-bool Service_Object::object(RuntimeContext &ctx, const DSValue &) {
+DSValue Service_Object::object(RuntimeContext &ctx, const DSValue &) {
     ctx.throwError(ctx.getPool().getErrorType(), "not support D-Bus proxy object");
-    return false;
+    return DSValue();
 }
 
 } // namespace ydsh

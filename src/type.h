@@ -34,9 +34,9 @@ struct TypeVisitor;
 class TypePool;
 class FieldHandle;
 class MethodHandle;
-
+class DSValue;
 class RuntimeContext;
-typedef void (*native_func_t)(RuntimeContext &);
+typedef DSValue (*native_func_t)(RuntimeContext &);
 
 class DSType {
 protected:
