@@ -101,7 +101,7 @@ static void showFeature(std::ostream &stream) {
     OP(DUMP_CODE,      "--dump-code",         0, "dump compiled code") \
     OP(PARSE_ONLY,     "--parse-only",        0, "not evaluate, parse only") \
     OP(DISABLE_ASSERT, "--disable-assertion", 0, "disable assert statement") \
-    OP(PRINT_TOPLEVEL, "--print-toplevel",    0, "print toplevel evaluated value") \
+    OP(PRINT_TOPLEVEL, "--print-toplevel",    0, "print top level evaluated value") \
     OP(TRACE_EXIT,     "--trace-exit",        0, "trace execution process to exit command") \
     OP(VERSION,        "--version",           0, "show version and copyright") \
     OP(HELP,           "--help",              0, "show this help message") \
@@ -113,7 +113,8 @@ static void showFeature(std::ostream &stream) {
     OP(RC_FILE,        "--rcfile",            argv::HAS_ARG, "load specified rc file (only available interactive mode)") \
     OP(QUIET,          "--quiet",             0, "suppress startup message (only available interactive mode)") \
     OP(SET_ARGS,       "-s",                  argv::IGNORE_REST, "set arguments and read command from standard input") \
-    OP(INTERACTIVE,    "-i",                  0, "run interactive mode")
+    OP(INTERACTIVE,    "-i",                  0, "run interactive mode") \
+    OP(PARSE_ONLY2,    "-n",                  0, "equivalent to `--parse-only' option")
 
 enum OptionKind {
 #define GEN_ENUM(E, S, F, D) E,
@@ -169,6 +170,7 @@ int main(int argc, char **argv) {
             DSContext_setOption(ctx, DS_OPTION_DUMP_CODE);
             break;
         case PARSE_ONLY:
+        case PARSE_ONLY2:
             DSContext_setOption(ctx, DS_OPTION_PARSE_ONLY);
             break;
         case DISABLE_ASSERT:
