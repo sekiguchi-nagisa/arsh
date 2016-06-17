@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <dbus/dbus_bind_impl.h>
+#include <dbus/dbus_bind.h>
 
 using namespace ydsh;
 

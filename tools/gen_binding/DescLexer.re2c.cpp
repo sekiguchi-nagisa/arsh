@@ -51,6 +51,7 @@ DescTokenKind DescLexer::nextToken(Token &token) {
       "function"             { RET(FUNC); }
       "constructor"          { RET(INIT); }
       "YDSH_METHOD"          { RET(YDSH_METHOD); }
+      "YDSH_METHOD_DECL"     { RET(YDSH_METHOD_DECL); }
       "RuntimeContext"       { RET(RCTX); }
       "Array"                { RET(ARRAY); }
       "Map"                  { RET(MAP); }
@@ -63,6 +64,7 @@ DescTokenKind DescLexer::nextToken(Token &token) {
       ")"                    { RET(RP); }
       ","                    { RET(COMMA); }
       ":"                    { RET(COLON); }
+      ";"                    { RET(SEMI_COLON); }
       "{"                    { RET(LBC); }
       "&"                    { RET(AND); }
       "?"                    { RET(OPT); }

@@ -224,7 +224,7 @@ set(YDSH_SRC
 
 if(USE_DBUS)
     set(YDSH_SRC ${YDSH_SRC}
-            src/dbus/dbus_bind_impl.cpp
+            src/dbus/dbus_bind.cpp
             src/dbus/dbus_util.cpp)
 endif()
 

@@ -299,7 +299,7 @@ static void initBuiltinVar(DSContext *dsctx) {
      * management object for D-Bus related function
      * must be DBus_Object
      */
-    defineBuiltin(rootNode, "DBus", DSValue(DBus_Object::newDBus_Object(&dsctx->ctx.getPool())));
+    defineBuiltin(rootNode, "DBus", newDBusObject(dsctx->ctx.getPool()));
 
     struct utsname name;
     if(uname(&name) == -1) {

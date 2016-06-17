@@ -35,6 +35,7 @@
 #define SUPPRESS_WARNING(a) (void)a
 
 #define YDSH_METHOD static inline DSValue
+#define YDSH_METHOD_DECL DSValue
 
 /**
  *   //!bind: function <method name>($this : <receiver type>, $param1 : <type1>, $param2? : <type2>, ...) : <return type>
@@ -1580,86 +1581,48 @@ YDSH_METHOD error_name(RuntimeContext &ctx) {
 // ##################
 
 //!bind: function systemBus($this : DBus) : Bus
-YDSH_METHOD dbus_systemBus(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(dbus_systemBus);
-    RET(typeAs<DBus_Object>(LOCAL(0))->getSystemBus(ctx));
-}
+YDSH_METHOD_DECL dbus_systemBus(RuntimeContext &ctx);
 
 //!bind: function sessionBus($this : DBus) : Bus
-YDSH_METHOD dbus_sessionBus(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(dbus_sessionBus);
-    RET(typeAs<DBus_Object>(LOCAL(0))->getSessionBus(ctx));
-}
+YDSH_METHOD_DECL dbus_sessionBus(RuntimeContext &ctx);
 
 //!bind: function waitSignal($this : DBus, $obj : DBusObject) : Void
-YDSH_METHOD dbus_waitSignal(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(dbus_waitSignal);
-    typeAs<DBus_Object>(LOCAL(0))->waitSignal(ctx);
-    RET_VOID;
-}
+YDSH_METHOD_DECL dbus_waitSignal(RuntimeContext &ctx);
 
 //!bind: function available($this : DBus) : Boolean
-YDSH_METHOD dbus_available(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(dbus_available);
-    RET_BOOL(typeAs<DBus_Object>(LOCAL(0))->supportDBus());
-}
+YDSH_METHOD_DECL dbus_available(RuntimeContext &ctx);
 
 //!bind: function getService($this : DBus, $proxy : DBusObject) : Service
-YDSH_METHOD dbus_getSrv(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(dbus_getSrv);
-    RET(typeAs<DBus_Object>(LOCAL(0))->getServiceFromProxy(ctx, LOCAL(1)));
-}
+YDSH_METHOD_DECL dbus_getSrv(RuntimeContext &ctx);
 
 //!bind: function getObjectPath($this : DBus, $proxy : DBusObject) : ObjectPath
-YDSH_METHOD dbus_getPath(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(dbus_getPath);
-    RET(typeAs<DBus_Object>(LOCAL(0))->getObjectPathFromProxy(ctx, LOCAL(1)));
-}
+YDSH_METHOD_DECL dbus_getPath(RuntimeContext &ctx);
 
 //!bind: function getIfaces($this : DBus, $proxy : DBusObject) : Array<String>
-YDSH_METHOD dbus_getIface(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(dbus_getIface);
-    RET(typeAs<DBus_Object>(LOCAL(0))->getIfaceListFromProxy(ctx, LOCAL(1)));
-}
+YDSH_METHOD_DECL dbus_getIface(RuntimeContext &ctx);
 
 //!bind: function introspect($this : DBus, $proxy : DBusObject) : String
-YDSH_METHOD dbus_introspect(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(dbus_introspect);
-    RET(typeAs<DBus_Object>(LOCAL(0))->introspectProxy(ctx, LOCAL(1)));
-}
+YDSH_METHOD_DECL dbus_introspect(RuntimeContext &ctx);
 
 // #################
 // ##     Bus     ##
 // #################
 
 //!bind: function service($this : Bus, $dest : String) : Service
-YDSH_METHOD bus_service(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(bus_service);
-    String_Object *strObj = typeAs<String_Object>(LOCAL(1));
-    RET(typeAs<Bus_Object>(LOCAL(0))->service(ctx, std::string(strObj->getValue())));
-}
+YDSH_METHOD_DECL bus_service(RuntimeContext &ctx);
 
 //!bind: function listNames($this : Bus) : Array<String>
-YDSH_METHOD bus_listNames(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(bus_listNames);
-    RET(typeAs<Bus_Object>(LOCAL(0))->listNames(ctx, false));
-}
+YDSH_METHOD_DECL bus_listNames(RuntimeContext &ctx);
 
 //!bind: function listActiveNames($this : Bus) : Array<String>
-YDSH_METHOD bus_listActiveNames(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(bus_listActiveNames);
-    RET(typeAs<Bus_Object>(LOCAL(0))->listNames(ctx, true));
-}
+YDSH_METHOD_DECL bus_listActiveNames(RuntimeContext &ctx);
 
 // #####################
 // ##     Service     ##
 // #####################
 
 //!bind: function object($this : Service, $path : ObjectPath) : DBusObject
-YDSH_METHOD service_object(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(service_object);
-    RET(typeAs<Service_Object>(LOCAL(0))->object(ctx, LOCAL(1)));
-}
+YDSH_METHOD_DECL service_object(RuntimeContext &ctx);
 
 
 } //namespace ydsh

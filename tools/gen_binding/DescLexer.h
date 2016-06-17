@@ -28,6 +28,7 @@
     OP(FUNC)           /* function */\
     OP(INIT)           /* constructor */\
     OP(YDSH_METHOD)    /* YDSH_METHOD */\
+    OP(YDSH_METHOD_DECL) /* YDSH_METHOD_DECL */\
     OP(RCTX)           /* RuntimeContext */\
     OP(ARRAY)          /* Array */\
     OP(MAP)            /* Map */\
@@ -41,6 +42,7 @@
     OP(RP)             /* ) */\
     OP(COMMA)          /* , */\
     OP(COLON)          /* : */\
+    OP(SEMI_COLON)     /* ; */\
     OP(LBC)            /* { */\
     OP(OPT)            /* ? */
 

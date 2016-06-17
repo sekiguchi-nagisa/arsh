@@ -777,50 +777,7 @@ struct ProxyObject : public DSObject {
                               const std::string &fieldName, DSType *fieldType) = 0;
 };
 
-struct DBus_Object : public DSObject {
-    explicit DBus_Object(TypePool *typePool);
-    virtual ~DBus_Object() = default;
-
-    /**
-     * init and get Bus_ObjectImpl representing for system bus.
-     * return false, if error happened
-    */
-    virtual DSValue getSystemBus(RuntimeContext &ctx);
-
-    /**
-     * init and get Bus_ObjectImpl representing for session bus.
-     * return false, if error happened
-     */
-    virtual DSValue getSessionBus(RuntimeContext &ctx);
-
-    virtual void waitSignal(RuntimeContext &ctx);
-
-    bool supportDBus();
-    virtual DSValue getServiceFromProxy(RuntimeContext &ctx, const DSValue &proxy);
-    virtual DSValue getObjectPathFromProxy(RuntimeContext &ctx, const DSValue &proxy);
-    virtual DSValue getIfaceListFromProxy(RuntimeContext &ctx, const DSValue &proxy);
-    virtual DSValue introspectProxy(RuntimeContext &ctx, const DSValue &proxy);
-
-    static DBus_Object *newDBus_Object(TypePool *typePool);
-};
-
-struct Bus_Object : public DSObject {
-    explicit Bus_Object(DSType &type);
-    virtual ~Bus_Object() = default;
-
-    virtual DSValue service(RuntimeContext &ctx, std::string &&serviceName);
-    virtual DSValue listNames(RuntimeContext &ctx, bool activeName);
-};
-
-struct Service_Object : public DSObject {
-    explicit Service_Object(DSType &type);
-    virtual ~Service_Object() = default;
-
-    /**
-     * objectPath is String_Object
-     */
-    virtual DSValue object(RuntimeContext &ctx, const DSValue &objectPath);
-};
+DSValue newDBusObject(TypePool &pool);
 
 } // namespace ydsh
 

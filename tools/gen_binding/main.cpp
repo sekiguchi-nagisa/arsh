@@ -767,7 +767,12 @@ void Parser::parse_funcDecl(const std::string &line, std::unique_ptr<Element> &e
     DescLexer lexer(line.c_str());
     this->init(lexer);
 
-    this->expect(YDSH_METHOD);
+    const bool isDecl = CUR_KIND() == YDSH_METHOD_DECL;
+    if(isDecl) {
+        this->expect(YDSH_METHOD_DECL);
+    } else {
+        this->expect(YDSH_METHOD);
+    }
 
     Token token = this->expect(IDENTIFIER);
     std::string str(this->lexer->toTokenText(token));
@@ -778,7 +783,7 @@ void Parser::parse_funcDecl(const std::string &line, std::unique_ptr<Element> &e
     this->expect(AND);
     this->expect(IDENTIFIER);
     this->expect(RP);
-    this->expect(LBC);
+    this->expect(isDecl ? SEMI_COLON : LBC);
 }
 
 #define OUT(fmt, ...) \
