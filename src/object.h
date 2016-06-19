@@ -758,22 +758,20 @@ struct ProxyObject : public DSObject {
     virtual ~ProxyObject() = default;
 
     /**
-     * invoke method and set return value.
+     * invoke method and return result.
      */
-    virtual bool invokeMethod(RuntimeContext &ctx, const std::string &methodName, MethodHandle *handle) = 0;
+    virtual DSValue invokeMethod(RuntimeContext &ctx, const std::string &methodName, MethodHandle *handle) = 0;
 
     /**
-     * push got value to stack top.
-     * return false, if error happened.
+     * return got value
      */
-    virtual bool invokeGetter(RuntimeContext &ctx, DSType *recvType,
-                              const std::string &fieldName, DSType *fieldType) = 0;
+    virtual DSValue invokeGetter(RuntimeContext &ctx, DSType *recvType,
+                                 const std::string &fieldName, DSType *fieldType) = 0;
 
     /**
      * pop stack top value and set to field.
-     * return false, if error happened.
      */
-    virtual bool invokeSetter(RuntimeContext &ctx,DSType *recvType,
+    virtual void invokeSetter(RuntimeContext &ctx,DSType *recvType,
                               const std::string &fieldName, DSType *fieldType) = 0;
 };
 

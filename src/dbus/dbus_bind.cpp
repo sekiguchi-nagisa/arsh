@@ -637,12 +637,12 @@ void DBusProxy_Object::doIntrospection(RuntimeContext &ctx) {
     }
 }
 
-bool DBusProxy_Object::invokeMethod(RuntimeContext &ctx, const std::string &methodName, MethodHandle *handle) {
+DSValue DBusProxy_Object::invokeMethod(RuntimeContext &ctx, const std::string &methodName, MethodHandle *handle) {
     // check signal
     if(handle->isSignal()) {
         this->addHandler(ctx.getPool().getTypeName(*handle->getRecvType()),
                          methodName, ctx.getLocal(1));
-        return true;
+        return DSValue();
     }
 
     auto msg = this->newMethodCallMsg(ctx.getPool().getTypeName(*handle->getRecvType()), methodName);
@@ -660,24 +660,19 @@ bool DBusProxy_Object::invokeMethod(RuntimeContext &ctx, const std::string &meth
     auto retMsg = this->sendMessage(ctx, std::move(msg));
 
     // decode result
+    DSValue result;
     if(retMsg != nullptr) {
-        DSValue result;
         if(handle->hasMultipleReturnType()) {
-            result = decodeMessage(ctx, static_cast<TupleType *>(handle->getReturnType())->getElementTypes(),
-                                   std::move(retMsg));
-        } else {
-            DSType *type = handle->getReturnType();
-            if(*type == ctx.getPool().getVoidType()) {
-                return true;
-            }
+            auto type = static_cast<TupleType *>(handle->getReturnType());
+            result = decodeMessage(ctx, type->getElementTypes(), std::move(retMsg));
+        } else if(!handle->getReturnType()->isVoidType()) {
             result = decodeMessage(ctx, *handle->getReturnType(), std::move(retMsg));
         }
-        ctx.push(std::move(result));
     }
-    return true;
+    return result;
 }
 
-bool DBusProxy_Object::invokeGetter(RuntimeContext &ctx, DSType *recvType,
+DSValue DBusProxy_Object::invokeGetter(RuntimeContext &ctx, DSType *recvType,
                                     const std::string &fieldName, DSType *fieldType) {
     auto msg = this->newMethodCallMsg("org.freedesktop.DBus.Properties", "Get");
 
@@ -695,12 +690,10 @@ bool DBusProxy_Object::invokeGetter(RuntimeContext &ctx, DSType *recvType,
     auto ret = this->sendMessage(ctx, std::move(msg));
 
     // decode result
-    auto result(decodeMessage(ctx, *fieldType, std::move(ret)));
-    ctx.push(std::move(result));
-    return true;
+    return decodeMessage(ctx, *fieldType, std::move(ret));
 }
 
-bool DBusProxy_Object::invokeSetter(RuntimeContext &ctx, DSType *recvType,
+void DBusProxy_Object::invokeSetter(RuntimeContext &ctx, DSType *recvType,
                                     const std::string &fieldName, DSType *) {
     auto msg = this->newMethodCallMsg("org.freedesktop.DBus.Properties", "Set");
 
@@ -718,7 +711,6 @@ bool DBusProxy_Object::invokeSetter(RuntimeContext &ctx, DSType *recvType,
 
     // call setter
     this->sendMessage(ctx, std::move(msg));
-    return true;
 }
 
 const DSValue &DBusProxy_Object::getService() {

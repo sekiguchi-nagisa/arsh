@@ -219,10 +219,10 @@ public:
     std::string toString(RuntimeContext &ctx, VisitedSet *set) override;
     bool introspect(RuntimeContext &ctx, DSType *targetType) override;
 
-    bool invokeMethod(RuntimeContext &ctx, const std::string &methodName, MethodHandle *handle) override;
-    bool invokeGetter(RuntimeContext &ctx,DSType *recvType,
-                      const std::string &fieldName, DSType *fieldType) override;
-    bool invokeSetter(RuntimeContext &ctx, DSType *recvType,
+    DSValue invokeMethod(RuntimeContext &ctx, const std::string &methodName, MethodHandle *handle) override;
+    DSValue invokeGetter(RuntimeContext &ctx,DSType *recvType,
+                         const std::string &fieldName, DSType *fieldType) override;
+    void invokeSetter(RuntimeContext &ctx, DSType *recvType,
                       const std::string &fieldName, DSType *fieldType) override;
 
     const DSValue &getService();
