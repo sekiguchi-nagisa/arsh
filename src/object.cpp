@@ -513,20 +513,10 @@ std::string FuncObject::toString(RuntimeContext &, VisitedSet *) {
 }
 
 static std::string toHexString(unsigned long v) {
-    std::string str = "0x";
-    char buf[24];
-    unsigned int index = 0;
-
-    unsigned long q = v;
-    do {
-        snprintf(buf + ++index, 24, "%lx", q % 16);
-        q /= 16;
-    } while(q > 0);
-
-    for(unsigned i = index; i > 0; i--) {
-        str += buf[i];
-    }
-    return str;
+    constexpr unsigned int size = sizeof(v) * 2 + 3;
+    char buf[size];
+    snprintf(buf, size, "0x%lx", v);
+    return std::string(buf);
 }
 
 std::string encodeMethodDescriptor(const char *methodName, const MethodHandle *handle) {
