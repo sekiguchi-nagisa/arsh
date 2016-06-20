@@ -58,6 +58,9 @@ namespace ydsh {
     OP(CALL_INIT, 2) \
     OP(CALL_METHOD, 4) \
     OP(CALL_FUNC, 2) \
+    OP(INVOKE_METHOD, 2) \
+    OP(INVOKE_GETTER, 2) \
+    OP(INVOKE_SETTER, 2) \
     OP(RETURN, 0) \
     OP(RETURN_V, 0) \
     OP(RETURN_UDC, 0) \

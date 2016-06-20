@@ -123,14 +123,23 @@ void ByteCodeGenerator::writeTypeIns(OpCode op, const DSType &type) {
     this->write8byteIns(op, reinterpret_cast<unsigned long>(&type));
 }
 
-void ByteCodeGenerator::writeConstant(const DSValue &value) {
-    this->curBuilder().constBuffer.push_back(value);
+unsigned short ByteCodeGenerator::writeConstant(DSValue &&value) {
+    this->curBuilder().constBuffer.push_back(std::move(value));
     unsigned int index = this->curBuilder().constBuffer.size() - 1;
     if(index > UINT16_MAX) {
         fatal("const pool index must be 16bit");
     }
+    return index;
+}
 
+void ByteCodeGenerator::writeLoadConstIns(const DSValue &value) {
+    unsigned short index = this->writeConstant(DSValue(value));
     this->write2byteIns(OpCode::LOAD_CONST, index);
+}
+
+void ByteCodeGenerator::writeDescriptorIns(OpCode op, std::string &&desc) {
+    unsigned short index = this->writeConstant(DSValue::create<String_Object>(this->pool.getStringType(), std::move(desc)));
+    this->write2byteIns(op, index);
 }
 
 void ByteCodeGenerator::writeMethodCallIns(OpCode op, unsigned short index, unsigned short paramSize) {
@@ -283,7 +292,7 @@ void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
 }
 
 void ByteCodeGenerator::generateTilde(TildeNode &node, bool isLastSegment) {
-    this->writeConstant(DSValue::create<String_Object>(this->pool.getStringType(), node.getValue()));
+    this->writeLoadConstIns(DSValue::create<String_Object>(this->pool.getStringType(), node.getValue()));
     if(!isLastSegment && strchr(node.getValue().c_str(), '/') == nullptr) {
         return;
     } else {
@@ -337,23 +346,23 @@ void ByteCodeGenerator::visitTypeOfNode(TypeOfNode &) {
 }
 
 void ByteCodeGenerator::visitIntValueNode(IntValueNode &node) {
-    this->writeConstant(node.getValue());
+    this->writeLoadConstIns(node.getValue());
 }
 
 void ByteCodeGenerator::visitLongValueNode(LongValueNode &node) {
-    this->writeConstant(node.getValue());
+    this->writeLoadConstIns(node.getValue());
 }
 
 void ByteCodeGenerator::visitFloatValueNode(FloatValueNode &node) {
-    this->writeConstant(node.getValue());
+    this->writeLoadConstIns(node.getValue());
 }
 
 void ByteCodeGenerator::visitStringValueNode(StringValueNode &node) {
-    this->writeConstant(node.getValue());
+    this->writeLoadConstIns(node.getValue());
 }
 
 void ByteCodeGenerator::visitObjectPathNode(ObjectPathNode &node) {
-    this->writeConstant(node.getValue());
+    this->writeLoadConstIns(node.getValue());
 }
 
 void ByteCodeGenerator::visitStringExprNode(StringExprNode &node) {
@@ -427,20 +436,24 @@ void ByteCodeGenerator::visitAccessNode(AccessNode &node) {
     switch(node.getAdditionalOp()) {
     case AccessNode::NOP: {
         if(node.withinInterface()) {
-            fatal("unsupported\n"); //FIXME interface getter
+            std::string desc = encodeFieldDescriptor(
+                    node.getRecvNode()->getType(), node.getFieldName().c_str(), node.getType());
+            this->writeDescriptorIns(OpCode::INVOKE_GETTER, std::move(desc));
+        } else {
+            this->write2byteIns(OpCode::LOAD_FIELD, node.getIndex());
         }
-
-        this->write2byteIns(OpCode::LOAD_FIELD, node.getIndex());
         break;
     }
     case AccessNode::DUP_RECV: {
         this->write0byteIns(OpCode::DUP);
 
         if(node.withinInterface()) {
-            fatal("unsupported\n"); //FIXME interface getter
+            std::string desc = encodeFieldDescriptor(
+                    node.getRecvNode()->getType(), node.getFieldName().c_str(), node.getType());
+            this->writeDescriptorIns(OpCode::INVOKE_GETTER, std::move(desc));
+        } else {
+            this->write2byteIns(OpCode::LOAD_FIELD, node.getIndex());
         }
-
-        this->write2byteIns(OpCode::LOAD_FIELD, node.getIndex());
         break;
     }
     }
@@ -522,7 +535,8 @@ void ByteCodeGenerator::visitMethodCallNode(MethodCallNode &node) {
 
     this->writeSourcePos(node.getStartPos());
     if(node.getHandle()->isInterfaceMethod()) {
-        fatal("unsupported\n"); //TODO interface call
+        this->writeDescriptorIns(
+                OpCode::INVOKE_METHOD, encodeMethodDescriptor(node.getMethodName().c_str(), node.getHandle()));
     } else {
         this->writeMethodCallIns(OpCode::CALL_METHOD, node.getHandle()->getMethodIndex(), node.getArgNodes().size());
     }
@@ -701,7 +715,7 @@ void ByteCodeGenerator::visitContinueNode(ContinueNode &node) {
 }
 
 void ByteCodeGenerator::visitExportEnvNode(ExportEnvNode &node) {
-    this->writeConstant(DSValue::create<String_Object>(this->pool.getStringType(), node.getEnvName()));
+    this->writeLoadConstIns(DSValue::create<String_Object>(this->pool.getStringType(), node.getEnvName()));
     this->write0byteIns(OpCode::DUP);
     this->visit(*node.getExprNode());
     this->write0byteIns(OpCode::STORE_ENV);
@@ -714,7 +728,7 @@ void ByteCodeGenerator::visitExportEnvNode(ExportEnvNode &node) {
 }
 
 void ByteCodeGenerator::visitImportEnvNode(ImportEnvNode &node) {
-    this->writeConstant(DSValue::create<String_Object>(this->pool.getStringType(), node.getEnvName()));
+    this->writeLoadConstIns(DSValue::create<String_Object>(this->pool.getStringType(), node.getEnvName()));
     this->write0byteIns(OpCode::DUP);
     const bool hashDefault = node.getDefaultValueNode() != nullptr;
     if(hashDefault) {
@@ -902,18 +916,21 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
     AssignableNode *assignableNode = static_cast<AssignableNode *>(node.getLeftNode());
     unsigned int index = assignableNode->getIndex();
     if(node.isFieldAssign()) {
+        AccessNode *accessNode = static_cast<AccessNode *>(node.getLeftNode());
         if(node.isSelfAssignment()) {
             this->visit(*node.getLeftNode());
         } else {
-            AccessNode *accessNode = static_cast<AccessNode *>(node.getLeftNode());
             this->visit(*accessNode->getRecvNode());
         }
         this->visit(*node.getRightNode());
 
         if(assignableNode->withinInterface()) {
-            fatal("unsupported\n"); //TODO interface setter
+            std::string desc = encodeFieldDescriptor(
+                    accessNode->getRecvNode()->getType(), accessNode->getFieldName().c_str(), accessNode->getType());
+            this->writeDescriptorIns(OpCode::INVOKE_SETTER, std::move(desc));
+        } else {
+            this->write2byteIns(OpCode::STORE_FIELD, index);
         }
-        this->write2byteIns(OpCode::STORE_FIELD, index);
     } else {
         if(node.isSelfAssignment()) {
             this->visit(*node.getLeftNode());
@@ -956,7 +973,7 @@ void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
     this->visit(*node.getBlockNode());
     auto func = DSValue::create<FuncObject>(this->finalizeCallable(node));
 
-    this->writeConstant(func);
+    this->writeLoadConstIns(func);
     this->write2byteIns(OpCode::STORE_GLOBAL, node.getVarIndex());
 }
 
@@ -969,14 +986,14 @@ void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     this->visit(*node.getBlockNode());
     auto func = DSValue::create<FuncObject>(this->finalizeCallable(node));
 
-    this->writeConstant(func);
+    this->writeLoadConstIns(func);
     this->write2byteIns(OpCode::STORE_GLOBAL, node.getUdcIndex());
 
     this->inUDC = false;
 }
 
 void ByteCodeGenerator::visitBindVarNode(BindVarNode &node) {
-    this->writeConstant(node.getValue());
+    this->writeLoadConstIns(node.getValue());
     this->write2byteIns(OpCode::STORE_GLOBAL, node.getVarIndex());
 }
 

@@ -1102,6 +1102,24 @@ static void mainLoop(RuntimeContext &ctx) {
             ctx.applyFuncObject(paramSize);
             break;
         }
+        vmcase(INVOKE_METHOD) {
+            unsigned short index = read16(GET_CODE(ctx), ctx.pc() + 1);
+            ctx.pc() += 2;
+            ctx.invokeMethod(index);
+            break;
+        }
+        vmcase(INVOKE_GETTER) {
+            unsigned short index = read16(GET_CODE(ctx), ctx.pc() + 1);
+            ctx.pc() += 2;
+            ctx.invokeGetter(index);
+            break;
+        }
+        vmcase(INVOKE_SETTER) {
+            unsigned short index = read16(GET_CODE(ctx), ctx.pc() + 1);
+            ctx.pc() += 2;
+            ctx.invokeSetter(index);
+            break;
+        }
         vmcase(RETURN) {
             ctx.unwindStackFrame();
             break;

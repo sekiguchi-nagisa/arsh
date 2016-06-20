@@ -502,6 +502,24 @@ public:
 
     void callConstructor(unsigned short paramSize);
 
+    /**
+     * invoke interface method.
+     * constPoolIndex indicates the constant pool index of descriptor object.
+     */
+    void invokeMethod(unsigned short constPoolIndex);
+
+    /**
+     * invoke interface getter.
+     * constPoolIndex indicates the constant pool index of descriptor object.
+     */
+    void invokeGetter(unsigned short constPoolIndex);
+
+    /**
+     * invoke interface setter.
+     * constPoolIndex indicates the constant pool index of descriptor object.
+     */
+    void invokeSetter(unsigned short constPoolIndex);
+
     void handleUncaughtException(DSValue &&except);
 
     // some runtime api

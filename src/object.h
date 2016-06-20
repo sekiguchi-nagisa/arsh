@@ -21,6 +21,7 @@
 #include <memory>
 #include <iostream>
 #include <unordered_set>
+#include <tuple>
 
 #include "type.h"
 #include <config.h>
@@ -751,6 +752,11 @@ public:
     std::string toString(RuntimeContext &ctx, VisitedSet *visitedSet) override;
 };
 
+std::string encodeMethodDescriptor(const char *methodName, const MethodHandle *handle);
+std::pair<const char *, const MethodHandle *> decodeMethodDescriptor(const char *desc);
+
+std::string encodeFieldDescriptor(const DSType &recvType, const char *fieldName, const DSType &fieldType);
+std::tuple<const DSType *, const char *, const DSType *> decodeFieldDescriptor(const char *desc);
 
 struct ProxyObject : public DSObject {
     explicit ProxyObject(DSType &type) : DSObject(type) { }
@@ -760,19 +766,19 @@ struct ProxyObject : public DSObject {
     /**
      * invoke method and return result.
      */
-    virtual DSValue invokeMethod(RuntimeContext &ctx, const std::string &methodName, MethodHandle *handle) = 0;
+    virtual DSValue invokeMethod(RuntimeContext &ctx, const char *methodName, const MethodHandle *handle) = 0;
 
     /**
      * return got value
      */
-    virtual DSValue invokeGetter(RuntimeContext &ctx, DSType *recvType,
-                                 const std::string &fieldName, DSType *fieldType) = 0;
+    virtual DSValue invokeGetter(RuntimeContext &ctx, const DSType *recvType,
+                                 const char *fieldName, const DSType *fieldType) = 0;
 
     /**
      * pop stack top value and set to field.
      */
-    virtual void invokeSetter(RuntimeContext &ctx,DSType *recvType,
-                              const std::string &fieldName, DSType *fieldType) = 0;
+    virtual void invokeSetter(RuntimeContext &ctx, const DSType *recvType,
+                              const char *fieldName, const DSType *fieldType) = 0;
 };
 
 DSValue newDBusObject(TypePool &pool);

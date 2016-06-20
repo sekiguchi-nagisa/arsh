@@ -473,9 +473,7 @@ void RuntimeContext::callMethod(unsigned short index, unsigned short paramSize) 
     const unsigned int recvIndex = this->stackTopIndex - paramSize;
 
     this->windStackFrame(actualParamSize, actualParamSize, nullptr);
-
     DSValue returnValue = this->callStack[recvIndex]->getType()->getMethodRef(index)(*this);
-
     this->unwindStackFrame();
 
     if(returnValue) {
@@ -512,6 +510,69 @@ void RuntimeContext::callConstructor(unsigned short paramSize) {
 
     this->windStackFrame(paramSize, paramSize + 1, nullptr);
     this->callStack[recvIndex]->getType()->getConstructor()(*this);
+    this->unwindStackFrame();
+}
+
+/**
+ * stack state in method call    stack grow ===>
+ *
+ * +-----------+------------------+   +--------+
+ * | stack top | param1(receiver) | ~ | paramN |
+ * +-----------+------------------+   +--------+
+ *             | offset           |   |        |
+ */
+void RuntimeContext::invokeMethod(unsigned short constPoolIndex) {
+    auto pair = decodeMethodDescriptor(
+            typeAs<String_Object>(this->callableStack().back()->getConstPool()[constPoolIndex])->getValue());
+    const char *methodName = pair.first;
+    auto handle = pair.second;
+    const unsigned int actualParamSize = handle->getParamTypes().size() + 1;    // include receiver
+    const unsigned int recvIndex = this->stackTopIndex - handle->getParamTypes().size();
+
+    this->windStackFrame(actualParamSize, actualParamSize, nullptr);
+    DSValue ret = typeAs<ProxyObject>(this->callStack[recvIndex])->invokeMethod(*this, methodName, handle);
+    this->unwindStackFrame();
+
+    if(ret) {
+        this->push(std::move(ret));
+    }
+}
+
+void RuntimeContext::invokeGetter(unsigned short constPoolIndex) {
+    auto tuple = decodeFieldDescriptor(
+            typeAs<String_Object>(this->callableStack().back()->getConstPool()[constPoolIndex])->getValue());
+    const DSType *recvType = std::get<0>(tuple);
+    const char *fieldName = std::get<1>(tuple);
+    const DSType *fieldType = std::get<2>(tuple);
+    const unsigned int recvIndex = this->stackTopIndex;
+
+    this->windStackFrame(1, 1, nullptr);
+    DSValue ret = typeAs<ProxyObject>(
+            this->callStack[recvIndex])->invokeGetter(*this, recvType, fieldName, fieldType);
+    this->unwindStackFrame();
+
+    assert(ret);
+    this->push(std::move(ret));
+}
+
+/**
+ * stack state in setter call    stack grow ===>
+ *
+ * +-----------+--------+-------+
+ * | stack top |  recv  | value |
+ * +-----------+--------+-------+
+ *             | offset |       |
+ */
+void RuntimeContext::invokeSetter(unsigned short constPoolIndex) {
+    auto tuple = decodeFieldDescriptor(
+            typeAs<String_Object>(this->callableStack().back()->getConstPool()[constPoolIndex])->getValue());
+    const DSType *recvType = std::get<0>(tuple);
+    const char *fieldName = std::get<1>(tuple);
+    const DSType *fieldType = std::get<2>(tuple);
+    const unsigned int recvIndex = this->stackTopIndex - 1;
+
+    this->windStackFrame(2, 2, nullptr);
+    typeAs<ProxyObject>(this->callStack[recvIndex])->invokeSetter(*this, recvType, fieldName, fieldType);
     this->unwindStackFrame();
 }
 

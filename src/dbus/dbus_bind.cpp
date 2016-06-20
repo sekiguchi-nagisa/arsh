@@ -637,15 +637,15 @@ void DBusProxy_Object::doIntrospection(RuntimeContext &ctx) {
     }
 }
 
-DSValue DBusProxy_Object::invokeMethod(RuntimeContext &ctx, const std::string &methodName, MethodHandle *handle) {
+DSValue DBusProxy_Object::invokeMethod(RuntimeContext &ctx, const char *methodName, const MethodHandle *handle) {
     // check signal
     if(handle->isSignal()) {
-        this->addHandler(ctx.getPool().getTypeName(*handle->getRecvType()),
+        this->addHandler(ctx.getPool().getTypeName(*handle->getRecvType()).c_str(),
                          methodName, ctx.getLocal(1));
         return DSValue();
     }
 
-    auto msg = this->newMethodCallMsg(ctx.getPool().getTypeName(*handle->getRecvType()), methodName);
+    auto msg = this->newMethodCallMsg(ctx.getPool().getTypeName(*handle->getRecvType()).c_str(), methodName);
 
     // append arg
     DBusMessageIter iter;
@@ -672,8 +672,8 @@ DSValue DBusProxy_Object::invokeMethod(RuntimeContext &ctx, const std::string &m
     return result;
 }
 
-DSValue DBusProxy_Object::invokeGetter(RuntimeContext &ctx, DSType *recvType,
-                                    const std::string &fieldName, DSType *fieldType) {
+DSValue DBusProxy_Object::invokeGetter(RuntimeContext &ctx, const DSType *recvType,
+                                       const char *fieldName, const DSType *fieldType) {
     auto msg = this->newMethodCallMsg("org.freedesktop.DBus.Properties", "Get");
 
     // append arg
@@ -682,19 +682,17 @@ DSValue DBusProxy_Object::invokeGetter(RuntimeContext &ctx, DSType *recvType,
 
     const char *ifaceName = ctx.getPool().getTypeName(*recvType).c_str();
     dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, &ifaceName);
-
-    const char *propertyName = fieldName.c_str();
-    dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, &propertyName);
+    dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, &fieldName);
 
     // call getter
     auto ret = this->sendMessage(ctx, std::move(msg));
 
     // decode result
-    return decodeMessage(ctx, *fieldType, std::move(ret));
+    return decodeMessage(ctx, *const_cast<DSType *>(fieldType), std::move(ret));    //FIXME: remove const_cast
 }
 
-void DBusProxy_Object::invokeSetter(RuntimeContext &ctx, DSType *recvType,
-                                    const std::string &fieldName, DSType *) {
+void DBusProxy_Object::invokeSetter(RuntimeContext &ctx, const DSType *recvType,
+                                    const char *fieldName, const DSType *) {
     auto msg = this->newMethodCallMsg("org.freedesktop.DBus.Properties", "Set");
 
     // append arg
@@ -703,11 +701,9 @@ void DBusProxy_Object::invokeSetter(RuntimeContext &ctx, DSType *recvType,
 
     const char *ifaceName = ctx.getPool().getTypeName(*recvType).c_str();
     dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, &ifaceName);
+    dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, &fieldName);
 
-    const char *propertyName = fieldName.c_str();
-    dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, &propertyName);
-
-    appendArg(ctx, &iter, ctx.getPool().getVariantType(), ctx.peek());
+    appendArg(ctx, &iter, ctx.getPool().getVariantType(), ctx.getLocal(1));
 
     // call setter
     this->sendMessage(ctx, std::move(msg));
@@ -778,17 +774,12 @@ ScopedDBusMessage DBusProxy_Object::newMethodCallMsg(const char *ifaceName, cons
             typeAs<String_Object>(this->objectPath)->getValue(), ifaceName, methodName));
 }
 
-ScopedDBusMessage DBusProxy_Object::newMethodCallMsg(const std::string &ifaceName, const std::string &methodName) {
-    return this->newMethodCallMsg(ifaceName.c_str(), methodName.c_str());
-}
-
 ScopedDBusMessage DBusProxy_Object::sendMessage(RuntimeContext &ctx, ScopedDBusMessage &&sendMsg) {
     return ::ydsh::sendMessage(ctx, typeAs<Service_Object>(this->srv)->getConnection(), std::move(sendMsg));
 }
 
-void DBusProxy_Object::addHandler(const std::string &ifaceName,
-                                  const std::string &methodName, const DSValue &obj) {
-    this->handerMap[std::make_pair(ifaceName.c_str(), methodName.c_str())] = obj;
+void DBusProxy_Object::addHandler(const char *ifaceName, const char *methodName, const DSValue &obj) {
+    this->handerMap[std::make_pair(ifaceName, methodName)] = obj;
 }
 
 

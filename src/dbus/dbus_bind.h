@@ -219,11 +219,11 @@ public:
     std::string toString(RuntimeContext &ctx, VisitedSet *set) override;
     bool introspect(RuntimeContext &ctx, DSType *targetType) override;
 
-    DSValue invokeMethod(RuntimeContext &ctx, const std::string &methodName, MethodHandle *handle) override;
-    DSValue invokeGetter(RuntimeContext &ctx,DSType *recvType,
-                         const std::string &fieldName, DSType *fieldType) override;
-    void invokeSetter(RuntimeContext &ctx, DSType *recvType,
-                      const std::string &fieldName, DSType *fieldType) override;
+    DSValue invokeMethod(RuntimeContext &ctx, const char *methodName, const MethodHandle *handle) override;
+    DSValue invokeGetter(RuntimeContext &ctx, const DSType *recvType,
+                         const char *fieldName, const DSType *fieldType) override;
+    void invokeSetter(RuntimeContext &ctx, const DSType *recvType,
+                      const char *fieldName, const DSType *fieldType) override;
 
     const DSValue &getService();
     const DSValue &getObjectPath();
@@ -254,7 +254,6 @@ public:
 
 private:
     ScopedDBusMessage newMethodCallMsg(const char *ifaceName, const char *methodName);
-    ScopedDBusMessage newMethodCallMsg(const std::string &ifaceName, const std::string &methodName);
 
     /**
      * send message and unref send message.
@@ -265,7 +264,7 @@ private:
     /**
      * obj must be FuncObject
      */
-    void addHandler(const std::string &ifaceName, const std::string &methodName, const DSValue &obj);
+    void addHandler(const char *ifaceName, const char *methodName, const DSValue &obj);
 };
 
 } // namespace ydsh
