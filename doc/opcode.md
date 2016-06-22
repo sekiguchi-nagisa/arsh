@@ -11,7 +11,8 @@
 | PUSH_TRUE     |                                | -> value                                     | push the true value onto the stack                 |
 | PUSH_FALSE    |                                | -> value                                     | push the false value onto the stack                |
 | PUSH_ESTRING  |                                | ->                                           | push the empty string value onto the stack         |
-| LOAD_CONST    | 2: byte1 byte2                 | -> value                                     | load a constant from the constant pool             |
+| LOAD_CONST    | 1: byte1                       | -> value                                     | load a constant from the constant pool             |
+| LOAD_CONST_W  | 2: byte1 byte2                 | -> value                                     | load a constant from the constant pool             |
 | LOAD_FUNC     | 2: byte1 byte2                 | -> value                                     | load a function from a global variable             |
 | LOAD_GLOBAL   | 2: byte1 byte2                 | -> value                                     | load a value from a global variable                |
 | STORE_GLOBAL  | 2: byte1 byte2                 | value ->                                     | store a value to a global variable                 |

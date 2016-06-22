@@ -955,6 +955,11 @@ static void mainLoop(RuntimeContext &ctx) {
             break;
         }
         vmcase(LOAD_CONST) {
+            unsigned char index = read8(GET_CODE(ctx), ++ctx.pc());
+            ctx.push(CONST_POOL(ctx)[index]);
+            break;
+        }
+        vmcase(LOAD_CONST_W) {
             unsigned short index = read16(GET_CODE(ctx), ctx.pc() + 1);
             ctx.pc() += 2;
             ctx.push(CONST_POOL(ctx)[index]);

@@ -134,7 +134,11 @@ unsigned short ByteCodeGenerator::writeConstant(DSValue &&value) {
 
 void ByteCodeGenerator::writeLoadConstIns(const DSValue &value) {
     unsigned short index = this->writeConstant(DSValue(value));
-    this->write2byteIns(OpCode::LOAD_CONST, index);
+    if(index <= UINT8_MAX) {
+        this->write1byteIns(OpCode::LOAD_CONST, index);
+    } else {
+        this->write2byteIns(OpCode::LOAD_CONST_W, index);
+    }
 }
 
 void ByteCodeGenerator::writeDescriptorIns(OpCode op, std::string &&desc) {
