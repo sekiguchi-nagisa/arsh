@@ -1565,24 +1565,6 @@ void UserDefinedCmdNode::accept(NodeVisitor &visitor) {
     visitor.visitUserDefinedCmdNode(*this);
 }
 
-// #########################
-// ##     BindVarNode     ##
-// #########################
-
-void BindVarNode::setAttribute(FieldHandle *handle) {
-    this->varIndex = handle->getFieldIndex();
-}
-
-void BindVarNode::dump(NodeDumper &dumper) const {
-    DUMP(varName);
-    DUMP_PRIM(varIndex);
-    //FIXME: value
-}
-
-void BindVarNode::accept(NodeVisitor &visitor) {
-    visitor.visitBindVarNode(*this);
-}
-
 // #######################
 // ##     EmptyNode     ##
 // #######################

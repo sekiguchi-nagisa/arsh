@@ -1167,14 +1167,6 @@ void TypeChecker::visitInterfaceNode(InterfaceNode &node) {
     resolveInterface(this->typePool, this->typeGen, &node);
 }
 
-void TypeChecker::visitBindVarNode(BindVarNode &node) {
-    DSType *valueType = node.getValue()->getType();
-    FieldHandle *handle =
-            this->addEntryAndThrowIfDefined(node, node.getVarName(), *valueType, true);
-    node.setAttribute(handle);
-    node.setType(this->typePool.getVoidType());
-}
-
 void TypeChecker::visitEmptyNode(EmptyNode &node) {
     node.setType(this->typePool.getVoidType());
 }

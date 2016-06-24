@@ -18,6 +18,7 @@
 
 #include "node_dumper.h"
 #include "node.h"
+#include "misc/demangle.hpp"
 
 namespace ydsh {
 

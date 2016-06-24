@@ -25,7 +25,7 @@
 #include "misc/noncopyable.h"
 #include "token_kind.h"
 #include "lexer.h"
-#include "object.h"
+#include "type.h"
 
 namespace ydsh {
 
@@ -2095,42 +2095,6 @@ public:
     void accept(NodeVisitor &visitor) override;
 };
 
-/**
- * define builtin global variable.
- */
-class BindVarNode : public Node {
-private:
-    std::string varName;
-    unsigned int varIndex;
-    DSValue value;
-
-public:
-    BindVarNode(const char *name, const DSValue &value) :
-            Node({0, 0}), varName(std::string(name)), varIndex(0), value(value) { }
-
-    BindVarNode(const char *name, DSValue &&value) :
-            Node({0, 0}), varName(std::string(name)), varIndex(0), value(std::move(value)) { }
-
-    ~BindVarNode() = default;
-
-    const std::string &getVarName() const {
-        return this->varName;
-    }
-
-    void setAttribute(FieldHandle *handle);
-
-    unsigned int getVarIndex() const {
-        return this->varIndex;
-    }
-
-    const DSValue &getValue() const {
-        return this->value;
-    }
-
-    void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
-};
-
 class EmptyNode : public Node {
 public:
     EmptyNode() : Node({0, 0}) { }
@@ -2275,7 +2239,6 @@ struct NodeVisitor {
     virtual void visitFunctionNode(FunctionNode &node) = 0;
     virtual void visitInterfaceNode(InterfaceNode &node) = 0;
     virtual void visitUserDefinedCmdNode(UserDefinedCmdNode &node) = 0;
-    virtual void visitBindVarNode(BindVarNode &node) = 0;
     virtual void visitEmptyNode(EmptyNode &node) = 0;
     virtual void visitDummyNode(DummyNode &node) = 0;
     virtual void visitRootNode(RootNode &node) = 0;
@@ -2340,7 +2303,6 @@ struct BaseVisitor : public NodeVisitor {
     virtual void visitFunctionNode(FunctionNode &node) override { this->visitDefault(node); }
     virtual void visitInterfaceNode(InterfaceNode &node) override { this->visitDefault(node); }
     virtual void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override { this->visitDefault(node); }
-    virtual void visitBindVarNode(BindVarNode &node) override { this->visitDefault(node); }
     virtual void visitEmptyNode(EmptyNode &node) override { this->visitDefault(node); }
     virtual void visitDummyNode(DummyNode &node) override { this->visitDefault(node); }
     virtual void visitRootNode(RootNode &node) override { this->visitDefault(node); }

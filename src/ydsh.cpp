@@ -284,22 +284,24 @@ static int eval(DSContext *dsctx, Lexer &lexer) {
     return eval(dsctx, rootNode);
 }
 
-static void defineBuiltin(RootNode &rootNode, const char *varName, DSValue &&value) {
-    rootNode.addNode(new BindVarNode(varName, std::move(value)));
+static void bindVariable(DSContext *dsctx, const char *varName, DSValue &&value) {
+    auto handle = dsctx->ctx.getSymbolTable().registerHandle(varName, *value.get()->getType(), true);
+    assert(handle != nullptr);
+    dsctx->ctx.setGlobal(handle->getFieldIndex(), std::move(value));
 }
 
-static void defineBuiltin(RootNode &rootNode, const char *varName, const DSValue &value) {
-    rootNode.addNode(new BindVarNode(varName, value));
+static void bindVariable(DSContext *dsctx, const char *varName, const DSValue &value) {
+    auto handle = dsctx->ctx.getSymbolTable().registerHandle(varName, *value.get()->getType(), true);
+    assert(handle != nullptr);
+    dsctx->ctx.setGlobal(handle->getFieldIndex(), value);
 }
 
 static void initBuiltinVar(DSContext *dsctx) {
-    RootNode rootNode;
-
     /**
      * management object for D-Bus related function
      * must be DBus_Object
      */
-    defineBuiltin(rootNode, "DBus", newDBusObject(dsctx->ctx.getPool()));
+    bindVariable(dsctx, "DBus", newDBusObject(dsctx->ctx.getPool()));
 
     struct utsname name;
     if(uname(&name) == -1) {
@@ -311,7 +313,7 @@ static void initBuiltinVar(DSContext *dsctx) {
      * for os type detection.
      * must be String_Object
      */
-    defineBuiltin(rootNode, "OSTYPE", DSValue::create<String_Object>(
+    bindVariable(dsctx, "OSTYPE", DSValue::create<String_Object>(
             dsctx->ctx.getPool().getStringType(), name.sysname));
 
 #define XSTR(V) #V
@@ -320,7 +322,7 @@ static void initBuiltinVar(DSContext *dsctx) {
      * for version detection
      * must be String_Object
      */
-    defineBuiltin(rootNode, "YDSH_VERSION", DSValue::create<String_Object>(
+    bindVariable(dsctx, "YDSH_VERSION", DSValue::create<String_Object>(
             dsctx->ctx.getPool().getStringType(),
             STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION) "." STR(X_INFO_PATCH_VERSION)));
 #undef XSTR
@@ -330,7 +332,7 @@ static void initBuiltinVar(DSContext *dsctx) {
      * default variable for read command.
      * must be String_Object
      */
-    defineBuiltin(rootNode, "REPLY", dsctx->ctx.getEmptyStrObj());
+    bindVariable(dsctx, "REPLY", dsctx->ctx.getEmptyStrObj());
 
     std::vector<DSType *> types(2);
     types[0] = &dsctx->ctx.getPool().getStringType();
@@ -340,50 +342,45 @@ static void initBuiltinVar(DSContext *dsctx) {
      * holding read variable.
      * must be Map_Object
      */
-    defineBuiltin(rootNode, "reply", DSValue::create<Map_Object>(
+    bindVariable(dsctx, "reply", DSValue::create<Map_Object>(
             dsctx->ctx.getPool().createReifiedType(dsctx->ctx.getPool().getMapTemplate(), std::move(types))));
 
     /**
      * contains exit status of most recent executed process. ($?)
      * must be Int_Object
      */
-    defineBuiltin(rootNode, "?", DSValue::create<Int_Object>(dsctx->ctx.getPool().getInt32Type(), 0));
+    bindVariable(dsctx, "?", DSValue::create<Int_Object>(dsctx->ctx.getPool().getInt32Type(), 0));
 
     /**
      * process id of root shell. ($$)
      * must be Int_Object
      */
-    defineBuiltin(rootNode, "$", DSValue::create<Int_Object>(dsctx->ctx.getPool().getUint32Type(), getpid()));
+    bindVariable(dsctx, "$", DSValue::create<Int_Object>(dsctx->ctx.getPool().getUint32Type(), getpid()));
 
     /**
      * contains script argument(exclude script name). ($@)
      * must be Array_Object
      */
-    defineBuiltin(rootNode, "@", DSValue::create<Array_Object>(dsctx->ctx.getPool().getStringArrayType()));
+    bindVariable(dsctx, "@", DSValue::create<Array_Object>(dsctx->ctx.getPool().getStringArrayType()));
 
     /**
      * contains size of argument. ($#)
      * must be Int_Object
      */
-    defineBuiltin(rootNode, "#", DSValue::create<Int_Object>(dsctx->ctx.getPool().getInt32Type(), 0));
+    bindVariable(dsctx, "#", DSValue::create<Int_Object>(dsctx->ctx.getPool().getInt32Type(), 0));
 
     /**
      * represent shell or shell script name.
      * must be String_Object
      */
-    defineBuiltin(rootNode, "0", DSValue::create<String_Object>(dsctx->ctx.getPool().getStringType(), "ydsh"));
+    bindVariable(dsctx, "0", DSValue::create<String_Object>(dsctx->ctx.getPool().getStringType(), "ydsh"));
 
     /**
      * initialize positional parameter
      */
     for(unsigned int i = 0; i < 9; i++) {
-        defineBuiltin(rootNode, std::to_string(i + 1).c_str(), dsctx->ctx.getEmptyStrObj());
+        bindVariable(dsctx, std::to_string(i + 1).c_str(), dsctx->ctx.getEmptyStrObj());
     }
-
-
-    // ignore error check (must be always success)
-    dsctx->checker.checkTypeRootNode(rootNode);
-    eval(dsctx, rootNode);
 }
 
 static void loadEmbeddedScript(DSContext *dsctx) {

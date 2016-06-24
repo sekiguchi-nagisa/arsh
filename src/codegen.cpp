@@ -1000,11 +1000,6 @@ void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     this->inUDC = false;
 }
 
-void ByteCodeGenerator::visitBindVarNode(BindVarNode &node) {
-    this->writeLdcIns(node.getValue());
-    this->write2byteIns(OpCode::STORE_GLOBAL, node.getVarIndex());
-}
-
 void ByteCodeGenerator::visitEmptyNode(EmptyNode &) { } // do nothing
 
 void ByteCodeGenerator::visitDummyNode(DummyNode &) { } // do nothing
