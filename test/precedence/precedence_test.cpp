@@ -76,7 +76,7 @@ public:
     }
 
     void visitIntValueNode(IntValueNode &node) override {
-        this->append(std::to_string(node.getTempValue()));
+        this->append(std::to_string(node.getValue()));
     }
 
     void visitCastNode(CastNode &node) override {

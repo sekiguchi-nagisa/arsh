@@ -65,9 +65,15 @@ public:
         return this->token.size;
     }
 
-    void updateToken(Token token);
+    void updateToken(Token token) {
+        if(token.pos > this->token.pos) {
+            this->token.size = token.pos + token.size - this->token.pos;
+        }
+    }
 
-    virtual void setType(DSType &type);
+    void setType(DSType &type) {
+        this->type = &type;
+    }
 
     /**
      * must not call it before type checking
@@ -258,15 +264,10 @@ public:
 
 private:
     IntKind kind;
-    int tempValue;
-
-    /**
-     * initialized after type check.
-     */
-    DSValue value;
+    int value;
 
     IntValueNode(Token token, IntKind kind, int value) :
-            Node(token), kind(kind), tempValue(value), value() { }
+            Node(token), kind(kind), value(value) { }
 
 public:
     static IntValueNode *newByte(Token token, unsigned char value) {
@@ -295,31 +296,21 @@ public:
         return this->kind;
     }
 
-    int getTempValue() const {
-        return this->tempValue;
-    }
-
-    /**
-     * before type check, return empty pointer.
-     */
-    const DSValue &getValue() const {
+    int getValue() const {
         return this->value;
     }
 
-    void setType(DSType &type) override;
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
 };
 
 class LongValueNode : public Node {
 private:
-    long tempValue;
+    long value;
     bool unsignedValue;
 
-    DSValue value;
-
     LongValueNode(Token token, long value, bool unsignedValue) :
-            Node(token), tempValue(value), unsignedValue(unsignedValue), value() { }
+            Node(token), value(value), unsignedValue(unsignedValue) { }
 
 public:
     static LongValueNode *newInt64(Token token, long value) {
@@ -333,83 +324,62 @@ public:
     ~LongValueNode() = default;
 
     /**
-     * before type check, return empty pointer.
-     */
-    const DSValue &getValue() const {
-        return this->value;
-    }
-
-    /**
      * if true, treat as unsigned int 64.
      */
     bool isUnsignedValue() const {
         return this->unsignedValue;
     }
 
-    void setType(DSType &type) override;
+    long getValue() const {
+        return this->value;
+    }
+
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
 };
 
 class FloatValueNode : public Node {
 private:
-    double tempValue;
-
-    /**
-     * initialized after type check.
-     */
-    DSValue value;
+    double value;
 
 public:
     FloatValueNode(Token token, double value) :
-            Node(token), tempValue(value), value() { }
+            Node(token), value(value) { }
 
-    /**
-     * before type check, return empty pointer.
-     */
-    const DSValue &getValue() const {
+    double getValue() const {
         return this->value;
     }
 
-    void setType(DSType &type) override;
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
 };
 
 class StringValueNode : public Node {
 protected:
-    /**
-     * after type checking, is broken.
-     */
-    std::string tempValue;
-
-    /**
-     * initialized after type check.
-     */
-    DSValue value;
+    std::string value;
 
 public:
     /**
      * used for CommandNode. lineNum is always 0.
      */
     explicit StringValueNode(std::string &&value) :
-            Node({0, 0}), tempValue(std::move(value)), value() { }
+            Node({0, 0}), value(std::move(value)) { }
 
     StringValueNode(Token token, std::string &&value) :
-            Node(token), tempValue(std::move(value)), value() { }
+            Node(token), value(std::move(value)) { }
 
     virtual ~StringValueNode() = default;
 
-    /**
-     * before type check, return empty pointer.
-     */
-    const DSValue &getValue() const {
+    const std::string &getValue() const {
         return this->value;
     }
 
-    void setType(DSType &type) override;
     void dump(NodeDumper &dumper) const override;
     virtual void accept(NodeVisitor &visitor) override;
+
+    static std::string extract(StringValueNode &&node) {
+        return std::move(node.value);
+    }
 };
 
 class ObjectPathNode : public StringValueNode {

@@ -132,8 +132,12 @@ unsigned short ByteCodeGenerator::writeConstant(DSValue &&value) {
     return index;
 }
 
-void ByteCodeGenerator::writeLoadConstIns(const DSValue &value) {
-    unsigned short index = this->writeConstant(DSValue(value));
+void ByteCodeGenerator::writeLdcIns(const DSValue &value) {
+    this->writeLdcIns(DSValue(value));
+}
+
+void ByteCodeGenerator::writeLdcIns(DSValue &&value) {
+    unsigned short index = this->writeConstant(std::move(value));
     if(index <= UINT8_MAX) {
         this->write1byteIns(OpCode::LOAD_CONST, index);
     } else {
@@ -296,7 +300,7 @@ void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
 }
 
 void ByteCodeGenerator::generateTilde(TildeNode &node, bool isLastSegment) {
-    this->writeLoadConstIns(DSValue::create<String_Object>(this->pool.getStringType(), node.getValue()));
+    this->writeLdcIns(DSValue::create<String_Object>(this->pool.getStringType(), node.getValue()));
     if(!isLastSegment && strchr(node.getValue().c_str(), '/') == nullptr) {
         return;
     } else {
@@ -350,23 +354,23 @@ void ByteCodeGenerator::visitTypeOfNode(TypeOfNode &) {
 }
 
 void ByteCodeGenerator::visitIntValueNode(IntValueNode &node) {
-    this->writeLoadConstIns(node.getValue());
+    this->writeLdcIns(DSValue::create<Int_Object>(node.getType(), node.getValue()));
 }
 
 void ByteCodeGenerator::visitLongValueNode(LongValueNode &node) {
-    this->writeLoadConstIns(node.getValue());
+    this->writeLdcIns(DSValue::create<Long_Object>(node.getType(), node.getValue()));
 }
 
 void ByteCodeGenerator::visitFloatValueNode(FloatValueNode &node) {
-    this->writeLoadConstIns(node.getValue());
+    this->writeLdcIns(DSValue::create<Float_Object>(node.getType(), node.getValue()));
 }
 
 void ByteCodeGenerator::visitStringValueNode(StringValueNode &node) {
-    this->writeLoadConstIns(node.getValue());
+    this->writeLdcIns(DSValue::create<String_Object>(node.getType(), StringValueNode::extract(std::move(node))));
 }
 
 void ByteCodeGenerator::visitObjectPathNode(ObjectPathNode &node) {
-    this->writeLoadConstIns(node.getValue());
+    this->writeLdcIns(DSValue::create<String_Object>(node.getType(), StringValueNode::extract(std::move(node))));
 }
 
 void ByteCodeGenerator::visitStringExprNode(StringExprNode &node) {
@@ -719,7 +723,7 @@ void ByteCodeGenerator::visitContinueNode(ContinueNode &node) {
 }
 
 void ByteCodeGenerator::visitExportEnvNode(ExportEnvNode &node) {
-    this->writeLoadConstIns(DSValue::create<String_Object>(this->pool.getStringType(), node.getEnvName()));
+    this->writeLdcIns(DSValue::create<String_Object>(this->pool.getStringType(), node.getEnvName()));
     this->write0byteIns(OpCode::DUP);
     this->visit(*node.getExprNode());
     this->write0byteIns(OpCode::STORE_ENV);
@@ -732,7 +736,7 @@ void ByteCodeGenerator::visitExportEnvNode(ExportEnvNode &node) {
 }
 
 void ByteCodeGenerator::visitImportEnvNode(ImportEnvNode &node) {
-    this->writeLoadConstIns(DSValue::create<String_Object>(this->pool.getStringType(), node.getEnvName()));
+    this->writeLdcIns(DSValue::create<String_Object>(this->pool.getStringType(), node.getEnvName()));
     this->write0byteIns(OpCode::DUP);
     const bool hashDefault = node.getDefaultValueNode() != nullptr;
     if(hashDefault) {
@@ -977,7 +981,7 @@ void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
     this->visit(*node.getBlockNode());
     auto func = DSValue::create<FuncObject>(this->finalizeCallable(node));
 
-    this->writeLoadConstIns(func);
+    this->writeLdcIns(func);
     this->write2byteIns(OpCode::STORE_GLOBAL, node.getVarIndex());
 }
 
@@ -990,14 +994,14 @@ void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     this->visit(*node.getBlockNode());
     auto func = DSValue::create<FuncObject>(this->finalizeCallable(node));
 
-    this->writeLoadConstIns(func);
+    this->writeLdcIns(func);
     this->write2byteIns(OpCode::STORE_GLOBAL, node.getUdcIndex());
 
     this->inUDC = false;
 }
 
 void ByteCodeGenerator::visitBindVarNode(BindVarNode &node) {
-    this->writeLoadConstIns(node.getValue());
+    this->writeLdcIns(node.getValue());
     this->write2byteIns(OpCode::STORE_GLOBAL, node.getVarIndex());
 }
 

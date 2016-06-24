@@ -293,7 +293,8 @@ private:
     void writeTypeIns(OpCode op, const DSType &type);
 
     unsigned short writeConstant(DSValue &&value);
-    void writeLoadConstIns(const DSValue &value);
+    void writeLdcIns(const DSValue &value);
+    void writeLdcIns(DSValue &&value);
     void writeDescriptorIns(OpCode op, std::string &&desc);
     void writeMethodCallIns(OpCode op, unsigned short index, unsigned short paramSize);
     void writeToString();

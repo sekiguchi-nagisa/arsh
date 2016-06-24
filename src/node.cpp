@@ -24,21 +24,6 @@
 
 namespace ydsh {
 
-// ##################
-// ##     Node     ##
-// ##################
-
-void Node::updateToken(Token token) {
-    if(token.pos > this->token.pos) {
-        this->token.size = token.pos + token.size - this->token.pos;
-    }
-}
-
-void Node::setType(DSType &type) {
-    this->type = &type;
-}
-
-
 // ##########################
 // ##     BaseTypeNode     ##
 // ##########################
@@ -177,19 +162,8 @@ TypeNode *newVoidTypeNode() {
 // ##     IntValueNode     ##
 // ##########################
 
-void IntValueNode::setType(DSType &type) {
-    this->type = &type;
-    this->value = DSValue::create<Int_Object>(*this->type, this->tempValue);
-}
-
 void IntValueNode::dump(NodeDumper &dumper) const {
-    DUMP_PRIM(tempValue);
-    if(this->type == nullptr) {
-        dumper.dump(NAME(value), "(null)");
-    } else {
-        Int_Object *obj = typeAs<Int_Object>(this->value);
-        dumper.dump(NAME(value), std::to_string(obj->getValue()));
-    }
+    DUMP_PRIM(value);
 }
 
 void IntValueNode::accept(NodeVisitor &visitor) {
@@ -200,20 +174,9 @@ void IntValueNode::accept(NodeVisitor &visitor) {
 // ##     LongValueNode     ##
 // ###########################
 
-void LongValueNode::setType(DSType &type) {
-    this->type = &type;
-    this->value = DSValue::create<Long_Object>(*this->type, this->tempValue);
-}
-
 void LongValueNode::dump(NodeDumper &dumper) const {
-    DUMP_PRIM(tempValue);
+    DUMP_PRIM(value);
     DUMP_PRIM(unsignedValue);
-    if(this->type == nullptr) {
-        dumper.dump(NAME(value), "(null)");
-    } else {
-        Long_Object *obj = typeAs<Long_Object>(this->value);
-        dumper.dump(NAME(value), std::to_string(obj->getValue()));
-    }
 }
 
 void LongValueNode::accept(NodeVisitor &visitor) {
@@ -225,19 +188,8 @@ void LongValueNode::accept(NodeVisitor &visitor) {
 // ##     FloatValueNode     ##
 // ############################
 
-void FloatValueNode::setType(DSType &type) {
-    this->type = &type;
-    this->value = DSValue::create<Float_Object>(*this->type, this->tempValue);
-}
-
 void FloatValueNode::dump(NodeDumper &dumper) const {
-    DUMP_PRIM(tempValue);
-    if(this->type == nullptr) {
-        dumper.dump(NAME(value), "(null)");
-    } else {
-        Float_Object *obj = typeAs<Float_Object>(this->value);
-        dumper.dump(NAME(value), std::to_string(obj->getValue()));
-    }
+    DUMP_PRIM(value);
 }
 
 void FloatValueNode::accept(NodeVisitor &visitor) {
@@ -249,21 +201,8 @@ void FloatValueNode::accept(NodeVisitor &visitor) {
 // ##     StringValueNode    ##
 // ############################
 
-void StringValueNode::setType(DSType &type) {
-    this->type = &type;
-    this->value = DSValue::create<String_Object>(*this->type, std::move(this->tempValue));
-}
-
 void StringValueNode::dump(NodeDumper &dumper) const {
-    if(this->type == nullptr) {
-        dumper.dump(NAME(tempValue), this->tempValue);
-        dumper.dump(NAME(value), "");
-
-    } else {
-        String_Object *obj = typeAs<String_Object>(this->value);
-        dumper.dump(NAME(tempValue), "");
-        dumper.dump(NAME(value), obj->getValue());
-    }
+    DUMP(value);
 }
 
 void StringValueNode::accept(NodeVisitor &visitor) {
