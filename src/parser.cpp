@@ -681,13 +681,12 @@ std::unique_ptr<Node> Parser::parse_forStatement() {
                                  iterNode.release(), blockNode.release());
     } else {    // for-in
         Token token = this->expect(APPLIED_NAME);
-        auto nameNode = uniquify<VarNode>(token, this->lexer->toName(token));
         this->expect(IN);
         std::unique_ptr<Node> exprNode(this->parse_expression());
         std::unique_ptr<BlockNode> blockNode(this->parse_block());
 
         return std::unique_ptr<Node>(
-                createForInNode(startPos, nameNode.release(), exprNode.release(), blockNode.release()));
+                createForInNode(startPos, this->lexer->toName(token), exprNode.release(), blockNode.release()));
     }
 }
 

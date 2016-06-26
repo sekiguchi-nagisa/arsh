@@ -387,15 +387,6 @@ void AccessNode::accept(NodeVisitor &visitor) {
     visitor.visitAccessNode(*this);
 }
 
-std::pair<Node *, std::string> AccessNode::split(AccessNode *accessNode) {
-    Node *node = accessNode->recvNode;
-    accessNode->recvNode = nullptr;
-
-    std::pair<Node *, std::string> pair(node, std::move(accessNode->fieldName));
-    delete accessNode;
-    return pair;
-}
-
 // ######################
 // ##     CastNode     ##
 // ######################
@@ -1392,17 +1383,6 @@ void AssignNode::accept(NodeVisitor &visitor) {
     visitor.visitAssignNode(*this);
 }
 
-std::pair<Node *, Node *> AssignNode::split(AssignNode *node) {
-    Node *leftNode = node->leftNode;
-    node->leftNode = nullptr;
-
-    Node *rightNode = node->rightNode;
-    node->rightNode = nullptr;
-
-    delete node;
-    return std::make_pair(leftNode, rightNode);
-}
-
 // ###################################
 // ##     ElementSelfAssignNode     ##
 // ###################################
@@ -1421,13 +1401,13 @@ ElementSelfAssignNode::ElementSelfAssignNode(MethodCallNode *leftNode, BinaryOpN
     delete leftNode;
 
     // init getter node
-    this->getterNode = new MethodCallNode(new DummyNode(), std::string(OP_GET));
-    this->getterNode->refArgNodes().push_back(new DummyNode());
+    this->getterNode = new MethodCallNode(new EmptyNode(), std::string(OP_GET));
+    this->getterNode->refArgNodes().push_back(new EmptyNode());
 
     // init setter node
-    this->setterNode = new MethodCallNode(new DummyNode(), std::string(OP_SET));
-    this->setterNode->refArgNodes().push_back(new DummyNode());
-    this->setterNode->refArgNodes().push_back(new DummyNode());
+    this->setterNode = new MethodCallNode(new EmptyNode(), std::string(OP_SET));
+    this->setterNode->refArgNodes().push_back(new EmptyNode());
+    this->setterNode->refArgNodes().push_back(new EmptyNode());
 }
 
 ElementSelfAssignNode::~ElementSelfAssignNode() {
@@ -1576,17 +1556,6 @@ void EmptyNode::accept(NodeVisitor &visitor) {
     visitor.visitEmptyNode(*this);
 }
 
-// #######################
-// ##     DummyNode     ##
-// #######################
-
-void DummyNode::dump(NodeDumper &) const {
-} // do nothing
-
-void DummyNode::accept(NodeVisitor &visitor) {
-    visitor.visitDummyNode(*this);
-}
-
 // ######################
 // ##     RootNode     ##
 // ######################
@@ -1690,7 +1659,7 @@ TokenKind resolveAssignOp(TokenKind op) {
     }
 }
 
-ForNode *createForInNode(unsigned int startPos, VarNode *varNode, Node *exprNode, BlockNode *blockNode) {
+ForNode *createForInNode(unsigned int startPos, std::string &&varName, Node *exprNode, BlockNode *blockNode) {
     Token dummy = {startPos, 1};
 
     // create for-init
@@ -1705,8 +1674,7 @@ ForNode *createForInNode(unsigned int startPos, VarNode *varNode, Node *exprNode
     // create forIn-init
     reset_var = new VarNode(dummy, std::string(reset_var_name));
     MethodCallNode *call_next = new MethodCallNode(reset_var, std::string(OP_NEXT));
-    VarDeclNode *init_var = new VarDeclNode(startPos,
-                                            VarNode::extractVarNameAndDelete(varNode), call_next, false);
+    VarDeclNode *init_var = new VarDeclNode(startPos, std::move(varName), call_next, false);
 
     // insert init to block
     blockNode->insertNodeToFirst(init_var);
@@ -1739,7 +1707,7 @@ Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode) {
      * self assignment
      */
     // assign to element
-    BinaryOpNode *opNode = new BinaryOpNode(new DummyNode(), resolveAssignOp(op), rightNode);
+    BinaryOpNode *opNode = new BinaryOpNode(new EmptyNode(), resolveAssignOp(op), rightNode);
     MethodCallNode *indexNode = dynamic_cast<MethodCallNode *>(leftNode);
     if(indexNode != nullptr && indexNode->hasAttribute(MethodCallNode::INDEX)) {
         return new ElementSelfAssignNode(indexNode, opNode);

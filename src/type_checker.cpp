@@ -1171,9 +1171,6 @@ void TypeChecker::visitEmptyNode(EmptyNode &node) {
     node.setType(this->typePool.getVoidType());
 }
 
-void TypeChecker::visitDummyNode(DummyNode &) {
-}   // do nothing
-
 void TypeChecker::visitRootNode(RootNode &node) {
     this->symbolTable.commit();
     this->typePool.commit();

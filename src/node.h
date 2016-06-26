@@ -551,17 +551,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-
-    // for ArgsNode
-    /**
-     * extract varName from varNode.
-     * after extracting, delete varNode.
-     */
-    static std::string extractVarNameAndDelete(VarNode *node) {
-        std::string name(std::move(node->varName));
-        delete node;
-        return name;
-    }
 };
 
 class AccessNode : public AssignableNode {
@@ -605,12 +594,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-
-    /**
-     * extract recvNode, and fieldName.
-     * after extraction, call destructor.
-     */
-    static std::pair<Node *, std::string> split(AccessNode *accessNode);
 };
 
 class CastNode : public Node {
@@ -1818,13 +1801,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-
-    /**
-     * for ArgsNode
-     * split AssignNode to leftNode and rightNode.
-     * after splitting, delete AssignNode.
-     */
-    static std::pair<Node *, Node *> split(AssignNode *node);
 };
 
 class ElementSelfAssignNode : public Node {
@@ -2105,15 +2081,6 @@ public:
     void accept(NodeVisitor &visitor) override;
 };
 
-class DummyNode : public Node {
-public:
-    DummyNode() : Node({0, 0}) { }
-    ~DummyNode() = default;
-
-    void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
-};
-
 class RootNode : public CallableNode {
 private:
     std::list<Node *> nodeList;
@@ -2171,7 +2138,7 @@ const char *resolveBinaryOpName(TokenKind op);
 
 TokenKind resolveAssignOp(TokenKind op);
 
-ForNode *createForInNode(unsigned int startPos, VarNode *varNode, Node *exprNode, BlockNode *blockNode);
+ForNode *createForInNode(unsigned int startPos, std::string &&varName, Node *exprNode, BlockNode *blockNode);
 
 Node *createSuffixNode(Node *leftNode, TokenKind op, Token token);
 
@@ -2240,7 +2207,6 @@ struct NodeVisitor {
     virtual void visitInterfaceNode(InterfaceNode &node) = 0;
     virtual void visitUserDefinedCmdNode(UserDefinedCmdNode &node) = 0;
     virtual void visitEmptyNode(EmptyNode &node) = 0;
-    virtual void visitDummyNode(DummyNode &node) = 0;
     virtual void visitRootNode(RootNode &node) = 0;
 };
 
@@ -2304,7 +2270,6 @@ struct BaseVisitor : public NodeVisitor {
     virtual void visitInterfaceNode(InterfaceNode &node) override { this->visitDefault(node); }
     virtual void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override { this->visitDefault(node); }
     virtual void visitEmptyNode(EmptyNode &node) override { this->visitDefault(node); }
-    virtual void visitDummyNode(DummyNode &node) override { this->visitDefault(node); }
     virtual void visitRootNode(RootNode &node) override { this->visitDefault(node); }
 };
 

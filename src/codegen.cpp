@@ -1002,8 +1002,6 @@ void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
 
 void ByteCodeGenerator::visitEmptyNode(EmptyNode &) { } // do nothing
 
-void ByteCodeGenerator::visitDummyNode(DummyNode &) { } // do nothing
-
 void ByteCodeGenerator::visitRootNode(RootNode &rootNode) {
     for(auto &node : rootNode.refNodeList()) {
         this->visit(*node);

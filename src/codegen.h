@@ -380,7 +380,6 @@ private:
     void visitInterfaceNode(InterfaceNode &node) override;
     void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override;
     void visitEmptyNode(EmptyNode &node) override;
-    void visitDummyNode(DummyNode &node) override;
     void visitRootNode(RootNode &node) override;
 
 public:
