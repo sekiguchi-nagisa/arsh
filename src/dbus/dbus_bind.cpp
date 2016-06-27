@@ -799,6 +799,7 @@ DSValue dbus_sessionBus(RuntimeContext &ctx) {
 }
 
 DSValue dbus_waitSignal(RuntimeContext &ctx) {
+    ctx.throwError(ctx.getPool().getErrorType(), "waitSignal is unimplemented");
     typeAs<DBus_Object>(LOCAL(0))->waitSignal(ctx);
     return DSValue();
 }
