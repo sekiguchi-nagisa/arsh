@@ -29,9 +29,9 @@ private:
     T *ptr;
 
 public:
-    IntrusivePtr() noexcept : ptr(nullptr) { }
+    constexpr IntrusivePtr() noexcept : ptr(nullptr) { }
 
-    IntrusivePtr(std::nullptr_t) noexcept : ptr(nullptr) { }
+    constexpr IntrusivePtr(std::nullptr_t) noexcept : ptr(nullptr) { }
 
     IntrusivePtr(T *ptr) noexcept : ptr(ptr) { intrusivePtr_addRef(this->ptr); }
 
