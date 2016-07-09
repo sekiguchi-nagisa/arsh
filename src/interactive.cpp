@@ -200,12 +200,12 @@ static std::size_t encoding_readCode(int fd, char *buf, std::size_t bufSize, int
 
 static void completeCallback(const char *buf, size_t cursor, linenoiseCompletions *lc) {
     std::string actualBuf(lineBuf);
-    size_t acutalCursor = actualBuf.size() + cursor;
+    size_t actualCursor = actualBuf.size() + cursor;
     actualBuf += buf;
     actualBuf += '\n';
 
     DSCandidates c;
-    DSContext_complete(dsContext, actualBuf.c_str(), acutalCursor, &c);
+    DSContext_complete(dsContext, actualBuf.c_str(), actualCursor, &c);
     lc->len = c.size;
     lc->cvec = c.values;
 }

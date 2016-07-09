@@ -1761,8 +1761,8 @@ private:
     flag8_set_t attributeSet;
 
 public:
-    const static flag8_t SELF_ASSIGN  = 1 << 0;
-    const static flag8_t FIELD_ASSIGN = 1 << 1;
+    static constexpr flag8_t SELF_ASSIGN  = 1 << 0;
+    static constexpr flag8_t FIELD_ASSIGN = 1 << 1;
 
     AssignNode(Node *leftNode, Node *rightNode, bool selfAssign = false) :
             Node(leftNode->getToken()),
