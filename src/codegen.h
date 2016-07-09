@@ -55,7 +55,7 @@ public:
         return this->index;
     }
 
-    void destory() const {
+    void destroy() const {
         delete this;
     }
 
@@ -67,7 +67,7 @@ public:
 
     friend void intrusivePtr_release(Label *l) noexcept {
         if(l != nullptr && --l->refCount == 0) {
-            l->destory();
+            l->destroy();
         }
     }
 };
