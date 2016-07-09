@@ -85,7 +85,7 @@ struct ByteCodeWriter {
     };
 
     struct GenHash {
-        bool operator()(const IntrusivePtr<Label> &l) const noexcept {
+        std::size_t operator()(const IntrusivePtr<Label> &l) const noexcept {
             return std::hash<unsigned long>()(reinterpret_cast<unsigned long>(l.get()));
         }
     };
