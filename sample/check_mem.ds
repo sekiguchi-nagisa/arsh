@@ -20,6 +20,14 @@ if not(which valgrind) {
     exit 1
 }
 
+
+function color($c : Int, $s : String): String {
+    return (test -t 1) ? "$(echo -e -n '\e['$c'm'$s'\e[0m')" : $s
+}
+
+let OK = $color(32, '[OK]')
+let NG = $color(35, '[NG]')
+
 function test($a : String) : Boolean {
     if not(test -f $a) {
         echo not found file: $a 1>&2
@@ -34,9 +42,9 @@ function __test_each($data : Array<String>, $test : typeof($test)): Boolean {
     for $t in $data {
         if $test($t) {
             $c++
-            echo -e '\e[32m[OK]\e[0m' $t
+            echo $OK $t
         } else {
-            echo -e '\e[35m[NG]\e[0m' $t
+            echo $NG $t
         }
     }
     echo ++++ result [$c/$size] ++++
