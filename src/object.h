@@ -614,15 +614,8 @@ struct ExceptionEntry {
     unsigned int dest;  // catch block address
 };
 
-class Callable {
-private:
-    SourceInfoPtr srcInfo;
-
-    /**
-     * if CallableKind is toplevel, it is null
-     */
-    char *name;
-
+class CallableBase {
+protected:
     /**
      * +----------------------+-------------------+-------------------------------+
      * | CallableKind (1byte) | code size (4byte) | local variable number (2byte) |
@@ -637,62 +630,11 @@ private:
      */
     unsigned char *code;
 
-    /**
-     * last element is sentinel (nullptr)
-     */
-    DSValue *constPool;
-
-    /**
-     * last element is sentinel ({0, 0})
-     */
-    SourcePosEntry *sourcePosEntries;
-
-    /**
-     * lats element is sentinel.
-     */
-    ExceptionEntry *exceptionEntries;
-
 public:
-    NON_COPYABLE(Callable);
+    CallableBase(unsigned char *code) : code(code) {}
 
-    Callable(const SourceInfoPtr &srcInfo, const char *name, unsigned char *code,
-             DSValue *constPool, SourcePosEntry *sourcePosEntries, ExceptionEntry *exceptionEntries) :
-            srcInfo(srcInfo), name(name == nullptr ? nullptr : strdup(name)), code(code),
-            constPool(constPool), sourcePosEntries(sourcePosEntries), exceptionEntries(exceptionEntries) { }
-
-    Callable(Callable &&c) :
-            srcInfo(c.srcInfo), name(c.name), code(c.code),
-            constPool(c.constPool), sourcePosEntries(c.sourcePosEntries), exceptionEntries(c.exceptionEntries) {
-        c.name = nullptr;
-        c.code = nullptr;
-        c.constPool = nullptr;
-        c.sourcePosEntries = nullptr;
-        c.exceptionEntries = nullptr;
-    }
-
-    ~Callable() {
-        free(this->name);
+    ~CallableBase() {
         free(this->code);
-        delete[] this->constPool;
-        delete[] this->sourcePosEntries;
-        delete[] this->exceptionEntries;
-    }
-
-    Callable &operator=(Callable &&c) noexcept {
-        Callable tmp(std::move(c));
-        std::swap(*this, tmp);
-        return *this;
-    }
-
-    const SourceInfoPtr &getSrcInfo() const {
-        return this->srcInfo;
-    }
-
-    /**
-     * may be null.
-     */
-    const char *getName() const {
-        return this->name;
     }
 
     const unsigned char *getCode() const {
@@ -718,6 +660,73 @@ public:
 
     unsigned int getCodeOffset() const {
         return this->getCallableKind() == CallableKind::TOPLEVEL ? 9 : 7;
+    }
+};
+
+class Callable : public CallableBase {
+private:
+    SourceInfoPtr srcInfo;
+
+    /**
+     * if CallableKind is toplevel, it is null
+     */
+    char *name;
+
+    /**
+     * last element is sentinel (nullptr)
+     */
+    DSValue *constPool;
+
+    /**
+     * last element is sentinel ({0, 0})
+     */
+    SourcePosEntry *sourcePosEntries;
+
+    /**
+     * lats element is sentinel.
+     */
+    ExceptionEntry *exceptionEntries;
+
+public:
+    NON_COPYABLE(Callable);
+
+    Callable(const SourceInfoPtr &srcInfo, const char *name, unsigned char *code,
+             DSValue *constPool, SourcePosEntry *sourcePosEntries, ExceptionEntry *exceptionEntries) :
+            CallableBase(code), srcInfo(srcInfo), name(name == nullptr ? nullptr : strdup(name)),
+            constPool(constPool), sourcePosEntries(sourcePosEntries), exceptionEntries(exceptionEntries) { }
+
+    Callable(Callable &&c) :
+            CallableBase(c.code), srcInfo(c.srcInfo), name(c.name),
+            constPool(c.constPool), sourcePosEntries(c.sourcePosEntries), exceptionEntries(c.exceptionEntries) {
+        c.name = nullptr;
+        c.code = nullptr;
+        c.constPool = nullptr;
+        c.sourcePosEntries = nullptr;
+        c.exceptionEntries = nullptr;
+    }
+
+    ~Callable() {
+        free(this->name);
+        delete[] this->constPool;
+        delete[] this->sourcePosEntries;
+        delete[] this->exceptionEntries;
+    }
+
+    Callable &operator=(Callable &&c) noexcept {
+        Callable tmp(std::move(c));
+        std::swap(*this, tmp);
+        return *this;
+    }
+
+    const SourceInfoPtr &getSrcInfo() const {
+        return this->srcInfo;
+    }
+
+    /**
+     * may be null.
+     */
+    const char *getName() const {
+        return this->name;
     }
 
     const DSValue *getConstPool() const {
