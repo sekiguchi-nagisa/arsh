@@ -3,13 +3,13 @@
 #+++++++++++++++++++++#
 
 set(GTEST_V "1.7.0")
-set(GTEST_URL "https://googletest.googlecode.com/files/gtest-${GTEST_V}.zip")
-set(GTEST_PATH ${CMAKE_CURRENT_SOURCE_DIR}/gtest-${GTEST_V}.zip)
-set(GTEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/gtest-${GTEST_V})
+set(GTEST_URL "https://github.com/google/googletest/archive/release-${GTEST_V}.tar.gz")
+set(GTEST_PATH ${CMAKE_CURRENT_SOURCE_DIR}/googletest-release-${GTEST_V}.tar.gz)
+set(GTEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/googletest-release-${GTEST_V})
 
 if(NOT EXISTS "${GTEST_DIR}")
     file(DOWNLOAD "${GTEST_URL}" "${GTEST_PATH}" SHOW_PROGRESS)
-    execute_process(COMMAND unzip ${GTEST_PATH} -d ${CMAKE_CURRENT_SOURCE_DIR})
+    execute_process(COMMAND ${CMAKE_COMMAND} -E tar xvf ${GTEST_PATH} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 endif()
 
 add_subdirectory(${GTEST_DIR})
