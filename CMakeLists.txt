@@ -234,6 +234,9 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_binding)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/directive)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_iface)
 
+set(GTEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/gtest)
+add_subdirectory(${GTEST_DIR})
+
 set(YDSH_STATIC ydsh_static)
 add_library(${YDSH_STATIC} STATIC ${YDSH_SRC} ${lexer_src} ${bind_src})
 add_dependencies(${YDSH_STATIC} gen_lexer gen_binding gen_bind embed_script)

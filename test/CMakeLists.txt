@@ -1,20 +1,3 @@
-#+++++++++++++++++++++#
-#     build gtest     #
-#+++++++++++++++++++++#
-
-set(GTEST_V "1.7.0")
-set(GTEST_URL "https://github.com/google/googletest/archive/release-${GTEST_V}.tar.gz")
-set(GTEST_PATH ${CMAKE_CURRENT_SOURCE_DIR}/googletest-release-${GTEST_V}.tar.gz)
-set(GTEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/googletest-release-${GTEST_V})
-
-if(NOT EXISTS "${GTEST_DIR}")
-    file(DOWNLOAD "${GTEST_URL}" "${GTEST_PATH}" SHOW_PROGRESS)
-    execute_process(COMMAND ${CMAKE_COMMAND} -E tar xvf ${GTEST_PATH} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-endif()
-
-add_subdirectory(${GTEST_DIR})
-
-
 #++++++++++++++++++++++++++++++++++++#
 #     setup test in subdirectory     #
 #++++++++++++++++++++++++++++++++++++#
