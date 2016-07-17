@@ -510,7 +510,9 @@ void ByteCodeGenerator::visitInstanceOfNode(InstanceOfNode &node) {
 
 void ByteCodeGenerator::visitPrintNode(PrintNode &node) {
     this->visit(*node.getExprNode());
-    this->writeToString();
+    if(node.getExprNode()->getType() != this->pool.getStringType()) {
+        this->writeToString();
+    }
     this->writeTypeIns(OpCode::PRINT, node.getExprNode()->getType());
 }
 
