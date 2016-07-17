@@ -236,6 +236,12 @@ void StringExprNode::addExprNode(Node *node) {
         }
         exprNode->nodes.clear();
         delete node;
+    } else if(dynamic_cast<StringValueNode *>(node) != nullptr &&
+            static_cast<StringValueNode *>(node)->getValue().empty()) { // ignore empty string value node
+        /**
+         * node must not be empty string value except for calling BinaryOpNode::toStringExpr()
+         */
+        delete node;
     } else {
         this->nodes.push_back(node);
     }
@@ -738,25 +744,52 @@ void UnaryOpNode::accept(NodeVisitor &visitor) {
 BinaryOpNode::~BinaryOpNode() {
     delete this->leftNode;
     delete this->rightNode;
-    delete this->methodCallNode;
+    delete this->optNode;
 }
 
-MethodCallNode *BinaryOpNode::createApplyNode() {
-    this->methodCallNode = new MethodCallNode(this->leftNode, resolveBinaryOpName(this->op));
-    this->methodCallNode->refArgNodes().push_back(this->rightNode);
+void BinaryOpNode::toMethodCall(BinaryOpNode &node) {
+    auto *methodCallNode = new MethodCallNode(node.leftNode, resolveBinaryOpName(node.op));
+    methodCallNode->refArgNodes().push_back(node.rightNode);
 
-    // assign null to prevent double free.
-    this->leftNode = nullptr;
-    this->rightNode = nullptr;
+    // assign null to prevent double free
+    node.leftNode = nullptr;
+    node.rightNode = nullptr;
 
-    return this->methodCallNode;
+    node.optNode = methodCallNode;
+}
+
+void BinaryOpNode::toStringExpr(TypePool &pool, BinaryOpNode &node) {
+    int needCast = 0;
+    if(node.leftNode->getType() != pool.getStringType()) {
+        needCast--;
+    }
+    if(node.rightNode->getType() != pool.getStringType()) {
+        needCast++;
+    }
+
+    // perform string cast
+    if(needCast == -1) {
+        node.leftNode = CastNode::newTypedCastNode(pool, node.leftNode, pool.getStringType());
+    } else if(needCast == 1) {
+        node.rightNode = CastNode::newTypedCastNode(pool, node.rightNode, pool.getStringType());
+    }
+
+    auto *exprNode = new StringExprNode(node.leftNode->getStartPos());
+    exprNode->addExprNode(node.leftNode);
+    exprNode->addExprNode(node.rightNode);
+
+    // assign null to prevent double free
+    node.leftNode = nullptr;
+    node.rightNode = nullptr;
+
+    node.optNode = exprNode;
 }
 
 void BinaryOpNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(leftNode);
     DUMP_PTR(rightNode);
     dumper.dump(NAME(op), TO_NAME(op));
-    DUMP_PTR(methodCallNode);
+    DUMP_PTR(optNode);
 }
 
 void BinaryOpNode::accept(NodeVisitor &visitor) {

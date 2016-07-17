@@ -382,6 +382,16 @@ void ByteCodeGenerator::visitStringExprNode(StringExprNode &node) {
     } else {
         this->write0byteIns(OpCode::NEW_STRING);
         for(Node *e : node.getExprNodes()) {
+            if(dynamic_cast<BinaryOpNode *>(e) != nullptr) {
+                auto *binary = static_cast<BinaryOpNode *>(e);
+                if(dynamic_cast<StringExprNode *>(binary->getOptNode()) != nullptr) {
+                    for(Node *e2 : static_cast<StringExprNode *>(binary->getOptNode())->getExprNodes()) {
+                        this->visit(*e2);
+                        this->write0byteIns(OpCode::APPEND_STRING);
+                    }
+                    continue;
+                }
+            }
             this->visit(*e);
             this->write0byteIns(OpCode::APPEND_STRING);
         }
@@ -521,7 +531,7 @@ void ByteCodeGenerator::visitUnaryOpNode(UnaryOpNode &node) {
 }
 
 void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
-    this->visit(*node.getApplyNode());
+    this->visit(*node.getOptNode());
 }
 
 void ByteCodeGenerator::visitApplyNode(ApplyNode &node) {

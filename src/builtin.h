@@ -849,19 +849,6 @@ YDSH_METHOD boolean_ne(RuntimeContext & ctx) {
 // ##     String     ##
 // ####################
 
-//!bind: function $OP_ADD($this : String, $target : Any) : String
-YDSH_METHOD string_add(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(string_add);
-
-    // cats LOCAL(1) to string
-    ctx.loadLocal(1);
-    ctx.callToString();
-
-    std::string str(typeAs<String_Object>(LOCAL(0))->getValue());
-    str += typeAs<String_Object>(ctx.peek())->getValue();
-    RET(DSValue::create<String_Object>(ctx.getPool().getStringType(), std::move(str)));
-}
-
 //!bind: function $OP_EQ($this : String, $target : String) : Boolean
 YDSH_METHOD string_eq(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_eq);

@@ -621,6 +621,14 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
     auto &leftType = this->checkType(node.getLeftNode());
     auto &rightType = this->checkType(node.getRightNode());
 
+    // string concatenation
+    if(node.getOp() == TokenKind::PLUS &&
+                (leftType == this->typePool.getStringType() || rightType == this->typePool.getStringType())) {
+        BinaryOpNode::toStringExpr(this->typePool, node);
+        node.setType(this->checkType(node.getOptNode()));
+        return;
+    }
+
     int leftPrecision = this->typePool.getIntPrecision(leftType);
     int rightPrecision = this->typePool.getIntPrecision(rightType);
 
@@ -635,8 +643,8 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
         this->resolveCoercion(rightType, node.refLeftNode());
     }
 
-    MethodCallNode *applyNode = node.createApplyNode();
-    node.setType(this->checkType(applyNode));
+    BinaryOpNode::toMethodCall(node);
+    node.setType(this->checkType(node.getOptNode()));
 }
 
 void TypeChecker::visitApplyNode(ApplyNode &node) {

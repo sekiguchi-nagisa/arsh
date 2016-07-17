@@ -934,12 +934,12 @@ private:
     /**
      * before call this->createApplyNode(), it is null.
      */
-    MethodCallNode *methodCallNode;
+    Node *optNode;
 
 public:
     BinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode) :
             Node(leftNode->getToken()),
-            leftNode(leftNode), rightNode(rightNode), op(op), methodCallNode(0) {
+            leftNode(leftNode), rightNode(rightNode), op(op), optNode(0) {
         this->updateToken(rightNode->getToken());
     }
 
@@ -966,16 +966,22 @@ public:
     }
 
     /**
-     * create ApplyNode and set to this->applyNode.
+     * create MethodCallNode and set to this->optNode.
      * leftNode and rightNode will be null.
      */
-    MethodCallNode *createApplyNode();
+    static void toMethodCall(BinaryOpNode &node);
 
     /**
-     * return null, before call this->createApplyNode().
+     * create StringExprNode and set to this->optNode.
+     * left and rightNode will be null.
      */
-    MethodCallNode *getApplyNode() const {
-        return this->methodCallNode;
+    static void toStringExpr(TypePool &pool, BinaryOpNode &node);
+
+    /**
+     * return null, before call toMethodCall().
+     */
+    Node *getOptNode() const {
+        return this->optNode;
     }
 
     void dump(NodeDumper &dumper) const override;

@@ -19,6 +19,10 @@ b")  # allow new line
 assert('a\nb' == "a\nb")
 assert('a\rb' == "a\rb")
 
+# string concatenation
+assert '12he' == 12 + 'h' + 'e'
+assert 'he12' == 'he' + '' + 12 + ''
+
 # string method
 assert("".empty())
 assert("".size() == 0)
