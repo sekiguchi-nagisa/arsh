@@ -229,7 +229,16 @@ StringExprNode::~StringExprNode() {
 }
 
 void StringExprNode::addExprNode(Node *node) {
-    this->nodes.push_back(node);
+    if(dynamic_cast<StringExprNode *>(node) != nullptr) {
+        StringExprNode *exprNode = static_cast<StringExprNode *>(node);
+        for(auto &e : exprNode->nodes) {
+            this->nodes.push_back(e);
+        }
+        exprNode->nodes.clear();
+        delete node;
+    } else {
+        this->nodes.push_back(node);
+    }
 }
 
 void StringExprNode::dump(NodeDumper &dumper) const {
