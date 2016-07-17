@@ -70,9 +70,9 @@ set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_DEBUG} -fprofile-arcs -ftest-cov
 #     set extra option     #
 #++++++++++++++++++++++++++#
 
-option(USE_DBUS "support D-Bus" ON)
-if("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
-    set(USE_DBUS OFF)
+option(USE_DBUS "support D-Bus" OFF)
+if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+    set(USE_DBUS ON)
 endif()
 show_option(USE_DBUS)
 
