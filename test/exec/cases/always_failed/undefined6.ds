@@ -1,0 +1,3 @@
+#$test($result = 'type', $lineNum = 3, $errorKind = 'UndefinedMethod', $status = 1)
+
+'hello'.__ADD__(34)     # __ADD__ method is not defined
