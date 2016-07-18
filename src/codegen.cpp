@@ -293,8 +293,14 @@ void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
         }
 
         for(; index < size; index++) {
-            this->visit(*node.getSegmentNodes()[index]);
-            this->write0byteIns(OpCode::APPEND_STRING);
+            auto *e = node.getSegmentNodes()[index];
+            if(dynamic_cast<StringExprNode *>(e) != nullptr &&
+                    static_cast<StringExprNode *>(e)->getExprNodes().size() > 1) {
+                this->generateStringExpr(*static_cast<StringExprNode *>(e), true);
+            } else {
+                this->visit(*e);
+                this->write0byteIns(OpCode::APPEND_STRING);
+            }
         }
     }
 }
@@ -320,6 +326,35 @@ void ByteCodeGenerator::writePipelineIns(const std::vector<IntrusivePtr<Label>> 
     for(unsigned int i = 0; i < size; i++) {
         this->curBuilder().append16(0);
         this->curBuilder().writeLabel(offset + 2 + i * 2, labels[i], offset, ByteCodeWriter<true>::LabelTarget::_16);
+    }
+}
+
+void ByteCodeGenerator::generateStringExpr(StringExprNode &node, bool fragment) {
+    const unsigned int size = node.getExprNodes().size();
+    if(size == 0) {
+        if(!fragment) {
+            this->write0byteIns(OpCode::PUSH_ESTRING);
+        }
+    } else if(size == 1) {
+        this->visit(*node.getExprNodes()[0]);
+    } else {
+        if(!fragment) {
+            this->write0byteIns(OpCode::NEW_STRING);
+        }
+        for(Node *e : node.getExprNodes()) {
+            if(dynamic_cast<BinaryOpNode *>(e) != nullptr) {
+                auto *binary = static_cast<BinaryOpNode *>(e);
+                if(dynamic_cast<StringExprNode *>(binary->getOptNode()) != nullptr) {
+                    for(Node *e2 : static_cast<StringExprNode *>(binary->getOptNode())->getExprNodes()) {
+                        this->visit(*e2);
+                        this->write0byteIns(OpCode::APPEND_STRING);
+                    }
+                    continue;
+                }
+            }
+            this->visit(*e);
+            this->write0byteIns(OpCode::APPEND_STRING);
+        }
     }
 }
 
@@ -374,28 +409,7 @@ void ByteCodeGenerator::visitObjectPathNode(ObjectPathNode &node) {
 }
 
 void ByteCodeGenerator::visitStringExprNode(StringExprNode &node) {
-    const unsigned int size = node.getExprNodes().size();
-    if(size == 0) {
-        this->write0byteIns(OpCode::PUSH_ESTRING);
-    } else if(size == 1) {
-        this->visit(*node.getExprNodes()[0]);
-    } else {
-        this->write0byteIns(OpCode::NEW_STRING);
-        for(Node *e : node.getExprNodes()) {
-            if(dynamic_cast<BinaryOpNode *>(e) != nullptr) {
-                auto *binary = static_cast<BinaryOpNode *>(e);
-                if(dynamic_cast<StringExprNode *>(binary->getOptNode()) != nullptr) {
-                    for(Node *e2 : static_cast<StringExprNode *>(binary->getOptNode())->getExprNodes()) {
-                        this->visit(*e2);
-                        this->write0byteIns(OpCode::APPEND_STRING);
-                    }
-                    continue;
-                }
-            }
-            this->visit(*e);
-            this->write0byteIns(OpCode::APPEND_STRING);
-        }
-    }
+    this->generateStringExpr(node, false);
 }
 
 void ByteCodeGenerator::visitArrayNode(ArrayNode &node) {

@@ -318,6 +318,7 @@ private:
     void generateCmdArg(CmdArgNode &node);
     void generateTilde(TildeNode &node, bool isLastSegment);
     void writePipelineIns(const std::vector<IntrusivePtr<Label>> &labels);
+    void generateStringExpr(StringExprNode &node, bool fragment);
 
     void initCallable(CallableKind kind, unsigned short localVarNum);
     void initToplevelCallable(const RootNode &node);
