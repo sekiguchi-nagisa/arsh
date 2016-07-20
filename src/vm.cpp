@@ -16,6 +16,7 @@
 
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <stdlib.h>
 
 #include "opcode.h"
 #include "context.h"
@@ -154,7 +155,7 @@ static void forkAndCapture(bool isStr, RuntimeContext &ctx) {
         exit(1);    //FIXME: throw exception
     }
 
-    pid_t pid = xfork();
+    pid_t pid = ctx.xfork();
     if(pid > 0) {   // parent process
         close(pipefds[WRITE_PIPE]);
 
@@ -707,7 +708,7 @@ static void callPipeline(RuntimeContext &ctx) {
     std::pair<unsigned int, ChildError> errorPair;
     unsigned int procIndex;
     unsigned int actualProcSize = 0;
-    for(procIndex = 0; procIndex < procSize && (pid = xfork()) > 0; procIndex++) {
+    for(procIndex = 0; procIndex < procSize && (pid = ctx.xfork()) > 0; procIndex++) {
         actualProcSize++;
         pipeline.procStates[procIndex].setPid(pid);
 

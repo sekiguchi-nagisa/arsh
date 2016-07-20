@@ -947,6 +947,30 @@ void RuntimeContext::interpretPromptString(const char *ps, std::string &output) 
     }
 }
 
+pid_t RuntimeContext::xfork() {
+    pid_t pid = fork();
+    if(pid == 0) {  // child process
+        struct sigaction act;
+        act.sa_handler = SIG_DFL;
+        act.sa_flags = 0;
+        sigemptyset(&act.sa_mask);
+
+        /**
+         * reset signal behavior
+         */
+        sigaction(SIGINT, &act, NULL);
+        sigaction(SIGQUIT, &act, NULL);
+        sigaction(SIGTSTP, &act, NULL);
+
+        // update PID, PPID
+        this->setGlobal(this->getBuiltinVarIndex(BuiltinVarOffset::PID),
+                        DSValue::create<Int_Object>(this->pool.getUint32Type(), getpid()));
+        this->setGlobal(this->getBuiltinVarIndex(BuiltinVarOffset::PPID),
+                        DSValue::create<Int_Object>(this->pool.getUint32Type(), getppid()));
+    }
+    return pid;
+}
+
 pid_t RuntimeContext::xwaitpid(pid_t pid, int &status, int options) {
     pid_t ret = waitpid(pid, &status, options);
     if(WIFSIGNALED(status)) {
@@ -1482,24 +1506,6 @@ std::string expandTilde(const char *path) {
         expanded += path;
     }
     return expanded;
-}
-
-pid_t xfork() {
-    pid_t pid = fork();
-    if(pid == 0) {  // child process
-        struct sigaction act;
-        act.sa_handler = SIG_DFL;
-        act.sa_flags = 0;
-        sigemptyset(&act.sa_mask);
-
-        /**
-         * reset signal behavior
-         */
-        sigaction(SIGINT, &act, NULL);
-        sigaction(SIGQUIT, &act, NULL);
-        sigaction(SIGTSTP, &act, NULL);
-    }
-    return pid;
 }
 
 } // namespace ydsh

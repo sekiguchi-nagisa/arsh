@@ -631,7 +631,7 @@ static void forkAndExec(RuntimeContext *ctx, char *const *argv, int &status, boo
     const char *filePath = ctx->getPathCache().searchPath(
             argv[0], useDefaultPath ? FilePathCache::USE_DEFAULT_PATH : 0);
 
-    pid_t pid = xfork();
+    pid_t pid = ctx->xfork();
     if(pid == -1) {
         perror("child process error");
         exit(1);
@@ -669,7 +669,7 @@ static int builtin_eval(RuntimeContext *ctx, const int argc, char *const *argv) 
     // user-defined command
     auto *udcNode = ctx->lookupUserDefinedCommand(cmdName);
     if(udcNode != nullptr) {
-        pid_t pid = xfork();
+        pid_t pid = ctx->xfork();
         if(pid == -1) {
             perror("child process error");
             exit(1);

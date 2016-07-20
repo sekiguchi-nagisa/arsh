@@ -3,3 +3,13 @@
 assert($OSTYPE == "$(uname -s)")
 
 assert($YDSH_VERSION == "$(ps_intrp '\V')")
+
+# $, PID, PPID
+assert $$ == $PID
+assert $PID != $PPID
+
+child() {
+    return $$ == $PPID && $$ != $PID ? 0 : 1
+}
+
+assert child

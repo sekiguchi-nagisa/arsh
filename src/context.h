@@ -43,8 +43,10 @@ enum class BuiltinVarOffset : unsigned int {
     VERSION,        // YDSH_VERSION (equivalent to ps_intrp '\V')
     REPLY,          // REPLY (for read command)
     REPLY_VAR,      // reply (fo read command)
+    PID,            // PID (current process)
+    PPID,           // PPID
     EXIT_STATUS,    // ?
-    PID,            // $
+    SHELL_PID,      // $
     ARGS,           // @
     ARGS_SIZE,      // #
     POS_0,          // 0 (for script name)
@@ -562,6 +564,11 @@ public:
     void interpretPromptString(const char *ps, std::string &output);
 
     /**
+     * after fork, reset signal setting in child process.
+     */
+    pid_t xfork();
+
+    /**
      * waitpid wrapper.
      */
     pid_t xwaitpid(pid_t pid, int &status, int options);
@@ -597,10 +604,6 @@ public:
  */
 std::string expandTilde(const char *path);
 
-/**
- * after fork, reset signal setting in child process.
- */
-pid_t xfork();
 
 // for exception handling
 struct DSExcepton {};

@@ -346,6 +346,18 @@ static void initBuiltinVar(DSContext *dsctx) {
             dsctx->ctx.getPool().createReifiedType(dsctx->ctx.getPool().getMapTemplate(), std::move(types))));
 
     /**
+     * process id of current process.
+     * must be Int_Object
+     */
+    bindVariable(dsctx, "PID", DSValue::create<Int_Object>(dsctx->ctx.getPool().getUint32Type(), getpid()));
+
+    /**
+     * parent process id of current process.
+     * must be Int_Object
+     */
+    bindVariable(dsctx, "PPID", DSValue::create<Int_Object>(dsctx->ctx.getPool().getUint32Type(), getppid()));
+
+    /**
      * contains exit status of most recent executed process. ($?)
      * must be Int_Object
      */
