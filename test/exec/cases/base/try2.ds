@@ -38,6 +38,23 @@ for(var i = 0; $i < 10; $i = $i + 1) {
 }
 assert($flag && $j == 5)
 
+$flag = $false
+$j = 0
+for(var i = 0; $i < 5; $i = $i + 1) {
+    $flag = $false
+    try {
+        if $i % 2 == 0 {
+            $flag = $true
+            continue;
+        }
+    } finally {
+        $j = 0
+    }
+    $j = $i
+}
+assert $j == 0 && $flag
+
+
 # nested finally
 function g() : Int {
     var i = 0

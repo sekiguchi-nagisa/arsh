@@ -1,10 +1,14 @@
+var c = 0
 try {
     34
 } finally {
     while $true {
+        $c++
         break;
     }
+    $c++
 }
+assert $c == 2
 
 try {
     34
@@ -13,7 +17,9 @@ try {
         $true
     } catch $e {
         while $true {
+            $c++
             break;
         }
     }
 }
+assert $c == 2
