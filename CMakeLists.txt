@@ -234,7 +234,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_binding)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/directive)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_iface)
 
-set(GTEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/gtest)
+set(GTEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/gtest)
 add_subdirectory(${GTEST_DIR})
 
 set(YDSH_STATIC ydsh_static)
@@ -247,11 +247,11 @@ target_link_libraries(${YDSH_STATIC} ${HAVE_LIBDBUS})
 #     ydsh     #
 #==============#
 
-include_directories(lib/linenoise)
+include_directories(ext/linenoise)
 add_executable(${BIN_NAME}
         src/main.cpp
         src/interactive.cpp
-        lib/linenoise/linenoise.c)
+        ext/linenoise/linenoise.c)
 target_link_libraries(${BIN_NAME} ${YDSH_STATIC})
 
 install(TARGETS ${BIN_NAME} RUNTIME DESTINATION bin)

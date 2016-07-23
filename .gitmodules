@@ -1,8 +1,8 @@
 [submodule "lib/linenoise"]
-	path = lib/linenoise
+	path = ext/linenoise
     url = https://github.com/sekiguchi-nagisa/linenoise.git
     ignore = dirty
 [submodule "lib/gtest"]
-	path = lib/gtest
+	path = ext/gtest
     url = https://github.com/google/googletest.git
     ignore = dirty
