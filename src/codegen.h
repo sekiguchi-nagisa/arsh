@@ -105,26 +105,19 @@ struct ByteCodeWriter {
     CodeBuffer codeBuffer;
 
     void write8(unsigned int index, unsigned char b) noexcept {
-        this->codeBuffer[index] = b;
+        ydsh::write8(this->codeBuffer.begin() + index, b);
     }
 
     void write16(unsigned int index, unsigned short b) noexcept {
-        this->write8(index, (b & 0xFF00) >> 8);
-        this->write8(index + 1, b & 0xFF);
+        ydsh::write16(this->codeBuffer.begin() + index, b);
     }
 
     void write32(unsigned int index, unsigned int b) noexcept {
-        this->write8(index,     (b & 0xFF000000) >> 24);
-        this->write8(index + 1, (b & 0xFF0000) >> 16);
-        this->write8(index + 2, (b & 0xFF00) >> 8);
-        this->write8(index + 3,  b & 0xFF);
+        ydsh::write32(this->codeBuffer.begin() + index, b);
     }
 
     void write64(unsigned int index, unsigned long b) noexcept {
-        for(unsigned int i = 0; i < 8; i++) {
-            const unsigned long mask = 0xFF * static_cast<unsigned long>(pow(0x100, 7 - i));
-            this->write8(index + i, (b & mask) >> ((7 - i) * 8));
-        }
+        ydsh::write64(this->codeBuffer.begin() + index, b);
     }
 
     void write(unsigned int index, unsigned long b) noexcept {

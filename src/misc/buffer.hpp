@@ -21,6 +21,7 @@
 #include <type_traits>
 #include <exception>
 #include <cassert>
+#include <cmath>
 
 #include "noncopyable.h"
 
@@ -388,6 +389,30 @@ inline unsigned long read64(const unsigned char *const code, unsigned int index)
         v |= static_cast<unsigned long>(read8(code, index + i)) << ((7 - i) * 8);
     }
     return v;
+}
+
+// for byte writing
+inline void write8(unsigned char *ptr, unsigned char b) noexcept {
+    *ptr = b;
+}
+
+inline void write16(unsigned char *ptr, unsigned short b) noexcept {
+    write8(ptr, (b & 0xFF00) >> 8);
+    write8(ptr + 1, b & 0xFF);
+}
+
+inline void write32(unsigned char *ptr, unsigned int b) noexcept {
+    write8(ptr,     (b & 0xFF000000) >> 24);
+    write8(ptr + 1, (b & 0xFF0000) >> 16);
+    write8(ptr + 2, (b & 0xFF00) >> 8);
+    write8(ptr + 3,  b & 0xFF);
+}
+
+inline void write64(unsigned char *ptr, unsigned long b) noexcept {
+    for(unsigned int i = 0; i < 8; i++) {
+        const unsigned long mask = 0xFF * static_cast<unsigned long>(pow(0x100, 7 - i));
+        write8(ptr + i, (b & mask) >> ((7 - i) * 8));
+    }
 }
 
 } // namespace ydsh
