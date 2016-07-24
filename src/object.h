@@ -28,6 +28,7 @@
 #include "misc/demangle.hpp"
 #include "misc/buffer.hpp"
 #include "lexer.h"
+#include "opcode.h"
 
 namespace ydsh {
 
@@ -583,10 +584,87 @@ struct DummyObject : public DSObject {
     }
 };
 
-enum class CallableKind : unsigned char {
+enum class CodeKind : unsigned char {
     TOPLEVEL,
     FUNCTION,
     USER_DEFINED_CMD,
+    NATIVE,
+};
+
+class DSCode {
+protected:
+    /**
+     * +----------------------+-------------------+-------------------------------+
+     * | CallableKind (1byte) | code size (4byte) | local variable number (2byte) |
+     * +----------------------+-------------------+-------------------------------+
+     *
+     * if indicate toplevel
+     *
+     * +----------------------+-------------------+-------------------------------+--------------------------------+
+     * | CallableKind (1byte) | code size (4byte) | local variable number (2byte) | global variable number (2byte) |
+     * +----------------------+-------------------+-------------------------------+--------------------------------+
+     *
+     * if indicate native
+     *
+     * +----------------------+
+     * | CallableKind (1byte) |
+     * +----------------------+
+     */
+    unsigned char *code;
+
+public:
+    DSCode(unsigned char *code) : code(code) {}
+
+protected:
+    ~DSCode() {
+        free(this->code);
+    }
+
+public:
+    const unsigned char *getCode() const {
+        return this->code;
+    }
+
+    CodeKind getKind() const {
+        return static_cast<CodeKind>(this->code[0]);
+    }
+
+    bool is(CodeKind kind) const {
+        return this->getKind() == kind;
+    }
+
+    unsigned int getCodeSize() const {
+        return read32(this->code, 1);
+    }
+
+    unsigned int getCodeOffset() const {
+        return this->is(CodeKind::NATIVE) ? 1 : this->is(CodeKind::TOPLEVEL) ? 9 : 7;
+    }
+};
+
+struct NativeCode : public DSCode {
+    NativeCode() : DSCode(nullptr) {}
+
+    NativeCode(native_func_t func, bool hasRet) : DSCode(new unsigned char[11]) {
+        this->code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
+        this->code[1] = static_cast<unsigned char>(OpCode::CALL_NATIVE);
+        write64(this->code + 2, reinterpret_cast<unsigned long>(func));
+        this->code[10] = static_cast<unsigned char>(hasRet ? OpCode::RETURN_V : OpCode::RETURN);
+    }
+
+    NativeCode(NativeCode &&o) : DSCode(o.code) {
+        o.code = nullptr;
+    }
+
+    ~NativeCode() = default;
+
+    NON_COPYABLE(NativeCode);
+
+    NativeCode &operator=(NativeCode &&o) noexcept {
+        NativeCode tmp(std::move(o));
+        std::swap(this->code, tmp.code);
+        return *this;
+    }
 };
 
 struct SourcePosEntry {
@@ -614,56 +692,7 @@ struct ExceptionEntry {
     unsigned int dest;  // catch block address
 };
 
-class CallableBase {
-protected:
-    /**
-     * +----------------------+-------------------+-------------------------------+
-     * | CallableKind (1byte) | code size (4byte) | local variable number (2byte) |
-     * +----------------------+-------------------+-------------------------------+
-     *
-     * if indicate toplevel
-     *
-     * +----------------------+-------------------+-------------------------------+--------------------------------+
-     * | CallableKind (1byte) | code size (4byte) | local variable number (2byte) | global variable number (2byte) |
-     * +----------------------+-------------------+-------------------------------+--------------------------------+
-     *
-     */
-    unsigned char *code;
-
-public:
-    CallableBase(unsigned char *code) : code(code) {}
-
-    ~CallableBase() {
-        free(this->code);
-    }
-
-    const unsigned char *getCode() const {
-        return this->code;
-    }
-
-    CallableKind getCallableKind() const {
-        return static_cast<CallableKind>(this->code[0]);
-    }
-
-    unsigned int getCodeSize() const {
-        return read32(this->code, 1);
-    }
-
-    unsigned short getLocalVarNum() const {
-        return read16(this->code, 5);
-    }
-
-    unsigned short getGlobalVarNum() const {
-        assert(this->getCallableKind() == CallableKind::TOPLEVEL);
-        return read16(this->code, 7);
-    }
-
-    unsigned int getCodeOffset() const {
-        return this->getCallableKind() == CallableKind::TOPLEVEL ? 9 : 7;
-    }
-};
-
-class Callable : public CallableBase {
+class CompiledCode : public DSCode {
 private:
     SourceInfoPtr srcInfo;
 
@@ -688,15 +717,15 @@ private:
     ExceptionEntry *exceptionEntries;
 
 public:
-    NON_COPYABLE(Callable);
+    NON_COPYABLE(CompiledCode);
 
-    Callable(const SourceInfoPtr &srcInfo, const char *name, unsigned char *code,
+    CompiledCode(const SourceInfoPtr &srcInfo, const char *name, unsigned char *code,
              DSValue *constPool, SourcePosEntry *sourcePosEntries, ExceptionEntry *exceptionEntries) :
-            CallableBase(code), srcInfo(srcInfo), name(name == nullptr ? nullptr : strdup(name)),
+            DSCode(code), srcInfo(srcInfo), name(name == nullptr ? nullptr : strdup(name)),
             constPool(constPool), sourcePosEntries(sourcePosEntries), exceptionEntries(exceptionEntries) { }
 
-    Callable(Callable &&c) :
-            CallableBase(c.code), srcInfo(c.srcInfo), name(c.name),
+    CompiledCode(CompiledCode &&c) :
+            DSCode(c.code), srcInfo(c.srcInfo), name(c.name),
             constPool(c.constPool), sourcePosEntries(c.sourcePosEntries), exceptionEntries(c.exceptionEntries) {
         c.name = nullptr;
         c.code = nullptr;
@@ -705,17 +734,20 @@ public:
         c.exceptionEntries = nullptr;
     }
 
-    ~Callable() {
+    ~CompiledCode() {
         free(this->name);
         delete[] this->constPool;
         delete[] this->sourcePosEntries;
         delete[] this->exceptionEntries;
     }
 
-    Callable &operator=(Callable &&c) noexcept {
-        Callable tmp(std::move(c));
-        std::swap(*this, tmp);
-        return *this;
+    unsigned short getLocalVarNum() const {
+        return read16(this->code, 5);
+    }
+
+    unsigned short getGlobalVarNum() const {
+        assert(this->getKind() == CodeKind::TOPLEVEL);
+        return read16(this->code, 7);
     }
 
     const SourceInfoPtr &getSrcInfo() const {
@@ -744,16 +776,16 @@ public:
 
 class FuncObject : public DSObject {
 private:
-    Callable callable;
+    CompiledCode code;
 
 public:
-    explicit FuncObject(Callable &&callable) :
-            DSObject(nullptr), callable(std::move(callable)) { }
+    explicit FuncObject(CompiledCode &&callable) :
+            DSObject(nullptr), code(std::move(callable)) { }
 
     ~FuncObject() = default;
 
-    const Callable &getCallable() const {
-        return this->callable;
+    const CompiledCode &getCode() const {
+        return this->code;
     }
 
     void setType(DSType *type) override;

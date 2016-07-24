@@ -36,6 +36,7 @@ class FieldHandle;
 class MethodHandle;
 class DSValue;
 class RuntimeContext;
+class DSCode;
 typedef DSValue (*native_func_t)(RuntimeContext &);
 
 class DSType {
@@ -116,7 +117,7 @@ public:
     /**
      * return null, if has no constructor
      */
-    virtual native_func_t getConstructor();
+    virtual const DSCode *getConstructor();
 
     /**
      * get size of the all fields(include superType fieldSize).
@@ -161,8 +162,8 @@ public:
      */
     virtual bool isSameOrBaseTypeOf(const DSType &targetType) const;
 
-    virtual native_func_t getMethodRef(unsigned int methodIndex);
-    virtual void copyAllMethodRef(std::vector<native_func_t> &methodTable);
+    virtual const DSCode *getMethodRef(unsigned int methodIndex);
+    virtual void copyAllMethodRef(std::vector<const DSCode *> &methodTable);
 };
 
 class FunctionType : public DSType {
@@ -259,10 +260,10 @@ protected:
     /**
      * may be null, if has no constructor
      */
-    native_func_t constructor;
+    const DSCode *constructor;
 
     std::unordered_map<std::string, MethodHandle *> methodHandleMap;
-    std::vector<native_func_t> methodTable;
+    std::vector<const DSCode *> methodTable;
 
 public:
     BuiltinType(DSType *superType, native_type_info_t info, flag8_set_t attribute);
@@ -270,13 +271,13 @@ public:
     virtual ~BuiltinType();
 
     virtual MethodHandle *getConstructorHandle(TypePool &typePool) override;
-    native_func_t getConstructor() override;
+    const DSCode *getConstructor() override;
     MethodHandle *lookupMethodHandle(TypePool &typePool, const std::string &methodName) override;
     virtual FieldHandle *findHandle(const std::string &fieldName) override;
     virtual void accept(TypeVisitor *visitor) override;
     unsigned int getMethodSize() override;
-    native_func_t getMethodRef(unsigned int methodIndex) override;
-    void copyAllMethodRef(std::vector<native_func_t> &methodTable) override;
+    const DSCode *getMethodRef(unsigned int methodIndex) override;
+    void copyAllMethodRef(std::vector<const DSCode *> &methodTable) override;
 
 protected:
     virtual void initMethodHandle(MethodHandle *handle, TypePool &typePool, NativeFuncInfo &info);
@@ -372,7 +373,7 @@ private:
     MethodHandle *constructorHandle;
 
     static NativeFuncInfo *funcInfo;
-    static native_func_t initRef;
+    static const DSCode *initRef;
 
 public:
     explicit ErrorType(DSType *superType) :
@@ -382,7 +383,7 @@ public:
     ~ErrorType();
 
     MethodHandle *getConstructorHandle(TypePool &typePool) override;
-    native_func_t getConstructor() override;
+    const DSCode *getConstructor() override;
 
     /**
      * return types.size()
@@ -396,7 +397,7 @@ public:
     /**
      * call only once.
      */
-    static void registerFuncInfo(NativeFuncInfo &info);
+    static void registerFuncInfo(native_type_info_t info);
 };
 
 struct TypeVisitor {

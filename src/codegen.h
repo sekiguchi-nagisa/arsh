@@ -241,7 +241,7 @@ private:
 
     MethodHandle *handle_STR;
 
-    struct CallableBuilder : public ByteCodeWriter<true> {
+    struct CodeBuilder : public ByteCodeWriter<true> {
         std::vector<DSValue> constBuffer;
         std::vector<SourcePosEntry> sourcePosEntries;
         std::vector<CatchBuilder> catchBuilders;
@@ -254,7 +254,7 @@ private:
         std::vector<IntrusivePtr<Label>> finallyLabels;
     };
 
-    std::vector<CallableBuilder *> builders;
+    std::vector<CodeBuilder *> builders;
 
 public:
     ByteCodeGenerator(TypePool &pool, bool assertion) :
@@ -264,7 +264,7 @@ public:
     ~ByteCodeGenerator();
 
 private:
-    CallableBuilder &curBuilder() noexcept {
+    CodeBuilder &curBuilder() noexcept {
         assert(!this->builders.empty());
         return *this->builders.back();
     }
@@ -313,9 +313,9 @@ private:
     void writePipelineIns(const std::vector<IntrusivePtr<Label>> &labels);
     void generateStringExpr(StringExprNode &node, bool fragment);
 
-    void initCallable(CallableKind kind, unsigned short localVarNum);
-    void initToplevelCallable(const RootNode &node);
-    Callable finalizeCallable(const CallableNode &node);
+    void initCodeBuilder(CodeKind kind, unsigned short localVarNum);
+    void initToplevelCodeBuilder(const RootNode &node);
+    CompiledCode finalizeCodeBuilder(const CallableNode &node);
 
     // visitor api
     void visit(Node &node) override;
@@ -380,13 +380,13 @@ public:
     /**
      * entry point of code generation.
      */
-    Callable generateToplevel(RootNode &node);
+    CompiledCode generateToplevel(RootNode &node);
 };
 
 /**
  * for debugging
  */
-void dumpCode(std::ostream &stream, RuntimeContext &ctx, const Callable &c);
+void dumpCode(std::ostream &stream, RuntimeContext &ctx, const CompiledCode &c);
 
 } // namespace ydsh
 

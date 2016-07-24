@@ -34,9 +34,9 @@ namespace ydsh {
 #define vmcase(code) case OpCode::code:
 #endif
 
-#define CALLABLE(ctx) (ctx.callableStack().back())
-#define GET_CODE(ctx) (CALLABLE(ctx)->getCode())
-#define CONST_POOL(ctx) (CALLABLE(ctx)->getConstPool())
+#define CODE(ctx) (ctx.codeStack().back())
+#define GET_CODE(ctx) (CODE(ctx)->getCode())
+#define CONST_POOL(ctx) (static_cast<const CompiledCode *>(CODE(ctx))->getConstPool())
 
 /* runtime api */
 static void printStackTop(RuntimeContext &ctx, DSType *stackTopType) {
@@ -973,7 +973,7 @@ static bool mainLoop(RuntimeContext &ctx) {
 
             auto *func = typeAs<FuncObject>(ctx.peek());
             if(func->getType() == nullptr) {
-                auto *handle = ctx.getSymbolTable().lookupHandle(func->getCallable().getName());
+                auto *handle = ctx.getSymbolTable().lookupHandle(func->getCode().getName());
                 assert(handle != nullptr);
                 func->setType(handle->getFieldType(ctx.getPool()));
             }
@@ -1108,6 +1108,16 @@ static bool mainLoop(RuntimeContext &ctx) {
             ctx.applyFuncObject(paramSize);
             break;
         }
+        vmcase(CALL_NATIVE) {
+            unsigned long v = read64(GET_CODE(ctx), ctx.pc() + 1);
+            ctx.pc() += 8;
+            native_func_t func = (native_func_t) v;
+            DSValue returnValue = func(ctx);
+            if(returnValue) {
+                ctx.push(std::move(returnValue));
+            }
+            break;
+        }
         vmcase(INVOKE_METHOD) {
             unsigned short index = read16(GET_CODE(ctx), ctx.pc() + 1);
             ctx.pc() += 2;
@@ -1128,18 +1138,27 @@ static bool mainLoop(RuntimeContext &ctx) {
         }
         vmcase(RETURN) {
             ctx.unwindStackFrame();
+            if(ctx.codeStack().empty()) {
+                return true;
+            }
             break;
         }
         vmcase(RETURN_V) {
             DSValue v(ctx.pop());
             ctx.unwindStackFrame();
             ctx.push(std::move(v));
+            if(ctx.codeStack().empty()) {
+                return true;
+            }
             break;
         }
         vmcase(RETURN_UDC) {
             auto v = ctx.pop();
             ctx.unwindStackFrame();
             ctx.updateExitStatus(typeAs<Int_Object>(v)->getValue());
+            if(ctx.codeStack().empty()) {
+                return true;
+            }
             break;
         }
         vmcase(BRANCH) {
@@ -1360,14 +1379,16 @@ static bool mainLoop(RuntimeContext &ctx) {
  * otherwise return false.
  */
 static bool handleException(RuntimeContext &ctx) {
-    while(!ctx.callableStack().empty()) {
-        if(CALLABLE(ctx) != nullptr) {  // may be null, if native method
+    while(!ctx.codeStack().empty()) {
+        if(!CODE(ctx)->is(CodeKind::NATIVE)) {
+            auto *cc = static_cast<const CompiledCode *>(CODE(ctx));
+
             // search exception entry
             const unsigned int occurredPC = ctx.pc();
             const DSType *occurredType = ctx.getThrownObject()->getType();
 
-            for(unsigned int i = 0; CALLABLE(ctx)->getExceptionEntries()[i].type != nullptr; i++) {
-                const ExceptionEntry &entry = CALLABLE(ctx)->getExceptionEntries()[i];
+            for(unsigned int i = 0; cc->getExceptionEntries()[i].type != nullptr; i++) {
+                const ExceptionEntry &entry = cc->getExceptionEntries()[i];
                 if(occurredPC >= entry.begin && occurredPC < entry.end
                    && entry.type->isSameOrBaseTypeOf(*occurredType)) {
                     ctx.pc() = entry.dest - 1;
@@ -1377,7 +1398,7 @@ static bool handleException(RuntimeContext &ctx) {
                 }
             }
         }
-        if(ctx.callableStack().size() == 1) {
+        if(ctx.codeStack().size() == 1) {
             break;  // when top level
         }
         ctx.unwindStackFrame();
@@ -1385,16 +1406,16 @@ static bool handleException(RuntimeContext &ctx) {
     return false;
 }
 
-bool vmEval(RuntimeContext &ctx, Callable &callable) {
+bool vmEval(RuntimeContext &ctx, CompiledCode &code) {
     ctx.resetState();
 
-    ctx.callableStack().push_back(&callable);
+    ctx.codeStack().push_back(&code);
     ctx.skipHeader();
 
     while(true) {
         try {
             bool ret = mainLoop(ctx);
-            ctx.callableStack().clear();
+            ctx.codeStack().clear();
             return ret;
         } catch(const DSExcepton &) {
             if(handleException(ctx)) {
@@ -1403,6 +1424,28 @@ bool vmEval(RuntimeContext &ctx, Callable &callable) {
             return false;
         }
     }
+}
+
+DSValue callMethod(RuntimeContext &ctx, const MethodHandle *handle, DSValue &&recv, std::vector<DSValue> &&args) {
+    assert(handle != nullptr);
+    assert(handle->getParamTypes().size() == args.size());
+
+    ctx.resetState();
+
+    // push argument
+    ctx.push(std::move(recv));
+    const unsigned int size = args.size();
+    for(unsigned int i = 0; i < size; i++) {
+        ctx.push(std::move(args[i]));
+    }
+
+    ctx.callMethod(handle->getMethodIndex(), args.size());
+    mainLoop(ctx);
+    DSValue ret;
+    if(!handle->getReturnType()->isVoidType()) {
+        ret = ctx.pop();
+    }
+    return ret;
 }
 
 } // namespace ydsh

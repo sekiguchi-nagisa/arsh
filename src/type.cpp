@@ -27,6 +27,8 @@ namespace ydsh {
 
 extern NativeFuncInfo *const nativeFuncInfoTable;
 
+const NativeCode *getNativeCode(unsigned int index);
+
 // ####################
 // ##     DSType     ##
 // ####################
@@ -39,7 +41,7 @@ MethodHandle *DSType::getConstructorHandle(TypePool &) {
     return nullptr;
 }
 
-native_func_t DSType::getConstructor() {
+const DSCode *DSType::getConstructor() {
     return nullptr;
 }
 
@@ -70,11 +72,11 @@ bool DSType::isSameOrBaseTypeOf(const DSType &targetType) const {
     return superType != nullptr && this->isSameOrBaseTypeOf(*superType);
 }
 
-native_func_t DSType::getMethodRef(unsigned int methodIndex) {
+const DSCode *DSType::getMethodRef(unsigned int methodIndex) {
     return this->superType != nullptr ? this->superType->getMethodRef(methodIndex) : 0;
 }
 
-void DSType::copyAllMethodRef(std::vector<native_func_t> &) {
+void DSType::copyAllMethodRef(std::vector<const DSCode *> &) {
 }
 
 // ##########################
@@ -108,6 +110,14 @@ NativeFuncInfo &native_type_info_t::getInitInfo() {
     return nativeFuncInfoTable[this->offset];
 }
 
+static const NativeCode *getCode(native_type_info_t info, unsigned int index) {
+    return getNativeCode(info.offset + info.constructorSize + index);
+}
+
+static const NativeCode *getCode(native_type_info_t info) {
+    return getNativeCode(info.offset);
+}
+
 
 // #########################
 // ##     BuiltinType     ##
@@ -132,7 +142,7 @@ BuiltinType::BuiltinType(DSType *superType, native_type_info_t info, flag8_set_t
         this->methodHandleMap.insert(std::make_pair(std::string(funcInfo->funcName), handle));
 
         // set to method table
-        this->methodTable[methodIndex] = this->info.getMethodInfo(i).func_ptr;
+        this->methodTable[methodIndex] = getCode(this->info, i);
     }
 }
 
@@ -148,12 +158,12 @@ MethodHandle *BuiltinType::getConstructorHandle(TypePool &typePool) {
     if(this->constructorHandle == nullptr && this->info.constructorSize != 0) {
         this->constructorHandle = new MethodHandle(0);
         this->initMethodHandle(this->constructorHandle, typePool, this->info.getInitInfo());
-        this->constructor = this->info.getInitInfo().func_ptr;
+        this->constructor = getCode(this->info);
     }
     return this->constructorHandle;
 }
 
-native_func_t BuiltinType::getConstructor() {
+const DSCode *BuiltinType::getConstructor() {
     return this->constructor;
 }
 
@@ -191,11 +201,11 @@ unsigned int BuiltinType::getMethodSize() {
     return this->methodHandleMap.size();
 }
 
-native_func_t BuiltinType::getMethodRef(unsigned int methodIndex) {
+const DSCode *BuiltinType::getMethodRef(unsigned int methodIndex) {
     return this->methodTable[methodIndex];
 }
 
-void BuiltinType::copyAllMethodRef(std::vector<native_func_t> &methodTable) {
+void BuiltinType::copyAllMethodRef(std::vector<const DSCode *> &methodTable) {
     unsigned int size = this->getMethodSize();
     assert(size <= methodTable.size());
 
@@ -244,7 +254,7 @@ MethodHandle *TupleType::getConstructorHandle(TypePool &typePool) {
     if(this->elementTypes.size() == 1 && this->constructorHandle == nullptr) {
         this->constructorHandle = new MethodHandle(0);
         this->initMethodHandle(this->constructorHandle, typePool, this->info.getInitInfo());
-        this->constructor = this->info.getInitInfo().func_ptr;
+        this->constructor = getCode(this->info);
     }
     return this->constructorHandle;
 }
@@ -355,7 +365,7 @@ ErrorType::~ErrorType() {
 }
 
 NativeFuncInfo *ErrorType::funcInfo = nullptr;
-native_func_t ErrorType::initRef;
+const DSCode *ErrorType::initRef;
 
 MethodHandle *ErrorType::getConstructorHandle(TypePool &typePool) {
     if(this->constructorHandle == nullptr) {
@@ -366,7 +376,7 @@ MethodHandle *ErrorType::getConstructorHandle(TypePool &typePool) {
     return this->constructorHandle;
 }
 
-native_func_t ErrorType::getConstructor() {
+const DSCode *ErrorType::getConstructor() {
     return initRef;
 }
 
@@ -393,10 +403,10 @@ void ErrorType::accept(TypeVisitor *visitor) {
 /**
  * call only once.
  */
-void ErrorType::registerFuncInfo(NativeFuncInfo &info) {
+void ErrorType::registerFuncInfo(native_type_info_t info) {
     if(funcInfo == nullptr) {
-        funcInfo = &info;
-        initRef = info.func_ptr;
+        funcInfo = &info.getInitInfo();
+        initRef = getCode(info);
     }
 }
 
@@ -540,7 +550,7 @@ TypePool::TypePool() :
     this->initBuiltinType(Proc__, "Proc%%", false, this->getAnyType(), info_Dummy());
 
     // register NativeFuncInfo to ErrorType
-    ErrorType::registerFuncInfo(info_ErrorType().getInitInfo());
+    ErrorType::registerFuncInfo(info_ErrorType());
 
     // initialize type template
     std::vector<DSType *> elements;

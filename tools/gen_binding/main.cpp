@@ -866,6 +866,12 @@ static void gencode(const char *outFileName, const std::vector<TypeBind *> &bind
     OUT("NativeFuncInfo *nativeFuncInfoTable = infoTable;\n");
     OUT("\n");
 
+    OUT("const NativeCode *getNativeCode(unsigned int index) {\n");
+    OUT("    static auto codes(initNative(infoTable));\n");
+    OUT("    return &codes[index];\n");
+    OUT("}\n");
+    OUT("\n");
+
     // generate dummy
     OUT("native_type_info_t info_Dummy() {\n");
     OUT("    return { .offset = 0, .constructorSize = 0, .methodSize = 0 };\n");

@@ -37,15 +37,6 @@
 #include "codegen.h"
 #include "misc/num.h"
 
-namespace ydsh {
-
-/**
- * entry point
- */
-bool vmEval(RuntimeContext &ctx, Callable &callable);
-
-} // namespace ydsh
-
 using namespace ydsh;
 
 struct DSContext {
@@ -214,7 +205,7 @@ static void handleTypeError(DSContext *dsctx, const Lexer &lexer, const TypeChec
 
 static int eval(DSContext *dsctx, RootNode &rootNode) {
     ByteCodeGenerator codegen(dsctx->ctx.getPool(), hasFlag(dsctx->option, DS_OPTION_ASSERT));
-    Callable c = codegen.generateToplevel(rootNode);
+    CompiledCode c = codegen.generateToplevel(rootNode);
 
     if(hasFlag(dsctx->option, DS_OPTION_DUMP_CODE)) {
         std::cout << "### dump compiled code ###" << std::endl;

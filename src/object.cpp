@@ -507,7 +507,7 @@ void FuncObject::setType(DSType *type) {
 
 std::string FuncObject::toString(RuntimeContext &, VisitedSet *) {
     std::string str("function(");
-    str += this->callable.getName();
+    str += this->code.getName();
     str += ")";
     return str;
 }

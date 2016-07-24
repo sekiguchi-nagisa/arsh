@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-#ifndef YDSH__BIND_H
-#define YDSH__BIND_H
+#ifndef YDSH_BIND_H
+#define YDSH_BIND_H
+
+#include <array>
 
 #include "type.h"
+#include "object.h"
 
 namespace ydsh {
 
@@ -49,6 +52,15 @@ native_type_info_t info_StringIterType();
 native_type_info_t info_ArrayType();
 native_type_info_t info_MapType();
 native_type_info_t info_TupleType();
+
+template <std::size_t N>
+std::array<NativeCode, N> initNative(const NativeFuncInfo (&e)[N]) {
+    std::array<NativeCode, N> array;
+    for(unsigned int i = 0; i < N; i++) {
+        array[i] = NativeCode(e[i].func_ptr, static_cast<HandleInfo>(e[i].handleInfo[0]) != HandleInfo::Void);
+    }
+    return array;
+}
 
 } // namespace ydsh
 

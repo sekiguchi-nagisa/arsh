@@ -38,6 +38,7 @@
 | CALL_INIT     | 2: byte1 byte2                 | value -> value                               | call constructor                                   |
 | CALL_METHOD   | 4: index1 index2 param1 param2 | recv param1 ~ paramN -> result               | call virtual method                                |
 | CALL_FUNC     | 2: param1 param2               | func param1 ~ paramN -> result               | apply function object                              |
+| CALL_NATIVE   | 8: ptr1 ~ ptr8                 | -> value                                     | call native function                               |
 | INVOKE_METHOD | 2: byte1 byte2                 | recv param1 ~ paramN -> result               | invoke interface method                            |
 | INVOKE_GETTER | 2: byte1 byte2                 | recv -> value                                | invoke interface getter                            |
 | INVOKE_SETTER | 2: byte1 byte2                 | recv value ->                                | invoke interface setter                            |

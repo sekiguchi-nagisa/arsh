@@ -150,10 +150,10 @@ RuntimeContext::RuntimeContext() :
         emptyStrObj(new String_Object(this->pool.getStringType(), std::string())),
         dummy(new DummyObject()), thrownObject(),
         callStack(new DSValue[DEFAULT_STACK_SIZE]),
-        callStackSize(DEFAULT_STACK_SIZE), stackTopIndex(0), stackBottomIndex(0),
-        localVarOffset(0), pc_(0), traceExit(false),
-        handle_STR(nullptr), IFS_index(0),
-        callableStack_(), pipelineEvaluator(nullptr),
+        callStackSize(DEFAULT_STACK_SIZE), globalVarSize(0),
+        stackTopIndex(0), stackBottomIndex(0), localVarOffset(0), pc_(0),
+        traceExit(false), IFS_index(0),
+        codeStack_(), pipelineEvaluator(nullptr),
         pathCache(), terminationHook(nullptr) { }
 
 RuntimeContext::~RuntimeContext() {
@@ -305,6 +305,7 @@ void RuntimeContext::finalizeScriptArg() {
 
 void RuntimeContext::reserveGlobalVar(unsigned int size) {
     this->reserveLocalVar(size);
+    this->globalVarSize = size;
     this->localVarOffset = size;
 }
 
@@ -371,9 +372,9 @@ void RuntimeContext::clearOperandStack() {
     }
 }
 
-void RuntimeContext::windStackFrame(unsigned int stackTopOffset,
-                    unsigned int paramSize, const Callable *callable) {
-    const unsigned int maxVarSize = callable == nullptr ? paramSize : callable->getLocalVarNum();
+void RuntimeContext::windStackFrame(unsigned int stackTopOffset, unsigned int paramSize, const DSCode *code) {
+    const unsigned int maxVarSize = code->is(CodeKind::NATIVE)? paramSize :
+                                    static_cast<const CompiledCode *>(code)->getLocalVarNum();
 
     const unsigned int oldLocalVarOffset = this->localVarOffset;
     const unsigned int oldStackBottomIndex = this->stackBottomIndex;
@@ -393,10 +394,8 @@ void RuntimeContext::windStackFrame(unsigned int stackTopOffset,
     this->callStack[this->stackTopIndex - 3] = DSValue::createNum(oldPC);
 
     // push callable
-    this->callableStack().push_back(callable);
-    if(callable != nullptr) {
-        this->skipHeader();
-    }
+    this->codeStack().push_back(code);
+    this->skipHeader();
 }
 
 void RuntimeContext::unwindStackFrame() {
@@ -431,20 +430,22 @@ void RuntimeContext::unwindStackFrame() {
     }
 
     // pop callable
-    this->callableStack().pop_back();
+    this->codeStack().pop_back();
 }
 
 void RuntimeContext::skipHeader() {
-    assert(!this->callableStack_.empty());
+    assert(!this->codeStack_.empty());
     this->pc() = 0;
-    if(this->callableStack().back()->getCallableKind() == CallableKind::TOPLEVEL) {
-        unsigned short varNum = this->callableStack().back()->getLocalVarNum();
-        unsigned short gvarNum = this->callableStack().back()->getGlobalVarNum();
+    if(this->codeStack().back()->is(CodeKind::TOPLEVEL)) {
+        const CompiledCode *code = static_cast<const CompiledCode *>(this->codeStack().back());
+
+        unsigned short varNum = code->getLocalVarNum();
+        unsigned short gvarNum = code->getGlobalVarNum();
 
         this->reserveGlobalVar(gvarNum);
         this->reserveLocalVar(this->getLocalVarOffset() + varNum);
     }
-    this->pc() += this->callableStack().back()->getCodeOffset() - 1;
+    this->pc() += this->codeStack().back()->getCodeOffset() - 1;
 }
 
 /**
@@ -457,7 +458,7 @@ void RuntimeContext::skipHeader() {
  */
 void RuntimeContext::applyFuncObject(unsigned int paramSize) {
     auto *func = typeAs<FuncObject>(this->callStack[this->stackTopIndex - paramSize]);
-    this->windStackFrame(paramSize + 1, paramSize, &func->getCallable());
+    this->windStackFrame(paramSize + 1, paramSize, &func->getCode());
 }
 
 /**
@@ -472,20 +473,8 @@ void RuntimeContext::callMethod(unsigned short index, unsigned short paramSize) 
     const unsigned int actualParamSize = paramSize + 1; // include receiver
     const unsigned int recvIndex = this->stackTopIndex - paramSize;
 
-    this->windStackFrame(actualParamSize, actualParamSize, nullptr);
-    DSValue returnValue = this->callStack[recvIndex]->getType()->getMethodRef(index)(*this);
-    this->unwindStackFrame();
-
-    if(returnValue) {
-        this->push(std::move(returnValue));
-    }
-}
-
-void RuntimeContext::callToString() {
-    if(this->handle_STR == nullptr) {
-        this->handle_STR = this->pool.getAnyType().lookupMethodHandle(this->pool, OP_STR);
-    }
-    this->callMethod(this->handle_STR->getMethodIndex(), 0);
+    this->windStackFrame(actualParamSize, actualParamSize,
+                         this->callStack[recvIndex]->getType()->getMethodRef(index));
 }
 
 void RuntimeContext::newDSObject(DSType *type) {
@@ -508,9 +497,8 @@ void RuntimeContext::newDSObject(DSType *type) {
 void RuntimeContext::callConstructor(unsigned short paramSize) {
     const unsigned int recvIndex = this->stackTopIndex - paramSize;
 
-    this->windStackFrame(paramSize, paramSize + 1, nullptr);
-    this->callStack[recvIndex]->getType()->getConstructor()(*this);
-    this->unwindStackFrame();
+    this->windStackFrame(paramSize, paramSize + 1,
+                         this->callStack[recvIndex]->getType()->getConstructor());
 }
 
 /**
@@ -522,8 +510,10 @@ void RuntimeContext::callConstructor(unsigned short paramSize) {
  *             | offset           |   |        |
  */
 void RuntimeContext::invokeMethod(unsigned short constPoolIndex) {
-    auto pair = decodeMethodDescriptor(
-            typeAs<String_Object>(this->callableStack().back()->getConstPool()[constPoolIndex])->getValue());
+    assert(!this->codeStack().back()->is(CodeKind::NATIVE));
+    const CompiledCode *code = static_cast<const CompiledCode *>(this->codeStack().back());
+
+    auto pair = decodeMethodDescriptor(typeAs<String_Object>(code->getConstPool()[constPoolIndex])->getValue());
     const char *methodName = pair.first;
     auto handle = pair.second;
     const unsigned int actualParamSize = handle->getParamTypes().size() + 1;    // include receiver
@@ -539,8 +529,10 @@ void RuntimeContext::invokeMethod(unsigned short constPoolIndex) {
 }
 
 void RuntimeContext::invokeGetter(unsigned short constPoolIndex) {
-    auto tuple = decodeFieldDescriptor(
-            typeAs<String_Object>(this->callableStack().back()->getConstPool()[constPoolIndex])->getValue());
+    assert(!this->codeStack().back()->is(CodeKind::NATIVE));
+    const CompiledCode *code = static_cast<const CompiledCode *>(this->codeStack().back());
+
+    auto tuple = decodeFieldDescriptor(typeAs<String_Object>(code->getConstPool()[constPoolIndex])->getValue());
     const DSType *recvType = std::get<0>(tuple);
     const char *fieldName = std::get<1>(tuple);
     const DSType *fieldType = std::get<2>(tuple);
@@ -564,8 +556,10 @@ void RuntimeContext::invokeGetter(unsigned short constPoolIndex) {
  *             | offset |       |
  */
 void RuntimeContext::invokeSetter(unsigned short constPoolIndex) {
-    auto tuple = decodeFieldDescriptor(
-            typeAs<String_Object>(this->callableStack().back()->getConstPool()[constPoolIndex])->getValue());
+    assert(!this->codeStack().back()->is(CodeKind::NATIVE));
+    const CompiledCode *code = static_cast<const CompiledCode *>(this->codeStack().back());
+
+    auto tuple = decodeFieldDescriptor(typeAs<String_Object>(code->getConstPool()[constPoolIndex])->getValue());
     const DSType *recvType = std::get<0>(tuple);
     const char *fieldName = std::get<1>(tuple);
     const DSType *fieldType = std::get<2>(tuple);
@@ -579,15 +573,12 @@ void RuntimeContext::invokeSetter(unsigned short constPoolIndex) {
 void RuntimeContext::handleUncaughtException(DSValue &&except) {
     std::cerr << "[runtime error]" << std::endl;
     const bool bt = this->pool.getErrorType().isSameOrBaseTypeOf(*except->getType());
-    this->push(std::move(except));
+    auto *handle = except->getType()->lookupMethodHandle(this->pool, bt ? "backtrace" : OP_STR);
+
     try {
-        if(bt) {
-            unsigned int index =
-                    this->pool.getErrorType().lookupMethodHandle(this->pool, "backtrace")->getMethodIndex();
-            this->callMethod(index, 0);
-        } else {
-            this->callToString();
-            std::cerr << typeAs<String_Object>(this->pop())->getValue() << std::endl;
+        DSValue ret = ydsh::callMethod(*this, handle, std::move(except), std::vector<DSValue>());
+        if(!bt) {
+            std::cerr << typeAs<String_Object>(ret)->getValue() << std::endl;
         }
     } catch(const DSExcepton &) {
         std::cerr << "cannot obtain string representation" << std::endl;
@@ -600,35 +591,39 @@ void RuntimeContext::handleUncaughtException(DSValue &&except) {
 }
 
 void RuntimeContext::fillInStackTrace(std::vector<StackTraceElement> &stackTrace) {
-    unsigned int callableDepth = this->callableStack_.size();
+    unsigned int callableDepth = this->codeStack_.size();
 
     unsigned int curPC = this->pc();
     unsigned int curBottomIndex = this->stackBottomIndex;
 
     while(callableDepth) {
-        auto &callable = this->callableStack()[--callableDepth];
-        if(callable != nullptr) {
+        auto &callable = this->codeStack()[--callableDepth];
+        if(!callable->is(CodeKind::NATIVE)) {
+            const CompiledCode *cc = static_cast<const CompiledCode *>(callable);
+
             // create stack trace element
-            const char *sourceName = callable->getSrcInfo()->getSourceName().c_str();
-            unsigned int pos = getSourcePos(callable->getSourcePosEntries(), curPC);
+            const char *sourceName = cc->getSrcInfo()->getSourceName().c_str();
+            unsigned int pos = getSourcePos(cc->getSourcePosEntries(), curPC);
 
             std::string callableName;
-            switch(callable->getCallableKind()) {
-            case CallableKind::TOPLEVEL:
+            switch(callable->getKind()) {
+            case CodeKind::TOPLEVEL:
                 callableName += "<toplevel>";
                 break;
-            case CallableKind::FUNCTION:
+            case CodeKind::FUNCTION:
                 callableName += "function ";
-                callableName += callable->getName();
+                callableName += cc->getName();
                 break;
-            case CallableKind::USER_DEFINED_CMD:
+            case CodeKind::USER_DEFINED_CMD:
                 callableName += "command ";
-                callableName += callable->getName();
+                callableName += cc->getName();
+                break;
+            default:
                 break;
             }
 
             stackTrace.push_back(StackTraceElement(
-                    sourceName, callable->getSrcInfo()->getLineNum(pos), std::move(callableName)));
+                    sourceName, cc->getSrcInfo()->getLineNum(pos), std::move(callableName)));
         }
 
         // unwind state
@@ -641,9 +636,9 @@ void RuntimeContext::fillInStackTrace(std::vector<StackTraceElement> &stackTrace
 }
 
 void RuntimeContext::resetState() {
-    this->localVarOffset = 0;
+    this->localVarOffset = this->globalVarSize;
     this->thrownObject.reset();
-    this->callableStack_.clear();
+    this->codeStack_.clear();
 }
 
 bool RuntimeContext::changeWorkingDir(const char *dest, const bool useLogical) {
@@ -743,7 +738,7 @@ void RuntimeContext::callUserDefinedCommand(const FuncObject *obj, DSValue *argA
     this->push(DSValue::create<Array_Object>(this->pool.getStringArrayType(), std::move(values)));
 
     // set stack stack
-    this->windStackFrame(1, 1, &obj->getCallable());
+    this->windStackFrame(1, 1, &obj->getCode());
 
     // set variable
     auto argv = typeAs<Array_Object>(this->getLocal(0));

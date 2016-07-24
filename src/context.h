@@ -160,6 +160,8 @@ private:
     static constexpr unsigned int DEFAULT_STACK_SIZE = 256;
     static constexpr unsigned int MAXIMUM_STACK_SIZE = 2 * 1024 * 1024;
 
+    unsigned int globalVarSize;
+
     /**
      * initial value is 0. increment index before push
      */
@@ -172,6 +174,7 @@ private:
 
     /**
      * offset of current local variable index.
+     * initial value is equivalent to globalVarSize.
      */
     unsigned int localVarOffset;
 
@@ -186,19 +189,14 @@ private:
     bool traceExit;
 
     /**
-     * for string cast
-     */
-    MethodHandle *handle_STR;
-
-    /**
      * for field splitting (read command, command substitution)
      */
     unsigned int IFS_index;
 
     /**
-     * contains currently evaluating callable.
+     * contains currently evaluating code.
      */
-    std::vector<const Callable *> callableStack_;
+    std::vector<const DSCode *> codeStack_;
 
     /**
      * for caching object.
@@ -376,7 +374,7 @@ public:
     /**
      * callable may be null, when call native method.
      */
-    void windStackFrame(unsigned int stackTopOffset, unsigned int paramSize, const Callable *callable);
+    void windStackFrame(unsigned int stackTopOffset, unsigned int paramSize, const DSCode *code);
 
     void unwindStackFrame();
 
@@ -487,14 +485,19 @@ public:
                 this->callStack[this->stackTopIndex]->getFieldTable()[index];
     }
 
-    std::vector<const Callable *> &callableStack() noexcept {
-        return this->callableStack_;
+    std::vector<const DSCode *> &codeStack() noexcept {
+        return this->codeStack_;
     }
 
     void applyFuncObject(unsigned int paramSize);
 
+    /**
+     * not directy use it
+     *
+     * @param index
+     * @param paramSize
+     */
     void callMethod(unsigned short index, unsigned short paramSize);
-    void callToString();
 
     /**
      * allocate new DSObject on stack top.
@@ -502,6 +505,10 @@ public:
      */
     void newDSObject(DSType *type);
 
+    /**
+     * not directly use it.
+     * @param paramSize
+     */
     void callConstructor(unsigned short paramSize);
 
     /**
@@ -600,6 +607,23 @@ public:
         return this->terminationHook;
     }
 };
+
+/**
+ * entry point
+ */
+bool vmEval(RuntimeContext &ctx, CompiledCode &code);
+
+/**
+ * call method.
+ * @param ctx
+ * @param handle
+ * must not be null
+ * @param recv
+ * @param args
+ * @return
+ * return value of method (if no return value, return null).
+ */
+DSValue callMethod(RuntimeContext &ctx, const MethodHandle *handle, DSValue &&recv, std::vector<DSValue> &&args);
 
 // some system util
 

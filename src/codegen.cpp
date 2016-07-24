@@ -1003,9 +1003,9 @@ void ByteCodeGenerator::visitElementSelfAssignNode(ElementSelfAssignNode &node) 
 }
 
 void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
-    this->initCallable(CallableKind::FUNCTION, node.getMaxVarNum());
+    this->initCodeBuilder(CodeKind::FUNCTION, node.getMaxVarNum());
     this->visit(*node.getBlockNode());
-    auto func = DSValue::create<FuncObject>(this->finalizeCallable(node));
+    auto func = DSValue::create<FuncObject>(this->finalizeCodeBuilder(node));
 
     this->writeLdcIns(func);
     this->write2byteIns(OpCode::STORE_GLOBAL, node.getVarIndex());
@@ -1016,9 +1016,9 @@ void ByteCodeGenerator::visitInterfaceNode(InterfaceNode &) { } // do nothing
 void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     this->inUDC = true;
 
-    this->initCallable(CallableKind::USER_DEFINED_CMD, node.getMaxVarNum());
+    this->initCodeBuilder(CodeKind::USER_DEFINED_CMD, node.getMaxVarNum());
     this->visit(*node.getBlockNode());
-    auto func = DSValue::create<FuncObject>(this->finalizeCallable(node));
+    auto func = DSValue::create<FuncObject>(this->finalizeCodeBuilder(node));
 
     this->writeLdcIns(func);
     this->write2byteIns(OpCode::STORE_GLOBAL, node.getUdcIndex());
@@ -1036,9 +1036,9 @@ void ByteCodeGenerator::visitRootNode(RootNode &rootNode) {
     this->write0byteIns(OpCode::STOP_EVAL);
 }
 
-void ByteCodeGenerator::initCallable(CallableKind kind, unsigned short localVarNum) {
+void ByteCodeGenerator::initCodeBuilder(CodeKind kind, unsigned short localVarNum) {
     // push new builder
-    auto *builder = new CallableBuilder();
+    auto *builder = new CodeBuilder();
     this->builders.push_back(builder);
 
     // generate header
@@ -1047,12 +1047,12 @@ void ByteCodeGenerator::initCallable(CallableKind kind, unsigned short localVarN
     this->curBuilder().append16(localVarNum);
 }
 
-void ByteCodeGenerator::initToplevelCallable(const RootNode &node) {
-    this->initCallable(CallableKind::TOPLEVEL, node.getMaxVarNum());
+void ByteCodeGenerator::initToplevelCodeBuilder(const RootNode &node) {
+    this->initCodeBuilder(CodeKind::TOPLEVEL, node.getMaxVarNum());
     this->curBuilder().append16(node.getMaxGVarNum());
 }
 
-Callable ByteCodeGenerator::finalizeCallable(const CallableNode &node) {
+CompiledCode ByteCodeGenerator::finalizeCodeBuilder(const CallableNode &node) {
     this->curBuilder().finalize();
 
     // extract code
@@ -1093,14 +1093,14 @@ Callable ByteCodeGenerator::finalizeCallable(const CallableNode &node) {
     delete this->builders.back();
     this->builders.pop_back();
 
-    return Callable(node.getSourceInfoPtr(), node.getName().empty() ? nullptr : node.getName().c_str(),
+    return CompiledCode(node.getSourceInfoPtr(), node.getName().empty() ? nullptr : node.getName().c_str(),
                     code, constPool, entries, except);
 }
 
-Callable ByteCodeGenerator::generateToplevel(RootNode &node) {
-    this->initToplevelCallable(node);
+CompiledCode ByteCodeGenerator::generateToplevel(RootNode &node) {
+    this->initToplevelCodeBuilder(node);
     this->visit(node);
-    return this->finalizeCallable(node);
+    return this->finalizeCodeBuilder(node);
 }
 
 static unsigned int digit(unsigned int n) {
@@ -1112,26 +1112,28 @@ static unsigned int digit(unsigned int n) {
 }
 
 
-static void dumpCodeImpl(std::ostream &stream, RuntimeContext &ctx, const Callable &c,
-                         std::vector<const Callable *> *list) {
+static void dumpCodeImpl(std::ostream &stream, RuntimeContext &ctx, const CompiledCode &c,
+                         std::vector<const CompiledCode *> *list) {
     const unsigned int codeSize = c.getCodeSize();
 
     stream << "Callable: ";
-    switch(c.getCallableKind()) {
-    case CallableKind::TOPLEVEL:
+    switch(c.getKind()) {
+    case CodeKind::TOPLEVEL:
         stream << "top level";
         break;
-    case CallableKind::FUNCTION:
+    case CodeKind::FUNCTION:
         stream << "function " << c.getName();
         break;
-    case CallableKind::USER_DEFINED_CMD:
+    case CodeKind::USER_DEFINED_CMD:
         stream << "command " << c.getName();
+        break;
+    default:
         break;
     }
     stream << std::endl;
     stream << "  code size: " << c.getCodeSize() << std::endl;
     stream << "  number of local variable: " << c.getLocalVarNum() << std::endl;
-    if(c.getCallableKind() == CallableKind::TOPLEVEL) {
+    if(c.getKind() == CodeKind::TOPLEVEL) {
         stream << "  number of global variable: " << c.getGlobalVarNum() << std::endl;
     }
 
@@ -1211,7 +1213,7 @@ static void dumpCodeImpl(std::ostream &stream, RuntimeContext &ctx, const Callab
                 break;
             case DSValueKind::OBJECT:
                 if(list != nullptr && dynamic_cast<FuncObject *>(v.get()) != nullptr) {
-                    list->push_back(&static_cast<FuncObject *>(v.get())->getCallable());
+                    list->push_back(&static_cast<FuncObject *>(v.get())->getCode());
                 }
                 stream << (v.get()->getType() != nullptr ? ctx.getPool().getTypeName(*v.get()->getType()) : "(null)")
                 << " " << v.get()->toString(ctx, nullptr);
@@ -1237,10 +1239,10 @@ static void dumpCodeImpl(std::ostream &stream, RuntimeContext &ctx, const Callab
     }
 }
 
-void dumpCode(std::ostream &stream, RuntimeContext &ctx, const Callable &c) {
+void dumpCode(std::ostream &stream, RuntimeContext &ctx, const CompiledCode &c) {
     stream << "Source File: " << c.getSrcInfo()->getSourceName() << std::endl;
 
-    std::vector<const Callable *> list;
+    std::vector<const CompiledCode *> list;
 
     dumpCodeImpl(stream, ctx, c, &list);
     for(auto &e : list) {
