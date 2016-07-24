@@ -522,6 +522,10 @@ public:
      */
     void invokeSetter(unsigned short constPoolIndex);
 
+    /**
+     * if called from child process, exit(1).
+     * @param except
+     */
     void handleUncaughtException(DSValue &&except);
 
     // some runtime api

@@ -592,6 +592,11 @@ void RuntimeContext::handleUncaughtException(DSValue &&except) {
     } catch(const DSExcepton &) {
         std::cerr << "cannot obtain string representation" << std::endl;
     }
+
+    if(typeAs<Int_Object>(this->getGlobal(this->getBuiltinVarIndex(BuiltinVarOffset::SHELL_PID)))->getValue() !=
+            typeAs<Int_Object>(this->getGlobal(this->getBuiltinVarIndex(BuiltinVarOffset::PID)))->getValue()) {
+        exit(1);    // in child process.
+    }
 }
 
 void RuntimeContext::fillInStackTrace(std::vector<StackTraceElement> &stackTrace) {

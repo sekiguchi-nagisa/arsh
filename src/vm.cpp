@@ -912,14 +912,14 @@ static void addRedirOption(RuntimeContext &ctx, RedirectOP op) {
     }
 }
 
-static void mainLoop(RuntimeContext &ctx) {
+static bool mainLoop(RuntimeContext &ctx) {
     while(true) {
         vmswitch(GET_CODE(ctx)[++ctx.pc()]) {
         vmcase(NOP) {
             break;
         }
         vmcase(STOP_EVAL) {
-            return;
+            return true;
         }
         vmcase(ASSERT) {
             checkAssertion(ctx);
@@ -1286,8 +1286,8 @@ static void mainLoop(RuntimeContext &ctx) {
             exit(ctx.getExitStatus());
         }
         vmcase(FAILURE_CHILD) {
-            ctx.handleUncaughtException(ctx.pop());
-            exit(1);
+            ctx.setThrownObject(ctx.pop());
+            return false;
         }
         vmcase(CAPTURE_STR) {
             forkAndCapture(true, ctx);
@@ -1393,9 +1393,9 @@ bool vmEval(RuntimeContext &ctx, Callable &callable) {
 
     while(true) {
         try {
-            mainLoop(ctx);
+            bool ret = mainLoop(ctx);
             ctx.callableStack().clear();
-            return true;
+            return ret;
         } catch(const DSExcepton &) {
             if(handleException(ctx)) {
                 continue;
