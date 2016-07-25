@@ -18,6 +18,8 @@ b' == "a
 b")  # allow new line
 assert('a\nb' == "a\nb")
 assert('a\rb' == "a\rb")
+assert "\
+hello" == "hello"
 
 # string concatenation
 assert '12he' == 12 + 'h' + 'e'

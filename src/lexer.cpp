@@ -211,6 +211,8 @@ std::string Lexer::doubleElementToString(Token token) const {
             case '\\':
                 ch = next;
                 break;
+            case '\n':
+                continue;
             default:
                 --i;
                 break;
