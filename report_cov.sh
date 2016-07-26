@@ -42,5 +42,5 @@ fi
 # generate coverage report
 OUTPUT="coverage_report"
 lcov $TOOL --directory . --capture --output-file ${OUTPUT}.info
-lcov --remove ${OUTPUT}.info 'test/*' 'tools/*' 'lib/*' '/usr/include/*' 'nextToken.re2c.cpp' --output-file ${OUTPUT}-cleaned.info
+lcov --remove ${OUTPUT}.info 'test/*' 'tools/*' 'ext/*' '/usr/include/*' 'nextToken.re2c.cpp' --output-file ${OUTPUT}-cleaned.info
 genhtml -o ${OUTPUT} ${OUTPUT}-cleaned.info
