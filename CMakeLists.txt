@@ -90,7 +90,7 @@ endif()
 show_option(USE_LOGGING)
 show_option(USE_SAFE_CAST)
 show_option(USE_FIXED_TIME)
-
+show_option(USE_FUZZER)
 
 #++++++++++++++++++++++++++++#
 #     check integer size     #
@@ -236,6 +236,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/src_to_str)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_binding)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/directive)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_iface)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/fuzz)
 
 set(GTEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/gtest)
 add_subdirectory(${GTEST_DIR})
