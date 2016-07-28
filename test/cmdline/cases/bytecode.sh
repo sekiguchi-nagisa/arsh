@@ -13,7 +13,7 @@ trap 'ereport $LINENO' ERR
 V="$(cat << EOS
 ### dump compiled code ###
 Source File: (string)
-Callable: top level
+DSCode: top level
   code size: 23
   number of local variable: 1
   number of global variable: 33
@@ -41,7 +41,7 @@ test "$($YDSH_BIN --dump-code -c 'var a = 34; 34 as String')" = "$V"
 V="$(cat << EOS
 ### dump compiled code ###
 Source File: (string)
-Callable: top level
+DSCode: top level
   code size: 38
   number of local variable: 1
   number of global variable: 33
@@ -69,7 +69,7 @@ Source Pos Entry:
 Exception Table:
   begin: 14, end: 33, type: Any, dest: 33
 
-Callable: function f
+DSCode: function f
   code size: 20
   number of local variable: 1
 Line Number Table:

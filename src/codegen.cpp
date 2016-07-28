@@ -1116,7 +1116,7 @@ static void dumpCodeImpl(std::ostream &stream, RuntimeContext &ctx, const Compil
                          std::vector<const CompiledCode *> *list) {
     const unsigned int codeSize = c.getCodeSize();
 
-    stream << "Callable: ";
+    stream << "DSCode: ";
     switch(c.getKind()) {
     case CodeKind::TOPLEVEL:
         stream << "top level";
