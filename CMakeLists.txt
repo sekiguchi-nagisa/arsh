@@ -90,7 +90,7 @@ endif()
 show_option(USE_LOGGING)
 show_option(USE_SAFE_CAST)
 show_option(USE_FIXED_TIME)
-
+show_option(USE_FUZZER)
 
 #++++++++++++++++++++++++++++#
 #     check integer size     #
