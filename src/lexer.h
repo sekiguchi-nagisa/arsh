@@ -86,7 +86,6 @@ public:
     }
 };
 
-//typedef std::shared_ptr<SourceInfo> SourceInfoPtr;
 using SourceInfoPtr = IntrusivePtr<SourceInfo>;
 
 class Lexer : public ydsh::parser_base::LexerBase {
@@ -108,13 +107,37 @@ private:
     LexerMode prevMode;
 
 public:
-    Lexer(const char *sourceName, const char *source) :
-            LexerBase(source),
+    /**
+     *
+     * @param sourceName
+     * must not be null.
+     * @param source
+     * must be null terminated.
+     * @return
+     */
+    Lexer(const char *sourceName, const char *source) : Lexer(sourceName, source, strlen(source)) {}
+
+    /**
+     *
+     * @param sourceName
+     * must not be null
+     * @param source
+     * must not be null
+     * @param size
+     * @return
+     */
+    Lexer(const char *sourceName, const char *source, unsigned int size) :
+            LexerBase(source, size),
             srcInfoPtr(makeIntrusive<SourceInfo>(sourceName)),
             modeStack(1, yycSTMT), prevNewLine(false), prevSpace(false), prevMode(yycSTMT) {}
 
     /**
-     * FILE must be opened with binary mode.
+     * 
+     * @param sourceName
+     * must not be null.
+     * @param fp
+     * must be opened with binary mode.
+     * @return
      */
     Lexer(const char *sourceName, FILE *fp) :
             LexerBase(fp),

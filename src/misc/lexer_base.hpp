@@ -103,8 +103,6 @@ protected:
      */
     bool endOfString;
 
-    bool zeroCopyBuf;
-
     static constexpr unsigned int DEFAULT_SIZE = 256;
     static constexpr int DEFAULT_READ_SIZE = 128;
 
@@ -112,7 +110,7 @@ private:
     LexerBase() :
             fp(nullptr), bufSize(0), buf(nullptr), cursor(nullptr),
             limit(nullptr), marker(nullptr), ctxMarker(nullptr),
-            endOfFile(false), endOfString(false), zeroCopyBuf(false) { }
+            endOfFile(false), endOfString(false) { }
 
 public:
     NON_COPYABLE(LexerBase);
@@ -121,20 +119,34 @@ public:
      * FILE must be opened with binary mode.
      * insert newline if not terminated by it.
      */
+
+    /**
+     *
+     * @param fp
+     * must be opened with binary mode.
+     * @return
+     */
     explicit LexerBase(FILE *fp);
 
     /**
+     *
+     * @param src
      * must be null terminated.
-     * if the last character of string(exclude null character) is newline, not copy it.
-     * otherwise, copy it.
+     * @return
      */
-    explicit LexerBase(const char *src);
+    explicit LexerBase(const char *src) : LexerBase(src, strlen(src)) {}
+
+    /**
+     *
+     * @param data
+     * @param size
+     * @return
+     */
+    LexerBase(const char *data, unsigned int size);
 
 protected:
     ~LexerBase() {
-        if(!this->zeroCopyBuf) {
-            delete[] this->buf;
-        }
+        delete[] this->buf;
     }
 
 public:
@@ -219,25 +231,16 @@ LexerBase<T>::LexerBase(FILE *fp) : LexerBase() {
 }
 
 template<bool T>
-LexerBase<T>::LexerBase(const char *src) : LexerBase() {
-    this->bufSize = strlen(src) + 1;
-    if(this->bufSize == 1) {    // empty string
-        src = "\n";
-        this->bufSize = 2;
-    }
+LexerBase<T>::LexerBase(const char *data, unsigned int size) : LexerBase() {
+    const bool insertingNewline = size == 0 || data[size - 1] != '\n';
+    this->bufSize = size + 1 + (insertingNewline ? 1 : 0);
 
-    this->zeroCopyBuf = src[this->bufSize - 2] == '\n';
-
-    if(this->zeroCopyBuf) {
-        this->buf = (unsigned char *) src;
-    } else {    // copy src and insert newline
-        unsigned int srcSize = this->bufSize - 1;
-        this->bufSize++;
-        this->buf = new unsigned char[this->bufSize];
-        memcpy(this->buf, src, sizeof(unsigned char) * srcSize);
+    this->buf = new unsigned char[this->bufSize];
+    memcpy(this->buf, data, sizeof(unsigned char) * size);
+    if(insertingNewline) {
         this->buf[this->bufSize - 2] = '\n';
-        this->buf[this->bufSize - 1] = '\0';
     }
+    this->buf[this->bufSize - 1] = '\0';
 
     this->cursor = this->buf;
     this->limit = this->buf + this->bufSize - 1;
