@@ -1244,6 +1244,22 @@ TEST_F(LexerTest_Lv1, CMD9) {
     ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, LINE_END, "\n", EOS, ""));
 }
 
+TEST_F(LexerTest_Lv1, CMD10) {
+    const char *text = "\\$true";
+    SCOPED_TRACE("");
+
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, LINE_END, "\n", EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, CMD11) {
+    const char *text = "\\[\\]true";
+    SCOPED_TRACE("");
+
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, LINE_END, "\n", EOS, ""));
+}
+
 TEST_F(LexerTest_Lv1, CMD_ARG1) {   // allow  '[' and ']'
     const char *text = "[[][";
     ASSERT_NO_FATAL_FAILURE({
@@ -1328,6 +1344,24 @@ TEST_F(LexerTest_Lv1, CMD_ARG9) {
 
 TEST_F(LexerTest_Lv1, CMD_ARG10) {
     const char *text = "qwwre!";
+    SCOPED_TRACE("");
+
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycCMD);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, LINE_END, "\n", EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, CMD_ARG11) {
+    const char *text = "\\;q\\$wwre!";
+    SCOPED_TRACE("");
+
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycCMD);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, LINE_END, "\n", EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, CMD_ARG12) {
+    const char *text = "q\\ w\\\twre!";
     SCOPED_TRACE("");
 
     this->initLexer(text);
