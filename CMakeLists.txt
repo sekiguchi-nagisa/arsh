@@ -79,6 +79,11 @@ show_option(USE_DBUS)
 option(USE_LOGGING "enable internal logging" OFF)
 option(USE_SAFE_CAST "check object cast" OFF)
 option(USE_FIXED_TIME "enable fixed time source" OFF)
+option(FUZZING "enable fuzzing" OFF)
+
+if(FUZZING)
+    set(CMAKE_BUILD_TYPE Debug)
+endif()
 
 string(TOLOWER "${CMAKE_BUILD_TYPE}" lower_type)
 if(("${lower_type}" STREQUAL "debug") OR ("${lower_type}" STREQUAL "coverage"))
@@ -90,6 +95,7 @@ endif()
 show_option(USE_LOGGING)
 show_option(USE_SAFE_CAST)
 show_option(USE_FIXED_TIME)
+show_option(FUZZING)
 
 
 #++++++++++++++++++++++++++++#
@@ -258,6 +264,20 @@ add_executable(${BIN_NAME}
 target_link_libraries(${BIN_NAME} ${YDSH_STATIC})
 
 install(TARGETS ${BIN_NAME} RUNTIME DESTINATION bin)
+
+
+#++++++++++++++++#
+#     fuzzer     #
+#++++++++++++++++#
+
+if(FUZZING)
+    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -fsanitize-coverage=edge,indirect-calls,8bit-counters")
+        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/fuzzing)
+    else()
+        message(FATAL_ERROR "require clang")
+    endif()
+endif()
 
 
 #++++++++++++++++++++#
