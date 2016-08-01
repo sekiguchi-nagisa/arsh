@@ -25,3 +25,9 @@ try { echo $c; assert($false); } catch($e) { assert($e is StackOverflowError) }
 try { "$a"; assert($false); } catch($e) { assert($e is StackOverflowError) }
 try { "$b"; assert($false); } catch($e) { assert($e is StackOverflowError) }
 try { "$c"; assert($false); } catch($e) { assert($e is StackOverflowError) }
+
+
+# clear collection due to prevent memory leak
+$a._0 = 1
+$b.clear()
+$c.clear()
