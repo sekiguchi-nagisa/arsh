@@ -13,20 +13,19 @@ typedef CmdLines<Kind> CL;
 
 typedef std::vector<const char *> RestArgs;
 
-void addArg(std::vector<std::string> &) {
+void addArg(std::vector<const char *> &) {
 }
 
 template <typename... T>
-void addArg(std::vector<std::string> &args, const char *first, T && ...rest) {
+void addArg(std::vector<const char *> &args, const char *first, T && ...rest) {
     args.push_back(first);
     addArg(args, std::forward<T>(rest)...);
 }
 
 template <typename... T>
-std::vector<std::string> make_args(const char *first, T && ...rest) {
-    std::vector<std::string> args;
-    args.push_back("<dummy>");
-    addArg(args, first, std::forward<T>(rest)...);
+std::vector<const char *> make_args(T && ...rest) {
+    std::vector<const char *> args;
+    addArg(args, "<dummy>", std::forward<T>(rest)...);
     return args;
 }
 
@@ -38,11 +37,11 @@ public:
     ArgTest() = default;
     virtual ~ArgTest() = default;
 
-    virtual void expectError(std::vector<std::string> args, const Opt (&options)[5], const char *expect) {
+    virtual void expectError(std::vector<const char *> &&args, const Opt (&options)[5], const char *expect) {
         int argc = args.size();
         char *argv[argc];
         for(int i = 0; i < argc; i++) {
-            argv[i] = const_cast<char *>(args[i].c_str());
+            argv[i] = const_cast<char *>(args[i]);
         }
 
         SCOPED_TRACE("");
@@ -57,11 +56,11 @@ public:
         }
     }
 
-    virtual void parse(std::vector<std::string> args, const Opt (&options)[5], CL &cl) {
+    virtual void parse(std::vector<const char *> &&args, const Opt (&options)[5], CL &cl) {
         int argc = args.size();
         char *argv[argc];
         for(int i = 0; i < argc; i++) {
-            argv[i] = const_cast<char *>(args[i].c_str());
+            argv[i] = const_cast<char *>(args[i]);
         }
 
         SCOPED_TRACE("");
@@ -202,9 +201,7 @@ TEST_F(ArgTest, succes3) {
         SCOPED_TRACE("");
 
         CL cl;
-        std::vector<std::string> args;
-        args.push_back("<dummy>");
-        this->parse(args, options, cl);
+        this->parse(make_args(), options, cl);
         ASSERT_EQ(0u, cl.size());
 
         ASSERT_EQ(0u, this->rest.size());
