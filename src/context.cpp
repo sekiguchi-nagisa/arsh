@@ -121,7 +121,7 @@ void FilePathCache::removePath(const char *cmdName) {
     if(cmdName != nullptr) {
         auto iter = this->map.find(cmdName);
         if(iter != this->map.end()) {
-            delete iter->first;
+            free(const_cast<char *>(iter->first));
             this->map.erase(iter);
         }
     }
@@ -133,7 +133,7 @@ bool FilePathCache::isCached(const char *cmdName) const {
 
 void FilePathCache::clear() {
     for(auto &pair : this->map) {
-        delete pair.first;
+        free(const_cast<char *>(pair.first));
     }
     this->map.clear();
 }

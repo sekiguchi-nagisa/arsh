@@ -82,7 +82,7 @@ TEST(BufferTest, case2) {
     });
 
     ASSERT_NO_FATAL_FAILURE({   // remove
-        delete[] extract(std::move(buffer));
+        free(extract(std::move(buffer)));
         ASSERT_EQ(0u, buffer.size());
         ASSERT_EQ(0u, buffer.capacity());
         ASSERT_TRUE(buffer.get() == nullptr);

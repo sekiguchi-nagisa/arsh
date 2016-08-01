@@ -17,16 +17,16 @@ void addArg(std::vector<std::string> &) {
 }
 
 template <typename... T>
-void addArg(std::vector<std::string> &args, const char *first, T ...rest) {
+void addArg(std::vector<std::string> &args, const char *first, T && ...rest) {
     args.push_back(first);
-    addArg(args, rest...);
+    addArg(args, std::forward<T>(rest)...);
 }
 
 template <typename... T>
-std::vector<std::string> make_args(const char *first, T ...rest) {
+std::vector<std::string> make_args(const char *first, T && ...rest) {
     std::vector<std::string> args;
     args.push_back("<dummy>");
-    addArg(args, first, rest...);
+    addArg(args, first, std::forward<T>(rest)...);
     return args;
 }
 
@@ -87,11 +87,7 @@ TEST_F(ArgTest, fail1) {
             {Kind::E, "-a", 0, "hogehjogee"},
     };
 
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-
-        this->expectError(make_args("-a", "-c"), options, "duplicated option: -a");
-    });
+    ASSERT_NO_FATAL_FAILURE(this->expectError(make_args("-a", "-c"), options, "duplicated option: -a"));
 }
 
 TEST_F(ArgTest, fail2) {
@@ -103,11 +99,7 @@ TEST_F(ArgTest, fail2) {
             {Kind::E, "-a", 0, "hogehjogee"},
     };
 
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-
-        this->expectError(make_args("-a", "fre"), options, "illegal option name: c");
-    });
+    ASSERT_NO_FATAL_FAILURE(this->expectError(make_args("-a", "fre"), options, "illegal option name: c"));
 }
 
 TEST_F(ArgTest, fail3) {
@@ -119,11 +111,7 @@ TEST_F(ArgTest, fail3) {
             {Kind::E, "-e", 0, "hogehjogee"},
     };
 
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-
-        this->expectError(make_args("-f", "fre"), options, "illegal option: -f");
-    });
+    ASSERT_NO_FATAL_FAILURE(this->expectError(make_args("-f", "fre"), options, "illegal option: -f"));
 }
 
 TEST_F(ArgTest, fail4) {
@@ -135,11 +123,7 @@ TEST_F(ArgTest, fail4) {
             {Kind::E, "-e", 0, "hogehjogee"},
     };
 
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-
-        this->expectError(make_args("-a", "-b"), options, "need argument: -b");
-    });
+    ASSERT_NO_FATAL_FAILURE(this->expectError(make_args("-a", "-b"), options, "need argument: -b"));
 }
 
 TEST_F(ArgTest, fail5) {
@@ -151,11 +135,7 @@ TEST_F(ArgTest, fail5) {
             {Kind::E, "-e", 0, "hogehjogee"},
     };
 
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-
-        this->expectError(make_args("-a", "-b", "-ae"), options, "need argument: -b");
-    });
+    ASSERT_NO_FATAL_FAILURE(this->expectError(make_args("-a", "-b", "-ae"), options, "need argument: -b"));
 }
 
 TEST_F(ArgTest, fail6) {
@@ -167,11 +147,7 @@ TEST_F(ArgTest, fail6) {
             {Kind::E, "-e", 0, "hogehjogee"},
     };
 
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-
-        this->expectError(make_args("-a", "-b", "hoge", "-e", "huga"), options, "require option: -c");
-    });
+    ASSERT_NO_FATAL_FAILURE(this->expectError(make_args("-a", "-b", "hoge", "-e", "huga"), options, "require option: -c"));
 }
 
 TEST_F(ArgTest, success1) {
@@ -183,18 +159,13 @@ TEST_F(ArgTest, success1) {
             {Kind::E, "-e", 0, "hogehjogee"},
     };
 
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-
-        CL cl;
-        this->parse(make_args("-a", "-b", "ae"), options, cl);
-        ASSERT_EQ(2u, cl.size());
-        ASSERT_EQ(Kind::A, cl[0].first);
-        ASSERT_EQ(Kind::B, cl[1].first);
-        ASSERT_STREQ("ae", cl[1].second);
-
-        ASSERT_EQ(0u, this->rest.size());
-    });
+    CL cl;
+    this->parse(make_args("-a", "-b", "ae"), options, cl);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, cl.size()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(Kind::A, cl[0].first));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(Kind::B, cl[1].first));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("ae", cl[1].second));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, this->rest.size()));
 }
 
 TEST_F(ArgTest, success2) {

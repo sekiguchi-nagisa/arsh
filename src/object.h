@@ -645,7 +645,8 @@ public:
 struct NativeCode : public DSCode {
     NativeCode() : DSCode(nullptr) {}
 
-    NativeCode(native_func_t func, bool hasRet) : DSCode(new unsigned char[11]) {
+    NativeCode(native_func_t func, bool hasRet) :
+            DSCode(reinterpret_cast<unsigned char *>(malloc(sizeof(unsigned char) * 11))) {
         this->code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
         this->code[1] = static_cast<unsigned char>(OpCode::CALL_NATIVE);
         write64(this->code + 2, reinterpret_cast<unsigned long>(func));
