@@ -28,4 +28,4 @@ add_dependencies(libFuzzer fuzzer_dir)
 
 add_executable(lexer_fuzzer lexer_fuzzer.cpp)
 add_dependencies(lexer_fuzzer libFuzzer)
-target_link_libraries(lexer_fuzzer ${YDSH_STATIC} ${fuzzer_static})
+target_link_libraries(lexer_fuzzer ${YDSH_STATIC} ${fuzzer_static} pthread)

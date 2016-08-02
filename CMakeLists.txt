@@ -58,21 +58,6 @@ endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -std=gnu++11")
 
 
-#+++++++++++++++++++++++++++++++++#
-#     set coverage build type     #
-#+++++++++++++++++++++++++++++++++#
-
-set(SANITIZER "" CACHE STRING "which sanitizer to use")
-
-if(NOT ("${SANITIZER}" STREQUAL ""))
-    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fsanitize=${SANITIZER} -fno-omit-frame-pointer")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=${SANITIZER} -fno-omit-frame-pointer")
-endif()
-
-set(CMAKE_C_FLAGS_COVERAGE "-g -fprofile-arcs -ftest-coverage")
-set(CMAKE_CXX_FLAGS_COVERAGE "-g -fprofile-arcs -ftest-coverage")
-
-
 #++++++++++++++++++++++++++#
 #     set extra option     #
 #++++++++++++++++++++++++++#
@@ -90,6 +75,7 @@ option(FUZZING "enable fuzzing" OFF)
 
 if(FUZZING)
     set(CMAKE_BUILD_TYPE Debug)
+    set(SANITIZER "address")
 endif()
 
 string(TOLOWER "${CMAKE_BUILD_TYPE}" lower_type)
@@ -103,6 +89,21 @@ show_option(USE_LOGGING)
 show_option(USE_SAFE_CAST)
 show_option(USE_FIXED_TIME)
 show_option(FUZZING)
+
+
+#+++++++++++++++++++++++++++++++++#
+#     set coverage build type     #
+#+++++++++++++++++++++++++++++++++#
+
+set(SANITIZER "" CACHE STRING "which sanitizer to use")
+
+if(NOT ("${SANITIZER}" STREQUAL ""))
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fsanitize=${SANITIZER} -fno-omit-frame-pointer")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=${SANITIZER} -fno-omit-frame-pointer")
+endif()
+
+set(CMAKE_C_FLAGS_COVERAGE "-g -fprofile-arcs -ftest-coverage")
+set(CMAKE_CXX_FLAGS_COVERAGE "-g -fprofile-arcs -ftest-coverage")
 
 
 #++++++++++++++++++++++++++++#
