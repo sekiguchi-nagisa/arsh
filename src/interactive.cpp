@@ -18,6 +18,8 @@
 #include <cstring>
 #include <string>
 #include <memory>
+#include <cstdlib>
+#include <cerrno>
 
 #include <unistd.h>
 
