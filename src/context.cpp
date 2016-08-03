@@ -501,6 +501,8 @@ void RuntimeContext::callConstructor(unsigned short paramSize) {
                          this->callStack[recvIndex]->getType()->getConstructor());
 }
 
+const NativeCode *getNativeCode(unsigned int index);
+
 /**
  * stack state in method call    stack grow ===>
  *
@@ -519,7 +521,7 @@ void RuntimeContext::invokeMethod(unsigned short constPoolIndex) {
     const unsigned int actualParamSize = handle->getParamTypes().size() + 1;    // include receiver
     const unsigned int recvIndex = this->stackTopIndex - handle->getParamTypes().size();
 
-    this->windStackFrame(actualParamSize, actualParamSize, nullptr);
+    this->windStackFrame(actualParamSize, actualParamSize, getNativeCode(0));
     DSValue ret = typeAs<ProxyObject>(this->callStack[recvIndex])->invokeMethod(*this, methodName, handle);
     this->unwindStackFrame();
 
@@ -538,7 +540,7 @@ void RuntimeContext::invokeGetter(unsigned short constPoolIndex) {
     const DSType *fieldType = std::get<2>(tuple);
     const unsigned int recvIndex = this->stackTopIndex;
 
-    this->windStackFrame(1, 1, nullptr);
+    this->windStackFrame(1, 1, getNativeCode(0));
     DSValue ret = typeAs<ProxyObject>(
             this->callStack[recvIndex])->invokeGetter(*this, recvType, fieldName, fieldType);
     this->unwindStackFrame();
@@ -565,7 +567,7 @@ void RuntimeContext::invokeSetter(unsigned short constPoolIndex) {
     const DSType *fieldType = std::get<2>(tuple);
     const unsigned int recvIndex = this->stackTopIndex - 1;
 
-    this->windStackFrame(2, 2, nullptr);
+    this->windStackFrame(2, 2, getNativeCode(0));
     typeAs<ProxyObject>(this->callStack[recvIndex])->invokeSetter(*this, recvType, fieldName, fieldType);
     this->unwindStackFrame();
 }
