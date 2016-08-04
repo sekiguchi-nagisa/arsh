@@ -803,6 +803,7 @@ void TypeChecker::visitSubstitutionNode(SubstitutionNode &node) {
 
 void TypeChecker::visitAssertNode(AssertNode &node) {
     this->checkType(this->typePool.getBooleanType(), node.getCondNode());
+    this->checkType(this->typePool.getStringType(), node.getMessageNode());
     node.setType(this->typePool.getVoidType());
 }
 

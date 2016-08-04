@@ -65,8 +65,11 @@ static void instanceOf(RuntimeContext &ctx, DSType *targetType) {
 }
 
 static void checkAssertion(RuntimeContext &ctx) {
+    auto msg(ctx.pop());
+    assert(typeAs<String_Object>(msg)->getValue() != nullptr);
+
     if(!typeAs<Boolean_Object>(ctx.pop())->getValue()) {
-        ctx.setThrownObject(ctx.newError(ctx.getPool().getAssertFail(), ""));
+        ctx.setThrownObject(Error_Object::newError(ctx, ctx.getPool().getAssertFail(), std::move(msg)));
 
         // invoke termination hook
         if(ctx.getTerminationHook() != nullptr) {

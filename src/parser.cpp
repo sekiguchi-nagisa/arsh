@@ -464,9 +464,15 @@ std::unique_ptr<Node> Parser::parse_statement() {
         return this->parse_typeAlias();
     }
     case ASSERT: {
-        Token token = this->expect(ASSERT);
-        auto node = uniquify<AssertNode>(token.pos, this->parse_expression().release());
-        node->updateToken(token);
+        this->expect(ASSERT);
+        auto condNode(this->parse_expression());
+        std::unique_ptr<Node> messageNode;
+        if(!HAS_NL() && CUR_KIND() == COLON) {
+            this->expectAndChangeMode(COLON, yycSTMT);
+            messageNode = this->parse_expression();
+        }
+
+        auto node = uniquify<AssertNode>(condNode.release(), messageNode.release());
         this->parse_statementEnd();
         return std::move(node);
     }

@@ -1245,14 +1245,21 @@ class AssertNode : public Node {
 private:
     Node *condNode;
 
+    Node *messageNode;
+
 public:
-    AssertNode(unsigned int startPos, Node *condNode) :
-            Node({startPos, 0}), condNode(condNode) { }
+    AssertNode(Node *condNode, Node *messageNode) :
+            Node(condNode->getToken()), condNode(condNode),
+            messageNode(messageNode != nullptr ? messageNode : new StringValueNode("")) { }
 
     ~AssertNode();
 
     Node *getCondNode() const {
         return this->condNode;
+    }
+
+    Node *getMessageNode() const {
+        return this->messageNode;
     }
 
     void dump(NodeDumper &dumper) const override;

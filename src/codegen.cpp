@@ -713,6 +713,7 @@ void ByteCodeGenerator::visitAssertNode(AssertNode &node) {
     if(this->assertion) {
         this->visit(*node.getCondNode());
         this->writeSourcePos(node.getCondNode()->getStartPos());
+        this->visit(*node.getMessageNode());
         this->write0byteIns(OpCode::ASSERT);
     }
 }

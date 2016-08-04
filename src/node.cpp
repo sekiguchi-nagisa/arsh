@@ -1005,10 +1005,12 @@ void SubstitutionNode::accept(NodeVisitor &visitor) {
 
 AssertNode::~AssertNode() {
     delete this->condNode;
+    delete this->messageNode;
 }
 
 void AssertNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(condNode);
+    DUMP_PTR(messageNode);
 }
 
 void AssertNode::accept(NodeVisitor &visitor) {
