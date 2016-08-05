@@ -769,7 +769,7 @@ static void format2digit(int num, std::string &out) {
     out += std::to_string(num);
 }
 
-const char *safeBasename(const char *str) {
+static const char *safeBasename(const char *str) {
     const char *ptr = strrchr(str, '/');
     return ptr == nullptr ? str : ptr + 1;
 }
