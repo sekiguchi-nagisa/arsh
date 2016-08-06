@@ -39,7 +39,7 @@
 
 using namespace ydsh;
 
-struct DSContext {
+struct DSState {
     RuntimeContext ctx;
     Parser parser;
     TypeChecker checker;
@@ -65,18 +65,18 @@ struct DSContext {
         const char *errorKind;
     } execStatus;
 
-    DSContext();
-    ~DSContext() = default;
+    DSState();
+    ~DSState() = default;
 
     static const unsigned int originalShellLevel;
 };
 
 
 // #######################
-// ##     DSContext     ##
+// ##     DSState     ##
 // #######################
 
-DSContext::DSContext() :
+DSState::DSState() :
         ctx(), parser(), checker(this->ctx.getPool(), this->ctx.getSymbolTable()),
         lineNum(1), option(DS_OPTION_ASSERT), prompt(), execStatus() {
     // set locale
@@ -100,17 +100,17 @@ DSContext::DSContext() :
 /**
  * get exit status of recently executed command.(also exit command)
  */
-static int getExitStatus(DSContext *dsctx) {
+static int getExitStatus(DSState *dsctx) {
     return dsctx->ctx.getExitStatus();
 }
 
-static void resetStatus(DSContext *dsctx) {
-    dsctx->execStatus.type = DS_STATUS_SUCCESS;
+static void resetStatus(DSState *dsctx) {
+    dsctx->execStatus.type = DS_EXEC_STATUS_SUCCESS;
     dsctx->execStatus.lineNum = 0;
     dsctx->execStatus.errorKind = "";
 }
 
-static void updateStatus(DSContext *dsctx, unsigned int type, unsigned int lineNum, const char *errorKind) {
+static void updateStatus(DSState *dsctx, unsigned int type, unsigned int lineNum, const char *errorKind) {
     dsctx->execStatus.type = type;
     dsctx->execStatus.lineNum = lineNum;
     dsctx->execStatus.errorKind = errorKind;
@@ -161,7 +161,7 @@ static void formatErrorLine(bool isatty, const Lexer &lexer, const Token &errorT
     << color(TermColor::Reset, isatty) << std::endl;
 }
 
-static void handleParseError(DSContext *dsctx, const Lexer &lexer, const ParseError &e) {
+static void handleParseError(DSState *dsctx, const Lexer &lexer, const ParseError &e) {
     /**
      * show parse error message
      */
@@ -180,10 +180,10 @@ static void handleParseError(DSContext *dsctx, const Lexer &lexer, const ParseEr
     /**
      * update execution status
      */
-    updateStatus(dsctx, DS_STATUS_PARSE_ERROR, errorLineNum, e.getErrorKind());
+    updateStatus(dsctx, DS_EXEC_STATUS_PARSE_ERROR, errorLineNum, e.getErrorKind());
 }
 
-static void handleTypeError(DSContext *dsctx, const Lexer &lexer, const TypeCheckError &e) {
+static void handleTypeError(DSState *dsctx, const Lexer &lexer, const TypeCheckError &e) {
     unsigned int errorLineNum = lexer.getSourceInfoPtr()->getLineNum(e.getStartPos());
 
     const bool isatty = isSupportedTerminal(STDERR_FILENO);
@@ -199,11 +199,11 @@ static void handleTypeError(DSContext *dsctx, const Lexer &lexer, const TypeChec
     /**
      * update execution status
      */
-    updateStatus(dsctx, DS_STATUS_TYPE_ERROR,
+    updateStatus(dsctx, DS_EXEC_STATUS_TYPE_ERROR,
                  lexer.getSourceInfoPtr()->getLineNum(e.getStartPos()), e.getKind());
 }
 
-static int eval(DSContext *dsctx, RootNode &rootNode) {
+static int eval(DSState *dsctx, RootNode &rootNode) {
     ByteCodeGenerator codegen(dsctx->ctx.getPool(), hasFlag(dsctx->option, DS_OPTION_ASSERT));
     CompiledCode c = codegen.generateToplevel(rootNode);
 
@@ -223,14 +223,14 @@ static int eval(DSContext *dsctx, RootNode &rootNode) {
         dsctx->ctx.loadThrownObject();
         dsctx->ctx.handleUncaughtException(dsctx->ctx.pop());
         dsctx->checker.recover(false);
-        updateStatus(dsctx, DS_STATUS_RUNTIME_ERROR, errorLineNum,
+        updateStatus(dsctx, DS_EXEC_STATUS_RUNTIME_ERROR, errorLineNum,
                      dsctx->ctx.getPool().getTypeName(*thrownObj->getType()).c_str());
         return 1;
     }
     return getExitStatus(dsctx);
 }
 
-static int eval(DSContext *dsctx, Lexer &lexer) {
+static int eval(DSState *dsctx, Lexer &lexer) {
     resetStatus(dsctx);
 
     lexer.setLineNum(dsctx->lineNum);
@@ -275,19 +275,19 @@ static int eval(DSContext *dsctx, Lexer &lexer) {
     return eval(dsctx, rootNode);
 }
 
-static void bindVariable(DSContext *dsctx, const char *varName, DSValue &&value) {
+static void bindVariable(DSState *dsctx, const char *varName, DSValue &&value) {
     auto handle = dsctx->ctx.getSymbolTable().registerHandle(varName, *value.get()->getType(), true);
     assert(handle != nullptr);
     dsctx->ctx.setGlobal(handle->getFieldIndex(), std::move(value));
 }
 
-static void bindVariable(DSContext *dsctx, const char *varName, const DSValue &value) {
+static void bindVariable(DSState *dsctx, const char *varName, const DSValue &value) {
     auto handle = dsctx->ctx.getSymbolTable().registerHandle(varName, *value.get()->getType(), true);
     assert(handle != nullptr);
     dsctx->ctx.setGlobal(handle->getFieldIndex(), value);
 }
 
-static void initBuiltinVar(DSContext *dsctx) {
+static void initBuiltinVar(DSState *dsctx) {
     /**
      * management object for D-Bus related function
      * must be DBus_Object
@@ -386,10 +386,10 @@ static void initBuiltinVar(DSContext *dsctx) {
     }
 }
 
-static void loadEmbeddedScript(DSContext *dsctx) {
+static void loadEmbeddedScript(DSState *dsctx) {
     Lexer lexer("(embed)", embed_script);
     eval(dsctx, lexer);
-    if(dsctx->execStatus.type != DS_STATUS_SUCCESS) {
+    if(dsctx->execStatus.type != DS_EXEC_STATUS_SUCCESS) {
         fatal("broken embedded script\n");
     }
     dsctx->ctx.getPool().commit();
@@ -417,69 +417,69 @@ static unsigned int getShellLevel() {
     return level;
 }
 
-const unsigned int DSContext::originalShellLevel = getShellLevel();
+const unsigned int DSState::originalShellLevel = getShellLevel();
 
 // #####################################
-// ##     public api of DSContext     ##
+// ##     public api of DSState     ##
 // #####################################
 
-DSContext *DSContext_create() {
-    DSContext *ctx = new DSContext();
+DSState *DSState_create() {
+    DSState *ctx = new DSState();
     initBuiltinVar(ctx);
     loadEmbeddedScript(ctx);
     return ctx;
 }
 
-void DSContext_delete(DSContext **ctx) {
-    if(ctx != nullptr) {
-        delete (*ctx);
-        *ctx = nullptr;
+void DSState_delete(DSState **st) {
+    if(st != nullptr) {
+        delete (*st);
+        *st = nullptr;
     }
 }
 
-int DSContext_eval(DSContext *ctx, const char *sourceName, const char *source) {
+int DSState_eval(DSState *st, const char *sourceName, const char *source) {
     Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName, source);
-    return eval(ctx, lexer);
+    return eval(st, lexer);
 }
 
-int DSContext_loadAndEval(DSContext *ctx, const char *sourceName, FILE *fp) {
+int DSState_loadAndEval(DSState *st, const char *sourceName, FILE *fp) {
     Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName, fp);
-    return eval(ctx, lexer);
+    return eval(st, lexer);
 }
 
-int DSContext_exec(DSContext *ctx, char *const argv[]) {
-    resetStatus(ctx);
-    ctx->ctx.execBuiltinCommand(argv);
-    return getExitStatus(ctx);
+int DSState_exec(DSState *st, char *const *argv) {
+    resetStatus(st);
+    st->ctx.execBuiltinCommand(argv);
+    return getExitStatus(st);
 }
 
-void DSContext_setLineNum(DSContext *ctx, unsigned int lineNum) {
-    ctx->lineNum = lineNum;
+void DSState_setLineNum(DSState *st, unsigned int lineNum) {
+    st->lineNum = lineNum;
 }
 
-unsigned int DSContext_lineNum(DSContext *ctx) {
-    return ctx->lineNum;
+unsigned int DSState_lineNum(DSState *st) {
+    return st->lineNum;
 }
 
-void DSContext_setShellName(DSContext *ctx, const char *shellName) {
+void DSState_setShellName(DSState *st, const char *shellName) {
     if(shellName != nullptr) {
-        ctx->ctx.updateScriptName(shellName);
+        st->ctx.updateScriptName(shellName);
     }
 }
 
-void DSContext_setArguments(DSContext *ctx, char *const args[]) {
+void DSState_setArguments(DSState *st, char *const *args) {
     if(args == nullptr) {
         return;
     }
 
-    ctx->ctx.initScriptArg();
+    st->ctx.initScriptArg();
     for(unsigned int i = 0; args[i] != nullptr; i++) {
-        ctx->ctx.addScriptArg(args[i]);
+        st->ctx.addScriptArg(args[i]);
     }
-    ctx->ctx.finalizeScriptArg();
+    st->ctx.finalizeScriptArg();
 }
 
-static void setOptionImpl(DSContext *ctx, flag32_set_t flagSet, bool set) {
+static void setOptionImpl(DSState *ctx, flag32_set_t flagSet, bool set) {
     if(hasFlag(flagSet, DS_OPTION_TOPLEVEL)) {
         ctx->checker.setToplevelPrinting(set);
     }
@@ -488,17 +488,17 @@ static void setOptionImpl(DSContext *ctx, flag32_set_t flagSet, bool set) {
     }
 }
 
-void DSContext_setOption(DSContext *ctx, unsigned int optionSet) {
-    setFlag(ctx->option, optionSet);
-    setOptionImpl(ctx, optionSet, true);
+void DSState_setOption(DSState *st, unsigned int optionSet) {
+    setFlag(st->option, optionSet);
+    setOptionImpl(st, optionSet, true);
 }
 
-void DSContext_unsetOption(DSContext *ctx, unsigned int optionSet) {
-    unsetFlag(ctx->option, optionSet);
-    setOptionImpl(ctx, optionSet, false);
+void DSState_unsetOption(DSState *st, unsigned int optionSet) {
+    unsetFlag(st->option, optionSet);
+    setOptionImpl(st, optionSet, false);
 }
 
-const char *DSContext_prompt(DSContext *ctx, unsigned int n) {
+const char *DSState_prompt(DSState *st, unsigned int n) {
     const char *psName = nullptr;
     switch(n) {
     case 1:
@@ -511,39 +511,39 @@ const char *DSContext_prompt(DSContext *ctx, unsigned int n) {
         return "";
     }
 
-    unsigned int index = ctx->ctx.getSymbolTable().lookupHandle(psName)->getFieldIndex();
-    const DSValue &obj = ctx->ctx.getGlobal(index);
+    unsigned int index = st->ctx.getSymbolTable().lookupHandle(psName)->getFieldIndex();
+    const DSValue &obj = st->ctx.getGlobal(index);
 
-    ctx->ctx.interpretPromptString(typeAs<String_Object>(obj)->getValue(), ctx->prompt);
-    return ctx->prompt.c_str();
+    st->ctx.interpretPromptString(typeAs<String_Object>(obj)->getValue(), st->prompt);
+    return st->prompt.c_str();
 }
 
-int DSContext_supportDBus() {
-    return hasFlag(DSContext_featureBit(), DS_FEATURE_DBUS) ? 1 : 0;
+int DSState_supportDBus() {
+    return hasFlag(DSState_featureBit(), DS_FEATURE_DBUS) ? 1 : 0;
 }
 
-unsigned int DSContext_majorVersion() {
+unsigned int DSState_majorVersion() {
     return X_INFO_MAJOR_VERSION;
 }
 
-unsigned int DSContext_minorVersion() {
+unsigned int DSState_minorVersion() {
     return X_INFO_MINOR_VERSION;
 }
 
-unsigned int DSContext_patchVersion() {
+unsigned int DSState_patchVersion() {
     return X_INFO_PATCH_VERSION;
 }
 
-const char *DSContext_version() {
+const char *DSState_version() {
     return "ydsh, version " X_INFO_VERSION
             " (" X_INFO_SYSTEM "), build by " X_INFO_CPP " " X_INFO_CPP_V;
 }
 
-const char *DSContext_copyright() {
+const char *DSState_copyright() {
     return "Copyright (C) 2015-2016 Nagisa Sekiguchi";
 }
 
-unsigned int DSContext_featureBit() {
+unsigned int DSState_featureBit() {
     unsigned int featureBit = 0;
 
 #ifdef USE_LOGGING
@@ -564,23 +564,23 @@ unsigned int DSContext_featureBit() {
     return featureBit;
 }
 
-unsigned int DSContext_status(DSContext *ctx) {
-    return ctx->execStatus.type;
+unsigned int DSState_status(DSState *st) {
+    return st->execStatus.type;
 }
 
-unsigned int DSContext_errorLineNum(DSContext *ctx) {
-    return ctx->execStatus.lineNum;
+unsigned int DSState_errorLineNum(DSState *st) {
+    return st->execStatus.lineNum;
 }
 
-const char *DSContext_errorKind(DSContext *ctx) {
-    return ctx->execStatus.errorKind;
+const char *DSState_errorKind(DSState *st) {
+    return st->execStatus.errorKind;
 }
 
-void DSContext_addTerminationHook(DSContext *ctx, TerminationHook hook) {
-    ctx->ctx.setTerminationHook(hook);
+void DSState_addTerminationHook(DSState *st, TerminationHook hook) {
+    st->ctx.setTerminationHook(hook);
 }
 
-void DSContext_complete(DSContext *ctx, const char *buf, size_t cursor, DSCandidates *c) {
+void DSState_complete(DSState *st, const char *buf, size_t cursor, DSCandidates *c) {
     if(c == nullptr) {
         return;
     }
@@ -589,7 +589,7 @@ void DSContext_complete(DSContext *ctx, const char *buf, size_t cursor, DSCandid
     c->size = 0;
     c->values = nullptr;
 
-    if(ctx == nullptr || buf == nullptr || cursor == 0) {
+    if(st == nullptr || buf == nullptr || cursor == 0) {
         return;
     }
 
@@ -597,7 +597,7 @@ void DSContext_complete(DSContext *ctx, const char *buf, size_t cursor, DSCandid
     LOG(DUMP_CONSOLE, "line: " << line << ", cursor: " << cursor);
 
     line += '\n';
-    CStrBuffer sbuf = ctx->ctx.completeLine(line);
+    CStrBuffer sbuf = st->ctx.completeLine(line);
 
     // write to DSCandidates
     c->size = sbuf.size();

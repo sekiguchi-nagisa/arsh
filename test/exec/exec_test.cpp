@@ -158,7 +158,7 @@ public:
         ASSERT_TRUE(s);
 
         // check run condition
-        RunCondition haveDBus = DSContext_supportDBus() ? RunCondition::TRUE : RunCondition::FALSE;
+        RunCondition haveDBus = DSState_supportDBus() ? RunCondition::TRUE : RunCondition::FALSE;
         if(d.getIfHaveDBus() != RunCondition::IGNORE && haveDBus != d.getIfHaveDBus()) {
             return; // do nothing
         }
@@ -275,14 +275,14 @@ TEST(BuiltinExecTest, case1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
 
-        DSContext *ctx = DSContext_create();
+        DSState *ctx = DSState_create();
 
-        int ret = DSContext_exec(ctx, make_argv("echo", "hello").get());
+        int ret = DSState_exec(ctx, make_argv("echo", "hello").get());
         ASSERT_EQ(0, ret);
-        ASSERT_EQ(DS_STATUS_SUCCESS, DSContext_status(ctx));
-        ASSERT_STREQ("", DSContext_errorKind(ctx));
+        ASSERT_EQ(DS_EXEC_STATUS_SUCCESS, DSState_status(ctx));
+        ASSERT_STREQ("", DSState_errorKind(ctx));
 
-        DSContext_delete(&ctx);
+                                DSState_delete(&ctx);
     });
 }
 
@@ -290,14 +290,14 @@ TEST(BuiltinExecTest, case2) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
 
-        DSContext *ctx = DSContext_create();
+        DSState *ctx = DSState_create();
 
-        int ret = DSContext_exec(ctx, make_argv("fheruifh", "hello").get());
+        int ret = DSState_exec(ctx, make_argv("fheruifh", "hello").get());
         ASSERT_EQ(1, ret);
-        ASSERT_EQ(DS_STATUS_SUCCESS, DSContext_status(ctx));  // if command not found, still success.
-        ASSERT_STREQ("", DSContext_errorKind(ctx));
+        ASSERT_EQ(DS_EXEC_STATUS_SUCCESS, DSState_status(ctx));  // if command not found, still success.
+        ASSERT_STREQ("", DSState_errorKind(ctx));
 
-        DSContext_delete(&ctx);
+                                DSState_delete(&ctx);
     });
 }
 
@@ -305,9 +305,9 @@ TEST(API, case1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
 
-        ASSERT_EQ((unsigned int)X_INFO_MAJOR_VERSION, DSContext_majorVersion());
-        ASSERT_EQ((unsigned int)X_INFO_MINOR_VERSION, DSContext_minorVersion());
-        ASSERT_EQ((unsigned int)X_INFO_PATCH_VERSION, DSContext_patchVersion());
+        ASSERT_EQ((unsigned int)X_INFO_MAJOR_VERSION, DSState_majorVersion());
+        ASSERT_EQ((unsigned int)X_INFO_MINOR_VERSION, DSState_minorVersion());
+        ASSERT_EQ((unsigned int)X_INFO_PATCH_VERSION, DSState_patchVersion());
     });
 }
 
@@ -315,61 +315,61 @@ TEST(API, case2) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
 
-        DSContext *ctx = DSContext_create();
-        ASSERT_EQ(1u, DSContext_lineNum(ctx));
-        DSContext_eval(ctx, nullptr, "12 + 32\n $true\n");
-        ASSERT_EQ(3u, DSContext_lineNum(ctx));
+        DSState *ctx = DSState_create();
+        ASSERT_EQ(1u, DSState_lineNum(ctx));
+                                DSState_eval(ctx, nullptr, "12 + 32\n $true\n");
+        ASSERT_EQ(3u, DSState_lineNum(ctx));
 
-        DSContext_setLineNum(ctx, 49);
-        DSContext_eval(ctx, nullptr, "23");
-        ASSERT_EQ(50u, DSContext_lineNum(ctx));
+                                DSState_setLineNum(ctx, 49);
+                                DSState_eval(ctx, nullptr, "23");
+        ASSERT_EQ(50u, DSState_lineNum(ctx));
 
-        DSContext_delete(&ctx);
+                                DSState_delete(&ctx);
     });
 }
 
 TEST(API, case3) {
     SCOPED_TRACE("");
 
-    DSContext *ctx = DSContext_create();
-    DSContext_eval(ctx, nullptr, "$PS1 = 'hello>'; $PS2 = 'second>'");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("hello>", DSContext_prompt(ctx, 1)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("second>", DSContext_prompt(ctx, 2)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("", DSContext_prompt(ctx, 5)));
+    DSState *ctx = DSState_create();
+    DSState_eval(ctx, nullptr, "$PS1 = 'hello>'; $PS2 = 'second>'");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("hello>", DSState_prompt(ctx, 1)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("second>", DSState_prompt(ctx, 2)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("", DSState_prompt(ctx, 5)));
 
-    DSContext_delete(&ctx);
+    DSState_delete(&ctx);
 }
 
 TEST(API, case4) {
     SCOPED_TRACE("");
 
     // null arguments
-    DSContext_complete(nullptr, nullptr, 1, nullptr);
+    DSState_complete(nullptr, nullptr, 1, nullptr);
 
-    DSContext *ctx = DSContext_create();
+    DSState *ctx = DSState_create();
     DSCandidates c;
-    DSContext_complete(ctx, "~", 1, &c);
+    DSState_complete(ctx, "~", 1, &c);
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(c.values != nullptr));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(c.size > 0));
 
     DSCandidates_release(&c);
-    DSContext_delete(&ctx);
+    DSState_delete(&ctx);
 }
 
 TEST(PID, case1) {
     SCOPED_TRACE("");
 
     pid_t pid = getpid();
-    DSContext *ctx = DSContext_create();
+    DSState *ctx = DSState_create();
     std::string src("assert($$ == ");
     src += std::to_string(pid);
     src += "u)";
 
-    int s = DSContext_eval(ctx, nullptr, src.c_str());
+    int s = DSState_eval(ctx, nullptr, src.c_str());
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, s));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_STATUS_SUCCESS, DSContext_status(ctx)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_EXEC_STATUS_SUCCESS, DSState_status(ctx)));
 
-    DSContext_delete(&ctx);
+    DSState_delete(&ctx);
 }
 
 int main(int argc, char **argv) {

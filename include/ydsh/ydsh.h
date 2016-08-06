@@ -23,31 +23,31 @@
 extern "C" {
 #endif
 
-struct DSContext;
-typedef struct DSContext DSContext;
+struct DSState;
+typedef struct DSState DSState;
 
 
-/***********************/
-/**     DSContext     **/
-/***********************/
+/*********************/
+/**     DSState     **/
+/*********************/
 
 /**
- * create new DSContext.
- * you can call DSContext_delete() to release object.
+ * create new DSState.
+ * you can call DSState_delete() to release object.
  * @return
  */
-DSContext *DSContext_create();
+DSState *DSState_create();
 
 /**
- * delete DSContext. after release object, assign null to ctx.
- * @param ctx
+ * delete DSState. after release object, assign null to ctx.
+ * @param st
  * may be null
  */
-void DSContext_delete(DSContext **ctx);
+void DSState_delete(DSState **st);
 
 /**
  * evaluate string.
- * @param ctx
+ * @param st
  * not null.
  * @param sourceName
  * if null, source name is treated as standard input.
@@ -57,11 +57,11 @@ void DSContext_delete(DSContext **ctx);
  * exit status of most recently executed command(include exit).
  * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
  */
-int DSContext_eval(DSContext *ctx, const char *sourceName, const char *source);
+int DSState_eval(DSState *st, const char *sourceName, const char *source);
 
 /**
  * evaluate file content.
- * @param ctx
+ * @param st
  * not null.
  * @param sourceName
  * if null, source name is treated as standard input
@@ -71,11 +71,11 @@ int DSContext_eval(DSContext *ctx, const char *sourceName, const char *source);
  * exit status of most recently executed command(include exit).
  * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
  */
-int DSContext_loadAndEval(DSContext *ctx, const char *sourceName, FILE *fp);
+int DSState_loadAndEval(DSState *st, const char *sourceName, FILE *fp);
 
 /**
  * execute builtin command.
- * @param ctx
+ * @param st
  * not null.
  * @param argv
  * first element must be command name.
@@ -84,28 +84,28 @@ int DSContext_loadAndEval(DSContext *ctx, const char *sourceName, FILE *fp);
  * exit status of executed command.
  * if command not found, return 1.
  */
-int DSContext_exec(DSContext *ctx, char *const argv[]);
+int DSState_exec(DSState *st, char *const *argv);
 
-void DSContext_setLineNum(DSContext *ctx, unsigned int lineNum);
-unsigned int DSContext_lineNum(DSContext *ctx);
+void DSState_setLineNum(DSState *st, unsigned int lineNum);
+unsigned int DSState_lineNum(DSState *st);
 
 /**
  * set shell name ($0).
- * @param ctx
+ * @param st
  * not null
  * @param shellName
  * if null, do nothing.
  */
-void DSContext_setShellName(DSContext *ctx, const char *shellName);
+void DSState_setShellName(DSState *st, const char *shellName);
 
 /**
  * set arguments ($@).
- * @param ctx
+ * @param st
  * not null.
  * @param args
  * if null, do nothing.
  */
-void DSContext_setArguments(DSContext *ctx, char *const args[]);
+void DSState_setArguments(DSState *st, char *const *args);
 
 
 #define DS_OPTION_DUMP_UAST  ((unsigned int) (1 << 0))
@@ -116,12 +116,12 @@ void DSContext_setArguments(DSContext *ctx, char *const args[]);
 #define DS_OPTION_TOPLEVEL   ((unsigned int) (1 << 5))
 #define DS_OPTION_TRACE_EXIT ((unsigned int) (1 << 6))
 
-void DSContext_setOption(DSContext *ctx, unsigned int optionSet);
-void DSContext_unsetOption(DSContext *ctx, unsigned int optionSet);
+void DSState_setOption(DSState *st, unsigned int optionSet);
+void DSState_unsetOption(DSState *st, unsigned int optionSet);
 
 /**
  * get prompt string
- * @param ctx
+ * @param st
  * not null.
  * @param n
  * @return
@@ -129,7 +129,7 @@ void DSContext_unsetOption(DSContext *ctx, unsigned int optionSet);
  * if n is 2, return secondary prompt.
  * otherwise, return empty string.
  */
-const char *DSContext_prompt(DSContext *ctx, unsigned int n);
+const char *DSState_prompt(DSState *st, unsigned int n);
 
 /**
  * check if support D-Bus binding.
@@ -137,20 +137,20 @@ const char *DSContext_prompt(DSContext *ctx, unsigned int n);
  * if support D-Bus, return 1.
  * otherwise, return 0.
  */
-int DSContext_supportDBus();
+int DSState_supportDBus();
 
 // for version information
-unsigned int DSContext_majorVersion();
-unsigned int DSContext_minorVersion();
-unsigned int DSContext_patchVersion();
+unsigned int DSState_majorVersion();
+unsigned int DSState_minorVersion();
+unsigned int DSState_patchVersion();
 
 /**
  * get version string (include some build information)
  * @return
  */
-const char *DSContext_version();
+const char *DSState_version();
 
-const char *DSContext_copyright();
+const char *DSState_copyright();
 
 // for feature detection
 #define DS_FEATURE_LOGGING    ((unsigned int) (1 << 0))
@@ -158,70 +158,70 @@ const char *DSContext_copyright();
 #define DS_FEATURE_SAFE_CAST  ((unsigned int) (1 << 2))
 #define DS_FEATURE_FIXED_TIME ((unsigned int) (1 << 3))
 
-unsigned int DSContext_featureBit();
+unsigned int DSState_featureBit();
 
 // for execution status
-#define DS_STATUS_SUCCESS         ((unsigned int) 0)
-#define DS_STATUS_PARSE_ERROR     ((unsigned int) 1)
-#define DS_STATUS_TYPE_ERROR      ((unsigned int) 2)
-#define DS_STATUS_RUNTIME_ERROR   ((unsigned int) 3)
-#define DS_STATUS_ASSERTION_ERROR ((unsigned int) 4)
-#define DS_STATUS_EXIT            ((unsigned int) 5)
+#define DS_EXEC_STATUS_SUCCESS         ((unsigned int) 0)
+#define DS_EXEC_STATUS_PARSE_ERROR     ((unsigned int) 1)
+#define DS_EXEC_STATUS_TYPE_ERROR      ((unsigned int) 2)
+#define DS_EXEC_STATUS_RUNTIME_ERROR   ((unsigned int) 3)
+#define DS_EXEC_STATUS_ASSERTION_ERROR ((unsigned int) 4)
+#define DS_EXEC_STATUS_EXIT            ((unsigned int) 5)
 
 /**
  * return type of status.
- * see DS_STATUS_* macro.
+ * see DS_EXEC_STATUS_* macro.
  */
 
 /**
  * get status of latest evaluation.
- * @param ctx
+ * @param st
  * not null.
  * @return
- * see DS_STATUS_* macro.
+ * see DS_EXEC_STATUS_* macro.
  */
-unsigned int DSContext_status(DSContext *ctx);
+unsigned int DSState_status(DSState *st);
 
 /**
  * get error line number of latest evaluation.
- * @param ctx
+ * @param st
  * not null
  * @return
- * if DS_STATUS_SUCCESS, return always 0,
+ * if DS_EXEC_STATUS_SUCCESS, return always 0,
  */
-unsigned int DSContext_errorLineNum(DSContext *ctx);
+unsigned int DSState_errorLineNum(DSState *st);
 
 /**
- * if type is DS_STATUS_PARSE_ERROR or DS_STATUS_TYPE_ERROR, return error kind.
- * if type is DS_STATUS_RUNTIME_ERROR return raised type name.
+ * if type is DS_EXEC_STATUS_PARSE_ERROR or DSEXEC__STATUS_TYPE_ERROR, return error kind.
+ * if type is DS_EXEC_STATUS_RUNTIME_ERROR return raised type name.
  * otherwise, return always empty string.
  */
 
 /**
  * get error kind of latest evaluation.
- * @param ctx
+ * @param st
  * not null.
  * @return
- * if DS_STATUS_PARSE_ERROR or DS_STATUS_TYPE_ERROR, return error kind.
- * if DS_STATUS_RUNTIME_ERROR, return raised type name.
+ * if DS_EXEC_STATUS_PARSE_ERROR or DS_EXEC_STATUS_TYPE_ERROR, return error kind.
+ * if DS_EXEC_STATUS_RUNTIME_ERROR, return raised type name.
  * otherwise, return always empty string.
  */
-const char *DSContext_errorKind(DSContext *ctx);
+const char *DSState_errorKind(DSState *st);
 
 // for termination hook
 /**
- * status indicates execution status (DS_STATUS_ASSERTION_ERROR or DS_STATUS_EXIT).
+ * status indicates execution status (DS_EXEC_STATUS_ASSERTION_ERROR or DS_EXEC_STATUS_EXIT).
  */
 typedef void (*TerminationHook)(unsigned int status, unsigned int errorLineNum);
 
 /**
  * when calling builtin exit command or raising assertion error, invoke hook and terminate immediately.
- * @param ctx
+ * @param st
  * not null.
  * @param hook
  * if null, clear termination hook.
  */
-void DSContext_addTerminationHook(DSContext *ctx, TerminationHook hook);
+void DSState_addTerminationHook(DSState *st, TerminationHook hook);
 
 
 // for input completion
@@ -239,10 +239,10 @@ typedef struct {
 
 /**
  * fill the candidates of possible token.
- * if buf or ctx is null, write 0 and null to c.
+ * if buf or st is null, write 0 and null to c.
  * if c is null, do nothing.
  * call DSCandidates_release() to release candidate.
- * @param ctx
+ * @param st
  * may be null.
  * @param buf
  * may be null.
@@ -250,7 +250,7 @@ typedef struct {
  * @param c
  * may be null.
  */
-void DSContext_complete(DSContext *ctx, const char *buf, size_t cursor, DSCandidates *c);
+void DSState_complete(DSState *st, const char *buf, size_t cursor, DSCandidates *c);
 
 /**
  * release buffer of candidates.

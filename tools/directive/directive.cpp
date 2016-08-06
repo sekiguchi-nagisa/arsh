@@ -339,7 +339,7 @@ struct ResultHandler : public AttributeHandler {
     OP("exit", EXIT) \
     OP("EXIT", EXIT)
 
-#define MATCH(STR, KIND) if(node.getValue() == STR) { return DS_STATUS_##KIND; }
+#define MATCH(STR, KIND) if(node.getValue() == STR) { return DS_EXEC_STATUS_##KIND; }
 
         EACH_STATUS(MATCH)
 

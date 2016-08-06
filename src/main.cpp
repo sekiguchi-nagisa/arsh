@@ -23,9 +23,9 @@
 
 using namespace ydsh;
 
-int exec_interactive(DSContext *ctx);
+int exec_interactive(DSState *ctx);
 
-static void loadRC(DSContext *ctx, const char *rcfile) {
+static void loadRC(DSState *ctx, const char *rcfile) {
     std::string path;
     if(rcfile != nullptr) {
         path += rcfile;
@@ -38,36 +38,36 @@ static void loadRC(DSContext *ctx, const char *rcfile) {
     if(fp == NULL) {
         return; // not read
     }
-    int ret = DSContext_loadAndEval(ctx, path.c_str(), fp);
-    int status = DSContext_status(ctx);
+    int ret = DSState_loadAndEval(ctx, path.c_str(), fp);
+    int status = DSState_status(ctx);
     fclose(fp);
-    if(status != DS_STATUS_SUCCESS) {
-        DSContext_delete(&ctx);
+    if(status != DS_EXEC_STATUS_SUCCESS) {
+        DSState_delete(&ctx);
         exit(ret);
     }
 
     // reset line num
-    DSContext_setLineNum(ctx, 1);
+    DSState_setLineNum(ctx, 1);
 }
 
 static const char *statusLogPath = nullptr;
 
 template <typename F, F func, typename ...T>
-static int invoke(DSContext **ctx, T&& ... args) {
-    int ret = func(*ctx, std::forward<T>(args)...);
+static int invoke(DSState **state, T&& ... args) {
+    int ret = func(*state, std::forward<T>(args)...);
     if(statusLogPath != nullptr) {
         FILE *fp = fopen(statusLogPath, "w");
         if(fp != nullptr) {
             fprintf(fp, "type=%d lineNum=%d kind=%s\n",
-                    DSContext_status(*ctx), DSContext_errorLineNum(*ctx), DSContext_errorKind(*ctx));
+                    DSState_status(*state), DSState_errorLineNum(*state), DSState_errorKind(*state));
             fclose(fp);
         }
     }
-    DSContext_delete(ctx);
+    DSState_delete(state);
     return ret;
 }
 
-#define INVOKE(F) invoke<decltype(&DSContext_ ## F), DSContext_ ## F>
+#define INVOKE(F) invoke<decltype(&DSState_ ## F), DSState_ ## F>
 
 static void terminationHook(unsigned int status, unsigned int errorLineNum) {
     if(statusLogPath != nullptr) {
@@ -87,7 +87,7 @@ static void showFeature(std::ostream &stream) {
             "USE_FIXED_TIME"
     };
 
-    const unsigned int featureBit = DSContext_featureBit();
+    const unsigned int featureBit = DSState_featureBit();
     for(unsigned int i = 0; i < (sizeof(featureNames) / sizeof(featureNames[0])); i++) {
         if(hasFlag(featureBit, static_cast<unsigned int>(1 << i))) {
             stream << featureNames[i] << std::endl;
@@ -144,13 +144,13 @@ int main(int argc, char **argv) {
         restIndex = argv::parseArgv(argc, argv, options, cmdLines);
     } catch(const argv::ParseError &e) {
         std::cerr << e.getMessage() << std::endl;
-        std::cerr << DSContext_version() << std::endl;
+        std::cerr << DSState_version() << std::endl;
         std::cerr << options << std::endl;
         return 1;
     }
 
-    DSContext *ctx = DSContext_create();
-    DSContext_addTerminationHook(ctx, terminationHook);
+    DSState *state = DSState_create();
+    DSState_addTerminationHook(state, terminationHook);
     InvocationKind invocationKind = InvocationKind::FROM_FILE;
     const char *evalText = nullptr;
     bool userc = true;
@@ -161,33 +161,33 @@ int main(int argc, char **argv) {
     for(auto &cmdLine : cmdLines) {
         switch(cmdLine.first) {
         case DUMP_UAST:
-            DSContext_setOption(ctx, DS_OPTION_DUMP_UAST);
+            DSState_setOption(state, DS_OPTION_DUMP_UAST);
             break;
         case DUMP_AST:
-            DSContext_setOption(ctx, DS_OPTION_DUMP_AST);
+            DSState_setOption(state, DS_OPTION_DUMP_AST);
             break;
         case DUMP_CODE:
-            DSContext_setOption(ctx, DS_OPTION_DUMP_CODE);
+            DSState_setOption(state, DS_OPTION_DUMP_CODE);
             break;
         case PARSE_ONLY:
         case PARSE_ONLY2:
-            DSContext_setOption(ctx, DS_OPTION_PARSE_ONLY);
+            DSState_setOption(state, DS_OPTION_PARSE_ONLY);
             break;
         case DISABLE_ASSERT:
-            DSContext_unsetOption(ctx, DS_OPTION_ASSERT);
+            DSState_unsetOption(state, DS_OPTION_ASSERT);
             break;
         case PRINT_TOPLEVEL:
-            DSContext_setOption(ctx, DS_OPTION_TOPLEVEL);
+            DSState_setOption(state, DS_OPTION_TOPLEVEL);
             break;
         case TRACE_EXIT:
-            DSContext_setOption(ctx, DS_OPTION_TRACE_EXIT);
+            DSState_setOption(state, DS_OPTION_TRACE_EXIT);
             break;
         case VERSION:
-            std::cout << DSContext_version() << std::endl;
-            std::cout << DSContext_copyright() << std::endl;
+            std::cout << DSState_version() << std::endl;
+            std::cout << DSState_copyright() << std::endl;
             return 0;
         case HELP:
-            std::cout << DSContext_version() << std::endl;
+            std::cout << DSState_version() << std::endl;
             std::cout << options << std::endl;
             return 0;
         case COMMAND:
@@ -242,37 +242,37 @@ int main(int argc, char **argv) {
             return 1;
         }
 
-        DSContext_setShellName(ctx, scriptName);
-        DSContext_setArguments(ctx, shellArgs + 1);
-        return INVOKE(loadAndEval)(&ctx, scriptName, fp);
+        DSState_setShellName(state, scriptName);
+        DSState_setArguments(state, shellArgs + 1);
+        return INVOKE(loadAndEval)(&state, scriptName, fp);
     }
     case InvocationKind::FROM_STDIN: {
-        DSContext_setArguments(ctx, shellArgs);
+        DSState_setArguments(state, shellArgs);
 
         if(isatty(STDIN_FILENO) == 0 && !forceInteractive) {  // pipe line mode
-            return INVOKE(loadAndEval)(&ctx, nullptr, stdin);
+            return INVOKE(loadAndEval)(&state, nullptr, stdin);
         } else {    // interactive mode
             if(!quiet) {
-                std::cout << DSContext_version() << std::endl;
-                std::cout << DSContext_copyright() << std::endl;
+                std::cout << DSState_version() << std::endl;
+                std::cout << DSState_copyright() << std::endl;
             }
             if(userc) {
-                loadRC(ctx, rcfile);
+                loadRC(state, rcfile);
             }
 
             // ignore termination hook
-            DSContext_addTerminationHook(ctx, nullptr);
+            DSState_addTerminationHook(state, nullptr);
 
-            return exec_interactive(ctx);
+            return exec_interactive(state);
         }
     }
     case InvocationKind::FROM_STRING: {
-        DSContext_setShellName(ctx, shellArgs[0]);
-        DSContext_setArguments(ctx, size == 0 ? nullptr : shellArgs + 1);
-        return INVOKE(eval)(&ctx, "(string)", evalText);
+        DSState_setShellName(state, shellArgs[0]);
+        DSState_setArguments(state, size == 0 ? nullptr : shellArgs + 1);
+        return INVOKE(eval)(&state, "(string)", evalText);
     }
     case InvocationKind::BUILTIN: {
-        return INVOKE(exec)(&ctx, (char **)shellArgs);
+        return INVOKE(exec)(&state, (char **)shellArgs);
     }
     }
 }

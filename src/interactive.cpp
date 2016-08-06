@@ -28,7 +28,7 @@
 #include <ydsh/ydsh.h>
 #include "misc/unicode.hpp"
 
-static DSContext *dsContext;
+static DSState *state;
 
 struct Deleter {
     void operator()(char *ptr) {
@@ -78,7 +78,7 @@ static const char *readLine() {
     bool continuation = false;
     while(true) {
         errno = 0;
-        auto str = StrWrapper(linenoise(DSContext_prompt(dsContext, continuation ? 2 : 1)));
+        auto str = StrWrapper(linenoise(DSState_prompt(state, continuation ? 2 : 1)));
         if(str == nullptr) {
             if(errno == EAGAIN) {
                 continuation = false;
@@ -207,7 +207,7 @@ static void completeCallback(const char *buf, size_t cursor, linenoiseCompletion
     actualBuf += '\n';
 
     DSCandidates c;
-    DSContext_complete(dsContext, actualBuf.c_str(), actualCursor, &c);
+    DSState_complete(state, actualBuf.c_str(), actualCursor, &c);
     lc->len = c.size;
     lc->cvec = c.values;
 }
@@ -215,7 +215,7 @@ static void completeCallback(const char *buf, size_t cursor, linenoiseCompletion
 /**
  * after execution, delete ctx
  */
-int exec_interactive(DSContext *ctx) {
+int exec_interactive(DSState *ctx) {
     *linenoiseInputFD() = dup(STDIN_FILENO);
     *linenoiseOutputFD() = dup(STDOUT_FILENO);
     *linenoiseErrorFD() = dup(STDERR_FILENO);
@@ -227,21 +227,21 @@ int exec_interactive(DSContext *ctx) {
 
     linenoiseSetCompletionCallback(completeCallback);
 
-    DSContext_setOption(ctx, DS_OPTION_TOPLEVEL);
-    dsContext = ctx;
+    DSState_setOption(ctx, DS_OPTION_TOPLEVEL);
+    state = ctx;
 
     int exitStatus = 0;
     for(const char *line = nullptr; (line = readLine()) != nullptr; ) {
         ignoreSignal();
-        int ret = DSContext_eval(ctx, nullptr, line);
-        unsigned int type = DSContext_status(ctx);
-        if(type == DS_STATUS_ASSERTION_ERROR || type == DS_STATUS_EXIT) {
+        int ret = DSState_eval(ctx, nullptr, line);
+        unsigned int type = DSState_status(ctx);
+        if(type == DS_EXEC_STATUS_ASSERTION_ERROR || type == DS_EXEC_STATUS_EXIT) {
             exitStatus = ret;
             break;
         }
     }
 
-    DSContext_delete(&ctx);
+    DSState_delete(&ctx);
     return exitStatus;
 }
 
