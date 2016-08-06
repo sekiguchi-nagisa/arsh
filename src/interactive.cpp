@@ -233,9 +233,11 @@ int exec_interactive(DSState *ctx) {
     int exitStatus = 0;
     for(const char *line = nullptr; (line = readLine()) != nullptr; ) {
         ignoreSignal();
-        int ret = DSState_eval(ctx, nullptr, line);
-        unsigned int type = DSState_status(ctx);
-        if(type == DS_EXEC_STATUS_ASSERTION_ERROR || type == DS_EXEC_STATUS_EXIT) {
+        DSError e;
+        int ret = DSState_eval(ctx, nullptr, line, &e);
+        unsigned int kind = e.kind;
+        DSError_release(&e);
+        if(kind == DS_ERROR_KIND_ASSERTION_ERROR || kind == DS_ERROR_KIND_EXIT) {
             exitStatus = ret;
             break;
         }

@@ -38,10 +38,12 @@ static void loadRC(DSState *ctx, const char *rcfile) {
     if(fp == NULL) {
         return; // not read
     }
-    int ret = DSState_loadAndEval(ctx, path.c_str(), fp);
-    int status = DSState_status(ctx);
+    DSError e;
+    int ret = DSState_loadAndEval(ctx, path.c_str(), fp, &e);
+    int kind = e.kind;
+    DSError_release(&e);
     fclose(fp);
-    if(status != DS_EXEC_STATUS_SUCCESS) {
+    if(kind != DS_ERROR_KIND_SUCCESS) {
         DSState_delete(&ctx);
         exit(ret);
     }
@@ -54,15 +56,17 @@ static const char *statusLogPath = nullptr;
 
 template <typename F, F func, typename ...T>
 static int invoke(DSState **state, T&& ... args) {
-    int ret = func(*state, std::forward<T>(args)...);
+    DSError error;
+    int ret = func(*state, std::forward<T>(args)..., &error);
     if(statusLogPath != nullptr) {
         FILE *fp = fopen(statusLogPath, "w");
         if(fp != nullptr) {
             fprintf(fp, "type=%d lineNum=%d kind=%s\n",
-                    DSState_status(*state), DSState_errorLineNum(*state), DSState_errorKind(*state));
+                    error.kind, error.lineNum, error.name != nullptr ? error.name : "");
             fclose(fp);
         }
     }
+    DSError_release(&error);
     DSState_delete(state);
     return ret;
 }

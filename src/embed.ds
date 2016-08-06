@@ -19,7 +19,7 @@ let TRUE = true
 let True = $TRUE
 let true = $True
 
-let FALSE = false
+let FALSE = not $true
 let False = $FALSE
 let false = $False
 

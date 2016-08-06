@@ -45,47 +45,6 @@ DSState *DSState_create();
  */
 void DSState_delete(DSState **st);
 
-/**
- * evaluate string.
- * @param st
- * not null.
- * @param sourceName
- * if null, source name is treated as standard input.
- * @param source
- * not null. must be null terminated.
- * @return
- * exit status of most recently executed command(include exit).
- * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
- */
-int DSState_eval(DSState *st, const char *sourceName, const char *source);
-
-/**
- * evaluate file content.
- * @param st
- * not null.
- * @param sourceName
- * if null, source name is treated as standard input
- * @param fp
- * must be opened with binary mode.
- * @return
- * exit status of most recently executed command(include exit).
- * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
- */
-int DSState_loadAndEval(DSState *st, const char *sourceName, FILE *fp);
-
-/**
- * execute builtin command.
- * @param st
- * not null.
- * @param argv
- * first element must be command name.
- * last element must be null.
- * @return
- * exit status of executed command.
- * if command not found, return 1.
- */
-int DSState_exec(DSState *st, char *const *argv);
-
 void DSState_setLineNum(DSState *st, unsigned int lineNum);
 unsigned int DSState_lineNum(DSState *st);
 
@@ -108,6 +67,7 @@ void DSState_setShellName(DSState *st, const char *shellName);
 void DSState_setArguments(DSState *st, char *const *args);
 
 
+// for option
 #define DS_OPTION_DUMP_UAST  ((unsigned int) (1 << 0))
 #define DS_OPTION_DUMP_AST   ((unsigned int) (1 << 1))
 #define DS_OPTION_DUMP_CODE  ((unsigned int) (1 << 2))
@@ -118,6 +78,91 @@ void DSState_setArguments(DSState *st, char *const *args);
 
 void DSState_setOption(DSState *st, unsigned int optionSet);
 void DSState_unsetOption(DSState *st, unsigned int optionSet);
+
+
+// for indicating error kind.
+#define DS_ERROR_KIND_SUCCESS         ((unsigned int) 0)
+#define DS_ERROR_KIND_PARSE_ERROR     ((unsigned int) 1)
+#define DS_ERROR_KIND_TYPE_ERROR      ((unsigned int) 2)
+#define DS_ERROR_KIND_RUNTIME_ERROR   ((unsigned int) 3)
+#define DS_ERROR_KIND_ASSERTION_ERROR ((unsigned int) 4)
+#define DS_ERROR_KIND_EXIT            ((unsigned int) 5)
+
+typedef struct {
+    /**
+     * kind of error.
+     * see DS_ERROR_KIND_ * macro
+     */
+    unsigned int kind;
+
+    /**
+     * indicate the line number of the error location.
+     * if kind is, DS_ERROR_KIND_SUCCESS, it is 0.
+     */
+    unsigned int lineNum;
+
+    /**
+     * indicate error name.
+     * if DS_ERROR_KIND_PARSE_ERROR or DS_ERROR_KIND_TYPE_ERROR, error kind.
+     * if DS_ERROR_KIND_RUNTIME_ERROR, raised type name.
+     * otherwise, null
+     */
+    char *name;
+} DSError;
+
+/**
+ * release buffer of DSError.
+ * if e is null, do nothing.
+ * after release, assign 0 and null to members.
+ * @param e
+ * may be null.
+ */
+void DSError_release(DSError *e);
+
+/**
+ * evaluate string. if e is not null, set error info.
+ * @param st
+ * not null.
+ * @param sourceName
+ * if null, source name is treated as standard input.
+ * @param source
+ * not null. must be null terminated.
+ * @param e
+ * may be null.
+ * @return
+ * exit status of most recently executed command(include exit).
+ * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
+ */
+int DSState_eval(DSState *st, const char *sourceName, const char *source, DSError *e);
+
+/**
+ * evaluate file content. if e is not null, set error info.
+ * @param st
+ * not null.
+ * @param sourceName
+ * if null, source name is treated as standard input
+ * @param fp
+ * must be opened with binary mode.
+ * @param e
+ * may be null.
+ * @return
+ * exit status of most recently executed command(include exit).
+ * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
+ */
+int DSState_loadAndEval(DSState *st, const char *sourceName, FILE *fp, DSError *e);
+
+/**
+ * execute builtin command.
+ * @param st
+ * not null.
+ * @param argv
+ * first element must be command name.
+ * last element must be null.
+ * @return
+ * exit status of executed command.
+ * if command not found, return 1.
+ */
+int DSState_exec(DSState *st, char *const *argv);
 
 /**
  * get prompt string
@@ -160,57 +205,10 @@ const char *DSState_copyright();
 
 unsigned int DSState_featureBit();
 
-// for execution status
-#define DS_EXEC_STATUS_SUCCESS         ((unsigned int) 0)
-#define DS_EXEC_STATUS_PARSE_ERROR     ((unsigned int) 1)
-#define DS_EXEC_STATUS_TYPE_ERROR      ((unsigned int) 2)
-#define DS_EXEC_STATUS_RUNTIME_ERROR   ((unsigned int) 3)
-#define DS_EXEC_STATUS_ASSERTION_ERROR ((unsigned int) 4)
-#define DS_EXEC_STATUS_EXIT            ((unsigned int) 5)
-
-/**
- * return type of status.
- * see DS_EXEC_STATUS_* macro.
- */
-
-/**
- * get status of latest evaluation.
- * @param st
- * not null.
- * @return
- * see DS_EXEC_STATUS_* macro.
- */
-unsigned int DSState_status(DSState *st);
-
-/**
- * get error line number of latest evaluation.
- * @param st
- * not null
- * @return
- * if DS_EXEC_STATUS_SUCCESS, return always 0,
- */
-unsigned int DSState_errorLineNum(DSState *st);
-
-/**
- * if type is DS_EXEC_STATUS_PARSE_ERROR or DSEXEC__STATUS_TYPE_ERROR, return error kind.
- * if type is DS_EXEC_STATUS_RUNTIME_ERROR return raised type name.
- * otherwise, return always empty string.
- */
-
-/**
- * get error kind of latest evaluation.
- * @param st
- * not null.
- * @return
- * if DS_EXEC_STATUS_PARSE_ERROR or DS_EXEC_STATUS_TYPE_ERROR, return error kind.
- * if DS_EXEC_STATUS_RUNTIME_ERROR, return raised type name.
- * otherwise, return always empty string.
- */
-const char *DSState_errorKind(DSState *st);
 
 // for termination hook
 /**
- * status indicates execution status (DS_EXEC_STATUS_ASSERTION_ERROR or DS_EXEC_STATUS_EXIT).
+ * status indicates execution status (DS_ERROR_KIND_ASSERTION_ERROR or DS_ERROR_KIND_EXIT).
  */
 typedef void (*TerminationHook)(unsigned int status, unsigned int errorLineNum);
 

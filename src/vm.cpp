@@ -75,7 +75,7 @@ static void checkAssertion(RuntimeContext &ctx) {
         if(ctx.getTerminationHook() != nullptr) {
             const unsigned int lineNum =
                     getOccuredLineNum(typeAs<Error_Object>(ctx.getThrownObject())->getStackTrace());
-            ctx.getTerminationHook()(DS_EXEC_STATUS_ASSERTION_ERROR, lineNum);
+            ctx.getTerminationHook()(DS_ERROR_KIND_ASSERTION_ERROR, lineNum);
         }
 
         // print stack trace

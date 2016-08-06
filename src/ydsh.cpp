@@ -51,20 +51,6 @@ struct DSState {
     // previously computed prompt
     std::string prompt;
 
-    struct {
-        /**
-         * kind of execution status.
-         */
-        unsigned int type;
-
-        /**
-         * for error location.
-         */
-        unsigned int lineNum;
-
-        const char *errorKind;
-    } execStatus;
-
     DSState();
     ~DSState() = default;
 
@@ -78,7 +64,7 @@ struct DSState {
 
 DSState::DSState() :
         ctx(), parser(), checker(this->ctx.getPool(), this->ctx.getSymbolTable()),
-        lineNum(1), option(DS_OPTION_ASSERT), prompt(), execStatus() {
+        lineNum(1), option(DS_OPTION_ASSERT), prompt() {
     // set locale
     setlocale(LC_ALL, "");
     setlocale(LC_MESSAGES, "C");
@@ -104,16 +90,12 @@ static int getExitStatus(DSState *dsctx) {
     return dsctx->ctx.getExitStatus();
 }
 
-static void resetStatus(DSState *dsctx) {
-    dsctx->execStatus.type = DS_EXEC_STATUS_SUCCESS;
-    dsctx->execStatus.lineNum = 0;
-    dsctx->execStatus.errorKind = "";
-}
-
-static void updateStatus(DSState *dsctx, unsigned int type, unsigned int lineNum, const char *errorKind) {
-    dsctx->execStatus.type = type;
-    dsctx->execStatus.lineNum = lineNum;
-    dsctx->execStatus.errorKind = errorKind;
+static void setErrorInfo(DSError *error, unsigned int type, unsigned int lineNum, const char *errorName) {
+    if(error != nullptr) {
+        error->kind = type;
+        error->lineNum = lineNum;
+        error->name = errorName != nullptr ? strdup(errorName) : nullptr;
+    }
 }
 
 /**
@@ -161,7 +143,7 @@ static void formatErrorLine(bool isatty, const Lexer &lexer, const Token &errorT
     << color(TermColor::Reset, isatty) << std::endl;
 }
 
-static void handleParseError(DSState *dsctx, const Lexer &lexer, const ParseError &e) {
+static void handleParseError(const Lexer &lexer, const ParseError &e, DSError *dsError) {
     /**
      * show parse error message
      */
@@ -177,13 +159,10 @@ static void handleParseError(DSState *dsctx, const Lexer &lexer, const ParseErro
     << e.getMessage() << std::endl;
     formatErrorLine(isatty, lexer, e.getErrorToken());
 
-    /**
-     * update execution status
-     */
-    updateStatus(dsctx, DS_EXEC_STATUS_PARSE_ERROR, errorLineNum, e.getErrorKind());
+    setErrorInfo(dsError, DS_ERROR_KIND_PARSE_ERROR, errorLineNum, e.getErrorKind());
 }
 
-static void handleTypeError(DSState *dsctx, const Lexer &lexer, const TypeCheckError &e) {
+static void handleTypeError(const Lexer &lexer, const TypeCheckError &e, DSError *dsError) {
     unsigned int errorLineNum = lexer.getSourceInfoPtr()->getLineNum(e.getStartPos());
 
     const bool isatty = isSupportedTerminal(STDERR_FILENO);
@@ -196,14 +175,11 @@ static void handleTypeError(DSState *dsctx, const Lexer &lexer, const TypeCheckE
     << e.getMessage() << std::endl;
     formatErrorLine(isatty, lexer, e.getToken());
 
-    /**
-     * update execution status
-     */
-    updateStatus(dsctx, DS_EXEC_STATUS_TYPE_ERROR,
+    setErrorInfo(dsError, DS_ERROR_KIND_TYPE_ERROR,
                  lexer.getSourceInfoPtr()->getLineNum(e.getStartPos()), e.getKind());
 }
 
-static int eval(DSState *dsctx, RootNode &rootNode) {
+static int eval(DSState *dsctx, RootNode &rootNode, DSError *dsError) {
     ByteCodeGenerator codegen(dsctx->ctx.getPool(), hasFlag(dsctx->option, DS_OPTION_ASSERT));
     CompiledCode c = codegen.generateToplevel(rootNode);
 
@@ -223,16 +199,15 @@ static int eval(DSState *dsctx, RootNode &rootNode) {
         dsctx->ctx.loadThrownObject();
         dsctx->ctx.handleUncaughtException(dsctx->ctx.pop());
         dsctx->checker.recover(false);
-        updateStatus(dsctx, DS_EXEC_STATUS_RUNTIME_ERROR, errorLineNum,
+        setErrorInfo(dsError, DS_ERROR_KIND_RUNTIME_ERROR, errorLineNum,
                      dsctx->ctx.getPool().getTypeName(*thrownObj->getType()).c_str());
         return 1;
     }
     return getExitStatus(dsctx);
 }
 
-static int eval(DSState *dsctx, Lexer &lexer) {
-    resetStatus(dsctx);
-
+static int eval(DSState *dsctx, Lexer &lexer, DSError *dsError) {
+    setErrorInfo(dsError, DS_ERROR_KIND_SUCCESS, 0, nullptr);
     lexer.setLineNum(dsctx->lineNum);
     RootNode rootNode;
 
@@ -247,7 +222,7 @@ static int eval(DSState *dsctx, Lexer &lexer) {
             std::cout << std::endl;
         }
     } catch(const ParseError &e) {
-        handleParseError(dsctx, lexer, e);
+        handleParseError(lexer, e, dsError);
         dsctx->lineNum = lexer.getLineNum();
         return 1;
     }
@@ -262,7 +237,7 @@ static int eval(DSState *dsctx, Lexer &lexer) {
             std::cout << std::endl;
         }
     } catch(const TypeCheckError &e) {
-        handleTypeError(dsctx, lexer, e);
+        handleTypeError(lexer, e, dsError);
         dsctx->checker.recover();
         return 1;
     }
@@ -272,7 +247,7 @@ static int eval(DSState *dsctx, Lexer &lexer) {
     }
 
     // eval
-    return eval(dsctx, rootNode);
+    return eval(dsctx, rootNode, dsError);
 }
 
 static void bindVariable(DSState *dsctx, const char *varName, DSValue &&value) {
@@ -388,8 +363,8 @@ static void initBuiltinVar(DSState *dsctx) {
 
 static void loadEmbeddedScript(DSState *dsctx) {
     Lexer lexer("(embed)", embed_script);
-    eval(dsctx, lexer);
-    if(dsctx->execStatus.type != DS_EXEC_STATUS_SUCCESS) {
+    int ret = eval(dsctx, lexer, nullptr);
+    if(ret != 0) {
         fatal("broken embedded script\n");
     }
     dsctx->ctx.getPool().commit();
@@ -437,22 +412,6 @@ void DSState_delete(DSState **st) {
     }
 }
 
-int DSState_eval(DSState *st, const char *sourceName, const char *source) {
-    Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName, source);
-    return eval(st, lexer);
-}
-
-int DSState_loadAndEval(DSState *st, const char *sourceName, FILE *fp) {
-    Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName, fp);
-    return eval(st, lexer);
-}
-
-int DSState_exec(DSState *st, char *const *argv) {
-    resetStatus(st);
-    st->ctx.execBuiltinCommand(argv);
-    return getExitStatus(st);
-}
-
 void DSState_setLineNum(DSState *st, unsigned int lineNum) {
     st->lineNum = lineNum;
 }
@@ -496,6 +455,30 @@ void DSState_setOption(DSState *st, unsigned int optionSet) {
 void DSState_unsetOption(DSState *st, unsigned int optionSet) {
     unsetFlag(st->option, optionSet);
     setOptionImpl(st, optionSet, false);
+}
+
+void DSError_release(DSError *e) {
+    if(e != nullptr) {
+        e->kind = 0;
+        e->lineNum = 0;
+        free(e->name);
+        e->name = nullptr;
+    }
+}
+
+int DSState_eval(DSState *st, const char *sourceName, const char *source, DSError *e) {
+    Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName, source);
+    return eval(st, lexer, e);
+}
+
+int DSState_loadAndEval(DSState *st, const char *sourceName, FILE *fp, DSError *e) {
+    Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName, fp);
+    return eval(st, lexer, e);
+}
+
+int DSState_exec(DSState *st, char *const *argv) {
+    st->ctx.execBuiltinCommand(argv);
+    return getExitStatus(st);
 }
 
 const char *DSState_prompt(DSState *st, unsigned int n) {
@@ -562,18 +545,6 @@ unsigned int DSState_featureBit() {
     setFlag(featureBit, DS_FEATURE_FIXED_TIME);
 #endif
     return featureBit;
-}
-
-unsigned int DSState_status(DSState *st) {
-    return st->execStatus.type;
-}
-
-unsigned int DSState_errorLineNum(DSState *st) {
-    return st->execStatus.lineNum;
-}
-
-const char *DSState_errorKind(DSState *st) {
-    return st->execStatus.errorKind;
 }
 
 void DSState_addTerminationHook(DSState *st, TerminationHook hook) {

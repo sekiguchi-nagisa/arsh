@@ -61,7 +61,7 @@ private:
 
 public:
     Directive() :
-            result(DS_EXEC_STATUS_SUCCESS), params(), status(0), lineNum(0),
+            result(DS_ERROR_KIND_SUCCESS), params(), status(0), lineNum(0),
             ifHaveDBus(RunCondition::IGNORE), errorKind() {}
 
     ~Directive() = default;

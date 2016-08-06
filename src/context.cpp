@@ -706,7 +706,7 @@ void RuntimeContext::exitShell(unsigned int status) {
     if(this->terminationHook != nullptr) {
         const unsigned int lineNum =
                 getOccuredLineNum(typeAs<Error_Object>(this->getThrownObject())->getStackTrace());
-        this->terminationHook(DS_EXEC_STATUS_EXIT, lineNum);
+        this->terminationHook(DS_ERROR_KIND_EXIT, lineNum);
     }
 
     // print stack trace

@@ -304,27 +304,27 @@ TEST(API, case1) {
 }
 
 TEST(API, case2) {
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
+    SCOPED_TRACE("");
 
-        DSState *ctx = DSState_create();
-        ASSERT_EQ(1u, DSState_lineNum(ctx));
-                                DSState_eval(ctx, nullptr, "12 + 32\n $true\n");
-        ASSERT_EQ(3u, DSState_lineNum(ctx));
+    DSState *ctx = DSState_create();
 
-                                DSState_setLineNum(ctx, 49);
-                                DSState_eval(ctx, nullptr, "23");
-        ASSERT_EQ(50u, DSState_lineNum(ctx));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, DSState_lineNum(ctx)));
 
-                                DSState_delete(&ctx);
-    });
+    DSState_eval(ctx, nullptr, "12 + 32\n $true\n", nullptr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, DSState_lineNum(ctx)));
+
+    DSState_setLineNum(ctx, 49);
+    DSState_eval(ctx, nullptr, "23", nullptr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(50u, DSState_lineNum(ctx)));
+
+    DSState_delete(&ctx);
 }
 
 TEST(API, case3) {
     SCOPED_TRACE("");
 
     DSState *ctx = DSState_create();
-    DSState_eval(ctx, nullptr, "$PS1 = 'hello>'; $PS2 = 'second>'");
+    DSState_eval(ctx, nullptr, "$PS1 = 'hello>'; $PS2 = 'second>'", nullptr);
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("hello>", DSState_prompt(ctx, 1)));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("second>", DSState_prompt(ctx, 2)));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("", DSState_prompt(ctx, 5)));
@@ -357,10 +357,12 @@ TEST(PID, case1) {
     src += std::to_string(pid);
     src += "u)";
 
-    int s = DSState_eval(ctx, nullptr, src.c_str());
+    DSError e;
+    int s = DSState_eval(ctx, nullptr, src.c_str(), &e);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, s));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_EXEC_STATUS_SUCCESS, DSState_status(ctx)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind));
 
+    DSError_release(&e);
     DSState_delete(&ctx);
 }
 
