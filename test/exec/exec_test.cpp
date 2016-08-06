@@ -272,33 +272,25 @@ TEST(Base, case2) {
 
 
 TEST(BuiltinExecTest, case1) {
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
+    SCOPED_TRACE("");
 
-        DSState *ctx = DSState_create();
+    DSState *ctx = DSState_create();
 
-        int ret = DSState_exec(ctx, make_argv("echo", "hello").get());
-        ASSERT_EQ(0, ret);
-        ASSERT_EQ(DS_EXEC_STATUS_SUCCESS, DSState_status(ctx));
-        ASSERT_STREQ("", DSState_errorKind(ctx));
+    int ret = DSState_exec(ctx, make_argv("echo", "hello").get());
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ret));
 
-                                DSState_delete(&ctx);
-    });
+    DSState_delete(&ctx);
 }
 
 TEST(BuiltinExecTest, case2) {
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
+    SCOPED_TRACE("");
 
-        DSState *ctx = DSState_create();
+    DSState *ctx = DSState_create();
 
-        int ret = DSState_exec(ctx, make_argv("fheruifh", "hello").get());
-        ASSERT_EQ(1, ret);
-        ASSERT_EQ(DS_EXEC_STATUS_SUCCESS, DSState_status(ctx));  // if command not found, still success.
-        ASSERT_STREQ("", DSState_errorKind(ctx));
+    int ret = DSState_exec(ctx, make_argv("fheruifh", "hello").get());
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, ret));
 
-                                DSState_delete(&ctx);
-    });
+    DSState_delete(&ctx);
 }
 
 TEST(API, case1) {

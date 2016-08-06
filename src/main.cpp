@@ -108,7 +108,7 @@ static void showFeature(std::ostream &stream) {
     OP(COMMAND,        "-c",                  argv::HAS_ARG | argv::IGNORE_REST, "evaluate argument") \
     OP(NORC,           "--norc",              0, "not load rc file (only available interactive mode)") \
     OP(EXEC,           "-e",                  argv::HAS_ARG | argv::IGNORE_REST, "execute builtin command (ignore some option)") \
-    OP(STATUS_LOG,     "--status-log",        argv::HAS_ARG, "write execution status to specified file (ignored in interactive mode)") \
+    OP(STATUS_LOG,     "--status-log",        argv::HAS_ARG, "write execution status to specified file (ignored in interactive mode or -e)") \
     OP(FEATURE,        "--feature",           0, "show available features") \
     OP(RC_FILE,        "--rcfile",            argv::HAS_ARG, "load specified rc file (only available interactive mode)") \
     OP(QUIET,          "--quiet",             0, "suppress startup message (only available interactive mode)") \
@@ -199,6 +199,7 @@ int main(int argc, char **argv) {
             break;
         case EXEC:
             invocationKind = InvocationKind::BUILTIN;
+            statusLogPath = nullptr;
             restIndex--;
             break;
         case STATUS_LOG:
@@ -272,7 +273,9 @@ int main(int argc, char **argv) {
         return INVOKE(eval)(&state, "(string)", evalText);
     }
     case InvocationKind::BUILTIN: {
-        return INVOKE(exec)(&state, (char **)shellArgs);
+        int ret = DSState_exec(state, shellArgs);
+        DSState_delete(&state);
+        return ret;
     }
     }
 }
