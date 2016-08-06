@@ -189,18 +189,18 @@ public:
         std::getline(input, line);
         ASSERT_FALSE(line.empty());
 
-        unsigned int type;
+        unsigned int kind;
         unsigned int lineNum;
-        std::string kind;
+        std::string name;
 
-        int r = parse(line, "type", "=", type, "lineNum", "=", lineNum, "kind", "=", kind);
+        int r = parse(line, "kind", "=", kind, "lineNum", "=", lineNum, "name", "=", name);
         ASSERT_EQ(0, r);
 
         // check status
-        ASSERT_EQ(d.getResult(), type);
+        ASSERT_EQ(d.getResult(), kind);
         ASSERT_EQ(d.getLineNum(), lineNum);
         ASSERT_EQ(d.getStatus(), static_cast<unsigned int>(ret));
-        ASSERT_EQ(d.getErrorKind(), kind);
+        ASSERT_EQ(d.getErrorKind(), name);
     }
 };
 

@@ -61,7 +61,7 @@ static int invoke(DSState **state, T&& ... args) {
     if(statusLogPath != nullptr) {
         FILE *fp = fopen(statusLogPath, "w");
         if(fp != nullptr) {
-            fprintf(fp, "type=%d lineNum=%d kind=%s\n",
+            fprintf(fp, "kind=%d lineNum=%d name=%s\n",
                     error.kind, error.lineNum, error.name != nullptr ? error.name : "");
             fclose(fp);
         }
@@ -73,11 +73,11 @@ static int invoke(DSState **state, T&& ... args) {
 
 #define INVOKE(F) invoke<decltype(&DSState_ ## F), DSState_ ## F>
 
-static void terminationHook(unsigned int status, unsigned int errorLineNum) {
+static void terminationHook(unsigned int kind, unsigned int errorLineNum) {
     if(statusLogPath != nullptr) {
         FILE *fp = fopen(statusLogPath, "w");
         if(fp != nullptr) {
-            fprintf(fp, "type=%d lineNum=%d kind=\n", status, errorLineNum);
+            fprintf(fp, "kind=%d lineNum=%d name=\n", kind, errorLineNum);
             fclose(fp);
         }
     }
