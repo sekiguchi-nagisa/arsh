@@ -692,7 +692,7 @@ DSType &TypePool::getDBusInterfaceType(const std::string &typeName) {
     DSType *type = this->typeMap.getType(typeName);
     if(type == nullptr) {
         // load dbus interface
-        std::string ifacePath(RuntimeContext::getIfaceDir());
+        std::string ifacePath(DSState::getIfaceDir());
         ifacePath += "/";
         ifacePath += typeName;
 

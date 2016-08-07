@@ -215,7 +215,7 @@ static void completeCallback(const char *buf, size_t cursor, linenoiseCompletion
 /**
  * after execution, delete ctx
  */
-int exec_interactive(DSState *ctx) {
+int exec_interactive(DSState *dsState) {
     *linenoiseInputFD() = dup(STDIN_FILENO);
     *linenoiseOutputFD() = dup(STDOUT_FILENO);
     *linenoiseErrorFD() = dup(STDERR_FILENO);
@@ -227,14 +227,14 @@ int exec_interactive(DSState *ctx) {
 
     linenoiseSetCompletionCallback(completeCallback);
 
-    DSState_setOption(ctx, DS_OPTION_TOPLEVEL);
-    state = ctx;
+    DSState_setOption(dsState, DS_OPTION_TOPLEVEL);
+    state = dsState;
 
     int exitStatus = 0;
     for(const char *line = nullptr; (line = readLine()) != nullptr; ) {
         ignoreSignal();
         DSError e;
-        int ret = DSState_eval(ctx, nullptr, line, &e);
+        int ret = DSState_eval(dsState, nullptr, line, &e);
         unsigned int kind = e.kind;
         DSError_release(&e);
         if(kind == DS_ERROR_KIND_ASSERTION_ERROR || kind == DS_ERROR_KIND_EXIT) {
@@ -243,7 +243,7 @@ int exec_interactive(DSState *ctx) {
         }
     }
 
-    DSState_delete(&ctx);
+    DSState_delete(&dsState);
     return exitStatus;
 }
 

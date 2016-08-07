@@ -20,9 +20,9 @@
 #include <cstring>
 #include <cassert>
 
-namespace ydsh {
+struct DSState;
 
-class RuntimeContext;
+namespace ydsh {
 
 constexpr unsigned int READ_PIPE = 0;
 constexpr unsigned int WRITE_PIPE = 1;
@@ -48,7 +48,7 @@ enum RedirectOP : unsigned char {
 /**
  * return exit status.
  */
-typedef int (*builtin_command_t)(RuntimeContext *ctx, const int argc, char *const *argv);
+typedef int (*builtin_command_t)(DSState *state, const int argc, char *const *argv);
 
 unsigned int getBuiltinCommandSize();
 
@@ -64,7 +64,7 @@ builtin_command_t lookupBuiltinCommand(const char *commandName);
  */
 int getBuiltinCommandIndex(const char *commandName);
 
-int execBuiltinCommand(RuntimeContext *ctx, unsigned int index, const int argc, char *const *argv);
+int execBuiltinCommand(DSState *state, unsigned int index, const int argc, char *const *argv);
 
 
 } // namespace ydsh

@@ -152,7 +152,7 @@ private:
     bool toplevelPrinting;
 
 public:
-    TypeChecker(TypePool &typePool, SymbolTable &symbolTable);
+    TypeChecker(TypePool &typePool, SymbolTable &symbolTable, bool toplevelPrinting);
 
     ~TypeChecker() = default;
 
@@ -160,15 +160,6 @@ public:
      * type checker entry point
      */
     void checkTypeRootNode(RootNode &rootNode);
-
-    /**
-     * abort symbol table and TypePool when error happened
-     */
-    void recover(bool abortType = true);
-
-    void setToplevelPrinting(bool set) {
-        this->toplevelPrinting = set;
-    }
 
     static DSType *resolveInterface(TypePool &typePool, InterfaceNode *node);
     static DSType *resolveInterface(TypePool &typePool, TypeGenerator &typeGen, InterfaceNode *node);

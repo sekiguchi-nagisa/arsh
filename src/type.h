@@ -28,6 +28,8 @@
 #include "misc/noncopyable.h"
 #include "handle_info.h"
 
+struct DSState;
+
 namespace ydsh {
 
 struct TypeVisitor;
@@ -35,9 +37,8 @@ class TypePool;
 class FieldHandle;
 class MethodHandle;
 class DSValue;
-class RuntimeContext;
 class DSCode;
-typedef DSValue (*native_func_t)(RuntimeContext &);
+typedef DSValue (*native_func_t)(DSState &);
 
 class DSType {
 protected:

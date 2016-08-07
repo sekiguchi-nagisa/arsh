@@ -24,6 +24,7 @@
 #include <dirent.h>
 #include <csignal>
 
+#include <ydsh/ydsh.h>
 #include <config.h>
 #include "context.h"
 #include "symbol.h"
@@ -138,12 +139,16 @@ void FilePathCache::clear() {
     this->map.clear();
 }
 
+const NativeCode *getNativeCode(unsigned int index);
 
-// ############################
-// ##     RuntimeContext     ##
-// ############################
+} // namespace ydsh
 
-RuntimeContext::RuntimeContext() :
+
+// #####################
+// ##     DSState     ##
+// #####################
+
+DSState::DSState() :
         pool(), symbolTable(),
         trueObj(new Boolean_Object(this->pool.getBooleanType(), true)),
         falseObj(new Boolean_Object(this->pool.getBooleanType(), false)),
@@ -152,11 +157,11 @@ RuntimeContext::RuntimeContext() :
         callStack(new DSValue[DEFAULT_STACK_SIZE]),
         callStackSize(DEFAULT_STACK_SIZE), globalVarSize(0),
         stackTopIndex(0), stackBottomIndex(0), localVarOffset(0), pc_(0),
-        traceExit(false), IFS_index(0),
+        option(DS_OPTION_ASSERT), IFS_index(0),
         codeStack_(), pipelineEvaluator(nullptr),
-        pathCache(), terminationHook(nullptr) { }
+        pathCache(), terminationHook(nullptr), lineNum(1), prompt() { }
 
-RuntimeContext::~RuntimeContext() {
+DSState::~DSState() {
     delete[] this->callStack;
 }
 
@@ -242,9 +247,9 @@ static std::string initLogicalWorkingDir() {
     }
 }
 
-std::string RuntimeContext::logicalWorkingDir = initLogicalWorkingDir();
+std::string DSState::logicalWorkingDir = initLogicalWorkingDir();
 
-std::string RuntimeContext::getConfigRootDir() {
+std::string DSState::getConfigRootDir() {
 #ifdef X_CONFIG_DIR
     return std::string(X_CONFIG_DIR);
 #else
@@ -254,28 +259,35 @@ std::string RuntimeContext::getConfigRootDir() {
 #endif
 }
 
-std::string RuntimeContext::getIfaceDir() {
+std::string DSState::getIfaceDir() {
     std::string root(getConfigRootDir());
     root += "/dbus/iface";
     return root;
 }
 
-void RuntimeContext::updateScriptName(const char *name) {
+void DSState::updateScriptName(const char *name) {
     unsigned int index = this->getBuiltinVarIndex(BuiltinVarOffset::POS_0);
     this->setGlobal(index, DSValue::create<String_Object>(this->pool.getStringType(), std::string(name)));
 }
 
-void RuntimeContext::addScriptArg(const char *arg) {
+void DSState::recover(bool abortType) {
+    this->symbolTable.abort();
+    if(abortType) {
+        this->pool.abort();
+    }
+}
+
+void DSState::addScriptArg(const char *arg) {
     typeAs<Array_Object>(this->getScriptArgs())->append(
             DSValue::create<String_Object>(this->pool.getStringType(), std::string(arg)));
 }
 
-void RuntimeContext::initScriptArg() {
+void DSState::initScriptArg() {
     unsigned int index = this->getBuiltinVarIndex(BuiltinVarOffset::ARGS);
     typeAs<Array_Object>(this->getGlobal(index))->refValues().clear();
 }
 
-void RuntimeContext::finalizeScriptArg() {
+void DSState::finalizeScriptArg() {
     unsigned int index = this->getBuiltinVarIndex(BuiltinVarOffset::ARGS);
     auto *array = typeAs<Array_Object>(this->getGlobal(index));
 
@@ -303,13 +315,13 @@ void RuntimeContext::finalizeScriptArg() {
     }
 }
 
-void RuntimeContext::reserveGlobalVar(unsigned int size) {
+void DSState::reserveGlobalVar(unsigned int size) {
     this->reserveLocalVar(size);
     this->globalVarSize = size;
     this->localVarOffset = size;
 }
 
-void RuntimeContext::reserveLocalVar(unsigned int size) {
+void DSState::reserveLocalVar(unsigned int size) {
     this->stackTopIndex = size;
     if(size >= this->callStackSize) {
         this->expandLocalStack();
@@ -317,25 +329,25 @@ void RuntimeContext::reserveLocalVar(unsigned int size) {
     this->stackBottomIndex = size;
 }
 
-DSValue RuntimeContext::newError(DSType &errorType, std::string &&message) {
+DSValue DSState::newError(DSType &errorType, std::string &&message) {
     return Error_Object::newError(*this, errorType, DSValue::create<String_Object>(
             this->pool.getStringType(), std::move(message)));
 }
 
-void RuntimeContext::throwException(DSValue &&except) {
+void DSState::throwException(DSValue &&except) {
     this->thrownObject = std::move(except);
     throw DSExcepton();
 }
 
-void RuntimeContext::throwError(DSType &errorType, const char *message) {
+void DSState::throwError(DSType &errorType, const char *message) {
     this->throwError(errorType, std::string(message));
 }
 
-void RuntimeContext::throwError(DSType &errorType, std::string &&message) {
+void DSState::throwError(DSType &errorType, std::string &&message) {
     this->throwException(this->newError(errorType, std::move(message)));
 }
 
-void RuntimeContext::throwSystemError(int errorNum, std::string &&message) {
+void DSState::throwSystemError(int errorNum, std::string &&message) {
     if(errorNum == 0) {
         fatal("errno is not 0\n");
     }
@@ -346,7 +358,7 @@ void RuntimeContext::throwSystemError(int errorNum, std::string &&message) {
     this->throwError(this->pool.getSystemErrorType(), std::move(str));
 }
 
-void RuntimeContext::expandLocalStack() {
+void DSState::expandLocalStack() {
     const unsigned int needSize = this->stackTopIndex;
     if(needSize >= MAXIMUM_STACK_SIZE) {
         this->stackTopIndex = this->callStackSize - 1;
@@ -366,13 +378,13 @@ void RuntimeContext::expandLocalStack() {
     this->callStackSize = newSize;
 }
 
-void RuntimeContext::clearOperandStack() {
+void DSState::clearOperandStack() {
     while(this->stackTopIndex > this->stackBottomIndex) {
         this->popNoReturn();
     }
 }
 
-void RuntimeContext::windStackFrame(unsigned int stackTopOffset, unsigned int paramSize, const DSCode *code) {
+void DSState::windStackFrame(unsigned int stackTopOffset, unsigned int paramSize, const DSCode *code) {
     const unsigned int maxVarSize = code->is(CodeKind::NATIVE)? paramSize :
                                     static_cast<const CompiledCode *>(code)->getLocalVarNum();
 
@@ -398,7 +410,7 @@ void RuntimeContext::windStackFrame(unsigned int stackTopOffset, unsigned int pa
     this->skipHeader();
 }
 
-void RuntimeContext::unwindStackFrame() {
+void DSState::unwindStackFrame() {
     this->clearOperandStack();
 
     // pop old state
@@ -433,7 +445,7 @@ void RuntimeContext::unwindStackFrame() {
     this->codeStack().pop_back();
 }
 
-void RuntimeContext::skipHeader() {
+void DSState::skipHeader() {
     assert(!this->codeStack_.empty());
     this->pc() = 0;
     if(this->codeStack().back()->is(CodeKind::TOPLEVEL)) {
@@ -456,7 +468,7 @@ void RuntimeContext::skipHeader() {
  * +-----------+---------+--------+   +--------+
  *                       | offset |   |        |
  */
-void RuntimeContext::applyFuncObject(unsigned int paramSize) {
+void DSState::applyFuncObject(unsigned int paramSize) {
     auto *func = typeAs<FuncObject>(this->callStack[this->stackTopIndex - paramSize]);
     this->windStackFrame(paramSize + 1, paramSize, &func->getCode());
 }
@@ -469,7 +481,7 @@ void RuntimeContext::applyFuncObject(unsigned int paramSize) {
  * +-----------+------------------+   +--------+
  *             | offset           |   |        |
  */
-void RuntimeContext::callMethod(unsigned short index, unsigned short paramSize) {
+void DSState::callMethod(unsigned short index, unsigned short paramSize) {
     const unsigned int actualParamSize = paramSize + 1; // include receiver
     const unsigned int recvIndex = this->stackTopIndex - paramSize;
 
@@ -477,7 +489,7 @@ void RuntimeContext::callMethod(unsigned short index, unsigned short paramSize) 
                          this->callStack[recvIndex]->getType()->getMethodRef(index));
 }
 
-void RuntimeContext::newDSObject(DSType *type) {
+void DSState::newDSObject(DSType *type) {
     if(!type->isRecordType()) {
         this->dummy->setType(type);
         this->push(this->dummy);
@@ -494,14 +506,12 @@ void RuntimeContext::newDSObject(DSType *type) {
  * +-----------+------------------+   +--------+
  *             |    new offset    |
  */
-void RuntimeContext::callConstructor(unsigned short paramSize) {
+void DSState::callConstructor(unsigned short paramSize) {
     const unsigned int recvIndex = this->stackTopIndex - paramSize;
 
     this->windStackFrame(paramSize, paramSize + 1,
                          this->callStack[recvIndex]->getType()->getConstructor());
 }
-
-const NativeCode *getNativeCode(unsigned int index);
 
 /**
  * stack state in method call    stack grow ===>
@@ -511,7 +521,7 @@ const NativeCode *getNativeCode(unsigned int index);
  * +-----------+------------------+   +--------+
  *             | offset           |   |        |
  */
-void RuntimeContext::invokeMethod(unsigned short constPoolIndex) {
+void DSState::invokeMethod(unsigned short constPoolIndex) {
     assert(!this->codeStack().back()->is(CodeKind::NATIVE));
     const CompiledCode *code = static_cast<const CompiledCode *>(this->codeStack().back());
 
@@ -530,7 +540,7 @@ void RuntimeContext::invokeMethod(unsigned short constPoolIndex) {
     }
 }
 
-void RuntimeContext::invokeGetter(unsigned short constPoolIndex) {
+void DSState::invokeGetter(unsigned short constPoolIndex) {
     assert(!this->codeStack().back()->is(CodeKind::NATIVE));
     const CompiledCode *code = static_cast<const CompiledCode *>(this->codeStack().back());
 
@@ -557,7 +567,7 @@ void RuntimeContext::invokeGetter(unsigned short constPoolIndex) {
  * +-----------+--------+-------+
  *             | offset |       |
  */
-void RuntimeContext::invokeSetter(unsigned short constPoolIndex) {
+void DSState::invokeSetter(unsigned short constPoolIndex) {
     assert(!this->codeStack().back()->is(CodeKind::NATIVE));
     const CompiledCode *code = static_cast<const CompiledCode *>(this->codeStack().back());
 
@@ -572,13 +582,13 @@ void RuntimeContext::invokeSetter(unsigned short constPoolIndex) {
     this->unwindStackFrame();
 }
 
-void RuntimeContext::handleUncaughtException(DSValue &&except) {
+void DSState::handleUncaughtException(DSValue &&except) {
     std::cerr << "[runtime error]" << std::endl;
     const bool bt = this->pool.getErrorType().isSameOrBaseTypeOf(*except->getType());
     auto *handle = except->getType()->lookupMethodHandle(this->pool, bt ? "backtrace" : OP_STR);
 
     try {
-        DSValue ret = ydsh::callMethod(*this, handle, std::move(except), std::vector<DSValue>());
+        DSValue ret = ::callMethod(*this, handle, std::move(except), std::vector<DSValue>());
         if(!bt) {
             std::cerr << typeAs<String_Object>(ret)->getValue() << std::endl;
         }
@@ -592,7 +602,7 @@ void RuntimeContext::handleUncaughtException(DSValue &&except) {
     }
 }
 
-void RuntimeContext::fillInStackTrace(std::vector<StackTraceElement> &stackTrace) {
+void DSState::fillInStackTrace(std::vector<StackTraceElement> &stackTrace) {
     unsigned int callableDepth = this->codeStack_.size();
 
     unsigned int curPC = this->pc();
@@ -637,13 +647,13 @@ void RuntimeContext::fillInStackTrace(std::vector<StackTraceElement> &stackTrace
     }
 }
 
-void RuntimeContext::resetState() {
+void DSState::resetState() {
     this->localVarOffset = this->globalVarSize;
     this->thrownObject.reset();
     this->codeStack_.clear();
 }
 
-bool RuntimeContext::changeWorkingDir(const char *dest, const bool useLogical) {
+bool DSState::changeWorkingDir(const char *dest, const bool useLogical) {
     if(dest == nullptr) {
         return true;
     }
@@ -683,7 +693,7 @@ bool RuntimeContext::changeWorkingDir(const char *dest, const bool useLogical) {
     return true;
 }
 
-const char *RuntimeContext::getIFS() {
+const char *DSState::getIFS() {
     if(this->IFS_index == 0) {
         auto handle = this->symbolTable.lookupHandle("IFS");
         this->IFS_index = handle->getFieldIndex();
@@ -692,12 +702,12 @@ const char *RuntimeContext::getIFS() {
     return typeAs<String_Object>(this->getGlobal(this->IFS_index))->getValue();
 }
 
-void RuntimeContext::updateExitStatus(unsigned int status) {
+void DSState::updateExitStatus(unsigned int status) {
     unsigned int index = this->getBuiltinVarIndex(BuiltinVarOffset::EXIT_STATUS);
     this->setGlobal(index, DSValue::create<Int_Object>(this->pool.getInt32Type(), status));
 }
 
-void RuntimeContext::exitShell(unsigned int status) {
+void DSState::exitShell(unsigned int status) {
     std::string str("terminated by exit ");
     str += std::to_string(status);
     this->thrownObject = this->newError(this->pool.getShellExit(), std::move(str));
@@ -710,7 +720,7 @@ void RuntimeContext::exitShell(unsigned int status) {
     }
 
     // print stack trace
-    if(this->traceExit) {
+    if(hasFlag(this->option, DS_OPTION_TRACE_EXIT)) {
         this->loadThrownObject();
         typeAs<Error_Object>(this->pop())->printStackTrace(*this);
     }
@@ -718,7 +728,7 @@ void RuntimeContext::exitShell(unsigned int status) {
     exit(status);
 }
 
-FuncObject *RuntimeContext::lookupUserDefinedCommand(const char *commandName) {
+FuncObject *DSState::lookupUserDefinedCommand(const char *commandName) {
     auto handle = this->symbolTable.lookupUdc(commandName);
     return handle == nullptr ? nullptr : typeAs<FuncObject>(this->getGlobal(handle->getFieldIndex()));
 }
@@ -731,7 +741,7 @@ FuncObject *RuntimeContext::lookupUserDefinedCommand(const char *commandName) {
  * +-----------+-------+--------+
  *             | offset|
  */
-void RuntimeContext::callUserDefinedCommand(const FuncObject *obj, DSValue *argArray) {
+void DSState::callUserDefinedCommand(const FuncObject *obj, DSValue *argArray) {
     // create parameter (@)
     std::vector<DSValue> values;
     for(int i = 1; argArray[i]; i++) {
@@ -774,7 +784,7 @@ static const char *safeBasename(const char *str) {
     return ptr == nullptr ? str : ptr + 1;
 }
 
-void RuntimeContext::interpretPromptString(const char *ps, std::string &output) {
+void DSState::interpretPromptString(const char *ps, std::string &output) const {
     output.clear();
 
     struct tm *local = getLocalTime();
@@ -949,7 +959,7 @@ void RuntimeContext::interpretPromptString(const char *ps, std::string &output) 
     }
 }
 
-pid_t RuntimeContext::xfork() {
+pid_t DSState::xfork() {
     pid_t pid = fork();
     if(pid == 0) {  // child process
         struct sigaction act;
@@ -973,7 +983,7 @@ pid_t RuntimeContext::xfork() {
     return pid;
 }
 
-pid_t RuntimeContext::xwaitpid(pid_t pid, int &status, int options) {
+pid_t DSState::xwaitpid(pid_t pid, int &status, int options) {
     pid_t ret = waitpid(pid, &status, options);
     if(WIFSIGNALED(status)) {
         fputc('\n', stdout);
@@ -1040,7 +1050,7 @@ static bool startsWith(const char *s1, const char *s2) {
  * append candidates to results.
  * token may be empty string.
  */
-static void completeCommandName(RuntimeContext &ctx, const std::string &token, CStrBuffer &results) {
+static void completeCommandName(DSState &ctx, const std::string &token, CStrBuffer &results) {
     // search user defined command
     for(auto iter = ctx.getSymbolTable().cbeginGlobal(); iter != ctx.getSymbolTable().cendGlobal(); ++iter) {
         const char *name = iter->first.c_str();
@@ -1125,9 +1135,9 @@ static void completeFileName(const std::string &token, CStrBuffer &results, bool
         if(targetDir[0] == '~') {
             targetDir = expandTilde(targetDir.c_str());
         }
-        targetDir = expandDots(RuntimeContext::getLogicalWorkingDir(), targetDir.c_str());
+        targetDir = expandDots(DSState::getLogicalWorkingDir(), targetDir.c_str());
     } else {
-        targetDir = expandDots(RuntimeContext::getLogicalWorkingDir(), ".");
+        targetDir = expandDots(DSState::getLogicalWorkingDir(), ".");
     }
     LOG(DUMP_CONSOLE, "targetDir = " << targetDir);
 
@@ -1176,7 +1186,7 @@ static void completeFileName(const std::string &token, CStrBuffer &results, bool
     closedir(dir);
 }
 
-static void completeGlobalVarName(RuntimeContext &ctx, const std::string &token, CStrBuffer &results) {
+static void completeGlobalVarName(DSState &ctx, const std::string &token, CStrBuffer &results) {
     const auto &symbolTable = ctx.getSymbolTable();
 
     for(auto iter = symbolTable.cbeginGlobal(); iter != symbolTable.cendGlobal(); ++iter) {
@@ -1449,7 +1459,7 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
     return kind;
 }
 
-CStrBuffer RuntimeContext::completeLine(const std::string &line) {
+CStrBuffer DSState::completeLine(const std::string &line) {
     assert(!line.empty() && line.back() == '\n');
 
     CStrBuffer sbuf;
@@ -1509,5 +1519,3 @@ std::string expandTilde(const char *path) {
     }
     return expanded;
 }
-
-} // namespace ydsh

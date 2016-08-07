@@ -156,24 +156,12 @@ void BlockLeavingDetector::operator()(BlockNode &node) {
 // ##     TypeChecker     ##
 // #########################
 
-TypeChecker::TypeChecker(TypePool &typePool, SymbolTable &symbolTable) :
+TypeChecker::TypeChecker(TypePool &typePool, SymbolTable &symbolTable, bool toplevelPrinting) :
         typePool(typePool), symbolTable(symbolTable), typeGen(this), curReturnType(0),
-        visitingDepth(0), loopDepth(0), finallyDepth(0), toplevelPrinting(false) { }
+        visitingDepth(0), loopDepth(0), finallyDepth(0), toplevelPrinting(toplevelPrinting) { }
 
 void TypeChecker::checkTypeRootNode(RootNode &rootNode) {
     rootNode.accept(*this);
-}
-
-void TypeChecker::recover(bool abortType) {
-    this->symbolTable.abort();
-    if(abortType) {
-        this->typePool.abort();
-    }
-
-    this->curReturnType = nullptr;
-    this->visitingDepth = 0;
-    this->loopDepth = 0;
-    this->finallyDepth = 0;
 }
 
 DSType *TypeChecker::resolveInterface(TypePool &typePool, InterfaceNode *node) {

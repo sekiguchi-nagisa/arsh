@@ -53,7 +53,7 @@ public:
     /**
      * get DBusConnection.
      */
-    void initConnection(RuntimeContext &ctx, bool systemBus);
+    void initConnection(DSState &ctx, bool systemBus);
 
     DBusConnection *getConnection() {
         return this->conn;
@@ -63,8 +63,8 @@ public:
         return this->systemBus;
     }
 
-    DSValue service(RuntimeContext &ctx, std::string &&serviceName);
-    DSValue listNames(RuntimeContext &ctx, bool activeName);
+    DSValue service(DSState &ctx, std::string &&serviceName);
+    DSValue listNames(DSState &ctx, bool activeName);
 };
 
 class Service_Object : public DSObject {
@@ -105,12 +105,12 @@ public:
         return this->uniqueName.c_str();
     }
 
-    std::string toString(RuntimeContext &ctx, VisitedSet *set) override;
+    std::string toString(DSState &ctx, VisitedSet *set) override;
 
     /**
      * objectPath is String_Object
      */
-    DSValue object(RuntimeContext &ctx, const DSValue &objectPath);
+    DSValue object(DSState &ctx, const DSValue &objectPath);
 };
 
 class DBus_Object : public DSObject {
@@ -153,19 +153,19 @@ public:
      * init and get Bus_Object representing for system bus.
      * return false, if error happened
      */
-    DSValue getSystemBus(RuntimeContext &ctx);
+    DSValue getSystemBus(DSState &ctx);
 
     /**
      * init and get Bus_Object representing for session bus.
      * return false, if error happened
      */
-    DSValue getSessionBus(RuntimeContext &ctx);
+    DSValue getSessionBus(DSState &ctx);
 
-    void waitSignal(RuntimeContext &ctx);
-    DSValue getServiceFromProxy(RuntimeContext &ctx, const DSValue &proxy);
-    DSValue getObjectPathFromProxy(RuntimeContext &ctx, const DSValue &proxy);
-    DSValue getIfaceListFromProxy(RuntimeContext &ctx, const DSValue &proxy);
-    DSValue introspectProxy(RuntimeContext &ctx, const DSValue &proxy);
+    void waitSignal(DSState &ctx);
+    DSValue getServiceFromProxy(DSState &ctx, const DSValue &proxy);
+    DSValue getObjectPathFromProxy(DSState &ctx, const DSValue &proxy);
+    DSValue getIfaceListFromProxy(DSState &ctx, const DSValue &proxy);
+    DSValue introspectProxy(DSState &ctx, const DSValue &proxy);
 };
 
 /**
@@ -216,13 +216,13 @@ public:
 
     ~DBusProxy_Object() = default;
 
-    std::string toString(RuntimeContext &ctx, VisitedSet *set) override;
-    bool introspect(RuntimeContext &ctx, DSType *targetType) override;
+    std::string toString(DSState &ctx, VisitedSet *set) override;
+    bool introspect(DSState &ctx, DSType *targetType) override;
 
-    DSValue invokeMethod(RuntimeContext &ctx, const char *methodName, const MethodHandle *handle) override;
-    DSValue invokeGetter(RuntimeContext &ctx, const DSType *recvType,
+    DSValue invokeMethod(DSState &ctx, const char *methodName, const MethodHandle *handle) override;
+    DSValue invokeGetter(DSState &ctx, const DSType *recvType,
                          const char *fieldName, const DSType *fieldType) override;
-    void invokeSetter(RuntimeContext &ctx, const DSType *recvType,
+    void invokeSetter(DSState &ctx, const DSType *recvType,
                       const char *fieldName, const DSType *fieldType) override;
 
     const DSValue &getService();
@@ -231,12 +231,12 @@ public:
     /**
      * return Array_Object
      */
-    DSValue createIfaceList(RuntimeContext &ctx);
+    DSValue createIfaceList(DSState &ctx);
 
     /**
      * lookup signal handler and push stack top. return func type of found handler.
      */
-    FunctionType  *lookupHandler(RuntimeContext &ctx, const char *ifaceName, const char *methodName);
+    FunctionType  *lookupHandler(DSState &ctx, const char *ifaceName, const char *methodName);
 
     bool matchObject(const char *serviceName, const char *objectPath);
 
@@ -250,7 +250,7 @@ public:
     /**
      * call only once
      */
-    void doIntrospection(RuntimeContext &ctx);
+    void doIntrospection(DSState &ctx);
 
 private:
     ScopedDBusMessage newMethodCallMsg(const char *ifaceName, const char *methodName);
@@ -259,7 +259,7 @@ private:
      * send message and unref send message.
      * return reply message.
      */
-    ScopedDBusMessage sendMessage(RuntimeContext &ctx, ScopedDBusMessage &&sendMsg);
+    ScopedDBusMessage sendMessage(DSState &ctx, ScopedDBusMessage &&sendMsg);
 
     /**
      * obj must be FuncObject

@@ -386,7 +386,7 @@ public:
 /**
  * for debugging
  */
-void dumpCode(std::ostream &stream, RuntimeContext &ctx, const CompiledCode &c);
+void dumpCode(std::ostream &stream, DSState &ctx, const CompiledCode &c);
 
 } // namespace ydsh
 

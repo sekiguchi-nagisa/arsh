@@ -45,6 +45,8 @@
 
 namespace ydsh {
 
+using RuntimeContext = DSState;
+
 template <typename T>
 using ObjTypeStub = typename std::conditional<
         std::is_same<double, T>::value,

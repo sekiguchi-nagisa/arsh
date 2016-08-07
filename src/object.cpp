@@ -33,7 +33,7 @@ DSValue *DSObject::getFieldTable() {
     return nullptr;
 }
 
-std::string DSObject::toString(RuntimeContext &, VisitedSet *) {
+std::string DSObject::toString(DSState &, VisitedSet *) {
     std::string str("DSObject(");
     str += std::to_string((long) this);
     str += ")";
@@ -44,15 +44,15 @@ bool DSObject::equals(const DSValue &obj) {
     return (long) this == (long) obj.get();
 }
 
-DSValue DSObject::str(RuntimeContext &ctx) {
+DSValue DSObject::str(DSState &ctx) {
     return DSValue::create<String_Object>(ctx.getPool().getStringType(), this->toString(ctx, nullptr));
 }
 
-DSValue DSObject::interp(RuntimeContext &ctx, VisitedSet *) {
+DSValue DSObject::interp(DSState &ctx, VisitedSet *) {
     return this->str(ctx);
 }
 
-DSValue DSObject::commandArg(RuntimeContext &ctx, VisitedSet *) {
+DSValue DSObject::commandArg(DSState &ctx, VisitedSet *) {
     return this->str(ctx);
 }
 
@@ -60,7 +60,7 @@ size_t DSObject::hash() {
     return std::hash<long>()((long) this);
 }
 
-bool DSObject::introspect(RuntimeContext &, DSType *targetType) {
+bool DSObject::introspect(DSState &, DSType *targetType) {
     return targetType->isSameOrBaseTypeOf(*this->type);
 }
 
@@ -68,7 +68,7 @@ bool DSObject::introspect(RuntimeContext &, DSType *targetType) {
 // ##     Int_Object     ##
 // ########################
 
-std::string Int_Object::toString(RuntimeContext &ctx, VisitedSet *) {
+std::string Int_Object::toString(DSState &ctx, VisitedSet *) {
     if(*this->type == ctx.getPool().getUint32Type()) {
         return std::to_string(static_cast<unsigned int>(this->value));
     }
@@ -87,7 +87,7 @@ size_t Int_Object::hash() {
 // ##     Long_Object     ##
 // #########################
 
-std::string Long_Object::toString(RuntimeContext &ctx, VisitedSet *) {
+std::string Long_Object::toString(DSState &ctx, VisitedSet *) {
     if(*this->type == ctx.getPool().getUint64Type()) {
         return std::to_string(static_cast<unsigned long>(this->value));
     }
@@ -106,7 +106,7 @@ size_t Long_Object::hash() {
 // ##     Float_Object     ##
 // ##########################
 
-std::string Float_Object::toString(RuntimeContext &, VisitedSet *) {
+std::string Float_Object::toString(DSState &, VisitedSet *) {
     return std::to_string(this->value);
 }
 
@@ -123,7 +123,7 @@ size_t Float_Object::hash() {
 // ##     Boolean_Object     ##
 // ############################
 
-std::string Boolean_Object::toString(RuntimeContext &, VisitedSet *) {
+std::string Boolean_Object::toString(DSState &, VisitedSet *) {
     return this->value ? "true" : "false";
 }
 
@@ -143,7 +143,7 @@ void String_Object::append(DSValue &&obj) {
     this->value += typeAs<String_Object>(obj)->value;
 }
 
-std::string String_Object::toString(RuntimeContext &, VisitedSet *) {
+std::string String_Object::toString(DSState &, VisitedSet *) {
     return this->value;
 }
 
@@ -159,7 +159,7 @@ size_t String_Object::hash() {
 // ##     Array_Object     ##
 // ##########################
 
-static void checkCircularRef(RuntimeContext &ctx, VisitedSet * &visitedSet,
+static void checkCircularRef(DSState &ctx, VisitedSet * &visitedSet,
                              std::shared_ptr<VisitedSet> &newSet, const DSObject *thisPtr) {
     if(visitedSet == nullptr) {
         auto &elementTypes = static_cast<ReifiedType *>(thisPtr->getType())->getElementTypes();
@@ -191,7 +191,7 @@ static void postVisit(VisitedSet *set, const DSObject *ptr) {
 }
 
 
-std::string Array_Object::toString(RuntimeContext &ctx, VisitedSet *visitedSet) {
+std::string Array_Object::toString(DSState &ctx, VisitedSet *visitedSet) {
     std::shared_ptr<VisitedSet> newSet;
     checkCircularRef(ctx, visitedSet, newSet, this);
 
@@ -227,7 +227,7 @@ const DSValue &Array_Object::nextElement() {
     return this->values[index];
 }
 
-DSValue Array_Object::interp(RuntimeContext &ctx, VisitedSet *visitedSet) {
+DSValue Array_Object::interp(DSState &ctx, VisitedSet *visitedSet) {
     std::shared_ptr<VisitedSet> newSet;
     checkCircularRef(ctx, visitedSet, newSet, this);
 
@@ -251,7 +251,7 @@ DSValue Array_Object::interp(RuntimeContext &ctx, VisitedSet *visitedSet) {
     return DSValue::create<String_Object>(ctx.getPool().getStringType(), std::move(str));
 }
 
-DSValue Array_Object::commandArg(RuntimeContext &ctx, VisitedSet *visitedSet) {
+DSValue Array_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
     std::shared_ptr<VisitedSet> newSet;
     checkCircularRef(ctx, visitedSet, newSet, this);
 
@@ -300,7 +300,7 @@ void Map_Object::initIterator() {
     this->iter = this->valueMap.cbegin();
 }
 
-DSValue Map_Object::nextElement(RuntimeContext &ctx) {
+DSValue Map_Object::nextElement(DSState &ctx) {
     std::vector<DSType *> types(2);
     types[0] = this->iter->first->getType();
     types[1] = this->iter->second->getType();
@@ -318,7 +318,7 @@ bool Map_Object::hasNext() {
     return this->iter != this->valueMap.cend();
 }
 
-std::string Map_Object::toString(RuntimeContext &ctx, VisitedSet *visitedSet) {
+std::string Map_Object::toString(DSState &ctx, VisitedSet *visitedSet) {
     std::shared_ptr<VisitedSet> newSet;
     checkCircularRef(ctx, visitedSet, newSet, this);
 
@@ -355,7 +355,7 @@ DSValue *BaseObject::getFieldTable() {
 // ##     Tuple_Object     ##
 // ##########################
 
-std::string Tuple_Object::toString(RuntimeContext &ctx, VisitedSet *visitedSet) {
+std::string Tuple_Object::toString(DSState &ctx, VisitedSet *visitedSet) {
     std::shared_ptr<VisitedSet> newSet;
     checkCircularRef(ctx, visitedSet, newSet, this);
 
@@ -382,7 +382,7 @@ const DSValue &Tuple_Object::get(unsigned int elementIndex) {
     return this->fieldTable[elementIndex];
 }
 
-DSValue Tuple_Object::interp(RuntimeContext &ctx, VisitedSet *visitedSet) {
+DSValue Tuple_Object::interp(DSState &ctx, VisitedSet *visitedSet) {
     std::shared_ptr<VisitedSet> newSet;
     checkCircularRef(ctx, visitedSet, newSet, this);
 
@@ -399,7 +399,7 @@ DSValue Tuple_Object::interp(RuntimeContext &ctx, VisitedSet *visitedSet) {
     return DSValue::create<String_Object>(ctx.getPool().getStringType(), std::move(str));
 }
 
-DSValue Tuple_Object::commandArg(RuntimeContext &ctx, VisitedSet *visitedSet) {
+DSValue Tuple_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
     std::shared_ptr<VisitedSet> newSet;
     checkCircularRef(ctx, visitedSet, newSet, this);
 
@@ -443,14 +443,14 @@ unsigned int getOccuredLineNum(const std::vector<StackTraceElement> &elements) {
 // ##     Error_Object     ##
 // ##########################
 
-std::string Error_Object::toString(RuntimeContext &ctx, VisitedSet *) {
+std::string Error_Object::toString(DSState &ctx, VisitedSet *) {
     std::string str(ctx.getPool().getTypeName(*this->type));
     str += ": ";
     str += typeAs<String_Object>(this->message)->getValue();
     return str;
 }
 
-void Error_Object::printStackTrace(RuntimeContext &ctx) {
+void Error_Object::printStackTrace(DSState &ctx) {
     // print header
     std::cerr << this->toString(ctx, nullptr) << std::endl;
 
@@ -460,7 +460,7 @@ void Error_Object::printStackTrace(RuntimeContext &ctx) {
     }
 }
 
-const DSValue &Error_Object::getName(RuntimeContext &ctx) {
+const DSValue &Error_Object::getName(DSState &ctx) {
     if(!this->name) {
         this->name = DSValue::create<String_Object>(
                 ctx.getPool().getStringType(), ctx.getPool().getTypeName(*this->type));
@@ -468,19 +468,19 @@ const DSValue &Error_Object::getName(RuntimeContext &ctx) {
     return this->name;
 }
 
-DSValue Error_Object::newError(RuntimeContext &ctx, DSType &type, const DSValue &message) {
+DSValue Error_Object::newError(DSState &ctx, DSType &type, const DSValue &message) {
     auto obj = DSValue::create<Error_Object>(type, message);
     typeAs<Error_Object>(obj)->createStackTrace(ctx);
     return obj;
 }
 
-DSValue Error_Object::newError(RuntimeContext &ctx, DSType &type, DSValue &&message) {
+DSValue Error_Object::newError(DSState &ctx, DSType &type, DSValue &&message) {
     auto obj = DSValue::create<Error_Object>(type, std::move(message));
     typeAs<Error_Object>(obj)->createStackTrace(ctx);
     return obj;
 }
 
-void Error_Object::createStackTrace(RuntimeContext &ctx) {
+void Error_Object::createStackTrace(DSState &ctx) {
     ctx.fillInStackTrace(this->stackTrace);
 }
 
@@ -505,7 +505,7 @@ void FuncObject::setType(DSType *type) {
     }
 }
 
-std::string FuncObject::toString(RuntimeContext &, VisitedSet *) {
+std::string FuncObject::toString(DSState &, VisitedSet *) {
     std::string str("function(");
     str += this->code.getName();
     str += ")";
@@ -571,61 +571,61 @@ DSValue newDBusObject(TypePool &pool) {
     return v;
 }
 
-DSValue dbus_systemBus(RuntimeContext &ctx) {
+DSValue dbus_systemBus(DSState &ctx) {
     ctx.throwError(ctx.getPool().getErrorType(), "unsupported feature");
     return DSValue();
 }
 
-DSValue dbus_sessionBus(RuntimeContext &ctx) {
+DSValue dbus_sessionBus(DSState &ctx) {
     ctx.throwError(ctx.getPool().getErrorType(), "unsupported feature");
     return DSValue();
 }
 
-DSValue dbus_waitSignal(RuntimeContext &ctx) {
+DSValue dbus_waitSignal(DSState &ctx) {
     ctx.throwError(ctx.getPool().getErrorType(), "not support waitSignal method");
     return DSValue();
 }
 
-DSValue dbus_available(RuntimeContext &ctx) {
+DSValue dbus_available(DSState &ctx) {
     return ctx.getFalseObj();
 }
 
-DSValue dbus_getSrv(RuntimeContext &ctx) {
+DSValue dbus_getSrv(DSState &ctx) {
     ctx.throwError(ctx.getPool().getErrorType(), "not support method");
     return DSValue();
 }
 
-DSValue dbus_getPath(RuntimeContext &ctx) {
+DSValue dbus_getPath(DSState &ctx) {
     ctx.throwError(ctx.getPool().getErrorType(), "not support method");
     return DSValue();
 }
 
-DSValue dbus_getIface(RuntimeContext &ctx) {
+DSValue dbus_getIface(DSState &ctx) {
     ctx.throwError(ctx.getPool().getErrorType(), "not support method");
     return DSValue();
 }
 
-DSValue dbus_introspect(RuntimeContext &ctx) {
+DSValue dbus_introspect(DSState &ctx) {
     ctx.throwError(ctx.getPool().getErrorType(), "not support method");
     return DSValue();
 }
 
-DSValue bus_service(RuntimeContext &ctx) {
+DSValue bus_service(DSState &ctx) {
     ctx.throwError(ctx.getPool().getErrorType(), "not support D-Bus service object");
     return DSValue();
 }
 
-DSValue bus_listNames(RuntimeContext &ctx) {
+DSValue bus_listNames(DSState &ctx) {
     ctx.throwError(ctx.getPool().getErrorType(), "not support D-Bus service object");
     return DSValue();
 }
 
-DSValue bus_listActiveNames(RuntimeContext &ctx) {
+DSValue bus_listActiveNames(DSState &ctx) {
     ctx.throwError(ctx.getPool().getErrorType(), "not support method");
     return DSValue();
 }
 
-DSValue service_object(RuntimeContext &ctx) {
+DSValue service_object(DSState &ctx) {
     ctx.throwError(ctx.getPool().getErrorType(), "not support method");
     return DSValue();
 }

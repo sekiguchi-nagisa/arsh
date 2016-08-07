@@ -39,56 +39,26 @@
 
 using namespace ydsh;
 
-struct DSState {
-    RuntimeContext ctx;
-    Parser parser;
-    TypeChecker checker;
-    unsigned int lineNum;
-
-    // option
-    flag32_set_t option;
-
-    // previously computed prompt
-    std::string prompt;
-
-    DSState();
-    ~DSState() = default;
-
-    static const unsigned int originalShellLevel;
-};
-
-
-// #######################
-// ##     DSState     ##
-// #######################
-
-DSState::DSState() :
-        ctx(), parser(), checker(this->ctx.getPool(), this->ctx.getSymbolTable()),
-        lineNum(1), option(DS_OPTION_ASSERT), prompt() {
-    // set locale
-    setlocale(LC_ALL, "");
-    setlocale(LC_MESSAGES, "C");
-
-    // update shell level
-    setenv(ENV_SHLVL, std::to_string(originalShellLevel + 1).c_str(), 1);
-
-    // set some env
-    if(getenv(ENV_HOME) == nullptr) {
-        struct passwd *pw = getpwuid(getuid());
-        if(pw == nullptr) {
-            perror("getpwuid failed\n");
-            exit(1);
-        }
-        setenv(ENV_HOME, pw->pw_dir, 1);
-    }
-}
-
 /**
- * get exit status of recently executed command.(also exit command)
+ * if environmental variable SHLVL dose not exist, set 0.
  */
-static int getExitStatus(DSState *dsctx) {
-    return dsctx->ctx.getExitStatus();
+static unsigned int getShellLevel() {
+    char *shlvl = getenv(ENV_SHLVL);
+    unsigned int level = 0;
+    if(shlvl != nullptr) {
+        int status;
+        long value = convertToInt64(shlvl, status);
+        if(status != 0) {
+            level = 0;
+        } else {
+            level = value;
+        }
+    }
+    return level;
 }
+
+static const unsigned int originalShellLevel = getShellLevel();
+
 
 static void setErrorInfo(DSError *error, unsigned int type, unsigned int lineNum, const char *errorName) {
     if(error != nullptr) {
@@ -179,95 +149,97 @@ static void handleTypeError(const Lexer &lexer, const TypeCheckError &e, DSError
                  lexer.getSourceInfoPtr()->getLineNum(e.getStartPos()), e.getKind());
 }
 
-static int eval(DSState *dsctx, RootNode &rootNode, DSError *dsError) {
-    ByteCodeGenerator codegen(dsctx->ctx.getPool(), hasFlag(dsctx->option, DS_OPTION_ASSERT));
+static int eval(DSState *state, RootNode &rootNode, DSError *dsError) {
+    ByteCodeGenerator codegen(state->getPool(), hasFlag(state->getOption(), DS_OPTION_ASSERT));
     CompiledCode c = codegen.generateToplevel(rootNode);
 
-    if(hasFlag(dsctx->option, DS_OPTION_DUMP_CODE)) {
+    if(hasFlag(state->getOption(), DS_OPTION_DUMP_CODE)) {
         std::cout << "### dump compiled code ###" << std::endl;
-        dumpCode(std::cout, dsctx->ctx, c);
+        dumpCode(std::cout, *state, c);
     }
 
-    if(!vmEval(dsctx->ctx, c)) {
+    if(!vmEval(*state, c)) {
         unsigned int errorLineNum = 0;
-        DSValue thrownObj = dsctx->ctx.getThrownObject();
+        DSValue thrownObj = state->getThrownObject();
         if(dynamic_cast<Error_Object *>(thrownObj.get()) != nullptr) {
             Error_Object *obj = typeAs<Error_Object>(thrownObj);
             errorLineNum = getOccuredLineNum(obj->getStackTrace());
         }
 
-        dsctx->ctx.loadThrownObject();
-        dsctx->ctx.handleUncaughtException(dsctx->ctx.pop());
-        dsctx->checker.recover(false);
+        state->loadThrownObject();
+        state->handleUncaughtException(state->pop());
+        state->recover(false);
         setErrorInfo(dsError, DS_ERROR_KIND_RUNTIME_ERROR, errorLineNum,
-                     dsctx->ctx.getPool().getTypeName(*thrownObj->getType()).c_str());
+                     state->getPool().getTypeName(*thrownObj->getType()).c_str());
         return 1;
     }
-    return getExitStatus(dsctx);
+    return state->getExitStatus();
 }
 
-static int eval(DSState *dsctx, Lexer &lexer, DSError *dsError) {
+static int eval(DSState *state, Lexer &lexer, DSError *dsError) {
     setErrorInfo(dsError, DS_ERROR_KIND_SUCCESS, 0, nullptr);
-    lexer.setLineNum(dsctx->lineNum);
+    lexer.setLineNum(state->getLineNum());
     RootNode rootNode;
 
     // parse
     try {
-        dsctx->parser.parse(lexer, rootNode);
-        dsctx->lineNum = lexer.getLineNum();
+        Parser().parse(lexer, rootNode);
+        state->setLineNum(lexer.getLineNum());
 
-        if(hasFlag(dsctx->option, DS_OPTION_DUMP_UAST)) {
+        if(hasFlag(state->getOption(), DS_OPTION_DUMP_UAST)) {
             std::cout << "### dump untyped AST ###" << std::endl;
-            NodeDumper::dump(std::cout, dsctx->ctx.getPool(), rootNode);
+            NodeDumper::dump(std::cout, state->getPool(), rootNode);
             std::cout << std::endl;
         }
     } catch(const ParseError &e) {
         handleParseError(lexer, e, dsError);
-        dsctx->lineNum = lexer.getLineNum();
+        state->setLineNum(lexer.getLineNum());
         return 1;
     }
 
     // type check
     try {
-        dsctx->checker.checkTypeRootNode(rootNode);
+        TypeChecker checker(state->getPool(), state->getSymbolTable(),
+                            hasFlag(state->getOption(), DS_OPTION_TOPLEVEL));
+        checker.checkTypeRootNode(rootNode);
 
-        if(hasFlag(dsctx->option, DS_OPTION_DUMP_AST)) {
+        if(hasFlag(state->getOption(), DS_OPTION_DUMP_AST)) {
             std::cout << "### dump typed AST ###" << std::endl;
-            NodeDumper::dump(std::cout, dsctx->ctx.getPool(), rootNode);
+            NodeDumper::dump(std::cout, state->getPool(), rootNode);
             std::cout << std::endl;
         }
     } catch(const TypeCheckError &e) {
         handleTypeError(lexer, e, dsError);
-        dsctx->checker.recover();
+        state->recover();
         return 1;
     }
 
-    if(hasFlag(dsctx->option, DS_OPTION_PARSE_ONLY)) {
+    if(hasFlag(state->getOption(), DS_OPTION_PARSE_ONLY)) {
         return 0;
     }
 
     // eval
-    return eval(dsctx, rootNode, dsError);
+    return eval(state, rootNode, dsError);
 }
 
-static void bindVariable(DSState *dsctx, const char *varName, DSValue &&value) {
-    auto handle = dsctx->ctx.getSymbolTable().registerHandle(varName, *value.get()->getType(), true);
+static void bindVariable(DSState *state, const char *varName, DSValue &&value) {
+    auto handle = state->getSymbolTable().registerHandle(varName, *value.get()->getType(), true);
     assert(handle != nullptr);
-    dsctx->ctx.setGlobal(handle->getFieldIndex(), std::move(value));
+    state->setGlobal(handle->getFieldIndex(), std::move(value));
 }
 
-static void bindVariable(DSState *dsctx, const char *varName, const DSValue &value) {
-    auto handle = dsctx->ctx.getSymbolTable().registerHandle(varName, *value.get()->getType(), true);
+static void bindVariable(DSState *state, const char *varName, const DSValue &value) {
+    auto handle = state->getSymbolTable().registerHandle(varName, *value.get()->getType(), true);
     assert(handle != nullptr);
-    dsctx->ctx.setGlobal(handle->getFieldIndex(), value);
+    state->setGlobal(handle->getFieldIndex(), value);
 }
 
-static void initBuiltinVar(DSState *dsctx) {
+static void initBuiltinVar(DSState *state) {
     /**
      * management object for D-Bus related function
      * must be DBus_Object
      */
-    bindVariable(dsctx, "DBus", newDBusObject(dsctx->ctx.getPool()));
+    bindVariable(state, "DBus", newDBusObject(state->getPool()));
 
     struct utsname name;
     if(uname(&name) == -1) {
@@ -279,8 +251,8 @@ static void initBuiltinVar(DSState *dsctx) {
      * for os type detection.
      * must be String_Object
      */
-    bindVariable(dsctx, "OSTYPE", DSValue::create<String_Object>(
-            dsctx->ctx.getPool().getStringType(), name.sysname));
+    bindVariable(state, "OSTYPE", DSValue::create<String_Object>(
+            state->getPool().getStringType(), name.sysname));
 
 #define XSTR(V) #V
 #define STR(V) XSTR(V)
@@ -288,8 +260,8 @@ static void initBuiltinVar(DSState *dsctx) {
      * for version detection
      * must be String_Object
      */
-    bindVariable(dsctx, "YDSH_VERSION", DSValue::create<String_Object>(
-            dsctx->ctx.getPool().getStringType(),
+    bindVariable(state, "YDSH_VERSION", DSValue::create<String_Object>(
+            state->getPool().getStringType(),
             STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION) "." STR(X_INFO_PATCH_VERSION)));
 #undef XSTR
 #undef STR
@@ -298,108 +270,106 @@ static void initBuiltinVar(DSState *dsctx) {
      * default variable for read command.
      * must be String_Object
      */
-    bindVariable(dsctx, "REPLY", dsctx->ctx.getEmptyStrObj());
+    bindVariable(state, "REPLY", state->getEmptyStrObj());
 
     std::vector<DSType *> types(2);
-    types[0] = &dsctx->ctx.getPool().getStringType();
+    types[0] = &state->getPool().getStringType();
     types[1] = types[0];
 
     /**
      * holding read variable.
      * must be Map_Object
      */
-    bindVariable(dsctx, "reply", DSValue::create<Map_Object>(
-            dsctx->ctx.getPool().createReifiedType(dsctx->ctx.getPool().getMapTemplate(), std::move(types))));
+    bindVariable(state, "reply", DSValue::create<Map_Object>(
+            state->getPool().createReifiedType(state->getPool().getMapTemplate(), std::move(types))));
 
     /**
      * process id of current process.
      * must be Int_Object
      */
-    bindVariable(dsctx, "PID", DSValue::create<Int_Object>(dsctx->ctx.getPool().getUint32Type(), getpid()));
+    bindVariable(state, "PID", DSValue::create<Int_Object>(state->getPool().getUint32Type(), getpid()));
 
     /**
      * parent process id of current process.
      * must be Int_Object
      */
-    bindVariable(dsctx, "PPID", DSValue::create<Int_Object>(dsctx->ctx.getPool().getUint32Type(), getppid()));
+    bindVariable(state, "PPID", DSValue::create<Int_Object>(state->getPool().getUint32Type(), getppid()));
 
     /**
      * contains exit status of most recent executed process. ($?)
      * must be Int_Object
      */
-    bindVariable(dsctx, "?", DSValue::create<Int_Object>(dsctx->ctx.getPool().getInt32Type(), 0));
+    bindVariable(state, "?", DSValue::create<Int_Object>(state->getPool().getInt32Type(), 0));
 
     /**
      * process id of root shell. ($$)
      * must be Int_Object
      */
-    bindVariable(dsctx, "$", DSValue::create<Int_Object>(dsctx->ctx.getPool().getUint32Type(), getpid()));
+    bindVariable(state, "$", DSValue::create<Int_Object>(state->getPool().getUint32Type(), getpid()));
 
     /**
      * contains script argument(exclude script name). ($@)
      * must be Array_Object
      */
-    bindVariable(dsctx, "@", DSValue::create<Array_Object>(dsctx->ctx.getPool().getStringArrayType()));
+    bindVariable(state, "@", DSValue::create<Array_Object>(state->getPool().getStringArrayType()));
 
     /**
      * contains size of argument. ($#)
      * must be Int_Object
      */
-    bindVariable(dsctx, "#", DSValue::create<Int_Object>(dsctx->ctx.getPool().getInt32Type(), 0));
+    bindVariable(state, "#", DSValue::create<Int_Object>(state->getPool().getInt32Type(), 0));
 
     /**
      * represent shell or shell script name.
      * must be String_Object
      */
-    bindVariable(dsctx, "0", DSValue::create<String_Object>(dsctx->ctx.getPool().getStringType(), "ydsh"));
+    bindVariable(state, "0", DSValue::create<String_Object>(state->getPool().getStringType(), "ydsh"));
 
     /**
      * initialize positional parameter
      */
     for(unsigned int i = 0; i < 9; i++) {
-        bindVariable(dsctx, std::to_string(i + 1).c_str(), dsctx->ctx.getEmptyStrObj());
+        bindVariable(state, std::to_string(i + 1).c_str(), state->getEmptyStrObj());
     }
 }
 
-static void loadEmbeddedScript(DSState *dsctx) {
+static void loadEmbeddedScript(DSState *state) {
     Lexer lexer("(embed)", embed_script);
-    int ret = eval(dsctx, lexer, nullptr);
+    int ret = eval(state, lexer, nullptr);
     if(ret != 0) {
         fatal("broken embedded script\n");
     }
-    dsctx->ctx.getPool().commit();
+    state->getPool().commit();
 
     // rest some state
-    dsctx->lineNum = 1;
-    dsctx->ctx.updateExitStatus(0);
+    state->setLineNum(1);
+    state->updateExitStatus(0);
 }
 
-/**
- * if environmental variable SHLVL dose not exist, set 0.
- */
-static unsigned int getShellLevel() {
-    char *shlvl = getenv(ENV_SHLVL);
-    unsigned int level = 0;
-    if(shlvl != nullptr) {
-        int status;
-        long value = convertToInt64(shlvl, status);
-        if(status != 0) {
-            level = 0;
-        } else {
-            level = value;
-        }
-    }
-    return level;
-}
-
-const unsigned int DSState::originalShellLevel = getShellLevel();
-
-// #####################################
+// ###################################
 // ##     public api of DSState     ##
-// #####################################
+// ###################################
 
 DSState *DSState_create() {
     DSState *ctx = new DSState();
+
+    // set locale
+    setlocale(LC_ALL, "");
+    setlocale(LC_MESSAGES, "C");
+
+    // update shell level
+    setenv(ENV_SHLVL, std::to_string(originalShellLevel + 1).c_str(), 1);
+
+    // set some env
+    if(getenv(ENV_HOME) == nullptr) {
+        struct passwd *pw = getpwuid(getuid());
+        if(pw == nullptr) {
+            perror("getpwuid failed\n");
+            exit(1);
+        }
+        setenv(ENV_HOME, pw->pw_dir, 1);
+    }
+
     initBuiltinVar(ctx);
     loadEmbeddedScript(ctx);
     return ctx;
@@ -413,16 +383,16 @@ void DSState_delete(DSState **st) {
 }
 
 void DSState_setLineNum(DSState *st, unsigned int lineNum) {
-    st->lineNum = lineNum;
+    st->setLineNum(lineNum);
 }
 
 unsigned int DSState_lineNum(DSState *st) {
-    return st->lineNum;
+    return st->getLineNum();
 }
 
 void DSState_setShellName(DSState *st, const char *shellName) {
     if(shellName != nullptr) {
-        st->ctx.updateScriptName(shellName);
+        st->updateScriptName(shellName);
     }
 }
 
@@ -431,30 +401,23 @@ void DSState_setArguments(DSState *st, char *const *args) {
         return;
     }
 
-    st->ctx.initScriptArg();
+    st->initScriptArg();
     for(unsigned int i = 0; args[i] != nullptr; i++) {
-        st->ctx.addScriptArg(args[i]);
+        st->addScriptArg(args[i]);
     }
-    st->ctx.finalizeScriptArg();
-}
-
-static void setOptionImpl(DSState *ctx, flag32_set_t flagSet, bool set) {
-    if(hasFlag(flagSet, DS_OPTION_TOPLEVEL)) {
-        ctx->checker.setToplevelPrinting(set);
-    }
-    if(hasFlag(flagSet, DS_OPTION_TRACE_EXIT)) {
-        ctx->ctx.setTraceExit(set);
-    }
+    st->finalizeScriptArg();
 }
 
 void DSState_setOption(DSState *st, unsigned int optionSet) {
-    setFlag(st->option, optionSet);
-    setOptionImpl(st, optionSet, true);
+    flag32_set_t origOption = st->getOption();
+    setFlag(origOption, optionSet);
+    st->setOption(origOption);
 }
 
 void DSState_unsetOption(DSState *st, unsigned int optionSet) {
-    unsetFlag(st->option, optionSet);
-    setOptionImpl(st, optionSet, false);
+    flag32_set_t origOption = st->getOption();
+    unsetFlag(origOption, optionSet);
+    st->setOption(origOption);
 }
 
 void DSError_release(DSError *e) {
@@ -477,8 +440,8 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, FILE *fp, DSError *
 }
 
 int DSState_exec(DSState *st, char *const *argv) {
-    st->ctx.execBuiltinCommand(argv);
-    return getExitStatus(st);
+    st->execBuiltinCommand(argv);
+    return st->getExitStatus();
 }
 
 const char *DSState_prompt(DSState *st, unsigned int n) {
@@ -494,11 +457,11 @@ const char *DSState_prompt(DSState *st, unsigned int n) {
         return "";
     }
 
-    unsigned int index = st->ctx.getSymbolTable().lookupHandle(psName)->getFieldIndex();
-    const DSValue &obj = st->ctx.getGlobal(index);
+    unsigned int index = st->getSymbolTable().lookupHandle(psName)->getFieldIndex();
+    const DSValue &obj = st->getGlobal(index);
 
-    st->ctx.interpretPromptString(typeAs<String_Object>(obj)->getValue(), st->prompt);
-    return st->prompt.c_str();
+    st->interpretPromptString(typeAs<String_Object>(obj)->getValue(), st->refPrompt());
+    return st->refPrompt().c_str();
 }
 
 int DSState_supportDBus() {
@@ -548,7 +511,7 @@ unsigned int DSState_featureBit() {
 }
 
 void DSState_addTerminationHook(DSState *st, TerminationHook hook) {
-    st->ctx.setTerminationHook(hook);
+    st->setTerminationHook(hook);
 }
 
 void DSState_complete(DSState *st, const char *buf, size_t cursor, DSCandidates *c) {
@@ -568,7 +531,7 @@ void DSState_complete(DSState *st, const char *buf, size_t cursor, DSCandidates 
     LOG(DUMP_CONSOLE, "line: " << line << ", cursor: " << cursor);
 
     line += '\n';
-    CStrBuffer sbuf = st->ctx.completeLine(line);
+    CStrBuffer sbuf = st->completeLine(line);
 
     // write to DSCandidates
     c->size = sbuf.size();

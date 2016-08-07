@@ -43,13 +43,13 @@ static ScopedDBusError newDBusError() {
     return e;
 }
 
-static void throwDBusError(RuntimeContext &ctx, const char *dbusErrorName, std::string &&message) {
+static void throwDBusError(DSState &ctx, const char *dbusErrorName, std::string &&message) {
     std::string name(dbusErrorName);
     auto &type = ctx.getPool().createErrorType(name, ctx.getPool().getDBusErrorType());
     ctx.throwError(type, std::move(message));
 }
 
-static void throwDBusError(RuntimeContext &ctx, ScopedDBusError &error) {
+static void throwDBusError(DSState &ctx, ScopedDBusError &error) {
     throwDBusError(ctx, error.get().name, std::string(error.get().message));
 }
 
@@ -58,7 +58,7 @@ static ScopedDBusMessage wrap(DBusMessage *msg) {
 }
 
 //FIXME: empty array
-static DSValue decodeMessageIter(RuntimeContext &ctx, DBusMessageIter *iter) {
+static DSValue decodeMessageIter(DSState &ctx, DBusMessageIter *iter) {
     int dbusType = dbus_message_iter_get_arg_type(iter);
     switch(dbusType) {
     case DBUS_TYPE_BYTE: {
@@ -213,7 +213,7 @@ static DSValue decodeMessageIter(RuntimeContext &ctx, DBusMessageIter *iter) {
     }
 }
 
-static std::vector<DSValue> decodeMessageRaw(RuntimeContext &ctx,
+static std::vector<DSValue> decodeMessageRaw(DSState &ctx,
                                                   const std::vector<DSType *> &types, ScopedDBusMessage &&msg) {
     std::vector<DSValue> values;
     DBusMessageIter iter;
@@ -247,7 +247,7 @@ static std::vector<DSValue> decodeMessageRaw(RuntimeContext &ctx,
     return values;
 }
 
-static DSValue decodeMessage(RuntimeContext &ctx,
+static DSValue decodeMessage(DSState &ctx,
                              const std::vector<DSType *> &types, ScopedDBusMessage &&msg) {
     std::vector<DSValue> values = decodeMessageRaw(ctx, types, std::move(msg));
 
@@ -266,23 +266,23 @@ static DSValue decodeMessage(RuntimeContext &ctx,
     return tuple;
 }
 
-static DSValue decodeMessage(RuntimeContext &ctx, DSType &type, ScopedDBusMessage &&msg) {
+static DSValue decodeMessage(DSState &ctx, DSType &type, ScopedDBusMessage &&msg) {
     std::vector<DSType *> types(1);
     types[0] = &type;
     return decodeMessage(ctx, types, std::move(msg));
 }
 
-static void appendArg(RuntimeContext &ctx, DBusMessageIter *iter, DSType &argType, const DSValue &arg) {
+static void appendArg(DSState &ctx, DBusMessageIter *iter, DSType &argType, const DSValue &arg) {
     DBus_Object *dbus = typeAs<DBus_Object>(ctx.getDBus());
     dbus->getBuilder().appendArg(iter, argType, arg);
 }
 
-static void appendArg(RuntimeContext &ctx, DBusMessageIter *iter,
+static void appendArg(DSState &ctx, DBusMessageIter *iter,
                       DSType &argType, unsigned int index) {
     appendArg(ctx, iter, argType, ctx.getLocal(index));
 }
 
-static ScopedDBusMessage sendMessage(RuntimeContext &ctx,
+static ScopedDBusMessage sendMessage(DSState &ctx,
                                      DBusConnection *conn, ScopedDBusMessage &&sendMsg) {
     auto error = newDBusError();
     auto retMsg = wrap(
@@ -310,7 +310,7 @@ Bus_Object::~Bus_Object() {
     }
 }
 
-void Bus_Object::initConnection(RuntimeContext &ctx, bool systemBus) {
+void Bus_Object::initConnection(DSState &ctx, bool systemBus) {
     // get connection
     auto error = newDBusError();
 
@@ -324,7 +324,7 @@ void Bus_Object::initConnection(RuntimeContext &ctx, bool systemBus) {
     }
 }
 
-DSValue Bus_Object::service(RuntimeContext &ctx, std::string &&serviceName) {
+DSValue Bus_Object::service(DSState &ctx, std::string &&serviceName) {
     auto msg = wrap(dbus_message_new_method_call(
             "org.freedesktop.DBus", "/org/freedesktop/DBus",
             "org.freedesktop.DBus", "GetNameOwner"));
@@ -352,7 +352,7 @@ DSValue Bus_Object::service(RuntimeContext &ctx, std::string &&serviceName) {
             std::move(serviceName), std::move(uniqueName));
 }
 
-DSValue Bus_Object::listNames(RuntimeContext &ctx, bool activeName) {
+DSValue Bus_Object::listNames(DSState &ctx, bool activeName) {
     auto msg = wrap(dbus_message_new_method_call(
             "org.freedesktop.DBus", "/org/freedesktop/DBus",
             "org.freedesktop.DBus", activeName ? "ListActivatableNames" : "ListNames"));
@@ -372,11 +372,11 @@ Service_Object::Service_Object(DSType &type, const DSValue &bus,
         DSObject(type), bus(bus), serviceName(std::move(serviceName)), uniqueName(std::move(uniqueName)) {
 }
 
-std::string Service_Object::toString(RuntimeContext &, VisitedSet *) {
+std::string Service_Object::toString(DSState &, VisitedSet *) {
     return this->serviceName;
 }
 
-DSValue Service_Object::object(RuntimeContext &ctx, const DSValue &objectPath) {
+DSValue Service_Object::object(DSState &ctx, const DSValue &objectPath) {
     DSValue obj(new DBusProxy_Object(ctx.getPool().getDBusObjectType(), DSValue(this), objectPath));
 
     // first call Introspection and resolve interface type.
@@ -393,7 +393,7 @@ DBus_Object::DBus_Object(TypePool &typePool) :
         DSObject(typePool.getDBusType()), systemBus(), sessionBus(), builder(&typePool) {
 }
 
-DSValue DBus_Object::getSystemBus(RuntimeContext &ctx) {
+DSValue DBus_Object::getSystemBus(DSState &ctx) {
     if(!this->systemBus) {
         this->systemBus = DSValue::create<Bus_Object>(ctx.getPool().getBusType(), true);
         typeAs<Bus_Object>(this->systemBus)->initConnection(ctx, true);
@@ -401,7 +401,7 @@ DSValue DBus_Object::getSystemBus(RuntimeContext &ctx) {
     return this->systemBus;
 }
 
-DSValue DBus_Object::getSessionBus(RuntimeContext &ctx) {
+DSValue DBus_Object::getSessionBus(DSState &ctx) {
     if(!this->sessionBus) {
         this->sessionBus = DSValue::create<Bus_Object>(ctx.getPool().getBusType(), false);
         typeAs<Bus_Object>(this->sessionBus)->initConnection(ctx, false);
@@ -409,7 +409,7 @@ DSValue DBus_Object::getSessionBus(RuntimeContext &ctx) {
     return this->sessionBus;
 }
 
-void DBus_Object::waitSignal(RuntimeContext &ctx) {
+void DBus_Object::waitSignal(DSState &ctx) {
     std::vector<DBusProxy_Object *> proxies;
     proxies.push_back(typeAs<DBusProxy_Object>(ctx.getLocal(1)));
 
@@ -492,19 +492,19 @@ void DBus_Object::waitSignal(RuntimeContext &ctx) {
     }
 }
 
-DSValue DBus_Object::getServiceFromProxy(RuntimeContext &, const DSValue &proxy) {
+DSValue DBus_Object::getServiceFromProxy(DSState &, const DSValue &proxy) {
     return typeAs<DBusProxy_Object>(proxy)->getService();
 }
 
-DSValue DBus_Object::getObjectPathFromProxy(RuntimeContext &, const DSValue &proxy) {
+DSValue DBus_Object::getObjectPathFromProxy(DSState &, const DSValue &proxy) {
     return typeAs<DBusProxy_Object>(proxy)->getObjectPath();
 }
 
-DSValue DBus_Object::getIfaceListFromProxy(RuntimeContext &ctx, const DSValue &proxy) {
+DSValue DBus_Object::getIfaceListFromProxy(DSState &ctx, const DSValue &proxy) {
     return typeAs<DBusProxy_Object>(proxy)->createIfaceList(ctx);
 }
 
-DSValue DBus_Object::introspectProxy(RuntimeContext &ctx, const DSValue &proxy) {
+DSValue DBus_Object::introspectProxy(DSState &ctx, const DSValue &proxy) {
     DBusProxy_Object *obj = typeAs<DBusProxy_Object>(proxy);
     auto msg = wrap(dbus_message_new_method_call(
             typeAs<Service_Object>(obj->getService())->getServiceName(),
@@ -546,7 +546,7 @@ DBusProxy_Object::DBusProxy_Object(DSType &type, const DSValue &srcObj, const DS
     assert(this->srv);
 }
 
-std::string DBusProxy_Object::toString(RuntimeContext &, VisitedSet *) {
+std::string DBusProxy_Object::toString(DSState &, VisitedSet *) {
     std::string str("[dest=");
     str += typeAs<Service_Object>(this->srv)->getServiceName();
     str += ", path=";
@@ -563,7 +563,7 @@ std::string DBusProxy_Object::toString(RuntimeContext &, VisitedSet *) {
     return str;
 }
 
-bool DBusProxy_Object::introspect(RuntimeContext &ctx, DSType *targetType) {
+bool DBusProxy_Object::introspect(DSState &ctx, DSType *targetType) {
     const std::string &typeName = ctx.getPool().getTypeName(*targetType);
     auto iter = this->ifaceSet.find(typeName);
     return iter != this->ifaceSet.end();
@@ -604,7 +604,7 @@ static void extractInterfaceName(std::unordered_set<std::string> &ifaceSet, char
     }
 }
 
-void DBusProxy_Object::doIntrospection(RuntimeContext &ctx) {
+void DBusProxy_Object::doIntrospection(DSState &ctx) {
     auto ret = this->sendMessage(ctx, this->newMethodCallMsg("org.freedesktop.DBus.Introspectable", "Introspect"));
 
     int retType = dbus_message_get_type(ret.get());
@@ -637,7 +637,7 @@ void DBusProxy_Object::doIntrospection(RuntimeContext &ctx) {
     }
 }
 
-DSValue DBusProxy_Object::invokeMethod(RuntimeContext &ctx, const char *methodName, const MethodHandle *handle) {
+DSValue DBusProxy_Object::invokeMethod(DSState &ctx, const char *methodName, const MethodHandle *handle) {
     // check signal
     if(handle->isSignal()) {
         this->addHandler(ctx.getPool().getTypeName(*handle->getRecvType()).c_str(),
@@ -672,7 +672,7 @@ DSValue DBusProxy_Object::invokeMethod(RuntimeContext &ctx, const char *methodNa
     return result;
 }
 
-DSValue DBusProxy_Object::invokeGetter(RuntimeContext &ctx, const DSType *recvType,
+DSValue DBusProxy_Object::invokeGetter(DSState &ctx, const DSType *recvType,
                                        const char *fieldName, const DSType *fieldType) {
     auto msg = this->newMethodCallMsg("org.freedesktop.DBus.Properties", "Get");
 
@@ -691,7 +691,7 @@ DSValue DBusProxy_Object::invokeGetter(RuntimeContext &ctx, const DSType *recvTy
     return decodeMessage(ctx, *const_cast<DSType *>(fieldType), std::move(ret));    //FIXME: remove const_cast
 }
 
-void DBusProxy_Object::invokeSetter(RuntimeContext &ctx, const DSType *recvType,
+void DBusProxy_Object::invokeSetter(DSState &ctx, const DSType *recvType,
                                     const char *fieldName, const DSType *) {
     auto msg = this->newMethodCallMsg("org.freedesktop.DBus.Properties", "Set");
 
@@ -717,7 +717,7 @@ const DSValue &DBusProxy_Object::getObjectPath() {
     return this->objectPath;
 }
 
-DSValue DBusProxy_Object::createIfaceList(RuntimeContext &ctx) {
+DSValue DBusProxy_Object::createIfaceList(DSState &ctx) {
     std::vector<DSValue> list(this->ifaceSet.size());
     unsigned int i = 0;
     for(auto &value : this->ifaceSet) {
@@ -726,7 +726,7 @@ DSValue DBusProxy_Object::createIfaceList(RuntimeContext &ctx) {
     return DSValue::create<Array_Object>(ctx.getPool().getStringArrayType(), std::move(list));
 }
 
-FunctionType *DBusProxy_Object::lookupHandler(RuntimeContext &ctx,
+FunctionType *DBusProxy_Object::lookupHandler(DSState &ctx,
                                               const char *ifaceName, const char *methodName) {
     auto iter = this->handerMap.find(std::make_pair(ifaceName, methodName));
     if(iter == this->handerMap.end()) {
@@ -774,7 +774,7 @@ ScopedDBusMessage DBusProxy_Object::newMethodCallMsg(const char *ifaceName, cons
             typeAs<String_Object>(this->objectPath)->getValue(), ifaceName, methodName));
 }
 
-ScopedDBusMessage DBusProxy_Object::sendMessage(RuntimeContext &ctx, ScopedDBusMessage &&sendMsg) {
+ScopedDBusMessage DBusProxy_Object::sendMessage(DSState &ctx, ScopedDBusMessage &&sendMsg) {
     return ::ydsh::sendMessage(ctx, typeAs<Service_Object>(this->srv)->getConnection(), std::move(sendMsg));
 }
 
@@ -790,54 +790,54 @@ DSValue newDBusObject(TypePool &pool) {
     return DSValue::create<DBus_Object>(pool);
 }
 
-DSValue dbus_systemBus(RuntimeContext &ctx) {
+DSValue dbus_systemBus(DSState &ctx) {
     return typeAs<DBus_Object>(LOCAL(0))->getSystemBus(ctx);
 }
 
-DSValue dbus_sessionBus(RuntimeContext &ctx) {
+DSValue dbus_sessionBus(DSState &ctx) {
     return typeAs<DBus_Object>(LOCAL(0))->getSessionBus(ctx);
 }
 
-DSValue dbus_waitSignal(RuntimeContext &ctx) {
+DSValue dbus_waitSignal(DSState &ctx) {
     ctx.throwError(ctx.getPool().getErrorType(), "waitSignal is unimplemented");
     typeAs<DBus_Object>(LOCAL(0))->waitSignal(ctx);
     return DSValue();
 }
 
-DSValue dbus_available(RuntimeContext &ctx) {
+DSValue dbus_available(DSState &ctx) {
     return ctx.getTrueObj();
 }
 
-DSValue dbus_getSrv(RuntimeContext &ctx) {
+DSValue dbus_getSrv(DSState &ctx) {
     return typeAs<DBus_Object>(LOCAL(0))->getServiceFromProxy(ctx, LOCAL(1));
 }
 
-DSValue dbus_getPath(RuntimeContext &ctx) {
+DSValue dbus_getPath(DSState &ctx) {
     return typeAs<DBus_Object>(LOCAL(0))->getObjectPathFromProxy(ctx, LOCAL(1));
 }
 
-DSValue dbus_getIface(RuntimeContext &ctx) {
+DSValue dbus_getIface(DSState &ctx) {
     return typeAs<DBus_Object>(LOCAL(0))->getIfaceListFromProxy(ctx, LOCAL(1));
 }
 
-DSValue dbus_introspect(RuntimeContext &ctx) {
+DSValue dbus_introspect(DSState &ctx) {
     return typeAs<DBus_Object>(LOCAL(0))->introspectProxy(ctx, LOCAL(1));
 }
 
-DSValue bus_service(RuntimeContext &ctx) {
+DSValue bus_service(DSState &ctx) {
     String_Object *strObj = typeAs<String_Object>(LOCAL(1));
     return typeAs<Bus_Object>(LOCAL(0))->service(ctx, std::string(strObj->getValue()));
 }
 
-DSValue bus_listNames(RuntimeContext &ctx) {
+DSValue bus_listNames(DSState &ctx) {
     return typeAs<Bus_Object>(LOCAL(0))->listNames(ctx, false);
 }
 
-DSValue bus_listActiveNames(RuntimeContext &ctx) {
+DSValue bus_listActiveNames(DSState &ctx) {
     return typeAs<Bus_Object>(LOCAL(0))->listNames(ctx, true);
 }
 
-DSValue service_object(RuntimeContext &ctx) {
+DSValue service_object(DSState &ctx) {
     return typeAs<Service_Object>(LOCAL(0))->object(ctx, LOCAL(1));
 }
 

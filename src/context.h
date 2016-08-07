@@ -105,7 +105,14 @@ public:
 
 using CStrBuffer = FlexBuffer<char *>;
 
-class RuntimeContext {
+// for exception handling
+struct DSExcepton {};
+
+} // namespace ydsh
+
+using namespace ydsh;
+
+struct DSState {
 private:
     TypePool pool;
     SymbolTable symbolTable;
@@ -184,9 +191,9 @@ private:
     unsigned int pc_;
 
     /**
-     * if true, print stack trace of builtin exit command.
+     * see DS_OPTION_ * macro.
      */
-    bool traceExit;
+    flag32_set_t option;
 
     /**
      * for field splitting (read command, command substitution)
@@ -211,17 +218,24 @@ private:
 
     TerminationHook terminationHook;
 
+    unsigned int lineNum;
+
+    /**
+     * previously computed prompt (DSState_prompt() )
+     */
+    std::string prompt;
+
     static std::string logicalWorkingDir;
 
     static const char *configRootDir;
     static const char *typeDefDir;
 
 public:
-    NON_COPYABLE(RuntimeContext);
+    NON_COPYABLE(DSState);
 
-    RuntimeContext();
+    DSState();
 
-    ~RuntimeContext();
+    ~DSState();
 
     static std::string getConfigRootDir();
     static std::string getIfaceDir();
@@ -258,11 +272,11 @@ public:
         return static_cast<unsigned int>(offset);
     }
 
-    const DSValue &getScriptName() {
+    const DSValue &getScriptName() const {
         return this->getGlobal(this->getBuiltinVarIndex(BuiltinVarOffset::POS_0));
     }
 
-    const DSValue &getScriptArgs() {
+    const DSValue &getScriptArgs() const {
         return this->getGlobal(this->getBuiltinVarIndex(BuiltinVarOffset::ARGS));
     }
 
@@ -285,16 +299,21 @@ public:
 
     void updateScriptName(const char *name);
 
+    /**
+     * abort symbol table and TypePool when error happened
+     */
+    void recover(bool abortType = true);
+
     const DSValue &getDBus() {
         return this->getGlobal(this->getBuiltinVarIndex(BuiltinVarOffset::DBUS));
     }
 
-    bool isTraceExit() const {
-        return this->traceExit;
+    flag32_set_t getOption() const {
+        return this->option;
     }
 
-    void setTraceExit(bool traceExit) {
-        this->traceExit = traceExit;
+    void setOption(flag32_set_t option) {
+        this->option = option;
     }
 
     const DSValue &getThrownObject() const {
@@ -572,7 +591,7 @@ public:
     /**
      * n is 1 or 2
      */
-    void interpretPromptString(const char *ps, std::string &output);
+    void interpretPromptString(const char *ps, std::string &output) const;
 
     /**
      * after fork, reset signal setting in child process.
@@ -606,16 +625,28 @@ public:
     TerminationHook getTerminationHook() const {
         return this->terminationHook;
     }
+
+    void setLineNum(unsigned int lineNum) {
+        this->lineNum = lineNum;
+    }
+
+    unsigned int getLineNum() const {
+        return this->lineNum;
+    }
+
+    std::string &refPrompt() {
+        return this->prompt;
+    }
 };
 
 /**
  * entry point
  */
-bool vmEval(RuntimeContext &ctx, CompiledCode &code);
+bool vmEval(DSState &state, CompiledCode &code);
 
 /**
  * call method.
- * @param ctx
+ * @param state
  * @param handle
  * must not be null
  * @param recv
@@ -623,7 +654,7 @@ bool vmEval(RuntimeContext &ctx, CompiledCode &code);
  * @return
  * return value of method (if no return value, return null).
  */
-DSValue callMethod(RuntimeContext &ctx, const MethodHandle *handle, DSValue &&recv, std::vector<DSValue> &&args);
+DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, std::vector<DSValue> &&args);
 
 // some system util
 
@@ -631,11 +662,5 @@ DSValue callMethod(RuntimeContext &ctx, const MethodHandle *handle, DSValue &&re
  * path is starts with tilde.
  */
 std::string expandTilde(const char *path);
-
-
-// for exception handling
-struct DSExcepton {};
-
-} // namespace ydsh
 
 #endif //YDSH_CONTEXT_H

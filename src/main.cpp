@@ -23,9 +23,9 @@
 
 using namespace ydsh;
 
-int exec_interactive(DSState *ctx);
+int exec_interactive(DSState *dsState);
 
-static void loadRC(DSState *ctx, const char *rcfile) {
+static void loadRC(DSState *state, const char *rcfile) {
     std::string path;
     if(rcfile != nullptr) {
         path += rcfile;
@@ -39,17 +39,17 @@ static void loadRC(DSState *ctx, const char *rcfile) {
         return; // not read
     }
     DSError e;
-    int ret = DSState_loadAndEval(ctx, path.c_str(), fp, &e);
+    int ret = DSState_loadAndEval(state, path.c_str(), fp, &e);
     int kind = e.kind;
     DSError_release(&e);
     fclose(fp);
     if(kind != DS_ERROR_KIND_SUCCESS) {
-        DSState_delete(&ctx);
+        DSState_delete(&state);
         exit(ret);
     }
 
     // reset line num
-    DSState_setLineNum(ctx, 1);
+    DSState_setLineNum(state, 1);
 }
 
 static const char *statusLogPath = nullptr;

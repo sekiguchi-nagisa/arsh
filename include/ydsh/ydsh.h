@@ -26,7 +26,6 @@ extern "C" {
 struct DSState;
 typedef struct DSState DSState;
 
-
 /*********************/
 /**     DSState     **/
 /*********************/

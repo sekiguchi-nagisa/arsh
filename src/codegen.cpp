@@ -1113,7 +1113,7 @@ static unsigned int digit(unsigned int n) {
 }
 
 
-static void dumpCodeImpl(std::ostream &stream, RuntimeContext &ctx, const CompiledCode &c,
+static void dumpCodeImpl(std::ostream &stream, DSState &ctx, const CompiledCode &c,
                          std::vector<const CompiledCode *> *list) {
     const unsigned int codeSize = c.getCodeSize();
 
@@ -1240,7 +1240,7 @@ static void dumpCodeImpl(std::ostream &stream, RuntimeContext &ctx, const Compil
     }
 }
 
-void dumpCode(std::ostream &stream, RuntimeContext &ctx, const CompiledCode &c) {
+void dumpCode(std::ostream &stream, DSState &ctx, const CompiledCode &c) {
     stream << "Source File: " << c.getSrcInfo()->getSourceName() << std::endl;
 
     std::vector<const CompiledCode *> list;

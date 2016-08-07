@@ -75,7 +75,7 @@ public:
     /**
      * for printing
      */
-    virtual std::string toString(RuntimeContext &ctx, VisitedSet *visitedSet);
+    virtual std::string toString(DSState &ctx, VisitedSet *visitedSet);
 
     /**
      * EQ method implementation.
@@ -86,18 +86,18 @@ public:
      * STR method implementation.
      * return String_Object
      */
-    DSValue str(RuntimeContext &ctx);
+    DSValue str(DSState &ctx);
 
     /**
      * for interpolation
      * return String_Object
      */
-    virtual DSValue interp(RuntimeContext &ctx, VisitedSet *visitedSet);
+    virtual DSValue interp(DSState &ctx, VisitedSet *visitedSet);
 
     /**
      * for command argument.
      */
-    virtual DSValue commandArg(RuntimeContext &ctx, VisitedSet *visitedSet);
+    virtual DSValue commandArg(DSState &ctx, VisitedSet *visitedSet);
 
     /**
      * for Map_Object
@@ -107,7 +107,7 @@ public:
     /**
      * check if this type is instance of targetType.
      */
-    virtual bool introspect(RuntimeContext &ctx, DSType *targetType);
+    virtual bool introspect(DSState &ctx, DSType *targetType);
 };
 
 enum class DSValueKind : unsigned char {
@@ -277,7 +277,7 @@ public:
         return this->value;
     }
 
-    std::string toString(RuntimeContext &ctx, VisitedSet *visitedSet) override;
+    std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
     bool equals(const DSValue &obj) override;
     size_t hash() override;
 };
@@ -295,7 +295,7 @@ public:
         return this->value;
     }
 
-    std::string toString(RuntimeContext &ctx, VisitedSet *visitedSet) override;
+    std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
     bool equals(const DSValue &obj) override;
     size_t hash() override;
 };
@@ -313,7 +313,7 @@ public:
         return this->value;
     }
 
-    std::string toString(RuntimeContext &ctx, VisitedSet *visitedSet) override;
+    std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
     bool equals(const DSValue &obj) override;
     size_t hash() override;
 };
@@ -331,7 +331,7 @@ public:
         return this->value;
     }
 
-    std::string toString(RuntimeContext &ctx, VisitedSet *visitedSe) override;
+    std::string toString(DSState &ctx, VisitedSet *visitedSe) override;
     bool equals(const DSValue &obj) override;
     size_t hash() override;
 };
@@ -372,7 +372,7 @@ public:
      */
     void append(DSValue &&obj);
 
-    std::string toString(RuntimeContext &ctx, VisitedSet *visitedSet) override;
+    std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
 
     bool equals(const DSValue &obj) override;
     size_t hash() override;
@@ -407,7 +407,7 @@ public:
         return this->values;
     }
 
-    std::string toString(RuntimeContext &ctx, VisitedSet *visitedSet) override;
+    std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
     void append(DSValue &&obj);
     void append(const DSValue &obj);
     void set(unsigned int index, const DSValue &obj);
@@ -422,8 +422,8 @@ public:
         return this->curIndex < this->values.size();
     }
 
-    DSValue interp(RuntimeContext &ctx, VisitedSet *visitedSet) override;
-    DSValue commandArg(RuntimeContext &ctx, VisitedSet *visitedSet) override;
+    DSValue interp(DSState &ctx, VisitedSet *visitedSet) override;
+    DSValue commandArg(DSState &ctx, VisitedSet *visitedSet) override;
 };
 
 struct KeyCompare {
@@ -457,10 +457,10 @@ public:
     void set(const DSValue &key, const DSValue &value);
     void add(std::pair<DSValue, DSValue> &&entry);
     void initIterator();
-    DSValue nextElement(RuntimeContext &ctx);
+    DSValue nextElement(DSState &ctx);
     bool hasNext();
 
-    std::string toString(RuntimeContext &ctx, VisitedSet *visitedSet) override;
+    std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
 };
 
 class BaseObject : public DSObject {
@@ -481,7 +481,7 @@ struct Tuple_Object : public BaseObject {
 
     ~Tuple_Object() = default;
 
-    std::string toString(RuntimeContext &ctx, VisitedSet *visitedSet) override;
+    std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
 
     unsigned int getElementSize() const {
         return this->type->getFieldSize();
@@ -491,8 +491,8 @@ struct Tuple_Object : public BaseObject {
 
     const DSValue &get(unsigned int elementIndex);
 
-    DSValue interp(RuntimeContext &ctx, VisitedSet *visitedSet) override;
-    DSValue commandArg(RuntimeContext &ctx, VisitedSet *visitedSet) override;
+    DSValue interp(DSState &ctx, VisitedSet *visitedSet) override;
+    DSValue commandArg(DSState &ctx, VisitedSet *visitedSet) override;
 };
 
 class StackTraceElement {
@@ -546,7 +546,7 @@ public:
 
     ~Error_Object() = default;
 
-    std::string toString(RuntimeContext &ctx, VisitedSet *visitedSet) override;
+    std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
 
     const DSValue &getMessage() const {
         return this->message;
@@ -555,9 +555,9 @@ public:
     /**
      * print stack trace to stderr
      */
-    void printStackTrace(RuntimeContext &ctx);
+    void printStackTrace(DSState &ctx);
 
-    const DSValue &getName(RuntimeContext &ctx);
+    const DSValue &getName(DSState &ctx);
 
     const std::vector<StackTraceElement> &getStackTrace() const {
         return this->stackTrace;
@@ -566,12 +566,12 @@ public:
     /**
      * create new Error_Object and create stack trace
      */
-    static DSValue newError(RuntimeContext &ctx, DSType &type, const DSValue &message);
+    static DSValue newError(DSState &ctx, DSType &type, const DSValue &message);
 
-    static DSValue newError(RuntimeContext &ctx, DSType &type, DSValue &&message);
+    static DSValue newError(DSState &ctx, DSType &type, DSValue &&message);
 
 private:
-    void createStackTrace(RuntimeContext &ctx);
+    void createStackTrace(DSState &ctx);
 };
 
 struct DummyObject : public DSObject {
@@ -791,7 +791,7 @@ public:
 
     void setType(DSType *type) override;
 
-    std::string toString(RuntimeContext &ctx, VisitedSet *visitedSet) override;
+    std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
 };
 
 std::string encodeMethodDescriptor(const char *methodName, const MethodHandle *handle);
@@ -808,18 +808,18 @@ struct ProxyObject : public DSObject {
     /**
      * invoke method and return result.
      */
-    virtual DSValue invokeMethod(RuntimeContext &ctx, const char *methodName, const MethodHandle *handle) = 0;
+    virtual DSValue invokeMethod(DSState &ctx, const char *methodName, const MethodHandle *handle) = 0;
 
     /**
      * return got value
      */
-    virtual DSValue invokeGetter(RuntimeContext &ctx, const DSType *recvType,
+    virtual DSValue invokeGetter(DSState &ctx, const DSType *recvType,
                                  const char *fieldName, const DSType *fieldType) = 0;
 
     /**
      * pop stack top value and set to field.
      */
-    virtual void invokeSetter(RuntimeContext &ctx, const DSType *recvType,
+    virtual void invokeSetter(DSState &ctx, const DSType *recvType,
                               const char *fieldName, const DSType *fieldType) = 0;
 };
 

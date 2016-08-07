@@ -274,23 +274,23 @@ TEST(Base, case2) {
 TEST(BuiltinExecTest, case1) {
     SCOPED_TRACE("");
 
-    DSState *ctx = DSState_create();
+    DSState *state = DSState_create();
 
-    int ret = DSState_exec(ctx, make_argv("echo", "hello").get());
+    int ret = DSState_exec(state, make_argv("echo", "hello").get());
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ret));
 
-    DSState_delete(&ctx);
+    DSState_delete(&state);
 }
 
 TEST(BuiltinExecTest, case2) {
     SCOPED_TRACE("");
 
-    DSState *ctx = DSState_create();
+    DSState *state = DSState_create();
 
-    int ret = DSState_exec(ctx, make_argv("fheruifh", "hello").get());
+    int ret = DSState_exec(state, make_argv("fheruifh", "hello").get());
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, ret));
 
-    DSState_delete(&ctx);
+    DSState_delete(&state);
 }
 
 TEST(API, case1) {
@@ -306,30 +306,30 @@ TEST(API, case1) {
 TEST(API, case2) {
     SCOPED_TRACE("");
 
-    DSState *ctx = DSState_create();
+    DSState *state = DSState_create();
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, DSState_lineNum(ctx)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, DSState_lineNum(state)));
 
-    DSState_eval(ctx, nullptr, "12 + 32\n $true\n", nullptr);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, DSState_lineNum(ctx)));
+    DSState_eval(state, nullptr, "12 + 32\n $true\n", nullptr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, DSState_lineNum(state)));
 
-    DSState_setLineNum(ctx, 49);
-    DSState_eval(ctx, nullptr, "23", nullptr);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(50u, DSState_lineNum(ctx)));
+    DSState_setLineNum(state, 49);
+    DSState_eval(state, nullptr, "23", nullptr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(50u, DSState_lineNum(state)));
 
-    DSState_delete(&ctx);
+    DSState_delete(&state);
 }
 
 TEST(API, case3) {
     SCOPED_TRACE("");
 
-    DSState *ctx = DSState_create();
-    DSState_eval(ctx, nullptr, "$PS1 = 'hello>'; $PS2 = 'second>'", nullptr);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("hello>", DSState_prompt(ctx, 1)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("second>", DSState_prompt(ctx, 2)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("", DSState_prompt(ctx, 5)));
+    DSState *state = DSState_create();
+    DSState_eval(state, nullptr, "$PS1 = 'hello>'; $PS2 = 'second>'", nullptr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("hello>", DSState_prompt(state, 1)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("second>", DSState_prompt(state, 2)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("", DSState_prompt(state, 5)));
 
-    DSState_delete(&ctx);
+    DSState_delete(&state);
 }
 
 TEST(API, case4) {
@@ -338,32 +338,32 @@ TEST(API, case4) {
     // null arguments
     DSState_complete(nullptr, nullptr, 1, nullptr);
 
-    DSState *ctx = DSState_create();
+    DSState *state = DSState_create();
     DSCandidates c;
-    DSState_complete(ctx, "~", 1, &c);
+    DSState_complete(state, "~", 1, &c);
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(c.values != nullptr));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(c.size > 0));
 
     DSCandidates_release(&c);
-    DSState_delete(&ctx);
+    DSState_delete(&state);
 }
 
 TEST(PID, case1) {
     SCOPED_TRACE("");
 
     pid_t pid = getpid();
-    DSState *ctx = DSState_create();
+    DSState *state = DSState_create();
     std::string src("assert($$ == ");
     src += std::to_string(pid);
     src += "u)";
 
     DSError e;
-    int s = DSState_eval(ctx, nullptr, src.c_str(), &e);
+    int s = DSState_eval(state, nullptr, src.c_str(), &e);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, s));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind));
 
     DSError_release(&e);
-    DSState_delete(&ctx);
+    DSState_delete(&state);
 }
 
 int main(int argc, char **argv) {
