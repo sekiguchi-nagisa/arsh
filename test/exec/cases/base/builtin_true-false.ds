@@ -17,3 +17,12 @@ assert(not $t)
 
 assert(help false | grep 'false: false')
 assert(help false | grep 'Always failure')
+
+
+# builtin null command
+:
+assert $? == 0
+assert (:)
+
+assert help : | grep ':: :'
+assert help : | grep 'Null command.  Always success'

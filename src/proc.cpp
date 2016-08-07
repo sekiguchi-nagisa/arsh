@@ -86,6 +86,8 @@ const struct {
     const char *usage;
     const char *detail;
 } builtinCommands[] {
+        {":", builtin_true, "",
+                "    Null command.  Always success (exit status is 0)."},
         {"__gets", builtin___gets, "",
                 "    Read standard input and write to standard output."},
         {"__puts", builtin___puts, "[-1] [arg1] [-2] [arg2]",

@@ -15,7 +15,7 @@ var PS1 = '\s-\v\$ '
 var PS2 = '> '
 
 # define boolean constant
-let TRUE = true
+let TRUE = :
 let True = $TRUE
 let true = $True
 
