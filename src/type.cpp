@@ -21,7 +21,7 @@
 #include "bind.h"
 #include "parser.h"
 #include "type_checker.h"
-#include "context.h"
+#include "state.h"
 
 namespace ydsh {
 

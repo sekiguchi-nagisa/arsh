@@ -18,7 +18,7 @@
 
 #include "symbol.h"
 #include "object.h"
-#include "context.h"
+#include "state.h"
 #include "node_dumper.h"
 
 

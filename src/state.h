@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_CONTEXT_H
-#define YDSH_CONTEXT_H
+#ifndef YDSH_STATE_H
+#define YDSH_STATE_H
 
 #include <unistd.h>
 
@@ -663,4 +663,4 @@ DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, s
  */
 std::string expandTilde(const char *path);
 
-#endif //YDSH_CONTEXT_H
+#endif //YDSH_STATE_H

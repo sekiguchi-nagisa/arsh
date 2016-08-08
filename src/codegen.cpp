@@ -18,7 +18,7 @@
 
 #include "codegen.h"
 #include "symbol.h"
-#include "context.h"
+#include "state.h"
 
 namespace ydsh {
 

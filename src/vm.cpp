@@ -19,7 +19,7 @@
 #include <stdlib.h>
 
 #include "opcode.h"
-#include "context.h"
+#include "state.h"
 #include "logger.h"
 
 extern char **environ;

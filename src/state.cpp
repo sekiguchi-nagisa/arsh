@@ -26,7 +26,7 @@
 
 #include <ydsh/ydsh.h>
 #include <config.h>
-#include "context.h"
+#include "state.h"
 #include "symbol.h"
 #include "logger.h"
 #include "parser.h"

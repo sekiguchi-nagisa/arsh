@@ -17,7 +17,7 @@
 #include <memory>
 
 #include "object.h"
-#include "context.h"
+#include "state.h"
 #include "misc/num.h"
 
 namespace ydsh {

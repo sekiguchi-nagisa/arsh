@@ -229,7 +229,7 @@ set(YDSH_SRC
         src/type.cpp
         src/handle.cpp
         src/proc.cpp
-        src/context.cpp
+        src/state.cpp
         src/symbol_table.cpp
         src/diagnosis.cpp
         src/codegen.cpp
