@@ -39,12 +39,6 @@ namespace ydsh {
 #define CONST_POOL(ctx) (static_cast<const CompiledCode *>(CODE(ctx))->getConstPool())
 
 /* runtime api */
-static void printStackTop(DSState &state, DSType *stackTopType) {
-    assert(!stackTopType->isVoidType());
-    std::cout << "(" << state.getPool().getTypeName(*stackTopType) << ") "
-    << typeAs<String_Object>(state.pop())->getValue() << std::endl;
-}
-
 static void checkCast(DSState &state, DSType *targetType) {
     if(!state.peek()->introspect(state, targetType)) {
         DSType *stackTopType = state.pop()->getType();
@@ -53,14 +47,6 @@ static void checkCast(DSState &state, DSType *targetType) {
         str += " to ";
         str += state.getPool().getTypeName(*targetType);
         state.throwError(state.getPool().getTypeCastErrorType(), std::move(str));
-    }
-}
-
-static void instanceOf(DSState &state, DSType *targetType) {
-    if(state.pop()->introspect(state, targetType)) {
-        state.push(state.getTrueObj());
-    } else {
-        state.push(state.getFalseObj());
     }
 }
 
@@ -916,13 +902,23 @@ static bool mainLoop(DSState &state) {
         vmcase(PRINT) {
             unsigned long v = read64(GET_CODE(state), state.pc() + 1);
             state.pc() += 8;
-            printStackTop(state, reinterpret_cast<DSType *>(v));
+
+            auto stackTopType = reinterpret_cast<DSType *>(v);
+            assert(!stackTopType->isVoidType());
+            std::cout << "(" << state.getPool().getTypeName(*stackTopType) << ") "
+                      << typeAs<String_Object>(state.pop())->getValue() << std::endl;
             break;
         }
         vmcase(INSTANCE_OF) {
             unsigned long v = read64(GET_CODE(state), state.pc() + 1);
             state.pc() += 8;
-            instanceOf(state, reinterpret_cast<DSType *>(v));
+
+            auto *targetType = reinterpret_cast<DSType *>(v);
+            if(state.pop()->introspect(state, targetType)) {
+                state.push(state.getTrueObj());
+            } else {
+                state.push(state.getFalseObj());
+            }
             break;
         }
         vmcase(CHECK_CAST) {
