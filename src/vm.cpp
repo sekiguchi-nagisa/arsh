@@ -93,21 +93,6 @@ static void importEnv(DSState &state, bool hasDefault) {
     }
 }
 
-static void storeEnv(DSState &state) {
-    DSValue value(state.pop());
-    DSValue name(state.pop());
-
-    setenv(typeAs<String_Object>(name)->getValue(),
-           typeAs<String_Object>(value)->getValue(), 1);//FIXME: check return value and throw
-}
-
-static void loadEnv(DSState &state) {
-    DSValue name = state.pop();
-    const char *value = getenv(typeAs<String_Object>(name)->getValue());
-    assert(value != nullptr);
-    state.push(DSValue::create<String_Object>(state.getPool().getStringType(), value));
-}
-
 
 /* for substitution */
 
@@ -1005,11 +990,18 @@ static bool mainLoop(DSState &state) {
             break;
         }
         vmcase(LOAD_ENV) {
-            loadEnv(state);
+            DSValue name = state.pop();
+            const char *value = getenv(typeAs<String_Object>(name)->getValue());
+            assert(value != nullptr);
+            state.push(DSValue::create<String_Object>(state.getPool().getStringType(), value));
             break;
         }
         vmcase(STORE_ENV) {
-            storeEnv(state);
+            DSValue value(state.pop());
+            DSValue name(state.pop());
+
+            setenv(typeAs<String_Object>(name)->getValue(),
+                   typeAs<String_Object>(value)->getValue(), 1);//FIXME: check return value and throw
             break;
         }
         vmcase(POP) {
