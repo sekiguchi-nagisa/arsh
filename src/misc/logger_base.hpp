@@ -29,7 +29,6 @@
 #include "flag_util.hpp"
 
 namespace ydsh {
-namespace log {
 namespace __detail_log {
 
 inline unsigned int mask(unsigned int index) {
@@ -37,7 +36,7 @@ inline unsigned int mask(unsigned int index) {
 }
 
 template <typename P, typename E>
-class Logger {
+class LoggerBase {
 private:
     static_assert(std::is_enum<E>::value, "must be enum type");
 
@@ -50,23 +49,23 @@ private:
      */
     unsigned int whiteList;
 
-    Logger();
+    LoggerBase();
 
 public:
-    ~Logger() {
-        if(ydsh::hasFlag(this->whiteList, CLOSE_APPENDER)) {
+    ~LoggerBase() {
+        if(hasFlag(this->whiteList, CLOSE_APPENDER)) {
             delete this->appender;
             this->appender = nullptr;
         }
     }
 
-    static Logger<P, E> &instance() {
-        static Logger<P, E> logger;
+    static LoggerBase<P, E> &instance() {
+        static LoggerBase<P, E> logger;
         return logger;
     }
 
     static bool checkPolicy(E e) {
-        return ydsh::hasFlag(instance().whiteList, mask(e));
+        return hasFlag(instance().whiteList, mask(e));
     }
 
     static std::ostream &format2digit(std::ostream &stream, int num) {
@@ -77,7 +76,7 @@ public:
 };
 
 template <typename P, typename E>
-Logger<P, E>::Logger() : appender(&std::cerr), whiteList(P::init()) {
+LoggerBase<P, E>::LoggerBase() : appender(&std::cerr), whiteList(P::init()) {
     const char *path = getenv(P::appenderPath());
     if(path != nullptr) {
         std::ostream *os = new std::ofstream(path);
@@ -87,13 +86,13 @@ Logger<P, E>::Logger() : appender(&std::cerr), whiteList(P::init()) {
         }
         if(os != nullptr) {
             this->appender = os;
-            ydsh::setFlag(this->whiteList, CLOSE_APPENDER);
+            setFlag(this->whiteList, CLOSE_APPENDER);
         }
     }
 }
 
 template <typename P, typename E>
-std::ostream &Logger<P, E>::header(const char *funcName) {
+std::ostream &LoggerBase<P, E>::header(const char *funcName) {
     std::ostream &stream = *instance().appender;
 
     time_t timer = time(nullptr);
@@ -143,13 +142,11 @@ unsigned int initPolicy(const char *prefix, const char *arg) {
     }
     if(buf.size() > prefixSize) {
         if(getenv(buf.c_str()) != nullptr) {
-            ydsh::setFlag(policySet, mask(indexCount));
+            setFlag(policySet, mask(indexCount));
         }
     }
     return policySet;
 }
-
-} // namespace __detail_log
 
 template <typename T>
 std::ostream &invoke(std::ostream &stream, T t) {
@@ -157,36 +154,30 @@ std::ostream &invoke(std::ostream &stream, T t) {
     return stream;
 }
 
-
-#ifdef USE_LOGGING
-constexpr bool enableLogging = true;
-#else
-constexpr bool enableLogging = false;
-#endif
-
-} // namespace log
+} // namespace __detail_log
 } // namespace ydsh
 
+#ifdef USE_LOGGING
 
 #define LOG(E, B) \
     do {\
-        using namespace ydsh::log;\
-        if(enableLogging && Logger::checkPolicy(__detail_log::LoggingPolicy::E)) {\
-            Logger::header(__func__) << B << std::endl;\
+        using namespace ydsh;\
+        if(__detail_log::Logger::checkPolicy(__detail_log::LoggingPolicy::E)) {\
+            __detail_log::Logger::header(__func__) << B << std::endl;\
         }\
     } while(false)
 
 #define LOG_L(E, B) \
     do {\
-        using namespace ydsh::log;\
-        if(enableLogging && Logger::checkPolicy(__detail_log::LoggingPolicy::E)) {\
-            invoke(Logger::header(__func__), B) << std::endl;\
+        using namespace ydsh;\
+        if(__detail_log::Logger::checkPolicy(__detail_log::LoggingPolicy::E)) {\
+            __detail_log::invoke(__detail_log::Logger::header(__func__), B) << std::endl;\
         }\
     } while(false)
 
 
 #define DEFINE_LOGGING_POLICY(PREFIX, APPENDER, ...) \
-namespace ydsh { namespace log { namespace __detail_log {\
+namespace ydsh { namespace __detail_log {\
 struct LoggingPolicy {\
     enum Policy { __VA_ARGS__ };\
     static unsigned int init() { \
@@ -194,8 +185,16 @@ struct LoggingPolicy {\
     }\
     static const char *appenderPath() { return PREFIX APPENDER; }\
 };\
-}\
-typedef __detail_log::Logger<__detail_log::LoggingPolicy, __detail_log::LoggingPolicy::Policy> Logger;\
+using Logger = LoggerBase<LoggingPolicy, LoggingPolicy::Policy>;\
 }}
+
+
+#else
+
+#define LOG(E, B)
+#define LOG_L(E, B)
+#define DEFINE_LOGGING_POLICY(PREFIX, APPENDER, ...)
+
+#endif
 
 #endif //YDSH_MISC_LOGGER_BASE_HPP
