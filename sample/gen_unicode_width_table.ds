@@ -1,5 +1,10 @@
 #!/usr/bin/env ydsh
 
+if $# != 1 {
+    echo "[usage] $0 [output]" 1>&2
+    exit 1
+}
+
 let out = "../${$@[0]}"
 let work_dir = "unicode-temp"
 
