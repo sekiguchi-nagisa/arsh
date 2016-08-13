@@ -1138,6 +1138,7 @@ static void dumpCodeImpl(std::ostream &stream, DSState &ctx, const CompiledCode 
         stream << "  number of global variable: " << c.getGlobalVarNum() << std::endl;
     }
 
+#if 0
     stream << "Line Number Table:" << std::endl;
     {
         const unsigned int size = c.getSrcInfo()->getLineNumTable().size();
@@ -1146,7 +1147,7 @@ static void dumpCodeImpl(std::ostream &stream, DSState &ctx, const CompiledCode 
             ", pos " << c.getSrcInfo()->getLineNumTable()[i] << std::endl;
         }
     }
-
+#endif
     stream << "Code:" << std::endl;
     {
         static const char *opName[] = {
@@ -1226,10 +1227,15 @@ static void dumpCodeImpl(std::ostream &stream, DSState &ctx, const CompiledCode 
 
 
     stream << "Source Pos Entry:" << std::endl;
-    for(unsigned int i = 0; c.getSourcePosEntries()[i].address != 0; i++) {
-        const auto &e = c.getSourcePosEntries()[i];
-        stream << "  address: " << std::setw(digit(codeSize)) <<
-        e.address << ", pos: " << e.pos << std::endl;
+    {
+        auto &srcInfo = c.getSrcInfo();
+        const unsigned int maxLineNum = srcInfo->getLineNumTable().size() + srcInfo->getLineNumOffset();
+        for(unsigned int i = 0; c.getSourcePosEntries()[i].address != 0; i++) {
+            const auto &e = c.getSourcePosEntries()[i];
+            stream << "  lineNum: " << std::setw(digit(maxLineNum)) << srcInfo->getLineNum(e.pos)
+                   << ", address: " << std::setw(digit(codeSize)) << e.address
+                   << ", pos: " << e.pos << std::endl;
+        }
     }
 
     stream << "Exception Table:" << std::endl;

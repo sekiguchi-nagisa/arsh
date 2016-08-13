@@ -17,8 +17,6 @@ DSCode: top level
   code size: 23
   number of local variable: 1
   number of global variable: 33
-Line Number Table:
-  line 1, pos 24
 Code:
    9: LOAD_CONST  0
   11: STORE_GLOBAL  32
@@ -30,7 +28,7 @@ Constant Pool:
   0: Int32 34
   1: Int32 34
 Source Pos Entry:
-  address: 16, pos: 12
+  lineNum: 1, address: 16, pos: 12
 Exception Table:
 EOS
 )"
@@ -45,8 +43,6 @@ DSCode: top level
   code size: 38
   number of local variable: 1
   number of global variable: 33
-Line Number Table:
-  line 1, pos 86
 Code:
    9: LOAD_CONST  0
   11: STORE_GLOBAL  32
@@ -65,15 +61,13 @@ Constant Pool:
   1: Int32 1
   2: Int32 3
 Source Pos Entry:
-  address: 19, pos: 67
+  lineNum: 1, address: 19, pos: 67
 Exception Table:
   begin: 14, end: 33, type: Any, dest: 33
 
 DSCode: function f
   code size: 20
   number of local variable: 1
-Line Number Table:
-  line 1, pos 86
 Code:
    7: LOAD_LOCAL  0
   10: INSTANCE_OF  Array<Int32>
