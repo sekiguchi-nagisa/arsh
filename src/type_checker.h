@@ -161,8 +161,8 @@ public:
      */
     void checkTypeRootNode(RootNode &rootNode);
 
-    static DSType *resolveInterface(TypePool &typePool, InterfaceNode *node);
-    static DSType *resolveInterface(TypePool &typePool, TypeGenerator &typeGen, InterfaceNode *node);
+    static DSType &resolveInterface(TypePool &typePool, InterfaceNode *node);
+    static DSType &resolveInterface(TypePool &typePool, TypeGenerator &typeGen, InterfaceNode *node);
 
 private:
     // base type check entry point

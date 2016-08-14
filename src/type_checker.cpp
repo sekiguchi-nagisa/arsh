@@ -164,12 +164,12 @@ void TypeChecker::checkTypeRootNode(RootNode &rootNode) {
     rootNode.accept(*this);
 }
 
-DSType *TypeChecker::resolveInterface(TypePool &typePool, InterfaceNode *node) {
+DSType &TypeChecker::resolveInterface(TypePool &typePool, InterfaceNode *node) {
     TypeGenerator typeGen(typePool);
     return resolveInterface(typePool, typeGen, node);
 }
 
-DSType *TypeChecker::resolveInterface(TypePool &typePool,
+DSType &TypeChecker::resolveInterface(TypePool &typePool,
                                       TypeChecker::TypeGenerator &typeGen, InterfaceNode *node) {
     auto &type = typePool.createInterfaceType(node->getInterfaceName());
 
@@ -204,7 +204,7 @@ DSType *TypeChecker::resolveInterface(TypePool &typePool,
 
     node->setType(typePool.getVoidType());
 
-    return &type;
+    return type;
 }
 
 // type check entry point

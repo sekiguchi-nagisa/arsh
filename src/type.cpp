@@ -705,7 +705,7 @@ DSType &TypePool::getDBusInterfaceType(const std::string &typeName) {
         if(ifaceNode == nullptr) {
             RAISE_TL_ERROR(NoDBusInterface, typeName);
         }
-        return *TypeChecker::resolveInterface(*this, ifaceNode);
+        return TypeChecker::resolveInterface(*this, ifaceNode);
     }
     return *type;
 }
