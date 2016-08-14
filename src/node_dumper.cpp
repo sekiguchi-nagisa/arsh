@@ -120,14 +120,6 @@ void NodeDumper::dump(const Node &node) {
     node.dump(*this);
 }
 
-void NodeDumper::enterIndent() {
-    this->indentLevel++;
-}
-
-void NodeDumper::leaveIndent() {
-    this->indentLevel--;
-}
-
 void NodeDumper::indent() {
     for(unsigned int i = 0; i < this->indentLevel; i++) {
         this->stream << "  ";

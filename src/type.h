@@ -568,11 +568,6 @@ private:
     TypeTemplate *mapTemplate;
     TypeTemplate *tupleTemplate;
 
-    /**
-     * contain user defined command name.
-     */
-    std::unordered_set<std::string> udcSet;
-
 public:
     NON_COPYABLE(TypePool);
 
@@ -846,8 +841,6 @@ public:
      * if not found, return null.
      */
     DSType *getByNumTypeIndex(unsigned int index);
-
-    bool addUserDefinedCommandName(const std::string &cmdName);
 
     /**
      * commit changed state(type)

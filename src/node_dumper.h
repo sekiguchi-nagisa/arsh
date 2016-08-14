@@ -84,9 +84,13 @@ public:
     static void dump(std::ostream &out, TypePool &pool, const RootNode &rootNode);
 
 private:
-    void enterIndent();
+    void enterIndent() {
+        this->indentLevel++;
+    }
 
-    void leaveIndent();
+    void leaveIndent() {
+        this->indentLevel--;
+    }
 
     void indent();
 

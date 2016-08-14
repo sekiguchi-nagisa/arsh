@@ -508,7 +508,7 @@ static constexpr size_t sizeOfArray(const T (&)[N]) {
 TypePool::TypePool() :
         typeMap(), typeTable(new DSType*[__SIZE_OF_DS_TYPE__]()),
         templateMap(8),
-        arrayTemplate(), mapTemplate(), tupleTemplate(), udcSet() {
+        arrayTemplate(), mapTemplate(), tupleTemplate() {
 
     // initialize type
     this->initBuiltinType(Any, "Any", true, info_AnyType());
@@ -821,10 +821,6 @@ int TypePool::getNumTypeIndex(const DSType &type) {
 
 DSType *TypePool::getByNumTypeIndex(unsigned int index) {
     return index < sizeOfArray(numTypeTable) ? this->typeTable[numTypeTable[index]] : nullptr;
-}
-
-bool TypePool::addUserDefinedCommandName(const std::string &cmdName) {
-    return this->udcSet.insert(cmdName).second;
 }
 
 void TypePool::commit() {
