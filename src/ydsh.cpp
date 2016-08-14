@@ -149,6 +149,30 @@ static void handleTypeError(const Lexer &lexer, const TypeCheckError &e, DSError
                  lexer.getSourceInfoPtr()->getLineNum(e.getStartPos()), e.getKind());
 }
 
+/**
+ * if called from child process, exit(1).
+ * @param except
+ */
+static void handleUncaughtException(DSState *st, DSValue &&except) {
+    std::cerr << "[runtime error]" << std::endl;
+    const bool bt = st->getPool().getErrorType().isSameOrBaseTypeOf(*except->getType());
+    auto *handle = except->getType()->lookupMethodHandle(st->getPool(), bt ? "backtrace" : OP_STR);
+
+    try {
+        DSValue ret = ::callMethod(*st, handle, std::move(except), std::vector<DSValue>());
+        if(!bt) {
+            std::cerr << typeAs<String_Object>(ret)->getValue() << std::endl;
+        }
+    } catch(const DSExcepton &) {
+        std::cerr << "cannot obtain string representation" << std::endl;
+    }
+
+    if(typeAs<Int_Object>(st->getGlobal(toIndex(BuiltinVarOffset::SHELL_PID)))->getValue() !=
+       typeAs<Int_Object>(st->getGlobal(toIndex(BuiltinVarOffset::PID)))->getValue()) {
+        exit(1);    // in child process.
+    }
+}
+
 static int eval(DSState *state, RootNode &rootNode, DSError *dsError) {
     ByteCodeGenerator codegen(state->getPool(), hasFlag(state->getOption(), DS_OPTION_ASSERT));
     CompiledCode c = codegen.generateToplevel(rootNode);
@@ -167,7 +191,7 @@ static int eval(DSState *state, RootNode &rootNode, DSError *dsError) {
         }
 
         state->loadThrownObject();
-        state->handleUncaughtException(state->pop());
+        handleUncaughtException(state, state->pop());
         state->recover(false);
         setErrorInfo(dsError, DS_ERROR_KIND_RUNTIME_ERROR, errorLineNum,
                      state->getPool().getTypeName(*thrownObj->getType()).c_str());
@@ -392,7 +416,37 @@ unsigned int DSState_lineNum(DSState *st) {
 
 void DSState_setShellName(DSState *st, const char *shellName) {
     if(shellName != nullptr) {
-        st->updateScriptName(shellName);
+        unsigned int index = toIndex(BuiltinVarOffset::POS_0);
+        st->setGlobal(index, DSValue::create<String_Object>(st->getPool().getStringType(), std::string(shellName)));
+    }
+}
+
+// set positional parameters
+static void finalizeScriptArg(DSState *st) {
+    unsigned int index = toIndex(BuiltinVarOffset::ARGS);
+    auto *array = typeAs<Array_Object>(st->getGlobal(index));
+
+    // update argument size
+    const unsigned int size = array->getValues().size();
+    index = toIndex(BuiltinVarOffset::ARGS_SIZE);
+    st->setGlobal(index, DSValue::create<Int_Object>(st->getPool().getInt32Type(), size));
+
+    unsigned int limit = 9;
+    if(size < limit) {
+        limit = size;
+    }
+
+    // update positional parameter
+    for(index = 0; index < limit; index++) {
+        unsigned int i = toIndex(BuiltinVarOffset::POS_1) + index;
+        st->setGlobal(i, array->getValues()[index]);
+    }
+
+    if(index < 9) {
+        for(; index < 9; index++) {
+            unsigned int i = toIndex(BuiltinVarOffset::POS_1) + index;
+            st->setGlobal(i, st->getEmptyStrObj());
+        }
     }
 }
 
@@ -401,11 +455,15 @@ void DSState_setArguments(DSState *st, char *const *args) {
         return;
     }
 
-    st->initScriptArg();
+    // clear previous arguments
+    unsigned int index = toIndex(BuiltinVarOffset::ARGS);
+    typeAs<Array_Object>(st->getGlobal(index))->refValues().clear();
+
     for(unsigned int i = 0; args[i] != nullptr; i++) {
-        st->addScriptArg(args[i]);
+        auto *array = typeAs<Array_Object>(st->getGlobal(toIndex(BuiltinVarOffset::ARGS)));
+        array->append(DSValue::create<String_Object>(st->getPool().getStringType(), std::string(args[i])));
     }
-    st->finalizeScriptArg();
+    finalizeScriptArg(st);
 }
 
 void DSState_setOption(DSState *st, unsigned int optionSet) {

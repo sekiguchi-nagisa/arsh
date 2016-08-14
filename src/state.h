@@ -54,6 +54,10 @@ enum class BuiltinVarOffset : unsigned int {
     /*POS_2, POS_3, POS_4, POS_5, POS_6, POS_7, POS_8, POS_9, */
 };
 
+inline unsigned int toIndex(BuiltinVarOffset offset) {
+    return static_cast<unsigned int>(offset);
+}
+
 class FilePathCache {
 private:
     /**
@@ -268,36 +272,9 @@ public:
         return this->pipelineEvaluator;
     }
 
-    unsigned int getBuiltinVarIndex(BuiltinVarOffset offset) const {
-        return static_cast<unsigned int>(offset);
-    }
-
-    const DSValue &getScriptName() const {
-        return this->getGlobal(this->getBuiltinVarIndex(BuiltinVarOffset::POS_0));
-    }
-
-    const DSValue &getScriptArgs() const {
-        return this->getGlobal(this->getBuiltinVarIndex(BuiltinVarOffset::ARGS));
-    }
-
-    void addScriptArg(const char *arg);
-
-    /**
-     * clear current script arg
-     */
-    void initScriptArg();
-
-    /**
-     * set argument to positional parameter
-     */
-    void finalizeScriptArg();
-
     int getExitStatus() const {
-        return typeAs<Int_Object>(this->getGlobal(
-                this->getBuiltinVarIndex(BuiltinVarOffset::EXIT_STATUS)))->getValue();
+        return typeAs<Int_Object>(this->getGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS)))->getValue();
     }
-
-    void updateScriptName(const char *name);
 
     /**
      * abort symbol table and TypePool when error happened
@@ -305,7 +282,7 @@ public:
     void recover(bool abortType = true);
 
     const DSValue &getDBus() {
-        return this->getGlobal(this->getBuiltinVarIndex(BuiltinVarOffset::DBUS));
+        return this->getGlobal(toIndex(BuiltinVarOffset::DBUS));
     }
 
     flag32_set_t getOption() const {
@@ -548,12 +525,6 @@ public:
      */
     void invokeSetter(unsigned short constPoolIndex);
 
-    /**
-     * if called from child process, exit(1).
-     * @param except
-     */
-    void handleUncaughtException(DSValue &&except);
-
     // some runtime api
     void fillInStackTrace(std::vector<StackTraceElement> &stackTrace);
 
@@ -570,7 +541,10 @@ public:
 
     const char *getIFS();
 
-    void updateExitStatus(unsigned int status);
+    void updateExitStatus(unsigned int status) {
+        unsigned int index = toIndex(BuiltinVarOffset::EXIT_STATUS);
+        this->setGlobal(index, DSValue::create<Int_Object>(this->pool.getInt32Type(), status));
+    }
 
     void exitShell(unsigned int status);
 

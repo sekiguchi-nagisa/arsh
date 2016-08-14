@@ -1156,14 +1156,12 @@ static int builtin_read(DSState *state, const int argc, char *const *argv) {  //
     }
 
     // clear old variable before read
-    state->setGlobal(state->getBuiltinVarIndex(BuiltinVarOffset::REPLY), state->getEmptyStrObj());    // clear REPLY
-    typeAs<Map_Object>(state->getGlobal(
-            state->getBuiltinVarIndex(BuiltinVarOffset::REPLY_VAR)))->refValueMap().clear();      // clear reply
+    state->setGlobal(toIndex(BuiltinVarOffset::REPLY), state->getEmptyStrObj());    // clear REPLY
+    typeAs<Map_Object>(state->getGlobal(toIndex(BuiltinVarOffset::REPLY_VAR)))->refValueMap().clear();      // clear reply
 
 
     const int varSize = argc - index;  // if zero, store line to REPLY
-    const unsigned int varIndex = state->getBuiltinVarIndex(
-                    varSize == 0 ? BuiltinVarOffset::REPLY : BuiltinVarOffset::REPLY_VAR);
+    const unsigned int varIndex = toIndex(varSize == 0 ? BuiltinVarOffset::REPLY : BuiltinVarOffset::REPLY_VAR);
     std::string strBuf;
 
     // show prompt

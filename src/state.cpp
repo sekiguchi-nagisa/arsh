@@ -265,53 +265,10 @@ std::string DSState::getIfaceDir() {
     return root;
 }
 
-void DSState::updateScriptName(const char *name) {
-    unsigned int index = this->getBuiltinVarIndex(BuiltinVarOffset::POS_0);
-    this->setGlobal(index, DSValue::create<String_Object>(this->pool.getStringType(), std::string(name)));
-}
-
 void DSState::recover(bool abortType) {
     this->symbolTable.abort();
     if(abortType) {
         this->pool.abort();
-    }
-}
-
-void DSState::addScriptArg(const char *arg) {
-    typeAs<Array_Object>(this->getScriptArgs())->append(
-            DSValue::create<String_Object>(this->pool.getStringType(), std::string(arg)));
-}
-
-void DSState::initScriptArg() {
-    unsigned int index = this->getBuiltinVarIndex(BuiltinVarOffset::ARGS);
-    typeAs<Array_Object>(this->getGlobal(index))->refValues().clear();
-}
-
-void DSState::finalizeScriptArg() {
-    unsigned int index = this->getBuiltinVarIndex(BuiltinVarOffset::ARGS);
-    auto *array = typeAs<Array_Object>(this->getGlobal(index));
-
-    // update argument size
-    const unsigned int size = array->getValues().size();
-    index = this->getBuiltinVarIndex(BuiltinVarOffset::ARGS_SIZE);
-    this->setGlobal(index, DSValue::create<Int_Object>(this->pool.getInt32Type(), size));
-
-    unsigned int limit = 9;
-    if(size < limit) {
-        limit = size;
-    }
-
-    // update positional parameter
-    for(index = 0; index < limit; index++) {
-        unsigned int i = this->getBuiltinVarIndex(BuiltinVarOffset::POS_1) + index;
-        this->setGlobal(i, array->getValues()[index]);
-    }
-
-    if(index < 9) {
-        for(; index < 9; index++) {
-            unsigned int i = this->getBuiltinVarIndex(BuiltinVarOffset::POS_1) + index;
-            this->setGlobal(i, this->getEmptyStrObj());
-        }
     }
 }
 
@@ -582,26 +539,6 @@ void DSState::invokeSetter(unsigned short constPoolIndex) {
     this->unwindStackFrame();
 }
 
-void DSState::handleUncaughtException(DSValue &&except) {
-    std::cerr << "[runtime error]" << std::endl;
-    const bool bt = this->pool.getErrorType().isSameOrBaseTypeOf(*except->getType());
-    auto *handle = except->getType()->lookupMethodHandle(this->pool, bt ? "backtrace" : OP_STR);
-
-    try {
-        DSValue ret = ::callMethod(*this, handle, std::move(except), std::vector<DSValue>());
-        if(!bt) {
-            std::cerr << typeAs<String_Object>(ret)->getValue() << std::endl;
-        }
-    } catch(const DSExcepton &) {
-        std::cerr << "cannot obtain string representation" << std::endl;
-    }
-
-    if(typeAs<Int_Object>(this->getGlobal(this->getBuiltinVarIndex(BuiltinVarOffset::SHELL_PID)))->getValue() !=
-            typeAs<Int_Object>(this->getGlobal(this->getBuiltinVarIndex(BuiltinVarOffset::PID)))->getValue()) {
-        exit(1);    // in child process.
-    }
-}
-
 void DSState::fillInStackTrace(std::vector<StackTraceElement> &stackTrace) {
     unsigned int callableDepth = this->codeStack_.size();
 
@@ -702,11 +639,6 @@ const char *DSState::getIFS() {
     return typeAs<String_Object>(this->getGlobal(this->IFS_index))->getValue();
 }
 
-void DSState::updateExitStatus(unsigned int status) {
-    unsigned int index = this->getBuiltinVarIndex(BuiltinVarOffset::EXIT_STATUS);
-    this->setGlobal(index, DSValue::create<Int_Object>(this->pool.getInt32Type(), status));
-}
-
 void DSState::exitShell(unsigned int status) {
     std::string str("terminated by exit ");
     str += std::to_string(status);
@@ -756,7 +688,7 @@ void DSState::callUserDefinedCommand(const FuncObject *obj, DSValue *argArray) {
     auto argv = typeAs<Array_Object>(this->getLocal(0));
     const unsigned int argSize = argv->getValues().size();
     this->setLocal(1, DSValue::create<Int_Object>(this->pool.getInt32Type(), argSize));   // #
-    this->setLocal(2, this->getGlobal(this->getBuiltinVarIndex(BuiltinVarOffset::POS_0))); // 0
+    this->setLocal(2, this->getGlobal(toIndex(BuiltinVarOffset::POS_0))); // 0
     unsigned int limit = 9;
     if(argSize < limit) {
         limit = argSize;
@@ -832,9 +764,11 @@ void DSState::interpretPromptString(const char *ps, std::string &output) const {
             case 'r':
                 ch = '\r';
                 break;
-            case 's':
-                output += safeBasename(typeAs<String_Object>(this->getScriptName())->getValue());
+            case 's': {
+                auto &v = this->getGlobal(toIndex(BuiltinVarOffset::POS_0));    // script name
+                output += safeBasename(typeAs<String_Object>(v)->getValue());
                 continue;
+            }
             case 't': {
                 format2digit(local->tm_hour, output);
                 output += ":";
@@ -875,7 +809,7 @@ void DSState::interpretPromptString(const char *ps, std::string &output) const {
 #undef STR
             }
             case 'V': {
-                const unsigned int index = this->getBuiltinVarIndex(BuiltinVarOffset::VERSION);
+                const unsigned int index = toIndex(BuiltinVarOffset::VERSION);
                 const char *str = typeAs<String_Object>(this->getGlobal(index))->getValue();
                 output += str;
                 continue;
@@ -975,9 +909,9 @@ pid_t DSState::xfork() {
         sigaction(SIGTSTP, &act, NULL);
 
         // update PID, PPID
-        this->setGlobal(this->getBuiltinVarIndex(BuiltinVarOffset::PID),
+        this->setGlobal(toIndex(BuiltinVarOffset::PID),
                         DSValue::create<Int_Object>(this->pool.getUint32Type(), getpid()));
-        this->setGlobal(this->getBuiltinVarIndex(BuiltinVarOffset::PPID),
+        this->setGlobal(toIndex(BuiltinVarOffset::PPID),
                         DSValue::create<Int_Object>(this->pool.getUint32Type(), getppid()));
     }
     return pid;
