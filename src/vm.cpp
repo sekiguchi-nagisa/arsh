@@ -139,15 +139,6 @@ static void reserveGlobalVar(DSState &st, unsigned int size) {
 static void skipHeader(DSState &st) {
     assert(!st.codeStack.empty());
     st.pc_ = 0;
-    if(st.codeStack.back()->is(CodeKind::TOPLEVEL)) {
-        const CompiledCode *code = static_cast<const CompiledCode *>(st.codeStack.back());
-
-        unsigned short varNum = code->getLocalVarNum();
-        unsigned short gvarNum = code->getGlobalVarNum();
-
-        reserveGlobalVar(st, gvarNum);
-        reserveLocalVar(st, st.localVarOffset + varNum);
-    }
     st.pc_ += st.codeStack.back()->getCodeOffset() - 1;
 }
 
@@ -178,32 +169,24 @@ static void windStackFrame(DSState &st, unsigned int stackTopOffset, unsigned in
 }
 
 static void unwindStackFrame(DSState &st) {
-    clearOperandStack(st);
+    // check stack layout
+    assert(st.callStack[st.stackBottomIndex].kind() == DSValueKind::NUMBER);
+    assert(st.callStack[st.stackBottomIndex - 1].kind() == DSValueKind::NUMBER);
+    assert(st.callStack[st.stackBottomIndex - 2].kind() == DSValueKind::NUMBER);
+    assert(st.callStack[st.stackBottomIndex - 3].kind() == DSValueKind::NUMBER);
 
     // pop old state
-    auto v = st.pop();
-    assert(v.kind() == DSValueKind::NUMBER);
-    const unsigned int oldLocalVarOffset = static_cast<unsigned int>(v.value());
-
-    v = st.pop();
-    assert(v.kind() == DSValueKind::NUMBER);
-    const unsigned int oldStackBottomIndex = static_cast<unsigned int>(v.value());
-
-    v = st.pop();
-    assert(v.kind() == DSValueKind::NUMBER);
-    const unsigned int oldStackTopIndex = static_cast<unsigned int>(v.value());
-
-    v = st.pop();
-    assert(v.kind() == DSValueKind::NUMBER);
-    const unsigned int oldPC = static_cast<unsigned int>(v.value());
-
+    const unsigned int oldLocalVarOffset = static_cast<unsigned int>(st.callStack[st.stackBottomIndex].value());
+    const unsigned int oldStackBottomIndex = static_cast<unsigned int>(st.callStack[st.stackBottomIndex - 1].value());
+    const unsigned int oldStackTopIndex = static_cast<unsigned int>(st.callStack[st.stackBottomIndex - 2].value());
+    const unsigned int oldPC = static_cast<unsigned int>(st.callStack[st.stackBottomIndex - 3].value());
 
     // restore state
     st.localVarOffset = oldLocalVarOffset;
     st.stackBottomIndex = oldStackBottomIndex;
     st.pc_ = oldPC;
 
-    // unwind local variable
+    // unwind operand and local variable
     while(st.stackTopIndex > oldStackTopIndex) {
         st.popNoReturn();
     }
@@ -1687,10 +1670,23 @@ static bool handleException(DSState &state) {
 } // namespace ydsh
 
 bool vmEval(DSState &state, CompiledCode &code) {
+    assert(state.codeStack.back()->is(CodeKind::TOPLEVEL));
+
     state.resetState();
 
     state.codeStack.push_back(&code);
     skipHeader(state);
+
+    // reserve local and global variable slot
+    {
+        const CompiledCode *code = static_cast<const CompiledCode *>(state.codeStack.back());
+
+        unsigned short varNum = code->getLocalVarNum();
+        unsigned short gvarNum = code->getGlobalVarNum();
+
+        reserveGlobalVar(state, gvarNum);
+        reserveLocalVar(state, state.localVarOffset + varNum);
+    }
 
     while(true) {
         try {
