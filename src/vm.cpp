@@ -1670,8 +1670,6 @@ static bool handleException(DSState &state) {
 } // namespace ydsh
 
 bool vmEval(DSState &state, CompiledCode &code) {
-    assert(state.codeStack.back()->is(CodeKind::TOPLEVEL));
-
     state.resetState();
 
     state.codeStack.push_back(&code);
@@ -1679,6 +1677,7 @@ bool vmEval(DSState &state, CompiledCode &code) {
 
     // reserve local and global variable slot
     {
+        assert(state.codeStack.back()->is(CodeKind::TOPLEVEL));
         const CompiledCode *code = static_cast<const CompiledCode *>(state.codeStack.back());
 
         unsigned short varNum = code->getLocalVarNum();
