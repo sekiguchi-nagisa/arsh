@@ -18,8 +18,10 @@
 
 #include "symbol.h"
 #include "object.h"
-#include "state.h"
+#include "node.h"
 #include "node_dumper.h"
+#include "handle.h"
+#include "proc.h"
 
 
 namespace ydsh {
@@ -915,13 +917,6 @@ void TildeNode::dump(NodeDumper &dumper) const {
 
 void TildeNode::accept(NodeVisitor &visitor) {
     visitor.visitTildeNode(*this);
-}
-
-std::string TildeNode::expand(bool isLastSegment) {
-    if(!isLastSegment && strchr(this->value.c_str(), '/') == nullptr) {
-        return this->value;
-    }
-    return expandTilde(this->value.c_str());
 }
 
 // #####################

@@ -155,8 +155,8 @@ static void handleTypeError(const Lexer &lexer, const TypeCheckError &e, DSError
  */
 static void handleUncaughtException(DSState *st, DSValue &&except) {
     std::cerr << "[runtime error]" << std::endl;
-    const bool bt = st->getPool().getErrorType().isSameOrBaseTypeOf(*except->getType());
-    auto *handle = except->getType()->lookupMethodHandle(st->getPool(), bt ? "backtrace" : OP_STR);
+    const bool bt = st->pool.getErrorType().isSameOrBaseTypeOf(*except->getType());
+    auto *handle = except->getType()->lookupMethodHandle(st->pool, bt ? "backtrace" : OP_STR);
 
     try {
         DSValue ret = ::callMethod(*st, handle, std::move(except), std::vector<DSValue>());
@@ -174,10 +174,10 @@ static void handleUncaughtException(DSState *st, DSValue &&except) {
 }
 
 static int eval(DSState *state, RootNode &rootNode, DSError *dsError) {
-    ByteCodeGenerator codegen(state->getPool(), hasFlag(state->getOption(), DS_OPTION_ASSERT));
+    ByteCodeGenerator codegen(state->pool, hasFlag(state->option, DS_OPTION_ASSERT));
     CompiledCode c = codegen.generateToplevel(rootNode);
 
-    if(hasFlag(state->getOption(), DS_OPTION_DUMP_CODE)) {
+    if(hasFlag(state->option, DS_OPTION_DUMP_CODE)) {
         std::cout << "### dump compiled code ###" << std::endl;
         dumpCode(std::cout, *state, c);
     }
@@ -194,7 +194,7 @@ static int eval(DSState *state, RootNode &rootNode, DSError *dsError) {
         handleUncaughtException(state, state->pop());
         state->recover(false);
         setErrorInfo(dsError, DS_ERROR_KIND_RUNTIME_ERROR, errorLineNum,
-                     state->getPool().getTypeName(*thrownObj->getType()).c_str());
+                     state->pool.getTypeName(*thrownObj->getType()).c_str());
         return 1;
     }
     return state->getExitStatus();
@@ -202,34 +202,33 @@ static int eval(DSState *state, RootNode &rootNode, DSError *dsError) {
 
 static int eval(DSState *state, Lexer &lexer, DSError *dsError) {
     setErrorInfo(dsError, DS_ERROR_KIND_SUCCESS, 0, nullptr);
-    lexer.setLineNum(state->getLineNum());
+    lexer.setLineNum(state->lineNum);
     RootNode rootNode;
 
     // parse
     try {
         Parser().parse(lexer, rootNode);
-        state->setLineNum(lexer.getLineNum());
+        state->lineNum = lexer.getLineNum();
 
-        if(hasFlag(state->getOption(), DS_OPTION_DUMP_UAST)) {
+        if(hasFlag(state->option, DS_OPTION_DUMP_UAST)) {
             std::cout << "### dump untyped AST ###" << std::endl;
-            NodeDumper::dump(std::cout, state->getPool(), rootNode);
+            NodeDumper::dump(std::cout, state->pool, rootNode);
             std::cout << std::endl;
         }
     } catch(const ParseError &e) {
         handleParseError(lexer, e, dsError);
-        state->setLineNum(lexer.getLineNum());
+        state->lineNum = lexer.getLineNum();
         return 1;
     }
 
     // type check
     try {
-        TypeChecker checker(state->getPool(), state->getSymbolTable(),
-                            hasFlag(state->getOption(), DS_OPTION_TOPLEVEL));
+        TypeChecker checker(state->pool, state->symbolTable, hasFlag(state->option, DS_OPTION_TOPLEVEL));
         checker.checkTypeRootNode(rootNode);
 
-        if(hasFlag(state->getOption(), DS_OPTION_DUMP_AST)) {
+        if(hasFlag(state->option, DS_OPTION_DUMP_AST)) {
             std::cout << "### dump typed AST ###" << std::endl;
-            NodeDumper::dump(std::cout, state->getPool(), rootNode);
+            NodeDumper::dump(std::cout, state->pool, rootNode);
             std::cout << std::endl;
         }
     } catch(const TypeCheckError &e) {
@@ -238,7 +237,7 @@ static int eval(DSState *state, Lexer &lexer, DSError *dsError) {
         return 1;
     }
 
-    if(hasFlag(state->getOption(), DS_OPTION_PARSE_ONLY)) {
+    if(hasFlag(state->option, DS_OPTION_PARSE_ONLY)) {
         return 0;
     }
 
@@ -247,13 +246,13 @@ static int eval(DSState *state, Lexer &lexer, DSError *dsError) {
 }
 
 static void bindVariable(DSState *state, const char *varName, DSValue &&value) {
-    auto handle = state->getSymbolTable().registerHandle(varName, *value.get()->getType(), true);
+    auto handle = state->symbolTable.registerHandle(varName, *value.get()->getType(), true);
     assert(handle != nullptr);
     state->setGlobal(handle->getFieldIndex(), std::move(value));
 }
 
 static void bindVariable(DSState *state, const char *varName, const DSValue &value) {
-    auto handle = state->getSymbolTable().registerHandle(varName, *value.get()->getType(), true);
+    auto handle = state->symbolTable.registerHandle(varName, *value.get()->getType(), true);
     assert(handle != nullptr);
     state->setGlobal(handle->getFieldIndex(), value);
 }
@@ -263,7 +262,7 @@ static void initBuiltinVar(DSState *state) {
      * management object for D-Bus related function
      * must be DBus_Object
      */
-    bindVariable(state, "DBus", newDBusObject(state->getPool()));
+    bindVariable(state, "DBus", newDBusObject(state->pool));
 
     struct utsname name;
     if(uname(&name) == -1) {
@@ -275,8 +274,7 @@ static void initBuiltinVar(DSState *state) {
      * for os type detection.
      * must be String_Object
      */
-    bindVariable(state, "OSTYPE", DSValue::create<String_Object>(
-            state->getPool().getStringType(), name.sysname));
+    bindVariable(state, "OSTYPE", DSValue::create<String_Object>(state->pool.getStringType(), name.sysname));
 
 #define XSTR(V) #V
 #define STR(V) XSTR(V)
@@ -285,7 +283,7 @@ static void initBuiltinVar(DSState *state) {
      * must be String_Object
      */
     bindVariable(state, "YDSH_VERSION", DSValue::create<String_Object>(
-            state->getPool().getStringType(),
+            state->pool.getStringType(),
             STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION) "." STR(X_INFO_PATCH_VERSION)));
 #undef XSTR
 #undef STR
@@ -294,10 +292,10 @@ static void initBuiltinVar(DSState *state) {
      * default variable for read command.
      * must be String_Object
      */
-    bindVariable(state, "REPLY", state->getEmptyStrObj());
+    bindVariable(state, "REPLY", state->emptyStrObj);
 
     std::vector<DSType *> types(2);
-    types[0] = &state->getPool().getStringType();
+    types[0] = &state->pool.getStringType();
     types[1] = types[0];
 
     /**
@@ -305,55 +303,55 @@ static void initBuiltinVar(DSState *state) {
      * must be Map_Object
      */
     bindVariable(state, "reply", DSValue::create<Map_Object>(
-            state->getPool().createReifiedType(state->getPool().getMapTemplate(), std::move(types))));
+            state->pool.createReifiedType(state->pool.getMapTemplate(), std::move(types))));
 
     /**
      * process id of current process.
      * must be Int_Object
      */
-    bindVariable(state, "PID", DSValue::create<Int_Object>(state->getPool().getUint32Type(), getpid()));
+    bindVariable(state, "PID", DSValue::create<Int_Object>(state->pool.getUint32Type(), getpid()));
 
     /**
      * parent process id of current process.
      * must be Int_Object
      */
-    bindVariable(state, "PPID", DSValue::create<Int_Object>(state->getPool().getUint32Type(), getppid()));
+    bindVariable(state, "PPID", DSValue::create<Int_Object>(state->pool.getUint32Type(), getppid()));
 
     /**
      * contains exit status of most recent executed process. ($?)
      * must be Int_Object
      */
-    bindVariable(state, "?", DSValue::create<Int_Object>(state->getPool().getInt32Type(), 0));
+    bindVariable(state, "?", DSValue::create<Int_Object>(state->pool.getInt32Type(), 0));
 
     /**
      * process id of root shell. ($$)
      * must be Int_Object
      */
-    bindVariable(state, "$", DSValue::create<Int_Object>(state->getPool().getUint32Type(), getpid()));
+    bindVariable(state, "$", DSValue::create<Int_Object>(state->pool.getUint32Type(), getpid()));
 
     /**
      * contains script argument(exclude script name). ($@)
      * must be Array_Object
      */
-    bindVariable(state, "@", DSValue::create<Array_Object>(state->getPool().getStringArrayType()));
+    bindVariable(state, "@", DSValue::create<Array_Object>(state->pool.getStringArrayType()));
 
     /**
      * contains size of argument. ($#)
      * must be Int_Object
      */
-    bindVariable(state, "#", DSValue::create<Int_Object>(state->getPool().getInt32Type(), 0));
+    bindVariable(state, "#", DSValue::create<Int_Object>(state->pool.getInt32Type(), 0));
 
     /**
      * represent shell or shell script name.
      * must be String_Object
      */
-    bindVariable(state, "0", DSValue::create<String_Object>(state->getPool().getStringType(), "ydsh"));
+    bindVariable(state, "0", DSValue::create<String_Object>(state->pool.getStringType(), "ydsh"));
 
     /**
      * initialize positional parameter
      */
     for(unsigned int i = 0; i < 9; i++) {
-        bindVariable(state, std::to_string(i + 1).c_str(), state->getEmptyStrObj());
+        bindVariable(state, std::to_string(i + 1).c_str(), state->emptyStrObj);
     }
 }
 
@@ -363,10 +361,10 @@ static void loadEmbeddedScript(DSState *state) {
     if(ret != 0) {
         fatal("broken embedded script\n");
     }
-    state->getPool().commit();
+    state->pool.commit();
 
     // rest some state
-    state->setLineNum(1);
+    state->lineNum = 1;
     state->updateExitStatus(0);
 }
 
@@ -407,17 +405,17 @@ void DSState_delete(DSState **st) {
 }
 
 void DSState_setLineNum(DSState *st, unsigned int lineNum) {
-    st->setLineNum(lineNum);
+    st->lineNum = lineNum;
 }
 
 unsigned int DSState_lineNum(DSState *st) {
-    return st->getLineNum();
+    return st->lineNum;
 }
 
 void DSState_setShellName(DSState *st, const char *shellName) {
     if(shellName != nullptr) {
         unsigned int index = toIndex(BuiltinVarOffset::POS_0);
-        st->setGlobal(index, DSValue::create<String_Object>(st->getPool().getStringType(), std::string(shellName)));
+        st->setGlobal(index, DSValue::create<String_Object>(st->pool.getStringType(), std::string(shellName)));
     }
 }
 
@@ -429,7 +427,7 @@ static void finalizeScriptArg(DSState *st) {
     // update argument size
     const unsigned int size = array->getValues().size();
     index = toIndex(BuiltinVarOffset::ARGS_SIZE);
-    st->setGlobal(index, DSValue::create<Int_Object>(st->getPool().getInt32Type(), size));
+    st->setGlobal(index, DSValue::create<Int_Object>(st->pool.getInt32Type(), size));
 
     unsigned int limit = 9;
     if(size < limit) {
@@ -445,7 +443,7 @@ static void finalizeScriptArg(DSState *st) {
     if(index < 9) {
         for(; index < 9; index++) {
             unsigned int i = toIndex(BuiltinVarOffset::POS_1) + index;
-            st->setGlobal(i, st->getEmptyStrObj());
+            st->setGlobal(i, st->emptyStrObj);
         }
     }
 }
@@ -461,21 +459,17 @@ void DSState_setArguments(DSState *st, char *const *args) {
 
     for(unsigned int i = 0; args[i] != nullptr; i++) {
         auto *array = typeAs<Array_Object>(st->getGlobal(toIndex(BuiltinVarOffset::ARGS)));
-        array->append(DSValue::create<String_Object>(st->getPool().getStringType(), std::string(args[i])));
+        array->append(DSValue::create<String_Object>(st->pool.getStringType(), std::string(args[i])));
     }
     finalizeScriptArg(st);
 }
 
 void DSState_setOption(DSState *st, unsigned int optionSet) {
-    flag32_set_t origOption = st->getOption();
-    setFlag(origOption, optionSet);
-    st->setOption(origOption);
+    setFlag(st->option, optionSet);
 }
 
 void DSState_unsetOption(DSState *st, unsigned int optionSet) {
-    flag32_set_t origOption = st->getOption();
-    unsetFlag(origOption, optionSet);
-    st->setOption(origOption);
+    unsetFlag(st->option, optionSet);
 }
 
 void DSError_release(DSError *e) {
@@ -498,8 +492,7 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, FILE *fp, DSError *
 }
 
 int DSState_exec(DSState *st, char *const *argv) {
-    st->execBuiltinCommand(argv);
-    return st->getExitStatus();
+    return execBuiltinCommand(*st, argv);
 }
 
 const char *DSState_prompt(DSState *st, unsigned int n) {
@@ -515,10 +508,10 @@ const char *DSState_prompt(DSState *st, unsigned int n) {
         return "";
     }
 
-    unsigned int index = st->getSymbolTable().lookupHandle(psName)->getFieldIndex();
+    unsigned int index = st->symbolTable.lookupHandle(psName)->getFieldIndex();
     const DSValue &obj = st->getGlobal(index);
 
-    st->interpretPromptString(typeAs<String_Object>(obj)->getValue(), st->refPrompt());
+    interpretPromptString(*st, typeAs<String_Object>(obj)->getValue(), st->refPrompt());
     return st->refPrompt().c_str();
 }
 
@@ -565,7 +558,7 @@ unsigned int DSState_featureBit() {
 }
 
 void DSState_addTerminationHook(DSState *st, TerminationHook hook) {
-    st->setTerminationHook(hook);
+    st->terminationHook = hook;
 }
 
 void DSState_complete(DSState *st, const char *buf, size_t cursor, DSCandidates *c) {
@@ -585,7 +578,7 @@ void DSState_complete(DSState *st, const char *buf, size_t cursor, DSCandidates 
     LOG(DUMP_CONSOLE, "line: " << line << ", cursor: " << cursor);
 
     line += '\n';
-    CStrBuffer sbuf = st->completeLine(line);
+    CStrBuffer sbuf = completeLine(*st, line);
 
     // write to DSCandidates
     c->size = sbuf.size();

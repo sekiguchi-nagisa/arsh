@@ -23,8 +23,9 @@
 
 #include "logger.h"
 #include "proc.h"
-#include "state.h"
+#include "core.h"
 #include "symbol.h"
+#include "object.h"
 #include "misc/num.h"
 #include "misc/files.h"
 
@@ -61,24 +62,24 @@ static void builtin_perror(char *const *argv, int errorNum, const char *fmt, ...
 
 
 // builtin command definition
-static int builtin___gets(DSState *state, const int argc, char *const *argv);
-static int builtin___puts(DSState *state, const int argc, char *const *argv);
-static int builtin_cd(DSState *state, const int argc, char *const *argv);
-static int builtin_check_env(DSState *state, const int argc, char *const *argv);
-static int builtin_command(DSState *state, const int argc, char *const *argv);
-static int builtin_complete(DSState *state, const int argc, char *const *argv);
-static int builtin_echo(DSState *state, const int argc, char *const *argv);
-static int builtin_eval(DSState *state, const int argc, char *const *argv);
-static int builtin_exec(DSState *state, const int argc, char *const *argv);
-static int builtin_exit(DSState *state, const int argc, char *const *argv);
-static int builtin_false(DSState *state, const int argc, char *const *argv);
-static int builtin_hash(DSState *state, const int argc, char *const *argv);
-static int builtin_help(DSState *state, const int argc, char *const *argv);
-static int builtin_ps_intrp(DSState *state, const int argc, char *const *argv);
-static int builtin_pwd(DSState *state, const int argc, char *const *argv);
-static int builtin_read(DSState *state, const int argc, char *const *argv);
-static int builtin_test(DSState *state, const int argc, char *const *argv);
-static int builtin_true(DSState *state, const int argc, char *const *argv);
+static int builtin___gets(DSState &state, const int argc, char *const *argv);
+static int builtin___puts(DSState &state, const int argc, char *const *argv);
+static int builtin_cd(DSState &state, const int argc, char *const *argv);
+static int builtin_check_env(DSState &state, const int argc, char *const *argv);
+static int builtin_command(DSState &state, const int argc, char *const *argv);
+static int builtin_complete(DSState &state, const int argc, char *const *argv);
+static int builtin_echo(DSState &state, const int argc, char *const *argv);
+static int builtin_eval(DSState &state, const int argc, char *const *argv);
+static int builtin_exec(DSState &state, const int argc, char *const *argv);
+static int builtin_exit(DSState &state, const int argc, char *const *argv);
+static int builtin_false(DSState &state, const int argc, char *const *argv);
+static int builtin_hash(DSState &state, const int argc, char *const *argv);
+static int builtin_help(DSState &state, const int argc, char *const *argv);
+static int builtin_ps_intrp(DSState &state, const int argc, char *const *argv);
+static int builtin_pwd(DSState &state, const int argc, char *const *argv);
+static int builtin_read(DSState &state, const int argc, char *const *argv);
+static int builtin_test(DSState &state, const int argc, char *const *argv);
+static int builtin_true(DSState &state, const int argc, char *const *argv);
 
 const struct {
     const char *commandName;
@@ -239,8 +240,13 @@ const struct {
                 "    Always success (exit status is 0)."},
 };
 
+template <typename T, std::size_t N>
+constexpr std::size_t arraySize(const T (&)[N]) {
+    return N;
+}
+
 unsigned int getBuiltinCommandSize() {
-    return sizeof(builtinCommands) / sizeof(builtinCommands[0]);
+    return arraySize(builtinCommands);
 }
 
 /**
@@ -253,16 +259,10 @@ const char *getBuiltinCommandName(unsigned int index) {
     return builtinCommands[index].commandName;
 }
 
-int execBuiltinCommand(DSState *ctx, unsigned int index, const int argc, char *const *argv) {
-    return builtinCommands[index].cmd_ptr(ctx, argc, argv);
-}
-
-template <typename T, std::size_t N>
-constexpr std::size_t arraySize(const T (&)[N]) {
-    return N;
-}
-
-int getBuiltinCommandIndex(const char *commandName) {
+/**
+ * return null, if not found builtin command.
+ */
+builtin_command_t lookupBuiltinCommand(const char *commandName) {
     /**
      * builtin command name and index.
      */
@@ -276,17 +276,9 @@ int getBuiltinCommandIndex(const char *commandName) {
 
     auto iter = builtinMap.find(commandName);
     if(iter == builtinMap.end()) {
-        return -1;
+        return nullptr;
     }
-    return iter->second;
-}
-
-/**
- * return null, if not found builtin command.
- */
-builtin_command_t lookupBuiltinCommand(const char *commandName) {
-    int index = getBuiltinCommandIndex(commandName);
-    return index < 0 ? nullptr : builtinCommands[static_cast<unsigned int>(index)].cmd_ptr;
+    return builtinCommands[iter->second].cmd_ptr;
 }
 
 static void printAllUsage(FILE *fp) {
@@ -319,7 +311,7 @@ static bool printUsage(FILE *fp, const char *prefix, bool isShortHelp = true) {
     return matched;
 }
 
-static int builtin_help(DSState *, const int argc, char *const *argv) {
+static int builtin_help(DSState &, const int argc, char *const *argv) {
     if(argc == 1) {
         printAllUsage(stdout);
         return 0;
@@ -350,7 +342,7 @@ inline static void showUsage(char *const *argv) {
     printUsage(stderr, argv[0]);
 }
 
-static int builtin_cd(DSState *state, const int argc, char *const *argv) {
+static int builtin_cd(DSState &state, const int argc, char *const *argv) {
     bool useOldpwd = false;
     bool useLogical = true;
 
@@ -381,14 +373,14 @@ static int builtin_cd(DSState *state, const int argc, char *const *argv) {
         printf("%s\n", dest);
     }
 
-    if(!state->changeWorkingDir(dest, useLogical)) {
+    if(!changeWorkingDir(state, dest, useLogical)) {
         PERROR(argv, "%s", dest);
         return 1;
     }
     return 0;
 }
 
-static int builtin_check_env(DSState *, const int argc, char *const *argv) {
+static int builtin_check_env(DSState &, const int argc, char *const *argv) {
     if(argc == 1) {
         showUsage(argv);
         return 1;
@@ -402,7 +394,7 @@ static int builtin_check_env(DSState *, const int argc, char *const *argv) {
     return 0;
 }
 
-static int builtin_exit(DSState *state, const int argc, char *const *argv) {
+static int builtin_exit(DSState &state, const int argc, char *const *argv) {
     int ret = 0;
     if(argc > 1) {
         const char *num = argv[1];
@@ -412,11 +404,11 @@ static int builtin_exit(DSState *state, const int argc, char *const *argv) {
             ret = value;
         }
     }
-    state->exitShell(ret);
+    exitShell(state, ret);
     return ret;
 }
 
-static int builtin_echo(DSState *, const int argc, char *const *argv) {
+static int builtin_echo(DSState &, const int argc, char *const *argv) {
     FILE *fp = stdout;  // not close it.
 
     bool newline = true;
@@ -523,18 +515,18 @@ static int builtin_echo(DSState *, const int argc, char *const *argv) {
     return 0;
 }
 
-static int builtin_true(DSState *, const int, char *const *) {
+static int builtin_true(DSState &, const int, char *const *) {
     return 0;
 }
 
-static int builtin_false(DSState *, const int, char *const *) {
+static int builtin_false(DSState &, const int, char *const *) {
     return 1;
 }
 
 /**
  * for stdin redirection test
  */
-static int builtin___gets(DSState *, const int, char *const *) {
+static int builtin___gets(DSState &, const int, char *const *) {
     unsigned int bufSize = 256;
     char buf[bufSize];
     int readSize;
@@ -548,7 +540,7 @@ static int builtin___gets(DSState *, const int, char *const *) {
 /**
  * for stdout/stderr redirection test
  */
-static int builtin___puts(DSState *, const int argc, char *const *argv) {
+static int builtin___puts(DSState &, const int argc, char *const *argv) {
     for(int index = 1; index < argc; index++) {
         const char *arg = argv[index];
         if(strcmp("-1", arg) == 0 && ++index < argc) {
@@ -569,19 +561,19 @@ static int builtin___puts(DSState *, const int argc, char *const *argv) {
 /**
  * for prompt string debugging
  */
-static int builtin_ps_intrp(DSState *state, const int argc, char *const *argv) {
+static int builtin_ps_intrp(DSState &state, const int argc, char *const *argv) {
     if(argc != 2) {
         showUsage(argv);
         return 1;
     }
     std::string str;
-    state->interpretPromptString(argv[1], str);
+    interpretPromptString(state, argv[1], str);
     fputs(str.c_str(), stdout);
     fputc('\n', stdout);
     return 0;
 }
 
-static int builtin_exec(DSState *state, const int argc, char *const *argv) {
+static int builtin_exec(DSState &state, const int argc, char *const *argv) {
     int index = 1;
     bool clearEnv = false;
     const char *progName = nullptr;
@@ -602,7 +594,7 @@ static int builtin_exec(DSState *state, const int argc, char *const *argv) {
 
     if(index < argc) { // exec
         char **argv2 = const_cast<char **>(argv + index);
-        const char *filePath = state->getPathCache().searchPath(argv2[0], FilePathCache::DIRECT_SEARCH);
+        const char *filePath = getPathCache(state).searchPath(argv2[0], FilePathCache::DIRECT_SEARCH);
         if(progName != nullptr) {
             argv2[0] = const_cast<char *>(progName);
         }
@@ -618,7 +610,7 @@ static int builtin_exec(DSState *state, const int argc, char *const *argv) {
 /**
  * write status to status (same of wait's status).
  */
-static void forkAndExec(DSState *ctx, char *const *argv, int &status, bool useDefaultPath = false) {
+static void forkAndExec(DSState &ctx, char *const *argv, int &status, bool useDefaultPath = false) {
     // setup self pipe
     int selfpipe[2];
     if(pipe(selfpipe) < 0) {
@@ -630,10 +622,10 @@ static void forkAndExec(DSState *ctx, char *const *argv, int &status, bool useDe
         exit(1);
     }
 
-    const char *filePath = ctx->getPathCache().searchPath(
+    const char *filePath = getPathCache(ctx).searchPath(
             argv[0], useDefaultPath ? FilePathCache::USE_DEFAULT_PATH : 0);
 
-    pid_t pid = ctx->xfork();
+    pid_t pid = xfork(ctx);
     if(pid == -1) {
         perror("child process error");
         exit(1);
@@ -655,23 +647,23 @@ static void forkAndExec(DSState *ctx, char *const *argv, int &status, bool useDe
         }
         close(selfpipe[READ_PIPE]);
         if(readSize > 0 && errnum == ENOENT) {  // remove cached path
-            ctx->getPathCache().removePath(argv[0]);
+            getPathCache(ctx).removePath(argv[0]);
         }
 
-        ctx->xwaitpid(pid, status, 0);
+        xwaitpid(ctx, pid, status, 0);
     }
 }
 
-static int builtin_eval(DSState *state, const int argc, char *const *argv) {
+static int builtin_eval(DSState &state, const int argc, char *const *argv) {
     if(argc <= 1) {
         return 0;
     }
 
     const char *cmdName = argv[1];
     // user-defined command
-    auto *udcNode = state->lookupUserDefinedCommand(cmdName);
+    auto *udcNode = lookupUserDefinedCommand(state, cmdName);
     if(udcNode != nullptr) {
-        pid_t pid = state->xfork();
+        pid_t pid = xfork(state);
         if(pid == -1) {
             perror("child process error");
             exit(1);
@@ -679,17 +671,16 @@ static int builtin_eval(DSState *state, const int argc, char *const *argv) {
             const unsigned int size = argc;
             DSValue *argv2 = new DSValue[size];
             for(int i = 1; i < argc; i++) {
-                argv2[i - 1] = DSValue::create<String_Object>(
-                        state->getPool().getStringType(), std::string(argv[i])
+                argv2[i - 1] = DSValue::create<String_Object>(getPool(state).getStringType(), std::string(argv[i])
                 );
             }
             argv2[size - 1] = nullptr;
 
-            state->callUserDefinedCommand(udcNode, argv2);
+            callUserDefinedCommand(state, udcNode, argv2);
             delete[] argv2;
         } else {    // parent process
             int status;
-            state->xwaitpid(pid, status, 0);
+            xwaitpid(state, pid, status, 0);
             if(WIFEXITED(status)) {
                 return WEXITSTATUS(status);
             }
@@ -720,7 +711,7 @@ static int builtin_eval(DSState *state, const int argc, char *const *argv) {
     return 0;
 }
 
-static int builtin_pwd(DSState *, const int argc, char *const *argv) {
+static int builtin_pwd(DSState &state, const int argc, char *const *argv) {
     bool useLogical = true;
 
     int index = 1;
@@ -741,7 +732,7 @@ static int builtin_pwd(DSState *, const int argc, char *const *argv) {
     }
 
     if(useLogical) {
-        const char *dir = DSState::getLogicalWorkingDir();
+        const char *dir = getLogicalWorkingDir(state);
         if(!S_ISDIR(getStMode(dir))) {
             PERROR(argv, ".");
             return 1;
@@ -760,7 +751,7 @@ static int builtin_pwd(DSState *, const int argc, char *const *argv) {
     return 0;
 }
 
-static int builtin_command(DSState *state, const int argc, char *const *argv) {
+static int builtin_command(DSState &state, const int argc, char *const *argv) {
     int index = 1;
     bool useDefaultPath = false;
 
@@ -810,7 +801,7 @@ static int builtin_command(DSState *state, const int argc, char *const *argv) {
             for(; index < argc; index++) {
                 const char *commandName = argv[index];
                 // check user defined command
-                if(state->lookupUserDefinedCommand(commandName) != nullptr) {
+                if(lookupUserDefinedCommand(state, commandName) != nullptr) {
                     successCount++;
                     fputs(commandName, stdout);
                     if(showDesc == 2) {
@@ -832,12 +823,12 @@ static int builtin_command(DSState *state, const int argc, char *const *argv) {
                 }
 
                 // check external command
-                const char *path = state->getPathCache().searchPath(commandName, FilePathCache::DIRECT_SEARCH);
+                const char *path = getPathCache(state).searchPath(commandName, FilePathCache::DIRECT_SEARCH);
                 if(path != nullptr) {
                     successCount++;
                     if(showDesc == 1) {
                         printf("%s\n", path);
-                    } else if(state->getPathCache().isCached(commandName)) {
+                    } else if(getPathCache(state).isCached(commandName)) {
                         printf("%s is hashed (%s)\n", commandName, path);
                     } else {
                         printf("%s is %s\n", commandName, path);
@@ -868,7 +859,7 @@ enum class BinaryOp : unsigned int {
     GE,
 };
 
-static int builtin_test(DSState *, const int argc, char *const *argv) {
+static int builtin_test(DSState &, const int argc, char *const *argv) {
     static CStringHashMap<BinaryOp> binaryOpMap;
     if(binaryOpMap.empty()) {
         static const struct {
@@ -1110,7 +1101,7 @@ static int xfgetc(FILE *fp) {
     return ch;
 }
 
-static int builtin_read(DSState *state, const int argc, char *const *argv) {  //FIXME: timeout, no echo, UTF-8
+static int builtin_read(DSState &state, const int argc, char *const *argv) {  //FIXME: timeout, no echo, UTF-8
     int index = 1;
     const char *prompt = "";
     const char *ifs = nullptr;
@@ -1152,12 +1143,12 @@ static int builtin_read(DSState *state, const int argc, char *const *argv) {  //
 
     // check ifs
     if(ifs == nullptr) {
-        ifs = state->getIFS();
+        ifs = getIFS(state);
     }
 
     // clear old variable before read
-    state->setGlobal(toIndex(BuiltinVarOffset::REPLY), state->getEmptyStrObj());    // clear REPLY
-    typeAs<Map_Object>(state->getGlobal(toIndex(BuiltinVarOffset::REPLY_VAR)))->refValueMap().clear();      // clear reply
+    setGlobal(state, toIndex(BuiltinVarOffset::REPLY), getEmptyStrObj(state));    // clear REPLY
+    typeAs<Map_Object>(getGlobal(state, toIndex(BuiltinVarOffset::REPLY_VAR)))->refValueMap().clear();      // clear reply
 
 
     const int varSize = argc - index;  // if zero, store line to REPLY
@@ -1196,9 +1187,9 @@ static int builtin_read(DSState *state, const int argc, char *const *argv) {  //
         }
         skipCount = 0;
         if(fieldSep && index < argc - 1) {
-            auto obj = typeAs<Map_Object>(state->getGlobal(varIndex));
-            auto varObj = DSValue::create<String_Object>(state->getPool().getStringType(), argv[index]);
-            auto valueObj = DSValue::create<String_Object>(state->getPool().getStringType(), std::move(strBuf));
+            auto obj = typeAs<Map_Object>(getGlobal(state, varIndex));
+            auto varObj = DSValue::create<String_Object>(getPool(state).getStringType(), argv[index]);
+            auto valueObj = DSValue::create<String_Object>(getPool(state).getStringType(), std::move(strBuf));
             std::swap(obj->refValueMap()[std::move(varObj)], valueObj);
             strBuf = "";
             index++;
@@ -1226,15 +1217,15 @@ static int builtin_read(DSState *state, const int argc, char *const *argv) {  //
     }
 
     if(varSize == 0) {
-        state->setGlobal(varIndex,
-                       DSValue::create<String_Object>(state->getPool().getStringType(), std::move(strBuf)));
+        setGlobal(state, varIndex,
+                  DSValue::create<String_Object>(getPool(state).getStringType(), std::move(strBuf)));
     }
 
     // set rest variable
     for(; index < argc; index++) {
-        auto obj = typeAs<Map_Object>(state->getGlobal(varIndex));
-        auto varObj = DSValue::create<String_Object>(state->getPool().getStringType(), argv[index]);
-        auto valueObj = DSValue::create<String_Object>(state->getPool().getStringType(), std::move(strBuf));
+        auto obj = typeAs<Map_Object>(getGlobal(state, varIndex));
+        auto varObj = DSValue::create<String_Object>(getPool(state).getStringType(), argv[index]);
+        auto valueObj = DSValue::create<String_Object>(getPool(state).getStringType(), std::move(strBuf));
         std::swap(obj->refValueMap()[std::move(varObj)], valueObj);
         strBuf = "";
     }
@@ -1245,7 +1236,7 @@ static int builtin_read(DSState *state, const int argc, char *const *argv) {  //
     return ch == EOF ? 1 : 0;
 }
 
-static int builtin_hash(DSState *state, const int argc, char *const *argv) {
+static int builtin_hash(DSState &state, const int argc, char *const *argv) {
     bool remove = false;
 
     // check option
@@ -1268,9 +1259,9 @@ static int builtin_hash(DSState *state, const int argc, char *const *argv) {
         for(; index < argc; index++) {
             const char *name = argv[index];
             if(remove) {
-                state->getPathCache().removePath(name);
+                getPathCache(state).removePath(name);
             } else {
-                if(state->getPathCache().searchPath(name) == nullptr) {
+                if(getPathCache(state).searchPath(name) == nullptr) {
                     builtin_perror(argv, 0, "%s: not found", name);
                     return 1;
                 }
@@ -1278,14 +1269,14 @@ static int builtin_hash(DSState *state, const int argc, char *const *argv) {
         }
     } else {
         if(remove) {    // remove all cache
-            state->getPathCache().clear();
+            getPathCache(state).clear();
         } else {    // show all cache
-            const auto cend = state->getPathCache().cend();
-            if(state->getPathCache().cbegin() == cend) {
+            const auto cend = getPathCache(state).cend();
+            if(getPathCache(state).cbegin() == cend) {
                 fputs("hash: file path cache is empty\n", stdout);
                 return 0;
             }
-            for(auto iter = state->getPathCache().cbegin(); iter != cend; ++iter) {
+            for(auto iter = getPathCache(state).cbegin(); iter != cend; ++iter) {
                 printf("%s=%s\n", iter->first, iter->second.c_str());
             }
         }
@@ -1294,7 +1285,7 @@ static int builtin_hash(DSState *state, const int argc, char *const *argv) {
 }
 
 // for completor debugging
-static int builtin_complete(DSState *state, const int argc, char *const *argv) {
+static int builtin_complete(DSState &state, const int argc, char *const *argv) {
     if(argc != 2) {
         showUsage(argv);
         return 1;
@@ -1302,7 +1293,7 @@ static int builtin_complete(DSState *state, const int argc, char *const *argv) {
 
     std::string line(argv[1]);
     line += '\n';
-    auto c = state->completeLine(line);
+    auto c = completeLine(state, line);
     for(const auto &e : c) {
         fputs(e, stdout);
         fputc('\n', stdout);

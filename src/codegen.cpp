@@ -18,7 +18,7 @@
 
 #include "codegen.h"
 #include "symbol.h"
-#include "state.h"
+#include "core.h"
 
 namespace ydsh {
 
@@ -1163,7 +1163,7 @@ static void dumpCodeImpl(std::ostream &stream, DSState &ctx, const CompiledCode 
             if(isTypeOp(code)) {
                 unsigned long v = read64(c.getCode(), i + 1);
                 i += 8;
-                stream << "  " << ctx.getPool().getTypeName(*reinterpret_cast<DSType *>(v));
+                stream << "  " << getPool(ctx).getTypeName(*reinterpret_cast<DSType *>(v));
             } else {
                 const int byteSize = getByteSize(code);
                 if(code == OpCode::CALL_METHOD) {
@@ -1217,7 +1217,7 @@ static void dumpCodeImpl(std::ostream &stream, DSState &ctx, const CompiledCode 
                 if(list != nullptr && dynamic_cast<FuncObject *>(v.get()) != nullptr) {
                     list->push_back(&static_cast<FuncObject *>(v.get())->getCode());
                 }
-                stream << (v.get()->getType() != nullptr ? ctx.getPool().getTypeName(*v.get()->getType()) : "(null)")
+                stream << (v.get()->getType() != nullptr ? getPool(ctx).getTypeName(*v.get()->getType()) : "(null)")
                 << " " << v.get()->toString(ctx, nullptr);
                 break;
             }
@@ -1242,7 +1242,7 @@ static void dumpCodeImpl(std::ostream &stream, DSState &ctx, const CompiledCode 
     for(unsigned int i = 0; c.getExceptionEntries()[i].type != nullptr; i++) {
         const auto &e = c.getExceptionEntries()[i];
         stream << "  begin: " << e.begin << ", end: " << e.end << ", type: "
-        << ctx.getPool().getTypeName(*e.type) << ", dest: " << e.dest << std::endl;
+        << getPool(ctx).getTypeName(*e.type) << ", dest: " << e.dest << std::endl;
     }
 }
 

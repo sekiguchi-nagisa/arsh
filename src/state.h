@@ -28,120 +28,38 @@
 #include "object.h"
 #include "symbol_table.h"
 #include "proc.h"
+#include "core.h"
 #include "misc/buffer.hpp"
-#include "misc/hash.hpp"
 #include "misc/noncopyable.h"
 
-namespace ydsh {
-
-struct DebugHook;
-
-/**
- * enum order is corresponding to builtin variable declaration order.
- */
-enum class BuiltinVarOffset : unsigned int {
-    DBUS,           // DBus
-    OSTYPE,         // OSTYPE (utsname.sysname)
-    VERSION,        // YDSH_VERSION (equivalent to ps_intrp '\V')
-    REPLY,          // REPLY (for read command)
-    REPLY_VAR,      // reply (fo read command)
-    PID,            // PID (current process)
-    PPID,           // PPID
-    EXIT_STATUS,    // ?
-    SHELL_PID,      // $
-    ARGS,           // @
-    ARGS_SIZE,      // #
-    POS_0,          // 0 (for script name)
-    POS_1,          // 1 (for argument)
-    /*POS_2, POS_3, POS_4, POS_5, POS_6, POS_7, POS_8, POS_9, */
-};
-
-inline unsigned int toIndex(BuiltinVarOffset offset) {
-    return static_cast<unsigned int>(offset);
-}
-
-class FilePathCache {
-private:
-    /**
-     * contains previously resolved path (for directive search)
-     */
-    std::string prevPath;
-
-    CStringHashMap<std::string> map;
-
-    static constexpr unsigned int MAX_CACHE_SIZE = 100;
-
-public:
-    FilePathCache() = default;
-
-    ~FilePathCache();
-
-    static constexpr unsigned char USE_DEFAULT_PATH = 1 << 0;
-    static constexpr unsigned char DIRECT_SEARCH    = 1 << 1;
-
-    /**
-     * search file path by using PATH
-     * if cannot resolve path (file not found), return null.
-     */
-    const char *searchPath(const char *cmdName, unsigned char option = 0);
-
-    void removePath(const char *cmdName);
-
-    bool isCached(const char *cmdName) const;
-
-    /**
-     * clear all cache
-     */
-    void clear();
-
-    /**
-     * get begin iterator of map
-     */
-    CStringHashMap<std::string>::const_iterator cbegin() const {
-        return this->map.cbegin();
-    }
-
-    /**
-     * get end iterator of map
-     */
-    CStringHashMap<std::string>::const_iterator cend() const {
-        return this->map.cend();
-    }
-};
-
-using CStrBuffer = FlexBuffer<char *>;
+using namespace ydsh;
 
 // for exception handling
 struct DSExcepton {};
 
-} // namespace ydsh
-
-using namespace ydsh;
-
 struct DSState {
-private:
     TypePool pool;
     SymbolTable symbolTable;
 
     /**
      * must be Boolean_Object
      */
-    DSValue trueObj;
+    const DSValue trueObj;
 
     /**
      * must be Boolean_Object
      */
-    DSValue falseObj;
+    const DSValue falseObj;
 
     /**
      * must be String_Object
      */
-    DSValue emptyStrObj;
+    const DSValue emptyStrObj;
 
     /**
      * for pseudo object allocation (used for builtin constructor call)
      */
-    DSValue dummy;
+    const DSValue dummy;
 
     /**
      * if not null ptr, thrown exception.
@@ -209,7 +127,7 @@ private:
     /**
      * contains currently evaluating code.
      */
-    std::vector<const DSCode *> codeStack_;
+    std::vector<const DSCode *> codeStack;
 
     /**
      * for caching object.
@@ -233,43 +151,14 @@ private:
 
     DebugHook *hook;
 
-    static std::string logicalWorkingDir;
+    std::string logicalWorkingDir;
 
-    static const char *configRootDir;
-    static const char *typeDefDir;
-
-public:
     NON_COPYABLE(DSState);
 
     DSState();
 
-    ~DSState();
-
-    static std::string getConfigRootDir();
-    static std::string getIfaceDir();
-
-    static const char *getLogicalWorkingDir() {
-        return logicalWorkingDir.c_str();
-    }
-
-    TypePool &getPool() {
-        return this->pool;
-    }
-
-    SymbolTable &getSymbolTable() {
-        return this->symbolTable;
-    }
-
-    const DSValue &getTrueObj() const {
-        return this->trueObj;
-    }
-
-    const DSValue &getFalseObj() const {
-        return this->falseObj;
-    }
-
-    const DSValue &getEmptyStrObj() const {
-        return this->emptyStrObj;
+    ~DSState() {
+        delete[] this->callStack;
     }
 
     DSValue &getPipeline() {
@@ -283,18 +172,11 @@ public:
     /**
      * abort symbol table and TypePool when error happened
      */
-    void recover(bool abortType = true);
-
-    const DSValue &getDBus() {
-        return this->getGlobal(toIndex(BuiltinVarOffset::DBUS));
-    }
-
-    flag32_set_t getOption() const {
-        return this->option;
-    }
-
-    void setOption(flag32_set_t option) {
-        this->option = option;
+    void recover(bool abortType = true) {
+        this->symbolTable.abort();
+        if(abortType) {
+            this->pool.abort();
+        }
     }
 
     const DSValue &getThrownObject() const {
@@ -305,53 +187,26 @@ public:
         this->thrownObject = std::move(value);
     }
 
-    unsigned int getStackTopIndex() {
-        return this->stackTopIndex;
-    }
-
-    unsigned int getLocalVarOffset() {
-        return this->localVarOffset;
-    }
-
     unsigned int &pc() noexcept {
         return this->pc_;
     }
 
-
     /**
-     * reserve global variable entry and set local variable offset.
+     * create error.
      */
-    void reserveGlobalVar(unsigned int size);
-
-    /**
-     * set stackTopIndex.
-     * if this->localStackSize < size, expand callStack.
-     */
-    void reserveLocalVar(unsigned int size);
-
-    /**
-     * create and push error.
-     */
-    DSValue newError(DSType &errorType, std::string &&message);
+    DSValue newError(DSType &errorType, std::string &&message) const {
+        return Error_Object::newError(*this, errorType, DSValue::create<String_Object>(
+                this->pool.getStringType(), std::move(message)));
+    }
 
     /**
      * pop stack top and store to thrownObject.
      */
-    void throwException(DSValue &&except);
 
-    /**
-     * for internal error reporting.
-     */
-    void throwError(DSType &errorType, const char *message);
-
-    void throwError(DSType &errorType, std::string &&message);
-
-    /**
-     * convert errno to SystemError.
-     * errorNum must not be 0.
-     * format message '%s: %s', message, strerror(errorNum)
-     */
-    void throwSystemError(int errorNum, std::string &&message);
+    void throwException(DSValue &&except) {
+        this->thrownObject = std::move(except);
+        throw DSExcepton();
+    }
 
     /**
      * get thrownObject and push to callStack
@@ -368,17 +223,6 @@ public:
      * expand local stack size to stackTopIndex
      */
     void expandLocalStack();
-
-    void clearOperandStack();
-
-    /**
-     * callable may be null, when call native method.
-     */
-    void windStackFrame(unsigned int stackTopOffset, unsigned int paramSize, const DSCode *code);
-
-    void unwindStackFrame();
-
-    void skipHeader();
 
     // operand manipulation
     void push(const DSValue &value) {
@@ -466,7 +310,7 @@ public:
         this->callStack[this->localVarOffset + index] = std::move(obj);
     }
 
-    const DSValue &getLocal(unsigned int index) {
+    const DSValue &getLocal(unsigned int index) const {
         return this->callStack[this->localVarOffset + index];
     }
 
@@ -485,132 +329,21 @@ public:
                 this->callStack[this->stackTopIndex]->getFieldTable()[index];
     }
 
-    std::vector<const DSCode *> &codeStack() noexcept {
-        return this->codeStack_;
-    }
-
-    void applyFuncObject(unsigned int paramSize);
-
-    /**
-     * not directy use it
-     *
-     * @param index
-     * @param paramSize
-     */
-    void callMethod(unsigned short index, unsigned short paramSize);
-
-    /**
-     * allocate new DSObject on stack top.
-     * if type is builtin type, not allocate it.
-     */
-    void newDSObject(DSType *type);
-
-    /**
-     * not directly use it.
-     * @param paramSize
-     */
-    void callConstructor(unsigned short paramSize);
-
-    /**
-     * invoke interface method.
-     * constPoolIndex indicates the constant pool index of descriptor object.
-     */
-    void invokeMethod(unsigned short constPoolIndex);
-
-    /**
-     * invoke interface getter.
-     * constPoolIndex indicates the constant pool index of descriptor object.
-     */
-    void invokeGetter(unsigned short constPoolIndex);
-
-    /**
-     * invoke interface setter.
-     * constPoolIndex indicates the constant pool index of descriptor object.
-     */
-    void invokeSetter(unsigned short constPoolIndex);
-
-    // some runtime api
-    void fillInStackTrace(std::vector<StackTraceElement> &stackTrace);
-
     /**
      * reset call stack, local var offset, thrown object.
      */
-    void resetState();
-
-    /**
-     * change current working directory and update OLDPWD, PWD.
-     * if dest is null, do nothing and return true.
-     */
-    bool changeWorkingDir(const char *dest, const bool useLogical);
-
-    const char *getIFS();
+    void resetState() {
+        this->localVarOffset = this->globalVarSize;
+        this->thrownObject.reset();
+        this->codeStack.clear();
+    }
 
     void updateExitStatus(unsigned int status) {
         unsigned int index = toIndex(BuiltinVarOffset::EXIT_STATUS);
         this->setGlobal(index, DSValue::create<Int_Object>(this->pool.getInt32Type(), status));
     }
 
-    void exitShell(unsigned int status);
-
-    FilePathCache &getPathCache() {
-        return this->pathCache;
-    }
-
-    /**
-     * if not found, return null
-     */
-    FuncObject *lookupUserDefinedCommand(const char *commandName);
-
-    /**
-     * obj must indicate user-defined command.
-     */
-    void callUserDefinedCommand(const FuncObject *obj, DSValue *argv);
-
-    /**
-     * n is 1 or 2
-     */
-    void interpretPromptString(const char *ps, std::string &output) const;
-
-    /**
-     * after fork, reset signal setting in child process.
-     */
-    pid_t xfork();
-
-    /**
-     * waitpid wrapper.
-     */
-    pid_t xwaitpid(pid_t pid, int &status, int options);
-
-    /**
-     * return completion candidates.
-     * line must be terminate newline.
-     */
-    CStrBuffer completeLine(const std::string &line);
-
     // for command invocation
-
-    /**
-     * first element of argv is command name.
-     * last element of argv is null.
-     * if execute exit command, throw InternalError.
-     */
-    void execBuiltinCommand(char *const argv[]);
-
-    void setTerminationHook(TerminationHook hook) {
-        this->terminationHook = hook;
-    }
-
-    TerminationHook getTerminationHook() const {
-        return this->terminationHook;
-    }
-
-    void setLineNum(unsigned int lineNum) {
-        this->lineNum = lineNum;
-    }
-
-    unsigned int getLineNum() const {
-        return this->lineNum;
-    }
 
     std::string &refPrompt() {
         return this->prompt;
@@ -631,6 +364,17 @@ public:
 bool vmEval(DSState &state, CompiledCode &code);
 
 /**
+ *
+ * @param st
+ * @param argv
+ * first element of argv is command name.
+ * last element of argv is null.
+ * @return
+ * exit status
+ */
+int execBuiltinCommand(DSState &st, char *const argv[]);
+
+/**
  * call method.
  * @param state
  * @param handle
@@ -641,20 +385,5 @@ bool vmEval(DSState &state, CompiledCode &code);
  * return value of method (if no return value, return null).
  */
 DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, std::vector<DSValue> &&args);
-
-// some system util
-
-/**
- * path is starts with tilde.
- */
-std::string expandTilde(const char *path);
-
-namespace ydsh {
-
-struct DebugHook {
-    virtual void vmFetchHook(DSState &st, OpCode op) = 0;
-};
-
-} // namespace ydsh
 
 #endif //YDSH_STATE_H

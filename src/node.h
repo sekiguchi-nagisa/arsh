@@ -1137,11 +1137,6 @@ public:
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-
-    /**
-     * if isLastSegment is true, segment nodes size is 1.
-     */
-    std::string expand(bool isLastSegment = true);
 };
 
 class CmdNode : public Node {

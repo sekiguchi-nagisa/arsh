@@ -566,12 +566,12 @@ public:
     /**
      * create new Error_Object and create stack trace
      */
-    static DSValue newError(DSState &ctx, DSType &type, const DSValue &message);
+    static DSValue newError(const DSState &ctx, DSType &type, const DSValue &message);
 
-    static DSValue newError(DSState &ctx, DSType &type, DSValue &&message);
+    static DSValue newError(const DSState &ctx, DSType &type, DSValue &&message);
 
 private:
-    void createStackTrace(DSState &ctx);
+    void createStackTrace(const DSState &ctx);
 };
 
 struct DummyObject : public DSObject {

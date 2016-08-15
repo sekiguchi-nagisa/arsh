@@ -17,6 +17,7 @@
 #include <cstring>
 
 #include "dbus_bind.h"
+#include "handle.h"
 #include "../logger.h"
 #include "../misc/resource.hpp"
 
@@ -45,8 +46,8 @@ static ScopedDBusError newDBusError() {
 
 static void throwDBusError(DSState &ctx, const char *dbusErrorName, std::string &&message) {
     std::string name(dbusErrorName);
-    auto &type = ctx.getPool().createErrorType(name, ctx.getPool().getDBusErrorType());
-    ctx.throwError(type, std::move(message));
+    auto &type = getPool(ctx).createErrorType(name, getPool(ctx).getDBusErrorType());
+    throwError(ctx, type, std::move(message));
 }
 
 static void throwDBusError(DSState &ctx, ScopedDBusError &error) {
@@ -64,57 +65,57 @@ static DSValue decodeMessageIter(DSState &ctx, DBusMessageIter *iter) {
     case DBUS_TYPE_BYTE: {
         unsigned char value;
         dbus_message_iter_get_basic(iter, &value);
-        return DSValue::create<Int_Object>(ctx.getPool().getByteType(), value);
+        return DSValue::create<Int_Object>(getPool(ctx).getByteType(), value);
     }
     case DBUS_TYPE_INT16: {
         dbus_int16_t value;
         dbus_message_iter_get_basic(iter, &value);
-        return DSValue::create<Int_Object>(ctx.getPool().getInt16Type(), value);
+        return DSValue::create<Int_Object>(getPool(ctx).getInt16Type(), value);
     }
     case DBUS_TYPE_UINT16: {
         dbus_uint16_t value;
         dbus_message_iter_get_basic(iter, &value);
-        return DSValue::create<Int_Object>(ctx.getPool().getUint16Type(), value);
+        return DSValue::create<Int_Object>(getPool(ctx).getUint16Type(), value);
     }
     case DBUS_TYPE_INT32: {
         dbus_int32_t value;
         dbus_message_iter_get_basic(iter, &value);
-        return DSValue::create<Int_Object>(ctx.getPool().getInt32Type(), value);
+        return DSValue::create<Int_Object>(getPool(ctx).getInt32Type(), value);
     }
     case DBUS_TYPE_UINT32: {
         dbus_uint32_t value;
         dbus_message_iter_get_basic(iter, &value);
-        return DSValue::create<Int_Object>(ctx.getPool().getUint32Type(), value);
+        return DSValue::create<Int_Object>(getPool(ctx).getUint32Type(), value);
     }
     case DBUS_TYPE_INT64: {
         dbus_int64_t value;
         dbus_message_iter_get_basic(iter, &value);
-        return DSValue::create<Long_Object>(ctx.getPool().getInt64Type(), value);
+        return DSValue::create<Long_Object>(getPool(ctx).getInt64Type(), value);
     }
     case DBUS_TYPE_UINT64: {
         dbus_uint64_t value;
         dbus_message_iter_get_basic(iter, &value);
-        return DSValue::create<Long_Object>(ctx.getPool().getUint64Type(), value);
+        return DSValue::create<Long_Object>(getPool(ctx).getUint64Type(), value);
     }
     case DBUS_TYPE_BOOLEAN: {
         dbus_bool_t value;
         dbus_message_iter_get_basic(iter, &value);
-        return value == TRUE ? ctx.getTrueObj() : ctx.getFalseObj();
+        return value == TRUE ? getTrueObj(ctx) : getFalseObj(ctx);
     }
     case DBUS_TYPE_DOUBLE: {
         double value;
         dbus_message_iter_get_basic(iter, &value);
-        return DSValue::create<Float_Object>(ctx.getPool().getFloatType(), value);
+        return DSValue::create<Float_Object>(getPool(ctx).getFloatType(), value);
     }
     case DBUS_TYPE_STRING: {
         const char *value;
         dbus_message_iter_get_basic(iter, &value);
-        return DSValue::create<String_Object>(ctx.getPool().getStringType(), std::string(value));
+        return DSValue::create<String_Object>(getPool(ctx).getStringType(), std::string(value));
     }
     case DBUS_TYPE_OBJECT_PATH: {
         const char *value;
         dbus_message_iter_get_basic(iter, &value);
-        return DSValue::create<String_Object>(ctx.getPool().getObjectPathType(), std::string(value));
+        return DSValue::create<String_Object>(getPool(ctx).getObjectPathType(), std::string(value));
     }
     case DBUS_TYPE_UNIX_FD: {
         fatal("unsupported dbus type: UNIX_FD");
@@ -130,7 +131,7 @@ static DSValue decodeMessageIter(DSState &ctx, DBusMessageIter *iter) {
                 std::string mapDesc("a");
                 mapDesc += desc;
                 dbus_free(desc);
-                auto &mapType = decodeTypeDescriptor(&ctx.getPool(), mapDesc.c_str());
+                auto &mapType = decodeTypeDescriptor(&getPool(ctx), mapDesc.c_str());
                 return DSValue::create<Map_Object>(mapType);
             }
 
@@ -151,11 +152,10 @@ static DSValue decodeMessageIter(DSState &ctx, DBusMessageIter *iter) {
             std::vector<DSType *> types(2);
             types[0] = entries.back().first->getType();
             types[1] = firstElementType == DBUS_TYPE_VARIANT ?
-                       &ctx.getPool().getVariantType() : entries.back().second->getType();
+                       &getPool(ctx).getVariantType() : entries.back().second->getType();
 
             auto map = DSValue::create<Map_Object>(
-                    ctx.getPool().createReifiedType(
-                            ctx.getPool().getMapTemplate(), std::move(types)));
+                    getPool(ctx).createReifiedType(getPool(ctx).getMapTemplate(), std::move(types)));
             for(auto &e : entries) {
                 typeAs<Map_Object>(map)->add(std::move(e));
             }
@@ -164,11 +164,10 @@ static DSValue decodeMessageIter(DSState &ctx, DBusMessageIter *iter) {
             if(!dbus_message_iter_has_next(&subIter)) { //empty array
                 char *desc = dbus_message_iter_get_signature(&subIter);
                 std::vector<DSType *> types(1);
-                types[0] = &decodeTypeDescriptor(&ctx.getPool(), desc);
+                types[0] = &decodeTypeDescriptor(&getPool(ctx), desc);
                 dbus_free(desc);
                 return DSValue::create<Array_Object>(
-                        ctx.getPool().createReifiedType(
-                                ctx.getPool().getArrayTemplate(), std::move(types)));
+                        getPool(ctx).createReifiedType(getPool(ctx).getArrayTemplate(), std::move(types)));
             }
 
             std::vector<DSValue> values;
@@ -176,11 +175,10 @@ static DSValue decodeMessageIter(DSState &ctx, DBusMessageIter *iter) {
                 values.push_back(decodeMessageIter(ctx, &subIter));
             } while(dbus_message_iter_next(&subIter));
             std::vector<DSType *> types(1);
-            types[0] = elementType == DBUS_TYPE_VARIANT ? &ctx.getPool().getVariantType() : values[0]->getType();
+            types[0] = elementType == DBUS_TYPE_VARIANT ? &getPool(ctx).getVariantType() : values[0]->getType();
 
             return DSValue::create<Array_Object>(
-                    ctx.getPool().createReifiedType(
-                            ctx.getPool().getArrayTemplate(), std::move(types)), std::move(values));
+                    getPool(ctx).createReifiedType(getPool(ctx).getArrayTemplate(), std::move(types)), std::move(values));
         }
 
     }
@@ -194,7 +192,7 @@ static DSValue decodeMessageIter(DSState &ctx, DBusMessageIter *iter) {
             values.push_back(decodeMessageIter(ctx, &subIter));
             types.push_back(values.back()->getType());
         } while(dbus_message_iter_next(&subIter));
-        auto &tupleType = ctx.getPool().createTupleType(std::move(types));
+        auto &tupleType = getPool(ctx).createTupleType(std::move(types));
         DSValue tuple(new Tuple_Object(tupleType));
         unsigned int size = values.size();
         for(unsigned int i = 0; i < size; i++) {
@@ -237,9 +235,9 @@ static std::vector<DSValue> decodeMessageRaw(DSState &ctx,
     for(unsigned int i = 0; i < size; i++) {
         if(!types[i]->isSameOrBaseTypeOf(*values[i]->getType())) {
             std::string str = "require type is: ";
-            str += ctx.getPool().getTypeName(*types[i]);
+            str += getPool(ctx).getTypeName(*types[i]);
             str += ", but is: ";
-            str += ctx.getPool().getTypeName(*values[i]->getType());
+            str += getPool(ctx).getTypeName(*values[i]->getType());
             throwDBusError(ctx, DBUS_ERROR_INVALID_SIGNATURE, std::move(str));
         }
     }
@@ -258,8 +256,7 @@ static DSValue decodeMessage(DSState &ctx,
         return std::move(values[0]);
     }
 
-    DSValue tuple(new Tuple_Object(
-            ctx.getPool().createTupleType(std::vector<DSType *>(types))));
+    DSValue tuple(new Tuple_Object(getPool(ctx).createTupleType(std::vector<DSType *>(types))));
     for(unsigned int i = 0; i < size; i++) {
         typeAs<Tuple_Object>(tuple)->set(i, values[i]);
     }
@@ -273,13 +270,13 @@ static DSValue decodeMessage(DSState &ctx, DSType &type, ScopedDBusMessage &&msg
 }
 
 static void appendArg(DSState &ctx, DBusMessageIter *iter, DSType &argType, const DSValue &arg) {
-    DBus_Object *dbus = typeAs<DBus_Object>(ctx.getDBus());
+    DBus_Object *dbus = typeAs<DBus_Object>(getDBus(ctx));
     dbus->getBuilder().appendArg(iter, argType, arg);
 }
 
 static void appendArg(DSState &ctx, DBusMessageIter *iter,
                       DSType &argType, unsigned int index) {
-    appendArg(ctx, iter, argType, ctx.getLocal(index));
+    appendArg(ctx, iter, argType, getLocal(ctx, index));
 }
 
 static ScopedDBusMessage sendMessage(DSState &ctx,
@@ -348,8 +345,7 @@ DSValue Bus_Object::service(DSState &ctx, std::string &&serviceName) {
 
     // init service object
     return DSValue::create<Service_Object>(
-            ctx.getPool().getServiceType(), DSValue(this),
-            std::move(serviceName), std::move(uniqueName));
+            getPool(ctx).getServiceType(), DSValue(this), std::move(serviceName), std::move(uniqueName));
 }
 
 DSValue Bus_Object::listNames(DSState &ctx, bool activeName) {
@@ -359,7 +355,7 @@ DSValue Bus_Object::listNames(DSState &ctx, bool activeName) {
     auto reply = sendMessage(ctx, this->conn, std::move(msg));
 
     // decode result
-    return decodeMessage(ctx, ctx.getPool().getStringArrayType(), std::move(reply));
+    return decodeMessage(ctx, getPool(ctx).getStringArrayType(), std::move(reply));
 }
 
 
@@ -377,7 +373,7 @@ std::string Service_Object::toString(DSState &, VisitedSet *) {
 }
 
 DSValue Service_Object::object(DSState &ctx, const DSValue &objectPath) {
-    DSValue obj(new DBusProxy_Object(ctx.getPool().getDBusObjectType(), DSValue(this), objectPath));
+    DSValue obj(new DBusProxy_Object(getPool(ctx).getDBusObjectType(), DSValue(this), objectPath));
 
     // first call Introspection and resolve interface type.
     typeAs<DBusProxy_Object>(obj)->doIntrospection(ctx);
@@ -395,7 +391,7 @@ DBus_Object::DBus_Object(TypePool &typePool) :
 
 DSValue DBus_Object::getSystemBus(DSState &ctx) {
     if(!this->systemBus) {
-        this->systemBus = DSValue::create<Bus_Object>(ctx.getPool().getBusType(), true);
+        this->systemBus = DSValue::create<Bus_Object>(getPool(ctx).getBusType(), true);
         typeAs<Bus_Object>(this->systemBus)->initConnection(ctx, true);
     }
     return this->systemBus;
@@ -403,7 +399,7 @@ DSValue DBus_Object::getSystemBus(DSState &ctx) {
 
 DSValue DBus_Object::getSessionBus(DSState &ctx) {
     if(!this->sessionBus) {
-        this->sessionBus = DSValue::create<Bus_Object>(ctx.getPool().getBusType(), false);
+        this->sessionBus = DSValue::create<Bus_Object>(getPool(ctx).getBusType(), false);
         typeAs<Bus_Object>(this->sessionBus)->initConnection(ctx, false);
     }
     return this->sessionBus;
@@ -411,7 +407,7 @@ DSValue DBus_Object::getSessionBus(DSState &ctx) {
 
 void DBus_Object::waitSignal(DSState &ctx) {
     std::vector<DBusProxy_Object *> proxies;
-    proxies.push_back(typeAs<DBusProxy_Object>(ctx.getLocal(1)));
+    proxies.push_back(typeAs<DBusProxy_Object>(getLocal(ctx, 1)));
 
     // add signal match rule
     Bus_Object *busObj =
@@ -479,7 +475,7 @@ void DBus_Object::waitSignal(DSState &ctx) {
             // push to stack
             const unsigned int size = values.size();
             for(unsigned int i = 0; i < size; i++) {
-                ctx.push(std::move(values[i]));
+                checkedPush(ctx, std::move(values[i]));
             }
 
             // apply handler
@@ -514,7 +510,7 @@ DSValue DBus_Object::introspectProxy(DSState &ctx, const DSValue &proxy) {
             ctx, typeAs<Service_Object>(obj->getService())->getConnection(), std::move(msg));
 
     // decode result
-    return decodeMessage(ctx, ctx.getPool().getStringType(), std::move(reply));
+    return decodeMessage(ctx, getPool(ctx).getStringType(), std::move(reply));
 }
 
 
@@ -564,7 +560,7 @@ std::string DBusProxy_Object::toString(DSState &, VisitedSet *) {
 }
 
 bool DBusProxy_Object::introspect(DSState &ctx, DSType *targetType) {
-    const std::string &typeName = ctx.getPool().getTypeName(*targetType);
+    const std::string &typeName = getPool(ctx).getTypeName(*targetType);
     auto iter = this->ifaceSet.find(typeName);
     return iter != this->ifaceSet.end();
 }
@@ -640,12 +636,11 @@ void DBusProxy_Object::doIntrospection(DSState &ctx) {
 DSValue DBusProxy_Object::invokeMethod(DSState &ctx, const char *methodName, const MethodHandle *handle) {
     // check signal
     if(handle->isSignal()) {
-        this->addHandler(ctx.getPool().getTypeName(*handle->getRecvType()).c_str(),
-                         methodName, ctx.getLocal(1));
+        this->addHandler(getPool(ctx).getTypeName(*handle->getRecvType()).c_str(), methodName, getLocal(ctx, 1));
         return DSValue();
     }
 
-    auto msg = this->newMethodCallMsg(ctx.getPool().getTypeName(*handle->getRecvType()).c_str(), methodName);
+    auto msg = this->newMethodCallMsg(getPool(ctx).getTypeName(*handle->getRecvType()).c_str(), methodName);
 
     // append arg
     DBusMessageIter iter;
@@ -680,7 +675,7 @@ DSValue DBusProxy_Object::invokeGetter(DSState &ctx, const DSType *recvType,
     DBusMessageIter iter;
     dbus_message_iter_init_append(msg.get(), &iter);
 
-    const char *ifaceName = ctx.getPool().getTypeName(*recvType).c_str();
+    const char *ifaceName = getPool(ctx).getTypeName(*recvType).c_str();
     dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, &ifaceName);
     dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, &fieldName);
 
@@ -699,11 +694,11 @@ void DBusProxy_Object::invokeSetter(DSState &ctx, const DSType *recvType,
     DBusMessageIter iter;
     dbus_message_iter_init_append(msg.get(), &iter);
 
-    const char *ifaceName = ctx.getPool().getTypeName(*recvType).c_str();
+    const char *ifaceName = getPool(ctx).getTypeName(*recvType).c_str();
     dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, &ifaceName);
     dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, &fieldName);
 
-    appendArg(ctx, &iter, ctx.getPool().getVariantType(), ctx.getLocal(1));
+    appendArg(ctx, &iter, getPool(ctx).getVariantType(), getLocal(ctx, 1));
 
     // call setter
     this->sendMessage(ctx, std::move(msg));
@@ -721,9 +716,9 @@ DSValue DBusProxy_Object::createIfaceList(DSState &ctx) {
     std::vector<DSValue> list(this->ifaceSet.size());
     unsigned int i = 0;
     for(auto &value : this->ifaceSet) {
-        list[i++] = DSValue::create<String_Object>(ctx.getPool().getStringType(), value);
+        list[i++] = DSValue::create<String_Object>(getPool(ctx).getStringType(), value);
     }
-    return DSValue::create<Array_Object>(ctx.getPool().getStringArrayType(), std::move(list));
+    return DSValue::create<Array_Object>(getPool(ctx).getStringArrayType(), std::move(list));
 }
 
 FunctionType *DBusProxy_Object::lookupHandler(DSState &ctx,
@@ -732,7 +727,7 @@ FunctionType *DBusProxy_Object::lookupHandler(DSState &ctx,
     if(iter == this->handerMap.end()) {
         return nullptr;
     }
-    ctx.push(iter->second);
+    checkedPush(ctx, iter->second);
     return static_cast<FunctionType *>(typeAs<FuncObject>(iter->second)->getType());
 }
 
@@ -784,7 +779,7 @@ void DBusProxy_Object::addHandler(const char *ifaceName, const char *methodName,
 
 
 // implementation of DBus related builtin method
-#define LOCAL(i) ctx.getLocal(i)
+#define LOCAL(i) getLocal(ctx, i)
 
 DSValue newDBusObject(TypePool &pool) {
     return DSValue::create<DBus_Object>(pool);
@@ -799,13 +794,13 @@ DSValue dbus_sessionBus(DSState &ctx) {
 }
 
 DSValue dbus_waitSignal(DSState &ctx) {
-    ctx.throwError(ctx.getPool().getErrorType(), "waitSignal is unimplemented");
+    throwError(ctx, getPool(ctx).getErrorType(), "waitSignal is unimplemented");
     typeAs<DBus_Object>(LOCAL(0))->waitSignal(ctx);
     return DSValue();
 }
 
 DSValue dbus_available(DSState &ctx) {
-    return ctx.getTrueObj();
+    return getTrueObj(ctx);
 }
 
 DSValue dbus_getSrv(DSState &ctx) {

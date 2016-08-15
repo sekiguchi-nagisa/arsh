@@ -48,7 +48,7 @@ enum RedirectOP : unsigned char {
 /**
  * return exit status.
  */
-typedef int (*builtin_command_t)(DSState *state, const int argc, char *const *argv);
+typedef int (*builtin_command_t)(DSState &state, const int argc, char *const *argv);
 
 unsigned int getBuiltinCommandSize();
 
@@ -58,14 +58,6 @@ unsigned int getBuiltinCommandSize();
 const char *getBuiltinCommandName(unsigned int index);
 
 builtin_command_t lookupBuiltinCommand(const char *commandName);
-
-/**
- * if not found, return -1.
- */
-int getBuiltinCommandIndex(const char *commandName);
-
-int execBuiltinCommand(DSState *state, unsigned int index, const int argc, char *const *argv);
-
 
 } // namespace ydsh
 

@@ -34,7 +34,7 @@ namespace ydsh {
 #define vmcase(code) case OpCode::code:
 #endif
 
-#define CODE(ctx) (ctx.codeStack().back())
+#define CODE(ctx) (ctx.codeStack.back())
 #define GET_CODE(ctx) (CODE(ctx)->getCode())
 #define CONST_POOL(ctx) (static_cast<const CompiledCode *>(CODE(ctx))->getConstPool())
 
@@ -43,10 +43,10 @@ static void checkCast(DSState &state, DSType *targetType) {
     if(!state.peek()->introspect(state, targetType)) {
         DSType *stackTopType = state.pop()->getType();
         std::string str("cannot cast ");
-        str += state.getPool().getTypeName(*stackTopType);
+        str += state.pool.getTypeName(*stackTopType);
         str += " to ";
-        str += state.getPool().getTypeName(*targetType);
-        state.throwError(state.getPool().getTypeCastErrorType(), std::move(str));
+        str += state.pool.getTypeName(*targetType);
+        throwError(state, state.pool.getTypeCastErrorType(), std::move(str));
     }
 }
 
@@ -55,13 +55,13 @@ static void checkAssertion(DSState &state) {
     assert(typeAs<String_Object>(msg)->getValue() != nullptr);
 
     if(!typeAs<Boolean_Object>(state.pop())->getValue()) {
-        state.setThrownObject(Error_Object::newError(state, state.getPool().getAssertFail(), std::move(msg)));
+        state.setThrownObject(Error_Object::newError(state, state.pool.getAssertFail(), std::move(msg)));
 
         // invoke termination hook
-        if(state.getTerminationHook() != nullptr) {
+        if(state.terminationHook != nullptr) {
             const unsigned int lineNum =
                     getOccuredLineNum(typeAs<Error_Object>(state.getThrownObject())->getStackTrace());
-            state.getTerminationHook()(DS_ERROR_KIND_ASSERTION_ERROR, lineNum);
+            state.terminationHook(DS_ERROR_KIND_ASSERTION_ERROR, lineNum);
         }
 
         // print stack trace
@@ -70,6 +70,22 @@ static void checkAssertion(DSState &state) {
 
         exit(1);
     }
+}
+
+/**
+ * convert errno to SystemError.
+ * errorNum must not be 0.
+ * format message '%s: %s', message, strerror(errorNum)
+ */
+static void throwSystemError(DSState &st, int errorNum, std::string &&message) {
+    if(errorNum == 0) {
+        fatal("errno is not 0\n");
+    }
+
+    std::string str(std::move(message));
+    str += ": ";
+    str += strerror(errorNum);
+    throwError(st, st.pool.getSystemErrorType(), std::move(str));
 }
 
 static void importEnv(DSState &state, bool hasDefault) {
@@ -89,9 +105,244 @@ static void importEnv(DSState &state, bool hasDefault) {
     if(env == nullptr) {
         std::string str("undefined environmental variable: ");
         str += name;
-        state.throwSystemError(EINVAL, std::move(str)); //FIXME: exception
+        throwSystemError(state, EINVAL, std::move(str)); //FIXME: exception
     }
 }
+
+static void clearOperandStack(DSState &st) {
+    while(st.stackTopIndex > st.stackBottomIndex) {
+        st.popNoReturn();
+    }
+}
+
+/**
+ * set stackTopIndex.
+ * if this->localStackSize < size, expand callStack.
+ */
+static void reserveLocalVar(DSState &st, unsigned int size) {
+    st.stackTopIndex = size;
+    if(size >= st.callStackSize) {
+        st.expandLocalStack();
+    }
+    st.stackBottomIndex = size;
+}
+
+/**
+ * reserve global variable entry and set local variable offset.
+ */
+static void reserveGlobalVar(DSState &st, unsigned int size) {
+    reserveLocalVar(st, size);
+    st.globalVarSize = size;
+    st.localVarOffset = size;
+}
+
+static void skipHeader(DSState &st) {
+    assert(!st.codeStack.empty());
+    st.pc_ = 0;
+    if(st.codeStack.back()->is(CodeKind::TOPLEVEL)) {
+        const CompiledCode *code = static_cast<const CompiledCode *>(st.codeStack.back());
+
+        unsigned short varNum = code->getLocalVarNum();
+        unsigned short gvarNum = code->getGlobalVarNum();
+
+        reserveGlobalVar(st, gvarNum);
+        reserveLocalVar(st, st.localVarOffset + varNum);
+    }
+    st.pc_ += st.codeStack.back()->getCodeOffset() - 1;
+}
+
+static void windStackFrame(DSState &st, unsigned int stackTopOffset, unsigned int paramSize, const DSCode *code) {
+    const unsigned int maxVarSize = code->is(CodeKind::NATIVE)? paramSize :
+                                    static_cast<const CompiledCode *>(code)->getLocalVarNum();
+
+    const unsigned int oldLocalVarOffset = st.localVarOffset;
+    const unsigned int oldStackBottomIndex = st.stackBottomIndex;
+    const unsigned int oldStackTopIndex = st.stackTopIndex - stackTopOffset;
+    const unsigned int oldPC = st.pc_;
+
+    // change stack state
+    const unsigned int localVarOffset = st.stackTopIndex - paramSize + 1;
+    reserveLocalVar(st, st.stackTopIndex + maxVarSize - paramSize + 4);
+    st.localVarOffset = localVarOffset;
+    st.pc_ = 0;
+
+    // push old state
+    st.callStack[st.stackTopIndex] = DSValue::createNum(oldLocalVarOffset);
+    st.callStack[st.stackTopIndex - 1] = DSValue::createNum(oldStackBottomIndex);
+    st.callStack[st.stackTopIndex - 2] = DSValue::createNum(oldStackTopIndex);
+    st.callStack[st.stackTopIndex - 3] = DSValue::createNum(oldPC);
+
+    // push callable
+    st.codeStack.push_back(code);
+    skipHeader(st);
+}
+
+static void unwindStackFrame(DSState &st) {
+    clearOperandStack(st);
+
+    // pop old state
+    auto v = st.pop();
+    assert(v.kind() == DSValueKind::NUMBER);
+    const unsigned int oldLocalVarOffset = static_cast<unsigned int>(v.value());
+
+    v = st.pop();
+    assert(v.kind() == DSValueKind::NUMBER);
+    const unsigned int oldStackBottomIndex = static_cast<unsigned int>(v.value());
+
+    v = st.pop();
+    assert(v.kind() == DSValueKind::NUMBER);
+    const unsigned int oldStackTopIndex = static_cast<unsigned int>(v.value());
+
+    v = st.pop();
+    assert(v.kind() == DSValueKind::NUMBER);
+    const unsigned int oldPC = static_cast<unsigned int>(v.value());
+
+
+    // restore state
+    st.localVarOffset = oldLocalVarOffset;
+    st.stackBottomIndex = oldStackBottomIndex;
+    st.pc_ = oldPC;
+
+    // unwind local variable
+    while(st.stackTopIndex > oldStackTopIndex) {
+        st.popNoReturn();
+    }
+
+    // pop callable
+    st.codeStack.pop_back();
+}
+
+/**
+ * stack state in function apply    stack grow ===>
+ *
+ * +-----------+---------+--------+   +--------+
+ * | stack top | funcObj | param1 | ~ | paramN |
+ * +-----------+---------+--------+   +--------+
+ *                       | offset |   |        |
+ */
+static void applyFuncObject(DSState &st, unsigned int paramSize) {
+    auto *func = typeAs<FuncObject>(st.callStack[st.stackTopIndex - paramSize]);
+    windStackFrame(st, paramSize + 1, paramSize, &func->getCode());
+}
+
+/**
+ * stack state in method call    stack grow ===>
+ *
+ * +-----------+------------------+   +--------+
+ * | stack top | param1(receiver) | ~ | paramN |
+ * +-----------+------------------+   +--------+
+ *             | offset           |   |        |
+ */
+static void callMethod(DSState &st, unsigned short index, unsigned short paramSize) {
+    const unsigned int actualParamSize = paramSize + 1; // include receiver
+    const unsigned int recvIndex = st.stackTopIndex - paramSize;
+
+    windStackFrame(st, actualParamSize, actualParamSize, st.callStack[recvIndex]->getType()->getMethodRef(index));
+}
+
+
+/**
+ * stack state in constructor call     stack grow ===>
+ *
+ * +-----------+------------------+   +--------+
+ * | stack top | param1(receiver) | ~ | paramN |
+ * +-----------+------------------+   +--------+
+ *             |    new offset    |
+ */
+static void callConstructor(DSState &st, unsigned short paramSize) {
+    const unsigned int recvIndex = st.stackTopIndex - paramSize;
+
+    windStackFrame(st, paramSize, paramSize + 1, st.callStack[recvIndex]->getType()->getConstructor());
+}
+
+const NativeCode *getNativeCode(unsigned int index);
+
+/**
+ * invoke interface method.
+ *
+ * stack state in method call    stack grow ===>
+ *
+ * +-----------+------------------+   +--------+
+ * | stack top | param1(receiver) | ~ | paramN |
+ * +-----------+------------------+   +--------+
+ *             | offset           |   |        |
+ *
+ * @param st
+ * @param constPoolIndex
+ * indicates the constant pool index of descriptor object.
+ */
+static void invokeMethod(DSState &st, unsigned short constPoolIndex) {
+    assert(!st.codeStack.back()->is(CodeKind::NATIVE));
+    const CompiledCode *code = static_cast<const CompiledCode *>(st.codeStack.back());
+
+    auto pair = decodeMethodDescriptor(typeAs<String_Object>(code->getConstPool()[constPoolIndex])->getValue());
+    const char *methodName = pair.first;
+    auto handle = pair.second;
+    const unsigned int actualParamSize = handle->getParamTypes().size() + 1;    // include receiver
+    const unsigned int recvIndex = st.stackTopIndex - handle->getParamTypes().size();
+
+    windStackFrame(st, actualParamSize, actualParamSize, getNativeCode(0));
+    DSValue ret = typeAs<ProxyObject>(st.callStack[recvIndex])->invokeMethod(st, methodName, handle);
+    unwindStackFrame(st);
+
+    if(ret) {
+        st.push(std::move(ret));
+    }
+}
+
+/**
+ * invoke interface getter.
+ * @param st
+ * @param constPoolIndex
+ * indicates the constant pool index of descriptor object.
+ */
+static void invokeGetter(DSState &st, unsigned short constPoolIndex) {
+    assert(!st.codeStack.back()->is(CodeKind::NATIVE));
+    const CompiledCode *code = static_cast<const CompiledCode *>(st.codeStack.back());
+
+    auto tuple = decodeFieldDescriptor(typeAs<String_Object>(code->getConstPool()[constPoolIndex])->getValue());
+    const DSType *recvType = std::get<0>(tuple);
+    const char *fieldName = std::get<1>(tuple);
+    const DSType *fieldType = std::get<2>(tuple);
+    const unsigned int recvIndex = st.stackTopIndex;
+
+    windStackFrame(st, 1, 1, getNativeCode(0));
+    DSValue ret = typeAs<ProxyObject>(st.callStack[recvIndex])->invokeGetter(st, recvType, fieldName, fieldType);
+    unwindStackFrame(st);
+
+    assert(ret);
+    st.push(std::move(ret));
+}
+
+/**
+ * invoke interface setter.
+ *
+ * stack state in setter call    stack grow ===>
+ *
+ * +-----------+--------+-------+
+ * | stack top |  recv  | value |
+ * +-----------+--------+-------+
+ *             | offset |       |
+ *
+ * @param st
+ * @param constPoolIndex
+ * indicates the constant pool index of descriptor object
+ */
+static void invokeSetter(DSState &st, unsigned short constPoolIndex) {
+    assert(!st.codeStack.back()->is(CodeKind::NATIVE));
+    const CompiledCode *code = static_cast<const CompiledCode *>(st.codeStack.back());
+
+    auto tuple = decodeFieldDescriptor(typeAs<String_Object>(code->getConstPool()[constPoolIndex])->getValue());
+    const DSType *recvType = std::get<0>(tuple);
+    const char *fieldName = std::get<1>(tuple);
+    const DSType *fieldType = std::get<2>(tuple);
+    const unsigned int recvIndex = st.stackTopIndex - 1;
+
+    windStackFrame(st, 2, 2, getNativeCode(0));
+    typeAs<ProxyObject>(st.callStack[recvIndex])->invokeSetter(st, recvType, fieldName, fieldType);
+    unwindStackFrame(st);
+}
+
 
 
 /* for substitution */
@@ -129,7 +380,7 @@ static void forkAndCapture(bool isStr, DSState &state) {
         exit(1);    //FIXME: throw exception
     }
 
-    pid_t pid = state.xfork();
+    pid_t pid = xfork(state);
     if(pid > 0) {   // parent process
         close(pipefds[WRITE_PIPE]);
 
@@ -159,15 +410,15 @@ static void forkAndCapture(bool isStr, DSState &state) {
                 str.erase(pos + 1);
             }
 
-            obj = DSValue::create<String_Object>(state.getPool().getStringType(), std::move(str));
+            obj = DSValue::create<String_Object>(state.pool.getStringType(), std::move(str));
         } else {    // capture stdout as String Array
-            const char *ifs = state.getIFS();
+            const char *ifs = getIFS(state);
             unsigned int skipCount = 1;
 
             static const int bufSize = 256;
             char buf[bufSize];
             std::string str;
-            obj = DSValue::create<Array_Object>(state.getPool().getStringArrayType());
+            obj = DSValue::create<Array_Object>(state.pool.getStringArrayType());
             Array_Object *array = typeAs<Array_Object>(obj);
 
             while(true) {
@@ -192,8 +443,7 @@ static void forkAndCapture(bool isStr, DSState &state) {
                     }
                     skipCount = 0;
                     if(fieldSep) {
-                        array->append(DSValue::create<String_Object>(
-                                state.getPool().getStringType(), std::move(str)));
+                        array->append(DSValue::create<String_Object>(state.pool.getStringType(), std::move(str)));
                         str = "";
                         skipCount = isSpace(ch) ? 2 : 1;
                         continue;
@@ -209,15 +459,14 @@ static void forkAndCapture(bool isStr, DSState &state) {
 
             // append remain
             if(!str.empty() || !hasSpace(ifs)) {
-                array->append(DSValue::create<String_Object>(
-                        state.getPool().getStringType(), std::move(str)));
+                array->append(DSValue::create<String_Object>(state.pool.getStringType(), std::move(str)));
             }
         }
         close(pipefds[READ_PIPE]);
 
         // wait exit
         int status;
-        state.xwaitpid(pid, status, 0);
+        xwaitpid(state, pid, status, 0);
         if(WIFEXITED(status)) {
             state.updateExitStatus(WEXITSTATUS(status));
         }
@@ -572,6 +821,45 @@ static PipelineState &activePipeline(DSState &state) {
     return *typeAs<PipelineState>(state.peek());
 }
 
+/**
+ * stack state in function apply    stack grow ===>
+ *
+ * +-----------+-------+--------+
+ * | stack top | param |
+ * +-----------+-------+--------+
+ *             | offset|
+ */
+void callUserDefinedCommand(DSState &st, const FuncObject *obj, DSValue *argArray) {
+    // create parameter (@)
+    std::vector<DSValue> values;
+    for(int i = 1; argArray[i]; i++) {
+        values.push_back(std::move(argArray[i]));
+    }
+    st.push(DSValue::create<Array_Object>(st.pool.getStringArrayType(), std::move(values)));
+
+    // set stack stack
+    windStackFrame(st, 1, 1, &obj->getCode());
+
+    // set variable
+    auto argv = typeAs<Array_Object>(st.getLocal(0));
+    const unsigned int argSize = argv->getValues().size();
+    st.setLocal(1, DSValue::create<Int_Object>(st.pool.getInt32Type(), argSize));   // #
+    st.setLocal(2, st.getGlobal(toIndex(BuiltinVarOffset::POS_0))); // 0
+    unsigned int limit = 9;
+    if(argSize < limit) {
+        limit = argSize;
+    }
+
+    unsigned int index;
+    for(index = 0; index < limit; index++) {
+        st.setLocal(index + 3, argv->getValues()[index]);
+    }
+
+    for(; index < 9; index++) {
+        st.setLocal(index + 3, st.emptyStrObj);  // set remain
+    }
+}
+
 static void callCommand(DSState &state, unsigned short procIndex) {
     // reset exit status
     state.updateExitStatus(0);
@@ -585,7 +873,7 @@ static void callCommand(DSState &state, unsigned short procIndex) {
     if(procKind == ProcState::ProcKind::USER_DEFINED) { // invoke user-defined command
         auto *udcObj = procState.udcObj();
         closeAllPipe(procSize, pipeline.selfpipes);
-        state.callUserDefinedCommand(udcObj, ptr);
+        callUserDefinedCommand(state, udcObj, ptr);
         return;
     } else {
         // create argv
@@ -611,7 +899,7 @@ static void callCommand(DSState &state, unsigned short procIndex) {
                 pipeline.redirect(state, 0, -1);
 
                 const int pid = getpid();
-                state.updateExitStatus(cmd_ptr(&state, argc, argv));
+                state.updateExitStatus(cmd_ptr(state, argc, argv));
 
                 if(pid == getpid()) {   // in parent process (if call command or eval, may be child)
                     // flush and restore
@@ -624,7 +912,7 @@ static void callCommand(DSState &state, unsigned short procIndex) {
                 }
             } else {
                 closeAllPipe(procSize, pipeline.selfpipes);
-                state.updateExitStatus(cmd_ptr(&state, argc, argv));
+                state.updateExitStatus(cmd_ptr(state, argc, argv));
             }
             return;
         } else {    // invoke external command
@@ -682,7 +970,7 @@ static void callPipeline(DSState &state) {
     std::pair<unsigned int, ChildError> errorPair;
     unsigned int procIndex;
     unsigned int actualProcSize = 0;
-    for(procIndex = 0; procIndex < procSize && (pid = state.xfork()) > 0; procIndex++) {
+    for(procIndex = 0; procIndex < procSize && (pid = xfork(state)) > 0; procIndex++) {
         actualProcSize++;
         pipeline.procStates[procIndex].setPid(pid);
 
@@ -701,7 +989,7 @@ static void callPipeline(DSState &state) {
 
             if(childError.errorNum == ENOENT) { // if file not found, remove path cache
                 const char *cmdName = pipeline.getCommandName(procIndex);
-                state.getPathCache().removePath(cmdName);
+                state.pathCache.removePath(cmdName);
             }
             procIndex = procSize;
             break;
@@ -716,7 +1004,7 @@ static void callPipeline(DSState &state) {
         // wait for exit
         for(unsigned int i = 0; i < actualProcSize; i++) {
             int status = 0;
-            state.xwaitpid(pipeline.procStates[i].pid(), status, 0);
+            xwaitpid(state, pipeline.procStates[i].pid(), status, 0);
             if(WIFEXITED(status)) {
                 pipeline.procStates[i].set(ProcState::NORMAL, WEXITSTATUS(status));
             }
@@ -778,7 +1066,7 @@ void PipelineState::checkChildError(DSState &state, const std::pair<unsigned int
             }
         }
         state.updateExitStatus(1);
-        state.throwSystemError(errorPair.second.errorNum, std::move(msg));
+        throwSystemError(state, errorPair.second.errorNum, std::move(msg));
     }
 }
 
@@ -796,7 +1084,7 @@ static void openProc(DSState &state) {
 
     // first, check user-defined command
     {
-        auto *udcObj = state.lookupUserDefinedCommand(commandName);
+        auto *udcObj = lookupUserDefinedCommand(state, commandName);
         if(udcObj != nullptr) {
             procKind = ProcState::ProcKind::USER_DEFINED;
             ptr = udcObj;
@@ -814,7 +1102,7 @@ static void openProc(DSState &state) {
 
     // resolve external command path
     if(ptr == nullptr) {
-        ptr = (void *)state.getPathCache().searchPath(commandName);
+        ptr = (void *)state.pathCache.searchPath(commandName);
     }
 
     auto &pipeline = activePipeline(state);
@@ -837,7 +1125,7 @@ static void closeProc(DSState &state) {
 static void addArg(DSState &state, bool skipEmptyString) {
     DSValue value = state.pop();
     DSType *valueType = value->getType();
-    if(*valueType == state.getPool().getStringType()) {
+    if(*valueType == state.pool.getStringType()) {
         if(skipEmptyString && typeAs<String_Object>(value)->empty()) {
             return;
         }
@@ -845,7 +1133,7 @@ static void addArg(DSState &state, bool skipEmptyString) {
         return;
     }
 
-    if(*valueType == state.getPool().getStringArrayType()) {
+    if(*valueType == state.pool.getStringArrayType()) {
         Array_Object *arrayObj = typeAs<Array_Object>(value);
         for(auto &element : arrayObj->getValues()) {
             if(typeAs<String_Object>(element)->empty()) {
@@ -854,7 +1142,7 @@ static void addArg(DSState &state, bool skipEmptyString) {
             activePipeline(state).argArray.push_back(element);
         }
     } else {
-        fatal("illegal command parameter type: %s\n", state.getPool().getTypeName(*valueType).c_str());
+        fatal("illegal command parameter type: %s\n", state.pool.getTypeName(*valueType).c_str());
     }
 }
 
@@ -864,10 +1152,10 @@ static void addArg(DSState &state, bool skipEmptyString) {
 static void addRedirOption(DSState &state, RedirectOP op) {
     DSValue value = state.pop();
     DSType *valueType = value->getType();
-    if(*valueType == state.getPool().getStringType()) {
+    if(*valueType == state.pool.getStringType()) {
         activePipeline(state).redirOptions.push_back(std::make_pair(op, value));
     } else {
-        fatal("illegal command parameter type: %s\n", state.getPool().getTypeName(*valueType).c_str());
+        fatal("illegal command parameter type: %s\n", state.pool.getTypeName(*valueType).c_str());
     }
 }
 
@@ -897,7 +1185,7 @@ static bool mainLoop(DSState &state) {
 
             auto stackTopType = reinterpret_cast<DSType *>(v);
             assert(!stackTopType->isVoidType());
-            std::cout << "(" << state.getPool().getTypeName(*stackTopType) << ") "
+            std::cout << "(" << state.pool.getTypeName(*stackTopType) << ") "
                       << typeAs<String_Object>(state.pop())->getValue() << std::endl;
             break;
         }
@@ -907,9 +1195,9 @@ static bool mainLoop(DSState &state) {
 
             auto *targetType = reinterpret_cast<DSType *>(v);
             if(state.pop()->introspect(state, targetType)) {
-                state.push(state.getTrueObj());
+                state.push(state.trueObj);
             } else {
-                state.push(state.getFalseObj());
+                state.push(state.falseObj);
             }
             break;
         }
@@ -920,15 +1208,15 @@ static bool mainLoop(DSState &state) {
             break;
         }
         vmcase(PUSH_TRUE) {
-            state.push(state.getTrueObj());
+            state.push(state.trueObj);
             break;
         }
         vmcase(PUSH_FALSE) {
-            state.push(state.getFalseObj());
+            state.push(state.falseObj);
             break;
         }
         vmcase(PUSH_ESTRING) {
-            state.push(state.getEmptyStrObj());
+            state.push(state.emptyStrObj);
             break;
         }
         vmcase(LOAD_CONST) {
@@ -949,9 +1237,9 @@ static bool mainLoop(DSState &state) {
 
             auto *func = typeAs<FuncObject>(state.peek());
             if(func->getType() == nullptr) {
-                auto *handle = state.getSymbolTable().lookupHandle(func->getCode().getName());
+                auto *handle = state.symbolTable.lookupHandle(func->getCode().getName());
                 assert(handle != nullptr);
-                func->setType(handle->getFieldType(state.getPool()));
+                func->setType(handle->getFieldType(state.pool));
             }
             break;
         }
@@ -1000,7 +1288,7 @@ static bool mainLoop(DSState &state) {
             DSValue name = state.pop();
             const char *value = getenv(typeAs<String_Object>(name)->getValue());
             assert(value != nullptr);
-            state.push(DSValue::create<String_Object>(state.getPool().getStringType(), value));
+            state.push(DSValue::create<String_Object>(state.pool.getStringType(), value));
             break;
         }
         vmcase(STORE_ENV) {
@@ -1028,7 +1316,7 @@ static bool mainLoop(DSState &state) {
             break;
         }
         vmcase(NEW_STRING) {
-            state.push(DSValue::create<String_Object>(state.getPool().getStringType()));
+            state.push(DSValue::create<String_Object>(state.pool.getStringType()));
             break;
         }
         vmcase(APPEND_STRING) {
@@ -1068,13 +1356,20 @@ static bool mainLoop(DSState &state) {
         vmcase(NEW) {
             unsigned long v = read64(GET_CODE(state), state.pc() + 1);
             state.pc() += 8;
-            state.newDSObject(reinterpret_cast<DSType *>(v));
+
+            DSType *type = reinterpret_cast<DSType *>(v);
+            if(!type->isRecordType()) {
+                state.dummy->setType(type);
+                state.push(state.dummy);
+            } else {
+                fatal("currently, DSObject allocation not supported\n");
+            }
             break;
         }
         vmcase(CALL_INIT) {
             unsigned short paramSize = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;
-            state.callConstructor(paramSize);
+            callConstructor(state, paramSize);
             break;
         }
         vmcase(CALL_METHOD) {
@@ -1082,13 +1377,13 @@ static bool mainLoop(DSState &state) {
             state.pc() += 2;
             unsigned short paramSize = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;
-            state.callMethod(index, paramSize);
+            callMethod(state, index, paramSize);
             break;
         }
         vmcase(CALL_FUNC) {
             unsigned short paramSize = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;
-            state.applyFuncObject(paramSize);
+            applyFuncObject(state, paramSize);
             break;
         }
         vmcase(CALL_NATIVE) {
@@ -1104,42 +1399,42 @@ static bool mainLoop(DSState &state) {
         vmcase(INVOKE_METHOD) {
             unsigned short index = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;
-            state.invokeMethod(index);
+            invokeMethod(state, index);
             break;
         }
         vmcase(INVOKE_GETTER) {
             unsigned short index = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;
-            state.invokeGetter(index);
+            invokeGetter(state, index);
             break;
         }
         vmcase(INVOKE_SETTER) {
             unsigned short index = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;
-            state.invokeSetter(index);
+            invokeSetter(state, index);
             break;
         }
         vmcase(RETURN) {
-            state.unwindStackFrame();
-            if(state.codeStack().empty()) {
+            unwindStackFrame(state);
+            if(state.codeStack.empty()) {
                 return true;
             }
             break;
         }
         vmcase(RETURN_V) {
             DSValue v(state.pop());
-            state.unwindStackFrame();
+            unwindStackFrame(state);
             state.push(std::move(v));
-            if(state.codeStack().empty()) {
+            if(state.codeStack.empty()) {
                 return true;
             }
             break;
         }
         vmcase(RETURN_UDC) {
             auto v = state.pop();
-            state.unwindStackFrame();
+            unwindStackFrame(state);
             state.updateExitStatus(typeAs<Int_Object>(v)->getValue());
-            if(state.codeStack().empty()) {
+            if(state.codeStack.empty()) {
                 return true;
             }
             break;
@@ -1183,7 +1478,7 @@ static bool mainLoop(DSState &state) {
             break;
         }
         vmcase(COPY_INT) {
-            DSType *type = state.getPool().getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
+            DSType *type = state.pool.getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
             int v = typeAs<Int_Object>(state.pop())->getValue();
             state.push(DSValue::create<Int_Object>(*type, v));
             break;
@@ -1191,13 +1486,13 @@ static bool mainLoop(DSState &state) {
         vmcase(TO_BYTE) {
             unsigned int v = typeAs<Int_Object>(state.pop())->getValue();
             v &= 0xFF;  // fill higher bits (8th ~ 31) with 0
-            state.push(DSValue::create<Int_Object>(state.getPool().getByteType(), v));
+            state.push(DSValue::create<Int_Object>(state.pool.getByteType(), v));
             break;
         }
         vmcase(TO_U16) {
             unsigned int v = typeAs<Int_Object>(state.pop())->getValue();
             v &= 0xFFFF;    // fill higher bits (16th ~ 31th) with 0
-            state.push(DSValue::create<Int_Object>(state.getPool().getUint16Type(), v));
+            state.push(DSValue::create<Int_Object>(state.pool.getUint16Type(), v));
             break;
         }
         vmcase(TO_I16) {
@@ -1206,31 +1501,31 @@ static bool mainLoop(DSState &state) {
             if(v & 0x8000) {    // if 15th bit is 1, fill higher bits with 1
                 v |= 0xFFFF0000;
             }
-            state.push(DSValue::create<Int_Object>(state.getPool().getInt16Type(), v));
+            state.push(DSValue::create<Int_Object>(state.pool.getInt16Type(), v));
             break;
         }
         vmcase(NEW_LONG) {
-            DSType *type = state.getPool().getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
+            DSType *type = state.pool.getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
             unsigned int v = typeAs<Int_Object>(state.pop())->getValue();
             unsigned long l = v;
             state.push(DSValue::create<Long_Object>(*type, l));
             break;
         }
         vmcase(COPY_LONG) {
-            DSType *type = state.getPool().getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
+            DSType *type = state.pool.getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
             long v = typeAs<Long_Object>(state.pop())->getValue();
             state.push(DSValue::create<Long_Object>(*type, v));
             break;
         }
         vmcase(I_NEW_LONG) {
-            DSType *type = state.getPool().getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
+            DSType *type = state.pool.getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
             int v = typeAs<Int_Object>(state.pop())->getValue();
             long l = v;
             state.push(DSValue::create<Long_Object>(*type, l));
             break;
         }
         vmcase(NEW_INT) {
-            DSType *type = state.getPool().getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
+            DSType *type = state.pool.getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
             unsigned long l = typeAs<Long_Object>(state.pop())->getValue();
             unsigned int v = static_cast<unsigned int>(l);
             state.push(DSValue::create<Int_Object>(*type, v));
@@ -1239,49 +1534,49 @@ static bool mainLoop(DSState &state) {
         vmcase(U32_TO_D) {
             unsigned int v = typeAs<Int_Object>(state.pop())->getValue();
             double d = static_cast<double>(v);
-            state.push(DSValue::create<Float_Object>(state.getPool().getFloatType(), d));
+            state.push(DSValue::create<Float_Object>(state.pool.getFloatType(), d));
             break;
         }
         vmcase(I32_TO_D) {
             int v = typeAs<Int_Object>(state.pop())->getValue();
             double d = static_cast<double>(v);
-            state.push(DSValue::create<Float_Object>(state.getPool().getFloatType(), d));
+            state.push(DSValue::create<Float_Object>(state.pool.getFloatType(), d));
             break;
         }
         vmcase(U64_TO_D) {
             unsigned long v = typeAs<Long_Object>(state.pop())->getValue();
             double d = static_cast<double>(v);
-            state.push(DSValue::create<Float_Object>(state.getPool().getFloatType(), d));
+            state.push(DSValue::create<Float_Object>(state.pool.getFloatType(), d));
             break;
         }
         vmcase(I64_TO_D) {
             long v = typeAs<Long_Object>(state.pop())->getValue();
             double d = static_cast<double>(v);
-            state.push(DSValue::create<Float_Object>(state.getPool().getFloatType(), d));
+            state.push(DSValue::create<Float_Object>(state.pool.getFloatType(), d));
             break;
         }
         vmcase(D_TO_U32) {
             double d = typeAs<Float_Object>(state.pop())->getValue();
             unsigned int v = static_cast<unsigned int>(d);
-            state.push(DSValue::create<Int_Object>(state.getPool().getUint32Type(), v));
+            state.push(DSValue::create<Int_Object>(state.pool.getUint32Type(), v));
             break;
         }
         vmcase(D_TO_I32) {
             double d = typeAs<Float_Object>(state.pop())->getValue();
             int v = static_cast<int>(d);
-            state.push(DSValue::create<Int_Object>(state.getPool().getInt32Type(), v));
+            state.push(DSValue::create<Int_Object>(state.pool.getInt32Type(), v));
             break;
         }
         vmcase(D_TO_U64) {
             double d = typeAs<Float_Object>(state.pop())->getValue();
             unsigned long v = static_cast<unsigned long>(d);
-            state.push(DSValue::create<Long_Object>(state.getPool().getUint64Type(), v));
+            state.push(DSValue::create<Long_Object>(state.pool.getUint64Type(), v));
             break;
         }
         vmcase(D_TO_I64) {
             double d = typeAs<Float_Object>(state.pop())->getValue();
             long v = static_cast<long>(d);
-            state.push(DSValue::create<Long_Object>(state.getPool().getInt64Type(), v));
+            state.push(DSValue::create<Long_Object>(state.pool.getInt64Type(), v));
             break;
         }
         vmcase(SUCCESS_CHILD) {
@@ -1336,7 +1631,7 @@ static bool mainLoop(DSState &state) {
         }
         vmcase(EXPAND_TILDE) {
             std::string str(expandTilde(typeAs<String_Object>(state.pop())->getValue()));
-            state.push(DSValue::create<String_Object>(state.getPool().getStringType(), std::move(str)));
+            state.push(DSValue::create<String_Object>(state.pool.getStringType(), std::move(str)));
             break;
         }
         vmcase(CALL_CMD) {
@@ -1347,9 +1642,9 @@ static bool mainLoop(DSState &state) {
         vmcase(POP_PIPELINE) {
             state.popNoReturn();
             if(state.getExitStatus() == 0) {
-                state.push(state.getTrueObj());
+                state.push(state.trueObj);
             } else {
-                state.push(state.getFalseObj());
+                state.push(state.falseObj);
             }
             break;
         }
@@ -1362,7 +1657,7 @@ static bool mainLoop(DSState &state) {
  * otherwise return false.
  */
 static bool handleException(DSState &state) {
-    while(!state.codeStack().empty()) {
+    while(!state.codeStack.empty()) {
         if(!CODE(state)->is(CodeKind::NATIVE)) {
             auto *cc = static_cast<const CompiledCode *>(CODE(state));
 
@@ -1375,16 +1670,16 @@ static bool handleException(DSState &state) {
                 if(occurredPC >= entry.begin && occurredPC < entry.end
                    && entry.type->isSameOrBaseTypeOf(*occurredType)) {
                     state.pc() = entry.dest - 1;
-                    state.clearOperandStack();
+                    clearOperandStack(state);
                     state.loadThrownObject();
                     return true;
                 }
             }
         }
-        if(state.codeStack().size() == 1) {
+        if(state.codeStack.size() == 1) {
             break;  // when top level
         }
-        state.unwindStackFrame();
+        unwindStackFrame(state);
     }
     return false;
 }
@@ -1394,13 +1689,13 @@ static bool handleException(DSState &state) {
 bool vmEval(DSState &state, CompiledCode &code) {
     state.resetState();
 
-    state.codeStack().push_back(&code);
-    state.skipHeader();
+    state.codeStack.push_back(&code);
+    skipHeader(state);
 
     while(true) {
         try {
             bool ret = mainLoop(state);
-            state.codeStack().clear();
+            state.codeStack.clear();
             return ret;
         } catch(const DSExcepton &) {
             if(handleException(state)) {
@@ -1411,19 +1706,21 @@ bool vmEval(DSState &state, CompiledCode &code) {
     }
 }
 
-void DSState::execBuiltinCommand(char *const argv[]) {
-    int cmdIndex = getBuiltinCommandIndex(argv[0]);
-    if(cmdIndex < 0) {
+int execBuiltinCommand(DSState &st, char *const argv[]) {
+    builtin_command_t cmd = lookupBuiltinCommand(argv[0]);
+    if(cmd == nullptr) {
         fprintf(stderr, "ydsh: %s: not builtin command\n", argv[0]);
-        this->updateExitStatus(1);
-        return;
+        st.updateExitStatus(1);
+        return 1;
     }
 
     int argc;
     for(argc = 0; argv[argc] != nullptr; argc++);
 
-    this->updateExitStatus(::ydsh::execBuiltinCommand(this, cmdIndex, argc, argv));
+    int s = cmd(st, argc, argv);
+    st.updateExitStatus(s);
     flushStdFD();
+    return s;
 }
 
 DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, std::vector<DSValue> &&args) {
@@ -1439,7 +1736,7 @@ DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, s
         state.push(std::move(args[i]));
     }
 
-    state.callMethod(handle->getMethodIndex(), args.size());
+    callMethod(state, handle->getMethodIndex(), args.size());
     mainLoop(state);
     DSValue ret;
     if(!handle->getReturnType()->isVoidType()) {

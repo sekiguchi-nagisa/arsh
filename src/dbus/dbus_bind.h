@@ -20,7 +20,7 @@
 #include <unordered_set>
 
 #include "object.h"
-#include "state.h"
+#include "core.h"
 #include "dbus_util.h"
 
 namespace ydsh {

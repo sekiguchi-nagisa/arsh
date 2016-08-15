@@ -17,7 +17,7 @@
 #include <memory>
 
 #include "object.h"
-#include "state.h"
+#include "core.h"
 #include "misc/num.h"
 
 namespace ydsh {
@@ -45,7 +45,7 @@ bool DSObject::equals(const DSValue &obj) {
 }
 
 DSValue DSObject::str(DSState &ctx) {
-    return DSValue::create<String_Object>(ctx.getPool().getStringType(), this->toString(ctx, nullptr));
+    return DSValue::create<String_Object>(getPool(ctx).getStringType(), this->toString(ctx, nullptr));
 }
 
 DSValue DSObject::interp(DSState &ctx, VisitedSet *) {
@@ -69,7 +69,7 @@ bool DSObject::introspect(DSState &, DSType *targetType) {
 // ########################
 
 std::string Int_Object::toString(DSState &ctx, VisitedSet *) {
-    if(*this->type == ctx.getPool().getUint32Type()) {
+    if(*this->type == getPool(ctx).getUint32Type()) {
         return std::to_string(static_cast<unsigned int>(this->value));
     }
     return std::to_string(this->value);
@@ -88,7 +88,7 @@ size_t Int_Object::hash() {
 // #########################
 
 std::string Long_Object::toString(DSState &ctx, VisitedSet *) {
-    if(*this->type == ctx.getPool().getUint64Type()) {
+    if(*this->type == getPool(ctx).getUint64Type()) {
         return std::to_string(static_cast<unsigned long>(this->value));
     }
     return std::to_string(this->value);
@@ -164,8 +164,8 @@ static void checkCircularRef(DSState &ctx, VisitedSet * &visitedSet,
     if(visitedSet == nullptr) {
         auto &elementTypes = static_cast<ReifiedType *>(thisPtr->getType())->getElementTypes();
         for(auto &elementType : elementTypes) {
-            if(*elementType == ctx.getPool().getVariantType() ||
-               *elementType == ctx.getPool().getAnyType()) {
+            if(*elementType == getPool(ctx).getVariantType() ||
+               *elementType == getPool(ctx).getAnyType()) {
                 newSet = std::make_shared<VisitedSet>();
                 visitedSet = newSet.get();
                 break;
@@ -173,7 +173,7 @@ static void checkCircularRef(DSState &ctx, VisitedSet * &visitedSet,
         }
     } else {
         if(visitedSet->find((unsigned long) thisPtr) != visitedSet->end()) {
-            ctx.throwError(ctx.getPool().getStackOverflowErrorType(), "caused by circular reference");
+            throwError(ctx, getPool(ctx).getStackOverflowErrorType(), "caused by circular reference");
         }
     }
 }
@@ -248,29 +248,29 @@ DSValue Array_Object::interp(DSState &ctx, VisitedSet *visitedSet) {
         str += typeAs<String_Object>(this->values[i]->interp(ctx, visitedSet))->getValue();
         postVisit(visitedSet, this);
     }
-    return DSValue::create<String_Object>(ctx.getPool().getStringType(), std::move(str));
+    return DSValue::create<String_Object>(getPool(ctx).getStringType(), std::move(str));
 }
 
 DSValue Array_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
     std::shared_ptr<VisitedSet> newSet;
     checkCircularRef(ctx, visitedSet, newSet, this);
 
-    DSValue result(new Array_Object(ctx.getPool().getStringArrayType()));
+    DSValue result(new Array_Object(getPool(ctx).getStringArrayType()));
     for(auto &e : this->values) {
         preVisit(visitedSet, this);
         DSValue temp(e->commandArg(ctx, visitedSet));
         postVisit(visitedSet, this);
 
         DSType *tempType = temp->getType();
-        if(*tempType == ctx.getPool().getStringType()) {
+        if(*tempType == getPool(ctx).getStringType()) {
             typeAs<Array_Object>(result)->values.push_back(std::move(temp));
-        } else if(*tempType == ctx.getPool().getStringArrayType()) {
+        } else if(*tempType == getPool(ctx).getStringArrayType()) {
             Array_Object *tempArray = typeAs<Array_Object>(temp);
             for(auto &tempValue : tempArray->values) {
                 typeAs<Array_Object>(result)->values.push_back(tempValue);
             }
         } else {
-            fatal("illegal command argument type: %s\n", ctx.getPool().getTypeName(*tempType).c_str());
+            fatal("illegal command argument type: %s\n", getPool(ctx).getTypeName(*tempType).c_str());
         }
     }
     return result;
@@ -305,8 +305,7 @@ DSValue Map_Object::nextElement(DSState &ctx) {
     types[0] = this->iter->first->getType();
     types[1] = this->iter->second->getType();
 
-    DSValue entry(
-            new Tuple_Object(ctx.getPool().createTupleType(std::move(types))));
+    DSValue entry(new Tuple_Object(getPool(ctx).createTupleType(std::move(types))));
     typeAs<Tuple_Object>(entry)->set(0, this->iter->first);
     typeAs<Tuple_Object>(entry)->set(1, this->iter->second);
     ++this->iter;
@@ -396,14 +395,14 @@ DSValue Tuple_Object::interp(DSState &ctx, VisitedSet *visitedSet) {
         str += typeAs<String_Object>(this->fieldTable[i]->interp(ctx, visitedSet))->getValue();
         postVisit(visitedSet, this);
     }
-    return DSValue::create<String_Object>(ctx.getPool().getStringType(), std::move(str));
+    return DSValue::create<String_Object>(getPool(ctx).getStringType(), std::move(str));
 }
 
 DSValue Tuple_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
     std::shared_ptr<VisitedSet> newSet;
     checkCircularRef(ctx, visitedSet, newSet, this);
 
-    DSValue result(new Array_Object(ctx.getPool().getStringArrayType()));
+    DSValue result(new Array_Object(getPool(ctx).getStringArrayType()));
     unsigned int size = this->getElementSize();
     for(unsigned int i = 0; i < size; i++) {
         preVisit(visitedSet, this);
@@ -411,15 +410,15 @@ DSValue Tuple_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
         postVisit(visitedSet, this);
 
         DSType *tempType = temp->getType();
-        if(*tempType == ctx.getPool().getStringType()) {
+        if(*tempType == getPool(ctx).getStringType()) {
             typeAs<Array_Object>(result)->append(std::move(temp));
-        } else if(*tempType == ctx.getPool().getStringArrayType()) {
+        } else if(*tempType == getPool(ctx).getStringArrayType()) {
             Array_Object *tempArray = typeAs<Array_Object>(temp);
             for(auto &tempValue : tempArray->getValues()) {
                 typeAs<Array_Object>(result)->append(tempValue);
             }
         } else {
-            fatal("illegal command argument type: %s\n", ctx.getPool().getTypeName(*tempType).c_str());
+            fatal("illegal command argument type: %s\n", getPool(ctx).getTypeName(*tempType).c_str());
         }
     }
     return result;
@@ -444,7 +443,7 @@ unsigned int getOccuredLineNum(const std::vector<StackTraceElement> &elements) {
 // ##########################
 
 std::string Error_Object::toString(DSState &ctx, VisitedSet *) {
-    std::string str(ctx.getPool().getTypeName(*this->type));
+    std::string str(getPool(ctx).getTypeName(*this->type));
     str += ": ";
     str += typeAs<String_Object>(this->message)->getValue();
     return str;
@@ -463,25 +462,25 @@ void Error_Object::printStackTrace(DSState &ctx) {
 const DSValue &Error_Object::getName(DSState &ctx) {
     if(!this->name) {
         this->name = DSValue::create<String_Object>(
-                ctx.getPool().getStringType(), ctx.getPool().getTypeName(*this->type));
+                getPool(ctx).getStringType(), getPool(ctx).getTypeName(*this->type));
     }
     return this->name;
 }
 
-DSValue Error_Object::newError(DSState &ctx, DSType &type, const DSValue &message) {
+DSValue Error_Object::newError(const DSState &ctx, DSType &type, const DSValue &message) {
     auto obj = DSValue::create<Error_Object>(type, message);
     typeAs<Error_Object>(obj)->createStackTrace(ctx);
     return obj;
 }
 
-DSValue Error_Object::newError(DSState &ctx, DSType &type, DSValue &&message) {
+DSValue Error_Object::newError(const DSState &ctx, DSType &type, DSValue &&message) {
     auto obj = DSValue::create<Error_Object>(type, std::move(message));
     typeAs<Error_Object>(obj)->createStackTrace(ctx);
     return obj;
 }
 
-void Error_Object::createStackTrace(DSState &ctx) {
-    ctx.fillInStackTrace(this->stackTrace);
+void Error_Object::createStackTrace(const DSState &ctx) {
+    fillInStackTrace(ctx, this->stackTrace);
 }
 
 unsigned int getSourcePos(const SourcePosEntry *const entries, unsigned int index) {  //FIXME binary search

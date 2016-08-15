@@ -21,7 +21,7 @@
 #include "bind.h"
 #include "parser.h"
 #include "type_checker.h"
-#include "state.h"
+#include "core.h"
 
 namespace ydsh {
 
@@ -692,7 +692,7 @@ DSType &TypePool::getDBusInterfaceType(const std::string &typeName) {
     DSType *type = this->typeMap.getType(typeName);
     if(type == nullptr) {
         // load dbus interface
-        std::string ifacePath(DSState::getIfaceDir());
+        std::string ifacePath(getIfaceDir());
         ifacePath += "/";
         ifacePath += typeName;
 
