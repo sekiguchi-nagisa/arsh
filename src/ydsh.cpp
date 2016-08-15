@@ -522,10 +522,6 @@ const char *DSState_prompt(DSState *st, unsigned int n) {
     return st->refPrompt().c_str();
 }
 
-int DSState_supportDBus() {
-    return hasFlag(DSState_featureBit(), DS_FEATURE_DBUS) ? 1 : 0;
-}
-
 unsigned int DSState_majorVersion() {
     return X_INFO_MAJOR_VERSION;
 }

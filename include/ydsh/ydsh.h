@@ -175,13 +175,6 @@ int DSState_exec(DSState *st, char *const *argv);
  */
 const char *DSState_prompt(DSState *st, unsigned int n);
 
-/**
- * check if support D-Bus binding.
- * @return
- * if support D-Bus, return 1.
- * otherwise, return 0.
- */
-int DSState_supportDBus();
 
 // for version information
 unsigned int DSState_majorVersion();
@@ -203,6 +196,16 @@ const char *DSState_copyright();
 #define DS_FEATURE_FIXED_TIME ((unsigned int) (1 << 3))
 
 unsigned int DSState_featureBit();
+
+/**
+ * check if support D-Bus binding.
+ * @return
+ * if support D-Bus, return 1.
+ * otherwise, return 0.
+ */
+inline int DSState_supportDBus() {
+    return DSState_featureBit() & DS_FEATURE_DBUS ? 1 : 0;
+}
 
 
 // for termination hook
