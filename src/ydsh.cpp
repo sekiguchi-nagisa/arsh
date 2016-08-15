@@ -57,7 +57,10 @@ static unsigned int getShellLevel() {
     return level;
 }
 
-static const unsigned int originalShellLevel = getShellLevel();
+static unsigned int originalShellLevel() {
+    static unsigned int level = getShellLevel();
+    return level;
+}
 
 
 static void setErrorInfo(DSError *error, unsigned int type, unsigned int lineNum, const char *errorName) {
@@ -380,7 +383,7 @@ DSState *DSState_create() {
     setlocale(LC_MESSAGES, "C");
 
     // update shell level
-    setenv(ENV_SHLVL, std::to_string(originalShellLevel + 1).c_str(), 1);
+    setenv(ENV_SHLVL, std::to_string(originalShellLevel() + 1).c_str(), 1);
 
     // set some env
     if(getenv(ENV_HOME) == nullptr) {
