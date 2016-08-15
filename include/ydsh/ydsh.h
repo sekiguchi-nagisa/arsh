@@ -45,7 +45,7 @@ DSState *DSState_create();
 void DSState_delete(DSState **st);
 
 void DSState_setLineNum(DSState *st, unsigned int lineNum);
-unsigned int DSState_lineNum(DSState *st);
+unsigned int DSState_lineNum(const DSState *st);
 
 /**
  * set shell name ($0).
@@ -75,6 +75,7 @@ void DSState_setArguments(DSState *st, char *const *args);
 #define DS_OPTION_TOPLEVEL   ((unsigned int) (1 << 5))
 #define DS_OPTION_TRACE_EXIT ((unsigned int) (1 << 6))
 
+unsigned int DSState_option(const DSState *st);
 void DSState_setOption(DSState *st, unsigned int optionSet);
 void DSState_unsetOption(DSState *st, unsigned int optionSet);
 
@@ -250,7 +251,7 @@ typedef struct {
  * @param c
  * may be null.
  */
-void DSState_complete(DSState *st, const char *buf, size_t cursor, DSCandidates *c);
+void DSState_complete(const DSState *st, const char *buf, size_t cursor, DSCandidates *c);
 
 /**
  * release buffer of candidates.

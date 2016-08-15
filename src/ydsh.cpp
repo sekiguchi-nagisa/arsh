@@ -408,7 +408,7 @@ void DSState_setLineNum(DSState *st, unsigned int lineNum) {
     st->lineNum = lineNum;
 }
 
-unsigned int DSState_lineNum(DSState *st) {
+unsigned int DSState_lineNum(const DSState *st) {
     return st->lineNum;
 }
 
@@ -462,6 +462,10 @@ void DSState_setArguments(DSState *st, char *const *args) {
         array->append(DSValue::create<String_Object>(st->pool.getStringType(), std::string(args[i])));
     }
     finalizeScriptArg(st);
+}
+
+unsigned int DSState_option(const DSState *st) {
+    return st->option;
 }
 
 void DSState_setOption(DSState *st, unsigned int optionSet) {
@@ -561,7 +565,7 @@ void DSState_addTerminationHook(DSState *st, TerminationHook hook) {
     st->terminationHook = hook;
 }
 
-void DSState_complete(DSState *st, const char *buf, size_t cursor, DSCandidates *c) {
+void DSState_complete(const DSState *st, const char *buf, size_t cursor, DSCandidates *c) {
     if(c == nullptr) {
         return;
     }
