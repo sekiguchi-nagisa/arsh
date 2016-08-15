@@ -159,7 +159,7 @@ DSState::DSState() :
         stackTopIndex(0), stackBottomIndex(0), localVarOffset(0), pc_(0),
         option(DS_OPTION_ASSERT), IFS_index(0),
         codeStack_(), pipelineEvaluator(nullptr),
-        pathCache(), terminationHook(nullptr), lineNum(1), prompt() { }
+        pathCache(), terminationHook(nullptr), lineNum(1), prompt(), hook(nullptr) { }
 
 DSState::~DSState() {
     delete[] this->callStack;

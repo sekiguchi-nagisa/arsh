@@ -26,7 +26,7 @@ extern char **environ;
 
 namespace ydsh {
 
-#define vmswitch(V) switch(static_cast<OpCode>(V))
+#define vmswitch(V) switch(V)
 
 #if 0
 #define vmcase(code) case OpCode::code: {fprintf(stderr, "pc: %u, code: %s\n", ctx.pc(), #code); }
@@ -873,7 +873,14 @@ static void addRedirOption(DSState &state, RedirectOP op) {
 
 static bool mainLoop(DSState &state) {
     while(true) {
-        vmswitch(GET_CODE(state)[++state.pc()]) {
+        // fetch next opcode
+        OpCode op = static_cast<OpCode>(GET_CODE(state)[++state.pc()]);
+        if(state.getHook() != nullptr) {
+            state.getHook()->vmFetchHook(state, op);
+        }
+
+        // dispatch instruction
+        vmswitch(op) {
         vmcase(NOP) {
             break;
         }

@@ -34,6 +34,8 @@
 
 namespace ydsh {
 
+struct DebugHook;
+
 /**
  * enum order is corresponding to builtin variable declaration order.
  */
@@ -228,6 +230,8 @@ private:
      * previously computed prompt (DSState_prompt() )
      */
     std::string prompt;
+
+    DebugHook *hook;
 
     static std::string logicalWorkingDir;
 
@@ -611,6 +615,14 @@ public:
     std::string &refPrompt() {
         return this->prompt;
     }
+
+    DebugHook *getHook() const {
+        return this->hook;
+    }
+
+    void setHook(DebugHook *hook) {
+        this->hook = hook;
+    }
 };
 
 /**
@@ -636,5 +648,13 @@ DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, s
  * path is starts with tilde.
  */
 std::string expandTilde(const char *path);
+
+namespace ydsh {
+
+struct DebugHook {
+    virtual void vmFetchHook(DSState &st, OpCode op) = 0;
+};
+
+} // namespace ydsh
 
 #endif //YDSH_STATE_H
