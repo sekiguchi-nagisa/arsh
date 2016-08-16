@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2016 Nagisa Sekiguchi
+ * Copyright (C) 2016 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_STATE_H
-#define YDSH_STATE_H
+#ifndef YDSH_VM_H
+#define YDSH_VM_H
 
 #include <unistd.h>
 
@@ -388,4 +388,4 @@ int execBuiltinCommand(DSState &st, char *const argv[]);
  */
 DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, std::vector<DSValue> &&args);
 
-#endif //YDSH_STATE_H
+#endif //YDSH_VM_H

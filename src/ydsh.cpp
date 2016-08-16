@@ -31,7 +31,7 @@
 #include "lexer.h"
 #include "parser.h"
 #include "type_checker.h"
-#include "state.h"
+#include "vm.h"
 #include "symbol.h"
 #include "logger.h"
 #include "codegen.h"

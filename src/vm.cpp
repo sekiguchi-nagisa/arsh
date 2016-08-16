@@ -19,8 +19,65 @@
 #include <stdlib.h>
 
 #include "opcode.h"
-#include "state.h"
+#include "vm.h"
 #include "logger.h"
+#include "symbol.h"
+#include "misc/files.h"
+
+
+// #####################
+// ##     DSState     ##
+// #####################
+
+static std::string initLogicalWorkingDir() {
+    const char *dir = getenv(ENV_PWD);
+    if(dir == nullptr || !S_ISDIR(getStMode(dir))) {
+        size_t size = PATH_MAX;
+        char buf[size];
+        const char *cwd = getcwd(buf, size);
+        return std::string(cwd != nullptr ? cwd : "");
+    }
+    if(dir[0] == '/') {
+        return std::string(dir);
+    } else {
+        return expandDots(nullptr, dir);
+    }
+}
+
+DSState::DSState() :
+        pool(), symbolTable(),
+        trueObj(new Boolean_Object(this->pool.getBooleanType(), true)),
+        falseObj(new Boolean_Object(this->pool.getBooleanType(), false)),
+        emptyStrObj(new String_Object(this->pool.getStringType(), std::string())),
+        dummy(new DummyObject()), thrownObject(),
+        callStack(new DSValue[DEFAULT_STACK_SIZE]),
+        callStackSize(DEFAULT_STACK_SIZE), globalVarSize(0),
+        stackTopIndex(0), stackBottomIndex(0), localVarOffset(0), pc_(0),
+        option(DS_OPTION_ASSERT), IFS_index(0),
+        codeStack(), pipelineEvaluator(nullptr),
+        pathCache(), terminationHook(nullptr), lineNum(1), prompt(),
+        hook(nullptr), logicalWorkingDir(initLogicalWorkingDir()) { }
+
+void DSState::expandLocalStack() {
+    const unsigned int needSize = this->stackTopIndex;
+    if(needSize >= MAXIMUM_STACK_SIZE) {
+        this->stackTopIndex = this->callStackSize - 1;
+        throwError(*this, this->pool.getStackOverflowErrorType(), "local stack size reaches limit");
+    }
+
+    unsigned int newSize = this->callStackSize;
+    do {
+        newSize += (newSize >> 1);
+    } while(newSize < needSize);
+    auto newTable = new DSValue[newSize];
+    for(unsigned int i = 0; i < this->callStackSize; i++) {
+        newTable[i] = std::move(this->callStack[i]);
+    }
+    delete[] this->callStack;
+    this->callStack = newTable;
+    this->callStackSize = newSize;
+}
+
 
 extern char **environ;
 

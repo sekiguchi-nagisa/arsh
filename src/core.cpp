@@ -24,7 +24,7 @@
 #include <cassert>
 
 #include <config.h>
-#include "state.h"
+#include "vm.h"
 #include "symbol.h"
 #include "parser.h"
 #include "logger.h"
