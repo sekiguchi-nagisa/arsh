@@ -791,7 +791,9 @@ void ByteCodeGenerator::visitForNode(ForNode &node) {
 
     // generate code
     this->visit(*node.getInitNode());
-    this->writeJumpIns(initLabel);
+    if(dynamic_cast<EmptyNode *>(node.getIterNode()) == nullptr) {
+        this->writeJumpIns(initLabel);
+    }
 
     this->markLabel(continueLabel);
     this->visit(*node.getIterNode());
@@ -801,7 +803,9 @@ void ByteCodeGenerator::visitForNode(ForNode &node) {
     this->writeBranchIns(breakLabel);
 
     this->visit(*node.getBlockNode());
-    this->writeJumpIns(continueLabel);
+    if(!node.getBlockNode()->getType().isBottomType()) {
+        this->writeJumpIns(continueLabel);
+    }
 
     this->markLabel(breakLabel);
 
@@ -821,10 +825,11 @@ void ByteCodeGenerator::visitWhileNode(WhileNode &node) {
     this->writeBranchIns(breakLabel);
 
     this->visit(*node.getBlockNode());
-    this->writeJumpIns(continueLabel);
+    if(!node.getBlockNode()->getType().isBottomType()) {
+        this->writeJumpIns(continueLabel);
+    }
 
     this->markLabel(breakLabel);
-
 
     // pop loop label
     this->curBuilder().loopLabels.pop_back();
@@ -838,15 +843,13 @@ void ByteCodeGenerator::visitDoWhileNode(DoWhileNode &node) {
     this->curBuilder().loopLabels.push_back(std::make_pair(breakLabel, continueLabel));
 
     // generate code
-    this->writeJumpIns(initLabel);
+    this->markLabel(initLabel);
+    this->visit(*node.getBlockNode());
 
     this->markLabel(continueLabel);
     this->visit(*node.getCondNode());
     this->writeBranchIns(breakLabel);
-
-    this->markLabel(initLabel);
-    this->visit(*node.getBlockNode());
-    this->writeJumpIns(continueLabel);
+    this->writeJumpIns(initLabel);
 
     this->markLabel(breakLabel);
 
