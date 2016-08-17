@@ -44,7 +44,7 @@ private:
     /**
      * attribute bit map.
      */
-    flag8_set_t attributeSet;
+    flag8_set_t attribute;
 
 public:
     // attribute definition
@@ -56,12 +56,8 @@ public:
 
     NON_COPYABLE(FieldHandle);
 
-    FieldHandle(DSType *fieldType, unsigned int fieldIndex, bool readOnly) :
-            fieldType(fieldType), fieldIndex(fieldIndex), attributeSet(0) {
-        if(readOnly) {
-            this->setAttribute(READ_ONLY);
-        }
-    }
+    FieldHandle(DSType *fieldType, unsigned int fieldIndex, flag8_set_t attribute) :
+            fieldType(fieldType), fieldIndex(fieldIndex), attribute(attribute) {}
 
     virtual ~FieldHandle() = default;
 
@@ -71,48 +67,31 @@ public:
         return this->fieldIndex;
     }
 
-    void setAttribute(flag8_t attribute) {
-        setFlag(this->attributeSet, attribute);
+    flag8_set_t getAttribute() const {
+        return this->attribute;
     }
 
-    void unsetAttribute(flag8_t attribute) {
-        unsetFlag(this->attributeSet, attribute);
-    }
-
-    /**
-     * if includes targetAttr, return true.
-     */
-    bool hasAttribute(flag8_t targetAttr) const {
-        return hasFlag(this->attributeSet, targetAttr);
-    }
-
-    /**
-     * equivalent to this->hasAttribute(READ_ONLY).
-     */
     bool isReadOnly() const {
-        return this->hasAttribute(READ_ONLY);
+        return hasFlag(this->getAttribute(), READ_ONLY);
     }
 
-    /**
-     * equivalent to this->hasAttribute(GLOBAL).
-     */
     bool isGlobal() const {
-        return this->hasAttribute(GLOBAL);
+        return hasFlag(this->getAttribute(), GLOBAL);
     }
 
     bool isEnv() const {
-        return this->hasAttribute(ENV);
+        return hasFlag(this->getAttribute(), ENV);
     }
 
     /**
      * if true, is FunctionHandle, equivalent to dynamic_cast<FunctionHandle*>(handle) != 0
      */
     bool isFuncHandle() const {
-        return this->hasAttribute(FUNC_HANDLE);
+        return hasFlag(this->getAttribute(), FUNC_HANDLE);
     }
 
     bool withinInterface() const {
-        return this->hasAttribute(INTERFACE);
+        return hasFlag(this->getAttribute(), INTERFACE);
     }
 };
 
@@ -126,10 +105,8 @@ protected:
 
 public:
     FunctionHandle(DSType *returnType, const std::vector<DSType *> &paramTypes, unsigned int fieldIndex) :
-            FieldHandle(0, fieldIndex, true),
-            returnType(returnType), paramTypes(paramTypes) {
-        this->setAttribute(FUNC_HANDLE);
-    }
+            FieldHandle(0, fieldIndex, READ_ONLY | FUNC_HANDLE | GLOBAL),
+            returnType(returnType), paramTypes(paramTypes) { }
 
     ~FunctionHandle() = default;
 
@@ -139,7 +116,7 @@ public:
         return this->returnType;
     }
 
-    const std::vector<DSType *> &getParamTypes();
+    const std::vector<DSType *> &getParamTypes() const;
 };
 
 class MethodHandle {

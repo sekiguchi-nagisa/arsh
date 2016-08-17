@@ -249,13 +249,13 @@ static int eval(DSState *state, Lexer &lexer, DSError *dsError) {
 }
 
 static void bindVariable(DSState *state, const char *varName, DSValue &&value) {
-    auto handle = state->symbolTable.registerHandle(varName, *value.get()->getType(), true);
+    auto handle = state->symbolTable.registerHandle(varName, *value.get()->getType(), FieldHandle::READ_ONLY);
     assert(handle != nullptr);
     state->setGlobal(handle->getFieldIndex(), std::move(value));
 }
 
 static void bindVariable(DSState *state, const char *varName, const DSValue &value) {
-    auto handle = state->symbolTable.registerHandle(varName, *value.get()->getType(), true);
+    auto handle = state->symbolTable.registerHandle(varName, *value.get()->getType(), FieldHandle::READ_ONLY);
     assert(handle != nullptr);
     state->setGlobal(handle->getFieldIndex(), value);
 }

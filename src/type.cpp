@@ -300,8 +300,8 @@ InterfaceType::~InterfaceType() {
 
 FieldHandle *InterfaceType::newFieldHandle(const std::string &fieldName, DSType &fieldType, bool readOnly) {
     // field index is always 0.
-    FieldHandle *handle = new FieldHandle(&fieldType, 0, readOnly);
-    handle->setAttribute(FieldHandle::INTERFACE);
+    FieldHandle *handle =
+            new FieldHandle(&fieldType, 0, (readOnly ? FieldHandle::READ_ONLY : 0) | FieldHandle::INTERFACE);
     auto pair = this->fieldHandleMap.insert(std::make_pair(fieldName, handle));
     if(pair.second) {
         return handle;

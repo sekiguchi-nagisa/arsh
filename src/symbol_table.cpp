@@ -76,14 +76,17 @@ FieldHandle *SymbolTable::lookupHandle(const std::string &symbolName) const {
     return nullptr;
 }
 
-FieldHandle *SymbolTable::registerHandle(const std::string &symbolName, DSType &type, bool readOnly) {
-    FieldHandle *handle = new FieldHandle(&type, this->scopes.back()->getCurVarIndex(), readOnly);
+FieldHandle *SymbolTable::registerHandle(const std::string &symbolName, DSType &type, flag8_set_t attribute) {
+    if(this->inGlobalScope()) {
+        setFlag(attribute, FieldHandle::GLOBAL);
+    }
+
+    FieldHandle *handle = new FieldHandle(&type, this->scopes.back()->getCurVarIndex(), attribute);
     if(!this->scopes.back()->addFieldHandle(symbolName, handle)) {
         delete handle;
         return nullptr;
     }
     if(this->inGlobalScope()) {
-        handle->setAttribute(FieldHandle::GLOBAL);
         this->handleCache.push_back(symbolName);
     }
     return handle;
@@ -97,7 +100,6 @@ FunctionHandle *SymbolTable::registerFuncHandle(const std::string &funcName, DST
         delete handle;
         return nullptr;
     }
-    handle->setAttribute(FieldHandle::GLOBAL);
     this->handleCache.push_back(funcName);
     return handle;
 }
@@ -106,7 +108,7 @@ FieldHandle *SymbolTable::registerUdc(const std::string &cmdName, DSType &type) 
     assert(this->inGlobalScope());
     std::string name = cmdSymbolPrefix;
     name += cmdName;
-    return this->registerHandle(name, type, true);
+    return this->registerHandle(name, type, FieldHandle::READ_ONLY);
 }
 
 FieldHandle *SymbolTable::lookupUdc(const char *cmdName) const {

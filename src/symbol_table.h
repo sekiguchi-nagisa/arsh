@@ -100,7 +100,7 @@ public:
     /**
      * return null, if found duplicated handle.
      */
-    FieldHandle *registerHandle(const std::string &symbolName, DSType &type, bool readOnly);
+    FieldHandle *registerHandle(const std::string &symbolName, DSType &type, flag8_set_t attribute);
 
     /**
      * return null, if found duplicated handle.

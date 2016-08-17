@@ -42,7 +42,7 @@ DSType *FunctionHandle::getFieldType(TypePool &typePool) {
     return this->fieldType;
 }
 
-const std::vector<DSType *> &FunctionHandle::getParamTypes() {
+const std::vector<DSType *> &FunctionHandle::getParamTypes() const {
     if(this->fieldType != nullptr) {
         return static_cast<FunctionType *>(this->fieldType)->getParamTypes();
     }

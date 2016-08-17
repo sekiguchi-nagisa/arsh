@@ -219,7 +219,7 @@ private:
 
     void resolveCoercion(DSType &requiredType, Node * &targetNode);
 
-    FieldHandle *addEntryAndThrowIfDefined(Node &node, const std::string &symbolName, DSType &type, bool readOnly);
+    FieldHandle *addEntryAndThrowIfDefined(Node &node, const std::string &symbolName, DSType &type, flag8_set_t attribute);
 
     bool isTopLevel() const {
         return this->visitingDepth == 1;
