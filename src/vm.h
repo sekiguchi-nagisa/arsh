@@ -35,7 +35,7 @@
 using namespace ydsh;
 
 // for exception handling
-struct DSExcepton {};
+struct DSException {};
 
 struct DSState {
     TypePool pool;
@@ -205,7 +205,7 @@ struct DSState {
 
     void throwException(DSValue &&except) {
         this->thrownObject = std::move(except);
-        throw DSExcepton();
+        throw DSException();
     }
 
     /**

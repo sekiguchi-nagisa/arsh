@@ -166,7 +166,7 @@ static void handleUncaughtException(DSState *st, DSValue &&except) {
         if(!bt) {
             std::cerr << typeAs<String_Object>(ret)->getValue() << std::endl;
         }
-    } catch(const DSExcepton &) {
+    } catch(const DSException &) {
         std::cerr << "cannot obtain string representation" << std::endl;
     }
 

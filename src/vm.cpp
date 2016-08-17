@@ -1749,7 +1749,7 @@ bool vmEval(DSState &state, CompiledCode &code) {
             bool ret = mainLoop(state);
             state.codeStack.clear();
             return ret;
-        } catch(const DSExcepton &) {
+        } catch(const DSException &) {
             if(handleException(state)) {
                 continue;
             }
