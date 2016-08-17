@@ -401,7 +401,11 @@ void ByteCodeGenerator::visitFloatValueNode(FloatValueNode &node) {
 }
 
 void ByteCodeGenerator::visitStringValueNode(StringValueNode &node) {
-    this->writeLdcIns(DSValue::create<String_Object>(node.getType(), StringValueNode::extract(std::move(node))));
+    if(node.getValue().empty()) {
+        this->write0byteIns(OpCode::PUSH_ESTRING);
+    } else {
+        this->writeLdcIns(DSValue::create<String_Object>(node.getType(), StringValueNode::extract(std::move(node))));
+    }
 }
 
 void ByteCodeGenerator::visitObjectPathNode(ObjectPathNode &node) {
