@@ -254,8 +254,8 @@ inline T *typeAs(const DSValue &value) noexcept {
         auto *r = dynamic_cast<T*>(value.get());
         if(r == nullptr) {
             DSObject &v = *value;
-            std::cerr << "target type is: " << Demangle()(typeid(T))
-            << ", but actual is: " << Demangle()(typeid(v)) << std::endl;
+            std::cerr << "target type is: " << demangle(typeid(T))
+            << ", but actual is: " << demangle(typeid(v)) << std::endl;
             abort();
         }
         return r;

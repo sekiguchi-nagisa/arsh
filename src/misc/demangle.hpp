@@ -23,17 +23,8 @@
 #include "fatal.h"
 
 namespace ydsh {
-namespace __detail_demangle {
 
-template <bool T>
-struct Demangle {
-    static_assert(T, "not allowed instantiation");
-
-    std::string operator()(const std::type_info &info) const;
-};
-
-template <bool T>
-std::string Demangle<T>::operator()(const std::type_info &info) const {
+inline std::string demangle(const std::type_info &info) {
     int status;
 
     char *className = abi::__cxa_demangle(info.name(), 0, 0, &status);
@@ -48,10 +39,6 @@ std::string Demangle<T>::operator()(const std::type_info &info) const {
 
     return str;
 }
-
-} // namespace __detail_demangle
-
-typedef __detail_demangle::Demangle<true> Demangle;
 
 } // namespace ydsh
 
