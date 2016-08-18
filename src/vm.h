@@ -240,9 +240,7 @@ struct DSState {
     }
 
     DSValue pop() {
-        DSValue v;
-        this->callStack[this->stackTopIndex--].swap(v);
-        return v;
+        return std::move(this->callStack[this->stackTopIndex--]);
     }
 
     void popNoReturn() {
