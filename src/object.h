@@ -653,6 +653,8 @@ struct NativeCode : public DSCode {
         this->code[10] = static_cast<unsigned char>(hasRet ? OpCode::RETURN_V : OpCode::RETURN);
     }
 
+    NativeCode(unsigned char *code) : DSCode(code) {}
+
     NativeCode(NativeCode &&o) : DSCode(o.code) {
         o.code = nullptr;
     }
@@ -667,6 +669,26 @@ struct NativeCode : public DSCode {
         return *this;
     }
 };
+
+/**
+ * DBUS_INIT_SIG
+ * DBUS_WAIT_SIG
+ * GOTO <prev inst>
+ * RETURN
+ *
+ * @return
+ */
+inline NativeCode createWaitSignalCode() {
+    unsigned char *code = reinterpret_cast<unsigned char *>(malloc(sizeof(unsigned char) * 9));
+    code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
+    code[1] = static_cast<unsigned char>(OpCode::DBUS_INIT_SIG);
+    code[2] = static_cast<unsigned char>(OpCode::DBUS_WAIT_SIG);
+    code[3] = static_cast<unsigned char>(OpCode::GOTO);
+    code[4] = code[5] = code[6] = code[7] = 0;
+    code[8] = static_cast<unsigned char>(OpCode::RETURN);
+    write32(code + 4, 2);
+    return NativeCode(code);
+}
 
 struct SourcePosEntry {
     unsigned int address;

@@ -405,27 +405,35 @@ DSValue DBus_Object::getSessionBus(DSState &ctx) {
     return this->sessionBus;
 }
 
-void DBus_Object::waitSignal(DSState &ctx) {
-    std::vector<DBusProxy_Object *> proxies;
-    proxies.push_back(typeAs<DBusProxy_Object>(getLocal(ctx, 1)));
+void DBus_Object::initSignalMatchRule(DSState &st) {
+    DBusProxy_Object *proxy = typeAs<DBusProxy_Object>(getLocal(st, 1));
 
     // add signal match rule
     Bus_Object *busObj =
-            typeAs<Bus_Object>(proxies[0]->isBelongToSystemBus() ? this->systemBus : this->sessionBus);
+            typeAs<Bus_Object>(proxy->isBelongToSystemBus() ? this->systemBus : this->sessionBus);
     DBusConnection *conn = busObj->getConnection();
 
-
     std::vector<std::string> ruleList;
-    proxies[0]->createSignalMatchRule(ruleList);
+    proxy->createSignalMatchRule(ruleList);
 
     auto error = newDBusError();
     for(auto &rule : ruleList) {
         LOG(TRACE_SIGNAL, "match rule: " << rule);
         dbus_bus_add_match(conn, rule.c_str(), &error);
         if(dbus_error_is_set(&error)) {
-            throwDBusError(ctx, error);
+            throwDBusError(st, error);
         }
     }
+}
+
+unsigned int DBus_Object::waitSignal(DSState &ctx) {    //TODO: timeout
+    DBusProxy_Object *proxy = typeAs<DBusProxy_Object>(getLocal(ctx, 1));
+
+    Bus_Object *busObj =
+            typeAs<Bus_Object>(proxy->isBelongToSystemBus() ? this->systemBus : this->sessionBus);
+    DBusConnection *conn = busObj->getConnection();
+
+    std::vector<DBusProxy_Object *> proxies = {proxy};
 
     // wait and dispatch
     while(true) {
@@ -477,13 +485,7 @@ void DBus_Object::waitSignal(DSState &ctx) {
             for(unsigned int i = 0; i < size; i++) {
                 checkedPush(ctx, std::move(values[i]));
             }
-
-            // apply handler
-//            if(ctx.applyFuncObject(0, true, size) != EvalStatus::SUCCESS) {
-//                return false;
-//            }
-            //FIXME: use vm
-            fatal("unsupported\n");
+            return size;
         }
     }
 }
@@ -778,7 +780,11 @@ void DBusProxy_Object::addHandler(const char *ifaceName, const char *methodName,
 }
 
 
-// implementation of DBus related builtin method
+/**
+ *
+ * implementation of DBus related builtin method
+ */
+
 #define LOCAL(i) getLocal(ctx, i)
 
 DSValue newDBusObject(TypePool &pool) {
@@ -791,12 +797,6 @@ DSValue dbus_systemBus(DSState &ctx) {
 
 DSValue dbus_sessionBus(DSState &ctx) {
     return typeAs<DBus_Object>(LOCAL(0))->getSessionBus(ctx);
-}
-
-DSValue dbus_waitSignal(DSState &ctx) {
-    throwError(ctx, getPool(ctx).getErrorType(), "waitSignal is unimplemented");
-    typeAs<DBus_Object>(LOCAL(0))->waitSignal(ctx);
-    return DSValue();
 }
 
 DSValue dbus_available(DSState &ctx) {
@@ -834,6 +834,27 @@ DSValue bus_listActiveNames(DSState &ctx) {
 
 DSValue service_object(DSState &ctx) {
     return typeAs<Service_Object>(LOCAL(0))->object(ctx, LOCAL(1));
+}
+
+// implementation of DBus specific instruction
+
+/**
+ * implemantion of DBUS_INIT_SIG instruction
+ * @param st
+ */
+void DBusInitSignal(DSState &ctx) {
+    typeAs<DBus_Object>(LOCAL(0))->initSignalMatchRule(ctx);
+}
+
+/**
+ * implemation of DBUS_WAIT_SIG instruction.
+ * after call it, push signal handler function and parameters on operand stack.
+ * @param st
+ * @return
+ * param size of dispatched function
+ */
+unsigned int DBusWaitSignal(DSState &ctx) {
+    return typeAs<DBus_Object>(LOCAL(0))->waitSignal(ctx);
 }
 
 

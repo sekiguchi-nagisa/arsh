@@ -1199,6 +1199,11 @@ static void addRedirOption(DSState &state, RedirectOP op) {
     }
 }
 
+// prototype of DBus related api
+void DBusInitSignal(DSState &st);
+unsigned int DBusWaitSignal(DSState &st);
+
+
 static bool mainLoop(DSState &state) {
     while(true) {
         // fetch next opcode
@@ -1688,6 +1693,15 @@ static bool mainLoop(DSState &state) {
             }
             break;
         }
+        vmcase(DBUS_INIT_SIG) {
+            DBusInitSignal(state);
+            break;
+        }
+        vmcase(DBUS_WAIT_SIG) {
+            const unsigned int paramSize = DBusWaitSignal(state);
+            applyFuncObject(state, paramSize);
+            break;
+        }
         }
     }
 }
@@ -1724,7 +1738,85 @@ static bool handleException(DSState &state) {
     return false;
 }
 
+
+/**
+ * stub of D-Bus related method and api
+ */
+
+#ifndef USE_DBUS
+
+void DBusInitSignal(DSState &) {  }   // do nothing
+
+unsigned int DBusWaitSignal(DSState &st) {
+    throwError(st, st.pool.getErrorType(), "not support method");
+    return 0;
+}
+
+DSValue newDBusObject(TypePool &pool) {
+    auto v = DSValue::create<DummyObject>();
+    v->setType(&pool.getDBusType());
+    return v;
+}
+
+DSValue dbus_systemBus(DSState &ctx) {
+    throwError(ctx, ctx.pool.getErrorType(), "not support method");
+    return DSValue();
+}
+
+DSValue dbus_sessionBus(DSState &ctx) {
+    throwError(ctx, ctx.pool.getErrorType(), "not support method");
+    return DSValue();
+}
+
+DSValue dbus_available(DSState &ctx) {
+    return ctx.falseObj;
+}
+
+DSValue dbus_getSrv(DSState &ctx) {
+    throwError(ctx, ctx.pool.getErrorType(), "not support method");
+    return DSValue();
+}
+
+DSValue dbus_getPath(DSState &ctx) {
+    throwError(ctx, ctx.pool.getErrorType(), "not support method");
+    return DSValue();
+}
+
+DSValue dbus_getIface(DSState &ctx) {
+    throwError(ctx, ctx.pool.getErrorType(), "not support method");
+    return DSValue();
+}
+
+DSValue dbus_introspect(DSState &ctx) {
+    throwError(ctx, ctx.pool.getErrorType(), "not support method");
+    return DSValue();
+}
+
+DSValue bus_service(DSState &ctx) {
+    throwError(ctx, ctx.pool.getErrorType(), "not support method");
+    return DSValue();
+}
+
+DSValue bus_listNames(DSState &ctx) {
+    throwError(ctx, ctx.pool.getErrorType(), "not support method");
+    return DSValue();
+}
+
+DSValue bus_listActiveNames(DSState &ctx) {
+    throwError(ctx, ctx.pool.getErrorType(), "not support method");
+    return DSValue();
+}
+
+DSValue service_object(DSState &ctx) {
+    throwError(ctx, ctx.pool.getErrorType(), "not support method");
+    return DSValue();
+}
+
+#endif
+
+
 } // namespace ydsh
+
 
 bool vmEval(DSState &state, CompiledCode &code) {
     state.resetState();

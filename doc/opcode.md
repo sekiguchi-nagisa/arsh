@@ -79,3 +79,5 @@
 | EXPAND_TILDE  |                                | value -> value                               | perform tilde expansion                            |
 | CALL_CMD      | 1: byte1                       | [no change]                                  | call command                                       |
 | POP_PIPELINE  |                                | value -> value                               | if last exit status is 0, push true value          |
+| DBUS_INIT_SIG |                                | [no change]                                  | init DBus signal match rule                        |
+| DBUS_WAIT_SIG |                                | -> func param1 ~ paramN                      | wait DBus signal, then dispatched handler          |

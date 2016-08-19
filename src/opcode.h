@@ -99,7 +99,9 @@ namespace ydsh {
     OP(ADD_REDIR_OP, 1) \
     OP(EXPAND_TILDE, 0) \
     OP(CALL_CMD, 1) \
-    OP(POP_PIPELINE, 0)
+    OP(POP_PIPELINE, 0) \
+    OP(DBUS_INIT_SIG, 0) \
+    OP(DBUS_WAIT_SIG, 0)
 
 enum class OpCode : unsigned char {
 #define GEN_OPCODE(CODE, N) CODE,

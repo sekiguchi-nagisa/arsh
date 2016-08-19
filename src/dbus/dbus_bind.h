@@ -161,7 +161,9 @@ public:
      */
     DSValue getSessionBus(DSState &ctx);
 
-    void waitSignal(DSState &ctx);
+    void initSignalMatchRule(DSState &st);
+    unsigned int waitSignal(DSState &st);
+
     DSValue getServiceFromProxy(DSState &ctx, const DSValue &proxy);
     DSValue getObjectPathFromProxy(DSState &ctx, const DSValue &proxy);
     DSValue getIfaceListFromProxy(DSState &ctx, const DSValue &proxy);
