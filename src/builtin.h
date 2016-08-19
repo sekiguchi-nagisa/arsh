@@ -1576,8 +1576,9 @@ YDSH_METHOD_DECL dbus_systemBus(RuntimeContext &ctx);
 YDSH_METHOD_DECL dbus_sessionBus(RuntimeContext &ctx);
 
 //!bind: function waitSignal($this : DBus, $obj : DBusObject) : Void
-YDSH_METHOD dbus_waitSignal(RuntimeContext &) {
+YDSH_METHOD dbus_waitSignal(RuntimeContext &ctx) {
     SUPPRESS_WARNING(dbus_waitSignal);
+    SUPPRESS_WARNING(ctx);
     fatal("broken");
 }
 
