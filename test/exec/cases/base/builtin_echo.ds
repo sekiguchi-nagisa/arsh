@@ -12,7 +12,7 @@ assert("$(echo -e '\0101\066')" == "A6")    # octal number
 assert("$(echo -e '\x09\x7E')" == $'\t~')   # hex number
 assert("$(echo -e '\x9\x7e')" == $'\t~')    # hex number
 assert("$(echo -e '\xG')" == '\xG')         # invalid hex number
-assert("$(echo -e 'a\0b')".size() == 2)
+assert("$(echo -e '\0')".empty())
 assert("$(echo -e '\a')" == $'\x07')
 assert("$(echo -e '\b')" == $'\x08')
 assert("$(echo -e '\e')" == $'\x1B')

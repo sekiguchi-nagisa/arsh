@@ -505,10 +505,7 @@ static int builtin_echo(DSState &, const int argc, char *const *argv) {
                     break;
                 }
             }
-
-            if(ch != '\0') {
-                fputc(ch, fp);
-            }
+            fputc(ch, fp);
         }
     }
 
