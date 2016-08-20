@@ -1,1 +1,5 @@
 'hello world!!' print
+
+assert "$('hello' print)" == "(String) hello"
+
+assert "$($'hello\x00world' print)" == $'(String) hello\x00world'

@@ -1229,8 +1229,12 @@ static bool mainLoop(DSState &state) {
 
             auto stackTopType = reinterpret_cast<DSType *>(v);
             assert(!stackTopType->isVoidType());
-            std::cout << "(" << state.pool.getTypeName(*stackTopType) << ") "
-                      << typeAs<String_Object>(state.pop())->getValue() << std::endl;
+            auto *strObj = typeAs<String_Object>(state.peek());
+            printf("(%s) ", state.pool.getTypeName(*stackTopType).c_str());
+            fwrite(strObj->getValue(), sizeof(char), strObj->size(), stdout);
+            fputc('\n', stdout);
+            fflush(stdout);
+            state.popNoReturn();
             break;
         }
         vmcase(INSTANCE_OF) {
