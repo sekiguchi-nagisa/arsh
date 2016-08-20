@@ -428,7 +428,7 @@ static void forkAndCapture(bool isStr, DSState &state) {
 
         if(isStr) {  // capture stdout as String
             static const int bufSize = 256;
-            char buf[bufSize + 1];
+            char buf[bufSize];
             std::string str;
             while(true) {
                 int readSize = read(pipefds[READ_PIPE], buf, bufSize);
@@ -438,8 +438,7 @@ static void forkAndCapture(bool isStr, DSState &state) {
                 if(readSize <= 0) {
                     break;
                 }
-                buf[readSize] = '\0';
-                str += buf;
+                str.append(buf, readSize);
             }
 
             // remove last newlines
