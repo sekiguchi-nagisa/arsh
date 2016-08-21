@@ -865,36 +865,36 @@ YDSH_METHOD string_ne(RuntimeContext &ctx) {
     RET_BOOL(r);
 }
 
+static int cmpstring(DSState &ctx) {
+    auto *str1 = typeAs<String_Object>(LOCAL(0));
+    auto *str2 = typeAs<String_Object>(LOCAL(1));
+    unsigned int size = std::min(str1->size(), str2->size());
+    return memcmp(str1->getValue(), str2->getValue(), size);
+}
+
+
 //!bind: function $OP_LT($this : String, $target : String) : Boolean
 YDSH_METHOD string_lt(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_lt);
-    bool r = strcmp(typeAs<String_Object>(LOCAL(0))->getValue(),
-                    typeAs<String_Object>(LOCAL(1))->getValue()) < 0;
-    RET_BOOL(r);
+    RET_BOOL(cmpstring(ctx) < 0);
 }
 
 //!bind: function $OP_GT($this : String, $target : String) : Boolean
 YDSH_METHOD string_gt(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_gt);
-    bool r = strcmp(typeAs<String_Object>(LOCAL(0))->getValue(),
-                    typeAs<String_Object>(LOCAL(1))->getValue()) > 0;
-    RET_BOOL(r);
+    RET_BOOL(cmpstring(ctx) > 0);
 }
 
 //!bind: function $OP_LE($this : String, $target : String) : Boolean
 YDSH_METHOD string_le(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_le);
-    bool r = strcmp(typeAs<String_Object>(LOCAL(0))->getValue(),
-                    typeAs<String_Object>(LOCAL(1))->getValue()) <= 0;
-    RET_BOOL(r);
+    RET_BOOL(cmpstring(ctx) <= 0);
 }
 
 //!bind: function $OP_GE($this : String, $target : String) : Boolean
 YDSH_METHOD string_ge(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_ge);
-    bool r = strcmp(typeAs<String_Object>(LOCAL(0))->getValue(),
-                    typeAs<String_Object>(LOCAL(1))->getValue()) >= 0;
-    RET_BOOL(r);
+    RET_BOOL(cmpstring(ctx) >= 0);
 }
 
 //!bind: function size($this : String) : Int32
@@ -1013,12 +1013,15 @@ YDSH_METHOD string_sliceTo(RuntimeContext &ctx) {
     RET(sliceImpl(ctx, strObj, 0, typeAs<Int_Object>(LOCAL(1))->getValue()));
 }
 
-static bool startsWith(const char *thisStr, const char *targetStr, int offset) {
+static bool startsWith(const String_Object *thisObj, const String_Object *targetObj, int offset) {
     if(offset < 0) {
         return false;
     }
-    const char *str = thisStr + offset;
-    return strstr(str, targetStr) == str;
+    const char *thisStr = thisObj->getValue() + offset;
+    const char *targetStr = targetObj->getValue();
+    const unsigned int thisSize = thisObj->size() - offset;
+    const unsigned int targetSize = targetObj->size();
+    return memmem(thisStr, thisSize, targetStr, targetSize) == thisStr;
 }
 
 //!bind: function startsWith($this : String, $target : String) : Boolean
@@ -1027,7 +1030,7 @@ YDSH_METHOD string_startsWith(RuntimeContext &ctx) {
     auto thisObj = typeAs<String_Object>(LOCAL(0));
     auto targetObj = typeAs<String_Object>(LOCAL(1));
 
-    bool r = startsWith(thisObj->getValue(), targetObj->getValue(), 0);
+    bool r = startsWith(thisObj, targetObj, 0);
     RET_BOOL(r);
 }
 
@@ -1037,20 +1040,21 @@ YDSH_METHOD string_endsWith(RuntimeContext &ctx) {
     auto thisObj = typeAs<String_Object>(LOCAL(0));
     auto targetObj = typeAs<String_Object>(LOCAL(1));
 
-    bool r = startsWith(thisObj->getValue(), targetObj->getValue(), thisObj->size() - targetObj->size());
+    bool r = startsWith(thisObj, targetObj, thisObj->size() - targetObj->size());
     RET_BOOL(r);
 }
 
 //!bind: function indexOf($this : String, $target : String) : Int32
 YDSH_METHOD string_indexOf(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_indexOf);
-    const char *thisStr = typeAs<String_Object>(LOCAL(0))->getValue();
-    const char *targetStr = typeAs<String_Object>(LOCAL(1))->getValue();
+    auto *thisObj = typeAs<String_Object>(LOCAL(0));
+    auto *targetObj = typeAs<String_Object>(LOCAL(1));
 
-    const char *ptr = strstr(thisStr, targetStr);
+    void *ptr = memmem(thisObj->getValue(), thisObj->size(),
+                             targetObj->getValue(), targetObj->size());
     int index = -1;
     if(ptr != nullptr) {
-        index = ptr - thisStr;
+        index = reinterpret_cast<const char *>(ptr) - thisObj->getValue();
     }
     RET(DSValue::create<Int_Object>(getPool(ctx).getIntType(), index));
 }
@@ -1060,17 +1064,20 @@ YDSH_METHOD string_lastIndexOf(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_lastIndexOf);
     const char *thisStr = typeAs<String_Object>(LOCAL(0))->getValue();
     const char *targetStr = typeAs<String_Object>(LOCAL(1))->getValue();
+    const unsigned int thisSize = typeAs<String_Object>(LOCAL(0))->size();
+    const unsigned int targetSize = typeAs<String_Object>(LOCAL(1))->size();
+    const char *end = thisStr + thisSize;
 
     int index = -1;
-    for(const char *ptr = thisStr; *ptr != '\0'; ptr++) {
-        ptr = strstr(ptr, targetStr);
+    for(const char *ptr = thisStr; ptr != end; ptr++) {
+        ptr = reinterpret_cast<const char *>(memmem(ptr, thisSize - (ptr - thisStr), targetStr, targetSize));
         if(ptr == nullptr) {
             break;
         }
         index = ptr - thisStr;
     }
 
-    if(*thisStr == *targetStr && *thisStr == '\0') {
+    if(thisSize == targetSize && targetSize == 0) {
         index = 0;
     }
     RET(DSValue::create<Int_Object>(getPool(ctx).getIntType(), index));
@@ -1081,6 +1088,7 @@ YDSH_METHOD string_split(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_split);
     const char *thisStr = typeAs<String_Object>(LOCAL(0))->getValue();
     const char *delimStr = typeAs<String_Object>(LOCAL(1))->getValue();
+    const unsigned int thisSize = typeAs<String_Object>(LOCAL(0))->size();
     const unsigned int delimSize = typeAs<String_Object>(LOCAL(1))->size();
 
     auto results = DSValue::create<Array_Object>(getPool(ctx).getStringArrayType());
@@ -1088,7 +1096,8 @@ YDSH_METHOD string_split(RuntimeContext &ctx) {
 
     const char *remain = thisStr;
     while(delimSize > 0) {
-        const char *ret = strstr(remain, delimStr);
+        const char *ret = reinterpret_cast<const char *>(
+                memmem(remain, thisSize - (remain - thisStr), delimStr, delimSize));
         if(ret == nullptr) {
             break;
         }
@@ -1098,8 +1107,8 @@ YDSH_METHOD string_split(RuntimeContext &ctx) {
 
     if(remain == thisStr) {
         ptr->append(LOCAL(0));
-    } else if(*remain != '\0') {
-        ptr->append(DSValue::create<String_Object>(getPool(ctx).getStringType(), std::string(remain)));
+    } else if(remain != thisStr + thisSize) {
+        ptr->append(DSValue::create<String_Object>(getPool(ctx).getStringType(), std::string(remain, thisSize - (remain - thisStr))));
     }
 
     RET(results);

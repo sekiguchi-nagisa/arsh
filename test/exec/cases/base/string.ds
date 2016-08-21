@@ -13,6 +13,7 @@ assert($'\101\066' == "A6")     # octal
 assert($'\x09\x7E' == $'\t~')  # hex
 assert($'\x09\x7e' == $'\t~')  # hex
 assert($'\r' == $'\x0D')    # hex
+assert $'\x00' != ''        # nul character
 assert('a
 b' == "a
 b")  # allow new line
@@ -68,45 +69,87 @@ try { assert("012345".sliceTo(9) == "A"); } catch($e) { assert($e is OutOfRangeE
 assert(not $a.startsWith("hoge"))
 assert("あ345".startsWith("あ"))
 assert("".startsWith(""))
+assert not "".startsWith('a')
 assert("a".startsWith(""))
+assert not $'a\x00b'.startsWith($'a\x00c')
+assert not "".startsWith($'\x00')
 
 assert($a.endsWith("rld"))
 assert("あ345空".endsWith("5空"))
 assert("".endsWith(""))
+assert not "".endsWith($'\x00')
 assert("a".endsWith(""))
+assert not "a".endsWith($'\x00')
 
 assert($a.indexOf("q") == -1)
 assert("0123ああ".indexOf("あ") == 4)
 assert("0123ああ".indexOf("") == 0)
+assert $'a\x00b'.indexOf($'\x00') == 1
 assert("".indexOf("") == 0)
+assert("".indexOf($'\x00') == -1)
 assert("".indexOf("aaa") == -1)
 
 assert($a.lastIndexOf("l") == 9)
 assert("00000".lastIndexOf("00") == 3)
 assert("00000".lastIndexOf("6") == -1)
 assert("0123".lastIndexOf("") == 3)
+assert($'a\x00b'.lastIndexOf("") == 2)
+assert($'a\x00b'.lastIndexOf($'\x00') == 1)
 assert("".lastIndexOf("") == 0)
 assert("".lastIndexOf("aaadd") == -1)
+assert "".lastIndexOf($'\x00') == -1
 
 var sa = "hello world !!".split(" ")
 assert($sa.size() == 3)
 assert($sa[0] == "hello")
 assert($sa[1] == "world")
 assert($sa[2] == "!!")
+
+$sa = 'hell'.split('l')
+assert $sa.size() == 2
+assert $sa[0] == 'he'
+assert $sa[1] == ''
+
+$sa = 'hell'.split('h')
+assert $sa.size() == 2
+assert $sa[0] == ''
+assert $sa[1] == 'ell'
+
 $sa = "こんばんわ".split("ん")
 assert($sa.size() == 3)
 assert($sa[0] == "こ")
 assert($sa[1] == "ば")
 assert($sa[2] == "わ")
+
 $sa = "hello".split("@")
 assert($sa.size() == 1)
 assert($sa[0] == "hello")
+
 $sa = "hello".split("")
 assert($sa.size() == 1)
 assert($sa[0] == "hello")
+
 $sa = "".split("")
 assert($sa.size() == 1)
 assert($sa[0] == "")
+
+$sa = $'a\x00b\x00'.split($'\x00')
+assert $sa.size() == 2
+assert $sa[0] == 'a'
+assert $sa[1] == 'b'
+
+$sa = "".split($'\x00')
+assert $sa.size() == 1
+assert $sa[0] == ""
+
+$sa = $'\x00'.split("")
+assert $sa.size() == 1
+assert $sa[0] == $'\x00'
+
+$sa = $'a\x00b\x00c'.split('b')
+assert $sa.size() == 2
+assert $sa[0] == $'a\x00'
+assert $sa[1] == $'\x00c'
 
 assert(not "-1".toUint32()._1)
 assert("4294967295".toUint32()._0 == 4294967295u32)
@@ -130,7 +173,7 @@ assert("-3.14e+3".toFloat()._0 == -3.14E+3)
 assert("Nan".toFloat()._0.isNan())
 assert("INF".toFloat()._0.isInf())
 
-
+# string compare
 var b = "aaa"
 var c = 'ccc'
 
@@ -138,6 +181,9 @@ assert($b < $c)
 assert($b <= $c)
 assert(not($b > $c))
 assert(not($b >= $c))
+assert not($'a\x00b' <= $'a\x00a')
+assert $'a\x00b' != $'a\x00c'
+assert $'a\x00b' != $'a'
 
 # string interpolation
 $a = "西暦${1900 + 114}年"
