@@ -1013,6 +1013,13 @@ YDSH_METHOD string_sliceTo(RuntimeContext &ctx) {
     RET(sliceImpl(ctx, strObj, 0, typeAs<Int_Object>(LOCAL(1))->getValue()));
 }
 
+static void *xmemmem(const void *haystack, size_t haystackSize, const void *needle, size_t needleSize) {
+    if(needleSize == 0) {
+        return const_cast<void *>(haystack);
+    }
+    return memmem(haystack, haystackSize, needle, needleSize);
+}
+
 static bool startsWith(const String_Object *thisObj, const String_Object *targetObj, int offset) {
     if(offset < 0) {
         return false;
@@ -1022,13 +1029,7 @@ static bool startsWith(const String_Object *thisObj, const String_Object *target
     const unsigned int thisSize = thisObj->size() - offset;
     const unsigned int targetSize = targetObj->size();
 
-    if(targetSize == 0) {
-        return true;
-    }
-    if(thisSize == 0) {
-        return false;
-    }
-    return memmem(thisStr, thisSize, targetStr, targetSize) == thisStr;
+    return xmemmem(thisStr, thisSize, targetStr, targetSize) == thisStr;
 }
 
 //!bind: function startsWith($this : String, $target : String) : Boolean
@@ -1057,8 +1058,8 @@ YDSH_METHOD string_indexOf(RuntimeContext &ctx) {
     auto *thisObj = typeAs<String_Object>(LOCAL(0));
     auto *targetObj = typeAs<String_Object>(LOCAL(1));
 
-    void *ptr = memmem(thisObj->getValue(), thisObj->size(),
-                             targetObj->getValue(), targetObj->size());
+    void *ptr = xmemmem(thisObj->getValue(), thisObj->size(),
+                        targetObj->getValue(), targetObj->size());
     int index = -1;
     if(ptr != nullptr) {
         index = reinterpret_cast<const char *>(ptr) - thisObj->getValue();
@@ -1077,7 +1078,7 @@ YDSH_METHOD string_lastIndexOf(RuntimeContext &ctx) {
 
     int index = -1;
     for(const char *ptr = thisStr; ptr != end; ptr++) {
-        ptr = reinterpret_cast<const char *>(memmem(ptr, thisSize - (ptr - thisStr), targetStr, targetSize));
+        ptr = reinterpret_cast<const char *>(xmemmem(ptr, thisSize - (ptr - thisStr), targetStr, targetSize));
         if(ptr == nullptr) {
             break;
         }
@@ -1104,7 +1105,7 @@ YDSH_METHOD string_split(RuntimeContext &ctx) {
     const char *remain = thisStr;
     while(delimSize > 0) {
         const char *ret = reinterpret_cast<const char *>(
-                memmem(remain, thisSize - (remain - thisStr), delimStr, delimSize));
+                xmemmem(remain, thisSize - (remain - thisStr), delimStr, delimSize));
         if(ret == nullptr) {
             break;
         }
