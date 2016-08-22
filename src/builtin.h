@@ -1021,6 +1021,13 @@ static bool startsWith(const String_Object *thisObj, const String_Object *target
     const char *targetStr = targetObj->getValue();
     const unsigned int thisSize = thisObj->size() - offset;
     const unsigned int targetSize = targetObj->size();
+
+    if(targetSize == 0) {
+        return true;
+    }
+    if(thisSize == 0) {
+        return false;
+    }
     return memmem(thisStr, thisSize, targetStr, targetSize) == thisStr;
 }
 
