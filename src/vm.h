@@ -342,20 +342,6 @@ struct DSState {
         unsigned int index = toIndex(BuiltinVarOffset::EXIT_STATUS);
         this->setGlobal(index, DSValue::create<Int_Object>(this->pool.getInt32Type(), status));
     }
-
-    // for command invocation
-
-    std::string &refPrompt() {
-        return this->prompt;
-    }
-
-    DebugHook *getHook() const {
-        return this->hook;
-    }
-
-    void setHook(DebugHook *hook) {
-        this->hook = hook;
-    }
 };
 
 /**

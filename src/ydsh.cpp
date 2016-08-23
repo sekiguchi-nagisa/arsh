@@ -518,8 +518,8 @@ const char *DSState_prompt(DSState *st, unsigned int n) {
     unsigned int index = st->symbolTable.lookupHandle(psName)->getFieldIndex();
     const DSValue &obj = st->getGlobal(index);
 
-    interpretPromptString(*st, typeAs<String_Object>(obj)->getValue(), st->refPrompt());
-    return st->refPrompt().c_str();
+    interpretPromptString(*st, typeAs<String_Object>(obj)->getValue(), st->prompt);
+    return st->prompt.c_str();
 }
 
 unsigned int DSState_majorVersion() {

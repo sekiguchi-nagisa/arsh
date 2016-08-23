@@ -1207,8 +1207,8 @@ static bool mainLoop(DSState &state) {
     while(true) {
         // fetch next opcode
         OpCode op = static_cast<OpCode>(GET_CODE(state)[++state.pc()]);
-        if(state.getHook() != nullptr) {
-            state.getHook()->vmFetchHook(state, op);
+        if(state.hook != nullptr) {
+            state.hook->vmFetchHook(state, op);
         }
 
         // dispatch instruction
