@@ -409,8 +409,6 @@ static int builtin_exit(DSState &state, const int argc, char *const *argv) {
 }
 
 static int builtin_echo(DSState &, const int argc, char *const *argv) {
-    FILE *fp = stdout;  // not close it.
-
     bool newline = true;
     bool interpEscape = false;
     int index = 1;
@@ -434,10 +432,10 @@ static int builtin_echo(DSState &, const int argc, char *const *argv) {
         if(firstArg) {
             firstArg = false;
         } else {
-            fputc(' ', fp);
+            fputc(' ', stdout);
         }
         if(!interpEscape) {
-            fputs(argv[index], fp);
+            fputs(argv[index], stdout);
             continue;
         }
         const char *arg = argv[index];
@@ -505,12 +503,12 @@ static int builtin_echo(DSState &, const int argc, char *const *argv) {
                     break;
                 }
             }
-            fputc(ch, fp);
+            fputc(ch, stdout);
         }
     }
 
     if(newline) {
-        fputc('\n', fp);
+        fputc('\n', stdout);
     }
     return 0;
 }
