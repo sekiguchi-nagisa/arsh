@@ -1,0 +1,4 @@
+var cur = "$(pwd)"
+cd "$(echo)"
+
+assert "$(pwd)" == $cur # if argument is empty string, do nothing

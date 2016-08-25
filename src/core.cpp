@@ -587,11 +587,13 @@ static std::vector<std::string> createPathStack(const char *path) {
     return stack;
 }
 
-/**
- * path is not null
- */
 std::string expandDots(const char *basePath, const char *path) {
-    assert(path != nullptr);
+    std::string str;
+
+    if(path == nullptr || *path == '\0') {
+        return str;
+    }
+
     std::vector<std::string> resolvedPathStack;
     auto pathStack(createPathStack(path));
 
@@ -620,8 +622,10 @@ std::string expandDots(const char *basePath, const char *path) {
     }
 
     // create path
-    std::string str;
     const unsigned int size = resolvedPathStack.size();
+    if(size == 1) {
+        str += '/';
+    }
     for(unsigned int i = 1; i < size; i++) {
         str += '/';
         str += std::move(resolvedPathStack[i]);

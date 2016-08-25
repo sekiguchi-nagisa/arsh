@@ -1,0 +1,6 @@
+var cur = "$(pwd)"
+
+cd $'\x002341'
+assert $? == 0
+
+assert "$(pwd)" == $cur
