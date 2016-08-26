@@ -20,10 +20,12 @@ assert("$(echo -e '\f')" == $'\x0c')
 assert("$(echo -e '\v')" == $'\013')
 assert("$(echo -e '\G')" == $'\G' && $'\G' == '\G') # invalid escape sequence
 
+assert("$(echo -e -- hello)" == '-- hello')
+assert "$(echo ---)" == '---'
 
 # disable interpretation
 assert("$(echo -e -E 'hello\t\nworld')" == 'hello\t\nworld')
-
+assert("$(echo -eE 'hello\t\nworld')" == 'hello\t\nworld')
 
 assert(help echo | grep 'echo: echo \[-neE] \[arg ...]')
 assert(help echo | grep 'Print argument to standard output and print new line.')

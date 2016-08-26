@@ -311,6 +311,67 @@ static bool printUsage(FILE *fp, const char *prefix, bool isShortHelp = true) {
     return matched;
 }
 
+struct GetOptState {
+    /**
+     * index of next processing argument
+     */
+    int index;
+
+    /**
+     * currently processed argument.
+     */
+    const char *optCursor;
+
+    /**
+     * may be null, if has no optional argument.
+     */
+    const char *optArg;
+
+    /**
+     * unrecognized option.
+     */
+    int optOpt;
+
+    GetOptState() : index(1), optCursor(nullptr), optArg(nullptr), optOpt(0) {}
+};
+
+static int getopt(const int argc, char *const argv[], const char *optStr, GetOptState &state) {
+    if(state.index < argc) {
+        const char *arg = argv[state.index];
+        if(*arg != '-' || strcmp(arg, "-") == 0) {
+            return -1;
+        }
+
+        if(strcmp(arg, "--") == 0) {
+            state.index++;
+            return -1;
+        }
+
+        if(state.optCursor == nullptr || *state.optCursor == '\0') {
+            state.optCursor = arg + 1;
+        }
+
+        const char *ptr = strchr(optStr, *state.optCursor);
+        if(ptr != nullptr) {
+            if(*(ptr + 1) == ':') {
+                if(++state.index == argc) {
+                    return ':';
+                }
+                state.optArg = argv[state.index];
+                state.optCursor = nullptr;
+            }
+
+            if(state.optCursor == nullptr || *(++state.optCursor) == '\0') {
+                state.index++;
+            }
+            return *ptr;
+        }
+        state.optOpt = *state.optCursor;
+        return '?';
+    }
+    return -1;
+}
+
 static int builtin_help(DSState &, const int argc, char *const *argv) {
     if(argc == 1) {
         printAllUsage(stdout);
@@ -343,28 +404,30 @@ inline static void showUsage(char *const *argv) {
 }
 
 static int builtin_cd(DSState &state, const int argc, char *const *argv) {
-    bool useOldpwd = false;
+    GetOptState optState;
     bool useLogical = true;
-
-    int index = 1;
-    for(; index < argc; index++) {
-        const char *arg = argv[index];
-        if(strcmp(arg, "-") == 0) {
-            useOldpwd = true;
-        } else if(strcmp(arg, "-P") == 0) {
+    for(int opt; (opt = getopt(argc, argv, "PL", optState)) != -1;) {
+        switch(opt) {
+        case 'P':
             useLogical = false;
-        } else if(strcmp(arg, "-L") == 0) {
+            break;
+        case 'L':
             useLogical = true;
-        } else {
+            break;
+        default:
             break;
         }
     }
 
+    int index = optState.index;
     const char *dest = nullptr;
-    if(useOldpwd) {
-        dest = getenv(ENV_OLDPWD);
-    } else if(index < argc) {
+    bool useOldpwd = false;
+    if(index < argc) {
         dest = argv[index];
+        if(strcmp(dest, "-") == 0) {
+            dest = getenv(ENV_OLDPWD);
+            useOldpwd = true;
+        }
     } else {
         dest = getenv(ENV_HOME);
     }
@@ -411,22 +474,31 @@ static int builtin_exit(DSState &state, const int argc, char *const *argv) {
 static int builtin_echo(DSState &, const int argc, char *const *argv) {
     bool newline = true;
     bool interpEscape = false;
-    int index = 1;
 
-    // parse option
-    for(; index < argc; index++) {
-        if(strcmp(argv[index], "-n") == 0) {
+    GetOptState optState;
+    for(int opt; (opt = getopt(argc, argv, "neE", optState)) != -1;) {
+        switch(opt) {
+        case 'n':
             newline = false;
-        } else if(strcmp(argv[index], "-e") == 0) {
-            interpEscape = true;
-        } else if(strcmp(argv[index], "-E") == 0) {
-            interpEscape = false;
-        } else {
             break;
+        case 'e':
+            interpEscape = true;
+            break;
+        case 'E':
+            interpEscape = false;
+            break;
+        default:
+            goto END;
         }
     }
 
+    END:
     // print argument
+    if(optState.index > 1 && strcmp(argv[optState.index - 1], "--") == 0) {
+        optState.index--;
+    }
+
+    int index = optState.index;
     bool firstArg = true;
     for(; index < argc; index++) {
         if(firstArg) {
@@ -539,18 +611,21 @@ static int builtin___gets(DSState &, const int, char *const *) {
  * for stdout/stderr redirection test
  */
 static int builtin___puts(DSState &, const int argc, char *const *argv) {
-    for(int index = 1; index < argc; index++) {
-        const char *arg = argv[index];
-        if(strcmp("-1", arg) == 0 && ++index < argc) {
-            fputs(argv[index], stdout);
+    GetOptState optState;
+    for(int opt; (opt = getopt(argc, argv, "1:2:", optState)) != -1;) {
+        switch(opt) {
+        case '1':
+            fputs(optState.optArg, stdout);
             fputc('\n', stdout);
             fflush(stdout);
-        } else if(strcmp("-2", arg) == 0 && ++index < argc) {
-            fputs(argv[index], stderr);
+            break;
+        case '2':
+            fputs(optState.optArg, stderr);
             fputc('\n', stderr);
             fflush(stderr);
-        } else {
-            return 1;   // need option
+            break;
+        default:
+            return 1;
         }
     }
     return 0;
@@ -572,24 +647,25 @@ static int builtin_ps_intrp(DSState &state, const int argc, char *const *argv) {
 }
 
 static int builtin_exec(DSState &state, const int argc, char *const *argv) {
-    int index = 1;
     bool clearEnv = false;
     const char *progName = nullptr;
-    for(; index < argc; index++) {
-        const char *arg = argv[index];
-        if(arg[0] != '-') {
-            break;
-        }
-        if(strcmp(arg, "-c") == 0) {
+    GetOptState optState;
+
+    for(int opt; (opt = getopt(argc, argv, "ca:", optState)) != -1;) {
+        switch(opt) {
+        case 'c':
             clearEnv = true;
-        } else if(strcmp(arg, "-a") == 0 && ++index < argc) {
-            progName = argv[index];
-        } else {
+            break;
+        case 'a':
+            progName = optState.optArg;
+            break;
+        default:
             showUsage(argv);
             return 1;
         }
     }
 
+    int index = optState.index;
     if(index < argc) { // exec
         char **argv2 = const_cast<char **>(argv + index);
         const char *filePath = getPathCache(state).searchPath(argv2[0], FilePathCache::DIRECT_SEARCH);
@@ -712,18 +788,17 @@ static int builtin_eval(DSState &state, const int argc, char *const *argv) {
 static int builtin_pwd(DSState &state, const int argc, char *const *argv) {
     bool useLogical = true;
 
-    int index = 1;
-    for(; index < argc; index++) {
-        const char *arg = argv[index];
-        if(arg[0] != '-') {
-            break;
-        }
-        if(strcmp(arg, "-L") == 0) {
+    GetOptState optState;
+    for(int opt; (opt = getopt(argc, argv, "LP", optState)) != -1;) {
+        switch(opt) {
+        case 'L':
             useLogical = true;
-        } else if(strcmp(arg, "-P") == 0) {
+            break;
+        case 'P':
             useLogical = false;
-        } else {
-            builtin_perror(argv, 0, "%s: invalid option", arg);
+            break;
+        default:
+            builtin_perror(argv, 0, "-%c: invalid option", optState.optOpt);
             showUsage(argv);
             return 1;
         }
@@ -750,7 +825,6 @@ static int builtin_pwd(DSState &state, const int argc, char *const *argv) {
 }
 
 static int builtin_command(DSState &state, const int argc, char *const *argv) {
-    int index = 1;
     bool useDefaultPath = false;
 
     /**
@@ -760,23 +834,26 @@ static int builtin_command(DSState &state, const int argc, char *const *argv) {
      */
     unsigned char showDesc = 0;
 
-    for(; index < argc; index++) {
-        const char *arg = argv[index];
-        if(arg[0] != '-') {
-            break;
-        } else if(strcmp(arg, "-p") == 0) {
+    GetOptState optState;
+    for(int opt; (opt = getopt(argc, argv, "pvV", optState)) != -1;) {
+        switch(opt) {
+        case 'p':
             useDefaultPath = true;
-        } else if(strcmp(arg, "-v") == 0) {
+            break;
+        case 'v':
             showDesc = 1;
-        } else if(strcmp(arg, "-V") == 0) {
+            break;
+        case 'V':
             showDesc = 2;
-        } else {
-            builtin_perror(argv, 0, "%s: invalid option", arg);
+            break;
+        default:
+            builtin_perror(argv, 0, "-%c: invalid option", optState.optOpt);
             showUsage(argv);
             return 1;
         }
     }
 
+    int index = optState.index;
     if(index < argc) {
         if(showDesc == 0) { // execute command
             char *const *argv2 = argv + index;
