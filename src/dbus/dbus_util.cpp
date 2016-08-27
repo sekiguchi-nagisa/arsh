@@ -58,10 +58,6 @@ int BaseTypeDescriptorMap::getDescriptor(DSType &type) {
 // ##     DescriptorBuilder     ##
 // ###############################
 
-DescriptorBuilder::DescriptorBuilder(TypePool *pool, BaseTypeDescriptorMap *typeMap) :
-        pool(pool), typeMap(typeMap), buf() {
-}
-
 const char *DescriptorBuilder::buildDescriptor(DSType &type) {
     this->buf.clear();
     type.accept(this);
@@ -116,23 +112,10 @@ void DescriptorBuilder::visitErrorType(ErrorType *type) {
     fatal("unsupported type: %s\n", this->pool->getTypeName(*type).c_str());
 }
 
-void DescriptorBuilder::append(char ch) {
-    this->buf += ch;
-}
 
 // ############################
 // ##     MessageBuilder     ##
 // ############################
-
-MessageBuilder::MessageBuilder(TypePool *pool) :
-        pool(pool), typeMap(0), descBuilder(0), objStack(), iter() {
-}
-
-MessageBuilder::~MessageBuilder() {
-    delete this->typeMap;
-    delete this->descBuilder;
-}
-
 
 void MessageBuilder::appendArg(DBusMessageIter *iter, DSType &argType, const DSValue &arg) {
     this->iter = iter;
@@ -299,10 +282,6 @@ void MessageBuilder::visitInterfaceType(InterfaceType *type) {
 
 void MessageBuilder::visitErrorType(ErrorType *type) {
     fatal("unsupported type: %s\n", this->pool->getTypeName(*type).c_str());
-}
-
-DSObject *MessageBuilder::peek() {
-    return this->objStack.back();
 }
 
 void MessageBuilder::append(DSType *type, DSObject *value) {

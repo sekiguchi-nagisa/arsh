@@ -212,7 +212,7 @@ static DSValue decodeMessageIter(DSState &ctx, DBusMessageIter *iter) {
 }
 
 static std::vector<DSValue> decodeMessageRaw(DSState &ctx,
-                                                  const std::vector<DSType *> &types, ScopedDBusMessage &&msg) {
+                                             const std::vector<DSType *> &types, ScopedDBusMessage &&msg) {
     std::vector<DSValue> values;
     DBusMessageIter iter;
     dbus_message_iter_init(msg.get(), &iter);
@@ -245,8 +245,7 @@ static std::vector<DSValue> decodeMessageRaw(DSState &ctx,
     return values;
 }
 
-static DSValue decodeMessage(DSState &ctx,
-                             const std::vector<DSType *> &types, ScopedDBusMessage &&msg) {
+static DSValue decodeMessage(DSState &ctx, const std::vector<DSType *> &types, ScopedDBusMessage &&msg) {
     std::vector<DSValue> values = decodeMessageRaw(ctx, types, std::move(msg));
 
     unsigned int size = values.size();
@@ -274,13 +273,11 @@ static void appendArg(DSState &ctx, DBusMessageIter *iter, DSType &argType, cons
     dbus->getBuilder().appendArg(iter, argType, arg);
 }
 
-static void appendArg(DSState &ctx, DBusMessageIter *iter,
-                      DSType &argType, unsigned int index) {
+static void appendArg(DSState &ctx, DBusMessageIter *iter, DSType &argType, unsigned int index) {
     appendArg(ctx, iter, argType, getLocal(ctx, index));
 }
 
-static ScopedDBusMessage sendMessage(DSState &ctx,
-                                     DBusConnection *conn, ScopedDBusMessage &&sendMsg) {
+static ScopedDBusMessage sendMessage(DSState &ctx, DBusConnection *conn, ScopedDBusMessage &&sendMsg) {
     auto error = newDBusError();
     auto retMsg = wrap(
             dbus_connection_send_with_reply_and_block(
@@ -296,16 +293,6 @@ static ScopedDBusMessage sendMessage(DSState &ctx,
 // ########################
 // ##     Bus_Object     ##
 // ########################
-
-Bus_Object::Bus_Object(DSType &type, bool systemBus) :
-        DSObject(type), conn(), systemBus(systemBus) {
-}
-
-Bus_Object::~Bus_Object() {
-    if(this->conn != nullptr) {
-        dbus_connection_unref(this->conn);
-    }
-}
 
 void Bus_Object::initConnection(DSState &ctx, bool systemBus) {
     // get connection
@@ -363,11 +350,6 @@ DSValue Bus_Object::listNames(DSState &ctx, bool activeName) {
 // ##     Service_Object     ##
 // ############################
 
-Service_Object::Service_Object(DSType &type, const DSValue &bus,
-                                       std::string &&serviceName, std::string &&uniqueName) :
-        DSObject(type), bus(bus), serviceName(std::move(serviceName)), uniqueName(std::move(uniqueName)) {
-}
-
 std::string Service_Object::toString(DSState &, VisitedSet *) {
     return this->serviceName;
 }
@@ -384,10 +366,6 @@ DSValue Service_Object::object(DSState &ctx, const DSValue &objectPath) {
 // #########################
 // ##     DBus_Object     ##
 // #########################
-
-DBus_Object::DBus_Object(TypePool &typePool) :
-        DSObject(typePool.getDBusType()), systemBus(), sessionBus(), builder(&typePool) {
-}
 
 DSValue DBus_Object::getSystemBus(DSState &ctx) {
     if(!this->systemBus) {
@@ -510,34 +488,9 @@ DSValue DBus_Object::introspectProxy(DSState &ctx, const DSValue &proxy) {
     return decodeMessage(ctx, getPool(ctx).getStringType(), std::move(reply));
 }
 
-
-bool SignalSelectorComparator::operator()(const SignalSelector &x,
-                                          const SignalSelector &y) const {
-    return strcmp(x.first, y.first) == 0 && strcmp(x.second, y.second) == 0;
-}
-
-std::size_t SignalSelectorHash::operator()(const SignalSelector &key) const {
-    size_t hash = 0;
-
-    for(unsigned int i = 0; key.first[i] != '\0'; i++) {
-        hash = hash * 61 + key.first[i];
-    }
-
-    for(unsigned int i = 0; key.second[i] != '\0'; i++) {
-        hash = hash * 61 + key.second[i];
-    }
-    return hash;
-}
-
-
 // ##############################
 // ##     DBusProxy_Object     ##
 // ##############################
-
-DBusProxy_Object::DBusProxy_Object(DSType &type, const DSValue &srcObj, const DSValue &objectPath) :
-        ProxyObject(type), srv(srcObj), objectPath(objectPath), ifaceSet(), handerMap() {
-    assert(this->srv);
-}
 
 std::string DBusProxy_Object::toString(DSState &, VisitedSet *) {
     std::string str("[dest=");
@@ -701,14 +654,6 @@ void DBusProxy_Object::invokeSetter(DSState &ctx, const DSType *recvType,
     this->sendMessage(ctx, std::move(msg));
 }
 
-const DSValue &DBusProxy_Object::getService() {
-    return this->srv;
-}
-
-const DSValue &DBusProxy_Object::getObjectPath() {
-    return this->objectPath;
-}
-
 DSValue DBusProxy_Object::createIfaceList(DSState &ctx) {
     std::vector<DSValue> list(this->ifaceSet.size());
     unsigned int i = 0;
@@ -758,10 +703,6 @@ ScopedDBusMessage DBusProxy_Object::newMethodCallMsg(const char *ifaceName, cons
 
 ScopedDBusMessage DBusProxy_Object::sendMessage(DSState &ctx, ScopedDBusMessage &&sendMsg) {
     return ::ydsh::sendMessage(ctx, typeAs<Service_Object>(this->srv)->getConnection(), std::move(sendMsg));
-}
-
-void DBusProxy_Object::addHandler(const char *ifaceName, const char *methodName, const DSValue &obj) {
-    this->handerMap[std::make_pair(ifaceName, methodName)] = obj;
 }
 
 

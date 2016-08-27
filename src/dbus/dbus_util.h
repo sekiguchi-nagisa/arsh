@@ -53,7 +53,7 @@ private:
     std::string buf;
 
 public:
-    DescriptorBuilder(TypePool *pool, BaseTypeDescriptorMap *typeMap);
+    DescriptorBuilder(TypePool *pool, BaseTypeDescriptorMap *typeMap) : pool(pool), typeMap(typeMap), buf() { }
     ~DescriptorBuilder() = default;
 
     const char *buildDescriptor(DSType &type);
@@ -66,7 +66,9 @@ public:
     void visitErrorType(ErrorType *type) override;
 
 private:
-    void append(char ch);
+    void append(char ch) {
+        this->buf += ch;
+    }
 };
 
 class MessageBuilder : public TypeVisitor {
@@ -81,8 +83,14 @@ private:
     DBusMessageIter *iter;
 
 public:
-    explicit MessageBuilder(TypePool *pool);
-    ~MessageBuilder();
+    explicit MessageBuilder(TypePool *pool) :
+            pool(pool), typeMap(0), descBuilder(0), objStack(), iter() { }
+
+    ~MessageBuilder() {
+        delete this->typeMap;
+        delete this->descBuilder;
+    }
+
     void appendArg(DBusMessageIter *iter, DSType &argType, const DSValue &arg);
 
     void visitFunctionType(FunctionType *type) override;
@@ -93,7 +101,10 @@ public:
     void visitErrorType(ErrorType *type) override;
 
 private:
-    DSObject *peek();
+    DSObject *peek() {
+        return this->objStack.back();
+    }
+
     void append(DSType *type, DSObject *value);
     DescriptorBuilder *getBuilder();
 

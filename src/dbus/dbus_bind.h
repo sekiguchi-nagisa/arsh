@@ -47,8 +47,13 @@ private:
     bool systemBus;
 
 public:
-    Bus_Object(DSType &type, bool systemBus);
-    ~Bus_Object();
+    Bus_Object(DSType &type, bool systemBus) : DSObject(type), conn(), systemBus(systemBus) { }
+
+    ~Bus_Object() {
+        if(this->conn != nullptr) {
+            dbus_connection_unref(this->conn);
+        }
+    }
 
     /**
      * get DBusConnection.
@@ -85,8 +90,9 @@ private:
     std::string uniqueName;
 
 public:
-    Service_Object(DSType &type, const DSValue &bus,
-                       std::string &&serviceName, std::string &&uniqueName);
+    Service_Object(DSType &type, const DSValue &bus, std::string &&serviceName, std::string &&uniqueName) :
+            DSObject(type), bus(bus), serviceName(std::move(serviceName)), uniqueName(std::move(uniqueName)) { }
+
     ~Service_Object() = default;
 
     const DSValue &getBus() const {
@@ -128,7 +134,9 @@ private:
     MessageBuilder builder;
 
 public:
-    explicit DBus_Object(TypePool &typePool);
+    explicit DBus_Object(TypePool &typePool) :
+            DSObject(typePool.getDBusType()), systemBus(), sessionBus(), builder(&typePool) { }
+
     ~DBus_Object() = default;
 
     /**
@@ -176,16 +184,27 @@ public:
 typedef std::pair<const char *, const char *> SignalSelector;
 
 struct SignalSelectorComparator {
-    bool operator() (const SignalSelector &x,
-                     const SignalSelector &y) const;
+    bool operator() (const SignalSelector &x, const SignalSelector &y) const {
+        return strcmp(x.first, y.first) == 0 && strcmp(x.second, y.second) == 0;
+    }
 };
 
 struct SignalSelectorHash {
-    std::size_t operator() (const SignalSelector &key) const;
+    std::size_t operator() (const SignalSelector &key) const {
+        size_t hash = 0;
+
+        for(unsigned int i = 0; key.first[i] != '\0'; i++) {
+            hash = hash * 61 + key.first[i];
+        }
+
+        for(unsigned int i = 0; key.second[i] != '\0'; i++) {
+            hash = hash * 61 + key.second[i];
+        }
+        return hash;
+    }
 };
 
-typedef std::unordered_map<SignalSelector, DSValue,
-        SignalSelectorHash, SignalSelectorComparator> HandlerMap;
+using HandlerMap = std::unordered_map<SignalSelector, DSValue, SignalSelectorHash, SignalSelectorComparator>;
 
 // represent for D-Bus object.
 class DBusProxy_Object : public ProxyObject {
@@ -214,7 +233,8 @@ public:
     /**
      * objectPath must be String_Object
      */
-    DBusProxy_Object(DSType &type, const DSValue &srcObj, const DSValue &objectPath);
+    DBusProxy_Object(DSType &type, const DSValue &srcObj, const DSValue &objectPath) :
+            ProxyObject(type), srv(srcObj), objectPath(objectPath), ifaceSet(), handerMap() { }
 
     ~DBusProxy_Object() = default;
 
@@ -227,8 +247,13 @@ public:
     void invokeSetter(DSState &ctx, const DSType *recvType,
                       const char *fieldName, const DSType *fieldType) override;
 
-    const DSValue &getService();
-    const DSValue &getObjectPath();
+    const DSValue &getService() {
+        return this->srv;
+    }
+
+    const DSValue &getObjectPath() {
+        return this->objectPath;
+    }
 
     /**
      * return Array_Object
@@ -276,7 +301,9 @@ private:
     /**
      * obj must be FuncObject
      */
-    void addHandler(const char *ifaceName, const char *methodName, const DSValue &obj);
+    void addHandler(const char *ifaceName, const char *methodName, const DSValue &obj) {
+        this->handerMap[std::make_pair(ifaceName, methodName)] = obj;
+    }
 };
 
 } // namespace ydsh
