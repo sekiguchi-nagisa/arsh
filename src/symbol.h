@@ -94,6 +94,7 @@ constexpr const char *ENV_OLDPWD = "OLDPWD";
 constexpr const char *ENV_PATH = "PATH";
 constexpr const char *ENV_SHLVL = "SHLVL";
 constexpr const char *ENV_TERM = "TERM";
+constexpr const char *ENV_OSTYPE = "OSTYPE";
 
 } // namespace ydsh
 

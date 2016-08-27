@@ -267,18 +267,6 @@ static void initBuiltinVar(DSState *state) {
      */
     bindVariable(state, "DBus", newDBusObject(state->pool));
 
-    struct utsname name;
-    if(uname(&name) == -1) {
-        perror("cannot get utsname");
-        exit(1);
-    }
-
-    /**
-     * for os type detection.
-     * must be String_Object
-     */
-    bindVariable(state, "OSTYPE", DSValue::create<String_Object>(state->pool.getStringType(), name.sysname));
-
 #define XSTR(V) #V
 #define STR(V) XSTR(V)
     /**
@@ -394,6 +382,13 @@ DSState *DSState_create() {
         }
         setenv(ENV_HOME, pw->pw_dir, 1);
     }
+
+    struct utsname name;
+    if(uname(&name) == -1) {
+        perror("cannot get utsname");
+        exit(1);
+    }
+    setenv(ENV_OSTYPE, name.sysname, 1);
 
     initBuiltinVar(ctx);
     loadEmbeddedScript(ctx);
