@@ -812,22 +812,23 @@ void TypeChecker::visitContinueNode(ContinueNode &node) {
 
 void TypeChecker::visitExportEnvNode(ExportEnvNode &node) {
     auto &stringType = this->typePool.getStringType();
+    this->checkType(stringType, node.getExprNode());
+
     FieldHandle *handle =
             this->addEntryAndThrowIfDefined(node, node.getEnvName(), stringType, FieldHandle::ENV);
 
     node.setAttribute(handle);
-    this->checkType(stringType, node.getExprNode());
     node.setType(this->typePool.getVoidType());
 }
 
 void TypeChecker::visitImportEnvNode(ImportEnvNode &node) {
     auto &stringType = this->typePool.getStringType();
+    if(node.getDefaultValueNode() != nullptr) {
+        this->checkType(stringType, node.getDefaultValueNode());
+    }
+
     FieldHandle *handle =
             this->addEntryAndThrowIfDefined(node, node.getEnvName(), stringType, FieldHandle::ENV);
-
-    if(node.getDefaultValueNode() != nullptr) {
-        this->checkType(this->typePool.getStringType(), node.getDefaultValueNode());
-    }
 
     node.setAttribute(handle);
     node.setType(this->typePool.getVoidType());
