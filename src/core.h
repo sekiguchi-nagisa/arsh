@@ -145,9 +145,6 @@ inline const DSValue &getDBus(const DSState &st) {
     return getGlobal(st, toIndex(BuiltinVarOffset::DBUS));
 }
 
-void checkedPush(DSState &st, const DSValue &v);    //TODO: future may be removed
-void checkedPush(DSState &st, DSValue &&v);         //TODO: future may be removed
-
 void throwError(DSState &st, DSType &errorType, const char *message);
 
 void throwError(DSState &st, DSType &errorType, std::string &&message);

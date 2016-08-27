@@ -193,14 +193,6 @@ const DSValue &getGlobal(const DSState &st, unsigned int index) {
     return st.getGlobal(index);
 }
 
-void checkedPush(DSState &st, const DSValue &v) {
-    st.push(v);
-}
-
-void checkedPush(DSState &st, DSValue &&v) {
-    st.push(std::move(v));
-}
-
 void throwError(DSState &st, DSType &errorType, const char *message) {
     throwError(st, errorType, std::string(message));
 }

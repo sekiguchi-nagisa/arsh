@@ -162,7 +162,7 @@ public:
     DSValue getSessionBus(DSState &ctx);
 
     void initSignalMatchRule(DSState &st);
-    unsigned int waitSignal(DSState &st);
+    std::vector<DSValue> waitSignal(DSState &st);
 
     DSValue getServiceFromProxy(DSState &ctx, const DSValue &proxy);
     DSValue getObjectPathFromProxy(DSState &ctx, const DSValue &proxy);
@@ -236,9 +236,19 @@ public:
     DSValue createIfaceList(DSState &ctx);
 
     /**
-     * lookup signal handler and push stack top. return func type of found handler.
+     * lookup signal handler
+     * @param ifaceName
+     * @param methodName
+     * @return
+     * must be FuncObject
      */
-    FunctionType  *lookupHandler(DSState &ctx, const char *ifaceName, const char *methodName);
+    DSValue lookupHandler(const char *ifaceName, const char *methodName) const {
+        auto iter = this->handerMap.find(std::make_pair(ifaceName, methodName));
+        if(iter == this->handerMap.end()) {
+            return nullptr;
+        }
+        return iter->second;
+    }
 
     bool matchObject(const char *serviceName, const char *objectPath);
 

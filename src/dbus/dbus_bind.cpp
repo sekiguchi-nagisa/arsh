@@ -426,7 +426,7 @@ void DBus_Object::initSignalMatchRule(DSState &st) {
     }
 }
 
-unsigned int DBus_Object::waitSignal(DSState &ctx) {    //TODO: timeout
+std::vector<DSValue> DBus_Object::waitSignal(DSState &ctx) {    //TODO: timeout
     DBusProxy_Object *proxy = typeAs<DBusProxy_Object>(getLocal(ctx, 1));
 
     Bus_Object *busObj =
@@ -475,17 +475,12 @@ unsigned int DBus_Object::waitSignal(DSState &ctx) {    //TODO: timeout
             continue;
         }
 
-        FunctionType *handlerType = matchedProxy->lookupHandler(ctx, ifaceName, methodName);
-        if(handlerType != nullptr) {
-            // invoke signal handler.
+        auto handler = matchedProxy->lookupHandler(ifaceName, methodName);
+        if(handler) {
+            auto *handlerType = static_cast<FunctionType *>(typeAs<FuncObject>(handler)->getType());
             std::vector<DSValue> values = decodeMessageRaw(ctx, handlerType->getParamTypes(), std::move(message));
-
-            // push to stack
-            const unsigned int size = values.size();
-            for(unsigned int i = 0; i < size; i++) {
-                checkedPush(ctx, std::move(values[i]));
-            }
-            return size;
+            values.insert(values.begin(), std::move(handler));
+            return values;
         }
     }
 }
@@ -723,16 +718,6 @@ DSValue DBusProxy_Object::createIfaceList(DSState &ctx) {
     return DSValue::create<Array_Object>(getPool(ctx).getStringArrayType(), std::move(list));
 }
 
-FunctionType *DBusProxy_Object::lookupHandler(DSState &ctx,
-                                              const char *ifaceName, const char *methodName) {
-    auto iter = this->handerMap.find(std::make_pair(ifaceName, methodName));
-    if(iter == this->handerMap.end()) {
-        return nullptr;
-    }
-    checkedPush(ctx, iter->second);
-    return static_cast<FunctionType *>(typeAs<FuncObject>(iter->second)->getType());
-}
-
 bool DBusProxy_Object::matchObject(const char *serviceName, const char *objectPath) {
     return strcmp(serviceName, typeAs<Service_Object>(this->srv)->getUniqueName()) == 0 &&
            strcmp(objectPath, typeAs<String_Object>(this->objectPath)->getValue()) == 0;
@@ -851,9 +836,9 @@ void DBusInitSignal(DSState &ctx) {
  * after call it, push signal handler function and parameters on operand stack.
  * @param st
  * @return
- * param size of dispatched function
+ * contains lookuped handler and parameters.
  */
-unsigned int DBusWaitSignal(DSState &ctx) {
+std::vector<DSValue> DBusWaitSignal(DSState &ctx) {
     return typeAs<DBus_Object>(LOCAL(0))->waitSignal(ctx);
 }
 

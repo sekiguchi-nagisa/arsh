@@ -1200,7 +1200,14 @@ static void addRedirOption(DSState &state, RedirectOP op) {
 
 // prototype of DBus related api
 void DBusInitSignal(DSState &st);
-unsigned int DBusWaitSignal(DSState &st);
+
+/**
+ *
+ * @param st
+ * @return
+ * last elements indicates resolved signal handler
+ */
+std::vector<DSValue> DBusWaitSignal(DSState &st);
 
 
 static bool mainLoop(DSState &state) {
@@ -1701,8 +1708,11 @@ static bool mainLoop(DSState &state) {
             break;
         }
         vmcase(DBUS_WAIT_SIG) {
-            const unsigned int paramSize = DBusWaitSignal(state);
-            applyFuncObject(state, paramSize);
+            auto v = DBusWaitSignal(state);
+            for(auto &e : v) {
+                state.push(std::move(e));
+            }
+            applyFuncObject(state, v.size() - 1);
             break;
         }
         }
@@ -1750,9 +1760,9 @@ static bool handleException(DSState &state) {
 
 void DBusInitSignal(DSState &) {  }   // do nothing
 
-unsigned int DBusWaitSignal(DSState &st) {
+std::vector<DSValue> DBusWaitSignal(DSState &st) {
     throwError(st, st.pool.getErrorType(), "not support method");
-    return 0;
+    return std::vector<DSValue>();
 }
 
 DSValue newDBusObject(TypePool &pool) {
