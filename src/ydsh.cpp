@@ -370,19 +370,27 @@ DSState *DSState_create() {
     setlocale(LC_ALL, "");
     setlocale(LC_MESSAGES, "C");
 
+    // set environmental variables
+
     // update shell level
     setenv(ENV_SHLVL, std::to_string(originalShellLevel() + 1).c_str(), 1);
 
-    // set some env
+    // set HOME
+    struct passwd *pw = getpwuid(getuid());
+    if(pw == nullptr) {
+        perror("getpwuid failed\n");
+        exit(1);
+    }
     if(getenv(ENV_HOME) == nullptr) {
-        struct passwd *pw = getpwuid(getuid());
-        if(pw == nullptr) {
-            perror("getpwuid failed\n");
-            exit(1);
-        }
         setenv(ENV_HOME, pw->pw_dir, 1);
     }
 
+    // set LOGNAME
+    if(getenv(ENV_LOGNAME) == nullptr) {
+        setenv(ENV_LOGNAME, pw->pw_name, 1);
+    }
+
+    // set OSTYPE
     struct utsname name;
     if(uname(&name) == -1) {
         perror("cannot get utsname");
