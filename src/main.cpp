@@ -233,7 +233,7 @@ int main(int argc, char **argv) {
     memcpy(shellArgs, argv + restIndex, sizeof(char *) * size);
     shellArgs[size] = nullptr;
 
-    if(invocationKind == InvocationKind::FROM_FILE && size == 0) {
+    if(invocationKind == InvocationKind::FROM_FILE && (size == 0 || strcmp(shellArgs[0], "-") == 0)) {
         invocationKind = InvocationKind::FROM_STDIN;
     }
 

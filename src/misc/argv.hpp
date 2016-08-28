@@ -134,6 +134,14 @@ int parseArgv(int argc, char **argv, const Option<T> (&options)[N], CmdLines<T> 
             break;
         }
 
+        if(strcmp(arg, "-") == 0) {
+            break;
+        }
+        if(strcmp(arg, "--") == 0) {
+            index++;
+            break;
+        }
+
         auto iter = indexMap.find(arg);
         if(iter == indexMap.end()) {    // not found
             throw ParseError("illegal option", arg);

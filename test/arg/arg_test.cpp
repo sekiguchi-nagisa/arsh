@@ -306,6 +306,41 @@ TEST_F(ArgTest, success7) {
      });
 }
 
+template <typename T, std::size_t N>
+static size_t arraySize(const T (&)[N]) {
+    return N;
+}
+
+TEST_F(ArgTest, success8) {
+    static const Opt options[] = {
+            {Kind::A, "-a", 0, "hogehjoge"},
+            {Kind::E, "-e", 0, "hogehjogee"},
+    };
+
+    CL cl;
+    const char *argv[] = {
+            "<dummy>", "-a", "-", "hoge"
+    };
+
+    int index = parseArgv(arraySize(argv), (char **)argv, options, cl);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, index));
+}
+
+TEST_F(ArgTest, success9) {
+    static const Opt options[] = {
+            {Kind::A, "-a", 0, "hogehjoge"},
+            {Kind::E, "-e", 0, "hogehjogee"},
+    };
+
+    CL cl;
+    const char *argv[] = {
+            "<dummy>", "--", "-a", "hoge"
+    };
+
+    int index = parseArgv(arraySize(argv), (char **)argv, options, cl);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, index));
+}
+
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

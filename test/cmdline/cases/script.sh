@@ -23,6 +23,7 @@ YDSH_BIN=$1
 
 $YDSH_BIN $TARGET A
 
+$YDSH_BIN -- $TARGET A
 
 a=hfuierht456
 $YDSH_BIN $a 2>&1 | grep "ydsh: $a"
