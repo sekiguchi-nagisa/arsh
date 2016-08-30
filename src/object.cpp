@@ -264,13 +264,12 @@ DSValue Array_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
         DSType *tempType = temp->getType();
         if(*tempType == getPool(ctx).getStringType()) {
             typeAs<Array_Object>(result)->values.push_back(std::move(temp));
-        } else if(*tempType == getPool(ctx).getStringArrayType()) {
+        } else {
+            assert(*tempType == getPool(ctx).getStringArrayType());
             Array_Object *tempArray = typeAs<Array_Object>(temp);
             for(auto &tempValue : tempArray->values) {
                 typeAs<Array_Object>(result)->values.push_back(tempValue);
             }
-        } else {
-            fatal("illegal command argument type: %s\n", getPool(ctx).getTypeName(*tempType).c_str());
         }
     }
     return result;
@@ -412,13 +411,12 @@ DSValue Tuple_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
         DSType *tempType = temp->getType();
         if(*tempType == getPool(ctx).getStringType()) {
             typeAs<Array_Object>(result)->append(std::move(temp));
-        } else if(*tempType == getPool(ctx).getStringArrayType()) {
+        } else {
+            assert(*tempType == getPool(ctx).getStringArrayType());
             Array_Object *tempArray = typeAs<Array_Object>(temp);
             for(auto &tempValue : tempArray->getValues()) {
                 typeAs<Array_Object>(result)->append(tempValue);
             }
-        } else {
-            fatal("illegal command argument type: %s\n", getPool(ctx).getTypeName(*tempType).c_str());
         }
     }
     return result;
