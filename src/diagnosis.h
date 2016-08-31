@@ -42,15 +42,12 @@ public:
         return this->message;
     }
 
-    /**
-     * after call it, message will be empty.
-     */
-    std::string moveMessage() {
-        return std::move(this->message);
-    }
-
     bool operator==(const TypeLookupError &e) const {
         return this->message == e.getMessage();
+    }
+
+    friend std::string extract(TypeLookupError &&e) {
+        return std::move(e.message);
     }
 };
 
@@ -141,7 +138,7 @@ public:
             token(token), kind(kind), message(std::move(message)) { }
 
     TypeCheckError(Token token, TypeLookupError &e) :
-            token(token), kind(e.getKind()), message(e.moveMessage()) { }
+            token(token), kind(e.getKind()), message(extract(std::move(e))) { }
 
     ~TypeCheckError() = default;
 
