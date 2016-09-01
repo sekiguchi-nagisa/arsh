@@ -28,23 +28,23 @@ $YDSH_BIN -c "cd $DIR/link; "'assert "$(pwd)" == "'"$DIR/link"'"'
 
 $YDSH_BIN -c "cd -L $DIR/link; "'assert "$(pwd -L)" == "'"$DIR/link"'"'
 
-$YDSH_BIN -c "cd $DIR/link; "'assert "$(pwd -P)" == "'"$DIR/$TARGET"'"'
+$YDSH_BIN -c "assert(cd $DIR/link); "'assert "$(pwd -P)" == "'"$DIR/$TARGET"'"'
 
-$YDSH_BIN -c "cd $DIR/link; cd ../; "'assert "$(pwd -P)" == "'"$DIR"'"'
+$YDSH_BIN -c "assert(cd $DIR/link); assert(cd ../); "'assert "$(pwd -P)" == "'"$DIR"'"'
 
-$YDSH_BIN -c "cd $DIR/link; cd ../; "'assert "$(pwd -L)" == "'"$DIR"'"'
+$YDSH_BIN -c "assert(cd $DIR/link); assert(cd ../); "'assert "$(pwd -L)" == "'"$DIR"'"'
 
-$YDSH_BIN -c "cd $DIR/link; cd ../; "'assert $OLDPWD == "'"$DIR/link"'"'
+$YDSH_BIN -c "assert(cd $DIR/link); assert(cd ../); "'assert $OLDPWD == "'"$DIR/link"'"'
 
 # without symbolic link
-$YDSH_BIN -c "cd -P $DIR/link; "'assert $PWD == "'"$DIR/$TARGET"'"'
+$YDSH_BIN -c "assert(cd -P $DIR/link); "'assert $PWD == "'"$DIR/$TARGET"'"'
 
-$YDSH_BIN -c "cd -P $DIR/link; "'assert "$(pwd)" == "'"$DIR/$TARGET"'"'
+$YDSH_BIN -c "assert(cd -P $DIR/link); "'assert "$(pwd)" == "'"$DIR/$TARGET"'"'
 
-$YDSH_BIN -c "cd -P $DIR/link; "'assert "$(pwd -P)" == "'"$DIR/$TARGET"'"'
+$YDSH_BIN -c "assert(cd -P $DIR/link); "'assert "$(pwd -P)" == "'"$DIR/$TARGET"'"'
 
-$YDSH_BIN -c "cd -P $DIR/link; "'assert "$(pwd -L)" == "'"$DIR/$TARGET"'"'
+$YDSH_BIN -c "assert(cd -P $DIR/link); "'assert "$(pwd -L)" == "'"$DIR/$TARGET"'"'
 
-$YDSH_BIN -c "cd -P $DIR/link; cd ../; "'assert "$(pwd -L)" == "'"$DIR/work"'"'
+$YDSH_BIN -c "assert(cd -P $DIR/link); assert(cd ../); "'assert "$(pwd -L)" == "'"$DIR/work"'"'
 
-$YDSH_BIN -c "cd -P $DIR/link; cd ../; "'assert $OLDPWD == "'"$DIR/$TARGET"'"'
+$YDSH_BIN -c "assert(cd -P $DIR/link); assert(cd ../); "'assert $OLDPWD == "'"$DIR/$TARGET"'"'
