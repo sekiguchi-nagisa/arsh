@@ -57,8 +57,12 @@ public:
         return this->token;
     }
 
-    unsigned int getStartPos() const {
+    unsigned int getPos() const {
         return this->token.pos;
+    }
+
+    void setPos(unsigned int pos) {
+        this->token.pos = pos;
     }
 
     unsigned int getSize() const {

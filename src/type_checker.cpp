@@ -1001,12 +1001,12 @@ void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
 void TypeChecker::visitAssignNode(AssignNode &node) {
     AssignableNode *leftNode = dynamic_cast<AssignableNode *>(node.getLeftNode());
     if(leftNode == nullptr) {
-        RAISE_TC_ERROR(Assignable, node);
+        RAISE_TC_ERROR(Assignable, *node.getLeftNode());
     }
 
     auto &leftType = this->checkType(leftNode);
     if(leftNode->isReadOnly()) {
-        RAISE_TC_ERROR(ReadOnly, node);
+        RAISE_TC_ERROR(ReadOnly, *leftNode);
     }
 
     if(dynamic_cast<AccessNode *>(leftNode) != nullptr) {

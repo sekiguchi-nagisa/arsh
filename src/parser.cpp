@@ -989,6 +989,7 @@ std::unique_ptr<Node> Parser::parse_memberExpression() {
                 ArgsWrapper args(this->parse_arguments());
                 node = uniquify<MethodCallNode>(node.release(), std::move(name),
                                                 ArgsWrapper::extract(std::move(args)));
+                node->updateToken(args.getToken());
             } else {    // treat as field access
                 node = uniquify<AccessNode>(node.release(), std::move(name));
                 node->updateToken(token);
@@ -998,13 +999,15 @@ std::unique_ptr<Node> Parser::parse_memberExpression() {
         case LB: {
             this->expect(LB);
             auto indexNode(this->parse_expression());
-            this->expect(RB);
+            auto token = this->expect(RB);
             node.reset(createIndexNode(node.release(), indexNode.release()));
+            node->updateToken(token);
             break;
         }
         case LP: {
             ArgsWrapper args(this->parse_arguments());
             node = uniquify<ApplyNode>(node.release(), ArgsWrapper::extract(std::move(args)));
+            node->updateToken(args.getToken());
             break;
         }
         default: {
@@ -1025,7 +1028,9 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         this->expect(NEW, false);
         std::unique_ptr<TypeNode> type(this->parse_typeName());
         ArgsWrapper args(this->parse_arguments());
-        return uniquify<NewNode>(startPos, type.release(), ArgsWrapper::extract(std::move(args)));
+        auto node = uniquify<NewNode>(startPos, type.release(), ArgsWrapper::extract(std::move(args)));
+        node->updateToken(args.getToken());
+        return std::move(node);
     }
     case BYTE_LITERAL: {
         TokenKind kind = CUR_KIND();
@@ -1126,6 +1131,8 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
                 }
             }
             node.reset(tuple.release());
+        } else {
+            node->setPos(token.pos);
         }
 
         token = this->expect(RP);
@@ -1197,9 +1204,9 @@ std::unique_ptr<Node> Parser::parse_stringLiteral() {
 }
 
 ArgsWrapper Parser::parse_arguments() {
-    this->expect(LP);
+    Token token = this->expect(LP);
 
-    ArgsWrapper args;
+    ArgsWrapper args(token.pos);
     switch(CUR_KIND()) {
     EACH_LA_expression(GEN_LA_CASE) {
         args.addArgNode(this->parse_expression());
@@ -1221,7 +1228,8 @@ ArgsWrapper Parser::parse_arguments() {
         E_ALTER(EACH_LA_expression(GEN_LA_ALTER) RP);
     }
 
-    this->expect(RP);
+    token = this->expect(RP);
+    args.updateToken(token);
     return args;
 }
 

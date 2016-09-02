@@ -776,7 +776,7 @@ void BinaryOpNode::toStringExpr(TypePool &pool, BinaryOpNode &node) {
         node.rightNode = CastNode::newTypedCastNode(pool, node.rightNode, pool.getStringType());
     }
 
-    auto *exprNode = new StringExprNode(node.leftNode->getStartPos());
+    auto *exprNode = new StringExprNode(node.leftNode->getPos());
     exprNode->addExprNode(node.leftNode);
     exprNode->addExprNode(node.rightNode);
 
@@ -1034,7 +1034,7 @@ void BlockNode::addReturnNodeToLast(TypePool &pool, Node *exprNode) {
     assert(!this->isUntyped() && !this->getType().isBottomType());
     assert(!exprNode->isUntyped());
 
-    ReturnNode *returnNode = new ReturnNode(exprNode->getStartPos(), exprNode);
+    ReturnNode *returnNode = new ReturnNode(exprNode->getPos(), exprNode);
     returnNode->setType(pool.getBottomType());
     this->addNode(returnNode);
     this->setType(returnNode->getType());
@@ -1232,10 +1232,10 @@ static void resolveIfIsStatement(Node *condNode, BlockNode *blockNode) {
         return;
     }
 
-    VarNode *exprNode = new VarNode({isNode->getStartPos(), 1}, std::string(varNode->getVarName()));
+    VarNode *exprNode = new VarNode({isNode->getPos(), 1}, std::string(varNode->getVarName()));
     CastNode *castNode = new CastNode(exprNode, isNode->getTargetTypeNode(), true);
     VarDeclNode *declNode =
-            new VarDeclNode(isNode->getStartPos(), std::string(varNode->getVarName()), castNode, true);
+            new VarDeclNode(isNode->getPos(), std::string(varNode->getVarName()), castNode, true);
     blockNode->insertNodeToFirst(declNode);
 }
 

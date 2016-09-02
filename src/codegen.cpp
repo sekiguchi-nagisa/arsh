@@ -508,11 +508,11 @@ void ByteCodeGenerator::visitCastNode(CastNode &node) {
         this->writeNumCastIns(node.getNumberCastOp(), node.getType());
         break;
     case CastNode::TO_STRING:
-        this->writeSourcePos(node.getStartPos());
+        this->writeSourcePos(node.getPos());
         this->writeToString();
         break;
     case CastNode::CHECK_CAST:
-        this->writeSourcePos(node.getStartPos());
+        this->writeSourcePos(node.getPos());
         this->writeTypeIns(OpCode::CHECK_CAST, node.getType());
         break;
     }
@@ -560,7 +560,7 @@ void ByteCodeGenerator::visitApplyNode(ApplyNode &node) {
         this->visit(*e);
     }
 
-    this->writeSourcePos(node.getStartPos());
+    this->writeSourcePos(node.getPos());
     this->write2byteIns(OpCode::CALL_FUNC, paramSize);
 }
 
@@ -571,7 +571,7 @@ void ByteCodeGenerator::visitMethodCallNode(MethodCallNode &node) {
         this->visit(*e);
     }
 
-    this->writeSourcePos(node.getStartPos());
+    this->writeSourcePos(node.getPos());
     if(node.getHandle()->isInterfaceMethod()) {
         this->writeDescriptorIns(
                 OpCode::INVOKE_METHOD, encodeMethodDescriptor(node.getMethodName().c_str(), node.getHandle()));
@@ -591,7 +591,7 @@ void ByteCodeGenerator::visitNewNode(NewNode &node) {
     }
 
     // call constructor
-    this->writeSourcePos(node.getStartPos());
+    this->writeSourcePos(node.getPos());
     this->write2byteIns(OpCode::CALL_INIT, paramSize);
 }
 
@@ -671,7 +671,7 @@ void ByteCodeGenerator::visitPipedCmdNode(PipedCmdNode &node) {
     }
     labels[size] = makeIntrusive<Label>();
 
-    this->writeSourcePos(node.getStartPos());
+    this->writeSourcePos(node.getPos());
     this->writePipelineIns(labels);
 
     if(size == 1) {
@@ -716,7 +716,7 @@ void ByteCodeGenerator::visitSubstitutionNode(SubstitutionNode &node) {
 void ByteCodeGenerator::visitAssertNode(AssertNode &node) {
     if(this->assertion) {
         this->visit(*node.getCondNode());
-        this->writeSourcePos(node.getCondNode()->getStartPos());
+        this->writeSourcePos(node.getCondNode()->getPos());
         this->visit(*node.getMessageNode());
         this->write0byteIns(OpCode::ASSERT);
     }
@@ -774,7 +774,7 @@ void ByteCodeGenerator::visitImportEnvNode(ImportEnvNode &node) {
         this->visit(*node.getDefaultValueNode());
     }
 
-    this->writeSourcePos(node.getStartPos());
+    this->writeSourcePos(node.getPos());
     this->write1byteIns(OpCode::IMPORT_ENV, hashDefault ? 1 : 0);
 
     if(node.isGlobal()) {
