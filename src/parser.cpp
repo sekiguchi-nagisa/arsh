@@ -464,15 +464,21 @@ std::unique_ptr<Node> Parser::parse_statement() {
         return this->parse_typeAlias();
     }
     case ASSERT: {
+        unsigned int pos = START_POS();
         this->expect(ASSERT);
         auto condNode(this->parse_expression());
         std::unique_ptr<Node> messageNode;
         if(!HAS_NL() && CUR_KIND() == COLON) {
             this->expectAndChangeMode(COLON, yycSTMT);
             messageNode = this->parse_expression();
+        } else {
+            std::string msg = "`";
+            msg += this->lexer->toTokenText(condNode->getToken());
+            msg += "'";
+            messageNode.reset(new StringValueNode(std::move(msg)));
         }
 
-        auto node = uniquify<AssertNode>(condNode.release(), messageNode.release());
+        auto node = uniquify<AssertNode>(pos, condNode.release(), messageNode.release());
         this->parse_statementEnd();
         return std::move(node);
     }

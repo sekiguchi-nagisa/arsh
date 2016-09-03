@@ -1247,9 +1247,10 @@ private:
     Node *messageNode;
 
 public:
-    AssertNode(Node *condNode, Node *messageNode) :
-            Node(condNode->getToken()), condNode(condNode),
-            messageNode(messageNode != nullptr ? messageNode : new StringValueNode("")) { }
+    AssertNode(unsigned int pos, Node *condNode, Node *messageNode) :
+            Node({pos, 1}), condNode(condNode), messageNode(messageNode) {
+        this->updateToken(messageNode->getToken());
+    }
 
     ~AssertNode();
 
