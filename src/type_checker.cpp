@@ -484,7 +484,7 @@ void TypeChecker::visitStringExprNode(StringExprNode &node) {
     for(unsigned int i = 0; i < size; i++) {
         Node *exprNode = node.getExprNodes()[i];
         auto &exprType = this->checkType(exprNode);
-        if(exprType != this->typePool.getStringType()) { // call __INTERP__()
+        if(!this->typePool.getStringType().isSameOrBaseTypeOf(exprType)) { // call __INTERP__()
             std::string methodName(OP_INTERP);
             MethodHandle *handle = exprType.lookupMethodHandle(this->typePool, methodName);
             assert(handle != nullptr);
@@ -724,14 +724,14 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
         Node *exprNode = node.getSegmentNodes()[i];
         auto &segmentType = this->checkType(exprNode);
 
-        if(segmentType != this->typePool.getStringType() &&
-                segmentType != this->typePool.getStringArrayType()) {    // call __STR__ or __CMD__ARG
+        if(!this->typePool.getStringType().isSameOrBaseTypeOf(segmentType) &&
+                !this->typePool.getStringArrayType().isSameOrBaseTypeOf(segmentType)) { // call __STR__ or __CMD__ARG
             // first try lookup __CMD_ARG__ method
             std::string methodName(OP_CMD_ARG);
             MethodHandle *handle = segmentType.lookupMethodHandle(this->typePool, methodName);
 
             if(handle == nullptr || (*handle->getReturnType() != this->typePool.getStringType() &&
-                    *handle->getReturnType() != this->typePool.getStringArrayType())) { // if not found, lookup __STR__
+                                     *handle->getReturnType() != this->typePool.getStringArrayType())) { // if not found, lookup __STR__
                 methodName = OP_STR;
                 handle = segmentType.lookupMethodHandle(this->typePool, methodName);
             }
