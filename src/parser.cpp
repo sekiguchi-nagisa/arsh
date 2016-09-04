@@ -1304,10 +1304,13 @@ std::unique_ptr<Node> Parser::parse_paramExpansion() {
 }
 
 std::unique_ptr<SubstitutionNode> Parser::parse_substitution() {
+    unsigned int pos = START_POS();
     this->expect(START_SUB_CMD);
-    auto node(this->parse_expression());
-    this->expect(RP);
-    return uniquify<SubstitutionNode>(node.release());
+    auto exprNode(this->parse_expression());
+    Token token = this->expect(RP);
+    auto node = uniquify<SubstitutionNode>(pos, exprNode.release());
+    node->updateToken(token);
+    return node;
 }
 
 bool parse(const char *sourceName, RootNode &rootNode) {

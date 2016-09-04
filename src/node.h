@@ -1217,8 +1217,8 @@ private:
     bool strExpr;
 
 public:
-    explicit SubstitutionNode(Node *exprNode) :
-            Node(exprNode->getToken()), exprNode(exprNode), strExpr(false) { }
+    SubstitutionNode(unsigned int pos, Node *exprNode) :
+            Node({pos, 1}), exprNode(exprNode), strExpr(false) { }
 
     ~SubstitutionNode();
 
