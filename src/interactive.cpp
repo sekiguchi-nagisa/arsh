@@ -242,8 +242,6 @@ int exec_interactive(DSState *dsState) {
             break;
         }
     }
-
-    DSState_delete(&dsState);
     return exitStatus;
 }
 

@@ -44,7 +44,6 @@ static void loadRC(DSState *state, const char *rcfile) {
     DSError_release(&e);
     fclose(fp);
     if(kind != DS_ERROR_KIND_SUCCESS) {
-        DSState_delete(&state);
         exit(ret);
     }
 
@@ -67,7 +66,6 @@ static int invoke(DSState **state, T&& ... args) {
         }
     }
     DSError_release(&error);
-    DSState_delete(state);
     return ret;
 }
 
@@ -150,7 +148,7 @@ int main(int argc, char **argv) {
         std::cerr << e.getMessage() << std::endl;
         std::cerr << DSState_version() << std::endl;
         std::cerr << options << std::endl;
-        return 1;
+        exit(1);
     }
 
     DSState *state = DSState_create();
@@ -189,11 +187,11 @@ int main(int argc, char **argv) {
         case VERSION:
             std::cout << DSState_version() << std::endl;
             std::cout << DSState_copyright() << std::endl;
-            return 0;
+            exit(0);
         case HELP:
             std::cout << DSState_version() << std::endl;
             std::cout << options << std::endl;
-            return 0;
+            exit(0);
         case COMMAND:
             invocationKind = InvocationKind::FROM_STRING;
             evalText = cmdLine.second;
@@ -211,7 +209,7 @@ int main(int argc, char **argv) {
             break;
         case FEATURE:
             showFeature(std::cout);
-            return 0;
+            exit(0);
         case RC_FILE:
             rcfile = cmdLine.second;
             break;
@@ -244,18 +242,18 @@ int main(int argc, char **argv) {
         FILE *fp = fopen(scriptName, "rb");
         if(fp == NULL) {
             fprintf(stderr, "ydsh: %s: %s\n", scriptName, strerror(errno));
-            return 1;
+            exit(1);
         }
 
         DSState_setShellName(state, scriptName);
         DSState_setArguments(state, shellArgs + 1);
-        return INVOKE(loadAndEval)(&state, scriptName, fp);
+        exit(INVOKE(loadAndEval)(&state, scriptName, fp));
     }
     case InvocationKind::FROM_STDIN: {
         DSState_setArguments(state, shellArgs);
 
         if(isatty(STDIN_FILENO) == 0 && !forceInteractive) {  // pipe line mode
-            return INVOKE(loadAndEval)(&state, nullptr, stdin);
+            exit(INVOKE(loadAndEval)(&state, nullptr, stdin));
         } else {    // interactive mode
             if(!quiet) {
                 std::cout << DSState_version() << std::endl;
@@ -268,18 +266,16 @@ int main(int argc, char **argv) {
             // ignore termination hook
             DSState_addTerminationHook(state, nullptr);
 
-            return exec_interactive(state);
+            exit(exec_interactive(state));
         }
     }
     case InvocationKind::FROM_STRING: {
         DSState_setShellName(state, shellArgs[0]);
         DSState_setArguments(state, size == 0 ? nullptr : shellArgs + 1);
-        return INVOKE(eval)(&state, "(string)", evalText);
+        exit(INVOKE(eval)(&state, "(string)", evalText));
     }
     case InvocationKind::BUILTIN: {
-        int ret = DSState_exec(state, shellArgs);
-        DSState_delete(&state);
-        return ret;
+        exit(DSState_exec(state, shellArgs));
     }
     }
 }
