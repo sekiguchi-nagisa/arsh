@@ -309,21 +309,18 @@ bool changeWorkingDir(DSState &st, const char *dest, const bool useLogical) {
 void exitShell(DSState &st, unsigned int status) {
     std::string str("terminated by exit ");
     str += std::to_string(status);
-    st.thrownObject = st.newError(st.pool.getShellExit(), std::move(str));
+    auto except = st.newError(st.pool.getShellExit(), std::move(str));
 
     // invoke termination hook
     if(st.terminationHook != nullptr) {
-        const unsigned int lineNum =
-                getOccuredLineNum(typeAs<Error_Object>(st.getThrownObject())->getStackTrace());
+        const unsigned int lineNum = getOccuredLineNum(typeAs<Error_Object>(except)->getStackTrace());
         st.terminationHook(DS_ERROR_KIND_EXIT, lineNum);
     }
 
     // print stack trace
     if(hasFlag(st.option, DS_OPTION_TRACE_EXIT)) {
-        st.loadThrownObject();
-        typeAs<Error_Object>(st.pop())->printStackTrace(st);
+        typeAs<Error_Object>(except)->printStackTrace(st);
     }
-
     exit(status);
 }
 

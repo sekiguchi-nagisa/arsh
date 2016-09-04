@@ -112,19 +112,16 @@ static void checkAssertion(DSState &state) {
     assert(typeAs<String_Object>(msg)->getValue() != nullptr);
 
     if(!typeAs<Boolean_Object>(state.pop())->getValue()) {
-        state.setThrownObject(Error_Object::newError(state, state.pool.getAssertFail(), std::move(msg)));
+        auto except = Error_Object::newError(state, state.pool.getAssertFail(), std::move(msg));
 
         // invoke termination hook
         if(state.terminationHook != nullptr) {
-            const unsigned int lineNum =
-                    getOccuredLineNum(typeAs<Error_Object>(state.getThrownObject())->getStackTrace());
+            const unsigned int lineNum = getOccuredLineNum(typeAs<Error_Object>(except)->getStackTrace());
             state.terminationHook(DS_ERROR_KIND_ASSERTION_ERROR, lineNum);
         }
 
         // print stack trace
-        state.loadThrownObject();
-        typeAs<Error_Object>(state.pop())->printStackTrace(state);
-
+        typeAs<Error_Object>(except)->printStackTrace(state);
         exit(1);
     }
 }
