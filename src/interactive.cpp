@@ -200,6 +200,21 @@ static std::size_t encoding_readCode(int fd, char *buf, std::size_t bufSize, int
     return UnicodeUtil::utf8ToCodePoint(buf, bufSize, *codePoint);
 }
 
+static std::size_t encoding_strLen(const char *str) {
+    unsigned int size = 0;
+    for(const char *ptr = str; *ptr != '\0';) {
+        unsigned int b = UnicodeUtil::utf8ByteSize(*ptr);
+        int codePoint = UnicodeUtil::utf8ToCodePoint(ptr, b);
+        if(codePoint < 0) {
+            return strlen(str);
+        }
+        int codeSize = UnicodeUtil::localeAwareWidth(codePoint);
+        size += codeSize < 0 ? 0 : codeSize;
+        ptr += b;
+    }
+    return size;
+}
+
 static void completeCallback(const char *buf, size_t cursor, linenoiseCompletions *lc) {
     std::string actualBuf(lineBuf);
     size_t actualCursor = actualBuf.size() + cursor;
@@ -223,7 +238,8 @@ int exec_interactive(DSState *dsState) {
     linenoiseSetEncodingFunctions(
             encoding_prevCharLen,
             encoding_nextCharLen,
-            encoding_readCode);
+            encoding_readCode,
+            encoding_strLen);
 
     linenoiseSetCompletionCallback(completeCallback);
 
