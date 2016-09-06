@@ -747,12 +747,7 @@ static void completeCommandName(const DSState &ctx, const std::string &token, CS
             continue;
         }
 
-        dirent *entry;
-        while(true) {
-            entry = readdir(dir);
-            if(entry == nullptr) {
-                break;
-            }
+        for(dirent *entry; (entry = readdir(dir)) != nullptr;) {
             const char *name = entry->d_name;
             if(startsWith(name, token.c_str())) {
                 std::string fullpath(p);
@@ -819,13 +814,7 @@ static void completeFileName(const DSState &st, const std::string &token,
         return;
     }
 
-    dirent *entry;
-    while(true) {
-        entry = readdir(dir);
-        if(entry == nullptr) {
-            break;
-        }
-
+    for(dirent *entry; (entry = readdir(dir)) != nullptr;) {
         if(startsWith(entry->d_name, name.c_str())) {
             if(name.empty() && (strcmp(entry->d_name, "..") == 0 || strcmp(entry->d_name, ".") == 0)) {
                 continue;

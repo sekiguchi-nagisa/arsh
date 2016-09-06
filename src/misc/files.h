@@ -40,26 +40,20 @@ inline void getFileList(const char *dirPath, bool recursive, std::vector<std::st
             return;
         }
 
-        dirent *entry;
-
-        do {
-            entry = readdir(dir);
-            if(entry == nullptr) {
-                break;
-            }
+        for(dirent *entry; (entry = readdir(dir)) != nullptr;) {
             if(entry->d_type == DT_REG) {
                 std::string name(path);
                 name += "/";
                 name += entry->d_name;
                 results.push_back(std::move(name));
             } else if(recursive && entry->d_type == DT_DIR &&
-                      strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+                    strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
                 std::string name(path);
                 name += "/";
                 name += entry->d_name;
                 dirList.push_back(std::move(name));
             }
-        } while(true);
+        }
         closedir(dir);
     }
 }
