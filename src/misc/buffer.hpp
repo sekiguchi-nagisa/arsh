@@ -65,7 +65,7 @@ private:
         return ptr;
     }
 
-    void moveElements(iterator src, iterator dest) {
+    void moveElements(iterator src, iterator dest) noexcept {
         if(src == dest) {
             return;
         }
@@ -97,13 +97,19 @@ public:
     /**
      * for lazy allocation
      */
-    FlexBuffer() : maxSize(0), usedSize(0), data(nullptr) { }
+    FlexBuffer() noexcept : maxSize(0), usedSize(0), data(nullptr) { }
 
-    FlexBuffer(FlexBuffer<T, SIZE_T> &&buffer) :
+    FlexBuffer(FlexBuffer<T, SIZE_T> &&buffer) noexcept :
             maxSize(buffer.maxSize), usedSize(buffer.usedSize), data(extract(std::move(buffer))) { }
 
     ~FlexBuffer() {
         free(this->data);
+    }
+
+    FlexBuffer<T, SIZE_T> &operator=(FlexBuffer<T, SIZE_T> &&buffer) noexcept {
+        FlexBuffer<T, SIZE_T> tmp(std::move(buffer));
+        this->swap(tmp);
+        return *this;
     }
 
     FlexBuffer<T, SIZE_T> &operator+=(const T &value);
@@ -113,7 +119,6 @@ public:
      */
     FlexBuffer<T, SIZE_T> &operator+=(const FlexBuffer<T, SIZE_T> &buffer);
 
-    FlexBuffer<T, SIZE_T> &operator=(FlexBuffer<T, SIZE_T> &&buffer) noexcept;
     FlexBuffer<T, SIZE_T> &operator+=(FlexBuffer<T, SIZE_T> &&buffer);
 
     /**
@@ -209,14 +214,14 @@ public:
     /**
      * pos must not equivalent to this->end().
      */
-    iterator erase(const_iterator pos);
+    iterator erase(const_iterator pos) noexcept;
 
     /**
      * first must be last or less. (first <= last).
      * last must be this->end() or less. (last <= this->end())
      * first is inclusive, last is exclusive.
      */
-    iterator erase(const_iterator first, const_iterator last);
+    iterator erase(const_iterator first, const_iterator last) noexcept;
 
     void assign(size_type n, const T &value);
 
@@ -264,13 +269,6 @@ FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::operator+=(const T &value) {
 template <typename T, typename SIZE_T>
 FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::operator+=(const FlexBuffer<T, SIZE_T> &buffer) {
     return this->append(buffer.get(), buffer.size());
-}
-
-template <typename T, typename SIZE_T>
-FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::operator=(FlexBuffer<T, SIZE_T> &&buffer) noexcept {
-    FlexBuffer<T, SIZE_T> tmp(std::move(buffer));
-    this->swap(tmp);
-    return *this;
 }
 
 template <typename T, typename SIZE_T>
@@ -335,7 +333,7 @@ typename FlexBuffer<T, SIZE_T>::iterator FlexBuffer<T, SIZE_T>::insert(const_ite
 }
 
 template <typename T, typename SIZE_T>
-typename FlexBuffer<T, SIZE_T>::iterator FlexBuffer<T, SIZE_T>::erase(const_iterator pos) {
+typename FlexBuffer<T, SIZE_T>::iterator FlexBuffer<T, SIZE_T>::erase(const_iterator pos) noexcept {
     assert(pos < this->end());
 
     const size_type index = pos - this->begin();
@@ -347,7 +345,7 @@ typename FlexBuffer<T, SIZE_T>::iterator FlexBuffer<T, SIZE_T>::erase(const_iter
 }
 
 template <typename T, typename SIZE_T>
-typename FlexBuffer<T, SIZE_T>::iterator FlexBuffer<T, SIZE_T>::erase(const_iterator first, const_iterator last) {
+typename FlexBuffer<T, SIZE_T>::iterator FlexBuffer<T, SIZE_T>::erase(const_iterator first, const_iterator last) noexcept {
     assert(last <= this->end());
     assert(first <= last);
 
@@ -367,7 +365,7 @@ void FlexBuffer<T, SIZE_T>::assign(size_type n, const T &value) {
     }
 }
 
-typedef FlexBuffer<char> ByteBuffer;
+using ByteBuffer = FlexBuffer<char>;
 
 // for byte reading
 inline unsigned char read8(const unsigned char *const code, unsigned int index) noexcept {
