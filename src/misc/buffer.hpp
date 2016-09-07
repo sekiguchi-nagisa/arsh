@@ -40,8 +40,8 @@ public:
     using reference = T &;
     using const_reference = const T &;
 
-    static const size_type MINIMUM_CAPACITY;
-    static const size_type MAXIMUM_CAPACITY;
+    static constexpr size_type MINIMUM_CAPACITY = 8;
+    static constexpr size_type MAXIMUM_CAPACITY = static_cast<SIZE_T>(-1);
 
 private:
     static_assert(std::is_unsigned<SIZE_T>::value, "need unsigned type");
@@ -238,10 +238,10 @@ public:
 // ########################
 
 template <typename T, typename SIZE_T>
-const typename FlexBuffer<T, SIZE_T>::size_type FlexBuffer<T, SIZE_T>::MINIMUM_CAPACITY = 8;
+constexpr typename FlexBuffer<T, SIZE_T>::size_type FlexBuffer<T, SIZE_T>::MINIMUM_CAPACITY;
 
 template <typename T, typename SIZE_T>
-const typename FlexBuffer<T, SIZE_T>::size_type FlexBuffer<T, SIZE_T>::MAXIMUM_CAPACITY = static_cast<SIZE_T>(-1);
+constexpr typename FlexBuffer<T, SIZE_T>::size_type FlexBuffer<T, SIZE_T>::MAXIMUM_CAPACITY;
 
 template <typename T, typename SIZE_T>
 void FlexBuffer<T, SIZE_T>::checkRange(size_type index) const {
