@@ -21,7 +21,7 @@ function assertArray($x : Array<String>, $y : Array<String>) {
     let size = $x.size()
     for(var i = 0; $i < $size; $i++) {
         if(not $assertSEQ($x[$i], $y[$i])) {
-            for(var j = 0; $j < $size; $j++) { echo $x[$j] $y[$j]; }
+            for(var j = 0; $j < $size; $j++) { echo $x[$j] $y[$j] 1>&2; }
             assert($false)
         }
     }
@@ -38,6 +38,10 @@ function comp($a : String, $path : String) : Array<String> {
     return $r
 }
 
+function escape($s : String) : String {
+    return '[]+-0123456789'.indexOf($s[0]) != -1 ? '\' + $s : $s
+}
+
 __cmd() {
     echo cmd
     echo __cmd
@@ -52,7 +56,7 @@ __cmd() {
         for $a in $(ls $dir) {
             var name = $dir + '/' + $a
             if(test -f $name && test -x $name) {
-                echo $a;
+                echo ${$escape($a)};
             }
         }
     }

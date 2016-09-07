@@ -654,25 +654,94 @@ std::string expandTilde(const char *path) {
 
 
 // for input completion
+enum class EscapeOp {
+    NOP,
+    COMMAND_NAME,
+    COMMAND_ARG,
+};
 
-static void append(CStrBuffer &buf, const char *str) {
+static std::string escapse(const char *str, EscapeOp op) {
+    std::string buf;
+    if(op == EscapeOp::NOP) {
+        buf += str;
+        return buf;
+    }
+
+    if(op == EscapeOp::COMMAND_NAME) {
+        char ch = *str;
+        if(isDecimal(ch) || ch == '+' || ch == '-') {
+            buf += '\\';
+            buf += ch;
+            str++;
+        }
+    }
+
+    while(*str != '\0') {
+        char ch = *(str++);
+        bool found = false;
+        switch(ch) {
+        case ' ':
+        case '\t':
+        case '\r':
+        case '\n':
+        case '\\':
+        case ';':
+        case '\'':
+        case '"':
+        case '`':
+        case '|':
+        case '&':
+        case '<':
+        case '>':
+        case '(':
+        case ')':
+        case '$':
+        case '#':
+            found = true;
+            break;
+        case '{':
+        case '}':
+        case '[':
+        case ']':
+            if(op == EscapeOp::COMMAND_NAME) {
+                found = true;
+            }
+            break;
+        default:
+            break;
+        }
+
+        if(found) {
+            buf += '\\';
+        }
+        buf += ch;
+    }
+
+    buf += '\0';
+    return buf;
+}
+
+
+static void append(CStrBuffer &buf, const char *str, EscapeOp op) {
+    std::string estr = escapse(str, op);
+
     // find inserting position
     for(auto iter = buf.begin(); iter != buf.end(); ++iter) {
-        int r = strcmp(str, *iter);
+        int r = strcmp(estr.c_str(), *iter);
         if(r <= 0) {
             if(r < 0) {
-                buf.insert(iter, strdup(str));
+                buf.insert(iter, strdup(estr.c_str()));
             }
             return;
         }
     }
 
     // not found, append to last
-    buf += strdup(str);
+    buf += strdup(estr.c_str());
 }
 
-static void append(CStrBuffer &buf, const std::string &str) {
-    append(buf, str.c_str());
+static void append(CStrBuffer &buf, const std::string &str, EscapeOp op) {
+    append(buf, str.c_str(), op);
 }
 
 static std::vector<std::string> computePathList(const char *pathVal) {
@@ -719,7 +788,7 @@ static void completeCommandName(const DSState &ctx, const std::string &token, CS
         if(startsWith(name, SymbolTable::cmdSymbolPrefix)) {
             name += strlen(SymbolTable::cmdSymbolPrefix);
             if(startsWith(name, token.c_str())) {
-                append(results, name);
+                append(results, name, EscapeOp::COMMAND_NAME);
             }
         }
     }
@@ -729,7 +798,7 @@ static void completeCommandName(const DSState &ctx, const std::string &token, CS
     for(unsigned int i = 0; i < bsize; i++) {
         const char *name = getBuiltinCommandName(i);
         if(startsWith(name, token.c_str())) {
-            append(results, name);
+            append(results, name, EscapeOp::COMMAND_NAME);
         }
     }
 
@@ -754,7 +823,7 @@ static void completeCommandName(const DSState &ctx, const std::string &token, CS
                 fullpath += '/';
                 fullpath += name;
                 if(S_ISREG(getStMode(fullpath.c_str())) && access(fullpath.c_str(), X_OK) == 0) {
-                    append(results, name);
+                    append(results, name, EscapeOp::COMMAND_NAME);
                 }
             }
         }
@@ -773,7 +842,7 @@ static void completeFileName(const DSState &st, const std::string &token,
                 std::string name("~");
                 name += entry->pw_name;
                 name += '/';
-                append(results, name);
+                append(results, name, EscapeOp::NOP);
             }
         }
         endpwent();
@@ -832,7 +901,7 @@ static void completeFileName(const DSState &st, const std::string &token,
             if(S_ISDIR(getStMode(fullpath.c_str()))) {
                 fileName += '/';
             }
-            append(results, fileName);
+            append(results, fileName, onlyExec ? EscapeOp::COMMAND_NAME : EscapeOp::COMMAND_ARG);
         }
     }
     closedir(dir);
@@ -843,14 +912,14 @@ static void completeGlobalVarName(const DSState &ctx, const std::string &token, 
         const char *varName = iter->first.c_str();
         if(!token.empty() && !startsWith(varName, SymbolTable::cmdSymbolPrefix)
            && startsWith(varName, token.c_str() + 1)) {
-            append(results, iter->first);
+            append(results, iter->first, EscapeOp::NOP);
         }
     }
 }
 
 static void completeExpectedToken(const std::string &token, CStrBuffer &results) {
     if(!token.empty()) {
-        append(results, token);
+        append(results, token, EscapeOp::NOP);
     }
 }
 

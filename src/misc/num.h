@@ -134,6 +134,10 @@ inline double convertToDouble(const char *str, int &status, bool skipIllegalChar
     return value;
 }
 
+inline bool isDecimal(char ch) {
+    return ch >= '0' && ch <= '9';
+}
+
 inline bool isOctal(char ch) {
     return ch >= '0' && ch < '8';
 }
