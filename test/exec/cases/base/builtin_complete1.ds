@@ -39,8 +39,31 @@ function comp($a : String, $path : String) : Array<String> {
 }
 
 function escape($s : String) : String {
-    return '[]+-0123456789'.indexOf($s[0]) != -1 ? '\' + $s : $s
+    var c = 0
+    var buf = ''
+    for $ch in $s {
+        if $c == 0 && '[]+-0123456789'.indexOf($ch) != -1 {
+            $buf += '\'
+        }
+        if $ch == ' ' {
+            $buf += '\'
+        }
+        $buf += $ch
+        $c++
+    }
+    return $buf
 }
+function escape2($s : String) : String {
+    var buf = ''
+    for $ch in $s {
+        if $ch == ' ' {
+            $buf += '\'
+        }
+        $buf += $ch
+    }
+    return $buf
+}
+
 
 __cmd() {
     echo cmd
@@ -117,7 +140,7 @@ __file() {
     for $a in $(ls -A $dir) {
         var name = $dir + '/' + $a
         if(test -d $name) {
-            echo $a/
+            echo ${$escape2($a)}/
         } else {
             if($# > 1) {
                 if(test -f $name) {
@@ -126,7 +149,7 @@ __file() {
                     }
                 }
             }
-            echo $a
+            echo ${$escape2($a)}
         }
     }
 }
