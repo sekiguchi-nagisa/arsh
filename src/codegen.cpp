@@ -341,6 +341,7 @@ void ByteCodeGenerator::generateStringExpr(StringExprNode &node, bool fragment) 
         if(!fragment) {
             this->write0byteIns(OpCode::NEW_STRING);
         }
+        unsigned int count = 0;
         for(Node *e : node.getExprNodes()) {
             if(dynamic_cast<BinaryOpNode *>(e) != nullptr) {
                 auto *binary = static_cast<BinaryOpNode *>(e);
@@ -353,6 +354,28 @@ void ByteCodeGenerator::generateStringExpr(StringExprNode &node, bool fragment) 
                 }
             }
             this->visit(*e);
+            if(count++ == 0 && dynamic_cast<EmptyNode *>(e) != nullptr) {
+                /**
+                 * When calling `APPEND_STRING' ins, the operand stack layout is the following
+                 *
+                 * +-----------------------------+-------+
+                 * | buf (created by NEW_STRING) | value |
+                 * +-----------------------------+-------+
+                 *
+                 * However, when string self assignment, first expr is empty expression
+                 * (due to self assignment impementation, see. AssignNode).
+                 * As a result, the stack layout will be the following
+                 *
+                 * +-------+-----+
+                 * | value | buf |
+                 * +-------+-----+
+                 *
+                 * In this situation `APPEND_STRING' ins brokes stack top string object (due to appending buf to value).
+                 * To prevent it, swap stack top two values.
+                 */
+                this->write0byteIns(OpCode::SWAP);
+            }
+
             this->write0byteIns(OpCode::APPEND_STRING);
         }
     }
