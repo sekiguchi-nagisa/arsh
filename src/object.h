@@ -80,7 +80,7 @@ public:
     /**
      * EQ method implementation.
      */
-    virtual bool equals(const DSValue &obj);
+    virtual bool equals(const DSValue &obj) const;
 
     /**
      * STR method implementation.
@@ -102,7 +102,7 @@ public:
     /**
      * for Map_Object
      */
-    virtual size_t hash();
+    virtual size_t hash() const;
 
     /**
      * check if this type is instance of targetType.
@@ -278,8 +278,8 @@ public:
     }
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
-    bool equals(const DSValue &obj) override;
-    size_t hash() override;
+    bool equals(const DSValue &obj) const override;
+    size_t hash() const override;
 };
 
 class Long_Object : public DSObject {
@@ -296,8 +296,8 @@ public:
     }
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
-    bool equals(const DSValue &obj) override;
-    size_t hash() override;
+    bool equals(const DSValue &obj) const override;
+    size_t hash() const override;
 };
 
 class Float_Object : public DSObject {
@@ -314,8 +314,8 @@ public:
     }
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
-    bool equals(const DSValue &obj) override;
-    size_t hash() override;
+    bool equals(const DSValue &obj) const override;
+    size_t hash() const override;
 };
 
 class Boolean_Object : public DSObject {
@@ -332,8 +332,8 @@ public:
     }
 
     std::string toString(DSState &ctx, VisitedSet *visitedSe) override;
-    bool equals(const DSValue &obj) override;
-    size_t hash() override;
+    bool equals(const DSValue &obj) const override;
+    size_t hash() const override;
 };
 
 class String_Object : public DSObject {
@@ -374,8 +374,8 @@ public:
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
 
-    bool equals(const DSValue &obj) override;
-    size_t hash() override;
+    bool equals(const DSValue &obj) const override;
+    size_t hash() const override;
 };
 
 struct StringIter_Object : public DSObject {

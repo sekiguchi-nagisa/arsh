@@ -1,0 +1,19 @@
+# boolean key
+var b = [$true : 34, $false : 90]
+assert $b[$true] == 34
+assert $b[$false] == 90
+
+# Int64
+var i64 = [900000000i64 : 'hello', -2222222222222i64 : 'world']
+assert $i64[900000000i64] == 'hello'
+assert $i64[-2222222222222i64] == 'world'
+
+# Uint64
+var u64 = [444444444444444u64 : $true, 47833298u64 : $false]
+assert $u64[444444444444444u64]
+assert not $u64[47833298u64]
+
+# Float
+var f = [3.14 : 3.14, 0.1e-3: 34]
+assert $f[3.14] == 3.14
+assert $f[0.0001] == 34

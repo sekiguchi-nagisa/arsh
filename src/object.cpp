@@ -40,7 +40,7 @@ std::string DSObject::toString(DSState &, VisitedSet *) {
     return str;
 }
 
-bool DSObject::equals(const DSValue &obj) {
+bool DSObject::equals(const DSValue &obj) const {
     return (long) this == (long) obj.get();
 }
 
@@ -56,7 +56,7 @@ DSValue DSObject::commandArg(DSState &ctx, VisitedSet *) {
     return this->str(ctx);
 }
 
-size_t DSObject::hash() {
+size_t DSObject::hash() const {
     return std::hash<long>()((long) this);
 }
 
@@ -75,11 +75,11 @@ std::string Int_Object::toString(DSState &ctx, VisitedSet *) {
     return std::to_string(this->value);
 }
 
-bool Int_Object::equals(const DSValue &obj) {
+bool Int_Object::equals(const DSValue &obj) const {
     return this->value == typeAs<Int_Object>(obj)->value;
 }
 
-size_t Int_Object::hash() {
+size_t Int_Object::hash() const {
     return std::hash<int>()(this->value);
 }
 
@@ -94,11 +94,11 @@ std::string Long_Object::toString(DSState &ctx, VisitedSet *) {
     return std::to_string(this->value);
 }
 
-bool Long_Object::equals(const DSValue &obj) {
+bool Long_Object::equals(const DSValue &obj) const {
     return this->value == typeAs<Long_Object>(obj)->value;
 }
 
-size_t Long_Object::hash() {
+size_t Long_Object::hash() const {
     return std::hash<long>()(this->value);
 }
 
@@ -110,11 +110,11 @@ std::string Float_Object::toString(DSState &, VisitedSet *) {
     return std::to_string(this->value);
 }
 
-bool Float_Object::equals(const DSValue &obj) {
+bool Float_Object::equals(const DSValue &obj) const {
     return this->value == typeAs<Float_Object>(obj)->value;
 }
 
-size_t Float_Object::hash() {
+size_t Float_Object::hash() const {
     return std::hash<double>()(this->value);
 }
 
@@ -127,11 +127,11 @@ std::string Boolean_Object::toString(DSState &, VisitedSet *) {
     return this->value ? "true" : "false";
 }
 
-bool Boolean_Object::equals(const DSValue &obj) {
+bool Boolean_Object::equals(const DSValue &obj) const {
     return this->value == typeAs<Boolean_Object>(obj)->value;
 }
 
-size_t Boolean_Object::hash() {
+size_t Boolean_Object::hash() const {
     return std::hash<bool>()(this->value);
 }
 
@@ -147,11 +147,11 @@ std::string String_Object::toString(DSState &, VisitedSet *) {
     return this->value;
 }
 
-bool String_Object::equals(const DSValue &obj) {
+bool String_Object::equals(const DSValue &obj) const {
     return this->value == typeAs<String_Object>(obj)->value;
 }
 
-size_t String_Object::hash() {
+size_t String_Object::hash() const {
     return std::hash<std::string>()(this->value);
 }
 
