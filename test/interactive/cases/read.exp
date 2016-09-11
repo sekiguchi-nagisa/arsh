@@ -7,7 +7,7 @@ spawn ${bin_name} --norc --quiet
 
 expect {
     -re "\\$ $" {
-        send "read -p \$PS2;\r"
+        send "read -s -p \$PS2;\r"
     }
     default {
         send_error "mismatch 1 prompt"

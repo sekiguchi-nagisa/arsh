@@ -16,6 +16,7 @@
 
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <termios.h>
 
 #include <cstdlib>
 #include <cstdarg>
@@ -185,7 +186,8 @@ const struct {
                 "    Options:\n"
                 "        -r    disable backslash escape\n"
                 "        -p    specify prompt string\n"
-                "        -f    specify field separator (if not, use IFS)"},
+                "        -f    specify field separator (if not, use IFS)\n"
+                "        -s    disable echo back"},
         {"test", builtin_test, "[expr]",
                 "    Unary or Binary expressions.\n"
                 "    If expression is true, return 0\n"
@@ -1176,45 +1178,37 @@ static int xfgetc(FILE *fp) {
     return ch;
 }
 
-static int builtin_read(DSState &state, const int argc, char *const *argv) {  //FIXME: timeout, no echo, UTF-8
-    int index = 1;
+static int builtin_read(DSState &state, const int argc, char *const *argv) {  //FIXME: timeout, UTF-8
     const char *prompt = "";
     const char *ifs = nullptr;
     bool backslash = true;
+    bool noecho = false;
 
-    for(; index < argc; index++) {
-        const char *arg = argv[index];
-        if(strlen(arg) != 2 || arg[0] != '-') {
+    GetOptState optState;
+    for(int opt; (opt = getopt(argc, argv, "rp:f:s", optState)) != -1;) {
+        switch(opt) {
+        case 'p':
+            prompt = optState.optArg;
             break;
-        }
-        const char op = arg[1]; // ignore '-'
-        switch(op) {
-        case 'p': {
-            if(index + 1 < argc) {
-                prompt = argv[++index];
-                break;
-            }
-            builtin_perror(argv, 0, "%s: option require argument", arg);
-            return 2;
-        }
-        case 'f': {
-            if(index + 1 < argc) {
-                ifs = argv[++index];
-                break;
-            }
-            builtin_perror(argv, 0, "%s: option require argument", arg);
-            return 2;
-        }
-        case 'r': {
+        case 'f':
+            ifs = optState.optArg;
+            break;
+        case 'r':
             backslash = false;
             break;
-        }
-        default: {
-            builtin_perror(argv, 0, "%s: invalid option", arg);
+        case 's':
+            noecho = true;
+            break;
+        case ':':
+            builtin_perror(argv, 0, "%s: option require argument", opt);
+            return 2;
+        default:
+            builtin_perror(argv, 0, "%s: invalid option", opt);
             return 2;
         }
-        }
     }
+
+    int index = optState.index;
 
     // check ifs
     if(ifs == nullptr) {
@@ -1235,6 +1229,17 @@ static int builtin_read(DSState &state, const int argc, char *const *argv) {  //
         fputs(prompt, stdout);
         fflush(stdout);
     }
+
+    // change tty state
+    struct termios tty;
+    struct termios oldtty;
+    if(noecho) {
+        tcgetattr(STDIN_FILENO, &tty);
+        oldtty = tty;
+        tty.c_lflag &= ~(ECHO | ECHOK | ECHONL);
+        tcsetattr(STDIN_FILENO, TCSANOW, &tty);
+    }
+
 
     // read line
     unsigned int skipCount = 1;
@@ -1307,6 +1312,10 @@ static int builtin_read(DSState &state, const int argc, char *const *argv) {  //
 
     if(ch == EOF) {
         clearerr(stdin);
+    }
+
+    if(noecho) {
+        tcsetattr(STDIN_FILENO, TCSANOW, &oldtty);
     }
     return ch == EOF ? 1 : 0;
 }
