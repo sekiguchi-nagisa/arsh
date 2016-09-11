@@ -543,11 +543,12 @@ std::unique_ptr<Node> Parser::parse_statement() {
             next = false;
             break;
         }
+
+        std::unique_ptr<Node> exprNode;
         if(!HAS_NL() && next) {
-            node = uniquify<ReturnNode>(token.pos, this->parse_expression().release());
-        } else {
-            node = uniquify<ReturnNode>(token);
+            exprNode = this->parse_expression();
         }
+        node = uniquify<ReturnNode>(token, exprNode.release());
         this->parse_statementEnd();
         return node;
     }
@@ -756,13 +757,7 @@ std::unique_ptr<CatchNode> Parser::parse_catchStatement() {
     }
 
     std::unique_ptr<BlockNode> blockNode(this->parse_block());
-
-    if(typeToken) {
-        return uniquify<CatchNode>(startPos, this->lexer->toName(token),
-                                   typeToken.release(), blockNode.release());
-    } else {
-        return uniquify<CatchNode>(startPos, this->lexer->toName(token), blockNode.release());
-    }
+    return uniquify<CatchNode>(startPos, this->lexer->toName(token), typeToken.release(), blockNode.release());
 }
 
 // command

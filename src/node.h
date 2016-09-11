@@ -1593,12 +1593,7 @@ private:
     Node *exprNode;
 
 public:
-    ReturnNode(unsigned int startPos, Node *exprNode) :
-            BlockEndNode({startPos, 0}), exprNode(exprNode) {
-        this->updateToken(exprNode->getToken());
-    }
-
-    explicit ReturnNode(Token token);
+    ReturnNode(Token token, Node *exprNode);
 
     ~ReturnNode();
 
@@ -1640,13 +1635,10 @@ private:
     BlockNode *blockNode;
 
 public:
-    CatchNode(unsigned int startPos, std::string &&exceptionName, BlockNode *blockNode) :
-            CatchNode(startPos, std::move(exceptionName), newAnyTypeNode(), blockNode) { }
-
     CatchNode(unsigned int startPos, std::string &&exceptionName,
               TypeNode *typeNode, BlockNode *blockNode) :
             Node({startPos, 0}), exceptionName(std::move(exceptionName)),
-            typeNode(typeNode), varIndex(0), blockNode(blockNode) {
+            typeNode(typeNode != nullptr ? typeNode : newAnyTypeNode()), varIndex(0), blockNode(blockNode) {
         this->updateToken(blockNode->getToken());
     }
 

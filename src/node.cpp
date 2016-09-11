@@ -1034,7 +1034,7 @@ void BlockNode::addReturnNodeToLast(TypePool &pool, Node *exprNode) {
     assert(!this->isUntyped() && !this->getType().isBottomType());
     assert(!exprNode->isUntyped());
 
-    ReturnNode *returnNode = new ReturnNode(exprNode->getPos(), exprNode);
+    ReturnNode *returnNode = new ReturnNode(exprNode->getToken(), exprNode);
     returnNode->setType(pool.getBottomType());
     this->addNode(returnNode);
     this->setType(returnNode->getType());
@@ -1272,8 +1272,12 @@ void IfNode::accept(NodeVisitor &visitor) {
 // ##     ReturnNode     ##
 // ########################
 
-ReturnNode::ReturnNode(Token token) :
-        BlockEndNode(token), exprNode(new EmptyNode(token)) { }
+ReturnNode::ReturnNode(Token token, Node *exprNode) :
+        BlockEndNode(token), exprNode(exprNode != nullptr ? exprNode : new EmptyNode(token)) {
+    if(exprNode != nullptr) {
+        this->updateToken(exprNode->getToken());
+    }
+}
 
 ReturnNode::~ReturnNode() {
     delete this->exprNode;
