@@ -62,7 +62,8 @@ public:
     /**
      * not directly call it.
      */
-    DSType(DSType *superType, flag8_set_t attribute);
+    DSType(DSType *superType, flag8_set_t attribute) :
+            superType(superType), attributeSet(attribute) { }
 
     virtual ~DSType() = default;
 
@@ -177,11 +178,9 @@ private:
     std::vector<DSType *> paramTypes;
 
 public:
-    FunctionType(DSType *superType,
-                 DSType *returnType, std::vector<DSType *> &&paramTypes) :
+    FunctionType(DSType *superType, DSType *returnType, std::vector<DSType *> &&paramTypes) :
             DSType(superType, DSType::FUNC_TYPE),
-            returnType(returnType), paramTypes(std::move(paramTypes)) {
-    }
+            returnType(returnType), paramTypes(std::move(paramTypes)) {}
 
     ~FunctionType() = default;
 

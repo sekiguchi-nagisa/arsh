@@ -33,10 +33,6 @@ const NativeCode *getNativeCode(unsigned int index);
 // ##     DSType     ##
 // ####################
 
-DSType::DSType(DSType *superType, flag8_set_t attribute) :
-        superType(superType), attributeSet(attribute) {
-}
-
 MethodHandle *DSType::getConstructorHandle(TypePool &) {
     return nullptr;
 }
