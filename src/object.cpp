@@ -139,10 +139,6 @@ size_t Boolean_Object::hash() const {
 // ##     String_Object     ##
 // ###########################
 
-void String_Object::append(DSValue &&obj) {
-    this->value += typeAs<String_Object>(obj)->value;
-}
-
 std::string String_Object::toString(DSState &, VisitedSet *) {
     return this->value;
 }
@@ -209,18 +205,6 @@ std::string Array_Object::toString(DSState &ctx, VisitedSet *visitedSet) {
     return str;
 }
 
-void Array_Object::append(DSValue &&obj) {
-    this->values.push_back(std::move(obj));
-}
-
-void Array_Object::append(const DSValue &obj) {
-    this->values.push_back(obj);
-}
-
-void Array_Object::set(unsigned int index, const DSValue &obj) {
-    this->values[index] = obj;
-}
-
 const DSValue &Array_Object::nextElement() {
     unsigned int index = this->curIndex++;
     assert(index < this->values.size());
@@ -275,29 +259,9 @@ DSValue Array_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
     return result;
 }
 
-bool KeyCompare::operator()(const DSValue &x, const DSValue &y) const {
-    return x->equals(y);
-}
-
-std::size_t GenHash::operator()(const DSValue &key) const {
-    return key->hash();
-}
-
 // ########################
 // ##     Map_Object     ##
 // ########################
-
-void Map_Object::set(const DSValue &key, const DSValue &value) {
-    this->valueMap[key] = value;
-}
-
-void Map_Object::add(std::pair<DSValue, DSValue> &&entry) {
-    this->valueMap.insert(std::move(entry));
-}
-
-void Map_Object::initIterator() {
-    this->iter = this->valueMap.cbegin();
-}
 
 DSValue Map_Object::nextElement(DSState &ctx) {
     std::vector<DSType *> types(2);
@@ -310,10 +274,6 @@ DSValue Map_Object::nextElement(DSState &ctx) {
     ++this->iter;
 
     return entry;
-}
-
-bool Map_Object::hasNext() {
-    return this->iter != this->valueMap.cend();
 }
 
 std::string Map_Object::toString(DSState &ctx, VisitedSet *visitedSet) {
@@ -370,14 +330,6 @@ std::string Tuple_Object::toString(DSState &ctx, VisitedSet *visitedSet) {
     }
     str += ")";
     return str;
-}
-
-void Tuple_Object::set(unsigned int elementIndex, const DSValue &obj) {
-    this->fieldTable[elementIndex] = obj;
-}
-
-const DSValue &Tuple_Object::get(unsigned int elementIndex) {
-    return this->fieldTable[elementIndex];
 }
 
 DSValue Tuple_Object::interp(DSState &ctx, VisitedSet *visitedSet) {

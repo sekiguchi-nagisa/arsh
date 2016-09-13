@@ -370,7 +370,9 @@ public:
     /**
      * for string expression
      */
-    void append(DSValue &&obj);
+    void append(DSValue &&obj) {
+        this->value += typeAs<String_Object>(obj)->value;
+    }
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
 
@@ -408,9 +410,19 @@ public:
     }
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
-    void append(DSValue &&obj);
-    void append(const DSValue &obj);
-    void set(unsigned int index, const DSValue &obj);
+
+    void append(DSValue &&obj) {
+        this->values.push_back(std::move(obj));
+    }
+
+    void append(const DSValue &obj) {
+        this->values.push_back(obj);
+    }
+
+    void set(unsigned int index, const DSValue &obj) {
+        this->values[index] = obj;
+    }
+
 
     void initIterator() {
         this->curIndex = 0;
@@ -427,14 +439,18 @@ public:
 };
 
 struct KeyCompare {
-    bool operator() (const DSValue &x, const DSValue &y) const;
+    bool operator() (const DSValue &x, const DSValue &y) const {
+        return x->equals(y);
+    }
 };
 
 struct GenHash {
-    std::size_t operator() (const DSValue &key) const;
+    std::size_t operator() (const DSValue &key) const {
+        return key->hash();
+    }
 };
 
-typedef std::unordered_map<DSValue, DSValue, GenHash, KeyCompare> HashMap;
+using HashMap = std::unordered_map<DSValue, DSValue, GenHash, KeyCompare>;
 
 class Map_Object : public DSObject {
 private:
@@ -454,11 +470,23 @@ public:
         return this->valueMap;
     }
 
-    void set(const DSValue &key, const DSValue &value);
-    void add(std::pair<DSValue, DSValue> &&entry);
-    void initIterator();
+    void set(const DSValue &key, const DSValue &value) {
+        this->valueMap[key] = value;
+    }
+
+    void add(std::pair<DSValue, DSValue> &&entry) {
+        this->valueMap.insert(std::move(entry));
+    }
+
+    void initIterator() {
+        this->iter = this->valueMap.cbegin();
+    }
+
     DSValue nextElement(DSState &ctx);
-    bool hasNext();
+
+    bool hasNext() {
+        return this->iter != this->valueMap.cend();
+    }
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
 };
@@ -487,9 +515,13 @@ struct Tuple_Object : public BaseObject {
         return this->type->getFieldSize();
     }
 
-    void set(unsigned int elementIndex, const DSValue &obj);
+    void set(unsigned int elementIndex, const DSValue &obj) {
+        this->fieldTable[elementIndex] = obj;
+    }
 
-    const DSValue &get(unsigned int elementIndex);
+    const DSValue &get(unsigned int elementIndex) {
+        return this->fieldTable[elementIndex];
+    }
 
     DSValue interp(DSState &ctx, VisitedSet *visitedSet) override;
     DSValue commandArg(DSState &ctx, VisitedSet *visitedSet) override;
