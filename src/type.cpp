@@ -22,6 +22,7 @@
 #include "parser.h"
 #include "type_checker.h"
 #include "core.h"
+#include "misc/size.hpp"
 
 namespace ydsh {
 
@@ -491,11 +492,6 @@ void TypeMap::removeType(const std::string &typeName) {
     }
 }
 
-template<typename T, size_t N>
-static constexpr size_t sizeOfArray(const T (&)[N]) {
-    return N;
-}
-
 
 // ######################
 // ##     TypePool     ##
@@ -787,9 +783,9 @@ int TypePool::getIntPrecision(const DSType &type) {
             {Byte, BYTE_PRECISION},
     };
 
-    for(unsigned int i = 0; i < sizeOfArray(table); i++) {
-        if(*this->typeTable[table[i].TYPE] == type) {
-            return table[i].precision;
+    for(auto &e : table) {
+        if(*this->typeTable[e.TYPE] == type) {
+            return e.precision;
         }
     }
     return INVALID_PRECISION;
@@ -807,7 +803,7 @@ static const TypePool::DS_TYPE numTypeTable[] = {
 };
 
 int TypePool::getNumTypeIndex(const DSType &type) {
-    for(unsigned int i = 0; i < sizeOfArray(numTypeTable); i++) {
+    for(unsigned int i = 0; i < arraySize(numTypeTable); i++) {
         if(*this->typeTable[numTypeTable[i]] == type) {
             return i;
         }
@@ -816,7 +812,7 @@ int TypePool::getNumTypeIndex(const DSType &type) {
 }
 
 DSType *TypePool::getByNumTypeIndex(unsigned int index) {
-    return index < sizeOfArray(numTypeTable) ? this->typeTable[numTypeTable[index]] : nullptr;
+    return index < arraySize(numTypeTable) ? this->typeTable[numTypeTable[index]] : nullptr;
 }
 
 void TypePool::commit() {

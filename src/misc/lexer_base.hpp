@@ -357,7 +357,7 @@ bool LexerBase<T>::fill(int n) {
 
 } // namespace __detail
 
-typedef __detail::LexerBase<true> LexerBase;
+using LexerBase = __detail::LexerBase<true>;
 
 
 } // namespace parser_base

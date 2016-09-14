@@ -20,6 +20,8 @@
 #include <algorithm>
 #include <clocale>
 
+#include "size.hpp"
+
 namespace ydsh {
 
 namespace __detail_unicode {
@@ -170,7 +172,7 @@ int UnicodeUtil<T>::width(int codePoint, AmbiguousCharWidth ambiguousCharWidth) 
     }
 
 
-#define BINARY_SEARCH(t, v) (std::binary_search(t, t + sizeof(t) / sizeof(Interval), v, Comparator()))
+#define BINARY_SEARCH(t, v) (std::binary_search(t, t + arraySize(t), v, Comparator()))
     struct Comparator {
         bool operator()(const Interval &l, int r) const {
             return l.end < r;
@@ -222,7 +224,7 @@ int UnicodeUtil<T>::localeAwareWidth(int codePoint) {
 
 } // namespace __detail_unicode
 
-typedef __detail_unicode::UnicodeUtil<true> UnicodeUtil;
+using UnicodeUtil = __detail_unicode::UnicodeUtil<true>;
 
 } // namespace ydsh
 

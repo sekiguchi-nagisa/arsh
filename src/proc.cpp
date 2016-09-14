@@ -29,7 +29,7 @@
 #include "object.h"
 #include "misc/num.h"
 #include "misc/files.h"
-
+#include "misc/size.hpp"
 
 namespace ydsh {
 
@@ -241,11 +241,6 @@ const struct {
         {"true", builtin_true, "",
                 "    Always success (exit status is 0)."},
 };
-
-template <typename T, std::size_t N>
-constexpr std::size_t arraySize(const T (&)[N]) {
-    return N;
-}
 
 unsigned int getBuiltinCommandSize() {
     return arraySize(builtinCommands);
