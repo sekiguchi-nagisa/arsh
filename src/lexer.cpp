@@ -144,6 +144,22 @@ bool Lexer::escapedSingleToString(Token token, std::string &out) const {
         char ch = this->buf[i];
         if(ch == '\\' && i + 1 < stopPos) {
             switch(this->buf[++i]) {
+            case '\\':
+                ch = '\\';
+                break;
+            case 'a':
+                ch = '\a';
+                break;
+            case 'b':
+                ch = '\b';
+                break;
+            case 'e':
+            case 'E':
+                ch = '\033';
+                break;
+            case 'f':
+                ch = '\f';
+                break;
             case 'n':
                 ch = '\n';
                 break;
@@ -153,11 +169,11 @@ bool Lexer::escapedSingleToString(Token token, std::string &out) const {
             case 't':
                 ch = '\t';
                 break;
+            case 'v':
+                ch = '\v';
+                break;
             case '\'':
                 ch = '\'';
-                break;
-            case '\\':
-                ch = '\\';
                 break;
             case 'x':
                 if(i + 1 < stopPos && isHex(this->buf[i + 1])) {

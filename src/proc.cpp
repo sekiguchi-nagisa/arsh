@@ -123,6 +123,7 @@ const struct {
                 "                  \\b    backspace\n"
                 "                  \\c    ignore subsequent string\n"
                 "                  \\e    escape sequence\n"
+                "                  \\E    escape sequence\n"
                 "                  \\f    form feed\n"
                 "                  \\n    newline\n"
                 "                  \\r    carriage return\n"
@@ -524,6 +525,7 @@ static int builtin_echo(DSState &, const int argc, char *const *argv) {
                 case 'c':   // stop printing
                     return 0;
                 case 'e':
+                case 'E':
                     ch = '\033';
                     break;
                 case 'f':
