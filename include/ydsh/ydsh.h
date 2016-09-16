@@ -66,7 +66,7 @@ void DSState_setShellName(DSState *st, const char *shellName);
 void DSState_setArguments(DSState *st, char *const *args);
 
 
-// for option
+/* for option */
 #define DS_OPTION_DUMP_UAST  ((unsigned int) (1 << 0))
 #define DS_OPTION_DUMP_AST   ((unsigned int) (1 << 1))
 #define DS_OPTION_DUMP_CODE  ((unsigned int) (1 << 2))
@@ -80,7 +80,7 @@ void DSState_setOption(DSState *st, unsigned int optionSet);
 void DSState_unsetOption(DSState *st, unsigned int optionSet);
 
 
-// for indicating error kind.
+/* for indicating error kind. */
 #define DS_ERROR_KIND_SUCCESS         ((unsigned int) 0)
 #define DS_ERROR_KIND_PARSE_ERROR     ((unsigned int) 1)
 #define DS_ERROR_KIND_TYPE_ERROR      ((unsigned int) 2)
@@ -177,7 +177,7 @@ int DSState_exec(DSState *st, char *const *argv);
 const char *DSState_prompt(DSState *st, unsigned int n);
 
 
-// for version information
+/* for version information */
 unsigned int DSState_majorVersion();
 unsigned int DSState_minorVersion();
 unsigned int DSState_patchVersion();
@@ -190,7 +190,7 @@ const char *DSState_version();
 
 const char *DSState_copyright();
 
-// for feature detection
+/* for feature detection */
 #define DS_FEATURE_LOGGING    ((unsigned int) (1 << 0))
 #define DS_FEATURE_DBUS       ((unsigned int) (1 << 1))
 #define DS_FEATURE_SAFE_CAST  ((unsigned int) (1 << 2))
@@ -200,16 +200,13 @@ unsigned int DSState_featureBit();
 
 /**
  * check if support D-Bus binding.
- * @return
  * if support D-Bus, return 1.
  * otherwise, return 0.
  */
-inline int DSState_supportDBus() {
-    return DSState_featureBit() & DS_FEATURE_DBUS ? 1 : 0;
-}
+#define DSState_supportDBus() (DSState_featureBit() & DS_FEATURE_DBUS ? 1 : 0)
 
 
-// for termination hook
+/* for termination hook */
 /**
  * status indicates execution status (DS_ERROR_KIND_ASSERTION_ERROR or DS_ERROR_KIND_EXIT).
  */
@@ -225,7 +222,7 @@ typedef void (*TerminationHook)(unsigned int status, unsigned int errorLineNum);
 void DSState_addTerminationHook(DSState *st, TerminationHook hook);
 
 
-// for input completion
+/* for input completion */
 typedef struct {
     /**
      * size of values.
@@ -267,4 +264,4 @@ void DSCandidates_release(DSCandidates *c);
 }
 #endif
 
-#endif //YDSH_YDSH_H
+#endif /* YDSH_YDSH_H */
