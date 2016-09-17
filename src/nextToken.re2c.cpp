@@ -121,7 +121,7 @@ TokenKind Lexer::nextToken(Token &token) {
       INNER_SPECIAL_NAME = SPECIAL_NAME | '${' SPECIAL_NAMES '}';
 
       CMD_START_CHAR     = "\\" [^\r\n\000] | [^ \t\r\n\\;'"`|&<>(){}$#[\]+\-0-9\000];
-      CMD_CHAR           = "\\" [^\000]     | [^ \t\r\n\\;'"`|&<>(){}$[\]\000];
+      CMD_CHAR           = "\\" [^\000]     | [^ \t\r\n\\;'"`|&<>(){}$\000];
       CMD_ARG_START_CHAR = "\\" [^\r\n\000] | [^ \t\r\n\\;'"`|&<>()$#\000];
       CMD_ARG_CHAR       = "\\" [^\000]     | [^ \t\r\n\\;'"`|&<>()$\000];
 

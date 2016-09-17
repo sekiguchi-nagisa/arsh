@@ -657,6 +657,7 @@ std::string expandTilde(const char *path) {
 enum class EscapeOp {
     NOP,
     COMMAND_NAME,
+    COMMAND_NAME_PART,
     COMMAND_ARG,
 };
 
@@ -669,7 +670,7 @@ static std::string escapse(const char *str, EscapeOp op) {
 
     if(op == EscapeOp::COMMAND_NAME) {
         char ch = *str;
-        if(isDecimal(ch) || ch == '+' || ch == '-') {
+        if(isDecimal(ch) || ch == '+' || ch == '-' || ch == '[' || ch == ']') {
             buf += '\\';
             buf += ch;
             str++;
@@ -701,9 +702,7 @@ static std::string escapse(const char *str, EscapeOp op) {
             break;
         case '{':
         case '}':
-        case '[':
-        case ']':
-            if(op == EscapeOp::COMMAND_NAME) {
+            if(op == EscapeOp::COMMAND_NAME || op == EscapeOp::COMMAND_NAME_PART) {
                 found = true;
             }
             break;
@@ -901,7 +900,7 @@ static void completeFileName(const DSState &st, const std::string &token,
             if(S_ISDIR(getStMode(fullpath.c_str()))) {
                 fileName += '/';
             }
-            append(results, fileName, onlyExec ? EscapeOp::COMMAND_NAME : EscapeOp::COMMAND_ARG);
+            append(results, fileName, onlyExec ? EscapeOp::COMMAND_NAME_PART : EscapeOp::COMMAND_ARG);
         }
     }
     closedir(dir);

@@ -1260,6 +1260,22 @@ TEST_F(LexerTest_Lv1, CMD11) {
     ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, LINE_END, "\n", EOS, ""));
 }
 
+TEST_F(LexerTest_Lv1, CMD12) {
+    const char *text = "/usr/bin/[";
+    SCOPED_TRACE("");
+
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, LINE_END, "\n", EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, CMD13) {
+    const char *text = "/usr/bin/]";
+    SCOPED_TRACE("");
+
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, LINE_END, "\n", EOS, ""));
+}
+
 TEST_F(LexerTest_Lv1, CMD_ARG1) {   // allow  '[' and ']'
     const char *text = "[[][";
     ASSERT_NO_FATAL_FAILURE({
