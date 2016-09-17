@@ -73,53 +73,6 @@ void Lexer::setPos(unsigned int pos) {
     this->cursor = this->buf + pos;
 }
 
-Token Lexer::getLineToken(Token token, bool skipEOS) const {
-    if(skipEOS && token.size == 0) {
-        unsigned int startIndex = token.pos;
-        for(; startIndex > 0; startIndex--) {
-            char ch = this->buf[startIndex];
-            if(ch == ' ' || ch == '\t' || ch == '\n' || ch == '\000') {
-                continue;
-            }
-            if(ch == '\\' && startIndex - 1 > 0 && this->buf[startIndex - 1] == '\n') {
-                continue;
-            }
-            break;
-        }
-        Token skippedToken;
-        skippedToken.pos = startIndex;
-        skippedToken.size = 0;
-        return this->getLineTokenImpl(skippedToken);
-    }
-    return this->getLineTokenImpl(token);
-}
-
-Token Lexer::getLineTokenImpl(Token token) const {
-    assert(this->withinRange(token));
-
-    // find start index of line.
-    unsigned int startIndex;
-    for(startIndex = token.pos; startIndex > 0; startIndex--) {
-        if(this->buf[startIndex] == '\n') {
-            startIndex += (startIndex == token.pos) ? 0 : 1;
-            break;
-        }
-    }
-
-    // find stop index of line
-    unsigned int stopIndex;
-    unsigned int usedSize = this->getUsedSize();
-    for(stopIndex = token.pos + token.size; stopIndex < usedSize; stopIndex++) {
-        if(this->buf[stopIndex] == '\n') {
-            break;
-        }
-    }
-    Token lineToken;
-    lineToken.pos = startIndex;
-    lineToken.size = stopIndex - startIndex;
-    return lineToken;
-}
-
 bool Lexer::singleToString(Token token, std::string &out) const {
     if(this->startsWith(token, '$')) {
         return this->escapedSingleToString(token, out);

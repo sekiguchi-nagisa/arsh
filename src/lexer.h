@@ -200,15 +200,6 @@ public:
      */
     TokenKind nextToken(Token &token);
 
-    // some token api
-
-    /**
-     * get line token which token belongs to.
-     */
-    Token getLineToken(Token token, bool skipEOS = false) const;
-
-    Token getLineTokenImpl(Token token) const;
-
     // token to value converting api.
 
     /**

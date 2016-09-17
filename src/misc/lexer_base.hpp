@@ -196,6 +196,12 @@ public:
                 memcmp(this->buf + token.pos, str, token.size) == 0;
     }
 
+
+    /**
+     * get line token which token belongs to.
+     */
+    Token getLineToken(Token token) const;
+
     std::string formatLineMarker(Token lineToken, Token token) const;
 
 private:
@@ -245,6 +251,53 @@ LexerBase<T>::LexerBase(const char *data, unsigned int size) : LexerBase() {
     this->cursor = this->buf;
     this->limit = this->buf + this->bufSize - 1;
     this->endOfFile = true;
+}
+
+template <bool T>
+Token LexerBase<T>::getLineToken(Token token) const {
+    assert(this->withinRange(token));
+
+    // skip space
+    if(token.size == 0) {
+        unsigned int startIndex = token.pos;
+        for(; startIndex > 0; startIndex--) {
+            char ch = this->buf[startIndex];
+            if(ch == ' ' || ch == '\t' || ch == '\n' || ch == '\000') {
+                continue;
+            }
+            if(ch == '\\' && startIndex + 1 < token.pos) {
+                char next = this->buf[startIndex + 1];
+                if(next == ' ' || next == '\t' || next == '\n') {
+                    continue;
+                }
+            }
+            break;
+        }
+        token.pos = startIndex;
+        token.size = 0;
+    }
+
+    // find start index of line.
+    unsigned int startIndex;
+    for(startIndex = token.pos; startIndex > 0; startIndex--) {
+        if(this->buf[startIndex] == '\n') {
+            startIndex += (startIndex == token.pos) ? 0 : 1;
+            break;
+        }
+    }
+
+    // find stop index of line
+    unsigned int stopIndex;
+    unsigned int usedSize = this->getUsedSize();
+    for(stopIndex = token.pos + token.size; stopIndex < usedSize; stopIndex++) {
+        if(this->buf[stopIndex] == '\n') {
+            break;
+        }
+    }
+    Token lineToken;
+    lineToken.pos = startIndex;
+    lineToken.size = stopIndex - startIndex;
+    return lineToken;
 }
 
 template<bool T>

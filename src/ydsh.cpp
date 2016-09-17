@@ -105,7 +105,7 @@ static std::ostream &operator<<(std::ostream &stream, TermColor color) {
 }
 
 static void formatErrorLine(bool isatty, const Lexer &lexer, const Token &errorToken) {
-    Token lineToken = lexer.getLineToken(errorToken, true);
+    Token lineToken = lexer.getLineToken(errorToken);
 
     // print error line
     std::cerr << color(TermColor::Cyan, isatty) << lexer.toTokenText(lineToken)
