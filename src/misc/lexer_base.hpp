@@ -323,6 +323,9 @@ std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token) const {
         }
     }
     const unsigned int stopPos = token.size + token.pos;
+    if(token.size == 0) {
+        marker += " ^";
+    }
     for(unsigned int i = token.pos; i < stopPos;) {
         unsigned int prev = i;
         int code = 0;
