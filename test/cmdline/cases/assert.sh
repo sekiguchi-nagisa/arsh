@@ -29,11 +29,8 @@ EOF
 test "$($YDSH_BIN -c "$v" 2>&1 || true)" = "$m"
 
 # assert without message
-m="$(cat << 'EOF'
-Assertion Error: `34 == 43'
-    from (string):1 '<toplevel>()'
-EOF
-)"
+m="$(echo 'Assertion Error: `34 == 43'"'
+    from (string):1 '<toplevel>()'")"
 
 test "$($YDSH_BIN -c 'assert 34 == 43' 2>&1 || true)" = "$m"
 
