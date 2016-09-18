@@ -4,7 +4,8 @@
 
 YDSH_BIN=$1
 
-DIR="$(mktemp -d 2> /dev/null || mktemp -d -t lfreop)"
+DIR="$PWD/cwd-test$$-temp$$"
+mkdir $DIR
 
 cleanup_tmpdir() {
     rm -rf $DIR
@@ -48,3 +49,5 @@ $YDSH_BIN -c "assert(cd -P $DIR/link); "'assert "$(pwd -L)" == "'"$DIR/$TARGET"'
 $YDSH_BIN -c "assert(cd -P $DIR/link); assert(cd ../); "'assert "$(pwd -L)" == "'"$DIR/work"'"'
 
 $YDSH_BIN -c "assert(cd -P $DIR/link); assert(cd ../); "'assert $OLDPWD == "'"$DIR/$TARGET"'"'
+
+cleanup_tmpdir
