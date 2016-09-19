@@ -1168,14 +1168,6 @@ static bool isFieldSep(const char *ifs, int ch) {
     return false;
 }
 
-static int xfgetc(FILE *fp) {
-    int ch = 0;
-    do {
-        ch = fgetc(fp);
-    } while(ch == EOF && ferror(fp) != 0 && (errno == EAGAIN || errno == EINTR));
-    return ch;
-}
-
 static int xfgetc(int fd) {
     char ch;
     do {
