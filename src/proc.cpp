@@ -182,13 +182,14 @@ const struct {
                 "    If -L specified, print logical working directory.\n"
                 "    If -P specified, print physical working directory\n"
                 "    (without symbolic link). Default is -L."},
-        {"read", builtin_read, "[-r] [-p prompt] [-f field separator] [name ...]",
+        {"read", builtin_read, "[-r] [-p prompt] [-f field separator] [-u fd] [name ...]",
                 "    Read from standard input.\n"
                 "    Options:\n"
                 "        -r    disable backslash escape\n"
                 "        -p    specify prompt string\n"
                 "        -f    specify field separator (if not, use IFS)\n"
-                "        -s    disable echo back"},
+                "        -s    disable echo back\n"
+                "        -u    specify file descriptor"},
         {"test", builtin_test, "[expr]",
                 "    Unary or Binary expressions.\n"
                 "    If expression is true, return 0\n"
@@ -1175,14 +1176,26 @@ static int xfgetc(FILE *fp) {
     return ch;
 }
 
+static int xfgetc(int fd) {
+    char ch;
+    do {
+        errno = 0;
+        if(read(fd, &ch, 1) <= 0) {
+            ch = EOF;
+        }
+    } while(ch == EOF && (errno == EAGAIN || errno == EINTR));
+    return ch;
+}
+
 static int builtin_read(DSState &state, const int argc, char *const *argv) {  //FIXME: timeout, UTF-8
     const char *prompt = "";
     const char *ifs = nullptr;
     bool backslash = true;
     bool noecho = false;
+    const char *fdStr = nullptr;
 
     GetOptState optState;
-    for(int opt; (opt = getopt(argc, argv, "rp:f:s", optState)) != -1;) {
+    for(int opt; (opt = getopt(argc, argv, "rp:f:su:", optState)) != -1;) {
         switch(opt) {
         case 'p':
             prompt = optState.optArg;
@@ -1196,6 +1209,9 @@ static int builtin_read(DSState &state, const int argc, char *const *argv) {  //
         case 's':
             noecho = true;
             break;
+        case 'u':
+            fdStr = optState.optArg;
+            break;
         case ':':
             builtin_perror(argv, 0, "%s: option require argument", opt);
             return 2;
@@ -1206,6 +1222,19 @@ static int builtin_read(DSState &state, const int argc, char *const *argv) {  //
     }
 
     int index = optState.index;
+
+    // specify file descriptor
+    int fd = STDIN_FILENO;
+    if(fdStr != nullptr) {
+        int s;
+        long v = convertToInt64(fdStr, s);
+        if(v < 0 || v > INT32_MAX) {
+            builtin_perror(argv, 0, "%s: invalid file descriptor", fdStr);
+            return 1;
+        }
+        fd = static_cast<int>(v);
+    }
+    const bool isTTY = isatty(fd) != 0;
 
     // check ifs
     if(ifs == nullptr) {
@@ -1222,26 +1251,25 @@ static int builtin_read(DSState &state, const int argc, char *const *argv) {  //
     std::string strBuf;
 
     // show prompt
-    if(isatty(fileno(stdin)) != 0) {
-        fputs(prompt, stdout);
-        fflush(stdout);
+    if(isTTY) {
+        fputs(prompt, stderr);
+        fflush(stderr);
     }
 
     // change tty state
     struct termios tty;
     struct termios oldtty;
-    if(noecho) {
-        tcgetattr(STDIN_FILENO, &tty);
+    if(noecho && isTTY) {
+        tcgetattr(fd, &tty);
         oldtty = tty;
         tty.c_lflag &= ~(ECHO | ECHOK | ECHONL);
-        tcsetattr(STDIN_FILENO, TCSANOW, &tty);
+        tcsetattr(fd, TCSANOW, &tty);
     }
-
 
     // read line
     unsigned int skipCount = 1;
     int ch;
-    for(bool prevIsBackslash = false; (ch = xfgetc(stdin)) != EOF;
+    for(bool prevIsBackslash = false; (ch = xfgetc(fd)) != EOF;
             prevIsBackslash = backslash && ch == '\\' && !prevIsBackslash) {
         if(ch == '\n') {
             if(prevIsBackslash) {
@@ -1307,12 +1335,9 @@ static int builtin_read(DSState &state, const int argc, char *const *argv) {  //
         strBuf = "";
     }
 
-    if(ch == EOF) {
-        clearerr(stdin);
-    }
-
-    if(noecho) {
-        tcsetattr(STDIN_FILENO, TCSANOW, &oldtty);
+    // restore tty setting
+    if(noecho && isTTY) {
+        tcsetattr(fd, TCSANOW, &oldtty);
     }
     return ch == EOF ? 1 : 0;
 }
