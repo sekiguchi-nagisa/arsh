@@ -249,5 +249,13 @@ if [ $? != 0 ]; then
 fi
 
 
+# invalid file descriptor
+test "$($YDSH_BIN -c 'read -u 89899' 2>&1)" = "-ydsh: read: 89899: Bad file descriptor"
+
+if [ $? != 0 ]; then
+    echo $LINENO
+    exit 1
+fi
+
 exit 0
 

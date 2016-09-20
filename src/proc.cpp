@@ -1331,7 +1331,13 @@ static int builtin_read(DSState &state, const int argc, char *const *argv) {  //
     if(noecho && isTTY) {
         tcsetattr(fd, TCSANOW, &oldtty);
     }
-    return ch == EOF ? 1 : 0;
+
+    // report error
+    int ret = ch == EOF ? 1 : 0;
+    if(ret != 0 && errno != 0) {
+        builtin_perror(argv, errno, "%d", fd);
+    }
+    return ret;
 }
 
 static int builtin_hash(DSState &state, const int argc, char *const *argv) {
