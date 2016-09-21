@@ -831,7 +831,7 @@ void TypePool::setToTypeTable(DS_TYPE TYPE, DSType *type) {
 void TypePool::initBuiltinType(DS_TYPE TYPE, const char *typeName, bool extendable,
                                native_type_info_t info) {
     // create and register type
-    flag8_set_t attribute = extendable ? DSType::EXTENDABLE : 0;
+    flag8_set_t attribute = extendable ? DSType::EXTENDIBLE : 0;
     if(TYPE == Void) {
         attribute |= DSType::VOID_TYPE;
     }
@@ -850,7 +850,7 @@ void TypePool::initBuiltinType(DS_TYPE TYPE, const char *typeName, bool extendab
                                DSType &superType, native_type_info_t info) {
     // create and register type
     DSType *type = this->typeMap.addType(
-            std::string(typeName), new BuiltinType(&superType, info, extendable ? DSType::EXTENDABLE : 0));
+            std::string(typeName), new BuiltinType(&superType, info, extendable ? DSType::EXTENDIBLE : 0));
 
     // set to typeTable
     this->setToTypeTable(TYPE, type);

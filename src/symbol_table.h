@@ -17,6 +17,8 @@
 #ifndef YDSH_SYMBOL_TABLE_H
 #define YDSH_SYMBOL_TABLE_H
 
+#include <cassert>
+
 #include "type.h"
 #include "handle.h"
 
@@ -152,21 +154,34 @@ public:
     /**
      * max number of local variable index.
      */
-    unsigned int getMaxVarIndex() const;
+    unsigned int getMaxVarIndex() const {
+        return this->maxVarIndexStack.back();
+    }
 
     /**
      * max number of global variable index.
      */
-    unsigned int getMaxGVarIndex() const;
+    unsigned int getMaxGVarIndex() const {
+        assert(this->inGlobalScope());
+        return this->scopes.back()->getCurVarIndex();
+    }
 
-    bool inGlobalScope() const;
+    bool inGlobalScope() const {
+        return this->scopes.size() == 1;
+    }
 
     /**
      * get const_iterator of global scope.
      */
-    Scope::const_iterator cbeginGlobal() const;
+    Scope::const_iterator cbeginGlobal() const {
+        assert(this->inGlobalScope());
+        return this->scopes.back()->cbegin();
+    }
 
-    Scope::const_iterator cendGlobal() const;
+    Scope::const_iterator cendGlobal() const {
+        assert(this->inGlobalScope());
+        return this->scopes.back()->cend();
+    }
 
     static constexpr const char *cmdSymbolPrefix = "%c";
 };

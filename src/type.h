@@ -50,7 +50,7 @@ protected:
     flag8_set_t attributeSet;
 
 public:
-    static constexpr flag8_t EXTENDABLE  = 1 << 0;
+    static constexpr flag8_t EXTENDIBLE  = 1 << 0;
     static constexpr flag8_t VOID_TYPE   = 1 << 1;  // Void
     static constexpr flag8_t FUNC_TYPE   = 1 << 2;  // function type
     static constexpr flag8_t IFACE_TYPE  = 1 << 3;  // interface
@@ -70,8 +70,8 @@ public:
     /**
      * if true, can extend this type
      */
-    bool isExtendable() const {
-        return hasFlag(this->attributeSet, EXTENDABLE);
+    bool isExtendible() const {
+        return hasFlag(this->attributeSet, EXTENDIBLE);
     }
 
     /**
@@ -377,7 +377,7 @@ private:
 
 public:
     explicit ErrorType(DSType *superType) :
-            DSType(superType, DSType::EXTENDABLE),
+            DSType(superType, DSType::EXTENDIBLE),
             constructorHandle() { }
 
     ~ErrorType();
@@ -854,10 +854,9 @@ public:
 private:
     void setToTypeTable(DS_TYPE TYPE, DSType *type);
 
-    void initBuiltinType(DS_TYPE TYPE, const char *typeName, bool extendable,
-                         native_type_info_t info);
+    void initBuiltinType(DS_TYPE TYPE, const char *typeName, bool extendible, native_type_info_t info);
 
-    void initBuiltinType(DS_TYPE TYPE, const char *typeName, bool extendable,
+    void initBuiltinType(DS_TYPE TYPE, const char *typeName, bool extendible,
                          DSType &superType, native_type_info_t info);
 
     TypeTemplate *initTypeTemplate(const char *typeName,

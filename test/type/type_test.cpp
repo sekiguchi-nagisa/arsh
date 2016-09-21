@@ -99,7 +99,7 @@ public:
 
     virtual void assertAttribute(flag8_set_t set, DSType &type) {
         SCOPED_TRACE("");
-        ASSERT_EQ(hasFlag(set, DSType::EXTENDABLE), type.isExtendable());
+        ASSERT_EQ(hasFlag(set, DSType::EXTENDIBLE), type.isExtendible());
         ASSERT_EQ(hasFlag(set, DSType::VOID_TYPE), type.isVoidType());
         ASSERT_EQ(hasFlag(set, DSType::FUNC_TYPE), type.isFuncType());
         ASSERT_EQ(hasFlag(set, DSType::IFACE_TYPE), type.isInterface());
@@ -212,11 +212,11 @@ TEST_F(TypeTest, superType) {
 }
 
 TEST_F(TypeTest, attribute) {
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDABLE, this->pool.getAnyType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.getAnyType()));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::VOID_TYPE, this->pool.getVoidType()));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::BOTTOM_TYPE, this->pool.getBottomType()));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getVariantType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDABLE, this->pool.getValueType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.getValueType()));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getByteType()));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getInt16Type()));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getUint16Type()));
@@ -231,13 +231,13 @@ TEST_F(TypeTest, attribute) {
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getUnixFDType()));
 
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getStringArrayType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDABLE, this->pool.getErrorType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDABLE, this->pool.getArithmeticErrorType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDABLE, this->pool.getOutOfRangeErrorType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDABLE, this->pool.getKeyNotFoundErrorType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDABLE, this->pool.getTypeCastErrorType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDABLE, this->pool.getStackOverflowErrorType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDABLE, this->pool.getDBusErrorType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.getErrorType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.getArithmeticErrorType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.getOutOfRangeErrorType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.getKeyNotFoundErrorType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.getTypeCastErrorType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.getStackOverflowErrorType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.getDBusErrorType()));
 
     ASSERT_NO_FATAL_FAILURE(
             this->assertAttribute(DSType::FUNC_TYPE, this->toType(func(type("Int32")))));

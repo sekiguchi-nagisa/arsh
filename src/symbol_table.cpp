@@ -171,27 +171,4 @@ void SymbolTable::abort() {
     }
 }
 
-unsigned int SymbolTable::getMaxVarIndex() const {
-    return this->maxVarIndexStack.back();
-}
-
-unsigned int SymbolTable::getMaxGVarIndex() const {
-    assert(this->inGlobalScope());
-    return this->scopes.back()->getCurVarIndex();
-}
-
-bool SymbolTable::inGlobalScope() const {
-    return this->scopes.size() == 1;
-}
-
-Scope::const_iterator SymbolTable::cbeginGlobal() const {
-    assert(this->inGlobalScope());
-    return this->scopes.back()->cbegin();
-}
-
-Scope::const_iterator SymbolTable::cendGlobal() const {
-    assert(this->inGlobalScope());
-    return this->scopes.back()->cend();
-}
-
 } // namespace ydsh
