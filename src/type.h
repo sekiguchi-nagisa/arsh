@@ -494,9 +494,6 @@ public:
 
 
 private:
-    static bool isAlias(const DSType *type);
-    static unsigned long asKey(const DSType *type);
-
     /**
      * remove type and call destructor.
      */
@@ -770,13 +767,13 @@ public:
      * get type except template type.
      * if type is undefined, throw exception
      */
-    DSType &getTypeAndThrowIfUndefined(const std::string &typeName);
+    DSType &getTypeAndThrowIfUndefined(const std::string &typeName) const;
 
     /**
      * get template type.
      * if template type is not found, throw exception
      */
-    const TypeTemplate &getTypeTemplate(const std::string &typeName);
+    const TypeTemplate &getTypeTemplate(const std::string &typeName) const;
 
     /**
      * if type template is Tuple, call createTupleType()
@@ -799,26 +796,34 @@ public:
     /**
      * set type name alias. if alias name has already defined, report error.
      */
-    void setAlias(const std::string &alias, DSType &targetType);
+    void setAlias(const std::string &alias, DSType &targetType) {
+        this->setAlias(alias.c_str(), targetType);
+    }
 
     void setAlias(const char *alias, DSType &targetType);
 
-    const std::string &getTypeName(const DSType &type) const;
+    const std::string &getTypeName(const DSType &type) const {
+        return this->typeMap.getTypeName(type);
+    }
 
     /**
      * create reified type name
      * equivalent to toReifiedTypeName(typeTemplate->getName(), elementTypes)
      */
-    std::string toReifiedTypeName(const TypeTemplate &typeTemplate, const std::vector<DSType *> &elementTypes);
+    std::string toReifiedTypeName(const TypeTemplate &typeTemplate, const std::vector<DSType *> &elementTypes) const {
+        return this->toReifiedTypeName(typeTemplate.getName(), elementTypes);
+    }
 
-    std::string toReifiedTypeName(const std::string &name, const std::vector<DSType *> &elementTypes);
+    std::string toReifiedTypeName(const std::string &name, const std::vector<DSType *> &elementTypes) const;
 
-    std::string toTupleTypeName(const std::vector<DSType *> &elementTypes);
+    std::string toTupleTypeName(const std::vector<DSType *> &elementTypes) const {
+        return this->toReifiedTypeName("Tuple", elementTypes);
+    }
 
     /**
      * create function type name
      */
-    std::string toFunctionTypeName(DSType *returnType, const std::vector<DSType *> &paramTypes);
+    std::string toFunctionTypeName(DSType *returnType, const std::vector<DSType *> &paramTypes) const;
 
     static constexpr int INT64_PRECISION = 50;
     static constexpr int INT32_PRECISION = 40;
@@ -829,27 +834,31 @@ public:
     /**
      * get integer precision. if type is not int type, return INVALID_PRECISION.
      */
-    int getIntPrecision(const DSType &type);
+    int getIntPrecision(const DSType &type) const;
 
     /**
      * if type is not number type, return -1.
      */
-    int getNumTypeIndex(const DSType &type);
+    int getNumTypeIndex(const DSType &type) const;
 
     /**
      * if not found, return null.
      */
-    DSType *getByNumTypeIndex(unsigned int index);
+    DSType *getByNumTypeIndex(unsigned int index) const;
 
     /**
      * commit changed state(type)
      */
-    void commit();
+    void commit() {
+        this->typeMap.commit();
+    }
 
     /**
      * abort changed state(type)
      */
-    void abort();
+    void abort() {
+        this->typeMap.abort();
+    }
 
 private:
     void setToTypeTable(DS_TYPE TYPE, DSType *type);
@@ -864,9 +873,9 @@ private:
 
     void initErrorType(DS_TYPE TYPE, const char *typeName, DSType &superType);
 
-    void checkElementTypes(const std::vector<DSType *> &elementTypes);
-    void checkElementTypes(const TypeTemplate &t, const std::vector<DSType *> &elementTypes);
-    bool asVariantType(const std::vector<DSType *> &elementTypes);
+    void checkElementTypes(const std::vector<DSType *> &elementTypes) const;
+    void checkElementTypes(const TypeTemplate &t, const std::vector<DSType *> &elementTypes) const;
+    bool asVariantType(const std::vector<DSType *> &elementTypes) const;
 
     /**
      * add standard dbus error type and alias. must call only once.

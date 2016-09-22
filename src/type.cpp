@@ -412,6 +412,16 @@ void ErrorType::registerFuncInfo(native_type_info_t info) {
 // ##     TypeMap     ##
 // #####################
 
+static bool isAlias(const DSType *type) {
+    assert(type != nullptr);
+    return (reinterpret_cast<long>(type)) < 0;
+}
+
+static unsigned long asKey(const DSType *type) {
+    assert(type != nullptr);
+    return reinterpret_cast<unsigned long>(type);
+}
+
 TypeMap::~TypeMap() {
     for(auto pair : this->typeMapImpl) {
         if(!isAlias(pair.second)) {
@@ -419,7 +429,6 @@ TypeMap::~TypeMap() {
         }
     }
 }
-
 
 DSType *TypeMap::addType(std::string &&typeName, DSType *type) {
     assert(type != nullptr);
@@ -469,16 +478,6 @@ void TypeMap::abort() {
         this->removeType(*typeName);
     }
     this->typeCache.clear();
-}
-
-bool TypeMap::isAlias(const DSType *type) {
-    assert(type != nullptr);
-    return ((long) type) < 0;
-}
-
-unsigned long TypeMap::asKey(const DSType *type) {
-    assert(type != nullptr);
-    return (unsigned long) type;
 }
 
 void TypeMap::removeType(const std::string &typeName) {
@@ -590,7 +589,7 @@ TypePool::~TypePool() {
     this->templateMap.clear();
 }
 
-DSType &TypePool::getTypeAndThrowIfUndefined(const std::string &typeName) {
+DSType &TypePool::getTypeAndThrowIfUndefined(const std::string &typeName) const {
     DSType *type = this->getType(typeName);
     if(type == 0) {
         RAISE_TL_ERROR(UndefinedType, typeName);
@@ -598,7 +597,7 @@ DSType &TypePool::getTypeAndThrowIfUndefined(const std::string &typeName) {
     return *type;
 }
 
-const TypeTemplate &TypePool::getTypeTemplate(const std::string &typeName) {
+const TypeTemplate &TypePool::getTypeTemplate(const std::string &typeName) const {
     auto iter = this->templateMap.find(typeName);
     if(iter == this->templateMap.end()) {
         RAISE_TL_ERROR(NotTemplate, typeName);
@@ -702,25 +701,13 @@ DSType &TypePool::getDBusInterfaceType(const std::string &typeName) {
     return *type;
 }
 
-void TypePool::setAlias(const std::string &alias, DSType &targetType) {
-    this->setAlias(alias.c_str(), targetType);
-}
-
 void TypePool::setAlias(const char *alias, DSType &targetType) {
     if(!this->typeMap.setAlias(std::string(alias), targetType)) {
         RAISE_TL_ERROR(DefinedType, alias);
     }
 }
 
-const std::string &TypePool::getTypeName(const DSType &type) const {
-    return this->typeMap.getTypeName(type);
-}
-
-std::string TypePool::toReifiedTypeName(const TypeTemplate &typeTemplate, const std::vector<DSType *> &elementTypes) {
-    return this->toReifiedTypeName(typeTemplate.getName(), elementTypes);
-}
-
-std::string TypePool::toReifiedTypeName(const std::string &name, const std::vector<DSType *> &elementTypes) {
+std::string TypePool::toReifiedTypeName(const std::string &name, const std::vector<DSType *> &elementTypes) const {
     int elementSize = elementTypes.size();
     std::string reifiedTypeName(name);
     reifiedTypeName += "<";
@@ -734,12 +721,7 @@ std::string TypePool::toReifiedTypeName(const std::string &name, const std::vect
     return reifiedTypeName;
 }
 
-
-std::string TypePool::toTupleTypeName(const std::vector<DSType *> &elementTypes) {
-    return toReifiedTypeName("Tuple", elementTypes);
-}
-
-std::string TypePool::toFunctionTypeName(DSType *returnType, const std::vector<DSType *> &paramTypes) {
+std::string TypePool::toFunctionTypeName(DSType *returnType, const std::vector<DSType *> &paramTypes) const {
     int paramSize = paramTypes.size();
     std::string funcTypeName("Func<");
     funcTypeName += this->getTypeName(*returnType);
@@ -765,7 +747,7 @@ constexpr int TypePool::INT16_PRECISION;
 constexpr int TypePool::BYTE_PRECISION;
 constexpr int TypePool::INVALID_PRECISION;
 
-int TypePool::getIntPrecision(const DSType &type) {
+int TypePool::getIntPrecision(const DSType &type) const {
     static const struct {
         DS_TYPE TYPE;
         int precision;
@@ -802,7 +784,7 @@ static const TypePool::DS_TYPE numTypeTable[] = {
         TypePool::Float,  // 7
 };
 
-int TypePool::getNumTypeIndex(const DSType &type) {
+int TypePool::getNumTypeIndex(const DSType &type) const {
     for(unsigned int i = 0; i < arraySize(numTypeTable); i++) {
         if(*this->typeTable[numTypeTable[i]] == type) {
             return i;
@@ -811,16 +793,8 @@ int TypePool::getNumTypeIndex(const DSType &type) {
     return -1;
 }
 
-DSType *TypePool::getByNumTypeIndex(unsigned int index) {
+DSType *TypePool::getByNumTypeIndex(unsigned int index) const {
     return index < arraySize(numTypeTable) ? this->typeTable[numTypeTable[index]] : nullptr;
-}
-
-void TypePool::commit() {
-    this->typeMap.commit();
-}
-
-void TypePool::abort() {
-    this->typeMap.abort();
 }
 
 void TypePool::setToTypeTable(DS_TYPE TYPE, DSType *type) {
@@ -868,7 +842,7 @@ void TypePool::initErrorType(DS_TYPE TYPE, const char *typeName, DSType &superTy
     this->setToTypeTable(TYPE, type);
 }
 
-void TypePool::checkElementTypes(const std::vector<DSType *> &elementTypes) {
+void TypePool::checkElementTypes(const std::vector<DSType *> &elementTypes) const {
     for(DSType *type : elementTypes) {
         if(*type == this->getVoidType()) {
             RAISE_TL_ERROR(InvalidElement, this->getTypeName(*type));
@@ -876,7 +850,7 @@ void TypePool::checkElementTypes(const std::vector<DSType *> &elementTypes) {
     }
 }
 
-void TypePool::checkElementTypes(const TypeTemplate &t, const std::vector<DSType *> &elementTypes) {
+void TypePool::checkElementTypes(const TypeTemplate &t, const std::vector<DSType *> &elementTypes) const {
     const unsigned int size = elementTypes.size();
 
     // check element type size
@@ -891,7 +865,7 @@ void TypePool::checkElementTypes(const TypeTemplate &t, const std::vector<DSType
     }
 }
 
-bool TypePool::asVariantType(const std::vector<DSType *> &elementTypes) {
+bool TypePool::asVariantType(const std::vector<DSType *> &elementTypes) const {
     for(DSType *type : elementTypes) {
         if(!this->getVariantType().isSameOrBaseTypeOf(*type)) {
             return false;
