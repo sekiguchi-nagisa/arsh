@@ -156,14 +156,6 @@ void BlockLeavingDetector::operator()(BlockNode &node) {
 // ##     TypeChecker     ##
 // #########################
 
-TypeChecker::TypeChecker(TypePool &typePool, SymbolTable &symbolTable, bool toplevelPrinting) :
-        typePool(typePool), symbolTable(symbolTable), typeGen(this), curReturnType(0),
-        visitingDepth(0), loopDepth(0), finallyDepth(0), toplevelPrinting(toplevelPrinting) { }
-
-void TypeChecker::checkTypeRootNode(RootNode &rootNode) {
-    rootNode.accept(*this);
-}
-
 DSType &TypeChecker::resolveInterface(TypePool &typePool, InterfaceNode *node) {
     TypeGenerator typeGen(typePool);
     return resolveInterface(typePool, typeGen, node);
@@ -205,20 +197,6 @@ DSType &TypeChecker::resolveInterface(TypePool &typePool,
     node->setType(typePool.getVoidType());
 
     return type;
-}
-
-// type check entry point
-DSType &TypeChecker::checkType(Node *targetNode) {
-    return this->checkType(nullptr, targetNode, &this->typePool.getVoidType());
-}
-
-DSType &TypeChecker::checkType(DSType &requiredType, Node *targetNode) {
-    return this->checkType(&requiredType, targetNode, nullptr);
-}
-
-DSType &TypeChecker::checkType(DSType *requiredType, Node *targetNode, DSType *unacceptableType) {
-    CoercionKind kind = CoercionKind::NOP;
-    return this->checkType(requiredType, targetNode, unacceptableType, kind);
 }
 
 DSType &TypeChecker::checkType(DSType *requiredType, Node *targetNode,
@@ -331,16 +309,6 @@ void TypeChecker::checkAndThrowIfOutOfLoop(Node &node) {
         return;
     }
     RAISE_TC_ERROR(InsideLoop, node);
-}
-
-void TypeChecker::pushReturnType(DSType &returnType) {
-    this->curReturnType = &returnType;
-}
-
-DSType *TypeChecker::popReturnType() {
-    DSType *returnType = this->curReturnType;
-    this->curReturnType = nullptr;
-    return returnType;
 }
 
 void TypeChecker::checkAndThrowIfInsideFinally(BlockEndNode &node) {

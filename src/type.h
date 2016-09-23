@@ -543,7 +543,7 @@ public:
          * for internal status reporting.
          * they are pseudo type, so must not use it from shell
          */
-                InternalStatus__,   // base type
+        InternalStatus__,   // base type
         ShellExit__,
         AssertFail__,
 

@@ -152,14 +152,18 @@ private:
     bool toplevelPrinting;
 
 public:
-    TypeChecker(TypePool &typePool, SymbolTable &symbolTable, bool toplevelPrinting);
+    TypeChecker(TypePool &typePool, SymbolTable &symbolTable, bool toplevelPrinting) :
+            typePool(typePool), symbolTable(symbolTable), typeGen(this), curReturnType(0),
+            visitingDepth(0), loopDepth(0), finallyDepth(0), toplevelPrinting(toplevelPrinting) { }
 
     ~TypeChecker() = default;
 
     /**
      * type checker entry point
      */
-    void checkTypeRootNode(RootNode &rootNode);
+    void checkTypeRootNode(RootNode &rootNode) {
+        rootNode.accept(*this);
+    }
 
     static DSType &resolveInterface(TypePool &typePool, InterfaceNode *node);
     static DSType &resolveInterface(TypePool &typePool, TypeGenerator &typeGen, InterfaceNode *node);
@@ -172,7 +176,9 @@ private:
      * if node type is void type, throw exception.
      * return resolved type.
      */
-    DSType &checkType(Node *targetNode);
+    DSType &checkType(Node *targetNode) {
+        return this->checkType(nullptr, targetNode, &this->typePool.getVoidType());
+    }
 
     /**
      * check node type
@@ -180,7 +186,9 @@ private:
      * if requiredType is not equivalent to node type, throw exception.
      * return resolved type.
      */
-    DSType &checkType(DSType &requiredType, Node *targetNode);
+    DSType &checkType(DSType &requiredType, Node *targetNode) {
+        return this->checkType(&requiredType, targetNode, nullptr);
+    }
 
     /**
      * check node type
@@ -192,7 +200,10 @@ private:
      * and if unacceptableType is equivalent to node type, throw exception.
      * return resolved type.
      */
-    DSType &checkType(DSType *requiredType, Node *targetNode, DSType *unacceptableType);
+    DSType &checkType(DSType *requiredType, Node *targetNode, DSType *unacceptableType) {
+        CoercionKind kind = CoercionKind::NOP;
+        return this->checkType(requiredType, targetNode, unacceptableType, kind);
+    }
 
     /**
      * root method of checkType
@@ -240,12 +251,18 @@ private:
      */
     void checkAndThrowIfOutOfLoop(Node &node);
 
-    void pushReturnType(DSType &returnType);
+    void pushReturnType(DSType &returnType) {
+        this->curReturnType = &returnType;
+    }
 
     /**
      * return null, if outside of function
      */
-    DSType *popReturnType();
+    DSType *popReturnType() {
+        DSType *returnType = this->curReturnType;
+        this->curReturnType = nullptr;
+        return returnType;
+    }
 
     /**
      * return null, if outside of function
