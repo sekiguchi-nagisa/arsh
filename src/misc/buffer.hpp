@@ -19,7 +19,8 @@
 
 #include <cstring>
 #include <type_traits>
-#include <exception>
+#include <stdexcept>
+#include <string>
 #include <cassert>
 #include <cmath>
 
