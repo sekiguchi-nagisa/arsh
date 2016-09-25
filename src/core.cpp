@@ -661,7 +661,7 @@ enum class EscapeOp {
     COMMAND_ARG,
 };
 
-static std::string escapse(const char *str, EscapeOp op) {
+static std::string escape(const char *str, EscapeOp op) {
     std::string buf;
     if(op == EscapeOp::NOP) {
         buf += str;
@@ -722,7 +722,7 @@ static std::string escapse(const char *str, EscapeOp op) {
 
 
 static void append(CStrBuffer &buf, const char *str, EscapeOp op) {
-    std::string estr = escapse(str, op);
+    std::string estr = escape(str, op);
 
     // find inserting position
     for(auto iter = buf.begin(); iter != buf.end(); ++iter) {
