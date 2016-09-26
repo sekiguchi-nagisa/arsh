@@ -806,6 +806,14 @@ std::unique_ptr<Node> Parser::parse_command() {
             this->parse_redirOption(node);
             break;
         }
+        case INVALID: {
+#define EACH_LA_cmdArgs(E) \
+            EACH_LA_cmdArg(E) \
+            EACH_LA_redir(E)
+
+            E_ALTER(EACH_LA_cmdArgs(GEN_LA_ALTER));
+#undef EACH_LA_cmdArgs
+        }
         default:
             next = false;
             break;

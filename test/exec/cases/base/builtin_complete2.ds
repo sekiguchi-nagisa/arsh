@@ -47,6 +47,7 @@ function assertArray($x : Array<String>, $y : Array<String>) {
     $assertArray($gvars2, $(complete '$P'))
     $assertArray(new Array<String>(), $(complete '$P '))
     $assertArray($gvars, $(complete '"$'))
+    $assertArray($gvars, $(complete 'echo $'))
 }
 
 
