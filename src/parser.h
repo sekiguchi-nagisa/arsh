@@ -156,8 +156,6 @@ private:
 
     std::unique_ptr<Node> parse_suffixExpression();
 
-    std::unique_ptr<Node> parse_memberExpression();
-
     std::unique_ptr<Node> parse_primaryExpression();
 
     std::unique_ptr<Node> parse_appliedName(bool asSpecialName = false);

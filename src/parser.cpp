@@ -979,24 +979,6 @@ std::unique_ptr<Node> Parser::parse_unaryExpression() {
 }
 
 std::unique_ptr<Node> Parser::parse_suffixExpression() {
-    auto node = this->parse_memberExpression();
-    if(!HAS_NL()) {
-        switch(CUR_KIND()) {    // currently not allow nested suffix expression
-        case INC:
-        case DEC: {
-            Token token = this->curToken;
-            TokenKind op = this->consume();
-            node.reset(createSuffixNode(node.release(), op, token));
-            break;
-        }
-        default:
-            break;
-        }
-    }
-    return node;
-}
-
-std::unique_ptr<Node> Parser::parse_memberExpression() {
     auto node(this->parse_primaryExpression());
 
     for(bool next = true; !HAS_NL() && next;) {
@@ -1028,6 +1010,13 @@ std::unique_ptr<Node> Parser::parse_memberExpression() {
             ArgsWrapper args(this->parse_arguments());
             node = uniquify<ApplyNode>(node.release(), ArgsWrapper::extract(std::move(args)));
             node->updateToken(args.getToken());
+            break;
+        }
+        case INC:
+        case DEC: {
+            Token token = this->curToken;
+            TokenKind op = this->consume();
+            node.reset(createSuffixNode(node.release(), op, token));
             break;
         }
         default: {
