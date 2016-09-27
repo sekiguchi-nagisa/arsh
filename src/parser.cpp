@@ -935,12 +935,6 @@ std::unique_ptr<Node> Parser::parse_binaryExpression(std::unique_ptr<Node> &&lef
             node = uniquify<InstanceOfNode>(node.release(), type.release());
             break;
         }
-        case PRINT: {
-            Token token = this->expect(PRINT);
-            node = uniquify<PrintNode>(node.release());
-            node->updateToken(token);
-            break;
-        }
         case TERNARY: {
             this->consume();
             auto tleftNode(this->parse_expression());

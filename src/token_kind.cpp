@@ -31,7 +31,6 @@ unsigned int getPrecedence(TokenKind kind) {
     switch(kind) {
     case IS:
     case AS:
-    case PRINT:
         return 300;
     case MUL:
     case DIV:

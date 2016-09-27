@@ -1,4 +1,0 @@
-#$test($result = 'type', $errorKind = 'Unacceptable', $lineNum = 4, $status = 1)
-
-function f() {}
-$f() print

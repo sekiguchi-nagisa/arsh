@@ -44,11 +44,11 @@ assert(not $b.find(34))
 var c = ["a" : 23, "d" : 43, "e" : 4]
 try {
     for(var i = $c.__ITERATOR__(); $true; $i.__NEXT__()) {
-        'in iterator' print
+        'in iterator'
     }
     assert($false)
 } catch($e : OutOfRangeError) {
-    $e.message() print
+    $e.backtrace()
 }
 
 var count = 0

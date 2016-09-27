@@ -11,9 +11,25 @@ trap 'ereport $LINENO' ERR
 YDSH_BIN=$1
 
 
-$YDSH_BIN --print-toplevel -c '$true' | grep '(Boolean) true'
-$YDSH_BIN -c '$true print' | grep '(Boolean) true'
+test "$($YDSH_BIN --print-toplevel -c '$true')" = '(Boolean) true'
 
-$YDSH_BIN --print-toplevel -c 'var a = new Tuple<Any>(9); $a._0 = $a; $a' 2>&1 | grep '[runtime errpr]'
+$YDSH_BIN --print-toplevel -c "$'hello\x00world'" | grep $'hello\x00world'
+
+v="$(cat << EOF
+[runtime error]
+StackOverflowError: caused by circular reference
+    from (string):1 '<toplevel>()'
+EOF
+)"
+
+test "$($YDSH_BIN --print-toplevel -c 'var a = new Tuple<Any>(9); $a._0 = $a; $a' 2>&1 || true)" = "$v"
+
+v="$(cat << EOF
+[runtime error]
+cannot obtain string representation
+EOF
+)"
+
+test "$($YDSH_BIN --print-toplevel -c 'var a = new Tuple<Any>(9); $a._0 = $a; throw $a' 2>&1 || true)" = "$v"
 
 exit 0

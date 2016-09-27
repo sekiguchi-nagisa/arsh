@@ -114,7 +114,6 @@
     TOKEN(IN                                 , "in") \
     TOKEN(IS                                 , "is") \
     TOKEN(TYPEOF                             , "typeof") \
-    TOKEN(PRINT                              , "print") \
     /* identifier. */\
     TOKEN(IDENTIFIER                         , "<Identifier>") \
     /* accessor */\
