@@ -89,7 +89,6 @@ TokenKind Lexer::nextToken(Token &token) {
       re2c:define:YYCURSOR = this->cursor;
       re2c:define:YYLIMIT = this->limit;
       re2c:define:YYMARKER = this->marker;
-      re2c:define:YYCTXMARKER = this->ctxMarker;
       re2c:define:YYFILL:naked = 1;
       re2c:define:YYFILL@len = #;
       re2c:define:YYFILL = "if(!this->fill(#)) { REACH_EOS(); }";
