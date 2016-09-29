@@ -190,6 +190,14 @@ public:
                 memcmp(this->buf + token.pos, str, token.size) == 0;
     }
 
+    /**
+     * shift EOS token to left.
+     * @param token
+     * @return
+     * if token is EOS, skip redundant white spaces and shift to left.
+     * otherwise, return token.
+     */
+    Token shiftEOS(Token token) const;
 
     /**
      * get line token which token belongs to.
@@ -248,10 +256,7 @@ LexerBase<T>::LexerBase(const char *data, unsigned int size) : LexerBase() {
 }
 
 template <bool T>
-Token LexerBase<T>::getLineToken(Token token) const {
-    assert(this->withinRange(token));
-
-    // skip space
+Token LexerBase<T>::shiftEOS(Token token) const {
     if(token.size == 0) {
         unsigned int startIndex = token.pos;
         for(; startIndex > 0; startIndex--) {
@@ -268,12 +273,17 @@ Token LexerBase<T>::getLineToken(Token token) const {
             break;
         }
         token.pos = startIndex;
-        token.size = 0;
     }
+    return token;
+}
+
+template <bool T>
+Token LexerBase<T>::getLineToken(Token token) const {
+    assert(this->withinRange(token));
 
     // find start index of line.
-    unsigned int startIndex;
-    for(startIndex = token.pos; startIndex > 0; startIndex--) {
+    unsigned int startIndex = token.pos;
+    for(; startIndex > 0; startIndex--) {
         if(this->buf[startIndex] == '\n') {
             startIndex += (startIndex == token.pos) ? 0 : 1;
             break;
@@ -281,12 +291,15 @@ Token LexerBase<T>::getLineToken(Token token) const {
     }
 
     // find stop index of line
-    unsigned int stopIndex;
-    unsigned int usedSize = this->getUsedSize();
-    for(stopIndex = token.pos + token.size; stopIndex < usedSize; stopIndex++) {
-        if(this->buf[stopIndex] == '\n') {
-            break;
+    unsigned int stopIndex = token.pos + token.size;
+    if(token.size > 0) {
+        for(unsigned int usedSize = this->getUsedSize(); stopIndex < usedSize; stopIndex++) {
+            if(this->buf[stopIndex] == '\n') {
+                break;
+            }
         }
+    } else {
+        stopIndex++;
     }
     Token lineToken;
     lineToken.pos = startIndex;
@@ -318,7 +331,7 @@ std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token) const {
     }
     const unsigned int stopPos = token.size + token.pos;
     if(token.size == 0) {
-        marker += " ^";
+        marker += "  ^";
     }
     for(unsigned int i = token.pos; i < stopPos;) {
         unsigned int prev = i;
