@@ -11,7 +11,7 @@ YDSH_BIN=$1
 
 # line marker of syntax error
 v="$(cat << EOF
-(stdin):4: [syntax error] mismatched token: <EOS>, expected: =
+(stdin):1: [syntax error] mismatched token: <EOS>, expected: =
 var a
       ^
 EOF

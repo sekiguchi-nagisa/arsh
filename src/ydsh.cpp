@@ -118,20 +118,19 @@ static void formatErrorLine(bool isatty, const Lexer &lexer, Token errorToken) {
 }
 
 static void handleParseError(const Lexer &lexer, const ParseError &e, DSError *dsError) {
+    Token errorToken = lexer.shiftEOS(e.getErrorToken());
+
     /**
      * show parse error message
      */
-    unsigned int errorLineNum = lexer.getSourceInfoPtr()->getLineNum(e.getErrorToken().pos);
-    if(e.getTokenKind() == EOS) {
-        errorLineNum--;
-    }
+    unsigned int errorLineNum = lexer.getSourceInfoPtr()->getLineNum(errorToken.pos);
 
     const bool isatty = isSupportedTerminal(STDERR_FILENO);
 
     std::cerr << lexer.getSourceInfoPtr()->getSourceName() << ":" << errorLineNum << ":"
     << color(TermColor::Magenta, isatty) << " [syntax error] " << color(TermColor::Reset, isatty)
     << e.getMessage() << std::endl;
-    formatErrorLine(isatty, lexer, e.getErrorToken());
+    formatErrorLine(isatty, lexer, errorToken);
 
     setErrorInfo(dsError, DS_ERROR_KIND_PARSE_ERROR, errorLineNum, e.getErrorKind());
 }
