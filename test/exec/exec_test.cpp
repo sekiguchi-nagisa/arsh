@@ -348,6 +348,19 @@ TEST(API, case4) {
     DSState_delete(&state);
 }
 
+TEST(API, case5) {
+    SCOPED_TRACE("");
+
+    DSState *state = DSState_create();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_OPTION_ASSERT, DSState_option(state)));
+
+    DSState_setOption(state, DS_OPTION_DUMP_CODE);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_OPTION_ASSERT | DS_OPTION_DUMP_CODE, DSState_option(state)));
+
+    DSState_unsetOption(state, DS_OPTION_ASSERT);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_OPTION_DUMP_CODE, DSState_option(state)));
+}
+
 TEST(PID, case1) {
     SCOPED_TRACE("");
 

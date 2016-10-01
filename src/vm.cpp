@@ -1161,7 +1161,7 @@ static void closeProc(DSState &state) {
 static void addArg(DSState &state, bool skipEmptyString) {
     DSValue value = state.pop();
     DSType *valueType = value->getType();
-    if(*valueType == state.pool.getStringType()) {
+    if(*valueType == state.pool.getStringType()) {  // String
         if(skipEmptyString && typeAs<String_Object>(value)->empty()) {
             return;
         }
@@ -1169,16 +1169,13 @@ static void addArg(DSState &state, bool skipEmptyString) {
         return;
     }
 
-    if(*valueType == state.pool.getStringArrayType()) {
-        Array_Object *arrayObj = typeAs<Array_Object>(value);
-        for(auto &element : arrayObj->getValues()) {
-            if(typeAs<String_Object>(element)->empty()) {
-                continue;
-            }
-            activePipeline(state).argArray.push_back(element);
+    assert(*valueType == state.pool.getStringArrayType());  // Array<String>
+    Array_Object *arrayObj = typeAs<Array_Object>(value);
+    for(auto &element : arrayObj->getValues()) {
+        if(typeAs<String_Object>(element)->empty()) {
+            continue;
         }
-    } else {
-        fatal("illegal command parameter type: %s\n", state.pool.getTypeName(*valueType).c_str());
+        activePipeline(state).argArray.push_back(element);
     }
 }
 
@@ -1187,12 +1184,8 @@ static void addArg(DSState &state, bool skipEmptyString) {
  */
 static void addRedirOption(DSState &state, RedirectOP op) {
     DSValue value = state.pop();
-    DSType *valueType = value->getType();
-    if(*valueType == state.pool.getStringType()) {
-        activePipeline(state).redirOptions.push_back(std::make_pair(op, value));
-    } else {
-        fatal("illegal command parameter type: %s\n", state.pool.getTypeName(*valueType).c_str());
-    }
+    assert(*value->getType() == state.pool.getStringType());
+    activePipeline(state).redirOptions.push_back(std::make_pair(op, value));
 }
 
 // prototype of DBus related api
