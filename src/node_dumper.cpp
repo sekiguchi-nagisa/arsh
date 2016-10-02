@@ -61,22 +61,6 @@ void NodeDumper::dump(const char *fieldName, const std::string &value) {
     this->stream << '"' << std::endl;
 }
 
-void NodeDumper::dump(const char *fieldName, const std::vector<Node *> &nodes) {
-    this->writeName(fieldName);
-    this->stream << std::endl;
-
-    this->enterIndent();
-    for(Node *node : nodes) {
-        this->indent();
-        this->stream << "- ";
-        this->dumpNodeHeader(*node, true);
-        this->enterIndent();
-        node->dump(*this);
-        this->leaveIndent();
-    }
-    this->leaveIndent();
-}
-
 void NodeDumper::dump(const char *fieldName, const std::list<Node *> &nodes) {
     this->writeName(fieldName);
     this->stream << std::endl;
@@ -145,6 +129,24 @@ void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
     if(inArray) {
         this->leaveIndent();
     }
+}
+
+void NodeDumper::dumpNodes(const char *fieldName, Node * const * begin, Node *const * end) {
+    this->writeName(fieldName);
+    this->stream << std::endl;
+
+    this->enterIndent();
+    for(; begin != end; ++begin) {
+        Node *node = *begin;
+
+        this->indent();
+        this->stream << "- ";
+        this->dumpNodeHeader(*node, true);
+        this->enterIndent();
+        node->dump(*this);
+        this->leaveIndent();
+    }
+    this->leaveIndent();
 }
 
 void NodeDumper::writeName(const char *fieldName) {

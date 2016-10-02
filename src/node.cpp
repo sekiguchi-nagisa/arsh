@@ -56,7 +56,7 @@ void ReifiedTypeNode::addElementTypeNode(TypeNode *typeNode) {
 
 void ReifiedTypeNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(templateTypeNode);
-    DUMP_NODES(elementTypeNodes);
+    DUMP(elementTypeNodes);
 }
 
 void ReifiedTypeNode::accept(NodeVisitor &visitor) {
@@ -82,7 +82,7 @@ void FuncTypeNode::addParamTypeNode(TypeNode *typeNode) {
 
 void FuncTypeNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(returnTypeNode);
-    DUMP_NODES(paramTypeNodes);
+    DUMP(paramTypeNodes);
 }
 
 void FuncTypeNode::accept(NodeVisitor &visitor) {
@@ -122,7 +122,7 @@ void ReturnTypeNode::addTypeNode(TypeNode *typeNode) {
 }
 
 void ReturnTypeNode::dump(NodeDumper &dumper) const {
-    DUMP_NODES(typeNodes);
+    DUMP(typeNodes);
 }
 
 void ReturnTypeNode::accept(NodeVisitor &visitor) {
@@ -1359,7 +1359,7 @@ void TryNode::addFinallyNode(BlockNode *finallyNode) {
 
 void TryNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(blockNode);
-    DUMP_NODES(catchNodes);
+    DUMP(catchNodes);
 
     DUMP_PTR(finallyNode);
 }
@@ -1515,8 +1515,8 @@ TypeNode *FunctionNode::getReturnTypeToken() {
 
 void FunctionNode::dump(NodeDumper &dumper) const {
     DUMP(name);
-    DUMP_NODES(paramNodes);
-    DUMP_NODES(paramTypeNodes);
+    DUMP(paramNodes);
+    DUMP(paramTypeNodes);
 
     DUMP_PTR(returnTypeNode);
     DUMP_PTR(blockNode);
@@ -1559,9 +1559,9 @@ void InterfaceNode::addFieldDecl(VarDeclNode *node, TypeNode *typeToken) {
 
 void InterfaceNode::dump(NodeDumper &dumper) const {
     DUMP(interfaceName);
-    DUMP_NODES(methodDeclNodes);
-    DUMP_NODES(fieldDeclNodes);
-    DUMP_NODES(fieldTypeNodes);
+    DUMP(methodDeclNodes);
+    DUMP(fieldDeclNodes);
+    DUMP(fieldTypeNodes);
 }
 
 void InterfaceNode::accept(NodeVisitor &visitor) {

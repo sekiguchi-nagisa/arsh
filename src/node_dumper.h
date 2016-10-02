@@ -58,7 +58,18 @@ public:
 
     void dump(const char *fieldName, const std::string &value);
 
-    void dump(const char *fieldName, const std::vector<Node *> &nodes);
+    void dump(const char *fieldName, const std::vector<Node *> &nodes) {
+        this->dumpNodes(fieldName, nodes.data(), nodes.data() + nodes.size());
+    }
+
+    template <typename T>
+    using convertible_t = typename std::enable_if<std::is_convertible<T, Node *>::value, T>::type;
+
+    template <typename T, typename = convertible_t<T *>>
+    void dump(const char *fieldName, const std::vector<T *> &nodes) {
+        this->dumpNodes(fieldName, reinterpret_cast<Node *const*>(nodes.data()),
+                        reinterpret_cast<Node *const*>(nodes.data() + nodes.size()));
+    }
 
     void dump(const char *fieldName, const std::list<Node *> &nodes);
 
@@ -96,18 +107,10 @@ private:
 
     void dumpNodeHeader(const Node &node, bool inArray = false);
 
+    void dumpNodes(const char *fieldName, Node* const* begin, Node* const* end);
+
     void writeName(const char *fieldName);
 };
-
-template <typename T>
-inline std::vector<Node *> toNodes(const std::vector<T *> &nodes) {
-    static_assert(std::is_base_of<Node, T>::value, "must be subtype of Node");
-    std::vector<Node *> v;
-    for(const auto &e : nodes) {
-        v.push_back(e);
-    }
-    return v;
-}
 
 } // namespace ydsh
 
@@ -122,8 +125,6 @@ inline std::vector<Node *> toNodes(const std::vector<T *> &nodes) {
             dumper.dump(NAME(field), *field);\
         }\
     } while(false)
-
-#define DUMP_NODES(field) dumper.dump(NAME(field), toNodes(field))
 
 
 // not directly use it.
