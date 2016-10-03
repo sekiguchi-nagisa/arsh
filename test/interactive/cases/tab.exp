@@ -9,7 +9,7 @@ set CTRLD \004
 
 expect {
     -re "\\$ $" {
-        send "    \t\r"
+        send "\$O\t\t\r"
     }
     default {
         send_error "mismatch first prompt"
@@ -18,7 +18,7 @@ expect {
 }
 
 expect {
-    -re "\\$ $" {
+    -re "OLDPWD  OSTYPE" {
         send "\t\r"
     }
     default {
