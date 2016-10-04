@@ -128,7 +128,7 @@
 #define E_ALTER(...) \
 do { \
     const TokenKind alters[] = { __VA_ARGS__ };\
-    this->alternativeError(sizeof(alters) / sizeof(alters[0]), alters);\
+    this->alternativeError(alters);\
 } while(false)
 
 // for check converted number range

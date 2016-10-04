@@ -650,7 +650,7 @@ std::unique_ptr<Element> Parser::parse_descriptor(const std::string &line) {
         const DescTokenKind alters[] = {
                 FUNC, INIT,
         };
-        this->alternativeError(2, alters);
+        this->alternativeError(alters);
     }
     }
     return std::unique_ptr<Element>(nullptr);
@@ -677,7 +677,7 @@ std::unique_ptr<Element> Parser::parse_funcDesc() {
         const DescTokenKind alters[] = {
                 IDENTIFIER, VAR_NAME,
         };
-        this->alternativeError(2, alters);
+        this->alternativeError(alters);
     }
     }
 
@@ -759,7 +759,7 @@ std::unique_ptr<TypeToken> Parser::parse_type() {
                 MAP,
                 TUPLE,
         };
-        this->alternativeError(sizeof(alters) / sizeof(alters[0]), alters);
+        this->alternativeError(alters);
     }
 }
 

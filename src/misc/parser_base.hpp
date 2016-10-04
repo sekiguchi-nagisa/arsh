@@ -119,9 +119,10 @@ protected:
 
     T consume();
 
+    template <std::size_t N>
     [[noreturn]]
-    void alternativeError(const unsigned int size, const T *const alters) const throw(ParseError<T>) {
-        raiseNoViableAlterError(this->curKind, this->curToken, size, alters);
+    void alternativeError(const T (&alters)[N]) const {
+        raiseNoViableAlterError(this->curKind, this->curToken, N, alters);
     }
 
     [[noreturn]]
