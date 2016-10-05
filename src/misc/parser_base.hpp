@@ -122,17 +122,18 @@ protected:
     template <std::size_t N>
     [[noreturn]]
     void alternativeError(const T (&alters)[N]) const {
-        raiseNoViableAlterError(this->curKind, this->curToken, N, alters);
+        raiseNoViableAlterError(N, alters);
     }
 
+
     [[noreturn]]
-    static void raiseTokenMismatchedError(T kind, Token errorToken, T expected);
+    void raiseTokenMismatchedError(T expected) const;
+
     [[noreturn]]
-    static void raiseNoViableAlterError(T kind, Token errorToken,
-                                        const unsigned int size, const T *const alters);
+    void raiseNoViableAlterError(unsigned int size, const T *const alters) const;
+
     [[noreturn]]
-    static void raiseInvalidTokenError(T kind, Token errorToken,
-                                       const unsigned int size, const T *const alters);
+    void raiseInvalidTokenError(unsigned int size, const T *const alters) const;
 };
 
 // ########################
@@ -142,7 +143,7 @@ protected:
 template<typename T, typename LexerImpl, typename Tracker>
 Token ParserBase<T, LexerImpl, Tracker>::expect(T kind, bool fetchNext) {
     if(this->curKind != kind) {
-        raiseTokenMismatchedError(this->curKind, this->curToken, kind);
+        this->raiseTokenMismatchedError(kind);
     }
     this->trace();
     Token token = this->curToken;
@@ -161,32 +162,31 @@ T ParserBase<T, LexerImpl, Tracker>::consume() {
 }
 
 template<typename T, typename LexerImpl, typename Tracker>
-void ParserBase<T, LexerImpl, Tracker>::raiseTokenMismatchedError(T kind, Token errorToken, T expected) {
-    if(LexerImpl::isInvalidToken(kind)) {
+void ParserBase<T, LexerImpl, Tracker>::raiseTokenMismatchedError(T expected) const {
+    if(LexerImpl::isInvalidToken(this->curKind)) {
         T alter[1] = { expected };
-        raiseInvalidTokenError(kind, errorToken, 1, alter);
+        this->raiseInvalidTokenError(1, alter);
     }
 
     std::string message("mismatched token: ");
-    message += toString(kind);
+    message += toString(this->curKind);
     message += ", expected: ";
     message += toString(expected);
 
     std::vector<T> expectedTokens(1);
     expectedTokens[0] = expected;
-    throw ParseError<T>(kind, errorToken, "TokenMismatched",
+    throw ParseError<T>(this->curKind, this->curToken, "TokenMismatched",
                         std::move(expectedTokens), std::move(message));
 }
 
 template<typename T, typename LexerImpl, typename Tracker>
-void ParserBase<T, LexerImpl, Tracker>::raiseNoViableAlterError(T kind, Token errorToken,
-                                                                const unsigned int size, const T *const alters) {
-    if(LexerImpl::isInvalidToken(kind)) {
-        raiseInvalidTokenError(kind, errorToken, size, alters);
+void ParserBase<T, LexerImpl, Tracker>::raiseNoViableAlterError(unsigned int size, const T *const alters) const {
+    if(LexerImpl::isInvalidToken(this->curKind)) {
+        this->raiseInvalidTokenError(size, alters);
     }
 
     std::string message = "no viable alternative: ";
-    message += toString(kind);
+    message += toString(this->curKind);
     if(size > 0 && alters != nullptr) {
         message += ", expected: ";
         for(unsigned int i = 0; i < size; i++) {
@@ -198,13 +198,12 @@ void ParserBase<T, LexerImpl, Tracker>::raiseNoViableAlterError(T kind, Token er
     }
 
     std::vector<T> expectedTokens(alters, alters + size);
-    throw ParseError<T>(kind, errorToken, "NoViableAlter",
+    throw ParseError<T>(this->curKind, this->curToken, "NoViableAlter",
                         std::move(expectedTokens), std::move(message));
 }
 
 template<typename T, typename LexerImpl, typename Tracker>
-void ParserBase<T, LexerImpl, Tracker>::raiseInvalidTokenError(T kind, Token errorToken,
-                                                               const unsigned int size, const T *const alters) {
+void ParserBase<T, LexerImpl, Tracker>::raiseInvalidTokenError(unsigned int size, const T *const alters) const {
     std::string message = "invalid token, expected: ";
     if(size > 0 && alters != nullptr) {
         for(unsigned int i = 0; i < size; i++) {
@@ -216,7 +215,7 @@ void ParserBase<T, LexerImpl, Tracker>::raiseInvalidTokenError(T kind, Token err
     }
 
     std::vector<T> expectedTokens(alters, alters + size);
-    throw ParseError<T>(kind, errorToken, "InvalidToken",
+    throw ParseError<T>(this->curKind, this->curToken, "InvalidToken",
                         std::move(expectedTokens), std::move(message));
 }
 
