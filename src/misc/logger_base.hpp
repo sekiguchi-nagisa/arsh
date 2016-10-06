@@ -68,10 +68,6 @@ public:
         return hasFlag(instance().whiteList, mask(e));
     }
 
-    static std::ostream &format2digit(std::ostream &stream, int num) {
-        return stream << (num < 10 ? "0" : "") << num;
-    }
-
     static std::ostream &header(const char *funcName);
 };
 
@@ -98,14 +94,10 @@ std::ostream &LoggerBase<P, E>::header(const char *funcName) {
     time_t timer = time(nullptr);
     struct tm *local = localtime(&timer);
 
-    stream << (local->tm_year + 1900) << "-";
-    format2digit(stream, local->tm_mon + 1) << "-";
-    format2digit(stream, local->tm_mday) << " ";
-    format2digit(stream, local->tm_hour) << ":";
-    format2digit(stream, local->tm_min) << ":";
-    format2digit(stream, local->tm_sec);
+    char buf[32];
+    strftime(buf, 32, "%F %T", local);
 
-    return stream << " ["  << getpid() << "] " << funcName << "(): ";
+    return stream << buf << " ["  << getpid() << "] " << funcName << "(): ";
 }
 
 
