@@ -149,9 +149,9 @@ unsigned int initPolicy(const char *prefix, const char *arg) {
 }
 
 template <typename T>
-std::ostream &invoke(std::ostream &stream, T t) {
+inline void invoke(std::ostream &stream, T t) {
     t(stream);
-    return stream;
+    stream << std::endl;
 }
 
 } // namespace __detail_log
@@ -159,21 +159,15 @@ std::ostream &invoke(std::ostream &stream, T t) {
 
 #ifdef USE_LOGGING
 
-#define LOG(E, B) \
-    do {\
-        using namespace ydsh;\
-        if(__detail_log::Logger::checkPolicy(__detail_log::LoggingPolicy::E)) {\
-            __detail_log::Logger::header(__func__) << B << std::endl;\
-        }\
-    } while(false)
-
 #define LOG_L(E, B) \
     do {\
         using namespace ydsh;\
         if(__detail_log::Logger::checkPolicy(__detail_log::LoggingPolicy::E)) {\
-            __detail_log::invoke(__detail_log::Logger::header(__func__), B) << std::endl;\
+            __detail_log::invoke(__detail_log::Logger::header(__func__), B);\
         }\
     } while(false)
+
+#define LOG(E, V) LOG_L(E, [&](std::ostream &__stream) { __stream << V; })
 
 
 #define DEFINE_LOGGING_POLICY(PREFIX, APPENDER, ...) \
