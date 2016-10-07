@@ -26,6 +26,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstring>
+#include <string>
 #include <ctime>
 
 #include "misc/flag_util.hpp"
@@ -83,7 +84,9 @@ private:
 
         unsigned int index = 0;
         for(auto &p : policies) {
-            const char *env = getenv(p);
+            std::string str("YDSH_");
+            str += p;
+            const char *env = getenv(str.c_str());
             if(env != nullptr) {
                 ydsh::setFlag(this->whiteList_, (1u << index));
             }
