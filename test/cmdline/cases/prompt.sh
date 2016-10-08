@@ -23,7 +23,7 @@ trap 'ereport $LINENO' ERR
 
 export TIME_SOURCE='2016-1-13T15:15:12Z'
 
-test "$($YDSH_BIN -e ps_intrp '\d')" = "Wed 1 13"
+test "$($YDSH_BIN -e ps_intrp '\d')" = "Wed 01 13"
 test "$($YDSH_BIN -e ps_intrp '\t')" = "15:15:12"
 test "$($YDSH_BIN -e ps_intrp '\T')" = "03:15:12"
 test "$($YDSH_BIN -e ps_intrp '\@')" = "03:15 PM"

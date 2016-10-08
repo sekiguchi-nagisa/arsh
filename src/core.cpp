@@ -357,13 +357,6 @@ pid_t xwaitpid(DSState &, pid_t pid, int &status, int options) {
     return ret;
 }
 
-static void format2digit(int num, std::string &out) {
-    if(num < 10) {
-        out += "0";
-    }
-    out += std::to_string(num);
-}
-
 static const char *safeBasename(const char *str) {
     const char *ptr = strrchr(str, '/');
     return ptr == nullptr ? str : ptr + 1;
@@ -374,12 +367,8 @@ void interpretPromptString(const DSState &st, const char *ps, std::string &outpu
 
     struct tm *local = getLocalTime();
 
-    static const char *wdays[] = {
-            "Sun", "Mon", "Tue", "Wed", "Thurs", "Fri", "Sat"
-    };
-
-    const unsigned int hostNameSize = 128;    // in linux environment, HOST_NAME_MAX is 64
-    static char hostName[hostNameSize];
+    constexpr unsigned int hostNameSize = 128;    // in linux environment, HOST_NAME_MAX is 64
+    char hostName[hostNameSize];
     if(gethostname(hostName, hostNameSize) !=  0) {
         hostName[0] = '\0';
     }
@@ -392,11 +381,14 @@ void interpretPromptString(const DSState &st, const char *ps, std::string &outpu
                 ch = '\a';
                 break;
             case 'd': {
+                const char *wdays[] = {
+                        "Sun", "Mon", "Tue", "Wed", "Thurs", "Fri", "Sat"
+                };
+
+                char str[16];
+                strftime(str, arraySize(str), " %m %d", local);
                 output += wdays[local->tm_wday];
-                output += " ";
-                output += std::to_string(local->tm_mon + 1);
-                output += " ";
-                output += std::to_string(local->tm_mday);
+                output += str;
                 continue;
             }
             case 'e':
@@ -423,26 +415,21 @@ void interpretPromptString(const DSState &st, const char *ps, std::string &outpu
                 continue;
             }
             case 't': {
-                format2digit(local->tm_hour, output);
-                output += ":";
-                format2digit(local->tm_min, output);
-                output += ":";
-                format2digit(local->tm_sec, output);
+                char str[16];
+                strftime(str, arraySize(str), "%T", local);
+                output += str;
                 continue;
             }
             case 'T': {
-                format2digit(local->tm_hour < 12 ? local->tm_hour : local->tm_hour - 12, output);
-                output += ":";
-                format2digit(local->tm_min, output);
-                output += ":";
-                format2digit(local->tm_sec, output);
+                char str[16];
+                strftime(str, arraySize(str), "%I:%M:%S", local);
+                output += str;
                 continue;
             }
             case '@': {
-                format2digit(local->tm_hour < 12 ? local->tm_hour : local->tm_hour - 12, output);
-                output += ":";
-                format2digit(local->tm_min, output);
-                output += " ";
+                char str[16];
+                strftime(str, arraySize(str), "%I:%M ", local);
+                output += str;
                 output += local->tm_hour < 12 ? "AM" : "PM";
                 continue;
             }
