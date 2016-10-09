@@ -82,7 +82,7 @@ static void terminationHook(unsigned int kind, unsigned int errorLineNum) {
 }
 
 static void showFeature(std::ostream &stream) {
-    static const char *featureNames[] = {
+    const char *featureNames[] = {
             "USE_LOGGING",
             "USE_DBUS",
             "USE_SAFE_CAST",

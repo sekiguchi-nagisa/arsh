@@ -23,7 +23,7 @@
 namespace ydsh {
 
 int getByteSize(OpCode code) {
-    static char table[] = {
+    char table[] = {
 #define GEN_BYTE_SIZE(CODE, N) N,
             OPCODE_LIST(GEN_BYTE_SIZE)
 #undef GEN_BYTE_SIZE
@@ -1180,7 +1180,7 @@ static void dumpCodeImpl(std::ostream &stream, DSState &ctx, const CompiledCode 
 #endif
     stream << "Code:" << std::endl;
     {
-        static const char *opName[] = {
+        const char *opName[] = {
 #define GEN_NAME(CODE, N) #CODE,
                 OPCODE_LIST(GEN_NAME)
 #undef GEN_NAME

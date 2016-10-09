@@ -19,7 +19,7 @@
 namespace ydsh {
 
 const char *toString(TokenKind kind) {
-    static const char *table[] = {
+    const char *table[] = {
 #define GEN_NAME(ENUM, STR) STR,
             EACH_TOKEN(GEN_NAME)
 #undef GEN_NAME

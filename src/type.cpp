@@ -875,7 +875,7 @@ bool TypePool::asVariantType(const std::vector<DSType *> &elementTypes) const {
 }
 
 void TypePool::registerDBusErrorTypes() {
-    static const char *table[] = {
+    const char *table[] = {
             "Failed",
             "NoMemory",
             "ServiceUnknown",

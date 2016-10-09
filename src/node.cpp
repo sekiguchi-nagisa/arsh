@@ -893,7 +893,7 @@ RedirNode::~RedirNode() {
 }
 
 void RedirNode::dump(NodeDumper &dumper) const {
-    static const char *redirOpStr[] = {
+    const char *redirOpStr[] = {
 #define GEN_STR(ENUM, STR) #ENUM,
             EACH_RedirectOP(GEN_STR)
 #undef GEN_STR

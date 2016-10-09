@@ -516,7 +516,7 @@ bool DBusProxy_Object::introspect(DSState &ctx, DSType *targetType) {
 }
 
 static void extractInterfaceName(std::unordered_set<std::string> &ifaceSet, char *str) {
-    static const char prefix[] = "<interface name=";
+    const char *prefix = "<interface name=";
 
     for(unsigned int i = 0; str[i] != '\0'; i++) {
         bool match = true;

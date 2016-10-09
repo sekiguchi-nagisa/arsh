@@ -90,7 +90,7 @@ struct UnicodeUtil {
 
 template <bool T>
 unsigned int UnicodeUtil<T>::utf8ByteSize(unsigned char b) {
-    static const unsigned char table[256] = {
+    const unsigned char table[256] = {
             1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
             1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
             1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -211,7 +211,7 @@ int UnicodeUtil<T>::localeAwareWidth(int codePoint) {
     auto e = ONE_WIDTH;
     const char *ctype = setlocale(LC_CTYPE, nullptr);
     if(ctype != nullptr) {
-        static const char *cjk[] = {"ja", "zh", "ko"};
+        const char *cjk[] = {"ja", "zh", "ko"};
         for(const auto &l : cjk) {
             if(strstr(ctype, l) != nullptr) {
                 e = TWO_WIDTH;
