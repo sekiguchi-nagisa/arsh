@@ -1107,10 +1107,6 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
                     kind = CompletorKind::EXPECT;
                     goto END;
                 }
-                if(expected == COMMAND) {
-                    kind = CompletorKind::CMD;
-                    goto END;
-                }
             }
             break;
         }
