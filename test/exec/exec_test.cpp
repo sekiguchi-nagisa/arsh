@@ -359,6 +359,8 @@ TEST(API, case5) {
 
     DSState_unsetOption(state, DS_OPTION_ASSERT);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_OPTION_DUMP_CODE, DSState_option(state)));
+
+    DSState_delete(&state);
 }
 
 TEST(PID, case1) {
