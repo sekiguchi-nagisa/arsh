@@ -1269,9 +1269,12 @@ public:
 class BlockNode : public Node {
 private:
     std::list<Node *> nodeList;
+    unsigned int baseIndex;
+    unsigned int varSize;
 
 public:
-    explicit BlockNode(unsigned int startPos) : Node({startPos, 1}), nodeList() { }
+    explicit BlockNode(unsigned int startPos) :
+            Node({startPos, 1}), nodeList(), baseIndex(0), varSize(0) { }
 
     ~BlockNode();
 
@@ -1285,6 +1288,22 @@ public:
 
     std::list<Node *> &refNodeList() {
         return this->nodeList;
+    }
+
+    unsigned int getBaseIndex() const {
+        return this->baseIndex;
+    }
+
+    void setBaseIndex(unsigned int index) {
+        this->baseIndex = index;
+    }
+
+    unsigned int getVarSize() const {
+        return this->varSize;
+    }
+
+    void setVarSize(unsigned int size) {
+        this->varSize = size;
     }
 
     /**

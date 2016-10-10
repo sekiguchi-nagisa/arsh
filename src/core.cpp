@@ -769,7 +769,7 @@ static bool startsWith(const char *s1, const char *s2) {
  */
 static void completeCommandName(const DSState &ctx, const std::string &token, CStrBuffer &results) {
     // search user defined command
-    for(auto iter = ctx.symbolTable.cbeginGlobal(); iter != ctx.symbolTable.cendGlobal(); ++iter) {
+    for(auto iter = ctx.symbolTable.curScope().cbegin(); iter != ctx.symbolTable.curScope().cend(); ++iter) {
         const char *name = iter->first.c_str();
         if(startsWith(name, SymbolTable::cmdSymbolPrefix)) {
             name += strlen(SymbolTable::cmdSymbolPrefix);
@@ -894,7 +894,7 @@ static void completeFileName(const DSState &st, const std::string &token,
 }
 
 static void completeGlobalVarName(const DSState &ctx, const std::string &token, CStrBuffer &results) {
-    for(auto iter = ctx.symbolTable.cbeginGlobal(); iter != ctx.symbolTable.cendGlobal(); ++iter) {
+    for(auto iter = ctx.symbolTable.curScope().cbegin(); iter != ctx.symbolTable.curScope().cend(); ++iter) {
         const char *varName = iter->first.c_str();
         if(!token.empty() && !startsWith(varName, SymbolTable::cmdSymbolPrefix)
            && startsWith(varName, token.c_str() + 1)) {

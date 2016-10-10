@@ -262,6 +262,11 @@ void TypeChecker::checkTypeWithCurrentScope(BlockNode *blockNode) {
             RAISE_TC_ERROR(UselessBlock, *targetNode);
         }
     }
+
+    // set base index of current scope
+    blockNode->setBaseIndex(this->symbolTable.curScope().getBaseIndex());
+    blockNode->setVarSize(this->symbolTable.curScope().getVarSize());
+
     blockNode->setType(prevIsTerminal ? this->typePool.getBottomType() : this->typePool.getVoidType());
 }
 

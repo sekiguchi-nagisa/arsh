@@ -57,6 +57,14 @@ public:
         return this->curVarIndex;
     }
 
+    unsigned int getVarSize() const {
+        return this->handleMap.size();
+    }
+
+    unsigned int getBaseIndex() const {
+        return this->getCurVarIndex() - this->getVarSize();
+    }
+
     /**
      * remove handle from handleMap, and delete it.
      */
@@ -170,17 +178,8 @@ public:
         return this->scopes.size() == 1;
     }
 
-    /**
-     * get const_iterator of global scope.
-     */
-    Scope::const_iterator cbeginGlobal() const {
-        assert(this->inGlobalScope());
-        return this->scopes.back()->cbegin();
-    }
-
-    Scope::const_iterator cendGlobal() const {
-        assert(this->inGlobalScope());
-        return this->scopes.back()->cend();
+    const Scope &curScope() const {
+        return *this->scopes.back();
     }
 
     static constexpr const char *cmdSymbolPrefix = "%c";

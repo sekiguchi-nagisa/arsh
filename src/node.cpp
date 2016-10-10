@@ -1042,6 +1042,8 @@ void BlockNode::addReturnNodeToLast(TypePool &pool, Node *exprNode) {
 
 void BlockNode::dump(NodeDumper &dumper) const {
     DUMP(nodeList);
+    DUMP_PRIM(baseIndex);
+    DUMP_PRIM(varSize);
 }
 
 void BlockNode::accept(NodeVisitor &visitor) {
