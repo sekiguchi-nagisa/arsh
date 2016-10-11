@@ -40,7 +40,11 @@ public:
     explicit Scope(unsigned int curVarIndex) :
             curVarIndex(curVarIndex), handleMap() { }
 
-    ~Scope();
+    ~Scope() {
+        for(auto &pair : this->handleMap) {
+            delete pair.second;
+        }
+    }
 
     /**
      * return null, if not exist.
@@ -98,9 +102,17 @@ private:
 public:
     NON_COPYABLE(SymbolTable);
 
-    SymbolTable();
+    SymbolTable() :
+            handleCache(), scopes(1), maxVarIndexStack(1) {
+        this->scopes[0] = new Scope();
+        this->maxVarIndexStack[0] = 0;
+    }
 
-    ~SymbolTable();
+    ~SymbolTable() {
+        for(Scope *scope : this->scopes) {
+            delete scope;
+        }
+    }
 
     /**
      * return null, if not found.
@@ -122,12 +134,21 @@ public:
      * if already registered, return null.
      * type must be any type
      */
-    FieldHandle *registerUdc(const std::string &cmdName, DSType &type);
+    FieldHandle *registerUdc(const std::string &cmdName, DSType &type) {
+        assert(this->inGlobalScope());
+        std::string name = cmdSymbolPrefix;
+        name += cmdName;
+        return this->registerHandle(name, type, FieldHandle::READ_ONLY);
+    }
 
     /**
      * if not found, return null.
      */
-    FieldHandle *lookupUdc(const char *cmdName) const;
+    FieldHandle *lookupUdc(const char *cmdName) const {
+        std::string name = cmdSymbolPrefix;
+        name += cmdName;
+        return this->lookupHandle(name);
+    }
 
     /**
      * create new local scope.

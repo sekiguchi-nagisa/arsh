@@ -24,12 +24,6 @@ namespace ydsh {
 // ##     Scope     ##
 // ###################
 
-Scope::~Scope() {
-    for(auto &pair : this->handleMap) {
-        delete pair.second;
-    }
-}
-
 FieldHandle *Scope::lookupHandle(const std::string &symbolName) const {
     auto iter = this->handleMap.find(symbolName);
     return iter != this->handleMap.end() ? iter->second : nullptr;
@@ -53,18 +47,6 @@ void Scope::deleteHandle(const std::string &symbolName) {
 // #########################
 // ##     SymbolTable     ##
 // #########################
-
-SymbolTable::SymbolTable() :
-        handleCache(), scopes(), maxVarIndexStack() {
-    this->scopes.push_back(new Scope());
-    this->maxVarIndexStack.push_back(0);
-}
-
-SymbolTable::~SymbolTable() {
-    for(Scope *scope : this->scopes) {
-        delete scope;
-    }
-}
 
 FieldHandle *SymbolTable::lookupHandle(const std::string &symbolName) const {
     for(auto iter = this->scopes.crbegin(); iter != this->scopes.crend(); ++iter) {
@@ -102,19 +84,6 @@ FunctionHandle *SymbolTable::registerFuncHandle(const std::string &funcName, DST
     }
     this->handleCache.push_back(funcName);
     return handle;
-}
-
-FieldHandle *SymbolTable::registerUdc(const std::string &cmdName, DSType &type) {
-    assert(this->inGlobalScope());
-    std::string name = cmdSymbolPrefix;
-    name += cmdName;
-    return this->registerHandle(name, type, FieldHandle::READ_ONLY);
-}
-
-FieldHandle *SymbolTable::lookupUdc(const char *cmdName) const {
-    std::string name = cmdSymbolPrefix;
-    name += cmdName;
-    return this->lookupHandle(name);
 }
 
 void SymbolTable::enterScope() {
