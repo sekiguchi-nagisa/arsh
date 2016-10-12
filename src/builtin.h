@@ -1503,8 +1503,8 @@ YDSH_METHOD map_swap(RuntimeContext &ctx) {
 YDSH_METHOD map_clear(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_clear);
     Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
-    obj->initIterator();
     obj->refValueMap().clear();
+    obj->initIterator();
     RET_VOID;
 }
 
