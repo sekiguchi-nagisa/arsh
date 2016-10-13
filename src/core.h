@@ -134,6 +134,8 @@ void setLocal(DSState &st, unsigned int index, DSValue &&obj);
 
 const DSValue &getLocal(const DSState &st, unsigned int index);
 
+DSValue extractLocal(DSState &st, unsigned int index);
+
 void setGlobal(DSState &st, unsigned int index, const DSValue &obj);
 
 void setGlobal(DSState &st, unsigned int index, DSValue &&obj);

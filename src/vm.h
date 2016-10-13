@@ -314,6 +314,10 @@ struct DSState {
         return this->callStack[this->localVarOffset + index];
     }
 
+    DSValue moveLocal(unsigned int index) {
+        return std::move(this->callStack[this->localVarOffset + index]);
+    }
+
     // field manipulation
 
     void storeField(unsigned int index) {

@@ -181,6 +181,10 @@ const DSValue &getLocal(const DSState &st, unsigned int index) {
     return st.getLocal(index);
 }
 
+DSValue extractLocal(DSState &st, unsigned int index) {
+    return st.moveLocal(index);
+}
+
 void setGlobal(DSState &st, unsigned int index, const DSValue &obj) {
     st.setGlobal(index, obj);
 }
