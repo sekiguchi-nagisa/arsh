@@ -1447,8 +1447,8 @@ YDSH_METHOD map_set(RuntimeContext &ctx) {
 YDSH_METHOD map_put(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_put);
     Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
-    auto pair = obj->refValueMap().insert(std::make_pair(LOCAL(1), LOCAL(2)));
-    RET_BOOL(pair.second);
+    bool r = obj->add(std::make_pair(LOCAL(1), LOCAL(2)));
+    RET_BOOL(r);
 }
 
 //!bind: function size($this : Map<T0, T1>) : Int32
@@ -1479,32 +1479,27 @@ YDSH_METHOD map_find(RuntimeContext &ctx) {
 YDSH_METHOD map_remove(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_remove);
     Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
-    unsigned int size = obj->refValueMap().erase(LOCAL(1));
-    RET_BOOL(size == 1);
+    bool r = obj->remove(LOCAL(1));
+    RET_BOOL(r);
 }
 
 //!bind: function swap($this : Map<T0, T1>, $key : T0, $value : T1) : T1
 YDSH_METHOD map_swap(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_swap);
     auto *obj = typeAs<Map_Object>(LOCAL(0));
-    auto iter = obj->refValueMap().find(LOCAL(1));
-    if(iter == obj->refValueMap().end()) {
+    DSValue value = LOCAL(2);
+    if(!obj->trySwap(LOCAL(1), value)) {
         std::string msg("not found key: ");
         msg += LOCAL(1)->toString(ctx, nullptr);
         throwError(ctx, getPool(ctx).getKeyNotFoundErrorType(), std::move(msg));
     }
-
-    DSValue value = LOCAL(2);
-    std::swap(iter->second, value);
     RET(value);
 }
 
 //!bind: function clear($this : Map<T0, T1>) : Void
 YDSH_METHOD map_clear(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_clear);
-    Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
-    obj->refValueMap().clear();
-    obj->initIterator();
+    typeAs<Map_Object>(LOCAL(0))->clear();
     RET_VOID;
 }
 

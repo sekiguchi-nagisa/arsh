@@ -1235,7 +1235,7 @@ static int builtin_read(DSState &state, const int argc, char *const *argv) {  //
 
     // clear old variable before read
     setGlobal(state, toIndex(BuiltinVarOffset::REPLY), getEmptyStrObj(state));    // clear REPLY
-    typeAs<Map_Object>(getGlobal(state, toIndex(BuiltinVarOffset::REPLY_VAR)))->refValueMap().clear();      // clear reply
+    typeAs<Map_Object>(getGlobal(state, toIndex(BuiltinVarOffset::REPLY_VAR)))->clear();      // clear reply
 
 
     const int varSize = argc - index;  // if zero, store line to REPLY
@@ -1287,7 +1287,7 @@ static int builtin_read(DSState &state, const int argc, char *const *argv) {  //
             auto obj = typeAs<Map_Object>(getGlobal(state, varIndex));
             auto varObj = DSValue::create<String_Object>(getPool(state).getStringType(), argv[index]);
             auto valueObj = DSValue::create<String_Object>(getPool(state).getStringType(), std::move(strBuf));
-            std::swap(obj->refValueMap()[std::move(varObj)], valueObj);
+            obj->set(varObj, valueObj);
             strBuf = "";
             index++;
             skipCount = isSpace(ch) ? 2 : 1;
@@ -1323,7 +1323,7 @@ static int builtin_read(DSState &state, const int argc, char *const *argv) {  //
         auto obj = typeAs<Map_Object>(getGlobal(state, varIndex));
         auto varObj = DSValue::create<String_Object>(getPool(state).getStringType(), argv[index]);
         auto valueObj = DSValue::create<String_Object>(getPool(state).getStringType(), std::move(strBuf));
-        std::swap(obj->refValueMap()[std::move(varObj)], valueObj);
+        obj->set(varObj, valueObj);
         strBuf = "";
     }
 

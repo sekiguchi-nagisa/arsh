@@ -1,0 +1,21 @@
+# modification in for-in
+
+# map
+var m = [0 : 1, 3 : 4]
+
+for $a in $m {
+    $m.clear()
+}
+
+for $a in $m {
+    if $m.size() > 1 { break; }
+    $m.put(0, 4)
+    $m.put(1, 2)
+    $m.put(2, 3)
+}
+
+for $a in $m {
+    $m.remove(2)
+    $m.remove(1)
+    $m.remove(0)
+}

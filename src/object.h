@@ -458,7 +458,7 @@ private:
     HashMap::const_iterator iter;
 
 public:
-    explicit Map_Object(DSType &type) : DSObject(type), valueMap() { }
+    explicit Map_Object(DSType &type) : DSObject(type), valueMap(), iter() { }
 
     ~Map_Object() = default;
 
@@ -466,16 +466,42 @@ public:
         return this->valueMap;
     }
 
-    HashMap &refValueMap() {
-        return this->valueMap;
+    void clear() {
+        this->valueMap.clear();
+        this->initIterator();
     }
 
     void set(const DSValue &key, const DSValue &value) {
-        this->valueMap[key] = value;
+        auto pair = this->valueMap.insert(std::make_pair(key, value));
+        if(!pair.second) {
+            DSValue v(value);
+            std::swap(pair.first->second, v);
+        }
+        this->iter = ++pair.first;
     }
 
-    void add(std::pair<DSValue, DSValue> &&entry) {
-        this->valueMap.insert(std::move(entry));
+    bool add(std::pair<DSValue, DSValue> &&entry) {
+        auto pair = this->valueMap.insert(std::move(entry));
+        this->iter = ++pair.first;
+        return pair.second;
+    }
+
+    bool trySwap(const DSValue &key, DSValue &value) {
+        auto iter = this->valueMap.find(key);
+        if(iter != this->valueMap.end()) {
+            std::swap(iter->second, value);
+            return true;
+        }
+        return false;
+    }
+
+    bool remove(const DSValue &key) {
+        auto iter = this->valueMap.find(key);
+        if(iter == this->valueMap.end()) {
+            return false;
+        }
+        this->iter = this->valueMap.erase(iter);
+        return true;
     }
 
     void initIterator() {
