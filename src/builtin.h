@@ -28,6 +28,7 @@
 
 // helper macro
 #define LOCAL(index) (getLocal(ctx, index))
+#define EXTRACT_LOCAL(index) (extractLocal(ctx, index))
 #define RET(value) return value
 #define RET_BOOL(value) return ((value) ? getTrueObj(ctx) : getFalseObj(ctx))
 #define RET_VOID return DSValue()
@@ -1439,7 +1440,7 @@ YDSH_METHOD map_get(RuntimeContext &ctx) {
 YDSH_METHOD map_set(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_set);
     Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
-    obj->set(LOCAL(1), LOCAL(2));
+    obj->set(EXTRACT_LOCAL(1), EXTRACT_LOCAL(2));
     RET_VOID;
 }
 
@@ -1447,7 +1448,7 @@ YDSH_METHOD map_set(RuntimeContext &ctx) {
 YDSH_METHOD map_put(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_put);
     Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
-    bool r = obj->add(std::make_pair(LOCAL(1), LOCAL(2)));
+    bool r = obj->add(std::make_pair(EXTRACT_LOCAL(1), EXTRACT_LOCAL(2)));
     RET_BOOL(r);
 }
 

@@ -471,11 +471,10 @@ public:
         this->initIterator();
     }
 
-    void set(const DSValue &key, const DSValue &value) {
-        auto pair = this->valueMap.insert(std::make_pair(key, value));
+    void set(DSValue &&key, DSValue &&value) {
+        auto pair = this->valueMap.insert(std::make_pair(std::move(key), value));
         if(!pair.second) {
-            DSValue v(value);
-            std::swap(pair.first->second, v);
+            std::swap(pair.first->second, value);
         }
         this->iter = ++pair.first;
     }

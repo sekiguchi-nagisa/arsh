@@ -1287,7 +1287,7 @@ static int builtin_read(DSState &state, const int argc, char *const *argv) {  //
             auto obj = typeAs<Map_Object>(getGlobal(state, varIndex));
             auto varObj = DSValue::create<String_Object>(getPool(state).getStringType(), argv[index]);
             auto valueObj = DSValue::create<String_Object>(getPool(state).getStringType(), std::move(strBuf));
-            obj->set(varObj, valueObj);
+            obj->set(std::move(varObj), std::move(valueObj));
             strBuf = "";
             index++;
             skipCount = isSpace(ch) ? 2 : 1;
@@ -1323,7 +1323,7 @@ static int builtin_read(DSState &state, const int argc, char *const *argv) {  //
         auto obj = typeAs<Map_Object>(getGlobal(state, varIndex));
         auto varObj = DSValue::create<String_Object>(getPool(state).getStringType(), argv[index]);
         auto valueObj = DSValue::create<String_Object>(getPool(state).getStringType(), std::move(strBuf));
-        obj->set(varObj, valueObj);
+        obj->set(std::move(varObj), std::move(valueObj));
         strBuf = "";
     }
 
