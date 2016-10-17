@@ -1307,7 +1307,7 @@ YDSH_METHOD array_set(RuntimeContext &ctx) {
     int size = obj->getValues().size();
     int index = typeAs<Int_Object>(LOCAL(1))->getValue();
     checkRange(ctx, index, size);
-    obj->set(index, LOCAL(2));
+    obj->set(index, EXTRACT_LOCAL(2));
     RET_VOID;
 }
 
@@ -1328,7 +1328,7 @@ YDSH_METHOD array_push(RuntimeContext &ctx) {
     if(obj->getValues().size() == INT32_MAX) {
         throwOutOfRangeError(ctx, std::string("reach Array size limit"));
     }
-    obj->append(LOCAL(1));
+    obj->append(EXTRACT_LOCAL(1));
     RET_VOID;
 }
 
