@@ -1,0 +1,110 @@
+#!/usr/bin/env expect
+
+set bin_name [lindex $argv 0]
+spawn ${bin_name} --norc
+
+set CTRLD \004
+set UP \033\133\101
+set DOWN \033\133\102
+
+# first input
+expect {
+    -re "\\$ $" {
+        send "1\r"
+    }
+    default {
+        send_error "mismatch first prompt"
+        exit 1
+    }
+}
+
+expect {
+    "(Int32) 1" {
+    }
+    default {
+        send_error "mismatch"
+        exit 1
+    }
+}
+
+
+# second input
+expect {
+    -re "\\$ $" {
+        send "2\r"
+    }
+    default {
+        send_error "mismatch first prompt"
+        exit 1
+    }
+}
+
+expect {
+    "(Int32) 2" {
+    }
+    default {
+        send_error "mismatch"
+        exit 1
+    }
+}
+
+# third input
+expect {
+    -re "\\$ $" {
+        send "3\r"
+    }
+    default {
+        send_error "mismatch first prompt"
+        exit 1
+    }
+}
+
+expect {
+    "(Int32) 3" {
+    }
+    default {
+        send_error "mismatch"
+        exit 1
+    }
+}
+
+# history prev
+expect {
+    -re "\\$ $" {
+        send $UP$UP$DOWN\r
+    }
+    default {
+        send_error "mismatch first prompt"
+        exit 1
+    }
+}
+
+expect {
+    "(Int32) 3" {
+        send $UP$UP\r
+    }
+    default {
+        send_error "mismatch"
+        exit 1
+    }
+}
+
+expect {
+    "(Int32) 2" {
+        send $CTRLD
+    }
+    default {
+        send_error "mismatch"
+        exit 1
+    }
+}
+
+expect default
+catch wait result
+set os_error [ lindex $result 2 ]
+if { $os_error == -1 } {
+    send_error "execution failed"
+    exit 1
+}
+set status [ lindex $result 3]
+exit $status
