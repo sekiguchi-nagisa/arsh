@@ -81,7 +81,6 @@ expect {
 
 expect {
     "(Int32) 3" {
-        send $UP$UP\r
     }
     default {
         send_error "mismatch"
@@ -90,11 +89,30 @@ expect {
 }
 
 expect {
+    -re "\\$ $" {
+        send $UP$UP\r
+    }
+    default {
+        send_error "mismatch first prompt"
+        exit 1
+    }
+}
+
+expect {
     "(Int32) 2" {
-        send $CTRLD
     }
     default {
         send_error "mismatch"
+        exit 1
+    }
+}
+
+expect {
+    -re "\\$ $" {
+        send $CTRLD
+    }
+    default {
+        send_error "mismatch first prompt"
         exit 1
     }
 }

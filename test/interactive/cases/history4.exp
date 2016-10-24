@@ -82,10 +82,19 @@ expect {
 
 expect {
     "(Int32) 24" {
-        send $CTRLD
     }
     default {
         send_error "mismatch"
+        exit 1
+    }
+}
+
+expect {
+    -re "\\$ $" {
+        send $CTRLD
+    }
+    default {
+        send_error "mismatch first prompt"
         exit 1
     }
 }
