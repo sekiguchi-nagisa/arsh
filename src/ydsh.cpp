@@ -82,6 +82,7 @@ static bool isSupportedTerminal(int fd) {
 enum class TermColor : int {   // ansi color code
     NOP     = -1,
     Reset   = 0,
+    Bold    = 1,
     // actual term color
     Black   = 30,
     Red     = 31,
@@ -113,8 +114,9 @@ static void formatErrorLine(bool isatty, const Lexer &lexer, Token errorToken) {
     << color(TermColor::Reset, isatty) << std::endl;
 
     // print line marker
-    std::cerr << color(TermColor::Green, isatty) << lexer.formatLineMarker(lineToken, errorToken)
-    << color(TermColor::Reset, isatty) << std::endl;
+    std::cerr << color(TermColor::Green, isatty) << color(TermColor::Bold, isatty)
+              << lexer.formatLineMarker(lineToken, errorToken)
+              << color(TermColor::Reset, isatty) << std::endl;
 }
 
 static void handleParseError(const Lexer &lexer, const ParseError &e, DSError *dsError) {
@@ -128,8 +130,9 @@ static void handleParseError(const Lexer &lexer, const ParseError &e, DSError *d
     const bool isatty = isSupportedTerminal(STDERR_FILENO);
 
     std::cerr << lexer.getSourceInfoPtr()->getSourceName() << ":" << errorLineNum << ":"
-    << color(TermColor::Magenta, isatty) << " [syntax error] " << color(TermColor::Reset, isatty)
-    << e.getMessage() << std::endl;
+              << color(TermColor::Magenta, isatty) << color(TermColor::Bold, isatty)
+              << " [syntax error] " << color(TermColor::Reset, isatty)
+              << e.getMessage() << std::endl;
     formatErrorLine(isatty, lexer, errorToken);
 
     setErrorInfo(dsError, DS_ERROR_KIND_PARSE_ERROR, errorLineNum, e.getErrorKind());
@@ -144,8 +147,9 @@ static void handleTypeError(const Lexer &lexer, const TypeCheckError &e, DSError
      * show type error message
      */
     std::cerr << lexer.getSourceInfoPtr()->getSourceName() << ":" << errorLineNum << ":"
-    << color(TermColor::Magenta, isatty) << " [semantic error] " << color(TermColor::Reset, isatty)
-    << e.getMessage() << std::endl;
+              << color(TermColor::Magenta, isatty) << color(TermColor::Bold, isatty)
+              << " [semantic error] " << color(TermColor::Reset, isatty)
+              << e.getMessage() << std::endl;
     formatErrorLine(isatty, lexer, e.getToken());
 
     setErrorInfo(dsError, DS_ERROR_KIND_TYPE_ERROR,
