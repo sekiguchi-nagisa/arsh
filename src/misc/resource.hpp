@@ -43,19 +43,23 @@ public:
 
     IntrusivePtr &operator=(const IntrusivePtr &v) noexcept {
         IntrusivePtr tmp(v);
-        std::swap(this->ptr, tmp.ptr);
+        this->swap(tmp);
         return *this;
     }
 
     IntrusivePtr &operator=(IntrusivePtr &&v) noexcept {
         IntrusivePtr tmp(std::move(v));
-        std::swap(this->ptr, tmp.ptr);
+        this->swap(tmp);
         return *this;
     }
 
     void reset() noexcept {
         IntrusivePtr tmp;
-        std::swap(this->ptr, tmp.ptr);
+        this->swap(tmp);
+    }
+
+    void swap(IntrusivePtr &o) noexcept {
+        std::swap(this->ptr, o.ptr);
     }
 
     T *get() const noexcept {
