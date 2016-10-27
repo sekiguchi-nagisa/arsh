@@ -799,11 +799,11 @@ public:
     NON_COPYABLE(CompiledCode);
 
     CompiledCode(const SourceInfoPtr &srcInfo, const char *name, unsigned char *code,
-             DSValue *constPool, SourcePosEntry *sourcePosEntries, ExceptionEntry *exceptionEntries) :
+                 DSValue *constPool, SourcePosEntry *sourcePosEntries, ExceptionEntry *exceptionEntries) noexcept :
             DSCode(code), srcInfo(srcInfo), name(name == nullptr ? nullptr : strdup(name)),
             constPool(constPool), sourcePosEntries(sourcePosEntries), exceptionEntries(exceptionEntries) { }
 
-    CompiledCode(CompiledCode &&c) :
+    CompiledCode(CompiledCode &&c) noexcept :
             DSCode(c.code), srcInfo(c.srcInfo), name(c.name),
             constPool(c.constPool), sourcePosEntries(c.sourcePosEntries), exceptionEntries(c.exceptionEntries) {
         c.name = nullptr;
@@ -813,11 +813,30 @@ public:
         c.exceptionEntries = nullptr;
     }
 
+    CompiledCode() noexcept :
+            DSCode(nullptr), srcInfo(), name(nullptr),
+            constPool(nullptr), sourcePosEntries(nullptr), exceptionEntries(nullptr) {}
+
     ~CompiledCode() {
         free(this->name);
         delete[] this->constPool;
         delete[] this->sourcePosEntries;
         delete[] this->exceptionEntries;
+    }
+
+    CompiledCode &operator=(CompiledCode &&o) noexcept {
+        auto tmp(std::move(o));
+        this->swap(tmp);
+        return *this;
+    }
+
+    void swap(CompiledCode &o) noexcept {
+        std::swap(this->code, o.code);
+        std::swap(this->srcInfo, o.srcInfo);
+        std::swap(this->name, o.name);
+        std::swap(this->constPool, o.constPool);
+        std::swap(this->sourcePosEntries, o.sourcePosEntries);
+        std::swap(this->exceptionEntries, o.exceptionEntries);
     }
 
     unsigned short getLocalVarNum() const {
@@ -850,6 +869,10 @@ public:
 
     const ExceptionEntry *getExceptionEntries() const {
         return this->exceptionEntries;
+    }
+
+    explicit operator bool() const noexcept {
+        return this->code != nullptr;
     }
 };
 

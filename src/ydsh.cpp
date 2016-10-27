@@ -180,16 +180,13 @@ static void handleUncaughtException(DSState *st, DSValue &&except) {
     }
 }
 
-static int eval(DSState *state, RootNode &rootNode, DSError *dsError) {
-    ByteCodeGenerator codegen(state->pool, hasFlag(state->option, DS_OPTION_ASSERT));
-    CompiledCode c = codegen.generateToplevel(rootNode);
-
+static int evalCode(DSState *state, CompiledCode &code, DSError *dsError) {
     if(hasFlag(state->option, DS_OPTION_DUMP_CODE)) {
         std::cout << "### dump compiled code ###" << std::endl;
-        dumpCode(std::cout, *state, c);
+        dumpCode(std::cout, *state, code);
     }
 
-    if(!vmEval(*state, c)) {
+    if(!vmEval(*state, code)) {
         unsigned int errorLineNum = 0;
         DSValue thrownObj = state->getThrownObject();
         if(dynamic_cast<Error_Object *>(thrownObj.get()) != nullptr) {
@@ -207,7 +204,7 @@ static int eval(DSState *state, RootNode &rootNode, DSError *dsError) {
     return state->getExitStatus();
 }
 
-static int eval(DSState *state, Lexer &lexer, DSError *dsError) {
+static int compileImpl(DSState *state, Lexer &lexer, DSError *dsError, CompiledCode &code) {
     setErrorInfo(dsError, DS_ERROR_KIND_SUCCESS, 0, nullptr);
     lexer.setLineNum(state->lineNum);
     RootNode rootNode;
@@ -248,8 +245,20 @@ static int eval(DSState *state, Lexer &lexer, DSError *dsError) {
         return 0;
     }
 
-    // eval
-    return eval(state, rootNode, dsError);
+    // code generation
+    ByteCodeGenerator codegen(state->pool, hasFlag(state->option, DS_OPTION_ASSERT));
+    code = codegen.generateToplevel(rootNode);
+    return 0;
+}
+
+static int compile(DSState *state, const char *sourceName, FILE *fp, DSError *dsError, CompiledCode &code) {
+    Lexer lexer(sourceName, fp);
+    return compileImpl(state, lexer, dsError, code);
+}
+
+static int compile(DSState *state, const char *sourceName, const char *source, DSError *dsError, CompiledCode &code) {
+    Lexer lexer(sourceName, source);
+    return compileImpl(state, lexer, dsError, code);
 }
 
 static void bindVariable(DSState *state, const char *varName, DSValue &&value) {
@@ -351,8 +360,7 @@ static void initBuiltinVar(DSState *state) {
 }
 
 static void loadEmbeddedScript(DSState *state) {
-    Lexer lexer("(embed)", embed_script);
-    int ret = eval(state, lexer, nullptr);
+    int ret = DSState_eval(state, "(embed)", embed_script, nullptr);
     if(ret != 0) {
         fatal("broken embedded script\n");
     }
@@ -496,13 +504,21 @@ void DSError_release(DSError *e) {
 }
 
 int DSState_eval(DSState *st, const char *sourceName, const char *source, DSError *e) {
-    Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName, source);
-    return eval(st, lexer, e);
+    CompiledCode code;
+    int ret = compile(st, sourceName == nullptr ? "(stdin)" : sourceName, source, e, code);
+    if(!code) {
+        return ret;
+    }
+    return evalCode(st, code, e);
 }
 
 int DSState_loadAndEval(DSState *st, const char *sourceName, FILE *fp, DSError *e) {
-    Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName, fp);
-    return eval(st, lexer, e);
+    CompiledCode code;
+    int ret = compile(st, sourceName == nullptr ? "(stdin)" : sourceName, fp, e, code);
+    if(!code) {
+        return ret;
+    }
+    return evalCode(st, code, e);
 }
 
 int DSState_exec(DSState *st, char *const *argv) {
