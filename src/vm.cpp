@@ -598,20 +598,20 @@ public:
     };
 
 private:
-    unsigned int __argOffset;
+    unsigned int argOffset_;
 
     /**
      * if not have redirect option, offset is 0.
      */
-    unsigned int __redirOffset;
+    unsigned int redirOffset_;
 
-    ProcKind __procKind;
+    ProcKind procKind_;
 
     union {
-        void *__dummy;
-        FuncObject *__udcObj;
-        builtin_command_t __builtinCmd;
-        const char *__filePath;   // may be null if not found file
+        void *dummy_;
+        FuncObject *udcObj_;
+        builtin_command_t builtinCmd_;
+        const char *filePath_;   // may be null if not found file
     };
 
 
@@ -619,17 +619,17 @@ private:
      * following fields are valid, if parent process.
      */
 
-    ExitKind __kind;
-    pid_t __pid;
-    int __exitStatus;
+    ExitKind kind_;
+    pid_t pid_;
+    int exitStatus_;
 
 public:
     ProcState() = default;
 
     ProcState(unsigned int argOffset, unsigned int redirOffset, ProcKind procKind, void *ptr) :
-            __argOffset(argOffset), __redirOffset(redirOffset),
-            __procKind(procKind), __dummy(ptr),
-            __kind(NORMAL), __pid(0), __exitStatus(0) { }
+            argOffset_(argOffset), redirOffset_(redirOffset),
+            procKind_(procKind), dummy_(ptr),
+            kind_(NORMAL), pid_(0), exitStatus_(0) { }
 
     ~ProcState() = default;
 
@@ -637,51 +637,51 @@ public:
      * only called, if parent process.
      */
     void set(ExitKind kind, int exitStatus) {
-        this->__kind = kind;
-        this->__exitStatus = exitStatus;
+        this->kind_ = kind;
+        this->exitStatus_ = exitStatus;
     }
 
     /**
      * only called, if parent process.
      */
     void setPid(pid_t pid) {
-        this->__pid = pid;
+        this->pid_ = pid;
     }
 
     unsigned int argOffset() const {
-        return this->__argOffset;
+        return this->argOffset_;
     }
 
     unsigned int redirOffset() const {
-        return this->__redirOffset;
+        return this->redirOffset_;
     }
 
     ProcKind procKind() const {
-        return this->__procKind;
+        return this->procKind_;
     }
 
     FuncObject *udcObj() const {
-        return this->__udcObj;
+        return this->udcObj_;
     }
 
     builtin_command_t builtinCmd() const {
-        return this->__builtinCmd;
+        return this->builtinCmd_;
     }
 
     const char *filePath() const {
-        return this->__filePath;
+        return this->filePath_;
     }
 
     ExitKind kind() const {
-        return this->__kind;
+        return this->kind_;
     }
 
     pid_t pid() const {
-        return this->__pid;
+        return this->pid_;
     }
 
     int exitStatus() const {
-        return this->__exitStatus;
+        return this->exitStatus_;
     }
 };
 
@@ -760,7 +760,7 @@ static int redirectToFile(const DSValue &fileName, const char *mode, int targetF
  * if errorPipe is not -1, report error and exit 1
  */
 void PipelineState::redirect(DSState &state, unsigned int procIndex, int errorPipe) {
-#define CHECK_ERROR(result) do { occurredError = (result); if(occurredError != 0) { goto ERR; } } while(0)
+#define CHECK_ERROR(result) do { occurredError = (result); if(occurredError != 0) { goto ERR; } } while(false)
 
     int occurredError = 0;
 

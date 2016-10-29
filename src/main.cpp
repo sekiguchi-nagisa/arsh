@@ -20,6 +20,7 @@
 
 #include <ydsh/ydsh.h>
 #include "misc/argv.hpp"
+#include "misc/size.hpp"
 
 using namespace ydsh;
 
@@ -90,7 +91,7 @@ static void showFeature(std::ostream &stream) {
     };
 
     const unsigned int featureBit = DSState_featureBit();
-    for(unsigned int i = 0; i < (sizeof(featureNames) / sizeof(featureNames[0])); i++) {
+    for(unsigned int i = 0; i < arraySize(featureNames); i++) {
         if(hasFlag(featureBit, static_cast<unsigned int>(1 << i))) {
             stream << featureNames[i] << std::endl;
         }
