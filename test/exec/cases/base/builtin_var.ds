@@ -13,3 +13,5 @@ child() {
 }
 
 assert child
+
+assert $HISTCMD == 1u    # HISTCMD is always 1 in scripting mode.

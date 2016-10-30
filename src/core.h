@@ -48,6 +48,7 @@ enum class BuiltinVarOffset : unsigned int {
     REPLY_VAR,      // reply (fo read command)
     PID,            // PID (current process)
     PPID,           // PPID
+    HISTCMD,        // HISTCMD
     EXIT_STATUS,    // ?
     SHELL_PID,      // $
     ARGS,           // @

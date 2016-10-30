@@ -322,6 +322,12 @@ static void initBuiltinVar(DSState *state) {
     bindVariable(state, "PPID", DSValue::create<Int_Object>(state->pool.getUint32Type(), getppid()));
 
     /**
+     * next histroy number.
+     * must be Int_Object
+     */
+    bindVariable(state, "HISTCMD", DSValue::create<Int_Object>(state->pool.getUint32Type(), 1));
+
+    /**
      * contains exit status of most recent executed process. ($?)
      * must be Int_Object
      */
