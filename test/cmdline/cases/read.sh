@@ -257,5 +257,28 @@ if [ $? != 0 ]; then
     exit 1
 fi
 
+
+# timeout
+test "$($YDSH_BIN -c 'read -t -1' 2>&1)" = "-ydsh: read: -1: invalid timeout specification"
+
+if [ $? != 0 ]; then
+    echo $LINENO
+    exit 1
+fi
+
+test "$($YDSH_BIN -c 'read -t 9999999999999999' 2>&1)" = "-ydsh: read: 9999999999999999: invalid timeout specification"
+
+if [ $? != 0 ]; then
+    echo $LINENO
+    exit 1
+fi
+
+$YDSH_BIN -c 'read -t 1'
+
+if [ $? != 1 ]; then
+    echo $LINENO
+    exit 1
+fi
+
 exit 0
 

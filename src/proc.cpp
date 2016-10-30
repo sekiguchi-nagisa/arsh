@@ -17,6 +17,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <termios.h>
+#include <poll.h>
 
 #include <cstdlib>
 #include <cstdarg>
@@ -182,14 +183,15 @@ const struct {
                 "    If -L specified, print logical working directory.\n"
                 "    If -P specified, print physical working directory\n"
                 "    (without symbolic link). Default is -L."},
-        {"read", builtin_read, "[-r] [-p prompt] [-f field separator] [-u fd] [name ...]",
+        {"read", builtin_read, "[-r] [-p prompt] [-f field separator] [-u fd] [-t timeout] [name ...]",
                 "    Read from standard input.\n"
                 "    Options:\n"
-                "        -r    disable backslash escape\n"
-                "        -p    specify prompt string\n"
-                "        -f    specify field separator (if not, use IFS)\n"
-                "        -s    disable echo back\n"
-                "        -u    specify file descriptor"},
+                "        -r         disable backslash escape\n"
+                "        -p         specify prompt string\n"
+                "        -f         specify field separator (if not, use IFS)\n"
+                "        -s         disable echo back\n"
+                "        -u         specify file descriptor\n"
+                "        -t timeout set timeout second (only available if input fd is a tty)"},
         {"test", builtin_test, "[expr]",
                 "    Unary or Binary expressions.\n"
                 "    If expression is true, return 0\n"
@@ -1168,10 +1170,20 @@ static bool isFieldSep(const char *ifs, int ch) {
     return false;
 }
 
-static int xfgetc(int fd) {
+static int xfgetc(int fd, int timeout) {
     char ch;
     do {
         errno = 0;
+
+        if(timeout > -2) {
+            struct pollfd pollfd[1];
+            pollfd[0].fd = fd;
+            pollfd[0].events = POLLIN;
+            if(poll(pollfd, 1, timeout) != 1) {
+                return EOF;
+            }
+        }
+
         if(read(fd, &ch, 1) <= 0) {
             ch = EOF;
         }
@@ -1184,10 +1196,11 @@ static int builtin_read(DSState &state, const int argc, char *const *argv) {  //
     const char *ifs = nullptr;
     bool backslash = true;
     bool noecho = false;
-    const char *fdStr = nullptr;
+    int fd = STDIN_FILENO;
+    int timeout = -1;
 
     GetOptState optState;
-    for(int opt; (opt = getopt(argc, argv, "rp:f:su:", optState)) != -1;) {
+    for(int opt; (opt = getopt(argc, argv, "rp:f:su:t:", optState)) != -1;) {
         switch(opt) {
         case 'p':
             prompt = optState.optArg;
@@ -1201,9 +1214,31 @@ static int builtin_read(DSState &state, const int argc, char *const *argv) {  //
         case 's':
             noecho = true;
             break;
-        case 'u':
-            fdStr = optState.optArg;
+        case 'u': {
+            int s;
+            long t = convertToInt64(optState.optArg, s);
+            if(s != 0 || t < 0 || t > INT32_MAX) {
+                builtin_perror(argv, 0, "%s: invalid file descriptor", optState.optArg);
+                return 1;
+            }
+            fd = static_cast<int>(t);
             break;
+        }
+        case 't': {
+            int s;
+            long t = convertToInt64(optState.optArg, s);
+            if(s == 0) {
+                if(t > -1 && t <= INT32_MAX) {
+                    t *= 1000;
+                    if(t > -1 && t <= INT32_MAX) {
+                        timeout = static_cast<int>(t);
+                        break;
+                    }
+                }
+            }
+            builtin_perror(argv, 0, "%s: invalid timeout specification", optState.optArg);
+            return 1;
+        }
         case ':':
             builtin_perror(argv, 0, "%s: option require argument", opt);
             return 2;
@@ -1214,18 +1249,6 @@ static int builtin_read(DSState &state, const int argc, char *const *argv) {  //
     }
 
     int index = optState.index;
-
-    // specify file descriptor
-    int fd = STDIN_FILENO;
-    if(fdStr != nullptr) {
-        int s;
-        long v = convertToInt64(fdStr, s);
-        if(v < 0 || v > INT32_MAX) {
-            builtin_perror(argv, 0, "%s: invalid file descriptor", fdStr);
-            return 1;
-        }
-        fd = static_cast<int>(v);
-    }
     const bool isTTY = isatty(fd) != 0;
 
     // check ifs
@@ -1259,9 +1282,12 @@ static int builtin_read(DSState &state, const int argc, char *const *argv) {  //
     }
 
     // read line
+    if(!isTTY) {
+        timeout = -2;
+    }
     unsigned int skipCount = 1;
     int ch;
-    for(bool prevIsBackslash = false; (ch = xfgetc(fd)) != EOF;
+    for(bool prevIsBackslash = false; (ch = xfgetc(fd, timeout)) != EOF;
             prevIsBackslash = backslash && ch == '\\' && !prevIsBackslash) {
         if(ch == '\n') {
             if(prevIsBackslash) {
