@@ -267,6 +267,7 @@ int main(int argc, char **argv) {
             // ignore termination hook
             DSState_addTerminationHook(state, nullptr);
 
+            DSState_setOption(state, DS_OPTION_INTERACTIVE);
             exit(exec_interactive(state));
         }
     }
