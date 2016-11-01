@@ -202,7 +202,7 @@ struct DSState {
     /**
      * pop stack top and store to thrownObject.
      */
-
+    [[noreturn]]
     void throwException(DSValue &&except) {
         this->thrownObject = std::move(except);
         throw DSException();

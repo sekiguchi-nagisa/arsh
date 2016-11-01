@@ -143,12 +143,10 @@ void setGlobal(DSState &st, unsigned int index, DSValue &&obj);
 
 const DSValue &getGlobal(const DSState &st, unsigned int index);
 
-inline const DSValue &getDBus(const DSState &st) {
-    return getGlobal(st, toIndex(BuiltinVarOffset::DBUS));
-}
-
+[[noreturn]]
 void throwError(DSState &st, DSType &errorType, const char *message);
 
+[[noreturn]]
 void throwError(DSState &st, DSType &errorType, std::string &&message);
 
 void fillInStackTrace(const DSState &st, std::vector<StackTraceElement> &stackTrace);
@@ -165,6 +163,7 @@ const char *getLogicalWorkingDir(const DSState &st);
  */
 bool changeWorkingDir(DSState &st, const char *dest, const bool useLogical);
 
+[[noreturn]]
 void exitShell(DSState &st, unsigned int status);
 
 /**

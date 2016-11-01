@@ -269,7 +269,7 @@ static DSValue decodeMessage(DSState &ctx, DSType &type, ScopedDBusMessage &&msg
 }
 
 static void appendArg(DSState &ctx, DBusMessageIter *iter, DSType &argType, const DSValue &arg) {
-    DBus_Object *dbus = typeAs<DBus_Object>(getDBus(ctx));
+    DBus_Object *dbus = typeAs<DBus_Object>(getGlobal(ctx, toIndex(BuiltinVarOffset::DBUS)));
     dbus->getBuilder().appendArg(iter, argType, arg);
 }
 
