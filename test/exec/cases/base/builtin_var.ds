@@ -15,3 +15,7 @@ child() {
 assert child
 
 assert $HISTCMD == 1u    # HISTCMD is always 1 in scripting mode.
+
+# UID, EUID
+assert $UID == $EUID
+assert $UID as String == "$(id -u)"

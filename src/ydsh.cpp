@@ -322,6 +322,18 @@ static void initBuiltinVar(DSState *state) {
     bindVariable(state, "PPID", DSValue::create<Int_Object>(state->pool.getUint32Type(), getppid()));
 
     /**
+     * uid of shell
+     * must be Int_Object
+     */
+    bindVariable(state, "UID", DSValue::create<Int_Object>(state->pool.getUint32Type(), getuid()));
+
+    /**
+     * euid of shell
+     * must be Int_Object
+     */
+    bindVariable(state, "EUID", DSValue::create<Int_Object>(state->pool.getUint32Type(), geteuid()));
+
+    /**
      * next histroy number.
      * must be Int_Object
      */
