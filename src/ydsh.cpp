@@ -274,6 +274,8 @@ static void bindVariable(DSState *state, const char *varName, const DSValue &val
 }
 
 static void initBuiltinVar(DSState *state) {
+    // set builtin variables internally used
+
     /**
      * management object for D-Bus related function
      * must be DBus_Object
@@ -322,18 +324,6 @@ static void initBuiltinVar(DSState *state) {
     bindVariable(state, "PPID", DSValue::create<Int_Object>(state->pool.getUint32Type(), getppid()));
 
     /**
-     * uid of shell
-     * must be Int_Object
-     */
-    bindVariable(state, "UID", DSValue::create<Int_Object>(state->pool.getUint32Type(), getuid()));
-
-    /**
-     * euid of shell
-     * must be Int_Object
-     */
-    bindVariable(state, "EUID", DSValue::create<Int_Object>(state->pool.getUint32Type(), geteuid()));
-
-    /**
      * next histroy number.
      * must be Int_Object
      */
@@ -375,6 +365,32 @@ static void initBuiltinVar(DSState *state) {
     for(unsigned int i = 0; i < 9; i++) {
         bindVariable(state, std::to_string(i + 1).c_str(), state->emptyStrObj);
     }
+
+
+    // set builtin variables
+
+    /**
+     * uid of shell
+     * must be Int_Object
+     */
+    bindVariable(state, "UID", DSValue::create<Int_Object>(state->pool.getUint32Type(), getuid()));
+
+    /**
+     * euid of shell
+     * must be Int_Object
+     */
+    bindVariable(state, "EUID", DSValue::create<Int_Object>(state->pool.getUint32Type(), geteuid()));
+
+    struct utsname name;
+    if(uname(&name) == -1) {
+        perror("cannot get utsname");
+        exit(1);
+    }
+
+    /**
+     * must be String_Object
+     */
+    bindVariable(state, "OSTYPE", DSValue::create<String_Object>(state->pool.getStringType(), name.sysname));
 }
 
 static void loadEmbeddedScript(DSState *state) {
@@ -419,14 +435,6 @@ DSState *DSState_create() {
     if(getenv(ENV_LOGNAME) == nullptr) {
         setenv(ENV_LOGNAME, pw->pw_name, 1);
     }
-
-    // set OSTYPE
-    struct utsname name;
-    if(uname(&name) == -1) {
-        perror("cannot get utsname");
-        exit(1);
-    }
-    setenv(ENV_OSTYPE, name.sysname, 1);
 
     initBuiltinVar(ctx);
     loadEmbeddedScript(ctx);

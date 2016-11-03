@@ -2,7 +2,6 @@
 
 import-env OLDPWD : "$(pwd)"
 import-env PWD : "$(pwd)"
-import-env OSTYPE : "$(uname -s)"
 
 if not(check_env PATH) {
     export-env PATH = '/bin:/usr/bin:/usr/local/bin'
