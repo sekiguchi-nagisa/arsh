@@ -391,6 +391,11 @@ static void initBuiltinVar(DSState *state) {
      * must be String_Object
      */
     bindVariable(state, "OSTYPE", DSValue::create<String_Object>(state->pool.getStringType(), name.sysname));
+
+    /**
+     * must be String_Object
+     */
+    bindVariable(state, "MACHTYPE", DSValue::create<String_Object>(state->pool.getStringType(), name.machine));
 }
 
 static void loadEmbeddedScript(DSState *state) {

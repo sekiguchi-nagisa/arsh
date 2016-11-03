@@ -1,7 +1,5 @@
 # for builtin variable or constant
 
-assert($OSTYPE == "$(uname -s)")
-
 assert($YDSH_VERSION == "$(ps_intrp '\V')")
 
 # $, PID, PPID
@@ -19,3 +17,7 @@ assert $HISTCMD == 1u    # HISTCMD is always 1 in scripting mode.
 # UID, EUID
 assert $UID == $EUID
 assert $UID as String == "$(id -u)"
+
+# uname
+assert($OSTYPE == "$(uname -s)")
+assert $MACHTYPE == "$(uname -m)"
