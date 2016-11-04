@@ -226,10 +226,7 @@ struct DSState {
 
     // operand manipulation
     void push(const DSValue &value) {
-        if(++this->stackTopIndex >= this->callStackSize) {
-            this->expandLocalStack();
-        }
-        this->callStack[this->stackTopIndex] = value;
+        this->push(DSValue(value));
     }
 
     void push(DSValue &&value) {
@@ -282,7 +279,7 @@ struct DSState {
     }
 
     void setGlobal(unsigned int index, const DSValue &obj) {
-        this->callStack[index] = obj;
+        this->setGlobal(index, DSValue(obj));
     }
 
     void setGlobal(unsigned int index, DSValue &&obj) {
@@ -303,7 +300,7 @@ struct DSState {
     }
 
     void setLocal(unsigned int index, const DSValue &obj) {
-        this->callStack[this->localVarOffset + index] = obj;
+        setLocal(index, DSValue(obj));
     }
 
     void setLocal(unsigned int index, DSValue &&obj) {

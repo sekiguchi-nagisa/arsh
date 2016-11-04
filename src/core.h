@@ -144,9 +144,6 @@ void setGlobal(DSState &st, unsigned int index, DSValue &&obj);
 const DSValue &getGlobal(const DSState &st, unsigned int index);
 
 [[noreturn]]
-void throwError(DSState &st, DSType &errorType, const char *message);
-
-[[noreturn]]
 void throwError(DSState &st, DSType &errorType, std::string &&message);
 
 void fillInStackTrace(const DSState &st, std::vector<StackTraceElement> &stackTrace);

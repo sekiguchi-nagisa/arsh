@@ -197,10 +197,6 @@ const DSValue &getGlobal(const DSState &st, unsigned int index) {
     return st.getGlobal(index);
 }
 
-void throwError(DSState &st, DSType &errorType, const char *message) {
-    throwError(st, errorType, std::string(message));
-}
-
 void throwError(DSState &st, DSType &errorType, std::string &&message) {
     st.throwException(st.newError(errorType, std::move(message)));
 }
