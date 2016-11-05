@@ -81,3 +81,4 @@
 | POP_PIPELINE  |                                | value -> value                               | if last exit status is 0, push true value          |
 | DBUS_INIT_SIG |                                | [no change]                                  | init DBus signal match rule                        |
 | DBUS_WAIT_SIG |                                | -> func param1 ~ paramN                      | wait DBus signal, then dispatched handler          |
+| RAND          |                                | -> value                                     | generate random number and push stack top          |

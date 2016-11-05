@@ -19,6 +19,7 @@
 #include <iostream>
 #include <csignal>
 #include <algorithm>
+#include <cstdlib>
 
 #include <unistd.h>
 #include <sys/utsname.h>
@@ -261,16 +262,18 @@ static int compile(DSState *state, const char *sourceName, const char *source, D
     return compileImpl(state, lexer, dsError, code);
 }
 
-static void bindVariable(DSState *state, const char *varName, DSValue &&value) {
-    auto handle = state->symbolTable.registerHandle(varName, *value.get()->getType(), FieldHandle::READ_ONLY);
+static void bindVariable(DSState *state, const char *varName, DSValue &&value, flag8_set_t attribute) {
+    auto handle = state->symbolTable.registerHandle(varName, *value.get()->getType(), attribute);
     assert(handle != nullptr);
     state->setGlobal(handle->getFieldIndex(), std::move(value));
 }
 
+static void bindVariable(DSState *state, const char *varName, DSValue &&value) {
+    bindVariable(state, varName, std::move(value), FieldHandle::READ_ONLY);
+}
+
 static void bindVariable(DSState *state, const char *varName, const DSValue &value) {
-    auto handle = state->symbolTable.registerHandle(varName, *value.get()->getType(), FieldHandle::READ_ONLY);
-    assert(handle != nullptr);
-    state->setGlobal(handle->getFieldIndex(), value);
+    bindVariable(state, varName, DSValue(value));
 }
 
 static void initBuiltinVar(DSState *state) {
@@ -396,6 +399,14 @@ static void initBuiltinVar(DSState *state) {
      * must be String_Object
      */
     bindVariable(state, "MACHTYPE", DSValue::create<String_Object>(state->pool.getStringType(), name.machine));
+
+    /**
+     * dummy object for random number
+     * must be Int_Object
+     */
+    bindVariable(state, "RANDOM", DSValue::create<Int_Object>(state->pool.getUint32Type(), 0),
+                 FieldHandle::READ_ONLY | FieldHandle::RANDOM);
+    srand(static_cast<unsigned int>(time(nullptr)));    // init rand for $RANDOM
 }
 
 static void loadEmbeddedScript(DSState *state) {

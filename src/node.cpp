@@ -358,7 +358,8 @@ void AssignableNode::dump(NodeDumper &dumper) const {
     OP(FieldHandle::GLOBAL     ) \
     OP(FieldHandle::ENV        ) \
     OP(FieldHandle::FUNC_HANDLE) \
-    OP(FieldHandle::INTERFACE  )
+    OP(FieldHandle::INTERFACE  ) \
+    OP(FieldHandle::RANDOM)
 
     DUMP_BITSET(attribute, EACH_FLAG);
 #undef EACH_FLAG

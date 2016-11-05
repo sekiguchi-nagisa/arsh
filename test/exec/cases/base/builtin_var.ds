@@ -21,3 +21,9 @@ assert $UID as String == "$(id -u)"
 # uname
 assert($OSTYPE == "$(uname -s)")
 assert $MACHTYPE == "$(uname -m)"
+
+# random number, at least 32767 (RAND_MAX)
+{
+    var r = $RANDOM
+    assert $r != $RANDOM    # value of $RANDOM is random number
+}

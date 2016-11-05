@@ -476,6 +476,8 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
         }
 
         this->write0byteIns(OpCode::LOAD_ENV);
+    } else if(hasFlag(node.getAttribute(), FieldHandle::RANDOM)) {
+        this->write0byteIns(OpCode::RAND);
     } else {
         if(node.isGlobal()) {
             if(!node.isUntyped() && node.getType().isFuncType()) {

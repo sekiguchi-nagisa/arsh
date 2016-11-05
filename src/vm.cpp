@@ -16,7 +16,7 @@
 
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <stdlib.h>
+#include <cstdlib>
 
 #include "opcode.h"
 #include "vm.h"
@@ -1703,6 +1703,11 @@ static bool mainLoop(DSState &state) {
                 state.push(std::move(e));
             }
             applyFuncObject(state, v.size() - 1);
+            break;
+        }
+        vmcase(RAND) {
+            int v = rand();
+            state.push(DSValue::create<Int_Object>(state.pool.getUint32Type(), v));
             break;
         }
         }

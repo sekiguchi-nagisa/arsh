@@ -53,6 +53,7 @@ public:
     static constexpr flag8_t ENV         = 1 << 2;
     static constexpr flag8_t FUNC_HANDLE = 1 << 3;
     static constexpr flag8_t INTERFACE   = 1 << 4;
+    static constexpr flag8_t RANDOM      = 1 << 5;
 
     NON_COPYABLE(FieldHandle);
 

@@ -533,7 +533,7 @@ public:
         return hasFlag(this->attribute, FieldHandle::INTERFACE);
     }
 
-    unsigned int getAttribute() const {
+    flag8_set_t getAttribute() const {
         return this->attribute;
     }
 
