@@ -350,20 +350,18 @@ void TupleNode::accept(NodeVisitor &visitor) {
 // ##     AssignableNode     ##
 // ############################
 
-void AssignableNode::setAttribute(FieldHandle *handle) {
-    this->index = handle->getFieldIndex();
-    this->readOnly = handle->isReadOnly();
-    this->global = handle->isGlobal();
-    this->env = handle->isEnv();
-    this->interface = handle->withinInterface();
-}
-
 void AssignableNode::dump(NodeDumper &dumper) const {
     DUMP_PRIM(index);
-    DUMP_PRIM(readOnly);
-    DUMP_PRIM(global);
-    DUMP_PRIM(env);
-    DUMP_PRIM(interface);
+
+#define EACH_FLAG(OP) \
+    OP(FieldHandle::READ_ONLY  ) \
+    OP(FieldHandle::GLOBAL     ) \
+    OP(FieldHandle::ENV        ) \
+    OP(FieldHandle::FUNC_HANDLE) \
+    OP(FieldHandle::INTERFACE  )
+
+    DUMP_BITSET(attribute, EACH_FLAG);
+#undef EACH_FLAG
 }
 
 // #####################

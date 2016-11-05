@@ -26,6 +26,7 @@
 #include "token_kind.h"
 #include "lexer.h"
 #include "type.h"
+#include "handle.h"
 
 namespace ydsh {
 
@@ -502,34 +503,38 @@ public:
 class AssignableNode : public Node {
 protected:
     unsigned int index;
-    bool readOnly;
-    bool global;
-    bool env;
-    bool interface;
+
+    flag8_set_t attribute;
 
 public:
     explicit AssignableNode(Token token) :
-            Node(token), index(0),
-            readOnly(false), global(false), env(false), interface(false) { }
+            Node(token), index(0), attribute(0) { }
 
     virtual ~AssignableNode() = default;
 
-    void setAttribute(FieldHandle *handle);
+    void setAttribute(FieldHandle *handle) {
+        this->index = handle->getFieldIndex();
+        this->attribute = handle->getAttribute();
+    }
 
     bool isReadOnly() const {
-        return this->readOnly;
+        return hasFlag(this->attribute, FieldHandle::READ_ONLY);
     }
 
     bool isGlobal() const {
-        return this->global;
+        return hasFlag(this->attribute, FieldHandle::GLOBAL);
     }
 
     bool isEnv() const {
-        return this->env;
+        return hasFlag(this->attribute, FieldHandle::ENV);
     }
 
     bool withinInterface() const {
-        return this->interface;
+        return hasFlag(this->attribute, FieldHandle::INTERFACE);
+    }
+
+    unsigned int getAttribute() const {
+        return this->attribute;
     }
 
     unsigned int getIndex() const {
