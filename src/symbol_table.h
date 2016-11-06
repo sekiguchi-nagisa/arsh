@@ -122,7 +122,7 @@ public:
     /**
      * return null, if found duplicated handle.
      */
-    FieldHandle *registerHandle(const std::string &symbolName, DSType &type, flag8_set_t attribute);
+    FieldHandle *registerHandle(const std::string &symbolName, DSType &type, FieldAttributes attribute);
 
     /**
      * return null, if found duplicated handle.
@@ -138,7 +138,7 @@ public:
         assert(this->inGlobalScope());
         std::string name = cmdSymbolPrefix;
         name += cmdName;
-        return this->registerHandle(name, type, FieldHandle::READ_ONLY);
+        return this->registerHandle(name, type, FieldAttribute::READ_ONLY);
     }
 
     /**

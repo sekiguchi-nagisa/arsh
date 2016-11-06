@@ -19,8 +19,34 @@
 #include "handle.h"
 #include "type.h"
 #include "misc/fatal.h"
+#include "misc/size.hpp"
 
 namespace ydsh {
+
+// #############################
+// ##     FieldAttributes     ##
+// #############################
+
+std::string FieldAttributes::str() const {
+    const char *table[] = {
+#define GEN_STR(E, V) #E,
+            EACH_FIELD_ATTR(GEN_STR)
+#undef GEN_STR
+    };
+
+    std::string value;
+    for(unsigned int i = 0; i < arraySize(table); i++) {
+        if(hasFlag(this->value_, 1u << i)) {
+            if(!value.empty()) {
+                value += " | ";
+            }
+            value += table[i];
+        }
+    }
+
+    return value;
+}
+
 
 // #########################
 // ##     FieldHandle     ##

@@ -262,14 +262,14 @@ static int compile(DSState *state, const char *sourceName, const char *source, D
     return compileImpl(state, lexer, dsError, code);
 }
 
-static void bindVariable(DSState *state, const char *varName, DSValue &&value, flag8_set_t attribute) {
+static void bindVariable(DSState *state, const char *varName, DSValue &&value, FieldAttributes attribute) {
     auto handle = state->symbolTable.registerHandle(varName, *value.get()->getType(), attribute);
     assert(handle != nullptr);
     state->setGlobal(handle->getFieldIndex(), std::move(value));
 }
 
 static void bindVariable(DSState *state, const char *varName, DSValue &&value) {
-    bindVariable(state, varName, std::move(value), FieldHandle::READ_ONLY);
+    bindVariable(state, varName, std::move(value), FieldAttribute::READ_ONLY);
 }
 
 static void bindVariable(DSState *state, const char *varName, const DSValue &value) {
@@ -405,7 +405,7 @@ static void initBuiltinVar(DSState *state) {
      * must be Int_Object
      */
     bindVariable(state, "RANDOM", DSValue::create<Int_Object>(state->pool.getUint32Type(), 0),
-                 FieldHandle::READ_ONLY | FieldHandle::RANDOM);
+                 FieldAttribute::READ_ONLY | FieldAttribute ::RANDOM);
     srand(static_cast<unsigned int>(time(nullptr)));    // init rand for $RANDOM
 }
 

@@ -236,7 +236,7 @@ TupleType::TupleType(native_type_info_t info, DSType *superType, std::vector<DST
     const unsigned int size = this->elementTypes.size();
     const unsigned int baseIndex = this->superType->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {
-        FieldHandle *handle = new FieldHandle(this->elementTypes[i], i + baseIndex, false);
+        FieldHandle *handle = new FieldHandle(this->elementTypes[i], i + baseIndex, FieldAttributes());
         this->fieldHandleMap.insert(std::make_pair("_" + std::to_string(i), handle));
     }
 }
@@ -297,8 +297,12 @@ InterfaceType::~InterfaceType() {
 
 FieldHandle *InterfaceType::newFieldHandle(const std::string &fieldName, DSType &fieldType, bool readOnly) {
     // field index is always 0.
-    FieldHandle *handle =
-            new FieldHandle(&fieldType, 0, (readOnly ? FieldHandle::READ_ONLY : 0) | FieldHandle::INTERFACE);
+    FieldAttributes attr(FieldAttribute::INTERFACE);
+    if(readOnly) {
+        attr.set(FieldAttribute::READ_ONLY);
+    }
+
+    FieldHandle *handle = new FieldHandle(&fieldType, 0, attr);
     auto pair = this->fieldHandleMap.insert(std::make_pair(fieldName, handle));
     if(pair.second) {
         return handle;

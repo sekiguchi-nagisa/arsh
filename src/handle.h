@@ -31,6 +31,57 @@ class DSType;
 class FunctionType;
 struct NativeFuncInfo;
 
+#define EACH_FIELD_ATTR(OP) \
+    OP(READ_ONLY  , (1 << 0)) \
+    OP(GLOBAL     , (1 << 1)) \
+    OP(ENV        , (1 << 2)) \
+    OP(FUNC_HANDLE, (1 << 3)) \
+    OP(INTERFACE  , (1 << 4)) \
+    OP(RANDOM     , (1 << 5))
+
+enum class FieldAttribute : unsigned int {
+#define GEN_ENUM(E, V) E = V,
+    EACH_FIELD_ATTR(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+class FieldAttributes {
+private:
+    unsigned int value_;
+
+private:
+    FieldAttributes(unsigned int value) : value_(value) {}
+
+public:
+    FieldAttributes() : value_(0) {}
+    FieldAttributes(FieldAttribute attr) : value_(static_cast<unsigned int>(attr)) {}
+    ~FieldAttributes() = default;
+
+    friend inline FieldAttributes operator|(FieldAttribute x, FieldAttribute y);
+
+    FieldAttributes operator|(FieldAttribute attr) const {
+        return this->value_ | static_cast<unsigned int>(attr);
+    }
+
+    void set(FieldAttribute attr) {
+        setFlag(this->value_, static_cast<unsigned int>(attr));
+    }
+
+    void unset(FieldAttribute attr) {
+        unsetFlag(this->value_, static_cast<unsigned int>(attr));
+    }
+
+    bool has(FieldAttribute attr) const {
+        return hasFlag(this->value_, static_cast<unsigned int>(attr));
+    }
+
+    std::string str() const;
+};
+
+inline FieldAttributes operator|(FieldAttribute x, FieldAttribute y) {
+    return static_cast<unsigned int>(x) | static_cast<unsigned int>(y);
+}
+
 /**
  * represent for class field or variable. field type may be function type.
  */
@@ -41,23 +92,12 @@ protected:
 private:
     unsigned int fieldIndex;
 
-    /**
-     * attribute bit map.
-     */
-    flag8_set_t attribute;
+    FieldAttributes attribute;
 
 public:
-    // attribute definition
-    static constexpr flag8_t READ_ONLY   = 1 << 0;
-    static constexpr flag8_t GLOBAL      = 1 << 1;
-    static constexpr flag8_t ENV         = 1 << 2;
-    static constexpr flag8_t FUNC_HANDLE = 1 << 3;
-    static constexpr flag8_t INTERFACE   = 1 << 4;
-    static constexpr flag8_t RANDOM      = 1 << 5;
-
     NON_COPYABLE(FieldHandle);
 
-    FieldHandle(DSType *fieldType, unsigned int fieldIndex, flag8_set_t attribute) :
+    FieldHandle(DSType *fieldType, unsigned int fieldIndex, FieldAttributes attribute) :
             fieldType(fieldType), fieldIndex(fieldIndex), attribute(attribute) {}
 
     virtual ~FieldHandle() = default;
@@ -68,31 +108,8 @@ public:
         return this->fieldIndex;
     }
 
-    flag8_set_t getAttribute() const {
+    FieldAttributes attr() const {
         return this->attribute;
-    }
-
-    bool isReadOnly() const {
-        return hasFlag(this->getAttribute(), READ_ONLY);
-    }
-
-    bool isGlobal() const {
-        return hasFlag(this->getAttribute(), GLOBAL);
-    }
-
-    bool isEnv() const {
-        return hasFlag(this->getAttribute(), ENV);
-    }
-
-    /**
-     * if true, is FunctionHandle, equivalent to dynamic_cast<FunctionHandle*>(handle) != 0
-     */
-    bool isFuncHandle() const {
-        return hasFlag(this->getAttribute(), FUNC_HANDLE);
-    }
-
-    bool withinInterface() const {
-        return hasFlag(this->getAttribute(), INTERFACE);
     }
 };
 
@@ -106,7 +123,7 @@ protected:
 
 public:
     FunctionHandle(DSType *returnType, const std::vector<DSType *> &paramTypes, unsigned int fieldIndex) :
-            FieldHandle(0, fieldIndex, READ_ONLY | FUNC_HANDLE | GLOBAL),
+            FieldHandle(0, fieldIndex, FieldAttribute::READ_ONLY | FieldAttribute::FUNC_HANDLE | FieldAttribute::GLOBAL),
             returnType(returnType), paramTypes(paramTypes) { }
 
     ~FunctionHandle() = default;

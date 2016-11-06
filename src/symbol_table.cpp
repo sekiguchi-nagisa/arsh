@@ -58,9 +58,9 @@ FieldHandle *SymbolTable::lookupHandle(const std::string &symbolName) const {
     return nullptr;
 }
 
-FieldHandle *SymbolTable::registerHandle(const std::string &symbolName, DSType &type, flag8_set_t attribute) {
+FieldHandle *SymbolTable::registerHandle(const std::string &symbolName, DSType &type, FieldAttributes attribute) {
     if(this->inGlobalScope()) {
-        setFlag(attribute, FieldHandle::GLOBAL);
+        attribute.set(FieldAttribute::GLOBAL);
     }
 
     FieldHandle *handle = new FieldHandle(&type, this->scopes.back()->getCurVarIndex(), attribute);

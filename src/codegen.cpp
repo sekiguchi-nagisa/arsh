@@ -468,18 +468,18 @@ void ByteCodeGenerator::visitTupleNode(TupleNode &node) {
 }
 
 void ByteCodeGenerator::visitVarNode(VarNode &node) {
-    if(node.isEnv()) {
-        if(node.isGlobal()) {
+    if(node.attr().has(FieldAttribute::ENV)) {
+        if(node.attr().has(FieldAttribute::GLOBAL)) {
             this->write2byteIns(OpCode::LOAD_GLOBAL, node.getIndex());
         } else {
             this->write2byteIns(OpCode::LOAD_LOCAL, node.getIndex());
         }
 
         this->write0byteIns(OpCode::LOAD_ENV);
-    } else if(hasFlag(node.getAttribute(), FieldHandle::RANDOM)) {
+    } else if(node.attr().has(FieldAttribute::RANDOM)) {
         this->write0byteIns(OpCode::RAND);
     } else {
-        if(node.isGlobal()) {
+        if(node.attr().has(FieldAttribute::GLOBAL)) {
             if(!node.isUntyped() && node.getType().isFuncType()) {
                 this->write2byteIns(OpCode::LOAD_FUNC, node.getIndex());
             } else {
@@ -496,7 +496,7 @@ void ByteCodeGenerator::visitAccessNode(AccessNode &node) {
 
     switch(node.getAdditionalOp()) {
     case AccessNode::NOP: {
-        if(node.withinInterface()) {
+        if(node.attr().has(FieldAttribute::INTERFACE)) {
             std::string desc = encodeFieldDescriptor(
                     node.getRecvNode()->getType(), node.getFieldName().c_str(), node.getType());
             this->writeDescriptorIns(OpCode::INVOKE_GETTER, std::move(desc));
@@ -508,7 +508,7 @@ void ByteCodeGenerator::visitAccessNode(AccessNode &node) {
     case AccessNode::DUP_RECV: {
         this->write0byteIns(OpCode::DUP);
 
-        if(node.withinInterface()) {
+        if(node.attr().has(FieldAttribute::INTERFACE)) {
             std::string desc = encodeFieldDescriptor(
                     node.getRecvNode()->getType(), node.getFieldName().c_str(), node.getType());
             this->writeDescriptorIns(OpCode::INVOKE_GETTER, std::move(desc));
@@ -991,7 +991,7 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
         }
         this->visit(*node.getRightNode());
 
-        if(assignableNode->withinInterface()) {
+        if(assignableNode->attr().has(FieldAttribute::INTERFACE)) {
             std::string desc = encodeFieldDescriptor(
                     accessNode->getRecvNode()->getType(), accessNode->getFieldName().c_str(), accessNode->getType());
             this->writeDescriptorIns(OpCode::INVOKE_SETTER, std::move(desc));
@@ -1005,8 +1005,8 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
         this->visit(*node.getRightNode());
         VarNode *varNode = static_cast<VarNode *>(node.getLeftNode());
 
-        if(varNode->isEnv()) {
-            if(varNode->isGlobal()) {
+        if(varNode->attr().has(FieldAttribute::ENV)) {
+            if(varNode->attr().has(FieldAttribute::GLOBAL)) {
                 this->write2byteIns(OpCode::LOAD_GLOBAL, index);
             } else {
                 this->write2byteIns(OpCode::LOAD_LOCAL, index);
@@ -1015,7 +1015,7 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
             this->write0byteIns(OpCode::SWAP);
             this->write0byteIns(OpCode::STORE_ENV);
         } else {
-            if(varNode->isGlobal()) {
+            if(varNode->attr().has(FieldAttribute::GLOBAL)) {
                 this->write2byteIns(OpCode::STORE_GLOBAL, index);
             } else {
                 this->write2byteIns(OpCode::STORE_LOCAL, index);

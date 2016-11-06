@@ -301,7 +301,7 @@ void TypeChecker::resolveCoercion(DSType &requiredType, Node * &targetNode) {
 }
 
 FieldHandle *TypeChecker::addEntryAndThrowIfDefined(Node &node, const std::string &symbolName, DSType &type,
-                                                    flag8_set_t attribute) {
+                                                    FieldAttributes attribute) {
     FieldHandle *handle = this->symbolTable.registerHandle(symbolName, type, attribute);
     if(handle == nullptr) {
         RAISE_TC_ERROR(DefinedSymbol, node, symbolName);
@@ -348,7 +348,7 @@ HandleOrFuncType TypeChecker::resolveCallee(VarNode &recvNode) {
     }
     recvNode.setAttribute(handle);
 
-    if(handle->isFuncHandle()) {
+    if(handle->attr().has(FieldAttribute::FUNC_HANDLE)) {
         return HandleOrFuncType(static_cast<FunctionHandle *>(handle));
     }
 
@@ -788,7 +788,7 @@ void TypeChecker::visitExportEnvNode(ExportEnvNode &node) {
     this->checkType(stringType, node.getExprNode());
 
     FieldHandle *handle =
-            this->addEntryAndThrowIfDefined(node, node.getEnvName(), stringType, FieldHandle::ENV);
+            this->addEntryAndThrowIfDefined(node, node.getEnvName(), stringType, FieldAttribute::ENV);
 
     node.setAttribute(handle);
     node.setType(this->typePool.getVoidType());
@@ -801,7 +801,7 @@ void TypeChecker::visitImportEnvNode(ImportEnvNode &node) {
     }
 
     FieldHandle *handle =
-            this->addEntryAndThrowIfDefined(node, node.getEnvName(), stringType, FieldHandle::ENV);
+            this->addEntryAndThrowIfDefined(node, node.getEnvName(), stringType, FieldAttribute::ENV);
 
     node.setAttribute(handle);
     node.setType(this->typePool.getVoidType());
@@ -899,7 +899,7 @@ void TypeChecker::visitCatchNode(CatchNode &node) {
      */
     this->symbolTable.enterScope();
     FieldHandle *handle =
-            this->addEntryAndThrowIfDefined(node, node.getExceptionName(), exceptionType, FieldHandle::READ_ONLY);
+            this->addEntryAndThrowIfDefined(node, node.getExceptionName(), exceptionType, FieldAttribute::READ_ONLY);
     node.setAttribute(handle);
     this->checkTypeWithCurrentScope(node.getBlockNode());
     this->symbolTable.exitScope();
@@ -965,8 +965,11 @@ void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
         RAISE_TC_ERROR(Unacceptable, *node.getInitValueNode(), this->typePool.getTypeName(initValueType));
     }
 
-    FieldHandle *handle = this->addEntryAndThrowIfDefined(
-            node, node.getVarName(), initValueType, node.isReadOnly() ? FieldHandle::READ_ONLY : 0);
+    FieldAttributes attr;
+    if(node.isReadOnly()) {
+        attr.set(FieldAttribute::READ_ONLY);
+    }
+    FieldHandle *handle = this->addEntryAndThrowIfDefined(node, node.getVarName(), initValueType, attr);
     node.setAttribute(handle);
     node.setType(this->typePool.getVoidType());
 }
@@ -978,7 +981,7 @@ void TypeChecker::visitAssignNode(AssignNode &node) {
     }
 
     auto &leftType = this->checkType(leftNode);
-    if(leftNode->isReadOnly()) {
+    if(leftNode->attr().has(FieldAttribute::READ_ONLY)) {
         RAISE_TC_ERROR(ReadOnly, *leftNode);
     }
 
@@ -1059,7 +1062,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     for(unsigned int i = 0; i < paramSize; i++) {
         VarNode *paramNode = node.getParamNodes()[i];
         FieldHandle *fieldHandle = this->addEntryAndThrowIfDefined(
-                *paramNode, paramNode->getVarName(), *paramTypes[i], 0);
+                *paramNode, paramNode->getVarName(), *paramTypes[i], FieldAttributes());
         paramNode->setAttribute(fieldHandle);
     }
 
@@ -1102,10 +1105,10 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     this->symbolTable.enterScope();
 
     // register special characters (@, #, 0, 1, ... 9)
-    this->addEntryAndThrowIfDefined(node, "@", this->typePool.getStringArrayType(), FieldHandle::READ_ONLY);
-    this->addEntryAndThrowIfDefined(node, "#", this->typePool.getInt32Type(), FieldHandle::READ_ONLY);
+    this->addEntryAndThrowIfDefined(node, "@", this->typePool.getStringArrayType(), FieldAttribute::READ_ONLY);
+    this->addEntryAndThrowIfDefined(node, "#", this->typePool.getInt32Type(), FieldAttribute::READ_ONLY);
     for(unsigned int i = 0; i < 10; i++) {
-        this->addEntryAndThrowIfDefined(node, std::to_string(i), this->typePool.getStringType(), FieldHandle::READ_ONLY);
+        this->addEntryAndThrowIfDefined(node, std::to_string(i), this->typePool.getStringType(), FieldAttribute::READ_ONLY);
     }
 
 

@@ -504,36 +504,20 @@ class AssignableNode : public Node {
 protected:
     unsigned int index;
 
-    flag8_set_t attribute;
+    FieldAttributes attribute;
 
 public:
     explicit AssignableNode(Token token) :
-            Node(token), index(0), attribute(0) { }
+            Node(token), index(0), attribute() { }
 
     virtual ~AssignableNode() = default;
 
     void setAttribute(FieldHandle *handle) {
         this->index = handle->getFieldIndex();
-        this->attribute = handle->getAttribute();
+        this->attribute = handle->attr();
     }
 
-    bool isReadOnly() const {
-        return hasFlag(this->attribute, FieldHandle::READ_ONLY);
-    }
-
-    bool isGlobal() const {
-        return hasFlag(this->attribute, FieldHandle::GLOBAL);
-    }
-
-    bool isEnv() const {
-        return hasFlag(this->attribute, FieldHandle::ENV);
-    }
-
-    bool withinInterface() const {
-        return hasFlag(this->attribute, FieldHandle::INTERFACE);
-    }
-
-    flag8_set_t getAttribute() const {
+    FieldAttributes attr() const {
         return this->attribute;
     }
 

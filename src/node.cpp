@@ -352,17 +352,7 @@ void TupleNode::accept(NodeVisitor &visitor) {
 
 void AssignableNode::dump(NodeDumper &dumper) const {
     DUMP_PRIM(index);
-
-#define EACH_FLAG(OP) \
-    OP(FieldHandle::READ_ONLY  ) \
-    OP(FieldHandle::GLOBAL     ) \
-    OP(FieldHandle::ENV        ) \
-    OP(FieldHandle::FUNC_HANDLE) \
-    OP(FieldHandle::INTERFACE  ) \
-    OP(FieldHandle::RANDOM)
-
-    DUMP_BITSET(attribute, EACH_FLAG);
-#undef EACH_FLAG
+    dumper.dump("attribute", this->attribute.str().c_str());
 }
 
 // #####################
@@ -1082,7 +1072,7 @@ ExportEnvNode::~ExportEnvNode() {
 }
 
 void ExportEnvNode::setAttribute(FieldHandle *handle) {
-    this->global = handle->isGlobal();
+    this->global = handle->attr().has(FieldAttribute::GLOBAL);
     this->varIndex = handle->getFieldIndex();
 }
 
@@ -1106,7 +1096,7 @@ ImportEnvNode::~ImportEnvNode() {
 }
 
 void ImportEnvNode::setAttribute(FieldHandle *handle) {
-    this->global = handle->isGlobal();
+    this->global = handle->attr().has(FieldAttribute::GLOBAL);
     this->varIndex = handle->getFieldIndex();
 }
 
@@ -1386,7 +1376,7 @@ VarDeclNode::~VarDeclNode() {
 }
 
 void VarDeclNode::setAttribute(FieldHandle *handle) {
-    this->global = handle->isGlobal();
+    this->global = handle->attr().has(FieldAttribute::GLOBAL);
     this->varIndex = handle->getFieldIndex();
 }
 
