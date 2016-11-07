@@ -333,6 +333,11 @@ static void initBuiltinVar(DSState *state) {
     bindVariable(state, "HISTCMD", DSValue::create<Int_Object>(state->pool.getUint32Type(), 1));
 
     /**
+     * must be Long_Object.
+     */
+    bindVariable(state, "SECONDS", DSValue::create<Long_Object>(state->pool.getUint64Type(), 0), FieldAttribute::SECONDS);
+
+    /**
      * contains exit status of most recent executed process. ($?)
      * must be Int_Object
      */

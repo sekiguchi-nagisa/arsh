@@ -478,6 +478,8 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
         this->write0byteIns(OpCode::LOAD_ENV);
     } else if(node.attr().has(FieldAttribute::RANDOM)) {
         this->write0byteIns(OpCode::RAND);
+    } else if(node.attr().has(FieldAttribute::SECONDS)) {
+        this->write0byteIns(OpCode::GET_SECOND);
     } else {
         if(node.attr().has(FieldAttribute::GLOBAL)) {
             if(!node.isUntyped() && node.getType().isFuncType()) {
@@ -1014,6 +1016,8 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
 
             this->write0byteIns(OpCode::SWAP);
             this->write0byteIns(OpCode::STORE_ENV);
+        } else if(varNode->attr().has(FieldAttribute::SECONDS)) {
+            this->write0byteIns(OpCode::SET_SECOND);
         } else {
             if(varNode->attr().has(FieldAttribute::GLOBAL)) {
                 this->write2byteIns(OpCode::STORE_GLOBAL, index);

@@ -21,6 +21,7 @@
 
 #include <vector>
 #include <iostream>
+#include <chrono>
 
 #include <ydsh/ydsh.h>
 
@@ -152,6 +153,8 @@ struct DSState {
     DebugHook *hook;
 
     std::string logicalWorkingDir;
+
+    decltype(std::chrono::system_clock::now()) baseTime;
 
     NON_COPYABLE(DSState);
 

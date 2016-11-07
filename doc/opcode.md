@@ -82,3 +82,5 @@
 | DBUS_INIT_SIG |                                | [no change]                                  | init DBus signal match rule                        |
 | DBUS_WAIT_SIG |                                | -> func param1 ~ paramN                      | wait DBus signal, then dispatched handler          |
 | RAND          |                                | -> value                                     | generate random number and push stack top          |
+| GET_SECOND    |                                | -> value                                     | get differential time between current and base     |
+| SET_SECOND    |                                | value ->                                     | set base time                                      |

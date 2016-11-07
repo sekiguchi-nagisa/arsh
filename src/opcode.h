@@ -102,7 +102,9 @@ namespace ydsh {
     OP(POP_PIPELINE, 0) \
     OP(DBUS_INIT_SIG, 0) \
     OP(DBUS_WAIT_SIG, 0) \
-    OP(RAND, 0)
+    OP(RAND, 0) \
+    OP(GET_SECOND, 0) \
+    OP(SET_SECOND, 0)
 
 enum class OpCode : unsigned char {
 #define GEN_OPCODE(CODE, N) CODE,

@@ -37,7 +37,8 @@ struct NativeFuncInfo;
     OP(ENV        , (1 << 2)) \
     OP(FUNC_HANDLE, (1 << 3)) \
     OP(INTERFACE  , (1 << 4)) \
-    OP(RANDOM     , (1 << 5))
+    OP(RANDOM     , (1 << 5)) \
+    OP(SECONDS    , (1 << 6))
 
 enum class FieldAttribute : unsigned int {
 #define GEN_ENUM(E, V) E = V,

@@ -27,3 +27,10 @@ assert $MACHTYPE == "$(uname -m)"
     var r = $RANDOM
     assert $r != $RANDOM    # value of $RANDOM is random number
 }
+
+# seconds
+$SECONDS = 0
+var sec = $SECONDS
+sleep 1
+
+assert $SECONDS != $sec

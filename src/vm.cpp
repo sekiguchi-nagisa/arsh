@@ -56,7 +56,7 @@ DSState::DSState() :
         option(DS_OPTION_ASSERT), IFS_index(0),
         codeStack(), pipelineEvaluator(nullptr),
         pathCache(), terminationHook(nullptr), lineNum(1), prompt(),
-        hook(nullptr), logicalWorkingDir(initLogicalWorkingDir()) { }
+        hook(nullptr), logicalWorkingDir(initLogicalWorkingDir()), baseTime(std::chrono::system_clock::now()) { }
 
 void DSState::expandLocalStack() {
     const unsigned int needSize = this->stackTopIndex;
@@ -1708,6 +1708,20 @@ static bool mainLoop(DSState &state) {
         vmcase(RAND) {
             int v = rand();
             state.push(DSValue::create<Int_Object>(state.pool.getUint32Type(), v));
+            break;
+        }
+        vmcase(GET_SECOND) {
+            auto now = std::chrono::system_clock::now();
+            auto diff = now - state.baseTime;
+            auto sec = std::chrono::duration_cast<std::chrono::seconds>(diff);
+            unsigned long v = typeAs<Long_Object>(state.getGlobal(toIndex(BuiltinVarOffset::SECONDS)))->getValue();
+            v += sec.count();
+            state.push(DSValue::create<Long_Object>(state.pool.getUint64Type(), v));
+            break;
+        }
+        vmcase(SET_SECOND) {
+            state.baseTime = std::chrono::system_clock::now();
+            state.storeGlobal(toIndex(BuiltinVarOffset::SECONDS));
             break;
         }
         }
