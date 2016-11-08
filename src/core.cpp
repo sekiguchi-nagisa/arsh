@@ -1073,16 +1073,14 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
             }
 
             if(strcmp(e.getErrorKind(), "NoViableAlter") == 0) {
-                if(!tokenPairs.empty()) {
-                    kind = selectWithCmd(lexer, tokenPairs, cursor, tokenPairs.size() - 1, tokenStr, true);
-                    if(kind != CompletorKind::NONE) {
-                        goto END;
-                    }
+                kind = selectWithCmd(lexer, tokenPairs, cursor, tokenPairs.size() - 1, tokenStr, true);
+                if(kind != CompletorKind::NONE) {
+                    goto END;
+                }
 
-                    if(!isNewline(lexer, tokenPairs.back()) && findKind(e.getExpectedTokens(), COMMAND)) {
-                        kind = CompletorKind::CMD;
-                        goto END;
-                    }
+                if(!isNewline(lexer, tokenPairs.back()) && findKind(e.getExpectedTokens(), COMMAND)) {
+                    kind = CompletorKind::CMD;
+                    goto END;
                 }
 
                 if(findKind(e.getExpectedTokens(), CMD_ARG_PART)) {
@@ -1094,11 +1092,9 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
                 TokenKind expected = e.getExpectedTokens().back();
                 LOG(DUMP_CONSOLE, "expected: " << toString(expected));
 
-                if(!tokenPairs.empty()) {
-                    kind = selectWithCmd(lexer, tokenPairs, cursor, tokenPairs.size() - 1, tokenStr, true);
-                    if(kind != CompletorKind::NONE) {
-                        goto END;
-                    }
+                kind = selectWithCmd(lexer, tokenPairs, cursor, tokenPairs.size() - 1, tokenStr, true);
+                if(kind != CompletorKind::NONE) {
+                    goto END;
                 }
 
                 std::string expectedStr = toString(expected);
