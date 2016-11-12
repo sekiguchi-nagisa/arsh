@@ -35,13 +35,13 @@ DSValue *DSObject::getFieldTable() {
 
 std::string DSObject::toString(DSState &, VisitedSet *) {
     std::string str("DSObject(");
-    str += std::to_string((long) this);
+    str += std::to_string(reinterpret_cast<long>(this));
     str += ")";
     return str;
 }
 
 bool DSObject::equals(const DSValue &obj) const {
-    return (long) this == (long) obj.get();
+    return reinterpret_cast<long>(this) == reinterpret_cast<long>(obj.get());
 }
 
 DSValue DSObject::str(DSState &ctx) {
@@ -57,7 +57,7 @@ DSValue DSObject::commandArg(DSState &ctx, VisitedSet *) {
 }
 
 size_t DSObject::hash() const {
-    return std::hash<long>()((long) this);
+    return std::hash<long>()(reinterpret_cast<long>(this));
 }
 
 bool DSObject::introspect(DSState &, DSType *targetType) {
@@ -176,13 +176,13 @@ static void checkCircularRef(DSState &ctx, VisitedSet * &visitedSet,
 
 static void preVisit(VisitedSet *set, const DSObject *ptr) {
     if(set != nullptr) {
-        set->insert((unsigned long) ptr);
+        set->insert(reinterpret_cast<unsigned long>(ptr));
     }
 }
 
 static void postVisit(VisitedSet *set, const DSObject *ptr) {
     if(set != nullptr) {
-        set->erase((unsigned long) ptr);
+        set->erase(reinterpret_cast<unsigned long>(ptr));
     }
 }
 
@@ -239,7 +239,7 @@ DSValue Array_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
     std::shared_ptr<VisitedSet> newSet;
     checkCircularRef(ctx, visitedSet, newSet, this);
 
-    DSValue result(new Array_Object(getPool(ctx).getStringArrayType()));
+    auto result = DSValue::create<Array_Object>(getPool(ctx).getStringArrayType());
     for(auto &e : this->values) {
         preVisit(visitedSet, this);
         DSValue temp(e->commandArg(ctx, visitedSet));
@@ -268,7 +268,7 @@ DSValue Map_Object::nextElement(DSState &ctx) {
     types[0] = this->iter->first->getType();
     types[1] = this->iter->second->getType();
 
-    DSValue entry(new Tuple_Object(getPool(ctx).createTupleType(std::move(types))));
+    auto entry = DSValue::create<Tuple_Object>(getPool(ctx).createTupleType(std::move(types)));
     typeAs<Tuple_Object>(entry)->set(0, this->iter->first);
     typeAs<Tuple_Object>(entry)->set(1, this->iter->second);
     ++this->iter;
@@ -353,7 +353,7 @@ DSValue Tuple_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
     std::shared_ptr<VisitedSet> newSet;
     checkCircularRef(ctx, visitedSet, newSet, this);
 
-    DSValue result(new Array_Object(getPool(ctx).getStringArrayType()));
+    auto result = DSValue::create<Array_Object>(getPool(ctx).getStringArrayType());
     unsigned int size = this->getElementSize();
     for(unsigned int i = 0; i < size; i++) {
         preVisit(visitedSet, this);
