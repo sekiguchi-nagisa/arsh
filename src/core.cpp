@@ -85,10 +85,7 @@ const char *FilePathCache::searchPath(const char *cmdName, unsigned char option)
             resolvedPath += '/';
         }
         resolvedPath += cmdName;
-
-        if(resolvedPath[0] == '~') {
-            resolvedPath = expandTilde(resolvedPath.c_str());
-        }
+        expandTilde(resolvedPath);
 
         struct stat st;
         if(stat(resolvedPath.c_str(), &st) == 0 && (st.st_mode & S_IXUSR) == S_IXUSR) {
@@ -609,7 +606,12 @@ std::string expandDots(const char *basePath, const char *path) {
     return str;
 }
 
-std::string expandTilde(const char *path) {
+void expandTilde(std::string &str) {
+    if(str.empty() || str.front() != '~') {
+        return;
+    }
+
+    const char *path = str.c_str();
     std::string expanded;
     for(; *path != '/' && *path != '\0'; path++) {
         expanded += *path;
@@ -636,7 +638,7 @@ std::string expandTilde(const char *path) {
     if(*path != '\0') {
         expanded += path;
     }
-    return expanded;
+    str = std::move(expanded);
 }
 
 
@@ -750,10 +752,7 @@ static std::vector<std::string> computePathList(const char *pathVal) {
 
     // expand tilde
     for(auto &s : result) {
-        if(s[0] == '~') {
-            std::string expanded = expandTilde(s.c_str());
-            std::swap(s, expanded);
-        }
+        expandTilde(s);
     }
 
     return result;
@@ -845,9 +844,7 @@ static void completeFileName(const DSState &st, const std::string &token,
         targetDir = "/";
     } else if(s != std::string::npos) {
         targetDir = token.substr(0, s);
-        if(targetDir[0] == '~') {
-            targetDir = expandTilde(targetDir.c_str());
-        }
+        expandTilde(targetDir);
         targetDir = expandDots(st.logicalWorkingDir.c_str(), targetDir.c_str());
     } else {
         targetDir = expandDots(st.logicalWorkingDir.c_str(), ".");

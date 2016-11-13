@@ -1675,7 +1675,8 @@ static bool mainLoop(DSState &state) {
             break;
         }
         vmcase(EXPAND_TILDE) {
-            std::string str(expandTilde(typeAs<String_Object>(state.pop())->getValue()));
+            std::string str = typeAs<String_Object>(state.pop())->getValue();
+            expandTilde(str);
             state.push(DSValue::create<String_Object>(state.pool.getStringType(), std::move(str)));
             break;
         }

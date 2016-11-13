@@ -191,10 +191,7 @@ void callUserDefinedCommand(DSState &st, const FuncObject *obj, DSValue *argv);
 
 std::string expandDots(const char *basePath, const char *path);
 
-/**
- * path is starts with tilde.
- */
-std::string expandTilde(const char *path);
+void expandTilde(std::string &str);
 
 /**
  * return completion candidates.
