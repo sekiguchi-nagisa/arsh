@@ -42,6 +42,12 @@ assert($b.empty())
 try { $b.pop(); assert($false) } catch($e) { assert($e is OutOfRangeError) }
 try { $b.peek(); assert($false) } catch($e) { assert($e is OutOfRangeError) }
 
+# copy
+$b = [$true, $false, $false]
+var bb = $b.copy()
+$b.clear()
+assert $bb.size() == 3 && $b.size() == 0
+
 # iterator
 var c = [23, 32]
 try {

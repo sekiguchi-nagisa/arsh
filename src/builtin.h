@@ -1381,6 +1381,19 @@ YDSH_METHOD array_clear(RuntimeContext &ctx) {
     RET_VOID;
 }
 
+//!bind: function copy($this : Array<T0>) : Array<T0>
+YDSH_METHOD array_copy(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_copy);
+    Array_Object *obj = typeAs<Array_Object>(LOCAL(0));
+
+    const unsigned int size = obj->refValues().size();
+    std::vector<DSValue> values(size);
+    for(unsigned int i = 0; i < size; i++) {
+        values[i] = obj->getValues()[i];
+    }
+    RET(DSValue::create<Array_Object>(*obj->getType(), std::move(values)));
+}
+
 //!bind: function $OP_ITER($this : Array<T0>) : Array<T0>
 YDSH_METHOD array_iter(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_iter);
