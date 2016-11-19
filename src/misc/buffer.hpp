@@ -122,6 +122,11 @@ public:
 
     FlexBuffer &operator+=(FlexBuffer &&buffer);
 
+    template <std::size_t N>
+    FlexBuffer &operator+=(const T (&value)[N]) {
+        return this->append(value, N);
+    }
+
     /**
      * value is not equivalent to this.data.
      */

@@ -90,7 +90,7 @@ TEST(BufferTest, case2) {
 
     unsigned int v[] = {10, 20, 30};
     ASSERT_NO_FATAL_FAILURE({   // reuse
-        buffer.append(v, sizeof(v) / sizeof(unsigned int));
+        buffer += v;
         ASSERT_EQ(3u, buffer.size());
         ASSERT_EQ(IBuffer::MINIMUM_CAPACITY, buffer.capacity());
         ASSERT_EQ(v[0], buffer[0]);
