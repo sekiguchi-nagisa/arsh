@@ -121,6 +121,7 @@ struct DebugHook {
 // getter api
 
 TypePool &getPool(DSState &st);
+const TypePool &getPool(const DSState &st);
 
 FilePathCache &getPathCache(DSState &st);
 

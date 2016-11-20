@@ -141,6 +141,10 @@ TypePool &getPool(DSState &st) {
     return st.pool;
 }
 
+const TypePool &getPool(const DSState &st) {
+    return st.pool;
+}
+
 FilePathCache &getPathCache(DSState &st) {
     return st.pathCache;
 }
@@ -310,7 +314,7 @@ void exitShell(DSState &st, unsigned int status) {
 
     // invoke termination hook
     if(st.terminationHook != nullptr) {
-        const unsigned int lineNum = getOccuredLineNum(typeAs<Error_Object>(except)->getStackTrace());
+        const unsigned int lineNum = getOccurredLineNum(typeAs<Error_Object>(except)->getStackTrace());
         st.terminationHook(DS_ERROR_KIND_EXIT, lineNum);
     }
 

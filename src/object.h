@@ -584,7 +584,9 @@ std::ostream &operator<<(std::ostream &stream, const StackTraceElement &e);
 /**
  * if stack trace elements is empty, return 0.
  */
-unsigned int getOccuredLineNum(const std::vector<StackTraceElement> &elements);
+inline unsigned int getOccurredLineNum(const std::vector<StackTraceElement> &elements) {
+    return elements.empty() ? 0 : elements.front().getLineNum();
+}
 
 
 class Error_Object : public DSObject {
@@ -593,13 +595,10 @@ private:
     DSValue name;
     std::vector<StackTraceElement> stackTrace;
 
-public:
-    Error_Object(DSType &type, const DSValue &message) :
-            DSObject(type), message(message), name(), stackTrace() { }
-
     Error_Object(DSType &type, DSValue &&message) :
             DSObject(type), message(std::move(message)), name(), stackTrace() { }
 
+public:
     ~Error_Object() = default;
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
@@ -608,12 +607,14 @@ public:
         return this->message;
     }
 
+    const DSValue &getName() const {
+        return this->name;
+    }
+
     /**
      * print stack trace to stderr
      */
     void printStackTrace(DSState &ctx);
-
-    const DSValue &getName(DSState &ctx);
 
     const std::vector<StackTraceElement> &getStackTrace() const {
         return this->stackTrace;
@@ -622,7 +623,9 @@ public:
     /**
      * create new Error_Object and create stack trace
      */
-    static DSValue newError(const DSState &ctx, DSType &type, const DSValue &message);
+    static DSValue newError(const DSState &ctx, DSType &type, const DSValue &message) {
+        return newError(ctx, type, DSValue(message));
+    }
 
     static DSValue newError(const DSState &ctx, DSType &type, DSValue &&message);
 

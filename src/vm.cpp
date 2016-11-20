@@ -116,7 +116,7 @@ static void checkAssertion(DSState &state) {
 
         // invoke termination hook
         if(state.terminationHook != nullptr) {
-            const unsigned int lineNum = getOccuredLineNum(typeAs<Error_Object>(except)->getStackTrace());
+            const unsigned int lineNum = getOccurredLineNum(typeAs<Error_Object>(except)->getStackTrace());
             state.terminationHook(DS_ERROR_KIND_ASSERTION_ERROR, lineNum);
         }
 

@@ -383,11 +383,6 @@ std::ostream &operator<<(std::ostream &stream, const StackTraceElement &e) {
            << e.getLineNum() << " '" << e.getCallerName() << "()'";
 }
 
-unsigned int getOccuredLineNum(const std::vector<StackTraceElement> &elements) {
-    return elements.empty() ? 0 : elements.front().getLineNum();
-}
-
-
 // ##########################
 // ##     Error_Object     ##
 // ##########################
@@ -409,23 +404,11 @@ void Error_Object::printStackTrace(DSState &ctx) {
     }
 }
 
-const DSValue &Error_Object::getName(DSState &ctx) {
-    if(!this->name) {
-        this->name = DSValue::create<String_Object>(
-                getPool(ctx).getStringType(), getPool(ctx).getTypeName(*this->type));
-    }
-    return this->name;
-}
-
-DSValue Error_Object::newError(const DSState &ctx, DSType &type, const DSValue &message) {
-    auto obj = DSValue::create<Error_Object>(type, message);
-    typeAs<Error_Object>(obj)->createStackTrace(ctx);
-    return obj;
-}
-
 DSValue Error_Object::newError(const DSState &ctx, DSType &type, DSValue &&message) {
-    auto obj = DSValue::create<Error_Object>(type, std::move(message));
+    DSValue obj(new Error_Object(type, std::move(message)));
     typeAs<Error_Object>(obj)->createStackTrace(ctx);
+    typeAs<Error_Object>(obj)->name = DSValue::create<String_Object>(
+            getPool(ctx).getStringType(), getPool(ctx).getTypeName(type));
     return obj;
 }
 

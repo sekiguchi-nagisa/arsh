@@ -1588,7 +1588,7 @@ YDSH_METHOD error_backtrace(RuntimeContext &ctx) {
 //!bind: function name($this : Error) : String
 YDSH_METHOD error_name(RuntimeContext &ctx) {
     SUPPRESS_WARNING(error_name);
-    RET(typeAs<Error_Object>(LOCAL(0))->getName(ctx));
+    RET(typeAs<Error_Object>(LOCAL(0))->getName());
 }
 
 // ##################
