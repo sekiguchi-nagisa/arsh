@@ -145,9 +145,12 @@
     TOKEN(TYPE_OPEN                          , "<") /* < */\
     TOKEN(TYPE_CLOSE                         , ">") /* > */\
     TOKEN(TYPE_SEP                           , ",") /* , */\
-    TOKEN(PTYPE_OPEN                         , "[") /* [ */\
-    TOKEN(PTYPE_CLOSE                        , "]") /* ] */\
+    TOKEN(ATYPE_OPEN                         , "[") /* [ */\
+    TOKEN(ATYPE_CLOSE                        , "]") /* ] */\
+    TOKEN(PTYPE_OPEN                         , "(") /* ( */\
+    TOKEN(PTYPE_CLOSE                        , ")") /* ) */\
     TOKEN(TYPE_PATH                          , ".") /* . */\
+    TOKEN(TYPE_MSEP                          , ":") /* : */\
     TOKEN(TYPE_OTHER                         , "<Type Other>")
 
 namespace ydsh {

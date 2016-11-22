@@ -289,8 +289,11 @@ TokenKind Lexer::nextToken(Token &token) {
       <TYPE> "<"               { RET(TYPE_OPEN); }
       <TYPE> ">"               { RET(TYPE_CLOSE); }
       <TYPE> ","               { RET(TYPE_SEP); }
-      <TYPE> "["               { RET(PTYPE_OPEN); }
-      <TYPE> "]"               { RET(PTYPE_CLOSE); }
+      <TYPE> "["               { RET(ATYPE_OPEN); }
+      <TYPE> "]"               { RET(ATYPE_CLOSE); }
+      <TYPE> "("               { RET(PTYPE_OPEN); }
+      <TYPE> ")"               { RET(PTYPE_CLOSE); }
+      <TYPE> ":"               { RET(TYPE_MSEP); }
       <TYPE> "\000"            { REACH_EOS();}
       <TYPE> *                 { RET(TYPE_OTHER); }
 

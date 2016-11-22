@@ -1,0 +1,7 @@
+# abbreviated notation
+assert [34] is [Int]
+
+assert [34 : (34, '')] is [typeof(34) : (Int, typeof(''))]
+
+assert not (45 is Func<Int, [[String]]>)
+assert [$false : $true][45 is [Int]]

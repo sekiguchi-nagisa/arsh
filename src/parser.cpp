@@ -380,10 +380,38 @@ std::unique_ptr<TypeNode> Parser::parse_typeName() {
         Token token = this->expect(IDENTIFIER);
         return this->parse_basicOrReifiedType(token);
     }
+    case PTYPE_OPEN: {
+        Token token = this->expect(PTYPE_OPEN, false);
+        auto reified = uniquify<ReifiedTypeNode>(new BaseTypeNode(token, "Tuple"));
+        reified->addElementTypeNode(this->parse_typeName().release());
+        while(CUR_KIND() == TYPE_SEP) {
+            this->expect(TYPE_SEP, false);
+            reified->addElementTypeNode(this->parse_typeName().release());
+        }
+        token = this->expect(PTYPE_CLOSE);
+        reified->updateToken(token);
+        this->restoreLexerState(token);
+        return std::move(reified);
+    }
+    case ATYPE_OPEN: {
+        Token token = this->expect(ATYPE_OPEN, false);
+        auto left = this->parse_typeName();
+        bool isMap = CUR_KIND() == TYPE_MSEP;
+        auto reified = uniquify<ReifiedTypeNode>(new BaseTypeNode(token, isMap ? "Map" : "Array"));
+        reified->addElementTypeNode(left.release());
+        if(isMap) {
+            this->expect(TYPE_MSEP, false);
+            reified->addElementTypeNode(this->parse_typeName().release());
+        }
+        token = this->expect(ATYPE_CLOSE);
+        reified->updateToken(token);
+        this->restoreLexerState(token);
+        return std::move(reified);
+    }
     case TYPEOF: {
         Token token = this->expect(TYPEOF);
-        if(CUR_KIND() == TYPE_OTHER && this->lexer->equals(this->curToken, "(")) {  // treat as typeof operator
-            this->expect(TYPE_OTHER, false);
+        if(CUR_KIND() == PTYPE_OPEN) {
+            this->expect(PTYPE_OPEN, false);
             PUSH_LEXER_MODE(yycSTMT);
 
             unsigned int startPos = token.pos;
@@ -406,7 +434,7 @@ std::unique_ptr<TypeNode> Parser::parse_typeName() {
 
             if(CUR_KIND() == TYPE_SEP) {   // ,[
                 this->expect(TYPE_SEP);
-                this->expect(PTYPE_OPEN, false);
+                this->expect(ATYPE_OPEN, false);
 
                 // parse first arg type
                 func->addParamTypeNode(this->parse_typeName().release());
@@ -416,7 +444,7 @@ std::unique_ptr<TypeNode> Parser::parse_typeName() {
                     this->expect(TYPE_SEP, false);
                     func->addParamTypeNode(this->parse_typeName().release());
                 }
-                this->expect(PTYPE_CLOSE);
+                this->expect(ATYPE_CLOSE);
             }
 
             token = this->expect(TYPE_CLOSE);
@@ -437,6 +465,8 @@ std::unique_ptr<TypeNode> Parser::parse_typeName() {
     default:
         E_ALTER(
                 IDENTIFIER,
+                PTYPE_OPEN,
+                ATYPE_OPEN,
                 FUNC,
                 TYPEOF,
                 TYPE_PATH
