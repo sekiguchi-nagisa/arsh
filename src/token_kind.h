@@ -150,8 +150,7 @@
     TOKEN(PTYPE_OPEN                         , "(") /* ( */\
     TOKEN(PTYPE_CLOSE                        , ")") /* ) */\
     TOKEN(TYPE_PATH                          , ".") /* . */\
-    TOKEN(TYPE_MSEP                          , ":") /* : */\
-    TOKEN(TYPE_OTHER                         , "<Type Other>")
+    TOKEN(TYPE_MSEP                          , ":") /* : */
 
 namespace ydsh {
 

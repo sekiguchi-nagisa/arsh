@@ -294,12 +294,10 @@ TokenKind Lexer::nextToken(Token &token) {
       <TYPE> "("               { RET(PTYPE_OPEN); }
       <TYPE> ")"               { RET(PTYPE_CLOSE); }
       <TYPE> ":"               { RET(TYPE_MSEP); }
-      <TYPE> "\000"            { REACH_EOS();}
-      <TYPE> *                 { RET(TYPE_OTHER); }
 
 
-      <STMT,EXPR,NAME,DSTRING,CMD> "\000" { REACH_EOS();}
-      <STMT,EXPR,NAME,DSTRING,CMD> *      { RET(INVALID); }
+      <STMT,EXPR,NAME,DSTRING,CMD,TYPE> "\000" { REACH_EOS();}
+      <STMT,EXPR,NAME,DSTRING,CMD,TYPE> *      { RET(INVALID); }
     */
 
     END:
