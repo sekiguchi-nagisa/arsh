@@ -36,7 +36,7 @@ struct Deleter {
     }
 };
 
-typedef std::unique_ptr<char, Deleter> StrWrapper;
+using StrWrapper = std::unique_ptr<char, Deleter>;
 
 /**
  * line is not nullptr
