@@ -1,0 +1,105 @@
+#!/usr/bin/env ydsh
+
+let name = "master-tpeg"
+
+
+## check argument
+assert($# == 1)
+
+let dir = $1
+assert(test -d $dir)
+
+let orig_tex = "$dir/tpeg.tex"
+assert(test -f $orig_tex)
+
+let orig_bib = "$dir/tpeg.bib"
+assert(test -f $orig_bib)
+
+
+## update bibtex
+cp $orig_bib ./$name.bib
+
+
+## update tex
+
+let tex = "./$name.tex"
+echo > $tex
+
+
+format() {
+var inst = $false
+var ack = $false
+while(read -r -f '') {
+    var l = $REPLY
+    if $inst { 
+        if $l.startsWith('}') { $inst = $false; }
+        continue
+    }
+    if $l.startsWith('\documentclass') {
+        echo '\documentclass[12pt,oneside]{report}' >> $tex
+        echo >> $tex
+        echo '\usepackage{suthesis-2e}' >> $tex
+        continue
+    }
+    if $l.startsWith('\author') || $l.startsWith('\title') {
+        continue
+    }
+    if $l.startsWith('\inst') { $inst = $true; continue; }
+    if $l.startsWith('\begin{document}') {
+        echo $l >> $tex
+        echo >> $tex
+        echo '\title{Typed Parsing Expression Grammar}' >> $tex
+        echo '\author{Nagisa Sekiguchi}' >> $tex
+        echo '\dept{Division of Physics, Electrical and Computer Engineering}' >> $tex
+        echo '\principaladviser{Kimio Kuramitsu}' >> $tex
+        continue
+    }
+    if $l.startsWith('\begin{abstract}') {
+        echo '\beforepreface' >> $tex
+        echo '\tablespagefalse' >> $tex
+        echo '\prefacesection{Abstract}' >> $tex
+        continue
+    }
+    if $l.startsWith('\end{abstract}') {
+        echo >> $tex
+        echo '\prefacesection{Acknowledgements}' >> $tex
+        echo '%% need to write' >> $tex
+        echo '\afterpreface' >> $tex
+        continue        
+    }
+    if $l.startsWith('\maketitle') {
+        continue
+    }
+    if $l.startsWith('\section') {
+        echo $l | sed -e 's/\section/chapter/g' >> $tex
+        continue
+    }
+    if $l.startsWith('\subsection') {
+        echo $l | sed -e 's/\subsection/section/g' >> $tex
+        continue
+    }
+    if $l.startsWith('\subsubsection') {
+        echo $l | sed -e 's/\subsubsection/subsection/g' >> $tex
+        continue
+    }
+    if $l.startsWith('\bibliographystyle') {
+        echo '\bibliographystyle{latex8}' >> $tex
+        $ack = $false
+        continue
+    }
+    if $l.startsWith('\bibliography{') {
+        echo '\bibliography{'$name'}' >> $tex
+        $ack = $false
+        continue
+    }
+    if $l.startsWith('\subparagraph*{Acknowledgements}') {
+        $ack = $true
+    }
+    if $ack {
+        continue
+    }
+    echo $l >> $tex
+}
+}
+
+cat $orig_tex | format
