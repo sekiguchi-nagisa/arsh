@@ -7,7 +7,11 @@ assert $$ == $PID
 assert $PID != $PPID
 
 child() {
-    return $$ == $PPID && $$ != $PID ? 0 : 1
+    if $$ == $PPID && $$ != $PID {
+        return 0
+    } else {
+        return 1
+    }
 }
 
 assert child

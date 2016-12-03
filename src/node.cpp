@@ -811,27 +811,6 @@ void CondOpNode::accept(NodeVisitor &visitor) {
     visitor.visitCondOpNode(*this);
 }
 
-// #########################
-// ##     TernaryNode     ##
-// #########################
-
-TernaryNode::~TernaryNode() {
-    delete this->condNode;
-    delete this->leftNode;
-    delete this->rightNode;
-}
-
-void TernaryNode::dump(NodeDumper &dumper) const {
-    DUMP_PTR(condNode);
-    DUMP_PTR(leftNode);
-    DUMP_PTR(rightNode);
-}
-
-void TernaryNode::accept(NodeVisitor &visitor) {
-    visitor.visitTernaryNode(*this);
-}
-
-
 // ########################
 // ##     CmdArgNode     ##
 // ########################

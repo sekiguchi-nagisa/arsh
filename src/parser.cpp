@@ -930,7 +930,7 @@ std::unique_ptr<Node> Parser::parse_assignmentExpression() {
             break;
         }
         default:
-            node = this->parse_binaryExpression(std::move(node), getPrecedence(TERNARY));
+            node = this->parse_binaryExpression(std::move(node), getPrecedence(COND_OR));
             break;
         }
     }
@@ -944,7 +944,7 @@ std::unique_ptr<Node> Parser::parse_expression() {
         return uniquify<ThrowNode>(startPos, this->parse_expression().release());
     }
     return this->parse_binaryExpression(
-            this->parse_unaryExpression(), getPrecedence(TERNARY));
+            this->parse_unaryExpression(), getPrecedence(COND_OR));
 }
 
 std::unique_ptr<Node> Parser::parse_binaryExpression(std::unique_ptr<Node> &&leftNode,
@@ -963,14 +963,6 @@ std::unique_ptr<Node> Parser::parse_binaryExpression(std::unique_ptr<Node> &&lef
             this->expect(IS, false);
             std::unique_ptr<TypeNode> type(this->parse_typeName());
             node = uniquify<InstanceOfNode>(node.release(), type.release());
-            break;
-        }
-        case TERNARY: {
-            this->consume();
-            auto tleftNode(this->parse_expression());
-            this->expectAndChangeMode(COLON, yycSTMT);
-            auto trightNode(this->parse_expression());
-            node = uniquify<TernaryNode>(node.release(), tleftNode.release(), trightNode.release());
             break;
         }
         default: {

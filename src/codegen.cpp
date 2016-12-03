@@ -646,22 +646,6 @@ void ByteCodeGenerator::visitCondOpNode(CondOpNode &node) {
     this->markLabel(mergeLabel);
 }
 
-void ByteCodeGenerator::visitTernaryNode(TernaryNode &node) {
-    auto elseLabel = makeIntrusive<Label>();
-    auto mergeLabel = makeIntrusive<Label>();
-
-    this->visit(*node.getCondNode());
-    this->writeBranchIns(elseLabel);
-    this->visit(*node.getLeftNode());
-    this->writeJumpIns(mergeLabel);
-
-    this->markLabel(elseLabel);
-    this->visit(*node.getRightNode());
-
-    this->markLabel(mergeLabel);
-}
-
-
 void ByteCodeGenerator::visitCmdNode(CmdNode &node) {
     this->visit(*node.getNameNode());
 
