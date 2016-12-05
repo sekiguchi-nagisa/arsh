@@ -156,6 +156,8 @@ struct DSState {
 
     decltype(std::chrono::system_clock::now()) baseTime;
 
+    DSHistory history;
+
     NON_COPYABLE(DSState);
 
     DSState();

@@ -13,6 +13,9 @@ type-alias Uint Uint32
 var IFS = $' \t\n'
 var PS1 = '\s-\v\$ '
 var PS2 = '> '
+var HISTFILE = '~/.ydsh_history'
+var HISTSIZE = 500u
+var HISTFILESIZE = 1000u
 
 # define boolean constant
 let TRUE = :

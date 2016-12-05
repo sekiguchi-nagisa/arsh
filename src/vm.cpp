@@ -44,6 +44,14 @@ static std::string initLogicalWorkingDir() {
     }
 }
 
+static DSHistory initHistory() {
+    return DSHistory {
+            .capacity = 0,
+            .size = 0,
+            .data = nullptr,
+    };
+}
+
 DSState::DSState() :
         pool(), symbolTable(),
         trueObj(new Boolean_Object(this->pool.getBooleanType(), true)),
@@ -56,7 +64,8 @@ DSState::DSState() :
         option(DS_OPTION_ASSERT), IFS_index(0),
         codeStack(), pipelineEvaluator(nullptr),
         pathCache(), terminationHook(nullptr), lineNum(1), prompt(),
-        hook(nullptr), logicalWorkingDir(initLogicalWorkingDir()), baseTime(std::chrono::system_clock::now()) { }
+        hook(nullptr), logicalWorkingDir(initLogicalWorkingDir()),
+        baseTime(std::chrono::system_clock::now()), history(initHistory()) { }
 
 void DSState::expandLocalStack() {
     const unsigned int needSize = this->stackTopIndex;

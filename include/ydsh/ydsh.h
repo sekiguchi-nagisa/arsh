@@ -260,6 +260,69 @@ void DSState_complete(const DSState *st, const char *buf, size_t cursor, DSCandi
  */
 void DSCandidates_release(DSCandidates *c);
 
+/* for history */
+#define DS_HISTSIZE_LIMIT       ((unsigned int) 4096)
+#define DS_HISTFILESIZE_LIMIT   ((unsigned int) 4096)
+
+typedef struct {
+    unsigned int capacity;
+    unsigned int size;
+    char **data;
+} DSHistory;
+
+/**
+ * get history view
+ * @param st
+ * @return
+ * read only history view
+ */
+const DSHistory *DSState_history(const DSState *st);
+
+/**
+ * synchronize history size with HISTSIZE.
+ * if HISTSIZE is not defined or not a number, do nothing.
+ * @param st
+ */
+void DSState_syncHistorySize(DSState *st);
+
+/**
+ * update history by index.
+ * if index >= DSHistory.size, do nothing.
+ * @param st
+ * @param index
+ * @param str
+ */
+void DSState_setHistoryAt(DSState *st, unsigned int index, const char *str);
+
+/**
+ *
+ * @param st
+ * @param str
+ */
+void DSState_addHistory(DSState *st, const char *str);
+
+/**
+ * delete history.
+ * if index >= DSHistory.size, do nothing.
+ * @param st
+ * @param index
+ */
+void DSState_deleteHistoryAt(DSState *st, unsigned int index);
+
+/**
+ * clear history.
+ * @param st
+ */
+void DSState_clearHistory(DSState *st);
+
+void DSState_loadHistory(DSState *st);
+
+/**
+ * save history to file specified by HISTFILE.
+ * @param st
+ */
+void DSState_saveHistory(const DSState *st);
+
 
 #ifdef __cplusplus
 }

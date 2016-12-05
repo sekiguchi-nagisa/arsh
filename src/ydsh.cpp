@@ -20,6 +20,7 @@
 #include <csignal>
 #include <algorithm>
 #include <cstdlib>
+#include <fstream>
 
 #include <unistd.h>
 #include <sys/utsname.h>
@@ -426,13 +427,7 @@ static void loadEmbeddedScript(DSState *state) {
     state->updateExitStatus(0);
 }
 
-// ###################################
-// ##     public api of DSState     ##
-// ###################################
-
-DSState *DSState_create() {
-    DSState *ctx = new DSState();
-
+static void initEnv() {
     // set locale
     setlocale(LC_ALL, "");
     setlocale(LC_MESSAGES, "C");
@@ -448,14 +443,20 @@ DSState *DSState_create() {
         perror("getpwuid failed\n");
         exit(1);
     }
-    if(getenv(ENV_HOME) == nullptr) {
-        setenv(ENV_HOME, pw->pw_dir, 1);
-    }
+    setenv(ENV_HOME, pw->pw_dir, 0);
 
     // set LOGNAME
-    if(getenv(ENV_LOGNAME) == nullptr) {
-        setenv(ENV_LOGNAME, pw->pw_name, 1);
-    }
+    setenv(ENV_LOGNAME, pw->pw_name, 0);
+}
+
+// ###################################
+// ##     public api of DSState     ##
+// ###################################
+
+DSState *DSState_create() {
+    initEnv();
+
+    DSState *ctx = new DSState();
 
     initBuiltinVar(ctx);
     loadEmbeddedScript(ctx);
@@ -673,4 +674,84 @@ void DSCandidates_release(DSCandidates *c) {
             c->values = nullptr;
         }
     }
+}
+
+const DSHistory *DSState_history(const DSState *st) {
+    return &st->history;
+}
+
+static void resizeHistory(DSHistory &history, unsigned int cap) {
+    if(cap == history.capacity) {
+        return;
+    }
+
+    if(cap < history.size) {
+        // if cap < history.size, free remain entry
+        for(unsigned int i = cap; i < history.size; i++) {
+            free(history.data);
+        }
+        history.size = cap;
+    }
+
+    void *ret = realloc(history.data, sizeof(char *) * cap);
+    if(cap == 0 || ret != nullptr) {
+        history.capacity = cap;
+        history.data = reinterpret_cast<char **>(ret);
+    }
+}
+
+void DSState_syncHistorySize(DSState *st) {
+    unsigned int index = st->symbolTable.lookupHandle(VAR_HISTSIZE)->getFieldIndex();
+    unsigned int cap = typeAs<Int_Object>(st->getGlobal(index))->getValue();
+    if(cap > DS_HISTSIZE_LIMIT) {
+        cap = DS_HISTSIZE_LIMIT;
+    }
+    resizeHistory(st->history, cap);
+}
+
+void DSState_setHistoryAt(DSState *st, unsigned int index, const char *str) {
+    if(index < st->history.size) {
+        free(st->history.data[index]);
+        st->history.data[index] = strdup(str);
+    }
+}
+
+void DSState_addHistory(DSState *st, const char *str) {
+    if(st->history.capacity > 0) {
+        if(st->history.size == st->history.capacity) {
+            DSState_deleteHistoryAt(st, 0);
+        }
+        st->history.data[st->history.size++] = strdup(str);
+    }
+}
+
+void DSState_deleteHistoryAt(DSState *st, unsigned int index) {
+    if(index < st->history.size) {
+        free(st->history.data[index]);
+        memmove(st->history.data + index, st->history.data + index + 1,
+                sizeof(char *) * (st->history.size - index - 1));
+        st->history.size--;
+    }
+}
+
+void DSState_clearHistory(DSState *st) {
+    resizeHistory(st->history, 0);
+}
+
+void DSState_loadHistory(DSState *st) {
+    DSState_syncHistorySize(st);
+    if(st->history.capacity > 0) {
+        unsigned int index = st->symbolTable.lookupHandle(VAR_HISTFILE)->getFieldIndex();
+        const char *path = typeAs<String_Object>(st->getGlobal(index))->getValue();
+        std::ifstream input(path);
+        if(input) {
+            for(std::string line; st->history.size < st->history.capacity && std::getline(input, line);) {
+                st->history.data[st->history.size++] = strdup(line.c_str());
+            }
+        }
+    }
+}
+
+void DSState_saveHistory(const DSState *) {
+
 }

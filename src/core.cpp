@@ -62,7 +62,7 @@ const char *FilePathCache::searchPath(const char *cmdName, unsigned char option)
     // get PATH
     const char *pathPrefix = getenv(ENV_PATH);
     if(pathPrefix == nullptr || hasFlag(option, USE_DEFAULT_PATH)) {
-        pathPrefix = VAR_DEFAULT_PATH;
+        pathPrefix = VAL_DEFAULT_PATH;
     }
 
     // resolve path

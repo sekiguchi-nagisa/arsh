@@ -38,8 +38,9 @@ constexpr const char *VAR_STDERR = "STDERR";
 constexpr const char *VAR_PS1 = "PS1";
 constexpr const char *VAR_PS2 = "PS2";
 
-constexpr const char *VAR_DEFAULT_PATH = "/bin:/usr/bin:/usr/local/bin";
-
+constexpr const char *VAR_HISTFILE = "HISTFILE";
+constexpr const char *VAR_HISTSIZE = "HISTSIZE";
+constexpr const char *VAR_HISTFILESIZE = "HISTFILESIZE";
 
 // =====  magic method  =====
 
@@ -95,6 +96,10 @@ constexpr const char *ENV_OLDPWD = "OLDPWD";
 constexpr const char *ENV_PATH = "PATH";
 constexpr const char *ENV_SHLVL = "SHLVL";
 constexpr const char *ENV_TERM = "TERM";
+
+// =====  default value  =====
+
+constexpr const char *VAL_DEFAULT_PATH = "/bin:/usr/bin:/usr/local/bin";
 
 } // namespace ydsh
 
