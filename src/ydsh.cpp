@@ -738,12 +738,15 @@ void DSState_clearHistory(DSState *st) {
     resizeHistory(st->history, 0);
 }
 
+static const char *histFile(const DSState *st) {
+    unsigned int index = st->symbolTable.lookupHandle(VAR_HISTFILE)->getFieldIndex();
+    return typeAs<String_Object>(st->getGlobal(index))->getValue();
+}
+
 void DSState_loadHistory(DSState *st) {
     DSState_syncHistorySize(st);
     if(st->history.capacity > 0) {
-        unsigned int index = st->symbolTable.lookupHandle(VAR_HISTFILE)->getFieldIndex();
-        const char *path = typeAs<String_Object>(st->getGlobal(index))->getValue();
-        std::ifstream input(path);
+        std::ifstream input(histFile(st));
         if(input) {
             for(std::string line; st->history.size < st->history.capacity && std::getline(input, line);) {
                 st->history.data[st->history.size++] = strdup(line.c_str());
@@ -752,6 +755,33 @@ void DSState_loadHistory(DSState *st) {
     }
 }
 
-void DSState_saveHistory(const DSState *) {
+void DSState_saveHistory(const DSState *st) {
+    auto handle = st->symbolTable.lookupHandle(VAR_HISTFILESIZE);
+    const unsigned int histFileSize = typeAs<Int_Object>(st->getGlobal(handle->getFieldIndex()))->getValue();
+    const char *path = histFile(st);
 
+    std::vector<std::string> buf(histFileSize);
+    unsigned int index = 0;
+    for(; index < histFileSize && index < st->history.size; index++) {
+        buf[index] = st->history.data[index];
+    }
+
+    // read previous history file
+    if(index < histFileSize) {
+        std::ifstream input(path);
+        if(input) {
+            for(std::string line; index < histFileSize && std::getline(input, line); index++) {
+                buf[index] = line;
+            }
+        }
+    }
+
+    // update history file
+    FILE *fp = fopen(path, "w");
+    if(fp != nullptr) {
+        for(auto &e : buf) {
+            fprintf(fp, "%s\n", e.c_str());
+        }
+        fclose(fp);
+    }
 }
