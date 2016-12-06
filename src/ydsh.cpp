@@ -779,8 +779,8 @@ void DSState_saveHistory(const DSState *st) {
     // update history file
     FILE *fp = fopen(path, "w");
     if(fp != nullptr) {
-        for(auto &e : buf) {
-            fprintf(fp, "%s\n", e.c_str());
+        for(unsigned int i = 0; i < index; i++) {
+            fprintf(fp, "%s\n", buf[i].c_str());
         }
         fclose(fp);
     }
