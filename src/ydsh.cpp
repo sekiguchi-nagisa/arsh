@@ -716,12 +716,23 @@ void DSState_setHistoryAt(DSState *st, unsigned int index, const char *str) {
     }
 }
 
+static void updateHistCmd(DSState *st, unsigned int offset, bool inc) {
+    unsigned int value = typeAs<Int_Object>(st->getGlobal(toIndex(BuiltinVarOffset::HISTCMD)))->getValue();
+    if(inc) {
+        value += offset;
+    } else {
+        value -= offset;
+    }
+    st->setGlobal(toIndex(BuiltinVarOffset::HISTCMD), DSValue::create<Int_Object>(st->pool.getUint32Type(), value));
+}
+
 void DSState_addHistory(DSState *st, const char *str) {
     if(st->history.capacity > 0) {
         if(st->history.size == st->history.capacity) {
             DSState_deleteHistoryAt(st, 0);
         }
         st->history.data[st->history.size++] = strdup(str);
+        updateHistCmd(st, 1, true);
     }
 }
 
@@ -731,10 +742,12 @@ void DSState_deleteHistoryAt(DSState *st, unsigned int index) {
         memmove(st->history.data + index, st->history.data + index + 1,
                 sizeof(char *) * (st->history.size - index - 1));
         st->history.size--;
+        updateHistCmd(st, 1, false);
     }
 }
 
 void DSState_clearHistory(DSState *st) {
+    updateHistCmd(st, st->history.size, false);
     resizeHistory(st->history, 0);
 }
 
@@ -748,9 +761,12 @@ void DSState_loadHistory(DSState *st) {
     if(st->history.capacity > 0) {
         std::ifstream input(histFile(st));
         if(input) {
+            unsigned int count = 0;
             for(std::string line; st->history.size < st->history.capacity && std::getline(input, line);) {
                 st->history.data[st->history.size++] = strdup(line.c_str());
+                count++;
             }
+            updateHistCmd(st, count, true);
         }
     }
 }
