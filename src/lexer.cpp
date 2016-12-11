@@ -36,8 +36,6 @@ const char *toModeName(LexerMode mode) {
         return "CMD";
     case yycDSTRING:
         return "DSTRING";
-    default:
-        return nullptr;
     }
 }
 
@@ -65,13 +63,6 @@ unsigned int SourceInfo::getLineNum(unsigned int pos) const {
 // ###################
 // ##     Lexer     ##
 // ###################
-
-void Lexer::setPos(unsigned int pos) {
-    if(this->buf + pos > this->limit) {
-        fatal("too large position: %u\n", pos);
-    }
-    this->cursor = this->buf + pos;
-}
 
 bool Lexer::singleToString(Token token, std::string &out) const {
     if(this->startsWith(token, '$')) {
@@ -301,11 +292,7 @@ long Lexer::toInt64(Token token, int &status) const {
         str[token.size] = '\0';
 
         long value = convertToInt64(str, status, true);
-        if(status == -1) {
-            fatal("cannot covert to int: %s\n", str);
-        } else if(status == -2) {
-            fatal("found illegal character in num: %s\n", str);
-        }
+        assert(status > -1);
         return value;
     }
     return static_cast<long>(this->toUint64(token, status));
@@ -321,11 +308,7 @@ unsigned long Lexer::toUint64(Token token, int &status) const {
     str[token.size] = '\0';
 
     unsigned long value = convertToUint64(str, status, true);
-    if(status == -1) {
-        fatal("cannot covert to int: %s\n", str);
-    } else if(status == -2) {
-        fatal("found illegal character in num: %s\n", str);
-    }
+    assert(status > -1);
     return value;
 }
 
@@ -339,11 +322,7 @@ double Lexer::toDouble(Token token, int &status) const {
     str[token.size] = '\0';
 
     double value = convertToDouble(str, status);
-    if(status == -1) {
-        fatal("cannot convert to double: %s\n", str);
-    } else if(status == -2) {
-        fatal("found illegal character in num: %s\n", str);
-    }
+    assert(status > -1);
     return value;
 }
 

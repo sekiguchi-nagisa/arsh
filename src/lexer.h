@@ -146,7 +146,10 @@ public:
 
     ~Lexer() = default;
 
-    void setPos(unsigned int pos);
+    void setPos(unsigned int pos) {
+        assert(this->buf + pos <= this->limit);
+        this->cursor = this->buf + pos;
+    }
 
     const SourceInfoPtr &getSourceInfoPtr() const {
         return this->srcInfoPtr;
