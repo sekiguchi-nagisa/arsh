@@ -37,6 +37,7 @@ const char *toModeName(LexerMode mode) {
     case yycDSTRING:
         return "DSTRING";
     }
+    return nullptr; // normally unreachable, but gcc requires this return statement.
 }
 
 // ########################
