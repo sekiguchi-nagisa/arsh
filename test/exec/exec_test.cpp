@@ -110,19 +110,14 @@ int parse(const char *src, T&& ...args) {
     return parse(str, std::forward<T>(args)...);
 }
 
-
-
-class ExecTest : public ::testing::TestWithParam<std::string> {
-private:
+class TempFileFactory {
+protected:
     std::string tmpFileName;
-    std::string targetName;
 
-public:
-    ExecTest() : tmpFileName(), targetName() { }
+    TempFileFactory() = default;
+    virtual ~TempFileFactory() = default;
 
-    virtual ~ExecTest() = default;
-
-    virtual void SetUp() {
+    void createTemp() {
         const char *tmpdir = getenv("TMPDIR");
         if(tmpdir == nullptr) {
             tmpdir = "/tmp";
@@ -134,11 +129,29 @@ public:
         int fd = mkstemp(name);
         close(fd);
         this->tmpFileName = name;
+    }
+
+    void deleteTemp() {
+        remove(this->tmpFileName.c_str());
+    }
+};
+
+class ExecTest : public ::testing::TestWithParam<std::string>, public TempFileFactory {
+private:
+    std::string targetName;
+
+public:
+    ExecTest() : targetName() { }
+
+    virtual ~ExecTest() = default;
+
+    virtual void SetUp() {
+        this->createTemp();
         this->targetName = this->GetParam();
     }
 
     virtual void TearDown() {
-        remove(this->tmpFileName.c_str());
+        this->deleteTemp();
     }
 
     virtual const std::string &getTmpFileName() {
