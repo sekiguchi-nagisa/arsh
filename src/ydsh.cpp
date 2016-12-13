@@ -328,12 +328,6 @@ static void initBuiltinVar(DSState *state) {
     bindVariable(state, "PPID", DSValue::create<Int_Object>(state->pool.getUint32Type(), getppid()));
 
     /**
-     * next histroy number.
-     * must be Int_Object
-     */
-    bindVariable(state, "HISTCMD", DSValue::create<Int_Object>(state->pool.getUint32Type(), 1));
-
-    /**
      * must be Long_Object.
      */
     bindVariable(state, "SECONDS", DSValue::create<Long_Object>(state->pool.getUint64Type(), 0), FieldAttribute::SECONDS);
@@ -717,13 +711,14 @@ void DSState_setHistoryAt(DSState *st, unsigned int index, const char *str) {
 }
 
 static void updateHistCmd(DSState *st, unsigned int offset, bool inc) {
-    unsigned int value = typeAs<Int_Object>(st->getGlobal(toIndex(BuiltinVarOffset::HISTCMD)))->getValue();
+    const unsigned int index = st->symbolTable.lookupHandle(VAR_HISTCMD)->getFieldIndex();
+    unsigned int value = typeAs<Int_Object>(st->getGlobal(index))->getValue();
     if(inc) {
         value += offset;
     } else {
         value -= offset;
     }
-    st->setGlobal(toIndex(BuiltinVarOffset::HISTCMD), DSValue::create<Int_Object>(st->pool.getUint32Type(), value));
+    st->setGlobal(index, DSValue::create<Int_Object>(st->pool.getUint32Type(), value));
 }
 
 void DSState_addHistory(DSState *st, const char *str) {

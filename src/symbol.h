@@ -38,6 +38,7 @@ constexpr const char *VAR_STDERR = "STDERR";
 constexpr const char *VAR_PS1 = "PS1";
 constexpr const char *VAR_PS2 = "PS2";
 
+constexpr const char *VAR_HISTCMD = "HISTCMD";
 constexpr const char *VAR_HISTFILE = "HISTFILE";
 constexpr const char *VAR_HISTSIZE = "HISTSIZE";
 constexpr const char *VAR_HISTFILESIZE = "HISTFILESIZE";
