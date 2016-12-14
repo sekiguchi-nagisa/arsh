@@ -1253,7 +1253,7 @@ static int builtin_read(DSState &state, const int argc, char *const *argv) {  //
 
     // check ifs
     if(ifs == nullptr) {
-        ifs = getIFS(state);
+        ifs = typeAs<String_Object>(getGlobal(state, toIndex(BuiltinVarOffset::IFS)))->getValue();
     }
 
     // clear old variable before read

@@ -49,6 +49,7 @@ enum class BuiltinVarOffset : unsigned int {
     PID,            // PID (current process)
     PPID,           // PPID
     SECONDS,        // SECONDS
+    IFS,            // IFS
     EXIT_STATUS,    // ?
     SHELL_PID,      // $
     ARGS,           // @

@@ -333,6 +333,12 @@ static void initBuiltinVar(DSState *state) {
     bindVariable(state, "SECONDS", DSValue::create<Long_Object>(state->pool.getUint64Type(), 0), FieldAttribute::SECONDS);
 
     /**
+     * for internal field splitting.
+     * must be String_Object.
+     */
+    bindVariable(state, "IFS", DSValue::create<String_Object>(state->pool.getStringType(), " \t\n"), FieldAttributes());
+
+    /**
      * contains exit status of most recent executed process. ($?)
      * must be Int_Object
      */

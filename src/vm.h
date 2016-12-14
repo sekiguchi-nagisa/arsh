@@ -121,11 +121,6 @@ struct DSState {
     flag32_set_t option;
 
     /**
-     * for field splitting (read command, command substitution)
-     */
-    unsigned int IFS_index;
-
-    /**
      * contains currently evaluating code.
      */
     std::vector<const DSCode *> codeStack;

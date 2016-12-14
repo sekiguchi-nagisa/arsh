@@ -61,8 +61,7 @@ DSState::DSState() :
         callStack(new DSValue[DEFAULT_STACK_SIZE]),
         callStackSize(DEFAULT_STACK_SIZE), globalVarSize(0),
         stackTopIndex(0), stackBottomIndex(0), localVarOffset(0), pc_(0),
-        option(DS_OPTION_ASSERT), IFS_index(0),
-        codeStack(), pipelineEvaluator(nullptr),
+        option(DS_OPTION_ASSERT), codeStack(), pipelineEvaluator(nullptr),
         pathCache(), terminationHook(nullptr), lineNum(1), prompt(),
         hook(nullptr), logicalWorkingDir(initLogicalWorkingDir()),
         baseTime(std::chrono::system_clock::now()), history(initHistory()) { }
@@ -457,7 +456,7 @@ static void forkAndCapture(bool isStr, DSState &state) {
 
             obj = DSValue::create<String_Object>(state.pool.getStringType(), std::move(str));
         } else {    // capture stdout as String Array
-            const char *ifs = getIFS(state);
+            const char *ifs = typeAs<String_Object>(getGlobal(state, toIndex(BuiltinVarOffset::IFS)))->getValue();
             unsigned int skipCount = 1;
 
             static const int bufSize = 256;

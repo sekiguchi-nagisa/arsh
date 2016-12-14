@@ -10,7 +10,6 @@ if not(check_env PATH) {
 type-alias Int Int32
 type-alias Uint Uint32
 
-var IFS = $' \t\n'
 var PS1 = '\s-\v\$ '
 var PS2 = '> '
 let HISTCMD = 1u

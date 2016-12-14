@@ -161,15 +161,6 @@ const DSValue &getEmptyStrObj(const DSState &st) {
     return st.emptyStrObj;
 }
 
-const char *getIFS(DSState &st) {
-    if(st.IFS_index == 0) {
-        auto handle = st.symbolTable.lookupHandle("IFS");
-        st.IFS_index = handle->getFieldIndex();
-        assert(handle != nullptr);
-    }
-    return typeAs<String_Object>(st.getGlobal(st.IFS_index))->getValue();
-}
-
 void setLocal(DSState &st, unsigned int index, const DSValue &obj) {
     st.setLocal(index, obj);
 }
