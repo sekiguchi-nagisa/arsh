@@ -5,7 +5,8 @@
 #include <ydsh/ydsh.h>
 #include <misc/files.h>
 #include <directive.h>
-#include <config.h>
+
+#include "../test_common.hpp"
 
 
 #ifndef EXEC_TEST_DIR
@@ -110,32 +111,6 @@ int parse(const char *src, T&& ...args) {
     return parse(str, std::forward<T>(args)...);
 }
 
-class TempFileFactory {
-protected:
-    std::string tmpFileName;
-
-    TempFileFactory() = default;
-    virtual ~TempFileFactory() = default;
-
-    void createTemp() {
-        const char *tmpdir = getenv("TMPDIR");
-        if(tmpdir == nullptr) {
-            tmpdir = "/tmp";
-        }
-        unsigned int size = 512;
-        char name[size];
-        snprintf(name, size, "%s/exec_test_tmpXXXXXX", tmpdir);
-
-        int fd = mkstemp(name);
-        close(fd);
-        this->tmpFileName = name;
-    }
-
-    void deleteTemp() {
-        remove(this->tmpFileName.c_str());
-    }
-};
-
 class ExecTest : public ::testing::TestWithParam<std::string>, public TempFileFactory {
 private:
     std::string targetName;
@@ -218,180 +193,41 @@ public:
 };
 
 TEST_P(ExecTest, baseTest) {
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->doTest();
-    });
+    SCOPED_TRACE("");
+    ASSERT_NO_FATAL_FAILURE(this->doTest());
 }
 
 INSTANTIATE_TEST_CASE_P(ExecTest, ExecTest, ::testing::ValuesIn(getFileList(EXEC_TEST_DIR, true)));
 
 
-void addArg(std::vector<char *> &) {
-}
-
-template <typename... T>
-void addArg(std::vector<char *> &out, const char *first, T ...rest) {
-    out.push_back(const_cast<char *>(first));
-    addArg(out, rest...);
-}
-
-template <typename... T>
-std::unique_ptr<char *[]> make_argv(const char *name, T ...args) {
-    std::vector<char *> out;
-    addArg(out, name, args...);
-    unsigned int size = out.size();
-    std::unique_ptr<char *[]> ptr(new char*[size + 1]);
-    for(unsigned int i = 0; i < size; i++) {
-        ptr[i] = out[i];
-    }
-    ptr[size] = nullptr;
-    return ptr;
-}
-
 TEST(Base, case1) {
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
+    SCOPED_TRACE("");
 
-        std::string line("type=3 lineNum=1 kind=SystemError");
-        unsigned int type;
-        unsigned int lineNum;
-        std::string kind;
+    std::string line("type=3 lineNum=1 kind=SystemError");
+    unsigned int type;
+    unsigned int lineNum;
+    std::string kind;
 
-        int ret = parse(line, "type", "=", type, "lineNum", "=", lineNum, "kind", "=", kind);
-        ASSERT_EQ(0, ret);
-        ASSERT_EQ(3u, type);
-        ASSERT_EQ(1u, lineNum);
-        ASSERT_EQ("SystemError", kind);
-    });
+    int ret = parse(line, "type", "=", type, "lineNum", "=", lineNum, "kind", "=", kind);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ret));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, type));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, lineNum));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("SystemError", kind));
 }
 
 TEST(Base, case2) {
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-
-        std::string line("type=0 lineNum=0 kind=");
-        unsigned int type;
-        unsigned int lineNum;
-        std::string kind;
-
-        int ret = parse(line, "type", "=", type, "lineNum", "=", lineNum, "kind", "=", kind);
-        ASSERT_EQ(0, ret);
-        ASSERT_EQ(0u, type);
-        ASSERT_EQ(0u, lineNum);
-        ASSERT_EQ("", kind);
-    });
-}
-
-
-TEST(BuiltinExecTest, case1) {
     SCOPED_TRACE("");
 
-    DSState *state = DSState_create();
+    std::string line("type=0 lineNum=0 kind=");
+    unsigned int type;
+    unsigned int lineNum;
+    std::string kind;
 
-    int ret = DSState_exec(state, make_argv("echo", "hello").get());
+    int ret = parse(line, "type", "=", type, "lineNum", "=", lineNum, "kind", "=", kind);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ret));
-
-    DSState_delete(&state);
-}
-
-TEST(BuiltinExecTest, case2) {
-    SCOPED_TRACE("");
-
-    DSState *state = DSState_create();
-
-    int ret = DSState_exec(state, make_argv("fheruifh", "hello").get());
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, ret));
-
-    DSState_delete(&state);
-}
-
-TEST(API, case1) {
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-
-        ASSERT_EQ((unsigned int)X_INFO_MAJOR_VERSION, DSState_majorVersion());
-        ASSERT_EQ((unsigned int)X_INFO_MINOR_VERSION, DSState_minorVersion());
-        ASSERT_EQ((unsigned int)X_INFO_PATCH_VERSION, DSState_patchVersion());
-    });
-}
-
-TEST(API, case2) {
-    SCOPED_TRACE("");
-
-    DSState *state = DSState_create();
-
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, DSState_lineNum(state)));
-
-    DSState_eval(state, nullptr, "12 + 32\n $true\n", nullptr);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, DSState_lineNum(state)));
-
-    DSState_setLineNum(state, 49);
-    DSState_eval(state, nullptr, "23", nullptr);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(50u, DSState_lineNum(state)));
-
-    DSState_delete(&state);
-}
-
-TEST(API, case3) {
-    SCOPED_TRACE("");
-
-    DSState *state = DSState_create();
-    DSState_eval(state, nullptr, "$PS1 = 'hello>'; $PS2 = 'second>'", nullptr);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("hello>", DSState_prompt(state, 1)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("second>", DSState_prompt(state, 2)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("", DSState_prompt(state, 5)));
-
-    DSState_delete(&state);
-}
-
-TEST(API, case4) {
-    SCOPED_TRACE("");
-
-    // null arguments
-    DSState_complete(nullptr, nullptr, 1, nullptr);
-
-    DSState *state = DSState_create();
-    DSCandidates c;
-    DSState_complete(state, "~", 1, &c);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(c.values != nullptr));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(c.size > 0));
-
-    DSCandidates_release(&c);
-    DSState_delete(&state);
-}
-
-TEST(API, case5) {
-    SCOPED_TRACE("");
-
-    DSState *state = DSState_create();
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_OPTION_ASSERT, DSState_option(state)));
-
-    DSState_setOption(state, DS_OPTION_DUMP_CODE);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_OPTION_ASSERT | DS_OPTION_DUMP_CODE, DSState_option(state)));
-
-    DSState_unsetOption(state, DS_OPTION_ASSERT);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_OPTION_DUMP_CODE, DSState_option(state)));
-
-    DSState_delete(&state);
-}
-
-TEST(PID, case1) {
-    SCOPED_TRACE("");
-
-    pid_t pid = getpid();
-    DSState *state = DSState_create();
-    std::string src("assert($$ == ");
-    src += std::to_string(pid);
-    src += "u)";
-
-    DSError e;
-    int s = DSState_eval(state, nullptr, src.c_str(), &e);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, s));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind));
-
-    DSError_release(&e);
-    DSState_delete(&state);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, type));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, lineNum));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", kind));
 }
 
 int main(int argc, char **argv) {
