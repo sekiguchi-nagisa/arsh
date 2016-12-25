@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#include <memory>
+
 #include <ydsh/ydsh.h>
 #include <config.h>
 
