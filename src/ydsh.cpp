@@ -688,7 +688,7 @@ static void resizeHistory(DSHistory &history, unsigned int cap) {
     if(cap < history.size) {
         // if cap < history.size, free remain entry
         for(unsigned int i = cap; i < history.size; i++) {
-            free(history.data);
+            free(history.data[i]);
         }
         history.size = cap;
     }
@@ -727,10 +727,17 @@ static void updateHistCmd(DSState *st, unsigned int offset, bool inc) {
     st->setGlobal(index, DSValue::create<Int_Object>(st->pool.getUint32Type(), value));
 }
 
+static void unsafeDeleteHistory(DSHistory &history, unsigned int index) {
+    free(history.data[index]);
+    memmove(history.data + index, history.data + index + 1,
+            sizeof(char *) * (history.size - index - 1));
+    history.size--;
+}
+
 void DSState_addHistory(DSState *st, const char *str) {
     if(st->history.capacity > 0) {
         if(st->history.size == st->history.capacity) {
-            DSState_deleteHistoryAt(st, 0);
+            unsafeDeleteHistory(st->history, 0);
         }
         st->history.data[st->history.size++] = strdup(str);
         updateHistCmd(st, 1, true);
@@ -739,17 +746,16 @@ void DSState_addHistory(DSState *st, const char *str) {
 
 void DSState_deleteHistoryAt(DSState *st, unsigned int index) {
     if(index < st->history.size) {
-        free(st->history.data[index]);
-        memmove(st->history.data + index, st->history.data + index + 1,
-                sizeof(char *) * (st->history.size - index - 1));
-        st->history.size--;
+        unsafeDeleteHistory(st->history, index);
         updateHistCmd(st, 1, false);
     }
 }
 
 void DSState_clearHistory(DSState *st) {
     updateHistCmd(st, st->history.size, false);
-    resizeHistory(st->history, 0);
+    while(st->history.size > 0) {
+        unsafeDeleteHistory(st->history, st->history.size - 1);
+    }
 }
 
 static const char *histFile(const DSState *st) {

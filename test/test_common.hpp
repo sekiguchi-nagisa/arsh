@@ -35,5 +35,6 @@ protected:
     }
 };
 
+#define ASSERT_(F) do { SCOPED_TRACE(""); F; } while(false)
 
 #endif //YDSH_TEST_COMMON_HPP
