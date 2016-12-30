@@ -159,6 +159,11 @@ struct DSState {
 
     ~DSState() {
         delete[] this->callStack;
+
+        for(unsigned int i = 0; i < this->history.size; i++) {
+            free(this->history.data[i]);
+        }
+        free(this->history.data);
     }
 
     DSValue &getPipeline() {
