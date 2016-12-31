@@ -611,7 +611,7 @@ const char *DSState_version() {
 }
 
 const char *DSState_copyright() {
-    return "Copyright (C) 2015-2016 Nagisa Sekiguchi";
+    return "Copyright (C) 2015-2017 Nagisa Sekiguchi";
 }
 
 unsigned int DSState_featureBit() {
