@@ -325,6 +325,114 @@ TEST_F(HistoryTest, clear) {
     ASSERT_(this->assertHistCmd(1));
 }
 
+TEST_F(HistoryTest, resize) {
+    this->setHistSize(10);
+    auto *history = DSState_history(this->state);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(10u, history->capacity));
+
+    this->setHistSize(10);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(10u, history->capacity)); // no change
+
+    this->setHistSize(DS_HISTSIZE_LIMIT + 10);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, history->size));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_HISTSIZE_LIMIT, history->capacity));
+
+    for(unsigned int i = 0; i < 10; i++) {
+        DSState_addHistory(this->state, std::to_string(i).c_str());
+    }
+
+    this->setHistSize(5);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(5u, history->size));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(5u, history->capacity));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("0", history->data[0]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("1", history->data[1]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("2", history->data[2]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("3", history->data[3]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("4", history->data[4]));
+}
+
+TEST_F(HistoryTest, file) {
+    this->setHistSize(10);
+    auto *history = DSState_history(this->state);
+    for(unsigned int i = 0; i < 10; i++) {
+        DSState_addHistory(this->state, std::to_string(i).c_str());
+    }
+
+    this->setHistFileSize(15);
+    /**
+     * 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+     */
+    DSState_saveHistory(this->state);
+    DSState_clearHistory(this->state);
+    DSState_loadHistory(this->state);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(10u, history->size));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(10u, history->capacity));
+
+    for(unsigned int i = 0; i < 10; i++) {
+        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i).c_str(), history->data[i]));
+    }
+
+    for(unsigned int i = 0; i < 5; i++) {
+        DSState_addHistory(this->state, std::to_string(i + 10).c_str());
+    }
+
+    for(unsigned int i = 0; i < 10; i++) {
+        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i + 5).c_str(), history->data[i]));
+    }
+
+    /**
+     * previous hist file content
+     * 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+     *
+     * newly added content
+     * 5, 6, 7, 8, 9, 10, 11, 12, 13, 14
+     *
+     * current hist file content
+     * 5, 6, 7, 8, 9, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14
+     */
+    DSState_saveHistory(this->state);
+    DSState_clearHistory(this->state);
+    this->setHistSize(15);
+    DSState_loadHistory(this->state);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(15u, history->size));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(15u, history->capacity));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("5", history->data[0]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("6", history->data[1]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("7", history->data[2]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("8", history->data[3]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("9", history->data[4]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("5", history->data[5]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("6", history->data[6]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("7", history->data[7]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("8", history->data[8]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("9", history->data[9]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("10", history->data[10]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("11", history->data[11]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("12", history->data[12]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("13", history->data[13]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("14", history->data[14]));
+}
+
+TEST_F(HistoryTest, file2) {
+    this->setHistFileSize(DS_HISTFILESIZE_LIMIT + 10);
+    this->setHistSize(DS_HISTFILESIZE_LIMIT);
+    auto *history = DSState_history(this->state);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_HISTFILESIZE_LIMIT, history->capacity));
+
+    for(unsigned int i = 0; i < DS_HISTFILESIZE_LIMIT; i++) {
+        DSState_addHistory(this->state, std::to_string(i).c_str());
+    }
+    DSState_saveHistory(this->state);
+    DSState_clearHistory(this->state);
+    DSState_loadHistory(this->state);
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_HISTFILESIZE_LIMIT, history->capacity));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_HISTFILESIZE_LIMIT, history->size));
+    for(unsigned int i = 0; i < DS_HISTFILESIZE_LIMIT; i++) {
+        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i).c_str(), history->data[i]));
+    }
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

@@ -778,32 +778,43 @@ void DSState_loadHistory(DSState *st) {
     }
 }
 
+static void appendWithFixedSize(std::vector<std::string> &buf, const unsigned int limit, std::string &&line) {
+    if(buf.size() >= limit) {
+        buf.erase(buf.begin());
+    }
+    buf.push_back(std::move(line));
+}
+
 void DSState_saveHistory(const DSState *st) {
     auto handle = st->symbolTable.lookupHandle(VAR_HISTFILESIZE);
-    const unsigned int histFileSize = typeAs<Int_Object>(st->getGlobal(handle->getFieldIndex()))->getValue();
+    unsigned int histFileSize = typeAs<Int_Object>(st->getGlobal(handle->getFieldIndex()))->getValue();
+    if(histFileSize > DS_HISTFILESIZE_LIMIT) {
+        histFileSize = DS_HISTFILESIZE_LIMIT;
+    }
     const char *path = histFile(st);
 
-    std::vector<std::string> buf(histFileSize);
-    unsigned int index = 0;
-    for(; index < histFileSize && index < st->history.size; index++) {
-        buf[index] = st->history.data[index];
-    }
+    std::vector<std::string> buf;
+    buf.reserve(histFileSize);
 
     // read previous history file
-    if(index < histFileSize) {
+    if(histFileSize > st->history.size) {
         std::ifstream input(path);
         if(input) {
-            for(std::string line; index < histFileSize && std::getline(input, line); index++) {
-                buf[index] = line;
+            for(std::string line; std::getline(input, line);) {
+                appendWithFixedSize(buf, histFileSize, std::move(line));
             }
         }
+    }
+
+    for(unsigned int i = 0; i < st->history.size; i++) {
+        appendWithFixedSize(buf, histFileSize, std::string(st->history.data[i]));
     }
 
     // update history file
     FILE *fp = fopen(path, "w");
     if(fp != nullptr) {
-        for(unsigned int i = 0; i < index; i++) {
-            fprintf(fp, "%s\n", buf[i].c_str());
+        for(auto &e : buf) {
+            fprintf(fp, "%s\n", e.c_str());
         }
         fclose(fp);
     }
