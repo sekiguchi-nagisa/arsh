@@ -1636,7 +1636,7 @@ static bool mainLoop(DSState &state) {
             exit(state.getExitStatus());
         }
         vmcase(FAILURE_CHILD) {
-            state.setThrownObject(state.pop());
+            state.storeThrowObject();
             return false;
         }
         vmcase(CAPTURE_STR) {

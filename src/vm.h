@@ -188,10 +188,6 @@ struct DSState {
         return this->thrownObject;
     }
 
-    void setThrownObject(DSValue &&value) {
-        this->thrownObject = std::move(value);
-    }
-
     unsigned int &pc() noexcept {
         return this->pc_;
     }

@@ -68,10 +68,6 @@ public:
         setFlag(this->value_, static_cast<unsigned int>(attr));
     }
 
-    void unset(FieldAttribute attr) {
-        unsetFlag(this->value_, static_cast<unsigned int>(attr));
-    }
-
     bool has(FieldAttribute attr) const {
         return hasFlag(this->value_, static_cast<unsigned int>(attr));
     }

@@ -139,20 +139,6 @@ public:
 
     ~DBus_Object() = default;
 
-    /**
-     * return null, before call getSystemBus(ctx)
-     */
-    const DSValue &getSystemBus() {
-        return this->systemBus;
-    }
-
-    /**
-     * return null, before call getSessionBus(ctx)
-     */
-    const DSValue &getSessionBus() {
-        return this->sessionBus;
-    }
-
     MessageBuilder &getBuilder() {
         return this->builder;
     }
