@@ -129,8 +129,6 @@ const DSValue &getTrueObj(const DSState &st);
 const DSValue &getFalseObj(const DSState &st);
 const DSValue &getEmptyStrObj(const DSState &st);
 
-const char *getIFS(DSState &st);
-
 void setLocal(DSState &st, unsigned int index, const DSValue &obj);
 
 void setLocal(DSState &st, unsigned int index, DSValue &&obj);
