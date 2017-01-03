@@ -256,6 +256,10 @@ static const char *historyCallback(const char *buf, int *historyIndex, historyOp
     return nullptr;
 }
 
+static void saveHistory() {
+    DSState_saveHistory(state);
+}
+
 /**
  * after execution, delete ctx
  */
@@ -276,7 +280,10 @@ int exec_interactive(DSState *dsState) {
 
     DSState_setOption(dsState, DS_OPTION_TOPLEVEL);
     DSState_syncHistorySize(dsState);
+    DSState_loadHistory(dsState);
     state = dsState;
+
+    atexit(saveHistory);
 
     for(const char *line = nullptr; (line = readLine()) != nullptr; ) {
         ignoreSignal();

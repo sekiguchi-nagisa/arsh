@@ -762,9 +762,11 @@ void DSState_clearHistory(DSState *st) {
     }
 }
 
-static const char *histFile(const DSState *st) {
+static const std::string histFile(const DSState *st) {
     unsigned int index = st->symbolTable.lookupHandle(VAR_HISTFILE)->getFieldIndex();
-    return typeAs<String_Object>(st->getGlobal(index))->getValue();
+    std::string path = typeAs<String_Object>(st->getGlobal(index))->getValue();
+    expandTilde(path);
+    return path;
 }
 
 void DSState_loadHistory(DSState *st) {
@@ -795,7 +797,7 @@ void DSState_saveHistory(const DSState *st) {
     if(histFileSize > DS_HISTFILESIZE_LIMIT) {
         histFileSize = DS_HISTFILESIZE_LIMIT;
     }
-    const char *path = histFile(st);
+    auto path = histFile(st);
 
     std::vector<std::string> buf;
     buf.reserve(histFileSize);
@@ -815,7 +817,7 @@ void DSState_saveHistory(const DSState *st) {
     }
 
     // update history file
-    FILE *fp = fopen(path, "w");
+    FILE *fp = fopen(path.c_str(), "w");
     if(fp != nullptr) {
         for(auto &e : buf) {
             fprintf(fp, "%s\n", e.c_str());
