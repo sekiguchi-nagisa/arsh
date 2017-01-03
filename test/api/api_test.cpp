@@ -233,6 +233,10 @@ TEST_F(HistoryTest, add) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("bbb", history->data[0]));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("ccc", history->data[1]));
     ASSERT_(this->assertHistCmd(4));
+
+    DSState_addHistory(this->state, "ccc");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, history->size));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, history->capacity));
 }
 
 

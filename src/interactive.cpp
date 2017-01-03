@@ -100,7 +100,7 @@ static const char *readLine() {
         break;
     }
 
-    linenoiseHistoryAdd(lineBuf.c_str());
+    DSState_addHistory(state, lineBuf.c_str());
     lineBuf += '\n';    // terminate newline
     return lineBuf.c_str();
 }
@@ -227,6 +227,35 @@ static void completeCallback(const char *buf, size_t cursor, linenoiseCompletion
     lc->cvec = c.values;
 }
 
+static const char *historyCallback(const char *buf, int *historyIndex, historyOp op) {
+    const unsigned int size = DSState_history(state)->size;
+    switch(op) {
+    case LINENOISE_HISTORY_OP_NEXT:
+    case LINENOISE_HISTORY_OP_PREV: {
+        if(size > 1) {
+            DSState_setHistoryAt(state, size - *historyIndex - 1, strdup(buf));
+            *historyIndex += (op == LINENOISE_HISTORY_OP_PREV) ? 1 : -1;
+            if(*historyIndex < 0) {
+                *historyIndex = 0;
+                return nullptr;
+            } else if(static_cast<unsigned int>(*historyIndex) >= size) {
+                *historyIndex = size - 1;
+                return nullptr;
+            }
+            return DSState_history(state)->data[size - *historyIndex - 1];
+        }
+        break;
+    }
+    case LINENOISE_HISTORY_OP_DELETE:
+        DSState_deleteHistoryAt(state, size - 1);
+        break;
+    case LINENOISE_HISTORY_OP_INIT:
+        DSState_addHistory(state, "");
+        break;
+    }
+    return nullptr;
+}
+
 /**
  * after execution, delete ctx
  */
@@ -243,7 +272,10 @@ int exec_interactive(DSState *dsState) {
 
     linenoiseSetCompletionCallback(completeCallback);
 
+    linenoiseSetHistoryCallback(historyCallback);
+
     DSState_setOption(dsState, DS_OPTION_TOPLEVEL);
+    DSState_syncHistorySize(dsState);
     state = dsState;
 
     for(const char *line = nullptr; (line = readLine()) != nullptr; ) {

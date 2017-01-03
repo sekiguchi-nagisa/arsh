@@ -736,6 +736,10 @@ static void unsafeDeleteHistory(DSHistory &history, unsigned int index) {
 
 void DSState_addHistory(DSState *st, const char *str) {
     if(st->history.capacity > 0) {
+        if(st->history.size > 0 && strcmp(str, st->history.data[st->history.size - 1]) == 0) {
+            return; // skip duplicated line
+        }
+
         if(st->history.size == st->history.capacity) {
             unsafeDeleteHistory(st->history, 0);
         }
