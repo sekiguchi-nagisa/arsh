@@ -403,6 +403,15 @@ TEST_F(HistoryTest, file) {
     for(unsigned int i = 0; i < 10; i++) {
         ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i + 5).c_str(), history->data[i]));
     }
+
+    DSState_clearHistory(this->state);
+    DSState_saveHistory(this->state);
+    DSState_loadHistory(this->state);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(10u, history->size));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(15u, history->capacity));
+    for(unsigned int i = 0; i < 10; i++) {
+        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i + 5).c_str(), history->data[i]));
+    }
 }
 
 TEST_F(HistoryTest, file2) {

@@ -785,17 +785,19 @@ void DSState_loadHistory(DSState *st) {
 }
 
 void DSState_saveHistory(const DSState *st) {
-    auto handle = st->symbolTable.lookupHandle(VAR_HISTFILESIZE);
-    unsigned int histFileSize = typeAs<Int_Object>(st->getGlobal(handle->getFieldIndex()))->getValue();
-    if(histFileSize > DS_HISTFILESIZE_LIMIT) {
-        histFileSize = DS_HISTFILESIZE_LIMIT;
-    }
-    auto path = histFile(st);
-    FILE *fp = fopen(path.c_str(), "w");
-    if(fp != nullptr) {
-        for(unsigned int i = 0; i < histFileSize && i < st->history.size; i++) {
-            fprintf(fp, "%s\n", st->history.data[i]);
+    if(st->history.size > 0) {
+        auto handle = st->symbolTable.lookupHandle(VAR_HISTFILESIZE);
+        unsigned int histFileSize = typeAs<Int_Object>(st->getGlobal(handle->getFieldIndex()))->getValue();
+        if(histFileSize > DS_HISTFILESIZE_LIMIT) {
+            histFileSize = DS_HISTFILESIZE_LIMIT;
         }
-        fclose(fp);
+        auto path = histFile(st);
+        FILE *fp = fopen(path.c_str(), "w");
+        if(fp != nullptr) {
+            for(unsigned int i = 0; i < histFileSize && i < st->history.size; i++) {
+                fprintf(fp, "%s\n", st->history.data[i]);
+            }
+            fclose(fp);
+        }
     }
 }
