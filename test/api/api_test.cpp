@@ -392,29 +392,17 @@ TEST_F(HistoryTest, file) {
      * 5, 6, 7, 8, 9, 10, 11, 12, 13, 14
      *
      * current hist file content
-     * 5, 6, 7, 8, 9, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14
+     * 5, 6, 7, 8, 9, 10, 11, 12, 13, 14
      */
     DSState_saveHistory(this->state);
     DSState_clearHistory(this->state);
     this->setHistSize(15);
     DSState_loadHistory(this->state);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(15u, history->size));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(10u, history->size));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(15u, history->capacity));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("5", history->data[0]));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("6", history->data[1]));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("7", history->data[2]));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("8", history->data[3]));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("9", history->data[4]));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("5", history->data[5]));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("6", history->data[6]));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("7", history->data[7]));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("8", history->data[8]));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("9", history->data[9]));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("10", history->data[10]));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("11", history->data[11]));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("12", history->data[12]));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("13", history->data[13]));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("14", history->data[14]));
+    for(unsigned int i = 0; i < 10; i++) {
+        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i + 5).c_str(), history->data[i]));
+    }
 }
 
 TEST_F(HistoryTest, file2) {
