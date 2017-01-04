@@ -404,6 +404,7 @@ TEST_F(HistoryTest, file) {
         ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i + 5).c_str(), history->data[i]));
     }
 
+    // not overwrite history file when buffer size is 0
     DSState_clearHistory(this->state);
     DSState_saveHistory(this->state);
     DSState_loadHistory(this->state);
@@ -411,6 +412,19 @@ TEST_F(HistoryTest, file) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(15u, history->capacity));
     for(unsigned int i = 0; i < 10; i++) {
         ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i + 5).c_str(), history->data[i]));
+    }
+
+    // not overwrite history file when hist file size is 0
+    this->setHistFileSize(0);
+    DSState_clearHistory(this->state);
+    DSState_addHistory(this->state, "hoge");
+    DSState_saveHistory(this->state);
+    DSState_loadHistory(this->state);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(11u, history->size));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(15u, history->capacity));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("hoge", history->data[0]));
+    for(unsigned int i = 1; i < 11; i++) {
+        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i + 4).c_str(), history->data[i]));
     }
 }
 
