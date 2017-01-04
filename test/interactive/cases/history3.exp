@@ -1,7 +1,8 @@
 #!/usr/bin/env expect
 
 set bin_name [lindex $argv 0]
-spawn ${bin_name} --norc
+set workdir [lindex $argv 1]
+spawn ${bin_name} --rcfile $workdir/rcfile3
 
 set CTRLD \004
 set UP \033\133\101

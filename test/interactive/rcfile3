@@ -1,0 +1,5 @@
+# for interactive test
+# for history test
+
+$HISTSIZE = 500u
+$HISTFILE = ""
