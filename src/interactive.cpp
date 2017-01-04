@@ -233,7 +233,7 @@ static const char *historyCallback(const char *buf, int *historyIndex, historyOp
     case LINENOISE_HISTORY_OP_NEXT:
     case LINENOISE_HISTORY_OP_PREV: {
         if(size > 1) {
-            DSState_setHistoryAt(state, size - *historyIndex - 1, strdup(buf));
+            DSState_setHistoryAt(state, size - *historyIndex - 1, buf);
             *historyIndex += (op == LINENOISE_HISTORY_OP_PREV) ? 1 : -1;
             if(*historyIndex < 0) {
                 *historyIndex = 0;
