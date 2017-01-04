@@ -151,6 +151,7 @@ public:
     virtual void SetUp() {
         this->createTemp();
         this->state = DSState_create();
+        DSState_setOption(this->state, DS_OPTION_HISTORY);
 
         std::string value;
         value += '"';

@@ -265,8 +265,19 @@ void DSCandidates_release(DSCandidates *c);
 #define DS_HISTFILESIZE_LIMIT   ((unsigned int) 4096)
 
 typedef struct {
+    /**
+     * initial value is 0.
+     */
     unsigned int capacity;
+
+    /**
+     * initial value is 0
+     */
     unsigned int size;
+
+    /**
+     * initial value is null
+     */
     char **data;
 } DSHistory;
 
@@ -280,7 +291,7 @@ const DSHistory *DSState_history(const DSState *st);
 
 /**
  * synchronize history size with HISTSIZE.
- * if HISTSIZE is not defined or not a number, do nothing.
+ * if not set DS_OPTION_HISTORY, do nothing.
  * @param st
  */
 void DSState_syncHistorySize(DSState *st);
@@ -315,6 +326,10 @@ void DSState_deleteHistoryAt(DSState *st, unsigned int index);
  */
 void DSState_clearHistory(DSState *st);
 
+/**
+ * load history from file specified by HISTFILE
+ * @param st
+ */
 void DSState_loadHistory(DSState *st);
 
 /**

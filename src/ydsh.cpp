@@ -701,12 +701,14 @@ static void resizeHistory(DSHistory &history, unsigned int cap) {
 }
 
 void DSState_syncHistorySize(DSState *st) {
-    unsigned int index = st->symbolTable.lookupHandle(VAR_HISTSIZE)->getFieldIndex();
-    unsigned int cap = typeAs<Int_Object>(st->getGlobal(index))->getValue();
-    if(cap > DS_HISTSIZE_LIMIT) {
-        cap = DS_HISTSIZE_LIMIT;
+    if(hasFlag(st->option, DS_OPTION_HISTORY)) {
+        unsigned int index = st->symbolTable.lookupHandle(VAR_HISTSIZE)->getFieldIndex();
+        unsigned int cap = typeAs<Int_Object>(st->getGlobal(index))->getValue();
+        if(cap > DS_HISTSIZE_LIMIT) {
+            cap = DS_HISTSIZE_LIMIT;
+        }
+        resizeHistory(st->history, cap);
     }
-    resizeHistory(st->history, cap);
 }
 
 void DSState_setHistoryAt(DSState *st, unsigned int index, const char *str) {
