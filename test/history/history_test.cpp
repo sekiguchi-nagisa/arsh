@@ -10,6 +10,7 @@
 class HistoryTest : public ::testing::Test, public TempFileFactory {
 protected:
     DSState *state;
+    bool evaled;
 
 public:
     HistoryTest() = default;
@@ -19,6 +20,7 @@ public:
         this->createTemp();
         this->state = DSState_create();
         DSState_setOption(this->state, DS_OPTION_HISTORY);
+        this->evaled = false;
 
         std::string value;
         value += '"';
@@ -66,6 +68,27 @@ private:
         std::string str = std::to_string(value);
         str += "u";
         this->assignValue(varName, std::move(str));
+    }
+
+    void eval(int expectedStatus, const char *code) {
+        if(!this->evaled) {
+            this->evaled = true;
+            const char *func = R"EOF(
+            function ASSERT($r : Boolean) {
+                if $r { true; } else { false; }
+            }
+            )EOF";
+            DSError e;
+            DSState_eval(this->state, "(builtin)", func, &e);
+            ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
+            DSError_release(&e);
+        }
+
+        DSError e;
+        auto r = DSState_eval(this->state, "(dummy)", code, &e);
+        ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
+        DSError_release(&e);
+        ASSERT_EQ(expectedStatus, r);
     }
 };
 
