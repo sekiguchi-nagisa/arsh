@@ -870,12 +870,13 @@ void Parser::parse_redirOption(std::unique_ptr<CmdNode> &node) {
 }
 
 std::unique_ptr<CmdArgNode> Parser::parse_cmdArg() {
-    auto node = uniquify<CmdArgNode>(this->parse_cmdArgSeg(true).release());
+    auto node = uniquify<CmdArgNode>(this->parse_cmdArgSeg(0).release());
 
-    for(bool next = true; !HAS_SPACE() && next;) {
+    unsigned int pos = 1;
+    for(bool next = true; !HAS_SPACE() && next; pos++) {
         switch(CUR_KIND()) {
         EACH_LA_cmdArg(GEN_LA_CASE) {
-            node->addSegmentNode(this->parse_cmdArgSeg().release());
+            node->addSegmentNode(this->parse_cmdArgSeg(pos).release());
             break;
         }
         default: {
@@ -887,11 +888,11 @@ std::unique_ptr<CmdArgNode> Parser::parse_cmdArg() {
     return node;
 }
 
-std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool expandTilde) {
+std::unique_ptr<Node> Parser::parse_cmdArgSeg(unsigned int pos) {
     switch(CUR_KIND()) {
     case CMD_ARG_PART: {
         Token token = this->expect(CMD_ARG_PART);
-        if(expandTilde && this->lexer->startsWith(token, '~')) {
+        if(pos == 0 && this->lexer->startsWith(token, '~')) {
             return uniquify<TildeNode>(token, this->lexer->toCmdArg(token));
         }
         return uniquify<StringValueNode>(token, this->lexer->toCmdArg(token));

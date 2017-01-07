@@ -143,7 +143,7 @@ private:
 
     std::unique_ptr<CmdArgNode> parse_cmdArg();
 
-    std::unique_ptr<Node> parse_cmdArgSeg(bool expandTilde = false);
+    std::unique_ptr<Node> parse_cmdArgSeg(unsigned int pos);
 
     std::unique_ptr<Node> parse_assignmentExpression();
 
