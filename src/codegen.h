@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Nagisa Sekiguchi
+ * Copyright (C) 2016-2017 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -309,7 +309,6 @@ private:
     void enterFinally();
     void writeCaptureIns(bool isStr, const IntrusivePtr<Label> &label);
     void generateCmdArg(CmdArgNode &node);
-    void generateTilde(TildeNode &node, bool isLastSegment);
     void writePipelineIns(const std::vector<IntrusivePtr<Label>> &labels);
     void generateStringExpr(StringExprNode &node, bool fragment);
 

@@ -239,7 +239,7 @@ assert($HOME + "/h" == "$(echo ~/'h')")
 
 ## expand to PWD
 assert($PWD == "$(echo ~+)")
-assert($PWD + "/" == "$(echo ~+/)")
+assert($PWD + "/" == "$(echo ~'+/')")
 assert($PWD + "/huge" == "$(echo ~+/huge)")
 assert($PWD + "/huge" == "$(echo ~+/"huge")")
 assert("~+e" == "$(echo ~+e)")

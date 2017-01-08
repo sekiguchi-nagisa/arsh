@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Nagisa Sekiguchi
+ * Copyright (C) 2016-2017 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -286,8 +286,10 @@ void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
         this->write0byteIns(OpCode::NEW_STRING);
 
         unsigned int index = 0;
-        if(dynamic_cast<TildeNode *>(node.getSegmentNodes()[0]) != nullptr) {
-            this->generateTilde(*static_cast<TildeNode *>(node.getSegmentNodes()[0]), false);
+        const bool tildeExpansion = dynamic_cast<TildeNode *>(node.getSegmentNodes()[0]) != nullptr;
+        if(tildeExpansion) {
+            this->writeLdcIns(DSValue::create<String_Object>(
+                    this->pool.getStringType(), static_cast<TildeNode *>(node.getSegmentNodes()[0])->getValue()));
             this->write0byteIns(OpCode::APPEND_STRING);
             index++;
         }
@@ -302,15 +304,10 @@ void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
                 this->write0byteIns(OpCode::APPEND_STRING);
             }
         }
-    }
-}
 
-void ByteCodeGenerator::generateTilde(TildeNode &node, bool isLastSegment) {
-    this->writeLdcIns(DSValue::create<String_Object>(this->pool.getStringType(), node.getValue()));
-    if(!isLastSegment && strchr(node.getValue().c_str(), '/') == nullptr) {
-        return;
-    } else {
-        this->write0byteIns(OpCode::EXPAND_TILDE);
+        if(tildeExpansion) {
+            this->write0byteIns(OpCode::EXPAND_TILDE);
+        }
     }
 }
 
@@ -363,7 +360,7 @@ void ByteCodeGenerator::generateStringExpr(StringExprNode &node, bool fragment) 
                  * +-----------------------------+-------+
                  *
                  * However, when string self assignment, first expr is empty expression
-                 * (due to self assignment impementation, see. AssignNode).
+                 * (due to self assignment implementation, see. AssignNode).
                  * As a result, the stack layout will be the following
                  *
                  * +-------+-----+
@@ -667,7 +664,8 @@ void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
 }
 
 void ByteCodeGenerator::visitTildeNode(TildeNode &node) {
-    this->generateTilde(node, true);
+    this->writeLdcIns(DSValue::create<String_Object>(this->pool.getStringType(), node.getValue()));
+    this->write0byteIns(OpCode::EXPAND_TILDE);
 }
 
 void ByteCodeGenerator::visitPipedCmdNode(PipedCmdNode &node) {
