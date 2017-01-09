@@ -327,16 +327,20 @@ void DSState_deleteHistoryAt(DSState *st, unsigned int index);
 void DSState_clearHistory(DSState *st);
 
 /**
- * load history from file specified by HISTFILE
+ * load history from file.
  * @param st
+ * @param fileName
+ * if null, use HISTFILE.
  */
-void DSState_loadHistory(DSState *st);
+void DSState_loadHistory(DSState *st, const char *fileName);
 
 /**
- * save history to file specified by HISTFILE.
+ * save history to file.
  * @param st
+ * @param fileName
+ * if null, use HISTFILE.
  */
-void DSState_saveHistory(const DSState *st);
+void DSState_saveHistory(const DSState *st, const char *fileName);
 
 
 #ifdef __cplusplus

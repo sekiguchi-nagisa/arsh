@@ -771,10 +771,10 @@ static const std::string histFile(const DSState *st) {
     return path;
 }
 
-void DSState_loadHistory(DSState *st) {
+void DSState_loadHistory(DSState *st, const char *fileName) {
     DSState_syncHistorySize(st);
     if(st->history.capacity > 0) {
-        std::ifstream input(histFile(st));
+        std::ifstream input(fileName != nullptr ? fileName : histFile(st).c_str());
         if(input) {
             unsigned int count = 0;
             for(std::string line; st->history.size < st->history.capacity && std::getline(input, line);) {
@@ -786,7 +786,7 @@ void DSState_loadHistory(DSState *st) {
     }
 }
 
-void DSState_saveHistory(const DSState *st) {
+void DSState_saveHistory(const DSState *st, const char *fileName) {
     auto handle = st->symbolTable.lookupHandle(VAR_HISTFILESIZE);
     unsigned int histFileSize = typeAs<Int_Object>(st->getGlobal(handle->getFieldIndex()))->getValue();
     if(histFileSize > DS_HISTFILESIZE_LIMIT) {
@@ -794,8 +794,7 @@ void DSState_saveHistory(const DSState *st) {
     }
 
     if(histFileSize > 0 && st->history.size > 0) {
-        auto path = histFile(st);
-        FILE *fp = fopen(path.c_str(), "w");
+        FILE *fp = fopen(fileName != nullptr ? fileName : histFile(st).c_str(), "w");
         if(fp != nullptr) {
             for(unsigned int i = 0; i < histFileSize && i < st->history.size; i++) {
                 fprintf(fp, "%s\n", st->history.data[i]);

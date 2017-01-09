@@ -257,7 +257,7 @@ static const char *historyCallback(const char *buf, int *historyIndex, historyOp
 }
 
 static void saveHistory() {
-    DSState_saveHistory(state);
+    DSState_saveHistory(state, nullptr);
 }
 
 /**
@@ -281,7 +281,7 @@ int exec_interactive(DSState *dsState) {
     DSState_setOption(dsState, DS_OPTION_TOPLEVEL);
     DSState_setOption(dsState, DS_OPTION_HISTORY);
     DSState_syncHistorySize(dsState);
-    DSState_loadHistory(dsState);
+    DSState_loadHistory(dsState, nullptr);
     state = dsState;
 
     atexit(saveHistory);

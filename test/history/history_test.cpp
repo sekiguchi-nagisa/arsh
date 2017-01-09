@@ -257,9 +257,9 @@ TEST_F(HistoryTest, file) {
     /**
      * 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
      */
-    DSState_saveHistory(this->state);
+    DSState_saveHistory(this->state, nullptr);
     DSState_clearHistory(this->state);
-    DSState_loadHistory(this->state);
+    DSState_loadHistory(this->state, nullptr);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(10u, history->size));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(10u, history->capacity));
 
@@ -285,10 +285,10 @@ TEST_F(HistoryTest, file) {
      * current hist file content
      * 5, 6, 7, 8, 9, 10, 11, 12, 13, 14
      */
-    DSState_saveHistory(this->state);
+    DSState_saveHistory(this->state, nullptr);
     DSState_clearHistory(this->state);
     this->setHistSize(15);
-    DSState_loadHistory(this->state);
+    DSState_loadHistory(this->state, nullptr);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(10u, history->size));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(15u, history->capacity));
     for(unsigned int i = 0; i < 10; i++) {
@@ -297,8 +297,8 @@ TEST_F(HistoryTest, file) {
 
     // not overwrite history file when buffer size is 0
     DSState_clearHistory(this->state);
-    DSState_saveHistory(this->state);
-    DSState_loadHistory(this->state);
+    DSState_saveHistory(this->state, nullptr);
+    DSState_loadHistory(this->state, nullptr);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(10u, history->size));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(15u, history->capacity));
     for(unsigned int i = 0; i < 10; i++) {
@@ -309,8 +309,8 @@ TEST_F(HistoryTest, file) {
     this->setHistFileSize(0);
     DSState_clearHistory(this->state);
     DSState_addHistory(this->state, "hoge");
-    DSState_saveHistory(this->state);
-    DSState_loadHistory(this->state);
+    DSState_saveHistory(this->state, nullptr);
+    DSState_loadHistory(this->state, nullptr);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(11u, history->size));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(15u, history->capacity));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("hoge", history->data[0]));
@@ -328,9 +328,9 @@ TEST_F(HistoryTest, file2) {
     for(unsigned int i = 0; i < DS_HISTFILESIZE_LIMIT; i++) {
         DSState_addHistory(this->state, std::to_string(i).c_str());
     }
-    DSState_saveHistory(this->state);
+    DSState_saveHistory(this->state, nullptr);
     DSState_clearHistory(this->state);
-    DSState_loadHistory(this->state);
+    DSState_loadHistory(this->state, nullptr);
 
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_HISTFILESIZE_LIMIT, history->capacity));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_HISTFILESIZE_LIMIT, history->size));
