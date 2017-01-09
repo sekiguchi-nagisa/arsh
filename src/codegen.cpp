@@ -20,6 +20,8 @@
 #include "symbol.h"
 #include "core.h"
 
+#define ASSERT_BYTE_SIZE(op, size) assert(getByteSize(op) == (size))
+
 namespace ydsh {
 
 int getByteSize(OpCode code) {
@@ -73,12 +75,6 @@ ExceptionEntry CatchBuilder::toEntry() const {
 // ##     ByteCodeGenerator     ##
 // ###############################
 
-#ifndef NDEBUG
-static bool checkByteSize(OpCode op, unsigned char size) {
-    return getByteSize(op) == size;
-}
-#endif
-
 ByteCodeGenerator::~ByteCodeGenerator() {
     for(auto &e : this->builders) {
         delete e;
@@ -90,30 +86,30 @@ void ByteCodeGenerator::writeIns(OpCode op) {
 }
 
 void ByteCodeGenerator::write0byteIns(OpCode op) {
-    assert(checkByteSize(op, 0));
+    ASSERT_BYTE_SIZE(op, 0);
     this->writeIns(op);
 }
 
 void ByteCodeGenerator::write1byteIns(OpCode op, unsigned char v) {
-    assert(checkByteSize(op, 1));
+    ASSERT_BYTE_SIZE(op, 1);
     this->writeIns(op);
     this->curBuilder().append8(v);
 }
 
 void ByteCodeGenerator::write2byteIns(OpCode op, unsigned short v) {
-    assert(checkByteSize(op, 2));
+    ASSERT_BYTE_SIZE(op, 2);
     this->writeIns(op);
     this->curBuilder().append16(v);
 }
 
 void ByteCodeGenerator::write4byteIns(OpCode op, unsigned int v) {
-    assert(checkByteSize(op, 4));
+    ASSERT_BYTE_SIZE(op, 4);
     this->writeIns(op);
     this->curBuilder().append32(v);
 }
 
 void ByteCodeGenerator::write8byteIns(OpCode op, unsigned long v) {
-    assert(checkByteSize(op, 8));
+    ASSERT_BYTE_SIZE(op, 8);
     this->writeIns(op);
     this->curBuilder().append64(v);
 }
@@ -152,7 +148,7 @@ void ByteCodeGenerator::writeDescriptorIns(OpCode op, std::string &&desc) {
 
 void ByteCodeGenerator::writeMethodCallIns(OpCode op, unsigned short index, unsigned short paramSize) {
     assert(op == OpCode::CALL_METHOD);
-    assert(checkByteSize(op, 4));
+    ASSERT_BYTE_SIZE(op, 4);
     this->writeIns(op);
     this->curBuilder().append16(index);
     this->curBuilder().append16(paramSize);
