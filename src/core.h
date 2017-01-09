@@ -35,6 +35,7 @@ class DSType;
 class DSValue;
 class StackTraceElement;
 class FuncObject;
+class SymbolTable;
 
 using CStrBuffer = FlexBuffer<char *>;
 
@@ -122,6 +123,7 @@ struct DebugHook {
 
 TypePool &getPool(DSState &st);
 const TypePool &getPool(const DSState &st);
+const SymbolTable &getSymbolTable(const DSState &st);
 
 FilePathCache &getPathCache(DSState &st);
 

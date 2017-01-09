@@ -145,6 +145,10 @@ const TypePool &getPool(const DSState &st) {
     return st.pool;
 }
 
+const SymbolTable &getSymbolTable(const DSState &st) {
+    return st.symbolTable;
+}
+
 FilePathCache &getPathCache(DSState &st) {
     return st.pathCache;
 }
