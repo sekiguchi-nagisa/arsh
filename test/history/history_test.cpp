@@ -47,7 +47,7 @@ public:
 
 
     virtual void assertHistCmd(unsigned int expect) {
-        unsigned int index = this->state->symbolTable.lookupHandle(VAR_HISTCMD)->getFieldIndex();
+        unsigned int index = toIndex(BuiltinVarOffset::HIST_CMD);
         unsigned int value = typeAs<Int_Object>(this->state->getGlobal(index))->getValue();
         ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, value));
     }

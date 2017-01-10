@@ -51,6 +51,7 @@ enum class BuiltinVarOffset : unsigned int {
     PPID,           // PPID
     SECONDS,        // SECONDS
     IFS,            // IFS
+    HIST_CMD,       // HISTCMD
     EXIT_STATUS,    // ?
     SHELL_PID,      // $
     ARGS,           // @
@@ -123,7 +124,6 @@ struct DebugHook {
 
 TypePool &getPool(DSState &st);
 const TypePool &getPool(const DSState &st);
-const SymbolTable &getSymbolTable(const DSState &st);
 
 FilePathCache &getPathCache(DSState &st);
 
