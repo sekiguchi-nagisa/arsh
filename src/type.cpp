@@ -631,7 +631,7 @@ DSType &TypePool::createReifiedType(const TypeTemplate &typeTemplate,
 DSType &TypePool::createTupleType(std::vector<DSType *> &&elementTypes) {
     this->checkElementTypes(elementTypes);
 
-    assert(elementTypes.size() == 0);
+    assert(elementTypes.size() > 0);
 
     std::string typeName(this->toTupleTypeName(elementTypes));
     DSType *type = this->typeMap.getType(typeName);
