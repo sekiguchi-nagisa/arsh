@@ -42,7 +42,7 @@ bool isTypeOp(OpCode code) {
     case OpCode::NEW_MAP:
     case OpCode::NEW_TUPLE:
     case OpCode::NEW:
-        assert(getByteSize(code) == 8);
+        ASSERT_BYTE_SIZE(code, 8);
         return true;
     default:
         return false;
