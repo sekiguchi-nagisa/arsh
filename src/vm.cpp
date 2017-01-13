@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Nagisa Sekiguchi
+ * Copyright (C) 2016-2017 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1211,7 +1211,7 @@ std::vector<DSValue> DBusWaitSignal(DSState &st);
 static bool mainLoop(DSState &state) {
     while(true) {
         // fetch next opcode
-        OpCode op = static_cast<OpCode>(GET_CODE(state)[++state.pc()]);
+        const OpCode op = static_cast<OpCode>(GET_CODE(state)[++state.pc()]);
         if(state.hook != nullptr) {
             state.hook->vmFetchHook(state, op);
         }
@@ -1639,12 +1639,9 @@ static bool mainLoop(DSState &state) {
             state.storeThrowObject();
             return false;
         }
-        vmcase(CAPTURE_STR) {
-            forkAndCapture(true, state);
-            break;
-        }
+        vmcase(CAPTURE_STR)
         vmcase(CAPTURE_ARRAY) {
-            forkAndCapture(false, state);
+            forkAndCapture(op == OpCode::CAPTURE_STR, state);
             break;
         }
         vmcase(NEW_PIPELINE) {
