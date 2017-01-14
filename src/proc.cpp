@@ -33,38 +33,13 @@
 #include "misc/files.h"
 #include "misc/size.hpp"
 
+#define PERROR0(arv)           fprintf(stderr, "-ydsh: %s: %s\n", (argv)[0], strerror(errno))
+#define PERROR(argv, fmt, ...) fprintf(stderr, "-ydsh: %s: " fmt ": %s\n", (argv)[0], ## __VA_ARGS__, strerror(errno))
+#define ERROR(argv, fmt, ...)  fprintf(stderr, "-ydsh: %s: " fmt "\n", (argv)[0], ## __VA_ARGS__)
+
 namespace ydsh {
 
 void xexecve(const char *filePath, char **argv, char *const *envp);
-
-/**
- * if errorNum is not 0, include strerror(errorNum)
- */
-__attribute__((__format__(__printf__, 3, 4)))
-static void builtin_perror(char *const *argv, int errorNum, const char *fmt, ...) {
-    const char *cmdName = argv[0];
-    fprintf(stderr, "-ydsh: %s", cmdName);
-
-    if(strcmp(fmt, "") != 0) {
-        fputs(": ", stderr);
-
-        va_list arg;
-        va_start(arg, fmt);
-
-        vfprintf(stderr, fmt, arg);
-
-        va_end(arg);
-    }
-
-    if(errorNum != 0) {
-        fprintf(stderr, ": %s", strerror(errorNum));
-    }
-    fputc('\n', stderr);
-}
-
-#define PERROR(argv, fmt, ...) builtin_perror(argv, errno, fmt, ## __VA_ARGS__ )
-#define ERROR(argv, fmt, ...) builtin_perror(argv, 0, fmt, ## __VA_ARGS__)
-
 
 // builtin command definition
 static int builtin___gets(DSState &state, const int argc, char *const *argv);
@@ -722,7 +697,7 @@ static void forkAndExec(DSState &ctx, char *const *argv, int &status, bool useDe
         xexecve(filePath, const_cast<char **>(argv), nullptr);
 
         int errnum = errno;
-        PERROR(argv, "");
+        PERROR0(argv);
         write(selfpipe[WRITE_PIPE], &errnum, sizeof(int));
         exit(1);
     } else {    // parent process
