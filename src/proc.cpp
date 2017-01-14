@@ -62,6 +62,7 @@ static void builtin_perror(char *const *argv, int errorNum, const char *fmt, ...
 }
 
 #define PERROR(argv, fmt, ...) builtin_perror(argv, errno, fmt, ## __VA_ARGS__ )
+#define ERROR(argv, fmt, ...) builtin_perror(argv, 0, fmt, ## __VA_ARGS__)
 
 
 // builtin command definition
@@ -405,7 +406,7 @@ static int builtin_help(DSState &, const int argc, char *const *argv) {
         }
     }
     if(!foundValidCommand) {
-        fprintf(stderr, "-ydsh: help: no help topics match `%s'.  Try `help help'.\n", argv[argc - 1]);
+        ERROR(argv, "-ydsh: help: no help topics match `%s'.  Try `help help'.", argv[argc - 1]);
         return 1;
     }
     return 0;
@@ -811,7 +812,7 @@ static int builtin_pwd(DSState &state, const int argc, char *const *argv) {
             useLogical = false;
             break;
         default:
-            builtin_perror(argv, 0, "-%c: invalid option", optState.optOpt);
+            ERROR(argv, "-%c: invalid option", optState.optOpt);
             showUsage(argv);
             return 1;
         }
@@ -860,7 +861,7 @@ static int builtin_command(DSState &state, const int argc, char *const *argv) {
             showDesc = 2;
             break;
         default:
-            builtin_perror(argv, 0, "-%c: invalid option", optState.optOpt);
+            ERROR(argv, "-%c: invalid option", optState.optOpt);
             showUsage(argv);
             return 1;
         }
@@ -988,7 +989,7 @@ static int builtin_test(DSState &, const int argc, char *const *argv) {
         const char *op = argv[1];
         const char *value = argv[2];
         if(strlen(op) != 2 || op[0] != '-') {
-            builtin_perror(argv, 0, "%s: invalid unary operator", op);
+            ERROR(argv, "%s: invalid unary operator", op);
             return 2;
         }
 
@@ -1087,7 +1088,7 @@ static int builtin_test(DSState &, const int argc, char *const *argv) {
             break;
         }
         default: {
-            builtin_perror(argv, 0, "%s: invalid unary operator", op);
+            ERROR(argv, "%s: invalid unary operator", op);
             return 2;
         }
         }
@@ -1126,13 +1127,13 @@ static int builtin_test(DSState &, const int argc, char *const *argv) {
             int s = 0;
             long n1 = convertToInt64(left, s);
             if(s != 0) {
-                builtin_perror(argv, 0, "%s: must be integer", left);
+                ERROR(argv, "%s: must be integer", left);
                 return 2;
             }
 
             long n2 = convertToInt64(right, s);
             if(s != 0) {
-                builtin_perror(argv, 0, "%s: must be integer", right);
+                ERROR(argv, "%s: must be integer", right);
                 return 2;
             }
             if(opKind == BinaryOp::EQ) {
@@ -1151,14 +1152,14 @@ static int builtin_test(DSState &, const int argc, char *const *argv) {
             break;
         }
         case BinaryOp::INVALID: {
-            builtin_perror(argv, 0, "%s: invalid binary operator", op);
+            ERROR(argv, "%s: invalid binary operator", op);
             return 2;
         }
         }
         break;
     }
     default: {
-        builtin_perror(argv, 0, "too many arguments");
+        ERROR(argv, "too many arguments");
         return 2;
     }
     }
@@ -1229,7 +1230,7 @@ static int builtin_read(DSState &state, const int argc, char *const *argv) {  //
             int s;
             long t = convertToInt64(optState.optArg, s);
             if(s != 0 || t < 0 || t > INT32_MAX) {
-                builtin_perror(argv, 0, "%s: invalid file descriptor", optState.optArg);
+                ERROR(argv, "%s: invalid file descriptor", optState.optArg);
                 return 1;
             }
             fd = static_cast<int>(t);
@@ -1247,14 +1248,14 @@ static int builtin_read(DSState &state, const int argc, char *const *argv) {  //
                     }
                 }
             }
-            builtin_perror(argv, 0, "%s: invalid timeout specification", optState.optArg);
+            ERROR(argv, "%s: invalid timeout specification", optState.optArg);
             return 1;
         }
         case ':':
-            builtin_perror(argv, 0, "%s: option require argument", opt);
+            ERROR(argv, "%s: option require argument", opt);
             return 2;
         default:
-            builtin_perror(argv, 0, "%s: invalid option", opt);
+            ERROR(argv, "%s: invalid option", opt);
             return 2;
         }
     }
@@ -1372,7 +1373,7 @@ static int builtin_read(DSState &state, const int argc, char *const *argv) {  //
     // report error
     int ret = ch == EOF ? 1 : 0;
     if(ret != 0 && errno != 0) {
-        builtin_perror(argv, errno, "%d", fd);
+        PERROR(argv, "%d", fd);
     }
     return ret;
 }
@@ -1390,7 +1391,7 @@ static int builtin_hash(DSState &state, const int argc, char *const *argv) {
         if(strcmp(arg, "-r") == 0) {
             remove = true;
         } else {
-            builtin_perror(argv, 0, "%s: invalid option", arg);
+            ERROR(argv, "%s: invalid option", arg);
             return 2;
         }
     }
@@ -1403,7 +1404,7 @@ static int builtin_hash(DSState &state, const int argc, char *const *argv) {
                 getPathCache(state).removePath(name);
             } else {
                 if(getPathCache(state).searchPath(name) == nullptr) {
-                    builtin_perror(argv, 0, "%s: not found", name);
+                    ERROR(argv, "%s: not found", name);
                     return 1;
                 }
             }
@@ -1450,7 +1451,7 @@ static int showHistory(DSState &state, const int argc, char *const *argv) {
     const unsigned int histSize = history->size;
     if(argc > 1) {
         if(argc > 2) {
-            builtin_perror(argv, 0, "too many argument");
+            ERROR(argv, "too many argument");
             return 1;
         }
 
@@ -1458,7 +1459,7 @@ static int showHistory(DSState &state, const int argc, char *const *argv) {
         const char *arg = argv[1];
         printOffset = convertToUint64(arg, s);
         if(s != 0) {
-            builtin_perror(argv, 0, "%s: numeric argument required", arg);
+            ERROR(argv, "%s: numeric argument required", arg);
             return 1;
         }
 
