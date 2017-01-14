@@ -40,6 +40,7 @@ void xexecve(const char *filePath, char **argv, char *const *envp);
 /**
  * if errorNum is not 0, include strerror(errorNum)
  */
+__attribute__((__format__(__printf__, 3, 4)))
 static void builtin_perror(char *const *argv, int errorNum, const char *fmt, ...) {
     const char *cmdName = argv[0];
     fprintf(stderr, "-ydsh: %s", cmdName);
@@ -1252,10 +1253,10 @@ static int builtin_read(DSState &state, const int argc, char *const *argv) {  //
             return 1;
         }
         case ':':
-            ERROR(argv, "%s: option require argument", opt);
+            ERROR(argv, "-%c: option require argument", opt);
             return 2;
         default:
-            ERROR(argv, "%s: invalid option", opt);
+            ERROR(argv, "-%c: invalid option", optState.optOpt);
             return 2;
         }
     }

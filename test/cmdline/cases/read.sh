@@ -280,5 +280,13 @@ if [ $? != 1 ]; then
     exit 1
 fi
 
+# invalid option
+test "$($YDSH_BIN -c 'read -q' 2>&1)" = "-ydsh: read: -q: invalid option"
+
+if [ $? != 0 ]; then
+    echo $LINENO
+    exit 1
+fi
+
 exit 0
 
