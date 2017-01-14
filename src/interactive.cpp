@@ -74,6 +74,7 @@ static std::string lineBuf;
 
 static const char *readLine() {
     lineBuf.clear();
+    DSState_syncHistorySize(state);
 
     bool continuation = false;
     while(true) {

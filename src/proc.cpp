@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2016 Nagisa Sekiguchi
+ * Copyright (C) 2015-2017 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@
 #include <cstdlib>
 #include <cstdarg>
 #include <unordered_map>
+#include <ydsh/ydsh.h>
 
 #include "logger.h"
 #include "proc.h"
@@ -77,6 +78,7 @@ static int builtin_exit(DSState &state, const int argc, char *const *argv);
 static int builtin_false(DSState &state, const int argc, char *const *argv);
 static int builtin_hash(DSState &state, const int argc, char *const *argv);
 static int builtin_help(DSState &state, const int argc, char *const *argv);
+static int builtin_history(DSState &state, const int argc, char *const *argv);
 static int builtin_ps_intrp(DSState &state, const int argc, char *const *argv);
 static int builtin_pwd(DSState &state, const int argc, char *const *argv);
 static int builtin_read(DSState &state, const int argc, char *const *argv);
@@ -153,6 +155,15 @@ const struct {
                 "    If option is not supplied, display all cached path."},
         {"help", builtin_help, "[-s] [pattern ...]",
                 "    Display helpful information about builtin commands."},
+        {"history", builtin_history, "[-c] [-d offset] or history [-arw] [file]",
+                "    Display or manipulate history list.\n"
+                "    Options:\n"
+                "        -c        clear the history list\n"
+                "        -d offset delete the history entry at OFFSET\n"
+                "\n"
+                "        -a        append the history list to history file\n"
+                "        -r        read the history list from history file\n"
+                "        -w        write the history list to history file"},
         {"ps_intrp", builtin_ps_intrp, "[prompt string]",
                 "    Interpret prompt string.\n"
                 "    Escape Sequence:\n"
@@ -1432,5 +1443,69 @@ static int builtin_complete(DSState &state, const int argc, char *const *argv) {
     }
     return 0;
 }
+
+static int showHistory(DSState &state, const int argc, char *const *argv) {
+    auto *history = DSState_history(&state);
+    unsigned int printOffset = history->size;
+    const unsigned int histSize = history->size;
+    if(argc > 1) {
+        if(argc > 2) {
+            builtin_perror(argv, 0, "too many argument");
+            return 1;
+        }
+
+        int s;
+        const char *arg = argv[1];
+        printOffset = convertToUint64(arg, s);
+        if(s != 0) {
+            builtin_perror(argv, 0, "%s: numeric argument required", arg);
+            return 1;
+        }
+
+        if(printOffset > histSize) {
+            printOffset = histSize;
+        }
+    }
+
+    const unsigned int histCmd = typeAs<Int_Object>(getGlobal(state, toIndex(BuiltinVarOffset::HIST_CMD)))->getValue();
+    const unsigned int base = histCmd - histSize;
+    for(unsigned int i = histSize - printOffset; i < histSize; i++) {
+        fprintf(stdout, "%5d  %s\n", i + base, history->data[i]);
+    }
+    return 0;
+}
+
+static int builtin_history(DSState &state, const int argc, char *const *argv) {
+    DSState_syncHistorySize(&state);
+//    auto *history = DSState_history(&state);
+
+    // print history
+    if(argc == 1 || argv[1][0] != '-') {
+        return showHistory(state, argc, argv);
+    }
+
+//    bool clear = false;
+//    std::vector<const char *> deleteList;
+//
+//    enum FileOp : unsigned char {
+//        NOP,
+//        APPEND,
+//        READ,
+//        WRITE,
+//    };
+//
+//    FileOp op = NOP;
+//    const char *fileName = nullptr;
+//
+//    for(int i = 1; i < argc; i++) {
+//        const char *arg = argv[i];
+//        if() {
+//
+//        }
+//    }
+
+    return 0;
+}
+
 
 } // namespace ydsh
