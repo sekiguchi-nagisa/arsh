@@ -53,7 +53,10 @@ typedef int (*builtin_command_t)(DSState &state, const int argc, char *const *ar
 unsigned int getBuiltinCommandSize();
 
 /**
- * if index is out of range, return null
+ *
+ * @param index
+ * must be less than getBuiltinCommandSize().
+ * @return
  */
 const char *getBuiltinCommandName(unsigned int index);
 

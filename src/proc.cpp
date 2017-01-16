@@ -237,13 +237,8 @@ unsigned int getBuiltinCommandSize() {
     return arraySize(builtinCommands);
 }
 
-/**
- * if index is out of range, return null
- */
 const char *getBuiltinCommandName(unsigned int index) {
-    if(index >= getBuiltinCommandSize()) {
-        return nullptr;
-    }
+    assert(index < getBuiltinCommandSize());
     return builtinCommands[index].commandName;
 }
 
@@ -458,7 +453,6 @@ static int builtin_exit(DSState &state, const int argc, char *const *argv) {
         }
     }
     exitShell(state, ret);
-    return ret;
 }
 
 static int builtin_echo(DSState &, const int argc, char *const *argv) {
@@ -994,7 +988,7 @@ static int builtin_test(DSState &, const int argc, char *const *argv) {
             break;
         }
         case 'd': {
-            result = S_ISDIR(getStMode(value)); // chedck if file is directory
+            result = S_ISDIR(getStMode(value)); // check if file is directory
             break;
         }
         case 'f': {
