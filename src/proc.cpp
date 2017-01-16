@@ -403,7 +403,9 @@ static int builtin_cd(DSState &state, const int argc, char *const *argv) {
             useLogical = true;
             break;
         default:
-            break;
+            ERROR(argv, "-%c: invalid option", optState.optOpt);
+            showUsage(argv);
+            return 1;
         }
     }
 

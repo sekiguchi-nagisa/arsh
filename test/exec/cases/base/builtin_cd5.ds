@@ -1,0 +1,4 @@
+cd -z
+assert $?  == 1
+
+assert test "$(cd -z 2>&1)" = $'-ydsh: cd: -z: invalid option\ncd: cd [-LP] [dir]'
