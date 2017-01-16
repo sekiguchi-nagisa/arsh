@@ -381,7 +381,7 @@ static int builtin_help(DSState &, const int argc, char *const *argv) {
         }
     }
     if(!foundValidCommand) {
-        ERROR(argv, "-ydsh: help: no help topics match `%s'.  Try `help help'.", argv[argc - 1]);
+        ERROR(argv, "no help topics match `%s'.  Try `help help'.", argv[argc - 1]);
         return 1;
     }
     return 0;
