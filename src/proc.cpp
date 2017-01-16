@@ -132,13 +132,12 @@ const struct {
                 "    If option is not supplied, display all cached path."},
         {"help", builtin_help, "[-s] [pattern ...]",
                 "    Display helpful information about builtin commands."},
-        {"history", builtin_history, "[-c] [-d offset] or history [-arw] [file]",
+        {"history", builtin_history, "[-c] [-d offset] or history [-rw] [file]",
                 "    Display or manipulate history list.\n"
                 "    Options:\n"
                 "        -c        clear the history list\n"
                 "        -d offset delete the history entry at OFFSET\n"
                 "\n"
-                "        -a        append the history list to history file\n"
                 "        -r        read the history list from history file\n"
                 "        -w        write the history list to history file"},
         {"ps_intrp", builtin_ps_intrp, "[prompt string]",
@@ -1454,33 +1453,72 @@ static int showHistory(DSState &state, const int argc, char *const *argv) {
 
 static int builtin_history(DSState &state, const int argc, char *const *argv) {
     DSState_syncHistorySize(&state);
-//    auto *history = DSState_history(&state);
 
-    // print history
     if(argc == 1 || argv[1][0] != '-') {
         return showHistory(state, argc, argv);
     }
 
-//    bool clear = false;
-//    std::vector<const char *> deleteList;
-//
-//    enum FileOp : unsigned char {
-//        NOP,
-//        APPEND,
-//        READ,
-//        WRITE,
-//    };
-//
-//    FileOp op = NOP;
-//    const char *fileName = nullptr;
-//
-//    for(int i = 1; i < argc; i++) {
-//        const char *arg = argv[i];
-//        if() {
-//
-//        }
-//    }
+    char op = '\0';
+    const char *fileName = nullptr;
+    const char *deleteTarget = nullptr;
 
+    for(int i = 1; i < argc; i++) {
+        const char *arg = argv[i];
+        if(arg[0] == '-' && strlen(arg) == 2) {
+            char ch = arg[1];
+            switch(ch) {
+            case 'c':
+                DSState_clearHistory(&state);
+                return 0;
+            case 'd': {
+                if(i + 1 < argc) {
+                    deleteTarget = argv[++i];
+                    continue;
+                } else {
+                    ERROR(argv, "%s: option requires argument", arg);
+                    return 2;
+                }
+            }
+            case 'r':
+            case 'w': {
+                if(op != '\0') {
+                    ERROR(argv, "cannot use more than one of -rw");
+                    return 1;
+                }
+                op = ch;
+                fileName = i + 1 < argc ? argv[++i] : nullptr;
+                continue;
+            }
+            default:
+                break;
+            }
+        }
+        ERROR(argv, "%s: invalid option", arg);
+        return 2;
+    }
+
+    auto *history = DSState_history(&state);
+    if(deleteTarget != nullptr) {
+        int s;
+        int offset = convertToInt64(deleteTarget, s);
+        if(s != 0 || offset < 0 || static_cast<unsigned int>(offset) > history->size) {
+            ERROR(argv, "%s: history offset out of range", deleteTarget);
+            return 1;
+        }
+        DSState_deleteHistoryAt(&state, offset);
+        return 0;
+    }
+
+    switch(op) {
+    case 'r':
+        DSState_loadHistory(&state, fileName);
+        break;
+    case 'w':
+        DSState_saveHistory(&state, fileName);
+        break;
+    default:
+        break;
+    }
     return 0;
 }
 
