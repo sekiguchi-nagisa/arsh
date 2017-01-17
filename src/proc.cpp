@@ -382,8 +382,20 @@ static int builtin_help(DSState &, const int argc, char *const *argv) {
     return 0;
 }
 
-inline static void showUsage(char *const *argv) {
+static void showUsage(char *const *argv) {
     printUsage(stderr, argv[0]);
+}
+
+static int invalidOptionError(char *const *argv, const GetOptState &s) {
+    ERROR(argv, "-%c: invalid option", s.optOpt);
+    showUsage(argv);
+    return 2;
+}
+
+static int invalidOptionError(char *const *argv, const char *opt) {
+    ERROR(argv, "%s: invalid option", opt);
+    showUsage(argv);
+    return 2;
 }
 
 static int builtin_cd(DSState &state, const int argc, char *const *argv) {
@@ -398,9 +410,7 @@ static int builtin_cd(DSState &state, const int argc, char *const *argv) {
             useLogical = true;
             break;
         default:
-            ERROR(argv, "-%c: invalid option", optState.optOpt);
-            showUsage(argv);
-            return 1;
+            return invalidOptionError(argv, optState);
         }
     }
 
@@ -783,9 +793,7 @@ static int builtin_pwd(DSState &state, const int argc, char *const *argv) {
             useLogical = false;
             break;
         default:
-            ERROR(argv, "-%c: invalid option", optState.optOpt);
-            showUsage(argv);
-            return 1;
+            return invalidOptionError(argv, optState);
         }
     }
 
@@ -832,9 +840,7 @@ static int builtin_command(DSState &state, const int argc, char *const *argv) {
             showDesc = 2;
             break;
         default:
-            ERROR(argv, "-%c: invalid option", optState.optOpt);
-            showUsage(argv);
-            return 1;
+            return invalidOptionError(argv, optState);
         }
     }
 
@@ -1226,8 +1232,7 @@ static int builtin_read(DSState &state, const int argc, char *const *argv) {  //
             ERROR(argv, "-%c: option require argument", opt);
             return 2;
         default:
-            ERROR(argv, "-%c: invalid option", optState.optOpt);
-            return 2;
+            return invalidOptionError(argv, optState);
         }
     }
 
@@ -1362,8 +1367,7 @@ static int builtin_hash(DSState &state, const int argc, char *const *argv) {
         if(strcmp(arg, "-r") == 0) {
             remove = true;
         } else {
-            ERROR(argv, "%s: invalid option", arg);
-            return 2;
+            return invalidOptionError(argv, arg);
         }
     }
 
@@ -1489,8 +1493,7 @@ static int builtin_history(DSState &state, const int argc, char *const *argv) {
                 break;
             }
         }
-        ERROR(argv, "%s: invalid option", arg);
-        return 2;
+        return invalidOptionError(argv, arg);
     }
 
     auto *history = DSState_history(&state);
