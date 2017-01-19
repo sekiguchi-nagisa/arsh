@@ -52,6 +52,29 @@ public:
         ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, value));
     }
 
+    void eval(const char *code) {
+        if(!this->evaled) {
+            this->evaled = true;
+            const char *func = R"EOF(
+            function assertEach($expect : [String], $actual : [String]) {
+                assert $expect.size() == $actual.size()
+                let size = $expect.size()
+                for(var i = 0; $i < $size; $i++) {
+                    assert $expect[$i] == $actual[$i] : "expect[$i] = ${$expect[$i]}, actual[$i] = ${$actual[$i]}"
+                }
+            }
+            )EOF";
+            DSError e;
+            DSState_eval(this->state, "(builtin)", func, &e);
+            ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
+            DSError_release(&e);
+        }
+        std::string c(code);
+        c += "\n";
+        c += "exit $?";
+        EXPECT_EXIT(DSState_eval(this->state, "(dummy)", c.c_str(), nullptr), ::testing::ExitedWithCode(0), "");
+    }
+
 private:
     void assignValue(const char *varName, std::string &&value) {
         std::string str = "$";
@@ -68,27 +91,6 @@ private:
         std::string str = std::to_string(value);
         str += "u";
         this->assignValue(varName, std::move(str));
-    }
-
-    void eval(int expectedStatus, const char *code) {
-        if(!this->evaled) {
-            this->evaled = true;
-            const char *func = R"EOF(
-            function ASSERT($r : Boolean) {
-                if $r { true; } else { false; }
-            }
-            )EOF";
-            DSError e;
-            DSState_eval(this->state, "(builtin)", func, &e);
-            ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
-            DSError_release(&e);
-        }
-
-        DSError e;
-        auto r = DSState_eval(this->state, "(dummy)", code, &e);
-        ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
-        DSError_release(&e);
-        ASSERT_EQ(expectedStatus, r);
     }
 };
 
@@ -337,6 +339,10 @@ TEST_F(HistoryTest, file2) {
     for(unsigned int i = 0; i < DS_HISTFILESIZE_LIMIT; i++) {
         ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i).c_str(), history->data[i]));
     }
+}
+
+TEST_F(HistoryTest, cmd_base) {
+    ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval("$assertEach(['a'], ['a'])")));
 }
 
 int main(int argc, char **argv) {
