@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#include <fstream>
+
 #include <ydsh/ydsh.h>
 #include <symbol.h>
 #include <vm.h>
@@ -57,7 +59,7 @@ public:
             this->evaled = true;
             const char *func = R"EOF(
             function assertEach($expect : [String], $actual : [String]) {
-                assert $expect.size() == $actual.size()
+                assert $expect.size() == $actual.size() : "size: ${$expect.size()} != ${$actual.size()}"
                 let size = $expect.size()
                 for(var i = 0; $i < $size; $i++) {
                     assert $expect[$i] == $actual[$i] : "expect[$i] = ${$expect[$i]}, actual[$i] = ${$actual[$i]}"
@@ -341,8 +343,276 @@ TEST_F(HistoryTest, file2) {
     }
 }
 
-TEST_F(HistoryTest, cmd_base) {
-    ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval("$assertEach(['a'], ['a'])")));
+TEST_F(HistoryTest, cmd_invalid) {
+    const char *code = R"EOF(
+            history -x
+            assert $? == 2
+            assert "$(history -xz 2>&1)" == "-ydsh: history: -xz: invalid option
+history: history [-c] [-d offset] or history [-rw] [file]"
+            true
+    )EOF";
+    ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(code)));
+}
+
+TEST_F(HistoryTest, cmd_print) {
+    this->setHistSize(10);
+
+    // emtpy history
+    const char *code = R"EOF(
+            $assertEach(new [String](), $(history))
+    )EOF";
+    ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(code)));
+
+    // print all
+    DSState_addHistory(this->state, "a");
+    DSState_addHistory(this->state, "b");
+    DSState_addHistory(this->state, "c");
+    DSState_addHistory(this->state, "d");
+    DSState_addHistory(this->state, "e");
+
+    code = R"EOF(
+        $IFS = $'\n'
+        $assertEach(["    1  a",
+                     "    2  b",
+                     "    3  c",
+                     "    4  d",
+                     "    5  e"], $(history))
+    )EOF";
+    ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(code)));
+
+    // print latest entry
+    DSState_addHistory(this->state, "a");
+    DSState_addHistory(this->state, "b");
+    DSState_addHistory(this->state, "c");
+    DSState_addHistory(this->state, "d");
+    DSState_addHistory(this->state, "e");
+
+    code = R"EOF(
+        $IFS = $'\n'
+        $assertEach(["    6  a",
+                     "    7  b",
+                     "    8  c",
+                     "    9  d",
+                     "   10  e"], $(history 5))
+    )EOF";
+    ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(code)));
+
+    // out of range
+    code = R"EOF(
+        $IFS = $'\n'
+        $assertEach(["    1  a",
+                     "    2  b",
+                     "    3  c",
+                     "    4  d",
+                     "    5  e",
+                     "    6  a",
+                     "    7  b",
+                     "    8  c",
+                     "    9  d",
+                     "   10  e"], $(history 500))
+    )EOF";
+    ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(code)));
+
+    // invalid number
+    code = R"EOF(
+        history hoge
+        assert $? == 1
+        assert "$(history hoge 2>&1)" == "-ydsh: history: hoge: numeric argument required"
+        true
+    )EOF";
+    ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(code)));
+
+    // too many arg
+    code = R"EOF(
+        history hoge
+        assert $? == 1
+        assert "$(history hoge 2 2>&1)" == "-ydsh: history: too many arguments"
+        true
+    )EOF";
+    ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(code)));
+}
+
+TEST_F(HistoryTest, cmd_delete) {
+    this->setHistSize(10);
+
+    DSState_addHistory(this->state, "a");
+    DSState_addHistory(this->state, "b");
+    DSState_addHistory(this->state, "c");
+    DSState_addHistory(this->state, "d");
+    DSState_addHistory(this->state, "e");
+    DSState_addHistory(this->state, "f");
+    DSState_addHistory(this->state, "g");
+    DSState_addHistory(this->state, "h");
+    DSState_addHistory(this->state, "i");
+    DSState_addHistory(this->state, "j");
+
+    // clear
+    const char *code = R"EOF(
+            history -c
+            $assertEach(new [String](), $(history))
+    )EOF";
+    ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(code)));
+
+    // delete history
+    code = R"EOF(
+        history -d 3 -d 5
+        $IFS = $'\n'
+        $assertEach(["    1  a",
+                     "    2  b",
+                     "    3  c",
+                     "    4  d",
+                     "    5  f",
+                     "    6  g",
+                     "    7  h",
+                     "    8  i",
+                     "    9  j"], $(history))
+    )EOF";
+    ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(code)));
+
+    // delete history, but missing number
+    code = R"EOF(
+        history -d 3 -d
+        assert $? == 2
+        assert "$(history -d 2>&1)" == "-ydsh: history: -d: option requires argument"
+        true
+    )EOF";
+    ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(code)));
+
+    // invalid number
+    code = R"EOF(
+        history -d hoge
+        assert $? == 1
+        assert "$(history -d hoge 2>&1)" == "-ydsh: history: hoge: history offset out of range"
+        true
+    )EOF";
+    ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(code)));
+
+    // out of range
+    code = R"EOF(
+        history -d 999999
+        assert $? == 1
+        assert "$(history -d 999999 2>&1)" == "-ydsh: history: 999999: history offset out of range"
+        true
+    )EOF";
+    ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(code)));
+
+    // out of range
+    code = R"EOF(
+        history -d 0
+        assert $? == 1
+        assert "$(history -d 0 2>&1)" == "-ydsh: history: 0: history offset out of range"
+        true
+    )EOF";
+    ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(code)));
+}
+
+TEST_F(HistoryTest, cmd_load) {
+    this->setHistSize(10);
+
+    FILE *fp = fopen(this->getTmpFileName().c_str(), "w");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(fp != nullptr));
+
+    const char *v[] = {
+            "a", "b", "c", "d", "e"
+    };
+    for(auto &e : v) {
+        fprintf(fp, "%s\n", e);
+    }
+    fclose(fp);
+
+    // load
+    const char *code = R"EOF(
+            history -r
+            $IFS = $'\n'
+            $assertEach(["    1  a",
+                         "    2  b",
+                         "    3  c",
+                         "    4  d",
+                         "    5  e"], $(history))
+    )EOF";
+    ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(code)));
+
+    // load invalid file
+    code = R"EOF(
+            history -r hfurehfurefewafzxc
+            $IFS = $'\n'
+            $assertEach(new [String](), $(history))
+    )EOF";
+    ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(code)));
+
+    // load specified file
+    code = R"EOF(
+            $IFS = $'\n'
+            $assertEach(["    1  a",
+                         "    2  b",
+                         "    3  c",
+                         "    4  d",
+                         "    5  e"], $(history))
+    )EOF";
+    std::string c = "history -r ";
+    c += this->getTmpFileName();
+    c += "\n";
+    c += code;
+    ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(c.c_str())));
+}
+
+static std::vector<std::string> readFile(const std::string &fileName) {
+    std::vector<std::string> v;
+    std::ifstream input(fileName);
+    for(std::string line; std::getline(input, line);) {
+        v.push_back(std::move(line));
+    }
+    return v;
+}
+
+TEST_F(HistoryTest, cmd_save) {
+    this->setHistSize(10);
+
+    const char *v[] = {
+            "a", "b", "c", "d", "e"
+    };
+
+    for(auto &e : v) {
+        DSState_addHistory(this->state, e);
+    }
+
+    // save to invalid file
+    ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval("history -w hfurehfiurhfcz24")));
+    auto hist = readFile(this->getTmpFileName());
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(hist.empty()));
+
+    // save to specified file
+    std::string code = "history -w ";
+    code += this->getTmpFileName();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(code.c_str())));
+    hist = readFile(this->getTmpFileName());
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(arraySize(v), hist.size()));
+    for(unsigned int i = 0; i < hist.size(); i++) {
+        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(v[i], hist[i].c_str()));
+    }
+
+    // save to file
+    for(auto &e : v) {
+        DSState_addHistory(this->state, e);
+    }
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval("history -w")));
+    hist = readFile(this->getTmpFileName());
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(arraySize(v) * 2, hist.size()));
+    for(unsigned int i = 0; i < hist.size(); i++) {
+        unsigned int index = i % 5;
+        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(v[index], hist[index].c_str()));
+    }
+
+    // save and load
+    const char *c = R"EOF(
+            history -c
+            history -w -r
+            assert $? == 1
+            assert "$(history -w -r 2>&1)" == "-ydsh: history: cannot use more than one of -rw"
+            true
+    )EOF";
+    ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(c)));
 }
 
 int main(int argc, char **argv) {

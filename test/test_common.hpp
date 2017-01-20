@@ -33,6 +33,11 @@ protected:
     void deleteTemp() {
         remove(this->tmpFileName.c_str());
     }
+
+public:
+    const std::string &getTmpFileName() const {
+        return this->tmpFileName;
+    }
 };
 
 #define ASSERT_(F) do { SCOPED_TRACE(""); F; } while(false)

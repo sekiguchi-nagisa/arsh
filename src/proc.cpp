@@ -1426,7 +1426,7 @@ static int showHistory(DSState &state, const int argc, char *const *argv) {
     const unsigned int histSize = history->size;
     if(argc > 1) {
         if(argc > 2) {
-            ERROR(argv, "too many argument");
+            ERROR(argv, "too many arguments");
             return 1;
         }
 
@@ -1486,7 +1486,7 @@ static int builtin_history(DSState &state, const int argc, char *const *argv) {
                     return 1;
                 }
                 op = ch;
-                fileName = i + 1 < argc ? argv[++i] : nullptr;
+                fileName = i + 1 < argc && argv[i + 1][0] != '-' ? argv[++i] : nullptr;
                 continue;
             }
             default:
@@ -1499,7 +1499,7 @@ static int builtin_history(DSState &state, const int argc, char *const *argv) {
     auto *history = DSState_history(&state);
     if(deleteTarget != nullptr) {
         int s;
-        int offset = convertToInt64(deleteTarget, s);
+        int offset = convertToInt64(deleteTarget, s) - 1;
         if(s != 0 || offset < 0 || static_cast<unsigned int>(offset) > history->size) {
             ERROR(argv, "%s: history offset out of range", deleteTarget);
             return 1;
@@ -1514,8 +1514,6 @@ static int builtin_history(DSState &state, const int argc, char *const *argv) {
         break;
     case 'w':
         DSState_saveHistory(&state, fileName);
-        break;
-    default:
         break;
     }
     return 0;
