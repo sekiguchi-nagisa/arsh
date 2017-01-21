@@ -22,6 +22,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/unicode)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/time)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/resource)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/history)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vm)
 
 if(USE_DBUS)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dbus)
