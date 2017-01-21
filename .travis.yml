@@ -145,6 +145,7 @@ matrix:
 
     # clang 3.9
     - os: linux
+      sudo: required
       dist: trusty
       compiler: clang
       addons:
@@ -162,6 +163,7 @@ matrix:
 
     # clang 4.0
     - os: linux
+      sudo: required
       dist: trusty
       compiler: clang
       addons:
@@ -178,8 +180,7 @@ matrix:
       env: CC_BIN=clang-4.0 CXX_BIN=clang++-4.0
 
 script:
-  - mkdir build && cd build 
-  - cmake .. -DCMAKE_C_COMPILER=$CC_BIN -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=DEBUG
+  - cmake . -DCMAKE_C_COMPILER=$CC_BIN -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=DEBUG
   - make -j2
   - ctest --output-on-failure
 
