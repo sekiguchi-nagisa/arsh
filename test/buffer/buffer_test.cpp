@@ -375,6 +375,15 @@ TEST(BufferTest, case13) {
     }
 }
 
+TEST(BufferTest, case14) {
+    // initializer list
+    IBuffer buffer = {0, 2, 4};
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, buffer.size()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, buffer[0]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, buffer[1]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, buffer[2]));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

@@ -23,6 +23,7 @@
 #include <string>
 #include <cassert>
 #include <cmath>
+#include <initializer_list>
 
 #include "noncopyable.h"
 
@@ -94,6 +95,12 @@ public:
             maxSize(initSize < MINIMUM_CAPACITY ? MINIMUM_CAPACITY : initSize),
             usedSize(0),
             data(allocArray(nullptr, this->maxSize)) { }
+
+    FlexBuffer(std::initializer_list<T> list) : FlexBuffer(list.size()) {
+        for(auto iter = list.begin(); iter != list.end(); ++iter) {
+            this->data[this->usedSize++] = *iter;
+        }
+    }
 
     /**
      * for lazy allocation
