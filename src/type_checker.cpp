@@ -309,15 +309,15 @@ FieldHandle *TypeChecker::addEntryAndThrowIfDefined(Node &node, const std::strin
     return handle;
 }
 
-void TypeChecker::checkAndThrowIfOutOfLoop(Node &node) {
-    if(this->loopDepth > 0) {
+void TypeChecker::checkAndThrowIfOutOfLoop(Node &node) const {
+    if(this->fctx.loopLevel() > 0) {
         return;
     }
     RAISE_TC_ERROR(InsideLoop, node);
 }
 
-void TypeChecker::checkAndThrowIfInsideFinally(BlockEndNode &node) {
-    if(this->finallyDepth > 0) {
+void TypeChecker::checkAndThrowIfInsideFinally(BlockEndNode &node) const {
+    if(this->fctx.finallyLevel() > 0) {
         RAISE_TC_ERROR(InsideFinally, node);
     }
 }
@@ -909,9 +909,9 @@ void TypeChecker::visitTryNode(TryNode &node) {
 
     // check type finally block, may be empty node
     if(node.getFinallyNode() != nullptr) {
-        this->finallyDepth++;
+        this->fctx.enterFinally();
         this->checkType(this->typePool.getVoidType(), node.getFinallyNode());
-        this->finallyDepth--;
+        this->fctx.leave();
 
         if(node.getFinallyNode()->getNodeList().empty()) {
             RAISE_TC_ERROR(UselessBlock, *node.getFinallyNode());
@@ -1127,6 +1127,7 @@ void TypeChecker::visitEmptyNode(EmptyNode &node) {
 void TypeChecker::visitRootNode(RootNode &node) {
     this->symbolTable.commit();
     this->typePool.commit();
+    this->fctx.clear();
 
     bool prevIsTerminal = false;
     for(auto &targetNode : node.refNodeList()) {

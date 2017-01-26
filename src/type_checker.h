@@ -22,6 +22,7 @@
 #include "handle.h"
 #include "symbol_table.h"
 #include "diagnosis.h"
+#include "misc/buffer.hpp"
 
 namespace ydsh {
 
@@ -84,6 +85,72 @@ public:
     void operator()(BlockNode &node);
 };
 
+class FlowContext {
+private:
+    struct Context {
+        unsigned int tryLevel;
+
+        unsigned int finallyLevel;
+
+        unsigned int loopLevel;
+    };
+
+    FlexBuffer<Context> stacks;
+
+public:
+    FlowContext() : stacks({{0, 0, 0}}) { }
+    ~FlowContext() = default;
+
+    unsigned int tryLevel() const {
+        return this->stacks.back().tryLevel;
+    }
+
+    /**
+     *
+     * @return
+     * finally block depth. (if 0, outside finally block)
+     */
+    unsigned int finallyLevel() const {
+        return this->stacks.back().finallyLevel;
+    }
+
+    /**
+     *
+     * @return
+     * loop block depth. (if 0, outside loop block)
+     */
+    unsigned int loopLevel() const {
+        return this->stacks.back().loopLevel;
+    }
+
+    void clear() {
+        this->stacks.clear();
+        this->stacks += {0, 0, 0};
+    }
+
+    void leave() {
+        this->stacks.pop_back();
+    }
+
+    void enterTry() {
+        auto v = this->stacks.back();
+        v.tryLevel = this->stacks.size();
+        this->stacks += v;
+    }
+
+    void enterFinally() {
+        auto v = this->stacks.back();
+        v.finallyLevel = this->stacks.size();
+        this->stacks += v;
+    }
+
+    void enterLoop() {
+        auto v = this->stacks.back();
+        v.loopLevel = this->stacks.size();
+        this->stacks += v;
+    }
+};
+
 class TypeChecker : protected NodeVisitor {
 public:
     class TypeGenerator : public BaseVisitor {
@@ -139,22 +206,14 @@ private:
 
     int visitingDepth;
 
-    /**
-     * represents loop block depth. (if 0, outside loop block)
-     */
-    int loopDepth;
-
-    /**
-     * represents finally block depth. (if 0, outside finally block)
-     */
-    int finallyDepth;
+    FlowContext fctx;
 
     bool toplevelPrinting;
 
 public:
     TypeChecker(TypePool &typePool, SymbolTable &symbolTable, bool toplevelPrinting) :
             typePool(typePool), symbolTable(symbolTable), typeGen(this), curReturnType(0),
-            visitingDepth(0), loopDepth(0), finallyDepth(0), toplevelPrinting(toplevelPrinting) { }
+            visitingDepth(0), fctx(), toplevelPrinting(toplevelPrinting) { }
 
     ~TypeChecker() = default;
 
@@ -237,11 +296,11 @@ private:
     }
 
     void enterLoop() {
-        this->loopDepth++;
+        this->fctx.enterLoop();
     }
 
     void exitLoop() {
-        this->loopDepth--;
+        this->fctx.leave();
     }
 
     /**
@@ -249,7 +308,7 @@ private:
      * if node is out of loop, throw exception
      * node is BreakNode or ContinueNode
      */
-    void checkAndThrowIfOutOfLoop(Node &node);
+    void checkAndThrowIfOutOfLoop(Node &node) const;
 
     void pushReturnType(DSType &returnType) {
         this->curReturnType = &returnType;
@@ -271,7 +330,7 @@ private:
         return this->curReturnType;
     }
 
-    void checkAndThrowIfInsideFinally(BlockEndNode &node);
+    void checkAndThrowIfInsideFinally(BlockEndNode &node) const;
 
     // for apply node type checking
 
