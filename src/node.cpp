@@ -1018,28 +1018,16 @@ void BlockNode::accept(NodeVisitor &visitor) {
     visitor.visitBlockNode(*this);
 }
 
-// #######################
-// ##     BreakNode     ##
-// #######################
+// ######################
+// ##     JumpNode     ##
+// ######################
 
-void BreakNode::dump(NodeDumper &dumper) const {
+void JumpNode::dump(NodeDumper &dumper) const {
     DUMP_PRIM(leavingBlock);
 }
 
-void BreakNode::accept(NodeVisitor &visitor) {
-    visitor.visitBreakNode(*this);
-}
-
-// ##########################
-// ##     ContinueNode     ##
-// ##########################
-
-void ContinueNode::dump(NodeDumper &dumper) const {
-    DUMP_PRIM(leavingBlock);
-}
-
-void ContinueNode::accept(NodeVisitor &visitor) {
-    visitor.visitContinueNode(*this);
+void JumpNode::accept(NodeVisitor &visitor) {
+    visitor.visitJumpNode(*this);
 }
 
 // ###########################
@@ -1254,7 +1242,6 @@ ReturnNode::~ReturnNode() {
 }
 
 void ReturnNode::dump(NodeDumper &dumper) const {
-    DUMP_PRIM(leavingBlock);
     DUMP_PTR(exprNode);
 }
 
@@ -1271,7 +1258,6 @@ ThrowNode::~ThrowNode() {
 }
 
 void ThrowNode::dump(NodeDumper &dumper) const {
-    DUMP_PRIM(leavingBlock);
     DUMP_PTR(exprNode);
 }
 

@@ -259,7 +259,7 @@ FieldHandle *TypeChecker::addEntryAndThrowIfDefined(Node &node, const std::strin
     return handle;
 }
 
-void TypeChecker::verifyJumpNode(Node &node) const {
+void TypeChecker::verifyJumpNode(JumpNode &node) const {
     if(this->fctx.loopLevel() == 0) {
         RAISE_TC_ERROR(InsideLoop, node);
     }
@@ -707,34 +707,8 @@ void TypeChecker::visitBlockNode(BlockNode &node) {
     this->checkTypeWithCurrentScope(&node);
     this->symbolTable.exitScope();
 }
-/**
- * void BlockLeavingDetector::visitBreakNode(BreakNode &node) {
-    if(this->action == Action::RAISE) {
-        RAISE_TC_ERROR(InsideFinally, node);
-    } else {
-        node.setLeavingBlock(true);
-    }
-}
 
-void BlockLeavingDetector::visitContinueNode(ContinueNode &node) {
-    if(this->action == Action::RAISE) {
-        RAISE_TC_ERROR(InsideFinally, node);
-    } else {
-        node.setLeavingBlock(true);
-    }
-}
- * @param node
- */
-void TypeChecker::visitBreakNode(BreakNode &node) {
-    this->verifyJumpNode(node);
-
-    if(this->fctx.tryCatchLevel() > this->fctx.loopLevel()) {
-        node.setLeavingBlock(true);
-    }
-    node.setType(this->typePool.getBottomType());
-}
-
-void TypeChecker::visitContinueNode(ContinueNode &node) {
+void TypeChecker::visitJumpNode(JumpNode &node) {
     this->verifyJumpNode(node);
 
     if(this->fctx.tryCatchLevel() > this->fctx.loopLevel()) {

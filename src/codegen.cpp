@@ -736,7 +736,7 @@ void ByteCodeGenerator::visitBlockNode(BlockNode &node) {
     }
 }
 
-void ByteCodeGenerator::visitBreakNode(BreakNode &node) {
+void ByteCodeGenerator::visitJumpNode(JumpNode &node) {
     assert(!this->curBuilder().loopLabels.empty());
 
     // add finally before jump
@@ -744,18 +744,8 @@ void ByteCodeGenerator::visitBreakNode(BreakNode &node) {
         this->enterFinally();
     }
 
-    this->writeJumpIns(this->curBuilder().loopLabels.back().first);
-}
-
-void ByteCodeGenerator::visitContinueNode(ContinueNode &node) {
-    assert(!this->curBuilder().loopLabels.empty());
-
-    // add finally before jump
-    if(node.isLeavingBlock()) {
-        this->enterFinally();
-    }
-
-    this->writeJumpIns(this->curBuilder().loopLabels.back().second);
+    this->writeJumpIns(node.isBreak() ? this->curBuilder().loopLabels.back().first :
+                       this->curBuilder().loopLabels.back().second);
 }
 
 void ByteCodeGenerator::visitExportEnvNode(ExportEnvNode &node) {

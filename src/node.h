@@ -1267,16 +1267,33 @@ public:
 };
 
 /**
- * base class for break, continue, return, throw node
+ * base class for jump, return, throw node
  */
 class BlockEndNode : public Node {
-protected:
+public:
+    explicit BlockEndNode(Token token) : Node(token) { }
+
+    virtual ~BlockEndNode() = default;
+};
+
+class JumpNode : public BlockEndNode {
+private:
+    /**
+     * if true, treat as break, otherwise, treat as continue.
+     */
+    bool asBreak;
+
     bool leavingBlock;
 
 public:
-    explicit BlockEndNode(Token token) : Node(token), leavingBlock(false) { }
+    JumpNode(Token token, bool asBreak) :
+            BlockEndNode(token), asBreak(asBreak), leavingBlock(false) { }
 
-    virtual ~BlockEndNode() = default;
+    ~JumpNode() = default;
+
+    bool isBreak() const {
+        return this->asBreak;
+    }
 
     void setLeavingBlock(bool leave) {
         this->leavingBlock = leave;
@@ -1285,23 +1302,6 @@ public:
     bool isLeavingBlock() const {
         return this->leavingBlock;
     }
-};
-
-class BreakNode : public BlockEndNode {
-public:
-    explicit BreakNode(Token token) : BlockEndNode(token) { }
-
-    ~BreakNode() = default;
-
-    void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
-};
-
-class ContinueNode : public BlockEndNode {
-public:
-    explicit ContinueNode(Token token) : BlockEndNode(token) { }
-
-    ~ContinueNode() = default;
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
@@ -2160,8 +2160,7 @@ struct NodeVisitor {
     virtual void visitSubstitutionNode(SubstitutionNode &node) = 0;
     virtual void visitAssertNode(AssertNode &node) = 0;
     virtual void visitBlockNode(BlockNode &node) = 0;
-    virtual void visitBreakNode(BreakNode &node) = 0;
-    virtual void visitContinueNode(ContinueNode &node) = 0;
+    virtual void visitJumpNode(JumpNode &node) = 0;
     virtual void visitExportEnvNode(ExportEnvNode &node) = 0;
     virtual void visitImportEnvNode(ImportEnvNode &node) = 0;
     virtual void visitTypeAliasNode(TypeAliasNode &node) = 0;
@@ -2222,8 +2221,7 @@ struct BaseVisitor : public NodeVisitor {
     virtual void visitSubstitutionNode(SubstitutionNode &node) override { this->visitDefault(node); }
     virtual void visitAssertNode(AssertNode &node) override { this->visitDefault(node); }
     virtual void visitBlockNode(BlockNode &node) override { this->visitDefault(node); }
-    virtual void visitBreakNode(BreakNode &node) override { this->visitDefault(node); }
-    virtual void visitContinueNode(ContinueNode &node) override { this->visitDefault(node); }
+    virtual void visitJumpNode(JumpNode &node) override { this->visitDefault(node); }
     virtual void visitExportEnvNode(ExportEnvNode &node) override { this->visitDefault(node); }
     virtual void visitImportEnvNode(ImportEnvNode &node) override { this->visitDefault(node); }
     virtual void visitTypeAliasNode(TypeAliasNode &node) override { this->visitDefault(node); }

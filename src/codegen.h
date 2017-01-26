@@ -352,8 +352,7 @@ private:
     void visitSubstitutionNode(SubstitutionNode &node) override;
     void visitAssertNode(AssertNode &node) override;
     void visitBlockNode(BlockNode &node) override;
-    void visitBreakNode(BreakNode &node) override;
-    void visitContinueNode(ContinueNode &node) override;
+    void visitJumpNode(JumpNode &node) override;
     void visitExportEnvNode(ExportEnvNode &node) override;
     void visitImportEnvNode(ImportEnvNode &node) override;
     void visitTypeAliasNode(TypeAliasNode &node) override;

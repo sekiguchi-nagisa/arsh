@@ -517,13 +517,13 @@ std::unique_ptr<Node> Parser::parse_statement() {
     }
     case BREAK: {
         Token token = this->expect(BREAK);
-        auto node = uniquify<BreakNode>(token);
+        auto node = uniquify<JumpNode>(token, true);
         this->parse_statementEnd();
         return std::move(node);
     }
     case CONTINUE: {
         Token token = this->expect(CONTINUE);
-        auto node = uniquify<ContinueNode>(token);
+        auto node = uniquify<JumpNode>(token, false);
         this->parse_statementEnd();
         return std::move(node);
     }

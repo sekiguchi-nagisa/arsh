@@ -282,7 +282,7 @@ private:
      * @param node
      * must be BreakNode or ContinueNode.
      */
-    void verifyJumpNode(Node &node) const;
+    void verifyJumpNode(JumpNode &node) const;
 
     void pushReturnType(DSType &returnType) {
         this->curReturnType = &returnType;
@@ -367,8 +367,7 @@ private:
     void visitSubstitutionNode(SubstitutionNode &node) override;
     void visitAssertNode(AssertNode &node) override;
     void visitBlockNode(BlockNode &node) override;
-    void visitBreakNode(BreakNode &node) override;
-    void visitContinueNode(ContinueNode &node) override;
+    void visitJumpNode(JumpNode &node) override;
     void visitExportEnvNode(ExportEnvNode &node) override;
     void visitImportEnvNode(ImportEnvNode &node) override;
     void visitTypeAliasNode(TypeAliasNode &node) override;
