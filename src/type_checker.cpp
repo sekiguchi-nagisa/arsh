@@ -102,56 +102,6 @@ DSType &TypeChecker::TypeGenerator::generateType(TypeNode *typeNode) {
     return typeNode->getType();
 }
 
-
-// ##################################
-// ##     BlockLeavingDetector     ##
-// ##################################
-
-void BlockLeavingDetector::visitDefault(Node &) { }  // do nothing
-
-void BlockLeavingDetector::visitBreakNode(BreakNode &node) {
-    if(this->action == Action::RAISE) {
-        RAISE_TC_ERROR(InsideFinally, node);
-    } else {
-        node.setLeavingBlock(true);
-    }
-}
-
-void BlockLeavingDetector::visitContinueNode(ContinueNode &node) {
-    if(this->action == Action::RAISE) {
-        RAISE_TC_ERROR(InsideFinally, node);
-    } else {
-        node.setLeavingBlock(true);
-    }
-}
-
-void BlockLeavingDetector::visitBlockNode(BlockNode &node) {
-    for(auto &e : node.getNodeList()) {
-        this->visit(*e);
-    }
-}
-
-void BlockLeavingDetector::visitIfNode(IfNode &node) {
-    this->visit(*node.getThenNode());
-    this->visit(*node.getElseNode());
-}
-
-void BlockLeavingDetector::visitTryNode(TryNode &node) {
-    this->visit(*node.getBlockNode());
-    for(auto &e : node.getCatchNodes()) {
-        this->visit(*e);
-    }
-}
-
-void BlockLeavingDetector::visitCatchNode(CatchNode &node) {
-    this->visit(*node.getBlockNode());
-}
-
-void BlockLeavingDetector::operator()(BlockNode &node) {
-    this->visit(node);
-}
-
-
 // #########################
 // ##     TypeChecker     ##
 // #########################
@@ -309,11 +259,14 @@ FieldHandle *TypeChecker::addEntryAndThrowIfDefined(Node &node, const std::strin
     return handle;
 }
 
-void TypeChecker::checkAndThrowIfOutOfLoop(Node &node) const {
-    if(this->fctx.loopLevel() > 0) {
-        return;
+void TypeChecker::verifyJumpNode(Node &node) const {
+    if(this->fctx.loopLevel() == 0) {
+        RAISE_TC_ERROR(InsideLoop, node);
     }
-    RAISE_TC_ERROR(InsideLoop, node);
+
+    if(this->fctx.finallyLevel() > this->fctx.loopLevel()) {
+        RAISE_TC_ERROR(InsideFinally, node);
+    }
 }
 
 void TypeChecker::checkAndThrowIfInsideFinally(BlockEndNode &node) const {
@@ -754,14 +707,39 @@ void TypeChecker::visitBlockNode(BlockNode &node) {
     this->checkTypeWithCurrentScope(&node);
     this->symbolTable.exitScope();
 }
+/**
+ * void BlockLeavingDetector::visitBreakNode(BreakNode &node) {
+    if(this->action == Action::RAISE) {
+        RAISE_TC_ERROR(InsideFinally, node);
+    } else {
+        node.setLeavingBlock(true);
+    }
+}
 
+void BlockLeavingDetector::visitContinueNode(ContinueNode &node) {
+    if(this->action == Action::RAISE) {
+        RAISE_TC_ERROR(InsideFinally, node);
+    } else {
+        node.setLeavingBlock(true);
+    }
+}
+ * @param node
+ */
 void TypeChecker::visitBreakNode(BreakNode &node) {
-    this->checkAndThrowIfOutOfLoop(node);
+    this->verifyJumpNode(node);
+
+    if(this->fctx.tryCatchLevel() > this->fctx.loopLevel()) {
+        node.setLeavingBlock(true);
+    }
     node.setType(this->typePool.getBottomType());
 }
 
 void TypeChecker::visitContinueNode(ContinueNode &node) {
-    this->checkAndThrowIfOutOfLoop(node);
+    this->verifyJumpNode(node);
+
+    if(this->fctx.tryCatchLevel() > this->fctx.loopLevel()) {
+        node.setLeavingBlock(true);
+    }
     node.setType(this->typePool.getBottomType());
 }
 
@@ -896,15 +874,15 @@ void TypeChecker::visitTryNode(TryNode &node) {
         RAISE_TC_ERROR(EmptyTry, *node.getBlockNode());
     }
 
+    this->fctx.enterTry();
     this->checkType(this->typePool.getVoidType(), node.getBlockNode());
-
-    BlockLeavingDetector detector(BlockLeavingDetector::MARK);
-    detector(*node.getBlockNode());
+    this->fctx.leave();
 
     // check type catch block
     for(CatchNode *c : node.getCatchNodes()) {
+        this->fctx.enterTry();
         this->checkType(this->typePool.getVoidType(), c);
-        detector(*c->getBlockNode());
+        this->fctx.leave();
     }
 
     // check type finally block, may be empty node
@@ -916,8 +894,6 @@ void TypeChecker::visitTryNode(TryNode &node) {
         if(node.getFinallyNode()->getNodeList().empty()) {
             RAISE_TC_ERROR(UselessBlock, *node.getFinallyNode());
         }
-
-        BlockLeavingDetector()(*node.getFinallyNode());
     }
 
     /**

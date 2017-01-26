@@ -59,32 +59,6 @@ enum class CoercionKind : unsigned char {
     NOP,                // not allow coercion
 };
 
-class BlockLeavingDetector : protected BaseVisitor {
-public:
-    enum Action {
-        RAISE,
-        MARK,
-    };
-
-private:
-    Action action;
-
-public:
-    BlockLeavingDetector(Action action = Action::RAISE): action(action) {}
-
-private:
-    void visitDefault(Node &node) override;
-    void visitBreakNode(BreakNode &node) override;
-    void visitContinueNode(ContinueNode &node) override;
-    void visitBlockNode(BlockNode &node) override;
-    void visitIfNode(IfNode &node) override;
-    void visitTryNode(TryNode &node) override;
-    void visitCatchNode(CatchNode &node) override;
-
-public:
-    void operator()(BlockNode &node);
-};
-
 class FlowContext {
 private:
     struct Context {
@@ -101,7 +75,7 @@ public:
     FlowContext() : stacks({{0, 0, 0}}) { }
     ~FlowContext() = default;
 
-    unsigned int tryLevel() const {
+    unsigned int tryCatchLevel() const {
         return this->stacks.back().tryLevel;
     }
 
@@ -304,11 +278,11 @@ private:
     }
 
     /**
-     * check node inside loop.
-     * if node is out of loop, throw exception
-     * node is BreakNode or ContinueNode
+     *
+     * @param node
+     * must be BreakNode or ContinueNode.
      */
-    void checkAndThrowIfOutOfLoop(Node &node) const;
+    void verifyJumpNode(Node &node) const;
 
     void pushReturnType(DSType &returnType) {
         this->curReturnType = &returnType;
@@ -330,6 +304,11 @@ private:
         return this->curReturnType;
     }
 
+    /**
+     *
+     * @param node
+     * must be ReturnNode ot ThrowNode.
+     */
     void checkAndThrowIfInsideFinally(BlockEndNode &node) const;
 
     // for apply node type checking
