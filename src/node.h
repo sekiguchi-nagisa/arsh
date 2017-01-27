@@ -1530,7 +1530,12 @@ public:
 class IfNode : public Node {
 private:
     Node *condNode;
-    BlockNode *thenNode;
+
+    /**
+     * may be BlockNode or CastNode(when then block is an expression)
+     */
+    Node *thenNode;
+
     Node *elseNode;
 
 public:
@@ -1545,11 +1550,19 @@ public:
         return this->condNode;
     }
 
-    BlockNode *getThenNode() const {
+    Node *getThenNode() const {
+        return this->thenNode;
+    }
+
+    Node *&refThenNode() {
         return this->thenNode;
     }
 
     Node *getElseNode() const {
+        return this->elseNode;
+    }
+
+    Node *&refElseNode() {
         return this->elseNode;
     }
 

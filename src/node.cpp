@@ -1179,7 +1179,9 @@ void DoWhileNode::accept(NodeVisitor &visitor) {
 /**
  * if condNode is InstanceOfNode and targetNode is VarNode, insert VarDeclNode to blockNode.
  */
-static void resolveIfIsStatement(Node *condNode, BlockNode *blockNode) {
+static void resolveIfIsStatement(Node *condNode, Node *thenNode) {
+    assert(dynamic_cast<BlockNode *>(thenNode) != nullptr);
+
     InstanceOfNode *isNode = dynamic_cast<InstanceOfNode *>(condNode);
     if(isNode == nullptr) {
         return;
@@ -1194,7 +1196,7 @@ static void resolveIfIsStatement(Node *condNode, BlockNode *blockNode) {
     CastNode *castNode = new CastNode(exprNode, isNode->getTargetTypeNode(), true);
     VarDeclNode *declNode =
             new VarDeclNode(isNode->getPos(), std::string(varNode->getVarName()), castNode, true);
-    blockNode->insertNodeToFirst(declNode);
+    static_cast<BlockNode *>(thenNode)->insertNodeToFirst(declNode);
 }
 
 IfNode::IfNode(unsigned int startPos, Node *condNode, BlockNode *thenNode, Node *elseNode) :
