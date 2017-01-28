@@ -111,6 +111,16 @@ public:
         this->close();
     }
 
+    void visitTernaryNode(TernaryNode &node) override {
+        this->open();
+        this->visit(*node.getCondNode());
+        this->append("?");
+        this->visit(*node.getLeftNode());
+        this->append(":");
+        this->visit(*node.getRightNode());
+        this->close();
+    }
+
     void visitAssignNode(AssignNode &node) override {
         this->open();
         this->visit(*node.getLeftNode());
@@ -250,6 +260,12 @@ TEST_F(PrecedenceTest, case8) {
         SCOPED_TRACE("");
         this->equals("(1 = (((2 == 3) && (4 + 5)) || 6))", "1 = 2 == 3 && 4 + 5 || 6");
     });
+}
+
+TEST_F(PrecedenceTest, case9) {
+    ASSERT_NO_FATAL_FAILURE(
+            this->equals("((1 == 2) ? ((3 > 4) ? (5 + 6) : (7 -xor 8)) : (9 && 10))",
+                         "1 == 2 ? 3 > 4 ? 5 + 6 : 7 -xor 8 : 9 && 10"));
 }
 
 int main(int argc, char **argv) {

@@ -1,0 +1,4 @@
+#$test($result = 'parse', $lineNum = 4, $errorKind = 'TokenMismatched', $status = 1)
+
+var a = 45
+$true ? 23 : $a = 4

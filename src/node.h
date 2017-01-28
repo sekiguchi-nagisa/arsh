@@ -1012,6 +1012,45 @@ public:
     void accept(NodeVisitor &visitor) override;
 };
 
+class TernaryNode : public Node {
+private:
+    Node *condNode;
+    Node *leftNode;
+    Node *rightNode;
+
+public:
+    TernaryNode(Node *condNode, Node *leftNode, Node *rightNode) :
+            Node(condNode->getToken()), condNode(condNode),
+            leftNode(leftNode), rightNode(rightNode) {
+        this->updateToken(this->rightNode->getToken());
+    }
+
+    ~TernaryNode();
+
+    Node *getCondNode() {
+        return this->condNode;
+    }
+
+    Node *getLeftNode() {
+        return this->leftNode;
+    }
+
+    Node *& refLeftNode() {
+        return this->leftNode;
+    }
+
+    Node *getRightNode() {
+        return this->rightNode;
+    }
+
+    Node *& refRightNode() {
+        return this->rightNode;
+    }
+
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+};
+
 /**
  * for command argument
  */
@@ -2152,6 +2191,7 @@ struct NodeVisitor {
     virtual void visitMethodCallNode(MethodCallNode &node) = 0;
     virtual void visitNewNode(NewNode &node) = 0;
     virtual void visitCondOpNode(CondOpNode &node) = 0;
+    virtual void visitTernaryNode(TernaryNode &node) = 0;
     virtual void visitCmdNode(CmdNode &node) = 0;
     virtual void visitCmdArgNode(CmdArgNode &node) = 0;
     virtual void visitRedirNode(RedirNode &node) = 0;
@@ -2213,6 +2253,7 @@ struct BaseVisitor : public NodeVisitor {
     virtual void visitMethodCallNode(MethodCallNode &node) override { this->visitDefault(node); }
     virtual void visitNewNode(NewNode &node) override { this->visitDefault(node); }
     virtual void visitCondOpNode(CondOpNode &node) override { this->visitDefault(node); }
+    virtual void visitTernaryNode(TernaryNode &node) override { this->visitDefault(node); }
     virtual void visitCmdNode(CmdNode &node) override { this->visitDefault(node); }
     virtual void visitCmdArgNode(CmdArgNode &node) override { this->visitDefault(node); }
     virtual void visitRedirNode(RedirNode &node) override { this->visitDefault(node); }

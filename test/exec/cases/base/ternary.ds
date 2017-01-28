@@ -1,0 +1,32 @@
+assert(23 == 23 ? $true : false)
+assert(23 <= 1 ? $false : 23 != 54)
+
+var a = $true && 1 ==1 ? -1 : 1
+assert($a == -1)
+$a = $true && 1 != 1 ? -1 : 1
+assert($a == 1)
+
+# nested ternary
+function t($a : Int) : Int {
+    return $a <= 0 ?
+                $a == 0 ?
+                    0 : -1
+                : 1
+}
+
+assert($t(-31) == -1)
+assert($t(0) == 0)
+assert($t(223) == 1)
+
+# ternary cast
+var tt = $true ? new OutOfRangeError("") : new Error("")
+assert($tt is Error)
+
+$tt = $false ? new Error("") : new ArithmeticError("")
+assert($tt is ArithmeticError)
+
+var t2 = $true ? 12 : 34.0
+assert($t2 is Float)
+
+$t2 = $false ? 34.0 : 22b
+assert($t2 == 22.0)
