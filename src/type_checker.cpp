@@ -198,13 +198,13 @@ DSType &TypeChecker::checkType(DSType *requiredType, Node *targetNode,
 }
 
 void TypeChecker::checkTypeWithCurrentScope(BlockNode *blockNode) {
-    bool prevIsTerminal = false;
+    DSType *blockType = &this->typePool.getVoidType();
     for(Node * &targetNode : blockNode->refNodeList()) {
-        if(prevIsTerminal) {
+        if(blockType->isBottomType()) {
             RAISE_TC_ERROR(Unreachable, *targetNode);
         }
         this->checkTypeWithCoercion(this->typePool.getVoidType(), targetNode);
-        prevIsTerminal = targetNode->getType().isBottomType();
+        blockType = &targetNode->getType();
 
         // check empty block
         BlockNode *b;
@@ -217,7 +217,8 @@ void TypeChecker::checkTypeWithCurrentScope(BlockNode *blockNode) {
     blockNode->setBaseIndex(this->symbolTable.curScope().getBaseIndex());
     blockNode->setVarSize(this->symbolTable.curScope().getVarSize());
 
-    blockNode->setType(prevIsTerminal ? this->typePool.getBottomType() : this->typePool.getVoidType());
+    assert(blockType != nullptr && (blockType->isBottomType() || blockType->isVoidType()));
+    blockNode->setType(*blockType);
 }
 
 void TypeChecker::checkTypeWithCoercion(DSType &requiredType, Node * &targetNode) {
