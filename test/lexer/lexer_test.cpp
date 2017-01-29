@@ -774,6 +774,12 @@ TEST_F(LexerTest_Lv1, invalid_regex2) {
     ASSERT_NO_FATAL_FAILURE(EXPECT(INVALID, "$"));
 }
 
+TEST_F(LexerTest_Lv1, invalid_regex3) {
+    const char *text = "$//";
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(INVALID, "$"));
+}
+
 TEST_F(LexerTest_Lv1, subCmd1) {
     const char *text = "$(";
     ASSERT_NO_FATAL_FAILURE({
