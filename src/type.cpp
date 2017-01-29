@@ -540,6 +540,7 @@ TypePool::TypePool() :
     this->initBuiltinType(Task, "Task", false, this->getAnyType(), info_Dummy());
     this->initBuiltinType(Func, "Func", false, this->getAnyType(), info_Dummy());
     this->initBuiltinType(StringIter__, "StringIter%%", false, this->getAnyType(), info_StringIterType());
+    this->initBuiltinType(Regex, "Regex", false, this->getAnyType(), info_RegexType());
 
     // pseudo type for command type checking
     this->initBuiltinType(Proc__, "Proc%%", false, this->getAnyType(), info_Dummy());

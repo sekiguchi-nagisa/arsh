@@ -118,6 +118,15 @@ assert_type_size("void *" 8 SIZEOF_PTR)
 
 
 #++++++++++++++++++++++#
+#     find libpcre     #
+#++++++++++++++++++++++#
+
+check_header(HAVE_PCRE_H "pcre.h")
+set(CMAKE_LIBRARY_PATH "/usr/lib/x86_64-linux-gnu")
+find_library(HAVE_LIBPCRE NAMES pcre)
+
+
+#++++++++++++++++++++++#
 #     find libdbus     #
 #++++++++++++++++++++++#
 
@@ -130,9 +139,9 @@ if(USE_DBUS)
     )
     check_header(HAVE_DBUS_H "dbus/dbus.h")
     check_header(HAVE_DBUS_ARCH_DEPS_H "dbus/dbus-arch-deps.h")
-    set(CMAKE_LIBRARY_PATH "/usr/lib/x86_64-linux-gnu")
     find_library(HAVE_LIBDBUS NAMES dbus-1)
 endif()
+
 
 #++++++++++++++++++++++++#
 #     init submodule     #
@@ -257,7 +266,7 @@ add_subdirectory(${GTEST_DIR})
 set(YDSH_STATIC ydsh_static)
 add_library(${YDSH_STATIC} STATIC ${YDSH_SRC} ${lexer_src} ${bind_src})
 add_dependencies(${YDSH_STATIC} gen_lexer gen_binding gen_bind embed_script)
-target_link_libraries(${YDSH_STATIC} ${HAVE_LIBDBUS})
+target_link_libraries(${YDSH_STATIC} ${HAVE_LIBDBUS} ${HAVE_LIBPCRE})
 
 
 #==============#

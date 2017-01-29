@@ -53,6 +53,7 @@
     OP(FLOAT_LITERAL) \
     OP(STRING_LITERAL) \
     OP(PATH_LITERAL) \
+    OP(REGEX_LITERAL) \
     OP(OPEN_DQUOTE) \
     OP(START_SUB_CMD) \
     OP(APPLIED_NAME) \
@@ -1136,6 +1137,23 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         std::string str;
         this->lexer->singleToString(token, str);    // always success
         return uniquify<ObjectPathNode>(token, std::move(str));
+    }
+    case REGEX_LITERAL: {
+        Token token = this->expect(REGEX_LITERAL);
+        auto old = token;
+
+        /**
+         * skip prefix '$/' and suffix '/'
+         */
+        token.pos += 2;
+        token.size -= 3;
+        std::string str = this->lexer->toTokenText(token);
+        const char *errorStr;
+        auto re = compileRegex(str.c_str(), errorStr);
+        if(!re) {
+            raiseTokenFormatError(REGEX_LITERAL, old, errorStr);
+        }
+        return uniquify<RegexNode>(old, std::move(str), std::move(re));
     }
     case OPEN_DQUOTE: {
         return this->parse_stringExpression();

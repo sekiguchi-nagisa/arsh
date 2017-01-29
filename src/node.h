@@ -27,6 +27,7 @@
 #include "lexer.h"
 #include "type.h"
 #include "handle.h"
+#include "regex_wrapper.h"
 
 namespace ydsh {
 
@@ -414,6 +415,34 @@ public:
 
     void setExprNode(unsigned int index, Node *exprNode) {
         this->nodes[index] = exprNode;
+    }
+
+    void dump(NodeDumper &dumper) const override;
+    void accept(NodeVisitor &visitor) override;
+};
+
+class RegexNode : public Node {
+private:
+    /**
+     * string representation of regex.
+     * TODO: delete it.
+     */
+    std::string reStr;
+
+    PCRE re;
+
+public:
+    RegexNode(Token token, std::string &&str, PCRE &&re) :
+            Node(token), reStr(std::move(str)), re(std::move(re)) { }
+
+    ~RegexNode() = default;
+
+    const std::string &getReStr() const {
+        return this->reStr;
+    }
+
+    PCRE extractRE() {
+        return std::move(re);
     }
 
     void dump(NodeDumper &dumper) const override;
@@ -2177,6 +2206,7 @@ struct NodeVisitor {
     virtual void visitStringValueNode(StringValueNode &node) = 0;
     virtual void visitObjectPathNode(ObjectPathNode &node) = 0;
     virtual void visitStringExprNode(StringExprNode &node) = 0;
+    virtual void visitRegexNode(RegexNode &node) = 0;
     virtual void visitArrayNode(ArrayNode &node) = 0;
     virtual void visitMapNode(MapNode &node) = 0;
     virtual void visitTupleNode(TupleNode &node) = 0;
@@ -2239,6 +2269,7 @@ struct BaseVisitor : public NodeVisitor {
     virtual void visitStringValueNode(StringValueNode &node) override { this->visitDefault(node); }
     virtual void visitObjectPathNode(ObjectPathNode &node) override { this->visitDefault(node); }
     virtual void visitStringExprNode(StringExprNode &node) override { this->visitDefault(node); }
+    virtual void visitRegexNode(RegexNode &node) override { this->visitDefault(node); }
     virtual void visitArrayNode(ArrayNode &node) override { this->visitDefault(node); }
     virtual void visitMapNode(MapNode &node) override { this->visitDefault(node); }
     virtual void visitTupleNode(TupleNode &node) override { this->visitDefault(node); }

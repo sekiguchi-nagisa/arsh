@@ -429,6 +429,10 @@ void TypeChecker::visitStringExprNode(StringExprNode &node) {
     node.setType(this->typePool.getStringType());
 }
 
+void TypeChecker::visitRegexNode(RegexNode &node) {
+    node.setType(this->typePool.getRegexType());
+}
+
 void TypeChecker::visitArrayNode(ArrayNode &node) {
     unsigned int size = node.getExprNodes().size();
     assert(size != 0);

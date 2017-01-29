@@ -432,6 +432,10 @@ void ByteCodeGenerator::visitStringExprNode(StringExprNode &node) {
     this->generateStringExpr(node, false);
 }
 
+void ByteCodeGenerator::visitRegexNode(RegexNode &node) {
+    this->writeLdcIns(DSValue::create<Regex_Object>(node.getType(), node.extractRE()));
+}
+
 void ByteCodeGenerator::visitArrayNode(ArrayNode &node) {
     this->writeTypeIns(OpCode::NEW_ARRAY, node.getType());
     for(Node *e : node.getExprNodes()) {

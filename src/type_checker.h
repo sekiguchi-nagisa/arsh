@@ -345,6 +345,7 @@ private:
     void visitStringValueNode(StringValueNode &node) override;
     void visitObjectPathNode(ObjectPathNode &node) override;
     void visitStringExprNode(StringExprNode &node) override;
+    void visitRegexNode(RegexNode &node) override;
     void visitArrayNode(ArrayNode &node) override;
     void visitMapNode(MapNode &node) override;
     void visitTupleNode(TupleNode &node) override;

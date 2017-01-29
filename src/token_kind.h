@@ -62,6 +62,7 @@
     TOKEN(FLOAT_LITERAL                      , "<Float Literal>") \
     TOKEN(STRING_LITERAL                     , "<String Literal>") \
     TOKEN(PATH_LITERAL                       , "<Path Literal>") \
+    TOKEN(REGEX_LITERAL                      , "<Regex Literal>") \
     TOKEN(OPEN_DQUOTE                        , "\"") \
     TOKEN(START_SUB_CMD                      , "$(") \
     /* applied name */\

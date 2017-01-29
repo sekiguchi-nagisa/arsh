@@ -47,6 +47,7 @@ native_type_info_t info_DBusObjectType();
 native_type_info_t info_ErrorType();
 native_type_info_t info_ProxyType();
 native_type_info_t info_StringIterType();
+native_type_info_t info_RegexType();
 
 // for type template initialization.
 native_type_info_t info_ArrayType();

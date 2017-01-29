@@ -1,0 +1,4 @@
+
+assert $/a/.search('bac')
+
+assert not $/abc/.search('cdf')

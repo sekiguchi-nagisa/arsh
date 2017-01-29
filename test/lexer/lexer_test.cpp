@@ -746,6 +746,34 @@ TEST_F(LexerTest_Lv1, invalid_string_expr) {
     });
 }
 
+// regex literal
+TEST_F(LexerTest_Lv1, regex1) {
+    const char *text = "$/hoge/";
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(REGEX_LITERAL, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
+}
+
+TEST_F(LexerTest_Lv1, regex2) {
+    const char *text = "$/ho\\/ge/";
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(REGEX_LITERAL, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
+}
+
+TEST_F(LexerTest_Lv1, invalid_regex1) {
+    const char *text = "$/ho/ge/";
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(REGEX_LITERAL, "$/ho/", INVALID, "g"));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
+}
+
+TEST_F(LexerTest_Lv1, invalid_regex2) {
+    const char *text = "$/ho\nge/";
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(INVALID, "$"));
+}
+
 TEST_F(LexerTest_Lv1, subCmd1) {
     const char *text = "$(";
     ASSERT_NO_FATAL_FAILURE({

@@ -41,7 +41,8 @@ namespace ydsh {
     OP(DBusObject) \
     OP(Error) \
     OP(Proxy) \
-    OP(StringIter)
+    OP(StringIter) \
+    OP(Regex)
 
 // type template
 #define EACH_HANDLE_INFO_TYPE_TEMP(OP) \

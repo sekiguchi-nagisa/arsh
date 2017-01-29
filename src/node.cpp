@@ -258,6 +258,18 @@ void StringExprNode::accept(NodeVisitor &visitor) {
 }
 
 // #######################
+// ##     RegexNode     ##
+// #######################
+
+void RegexNode::dump(NodeDumper &dumper) const {
+    DUMP(reStr);
+}
+
+void RegexNode::accept(NodeVisitor &visitor) {
+    visitor.visitRegexNode(*this);
+}
+
+// #######################
 // ##     ArrayNode     ##
 // #######################
 

@@ -1206,6 +1206,8 @@ YDSH_METHOD string_iter(RuntimeContext &ctx) {
     RET(DSValue::create<StringIter_Object>(getPool(ctx).getStringIterType(), str));
 }
 
+static bool regexSearch(const Regex_Object *re, const String_Object *str);
+
 
 // ########################
 // ##     StringIter     ##
@@ -1262,6 +1264,25 @@ YDSH_METHOD objectpath_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(objectpath_size);
     int size = typeAs<String_Object>(LOCAL(0))->size();
     RET(DSValue::create<Int_Object>(getPool(ctx).getInt32Type(), size));
+}
+
+
+// ###################
+// ##     Regex     ##
+// ###################
+
+static bool regexSearch(const Regex_Object *re, const String_Object *str) {
+    int ovec[1];
+    int match = pcre_exec(re->getRe().get(), nullptr, str->getValue(), str->size(), 0, 0, ovec, arraySize(ovec));
+    return match >= 0;
+}
+
+//!bind: function search($this : Regex, $target : String) : Boolean
+YDSH_METHOD regex_search(RuntimeContext &ctx) {
+    auto *re = typeAs<Regex_Object>(LOCAL(0));
+    auto *str = typeAs<String_Object>(LOCAL(1));
+    bool r = regexSearch(re, str);
+    RET_BOOL(r);
 }
 
 

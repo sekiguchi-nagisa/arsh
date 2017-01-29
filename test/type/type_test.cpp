@@ -167,6 +167,7 @@ TEST_F(TypeTest, builtinName) {
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("TypeCastError", this->pool.getTypeCastErrorType()));
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("StackOverflowError", this->pool.getStackOverflowErrorType()));
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("DBusError", this->pool.getDBusErrorType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Regex", this->pool.getRegexType()));
 }
 
 TEST_F(TypeTest, superType) {
@@ -200,6 +201,7 @@ TEST_F(TypeTest, superType) {
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getTypeCastErrorType(), this->pool.getErrorType()));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getStackOverflowErrorType(), this->pool.getErrorType()));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getDBusErrorType(), this->pool.getErrorType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getRegexType(), this->pool.getAnyType()));
 }
 
 TEST_F(TypeTest, attribute) {
@@ -229,6 +231,7 @@ TEST_F(TypeTest, attribute) {
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.getTypeCastErrorType()));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.getStackOverflowErrorType()));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.getDBusErrorType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getRegexType()));
 
     ASSERT_NO_FATAL_FAILURE(
             this->assertAttribute(DSType::FUNC_TYPE, this->toType(func(type("Int32")))));

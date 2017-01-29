@@ -29,6 +29,7 @@
 #include "misc/buffer.hpp"
 #include "lexer.h"
 #include "opcode.h"
+#include "regex_wrapper.h"
 
 namespace ydsh {
 
@@ -386,6 +387,20 @@ struct StringIter_Object : public DSObject {
 
     StringIter_Object(DSType &type, String_Object *str) :
             DSObject(type), curIndex(0), strObj(DSValue(str)) { }
+};
+
+class Regex_Object : public DSObject {
+private:
+    PCRE re;
+
+public:
+    Regex_Object(DSType &type, PCRE &&re) : DSObject(type), re(std::move(re)) {}
+
+    ~Regex_Object() = default;
+
+    const PCRE &getRe() const {
+        return this->re;
+    }
 };
 
 class Array_Object : public DSObject {

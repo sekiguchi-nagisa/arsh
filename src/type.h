@@ -519,6 +519,7 @@ public:
         Boolean,
         String,
         StringArray,    // for command argument
+        Regex,
         Error,
         Task,
         Func,
@@ -665,6 +666,10 @@ public:
 
     DSType &getStringIterType() const {
         return *this->typeTable[StringIter__];
+    }
+
+    DSType &getRegexType() const {
+        return *this->typeTable[Regex];
     }
 
     DSType &getObjectPathType() const {

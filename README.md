@@ -14,6 +14,7 @@ Language specification is subject to change without notice.
 * expect (for testing)
 * gcc/clang (need c++11 support)
 * libdbus 1.6.x or later
+* libpcre
 * libxml2 (for D-Bus introspection)
 
 ### Tested Compiler

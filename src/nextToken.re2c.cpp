@@ -124,6 +124,9 @@ TokenKind Lexer::nextToken(Token &token) {
       CMD_ARG_START_CHAR = "\\" [^\r\n\000] | [^ \t\r\n\\;'"`|&<>()$#\000];
       CMD_ARG_CHAR       = "\\" [^\000]     | [^ \t\r\n\\;'"`|&<>()$\000];
 
+      REGEX_CHAR = "\\/" | [^\r\n/];
+      REGEX = "$/"  REGEX_CHAR+ "/";
+
       LINE_END = ";";
       NEW_LINE = [\r\n][ \t\r\n]*;
       COMMENT = "#" [^\r\n\000]*;
@@ -179,6 +182,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT> ESTRING_LITERAL   { UPDATE_LN(); MODE(EXPR); RET(STRING_LITERAL); }
       <STMT> "p" ['] PATH_CHARS [']
                                { MODE(EXPR); RET(PATH_LITERAL); }
+      <STMT> REGEX             { MODE(EXPR); RET(REGEX_LITERAL); }
       <STMT> ["]               { MODE(EXPR); PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
       <STMT> "$("              { MODE(EXPR); PUSH_MODE(STMT); RET(START_SUB_CMD); }
 
