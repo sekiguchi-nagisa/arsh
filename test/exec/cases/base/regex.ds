@@ -4,3 +4,16 @@ assert $/a/.search('bac')
 assert not $/abc/.search('cdf')
 
 assert $/^.$/.search("あ")
+
+assert '/hoge' =~ $/\//
+
+assert 'hoge' !~ $/hoge./
+
+assert new Regex(".*").search("a")
+
+try {
+    new Regex("**")
+    assert false
+} catch $e {
+    assert $e is RegexSyntaxError
+}

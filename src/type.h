@@ -539,6 +539,7 @@ public:
         DBusError,
         SystemError,    // for errno
         StackOverflowError,
+        RegexSyntaxError,
 
         /**
          * for internal status reporting.
@@ -731,6 +732,10 @@ public:
 
     DSType &getStackOverflowErrorType() const {
         return *this->typeTable[StackOverflowError];
+    }
+
+    DSType &getRegexSyntaxErrorType() const {
+        return *this->typeTable[RegexSyntaxError];
     }
 
     // for internal status reporting

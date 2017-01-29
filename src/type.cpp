@@ -574,6 +574,7 @@ TypePool::TypePool() :
     this->initErrorType(DBusError, "DBusError", this->getErrorType());
     this->initErrorType(SystemError, "SystemError", this->getErrorType());
     this->initErrorType(StackOverflowError, "StackOverflowError", this->getErrorType());
+    this->initErrorType(RegexSyntaxError, "RegexSyntaxError", this->getErrorType());
 
     this->registerDBusErrorTypes();
 

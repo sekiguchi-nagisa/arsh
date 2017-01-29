@@ -1208,6 +1208,24 @@ YDSH_METHOD string_iter(RuntimeContext &ctx) {
 
 static bool regexSearch(const Regex_Object *re, const String_Object *str);
 
+//!bind: function $OP_MATCH($this : String, $re : Regex) : Boolean
+YDSH_METHOD string_match(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_match);
+    auto *str = typeAs<String_Object>(LOCAL(0));
+    auto *re = typeAs<Regex_Object>(LOCAL(1));
+    bool r = regexSearch(re, str);
+    RET_BOOL(r);
+}
+
+//!bind: function $OP_UNMATCH($this : String, $re : Regex) : Boolean
+YDSH_METHOD string_unmatch(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_unmatch);
+    auto *str = typeAs<String_Object>(LOCAL(0));
+    auto *re = typeAs<Regex_Object>(LOCAL(1));
+    bool r = !regexSearch(re, str);
+    RET_BOOL(r);
+}
+
 
 // ########################
 // ##     StringIter     ##
@@ -1277,8 +1295,22 @@ static bool regexSearch(const Regex_Object *re, const String_Object *str) {
     return match >= 0;
 }
 
+//!bind: constructor ($this : Regex, $str : String)
+YDSH_METHOD regex_init(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(regex_init);
+    auto *str = typeAs<String_Object>(LOCAL(1));
+    const char *errorStr;
+    auto re = compileRegex(str->getValue(), errorStr);
+    if(!re) {
+        throwError(ctx, getPool(ctx).getRegexSyntaxErrorType(), std::string(errorStr));
+    }
+    setLocal(ctx, 0, DSValue::create<Regex_Object>(getPool(ctx).getRegexType(), std::move(re)));
+    RET_VOID;
+}
+
 //!bind: function search($this : Regex, $target : String) : Boolean
 YDSH_METHOD regex_search(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(regex_search);
     auto *re = typeAs<Regex_Object>(LOCAL(0));
     auto *str = typeAs<String_Object>(LOCAL(1));
     bool r = regexSearch(re, str);
