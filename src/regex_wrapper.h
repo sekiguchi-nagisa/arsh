@@ -33,7 +33,7 @@ using PCRE = std::unique_ptr<pcre, PCREDeleter>;
 
 inline PCRE compileRegex(const char *pattern, const char * &errorStr) {
     int errorOffset;
-    pcre *re = pcre_compile(pattern,  PCRE_JAVASCRIPT_COMPAT, &errorStr, &errorOffset, nullptr);
+    pcre *re = pcre_compile(pattern,  PCRE_JAVASCRIPT_COMPAT | PCRE_UTF8, &errorStr, &errorOffset, nullptr);
     return PCRE(re);
 
 }

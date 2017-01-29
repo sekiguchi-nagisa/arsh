@@ -2,3 +2,5 @@
 assert $/a/.search('bac')
 
 assert not $/abc/.search('cdf')
+
+assert $/^.$/.search("あ")
