@@ -1029,7 +1029,15 @@ public:
         return this->leftNode;
     }
 
+    Node *& refLeftNode() {
+        return this->leftNode;
+    }
+
     Node *getRightNode() const {
+        return this->rightNode;
+    }
+
+    Node *& refRightNode() {
         return this->rightNode;
     }
 
@@ -1057,6 +1065,10 @@ public:
     ~TernaryNode();
 
     Node *getCondNode() {
+        return this->condNode;
+    }
+
+    Node *& refCondNode() {
         return this->condNode;
     }
 
@@ -1273,6 +1285,10 @@ public:
     ~AssertNode();
 
     Node *getCondNode() const {
+        return this->condNode;
+    }
+
+    Node *&refCondNode() {
         return this->condNode;
     }
 
@@ -1610,6 +1626,10 @@ public:
     ~IfNode();
 
     Node *getCondNode() const {
+        return this->condNode;
+    }
+
+    Node *&refCondNode() {
         return this->condNode;
     }
 

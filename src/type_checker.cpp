@@ -618,13 +618,13 @@ void TypeChecker::visitNewNode(NewNode &node) {
 
 void TypeChecker::visitCondOpNode(CondOpNode &node) {
     auto &booleanType = this->typePool.getBooleanType();
-    this->checkType(booleanType, node.getLeftNode());
-    this->checkType(booleanType, node.getRightNode());
+    this->checkTypeWithCoercion(booleanType, node.refLeftNode());
+    this->checkTypeWithCoercion(booleanType, node.refRightNode());
     node.setType(booleanType);
 }
 
 void TypeChecker::visitTernaryNode(TernaryNode &node) {
-    this->checkType(this->typePool.getBooleanType(), node.getCondNode());
+    this->checkTypeWithCoercion(this->typePool.getBooleanType(), node.refCondNode());
     auto &leftType = this->checkType(node.getLeftNode());
     auto &rightType = this->checkType(node.getRightNode());
 
@@ -720,7 +720,7 @@ void TypeChecker::visitSubstitutionNode(SubstitutionNode &node) {
 }
 
 void TypeChecker::visitAssertNode(AssertNode &node) {
-    this->checkType(this->typePool.getBooleanType(), node.getCondNode());
+    this->checkTypeWithCoercion(this->typePool.getBooleanType(), node.refCondNode());
     this->checkType(this->typePool.getStringType(), node.getMessageNode());
     node.setType(this->typePool.getVoidType());
 }
@@ -817,7 +817,7 @@ void TypeChecker::visitDoWhileNode(DoWhileNode &node) {
 }
 
 void TypeChecker::visitIfNode(IfNode &node) {
-    this->checkType(this->typePool.getBooleanType(), node.getCondNode());
+    this->checkTypeWithCoercion(this->typePool.getBooleanType(), node.refCondNode());
     this->checkType(this->typePool.getVoidType(), node.getThenNode());
     this->checkType(this->typePool.getVoidType(), node.getElseNode());
 
