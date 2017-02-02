@@ -782,7 +782,7 @@ void TypeChecker::visitForNode(ForNode &node) {
     this->symbolTable.enterScope();
 
     this->checkTypeWithCoercion(this->typePool.getVoidType(), node.refInitNode());
-    this->checkType(this->typePool.getBooleanType(), node.getCondNode());
+    this->checkTypeWithCoercion(this->typePool.getBooleanType(), node.refCondNode());
     this->checkTypeWithCoercion(this->typePool.getVoidType(), node.refIterNode());
 
     this->enterLoop();
@@ -794,7 +794,7 @@ void TypeChecker::visitForNode(ForNode &node) {
 }
 
 void TypeChecker::visitWhileNode(WhileNode &node) {
-    this->checkType(this->typePool.getBooleanType(), node.getCondNode());
+    this->checkTypeWithCoercion(this->typePool.getBooleanType(), node.refCondNode());
     this->enterLoop();
     this->checkType(this->typePool.getVoidType(), node.getBlockNode());
     this->exitLoop();
@@ -810,7 +810,7 @@ void TypeChecker::visitDoWhileNode(DoWhileNode &node) {
     /**
      * block node and cond node is same scope.
      */
-    this->checkType(this->typePool.getBooleanType(), node.getCondNode());
+    this->checkTypeWithCoercion(this->typePool.getBooleanType(), node.refCondNode());
 
     this->symbolTable.exitScope();
     node.setType(this->typePool.getVoidType());

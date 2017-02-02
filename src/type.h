@@ -56,6 +56,7 @@ public:
     static constexpr flag8_t IFACE_TYPE  = 1 << 3;  // interface
     static constexpr flag8_t RECORD_TYPE = 1 << 4;  // indicate user defined type
     static constexpr flag8_t BOTTOM_TYPE = 1 << 5;  // Bottom
+    static constexpr flag8_t OPTION_TYPE = 1 << 6;  // Option<T>
 
     NON_COPYABLE(DSType);
 
@@ -101,6 +102,10 @@ public:
 
     bool isBottomType() const {
         return hasFlag(this->attributeSet, BOTTOM_TYPE);
+    }
+
+    bool isOptionType() const {
+        return hasFlag(this->attributeSet, OPTION_TYPE);
     }
 
     /**
@@ -162,7 +167,7 @@ public:
      * if this type is equivalent to target type or
      * the super type of target type, return true.
      */
-    virtual bool isSameOrBaseTypeOf(const DSType &targetType) const;
+    bool isSameOrBaseTypeOf(const DSType &targetType) const;
 
     virtual const DSCode *getMethodRef(unsigned int methodIndex);
     virtual void copyAllMethodRef(std::vector<const DSCode *> &methodTable);
@@ -297,8 +302,9 @@ public:
     /**
      * super type is AnyType or VariantType.
      */
-    ReifiedType(native_type_info_t info, DSType *superType, std::vector<DSType *> &&elementTypes) :
-            BuiltinType(superType, info, 0), elementTypes(std::move(elementTypes)) { }
+    ReifiedType(native_type_info_t info, DSType *superType,
+                std::vector<DSType *> &&elementTypes, flag8_set_t attribute = 0) :
+            BuiltinType(superType, info, attribute), elementTypes(std::move(elementTypes)) { }
 
     virtual ~ReifiedType() = default;
 
@@ -565,6 +571,7 @@ private:
     TypeTemplate *arrayTemplate;
     TypeTemplate *mapTemplate;
     TypeTemplate *tupleTemplate;
+    TypeTemplate *optionTemplate;
 
 public:
     NON_COPYABLE(TypePool);
@@ -762,6 +769,10 @@ public:
 
     const TypeTemplate &getTupleTemplate() const {
         return *this->tupleTemplate;
+    }
+
+    const TypeTemplate &getOptionTemplate() const {
+        return *this->optionTemplate;
     }
 
     // for type lookup

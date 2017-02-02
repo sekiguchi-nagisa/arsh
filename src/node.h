@@ -1547,6 +1547,10 @@ public:
         return this->condNode;
     }
 
+    Node *&refCondNode() {
+        return this->condNode;
+    }
+
     Node *getIterNode() const {
         return this->iterNode;
     }
@@ -1580,6 +1584,10 @@ public:
         return this->condNode;
     }
 
+    Node *&refCondNode() {
+        return this->condNode;
+    }
+
     BlockNode *getBlockNode() const {
         return this->blockNode;
     }
@@ -1604,6 +1612,10 @@ public:
     }
 
     Node *getCondNode() const {
+        return this->condNode;
+    }
+
+    Node *&refCondNode() {
         return this->condNode;
     }
 

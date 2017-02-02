@@ -61,6 +61,10 @@ std::unique_ptr<TypeNode> tuple(std::unique_ptr<TypeNode> &&first, T&&... rest) 
     return reified("Tuple", std::move(first), std::forward<T>(rest)...);
 }
 
+inline std::unique_ptr<TypeNode> opt(std::unique_ptr<TypeNode> &&type) {
+    return reified("Option", std::move(type));
+}
+
 
 class TypeTest : public ::testing::Test {
 public:
@@ -175,6 +179,7 @@ TEST_F(TypeTest, superType) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->pool.getAnyType().getSuperType() == nullptr));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->pool.getVoidType().getSuperType() == nullptr));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->pool.getBottomType().getSuperType() == nullptr));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->toType(opt(type("String"))).getSuperType() == nullptr));
 
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getVariantType(), this->pool.getAnyType()));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getValueType(), this->pool.getVariantType()));
@@ -249,6 +254,7 @@ TEST_F(TypeTest, templateName) {
     ASSERT_NO_FATAL_FAILURE(this->assertTemplateName("Array", this->pool.getArrayTemplate(), 1));
     ASSERT_NO_FATAL_FAILURE(this->assertTemplateName("Map", this->pool.getMapTemplate(), 2));
     ASSERT_NO_FATAL_FAILURE(this->assertTemplateName("Tuple", this->pool.getTupleTemplate(), 0));
+    ASSERT_NO_FATAL_FAILURE(this->assertTemplateName("Option", this->pool.getOptionTemplate(), 0));
 }
 
 TEST_F(TypeTest, typeToken) {
@@ -292,6 +298,14 @@ TEST_F(TypeTest, api) {
             ASSERT_FALSE(this->pool.getBottomType().isSameOrBaseTypeOf(this->pool.getBooleanType())));
     ASSERT_NO_FATAL_FAILURE(
             ASSERT_TRUE(this->pool.getVoidType().isSameOrBaseTypeOf(this->pool.getBottomType())));
+    ASSERT_NO_FATAL_FAILURE(
+            ASSERT_TRUE(this->toType(opt(type("Int32"))).isSameOrBaseTypeOf(this->pool.getBottomType())));
+    ASSERT_NO_FATAL_FAILURE(
+            ASSERT_FALSE(this->pool.getAnyType().isSameOrBaseTypeOf(this->toType(opt(type("Int32"))))));
+    ASSERT_NO_FATAL_FAILURE(
+            ASSERT_TRUE(this->toType(opt(type("Int32"))).isSameOrBaseTypeOf(this->pool.getInt32Type())));
+    ASSERT_NO_FATAL_FAILURE(
+            ASSERT_TRUE(this->toType(opt(type("Error"))).isSameOrBaseTypeOf(this->pool.getArithmeticErrorType())));
 }
 
 int main(int argc, char **argv) {

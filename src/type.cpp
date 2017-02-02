@@ -65,6 +65,9 @@ bool DSType::isSameOrBaseTypeOf(const DSType &targetType) const {
     if(targetType.isBottomType()) {
         return true;
     }
+    if(this->isOptionType()) {
+        return static_cast<const ReifiedType *>(this)->getElementTypes()[0]->isSameOrBaseTypeOf(targetType);
+    }
     DSType *superType = targetType.getSuperType();
     return superType != nullptr && this->isSameOrBaseTypeOf(*superType);
 }
@@ -561,6 +564,9 @@ TypePool::TypePool() :
     elements = std::vector<DSType *>();
     this->tupleTemplate = this->initTypeTemplate("Tuple", std::move(elements), info_TupleType());   // pseudo template.
 
+    elements = std::vector<DSType *>();
+    this->optionTemplate = this->initTypeTemplate("Option", std::move(elements), info_Dummy()); // pseudo template
+
     // init string array type(for command argument)
     std::vector<DSType *> types(1);
     types[0] = &this->getStringType();
@@ -617,15 +623,25 @@ DSType &TypePool::createReifiedType(const TypeTemplate &typeTemplate,
         return this->createTupleType(std::move(elementTypes));
     }
 
+    flag8_set_t attr = this->optionTemplate->getName() == typeTemplate.getName() ? DSType::OPTION_TYPE : 0;
+
     // check each element type
-    this->checkElementTypes(typeTemplate, elementTypes);
+    if(attr) {
+        auto *type = elementTypes[0];
+        if(type->isOptionType() || type->isVoidType()) {
+            RAISE_TL_ERROR(InvalidElement, this->getTypeName(*type));
+        }
+    } else {
+        this->checkElementTypes(typeTemplate, elementTypes);
+    }
 
     std::string typeName(this->toReifiedTypeName(typeTemplate, elementTypes));
     DSType *type = this->typeMap.getType(typeName);
     if(type == nullptr) {
-        DSType *superType = this->asVariantType(elementTypes) ? &this->getVariantType() : &this->getAnyType();
+        DSType *superType = attr ? nullptr :
+                            this->asVariantType(elementTypes) ? &this->getVariantType() : &this->getAnyType();
         return *this->typeMap.addType(std::move(typeName),
-                                      new ReifiedType(typeTemplate.getInfo(), superType, std::move(elementTypes)));
+                                      new ReifiedType(typeTemplate.getInfo(), superType, std::move(elementTypes), attr));
     }
     return *type;
 }
@@ -863,7 +879,7 @@ void TypePool::checkElementTypes(const TypeTemplate &t, const std::vector<DSType
     }
 
     for(unsigned int i = 0; i < size; i++) {
-        if(!t.getAcceptableTypes()[i]->isSameOrBaseTypeOf(*elementTypes[i])) {
+        if(!t.getAcceptableTypes()[i]->isSameOrBaseTypeOf(*elementTypes[i]) && !elementTypes[i]->isOptionType()) {
             RAISE_TL_ERROR(InvalidElement, this->getTypeName(*elementTypes[i]));
         }
     }
