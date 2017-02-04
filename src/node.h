@@ -689,21 +689,12 @@ public:
         return this->numCastOp;
     }
 
-    /**
-     * this node must be typed.
-     * not allow void cast.
-     */
-    bool resolveCastOp(TypePool &pool);
+    void setNumberCastOp(unsigned short op) {
+        this->numCastOp = op;
+    }
 
     void dump(NodeDumper &dumper) const override;
     void accept(NodeVisitor &visitor) override;
-
-    /**
-     * for implicit cast.
-     * targetNode must be typed node.
-     * type is after casted value type.
-     */
-    static CastNode *newTypedCastNode(TypePool &pool, Node *targetNode, DSType &type);
 };
 
 class InstanceOfNode : public Node {
@@ -942,19 +933,19 @@ public:
 class BinaryOpNode : public Node {
 private:
     /**
-     * after call this->createApplyNode(), will be null.
+     * will be null.
      */
     Node *leftNode;
 
     /**
-     * after call this->createApplyNode(), will be null.
+     * will be null.
      */
     Node *rightNode;
 
     TokenKind op;
 
     /**
-     * before call this->createApplyNode(), it is null.
+     * initial value is null
      */
     Node *optNode;
 
@@ -988,22 +979,14 @@ public:
     }
 
     /**
-     * create MethodCallNode and set to this->optNode.
-     * leftNode and rightNode will be null.
-     */
-    static void toMethodCall(BinaryOpNode &node);
-
-    /**
-     * create StringExprNode and set to this->optNode.
-     * left and rightNode will be null.
-     */
-    static void toStringExpr(TypePool &pool, BinaryOpNode &node);
-
-    /**
      * return null, before call toMethodCall().
      */
     Node *getOptNode() const {
         return this->optNode;
+    }
+
+    void setOptNode(Node *node) {
+        this->optNode = node;
     }
 
     void dump(NodeDumper &dumper) const override;

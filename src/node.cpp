@@ -443,60 +443,6 @@ TypeNode *CastNode::getTargetTypeNode() const {
     return this->targetTypeNode;
 }
 
-bool CastNode::resolveCastOp(TypePool &pool) {
-    auto &exprType = this->exprNode->getType();
-    auto &targetType = this->getType();
-
-    /**
-     * nop
-     */
-    if(targetType.isSameOrBaseTypeOf(exprType)) {
-        return true;
-    }
-
-    /**
-     * number cast
-     */
-    int beforeIndex = pool.getNumTypeIndex(exprType);
-    int afterIndex = pool.getNumTypeIndex(targetType);
-    if(beforeIndex > -1 && afterIndex > -1) {
-        static const unsigned short table[8][8] = {
-                {NOP,           COPY_INT,        COPY_INT,        COPY_INT, COPY_INT, NEW_LONG,   NEW_LONG,   U32_TO_D},
-                {TO_B,          NOP,             TO_U16,          COPY_INT, COPY_INT, I_NEW_LONG, I_NEW_LONG, I32_TO_D},
-                {TO_B,          TO_I16,          NOP,             COPY_INT, COPY_INT, NEW_LONG,   NEW_LONG,   U32_TO_D},
-                {TO_B,          TO_I16,          TO_U16,          NOP,      COPY_INT, I_NEW_LONG, I_NEW_LONG, I32_TO_D},
-                {TO_B,          TO_I16,          TO_U16,          COPY_INT, NOP,      NEW_LONG,   NEW_LONG,   U32_TO_D},
-                {NEW_INT|TO_B,  NEW_INT|TO_I16,  NEW_INT|TO_U16,  NEW_INT,  NEW_INT,  NOP,        COPY_LONG,  I64_TO_D},
-                {NEW_INT|TO_B,  NEW_INT|TO_I16,  NEW_INT|TO_U16,  NEW_INT,  NEW_INT,  COPY_LONG,  NOP,        U64_TO_D},
-                {D_TO_U32|TO_B, D_TO_I32|TO_I16, D_TO_U32|TO_U16, D_TO_I32, D_TO_U32, D_TO_I64,   D_TO_U64,   NOP},
-        };
-
-        assert(beforeIndex >= 0 && beforeIndex <= 8);
-        assert(afterIndex >= 0 && afterIndex <= 8);
-        this->setOpKind(CastNode::NUM_CAST);
-        this->numCastOp = table[beforeIndex][afterIndex];
-        return true;
-    }
-
-    /**
-     * to string
-     */
-    if(targetType == pool.getStringType()) {
-        this->setOpKind(CastNode::TO_STRING);
-        return true;
-    }
-
-    /**
-     * check cast
-     */
-    if(!targetType.isBottomType() && exprType.isSameOrBaseTypeOf(targetType)) {
-        this->setOpKind(CastNode::CHECK_CAST);
-        return true;
-    }
-
-    return false;
-}
-
 void CastNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
     TypeNode *targetTypeToken = this->getTargetTypeNode();
@@ -537,20 +483,6 @@ void CastNode::dump(NodeDumper &dumper) const {
 
 void CastNode::accept(NodeVisitor &visitor) {
     visitor.visitCastNode(*this);
-}
-
-CastNode *CastNode::newTypedCastNode(TypePool &pool, Node *targetNode, DSType &type) {
-    assert(!targetNode->isUntyped());
-    CastNode *castNode = new CastNode(targetNode, nullptr);
-    castNode->setType(type);
-    if(type == pool.getVoidType()) {
-        castNode->setOpKind(CastNode::TO_VOID);
-    } else {
-        bool s = castNode->resolveCastOp(pool);
-        (void) s;   // do nothing
-        assert(s);
-    }
-    return castNode;
 }
 
 
@@ -748,44 +680,6 @@ BinaryOpNode::~BinaryOpNode() {
     delete this->leftNode;
     delete this->rightNode;
     delete this->optNode;
-}
-
-void BinaryOpNode::toMethodCall(BinaryOpNode &node) {
-    auto *methodCallNode = new MethodCallNode(node.leftNode, resolveBinaryOpName(node.op));
-    methodCallNode->refArgNodes().push_back(node.rightNode);
-
-    // assign null to prevent double free
-    node.leftNode = nullptr;
-    node.rightNode = nullptr;
-
-    node.optNode = methodCallNode;
-}
-
-void BinaryOpNode::toStringExpr(TypePool &pool, BinaryOpNode &node) {
-    int needCast = 0;
-    if(node.leftNode->getType() != pool.getStringType()) {
-        needCast--;
-    }
-    if(node.rightNode->getType() != pool.getStringType()) {
-        needCast++;
-    }
-
-    // perform string cast
-    if(needCast == -1) {
-        node.leftNode = CastNode::newTypedCastNode(pool, node.leftNode, pool.getStringType());
-    } else if(needCast == 1) {
-        node.rightNode = CastNode::newTypedCastNode(pool, node.rightNode, pool.getStringType());
-    }
-
-    auto *exprNode = new StringExprNode(node.leftNode->getPos());
-    exprNode->addExprNode(node.leftNode);
-    exprNode->addExprNode(node.rightNode);
-
-    // assign null to prevent double free
-    node.leftNode = nullptr;
-    node.rightNode = nullptr;
-
-    node.optNode = exprNode;
 }
 
 void BinaryOpNode::dump(NodeDumper &dumper) const {

@@ -248,7 +248,7 @@ bool TypeChecker::checkCoercion(const DSType &requiredType, const DSType &target
 }
 
 void TypeChecker::resolveCoercion(DSType &requiredType, Node * &targetNode) {
-    targetNode = CastNode::newTypedCastNode(this->typePool, targetNode, requiredType);
+    targetNode = this->newTypedCastNode(targetNode, requiredType);
 }
 
 FieldHandle *TypeChecker::addEntryAndThrowIfDefined(Node &node, const std::string &symbolName, DSType &type,
@@ -334,6 +334,101 @@ void TypeChecker::checkTypeArgsNode(Node &node, MethodHandle *handle, std::vecto
         }
     } while(handle->getNext() != nullptr);  //FIXME: method overloading
 }
+
+void TypeChecker::resolveCastOp(CastNode &node, bool allowVoidCast) {
+    auto &exprType = node.getExprNode()->getType();
+    auto &targetType = node.getType();
+
+    if(allowVoidCast && node.getType().isVoidType()) {
+        node.setOpKind(CastNode::TO_VOID);
+        return;
+    }
+
+    /**
+     * nop
+     */
+    if(targetType.isSameOrBaseTypeOf(exprType)) {
+        return;
+    }
+
+    /**
+     * number cast
+     */
+    int beforeIndex = this->typePool.getNumTypeIndex(exprType);
+    int afterIndex = this->typePool.getNumTypeIndex(targetType);
+    if(beforeIndex > -1 && afterIndex > -1) {
+        static const unsigned short table[8][8] = {
+                {CastNode::NOP,           CastNode::COPY_INT,        CastNode::COPY_INT,        CastNode::COPY_INT, CastNode::COPY_INT, CastNode::NEW_LONG,   CastNode::NEW_LONG,   CastNode::U32_TO_D},
+                {CastNode::TO_B,          CastNode::NOP,             CastNode::TO_U16,          CastNode::COPY_INT, CastNode::COPY_INT, CastNode::I_NEW_LONG, CastNode::I_NEW_LONG, CastNode::I32_TO_D},
+                {CastNode::TO_B,          CastNode::TO_I16,          CastNode::NOP,             CastNode::COPY_INT, CastNode::COPY_INT, CastNode::NEW_LONG,   CastNode::NEW_LONG,   CastNode::U32_TO_D},
+                {CastNode::TO_B,          CastNode::TO_I16,          CastNode::TO_U16,          CastNode::NOP,      CastNode::COPY_INT, CastNode::I_NEW_LONG, CastNode::I_NEW_LONG, CastNode::I32_TO_D},
+                {CastNode::TO_B,          CastNode::TO_I16,          CastNode::TO_U16,          CastNode::COPY_INT, CastNode::NOP,      CastNode::NEW_LONG,   CastNode::NEW_LONG,   CastNode::U32_TO_D},
+                {CastNode::NEW_INT|CastNode::TO_B,  CastNode::NEW_INT|CastNode::TO_I16,  CastNode::NEW_INT|CastNode::TO_U16,  CastNode::NEW_INT,  CastNode::NEW_INT,  CastNode::NOP,        CastNode::COPY_LONG,  CastNode::I64_TO_D},
+                {CastNode::NEW_INT|CastNode::TO_B,  CastNode::NEW_INT|CastNode::TO_I16,  CastNode::NEW_INT|CastNode::TO_U16,  CastNode::NEW_INT,  CastNode::NEW_INT,  CastNode::COPY_LONG,  CastNode::NOP,        CastNode::U64_TO_D},
+                {CastNode::D_TO_U32|CastNode::TO_B, CastNode::D_TO_I32|CastNode::TO_I16, CastNode::D_TO_U32|CastNode::TO_U16, CastNode::D_TO_I32, CastNode::D_TO_U32, CastNode::D_TO_I64,   CastNode::D_TO_U64,   CastNode::NOP},
+        };
+
+        assert(beforeIndex >= 0 && beforeIndex <= 8);
+        assert(afterIndex >= 0 && afterIndex <= 8);
+        node.setOpKind(CastNode::NUM_CAST);
+        node.setNumberCastOp(table[beforeIndex][afterIndex]);
+        return;
+    }
+
+    /**
+     * to string
+     */
+    if(targetType == this->typePool.getStringType()) {
+        node.setOpKind(CastNode::TO_STRING);
+        return;
+    }
+
+    /**
+     * check cast
+     */
+    if(!targetType.isBottomType() && exprType.isSameOrBaseTypeOf(targetType)) {
+        node.setOpKind(CastNode::CHECK_CAST);
+        return;
+    }
+
+    RAISE_TC_ERROR(CastOp, node, this->typePool.getTypeName(exprType), this->typePool.getTypeName(targetType));
+}
+
+CastNode *TypeChecker::newTypedCastNode(Node *targetNode, DSType &type) {
+    assert(!targetNode->isUntyped());
+    CastNode *castNode = new CastNode(targetNode, nullptr);
+    castNode->setType(type);
+    this->resolveCastOp(*castNode, true);
+    return castNode;
+}
+
+void TypeChecker::convertToStringExpr(BinaryOpNode &node) {
+    int needCast = 0;
+    if(node.getLeftNode()->getType() != this->typePool.getStringType()) {
+        needCast--;
+    }
+    if(node.getRightNode()->getType() != this->typePool.getStringType()) {
+        needCast++;
+    }
+
+    // perform string cast
+    if(needCast == -1) {
+        node.refLeftNode() = this->newTypedCastNode(node.getLeftNode(), this->typePool.getStringType());
+    } else if(needCast == 1) {
+        node.refRightNode() = this->newTypedCastNode(node.getRightNode(), this->typePool.getStringType());
+    }
+
+    auto *exprNode = new StringExprNode(node.getLeftNode()->getPos());
+    exprNode->addExprNode(node.getLeftNode());
+    exprNode->addExprNode(node.getRightNode());
+
+    // assign null to prevent double free
+    node.refLeftNode() = nullptr;
+    node.refRightNode() = nullptr;
+
+    node.setOptNode(exprNode);
+}
+
 
 // visitor api
 void TypeChecker::visit(Node &) {
@@ -500,14 +595,10 @@ void TypeChecker::visitAccessNode(AccessNode &node) {
 }
 
 void TypeChecker::visitCastNode(CastNode &node) {
-    auto &exprType = this->checkType(node.getExprNode());
+    this->checkType(node.getExprNode());
     auto &targetType = this->toType(node.getTargetTypeNode());
     node.setType(targetType);
-
-    // resolve cast op
-    if(!node.resolveCastOp(this->typePool)) {
-        RAISE_TC_ERROR(CastOp, node, this->typePool.getTypeName(exprType), this->typePool.getTypeName(targetType));
-    }
+    this->resolveCastOp(node, false);
 }
 
 void TypeChecker::visitInstanceOfNode(InstanceOfNode &node) {
@@ -535,6 +626,17 @@ void TypeChecker::visitUnaryOpNode(UnaryOpNode &node) {
     node.setType(this->checkType(applyNode));
 }
 
+static void toMethodCall(BinaryOpNode &node) {
+    auto *methodCallNode = new MethodCallNode(node.getLeftNode(), resolveBinaryOpName(node.getOp()));
+    methodCallNode->refArgNodes().push_back(node.getRightNode());
+
+    // assign null to prevent double free
+    node.refLeftNode() = nullptr;
+    node.refRightNode() = nullptr;
+
+    node.setOptNode(methodCallNode);
+}
+
 void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
     auto &leftType = this->checkType(node.getLeftNode());
     auto &rightType = this->checkType(node.getRightNode());
@@ -542,7 +644,7 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
     // string concatenation
     if(node.getOp() == TokenKind::PLUS &&
                 (leftType == this->typePool.getStringType() || rightType == this->typePool.getStringType())) {
-        BinaryOpNode::toStringExpr(this->typePool, node);
+        this->convertToStringExpr(node);
         node.setType(this->checkType(node.getOptNode()));
         return;
     }
@@ -561,7 +663,7 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
         this->resolveCoercion(rightType, node.refLeftNode());
     }
 
-    BinaryOpNode::toMethodCall(node);
+    toMethodCall(node);
     node.setType(this->checkType(node.getOptNode()));
 }
 
@@ -952,7 +1054,7 @@ void TypeChecker::visitAssignNode(AssignNode &node) {
         }
         auto &rightType = this->checkType(node.getRightNode());
         if(leftType != rightType) { // convert right hand-side type to left type
-            node.refRightNode() = CastNode::newTypedCastNode(this->typePool, node.refRightNode(), leftType);
+            node.refRightNode() = this->newTypedCastNode(node.refRightNode(), leftType);
         }
     } else {
         this->checkTypeWithCoercion(leftType, node.refRightNode());
@@ -974,7 +1076,7 @@ void TypeChecker::visitElementSelfAssignNode(ElementSelfAssignNode &node) {
     // convert right hand-side type to element type
     auto &rightType = this->checkType(node.getRightNode());
     if(elementType != rightType) {
-        node.refRightNode() = CastNode::newTypedCastNode(this->typePool, node.refRightNode(), elementType);
+        node.refRightNode() = this->newTypedCastNode(node.refRightNode(), elementType);
     }
 
     node.getSetterNode()->getArgNodes()[1]->setType(elementType);

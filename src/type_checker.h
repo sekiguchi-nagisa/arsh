@@ -331,6 +331,27 @@ private:
     // helper for argument type checking
     void checkTypeArgsNode(Node &node, MethodHandle *handle, std::vector<Node *> &argNodes);
 
+    // helper api for type cast
+
+    /**
+     *
+     * @param node
+     * must be typed
+     * @param allowVoidCast
+     */
+    void resolveCastOp(CastNode &node, bool allowVoidCast);
+
+    /**
+     * for implicit cast.
+     * @param targetNode
+     * must be typed.
+     * @param type
+     * @return
+     */
+    CastNode *newTypedCastNode(Node *targetNode, DSType &type);
+
+    void convertToStringExpr(BinaryOpNode &node);
+
     // visitor api
     void visit(Node &node) override;
     void visitBaseTypeNode(BaseTypeNode &typeNode) override;
