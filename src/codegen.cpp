@@ -173,20 +173,22 @@ static inline unsigned short toShort(OpCode op1, OpCode op2) {
 void ByteCodeGenerator::writeNumCastIns(const DSType &beforeType, const DSType &afterType) {
     const int beforeIndex = this->pool.getNumTypeIndex(beforeType);
     const int afterIndex = this->pool.getNumTypeIndex(afterType);
-    assert(beforeIndex > -1 && afterIndex > -1);
+
+    assert(beforeIndex > -1 && beforeIndex < 8);
+    assert(afterIndex > -1 && afterIndex < 8);
 
 #define _1(L) toShort(OpCode::L)
-#define _2(L, R) toShort(OpCode::L, OpCode::L)
+#define _2(L, R) toShort(OpCode::L, OpCode::R)
 
     const unsigned short table[8][8] = {
-            {_1(NOP),           _1(COPY_INT),        _1(COPY_INT),        _1(COPY_INT), _1(COPY_INT), _1(NEW_LONG),   _1(NEW_LONG),   _1(U32_TO_D)},
-            {_1(TO_BYTE),       _1(NOP),             _1(TO_U16),          _1(COPY_INT), _1(COPY_INT), _1(I_NEW_LONG), _1(I_NEW_LONG), _1(I32_TO_D)},
-            {_1(TO_BYTE),       _1(TO_I16),          _1(NOP),             _1(COPY_INT), _1(COPY_INT), _1(NEW_LONG),   _1(NEW_LONG),   _1(U32_TO_D)},
-            {_1(TO_BYTE),       _1(TO_I16),          _1(TO_U16),          _1(NOP),      _1(COPY_INT), _1(I_NEW_LONG), _1(I_NEW_LONG), _1(I32_TO_D)},
-            {_1(TO_BYTE),       _1(TO_I16),          _1(TO_U16),          _1(COPY_INT), _1(NOP),      _1(NEW_LONG),   _1(NEW_LONG),   _1(U32_TO_D)},
-            {_2(NEW_INT,TO_B),  _2(NEW_INT,TO_I16),  _2(NEW_INT,TO_U16),  _1(NEW_INT),  _1(NEW_INT),  _1(NOP),        _1(COPY_LONG),  _1(I64_TO_D)},
-            {_2(NEW_INT,TO_B),  _2(NEW_INT,TO_I16),  _2(NEW_INT,TO_U16),  _1(NEW_INT),  _1(NEW_INT),  _1(COPY_LONG),  _1(NOP),        _1(U64_TO_D)},
-            {_2(D_TO_U32,TO_B), _2(D_TO_I32,TO_I16), _2(D_TO_U32,TO_U16), _1(D_TO_I32), _1(D_TO_U32), _1(D_TO_I64),   _1(D_TO_U64),   _1(NOP)},
+            {_1(NOP),              _1(COPY_INT),        _1(COPY_INT),        _1(COPY_INT), _1(COPY_INT), _1(NEW_LONG),   _1(NEW_LONG),   _1(U32_TO_D)},
+            {_1(TO_BYTE),          _1(NOP),             _1(TO_U16),          _1(COPY_INT), _1(COPY_INT), _1(I_NEW_LONG), _1(I_NEW_LONG), _1(I32_TO_D)},
+            {_1(TO_BYTE),          _1(TO_I16),          _1(NOP),             _1(COPY_INT), _1(COPY_INT), _1(NEW_LONG),   _1(NEW_LONG),   _1(U32_TO_D)},
+            {_1(TO_BYTE),          _1(TO_I16),          _1(TO_U16),          _1(NOP),      _1(COPY_INT), _1(I_NEW_LONG), _1(I_NEW_LONG), _1(I32_TO_D)},
+            {_1(TO_BYTE),          _1(TO_I16),          _1(TO_U16),          _1(COPY_INT), _1(NOP),      _1(NEW_LONG),   _1(NEW_LONG),   _1(U32_TO_D)},
+            {_2(NEW_INT,TO_BYTE),  _2(NEW_INT,TO_I16),  _2(NEW_INT,TO_U16),  _1(NEW_INT),  _1(NEW_INT),  _1(NOP),        _1(COPY_LONG),  _1(I64_TO_D)},
+            {_2(NEW_INT,TO_BYTE),  _2(NEW_INT,TO_I16),  _2(NEW_INT,TO_U16),  _1(NEW_INT),  _1(NEW_INT),  _1(COPY_LONG),  _1(NOP),        _1(U64_TO_D)},
+            {_2(D_TO_U32,TO_BYTE), _2(D_TO_I32,TO_I16), _2(D_TO_U32,TO_U16), _1(D_TO_I32), _1(D_TO_U32), _1(D_TO_I64),   _1(D_TO_U64),   _1(NOP)},
     };
 
 #undef _1
@@ -194,7 +196,7 @@ void ByteCodeGenerator::writeNumCastIns(const DSType &beforeType, const DSType &
 
     const unsigned short v = table[beforeIndex][afterIndex];
     for(unsigned int i = 0; i < 2; i++) {
-        const unsigned short mask = 0xFF << i;
+        const unsigned short mask = 0xFF << (i * 8);
         OpCode op = static_cast<OpCode>((mask & v) >> (i * 8));
         if(op != OpCode::NOP) {
             unsigned int size = getByteSize(op);

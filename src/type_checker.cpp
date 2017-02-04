@@ -357,8 +357,7 @@ void TypeChecker::resolveCastOp(CastNode &node, bool allowVoidCast) {
     int beforeIndex = this->typePool.getNumTypeIndex(exprType);
     int afterIndex = this->typePool.getNumTypeIndex(targetType);
     if(beforeIndex > -1 && afterIndex > -1) {
-        assert(beforeIndex >= 0 && beforeIndex <= 8);
-        assert(afterIndex >= 0 && afterIndex <= 8);
+        assert(beforeIndex < 8 && afterIndex < 8);
         node.setOpKind(CastNode::NUM_CAST);
         return;
     }
