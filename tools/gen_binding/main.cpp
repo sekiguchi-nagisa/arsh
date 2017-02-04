@@ -353,21 +353,22 @@ void ReifiedTypeToken::serialize(HandleInfoSerializer &s) {
     }
 }
 
+static std::unordered_map<std::string, std::pair<unsigned int, HandleInfo >> initTypeMap() {
+    std::unordered_map<std::string, std::pair<unsigned int, HandleInfo >> map;
+    map.insert({"Array",  {1, Array}});
+    map.insert({"Map",    {2, Map}});
+    map.insert({"Tuple",  {0, Tuple}});
+    return map;
+}
+
 std::unique_ptr<ReifiedTypeToken> ReifiedTypeToken::newReifiedTypeToken(const std::string &name) {
-    std::unique_ptr<CommonTypeToken> tok;
-    unsigned int size = 0;
-    if(name == toTypeInfoName(Array)) {
-        tok.reset(new CommonTypeToken(Array));
-        size = 1;
-    } else if(name == toTypeInfoName(Map)) {
-        tok.reset(new CommonTypeToken(Map));
-        size = 2;
-    } else if(name == toTypeInfoName(Tuple)) {
-        tok.reset(new CommonTypeToken(Tuple));
-        size = 0;
-    } else {
+    static auto typeMap = initTypeMap();
+    auto iter = typeMap.find(name);
+    if(iter == typeMap.end()) {
         error("unsupported type template: %s", name.c_str());
     }
+    auto tok = std::unique_ptr<CommonTypeToken>(new CommonTypeToken(iter->second.second));
+    unsigned int size = iter->second.first;
     return std::unique_ptr<ReifiedTypeToken>(new ReifiedTypeToken(std::move(tok), size));
 }
 
@@ -724,43 +725,27 @@ void Parser::parse_params(const std::unique_ptr<Element> &element) {
 }
 
 std::unique_ptr<TypeToken> Parser::parse_type() {
-    switch(CUR_KIND()) {
-    case IDENTIFIER: {
-        Token token = this->expect(IDENTIFIER);
+    Token token = this->expect(IDENTIFIER);
+    if(CUR_KIND() != TYPE_OPEN) {
         return CommonTypeToken::newTypeToken(this->lexer->toTokenText(token));
     }
-    case ARRAY:
-    case MAP:
-    case TUPLE: {
-        auto token = this->curToken;
-        this->consume();
 
-        auto type(ReifiedTypeToken::newReifiedTypeToken(this->lexer->toTokenText(token)));
-        this->expect(TYPE_OPEN);
+    auto type(ReifiedTypeToken::newReifiedTypeToken(this->lexer->toTokenText(token)));
+    this->expect(TYPE_OPEN);
 
-        if(CUR_KIND() != TYPE_CLOSE) {
-            unsigned int count = 0;
-            do {
-                if(count++ > 0) {
-                    this->expect(COMMA);
-                }
-                type->addElement(this->parse_type());
-            } while(CUR_KIND() == COMMA);
-        }
-
-        this->expect(TYPE_CLOSE);
-
-        return std::unique_ptr<TypeToken>(type.release());
+    if(CUR_KIND() != TYPE_CLOSE) {
+        unsigned int count = 0;
+        do {
+            if(count++ > 0) {
+                this->expect(COMMA);
+            }
+            type->addElement(this->parse_type());
+        } while(CUR_KIND() == COMMA);
     }
-    default:
-        const DescTokenKind alters[] = {
-                IDENTIFIER,
-                ARRAY,
-                MAP,
-                TUPLE,
-        };
-        this->alternativeError(alters);
-    }
+
+    this->expect(TYPE_CLOSE);
+
+    return std::unique_ptr<TypeToken>(type.release());
 }
 
 void Parser::parse_funcDecl(const std::string &line, std::unique_ptr<Element> &element) {
