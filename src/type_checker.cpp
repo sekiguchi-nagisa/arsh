@@ -402,6 +402,21 @@ CastNode *TypeChecker::newTypedCastNode(Node *targetNode, DSType &type) {
     return castNode;
 }
 
+Node* TypeChecker::newPrintOpNode(Node *node) {
+    if(!node->getType().isVoidType() && !node->getType().isBottomType()) {
+        auto &type = node->getType();
+        auto &stringType = this->typePool.getStringType();
+        if(node->getType() != stringType) {
+            node = newTypedCastNode(node, stringType);
+        }
+        auto *castNode = newTypedCastNode(node, this->typePool.getVoidType());
+        castNode->setOpKind(CastNode::PRINT);
+        castNode->getExprNode()->setType(type);
+        node = castNode;
+    }
+    return node;
+}
+
 void TypeChecker::convertToStringExpr(BinaryOpNode &node) {
     int needCast = 0;
     if(node.getLeftNode()->getType() != this->typePool.getStringType()) {
@@ -613,11 +628,6 @@ void TypeChecker::visitInstanceOfNode(InstanceOfNode &node) {
         node.setOpKind(InstanceOfNode::ALWAYS_FALSE);
     }
     node.setType(this->typePool.getBooleanType());
-}
-
-void TypeChecker::visitPrintNode(PrintNode &node) {
-    this->checkType(node.getExprNode());
-    node.setType(this->typePool.getVoidType());
 }
 
 void TypeChecker::visitUnaryOpNode(UnaryOpNode &node) {
@@ -1213,9 +1223,7 @@ void TypeChecker::visitRootNode(RootNode &node) {
             this->checkTypeWithCoercion(this->typePool.getVoidType(), targetNode);
         } else if(this->toplevelPrinting) {
             this->checkType(nullptr, targetNode, nullptr);
-            if(!targetNode->getType().isVoidType() && !targetNode->getType().isBottomType()) {
-                targetNode = PrintNode::newTypedPrintNode(this->typePool, targetNode);
-            }
+            targetNode = this->newPrintOpNode(targetNode);
         } else {
             this->checkTypeWithCoercion(this->typePool.getVoidType(), targetNode);
         }

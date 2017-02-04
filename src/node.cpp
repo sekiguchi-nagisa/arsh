@@ -453,7 +453,8 @@ void CastNode::dump(NodeDumper &dumper) const {
     OP(TO_VOID) \
     OP(NUM_CAST) \
     OP(TO_STRING) \
-    OP(CHECK_CAST)
+    OP(CHECK_CAST) \
+    OP(PRINT)
 
     DUMP_ENUM(opKind, EACH_ENUM);
 #undef EACH_ENUM
@@ -516,31 +517,6 @@ void InstanceOfNode::dump(NodeDumper &dumper) const {
 
 void InstanceOfNode::accept(NodeVisitor &visitor) {
     visitor.visitInstanceOfNode(*this);
-}
-
-// #######################
-// ##     PrintNode     ##
-// #######################
-
-PrintNode::PrintNode(Node *exprNode) : Node(exprNode->getToken()), exprNode(exprNode) { }
-
-PrintNode::~PrintNode() {
-    delete this->exprNode;
-}
-
-void PrintNode::dump(NodeDumper &dumper) const {
-    DUMP_PTR(exprNode);
-}
-
-void PrintNode::accept(NodeVisitor &visitor) {
-    visitor.visitPrintNode(*this);
-}
-
-PrintNode *PrintNode::newTypedPrintNode(TypePool &pool, Node *exprNode) {
-    assert(!exprNode->isUntyped());
-    PrintNode *node = new PrintNode(exprNode);
-    node->setType(pool.getVoidType());
-    return node;
 }
 
 

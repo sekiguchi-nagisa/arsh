@@ -539,6 +539,9 @@ void ByteCodeGenerator::visitCastNode(CastNode &node) {
         this->writeSourcePos(node.getPos());
         this->writeTypeIns(OpCode::CHECK_CAST, node.getType());
         break;
+    case CastNode::PRINT:
+        this->writeTypeIns(OpCode::PRINT, node.getExprNode()->getType());
+        break;
     }
 }
 
@@ -558,14 +561,6 @@ void ByteCodeGenerator::visitInstanceOfNode(InstanceOfNode &node) {
         this->write0byteIns(OpCode::PUSH_FALSE);
         break;
     }
-}
-
-void ByteCodeGenerator::visitPrintNode(PrintNode &node) {
-    this->visit(*node.getExprNode());
-    if(node.getExprNode()->getType() != this->pool.getStringType()) {
-        this->writeToString();
-    }
-    this->writeTypeIns(OpCode::PRINT, node.getExprNode()->getType());
 }
 
 void ByteCodeGenerator::visitUnaryOpNode(UnaryOpNode &node) {

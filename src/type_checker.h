@@ -350,6 +350,15 @@ private:
      */
     CastNode *newTypedCastNode(Node *targetNode, DSType &type);
 
+    /**
+     *
+     * @param node
+     * must be typed
+     * @return
+     *
+     */
+    Node *newPrintOpNode(Node *node);
+
     void convertToStringExpr(BinaryOpNode &node);
 
     // visitor api
@@ -374,7 +383,6 @@ private:
     void visitAccessNode(AccessNode &node) override;
     void visitCastNode(CastNode &node) override;
     void visitInstanceOfNode(InstanceOfNode &node) override;
-    void visitPrintNode(PrintNode &node) override;
     void visitUnaryOpNode(UnaryOpNode &node) override;
     void visitBinaryOpNode(BinaryOpNode &node) override;
     void visitApplyNode(ApplyNode &node) override;
