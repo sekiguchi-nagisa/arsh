@@ -949,6 +949,10 @@ void TypeChecker::visitThrowNode(ThrowNode &node) {
 
 void TypeChecker::visitCatchNode(CatchNode &node) {
     auto &exceptionType = this->toType(node.getTypeNode());
+    if(!this->typePool.getAnyType().isSameOrBaseTypeOf(exceptionType)) {
+        RAISE_TC_ERROR(Required, *node.getTypeNode(), this->typePool.getTypeName(this->typePool.getAnyType()),
+                       this->typePool.getTypeName(exceptionType));
+    }
 
     /**
      * check type catch block
