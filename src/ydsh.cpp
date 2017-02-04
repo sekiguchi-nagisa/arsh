@@ -158,21 +158,29 @@ static void handleTypeError(const Lexer &lexer, const TypeCheckError &e, DSError
                  lexer.getSourceInfoPtr()->getLineNum(e.getStartPos()), e.getKind());
 }
 
+static bool tryToObtainStr(DSState *st, DSValue &&except) {
+    if(except.isObject()) {
+        const bool bt = st->pool.getErrorType().isSameOrBaseTypeOf(*except->getType());
+        auto *handle = except->getType()->lookupMethodHandle(st->pool, bt ? "backtrace" : OP_STR);
+
+        try {
+            DSValue ret = ::callMethod(*st, handle, std::move(except), std::vector<DSValue>());
+            if(!bt) {
+                std::cerr << typeAs<String_Object>(ret)->getValue() << std::endl;
+            }
+            return true;
+        } catch(const DSException &) {}
+    }
+    return false;
+}
+
 /**
  * if called from child process, exit(1).
  * @param except
  */
 static void handleUncaughtException(DSState *st, DSValue &&except) {
     std::cerr << "[runtime error]" << std::endl;
-    const bool bt = st->pool.getErrorType().isSameOrBaseTypeOf(*except->getType());
-    auto *handle = except->getType()->lookupMethodHandle(st->pool, bt ? "backtrace" : OP_STR);
-
-    try {
-        DSValue ret = ::callMethod(*st, handle, std::move(except), std::vector<DSValue>());
-        if(!bt) {
-            std::cerr << typeAs<String_Object>(ret)->getValue() << std::endl;
-        }
-    } catch(const DSException &) {
+    if(!tryToObtainStr(st, std::move(except))) {
         std::cerr << "cannot obtain string representation" << std::endl;
     }
 
@@ -191,7 +199,7 @@ static int evalCode(DSState *state, CompiledCode &code, DSError *dsError) {
     if(!vmEval(*state, code)) {
         unsigned int errorLineNum = 0;
         DSValue thrownObj = state->getThrownObject();
-        if(dynamic_cast<Error_Object *>(thrownObj.get()) != nullptr) {
+        if(thrownObj.isObject() && dynamic_cast<Error_Object *>(thrownObj.get()) != nullptr) {
             Error_Object *obj = typeAs<Error_Object>(thrownObj);
             errorLineNum = getOccurredLineNum(obj->getStackTrace());
         }
@@ -200,7 +208,8 @@ static int evalCode(DSState *state, CompiledCode &code, DSError *dsError) {
         handleUncaughtException(state, state->pop());
         state->recover(false);
         setErrorInfo(dsError, DS_ERROR_KIND_RUNTIME_ERROR, errorLineNum,
-                     state->pool.getTypeName(*thrownObj->getType()).c_str());
+                     state->pool.getTypeName(
+                             thrownObj.isObject() ? *thrownObj->getType() : state->pool.getAnyType()).c_str());
         return 1;
     }
     return state->getExitStatus();

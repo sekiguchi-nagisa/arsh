@@ -104,7 +104,10 @@ namespace ydsh {
     OP(DBUS_WAIT_SIG, 0) \
     OP(RAND, 0) \
     OP(GET_SECOND, 0) \
-    OP(SET_SECOND, 0)
+    OP(SET_SECOND, 0) \
+    OP(UNWRAP, 0) \
+    OP(CHECK_UNWRAP, 0) \
+    OP(NEW_INVALID, 0)
 
 enum class OpCode : unsigned char {
 #define GEN_OPCODE(CODE, N) CODE,

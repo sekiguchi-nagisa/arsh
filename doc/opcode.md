@@ -84,3 +84,6 @@
 | RAND          |                                | -> value                                     | generate random number and push stack top          |
 | GET_SECOND    |                                | -> value                                     | get differential time between current and base     |
 | SET_SECOND    |                                | value ->                                     | set base time                                      |
+| UNWRAP        |                                | value -> value                               | unwrap option value                                |
+| CHECK_UNWRAP  |                                | value -> value                               | check if option value has a value                  |
+| NEW_INVALID   |                                | -> value                                     | create then invalid value                          |

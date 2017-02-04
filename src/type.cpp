@@ -581,6 +581,7 @@ TypePool::TypePool() :
     this->initErrorType(SystemError, "SystemError", this->getErrorType());
     this->initErrorType(StackOverflowError, "StackOverflowError", this->getErrorType());
     this->initErrorType(RegexSyntaxError, "RegexSyntaxError", this->getErrorType());
+    this->initErrorType(UnwrapingError, "UnwrappingError", this->getErrorType());
 
     this->registerDBusErrorTypes();
 

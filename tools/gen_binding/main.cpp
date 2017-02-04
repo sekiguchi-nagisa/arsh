@@ -209,6 +209,9 @@ bool HandleInfoSerializer::isType(const std::vector<HandleInfo> &infos, unsigned
             }
             return true;
         }
+        case Option: {
+            return getNum(infos, index) == 1 && isType(infos, index);
+        }
         EACH_HANDLE_INFO_NUM(GEN_CASE)
             return false;
         EACH_HANDLE_INFO_PTYPE(GEN_CASE)
@@ -358,6 +361,7 @@ static std::unordered_map<std::string, std::pair<unsigned int, HandleInfo >> ini
     map.insert({"Array",  {1, Array}});
     map.insert({"Map",    {2, Map}});
     map.insert({"Tuple",  {0, Tuple}});
+    map.insert({"Option",  {1, Option}});
     return map;
 }
 

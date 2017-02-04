@@ -1518,7 +1518,8 @@ static bool mainLoop(DSState &state) {
         }
         vmcase(EXIT_FINALLY) {
             switch(state.peek().kind()) {
-            case DSValueKind::OBJECT: {
+            case DSValueKind::OBJECT:
+            case DSValueKind::INVALID: {
                 state.throwException(state.pop());
                 break;
             }
@@ -1728,6 +1729,21 @@ static bool mainLoop(DSState &state) {
         vmcase(SET_SECOND) {
             state.baseTime = std::chrono::system_clock::now();
             state.storeGlobal(toIndex(BuiltinVarOffset::SECONDS));
+            break;
+        }
+        vmcase(UNWRAP) {
+            if(state.peek().kind() == DSValueKind::INVALID) {
+                throwError(state, state.pool.getUnwrappingErrorType(), std::string("invalid value"));
+            }
+            break;
+        }
+        vmcase(CHECK_UNWRAP) {
+            bool b = state.pop().kind() != DSValueKind::INVALID;
+            state.push(b ? state.trueObj : state.falseObj);
+            break;
+        }
+        vmcase(NEW_INVALID) {
+            state.push(DSValue::createInvalid());
             break;
         }
         }

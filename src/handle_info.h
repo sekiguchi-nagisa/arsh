@@ -48,7 +48,8 @@ namespace ydsh {
 #define EACH_HANDLE_INFO_TYPE_TEMP(OP) \
     OP(Array) \
     OP(Map) \
-    OP(Tuple)
+    OP(Tuple) \
+    OP(Option)
 
 // param types num
 #define EACH_HANDLE_INFO_NUM(OP) \

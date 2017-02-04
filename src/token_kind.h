@@ -102,6 +102,7 @@
     /* suffix op */\
     TOKEN(INC                                , "++") \
     TOKEN(DEC                                , "--") \
+    TOKEN(UNWRAP                             , "!") \
     /* assign op */\
     TOKEN(ASSIGN                             , "=") \
     TOKEN(ADD_ASSIGN                         , "+=") \

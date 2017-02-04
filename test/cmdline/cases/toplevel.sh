@@ -32,4 +32,15 @@ EOF
 
 test "$($YDSH_BIN --print-toplevel -c 'var a = new Tuple<Any>(9); $a._0 = $a; throw $a' 2>&1 || true)" = "$v"
 
+test "$($YDSH_BIN --print-toplevel -c 'var a = $true as Option<Boolean>; $a')" = '(Option<Boolean>) true'
+
+v="$(cat << EOF
+[runtime error]
+UnwrappingError: invalid value
+    from (string):1 '<toplevel>()'
+EOF
+)"
+
+test "$($YDSH_BIN --print-toplevel -c 'new Option<Boolean>()' 2>&1 || true)" = "$v"
+
 exit 0

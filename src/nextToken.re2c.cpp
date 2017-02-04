@@ -222,6 +222,7 @@ TokenKind Lexer::nextToken(Token &token) {
 
       <EXPR> "++"              { RET(INC); }
       <EXPR> "--"              { RET(DEC); }
+      <EXPR> "!"               { RET(UNWRAP); }
 
       <EXPR> "="               { MODE(STMT); RET(ASSIGN); }
       <EXPR> "+="              { MODE(STMT); RET(ADD_ASSIGN); }

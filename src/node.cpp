@@ -454,6 +454,7 @@ void CastNode::dump(NodeDumper &dumper) const {
     OP(NUM_CAST) \
     OP(TO_STRING) \
     OP(CHECK_CAST) \
+    OP(CHECK_UNWRAP) \
     OP(PRINT)
 
     DUMP_ENUM(opKind, EACH_ENUM);

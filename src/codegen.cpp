@@ -522,8 +522,20 @@ void ByteCodeGenerator::visitCastNode(CastNode &node) {
         this->writeSourcePos(node.getPos());
         this->writeTypeIns(OpCode::CHECK_CAST, node.getType());
         break;
+    case CastNode::CHECK_UNWRAP:
+        this->writeSourcePos(node.getPos());
+        this->write0byteIns(OpCode::CHECK_UNWRAP);
+        break;
     case CastNode::PRINT:
-        this->writeTypeIns(OpCode::PRINT, node.getExprNode()->getType());
+        this->writeSourcePos(node.getPos());
+        auto &exprType = node.getExprNode()->getType();
+        if(exprType.isOptionType()) {
+            this->write0byteIns(OpCode::UNWRAP);
+        }
+        if(exprType != this->pool.getStringType()) {
+            this->writeToString();
+        }
+        this->writeTypeIns(OpCode::PRINT, exprType);
         break;
     }
 }
@@ -547,7 +559,12 @@ void ByteCodeGenerator::visitInstanceOfNode(InstanceOfNode &node) {
 }
 
 void ByteCodeGenerator::visitUnaryOpNode(UnaryOpNode &node) {
-    this->visit(*node.getApplyNode());
+    if(node.isUnwrapOp()) {
+        this->visit(*node.getExprNode());
+        this->write0byteIns(OpCode::UNWRAP);
+    } else {
+        this->visit(*node.getApplyNode());
+    }
 }
 
 void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
@@ -583,6 +600,11 @@ void ByteCodeGenerator::visitMethodCallNode(MethodCallNode &node) {
 }
 
 void ByteCodeGenerator::visitNewNode(NewNode &node) {
+    if(node.getType().isOptionType()) {
+        this->write0byteIns(OpCode::NEW_INVALID);
+        return;
+    }
+
     unsigned int paramSize = node.getArgNodes().size();
 
     this->writeTypeIns(OpCode::NEW, node.getType());
@@ -1221,6 +1243,8 @@ static void dumpCodeImpl(std::ostream &stream, DSState &ctx, const CompiledCode 
                 }
                 stream << (v.get()->getType() != nullptr ? getPool(ctx).getTypeName(*v.get()->getType()) : "(null)")
                 << " " << v.get()->toString(ctx, nullptr);
+                break;
+            case DSValueKind::INVALID:
                 break;
             }
             stream << std::endl;

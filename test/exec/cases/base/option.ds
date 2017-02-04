@@ -1,0 +1,50 @@
+function opt($v : Int) : Option<String> {
+    return $v > -1 ? "hello" : new Option<String>()
+}
+
+# boolean cast
+assert $opt(1)
+
+assert not $opt(-2)
+
+if $opt(1) {
+    assert $true
+} else {
+    assert $false
+}
+
+var c = 0
+for(var i = 4; $opt($i); $i--) {
+    $c++
+}
+assert $c == 5
+
+assert $opt(5) ? $true : $false
+assert $opt(-3) ? $false : $true
+
+assert $opt(45) as Boolean
+assert not ($opt(-90) as Boolean)
+
+
+# unwrap
+assert $opt(45)! == "hello"
+assert (34 as Option<Int>)! == 34
+
+var in = $false
+try {
+    assert $opt(-43)! == "hello"
+} catch $e {
+    $in = $true
+    assert $e is UnwrappingError
+}
+assert $in
+
+
+# assign
+var o = $opt(45)
+$o = "world"
+assert $o! == "world"
+
+$o = new Option<String>()
+$o = "34"
+assert $o && $o! == "34"

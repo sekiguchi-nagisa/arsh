@@ -626,7 +626,8 @@ public:
         NUM_CAST,
         TO_STRING,
         CHECK_CAST,
-        PRINT,
+        CHECK_UNWRAP,
+        PRINT
     };
 
 private:
@@ -842,7 +843,7 @@ private:
 
 public:
     UnaryOpNode(unsigned int startPos, TokenKind op, Node *exprNode) :
-            Node({startPos, 0}), op(op), exprNode(exprNode), methodCallNode(0) {
+            Node({startPos, 0}), op(op), exprNode(exprNode), methodCallNode(nullptr) {
         this->updateToken(exprNode->getToken());
     }
 
@@ -854,6 +855,10 @@ public:
 
     void setExprNode(Node *exprNode) {
         this->exprNode = exprNode;
+    }
+
+    bool isUnwrapOp() const {
+        return this->op == UNWRAP;
     }
 
     /**

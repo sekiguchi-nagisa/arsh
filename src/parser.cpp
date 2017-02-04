@@ -1045,6 +1045,13 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
             node.reset(createSuffixNode(node.release(), op, token));
             break;
         }
+        case UNWRAP: {
+            Token token = this->curToken;
+            TokenKind op = this->consume();
+            node = uniquify<UnaryOpNode>(node->getPos(), op, node.release());
+            node->updateToken(token);
+            break;
+        }
         default: {
             next = false;
             break;

@@ -234,6 +234,11 @@ bool TypeChecker::checkCoercion(const DSType &requiredType, const DSType &target
         return true;
     }
 
+    // option type checking
+    if(targetType.isOptionType() && requiredType == this->typePool.getBooleanType()) {
+        return true;
+    }
+
     // int widening or float cast
     int targetPrecision = this->typePool.getIntPrecision(targetType);
     if(targetPrecision > TypePool::INVALID_PRECISION) {
@@ -362,20 +367,20 @@ void TypeChecker::resolveCastOp(CastNode &node, bool allowVoidCast) {
         return;
     }
 
-    /**
-     * to string
-     */
-    if(targetType == this->typePool.getStringType()) {
-        node.setOpKind(CastNode::TO_STRING);
-        return;
-    }
-
-    /**
-     * check cast
-     */
-    if(!targetType.isBottomType() && exprType.isSameOrBaseTypeOf(targetType)) {
-        node.setOpKind(CastNode::CHECK_CAST);
-        return;
+    if(exprType.isOptionType()) {
+        if(targetType == this->typePool.getBooleanType()) {
+            node.setOpKind(CastNode::CHECK_UNWRAP);
+            return;
+        }
+    } else  {
+        if(targetType == this->typePool.getStringType()) {
+            node.setOpKind(CastNode::TO_STRING);
+            return;
+        }
+        if(!targetType.isBottomType() && exprType.isSameOrBaseTypeOf(targetType)) {
+            node.setOpKind(CastNode::CHECK_CAST);
+            return;
+        }
     }
 
     RAISE_TC_ERROR(CastOp, node, this->typePool.getTypeName(exprType), this->typePool.getTypeName(targetType));
@@ -391,14 +396,8 @@ CastNode *TypeChecker::newTypedCastNode(Node *targetNode, DSType &type) {
 
 Node* TypeChecker::newPrintOpNode(Node *node) {
     if(!node->getType().isVoidType() && !node->getType().isBottomType()) {
-        auto &type = node->getType();
-        auto &stringType = this->typePool.getStringType();
-        if(node->getType() != stringType) {
-            node = newTypedCastNode(node, stringType);
-        }
         auto *castNode = newTypedCastNode(node, this->typePool.getVoidType());
         castNode->setOpKind(CastNode::PRINT);
-        castNode->getExprNode()->setType(type);
         node = castNode;
     }
     return node;
@@ -510,8 +509,11 @@ void TypeChecker::visitStringExprNode(StringExprNode &node) {
         auto &exprType = this->checkType(exprNode);
         if(!this->typePool.getStringType().isSameOrBaseTypeOf(exprType)) { // call __INTERP__()
             std::string methodName(OP_INTERP);
-            MethodHandle *handle = exprType.lookupMethodHandle(this->typePool, methodName);
-            assert(handle != nullptr);
+            MethodHandle *handle = exprType.isOptionType() ? nullptr :
+                                   exprType.lookupMethodHandle(this->typePool, methodName);
+            if(handle == nullptr) { // if exprType is
+                RAISE_TC_ERROR(UndefinedMethod, *exprNode, methodName);
+            }
 
             MethodCallNode *callNode = new MethodCallNode(exprNode, std::move(methodName));
 
@@ -618,9 +620,19 @@ void TypeChecker::visitInstanceOfNode(InstanceOfNode &node) {
 }
 
 void TypeChecker::visitUnaryOpNode(UnaryOpNode &node) {
-    this->checkType(node.getExprNode());
-    MethodCallNode *applyNode = node.createApplyNode();
-    node.setType(this->checkType(applyNode));
+    auto &exprType = this->checkType(node.getExprNode());
+    if(node.isUnwrapOp()) {
+        if(!exprType.isOptionType()) {
+            RAISE_TC_ERROR(Required, *node.getExprNode(), "Option type", this->typePool.getTypeName(exprType));
+        }
+        node.setType(*static_cast<ReifiedType *>(&exprType)->getElementTypes()[0]);
+    } else {
+        if(exprType.isOptionType()) {
+            node.setExprNode(this->newTypedCastNode(node.getExprNode(), this->typePool.getBooleanType()));
+        }
+        MethodCallNode *applyNode = node.createApplyNode();
+        node.setType(this->checkType(applyNode));
+    }
 }
 
 static void toMethodCall(BinaryOpNode &node) {
@@ -706,12 +718,20 @@ void TypeChecker::visitMethodCallNode(MethodCallNode &node) {
 
 void TypeChecker::visitNewNode(NewNode &node) {
     auto &type = this->toType(node.getTargetTypeNode());
-    MethodHandle *handle = type.getConstructorHandle(this->typePool);
-    if(handle == nullptr) {
-        RAISE_TC_ERROR(UndefinedInit, node, this->typePool.getTypeName(type));
+    if(type.isOptionType()) {
+        unsigned int size = node.getArgNodes().size();
+        if(size > 0) {
+            RAISE_TC_ERROR(UnmatchParam, node, std::to_string(0), std::to_string(size));
+        }
+    } else {
+        MethodHandle *handle = type.getConstructorHandle(this->typePool);
+        if(handle == nullptr) {
+            RAISE_TC_ERROR(UndefinedInit, node, this->typePool.getTypeName(type));
+        }
+
+        this->checkTypeArgsNode(node, handle, node.refArgNodes());
     }
 
-    this->checkTypeArgsNode(node, handle, node.refArgNodes());
     node.setType(type);
 }
 
@@ -763,7 +783,11 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
             if(handle == nullptr || (*handle->getReturnType() != this->typePool.getStringType() &&
                                      *handle->getReturnType() != this->typePool.getStringArrayType())) { // if not found, lookup __STR__
                 methodName = OP_STR;
-                handle = segmentType.lookupMethodHandle(this->typePool, methodName);
+                handle = segmentType.isOptionType() ? nullptr :
+                         segmentType.lookupMethodHandle(this->typePool, methodName);
+                if(handle == nullptr) {
+                    RAISE_TC_ERROR(UndefinedMethod, *exprNode, methodName);
+                }
             }
 
             // create MethodCallNode and check type
@@ -943,7 +967,7 @@ void TypeChecker::visitReturnNode(ReturnNode &node) {
 
 void TypeChecker::visitThrowNode(ThrowNode &node) {
     this->checkAndThrowIfInsideFinally(node);
-    this->checkType(node.getExprNode());
+    this->checkType(this->typePool.getAnyType(), node.getExprNode());
     node.setType(this->typePool.getBottomType());
 }
 

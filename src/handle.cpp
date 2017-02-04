@@ -133,6 +133,14 @@ static DSType *decodeType(TypePool &typePool, const char *&pos,
             return &typePool.createTupleType(std::move(elementTypes));
         }
     }
+    case Option: {
+        auto &t = typePool.getOptionTemplate();
+        unsigned int size = decodeNum(pos);
+        assert(size == 1);
+        std::vector<DSType *> elementTypes(size);
+        elementTypes[0] = decodeType(typePool, pos, types);
+        return &typePool.createReifiedType(t, std::move(elementTypes));
+    }
     case P_N0:
     case P_N1:
     case P_N2:

@@ -546,6 +546,7 @@ public:
         SystemError,    // for errno
         StackOverflowError,
         RegexSyntaxError,
+        UnwrapingError,
 
         /**
          * for internal status reporting.
@@ -743,6 +744,10 @@ public:
 
     DSType &getRegexSyntaxErrorType() const {
         return *this->typeTable[RegexSyntaxError];
+    }
+
+    DSType &getUnwrappingErrorType() const {
+        return *this->typeTable[UnwrapingError];
     }
 
     // for internal status reporting

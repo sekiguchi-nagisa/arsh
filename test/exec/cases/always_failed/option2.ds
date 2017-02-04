@@ -1,0 +1,4 @@
+#$test($result = 'type', $lineNum = 4, $errorKind = 'CastOp', $status = 1)
+
+var a = 34 as Option<Int>
+$a as Any

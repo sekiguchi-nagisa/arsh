@@ -114,6 +114,7 @@ public:
 enum class DSValueKind : unsigned char {
     OBJECT = 0,
     NUMBER = 129,
+    INVALID = 130,
 };
 
 class DSValue {
@@ -126,7 +127,16 @@ private:
 
         /**
          * if most significant bit is 0, represents DSObject' pointer(may be nullptr).
-         * otherwise, represents native pointer, number ... etc
+         * otherwise, represents native pointer, number ... etc.
+         *
+         *               DSValue format
+         * +-------+---------------------------------+
+         * |  tag  |    DSObject pointer or value    |
+         * +-------+---------------------------------+
+         *   8bit                   56bit
+         *
+         * significant 8bit represents tag (DSValueKind).
+         *
          */
         long val;
     };
@@ -234,6 +244,10 @@ public:
     static DSValue createNum(unsigned int v) {
         unsigned long mask = static_cast<unsigned long>(DSValueKind::NUMBER) << 56;
         return DSValue(mask | v);
+    }
+
+    static DSValue createInvalid() {
+        return DSValue(static_cast<unsigned long>(DSValueKind::INVALID) << 56);
     }
 };
 
