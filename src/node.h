@@ -629,29 +629,6 @@ public:
         PRINT,
     };
 
-    /**
-     * number cast op
-     */
-    enum NumberCastOp : unsigned short {
-        NOP        = 0,
-        COPY_INT   = 1 << 0,
-        TO_B       = 1 << 1,
-        TO_U16     = 1 << 2,
-        TO_I16     = 1 << 3,
-        NEW_LONG   = 1 << 4,
-        COPY_LONG  = 1 << 5,
-        I_NEW_LONG = 1 << 6,
-        NEW_INT    = 1 << 7,
-        U32_TO_D   = 1 << 8,
-        I32_TO_D   = 1 << 9,
-        U64_TO_D   = 1 << 10,
-        I64_TO_D   = 1 << 11,
-        D_TO_U32   = 1 << 12,
-        D_TO_I32   = 1 << 13,
-        D_TO_U64   = 1 << 14,
-        D_TO_I64   = 1 << 15,
-    };
-
 private:
     Node *exprNode;
 
@@ -661,11 +638,6 @@ private:
     TypeNode *targetTypeNode;
 
     CastOp opKind;
-
-    /**
-     * additional op for number cast.
-     */
-    unsigned short numCastOp;
 
 public:
     CastNode(Node *exprNode, TypeNode *type, bool dupTypeToken = false);
@@ -684,14 +656,6 @@ public:
 
     CastOp getOpKind() const {
         return this->opKind;
-    }
-
-    unsigned short getNumberCastOp() const {
-        return this->numCastOp;
-    }
-
-    void setNumberCastOp(unsigned short op) {
-        this->numCastOp = op;
     }
 
     void dump(NodeDumper &dumper) const override;

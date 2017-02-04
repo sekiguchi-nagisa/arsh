@@ -357,21 +357,9 @@ void TypeChecker::resolveCastOp(CastNode &node, bool allowVoidCast) {
     int beforeIndex = this->typePool.getNumTypeIndex(exprType);
     int afterIndex = this->typePool.getNumTypeIndex(targetType);
     if(beforeIndex > -1 && afterIndex > -1) {
-        static const unsigned short table[8][8] = {
-                {CastNode::NOP,           CastNode::COPY_INT,        CastNode::COPY_INT,        CastNode::COPY_INT, CastNode::COPY_INT, CastNode::NEW_LONG,   CastNode::NEW_LONG,   CastNode::U32_TO_D},
-                {CastNode::TO_B,          CastNode::NOP,             CastNode::TO_U16,          CastNode::COPY_INT, CastNode::COPY_INT, CastNode::I_NEW_LONG, CastNode::I_NEW_LONG, CastNode::I32_TO_D},
-                {CastNode::TO_B,          CastNode::TO_I16,          CastNode::NOP,             CastNode::COPY_INT, CastNode::COPY_INT, CastNode::NEW_LONG,   CastNode::NEW_LONG,   CastNode::U32_TO_D},
-                {CastNode::TO_B,          CastNode::TO_I16,          CastNode::TO_U16,          CastNode::NOP,      CastNode::COPY_INT, CastNode::I_NEW_LONG, CastNode::I_NEW_LONG, CastNode::I32_TO_D},
-                {CastNode::TO_B,          CastNode::TO_I16,          CastNode::TO_U16,          CastNode::COPY_INT, CastNode::NOP,      CastNode::NEW_LONG,   CastNode::NEW_LONG,   CastNode::U32_TO_D},
-                {CastNode::NEW_INT|CastNode::TO_B,  CastNode::NEW_INT|CastNode::TO_I16,  CastNode::NEW_INT|CastNode::TO_U16,  CastNode::NEW_INT,  CastNode::NEW_INT,  CastNode::NOP,        CastNode::COPY_LONG,  CastNode::I64_TO_D},
-                {CastNode::NEW_INT|CastNode::TO_B,  CastNode::NEW_INT|CastNode::TO_I16,  CastNode::NEW_INT|CastNode::TO_U16,  CastNode::NEW_INT,  CastNode::NEW_INT,  CastNode::COPY_LONG,  CastNode::NOP,        CastNode::U64_TO_D},
-                {CastNode::D_TO_U32|CastNode::TO_B, CastNode::D_TO_I32|CastNode::TO_I16, CastNode::D_TO_U32|CastNode::TO_U16, CastNode::D_TO_I32, CastNode::D_TO_U32, CastNode::D_TO_I64,   CastNode::D_TO_U64,   CastNode::NOP},
-        };
-
         assert(beforeIndex >= 0 && beforeIndex <= 8);
         assert(afterIndex >= 0 && afterIndex <= 8);
         node.setOpKind(CastNode::NUM_CAST);
-        node.setNumberCastOp(table[beforeIndex][afterIndex]);
         return;
     }
 

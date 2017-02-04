@@ -162,67 +162,48 @@ void ByteCodeGenerator::writeToString() {
     this->writeMethodCallIns(OpCode::CALL_METHOD, this->handle_STR->getMethodIndex(), 0);
 }
 
-void ByteCodeGenerator::writeNumCastIns(unsigned short v, const DSType &type) {
-    const int index = this->pool.getNumTypeIndex(type);
-    assert(index > -1);
+static inline unsigned short toShort(OpCode op) {
+    return static_cast<unsigned char>(op);
+}
 
-    for(int i = 15; i > -1; i--) {
-        unsigned short flag = (1 << i);
-        if(!hasFlag(v, flag)) {
-            continue;
-        }
-        auto op = static_cast<CastNode::NumberCastOp >(flag);
-        switch(op) {
-        case CastNode::NOP:
-            break;
-        case CastNode::COPY_INT:
-            this->write1byteIns(OpCode::COPY_INT, index);
-            break;
-        case CastNode::TO_B:
-            this->write0byteIns(OpCode::TO_BYTE);
-            break;
-        case CastNode::TO_U16:
-            this->write0byteIns(OpCode::TO_U16);
-            break;
-        case CastNode::TO_I16:
-            this->write0byteIns(OpCode::TO_I16);
-            break;
-        case CastNode::NEW_LONG:
-            this->write1byteIns(OpCode::NEW_LONG, index);
-            break;
-        case CastNode::COPY_LONG:
-            this->write1byteIns(OpCode::COPY_LONG, index);
-            break;
-        case CastNode::I_NEW_LONG:
-            this->write1byteIns(OpCode::I_NEW_LONG, index);
-            break;
-        case CastNode::NEW_INT:
-            this->write1byteIns(OpCode::NEW_INT, index);
-            break;
-        case CastNode::U32_TO_D:
-            this->write0byteIns(OpCode::U32_TO_D);
-            break;
-        case CastNode::I32_TO_D:
-            this->write0byteIns(OpCode::I32_TO_D);
-            break;
-        case CastNode::U64_TO_D:
-            this->write0byteIns(OpCode::U64_TO_D);
-            break;
-        case CastNode::I64_TO_D:
-            this->write0byteIns(OpCode::I64_TO_D);
-            break;
-        case CastNode::D_TO_U32:
-            this->write0byteIns(OpCode::D_TO_U32);
-            break;
-        case CastNode::D_TO_I32:
-            this->write0byteIns(OpCode::D_TO_I32);
-            break;
-        case CastNode::D_TO_U64:
-            this->write0byteIns(OpCode::D_TO_U64);
-            break;
-        case CastNode::D_TO_I64:
-            this->write0byteIns(OpCode::D_TO_I64);
-            break;
+static inline unsigned short toShort(OpCode op1, OpCode op2) {
+    return toShort(op1) | toShort(op2) << 8;
+}
+
+void ByteCodeGenerator::writeNumCastIns(const DSType &beforeType, const DSType &afterType) {
+    const int beforeIndex = this->pool.getNumTypeIndex(beforeType);
+    const int afterIndex = this->pool.getNumTypeIndex(afterType);
+    assert(beforeIndex > -1 && afterIndex > -1);
+
+#define _1(L) toShort(OpCode::L)
+#define _2(L, R) toShort(OpCode::L, OpCode::L)
+
+    const unsigned short table[8][8] = {
+            {_1(NOP),           _1(COPY_INT),        _1(COPY_INT),        _1(COPY_INT), _1(COPY_INT), _1(NEW_LONG),   _1(NEW_LONG),   _1(U32_TO_D)},
+            {_1(TO_BYTE),       _1(NOP),             _1(TO_U16),          _1(COPY_INT), _1(COPY_INT), _1(I_NEW_LONG), _1(I_NEW_LONG), _1(I32_TO_D)},
+            {_1(TO_BYTE),       _1(TO_I16),          _1(NOP),             _1(COPY_INT), _1(COPY_INT), _1(NEW_LONG),   _1(NEW_LONG),   _1(U32_TO_D)},
+            {_1(TO_BYTE),       _1(TO_I16),          _1(TO_U16),          _1(NOP),      _1(COPY_INT), _1(I_NEW_LONG), _1(I_NEW_LONG), _1(I32_TO_D)},
+            {_1(TO_BYTE),       _1(TO_I16),          _1(TO_U16),          _1(COPY_INT), _1(NOP),      _1(NEW_LONG),   _1(NEW_LONG),   _1(U32_TO_D)},
+            {_2(NEW_INT,TO_B),  _2(NEW_INT,TO_I16),  _2(NEW_INT,TO_U16),  _1(NEW_INT),  _1(NEW_INT),  _1(NOP),        _1(COPY_LONG),  _1(I64_TO_D)},
+            {_2(NEW_INT,TO_B),  _2(NEW_INT,TO_I16),  _2(NEW_INT,TO_U16),  _1(NEW_INT),  _1(NEW_INT),  _1(COPY_LONG),  _1(NOP),        _1(U64_TO_D)},
+            {_2(D_TO_U32,TO_B), _2(D_TO_I32,TO_I16), _2(D_TO_U32,TO_U16), _1(D_TO_I32), _1(D_TO_U32), _1(D_TO_I64),   _1(D_TO_U64),   _1(NOP)},
+    };
+
+#undef _1
+#undef _2
+
+    const unsigned short v = table[beforeIndex][afterIndex];
+    for(unsigned int i = 0; i < 2; i++) {
+        const unsigned short mask = 0xFF << i;
+        OpCode op = static_cast<OpCode>((mask & v) >> (i * 8));
+        if(op != OpCode::NOP) {
+            unsigned int size = getByteSize(op);
+            assert(size == 0 || size == 1);
+            if(size) {
+                this->write1byteIns(op, afterIndex);
+            } else {
+                this->write0byteIns(op);
+            }
         }
     }
 }
@@ -529,7 +510,7 @@ void ByteCodeGenerator::visitCastNode(CastNode &node) {
         this->write0byteIns(OpCode::POP);
         break;
     case CastNode::NUM_CAST:
-        this->writeNumCastIns(node.getNumberCastOp(), node.getType());
+        this->writeNumCastIns(node.getExprNode()->getType(), node.getType());
         break;
     case CastNode::TO_STRING:
         this->writeSourcePos(node.getPos());

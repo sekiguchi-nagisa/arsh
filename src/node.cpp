@@ -411,7 +411,7 @@ void AccessNode::accept(NodeVisitor &visitor) {
 
 CastNode::CastNode(Node *exprNode, TypeNode *type, bool dupTypeToken) :
         Node(exprNode->getToken()), exprNode(exprNode), targetTypeNode(nullptr),
-        opKind(NO_CAST), numCastOp(NOP) {
+        opKind(NO_CAST) {
     static const unsigned long tag = (unsigned long) 1L << 63;
 
     if(dupTypeToken) {
@@ -458,28 +458,6 @@ void CastNode::dump(NodeDumper &dumper) const {
 
     DUMP_ENUM(opKind, EACH_ENUM);
 #undef EACH_ENUM
-
-#define EACH_FLAG(OP) \
-    OP(NOP) \
-    OP(COPY_INT) \
-    OP(TO_B) \
-    OP(TO_U16) \
-    OP(TO_I16) \
-    OP(NEW_LONG) \
-    OP(COPY_LONG) \
-    OP(I_NEW_LONG) \
-    OP(NEW_INT) \
-    OP(U32_TO_D) \
-    OP(I32_TO_D) \
-    OP(U64_TO_D) \
-    OP(I64_TO_D) \
-    OP(D_TO_U32) \
-    OP(D_TO_I32) \
-    OP(D_TO_U64) \
-    OP(D_TO_I64)
-
-    DUMP_BITSET(numCastOp, EACH_FLAG);
-#undef EACH_FLAG
 }
 
 void CastNode::accept(NodeVisitor &visitor) {
