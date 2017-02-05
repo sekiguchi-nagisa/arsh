@@ -899,7 +899,7 @@ private:
 
     void initErrorType(DS_TYPE TYPE, const char *typeName, DSType &superType);
 
-    void checkElementTypes(const std::vector<DSType *> &elementTypes, bool allowOptionType) const;
+    void checkElementTypes(const std::vector<DSType *> &elementTypes) const;
     void checkElementTypes(const TypeTemplate &t, const std::vector<DSType *> &elementTypes) const;
     bool asVariantType(const std::vector<DSType *> &elementTypes) const;
 
