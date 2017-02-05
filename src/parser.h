@@ -108,7 +108,9 @@ private:
     /**
      * not call it directory
      */
-    std::unique_ptr<TypeNode> parse_basicOrReifiedType(Token token);
+    std::pair<std::unique_ptr<TypeNode>, Token> parse_basicOrReifiedType(Token token);
+
+    std::pair<std::unique_ptr<TypeNode>, Token> parse_typeNameImpl();
 
     /**
      * not call NEXT_TOKEN, before call it.

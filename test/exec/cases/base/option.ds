@@ -45,6 +45,6 @@ var o = $opt(45)
 $o = "world"
 assert $o! == "world"
 
-$o = new Option<String>()
+$o = new String!()
 $o = "34"
 assert $o && $o! == "34"

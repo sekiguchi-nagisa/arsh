@@ -299,6 +299,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <TYPE> "("               { RET(PTYPE_OPEN); }
       <TYPE> ")"               { RET(PTYPE_CLOSE); }
       <TYPE> ":"               { RET(TYPE_MSEP); }
+      <TYPE> "!"               { RET(TYPE_OPT); }
 
 
       <STMT,EXPR,NAME,DSTRING,CMD,TYPE> "\000" { REACH_EOS();}

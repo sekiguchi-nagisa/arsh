@@ -349,7 +349,7 @@ std::unique_ptr<Node> Parser::parse_typeAlias() {
     return uniquify<TypeAliasNode>(startPos, this->lexer->toTokenText(token), typeToken.release());
 }
 
-std::unique_ptr<TypeNode> Parser::parse_basicOrReifiedType(Token token) {
+std::pair<std::unique_ptr<TypeNode>, Token> Parser::parse_basicOrReifiedType(Token token) {
     auto typeToken = uniquify<BaseTypeNode>(token, this->lexer->toName(token));
     if(!HAS_NL() && CUR_KIND() == TYPE_OPEN) {
         this->expect(TYPE_OPEN, false);
@@ -364,15 +364,13 @@ std::unique_ptr<TypeNode> Parser::parse_basicOrReifiedType(Token token) {
         token = this->expect(TYPE_CLOSE);
         reified->updateToken(token);
 
-        this->restoreLexerState(token);
-        return std::move(reified);
+        return {std::move(reified), token};
     }
 
-    this->restoreLexerState(token);
-    return std::move(typeToken);
+    return {std::move(typeToken), token};
 }
 
-std::unique_ptr<TypeNode> Parser::parse_typeName() {
+std::pair<std::unique_ptr<TypeNode>, Token> Parser::parse_typeNameImpl() {
     // change lexer state to TYPE
     PUSH_LEXER_MODE(yycTYPE);
 
@@ -391,8 +389,7 @@ std::unique_ptr<TypeNode> Parser::parse_typeName() {
         }
         token = this->expect(PTYPE_CLOSE);
         reified->updateToken(token);
-        this->restoreLexerState(token);
-        return std::move(reified);
+        return {std::move(reified), token};
     }
     case ATYPE_OPEN: {
         Token token = this->expect(ATYPE_OPEN, false);
@@ -406,8 +403,7 @@ std::unique_ptr<TypeNode> Parser::parse_typeName() {
         }
         token = this->expect(ATYPE_CLOSE);
         reified->updateToken(token);
-        this->restoreLexerState(token);
-        return std::move(reified);
+        return {std::move(reified), token};
     }
     case TYPEOF: {
         Token token = this->expect(TYPEOF);
@@ -420,8 +416,7 @@ std::unique_ptr<TypeNode> Parser::parse_typeName() {
 
             token = this->expect(RP, false);
 
-            this->restoreLexerState(token);
-            return uniquify<TypeOfNode>(startPos, std::move(exprNode).release());
+            return {uniquify<TypeOfNode>(startPos, std::move(exprNode).release()), token};
         }
         return this->parse_basicOrReifiedType(token);
     }
@@ -451,17 +446,14 @@ std::unique_ptr<TypeNode> Parser::parse_typeName() {
             token = this->expect(TYPE_CLOSE);
             func->updateToken(token);
 
-            this->restoreLexerState(token);
-            return std::move(func);
+            return {std::move(func), token};
         } else {
-            this->restoreLexerState(token);
-            return uniquify<BaseTypeNode>(token, this->lexer->toName(token));
+            return {uniquify<BaseTypeNode>(token, this->lexer->toName(token)), token};
         }
     }
     case TYPE_PATH: {
         Token token = this->expect(TYPE_PATH);
-        this->restoreLexerState(token);
-        return uniquify<DBusIfaceTypeNode>(token, this->lexer->toTokenText(token));
+        return {uniquify<DBusIfaceTypeNode>(token, this->lexer->toTokenText(token)), token};
     }
     default:
         E_ALTER(
@@ -473,6 +465,21 @@ std::unique_ptr<TypeNode> Parser::parse_typeName() {
                 TYPE_PATH
         );
     }
+}
+
+std::unique_ptr<TypeNode> Parser::parse_typeName() {
+    auto result = this->parse_typeNameImpl();
+    if(!HAS_NL() && CUR_KIND() == TYPE_OPT) {
+        result.second = this->expect(TYPE_OPT);
+        auto reified = uniquify<ReifiedTypeNode>(new BaseTypeNode(result.second, "Option"));
+        reified->setPos(result.first->getPos());
+        reified->addElementTypeNode(result.first.release());
+        reified->updateToken(result.second);
+        result.first = std::move(reified);
+    }
+
+    this->restoreLexerState(result.second);
+    return std::move(result.first);
 }
 
 std::unique_ptr<Node> Parser::parse_statement() {
