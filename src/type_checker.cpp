@@ -536,7 +536,7 @@ void TypeChecker::visitArrayNode(ArrayNode &node) {
     unsigned int size = node.getExprNodes().size();
     assert(size != 0);
     Node *firstElementNode = node.getExprNodes()[0];
-    auto &elementType = this->checkType(firstElementNode);
+    auto &elementType = this->checkType(this->typePool.getAnyType(), firstElementNode);
 
     for(unsigned int i = 1; i < size; i++) {
         this->checkTypeWithCoercion(elementType, node.refExprNodes()[i]);
@@ -554,7 +554,7 @@ void TypeChecker::visitMapNode(MapNode &node) {
     Node *firstKeyNode = node.getKeyNodes()[0];
     auto &keyType = this->checkType(this->typePool.getValueType(), firstKeyNode);
     Node *firstValueNode = node.getValueNodes()[0];
-    auto &valueType = this->checkType(firstValueNode);
+    auto &valueType = this->checkType(this->typePool.getAnyType(), firstValueNode);
 
     for(unsigned int i = 1; i < size; i++) {
         this->checkTypeWithCoercion(keyType, node.refKeyNodes()[i]);
@@ -572,7 +572,7 @@ void TypeChecker::visitTupleNode(TupleNode &node) {
     unsigned int size = node.getNodes().size();
     std::vector<DSType *> types(size);
     for(unsigned int i = 0; i < size; i++) {
-        types[i] = &this->checkType(node.getNodes()[i]);
+        types[i] = &this->checkType(this->typePool.getAnyType(), node.getNodes()[i]);
     }
     node.setType(this->typePool.createTupleType(std::move(types)));
 }

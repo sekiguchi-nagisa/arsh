@@ -648,7 +648,7 @@ DSType &TypePool::createReifiedType(const TypeTemplate &typeTemplate,
 }
 
 DSType &TypePool::createTupleType(std::vector<DSType *> &&elementTypes) {
-    this->checkElementTypes(elementTypes);
+    this->checkElementTypes(elementTypes, false);
 
     assert(elementTypes.size() > 0);
 
@@ -663,7 +663,7 @@ DSType &TypePool::createTupleType(std::vector<DSType *> &&elementTypes) {
 }
 
 FunctionType &TypePool::createFuncType(DSType *returnType, std::vector<DSType *> &&paramTypes) {
-    this->checkElementTypes(paramTypes);
+    this->checkElementTypes(paramTypes, true);
 
     std::string typeName(toFunctionTypeName(returnType, paramTypes));
     DSType *type = this->typeMap.getType(typeName);
@@ -863,9 +863,10 @@ void TypePool::initErrorType(DS_TYPE TYPE, const char *typeName, DSType &superTy
     this->setToTypeTable(TYPE, type);
 }
 
-void TypePool::checkElementTypes(const std::vector<DSType *> &elementTypes) const {
+void TypePool::checkElementTypes(const std::vector<DSType *> &elementTypes, bool allowOptionType) const {
     for(DSType *type : elementTypes) {
-        if(*type == this->getVoidType()) {
+        if((allowOptionType && *type == this->getVoidType())
+           || !this->getAnyType().isSameOrBaseTypeOf(*type)) {
             RAISE_TL_ERROR(InvalidElement, this->getTypeName(*type));
         }
     }
@@ -880,7 +881,7 @@ void TypePool::checkElementTypes(const TypeTemplate &t, const std::vector<DSType
     }
 
     for(unsigned int i = 0; i < size; i++) {
-        if(!t.getAcceptableTypes()[i]->isSameOrBaseTypeOf(*elementTypes[i]) && !elementTypes[i]->isOptionType()) {
+        if(!t.getAcceptableTypes()[i]->isSameOrBaseTypeOf(*elementTypes[i])) {
             RAISE_TL_ERROR(InvalidElement, this->getTypeName(*elementTypes[i]));
         }
     }
