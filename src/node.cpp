@@ -405,13 +405,13 @@ void AccessNode::accept(NodeVisitor &visitor) {
     visitor.visitAccessNode(*this);
 }
 
-// ######################
-// ##     CastNode     ##
-// ######################
+// ########################
+// ##     TypeOpNode     ##
+// ########################
 
-CastNode::CastNode(Node *exprNode, TypeNode *type, bool dupTypeToken) :
+TypeOpNode::TypeOpNode(Node *exprNode, TypeNode *type, OpKind init, bool dupTypeToken) :
         Node(exprNode->getToken()), exprNode(exprNode), targetTypeNode(nullptr),
-        opKind(NO_CAST) {
+        opKind(init) {
     static const unsigned long tag = (unsigned long) 1L << 63;
 
     if(dupTypeToken) {
@@ -426,7 +426,7 @@ CastNode::CastNode(Node *exprNode, TypeNode *type, bool dupTypeToken) :
     }
 }
 
-CastNode::~CastNode() {
+TypeOpNode::~TypeOpNode() {
     delete this->exprNode;
 
     if((long) this->targetTypeNode >= 0) {
@@ -434,7 +434,7 @@ CastNode::~CastNode() {
     }
 }
 
-TypeNode *CastNode::getTargetTypeNode() const {
+TypeNode *TypeOpNode::getTargetTypeNode() const {
     static const unsigned long mask = ~(1L << 63);
     if((long) this->targetTypeNode < 0) {
         TypeNode *tok = reinterpret_cast<TypeNode *>(mask & (unsigned long) this->targetTypeNode);
@@ -443,7 +443,7 @@ TypeNode *CastNode::getTargetTypeNode() const {
     return this->targetTypeNode;
 }
 
-void CastNode::dump(NodeDumper &dumper) const {
+void TypeOpNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
     TypeNode *targetTypeToken = this->getTargetTypeNode();
     DUMP_PTR(targetTypeToken);
@@ -455,37 +455,7 @@ void CastNode::dump(NodeDumper &dumper) const {
     OP(TO_STRING) \
     OP(CHECK_CAST) \
     OP(CHECK_UNWRAP) \
-    OP(PRINT)
-
-    DUMP_ENUM(opKind, EACH_ENUM);
-#undef EACH_ENUM
-}
-
-void CastNode::accept(NodeVisitor &visitor) {
-    visitor.visitCastNode(*this);
-}
-
-
-// ############################
-// ##     InstanceOfNode     ##
-// ############################
-
-InstanceOfNode::InstanceOfNode(Node *targetNode, TypeNode *typeNode) :
-    Node(targetNode->getToken()), targetNode(targetNode),
-    targetTypeNode(typeNode), opKind(ALWAYS_FALSE) {
-    this->updateToken(typeNode->getToken());
-}
-
-InstanceOfNode::~InstanceOfNode() {
-    delete this->targetNode;
-    delete this->targetTypeNode;
-}
-
-void InstanceOfNode::dump(NodeDumper &dumper) const {
-    DUMP_PTR(targetNode);
-    DUMP_PTR(targetTypeNode);
-
-#define EACH_ENUM(OP) \
+    OP(PRINT) \
     OP(ALWAYS_FALSE) \
     OP(ALWAYS_TRUE) \
     OP(INSTANCEOF)
@@ -494,8 +464,8 @@ void InstanceOfNode::dump(NodeDumper &dumper) const {
 #undef EACH_ENUM
 }
 
-void InstanceOfNode::accept(NodeVisitor &visitor) {
-    visitor.visitInstanceOfNode(*this);
+void TypeOpNode::accept(NodeVisitor &visitor) {
+    visitor.visitTypeOpNode(*this);
 }
 
 
@@ -1062,18 +1032,18 @@ void DoWhileNode::accept(NodeVisitor &visitor) {
  * if condNode is InstanceOfNode and targetNode is VarNode, insert VarDeclNode to blockNode.
  */
 static void resolveIfIsStatement(Node *condNode, BlockNode *blockNode) {
-    InstanceOfNode *isNode = dynamic_cast<InstanceOfNode *>(condNode);
-    if(isNode == nullptr) {
+    auto *isNode = dynamic_cast<TypeOpNode *>(condNode);
+    if(isNode == nullptr || !isNode->isInstanceOfOp()) {
         return;
     }
 
-    VarNode *varNode = dynamic_cast<VarNode *>(isNode->getTargetNode());
+    VarNode *varNode = dynamic_cast<VarNode *>(isNode->getExprNode());
     if(varNode == nullptr) {
         return;
     }
 
     VarNode *exprNode = new VarNode({isNode->getPos(), 1}, std::string(varNode->getVarName()));
-    CastNode *castNode = new CastNode(exprNode, isNode->getTargetTypeNode(), true);
+    TypeOpNode *castNode = new TypeOpNode(exprNode, isNode->getTargetTypeNode(), TypeOpNode::NO_CAST, true);
     VarDeclNode *declNode =
             new VarDeclNode(isNode->getPos(), std::string(varNode->getVarName()), castNode, true);
     blockNode->insertNodeToFirst(declNode);

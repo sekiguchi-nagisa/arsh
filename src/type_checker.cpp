@@ -340,12 +340,12 @@ void TypeChecker::checkTypeArgsNode(Node &node, MethodHandle *handle, std::vecto
     } while(handle->getNext() != nullptr);  //FIXME: method overloading
 }
 
-void TypeChecker::resolveCastOp(CastNode &node, bool allowVoidCast) {
+void TypeChecker::resolveCastOp(TypeOpNode &node, bool allowVoidCast) {
     auto &exprType = node.getExprNode()->getType();
     auto &targetType = node.getType();
 
     if(allowVoidCast && node.getType().isVoidType()) {
-        node.setOpKind(CastNode::TO_VOID);
+        node.setOpKind(TypeOpNode::TO_VOID);
         return;
     }
 
@@ -363,22 +363,22 @@ void TypeChecker::resolveCastOp(CastNode &node, bool allowVoidCast) {
     int afterIndex = this->typePool.getNumTypeIndex(targetType);
     if(beforeIndex > -1 && afterIndex > -1) {
         assert(beforeIndex < 8 && afterIndex < 8);
-        node.setOpKind(CastNode::NUM_CAST);
+        node.setOpKind(TypeOpNode::NUM_CAST);
         return;
     }
 
     if(exprType.isOptionType()) {
         if(targetType == this->typePool.getBooleanType()) {
-            node.setOpKind(CastNode::CHECK_UNWRAP);
+            node.setOpKind(TypeOpNode::CHECK_UNWRAP);
             return;
         }
     } else  {
         if(targetType == this->typePool.getStringType()) {
-            node.setOpKind(CastNode::TO_STRING);
+            node.setOpKind(TypeOpNode::TO_STRING);
             return;
         }
         if(!targetType.isBottomType() && exprType.isSameOrBaseTypeOf(targetType)) {
-            node.setOpKind(CastNode::CHECK_CAST);
+            node.setOpKind(TypeOpNode::CHECK_CAST);
             return;
         }
     }
@@ -386,9 +386,9 @@ void TypeChecker::resolveCastOp(CastNode &node, bool allowVoidCast) {
     RAISE_TC_ERROR(CastOp, node, this->typePool.getTypeName(exprType), this->typePool.getTypeName(targetType));
 }
 
-CastNode *TypeChecker::newTypedCastNode(Node *targetNode, DSType &type) {
+TypeOpNode *TypeChecker::newTypedCastNode(Node *targetNode, DSType &type) {
     assert(!targetNode->isUntyped());
-    CastNode *castNode = new CastNode(targetNode, nullptr);
+    TypeOpNode *castNode = new TypeOpNode(targetNode, nullptr, TypeOpNode::NO_CAST);
     castNode->setType(type);
     this->resolveCastOp(*castNode, true);
     return castNode;
@@ -397,7 +397,7 @@ CastNode *TypeChecker::newTypedCastNode(Node *targetNode, DSType &type) {
 Node* TypeChecker::newPrintOpNode(Node *node) {
     if(!node->getType().isVoidType() && !node->getType().isBottomType()) {
         auto *castNode = newTypedCastNode(node, this->typePool.getVoidType());
-        castNode->setOpKind(CastNode::PRINT);
+        castNode->setOpKind(TypeOpNode::PRINT);
         node = castNode;
     }
     return node;
@@ -598,25 +598,23 @@ void TypeChecker::visitAccessNode(AccessNode &node) {
     node.setType(*handle->getFieldType(this->typePool));
 }
 
-void TypeChecker::visitCastNode(CastNode &node) {
-    this->checkType(node.getExprNode());
-    auto &targetType = this->toType(node.getTargetTypeNode());
-    node.setType(targetType);
-    this->resolveCastOp(node, false);
-}
-
-void TypeChecker::visitInstanceOfNode(InstanceOfNode &node) {
-    auto &exprType = this->checkType(node.getTargetNode());
+void TypeChecker::visitTypeOpNode(TypeOpNode &node) {
+    auto &exprType = this->checkType(node.getExprNode());
     auto &targetType = this->toType(node.getTargetTypeNode());
 
-    if(targetType.isSameOrBaseTypeOf(exprType)) {
-        node.setOpKind(InstanceOfNode::ALWAYS_TRUE);
-    } else if(exprType.isSameOrBaseTypeOf(targetType)) {
-        node.setOpKind(InstanceOfNode::INSTANCEOF);
+    if(node.isCastOp()) {
+        node.setType(targetType);
+        this->resolveCastOp(node, false);
     } else {
-        node.setOpKind(InstanceOfNode::ALWAYS_FALSE);
+        if(targetType.isSameOrBaseTypeOf(exprType)) {
+            node.setOpKind(TypeOpNode::ALWAYS_TRUE);
+        } else if(exprType.isSameOrBaseTypeOf(targetType)) {
+            node.setOpKind(TypeOpNode::INSTANCEOF);
+        } else {
+            node.setOpKind(TypeOpNode::ALWAYS_FALSE);
+        }
+        node.setType(this->typePool.getBooleanType());
     }
-    node.setType(this->typePool.getBooleanType());
 }
 
 void TypeChecker::visitUnaryOpNode(UnaryOpNode &node) {

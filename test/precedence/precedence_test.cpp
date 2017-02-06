@@ -79,19 +79,11 @@ public:
         this->append(std::to_string(node.getValue()));
     }
 
-    void visitCastNode(CastNode &node) override {
+    void visitTypeOpNode(TypeOpNode &node) override {
         this->open();
         this->visit(*node.getExprNode());
-        this->append("as");
+        this->append(node.isCastOp() ? "as" : "is");
         this->append(dynamic_cast<BaseTypeNode *>(node.getTargetTypeNode())->getTokenText()); //FIXME:
-        this->close();
-    }
-
-    void visitInstanceOfNode(InstanceOfNode &node) override {
-        this->open();
-        this->visit(*node.getTargetNode());
-        this->append("is");
-        this->append(dynamic_cast<BaseTypeNode *>(node.getTargetTypeNode())->getTokenText());  //FIXME:
         this->close();
     }
 

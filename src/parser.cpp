@@ -965,13 +965,13 @@ std::unique_ptr<Node> Parser::parse_binaryExpression(std::unique_ptr<Node> &&lef
         case AS: {
             this->expect(AS, false);
             std::unique_ptr<TypeNode> type(this->parse_typeName());
-            node = uniquify<CastNode>(node.release(), type.release());
+            node = uniquify<TypeOpNode>(node.release(), type.release(), TypeOpNode::NO_CAST);
             break;
         }
         case IS: {
             this->expect(IS, false);
             std::unique_ptr<TypeNode> type(this->parse_typeName());
-            node = uniquify<InstanceOfNode>(node.release(), type.release());
+            node = uniquify<TypeOpNode>(node.release(), type.release(), TypeOpNode::ALWAYS_FALSE);
             break;
         }
         case TERNARY: {

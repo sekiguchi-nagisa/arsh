@@ -618,16 +618,25 @@ public:
     void accept(NodeVisitor &visitor) override;
 };
 
-class CastNode : public Node {
+class TypeOpNode : public Node {
 public:
-    enum CastOp {
+    /**
+     * do not change definition order
+     */
+    enum OpKind : unsigned char {
+        // cast
         NO_CAST,
         TO_VOID,
         NUM_CAST,
         TO_STRING,
         CHECK_CAST,
         CHECK_UNWRAP,
-        PRINT
+        PRINT,
+
+        // instance of
+        ALWAYS_FALSE,
+        ALWAYS_TRUE,
+        INSTANCEOF,
     };
 
 private:
@@ -638,12 +647,12 @@ private:
      */
     TypeNode *targetTypeNode;
 
-    CastOp opKind;
+    OpKind opKind;
 
 public:
-    CastNode(Node *exprNode, TypeNode *type, bool dupTypeToken = false);
+     TypeOpNode(Node *exprNode, TypeNode *type, OpKind init, bool dupTypeToken = false);
 
-    ~CastNode();
+    ~ TypeOpNode();
 
     Node *getExprNode() const {
         return this->exprNode;
@@ -651,50 +660,22 @@ public:
 
     TypeNode *getTargetTypeNode() const;
 
-    void setOpKind(CastOp opKind) {
+    void setOpKind(OpKind opKind) {
         this->opKind = opKind;
     }
 
-    CastOp getOpKind() const {
+    OpKind getOpKind() const {
         return this->opKind;
     }
 
-    void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
-};
-
-class InstanceOfNode : public Node {
-public:
-    enum InstanceOfOp {
-        ALWAYS_FALSE,
-        ALWAYS_TRUE,
-        INSTANCEOF,
-    };
-
-private:
-    Node *targetNode;
-    TypeNode *targetTypeNode;
-    InstanceOfOp opKind;
-
-public:
-    InstanceOfNode(Node *targetNode, TypeNode *typeNode);
-
-    ~InstanceOfNode();
-
-    Node *getTargetNode() const {
-        return this->targetNode;
+    bool isCastOp() const {
+        return static_cast<unsigned char>(this->opKind) >= static_cast<unsigned char>(NO_CAST)
+               && static_cast<unsigned char>(this->opKind) <= static_cast<unsigned char>(PRINT);
     }
 
-    TypeNode *getTargetTypeNode() const {
-        return this->targetTypeNode;
-    }
-
-    void setOpKind(InstanceOfOp opKind) {
-        this->opKind = opKind;
-    }
-
-    InstanceOfOp getOpKind() const {
-        return this->opKind;
+    bool isInstanceOfOp() const {
+        return static_cast<unsigned char>(this->opKind) >= static_cast<unsigned char>(ALWAYS_FALSE)
+               && static_cast<unsigned char>(this->opKind) <= static_cast<unsigned char>(INSTANCEOF);
     }
 
     void dump(NodeDumper &dumper) const override;
@@ -2178,8 +2159,7 @@ struct NodeVisitor {
     virtual void visitTupleNode(TupleNode &node) = 0;
     virtual void visitVarNode(VarNode &node) = 0;
     virtual void visitAccessNode(AccessNode &node) = 0;
-    virtual void visitCastNode(CastNode &node) = 0;
-    virtual void visitInstanceOfNode(InstanceOfNode &node) = 0;
+    virtual void visitTypeOpNode(TypeOpNode &node) = 0;
     virtual void visitUnaryOpNode(UnaryOpNode &node) = 0;
     virtual void visitBinaryOpNode(BinaryOpNode &node) = 0;
     virtual void visitApplyNode(ApplyNode &node) = 0;
@@ -2240,8 +2220,7 @@ struct BaseVisitor : public NodeVisitor {
     virtual void visitTupleNode(TupleNode &node) override { this->visitDefault(node); }
     virtual void visitVarNode(VarNode &node) override { this->visitDefault(node); }
     virtual void visitAccessNode(AccessNode &node) override { this->visitDefault(node); }
-    virtual void visitCastNode(CastNode &node) override { this->visitDefault(node); }
-    virtual void visitInstanceOfNode(InstanceOfNode &node) override { this->visitDefault(node); }
+    virtual void visitTypeOpNode(TypeOpNode &node) override { this->visitDefault(node); }
     virtual void visitUnaryOpNode(UnaryOpNode &node) override { this->visitDefault(node); }
     virtual void visitBinaryOpNode(BinaryOpNode &node) override { this->visitDefault(node); }
     virtual void visitApplyNode(ApplyNode &node) override { this->visitDefault(node); }

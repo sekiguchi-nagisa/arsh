@@ -339,7 +339,7 @@ private:
      * must be typed
      * @param allowVoidCast
      */
-    void resolveCastOp(CastNode &node, bool allowVoidCast);
+    void resolveCastOp(TypeOpNode &node, bool allowVoidCast);
 
     /**
      * for implicit cast.
@@ -348,7 +348,7 @@ private:
      * @param type
      * @return
      */
-    CastNode *newTypedCastNode(Node *targetNode, DSType &type);
+    TypeOpNode *newTypedCastNode(Node *targetNode, DSType &type);
 
     /**
      *
@@ -381,8 +381,7 @@ private:
     void visitTupleNode(TupleNode &node) override;
     void visitVarNode(VarNode &node) override;
     void visitAccessNode(AccessNode &node) override;
-    void visitCastNode(CastNode &node) override;
-    void visitInstanceOfNode(InstanceOfNode &node) override;
+    void visitTypeOpNode(TypeOpNode &node) override;
     void visitUnaryOpNode(UnaryOpNode &node) override;
     void visitBinaryOpNode(BinaryOpNode &node) override;
     void visitApplyNode(ApplyNode &node) override;

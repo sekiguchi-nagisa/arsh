@@ -502,31 +502,31 @@ void ByteCodeGenerator::visitAccessNode(AccessNode &node) {
     }
 }
 
-void ByteCodeGenerator::visitCastNode(CastNode &node) {
+void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
     this->visit(*node.getExprNode());
 
     switch(node.getOpKind()) {
-    case CastNode::NO_CAST:
+    case TypeOpNode::NO_CAST:
         break;
-    case CastNode::TO_VOID:
+    case TypeOpNode::TO_VOID:
         this->write0byteIns(OpCode::POP);
         break;
-    case CastNode::NUM_CAST:
+    case TypeOpNode::NUM_CAST:
         this->writeNumCastIns(node.getExprNode()->getType(), node.getType());
         break;
-    case CastNode::TO_STRING:
+    case TypeOpNode::TO_STRING:
         this->writeSourcePos(node.getPos());
         this->writeToString();
         break;
-    case CastNode::CHECK_CAST:
+    case TypeOpNode::CHECK_CAST:
         this->writeSourcePos(node.getPos());
         this->writeTypeIns(OpCode::CHECK_CAST, node.getType());
         break;
-    case CastNode::CHECK_UNWRAP:
+    case TypeOpNode::CHECK_UNWRAP:
         this->writeSourcePos(node.getPos());
         this->write0byteIns(OpCode::CHECK_UNWRAP);
         break;
-    case CastNode::PRINT:
+    case TypeOpNode::PRINT: {
         this->writeSourcePos(node.getPos());
         auto &exprType = node.getExprNode()->getType();
         if(exprType.isOptionType()) {
@@ -538,22 +538,16 @@ void ByteCodeGenerator::visitCastNode(CastNode &node) {
         this->writeTypeIns(OpCode::PRINT, exprType);
         break;
     }
-}
-
-void ByteCodeGenerator::visitInstanceOfNode(InstanceOfNode &node) {
-    this->visit(*node.getTargetNode());
-
-    switch(node.getOpKind()) {
-    case InstanceOfNode::INSTANCEOF:
-        this->writeTypeIns(OpCode::INSTANCE_OF, node.getTargetTypeNode()->getType());
+    case TypeOpNode::ALWAYS_FALSE:
+        this->write0byteIns(OpCode::POP);
+        this->write0byteIns(OpCode::PUSH_FALSE);
         break;
-    case InstanceOfNode::ALWAYS_TRUE:
+    case TypeOpNode::ALWAYS_TRUE:
         this->write0byteIns(OpCode::POP);
         this->write0byteIns(OpCode::PUSH_TRUE);
         break;
-    case InstanceOfNode::ALWAYS_FALSE:
-        this->write0byteIns(OpCode::POP);
-        this->write0byteIns(OpCode::PUSH_FALSE);
+    case TypeOpNode::INSTANCEOF:
+        this->writeTypeIns(OpCode::INSTANCE_OF, node.getTargetTypeNode()->getType());
         break;
     }
 }
