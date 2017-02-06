@@ -669,13 +669,11 @@ public:
     }
 
     bool isCastOp() const {
-        return static_cast<unsigned char>(this->opKind) >= static_cast<unsigned char>(NO_CAST)
-               && static_cast<unsigned char>(this->opKind) <= static_cast<unsigned char>(PRINT);
+        return static_cast<unsigned char>(this->opKind) <= static_cast<unsigned char>(PRINT);
     }
 
     bool isInstanceOfOp() const {
-        return static_cast<unsigned char>(this->opKind) >= static_cast<unsigned char>(ALWAYS_FALSE)
-               && static_cast<unsigned char>(this->opKind) <= static_cast<unsigned char>(INSTANCEOF);
+        return static_cast<unsigned char>(this->opKind) >= static_cast<unsigned char>(ALWAYS_FALSE);
     }
 
     void dump(NodeDumper &dumper) const override;
