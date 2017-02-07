@@ -1,0 +1,26 @@
+function f($v : Int) : [Int] {
+    var a = new [Int]()
+
+    try {
+        try {
+            12 / $v
+            $a.add(0)
+        } catch $e {
+            $a.add(1)
+        }
+        $a.add(2)
+    } finally {
+        $a.add(3)
+    }
+
+    return $a
+}
+
+var a = $f(0)
+var e = [1, 2, 3]
+assert $a as String == $e as String : "$a != $e"
+
+$a = $f(1)
+$e = [0, 2, 3]
+
+assert $a as String == $e as String : "$a != $e"

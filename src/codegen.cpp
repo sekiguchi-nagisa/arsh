@@ -914,7 +914,8 @@ void ByteCodeGenerator::visitCatchNode(CatchNode &node) {
 void ByteCodeGenerator::visitTryNode(TryNode &node) {
     auto finallyLabel = makeIntrusive<Label>();
 
-    if(node.getFinallyNode() != nullptr) {
+    const bool hasFinally = node.getFinallyNode() != nullptr;
+    if(hasFinally) {
         this->curBuilder().finallyLabels.push_back(finallyLabel);
     }
 
@@ -927,7 +928,9 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
     this->visit(*node.getBlockNode());
     this->markLabel(endLabel);
     if(!node.getBlockNode()->getType().isBottomType()) {
-        this->enterFinally();
+        if(hasFinally) {
+            this->enterFinally();
+        }
         this->writeJumpIns(mergeLabel);
     }
 
@@ -936,13 +939,15 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
         this->catchException(beginLabel, endLabel, c->getTypeNode()->getType());
         this->visit(*c);
         if(!c->getType().isBottomType()) {
-            this->enterFinally();
+            if(hasFinally) {
+                this->enterFinally();
+            }
             this->writeJumpIns(mergeLabel);
         }
     }
 
     // generate finally
-    if(node.getFinallyNode() != nullptr) {
+    if(hasFinally) {
         this->curBuilder().finallyLabels.pop_back();
 
         this->markLabel(finallyLabel);
