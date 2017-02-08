@@ -1123,23 +1123,7 @@ YDSH_METHOD string_split(RuntimeContext &ctx) {
     RET(results);
 }
 
-static DSValue createResult(RuntimeContext &ctx, DSValue &&value, bool success) {
-    // get tuple type
-    std::vector<DSType *> types(2);
-    types[0] = value.get()->getType();
-    types[1] = &getPool(ctx).getBooleanType();
-    auto &tupleType = getPool(ctx).createTupleType(std::move(types));
-
-    // create result
-    DSValue tuple = DSValue::create<Tuple_Object>(tupleType);
-    auto *ptr = typeAs<Tuple_Object>(tuple);
-    ptr->set(0, value);
-    ptr->set(1, success ? getTrueObj(ctx) : getFalseObj(ctx));
-
-    RET(tuple);
-}
-
-//!bind: function toInt32($this : String) : Tuple<Int32, Boolean>
+//!bind: function toInt32($this : String) : Option<Int32>
 YDSH_METHOD string_toInt32(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_toInt32);
     const char *str = typeAs<String_Object>(LOCAL(0))->getValue();
@@ -1151,10 +1135,11 @@ YDSH_METHOD string_toInt32(RuntimeContext &ctx) {
         status = 1;
         value = 0;
     }
-    RET(createResult(ctx, DSValue::create<Int_Object>(getPool(ctx).getInt32Type(), (int)value), status == 0));
+
+    RET(status == 0 ? DSValue::create<Int_Object>(getPool(ctx).getInt32Type(), (int)value) : DSValue::createInvalid());
 }
 
-//!bind: function toUint32($this : String) : Tuple<Uint32, Boolean>
+//!bind: function toUint32($this : String) : Option<Uint32>
 YDSH_METHOD string_toUint32(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_toUint32);
     const char *str = typeAs<String_Object>(LOCAL(0))->getValue();
@@ -1166,37 +1151,37 @@ YDSH_METHOD string_toUint32(RuntimeContext &ctx) {
         status = 1;
         value = 0;
     }
-    RET(createResult(ctx, DSValue::create<Int_Object>(getPool(ctx).getUint32Type(), (unsigned int)value), status == 0));
+    RET(status == 0 ? DSValue::create<Int_Object>(getPool(ctx).getUint32Type(), (unsigned int)value) : DSValue::createInvalid());
 }
 
-//!bind: function toInt64($this : String) : Tuple<Int64, Boolean>
+//!bind: function toInt64($this : String) : Option<Int64>
 YDSH_METHOD string_toInt64(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_toInt64);
     const char *str = typeAs<String_Object>(LOCAL(0))->getValue();
     int status = 0;
     long value = convertToInt64(str, status, false);
 
-    RET(createResult(ctx, DSValue::create<Long_Object>(getPool(ctx).getInt64Type(), value), status == 0));
+    RET(status == 0 ? DSValue::create<Long_Object>(getPool(ctx).getInt64Type(), value) : DSValue::createInvalid());
 }
 
-//!bind: function toUint64($this : String) : Tuple<Uint64, Boolean>
+//!bind: function toUint64($this : String) : Option<Uint64>
 YDSH_METHOD string_toUint64(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_toUint64);
     const char *str = typeAs<String_Object>(LOCAL(0))->getValue();
     int status = 0;
     unsigned long value = convertToUint64(str, status, false);
 
-    RET(createResult(ctx, DSValue::create<Long_Object>(getPool(ctx).getUint64Type(), value), status == 0));
+    RET(status == 0 ? DSValue::create<Long_Object>(getPool(ctx).getUint64Type(), value) : DSValue::createInvalid());
 }
 
-//!bind: function toFloat($this : String) : Tuple<Float, Boolean>
+//!bind: function toFloat($this : String) : Option<Float>
 YDSH_METHOD string_toFloat(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_toFloat);
     const char *str = typeAs<String_Object>(LOCAL(0))->getValue();
     int status = 0;
     double value = convertToDouble(str, status, false);
 
-    RET(createResult(ctx, DSValue::create<Float_Object>(getPool(ctx).getFloatType(), value), status == 0));
+    RET(status == 0 ? DSValue::create<Float_Object>(getPool(ctx).getFloatType(), value) : DSValue::createInvalid());
 }
 
 //!bind: function $OP_ITER($this : String) : StringIter
