@@ -14,6 +14,7 @@ assert($a.size() == 2)
 assert(not $a.empty())
 
 assert($a.find("b"))
+assert $a.find("b")! == -456
 assert(not $a.find("c"))
 
 assert($a.put("c", -19))

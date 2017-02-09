@@ -1519,12 +1519,12 @@ YDSH_METHOD map_empty(RuntimeContext &ctx) {
     RET_BOOL(value);
 }
 
-//!bind: function find($this : Map<T0, T1>, $key : T0) : Boolean
+//!bind: function find($this : Map<T0, T1>, $key : T0) : Option<T1>
 YDSH_METHOD map_find(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_find);
     Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
     auto iter = obj->getValueMap().find(LOCAL(1));
-    RET_BOOL(iter != obj->getValueMap().end());
+    RET(iter != obj->getValueMap().end() ? iter->second : DSValue::createInvalid());
 }
 
 //!bind: function remove($this : Map<T0, T1>, $key : T0) : Boolean
