@@ -162,11 +162,11 @@ void ByteCodeGenerator::writeToString() {
     this->writeMethodCallIns(OpCode::CALL_METHOD, this->handle_STR->getMethodIndex(), 0);
 }
 
-static inline unsigned short toShort(OpCode op) {
+static constexpr unsigned short toShort(OpCode op) {
     return static_cast<unsigned char>(op);
 }
 
-static inline unsigned short toShort(OpCode op1, OpCode op2) {
+static constexpr unsigned short toShort(OpCode op1, OpCode op2) {
     return toShort(op1) | toShort(op2) << 8;
 }
 
