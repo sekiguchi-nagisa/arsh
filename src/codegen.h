@@ -297,6 +297,11 @@ private:
     void writeJumpIns(const IntrusivePtr<Label> &label);
     void markLabel(IntrusivePtr<Label> &label);
 
+    void pushLoopLabels(const IntrusivePtr<Label> &breakLabel, const IntrusivePtr<Label> &continueLabel);
+
+    void popLoopLabels();
+
+    const std::pair<IntrusivePtr<Label>, IntrusivePtr<Label>> &peekLoopLabels();
     /**
      * for line number
      */

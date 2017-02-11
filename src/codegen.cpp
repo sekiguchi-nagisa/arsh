@@ -231,6 +231,18 @@ void ByteCodeGenerator::markLabel(IntrusivePtr<Label> &label) {
     this->curBuilder().markLabel(index, label);
 }
 
+void ByteCodeGenerator::pushLoopLabels(const IntrusivePtr<Label> &breakLabel, const IntrusivePtr<Label> &continueLabel) {
+    this->curBuilder().loopLabels.push_back(std::make_pair(breakLabel, continueLabel));
+}
+
+void ByteCodeGenerator::popLoopLabels() {
+    this->curBuilder().loopLabels.pop_back();
+}
+
+const std::pair<IntrusivePtr<Label>, IntrusivePtr<Label>> &ByteCodeGenerator::peekLoopLabels() {
+    return this->curBuilder().loopLabels.back();
+}
+
 void ByteCodeGenerator::writeSourcePos(unsigned int pos) {
     const unsigned int index = this->curBuilder().codeBuffer.size();
     if(this->curBuilder().sourcePosEntries.empty() || this->curBuilder().sourcePosEntries.back().pos != pos) {
@@ -758,8 +770,7 @@ void ByteCodeGenerator::visitJumpNode(JumpNode &node) {
         this->enterFinally();
     }
 
-    this->writeJumpIns(node.isBreak() ? this->curBuilder().loopLabels.back().first :
-                       this->curBuilder().loopLabels.back().second);
+    this->writeJumpIns(node.isBreak() ? this->peekLoopLabels().first : this->peekLoopLabels().second);
 }
 
 void ByteCodeGenerator::visitExportEnvNode(ExportEnvNode &node) {
@@ -800,7 +811,7 @@ void ByteCodeGenerator::visitForNode(ForNode &node) {
     auto initLabel = makeIntrusive<Label>();
     auto breakLabel = makeIntrusive<Label>();
     auto continueLabel = makeIntrusive<Label>();
-    this->curBuilder().loopLabels.push_back(std::make_pair(breakLabel, continueLabel));
+    this->pushLoopLabels(breakLabel, continueLabel);
 
     // generate code
     this->visit(*node.getInitNode());
@@ -823,14 +834,14 @@ void ByteCodeGenerator::visitForNode(ForNode &node) {
     this->markLabel(breakLabel);
 
     // pop loop label
-    this->curBuilder().loopLabels.pop_back();
+    this->popLoopLabels();
 }
 
 void ByteCodeGenerator::visitWhileNode(WhileNode &node) {
     // push loop label
     auto breakLabel = makeIntrusive<Label>();
     auto continueLabel = makeIntrusive<Label>();
-    this->curBuilder().loopLabels.push_back(std::make_pair(breakLabel, continueLabel));
+    this->pushLoopLabels(breakLabel, continueLabel);
 
     // generate code
     this->markLabel(continueLabel);
@@ -845,7 +856,7 @@ void ByteCodeGenerator::visitWhileNode(WhileNode &node) {
     this->markLabel(breakLabel);
 
     // pop loop label
-    this->curBuilder().loopLabels.pop_back();
+    this->popLoopLabels();
 }
 
 void ByteCodeGenerator::visitDoWhileNode(DoWhileNode &node) {
@@ -853,7 +864,7 @@ void ByteCodeGenerator::visitDoWhileNode(DoWhileNode &node) {
     auto initLabel = makeIntrusive<Label>();
     auto breakLabel = makeIntrusive<Label>();
     auto continueLabel = makeIntrusive<Label>();
-    this->curBuilder().loopLabels.push_back(std::make_pair(breakLabel, continueLabel));
+    this->pushLoopLabels(breakLabel, continueLabel);
 
     // generate code
     this->markLabel(initLabel);
@@ -867,7 +878,7 @@ void ByteCodeGenerator::visitDoWhileNode(DoWhileNode &node) {
     this->markLabel(breakLabel);
 
     // pop loop label
-    this->curBuilder().loopLabels.pop_back();
+    this->popLoopLabels();
 }
 
 void ByteCodeGenerator::visitIfNode(IfNode &node) {
