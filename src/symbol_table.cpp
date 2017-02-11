@@ -33,7 +33,11 @@ bool Scope::addFieldHandle(const std::string &symbolName, FieldHandle *handle) {
     if(!this->handleMap.insert(std::make_pair(symbolName, handle)).second) {
         return false;
     }
-    this->curVarIndex++;
+    if(handle == nullptr) {
+        this->shadowCount++;
+    } else {
+        this->curVarIndex++;
+    }
     return true;
 }
 

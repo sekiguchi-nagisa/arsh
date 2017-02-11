@@ -27,6 +27,7 @@ namespace ydsh {
 class Scope {
 private:
     unsigned int curVarIndex;
+    unsigned int shadowCount;
     std::unordered_map<std::string, FieldHandle *> handleMap;
 
 public:
@@ -38,7 +39,7 @@ public:
     Scope() : Scope(0) { }
 
     explicit Scope(unsigned int curVarIndex) :
-            curVarIndex(curVarIndex), handleMap() { }
+            curVarIndex(curVarIndex), shadowCount(0), handleMap() { }
 
     ~Scope() {
         for(auto &pair : this->handleMap) {
@@ -62,7 +63,7 @@ public:
     }
 
     unsigned int getVarSize() const {
-        return this->handleMap.size();
+        return this->handleMap.size() - this->shadowCount;
     }
 
     unsigned int getBaseIndex() const {
@@ -123,6 +124,11 @@ public:
      * return null, if found duplicated handle.
      */
     FieldHandle *registerHandle(const std::string &symbolName, DSType &type, FieldAttributes attribute);
+
+    bool disallowShadowing(const std::string &symbolName) {
+        assert(!this->inGlobalScope());
+        return this->scopes.back()->addFieldHandle(symbolName, nullptr);
+    }
 
     /**
      * return null, if found duplicated handle.

@@ -879,13 +879,22 @@ void TypeChecker::visitForNode(ForNode &node) {
     this->symbolTable.enterScope();
 
     this->checkTypeWithCoercion(this->typePool.getVoidType(), node.refInitNode());
+
+    this->symbolTable.enterScope();
+
+    if(dynamic_cast<VarDeclNode *>(node.getInitNode()) != nullptr) {
+        bool b = this->symbolTable.disallowShadowing(static_cast<VarDeclNode *>(node.getInitNode())->getVarName());
+        (void) b;
+        assert(b);
+    }
     this->checkTypeWithCoercion(this->typePool.getBooleanType(), node.refCondNode());
     this->checkTypeWithCoercion(this->typePool.getVoidType(), node.refIterNode());
 
     this->enterLoop();
     this->checkTypeWithCurrentScope(node.getBlockNode());
     this->exitLoop();
-    
+
+    this->symbolTable.exitScope();
     this->symbolTable.exitScope();
     node.setType(this->typePool.getVoidType());
 }
