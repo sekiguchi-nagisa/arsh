@@ -883,54 +883,6 @@ void JumpNode::accept(NodeVisitor &visitor) {
 }
 
 // ###########################
-// ##     ExportEnvNode     ##
-// ###########################
-
-ExportEnvNode::~ExportEnvNode() {
-    delete this->exprNode;
-}
-
-void ExportEnvNode::setAttribute(FieldHandle *handle) {
-    this->global = handle->attr().has(FieldAttribute::GLOBAL);
-    this->varIndex = handle->getFieldIndex();
-}
-
-void ExportEnvNode::dump(NodeDumper &dumper) const {
-    DUMP(envName);
-    DUMP_PTR(exprNode);
-    DUMP_PRIM(global);
-    DUMP_PRIM(varIndex);
-}
-
-void ExportEnvNode::accept(NodeVisitor &visitor) {
-    visitor.visitExportEnvNode(*this);
-}
-
-// ###########################
-// ##     ImportEnvNode     ##
-// ###########################
-
-ImportEnvNode::~ImportEnvNode() {
-    delete this->defaultValueNode;
-}
-
-void ImportEnvNode::setAttribute(FieldHandle *handle) {
-    this->global = handle->attr().has(FieldAttribute::GLOBAL);
-    this->varIndex = handle->getFieldIndex();
-}
-
-void ImportEnvNode::dump(NodeDumper &dumper) const {
-    DUMP(envName);
-    DUMP_PTR(defaultValueNode);
-    DUMP_PRIM(global);
-    DUMP_PRIM(varIndex);
-}
-
-void ImportEnvNode::accept(NodeVisitor &visitor) {
-    visitor.visitImportEnvNode(*this);
-}
-
-// ###########################
 // ##     TypeAliasNode     ##
 // ###########################
 
@@ -1045,7 +997,7 @@ static void resolveIfIsStatement(Node *condNode, BlockNode *blockNode) {
     VarNode *exprNode = new VarNode({isNode->getPos(), 1}, std::string(varNode->getVarName()));
     TypeOpNode *castNode = new TypeOpNode(exprNode, isNode->getTargetTypeNode(), TypeOpNode::NO_CAST, true);
     VarDeclNode *declNode =
-            new VarDeclNode(isNode->getPos(), std::string(varNode->getVarName()), castNode, true);
+            new VarDeclNode(isNode->getPos(), std::string(varNode->getVarName()), castNode, VarDeclNode::CONST);
     blockNode->insertNodeToFirst(declNode);
 }
 
@@ -1180,16 +1132,16 @@ void TryNode::accept(NodeVisitor &visitor) {
 // ##     VarDeclNode     ##
 // #########################
 
-VarDeclNode::VarDeclNode(unsigned int startPos, std::string &&varName, Node *initValueNode, bool readOnly) :
-        Node({startPos, 0}), varName(std::move(varName)), readOnly(readOnly), global(false),
-        varIndex(0), initValueNode(initValueNode) {
-    if(this->initValueNode != nullptr) {
-        this->updateToken(initValueNode->getToken());
+VarDeclNode::VarDeclNode(unsigned int startPos, std::string &&varName, Node *exprNode, Kind kind) :
+        Node({startPos, 0}), varName(std::move(varName)), global(false), kind(kind),
+        varIndex(0), exprNode(exprNode) {
+    if(this->exprNode != nullptr) {
+        this->updateToken(exprNode->getToken());
     }
 }
 
 VarDeclNode::~VarDeclNode() {
-    delete this->initValueNode;
+    delete this->exprNode;
 }
 
 void VarDeclNode::setAttribute(FieldHandle *handle) {
@@ -1199,10 +1151,18 @@ void VarDeclNode::setAttribute(FieldHandle *handle) {
 
 void VarDeclNode::dump(NodeDumper &dumper) const {
     DUMP(varName);
-    DUMP_PRIM(readOnly);
     DUMP_PRIM(global);
     DUMP_PRIM(varIndex);
-    DUMP_PTR(initValueNode);
+    DUMP_PTR(exprNode);
+
+#define EACH_ENUM(OP) \
+    OP(VAR) \
+    OP(CONST) \
+    OP(IMPORT_ENV) \
+    OP(EXPORT_ENV)
+
+    DUMP_ENUM(kind, EACH_ENUM);
+#undef EACH_ENUM
 }
 
 void VarDeclNode::accept(NodeVisitor &visitor) {
@@ -1516,7 +1476,7 @@ ForNode *createForInNode(unsigned int startPos, std::string &&varName, Node *exp
     // create for-init
     MethodCallNode *call_iter = new MethodCallNode(exprNode, std::string(OP_ITER));
     std::string reset_var_name(std::to_string(rand()));
-    VarDeclNode *reset_varDecl = new VarDeclNode(startPos, std::string(reset_var_name), call_iter, true);
+    VarDeclNode *reset_varDecl = new VarDeclNode(startPos, std::string(reset_var_name), call_iter, VarDeclNode::CONST);
 
     // create for-cond
     VarNode *reset_var = new VarNode(dummy, std::string(reset_var_name));
@@ -1525,7 +1485,7 @@ ForNode *createForInNode(unsigned int startPos, std::string &&varName, Node *exp
     // create forIn-init
     reset_var = new VarNode(dummy, std::string(reset_var_name));
     MethodCallNode *call_next = new MethodCallNode(reset_var, std::string(OP_NEXT));
-    VarDeclNode *init_var = new VarDeclNode(startPos, std::move(varName), call_next, false);
+    VarDeclNode *init_var = new VarDeclNode(startPos, std::move(varName), call_next, VarDeclNode::VAR);
 
     // insert init to block
     blockNode->insertNodeToFirst(init_var);

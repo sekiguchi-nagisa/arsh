@@ -307,7 +307,7 @@ std::unique_ptr<Node> Parser::parse_interface() {
         case VAR:
         case LET: {
             startPos = START_POS();
-            bool readOnly = this->consume() == LET;
+            auto readOnly = this->consume() == LET ? VarDeclNode::CONST : VarDeclNode::VAR;
             token = this->expect(IDENTIFIER);
             this->expect(COLON, false);
             auto type(this->parse_typeName());
@@ -541,8 +541,8 @@ std::unique_ptr<Node> Parser::parse_statement() {
         Token token = this->expect(IDENTIFIER);
         std::string name(this->lexer->toName(token));
         this->expect(ASSIGN);
-        auto node = uniquify<ExportEnvNode>(startPos, std::move(name),
-                                            this->parse_expression().release());
+        auto node = uniquify<VarDeclNode>(startPos, std::move(name),
+                                          this->parse_expression().release(), VarDeclNode::EXPORT_ENV);
         this->parse_statementEnd();
         return std::move(node);
     }
@@ -558,12 +558,15 @@ std::unique_ptr<Node> Parser::parse_statement() {
         unsigned int startPos = START_POS();
         this->expect(IMPORT_ENV);
         Token token = this->expect(IDENTIFIER);
-        auto node = uniquify<ImportEnvNode>(startPos, this->lexer->toName(token));
-        node->updateToken(token);
+        std::unique_ptr<Node> exprNode;
         if(!HAS_NL() && CUR_KIND() == COLON) {
             this->expectAndChangeMode(COLON, yycSTMT);
-            node->setDefaultValueNode(this->parse_expression().release());
+            exprNode = this->parse_expression();
         }
+
+        auto node = uniquify<VarDeclNode>(startPos, this->lexer->toName(token),
+                                          exprNode.release(), VarDeclNode::IMPORT_ENV);
+        node->updateToken(token);
 
         this->parse_statementEnd();
         return std::move(node);
@@ -671,19 +674,18 @@ std::unique_ptr<BlockNode> Parser::parse_block() {
 
 std::unique_ptr<Node> Parser::parse_variableDeclaration() {
     unsigned int startPos = START_POS();
-    bool readOnly = false;
+    auto readOnly = VarDeclNode::VAR;
     if(CUR_KIND() == VAR) {
         this->expect(VAR);
     } else {
         this->expect(LET);
-        readOnly = true;
+        readOnly = VarDeclNode::CONST;
     }
 
     Token token = this->expect(IDENTIFIER);
     std::string name(this->lexer->toName(token));
     this->expect(ASSIGN);
-    return uniquify<VarDeclNode>(startPos, std::move(name),
-                                 this->parse_expression().release(), readOnly);
+    return uniquify<VarDeclNode>(startPos, std::move(name), this->parse_expression().release(), readOnly);
 }
 
 std::unique_ptr<Node> Parser::parse_ifStatement(bool asElif) {

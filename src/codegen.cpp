@@ -773,37 +773,6 @@ void ByteCodeGenerator::visitJumpNode(JumpNode &node) {
     this->writeJumpIns(node.isBreak() ? this->peekLoopLabels().first : this->peekLoopLabels().second);
 }
 
-void ByteCodeGenerator::visitExportEnvNode(ExportEnvNode &node) {
-    this->writeLdcIns(DSValue::create<String_Object>(this->pool.getStringType(), node.getEnvName()));
-    this->write0byteIns(OpCode::DUP);
-    this->visit(*node.getExprNode());
-    this->write0byteIns(OpCode::STORE_ENV);
-
-    if(node.isGlobal()) {
-        this->write2byteIns(OpCode::STORE_GLOBAL, node.getVarIndex());
-    } else {
-        this->write2byteIns(OpCode::STORE_LOCAL, node.getVarIndex());
-    }
-}
-
-void ByteCodeGenerator::visitImportEnvNode(ImportEnvNode &node) {
-    this->writeLdcIns(DSValue::create<String_Object>(this->pool.getStringType(), node.getEnvName()));
-    this->write0byteIns(OpCode::DUP);
-    const bool hashDefault = node.getDefaultValueNode() != nullptr;
-    if(hashDefault) {
-        this->visit(*node.getDefaultValueNode());
-    }
-
-    this->writeSourcePos(node.getPos());
-    this->write1byteIns(OpCode::IMPORT_ENV, hashDefault ? 1 : 0);
-
-    if(node.isGlobal()) {
-        this->write2byteIns(OpCode::STORE_GLOBAL, node.getVarIndex());
-    } else {
-        this->write2byteIns(OpCode::STORE_LOCAL, node.getVarIndex());
-    }
-}
-
 void ByteCodeGenerator::visitTypeAliasNode(TypeAliasNode &) { } // do nothing
 
 void ByteCodeGenerator::visitForNode(ForNode &node) {
@@ -971,7 +940,32 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
 }
 
 void ByteCodeGenerator::visitVarDeclNode(VarDeclNode &node) {
-    this->visit(*node.getInitValueNode());
+    switch(node.getKind()) {
+    case VarDeclNode::VAR:
+    case VarDeclNode::CONST:
+        this->visit(*node.getExprNode());
+        break;
+    case VarDeclNode::IMPORT_ENV: {
+        this->writeLdcIns(DSValue::create<String_Object>(this->pool.getStringType(), node.getVarName()));
+        this->write0byteIns(OpCode::DUP);
+        const bool hashDefault = node.getExprNode() != nullptr;
+        if(hashDefault) {
+            this->visit(*node.getExprNode());
+        }
+
+        this->writeSourcePos(node.getPos());
+        this->write1byteIns(OpCode::IMPORT_ENV, hashDefault ? 1 : 0);
+        break;
+    }
+    case VarDeclNode::EXPORT_ENV: {
+        this->writeLdcIns(DSValue::create<String_Object>(this->pool.getStringType(), node.getVarName()));
+        this->write0byteIns(OpCode::DUP);
+        this->visit(*node.getExprNode());
+        this->write0byteIns(OpCode::STORE_ENV);
+        break;
+    }
+    }
+
     if(node.isGlobal()) {
         this->write2byteIns(OpCode::STORE_GLOBAL, node.getVarIndex());
     } else {

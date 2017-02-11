@@ -358,8 +358,6 @@ private:
     void visitAssertNode(AssertNode &node) override;
     void visitBlockNode(BlockNode &node) override;
     void visitJumpNode(JumpNode &node) override;
-    void visitExportEnvNode(ExportEnvNode &node) override;
-    void visitImportEnvNode(ImportEnvNode &node) override;
     void visitTypeAliasNode(TypeAliasNode &node) override;
     void visitForNode(ForNode &node) override;
     void visitWhileNode(WhileNode &node) override;

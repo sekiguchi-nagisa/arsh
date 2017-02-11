@@ -1304,96 +1304,6 @@ public:
     void accept(NodeVisitor &visitor) override;
 };
 
-class ExportEnvNode : public Node {
-private:
-    std::string envName;
-    Node *exprNode;
-    bool global;
-    unsigned int varIndex;
-
-public:
-    ExportEnvNode(unsigned int startPos, std::string &&envName, Node *exprNode) :
-            Node({startPos, 0}), envName(std::move(envName)), exprNode(exprNode),
-            global(false), varIndex(0) {
-        this->updateToken(exprNode->getToken());
-    }
-
-    ~ExportEnvNode();
-
-    const std::string &getEnvName() const {
-        return this->envName;
-    }
-
-    Node *getExprNode() const {
-        return this->exprNode;
-    }
-
-    void setAttribute(FieldHandle *handle);
-
-    bool isGlobal() const {
-        return this->global;
-    }
-
-    unsigned int getVarIndex() const {
-        return this->varIndex;
-    }
-
-    void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
-};
-
-class ImportEnvNode : public Node {
-private:
-    std::string envName;
-
-    /**
-     * may be null if has no default value.
-     */
-    Node *defaultValueNode;
-
-    bool global;
-    unsigned int varIndex;
-
-public:
-    /**
-     * defaultValueNode may be null
-     */
-    ImportEnvNode(unsigned int startPos, std::string &&envName) :
-            Node({startPos, 0}), envName(std::move(envName)),
-            defaultValueNode(nullptr), global(false), varIndex(0) { }
-
-    ~ImportEnvNode();
-
-    const std::string &getEnvName() const {
-        return this->envName;
-    }
-
-    void setDefaultValueNode(Node *node) {
-        this->defaultValueNode = node;
-        this->updateToken(this->defaultValueNode->getToken());
-    }
-
-    /**
-     * may be null
-     */
-    Node *getDefaultValueNode() const {
-        return this->defaultValueNode;
-    }
-
-    void setAttribute(FieldHandle *handle);
-
-    bool isGlobal() const {
-        return this->global;
-    }
-
-    unsigned int getVarIndex() const {
-        return this->varIndex;
-    }
-
-    void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
-};
-
 class TypeAliasNode : public Node {
 private:
     std::string alias;
@@ -1694,15 +1604,27 @@ public:
 };
 
 class VarDeclNode : public Node {
+public:
+    enum Kind : unsigned char {
+        VAR,
+        CONST,
+        IMPORT_ENV,
+        EXPORT_ENV,
+    };
+
 private:
     std::string varName;
-    bool readOnly;
     bool global;
+    Kind kind;
     unsigned int varIndex;
-    Node *initValueNode;
+
+    /**
+     * may be null
+     */
+    Node *exprNode;
 
 public:
-    VarDeclNode(unsigned int startPos, std::string &&varName, Node *initValueNode, bool readOnly);
+    VarDeclNode(unsigned int startPos, std::string &&varName, Node *exprNode, Kind kind);
 
     ~VarDeclNode();
 
@@ -1710,8 +1632,12 @@ public:
         return this->varName;
     }
 
+    Kind getKind() const {
+        return this->kind;
+    }
+
     bool isReadOnly() const {
-        return this->readOnly;
+        return this->getKind() == CONST;
     }
 
     void setAttribute(FieldHandle *handle);
@@ -1720,8 +1646,8 @@ public:
         return this->global;
     }
 
-    Node *getInitValueNode() const {
-        return this->initValueNode;
+    Node *getExprNode() const {
+        return this->exprNode;
     }
 
     unsigned int getVarIndex() const {
@@ -2174,8 +2100,6 @@ struct NodeVisitor {
     virtual void visitAssertNode(AssertNode &node) = 0;
     virtual void visitBlockNode(BlockNode &node) = 0;
     virtual void visitJumpNode(JumpNode &node) = 0;
-    virtual void visitExportEnvNode(ExportEnvNode &node) = 0;
-    virtual void visitImportEnvNode(ImportEnvNode &node) = 0;
     virtual void visitTypeAliasNode(TypeAliasNode &node) = 0;
     virtual void visitForNode(ForNode &node) = 0;
     virtual void visitWhileNode(WhileNode &node) = 0;
@@ -2235,8 +2159,6 @@ struct BaseVisitor : public NodeVisitor {
     virtual void visitAssertNode(AssertNode &node) override { this->visitDefault(node); }
     virtual void visitBlockNode(BlockNode &node) override { this->visitDefault(node); }
     virtual void visitJumpNode(JumpNode &node) override { this->visitDefault(node); }
-    virtual void visitExportEnvNode(ExportEnvNode &node) override { this->visitDefault(node); }
-    virtual void visitImportEnvNode(ImportEnvNode &node) override { this->visitDefault(node); }
     virtual void visitTypeAliasNode(TypeAliasNode &node) override { this->visitDefault(node); }
     virtual void visitForNode(ForNode &node) override { this->visitDefault(node); }
     virtual void visitWhileNode(WhileNode &node) override { this->visitDefault(node); }

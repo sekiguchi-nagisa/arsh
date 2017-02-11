@@ -861,30 +861,6 @@ void TypeChecker::visitJumpNode(JumpNode &node) {
     node.setType(this->typePool.getBottomType());
 }
 
-void TypeChecker::visitExportEnvNode(ExportEnvNode &node) {
-    auto &stringType = this->typePool.getStringType();
-    this->checkType(stringType, node.getExprNode());
-
-    FieldHandle *handle =
-            this->addEntryAndThrowIfDefined(node, node.getEnvName(), stringType, FieldAttribute::ENV);
-
-    node.setAttribute(handle);
-    node.setType(this->typePool.getVoidType());
-}
-
-void TypeChecker::visitImportEnvNode(ImportEnvNode &node) {
-    auto &stringType = this->typePool.getStringType();
-    if(node.getDefaultValueNode() != nullptr) {
-        this->checkType(stringType, node.getDefaultValueNode());
-    }
-
-    FieldHandle *handle =
-            this->addEntryAndThrowIfDefined(node, node.getEnvName(), stringType, FieldAttribute::ENV);
-
-    node.setAttribute(handle);
-    node.setType(this->typePool.getVoidType());
-}
-
 void TypeChecker::visitTypeAliasNode(TypeAliasNode &node) {
     if(!this->isTopLevel()) {   // only available toplevel scope
         RAISE_TC_ERROR(OutsideToplevel, node);
@@ -1040,16 +1016,28 @@ void TypeChecker::visitTryNode(TryNode &node) {
 }
 
 void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
-    auto &initValueType = this->checkType(node.getInitValueNode());
-    if(initValueType.isBottomType()) {
-        RAISE_TC_ERROR(Unacceptable, *node.getInitValueNode(), this->typePool.getTypeName(initValueType));
+    DSType *exprType;
+    FieldAttributes attr;
+    switch(node.getKind()) {
+    case VarDeclNode::CONST:
+        attr.set(FieldAttribute::READ_ONLY);
+    case VarDeclNode::VAR:
+        exprType = &this->checkType(node.getExprNode());
+        if(exprType->isBottomType()) {
+            RAISE_TC_ERROR(Unacceptable, *node.getExprNode(), this->typePool.getTypeName(*exprType));
+        }
+        break;
+    case VarDeclNode::IMPORT_ENV:
+    case VarDeclNode::EXPORT_ENV:
+        attr.set(FieldAttribute::ENV);
+        exprType = &this->typePool.getStringType();
+        if(node.getExprNode() != nullptr) {
+            this->checkType(*exprType, node.getExprNode());
+        }
+        break;
     }
 
-    FieldAttributes attr;
-    if(node.isReadOnly()) {
-        attr.set(FieldAttribute::READ_ONLY);
-    }
-    FieldHandle *handle = this->addEntryAndThrowIfDefined(node, node.getVarName(), initValueType, attr);
+    FieldHandle *handle = this->addEntryAndThrowIfDefined(node, node.getVarName(), *exprType, attr);
     node.setAttribute(handle);
     node.setType(this->typePool.getVoidType());
 }
