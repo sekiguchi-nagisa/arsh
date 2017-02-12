@@ -15,7 +15,7 @@ V="$(cat << EOS
 Source File: (string)
 DSCode: top level
   code size: 23
-  number of local variable: 1
+  number of local variable: 0
   number of global variable: 42
 Code:
    9: LOAD_CONST  0
@@ -41,7 +41,7 @@ V="$(cat << EOS
 Source File: (string)
 DSCode: top level
   code size: 38
-  number of local variable: 1
+  number of local variable: 0
   number of global variable: 42
 Code:
    9: LOAD_CONST  0

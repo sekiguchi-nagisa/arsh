@@ -125,6 +125,8 @@ void SymbolTable::exitFunc() {
 void SymbolTable::commit() {
     assert(this->inGlobalScope());
     this->handleCache.clear();
+    this->maxVarIndexStack.clear();
+    this->maxVarIndexStack.push_back(0);
 }
 
 void SymbolTable::abort() {

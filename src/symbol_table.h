@@ -103,8 +103,7 @@ private:
 public:
     NON_COPYABLE(SymbolTable);
 
-    SymbolTable() :
-            handleCache(), scopes(1), maxVarIndexStack(1) {
+    SymbolTable() : handleCache(), scopes(1), maxVarIndexStack(1) {
         this->scopes[0] = new Scope();
         this->maxVarIndexStack[0] = 0;
     }
