@@ -87,3 +87,4 @@
 | UNWRAP        |                                | value -> value                               | unwrap option value                                |
 | CHECK_UNWRAP  |                                | value -> value                               | check if option value has a value                  |
 | NEW_INVALID   |                                | -> value                                     | create then invalid value                          |
+| RECLAIM_LOCAL | 4: offset1 offset2 size1 size2 | [no change]                                  | reclaim local variables specified range            |

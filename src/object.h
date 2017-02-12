@@ -801,6 +801,9 @@ struct ExceptionEntry {
     unsigned int begin; // inclusive
     unsigned int end;   // exclusive
     unsigned int dest;  // catch block address
+
+    unsigned short localOffset;
+    unsigned short localSize;
 };
 
 class CompiledCode : public DSCode {

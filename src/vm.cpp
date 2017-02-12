@@ -177,6 +177,12 @@ static void clearOperandStack(DSState &st) {
     }
 }
 
+static void reclaimLocals(DSState &state, unsigned short offset, unsigned short size) {
+    for(unsigned int i = 0; i < size; i++) {
+        state.callStack[state.localVarOffset + offset + i].reset();
+    }
+}
+
 /**
  * set stackTopIndex.
  * if this->localStackSize < size, expand callStack.
@@ -1746,6 +1752,15 @@ static bool mainLoop(DSState &state) {
             state.push(DSValue::createInvalid());
             break;
         }
+        vmcase(RECLAIM_LOCAL) {
+            unsigned short offset = read16(GET_CODE(state), state.pc() + 1);
+            state.pc() += 2;
+            unsigned short size = read16(GET_CODE(state), state.pc() + 1);
+            state.pc() += 2;
+
+            reclaimLocals(state, offset, size);
+            break;
+        }
         }
     }
 }
@@ -1769,6 +1784,7 @@ static bool handleException(DSState &state) {
                    && entry.type->isSameOrBaseTypeOf(*occurredType)) {
                     state.pc() = entry.dest - 1;
                     clearOperandStack(state);
+                    reclaimLocals(state, entry.localOffset, entry.localSize);
                     state.loadThrownObject();
                     return true;
                 }

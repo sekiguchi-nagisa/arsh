@@ -217,11 +217,14 @@ private:
     IntrusivePtr<Label> end;    // exclusive
     const DSType *type;
     unsigned int address;   // start index of catch block.
+    unsigned short localOffset;
+    unsigned short localSize;
 
 public:
-    CatchBuilder() : begin(nullptr), end(nullptr), type(nullptr), address(0) { }
-    CatchBuilder(const IntrusivePtr<Label> &begin, const IntrusivePtr<Label> &end, const DSType &type, unsigned int address) :
-            begin(begin), end(end), type(&type), address(address) {}
+    CatchBuilder() : begin(nullptr), end(nullptr), type(nullptr), address(0), localOffset(0), localSize(0) { }
+    CatchBuilder(const IntrusivePtr<Label> &begin, const IntrusivePtr<Label> &end, const DSType &type,
+                 unsigned int address, unsigned short localOffset, unsigned short localSize) :
+            begin(begin), end(end), type(&type), address(address), localOffset(localOffset), localSize(localSize) {}
 
     ~CatchBuilder() = default;
 
@@ -233,6 +236,8 @@ private:
     TypePool &pool;
 
     bool assertion;
+
+    bool inFunc;
 
     /**
      * if true, within user-defined command definition.
@@ -247,9 +252,14 @@ private:
         std::vector<CatchBuilder> catchBuilders;
 
         /**
+         * first is local offset, second is local size
+         */
+        std::vector<std::pair<unsigned short, unsigned short>> localVars;
+
+        /**
          * first is break label, second is continue label
          */
-        std::vector<std::pair<IntrusivePtr<Label>, IntrusivePtr<Label>>> loopLabels;
+        std::vector<std::pair<std::pair<IntrusivePtr<Label>, IntrusivePtr<Label>>, unsigned int>> loopLabels;
 
         std::vector<IntrusivePtr<Label>> finallyLabels;
     };
@@ -258,7 +268,7 @@ private:
 
 public:
     ByteCodeGenerator(TypePool &pool, bool assertion) :
-            pool(pool), assertion(assertion), inUDC(false),
+            pool(pool), assertion(assertion), inFunc(false), inUDC(false),
             handle_STR(nullptr), builders() { }
 
     ~ByteCodeGenerator();
@@ -278,6 +288,7 @@ private:
     void write1byteIns(OpCode op, unsigned char v);
     void write2byteIns(OpCode op, unsigned short v);
     void write4byteIns(OpCode op, unsigned int v);
+    void write4byteIns(OpCode op, unsigned short v1, unsigned short v2);
     void write8byteIns(OpCode op, unsigned long v);
 
     /**
@@ -289,7 +300,6 @@ private:
     void writeLdcIns(const DSValue &value);
     void writeLdcIns(DSValue &&value);
     void writeDescriptorIns(OpCode op, std::string &&desc);
-    void writeMethodCallIns(OpCode op, unsigned short index, unsigned short paramSize);
     void writeToString();
     void writeNumCastIns(const DSType &beforeType, const DSType &afterType);
     void writeBranchIns(OpCode op, const IntrusivePtr<Label> &label);
@@ -298,10 +308,46 @@ private:
     void markLabel(IntrusivePtr<Label> &label);
 
     void pushLoopLabels(const IntrusivePtr<Label> &breakLabel, const IntrusivePtr<Label> &continueLabel);
-
     void popLoopLabels();
-
     const std::pair<IntrusivePtr<Label>, IntrusivePtr<Label>> &peekLoopLabels();
+
+    /**
+     *
+     * @param node
+     * not empty block
+     * @return
+     */
+    bool needReclaim(const BlockNode &node) {
+        if(node.getNodeList().empty()) {
+            return false;
+        }
+
+        if((*node.getNodeList().rbegin())->getType().isBottomType()) {
+            return false;
+        }
+
+        if(node.getVarSize() == 0) {
+            return 0;
+        }
+
+        if((this->inFunc || this->inUDC) && this->curBuilder().localVars.size() == 1) {
+            return false;
+        }
+        return true;
+    }
+
+    template <typename Func>
+    void generateBlock(unsigned short localOffset, unsigned short localSize, bool needReclaim, Func func) {
+        this->curBuilder().localVars.push_back({localOffset, localSize});
+
+        func();
+
+        if(needReclaim) {
+            this->write4byteIns(OpCode::RECLAIM_LOCAL, localOffset, localSize);
+        }
+        this->curBuilder().localVars.pop_back();
+    }
+
     /**
      * for line number
      */
@@ -310,7 +356,8 @@ private:
     /**
      * begin and end have already been marked.
      */
-    void catchException(const IntrusivePtr<Label> &begin, const IntrusivePtr<Label> &end, const DSType &type);
+    void catchException(const IntrusivePtr<Label> &begin, const IntrusivePtr<Label> &end, const DSType &type,
+                        unsigned short localOffset = 0, unsigned short localSize = 0);
     void enterFinally();
     void writeCaptureIns(bool isStr, const IntrusivePtr<Label> &label);
     void generateCmdArg(CmdArgNode &node);

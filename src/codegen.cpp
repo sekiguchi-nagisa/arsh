@@ -67,6 +67,8 @@ ExceptionEntry CatchBuilder::toEntry() const {
             .begin = this->begin->getIndex(),
             .end = this->end->getIndex(),
             .dest = this->address,
+            .localOffset = this->localOffset,
+            .localSize = this->localSize,
     };
 }
 
@@ -108,6 +110,14 @@ void ByteCodeGenerator::write4byteIns(OpCode op, unsigned int v) {
     this->curBuilder().append32(v);
 }
 
+void ByteCodeGenerator::write4byteIns(OpCode op, unsigned short v1, unsigned short v2) {
+    assert(op == OpCode::CALL_METHOD || op == OpCode::RECLAIM_LOCAL);
+    ASSERT_BYTE_SIZE(op, 4);
+    this->writeIns(op);
+    this->curBuilder().append16(v1);
+    this->curBuilder().append16(v2);
+}
+
 void ByteCodeGenerator::write8byteIns(OpCode op, unsigned long v) {
     ASSERT_BYTE_SIZE(op, 8);
     this->writeIns(op);
@@ -146,20 +156,12 @@ void ByteCodeGenerator::writeDescriptorIns(OpCode op, std::string &&desc) {
     this->write2byteIns(op, index);
 }
 
-void ByteCodeGenerator::writeMethodCallIns(OpCode op, unsigned short index, unsigned short paramSize) {
-    assert(op == OpCode::CALL_METHOD);
-    ASSERT_BYTE_SIZE(op, 4);
-    this->writeIns(op);
-    this->curBuilder().append16(index);
-    this->curBuilder().append16(paramSize);
-}
-
 void ByteCodeGenerator::writeToString() {
     if(this->handle_STR == nullptr) {
         this->handle_STR = this->pool.getAnyType().lookupMethodHandle(this->pool, std::string(OP_STR));
     }
 
-    this->writeMethodCallIns(OpCode::CALL_METHOD, this->handle_STR->getMethodIndex(), 0);
+    this->write4byteIns(OpCode::CALL_METHOD, this->handle_STR->getMethodIndex(), 0);
 }
 
 static constexpr unsigned short toShort(OpCode op) {
@@ -232,7 +234,7 @@ void ByteCodeGenerator::markLabel(IntrusivePtr<Label> &label) {
 }
 
 void ByteCodeGenerator::pushLoopLabels(const IntrusivePtr<Label> &breakLabel, const IntrusivePtr<Label> &continueLabel) {
-    this->curBuilder().loopLabels.push_back(std::make_pair(breakLabel, continueLabel));
+    this->curBuilder().loopLabels.push_back({{breakLabel, continueLabel}, this->curBuilder().loopLabels.size()});
 }
 
 void ByteCodeGenerator::popLoopLabels() {
@@ -240,7 +242,7 @@ void ByteCodeGenerator::popLoopLabels() {
 }
 
 const std::pair<IntrusivePtr<Label>, IntrusivePtr<Label>> &ByteCodeGenerator::peekLoopLabels() {
-    return this->curBuilder().loopLabels.back();
+    return this->curBuilder().loopLabels.back().first;
 }
 
 void ByteCodeGenerator::writeSourcePos(unsigned int pos) {
@@ -250,9 +252,10 @@ void ByteCodeGenerator::writeSourcePos(unsigned int pos) {
     }
 }
 
-void ByteCodeGenerator::catchException(const IntrusivePtr<Label> &begin, const IntrusivePtr<Label> &end, const DSType &type) {
+void ByteCodeGenerator::catchException(const IntrusivePtr<Label> &begin, const IntrusivePtr<Label> &end,
+                                       const DSType &type, unsigned short localOffset, unsigned short localSize) {
     const unsigned int index = this->curBuilder().codeBuffer.size();
-    this->curBuilder().catchBuilders.push_back(CatchBuilder(begin, end, type, index));
+    this->curBuilder().catchBuilders.push_back(CatchBuilder(begin, end, type, index, localOffset, localSize));
 }
 
 void ByteCodeGenerator::enterFinally() {
@@ -601,7 +604,7 @@ void ByteCodeGenerator::visitMethodCallNode(MethodCallNode &node) {
         this->writeDescriptorIns(
                 OpCode::INVOKE_METHOD, encodeMethodDescriptor(node.getMethodName().c_str(), node.getHandle()));
     } else {
-        this->writeMethodCallIns(OpCode::CALL_METHOD, node.getHandle()->getMethodIndex(), node.getArgNodes().size());
+        this->write4byteIns(OpCode::CALL_METHOD, node.getHandle()->getMethodIndex(), node.getArgNodes().size());
     }
 }
 
@@ -756,10 +759,14 @@ void ByteCodeGenerator::visitAssertNode(AssertNode &node) {
 void ByteCodeGenerator::visitBlockNode(BlockNode &node) {
     if(node.getNodeList().empty()) {
         this->write0byteIns(OpCode::NOP);
+        return;
     }
-    for(auto &e : node.getNodeList()) {
-        this->visit(*e);
-    }
+
+    this->generateBlock(node.getBaseIndex(), node.getVarSize(), needReclaim(node), [&]{
+        for(auto &e : node.getNodeList()) {
+            this->visit(*e);
+        }
+    });
 }
 
 void ByteCodeGenerator::visitJumpNode(JumpNode &node) {
@@ -783,24 +790,34 @@ void ByteCodeGenerator::visitForNode(ForNode &node) {
     this->pushLoopLabels(breakLabel, continueLabel);
 
     // generate code
-    this->visit(*node.getInitNode());
-    if(dynamic_cast<EmptyNode *>(node.getIterNode()) == nullptr) {
-        this->writeJumpIns(initLabel);
+    unsigned short localOffset = 0;
+    unsigned short localSize = 0;
+    if(dynamic_cast<VarDeclNode *>(node.getInitNode())) {
+        localOffset = static_cast<VarDeclNode *>(node.getInitNode())->getVarIndex();
+        localSize = 1;
     }
 
-    this->markLabel(continueLabel);
-    this->visit(*node.getIterNode());
+    this->generateBlock(localOffset, localSize, localSize > 0, [&]{
+        this->visit(*node.getInitNode());
+        if(dynamic_cast<EmptyNode *>(node.getIterNode()) == nullptr) {
+            this->writeJumpIns(initLabel);
+        }
 
-    this->markLabel(initLabel);
-    this->visit(*node.getCondNode());
-    this->writeBranchIns(breakLabel);
+        this->markLabel(continueLabel);
+        this->visit(*node.getIterNode());
 
-    this->visit(*node.getBlockNode());
-    if(!node.getBlockNode()->getType().isBottomType()) {
-        this->writeJumpIns(continueLabel);
-    }
+        this->markLabel(initLabel);
+        this->visit(*node.getCondNode());
+        this->writeBranchIns(breakLabel);
 
-    this->markLabel(breakLabel);
+        this->visit(*node.getBlockNode());
+
+        if(!node.getBlockNode()->getType().isBottomType()) {
+            this->writeJumpIns(continueLabel);
+        }
+
+        this->markLabel(breakLabel);
+    });
 
     // pop loop label
     this->popLoopLabels();
@@ -836,15 +853,22 @@ void ByteCodeGenerator::visitDoWhileNode(DoWhileNode &node) {
     this->pushLoopLabels(breakLabel, continueLabel);
 
     // generate code
-    this->markLabel(initLabel);
-    this->visit(*node.getBlockNode());
+    auto &blockNode = *node.getBlockNode();
 
-    this->markLabel(continueLabel);
-    this->visit(*node.getCondNode());
+    this->markLabel(initLabel);
+    this->generateBlock(blockNode.getBaseIndex(), blockNode.getVarSize(), this->needReclaim(blockNode), [&]{
+        for(auto &e : blockNode.getNodeList()) {
+            this->visit(*e);
+        }
+
+        this->markLabel(continueLabel);
+        this->visit(*node.getCondNode());
+    });
     this->writeBranchIns(breakLabel);
     this->writeJumpIns(initLabel);
 
     this->markLabel(breakLabel);
+
 
     // pop loop label
     this->popLoopLabels();
@@ -887,8 +911,12 @@ void ByteCodeGenerator::visitThrowNode(ThrowNode &node) {
 }
 
 void ByteCodeGenerator::visitCatchNode(CatchNode &node) {
-    this->write2byteIns(OpCode::STORE_LOCAL, node.getVarIndex());
-    this->visit(*node.getBlockNode());
+    if(node.getBlockNode()->getNodeList().empty()) {
+        this->write0byteIns(OpCode::POP);
+    } else {
+        this->write2byteIns(OpCode::STORE_LOCAL, node.getVarIndex());
+        this->visit(*node.getBlockNode());
+    }
 }
 
 void ByteCodeGenerator::visitTryNode(TryNode &node) {
@@ -903,11 +931,13 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
     auto endLabel = makeIntrusive<Label>();
     auto mergeLabel = makeIntrusive<Label>();
 
+    auto &blockNode = *node.getBlockNode();
+
     // generate try block
     this->markLabel(beginLabel);
-    this->visit(*node.getBlockNode());
+    this->visit(blockNode);
     this->markLabel(endLabel);
-    if(!node.getBlockNode()->getType().isBottomType()) {
+    if(!blockNode.getType().isBottomType()) {
         if(hasFinally) {
             this->enterFinally();
         }
@@ -916,7 +946,8 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
 
     // generate catch
     for(auto &c : node.getCatchNodes()) {
-        this->catchException(beginLabel, endLabel, c->getTypeNode()->getType());
+        this->catchException(beginLabel, endLabel, c->getTypeNode()->getType(),
+                             blockNode.getBaseIndex(), blockNode.getVarSize());
         this->visit(*c);
         if(!c->getType().isBottomType()) {
             if(hasFinally) {
@@ -1032,12 +1063,16 @@ void ByteCodeGenerator::visitElementSelfAssignNode(ElementSelfAssignNode &node) 
 }
 
 void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
+    this->inFunc = true;
+
     this->initCodeBuilder(CodeKind::FUNCTION, node.getMaxVarNum());
     this->visit(*node.getBlockNode());
     auto func = DSValue::create<FuncObject>(this->finalizeCodeBuilder(node));
 
     this->writeLdcIns(func);
     this->write2byteIns(OpCode::STORE_GLOBAL, node.getVarIndex());
+
+    this->inFunc = false;
 }
 
 void ByteCodeGenerator::visitInterfaceNode(InterfaceNode &) { } // do nothing
@@ -1116,6 +1151,8 @@ CompiledCode ByteCodeGenerator::finalizeCodeBuilder(const CallableNode &node) {
             .begin = 0,
             .end = 0,
             .dest = 0,
+            .localOffset = 0,
+            .localSize = 0,
     };  // sentinel
 
     // remove current builder
