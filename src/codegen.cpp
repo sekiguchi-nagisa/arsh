@@ -895,7 +895,7 @@ void ByteCodeGenerator::visitReturnNode(ReturnNode &node) {
     // add finally before return
     this->enterFinally();
 
-    if(this->inUDC) {
+    if(this->inUDC()) {
         assert(node.getExprNode()->getType() == this->pool.getInt32Type());
         this->write0byteIns(OpCode::RETURN_UDC);
     } else if(node.getExprNode()->getType().isVoidType()) {
@@ -1063,31 +1063,23 @@ void ByteCodeGenerator::visitElementSelfAssignNode(ElementSelfAssignNode &node) 
 }
 
 void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
-    this->inFunc = true;
-
     this->initCodeBuilder(CodeKind::FUNCTION, node.getMaxVarNum());
     this->visit(*node.getBlockNode());
     auto func = DSValue::create<FuncObject>(this->finalizeCodeBuilder(node));
 
     this->writeLdcIns(func);
     this->write2byteIns(OpCode::STORE_GLOBAL, node.getVarIndex());
-
-    this->inFunc = false;
 }
 
 void ByteCodeGenerator::visitInterfaceNode(InterfaceNode &) { } // do nothing
 
 void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
-    this->inUDC = true;
-
     this->initCodeBuilder(CodeKind::USER_DEFINED_CMD, node.getMaxVarNum());
     this->visit(*node.getBlockNode());
     auto func = DSValue::create<FuncObject>(this->finalizeCodeBuilder(node));
 
     this->writeLdcIns(func);
     this->write2byteIns(OpCode::STORE_GLOBAL, node.getUdcIndex());
-
-    this->inUDC = false;
 }
 
 void ByteCodeGenerator::visitEmptyNode(EmptyNode &) { } // do nothing

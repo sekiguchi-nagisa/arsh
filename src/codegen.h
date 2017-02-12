@@ -237,13 +237,6 @@ private:
 
     bool assertion;
 
-    bool inFunc;
-
-    /**
-     * if true, within user-defined command definition.
-     */
-    bool inUDC;
-
     MethodHandle *handle_STR;
 
     struct CodeBuilder : public ByteCodeWriter<true> {
@@ -268,8 +261,7 @@ private:
 
 public:
     ByteCodeGenerator(TypePool &pool, bool assertion) :
-            pool(pool), assertion(assertion), inFunc(false), inUDC(false),
-            handle_STR(nullptr), builders() { }
+            pool(pool), assertion(assertion), handle_STR(nullptr), builders() { }
 
     ~ByteCodeGenerator();
 
@@ -277,6 +269,14 @@ private:
     CodeBuilder &curBuilder() noexcept {
         assert(!this->builders.empty());
         return *this->builders.back();
+    }
+
+    bool inUDC() const {
+        return static_cast<CodeKind>(this->builders.back()->codeBuffer[0]) == CodeKind::USER_DEFINED_CMD;
+    }
+
+    bool inFunc() const {
+        return static_cast<CodeKind>(this->builders.back()->codeBuffer[0]) == CodeKind::FUNCTION;
     }
 
     /**
@@ -330,7 +330,7 @@ private:
             return 0;
         }
 
-        if((this->inFunc || this->inUDC) && this->curBuilder().localVars.size() == 1) {
+        if((this->inFunc() || this->inUDC()) && this->curBuilder().localVars.size() == 1) {
             return false;
         }
         return true;
