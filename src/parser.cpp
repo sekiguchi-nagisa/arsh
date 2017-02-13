@@ -990,7 +990,7 @@ std::unique_ptr<Node> Parser::parse_binaryExpression(std::unique_ptr<Node> &&lef
             for(unsigned int nextP = PRECEDENCE(); !HAS_NL() && nextP > p; nextP = PRECEDENCE()) {
                 rightNode = this->parse_binaryExpression(std::move(rightNode), nextP);
             }
-            node.reset(createBinaryOpNode(node.release(), op, rightNode.release()));
+            node = uniquify<BinaryOpNode>(node.release(), op, rightNode.release());
             break;
         }
         }

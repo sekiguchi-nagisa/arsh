@@ -95,14 +95,6 @@ public:
         this->close();
     }
 
-    void visitCondOpNode(CondOpNode &node) override {
-        this->open();
-        this->visit(*node.getLeftNode());
-        this->append(node.isAndOp() ? "&&" : "||");
-        this->visit(*node.getRightNode());
-        this->close();
-    }
-
     void visitTernaryNode(TernaryNode &node) override {
         this->open();
         this->visit(*node.getCondNode());

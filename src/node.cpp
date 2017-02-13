@@ -609,30 +609,6 @@ void BinaryOpNode::accept(NodeVisitor &visitor) {
     visitor.visitBinaryOpNode(*this);
 }
 
-// ########################
-// ##     CondOpNode     ##
-// ########################
-
-CondOpNode::CondOpNode(Node *leftNode, Node *rightNode, bool isAndOp) :
-        Node(leftNode->getToken()), leftNode(leftNode), rightNode(rightNode), andOp(isAndOp) {
-    this->updateToken(rightNode->getToken());
-}
-
-CondOpNode::~CondOpNode() {
-    delete this->leftNode;
-    delete this->rightNode;
-}
-
-void CondOpNode::dump(NodeDumper &dumper) const {
-    DUMP_PTR(leftNode);
-    DUMP_PTR(rightNode);
-    DUMP_PRIM(andOp);
-}
-
-void CondOpNode::accept(NodeVisitor &visitor) {
-    visitor.visitCondOpNode(*this);
-}
-
 // #########################
 // ##     TernaryNode     ##
 // #########################
@@ -1524,17 +1500,6 @@ Node *createIndexNode(Node *recvNode, Node *indexNode) {
     methodCallNode->setAttribute(MethodCallNode::INDEX);
     methodCallNode->refArgNodes().push_back(indexNode);
     return methodCallNode;
-}
-
-Node *createBinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode) {
-    switch(op) {
-    case COND_OR:
-        return new CondOpNode(leftNode, rightNode, false);
-    case COND_AND:
-        return new CondOpNode(leftNode, rightNode, true);
-    default:
-        return new BinaryOpNode(leftNode, op, rightNode);
-    }
 }
 
 } // namespace ydsh

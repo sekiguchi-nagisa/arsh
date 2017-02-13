@@ -641,6 +641,14 @@ static void toMethodCall(BinaryOpNode &node) {
 }
 
 void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
+    if(node.getOp() == COND_AND || node.getOp() == COND_OR) {
+        auto &booleanType = this->typePool.getBooleanType();
+        this->checkTypeWithCoercion(booleanType, node.refLeftNode());
+        this->checkTypeWithCoercion(booleanType, node.refRightNode());
+        node.setType(booleanType);
+        return;
+    }
+
     auto &leftType = this->checkType(node.getLeftNode());
     auto &rightType = this->checkType(node.getRightNode());
 
@@ -727,13 +735,6 @@ void TypeChecker::visitNewNode(NewNode &node) {
     }
 
     node.setType(type);
-}
-
-void TypeChecker::visitCondOpNode(CondOpNode &node) {
-    auto &booleanType = this->typePool.getBooleanType();
-    this->checkTypeWithCoercion(booleanType, node.refLeftNode());
-    this->checkTypeWithCoercion(booleanType, node.refRightNode());
-    node.setType(booleanType);
 }
 
 void TypeChecker::visitTernaryNode(TernaryNode &node) {

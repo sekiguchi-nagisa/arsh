@@ -573,7 +573,32 @@ void ByteCodeGenerator::visitUnaryOpNode(UnaryOpNode &node) {
 }
 
 void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
-    this->visit(*node.getOptNode());
+    auto kind = node.getOp();
+    if(kind == COND_AND || kind == COND_OR) {
+        auto elseLabel = makeIntrusive<Label>();
+        auto mergeLabel = makeIntrusive<Label>();
+
+        this->visit(*node.getLeftNode());
+        this->writeBranchIns(elseLabel);
+
+        if(kind == COND_AND) {
+            this->visit(*node.getRightNode());
+            this->writeJumpIns(mergeLabel);
+
+            this->markLabel(elseLabel);
+            this->write0byteIns(OpCode::PUSH_FALSE);
+        } else {
+            this->write0byteIns(OpCode::PUSH_TRUE);
+            this->writeJumpIns(mergeLabel);
+
+            this->markLabel(elseLabel);
+            this->visit(*node.getRightNode());
+        }
+
+        this->markLabel(mergeLabel);
+    } else {
+        this->visit(*node.getOptNode());
+    }
 }
 
 void ByteCodeGenerator::visitApplyNode(ApplyNode &node) {
@@ -622,30 +647,6 @@ void ByteCodeGenerator::visitNewNode(NewNode &node) {
     // call constructor
     this->writeSourcePos(node.getPos());
     this->write2byteIns(OpCode::CALL_INIT, paramSize);
-}
-
-void ByteCodeGenerator::visitCondOpNode(CondOpNode &node) {
-    auto elseLabel = makeIntrusive<Label>();
-    auto mergeLabel = makeIntrusive<Label>();
-
-    this->visit(*node.getLeftNode());
-    this->writeBranchIns(elseLabel);
-
-    if(node.isAndOp()) {
-        this->visit(*node.getRightNode());
-        this->writeJumpIns(mergeLabel);
-
-        this->markLabel(elseLabel);
-        this->write0byteIns(OpCode::PUSH_FALSE);
-    } else {
-        this->write0byteIns(OpCode::PUSH_TRUE);
-        this->writeJumpIns(mergeLabel);
-
-        this->markLabel(elseLabel);
-        this->visit(*node.getRightNode());
-    }
-
-    this->markLabel(mergeLabel);
 }
 
 void ByteCodeGenerator::visitTernaryNode(TernaryNode &node) {
