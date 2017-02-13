@@ -422,10 +422,6 @@ void ByteCodeGenerator::visitStringValueNode(StringValueNode &node) {
     }
 }
 
-void ByteCodeGenerator::visitObjectPathNode(ObjectPathNode &node) {
-    this->writeLdcIns(DSValue::create<String_Object>(node.getType(), StringValueNode::extract(std::move(node))));
-}
-
 void ByteCodeGenerator::visitStringExprNode(StringExprNode &node) {
     this->generateStringExpr(node, false);
 }

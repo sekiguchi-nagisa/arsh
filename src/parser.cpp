@@ -1153,7 +1153,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         token.size--;
         std::string str;
         this->lexer->singleToString(token, str);    // always success
-        return uniquify<ObjectPathNode>(token, std::move(str));
+        return uniquify<StringValueNode>(token, std::move(str), true);
     }
     case REGEX_LITERAL: {
         Token token = this->expect(REGEX_LITERAL);

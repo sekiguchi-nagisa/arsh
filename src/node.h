@@ -363,21 +363,26 @@ public:
 class StringValueNode : public Node {
 protected:
     std::string value;
+    bool asObjPath;
 
 public:
     /**
      * used for CommandNode. lineNum is always 0.
      */
     explicit StringValueNode(std::string &&value) :
-            Node({0, 0}), value(std::move(value)) { }
+            Node({0, 0}), value(std::move(value)), asObjPath(false) { }
 
-    StringValueNode(Token token, std::string &&value) :
-            Node(token), value(std::move(value)) { }
+    StringValueNode(Token token, std::string &&value, bool asObjPath = false) :
+            Node(token), value(std::move(value)), asObjPath(asObjPath) { }
 
-    virtual ~StringValueNode() = default;
+    ~StringValueNode() = default;
 
     const std::string &getValue() const {
         return this->value;
+    }
+
+    bool isObjectPath() const {
+        return this->asObjPath;
     }
 
     void dump(NodeDumper &dumper) const override;
@@ -386,16 +391,6 @@ public:
     static std::string extract(StringValueNode &&node) {
         return std::move(node.value);
     }
-};
-
-class ObjectPathNode : public StringValueNode {
-public:
-    ObjectPathNode(Token token, std::string &&value) :
-            StringValueNode(token, std::move(value)) { }
-
-    ~ObjectPathNode() = default;
-
-    void accept(NodeVisitor &visitor) override;
 };
 
 class StringExprNode : public Node {
@@ -2075,7 +2070,6 @@ struct NodeVisitor {
     virtual void visitLongValueNode(LongValueNode &node) = 0;
     virtual void visitFloatValueNode(FloatValueNode &node) = 0;
     virtual void visitStringValueNode(StringValueNode &node) = 0;
-    virtual void visitObjectPathNode(ObjectPathNode &node) = 0;
     virtual void visitStringExprNode(StringExprNode &node) = 0;
     virtual void visitRegexNode(RegexNode &node) = 0;
     virtual void visitArrayNode(ArrayNode &node) = 0;
@@ -2134,7 +2128,6 @@ struct BaseVisitor : public NodeVisitor {
     virtual void visitLongValueNode(LongValueNode &node) override { this->visitDefault(node); }
     virtual void visitFloatValueNode(FloatValueNode &node) override { this->visitDefault(node); }
     virtual void visitStringValueNode(StringValueNode &node) override { this->visitDefault(node); }
-    virtual void visitObjectPathNode(ObjectPathNode &node) override { this->visitDefault(node); }
     virtual void visitStringExprNode(StringExprNode &node) override { this->visitDefault(node); }
     virtual void visitRegexNode(RegexNode &node) override { this->visitDefault(node); }
     virtual void visitArrayNode(ArrayNode &node) override { this->visitDefault(node); }

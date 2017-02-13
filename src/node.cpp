@@ -211,15 +211,6 @@ void StringValueNode::accept(NodeVisitor &visitor) {
     visitor.visitStringValueNode(*this);
 }
 
-
-// ############################
-// ##     ObjectPathNode     ##
-// ############################
-
-void ObjectPathNode::accept(NodeVisitor &visitor) {
-    visitor.visitObjectPathNode(*this);
-}
-
 // ############################
 // ##     StringExprNode     ##
 // ############################

@@ -495,11 +495,7 @@ void TypeChecker::visitFloatValueNode(FloatValueNode &node) {
 }
 
 void TypeChecker::visitStringValueNode(StringValueNode &node) {
-    node.setType(this->typePool.getStringType());
-}
-
-void TypeChecker::visitObjectPathNode(ObjectPathNode &node) {
-    node.setType(this->typePool.getObjectPathType());
+    node.setType(node.isObjectPath() ? this->typePool.getObjectPathType() : this->typePool.getStringType());
 }
 
 void TypeChecker::visitStringExprNode(StringExprNode &node) {
