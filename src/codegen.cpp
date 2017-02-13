@@ -758,7 +758,6 @@ void ByteCodeGenerator::visitAssertNode(AssertNode &node) {
 
 void ByteCodeGenerator::visitBlockNode(BlockNode &node) {
     if(node.getNodeList().empty()) {
-        this->write0byteIns(OpCode::NOP);
         return;
     }
 
