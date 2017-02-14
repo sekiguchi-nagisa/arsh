@@ -1302,6 +1302,34 @@ YDSH_METHOD regex_search(RuntimeContext &ctx) {
     RET_BOOL(r);
 }
 
+//!bind: function match($this: Regex, $target : String) : Array<String>
+YDSH_METHOD regex_match(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(regex_match);
+    auto *re = typeAs<Regex_Object>(LOCAL(0));
+    auto *str = typeAs<String_Object>(LOCAL(1));
+
+    int captureSize;
+    pcre_fullinfo(re->getRe().get(), nullptr, PCRE_INFO_CAPTURECOUNT, &captureSize);
+    int *ovec = static_cast<int *>(malloc(sizeof(int) * (captureSize + 1) * 3));
+    int matchSize = pcre_exec(re->getRe().get(), nullptr, str->getValue(), str->size(), 0, 0, ovec, (captureSize + 1) * 3);
+
+    auto ret = DSValue::create<Array_Object>(getPool(ctx).getStringArrayType());
+    auto *array = typeAs<Array_Object>(ret);
+
+    if(matchSize > 0) {
+        array->refValues().reserve(matchSize);
+    }
+    for(int i = 0; i < matchSize; i++) {
+        unsigned int size = ovec[i * 2 + 1] - ovec[i * 2];
+        auto v = DSValue::create<String_Object>(getPool(ctx).getStringType(),
+                                                std::string(str->getValue() + ovec[i * 2], size));
+        array->refValues().push_back(std::move(v));
+    }
+    free(ovec);
+
+    RET(ret);
+}
+
 
 // ###################
 // ##     Array     ##

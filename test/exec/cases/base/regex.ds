@@ -17,3 +17,10 @@ try {
 } catch $e {
     assert $e is RegexSyntaxError
 }
+
+var a = $/hello (world)\(!!/.match("hello world(!!")
+assert $a.size() == 2
+assert $a[0] == "hello world(!!"
+assert $a[1] == "world"
+
+assert $/hufure/.match("").empty()
