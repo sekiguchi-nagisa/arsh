@@ -1321,7 +1321,8 @@ YDSH_METHOD regex_match(RuntimeContext &ctx) {
     }
     for(int i = 0; i < matchSize; i++) {
         unsigned int size = ovec[i * 2 + 1] - ovec[i * 2];
-        auto v = DSValue::create<String_Object>(getPool(ctx).getStringType(),
+        auto v = size == 0 ? getEmptyStrObj(ctx) :
+                 DSValue::create<String_Object>(getPool(ctx).getStringType(),
                                                 std::string(str->getValue() + ovec[i * 2], size));
         array->refValues().push_back(std::move(v));
     }
