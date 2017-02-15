@@ -186,6 +186,12 @@ static void postVisit(VisitedSet *set, const DSObject *ptr) {
     }
 }
 
+static void checkInvalid(DSState &st, DSValue &v) {
+    if(v.kind() == DSValueKind::INVALID) {
+        throwError(st, getPool(st).getUnwrappingErrorType(), "invalid value");
+    }
+}
+
 
 std::string Array_Object::toString(DSState &ctx, VisitedSet *visitedSet) {
     std::shared_ptr<VisitedSet> newSet;
@@ -197,6 +203,7 @@ std::string Array_Object::toString(DSState &ctx, VisitedSet *visitedSet) {
         if(i > 0) {
             str += ", ";
         }
+        checkInvalid(ctx, this->values[i]);
         preVisit(visitedSet, this);
         str += this->values[i]->toString(ctx, visitedSet);
         postVisit(visitedSet, this);
@@ -216,6 +223,7 @@ DSValue Array_Object::interp(DSState &ctx, VisitedSet *visitedSet) {
     checkCircularRef(ctx, visitedSet, newSet, this);
 
     if(this->values.size() == 1) {
+        checkInvalid(ctx, this->values[0]);
         preVisit(visitedSet, this);
         auto v = this->values[0]->interp(ctx, visitedSet);
         postVisit(visitedSet, this);
@@ -228,6 +236,7 @@ DSValue Array_Object::interp(DSState &ctx, VisitedSet *visitedSet) {
         if(i > 0) {
             str += " ";
         }
+        checkInvalid(ctx, this->values[i]);
         preVisit(visitedSet, this);
         str += typeAs<String_Object>(this->values[i]->interp(ctx, visitedSet))->getValue();
         postVisit(visitedSet, this);
@@ -241,6 +250,7 @@ DSValue Array_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
 
     auto result = DSValue::create<Array_Object>(getPool(ctx).getStringArrayType());
     for(auto &e : this->values) {
+        checkInvalid(ctx, e);
         preVisit(visitedSet, this);
         DSValue temp(e->commandArg(ctx, visitedSet));
         postVisit(visitedSet, this);
@@ -289,6 +299,7 @@ std::string Map_Object::toString(DSState &ctx, VisitedSet *visitedSet) {
         str += iter.first->toString(ctx, nullptr);
         str += " : ";
 
+        checkInvalid(ctx, iter.second);
         preVisit(visitedSet, this);
         str += iter.second->toString(ctx, visitedSet);
         postVisit(visitedSet, this);
@@ -324,6 +335,7 @@ std::string Tuple_Object::toString(DSState &ctx, VisitedSet *visitedSet) {
             str += ", ";
         }
 
+        checkInvalid(ctx, this->fieldTable[i]);
         preVisit(visitedSet, this);
         str += this->fieldTable[i]->toString(ctx, visitedSet);
         postVisit(visitedSet, this);
@@ -342,6 +354,7 @@ DSValue Tuple_Object::interp(DSState &ctx, VisitedSet *visitedSet) {
         if(i > 0) {
             str += " ";
         }
+        checkInvalid(ctx, this->fieldTable[i]);
         preVisit(visitedSet, this);
         str += typeAs<String_Object>(this->fieldTable[i]->interp(ctx, visitedSet))->getValue();
         postVisit(visitedSet, this);
@@ -356,6 +369,7 @@ DSValue Tuple_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
     auto result = DSValue::create<Array_Object>(getPool(ctx).getStringArrayType());
     unsigned int size = this->getElementSize();
     for(unsigned int i = 0; i < size; i++) {
+        checkInvalid(ctx, this->fieldTable[i]);
         preVisit(visitedSet, this);
         DSValue temp(this->fieldTable[i]->commandArg(ctx, visitedSet));
         postVisit(visitedSet, this);

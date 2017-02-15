@@ -48,3 +48,17 @@ assert $o! == "world"
 $o = new String!()
 $o = "34"
 assert $o && $o! == "34"
+
+
+# collection with option value
+assert [23 as Int!] as String == '[23]'
+try { [34 : new Int!()] as String } catch $e { assert $e is UnwrappingError }
+try { (34, new Boolean!()) as String } catch $e { assert $e is UnwrappingError }
+
+assert "${[3 as Int!]}" == '3'
+try { "${[1u : new String!()]}" }catch $e { assert $e is UnwrappingError }
+try { "${(2, $false, new Error!())}" }  catch $e { assert $e is UnwrappingError }
+
+assert "$(echo ${[$false as Boolean!]})" == 'false'
+try { echo ${['s' : new Float!()]}; }  catch $e { assert $e is UnwrappingError }
+try { echo ${new (Byte!)(new Byte!())}; } catch $e { assert $e is UnwrappingError }
