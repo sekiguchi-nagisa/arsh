@@ -83,53 +83,53 @@ ByteCodeGenerator::~ByteCodeGenerator() {
     }
 }
 
-void ByteCodeGenerator::writeIns(OpCode op) {
+void ByteCodeGenerator::emitIns(OpCode op) {
     this->curBuilder().append8(static_cast<unsigned char>(op));
 }
 
-void ByteCodeGenerator::write0byteIns(OpCode op) {
+void ByteCodeGenerator::emit0byteIns(OpCode op) {
     ASSERT_BYTE_SIZE(op, 0);
-    this->writeIns(op);
+    this->emitIns(op);
 }
 
-void ByteCodeGenerator::write1byteIns(OpCode op, unsigned char v) {
+void ByteCodeGenerator::emit1byteIns(OpCode op, unsigned char v) {
     ASSERT_BYTE_SIZE(op, 1);
-    this->writeIns(op);
+    this->emitIns(op);
     this->curBuilder().append8(v);
 }
 
-void ByteCodeGenerator::write2byteIns(OpCode op, unsigned short v) {
+void ByteCodeGenerator::emit2byteIns(OpCode op, unsigned short v) {
     ASSERT_BYTE_SIZE(op, 2);
-    this->writeIns(op);
+    this->emitIns(op);
     this->curBuilder().append16(v);
 }
 
-void ByteCodeGenerator::write4byteIns(OpCode op, unsigned int v) {
+void ByteCodeGenerator::emit4byteIns(OpCode op, unsigned int v) {
     ASSERT_BYTE_SIZE(op, 4);
-    this->writeIns(op);
+    this->emitIns(op);
     this->curBuilder().append32(v);
 }
 
-void ByteCodeGenerator::write4byteIns(OpCode op, unsigned short v1, unsigned short v2) {
+void ByteCodeGenerator::emit4byteIns(OpCode op, unsigned short v1, unsigned short v2) {
     assert(op == OpCode::CALL_METHOD || op == OpCode::RECLAIM_LOCAL);
     ASSERT_BYTE_SIZE(op, 4);
-    this->writeIns(op);
+    this->emitIns(op);
     this->curBuilder().append16(v1);
     this->curBuilder().append16(v2);
 }
 
-void ByteCodeGenerator::write8byteIns(OpCode op, unsigned long v) {
+void ByteCodeGenerator::emit8byteIns(OpCode op, unsigned long v) {
     ASSERT_BYTE_SIZE(op, 8);
-    this->writeIns(op);
+    this->emitIns(op);
     this->curBuilder().append64(v);
 }
 
-void ByteCodeGenerator::writeTypeIns(OpCode op, const DSType &type) {
+void ByteCodeGenerator::emitTypeIns(OpCode op, const DSType &type) {
     assert(isTypeOp(op));
-    this->write8byteIns(op, reinterpret_cast<unsigned long>(&type));
+    this->emit8byteIns(op, reinterpret_cast<unsigned long>(&type));
 }
 
-unsigned short ByteCodeGenerator::writeConstant(DSValue &&value) {
+unsigned short ByteCodeGenerator::emitConstant(DSValue &&value) {
     this->curBuilder().constBuffer.push_back(std::move(value));
     unsigned int index = this->curBuilder().constBuffer.size() - 1;
     if(index > UINT16_MAX) {
@@ -138,30 +138,31 @@ unsigned short ByteCodeGenerator::writeConstant(DSValue &&value) {
     return index;
 }
 
-void ByteCodeGenerator::writeLdcIns(const DSValue &value) {
-    this->writeLdcIns(DSValue(value));
+void ByteCodeGenerator::emitLdcIns(const DSValue &value) {
+    this->emitLdcIns(DSValue(value));
 }
 
-void ByteCodeGenerator::writeLdcIns(DSValue &&value) {
-    unsigned short index = this->writeConstant(std::move(value));
+void ByteCodeGenerator::emitLdcIns(DSValue &&value) {
+    unsigned short index = this->emitConstant(std::move(value));
     if(index <= UINT8_MAX) {
-        this->write1byteIns(OpCode::LOAD_CONST, index);
+        this->emit1byteIns(OpCode::LOAD_CONST, index);
     } else {
-        this->write2byteIns(OpCode::LOAD_CONST_W, index);
+        this->emit2byteIns(OpCode::LOAD_CONST_W, index);
     }
 }
 
-void ByteCodeGenerator::writeDescriptorIns(OpCode op, std::string &&desc) {
-    unsigned short index = this->writeConstant(DSValue::create<String_Object>(this->pool.getStringType(), std::move(desc)));
-    this->write2byteIns(op, index);
+void ByteCodeGenerator::emitDescriptorIns(OpCode op, std::string &&desc) {
+    unsigned short index = this->emitConstant(
+            DSValue::create<String_Object>(this->pool.getStringType(), std::move(desc)));
+    this->emit2byteIns(op, index);
 }
 
-void ByteCodeGenerator::writeToString() {
+void ByteCodeGenerator::generateToString() {
     if(this->handle_STR == nullptr) {
         this->handle_STR = this->pool.getAnyType().lookupMethodHandle(this->pool, std::string(OP_STR));
     }
 
-    this->write4byteIns(OpCode::CALL_METHOD, this->handle_STR->getMethodIndex(), 0);
+    this->emit4byteIns(OpCode::CALL_METHOD, this->handle_STR->getMethodIndex(), 0);
 }
 
 static constexpr unsigned short toShort(OpCode op) {
@@ -172,7 +173,7 @@ static constexpr unsigned short toShort(OpCode op1, OpCode op2) {
     return toShort(op1) | toShort(op2) << 8;
 }
 
-void ByteCodeGenerator::writeNumCastIns(const DSType &beforeType, const DSType &afterType) {
+void ByteCodeGenerator::emitNumCastIns(const DSType &beforeType, const DSType &afterType) {
     const int beforeIndex = this->pool.getNumTypeIndex(beforeType);
     const int afterIndex = this->pool.getNumTypeIndex(afterType);
 
@@ -204,28 +205,28 @@ void ByteCodeGenerator::writeNumCastIns(const DSType &beforeType, const DSType &
             unsigned int size = getByteSize(op);
             assert(size == 0 || size == 1);
             if(size) {
-                this->write1byteIns(op, afterIndex);
+                this->emit1byteIns(op, afterIndex);
             } else {
-                this->write0byteIns(op);
+                this->emit0byteIns(op);
             }
         }
     }
 }
 
-void ByteCodeGenerator::writeBranchIns(OpCode op, const IntrusivePtr<Label> &label) {
+void ByteCodeGenerator::emitBranchIns(OpCode op, const IntrusivePtr<Label> &label) {
     const unsigned int index = this->curBuilder().codeBuffer.size();    //FIXME: check index range
-    this->write2byteIns(op, 0);
-    this->curBuilder().writeLabel(index + 1, label, index, ByteCodeWriter<true>::LabelTarget::_16);
+    this->emit2byteIns(op, 0);
+    this->curBuilder().writeLabel(index + 1, label, index, CodeEmitter<true>::LabelTarget::_16);
 }
 
-void ByteCodeGenerator::writeBranchIns(const IntrusivePtr<Label> &label) {
-    this->writeBranchIns(OpCode::BRANCH, label);
+void ByteCodeGenerator::emitBranchIns(const IntrusivePtr<Label> &label) {
+    this->emitBranchIns(OpCode::BRANCH, label);
 }
 
-void ByteCodeGenerator::writeJumpIns(const IntrusivePtr<Label> &label) {
+void ByteCodeGenerator::emitJumpIns(const IntrusivePtr<Label> &label) {
     const unsigned int index = this->curBuilder().codeBuffer.size();
-    this->write4byteIns(OpCode::GOTO, 0);
-    this->curBuilder().writeLabel(index + 1, label, 0, ByteCodeWriter<true>::LabelTarget::_32);
+    this->emit4byteIns(OpCode::GOTO, 0);
+    this->curBuilder().writeLabel(index + 1, label, 0, CodeEmitter<true>::LabelTarget::_32);
 }
 
 void ByteCodeGenerator::markLabel(IntrusivePtr<Label> &label) {
@@ -262,13 +263,13 @@ void ByteCodeGenerator::enterFinally() {
     for(auto iter = this->curBuilder().finallyLabels.rbegin();
         iter != this->curBuilder().finallyLabels.rend(); ++iter) {
         const unsigned int index = this->curBuilder().codeBuffer.size();
-        this->write4byteIns(OpCode::ENTER_FINALLY, 0);
-        this->curBuilder().writeLabel(index + 1, *iter, 0, ByteCodeWriter<true>::LabelTarget::_32);
+        this->emit4byteIns(OpCode::ENTER_FINALLY, 0);
+        this->curBuilder().writeLabel(index + 1, *iter, 0, CodeEmitter<true>::LabelTarget::_32);
     }
 }
 
 void ByteCodeGenerator::writeCaptureIns(bool isStr, const IntrusivePtr<Label> &label) {
-    this->writeBranchIns(isStr ? OpCode::CAPTURE_STR : OpCode::CAPTURE_ARRAY, label);
+    this->emitBranchIns(isStr ? OpCode::CAPTURE_STR : OpCode::CAPTURE_ARRAY, label);
 }
 
 void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
@@ -277,14 +278,14 @@ void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
     if(size == 1) {
         this->visit(*node.getSegmentNodes()[0]);
     } else {
-        this->write0byteIns(OpCode::NEW_STRING);
+        this->emit0byteIns(OpCode::NEW_STRING);
 
         unsigned int index = 0;
         const bool tildeExpansion = dynamic_cast<TildeNode *>(node.getSegmentNodes()[0]) != nullptr;
         if(tildeExpansion) {
-            this->writeLdcIns(DSValue::create<String_Object>(
+            this->emitLdcIns(DSValue::create<String_Object>(
                     this->pool.getStringType(), static_cast<TildeNode *>(node.getSegmentNodes()[0])->getValue()));
-            this->write0byteIns(OpCode::APPEND_STRING);
+            this->emit0byteIns(OpCode::APPEND_STRING);
             index++;
         }
 
@@ -295,12 +296,12 @@ void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
                 this->generateStringExpr(*static_cast<StringExprNode *>(e), true);
             } else {
                 this->visit(*e);
-                this->write0byteIns(OpCode::APPEND_STRING);
+                this->emit0byteIns(OpCode::APPEND_STRING);
             }
         }
 
         if(tildeExpansion) {
-            this->write0byteIns(OpCode::EXPAND_TILDE);
+            this->emit0byteIns(OpCode::EXPAND_TILDE);
         }
     }
 }
@@ -312,11 +313,11 @@ void ByteCodeGenerator::writePipelineIns(const std::vector<IntrusivePtr<Label>> 
     }
 
     const unsigned int offset = this->curBuilder().codeBuffer.size();
-    this->writeIns(OpCode::CALL_PIPELINE);
+    this->emitIns(OpCode::CALL_PIPELINE);
     this->curBuilder().append8(size);
     for(unsigned int i = 0; i < size; i++) {
         this->curBuilder().append16(0);
-        this->curBuilder().writeLabel(offset + 2 + i * 2, labels[i], offset, ByteCodeWriter<true>::LabelTarget::_16);
+        this->curBuilder().writeLabel(offset + 2 + i * 2, labels[i], offset, CodeEmitter<true>::LabelTarget::_16);
     }
 }
 
@@ -324,13 +325,13 @@ void ByteCodeGenerator::generateStringExpr(StringExprNode &node, bool fragment) 
     const unsigned int size = node.getExprNodes().size();
     if(size == 0) {
         if(!fragment) {
-            this->write0byteIns(OpCode::PUSH_ESTRING);
+            this->emit0byteIns(OpCode::PUSH_ESTRING);
         }
     } else if(size == 1) {
         this->visit(*node.getExprNodes()[0]);
     } else {
         if(!fragment) {
-            this->write0byteIns(OpCode::NEW_STRING);
+            this->emit0byteIns(OpCode::NEW_STRING);
         }
         unsigned int count = 0;
         for(Node *e : node.getExprNodes()) {
@@ -339,7 +340,7 @@ void ByteCodeGenerator::generateStringExpr(StringExprNode &node, bool fragment) 
                 if(dynamic_cast<StringExprNode *>(binary->getOptNode()) != nullptr) {
                     for(Node *e2 : static_cast<StringExprNode *>(binary->getOptNode())->getExprNodes()) {
                         this->visit(*e2);
-                        this->write0byteIns(OpCode::APPEND_STRING);
+                        this->emit0byteIns(OpCode::APPEND_STRING);
                     }
                     continue;
                 }
@@ -364,10 +365,10 @@ void ByteCodeGenerator::generateStringExpr(StringExprNode &node, bool fragment) 
                  * In this situation `APPEND_STRING' ins brokes stack top string object (due to appending buf to value).
                  * To prevent it, swap stack top two values.
                  */
-                this->write0byteIns(OpCode::SWAP);
+                this->emit0byteIns(OpCode::SWAP);
             }
 
-            this->write0byteIns(OpCode::APPEND_STRING);
+            this->emit0byteIns(OpCode::APPEND_STRING);
         }
     }
 }
@@ -403,22 +404,22 @@ void ByteCodeGenerator::visitTypeOfNode(TypeOfNode &) {
 }
 
 void ByteCodeGenerator::visitIntValueNode(IntValueNode &node) {
-    this->writeLdcIns(DSValue::create<Int_Object>(node.getType(), node.getValue()));
+    this->emitLdcIns(DSValue::create<Int_Object>(node.getType(), node.getValue()));
 }
 
 void ByteCodeGenerator::visitLongValueNode(LongValueNode &node) {
-    this->writeLdcIns(DSValue::create<Long_Object>(node.getType(), node.getValue()));
+    this->emitLdcIns(DSValue::create<Long_Object>(node.getType(), node.getValue()));
 }
 
 void ByteCodeGenerator::visitFloatValueNode(FloatValueNode &node) {
-    this->writeLdcIns(DSValue::create<Float_Object>(node.getType(), node.getValue()));
+    this->emitLdcIns(DSValue::create<Float_Object>(node.getType(), node.getValue()));
 }
 
 void ByteCodeGenerator::visitStringValueNode(StringValueNode &node) {
     if(node.getValue().empty()) {
-        this->write0byteIns(OpCode::PUSH_ESTRING);
+        this->emit0byteIns(OpCode::PUSH_ESTRING);
     } else {
-        this->writeLdcIns(DSValue::create<String_Object>(node.getType(), StringValueNode::extract(std::move(node))));
+        this->emitLdcIns(DSValue::create<String_Object>(node.getType(), StringValueNode::extract(std::move(node))));
     }
 }
 
@@ -427,59 +428,59 @@ void ByteCodeGenerator::visitStringExprNode(StringExprNode &node) {
 }
 
 void ByteCodeGenerator::visitRegexNode(RegexNode &node) {
-    this->writeLdcIns(DSValue::create<Regex_Object>(node.getType(), node.extractRE()));
+    this->emitLdcIns(DSValue::create<Regex_Object>(node.getType(), node.extractRE()));
 }
 
 void ByteCodeGenerator::visitArrayNode(ArrayNode &node) {
-    this->writeTypeIns(OpCode::NEW_ARRAY, node.getType());
+    this->emitTypeIns(OpCode::NEW_ARRAY, node.getType());
     for(Node *e : node.getExprNodes()) {
         this->visit(*e);
-        this->write0byteIns(OpCode::APPEND_ARRAY);
+        this->emit0byteIns(OpCode::APPEND_ARRAY);
     }
 }
 
 void ByteCodeGenerator::visitMapNode(MapNode &node) {
-    this->writeTypeIns(OpCode::NEW_MAP, node.getType());
+    this->emitTypeIns(OpCode::NEW_MAP, node.getType());
     const unsigned int size = node.getKeyNodes().size();
     for(unsigned int i = 0; i < size; i++) {
         this->visit(*node.getKeyNodes()[i]);
         this->visit(*node.getValueNodes()[i]);
-        this->write0byteIns(OpCode::APPEND_MAP);
+        this->emit0byteIns(OpCode::APPEND_MAP);
     }
 }
 
 void ByteCodeGenerator::visitTupleNode(TupleNode &node) {
-    this->writeTypeIns(OpCode::NEW_TUPLE, node.getType());
+    this->emitTypeIns(OpCode::NEW_TUPLE, node.getType());
     const unsigned int size = node.getNodes().size();
     for(unsigned int i = 0; i < size; i++) {
-        this->write0byteIns(OpCode::DUP);
+        this->emit0byteIns(OpCode::DUP);
         this->visit(*node.getNodes()[i]);
-        this->write2byteIns(OpCode::STORE_FIELD, i);
+        this->emit2byteIns(OpCode::STORE_FIELD, i);
     }
 }
 
 void ByteCodeGenerator::visitVarNode(VarNode &node) {
     if(node.attr().has(FieldAttribute::ENV)) {
         if(node.attr().has(FieldAttribute::GLOBAL)) {
-            this->write2byteIns(OpCode::LOAD_GLOBAL, node.getIndex());
+            this->emit2byteIns(OpCode::LOAD_GLOBAL, node.getIndex());
         } else {
-            this->write2byteIns(OpCode::LOAD_LOCAL, node.getIndex());
+            this->emit2byteIns(OpCode::LOAD_LOCAL, node.getIndex());
         }
 
-        this->write0byteIns(OpCode::LOAD_ENV);
+        this->emit0byteIns(OpCode::LOAD_ENV);
     } else if(node.attr().has(FieldAttribute::RANDOM)) {
-        this->write0byteIns(OpCode::RAND);
+        this->emit0byteIns(OpCode::RAND);
     } else if(node.attr().has(FieldAttribute::SECONDS)) {
-        this->write0byteIns(OpCode::GET_SECOND);
+        this->emit0byteIns(OpCode::GET_SECOND);
     } else {
         if(node.attr().has(FieldAttribute::GLOBAL)) {
             if(!node.isUntyped() && node.getType().isFuncType()) {
-                this->write2byteIns(OpCode::LOAD_FUNC, node.getIndex());
+                this->emit2byteIns(OpCode::LOAD_FUNC, node.getIndex());
             } else {
-                this->write2byteIns(OpCode::LOAD_GLOBAL, node.getIndex());
+                this->emit2byteIns(OpCode::LOAD_GLOBAL, node.getIndex());
             }
         } else {
-            this->write2byteIns(OpCode::LOAD_LOCAL, node.getIndex());
+            this->emit2byteIns(OpCode::LOAD_LOCAL, node.getIndex());
         }
     }
 }
@@ -492,21 +493,21 @@ void ByteCodeGenerator::visitAccessNode(AccessNode &node) {
         if(node.attr().has(FieldAttribute::INTERFACE)) {
             std::string desc = encodeFieldDescriptor(
                     node.getRecvNode()->getType(), node.getFieldName().c_str(), node.getType());
-            this->writeDescriptorIns(OpCode::INVOKE_GETTER, std::move(desc));
+            this->emitDescriptorIns(OpCode::INVOKE_GETTER, std::move(desc));
         } else {
-            this->write2byteIns(OpCode::LOAD_FIELD, node.getIndex());
+            this->emit2byteIns(OpCode::LOAD_FIELD, node.getIndex());
         }
         break;
     }
     case AccessNode::DUP_RECV: {
-        this->write0byteIns(OpCode::DUP);
+        this->emit0byteIns(OpCode::DUP);
 
         if(node.attr().has(FieldAttribute::INTERFACE)) {
             std::string desc = encodeFieldDescriptor(
                     node.getRecvNode()->getType(), node.getFieldName().c_str(), node.getType());
-            this->writeDescriptorIns(OpCode::INVOKE_GETTER, std::move(desc));
+            this->emitDescriptorIns(OpCode::INVOKE_GETTER, std::move(desc));
         } else {
-            this->write2byteIns(OpCode::LOAD_FIELD, node.getIndex());
+            this->emit2byteIns(OpCode::LOAD_FIELD, node.getIndex());
         }
         break;
     }
@@ -520,45 +521,45 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
     case TypeOpNode::NO_CAST:
         break;
     case TypeOpNode::TO_VOID:
-        this->write0byteIns(OpCode::POP);
+        this->emit0byteIns(OpCode::POP);
         break;
     case TypeOpNode::NUM_CAST:
-        this->writeNumCastIns(node.getExprNode()->getType(), node.getType());
+        this->emitNumCastIns(node.getExprNode()->getType(), node.getType());
         break;
     case TypeOpNode::TO_STRING:
         this->writeSourcePos(node.getPos());
-        this->writeToString();
+        this->generateToString();
         break;
     case TypeOpNode::CHECK_CAST:
         this->writeSourcePos(node.getPos());
-        this->writeTypeIns(OpCode::CHECK_CAST, node.getType());
+        this->emitTypeIns(OpCode::CHECK_CAST, node.getType());
         break;
     case TypeOpNode::CHECK_UNWRAP:
         this->writeSourcePos(node.getPos());
-        this->write0byteIns(OpCode::CHECK_UNWRAP);
+        this->emit0byteIns(OpCode::CHECK_UNWRAP);
         break;
     case TypeOpNode::PRINT: {
         this->writeSourcePos(node.getPos());
         auto &exprType = node.getExprNode()->getType();
         if(exprType.isOptionType()) {
-            this->write0byteIns(OpCode::UNWRAP);
+            this->emit0byteIns(OpCode::UNWRAP);
         }
         if(exprType != this->pool.getStringType()) {
-            this->writeToString();
+            this->generateToString();
         }
-        this->writeTypeIns(OpCode::PRINT, exprType);
+        this->emitTypeIns(OpCode::PRINT, exprType);
         break;
     }
     case TypeOpNode::ALWAYS_FALSE:
-        this->write0byteIns(OpCode::POP);
-        this->write0byteIns(OpCode::PUSH_FALSE);
+        this->emit0byteIns(OpCode::POP);
+        this->emit0byteIns(OpCode::PUSH_FALSE);
         break;
     case TypeOpNode::ALWAYS_TRUE:
-        this->write0byteIns(OpCode::POP);
-        this->write0byteIns(OpCode::PUSH_TRUE);
+        this->emit0byteIns(OpCode::POP);
+        this->emit0byteIns(OpCode::PUSH_TRUE);
         break;
     case TypeOpNode::INSTANCEOF:
-        this->writeTypeIns(OpCode::INSTANCE_OF, node.getTargetTypeNode()->getType());
+        this->emitTypeIns(OpCode::INSTANCE_OF, node.getTargetTypeNode()->getType());
         break;
     }
 }
@@ -566,7 +567,7 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
 void ByteCodeGenerator::visitUnaryOpNode(UnaryOpNode &node) {
     if(node.isUnwrapOp()) {
         this->visit(*node.getExprNode());
-        this->write0byteIns(OpCode::UNWRAP);
+        this->emit0byteIns(OpCode::UNWRAP);
     } else {
         this->visit(*node.getApplyNode());
     }
@@ -579,17 +580,17 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
         auto mergeLabel = makeIntrusive<Label>();
 
         this->visit(*node.getLeftNode());
-        this->writeBranchIns(elseLabel);
+        this->emitBranchIns(elseLabel);
 
         if(kind == COND_AND) {
             this->visit(*node.getRightNode());
-            this->writeJumpIns(mergeLabel);
+            this->emitJumpIns(mergeLabel);
 
             this->markLabel(elseLabel);
-            this->write0byteIns(OpCode::PUSH_FALSE);
+            this->emit0byteIns(OpCode::PUSH_FALSE);
         } else {
-            this->write0byteIns(OpCode::PUSH_TRUE);
-            this->writeJumpIns(mergeLabel);
+            this->emit0byteIns(OpCode::PUSH_TRUE);
+            this->emitJumpIns(mergeLabel);
 
             this->markLabel(elseLabel);
             this->visit(*node.getRightNode());
@@ -610,7 +611,7 @@ void ByteCodeGenerator::visitApplyNode(ApplyNode &node) {
     }
 
     this->writeSourcePos(node.getPos());
-    this->write2byteIns(OpCode::CALL_FUNC, paramSize);
+    this->emit2byteIns(OpCode::CALL_FUNC, paramSize);
 }
 
 void ByteCodeGenerator::visitMethodCallNode(MethodCallNode &node) {
@@ -622,22 +623,22 @@ void ByteCodeGenerator::visitMethodCallNode(MethodCallNode &node) {
 
     this->writeSourcePos(node.getPos());
     if(node.getHandle()->isInterfaceMethod()) {
-        this->writeDescriptorIns(
+        this->emitDescriptorIns(
                 OpCode::INVOKE_METHOD, encodeMethodDescriptor(node.getMethodName().c_str(), node.getHandle()));
     } else {
-        this->write4byteIns(OpCode::CALL_METHOD, node.getHandle()->getMethodIndex(), node.getArgNodes().size());
+        this->emit4byteIns(OpCode::CALL_METHOD, node.getHandle()->getMethodIndex(), node.getArgNodes().size());
     }
 }
 
 void ByteCodeGenerator::visitNewNode(NewNode &node) {
     if(node.getType().isOptionType()) {
-        this->write0byteIns(OpCode::NEW_INVALID);
+        this->emit0byteIns(OpCode::NEW_INVALID);
         return;
     }
 
     unsigned int paramSize = node.getArgNodes().size();
 
-    this->writeTypeIns(OpCode::NEW, node.getType());
+    this->emitTypeIns(OpCode::NEW, node.getType());
 
     // push arguments
     for(Node *argNode : node.getArgNodes()) {
@@ -646,7 +647,7 @@ void ByteCodeGenerator::visitNewNode(NewNode &node) {
 
     // call constructor
     this->writeSourcePos(node.getPos());
-    this->write2byteIns(OpCode::CALL_INIT, paramSize);
+    this->emit2byteIns(OpCode::CALL_INIT, paramSize);
 }
 
 void ByteCodeGenerator::visitTernaryNode(TernaryNode &node) {
@@ -654,9 +655,9 @@ void ByteCodeGenerator::visitTernaryNode(TernaryNode &node) {
     auto mergeLabel = makeIntrusive<Label>();
 
     this->visit(*node.getCondNode());
-    this->writeBranchIns(elseLabel);
+    this->emitBranchIns(elseLabel);
     this->visit(*node.getLeftNode());
-    this->writeJumpIns(mergeLabel);
+    this->emitJumpIns(mergeLabel);
 
     this->markLabel(elseLabel);
     this->visit(*node.getRightNode());
@@ -668,33 +669,33 @@ void ByteCodeGenerator::visitTernaryNode(TernaryNode &node) {
 void ByteCodeGenerator::visitCmdNode(CmdNode &node) {
     this->visit(*node.getNameNode());
 
-    this->write0byteIns(OpCode::OPEN_PROC);
+    this->emit0byteIns(OpCode::OPEN_PROC);
     for(auto &e : node.getArgNodes()) {
         this->visit(*e);
     }
-    this->write0byteIns(OpCode::CLOSE_PROC);
+    this->emit0byteIns(OpCode::CLOSE_PROC);
 }
 
 void ByteCodeGenerator::visitCmdArgNode(CmdArgNode &node) {
     this->generateCmdArg(node);
-    this->write1byteIns(OpCode::ADD_CMD_ARG, node.isIgnorableEmptyString() ? 1 : 0);
+    this->emit1byteIns(OpCode::ADD_CMD_ARG, node.isIgnorableEmptyString() ? 1 : 0);
 }
 
 void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
     this->generateCmdArg(*node.getTargetNode());
-    this->write1byteIns(OpCode::ADD_REDIR_OP, node.getRedirectOP());
+    this->emit1byteIns(OpCode::ADD_REDIR_OP, node.getRedirectOP());
 }
 
 void ByteCodeGenerator::visitTildeNode(TildeNode &node) {
-    this->writeLdcIns(DSValue::create<String_Object>(this->pool.getStringType(), node.getValue()));
-    this->write0byteIns(OpCode::EXPAND_TILDE);
+    this->emitLdcIns(DSValue::create<String_Object>(this->pool.getStringType(), node.getValue()));
+    this->emit0byteIns(OpCode::EXPAND_TILDE);
 }
 
 void ByteCodeGenerator::visitPipedCmdNode(PipedCmdNode &node) {
     const unsigned int size = node.getCmdNodes().size();
     std::vector<IntrusivePtr<Label>> labels(size + 1);
 
-    this->write0byteIns(OpCode::NEW_PIPELINE);
+    this->emit0byteIns(OpCode::NEW_PIPELINE);
 
     for(unsigned int i = 0; i < size; i++) {
         this->visit(*node.getCmdNodes()[i]);
@@ -707,8 +708,8 @@ void ByteCodeGenerator::visitPipedCmdNode(PipedCmdNode &node) {
 
     if(size == 1) {
         this->markLabel(labels[0]);
-        this->write1byteIns(OpCode::CALL_CMD, 0);
-        this->write0byteIns(OpCode::SUCCESS_CHILD);
+        this->emit1byteIns(OpCode::CALL_CMD, 0);
+        this->emit0byteIns(OpCode::SUCCESS_CHILD);
     } else {
         auto begin = makeIntrusive<Label>();
         auto end = makeIntrusive<Label>();
@@ -716,16 +717,16 @@ void ByteCodeGenerator::visitPipedCmdNode(PipedCmdNode &node) {
         this->markLabel(begin);
         for(unsigned int i = 0; i < size; i++) {
             this->markLabel(labels[i]);
-            this->write1byteIns(OpCode::CALL_CMD, i);
-            this->write0byteIns(OpCode::SUCCESS_CHILD);
+            this->emit1byteIns(OpCode::CALL_CMD, i);
+            this->emit0byteIns(OpCode::SUCCESS_CHILD);
         }
         this->markLabel(end);
         this->catchException(begin, end, this->pool.getAnyType());
-        this->write0byteIns(OpCode::FAILURE_CHILD);
+        this->emit0byteIns(OpCode::FAILURE_CHILD);
     }
 
     this->markLabel(labels[size]);
-    this->write0byteIns(OpCode::POP_PIPELINE);
+    this->emit0byteIns(OpCode::POP_PIPELINE);
 }
 
 void ByteCodeGenerator::visitSubstitutionNode(SubstitutionNode &node) {
@@ -738,9 +739,9 @@ void ByteCodeGenerator::visitSubstitutionNode(SubstitutionNode &node) {
     this->visit(*node.getExprNode());
     this->markLabel(endLabel);
 
-    this->write0byteIns(OpCode::SUCCESS_CHILD);
+    this->emit0byteIns(OpCode::SUCCESS_CHILD);
     this->catchException(beginLabel, endLabel, this->pool.getAnyType());
-    this->write0byteIns(OpCode::FAILURE_CHILD);
+    this->emit0byteIns(OpCode::FAILURE_CHILD);
     this->markLabel(mergeLabel);
 }
 
@@ -749,7 +750,7 @@ void ByteCodeGenerator::visitAssertNode(AssertNode &node) {
         this->visit(*node.getCondNode());
         this->writeSourcePos(node.getCondNode()->getPos());
         this->visit(*node.getMessageNode());
-        this->write0byteIns(OpCode::ASSERT);
+        this->emit0byteIns(OpCode::ASSERT);
     }
 }
 
@@ -773,7 +774,7 @@ void ByteCodeGenerator::visitJumpNode(JumpNode &node) {
         this->enterFinally();
     }
 
-    this->writeJumpIns(node.isBreak() ? this->peekLoopLabels().first : this->peekLoopLabels().second);
+    this->emitJumpIns(node.isBreak() ? this->peekLoopLabels().first : this->peekLoopLabels().second);
 }
 
 void ByteCodeGenerator::visitTypeAliasNode(TypeAliasNode &) { } // do nothing
@@ -796,7 +797,7 @@ void ByteCodeGenerator::visitForNode(ForNode &node) {
     this->generateBlock(localOffset, localSize, localSize > 0, [&]{
         this->visit(*node.getInitNode());
         if(dynamic_cast<EmptyNode *>(node.getIterNode()) == nullptr) {
-            this->writeJumpIns(initLabel);
+            this->emitJumpIns(initLabel);
         }
 
         this->markLabel(continueLabel);
@@ -804,12 +805,12 @@ void ByteCodeGenerator::visitForNode(ForNode &node) {
 
         this->markLabel(initLabel);
         this->visit(*node.getCondNode());
-        this->writeBranchIns(breakLabel);
+        this->emitBranchIns(breakLabel);
 
         this->visit(*node.getBlockNode());
 
         if(!node.getBlockNode()->getType().isBottomType()) {
-            this->writeJumpIns(continueLabel);
+            this->emitJumpIns(continueLabel);
         }
 
         this->markLabel(breakLabel);
@@ -828,11 +829,11 @@ void ByteCodeGenerator::visitWhileNode(WhileNode &node) {
     // generate code
     this->markLabel(continueLabel);
     this->visit(*node.getCondNode());
-    this->writeBranchIns(breakLabel);
+    this->emitBranchIns(breakLabel);
 
     this->visit(*node.getBlockNode());
     if(!node.getBlockNode()->getType().isBottomType()) {
-        this->writeJumpIns(continueLabel);
+        this->emitJumpIns(continueLabel);
     }
 
     this->markLabel(breakLabel);
@@ -860,8 +861,8 @@ void ByteCodeGenerator::visitDoWhileNode(DoWhileNode &node) {
         this->markLabel(continueLabel);
         this->visit(*node.getCondNode());
     });
-    this->writeBranchIns(breakLabel);
-    this->writeJumpIns(initLabel);
+    this->emitBranchIns(breakLabel);
+    this->emitJumpIns(initLabel);
 
     this->markLabel(breakLabel);
 
@@ -875,9 +876,9 @@ void ByteCodeGenerator::visitIfNode(IfNode &node) {
     auto mergeLabel = makeIntrusive<Label>();
 
     this->visit(*node.getCondNode());
-    this->writeBranchIns(elseLabel);
+    this->emitBranchIns(elseLabel);
     this->visit(*node.getThenNode());
-    this->writeJumpIns(mergeLabel);
+    this->emitJumpIns(mergeLabel);
 
     this->markLabel(elseLabel);
     this->visit(*node.getElseNode());
@@ -893,24 +894,24 @@ void ByteCodeGenerator::visitReturnNode(ReturnNode &node) {
 
     if(this->inUDC()) {
         assert(node.getExprNode()->getType() == this->pool.getInt32Type());
-        this->write0byteIns(OpCode::RETURN_UDC);
+        this->emit0byteIns(OpCode::RETURN_UDC);
     } else if(node.getExprNode()->getType().isVoidType()) {
-        this->write0byteIns(OpCode::RETURN);
+        this->emit0byteIns(OpCode::RETURN);
     } else {
-        this->write0byteIns(OpCode::RETURN_V);
+        this->emit0byteIns(OpCode::RETURN_V);
     }
 }
 
 void ByteCodeGenerator::visitThrowNode(ThrowNode &node) {
     this->visit(*node.getExprNode());
-    this->write0byteIns(OpCode::THROW);
+    this->emit0byteIns(OpCode::THROW);
 }
 
 void ByteCodeGenerator::visitCatchNode(CatchNode &node) {
     if(node.getBlockNode()->getNodeList().empty()) {
-        this->write0byteIns(OpCode::POP);
+        this->emit0byteIns(OpCode::POP);
     } else {
-        this->write2byteIns(OpCode::STORE_LOCAL, node.getVarIndex());
+        this->emit2byteIns(OpCode::STORE_LOCAL, node.getVarIndex());
         this->visit(*node.getBlockNode());
     }
 }
@@ -937,7 +938,7 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
         if(hasFinally) {
             this->enterFinally();
         }
-        this->writeJumpIns(mergeLabel);
+        this->emitJumpIns(mergeLabel);
     }
 
     // generate catch
@@ -949,7 +950,7 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
             if(hasFinally) {
                 this->enterFinally();
             }
-            this->writeJumpIns(mergeLabel);
+            this->emitJumpIns(mergeLabel);
         }
     }
 
@@ -960,7 +961,7 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
         this->markLabel(finallyLabel);
         this->catchException(beginLabel, finallyLabel, this->pool.getAnyType());
         this->visit(*node.getFinallyNode());
-        this->write0byteIns(OpCode::EXIT_FINALLY);
+        this->emit0byteIns(OpCode::EXIT_FINALLY);
     }
 
     this->markLabel(mergeLabel);
@@ -973,30 +974,30 @@ void ByteCodeGenerator::visitVarDeclNode(VarDeclNode &node) {
         this->visit(*node.getExprNode());
         break;
     case VarDeclNode::IMPORT_ENV: {
-        this->writeLdcIns(DSValue::create<String_Object>(this->pool.getStringType(), node.getVarName()));
-        this->write0byteIns(OpCode::DUP);
+        this->emitLdcIns(DSValue::create<String_Object>(this->pool.getStringType(), node.getVarName()));
+        this->emit0byteIns(OpCode::DUP);
         const bool hashDefault = node.getExprNode() != nullptr;
         if(hashDefault) {
             this->visit(*node.getExprNode());
         }
 
         this->writeSourcePos(node.getPos());
-        this->write1byteIns(OpCode::IMPORT_ENV, hashDefault ? 1 : 0);
+        this->emit1byteIns(OpCode::IMPORT_ENV, hashDefault ? 1 : 0);
         break;
     }
     case VarDeclNode::EXPORT_ENV: {
-        this->writeLdcIns(DSValue::create<String_Object>(this->pool.getStringType(), node.getVarName()));
-        this->write0byteIns(OpCode::DUP);
+        this->emitLdcIns(DSValue::create<String_Object>(this->pool.getStringType(), node.getVarName()));
+        this->emit0byteIns(OpCode::DUP);
         this->visit(*node.getExprNode());
-        this->write0byteIns(OpCode::STORE_ENV);
+        this->emit0byteIns(OpCode::STORE_ENV);
         break;
     }
     }
 
     if(node.isGlobal()) {
-        this->write2byteIns(OpCode::STORE_GLOBAL, node.getVarIndex());
+        this->emit2byteIns(OpCode::STORE_GLOBAL, node.getVarIndex());
     } else {
-        this->write2byteIns(OpCode::STORE_LOCAL, node.getVarIndex());
+        this->emit2byteIns(OpCode::STORE_LOCAL, node.getVarIndex());
     }
 }
 
@@ -1015,9 +1016,9 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
         if(assignableNode->attr().has(FieldAttribute::INTERFACE)) {
             std::string desc = encodeFieldDescriptor(
                     accessNode->getRecvNode()->getType(), accessNode->getFieldName().c_str(), accessNode->getType());
-            this->writeDescriptorIns(OpCode::INVOKE_SETTER, std::move(desc));
+            this->emitDescriptorIns(OpCode::INVOKE_SETTER, std::move(desc));
         } else {
-            this->write2byteIns(OpCode::STORE_FIELD, index);
+            this->emit2byteIns(OpCode::STORE_FIELD, index);
         }
     } else {
         if(node.isSelfAssignment()) {
@@ -1028,20 +1029,20 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
 
         if(varNode->attr().has(FieldAttribute::ENV)) {
             if(varNode->attr().has(FieldAttribute::GLOBAL)) {
-                this->write2byteIns(OpCode::LOAD_GLOBAL, index);
+                this->emit2byteIns(OpCode::LOAD_GLOBAL, index);
             } else {
-                this->write2byteIns(OpCode::LOAD_LOCAL, index);
+                this->emit2byteIns(OpCode::LOAD_LOCAL, index);
             }
 
-            this->write0byteIns(OpCode::SWAP);
-            this->write0byteIns(OpCode::STORE_ENV);
+            this->emit0byteIns(OpCode::SWAP);
+            this->emit0byteIns(OpCode::STORE_ENV);
         } else if(varNode->attr().has(FieldAttribute::SECONDS)) {
-            this->write0byteIns(OpCode::SET_SECOND);
+            this->emit0byteIns(OpCode::SET_SECOND);
         } else {
             if(varNode->attr().has(FieldAttribute::GLOBAL)) {
-                this->write2byteIns(OpCode::STORE_GLOBAL, index);
+                this->emit2byteIns(OpCode::STORE_GLOBAL, index);
             } else {
-                this->write2byteIns(OpCode::STORE_LOCAL, index);
+                this->emit2byteIns(OpCode::STORE_LOCAL, index);
             }
         }
     }
@@ -1050,7 +1051,7 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
 void ByteCodeGenerator::visitElementSelfAssignNode(ElementSelfAssignNode &node) {
     this->visit(*node.getRecvNode());
     this->visit(*node.getIndexNode());
-    this->write0byteIns(OpCode::DUP2);
+    this->emit0byteIns(OpCode::DUP2);
 
     this->visit(*node.getGetterNode());
     this->visit(*node.getRightNode());
@@ -1063,8 +1064,8 @@ void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
     this->visit(*node.getBlockNode());
     auto func = DSValue::create<FuncObject>(this->finalizeCodeBuilder(node));
 
-    this->writeLdcIns(func);
-    this->write2byteIns(OpCode::STORE_GLOBAL, node.getVarIndex());
+    this->emitLdcIns(func);
+    this->emit2byteIns(OpCode::STORE_GLOBAL, node.getVarIndex());
 }
 
 void ByteCodeGenerator::visitInterfaceNode(InterfaceNode &) { } // do nothing
@@ -1074,8 +1075,8 @@ void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     this->visit(*node.getBlockNode());
     auto func = DSValue::create<FuncObject>(this->finalizeCodeBuilder(node));
 
-    this->writeLdcIns(func);
-    this->write2byteIns(OpCode::STORE_GLOBAL, node.getUdcIndex());
+    this->emitLdcIns(func);
+    this->emit2byteIns(OpCode::STORE_GLOBAL, node.getUdcIndex());
 }
 
 void ByteCodeGenerator::visitEmptyNode(EmptyNode &) { } // do nothing
@@ -1085,7 +1086,7 @@ void ByteCodeGenerator::visitRootNode(RootNode &rootNode) {
         this->visit(*node);
     }
 
-    this->write0byteIns(OpCode::STOP_EVAL);
+    this->emit0byteIns(OpCode::STOP_EVAL);
 }
 
 void ByteCodeGenerator::initCodeBuilder(CodeKind kind, unsigned short localVarNum) {
@@ -1109,7 +1110,7 @@ CompiledCode ByteCodeGenerator::finalizeCodeBuilder(const CallableNode &node) {
 
     // extract code
     const unsigned int codeSize = this->curBuilder().codeBuffer.size();
-    this->curBuilder().write32(1, codeSize);
+    this->curBuilder().emit32(1, codeSize);
     unsigned char *code = extract(std::move(this->curBuilder().codeBuffer));
 
     // create constant pool

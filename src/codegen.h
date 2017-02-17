@@ -75,7 +75,7 @@ public:
 using CodeBuffer = FlexBuffer<unsigned char>;
 
 template <bool T>
-struct ByteCodeWriter {
+struct CodeEmitter {
     static_assert(true, "not allow instantiation");
 
     struct Compare {
@@ -104,56 +104,56 @@ struct ByteCodeWriter {
 
     CodeBuffer codeBuffer;
 
-    void write8(unsigned int index, unsigned char b) noexcept {
+    void emit8(unsigned int index, unsigned char b) noexcept {
         ydsh::write8(this->codeBuffer.begin() + index, b);
     }
 
-    void write16(unsigned int index, unsigned short b) noexcept {
+    void emit16(unsigned int index, unsigned short b) noexcept {
         ydsh::write16(this->codeBuffer.begin() + index, b);
     }
 
-    void write32(unsigned int index, unsigned int b) noexcept {
+    void emit32(unsigned int index, unsigned int b) noexcept {
         ydsh::write32(this->codeBuffer.begin() + index, b);
     }
 
-    void write64(unsigned int index, unsigned long b) noexcept {
+    void emit64(unsigned int index, unsigned long b) noexcept {
         ydsh::write64(this->codeBuffer.begin() + index, b);
     }
 
-    void write(unsigned int index, unsigned long b) noexcept {
+    void emit(unsigned int index, unsigned long b) noexcept {
         if(b <= UINT8_MAX) {
-            this->write8(index, static_cast<unsigned char>(b));
+            this->emit8(index, static_cast<unsigned char>(b));
         } else if(b <= UINT16_MAX) {
-            this->write16(index, static_cast<unsigned short>(b));
+            this->emit16(index, static_cast<unsigned short>(b));
         } else if(b <= UINT32_MAX) {
-            this->write32(index, static_cast<unsigned int>(b));
+            this->emit32(index, static_cast<unsigned int>(b));
         } else {
-            this->write64(index, b);
+            this->emit64(index, b);
         }
     }
 
     void append8(unsigned char b) {
         const unsigned int index = this->codeBuffer.size();
         this->codeBuffer.assign(1, 0);
-        this->write8(index, b);
+        this->emit8(index, b);
     }
 
     void append16(unsigned short b) {
         const unsigned int index = this->codeBuffer.size();
         this->codeBuffer.assign(2, 0);
-        this->write16(index, b);
+        this->emit16(index, b);
     }
 
     void append32(unsigned int b) {
         const unsigned int index = this->codeBuffer.size();
         this->codeBuffer.assign(4, 0);
-        this->write32(index, b);
+        this->emit32(index, b);
     }
 
     void append64(unsigned long b) {
         const unsigned int index = this->codeBuffer.size();
         this->codeBuffer.assign(8, 0);
-        this->write64(index, b);
+        this->emit64(index, b);
     }
 
     void append(unsigned long b) {
@@ -193,16 +193,16 @@ struct ByteCodeWriter {
                     if(offset > UINT8_MAX) {
                         fatal("offset is greater than UINT8_MAX\n");
                     }
-                    this->write8(targetIndex, offset);
+                    this->emit8(targetIndex, offset);
                     break;
                 case LabelTarget::_16:
                     if(offset > UINT16_MAX) {
                         fatal("offset is greater than UINT16_MAX\n");
                     }
-                    this->write16(targetIndex, offset);
+                    this->emit16(targetIndex, offset);
                     break;
                 case LabelTarget::_32:
-                    this->write32(targetIndex, offset);
+                    this->emit32(targetIndex, offset);
                     break;
                 }
             }
@@ -239,7 +239,7 @@ private:
 
     MethodHandle *handle_STR;
 
-    struct CodeBuilder : public ByteCodeWriter<true> {
+    struct CodeBuilder : public CodeEmitter<true> {
         std::vector<DSValue> constBuffer;
         std::vector<SourcePosEntry> sourcePosEntries;
         std::vector<CatchBuilder> catchBuilders;
@@ -282,29 +282,29 @@ private:
     /**
      * not check byte size. not directly use it.
      */
-    void writeIns(OpCode op);
+    void emitIns(OpCode op);
 
-    void write0byteIns(OpCode op);
-    void write1byteIns(OpCode op, unsigned char v);
-    void write2byteIns(OpCode op, unsigned short v);
-    void write4byteIns(OpCode op, unsigned int v);
-    void write4byteIns(OpCode op, unsigned short v1, unsigned short v2);
-    void write8byteIns(OpCode op, unsigned long v);
+    void emit0byteIns(OpCode op);
+    void emit1byteIns(OpCode op, unsigned char v);
+    void emit2byteIns(OpCode op, unsigned short v);
+    void emit4byteIns(OpCode op, unsigned int v);
+    void emit4byteIns(OpCode op, unsigned short v1, unsigned short v2);
+    void emit8byteIns(OpCode op, unsigned long v);
 
     /**
      * write instruction having type. (ex. PRINT).
      */
-    void writeTypeIns(OpCode op, const DSType &type);
+    void emitTypeIns(OpCode op, const DSType &type);
 
-    unsigned short writeConstant(DSValue &&value);
-    void writeLdcIns(const DSValue &value);
-    void writeLdcIns(DSValue &&value);
-    void writeDescriptorIns(OpCode op, std::string &&desc);
-    void writeToString();
-    void writeNumCastIns(const DSType &beforeType, const DSType &afterType);
-    void writeBranchIns(OpCode op, const IntrusivePtr<Label> &label);
-    void writeBranchIns(const IntrusivePtr<Label> &label);
-    void writeJumpIns(const IntrusivePtr<Label> &label);
+    unsigned short emitConstant(DSValue &&value);
+    void emitLdcIns(const DSValue &value);
+    void emitLdcIns(DSValue &&value);
+    void emitDescriptorIns(OpCode op, std::string &&desc);
+    void generateToString();
+    void emitNumCastIns(const DSType &beforeType, const DSType &afterType);
+    void emitBranchIns(OpCode op, const IntrusivePtr<Label> &label);
+    void emitBranchIns(const IntrusivePtr<Label> &label);
+    void emitJumpIns(const IntrusivePtr<Label> &label);
     void markLabel(IntrusivePtr<Label> &label);
 
     void pushLoopLabels(const IntrusivePtr<Label> &breakLabel, const IntrusivePtr<Label> &continueLabel);
@@ -343,7 +343,7 @@ private:
         func();
 
         if(needReclaim) {
-            this->write4byteIns(OpCode::RECLAIM_LOCAL, localOffset, localSize);
+            this->emit4byteIns(OpCode::RECLAIM_LOCAL, localOffset, localSize);
         }
         this->curBuilder().localVars.pop_back();
     }
