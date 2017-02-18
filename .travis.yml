@@ -179,6 +179,29 @@ matrix:
             - expect
       env: CC_BIN=clang-4.0 CXX_BIN=clang++-4.0
 
+    # clang 3.9 with address sanitizer
+    - os: linux
+      sudo: required
+      dist: trusty
+      compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-3.9
+          packages:
+            - clang-3.9
+            - libxml2-dev
+            - libdbus-1-3
+            - libdbus-glib-1-dev
+            - expect
+      env: CC_BIN=clang-3.9 CXX_BIN=clang++-3.9
+      script:
+        - cmake . -DCMAKE_BUILD_TYPE=debug -DSANITIZER=address
+        - make -j2
+        - ctest --output-on-failure
+
+
 script:
   - cmake . -DCMAKE_C_COMPILER=$CC_BIN -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=DEBUG
   - make -j2
