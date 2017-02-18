@@ -195,7 +195,7 @@ matrix:
             - libdbus-1-3
             - libdbus-glib-1-dev
             - expect
-      env: CC_BIN=clang-3.9 CXX_BIN=clang++-3.9
+      env: CC_BIN=clang-3.9 CXX_BIN=clang++-3.9 SPECIAL=address-sanitizer
       script:
         - cmake . -DCMAKE_BUILD_TYPE=debug -DSANITIZER=address
         - make -j2
