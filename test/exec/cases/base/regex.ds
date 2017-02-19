@@ -9,6 +9,10 @@ assert '/hoge' =~ $/\//
 
 assert 'hoge' !~ $/hoge./
 
+assert 'hfur' =~ $//
+
+assert '' =~ $//
+
 assert new Regex(".*").search("a")
 
 try {

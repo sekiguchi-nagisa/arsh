@@ -125,7 +125,7 @@ TokenKind Lexer::nextToken(Token &token) {
       CMD_ARG_CHAR       = "\\" [^\000]     | [^ \t\r\n\\;'"`|&<>()$\000];
 
       REGEX_CHAR = "\\/" | [^\r\n/];
-      REGEX = "$/"  REGEX_CHAR+ "/";
+      REGEX = "$/" REGEX_CHAR* "/";
 
       LINE_END = ";";
       NEW_LINE = [\r\n][ \t\r\n]*;
