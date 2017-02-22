@@ -536,6 +536,21 @@ void DSState_setArguments(DSState *st, char *const *args) {
     finalizeScriptArg(st);
 }
 
+int DSState_setScriptDir(DSState *st, const char *scriptPath) {
+    char *real = realpath(scriptPath, nullptr);
+    if(real == nullptr) {
+        return -1;
+    }
+
+    unsigned int index = st->symbolTable.lookupHandle(VAR_SCRIPT_DIR)->getFieldIndex();
+    const char *ptr = strrchr(real, '/');
+
+    std::string str(real, real == ptr ? 1 : ptr - real);
+    free(real);
+    setGlobal(*st, index, DSValue::create<String_Object>(st->pool.getStringType(), std::move(str)));
+    return 0;
+}
+
 unsigned int DSState_option(const DSState *st) {
     return st->option;
 }

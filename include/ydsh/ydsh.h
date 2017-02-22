@@ -65,6 +65,17 @@ void DSState_setShellName(DSState *st, const char *shellName);
  */
 void DSState_setArguments(DSState *st, char *const *args);
 
+/**
+ *
+ * @param st
+ * not null
+ * @param scriptPath
+ * @return
+ * if scriptPath is not found, return -1 and do nothing. (set errno)
+ * if success, return 0.
+ */
+int DSState_setScriptDir(DSState *st, const char *scriptPath);
+
 
 /* for option */
 #define DS_OPTION_DUMP_UAST  ((unsigned int) (1 << 0))

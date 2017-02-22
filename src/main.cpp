@@ -248,6 +248,7 @@ int main(int argc, char **argv) {
 
         DSState_setShellName(state, scriptName);
         DSState_setArguments(state, shellArgs + 1);
+        DSState_setScriptDir(state, scriptName);
         exit(INVOKE(loadAndEval)(&state, scriptName, fp));
     }
     case InvocationKind::FROM_STDIN: {

@@ -16,10 +16,10 @@ Source File: (string)
 DSCode: top level
   code size: 23
   number of local variable: 0
-  number of global variable: 42
+  number of global variable: 43
 Code:
    9: LOAD_CONST  0
-  11: STORE_GLOBAL  41
+  11: STORE_GLOBAL  42
   14: LOAD_CONST  1
   16: CALL_METHOD  0  0
   21: POP
@@ -42,11 +42,11 @@ Source File: (string)
 DSCode: top level
   code size: 38
   number of local variable: 0
-  number of global variable: 42
+  number of global variable: 43
 Code:
    9: LOAD_CONST  0
-  11: STORE_GLOBAL  41
-  14: LOAD_GLOBAL  41
+  11: STORE_GLOBAL  42
+  14: LOAD_GLOBAL  42
   17: LOAD_CONST  1
   19: CALL_FUNC  1
   22: POP

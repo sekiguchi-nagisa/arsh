@@ -28,6 +28,12 @@ $YDSH_BIN -- $TARGET A
 a=hfuierht456
 $YDSH_BIN $a 2>&1 | grep "ydsh: $a"
 
+# script dir
+cat << EOS > $TARGET
+assert \$SCRIPT_DIR == "\$(cd \$(dirname \$0) && pwd -P)"
+EOS
+
+$YDSH_BIN $TARGET
 
 cleanup_tmpdir
 exit 0
