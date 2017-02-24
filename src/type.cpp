@@ -565,7 +565,7 @@ TypePool::TypePool() :
     this->tupleTemplate = this->initTypeTemplate("Tuple", std::move(elements), info_TupleType());   // pseudo template.
 
     elements = std::vector<DSType *>();
-    this->optionTemplate = this->initTypeTemplate("Option", std::move(elements), info_Dummy()); // pseudo template
+    this->optionTemplate = this->initTypeTemplate("Option", std::move(elements), info_OptionType()); // pseudo template
 
     // init string array type(for command argument)
     std::vector<DSType *> types(1);

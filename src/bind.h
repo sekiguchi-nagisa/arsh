@@ -53,6 +53,7 @@ native_type_info_t info_RegexType();
 native_type_info_t info_ArrayType();
 native_type_info_t info_MapType();
 native_type_info_t info_TupleType();
+native_type_info_t info_OptionType();
 
 template <std::size_t N>
 std::array<NativeCode, N> initNative(const NativeFuncInfo (&e)[N]) {
