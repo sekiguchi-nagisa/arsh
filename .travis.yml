@@ -225,7 +225,7 @@ matrix:
         - make -j2
         - ctest --output-on-failure
       after_success:
-        - coveralls --gcov gcov-6 --gcov-options '\-lp' --exclude test --exclude tools --exclude ext --exclude src/nextToken.re2c.cpp --exclude nextToken.cpp
+        - coveralls --gcov gcov-6 --gcov-options '\-lp' --exclude test --exclude tools --exclude ext --exclude fuzzing -E re2c --exclude src/nextToken.re2c.cpp --exclude nextToken.cpp
 
 script:
   - cmake . -DCMAKE_C_COMPILER=$CC_BIN -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=DEBUG
