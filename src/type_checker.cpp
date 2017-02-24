@@ -1022,7 +1022,7 @@ void TypeChecker::visitTryNode(TryNode &node) {
 }
 
 void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
-    DSType *exprType;
+    DSType *exprType = nullptr;
     FieldAttributes attr;
     switch(node.getKind()) {
     case VarDeclNode::CONST:
