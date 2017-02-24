@@ -224,7 +224,7 @@ matrix:
         - cmake . $OPTION
         - make -j2
         - ctest --output-on-failure
-      before_script:
+      after_success:
         - coveralls --gcov gcov-6 --gcov-options '\-lp' --exclude test --exclude tools --exclude ext --exclude src/nextToken.re2c.cpp --exclude nextToken.cpp
 
 script:
