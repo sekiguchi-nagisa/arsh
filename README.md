@@ -1,3 +1,5 @@
+
+[![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](#license)
 [![Build Status](https://travis-ci.org/sekiguchi-nagisa/ydsh.svg?branch=master)](https://travis-ci.org/sekiguchi-nagisa/ydsh)
 
 # ydsh
