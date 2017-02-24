@@ -22,11 +22,7 @@ if not(which valgrind) {
 
 
 function color($c : Int, $s : String): String {
-    if (test -t 1) {
-        return "$(echo -e -n '\e['$c'm'$s'\e[0m')"
-    } else {
-        return  $s
-    }
+    return (test -t 1) ? "$(echo -e -n '\e['$c'm'$s'\e[0m')" : $s
 }
 
 let OK = $color(32, '[OK]')
