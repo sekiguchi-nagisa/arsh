@@ -117,6 +117,15 @@ TEST(API, case5) {
     DSState_delete(&state);
 }
 
+TEST(API, case6) {
+    SCOPED_TRACE("");
+
+    DSState *state = DSState_create();
+    int r = DSState_setScriptDir(state, "hfarefoiaji vfd");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, r));
+    DSState_delete(&state);
+}
+
 TEST(PID, case1) {
     SCOPED_TRACE("");
 
