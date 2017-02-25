@@ -614,19 +614,23 @@ const char *DSState_prompt(DSState *st, unsigned int n) {
     return st->prompt.c_str();
 }
 
-unsigned int DSState_majorVersion() {
-    return X_INFO_MAJOR_VERSION;
+static void storeVerInfo(unsigned int *vec, unsigned int size) {
+    if(vec == nullptr || size == 0) {
+        return;
+    }
+    if(size > 0) {
+        vec[0] = X_INFO_MAJOR_VERSION;
+    }
+    if(size > 1) {
+        vec[1] = X_INFO_MINOR_VERSION;
+    }
+    if(size > 2) {
+        vec[2] = X_INFO_PATCH_VERSION;
+    }
 }
 
-unsigned int DSState_minorVersion() {
-    return X_INFO_MINOR_VERSION;
-}
-
-unsigned int DSState_patchVersion() {
-    return X_INFO_PATCH_VERSION;
-}
-
-const char *DSState_version() {
+const char *DSState_version(unsigned int *vec, unsigned int size) {
+    storeVerInfo(vec, size);
     return "ydsh, version " X_INFO_VERSION
             " (" X_INFO_SYSTEM "), build by " X_INFO_CPP " " X_INFO_CPP_V;
 }
@@ -660,9 +664,9 @@ void DSState_addTerminationHook(DSState *st, TerminationHook hook) {
     st->terminationHook = hook;
 }
 
-void DSState_complete(const DSState *st, const char *buf, size_t cursor, DSCandidates *c) {
+int DSState_complete(const DSState *st, const char *buf, size_t cursor, DSCandidates *c) {
     if(c == nullptr) {
-        return;
+        return -1;
     }
 
     // init candidates
@@ -670,7 +674,7 @@ void DSState_complete(const DSState *st, const char *buf, size_t cursor, DSCandi
     c->values = nullptr;
 
     if(st == nullptr || buf == nullptr || cursor == 0) {
-        return;
+        return -1;
     }
 
     std::string line(buf, cursor);
@@ -682,6 +686,7 @@ void DSState_complete(const DSState *st, const char *buf, size_t cursor, DSCandi
     // write to DSCandidates
     c->size = sbuf.size();
     c->values = extract(std::move(sbuf));
+    return 0;
 }
 
 void DSCandidates_release(DSCandidates *c) {

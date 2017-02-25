@@ -20,6 +20,7 @@
 #include <memory>
 #include <cstdlib>
 #include <cerrno>
+#include <cassert>
 
 #include <unistd.h>
 
@@ -223,7 +224,9 @@ static void completeCallback(const char *buf, size_t cursor, linenoiseCompletion
     actualBuf += '\n';
 
     DSCandidates c;
-    DSState_complete(state, actualBuf.c_str(), actualCursor, &c);
+    int r = DSState_complete(state, actualBuf.c_str(), actualCursor, &c);
+    (void) r;
+    assert(r == 0);
     lc->len = c.size;
     lc->cvec = c.values;
 }

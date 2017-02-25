@@ -188,17 +188,16 @@ int DSState_exec(DSState *st, char *const *argv);
  */
 const char *DSState_prompt(DSState *st, unsigned int n);
 
-
-/* for version information */
-unsigned int DSState_majorVersion();
-unsigned int DSState_minorVersion();
-unsigned int DSState_patchVersion();
-
 /**
- * get version string (include some build information)
+ * get version information
+ * @param vec
+ * for storing version number
+ * @param size
+ * size of vec
  * @return
+ * version string
  */
-const char *DSState_version();
+const char *DSState_version(unsigned int *vec, unsigned int size);
 
 const char *DSState_copyright();
 
@@ -259,8 +258,10 @@ typedef struct {
  * @param cursor
  * @param c
  * may be null.
+ * @return
+ * if completion success, return 0. otherwise return -1.
  */
-void DSState_complete(const DSState *st, const char *buf, size_t cursor, DSCandidates *c);
+int DSState_complete(const DSState *st, const char *buf, size_t cursor, DSCandidates *c);
 
 /**
  * release buffer of candidates.

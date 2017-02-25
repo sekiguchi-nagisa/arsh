@@ -52,9 +52,12 @@ TEST(BuiltinExecTest, case2) {
 TEST(API, case1) {
     SCOPED_TRACE("");
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ((unsigned int)X_INFO_MAJOR_VERSION, DSState_majorVersion()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ((unsigned int)X_INFO_MINOR_VERSION, DSState_minorVersion()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ((unsigned int)X_INFO_PATCH_VERSION, DSState_patchVersion()));
+    unsigned int vec[3];
+    DSState_version(vec, 3);
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ((unsigned int)X_INFO_MAJOR_VERSION, vec[0]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ((unsigned int)X_INFO_MINOR_VERSION, vec[1]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ((unsigned int)X_INFO_PATCH_VERSION, vec[2]));
 }
 
 TEST(API, case2) {
@@ -90,11 +93,13 @@ TEST(API, case4) {
     SCOPED_TRACE("");
 
     // null arguments
-    DSState_complete(nullptr, nullptr, 1, nullptr);
+    int r = DSState_complete(nullptr, nullptr, 1, nullptr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, r));
 
     DSState *state = DSState_create();
     DSCandidates c;
-    DSState_complete(state, "~", 1, &c);
+    r = DSState_complete(state, "~", 1, &c);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, r));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(c.values != nullptr));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(c.size > 0));
 

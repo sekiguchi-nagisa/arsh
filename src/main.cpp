@@ -140,6 +140,10 @@ enum class InvocationKind {
     BUILTIN,
 };
 
+static const char *version() {
+    return DSState_version(nullptr, 0);
+}
+
 int main(int argc, char **argv) {
     argv::CmdLines<OptionKind> cmdLines;
     int restIndex;
@@ -147,7 +151,7 @@ int main(int argc, char **argv) {
         restIndex = argv::parseArgv(argc, argv, options, cmdLines);
     } catch(const argv::ParseError &e) {
         std::cerr << e.getMessage() << std::endl;
-        std::cerr << DSState_version() << std::endl;
+        std::cerr << version() << std::endl;
         std::cerr << options << std::endl;
         exit(1);
     }
@@ -186,11 +190,11 @@ int main(int argc, char **argv) {
             DSState_setOption(state, DS_OPTION_TRACE_EXIT);
             break;
         case VERSION:
-            std::cout << DSState_version() << std::endl;
+            std::cout << version() << std::endl;
             std::cout << DSState_copyright() << std::endl;
             exit(0);
         case HELP:
-            std::cout << DSState_version() << std::endl;
+            std::cout << version() << std::endl;
             std::cout << options << std::endl;
             exit(0);
         case COMMAND:
@@ -258,7 +262,7 @@ int main(int argc, char **argv) {
             exit(INVOKE(loadAndEval)(&state, nullptr, stdin));
         } else {    // interactive mode
             if(!quiet) {
-                std::cout << DSState_version() << std::endl;
+                std::cout << version() << std::endl;
                 std::cout << DSState_copyright() << std::endl;
             }
             if(userc) {
