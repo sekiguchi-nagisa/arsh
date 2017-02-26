@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Nagisa Sekiguchi
+ * Copyright (C) 2016-2017 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,57 +18,30 @@
 
 namespace ydsh {
 
-const char *getTLErrorKind(TLError e) {
-    const char *table[] = {
-#define GEN_KIND(K, M) #K,
-            EACH_TL_ERROR(GEN_KIND)
-#undef GEN_KIND
-    };
-    return table[static_cast<unsigned int>(e)];
+TypeLookupError createTLError(TLError, const char *kind, const char *fmt, ...) {
+    va_list arg;
+
+    va_start(arg, fmt);
+    char *str = nullptr;
+    vasprintf(&str, fmt, arg);
+    va_end(arg);
+
+    TypeLookupError error(kind, str);
+    free(str);
+    return error;
 }
 
-static std::string formatMessage(const char *fmt, const std::string **v) {
-    unsigned int c = 0;
-    std::string str;
-    for(unsigned int i = 0; fmt[i] != '\0'; i++) {
-        char ch = fmt[i];
-        if(ch == '%') {
-            str += *v[c++];
-        } else {
-            str += ch;
-        }
-    }
-    return str;
+TypeCheckError createTCError(TCError, const Node &node, const char *kind, const char *fmt, ...) {
+    va_list arg;
+
+    va_start(arg, fmt);
+    char *str = nullptr;
+    vasprintf(&str, fmt, arg);
+    va_end(arg);
+
+    TypeCheckError error(node.getToken(), kind, str);
+    free(str);
+    return error;
 }
-
-namespace __detail_tl_error {
-
-TypeLookupError createErrorImpl(TLError e, const std::string **v) {
-    return TypeLookupError(getTLErrorKind(e), formatMessage(getTLErrorMessage(e), v));
-}
-
-} // namespace __detail_tl_error
-
-} // namespace ydsh
-
-
-namespace ydsh {
-
-const char *getTCErrorKind(TCError e) {
-    const char *table[] = {
-#define GEN_KIND(K, M) #K,
-            EACH_TC_ERROR(GEN_KIND)
-#undef GEN_KIND
-    };
-    return table[static_cast<unsigned int>(e)];
-}
-
-namespace __detail_tc_error {
-
-TypeCheckError createErrorImpl(TCError e, const Node &node, const std::string **v) {
-    return TypeCheckError(node.getToken(), getTCErrorKind(e), formatMessage(getTCErrorMessage(e), v));
-}
-
-} // namespace __detail_tc_error
 
 } // namespace ydsh

@@ -605,7 +605,7 @@ TypePool::~TypePool() {
 DSType &TypePool::getTypeAndThrowIfUndefined(const std::string &typeName) const {
     DSType *type = this->getType(typeName);
     if(type == 0) {
-        RAISE_TL_ERROR(UndefinedType, typeName);
+        RAISE_TL_ERROR(UndefinedType, typeName.c_str());
     }
     return *type;
 }
@@ -613,7 +613,7 @@ DSType &TypePool::getTypeAndThrowIfUndefined(const std::string &typeName) const 
 const TypeTemplate &TypePool::getTypeTemplate(const std::string &typeName) const {
     auto iter = this->templateMap.find(typeName);
     if(iter == this->templateMap.end()) {
-        RAISE_TL_ERROR(NotTemplate, typeName);
+        RAISE_TL_ERROR(NotTemplate, typeName.c_str());
     }
     return *iter->second;
 }
@@ -630,7 +630,7 @@ DSType &TypePool::createReifiedType(const TypeTemplate &typeTemplate,
     if(attr) {
         auto *type = elementTypes[0];
         if(type->isOptionType() || type->isVoidType()) {
-            RAISE_TL_ERROR(InvalidElement, this->getTypeName(*type));
+            RAISE_TL_ERROR(InvalidElement, this->getTypeName(*type).c_str());
         }
     } else {
         this->checkElementTypes(typeTemplate, elementTypes);
@@ -710,12 +710,12 @@ DSType &TypePool::getDBusInterfaceType(const std::string &typeName) {
 
         RootNode rootNode;
         if(!parse(ifacePath.c_str(), rootNode)) {
-            RAISE_TL_ERROR(NoDBusInterface, typeName);
+            RAISE_TL_ERROR(NoDBusInterface, typeName.c_str());
         }
 
         InterfaceNode *ifaceNode = dynamic_cast<InterfaceNode *>(rootNode.getNodeList().front());
         if(ifaceNode == nullptr) {
-            RAISE_TL_ERROR(NoDBusInterface, typeName);
+            RAISE_TL_ERROR(NoDBusInterface, typeName.c_str());
         }
         return TypeChecker::resolveInterface(*this, ifaceNode);
     }
@@ -866,7 +866,7 @@ void TypePool::initErrorType(DS_TYPE TYPE, const char *typeName, DSType &superTy
 void TypePool::checkElementTypes(const std::vector<DSType *> &elementTypes) const {
     for(DSType *type : elementTypes) {
         if(*type == this->getVoidType()) {
-            RAISE_TL_ERROR(InvalidElement, this->getTypeName(*type));
+            RAISE_TL_ERROR(InvalidElement, this->getTypeName(*type).c_str());
         }
     }
 }
@@ -876,12 +876,12 @@ void TypePool::checkElementTypes(const TypeTemplate &t, const std::vector<DSType
 
     // check element type size
     if(t.getElementTypeSize() != size) {
-        RAISE_TL_ERROR(UnmatchElement, t.getName(), std::to_string(t.getElementTypeSize()), std::to_string(size));
+        RAISE_TL_ERROR(UnmatchElement, t.getName().c_str(), t.getElementTypeSize(), size);
     }
 
     for(unsigned int i = 0; i < size; i++) {
         if(!t.getAcceptableTypes()[i]->isSameOrBaseTypeOf(*elementTypes[i]) && !elementTypes[i]->isOptionType()) {
-            RAISE_TL_ERROR(InvalidElement, this->getTypeName(*elementTypes[i]));
+            RAISE_TL_ERROR(InvalidElement, this->getTypeName(*elementTypes[i]).c_str());
         }
     }
 }

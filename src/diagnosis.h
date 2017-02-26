@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Nagisa Sekiguchi
+ * Copyright (C) 2016-2017 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@
 
 #include <string>
 
-namespace ydsh {
+#include "node.h"
 
-// TypeLookupError
+namespace ydsh {
 
 class TypeLookupError {
 private:
@@ -29,8 +29,8 @@ private:
     std::string message;
 
 public:
-    TypeLookupError(const char *kind, std::string &&message) :
-            kind(kind), message(std::move(message)) { }
+    TypeLookupError(const char *kind, const char *message) :
+            kind(kind), message(message) { }
 
     ~TypeLookupError() = default;
 
@@ -51,76 +51,28 @@ public:
     }
 };
 
-#define EACH_TL_ERROR(E) \
-    E(UndefinedType  , "undefined type: %") \
-    E(NotTemplate    , "illegal type template: %") \
-    E(DefinedType    , "already defined type: %") \
-    E(InvalidElement , "invalid type element: %") \
-    E(NoDBusInterface, "not found D-Bus interface: %") \
-    E(UnmatchElement , "not match type element, % requires % type element, but is %")
-
 enum class TLError : unsigned int {
-#define GEN_ENUM(K, M) K,
-    EACH_TL_ERROR(GEN_ENUM)
-#undef GEN_ENUM
+    E_UndefinedType,
+    E_NotTemplate,
+    E_DefinedType,
+    E_InvalidElement,
+    E_NoDBusInterface,
+    E_UnmatchElement,
 };
 
-const char *getTLErrorKind(TLError e);
-
-constexpr const char *const TL_ERROR_MSG_ARRAY[] = {
-#define GEN_MSG(K, M) M,
-        EACH_TL_ERROR(GEN_MSG)
-#undef GEN_MSG
-};
-
-constexpr const char *getTLErrorMessage(TLError e) {
-    return TL_ERROR_MSG_ARRAY[static_cast<unsigned int>(e)];
-}
+#define UndefinedType   "undefined type: %s"
+#define NotTemplate     "illegal type template: %s"
+#define DefinedType     "already defined type: %s"
+#define InvalidElement  "invalid type element: %s"
+#define NoDBusInterface "not found D-Bus interface: %s"
+#define UnmatchElement  "not match type element, %s requires %d type element, but is %d"
 
 
-namespace __detail_tl_error {
-
-TypeLookupError createErrorImpl(TLError e, const std::string **v);
-
-
-inline TypeLookupError createErrorNext(TLError e, const std::string **v, unsigned int) {
-    return createErrorImpl(e, v);
-}
-
-template <typename ... T>
-inline TypeLookupError createErrorNext(TLError e, const std::string **v, unsigned int index,
-                                       const std::string &arg, T && ... args) {
-    v[index] = &arg;
-    return createErrorNext(e, v, index + 1, std::forward<T>(args)...);
-}
-
-
-template <unsigned int N, typename ... T>
-inline TypeLookupError createError(TLError e, T && ... args) {
-    static_assert(N == sizeof ... (T), "invalid parameter size");
-    const std::string *v[sizeof...(args)];
-    return createErrorNext(e, v, 0, std::forward<T>(args)...);
-};
-
-constexpr unsigned int computeParamSize(const char *s, unsigned int index = 0) {
-    return s[index] == '\0' ? 0 :
-           (s[index] == '%' ? 1 : 0) + computeParamSize(s, index + 1);
-}
-
-} // namespace __detail_tl_error
-
-} // namespace ydsh
+TypeLookupError createTLError(TLError e, const char *kind, const char *fmt, ...) __attribute__ ((format(printf, 3, 4)));
 
 #define RAISE_TL_ERROR(e, ...) \
-do { \
-    using namespace ydsh::__detail_tl_error;\
-    throw createError<computeParamSize(getTLErrorMessage(TLError::e))>(TLError::e, ## __VA_ARGS__);\
-} while(false)
+    throw createTLError(TLError::E_ ## e, #e, e, ## __VA_ARGS__)
 
-
-#include "node.h"
-
-namespace ydsh {
 
 /**
  * for type error reporting
@@ -134,8 +86,8 @@ private:
     std::string message;
 
 public:
-    TypeCheckError(Token token, const char *kind, std::string &&message) :
-            token(token), kind(kind), message(std::move(message)) { }
+    TypeCheckError(Token token, const char *kind, const char *message) :
+            token(token), kind(kind), message(message) { }
 
     TypeCheckError(Token token, TypeLookupError &e) :
             token(token), kind(e.getKind()), message(extract(std::move(e))) { }
@@ -163,86 +115,67 @@ public:
     }
 };
 
-#define EACH_TC_ERROR(E) \
-    E(InsideLoop       , "only available inside loop statement") \
-    E(UnfoundReturn    , "not found return statement") \
-    E(Unreachable      , "unreachable code") \
-    E(InsideFunc       , "only available inside function") \
-    E(NotNeedExpr      , "not need expression") \
-    E(Assignable       , "require assignable expression") \
-    E(ReadOnly         , "read only symbol") \
-    E(InsideFinally    , "unavailable inside finally block") \
-    E(OutsideToplevel  , "only available top level scope") \
-    E(NotCallable      , "Func type object is not directly callable") \
-    E(DisallowTypeof   , "not allow typeof operator") \
-    E(UselessBlock     , "useless block") \
-    E(EmptyTry         , "empty try block") \
-    E(UselessTry       , "useless try block") \
-    E(DefinedSymbol    , "already defined symbol: %") \
-    E(DefinedField     , "already defined field: %") \
-    E(UndefinedSymbol  , "undefined symbol: %") \
-    E(UndefinedField   , "undefined field: %") \
-    E(UndefinedMethod  , "undefined method: %") \
-    E(UndefinedInit    , "undefined constructor: %") \
-    E(Unacceptable     , "unacceptable type: %") \
-    E(DefinedCmd       , "already defined command: %") \
-    E(Required         , "require %, but is %") \
-    E(CastOp           , "unsupported cast op: % -> %") \
-    E(UnmatchParam     , "not match parameter, require size is %, but is %")
-
 enum class TCError : unsigned int {
-#define GEN_ENUM(K, M) K,
-    EACH_TC_ERROR(GEN_ENUM)
-#undef GEN_ENUM
+    E_InsideLoop,
+    E_UnfoundReturn,
+    E_Unreachable,
+    E_InsideFunc,
+    E_NotNeedExpr,
+    E_Assignable,
+    E_ReadOnly,
+    E_InsideFinally,
+    E_OutsideToplevel,
+    E_NotCallable,
+    E_DisallowTypeof,
+    E_UselessBlock,
+    E_EmptyTry,
+    E_UselessTry,
+    E_DefinedSymbol,
+    E_DefinedField,
+    E_UndefinedSymbol,
+    E_UndefinedField,
+    E_UndefinedMethod,
+    E_UndefinedInit,
+    E_Unacceptable,
+    E_DefinedCmd,
+    E_Required,
+    E_CastOp,
+    E_UnmatchParam,
 };
 
-const char *getTCErrorKind(TCError e);
-
-constexpr const char *const TC_ERROR_MSG_ARRAY[] = {
-#define GEN_MSG(K, M) M,
-        EACH_TC_ERROR(GEN_MSG)
-#undef GEN_MSG
-};
-
-constexpr const char *getTCErrorMessage(TCError e) {
-    return TC_ERROR_MSG_ARRAY[static_cast<unsigned int>(e)];
-}
-
-
-namespace __detail_tc_error {
-
-TypeCheckError createErrorImpl(TCError e, const Node &node, const std::string **v);
-
-
-inline TypeCheckError createTCErrorNext(TCError e, const Node &node, const std::string **v, unsigned int) {
-    return createErrorImpl(e, node, v);
-}
-
-template <typename ... T>
-inline TypeCheckError createTCErrorNext(TCError e, const Node &node, const std::string **v,
-                                        unsigned int index, const std::string &arg, T && ... args) {
-    v[index] = &arg;
-    return createTCErrorNext(e, node, v, index + 1, std::forward<T>(args)...);
-}
+#define InsideLoop        "only available inside loop statement"
+#define UnfoundReturn     "not found return statement"
+#define Unreachable       "unreachable code"
+#define InsideFunc        "only available inside function"
+#define NotNeedExpr       "not need expression"
+#define Assignable        "require assignable expression"
+#define ReadOnly          "read only symbol"
+#define InsideFinally     "unavailable inside finally block"
+#define OutsideToplevel   "only available top level scope"
+#define NotCallable       "Func type object is not directly callable"
+#define DisallowTypeof    "not allow typeof operator"
+#define UselessBlock      "useless block"
+#define EmptyTry          "empty try block"
+#define UselessTry        "useless try block"
+#define DefinedSymbol     "already defined symbol: %s"
+#define DefinedField      "already defined field: %s"
+#define UndefinedSymbol   "undefined symbol: %s"
+#define UndefinedField    "undefined field: %s"
+#define UndefinedMethod   "undefined method: %s"
+#define UndefinedInit     "undefined constructor: %s"
+#define Unacceptable      "unacceptable type: %s"
+#define DefinedCmd        "already defined command: %s"
+#define Required          "require %s, but is %s"
+#define CastOp            "unsupported cast op: %s -> %s"
+#define UnmatchParam      "not match parameter, require size is %d, but is %d"
 
 
-template <unsigned int N, typename ... T>
-inline TypeCheckError createTCError(TCError e, const Node &node, T && ... args) {
-    static_assert(N == sizeof ... (T), "invalid parameter size");
-    const std::string *v[sizeof...(args)];
-    return createTCErrorNext(e, node, v, 0, std::forward<T>(args)...);
-};
-
-} // namespace __detail_tc_error
-
-} // namespace ydsh
+TypeCheckError createTCError(TCError e, const Node &node,
+                             const char *kind, const char *fmt, ...) __attribute__ ((format(printf, 4, 5)));
 
 #define RAISE_TC_ERROR(e, node,  ...) \
-do { \
-    using namespace ydsh::__detail_tc_error;\
-    using namespace ydsh::__detail_tl_error;\
-    constexpr auto s = computeParamSize(getTCErrorMessage(TCError::e));\
-    throw createTCError<s>(TCError::e, node, ## __VA_ARGS__);\
-} while(false)
+    throw createTCError(TCError::E_ ## e, node, #e, e, ## __VA_ARGS__)
+
+} // namespace ydsh
 
 #endif //YDSH_DIAGNOSIS_H

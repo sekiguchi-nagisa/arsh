@@ -92,7 +92,7 @@ void TypeChecker::TypeGenerator::visitTypeOfNode(TypeOfNode &typeNode) {
     }
     DSType &type = this->checker->checkType(typeNode.getExprNode());
     if(type.isBottomType()) {
-        RAISE_TC_ERROR(Unacceptable, *typeNode.getExprNode(), this->checker->typePool.getTypeName(type));
+        RAISE_TC_ERROR(Unacceptable, *typeNode.getExprNode(), this->checker->typePool.getTypeName(type).c_str());
     }
     typeNode.setType(type);
 }
@@ -123,7 +123,7 @@ DSType &TypeChecker::resolveInterface(TypePool &typePool,
         FieldHandle *handle = type.newFieldHandle(
                 fieldDeclNode->getVarName(), fieldType, fieldDeclNode->isReadOnly());
         if(handle == nullptr) {
-            RAISE_TC_ERROR(DefinedField, *fieldDeclNode, fieldDeclNode->getVarName());
+            RAISE_TC_ERROR(DefinedField, *fieldDeclNode, fieldDeclNode->getVarName().c_str());
         }
     }
 
@@ -173,7 +173,7 @@ DSType &TypeChecker::checkType(DSType *requiredType, Node *targetNode,
     if(requiredType == nullptr) {
         if(!type.isBottomType() && unacceptableType != nullptr &&
                 unacceptableType->isSameOrBaseTypeOf(type)) {
-            RAISE_TC_ERROR(Unacceptable, *targetNode, this->typePool.getTypeName(type));
+            RAISE_TC_ERROR(Unacceptable, *targetNode, this->typePool.getTypeName(type).c_str());
         }
         return type;
     }
@@ -193,8 +193,8 @@ DSType &TypeChecker::checkType(DSType *requiredType, Node *targetNode,
         return type;
     }
 
-    RAISE_TC_ERROR(Required, *targetNode, this->typePool.getTypeName(*requiredType),
-               this->typePool.getTypeName(type));
+    RAISE_TC_ERROR(Required, *targetNode, this->typePool.getTypeName(*requiredType).c_str(),
+               this->typePool.getTypeName(type).c_str());
 }
 
 void TypeChecker::checkTypeWithCurrentScope(BlockNode *blockNode) {
@@ -260,7 +260,7 @@ FieldHandle *TypeChecker::addEntryAndThrowIfDefined(Node &node, const std::strin
                                                     FieldAttributes attribute) {
     FieldHandle *handle = this->symbolTable.registerHandle(symbolName, type, attribute);
     if(handle == nullptr) {
-        RAISE_TC_ERROR(DefinedSymbol, node, symbolName);
+        RAISE_TC_ERROR(DefinedSymbol, node, symbolName.c_str());
     }
     return handle;
 }
@@ -303,7 +303,7 @@ HandleOrFuncType TypeChecker::resolveCallee(Node &recvNode) {
 HandleOrFuncType TypeChecker::resolveCallee(VarNode &recvNode) {
     FieldHandle *handle = this->symbolTable.lookupHandle(recvNode.getVarName());
     if(handle == nullptr) {
-        RAISE_TC_ERROR(UndefinedSymbol, recvNode, recvNode.getVarName());
+        RAISE_TC_ERROR(UndefinedSymbol, recvNode, recvNode.getVarName().c_str());
     }
     recvNode.setAttribute(handle);
 
@@ -317,8 +317,8 @@ HandleOrFuncType TypeChecker::resolveCallee(VarNode &recvNode) {
         if(this->typePool.getBaseFuncType() == *type) {
             RAISE_TC_ERROR(NotCallable, recvNode);
         } else {
-            RAISE_TC_ERROR(Required, recvNode, this->typePool.getTypeName(this->typePool.getBaseFuncType()),
-                       this->typePool.getTypeName(*type));
+            RAISE_TC_ERROR(Required, recvNode, this->typePool.getTypeName(this->typePool.getBaseFuncType()).c_str(),
+                           this->typePool.getTypeName(*type).c_str());
         }
     }
     return HandleOrFuncType(funcType);
@@ -330,7 +330,7 @@ void TypeChecker::checkTypeArgsNode(Node &node, MethodHandle *handle, std::vecto
         // check param size
         unsigned int paramSize = handle->getParamTypes().size();
         if(paramSize != argSize) {
-            RAISE_TC_ERROR(UnmatchParam, node, std::to_string(paramSize), std::to_string(argSize));
+            RAISE_TC_ERROR(UnmatchParam, node, paramSize, argSize);
         }
 
         // check type each node
@@ -383,7 +383,7 @@ void TypeChecker::resolveCastOp(TypeOpNode &node, bool allowVoidCast) {
         }
     }
 
-    RAISE_TC_ERROR(CastOp, node, this->typePool.getTypeName(exprType), this->typePool.getTypeName(targetType));
+    RAISE_TC_ERROR(CastOp, node, this->typePool.getTypeName(exprType).c_str(), this->typePool.getTypeName(targetType).c_str());
 }
 
 TypeOpNode *TypeChecker::newTypedCastNode(Node *targetNode, DSType &type) {
@@ -508,7 +508,7 @@ void TypeChecker::visitStringExprNode(StringExprNode &node) {
             MethodHandle *handle = exprType.isOptionType() ? nullptr :
                                    exprType.lookupMethodHandle(this->typePool, methodName);
             if(handle == nullptr) { // if exprType is
-                RAISE_TC_ERROR(UndefinedMethod, *exprNode, methodName);
+                RAISE_TC_ERROR(UndefinedMethod, *exprNode, methodName.c_str());
             }
 
             MethodCallNode *callNode = new MethodCallNode(exprNode, std::move(methodName));
@@ -576,7 +576,7 @@ void TypeChecker::visitTupleNode(TupleNode &node) {
 void TypeChecker::visitVarNode(VarNode &node) {
     FieldHandle *handle = this->symbolTable.lookupHandle(node.getVarName());
     if(handle == nullptr) {
-        RAISE_TC_ERROR(UndefinedSymbol, node, node.getVarName());
+        RAISE_TC_ERROR(UndefinedSymbol, node, node.getVarName().c_str());
     }
 
     node.setAttribute(handle);
@@ -587,7 +587,7 @@ void TypeChecker::visitAccessNode(AccessNode &node) {
     auto &recvType = this->checkType(node.getRecvNode());
     FieldHandle *handle = recvType.lookupFieldHandle(this->typePool, node.getFieldName());
     if(handle == nullptr) {
-        RAISE_TC_ERROR(UndefinedField, node, node.getFieldName());
+        RAISE_TC_ERROR(UndefinedField, node, node.getFieldName().c_str());
     }
 
     node.setAttribute(handle);
@@ -617,7 +617,7 @@ void TypeChecker::visitUnaryOpNode(UnaryOpNode &node) {
     auto &exprType = this->checkType(node.getExprNode());
     if(node.isUnwrapOp()) {
         if(!exprType.isOptionType()) {
-            RAISE_TC_ERROR(Required, *node.getExprNode(), "Option type", this->typePool.getTypeName(exprType));
+            RAISE_TC_ERROR(Required, *node.getExprNode(), "Option type", this->typePool.getTypeName(exprType).c_str());
         }
         node.setType(*static_cast<ReifiedType *>(&exprType)->getElementTypes()[0]);
     } else {
@@ -692,7 +692,7 @@ void TypeChecker::visitApplyNode(ApplyNode &node) {
     unsigned int argSize = node.getArgNodes().size();
     // check param size
     if(size != argSize) {
-        RAISE_TC_ERROR(UnmatchParam, node, std::to_string(size), std::to_string(argSize));
+        RAISE_TC_ERROR(UnmatchParam, node, size, argSize);
     }
 
     // check type each node
@@ -708,7 +708,7 @@ void TypeChecker::visitMethodCallNode(MethodCallNode &node) {
     auto &recvType = this->checkType(node.getRecvNode());
     MethodHandle *handle = recvType.lookupMethodHandle(this->typePool, node.getMethodName());
     if(handle == nullptr) {
-        RAISE_TC_ERROR(UndefinedMethod, node, node.getMethodName());
+        RAISE_TC_ERROR(UndefinedMethod, node, node.getMethodName().c_str());
     }
 
     // check type argument
@@ -723,12 +723,12 @@ void TypeChecker::visitNewNode(NewNode &node) {
     if(type.isOptionType()) {
         unsigned int size = node.getArgNodes().size();
         if(size > 0) {
-            RAISE_TC_ERROR(UnmatchParam, node, std::to_string(0), std::to_string(size));
+            RAISE_TC_ERROR(UnmatchParam, node, 0, size);
         }
     } else {
         MethodHandle *handle = type.getConstructorHandle(this->typePool);
         if(handle == nullptr) {
-            RAISE_TC_ERROR(UndefinedInit, node, this->typePool.getTypeName(type));
+            RAISE_TC_ERROR(UndefinedInit, node, this->typePool.getTypeName(type).c_str());
         }
 
         this->checkTypeArgsNode(node, handle, node.refArgNodes());
@@ -781,7 +781,7 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
                 handle = segmentType.isOptionType() ? nullptr :
                          segmentType.lookupMethodHandle(this->typePool, methodName);
                 if(handle == nullptr) {
-                    RAISE_TC_ERROR(UndefinedMethod, *exprNode, methodName);
+                    RAISE_TC_ERROR(UndefinedMethod, *exprNode, methodName.c_str());
                 }
             }
 
@@ -954,8 +954,8 @@ void TypeChecker::visitThrowNode(ThrowNode &node) {
 void TypeChecker::visitCatchNode(CatchNode &node) {
     auto &exceptionType = this->toType(node.getTypeNode());
     if(!this->typePool.getAnyType().isSameOrBaseTypeOf(exceptionType)) {
-        RAISE_TC_ERROR(Required, *node.getTypeNode(), this->typePool.getTypeName(this->typePool.getAnyType()),
-                       this->typePool.getTypeName(exceptionType));
+        RAISE_TC_ERROR(Required, *node.getTypeNode(), this->typePool.getTypeName(this->typePool.getAnyType()).c_str(),
+                       this->typePool.getTypeName(exceptionType).c_str());
     }
 
     /**
@@ -1030,7 +1030,7 @@ void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
     case VarDeclNode::VAR:
         exprType = &this->checkType(node.getExprNode());
         if(exprType->isBottomType()) {
-            RAISE_TC_ERROR(Unacceptable, *node.getExprNode(), this->typePool.getTypeName(*exprType));
+            RAISE_TC_ERROR(Unacceptable, *node.getExprNode(), this->typePool.getTypeName(*exprType).c_str());
         }
         break;
     case VarDeclNode::IMPORT_ENV:
@@ -1114,7 +1114,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     for(unsigned int i = 0; i < paramSize; i++) {
         auto *type = &this->toType(node.getParamTypeNodes()[i]);
         if(type->isVoidType()) {
-            RAISE_TC_ERROR(Unacceptable, *node.getParamTypeNodes()[i], this->typePool.getTypeName(*type));
+            RAISE_TC_ERROR(Unacceptable, *node.getParamTypeNodes()[i], this->typePool.getTypeName(*type).c_str());
         }
         paramTypes[i] = type;
     }
@@ -1123,7 +1123,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     FunctionHandle *handle =
             this->symbolTable.registerFuncHandle(node.getName(), returnType, paramTypes);
     if(handle == nullptr) {
-        RAISE_TC_ERROR(DefinedSymbol, node, node.getName());
+        RAISE_TC_ERROR(DefinedSymbol, node, node.getName().c_str());
     }
     node.setVarIndex(handle->getFieldIndex());
 
@@ -1170,7 +1170,7 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     // register command name
     FieldHandle *handle = this->symbolTable.registerUdc(node.getName(), this->typePool.getAnyType());
     if(handle == nullptr) {
-        RAISE_TC_ERROR(DefinedCmd, node, node.getName());
+        RAISE_TC_ERROR(DefinedCmd, node, node.getName().c_str());
     }
     node.setUdcIndex(handle->getFieldIndex());
 
