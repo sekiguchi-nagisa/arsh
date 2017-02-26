@@ -178,8 +178,10 @@ static void clearOperandStack(DSState &st) {
 }
 
 static void reclaimLocals(DSState &state, unsigned short offset, unsigned short size) {
-    for(unsigned int i = 0; i < size; i++) {
-        state.callStack[state.localVarOffset + offset + i].reset();
+    auto *limit = state.callStack + state.localVarOffset + offset;
+    auto *cur = limit + size - 1;
+    while(cur >= limit) {
+        (cur--)->reset();
     }
 }
 
