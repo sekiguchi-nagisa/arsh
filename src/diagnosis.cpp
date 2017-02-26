@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <cstdarg>
+
 #include "diagnosis.h"
 
 namespace ydsh {
