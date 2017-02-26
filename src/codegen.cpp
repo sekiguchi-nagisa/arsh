@@ -235,7 +235,7 @@ void ByteCodeGenerator::markLabel(IntrusivePtr<Label> &label) {
 }
 
 void ByteCodeGenerator::pushLoopLabels(const IntrusivePtr<Label> &breakLabel, const IntrusivePtr<Label> &continueLabel) {
-    this->curBuilder().loopLabels.push_back({{breakLabel, continueLabel}, this->curBuilder().loopLabels.size()});
+    this->curBuilder().loopLabels.push_back({{breakLabel, continueLabel}, this->curBuilder().localVars.size()});
 }
 
 void ByteCodeGenerator::popLoopLabels() {
@@ -769,6 +769,21 @@ void ByteCodeGenerator::visitBlockNode(BlockNode &node) {
 void ByteCodeGenerator::visitJumpNode(JumpNode &node) {
     assert(!this->curBuilder().loopLabels.empty());
 
+    // reclaim local before jump
+    unsigned int blockIndex = this->curBuilder().loopLabels.back().second;
+    const unsigned int startOffset = this->curBuilder().localVars[blockIndex].first;
+    unsigned int stopOffset = startOffset + this->curBuilder().localVars[blockIndex].second;
+
+    const unsigned int size = this->curBuilder().localVars.size();
+    for(; blockIndex < size; blockIndex++) {
+        auto &pair = this->curBuilder().localVars[blockIndex];
+        stopOffset = pair.first + pair.second;
+    }
+
+    if(stopOffset - startOffset > 0) {
+        this->emit4byteIns(OpCode::RECLAIM_LOCAL, startOffset, stopOffset - startOffset);
+    }
+
     // add finally before jump
     if(node.isLeavingBlock()) {
         this->enterFinally();
@@ -780,12 +795,6 @@ void ByteCodeGenerator::visitJumpNode(JumpNode &node) {
 void ByteCodeGenerator::visitTypeAliasNode(TypeAliasNode &) { } // do nothing
 
 void ByteCodeGenerator::visitForNode(ForNode &node) {
-    // push loop label
-    auto initLabel = makeIntrusive<Label>();
-    auto breakLabel = makeIntrusive<Label>();
-    auto continueLabel = makeIntrusive<Label>();
-    this->pushLoopLabels(breakLabel, continueLabel);
-
     // generate code
     unsigned short localOffset = 0;
     unsigned short localSize = 0;
@@ -795,6 +804,12 @@ void ByteCodeGenerator::visitForNode(ForNode &node) {
     }
 
     this->generateBlock(localOffset, localSize, localSize > 0, [&]{
+        // push loop label
+        auto initLabel = makeIntrusive<Label>();
+        auto breakLabel = makeIntrusive<Label>();
+        auto continueLabel = makeIntrusive<Label>();
+        this->pushLoopLabels(breakLabel, continueLabel);
+
         this->visit(*node.getInitNode());
         if(dynamic_cast<EmptyNode *>(node.getIterNode()) == nullptr) {
             this->emitJumpIns(initLabel);
@@ -814,10 +829,10 @@ void ByteCodeGenerator::visitForNode(ForNode &node) {
         }
 
         this->markLabel(breakLabel);
-    });
 
-    // pop loop label
-    this->popLoopLabels();
+        // pop loop label
+        this->popLoopLabels();
+    });
 }
 
 void ByteCodeGenerator::visitWhileNode(WhileNode &node) {
