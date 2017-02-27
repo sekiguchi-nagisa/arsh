@@ -240,7 +240,6 @@ set(YDSH_SRC
         src/proc.cpp
         src/core.cpp
         src/symbol_table.cpp
-        src/diagnosis.cpp
         src/codegen.cpp
         src/vm.cpp
         src/lexer.cpp

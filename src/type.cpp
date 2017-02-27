@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <cstdarg>
+
 #include "type.h"
 #include "object.h"
 #include "handle.h"
@@ -951,6 +953,32 @@ void TypePool::registerDBusErrorTypes() {
         s += e;
         this->setAlias(e, this->createErrorType(s, this->getDBusErrorType()));
     }
+}
+
+TypeLookupError createTLError(TLError, const char *kind, const char *fmt, ...) {
+    va_list arg;
+
+    va_start(arg, fmt);
+    char *str = nullptr;
+    vasprintf(&str, fmt, arg);
+    va_end(arg);
+
+    TypeLookupError error(kind, str);
+    free(str);
+    return error;
+}
+
+TypeCheckError createTCError(TCError, const Node &node, const char *kind, const char *fmt, ...) {
+    va_list arg;
+
+    va_start(arg, fmt);
+    char *str = nullptr;
+    vasprintf(&str, fmt, arg);
+    va_end(arg);
+
+    TypeCheckError error(node.getToken(), kind, str);
+    free(str);
+    return error;
 }
 
 } // namespace ydsh
