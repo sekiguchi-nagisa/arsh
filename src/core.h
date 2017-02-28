@@ -114,8 +114,20 @@ public:
     }
 };
 
-struct DebugHook {
+struct VMHook {
+    /**
+     * hook for vm fetch event
+     * @param st
+     * @param op
+     * fetched opcode
+     */
     virtual void vmFetchHook(DSState &st, OpCode op) = 0;
+
+    /**
+     * hook for exception handle event
+     * @param st
+     */
+    virtual void vmThrowHook(DSState &st) = 0;
 };
 
 // core api

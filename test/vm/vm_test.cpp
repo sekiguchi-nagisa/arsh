@@ -16,7 +16,7 @@ public:
     }
 };
 
-class VMInspector : public DebugHook {
+class VMInspector : public VMHook {
 private:
     OpCode breakOp;
 
@@ -31,12 +31,13 @@ public:
         return this->breakOp;
     }
 
-    void vmFetchHook(DSState &st, OpCode op) override {
-        (void) st;
+    void vmFetchHook(DSState &, OpCode op) override {
         if(this->breakOp == op) {
             throw VMBreakException(op);
         }
     }
+
+    void vmThrowHook(DSState &) override {}
 };
 
 class VMTest : public ::testing::Test {
@@ -66,6 +67,12 @@ protected:
 
     void setBreakPoint(OpCode op) {
         this->inspector.setBreakOp(op);
+    }
+
+    DSValue getGlobal(const char *varName) const {
+        auto *handle = this->state->symbolTable.lookupHandle(varName);
+        unsigned int index = handle->getFieldIndex();
+        return state->getGlobal(index);
     }
 };
 

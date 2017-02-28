@@ -1772,6 +1772,10 @@ static bool mainLoop(DSState &state) {
  * otherwise return false.
  */
 static bool handleException(DSState &state) {
+    if(state.hook != nullptr) {
+        state.hook->vmThrowHook(state);
+    }
+
     while(!state.codeStack.empty()) {
         if(!CODE(state)->is(CodeKind::NATIVE)) {
             auto *cc = static_cast<const CompiledCode *>(CODE(state));

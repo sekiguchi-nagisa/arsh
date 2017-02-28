@@ -145,7 +145,7 @@ struct DSState {
      */
     std::string prompt;
 
-    DebugHook *hook;
+    VMHook *hook;
 
     std::string logicalWorkingDir;
 
