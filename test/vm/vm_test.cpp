@@ -104,13 +104,13 @@ TEST_F(VMTest, deinit1) {
     ASSERT_(RefCount("a", 2));
 }
 
-//TEST_F(VMTest, deinit2) {  //FIXME:
-//    this->eval("{ var b = $@; throw 34; }");
-//    ASSERT_(RefCount("@", 1));
-//
-//    this->eval("{ var a = $@; { var b = $@; throw 34; }}");
-//    ASSERT_(RefCount("@", 1));
-//}
+TEST_F(VMTest, deinit2) {
+    this->eval("{ var b = $@; throw 34; }");
+    ASSERT_(RefCount("@", 1));
+
+    this->eval("{ var a = $@; { var b = $@; var c = $b; throw 34; }}");
+    ASSERT_(RefCount("@", 1));
+}
 
 TEST_F(VMTest, deinit3) {
     this->eval("var i = 0; while $i < 2 { var b = $@; $i++ }");

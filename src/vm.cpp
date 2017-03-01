@@ -1801,6 +1801,8 @@ static bool handleException(DSState &state) {
         }
         unwindStackFrame(state);
     }
+    unsigned int localSize = static_cast<const CompiledCode *>(CODE(state))->getLocalVarNum();
+    reclaimLocals(state, 0, localSize);
     return false;
 }
 
