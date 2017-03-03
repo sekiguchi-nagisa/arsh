@@ -254,7 +254,9 @@ assert("~-yfr" == "$(echo ~-yfr)")
 assert("~-true" == "$(echo ~-$true)")
 
 ## expand to user home
-assert("$(cat /etc/passwd | grep ^root | cut -d : -f 6)" == "$(echo ~root)")
+if not $OSTYPE.startsWith("CYGWIN") {
+    assert("$(cat /etc/passwd | grep ^root | cut -d : -f 6)" == "$(echo ~root)")
+}
 
 # redirection (append)
 let DIR = "$(mktemp -d 2> /dev/null || mktemp -d -t hferui4g)"

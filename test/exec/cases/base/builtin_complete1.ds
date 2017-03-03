@@ -109,7 +109,9 @@ $assertArray($(cmd /bin /usr/bin | grep '^l'), $comp('l', '/bin:/usr/bin'))
 $assertArray($(cmd | grep '^p'), $comp('p', ''))
 $assertArray($(cmd /bin /usr/bin), $comp('{}', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin), $comp('echo; ', '/bin:/usr/bin'))
-$assertArray($(cmd /bin /usr/bin ~/bin), $comp('echo; ', '/bin:/usr/bin:~/bin'))
+if(test -d ~/bin) {
+    $assertArray($(cmd /bin /usr/bin ~/bin), $comp('echo; ', '/bin:/usr/bin:~/bin'))
+}
 $assertArray($(cmd /bin /usr/bin), $comp('{', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin | grep '^l'), $comp('{l', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin), $comp('echo &&', '/bin:/usr/bin'))
