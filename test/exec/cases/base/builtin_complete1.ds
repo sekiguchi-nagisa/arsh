@@ -68,9 +68,6 @@ function escape2($s : String) : String {
 __cmd() {
     echo cmd
     echo __cmd
-    echo user
-    echo __tilde_each
-    echo tilde
     echo __file
     echo file
 
@@ -115,25 +112,6 @@ if(test -d ~/bin) {
 $assertArray($(cmd /bin /usr/bin), $comp('{', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin | grep '^l'), $comp('{l', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin), $comp('echo &&', '/bin:/usr/bin'))
-
-
-# complete tilde
-user() {
-    basename ~ && cut -d: -f1 /etc/passwd | grep -v '#'
-}
-
-__tilde_each() {
-    while(read -f $'\n') {
-        echo '~'$REPLY/
-    }
-}
-
-tilde() {
-    user | __tilde_each | sort | uniq
-}
-
-$assertArray($(tilde), $(complete '~'))
-$assertArray($(tilde | grep '~r'), $(complete '~r'))
 
 
 # complete file name

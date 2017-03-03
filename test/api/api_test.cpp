@@ -1,9 +1,13 @@
 #include <gtest/gtest.h>
 
 #include <memory>
+#include <algorithm>
 
 #include <ydsh/ydsh.h>
 #include <config.h>
+
+#include <sys/types.h>
+#include <pwd.h>
 
 void addArg(std::vector<char *> &) {
 }
@@ -89,6 +93,34 @@ TEST(API, case3) {
     DSState_delete(&state);
 }
 
+static std::vector<std::string> tilde() {
+    std::vector<std::string> v;
+    setpwent();
+
+    for(decltype(getpwent()) entry = nullptr; (entry = getpwent()) != nullptr;) {
+        std::string str = "~";
+        str += entry->pw_name;
+        str += "/";
+        v.push_back(std::move(str));
+    }
+
+    endpwent();
+
+    std::sort(v.begin(), v.end());
+
+    return v;
+}
+
+static std::vector<std::string> filter(const std::vector<std::string> &v, const char *cond) {
+    std::vector<std::string> t;
+    for(auto &e : v) {
+        if(strstr(e.c_str(), cond) != nullptr) {
+            t.push_back(e);
+        }
+    }
+    return t;
+}
+
 TEST(API, case4) {
     SCOPED_TRACE("");
 
@@ -97,13 +129,33 @@ TEST(API, case4) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, r));
 
     DSState *state = DSState_create();
+
     DSCandidates c;
-    r = DSState_complete(state, "~", 1, &c);
+    r = DSState_complete(state, "echo ~", 6, &c);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, r));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(c.values != nullptr));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(c.size > 0));
 
+    auto expect = tilde();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect.size(), c.size));
+    for(unsigned int i = 0; i < c.size; i++) {
+        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(expect[i].c_str(), c.values[i]));
+    }
     DSCandidates_release(&c);
+
+
+    r = DSState_complete(state, "echo ~r", 7, &c);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, r));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(c.values != nullptr));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(c.size > 0));
+
+    expect = filter(expect, "~r");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect.size(), c.size));
+    for(unsigned int i = 0; i < c.size; i++) {
+        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(expect[i].c_str(), c.values[i]));
+    }
+    DSCandidates_release(&c);
+
     DSState_delete(&state);
 }
 

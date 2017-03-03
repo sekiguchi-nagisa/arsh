@@ -817,6 +817,7 @@ static void completeFileName(const DSState &st, const std::string &token,
 
     // complete tilde
     if(token[0] == '~' && s == std::string::npos) {
+        setpwent();
         for(struct passwd *entry = getpwent(); entry != nullptr; entry = getpwent()) {
             if(startsWith(entry->pw_name, token.c_str() + 1)) {
                 std::string name("~");
