@@ -98,9 +98,8 @@ assert($? == 0)
 test -b .
 assert($? == 1)
 
-var blk = $(df . | grep /dev)[0]
-test -b $blk
-assert($? == 0)
+var blk = $(df . | grep /dev)
+assert $blk.empty() || test -b $blk[0]
 
 test -c ..
 assert($? == 1)
@@ -135,7 +134,7 @@ rm -f $pipe
 test -r /
 assert($? == 0)
 
-test -s .
+test -s $0
 assert($? == 0)
 
 touch $pipe
