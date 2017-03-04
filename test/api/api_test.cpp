@@ -108,7 +108,7 @@ static std::vector<std::string> tilde() {
 
     std::sort(v.begin(), v.end());
     auto iter = std::unique(v.begin(), v.end());
-    v.erase(iter);
+    v.erase(iter, v.end());
 
     return v;
 }
@@ -139,6 +139,7 @@ TEST(API, case4) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(c.size > 0));
 
     auto expect = tilde();
+    for(auto &e : expect) { std::cerr << e << std::endl; }
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect.size(), c.size));
     for(unsigned int i = 0; i < c.size; i++) {
         ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(expect[i].c_str(), c.values[i]));
@@ -148,8 +149,6 @@ TEST(API, case4) {
 
     r = DSState_complete(state, "echo ~r", 7, &c);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, r));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(c.values != nullptr));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(c.size > 0));
 
     expect = filter(expect, "~r");
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect.size(), c.size));
