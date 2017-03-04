@@ -106,6 +106,7 @@ static std::vector<std::string> tilde() {
 
     endpwent();
 
+    std::unique(v.begin(), v.end());
     std::sort(v.begin(), v.end());
 
     return v;
