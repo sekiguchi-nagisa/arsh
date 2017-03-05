@@ -837,50 +837,26 @@ void ByteCodeGenerator::visitForNode(ForNode &node) {
 
 void ByteCodeGenerator::visitWhileNode(WhileNode &node) {
     // push loop label
+    auto startLabel = makeIntrusive<Label>();
     auto breakLabel = makeIntrusive<Label>();
     auto continueLabel = makeIntrusive<Label>();
     this->pushLoopLabels(breakLabel, continueLabel);
 
     // generate code
+    if(node.isDoWhile()) {
+        this->emitJumpIns(startLabel);
+    }
     this->markLabel(continueLabel);
     this->visit(*node.getCondNode());
     this->emitBranchIns(breakLabel);
 
+    this->markLabel(startLabel);
     this->visit(*node.getBlockNode());
     if(!node.getBlockNode()->getType().isBottomType()) {
         this->emitJumpIns(continueLabel);
     }
 
     this->markLabel(breakLabel);
-
-    // pop loop label
-    this->popLoopLabels();
-}
-
-void ByteCodeGenerator::visitDoWhileNode(DoWhileNode &node) {
-    // push loop label
-    auto initLabel = makeIntrusive<Label>();
-    auto breakLabel = makeIntrusive<Label>();
-    auto continueLabel = makeIntrusive<Label>();
-    this->pushLoopLabels(breakLabel, continueLabel);
-
-    // generate code
-    auto &blockNode = *node.getBlockNode();
-
-    this->markLabel(initLabel);
-    this->generateBlock(blockNode.getBaseIndex(), blockNode.getVarSize(), this->needReclaim(blockNode), [&]{
-        for(auto &e : blockNode.getNodeList()) {
-            this->visit(*e);
-        }
-
-        this->markLabel(continueLabel);
-        this->visit(*node.getCondNode());
-    });
-    this->emitBranchIns(breakLabel);
-    this->emitJumpIns(initLabel);
-
-    this->markLabel(breakLabel);
-
 
     // pop loop label
     this->popLoopLabels();

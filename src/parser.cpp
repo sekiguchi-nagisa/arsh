@@ -607,7 +607,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
         auto blockNode(this->parse_block());
         this->expect(WHILE);
         auto condNode(this->parse_expression());
-        auto node = uniquify<DoWhileNode>(startPos, blockNode.release(), condNode.release());
+        auto node = uniquify<WhileNode>(startPos, condNode.release(), blockNode.release(), true);
         this->parse_statementEnd();
         return std::move(node);
     }

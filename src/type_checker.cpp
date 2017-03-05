@@ -904,14 +904,6 @@ void TypeChecker::visitWhileNode(WhileNode &node) {
     node.setType(this->typePool.getVoidType());
 }
 
-void TypeChecker::visitDoWhileNode(DoWhileNode &node) {
-    this->enterLoop();
-    this->checkType(this->typePool.getVoidType(), node.getBlockNode());
-    this->exitLoop();
-    this->checkTypeWithCoercion(this->typePool.getBooleanType(), node.refCondNode());
-    node.setType(this->typePool.getVoidType());
-}
-
 void TypeChecker::visitIfNode(IfNode &node) {
     this->checkTypeWithCoercion(this->typePool.getBooleanType(), node.refCondNode());
     this->checkType(this->typePool.getVoidType(), node.getThenNode());

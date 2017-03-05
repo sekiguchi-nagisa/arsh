@@ -399,7 +399,6 @@ private:
     void visitTypeAliasNode(TypeAliasNode &node) override;
     void visitForNode(ForNode &node) override;
     void visitWhileNode(WhileNode &node) override;
-    void visitDoWhileNode(DoWhileNode &node) override;
     void visitIfNode(IfNode &node) override;
     void visitReturnNode(ReturnNode &node) override;
     void visitThrowNode(ThrowNode &node) override;

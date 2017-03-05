@@ -925,24 +925,6 @@ void WhileNode::accept(NodeVisitor &visitor) {
     visitor.visitWhileNode(*this);
 }
 
-// #########################
-// ##     DoWhileNode     ##
-// #########################
-
-DoWhileNode::~DoWhileNode() {
-    delete this->blockNode;
-    delete this->condNode;
-}
-
-void DoWhileNode::dump(NodeDumper &dumper) const {
-    DUMP_PTR(blockNode);
-    DUMP_PTR(condNode);
-}
-
-void DoWhileNode::accept(NodeVisitor &visitor) {
-    visitor.visitDoWhileNode(*this);
-}
-
 // ####################
 // ##     IfNode     ##
 // ####################

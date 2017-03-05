@@ -1350,11 +1350,12 @@ class WhileNode : public Node {
 private:
     Node *condNode;
     BlockNode *blockNode;
+    bool asDoWhile;
 
 public:
-    WhileNode(unsigned int startPos, Node *condNode, BlockNode *blockNode) :
-            Node({startPos, 0}), condNode(condNode), blockNode(blockNode) {
-        this->updateToken(blockNode->getToken());
+    WhileNode(unsigned int startPos, Node *condNode, BlockNode *blockNode, bool asDoWhile = false) :
+            Node({startPos, 0}), condNode(condNode), blockNode(blockNode), asDoWhile(asDoWhile) {
+        this->updateToken(this->asDoWhile ? condNode->getToken() : blockNode->getToken());
     }
 
     ~WhileNode();
@@ -1371,31 +1372,8 @@ public:
         return this->blockNode;
     }
 
-    void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
-};
-
-class DoWhileNode : public Node {
-private:
-    BlockNode *blockNode;
-    Node *condNode;
-
-public:
-    DoWhileNode(unsigned int startPos, BlockNode *blockNode, Node *condNode) :
-            Node({startPos, 0}), blockNode(blockNode), condNode(condNode) { }
-
-    ~DoWhileNode();
-
-    BlockNode *getBlockNode() const {
-        return this->blockNode;
-    }
-
-    Node *getCondNode() const {
-        return this->condNode;
-    }
-
-    Node *&refCondNode() {
-        return this->condNode;
+    bool isDoWhile() const {
+        return this->asDoWhile;
     }
 
     void dump(NodeDumper &dumper) const override;
@@ -2055,7 +2033,6 @@ struct NodeVisitor {
     virtual void visitTypeAliasNode(TypeAliasNode &node) = 0;
     virtual void visitForNode(ForNode &node) = 0;
     virtual void visitWhileNode(WhileNode &node) = 0;
-    virtual void visitDoWhileNode(DoWhileNode &node) = 0;
     virtual void visitIfNode(IfNode &node) = 0;
     virtual void visitReturnNode(ReturnNode &node) = 0;
     virtual void visitThrowNode(ThrowNode &node) = 0;
@@ -2112,7 +2089,6 @@ struct BaseVisitor : public NodeVisitor {
     virtual void visitTypeAliasNode(TypeAliasNode &node) override { this->visitDefault(node); }
     virtual void visitForNode(ForNode &node) override { this->visitDefault(node); }
     virtual void visitWhileNode(WhileNode &node) override { this->visitDefault(node); }
-    virtual void visitDoWhileNode(DoWhileNode &node) override { this->visitDefault(node); }
     virtual void visitIfNode(IfNode &node) override { this->visitDefault(node); }
     virtual void visitReturnNode(ReturnNode &node) override { this->visitDefault(node); }
     virtual void visitThrowNode(ThrowNode &node) override { this->visitDefault(node); }
