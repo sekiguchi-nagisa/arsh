@@ -866,14 +866,14 @@ void TypeAliasNode::accept(NodeVisitor &visitor) {
     visitor.visitTypeAliasNode(*this);
 }
 
-// #####################
-// ##     ForNode     ##
-// #####################
+// ######################
+// ##     LoopNode     ##
+// ######################
 
-ForNode::ForNode(unsigned int startPos, Node *initNode,
-                 Node *condNode, Node *iterNode, BlockNode *blockNode) :
+LoopNode::LoopNode(unsigned int startPos, Node *initNode,
+                 Node *condNode, Node *iterNode, BlockNode *blockNode, bool asDoWhile) :
         Node({startPos, 0}), initNode(initNode), condNode(condNode),
-        iterNode(iterNode), blockNode(blockNode) {
+        iterNode(iterNode), blockNode(blockNode), asDoWhile(asDoWhile) {
     if(this->initNode == nullptr) {
         this->initNode = new EmptyNode();
     }
@@ -886,43 +886,26 @@ ForNode::ForNode(unsigned int startPos, Node *initNode,
         this->iterNode = new EmptyNode();
     }
 
-    this->updateToken(blockNode->getToken());
+    this->updateToken(this->asDoWhile ? condNode->getToken() : blockNode->getToken());
 }
 
-ForNode::~ForNode() {
+LoopNode::~LoopNode() {
     delete this->initNode;
     delete this->condNode;
     delete this->iterNode;
     delete this->blockNode;
 }
 
-void ForNode::dump(NodeDumper &dumper) const {
+void LoopNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(initNode);
     DUMP_PTR(condNode);
     DUMP_PTR(iterNode);
     DUMP_PTR(blockNode);
+    DUMP_PRIM(asDoWhile);
 }
 
-void ForNode::accept(NodeVisitor &visitor) {
-    visitor.visitForNode(*this);
-}
-
-// #######################
-// ##     WhileNode     ##
-// #######################
-
-WhileNode::~WhileNode() {
-    delete this->condNode;
-    delete this->blockNode;
-}
-
-void WhileNode::dump(NodeDumper &dumper) const {
-    DUMP_PTR(condNode);
-    DUMP_PTR(blockNode);
-}
-
-void WhileNode::accept(NodeVisitor &visitor) {
-    visitor.visitWhileNode(*this);
+void LoopNode::accept(NodeVisitor &visitor) {
+    visitor.visitLoopNode(*this);
 }
 
 // ####################
@@ -1419,7 +1402,7 @@ TokenKind resolveAssignOp(TokenKind op) {
     }
 }
 
-ForNode *createForInNode(unsigned int startPos, std::string &&varName, Node *exprNode, BlockNode *blockNode) {
+LoopNode *createForInNode(unsigned int startPos, std::string &&varName, Node *exprNode, BlockNode *blockNode) {
     Token dummy = {startPos, 1};
 
     // create for-init
@@ -1439,7 +1422,7 @@ ForNode *createForInNode(unsigned int startPos, std::string &&varName, Node *exp
     // insert init to block
     blockNode->insertNodeToFirst(init_var);
 
-    return new ForNode(startPos, reset_varDecl, call_hasNext, nullptr, blockNode);
+    return new LoopNode(startPos, reset_varDecl, call_hasNext, nullptr, blockNode);
 }
 
 Node *createSuffixNode(Node *leftNode, TokenKind op, Token token) {

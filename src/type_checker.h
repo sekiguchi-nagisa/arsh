@@ -397,8 +397,7 @@ private:
     void visitBlockNode(BlockNode &node) override;
     void visitJumpNode(JumpNode &node) override;
     void visitTypeAliasNode(TypeAliasNode &node) override;
-    void visitForNode(ForNode &node) override;
-    void visitWhileNode(WhileNode &node) override;
+    void visitLoopNode(LoopNode &node) override;
     void visitIfNode(IfNode &node) override;
     void visitReturnNode(ReturnNode &node) override;
     void visitThrowNode(ThrowNode &node) override;

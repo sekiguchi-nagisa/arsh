@@ -599,7 +599,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
         auto condNode(this->parse_expression());
         auto blockNode(this->parse_block());
         this->parse_statementEnd();
-        return uniquify<WhileNode>(startPos, condNode.release(), blockNode.release());
+        return uniquify<LoopNode>(startPos, condNode.release(), blockNode.release());
     }
     case DO: {
         unsigned int startPos = START_POS();
@@ -607,7 +607,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
         auto blockNode(this->parse_block());
         this->expect(WHILE);
         auto condNode(this->parse_expression());
-        auto node = uniquify<WhileNode>(startPos, condNode.release(), blockNode.release(), true);
+        auto node = uniquify<LoopNode>(startPos, condNode.release(), blockNode.release(), true);
         this->parse_statementEnd();
         return std::move(node);
     }
@@ -730,7 +730,7 @@ std::unique_ptr<Node> Parser::parse_forStatement() {
         std::unique_ptr<BlockNode> blockNode(this->parse_block());
 
         this->parse_statementEnd();
-        return uniquify<ForNode>(startPos, initNode.release(), condNode.release(),
+        return uniquify<LoopNode>(startPos, initNode.release(), condNode.release(),
                                  iterNode.release(), blockNode.release());
     } else {    // for-in
         Token token = this->expect(APPLIED_NAME);

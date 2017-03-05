@@ -872,7 +872,7 @@ void TypeChecker::visitTypeAliasNode(TypeAliasNode &node) {
     }
 }
 
-void TypeChecker::visitForNode(ForNode &node) {
+void TypeChecker::visitLoopNode(LoopNode &node) {
     this->symbolTable.enterScope();
 
     this->checkTypeWithCoercion(this->typePool.getVoidType(), node.refInitNode());
@@ -893,14 +893,13 @@ void TypeChecker::visitForNode(ForNode &node) {
 
     this->symbolTable.exitScope();
     this->symbolTable.exitScope();
-    node.setType(this->typePool.getVoidType());
-}
 
-void TypeChecker::visitWhileNode(WhileNode &node) {
-    this->checkTypeWithCoercion(this->typePool.getBooleanType(), node.refCondNode());
-    this->enterLoop();
-    this->checkType(this->typePool.getVoidType(), node.getBlockNode());
-    this->exitLoop();
+    if(!node.getBlockNode()->getType().isBottomType()) {    // insert continue to block end
+        auto *jumpNode = new JumpNode({0, 0}, false);
+        jumpNode->setType(this->typePool.getBottomType());
+        node.getBlockNode()->addNode(jumpNode);
+        node.getBlockNode()->setType(jumpNode->getType());
+    }
     node.setType(this->typePool.getVoidType());
 }
 

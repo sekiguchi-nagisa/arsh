@@ -1285,7 +1285,10 @@ public:
     void accept(NodeVisitor &visitor) override;
 };
 
-class ForNode : public Node {
+/**
+ * indicating for, while, do-while statement
+ */
+class LoopNode : public Node {
 private:
     /**
      * may be empty node
@@ -1304,15 +1307,20 @@ private:
 
     BlockNode *blockNode;
 
+    bool asDoWhile;
+
 public:
     /**
      * initNode may be null.
      * condNode may be null.
      * iterNode may be null.
      */
-    ForNode(unsigned int startPos, Node *initNode, Node *condNode, Node *iterNode, BlockNode *blockNode);
+    LoopNode(unsigned int startPos, Node *initNode, Node *condNode, Node *iterNode, BlockNode *blockNode, bool asDoWhile = false);
 
-    ~ForNode();
+    LoopNode(unsigned int startPos, Node *condNode, BlockNode *blockNode, bool asDoWhile = false) :
+            LoopNode(startPos, nullptr, condNode, nullptr, blockNode, asDoWhile) {}
+
+    ~LoopNode();
 
     Node *getInitNode() const {
         return this->initNode;
@@ -1336,36 +1344,6 @@ public:
 
     Node * &refIterNode() {
         return this->iterNode;
-    }
-
-    BlockNode *getBlockNode() const {
-        return this->blockNode;
-    }
-
-    void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
-};
-
-class WhileNode : public Node {
-private:
-    Node *condNode;
-    BlockNode *blockNode;
-    bool asDoWhile;
-
-public:
-    WhileNode(unsigned int startPos, Node *condNode, BlockNode *blockNode, bool asDoWhile = false) :
-            Node({startPos, 0}), condNode(condNode), blockNode(blockNode), asDoWhile(asDoWhile) {
-        this->updateToken(this->asDoWhile ? condNode->getToken() : blockNode->getToken());
-    }
-
-    ~WhileNode();
-
-    Node *getCondNode() const {
-        return this->condNode;
-    }
-
-    Node *&refCondNode() {
-        return this->condNode;
     }
 
     BlockNode *getBlockNode() const {
@@ -1985,7 +1963,7 @@ const char *resolveBinaryOpName(TokenKind op);
 
 TokenKind resolveAssignOp(TokenKind op);
 
-ForNode *createForInNode(unsigned int startPos, std::string &&varName, Node *exprNode, BlockNode *blockNode);
+LoopNode *createForInNode(unsigned int startPos, std::string &&varName, Node *exprNode, BlockNode *blockNode);
 
 Node *createSuffixNode(Node *leftNode, TokenKind op, Token token);
 
@@ -2031,8 +2009,7 @@ struct NodeVisitor {
     virtual void visitBlockNode(BlockNode &node) = 0;
     virtual void visitJumpNode(JumpNode &node) = 0;
     virtual void visitTypeAliasNode(TypeAliasNode &node) = 0;
-    virtual void visitForNode(ForNode &node) = 0;
-    virtual void visitWhileNode(WhileNode &node) = 0;
+    virtual void visitLoopNode(LoopNode &node) = 0;
     virtual void visitIfNode(IfNode &node) = 0;
     virtual void visitReturnNode(ReturnNode &node) = 0;
     virtual void visitThrowNode(ThrowNode &node) = 0;
@@ -2087,8 +2064,7 @@ struct BaseVisitor : public NodeVisitor {
     virtual void visitBlockNode(BlockNode &node) override { this->visitDefault(node); }
     virtual void visitJumpNode(JumpNode &node) override { this->visitDefault(node); }
     virtual void visitTypeAliasNode(TypeAliasNode &node) override { this->visitDefault(node); }
-    virtual void visitForNode(ForNode &node) override { this->visitDefault(node); }
-    virtual void visitWhileNode(WhileNode &node) override { this->visitDefault(node); }
+    virtual void visitLoopNode(LoopNode &node) override { this->visitDefault(node); }
     virtual void visitIfNode(IfNode &node) override { this->visitDefault(node); }
     virtual void visitReturnNode(ReturnNode &node) override { this->visitDefault(node); }
     virtual void visitThrowNode(ThrowNode &node) override { this->visitDefault(node); }
