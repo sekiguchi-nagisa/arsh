@@ -11,9 +11,8 @@ do {
 assert($i == $count)
 
 
-
-do {
 	let a = 23
+do {
 	$i = $i + 1
 } while $i < $a
 

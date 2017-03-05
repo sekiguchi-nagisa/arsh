@@ -905,17 +905,10 @@ void TypeChecker::visitWhileNode(WhileNode &node) {
 }
 
 void TypeChecker::visitDoWhileNode(DoWhileNode &node) {
-    this->symbolTable.enterScope();
     this->enterLoop();
-    this->checkTypeWithCurrentScope(node.getBlockNode());
+    this->checkType(this->typePool.getVoidType(), node.getBlockNode());
     this->exitLoop();
-
-    /**
-     * block node and cond node is same scope.
-     */
     this->checkTypeWithCoercion(this->typePool.getBooleanType(), node.refCondNode());
-
-    this->symbolTable.exitScope();
     node.setType(this->typePool.getVoidType());
 }
 

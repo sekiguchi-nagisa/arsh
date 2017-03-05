@@ -119,9 +119,6 @@ TEST_F(VMTest, deinit3) {
     this->eval("while $true { var b = $@; break; }");
     ASSERT_(RefCount("@", 1));
 
-//    this->eval("do { var b = $@; var c = $b; continue; } while $b.size() > 0");   //FIXME:
-//    ASSERT_(RefCount("@", 1));
-
     this->eval("for(var i = $@; $true;) { var b = $i; break; }");
     ASSERT_(RefCount("@", 1));
 
