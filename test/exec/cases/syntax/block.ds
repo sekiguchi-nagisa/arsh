@@ -6,4 +6,4 @@ if($true) {
     # empty
 }
 
-do {} while($false)
+{$true}; do {} while($false)

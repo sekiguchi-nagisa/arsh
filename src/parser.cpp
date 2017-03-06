@@ -521,7 +521,9 @@ std::unique_ptr<Node> Parser::parse_statement() {
         return std::move(node);
     }
     case LBC: {
-        return this->parse_block();
+        auto node = this->parse_block();
+        this->parse_statementEnd();
+        return std::move(node);
     }
     case BREAK: {
         Token token = this->expect(BREAK);
@@ -738,6 +740,7 @@ std::unique_ptr<Node> Parser::parse_forStatement() {
         std::unique_ptr<Node> exprNode(this->parse_expression());
         std::unique_ptr<BlockNode> blockNode(this->parse_block());
 
+        this->parse_statementEnd();
         return std::unique_ptr<Node>(
                 createForInNode(startPos, this->lexer->toName(token), exprNode.release(), blockNode.release()));
     }
