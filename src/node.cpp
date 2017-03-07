@@ -967,7 +967,7 @@ void IfNode::accept(NodeVisitor &visitor) {
 // ########################
 
 ReturnNode::ReturnNode(Token token, Node *exprNode) :
-        BlockEndNode(token), exprNode(exprNode != nullptr ? exprNode : new EmptyNode(token)) {
+        Node(token), exprNode(exprNode != nullptr ? exprNode : new EmptyNode(token)) {
     if(exprNode != nullptr) {
         this->updateToken(exprNode->getToken());
     }

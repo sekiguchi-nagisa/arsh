@@ -1218,17 +1218,7 @@ public:
     void accept(NodeVisitor &visitor) override;
 };
 
-/**
- * base class for jump, return, throw node
- */
-class BlockEndNode : public Node {
-public:
-    explicit BlockEndNode(Token token) : Node(token) { }
-
-    virtual ~BlockEndNode() = default;
-};
-
-class JumpNode : public BlockEndNode {
+class JumpNode : public Node {
 private:
     /**
      * if true, treat as break, otherwise, treat as continue.
@@ -1239,7 +1229,7 @@ private:
 
 public:
     JumpNode(Token token, bool asBreak) :
-            BlockEndNode(token), asBreak(asBreak), leavingBlock(false) { }
+            Node(token), asBreak(asBreak), leavingBlock(false) { }
 
     ~JumpNode() = default;
 
@@ -1391,7 +1381,7 @@ public:
     void accept(NodeVisitor &visitor) override;
 };
 
-class ReturnNode : public BlockEndNode {
+class ReturnNode : public Node {
 private:
     Node *exprNode;
 
@@ -1408,13 +1398,13 @@ public:
     void accept(NodeVisitor &visitor) override;
 };
 
-class ThrowNode : public BlockEndNode {
+class ThrowNode : public Node {
 private:
     Node *exprNode;
 
 public:
     ThrowNode(unsigned int startPos, Node *exprNode) :
-            BlockEndNode({startPos, 0}), exprNode(exprNode) {
+            Node({startPos, 0}), exprNode(exprNode) {
         this->updateToken(exprNode->getToken());
     }
 

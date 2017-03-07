@@ -277,13 +277,6 @@ private:
         this->fctx.leave();
     }
 
-    /**
-     *
-     * @param node
-     * must be BreakNode or ContinueNode.
-     */
-    void verifyJumpNode(JumpNode &node) const;
-
     void pushReturnType(DSType &returnType) {
         this->curReturnType = &returnType;
     }
@@ -303,13 +296,6 @@ private:
     DSType *getCurrentReturnType() const {
         return this->curReturnType;
     }
-
-    /**
-     *
-     * @param node
-     * must be ReturnNode ot ThrowNode.
-     */
-    void checkAndThrowIfInsideFinally(BlockEndNode &node) const;
 
     // for apply node type checking
 

@@ -265,22 +265,6 @@ FieldHandle *TypeChecker::addEntryAndThrowIfDefined(Node &node, const std::strin
     return handle;
 }
 
-void TypeChecker::verifyJumpNode(JumpNode &node) const {
-    if(this->fctx.loopLevel() == 0) {
-        RAISE_TC_ERROR(InsideLoop, node);
-    }
-
-    if(this->fctx.finallyLevel() > this->fctx.loopLevel()) {
-        RAISE_TC_ERROR(InsideFinally, node);
-    }
-}
-
-void TypeChecker::checkAndThrowIfInsideFinally(BlockEndNode &node) const {
-    if(this->fctx.finallyLevel() > 0) {
-        RAISE_TC_ERROR(InsideFinally, node);
-    }
-}
-
 DSType &TypeChecker::toType(TypeNode *typeToken) {
     return this->typeGen.generateTypeAndThrow(typeToken);
 }
@@ -850,7 +834,13 @@ void TypeChecker::visitBlockNode(BlockNode &node) {
 }
 
 void TypeChecker::visitJumpNode(JumpNode &node) {
-    this->verifyJumpNode(node);
+    if(this->fctx.loopLevel() == 0) {
+        RAISE_TC_ERROR(InsideLoop, node);
+    }
+
+    if(this->fctx.finallyLevel() > this->fctx.loopLevel()) {
+        RAISE_TC_ERROR(InsideFinally, node);
+    }
 
     if(this->fctx.tryCatchLevel() > this->fctx.loopLevel()) {
         node.setLeavingBlock(true);
@@ -915,7 +905,10 @@ void TypeChecker::visitIfNode(IfNode &node) {
 }
 
 void TypeChecker::visitReturnNode(ReturnNode &node) {
-    this->checkAndThrowIfInsideFinally(node);
+    if(this->fctx.finallyLevel() > 0) {
+        RAISE_TC_ERROR(InsideFinally, node);
+    }
+
     DSType *returnType = this->getCurrentReturnType();
     if(returnType == nullptr) {
         RAISE_TC_ERROR(InsideFunc, node);
@@ -930,7 +923,10 @@ void TypeChecker::visitReturnNode(ReturnNode &node) {
 }
 
 void TypeChecker::visitThrowNode(ThrowNode &node) {
-    this->checkAndThrowIfInsideFinally(node);
+    if(this->fctx.finallyLevel() > 0) {
+        RAISE_TC_ERROR(InsideFinally, node);
+    }
+
     this->checkType(this->typePool.getAnyType(), node.getExprNode());
     node.setType(this->typePool.getBottomType());
 }
