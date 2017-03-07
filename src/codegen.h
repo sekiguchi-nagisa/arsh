@@ -318,11 +318,11 @@ private:
      * @return
      */
     bool needReclaim(const BlockNode &node) {
-        if(node.getNodeList().empty()) {
+        if(node.getNodes().empty()) {
             return false;
         }
 
-        if((*node.getNodeList().rbegin())->getType().isBottomType()) {
+        if((*node.getNodes().rbegin())->getType().isBottomType()) {
             return false;
         }
 

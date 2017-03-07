@@ -715,7 +715,7 @@ DSType &TypePool::getDBusInterfaceType(const std::string &typeName) {
             RAISE_TL_ERROR(NoDBusInterface, typeName.c_str());
         }
 
-        InterfaceNode *ifaceNode = dynamic_cast<InterfaceNode *>(rootNode.getNodeList().front());
+        InterfaceNode *ifaceNode = dynamic_cast<InterfaceNode *>(rootNode.getNodes().front());
         if(ifaceNode == nullptr) {
             RAISE_TL_ERROR(NoDBusInterface, typeName.c_str());
         }

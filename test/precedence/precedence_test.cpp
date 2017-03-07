@@ -114,11 +114,11 @@ public:
     }
 
     void visitRootNode(RootNode &node) override {
-        if(node.getNodeList().size() != 1) {
+        if(node.getNodes().size() != 1) {
             fatal("must be 1\n");
         }
 
-        this->visit(*node.getNodeList().front());
+        this->visit(*node.getNodes().front());
     }
 };
 

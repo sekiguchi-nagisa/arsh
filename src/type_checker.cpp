@@ -199,7 +199,7 @@ DSType &TypeChecker::checkType(DSType *requiredType, Node *targetNode,
 
 void TypeChecker::checkTypeWithCurrentScope(BlockNode *blockNode) {
     DSType *blockType = &this->typePool.getVoidType();
-    for(Node * &targetNode : blockNode->refNodeList()) {
+    for(Node * &targetNode : blockNode->refNodes()) {
         if(blockType->isBottomType()) {
             RAISE_TC_ERROR(Unreachable, *targetNode);
         }
@@ -208,7 +208,7 @@ void TypeChecker::checkTypeWithCurrentScope(BlockNode *blockNode) {
 
         // check empty block
         BlockNode *b;
-        if((b = dynamic_cast<BlockNode *>(targetNode)) != nullptr && b->getNodeList().empty()) {
+        if((b = dynamic_cast<BlockNode *>(targetNode)) != nullptr && b->getNodes().empty()) {
             RAISE_TC_ERROR(UselessBlock, *targetNode);
         }
     }
@@ -958,7 +958,7 @@ void TypeChecker::visitTryNode(TryNode &node) {
     if(node.getCatchNodes().empty() && node.getFinallyNode() == nullptr) {
         RAISE_TC_ERROR(UselessTry, node);
     }
-    if(node.getBlockNode()->getNodeList().empty()) {
+    if(node.getBlockNode()->getNodes().empty()) {
         RAISE_TC_ERROR(EmptyTry, *node.getBlockNode());
     }
 
@@ -979,7 +979,7 @@ void TypeChecker::visitTryNode(TryNode &node) {
         this->checkType(this->typePool.getVoidType(), node.getFinallyNode());
         this->fctx.leave();
 
-        if(node.getFinallyNode()->getNodeList().empty()) {
+        if(node.getFinallyNode()->getNodes().empty()) {
             RAISE_TC_ERROR(UselessBlock, *node.getFinallyNode());
         }
     }
@@ -1179,8 +1179,8 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     this->popReturnType();
 
     // insert return node if not found
-    if(node.getBlockNode()->getNodeList().empty() ||
-            !node.getBlockNode()->getNodeList().back()->getType().isBottomType()) {
+    if(node.getBlockNode()->getNodes().empty() ||
+            !node.getBlockNode()->getNodes().back()->getType().isBottomType()) {
         VarNode *varNode = new VarNode({0, 1}, "?");
         this->checkType(varNode);
         node.getBlockNode()->addReturnNodeToLast(this->typePool, varNode);
@@ -1206,7 +1206,7 @@ void TypeChecker::visitRootNode(RootNode &node) {
     this->fctx.clear();
 
     bool prevIsTerminal = false;
-    for(auto &targetNode : node.refNodeList()) {
+    for(auto &targetNode : node.refNodes()) {
         if(prevIsTerminal) {
             RAISE_TC_ERROR(Unreachable, *targetNode);
         }
@@ -1222,7 +1222,7 @@ void TypeChecker::visitRootNode(RootNode &node) {
 
         // check empty block
         BlockNode *blockNode;
-        if((blockNode = dynamic_cast<BlockNode *>(targetNode)) != nullptr && blockNode->getNodeList().empty()) {
+        if((blockNode = dynamic_cast<BlockNode *>(targetNode)) != nullptr && blockNode->getNodes().empty()) {
             RAISE_TC_ERROR(UselessBlock, *targetNode);
         }
     }

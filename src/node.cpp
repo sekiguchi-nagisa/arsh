@@ -804,17 +804,17 @@ void AssertNode::accept(NodeVisitor &visitor) {
 // #######################
 
 BlockNode::~BlockNode() {
-    for(Node *n : this->nodeList) {
+    for(Node *n : this->nodes) {
         delete n;
     }
 }
 
 void BlockNode::addNode(Node *node) {
-    this->nodeList.push_back(node);
+    this->nodes.push_back(node);
 }
 
 void BlockNode::insertNodeToFirst(Node *node) {
-    this->nodeList.push_front(node);
+    this->nodes.insert(this->nodes.begin(), node);
 }
 
 void BlockNode::addReturnNodeToLast(TypePool &pool, Node *exprNode) {
@@ -828,7 +828,7 @@ void BlockNode::addReturnNodeToLast(TypePool &pool, Node *exprNode) {
 }
 
 void BlockNode::dump(NodeDumper &dumper) const {
-    DUMP(nodeList);
+    DUMP(nodes);
     DUMP_PRIM(baseIndex);
     DUMP_PRIM(varSize);
 }
@@ -1304,17 +1304,17 @@ void EmptyNode::accept(NodeVisitor &visitor) {
 // ######################
 
 RootNode::~RootNode() {
-    for(Node *n : this->nodeList) {
+    for(Node *n : this->nodes) {
         delete n;
     }
 }
 
 void RootNode::addNode(Node *node) {
-    this->nodeList.push_back(node);
+    this->nodes.push_back(node);
 }
 
 void RootNode::dump(NodeDumper &dumper) const {
-    DUMP(nodeList);
+    DUMP(nodes);
     dumper.dump("sourceName", this->srcInfoPtr->getSourceName());
     DUMP_PRIM(maxVarNum);
     DUMP_PRIM(maxGVarNum);

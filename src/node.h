@@ -18,7 +18,6 @@
 #define YDSH_NODE_H
 
 #include <utility>
-#include <list>
 #include <memory>
 
 #include "misc/flag_util.hpp"
@@ -1171,13 +1170,13 @@ public:
 
 class BlockNode : public Node {
 private:
-    std::list<Node *> nodeList;
+    std::vector<Node *> nodes;
     unsigned int baseIndex;
     unsigned int varSize;
 
 public:
     explicit BlockNode(unsigned int startPos) :
-            Node({startPos, 1}), nodeList(), baseIndex(0), varSize(0) { }
+            Node({startPos, 1}), nodes(), baseIndex(0), varSize(0) { }
 
     ~BlockNode();
 
@@ -1185,12 +1184,12 @@ public:
 
     void insertNodeToFirst(Node *node);
 
-    const std::list<Node *> &getNodeList() const {
-        return this->nodeList;
+    const std::vector<Node *> &getNodes() const {
+        return this->nodes;
     }
 
-    std::list<Node *> &refNodeList() {
-        return this->nodeList;
+    std::vector<Node *> &refNodes() {
+        return this->nodes;
     }
 
     unsigned int getBaseIndex() const {
@@ -1908,7 +1907,7 @@ public:
 
 class RootNode : public CallableNode {
 private:
-    std::list<Node *> nodeList;
+    std::vector<Node *> nodes;
 
     /**
      * max number of local variable.
@@ -1921,18 +1920,18 @@ private:
     unsigned int maxGVarNum;
 
 public:
-    RootNode() : CallableNode(), nodeList(), maxVarNum(0), maxGVarNum(0) { }
+    RootNode() : CallableNode(), nodes(), maxVarNum(0), maxGVarNum(0) { }
 
     ~RootNode();
 
     void addNode(Node *node);
 
-    const std::list<Node *> &getNodeList() const {
-        return this->nodeList;
+    const std::vector<Node *> &getNodes() const {
+        return this->nodes;
     }
 
-    std::list<Node *> &refNodeList() {
-        return this->nodeList;
+    std::vector<Node *> &refNodes() {
+        return this->nodes;
     }
 
     void setMaxVarNum(unsigned int maxVarNum) {

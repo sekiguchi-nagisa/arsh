@@ -755,12 +755,12 @@ void ByteCodeGenerator::visitAssertNode(AssertNode &node) {
 }
 
 void ByteCodeGenerator::visitBlockNode(BlockNode &node) {
-    if(node.getNodeList().empty()) {
+    if(node.getNodes().empty()) {
         return;
     }
 
     this->generateBlock(node.getBaseIndex(), node.getVarSize(), needReclaim(node), [&]{
-        for(auto &e : node.getNodeList()) {
+        for(auto &e : node.getNodes()) {
             this->visit(*e);
         }
     });
@@ -873,7 +873,7 @@ void ByteCodeGenerator::visitThrowNode(ThrowNode &node) {
 }
 
 void ByteCodeGenerator::visitCatchNode(CatchNode &node) {
-    if(node.getBlockNode()->getNodeList().empty()) {
+    if(node.getBlockNode()->getNodes().empty()) {
         this->emit0byteIns(OpCode::POP);
     } else {
         this->emit2byteIns(OpCode::STORE_LOCAL, node.getVarIndex());
@@ -1047,7 +1047,7 @@ void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
 void ByteCodeGenerator::visitEmptyNode(EmptyNode &) { } // do nothing
 
 void ByteCodeGenerator::visitRootNode(RootNode &rootNode) {
-    for(auto &node : rootNode.refNodeList()) {
+    for(auto &node : rootNode.refNodes()) {
         this->visit(*node);
     }
 
