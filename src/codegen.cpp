@@ -403,16 +403,25 @@ void ByteCodeGenerator::visitTypeOfNode(TypeOfNode &) {
     fatal("unsupported\n");
 }
 
-void ByteCodeGenerator::visitIntValueNode(IntValueNode &node) {
-    this->emitLdcIns(DSValue::create<Int_Object>(node.getType(), node.getValue()));
-}
-
-void ByteCodeGenerator::visitLongValueNode(LongValueNode &node) {
-    this->emitLdcIns(DSValue::create<Long_Object>(node.getType(), node.getValue()));
-}
-
-void ByteCodeGenerator::visitFloatValueNode(FloatValueNode &node) {
-    this->emitLdcIns(DSValue::create<Float_Object>(node.getType(), node.getValue()));
+void ByteCodeGenerator::visitNumberNode(NumberNode &node) {
+    DSValue value;
+    switch(node.getKind()) {
+    case NumberNode::BYTE:
+    case NumberNode::INT16:
+    case NumberNode::UINT16:
+    case NumberNode::INT32:
+    case NumberNode::UINT32:
+        value = DSValue::create<Int_Object>(node.getType(), node.getIntValue());
+        break;
+    case NumberNode::INT64:
+    case NumberNode::UINT64:
+        value = DSValue::create<Long_Object>(node.getType(), node.getLongValue());
+        break;
+    case NumberNode::FLOAT:
+        value = DSValue::create<Float_Object>(node.getType(), node.getFloatValue());
+        break;
+    }
+    this->emitLdcIns(std::move(value));
 }
 
 void ByteCodeGenerator::visitStringValueNode(StringValueNode &node) {

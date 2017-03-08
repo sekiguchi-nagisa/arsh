@@ -376,9 +376,7 @@ private:
     void visitDBusIfaceTypeNode(DBusIfaceTypeNode &typeNode) override;
     void visitReturnTypeNode(ReturnTypeNode &typeNode) override;
     void visitTypeOfNode(TypeOfNode &typeNode) override;
-    void visitIntValueNode(IntValueNode &node) override;
-    void visitLongValueNode(LongValueNode &node) override;
-    void visitFloatValueNode(FloatValueNode &node) override;
+    void visitNumberNode(NumberNode &node) override;
     void visitStringValueNode(StringValueNode &node) override;
     void visitStringExprNode(StringExprNode &node) override;
     void visitRegexNode(RegexNode &node) override;

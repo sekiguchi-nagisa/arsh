@@ -75,8 +75,8 @@ public:
         fatal("unsupported\n");
     }
 
-    void visitIntValueNode(IntValueNode &node) override {
-        this->append(std::to_string(node.getValue()));
+    void visitNumberNode(NumberNode &node) override {
+        this->append(std::to_string(node.getIntValue()));
     }
 
     void visitTypeOpNode(TypeOpNode &node) override {

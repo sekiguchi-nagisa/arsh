@@ -1092,56 +1092,56 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         Token token = this->expect(BYTE_LITERAL);
         unsigned char value;
         CONVERT_TO_NUM(value, kind, token, this->lexer->toUint8);
-        return std::unique_ptr<Node>(IntValueNode::newByte(token, value));
+        return std::unique_ptr<Node>(NumberNode::newByte(token, value));
     }
     case INT16_LITERAL: {
         TokenKind kind = CUR_KIND();
         Token token = this->expect(INT16_LITERAL);
         short value;
         CONVERT_TO_NUM(value, kind, token, this->lexer->toInt16);
-        return std::unique_ptr<Node>(IntValueNode::newInt16(token, value));
+        return std::unique_ptr<Node>(NumberNode::newInt16(token, value));
     }
     case UINT16_LITERAL: {
         TokenKind kind = CUR_KIND();
         Token token = this->expect(UINT16_LITERAL);
         unsigned short value;
         CONVERT_TO_NUM(value, kind, token, this->lexer->toUint16);
-        return std::unique_ptr<Node>(IntValueNode::newUint16(token, value));
+        return std::unique_ptr<Node>(NumberNode::newUint16(token, value));
     }
     case INT32_LITERAL: {
         TokenKind kind = CUR_KIND();
         Token token = this->expect(INT32_LITERAL);
         int value;
         CONVERT_TO_NUM(value, kind, token, this->lexer->toInt32);
-        return std::unique_ptr<Node>(IntValueNode::newInt32(token, value));
+        return std::unique_ptr<Node>(NumberNode::newInt32(token, value));
     }
     case UINT32_LITERAL: {
         TokenKind kind = CUR_KIND();
         Token token = this->expect(UINT32_LITERAL);
         unsigned int value;
         CONVERT_TO_NUM(value, kind, token, this->lexer->toUint32);
-        return std::unique_ptr<Node>(IntValueNode::newUint32(token, value));
+        return std::unique_ptr<Node>(NumberNode::newUint32(token, value));
     }
     case INT64_LITERAL: {
         TokenKind kind = CUR_KIND();
         Token token = this->expect(INT64_LITERAL);
         long value;
         CONVERT_TO_NUM(value, kind, token, this->lexer->toInt64);
-        return std::unique_ptr<Node>(LongValueNode::newInt64(token, value));
+        return std::unique_ptr<Node>(NumberNode::newInt64(token, value));
     }
     case UINT64_LITERAL: {
         TokenKind kind = CUR_KIND();
         Token token = this->expect(UINT64_LITERAL);
         unsigned long value;
         CONVERT_TO_NUM(value, kind, token, this->lexer->toUint64);
-        return std::unique_ptr<Node>(LongValueNode::newUint64(token, value));
+        return std::unique_ptr<Node>(NumberNode::newUint64(token, value));
     }
     case FLOAT_LITERAL: {
         TokenKind kind = CUR_KIND();
         Token token = this->expect(FLOAT_LITERAL);
         double value;
         CONVERT_TO_NUM(value, kind, token, this->lexer->toDouble);
-        return uniquify<FloatValueNode>(token, value);
+        return std::unique_ptr<Node>(NumberNode::newFloat(token, value));
     }
     case STRING_LITERAL: {
         return this->parse_stringLiteral();

@@ -257,102 +257,96 @@ TypeNode *newVoidTypeNode();
 
 // expression definition
 
-class IntValueNode : public Node {
+class NumberNode : public Node {
 public:
-    enum IntKind{
+    enum NumKind {
         BYTE,
         INT16,
         UINT16,
         INT32,
         UINT32,
+        INT64,
+        UINT64,
+        FLOAT,
     };
 
 private:
-    IntKind kind;
-    int value;
+    NumKind kind;
 
-    IntValueNode(Token token, IntKind kind, int value) :
-            Node(token), kind(kind), value(value) { }
+    union {
+        int intValue;
+        long longValue;
+        double floatValue;
+    };
+
+     NumberNode(Token token, NumKind kind) :
+            Node(token), kind(kind), intValue(0) { }
 
 public:
-    static IntValueNode *newByte(Token token, unsigned char value) {
-        return new IntValueNode(token, BYTE, value);
+    static  NumberNode *newByte(Token token, unsigned char value) {
+        auto *node = new  NumberNode(token, BYTE);
+        node->intValue = value;
+        return node;
     }
 
-    static IntValueNode *newInt16(Token token, short value) {
-        return new IntValueNode(token, INT16, value);
+    static  NumberNode *newInt16(Token token, short value) {
+        auto *node = new  NumberNode(token, INT16);
+        node->intValue = value;
+        return node;
     }
 
-    static IntValueNode *newUint16(Token token, unsigned short value) {
-        return new IntValueNode(token, UINT16, value);
+    static  NumberNode *newUint16(Token token, unsigned short value) {
+        auto *node = new  NumberNode(token, UINT16);
+        node->intValue = value;
+        return node;
     }
 
-    static IntValueNode *newInt32(Token token, int value) {
-        return new IntValueNode(token, INT32, value);
+    static  NumberNode *newInt32(Token token, int value) {
+        auto *node = new  NumberNode(token, INT32);
+        node->intValue = value;
+        return node;
     }
 
-    static IntValueNode *newUint32(Token token, unsigned int value) {
-        return new IntValueNode(token, UINT32, value);
+    static  NumberNode *newUint32(Token token, unsigned int value) {
+        auto *node = new  NumberNode(token, UINT32);
+        node->intValue = value;
+        return node;
     }
 
-    ~IntValueNode() = default;
+    static  NumberNode *newInt64(Token token, long value) {
+        auto *node = new  NumberNode(token, INT64);
+        node->longValue = value;
+        return node;
+    }
 
-    IntKind getKind() const {
+    static  NumberNode *newUint64(Token token, unsigned long value) {
+        auto *node = new  NumberNode(token, UINT64);
+        node->longValue = value;
+        return node;
+    }
+
+    static  NumberNode *newFloat(Token token, double value) {
+        auto *node = new  NumberNode(token, FLOAT);
+        node->floatValue = value;
+        return node;
+    }
+
+    ~NumberNode() = default;
+
+    NumKind getKind() const {
         return this->kind;
     }
 
-    int getValue() const {
-        return this->value;
+    int getIntValue() const {
+        return this->intValue;
     }
 
-    void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
-};
-
-class LongValueNode : public Node {
-private:
-    long value;
-    bool unsignedValue;
-
-    LongValueNode(Token token, long value, bool unsignedValue) :
-            Node(token), value(value), unsignedValue(unsignedValue) { }
-
-public:
-    static LongValueNode *newInt64(Token token, long value) {
-        return new LongValueNode(token, value, false);
+    long getLongValue() const {
+        return this->longValue;
     }
 
-    static LongValueNode *newUint64(Token token, unsigned long value) {
-        return new LongValueNode(token, value, true);
-    }
-
-    ~LongValueNode() = default;
-
-    /**
-     * if true, treat as unsigned int 64.
-     */
-    bool isUnsignedValue() const {
-        return this->unsignedValue;
-    }
-
-    long getValue() const {
-        return this->value;
-    }
-
-    void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
-};
-
-class FloatValueNode : public Node {
-private:
-    double value;
-
-public:
-    FloatValueNode(Token token, double value) :
-            Node(token), value(value) { }
-
-    double getValue() const {
-        return this->value;
+    double getFloatValue() const {
+        return this->floatValue;
     }
 
     void dump(NodeDumper &dumper) const override;
@@ -1970,9 +1964,7 @@ struct NodeVisitor {
     virtual void visitDBusIfaceTypeNode(DBusIfaceTypeNode &node) = 0;
     virtual void visitReturnTypeNode(ReturnTypeNode &node) = 0;
     virtual void visitTypeOfNode(TypeOfNode &node) = 0;
-    virtual void visitIntValueNode(IntValueNode &node) = 0;
-    virtual void visitLongValueNode(LongValueNode &node) = 0;
-    virtual void visitFloatValueNode(FloatValueNode &node) = 0;
+    virtual void visitNumberNode(NumberNode &node) = 0;
     virtual void visitStringValueNode(StringValueNode &node) = 0;
     virtual void visitStringExprNode(StringExprNode &node) = 0;
     virtual void visitRegexNode(RegexNode &node) = 0;
@@ -2025,9 +2017,7 @@ struct BaseVisitor : public NodeVisitor {
     virtual void visitDBusIfaceTypeNode(DBusIfaceTypeNode &node) override { this->visitDefault(node); }
     virtual void visitReturnTypeNode(ReturnTypeNode &node) override { this->visitDefault(node); }
     virtual void visitTypeOfNode(TypeOfNode &node) override { this->visitDefault(node); }
-    virtual void visitIntValueNode(IntValueNode &node) override { this->visitDefault(node); }
-    virtual void visitLongValueNode(LongValueNode &node) override { this->visitDefault(node); }
-    virtual void visitFloatValueNode(FloatValueNode &node) override { this->visitDefault(node); }
+    virtual void visitNumberNode(NumberNode &node) override { this->visitDefault(node); }
     virtual void visitStringValueNode(StringValueNode &node) override { this->visitDefault(node); }
     virtual void visitStringExprNode(StringExprNode &node) override { this->visitDefault(node); }
     virtual void visitRegexNode(RegexNode &node) override { this->visitDefault(node); }

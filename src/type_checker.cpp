@@ -444,38 +444,35 @@ void TypeChecker::visitTypeOfNode(TypeOfNode &) {
     fatal("unsupported\n");
 }
 
-void TypeChecker::visitIntValueNode(IntValueNode &node) {
+void TypeChecker::visitNumberNode(NumberNode &node) {
     DSType *type = nullptr;
     switch(node.getKind()) {
-    case IntValueNode::BYTE:
+    case NumberNode::BYTE:
         type = &this->typePool.getByteType();
         break;
-    case IntValueNode::INT16:
+    case NumberNode::INT16:
         type = &this->typePool.getInt16Type();
         break;
-    case IntValueNode::UINT16:
+    case NumberNode::UINT16:
         type = &this->typePool.getUint16Type();
         break;
-    case IntValueNode::INT32:
+    case NumberNode::INT32:
         type = &this->typePool.getInt32Type();
         break;
-    case IntValueNode::UINT32:
+    case NumberNode::UINT32:
         type = &this->typePool.getUint32Type();
+        break;
+    case NumberNode::INT64:
+        type = &this->typePool.getInt64Type();
+        break;
+    case NumberNode::UINT64:
+        type = &this->typePool.getUint64Type();
+        break;
+    case NumberNode::FLOAT:
+        type = &this->typePool.getFloatType();
         break;
     }
     node.setType(*type);
-}
-
-void TypeChecker::visitLongValueNode(LongValueNode &node) {
-    if(node.isUnsignedValue()) {
-        node.setType(this->typePool.getUint64Type());
-    } else {
-        node.setType(this->typePool.getInt64Type());
-    }
-}
-
-void TypeChecker::visitFloatValueNode(FloatValueNode &node) {
-    node.setType(this->typePool.getFloatType());
 }
 
 void TypeChecker::visitStringValueNode(StringValueNode &node) {

@@ -160,44 +160,44 @@ TypeNode *newVoidTypeNode() {
 }
 
 
-// ##########################
-// ##     IntValueNode     ##
-// ##########################
+// ########################
+// ##     NumberNode     ##
+// ########################
 
-void IntValueNode::dump(NodeDumper &dumper) const {
-    DUMP_PRIM(value);
+void NumberNode::dump(NodeDumper &dumper) const {
+#define EACH_ENUM(OP) \
+    OP(BYTE) \
+    OP(INT16) \
+    OP(UINT16) \
+    OP(INT32) \
+    OP(UINT32) \
+    OP(INT64) \
+    OP(UINT64) \
+    OP(FLOAT)
+
+    DUMP_ENUM(kind, EACH_ENUM);
+#undef EACH_ENUM
+
+    switch(this->kind) {
+    case BYTE:
+    case INT16:
+    case UINT16:
+    case INT32:
+    case UINT32:
+        DUMP_PRIM(intValue);
+    case INT64:
+    case UINT64:
+        DUMP_PRIM(longValue);
+    case FLOAT:
+        DUMP_PRIM(floatValue);
+    }
+
+    DUMP_PRIM(intValue);
 }
 
-void IntValueNode::accept(NodeVisitor &visitor) {
-    visitor.visitIntValueNode(*this);
+void NumberNode::accept(NodeVisitor &visitor) {
+    visitor.visitNumberNode(*this);
 }
-
-// ###########################
-// ##     LongValueNode     ##
-// ###########################
-
-void LongValueNode::dump(NodeDumper &dumper) const {
-    DUMP_PRIM(value);
-    DUMP_PRIM(unsignedValue);
-}
-
-void LongValueNode::accept(NodeVisitor &visitor) {
-    visitor.visitLongValueNode(*this);
-}
-
-
-// ############################
-// ##     FloatValueNode     ##
-// ############################
-
-void FloatValueNode::dump(NodeDumper &dumper) const {
-    DUMP_PRIM(value);
-}
-
-void FloatValueNode::accept(NodeVisitor &visitor) {
-    visitor.visitFloatValueNode(*this);
-}
-
 
 // ############################
 // ##     StringValueNode    ##
@@ -1426,7 +1426,7 @@ LoopNode *createForInNode(unsigned int startPos, std::string &&varName, Node *ex
 }
 
 Node *createSuffixNode(Node *leftNode, TokenKind op, Token token) {
-    return createAssignNode(leftNode, op, IntValueNode::newByte(token, 1));
+    return createAssignNode(leftNode, op, NumberNode::newByte(token, 1));
 }
 
 Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode) {
