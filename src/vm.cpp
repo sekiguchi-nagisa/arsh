@@ -822,8 +822,8 @@ void PipelineState::redirect(DSState &state, unsigned int procIndex, int errorPi
             dup2(STDERR_FILENO, STDOUT_FILENO);
             break;
         }
-        default:
-            fatal("unsupported redir option: %d\n", pair.first);
+        case DUMMY:
+            break;  // unreachable
         }
     }
 
