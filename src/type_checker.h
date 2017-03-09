@@ -356,7 +356,7 @@ private:
     void visitReturnTypeNode(ReturnTypeNode &typeNode) override;
     void visitTypeOfNode(TypeOfNode &typeNode) override;
     void visitNumberNode(NumberNode &node) override;
-    void visitStringValueNode(StringValueNode &node) override;
+    void visitStringNode(StringNode &node) override;
     void visitStringExprNode(StringExprNode &node) override;
     void visitRegexNode(RegexNode &node) override;
     void visitArrayNode(ArrayNode &node) override;
@@ -374,7 +374,6 @@ private:
     void visitCmdNode(CmdNode &node) override;
     void visitCmdArgNode(CmdArgNode &node) override;
     void visitRedirNode(RedirNode &node) override;
-    void visitTildeNode(TildeNode &node) override;
     void visitPipedCmdNode(PipedCmdNode &node) override;
     void visitSubstitutionNode(SubstitutionNode &node) override;
     void visitAssertNode(AssertNode &node) override;

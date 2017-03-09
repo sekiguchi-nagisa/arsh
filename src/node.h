@@ -353,35 +353,50 @@ public:
     void accept(NodeVisitor &visitor) override;
 };
 
-class StringValueNode : public Node {
-protected:
+class StringNode : public Node {
+public:
+    enum StringKind {
+        STRING,
+        OBJECT_PATH,
+        TILDE,
+    };
+
+private:
     std::string value;
-    bool asObjPath;
+    StringKind kind;
 
 public:
     /**
      * used for CommandNode. lineNum is always 0.
      */
-    explicit StringValueNode(std::string &&value) :
-            Node({0, 0}), value(std::move(value)), asObjPath(false) { }
+    explicit StringNode(std::string &&value) :
+            Node({0, 0}), value(std::move(value)), kind(STRING) { }
 
-    StringValueNode(Token token, std::string &&value, bool asObjPath = false) :
-            Node(token), value(std::move(value)), asObjPath(asObjPath) { }
+    StringNode(Token token, std::string &&value, StringKind kind = STRING) :
+            Node(token), value(std::move(value)), kind(kind) { }
 
-    ~StringValueNode() = default;
+    ~StringNode() = default;
 
     const std::string &getValue() const {
         return this->value;
     }
 
+    StringKind getKind() const {
+        return this->kind;
+    }
+
     bool isObjectPath() const {
-        return this->asObjPath;
+        return this->getKind() == OBJECT_PATH;
+    }
+
+    bool isTilde() const {
+        return this->getKind() == TILDE;
     }
 
     void dump(NodeDumper &dumper) const override;
-    virtual void accept(NodeVisitor &visitor) override;
+    void accept(NodeVisitor &visitor) override;
 
-    static std::string extract(StringValueNode &&node) {
+    static std::string extract(StringNode &&node) {
         return std::move(node.value);
     }
 };
@@ -1010,35 +1025,10 @@ public:
     void accept(NodeVisitor &visitor) override;
 };
 
-/**
- * for tilde expansion
- * TildeNode is always first element of CmdArgNode.
- */
-class TildeNode : public Node {
-private:
-    /**
-     * starts with '/'
-     */
-    std::string value;
-
-public:
-    TildeNode(Token token, std::string &&value) :
-            Node(token), value(std::move(value)) { }
-
-    ~TildeNode() = default;
-
-    const std::string &getValue() {
-        return this->value;
-    }
-
-    void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
-};
-
 class CmdNode : public Node {
 private:
     /**
-     * msy be TildeNode or StringValueNode.
+     * must be StringNode.
      */
     Node *nameNode;
 
@@ -1048,11 +1038,7 @@ private:
     std::vector<Node *> argNodes;
 
 public:
-    CmdNode(Token token, std::string &&value) :
-            Node(token),
-            nameNode(new StringValueNode(token, std::move(value))), argNodes() { }
-
-    explicit CmdNode(TildeNode *nameNode) :
+    explicit CmdNode(StringNode *nameNode) :
             Node(nameNode->getToken()), nameNode(nameNode), argNodes() { }
 
     ~CmdNode();
@@ -1965,7 +1951,7 @@ struct NodeVisitor {
     virtual void visitReturnTypeNode(ReturnTypeNode &node) = 0;
     virtual void visitTypeOfNode(TypeOfNode &node) = 0;
     virtual void visitNumberNode(NumberNode &node) = 0;
-    virtual void visitStringValueNode(StringValueNode &node) = 0;
+    virtual void visitStringNode(StringNode &node) = 0;
     virtual void visitStringExprNode(StringExprNode &node) = 0;
     virtual void visitRegexNode(RegexNode &node) = 0;
     virtual void visitArrayNode(ArrayNode &node) = 0;
@@ -1983,7 +1969,6 @@ struct NodeVisitor {
     virtual void visitCmdNode(CmdNode &node) = 0;
     virtual void visitCmdArgNode(CmdArgNode &node) = 0;
     virtual void visitRedirNode(RedirNode &node) = 0;
-    virtual void visitTildeNode(TildeNode &node) = 0;
     virtual void visitPipedCmdNode(PipedCmdNode &node) = 0;
     virtual void visitSubstitutionNode(SubstitutionNode &node) = 0;
     virtual void visitAssertNode(AssertNode &node) = 0;
@@ -2018,7 +2003,7 @@ struct BaseVisitor : public NodeVisitor {
     virtual void visitReturnTypeNode(ReturnTypeNode &node) override { this->visitDefault(node); }
     virtual void visitTypeOfNode(TypeOfNode &node) override { this->visitDefault(node); }
     virtual void visitNumberNode(NumberNode &node) override { this->visitDefault(node); }
-    virtual void visitStringValueNode(StringValueNode &node) override { this->visitDefault(node); }
+    virtual void visitStringNode(StringNode &node) override { this->visitDefault(node); }
     virtual void visitStringExprNode(StringExprNode &node) override { this->visitDefault(node); }
     virtual void visitRegexNode(RegexNode &node) override { this->visitDefault(node); }
     virtual void visitArrayNode(ArrayNode &node) override { this->visitDefault(node); }
@@ -2036,7 +2021,6 @@ struct BaseVisitor : public NodeVisitor {
     virtual void visitCmdNode(CmdNode &node) override { this->visitDefault(node); }
     virtual void visitCmdArgNode(CmdArgNode &node) override { this->visitDefault(node); }
     virtual void visitRedirNode(RedirNode &node) override { this->visitDefault(node); }
-    virtual void visitTildeNode(TildeNode &node) override { this->visitDefault(node); }
     virtual void visitPipedCmdNode(PipedCmdNode &node) override { this->visitDefault(node); }
     virtual void visitSubstitutionNode(SubstitutionNode &node) override { this->visitDefault(node); }
     virtual void visitAssertNode(AssertNode &node) override { this->visitDefault(node); }

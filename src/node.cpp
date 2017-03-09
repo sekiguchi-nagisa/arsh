@@ -200,17 +200,25 @@ void NumberNode::accept(NodeVisitor &visitor) {
     visitor.visitNumberNode(*this);
 }
 
-// ############################
-// ##     StringValueNode    ##
-// ############################
+// #######################
+// ##     StringNode    ##
+// #######################
 
-void StringValueNode::dump(NodeDumper &dumper) const {
-    DUMP_PRIM(asObjPath);
+void StringNode::dump(NodeDumper &dumper) const {
+#define EACH_ENUM(OP) \
+    OP(STRING) \
+    OP(OBJECT_PATH) \
+    OP(TILDE)
+
+    DUMP_ENUM(kind, EACH_ENUM);
+
+#undef EACH_ENUM
+
     DUMP(value);
 }
 
-void StringValueNode::accept(NodeVisitor &visitor) {
-    visitor.visitStringValueNode(*this);
+void StringNode::accept(NodeVisitor &visitor) {
+    visitor.visitStringNode(*this);
 }
 
 // ############################
@@ -231,8 +239,8 @@ void StringExprNode::addExprNode(Node *node) {
         }
         exprNode->nodes.clear();
         delete node;
-    } else if(dynamic_cast<StringValueNode *>(node) != nullptr &&
-            static_cast<StringValueNode *>(node)->getValue().empty()) { // ignore empty string value node
+    } else if(dynamic_cast<StringNode *>(node) != nullptr &&
+            static_cast<StringNode *>(node)->getValue().empty()) { // ignore empty string value node
         /**
          * node must not be empty string value except for calling BinaryOpNode::toStringExpr()
          */
@@ -657,7 +665,7 @@ void CmdArgNode::accept(NodeVisitor &visitor) {
 
 bool CmdArgNode::isIgnorableEmptyString() {
     return this->segmentNodes.size() > 1 ||
-            (dynamic_cast<StringValueNode *>(this->segmentNodes.back()) == nullptr &&
+            (dynamic_cast<StringNode *>(this->segmentNodes.back()) == nullptr &&
                     dynamic_cast<StringExprNode *>(this->segmentNodes.back()) == nullptr);
 }
 
@@ -696,18 +704,6 @@ void RedirNode::accept(NodeVisitor &visitor) {
     visitor.visitRedirNode(*this);
 }
 
-// #######################
-// ##     TildeNode     ##
-// #######################
-
-void TildeNode::dump(NodeDumper &dumper) const {
-    DUMP(value);
-}
-
-void TildeNode::accept(NodeVisitor &visitor) {
-    visitor.visitTildeNode(*this);
-}
-
 // #####################
 // ##     CmdNode     ##
 // #####################
@@ -731,7 +727,7 @@ void CmdNode::addRedirOption(TokenKind kind, CmdArgNode *node) {
 }
 
 void CmdNode::addRedirOption(TokenKind kind, Token token) {
-    this->addRedirOption(kind, new CmdArgNode(new StringValueNode(token, std::string(""))));
+    this->addRedirOption(kind, new CmdArgNode(new StringNode(token, std::string(""))));
 }
 
 void CmdNode::dump(NodeDumper &dumper) const {

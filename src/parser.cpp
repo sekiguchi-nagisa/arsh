@@ -513,7 +513,7 @@ std::unique_ptr<Node> Parser::parse_statement() {
             std::string msg = "`";
             msg += this->lexer->toTokenText(condNode->getToken());
             msg += "'";
-            messageNode.reset(new StringValueNode(std::move(msg)));
+            messageNode.reset(new StringNode(std::move(msg)));
         }
 
         auto node = uniquify<AssertNode>(pos, condNode.release(), messageNode.release());
@@ -830,14 +830,8 @@ std::unique_ptr<Node> Parser::parse_command() {
                 this->parse_block().release());
     }
 
-
-    std::unique_ptr<CmdNode> node;
-
-    if(this->lexer->startsWith(token, '~')) {
-        node = uniquify<CmdNode>(new TildeNode(token, this->lexer->toCmdArg(token)));
-    } else {
-        node = uniquify<CmdNode>(token, this->lexer->toCmdArg(token));
-    }
+    auto kind = this->lexer->startsWith(token, '~') ? StringNode::TILDE : StringNode::STRING;
+    auto node = uniquify<CmdNode>(new StringNode(token, this->lexer->toCmdArg(token), kind));
 
     for(bool next = true; next && HAS_SPACE();) {
         switch(CUR_KIND()) {
@@ -905,10 +899,8 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(unsigned int pos) {
     switch(CUR_KIND()) {
     case CMD_ARG_PART: {
         Token token = this->expect(CMD_ARG_PART);
-        if(pos == 0 && this->lexer->startsWith(token, '~')) {
-            return uniquify<TildeNode>(token, this->lexer->toCmdArg(token));
-        }
-        return uniquify<StringValueNode>(token, this->lexer->toCmdArg(token));
+        auto kind = pos == 0 && this->lexer->startsWith(token, '~') ? StringNode::TILDE : StringNode::STRING;
+        return uniquify<StringNode>(token, this->lexer->toCmdArg(token), kind);
     }
     case STRING_LITERAL: {
         return this->parse_stringLiteral();
@@ -1156,7 +1148,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         token.size--;
         std::string str;
         this->lexer->singleToString(token, str);    // always success
-        return uniquify<StringValueNode>(token, std::move(str), true);
+        return uniquify<StringNode>(token, std::move(str), StringNode::OBJECT_PATH);
     }
     case REGEX_LITERAL: {
         Token token = this->expect(REGEX_LITERAL);
@@ -1272,7 +1264,7 @@ std::unique_ptr<Node> Parser::parse_stringLiteral() {
     if(!s) {
         raiseTokenFormatError(STRING_LITERAL, token, "illegal escape sequence");
     }
-    return uniquify<StringValueNode>(token, std::move(str));
+    return uniquify<StringNode>(token, std::move(str));
 }
 
 ArgsWrapper Parser::parse_arguments() {
@@ -1314,7 +1306,7 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
         case STR_ELEMENT: {
             token = this->expect(STR_ELEMENT);
             node->addExprNode(
-                    new StringValueNode(token, this->lexer->doubleElementToString(token)));
+                    new StringNode(token, this->lexer->doubleElementToString(token)));
             break;
         }
         EACH_LA_interpolation(GEN_LA_CASE) {

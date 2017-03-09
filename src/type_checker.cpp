@@ -475,7 +475,7 @@ void TypeChecker::visitNumberNode(NumberNode &node) {
     node.setType(*type);
 }
 
-void TypeChecker::visitStringValueNode(StringValueNode &node) {
+void TypeChecker::visitStringNode(StringNode &node) {
     node.setType(node.isObjectPath() ? this->typePool.getObjectPathType() : this->typePool.getStringType());
 }
 
@@ -796,10 +796,6 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
     }
 
     node.setType(this->typePool.getAnyType());   //FIXME
-}
-
-void TypeChecker::visitTildeNode(TildeNode &node) {
-    node.setType(this->typePool.getStringType());
 }
 
 void TypeChecker::visitPipedCmdNode(PipedCmdNode &node) {

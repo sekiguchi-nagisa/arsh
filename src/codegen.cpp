@@ -272,6 +272,10 @@ void ByteCodeGenerator::writeCaptureIns(bool isStr, const IntrusivePtr<Label> &l
     this->emitBranchIns(isStr ? OpCode::CAPTURE_STR : OpCode::CAPTURE_ARRAY, label);
 }
 
+static bool isTildeExpansion(const Node *node) {
+    return dynamic_cast<const StringNode *>(node) && static_cast<const StringNode *>(node)->isTilde();
+}
+
 void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
     const unsigned int size = node.getSegmentNodes().size();
 
@@ -281,10 +285,10 @@ void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
         this->emit0byteIns(OpCode::NEW_STRING);
 
         unsigned int index = 0;
-        const bool tildeExpansion = dynamic_cast<TildeNode *>(node.getSegmentNodes()[0]) != nullptr;
+        const bool tildeExpansion = isTildeExpansion(node.getSegmentNodes()[0]);
         if(tildeExpansion) {
             this->emitLdcIns(DSValue::create<String_Object>(
-                    this->pool.getStringType(), static_cast<TildeNode *>(node.getSegmentNodes()[0])->getValue()));
+                    this->pool.getStringType(), static_cast<StringNode *>(node.getSegmentNodes()[0])->getValue()));
             this->emit0byteIns(OpCode::APPEND_STRING);
             index++;
         }
@@ -424,11 +428,14 @@ void ByteCodeGenerator::visitNumberNode(NumberNode &node) {
     this->emitLdcIns(std::move(value));
 }
 
-void ByteCodeGenerator::visitStringValueNode(StringValueNode &node) {
+void ByteCodeGenerator::visitStringNode(StringNode &node) {
     if(node.getValue().empty()) {
         this->emit0byteIns(OpCode::PUSH_ESTRING);
     } else {
-        this->emitLdcIns(DSValue::create<String_Object>(node.getType(), StringValueNode::extract(std::move(node))));
+        this->emitLdcIns(DSValue::create<String_Object>(node.getType(), StringNode::extract(std::move(node))));
+        if(node.isTilde()) {
+            this->emit0byteIns(OpCode::EXPAND_TILDE);
+        }
     }
 }
 
@@ -693,11 +700,6 @@ void ByteCodeGenerator::visitCmdArgNode(CmdArgNode &node) {
 void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
     this->generateCmdArg(*node.getTargetNode());
     this->emit1byteIns(OpCode::ADD_REDIR_OP, node.getRedirectOP());
-}
-
-void ByteCodeGenerator::visitTildeNode(TildeNode &node) {
-    this->emitLdcIns(DSValue::create<String_Object>(this->pool.getStringType(), node.getValue()));
-    this->emit0byteIns(OpCode::EXPAND_TILDE);
 }
 
 void ByteCodeGenerator::visitPipedCmdNode(PipedCmdNode &node) {
