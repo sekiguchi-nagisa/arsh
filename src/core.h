@@ -162,9 +162,9 @@ void throwError(DSState &st, DSType &errorType, std::string &&message);
 
 void fillInStackTrace(const DSState &st, std::vector<StackTraceElement> &stackTrace);
 
-std::string getConfigRootDir();
+const char *getConfigRootDir();
 
-std::string getIfaceDir();
+const char *getIfaceDir();
 
 const char *getLogicalWorkingDir(const DSState &st);
 

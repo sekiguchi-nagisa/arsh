@@ -238,7 +238,7 @@ void fillInStackTrace(const DSState &st, std::vector<StackTraceElement> &stackTr
     }
 }
 
-std::string getConfigRootDir() {
+static std::string initConfigRootDir() {
 #ifdef X_CONFIG_DIR
     return std::string(X_CONFIG_DIR);
 #else
@@ -248,10 +248,20 @@ std::string getConfigRootDir() {
 #endif
 }
 
-std::string getIfaceDir() {
+const char *getConfigRootDir() {
+    static std::string dir(initConfigRootDir());
+    return dir.c_str();
+}
+
+static std::string initIfaceDir() {
     std::string root(getConfigRootDir());
     root += "/dbus/iface";
     return root;
+}
+
+const char *getIfaceDir() {
+    static std::string dir(initIfaceDir());
+    return dir.c_str();
 }
 
 const char *getLogicalWorkingDir(const DSState &st) {
