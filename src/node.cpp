@@ -185,14 +185,15 @@ void NumberNode::dump(NodeDumper &dumper) const {
     case INT32:
     case UINT32:
         DUMP_PRIM(intValue);
+        break;
     case INT64:
     case UINT64:
         DUMP_PRIM(longValue);
+        break;
     case FLOAT:
         DUMP_PRIM(floatValue);
+        break;
     }
-
-    DUMP_PRIM(intValue);
 }
 
 void NumberNode::accept(NodeVisitor &visitor) {
