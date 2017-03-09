@@ -735,8 +735,13 @@ public:
 
     void redirect(DSState &state, unsigned int procIndex, int errorPipe);
 
-    DSValue *getARGV(unsigned int procIndex);
-    const char *getCommandName(unsigned int procIndex);
+    DSValue *getARGV(unsigned int procIndex) {
+        return this->argArray.data() + this->procStates[procIndex].argOffset();
+    }
+
+    const char *getCommandName(unsigned int procIndex) {
+        return typeAs<String_Object>(this->getARGV(procIndex)[0])->getValue();
+    }
 
     void checkChildError(DSState &state, const std::pair<unsigned int, ChildError> &errorPair);
 };
@@ -841,10 +846,6 @@ void PipelineState::redirect(DSState &state, unsigned int procIndex, int errorPi
     }
 
 #undef CHECK_ERROR
-}
-
-DSValue *PipelineState::getARGV(unsigned int procIndex) {
-    return this->argArray.data() + this->procStates[procIndex].argOffset();
 }
 
 static void saveStdFD(int (&origFds)[3]) {
@@ -1097,10 +1098,6 @@ static void callPipeline(DSState &state) {
         perror("child process error");
         exit(1);
     }
-}
-
-const char *PipelineState::getCommandName(unsigned int procIndex) {
-    return typeAs<String_Object>(this->getARGV(procIndex)[0])->getValue();
 }
 
 void PipelineState::checkChildError(DSState &state, const std::pair<unsigned int, ChildError> &errorPair) {
