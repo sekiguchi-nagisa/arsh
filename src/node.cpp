@@ -205,6 +205,7 @@ void NumberNode::accept(NodeVisitor &visitor) {
 // ############################
 
 void StringValueNode::dump(NodeDumper &dumper) const {
+    DUMP_PRIM(asObjPath);
     DUMP(value);
 }
 
@@ -843,6 +844,7 @@ void BlockNode::accept(NodeVisitor &visitor) {
 // ######################
 
 void JumpNode::dump(NodeDumper &dumper) const {
+    DUMP_PRIM(asBreak);
     DUMP_PRIM(leavingBlock);
 }
 
