@@ -1515,10 +1515,10 @@ static bool mainLoop(DSState &state) {
             state.throwException(state.pop());
         }
         vmcase(ENTER_FINALLY) {
-            const unsigned int index = read32(GET_CODE(state), state.pc() + 1);
-            const unsigned int savedIndex = state.pc() + 4;
+            const unsigned int offset = read16(GET_CODE(state), state.pc() + 1);
+            const unsigned int savedIndex = state.pc() + 2;
             state.push(DSValue::createNum(savedIndex));
-            state.pc() = index - 1;
+            state.pc() += offset - 1;
             break;
         }
         vmcase(EXIT_FINALLY) {

@@ -69,7 +69,7 @@ namespace ydsh {
     OP(BRANCH, 2) \
     OP(GOTO, 4) \
     OP(THROW, 0) \
-    OP(ENTER_FINALLY, 4) \
+    OP(ENTER_FINALLY, 2) \
     OP(EXIT_FINALLY, 0) \
     OP(COPY_INT, 1) \
     OP(TO_BYTE, 0) \

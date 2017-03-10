@@ -40,7 +40,7 @@ V="$(cat << EOS
 ### dump compiled code ###
 Source File: (string)
 DSCode: top level
-  code size: 38
+  code size: 36
   number of local variable: 0
   number of global variable: 43
 Code:
@@ -50,12 +50,12 @@ Code:
   17: LOAD_CONST  1
   19: CALL_FUNC  1
   22: POP
-  23: ENTER_FINALLY  33
-  28: GOTO  37
-  33: LOAD_CONST  2
-  35: POP
-  36: EXIT_FINALLY
-  37: STOP_EVAL
+  23: ENTER_FINALLY  8
+  26: GOTO  35
+  31: LOAD_CONST  2
+  33: POP
+  34: EXIT_FINALLY
+  35: STOP_EVAL
 Constant Pool:
   0: (null) function(f)
   1: Int32 1
@@ -63,7 +63,7 @@ Constant Pool:
 Source Pos Entry:
   lineNum: 1, address: 19, pos: 67
 Exception Table:
-  begin: 14, end: 33, type: Any, dest: 33
+  begin: 14, end: 31, type: Any, dest: 31
 
 DSCode: function f
   code size: 20

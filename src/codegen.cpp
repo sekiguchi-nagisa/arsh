@@ -263,8 +263,8 @@ void ByteCodeGenerator::enterFinally() {
     for(auto iter = this->curBuilder().finallyLabels.rbegin();
         iter != this->curBuilder().finallyLabels.rend(); ++iter) {
         const unsigned int index = this->curBuilder().codeBuffer.size();
-        this->emit4byteIns(OpCode::ENTER_FINALLY, 0);
-        this->curBuilder().writeLabel(index + 1, *iter, 0, CodeEmitter<true>::LabelTarget::_32);
+        this->emit2byteIns(OpCode::ENTER_FINALLY, 0);
+        this->curBuilder().writeLabel(index + 1, *iter, index, CodeEmitter<true>::LabelTarget::_16);
     }
 }
 
