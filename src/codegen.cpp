@@ -20,8 +20,6 @@
 #include "symbol.h"
 #include "core.h"
 
-#define ASSERT_BYTE_SIZE(op, size) assert(getByteSize(op) == (size))
-
 namespace ydsh {
 
 int getByteSize(OpCode code) {
@@ -81,53 +79,6 @@ ByteCodeGenerator::~ByteCodeGenerator() {
     for(auto &e : this->builders) {
         delete e;
     }
-}
-
-void ByteCodeGenerator::emitIns(OpCode op) {
-    this->curBuilder().append8(static_cast<unsigned char>(op));
-}
-
-void ByteCodeGenerator::emit0byteIns(OpCode op) {
-    ASSERT_BYTE_SIZE(op, 0);
-    this->emitIns(op);
-}
-
-void ByteCodeGenerator::emit1byteIns(OpCode op, unsigned char v) {
-    ASSERT_BYTE_SIZE(op, 1);
-    this->emitIns(op);
-    this->curBuilder().append8(v);
-}
-
-void ByteCodeGenerator::emit2byteIns(OpCode op, unsigned short v) {
-    ASSERT_BYTE_SIZE(op, 2);
-    this->emitIns(op);
-    this->curBuilder().append16(v);
-}
-
-void ByteCodeGenerator::emit3byteIns(OpCode op, unsigned int v) {
-    ASSERT_BYTE_SIZE(op, 3);
-    this->emitIns(op);
-    this->curBuilder().append24(v);
-}
-
-void ByteCodeGenerator::emit4byteIns(OpCode op, unsigned int v) {
-    ASSERT_BYTE_SIZE(op, 4);
-    this->emitIns(op);
-    this->curBuilder().append32(v);
-}
-
-void ByteCodeGenerator::emit4byteIns(OpCode op, unsigned short v1, unsigned short v2) {
-    assert(op == OpCode::CALL_METHOD || op == OpCode::RECLAIM_LOCAL);
-    ASSERT_BYTE_SIZE(op, 4);
-    this->emitIns(op);
-    this->curBuilder().append16(v1);
-    this->curBuilder().append16(v2);
-}
-
-void ByteCodeGenerator::emit8byteIns(OpCode op, unsigned long v) {
-    ASSERT_BYTE_SIZE(op, 8);
-    this->emitIns(op);
-    this->curBuilder().append64(v);
 }
 
 void ByteCodeGenerator::emitTypeIns(OpCode op, const DSType &type) {

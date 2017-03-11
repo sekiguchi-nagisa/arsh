@@ -25,6 +25,8 @@
 #include "handle.h"
 #include "misc/resource.hpp"
 
+#define ASSERT_BYTE_SIZE(op, size) assert(getByteSize(op) == (size))
+
 namespace ydsh {
 
 class Label {
@@ -289,18 +291,53 @@ private:
         return static_cast<CodeKind>(this->builders.back()->codeBuffer[0]) == CodeKind::FUNCTION;
     }
 
-    /**
-     * not check byte size. not directly use it.
-     */
-    void emitIns(OpCode op);
+    void emitIns(OpCode op) {
+        this->curBuilder().append8(static_cast<unsigned char>(op));
+    }
 
-    void emit0byteIns(OpCode op);
-    void emit1byteIns(OpCode op, unsigned char v);
-    void emit2byteIns(OpCode op, unsigned short v);
-    void emit3byteIns(OpCode op, unsigned int v);
-    void emit4byteIns(OpCode op, unsigned int v);
-    void emit4byteIns(OpCode op, unsigned short v1, unsigned short v2);
-    void emit8byteIns(OpCode op, unsigned long v);
+    void emit0byteIns(OpCode op) {
+        ASSERT_BYTE_SIZE(op, 0);
+        this->emitIns(op);
+    }
+
+    void emit1byteIns(OpCode op, unsigned char v) {
+        ASSERT_BYTE_SIZE(op, 1);
+        this->emitIns(op);
+        this->curBuilder().append8(v);
+    }
+
+    void emit2byteIns(OpCode op, unsigned short v) {
+        ASSERT_BYTE_SIZE(op, 2);
+        this->emitIns(op);
+        this->curBuilder().append16(v);
+    }
+
+    void emit3byteIns(OpCode op, unsigned int v) {
+        ASSERT_BYTE_SIZE(op, 3);
+        this->emitIns(op);
+        this->curBuilder().append24(v);
+    }
+
+    void emit4byteIns(OpCode op, unsigned int v) {
+        ASSERT_BYTE_SIZE(op, 4);
+        this->emitIns(op);
+        this->curBuilder().append32(v);
+    }
+
+    void emit4byteIns(OpCode op, unsigned short v1, unsigned short v2) {
+        assert(op == OpCode::CALL_METHOD || op == OpCode::RECLAIM_LOCAL);
+        ASSERT_BYTE_SIZE(op, 4);
+        this->emitIns(op);
+        this->curBuilder().append16(v1);
+        this->curBuilder().append16(v2);
+    }
+
+    void emit8byteIns(OpCode op, unsigned long v) {
+        ASSERT_BYTE_SIZE(op, 8);
+        this->emitIns(op);
+        this->curBuilder().append64(v);
+    }
+
 
     /**
      * write instruction having type. (ex. PRINT).
