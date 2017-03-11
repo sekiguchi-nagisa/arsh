@@ -149,13 +149,13 @@ void ByteCodeGenerator::emitLdcIns(const DSValue &value) {
 }
 
 void ByteCodeGenerator::emitLdcIns(DSValue &&value) {
-    unsigned short index = this->emitConstant(std::move(value));
+    unsigned int index = this->emitConstant(std::move(value));
     if(index <= UINT8_MAX) {
         this->emit1byteIns(OpCode::LOAD_CONST, index);
     } else if(index <= UINT16_MAX) {
         this->emit2byteIns(OpCode::LOAD_CONST_W, index);
     } else {
-
+        this->emit3byteIns(OpCode::LOAD_CONST_T, index);
     }
 }
 
