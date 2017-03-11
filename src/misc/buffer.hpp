@@ -381,59 +381,67 @@ void FlexBuffer<T, SIZE_T>::assign(size_type n, const T &value) {
 using ByteBuffer = FlexBuffer<char>;
 
 // for byte reading
-inline unsigned char read8(const unsigned char *const code, unsigned int index) noexcept {
-    return code[index];
-}
+template <unsigned int N>
+inline unsigned long readN(const unsigned char *ptr, unsigned int index) noexcept {
+    static_assert(N > 0 && N < 9, "out of range");
 
-inline unsigned short read16(const unsigned char *const code, unsigned int index) noexcept {
-    return read8(code, index) << 8 | read8(code, index + 1);
-}
-
-inline unsigned int read24(const unsigned char *const code, unsigned int index) noexcept {
-    return read8(code, index) << 16 | read8(code, index + 1) << 8 | read8(code, index + 2);
-}
-
-inline unsigned int read32(const unsigned char *const code, unsigned int index) noexcept {
-    return read8(code, index) << 24 | read8(code, index + 1) << 16
-           | read8(code, index + 2) << 8 | read8(code, index + 3);
-}
-
-inline unsigned long read64(const unsigned char *const code, unsigned int index) noexcept {
+    ptr += index;
     unsigned long v = 0;
-    for(unsigned int i = 0; i < 8; i++) {
-        v |= static_cast<unsigned long>(read8(code, index + i)) << ((7 - i) * 8);
+    for(int i = N; i > 0; i--) {
+        v |= static_cast<unsigned long>(*(ptr++)) << ((i - 1) * 8);
     }
     return v;
 }
 
+inline unsigned char read8(const unsigned char *const code, unsigned int index) noexcept {
+    return readN<1>(code, index);
+}
+
+inline unsigned short read16(const unsigned char *const code, unsigned int index) noexcept {
+    return readN<2>(code, index);
+}
+
+inline unsigned int read24(const unsigned char *const code, unsigned int index) noexcept {
+    return readN<3>(code, index);
+}
+
+inline unsigned int read32(const unsigned char *const code, unsigned int index) noexcept {
+    return readN<4>(code, index);
+}
+
+inline unsigned long read64(const unsigned char *const code, unsigned int index) noexcept {
+    return readN<8>(code, index);
+}
+
 // for byte writing
+template <unsigned int N>
+inline void writeN(unsigned char *ptr, unsigned long b) noexcept {
+    static_assert(N > 0 && N < 9, "out of range");
+
+    for(unsigned int i = N; i > 0; --i) {
+        const unsigned long mask = static_cast<unsigned long>(0xFF) << ((i - 1) * 8);
+        *(ptr++) = (b & mask) >> ((i - 1) * 8);
+    }
+}
+
 inline void write8(unsigned char *ptr, unsigned char b) noexcept {
-    *ptr = b;
+    writeN<1>(ptr, b);
 }
 
 inline void write16(unsigned char *ptr, unsigned short b) noexcept {
-    write8(ptr, (b & 0xFF00) >> 8);
-    write8(ptr + 1, b & 0xFF);
+    writeN<2>(ptr, b);
 }
 
 inline void write24(unsigned char *ptr, unsigned int b) noexcept {
-    write8(ptr,     (b & 0xFF0000) >> 16);
-    write8(ptr + 1, (b & 0xFF00) >> 8);
-    write8(ptr + 2,  b & 0xFF);
+    writeN<3>(ptr, b);
 }
 
 inline void write32(unsigned char *ptr, unsigned int b) noexcept {
-    write8(ptr,     (b & 0xFF000000) >> 24);
-    write8(ptr + 1, (b & 0xFF0000) >> 16);
-    write8(ptr + 2, (b & 0xFF00) >> 8);
-    write8(ptr + 3,  b & 0xFF);
+    writeN<4>(ptr, b);
 }
 
 inline void write64(unsigned char *ptr, unsigned long b) noexcept {
-    for(unsigned int i = 0; i < 8; i++) {
-        const unsigned long mask = 0xFF * static_cast<unsigned long>(pow(0x100, 7 - i));
-        write8(ptr + i, (b & mask) >> ((7 - i) * 8));
-    }
+    writeN<8>(ptr, b);
 }
 
 } // namespace ydsh
