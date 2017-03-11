@@ -34,6 +34,7 @@ namespace ydsh {
     OP(PUSH_ESTRING, 0) \
     OP(LOAD_CONST, 1) \
     OP(LOAD_CONST_W, 2) \
+    OP(LOAD_CONST_T, 3) \
     OP(LOAD_FUNC, 2) \
     OP(LOAD_GLOBAL, 2) \
     OP(STORE_GLOBAL, 2) \

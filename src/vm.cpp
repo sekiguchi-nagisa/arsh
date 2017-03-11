@@ -1288,6 +1288,12 @@ static bool mainLoop(DSState &state) {
             state.push(CONST_POOL(state)[index]);
             break;
         }
+        vmcase(LOAD_CONST_T) {
+            unsigned int index = read24(GET_CODE(state), state.pc() + 1);
+            state.pc() += 3;
+            state.push(CONST_POOL(state)[index]);
+            break;
+        }
         vmcase(LOAD_FUNC) {
             unsigned short index = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2016 Nagisa Sekiguchi
+ * Copyright (C) 2015-2017 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -389,6 +389,10 @@ inline unsigned short read16(const unsigned char *const code, unsigned int index
     return read8(code, index) << 8 | read8(code, index + 1);
 }
 
+inline unsigned int read24(const unsigned char *const code, unsigned int index) noexcept {
+    return read8(code, index) << 16 | read8(code, index + 1) << 8 | read8(code, index + 2);
+}
+
 inline unsigned int read32(const unsigned char *const code, unsigned int index) noexcept {
     return read8(code, index) << 24 | read8(code, index + 1) << 16
            | read8(code, index + 2) << 8 | read8(code, index + 3);
@@ -410,6 +414,12 @@ inline void write8(unsigned char *ptr, unsigned char b) noexcept {
 inline void write16(unsigned char *ptr, unsigned short b) noexcept {
     write8(ptr, (b & 0xFF00) >> 8);
     write8(ptr + 1, b & 0xFF);
+}
+
+inline void write24(unsigned char *ptr, unsigned int b) noexcept {
+    write8(ptr,     (b & 0xFF0000) >> 16);
+    write8(ptr + 1, (b & 0xFF00) >> 8);
+    write8(ptr + 2,  b & 0xFF);
 }
 
 inline void write32(unsigned char *ptr, unsigned int b) noexcept {

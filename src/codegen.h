@@ -112,6 +112,10 @@ struct CodeEmitter {
         ydsh::write16(this->codeBuffer.begin() + index, b);
     }
 
+    void emit24(unsigned int index, unsigned int b) noexcept {
+        ydsh::write24(this->codeBuffer.begin() + index, b);
+    }
+
     void emit32(unsigned int index, unsigned int b) noexcept {
         ydsh::write32(this->codeBuffer.begin() + index, b);
     }
@@ -142,6 +146,12 @@ struct CodeEmitter {
         const unsigned int index = this->codeBuffer.size();
         this->codeBuffer.assign(2, 0);
         this->emit16(index, b);
+    }
+
+    void append24(unsigned int b) {
+        const unsigned int index = this->codeBuffer.size();
+        this->codeBuffer.assign(3, 0);
+        this->emit24(index, b);
     }
 
     void append32(unsigned int b) {
@@ -287,6 +297,7 @@ private:
     void emit0byteIns(OpCode op);
     void emit1byteIns(OpCode op, unsigned char v);
     void emit2byteIns(OpCode op, unsigned short v);
+    void emit3byteIns(OpCode op, unsigned int v);
     void emit4byteIns(OpCode op, unsigned int v);
     void emit4byteIns(OpCode op, unsigned short v1, unsigned short v2);
     void emit8byteIns(OpCode op, unsigned long v);
@@ -296,7 +307,7 @@ private:
      */
     void emitTypeIns(OpCode op, const DSType &type);
 
-    unsigned short emitConstant(DSValue &&value);
+    unsigned int emitConstant(DSValue &&value);
     void emitLdcIns(const DSValue &value);
     void emitLdcIns(DSValue &&value);
     void emitDescriptorIns(OpCode op, std::string &&desc);

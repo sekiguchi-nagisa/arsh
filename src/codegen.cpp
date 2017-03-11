@@ -104,6 +104,12 @@ void ByteCodeGenerator::emit2byteIns(OpCode op, unsigned short v) {
     this->curBuilder().append16(v);
 }
 
+void ByteCodeGenerator::emit3byteIns(OpCode op, unsigned int v) {
+    ASSERT_BYTE_SIZE(op, 3);
+    this->emitIns(op);
+    this->curBuilder().append24(v);
+}
+
 void ByteCodeGenerator::emit4byteIns(OpCode op, unsigned int v) {
     ASSERT_BYTE_SIZE(op, 4);
     this->emitIns(op);
@@ -129,11 +135,11 @@ void ByteCodeGenerator::emitTypeIns(OpCode op, const DSType &type) {
     this->emit8byteIns(op, reinterpret_cast<unsigned long>(&type));
 }
 
-unsigned short ByteCodeGenerator::emitConstant(DSValue &&value) {
+unsigned int ByteCodeGenerator::emitConstant(DSValue &&value) {
     this->curBuilder().constBuffer.push_back(std::move(value));
     unsigned int index = this->curBuilder().constBuffer.size() - 1;
-    if(index > UINT16_MAX) {
-        fatal("const pool index must be 16bit");
+    if(index > 0xFFFFFF) {
+        fatal("const pool index is up to 24bit");
     }
     return index;
 }
@@ -146,8 +152,10 @@ void ByteCodeGenerator::emitLdcIns(DSValue &&value) {
     unsigned short index = this->emitConstant(std::move(value));
     if(index <= UINT8_MAX) {
         this->emit1byteIns(OpCode::LOAD_CONST, index);
-    } else {
+    } else if(index <= UINT16_MAX) {
         this->emit2byteIns(OpCode::LOAD_CONST_W, index);
+    } else {
+
     }
 }
 
@@ -1205,6 +1213,9 @@ static void dumpCodeImpl(std::ostream &stream, DSState &ctx, const CompiledCode 
                         break;
                     case 2:
                         stream << "  " << read16(c.getCode(), i + 1);
+                        break;
+                    case 3:
+                        stream << "  " << read24(c.getCode(), i + 1);
                         break;
                     case 4:
                         stream << "  " << read32(c.getCode(), i + 1);
