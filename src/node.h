@@ -1153,10 +1153,11 @@ private:
     std::vector<Node *> nodes;
     unsigned int baseIndex;
     unsigned int varSize;
+    unsigned int maxVarSize;
 
 public:
     explicit BlockNode(unsigned int startPos) :
-            Node({startPos, 1}), nodes(), baseIndex(0), varSize(0) { }
+            Node({startPos, 1}), nodes(), baseIndex(0), varSize(0), maxVarSize(0) { }
 
     ~BlockNode();
 
@@ -1186,6 +1187,14 @@ public:
 
     void setVarSize(unsigned int size) {
         this->varSize = size;
+    }
+
+    unsigned int getMaxVarSize() const {
+        return this->maxVarSize;
+    }
+
+    void setMaxVarSize(unsigned int size) {
+        this->maxVarSize = size;
     }
 
     /**

@@ -829,6 +829,7 @@ void BlockNode::dump(NodeDumper &dumper) const {
     DUMP(nodes);
     DUMP_PRIM(baseIndex);
     DUMP_PRIM(varSize);
+    DUMP_PRIM(maxVarSize);
 }
 
 void BlockNode::accept(NodeVisitor &visitor) {

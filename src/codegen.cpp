@@ -864,6 +864,7 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
     auto mergeLabel = makeIntrusive<Label>();
 
     auto &blockNode = *node.getBlockNode();
+    auto maxLocalSize = blockNode.getMaxVarSize();
 
     // generate try block
     this->markLabel(beginLabel);
@@ -878,6 +879,10 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
 
     // generate catch
     for(auto &c : node.getCatchNodes()) {
+        if(maxLocalSize < c->getBlockNode()->getMaxVarSize()) {
+            maxLocalSize = c->getBlockNode()->getMaxVarSize();
+        }
+
         this->catchException(beginLabel, endLabel, c->getTypeNode()->getType(),
                              blockNode.getBaseIndex(), blockNode.getVarSize());
         this->visit(*c);
@@ -894,7 +899,8 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
         this->curBuilder().finallyLabels.pop_back();
 
         this->markLabel(finallyLabel);
-        this->catchException(beginLabel, finallyLabel, this->pool.getAnyType());
+        this->catchException(beginLabel, finallyLabel, this->pool.getAnyType(),
+                             blockNode.getBaseIndex(), maxLocalSize);
         this->visit(*node.getFinallyNode());
         this->emit0byteIns(OpCode::EXIT_FINALLY);
     }
@@ -1236,7 +1242,8 @@ static void dumpCodeImpl(std::ostream &stream, DSState &ctx, const CompiledCode 
     for(unsigned int i = 0; c.getExceptionEntries()[i].type != nullptr; i++) {
         const auto &e = c.getExceptionEntries()[i];
         stream << "  begin: " << e.begin << ", end: " << e.end << ", type: "
-        << getPool(ctx).getTypeName(*e.type) << ", dest: " << e.dest << std::endl;
+        << getPool(ctx).getTypeName(*e.type) << ", dest: " << e.dest << ", offset: "
+               << e.localOffset << ", size: " << e.localSize << std::endl;
     }
 }
 

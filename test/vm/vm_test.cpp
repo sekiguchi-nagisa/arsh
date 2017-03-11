@@ -159,11 +159,17 @@ TEST_F(VMTest, deinit8) {
     ASSERT_(RefCount("@", 1));
 }
 
-//TEST_F(VMTest, deinit9) { //FIXME:
-//    this->setBreakPoint(OpCode::RAND);
-//    this->eval("try { var a = $@; 34 / 0 } catch $e { var b = $@; throw 34; } finally {  $RANDOM; }");
-//    ASSERT_(RefCount("@", 1));
-//}
+TEST_F(VMTest, deinit9) {
+    this->setBreakPoint(OpCode::RAND);
+    this->eval("try { var a = $@; 34 / 0 } catch $e { var b = $@; throw 34; } finally {  $RANDOM; }");
+    ASSERT_(RefCount("@", 1));
+}
+
+TEST_F(VMTest, deinit10) {
+    this->setBreakPoint(OpCode::RAND);
+    this->eval("try { var a = $@; var b = $a; 34 / 0 } catch $e : Int { var b = $@; var c = $b; var d = $c; } finally {  $RANDOM; }");
+    ASSERT_(RefCount("@", 1));
+}
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
