@@ -78,14 +78,15 @@ int DSState_setScriptDir(DSState *st, const char *scriptPath);
 
 
 /* for option */
-#define DS_OPTION_DUMP_UAST  ((unsigned int) (1 << 0))
-#define DS_OPTION_DUMP_AST   ((unsigned int) (1 << 1))
-#define DS_OPTION_DUMP_CODE  ((unsigned int) (1 << 2))
-#define DS_OPTION_PARSE_ONLY ((unsigned int) (1 << 3))
-#define DS_OPTION_ASSERT     ((unsigned int) (1 << 4))
-#define DS_OPTION_TOPLEVEL   ((unsigned int) (1 << 5))
-#define DS_OPTION_TRACE_EXIT ((unsigned int) (1 << 6))
-#define DS_OPTION_HISTORY    ((unsigned int) (1 << 7))
+#define DS_OPTION_DUMP_UAST    ((unsigned int) (1 << 0))
+#define DS_OPTION_DUMP_AST     ((unsigned int) (1 << 1))
+#define DS_OPTION_DUMP_CODE    ((unsigned int) (1 << 2))
+#define DS_OPTION_PARSE_ONLY   ((unsigned int) (1 << 3))
+#define DS_OPTION_ASSERT       ((unsigned int) (1 << 4))
+#define DS_OPTION_TOPLEVEL     ((unsigned int) (1 << 5))
+#define DS_OPTION_TRACE_EXIT   ((unsigned int) (1 << 6))
+#define DS_OPTION_HISTORY      ((unsigned int) (1 << 7))
+#define DS_OPTION_COMPILE_ONLY ((unsigned int) (1 << 8))
 
 unsigned int DSState_option(const DSState *st);
 void DSState_setOption(DSState *st, unsigned int optionSet);

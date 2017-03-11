@@ -188,6 +188,10 @@ static int evalCode(DSState *state, CompiledCode &code, DSError *dsError) {
         dumpCode(std::cout, *state, code);
     }
 
+    if(hasFlag(state->option, DS_OPTION_COMPILE_ONLY)) {
+        return 0;
+    }
+
     if(!vmEval(*state, code)) {
         unsigned int errorLineNum = 0;
         DSValue thrownObj = state->getThrownObject();

@@ -103,6 +103,7 @@ static void showFeature(std::ostream &stream) {
     OP(DUMP_AST,       "--dump-ast",          0, "dump abstract syntax tree (after type checking)") \
     OP(DUMP_CODE,      "--dump-code",         0, "dump compiled code") \
     OP(PARSE_ONLY,     "--parse-only",        0, "not evaluate, parse only") \
+    OP(COMPILE_ONLY,   "--compile-only",      0, "not evaluate, compile only") \
     OP(DISABLE_ASSERT, "--disable-assertion", 0, "disable assert statement") \
     OP(PRINT_TOPLEVEL, "--print-toplevel",    0, "print top level evaluated value") \
     OP(TRACE_EXIT,     "--trace-exit",        0, "trace execution process to exit command") \
@@ -179,6 +180,9 @@ int main(int argc, char **argv) {
         case PARSE_ONLY:
         case PARSE_ONLY2:
             DSState_setOption(state, DS_OPTION_PARSE_ONLY);
+            break;
+        case COMPILE_ONLY:
+            DSState_setOption(state, DS_OPTION_COMPILE_ONLY);
             break;
         case DISABLE_ASSERT:
             DSState_unsetOption(state, DS_OPTION_ASSERT);
