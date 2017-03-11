@@ -97,11 +97,6 @@ void TypeChecker::TypeGenerator::visitTypeOfNode(TypeOfNode &typeNode) {
     typeNode.setType(type);
 }
 
-DSType &TypeChecker::TypeGenerator::generateType(TypeNode *typeNode) {
-    typeNode->accept(*this);
-    return typeNode->getType();
-}
-
 // #########################
 // ##     TypeChecker     ##
 // #########################
@@ -253,10 +248,6 @@ bool TypeChecker::checkCoercion(const DSType &requiredType, const DSType &target
     return false;
 }
 
-void TypeChecker::resolveCoercion(DSType &requiredType, Node * &targetNode) {
-    targetNode = this->newTypedCastNode(targetNode, requiredType);
-}
-
 FieldHandle *TypeChecker::addEntryAndThrowIfDefined(Node &node, const std::string &symbolName, DSType &type,
                                                     FieldAttributes attribute) {
     FieldHandle *handle = this->symbolTable.registerHandle(symbolName, type, attribute);
@@ -264,10 +255,6 @@ FieldHandle *TypeChecker::addEntryAndThrowIfDefined(Node &node, const std::strin
         RAISE_TC_ERROR(DefinedSymbol, node, symbolName.c_str());
     }
     return handle;
-}
-
-DSType &TypeChecker::toType(TypeNode *typeToken) {
-    return this->typeGen.generateTypeAndThrow(typeToken);
 }
 
 // for ApplyNode type checking

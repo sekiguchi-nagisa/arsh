@@ -161,7 +161,10 @@ public:
         void visitTypeOfNode(TypeOfNode &typeNode) override;
 
     private:
-        DSType &generateType(TypeNode *typeNode);
+        DSType &generateType(TypeNode *typeNode) {
+            typeNode->accept(*this);
+            return typeNode->getType();
+        }
     };
 
 private:
@@ -261,7 +264,9 @@ private:
      */
     bool checkCoercion(const DSType &requiredType, const DSType &targetType);
 
-    void resolveCoercion(DSType &requiredType, Node * &targetNode);
+    void resolveCoercion(DSType &requiredType, Node * &targetNode) {
+        targetNode = this->newTypedCastNode(targetNode, requiredType);
+    }
 
     FieldHandle *addEntryAndThrowIfDefined(Node &node, const std::string &symbolName, DSType &type, FieldAttributes attribute);
 
@@ -302,7 +307,9 @@ private:
     /**
      * convert TypeToken to DSType..
      */
-    DSType &toType(TypeNode *typeToken);
+    DSType &toType(TypeNode *typeToken) {
+        return this->typeGen.generateTypeAndThrow(typeToken);
+    }
 
     /**
      * check type ApplyNode and resolve callee(handle or function type).
