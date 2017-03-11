@@ -114,6 +114,10 @@ public:
         }
     }
 
+private:
+    bool tryToRegister(const std::string &name, FieldHandle *handle);
+
+public:
     /**
      * return null, if not found.
      */

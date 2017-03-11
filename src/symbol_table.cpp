@@ -52,6 +52,20 @@ void Scope::deleteHandle(const std::string &symbolName) {
 // ##     SymbolTable     ##
 // #########################
 
+bool SymbolTable::tryToRegister(const std::string &name, FieldHandle *handle) {
+    if(!this->scopes.back()->addFieldHandle(name, handle)) {
+        delete handle;
+        return false;
+    }
+    if(!this->inGlobalScope()) {
+        unsigned int varIndex = this->scopes.back()->getCurVarIndex();
+        if(varIndex > this->maxVarIndexStack.back()) {
+            this->maxVarIndexStack.back() = varIndex;
+        }
+    }
+    return true;
+}
+
 FieldHandle *SymbolTable::lookupHandle(const std::string &symbolName) const {
     for(auto iter = this->scopes.crbegin(); iter != this->scopes.crend(); ++iter) {
         FieldHandle *handle = (*iter)->lookupHandle(symbolName);
@@ -68,8 +82,7 @@ FieldHandle *SymbolTable::registerHandle(const std::string &symbolName, DSType &
     }
 
     FieldHandle *handle = new FieldHandle(&type, this->scopes.back()->getCurVarIndex(), attribute);
-    if(!this->scopes.back()->addFieldHandle(symbolName, handle)) {
-        delete handle;
+    if(!this->tryToRegister(symbolName, handle)) {
         return nullptr;
     }
     if(this->inGlobalScope()) {
@@ -82,8 +95,7 @@ FunctionHandle *SymbolTable::registerFuncHandle(const std::string &funcName, DST
                                                 const std::vector<DSType *> &paramTypes) {
     assert(this->inGlobalScope());
     FunctionHandle *handle = new FunctionHandle(&returnType, paramTypes, this->scopes.back()->getCurVarIndex());
-    if(!this->scopes.back()->addFieldHandle(funcName, handle)) {
-        delete handle;
+    if(!this->tryToRegister(funcName, handle)) {
         return nullptr;
     }
     this->handleCache.push_back(funcName);
@@ -100,14 +112,8 @@ void SymbolTable::enterScope() {
 
 void SymbolTable::exitScope() {
     assert(!this->inGlobalScope());
-    Scope *scope = this->scopes.back();
-    unsigned int varIndex = scope->getCurVarIndex();
-    if(varIndex > this->maxVarIndexStack.back()) {
-        this->maxVarIndexStack.back() = varIndex;
-    }
-
+    delete this->scopes.back();
     this->scopes.pop_back();
-    delete scope;
 }
 
 void SymbolTable::enterFunc() {
