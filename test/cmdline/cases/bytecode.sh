@@ -63,7 +63,7 @@ Constant Pool:
 Source Pos Entry:
   lineNum: 1, address: 19, pos: 67
 Exception Table:
-  begin: 14, end: 31, type: Any, dest: 31
+  begin: 14, end: 31, type: Any, dest: 31, offset: 0, size: 0
 
 DSCode: function f
   code size: 20

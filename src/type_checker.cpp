@@ -216,7 +216,7 @@ void TypeChecker::checkTypeWithCurrentScope(BlockNode *blockNode) {
     // set base index of current scope
     blockNode->setBaseIndex(this->symbolTable.curScope().getBaseIndex());
     blockNode->setVarSize(this->symbolTable.curScope().getVarSize());
-    blockNode->setMaxVarSize(this->symbolTable.getMaxVarIndex());
+    blockNode->setMaxVarSize(this->symbolTable.getMaxVarIndex() - blockNode->getBaseIndex());
 
     assert(blockType != nullptr && (blockType->isBottomType() || blockType->isVoidType()));
     blockNode->setType(*blockType);
