@@ -16,3 +16,8 @@ hoge() {
 }
 
 assert(eval hoge a b)
+
+
+# do nothing
+eval
+assert $? == 0

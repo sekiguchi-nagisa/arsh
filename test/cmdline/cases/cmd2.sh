@@ -37,6 +37,12 @@ if [ $? != 1 ]; then
     exit 1
 fi
 
+$YDSH_BIN -c '__puts 34'
+
+if [ $? != 1 ]; then
+    exit 1
+fi
+
 $YDSH_BIN -c 'echo hello'
 
 if [ $? != 0 ]; then

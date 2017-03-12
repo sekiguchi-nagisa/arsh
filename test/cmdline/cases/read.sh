@@ -108,6 +108,36 @@ fi
 
 
 # splitting
+# use IFS
+# ignore after string of newline
+echo -e 'hello  \n world' |
+  $YDSH_BIN -c \
+  'read a b; assert($reply.size() == 2 &&
+                      $reply["a"] == "hello" &&
+                      $reply["b"].empty())'
+
+if [ $? != 0 ]; then
+    echo $LINENO
+    exit 1
+fi
+
+
+# splitting
+# use IFS
+# ignore newline
+echo -e 'hello  \\\n world' |
+  $YDSH_BIN -c \
+  'read a b; assert($reply.size() == 2 &&
+                      $reply["a"] == "hello" &&
+                      $reply["b"] == "world")'
+
+if [ $? != 0 ]; then
+    echo $LINENO
+    exit 1
+fi
+
+
+# splitting
 # specify separator
 echo -e 'hello1world' |
   $YDSH_BIN -c \
@@ -248,46 +278,10 @@ if [ $? != 0 ]; then
     exit 1
 fi
 
-
-# invalid file descriptor
-test "$($YDSH_BIN -c 'read -u 89899' 2>&1)" = "-ydsh: read: 89899: Bad file descriptor"
-
-if [ $? != 0 ]; then
-    echo $LINENO
-    exit 1
-fi
-
-
 # timeout
-test "$($YDSH_BIN -c 'read -t -1' 2>&1)" = "-ydsh: read: -1: invalid timeout specification"
-
-if [ $? != 0 ]; then
-    echo $LINENO
-    exit 1
-fi
-
-test "$($YDSH_BIN -c 'read -t 9999999999999999' 2>&1)" = "-ydsh: read: 9999999999999999: invalid timeout specification"
-
-if [ $? != 0 ]; then
-    echo $LINENO
-    exit 1
-fi
-
 $YDSH_BIN -c 'read -t 1'
 
 if [ $? != 1 ]; then
-    echo $LINENO
-    exit 1
-fi
-
-# invalid option
-test "$($YDSH_BIN -c 'read -q' 2>&1)" = "$(cat << EOF
--ydsh: read: -q: invalid option
-read: read [-r] [-p prompt] [-f field separator] [-u fd] [-t timeout] [name ...]
-EOF
-)"
-
-if [ $? != 0 ]; then
     echo $LINENO
     exit 1
 fi

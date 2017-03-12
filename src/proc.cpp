@@ -338,6 +338,7 @@ static int getopt(const int argc, char *const argv[], const char *optStr, GetOpt
         if(ptr != nullptr) {
             if(*(ptr + 1) == ':') {
                 if(++state.index == argc) {
+                    state.optOpt = *ptr;
                     return ':';
                 }
                 state.optArg = argv[state.index];
@@ -1229,7 +1230,7 @@ static int builtin_read(DSState &state, const int argc, char *const *argv) {  //
             return 1;
         }
         case ':':
-            ERROR(argv, "-%c: option require argument", opt);
+            ERROR(argv, "-%c: option require argument", optState.optOpt);
             return 2;
         default:
             return invalidOptionError(argv, optState);
