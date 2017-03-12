@@ -37,7 +37,7 @@ if [ $? != 1 ]; then
     exit 1
 fi
 
-$YDSH_BIN -c '__puts 34'
+$YDSH_BIN -c '__puts -3'
 
 if [ $? != 1 ]; then
     exit 1
