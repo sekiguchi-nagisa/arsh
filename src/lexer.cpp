@@ -22,6 +22,53 @@
 
 namespace ydsh {
 
+const char *toString(TokenKind kind) {
+    const char *table[] = {
+#define GEN_NAME(ENUM, STR) STR,
+            EACH_TOKEN(GEN_NAME)
+#undef GEN_NAME
+    };
+    return table[kind];
+}
+
+unsigned int getPrecedence(TokenKind kind) {
+    switch(kind) {
+    case IS:
+    case AS:
+        return 300;
+    case MUL:
+    case DIV:
+    case MOD:
+        return 280;
+    case PLUS:
+    case MINUS:
+        return 260;
+    case AND:
+        return 220;
+    case XOR:
+        return 200;
+    case OR:
+        return 180;
+    case LA:
+    case RA:
+    case LE:
+    case GE:
+    case EQ:
+    case NE:
+    case MATCH:
+    case UNMATCH:
+        return 160;
+    case COND_AND:
+        return 140;
+    case COND_OR:
+        return 120;
+    case TERNARY:
+        return 100;
+    default:
+        return 0;
+    }
+}
+
 const char *toModeName(LexerMode mode) {
     switch(mode) {
     case yycSTMT:

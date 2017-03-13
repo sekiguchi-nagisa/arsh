@@ -1425,10 +1425,6 @@ LoopNode *createForInNode(unsigned int startPos, std::string &&varName, Node *ex
     return new LoopNode(startPos, reset_varDecl, call_hasNext, nullptr, blockNode);
 }
 
-Node *createSuffixNode(Node *leftNode, TokenKind op, Token token) {
-    return createAssignNode(leftNode, op, NumberNode::newByte(token, 1));
-}
-
 Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode) {
     /*
      * basic assignment

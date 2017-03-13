@@ -244,7 +244,6 @@ set(YDSH_SRC
         src/vm.cpp
         src/lexer.cpp
         src/parser.cpp
-        src/token_kind.cpp
         src/type_checker.cpp)
 
 if(USE_DBUS)

@@ -1943,9 +1943,11 @@ TokenKind resolveAssignOp(TokenKind op);
 
 LoopNode *createForInNode(unsigned int startPos, std::string &&varName, Node *exprNode, BlockNode *blockNode);
 
-Node *createSuffixNode(Node *leftNode, TokenKind op, Token token);
-
 Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode);
+
+inline Node *createSuffixNode(Node *leftNode, TokenKind op, Token token) {
+    return createAssignNode(leftNode, op, NumberNode::newByte(token, 1));
+}
 
 Node *createIndexNode(Node *recvNode, Node *indexNode);
 
