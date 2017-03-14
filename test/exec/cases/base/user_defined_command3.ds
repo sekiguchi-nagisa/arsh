@@ -8,25 +8,11 @@ f() {
 var t = $false
 try {
     f
+} catch($e) {
     $t = not $t
-} catch($e) {}
+}
 assert($t)
 assert($? == 1)
-
-# assert
-g() {
-    assert($false)
-}
-
-g
-assert($? == 1)
-
-# exit
-h() {
-    exit 34
-}
-h
-assert($? == 34)
 
 # return
 i() {

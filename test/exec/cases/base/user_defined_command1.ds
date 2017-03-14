@@ -16,20 +16,6 @@ hoge2() {
 hoge2
 assert($? == 34)
 
-hoge3() {
-    assert($false)
-}
-
-hoge3
-assert($? != 0)
-
-hoge4() {
-    exit 6
-}
-
-hoge4
-assert($? == 6)
-
 hoge5() {
     false
 }

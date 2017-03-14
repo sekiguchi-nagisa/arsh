@@ -1,0 +1,7 @@
+#$test($result = 'throw', $lineNum = 4, $errorKind = 'Error', $status = 1)
+
+f() {
+    throw new Error("");
+}
+
+f

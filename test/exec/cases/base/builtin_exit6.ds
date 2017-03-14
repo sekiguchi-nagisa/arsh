@@ -1,0 +1,9 @@
+# exit in user-defined command
+
+#$test($result = 'exit', $status = 9, $lineNum = 6)
+
+f() {
+    exit 9
+}
+
+f

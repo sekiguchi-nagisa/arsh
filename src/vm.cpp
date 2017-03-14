@@ -848,6 +848,30 @@ void PipelineState::redirect(DSState &state, unsigned int procIndex, int errorPi
 #undef CHECK_ERROR
 }
 
+class RestorableFDs : public DSObject {
+private:
+    int fds[3];
+
+    NON_COPYABLE(RestorableFDs);
+
+public:
+    RestorableFDs() : DSObject(nullptr) {
+        this->fds[0] = dup(STDIN_FILENO);
+        this->fds[1] = dup(STDOUT_FILENO);
+        this->fds[2] = dup(STDERR_FILENO);
+    }
+
+    ~RestorableFDs() {
+        dup2(this->fds[0], STDIN_FILENO);
+        dup2(this->fds[1], STDOUT_FILENO);
+        dup2(this->fds[2], STDERR_FILENO);
+
+        for(unsigned int i = 0; i < 3; i++) {
+            close(this->fds[i]);
+        }
+    }
+};
+
 static void saveStdFD(int (&origFds)[3]) {
     origFds[0] = dup(STDIN_FILENO);
     origFds[1] = dup(STDOUT_FILENO);
@@ -882,7 +906,7 @@ static PipelineState &activePipeline(DSState &state) {
  * +-----------+-------+--------+
  *             | offset|
  */
-void callUserDefinedCommand(DSState &st, const FuncObject *obj, DSValue *argArray) {
+void callUserDefinedCommand(DSState &st, const FuncObject *obj, DSValue *argArray, DSValue &&restoreFD) {
     // create parameter (@)
     std::vector<DSValue> values;
     for(int i = 1; argArray[i]; i++) {
@@ -903,14 +927,20 @@ void callUserDefinedCommand(DSState &st, const FuncObject *obj, DSValue *argArra
         limit = argSize;
     }
 
-    unsigned int index;
-    for(index = 0; index < limit; index++) {
+    unsigned int index = 0;
+    for(; index < limit; index++) {
         st.setLocal(index + 3, argv->getValues()[index]);
     }
 
     for(; index < 9; index++) {
         st.setLocal(index + 3, st.emptyStrObj);  // set remain
     }
+
+    st.setLocal(index + 3, std::move(restoreFD));   // set restoreFD
+}
+
+static bool needRestore(const PipelineState &state) {
+    return state.procStates.size() == 1 && state.redirOptions.size() > 1;
 }
 
 static void callCommand(DSState &state, unsigned short procIndex) {
@@ -919,14 +949,23 @@ static void callCommand(DSState &state, unsigned short procIndex) {
 
     auto &pipeline = activePipeline(state);
     const unsigned int procSize = pipeline.procStates.size();
+    const bool inParent = procSize == 1;
 
     const auto &procState = pipeline.procStates[procIndex];
     DSValue *ptr = pipeline.getARGV(procIndex);
     const auto procKind = procState.procKind();
     if(procKind == ProcState::ProcKind::USER_DEFINED) { // invoke user-defined command
         auto *udcObj = procState.udcObj();
-        closeAllPipe(procSize, pipeline.selfpipes);
-        callUserDefinedCommand(state, udcObj, ptr);
+        DSValue restoreFD;
+        if(inParent) {
+            if(needRestore(pipeline)) {
+                restoreFD = DSValue::create<RestorableFDs>();
+            }
+            pipeline.redirect(state, 0, -1);
+        } else {
+            closeAllPipe(procSize, pipeline.selfpipes);
+        }
+        callUserDefinedCommand(state, udcObj, ptr, std::move(restoreFD));
         return;
     } else {
         // create argv
@@ -939,7 +978,6 @@ static void callCommand(DSState &state, unsigned short procIndex) {
         argv[argc] = nullptr;
 
         if(procKind == ProcState::ProcKind::BUILTIN) {  // invoke builtin command
-            const bool inParent = procSize == 1 && procIndex == 0;
             builtin_command_t cmd_ptr = procState.builtinCmd();
             if(inParent) {
                 const bool restoreFD = strcmp(argv[0], "exec") != 0;
@@ -960,8 +998,6 @@ static void callCommand(DSState &state, unsigned short procIndex) {
                     if(restoreFD) {
                         restoreStdFD(origFDs);
                     }
-
-                    state.pc()++; // skip next instruction (EXIT_CHILD)
                 }
             } else {
                 closeAllPipe(procSize, pipeline.selfpipes);
@@ -1008,7 +1044,7 @@ static void callPipeline(DSState &state) {
     const unsigned int procSize = pipeline.procStates.size();
 
     // check builtin command
-    if(procSize == 1 && pipeline.procStates[0].procKind() == ProcState::ProcKind::BUILTIN) {
+    if(procSize == 1 && pipeline.procStates[0].procKind() != ProcState::ProcKind::EXTERNAL) {
         // set pc to next instruction
         state.pc() += read16(GET_CODE(state), state.pc() + 2) - 1;
         return;

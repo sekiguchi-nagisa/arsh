@@ -679,7 +679,6 @@ void ByteCodeGenerator::visitPipedCmdNode(PipedCmdNode &node) {
     if(size == 1) {
         this->markLabel(labels[0]);
         this->emit1byteIns(OpCode::CALL_CMD, 0);
-        this->emit0byteIns(OpCode::SUCCESS_CHILD);
     } else {
         auto begin = makeIntrusive<Label>();
         auto end = makeIntrusive<Label>();

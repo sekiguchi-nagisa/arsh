@@ -200,7 +200,7 @@ FuncObject *lookupUserDefinedCommand(const DSState &st, const char *commandName)
 /**
  * obj must indicate user-defined command.
  */
-void callUserDefinedCommand(DSState &st, const FuncObject *obj, DSValue *argv);
+void callUserDefinedCommand(DSState &st, const FuncObject *obj, DSValue *argv, DSValue &&restoreFD);
 
 std::string expandDots(const char *basePath, const char *path);
 

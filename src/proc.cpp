@@ -746,7 +746,7 @@ static int builtin_eval(DSState &state, const int argc, char *const *argv) {
             }
             argv2[size - 1] = nullptr;
 
-            callUserDefinedCommand(state, udcNode, argv2);
+            callUserDefinedCommand(state, udcNode, argv2, DSValue());
             delete[] argv2;
         } else {    // parent process
             int status;

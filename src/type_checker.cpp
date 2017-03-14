@@ -1146,6 +1146,8 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
         this->addEntryAndThrowIfDefined(node, std::to_string(i), this->typePool.getStringType(), FieldAttribute::READ_ONLY);
     }
 
+    // register dummy parameter (for closing file descriptor)
+    this->addEntryAndThrowIfDefined(node, "%%restore", this->typePool.getAnyType(), FieldAttribute::READ_ONLY);
 
     // check type command body
     this->checkTypeWithCurrentScope(node.getBlockNode());

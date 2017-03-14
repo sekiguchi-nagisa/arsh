@@ -1,0 +1,9 @@
+# assert in user-defined command
+
+#$test($result = 'assert', $lineNum = 6, $status = 1)
+
+f() {
+    assert $false
+}
+
+f
