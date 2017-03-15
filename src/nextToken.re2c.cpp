@@ -54,14 +54,7 @@
 /*
  * update line number table
  */
-#define UPDATE_LN() \
-    do {\
-        const unsigned int stopPos = this->getPos();\
-        for(unsigned int i = startPos; i < stopPos; ++i) {\
-            if(this->buf[i] == '\n') \
-            { this->srcInfoPtr->addNewlinePos(i); } \
-        }\
-    } while(false)
+#define UPDATE_LN() this->updateNewline(startPos)
 
 #define FIND_NEW_LINE() \
     do {\
