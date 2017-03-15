@@ -1237,6 +1237,53 @@ static void addRedirOption(DSState &state, RedirectOP op) {
     activePipeline(state).redirOptions.push_back(std::make_pair(op, value));
 }
 
+/**
+ * write status to status (same of wait's status).
+ */
+void forkAndExec(DSState &ctx, char *const *argv, int &status, bool useDefaultPath) {
+    // setup self pipe
+    int selfpipe[2];
+    if(pipe(selfpipe) < 0) {
+        perror("pipe creation error");
+        exit(1);
+    }
+    if(fcntl(selfpipe[WRITE_PIPE], F_SETFD, fcntl(selfpipe[WRITE_PIPE], F_GETFD) | FD_CLOEXEC)) {
+        perror("fcntl error");
+        exit(1);
+    }
+
+    const char *filePath = getPathCache(ctx).searchPath(
+            argv[0], useDefaultPath ? FilePathCache::USE_DEFAULT_PATH : 0);
+
+    pid_t pid = xfork(ctx);
+    if(pid == -1) {
+        perror("child process error");
+        exit(1);
+    } else if(pid == 0) {   // child
+        xexecve(filePath, const_cast<char **>(argv), nullptr);
+
+        int errnum = errno;
+        PERROR0(argv);
+        write(selfpipe[WRITE_PIPE], &errnum, sizeof(int));
+        exit(1);
+    } else {    // parent process
+        close(selfpipe[WRITE_PIPE]);
+        int readSize;
+        int errnum = 0;
+        while((readSize = read(selfpipe[READ_PIPE], &errnum, sizeof(int))) == -1) {
+            if(errno != EAGAIN && errno != EINTR) {
+                break;
+            }
+        }
+        close(selfpipe[READ_PIPE]);
+        if(readSize > 0 && errnum == ENOENT) {  // remove cached path
+            getPathCache(ctx).removePath(argv[0]);
+        }
+
+        xwaitpid(ctx, pid, status, 0);
+    }
+}
+
 // prototype of DBus related api
 void DBusInitSignal(DSState &st);
 

@@ -64,5 +64,9 @@ builtin_command_t lookupBuiltinCommand(const char *commandName);
 
 } // namespace ydsh
 
+#define PERROR0(arv)           fprintf(stderr, "-ydsh: %s: %s\n", (argv)[0], strerror(errno))
+#define PERROR(argv, fmt, ...) fprintf(stderr, "-ydsh: %s: " fmt ": %s\n", (argv)[0], ## __VA_ARGS__, strerror(errno))
+#define ERROR(argv, fmt, ...)  fprintf(stderr, "-ydsh: %s: " fmt "\n", (argv)[0], ## __VA_ARGS__)
+
 
 #endif //YDSH_PROC_H
