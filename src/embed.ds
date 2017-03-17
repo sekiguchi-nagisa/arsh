@@ -1,6 +1,6 @@
 # builtin variable definition
 
-import-env OLDPWD : "$(pwd)"
+import-env OLDPWD : ""
 import-env PWD : "$(pwd)"
 
 let SCRIPT_DIR = "$(pwd -P)"
