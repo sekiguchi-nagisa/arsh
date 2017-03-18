@@ -735,8 +735,17 @@ public:
 
     void redirect(DSState &state, unsigned int procIndex, int errorPipe);
 
-    DSValue *getARGV(unsigned int procIndex) {
+    const DSValue *getARGV(unsigned int procIndex) const {
         return this->argArray.data() + this->procStates[procIndex].argOffset();
+    }
+
+    DSValue toARGV(unsigned int procIndex, const TypePool &pool) const {
+        auto *ptr = this->getARGV(procIndex);
+        std::vector<DSValue> values;
+        for(int i = 1; ptr[i]; i++) {
+            values.push_back(std::move(ptr[i]));
+        }
+        return DSValue::create<Array_Object>(pool.getStringArrayType(), std::move(values));
     }
 
     const char *getCommandName(unsigned int procIndex) {
@@ -906,13 +915,9 @@ static PipelineState &activePipeline(DSState &state) {
  * +-----------+-------+--------+
  *             | offset|
  */
-void callUserDefinedCommand(DSState &st, const FuncObject *obj, DSValue *argArray, DSValue &&restoreFD) {
-    // create parameter (@)
-    std::vector<DSValue> values;
-    for(int i = 1; argArray[i]; i++) {
-        values.push_back(std::move(argArray[i]));
-    }
-    st.push(DSValue::create<Array_Object>(st.pool.getStringArrayType(), std::move(values)));
+void callUserDefinedCommand(DSState &st, const FuncObject *obj, DSValue &&argvObj, DSValue &&restoreFD) {
+    // push argv (@)
+    st.push(std::move(argvObj));
 
     // set stack stack
     windStackFrame(st, 1, 1, &obj->getCode());
@@ -952,7 +957,6 @@ static void callCommand(DSState &state, unsigned short procIndex) {
     const bool inParent = procSize == 1;
 
     const auto &procState = pipeline.procStates[procIndex];
-    DSValue *ptr = pipeline.getARGV(procIndex);
     const auto procKind = procState.procKind();
     if(procKind == ProcState::ProcKind::USER_DEFINED) { // invoke user-defined command
         auto *udcObj = procState.udcObj();
@@ -965,11 +969,12 @@ static void callCommand(DSState &state, unsigned short procIndex) {
         } else {
             closeAllPipe(procSize, pipeline.selfpipes);
         }
-        callUserDefinedCommand(state, udcObj, ptr, std::move(restoreFD));
+        callUserDefinedCommand(state, udcObj, pipeline.toARGV(procIndex, state.pool), std::move(restoreFD));
         return;
     } else {
         // create argv
         unsigned int argc = 1;
+        const DSValue *ptr = pipeline.getARGV(procIndex);
         for(; ptr[argc]; argc++);
         char *argv[argc + 1];
         for(unsigned int i = 0; i < argc; i++) {

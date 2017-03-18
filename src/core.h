@@ -200,9 +200,15 @@ void interpretPromptString(const DSState &st, const char *ps, std::string &outpu
 FuncObject *lookupUserDefinedCommand(const DSState &st, const char *commandName);
 
 /**
- * obj must indicate user-defined command.
+ *
+ * @param st
+ * @param obj
+ * must be user-defined command (FuncObject)
+ * @param argvObj
+ * must be Array_Object (Array<String>)
+ * @param restoreFD
  */
-void callUserDefinedCommand(DSState &st, const FuncObject *obj, DSValue *argv, DSValue &&restoreFD);
+void callUserDefinedCommand(DSState &st, const FuncObject *obj, DSValue &&argvObj, DSValue &&restoreFD);
 
 std::string expandDots(const char *basePath, const char *path);
 

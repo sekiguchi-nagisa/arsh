@@ -687,16 +687,13 @@ static int builtin_eval(DSState &state, const int argc, char *const *argv) {
             perror("child process error");
             exit(1);
         } else if(pid == 0) {   // child
-            const unsigned int size = argc;
-            DSValue *argv2 = new DSValue[size];
+            unsigned int size = argc - 1;
+            std::vector<DSValue> values(size);
             for(int i = 1; i < argc; i++) {
-                argv2[i - 1] = DSValue::create<String_Object>(getPool(state).getStringType(), std::string(argv[i])
-                );
+                values[i - 1] = DSValue::create<String_Object>(getPool(state).getStringType(), std::string(argv[i]));
             }
-            argv2[size - 1] = nullptr;
-
-            callUserDefinedCommand(state, udcNode, argv2, DSValue());
-            delete[] argv2;
+            auto argv2 = DSValue::create<Array_Object>(getPool(state).getStringArrayType(), std::move(values));
+            callUserDefinedCommand(state, udcNode, std::move(argv2), DSValue());
         } else {    // parent process
             int status;
             xwaitpid(state, pid, status, 0);
