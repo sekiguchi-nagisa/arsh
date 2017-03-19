@@ -466,6 +466,16 @@ public:
     DSValue commandArg(DSState &ctx, VisitedSet *visitedSet) override;
 };
 
+/**
+ *
+ * @param v
+ * must be Array_Object
+ */
+inline void eraseFirst(Array_Object &v) {
+    auto &values = v.refValues();
+    values.erase(values.begin());
+}
+
 struct KeyCompare {
     bool operator() (const DSValue &x, const DSValue &y) const {
         return x->equals(y);

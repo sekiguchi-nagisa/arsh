@@ -24,6 +24,8 @@ struct DSState;
 
 namespace ydsh {
 
+class Array_Object;
+
 constexpr unsigned int READ_PIPE = 0;
 constexpr unsigned int WRITE_PIPE = 1;
 
@@ -47,8 +49,9 @@ enum RedirectOP : unsigned char {
 
 /**
  * return exit status.
+ * argvObj must be Array_Object
  */
-typedef int (*builtin_command_t)(DSState &state, const int argc, char *const *argv);
+typedef int (*builtin_command_t)(DSState &state, Array_Object &argvObj);
 
 unsigned int getBuiltinCommandSize();
 
@@ -66,7 +69,7 @@ builtin_command_t lookupBuiltinCommand(const char *commandName);
 
 #define PERROR0(arv)           fprintf(stderr, "-ydsh: %s: %s\n", (argv)[0], strerror(errno))
 #define PERROR(argv, fmt, ...) fprintf(stderr, "-ydsh: %s: " fmt ": %s\n", (argv)[0], ## __VA_ARGS__, strerror(errno))
-#define ERROR(argv, fmt, ...)  fprintf(stderr, "-ydsh: %s: " fmt "\n", (argv)[0], ## __VA_ARGS__)
+#define ERROR(argv, fmt, ...)  fprintf(stderr, "-ydsh: %s: " fmt "\n", typeAs<String_Object>(argv.getValues()[0])->getValue(), ## __VA_ARGS__)
 
 
 #endif //YDSH_PROC_H

@@ -742,7 +742,7 @@ public:
     DSValue toARGV(unsigned int procIndex, const TypePool &pool) const {
         auto *ptr = this->getARGV(procIndex);
         std::vector<DSValue> values;
-        for(int i = 1; ptr[i]; i++) {
+        for(int i = 0; ptr[i]; i++) {
             values.push_back(std::move(ptr[i]));
         }
         return DSValue::create<Array_Object>(pool.getStringArrayType(), std::move(values));
@@ -917,6 +917,7 @@ static PipelineState &activePipeline(DSState &state) {
  */
 void callUserDefinedCommand(DSState &st, const FuncObject *obj, DSValue &&argvObj, DSValue &&restoreFD) {
     // push argv (@)
+    eraseFirst(*typeAs<Array_Object>(argvObj));
     st.push(std::move(argvObj));
 
     // set stack stack
@@ -972,20 +973,12 @@ static void callCommand(DSState &state, unsigned short procIndex) {
         callUserDefinedCommand(state, udcObj, pipeline.toARGV(procIndex, state.pool), std::move(restoreFD));
         return;
     } else {
-        // create argv
-        unsigned int argc = 1;
-        const DSValue *ptr = pipeline.getARGV(procIndex);
-        for(; ptr[argc]; argc++);
-        char *argv[argc + 1];
-        for(unsigned int i = 0; i < argc; i++) {
-            argv[i] = const_cast<char *>(typeAs<String_Object>(ptr[i])->getValue());
-        }
-        argv[argc] = nullptr;
-
         if(procKind == ProcState::ProcKind::BUILTIN) {  // invoke builtin command
+            const DSValue *ptr = pipeline.getARGV(procIndex);
+            const char *name = typeAs<String_Object>(ptr[0])->getValue();
             builtin_command_t cmd_ptr = procState.builtinCmd();
             if(inParent) {
-                const bool restoreFD = strcmp(argv[0], "exec") != 0;
+                const bool restoreFD = strcmp(name, "exec") != 0;
 
                 int origFDs[3];
                 if(restoreFD) {
@@ -995,7 +988,8 @@ static void callCommand(DSState &state, unsigned short procIndex) {
                 pipeline.redirect(state, 0, -1);
 
                 const int pid = getpid();
-                state.updateExitStatus(cmd_ptr(state, argc, argv));
+                auto obj = pipeline.toARGV(procIndex, state.pool);
+                state.updateExitStatus(cmd_ptr(state, *typeAs<Array_Object>(obj)));
 
                 if(pid == getpid()) {   // in parent process (if call command or eval, may be child)
                     // flush and restore
@@ -1006,10 +1000,21 @@ static void callCommand(DSState &state, unsigned short procIndex) {
                 }
             } else {
                 closeAllPipe(procSize, pipeline.selfpipes);
-                state.updateExitStatus(cmd_ptr(state, argc, argv));
+                auto obj = pipeline.toARGV(procIndex, state.pool);
+                state.updateExitStatus(cmd_ptr(state, *typeAs<Array_Object>(obj)));
             }
             return;
         } else {    // invoke external command
+            // create argv
+            unsigned int argc = 1;
+            const DSValue *ptr = pipeline.getARGV(procIndex);
+            for(; ptr[argc]; argc++);
+            char *argv[argc + 1];
+            for(unsigned int i = 0; i < argc; i++) {
+                argv[i] = const_cast<char *>(typeAs<String_Object>(ptr[i])->getValue());
+            }
+            argv[argc] = nullptr;
+
             xexecve(procState.filePath(), argv, nullptr);
 
             ChildError e;
@@ -1245,7 +1250,17 @@ static void addRedirOption(DSState &state, RedirectOP op) {
 /**
  * write status to status (same of wait's status).
  */
-void forkAndExec(DSState &ctx, char *const *argv, int &status, bool useDefaultPath) {
+int forkAndExec(DSState &ctx, const Array_Object &argvObj, bool useDefaultPath) {
+    auto &values = argvObj.getValues();
+    char *argv[values.size() + 1];
+    {
+        unsigned int size = values.size();
+        for(unsigned int i = 0; i < size; i++) {
+            argv[i] = const_cast<char *>(typeAs<String_Object>(values[i])->getValue());
+        }
+        argv[size] = nullptr;
+    }
+
     // setup self pipe
     int selfpipe[2];
     if(pipe(selfpipe) < 0) {
@@ -1265,7 +1280,7 @@ void forkAndExec(DSState &ctx, char *const *argv, int &status, bool useDefaultPa
         perror("child process error");
         exit(1);
     } else if(pid == 0) {   // child
-        xexecve(filePath, const_cast<char **>(argv), nullptr);
+        xexecve(filePath, argv, nullptr);
 
         int errnum = errno;
         PERROR0(argv);
@@ -1285,7 +1300,9 @@ void forkAndExec(DSState &ctx, char *const *argv, int &status, bool useDefaultPa
             getPathCache(ctx).removePath(argv[0]);
         }
 
+        int status;
         xwaitpid(ctx, pid, status, 0);
+        return status;
     }
 }
 
@@ -2017,10 +2034,13 @@ int execBuiltinCommand(DSState &st, char *const argv[]) {
         return 1;
     }
 
-    int argc;
-    for(argc = 0; argv[argc] != nullptr; argc++);
+    std::vector<DSValue> values;
+    for(; *argv != nullptr; argv++) {
+        values.push_back(DSValue::create<String_Object>(st.pool.getStringType(), std::string(*argv)));
+    }
 
-    int s = cmd(st, argc, argv);
+    auto obj = DSValue::create<Array_Object>(st.pool.getStringArrayType(), std::move(values));
+    int s = cmd(st, *typeAs<Array_Object>(obj));
     st.updateExitStatus(s);
     flushStdFD();
     return s;

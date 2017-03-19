@@ -35,28 +35,40 @@
 
 namespace ydsh {
 
+inline void initArray(const std::vector<DSValue> &value, char **array) {
+    const unsigned int size = value.size();
+    for(unsigned int i = 0; i < size; i++) {
+        array[i] = const_cast<char *>(typeAs<String_Object>(value[i])->getValue());
+    }
+    array[size] = nullptr;
+}
+
+#define DEF_ARGV(argc, argv, obj) const int argc = obj.getValues().size(); char *argv[argc + 1]; initArray(obj.getValues(), argv)
+
+
+
 void xexecve(const char *filePath, char **argv, char *const *envp);
 
 // builtin command definition
-static int builtin___gets(DSState &state, const int argc, char *const *argv);
-static int builtin___puts(DSState &state, const int argc, char *const *argv);
-static int builtin_cd(DSState &state, const int argc, char *const *argv);
-static int builtin_check_env(DSState &state, const int argc, char *const *argv);
-static int builtin_command(DSState &state, const int argc, char *const *argv);
-static int builtin_complete(DSState &state, const int argc, char *const *argv);
-static int builtin_echo(DSState &state, const int argc, char *const *argv);
-static int builtin_eval(DSState &state, const int argc, char *const *argv);
-static int builtin_exec(DSState &state, const int argc, char *const *argv);
-static int builtin_exit(DSState &state, const int argc, char *const *argv);
-static int builtin_false(DSState &state, const int argc, char *const *argv);
-static int builtin_hash(DSState &state, const int argc, char *const *argv);
-static int builtin_help(DSState &state, const int argc, char *const *argv);
-static int builtin_history(DSState &state, const int argc, char *const *argv);
-static int builtin_ps_intrp(DSState &state, const int argc, char *const *argv);
-static int builtin_pwd(DSState &state, const int argc, char *const *argv);
-static int builtin_read(DSState &state, const int argc, char *const *argv);
-static int builtin_test(DSState &state, const int argc, char *const *argv);
-static int builtin_true(DSState &state, const int argc, char *const *argv);
+static int builtin___gets(DSState &state, Array_Object &argvObj);
+static int builtin___puts(DSState &state, Array_Object &argvObj);
+static int builtin_cd(DSState &state, Array_Object &argvObj);
+static int builtin_check_env(DSState &state, Array_Object &argvObj);
+static int builtin_command(DSState &state, Array_Object &argvObj);
+static int builtin_complete(DSState &state, Array_Object &argvObj);
+static int builtin_echo(DSState &state, Array_Object &argvObj);
+static int builtin_eval(DSState &state, Array_Object &argvObj);
+static int builtin_exec(DSState &state, Array_Object &argvObj);
+static int builtin_exit(DSState &state, Array_Object &argvObj);
+static int builtin_false(DSState &state, Array_Object &argvObj);
+static int builtin_hash(DSState &state, Array_Object &argvObj);
+static int builtin_help(DSState &state, Array_Object &argvObj);
+static int builtin_history(DSState &state, Array_Object &argvObj);
+static int builtin_ps_intrp(DSState &state, Array_Object &argvObj);
+static int builtin_pwd(DSState &state, Array_Object &argvObj);
+static int builtin_read(DSState &state, Array_Object &argvObj);
+static int builtin_test(DSState &state, Array_Object &argvObj);
+static int builtin_true(DSState &state, Array_Object &argvObj);
 
 const struct {
     const char *commandName;
@@ -290,6 +302,10 @@ static bool printUsage(FILE *fp, const char *prefix, bool isShortHelp = true) {
     return matched;
 }
 
+inline const char *str(const DSValue &v) {
+    return typeAs<String_Object>(v)->getValue();
+}
+
 struct GetOptState {
     /**
      * index of next processing argument
@@ -352,16 +368,18 @@ static int getopt(const int argc, char *const argv[], const char *optStr, GetOpt
     return -1;
 }
 
-static int builtin_help(DSState &, const int argc, char *const *argv) {
-    if(argc == 1) {
+static int builtin_help(DSState &, Array_Object &argvObj) {
+    const unsigned int size = argvObj.getValues().size();
+
+    if(size == 1) {
         printAllUsage(stdout);
         return 0;
     }
     bool isShortHelp = false;
     bool foundValidCommand = false;
-    for(int i = 1; i < argc; i++) {
-        const char *arg = argv[i];
-        if(strcmp(arg, "-s") == 0 && argc == 2) {
+    for(unsigned int i = 1; i < size; i++) {
+        const char *arg = str(argvObj.getValues()[i]);
+        if(strcmp(arg, "-s") == 0 && size == 2) {
             printAllUsage(stdout);
             foundValidCommand = true;
         } else if(strcmp(arg, "-s") == 0 && i == 1) {
@@ -373,29 +391,31 @@ static int builtin_help(DSState &, const int argc, char *const *argv) {
         }
     }
     if(!foundValidCommand) {
-        ERROR(argv, "no help topics match `%s'.  Try `help help'.", argv[argc - 1]);
+        ERROR(argvObj, "no help topics match `%s'.  Try `help help'.", str(argvObj.getValues()[size - 1]));
         return 1;
     }
     return 0;
 }
 
-static void showUsage(char *const *argv) {
-    printUsage(stderr, argv[0]);
+static void showUsage(const Array_Object &obj) {
+    printUsage(stderr, str(obj.getValues()[0]));
 }
 
-static int invalidOptionError(char *const *argv, const GetOptState &s) {
-    ERROR(argv, "-%c: invalid option", s.optOpt);
-    showUsage(argv);
+static int invalidOptionError(const Array_Object &obj, const GetOptState &s) {
+    ERROR(obj, "-%c: invalid option", s.optOpt);
+    showUsage(obj);
     return 2;
 }
 
-static int invalidOptionError(char *const *argv, const char *opt) {
-    ERROR(argv, "%s: invalid option", opt);
-    showUsage(argv);
+static int invalidOptionError(const Array_Object &obj, const char *opt) {
+    ERROR(obj, "%s: invalid option", opt);
+    showUsage(obj);
     return 2;
 }
 
-static int builtin_cd(DSState &state, const int argc, char *const *argv) {
+static int builtin_cd(DSState &state, Array_Object &argvObj) {
+    DEF_ARGV(argc, argv, argvObj);
+
     GetOptState optState;
     bool useLogical = true;
     for(int opt; (opt = getopt(argc, argv, "PL", optState)) != -1;) {
@@ -407,7 +427,7 @@ static int builtin_cd(DSState &state, const int argc, char *const *argv) {
             useLogical = true;
             break;
         default:
-            return invalidOptionError(argv, optState);
+            return invalidOptionError(argvObj, optState);
         }
     }
 
@@ -435,13 +455,14 @@ static int builtin_cd(DSState &state, const int argc, char *const *argv) {
     return 0;
 }
 
-static int builtin_check_env(DSState &, const int argc, char *const *argv) {
-    if(argc == 1) {
-        showUsage(argv);
+static int builtin_check_env(DSState &, Array_Object &argvObj) {
+    const unsigned int size = argvObj.getValues().size();
+    if(size == 1) {
+        showUsage(argvObj);
         return 1;
     }
-    for(int i = 1; i < argc; i++) {
-        const char *env = getenv(argv[i]);
+    for(unsigned int i = 1; i < size; i++) {
+        const char *env = getenv(str(argvObj.getValues()[i]));
         if(env == nullptr || strlen(env) == 0) {
             return 1;
         }
@@ -449,10 +470,12 @@ static int builtin_check_env(DSState &, const int argc, char *const *argv) {
     return 0;
 }
 
-static int builtin_exit(DSState &state, const int argc, char *const *argv) {
+static int builtin_exit(DSState &state, Array_Object &argvObj) {
+    const unsigned int size = argvObj.getValues().size();
+
     int ret = 0;
-    if(argc > 1) {
-        const char *num = argv[1];
+    if(size > 1) {
+        const char *num = str(argvObj.getValues()[1]);
         int status;
         long value = convertToInt64(num, status);
         if(status == 0) {
@@ -462,7 +485,9 @@ static int builtin_exit(DSState &state, const int argc, char *const *argv) {
     exitShell(state, ret);
 }
 
-static int builtin_echo(DSState &, const int argc, char *const *argv) {
+static int builtin_echo(DSState &, Array_Object &argvObj) {
+    DEF_ARGV(argc, argv, argvObj);
+
     bool newline = true;
     bool interpEscape = false;
 
@@ -577,18 +602,18 @@ static int builtin_echo(DSState &, const int argc, char *const *argv) {
     return 0;
 }
 
-static int builtin_true(DSState &, const int, char *const *) {
+static int builtin_true(DSState &, Array_Object &) {
     return 0;
 }
 
-static int builtin_false(DSState &, const int, char *const *) {
+static int builtin_false(DSState &, Array_Object &) {
     return 1;
 }
 
 /**
  * for stdin redirection test
  */
-static int builtin___gets(DSState &, const int, char *const *) {
+static int builtin___gets(DSState &, Array_Object &) {
     unsigned int bufSize = 256;
     char buf[bufSize];
     int readSize;
@@ -602,7 +627,9 @@ static int builtin___gets(DSState &, const int, char *const *) {
 /**
  * for stdout/stderr redirection test
  */
-static int builtin___puts(DSState &, const int argc, char *const *argv) {
+static int builtin___puts(DSState &, Array_Object &argvObj) {
+    DEF_ARGV(argc, argv, argvObj);
+
     GetOptState optState;
     for(int opt; (opt = getopt(argc, argv, "1:2:", optState)) != -1;) {
         switch(opt) {
@@ -626,19 +653,21 @@ static int builtin___puts(DSState &, const int argc, char *const *argv) {
 /**
  * for prompt string debugging
  */
-static int builtin_ps_intrp(DSState &state, const int argc, char *const *argv) {
-    if(argc != 2) {
-        showUsage(argv);
+static int builtin_ps_intrp(DSState &state, Array_Object &argvObj) {
+    if(argvObj.getValues().size() != 2) {
+        showUsage(argvObj);
         return 1;
     }
-    std::string str;
-    interpretPromptString(state, argv[1], str);
-    fputs(str.c_str(), stdout);
+    std::string v;
+    interpretPromptString(state, str(argvObj.getValues()[1]), v);
+    fputs(v.c_str(), stdout);
     fputc('\n', stdout);
     return 0;
 }
 
-static int builtin_exec(DSState &state, const int argc, char *const *argv) {
+static int builtin_exec(DSState &state, Array_Object &argvObj) {
+    DEF_ARGV(argc, argv, argvObj);
+
     bool clearEnv = false;
     const char *progName = nullptr;
     GetOptState optState;
@@ -652,7 +681,7 @@ static int builtin_exec(DSState &state, const int argc, char *const *argv) {
             progName = optState.optArg;
             break;
         default:
-            showUsage(argv);
+            showUsage(argvObj);
             return 1;
         }
     }
@@ -673,12 +702,13 @@ static int builtin_exec(DSState &state, const int argc, char *const *argv) {
     return 0;
 }
 
-static int builtin_eval(DSState &state, const int argc, char *const *argv) {
+static int builtin_eval(DSState &state, Array_Object &argvObj) {
+    unsigned int argc = argvObj.getValues().size();
     if(argc <= 1) {
         return 0;
     }
 
-    const char *cmdName = argv[1];
+    const char *cmdName = str(argvObj.getValues()[1]);
     // user-defined command
     auto *udcNode = lookupUserDefinedCommand(state, cmdName);
     if(udcNode != nullptr) {
@@ -687,13 +717,8 @@ static int builtin_eval(DSState &state, const int argc, char *const *argv) {
             perror("child process error");
             exit(1);
         } else if(pid == 0) {   // child
-            unsigned int size = argc - 1;
-            std::vector<DSValue> values(size);
-            for(int i = 1; i < argc; i++) {
-                values[i - 1] = DSValue::create<String_Object>(getPool(state).getStringType(), std::string(argv[i]));
-            }
-            auto argv2 = DSValue::create<Array_Object>(getPool(state).getStringArrayType(), std::move(values));
-            callUserDefinedCommand(state, udcNode, std::move(argv2), DSValue());
+            eraseFirst(argvObj);
+            callUserDefinedCommand(state, udcNode, DSValue(&argvObj), DSValue());
         } else {    // parent process
             int status;
             xwaitpid(state, pid, status, 0);
@@ -708,16 +733,14 @@ static int builtin_eval(DSState &state, const int argc, char *const *argv) {
     }
 
     // builtin command
-    int argc2 = argc - 1;
-    char *const *argv2 = argv + 1;
     builtin_command_t builtinCmd = lookupBuiltinCommand(cmdName);
+    eraseFirst(argvObj);
     if(builtinCmd != nullptr) {
-        return builtinCmd(state, argc2, argv2);
+        return builtinCmd(state, argvObj);
     }
 
     // external command
-    int status;
-    forkAndExec(state, argv2, status);
+    int status = forkAndExec(state, std::move(argvObj));
     if(WIFEXITED(status)) {
         return WEXITSTATUS(status);
     }
@@ -727,7 +750,9 @@ static int builtin_eval(DSState &state, const int argc, char *const *argv) {
     return 0;
 }
 
-static int builtin_pwd(DSState &state, const int argc, char *const *argv) {
+static int builtin_pwd(DSState &state, Array_Object &argvObj) {
+    DEF_ARGV(argc, argv, argvObj);
+
     bool useLogical = true;
 
     GetOptState optState;
@@ -740,7 +765,7 @@ static int builtin_pwd(DSState &state, const int argc, char *const *argv) {
             useLogical = false;
             break;
         default:
-            return invalidOptionError(argv, optState);
+            return invalidOptionError(argvObj, optState);
         }
     }
 
@@ -764,7 +789,9 @@ static int builtin_pwd(DSState &state, const int argc, char *const *argv) {
     return 0;
 }
 
-static int builtin_command(DSState &state, const int argc, char *const *argv) {
+static int builtin_command(DSState &state, Array_Object &argvObj) {
+    DEF_ARGV(argc, argv, argvObj);
+
     bool useDefaultPath = false;
 
     /**
@@ -787,21 +814,20 @@ static int builtin_command(DSState &state, const int argc, char *const *argv) {
             showDesc = 2;
             break;
         default:
-            return invalidOptionError(argv, optState);
+            return invalidOptionError(argvObj, optState);
         }
     }
 
     int index = optState.index;
     if(index < argc) {
         if(showDesc == 0) { // execute command
-            char *const *argv2 = argv + index;
-            int argc2 = argc - index;
+            auto &values = argvObj.refValues();
+            values.erase(values.begin(), values.begin() + index);
             auto *cmd = lookupBuiltinCommand(argv[index]);
             if(cmd != nullptr) {
-                return cmd(state, argc2, argv2);
+                return cmd(state, argvObj);
             } else {
-                int status;
-                forkAndExec(state, argv2, status, useDefaultPath);
+                int status = forkAndExec(state, argvObj, useDefaultPath);
                 if(WIFEXITED(status)) {
                     return WEXITSTATUS(status);
                 }
@@ -872,7 +898,9 @@ enum class BinaryOp : unsigned int {
     GE,
 };
 
-static int builtin_test(DSState &, const int argc, char *const *argv) {
+static int builtin_test(DSState &, Array_Object &argvObj) {
+    DEF_ARGV(argc, argv, argvObj);
+
     static CStringHashMap<BinaryOp> binaryOpMap;
     if(binaryOpMap.empty()) {
         static const struct {
@@ -913,7 +941,7 @@ static int builtin_test(DSState &, const int argc, char *const *argv) {
         const char *op = argv[1];
         const char *value = argv[2];
         if(strlen(op) != 2 || op[0] != '-') {
-            ERROR(argv, "%s: invalid unary operator", op);
+            ERROR(argvObj, "%s: invalid unary operator", op);
             return 2;
         }
 
@@ -1012,7 +1040,7 @@ static int builtin_test(DSState &, const int argc, char *const *argv) {
             break;
         }
         default: {
-            ERROR(argv, "%s: invalid unary operator", op);
+            ERROR(argvObj, "%s: invalid unary operator", op);
             return 2;
         }
         }
@@ -1051,13 +1079,13 @@ static int builtin_test(DSState &, const int argc, char *const *argv) {
             int s = 0;
             long n1 = convertToInt64(left, s);
             if(s != 0) {
-                ERROR(argv, "%s: must be integer", left);
+                ERROR(argvObj, "%s: must be integer", left);
                 return 2;
             }
 
             long n2 = convertToInt64(right, s);
             if(s != 0) {
-                ERROR(argv, "%s: must be integer", right);
+                ERROR(argvObj, "%s: must be integer", right);
                 return 2;
             }
             if(opKind == BinaryOp::EQ) {
@@ -1076,14 +1104,14 @@ static int builtin_test(DSState &, const int argc, char *const *argv) {
             break;
         }
         case BinaryOp::INVALID: {
-            ERROR(argv, "%s: invalid binary operator", op);
+            ERROR(argvObj, "%s: invalid binary operator", op);
             return 2;
         }
         }
         break;
     }
     default: {
-        ERROR(argv, "too many arguments");
+        ERROR(argvObj, "too many arguments");
         return 2;
     }
     }
@@ -1127,7 +1155,9 @@ static int xfgetc(int fd, int timeout) {
     return ch;
 }
 
-static int builtin_read(DSState &state, const int argc, char *const *argv) {  //FIXME: timeout, UTF-8
+static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeout, UTF-8
+    DEF_ARGV(argc, argv, argvObj);
+
     const char *prompt = "";
     const char *ifs = nullptr;
     bool backslash = true;
@@ -1154,7 +1184,7 @@ static int builtin_read(DSState &state, const int argc, char *const *argv) {  //
             int s;
             long t = convertToInt64(optState.optArg, s);
             if(s != 0 || t < 0 || t > INT32_MAX) {
-                ERROR(argv, "%s: invalid file descriptor", optState.optArg);
+                ERROR(argvObj, "%s: invalid file descriptor", optState.optArg);
                 return 1;
             }
             fd = static_cast<int>(t);
@@ -1172,14 +1202,14 @@ static int builtin_read(DSState &state, const int argc, char *const *argv) {  //
                     }
                 }
             }
-            ERROR(argv, "%s: invalid timeout specification", optState.optArg);
+            ERROR(argvObj, "%s: invalid timeout specification", optState.optArg);
             return 1;
         }
         case ':':
-            ERROR(argv, "-%c: option require argument", optState.optOpt);
+            ERROR(argvObj, "-%c: option require argument", optState.optOpt);
             return 2;
         default:
-            return invalidOptionError(argv, optState);
+            return invalidOptionError(argvObj, optState);
         }
     }
 
@@ -1301,7 +1331,9 @@ static int builtin_read(DSState &state, const int argc, char *const *argv) {  //
     return ret;
 }
 
-static int builtin_hash(DSState &state, const int argc, char *const *argv) {
+static int builtin_hash(DSState &state, Array_Object &argvObj) {
+    DEF_ARGV(argc, argv, argvObj);
+
     bool remove = false;
 
     // check option
@@ -1314,7 +1346,7 @@ static int builtin_hash(DSState &state, const int argc, char *const *argv) {
         if(strcmp(arg, "-r") == 0) {
             remove = true;
         } else {
-            return invalidOptionError(argv, arg);
+            return invalidOptionError(argvObj, arg);
         }
     }
 
@@ -1326,7 +1358,7 @@ static int builtin_hash(DSState &state, const int argc, char *const *argv) {
                 getPathCache(state).removePath(name);
             } else {
                 if(getPathCache(state).searchPath(name) == nullptr) {
-                    ERROR(argv, "%s: not found", name);
+                    ERROR(argvObj, "%s: not found", name);
                     return 1;
                 }
             }
@@ -1349,13 +1381,14 @@ static int builtin_hash(DSState &state, const int argc, char *const *argv) {
 }
 
 // for completor debugging
-static int builtin_complete(DSState &state, const int argc, char *const *argv) {
+static int builtin_complete(DSState &state, Array_Object &argvObj) {
+    const unsigned int argc = argvObj.getValues().size();
     if(argc != 2) {
-        showUsage(argv);
+        showUsage(argvObj);
         return 1;
     }
 
-    std::string line(argv[1]);
+    std::string line = str(argvObj.getValues()[1]);
     line += '\n';
     auto c = completeLine(state, line);
     for(const auto &e : c) {
@@ -1367,21 +1400,22 @@ static int builtin_complete(DSState &state, const int argc, char *const *argv) {
     return 0;
 }
 
-static int showHistory(DSState &state, const int argc, char *const *argv) {
+static int showHistory(DSState &state, const Array_Object &obj) {
     auto *history = DSState_history(&state);
     unsigned int printOffset = history->size;
     const unsigned int histSize = history->size;
+    const unsigned int argc = obj.getValues().size();
     if(argc > 1) {
         if(argc > 2) {
-            ERROR(argv, "too many arguments");
+            ERROR(obj, "too many arguments");
             return 1;
         }
 
         int s;
-        const char *arg = argv[1];
+        const char *arg = str(obj.getValues()[1]);
         printOffset = convertToUint64(arg, s);
         if(s != 0) {
-            ERROR(argv, "%s: numeric argument required", arg);
+            ERROR(obj, "%s: numeric argument required", arg);
             return 1;
         }
 
@@ -1398,19 +1432,20 @@ static int showHistory(DSState &state, const int argc, char *const *argv) {
     return 0;
 }
 
-static int builtin_history(DSState &state, const int argc, char *const *argv) {
+static int builtin_history(DSState &state, Array_Object &argvObj) {
     DSState_syncHistorySize(&state);
 
-    if(argc == 1 || argv[1][0] != '-') {
-        return showHistory(state, argc, argv);
+    const unsigned int argc = argvObj.getValues().size();
+    if(argc == 1 || str(argvObj.getValues()[1])[0] != '-') {
+        return showHistory(state, argvObj);
     }
 
     char op = '\0';
     const char *fileName = nullptr;
     const char *deleteTarget = nullptr;
 
-    for(int i = 1; i < argc; i++) {
-        const char *arg = argv[i];
+    for(unsigned int i = 1; i < argc; i++) {
+        const char *arg = str(argvObj.getValues()[i]);
         if(arg[0] == '-' && strlen(arg) == 2) {
             char ch = arg[1];
             switch(ch) {
@@ -1419,28 +1454,29 @@ static int builtin_history(DSState &state, const int argc, char *const *argv) {
                 return 0;
             case 'd': {
                 if(i + 1 < argc) {
-                    deleteTarget = argv[++i];
+                    deleteTarget = str(argvObj.getValues()[++i]);
                     continue;
                 } else {
-                    ERROR(argv, "%s: option requires argument", arg);
+                    ERROR(argvObj, "%s: option requires argument", arg);
                     return 2;
                 }
             }
             case 'r':
             case 'w': {
                 if(op != '\0') {
-                    ERROR(argv, "cannot use more than one of -rw");
+                    ERROR(argvObj, "cannot use more than one of -rw");
                     return 1;
                 }
                 op = ch;
-                fileName = i + 1 < argc && argv[i + 1][0] != '-' ? argv[++i] : nullptr;
+                fileName = i + 1 < argc
+                           && str(argvObj.getValues()[i + 1])[0] != '-' ? str(argvObj.getValues()[++i]) : nullptr;
                 continue;
             }
             default:
                 break;
             }
         }
-        return invalidOptionError(argv, arg);
+        return invalidOptionError(argvObj, arg);
     }
 
     auto *history = DSState_history(&state);
@@ -1448,7 +1484,7 @@ static int builtin_history(DSState &state, const int argc, char *const *argv) {
         int s;
         int offset = convertToInt64(deleteTarget, s) - 1;
         if(s != 0 || offset < 0 || static_cast<unsigned int>(offset) > history->size) {
-            ERROR(argv, "%s: history offset out of range", deleteTarget);
+            ERROR(argvObj, "%s: history offset out of range", deleteTarget);
             return 1;
         }
         DSState_deleteHistoryAt(&state, offset);

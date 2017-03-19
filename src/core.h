@@ -187,7 +187,7 @@ pid_t xfork(DSState &st);
  */
 pid_t xwaitpid(DSState &st, pid_t pid, int &status, int options);
 
-void forkAndExec(DSState &ctx, char *const *argv, int &status, bool useDefaultPath = false);
+int forkAndExec(DSState &ctx, const Array_Object &argvObj, bool useDefaultPath = false);
 
 /**
  * n is 1 or 2
