@@ -881,6 +881,111 @@ public:
     }
 };
 
+class RedirConfig : public DSObject {
+private:
+    const bool restore;
+
+    std::vector<std::pair<RedirectOP, DSValue>> ops;
+
+    int fds[3];
+
+    NON_COPYABLE(RedirConfig);
+
+public:
+    RedirConfig(bool restore) : DSObject(nullptr), restore(restore), ops() {
+        if(this->restore) {
+            this->fds[0] = dup(STDIN_FILENO);
+            this->fds[1] = dup(STDOUT_FILENO);
+            this->fds[2] = dup(STDERR_FILENO);
+        }
+    }
+
+    ~RedirConfig() {
+        if(this->restore) {
+            dup2(this->fds[0], STDIN_FILENO);
+            dup2(this->fds[1], STDOUT_FILENO);
+            dup2(this->fds[2], STDERR_FILENO);
+
+            for(unsigned int i = 0; i < 3; i++) {
+                close(this->fds[i]);
+            }
+        }
+    }
+
+    void addRedirOp(RedirectOP op, DSValue &&arg) {
+        this->ops.push_back(std::make_pair(op, std::move(arg)));
+    }
+
+    void redirect(DSState &st) const;
+};
+
+static int redirectImpl(const std::pair<RedirectOP, DSValue> &pair) {
+    switch(pair.first) {
+    case IN_2_FILE: {
+        return redirectToFile(pair.second, "rb", STDIN_FILENO);
+    }
+    case OUT_2_FILE: {
+        return redirectToFile(pair.second, "wb", STDOUT_FILENO);
+    }
+    case OUT_2_FILE_APPEND: {
+        return redirectToFile(pair.second, "ab", STDOUT_FILENO);
+    }
+    case ERR_2_FILE: {
+        return redirectToFile(pair.second, "wb", STDERR_FILENO);
+    }
+    case ERR_2_FILE_APPEND: {
+        return redirectToFile(pair.second, "ab", STDERR_FILENO);
+    }
+    case MERGE_ERR_2_OUT_2_FILE: {
+        int r = redirectToFile(pair.second, "wb", STDOUT_FILENO);
+        if(r != 0) {
+            return r;
+        }
+        if(!dup2(STDOUT_FILENO, STDERR_FILENO)) {
+            return errno;
+        }
+        return 0;
+    }
+    case MERGE_ERR_2_OUT_2_FILE_APPEND: {
+        int r = redirectToFile(pair.second, "ab", STDOUT_FILENO);
+        if(r != 0) {
+            return r;
+        }
+        if(!dup2(STDOUT_FILENO, STDERR_FILENO)) {
+            return errno;
+        }
+        return 0;
+    }
+    case MERGE_ERR_2_OUT: {
+        if(!dup2(STDOUT_FILENO, STDERR_FILENO)) {
+            return errno;
+        }
+        return 0;
+    }
+    case MERGE_OUT_2_ERR: {
+        if(!dup2(STDERR_FILENO, STDOUT_FILENO)) {
+            return errno;
+        }
+        return 0;
+    }
+    case DUMMY:
+        return 0;   // unreachable
+    }
+}
+
+void RedirConfig::redirect(DSState &st) const {
+    for(auto &pair : this->ops) {
+        int r = redirectImpl(pair);
+        if(this->restore && r != 0) {
+            std::string msg = "io redirection error: ";
+            if(pair.second && !typeAs<String_Object>(pair.second)->empty()) {
+                msg += typeAs<String_Object>(pair.second)->getValue();
+            }
+            throwSystemError(st, r, std::move(msg));
+        }
+    }
+}
+
 static void saveStdFD(int (&origFds)[3]) {
     origFds[0] = dup(STDIN_FILENO);
     origFds[1] = dup(STDOUT_FILENO);
@@ -1814,6 +1919,22 @@ static bool mainLoop(DSState &state) {
             } else {
                 state.push(state.falseObj);
             }
+            break;
+        }
+        vmcase(NEW_REDIR)
+        vmcase(NEW_REDIR_P) {
+            bool restore = op == OpCode::NEW_REDIR;
+            state.push(DSValue::create<RedirConfig>(restore));
+            break;
+        }
+        vmcase(ADD_REDIR_OP2) {
+            unsigned char v = read8(GET_CODE(state), ++state.pc());
+            auto value = state.pop();
+            typeAs<RedirConfig>(state.peek())->addRedirOp(static_cast<RedirectOP>(v), std::move(value));
+            break;
+        }
+        vmcase(DO_REDIR) {
+            typeAs<RedirConfig>(state.peek())->redirect(state);
             break;
         }
         vmcase(DBUS_INIT_SIG) {

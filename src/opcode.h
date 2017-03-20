@@ -101,6 +101,10 @@ namespace ydsh {
     OP(EXPAND_TILDE, 0) \
     OP(CALL_CMD, 1) \
     OP(POP_PIPELINE, 0) \
+    OP(NEW_REDIR, 0) \
+    OP(NEW_REDIR_P, 0) \
+    OP(ADD_REDIR_OP2, 1) \
+    OP(DO_REDIR, 0) \
     OP(DBUS_INIT_SIG, 0) \
     OP(DBUS_WAIT_SIG, 0) \
     OP(RAND, 0) \
