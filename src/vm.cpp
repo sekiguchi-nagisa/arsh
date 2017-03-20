@@ -969,8 +969,9 @@ static int redirectImpl(const std::pair<RedirectOP, DSValue> &pair) {
         return 0;
     }
     case DUMMY:
-        return 0;   // unreachable
+        break;   // unreachable
     }
+    return 0;
 }
 
 void RedirConfig::redirect(DSState &st) const {
