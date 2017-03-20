@@ -476,6 +476,10 @@ inline void eraseFirst(Array_Object &v) {
     values.erase(values.begin());
 }
 
+inline const char *str(const DSValue &v) {
+    return typeAs<String_Object>(v)->getValue();
+}
+
 struct KeyCompare {
     bool operator() (const DSValue &x, const DSValue &y) const {
         return x->equals(y);

@@ -25,7 +25,7 @@
 #include <ydsh/ydsh.h>
 
 #include "logger.h"
-#include "proc.h"
+#include "cmd.h"
 #include "core.h"
 #include "symbol.h"
 #include "object.h"
@@ -302,10 +302,6 @@ static bool printUsage(FILE *fp, const char *prefix, bool isShortHelp = true) {
     return matched;
 }
 
-inline const char *str(const DSValue &v) {
-    return typeAs<String_Object>(v)->getValue();
-}
-
 struct GetOptState {
     /**
      * index of next processing argument
@@ -435,7 +431,7 @@ static int builtin_cd(DSState &state, Array_Object &argvObj) {
     const char *dest = nullptr;
     bool useOldpwd = false;
     if(index < argc) {
-        dest = argv[index];
+        dest = str(argvObj.getValues()[index]);
         if(strcmp(dest, "-") == 0) {
             dest = getenv(ENV_OLDPWD);
             useOldpwd = true;
@@ -449,7 +445,7 @@ static int builtin_cd(DSState &state, Array_Object &argvObj) {
     }
 
     if(!changeWorkingDir(state, dest, useLogical)) {
-        PERROR(argv, "%s", dest);
+        PERROR(argvObj, "%s", dest);
         return 1;
     }
     return 0;
@@ -510,7 +506,7 @@ static int builtin_echo(DSState &, Array_Object &argvObj) {
 
     END:
     // print argument
-    if(optState.index > 1 && strcmp(argv[optState.index - 1], "--") == 0) {
+    if(optState.index > 1 && strcmp(str(argvObj.getValues()[optState.index - 1]), "--") == 0) {
         optState.index--;
     }
 
@@ -523,10 +519,10 @@ static int builtin_echo(DSState &, Array_Object &argvObj) {
             fputc(' ', stdout);
         }
         if(!interpEscape) {
-            fputs(argv[index], stdout);
+            fputs(str(argvObj.getValues()[index]), stdout);
             continue;
         }
-        const char *arg = argv[index];
+        const char *arg = str(argvObj.getValues()[index]);
         for(unsigned int i = 0; arg[i] != '\0'; i++) {
             char ch = arg[i];
             if(ch == '\\' && arg[i + 1] != '\0') {
@@ -571,7 +567,7 @@ static int builtin_echo(DSState &, Array_Object &argvObj) {
                             break;
                         }
                     }
-                    ch = (char) v;
+                    ch = static_cast<char>(v);
                     break;
                 }
                 case 'x': {
@@ -581,7 +577,7 @@ static int builtin_echo(DSState &, Array_Object &argvObj) {
                             v *= 16;
                             v += toHex(arg[++i]);
                         }
-                        ch = (char) v;
+                        ch = static_cast<char>(v);
                         break;
                     }
                     i--;
@@ -688,7 +684,12 @@ static int builtin_exec(DSState &state, Array_Object &argvObj) {
 
     int index = optState.index;
     if(index < argc) { // exec
-        char **argv2 = const_cast<char **>(argv + index);
+        char *argv2[argc - index + 1];
+        for(int i = index; i < argc; i++) {
+            argv2[i - index] = const_cast<char *>(str(argvObj.getValues()[i]));
+        }
+        argv2[argc - index] = nullptr;
+
         const char *filePath = getPathCache(state).searchPath(argv2[0], FilePathCache::DIRECT_SEARCH);
         if(progName != nullptr) {
             argv2[0] = const_cast<char *>(progName);
@@ -696,7 +697,7 @@ static int builtin_exec(DSState &state, Array_Object &argvObj) {
 
         char *envp[] = {nullptr};
         xexecve(filePath, argv2, clearEnv ? envp : nullptr);
-        PERROR(argv, "%s", argv[index]);
+        PERROR(argvObj, "%s", str(argvObj.getValues()[index]));
         exit(1);
     }
     return 0;
@@ -772,7 +773,7 @@ static int builtin_pwd(DSState &state, Array_Object &argvObj) {
     if(useLogical) {
         const char *dir = getLogicalWorkingDir(state);
         if(!S_ISDIR(getStMode(dir))) {
-            PERROR(argv, ".");
+            PERROR(argvObj, ".");
             return 1;
         }
         fputs(dir, stdout);
@@ -780,7 +781,7 @@ static int builtin_pwd(DSState &state, Array_Object &argvObj) {
         size_t size = PATH_MAX;
         char buf[size];
         if(getcwd(buf, size) == nullptr) {
-            PERROR(argv, ".");
+            PERROR(argvObj, ".");
             return 1;
         }
         fputs(buf, stdout);
@@ -875,7 +876,7 @@ static int builtin_command(DSState &state, Array_Object &argvObj) {
                     continue;
                 }
                 if(showDesc == 2) {
-                    PERROR(argv, "%s", commandName);
+                    PERROR(argvObj, "%s", commandName);
                 }
             }
             return successCount > 0 ? 0 : 1;
@@ -899,8 +900,6 @@ enum class BinaryOp : unsigned int {
 };
 
 static int builtin_test(DSState &, Array_Object &argvObj) {
-    DEF_ARGV(argc, argv, argvObj);
-
     static CStringHashMap<BinaryOp> binaryOpMap;
     if(binaryOpMap.empty()) {
         static const struct {
@@ -926,7 +925,8 @@ static int builtin_test(DSState &, Array_Object &argvObj) {
     }
 
     bool result = false;
-    const int argSize = argc - 1;
+    unsigned int argc = argvObj.getValues().size();
+    const unsigned int argSize = argc - 1;
 
     switch(argSize) {
     case 0: {
@@ -934,12 +934,12 @@ static int builtin_test(DSState &, Array_Object &argvObj) {
         break;
     }
     case 1: {
-        result = strlen(argv[1]) != 0; // check if string is not empty
+        result = strlen(str(argvObj.getValues()[1])) != 0;  // check if string is not empty
         break;
     }
     case 2: {   // unary op
-        const char *op = argv[1];
-        const char *value = argv[2];
+        const char *op = str(argvObj.getValues()[1]);
+        const char *value = str(argvObj.getValues()[2]);
         if(strlen(op) != 2 || op[0] != '-') {
             ERROR(argvObj, "%s: invalid unary operator", op);
             return 2;
@@ -1047,9 +1047,9 @@ static int builtin_test(DSState &, Array_Object &argvObj) {
         break;
     }
     case 3: {   // binary op
-        const char *left = argv[1];
-        const char *op = argv[2];
-        const char *right = argv[3];
+        const char *left = str(argvObj.getValues()[1]);
+        const char *op = str(argvObj.getValues()[2]);
+        const char *right = str(argvObj.getValues()[3]);
 
         auto iter = binaryOpMap.find(op);
         const BinaryOp opKind = iter != binaryOpMap.end() ? iter->second : BinaryOp::INVALID;
@@ -1276,7 +1276,7 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
         skipCount = 0;
         if(fieldSep && index < argc - 1) {
             auto obj = typeAs<Map_Object>(getGlobal(state, varIndex));
-            auto varObj = DSValue::create<String_Object>(getPool(state).getStringType(), argv[index]);
+            auto varObj = argvObj.getValues()[index];
             auto valueObj = DSValue::create<String_Object>(getPool(state).getStringType(), std::move(strBuf));
             obj->set(std::move(varObj), std::move(valueObj));
             strBuf = "";
@@ -1312,7 +1312,7 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
     // set rest variable
     for(; index < argc; index++) {
         auto obj = typeAs<Map_Object>(getGlobal(state, varIndex));
-        auto varObj = DSValue::create<String_Object>(getPool(state).getStringType(), argv[index]);
+        auto varObj = argvObj.getValues()[index];
         auto valueObj = DSValue::create<String_Object>(getPool(state).getStringType(), std::move(strBuf));
         obj->set(std::move(varObj), std::move(valueObj));
         strBuf = "";
@@ -1326,20 +1326,19 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
     // report error
     int ret = ch == EOF ? 1 : 0;
     if(ret != 0 && errno != 0) {
-        PERROR(argv, "%d", fd);
+        PERROR(argvObj, "%d", fd);
     }
     return ret;
 }
 
 static int builtin_hash(DSState &state, Array_Object &argvObj) {
-    DEF_ARGV(argc, argv, argvObj);
-
     bool remove = false;
 
     // check option
-    int index = 1;
+    const unsigned int argc = argvObj.getValues().size();
+    unsigned int index = 1;
     for(; index < argc; index++) {
-        const char *arg = argv[index];
+        const char *arg = str(argvObj.getValues()[index]);
         if(arg[0] != '-') {
             break;
         }
@@ -1353,7 +1352,7 @@ static int builtin_hash(DSState &state, Array_Object &argvObj) {
     const bool hasNames = index < argc;
     if(hasNames) {
         for(; index < argc; index++) {
-            const char *name = argv[index];
+            const char *name = str(argvObj.getValues()[index]);
             if(remove) {
                 getPathCache(state).removePath(name);
             } else {

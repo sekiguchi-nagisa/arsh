@@ -1283,7 +1283,7 @@ int forkAndExec(DSState &ctx, const Array_Object &argvObj, bool useDefaultPath) 
         xexecve(filePath, argv, nullptr);
 
         int errnum = errno;
-        PERROR0(argv);
+        PERROR0(argvObj);
         write(selfpipe[WRITE_PIPE], &errnum, sizeof(int));
         exit(1);
     } else {    // parent process

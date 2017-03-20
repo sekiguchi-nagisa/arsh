@@ -21,7 +21,7 @@
 #include "node.h"
 #include "node_dumper.h"
 #include "handle.h"
-#include "proc.h"
+#include "cmd.h"
 
 
 namespace ydsh {
