@@ -35,18 +35,6 @@
 
 namespace ydsh {
 
-inline void initArray(const std::vector<DSValue> &value, char **array) {
-    const unsigned int size = value.size();
-    for(unsigned int i = 0; i < size; i++) {
-        array[i] = const_cast<char *>(typeAs<String_Object>(value[i])->getValue());
-    }
-    array[size] = nullptr;
-}
-
-#define DEF_ARGV(argc, argv, obj) const int argc = obj.getValues().size(); char *argv[argc + 1]; initArray(obj.getValues(), argv)
-
-
-
 void xexecve(const char *filePath, char **argv, char *const *envp);
 
 // builtin command definition
@@ -306,7 +294,7 @@ struct GetOptState {
     /**
      * index of next processing argument
      */
-    int index;
+    unsigned int index;
 
     /**
      * currently processed argument.
@@ -326,9 +314,18 @@ struct GetOptState {
     GetOptState() : index(1), optCursor(nullptr), optArg(nullptr), optOpt(0) {}
 };
 
-static int getopt(const int argc, char *const argv[], const char *optStr, GetOptState &state) {
+/**
+ *
+ * @param obj
+ * first element is command name.
+ * @param optStr
+ * @param state
+ * @return
+ */
+static int getopt(const Array_Object &obj, const char *optStr, GetOptState &state) {
+    unsigned int argc = obj.getValues().size();
     if(state.index < argc) {
-        const char *arg = argv[state.index];
+        const char *arg = str(obj.getValues()[state.index]);
         if(*arg != '-' || strcmp(arg, "-") == 0) {
             return -1;
         }
@@ -349,7 +346,7 @@ static int getopt(const int argc, char *const argv[], const char *optStr, GetOpt
                     state.optOpt = *ptr;
                     return ':';
                 }
-                state.optArg = argv[state.index];
+                state.optArg = str(obj.getValues()[state.index]);
                 state.optCursor = nullptr;
             }
 
@@ -410,11 +407,9 @@ static int invalidOptionError(const Array_Object &obj, const char *opt) {
 }
 
 static int builtin_cd(DSState &state, Array_Object &argvObj) {
-    DEF_ARGV(argc, argv, argvObj);
-
     GetOptState optState;
     bool useLogical = true;
-    for(int opt; (opt = getopt(argc, argv, "PL", optState)) != -1;) {
+    for(int opt; (opt = getopt(argvObj, "PL", optState)) != -1;) {
         switch(opt) {
         case 'P':
             useLogical = false;
@@ -427,10 +422,10 @@ static int builtin_cd(DSState &state, Array_Object &argvObj) {
         }
     }
 
-    int index = optState.index;
+    unsigned int index = optState.index;
     const char *dest = nullptr;
     bool useOldpwd = false;
-    if(index < argc) {
+    if(index < argvObj.getValues().size()) {
         dest = str(argvObj.getValues()[index]);
         if(strcmp(dest, "-") == 0) {
             dest = getenv(ENV_OLDPWD);
@@ -482,13 +477,11 @@ static int builtin_exit(DSState &state, Array_Object &argvObj) {
 }
 
 static int builtin_echo(DSState &, Array_Object &argvObj) {
-    DEF_ARGV(argc, argv, argvObj);
-
     bool newline = true;
     bool interpEscape = false;
 
     GetOptState optState;
-    for(int opt; (opt = getopt(argc, argv, "neE", optState)) != -1;) {
+    for(int opt; (opt = getopt(argvObj, "neE", optState)) != -1;) {
         switch(opt) {
         case 'n':
             newline = false;
@@ -510,7 +503,8 @@ static int builtin_echo(DSState &, Array_Object &argvObj) {
         optState.index--;
     }
 
-    int index = optState.index;
+    unsigned int index = optState.index;
+    const unsigned int argc = argvObj.getValues().size();
     bool firstArg = true;
     for(; index < argc; index++) {
         if(firstArg) {
@@ -624,10 +618,8 @@ static int builtin___gets(DSState &, Array_Object &) {
  * for stdout/stderr redirection test
  */
 static int builtin___puts(DSState &, Array_Object &argvObj) {
-    DEF_ARGV(argc, argv, argvObj);
-
     GetOptState optState;
-    for(int opt; (opt = getopt(argc, argv, "1:2:", optState)) != -1;) {
+    for(int opt; (opt = getopt(argvObj, "1:2:", optState)) != -1;) {
         switch(opt) {
         case '1':
             fputs(optState.optArg, stdout);
@@ -662,13 +654,11 @@ static int builtin_ps_intrp(DSState &state, Array_Object &argvObj) {
 }
 
 static int builtin_exec(DSState &state, Array_Object &argvObj) {
-    DEF_ARGV(argc, argv, argvObj);
-
     bool clearEnv = false;
     const char *progName = nullptr;
     GetOptState optState;
 
-    for(int opt; (opt = getopt(argc, argv, "ca:", optState)) != -1;) {
+    for(int opt; (opt = getopt(argvObj, "ca:", optState)) != -1;) {
         switch(opt) {
         case 'c':
             clearEnv = true;
@@ -682,10 +672,11 @@ static int builtin_exec(DSState &state, Array_Object &argvObj) {
         }
     }
 
-    int index = optState.index;
+    unsigned int index = optState.index;
+    const unsigned int argc = argvObj.getValues().size();
     if(index < argc) { // exec
         char *argv2[argc - index + 1];
-        for(int i = index; i < argc; i++) {
+        for(unsigned int i = index; i < argc; i++) {
             argv2[i - index] = const_cast<char *>(str(argvObj.getValues()[i]));
         }
         argv2[argc - index] = nullptr;
@@ -752,12 +743,10 @@ static int builtin_eval(DSState &state, Array_Object &argvObj) {
 }
 
 static int builtin_pwd(DSState &state, Array_Object &argvObj) {
-    DEF_ARGV(argc, argv, argvObj);
-
     bool useLogical = true;
 
     GetOptState optState;
-    for(int opt; (opt = getopt(argc, argv, "LP", optState)) != -1;) {
+    for(int opt; (opt = getopt(argvObj, "LP", optState)) != -1;) {
         switch(opt) {
         case 'L':
             useLogical = true;
@@ -791,8 +780,6 @@ static int builtin_pwd(DSState &state, Array_Object &argvObj) {
 }
 
 static int builtin_command(DSState &state, Array_Object &argvObj) {
-    DEF_ARGV(argc, argv, argvObj);
-
     bool useDefaultPath = false;
 
     /**
@@ -803,7 +790,7 @@ static int builtin_command(DSState &state, Array_Object &argvObj) {
     unsigned char showDesc = 0;
 
     GetOptState optState;
-    for(int opt; (opt = getopt(argc, argv, "pvV", optState)) != -1;) {
+    for(int opt; (opt = getopt(argvObj, "pvV", optState)) != -1;) {
         switch(opt) {
         case 'p':
             useDefaultPath = true;
@@ -819,12 +806,13 @@ static int builtin_command(DSState &state, Array_Object &argvObj) {
         }
     }
 
-    int index = optState.index;
+    unsigned int index = optState.index;
+    const unsigned int argc = argvObj.getValues().size();
     if(index < argc) {
         if(showDesc == 0) { // execute command
+            auto *cmd = lookupBuiltinCommand(str(argvObj.getValues()[index]));
             auto &values = argvObj.refValues();
             values.erase(values.begin(), values.begin() + index);
-            auto *cmd = lookupBuiltinCommand(argv[index]);
             if(cmd != nullptr) {
                 return cmd(state, argvObj);
             } else {
@@ -839,7 +827,7 @@ static int builtin_command(DSState &state, Array_Object &argvObj) {
         } else {    // show command description
             unsigned int successCount = 0;
             for(; index < argc; index++) {
-                const char *commandName = argv[index];
+                const char *commandName = str(argvObj.getValues()[index]);
                 // check user defined command
                 if(lookupUserDefinedCommand(state, commandName) != nullptr) {
                     successCount++;
@@ -1156,8 +1144,6 @@ static int xfgetc(int fd, int timeout) {
 }
 
 static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeout, UTF-8
-    DEF_ARGV(argc, argv, argvObj);
-
     const char *prompt = "";
     const char *ifs = nullptr;
     bool backslash = true;
@@ -1166,7 +1152,7 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
     int timeout = -1;
 
     GetOptState optState;
-    for(int opt; (opt = getopt(argc, argv, "rp:f:su:t:", optState)) != -1;) {
+    for(int opt; (opt = getopt(argvObj, "rp:f:su:t:", optState)) != -1;) {
         switch(opt) {
         case 'p':
             prompt = optState.optArg;
@@ -1213,7 +1199,8 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
         }
     }
 
-    int index = optState.index;
+    const unsigned int argc = argvObj.getValues().size();
+    unsigned int index = optState.index;
     const bool isTTY = isatty(fd) != 0;
 
     // check ifs
