@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH__PROC_H
-#define YDSH__PROC_H
+#ifndef YDSH_CMD_H
+#define YDSH_CMD_H
 
 #include <cstring>
 #include <cassert>
@@ -72,4 +72,4 @@ builtin_command_t lookupBuiltinCommand(const char *commandName);
 #define ERROR(obj, fmt, ...)  fprintf(stderr, "-ydsh: %s: " fmt "\n", str(obj.getValues()[0]), ## __VA_ARGS__)
 
 
-#endif //YDSH_PROC_H
+#endif //YDSH_CMD_H

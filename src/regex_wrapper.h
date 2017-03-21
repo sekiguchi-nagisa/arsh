@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_REGEX_H
-#define YDSH_REGEX_H
+#ifndef YDSH_REGEX_WRAPPER_H
+#define YDSH_REGEX_WRAPPER_H
 
 #include <memory>
 
@@ -41,4 +41,4 @@ inline PCRE compileRegex(const char *pattern, const char * &errorStr) {
 } // namespace ydsh
 
 
-#endif //YDSH_REGEX_H
+#endif //YDSH_REGEX_WRAPPER_H
