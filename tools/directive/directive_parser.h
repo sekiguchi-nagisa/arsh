@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2016 Nagisa Sekiguchi
+ * Copyright (C) 2015-2017 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -296,13 +296,13 @@ public:
     bool operator()(const char *sourceName, std::istream &input, Directive &d);
 
 private:
-    void parse_toplevel(std::unique_ptr<DirectiveNode> &node);
-    void parse_attribute(std::unique_ptr<AttributeNode> &node);
-    void parse_value(std::unique_ptr<Node> &value);
-    void parse_number(std::unique_ptr<Node> &node);
-    void parse_string(std::unique_ptr<Node> &node);
-    void parse_boolean(std::unique_ptr<Node> &node);
-    void parse_array(std::unique_ptr<Node> &node);
+    std::unique_ptr<DirectiveNode> parse_toplevel();
+    std::unique_ptr<AttributeNode> parse_attribute();
+    std::unique_ptr<Node> parse_value();
+    std::unique_ptr<Node> parse_number();
+    std::unique_ptr<Node> parse_string();
+    std::unique_ptr<Node> parse_boolean();
+    std::unique_ptr<Node> parse_array();
 };
 
 struct AttributeHandler {

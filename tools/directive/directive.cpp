@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2016 Nagisa Sekiguchi
+ * Copyright (C) 2015-2017 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -162,8 +162,7 @@ bool DirectiveParser::operator()(const char *sourceName, std::istream &input, Di
         this->fetchNext();
 
         try {
-            std::unique_ptr<DirectiveNode> node;
-            this->parse_toplevel(node);
+            auto node = this->parse_toplevel();
             DirectiveInitializer()(node, d);
             return true;
         } catch(const ParseError &e) {
@@ -191,9 +190,9 @@ bool DirectiveParser::operator()(const char *sourceName, std::istream &input, Di
 
 #define CUR_KIND() this->curKind
 
-void DirectiveParser::parse_toplevel(std::unique_ptr<DirectiveNode> &node) {
+std::unique_ptr<DirectiveNode> DirectiveParser::parse_toplevel() {
     Token token = this->expect(APPLIED_NAME);
-    node.reset(new DirectiveNode(token, this->lexer->toName(token)));
+    std::unique_ptr<DirectiveNode> node(new DirectiveNode(token, this->lexer->toName(token)));
 
     this->expect(LP);
 
@@ -204,40 +203,36 @@ void DirectiveParser::parse_toplevel(std::unique_ptr<DirectiveNode> &node) {
         } else {
             first = false;
         }
-        std::unique_ptr<AttributeNode> attr;
-        this->parse_attribute(attr);
+        auto attr = this->parse_attribute();
         node->append(std::move(attr));
     } while(CUR_KIND() == COMMA);
 
     this->expect(RP);
+
+    return node;
 }
 
-void DirectiveParser::parse_attribute(std::unique_ptr<AttributeNode> &node) {
+std::unique_ptr<AttributeNode> DirectiveParser::parse_attribute() {
     Token token = this->expect(APPLIED_NAME);
 
     this->expect(ASSIGN);
 
-    std::unique_ptr<Node> value;
-    this->parse_value(value);
+    auto value = this->parse_value();
 
-    node.reset(new AttributeNode(token, this->lexer->toName(token), std::move(value)));
+    return std::unique_ptr<AttributeNode>(new AttributeNode(token, this->lexer->toName(token), std::move(value)));
 }
 
-void DirectiveParser::parse_value(std::unique_ptr<Node> &value) {
+std::unique_ptr<Node> DirectiveParser::parse_value() {
     switch(CUR_KIND()) {
     case INT_LITERAL:
-        this->parse_number(value);
-        return;
+        return this->parse_number();
     case STRING_LITERAL:
-        this->parse_string(value);
-        return;
+        return this->parse_string();
     case TRUE_LITERAL:
     case FALSE_LITERAL:
-        this->parse_boolean(value);
-        return;
+        return this->parse_boolean();
     case ARRAY_OPEN:
-        this->parse_array(value);
-        return;
+        return this->parse_array();
     default:
         const TokenKind alters[] = {
 #define EACH_LA_value(OP) \
@@ -255,7 +250,7 @@ void DirectiveParser::parse_value(std::unique_ptr<Node> &value) {
     }
 }
 
-void DirectiveParser::parse_number(std::unique_ptr<Node> &node) {
+std::unique_ptr<Node> DirectiveParser::parse_number() {
     Token token = this->expect(INT_LITERAL);
     int status;
     int value = this->lexer->toInt(token, status);
@@ -264,15 +259,15 @@ void DirectiveParser::parse_number(std::unique_ptr<Node> &node) {
         str += this->lexer->toTokenText(token);
         throw SemanticError(token, std::move(str));
     }
-    node.reset(new NumberNode(token, value));
+    return std::unique_ptr<Node>(new NumberNode(token, value));
 }
 
-void DirectiveParser::parse_string(std::unique_ptr<Node> &node) {
+std::unique_ptr<Node> DirectiveParser::parse_string() {
     Token token = this->expect(STRING_LITERAL);
-    node.reset(new StringNode(token, this->lexer->toString(token)));
+    return std::unique_ptr<Node>(new StringNode(token, this->lexer->toString(token)));
 }
 
-void DirectiveParser::parse_boolean(std::unique_ptr<Node> &node) {
+std::unique_ptr<Node> DirectiveParser::parse_boolean() {
     Token token;
     bool value;
     if(CUR_KIND() == TRUE_LITERAL) {
@@ -282,24 +277,23 @@ void DirectiveParser::parse_boolean(std::unique_ptr<Node> &node) {
         token = this->expect(FALSE_LITERAL);
         value = false;
     }
-    node.reset(new BooleanNode(token, value));
+    return std::unique_ptr<Node>(new BooleanNode(token, value));
 }
 
-void DirectiveParser::parse_array(std::unique_ptr<Node> &node) {
+std::unique_ptr<Node> DirectiveParser::parse_array() {
     Token token = this->expect(ARRAY_OPEN);
     std::unique_ptr<ArrayNode> arrayNode(new ArrayNode(token));
-    std::unique_ptr<Node> value;
-    this->parse_value(value);
+    auto value = this->parse_value();
     arrayNode->appendNode(std::move(value));
 
     while(CUR_KIND() == COMMA) {
         this->expect(COMMA);
 
-        this->parse_value(value);
+        value = this->parse_value();
         arrayNode->appendNode(std::move(value));
     }
     this->expect(ARRAY_CLOSE);
-    node = std::move(arrayNode);
+    return std::move(arrayNode);
 }
 
 template <typename T>
