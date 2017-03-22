@@ -1476,6 +1476,10 @@ static bool mainLoop(DSState &state) {
             checkCast(state, reinterpret_cast<DSType *>(v));
             break;
         }
+        vmcase(PUSH_NULL) {
+            state.push(nullptr);
+            break;
+        }
         vmcase(PUSH_TRUE) {
             state.push(state.trueObj);
             break;

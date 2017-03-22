@@ -29,6 +29,7 @@ namespace ydsh {
     OP(PRINT, 8) \
     OP(INSTANCE_OF, 8) \
     OP(CHECK_CAST, 8) \
+    OP(PUSH_NULL, 0) \
     OP(PUSH_TRUE, 0) \
     OP(PUSH_FALSE, 0) \
     OP(PUSH_ESTRING, 0) \
