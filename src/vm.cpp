@@ -1096,6 +1096,7 @@ static void callCommand(DSState &state, unsigned short procIndex) {
                 const int pid = getpid();
                 auto obj = pipeline.toARGV(procIndex, state.pool);
                 state.updateExitStatus(cmd_ptr(state, *typeAs<Array_Object>(obj)));
+                state.push(state.getExitStatus() == 0 ? state.trueObj : state.falseObj);
 
                 if(pid == getpid()) {   // in parent process (if call command or eval, may be child)
                     // flush and restore
@@ -1224,6 +1225,12 @@ static void callPipeline(DSState &state) {
         // set pc to next instruction
         unsigned int byteSize = read8(GET_CODE(state), state.pc() + 1);
         state.pc() += read16(GET_CODE(state), state.pc() + 2 + (byteSize - 1) * 2) - 1;
+
+        if(state.getExitStatus() == 0) {
+            state.push(state.trueObj);
+        } else {
+            state.push(state.falseObj);
+        }
     } else if(pid == 0) { // child process
         if(procIndex == 0) {    // first process
             if(procSize > 1) {
@@ -1713,6 +1720,7 @@ static bool mainLoop(DSState &state) {
             auto v = state.pop();
             unwindStackFrame(state);
             state.updateExitStatus(typeAs<Int_Object>(v)->getValue());
+            state.push(state.getExitStatus() == 0 ? state.trueObj : state.falseObj);
             if(state.codeStack.empty()) {
                 return true;
             }
@@ -1918,12 +1926,9 @@ static bool mainLoop(DSState &state) {
             break;
         }
         vmcase(POP_PIPELINE) {
+            auto v = state.pop();
             state.popNoReturn();
-            if(state.getExitStatus() == 0) {
-                state.push(state.trueObj);
-            } else {
-                state.push(state.falseObj);
-            }
+            state.push(std::move(v));
             break;
         }
         vmcase(NEW_REDIR)
