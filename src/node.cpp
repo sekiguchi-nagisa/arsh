@@ -724,6 +724,7 @@ void CmdNode::addArgNode(CmdArgNode *node) {
 void CmdNode::addRedirOption(TokenKind kind, CmdArgNode *node) {
     this->argNodes.push_back(new RedirNode(kind, node));
     this->updateToken(node->getToken());
+    this->redirCount++;
 }
 
 void CmdNode::addRedirOption(TokenKind kind, Token token) {
@@ -733,6 +734,7 @@ void CmdNode::addRedirOption(TokenKind kind, Token token) {
 void CmdNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(nameNode);
     DUMP(argNodes);
+    DUMP_PRIM(redirCount);
 }
 
 void CmdNode::accept(NodeVisitor &visitor) {

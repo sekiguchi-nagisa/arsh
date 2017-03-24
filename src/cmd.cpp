@@ -732,7 +732,7 @@ static int builtin_eval(DSState &state, Array_Object &argvObj) {
     }
 
     // external command
-    int status = forkAndExec(state, std::move(argvObj));
+    int status = forkAndExec(state, argvObj);
     if(WIFEXITED(status)) {
         return WEXITSTATUS(status);
     }

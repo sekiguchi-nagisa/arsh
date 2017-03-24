@@ -100,7 +100,10 @@ namespace ydsh {
     OP(ADD_CMD_ARG, 1) \
     OP(ADD_REDIR_OP, 1) \
     OP(EXPAND_TILDE, 0) \
+    OP(NEW_CMD, 0) \
+    OP(ADD_CMD_ARG2, 1) \
     OP(CALL_CMD, 1) \
+    OP(CALL_CMD2, 0) \
     OP(POP_PIPELINE, 0) \
     OP(NEW_REDIR, 0) \
     OP(NEW_REDIR_P, 0) \

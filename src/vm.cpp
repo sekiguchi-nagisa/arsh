@@ -1133,6 +1133,159 @@ static void callCommand(DSState &state, unsigned short procIndex) {
     }
 }
 
+enum class CmdKind {
+    USER_DEFINED,
+    BUILTIN,
+    EXTERNAL,
+};
+
+struct Command {
+    CmdKind kind;
+    union {
+        FuncObject *udcObj;
+        builtin_command_t builtinCmd;
+        const char *filePath;   // may be null if not found file
+    };
+};
+
+static Command resolveCmd(DSState &state, const char *cmdName) {
+    Command cmd;
+
+    // first, check user-defined command
+    {
+        auto *udcObj = lookupUserDefinedCommand(state, cmdName);
+        if(udcObj != nullptr) {
+            cmd.kind = CmdKind::USER_DEFINED;
+            cmd.udcObj = udcObj;
+            return cmd;
+        }
+    }
+
+    // second, check builtin command
+    {
+        builtin_command_t bcmd = lookupBuiltinCommand(cmdName);
+        if(bcmd != nullptr) {
+            cmd.kind = CmdKind::BUILTIN;
+            cmd.builtinCmd = bcmd;
+            return cmd;
+        }
+    }
+
+    // resolve external command path
+    cmd.kind = CmdKind::EXTERNAL;
+    cmd.filePath = state.pathCache.searchPath(cmdName);
+    return cmd;
+}
+
+static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **const argv) {
+    // setup self pipe
+    int selfpipe[2];
+    if(pipe(selfpipe) < 0) {
+        perror("pipe creation error");
+        exit(1);
+    }
+    if(fcntl(selfpipe[WRITE_PIPE], F_SETFD, fcntl(selfpipe[WRITE_PIPE], F_GETFD) | FD_CLOEXEC)) {
+        perror("fcntl error");
+        exit(1);
+    }
+
+    pid_t pid = xfork(state);
+    if(pid == -1) {
+        perror("child process error");
+        exit(1);
+    } else if(pid == 0) {   // child
+        xexecve(cmd.filePath, argv, nullptr);
+
+        int errnum = errno;
+        write(selfpipe[WRITE_PIPE], &errnum, sizeof(int));
+        exit(-1);
+    } else {    // parent process
+        close(selfpipe[WRITE_PIPE]);
+        int readSize;
+        int errnum = 0;
+        while((readSize = read(selfpipe[READ_PIPE], &errnum, sizeof(int))) == -1) {
+            if(errno != EAGAIN && errno != EINTR) {
+                break;
+            }
+        }
+        close(selfpipe[READ_PIPE]);
+        if(readSize > 0 && errnum == ENOENT) {  // remove cached path
+            getPathCache(state).removePath(argv[0]);
+        }
+
+        int status;
+        xwaitpid(state, pid, status, 0);
+        if(errnum != 0) {
+            state.updateExitStatus(1);
+            std::string str = "execution error: ";
+            str += cmdName;
+            throwSystemError(state, errnum, std::move(str));
+        }
+        return status;
+    }
+}
+
+static void pushExitStatus(DSState &state, int status) {
+    state.updateExitStatus(status);
+    state.push(status == 0 ? state.trueObj : state.falseObj);
+}
+
+static void callCommand(DSState &state, DSValue &&argvObj, DSValue &&redirConfig, bool needFork) {
+    // reset exit status
+    state.updateExitStatus(0);
+
+    auto *array = typeAs<Array_Object>(argvObj);
+    const unsigned int size = array->getValues().size();
+    if(size == 0) {
+        return;
+    }
+
+    auto &first = array->getValues()[0];
+    const char *cmdName = typeAs<String_Object>(first)->getValue();
+    auto cmd = resolveCmd(state, cmdName);
+
+    switch(cmd.kind) {
+    case CmdKind::USER_DEFINED: {
+        callUserDefinedCommand(state, cmd.udcObj, std::move(argvObj), std::move(redirConfig));
+        return;
+    }
+    case CmdKind::BUILTIN: {
+        if(!needFork && strcmp(cmdName, "exec") == 0 && redirConfig) { // when call exec command as single command
+            redirConfig = DSValue();    // force remove redir config
+        }
+        int status = cmd.builtinCmd(state, *array);
+        pushExitStatus(state, status);
+        flushStdFD();
+        return;
+    }
+    case CmdKind::EXTERNAL: {
+        // create argv
+        char *argv[size + 1];
+        for(unsigned int i = 0; i < size; i++) {
+            argv[i] = const_cast<char *>(str(array->getValues()[i]));
+        }
+        argv[size] = nullptr;
+
+        if(needFork) {
+            int status = forkAndExec(state, cmdName, cmd, argv);
+            int r = 0;
+            if(WIFEXITED(status)) {
+                r = WEXITSTATUS(status);
+            }
+            if(WIFSIGNALED(status)) {
+                r = WTERMSIG(status);
+            }
+            pushExitStatus(state, r);
+        } else {
+            xexecve(cmd.filePath, argv, nullptr);
+            fprintf(stderr, "execution error: %s: %s\n", cmdName, strerror(errno));
+            exit(1);
+        }
+        return;
+    }
+    }
+}
+
 /**
  * initialize pipe and selfpipe
  */
@@ -1348,6 +1501,37 @@ static void addArg(DSState &state, bool skipEmptyString) {
             continue;
         }
         activePipeline(state).argArray.push_back(element);
+    }
+}
+
+static void addCmdArg(DSState &state, bool skipEmptyStr) {
+    /**
+     * stack layout
+     *
+     * ===========> stack grow
+     * +------+-------+-------+
+     * | argv | redir | value |
+     * +------+-------+-------+
+     */
+    DSValue value = state.pop();
+    DSType *valueType = value->getType();
+
+    Array_Object *argv = typeAs<Array_Object>(state.callStack[state.stackTopIndex - 1]);
+    if(*valueType == state.pool.getStringType()) {  // String
+        if(skipEmptyStr && typeAs<String_Object>(value)->empty()) {
+            return;
+        }
+        argv->append(std::move(value));
+        return;
+    }
+
+    assert(*valueType == state.pool.getStringArrayType());  // Array<String>
+    Array_Object *arrayObj = typeAs<Array_Object>(value);
+    for(auto &element : arrayObj->getValues()) {
+        if(typeAs<String_Object>(element)->empty()) {
+            continue;
+        }
+        argv->append(element);
     }
 }
 
@@ -1920,9 +2104,28 @@ static bool mainLoop(DSState &state) {
             state.push(DSValue::create<String_Object>(state.pool.getStringType(), std::move(str)));
             break;
         }
+        vmcase(NEW_CMD) {
+            auto v = state.pop();
+            auto obj = DSValue::create<Array_Object>(state.pool.getStringArrayType());
+            Array_Object *argv = typeAs<Array_Object>(obj);
+            argv->append(std::move(v));
+            state.push(std::move(obj));
+            break;
+        }
+        vmcase(ADD_CMD_ARG2) {
+            unsigned char v = read8(GET_CODE(state), ++state.pc());
+            addCmdArg(state, v > 0);
+            break;
+        }
         vmcase(CALL_CMD) {
             unsigned char v = read8(GET_CODE(state), ++state.pc());
             callCommand(state, v);
+            break;
+        }
+        vmcase(CALL_CMD2) {
+            auto redir = state.pop();
+            auto argv = state.pop();
+            callCommand(state, std::move(argv), std::move(redir), true);
             break;
         }
         vmcase(POP_PIPELINE) {

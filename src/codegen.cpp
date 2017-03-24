@@ -663,6 +663,36 @@ void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
 
 void ByteCodeGenerator::visitPipedCmdNode(PipedCmdNode &node) {
     const unsigned int size = node.getCmdNodes().size();
+
+    if(size == 1) {
+        this->writeSourcePos(node.getPos());
+
+        auto *cmdNode = static_cast<CmdNode *>(node.getCmdNodes()[0]);
+        this->visit(*cmdNode->getNameNode());
+        this->emit0byteIns(OpCode::NEW_CMD);
+        this->emit0byteIns(cmdNode->hasRedir() ? OpCode::NEW_REDIR : OpCode::PUSH_NULL);
+
+        for(auto &e : cmdNode->getArgNodes()) {
+            if(dynamic_cast<CmdArgNode *>(e)) {
+                auto *argNode = static_cast<CmdArgNode *>(e);
+                this->generateCmdArg(*argNode);
+                this->emit1byteIns(OpCode::ADD_CMD_ARG2, argNode->isIgnorableEmptyString() ? 1 : 0);
+            } else if(dynamic_cast<RedirNode *>(e)) {
+                auto *redirNode = static_cast<RedirNode *>(e);
+                this->generateCmdArg(*redirNode->getTargetNode());
+                this->emit1byteIns(OpCode::ADD_REDIR_OP2, redirNode->getRedirectOP());
+            } else {
+                fatal("unsupported node\n");
+            }
+        }
+
+        if(cmdNode->hasRedir()) {
+            this->emit0byteIns(OpCode::DO_REDIR);
+        }
+        this->emit0byteIns(OpCode::CALL_CMD2);
+        return;
+    }
+
     std::vector<IntrusivePtr<Label>> labels(size + 1);
 
     this->emit0byteIns(OpCode::NEW_PIPELINE);

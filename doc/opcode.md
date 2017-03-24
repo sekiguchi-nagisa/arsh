@@ -79,7 +79,10 @@
 | ADD_CMD_ARG   | 1: byte1                       | value1 value2 -> value1                      | add stack top value as command argument            |
 | ADD_REDIR_OP  | 1: byte1                       | value1 value2 -> value1                      | add stack top value as redirection op              |
 | EXPAND_TILDE  |                                | value -> value                               | perform tilde expansion                            |
+| NEW_CMD       |                                | value -> value                               | pop stack top and store it to new argv             |
+| ADD_CMD_ARG2  | 1: byte1                       | value1 value2 value3 -> value1 value2        | add stack top value as command argument            |
 | CALL_CMD      | 1: byte1                       | [no change]                                  | call command                                       |
+| CALL_CMD2     |                                | value1 value2 -> value                       | call command. value1 is parameter, value2 is redir |
 | POP_PIPELINE  |                                | value -> value                               | if last exit status is 0, push true value          |
 | NEW_REDIR     |                                | -> value                                     | create new RedireConfig                            |
 | NEW_REDIR_P   |                                | -> value                                     | create new RedireConfig (in pipeline)              |

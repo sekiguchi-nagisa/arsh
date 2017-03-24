@@ -1037,9 +1037,11 @@ private:
      */
     std::vector<Node *> argNodes;
 
+    unsigned int redirCount;
+
 public:
     explicit CmdNode(StringNode *nameNode) :
-            Node(nameNode->getToken()), nameNode(nameNode), argNodes() { }
+            Node(nameNode->getToken()), nameNode(nameNode), argNodes(), redirCount(0) { }
 
     ~CmdNode();
 
@@ -1051,6 +1053,10 @@ public:
 
     const std::vector<Node *> &getArgNodes() const {
         return this->argNodes;
+    }
+
+    bool hasRedir() const {
+        return this->redirCount > 0;
     }
 
     void addRedirOption(TokenKind kind, CmdArgNode *node);
