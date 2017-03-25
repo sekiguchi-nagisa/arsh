@@ -11,7 +11,11 @@ var OLD_PATH = $PATH
 
 $PATH = ""
 
-command ls
+try {
+    command ls
+} catch $e {
+    assert $e is SystemError
+}
 assert($? != 0)
 
 assert(command -p ls)
@@ -23,7 +27,13 @@ hoge() {
 }
 
 # execute invalid command
-assert(command hoge 2>&1 | grep '^-ydsh: hoge: No such file or directory$')
+try {
+    command hoge
+} catch $e {
+    assert $e is SystemError
+    assert ($e as Error).message() == 'execution error: hoge: No such file or directory'  
+}
+
 
 # show command information
 hash -r
