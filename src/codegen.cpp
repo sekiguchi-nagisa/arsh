@@ -19,6 +19,7 @@
 #include "codegen.h"
 #include "symbol.h"
 #include "core.h"
+#include "cmd.h"
 
 namespace ydsh {
 
@@ -656,9 +657,19 @@ void ByteCodeGenerator::visitCmdArgNode(CmdArgNode &node) {
     this->emit1byteIns(OpCode::ADD_CMD_ARG, node.isIgnorableEmptyString() ? 1 : 0);
 }
 
+static RedirectOP resolveRedirOp(TokenKind kind) {
+    switch(kind) {
+#define GEN_CASE(ENUM, STR) case REDIR_##ENUM : return RedirectOP::ENUM;
+    EACH_RedirectOP(GEN_CASE)
+#undef GEN_CASE
+    default:
+        fatal("unsupported redir op: %s", toString(kind));
+    }
+}
+
 void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
     this->generateCmdArg(*node.getTargetNode());
-    this->emit1byteIns(OpCode::ADD_REDIR_OP, node.getRedirectOP());
+    this->emit1byteIns(OpCode::ADD_REDIR_OP, resolveRedirOp(node.getRedirectOP()));
 }
 
 void ByteCodeGenerator::visitPipedCmdNode(PipedCmdNode &node) {
@@ -680,7 +691,7 @@ void ByteCodeGenerator::visitPipedCmdNode(PipedCmdNode &node) {
             } else if(dynamic_cast<RedirNode *>(e)) {
                 auto *redirNode = static_cast<RedirNode *>(e);
                 this->generateCmdArg(*redirNode->getTargetNode());
-                this->emit1byteIns(OpCode::ADD_REDIR_OP2, redirNode->getRedirectOP());
+                this->emit1byteIns(OpCode::ADD_REDIR_OP2, resolveRedirOp(redirNode->getRedirectOP()));
             } else {
                 fatal("unsupported node\n");
             }

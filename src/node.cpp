@@ -21,7 +21,6 @@
 #include "node.h"
 #include "node_dumper.h"
 #include "handle.h"
-#include "cmd.h"
 
 
 namespace ydsh {
@@ -673,30 +672,12 @@ bool CmdArgNode::isIgnorableEmptyString() {
 // ##     RedirNode     ##
 // #######################
 
-RedirNode::RedirNode(TokenKind kind, CmdArgNode *node) :
-        Node(node->getToken()), op(RedirectOP::DUMMY), targetNode(node) {
-    switch(kind) {
-#define GEN_CASE(ENUM, STR) case REDIR_##ENUM : this->op = RedirectOP::ENUM; break;
-    EACH_RedirectOP(GEN_CASE)
-#undef GEN_CASE
-    default:
-        fatal("unsupported redirect op: %s\n", TO_NAME(kind));
-        break;
-    }
-}
-
 RedirNode::~RedirNode() {
     delete this->targetNode;
 }
 
 void RedirNode::dump(NodeDumper &dumper) const {
-    const char *redirOpStr[] = {
-#define GEN_STR(ENUM, STR) #ENUM,
-            EACH_RedirectOP(GEN_STR)
-#undef GEN_STR
-    };
-
-    dumper.dump(NAME(op), redirOpStr[this->op]);
+    DUMP(op);
     DUMP_PTR(targetNode);
 }
 

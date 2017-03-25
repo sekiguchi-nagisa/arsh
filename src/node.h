@@ -32,8 +32,6 @@ namespace ydsh {
 
 class FieldHandle;
 class MethodHandle;
-enum RedirectOP : unsigned char;
-
 struct NodeVisitor;
 class NodeDumper;
 
@@ -1005,15 +1003,16 @@ public:
 
 class RedirNode : public Node {
 private:
-    RedirectOP op;
+    TokenKind op;
     CmdArgNode *targetNode;
 
 public:
-    RedirNode(TokenKind kind, CmdArgNode *node);
+    RedirNode(TokenKind kind, CmdArgNode *node) :
+            Node(node->getToken()), op(kind), targetNode(node) {}
 
     ~RedirNode();
 
-    RedirectOP getRedirectOP() {
+    TokenKind getRedirectOP() {
         return this->op;
     }
 
