@@ -596,7 +596,14 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, FILE *fp, DSError *
 }
 
 int DSState_exec(DSState *st, char *const *argv) {
-    return execBuiltinCommand(*st, argv);
+    try {
+        return execBuiltinCommand(*st, argv);
+    } catch(const DSException &) {
+        auto &obj = typeAs<Error_Object>(st->getThrownObject())->getMessage();
+        const char *str = typeAs<String_Object>(obj)->getValue();
+        fprintf(stderr, "ydsh: %s\n", str + strlen(EXEC_ERROR));
+        return 1;
+    }
 }
 
 const char *DSState_prompt(DSState *st, unsigned int n) {

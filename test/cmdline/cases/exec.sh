@@ -15,6 +15,32 @@ if [ $? != 1 ]; then
     exit 1
 fi
 
+# command
+$YDSH_BIN -e command hogehoge
+
+if [ $? != 1 ]; then
+    exit 1
+fi
+
+test "$($YDSH_BIN -e command hoge 2>&1)" = "ydsh: hoge: command not found"
+
+if [ $? != 0 ]; then
+    exit 1
+fi
+
+# eval
+$YDSH_BIN -e eval hogehoge
+
+if [ $? != 1 ]; then
+    exit 1
+fi
+
+test "$($YDSH_BIN -e eval hoge 2>&1)" = "ydsh: hoge: command not found"
+
+if [ $? != 0 ]; then
+    exit 1
+fi
+
 # exit
 $YDSH_BIN -e exit 34
 
