@@ -85,7 +85,6 @@
 | CALL_CMD2     |                                | value1 value2 -> value                       | call command. value1 is parameter, value2 is redir |
 | POP_PIPELINE  |                                | value -> value                               | if last exit status is 0, push true value          |
 | NEW_REDIR     |                                | -> value                                     | create new RedireConfig                            |
-| NEW_REDIR_P   |                                | -> value                                     | create new RedireConfig (in pipeline)              |
 | ADD_REDIR_OP2 | 1: byte1                       | value1 value2 -> value1                      | add stack top value as redirection target          |
 | DO_REDIR      |                                | value -> value                               | perform redirection                                |
 | DBUS_INIT_SIG |                                | [no change]                                  | init DBus signal match rule                        |

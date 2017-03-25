@@ -106,7 +106,6 @@ namespace ydsh {
     OP(CALL_CMD2, 0) \
     OP(POP_PIPELINE, 0) \
     OP(NEW_REDIR, 0) \
-    OP(NEW_REDIR_P, 0) \
     OP(ADD_REDIR_OP2, 1) \
     OP(DO_REDIR, 0) \
     OP(DBUS_INIT_SIG, 0) \

@@ -881,7 +881,7 @@ public:
 
 class RedirConfig : public DSObject {
 private:
-    const bool restore;
+    bool restore;
 
     std::vector<std::pair<RedirectOP, DSValue>> ops;
 
@@ -890,12 +890,10 @@ private:
     NON_COPYABLE(RedirConfig);
 
 public:
-    RedirConfig(bool restore) : DSObject(nullptr), restore(restore), ops() {
-        if(this->restore) {
-            this->fds[0] = dup(STDIN_FILENO);
-            this->fds[1] = dup(STDOUT_FILENO);
-            this->fds[2] = dup(STDERR_FILENO);
-        }
+    RedirConfig() : DSObject(nullptr), restore(true), ops() {
+        this->fds[0] = dup(STDIN_FILENO);
+        this->fds[1] = dup(STDOUT_FILENO);
+        this->fds[2] = dup(STDERR_FILENO);
     }
 
     ~RedirConfig() {
@@ -903,15 +901,18 @@ public:
             dup2(this->fds[0], STDIN_FILENO);
             dup2(this->fds[1], STDOUT_FILENO);
             dup2(this->fds[2], STDERR_FILENO);
-
-            for(unsigned int i = 0; i < 3; i++) {
-                close(this->fds[i]);
-            }
+        }
+        for(unsigned int i = 0; i < 3; i++) {
+            close(this->fds[i]);
         }
     }
 
     void addRedirOp(RedirectOP op, DSValue &&arg) {
         this->ops.push_back(std::make_pair(op, std::move(arg)));
+    }
+
+    void setRestore(bool restore) {
+        this->restore = restore;
     }
 
     void redirect(DSState &st) const;
@@ -1252,8 +1253,8 @@ static void callCommand(DSState &state, DSValue &&argvObj, DSValue &&redirConfig
         return;
     }
     case CmdKind::BUILTIN: {
-        if(!needFork && strcmp(cmdName, "exec") == 0 && redirConfig) { // when call exec command as single command
-            redirConfig = DSValue();    // force remove redir config
+        if(needFork && strcmp(cmdName, "exec") == 0 && redirConfig) { // when call exec command as single command
+            typeAs<RedirConfig>(redirConfig)->setRestore(false);
         }
         int status = cmd.builtinCmd(state, *array);
         pushExitStatus(state, status);
@@ -2099,10 +2100,8 @@ static bool mainLoop(DSState &state) {
             state.push(std::move(v));
             break;
         }
-        vmcase(NEW_REDIR)
-        vmcase(NEW_REDIR_P) {
-            bool restore = op == OpCode::NEW_REDIR;
-            state.push(DSValue::create<RedirConfig>(restore));
+        vmcase(NEW_REDIR) {
+            state.push(DSValue::create<RedirConfig>());
             break;
         }
         vmcase(ADD_REDIR_OP2) {

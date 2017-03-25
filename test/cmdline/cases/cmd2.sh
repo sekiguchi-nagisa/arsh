@@ -62,4 +62,11 @@ if [ $? != 66 ]; then
     exit 1
 fi
 
+# eval
+test "$($YDSH_BIN -c 'exec > /dev/null; echo hello')" = ""
+
+if [ $? != 0 ]; then
+    exit 1
+fi
+
 exit 0
