@@ -16,7 +16,7 @@ assert(hash | grep "ps=")
 # add cache (not found)
 hash hfreiufre
 assert($? == 1)
-assert("$(hash hfreiufre 2>&1)" == "-ydsh: hash: hfreiufre: not found")
+assert("$(hash hfreiufre 2>&1)" == "ydsh: hash: hfreiufre: not found")
 
 # remove cache
 hash -r cat ps

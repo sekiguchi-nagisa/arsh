@@ -15,6 +15,14 @@ try {
 # execution error
 
 try {
+    hfjhei94fg
+    assert($false)
+} catch($e : Error) {
+    assert($e is SystemError)
+    assert($e.message() == "execution error: hfjhei94fg: command not found")
+}
+
+try {
     hfjhei94fg | grep ds
     assert($false)
 } catch($e : Error) {

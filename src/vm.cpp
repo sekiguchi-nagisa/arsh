@@ -165,9 +165,9 @@ static void importEnv(DSState &state, bool hasDefault) {
 
     env = getenv(name);
     if(env == nullptr) {
-        std::string str("undefined environmental variable: ");
+        std::string str = UNDEF_ENV_ERROR;
         str += name;
-        throwSystemError(state, EINVAL, std::move(str)); //FIXME: exception
+        throwSystemError(state, EINVAL, std::move(str));
     }
 }
 
@@ -978,7 +978,7 @@ void RedirConfig::redirect(DSState &st) const {
     for(auto &pair : this->ops) {
         int r = redirectImpl(pair);
         if(this->restore && r != 0) {
-            std::string msg = "io redirection error: ";
+            std::string msg = REDIR_ERROR;
             if(pair.second && !typeAs<String_Object>(pair.second)->empty()) {
                 msg += typeAs<String_Object>(pair.second)->getValue();
             }
@@ -1217,8 +1217,12 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
         xwaitpid(state, pid, status, 0);
         if(errnum != 0) {
             state.updateExitStatus(1);
-            std::string str = "execution error: ";
+            std::string str = EXEC_ERROR;
             str += cmdName;
+            if(errnum == ENOENT) {
+                str += ": command not found";
+                throwError(state, state.pool.getSystemErrorType(), std::move(str));
+            }
             throwSystemError(state, errnum, std::move(str));
         }
         return status;
@@ -1418,10 +1422,10 @@ void PipelineState::checkChildError(DSState &state, const std::pair<unsigned int
 
         std::string msg;
         if(pair.first == RedirectOP::DUMMY) {  // execution error
-            msg += "execution error: ";
+            msg += EXEC_ERROR;
             msg += this->getCommandName(errorPair.first);
         } else {    // redirection error
-            msg += "io redirection error: ";
+            msg += REDIR_ERROR;
             if(pair.second && typeAs<String_Object>(pair.second)->size() != 0) {
                 msg += typeAs<String_Object>(pair.second)->getValue();
             }

@@ -347,7 +347,7 @@ TEST_F(HistoryTest, cmd_invalid) {
     const char *code = R"EOF(
             history -x
             assert $? == 2
-            assert "$(history -xz 2>&1)" == "-ydsh: history: -xz: invalid option
+            assert "$(history -xz 2>&1)" == "ydsh: history: -xz: invalid option
 history: history [-c] [-d offset] or history [-rw] [file]"
             true
     )EOF";
@@ -417,7 +417,7 @@ TEST_F(HistoryTest, cmd_print) {
     code = R"EOF(
         history hoge
         assert $? == 1
-        assert "$(history hoge 2>&1)" == "-ydsh: history: hoge: numeric argument required"
+        assert "$(history hoge 2>&1)" == "ydsh: history: hoge: numeric argument required"
         true
     )EOF";
     ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(code)));
@@ -426,7 +426,7 @@ TEST_F(HistoryTest, cmd_print) {
     code = R"EOF(
         history hoge
         assert $? == 1
-        assert "$(history hoge 2 2>&1)" == "-ydsh: history: too many arguments"
+        assert "$(history hoge 2 2>&1)" == "ydsh: history: too many arguments"
         true
     )EOF";
     ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(code)));
@@ -473,7 +473,7 @@ TEST_F(HistoryTest, cmd_delete) {
     code = R"EOF(
         history -d 3 -d
         assert $? == 2
-        assert "$(history -d 2>&1)" == "-ydsh: history: -d: option requires argument"
+        assert "$(history -d 2>&1)" == "ydsh: history: -d: option requires argument"
         true
     )EOF";
     ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(code)));
@@ -482,7 +482,7 @@ TEST_F(HistoryTest, cmd_delete) {
     code = R"EOF(
         history -d hoge
         assert $? == 1
-        assert "$(history -d hoge 2>&1)" == "-ydsh: history: hoge: history offset out of range"
+        assert "$(history -d hoge 2>&1)" == "ydsh: history: hoge: history offset out of range"
         true
     )EOF";
     ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(code)));
@@ -491,7 +491,7 @@ TEST_F(HistoryTest, cmd_delete) {
     code = R"EOF(
         history -d 999999
         assert $? == 1
-        assert "$(history -d 999999 2>&1)" == "-ydsh: history: 999999: history offset out of range"
+        assert "$(history -d 999999 2>&1)" == "ydsh: history: 999999: history offset out of range"
         true
     )EOF";
     ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(code)));
@@ -500,7 +500,7 @@ TEST_F(HistoryTest, cmd_delete) {
     code = R"EOF(
         history -d 0
         assert $? == 1
-        assert "$(history -d 0 2>&1)" == "-ydsh: history: 0: history offset out of range"
+        assert "$(history -d 0 2>&1)" == "ydsh: history: 0: history offset out of range"
         true
     )EOF";
     ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(code)));
@@ -609,7 +609,7 @@ TEST_F(HistoryTest, cmd_save) {
             history -c
             history -w -r
             assert $? == 1
-            assert "$(history -w -r 2>&1)" == "-ydsh: history: cannot use more than one of -rw"
+            assert "$(history -w -r 2>&1)" == "ydsh: history: cannot use more than one of -rw"
             true
     )EOF";
     ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(c)));

@@ -31,7 +31,7 @@ try {
     command hoge
 } catch $e {
     assert $e is SystemError
-    assert ($e as Error).message() == 'execution error: hoge: No such file or directory'  
+    assert ($e as Error).message() == 'execution error: hoge: command not found'  
 }
 
 
@@ -58,7 +58,7 @@ ls 2>&1 > /dev/null
 assert("$(command -V ls)" == "ls is hashed ($(which ls))")          # hashed
 
 assert("$(command -V hfiureaf 2>&1)" ==
-       "-ydsh: command: hfiureaf: No such file or directory")       # invalid
+       "ydsh: command: hfiureaf: No such file or directory")       # invalid
 command -V hfueirf
 assert($? != 0)
 
@@ -67,5 +67,5 @@ command -V hferure fhaueirnv
 assert($? != 0)
 
 # invalid
-assert(command -i 2>&1 | grep '^-ydsh: command: -i: invalid option$')
+assert(command -i 2>&1 | grep '^ydsh: command: -i: invalid option$')
 assert(command) # do nothing, but success
