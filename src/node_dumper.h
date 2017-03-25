@@ -29,11 +29,7 @@ namespace ydsh {
 
 class TypePool;
 class DSType;
-
-};
-
-namespace ydsh {
-
+enum TokenKind : unsigned int;
 class Node;
 class TypeNode;
 class RootNode;
@@ -56,7 +52,9 @@ public:
      */
     void dump(const char *fieldName, const char *value);
 
-    void dump(const char *fieldName, const std::string &value);
+    void dump(const char *fieldName, const std::string &value) {
+        this->dump(fieldName, value.c_str());
+    }
 
     void dump(const char *fieldName, const std::vector<Node *> &nodes) {
         this->dumpNodes(fieldName, nodes.data(), nodes.data() + nodes.size());
@@ -79,6 +77,8 @@ public:
     void dump(const char *fieldName, const Node &node);
 
     void dump(const char *fieldName, const DSType &type);
+
+    void dump(const char *fieldName, TokenKind kind);
 
     void dumpNull(const char *fieldName);
 

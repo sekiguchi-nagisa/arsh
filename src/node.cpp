@@ -588,7 +588,7 @@ MethodCallNode *UnaryOpNode::createApplyNode() {
 }
 
 void UnaryOpNode::dump(NodeDumper &dumper) const {
-    dumper.dump(NAME(op), TO_NAME(op));
+    DUMP(op);
     DUMP_PTR(exprNode);
     DUMP_PTR(methodCallNode);
 }
@@ -611,7 +611,7 @@ BinaryOpNode::~BinaryOpNode() {
 void BinaryOpNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(leftNode);
     DUMP_PTR(rightNode);
-    dumper.dump(NAME(op), TO_NAME(op));
+    DUMP(op);
     DUMP_PTR(optNode);
 }
 

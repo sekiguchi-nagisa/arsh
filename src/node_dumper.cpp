@@ -23,15 +23,11 @@
 namespace ydsh {
 
 void NodeDumper::dump(const char *fieldName, const char *value) {
-    std::string str(value);
-    this->dump(fieldName, str);
-}
-
-void NodeDumper::dump(const char *fieldName, const std::string &value) {
     this->writeName(fieldName);
 
     this->stream << '"';
-    for(char ch : value) {
+    while(*value) {
+        char ch = *(value++);
         bool escape = true;
         switch(ch) {
         case '\t':
@@ -89,8 +85,11 @@ void NodeDumper::dump(const char *fieldName, const Node &node) {
 }
 
 void NodeDumper::dump(const char *fieldName, const DSType &type) {
-    this->writeName(fieldName);
-    this->stream << this->pool.getTypeName(type) << std::endl;
+    this->dump(fieldName, this->pool.getTypeName(type));
+}
+
+void NodeDumper::dump(const char *fieldName, TokenKind kind) {
+    this->dump(fieldName, toString(kind));
 }
 
 void NodeDumper::dumpNull(const char *fieldName) {
