@@ -440,11 +440,10 @@ static void forkAndCapture(bool isStr, DSState &state) {
         DSValue obj;
 
         if(isStr) {  // capture stdout as String
-            static const int bufSize = 256;
-            char buf[bufSize];
+            char buf[256];
             std::string str;
             while(true) {
-                int readSize = read(pipefds[READ_PIPE], buf, bufSize);
+                int readSize = read(pipefds[READ_PIPE], buf, arraySize(buf));
                 if(readSize == -1 && (errno == EAGAIN || errno == EINTR)) {
                     continue;
                 }
@@ -467,14 +466,13 @@ static void forkAndCapture(bool isStr, DSState &state) {
             const char *ifs = typeAs<String_Object>(getGlobal(state, toIndex(BuiltinVarOffset::IFS)))->getValue();
             unsigned int skipCount = 1;
 
-            static const int bufSize = 256;
-            char buf[bufSize];
+            char buf[256];
             std::string str;
             obj = DSValue::create<Array_Object>(state.pool.getStringArrayType());
             Array_Object *array = typeAs<Array_Object>(obj);
 
             while(true) {
-                int readSize = read(pipefds[READ_PIPE], buf, bufSize);
+                int readSize = read(pipefds[READ_PIPE], buf, arraySize(buf));
                 if(readSize == -1 && (errno == EINTR || errno == EAGAIN)) {
                     continue;
                 }
