@@ -873,7 +873,7 @@ LoopNode::LoopNode(unsigned int startPos, Node *initNode,
         this->iterNode = new EmptyNode();
     }
 
-    this->updateToken(this->asDoWhile ? condNode->getToken() : blockNode->getToken());
+    this->updateToken(this->asDoWhile ? this->condNode->getToken() : this->blockNode->getToken());
 }
 
 LoopNode::~LoopNode() {
