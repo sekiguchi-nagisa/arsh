@@ -1038,9 +1038,11 @@ private:
 
     unsigned int redirCount;
 
+    bool inPipe;
+
 public:
     explicit CmdNode(StringNode *nameNode) :
-            Node(nameNode->getToken()), nameNode(nameNode), argNodes(), redirCount(0) { }
+            Node(nameNode->getToken()), nameNode(nameNode), argNodes(), redirCount(0), inPipe(false) { }
 
     ~CmdNode();
 
@@ -1056,6 +1058,14 @@ public:
 
     bool hasRedir() const {
         return this->redirCount > 0;
+    }
+
+    void setInPipe(bool inPipe) {
+        this->inPipe = inPipe;
+    }
+
+    bool getInPipe() const {
+        return this->inPipe;
     }
 
     void addRedirOption(TokenKind kind, CmdArgNode *node);

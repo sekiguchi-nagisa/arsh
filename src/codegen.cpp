@@ -270,14 +270,14 @@ void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
     }
 }
 
-void ByteCodeGenerator::writePipelineIns(const std::vector<IntrusivePtr<Label>> &labels) {
+void ByteCodeGenerator::emitPipelineIns(const std::vector<IntrusivePtr<Label>> &labels) {
     const unsigned int size = labels.size();
     if(size > UINT8_MAX) {
         fatal("reach limit\n");
     }
 
     const unsigned int offset = this->curBuilder().codeBuffer.size();
-    this->emitIns(OpCode::CALL_PIPELINE);
+    this->emitIns(OpCode::PIPELINE);
     this->curBuilder().append8(size);
     for(unsigned int i = 0; i < size; i++) {
         this->curBuilder().append16(0);
@@ -643,13 +643,20 @@ void ByteCodeGenerator::visitTernaryNode(TernaryNode &node) {
 
 
 void ByteCodeGenerator::visitCmdNode(CmdNode &node) {
-    this->visit(*node.getNameNode());
+    this->writeSourcePos(node.getPos());
 
-    this->emit0byteIns(OpCode::OPEN_PROC);
-    for(auto &e : node.getArgNodes()) {
-        this->visit(*e);
+    this->visit(*node.getNameNode());
+    this->emit0byteIns(OpCode::NEW_CMD);
+    this->emit0byteIns(node.hasRedir() ? OpCode::NEW_REDIR : OpCode::PUSH_NULL);
+
+    for(auto &argNode : node.getArgNodes()) {
+        this->visit(*argNode);
     }
-    this->emit0byteIns(OpCode::CLOSE_PROC);
+
+    if(node.hasRedir()) {
+        this->emit0byteIns(OpCode::DO_REDIR);
+    }
+    this->emit0byteIns(node.getInPipe() ? OpCode::CALL_CMD_P : OpCode::CALL_CMD);
 }
 
 void ByteCodeGenerator::visitCmdArgNode(CmdArgNode &node) {
@@ -675,68 +682,30 @@ void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
 void ByteCodeGenerator::visitPipedCmdNode(PipedCmdNode &node) {
     const unsigned int size = node.getCmdNodes().size();
 
-    if(size == 1) {
-        this->writeSourcePos(node.getPos());
-
-        auto *cmdNode = static_cast<CmdNode *>(node.getCmdNodes()[0]);
-        this->visit(*cmdNode->getNameNode());
-        this->emit0byteIns(OpCode::NEW_CMD);
-        this->emit0byteIns(cmdNode->hasRedir() ? OpCode::NEW_REDIR : OpCode::PUSH_NULL);
-
-        for(auto &e : cmdNode->getArgNodes()) {
-            if(dynamic_cast<CmdArgNode *>(e)) {
-                auto *argNode = static_cast<CmdArgNode *>(e);
-                this->generateCmdArg(*argNode);
-                this->emit1byteIns(OpCode::ADD_CMD_ARG2, argNode->isIgnorableEmptyString() ? 1 : 0);
-            } else if(dynamic_cast<RedirNode *>(e)) {
-                auto *redirNode = static_cast<RedirNode *>(e);
-                this->generateCmdArg(*redirNode->getTargetNode());
-                this->emit1byteIns(OpCode::ADD_REDIR_OP2, resolveRedirOp(redirNode->getRedirectOP()));
-            } else {
-                fatal("unsupported node\n");
-            }
-        }
-
-        if(cmdNode->hasRedir()) {
-            this->emit0byteIns(OpCode::DO_REDIR);
-        }
-        this->emit0byteIns(OpCode::CALL_CMD2);
-        return;
-    }
-
+    // init label
     std::vector<IntrusivePtr<Label>> labels(size + 1);
-
-    this->emit0byteIns(OpCode::NEW_PIPELINE);
-
     for(unsigned int i = 0; i < size; i++) {
-        this->visit(*node.getCmdNodes()[i]);
         labels[i] = makeIntrusive<Label>();
     }
     labels[size] = makeIntrusive<Label>();
 
+    // generate pipeline
     this->writeSourcePos(node.getPos());
-    this->writePipelineIns(labels);
+    this->emitPipelineIns(labels);
 
-    if(size == 1) {
-        this->markLabel(labels[0]);
-        this->emit1byteIns(OpCode::CALL_CMD, 0);
-    } else {
-        auto begin = makeIntrusive<Label>();
-        auto end = makeIntrusive<Label>();
+    auto begin = makeIntrusive<Label>();
+    auto end = makeIntrusive<Label>();
 
-        this->markLabel(begin);
-        for(unsigned int i = 0; i < size; i++) {
-            this->markLabel(labels[i]);
-            this->emit1byteIns(OpCode::CALL_CMD, i);
-            this->emit0byteIns(OpCode::SUCCESS_CHILD);
-        }
-        this->markLabel(end);
-        this->catchException(begin, end, this->pool.getAnyType());
-        this->emit0byteIns(OpCode::FAILURE_CHILD);
+    this->markLabel(begin);
+    for(unsigned int i = 0; i < size; i++) {
+        this->markLabel(labels[i]);
+        this->visit(*node.getCmdNodes()[i]);
+        this->emit0byteIns(OpCode::SUCCESS_CHILD);
     }
-
+    this->markLabel(end);
+    this->catchException(begin, end, this->pool.getAnyType());
+    this->emit0byteIns(OpCode::FAILURE_CHILD);
     this->markLabel(labels[size]);
-    this->emit0byteIns(OpCode::POP_PIPELINE);
 }
 
 void ByteCodeGenerator::visitSubstitutionNode(SubstitutionNode &node) {

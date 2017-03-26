@@ -810,13 +810,16 @@ std::unique_ptr<Node> Parser::parse_pipedCommand() {
         return cmdNode;
     }
 
-    auto node = uniquify<PipedCmdNode>(cmdNode.release());
+    if(CUR_KIND() == PIPE) {
+        auto node = uniquify<PipedCmdNode>(cmdNode.release());
 
-    while(CUR_KIND() == PIPE) {
-        this->expect(PIPE);
-        node->addCmdNodes(this->parse_command().release());
+        while(CUR_KIND() == PIPE) {
+            this->expect(PIPE);
+            node->addCmdNodes(this->parse_command().release());
+        }
+        return std::move(node);
     }
-    return std::move(node);
+    return cmdNode;
 }
 
 std::unique_ptr<Node> Parser::parse_command() {

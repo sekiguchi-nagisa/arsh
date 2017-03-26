@@ -729,7 +729,7 @@ void TypeChecker::visitCmdNode(CmdNode &node) {
     for(auto *argNode : node.getArgNodes()) {
         this->checkType(argNode);
     }
-    node.setType(this->typePool.getProcType());
+    node.setType(this->typePool.getBooleanType());
 }
 
 void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
@@ -788,7 +788,7 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
 
 void TypeChecker::visitPipedCmdNode(PipedCmdNode &node) {
     for(auto *cmdNode : node.getCmdNodes()) {
-        this->checkType(this->typePool.getProcType(), cmdNode);
+        this->checkType(cmdNode);
     }
     node.setType(this->typePool.getBooleanType());
 }

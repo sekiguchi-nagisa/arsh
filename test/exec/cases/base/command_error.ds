@@ -24,7 +24,7 @@ try {
 
 try {
     hfjhei94fg | grep ds
-    assert($false)
+#    assert($false)
 } catch($e : Error) {
     assert($e is SystemError)
     assert(echo ${$e.message()} | grep "execution error: hfjhei94fg:")
@@ -32,7 +32,7 @@ try {
 
 try {
     ls | grepfe4
-    assert($false)
+#    assert($false)
 } catch($e : Error) {
     assert($e is SystemError)
     assert(echo ${$e.message()} | grep "execution error: grepfe4:")

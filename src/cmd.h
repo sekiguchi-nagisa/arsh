@@ -44,7 +44,6 @@ enum RedirectOP : unsigned char {
 #define GEN_ENUM(ENUM, STR) ENUM,
     EACH_RedirectOP(GEN_ENUM)
 #undef GEN_ENUM
-    DUMMY,
 };
 
 /**

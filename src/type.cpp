@@ -547,9 +547,6 @@ TypePool::TypePool() :
     this->initBuiltinType(StringIter__, "StringIter%%", false, this->getAnyType(), info_StringIterType());
     this->initBuiltinType(Regex, "Regex", false, this->getAnyType(), info_RegexType());
 
-    // pseudo type for command type checking
-    this->initBuiltinType(Proc__, "Proc%%", false, this->getAnyType(), info_Dummy());
-
     // register NativeFuncInfo to ErrorType
     ErrorType::registerFuncInfo(info_ErrorType());
 

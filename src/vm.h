@@ -126,12 +126,6 @@ struct DSState {
     std::vector<const DSCode *> codeStack;
 
     /**
-     * for caching object.
-     * must be PipelineEvaluator object.
-     */
-    DSValue pipelineEvaluator;
-
-    /**
      * cache searched result.
      */
     FilePathCache pathCache;
@@ -164,10 +158,6 @@ struct DSState {
             free(this->history.data[i]);
         }
         free(this->history.data);
-    }
-
-    DSValue &getPipeline() {
-        return this->pipelineEvaluator;
     }
 
     int getExitStatus() const {

@@ -716,6 +716,7 @@ void CmdNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(nameNode);
     DUMP(argNodes);
     DUMP_PRIM(redirCount);
+    DUMP_PRIM(inPipe);
 }
 
 void CmdNode::accept(NodeVisitor &visitor) {
@@ -734,6 +735,9 @@ PipedCmdNode::~PipedCmdNode() {
 
 void PipedCmdNode::addCmdNodes(Node *node) {
     this->cmdNodes.push_back(node);
+    if(dynamic_cast<CmdNode *>(node)) {
+        static_cast<CmdNode *>(node)->setInPipe(true);
+    }
     this->updateToken(node->getToken());
 }
 

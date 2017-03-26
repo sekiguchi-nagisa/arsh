@@ -69,4 +69,17 @@ if [ $? != 0 ]; then
     exit 1
 fi
 
+# command error
+$YDSH_BIN -c 'hoge | huga' 2>&1 | grep 'execution error: hoge: command not found'
+
+if [ $? != 0 ]; then
+    exit 1
+fi
+
+$YDSH_BIN -c 'hoge | huga' 2>&1 | grep 'execution error: huga: command not found'
+
+if [ $? != 0 ]; then
+    exit 1
+fi
+
 exit 0

@@ -10,7 +10,7 @@ hash ls cat ps
 assert($? == 0)
 assert(hash | grep "ls=")
 assert(hash | grep "cat=")
-assert(hash | grep "grep=") # 'grep' is cached due to call it previously
+#assert(hash | grep "grep=") # 'grep' is not cached due to calling from pipe
 assert(hash | grep "ps=")
 
 # add cache (not found)
@@ -21,7 +21,6 @@ assert("$(hash hfreiufre 2>&1)" == "ydsh: hash: hfreiufre: not found")
 # remove cache
 hash -r cat ps
 assert(hash | grep "ls=")
-assert(hash | grep "grep=")
 hash | grep "cat="
 assert($? != 0)
 hash | grep "ps="

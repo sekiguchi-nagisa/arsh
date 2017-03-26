@@ -93,20 +93,14 @@ namespace ydsh {
     OP(FAILURE_CHILD, 0) \
     OP(CAPTURE_STR, 2) \
     OP(CAPTURE_ARRAY, 2) \
-    OP(NEW_PIPELINE, 0) \
-    OP(CALL_PIPELINE, -1) \
-    OP(OPEN_PROC, 0) \
-    OP(CLOSE_PROC, 0) \
-    OP(ADD_CMD_ARG, 1) \
-    OP(ADD_REDIR_OP, 1) \
+    OP(PIPELINE, -1) \
     OP(EXPAND_TILDE, 0) \
     OP(NEW_CMD, 0) \
-    OP(ADD_CMD_ARG2, 1) \
-    OP(CALL_CMD, 1) \
-    OP(CALL_CMD2, 0) \
-    OP(POP_PIPELINE, 0) \
+    OP(ADD_CMD_ARG, 1) \
+    OP(CALL_CMD, 0) \
+    OP(CALL_CMD_P, 0) \
     OP(NEW_REDIR, 0) \
-    OP(ADD_REDIR_OP2, 1) \
+    OP(ADD_REDIR_OP, 1) \
     OP(DO_REDIR, 0) \
     OP(DBUS_INIT_SIG, 0) \
     OP(DBUS_WAIT_SIG, 0) \

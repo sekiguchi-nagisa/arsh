@@ -529,7 +529,6 @@ public:
         Error,
         Task,
         Func,
-        Proc__,
         StringIter__,
         ObjectPath, // for D-Bus object path
         UnixFD,     // for Unix file descriptor
@@ -667,10 +666,6 @@ public:
 
     DSType &getBaseFuncType() const {
         return *this->typeTable[Func];
-    }
-
-    DSType &getProcType() const {
-        return *this->typeTable[Proc__];
     }
 
     DSType &getStringIterType() const {

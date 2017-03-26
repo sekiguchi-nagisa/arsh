@@ -409,7 +409,7 @@ private:
     void enterFinally();
     void writeCaptureIns(bool isStr, const IntrusivePtr<Label> &label);
     void generateCmdArg(CmdArgNode &node);
-    void writePipelineIns(const std::vector<IntrusivePtr<Label>> &labels);
+    void emitPipelineIns(const std::vector<IntrusivePtr<Label>> &labels);
     void generateStringExpr(StringExprNode &node, bool fragment);
 
     void initCodeBuilder(CodeKind kind, unsigned short localVarNum);
