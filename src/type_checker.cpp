@@ -1189,8 +1189,8 @@ void TypeChecker::visitRootNode(RootNode &node) {
         if(prevIsTerminal) {
             RAISE_TC_ERROR(Unreachable, *targetNode);
         }
-        if(dynamic_cast<PipedCmdNode *>(targetNode) != nullptr) {  // pop stack top
-            this->checkTypeWithCoercion(this->typePool.getVoidType(), targetNode);
+        if(dynamic_cast<PipedCmdNode *>(targetNode) != nullptr || dynamic_cast<CmdNode *>(targetNode) != nullptr) {
+            this->checkTypeWithCoercion(this->typePool.getVoidType(), targetNode);  // pop stack top
         } else if(this->toplevelPrinting) {
             this->checkType(nullptr, targetNode, nullptr);
             targetNode = this->newPrintOpNode(targetNode);

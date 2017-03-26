@@ -13,6 +13,10 @@ YDSH_BIN=$1
 
 test "$($YDSH_BIN --print-toplevel -c '$true')" = '(Boolean) true'
 
+test "$($YDSH_BIN --print-toplevel -c 'true')" = ""
+
+test "$($YDSH_BIN --print-toplevel -c 'true | true')" = ""
+
 $YDSH_BIN --print-toplevel -c "$'hello\x00world'" | grep $'hello\x00world'
 
 v="$(cat << EOF
