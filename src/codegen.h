@@ -407,7 +407,7 @@ private:
     /**
      * for line number
      */
-    void writeSourcePos(unsigned int pos);
+    void emitSourcePos(unsigned int pos);
 
     /**
      * begin and end have already been marked.
@@ -415,7 +415,7 @@ private:
     void catchException(const IntrusivePtr<Label> &begin, const IntrusivePtr<Label> &end, const DSType &type,
                         unsigned short localOffset = 0, unsigned short localSize = 0);
     void enterFinally();
-    void writeCaptureIns(bool isStr, const IntrusivePtr<Label> &label);
+    void emitCaptureIns(bool isStr, const IntrusivePtr<Label> &label);
     void generateCmdArg(CmdArgNode &node);
     void emitPipelineIns(const std::vector<IntrusivePtr<Label>> &labels);
     void generateStringExpr(StringExprNode &node, bool fragment);

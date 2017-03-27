@@ -206,7 +206,7 @@ const std::pair<IntrusivePtr<Label>, IntrusivePtr<Label>> &ByteCodeGenerator::pe
     return this->curBuilder().loopLabels.back().first;
 }
 
-void ByteCodeGenerator::writeSourcePos(unsigned int pos) {
+void ByteCodeGenerator::emitSourcePos(unsigned int pos) {
     const unsigned int index = this->curBuilder().codeBuffer.size();
     if(this->curBuilder().sourcePosEntries.empty() || this->curBuilder().sourcePosEntries.back().pos != pos) {
         this->curBuilder().sourcePosEntries.push_back({index, pos});
@@ -228,7 +228,7 @@ void ByteCodeGenerator::enterFinally() {
     }
 }
 
-void ByteCodeGenerator::writeCaptureIns(bool isStr, const IntrusivePtr<Label> &label) {
+void ByteCodeGenerator::emitCaptureIns(bool isStr, const IntrusivePtr<Label> &label) {
     this->emitBranchIns(isStr ? OpCode::CAPTURE_STR : OpCode::CAPTURE_ARRAY, label);
 }
 
@@ -502,19 +502,19 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
         this->emitNumCastIns(node.getExprNode()->getType(), node.getType());
         break;
     case TypeOpNode::TO_STRING:
-        this->writeSourcePos(node.getPos());
+        this->emitSourcePos(node.getPos());
         this->generateToString();
         break;
     case TypeOpNode::CHECK_CAST:
-        this->writeSourcePos(node.getPos());
+        this->emitSourcePos(node.getPos());
         this->emitTypeIns(OpCode::CHECK_CAST, node.getType());
         break;
     case TypeOpNode::CHECK_UNWRAP:
-        this->writeSourcePos(node.getPos());
+        this->emitSourcePos(node.getPos());
         this->emit0byteIns(OpCode::CHECK_UNWRAP);
         break;
     case TypeOpNode::PRINT: {
-        this->writeSourcePos(node.getPos());
+        this->emitSourcePos(node.getPos());
         auto &exprType = node.getExprNode()->getType();
         if(exprType.isOptionType()) {
             this->emit0byteIns(OpCode::UNWRAP);
@@ -585,7 +585,7 @@ void ByteCodeGenerator::visitApplyNode(ApplyNode &node) {
         this->visit(*e);
     }
 
-    this->writeSourcePos(node.getPos());
+    this->emitSourcePos(node.getPos());
     this->emit2byteIns(OpCode::CALL_FUNC, paramSize);
 }
 
@@ -596,7 +596,7 @@ void ByteCodeGenerator::visitMethodCallNode(MethodCallNode &node) {
         this->visit(*e);
     }
 
-    this->writeSourcePos(node.getPos());
+    this->emitSourcePos(node.getPos());
     if(node.getHandle()->isInterfaceMethod()) {
         this->emitDescriptorIns(
                 OpCode::INVOKE_METHOD, encodeMethodDescriptor(node.getMethodName().c_str(), node.getHandle()));
@@ -621,7 +621,7 @@ void ByteCodeGenerator::visitNewNode(NewNode &node) {
     }
 
     // call constructor
-    this->writeSourcePos(node.getPos());
+    this->emitSourcePos(node.getPos());
     this->emit2byteIns(OpCode::CALL_INIT, paramSize);
 }
 
@@ -642,7 +642,7 @@ void ByteCodeGenerator::visitTernaryNode(TernaryNode &node) {
 
 
 void ByteCodeGenerator::visitCmdNode(CmdNode &node) {
-    this->writeSourcePos(node.getPos());
+    this->emitSourcePos(node.getPos());
 
     this->visit(*node.getNameNode());
     this->emit0byteIns(OpCode::NEW_CMD);
@@ -689,7 +689,7 @@ void ByteCodeGenerator::visitPipelineNode(PipelineNode &node) {
     labels[size] = makeIntrusive<Label>();
 
     // generate pipeline
-    this->writeSourcePos(node.getPos());
+    this->emitSourcePos(node.getPos());
     this->emitPipelineIns(labels);
 
     auto begin = makeIntrusive<Label>();
@@ -713,7 +713,7 @@ void ByteCodeGenerator::visitSubstitutionNode(SubstitutionNode &node) {
     auto mergeLabel = makeIntrusive<Label>();
 
     this->markLabel(beginLabel);
-    this->writeCaptureIns(node.isStrExpr(), mergeLabel);
+    this->emitCaptureIns(node.isStrExpr(), mergeLabel);
     this->visit(*node.getExprNode());
     this->markLabel(endLabel);
 
@@ -726,7 +726,7 @@ void ByteCodeGenerator::visitSubstitutionNode(SubstitutionNode &node) {
 void ByteCodeGenerator::visitAssertNode(AssertNode &node) {
     if(this->assertion) {
         this->visit(*node.getCondNode());
-        this->writeSourcePos(node.getCondNode()->getPos());
+        this->emitSourcePos(node.getCondNode()->getPos());
         this->visit(*node.getMessageNode());
         this->emit0byteIns(OpCode::ASSERT);
     }
@@ -930,7 +930,7 @@ void ByteCodeGenerator::visitVarDeclNode(VarDeclNode &node) {
             this->visit(*node.getExprNode());
         }
 
-        this->writeSourcePos(node.getPos());
+        this->emitSourcePos(node.getPos());
         this->emit1byteIns(OpCode::IMPORT_ENV, hashDefault ? 1 : 0);
         break;
     }
