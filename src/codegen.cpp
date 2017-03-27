@@ -1071,13 +1071,9 @@ CompiledCode ByteCodeGenerator::finalizeCodeBuilder(const CallableNode &node) {
     }
     constPool[constSize] = nullptr; // sentinel
 
-    // create source pos entry
-    const unsigned int lineNumEntrySize = this->curBuilder().sourcePosEntries.size();
-    SourcePosEntry *entries = new SourcePosEntry[lineNumEntrySize + 1];
-    for(unsigned int i = 0; i < lineNumEntrySize; i++) {
-        entries[i] = this->curBuilder().sourcePosEntries[i];
-    }
-    entries[lineNumEntrySize] = {0, 0};  // sentinel
+    // extract source pos entry
+    this->curBuilder().sourcePosEntries.push_back({0, 0});
+    auto *entries = extract(std::move(this->curBuilder().sourcePosEntries));
 
     // create exception entry
     const unsigned int exeptEntrySize = this->curBuilder().catchBuilders.size();

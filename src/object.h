@@ -869,7 +869,7 @@ public:
     ~CompiledCode() {
         free(this->name);
         delete[] this->constPool;
-        delete[] this->sourcePosEntries;
+        free(this->sourcePosEntries);
         delete[] this->exceptionEntries;
     }
 
