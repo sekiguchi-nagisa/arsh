@@ -85,6 +85,8 @@ private:
      */
     void checkRange(size_type index) const;
 
+    FlexBuffer &push_back_impl(const T &value);
+
 public:
     NON_COPYABLE(FlexBuffer);
 
@@ -120,7 +122,13 @@ public:
         return *this;
     }
 
-    FlexBuffer &operator+=(const T &value);
+    FlexBuffer &operator+=(const T &value) {
+        return this->push_back_impl(value);
+    }
+
+    FlexBuffer &operator+=(T &&value) {
+        return this->push_back_impl(value);
+    }
 
     /**
      * buffer.data is not equivalent to this.data.
@@ -202,6 +210,14 @@ public:
         return this->operator[](this->usedSize - 1);
     }
 
+    void push_back(const T &value) {
+        this->push_back_impl(value);
+    }
+
+    void push_back(T &&value) {
+        this->push_back_impl(value);
+    }
+
     void pop_back() noexcept {
         this->usedSize--;
     }
@@ -273,7 +289,7 @@ void FlexBuffer<T, SIZE_T>::checkRange(size_type index) const {
 }
 
 template <typename T, typename SIZE_T>
-FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::operator+=(const T &value) {
+FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::push_back_impl(const T &value) {
     this->reserve(this->usedSize + 1);
     this->data[this->usedSize++] = value;
     return *this;

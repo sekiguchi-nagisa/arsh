@@ -384,6 +384,31 @@ TEST(BufferTest, case14) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, buffer[2]));
 }
 
+struct Dummy {
+    unsigned int first;
+    const char *second;
+};
+
+TEST(BufferTest, case15) {
+    FlexBuffer<Dummy> buffer;
+
+    buffer += {0, nullptr};
+    buffer.push_back({0, nullptr});
+
+    Dummy d;
+    d.first = 1;
+    d.second = "hello";
+    buffer.push_back(d);
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, buffer.size()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, buffer[0].first));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(nullptr, buffer[0].second));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, buffer[1].first));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(nullptr, buffer[1].second));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, buffer[2].first));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("hello", buffer[2].second));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
