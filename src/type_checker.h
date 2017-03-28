@@ -381,7 +381,7 @@ private:
     void visitCmdNode(CmdNode &node) override;
     void visitCmdArgNode(CmdArgNode &node) override;
     void visitRedirNode(RedirNode &node) override;
-    void visitPipedCmdNode(PipedCmdNode &node) override;
+    void visitPipelineNode(PipelineNode &node) override;
     void visitSubstitutionNode(SubstitutionNode &node) override;
     void visitAssertNode(AssertNode &node) override;
     void visitBlockNode(BlockNode &node) override;

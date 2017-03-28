@@ -679,8 +679,8 @@ void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
     this->emit1byteIns(OpCode::ADD_REDIR_OP, resolveRedirOp(node.getRedirectOP()));
 }
 
-void ByteCodeGenerator::visitPipedCmdNode(PipedCmdNode &node) {
-    const unsigned int size = node.getCmdNodes().size();
+void ByteCodeGenerator::visitPipelineNode(PipelineNode &node) {
+    const unsigned int size = node.getNodes().size();
 
     // init label
     std::vector<IntrusivePtr<Label>> labels(size + 1);
@@ -699,7 +699,7 @@ void ByteCodeGenerator::visitPipedCmdNode(PipedCmdNode &node) {
     this->markLabel(begin);
     for(unsigned int i = 0; i < size; i++) {
         this->markLabel(labels[i]);
-        this->visit(*node.getCmdNodes()[i]);
+        this->visit(*node.getNodes()[i]);
         this->emit0byteIns(OpCode::SUCCESS_CHILD);
     }
     this->markLabel(end);

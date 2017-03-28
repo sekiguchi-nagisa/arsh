@@ -786,8 +786,8 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
     node.setType(this->typePool.getAnyType());   //FIXME
 }
 
-void TypeChecker::visitPipedCmdNode(PipedCmdNode &node) {
-    for(auto *cmdNode : node.getCmdNodes()) {
+void TypeChecker::visitPipelineNode(PipelineNode &node) {
+    for(auto *cmdNode : node.getNodes()) {
         this->checkType(cmdNode);
     }
     node.setType(this->typePool.getBooleanType());
@@ -1189,7 +1189,7 @@ void TypeChecker::visitRootNode(RootNode &node) {
         if(prevIsTerminal) {
             RAISE_TC_ERROR(Unreachable, *targetNode);
         }
-        if(dynamic_cast<PipedCmdNode *>(targetNode) != nullptr || dynamic_cast<CmdNode *>(targetNode) != nullptr) {
+        if(dynamic_cast<PipelineNode *>(targetNode) != nullptr || dynamic_cast<CmdNode *>(targetNode) != nullptr) {
             this->checkTypeWithCoercion(this->typePool.getVoidType(), targetNode);  // pop stack top
         } else if(this->toplevelPrinting) {
             this->checkType(nullptr, targetNode, nullptr);

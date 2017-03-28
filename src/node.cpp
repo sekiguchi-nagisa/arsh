@@ -724,29 +724,29 @@ void CmdNode::accept(NodeVisitor &visitor) {
 }
 
 // ##########################
-// ##     PipedCmdNode     ##
+// ##     PipelineNode     ##
 // ##########################
 
-PipedCmdNode::~PipedCmdNode() {
-    for(auto *p : this->cmdNodes) {
+PipelineNode::~PipelineNode() {
+    for(auto *p : this->nodes) {
         delete p;
     }
 }
 
-void PipedCmdNode::addCmdNodes(Node *node) {
-    this->cmdNodes.push_back(node);
+void PipelineNode::addNode(Node *node) {
+    this->nodes.push_back(node);
     if(dynamic_cast<CmdNode *>(node)) {
         static_cast<CmdNode *>(node)->setInPipe(true);
     }
     this->updateToken(node->getToken());
 }
 
-void PipedCmdNode::dump(NodeDumper &dumper) const {
-    DUMP(cmdNodes);
+void PipelineNode::dump(NodeDumper &dumper) const {
+    DUMP(nodes);
 }
 
-void PipedCmdNode::accept(NodeVisitor &visitor) {
-    visitor.visitPipedCmdNode(*this);
+void PipelineNode::accept(NodeVisitor &visitor) {
+    visitor.visitPipelineNode(*this);
 }
 
 // ##############################

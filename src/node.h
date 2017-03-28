@@ -1075,22 +1075,22 @@ public:
     void accept(NodeVisitor &visitor) override;
 };
 
-class PipedCmdNode : public Node {
+class PipelineNode : public Node {
 private:
-    std::vector<Node *> cmdNodes;
+    std::vector<Node *> nodes;
 
 public:
-    explicit PipedCmdNode(Node *node) :
-            Node(node->getToken()), cmdNodes(1) {
-        this->cmdNodes[0] = node;
+    explicit PipelineNode(Node *node) :
+            Node(node->getToken()), nodes(1) {
+        this->nodes[0] = node;
     }
 
-    ~PipedCmdNode();
+    ~PipelineNode();
 
-    void addCmdNodes(Node *node);
+    void addNode(Node *node);
 
-    const std::vector<Node *> &getCmdNodes() const {
-        return this->cmdNodes;
+    const std::vector<Node *> &getNodes() const {
+        return this->nodes;
     }
 
     void dump(NodeDumper &dumper) const override;
@@ -1995,7 +1995,7 @@ struct NodeVisitor {
     virtual void visitCmdNode(CmdNode &node) = 0;
     virtual void visitCmdArgNode(CmdArgNode &node) = 0;
     virtual void visitRedirNode(RedirNode &node) = 0;
-    virtual void visitPipedCmdNode(PipedCmdNode &node) = 0;
+    virtual void visitPipelineNode(PipelineNode &node) = 0;
     virtual void visitSubstitutionNode(SubstitutionNode &node) = 0;
     virtual void visitAssertNode(AssertNode &node) = 0;
     virtual void visitBlockNode(BlockNode &node) = 0;
@@ -2047,7 +2047,7 @@ struct BaseVisitor : public NodeVisitor {
     virtual void visitCmdNode(CmdNode &node) override { this->visitDefault(node); }
     virtual void visitCmdArgNode(CmdArgNode &node) override { this->visitDefault(node); }
     virtual void visitRedirNode(RedirNode &node) override { this->visitDefault(node); }
-    virtual void visitPipedCmdNode(PipedCmdNode &node) override { this->visitDefault(node); }
+    virtual void visitPipelineNode(PipelineNode &node) override { this->visitDefault(node); }
     virtual void visitSubstitutionNode(SubstitutionNode &node) override { this->visitDefault(node); }
     virtual void visitAssertNode(AssertNode &node) override { this->visitDefault(node); }
     virtual void visitBlockNode(BlockNode &node) override { this->visitDefault(node); }
