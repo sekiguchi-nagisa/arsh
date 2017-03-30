@@ -17,19 +17,13 @@
 #ifndef YDSH_CMD_H
 #define YDSH_CMD_H
 
-#include <cstring>
-#include <cassert>
-
 struct DSState;
 
 namespace ydsh {
 
 class Array_Object;
 
-constexpr unsigned int READ_PIPE = 0;
-constexpr unsigned int WRITE_PIPE = 1;
-
-#define EACH_RedirectOP(OP) \
+#define EACH_RedirOP(OP) \
     OP(IN_2_FILE, "<") \
     OP(OUT_2_FILE, "1>") \
     OP(OUT_2_FILE_APPEND, "1>>") \
@@ -40,9 +34,9 @@ constexpr unsigned int WRITE_PIPE = 1;
     OP(MERGE_ERR_2_OUT, "2>&1") \
     OP(MERGE_OUT_2_ERR, "1>&2")
 
-enum RedirectOP : unsigned char {
+enum class RedirOP : unsigned char {
 #define GEN_ENUM(ENUM, STR) ENUM,
-    EACH_RedirectOP(GEN_ENUM)
+    EACH_RedirOP(GEN_ENUM)
 #undef GEN_ENUM
 };
 
@@ -66,7 +60,6 @@ builtin_command_t lookupBuiltinCommand(const char *commandName);
 
 } // namespace ydsh
 
-#define PERROR0(obj)          fprintf(stderr, "ydsh: %s: %s\n", str(obj.getValues()[0]), strerror(errno))
 #define PERROR(obj, fmt, ...) fprintf(stderr, "ydsh: %s: " fmt ": %s\n", str(obj.getValues()[0]), ## __VA_ARGS__, strerror(errno))
 #define ERROR(obj, fmt, ...)  fprintf(stderr, "ydsh: %s: " fmt "\n", str(obj.getValues()[0]), ## __VA_ARGS__)
 

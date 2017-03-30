@@ -664,10 +664,10 @@ void ByteCodeGenerator::visitCmdArgNode(CmdArgNode &node) {
     this->emit1byteIns(OpCode::ADD_CMD_ARG, node.isIgnorableEmptyString() ? 1 : 0);
 }
 
-static RedirectOP resolveRedirOp(TokenKind kind) {
+static RedirOP resolveRedirOp(TokenKind kind) {
     switch(kind) {
-#define GEN_CASE(ENUM, STR) case REDIR_##ENUM : return RedirectOP::ENUM;
-    EACH_RedirectOP(GEN_CASE)
+#define GEN_CASE(ENUM, STR) case REDIR_##ENUM : return RedirOP::ENUM;
+    EACH_RedirOP(GEN_CASE)
 #undef GEN_CASE
     default:
         fatal("unsupported redir op: %s", toString(kind));
@@ -676,7 +676,7 @@ static RedirectOP resolveRedirOp(TokenKind kind) {
 
 void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
     this->generateCmdArg(*node.getTargetNode());
-    this->emit1byteIns(OpCode::ADD_REDIR_OP, resolveRedirOp(node.getRedirectOP()));
+    this->emit1byteIns(OpCode::ADD_REDIR_OP, static_cast<unsigned char>(resolveRedirOp(node.getRedirectOP())));
 }
 
 void ByteCodeGenerator::visitPipelineNode(PipelineNode &node) {

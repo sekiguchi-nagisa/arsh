@@ -422,6 +422,9 @@ static bool hasSpace(const char *ifs) {
     return false;
 }
 
+static constexpr unsigned int READ_PIPE = 0;
+static constexpr unsigned int WRITE_PIPE = 1;
+
 static void forkAndCapture(bool isStr, DSState &state) {
     const unsigned short offset = read16(GET_CODE(state), state.pc() + 1);
 
@@ -594,7 +597,7 @@ class RedirConfig : public DSObject {
 private:
     bool restore;
 
-    std::vector<std::pair<RedirectOP, DSValue>> ops;
+    std::vector<std::pair<RedirOP, DSValue>> ops;
 
     int fds[3];
 
@@ -618,7 +621,7 @@ public:
         }
     }
 
-    void addRedirOp(RedirectOP op, DSValue &&arg) {
+    void addRedirOp(RedirOP op, DSValue &&arg) {
         this->ops.push_back(std::make_pair(op, std::move(arg)));
     }
 
@@ -629,24 +632,24 @@ public:
     void redirect(DSState &st) const;
 };
 
-static int redirectImpl(const std::pair<RedirectOP, DSValue> &pair) {
+static int redirectImpl(const std::pair<RedirOP, DSValue> &pair) {
     switch(pair.first) {
-    case IN_2_FILE: {
+    case RedirOP::IN_2_FILE: {
         return redirectToFile(pair.second, "rb", STDIN_FILENO);
     }
-    case OUT_2_FILE: {
+    case RedirOP::OUT_2_FILE: {
         return redirectToFile(pair.second, "wb", STDOUT_FILENO);
     }
-    case OUT_2_FILE_APPEND: {
+    case RedirOP::OUT_2_FILE_APPEND: {
         return redirectToFile(pair.second, "ab", STDOUT_FILENO);
     }
-    case ERR_2_FILE: {
+    case RedirOP::ERR_2_FILE: {
         return redirectToFile(pair.second, "wb", STDERR_FILENO);
     }
-    case ERR_2_FILE_APPEND: {
+    case RedirOP::ERR_2_FILE_APPEND: {
         return redirectToFile(pair.second, "ab", STDERR_FILENO);
     }
-    case MERGE_ERR_2_OUT_2_FILE: {
+    case RedirOP::MERGE_ERR_2_OUT_2_FILE: {
         int r = redirectToFile(pair.second, "wb", STDOUT_FILENO);
         if(r != 0) {
             return r;
@@ -656,7 +659,7 @@ static int redirectImpl(const std::pair<RedirectOP, DSValue> &pair) {
         }
         return 0;
     }
-    case MERGE_ERR_2_OUT_2_FILE_APPEND: {
+    case RedirOP::MERGE_ERR_2_OUT_2_FILE_APPEND: {
         int r = redirectToFile(pair.second, "ab", STDOUT_FILENO);
         if(r != 0) {
             return r;
@@ -666,18 +669,18 @@ static int redirectImpl(const std::pair<RedirectOP, DSValue> &pair) {
         }
         return 0;
     }
-    case MERGE_ERR_2_OUT:
+    case RedirOP::MERGE_ERR_2_OUT:
         if(!dup2(STDOUT_FILENO, STDERR_FILENO)) {
             return errno;
         }
         return 0;
-    case MERGE_OUT_2_ERR:
+    case RedirOP::MERGE_OUT_2_ERR:
         if(!dup2(STDERR_FILENO, STDOUT_FILENO)) {
             return errno;
         }
         return 0;
     }
-    return 0;
+    return 0;   // normally unreachable, but gcc requires this return statement.
 }
 
 void RedirConfig::redirect(DSState &st) const {
@@ -1542,7 +1545,7 @@ static bool mainLoop(DSState &state) {
         vmcase(ADD_REDIR_OP) {
             unsigned char v = read8(GET_CODE(state), ++state.pc());
             auto value = state.pop();
-            typeAs<RedirConfig>(state.peek())->addRedirOp(static_cast<RedirectOP>(v), std::move(value));
+            typeAs<RedirConfig>(state.peek())->addRedirOp(static_cast<RedirOP>(v), std::move(value));
             break;
         }
         vmcase(DO_REDIR) {
