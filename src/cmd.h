@@ -24,18 +24,18 @@ namespace ydsh {
 class Array_Object;
 
 #define EACH_RedirOP(OP) \
-    OP(IN_2_FILE, "<") \
-    OP(OUT_2_FILE, "1>") \
-    OP(OUT_2_FILE_APPEND, "1>>") \
-    OP(ERR_2_FILE, "2>") \
-    OP(ERR_2_FILE_APPEND, "2>>") \
-    OP(MERGE_ERR_2_OUT_2_FILE, "&>") \
-    OP(MERGE_ERR_2_OUT_2_FILE_APPEND, "&>>") \
-    OP(MERGE_ERR_2_OUT, "2>&1") \
-    OP(MERGE_OUT_2_ERR, "1>&2")
+    OP(IN_2_FILE) \
+    OP(OUT_2_FILE) \
+    OP(OUT_2_FILE_APPEND) \
+    OP(ERR_2_FILE) \
+    OP(ERR_2_FILE_APPEND) \
+    OP(MERGE_ERR_2_OUT_2_FILE) \
+    OP(MERGE_ERR_2_OUT_2_FILE_APPEND) \
+    OP(MERGE_ERR_2_OUT) \
+    OP(MERGE_OUT_2_ERR)
 
 enum class RedirOP : unsigned char {
-#define GEN_ENUM(ENUM, STR) ENUM,
+#define GEN_ENUM(ENUM) ENUM,
     EACH_RedirOP(GEN_ENUM)
 #undef GEN_ENUM
 };
