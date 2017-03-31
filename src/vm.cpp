@@ -654,9 +654,7 @@ static int redirectImpl(const std::pair<RedirOP, DSValue> &pair) {
         if(r != 0) {
             return r;
         }
-        if(!dup2(STDOUT_FILENO, STDERR_FILENO)) {
-            return errno;
-        }
+        dup2(STDOUT_FILENO, STDERR_FILENO); //FIXME: error check
         return 0;
     }
     case RedirOP::MERGE_ERR_2_OUT_2_FILE_APPEND: {
@@ -664,20 +662,14 @@ static int redirectImpl(const std::pair<RedirOP, DSValue> &pair) {
         if(r != 0) {
             return r;
         }
-        if(!dup2(STDOUT_FILENO, STDERR_FILENO)) {
-            return errno;
-        }
+        dup2(STDOUT_FILENO, STDERR_FILENO);
         return 0;
     }
     case RedirOP::MERGE_ERR_2_OUT:
-        if(!dup2(STDOUT_FILENO, STDERR_FILENO)) {
-            return errno;
-        }
+        dup2(STDOUT_FILENO, STDERR_FILENO);
         return 0;
     case RedirOP::MERGE_OUT_2_ERR:
-        if(!dup2(STDERR_FILENO, STDOUT_FILENO)) {
-            return errno;
-        }
+        dup2(STDERR_FILENO, STDOUT_FILENO);
         return 0;
     }
     return 0;   // normally unreachable, but gcc requires this return statement.
