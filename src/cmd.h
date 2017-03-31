@@ -32,7 +32,8 @@ class Array_Object;
     OP(MERGE_ERR_2_OUT_2_FILE) \
     OP(MERGE_ERR_2_OUT_2_FILE_APPEND) \
     OP(MERGE_ERR_2_OUT) \
-    OP(MERGE_OUT_2_ERR)
+    OP(MERGE_OUT_2_ERR) \
+    OP(HERE_STR)
 
 enum class RedirOP : unsigned char {
 #define GEN_ENUM(ENUM) ENUM,

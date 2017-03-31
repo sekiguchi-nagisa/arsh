@@ -16,6 +16,8 @@
 
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <sys/wait.h>
+
 #include <cstdlib>
 
 #include "opcode.h"
@@ -579,18 +581,22 @@ void xexecve(const char *filePath, char **argv, char *const *envp) {
     execve(filePath, argv, envp);
 }
 
-/**
- * if failed, return non-zero value(errno)
- */
-static int redirectToFile(const DSValue &fileName, const char *mode, int targetFD) {
-    FILE *fp = fopen(typeAs<String_Object>(fileName)->getValue(), mode);
-    if(fp == NULL) {
-        return errno;
+using pipe_t = int[2];
+
+static void initPipe(unsigned int size, pipe_t *pipes) {
+    for(unsigned int i = 0; i < size; i++) {
+        if(pipe(pipes[i]) < 0) {  // create pipe
+            perror("pipe creation error");
+            exit(1);
+        }
     }
-    int fd = fileno(fp);
-    dup2(fd, targetFD);
-    fclose(fp);
-    return 0;
+}
+
+static void closeAllPipe(int size, pipe_t *pipefds) {
+    for(int i = 0; i < size; i++) {
+        close(pipefds[i][0]);
+        close(pipefds[i][1]);
+    }
 }
 
 class RedirConfig : public DSObject {
@@ -632,6 +638,49 @@ public:
     void redirect(DSState &st) const;
 };
 
+static int doIOHere(const String_Object &value) {
+    pipe_t pipe[1];
+    initPipe(1, pipe);
+
+    dup2(pipe[0][READ_PIPE], STDIN_FILENO);
+
+    if(value.size() <= PIPE_BUF) {
+        write(pipe[0][WRITE_PIPE], value.getValue(), sizeof(char) * value.size());
+        write(pipe[0][WRITE_PIPE], "\n", 1);
+        closeAllPipe(1, pipe);
+    } else {
+        pid_t pid = fork();
+        if(pid < 0) {
+            return errno;
+        } else if(pid == 0) {   // child
+            pid = fork();   // double-fork (not wait IO-here process termination.)
+            if(pid == 0) {  // child
+                close(pipe[0][READ_PIPE]);
+                dup2(pipe[0][WRITE_PIPE], STDOUT_FILENO);
+                printf("%s\n", value.getValue());
+            }
+            exit(0);
+        }
+        closeAllPipe(1, pipe);
+        waitpid(pid, nullptr, 0);
+    }
+    return 0;
+}
+
+/**
+ * if failed, return non-zero value(errno)
+ */
+static int redirectToFile(const DSValue &fileName, const char *mode, int targetFD) {
+    FILE *fp = fopen(typeAs<String_Object>(fileName)->getValue(), mode);
+    if(fp == NULL) {
+        return errno;
+    }
+    int fd = fileno(fp);
+    dup2(fd, targetFD);
+    fclose(fp);
+    return 0;
+}
+
 static int redirectImpl(const std::pair<RedirOP, DSValue> &pair) {
     switch(pair.first) {
     case RedirOP::IN_2_FILE: {
@@ -671,6 +720,8 @@ static int redirectImpl(const std::pair<RedirOP, DSValue> &pair) {
     case RedirOP::MERGE_OUT_2_ERR:
         dup2(STDERR_FILENO, STDOUT_FILENO);
         return 0;
+    case RedirOP::HERE_STR:
+        return doIOHere(*typeAs<String_Object>(pair.second));
     }
     return 0;   // normally unreachable, but gcc requires this return statement.
 }
@@ -774,15 +825,6 @@ static Command resolveCmd(DSState &state, const char *cmdName) {
     cmd.kind = CmdKind::EXTERNAL;
     cmd.filePath = state.pathCache.searchPath(cmdName);
     return cmd;
-}
-
-using pipe_t = int[2];
-
-static void closeAllPipe(int size, int pipefds[][2]) {
-    for(int i = 0; i < size; i++) {
-        close(pipefds[i][0]);
-        close(pipefds[i][1]);
-    }
 }
 
 static void throwCmdError(DSState &state, const char *cmdName, int errnum) {
@@ -898,15 +940,6 @@ static void callCommand(DSState &state, DSValue &&argvObj, DSValue &&redirConfig
         }
         return;
     }
-    }
-}
-
-static void initPipe(unsigned int size, pipe_t *pipes) {
-    for(unsigned int i = 0; i < size; i++) {
-        if(pipe(pipes[i]) < 0) {  // create pipe
-            perror("pipe creation error");
-            exit(1);
-        }
     }
 }
 

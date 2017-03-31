@@ -141,6 +141,7 @@
     TOKEN(REDIR_MERGE_ERR_2_OUT_2_FILE_APPEND, "&>>") \
     TOKEN(REDIR_MERGE_ERR_2_OUT              , "2>&1") \
     TOKEN(REDIR_MERGE_OUT_2_ERR              , "1>&2") \
+    TOKEN(REDIR_HERE_STR                     , "<<<") \
     TOKEN(PIPE                               , "|") \
     TOKEN(BACKGROUND                         , "&") \
     /* type  */\

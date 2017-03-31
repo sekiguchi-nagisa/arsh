@@ -271,6 +271,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <CMD> "&>>"              { RET(REDIR_MERGE_ERR_2_OUT_2_FILE_APPEND); }
       <CMD> "2>&1"             { RET(REDIR_MERGE_ERR_2_OUT); }
       <CMD> "1>&2"             { RET(REDIR_MERGE_OUT_2_ERR); }
+      <CMD> "<<<"              { RET(REDIR_HERE_STR); }
 
       <CMD> "|"                { POP_MODE(); MODE(STMT); RET(PIPE); }
       <CMD> "&"                { RET(BACKGROUND); }
