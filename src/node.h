@@ -1081,8 +1081,8 @@ private:
 
 public:
     explicit PipelineNode(Node *node) :
-            Node(node->getToken()), nodes(1) {
-        this->nodes[0] = node;
+            Node(node->getToken()), nodes() {
+        this->addNode(node);
     }
 
     ~PipelineNode();
