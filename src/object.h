@@ -263,15 +263,12 @@ inline T *typeAs(const DSValue &value) noexcept {
 
     if(useSafeCast) {
         if(!value.isObject()) {
-            std::cerr << "must be represent DSObject" << std::endl;
-            abort();
+            fatal("must be represent DSObject\n");
         }
         auto *r = dynamic_cast<T*>(value.get());
         if(r == nullptr) {
             DSObject &v = *value;
-            std::cerr << "target type is: " << demangle(typeid(T))
-            << ", but actual is: " << demangle(typeid(v)) << std::endl;
-            abort();
+            fatal("target type is: %s, but actual is: %s\n", demangle(typeid(T)).c_str(), demangle(typeid(v)).c_str());
         }
         return r;
     } else {
