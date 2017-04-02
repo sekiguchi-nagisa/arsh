@@ -126,10 +126,10 @@ DSType &TypeChecker::resolveInterface(TypePool &typePool,
     for(FunctionNode *funcNode : node->getMethodDeclNodes()) {
         MethodHandle *handle = type.newMethodHandle(funcNode->getName());
         handle->setRecvType(type);
-        handle->setReturnType(typeGen.generateTypeAndThrow(funcNode->getReturnTypeToken()));
+        auto *retTypeNode = funcNode->getReturnTypeToken();
+        handle->setReturnType(typeGen.generateTypeAndThrow(retTypeNode));
         // resolve multi return
-        ReturnTypeNode *rToken = dynamic_cast<ReturnTypeNode *>(funcNode->getReturnTypeToken());
-        if(rToken != nullptr && rToken->hasMultiReturn()) {
+        if(retTypeNode->is(NodeKind::ReturnType) && static_cast<ReturnTypeNode *>(retTypeNode)->hasMultiReturn()) {
             handle->setAttribute(MethodHandle::MULTI_RETURN);
         }
 
@@ -202,8 +202,7 @@ void TypeChecker::checkTypeWithCurrentScope(BlockNode *blockNode) {
         blockType = &targetNode->getType();
 
         // check empty block
-        BlockNode *b;
-        if((b = dynamic_cast<BlockNode *>(targetNode)) != nullptr && b->getNodes().empty()) {
+        if(targetNode->is(NodeKind::Block) && static_cast<BlockNode *>(targetNode)->getNodes().empty()) {
             RAISE_TC_ERROR(UselessBlock, *targetNode);
         }
     }
@@ -259,17 +258,15 @@ FieldHandle *TypeChecker::addEntryAndThrowIfDefined(Node &node, const std::strin
 
 // for ApplyNode type checking
 HandleOrFuncType TypeChecker::resolveCallee(Node &recvNode) {
-    VarNode *varNode = dynamic_cast<VarNode *>(&recvNode);
-    if(varNode != nullptr) {
-        return this->resolveCallee(*varNode);
+    if(recvNode.is(NodeKind::Var)) {
+        return this->resolveCallee(*static_cast<VarNode *>(&recvNode));
     }
 
-    FunctionType *funcType =
-            dynamic_cast<FunctionType *>(&this->checkType(this->typePool.getBaseFuncType(), &recvNode));
-    if(funcType == nullptr) {
+    auto &type = this->checkType(this->typePool.getBaseFuncType(), &recvNode);
+    if(!type.isFuncType()) {
         RAISE_TC_ERROR(NotCallable, recvNode);
     }
-    return HandleOrFuncType(funcType);
+    return HandleOrFuncType(static_cast<FunctionType *>(&type));
 }
 
 HandleOrFuncType TypeChecker::resolveCallee(VarNode &recvNode) {
@@ -284,8 +281,7 @@ HandleOrFuncType TypeChecker::resolveCallee(VarNode &recvNode) {
     }
 
     DSType *type = handle->getFieldType(this->typePool);
-    FunctionType *funcType = dynamic_cast<FunctionType *>(type);
-    if(funcType == nullptr) {
+    if(!type->isFuncType()) {
         if(this->typePool.getBaseFuncType() == *type) {
             RAISE_TC_ERROR(NotCallable, recvNode);
         } else {
@@ -293,7 +289,7 @@ HandleOrFuncType TypeChecker::resolveCallee(VarNode &recvNode) {
                            this->typePool.getTypeName(*type).c_str());
         }
     }
-    return HandleOrFuncType(funcType);
+    return HandleOrFuncType(static_cast<FunctionType *>(type));
 }
 
 void TypeChecker::checkTypeArgsNode(Node &node, MethodHandle *handle, std::vector<Node *> &argNodes) {
@@ -850,7 +846,7 @@ void TypeChecker::visitLoopNode(LoopNode &node) {
 
     this->symbolTable.enterScope();
 
-    if(dynamic_cast<VarDeclNode *>(node.getInitNode()) != nullptr) {
+    if(node.getInitNode()->is(NodeKind::VarDecl)) {
         bool b = this->symbolTable.disallowShadowing(static_cast<VarDeclNode *>(node.getInitNode())->getVarName());
         (void) b;
         assert(b);
@@ -896,7 +892,7 @@ void TypeChecker::visitReturnNode(ReturnNode &node) {
     }
     auto &exprType = this->checkType(*returnType, node.getExprNode());
     if(exprType == this->typePool.getVoidType()) {
-        if(dynamic_cast<EmptyNode *>(node.getExprNode()) == nullptr) {
+        if(!node.getExprNode()->is(NodeKind::Empty)) {
             RAISE_TC_ERROR(NotNeedExpr, node);
         }
     }
@@ -1020,15 +1016,15 @@ void TypeChecker::visitAssignNode(AssignNode &node) {
         RAISE_TC_ERROR(ReadOnly, *leftNode);
     }
 
-    if(dynamic_cast<AccessNode *>(leftNode) != nullptr) {
+    if(leftNode->is(NodeKind::Access)) {
         node.setAttribute(AssignNode::FIELD_ASSIGN);
     }
     if(node.isSelfAssignment()) {
-        BinaryOpNode *opNode = dynamic_cast<BinaryOpNode *>(node.getRightNode());
+        assert(node.getRightNode()->is(NodeKind::BinaryOp));
+        BinaryOpNode *opNode = static_cast<BinaryOpNode *>(node.getRightNode());
         opNode->getLeftNode()->setType(leftType);
-        AccessNode *accessNode = dynamic_cast<AccessNode *>(leftNode);
-        if(accessNode != nullptr) {
-            accessNode->setAdditionalOp(AccessNode::DUP_RECV);
+        if(leftNode->is(NodeKind::Access)) {
+            static_cast<AccessNode *>(leftNode)->setAdditionalOp(AccessNode::DUP_RECV);
         }
         auto &rightType = this->checkType(node.getRightNode());
         if(leftType != rightType) { // convert right hand-side type to left type
@@ -1189,7 +1185,8 @@ void TypeChecker::visitRootNode(RootNode &node) {
         if(prevIsTerminal) {
             RAISE_TC_ERROR(Unreachable, *targetNode);
         }
-        if(dynamic_cast<PipelineNode *>(targetNode) != nullptr || dynamic_cast<CmdNode *>(targetNode) != nullptr) {
+        auto kind = targetNode->getKind();
+        if(kind == NodeKind::Pipeline || kind == NodeKind::Cmd) {
             this->checkTypeWithCoercion(this->typePool.getVoidType(), targetNode);  // pop stack top
         } else if(this->toplevelPrinting) {
             this->checkType(nullptr, targetNode, nullptr);
@@ -1200,8 +1197,7 @@ void TypeChecker::visitRootNode(RootNode &node) {
         prevIsTerminal = targetNode->getType().isBottomType();
 
         // check empty block
-        BlockNode *blockNode;
-        if((blockNode = dynamic_cast<BlockNode *>(targetNode)) != nullptr && blockNode->getNodes().empty()) {
+        if(targetNode->is(NodeKind::Block) && static_cast<BlockNode *>(targetNode)->getNodes().empty()) {
             RAISE_TC_ERROR(UselessBlock, *targetNode);
         }
     }

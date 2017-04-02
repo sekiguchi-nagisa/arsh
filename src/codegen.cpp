@@ -233,7 +233,7 @@ void ByteCodeGenerator::writeCaptureIns(bool isStr, const IntrusivePtr<Label> &l
 }
 
 static bool isTildeExpansion(const Node *node) {
-    return dynamic_cast<const StringNode *>(node) && static_cast<const StringNode *>(node)->isTilde();
+    return node->is(NodeKind::String) && static_cast<const StringNode *>(node)->isTilde();
 }
 
 void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
@@ -255,8 +255,7 @@ void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
 
         for(; index < size; index++) {
             auto *e = node.getSegmentNodes()[index];
-            if(dynamic_cast<StringExprNode *>(e) != nullptr &&
-                    static_cast<StringExprNode *>(e)->getExprNodes().size() > 1) {
+            if(e->is(NodeKind::StringExpr) && static_cast<StringExprNode *>(e)->getExprNodes().size() > 1) {
                 this->generateStringExpr(*static_cast<StringExprNode *>(e), true);
             } else {
                 this->visit(*e);
@@ -299,9 +298,9 @@ void ByteCodeGenerator::generateStringExpr(StringExprNode &node, bool fragment) 
         }
         unsigned int count = 0;
         for(Node *e : node.getExprNodes()) {
-            if(dynamic_cast<BinaryOpNode *>(e) != nullptr) {
+            if(e->is(NodeKind::BinaryOp)) {
                 auto *binary = static_cast<BinaryOpNode *>(e);
-                if(dynamic_cast<StringExprNode *>(binary->getOptNode()) != nullptr) {
+                if(binary->getOptNode()->is(NodeKind::StringExpr)) {
                     for(Node *e2 : static_cast<StringExprNode *>(binary->getOptNode())->getExprNodes()) {
                         this->visit(*e2);
                         this->emit0byteIns(OpCode::APPEND_STRING);
@@ -310,7 +309,7 @@ void ByteCodeGenerator::generateStringExpr(StringExprNode &node, bool fragment) 
                 }
             }
             this->visit(*e);
-            if(count++ == 0 && dynamic_cast<EmptyNode *>(e) != nullptr) {
+            if(count++ == 0 && e->is(NodeKind::Empty)) {
                 /**
                  * When calling `APPEND_STRING' ins, the operand stack layout is the following
                  *
@@ -777,7 +776,7 @@ void ByteCodeGenerator::visitLoopNode(LoopNode &node) {
     // generate code
     unsigned short localOffset = 0;
     unsigned short localSize = 0;
-    if(dynamic_cast<VarDeclNode *>(node.getInitNode())) {
+    if(node.getInitNode()->is(NodeKind::VarDecl)) {
         localOffset = static_cast<VarDeclNode *>(node.getInitNode())->getVarIndex();
         localSize = 1;
     }
@@ -791,7 +790,7 @@ void ByteCodeGenerator::visitLoopNode(LoopNode &node) {
         this->pushLoopLabels(breakLabel, continueLabel);
 
         this->visit(*node.getInitNode());
-        if(dynamic_cast<EmptyNode *>(node.getIterNode()) == nullptr) {
+        if(!node.getIterNode()->is(NodeKind::Empty)) {
             this->emitJumpIns(initLabel);
         }
 

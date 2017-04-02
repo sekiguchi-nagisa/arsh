@@ -25,6 +25,19 @@
 
 namespace ydsh {
 
+// ##################
+// ##     Node     ##
+// ##################
+
+void Node::accept(NodeVisitor &visitor) {
+    switch(this->kind) {
+#define DISPATCH(K) case NodeKind::K: visitor.visit ## K ## Node(*static_cast<K ## Node *>(this)); break;
+    EACH_NODE_KIND(DISPATCH)
+#undef DISPATCH
+    }
+}
+
+
 // ##########################
 // ##     BaseTypeNode     ##
 // ##########################
@@ -32,11 +45,6 @@ namespace ydsh {
 void BaseTypeNode::dump(NodeDumper &dumper) const {
     DUMP(typeName);
 }
-
-void BaseTypeNode::accept(NodeVisitor &visitor) {
-    visitor.visitBaseTypeNode(*this);
-}
-
 
 // #############################
 // ##     ReifiedTypeNode     ##
@@ -57,11 +65,6 @@ void ReifiedTypeNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(templateTypeNode);
     DUMP(elementTypeNodes);
 }
-
-void ReifiedTypeNode::accept(NodeVisitor &visitor) {
-    visitor.visitReifiedTypeNode(*this);
-}
-
 
 // ##########################
 // ##     FuncTypeNode     ##
@@ -84,10 +87,6 @@ void FuncTypeNode::dump(NodeDumper &dumper) const {
     DUMP(paramTypeNodes);
 }
 
-void FuncTypeNode::accept(NodeVisitor &visitor) {
-    visitor.visitFuncTypeNode(*this);
-}
-
 // ###############################
 // ##     DBusIfaceTypeNode     ##
 // ###############################
@@ -96,18 +95,9 @@ void DBusIfaceTypeNode::dump(NodeDumper &dumper) const {
     DUMP(name);
 }
 
-void DBusIfaceTypeNode::accept(NodeVisitor &visitor) {
-    visitor.visitDBusIfaceTypeNode(*this);
-}
-
 // ############################
 // ##     ReturnTypeNode     ##
 // ############################
-
-ReturnTypeNode::ReturnTypeNode(TypeNode *typeNode) :
-        TypeNode(typeNode->getToken()), typeNodes() {
-    this->addTypeNode(typeNode);
-}
 
 ReturnTypeNode::~ReturnTypeNode() {
     for(auto t : this->typeNodes) {
@@ -124,18 +114,9 @@ void ReturnTypeNode::dump(NodeDumper &dumper) const {
     DUMP(typeNodes);
 }
 
-void ReturnTypeNode::accept(NodeVisitor &visitor) {
-    visitor.visitReturnTypeNode(*this);
-}
-
 // ########################
 // ##     TypeOfNode     ##
 // ########################
-
-TypeOfNode::TypeOfNode(unsigned int startPos, Node *exprNode) :
-        TypeNode({startPos, 0}), exprNode(exprNode) {
-    this->updateToken(exprNode->getToken());
-}
 
 TypeOfNode::~TypeOfNode() {
     delete this->exprNode;
@@ -143,10 +124,6 @@ TypeOfNode::~TypeOfNode() {
 
 void TypeOfNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
-}
-
-void TypeOfNode::accept(NodeVisitor &visitor) {
-    visitor.visitTypeOfNode(*this);
 }
 
 
@@ -195,10 +172,6 @@ void NumberNode::dump(NodeDumper &dumper) const {
     }
 }
 
-void NumberNode::accept(NodeVisitor &visitor) {
-    visitor.visitNumberNode(*this);
-}
-
 // #######################
 // ##     StringNode    ##
 // #######################
@@ -216,10 +189,6 @@ void StringNode::dump(NodeDumper &dumper) const {
     DUMP(value);
 }
 
-void StringNode::accept(NodeVisitor &visitor) {
-    visitor.visitStringNode(*this);
-}
-
 // ############################
 // ##     StringExprNode     ##
 // ############################
@@ -231,14 +200,14 @@ StringExprNode::~StringExprNode() {
 }
 
 void StringExprNode::addExprNode(Node *node) {
-    if(dynamic_cast<StringExprNode *>(node) != nullptr) {
+    if(node->is(NodeKind::StringExpr)) {
         StringExprNode *exprNode = static_cast<StringExprNode *>(node);
         for(auto &e : exprNode->nodes) {
             this->nodes.push_back(e);
         }
         exprNode->nodes.clear();
         delete node;
-    } else if(dynamic_cast<StringNode *>(node) != nullptr &&
+    } else if(node->is(NodeKind::String) &&
             static_cast<StringNode *>(node)->getValue().empty()) { // ignore empty string value node
         /**
          * node must not be empty string value except for calling BinaryOpNode::toStringExpr()
@@ -253,10 +222,6 @@ void StringExprNode::dump(NodeDumper &dumper) const {
     DUMP(nodes);
 }
 
-void StringExprNode::accept(NodeVisitor &visitor) {
-    visitor.visitStringExprNode(*this);
-}
-
 // #######################
 // ##     RegexNode     ##
 // #######################
@@ -265,18 +230,9 @@ void RegexNode::dump(NodeDumper &dumper) const {
     DUMP(reStr);
 }
 
-void RegexNode::accept(NodeVisitor &visitor) {
-    visitor.visitRegexNode(*this);
-}
-
 // #######################
 // ##     ArrayNode     ##
 // #######################
-
-ArrayNode::ArrayNode(unsigned int startPos, Node *node) :
-        Node({startPos, 0}), nodes() {
-    this->nodes.push_back(node);
-}
 
 ArrayNode::~ArrayNode() {
     for(Node *e : this->nodes) {
@@ -292,19 +248,9 @@ void ArrayNode::dump(NodeDumper &dumper) const {
     DUMP(nodes);
 }
 
-void ArrayNode::accept(NodeVisitor &visitor) {
-    visitor.visitArrayNode(*this);
-}
-
 // #####################
 // ##     MapNode     ##
 // #####################
-
-MapNode::MapNode(unsigned int startPos, Node *keyNode, Node *valueNode) :
-        Node({startPos, 0}), keyNodes(), valueNodes() {
-    this->keyNodes.push_back(keyNode);
-    this->valueNodes.push_back(valueNode);
-}
 
 MapNode::~MapNode() {
     for(Node *e : this->keyNodes) {
@@ -326,19 +272,9 @@ void MapNode::dump(NodeDumper &dumper) const {
     DUMP(valueNodes);
 }
 
-void MapNode::accept(NodeVisitor &visitor) {
-    visitor.visitMapNode(*this);
-}
-
 // #######################
 // ##     TupleNode     ##
 // #######################
-
-TupleNode::TupleNode(unsigned int startPos, Node *leftNode, Node *rightNode) :
-        Node({startPos, 0}), nodes(2) {
-    this->nodes[0] = leftNode;
-    this->nodes[1] = rightNode;
-}
 
 TupleNode::~TupleNode() {
     for(Node *node : this->nodes) {
@@ -352,10 +288,6 @@ void TupleNode::addNode(Node *node) {
 
 void TupleNode::dump(NodeDumper &dumper) const {
     DUMP(nodes);
-}
-
-void TupleNode::accept(NodeVisitor &visitor) {
-    visitor.visitTupleNode(*this);
 }
 
 // ############################
@@ -374,10 +306,6 @@ void AssignableNode::dump(NodeDumper &dumper) const {
 void VarNode::dump(NodeDumper &dumper) const {
     DUMP(varName);
     AssignableNode::dump(dumper);
-}
-
-void VarNode::accept(NodeVisitor &visitor) {
-    visitor.visitVarNode(*this);
 }
 
 // ########################
@@ -401,16 +329,12 @@ void AccessNode::dump(NodeDumper &dumper) const {
 #undef EACH_ENUM
 }
 
-void AccessNode::accept(NodeVisitor &visitor) {
-    visitor.visitAccessNode(*this);
-}
-
 // ########################
 // ##     TypeOpNode     ##
 // ########################
 
 TypeOpNode::TypeOpNode(Node *exprNode, TypeNode *type, OpKind init, bool dupTypeToken) :
-        Node(exprNode->getToken()), exprNode(exprNode), targetTypeNode(nullptr),
+        Node(NodeKind::TypeOp, exprNode->getToken()), exprNode(exprNode), targetTypeNode(nullptr),
         opKind(init) {
     static const unsigned long tag = (unsigned long) 1L << 63;
 
@@ -464,17 +388,12 @@ void TypeOpNode::dump(NodeDumper &dumper) const {
 #undef EACH_ENUM
 }
 
-void TypeOpNode::accept(NodeVisitor &visitor) {
-    visitor.visitTypeOpNode(*this);
-}
-
-
 // #######################
 // ##     ApplyNode     ##
 // #######################
 
 ApplyNode::ApplyNode(Node *exprNode, std::vector<Node *> &&argNodes) :
-        Node(exprNode->getToken()),
+        Node(NodeKind::Apply, exprNode->getToken()),
         exprNode(exprNode), argNodes(std::move(argNodes)) {
     if(!this->argNodes.empty()) {
         this->updateToken(this->argNodes.back()->getToken());
@@ -494,16 +413,12 @@ void ApplyNode::dump(NodeDumper &dumper) const {
     DUMP(argNodes);
 }
 
-void ApplyNode::accept(NodeVisitor &visitor) {
-    visitor.visitApplyNode(*this);
-}
-
 // ############################
 // ##     MethodCallNode     ##
 // ############################
 
 MethodCallNode::MethodCallNode(Node *recvNode, std::string &&methodName, std::vector<Node *> &&argNodes) :
-        Node(recvNode->getToken()),
+        Node(NodeKind::MethodCall, recvNode->getToken()),
         recvNode(recvNode), methodName(std::move(methodName)),
         argNodes(std::move(argNodes)), handle(), attributeSet() {
     if(!this->argNodes.empty()) {
@@ -536,16 +451,12 @@ void MethodCallNode::dump(NodeDumper &dumper) const {
 #undef EACH_FLAG
 }
 
-void MethodCallNode::accept(NodeVisitor &visitor) {
-    visitor.visitMethodCallNode(*this);
-}
-
 // #####################
 // ##     NewNode     ##
 // #####################
 
 NewNode::NewNode(unsigned int startPos, TypeNode *targetTypeNode, std::vector<Node *> &&argNodes) :
-        Node({startPos, 0}), targetTypeNode(targetTypeNode), argNodes(std::move(argNodes)) {
+        Node(NodeKind::New, {startPos, 0}), targetTypeNode(targetTypeNode), argNodes(std::move(argNodes)) {
     if(!this->argNodes.empty()) {
         this->updateToken(this->argNodes.back()->getToken());
     }
@@ -562,10 +473,6 @@ NewNode::~NewNode() {
 void NewNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(targetTypeNode);
     DUMP(argNodes);
-}
-
-void NewNode::accept(NodeVisitor &visitor) {
-    visitor.visitNewNode(*this);
 }
 
 // #########################
@@ -592,10 +499,6 @@ void UnaryOpNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(methodCallNode);
 }
 
-void UnaryOpNode::accept(NodeVisitor &visitor) {
-    visitor.visitUnaryOpNode(*this);
-}
-
 
 // ##########################
 // ##     BinaryOpNode     ##
@@ -614,10 +517,6 @@ void BinaryOpNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(optNode);
 }
 
-void BinaryOpNode::accept(NodeVisitor &visitor) {
-    visitor.visitBinaryOpNode(*this);
-}
-
 // #########################
 // ##     TernaryNode     ##
 // #########################
@@ -632,10 +531,6 @@ void TernaryNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(condNode);
     DUMP_PTR(leftNode);
     DUMP_PTR(rightNode);
-}
-
-void TernaryNode::accept(NodeVisitor &visitor) {
-    visitor.visitTernaryNode(*this);
 }
 
 
@@ -658,14 +553,10 @@ void CmdArgNode::dump(NodeDumper &dumper) const {
     DUMP(segmentNodes);
 }
 
-void CmdArgNode::accept(NodeVisitor &visitor) {
-    visitor.visitCmdArgNode(*this);
-}
-
 bool CmdArgNode::isIgnorableEmptyString() {
     return this->segmentNodes.size() > 1 ||
-            (dynamic_cast<StringNode *>(this->segmentNodes.back()) == nullptr &&
-                    dynamic_cast<StringExprNode *>(this->segmentNodes.back()) == nullptr);
+            (!this->segmentNodes.back()->is(NodeKind::String) &&
+                    !this->segmentNodes.back()->is(NodeKind::StringExpr));
 }
 
 // #######################
@@ -679,10 +570,6 @@ RedirNode::~RedirNode() {
 void RedirNode::dump(NodeDumper &dumper) const {
     DUMP(op);
     DUMP_PTR(targetNode);
-}
-
-void RedirNode::accept(NodeVisitor &visitor) {
-    visitor.visitRedirNode(*this);
 }
 
 // #####################
@@ -719,10 +606,6 @@ void CmdNode::dump(NodeDumper &dumper) const {
     DUMP_PRIM(inPipe);
 }
 
-void CmdNode::accept(NodeVisitor &visitor) {
-    visitor.visitCmdNode(*this);
-}
-
 // ##########################
 // ##     PipelineNode     ##
 // ##########################
@@ -735,7 +618,7 @@ PipelineNode::~PipelineNode() {
 
 void PipelineNode::addNode(Node *node) {
     this->nodes.push_back(node);
-    if(dynamic_cast<CmdNode *>(node)) {
+    if(node->is(NodeKind::Cmd)) {
         static_cast<CmdNode *>(node)->setInPipe(true);
     }
     this->updateToken(node->getToken());
@@ -743,10 +626,6 @@ void PipelineNode::addNode(Node *node) {
 
 void PipelineNode::dump(NodeDumper &dumper) const {
     DUMP(nodes);
-}
-
-void PipelineNode::accept(NodeVisitor &visitor) {
-    visitor.visitPipelineNode(*this);
 }
 
 // ##############################
@@ -762,10 +641,6 @@ void SubstitutionNode::dump(NodeDumper &dumper) const {
     DUMP_PRIM(strExpr);
 }
 
-void SubstitutionNode::accept(NodeVisitor &visitor) {
-    visitor.visitSubstitutionNode(*this);
-}
-
 // ########################
 // ##     AssertNode     ##
 // ########################
@@ -778,10 +653,6 @@ AssertNode::~AssertNode() {
 void AssertNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(condNode);
     DUMP_PTR(messageNode);
-}
-
-void AssertNode::accept(NodeVisitor &visitor) {
-    visitor.visitAssertNode(*this);
 }
 
 // #######################
@@ -819,10 +690,6 @@ void BlockNode::dump(NodeDumper &dumper) const {
     DUMP_PRIM(maxVarSize);
 }
 
-void BlockNode::accept(NodeVisitor &visitor) {
-    visitor.visitBlockNode(*this);
-}
-
 // ######################
 // ##     JumpNode     ##
 // ######################
@@ -830,10 +697,6 @@ void BlockNode::accept(NodeVisitor &visitor) {
 void JumpNode::dump(NodeDumper &dumper) const {
     DUMP_PRIM(asBreak);
     DUMP_PRIM(leavingBlock);
-}
-
-void JumpNode::accept(NodeVisitor &visitor) {
-    visitor.visitJumpNode(*this);
 }
 
 // ###########################
@@ -849,17 +712,13 @@ void TypeAliasNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(targetTypeNode);
 }
 
-void TypeAliasNode::accept(NodeVisitor &visitor) {
-    visitor.visitTypeAliasNode(*this);
-}
-
 // ######################
 // ##     LoopNode     ##
 // ######################
 
 LoopNode::LoopNode(unsigned int startPos, Node *initNode,
                  Node *condNode, Node *iterNode, BlockNode *blockNode, bool asDoWhile) :
-        Node({startPos, 0}), initNode(initNode), condNode(condNode),
+        Node(NodeKind::Loop, {startPos, 0}), initNode(initNode), condNode(condNode),
         iterNode(iterNode), blockNode(blockNode), asDoWhile(asDoWhile) {
     if(this->initNode == nullptr) {
         this->initNode = new EmptyNode();
@@ -891,10 +750,6 @@ void LoopNode::dump(NodeDumper &dumper) const {
     DUMP_PRIM(asDoWhile);
 }
 
-void LoopNode::accept(NodeVisitor &visitor) {
-    visitor.visitLoopNode(*this);
-}
-
 // ####################
 // ##     IfNode     ##
 // ####################
@@ -903,15 +758,15 @@ void LoopNode::accept(NodeVisitor &visitor) {
  * if condNode is InstanceOfNode and targetNode is VarNode, insert VarDeclNode to blockNode.
  */
 static void resolveIfIsStatement(Node *condNode, BlockNode *blockNode) {
-    auto *isNode = dynamic_cast<TypeOpNode *>(condNode);
-    if(isNode == nullptr || !isNode->isInstanceOfOp()) {
+    if(!condNode->is(NodeKind::TypeOp) || !static_cast<TypeOpNode *>(condNode)->isInstanceOfOp()) {
         return;
     }
+    auto *isNode = static_cast<TypeOpNode *>(condNode);
 
-    VarNode *varNode = dynamic_cast<VarNode *>(isNode->getExprNode());
-    if(varNode == nullptr) {
+    if(!isNode->getExprNode()->is(NodeKind::Var)) {
         return;
     }
+    auto *varNode = static_cast<VarNode *>(isNode->getExprNode());
 
     VarNode *exprNode = new VarNode({isNode->getPos(), 1}, std::string(varNode->getVarName()));
     TypeOpNode *castNode = new TypeOpNode(exprNode, isNode->getTargetTypeNode(), TypeOpNode::NO_CAST, true);
@@ -921,7 +776,7 @@ static void resolveIfIsStatement(Node *condNode, BlockNode *blockNode) {
 }
 
 IfNode::IfNode(unsigned int startPos, Node *condNode, BlockNode *thenNode, Node *elseNode) :
-        Node({startPos, 0}), condNode(condNode), thenNode(thenNode), elseNode(elseNode) {
+        Node(NodeKind::If, {startPos, 0}), condNode(condNode), thenNode(thenNode), elseNode(elseNode) {
 
     resolveIfIsStatement(this->condNode, this->thenNode);
     this->updateToken(thenNode->getToken());
@@ -945,16 +800,12 @@ void IfNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(elseNode);
 }
 
-void IfNode::accept(NodeVisitor &visitor) {
-    visitor.visitIfNode(*this);
-}
-
 // ########################
 // ##     ReturnNode     ##
 // ########################
 
 ReturnNode::ReturnNode(Token token, Node *exprNode) :
-        Node(token), exprNode(exprNode != nullptr ? exprNode : new EmptyNode(token)) {
+        Node(NodeKind::Return, token), exprNode(exprNode != nullptr ? exprNode : new EmptyNode(token)) {
     if(exprNode != nullptr) {
         this->updateToken(exprNode->getToken());
     }
@@ -968,10 +819,6 @@ void ReturnNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
 }
 
-void ReturnNode::accept(NodeVisitor &visitor) {
-    visitor.visitReturnNode(*this);
-}
-
 // #######################
 // ##     ThrowNode     ##
 // #######################
@@ -982,10 +829,6 @@ ThrowNode::~ThrowNode() {
 
 void ThrowNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
-}
-
-void ThrowNode::accept(NodeVisitor &visitor) {
-    visitor.visitThrowNode(*this);
 }
 
 // #######################
@@ -1006,10 +849,6 @@ void CatchNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(typeNode);
     DUMP_PTR(blockNode);
     DUMP_PRIM(varIndex);
-}
-
-void CatchNode::accept(NodeVisitor &visitor) {
-    visitor.visitCatchNode(*this);
 }
 
 // #####################
@@ -1043,16 +882,12 @@ void TryNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(finallyNode);
 }
 
-void TryNode::accept(NodeVisitor &visitor) {
-    visitor.visitTryNode(*this);
-}
-
 // #########################
 // ##     VarDeclNode     ##
 // #########################
 
 VarDeclNode::VarDeclNode(unsigned int startPos, std::string &&varName, Node *exprNode, Kind kind) :
-        Node({startPos, 0}), varName(std::move(varName)), global(false), kind(kind),
+        Node(NodeKind::VarDecl, {startPos, 0}), varName(std::move(varName)), global(false), kind(kind),
         varIndex(0), exprNode(exprNode) {
     if(this->exprNode != nullptr) {
         this->updateToken(exprNode->getToken());
@@ -1084,10 +919,6 @@ void VarDeclNode::dump(NodeDumper &dumper) const {
 #undef EACH_ENUM
 }
 
-void VarDeclNode::accept(NodeVisitor &visitor) {
-    visitor.visitVarDeclNode(*this);
-}
-
 // ########################
 // ##     AssignNode     ##
 // ########################
@@ -1109,16 +940,12 @@ void AssignNode::dump(NodeDumper &dumper) const {
 #undef EACH_FLAG
 }
 
-void AssignNode::accept(NodeVisitor &visitor) {
-    visitor.visitAssignNode(*this);
-}
-
 // ###################################
 // ##     ElementSelfAssignNode     ##
 // ###################################
 
 ElementSelfAssignNode::ElementSelfAssignNode(MethodCallNode *leftNode, BinaryOpNode *binaryNode) :
-        Node(leftNode->getToken()),
+        Node(NodeKind::ElementSelfAssign, leftNode->getToken()),
         recvNode(), indexNode(),
         getterNode(), setterNode(), rightNode(binaryNode) {
     this->updateToken(binaryNode->getToken());
@@ -1166,10 +993,6 @@ void ElementSelfAssignNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(rightNode);
 }
 
-void ElementSelfAssignNode::accept(NodeVisitor &visitor) {
-    visitor.visitElementSelfAssignNode(*this);
-}
-
 
 // ##########################
 // ##     FunctionNode     ##
@@ -1212,10 +1035,6 @@ void FunctionNode::dump(NodeDumper &dumper) const {
     dumper.dump("sourceName", this->srcInfoPtr->getSourceName());
 }
 
-void FunctionNode::accept(NodeVisitor &visitor) {
-    visitor.visitFunctionNode(*this);
-}
-
 // ###########################
 // ##     InterfaceNode     ##
 // ###########################
@@ -1251,10 +1070,6 @@ void InterfaceNode::dump(NodeDumper &dumper) const {
     DUMP(fieldTypeNodes);
 }
 
-void InterfaceNode::accept(NodeVisitor &visitor) {
-    visitor.visitInterfaceNode(*this);
-}
-
 // ################################
 // ##     UserDefinedCmdNode     ##
 // ################################
@@ -1271,20 +1086,12 @@ void UserDefinedCmdNode::dump(NodeDumper &dumper) const {
     dumper.dump("sourceName", this->srcInfoPtr->getSourceName());
 }
 
-void UserDefinedCmdNode::accept(NodeVisitor &visitor) {
-    visitor.visitUserDefinedCmdNode(*this);
-}
-
 // #######################
 // ##     EmptyNode     ##
 // #######################
 
 void EmptyNode::dump(NodeDumper &) const {
 } // do nothing
-
-void EmptyNode::accept(NodeVisitor &visitor) {
-    visitor.visitEmptyNode(*this);
-}
 
 // ######################
 // ##     RootNode     ##
@@ -1305,10 +1112,6 @@ void RootNode::dump(NodeDumper &dumper) const {
     dumper.dump("sourceName", this->srcInfoPtr->getSourceName());
     DUMP_PRIM(maxVarNum);
     DUMP_PRIM(maxGVarNum);
-}
-
-void RootNode::accept(NodeVisitor &visitor) {
-    visitor.visitRootNode(*this);
 }
 
 // for node creation
@@ -1418,8 +1221,9 @@ Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode) {
      */
     if(op == ASSIGN) {
         // assign to element(actually call SET)
-        MethodCallNode *indexNode = dynamic_cast<MethodCallNode *>(leftNode);
-        if(indexNode != nullptr && indexNode->hasAttribute(MethodCallNode::INDEX)) {
+        if(leftNode->is(NodeKind::MethodCall) &&
+                static_cast<MethodCallNode *>(leftNode)->hasAttribute(MethodCallNode::INDEX)) {
+            auto *indexNode = static_cast<MethodCallNode *>(leftNode);
             indexNode->setMethodName(std::string(OP_SET));
             indexNode->refArgNodes().push_back(rightNode);
             return indexNode;
@@ -1434,8 +1238,9 @@ Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode) {
      */
     // assign to element
     BinaryOpNode *opNode = new BinaryOpNode(new EmptyNode(), resolveAssignOp(op), rightNode);
-    MethodCallNode *indexNode = dynamic_cast<MethodCallNode *>(leftNode);
-    if(indexNode != nullptr && indexNode->hasAttribute(MethodCallNode::INDEX)) {
+    if(leftNode->is(NodeKind::MethodCall) &&
+            static_cast<MethodCallNode *>(leftNode)->hasAttribute(MethodCallNode::INDEX)) {
+        MethodCallNode *indexNode = static_cast<MethodCallNode *>(leftNode);
         return new ElementSelfAssignNode(indexNode, opNode);
     } else {
         // assign to variable or field

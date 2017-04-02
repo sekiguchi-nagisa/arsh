@@ -807,7 +807,7 @@ std::unique_ptr<CatchNode> Parser::parse_catchStatement() {
 // command
 std::unique_ptr<Node> Parser::parse_pipedCommand() {
     std::unique_ptr<Node> cmdNode(this->parse_command());
-    if(dynamic_cast<UserDefinedCmdNode*>(cmdNode.get()) != nullptr) {
+    if(cmdNode->is(NodeKind::UserDefinedCmd)) {
         return cmdNode;
     }
 

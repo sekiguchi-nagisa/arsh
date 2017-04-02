@@ -18,7 +18,6 @@
 
 #include "node_dumper.h"
 #include "node.h"
-#include "misc/demangle.hpp"
 
 namespace ydsh {
 
@@ -109,8 +108,17 @@ void NodeDumper::indent() {
     }
 }
 
+static const char *toString(NodeKind kind) {
+    const char *table[] = {
+#define GEN_STR(E) #E,
+        EACH_NODE_KIND(GEN_STR)
+#undef GEN_STR
+    };
+    return table[static_cast<unsigned char>(kind)];
+}
+
 void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
-    std::string className = demangle(typeid(node));
+    const char *className = toString(node.getKind());
 
     this->stream << "__Node: " << std::endl;
     this->enterIndent();
@@ -118,7 +126,7 @@ void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
         this->enterIndent();
     }
 
-    this->indent(); this->stream << "__kind: " << strrchr(className.c_str(), ':') + 1 << std::endl;
+    this->indent(); this->stream << "kind: " << className << std::endl;
     this->indent(); this->stream << "pos: " << node.getPos() << std::endl;
     this->indent(); this->stream << "size: " << node.getSize() << std::endl;
     this->indent(); this->stream << "type: " <<

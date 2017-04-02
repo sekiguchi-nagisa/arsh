@@ -35,8 +35,64 @@ class MethodHandle;
 struct NodeVisitor;
 class NodeDumper;
 
+#define EACH_NODE_KIND(OP) \
+    OP(BaseType) \
+    OP(ReifiedType) \
+    OP(FuncType) \
+    OP(DBusIfaceType) \
+    OP(ReturnType) \
+    OP(TypeOf) \
+    OP(Number) \
+    OP(String) \
+    OP(StringExpr) \
+    OP(Regex) \
+    OP(Array) \
+    OP(Map) \
+    OP(Tuple) \
+    OP(Var) \
+    OP(Access) \
+    OP(TypeOp) \
+    OP(UnaryOp) \
+    OP(BinaryOp) \
+    OP(Apply) \
+    OP(MethodCall) \
+    OP(New) \
+    OP(Ternary) \
+    OP(Cmd) \
+    OP(CmdArg) \
+    OP(Redir) \
+    OP(Pipeline) \
+    OP(Substitution) \
+    OP(Assert) \
+    OP(Block) \
+    OP(Jump) \
+    OP(TypeAlias) \
+    OP(Loop) \
+    OP(If) \
+    OP(Return) \
+    OP(Throw) \
+    OP(Catch) \
+    OP(Try) \
+    OP(VarDecl) \
+    OP(Assign) \
+    OP(ElementSelfAssign) \
+    OP(Function) \
+    OP(Interface) \
+    OP(UserDefinedCmd) \
+    OP(Empty) \
+    OP(Root)
+
+enum class NodeKind : unsigned char {
+#define GEN_ENUM(T) T,
+    EACH_NODE_KIND(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+
 class Node {
 protected:
+    const NodeKind kind;
+
     Token token;
 
     /**
@@ -44,13 +100,20 @@ protected:
      */
     DSType *type;
 
-public:
     NON_COPYABLE(Node);
 
-    explicit Node(Token token) :
-            token(token), type() { }
+    Node(NodeKind kind, Token token) : kind(kind), token(token), type() { }
 
+public:
     virtual ~Node() = default;
+
+    NodeKind getKind() const {
+        return this->kind;
+    }
+
+    bool is(NodeKind kind) const {
+        return this->kind == kind;
+    }
 
     Token getToken() const {
         return this->token;
@@ -90,7 +153,8 @@ public:
     }
 
     virtual void dump(NodeDumper &dumper) const = 0;
-    virtual void accept(NodeVisitor &visitor) = 0;
+
+    void accept(NodeVisitor &visitor);
 };
 
 // type definition
@@ -98,13 +162,11 @@ public:
  * represent for parsed type.
  */
 class TypeNode : public Node {
+protected:
+    TypeNode(NodeKind kind, Token token) : Node(kind,token) { }
+
 public:
-    explicit TypeNode(Token token) : Node(token) { }
-
     virtual ~TypeNode() = default;
-
-    virtual void dump(NodeDumper &dumper) const override = 0;
-    virtual void accept(NodeVisitor &visitor) override = 0;
 };
 
 class BaseTypeNode : public TypeNode {
@@ -113,7 +175,7 @@ private:
 
 public:
     BaseTypeNode(Token token, std::string &&typeName) :
-            TypeNode(token), typeName(std::move(typeName)) { }
+            TypeNode(NodeKind::BaseType, token), typeName(std::move(typeName)) { }
 
     ~BaseTypeNode() = default;
 
@@ -122,7 +184,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 /**
@@ -135,7 +196,7 @@ private:
 
 public:
     explicit ReifiedTypeNode(BaseTypeNode *templateTypeNode) :
-            TypeNode(templateTypeNode->getToken()),
+            TypeNode(NodeKind::ReifiedType, templateTypeNode->getToken()),
             templateTypeNode(templateTypeNode), elementTypeNodes() { }
 
     ~ReifiedTypeNode();
@@ -151,7 +212,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class FuncTypeNode : public TypeNode {
@@ -165,7 +225,7 @@ private:
 
 public:
     FuncTypeNode(unsigned int startPos, TypeNode *returnTypeNode) :
-            TypeNode({startPos, 0}),
+            TypeNode(NodeKind::FuncType, {startPos, 0}),
             returnTypeNode(returnTypeNode), paramTypeNodes() { }
 
     ~FuncTypeNode();
@@ -181,7 +241,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class DBusIfaceTypeNode : public TypeNode {
@@ -194,7 +253,7 @@ private:
 
 public:
     DBusIfaceTypeNode(Token token, std::string &&name) :
-            TypeNode(token), name(std::move(name)) { }
+            TypeNode(NodeKind::DBusIfaceType, token), name(std::move(name)) { }
 
     ~DBusIfaceTypeNode() = default;
 
@@ -203,7 +262,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 /**
@@ -214,7 +272,11 @@ private:
     std::vector<TypeNode *> typeNodes;
 
 public:
-    explicit ReturnTypeNode(TypeNode *typeNode);
+    explicit ReturnTypeNode(TypeNode *typeNode) :
+            TypeNode(NodeKind::ReturnType, typeNode->getToken()), typeNodes() {
+        this->addTypeNode(typeNode);
+    }
+
     ~ReturnTypeNode();
 
     void addTypeNode(TypeNode *typeNode);
@@ -228,7 +290,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class TypeOfNode : public TypeNode {
@@ -236,7 +297,11 @@ private:
     Node *exprNode;
 
 public:
-    TypeOfNode(unsigned int startPos, Node *exprNode);
+    TypeOfNode(unsigned int startPos, Node *exprNode) :
+            TypeNode(NodeKind::TypeOf, {startPos, 0}), exprNode(exprNode) {
+        this->updateToken(exprNode->getToken());
+    }
+
     ~TypeOfNode();
 
     Node *getExprNode() const {
@@ -244,7 +309,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 TypeNode *newAnyTypeNode();
@@ -278,52 +342,52 @@ private:
     };
 
      NumberNode(Token token, NumKind kind) :
-            Node(token), kind(kind), intValue(0) { }
+            Node(NodeKind::Number, token), kind(kind), intValue(0) { }
 
 public:
-    static  NumberNode *newByte(Token token, unsigned char value) {
+    static NumberNode *newByte(Token token, unsigned char value) {
         auto *node = new  NumberNode(token, BYTE);
         node->intValue = value;
         return node;
     }
 
-    static  NumberNode *newInt16(Token token, short value) {
+    static NumberNode *newInt16(Token token, short value) {
         auto *node = new  NumberNode(token, INT16);
         node->intValue = value;
         return node;
     }
 
-    static  NumberNode *newUint16(Token token, unsigned short value) {
+    static NumberNode *newUint16(Token token, unsigned short value) {
         auto *node = new  NumberNode(token, UINT16);
         node->intValue = value;
         return node;
     }
 
-    static  NumberNode *newInt32(Token token, int value) {
+    static NumberNode *newInt32(Token token, int value) {
         auto *node = new  NumberNode(token, INT32);
         node->intValue = value;
         return node;
     }
 
-    static  NumberNode *newUint32(Token token, unsigned int value) {
+    static NumberNode *newUint32(Token token, unsigned int value) {
         auto *node = new  NumberNode(token, UINT32);
         node->intValue = value;
         return node;
     }
 
-    static  NumberNode *newInt64(Token token, long value) {
+    static NumberNode *newInt64(Token token, long value) {
         auto *node = new  NumberNode(token, INT64);
         node->longValue = value;
         return node;
     }
 
-    static  NumberNode *newUint64(Token token, unsigned long value) {
+    static NumberNode *newUint64(Token token, unsigned long value) {
         auto *node = new  NumberNode(token, UINT64);
         node->longValue = value;
         return node;
     }
 
-    static  NumberNode *newFloat(Token token, double value) {
+    static NumberNode *newFloat(Token token, double value) {
         auto *node = new  NumberNode(token, FLOAT);
         node->floatValue = value;
         return node;
@@ -348,7 +412,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class StringNode : public Node {
@@ -368,10 +431,10 @@ public:
      * used for CommandNode. lineNum is always 0.
      */
     explicit StringNode(std::string &&value) :
-            Node({0, 0}), value(std::move(value)), kind(STRING) { }
+            StringNode({0, 0}, std::move(value)) { }
 
     StringNode(Token token, std::string &&value, StringKind kind = STRING) :
-            Node(token), value(std::move(value)), kind(kind) { }
+            Node(NodeKind::String, token), value(std::move(value)), kind(kind) { }
 
     ~StringNode() = default;
 
@@ -392,7 +455,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 
     static std::string extract(StringNode &&node) {
         return std::move(node.value);
@@ -404,7 +466,8 @@ private:
     std::vector<Node *> nodes;
 
 public:
-    explicit StringExprNode(unsigned int startPos) : Node({startPos, 1}), nodes() { }
+    explicit StringExprNode(unsigned int startPos) :
+            Node(NodeKind::StringExpr, {startPos, 1}), nodes() { }
 
     ~StringExprNode();
 
@@ -419,7 +482,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class RegexNode : public Node {
@@ -434,7 +496,7 @@ private:
 
 public:
     RegexNode(Token token, std::string &&str, PCRE &&re) :
-            Node(token), reStr(std::move(str)), re(std::move(re)) { }
+            Node(NodeKind::Regex, token), reStr(std::move(str)), re(std::move(re)) { }
 
     ~RegexNode() = default;
 
@@ -447,7 +509,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class ArrayNode : public Node {
@@ -455,7 +516,10 @@ private:
     std::vector<Node *> nodes;
 
 public:
-    ArrayNode(unsigned int startPos, Node *node);
+    ArrayNode(unsigned int startPos, Node *node) :
+            Node(NodeKind::Array, {startPos, 0}), nodes() {
+        this->addExprNode(node);
+    }
 
     ~ArrayNode();
 
@@ -470,7 +534,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class MapNode : public Node {
@@ -479,7 +542,10 @@ private:
     std::vector<Node *> valueNodes;
 
 public:
-    MapNode(unsigned int startPos, Node *keyNode, Node *valueNode);
+    MapNode(unsigned int startPos, Node *keyNode, Node *valueNode) :
+            Node(NodeKind::Map, {startPos, 0}), keyNodes(), valueNodes() {
+        this->addEntry(keyNode, valueNode);
+    }
 
     ~MapNode();
 
@@ -502,7 +568,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class TupleNode : public Node {
@@ -513,7 +578,11 @@ private:
     std::vector<Node *> nodes;
 
 public:
-    TupleNode(unsigned int startPos, Node *leftNode, Node *rightNode);
+    TupleNode(unsigned int startPos, Node *leftNode, Node *rightNode) :
+            Node(NodeKind::Tuple, {startPos, 0}), nodes() {
+        this->addNode(leftNode);
+        this->addNode(rightNode);
+    }
 
     ~TupleNode();
 
@@ -524,7 +593,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 /**
@@ -536,10 +604,10 @@ protected:
 
     FieldAttributes attribute;
 
-public:
-    explicit AssignableNode(Token token) :
-            Node(token), index(0), attribute() { }
+    AssignableNode(NodeKind kind, Token token) :
+            Node(kind, token), index(0), attribute() { }
 
+public:
     virtual ~AssignableNode() = default;
 
     void setAttribute(FieldHandle *handle) {
@@ -564,7 +632,7 @@ private:
 
 public:
     VarNode(Token token, std::string &&varName) :
-            AssignableNode(token), varName(std::move(varName)) { }
+            AssignableNode(NodeKind::Var, token), varName(std::move(varName)) { }
 
     ~VarNode() = default;
 
@@ -573,7 +641,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class AccessNode : public AssignableNode {
@@ -590,7 +657,7 @@ private:
 
 public:
     AccessNode(Node *recvNode, std::string &&fieldName) :
-            AssignableNode(recvNode->getToken()),
+            AssignableNode(NodeKind::Access, recvNode->getToken()),
             recvNode(recvNode), fieldName(std::move(fieldName)), additionalOp(NOP) { }
 
     ~AccessNode();
@@ -616,7 +683,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class TypeOpNode : public Node {
@@ -653,7 +719,7 @@ private:
 public:
      TypeOpNode(Node *exprNode, TypeNode *type, OpKind init, bool dupTypeToken = false);
 
-    ~ TypeOpNode();
+    ~TypeOpNode();
 
     Node *getExprNode() const {
         return this->exprNode;
@@ -678,7 +744,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 /**
@@ -707,7 +772,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class MethodCallNode : public Node {
@@ -769,7 +833,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 
     static constexpr flag8_t INDEX = 1 << 0;
     static constexpr flag8_t ICALL = 1 << 1;
@@ -801,7 +864,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 /**
@@ -823,7 +885,7 @@ private:
 
 public:
     UnaryOpNode(unsigned int startPos, TokenKind op, Node *exprNode) :
-            Node({startPos, 0}), op(op), exprNode(exprNode), methodCallNode(nullptr) {
+            Node(NodeKind::UnaryOp, {startPos, 0}), op(op), exprNode(exprNode), methodCallNode(nullptr) {
         this->updateToken(exprNode->getToken());
     }
 
@@ -855,7 +917,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 /**
@@ -882,7 +943,7 @@ private:
 
 public:
     BinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode) :
-            Node(leftNode->getToken()),
+            Node(NodeKind::BinaryOp, leftNode->getToken()),
             leftNode(leftNode), rightNode(rightNode), op(op), optNode(nullptr) {
         this->updateToken(rightNode->getToken());
     }
@@ -921,7 +982,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class TernaryNode : public Node {
@@ -932,7 +992,7 @@ private:
 
 public:
     TernaryNode(Node *condNode, Node *leftNode, Node *rightNode) :
-            Node(condNode->getToken()), condNode(condNode),
+            Node(NodeKind::Ternary, condNode->getToken()), condNode(condNode),
             leftNode(leftNode), rightNode(rightNode) {
         this->updateToken(this->rightNode->getToken());
     }
@@ -964,7 +1024,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 /**
@@ -976,7 +1035,7 @@ private:
 
 public:
     explicit CmdArgNode(Node *segmentNode) :
-            Node(segmentNode->getToken()), segmentNodes() {
+            Node(NodeKind::CmdArg, segmentNode->getToken()), segmentNodes() {
         this->addSegmentNode(segmentNode);
     }
 
@@ -993,7 +1052,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 
     /**
      * if true, ignore evaluated empty string.
@@ -1008,7 +1066,7 @@ private:
 
 public:
     RedirNode(TokenKind kind, CmdArgNode *node) :
-            Node(node->getToken()), op(kind), targetNode(node) {}
+            Node(NodeKind::Redir, node->getToken()), op(kind), targetNode(node) {}
 
     ~RedirNode();
 
@@ -1021,7 +1079,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class CmdNode : public Node {
@@ -1042,7 +1099,8 @@ private:
 
 public:
     explicit CmdNode(StringNode *nameNode) :
-            Node(nameNode->getToken()), nameNode(nameNode), argNodes(), redirCount(0), inPipe(false) { }
+            Node(NodeKind::Cmd, nameNode->getToken()),
+            nameNode(nameNode), argNodes(), redirCount(0), inPipe(false) { }
 
     ~CmdNode();
 
@@ -1072,7 +1130,6 @@ public:
     void addRedirOption(TokenKind kind, Token token);
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class PipelineNode : public Node {
@@ -1081,7 +1138,7 @@ private:
 
 public:
     explicit PipelineNode(Node *node) :
-            Node(node->getToken()), nodes() {
+            Node(NodeKind::Pipeline, node->getToken()), nodes() {
         this->addNode(node);
     }
 
@@ -1094,7 +1151,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 /**
@@ -1111,7 +1167,7 @@ private:
 
 public:
     SubstitutionNode(unsigned int pos, Node *exprNode) :
-            Node({pos, 1}), exprNode(exprNode), strExpr(false) { }
+            Node(NodeKind::Substitution, {pos, 1}), exprNode(exprNode), strExpr(false) { }
 
     ~SubstitutionNode();
 
@@ -1128,7 +1184,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 // statement definition
@@ -1141,7 +1196,7 @@ private:
 
 public:
     AssertNode(unsigned int pos, Node *condNode, Node *messageNode) :
-            Node({pos, 1}), condNode(condNode), messageNode(messageNode) {
+            Node(NodeKind::Assert, {pos, 1}), condNode(condNode), messageNode(messageNode) {
         this->updateToken(messageNode->getToken());
     }
 
@@ -1160,7 +1215,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class BlockNode : public Node {
@@ -1172,7 +1226,7 @@ private:
 
 public:
     explicit BlockNode(unsigned int startPos) :
-            Node({startPos, 1}), nodes(), baseIndex(0), varSize(0), maxVarSize(0) { }
+            Node(NodeKind::Block, {startPos, 1}), nodes(), baseIndex(0), varSize(0), maxVarSize(0) { }
 
     ~BlockNode();
 
@@ -1219,7 +1273,6 @@ public:
     void addReturnNodeToLast(TypePool &pool, Node *exprNode);
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class JumpNode : public Node {
@@ -1233,7 +1286,7 @@ private:
 
 public:
     JumpNode(Token token, bool asBreak) :
-            Node(token), asBreak(asBreak), leavingBlock(false) { }
+            Node(NodeKind::Jump, token), asBreak(asBreak), leavingBlock(false) { }
 
     ~JumpNode() = default;
 
@@ -1250,7 +1303,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class TypeAliasNode : public Node {
@@ -1260,7 +1312,7 @@ private:
 
 public:
     TypeAliasNode(unsigned int startPos, std::string &&alias, TypeNode *targetTypeNode) :
-            Node({startPos, 0}), alias(std::move(alias)), targetTypeNode(targetTypeNode) {
+            Node(NodeKind::TypeAlias, {startPos, 0}), alias(std::move(alias)), targetTypeNode(targetTypeNode) {
         this->updateToken(targetTypeNode->getToken());
     }
 
@@ -1275,7 +1327,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 /**
@@ -1348,7 +1399,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class IfNode : public Node {
@@ -1382,7 +1432,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class ReturnNode : public Node {
@@ -1399,7 +1448,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class ThrowNode : public Node {
@@ -1408,7 +1456,7 @@ private:
 
 public:
     ThrowNode(unsigned int startPos, Node *exprNode) :
-            Node({startPos, 0}), exprNode(exprNode) {
+            Node(NodeKind::Throw, {startPos, 0}), exprNode(exprNode) {
         this->updateToken(exprNode->getToken());
     }
 
@@ -1419,7 +1467,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class CatchNode : public Node {
@@ -1434,7 +1481,7 @@ private:
 public:
     CatchNode(unsigned int startPos, std::string &&exceptionName,
               TypeNode *typeNode, BlockNode *blockNode) :
-            Node({startPos, 0}), exceptionName(std::move(exceptionName)),
+            Node(NodeKind::Catch, {startPos, 0}), exceptionName(std::move(exceptionName)),
             typeNode(typeNode != nullptr ? typeNode : newAnyTypeNode()), varIndex(0), blockNode(blockNode) {
         this->updateToken(blockNode->getToken());
     }
@@ -1460,7 +1507,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class TryNode : public Node {
@@ -1479,7 +1525,7 @@ private:
 
 public:
     TryNode(unsigned int startPos, BlockNode *blockNode) :
-            Node({startPos, 0}), blockNode(blockNode), catchNodes(), finallyNode() {
+            Node(NodeKind::Try, {startPos, 0}), blockNode(blockNode), catchNodes(), finallyNode() {
         this->updateToken(blockNode->getToken());
     }
 
@@ -1505,7 +1551,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class VarDeclNode : public Node {
@@ -1560,7 +1605,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 /**
@@ -1583,7 +1627,7 @@ public:
     static constexpr flag8_t FIELD_ASSIGN = 1 << 1;
 
     AssignNode(Node *leftNode, Node *rightNode, bool selfAssign = false) :
-            Node(leftNode->getToken()),
+            Node(NodeKind::Assign, leftNode->getToken()),
             leftNode(leftNode), rightNode(rightNode), attributeSet(0) {
         if(selfAssign) {
             setFlag(this->attributeSet, SELF_ASSIGN);
@@ -1618,7 +1662,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class ElementSelfAssignNode : public Node {
@@ -1685,7 +1728,6 @@ public:
     void setIndexType(DSType &type);
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class CallableNode : public Node {
@@ -1697,12 +1739,12 @@ protected:
      */
     std::string name;
 
+    CallableNode(NodeKind kind, unsigned int startPos, const SourceInfoPtr &srcInfoPtr, std::string &&name) :
+            Node(kind, {startPos, 0}), srcInfoPtr(srcInfoPtr), name(std::move(name)) { }
+
+    explicit CallableNode(NodeKind kind) : Node(kind, {0, 0}), srcInfoPtr(nullptr), name() { }
+
 public:
-    CallableNode(unsigned int startPos, const SourceInfoPtr &srcInfoPtr, std::string &&name) :
-            Node({startPos, 0}), srcInfoPtr(srcInfoPtr), name(std::move(name)) { }
-
-    CallableNode() : Node({0, 0}), srcInfoPtr(nullptr), name() { }
-
     virtual ~CallableNode() = default;
 
     const SourceInfoPtr &getSourceInfoPtr() const {
@@ -1751,7 +1793,7 @@ private:
 public:
     FunctionNode(unsigned int startPos, const SourceInfoPtr &srcInfoPtr,
                  std::string &&funcName) :
-            CallableNode(startPos, srcInfoPtr, std::move(funcName)),
+            CallableNode(NodeKind::Function, startPos, srcInfoPtr, std::move(funcName)),
             paramNodes(), paramTypeNodes(), returnTypeNode(),
             blockNode(), maxVarNum(0), varIndex(0) { }
 
@@ -1803,7 +1845,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class InterfaceNode : public Node {
@@ -1816,7 +1857,7 @@ private:
 
 public:
     InterfaceNode(unsigned int startPos, std::string &&interfaceName) :
-            Node({startPos, 0}), interfaceName(std::move(interfaceName)), methodDeclNodes(),
+            Node(NodeKind::Interface, {startPos, 0}), interfaceName(std::move(interfaceName)), methodDeclNodes(),
             fieldDeclNodes(), fieldTypeNodes() { }
 
     ~InterfaceNode();
@@ -1845,7 +1886,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class UserDefinedCmdNode : public CallableNode {
@@ -1858,7 +1898,7 @@ private:
 public:
     UserDefinedCmdNode(unsigned int startPos, const SourceInfoPtr &srcInfoPtr,
                        std::string &&commandName, BlockNode *blockNode) :
-            CallableNode(startPos, srcInfoPtr, std::move(commandName)),
+            CallableNode(NodeKind::UserDefinedCmd, startPos, srcInfoPtr, std::move(commandName)),
             udcIndex(0), blockNode(blockNode), maxVarNum(0) {
         this->updateToken(blockNode->getToken());
     }
@@ -1886,17 +1926,15 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class EmptyNode : public Node {
 public:
-    EmptyNode() : Node({0, 0}) { }
-    explicit EmptyNode(Token token) : Node(token) { }
+    EmptyNode() : EmptyNode({0, 0}) { }
+    explicit EmptyNode(Token token) : Node(NodeKind::Empty, token) { }
     ~EmptyNode() = default;
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 class RootNode : public CallableNode {
@@ -1914,7 +1952,7 @@ private:
     unsigned int maxGVarNum;
 
 public:
-    RootNode() : CallableNode(), nodes(), maxVarNum(0), maxGVarNum(0) { }
+    RootNode() : CallableNode(NodeKind::Root), nodes(), maxVarNum(0), maxGVarNum(0) { }
 
     ~RootNode();
 
@@ -1945,7 +1983,6 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
-    void accept(NodeVisitor &visitor) override;
 };
 
 // helper function for node creation
