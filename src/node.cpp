@@ -30,7 +30,7 @@ namespace ydsh {
 // ##################
 
 void Node::accept(NodeVisitor &visitor) {
-    switch(this->kind) {
+    switch(this->nodeKind) {
 #define DISPATCH(K) case NodeKind::K: visitor.visit ## K ## Node(*static_cast<K ## Node *>(this)); break;
     EACH_NODE_KIND(DISPATCH)
 #undef DISPATCH

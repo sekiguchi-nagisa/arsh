@@ -91,7 +91,7 @@ enum class NodeKind : unsigned char {
 
 class Node {
 protected:
-    const NodeKind kind;
+    const NodeKind nodeKind;
 
     Token token;
 
@@ -102,17 +102,17 @@ protected:
 
     NON_COPYABLE(Node);
 
-    Node(NodeKind kind, Token token) : kind(kind), token(token), type() { }
+    Node(NodeKind kind, Token token) : nodeKind(kind), token(token), type() { }
 
 public:
     virtual ~Node() = default;
 
-    NodeKind getKind() const {
-        return this->kind;
+    NodeKind getNodeKind() const {
+        return this->nodeKind;
     }
 
     bool is(NodeKind kind) const {
-        return this->kind == kind;
+        return this->nodeKind == kind;
     }
 
     Token getToken() const {

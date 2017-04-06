@@ -118,21 +118,20 @@ static const char *toString(NodeKind kind) {
 }
 
 void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
-    const char *className = toString(node.getKind());
+    this->stream << "nodeKind: " << toString(node.getNodeKind()) << std::endl;
 
-    this->stream << "__Node: " << std::endl;
-    this->enterIndent();
     if(inArray) {
         this->enterIndent();
     }
 
-    this->indent(); this->stream << "kind: " << className << std::endl;
+    this->indent(); this->stream << "token: " << std::endl;
+    this->enterIndent();
     this->indent(); this->stream << "pos: " << node.getPos() << std::endl;
     this->indent(); this->stream << "size: " << node.getSize() << std::endl;
+    this->leaveIndent();
     this->indent(); this->stream << "type: " <<
             (!node.isUntyped() ? this->pool.getTypeName(node.getType()) : "") << std::endl;
 
-    this->leaveIndent();
     if(inArray) {
         this->leaveIndent();
     }

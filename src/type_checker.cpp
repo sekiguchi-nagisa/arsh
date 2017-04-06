@@ -1185,7 +1185,7 @@ void TypeChecker::visitRootNode(RootNode &node) {
         if(prevIsTerminal) {
             RAISE_TC_ERROR(Unreachable, *targetNode);
         }
-        auto kind = targetNode->getKind();
+        auto kind = targetNode->getNodeKind();
         if(kind == NodeKind::Pipeline || kind == NodeKind::Cmd) {
             this->checkTypeWithCoercion(this->typePool.getVoidType(), targetNode);  // pop stack top
         } else if(this->toplevelPrinting) {
