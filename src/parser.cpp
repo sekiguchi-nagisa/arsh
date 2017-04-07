@@ -15,6 +15,7 @@
  */
 
 #include "parser.h"
+#include "symbol.h"
 
 
 // helper macro
@@ -756,7 +757,7 @@ std::unique_ptr<Node> Parser::parse_forInit() {
         return this->parse_assignmentExpression();
     }
     default:
-        return std::unique_ptr<Node>(nullptr);
+        return uniquify<EmptyNode>();
     }
 }
 
@@ -766,7 +767,8 @@ std::unique_ptr<Node> Parser::parse_forCond() {
         return this->parse_expression();
     }
     default:
-        return std::unique_ptr<Node>(nullptr);
+        Token token{0, 0};
+        return uniquify<VarNode>(token, std::string(VAR_TRUE));
     }
 }
 
@@ -776,7 +778,7 @@ std::unique_ptr<Node> Parser::parse_forIter() {
         return this->parse_assignmentExpression();
     }
     default:
-        return std::unique_ptr<Node>(nullptr);
+        return uniquify<EmptyNode>();
     }
 }
 

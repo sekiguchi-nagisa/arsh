@@ -724,10 +724,6 @@ LoopNode::LoopNode(unsigned int startPos, Node *initNode,
         this->initNode = new EmptyNode();
     }
 
-    if(this->condNode == nullptr) {
-        this->condNode = new VarNode({startPos, 1}, std::string(VAR_TRUE));
-    }
-
     if(this->iterNode == nullptr) {
         this->iterNode = new EmptyNode();
     }
