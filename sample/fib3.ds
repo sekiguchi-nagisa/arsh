@@ -1,0 +1,17 @@
+#!/usr/bin/env ydsh
+
+fib() {
+    var n = $@[0].toInt32()!
+    if $n < 3 {
+        return 1;
+    }
+    fib ${$n - 1}
+    var x = $?
+    fib ${$n - 2}
+    var y = $?
+
+    return $x + $y
+}
+
+fib 36
+echo $?
