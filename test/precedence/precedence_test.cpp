@@ -154,9 +154,9 @@ public:
         // parse
         Lexer lexer("(string)", input);
         RootNode rootNode;
-        Parser parser;
+        Parser parser(lexer);
         try {
-            parser.parse(lexer, rootNode);
+            parser(rootNode);
         } catch(const ParseError &e) {
             ASSERT_TRUE(false);
         }

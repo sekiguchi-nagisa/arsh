@@ -1013,10 +1013,10 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
     TokenTracker tracker;
     try {
         {
-            Parser parser;
+            Parser parser(lexer);
             parser.setTracker(&tracker);
             RootNode rootNode;
-            parser.parse(lexer, rootNode);
+            parser(rootNode);
         }
 
         const auto &tokenPairs = tracker.getTokenPairs();

@@ -217,7 +217,8 @@ static int compileImpl(DSState *state, Lexer &lexer, DSError *dsError, CompiledC
 
     // parse
     try {
-        Parser().parse(lexer, rootNode);
+        Parser parser(lexer);
+        parser(rootNode);
         state->lineNum = lexer.getLineNum();
 
         if(hasFlag(state->option, DS_OPTION_DUMP_UAST)) {

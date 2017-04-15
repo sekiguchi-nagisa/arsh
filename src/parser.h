@@ -74,7 +74,10 @@ public:
 
 class Parser : public ydsh::parser_base::ParserBase<TokenKind, Lexer, TokenTracker> {
 public:
-    Parser() = default;
+    Parser(Lexer &lexer) {
+        this->lexer = &lexer;
+        this->fetchNext();
+    }
 
     ~Parser() = default;
 
@@ -82,7 +85,7 @@ public:
      * parse entry point.
      * write parsed nodes to rootNode.
      */
-    void parse(Lexer &lexer, RootNode &rootNode);
+    void operator()(RootNode &rootNode);
 
 private:
     /**

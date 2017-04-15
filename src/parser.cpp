@@ -181,12 +181,7 @@ static void raiseTokenFormatError(TokenKind kind, Token token, const char *msg) 
 // ##     Parser     ##
 // ####################
 
-void Parser::parse(Lexer &lexer, RootNode &rootNode) {
-    this->lexer = &lexer;
-
-    // first, fetch token.
-    this->fetchNext();
-
+void Parser::operator()(RootNode &rootNode) {
     // start parsing
     rootNode.setSourceInfoPtr(this->lexer->getSourceInfoPtr());
     this->parse_toplevel(rootNode);
@@ -1384,10 +1379,10 @@ bool parse(const char *sourceName, RootNode &rootNode) {
     }
 
     Lexer lexer(sourceName, fp);
-    Parser parser;
+    Parser parser(lexer);
 
     try {
-        parser.parse(lexer, rootNode);
+        parser(rootNode);
     } catch(const ParseError &e) {
         return false;   //FIXME: display error message.
     }
