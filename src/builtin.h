@@ -1104,14 +1104,16 @@ YDSH_METHOD string_split(RuntimeContext &ctx) {
     auto ptr = typeAs<Array_Object>(results);
 
     const char *remain = thisStr;
-    while(delimSize > 0) {
-        const char *ret = reinterpret_cast<const char *>(
-                xmemmem(remain, thisSize - (remain - thisStr), delimStr, delimSize));
-        if(ret == nullptr) {
-            break;
+    if(delimSize > 0) {
+        while(true) {
+            const char *ret = reinterpret_cast<const char *>(
+                    xmemmem(remain, thisSize - (remain - thisStr), delimStr, delimSize));
+            if(ret == nullptr) {
+                break;
+            }
+            ptr->append(DSValue::create<String_Object>(getPool(ctx).getStringType(), std::string(remain, ret - remain)));
+            remain = ret + delimSize;
         }
-        ptr->append(DSValue::create<String_Object>(getPool(ctx).getStringType(), std::string(remain, ret - remain)));
-        remain = ret + delimSize;
     }
 
     if(remain == thisStr) {
