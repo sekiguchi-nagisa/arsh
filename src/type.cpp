@@ -151,7 +151,7 @@ BuiltinType::BuiltinType(DSType *superType, native_type_info_t info, flag8_set_t
 BuiltinType::~BuiltinType() {
     delete this->constructorHandle;
 
-    for(std::pair<std::string, MethodHandle *> pair : this->methodHandleMap) {
+    for(auto &pair : this->methodHandleMap) {
         delete pair.second;
     }
 }
@@ -448,7 +448,7 @@ DSType *TypeMap::addType(std::string &&typeName, DSType *type) {
 }
 
 DSType *TypeMap::getType(const std::string &typeName) const {
-    static const unsigned long mask = ~(1L << 63);
+    constexpr unsigned long mask = ~(1L << 63);
     auto iter = this->typeMapImpl.find(typeName);
     if(iter != this->typeMapImpl.end()) {
         DSType *type = iter->second;
@@ -467,7 +467,7 @@ const std::string &TypeMap::getTypeName(const DSType &type) const {
 }
 
 bool TypeMap::setAlias(std::string &&alias, DSType &targetType) {
-    static const unsigned long tag = 1L << 63;
+    constexpr unsigned long tag = 1L << 63;
 
     /**
      * use tagged pointer to prevent double free.
@@ -770,7 +770,7 @@ constexpr int TypePool::BYTE_PRECISION;
 constexpr int TypePool::INVALID_PRECISION;
 
 int TypePool::getIntPrecision(const DSType &type) const {
-    static const struct {
+    const struct {
         DS_TYPE TYPE;
         int precision;
     } table[] = {

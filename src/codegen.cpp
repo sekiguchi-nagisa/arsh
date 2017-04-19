@@ -162,7 +162,7 @@ void ByteCodeGenerator::emitNumCastIns(const DSType &beforeType, const DSType &a
         const unsigned short mask = 0xFF << (i * 8);
         OpCode op = static_cast<OpCode>((mask & v) >> (i * 8));
         if(op != OpCode::NOP) {
-            unsigned int size = getByteSize(op);
+            int size = getByteSize(op);
             assert(size == 0 || size == 1);
             if(size) {
                 this->emit1byteIns(op, afterIndex);

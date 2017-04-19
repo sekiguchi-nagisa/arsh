@@ -156,7 +156,7 @@ protected:
 public:
     NON_COPYABLE(MethodHandle);
 
-    explicit MethodHandle(int methodIndex) :
+    explicit MethodHandle(unsigned int methodIndex) :
             methodIndex(methodIndex), attributeSet(),
             returnType(), recvType(), paramTypes(), next() { }
 
