@@ -593,7 +593,7 @@ struct Tuple_Object : public BaseObject {
 
 class StackTraceElement {
 private:
-    const char *sourceName;
+    std::string sourceName;
     unsigned int lineNum;
     std::string callerName;
 
@@ -603,7 +603,7 @@ public:
 
     ~StackTraceElement() = default;
 
-    const char *getSourceName() const {
+    const std::string &getSourceName() const {
         return this->sourceName;
     }
 
