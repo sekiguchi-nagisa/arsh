@@ -598,9 +598,6 @@ private:
     std::string callerName;
 
 public:
-    StackTraceElement() :
-            sourceName(), lineNum(0), callerName() { }
-
     StackTraceElement(const char *sourceName, unsigned int lineNum, std::string &&callerName) :
             sourceName(sourceName), lineNum(lineNum), callerName(std::move(callerName)) { }
 
