@@ -2,6 +2,13 @@
 
 YDSH_BIN=$1
 
+ereport() {
+    echo trap error in $1
+    exit 1
+}
+
+trap 'ereport $LINENO' EXIT
+
 # syntax error
 $YDSH_BIN -c '23 / /'
 
@@ -70,16 +77,17 @@ if [ $? != 0 ]; then
 fi
 
 # command error
-$YDSH_BIN -c 'hoge | huga' 2>&1 | grep 'execution error: hoge: command not found'
+$YDSH_BIN -c 'hoge | :' 2>&1 | grep 'execution error: hoge: command not found'
 
 if [ $? != 0 ]; then
     exit 1
 fi
 
-$YDSH_BIN -c 'hoge | huga' 2>&1 | grep 'execution error: huga: command not found'
+$YDSH_BIN -c ': | huga' 2>&1 | grep 'execution error: huga: command not found'
 
 if [ $? != 0 ]; then
     exit 1
 fi
 
+trap EXIT
 exit 0
