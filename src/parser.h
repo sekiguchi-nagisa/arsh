@@ -93,12 +93,19 @@ private:
      */
     void refetch(LexerMode mode);
 
+    void pushLexerMode(LexerMode mode) {
+        this->lexer->pushLexerMode(mode);
+        this->fetchNext();
+    }
+
     void restoreLexerState(Token prevToken);
 
     /**
      * after matching token, change lexer mode and fetchNext.
      */
     void expectAndChangeMode(TokenKind kind, LexerMode mode);
+
+    void raiseTokenFormatError(TokenKind kind, Token token, const char *msg);
 
     // parser rule definition.
     void parse_toplevel(RootNode &rootNode);
@@ -162,6 +169,18 @@ private:
     std::unique_ptr<Node> parse_suffixExpression();
 
     std::unique_ptr<Node> parse_primaryExpression();
+
+    template <typename Func>
+    auto expectNum(TokenKind kind, Func func) ->
+    std::pair<Token, decltype((this->lexer->*func)(std::declval<Token>(), std::declval<int &>()))> {
+        auto token = this->expect(kind);
+        int status;
+        auto out = (this->lexer->*func)(token, status);
+        if(status != 0) {
+            this->raiseTokenFormatError(kind, token, "out of range");
+        }
+        return std::make_pair(token, out);
+    }
 
     std::unique_ptr<Node> parse_appliedName(bool asSpecialName = false);
 

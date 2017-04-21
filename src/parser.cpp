@@ -128,22 +128,7 @@
     OP(MOD_ASSIGN)
 
 
-#define E_ALTER(...) \
-do { \
-    const TokenKind alters[] = { __VA_ARGS__ };\
-    this->alternativeError(alters);\
-} while(false)
-
-// for check converted number range
-#define CONVERT_TO_NUM(out, kind, token, func) \
-    do {\
-        int status;\
-        out = func(token, status);\
-        if(status != 0) { raiseTokenFormatError(kind, token, "out of range"); }\
-    } while(false)
-
-#define PUSH_LEXER_MODE(mode) \
-    do { this->lexer->pushLexerMode((mode)); this->fetchNext(); } while(false)
+#define E_ALTER(...) this->alternativeError({ __VA_ARGS__ })
 
 #define PRECEDENCE() getPrecedence(CUR_KIND())
 
@@ -167,14 +152,6 @@ template <typename T, typename ... A>
 static inline std::unique_ptr<T> uniquify(A &&... args) {
     return std::unique_ptr<T>(new T(std::forward<A>(args)...));
 };
-
-static void raiseTokenFormatError(TokenKind kind, Token token, const char *msg) {
-    std::string message(msg);
-    message += ": ";
-    message += toString(kind);
-
-    throw ParseError(kind, token, "TokenFormat", std::move(message));
-}
 
 
 // ####################
@@ -206,6 +183,13 @@ void Parser::expectAndChangeMode(TokenKind kind, LexerMode mode) {
     this->fetchNext();
 }
 
+void Parser::raiseTokenFormatError(TokenKind kind, Token token, const char *msg) {
+    std::string message(msg);
+    message += ": ";
+    message += toString(kind);
+
+    throw ParseError(kind, token, "TokenFormat", std::move(message));
+}
 
 // parse rule definition
 
@@ -283,7 +267,7 @@ std::unique_ptr<Node> Parser::parse_interface() {
     this->expect(INTERFACE, false);
 
     // enter TYPE mode
-    PUSH_LEXER_MODE(yycTYPE);
+    this->pushLexerMode(yycTYPE);
 
     Token token = this->expect(TYPE_PATH);
 
@@ -369,7 +353,7 @@ std::pair<std::unique_ptr<TypeNode>, Token> Parser::parse_basicOrReifiedType(Tok
 
 std::pair<std::unique_ptr<TypeNode>, Token> Parser::parse_typeNameImpl() {
     // change lexer state to TYPE
-    PUSH_LEXER_MODE(yycTYPE);
+    this->pushLexerMode(yycTYPE);
 
     switch(CUR_KIND()) {
     case IDENTIFIER: {
@@ -406,7 +390,7 @@ std::pair<std::unique_ptr<TypeNode>, Token> Parser::parse_typeNameImpl() {
         Token token = this->expect(TYPEOF);
         if(CUR_KIND() == PTYPE_OPEN) {
             this->expect(PTYPE_OPEN, false);
-            PUSH_LEXER_MODE(yycSTMT);
+            this->pushLexerMode(yycSTMT);
 
             unsigned int startPos = token.pos;
             auto exprNode(this->parse_expression());
@@ -1081,60 +1065,36 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         return std::move(node);
     }
     case BYTE_LITERAL: {
-        TokenKind kind = CUR_KIND();
-        Token token = this->expect(BYTE_LITERAL);
-        unsigned char value;
-        CONVERT_TO_NUM(value, kind, token, this->lexer->toUint8);
-        return std::unique_ptr<Node>(NumberNode::newByte(token, value));
+        auto pair = this->expectNum(BYTE_LITERAL, &Lexer::toUint8);
+        return std::unique_ptr<Node>(NumberNode::newByte(pair.first, pair.second));
     }
     case INT16_LITERAL: {
-        TokenKind kind = CUR_KIND();
-        Token token = this->expect(INT16_LITERAL);
-        short value;
-        CONVERT_TO_NUM(value, kind, token, this->lexer->toInt16);
-        return std::unique_ptr<Node>(NumberNode::newInt16(token, value));
+        auto pair = this->expectNum(INT16_LITERAL, &Lexer::toInt16);
+        return std::unique_ptr<Node>(NumberNode::newInt16(pair.first, pair.second));
     }
     case UINT16_LITERAL: {
-        TokenKind kind = CUR_KIND();
-        Token token = this->expect(UINT16_LITERAL);
-        unsigned short value;
-        CONVERT_TO_NUM(value, kind, token, this->lexer->toUint16);
-        return std::unique_ptr<Node>(NumberNode::newUint16(token, value));
+        auto pair = this->expectNum(UINT16_LITERAL, &Lexer::toUint16);
+        return std::unique_ptr<Node>(NumberNode::newUint16(pair.first, pair.second));
     }
     case INT32_LITERAL: {
-        TokenKind kind = CUR_KIND();
-        Token token = this->expect(INT32_LITERAL);
-        int value;
-        CONVERT_TO_NUM(value, kind, token, this->lexer->toInt32);
-        return std::unique_ptr<Node>(NumberNode::newInt32(token, value));
+        auto pair = this->expectNum(INT32_LITERAL, &Lexer::toInt32);
+        return std::unique_ptr<Node>(NumberNode::newInt32(pair.first, pair.second));
     }
     case UINT32_LITERAL: {
-        TokenKind kind = CUR_KIND();
-        Token token = this->expect(UINT32_LITERAL);
-        unsigned int value;
-        CONVERT_TO_NUM(value, kind, token, this->lexer->toUint32);
-        return std::unique_ptr<Node>(NumberNode::newUint32(token, value));
+        auto pair = this->expectNum(UINT32_LITERAL, &Lexer::toUint32);
+        return std::unique_ptr<Node>(NumberNode::newUint32(pair.first, pair.second));
     }
     case INT64_LITERAL: {
-        TokenKind kind = CUR_KIND();
-        Token token = this->expect(INT64_LITERAL);
-        long value;
-        CONVERT_TO_NUM(value, kind, token, this->lexer->toInt64);
-        return std::unique_ptr<Node>(NumberNode::newInt64(token, value));
+        auto pair = this->expectNum(INT64_LITERAL, &Lexer::toInt64);
+        return std::unique_ptr<Node>(NumberNode::newInt64(pair.first, pair.second));
     }
     case UINT64_LITERAL: {
-        TokenKind kind = CUR_KIND();
-        Token token = this->expect(UINT64_LITERAL);
-        unsigned long value;
-        CONVERT_TO_NUM(value, kind, token, this->lexer->toUint64);
-        return std::unique_ptr<Node>(NumberNode::newUint64(token, value));
+        auto pair = this->expectNum(UINT64_LITERAL, &Lexer::toUint64);
+        return std::unique_ptr<Node>(NumberNode::newUint64(pair.first, pair.second));
     }
     case FLOAT_LITERAL: {
-        TokenKind kind = CUR_KIND();
-        Token token = this->expect(FLOAT_LITERAL);
-        double value;
-        CONVERT_TO_NUM(value, kind, token, this->lexer->toDouble);
-        return std::unique_ptr<Node>(NumberNode::newFloat(token, value));
+        auto pair = this->expectNum(FLOAT_LITERAL, &Lexer::toDouble);
+        return std::unique_ptr<Node>(NumberNode::newFloat(pair.first, pair.second));
     }
     case STRING_LITERAL: {
         return this->parse_stringLiteral();
