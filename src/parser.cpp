@@ -128,7 +128,7 @@
     OP(MOD_ASSIGN)
 
 
-#define E_ALTER(...) this->alternativeError({ __VA_ARGS__ })
+#define E_ALTER(...) this->alternativeError((TokenKind[]) { __VA_ARGS__ })
 
 #define PRECEDENCE() getPrecedence(CUR_KIND())
 
