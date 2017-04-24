@@ -801,10 +801,11 @@ void IfNode::dump(NodeDumper &dumper) const {
 // ########################
 
 ReturnNode::ReturnNode(Token token, Node *exprNode) :
-        Node(NodeKind::Return, token), exprNode(exprNode != nullptr ? exprNode : new EmptyNode(token)) {
-    if(exprNode != nullptr) {
-        this->updateToken(exprNode->getToken());
+        Node(NodeKind::Return, token), exprNode(exprNode) {
+    if(this->exprNode == nullptr) {
+        this->exprNode = new EmptyNode(token);
     }
+    this->updateToken(this->exprNode->getToken());
 }
 
 ReturnNode::~ReturnNode() {
