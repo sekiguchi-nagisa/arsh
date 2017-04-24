@@ -290,77 +290,6 @@ static bool printUsage(FILE *fp, const char *prefix, bool isShortHelp = true) {
     return matched;
 }
 
-struct GetOptState {
-    /**
-     * index of next processing argument
-     */
-    unsigned int index;
-
-    /**
-     * currently processed argument.
-     */
-    const char *optCursor;
-
-    /**
-     * may be null, if has no optional argument.
-     */
-    const char *optArg;
-
-    /**
-     * unrecognized option.
-     */
-    int optOpt;
-
-    GetOptState() : index(1), optCursor(nullptr), optArg(nullptr), optOpt(0) {}
-};
-
-/**
- *
- * @param obj
- * first element is command name.
- * @param optStr
- * @param state
- * @return
- */
-static int getopt(const Array_Object &obj, const char *optStr, GetOptState &state) {
-    unsigned int argc = obj.getValues().size();
-    if(state.index < argc) {
-        const char *arg = str(obj.getValues()[state.index]);
-        if(*arg != '-' || strcmp(arg, "-") == 0) {
-            return -1;
-        }
-
-        if(strcmp(arg, "--") == 0) {
-            state.index++;
-            return -1;
-        }
-
-        if(state.optCursor == nullptr || *state.optCursor == '\0') {
-            state.optCursor = arg + 1;
-        }
-
-        const char *ptr = strchr(optStr, *state.optCursor);
-        if(ptr != nullptr) {
-            if(*(ptr + 1) == ':') {
-                if(++state.index == argc) {
-                    state.optOpt = *ptr;
-                    return ':';
-                }
-                state.optArg = str(obj.getValues()[state.index]);
-                state.optCursor = nullptr;
-            }
-
-            if(state.optCursor == nullptr || *(++state.optCursor) == '\0') {
-                state.index++;
-            }
-            return *ptr;
-        }
-        state.optOpt = *state.optCursor;
-        return '?';
-    }
-    return -1;
-}
-
 static int builtin_help(DSState &, Array_Object &argvObj) {
     const unsigned int size = argvObj.getValues().size();
 
@@ -409,7 +338,7 @@ static int invalidOptionError(const Array_Object &obj, const char *opt) {
 static int builtin_cd(DSState &state, Array_Object &argvObj) {
     GetOptState optState;
     bool useLogical = true;
-    for(int opt; (opt = getopt(argvObj, "PL", optState)) != -1;) {
+    for(int opt; (opt = optState(argvObj, "PL")) != -1;) {
         switch(opt) {
         case 'P':
             useLogical = false;
@@ -481,7 +410,7 @@ static int builtin_echo(DSState &, Array_Object &argvObj) {
     bool interpEscape = false;
 
     GetOptState optState;
-    for(int opt; (opt = getopt(argvObj, "neE", optState)) != -1;) {
+    for(int opt; (opt = optState(argvObj, "neE")) != -1;) {
         switch(opt) {
         case 'n':
             newline = false;
@@ -619,7 +548,7 @@ static int builtin___gets(DSState &, Array_Object &) {
  */
 static int builtin___puts(DSState &, Array_Object &argvObj) {
     GetOptState optState;
-    for(int opt; (opt = getopt(argvObj, "1:2:", optState)) != -1;) {
+    for(int opt; (opt = optState(argvObj, "1:2:")) != -1;) {
         switch(opt) {
         case '1':
             fputs(optState.optArg, stdout);
@@ -658,7 +587,7 @@ static int builtin_exec(DSState &state, Array_Object &argvObj) {
     const char *progName = nullptr;
     GetOptState optState;
 
-    for(int opt; (opt = getopt(argvObj, "ca:", optState)) != -1;) {
+    for(int opt; (opt = optState(argvObj, "ca:")) != -1;) {
         switch(opt) {
         case 'c':
             clearEnv = true;
@@ -746,7 +675,7 @@ static int builtin_pwd(DSState &state, Array_Object &argvObj) {
     bool useLogical = true;
 
     GetOptState optState;
-    for(int opt; (opt = getopt(argvObj, "LP", optState)) != -1;) {
+    for(int opt; (opt = optState(argvObj, "LP")) != -1;) {
         switch(opt) {
         case 'L':
             useLogical = true;
@@ -790,7 +719,7 @@ static int builtin_command(DSState &state, Array_Object &argvObj) {
     unsigned char showDesc = 0;
 
     GetOptState optState;
-    for(int opt; (opt = getopt(argvObj, "pvV", optState)) != -1;) {
+    for(int opt; (opt = optState(argvObj, "pvV")) != -1;) {
         switch(opt) {
         case 'p':
             useDefaultPath = true;
@@ -1152,7 +1081,7 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
     int timeout = -1;
 
     GetOptState optState;
-    for(int opt; (opt = getopt(argvObj, "rp:f:su:t:", optState)) != -1;) {
+    for(int opt; (opt = optState(argvObj, "rp:f:su:t:")) != -1;) {
         switch(opt) {
         case 'p':
             prompt = optState.optArg;

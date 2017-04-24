@@ -114,6 +114,32 @@ public:
     }
 };
 
+struct GetOptState {
+    /**
+     * index of next processing argument
+     */
+    unsigned int index;
+
+    /**
+     * currently processed argument.
+     */
+    const char *optCursor;
+
+    /**
+     * may be null, if has no optional argument.
+     */
+    const char *optArg;
+
+    /**
+     * unrecognized option.
+     */
+    int optOpt;
+
+    GetOptState() : index(1), optCursor(nullptr), optArg(nullptr), optOpt(0) {}
+
+    int operator()(const Array_Object &obj, const char *optStr);
+};
+
 struct VMHook {
     /**
      * hook for vm fetch event
