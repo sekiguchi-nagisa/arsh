@@ -581,9 +581,9 @@ void interpretPromptString(const DSState &st, const char *ps, std::string &outpu
     }
 }
 
-FuncObject *lookupUserDefinedCommand(const DSState &st, const char *commandName) {
+const DSCode *lookupUserDefinedCommand(const DSState &st, const char *commandName) {
     auto handle = st.symbolTable.lookupUdc(commandName);
-    return handle == nullptr ? nullptr : typeAs<FuncObject>(st.getGlobal(handle->getFieldIndex()));
+    return handle == nullptr ? nullptr : &typeAs<FuncObject>(st.getGlobal(handle->getFieldIndex()))->getCode();
 }
 
 /**

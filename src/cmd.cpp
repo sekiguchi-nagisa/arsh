@@ -631,15 +631,15 @@ static int builtin_eval(DSState &state, Array_Object &argvObj) {
 
     const char *cmdName = str(argvObj.getValues()[1]);
     // user-defined command
-    auto *udcNode = lookupUserDefinedCommand(state, cmdName);
-    if(udcNode != nullptr) {
+    auto *udc = lookupUserDefinedCommand(state, cmdName);
+    if(udc != nullptr) {
         pid_t pid = xfork(state);
         if(pid == -1) {
             perror("child process error");
             exit(1);
         } else if(pid == 0) {   // child
             eraseFirst(argvObj);
-            callUserDefinedCommand(state, udcNode, DSValue(&argvObj), DSValue());
+            callUserDefinedCommand(state, udc, DSValue(&argvObj), DSValue());
         } else {    // parent process
             int status;
             xwaitpid(state, pid, status, 0);

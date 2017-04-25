@@ -753,13 +753,13 @@ static void flushStdFD() {
  * +-----------+-------+--------+
  *             | offset|
  */
-void callUserDefinedCommand(DSState &st, const FuncObject *obj, DSValue &&argvObj, DSValue &&restoreFD) {
+void callUserDefinedCommand(DSState &st, const DSCode *code, DSValue &&argvObj, DSValue &&restoreFD) {
     // push argv (@)
     eraseFirst(*typeAs<Array_Object>(argvObj));
     st.push(std::move(argvObj));
 
     // set stack stack
-    windStackFrame(st, 1, 1, &obj->getCode());
+    windStackFrame(st, 1, 1, code);
 
     // set variable
     auto argv = typeAs<Array_Object>(st.getLocal(0));
@@ -792,21 +792,23 @@ enum class CmdKind {
 struct Command {
     CmdKind kind;
     union {
-        FuncObject *udcObj;
+        const DSCode *udc;
         builtin_command_t builtinCmd;
         const char *filePath;   // may be null if not found file
     };
 };
 
-static Command resolveCmd(DSState &state, const char *cmdName) {
+static constexpr flag8_t CMD_MASK_UDC      = 1 << 0;
+
+static Command resolveCmd(DSState &state, const char *cmdName, const flag8_set_t cmdMask) {
     Command cmd;
 
     // first, check user-defined command
-    {
+    if(!hasFlag(cmdMask, CMD_MASK_UDC)) {
         auto *udcObj = lookupUserDefinedCommand(state, cmdName);
         if(udcObj != nullptr) {
             cmd.kind = CmdKind::USER_DEFINED;
-            cmd.udcObj = udcObj;
+            cmd.udc = udcObj;
             return cmd;
         }
     }
@@ -888,7 +890,7 @@ static void pushExitStatus(DSState &state, int status) {
     state.push(status == 0 ? state.trueObj : state.falseObj);
 }
 
-static void callCommand(DSState &state, DSValue &&argvObj, DSValue &&redirConfig, bool needFork) {
+static void callCommand(DSState &state, DSValue &&argvObj, DSValue &&redirConfig, bool needFork, flag8_set_t cmdMask) {
     // reset exit status
     state.updateExitStatus(0);
 
@@ -900,11 +902,11 @@ static void callCommand(DSState &state, DSValue &&argvObj, DSValue &&redirConfig
 
     auto &first = array->getValues()[0];
     const char *cmdName = typeAs<String_Object>(first)->getValue();
-    auto cmd = resolveCmd(state, cmdName);
+    auto cmd = resolveCmd(state, cmdName, cmdMask);
 
     switch(cmd.kind) {
     case CmdKind::USER_DEFINED: {
-        callUserDefinedCommand(state, cmd.udcObj, std::move(argvObj), std::move(redirConfig));
+        callUserDefinedCommand(state, cmd.udc, std::move(argvObj), std::move(redirConfig));
         return;
     }
     case CmdKind::BUILTIN: {
@@ -1560,7 +1562,7 @@ static bool mainLoop(DSState &state) {
 
             auto redir = state.pop();
             auto argv = state.pop();
-            callCommand(state, std::move(argv), std::move(redir), needFork);
+            callCommand(state, std::move(argv), std::move(redir), needFork, 0);
             break;
         }
         vmcase(NEW_REDIR) {

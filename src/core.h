@@ -36,6 +36,7 @@ class DSValue;
 class StackTraceElement;
 class FuncObject;
 class SymbolTable;
+class DSCode;
 
 using CStrBuffer = FlexBuffer<char *>;
 
@@ -223,18 +224,18 @@ void interpretPromptString(const DSState &st, const char *ps, std::string &outpu
 /**
  * if not found, return null
  */
-FuncObject *lookupUserDefinedCommand(const DSState &st, const char *commandName);
+const DSCode *lookupUserDefinedCommand(const DSState &st, const char *commandName);
 
 /**
  *
  * @param st
- * @param obj
- * must be user-defined command (FuncObject)
+ * @param code
+ * must be user-defined command
  * @param argvObj
  * must be Array_Object (Array<String>)
  * @param restoreFD
  */
-void callUserDefinedCommand(DSState &st, const FuncObject *obj, DSValue &&argvObj, DSValue &&restoreFD);
+void callUserDefinedCommand(DSState &st, const DSCode *code, DSValue &&argvObj, DSValue &&restoreFD);
 
 std::string expandDots(const char *basePath, const char *path);
 
