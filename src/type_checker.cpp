@@ -1135,15 +1135,15 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     this->symbolTable.enterFunc();
     this->symbolTable.enterScope();
 
+    // register dummy parameter (for closing file descriptor)
+    this->addEntryAndThrowIfDefined(node, "%%redir", this->typePool.getAnyType(), FieldAttribute::READ_ONLY);
+
     // register special characters (@, #, 0, 1, ... 9)
     this->addEntryAndThrowIfDefined(node, "@", this->typePool.getStringArrayType(), FieldAttribute::READ_ONLY);
     this->addEntryAndThrowIfDefined(node, "#", this->typePool.getInt32Type(), FieldAttribute::READ_ONLY);
     for(unsigned int i = 0; i < 10; i++) {
         this->addEntryAndThrowIfDefined(node, std::to_string(i), this->typePool.getStringType(), FieldAttribute::READ_ONLY);
     }
-
-    // register dummy parameter (for closing file descriptor)
-    this->addEntryAndThrowIfDefined(node, "%%restore", this->typePool.getAnyType(), FieldAttribute::READ_ONLY);
 
     // check type command body
     this->checkTypeWithCurrentScope(node.getBlockNode());

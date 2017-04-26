@@ -754,18 +754,20 @@ static void flushStdFD() {
  *             | offset|
  */
 void callUserDefinedCommand(DSState &st, const DSCode *code, DSValue &&argvObj, DSValue &&restoreFD) {
-    // push argv (@)
+    // push parameter
+    st.push(std::move(restoreFD));  // push %%redir
+
     eraseFirst(*typeAs<Array_Object>(argvObj));
-    st.push(std::move(argvObj));
+    st.push(std::move(argvObj));    // push argv (@)
 
     // set stack stack
-    windStackFrame(st, 1, 1, code);
+    windStackFrame(st, 2, 2, code);
 
     // set variable
-    auto argv = typeAs<Array_Object>(st.getLocal(0));
+    auto argv = typeAs<Array_Object>(st.getLocal(1));
     const unsigned int argSize = argv->getValues().size();
-    st.setLocal(1, DSValue::create<Int_Object>(st.pool.getInt32Type(), argSize));   // #
-    st.setLocal(2, st.getGlobal(toIndex(BuiltinVarOffset::POS_0))); // 0
+    st.setLocal(2, DSValue::create<Int_Object>(st.pool.getInt32Type(), argSize));   // #
+    st.setLocal(3, st.getGlobal(toIndex(BuiltinVarOffset::POS_0))); // 0
     unsigned int limit = 9;
     if(argSize < limit) {
         limit = argSize;
@@ -773,14 +775,12 @@ void callUserDefinedCommand(DSState &st, const DSCode *code, DSValue &&argvObj, 
 
     unsigned int index = 0;
     for(; index < limit; index++) {
-        st.setLocal(index + 3, argv->getValues()[index]);
+        st.setLocal(index + 4, argv->getValues()[index]);
     }
 
     for(; index < 9; index++) {
-        st.setLocal(index + 3, st.emptyStrObj);  // set remain
+        st.setLocal(index + 4, st.emptyStrObj);  // set remain
     }
-
-    st.setLocal(index + 3, std::move(restoreFD));   // set restoreFD
 }
 
 enum class CmdKind {
