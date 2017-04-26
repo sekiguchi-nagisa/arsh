@@ -39,8 +39,8 @@ namespace ydsh {
     OP(LOAD_FUNC, 2) \
     OP(LOAD_GLOBAL, 2) \
     OP(STORE_GLOBAL, 2) \
-    OP(LOAD_LOCAL, 2) \
-    OP(STORE_LOCAL, 2) \
+    OP(LOAD_LOCAL, 1) \
+    OP(STORE_LOCAL, 1) \
     OP(LOAD_FIELD, 2) \
     OP(STORE_FIELD, 2) \
     OP(IMPORT_ENV, 1) \
@@ -110,7 +110,7 @@ namespace ydsh {
     OP(UNWRAP, 0) \
     OP(CHECK_UNWRAP, 0) \
     OP(NEW_INVALID, 0) \
-    OP(RECLAIM_LOCAL, 4)
+    OP(RECLAIM_LOCAL, 2)
 
 enum class OpCode : unsigned char {
 #define GEN_OPCODE(CODE, N) CODE,

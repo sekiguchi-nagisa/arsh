@@ -207,19 +207,19 @@ const DSValue &getEmptyStrObj(const DSState &st) {
     return st.emptyStrObj;
 }
 
-void setLocal(DSState &st, unsigned int index, const DSValue &obj) {
+void setLocal(DSState &st, unsigned char index, const DSValue &obj) {
     st.setLocal(index, obj);
 }
 
-void setLocal(DSState &st, unsigned int index, DSValue &&obj) {
+void setLocal(DSState &st, unsigned char index, DSValue &&obj) {
     st.setLocal(index, std::move(obj));
 }
 
-const DSValue &getLocal(const DSState &st, unsigned int index) {
+const DSValue &getLocal(const DSState &st, unsigned char index) {
     return st.getLocal(index);
 }
 
-DSValue extractLocal(DSState &st, unsigned int index) {
+DSValue extractLocal(DSState &st, unsigned char index) {
     return st.moveLocal(index);
 }
 

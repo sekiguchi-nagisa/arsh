@@ -256,7 +256,7 @@ FieldHandle *TypeChecker::addEntryAndThrowIfDefined(Node &node, const std::strin
     case SymbolError::DEFINED:
         RAISE_TC_ERROR(DefinedSymbol, node, symbolName.c_str());
     case SymbolError::LIMIT:
-        break;
+        RAISE_TC_ERROR(LocalLimit, node);
     }
     return pair.first;
 }

@@ -1,0 +1,34 @@
+#$test($result = 'type', $lineNum = 29, $errorKind = 'LocalLimit', $status = 1)
+
+{
+var _001=0; var _002=0; var _003=0; var _004=0; var _005=0; var _006=0; var _007=0; var _008=0; var _009=0; var _010=0;
+var _011=0; var _012=0; var _013=0; var _014=0; var _015=0; var _016=0; var _017=0; var _018=0; var _019=0; var _020=0;
+var _021=0; var _022=0; var _023=0; var _024=0; var _025=0; var _026=0; var _027=0; var _028=0; var _029=0; var _030=0;
+var _031=0; var _032=0; var _033=0; var _034=0; var _035=0; var _036=0; var _037=0; var _038=0; var _039=0; var _040=0;
+var _041=0; var _042=0; var _043=0; var _044=0; var _045=0; var _046=0; var _047=0; var _048=0; var _049=0; var _050=0;
+var _051=0; var _052=0; var _053=0; var _054=0; var _055=0; var _056=0; var _057=0; var _058=0; var _059=0; var _060=0;
+var _061=0; var _062=0; var _063=0; var _064=0; var _065=0; var _066=0; var _067=0; var _068=0; var _069=0; var _070=0;
+var _071=0; var _072=0; var _073=0; var _074=0; var _075=0; var _076=0; var _077=0; var _078=0; var _079=0; var _080=0;
+var _081=0; var _082=0; var _083=0; var _084=0; var _085=0; var _086=0; var _087=0; var _088=0; var _089=0; var _090=0;
+var _091=0; var _092=0; var _093=0; var _094=0; var _095=0; var _096=0; var _097=0; var _098=0; var _099=0; var _100=0;
+var _101=0; var _102=0; var _103=0; var _104=0; var _105=0; var _106=0; var _107=0; var _108=0; var _109=0; var _110=0;
+var _111=0; var _112=0; var _113=0; var _114=0; var _115=0; var _116=0; var _117=0; var _118=0; var _119=0; var _120=0;
+var _121=0; var _122=0; var _123=0; var _124=0; var _125=0; var _126=0; var _127=0; var _128=0; var _129=0; var _130=0;
+var _131=0; var _132=0; var _133=0; var _134=0; var _135=0; var _136=0; var _137=0; var _138=0; var _139=0; var _140=0;
+var _141=0; var _142=0; var _143=0; var _144=0; var _145=0; var _146=0; var _147=0; var _148=0; var _149=0; var _150=0;
+var _151=0; var _152=0; var _153=0; var _154=0; var _155=0; var _156=0; var _157=0; var _158=0; var _159=0; var _160=0;
+var _161=0; var _162=0; var _163=0; var _164=0; var _165=0; var _166=0; var _167=0; var _168=0; var _169=0; var _170=0;
+var _171=0; var _172=0; var _173=0; var _174=0; var _175=0; var _176=0; var _177=0; var _178=0; var _179=0; var _180=0;
+var _181=0; var _182=0; var _183=0; var _184=0; var _185=0; var _186=0; var _187=0; var _188=0; var _189=0; var _190=0;
+var _191=0; var _192=0; var _193=0; var _194=0; var _195=0; var _196=0; var _197=0; var _198=0; var _199=0; var _200=0;
+var _201=0; var _202=0; var _203=0; var _204=0; var _205=0; var _206=0; var _207=0; var _208=0; var _209=0; var _210=0;
+var _211=0; var _212=0; var _213=0; var _214=0; var _215=0; var _216=0; var _217=0; var _218=0; var _219=0; var _220=0;
+var _221=0; var _222=0; var _223=0; var _224=0; var _225=0; var _226=0; var _227=0; var _228=0; var _229=0; var _230=0;
+var _231=0; var _232=0; var _233=0; var _234=0; var _235=0; var _236=0; var _237=0; var _238=0; var _239=0; var _240=0;
+var _241=0; var _242=0; var _243=0; var _244=0; var _245=0; var _246=0; var _247=0; var _248=0; var _249=0; var _250=0;
+var _251=0; var _252=0; var _253=0; var _254=0; var _255=0; var _256=0; var _257=0; var _258=0; var _259=0; var _260=0;
+var _261=0; var _262=0; var _263=0; var _264=0; var _265=0; var _266=0; var _267=0; var _268=0; var _269=0; var _270=0;
+var _271=0; var _272=0; var _273=0; var _274=0; var _275=0; var _276=0; var _277=0; var _278=0; var _279=0; var _280=0;
+var _281=0; var _282=0; var _283=0; var _284=0; var _285=0; var _286=0; var _287=0; var _288=0; var _289=0; var _290=0;
+var _291=0; var _292=0; var _293=0; var _294=0; var _295=0; var _296=0; var _297=0; var _298=0; var _299=0; var _300=0;
+}

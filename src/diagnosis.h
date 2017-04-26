@@ -130,6 +130,7 @@ enum class TCError : unsigned int {
     E_UselessBlock,
     E_EmptyTry,
     E_UselessTry,
+    E_LocalLimit,
     E_DefinedSymbol,
     E_DefinedField,
     E_UndefinedSymbol,
@@ -157,6 +158,7 @@ enum class TCError : unsigned int {
 #define UselessBlock      "useless block"
 #define EmptyTry          "empty try block"
 #define UselessTry        "useless try block"
+#define LocalLimit        "too many local variable"
 #define DefinedSymbol     "already defined symbol: %s"
 #define DefinedField      "already defined field: %s"
 #define UndefinedSymbol   "undefined symbol: %s"

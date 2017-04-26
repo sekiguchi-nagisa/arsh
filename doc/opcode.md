@@ -18,8 +18,8 @@
 | LOAD_FUNC     | 2: byte1 byte2                 | -> value                                     | load a function from a global variable             |
 | LOAD_GLOBAL   | 2: byte1 byte2                 | -> value                                     | load a value from a global variable                |
 | STORE_GLOBAL  | 2: byte1 byte2                 | value ->                                     | store a value to a global variable                 |
-| LOAD_LOCAL    | 2: byte1 byte2                 | -> value                                     | load a value from a local variable                 |
-| STORE_LOCAL   | 2: byte1 byte2                 | value ->                                     | store a value to a local variable                  |
+| LOAD_LOCAL    | 1: byte1                       | -> value                                     | load a value from a local variable                 |
+| STORE_LOCAL   | 1: byte1                       | value ->                                     | store a value to a local variable                  |
 | LOAD_FIELD    | 2: byte1 byte2                 | value -> value                               | load a value from a instance field                 |
 | STORE_FIELD   | 2: byte1 byte2                 | value1 value2 ->                             | store a value into a instance field                |
 | IMPORT_ENV    | 1: byte1                       | value1 [value2] ->                           | import environmental variable                      |
@@ -89,4 +89,4 @@
 | UNWRAP        |                                | value -> value                               | unwrap option value                                |
 | CHECK_UNWRAP  |                                | value -> value                               | check if option value has a value                  |
 | NEW_INVALID   |                                | -> value                                     | create then invalid value                          |
-| RECLAIM_LOCAL | 4: offset1 offset2 size1 size2 | [no change]                                  | reclaim local variables specified range            |
+| RECLAIM_LOCAL | 2: offset1 size1               | [no change]                                  | reclaim local variables specified range            |

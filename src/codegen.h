@@ -312,6 +312,14 @@ private:
         this->curBuilder().append16(v);
     }
 
+    void emit2byteIns(OpCode op, unsigned char v1, unsigned char v2) {
+        assert(op == OpCode::RECLAIM_LOCAL);
+        ASSERT_BYTE_SIZE(op, 2);
+        this->emitIns(op);
+        this->curBuilder().append8(v1);
+        this->curBuilder().append8(v2);
+    }
+
     void emit3byteIns(OpCode op, unsigned int v) {
         ASSERT_BYTE_SIZE(op, 3);
         this->emitIns(op);
@@ -325,7 +333,7 @@ private:
     }
 
     void emit4byteIns(OpCode op, unsigned short v1, unsigned short v2) {
-        assert(op == OpCode::CALL_METHOD || op == OpCode::RECLAIM_LOCAL);
+        assert(op == OpCode::CALL_METHOD);
         ASSERT_BYTE_SIZE(op, 4);
         this->emitIns(op);
         this->curBuilder().append16(v1);
@@ -391,7 +399,7 @@ private:
         func();
 
         if(needReclaim) {
-            this->emit4byteIns(OpCode::RECLAIM_LOCAL, localOffset, localSize);
+            this->emit2byteIns(OpCode::RECLAIM_LOCAL, localOffset, localSize);
         }
         this->curBuilder().localVars.pop_back();
     }

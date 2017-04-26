@@ -59,6 +59,9 @@ SymbolError SymbolTable::tryToRegister(const std::string &name, FieldHandle *han
     }
     if(!this->inGlobalScope()) {
         unsigned int varIndex = this->scopes.back()->getCurVarIndex();
+        if(varIndex > UINT8_MAX) {
+            return SymbolError::LIMIT;
+        }
         if(varIndex > this->maxVarIndexStack.back()) {
             this->maxVarIndexStack.back() = varIndex;
         }

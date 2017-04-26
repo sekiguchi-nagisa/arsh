@@ -439,7 +439,7 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
         if(node.attr().has(FieldAttribute::GLOBAL)) {
             this->emit2byteIns(OpCode::LOAD_GLOBAL, node.getIndex());
         } else {
-            this->emit2byteIns(OpCode::LOAD_LOCAL, node.getIndex());
+            this->emit1byteIns(OpCode::LOAD_LOCAL, node.getIndex());
         }
 
         this->emit0byteIns(OpCode::LOAD_ENV);
@@ -455,7 +455,7 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
                 this->emit2byteIns(OpCode::LOAD_GLOBAL, node.getIndex());
             }
         } else {
-            this->emit2byteIns(OpCode::LOAD_LOCAL, node.getIndex());
+            this->emit1byteIns(OpCode::LOAD_LOCAL, node.getIndex());
         }
     }
 }
@@ -759,7 +759,7 @@ void ByteCodeGenerator::visitJumpNode(JumpNode &node) {
     }
 
     if(stopOffset - startOffset > 0) {
-        this->emit4byteIns(OpCode::RECLAIM_LOCAL, startOffset, stopOffset - startOffset);
+        this->emit2byteIns(OpCode::RECLAIM_LOCAL, startOffset, stopOffset - startOffset);
     }
 
     // add finally before jump
@@ -854,7 +854,7 @@ void ByteCodeGenerator::visitCatchNode(CatchNode &node) {
     if(node.getBlockNode()->getNodes().empty()) {
         this->emit0byteIns(OpCode::POP);
     } else {
-        this->emit2byteIns(OpCode::STORE_LOCAL, node.getVarIndex());
+        this->emit1byteIns(OpCode::STORE_LOCAL, node.getVarIndex());
         this->visit(*node.getBlockNode());
     }
 }
@@ -946,7 +946,7 @@ void ByteCodeGenerator::visitVarDeclNode(VarDeclNode &node) {
     if(node.isGlobal()) {
         this->emit2byteIns(OpCode::STORE_GLOBAL, node.getVarIndex());
     } else {
-        this->emit2byteIns(OpCode::STORE_LOCAL, node.getVarIndex());
+        this->emit1byteIns(OpCode::STORE_LOCAL, node.getVarIndex());
     }
 }
 
@@ -980,7 +980,7 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
             if(varNode->attr().has(FieldAttribute::GLOBAL)) {
                 this->emit2byteIns(OpCode::LOAD_GLOBAL, index);
             } else {
-                this->emit2byteIns(OpCode::LOAD_LOCAL, index);
+                this->emit1byteIns(OpCode::LOAD_LOCAL, index);
             }
 
             this->emit0byteIns(OpCode::SWAP);
@@ -991,7 +991,7 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
             if(varNode->attr().has(FieldAttribute::GLOBAL)) {
                 this->emit2byteIns(OpCode::STORE_GLOBAL, index);
             } else {
-                this->emit2byteIns(OpCode::STORE_LOCAL, index);
+                this->emit1byteIns(OpCode::STORE_LOCAL, index);
             }
         }
     }

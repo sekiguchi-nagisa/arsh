@@ -281,28 +281,28 @@ struct DSState {
         return this->callStack[index];
     }
 
-    void storeLocal(unsigned int index) {
+    void storeLocal(unsigned char index) {
         this->callStack[this->localVarOffset + index] = this->pop();
     }
 
-    void loadLocal(unsigned int index) {
+    void loadLocal(unsigned char index) {
         auto v(this->callStack[this->localVarOffset + index]); // callStack may be expanded.
         this->push(std::move(v));
     }
 
-    void setLocal(unsigned int index, const DSValue &obj) {
+    void setLocal(unsigned char index, const DSValue &obj) {
         setLocal(index, DSValue(obj));
     }
 
-    void setLocal(unsigned int index, DSValue &&obj) {
+    void setLocal(unsigned char index, DSValue &&obj) {
         this->callStack[this->localVarOffset + index] = std::move(obj);
     }
 
-    const DSValue &getLocal(unsigned int index) const {
+    const DSValue &getLocal(unsigned char index) const {
         return this->callStack[this->localVarOffset + index];
     }
 
-    DSValue moveLocal(unsigned int index) {
+    DSValue moveLocal(unsigned char index) {
         return std::move(this->callStack[this->localVarOffset + index]);
     }
 

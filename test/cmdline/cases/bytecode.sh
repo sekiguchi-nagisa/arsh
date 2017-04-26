@@ -66,12 +66,12 @@ Exception Table:
   begin: 14, end: 31, type: Any, dest: 31, offset: 0, size: 0
 
 DSCode: function f
-  code size: 20
+  code size: 19
   number of local variable: 1
 Code:
    7: LOAD_LOCAL  0
-  10: INSTANCE_OF  Array<Int32>
-  19: RETURN_V
+   9: INSTANCE_OF  Array<Int32>
+  18: RETURN_V
 Constant Pool:
 Source Pos Entry:
 Exception Table:

@@ -179,7 +179,7 @@ static void clearOperandStack(DSState &st) {
     }
 }
 
-static void reclaimLocals(DSState &state, unsigned short offset, unsigned short size) {
+static void reclaimLocals(DSState &state, unsigned char offset, unsigned char size) {
     auto *limit = state.callStack + state.localVarOffset + offset;
     auto *cur = limit + size - 1;
     while(cur >= limit) {
@@ -1196,14 +1196,12 @@ static bool mainLoop(DSState &state) {
             break;
         }
         vmcase(LOAD_LOCAL) {
-            unsigned short index = read16(GET_CODE(state), state.pc() + 1);
-            state.pc() += 2;
+            unsigned char index = read8(GET_CODE(state), ++state.pc());
             state.loadLocal(index);
             break;
         }
         vmcase(STORE_LOCAL) {
-            unsigned short index = read16(GET_CODE(state), state.pc() + 1);
-            state.pc() += 2;
+            unsigned char index = read8(GET_CODE(state), ++state.pc());
             state.storeLocal(index);
             break;
         }
@@ -1626,10 +1624,8 @@ static bool mainLoop(DSState &state) {
             break;
         }
         vmcase(RECLAIM_LOCAL) {
-            unsigned short offset = read16(GET_CODE(state), state.pc() + 1);
-            state.pc() += 2;
-            unsigned short size = read16(GET_CODE(state), state.pc() + 1);
-            state.pc() += 2;
+            unsigned char offset = read8(GET_CODE(state), ++state.pc());
+            unsigned char size = read8(GET_CODE(state), ++state.pc());
 
             reclaimLocals(state, offset, size);
             break;
