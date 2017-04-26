@@ -270,8 +270,8 @@ static int compile(DSState *state, const char *sourceName, const char *source, D
 
 static void bindVariable(DSState *state, const char *varName, DSValue &&value, FieldAttributes attribute) {
     auto handle = state->symbolTable.registerHandle(varName, *value.get()->getType(), attribute);
-    assert(handle != nullptr);
-    state->setGlobal(handle->getFieldIndex(), std::move(value));
+    assert(handle.first != nullptr);
+    state->setGlobal(handle.first->getFieldIndex(), std::move(value));
 }
 
 static void bindVariable(DSState *state, const char *varName, DSValue &&value) {

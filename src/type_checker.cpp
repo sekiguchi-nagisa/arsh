@@ -249,11 +249,16 @@ bool TypeChecker::checkCoercion(const DSType &requiredType, const DSType &target
 
 FieldHandle *TypeChecker::addEntryAndThrowIfDefined(Node &node, const std::string &symbolName, DSType &type,
                                                     FieldAttributes attribute) {
-    FieldHandle *handle = this->symbolTable.registerHandle(symbolName, type, attribute);
-    if(handle == nullptr) {
+    auto pair = this->symbolTable.registerHandle(symbolName, type, attribute);
+    switch(pair.second) {
+    case SymbolError::DUMMY:
+        break;
+    case SymbolError::DEFINED:
         RAISE_TC_ERROR(DefinedSymbol, node, symbolName.c_str());
+    case SymbolError::LIMIT:
+        break;
     }
-    return handle;
+    return pair.first;
 }
 
 // for ApplyNode type checking
@@ -1077,12 +1082,11 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     }
 
     // register function handle
-    FunctionHandle *handle =
-            this->symbolTable.registerFuncHandle(node.getName(), returnType, paramTypes);
-    if(handle == nullptr) {
+    auto pair = this->symbolTable.registerFuncHandle(node.getName(), returnType, paramTypes);
+    if(pair.second == SymbolError::DEFINED) {
         RAISE_TC_ERROR(DefinedSymbol, node, node.getName().c_str());
     }
-    node.setVarIndex(handle->getFieldIndex());
+    node.setVarIndex(pair.first->getFieldIndex());
 
     // prepare type checking
     this->pushReturnType(returnType);
@@ -1125,11 +1129,11 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     }
 
     // register command name
-    FieldHandle *handle = this->symbolTable.registerUdc(node.getName(), this->typePool.getAnyType());
-    if(handle == nullptr) {
+    auto pair = this->symbolTable.registerUdc(node.getName(), this->typePool.getAnyType());
+    if(pair.second == SymbolError::DEFINED) {
         RAISE_TC_ERROR(DefinedCmd, node, node.getName().c_str());
     }
-    node.setUdcIndex(handle->getFieldIndex());
+    node.setUdcIndex(pair.first->getFieldIndex());
 
     this->pushReturnType(this->typePool.getIntType());    // pseudo return type
     this->symbolTable.enterFunc();

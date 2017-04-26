@@ -86,6 +86,12 @@ public:
     }
 };
 
+enum class SymbolError {
+    DUMMY,
+    DEFINED,
+    LIMIT,
+};
+
 class SymbolTable {
 private:
     std::vector<std::string> handleCache;
@@ -115,7 +121,7 @@ public:
     }
 
 private:
-    bool tryToRegister(const std::string &name, FieldHandle *handle);
+    SymbolError tryToRegister(const std::string &name, FieldHandle *handle);
 
 public:
     /**
@@ -126,7 +132,7 @@ public:
     /**
      * return null, if found duplicated handle.
      */
-    FieldHandle *registerHandle(const std::string &symbolName, DSType &type, FieldAttributes attribute);
+    std::pair<FieldHandle *, SymbolError> registerHandle(const std::string &symbolName, DSType &type, FieldAttributes attribute);
 
     bool disallowShadowing(const std::string &symbolName) {
         assert(!this->inGlobalScope());
@@ -136,14 +142,14 @@ public:
     /**
      * return null, if found duplicated handle.
      */
-    FunctionHandle *registerFuncHandle(const std::string &funcName, DSType &returnType,
+    std::pair<FieldHandle *, SymbolError> registerFuncHandle(const std::string &funcName, DSType &returnType,
                                        const std::vector<DSType *> &paramTypes);
 
     /**
      * if already registered, return null.
      * type must be any type
      */
-    FieldHandle *registerUdc(const std::string &cmdName, DSType &type) {
+    std::pair<FieldHandle *, SymbolError> registerUdc(const std::string &cmdName, DSType &type) {
         assert(this->inGlobalScope());
         std::string name = cmdSymbolPrefix;
         name += cmdName;

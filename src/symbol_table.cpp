@@ -52,10 +52,10 @@ void Scope::deleteHandle(const std::string &symbolName) {
 // ##     SymbolTable     ##
 // #########################
 
-bool SymbolTable::tryToRegister(const std::string &name, FieldHandle *handle) {
+SymbolError SymbolTable::tryToRegister(const std::string &name, FieldHandle *handle) {
     if(!this->scopes.back()->addFieldHandle(name, handle)) {
         delete handle;
-        return false;
+        return SymbolError::DEFINED;
     }
     if(!this->inGlobalScope()) {
         unsigned int varIndex = this->scopes.back()->getCurVarIndex();
@@ -63,7 +63,7 @@ bool SymbolTable::tryToRegister(const std::string &name, FieldHandle *handle) {
             this->maxVarIndexStack.back() = varIndex;
         }
     }
-    return true;
+    return SymbolError::DUMMY;
 }
 
 FieldHandle *SymbolTable::lookupHandle(const std::string &symbolName) const {
@@ -76,30 +76,33 @@ FieldHandle *SymbolTable::lookupHandle(const std::string &symbolName) const {
     return nullptr;
 }
 
-FieldHandle *SymbolTable::registerHandle(const std::string &symbolName, DSType &type, FieldAttributes attribute) {
+std::pair<FieldHandle *, SymbolError> SymbolTable::registerHandle(const std::string &symbolName,
+                                                                DSType &type, FieldAttributes attribute) {
     if(this->inGlobalScope()) {
         attribute.set(FieldAttribute::GLOBAL);
     }
 
     FieldHandle *handle = new FieldHandle(&type, this->scopes.back()->getCurVarIndex(), attribute);
-    if(!this->tryToRegister(symbolName, handle)) {
-        return nullptr;
+    auto e = this->tryToRegister(symbolName, handle);
+    if(e != SymbolError::DUMMY) {
+        return std::make_pair(nullptr, e);
     }
     if(this->inGlobalScope()) {
         this->handleCache.push_back(symbolName);
     }
-    return handle;
+    return std::make_pair(handle, SymbolError::DUMMY);
 }
 
-FunctionHandle *SymbolTable::registerFuncHandle(const std::string &funcName, DSType &returnType,
-                                                const std::vector<DSType *> &paramTypes) {
+std::pair<FieldHandle *, SymbolError> SymbolTable::registerFuncHandle(const std::string &funcName, DSType &returnType,
+                                                                    const std::vector<DSType *> &paramTypes) {
     assert(this->inGlobalScope());
-    FunctionHandle *handle = new FunctionHandle(&returnType, paramTypes, this->scopes.back()->getCurVarIndex());
-    if(!this->tryToRegister(funcName, handle)) {
-        return nullptr;
+    FieldHandle *handle = new FunctionHandle(&returnType, paramTypes, this->scopes.back()->getCurVarIndex());
+    auto e = this->tryToRegister(funcName, handle);
+    if(e != SymbolError::DUMMY) {
+        return std::make_pair(nullptr, e);
     }
     this->handleCache.push_back(funcName);
-    return handle;
+    return std::make_pair(handle, SymbolError::DUMMY);
 }
 
 void SymbolTable::enterScope() {
