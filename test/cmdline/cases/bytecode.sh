@@ -14,21 +14,21 @@ V="$(cat << EOS
 ### dump compiled code ###
 Source File: (string)
 DSCode: top level
-  code size: 23
+  code size: 22
   number of local variable: 0
   number of global variable: 43
 Code:
-   9: LOAD_CONST  0
-  11: STORE_GLOBAL  42
-  14: LOAD_CONST  1
-  16: CALL_METHOD  0  0
-  21: POP
-  22: STOP_EVAL
+   8: LOAD_CONST  0
+  10: STORE_GLOBAL  42
+  13: LOAD_CONST  1
+  15: CALL_METHOD  0  0
+  20: POP
+  21: STOP_EVAL
 Constant Pool:
   0: Int32 34
   1: Int32 34
 Source Pos Entry:
-  lineNum: 1, address: 16, pos: 12
+  lineNum: 1, address: 15, pos: 12
 Exception Table:
 EOS
 )"
@@ -40,38 +40,38 @@ V="$(cat << EOS
 ### dump compiled code ###
 Source File: (string)
 DSCode: top level
-  code size: 36
+  code size: 35
   number of local variable: 0
   number of global variable: 43
 Code:
-   9: LOAD_CONST  0
-  11: STORE_GLOBAL  42
-  14: LOAD_GLOBAL  42
-  17: LOAD_CONST  1
-  19: CALL_FUNC  1
-  22: POP
-  23: ENTER_FINALLY  8
-  26: GOTO  35
-  31: LOAD_CONST  2
-  33: POP
-  34: EXIT_FINALLY
-  35: STOP_EVAL
+   8: LOAD_CONST  0
+  10: STORE_GLOBAL  42
+  13: LOAD_GLOBAL  42
+  16: LOAD_CONST  1
+  18: CALL_FUNC  1
+  21: POP
+  22: ENTER_FINALLY  8
+  25: GOTO  34
+  30: LOAD_CONST  2
+  32: POP
+  33: EXIT_FINALLY
+  34: STOP_EVAL
 Constant Pool:
   0: (null) function(f)
   1: Int32 1
   2: Int32 3
 Source Pos Entry:
-  lineNum: 1, address: 19, pos: 67
+  lineNum: 1, address: 18, pos: 67
 Exception Table:
-  begin: 14, end: 31, type: Any, dest: 31, offset: 0, size: 0
+  begin: 13, end: 30, type: Any, dest: 30, offset: 0, size: 0
 
 DSCode: function f
-  code size: 19
+  code size: 18
   number of local variable: 1
 Code:
-   7: LOAD_LOCAL  0
-   9: INSTANCE_OF  Array<Int32>
-  18: RETURN_V
+   6: LOAD_LOCAL  0
+   8: INSTANCE_OF  Array<Int32>
+  17: RETURN_V
 Constant Pool:
 Source Pos Entry:
 Exception Table:

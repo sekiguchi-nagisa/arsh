@@ -1046,7 +1046,7 @@ void ByteCodeGenerator::initCodeBuilder(CodeKind kind, unsigned short localVarNu
     // generate header
     this->curBuilder().append8(static_cast<unsigned char>(kind));
     this->curBuilder().append32(0);
-    this->curBuilder().append16(localVarNum);
+    this->curBuilder().append8(localVarNum);
 }
 
 void ByteCodeGenerator::initToplevelCodeBuilder(const RootNode &node) {

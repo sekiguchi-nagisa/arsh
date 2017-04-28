@@ -691,13 +691,13 @@ class DSCode {
 protected:
     /**
      * +----------------------+-------------------+-------------------------------+
-     * | CallableKind (1byte) | code size (4byte) | local variable number (2byte) |
+     * | CallableKind (1byte) | code size (4byte) | local variable number (1byte) |
      * +----------------------+-------------------+-------------------------------+
      *
      * if indicate toplevel
      *
      * +----------------------+-------------------+-------------------------------+--------------------------------+
-     * | CallableKind (1byte) | code size (4byte) | local variable number (2byte) | global variable number (2byte) |
+     * | CallableKind (1byte) | code size (4byte) | local variable number (1byte) | global variable number (2byte) |
      * +----------------------+-------------------+-------------------------------+--------------------------------+
      *
      * if indicate native
@@ -734,7 +734,7 @@ public:
     }
 
     unsigned int getCodeOffset() const {
-        return this->is(CodeKind::NATIVE) ? 1 : this->is(CodeKind::TOPLEVEL) ? 9 : 7;
+        return this->is(CodeKind::NATIVE) ? 1 : this->is(CodeKind::TOPLEVEL) ? 8 : 6;
     }
 };
 
@@ -883,12 +883,12 @@ public:
     }
 
     unsigned short getLocalVarNum() const {
-        return read16(this->code, 5);
+        return read8(this->code, 5);
     }
 
     unsigned short getGlobalVarNum() const {
         assert(this->getKind() == CodeKind::TOPLEVEL);
-        return read16(this->code, 7);
+        return read16(this->code, 6);
     }
 
     const SourceInfoPtr &getSrcInfo() const {
