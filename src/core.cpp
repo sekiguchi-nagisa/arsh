@@ -45,7 +45,7 @@ FilePathCache::~FilePathCache() {
     }
 }
 
-const char *FilePathCache::searchPath(const char *cmdName, unsigned char option) {
+const char *FilePathCache::searchPath(const char *cmdName, flag8_t option) {
     // if found '/', return fileName
     if(strchr(cmdName, '/') != nullptr) {
         return cmdName;
@@ -579,11 +579,6 @@ void interpretPromptString(const DSState &st, const char *ps, std::string &outpu
         }
         output += ch;
     }
-}
-
-const DSCode *lookupUserDefinedCommand(const DSState &st, const char *commandName) {
-    auto handle = st.symbolTable.lookupUdc(commandName);
-    return handle == nullptr ? nullptr : &typeAs<FuncObject>(st.getGlobal(handle->getFieldIndex()))->getCode();
 }
 
 /**

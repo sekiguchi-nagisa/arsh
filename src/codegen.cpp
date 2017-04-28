@@ -325,7 +325,7 @@ void ByteCodeGenerator::generateStringExpr(StringExprNode &node, bool fragment) 
                  * | value | buf |
                  * +-------+-----+
                  *
-                 * In this situation `APPEND_STRING' ins brokes stack top string object (due to appending buf to value).
+                 * In this situation `APPEND_STRING' ins breaks stack top string object (due to appending buf to value).
                  * To prevent it, swap stack top two values.
                  */
                 this->emit0byteIns(OpCode::SWAP);

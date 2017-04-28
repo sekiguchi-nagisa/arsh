@@ -42,10 +42,8 @@ static int builtin___gets(DSState &state, Array_Object &argvObj);
 static int builtin___puts(DSState &state, Array_Object &argvObj);
 static int builtin_cd(DSState &state, Array_Object &argvObj);
 static int builtin_check_env(DSState &state, Array_Object &argvObj);
-static int builtin_command(DSState &state, Array_Object &argvObj);
 static int builtin_complete(DSState &state, Array_Object &argvObj);
 static int builtin_echo(DSState &state, Array_Object &argvObj);
-static int builtin_eval(DSState &state, Array_Object &argvObj);
 static int builtin_exec(DSState &state, Array_Object &argvObj);
 static int builtin_exit(DSState &state, Array_Object &argvObj);
 static int builtin_false(DSState &state, Array_Object &argvObj);
@@ -82,7 +80,7 @@ const struct {
         {"check_env", builtin_check_env, "[variable ...]",
                 "    Check existence of specified environmental variables.\n"
                 "    If all of variables are exist and not empty string, exit with 0."},
-        {"command", builtin_command, "[-pVv] command [arg ...]",
+        {"command", nullptr, "[-pVv] command [arg ...]",
                 "    Execute COMMAND with ARGS excepting user defined command.\n"
                         "    If -p option is specified, search command from default PATH.\n"
                         "    If -V or -v option are specified, print description of COMMAND.\n"
@@ -108,7 +106,7 @@ const struct {
                 "                  \\0nnn N is octal number.  NNN can be 0 to 3 number\n"
                 "                  \\xnn  N is hex number.  NN can be 1 to 2 number\n"
                 "        -E    disable escape sequence interpretation"},
-        {"eval", builtin_eval, "[args ...]",
+        {"eval", nullptr, "[args ...]",
                 "    evaluate ARGS as command."},
         {"exec", builtin_exec, "[-c] [-a name] file [args ...]",
                 "    Execute FILE and replace this shell with specified program.\n"
@@ -323,7 +321,7 @@ static void showUsage(const Array_Object &obj) {
     printUsage(stderr, str(obj.getValues()[0]));
 }
 
-static int invalidOptionError(const Array_Object &obj, const GetOptState &s) {
+int invalidOptionError(const Array_Object &obj, const GetOptState &s) {
     ERROR(obj, "-%c: invalid option", s.optOpt);
     showUsage(obj);
     return 2;
@@ -623,54 +621,6 @@ static int builtin_exec(DSState &state, Array_Object &argvObj) {
     return 0;
 }
 
-static int builtin_eval(DSState &state, Array_Object &argvObj) {
-    unsigned int argc = argvObj.getValues().size();
-    if(argc <= 1) {
-        return 0;
-    }
-
-    const char *cmdName = str(argvObj.getValues()[1]);
-    // user-defined command
-    auto *udc = lookupUserDefinedCommand(state, cmdName);
-    if(udc != nullptr) {
-        pid_t pid = xfork(state);
-        if(pid == -1) {
-            perror("child process error");
-            exit(1);
-        } else if(pid == 0) {   // child
-            eraseFirst(argvObj);
-            callUserDefinedCommand(state, udc, DSValue(&argvObj), DSValue());
-        } else {    // parent process
-            int status;
-            xwaitpid(state, pid, status, 0);
-            if(WIFEXITED(status)) {
-                return WEXITSTATUS(status);
-            }
-            if(WIFSIGNALED(status)) {
-                return WTERMSIG(status);
-            }
-        }
-        return 0;
-    }
-
-    // builtin command
-    builtin_command_t builtinCmd = lookupBuiltinCommand(cmdName);
-    eraseFirst(argvObj);
-    if(builtinCmd != nullptr) {
-        return builtinCmd(state, argvObj);
-    }
-
-    // external command
-    int status = forkAndExec(state, argvObj);
-    if(WIFEXITED(status)) {
-        return WEXITSTATUS(status);
-    }
-    if(WIFSIGNALED(status)) {
-        return WTERMSIG(status);
-    }
-    return 0;
-}
-
 static int builtin_pwd(DSState &state, Array_Object &argvObj) {
     bool useLogical = true;
 
@@ -705,100 +655,6 @@ static int builtin_pwd(DSState &state, Array_Object &argvObj) {
         fputs(buf, stdout);
     }
     fputc('\n', stdout);
-    return 0;
-}
-
-static int builtin_command(DSState &state, Array_Object &argvObj) {
-    bool useDefaultPath = false;
-
-    /**
-     * if 0, ignore
-     * if 1, show description
-     * if 2, show detailed description
-     */
-    unsigned char showDesc = 0;
-
-    GetOptState optState;
-    for(int opt; (opt = optState(argvObj, "pvV")) != -1;) {
-        switch(opt) {
-        case 'p':
-            useDefaultPath = true;
-            break;
-        case 'v':
-            showDesc = 1;
-            break;
-        case 'V':
-            showDesc = 2;
-            break;
-        default:
-            return invalidOptionError(argvObj, optState);
-        }
-    }
-
-    unsigned int index = optState.index;
-    const unsigned int argc = argvObj.getValues().size();
-    if(index < argc) {
-        if(showDesc == 0) { // execute command
-            auto *cmd = lookupBuiltinCommand(str(argvObj.getValues()[index]));
-            auto &values = argvObj.refValues();
-            values.erase(values.begin(), values.begin() + index);
-            if(cmd != nullptr) {
-                return cmd(state, argvObj);
-            } else {
-                int status = forkAndExec(state, argvObj, useDefaultPath);
-                if(WIFEXITED(status)) {
-                    return WEXITSTATUS(status);
-                }
-                if(WIFSIGNALED(status)) {
-                    return WTERMSIG(status);
-                }
-            }
-        } else {    // show command description
-            unsigned int successCount = 0;
-            for(; index < argc; index++) {
-                const char *commandName = str(argvObj.getValues()[index]);
-                // check user defined command
-                if(lookupUserDefinedCommand(state, commandName) != nullptr) {
-                    successCount++;
-                    fputs(commandName, stdout);
-                    if(showDesc == 2) {
-                        fputs(" is an user-defined command", stdout);
-                    }
-                    fputc('\n', stdout);
-                    continue;
-                }
-
-                // check builtin command
-                if(lookupBuiltinCommand(commandName) != nullptr) {
-                    successCount++;
-                    fputs(commandName, stdout);
-                    if(showDesc == 2) {
-                        fputs(" is a shell builtin command", stdout);
-                    }
-                    fputc('\n', stdout);
-                    continue;
-                }
-
-                // check external command
-                const char *path = getPathCache(state).searchPath(commandName, FilePathCache::DIRECT_SEARCH);
-                if(path != nullptr) {
-                    successCount++;
-                    if(showDesc == 1) {
-                        printf("%s\n", path);
-                    } else if(getPathCache(state).isCached(commandName)) {
-                        printf("%s is hashed (%s)\n", commandName, path);
-                    } else {
-                        printf("%s is %s\n", commandName, path);
-                    }
-                    continue;
-                }
-                if(showDesc == 2) {
-                    PERROR(argvObj, "%s", commandName);
-                }
-            }
-            return successCount > 0 ? 0 : 1;
-        }
-    }
     return 0;
 }
 

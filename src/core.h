@@ -25,6 +25,7 @@
 #include "opcode.h"
 #include "misc/hash.hpp"
 #include "misc/buffer.hpp"
+#include "misc/flag_util.hpp"
 
 struct DSState;
 
@@ -82,14 +83,14 @@ public:
 
     ~FilePathCache();
 
-    static constexpr unsigned char USE_DEFAULT_PATH = 1 << 0;
-    static constexpr unsigned char DIRECT_SEARCH    = 1 << 1;
+    static constexpr flag8_t USE_DEFAULT_PATH = 1 << 0;
+    static constexpr flag8_t DIRECT_SEARCH    = 1 << 1;
 
     /**
      * search file path by using PATH
      * if cannot resolve path (file not found), return null.
      */
-    const char *searchPath(const char *cmdName, unsigned char option = 0);
+    const char *searchPath(const char *cmdName, flag8_set_t option = 0);
 
     void removePath(const char *cmdName);
 
@@ -214,28 +215,11 @@ pid_t xfork(DSState &st);
  */
 pid_t xwaitpid(DSState &st, pid_t pid, int &status, int options);
 
-int forkAndExec(DSState &ctx, const Array_Object &argvObj, bool useDefaultPath = false);
 
 /**
  * n is 1 or 2
  */
 void interpretPromptString(const DSState &st, const char *ps, std::string &output);
-
-/**
- * if not found, return null
- */
-const DSCode *lookupUserDefinedCommand(const DSState &st, const char *commandName);
-
-/**
- *
- * @param st
- * @param code
- * must be user-defined command
- * @param argvObj
- * must be Array_Object (Array<String>)
- * @param restoreFD
- */
-void callUserDefinedCommand(DSState &st, const DSCode *code, DSValue &&argvObj, DSValue &&restoreFD);
 
 std::string expandDots(const char *basePath, const char *path);
 

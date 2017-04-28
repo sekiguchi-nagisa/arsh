@@ -53,6 +53,9 @@ assert($? != 0)
 hash -r
 assert("$(command -V ls)" == "ls is $(which ls)")                   # external
 assert("$(command -V cd)" == "cd is a shell builtin command")       # builtin
+assert "$(command -V eval)" == "eval is a shell builtin command"
+assert "$(command -V exec)" == "exec is a shell builtin command"
+assert "$(command -V command)" == "command is a shell builtin command"
 assert("$(command -V hoge)" == "hoge is an user-defined command")   # user-defined
 ls 2>&1 > /dev/null
 assert("$(command -V ls)" == "ls is hashed ($(which ls))")          # hashed

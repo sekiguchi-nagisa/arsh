@@ -748,43 +748,44 @@ static void flushStdFD() {
 /**
  * stack state in function apply    stack grow ===>
  *
- * +-----------+-------+--------+
- * | stack top | param |
- * +-----------+-------+--------+
- *             | offset|
+ * +-----------+---------------+--------------+
+ * | stack top | param1(redir) | param2(argv) |
+ * +-----------+---------------+--------------+
+ *             |     offset    |
  */
-void callUserDefinedCommand(DSState &st, const DSCode *code, DSValue &&argvObj, DSValue &&restoreFD) {
+static void callUserDefinedCommand(DSState &st, const DSCode *code, DSValue &&argvObj, DSValue &&restoreFD, bool setvar = true) {
     // push parameter
     st.push(std::move(restoreFD));  // push %%redir
-
-    eraseFirst(*typeAs<Array_Object>(argvObj));
     st.push(std::move(argvObj));    // push argv (@)
 
     // set stack stack
     windStackFrame(st, 2, 2, code);
 
-    // set variable
-    auto argv = typeAs<Array_Object>(st.getLocal(1));
-    const unsigned int argSize = argv->getValues().size();
-    st.setLocal(2, DSValue::create<Int_Object>(st.pool.getInt32Type(), argSize));   // #
-    st.setLocal(3, st.getGlobal(toIndex(BuiltinVarOffset::POS_0))); // 0
-    unsigned int limit = 9;
-    if(argSize < limit) {
-        limit = argSize;
-    }
+    if(setvar) {    // set variable
+        auto argv = typeAs<Array_Object>(st.getLocal(1));
+        eraseFirst(*argv);
+        const unsigned int argSize = argv->getValues().size();
+        st.setLocal(2, DSValue::create<Int_Object>(st.pool.getInt32Type(), argSize));   // #
+        st.setLocal(3, st.getGlobal(toIndex(BuiltinVarOffset::POS_0))); // 0
+        unsigned int limit = 9;
+        if(argSize < limit) {
+            limit = argSize;
+        }
 
-    unsigned int index = 0;
-    for(; index < limit; index++) {
-        st.setLocal(index + 4, argv->getValues()[index]);
-    }
+        unsigned int index = 0;
+        for(; index < limit; index++) {
+            st.setLocal(index + 4, argv->getValues()[index]);
+        }
 
-    for(; index < 9; index++) {
-        st.setLocal(index + 4, st.emptyStrObj);  // set remain
+        for(; index < 9; index++) {
+            st.setLocal(index + 4, st.emptyStrObj);  // set remain
+        }
     }
 }
 
 enum class CmdKind {
     USER_DEFINED,
+    BUILTIN_S,
     BUILTIN,
     EXTERNAL,
 };
@@ -798,13 +799,51 @@ struct Command {
     };
 };
 
-static constexpr flag8_t CMD_MASK_UDC      = 1 << 0;
+class CmdResolver {
+private:
+    flag8_set_t mask;
+    flag8_set_t searchOp;
 
-static Command resolveCmd(DSState &state, const char *cmdName, const flag8_set_t cmdMask) {
+    static CStringHashMap<NativeCode> map;
+
+public:
+    static constexpr flag8_t MASK_UDC      = 1 << 0;
+    static constexpr flag8_t MASK_EXTERNAL = 1 << 1;
+
+    CmdResolver(flag8_set_t mask, flag8_set_t op) : mask(mask), searchOp(op) {}
+    CmdResolver() : CmdResolver(0, 0) {}
+    ~CmdResolver() = default;
+
+    Command operator()(DSState &state, const char *cmdName) const;
+};
+
+static NativeCode initCode(OpCode op) {
+    unsigned char *code = reinterpret_cast<unsigned char *>(malloc(sizeof(unsigned char) * 3));
+    code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
+    code[1] = static_cast<unsigned char>(op);
+    code[2] = static_cast<unsigned char>(OpCode::RETURN_V);
+    return NativeCode(code);
+}
+
+static CStringHashMap<NativeCode> initSBuiltinMap() {
+    CStringHashMap<NativeCode> map;
+    map.insert(std::make_pair("command", initCode(OpCode::BUILTIN_CMD)));
+    map.insert(std::make_pair("eval", initCode(OpCode::BUILTIN_EVAL)));
+    return map;
+}
+
+static const DSCode *lookupUserDefinedCommand(const DSState &st, const char *commandName) {
+    auto handle = st.symbolTable.lookupUdc(commandName);
+    return handle == nullptr ? nullptr : &typeAs<FuncObject>(st.getGlobal(handle->getFieldIndex()))->getCode();
+}
+
+CStringHashMap<NativeCode> CmdResolver::map = initSBuiltinMap();
+
+Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
     Command cmd;
 
     // first, check user-defined command
-    if(!hasFlag(cmdMask, CMD_MASK_UDC)) {
+    if(!hasFlag(this->mask, MASK_UDC)) {
         auto *udcObj = lookupUserDefinedCommand(state, cmdName);
         if(udcObj != nullptr) {
             cmd.kind = CmdKind::USER_DEFINED;
@@ -821,11 +860,18 @@ static Command resolveCmd(DSState &state, const char *cmdName, const flag8_set_t
             cmd.builtinCmd = bcmd;
             return cmd;
         }
+
+        auto iter = map.find(cmdName);
+        if(iter != map.end()) {
+            cmd.kind = CmdKind::BUILTIN_S;
+            cmd.udc = &iter->second;
+            return cmd;
+        }
     }
 
     // resolve external command path
     cmd.kind = CmdKind::EXTERNAL;
-    cmd.filePath = state.pathCache.searchPath(cmdName);
+    cmd.filePath = hasFlag(this->mask, MASK_EXTERNAL) ? nullptr : state.pathCache.searchPath(cmdName, this->searchOp);
     return cmd;
 }
 
@@ -890,23 +936,20 @@ static void pushExitStatus(DSState &state, int status) {
     state.push(status == 0 ? state.trueObj : state.falseObj);
 }
 
-static void callCommand(DSState &state, DSValue &&argvObj, DSValue &&redirConfig, bool needFork, flag8_set_t cmdMask) {
+static void callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue &&redirConfig, bool needFork) {
     // reset exit status
     state.updateExitStatus(0);
 
     auto *array = typeAs<Array_Object>(argvObj);
     const unsigned int size = array->getValues().size();
-    if(size == 0) {
-        return;
-    }
-
     auto &first = array->getValues()[0];
     const char *cmdName = typeAs<String_Object>(first)->getValue();
-    auto cmd = resolveCmd(state, cmdName, cmdMask);
 
     switch(cmd.kind) {
-    case CmdKind::USER_DEFINED: {
-        callUserDefinedCommand(state, cmd.udc, std::move(argvObj), std::move(redirConfig));
+    case CmdKind::USER_DEFINED:
+    case CmdKind::BUILTIN_S: {
+        bool setvar = cmd.kind == CmdKind::USER_DEFINED;
+        callUserDefinedCommand(state, cmd.udc, std::move(argvObj), std::move(redirConfig), setvar);
         return;
     }
     case CmdKind::BUILTIN: {
@@ -943,6 +986,102 @@ static void callCommand(DSState &state, DSValue &&argvObj, DSValue &&redirConfig
         return;
     }
     }
+}
+
+int invalidOptionError(const Array_Object &obj, const GetOptState &s);
+
+static void callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir) {
+    auto &arrayObj = *typeAs<Array_Object>(argvObj);
+
+    bool useDefaultPath = false;
+
+    /**
+     * if 0, ignore
+     * if 1, show description
+     * if 2, show detailed description
+     */
+    unsigned char showDesc = 0;
+
+    GetOptState optState;
+    for(int opt; (opt = optState(arrayObj, "pvV")) != -1;) {
+        switch(opt) {
+        case 'p':
+            useDefaultPath = true;
+            break;
+        case 'v':
+            showDesc = 1;
+            break;
+        case 'V':
+            showDesc = 2;
+            break;
+        default:
+            int s = invalidOptionError(arrayObj, optState);
+            pushExitStatus(state, s);
+            return;
+        }
+    }
+
+    unsigned int index = optState.index;
+    const unsigned int argc = arrayObj.getValues().size();
+    if(index < argc) {
+        if(showDesc == 0) { // execute command
+            const char *cmdName = str(arrayObj.getValues()[index]);
+            auto &values = arrayObj.refValues();
+            values.erase(values.begin(), values.begin() + index);
+
+            auto resolve = CmdResolver(CmdResolver::MASK_UDC, useDefaultPath ? FilePathCache::USE_DEFAULT_PATH : 0);
+            callCommand(state, resolve(state, cmdName), std::move(argvObj), std::move(redir), true);
+            return;
+        } else {    // show command description
+            unsigned int successCount = 0;
+            for(; index < argc; index++) {
+                const char *commandName = str(arrayObj.getValues()[index]);
+                auto cmd = CmdResolver(0, FilePathCache::DIRECT_SEARCH)(state, commandName);
+                switch(cmd.kind) {
+                case CmdKind::USER_DEFINED: {
+                    successCount++;
+                    fputs(commandName, stdout);
+                    if(showDesc == 2) {
+                        fputs(" is an user-defined command", stdout);
+                    }
+                    fputc('\n', stdout);
+                    continue;
+                }
+                case CmdKind::BUILTIN_S:
+                case CmdKind::BUILTIN: {
+                    successCount++;
+                    fputs(commandName, stdout);
+                    if(showDesc == 2) {
+                        fputs(" is a shell builtin command", stdout);
+                    }
+                    fputc('\n', stdout);
+                    continue;
+                }
+                case CmdKind::EXTERNAL: {
+                    const char *path = cmd.filePath;
+                    if(path != nullptr) {
+                        if(showDesc == 1) {
+                            printf("%s\n", path);
+                        } else if(getPathCache(state).isCached(commandName)) {
+                            printf("%s is hashed (%s)\n", commandName, path);
+                        } else {
+                            printf("%s is %s\n", commandName, path);
+                        }
+                        continue;
+                    }
+                    break;
+                }
+                }
+
+                if(showDesc == 2) {
+                    PERROR(arrayObj, "%s", commandName);
+                }
+            }
+            pushExitStatus(state, successCount > 0 ? 0 : 1);
+            return;
+        }
+    }
+    pushExitStatus(state, 0);
 }
 
 struct Process {
@@ -1049,28 +1188,6 @@ static void addCmdArg(DSState &state, bool skipEmptyStr) {
         }
         argv->append(element);
     }
-}
-
-/**
- * write status to status (same of wait's status).
- */
-int forkAndExec(DSState &ctx, const Array_Object &argvObj, bool useDefaultPath) {
-    auto &values = argvObj.getValues();
-    char *argv[values.size() + 1];
-    {
-        unsigned int size = values.size();
-        for(unsigned int i = 0; i < size; i++) {
-            argv[i] = const_cast<char *>(typeAs<String_Object>(values[i])->getValue());
-        }
-        argv[size] = nullptr;
-    }
-    const char *filePath = getPathCache(ctx).searchPath(
-            argv[0], useDefaultPath ? FilePathCache::USE_DEFAULT_PATH : 0);
-
-    Command cmd;
-    cmd.filePath = filePath;
-    cmd.kind = CmdKind::EXTERNAL;
-    return forkAndExec(ctx, argv[0], cmd, argv);
 }
 
 // prototype of DBus related api
@@ -1560,7 +1677,29 @@ static bool mainLoop(DSState &state) {
 
             auto redir = state.pop();
             auto argv = state.pop();
-            callCommand(state, std::move(argv), std::move(redir), needFork, 0);
+
+            const char *cmdName = str(typeAs<Array_Object>(argv)->getValues()[0]);
+            callCommand(state, CmdResolver()(state, cmdName), std::move(argv), std::move(redir), needFork);
+            break;
+        }
+        vmcase(BUILTIN_CMD) {
+            auto redir = std::move(state.getLocal(0));
+            auto argv = std::move(state.getLocal(1));
+            callBuiltinCommand(state, std::move(argv), std::move(redir));
+            break;
+        }
+        vmcase(BUILTIN_EVAL) {
+            auto redir = std::move(state.getLocal(0));
+            auto argv = std::move(state.getLocal(1));
+
+            eraseFirst(*typeAs<Array_Object>(argv));
+            auto *array = typeAs<Array_Object>(argv);
+            if(array->getValues().size()) {
+                const char *cmdName = str(typeAs<Array_Object>(argv)->getValues()[0]);
+                callCommand(state, CmdResolver()(state, cmdName), std::move(argv), std::move(redir), true);
+            } else {
+                pushExitStatus(state, 0);
+            }
             break;
         }
         vmcase(NEW_REDIR) {
@@ -1786,23 +1925,27 @@ bool vmEval(DSState &state, CompiledCode &code) {
 }
 
 int execBuiltinCommand(DSState &st, char *const argv[]) {
-    builtin_command_t cmd = lookupBuiltinCommand(argv[0]);
-    if(cmd == nullptr) {
+    auto cmd = CmdResolver(CmdResolver::MASK_EXTERNAL | CmdResolver::MASK_UDC, 0)(st, argv[0]);
+    if(cmd.builtinCmd == nullptr) {
         fprintf(stderr, "ydsh: %s: not builtin command\n", argv[0]);
         st.updateExitStatus(1);
         return 1;
     }
 
+    // init parameter
     std::vector<DSValue> values;
     for(; *argv != nullptr; argv++) {
         values.push_back(DSValue::create<String_Object>(st.pool.getStringType(), std::string(*argv)));
     }
-
     auto obj = DSValue::create<Array_Object>(st.pool.getStringArrayType(), std::move(values));
-    int s = cmd(st, *typeAs<Array_Object>(obj));
-    st.updateExitStatus(s);
-    flushStdFD();
-    return s;
+
+    st.resetState();
+    callCommand(st, cmd, std::move(obj), DSValue(), false);
+    if(st.codeStack.size()) {
+        mainLoop(st);
+    }
+    st.pop();
+    return st.getExitStatus();
 }
 
 DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, std::vector<DSValue> &&args) {
