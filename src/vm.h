@@ -334,6 +334,10 @@ struct DSState {
         unsigned int index = toIndex(BuiltinVarOffset::EXIT_STATUS);
         this->setGlobal(index, DSValue::create<Int_Object>(this->pool.getInt32Type(), status));
     }
+
+    bool isInteractive() const {
+        return hasFlag(this->option, DS_OPTION_INTERACTIVE);
+    }
 };
 
 /**

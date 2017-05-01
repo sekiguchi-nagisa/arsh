@@ -438,7 +438,7 @@ static void forkAndCapture(bool isStr, DSState &state) {
         exit(1);    //FIXME: throw exception
     }
 
-    pid_t pid = xfork(state);
+    pid_t pid = xfork(state, getpgid(0), false);
     if(pid > 0) {   // parent process
         close(pipefds[WRITE_PIPE]);
 
@@ -897,7 +897,8 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
         exit(1);
     }
 
-    pid_t pid = xfork(state);
+    bool rootShell = isRootShell(state);
+    pid_t pid = xfork(state, rootShell ? 0 : getpgid(0), rootShell);
     if(pid == -1) {
         perror("child process error");
         exit(1);
@@ -923,6 +924,9 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
 
         int status;
         xwaitpid(state, pid, status, 0);
+        if(state.isInteractive() && rootShell) {
+            tcsetpgrp(STDIN_FILENO, getpgid(0));
+        }
         if(errnum != 0) {
             state.updateExitStatus(1);
             throwCmdError(state, cmdName, errnum);
@@ -1104,10 +1108,15 @@ static void callPipeline(DSState &state) {
 
     // fork
     Process procs[size];
+    const bool rootShell = isRootShell(state);
+    pid_t pgid = rootShell ? 0 : getpgid(0);
     pid_t pid;
     unsigned int procIndex;
-    for(procIndex = 0; procIndex < size && (pid = xfork(state)) > 0; procIndex++) {
+    for(procIndex = 0; procIndex < size && (pid = xfork(state, pgid, rootShell)) > 0; procIndex++) {
         procs[procIndex].pid = pid;
+        if(!pgid) {
+            pgid = pid;
+        }
     }
 
     if(procIndex == size) { // parent
@@ -1126,6 +1135,9 @@ static void callPipeline(DSState &state) {
                 procs[i].kind = Process::SIGNAL;
                 procs[i].status = WTERMSIG(status);
             }
+        }
+        if(state.isInteractive() && rootShell) {
+            tcsetpgrp(STDIN_FILENO, getpgid(0));
         }
         pushExitStatus(state, procs[size - 1].status);
 

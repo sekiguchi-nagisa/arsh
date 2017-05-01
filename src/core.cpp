@@ -372,24 +372,46 @@ void exitShell(DSState &st, unsigned int status) {
     exit(status);
 }
 
-pid_t xfork(DSState &st) {
+bool isRootShell(const DSState &st) {
+    int shellpid = typeAs<Int_Object>(st.getGlobal(toIndex(BuiltinVarOffset::SHELL_PID)))->getValue();
+    return shellpid == getpid();
+}
+
+pid_t xfork(DSState &st, pid_t pgid, bool foreground) {
     pid_t pid = fork();
     if(pid == 0) {  // child process
-        struct sigaction act;
-        act.sa_handler = SIG_DFL;
-        act.sa_flags = 0;
-        sigemptyset(&act.sa_mask);
+        if(st.isInteractive()) {
+            setpgid(0, pgid);
+            if(foreground) {
+                tcsetpgrp(STDIN_FILENO, getpgid(0));
+            }
 
-        /**
-         * reset signal behavior
-         */
-        sigaction(SIGINT, &act, NULL);
-        sigaction(SIGQUIT, &act, NULL);
-        sigaction(SIGTSTP, &act, NULL);
+            struct sigaction act;
+            act.sa_handler = SIG_DFL;
+            act.sa_flags = 0;
+            sigemptyset(&act.sa_mask);
+
+            /**
+             * reset signal behavior
+             */
+            sigaction(SIGINT, &act, NULL);
+            sigaction(SIGQUIT, &act, NULL);
+            sigaction(SIGTSTP, &act, NULL);
+            sigaction(SIGTTIN, &act, NULL);
+            sigaction(SIGTTOU, &act, NULL);
+            sigaction(SIGCHLD, &act, NULL);
+        }
 
         // update PID, PPID
         st.setGlobal(toIndex(BuiltinVarOffset::PID), DSValue::create<Int_Object>(st.pool.getUint32Type(), getpid()));
         st.setGlobal(toIndex(BuiltinVarOffset::PPID), DSValue::create<Int_Object>(st.pool.getUint32Type(), getppid()));
+    } else if(pid > 0) {
+        if(st.isInteractive()) {
+            setpgid(pid, pgid);
+            if(foreground) {
+                tcsetpgrp(STDIN_FILENO, getpgid(pid));
+            }
+        }
     }
     return pid;
 }
@@ -400,7 +422,7 @@ pid_t xfork(DSState &st) {
 pid_t xwaitpid(DSState &, pid_t pid, int &status, int options) {
     pid_t ret = waitpid(pid, &status, options);
     if(WIFSIGNALED(status)) {
-        fputc('\n', stdout);
+//        fputc('\n', stdout);
     }
     return ret;
 }

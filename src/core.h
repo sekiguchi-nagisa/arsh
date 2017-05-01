@@ -205,10 +205,12 @@ bool changeWorkingDir(DSState &st, const char *dest, const bool useLogical);
 [[noreturn]]
 void exitShell(DSState &st, unsigned int status);
 
+bool isRootShell(const DSState &st);
+
 /**
  * after fork, reset signal setting in child process.
  */
-pid_t xfork(DSState &st);
+pid_t xfork(DSState &st, pid_t pgid, bool foreground);
 
 /**
  * waitpid wrapper.

@@ -116,6 +116,9 @@ static void ignoreSignal() {
     sigaction(SIGINT, &ignore_act, NULL);
     sigaction(SIGQUIT, &ignore_act, NULL);
     sigaction(SIGTSTP, &ignore_act, NULL);  //FIXME: job control
+    sigaction(SIGTTIN, &ignore_act, NULL);
+    sigaction(SIGTTOU, &ignore_act, NULL);
+    sigaction(SIGCHLD, &ignore_act, NULL);
 }
 
 
@@ -284,6 +287,7 @@ int exec_interactive(DSState *dsState) {
 
     DSState_setOption(dsState, DS_OPTION_TOPLEVEL);
     DSState_setOption(dsState, DS_OPTION_HISTORY);
+    DSState_setOption(dsState, DS_OPTION_INTERACTIVE);
     DSState_syncHistorySize(dsState);
     DSState_loadHistory(dsState, nullptr);
     state = dsState;

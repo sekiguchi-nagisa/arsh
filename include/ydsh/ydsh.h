@@ -87,6 +87,7 @@ int DSState_setScriptDir(DSState *st, const char *scriptPath);
 #define DS_OPTION_TRACE_EXIT   ((unsigned int) (1 << 6))
 #define DS_OPTION_HISTORY      ((unsigned int) (1 << 7))
 #define DS_OPTION_COMPILE_ONLY ((unsigned int) (1 << 8))
+#define DS_OPTION_INTERACTIVE  ((unsigned int) (1 << 9))
 
 unsigned int DSState_option(const DSState *st);
 void DSState_setOption(DSState *st, unsigned int optionSet);
