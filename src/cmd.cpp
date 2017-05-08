@@ -391,7 +391,7 @@ static int builtin_check_env(DSState &, Array_Object &argvObj) {
 static int builtin_exit(DSState &state, Array_Object &argvObj) {
     const unsigned int size = argvObj.getValues().size();
 
-    int ret = 0;
+    int ret = typeAs<Int_Object>(getGlobal(state, toIndex(BuiltinVarOffset::EXIT_STATUS)))->getValue();
     if(size > 1) {
         const char *num = str(argvObj.getValues()[1]);
         int status;

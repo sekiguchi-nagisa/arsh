@@ -754,6 +754,9 @@ static void flushStdFD() {
  *             |     offset    |
  */
 static void callUserDefinedCommand(DSState &st, const DSCode *code, DSValue &&argvObj, DSValue &&restoreFD, bool setvar = true) {
+    // reset exit status
+    st.updateExitStatus(0);
+
     // push parameter
     st.push(std::move(restoreFD));  // push %%redir
     st.push(std::move(argvObj));    // push argv (@)
@@ -941,9 +944,6 @@ static void pushExitStatus(DSState &state, int status) {
 }
 
 static void callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue &&redirConfig, bool needFork) {
-    // reset exit status
-    state.updateExitStatus(0);
-
     auto *array = typeAs<Array_Object>(argvObj);
     const unsigned int size = array->getValues().size();
     auto &first = array->getValues()[0];
