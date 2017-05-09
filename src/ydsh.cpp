@@ -309,9 +309,7 @@ static void initBuiltinVar(DSState *state) {
      */
     bindVariable(state, "REPLY", state->emptyStrObj);
 
-    std::vector<DSType *> types(2);
-    types[0] = &state->pool.getStringType();
-    types[1] = types[0];
+    std::vector<DSType *> types = {&state->pool.getStringType(), &state->pool.getStringType()};
 
     /**
      * holding read variable.

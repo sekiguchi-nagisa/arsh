@@ -551,13 +551,10 @@ TypePool::TypePool() :
     ErrorType::registerFuncInfo(info_ErrorType());
 
     // initialize type template
-    std::vector<DSType *> elements;
-    elements.push_back(&this->getAnyType());
+    std::vector<DSType *> elements = {&this->getAnyType()};
     this->arrayTemplate = this->initTypeTemplate("Array", std::move(elements), info_ArrayType());
 
-    elements = std::vector<DSType *>();
-    elements.push_back(&this->getValueType());
-    elements.push_back(&this->getAnyType());
+    elements = {&this->getValueType(), &this->getAnyType()};
     this->mapTemplate = this->initTypeTemplate("Map", std::move(elements), info_MapType());
 
     elements = std::vector<DSType *>();
@@ -567,8 +564,7 @@ TypePool::TypePool() :
     this->optionTemplate = this->initTypeTemplate("Option", std::move(elements), info_OptionType()); // pseudo template
 
     // init string array type(for command argument)
-    std::vector<DSType *> types(1);
-    types[0] = &this->getStringType();
+    std::vector<DSType *> types = {&this->getStringType()};
     this->setToTypeTable(StringArray, &this->createReifiedType(this->getArrayTemplate(), std::move(types)));
 
     // init some error type
