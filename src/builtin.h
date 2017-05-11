@@ -1220,6 +1220,10 @@ YDSH_METHOD string_realpath(RuntimeContext &ctx) {
     std::string str = obj->getValue();
     expandTilde(str);
     char *buf = realpath(str.c_str(), nullptr);
+    if(buf == nullptr) {
+        RET(extractLocal(ctx, 0));
+    }
+
     str = buf;
     free(buf);
     RET(DSValue::create<String_Object>(*obj->getType(), std::move(str)));
