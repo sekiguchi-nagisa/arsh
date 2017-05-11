@@ -594,7 +594,6 @@ TypePool::~TypePool() {
     for(auto &pair : this->templateMap) {
         delete pair.second;
     }
-    this->templateMap.clear();
 }
 
 DSType &TypePool::getTypeAndThrowIfUndefined(const std::string &typeName) const {
