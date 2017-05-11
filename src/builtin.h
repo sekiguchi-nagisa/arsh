@@ -1213,6 +1213,18 @@ YDSH_METHOD string_unmatch(RuntimeContext &ctx) {
     RET_BOOL(r);
 }
 
+//!bind: function realpath($this : String) : String
+YDSH_METHOD string_realpath(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_realpath);
+    auto *obj = typeAs<String_Object>(LOCAL(0));
+    std::string str = obj->getValue();
+    expandTilde(str);
+    char *buf = realpath(str.c_str(), nullptr);
+    str = buf;
+    free(buf);
+    RET(DSValue::create<String_Object>(*obj->getType(), std::move(str)));
+}
+
 
 // ########################
 // ##     StringIter     ##
