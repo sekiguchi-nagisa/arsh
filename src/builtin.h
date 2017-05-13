@@ -1213,7 +1213,7 @@ YDSH_METHOD string_unmatch(RuntimeContext &ctx) {
     RET_BOOL(r);
 }
 
-//!bind: function realpath($this : String) : String
+//!bind: function realpath($this : String) : Option<String>
 YDSH_METHOD string_realpath(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_realpath);
     auto *obj = typeAs<String_Object>(LOCAL(0));
@@ -1221,7 +1221,7 @@ YDSH_METHOD string_realpath(RuntimeContext &ctx) {
     expandTilde(str);
     char *buf = realpath(str.c_str(), nullptr);
     if(buf == nullptr) {
-        RET(extractLocal(ctx, 0));
+        RET(DSValue::createInvalid());
     }
 
     str = buf;

@@ -801,7 +801,7 @@ void DSState_clearHistory(DSState *st) {
     }
 }
 
-static const std::string histFile(const DSState *st) {
+static std::string histFile(const DSState *st) {
     unsigned int index = st->symbolTable.lookupHandle(VAR_HISTFILE)->getFieldIndex();
     std::string path = typeAs<String_Object>(st->getGlobal(index))->getValue();
     expandTilde(path);

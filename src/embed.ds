@@ -14,7 +14,7 @@ type-alias Uint Uint32
 
 var PS1 = '\s-\v\$ '
 var PS2 = '> '
-var HISTFILE = '~/.ydsh_history'.realpath()
+var HISTFILE = '~/.ydsh_history'
 var HISTSIZE = 0u
 var HISTFILESIZE = 1000u
 

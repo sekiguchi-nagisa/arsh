@@ -173,8 +173,8 @@ assert("-3.14e+3".toFloat()! == -3.14E+3)
 assert("Nan".toFloat()!.isNan())
 assert("INF".toFloat()!.isInf())
 
-assert "~".realpath() == "$(echo ~)"
-assert "fhafjeoirwae54".realpath() == "fhafjeoirwae54"
+assert "~".realpath()! == "$(echo ~)"
+assert not "fhafjeoirwae54".realpath()
 
 # string compare
 var b = "aaa"
