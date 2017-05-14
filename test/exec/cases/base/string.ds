@@ -208,7 +208,3 @@ assert("this is false" == "this is ${false}")
 assert(("fre" + 3.14) is String)
 assert("hey" + $true == 'heytrue')
 assert("" + $False == "false")
-
-# string iterator
-try { for(var i = "hello".__ITERATOR__(); $true; $i.__NEXT__()) {} }
-catch($e) { assert($e is OutOfRangeError) }

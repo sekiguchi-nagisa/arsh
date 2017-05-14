@@ -34,4 +34,4 @@ assert((12 as Any, $true) is Tuple<Any, Boolean>)
 assert(not ((12 as Any, $true) is Variant))
 
 # super method
-assert("(1, 2)" == (1, 2).__STR__())
+assert("(1, 2)" == (1, 2) as String)

@@ -47,47 +47,47 @@ constexpr const char *VAR_SCRIPT_DIR = "SCRIPT_DIR";
 // =====  magic method  =====
 
 // unary op definition
-constexpr const char *OP_PLUS = "__PLUS__";     // +
-constexpr const char *OP_MINUS = "__MINUS__";    // -
-constexpr const char *OP_NOT = "__NOT__";      // not
+constexpr const char *OP_PLUS = "%plus";     // +
+constexpr const char *OP_MINUS = "%minus";    // -
+constexpr const char *OP_NOT = "%not";      // not
 
 // binary op definition
-constexpr const char *OP_ADD = "__ADD__";      // +
-constexpr const char *OP_SUB = "__SUB__";      // -
-constexpr const char *OP_MUL = "__MUL__";      // *
-constexpr const char *OP_DIV = "__DIV__";      // /
-constexpr const char *OP_MOD = "__MOD__";      // %
+constexpr const char *OP_ADD = "%add";      // +
+constexpr const char *OP_SUB = "%sub";      // -
+constexpr const char *OP_MUL = "%mul";      // *
+constexpr const char *OP_DIV = "%div";      // /
+constexpr const char *OP_MOD = "%mod";      // %
 
-constexpr const char *OP_EQ = "__EQ__";       // ==
-constexpr const char *OP_NE = "__NE__";       // !=
+constexpr const char *OP_EQ = "%eq";       // ==
+constexpr const char *OP_NE = "%ne";       // !=
 
-constexpr const char *OP_LT = "__LT__";       // <
-constexpr const char *OP_GT = "__GT__";       // >
-constexpr const char *OP_LE = "__LE__";       // <=
-constexpr const char *OP_GE = "__GE__";       // >=
+constexpr const char *OP_LT = "%lt";       // <
+constexpr const char *OP_GT = "%gt";       // >
+constexpr const char *OP_LE = "%le";       // <=
+constexpr const char *OP_GE = "%ge";       // >=
 
-constexpr const char *OP_AND = "__AND__";      // &
-constexpr const char *OP_OR = "__OR__";       // |
-constexpr const char *OP_XOR = "__XOR__";      // ^
+constexpr const char *OP_AND = "%and";      // &
+constexpr const char *OP_OR = "%or";       // |
+constexpr const char *OP_XOR = "%xor";      // ^
 
-constexpr const char *OP_MATCH   = "__MATCH__";    // =~
-constexpr const char *OP_UNMATCH = "__UNMATCH__";    // !~
+constexpr const char *OP_MATCH   = "%match";    // =~
+constexpr const char *OP_UNMATCH = "%unmatch";    // !~
 
 // indexer op
-constexpr const char *OP_GET = "__GET__";      // []
-constexpr const char *OP_SET = "__SET__";      // [] =
+constexpr const char *OP_GET = "%get";      // []
+constexpr const char *OP_SET = "%set";      // [] =
 
 // iterator (for-in)
-constexpr const char *OP_ITER = "__ITERATOR__";
-constexpr const char *OP_NEXT = "__NEXT__";
-constexpr const char *OP_HAS_NEXT = "__HAS_NEXT__";
+constexpr const char *OP_ITER = "%iter";
+constexpr const char *OP_NEXT = "%next";
+constexpr const char *OP_HAS_NEXT = "%has_nex";
 
 // to string
-constexpr const char *OP_STR = "__STR__";    // for string cast or command argument
-constexpr const char *OP_INTERP = "__INTERP__";    // for interpolation
+constexpr const char *OP_STR = "%str";    // for string cast or command argument
+constexpr const char *OP_INTERP = "%interp";    // for interpolation
 
 // to command argument
-constexpr const char *OP_CMD_ARG = "__CMD_ARG__";  // for command argument
+constexpr const char *OP_CMD_ARG = "%cmd_arg";  // for command argument
 
 // =====  environmental variable  =====
 
