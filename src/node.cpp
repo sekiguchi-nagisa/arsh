@@ -314,11 +314,12 @@ void VarNode::dump(NodeDumper &dumper) const {
 
 AccessNode::~AccessNode() {
     delete this->recvNode;
+    delete this->nameNode;
 }
 
 void AccessNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(recvNode);
-    DUMP(fieldName);
+    DUMP_PTR(nameNode);
     AssignableNode::dump(dumper);
 
 #define EACH_ENUM(OP) \

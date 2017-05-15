@@ -652,13 +652,13 @@ public:
 
 private:
     Node *recvNode;
-    std::string fieldName;
+    VarNode *nameNode;
     AdditionalOp additionalOp;
 
 public:
-    AccessNode(Node *recvNode, std::string &&fieldName) :
+    AccessNode(Node *recvNode, VarNode *nameNode) :
             AssignableNode(NodeKind::Access, recvNode->getToken()),
-            recvNode(recvNode), fieldName(std::move(fieldName)), additionalOp(NOP) { }
+            recvNode(recvNode), nameNode(nameNode), additionalOp(NOP) { }
 
     ~AccessNode();
 
@@ -666,12 +666,12 @@ public:
         return this->recvNode;
     }
 
-    void setFieldName(const std::string &fieldName) {
-        this->fieldName = fieldName;
+    const std::string &getFieldName() const {
+        return this->nameNode->getVarName();
     }
 
-    const std::string &getFieldName() const {
-        return this->fieldName;
+    VarNode *getNameNode() const {
+        return this->nameNode;
     }
 
     void setAdditionalOp(AdditionalOp op) {

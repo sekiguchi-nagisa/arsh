@@ -557,7 +557,7 @@ void TypeChecker::visitAccessNode(AccessNode &node) {
     auto &recvType = this->checkType(node.getRecvNode());
     FieldHandle *handle = recvType.lookupFieldHandle(this->typePool, node.getFieldName());
     if(handle == nullptr) {
-        RAISE_TC_ERROR(UndefinedField, node, node.getFieldName().c_str());
+        RAISE_TC_ERROR(UndefinedField, *node.getNameNode(), node.getFieldName().c_str());
     }
 
     node.setAttribute(handle);

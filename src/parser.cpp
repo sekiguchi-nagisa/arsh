@@ -1008,7 +1008,7 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
                                                 ArgsWrapper::extract(std::move(args)));
                 node->updateToken(args.getToken());
             } else {    // treat as field access
-                node = uniquify<AccessNode>(node.release(), std::move(name));
+                node = uniquify<AccessNode>(node.release(), new VarNode(token, std::move(name)));
                 node->updateToken(token);
             }
             break;
