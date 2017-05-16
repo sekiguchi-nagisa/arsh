@@ -573,8 +573,7 @@ static int builtin_ps_intrp(DSState &state, Array_Object &argvObj) {
         showUsage(argvObj);
         return 1;
     }
-    std::string v;
-    interpretPromptString(state, str(argvObj.getValues()[1]), v);
+    std::string v = interpretPromptString(state, str(argvObj.getValues()[1]));
     fputs(v.c_str(), stdout);
     fputc('\n', stdout);
     return 0;

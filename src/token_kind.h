@@ -17,8 +17,6 @@
 #ifndef YDSH_TOKEN_KIND_H
 #define YDSH_TOKEN_KIND_H
 
-#include <ostream>
-
 #define EACH_TOKEN(TOKEN) \
     TOKEN(INVALID                            , "<Invalid>") \
     TOKEN(EOS                                , "<EOS>") \

@@ -432,8 +432,8 @@ static const char *safeBasename(const char *str) {
     return ptr == nullptr ? str : ptr + 1;
 }
 
-void interpretPromptString(const DSState &st, const char *ps, std::string &output) {
-    output.clear();
+std::string interpretPromptString(const DSState &st, const char *ps) {
+    std::string output;
 
     struct tm *local = getLocalTime();
 
@@ -601,6 +601,7 @@ void interpretPromptString(const DSState &st, const char *ps, std::string &outpu
         }
         output += ch;
     }
+    return output;
 }
 
 /**

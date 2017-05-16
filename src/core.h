@@ -221,7 +221,7 @@ pid_t xwaitpid(DSState &st, pid_t pid, int &status, int options);
 /**
  * n is 1 or 2
  */
-void interpretPromptString(const DSState &st, const char *ps, std::string &output);
+std::string interpretPromptString(const DSState &st, const char *ps);
 
 std::string expandDots(const char *basePath, const char *path);
 
