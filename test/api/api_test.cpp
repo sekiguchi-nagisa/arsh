@@ -198,7 +198,6 @@ TEST(PID, case1) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, s));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind));
 
-    DSError_release(&e);
     DSState_delete(&state);
 }
 

@@ -121,17 +121,8 @@ typedef struct {
      * if DS_ERROR_KIND_RUNTIME_ERROR, raised type name.
      * otherwise, null
      */
-    char *name;
+    const char *name;
 } DSError;
-
-/**
- * release buffer of DSError.
- * if e is null, do nothing.
- * after release, assign 0 and null to members.
- * @param e
- * may be null.
- */
-void DSError_release(DSError *e);
 
 /**
  * evaluate string. if e is not null, set error info.

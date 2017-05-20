@@ -69,7 +69,7 @@ static void setErrorInfo(DSError *error, unsigned int type, unsigned int lineNum
     if(error != nullptr) {
         error->kind = type;
         error->lineNum = lineNum;
-        error->name = errorName != nullptr ? strdup(errorName) : nullptr;
+        error->name = errorName;
     }
 }
 
@@ -565,15 +565,6 @@ void DSState_setOption(DSState *st, unsigned int optionSet) {
 
 void DSState_unsetOption(DSState *st, unsigned int optionSet) {
     unsetFlag(st->option, optionSet);
-}
-
-void DSError_release(DSError *e) {
-    if(e != nullptr) {
-        e->kind = 0;
-        e->lineNum = 0;
-        free(e->name);
-        e->name = nullptr;
-    }
 }
 
 int DSState_eval(DSState *st, const char *sourceName, const char *source, DSError *e) {

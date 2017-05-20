@@ -69,7 +69,6 @@ public:
             DSError e;
             DSState_eval(this->state, "(builtin)", func, &e);
             ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
-            DSError_release(&e);
         }
         std::string c(code);
         c += "\n";
