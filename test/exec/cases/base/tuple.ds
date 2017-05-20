@@ -13,7 +13,7 @@ assert(not ($false,
 		)
 
 
-var b = new Tuple<String>("hello")
+var b = ("hello",)
 assert($b._0 == "hello")
 
 

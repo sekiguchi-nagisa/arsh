@@ -1629,15 +1629,6 @@ YDSH_METHOD map_hasNext(RuntimeContext &ctx) {
 // ##     Tuple     ##
 // ###################
 
-//!bind: constructor ($this : Tuple<T0>, $arg : T0)
-YDSH_METHOD tuple_init(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(tuple_init);
-    DSType *type = LOCAL(0)->getType();
-    setLocal(ctx, 0, DSValue::create<Tuple_Object>(*type));
-    typeAs<Tuple_Object>(LOCAL(0))->set(0, LOCAL(1));
-    RET_VOID;
-}
-
 //!bind: function $OP_CMD_ARG($this : Tuple<>) : Array<String>
 YDSH_METHOD tuple_cmdArg(RuntimeContext &ctx) {
     SUPPRESS_WARNING(tuple_cmdArg);

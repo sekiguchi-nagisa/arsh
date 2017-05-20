@@ -1,5 +1,5 @@
 
-var a = new Tuple<Any>(0)
+var a = (0 as Any, )
 var b = new Map<Int, Any>()
 var c = new Array<Any>()
 

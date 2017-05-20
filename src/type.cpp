@@ -252,15 +252,6 @@ TupleType::~TupleType() {
     }
 }
 
-MethodHandle *TupleType::getConstructorHandle(TypePool &typePool) {
-    if(this->elementTypes.size() == 1 && this->constructorHandle == nullptr) {
-        this->constructorHandle = new MethodHandle(0);
-        this->initMethodHandle(this->constructorHandle, typePool, this->info.getInitInfo());
-        this->constructor = getCode(this->info);
-    }
-    return this->constructorHandle;
-}
-
 unsigned int TupleType::getFieldSize() {
     return this->elementTypes.size();
 }

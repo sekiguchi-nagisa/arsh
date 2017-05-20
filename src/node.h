@@ -578,10 +578,9 @@ private:
     std::vector<Node *> nodes;
 
 public:
-    TupleNode(unsigned int startPos, Node *leftNode, Node *rightNode) :
+    TupleNode(unsigned int startPos, Node *node) :
             Node(NodeKind::Tuple, {startPos, 0}), nodes() {
-        this->addNode(leftNode);
-        this->addNode(rightNode);
+        this->addNode(node);
     }
 
     ~TupleNode();

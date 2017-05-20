@@ -61,4 +61,4 @@ try { "${(2, $false, new Error!())}" }  catch $e { assert $e is UnwrappingError 
 
 assert "$(echo ${[$false as Boolean!]})" == 'false'
 try { echo ${['s' : new Float!()]}; }  catch $e { assert $e is UnwrappingError }
-try { echo ${new (Byte!)(new Byte!())}; } catch $e { assert $e is UnwrappingError }
+try { echo ${(new Byte!(),)}; } catch $e { assert $e is UnwrappingError }

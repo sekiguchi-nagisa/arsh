@@ -329,8 +329,6 @@ public:
     TupleType(native_type_info_t info, DSType *superType, std::vector<DSType *> &&types);
     ~TupleType();
 
-    MethodHandle *getConstructorHandle(TypePool &typePool) override;
-
     /**
      * return types.size()
      */

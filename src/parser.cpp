@@ -1143,18 +1143,21 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         auto node(this->parse_expression());
         if(CUR_KIND() == COMMA) {   // tuple
             this->expect(COMMA);
-            auto rightNode(this->parse_expression());
-            auto tuple = uniquify<TupleNode>(token.pos, node.release(), rightNode.release());
-            for(bool next = true; next;) {
-                if(CUR_KIND() == COMMA) {
-                    this->expect(COMMA);
-                    tuple->addNode(this->parse_expression().release());
-                } else if(CUR_KIND() == RP) {
-                    next = false;
-                } else {
-                    E_ALTER(COMMA, RP);
+            auto tuple = uniquify<TupleNode>(token.pos, node.release());
+            if(CUR_KIND() != RP) {
+                tuple->addNode(this->parse_expression().release());
+                while(true) {
+                    if(CUR_KIND() == COMMA) {
+                        this->expect(COMMA);
+                        tuple->addNode(this->parse_expression().release());
+                    } else if(CUR_KIND() == RP) {
+                        break;
+                    } else {
+                        E_ALTER(COMMA, RP);
+                    }
                 }
             }
+
             node.reset(tuple.release());
         } else {
             node->setPos(token.pos);
