@@ -574,7 +574,7 @@ void TypeChecker::visitTypeOpNode(TypeOpNode &node) {
     } else {
         if(targetType.isSameOrBaseTypeOf(exprType)) {
             node.setOpKind(TypeOpNode::ALWAYS_TRUE);
-        } else if(exprType.isSameOrBaseTypeOf(targetType)) {
+        } else if(!exprType.isOptionType() && exprType.isSameOrBaseTypeOf(targetType)) {
             node.setOpKind(TypeOpNode::INSTANCEOF);
         } else {
             node.setOpKind(TypeOpNode::ALWAYS_FALSE);
