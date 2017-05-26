@@ -248,6 +248,7 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
     node->updateToken(this->curToken);
     this->expect(RP);
 
+    std::unique_ptr<TypeNode> retTypeNode;
     if(CUR_KIND() == COLON) {
         this->expect(COLON, false);
         auto type = uniquify<ReturnTypeNode>(this->parse_typeName().release());
@@ -255,8 +256,12 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
             this->expect(COMMA, false);
             type->addTypeNode(this->parse_typeName().release());
         }
-        node->setReturnTypeToken(type.release());
+        retTypeNode = std::move(type);
     }
+    if(!retTypeNode) {
+        retTypeNode.reset(newVoidTypeNode());
+    }
+    node->setReturnTypeToken(retTypeNode.release());
 
     return node;
 }

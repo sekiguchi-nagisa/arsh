@@ -1014,13 +1014,6 @@ void FunctionNode::addParamNode(VarNode *node, TypeNode *paramType) {
     this->paramTypeNodes.push_back(paramType);
 }
 
-TypeNode *FunctionNode::getReturnTypeToken() {
-    if(this->returnTypeNode == nullptr) {
-        this->returnTypeNode = newVoidTypeNode();
-    }
-    return this->returnTypeNode;
-}
-
 void FunctionNode::dump(NodeDumper &dumper) const {
     DUMP(name);
     DUMP(paramNodes);

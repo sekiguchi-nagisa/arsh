@@ -1803,7 +1803,9 @@ public:
         this->updateToken(typeToken->getToken());
     }
 
-    TypeNode *getReturnTypeToken();
+    TypeNode *getReturnTypeToken() {
+        return this->returnTypeNode;
+    }
 
     void setBlockNode(BlockNode *blockNode) {
         this->blockNode = blockNode;
