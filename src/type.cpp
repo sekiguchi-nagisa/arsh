@@ -704,7 +704,7 @@ DSType &TypePool::getDBusInterfaceType(const std::string &typeName) {
         }
 
         auto *ifaceNode = static_cast<InterfaceNode *>(front);
-        return TypeChecker::resolveInterface(*this, ifaceNode);
+        return TypeGenerator(*this).resolveInterface(ifaceNode);
     }
     return *type;
 }

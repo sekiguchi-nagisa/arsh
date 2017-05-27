@@ -26,95 +26,90 @@ namespace ydsh {
 // ##     TypeGenerator     ##
 // ###########################
 
-DSType &TypeChecker::TypeGenerator::generateTypeAndThrow(TypeNode *typeNode) throw(TypeCheckError) {
-    try {
-        return this->generateType(typeNode);
-    } catch(TypeLookupError &e) {
-        throw TypeCheckError(typeNode->getToken(), e);
+DSType& TypeGenerator::toTypeImpl(TypeNode &node) {
+    switch(node.typeKind) {
+    case TypeNode::Base: {
+        auto &type = pool.getTypeAndThrowIfUndefined(static_cast<BaseTypeNode&>(node).getTokenText());
+        node.setType(type);
+        return type;
     }
-}
-
-void TypeChecker::TypeGenerator::visitDefault(Node &) {
-    fatal("unsupported\n");
-}
-
-void TypeChecker::TypeGenerator::visitBaseTypeNode(BaseTypeNode &typeNode) {
-    DSType &type = this->pool.getTypeAndThrowIfUndefined(typeNode.getTokenText());
-    typeNode.setType(type);
-}
-
-void TypeChecker::TypeGenerator::visitReifiedTypeNode(ReifiedTypeNode &typeNode) {
-    unsigned int size = typeNode.getElementTypeNodes().size();
-    auto &typeTemplate = this->pool.getTypeTemplate(typeNode.getTemplate()->getTokenText());
-    std::vector<DSType *> elementTypes(size);
-    for(unsigned int i = 0; i < size; i++) {
-        elementTypes[i] = &this->generateType(typeNode.getElementTypeNodes()[i]);
-    }
-    DSType &type = this->pool.createReifiedType(typeTemplate, std::move(elementTypes));
-    typeNode.setType(type);
-}
-
-void TypeChecker::TypeGenerator::visitFuncTypeNode(FuncTypeNode &typeNode) {
-    auto &returnType = this->generateType(typeNode.getReturnTypeNode());
-    unsigned int size = typeNode.getParamTypeNodes().size();
-    std::vector<DSType *> paramTypes(size);
-    for(unsigned int i = 0; i < size; i++) {
-        paramTypes[i] = &this->generateType(typeNode.getParamTypeNodes()[i]);
-    }
-    DSType &type = this->pool.createFuncType(&returnType, std::move(paramTypes));
-    typeNode.setType(type);
-}
-
-void TypeChecker::TypeGenerator::visitDBusIfaceTypeNode(DBusIfaceTypeNode &typeNode) {
-    DSType &type = this->pool.getDBusInterfaceType(typeNode.getTokenText());
-    typeNode.setType(type);
-}
-
-void TypeChecker::TypeGenerator::visitReturnTypeNode(ReturnTypeNode &typeNode) {
-    unsigned int size = typeNode.getTypeNodes().size();
-    if(size == 1) {
-        DSType &type = this->generateType(typeNode.getTypeNodes()[0]);
+    case TypeNode::Reified: {
+        auto &typeNode = static_cast<ReifiedTypeNode&>(node);
+        unsigned int size = typeNode.getElementTypeNodes().size();
+        auto &typeTemplate = pool.getTypeTemplate(typeNode.getTemplate()->getTokenText());
+        std::vector<DSType *> elementTypes(size);
+        for(unsigned int i = 0; i < size; i++) {
+            elementTypes[i] = &this->toType(*typeNode.getElementTypeNodes()[i]);
+        }
+        DSType &type = pool.createReifiedType(typeTemplate, std::move(elementTypes));
         typeNode.setType(type);
-        return;
+        return type;
     }
+    case TypeNode::Func: {
+        auto &typeNode = static_cast<FuncTypeNode&>(node);
+        auto &returnType = this->toType(*typeNode.getReturnTypeNode());
+        unsigned int size = typeNode.getParamTypeNodes().size();
+        std::vector<DSType *> paramTypes(size);
+        for(unsigned int i = 0; i < size; i++) {
+            paramTypes[i] = &this->toType(*typeNode.getParamTypeNodes()[i]);
+        }
+        DSType &type = pool.createFuncType(&returnType, std::move(paramTypes));
+        typeNode.setType(type);
+        return type;
+    }
+    case TypeNode::DBusIface: {
+        DSType &type = pool.getDBusInterfaceType(static_cast<DBusIfaceTypeNode&>(node).getTokenText());
+        node.setType(type);
+        return type;
+    }
+    case TypeNode::Return: {
+        auto &typeNode = static_cast<ReturnTypeNode&>(node);
+        unsigned int size = typeNode.getTypeNodes().size();
+        if(size == 1) {
+            DSType &type = this->toType(*typeNode.getTypeNodes()[0]);
+            typeNode.setType(type);
+            return type;
+        }
 
-    std::vector<DSType *> types(size);
-    for(unsigned int i = 0; i < size; i++) {
-        types[i] = &this->generateType(typeNode.getTypeNodes()[i]);
+        std::vector<DSType *> types(size);
+        for(unsigned int i = 0; i < size; i++) {
+            types[i] = &this->toType(*typeNode.getTypeNodes()[i]);
+        }
+        DSType &type = pool.createTupleType(std::move(types));
+        typeNode.setType(type);
+        return type;
     }
-    DSType &type = this->pool.createTupleType(std::move(types));
-    typeNode.setType(type);
+    case TypeNode::TypeOf:
+        if(this->checker == nullptr) {
+            RAISE_TC_ERROR(DisallowTypeof, node);
+        } else {
+            auto &typeNode = static_cast<TypeOfNode&>(node);
+            DSType &type = this->checker->checkType(typeNode.getExprNode());
+            if(type.isBottomType()) {
+                RAISE_TC_ERROR(Unacceptable, *typeNode.getExprNode(), this->pool.getTypeName(type).c_str());
+            }
+            typeNode.setType(type);
+            return type;
+        }
+    }
 }
 
-void TypeChecker::TypeGenerator::visitTypeOfNode(TypeOfNode &typeNode) {
-    if(this->checker == nullptr) {  // not support typeof operator(in D-Bus interface loading)
-        RAISE_TC_ERROR(DisallowTypeof, *typeNode.getExprNode());
+DSType& TypeGenerator::toType(TypeNode &node) {
+    try {
+        return this->toTypeImpl(node);
+    } catch(TypeLookupError &e) {
+        throw TypeCheckError(node.getToken(), e);
     }
-    DSType &type = this->checker->checkType(typeNode.getExprNode());
-    if(type.isBottomType()) {
-        RAISE_TC_ERROR(Unacceptable, *typeNode.getExprNode(), this->checker->typePool.getTypeName(type).c_str());
-    }
-    typeNode.setType(type);
 }
 
-// #########################
-// ##     TypeChecker     ##
-// #########################
-
-DSType &TypeChecker::resolveInterface(TypePool &typePool, InterfaceNode *node) {
-    TypeGenerator typeGen(typePool);
-    return resolveInterface(typePool, typeGen, node);
-}
-
-DSType &TypeChecker::resolveInterface(TypePool &typePool,
-                                      TypeChecker::TypeGenerator &typeGen, InterfaceNode *node) {
-    auto &type = typePool.createInterfaceType(node->getInterfaceName());
+DSType& TypeGenerator::resolveInterface(InterfaceNode *node) {
+    auto &type = this->pool.createInterfaceType(node->getInterfaceName());
 
     // create field handle
     unsigned int fieldSize = node->getFieldDeclNodes().size();
     for(unsigned int i = 0; i < fieldSize; i++) {
         VarDeclNode *fieldDeclNode = node->getFieldDeclNodes()[i];
-        auto &fieldType = typeGen.generateTypeAndThrow(node->getFieldTypeNodes()[i]);
+        auto &fieldType = this->toType(*node->getFieldTypeNodes()[i]);
         FieldHandle *handle = type.newFieldHandle(
                 fieldDeclNode->getVarName(), fieldType, fieldDeclNode->isReadOnly());
         if(handle == nullptr) {
@@ -127,22 +122,26 @@ DSType &TypeChecker::resolveInterface(TypePool &typePool,
         MethodHandle *handle = type.newMethodHandle(funcNode->getName());
         handle->setRecvType(type);
         auto *retTypeNode = funcNode->getReturnTypeToken();
-        handle->setReturnType(typeGen.generateTypeAndThrow(retTypeNode));
+        handle->setReturnType(this->toType(*retTypeNode));
         // resolve multi return
-        if(retTypeNode->is(NodeKind::ReturnType) && static_cast<ReturnTypeNode *>(retTypeNode)->hasMultiReturn()) {
+        if(retTypeNode->typeKind == TypeNode::Return && static_cast<ReturnTypeNode *>(retTypeNode)->hasMultiReturn()) {
             handle->setAttribute(MethodHandle::MULTI_RETURN);
         }
 
         unsigned int paramSize = funcNode->getParamNodes().size();
         for(unsigned int i = 0; i < paramSize; i++) {
-            handle->addParamType(typeGen.generateTypeAndThrow(funcNode->getParamTypeNodes()[i]));
+            handle->addParamType(this->toType(*funcNode->getParamTypeNodes()[i]));
         }
     }
 
-    node->setType(typePool.getVoidType());
-
+    node->setType(this->pool.getVoidType());
     return type;
 }
+
+
+// #########################
+// ##     TypeChecker     ##
+// #########################
 
 DSType &TypeChecker::checkType(DSType *requiredType, Node *targetNode,
                                DSType *unacceptableType, CoercionKind &kind) {
@@ -409,28 +408,8 @@ void TypeChecker::visit(Node &) {
     fatal("unsupported\n");
 }
 
-void TypeChecker::visitBaseTypeNode(BaseTypeNode &) {
-    fatal("unsupported\n");
-}
-
-void TypeChecker::visitReifiedTypeNode(ReifiedTypeNode &) {
-    fatal("unsupported\n");
-}
-
-void TypeChecker::visitFuncTypeNode(FuncTypeNode &) {
-    fatal("unsupported\n");
-}
-
-void TypeChecker::visitDBusIfaceTypeNode(DBusIfaceTypeNode &) {
-    fatal("unsupported\n");
-}
-
-void TypeChecker::visitReturnTypeNode(ReturnTypeNode &) {
-    fatal("unsupported\n");
-}
-
-void TypeChecker::visitTypeOfNode(TypeOfNode &) {
-    fatal("unsupported\n");
+void TypeChecker::visitTypeNode(TypeNode &node) {
+    TypeGenerator(this->typePool, this).toType(node);
 }
 
 void TypeChecker::visitNumberNode(NumberNode &node) {
@@ -1172,7 +1151,7 @@ void TypeChecker::visitInterfaceNode(InterfaceNode &node) {
     if(!this->isTopLevel()) {   // only available toplevel scope
         RAISE_TC_ERROR(OutsideToplevel, node);
     }
-    resolveInterface(this->typePool, this->typeGen, &node);
+    TypeGenerator(this->typePool, this).resolveInterface(&node);
 }
 
 void TypeChecker::visitEmptyNode(EmptyNode &node) {

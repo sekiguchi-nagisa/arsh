@@ -135,7 +135,7 @@ public:
 
     virtual DSType &toType(std::unique_ptr<TypeNode> &&tok) {
         TypeNode *ptr = tok.get();
-        return TypeChecker::TypeGenerator(this->pool).generateTypeAndThrow(ptr);
+        return TypeGenerator(this->pool).toType(*ptr);
     }
 };
 

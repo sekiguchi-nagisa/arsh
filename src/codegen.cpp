@@ -342,27 +342,7 @@ void ByteCodeGenerator::visit(Node &node) {
     node.accept(*this);
 }
 
-void ByteCodeGenerator::visitBaseTypeNode(BaseTypeNode &) {
-    fatal("unsupported\n");
-}
-
-void ByteCodeGenerator::visitReifiedTypeNode(ReifiedTypeNode &) {
-    fatal("unsupported\n");
-}
-
-void ByteCodeGenerator::visitFuncTypeNode(FuncTypeNode &) {
-    fatal("unsupported\n");
-}
-
-void ByteCodeGenerator::visitDBusIfaceTypeNode(DBusIfaceTypeNode &) {
-    fatal("unsupported\n");
-}
-
-void ByteCodeGenerator::visitReturnTypeNode(ReturnTypeNode &) {
-    fatal("unsupported\n");
-}
-
-void ByteCodeGenerator::visitTypeOfNode(TypeOfNode &) {
+void ByteCodeGenerator::visitTypeNode(TypeNode &) {
     fatal("unsupported\n");
 }
 

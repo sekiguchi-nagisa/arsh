@@ -36,12 +36,7 @@ struct NodeVisitor;
 class NodeDumper;
 
 #define EACH_NODE_KIND(OP) \
-    OP(BaseType) \
-    OP(ReifiedType) \
-    OP(FuncType) \
-    OP(DBusIfaceType) \
-    OP(ReturnType) \
-    OP(TypeOf) \
+    OP(Type) \
     OP(Number) \
     OP(String) \
     OP(StringExpr) \
@@ -158,15 +153,32 @@ public:
 };
 
 // type definition
+#define EACH_TYPE_NODE_KIND(OP) \
+    OP(Base) \
+    OP(Reified) \
+    OP(Func) \
+    OP(DBusIface) \
+    OP(Return) \
+    OP(TypeOf)
+
 /**
  * represent for parsed type.
  */
 class TypeNode : public Node {
+public:
+    const enum Kind : unsigned char {
+#define GEN_ENUM(OP) OP,
+        EACH_TYPE_NODE_KIND(GEN_ENUM)
+#undef GEN_ENUM
+    } typeKind;
+
 protected:
-    TypeNode(NodeKind kind, Token token) : Node(kind,token) { }
+    TypeNode(Kind typeKind, Token token) : Node(NodeKind::Type, token), typeKind(typeKind) { }
 
 public:
     virtual ~TypeNode() = default;
+
+    virtual void dump(NodeDumper &dumper) const override;
 };
 
 class BaseTypeNode : public TypeNode {
@@ -175,7 +187,7 @@ private:
 
 public:
     BaseTypeNode(Token token, std::string &&typeName) :
-            TypeNode(NodeKind::BaseType, token), typeName(std::move(typeName)) { }
+            TypeNode(TypeNode::Base, token), typeName(std::move(typeName)) { }
 
     ~BaseTypeNode() = default;
 
@@ -196,7 +208,7 @@ private:
 
 public:
     explicit ReifiedTypeNode(BaseTypeNode *templateTypeNode) :
-            TypeNode(NodeKind::ReifiedType, templateTypeNode->getToken()),
+            TypeNode(TypeNode::Reified, templateTypeNode->getToken()),
             templateTypeNode(templateTypeNode), elementTypeNodes() { }
 
     ~ReifiedTypeNode();
@@ -225,7 +237,7 @@ private:
 
 public:
     FuncTypeNode(unsigned int startPos, TypeNode *returnTypeNode) :
-            TypeNode(NodeKind::FuncType, {startPos, 0}),
+            TypeNode(TypeNode::Func, {startPos, 0}),
             returnTypeNode(returnTypeNode), paramTypeNodes() { }
 
     ~FuncTypeNode();
@@ -253,7 +265,7 @@ private:
 
 public:
     DBusIfaceTypeNode(Token token, std::string &&name) :
-            TypeNode(NodeKind::DBusIfaceType, token), name(std::move(name)) { }
+            TypeNode(TypeNode::DBusIface, token), name(std::move(name)) { }
 
     ~DBusIfaceTypeNode() = default;
 
@@ -273,7 +285,7 @@ private:
 
 public:
     explicit ReturnTypeNode(TypeNode *typeNode) :
-            TypeNode(NodeKind::ReturnType, typeNode->getToken()), typeNodes() {
+            TypeNode(TypeNode::Return, typeNode->getToken()), typeNodes() {
         this->addTypeNode(typeNode);
     }
 
@@ -298,7 +310,7 @@ private:
 
 public:
     TypeOfNode(unsigned int startPos, Node *exprNode) :
-            TypeNode(NodeKind::TypeOf, {startPos, 0}), exprNode(exprNode) {
+            TypeNode(TypeNode::TypeOf, {startPos, 0}), exprNode(exprNode) {
         this->updateToken(exprNode->getToken());
     }
 
@@ -1998,12 +2010,7 @@ struct NodeVisitor {
     virtual ~NodeVisitor() = default;
 
     virtual void visit(Node &node) { node.accept(*this); }
-    virtual void visitBaseTypeNode(BaseTypeNode &node) = 0;
-    virtual void visitReifiedTypeNode(ReifiedTypeNode &node) = 0;
-    virtual void visitFuncTypeNode(FuncTypeNode &node) = 0;
-    virtual void visitDBusIfaceTypeNode(DBusIfaceTypeNode &node) = 0;
-    virtual void visitReturnTypeNode(ReturnTypeNode &node) = 0;
-    virtual void visitTypeOfNode(TypeOfNode &node) = 0;
+    virtual void visitTypeNode(TypeNode &node) = 0;
     virtual void visitNumberNode(NumberNode &node) = 0;
     virtual void visitStringNode(StringNode &node) = 0;
     virtual void visitStringExprNode(StringExprNode &node) = 0;
@@ -2050,12 +2057,7 @@ struct BaseVisitor : public NodeVisitor {
 
     virtual void visitDefault(Node &node) = 0;
 
-    virtual void visitBaseTypeNode(BaseTypeNode &node) override { this->visitDefault(node); }
-    virtual void visitReifiedTypeNode(ReifiedTypeNode &node) override { this->visitDefault(node); }
-    virtual void visitFuncTypeNode(FuncTypeNode &node) override { this->visitDefault(node); }
-    virtual void visitDBusIfaceTypeNode(DBusIfaceTypeNode &node) override { this->visitDefault(node); }
-    virtual void visitReturnTypeNode(ReturnTypeNode &node) override { this->visitDefault(node); }
-    virtual void visitTypeOfNode(TypeOfNode &node) override { this->visitDefault(node); }
+    virtual void visitTypeNode(TypeNode &node) override { this->visitDefault(node); }
     virtual void visitNumberNode(NumberNode &node) override { this->visitDefault(node); }
     virtual void visitStringNode(StringNode &node) override { this->visitDefault(node); }
     virtual void visitStringExprNode(StringExprNode &node) override { this->visitDefault(node); }

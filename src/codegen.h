@@ -426,12 +426,7 @@ private:
 
     // visitor api
     void visit(Node &node) override;
-    void visitBaseTypeNode(BaseTypeNode &typeNode) override;
-    void visitReifiedTypeNode(ReifiedTypeNode &typeNode) override;
-    void visitFuncTypeNode(FuncTypeNode &typeNode) override;
-    void visitDBusIfaceTypeNode(DBusIfaceTypeNode &typeNode) override;
-    void visitReturnTypeNode(ReturnTypeNode &typeNode) override;
-    void visitTypeOfNode(TypeOfNode &typeNode) override;
+    void visitTypeNode(TypeNode &node) override;
     void visitNumberNode(NumberNode &node) override;
     void visitStringNode(StringNode &node) override;
     void visitStringExprNode(StringExprNode &node) override;

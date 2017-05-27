@@ -125,56 +125,35 @@ public:
     }
 };
 
-class TypeChecker : protected NodeVisitor {
+class TypeChecker;
+
+class TypeGenerator {
+private:
+    TypePool &pool;
+    TypeChecker *checker;
+
 public:
-    class TypeGenerator : public BaseVisitor {
-    private:
-        TypePool &pool;
+    TypeGenerator(TypePool &pool, TypeChecker *checker = nullptr) : pool(pool), checker(checker) {}
 
-        /**
-         * may be null
-         */
-        TypeChecker *checker;
+    DSType &toType(TypeNode &node);
 
-    public:
-        explicit TypeGenerator(TypePool &pool)
-                : pool(pool), checker(nullptr) { }
-
-        explicit TypeGenerator(TypeChecker *checker)
-                : pool(checker->typePool), checker(checker) { }
-
-        ~TypeGenerator() = default;
-
-        /**
-         * entry point.
-         * generate DSType from TypeNode.
-         */
-        DSType &generateTypeAndThrow(TypeNode *typeNode) throw(TypeCheckError);
-
-        void visitDefault(Node &node) override;
-
-        void visitBaseTypeNode(BaseTypeNode &typeNode) override;
-        void visitReifiedTypeNode(ReifiedTypeNode &typeNode) override;
-        void visitFuncTypeNode(FuncTypeNode &typeNode) override;
-        void visitDBusIfaceTypeNode(DBusIfaceTypeNode &typeNode) override;
-        void visitReturnTypeNode(ReturnTypeNode &typeNode) override;
-        void visitTypeOfNode(TypeOfNode &typeNode) override;
-
-    private:
-        DSType &generateType(TypeNode *typeNode) {
-            typeNode->accept(*this);
-            return typeNode->getType();
-        }
-    };
+    DSType &resolveInterface(InterfaceNode *node);
 
 private:
+    DSType &toTypeImpl(TypeNode &node);
+};
+
+
+class TypeChecker : protected NodeVisitor {
+private:
+    friend class TypeGenerator;
+
     /**
      * for type lookup
      */
     TypePool &typePool;
 
     SymbolTable &symbolTable;
-    TypeGenerator typeGen;
 
     /**
      * contains current return type of current function
@@ -189,7 +168,7 @@ private:
 
 public:
     TypeChecker(TypePool &typePool, SymbolTable &symbolTable, bool toplevelPrinting) :
-            typePool(typePool), symbolTable(symbolTable), typeGen(this), curReturnType(0),
+            typePool(typePool), symbolTable(symbolTable), curReturnType(0),
             visitingDepth(0), fctx(), toplevelPrinting(toplevelPrinting) { }
 
     ~TypeChecker() = default;
@@ -201,11 +180,11 @@ public:
         rootNode.accept(*this);
     }
 
-    static DSType &resolveInterface(TypePool &typePool, InterfaceNode *node);
-    static DSType &resolveInterface(TypePool &typePool, TypeGenerator &typeGen, InterfaceNode *node);
-
 private:
     // base type check entry point
+    DSType &toType(TypeNode *node) {
+        return this->checkType(nullptr, node, nullptr);
+    }
 
     /**
      * check node type.
@@ -303,14 +282,6 @@ private:
     }
 
     // for apply node type checking
-
-    /**
-     * convert TypeToken to DSType..
-     */
-    DSType &toType(TypeNode *typeToken) {
-        return this->typeGen.generateTypeAndThrow(typeToken);
-    }
-
     /**
      * check type ApplyNode and resolve callee(handle or function type).
      */
@@ -356,12 +327,7 @@ private:
 
     // visitor api
     void visit(Node &node) override;
-    void visitBaseTypeNode(BaseTypeNode &typeNode) override;
-    void visitReifiedTypeNode(ReifiedTypeNode &typeNode) override;
-    void visitFuncTypeNode(FuncTypeNode &typeNode) override;
-    void visitDBusIfaceTypeNode(DBusIfaceTypeNode &typeNode) override;
-    void visitReturnTypeNode(ReturnTypeNode &typeNode) override;
-    void visitTypeOfNode(TypeOfNode &typeNode) override;
+    void visitTypeNode(TypeNode &node) override;
     void visitNumberNode(NumberNode &node) override;
     void visitStringNode(StringNode &node) override;
     void visitStringExprNode(StringExprNode &node) override;

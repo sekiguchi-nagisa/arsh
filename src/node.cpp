@@ -37,12 +37,21 @@ void Node::accept(NodeVisitor &visitor) {
     }
 }
 
+// ######################
+// ##     TypeNode     ##
+// ######################
+
+void TypeNode::dump(NodeDumper &dumper) const {
+    DUMP_ENUM(typeKind, EACH_TYPE_NODE_KIND);
+}
+
 
 // ##########################
 // ##     BaseTypeNode     ##
 // ##########################
 
 void BaseTypeNode::dump(NodeDumper &dumper) const {
+    TypeNode::dump(dumper);
     DUMP(typeName);
 }
 
@@ -62,6 +71,7 @@ void ReifiedTypeNode::addElementTypeNode(TypeNode *typeNode) {
 }
 
 void ReifiedTypeNode::dump(NodeDumper &dumper) const {
+    TypeNode::dump(dumper);
     DUMP_PTR(templateTypeNode);
     DUMP(elementTypeNodes);
 }
@@ -83,6 +93,7 @@ void FuncTypeNode::addParamTypeNode(TypeNode *typeNode) {
 }
 
 void FuncTypeNode::dump(NodeDumper &dumper) const {
+    TypeNode::dump(dumper);
     DUMP_PTR(returnTypeNode);
     DUMP(paramTypeNodes);
 }
@@ -92,6 +103,7 @@ void FuncTypeNode::dump(NodeDumper &dumper) const {
 // ###############################
 
 void DBusIfaceTypeNode::dump(NodeDumper &dumper) const {
+    TypeNode::dump(dumper);
     DUMP(name);
 }
 
@@ -111,6 +123,7 @@ void ReturnTypeNode::addTypeNode(TypeNode *typeNode) {
 }
 
 void ReturnTypeNode::dump(NodeDumper &dumper) const {
+    TypeNode::dump(dumper);
     DUMP(typeNodes);
 }
 
@@ -123,6 +136,7 @@ TypeOfNode::~TypeOfNode() {
 }
 
 void TypeOfNode::dump(NodeDumper &dumper) const {
+    TypeNode::dump(dumper);
     DUMP_PTR(exprNode);
 }
 
