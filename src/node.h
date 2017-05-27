@@ -331,85 +331,84 @@ TypeNode *newVoidTypeNode();
 
 // expression definition
 
+#define EACH_NUMBER_NODE_KIND(OP) \
+    OP(Byte) \
+    OP(Int16) \
+    OP(Uint16) \
+    OP(Int32) \
+    OP(Uint32) \
+    OP(Int64) \
+    OP(Uint64) \
+    OP(Float)
+
 class NumberNode : public Node {
 public:
-    enum NumKind {
-        BYTE,
-        INT16,
-        UINT16,
-        INT32,
-        UINT32,
-        INT64,
-        UINT64,
-        FLOAT,
-    };
+    const enum Kind : unsigned char {
+#define GEN_ENUM(OP) OP,
+        EACH_NUMBER_NODE_KIND(GEN_ENUM)
+#undef GEN_ENUM
+    } kind;
 
 private:
-    NumKind kind;
-
     union {
         int intValue;
         long longValue;
         double floatValue;
     };
 
-     NumberNode(Token token, NumKind kind) :
+     NumberNode(Token token, Kind kind) :
             Node(NodeKind::Number, token), kind(kind), intValue(0) { }
 
 public:
     static NumberNode *newByte(Token token, unsigned char value) {
-        auto *node = new  NumberNode(token, BYTE);
+        auto *node = new  NumberNode(token, Byte);
         node->intValue = value;
         return node;
     }
 
     static NumberNode *newInt16(Token token, short value) {
-        auto *node = new  NumberNode(token, INT16);
+        auto *node = new  NumberNode(token, Int16);
         node->intValue = value;
         return node;
     }
 
     static NumberNode *newUint16(Token token, unsigned short value) {
-        auto *node = new  NumberNode(token, UINT16);
+        auto *node = new  NumberNode(token, Uint16);
         node->intValue = value;
         return node;
     }
 
     static NumberNode *newInt32(Token token, int value) {
-        auto *node = new  NumberNode(token, INT32);
+        auto *node = new  NumberNode(token, Int32);
         node->intValue = value;
         return node;
     }
 
     static NumberNode *newUint32(Token token, unsigned int value) {
-        auto *node = new  NumberNode(token, UINT32);
+        auto *node = new  NumberNode(token, Uint32);
         node->intValue = value;
         return node;
     }
 
     static NumberNode *newInt64(Token token, long value) {
-        auto *node = new  NumberNode(token, INT64);
+        auto *node = new  NumberNode(token, Int64);
         node->longValue = value;
         return node;
     }
 
     static NumberNode *newUint64(Token token, unsigned long value) {
-        auto *node = new  NumberNode(token, UINT64);
+        auto *node = new  NumberNode(token, Uint64);
         node->longValue = value;
         return node;
     }
 
     static NumberNode *newFloat(Token token, double value) {
-        auto *node = new  NumberNode(token, FLOAT);
+        auto *node = new  NumberNode(token, Float);
         node->floatValue = value;
         return node;
     }
 
     ~NumberNode() = default;
-
-    NumKind getKind() const {
-        return this->kind;
-    }
 
     int getIntValue() const {
         return this->intValue;

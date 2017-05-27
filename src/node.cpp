@@ -155,32 +155,21 @@ TypeNode *newVoidTypeNode() {
 // ########################
 
 void NumberNode::dump(NodeDumper &dumper) const {
-#define EACH_ENUM(OP) \
-    OP(BYTE) \
-    OP(INT16) \
-    OP(UINT16) \
-    OP(INT32) \
-    OP(UINT32) \
-    OP(INT64) \
-    OP(UINT64) \
-    OP(FLOAT)
-
-    DUMP_ENUM(kind, EACH_ENUM);
-#undef EACH_ENUM
+    DUMP_ENUM(kind, EACH_NUMBER_NODE_KIND);
 
     switch(this->kind) {
-    case BYTE:
-    case INT16:
-    case UINT16:
-    case INT32:
-    case UINT32:
+    case Byte:
+    case Int16:
+    case Uint16:
+    case Int32:
+    case Uint32:
         DUMP_PRIM(intValue);
         break;
-    case INT64:
-    case UINT64:
+    case Int64:
+    case Uint64:
         DUMP_PRIM(longValue);
         break;
-    case FLOAT:
+    case Float:
         DUMP_PRIM(floatValue);
         break;
     }

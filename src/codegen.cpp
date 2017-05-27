@@ -348,19 +348,19 @@ void ByteCodeGenerator::visitTypeNode(TypeNode &) {
 
 void ByteCodeGenerator::visitNumberNode(NumberNode &node) {
     DSValue value;
-    switch(node.getKind()) {
-    case NumberNode::BYTE:
-    case NumberNode::INT16:
-    case NumberNode::UINT16:
-    case NumberNode::INT32:
-    case NumberNode::UINT32:
+    switch(node.kind) {
+    case NumberNode::Byte:
+    case NumberNode::Int16:
+    case NumberNode::Uint16:
+    case NumberNode::Int32:
+    case NumberNode::Uint32:
         value = DSValue::create<Int_Object>(node.getType(), node.getIntValue());
         break;
-    case NumberNode::INT64:
-    case NumberNode::UINT64:
+    case NumberNode::Int64:
+    case NumberNode::Uint64:
         value = DSValue::create<Long_Object>(node.getType(), node.getLongValue());
         break;
-    case NumberNode::FLOAT:
+    case NumberNode::Float:
         value = DSValue::create<Float_Object>(node.getType(), node.getFloatValue());
         break;
     }
