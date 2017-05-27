@@ -140,7 +140,7 @@ public:
     DSType &resolveInterface(InterfaceNode *node);
 
 private:
-    DSType &toTypeImpl(TypeNode &node);
+    DSType *toTypeImpl(TypeNode &node);
 };
 
 

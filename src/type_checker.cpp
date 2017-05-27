@@ -26,12 +26,10 @@ namespace ydsh {
 // ##     TypeGenerator     ##
 // ###########################
 
-DSType& TypeGenerator::toTypeImpl(TypeNode &node) {
+DSType *TypeGenerator::toTypeImpl(TypeNode &node) {
     switch(node.typeKind) {
     case TypeNode::Base: {
-        auto &type = pool.getTypeAndThrowIfUndefined(static_cast<BaseTypeNode&>(node).getTokenText());
-        node.setType(type);
-        return type;
+        return &pool.getTypeAndThrowIfUndefined(static_cast<BaseTypeNode&>(node).getTokenText());
     }
     case TypeNode::Reified: {
         auto &typeNode = static_cast<ReifiedTypeNode&>(node);
@@ -41,9 +39,7 @@ DSType& TypeGenerator::toTypeImpl(TypeNode &node) {
         for(unsigned int i = 0; i < size; i++) {
             elementTypes[i] = &this->toType(*typeNode.getElementTypeNodes()[i]);
         }
-        DSType &type = pool.createReifiedType(typeTemplate, std::move(elementTypes));
-        typeNode.setType(type);
-        return type;
+        return &pool.createReifiedType(typeTemplate, std::move(elementTypes));
     }
     case TypeNode::Func: {
         auto &typeNode = static_cast<FuncTypeNode&>(node);
@@ -53,50 +49,44 @@ DSType& TypeGenerator::toTypeImpl(TypeNode &node) {
         for(unsigned int i = 0; i < size; i++) {
             paramTypes[i] = &this->toType(*typeNode.getParamTypeNodes()[i]);
         }
-        DSType &type = pool.createFuncType(&returnType, std::move(paramTypes));
-        typeNode.setType(type);
-        return type;
+        return &pool.createFuncType(&returnType, std::move(paramTypes));
     }
     case TypeNode::DBusIface: {
-        DSType &type = pool.getDBusInterfaceType(static_cast<DBusIfaceTypeNode&>(node).getTokenText());
-        node.setType(type);
-        return type;
+        return &pool.getDBusInterfaceType(static_cast<DBusIfaceTypeNode&>(node).getTokenText());
     }
     case TypeNode::Return: {
         auto &typeNode = static_cast<ReturnTypeNode&>(node);
         unsigned int size = typeNode.getTypeNodes().size();
         if(size == 1) {
-            DSType &type = this->toType(*typeNode.getTypeNodes()[0]);
-            typeNode.setType(type);
-            return type;
+            return &this->toType(*typeNode.getTypeNodes()[0]);
         }
 
         std::vector<DSType *> types(size);
         for(unsigned int i = 0; i < size; i++) {
             types[i] = &this->toType(*typeNode.getTypeNodes()[i]);
         }
-        DSType &type = pool.createTupleType(std::move(types));
-        typeNode.setType(type);
-        return type;
+        return &pool.createTupleType(std::move(types));
     }
     case TypeNode::TypeOf:
         if(this->checker == nullptr) {
             RAISE_TC_ERROR(DisallowTypeof, node);
         } else {
             auto &typeNode = static_cast<TypeOfNode&>(node);
-            DSType &type = this->checker->checkType(typeNode.getExprNode());
+            auto &type = this->checker->checkType(typeNode.getExprNode());
             if(type.isBottomType()) {
                 RAISE_TC_ERROR(Unacceptable, *typeNode.getExprNode(), this->pool.getTypeName(type).c_str());
             }
-            typeNode.setType(type);
-            return type;
+            return &type;
         }
     }
+    return nullptr; // for suppressing gcc warning (normally unreachable).
 }
 
 DSType& TypeGenerator::toType(TypeNode &node) {
     try {
-        return this->toTypeImpl(node);
+        auto *type = this->toTypeImpl(node);
+        node.setType(*type);
+        return *type;
     } catch(TypeLookupError &e) {
         throw TypeCheckError(node.getToken(), e);
     }
@@ -412,16 +402,14 @@ void TypeChecker::visitTypeNode(TypeNode &node) {
     TypeGenerator(this->typePool, this).toType(node);
 }
 
-static DSType &num2Type(const TypePool &pool, NumberNode::Kind kind) {
-    switch(kind) {
-#define GEN_CASE(OP) case NumberNode::OP: return pool.get ## OP ## Type();
+void TypeChecker::visitNumberNode(NumberNode &node) {
+    DSType *type = nullptr;
+    switch(node.kind) {
+#define GEN_CASE(OP) case NumberNode::OP: { type = &this->typePool.get ## OP ## Type(); break; }
     EACH_NUMBER_NODE_KIND(GEN_CASE)
 #undef GEN_CASE
     }
-}
-
-void TypeChecker::visitNumberNode(NumberNode &node) {
-    node.setType(num2Type(this->typePool, node.kind));
+    node.setType(*type);
 }
 
 void TypeChecker::visitStringNode(StringNode &node) {
