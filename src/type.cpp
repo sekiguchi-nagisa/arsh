@@ -15,12 +15,12 @@
  */
 
 #include <cstdarg>
+#include <array>
 
 #include "type.h"
 #include "object.h"
 #include "handle.h"
 #include "diagnosis.h"
-#include "bind.h"
 #include "parser.h"
 #include "type_checker.h"
 #include "core.h"
@@ -28,9 +28,27 @@
 
 namespace ydsh {
 
-extern NativeFuncInfo *const nativeFuncInfoTable;
+template <std::size_t N>
+std::array<NativeCode, N> initNative(const NativeFuncInfo (&e)[N]) {
+    std::array<NativeCode, N> array;
+    for(unsigned int i = 0; i < N; i++) {
+        const char *funcName = e[i].funcName;
+        if(funcName != nullptr && strcmp(funcName, "waitSignal") == 0) {
+            array[i] = createWaitSignalCode();
+        } else {
+            array[i] = NativeCode(e[i].func_ptr, static_cast<HandleInfo>(e[i].handleInfo[0]) != HandleInfo::Void);
+        }
+    }
+    return array;
+}
 
-const NativeCode *getNativeCode(unsigned int index);
+} // namespace ydsh
+
+#include "bind.hpp"
+
+namespace ydsh {
+
+extern NativeFuncInfo *const nativeFuncInfoTable;
 
 // ####################
 // ##     DSType     ##
