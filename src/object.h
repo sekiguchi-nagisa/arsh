@@ -22,10 +22,11 @@
 #include <iostream>
 #include <unordered_set>
 #include <tuple>
+#include <cxxabi.h>
 
 #include "type.h"
 #include <config.h>
-#include "misc/demangle.hpp"
+#include "misc/fatal.h"
 #include "misc/buffer.hpp"
 #include "lexer.h"
 #include "opcode.h"
@@ -268,7 +269,11 @@ inline T *typeAs(const DSValue &value) noexcept {
         auto *r = dynamic_cast<T*>(value.get());
         if(r == nullptr) {
             DSObject &v = *value;
-            fatal("target type is: %s, but actual is: %s\n", demangle(typeid(T)).c_str(), demangle(typeid(v)).c_str());
+            int status;
+            char *target = abi::__cxa_demangle(typeid(T).name(), 0, 0, &status);
+            char *actual = abi::__cxa_demangle(typeid(v).name(), 0, 0, &status);
+
+            fatal("target type is: %s, but actual is: %s\n", target, actual);
         }
         return r;
     } else {
