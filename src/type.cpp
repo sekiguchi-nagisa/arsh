@@ -44,7 +44,7 @@ std::array<NativeCode, N> initNative(const NativeFuncInfo (&e)[N]) {
 
 } // namespace ydsh
 
-#include "bind.hpp"
+#include "bind.h"
 
 namespace ydsh {
 

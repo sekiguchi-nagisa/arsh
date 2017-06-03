@@ -195,7 +195,7 @@ add_custom_target(gen_lexer DEPENDS ${lexer_src})
 #     generate builtin binding     #
 #==================================#
 
-set(bind_src ${CMAKE_CURRENT_BINARY_DIR}/src/bind.hpp)
+set(bind_src ${CMAKE_CURRENT_BINARY_DIR}/src/bind.h)
 add_custom_command(OUTPUT ${bind_src}
     COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tools/gen_binding/gen_binding
         ${CMAKE_SOURCE_DIR}/src/builtin.h ${bind_src}

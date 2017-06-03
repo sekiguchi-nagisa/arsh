@@ -833,6 +833,9 @@ static void gencode(const char *outFileName, const std::vector<TypeBind *> &bind
     }
 
     // write header
+    OUT("#ifndef YDSH_BIND_H\n");
+    OUT("#define YDSH_BIND_H\n");
+    OUT("\n");
     OUT("#include <builtin.h>\n");
     OUT("#include <symbol.h>\n");
     OUT("\n");
@@ -890,6 +893,8 @@ static void gencode(const char *outFileName, const std::vector<TypeBind *> &bind
     }
 
     OUT("} // namespace ydsh\n");
+    OUT("\n");
+    OUT("#endif //YDSH_BIND_H\n");
     fclose(fp);
 }
 
