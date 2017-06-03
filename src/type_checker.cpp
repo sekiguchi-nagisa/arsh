@@ -936,8 +936,10 @@ void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
     FieldAttributes attr;
     switch(node.getKind()) {
     case VarDeclNode::CONST:
-        attr.set(FieldAttribute::READ_ONLY);
     case VarDeclNode::VAR:
+        if(node.getKind() == VarDeclNode::CONST) {
+            attr.set(FieldAttribute::READ_ONLY);
+        }
         exprType = &this->checkType(node.getExprNode());
         if(exprType->isBottomType()) {
             RAISE_TC_ERROR(Unacceptable, *node.getExprNode(), this->typePool.getTypeName(*exprType).c_str());
