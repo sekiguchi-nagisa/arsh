@@ -74,6 +74,24 @@ matrix:
             - expect
       env: CC_BIN=gcc-6 CXX_BIN=g++-6
 
+    # gcc 7
+    - os: linux
+      sudo: required
+      dist: trusty
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-7
+            - g++-7
+            - libxml2-dev
+            - libdbus-1-3
+            - libdbus-glib-1-dev
+            - expect
+      env: CC_BIN=gcc-7 CXX_BIN=g++-7
+
     # clang 3.5
     - os: linux
       sudo: required
