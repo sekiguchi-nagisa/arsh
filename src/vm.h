@@ -338,6 +338,11 @@ struct DSState {
     bool isInteractive() const {
         return hasFlag(this->option, DS_OPTION_INTERACTIVE);
     }
+
+    bool isRootShell() const {
+        int shellpid = typeAs<Int_Object>(this->getGlobal(toIndex(BuiltinVarOffset::SHELL_PID)))->getValue();
+        return shellpid == getpid();
+    }
 };
 
 /**

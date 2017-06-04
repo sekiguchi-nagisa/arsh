@@ -372,11 +372,6 @@ void exitShell(DSState &st, unsigned int status) {
     exit(status);
 }
 
-bool isRootShell(const DSState &st) {
-    int shellpid = typeAs<Int_Object>(st.getGlobal(toIndex(BuiltinVarOffset::SHELL_PID)))->getValue();
-    return shellpid == getpid();
-}
-
 pid_t xfork(DSState &st, pid_t pgid, bool foreground) {
     pid_t pid = fork();
     if(pid == 0) {  // child process

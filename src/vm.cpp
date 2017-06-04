@@ -900,7 +900,7 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
         exit(1);
     }
 
-    bool rootShell = isRootShell(state);
+    bool rootShell = state.isRootShell();
     pid_t pid = xfork(state, rootShell ? 0 : getpgid(0), rootShell);
     if(pid == -1) {
         perror("child process error");
@@ -1108,7 +1108,7 @@ static void callPipeline(DSState &state) {
 
     // fork
     Process procs[size];
-    const bool rootShell = isRootShell(state);
+    const bool rootShell = state.isRootShell();
     pid_t pgid = rootShell ? 0 : getpgid(0);
     pid_t pid;
     unsigned int procIndex;
