@@ -60,7 +60,13 @@
     OP(APPLIED_NAME) \
     OP(SPECIAL_NAME) \
     OP(LP) \
-    OP(LB)
+    OP(LB) \
+    OP(LBC) \
+    OP(DO) \
+    OP(FOR) \
+    OP(IF) \
+    OP(TRY) \
+    OP(WHILE)
 
 #define EACH_LA_expression(OP) \
     OP(NOT) \
@@ -74,19 +80,13 @@
     OP(INTERFACE) \
     OP(TYPE_ALIAS) \
     OP(ASSERT) \
-    OP(LBC) \
     OP(BREAK) \
     OP(CONTINUE) \
-    OP(DO) \
     OP(EXPORT_ENV) \
-    OP(FOR) \
-    OP(IF) \
     OP(IMPORT_ENV) \
     OP(LET) \
     OP(RETURN) \
-    OP(TRY) \
     OP(VAR) \
-    OP(WHILE) \
     OP(LINE_END) \
     EACH_LA_expression(OP)
 
@@ -506,11 +506,6 @@ std::unique_ptr<Node> Parser::parse_statement() {
         this->parse_statementEnd();
         return std::move(node);
     }
-    case LBC: {
-        auto node = this->parse_block();
-        this->parse_statementEnd();
-        return std::move(node);
-    }
     case BREAK: {
         Token token = this->expect(BREAK);
         auto node = uniquify<JumpNode>(token, true);
@@ -533,14 +528,6 @@ std::unique_ptr<Node> Parser::parse_statement() {
                                           this->parse_expression().release(), VarDeclNode::EXPORT_ENV);
         this->parse_statementEnd();
         return std::move(node);
-    }
-    case FOR: {
-        return this->parse_forStatement();
-    }
-    case IF: {
-        auto node = this->parse_ifStatement();
-        this->parse_statementEnd();
-        return node;
     }
     case IMPORT_ENV: {
         unsigned int startPos = START_POS();
@@ -580,42 +567,6 @@ std::unique_ptr<Node> Parser::parse_statement() {
         node = uniquify<ReturnNode>(token, exprNode.release());
         this->parse_statementEnd();
         return node;
-    }
-    case WHILE: {
-        unsigned int startPos = START_POS();
-        this->expect(WHILE);
-        auto condNode(this->parse_expression());
-        auto blockNode(this->parse_block());
-        this->parse_statementEnd();
-        return uniquify<LoopNode>(startPos, condNode.release(), blockNode.release());
-    }
-    case DO: {
-        unsigned int startPos = START_POS();
-        this->expect(DO);
-        auto blockNode(this->parse_block());
-        this->expect(WHILE);
-        auto condNode(this->parse_expression());
-        auto node = uniquify<LoopNode>(startPos, condNode.release(), blockNode.release(), true);
-        this->parse_statementEnd();
-        return std::move(node);
-    }
-    case TRY: {
-        unsigned int startPos = START_POS();
-        this->expect(TRY);
-        auto tryNode = uniquify<TryNode>(startPos, this->parse_block().release());
-
-        // parse catch
-        while(CUR_KIND() == CATCH) {
-            tryNode->addCatchNode(this->parse_catchStatement().release());
-        }
-
-        // parse finally
-        if(CUR_KIND() == FINALLY) {
-            this->expect(FINALLY);
-            tryNode->addFinallyNode(this->parse_block().release());
-        }
-        this->parse_statementEnd();
-        return std::move(tryNode);
     }
     EACH_LA_varDecl(GEN_LA_CASE) {
         auto node(this->parse_variableDeclaration());
@@ -717,7 +668,6 @@ std::unique_ptr<Node> Parser::parse_forStatement() {
         this->expect(RP);
         std::unique_ptr<BlockNode> blockNode(this->parse_block());
 
-        this->parse_statementEnd();
         return uniquify<LoopNode>(startPos, initNode.release(), condNode.release(),
                                  iterNode.release(), blockNode.release());
     } else {    // for-in
@@ -726,7 +676,6 @@ std::unique_ptr<Node> Parser::parse_forStatement() {
         std::unique_ptr<Node> exprNode(this->parse_expression());
         std::unique_ptr<BlockNode> blockNode(this->parse_block());
 
-        this->parse_statementEnd();
         return std::unique_ptr<Node>(
                 createForInNode(startPos, this->lexer->toName(token), exprNode.release(), blockNode.release()));
     }
@@ -1215,6 +1164,50 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         token = this->expect(RB);
         node->updateToken(token);
         return node;
+    }
+    case LBC: {
+        auto node = this->parse_block();
+        return std::move(node);
+    }
+    case FOR: {
+        return this->parse_forStatement();
+    }
+    case IF: {
+        auto node = this->parse_ifStatement();
+        return node;
+    }
+    case WHILE: {
+        unsigned int startPos = START_POS();
+        this->expect(WHILE);
+        auto condNode(this->parse_expression());
+        auto blockNode(this->parse_block());
+        return uniquify<LoopNode>(startPos, condNode.release(), blockNode.release());
+    }
+    case DO: {
+        unsigned int startPos = START_POS();
+        this->expect(DO);
+        auto blockNode(this->parse_block());
+        this->expect(WHILE);
+        auto condNode(this->parse_expression());
+        auto node = uniquify<LoopNode>(startPos, condNode.release(), blockNode.release(), true);
+        return std::move(node);
+    }
+    case TRY: {
+        unsigned int startPos = START_POS();
+        this->expect(TRY);
+        auto tryNode = uniquify<TryNode>(startPos, this->parse_block().release());
+
+        // parse catch
+        while(CUR_KIND() == CATCH) {
+            tryNode->addCatchNode(this->parse_catchStatement().release());
+        }
+
+        // parse finally
+        if(CUR_KIND() == FINALLY) {
+            this->expect(FINALLY);
+            tryNode->addFinallyNode(this->parse_block().release());
+        }
+        return std::move(tryNode);
     }
     default:
         E_ALTER(EACH_LA_primary(GEN_LA_ALTER));

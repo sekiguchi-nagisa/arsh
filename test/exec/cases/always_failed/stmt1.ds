@@ -1,0 +1,4 @@
+#$test($result = 'type', $lineNum = 4, $errorKind = 'Unacceptable', $status = 1)
+
+34 +
+try { 34 } catch $e  {}
