@@ -135,14 +135,14 @@ TokenKind Lexer::nextToken(Token &token) {
     /*!re2c
       <STMT> "assert"          { RET(ASSERT); }
       <STMT> "break"           { RET(BREAK); }
-      <STMT> "catch"           { RET(CATCH); }
+      <EXPR> "catch"           { MODE(STMT); RET(CATCH); }
       <STMT> "class"           { MODE(NAME); RET(CLASS); }
       <STMT> "continue"        { RET(CONTINUE); }
       <STMT> "do"              { RET(DO); }
-      <STMT> "elif"            { RET(ELIF); }
-      <STMT> "else"            { RET(ELSE); }
+      <EXPR> "elif"            { MODE(STMT); RET(ELIF); }
+      <EXPR> "else"            { RET(ELSE); }
       <STMT> "export-env"      { MODE(NAME); RET(EXPORT_ENV); }
-      <STMT> "finally"         { RET(FINALLY); }
+      <EXPR> "finally"         { RET(FINALLY); }
       <STMT> "for"             { RET(FOR); }
       <STMT> "function"        { MODE(NAME); RET(FUNCTION); }
       <STMT> "if"              { RET(IF); }
@@ -154,9 +154,9 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT> "return"          { RET(RETURN); }
       <STMT> "try"             { RET(TRY); }
       <STMT> "throw"           { RET(THROW); }
-      <STMT> "type-alias"      { MODE(NAME); RET(TYPE_ALIAS);}
+      <STMT> "type-alias"      { MODE(NAME); RET(TYPE_ALIAS); }
       <STMT> "var"             { MODE(NAME); RET(VAR); }
-      <STMT> "while"           { RET(WHILE); }
+      <STMT,EXPR> "while"      { MODE(STMT); RET(WHILE); }
 
       <STMT,EXPR> "+"          { MODE(STMT); RET(PLUS); }
       <STMT,EXPR> "-"          { MODE(STMT); RET(MINUS); }
@@ -186,7 +186,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT,EXPR> ")"          { POP_MODE(); RET(RP); }
       <STMT,EXPR> "["          { MODE(EXPR); PUSH_MODE(STMT); RET(LB); }
       <STMT,EXPR> "]"          { POP_MODE(); RET(RB); }
-      <STMT,EXPR> "{"          { MODE(STMT); PUSH_MODE(STMT); RET(LBC); }
+      <STMT,EXPR> "{"          { MODE(EXPR); PUSH_MODE(STMT); RET(LBC); }
       <STMT,EXPR> "}"          { POP_MODE(); RET(RBC); }
 
       <STMT> CMD_START_CHAR CMD_CHAR*

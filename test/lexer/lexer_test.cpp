@@ -147,8 +147,9 @@ TEST_F(LexerTest_Lv1, catch_tok) {
     const char *text = "catch";
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->initLexer(text);
+        this->initLexer(text, yycEXPR);
         EXPECT(CATCH, text, EOS, "");
+        this->assertLexerMode(yycSTMT);
     });
 }
 
@@ -183,8 +184,9 @@ TEST_F(LexerTest_Lv1, elif_tok) {
     const char *text = "elif";
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->initLexer(text);
+        this->initLexer(text, yycEXPR);
         EXPECT(ELIF, text, EOS, "");
+        this->assertLexerMode(yycSTMT);
     });
 }
 
@@ -192,7 +194,7 @@ TEST_F(LexerTest_Lv1, else_tok) {
     const char *text = "else";
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->initLexer(text);
+        this->initLexer(text, yycEXPR);
         EXPECT(ELSE, text, EOS, "");
     });
 }
@@ -211,7 +213,7 @@ TEST_F(LexerTest_Lv1, finally_tok) {
     const char *text = "finally";
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->initLexer(text);
+        this->initLexer(text, yycEXPR);
         EXPECT(FINALLY, text, EOS, "");
     });
 }
@@ -341,7 +343,7 @@ TEST_F(LexerTest_Lv1, var_tok) {
     });
 }
 
-TEST_F(LexerTest_Lv1, while_tok) {
+TEST_F(LexerTest_Lv1, while_tok1) {
     const char *text = "while";
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
@@ -349,6 +351,14 @@ TEST_F(LexerTest_Lv1, while_tok) {
         EXPECT(WHILE, text, EOS, "");
         this->assertLexerMode(yycSTMT);
     });
+}
+
+TEST_F(LexerTest_Lv1, while_tok2) {
+    const char *text = "while";
+    SCOPED_TRACE("");
+    this->initLexer(text, yycEXPR);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(WHILE, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
 }
 
 TEST_F(LexerTest_Lv1, plus_tok1) {
@@ -1145,7 +1155,7 @@ TEST_F(LexerTest_Lv1, LBC1) {
         EXPECT(LBC, text, EOS, "");
         this->assertLexerMode(yycSTMT);
         this->lexer->popLexerMode();
-        this->assertLexerMode(yycSTMT);
+        this->assertLexerMode(yycEXPR);
     });
 }
 
@@ -1157,7 +1167,7 @@ TEST_F(LexerTest_Lv1, LBC2) {
         EXPECT(LBC, text, EOS, "");
         this->assertLexerMode(yycSTMT);
         this->lexer->popLexerMode();
-        this->assertLexerMode(yycSTMT);
+        this->assertLexerMode(yycEXPR);
     });
 }
 
