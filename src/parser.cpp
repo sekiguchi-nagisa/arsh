@@ -1166,15 +1166,13 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         return node;
     }
     case LBC: {
-        auto node = this->parse_block();
-        return std::move(node);
+        return this->parse_block();
     }
     case FOR: {
         return this->parse_forStatement();
     }
     case IF: {
-        auto node = this->parse_ifStatement();
-        return node;
+        return this->parse_ifStatement();
     }
     case WHILE: {
         unsigned int startPos = START_POS();
@@ -1189,8 +1187,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         auto blockNode(this->parse_block());
         this->expect(WHILE);
         auto condNode(this->parse_expression());
-        auto node = uniquify<LoopNode>(startPos, condNode.release(), blockNode.release(), true);
-        return std::move(node);
+        return uniquify<LoopNode>(startPos, condNode.release(), blockNode.release(), true);
     }
     case TRY: {
         unsigned int startPos = START_POS();
