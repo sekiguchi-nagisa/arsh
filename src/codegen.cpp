@@ -605,22 +605,6 @@ void ByteCodeGenerator::visitNewNode(NewNode &node) {
     this->emit2byteIns(OpCode::CALL_INIT, paramSize);
 }
 
-void ByteCodeGenerator::visitTernaryNode(TernaryNode &node) {
-    auto elseLabel = makeIntrusive<Label>();
-    auto mergeLabel = makeIntrusive<Label>();
-
-    this->visit(*node.getCondNode());
-    this->emitBranchIns(elseLabel);
-    this->visit(*node.getLeftNode());
-    this->emitJumpIns(mergeLabel);
-
-    this->markLabel(elseLabel);
-    this->visit(*node.getRightNode());
-
-    this->markLabel(mergeLabel);
-}
-
-
 void ByteCodeGenerator::visitCmdNode(CmdNode &node) {
     this->emitSourcePos(node.getPos());
 

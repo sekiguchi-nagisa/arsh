@@ -915,7 +915,8 @@ std::unique_ptr<Node> Parser::parse_binaryExpression(std::unique_ptr<Node> &&lef
             auto tleftNode(this->parse_expression());
             this->expectAndChangeMode(COLON, yycSTMT);
             auto trightNode(this->parse_expression());
-            node = uniquify<TernaryNode>(node.release(), tleftNode.release(), trightNode.release());
+            unsigned int pos = node->getPos();
+            node = uniquify<IfNode>(pos, node.release(), tleftNode.release(), trightNode.release());
             break;
         }
         default: {

@@ -348,7 +348,6 @@ private:
     void visitApplyNode(DSType *requiredType, ApplyNode &node);
     void visitMethodCallNode(DSType *requiredType, MethodCallNode &node);
     void visitNewNode(DSType *requiredType, NewNode &node);
-    void visitTernaryNode(DSType *requiredType, TernaryNode &node);
     void visitCmdNode(DSType *requiredType, CmdNode &node);
     void visitCmdArgNode(DSType *requiredType, CmdArgNode &node);
     void visitRedirNode(DSType *requiredType, RedirNode &node);

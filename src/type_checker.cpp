@@ -192,7 +192,7 @@ void TypeChecker::checkTypeWithCurrentScope(DSType *requiredType, BlockNode *blo
             if(requiredType != nullptr) {
                 this->checkTypeWithCoercion(*requiredType, targetNode);
             } else {
-                this->checkType(targetNode);
+                this->checkType(nullptr, targetNode, nullptr);
             }
         } else {
             this->checkTypeWithCoercion(this->typePool.getVoidType(), targetNode);
@@ -669,24 +669,6 @@ void TypeChecker::visitNewNode(DSType *, NewNode &node) {
     node.setType(type);
 }
 
-void TypeChecker::visitTernaryNode(DSType *, TernaryNode &node) {
-    this->checkTypeWithCoercion(this->typePool.getBooleanType(), node.refCondNode());
-    auto &leftType = this->checkType(node.getLeftNode());
-    auto &rightType = this->checkType(node.getRightNode());
-
-    if(leftType.isSameOrBaseTypeOf(rightType)) {
-        node.setType(leftType);
-    } else if(rightType.isSameOrBaseTypeOf(leftType)) {
-        node.setType(rightType);
-    } else if(this->checkCoercion(leftType, rightType)) {
-        this->checkTypeWithCoercion(leftType, node.refRightNode());
-        node.setType(leftType);
-    } else {
-        this->checkTypeWithCoercion(rightType, node.refLeftNode());
-        node.setType(rightType);
-    }
-}
-
 void TypeChecker::visitCmdNode(DSType *, CmdNode &node) {
     this->checkType(this->typePool.getStringType(), node.getNameNode());
     for(auto *argNode : node.getArgNodes()) {
@@ -837,15 +819,28 @@ void TypeChecker::visitLoopNode(DSType *, LoopNode &node) {
     node.setType(this->typePool.getVoidType());
 }
 
-void TypeChecker::visitIfNode(DSType *, IfNode &node) {
+void TypeChecker::visitIfNode(DSType *requiredType, IfNode &node) {
     this->checkTypeWithCoercion(this->typePool.getBooleanType(), node.refCondNode());
-    this->checkType(this->typePool.getVoidType(), node.getThenNode());
-    this->checkType(this->typePool.getVoidType(), node.getElseNode());
+    auto &thenType = this->checkType(nullptr, node.getThenNode(), nullptr);
+    auto &elseType = this->checkType(nullptr, node.getElseNode(), nullptr);
 
-    // check if terminal node
-    bool terminal = node.getThenNode()->getType().isBottomType()
-                    && node.getElseNode()->getType().isBottomType();
-    node.setType(terminal ? this->typePool.getBottomType() : this->typePool.getVoidType());
+    if(thenType.isBottomType() && elseType.isBottomType()) {
+        node.setType(thenType);
+    } else if(requiredType != nullptr && requiredType->isVoidType()) {
+        this->checkTypeWithCoercion(this->typePool.getVoidType(), node.refThenNode());
+        this->checkTypeWithCoercion(this->typePool.getVoidType(), node.refElseNode());
+        node.setType(this->typePool.getVoidType());
+    } else if(thenType.isSameOrBaseTypeOf(elseType)) {
+        node.setType(thenType);
+    } else if(elseType.isSameOrBaseTypeOf(thenType)) {
+        node.setType(elseType);
+    } else if(this->checkCoercion(thenType, elseType)) {
+        this->checkTypeWithCoercion(thenType, node.refElseNode());
+        node.setType(thenType);
+    } else {
+        this->checkTypeWithCoercion(elseType, node.refThenNode());
+        node.setType(elseType);
+    }
 }
 
 void TypeChecker::visitReturnNode(DSType *, ReturnNode &node) {

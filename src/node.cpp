@@ -521,22 +521,6 @@ void BinaryOpNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(optNode);
 }
 
-// #########################
-// ##     TernaryNode     ##
-// #########################
-
-TernaryNode::~TernaryNode() {
-    delete this->condNode;
-    delete this->leftNode;
-    delete this->rightNode;
-}
-
-void TernaryNode::dump(NodeDumper &dumper) const {
-    DUMP_PTR(condNode);
-    DUMP_PTR(leftNode);
-    DUMP_PTR(rightNode);
-}
-
 
 // ########################
 // ##     CmdArgNode     ##
@@ -775,10 +759,12 @@ static void resolveIfIsStatement(Node *condNode, BlockNode *blockNode) {
     blockNode->insertNodeToFirst(declNode);
 }
 
-IfNode::IfNode(unsigned int startPos, Node *condNode, BlockNode *thenNode, Node *elseNode) :
+IfNode::IfNode(unsigned int startPos, Node *condNode, Node *thenNode, Node *elseNode) :
         Node(NodeKind::If, {startPos, 0}), condNode(condNode), thenNode(thenNode), elseNode(elseNode) {
 
-    resolveIfIsStatement(this->condNode, this->thenNode);
+    if(this->thenNode->is(NodeKind::Block)) {
+        resolveIfIsStatement(this->condNode, static_cast<BlockNode *>(this->thenNode));
+    }
     this->updateToken(thenNode->getToken());
     if(this->elseNode != nullptr) {
         this->updateToken(this->elseNode->getToken());

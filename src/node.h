@@ -52,7 +52,6 @@ class NodeDumper;
     OP(Apply) \
     OP(MethodCall) \
     OP(New) \
-    OP(Ternary) \
     OP(Cmd) \
     OP(CmdArg) \
     OP(Redir) \
@@ -994,48 +993,6 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class TernaryNode : public Node {
-private:
-    Node *condNode;
-    Node *leftNode;
-    Node *rightNode;
-
-public:
-    TernaryNode(Node *condNode, Node *leftNode, Node *rightNode) :
-            Node(NodeKind::Ternary, condNode->getToken()), condNode(condNode),
-            leftNode(leftNode), rightNode(rightNode) {
-        this->updateToken(this->rightNode->getToken());
-    }
-
-    ~TernaryNode();
-
-    Node *getCondNode() {
-        return this->condNode;
-    }
-
-    Node *& refCondNode() {
-        return this->condNode;
-    }
-
-    Node *getLeftNode() {
-        return this->leftNode;
-    }
-
-    Node *& refLeftNode() {
-        return this->leftNode;
-    }
-
-    Node *getRightNode() {
-        return this->rightNode;
-    }
-
-    Node *& refRightNode() {
-        return this->rightNode;
-    }
-
-    void dump(NodeDumper &dumper) const override;
-};
-
 /**
  * for command argument
  */
@@ -1404,14 +1361,14 @@ public:
 class IfNode : public Node {
 private:
     Node *condNode;
-    BlockNode *thenNode;
+    Node *thenNode;
     Node *elseNode;
 
 public:
     /**
      * elseNode may be null
      */
-    IfNode(unsigned int startPos, Node *condNode, BlockNode *thenNode, Node *elseNode);
+    IfNode(unsigned int startPos, Node *condNode, Node *thenNode, Node *elseNode);
 
     ~IfNode();
 
@@ -1423,11 +1380,19 @@ public:
         return this->condNode;
     }
 
-    BlockNode *getThenNode() const {
+    Node *getThenNode() const {
+        return this->thenNode;
+    }
+
+    Node *&refThenNode() {
         return this->thenNode;
     }
 
     Node *getElseNode() const {
+        return this->elseNode;
+    }
+
+    Node *&refElseNode() {
         return this->elseNode;
     }
 
@@ -2025,7 +1990,6 @@ struct NodeVisitor {
     virtual void visitApplyNode(ApplyNode &node) = 0;
     virtual void visitMethodCallNode(MethodCallNode &node) = 0;
     virtual void visitNewNode(NewNode &node) = 0;
-    virtual void visitTernaryNode(TernaryNode &node) = 0;
     virtual void visitCmdNode(CmdNode &node) = 0;
     virtual void visitCmdArgNode(CmdArgNode &node) = 0;
     virtual void visitRedirNode(RedirNode &node) = 0;
@@ -2072,7 +2036,6 @@ struct BaseVisitor : public NodeVisitor {
     virtual void visitApplyNode(ApplyNode &node) override { this->visitDefault(node); }
     virtual void visitMethodCallNode(MethodCallNode &node) override { this->visitDefault(node); }
     virtual void visitNewNode(NewNode &node) override { this->visitDefault(node); }
-    virtual void visitTernaryNode(TernaryNode &node) override { this->visitDefault(node); }
     virtual void visitCmdNode(CmdNode &node) override { this->visitDefault(node); }
     virtual void visitCmdArgNode(CmdArgNode &node) override { this->visitDefault(node); }
     virtual void visitRedirNode(RedirNode &node) override { this->visitDefault(node); }

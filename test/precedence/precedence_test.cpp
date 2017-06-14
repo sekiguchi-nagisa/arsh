@@ -95,13 +95,13 @@ public:
         this->close();
     }
 
-    void visitTernaryNode(TernaryNode &node) override {
+    void visitIfNode(IfNode &node) override {
         this->open();
         this->visit(*node.getCondNode());
         this->append("?");
-        this->visit(*node.getLeftNode());
+        this->visit(*node.getThenNode());
         this->append(":");
-        this->visit(*node.getRightNode());
+        this->visit(*node.getElseNode());
         this->close();
     }
 
