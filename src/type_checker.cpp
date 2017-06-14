@@ -181,13 +181,22 @@ DSType &TypeChecker::checkType(DSType *requiredType, Node *targetNode,
                this->typePool.getTypeName(type).c_str());
 }
 
-void TypeChecker::checkTypeWithCurrentScope(BlockNode *blockNode) {
+void TypeChecker::checkTypeWithCurrentScope(DSType *requiredType, BlockNode *blockNode) {
     DSType *blockType = &this->typePool.getVoidType();
-    for(Node * &targetNode : blockNode->refNodes()) {
+    for(auto iter = blockNode->refNodes().begin(); iter != blockNode->refNodes().end(); ++iter) {
+        auto &targetNode = *iter;
         if(blockType->isBottomType()) {
             RAISE_TC_ERROR(Unreachable, *targetNode);
         }
-        this->checkTypeWithCoercion(this->typePool.getVoidType(), targetNode);
+        if(iter == blockNode->refNodes().end() - 1) {
+            if(requiredType != nullptr) {
+                this->checkTypeWithCoercion(*requiredType, targetNode);
+            } else {
+                this->checkType(targetNode);
+            }
+        } else {
+            this->checkTypeWithCoercion(this->typePool.getVoidType(), targetNode);
+        }
         blockType = &targetNode->getType();
 
         // check empty block
@@ -201,7 +210,7 @@ void TypeChecker::checkTypeWithCurrentScope(BlockNode *blockNode) {
     blockNode->setVarSize(this->symbolTable.curScope().getVarSize());
     blockNode->setMaxVarSize(this->symbolTable.getMaxVarIndex() - blockNode->getBaseIndex());
 
-    assert(blockType != nullptr && (blockType->isBottomType() || blockType->isVoidType()));
+    assert(blockType != nullptr);
     blockNode->setType(*blockType);
 }
 
@@ -762,9 +771,9 @@ void TypeChecker::visitAssertNode(DSType *, AssertNode &node) {
     node.setType(this->typePool.getVoidType());
 }
 
-void TypeChecker::visitBlockNode(DSType *, BlockNode &node) {
+void TypeChecker::visitBlockNode(DSType *requiredType, BlockNode &node) {
     this->symbolTable.enterScope();
-    this->checkTypeWithCurrentScope(&node);
+    this->checkTypeWithCurrentScope(requiredType, &node);
     this->symbolTable.exitScope();
 }
 

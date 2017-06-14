@@ -226,7 +226,11 @@ private:
     DSType &checkType(DSType *requiredType, Node *targetNode,
                       DSType *unacceptableType, CoercionKind &kind);
 
-    void checkTypeWithCurrentScope(BlockNode *blockNode);
+    void checkTypeWithCurrentScope(BlockNode *blockNode) {
+        this->checkTypeWithCurrentScope(&this->typePool.getVoidType(), blockNode);
+    }
+
+    void checkTypeWithCurrentScope(DSType *requiredType, BlockNode *blockNode);
 
     /**
      * after type checking.

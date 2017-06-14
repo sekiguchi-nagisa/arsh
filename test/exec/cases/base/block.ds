@@ -14,3 +14,7 @@ assert($a == 45)
 
 var b = 1
 assert($b == 1)
+
+assert {var b = 45; $b = $b * 2; $b; } == 90
+
+assert {{34}} == 34
