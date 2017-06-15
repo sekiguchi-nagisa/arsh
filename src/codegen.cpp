@@ -552,6 +552,14 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
         }
 
         this->markLabel(mergeLabel);
+    } else if(kind == NULL_COALE) {
+        auto mergeLabel = makeIntrusive<Label>();
+
+        this->visit(*node.getLeftNode());
+        this->emitBranchIns(OpCode::TRY_UNWRAP, mergeLabel);
+
+        this->visit(*node.getRightNode());
+        this->markLabel(mergeLabel);
     } else {
         this->visit(*node.getOptNode());
     }

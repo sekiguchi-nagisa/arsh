@@ -111,6 +111,7 @@ namespace ydsh {
     OP(SET_SECOND, 0) \
     OP(UNWRAP, 0) \
     OP(CHECK_UNWRAP, 0) \
+    OP(TRY_UNWRAP, 2) \
     OP(NEW_INVALID, 0) \
     OP(RECLAIM_LOCAL, 2)
 

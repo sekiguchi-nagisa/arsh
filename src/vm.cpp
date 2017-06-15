@@ -1770,6 +1770,16 @@ static bool mainLoop(DSState &state) {
             state.push(b ? state.trueObj : state.falseObj);
             break;
         }
+        vmcase(TRY_UNWRAP) {
+            unsigned short offset = read16(GET_CODE(state), state.pc() + 1);
+            if(state.peek().kind() == DSValueKind::INVALID) {
+                state.popNoReturn();
+                state.pc() += 2;
+            } else {
+                state.pc() += offset - 1;
+            }
+            break;
+        }
         vmcase(NEW_INVALID) {
             state.push(DSValue::createInvalid());
             break;

@@ -49,6 +49,8 @@ unsigned int getPrecedence(TokenKind kind) {
         return 200;
     case OR:
         return 180;
+    case NULL_COALE:
+        return 170;
     case LA:
     case RA:
     case LE:

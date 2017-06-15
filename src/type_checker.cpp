@@ -581,6 +581,17 @@ void TypeChecker::visitBinaryOpNode(DSType *, BinaryOpNode &node) {
         return;
     }
 
+    if(node.getOp() == NULL_COALE) {
+        auto &leftType = this->checkType(node.getLeftNode());
+        if(!leftType.isOptionType()) {
+            RAISE_TC_ERROR(Required, *node.getLeftNode(), "Option type", this->typePool.getTypeName(leftType).c_str());
+        }
+        auto &elementType = static_cast<ReifiedType &>(leftType).getElementTypes()[0];
+        this->checkTypeWithCoercion(*elementType, node.refRightNode());
+        node.setType(*elementType);
+        return;
+    }
+
     auto &leftType = this->checkType(node.getLeftNode());
     auto &rightType = this->checkType(node.getRightNode());
 

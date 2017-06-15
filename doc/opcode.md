@@ -90,5 +90,6 @@
 | SET_SECOND    |                                | value ->                                     | set base time                                      |
 | UNWRAP        |                                | value -> value                               | unwrap option value                                |
 | CHECK_UNWRAP  |                                | value -> value                               | check if option value has a value                  |
+| TRY_UNWRAP    | 2: offset1 offset2             | value -> / [no change]                       | try to unwrap option value                         |
 | NEW_INVALID   |                                | -> value                                     | create then invalid value                          |
 | RECLAIM_LOCAL | 2: offset1 size1               | [no change]                                  | reclaim local variables specified range            |

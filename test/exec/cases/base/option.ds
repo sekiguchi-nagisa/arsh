@@ -40,6 +40,12 @@ try {
 assert $in
 
 
+# null coalescing
+assert $opt(3) ?? "de" == "hello"
+assert $opt(-1) ?? "de" == "de"
+assert new Float!() ?? 34 == 34.0
+
+
 # assign
 var o = $opt(45)
 $o = "world"
