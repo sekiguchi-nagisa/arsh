@@ -84,7 +84,7 @@ DescTokenKind DescLexer::nextToken(Token &token) {
 }
 
 const char *toString(DescTokenKind kind) {
-    static const char *names[] = {
+    const char *names[] = {
 #define GEN_NAME(TOK) #TOK,
             EACH_DESC_TOKEN(GEN_NAME)
 #undef GEN_NAME

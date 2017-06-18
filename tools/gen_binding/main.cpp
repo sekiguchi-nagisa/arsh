@@ -100,7 +100,7 @@ public:
 
     static HandleInfoMap &getInstance();
 
-    const std::string &getName(HandleInfo info);
+    const char *getName(HandleInfo info) const;
 
     HandleInfo getInfo(const std::string &name);
 
@@ -122,16 +122,14 @@ HandleInfoMap &HandleInfoMap::getInstance() {
     return map;
 }
 
-const std::string &HandleInfoMap::getName(HandleInfo info) {
+const char *HandleInfoMap::getName(HandleInfo info) const {
     for(auto &pair : this->info2NameMap) {
         if(pair.first == info) {
-            return pair.second;
+            return pair.second.c_str();
         }
     }
     fatal("not found handle info: %s\n", toTypeInfoName(info).c_str());
-
-    static std::string str;
-    return str;
+    return nullptr;
 }
 
 HandleInfo HandleInfoMap::getInfo(const std::string &name) {
