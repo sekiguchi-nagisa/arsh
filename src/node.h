@@ -57,6 +57,7 @@ class NodeDumper;
     OP(Redir) \
     OP(Pipeline) \
     OP(Substitution) \
+    OP(With) \
     OP(Assert) \
     OP(Block) \
     OP(Jump) \
@@ -1035,6 +1036,9 @@ public:
     RedirNode(TokenKind kind, CmdArgNode *node) :
             Node(NodeKind::Redir, node->getToken()), op(kind), targetNode(node) {}
 
+    RedirNode(TokenKind kind, Token token) :
+            RedirNode(kind, new CmdArgNode(new StringNode(token, std::string("")))) {}
+
     ~RedirNode();
 
     TokenKind getRedirectOP() {
@@ -1093,8 +1097,7 @@ public:
         return this->inPipe;
     }
 
-    void addRedirOption(TokenKind kind, CmdArgNode *node);
-    void addRedirOption(TokenKind kind, Token token);
+    void addRedirNode(RedirNode *node);
 
     void dump(NodeDumper &dumper) const override;
 };
@@ -1148,6 +1151,43 @@ public:
 
     bool isStrExpr() const {
         return this->strExpr;
+    }
+
+    void dump(NodeDumper &dumper) const override;
+};
+
+class WithNode : public Node {
+private:
+    Node *exprNode;
+
+    std::vector<Node *> redirNodes;
+
+    unsigned int baseIndex;
+
+public:
+    WithNode(Node *exprNode) :
+            Node(NodeKind::With, exprNode->getToken()), exprNode(exprNode), redirNodes(), baseIndex(0) {}
+
+    ~WithNode();
+
+    Node *getExprNode() const {
+        return this->exprNode;
+    }
+
+    void addRedirNode(RedirNode *node) {
+        this->redirNodes.push_back(node);
+    }
+
+    const std::vector<Node *> &getRedirNodes() const {
+        return this->redirNodes;
+    }
+
+    void setBaseIndex(unsigned int index) {
+        this->baseIndex = index;
+    }
+
+    unsigned int getBaseIndex() const {
+        return this->baseIndex;
     }
 
     void dump(NodeDumper &dumper) const override;
@@ -1995,6 +2035,7 @@ struct NodeVisitor {
     virtual void visitRedirNode(RedirNode &node) = 0;
     virtual void visitPipelineNode(PipelineNode &node) = 0;
     virtual void visitSubstitutionNode(SubstitutionNode &node) = 0;
+    virtual void visitWithNode(WithNode &node) = 0;
     virtual void visitAssertNode(AssertNode &node) = 0;
     virtual void visitBlockNode(BlockNode &node) = 0;
     virtual void visitJumpNode(JumpNode &node) = 0;
@@ -2041,6 +2082,7 @@ struct BaseVisitor : public NodeVisitor {
     virtual void visitRedirNode(RedirNode &node) override { this->visitDefault(node); }
     virtual void visitPipelineNode(PipelineNode &node) override { this->visitDefault(node); }
     virtual void visitSubstitutionNode(SubstitutionNode &node) override { this->visitDefault(node); }
+    virtual void visitWithNode(WithNode &node) override { this->visitDefault(node); }
     virtual void visitAssertNode(AssertNode &node) override { this->visitDefault(node); }
     virtual void visitBlockNode(BlockNode &node) override { this->visitDefault(node); }
     virtual void visitJumpNode(JumpNode &node) override { this->visitDefault(node); }

@@ -577,14 +577,10 @@ void CmdNode::addArgNode(CmdArgNode *node) {
     this->updateToken(node->getToken());
 }
 
-void CmdNode::addRedirOption(TokenKind kind, CmdArgNode *node) {
-    this->argNodes.push_back(new RedirNode(kind, node));
+void CmdNode::addRedirNode(RedirNode *node) {
+    this->argNodes.push_back(node);
     this->updateToken(node->getToken());
     this->redirCount++;
-}
-
-void CmdNode::addRedirOption(TokenKind kind, Token token) {
-    this->addRedirOption(kind, new CmdArgNode(new StringNode(token, std::string(""))));
 }
 
 void CmdNode::dump(NodeDumper &dumper) const {
@@ -627,6 +623,24 @@ SubstitutionNode::~SubstitutionNode() {
 void SubstitutionNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
     DUMP_PRIM(strExpr);
+}
+
+// ######################
+// ##     WithNode     ##
+// ######################
+
+WithNode::~WithNode() {
+    delete this->exprNode;
+
+    for(auto &e : this->redirNodes) {
+        delete e;
+    }
+}
+
+void WithNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(exprNode);
+    DUMP(redirNodes);
+    DUMP_PRIM(baseIndex);
 }
 
 // ########################

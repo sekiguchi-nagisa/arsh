@@ -60,6 +60,8 @@ unsigned int getPrecedence(TokenKind kind) {
     case MATCH:
     case UNMATCH:
         return 160;
+    case WITH:
+        return 150;
     case COND_AND:
         return 140;
     case COND_OR:

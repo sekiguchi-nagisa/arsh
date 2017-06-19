@@ -695,6 +695,19 @@ void ByteCodeGenerator::visitSubstitutionNode(SubstitutionNode &node) {
     this->markLabel(mergeLabel);
 }
 
+void ByteCodeGenerator::visitWithNode(WithNode &node) {
+    this->generateBlock(node.getBaseIndex(), 1, true, [&] {
+        this->emit0byteIns(OpCode::NEW_REDIR);
+        for(auto &e : node.getRedirNodes()) {
+            this->visit(*e);
+        }
+        this->emit0byteIns(OpCode::DO_REDIR);
+        this->emit1byteIns(OpCode::STORE_LOCAL, node.getBaseIndex());
+
+        this->visit(*node.getExprNode());
+    });
+}
+
 void ByteCodeGenerator::visitAssertNode(AssertNode &node) {
     if(this->assertion) {
         this->visit(*node.getCondNode());

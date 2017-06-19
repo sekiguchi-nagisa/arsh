@@ -779,7 +779,7 @@ std::unique_ptr<Node> Parser::parse_command() {
             break;
         }
         EACH_LA_redir(GEN_LA_CASE) {
-            this->parse_redirOption(node);
+            node->addRedirNode(this->parse_redirOption().release());
             break;
         }
         case INVALID: {
@@ -798,17 +798,16 @@ std::unique_ptr<Node> Parser::parse_command() {
     return std::move(node);
 }
 
-void Parser::parse_redirOption(std::unique_ptr<CmdNode> &node) {
+std::unique_ptr<RedirNode> Parser::parse_redirOption() {
     switch(CUR_KIND()) {
     EACH_LA_redirFile(GEN_LA_CASE) {
         TokenKind kind = this->consume();
-        node->addRedirOption(kind, this->parse_cmdArg().release());
-        break;
+        return uniquify<RedirNode>(kind, this->parse_cmdArg().release());
     }
     EACH_LA_redirNoFile(GEN_LA_CASE) {
-        node->addRedirOption(CUR_KIND(), this->curToken);
-        this->consume();
-        break;
+        Token token = this->curToken;
+        TokenKind kind = this->consume();
+        return uniquify<RedirNode>(kind, token);
     }
     default:
         E_ALTER(EACH_LA_redir(GEN_LA_ALTER));
@@ -908,6 +907,26 @@ std::unique_ptr<Node> Parser::parse_binaryExpression(std::unique_ptr<Node> &&lef
             this->expect(IS, false);
             std::unique_ptr<TypeNode> type(this->parse_typeName());
             node = uniquify<TypeOpNode>(node.release(), type.release(), TypeOpNode::ALWAYS_FALSE);
+            break;
+        }
+        case WITH: {
+            this->expect(WITH);
+            auto withNode = uniquify<WithNode>(node.release());
+            for(bool next = true; next && HAS_SPACE();) {
+                switch(CUR_KIND()) {
+                EACH_LA_redir(GEN_LA_CASE) {
+                    withNode->addRedirNode(this->parse_redirOption().release());
+                    break;
+                }
+                case INVALID: {
+                    E_ALTER(EACH_LA_redir(GEN_LA_ALTER));
+                }
+                default:
+                    next = false;
+                    break;
+                }
+            }
+            node = std::move(withNode);
             break;
         }
         case TERNARY: {

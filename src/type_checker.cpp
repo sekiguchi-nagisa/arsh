@@ -758,6 +758,22 @@ void TypeChecker::visitSubstitutionNode(DSType *, SubstitutionNode &node) {
     }
 }
 
+void TypeChecker::visitWithNode(DSType *requiredType, WithNode &node) {
+    this->symbolTable.enterScope();
+
+    // register redir config
+    this->addEntryAndThrowIfDefined(node, "%%redir", this->typePool.getAnyType(), FieldAttribute::READ_ONLY);
+
+    auto &type = this->checkType(requiredType, node.getExprNode(), nullptr);
+    for(auto &e : node.getRedirNodes()) {
+        this->checkType(e);
+    }
+
+    node.setBaseIndex(this->symbolTable.curScope().getBaseIndex());
+    this->symbolTable.exitScope();
+    node.setType(type);
+}
+
 void TypeChecker::visitAssertNode(DSType *, AssertNode &node) {
     this->checkTypeWithCoercion(this->typePool.getBooleanType(), node.refCondNode());
     this->checkType(this->typePool.getStringType(), node.getMessageNode());

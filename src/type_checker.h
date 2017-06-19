@@ -353,6 +353,7 @@ private:
     void visitRedirNode(DSType *requiredType, RedirNode &node);
     void visitPipelineNode(DSType *requiredType, PipelineNode &node);
     void visitSubstitutionNode(DSType *requiredType, SubstitutionNode &node);
+    void visitWithNode(DSType *requiredType, WithNode &node);
     void visitAssertNode(DSType *requiredType, AssertNode &node);
     void visitBlockNode(DSType *requiredType, BlockNode &node);
     void visitJumpNode(DSType *requiredType, JumpNode &node);

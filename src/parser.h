@@ -151,7 +151,7 @@ private:
 
     std::unique_ptr<Node> parse_command();
 
-    void parse_redirOption(std::unique_ptr<CmdNode> &node);
+    std::unique_ptr<RedirNode> parse_redirOption();
 
     std::unique_ptr<CmdArgNode> parse_cmdArg();
 
