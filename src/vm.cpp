@@ -1966,7 +1966,7 @@ int execBuiltinCommand(DSState &st, char *const argv[]) {
     if(st.codeStack.size()) {
         mainLoop(st);
     }
-    st.pop();
+    st.popNoReturn();
     return st.getExitStatus();
 }
 
