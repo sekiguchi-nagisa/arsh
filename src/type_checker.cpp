@@ -764,7 +764,8 @@ void TypeChecker::visitWithNode(DSType *requiredType, WithNode &node) {
     // register redir config
     this->addEntryAndThrowIfDefined(node, "%%redir", this->typePool.getAnyType(), FieldAttribute::READ_ONLY);
 
-    auto &type = this->checkType(requiredType, node.getExprNode(), nullptr);
+    auto &type = this->checkType(requiredType != nullptr && requiredType->isVoidType() ?
+                                 nullptr : requiredType, node.getExprNode(), nullptr);
     for(auto &e : node.getRedirNodes()) {
         this->checkType(e);
     }

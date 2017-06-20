@@ -65,6 +65,20 @@ $YDSH_BIN -c "eval sh -c 'echo GHI' 1>> $TARGET"
 test "$(cat $TARGET)" = "$(echo 123 && echo DEF && echo GHI)"
 
 
+# with
+$YDSH_BIN -c "{ echo ABC; } with > $TARGET"
+test "$(cat $TARGET)" = "$(echo ABC)"
+
+$YDSH_BIN -c "{ echo 123; } with 1> $TARGET"
+test "$(cat $TARGET)" = "$(echo 123)"
+
+$YDSH_BIN -c "{ echo DEF; } with >> $TARGET"
+test "$(cat $TARGET)" = "$(echo 123 && echo DEF)"
+
+$YDSH_BIN -c "{ echo GHI; } with 1>> $TARGET"
+test "$(cat $TARGET)" = "$(echo 123 && echo DEF && echo GHI)"
+
+
 # command command
 ## builtin command
 $YDSH_BIN -c "command __puts -1 ABC > $TARGET"

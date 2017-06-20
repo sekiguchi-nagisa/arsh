@@ -98,6 +98,32 @@ $YDSH_BIN -c "eval sh -c 'echo AAA && echo 123 1>&2' &>> $TARGET"
 test "$(cat $TARGET)" = "$(echo AAA && echo 123 && echo AAA && echo 123)"
 
 
+# with
+test "$($YDSH_BIN -c '{ __puts -1 AAA -2 123; } with 2>&1')" = "$(echo AAA && echo 123)"
+
+test "$($YDSH_BIN -c '{ __puts -1 AAA -2 123; } with 2>&1 > /dev/null')" = "$(echo 123)"
+
+test "$($YDSH_BIN -c '{ __puts -1 AAA -2 123; } with 2>&1 2> /dev/null')" = "$(echo AAA)"
+
+test "$($YDSH_BIN -c '{ __puts -1 AAA -2 123; } with 1>&2')" = "$(echo)"
+
+test "$($YDSH_BIN -c '{ __puts -1 AAA -2 123; } with 1>&2' 2>&1)" = "$(echo AAA && echo 123)"
+
+test "$($YDSH_BIN -c '{ __puts -1 AAA -2 123; } with 1>&2 > /dev/null' 2>&1)" = "$(echo 123)"
+
+test "$($YDSH_BIN -c '{ __puts -1 AAA -2 123; } with 1>&2 2> /dev/null' 2>&1)" = "$(echo AAA)"
+
+
+$YDSH_BIN -c "{ __puts -1 AAA -2 123; } with &> $TARGET"
+test "$(cat $TARGET)" = "$(echo AAA && echo 123)"
+
+$YDSH_BIN -c "{ __puts -1 AAA -2 123; } with >& $TARGET"
+test "$(cat $TARGET)" = "$(echo AAA && echo 123)"
+
+$YDSH_BIN -c "{ __puts -1 AAA -2 123; } with &>> $TARGET"
+test "$(cat $TARGET)" = "$(echo AAA && echo 123 && echo AAA && echo 123)"
+
+
 # command command
 ## builtin command
 test "$($YDSH_BIN -c 'command __puts -1 AAA -2 123 2>&1')" = "$(echo AAA && echo 123)"

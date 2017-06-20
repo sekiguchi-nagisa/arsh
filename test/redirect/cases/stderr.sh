@@ -47,6 +47,14 @@ $YDSH_BIN -c "eval sh -c 'echo DEF 1>&2' 2>> $TARGET"
 test "$(cat $TARGET)" = "$(echo 123 && echo DEF)"
 
 
+# with
+$YDSH_BIN -c "{ sh -c 'echo 123 1>&2'; } with 2> $TARGET"
+test "$(cat $TARGET)" = "$(echo 123)"
+
+$YDSH_BIN -c "{ sh -c 'echo DEF 1>&2'; } with 2>> $TARGET"
+test "$(cat $TARGET)" = "$(echo 123 && echo DEF)"
+
+
 # command command
 ## builtin command
 $YDSH_BIN -c "command __puts -2 123 2> $TARGET"

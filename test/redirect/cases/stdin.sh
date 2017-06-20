@@ -32,6 +32,9 @@ $YDSH_BIN -c "grep < $TARGET 'hello world'" | grep 'hello world'
 # eval
 $YDSH_BIN -c "eval grep < $TARGET 'hello world'" | grep 'hello world'
 
+# with
+$YDSH_BIN -c "{ grep 'hello world'; } with < $TARGET" | grep 'hello world'
+
 # command command
 ## builtin
 $YDSH_BIN -c "command __gets < $TARGET" | grep 'hello world'

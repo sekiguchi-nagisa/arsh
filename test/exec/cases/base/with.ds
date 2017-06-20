@@ -1,0 +1,9 @@
+
+assert ($true with > /dev/null) is Boolean
+
+function f() : String {
+    read
+    return $REPLY
+}
+
+assert ($f() with <<< "hello world") == "hello world"

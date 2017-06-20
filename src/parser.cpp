@@ -911,7 +911,8 @@ std::unique_ptr<Node> Parser::parse_binaryExpression(std::unique_ptr<Node> &&lef
         }
         case WITH: {
             this->expect(WITH);
-            auto withNode = uniquify<WithNode>(node.release());
+            auto redirNode = this->parse_redirOption();
+            auto withNode = uniquify<WithNode>(node.release(), redirNode.release());
             for(bool next = true; next && HAS_SPACE();) {
                 switch(CUR_KIND()) {
                 EACH_LA_redir(GEN_LA_CASE) {

@@ -1165,8 +1165,10 @@ private:
     unsigned int baseIndex;
 
 public:
-    WithNode(Node *exprNode) :
-            Node(NodeKind::With, exprNode->getToken()), exprNode(exprNode), redirNodes(), baseIndex(0) {}
+    WithNode(Node *exprNode, RedirNode *redirNode) :
+            Node(NodeKind::With, exprNode->getToken()), exprNode(exprNode), redirNodes(), baseIndex(0) {
+        this->addRedirNode(redirNode);
+    }
 
     ~WithNode();
 
@@ -1176,6 +1178,7 @@ public:
 
     void addRedirNode(RedirNode *node) {
         this->redirNodes.push_back(node);
+        this->updateToken(node->getToken());
     }
 
     const std::vector<Node *> &getRedirNodes() const {
