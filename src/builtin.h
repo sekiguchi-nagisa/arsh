@@ -1303,7 +1303,7 @@ YDSH_METHOD regex_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(regex_init);
     auto *str = typeAs<String_Object>(LOCAL(1));
     const char *errorStr;
-    auto re = compileRegex(str->getValue(), errorStr);
+    auto re = compileRegex(str->getValue(), errorStr, 0);
     if(!re) {
         throwError(ctx, getPool(ctx).getRegexSyntaxErrorType(), std::string(errorStr));
     }

@@ -1091,13 +1091,29 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         auto old = token;
 
         /**
-         * skip prefix '$/' and suffix '/'
+         * skip prefix '$/'
          */
         token.pos += 2;
-        token.size -= 3;
+        token.size -= 2;
         std::string str = this->lexer->toTokenText(token);
+
+        /**
+         * parse regex flag
+         */
+        int regexFlag = 0;
+        while(str.back() != '/') {
+            char ch = str.back();
+            if(ch == 'i') {
+                regexFlag |= PCRE_CASELESS;
+            } else if(ch == 'm') {
+                regexFlag |= PCRE_MULTILINE;
+            }
+            str.pop_back();
+        }
+        str.pop_back(); // skip suffix '/'
+
         const char *errorStr;
-        auto re = compileRegex(str.c_str(), errorStr);
+        auto re = compileRegex(str.c_str(), errorStr, regexFlag);
         if(!re) {
             raiseTokenFormatError(REGEX_LITERAL, old, errorStr);
         }

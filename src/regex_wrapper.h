@@ -31,11 +31,10 @@ struct PCREDeleter {
 
 using PCRE = std::unique_ptr<pcre, PCREDeleter>;
 
-inline PCRE compileRegex(const char *pattern, const char * &errorStr) {
+inline PCRE compileRegex(const char *pattern, const char * &errorStr, int flag) {
     int errorOffset;
-    pcre *re = pcre_compile(pattern,  PCRE_JAVASCRIPT_COMPAT | PCRE_UTF8, &errorStr, &errorOffset, nullptr);
+    pcre *re = pcre_compile(pattern,  PCRE_JAVASCRIPT_COMPAT | PCRE_UTF8 | flag, &errorStr, &errorOffset, nullptr);
     return PCRE(re);
-
 }
 
 } // namespace ydsh
