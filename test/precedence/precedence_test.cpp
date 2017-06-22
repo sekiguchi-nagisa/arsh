@@ -227,7 +227,7 @@ TEST_F(PrecedenceTest, case5) {
 TEST_F(PrecedenceTest, case6) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
-        this->equals("((1 -and 2) -or (3 -xor (4 + 3)))", "1 -and 2 -or 3 -xor 4 + 3");
+        this->equals("((1 and 2) or (3 xor (4 + 3)))", "1 and 2 or 3 xor 4 + 3");
     });
 }
 
@@ -248,8 +248,8 @@ TEST_F(PrecedenceTest, case8) {
 
 TEST_F(PrecedenceTest, case9) {
     ASSERT_NO_FATAL_FAILURE(
-            this->equals("((1 == 2) ? ((3 > 4) ? (5 + 6) : (7 -xor 8)) : (9 && 10))",
-                         "1 == 2 ? 3 > 4 ? 5 + 6 : 7 -xor 8 : 9 && 10"));
+            this->equals("((1 == 2) ? ((3 > 4) ? (5 + 6) : (7 xor 8)) : (9 && 10))",
+                         "1 == 2 ? 3 > 4 ? 5 + 6 : 7 xor 8 : 9 && 10"));
 }
 
 int main(int argc, char **argv) {

@@ -167,14 +167,14 @@ assert(not (43 <= 0))
 assert(55 >= 55)
 assert(43 >= -353)
 
-assert((1 -or 2) is Int32)
-assert((1 -or 2) == 3)
+assert((1 or 2) is Int32)
+assert((1 or 2) == 3)
 
-assert((3 -and 3) is Int32)
-assert((3 -and 3) == 3)
+assert((3 and 3) is Int32)
+assert((3 and 3) == 3)
 
-assert((1 -xor 2) is Int32)
-assert((1 -xor 2) == 3)
+assert((1 xor 2) is Int32)
+assert((1 xor 2) == 3)
 
 # Uint32 op
 assert(-12u32 is Uint32)
@@ -208,14 +208,14 @@ assert(55u32 >= 55u32)
 assert(43u32 <= 77u32)
 assert(890u32 >= 4u32)
 
-assert((1u32 -or 2u32) is Uint32)
-assert((1u32 -or 2u32) == 3u32)
+assert((1u32 or 2u32) is Uint32)
+assert((1u32 or 2u32) == 3u32)
 
-assert((3u32 -and 3u32) is Uint32)
-assert((3u32 -and 3u32) == 3u32)
+assert((3u32 and 3u32) is Uint32)
+assert((3u32 and 3u32) == 3u32)
 
-assert((1u32 -xor 2u32) is Uint32)
-assert((1u32 -xor 2u32) == 3u32)
+assert((1u32 xor 2u32) is Uint32)
+assert((1u32 xor 2u32) == 3u32)
 
 # Int64 op
 assert((12i64 + 3i64) is Int64)
@@ -247,14 +247,14 @@ assert(not (43i64 <= 0i64))
 assert(55i64 >= 55i64)
 assert(43i64 >= -353i64)
 
-assert((1i64 -or 2i64) is Int64)
-assert((1i64 -or 2i64) == 3i64)
+assert((1i64 or 2i64) is Int64)
+assert((1i64 or 2i64) == 3i64)
 
-assert((3i64 -and 3i64) is Int64)
-assert((3i64 -and 3i64) == 3i64)
+assert((3i64 and 3i64) is Int64)
+assert((3i64 and 3i64) == 3i64)
 
-assert((1i64 -xor 2i64) is Int64)
-assert((1i64 -xor 2i64) == 3i64)
+assert((1i64 xor 2i64) is Int64)
+assert((1i64 xor 2i64) == 3i64)
 
 # Uint64 op
 assert(-1u64 == 18446744073709551615u64)
@@ -287,14 +287,14 @@ assert(55u64 >= 55u64)
 assert(43u64 <= 77u64)
 assert(890u64 >= 4u64)
 
-assert((1u64 -or 2u64) is Uint64)
-assert((1u64 -or 2u64) == 3u64)
+assert((1u64 or 2u64) is Uint64)
+assert((1u64 or 2u64) == 3u64)
 
-assert((3u64 -and 3u64) is Uint64)
-assert((3u64 -and 3u64) == 3u64)
+assert((3u64 and 3u64) is Uint64)
+assert((3u64 and 3u64) == 3u64)
 
-assert((1u64 -xor 2u64) is Uint64)
-assert((1u64 -xor 2u64) == 3u64)
+assert((1u64 xor 2u64) is Uint64)
+assert((1u64 xor 2u64) == 3u64)
 
 # int cast
 assert((2b + 4b) is Int32)

@@ -1635,16 +1635,16 @@ TEST_F(LexerTest_Lv1, NE2) {
 }
 
 TEST_F(LexerTest_Lv1, AND1) {
-    const char *text = "-and";
+    const char *text = "and";
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(MINUS, "-", COMMAND, "and", LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, "and", LINE_END, "\n", EOS, "");
     });
 }
 
 TEST_F(LexerTest_Lv1, AND2) {
-    const char *text = "-and";
+    const char *text = "and";
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text, yycEXPR);
@@ -1673,16 +1673,16 @@ TEST_F(LexerTest_Lv1, BG) {
 }
 
 TEST_F(LexerTest_Lv1, OR1) {
-    const char *text = "-or";
+    const char *text = "or";
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(MINUS, "-", COMMAND, "or", LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, "or", LINE_END, "\n", EOS, "");
     });
 }
 
 TEST_F(LexerTest_Lv1, OR2) {
-    const char *text = "-or";
+    const char *text = "or";
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text, yycEXPR);
@@ -1712,16 +1712,16 @@ TEST_F(LexerTest_Lv1, PIPE) {
 }
 
 TEST_F(LexerTest_Lv1, XOR1) {
-    const char *text = "-xor";
+    const char *text = "xor";
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(MINUS, "-", COMMAND, "xor", LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, "xor", LINE_END, "\n", EOS, "");
     });
 }
 
 TEST_F(LexerTest_Lv1, XOR2) {
-    const char *text = "-xor";
+    const char *text = "xor";
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text, yycEXPR);
