@@ -147,8 +147,6 @@ private:
 
     std::unique_ptr<CatchNode> parse_catchStatement();
 
-    std::unique_ptr<Node> parse_pipedCommand();
-
     std::unique_ptr<Node> parse_command();
 
     std::unique_ptr<RedirNode> parse_redirOption();

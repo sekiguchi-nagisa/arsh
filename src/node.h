@@ -1107,9 +1107,10 @@ private:
     std::vector<Node *> nodes;
 
 public:
-    explicit PipelineNode(Node *node) :
-            Node(NodeKind::Pipeline, node->getToken()), nodes() {
-        this->addNode(node);
+    PipelineNode(Node *leftNode, Node *rightNode) :
+            Node(NodeKind::Pipeline, leftNode->getToken()), nodes() {
+        this->addNode(leftNode);
+        this->addNode(rightNode);
     }
 
     ~PipelineNode();

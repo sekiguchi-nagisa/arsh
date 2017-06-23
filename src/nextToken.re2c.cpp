@@ -213,6 +213,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <EXPR> "!~"              { MODE(STMT); RET(UNMATCH); }
       <EXPR> "?"               { MODE(STMT); RET(TERNARY); }
       <EXPR> "??"              { MODE(STMT); RET(NULL_COALE); }
+      <EXPR> "|"               { MODE(STMT); RET(PIPE); }
 
       <EXPR> "++"              { RET(INC); }
       <EXPR> "--"              { RET(DEC); }

@@ -740,24 +740,6 @@ std::unique_ptr<CatchNode> Parser::parse_catchStatement() {
 }
 
 // command
-std::unique_ptr<Node> Parser::parse_pipedCommand() {
-    std::unique_ptr<Node> cmdNode(this->parse_command());
-    if(cmdNode->is(NodeKind::UserDefinedCmd)) {
-        return cmdNode;
-    }
-
-    if(CUR_KIND() == PIPE) {
-        auto node = uniquify<PipelineNode>(cmdNode.release());
-
-        while(CUR_KIND() == PIPE) {
-            this->expect(PIPE);
-            node->addNode(this->parse_command().release());
-        }
-        return std::move(node);
-    }
-    return cmdNode;
-}
-
 std::unique_ptr<Node> Parser::parse_command() {
     Token token = this->expect(COMMAND);
 
@@ -891,6 +873,20 @@ std::unique_ptr<Node> Parser::parse_expression() {
             this->parse_unaryExpression(), getPrecedence(TERNARY));
 }
 
+static std::unique_ptr<Node> createBinaryNode(std::unique_ptr<Node> &&leftNode,
+                                              TokenKind op, std::unique_ptr<Node> &&rightNode) {
+    if(op == PIPE) {
+        if(leftNode->is(NodeKind::Pipeline)) {
+            static_cast<PipelineNode *>(leftNode.get())->addNode(rightNode.release());
+            return std::move(leftNode);
+        } else {
+            return uniquify<PipelineNode>(leftNode.release(), rightNode.release());
+        }
+    } else {
+        return uniquify<BinaryOpNode>(leftNode.release(), op, rightNode.release());
+    }
+}
+
 std::unique_ptr<Node> Parser::parse_binaryExpression(std::unique_ptr<Node> &&leftNode,
                                                      unsigned int basePrecedence) {
     std::unique_ptr<Node> node(std::move(leftNode));
@@ -945,7 +941,7 @@ std::unique_ptr<Node> Parser::parse_binaryExpression(std::unique_ptr<Node> &&lef
             for(unsigned int nextP = PRECEDENCE(); !HAS_NL() && nextP > p; nextP = PRECEDENCE()) {
                 rightNode = this->parse_binaryExpression(std::move(rightNode), nextP);
             }
-            node = uniquify<BinaryOpNode>(node.release(), op, rightNode.release());
+            node = createBinaryNode(std::move(node), op, std::move(rightNode));
             break;
         }
         }
@@ -1029,7 +1025,7 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
 std::unique_ptr<Node> Parser::parse_primaryExpression() {
     switch(CUR_KIND()) {
     case COMMAND:
-        return parse_pipedCommand();
+        return parse_command();
     case NEW: {
         unsigned int startPos = START_POS();
         this->expect(NEW, false);

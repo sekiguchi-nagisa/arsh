@@ -1691,16 +1691,14 @@ TEST_F(LexerTest_Lv1, OR2) {
     });
 }
 
-TEST_F(LexerTest_Lv1, OR3) {    // invalid
+TEST_F(LexerTest_Lv1, PIPE1) {
     const char *text = "|";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text, yycEXPR);
-        EXPECT(INVALID, "|");
-    });
+    this->initLexer(text, yycEXPR);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(PIPE, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
 }
 
-TEST_F(LexerTest_Lv1, PIPE) {
+TEST_F(LexerTest_Lv1, PIPE2) {
     const char *text = "|";
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
