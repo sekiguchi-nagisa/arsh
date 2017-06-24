@@ -235,6 +235,7 @@ protected:
      */
     Tracker *tracker;
 
+private:
     std::unique_ptr<ParseError<T>> error;
 
 public:
@@ -290,6 +291,11 @@ protected:
     void raiseNoViableAlterError(unsigned int size, const T *const alters);
 
     void raiseInvalidTokenError(unsigned int size, const T *const alters);
+
+    template <typename ...Arg>
+    void createError(Arg && ...arg) {
+        this->error.reset(new ParseError<T>(std::forward<Arg>(arg)...));
+    }
 };
 
 // ############################
@@ -331,8 +337,8 @@ void AbstractParser<T, LexerImpl, Tracker>::raiseTokenMismatchedError(T expected
 
         std::vector<T> expectedTokens(1);
         expectedTokens[0] = expected;
-        this->error.reset(new ParseError<T>(this->curKind, this->curToken, "TokenMismatched",
-                                            std::move(expectedTokens), std::move(message)));
+        this->createError(this->curKind, this->curToken, "TokenMismatched",
+                          std::move(expectedTokens), std::move(message));
     }
 }
 
@@ -354,8 +360,8 @@ void AbstractParser<T, LexerImpl, Tracker>::raiseNoViableAlterError(unsigned int
         }
 
         std::vector<T> expectedTokens(alters, alters + size);
-        this->error.reset(new ParseError<T>(this->curKind, this->curToken, "NoViableAlter",
-                                            std::move(expectedTokens), std::move(message)));
+        this->createError(this->curKind, this->curToken, "NoViableAlter",
+                          std::move(expectedTokens), std::move(message));
     }
 }
 
@@ -372,8 +378,8 @@ void AbstractParser<T, LexerImpl, Tracker>::raiseInvalidTokenError(unsigned int 
     }
 
     std::vector<T> expectedTokens(alters, alters + size);
-    this->error.reset(new ParseError<T>(this->curKind, this->curToken, "InvalidToken",
-                                        std::move(expectedTokens), std::move(message)));
+    this->createError(this->curKind, this->curToken, "InvalidToken",
+                      std::move(expectedTokens), std::move(message));
 }
 
 
