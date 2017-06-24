@@ -143,6 +143,10 @@ static bool isDirective(const std::string &line) {
     return true;
 }
 
+#define TRY(expr) \
+({ auto v = expr; if(this->hasError()) { return nullptr; } std::forward<decltype(v)>(v); })
+
+
 bool DirectiveParser::operator()(const char *sourceName, std::istream &input, Directive &d) {
     std::string line;
     unsigned int lineNum = 0;
@@ -163,16 +167,19 @@ bool DirectiveParser::operator()(const char *sourceName, std::istream &input, Di
 
         try {
             auto node = this->parse_toplevel();
+            if(this->hasError()) {
+                auto &e = *this->getError();
+                std::cerr << sourceName << ":" << lexer.getLineNum() << ": [syntax error] " << e.getMessage() << std::endl;
+                std::cerr << src << std::endl;
+                Token lineToken;
+                lineToken.pos = 0;
+                lineToken.size = line.size();
+                std::cerr << this->lexer->formatLineMarker(lineToken, e.getErrorToken()) << std::endl;
+                return false;
+            }
+
             DirectiveInitializer()(node, d);
             return true;
-        } catch(const ParseError &e) {
-            std::cerr << sourceName << ":" << lexer.getLineNum() << ": [syntax error] " << e.getMessage() << std::endl;
-            std::cerr << src << std::endl;
-            Token lineToken;
-            lineToken.pos = 0;
-            lineToken.size = line.size();
-            std::cerr << this->lexer->formatLineMarker(lineToken, e.getErrorToken()) << std::endl;
-            return false;
         } catch(const SemanticError &e) {
             std::cerr << sourceName << ":" << lexer.getLineNum() << ": [semantic error] ";
             std::cerr << e.getMessage() << std::endl;
@@ -191,33 +198,33 @@ bool DirectiveParser::operator()(const char *sourceName, std::istream &input, Di
 #define CUR_KIND() this->curKind
 
 std::unique_ptr<DirectiveNode> DirectiveParser::parse_toplevel() {
-    Token token = this->expect(APPLIED_NAME);
+    Token token = TRY(this->expect(APPLIED_NAME));
     std::unique_ptr<DirectiveNode> node(new DirectiveNode(token, this->lexer->toName(token)));
 
-    this->expect(LP);
+    TRY(this->expect(LP));
 
     bool first = true;
     do {
         if(!first) {
-            this->expect(COMMA);
+            TRY(this->expect(COMMA));
         } else {
             first = false;
         }
-        auto attr = this->parse_attribute();
+        auto attr = TRY(this->parse_attribute());
         node->append(std::move(attr));
     } while(CUR_KIND() == COMMA);
 
-    this->expect(RP);
+    TRY(this->expect(RP));
 
     return node;
 }
 
 std::unique_ptr<AttributeNode> DirectiveParser::parse_attribute() {
-    Token token = this->expect(APPLIED_NAME);
+    Token token = TRY(this->expect(APPLIED_NAME));
 
-    this->expect(ASSIGN);
+    TRY(this->expect(ASSIGN));
 
-    auto value = this->parse_value();
+    auto value = TRY(this->parse_value());
 
     return std::unique_ptr<AttributeNode>(new AttributeNode(token, this->lexer->toName(token), std::move(value)));
 }
@@ -246,12 +253,13 @@ std::unique_ptr<Node> DirectiveParser::parse_value() {
 #undef GEN_LA_value
 #undef EACH_LA_value
         };
-        this->alternativeError(alters);
+        this->raiseNoViableAlterError(alters);
+        return nullptr;
     }
 }
 
 std::unique_ptr<Node> DirectiveParser::parse_number() {
-    Token token = this->expect(INT_LITERAL);
+    Token token = TRY(this->expect(INT_LITERAL));
     int status;
     int value = this->lexer->toInt(token, status);
     if(value < 0 || status != 0) {
@@ -263,7 +271,7 @@ std::unique_ptr<Node> DirectiveParser::parse_number() {
 }
 
 std::unique_ptr<Node> DirectiveParser::parse_string() {
-    Token token = this->expect(STRING_LITERAL);
+    Token token = TRY(this->expect(STRING_LITERAL));
     return std::unique_ptr<Node>(new StringNode(token, this->lexer->toString(token)));
 }
 
@@ -271,28 +279,28 @@ std::unique_ptr<Node> DirectiveParser::parse_boolean() {
     Token token;
     bool value;
     if(CUR_KIND() == TRUE_LITERAL) {
-        token = this->expect(TRUE_LITERAL);
+        token = TRY(this->expect(TRUE_LITERAL));
         value = true;
     } else {
-        token = this->expect(FALSE_LITERAL);
+        token = TRY(this->expect(FALSE_LITERAL));
         value = false;
     }
     return std::unique_ptr<Node>(new BooleanNode(token, value));
 }
 
 std::unique_ptr<Node> DirectiveParser::parse_array() {
-    Token token = this->expect(ARRAY_OPEN);
+    Token token = TRY(this->expect(ARRAY_OPEN));
     std::unique_ptr<ArrayNode> arrayNode(new ArrayNode(token));
-    auto value = this->parse_value();
+    auto value = TRY(this->parse_value());
     arrayNode->appendNode(std::move(value));
 
     while(CUR_KIND() == COMMA) {
-        this->expect(COMMA);
+        TRY(this->expect(COMMA));
 
-        value = this->parse_value();
+        value = TRY(this->parse_value());
         arrayNode->appendNode(std::move(value));
     }
-    this->expect(ARRAY_CLOSE);
+    TRY(this->expect(ARRAY_CLOSE));
     return std::move(arrayNode);
 }
 

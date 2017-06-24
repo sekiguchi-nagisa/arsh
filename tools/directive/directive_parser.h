@@ -288,7 +288,7 @@ public:
  *
  * test directive use subset of ydsh lexical rule.
  */
-class DirectiveParser : public ydsh::parser_base::ParserBase<TokenKind, Lexer> {
+class DirectiveParser : public ydsh::parser_base::AbstractParser<TokenKind, Lexer> {
 public:
     DirectiveParser() = default;
     ~DirectiveParser() = default;

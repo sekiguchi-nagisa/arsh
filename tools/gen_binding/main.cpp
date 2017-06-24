@@ -531,18 +531,17 @@ using ParseError = ydsh::parser_base::ParseError<DescTokenKind>;
 
 #define CUR_KIND() (this->curKind)
 
-class Parser : public ydsh::parser_base::ParserBase<DescTokenKind, DescLexer> {
-private:
+#define TRY(expr) \
+({ auto v = expr; if(this->hasError()) { return nullptr; } std::forward<decltype(v)>(v); })
+
+
+class Parser : public ydsh::parser_base::AbstractParser<DescTokenKind, DescLexer> {
+public:
     Parser() = default;
 
-public:
     ~Parser() = default;
 
-    /**
-     * open file and parse.
-     * after parsing, write results to elements.
-     */
-    static void parse(const char *fileName, std::vector<std::unique_ptr<Element>> &elements);
+    std::vector<std::unique_ptr<Element>> operator()(const char *fileName);
 
 private:
     static bool isDescriptor(const std::string &line);
@@ -565,54 +564,79 @@ private:
 
     std::unique_ptr<Element> parse_initDesc();
 
-    void parse_params(const std::unique_ptr<Element> &element);
+    /**
+     *
+     * @param element
+     * @return
+     * always null
+     */
+    std::unique_ptr<Element> parse_params(std::unique_ptr<Element> &element);
 
     std::unique_ptr<TypeToken> parse_type();
 
-    void parse_funcDecl(const std::string &line, std::unique_ptr<Element> &element);
+    /**
+     *
+     * @param line
+     * @param element
+     * @return
+     * always null
+     */
+    std::unique_ptr<Element> parse_funcDecl(const std::string &line, std::unique_ptr<Element> &element);
 };
 
-void Parser::parse(const char *fileName, std::vector<std::unique_ptr<Element>> &elements) {
+std::vector<std::unique_ptr<Element>> Parser::operator()(const char *fileName) {
     std::ifstream input(fileName);
     if(!input) {
         fatal("cannot open file: %s\n", fileName);
     }
 
-    Parser parser;
     unsigned int lineNum = 0;
     std::string line;
     bool foundDesc = false;
 
+    std::vector<std::unique_ptr<Element>> elements;
     std::unique_ptr<Element> element;
     while(std::getline(input, line)) {
         lineNum++;
 
         try {
             if(foundDesc) {
-                parser.parse_funcDecl(line, element);
+                this->parse_funcDecl(line, element);
+                if(this->hasError()) {
+                    goto ERR;
+                }
                 elements.push_back(std::move(element));
                 foundDesc = false;
                 continue;
             }
             if(isDescriptor(line)) {
                 foundDesc = true;
-                element = parser.parse_descriptor(line);
+                element = this->parse_descriptor(line);
+                if(this->hasError()) {
+                    goto ERR;
+                }
+            }
+
+            ERR:
+            if(this->hasError()) {
+                auto &e = *this->getError();
+                std::cerr << fileName << ":" << lineNum << ": [error] " << e.getMessage() << std::endl;
+                std::cerr << line << std::endl;
+                Token lineToken;
+                lineToken.pos = 0;
+                lineToken.size = line.size();
+                std::cerr << this->lexer->formatLineMarker(lineToken, e.getErrorToken()) << std::endl;
+                exit(EXIT_FAILURE);
             }
         } catch(const ProcessingError &e) {
             std::cerr << fileName << ":" << lineNum
-            << ": [error] " << e.getMessage() << std::endl;
+                      << ": [error] " << e.getMessage() << std::endl;
             std::cerr << line << std::endl;
-            exit(EXIT_FAILURE);
-        } catch(const ParseError &e) {
-            std::cerr << fileName << ":" << lineNum << ": [error] " << e.getMessage() << std::endl;
-            std::cerr << line << std::endl;
-            Token lineToken;
-            lineToken.pos = 0;
-            lineToken.size = line.size();
-            std::cerr << parser.lexer->formatLineMarker(lineToken, e.getErrorToken()) << std::endl;
             exit(EXIT_FAILURE);
         }
     }
+
+    return elements;
 }
 
 bool Parser::isDescriptor(const std::string &line) {
@@ -642,37 +666,36 @@ std::unique_ptr<Element> Parser::parse_descriptor(const std::string &line) {
     DescLexer lexer(line.c_str());
     this->init(lexer);
 
-    this->expect(DESC_PREFIX);
+    TRY(this->expect(DESC_PREFIX));
 
     switch(CUR_KIND()) {
     case FUNC:
         return this->parse_funcDesc();
     case INIT:
         return this->parse_initDesc();
-    default: {
+    default:
         const DescTokenKind alters[] = {
                 FUNC, INIT,
         };
-        this->alternativeError(alters);
+        this->raiseNoViableAlterError(alters);
+        return nullptr;
     }
-    }
-    return std::unique_ptr<Element>(nullptr);
 }
 
 std::unique_ptr<Element> Parser::parse_funcDesc() {
-    this->expect(FUNC);
+    TRY(this->expect(FUNC));
 
     std::unique_ptr<Element> element;
 
     // parser function name
     switch(CUR_KIND()) {
     case IDENTIFIER: {
-        Token token = this->expect(IDENTIFIER);
+        Token token = TRY(this->expect(IDENTIFIER));
         element = Element::newFuncElement(this->lexer->toTokenText(token), false);
         break;
     }
     case VAR_NAME: {
-        Token token = this->expect(VAR_NAME);
+        Token token = TRY(this->expect(VAR_NAME));
         element = Element::newFuncElement(this->toName(token), true);
         break;
     }
@@ -680,97 +703,102 @@ std::unique_ptr<Element> Parser::parse_funcDesc() {
         const DescTokenKind alters[] = {
                 IDENTIFIER, VAR_NAME,
         };
-        this->alternativeError(alters);
+        this->raiseNoViableAlterError(alters);
+        return nullptr;
     }
     }
 
     // parser parameter decl
-    this->expect(LP);
-    this->parse_params(element);
-    this->expect(RP);
+    TRY(this->expect(LP));
+    TRY(this->parse_params(element));
+    TRY(this->expect(RP));
 
-    this->expect(COLON);
-    element->setReturnType(this->parse_type());
+    TRY(this->expect(COLON));
+    element->setReturnType(TRY(this->parse_type()));
 
     return element;
 }
 
 std::unique_ptr<Element> Parser::parse_initDesc() {
-    this->expect(INIT);
+    TRY(this->expect(INIT));
 
     std::unique_ptr<Element> element(Element::newInitElement());
-    this->expect(LP);
-    this->parse_params(element);
-    this->expect(RP);
+    TRY(this->expect(LP));
+    TRY(this->parse_params(element));
+    TRY(this->expect(RP));
 
     return element;
 }
 
-void Parser::parse_params(const std::unique_ptr<Element> &element) {
+std::unique_ptr<Element> Parser::parse_params(std::unique_ptr<Element> &element) {
     int count = 0;
     do {
         if(count++ > 0) {
-            this->expect(COMMA);
+            TRY(this->expect(COMMA));
         }
 
-        Token token = this->expect(VAR_NAME);
+        Token token = TRY(this->expect(VAR_NAME));
         bool hasDefault = false;
         if(CUR_KIND() == OPT) {
-            this->expect(OPT);
+            TRY(this->expect(OPT));
             hasDefault = true;
         }
-        this->expect(COLON);
-        std::unique_ptr<TypeToken> type(this->parse_type());
+        TRY(this->expect(COLON));
+        auto type = TRY(this->parse_type());
 
         element->addParam(this->toName(token), hasDefault, std::move(type));
     } while(CUR_KIND() == COMMA);
+
+    return nullptr;
 }
 
 std::unique_ptr<TypeToken> Parser::parse_type() {
-    Token token = this->expect(IDENTIFIER);
+    Token token = TRY(this->expect(IDENTIFIER));
     if(CUR_KIND() != TYPE_OPEN) {
         return CommonTypeToken::newTypeToken(this->lexer->toTokenText(token));
     }
 
     auto type(ReifiedTypeToken::newReifiedTypeToken(this->lexer->toTokenText(token)));
-    this->expect(TYPE_OPEN);
+    TRY(this->expect(TYPE_OPEN));
 
     if(CUR_KIND() != TYPE_CLOSE) {
         unsigned int count = 0;
         do {
             if(count++ > 0) {
-                this->expect(COMMA);
+                TRY(this->expect(COMMA));
             }
-            type->addElement(this->parse_type());
+            type->addElement(TRY(this->parse_type()));
         } while(CUR_KIND() == COMMA);
     }
 
-    this->expect(TYPE_CLOSE);
+    TRY(this->expect(TYPE_CLOSE));
 
     return std::unique_ptr<TypeToken>(type.release());
 }
 
-void Parser::parse_funcDecl(const std::string &line, std::unique_ptr<Element> &element) {
+std::unique_ptr<Element> Parser::parse_funcDecl(const std::string &line, std::unique_ptr<Element> &element) {
     DescLexer lexer(line.c_str());
     this->init(lexer);
 
     const bool isDecl = CUR_KIND() == YDSH_METHOD_DECL;
     if(isDecl) {
-        this->expect(YDSH_METHOD_DECL);
+        TRY(this->expect(YDSH_METHOD_DECL));
     } else {
-        this->expect(YDSH_METHOD);
+        TRY(this->expect(YDSH_METHOD));
     }
 
-    Token token = this->expect(IDENTIFIER);
+    Token token = TRY(this->expect(IDENTIFIER));
     std::string str(this->lexer->toTokenText(token));
     element->setActualFuncName(std::move(str));
 
-    this->expect(LP);
-    this->expect(RCTX);
-    this->expect(AND);
-    this->expect(IDENTIFIER);
-    this->expect(RP);
-    this->expect(isDecl ? SEMI_COLON : LBC);
+    TRY(this->expect(LP));
+    TRY(this->expect(RCTX));
+    TRY(this->expect(AND));
+    TRY(this->expect(IDENTIFIER));
+    TRY(this->expect(RP));
+    TRY(this->expect(isDecl ? SEMI_COLON : LBC));
+
+    return nullptr;
 }
 
 #define OUT(fmt, ...) \
@@ -907,9 +935,7 @@ int main(int argc, char **argv) {
     const char *inputFileName = argv[1];
     const char *outputFileName = argv[2];
 
-    std::vector<std::unique_ptr<Element>> elements;
-    Parser::parse(inputFileName, elements);
-
+    auto elements = Parser()(inputFileName);
     std::vector<TypeBind *> binds(genTypeBinds(elements));
     gencode(outputFileName, binds);
 
