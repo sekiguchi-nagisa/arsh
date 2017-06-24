@@ -200,13 +200,6 @@ void Parser::parse_toplevel(RootNode &rootNode) {
     this->expect(EOS);
 }
 
-std::unique_ptr<Node> Parser::parse_function() {
-    auto node(this->parse_funcDecl());
-    node->setBlockNode(this->parse_block().release());
-    this->parse_statementEnd();
-    return std::move(node);
-}
-
 std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
     unsigned int startPos = START_POS();
     this->expect(FUNCTION);
@@ -321,18 +314,8 @@ std::unique_ptr<Node> Parser::parse_interface() {
 
     token = this->expect(RBC);
     node->updateToken(token);
-    this->parse_statementEnd();
 
     return std::move(node);
-}
-
-std::unique_ptr<Node> Parser::parse_typeAlias() {
-    unsigned int startPos = START_POS();
-    this->expect(TYPE_ALIAS);
-    Token token = this->expect(IDENTIFIER, false);
-    auto typeToken(this->parse_typeName());
-    this->parse_statementEnd();
-    return uniquify<TypeAliasNode>(startPos, this->lexer->toTokenText(token), typeToken.release());
 }
 
 std::pair<std::unique_ptr<TypeNode>, Token> Parser::parse_basicOrReifiedType(Token token) {
@@ -468,29 +451,36 @@ std::unique_ptr<TypeNode> Parser::parse_typeName() {
     return std::move(result.first);
 }
 
-std::unique_ptr<Node> Parser::parse_statement() {
+std::unique_ptr<Node> Parser::parse_statementImp() {
     if(this->lexer->getPrevMode() != yycSTMT) {
         this->refetch(yycSTMT);
     }
 
     switch(CUR_KIND()) {
     case LINE_END: {
-        Token token = this->expect(LINE_END);
+//        Token token = this->expect(LINE_END);
+        Token token = this->curToken;   // not consume LINE_END token
         return uniquify<EmptyNode>(token);
     }
     case FUNCTION: {
-        return this->parse_function();
+        auto node = this->parse_funcDecl();
+        node->setBlockNode(this->parse_block().release());
+        return std::move(node);
     }
     case INTERFACE: {
         return this->parse_interface();
     }
     case TYPE_ALIAS: {
-        return this->parse_typeAlias();
+        unsigned int startPos = START_POS();
+        this->expect(TYPE_ALIAS);
+        Token token = this->expect(IDENTIFIER, false);
+        auto typeToken = this->parse_typeName();
+        return uniquify<TypeAliasNode>(startPos, this->lexer->toTokenText(token), typeToken.release());
     }
     case ASSERT: {
         unsigned int pos = START_POS();
         this->expect(ASSERT);
-        auto condNode(this->parse_expression());
+        auto condNode = this->parse_expression();
         std::unique_ptr<Node> messageNode;
         if(!HAS_NL() && CUR_KIND() == COLON) {
             this->expectAndChangeMode(COLON, yycSTMT);
@@ -502,21 +492,15 @@ std::unique_ptr<Node> Parser::parse_statement() {
             messageNode.reset(new StringNode(std::move(msg)));
         }
 
-        auto node = uniquify<AssertNode>(pos, condNode.release(), messageNode.release());
-        this->parse_statementEnd();
-        return std::move(node);
+        return uniquify<AssertNode>(pos, condNode.release(), messageNode.release());
     }
     case BREAK: {
         Token token = this->expect(BREAK);
-        auto node = uniquify<JumpNode>(token, true);
-        this->parse_statementEnd();
-        return std::move(node);
+        return uniquify<JumpNode>(token, true);
     }
     case CONTINUE: {
         Token token = this->expect(CONTINUE);
-        auto node = uniquify<JumpNode>(token, false);
-        this->parse_statementEnd();
-        return std::move(node);
+        return uniquify<JumpNode>(token, false);
     }
     case EXPORT_ENV: {
         unsigned int startPos = START_POS();
@@ -524,10 +508,8 @@ std::unique_ptr<Node> Parser::parse_statement() {
         Token token = this->expect(IDENTIFIER);
         std::string name(this->lexer->toName(token));
         this->expect(ASSIGN);
-        auto node = uniquify<VarDeclNode>(startPos, std::move(name),
-                                          this->parse_expression().release(), VarDeclNode::EXPORT_ENV);
-        this->parse_statementEnd();
-        return std::move(node);
+        return uniquify<VarDeclNode>(startPos, std::move(name),
+                                     this->parse_expression().release(), VarDeclNode::EXPORT_ENV);
     }
     case IMPORT_ENV: {
         unsigned int startPos = START_POS();
@@ -542,8 +524,6 @@ std::unique_ptr<Node> Parser::parse_statement() {
         auto node = uniquify<VarDeclNode>(startPos, this->lexer->toName(token),
                                           exprNode.release(), VarDeclNode::IMPORT_ENV);
         node->updateToken(token);
-
-        this->parse_statementEnd();
         return std::move(node);
     }
     case RETURN: {
@@ -564,24 +544,24 @@ std::unique_ptr<Node> Parser::parse_statement() {
         if(!HAS_NL() && next) {
             exprNode = this->parse_expression();
         }
-        node = uniquify<ReturnNode>(token, exprNode.release());
-        this->parse_statementEnd();
-        return node;
+        return uniquify<ReturnNode>(token, exprNode.release());
     }
     EACH_LA_varDecl(GEN_LA_CASE) {
-        auto node(this->parse_variableDeclaration());
-        this->parse_statementEnd();
-        return node;
+        return this->parse_variableDeclaration();
     }
     EACH_LA_expression(GEN_LA_CASE) {
-        auto node(this->parse_assignmentExpression());
-        this->parse_statementEnd();
-        return node;
+        return this->parse_assignmentExpression();
     }
     default: {
         E_ALTER(EACH_LA_statement(GEN_LA_ALTER));
     }
     }
+}
+
+std::unique_ptr<Node> Parser::parse_statement() {
+    auto node = this->parse_statementImp();
+    this->parse_statementEnd();
+    return node;
 }
 
 void Parser::parse_statementEnd() {

@@ -110,10 +110,8 @@ private:
     // parser rule definition.
     void parse_toplevel(RootNode &rootNode);
 
-    std::unique_ptr<Node> parse_function();
     std::unique_ptr<FunctionNode> parse_funcDecl();
     std::unique_ptr<Node> parse_interface();
-    std::unique_ptr<Node> parse_typeAlias();
 
     /**
      * not call it directory
@@ -126,6 +124,8 @@ private:
      * not call NEXT_TOKEN, before call it.
      */
     std::unique_ptr<TypeNode> parse_typeName();
+
+    std::unique_ptr<Node> parse_statementImp();
 
     std::unique_ptr<Node> parse_statement();
 
