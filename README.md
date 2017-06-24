@@ -10,12 +10,11 @@ Currently, under heavy development.
 Language specification is subject to change without notice. 
 
 ## Build Requirement
-
 * Linux x64
 * cmake 2.8 or later
 * make
 * expect (for testing)
-* gcc/clang (need c++11 support)
+* gcc/clang (need c++11 support, need GNU extension)
 * libdbus 1.6.x or later
 * libpcre
 * libxml2 (for D-Bus introspection)
