@@ -601,15 +601,28 @@ PipelineNode::~PipelineNode() {
 }
 
 void PipelineNode::addNode(Node *node) {
+    if(node->is(NodeKind::Pipeline)) {
+        auto *pipe = static_cast<PipelineNode *>(node);
+        for(auto &e : pipe->nodes) {
+            this->addNodeImpl(e);
+            e = nullptr;
+        }
+        delete pipe;
+    } else {
+        this->addNodeImpl(node);
+    }
+}
+
+void PipelineNode::dump(NodeDumper &dumper) const {
+    DUMP(nodes);
+}
+
+void PipelineNode::addNodeImpl(Node *node) {
     this->nodes.push_back(node);
     if(node->is(NodeKind::Cmd)) {
         static_cast<CmdNode *>(node)->setInPipe(true);
     }
     this->updateToken(node->getToken());
-}
-
-void PipelineNode::dump(NodeDumper &dumper) const {
-    DUMP(nodes);
 }
 
 // ##############################

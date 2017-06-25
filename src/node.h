@@ -1122,6 +1122,9 @@ public:
     }
 
     void dump(NodeDumper &dumper) const override;
+
+private:
+    void addNodeImpl(Node *node);
 };
 
 /**
