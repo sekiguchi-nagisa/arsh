@@ -1,0 +1,46 @@
+#! /usr/bin/env ydsh
+
+# not return 
+function open_todo_today() : Boolean {
+    let name = "$(date +'%Y%m%d').md"
+    if not(test -e $name) {
+        echo "# $(date +'%Y-%m-%d')" > $name
+        echo "## TODO" >> $name
+        echo -e "\n" >> $name
+        echo "## MEMO" >> $name
+    }
+    assert test -f $name
+    return exec vim $name
+}
+
+function open_todo_at($a : Uint) : Boolean {
+    var c = $a + 1u
+    var name = $(ls | grep '20[0-9][0-9][0-1][0-9][0-3][0-9].md' | sort -r | head -n $c)[$a as Int]
+    assert test -f $name
+    return exec vim $name
+}
+
+function open_todo($a : Uint) : Boolean {
+    if $a == 0u { return $false; }
+    var v = $(ls | grep "$(date +'%Y%m')${$a < 10u ? '0' + $a : $a as String}")
+    var name = if $v.size() == 1 { $v[0]; } else { return $false; }
+    assert test -f $name
+    return exec vim $name
+}
+
+
+if $# == 0 {
+    $open_todo_today()
+} elif $# == 1 {
+    $1 =~ $/^today$/i && $open_todo_today()
+
+    var r = $/^\-([1-9][0-9]*)$/.match($1)
+    $r.size() > 0 && $open_todo_at($r[1].toUint32()!)
+
+    $open_todo($1.toUint32() ?? 0u)
+
+    test -f $1 && exec vim $1
+
+    echo file not found: $1 1>&2
+    exit 1
+}
