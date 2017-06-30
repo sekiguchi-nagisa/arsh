@@ -452,7 +452,7 @@ DSType *TypeMap::addType(std::string &&typeName, DSType *type) {
     assert(type != nullptr);
     auto pair = this->typeMapImpl.insert(std::make_pair(std::move(typeName), type));
     this->typeNameMap.insert(std::make_pair(asKey(type), &pair.first->first));
-    this->typeCache.push_back(&pair.first->first);
+//    this->typeCache.push_back(&pair.first->first);
     return type;
 }
 
@@ -483,7 +483,7 @@ bool TypeMap::setAlias(std::string &&alias, DSType &targetType) {
      */
     DSType *taggedPtr = reinterpret_cast<DSType *>(tag | (unsigned long) &targetType);
     auto pair = this->typeMapImpl.insert(std::make_pair(std::move(alias), taggedPtr));
-    this->typeCache.push_back(&pair.first->first);
+//    this->typeCache.push_back(&pair.first->first);
     return pair.second;
 }
 
@@ -492,9 +492,9 @@ void TypeMap::commit() {
 }
 
 void TypeMap::abort() {
-    for(const std::string *typeName : this->typeCache) {
-        this->removeType(*typeName);
-    }
+//    for(const std::string *typeName : this->typeCache) {
+//        this->removeType(*typeName);
+//    }
     this->typeCache.clear();
 }
 
