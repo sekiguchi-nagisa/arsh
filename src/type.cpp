@@ -24,6 +24,7 @@
 #include "parser.h"
 #include "type_checker.h"
 #include "core.h"
+#include "symbol.h"
 #include "misc/size.hpp"
 
 namespace ydsh {
@@ -561,16 +562,16 @@ TypePool::TypePool() :
 
     // initialize type template
     std::vector<DSType *> elements = {&this->getAnyType()};
-    this->arrayTemplate = this->initTypeTemplate("Array", std::move(elements), info_ArrayType());
+    this->arrayTemplate = this->initTypeTemplate(TYPE_ARRAY, std::move(elements), info_ArrayType());
 
     elements = {&this->getValueType(), &this->getAnyType()};
-    this->mapTemplate = this->initTypeTemplate("Map", std::move(elements), info_MapType());
+    this->mapTemplate = this->initTypeTemplate(TYPE_MAP, std::move(elements), info_MapType());
 
     elements = std::vector<DSType *>();
-    this->tupleTemplate = this->initTypeTemplate("Tuple", std::move(elements), info_TupleType());   // pseudo template.
+    this->tupleTemplate = this->initTypeTemplate(TYPE_TUPLE, std::move(elements), info_TupleType());   // pseudo template.
 
     elements = std::vector<DSType *>();
-    this->optionTemplate = this->initTypeTemplate("Option", std::move(elements), info_OptionType()); // pseudo template
+    this->optionTemplate = this->initTypeTemplate(TYPE_OPTION, std::move(elements), info_OptionType()); // pseudo template
 
     // init string array type(for command argument)
     std::vector<DSType *> types = {&this->getStringType()};

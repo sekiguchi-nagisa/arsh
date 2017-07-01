@@ -109,6 +109,14 @@ constexpr const char *EXEC_ERROR = "execution error: ";
 constexpr const char *REDIR_ERROR = "io redirection error: ";
 constexpr const char *UNDEF_ENV_ERROR = "undefined environmental variable: ";
 
+// =====  generic type name  =====
+
+constexpr const char *TYPE_ARRAY = "Array";
+constexpr const char *TYPE_MAP = "Map";
+constexpr const char *TYPE_TUPLE = "Tuple";
+constexpr const char *TYPE_OPTION = "Option";
+
+
 } // namespace ydsh
 
 #endif //YDSH_SYMBOL_H

@@ -350,7 +350,7 @@ std::pair<std::unique_ptr<TypeNode>, Token> Parser::parse_typeNameImpl() {
     }
     case PTYPE_OPEN: {
         Token token = this->expect(PTYPE_OPEN, false);
-        auto reified = uniquify<ReifiedTypeNode>(new BaseTypeNode(token, "Tuple"));
+        auto reified = uniquify<ReifiedTypeNode>(new BaseTypeNode(token, TYPE_TUPLE));
         reified->addElementTypeNode(this->parse_typeName().release());
         while(CUR_KIND() == TYPE_SEP) {
             this->expect(TYPE_SEP, false);
@@ -364,7 +364,7 @@ std::pair<std::unique_ptr<TypeNode>, Token> Parser::parse_typeNameImpl() {
         Token token = this->expect(ATYPE_OPEN, false);
         auto left = this->parse_typeName();
         bool isMap = CUR_KIND() == TYPE_MSEP;
-        auto reified = uniquify<ReifiedTypeNode>(new BaseTypeNode(token, isMap ? "Map" : "Array"));
+        auto reified = uniquify<ReifiedTypeNode>(new BaseTypeNode(token, isMap ? TYPE_MAP : TYPE_ARRAY));
         reified->addElementTypeNode(left.release());
         if(isMap) {
             this->expect(TYPE_MSEP, false);
@@ -440,7 +440,7 @@ std::unique_ptr<TypeNode> Parser::parse_typeName() {
     auto result = this->parse_typeNameImpl();
     if(!HAS_NL() && CUR_KIND() == TYPE_OPT) {
         result.second = this->expect(TYPE_OPT);
-        auto reified = uniquify<ReifiedTypeNode>(new BaseTypeNode(result.second, "Option"));
+        auto reified = uniquify<ReifiedTypeNode>(new BaseTypeNode(result.second, TYPE_OPTION));
         reified->setPos(result.first->getPos());
         reified->addElementTypeNode(result.first.release());
         reified->updateToken(result.second);
