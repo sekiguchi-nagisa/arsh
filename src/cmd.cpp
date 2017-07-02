@@ -671,30 +671,34 @@ enum class BinaryOp : unsigned int {
     GE,
 };
 
-static int builtin_test(DSState &, Array_Object &argvObj) {
-    static CStringHashMap<BinaryOp> binaryOpMap;
-    if(binaryOpMap.empty()) {
-        static const struct {
-            const char *k;
-            BinaryOp op;
-        } table[] = {
-                {"=", BinaryOp::STR_EQ},
-                {"==", BinaryOp::STR_EQ},
-                {"!=", BinaryOp::STR_NE},
-                {"<", BinaryOp::STR_LT},
-                {">", BinaryOp::STR_GT},
-                {"-eq", BinaryOp::EQ},
-                {"-ne", BinaryOp::NE},
-                {"-lt", BinaryOp::LT},
-                {"-gt", BinaryOp::GT},
-                {"-le", BinaryOp::LE},
-                {"-ge", BinaryOp::GE},
-        };
+static CStringHashMap<BinaryOp> initBinaryOpMap() {
+    CStringHashMap<BinaryOp> binaryOpMap;
 
-        for(const auto &e : table) {
-            binaryOpMap.insert(std::make_pair(e.k, e.op));
-        }
+    const struct {
+        const char *k;
+        BinaryOp op;
+    } table[] = {
+            {"=", BinaryOp::STR_EQ},
+            {"==", BinaryOp::STR_EQ},
+            {"!=", BinaryOp::STR_NE},
+            {"<", BinaryOp::STR_LT},
+            {">", BinaryOp::STR_GT},
+            {"-eq", BinaryOp::EQ},
+            {"-ne", BinaryOp::NE},
+            {"-lt", BinaryOp::LT},
+            {"-gt", BinaryOp::GT},
+            {"-le", BinaryOp::LE},
+            {"-ge", BinaryOp::GE},
+    };
+
+    for(const auto &e : table) {
+        binaryOpMap.insert(std::make_pair(e.k, e.op));
     }
+    return binaryOpMap;
+}
+
+static int builtin_test(DSState &, Array_Object &argvObj) {
+    static auto binaryOpMap = initBinaryOpMap();
 
     bool result = false;
     unsigned int argc = argvObj.getValues().size();
