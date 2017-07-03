@@ -12,6 +12,10 @@ $a[2] = "ho"
 assert($a[2] == "ho")
 try { $a[5] = "hoge"; assert($false) } catch($e) { assert($e is OutOfRangeError) }
 
+assert $a.get(2)
+assert not $a.get(5)
+assert $a.get(2)! == "ho"
+
 assert($a.empty() == $false)
 assert($a.size() is Int)
 assert($a.size() == 4)

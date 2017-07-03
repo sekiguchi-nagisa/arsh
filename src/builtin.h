@@ -1384,6 +1384,19 @@ YDSH_METHOD array_get(RuntimeContext &ctx) {
     RET(obj->getValues()[index]);
 }
 
+//!bind: function get($this : Array<T0>, $index : Int32) : Option<T0>
+YDSH_METHOD array_get2(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_get);
+
+    Array_Object *obj = typeAs<Array_Object>(LOCAL(0));
+    int size = obj->getValues().size();
+    int index = typeAs<Int_Object>(LOCAL(1))->getValue();
+    if(index < 0 || index >= size) {
+        RET(DSValue::createInvalid());
+    }
+    RET(obj->getValues()[index]);
+}
+
 //!bind: function $OP_SET($this : Array<T0>, $index : Int32, $value : T0) : Void
 YDSH_METHOD array_set(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_set);
@@ -1566,7 +1579,7 @@ YDSH_METHOD map_empty(RuntimeContext &ctx) {
     RET_BOOL(value);
 }
 
-//!bind: function find($this : Map<T0, T1>, $key : T0) : Option<T1>
+//!bind: function get($this : Map<T0, T1>, $key : T0) : Option<T1>
 YDSH_METHOD map_find(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_find);
     Map_Object *obj = typeAs<Map_Object>(LOCAL(0));

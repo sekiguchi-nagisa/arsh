@@ -13,16 +13,16 @@ assert($a.size() is Int32)
 assert($a.size() == 2)
 assert(not $a.empty())
 
-assert($a.find("b"))
-assert $a.find("b")! == -456
-assert(not $a.find("c"))
+assert($a.get("b"))
+assert $a.get("b")! == -456
+assert(not $a.get("c"))
 
 assert($a.put("c", -19))
 assert(not $a.put("c", 789))
 
 assert(not $a.remove("333"))
 assert($a.remove("c"))
-assert(not $a.find("c"))
+assert(not $a.get("c"))
 
 
 var b = new Map<Int, Float>()
@@ -39,7 +39,7 @@ try { $b.swap(777, 23); assert($false) } catch($e) { assert($e is KeyNotFoundErr
 
 $b.clear()
 assert($b.empty())
-assert(not $b.find(34))
+assert(not $b.get(34))
 
 
 # inheritance
