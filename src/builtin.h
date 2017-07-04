@@ -1555,12 +1555,12 @@ YDSH_METHOD map_set(RuntimeContext &ctx) {
     RET_VOID;
 }
 
-//!bind: function put($this : Map<T0, T1>, $key : T0, $value : T1) : Boolean
+//!bind: function put($this : Map<T0, T1>, $key : T0, $value : T1) : Option<T1>
 YDSH_METHOD map_put(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_put);
     Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
-    bool r = obj->add(std::make_pair(EXTRACT_LOCAL(1), EXTRACT_LOCAL(2)));
-    RET_BOOL(r);
+    auto v = obj->set(EXTRACT_LOCAL(1), EXTRACT_LOCAL(2));
+    RET(v);
 }
 
 //!bind: function size($this : Map<T0, T1>) : Int32

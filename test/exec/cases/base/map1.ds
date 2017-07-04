@@ -17,8 +17,8 @@ assert($a.get("b"))
 assert $a.get("b")! == -456
 assert(not $a.get("c"))
 
-assert($a.put("c", -19))
-assert(not $a.put("c", 789))
+assert(not $a.put("c", -19))
+assert($a.put("c", 789)! == -19)
 
 assert(not $a.remove("333"))
 assert($a.remove("c"))

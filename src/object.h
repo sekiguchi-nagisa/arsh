@@ -515,12 +515,22 @@ public:
         this->initIterator();
     }
 
-    void set(DSValue &&key, DSValue &&value) {
+    /**
+     *
+     * @param key
+     * @param value
+     * @return
+     * old element. if not found (first time insertion), return invalid
+     */
+    DSValue set(DSValue &&key, DSValue &&value) {
         auto pair = this->valueMap.insert(std::make_pair(std::move(key), value));
-        if(!pair.second) {
+        if(pair.second) {
+            this->iter = ++pair.first;
+            return DSValue::createInvalid();
+        } else {
             std::swap(pair.first->second, value);
+            return value;
         }
-        this->iter = ++pair.first;
     }
 
     bool add(std::pair<DSValue, DSValue> &&entry) {
