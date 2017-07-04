@@ -102,51 +102,33 @@ TEST_F(DirectiveTest, result2) {
 }
 
 TEST_F(DirectiveTest, result3) {
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->parse("#$test($result = 'success')", true);
-        ASSERT_EQ(DS_ERROR_KIND_SUCCESS, this->getDirective().getResult());
-    });
+    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($result = 'success')", true));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, this->getDirective().getResult()));
 }
 
 TEST_F(DirectiveTest, result4) {
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->parse("#$test($result = 'TYPE_ERROR')", true);
-        ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, this->getDirective().getResult());
-    });
+    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($result = 'TYPE_ERROR')", true));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, this->getDirective().getResult()));
 }
 
 TEST_F(DirectiveTest, result5) {
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->parse("#$test($result = 'type')", true);
-        ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, this->getDirective().getResult());
-    });
+    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($result = 'type')", true));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, this->getDirective().getResult()));
 }
 
 TEST_F(DirectiveTest, result6) {
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->parse("#$test($result = 'PARSE_ERROR')", true);
-        ASSERT_EQ(DS_ERROR_KIND_PARSE_ERROR, this->getDirective().getResult());
-    });
+    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($result = 'PARSE_ERROR')", true));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_PARSE_ERROR, this->getDirective().getResult()));
 }
 
 TEST_F(DirectiveTest, result7) {
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->parse("#$test($result = 'parse')", true);
-        ASSERT_EQ(DS_ERROR_KIND_PARSE_ERROR, this->getDirective().getResult());
-    });
+    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($result = 'parse')", true));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_PARSE_ERROR, this->getDirective().getResult()));
 }
 
 TEST_F(DirectiveTest, result8) {
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->parse("#$test($result = 'RUNTIME_ERROR')", true);
-        ASSERT_EQ(DS_ERROR_KIND_RUNTIME_ERROR, this->getDirective().getResult());
-    });
+    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($result = 'RUNTIME_ERROR')", true));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_RUNTIME_ERROR, this->getDirective().getResult()));
 }
 
 TEST_F(DirectiveTest, result9) {
