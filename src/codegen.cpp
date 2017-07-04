@@ -497,9 +497,21 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
         this->emitSourcePos(node.getPos());
         auto &exprType = node.getExprNode()->getType();
         if(exprType.isOptionType()) {
-            this->emit0byteIns(OpCode::UNWRAP);
-        }
-        if(exprType != this->pool.getStringType()) {
+            auto elementType = static_cast<ReifiedType &>(exprType).getElementTypes()[0];
+
+            auto thenLabel = makeIntrusive<Label>();
+            auto mergeLabel = makeIntrusive<Label>();
+            this->emitBranchIns(OpCode::TRY_UNWRAP, thenLabel);
+            this->emitLdcIns(DSValue::create<String_Object>(this->pool.getStringType(), "(invalid)"));
+            this->emitJumpIns(mergeLabel);
+
+            this->markLabel(thenLabel);
+            if(*elementType != this->pool.getStringType()) {
+                this->generateToString();
+            }
+
+            this->markLabel(mergeLabel);
+        } else if(exprType != this->pool.getStringType()) {
             this->generateToString();
         }
         this->emitTypeIns(OpCode::PRINT, exprType);
