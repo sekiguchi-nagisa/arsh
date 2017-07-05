@@ -285,7 +285,7 @@ public:
     void copyAllMethodRef(std::vector<const DSCode *> &methodTable) override;
 
 protected:
-    virtual void initMethodHandle(MethodHandle *handle, TypePool &typePool, NativeFuncInfo &info);
+    virtual bool initMethodHandle(MethodHandle *handle, TypePool &typePool, NativeFuncInfo &info);
 };
 
 /**
@@ -314,7 +314,7 @@ public:
 
     virtual void accept(TypeVisitor *visitor) override;
 protected:
-    void initMethodHandle(MethodHandle *handle, TypePool &typePool, NativeFuncInfo &info) override;
+    bool initMethodHandle(MethodHandle *handle, TypePool &typePool, NativeFuncInfo &info) override;
 };
 
 

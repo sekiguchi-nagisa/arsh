@@ -1,0 +1,8 @@
+#$test($result = 'type', $lineNum = 8, $errorKind = 'UndefinedMethod', $status = 1)
+
+assert [23].get(0)
+
+# when lookup 'get' method, try to generate Option<Option<Int>> type (as method return type).
+# But currently nested option type is not allowed, so cannot instantiate method handle.
+# As a result, cannot resolve 'get' method
+assert [new Int!()].get(0)

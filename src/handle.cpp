@@ -20,6 +20,7 @@
 #include "type.h"
 #include "misc/fatal.h"
 #include "misc/size.hpp"
+#include "diagnosis.h"
 
 namespace ydsh {
 
@@ -162,20 +163,25 @@ static DSType *decodeType(TypePool &typePool, const char *&pos,
     return nullptr;
 }
 
-void MethodHandle::init(TypePool &typePool, NativeFuncInfo &info,
+bool MethodHandle::init(TypePool &typePool, NativeFuncInfo &info,
                         const std::vector<DSType *> *types) {
-    // init return type
-    const char *pos = info.handleInfo;
-    this->returnType = decodeType(typePool, pos, types);
+    try {
+        const char *pos = info.handleInfo;
+        auto *returnType = decodeType(typePool, pos, types);    // init return type
+        const unsigned int paramSize = decodeNum(pos);
+        auto *recvType = decodeType(typePool, pos, types);
+        std::vector<DSType *> paramTypes(paramSize - 1);
+        for(unsigned int i = 1; i < paramSize; i++) {   // init param types
+            paramTypes[i - 1] = decodeType(typePool, pos, types);
+        }
 
-    /**
-     * init param types
-     */
-    const unsigned int paramSize = decodeNum(pos);
-    this->recvType = decodeType(typePool, pos, types);
-    for(unsigned int i = 1; i < paramSize; i++) {
-        this->paramTypes.push_back(decodeType(typePool, pos,types));
+        this->returnType = returnType;
+        this->recvType = recvType;
+        this->paramTypes = std::move(paramTypes);
+    } catch(const TypeLookupError &) {
+        return false;
     }
+    return true;
 }
 
 bool MethodHandle::isSignal() const {

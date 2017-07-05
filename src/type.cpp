@@ -178,7 +178,9 @@ BuiltinType::~BuiltinType() {
 MethodHandle *BuiltinType::getConstructorHandle(TypePool &typePool) {
     if(this->constructorHandle == nullptr && this->info.constructorSize != 0) {
         this->constructorHandle = new MethodHandle(0);
-        this->initMethodHandle(this->constructorHandle, typePool, this->info.getInitInfo());
+        if(!this->initMethodHandle(this->constructorHandle, typePool, this->info.getInitInfo())) {
+            return nullptr;
+        }
         this->constructor = getCode(this->info);
     }
     return this->constructorHandle;
@@ -198,7 +200,9 @@ MethodHandle *BuiltinType::lookupMethodHandle(TypePool &typePool, const std::str
     if(!handle->initialized()) { // init handle
         unsigned int baseIndex = this->superType != nullptr ? this->superType->getMethodSize() : 0;
         unsigned int infoIndex = handle->getMethodIndex() - baseIndex;
-        this->initMethodHandle(handle, typePool, this->info.getMethodInfo(infoIndex));
+        if(!this->initMethodHandle(handle, typePool, this->info.getMethodInfo(infoIndex))) {
+            return nullptr;
+        }
     }
     return handle;
 }
@@ -235,16 +239,16 @@ void BuiltinType::copyAllMethodRef(std::vector<const DSCode *> &methodTable) {
     }
 }
 
-void BuiltinType::initMethodHandle(MethodHandle *handle, TypePool &typePool, NativeFuncInfo &info) {
-    handle->init(typePool, info);
+bool BuiltinType::initMethodHandle(MethodHandle *handle, TypePool &typePool, NativeFuncInfo &info) {
+    return handle->init(typePool, info);
 }
 
 // #########################
 // ##     ReifiedType     ##
 // #########################
 
-void ReifiedType::initMethodHandle(MethodHandle *handle, TypePool &typePool, NativeFuncInfo &info) {
-    handle->init(typePool, info, &this->elementTypes);
+bool ReifiedType::initMethodHandle(MethodHandle *handle, TypePool &typePool, NativeFuncInfo &info) {
+    return handle->init(typePool, info, &this->elementTypes);
 }
 
 void ReifiedType::accept(TypeVisitor *visitor) {
