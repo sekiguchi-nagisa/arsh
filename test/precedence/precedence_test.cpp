@@ -169,81 +169,49 @@ public:
 };
 
 TEST_F(PrecedenceTest, base1) {
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->equals("1", "1");
-    });
+    ASSERT_NO_FATAL_FAILURE(this->equals("1", "1"));
 }
 
 TEST_F(PrecedenceTest, base2) {
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->equals("  1  ", "(1)");
-    });
+    ASSERT_NO_FATAL_FAILURE(this->equals("  1  ", "(1)"));
 }
 
 TEST_F(PrecedenceTest, base3) {
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->equals("(1 + 2)", "1+2");
-    });
+    ASSERT_NO_FATAL_FAILURE(this->equals("(1 + 2)", "1+2"));
 }
 
 TEST_F(PrecedenceTest, case1) {
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->equals("((1 as Int) is Int)", "1 as Int is Int");
-    });
+    ASSERT_NO_FATAL_FAILURE(this->equals("((1 as Int) is Int)", "1 as Int is Int"));
 }
 
 TEST_F(PrecedenceTest, case2) {
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->equals("((1 is Int) as Int)", "1 is Int as Int");
-    });
+    ASSERT_NO_FATAL_FAILURE(this->equals("((1 is Int) as Int)", "1 is Int as Int"));
 }
 
 TEST_F(PrecedenceTest, case3) {
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->equals("(12 / (23 as Int))", "12 / 23 as Int");
-    });
+    ASSERT_NO_FATAL_FAILURE(this->equals("(12 / (23 as Int))", "12 / 23 as Int"));
 }
 
 TEST_F(PrecedenceTest, case4) {
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->equals("(((1 / 2) * 3) % 4)", "1 / 2 * 3 % 4");
-   });
+    ASSERT_NO_FATAL_FAILURE(this->equals("(((1 / 2) * 3) % 4)", "1 / 2 * 3 % 4"));
 }
 
 TEST_F(PrecedenceTest, case5) {
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->equals("((1 + (2 * 3)) - 4)", "1 + 2 * 3 - 4");
-    });
+    ASSERT_NO_FATAL_FAILURE(this->equals("((1 + (2 * 3)) - 4)", "1 + 2 * 3 - 4"));
 }
 
 TEST_F(PrecedenceTest, case6) {
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->equals("((1 and 2) or (3 xor (4 + 3)))", "1 and 2 or 3 xor 4 + 3");
-    });
+    ASSERT_NO_FATAL_FAILURE(this->equals("((1 and 2) or (3 xor (4 + 3)))", "1 and 2 or 3 xor 4 + 3"));
 }
 
 TEST_F(PrecedenceTest, case7) {
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
+    ASSERT_NO_FATAL_FAILURE(
         this->equals("((((((((1 < 2) > 3) == 4) >= 5) !~ 6) <= 7) != 8) =~ 9)",
-                     "1 < 2 > 3 == 4 >= 5 !~ 6 <= 7 != 8 =~ 9");
-    });
+                     "1 < 2 > 3 == 4 >= 5 !~ 6 <= 7 != 8 =~ 9"));
 }
 
 TEST_F(PrecedenceTest, case8) {
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->equals("(1 = (((2 == 3) && (4 + 5)) || 6))", "1 = 2 == 3 && 4 + 5 || 6");
-    });
+    ASSERT_NO_FATAL_FAILURE(this->equals("(1 = (((2 == 3) && (4 + 5)) || 6))", "1 = 2 == 3 && 4 + 5 || 6"));
 }
 
 TEST_F(PrecedenceTest, case9) {

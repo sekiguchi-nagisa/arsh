@@ -42,10 +42,7 @@ public:
 
 
 TEST_P(CmdlineTest, base) {
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->doTest();
-    });
+    ASSERT_NO_FATAL_FAILURE(this->doTest());
 }
 
 INSTANTIATE_TEST_CASE_P(CmdlineTest, CmdlineTest, ::testing::ValuesIn(getFileList(CMDLINE_TEST_DIR, true)));
