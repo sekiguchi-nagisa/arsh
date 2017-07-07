@@ -20,6 +20,10 @@ assert(not $a.get("c"))
 assert(not $a.put("c", -19))
 assert($a.put("c", 789)! == -19)
 
+assert $a.default("1234", 100) == 100
+assert $a.get("1234")! == 100
+assert $a.default("1234", 10) == 100
+
 assert(not $a.remove("333"))
 assert($a.remove("c"))
 assert(not $a.get("c"))

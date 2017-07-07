@@ -1563,6 +1563,14 @@ YDSH_METHOD map_put(RuntimeContext &ctx) {
     RET(v);
 }
 
+//!bind: function default($this : Map<T0, T1>, $key : T0, $value : T1) : T1
+YDSH_METHOD map_default(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(map_default);
+    Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
+    auto v = obj->setDefault(EXTRACT_LOCAL(1), EXTRACT_LOCAL(2));
+    RET(v);
+}
+
 //!bind: function size($this : Map<T0, T1>) : Int32
 YDSH_METHOD map_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_size);

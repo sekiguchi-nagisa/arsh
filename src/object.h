@@ -533,6 +533,15 @@ public:
         }
     }
 
+    DSValue setDefault(DSValue &&key, DSValue &&value) {
+        auto pair = this->valueMap.insert(std::make_pair(std::move(key), std::move(value)));
+        if(pair.second) {
+            this->iter = pair.first;
+            this->iter++;
+        }
+        return pair.first->second;
+    }
+
     bool add(std::pair<DSValue, DSValue> &&entry) {
         auto pair = this->valueMap.insert(std::move(entry));
         this->iter = ++pair.first;
