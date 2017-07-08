@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#include <iomanip>
-
 #include "codegen.h"
 #include "symbol.h"
 #include "core.h"
@@ -1102,36 +1100,49 @@ CompiledCode ByteCodeGenerator::generateToplevel(RootNode &node) {
 
 static unsigned int digit(unsigned int n) {
     unsigned int c;
+    if(n == 0) {
+        return 1;
+    }
     for(c = 0; n > 0; c++) {
         n /= 10;
     }
     return c;
 }
 
+static std::string formatNum(unsigned int width, unsigned int num) {
+    std::string str;
+    unsigned int numWidth = digit(num);
+    for(unsigned int i = 0; i < width - numWidth; i++) {
+        str += ' ';
+    }
+    str += std::to_string(num);
+    return str;
+}
 
-static void dumpCodeImpl(std::ostream &stream, DSState &ctx, const CompiledCode &c,
+
+static void dumpCodeImpl(FILE *fp, DSState &ctx, const CompiledCode &c,
                          std::vector<const CompiledCode *> *list) {
     const unsigned int codeSize = c.getCodeSize();
 
-    stream << "DSCode: ";
+    fputs("DSCode: ", fp);
     switch(c.getKind()) {
     case CodeKind::TOPLEVEL:
-        stream << "top level";
+        fputs("top level", fp);
         break;
     case CodeKind::FUNCTION:
-        stream << "function " << c.getName();
+        fprintf(fp, "function %s", c.getName());
         break;
     case CodeKind::USER_DEFINED_CMD:
-        stream << "command " << c.getName();
+        fprintf(fp, "command %s", c.getName());
         break;
     default:
         break;
     }
-    stream << std::endl;
-    stream << "  code size: " << c.getCodeSize() << std::endl;
-    stream << "  number of local variable: " << c.getLocalVarNum() << std::endl;
+    fputc('\n', fp);
+    fprintf(fp, "  code size: %d\n", c.getCodeSize());
+    fprintf(fp, "  number of local variable: %d\n", c.getLocalVarNum());
     if(c.getKind() == CodeKind::TOPLEVEL) {
-        stream << "  number of global variable: " << c.getGlobalVarNum() << std::endl;
+        fprintf(fp, "  number of global variable: %d\n", c.getGlobalVarNum());
     }
 
 #if 0
@@ -1144,7 +1155,7 @@ static void dumpCodeImpl(std::ostream &stream, DSState &ctx, const CompiledCode 
         }
     }
 #endif
-    stream << "Code:" << std::endl;
+    fputs("Code:\n", fp);
     {
         const char *opName[] = {
 #define GEN_NAME(CODE, N) #CODE,
@@ -1154,35 +1165,34 @@ static void dumpCodeImpl(std::ostream &stream, DSState &ctx, const CompiledCode 
 
         for(unsigned int i = c.getCodeOffset(); i < codeSize; i++) {
             OpCode code = static_cast<OpCode>(c.getCode()[i]);
-            stream << "  " << std::setw(digit(codeSize)) << i << ": "
-            << opName[static_cast<unsigned char>(code)];
+            fprintf(fp, "  %s: %s", formatNum(digit(codeSize), i).c_str(), opName[static_cast<unsigned char>(code)]);
             if(isTypeOp(code)) {
                 unsigned long v = read64(c.getCode(), i + 1);
                 i += 8;
-                stream << "  " << getPool(ctx).getTypeName(*reinterpret_cast<DSType *>(v));
+                fprintf(fp, "  %s", getPool(ctx).getTypeName(*reinterpret_cast<DSType *>(v)).c_str());
             } else {
                 const int byteSize = getByteSize(code);
                 if(code == OpCode::CALL_METHOD) {
-                    stream << "  " << read16(c.getCode(), i + 1) << "  " << read16(c.getCode(), i + 3);
+                    fprintf(fp, "  %d  %d", read16(c.getCode(), i + 1), read16(c.getCode(), i + 3));
                 } else {
                     switch(byteSize) {
                     case 1:
-                        stream << "  " << static_cast<unsigned int>(read8(c.getCode(), i + 1));
+                        fprintf(fp, "  %d", static_cast<unsigned int>(read8(c.getCode(), i + 1)));
                         break;
                     case 2:
-                        stream << "  " << read16(c.getCode(), i + 1);
+                        fprintf(fp, "  %d", read16(c.getCode(), i + 1));
                         break;
                     case 3:
-                        stream << "  " << read24(c.getCode(), i + 1);
+                        fprintf(fp, "  %d", read24(c.getCode(), i + 1));
                         break;
                     case 4:
-                        stream << "  " << read32(c.getCode(), i + 1);
+                        fprintf(fp, "  %d", read32(c.getCode(), i + 1));
                         break;
                     case -1: {
                         unsigned int s = static_cast<unsigned int>(read8(c.getCode(), i + 1));
-                        stream << " " << s;
+                        fprintf(fp, " %d", s);
                         for(unsigned int index = 0; index < s; index++) {
-                            stream << "  " << read16(c.getCode(), i + 2 + index * 2);
+                            fprintf(fp, "  %d", read16(c.getCode(), i + 2 + index * 2));
                         }
                         break;
                     }
@@ -1196,67 +1206,69 @@ static void dumpCodeImpl(std::ostream &stream, DSState &ctx, const CompiledCode 
                     i += -1 * byteSize + 2 * read8(c.getCode(), i + 1);
                 }
             }
-            stream << std::endl;
+            fputc('\n', fp);
         }
     }
 
 
-    stream << "Constant Pool:" << std::endl;
+    fputs("Constant Pool:\n", fp);
     {
         unsigned int constSize;
         for(constSize = 0; c.getConstPool()[constSize]; constSize++);
         for(unsigned int i = 0; c.getConstPool()[i]; i++) {
-            stream << "  " << std::setw(digit(constSize)) << i << ": ";
+            fprintf(fp, "  %s: ", formatNum(digit(constSize), i).c_str());
             auto &v = c.getConstPool()[i];
             switch(v.kind()) {
             case DSValueKind::NUMBER:
-                stream << static_cast<unsigned long>(v.value());
+                fprintf(fp, "%lu", static_cast<unsigned long>(v.value()));
                 break;
             case DSValueKind::OBJECT:
                 if(list != nullptr && dynamic_cast<FuncObject *>(v.get()) != nullptr) {
                     list->push_back(&static_cast<FuncObject *>(v.get())->getCode());
                 }
-                stream << (v.get()->getType() != nullptr ? getPool(ctx).getTypeName(*v.get()->getType()) : "(null)")
-                << " " << v.get()->toString(ctx, nullptr);
+                fprintf(fp, "%s %s",
+                        (v.get()->getType() != nullptr ? getPool(ctx).getTypeName(*v.get()->getType()).c_str() : "(null)"),
+                        v.get()->toString(ctx, nullptr).c_str());
                 break;
             case DSValueKind::INVALID:
                 break;
             }
-            stream << std::endl;
+            fputc('\n', fp);
         }
     }
 
 
-    stream << "Source Pos Entry:" << std::endl;
+    fputs("Source Pos Entry:\n", fp);
     {
         auto &srcInfo = c.getSrcInfo();
         const unsigned int maxLineNum = srcInfo->getLineNumTable().size() + srcInfo->getLineNumOffset();
         for(unsigned int i = 0; c.getSourcePosEntries()[i].address != 0; i++) {
             const auto &e = c.getSourcePosEntries()[i];
-            stream << "  lineNum: " << std::setw(digit(maxLineNum)) << srcInfo->getLineNum(e.pos)
-                   << ", address: " << std::setw(digit(codeSize)) << e.address
-                   << ", pos: " << e.pos << std::endl;
+            fprintf(fp, "  lineNum: %s, address: %s, pos: %d\n",
+                    formatNum(digit(maxLineNum), srcInfo->getLineNum(e.pos)).c_str(),
+                    formatNum(digit(codeSize), e.address).c_str(), e.pos);
         }
     }
 
-    stream << "Exception Table:" << std::endl;
+    fputs("Exception Table:\n", fp);
     for(unsigned int i = 0; c.getExceptionEntries()[i].type != nullptr; i++) {
         const auto &e = c.getExceptionEntries()[i];
-        stream << "  begin: " << e.begin << ", end: " << e.end << ", type: "
-        << getPool(ctx).getTypeName(*e.type) << ", dest: " << e.dest << ", offset: "
-               << e.localOffset << ", size: " << e.localSize << std::endl;
+        fprintf(fp, "  begin: %d, end: %d, type: %s, dest: %d, offset: %d, size: %d\n",
+                e.begin, e.end, getPool(ctx).getTypeName(*e.type).c_str(), e.dest, e.localOffset, e.localSize);
     }
+
+    fflush(fp);
 }
 
-void dumpCode(std::ostream &stream, DSState &ctx, const CompiledCode &c) {
-    stream << "Source File: " << c.getSrcInfo()->getSourceName() << std::endl;
+void dumpCode(FILE *fp, DSState &ctx, const CompiledCode &c) {
+    fprintf(fp, "Source File: %s\n", c.getSrcInfo()->getSourceName().c_str());
 
     std::vector<const CompiledCode *> list;
 
-    dumpCodeImpl(stream, ctx, c, &list);
+    dumpCodeImpl(fp, ctx, c, &list);
     for(auto &e : list) {
-        stream << std::endl;
-        dumpCodeImpl(stream, ctx, *e, nullptr);
+        fputc('\n', fp);
+        dumpCodeImpl(fp, ctx, *e, nullptr);
     }
 }
 

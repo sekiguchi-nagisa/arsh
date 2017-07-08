@@ -184,8 +184,8 @@ static void handleUncaughtException(DSState *st, DSValue &&except) {
 
 static int evalCode(DSState *state, CompiledCode &code, DSError *dsError) {
     if(hasFlag(state->option, DS_OPTION_DUMP_CODE)) {
-        std::cout << "### dump compiled code ###" << std::endl;
-        dumpCode(std::cout, *state, code);
+        fprintf(stdout, "### dump compiled code ###\n");
+        dumpCode(stdout, *state, code);
     }
 
     if(hasFlag(state->option, DS_OPTION_COMPILE_ONLY)) {
