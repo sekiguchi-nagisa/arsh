@@ -58,11 +58,6 @@ struct DSState {
     const DSValue emptyStrObj;
 
     /**
-     * for pseudo object allocation (used for builtin constructor call)
-     */
-    const DSValue dummy;
-
-    /**
      * if not null ptr, thrown exception.
      */
     DSValue thrownObject;

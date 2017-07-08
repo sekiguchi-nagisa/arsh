@@ -694,16 +694,6 @@ private:
     void createStackTrace(const DSState &ctx);
 };
 
-struct DummyObject : public DSObject {
-    DummyObject() : DSObject(nullptr) { }
-
-    ~DummyObject() = default;
-
-    void setType(DSType *type) override {
-        this->type = type;
-    }
-};
-
 enum class CodeKind : unsigned char {
     TOPLEVEL,
     FUNCTION,

@@ -59,8 +59,7 @@ DSState::DSState() :
         trueObj(new Boolean_Object(this->pool.getBooleanType(), true)),
         falseObj(new Boolean_Object(this->pool.getBooleanType(), false)),
         emptyStrObj(new String_Object(this->pool.getStringType(), std::string())),
-        dummy(new DummyObject()), thrownObject(),
-        callStack(new DSValue[DEFAULT_STACK_SIZE]),
+        thrownObject(), callStack(new DSValue[DEFAULT_STACK_SIZE]),
         callStackSize(DEFAULT_STACK_SIZE), globalVarSize(0),
         stackTopIndex(0), stackBottomIndex(0), localVarOffset(0), pc_(0),
         option(DS_OPTION_ASSERT), codeStack(),
@@ -1423,8 +1422,7 @@ static bool mainLoop(DSState &state) {
 
             DSType *type = reinterpret_cast<DSType *>(v);
             if(!type->isRecordType()) {
-                state.dummy->setType(type);
-                state.push(state.dummy);
+                state.push(DSValue::create<DSObject>(*type));
             } else {
                 fatal("currently, DSObject allocation not supported\n");
             }
