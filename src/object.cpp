@@ -388,21 +388,6 @@ DSValue Tuple_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
     return result;
 }
 
-// ###############################
-// ##     StackTraceElement     ##
-// ###############################
-
-std::string StackTraceElement::toString() const {
-    std::string str = "from ";
-    str += this->getSourceName();
-    str += ":";
-    str += std::to_string(this->getLineNum());
-    str += " '";
-    str += this->getCallerName();
-    str += "()'";
-    return str;
-}
-
 // ##########################
 // ##     Error_Object     ##
 // ##########################
@@ -420,7 +405,8 @@ void Error_Object::printStackTrace(DSState &ctx) {
 
     // print stack trace
     for(auto &s : this->stackTrace) {
-        fprintf(stderr, "    %s\n", s.toString().c_str());
+        fprintf(stderr, "    from %s:%d '%s()'\n",
+                s.getSourceName().c_str(), s.getLineNum(), s.getCallerName().c_str());
     }
 }
 

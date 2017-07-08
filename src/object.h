@@ -636,8 +636,6 @@ public:
     const std::string &getCallerName() const {
         return this->callerName;
     }
-
-    std::string toString() const;
 };
 
 /**
