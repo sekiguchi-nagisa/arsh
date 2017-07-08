@@ -23,8 +23,7 @@ namespace ydsh {
  * see (doc/opcode.md)
  */
 #define OPCODE_LIST(OP) \
-    OP(NOP, 0) \
-    OP(STOP_EVAL, 0) \
+    OP(HALT, 0) \
     OP(ASSERT, 0) \
     OP(PRINT, 8) \
     OP(INSTANCE_OF, 8) \

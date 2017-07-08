@@ -1224,10 +1224,7 @@ static bool mainLoop(DSState &state) {
 
         // dispatch instruction
         vmswitch(op) {
-        vmcase(NOP) {
-            break;
-        }
-        vmcase(STOP_EVAL) {
+        vmcase(HALT) {
             return true;
         }
         vmcase(ASSERT) {

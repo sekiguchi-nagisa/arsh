@@ -23,7 +23,7 @@ Code:
   13: LOAD_CONST  1
   15: CALL_METHOD  0  0
   20: POP
-  21: STOP_EVAL
+  21: HALT
 Constant Pool:
   0: Int32 34
   1: Int32 34
@@ -55,7 +55,7 @@ Code:
   30: LOAD_CONST  2
   32: POP
   33: EXIT_FINALLY
-  34: STOP_EVAL
+  34: HALT
 Constant Pool:
   0: (null) function(f)
   1: Int32 1

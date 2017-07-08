@@ -144,14 +144,14 @@ void ByteCodeGenerator::emitNumCastIns(const DSType &beforeType, const DSType &a
 #define _2(L, R) toShort(OpCode::L, OpCode::R)
 
     const unsigned short table[8][8] = {
-            {_1(NOP),              _1(COPY_INT),        _1(COPY_INT),        _1(COPY_INT), _1(COPY_INT), _1(NEW_LONG),   _1(NEW_LONG),   _1(U32_TO_D)},
-            {_1(TO_BYTE),          _1(NOP),             _1(TO_U16),          _1(COPY_INT), _1(COPY_INT), _1(I_NEW_LONG), _1(I_NEW_LONG), _1(I32_TO_D)},
-            {_1(TO_BYTE),          _1(TO_I16),          _1(NOP),             _1(COPY_INT), _1(COPY_INT), _1(NEW_LONG),   _1(NEW_LONG),   _1(U32_TO_D)},
-            {_1(TO_BYTE),          _1(TO_I16),          _1(TO_U16),          _1(NOP),      _1(COPY_INT), _1(I_NEW_LONG), _1(I_NEW_LONG), _1(I32_TO_D)},
-            {_1(TO_BYTE),          _1(TO_I16),          _1(TO_U16),          _1(COPY_INT), _1(NOP),      _1(NEW_LONG),   _1(NEW_LONG),   _1(U32_TO_D)},
-            {_2(NEW_INT,TO_BYTE),  _2(NEW_INT,TO_I16),  _2(NEW_INT,TO_U16),  _1(NEW_INT),  _1(NEW_INT),  _1(NOP),        _1(COPY_LONG),  _1(I64_TO_D)},
-            {_2(NEW_INT,TO_BYTE),  _2(NEW_INT,TO_I16),  _2(NEW_INT,TO_U16),  _1(NEW_INT),  _1(NEW_INT),  _1(COPY_LONG),  _1(NOP),        _1(U64_TO_D)},
-            {_2(D_TO_U32,TO_BYTE), _2(D_TO_I32,TO_I16), _2(D_TO_U32,TO_U16), _1(D_TO_I32), _1(D_TO_U32), _1(D_TO_I64),   _1(D_TO_U64),   _1(NOP)},
+            {_1(HALT),             _1(COPY_INT),        _1(COPY_INT),        _1(COPY_INT), _1(COPY_INT), _1(NEW_LONG),   _1(NEW_LONG),   _1(U32_TO_D)},
+            {_1(TO_BYTE),          _1(HALT),            _1(TO_U16),          _1(COPY_INT), _1(COPY_INT), _1(I_NEW_LONG), _1(I_NEW_LONG), _1(I32_TO_D)},
+            {_1(TO_BYTE),          _1(TO_I16),          _1(HALT),            _1(COPY_INT), _1(COPY_INT), _1(NEW_LONG),   _1(NEW_LONG),   _1(U32_TO_D)},
+            {_1(TO_BYTE),          _1(TO_I16),          _1(TO_U16),          _1(HALT),     _1(COPY_INT), _1(I_NEW_LONG), _1(I_NEW_LONG), _1(I32_TO_D)},
+            {_1(TO_BYTE),          _1(TO_I16),          _1(TO_U16),          _1(COPY_INT), _1(HALT),     _1(NEW_LONG),   _1(NEW_LONG),   _1(U32_TO_D)},
+            {_2(NEW_INT,TO_BYTE),  _2(NEW_INT,TO_I16),  _2(NEW_INT,TO_U16),  _1(NEW_INT),  _1(NEW_INT),  _1(HALT),       _1(COPY_LONG),  _1(I64_TO_D)},
+            {_2(NEW_INT,TO_BYTE),  _2(NEW_INT,TO_I16),  _2(NEW_INT,TO_U16),  _1(NEW_INT),  _1(NEW_INT),  _1(COPY_LONG),  _1(HALT),       _1(U64_TO_D)},
+            {_2(D_TO_U32,TO_BYTE), _2(D_TO_I32,TO_I16), _2(D_TO_U32,TO_U16), _1(D_TO_I32), _1(D_TO_U32), _1(D_TO_I64),   _1(D_TO_U64),   _1(HALT)},
     };
 
 #undef _1
@@ -161,7 +161,7 @@ void ByteCodeGenerator::emitNumCastIns(const DSType &beforeType, const DSType &a
     for(unsigned int i = 0; i < 2; i++) {
         const unsigned short mask = 0xFF << (i * 8);
         OpCode op = static_cast<OpCode>((mask & v) >> (i * 8));
-        if(op != OpCode::NOP) {
+        if(op != OpCode::HALT) {
             int size = getByteSize(op);
             assert(size == 0 || size == 1);
             if(size) {
@@ -1032,7 +1032,7 @@ void ByteCodeGenerator::visitRootNode(RootNode &rootNode) {
         this->visit(*node);
     }
 
-    this->emit0byteIns(OpCode::STOP_EVAL);
+    this->emit0byteIns(OpCode::HALT);
 }
 
 void ByteCodeGenerator::initCodeBuilder(CodeKind kind, unsigned short localVarNum) {

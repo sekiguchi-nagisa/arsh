@@ -21,7 +21,7 @@ private:
     OpCode breakOp;
 
 public:
-    VMInspector() : breakOp(OpCode::NOP) {}
+    VMInspector() : breakOp(OpCode::HALT) {}
 
     void setBreakOp(OpCode breakOp) {
         this->breakOp = breakOp;
@@ -70,7 +70,7 @@ protected:
     }
 
     void resetBreakPoint() {
-        this->setBreakPoint(OpCode::NOP);
+        this->setBreakPoint(OpCode::HALT);
     }
 
     void RefCount(const char *gvarName, unsigned int refCount) {

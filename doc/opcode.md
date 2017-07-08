@@ -2,8 +2,7 @@
 
 | **Mnemonic**  | **Other bytes**                | **Stack (before -> after)**                  | **Description**                                    |
 |---------------|--------------------------------|----------------------------------------------|----------------------------------------------------|
-| NOP           |                                | [no change]                                  | do nothing                                         |
-| STOP_EVAL     |                                | [no change]                                  | stop evaluation of interpreter                     |
+| HALT          |                                | [no change]                                  | stop evaluation of interpreter                     |
 | ASSERT        |                                | value1 value2 ->                             | assertion that value1 is true.                     |
 | PRINT         | 8: ptr1 ~ ptr8                 | value ->                                     | print specified type and value on top of the stack |
 | INSTANCE_OF   | 8: ptr1 ~ ptr8                 | value -> value                               | check if a value is instance of a specified type   |
