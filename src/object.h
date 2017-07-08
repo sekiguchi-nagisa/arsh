@@ -17,9 +17,7 @@
 #ifndef YDSH_OBJECT_H
 #define YDSH_OBJECT_H
 
-#include <ostream>
 #include <memory>
-#include <iostream>
 #include <unordered_set>
 #include <tuple>
 #include <cxxabi.h>
@@ -638,9 +636,9 @@ public:
     const std::string &getCallerName() const {
         return this->callerName;
     }
-};
 
-std::ostream &operator<<(std::ostream &stream, const StackTraceElement &e);
+    std::string toString() const;
+};
 
 /**
  * if stack trace elements is empty, return 0.

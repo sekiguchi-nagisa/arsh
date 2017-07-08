@@ -392,9 +392,15 @@ DSValue Tuple_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
 // ##     StackTraceElement     ##
 // ###############################
 
-std::ostream &operator<<(std::ostream &stream, const StackTraceElement &e) {
-    return stream << "from " << e.getSourceName() << ":"
-           << e.getLineNum() << " '" << e.getCallerName() << "()'";
+std::string StackTraceElement::toString() const {
+    std::string str = "from ";
+    str += this->getSourceName();
+    str += ":";
+    str += std::to_string(this->getLineNum());
+    str += " '";
+    str += this->getCallerName();
+    str += "()'";
+    return str;
 }
 
 // ##########################
@@ -410,11 +416,11 @@ std::string Error_Object::toString(DSState &ctx, VisitedSet *) {
 
 void Error_Object::printStackTrace(DSState &ctx) {
     // print header
-    std::cerr << this->toString(ctx, nullptr) << std::endl;
+    fprintf(stderr, "%s\n", this->toString(ctx, nullptr).c_str());
 
     // print stack trace
     for(auto &s : this->stackTrace) {
-        std::cerr << "    " << s << std::endl;
+        fprintf(stderr, "    %s\n", s.toString().c_str());
     }
 }
 
