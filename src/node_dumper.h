@@ -20,7 +20,6 @@
 #define NAME(f) #f
 
 #include <string>
-#include <ostream>
 #include <vector>
 #include <list>
 #include <type_traits>
@@ -36,14 +35,13 @@ class RootNode;
 
 class NodeDumper {
 private:
-    std::ostream &stream;
+    FILE *fp;
     TypePool &pool;
 
     unsigned int indentLevel;
 
 public:
-    NodeDumper(std::ostream &stream, TypePool &pool) :
-            stream(stream), pool(pool), indentLevel(0) { }
+    NodeDumper(FILE *fp, TypePool &pool) : fp(fp), pool(pool), indentLevel(0) { }
 
     ~NodeDumper() = default;
 
@@ -92,7 +90,7 @@ public:
      */
     void operator()(const RootNode &rootNode);
 
-    static void dump(std::ostream &out, TypePool &pool, const RootNode &rootNode);
+    static void dump(FILE *fp, TypePool &pool, const RootNode &rootNode);
 
 private:
     void enterIndent() {
@@ -104,6 +102,10 @@ private:
     }
 
     void indent();
+
+    void newline() {
+        fputc('\n', this->fp);
+    }
 
     void dumpNodeHeader(const Node &node, bool inArray = false);
 

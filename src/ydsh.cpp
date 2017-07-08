@@ -16,7 +16,6 @@
 
 #include <cstring>
 #include <pwd.h>
-#include <iostream>
 #include <csignal>
 #include <algorithm>
 #include <cstdlib>
@@ -82,7 +81,6 @@ static bool isSupportedTerminal(int fd) {
 }
 
 enum class TermColor : int {   // ansi color code
-    NOP     = -1,
     Reset   = 0,
     Bold    = 1,
     // actual term color
@@ -96,29 +94,31 @@ enum class TermColor : int {   // ansi color code
     White   = 37,
 };
 
-static TermColor color(TermColor color, bool isatty) {
-    return isatty ? color : TermColor::NOP;
+static std::string colorImpl(TermColor color, bool isatty) {
+    std::string str;
+    if(isatty) {
+        str += "\033[";
+        str += std::to_string(static_cast<unsigned int>(color));
+        str += 'm';
+    }
+    return str;
 }
 
-static std::ostream &operator<<(std::ostream &stream, TermColor color) {
-    if(color != TermColor::NOP) {
-        stream << "\033[" << static_cast<unsigned int>(color) << "m";
-    }
-    return stream;
-}
+#define color(c, tty) (colorImpl(c, tty).c_str())
 
 static void formatErrorLine(bool isatty, const Lexer &lexer, Token errorToken) {
     errorToken = lexer.shiftEOS(errorToken);
     Token lineToken = lexer.getLineToken(errorToken);
 
     // print error line
-    std::cerr << color(TermColor::Cyan, isatty) << lexer.toTokenText(lineToken)
-    << color(TermColor::Reset, isatty) << std::endl;
+    fprintf(stderr, "%s%s%s\n", color(TermColor::Cyan, isatty),
+            lexer.toTokenText(lineToken).c_str(), color(TermColor::Reset, isatty));
 
     // print line marker
-    std::cerr << color(TermColor::Green, isatty) << color(TermColor::Bold, isatty)
-              << lexer.formatLineMarker(lineToken, errorToken)
-              << color(TermColor::Reset, isatty) << std::endl;
+    fprintf(stderr, "%s%s%s%s\n", color(TermColor::Green, isatty), color(TermColor::Bold, isatty),
+            lexer.formatLineMarker(lineToken, errorToken).c_str(), color(TermColor::Reset, isatty));
+
+    fflush(stderr);
 }
 
 static void handleParseError(const Lexer &lexer, const ParseError &e, DSError *dsError) {
@@ -131,10 +131,10 @@ static void handleParseError(const Lexer &lexer, const ParseError &e, DSError *d
 
     const bool isatty = isSupportedTerminal(STDERR_FILENO);
 
-    std::cerr << lexer.getSourceInfoPtr()->getSourceName() << ":" << errorLineNum << ":"
-              << color(TermColor::Magenta, isatty) << color(TermColor::Bold, isatty)
-              << " [syntax error] " << color(TermColor::Reset, isatty)
-              << e.getMessage() << std::endl;
+    fprintf(stderr, "%s:%d:%s%s [syntax error] %s%s\n",
+            lexer.getSourceInfoPtr()->getSourceName().c_str(), errorLineNum,
+            color(TermColor::Magenta, isatty), color(TermColor::Bold, isatty),
+            color(TermColor::Reset, isatty), e.getMessage().c_str());
     formatErrorLine(isatty, lexer, errorToken);
 
     setErrorInfo(dsError, DS_ERROR_KIND_PARSE_ERROR, errorLineNum, e.getErrorKind());
@@ -148,10 +148,10 @@ static void handleTypeError(const Lexer &lexer, const TypeCheckError &e, DSError
     /**
      * show type error message
      */
-    std::cerr << lexer.getSourceInfoPtr()->getSourceName() << ":" << errorLineNum << ":"
-              << color(TermColor::Magenta, isatty) << color(TermColor::Bold, isatty)
-              << " [semantic error] " << color(TermColor::Reset, isatty)
-              << e.getMessage() << std::endl;
+    fprintf(stderr, "%s:%d:%s%s [semantic error] %s%s\n",
+            lexer.getSourceInfoPtr()->getSourceName().c_str(), errorLineNum,
+            color(TermColor::Magenta, isatty), color(TermColor::Bold, isatty),
+            color(TermColor::Reset, isatty), e.getMessage().c_str());
     formatErrorLine(isatty, lexer, e.getToken());
 
     setErrorInfo(dsError, DS_ERROR_KIND_TYPE_ERROR,
@@ -163,17 +163,17 @@ static void handleTypeError(const Lexer &lexer, const TypeCheckError &e, DSError
  * @param except
  */
 static void handleUncaughtException(DSState *st, DSValue &&except) {
-    std::cerr << "[runtime error]" << std::endl;
+    fputs("[runtime error]\n", stderr);
     const bool bt = st->pool.getErrorType().isSameOrBaseTypeOf(*except->getType());
     auto *handle = except->getType()->lookupMethodHandle(st->pool, bt ? "backtrace" : OP_STR);
 
     try {
         DSValue ret = ::callMethod(*st, handle, std::move(except), std::vector<DSValue>());
         if(!bt) {
-            std::cerr << typeAs<String_Object>(ret)->getValue() << std::endl;
+            fprintf(stderr, "%s\n", typeAs<String_Object>(ret)->getValue());
         }
     } catch(const DSException &) {
-        std::cerr << "cannot obtain string representation" << std::endl;
+        fputs("cannot obtain string representation\n", stderr);
     }
 
     if(typeAs<Int_Object>(st->getGlobal(toIndex(BuiltinVarOffset::SHELL_PID)))->getValue() !=
@@ -222,9 +222,9 @@ static int compileImpl(DSState *state, Lexer &lexer, DSError *dsError, CompiledC
         state->lineNum = lexer.getLineNum();
 
         if(hasFlag(state->option, DS_OPTION_DUMP_UAST)) {
-            std::cout << "### dump untyped AST ###" << std::endl;
-            NodeDumper::dump(std::cout, state->pool, rootNode);
-            std::cout << std::endl;
+            fputs("### dump untyped AST ###\n", stdout);
+            NodeDumper::dump(stdout, state->pool, rootNode);
+            fputc('\n', stdout);
         }
     } catch(const ParseError &e) {
         handleParseError(lexer, e, dsError);
@@ -238,9 +238,9 @@ static int compileImpl(DSState *state, Lexer &lexer, DSError *dsError, CompiledC
         checker.checkTypeRootNode(rootNode);
 
         if(hasFlag(state->option, DS_OPTION_DUMP_AST)) {
-            std::cout << "### dump typed AST ###" << std::endl;
-            NodeDumper::dump(std::cout, state->pool, rootNode);
-            std::cout << std::endl;
+            fputs("### dump typed AST ###\n", stdout);
+            NodeDumper::dump(stdout, state->pool, rootNode);
+            fputc('\n', stdout);
         }
     } catch(const TypeCheckError &e) {
         handleTypeError(lexer, e, dsError);

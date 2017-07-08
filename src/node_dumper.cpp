@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#include <iostream>
-
 #include "node_dumper.h"
 #include "node.h"
 
@@ -24,7 +22,7 @@ namespace ydsh {
 void NodeDumper::dump(const char *fieldName, const char *value) {
     this->writeName(fieldName);
 
-    this->stream << '"';
+    fputc('"', this->fp);
     while(*value) {
         char ch = *(value++);
         bool escape = true;
@@ -49,21 +47,21 @@ void NodeDumper::dump(const char *fieldName, const char *value) {
             break;
         }
         if(escape) {
-            this->stream << '\\';
+            fputc('\\', this->fp);
         }
-        this->stream << ch;
+        fputc(ch, this->fp);
     }
-    this->stream << '"' << std::endl;
+    fputs("\"\n", this->fp);
 }
 
 void NodeDumper::dump(const char *fieldName, const std::list<Node *> &nodes) {
     this->writeName(fieldName);
-    this->stream << std::endl;
+    this->newline();
 
     this->enterIndent();
     for(Node *node : nodes) {
         this->indent();
-        this->stream << "- ";
+        fputs("- ", this->fp);
         this->dumpNodeHeader(*node, true);
         this->enterIndent();
         node->dump(*this);
@@ -77,7 +75,7 @@ void NodeDumper::dump(const char *fieldName, const Node &node) {
     this->writeName(fieldName);
 
     // write node body
-    this->stream << std::endl;
+    this->newline();
     this->enterIndent();
     this->dump(node);
     this->leaveIndent();
@@ -93,18 +91,19 @@ void NodeDumper::dump(const char *fieldName, TokenKind kind) {
 
 void NodeDumper::dumpNull(const char *fieldName) {
     this->writeName(fieldName);
-    this->stream << std::endl;
+    this->newline();
 }
 
 void NodeDumper::dump(const Node &node) {
     this->indent();
     this->dumpNodeHeader(node);
     node.dump(*this);
+    fflush(this->fp);
 }
 
 void NodeDumper::indent() {
     for(unsigned int i = 0; i < this->indentLevel; i++) {
-        this->stream << "  ";
+        fputs("  ", this->fp);
     }
 }
 
@@ -118,19 +117,19 @@ static const char *toString(NodeKind kind) {
 }
 
 void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
-    this->stream << "nodeKind: " << toString(node.getNodeKind()) << std::endl;
+    fprintf(this->fp, "nodeKind: %s\n", toString(node.getNodeKind()));
 
     if(inArray) {
         this->enterIndent();
     }
 
-    this->indent(); this->stream << "token: " << std::endl;
+    this->indent(); fprintf(this->fp, "token: \n");
     this->enterIndent();
-    this->indent(); this->stream << "pos: " << node.getPos() << std::endl;
-    this->indent(); this->stream << "size: " << node.getSize() << std::endl;
+    this->indent(); fprintf(this->fp, "pos: %d\n", node.getPos());
+    this->indent(); fprintf(this->fp, "size: %d\n", node.getSize());
     this->leaveIndent();
-    this->indent(); this->stream << "type: " <<
-            (!node.isUntyped() ? this->pool.getTypeName(node.getType()) : "") << std::endl;
+    this->indent(); fprintf(this->fp, "type: %s\n",
+                            (!node.isUntyped() ? this->pool.getTypeName(node.getType()).c_str() : ""));
 
     if(inArray) {
         this->leaveIndent();
@@ -139,14 +138,14 @@ void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
 
 void NodeDumper::dumpNodes(const char *fieldName, Node * const * begin, Node *const * end) {
     this->writeName(fieldName);
-    this->stream << std::endl;
+    this->newline();
 
     this->enterIndent();
     for(; begin != end; ++begin) {
         Node *node = *begin;
 
         this->indent();
-        this->stream << "- ";
+        fputs("- ", this->fp);
         this->dumpNodeHeader(*node, true);
         this->enterIndent();
         node->dump(*this);
@@ -156,15 +155,15 @@ void NodeDumper::dumpNodes(const char *fieldName, Node * const * begin, Node *co
 }
 
 void NodeDumper::writeName(const char *fieldName) {
-    this->indent(); this->stream << fieldName << ": ";
+    this->indent(); fprintf(this->fp, "%s: ", fieldName);
 }
 
 void NodeDumper::operator()(const RootNode &rootNode) {
     this->dump(rootNode);
 }
 
-void NodeDumper::dump(std::ostream &out, TypePool &pool, const RootNode &rootNode) {
-    NodeDumper writer(out, pool);
+void NodeDumper::dump(FILE *fp, TypePool &pool, const RootNode &rootNode) {
+    NodeDumper writer(fp, pool);
     writer(rootNode);
 }
 
