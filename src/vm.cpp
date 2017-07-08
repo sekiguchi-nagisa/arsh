@@ -1844,9 +1844,7 @@ std::vector<DSValue> DBusWaitSignal(DSState &st) {
 }
 
 DSValue newDBusObject(TypePool &pool) {
-    auto v = DSValue::create<DummyObject>();
-    v->setType(&pool.getDBusType());
-    return v;
+    return DSValue::create<DSObject>(pool.getDBusType());
 }
 
 DSValue dbus_systemBus(DSState &ctx) {
