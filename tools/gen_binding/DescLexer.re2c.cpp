@@ -56,6 +56,8 @@ DescTokenKind DescLexer::nextToken(Token &token) {
       IDENTIFIER             { RET(IDENTIFIER); }
       "<"                    { RET(TYPE_OPEN); }
       ">"                    { RET(TYPE_CLOSE); }
+      "["                    { RET(PTYPE_OPEN); }
+      "]"                    { RET(PTYPE_CLOSE); }
       "$" IDENTIFIER         { RET(VAR_NAME); }
       "("                    { RET(LP); }
       ")"                    { RET(RP); }

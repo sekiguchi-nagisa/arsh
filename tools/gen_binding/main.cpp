@@ -22,6 +22,7 @@
 #include <unordered_map>
 
 #include <handle_info.h>
+#include <symbol.h>
 #include <misc/parser_base.hpp>
 #include <misc/fatal.h>
 #include <DescLexer.h>
@@ -114,6 +115,7 @@ HandleInfoMap::HandleInfoMap() :
     EACH_HANDLE_INFO_TYPE(REGISTER)
     EACH_HANDLE_INFO_PTYPE(REGISTER)
     EACH_HANDLE_INFO_TYPE_TEMP(REGISTER)
+    EACH_HANDLE_INFO_FUNC_TYPE(REGISTER)
 #undef REGISTER
 }
 
@@ -210,6 +212,18 @@ bool HandleInfoSerializer::isType(const std::vector<HandleInfo> &infos, unsigned
         case Option: {
             return getNum(infos, index) == 1 && isType(infos, index);
         }
+        case Func: {
+            if(!isType(infos, index)) {
+                return false;
+            }
+            int num = getNum(infos, index);
+            for(int i = 0; i < num; i++) {
+                if(!isType(infos, index)) {
+                    return false;
+                }
+            }
+            return true;
+        }
         EACH_HANDLE_INFO_NUM(GEN_CASE)
             return false;
         EACH_HANDLE_INFO_PTYPE(GEN_CASE)
@@ -228,6 +242,8 @@ int HandleInfoSerializer::getNum(const std::vector<HandleInfo> &infos, unsigned 
         EACH_HANDLE_INFO_TYPE(GEN_CASE)
             return -1;
         EACH_HANDLE_INFO_TYPE_TEMP(GEN_CASE)
+            return -1;
+        EACH_HANDLE_INFO_FUNC_TYPE(GEN_CASE)
             return -1;
         EACH_HANDLE_INFO_NUM(GEN_CASE)
             return (int) (ch - P_N0);
@@ -298,11 +314,11 @@ public:
         return this->info == info;
     }
 
-    static std::unique_ptr<TypeToken> newTypeToken(const std::string &name);
+    static std::unique_ptr<CommonTypeToken> newTypeToken(const std::string &name);
 };
 
-std::unique_ptr<TypeToken> CommonTypeToken::newTypeToken(const std::string &name) {
-    return std::unique_ptr<TypeToken>(
+std::unique_ptr<CommonTypeToken> CommonTypeToken::newTypeToken(const std::string &name) {
+    return std::unique_ptr<CommonTypeToken>(
             new CommonTypeToken(HandleInfoMap::getInstance().getInfo(name)));
 }
 
@@ -356,10 +372,10 @@ void ReifiedTypeToken::serialize(HandleInfoSerializer &s) {
 
 static std::unordered_map<std::string, std::pair<unsigned int, HandleInfo >> initTypeMap() {
     std::unordered_map<std::string, std::pair<unsigned int, HandleInfo >> map;
-    map.insert({"Array",  {1, Array}});
-    map.insert({"Map",    {2, Map}});
-    map.insert({"Tuple",  {0, Tuple}});
-    map.insert({"Option",  {1, Option}});
+    map.insert({TYPE_ARRAY,  {1, Array}});
+    map.insert({TYPE_MAP,    {2, Map}});
+    map.insert({TYPE_TUPLE,  {0, Tuple}});
+    map.insert({TYPE_OPTION,  {1, Option}});
     return map;
 }
 
@@ -374,6 +390,39 @@ std::unique_ptr<ReifiedTypeToken> ReifiedTypeToken::newReifiedTypeToken(const st
     return std::unique_ptr<ReifiedTypeToken>(new ReifiedTypeToken(std::move(tok), size));
 }
 
+class FuncTypeToken : public TypeToken {
+private:
+    std::unique_ptr<CommonTypeToken> typeTemp;
+
+    std::unique_ptr<TypeToken> returnType;
+
+    std::vector<std::unique_ptr<TypeToken>> paramTypes;
+
+public:
+    FuncTypeToken(std::unique_ptr<TypeToken> &&returnType) :
+            typeTemp(CommonTypeToken::newTypeToken(TYPE_FUNC)), returnType(std::move(returnType)), paramTypes() {}
+
+    ~FuncTypeToken() = default;
+
+    void addParamType(std::unique_ptr<TypeToken> &&type) {
+        this->paramTypes.push_back(std::move(type));
+    }
+
+    void serialize(HandleInfoSerializer &s) override;
+
+    bool isType(HandleInfo info) override {
+        return this->typeTemp->isType(info);
+    }
+};
+
+void FuncTypeToken::serialize(HandleInfoSerializer &s) {
+    this->typeTemp->serialize(s);
+    this->returnType->serialize(s);
+    s.add(toNum(this->paramTypes.size()));
+    for(auto &tok : this->paramTypes) {
+        tok->serialize(s);
+    }
+}
 
 class Element {
 protected:
@@ -752,28 +801,56 @@ std::unique_ptr<Element> Parser::parse_params(std::unique_ptr<Element> &element)
     return nullptr;
 }
 
+static bool isFunc(const std::string &str) {
+    return str == TYPE_FUNC;
+}
+
 std::unique_ptr<TypeToken> Parser::parse_type() {
     Token token = TRY(this->expect(IDENTIFIER));
     if(CUR_KIND() != TYPE_OPEN) {
         return CommonTypeToken::newTypeToken(this->lexer->toTokenText(token));
     }
 
-    auto type(ReifiedTypeToken::newReifiedTypeToken(this->lexer->toTokenText(token)));
-    TRY(this->expect(TYPE_OPEN));
+    auto str = this->lexer->toTokenText(token);
+    if(isFunc(str)) {
+        TRY(this->expect(TYPE_OPEN));
+        auto retType = TRY(this->parse_type());
+        std::unique_ptr<FuncTypeToken> funcType(new FuncTypeToken(std::move(retType)));
 
-    if(CUR_KIND() != TYPE_CLOSE) {
-        unsigned int count = 0;
-        do {
-            if(count++ > 0) {
-                TRY(this->expect(COMMA));
-            }
-            type->addElement(TRY(this->parse_type()));
-        } while(CUR_KIND() == COMMA);
+        if(CUR_KIND() != TYPE_CLOSE) {
+            TRY(this->expect(COMMA));
+            TRY(this->expect(PTYPE_OPEN));
+            unsigned int count = 0;
+            do {
+                if(count++ > 0) {
+                    TRY(this->expect(COMMA));
+                }
+                funcType->addParamType(TRY(this->parse_type()));
+            } while(CUR_KIND() == COMMA);
+            TRY(this->expect(PTYPE_CLOSE));
+        }
+
+        TRY(this->expect(TYPE_CLOSE));
+
+        return std::move(funcType);
+    } else {
+        auto type(ReifiedTypeToken::newReifiedTypeToken(std::move(str)));
+        TRY(this->expect(TYPE_OPEN));
+
+        if(CUR_KIND() != TYPE_CLOSE) {
+            unsigned int count = 0;
+            do {
+                if(count++ > 0) {
+                    TRY(this->expect(COMMA));
+                }
+                type->addElement(TRY(this->parse_type()));
+            } while(CUR_KIND() == COMMA);
+        }
+
+        TRY(this->expect(TYPE_CLOSE));
+
+        return std::unique_ptr<TypeToken>(type.release());
     }
-
-    TRY(this->expect(TYPE_CLOSE));
-
-    return std::unique_ptr<TypeToken>(type.release());
 }
 
 std::unique_ptr<Element> Parser::parse_funcDecl(const std::string &line, std::unique_ptr<Element> &element) {

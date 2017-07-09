@@ -34,6 +34,8 @@
     OP(IDENTIFIER) \
     OP(TYPE_OPEN)      /* < */\
     OP(TYPE_CLOSE)     /* > */\
+    OP(PTYPE_OPEN)     /* [ */\
+    OP(PTYPE_CLOSE     /* ] */)\
     OP(VAR_NAME)       /* $ [_a-zA-Z][_a-zA-Z0-9]* */\
     OP(LP)             /* ( */\
     OP(RP)             /* ) */\

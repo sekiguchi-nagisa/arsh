@@ -115,6 +115,7 @@ constexpr const char *TYPE_ARRAY = "Array";
 constexpr const char *TYPE_MAP = "Map";
 constexpr const char *TYPE_TUPLE = "Tuple";
 constexpr const char *TYPE_OPTION = "Option";
+constexpr const char *TYPE_FUNC = "Func";
 
 
 } // namespace ydsh

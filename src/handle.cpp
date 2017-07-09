@@ -155,6 +155,15 @@ DSType* TypeDecoder::decode() {
         elementTypes[0] = this->decode();
         return &this->pool.createReifiedType(t, std::move(elementTypes));
     }
+    case Func: {
+        auto *retType = this->decode();
+        unsigned int size = this->decodeNum();
+        std::vector<DSType *> paramTypes(size);
+        for(unsigned int i = 0; i < size; i++) {
+            paramTypes[i] = this->decode();
+        }
+        return &this->pool.createFuncType(retType, std::move(paramTypes));
+    }
     case P_N0:
     case P_N1:
     case P_N2:

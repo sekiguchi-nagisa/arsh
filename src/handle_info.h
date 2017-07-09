@@ -51,6 +51,10 @@ namespace ydsh {
     OP(Tuple) \
     OP(Option)
 
+// func type
+#define EACH_HANDLE_INFO_FUNC_TYPE(OP) \
+    OP(Func)
+
 // param types num
 #define EACH_HANDLE_INFO_NUM(OP) \
     OP(P_N0) \
@@ -71,6 +75,7 @@ namespace ydsh {
 #define EACH_HANDLE_INFO(OP) \
     EACH_HANDLE_INFO_TYPE(OP) \
     EACH_HANDLE_INFO_TYPE_TEMP(OP) \
+    EACH_HANDLE_INFO_FUNC_TYPE(OP) \
     EACH_HANDLE_INFO_NUM(OP) \
     EACH_HANDLE_INFO_PTYPE(OP)
 
