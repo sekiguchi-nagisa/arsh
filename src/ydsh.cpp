@@ -80,31 +80,35 @@ static bool isSupportedTerminal(int fd) {
     return term != nullptr && strcasecmp(term, "dumb") != 0 && isatty(fd) != 0;
 }
 
-enum class TermColor : int {   // ansi color code
-    Reset   = 0,
-    Bold    = 1,
-    // actual term color
-    Black   = 30,
-    Red     = 31,
-    Green   = 32,
-    Yellow  = 33,
-    Blue    = 34,
-    Magenta = 35,
-    Cyan    = 36,
-    White   = 37,
+#define EACH_TERM_COLOR(C) \
+    C(Reset,    0) \
+    C(Bold,     1) \
+    /*C(Black,   30)*/ \
+    /*C(Red,     31)*/ \
+    C(Green,   32) \
+    /*C(Yellow,  33)*/ \
+    /*C(Blue,    34)*/ \
+    C(Magenta, 35) \
+    C(Cyan,    36) /*\
+    C(white,   37)*/
+
+enum class TermColor : unsigned int {   // ansi color code
+#define GEN_ENUM(E, N) E,
+    EACH_TERM_COLOR(GEN_ENUM)
+#undef GEN_ENUM
 };
 
-static std::string colorImpl(TermColor color, bool isatty) {
-    std::string str;
+static const char *color(TermColor color, bool isatty) {
     if(isatty) {
-        str += "\033[";
-        str += std::to_string(static_cast<unsigned int>(color));
-        str += 'm';
+#define GEN_STR(E, C) "\033[" #C "m",
+        const char *ansi[] = {
+                EACH_TERM_COLOR(GEN_STR)
+        };
+#undef GEN_STR
+        return ansi[static_cast<unsigned int>(color)];
     }
-    return str;
+    return "";
 }
-
-#define color(c, tty) (colorImpl(c, tty).c_str())
 
 static void formatErrorLine(bool isatty, const Lexer &lexer, Token errorToken) {
     errorToken = lexer.shiftEOS(errorToken);
