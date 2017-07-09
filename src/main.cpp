@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#include <iostream>
-
 #include <unistd.h>
 
 #include <ydsh/ydsh.h>
@@ -80,7 +78,7 @@ static void terminationHook(unsigned int kind, unsigned int errorLineNum) {
     }
 }
 
-static void showFeature(std::ostream &stream) {
+static void showFeature(FILE *fp) {
     const char *featureNames[] = {
             "USE_LOGGING",
             "USE_DBUS",
@@ -91,7 +89,7 @@ static void showFeature(std::ostream &stream) {
     const unsigned int featureBit = DSState_featureBit();
     for(unsigned int i = 0; i < arraySize(featureNames); i++) {
         if(hasFlag(featureBit, static_cast<unsigned int>(1 << i))) {
-            stream << featureNames[i] << std::endl;
+            fprintf(fp, "%s\n", featureNames[i]);
         }
     }
 }
@@ -149,9 +147,9 @@ int main(int argc, char **argv) {
     try {
         restIndex = argv::parseArgv(argc, argv, options, cmdLines);
     } catch(const argv::ParseError &e) {
-        std::cerr << e.getMessage() << std::endl;
-        std::cerr << version() << std::endl;
-        std::cerr << options << std::endl;
+        fprintf(stderr, "%s\n", e.getMessage().c_str());
+        fprintf(stderr, "%s\n", version());
+        argv::printOption(stderr, options);
         exit(1);
     }
 
@@ -192,12 +190,11 @@ int main(int argc, char **argv) {
             DSState_setOption(state, DS_OPTION_TRACE_EXIT);
             break;
         case VERSION:
-            std::cout << version() << std::endl;
-            std::cout << DSState_copyright() << std::endl;
+            fprintf(stdout, "%s\n%s\n", version(), DSState_copyright());
             exit(0);
         case HELP:
-            std::cout << version() << std::endl;
-            std::cout << options << std::endl;
+            fprintf(stdout, "%s\n", version());
+            argv::printOption(stdout, options);
             exit(0);
         case COMMAND:
             invocationKind = InvocationKind::FROM_STRING;
@@ -215,7 +212,7 @@ int main(int argc, char **argv) {
             statusLogPath = cmdLine.second;
             break;
         case FEATURE:
-            showFeature(std::cout);
+            showFeature(stdout);
             exit(0);
         case RC_FILE:
             rcfile = cmdLine.second;
@@ -264,8 +261,7 @@ int main(int argc, char **argv) {
             exit(INVOKE(loadAndEval)(&state, nullptr, stdin));
         } else {    // interactive mode
             if(!quiet) {
-                std::cout << version() << std::endl;
-                std::cout << DSState_copyright() << std::endl;
+                fprintf(stdout, "%s\n%s\n", version(), DSState_copyright());
             }
             if(userc) {
                 loadRC(state, rcfile);

@@ -179,7 +179,7 @@ int parseArgv(int argc, char **argv, const Option<T> (&options)[N], CmdLines<T> 
 };
 
 template<typename T, size_t N>
-std::ostream &operator<<(std::ostream &stream, const Option<T> (&options)[N]) {
+void printOption(FILE *fp, const Option<T> (&options)[N]) {
     std::vector<const Option<T> *> sortedOptions;
     for(unsigned int i = 0; i < N; i++) {
         sortedOptions.push_back(&options[i]);
@@ -205,27 +205,26 @@ std::ostream &operator<<(std::ostream &stream, const Option<T> (&options)[N]) {
     }
 
     // print help message
-    stream << "Options:";
+    fputs("Options:", fp);
     for(const Option<T> *option : sortedOptions) {
-        stream << std::endl;
+        fputc('\n', fp);
         unsigned int size = option->getUsageSize();
-        stream << "    " << option->optionName;
-        stream << (option->hasArg() ? usageSuffix : "");
+        fprintf(fp, "    %s%s", option->optionName, (option->hasArg() ? usageSuffix : ""));
         for(unsigned int i = 0; i < maxSizeOfUsage - size; i++) {
-            stream << ' ';
+            fputc(' ', fp);
         }
 
         std::vector<std::string> details(option->getDetails());
         unsigned int detailSize = details.size();
         for(unsigned int i = 0; i < detailSize; i++) {
             if(i > 0) {
-                stream << std::endl << spaces << "    ";
+                fprintf(fp, "\n%s    ", spaces.c_str());
             }
-            stream << "    " << details[i];
+            fprintf(fp, "    %s", details[i].c_str());
         }
     }
-
-    return stream;
+    fputc('\n', fp);
+    fflush(fp);
 };
 
 } // namespace argv
