@@ -92,14 +92,6 @@ extern char **environ;
 
 namespace ydsh {
 
-#define vmswitch(V) switch(V)
-
-#if 0
-#define vmcase(code) case OpCode::code: {fprintf(stderr, "pc: %u, code: %s\n", ctx.pc(), #code); }
-#else
-#define vmcase(code) case OpCode::code:
-#endif
-
 #define CODE(ctx) (ctx.codeStack.back())
 #define GET_CODE(ctx) (CODE(ctx)->getCode())
 #define CONST_POOL(ctx) (static_cast<const CompiledCode *>(CODE(ctx))->getConstPool())
@@ -1213,6 +1205,16 @@ void DBusInitSignal(DSState &st);
 std::vector<DSValue> DBusWaitSignal(DSState &st);
 
 
+#define vmdispatch(V) switch(V)
+
+#if 0
+#define vmcase(code) case OpCode::code: {fprintf(stderr, "pc: %u, code: %s\n", ctx.pc(), #code); }
+#else
+#define vmcase(code) case OpCode::code:
+#endif
+
+#define vmnext continue
+
 static bool mainLoop(DSState &state) {
     while(true) {
         // fetch next opcode
@@ -1222,13 +1224,13 @@ static bool mainLoop(DSState &state) {
         }
 
         // dispatch instruction
-        vmswitch(op) {
+        vmdispatch(op) {
         vmcase(HALT) {
             return true;
         }
         vmcase(ASSERT) {
             checkAssertion(state);
-            break;
+            vmnext;
         }
         vmcase(PRINT) {
             unsigned long v = read64(GET_CODE(state), state.pc() + 1);
@@ -1242,7 +1244,7 @@ static bool mainLoop(DSState &state) {
             fputc('\n', stdout);
             fflush(stdout);
             state.popNoReturn();
-            break;
+            vmnext;
         }
         vmcase(INSTANCE_OF) {
             unsigned long v = read64(GET_CODE(state), state.pc() + 1);
@@ -1254,46 +1256,46 @@ static bool mainLoop(DSState &state) {
             } else {
                 state.push(state.falseObj);
             }
-            break;
+            vmnext;
         }
         vmcase(CHECK_CAST) {
             unsigned long v = read64(GET_CODE(state), state.pc() + 1);
             state.pc() += 8;
             checkCast(state, reinterpret_cast<DSType *>(v));
-            break;
+            vmnext;
         }
         vmcase(PUSH_NULL) {
             state.push(nullptr);
-            break;
+            vmnext;
         }
         vmcase(PUSH_TRUE) {
             state.push(state.trueObj);
-            break;
+            vmnext;
         }
         vmcase(PUSH_FALSE) {
             state.push(state.falseObj);
-            break;
+            vmnext;
         }
         vmcase(PUSH_ESTRING) {
             state.push(state.emptyStrObj);
-            break;
+            vmnext;
         }
         vmcase(LOAD_CONST) {
             unsigned char index = read8(GET_CODE(state), ++state.pc());
             state.push(CONST_POOL(state)[index]);
-            break;
+            vmnext;
         }
         vmcase(LOAD_CONST_W) {
             unsigned short index = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;
             state.push(CONST_POOL(state)[index]);
-            break;
+            vmnext;
         }
         vmcase(LOAD_CONST_T) {
             unsigned int index = read24(GET_CODE(state), state.pc() + 1);
             state.pc() += 3;
             state.push(CONST_POOL(state)[index]);
-            break;
+            vmnext;
         }
         vmcase(LOAD_FUNC) {
             unsigned short index = read16(GET_CODE(state), state.pc() + 1);
@@ -1306,53 +1308,53 @@ static bool mainLoop(DSState &state) {
                 assert(handle != nullptr);
                 func->setType(handle->getFieldType(state.pool));
             }
-            break;
+            vmnext;
         }
         vmcase(LOAD_GLOBAL) {
             unsigned short index = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;
             state.loadGlobal(index);
-            break;
+            vmnext;
         }
         vmcase(STORE_GLOBAL) {
             unsigned short index = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;
             state.storeGlobal(index);
-            break;
+            vmnext;
         }
         vmcase(LOAD_LOCAL) {
             unsigned char index = read8(GET_CODE(state), ++state.pc());
             state.loadLocal(index);
-            break;
+            vmnext;
         }
         vmcase(STORE_LOCAL) {
             unsigned char index = read8(GET_CODE(state), ++state.pc());
             state.storeLocal(index);
-            break;
+            vmnext;
         }
         vmcase(LOAD_FIELD) {
             unsigned short index = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;
             state.loadField(index);
-            break;
+            vmnext;
         }
         vmcase(STORE_FIELD) {
             unsigned short index = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;
             state.storeField(index);
-            break;
+            vmnext;
         }
         vmcase(IMPORT_ENV) {
             unsigned char b = read8(GET_CODE(state), ++state.pc());
             importEnv(state, b > 0);
-            break;
+            vmnext;
         }
         vmcase(LOAD_ENV) {
             DSValue name = state.pop();
             const char *value = getenv(typeAs<String_Object>(name)->getValue());
             assert(value != nullptr);
             state.push(DSValue::create<String_Object>(state.pool.getStringType(), value));
-            break;
+            vmnext;
         }
         vmcase(STORE_ENV) {
             DSValue value(state.pop());
@@ -1360,61 +1362,61 @@ static bool mainLoop(DSState &state) {
 
             setenv(typeAs<String_Object>(name)->getValue(),
                    typeAs<String_Object>(value)->getValue(), 1);//FIXME: check return value and throw
-            break;
+            vmnext;
         }
         vmcase(POP) {
             state.popNoReturn();
-            break;
+            vmnext;
         }
         vmcase(DUP) {
             state.dup();
-            break;
+            vmnext;
         }
         vmcase(DUP2) {
             state.dup2();
-            break;
+            vmnext;
         }
         vmcase(SWAP) {
             state.swap();
-            break;
+            vmnext;
         }
         vmcase(NEW_STRING) {
             state.push(DSValue::create<String_Object>(state.pool.getStringType()));
-            break;
+            vmnext;
         }
         vmcase(APPEND_STRING) {
             DSValue v(state.pop());
             typeAs<String_Object>(state.peek())->append(std::move(v));
-            break;
+            vmnext;
         }
         vmcase(NEW_ARRAY) {
             unsigned long v = read64(GET_CODE(state), state.pc() + 1);
             state.pc() += 8;
             state.push(DSValue::create<Array_Object>(*reinterpret_cast<DSType *>(v)));
-            break;
+            vmnext;
         }
         vmcase(APPEND_ARRAY) {
             DSValue v(state.pop());
             typeAs<Array_Object>(state.peek())->append(std::move(v));
-            break;
+            vmnext;
         }
         vmcase(NEW_MAP) {
             unsigned long v = read64(GET_CODE(state), state.pc() + 1);
             state.pc() += 8;
             state.push(DSValue::create<Map_Object>(*reinterpret_cast<DSType *>(v)));
-            break;
+            vmnext;
         }
         vmcase(APPEND_MAP) {
             DSValue value(state.pop());
             DSValue key(state.pop());
             typeAs<Map_Object>(state.peek())->add(std::make_pair(std::move(key), std::move(value)));
-            break;
+            vmnext;
         }
         vmcase(NEW_TUPLE) {
             unsigned long v = read64(GET_CODE(state), state.pc() + 1);
             state.pc() += 8;
             state.push(DSValue::create<Tuple_Object>(*reinterpret_cast<DSType *>(v)));
-            break;
+            vmnext;
         }
         vmcase(NEW) {
             unsigned long v = read64(GET_CODE(state), state.pc() + 1);
@@ -1426,13 +1428,13 @@ static bool mainLoop(DSState &state) {
             } else {
                 fatal("currently, DSObject allocation not supported\n");
             }
-            break;
+            vmnext;
         }
         vmcase(CALL_INIT) {
             unsigned short paramSize = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;
             callConstructor(state, paramSize);
-            break;
+            vmnext;
         }
         vmcase(CALL_METHOD) {
             unsigned short index = read16(GET_CODE(state), state.pc() + 1);
@@ -1440,13 +1442,13 @@ static bool mainLoop(DSState &state) {
             unsigned short paramSize = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;
             callMethod(state, index, paramSize);
-            break;
+            vmnext;
         }
         vmcase(CALL_FUNC) {
             unsigned short paramSize = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;
             applyFuncObject(state, paramSize);
-            break;
+            vmnext;
         }
         vmcase(CALL_NATIVE) {
             unsigned long v = read64(GET_CODE(state), state.pc() + 1);
@@ -1456,32 +1458,32 @@ static bool mainLoop(DSState &state) {
             if(returnValue) {
                 state.push(std::move(returnValue));
             }
-            break;
+            vmnext;
         }
         vmcase(INVOKE_METHOD) {
             unsigned short index = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;
             invokeMethod(state, index);
-            break;
+            vmnext;
         }
         vmcase(INVOKE_GETTER) {
             unsigned short index = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;
             invokeGetter(state, index);
-            break;
+            vmnext;
         }
         vmcase(INVOKE_SETTER) {
             unsigned short index = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;
             invokeSetter(state, index);
-            break;
+            vmnext;
         }
         vmcase(RETURN) {
             unwindStackFrame(state);
             if(state.codeStack.empty()) {
                 return true;
             }
-            break;
+            vmnext;
         }
         vmcase(RETURN_V) {
             DSValue v(state.pop());
@@ -1490,7 +1492,7 @@ static bool mainLoop(DSState &state) {
             if(state.codeStack.empty()) {
                 return true;
             }
-            break;
+            vmnext;
         }
         vmcase(RETURN_UDC) {
             auto v = state.pop();
@@ -1500,7 +1502,7 @@ static bool mainLoop(DSState &state) {
             if(state.codeStack.empty()) {
                 return true;
             }
-            break;
+            vmnext;
         }
         vmcase(BRANCH) {
             unsigned short offset = read16(GET_CODE(state), state.pc() + 1);
@@ -1509,55 +1511,56 @@ static bool mainLoop(DSState &state) {
             } else {
                 state.pc() += offset - 1;
             }
-            break;
+            vmnext;
         }
         vmcase(GOTO) {
             unsigned int index = read32(GET_CODE(state), state.pc() + 1);
             state.pc() = index - 1;
-            break;
+            vmnext;
         }
         vmcase(THROW) {
             state.throwException(state.pop());
+            vmnext;
         }
         vmcase(ENTER_FINALLY) {
             const unsigned int offset = read16(GET_CODE(state), state.pc() + 1);
             const unsigned int savedIndex = state.pc() + 2;
             state.push(DSValue::createNum(savedIndex));
             state.pc() += offset - 1;
-            break;
+            vmnext;
         }
         vmcase(EXIT_FINALLY) {
             switch(state.peek().kind()) {
             case DSValueKind::OBJECT:
             case DSValueKind::INVALID: {
                 state.throwException(state.pop());
-                break;
+                vmnext;
             }
             case DSValueKind::NUMBER: {
                 unsigned int index = static_cast<unsigned int>(state.pop().value());
                 state.pc() = index;
-                break;
+                vmnext;
             }
             }
-            break;
+            vmnext;
         }
         vmcase(COPY_INT) {
             DSType *type = state.pool.getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
             int v = typeAs<Int_Object>(state.pop())->getValue();
             state.push(DSValue::create<Int_Object>(*type, v));
-            break;
+            vmnext;
         }
         vmcase(TO_BYTE) {
             unsigned int v = typeAs<Int_Object>(state.pop())->getValue();
             v &= 0xFF;  // fill higher bits (8th ~ 31) with 0
             state.push(DSValue::create<Int_Object>(state.pool.getByteType(), v));
-            break;
+            vmnext;
         }
         vmcase(TO_U16) {
             unsigned int v = typeAs<Int_Object>(state.pop())->getValue();
             v &= 0xFFFF;    // fill higher bits (16th ~ 31th) with 0
             state.push(DSValue::create<Int_Object>(state.pool.getUint16Type(), v));
-            break;
+            vmnext;
         }
         vmcase(TO_I16) {
             unsigned int v = typeAs<Int_Object>(state.pop())->getValue();
@@ -1566,82 +1569,82 @@ static bool mainLoop(DSState &state) {
                 v |= 0xFFFF0000;
             }
             state.push(DSValue::create<Int_Object>(state.pool.getInt16Type(), v));
-            break;
+            vmnext;
         }
         vmcase(NEW_LONG) {
             DSType *type = state.pool.getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
             unsigned int v = typeAs<Int_Object>(state.pop())->getValue();
             unsigned long l = v;
             state.push(DSValue::create<Long_Object>(*type, l));
-            break;
+            vmnext;
         }
         vmcase(COPY_LONG) {
             DSType *type = state.pool.getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
             long v = typeAs<Long_Object>(state.pop())->getValue();
             state.push(DSValue::create<Long_Object>(*type, v));
-            break;
+            vmnext;
         }
         vmcase(I_NEW_LONG) {
             DSType *type = state.pool.getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
             int v = typeAs<Int_Object>(state.pop())->getValue();
             long l = v;
             state.push(DSValue::create<Long_Object>(*type, l));
-            break;
+            vmnext;
         }
         vmcase(NEW_INT) {
             DSType *type = state.pool.getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
             unsigned long l = typeAs<Long_Object>(state.pop())->getValue();
             unsigned int v = static_cast<unsigned int>(l);
             state.push(DSValue::create<Int_Object>(*type, v));
-            break;
+            vmnext;
         }
         vmcase(U32_TO_D) {
             unsigned int v = typeAs<Int_Object>(state.pop())->getValue();
             double d = static_cast<double>(v);
             state.push(DSValue::create<Float_Object>(state.pool.getFloatType(), d));
-            break;
+            vmnext;
         }
         vmcase(I32_TO_D) {
             int v = typeAs<Int_Object>(state.pop())->getValue();
             double d = static_cast<double>(v);
             state.push(DSValue::create<Float_Object>(state.pool.getFloatType(), d));
-            break;
+            vmnext;
         }
         vmcase(U64_TO_D) {
             unsigned long v = typeAs<Long_Object>(state.pop())->getValue();
             double d = static_cast<double>(v);
             state.push(DSValue::create<Float_Object>(state.pool.getFloatType(), d));
-            break;
+            vmnext;
         }
         vmcase(I64_TO_D) {
             long v = typeAs<Long_Object>(state.pop())->getValue();
             double d = static_cast<double>(v);
             state.push(DSValue::create<Float_Object>(state.pool.getFloatType(), d));
-            break;
+            vmnext;
         }
         vmcase(D_TO_U32) {
             double d = typeAs<Float_Object>(state.pop())->getValue();
             unsigned int v = static_cast<unsigned int>(d);
             state.push(DSValue::create<Int_Object>(state.pool.getUint32Type(), v));
-            break;
+            vmnext;
         }
         vmcase(D_TO_I32) {
             double d = typeAs<Float_Object>(state.pop())->getValue();
             int v = static_cast<int>(d);
             state.push(DSValue::create<Int_Object>(state.pool.getInt32Type(), v));
-            break;
+            vmnext;
         }
         vmcase(D_TO_U64) {
             double d = typeAs<Float_Object>(state.pop())->getValue();
             unsigned long v = static_cast<unsigned long>(d);
             state.push(DSValue::create<Long_Object>(state.pool.getUint64Type(), v));
-            break;
+            vmnext;
         }
         vmcase(D_TO_I64) {
             double d = typeAs<Float_Object>(state.pop())->getValue();
             long v = static_cast<long>(d);
             state.push(DSValue::create<Long_Object>(state.pool.getInt64Type(), v));
-            break;
+            vmnext;
         }
         vmcase(SUCCESS_CHILD) {
             exit(state.getExitStatus());
@@ -1653,17 +1656,17 @@ static bool mainLoop(DSState &state) {
         vmcase(CAPTURE_STR)
         vmcase(CAPTURE_ARRAY) {
             forkAndCapture(op == OpCode::CAPTURE_STR, state);
-            break;
+            vmnext;
         }
         vmcase(PIPELINE) {
             callPipeline(state);
-            break;
+            vmnext;
         }
         vmcase(EXPAND_TILDE) {
             std::string str = typeAs<String_Object>(state.pop())->getValue();
             expandTilde(str);
             state.push(DSValue::create<String_Object>(state.pool.getStringType(), std::move(str)));
-            break;
+            vmnext;
         }
         vmcase(NEW_CMD) {
             auto v = state.pop();
@@ -1671,12 +1674,12 @@ static bool mainLoop(DSState &state) {
             Array_Object *argv = typeAs<Array_Object>(obj);
             argv->append(std::move(v));
             state.push(std::move(obj));
-            break;
+            vmnext;
         }
         vmcase(ADD_CMD_ARG) {
             unsigned char v = read8(GET_CODE(state), ++state.pc());
             addCmdArg(state, v > 0);
-            break;
+            vmnext;
         }
         vmcase(CALL_CMD)
         vmcase(CALL_CMD_P) {
@@ -1687,13 +1690,13 @@ static bool mainLoop(DSState &state) {
 
             const char *cmdName = str(typeAs<Array_Object>(argv)->getValues()[0]);
             callCommand(state, CmdResolver()(state, cmdName), std::move(argv), std::move(redir), needFork);
-            break;
+            vmnext;
         }
         vmcase(BUILTIN_CMD) {
             auto redir = std::move(state.getLocal(0));
             auto argv = std::move(state.getLocal(1));
             callBuiltinCommand(state, std::move(argv), std::move(redir));
-            break;
+            vmnext;
         }
         vmcase(BUILTIN_EVAL) {
             auto redir = std::move(state.getLocal(0));
@@ -1707,25 +1710,25 @@ static bool mainLoop(DSState &state) {
             } else {
                 pushExitStatus(state, 0);
             }
-            break;
+            vmnext;
         }
         vmcase(NEW_REDIR) {
             state.push(DSValue::create<RedirConfig>());
-            break;
+            vmnext;
         }
         vmcase(ADD_REDIR_OP) {
             unsigned char v = read8(GET_CODE(state), ++state.pc());
             auto value = state.pop();
             typeAs<RedirConfig>(state.peek())->addRedirOp(static_cast<RedirOP>(v), std::move(value));
-            break;
+            vmnext;
         }
         vmcase(DO_REDIR) {
             typeAs<RedirConfig>(state.peek())->redirect(state);
-            break;
+            vmnext;
         }
         vmcase(DBUS_INIT_SIG) {
             DBusInitSignal(state);
-            break;
+            vmnext;
         }
         vmcase(DBUS_WAIT_SIG) {
             auto v = DBusWaitSignal(state);
@@ -1733,12 +1736,12 @@ static bool mainLoop(DSState &state) {
                 state.push(std::move(e));
             }
             applyFuncObject(state, v.size() - 1);
-            break;
+            vmnext;
         }
         vmcase(RAND) {
             int v = rand();
             state.push(DSValue::create<Int_Object>(state.pool.getUint32Type(), v));
-            break;
+            vmnext;
         }
         vmcase(GET_SECOND) {
             auto now = std::chrono::system_clock::now();
@@ -1747,23 +1750,23 @@ static bool mainLoop(DSState &state) {
             unsigned long v = typeAs<Long_Object>(state.getGlobal(toIndex(BuiltinVarOffset::SECONDS)))->getValue();
             v += sec.count();
             state.push(DSValue::create<Long_Object>(state.pool.getUint64Type(), v));
-            break;
+            vmnext;
         }
         vmcase(SET_SECOND) {
             state.baseTime = std::chrono::system_clock::now();
             state.storeGlobal(toIndex(BuiltinVarOffset::SECONDS));
-            break;
+            vmnext;
         }
         vmcase(UNWRAP) {
             if(state.peek().kind() == DSValueKind::INVALID) {
                 throwError(state, state.pool.getUnwrappingErrorType(), std::string("invalid value"));
             }
-            break;
+            vmnext;
         }
         vmcase(CHECK_UNWRAP) {
             bool b = state.pop().kind() != DSValueKind::INVALID;
             state.push(b ? state.trueObj : state.falseObj);
-            break;
+            vmnext;
         }
         vmcase(TRY_UNWRAP) {
             unsigned short offset = read16(GET_CODE(state), state.pc() + 1);
@@ -1773,18 +1776,18 @@ static bool mainLoop(DSState &state) {
             } else {
                 state.pc() += offset - 1;
             }
-            break;
+            vmnext;
         }
         vmcase(NEW_INVALID) {
             state.push(DSValue::createInvalid());
-            break;
+            vmnext;
         }
         vmcase(RECLAIM_LOCAL) {
             unsigned char offset = read8(GET_CODE(state), ++state.pc());
             unsigned char size = read8(GET_CODE(state), ++state.pc());
 
             reclaimLocals(state, offset, size);
-            break;
+            vmnext;
         }
         }
     }
