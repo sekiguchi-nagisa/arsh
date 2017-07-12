@@ -1122,7 +1122,7 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
         LOG_L(DUMP_CONSOLE, [&](std::ostream &stream) {
             stream << "error kind: " << e.getErrorKind() << std::endl;
             stream << "kind: " << toString(e.getTokenKind())
-                   << ", token: " << e.getErrorToken()
+                   << ", token: " << toString(e.getErrorToken())
                    << ", text: " << lexer.toTokenText(e.getErrorToken()) << std::endl;
         });
 
@@ -1194,7 +1194,7 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
         stream << "token size: " << tracker.getTokenPairs().size() << std::endl;
         for(auto &t : tracker.getTokenPairs()) {
             stream << "kind: " << toString(t.first)
-                   << ", token: " << t.second
+                   << ", token: " << toString(t.second)
                    << ", text: " << lexer.toTokenText(t.second) << std::endl;
         }
 

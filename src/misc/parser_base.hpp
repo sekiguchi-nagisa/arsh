@@ -18,7 +18,6 @@
 #define YDSH_MISC_PARSER_BASE_HPP
 
 #include <vector>
-#include <ostream>
 
 #include "misc/lexer_base.hpp"
 

@@ -21,7 +21,6 @@
 #include <cstring>
 #include <cassert>
 #include <string>
-#include <ostream>
 #include <type_traits>
 #include <vector>
 #include <memory>
@@ -46,8 +45,13 @@ struct Token {
     }
 };
 
-inline std::ostream &operator<<(std::ostream &stream, const Token &token) {
-    return stream << "(pos = " << token.pos << ", size = " << token.size << ")";
+inline std::string toString(Token token) {
+    std::string str = "(pos = ";
+    str += std::to_string(token.pos);
+    str += ", size = ";
+    str += std::to_string(token.size);
+    str += ")";
+    return str;
 }
 
 namespace __detail {

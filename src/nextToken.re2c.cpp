@@ -17,10 +17,6 @@
 #include "lexer.h"
 #include "logger.h"
 
-#ifdef USE_TRACE_TOKEN
-#include <iostream>
-#include <cstdlib>
-#endif
 
 // helper macro definition.
 #define RET(k) do { kind = k; goto END; } while(false)
@@ -320,7 +316,7 @@ TokenKind Lexer::nextToken(Token &token) {
     this->prevMode = prevMode;
 
     LOG(TRACE_TOKEN,
-        toString(kind) << ", " << token << ", text = " << this->toTokenText(token) << std::endl
+        toString(kind) << ", " << toString(token) << ", text = " << this->toTokenText(token) << std::endl
                      << "   lexer mode: " << toModeName(this->getLexerMode())
     );
     return kind;

@@ -20,7 +20,6 @@
 #include <unistd.h>
 
 #include <vector>
-#include <iostream>
 #include <chrono>
 
 #include <ydsh/ydsh.h>
