@@ -19,6 +19,7 @@
 #include <sys/wait.h>
 
 #include <cstdlib>
+#include <cerrno>
 
 #include "opcode.h"
 #include "vm.h"
