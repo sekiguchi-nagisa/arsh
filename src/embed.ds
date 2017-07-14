@@ -28,6 +28,11 @@ let False = $FALSE
 let false = $False
 
 
+# dummy function for signal handler
+function SIG_DFL($s : Signal) {}
+function SIG_IGN($s : Signal) {}
+
+
 # builtin D-Bus interface
 
 interface org.freedesktop.DBus.Peer {

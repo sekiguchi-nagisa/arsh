@@ -15,9 +15,11 @@
  */
 
 #include <cmath>
+#include <csignal>
 
 #include "misc/fatal.h"
 #include "misc/num.h"
+#include "misc/hash.hpp"
 #include "lexer.h"
 
 namespace ydsh {
@@ -378,6 +380,69 @@ double Lexer::toDouble(Token token, int &status) const {
     double value = convertToDouble(str, status);
     assert(status > -1);
     return value;
+}
+
+static CStringHashMap<int> initSignalMap() {
+#define EACH_SIGNAL(S) \
+    S(HUP) \
+    S(INT) \
+    S(QUIT) \
+    S(ILL) \
+    S(TRAP) \
+    S(ABRT) \
+    S(IOT) \
+    S(BUS) \
+    S(FPE) \
+    S(KILL) \
+    S(USR1) \
+    S(SEGV) \
+    S(USR2) \
+    S(PIPE) \
+    S(ALRM) \
+    S(TERM) \
+    S(STKFLT) \
+    S(CLD) \
+    S(CHLD) \
+    S(CONT) \
+    S(STOP) \
+    S(TSTP) \
+    S(TTIN) \
+    S(TTOU) \
+    S(URG) \
+    S(XCPU) \
+    S(XFSZ) \
+    S(VTALRM) \
+    S(PROF) \
+    S(WINCH) \
+    S(POLL) \
+    S(IO) \
+    S(PWR)
+
+    CStringHashMap<int> map = {
+#define GEN_KV(S) {#S, SIG ## S},
+        EACH_SIGNAL(GEN_KV)
+#undef GEN_KV
+    };
+    return map;
+}
+
+int Lexer::toSigNum(Token token) const {
+    static auto signalMap = initSignalMap();
+
+    token.pos++;    // skip prefix %
+    token.pos++;    // skip '
+    token.size -= 3;
+
+    std::string str;
+    for(unsigned int i = 0; i < token.size; i++) {
+        char ch = this->buf[token.pos + i];
+        if(ch >= 'a' && ch <= 'z') {
+            ch -= static_cast<int>('a') - static_cast<int>('A');   // convert to upper character
+        }
+        str += ch;
+    }
+    auto iter = signalMap.find(str.c_str());
+    return iter == signalMap.end() ? 0 : iter->second;
 }
 
 bool Lexer::isDecimal(Token token) const {

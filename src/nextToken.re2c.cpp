@@ -172,6 +172,8 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT> "p" ['] PATH_CHARS [']
                                { MODE(EXPR); RET(PATH_LITERAL); }
       <STMT> REGEX             { MODE(EXPR); RET(REGEX_LITERAL); }
+      <STMT> "%" ['] VAR_NAME [']
+                               { MODE(EXPR); RET(SIGNAL_LITERAL); }
       <STMT> ["]               { MODE(EXPR); PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
       <STMT> "$("              { MODE(EXPR); PUSH_MODE(STMT); RET(START_SUB_CMD); }
 

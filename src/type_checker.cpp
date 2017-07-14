@@ -417,13 +417,35 @@ void TypeChecker::visitTypeNode(DSType *, TypeNode &node) {
 }
 
 void TypeChecker::visitNumberNode(DSType *, NumberNode &node) {
-    DSType *type = nullptr;
     switch(node.kind) {
-#define GEN_CASE(OP) case NumberNode::OP: { type = &this->typePool.get ## OP ## Type(); break; }
-    EACH_NUMBER_NODE_KIND(GEN_CASE)
-#undef GEN_CASE
+    case NumberNode::Byte:
+        node.setType(this->typePool.getByteType());
+        break;
+    case NumberNode::Int16:
+        node.setType(this->typePool.getInt16Type());
+        break;
+    case NumberNode::Uint16:
+        node.setType(this->typePool.getUint16Type());
+        break;
+    case NumberNode::Int32:
+        node.setType(this->typePool.getInt32Type());
+        break;
+    case NumberNode::Uint32:
+        node.setType(this->typePool.getUint32Type());
+        break;
+    case NumberNode::Int64:
+        node.setType(this->typePool.getInt64Type());
+        break;
+    case NumberNode::Uint64:
+        node.setType(this->typePool.getUint64Type());
+        break;
+    case NumberNode::Float:
+        node.setType(this->typePool.getFloatType());
+        break;
+    case NumberNode::Signal:
+        node.setType(this->typePool.getSignalType());
+        break;
     }
-    node.setType(*type);
 }
 
 void TypeChecker::visitStringNode(DSType *, StringNode &node) {

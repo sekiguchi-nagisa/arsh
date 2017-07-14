@@ -339,7 +339,8 @@ TypeNode *newVoidTypeNode();
     OP(Uint32) \
     OP(Int64) \
     OP(Uint64) \
-    OP(Float)
+    OP(Float) \
+    OP(Signal)
 
 class NumberNode : public Node {
 public:
@@ -405,6 +406,12 @@ public:
     static NumberNode *newFloat(Token token, double value) {
         auto *node = new  NumberNode(token, Float);
         node->floatValue = value;
+        return node;
+    }
+
+    static NumberNode *newSignal(Token token, int value) {
+        auto *node = new NumberNode(token, Signal);
+        node->intValue = value;
         return node;
     }
 

@@ -560,6 +560,8 @@ TypePool::TypePool() :
     this->initBuiltinType(Func, "Func", false, this->getAnyType(), info_Dummy());
     this->initBuiltinType(StringIter__, "StringIter%%", false, this->getAnyType(), info_StringIterType());
     this->initBuiltinType(Regex, "Regex", false, this->getAnyType(), info_RegexType());
+    this->initBuiltinType(Signal, "Signal", false, this->getAnyType(), info_SignalType());
+    this->initBuiltinType(Signals, "Signals", false, this->getAnyType(), info_SignalsType());
 
     // register NativeFuncInfo to ErrorType
     ErrorType::registerFuncInfo(info_ErrorType());

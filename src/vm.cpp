@@ -66,7 +66,8 @@ DSState::DSState() :
         option(DS_OPTION_ASSERT), codeStack(),
         pathCache(), terminationHook(nullptr), lineNum(1), prompt(),
         hook(nullptr), logicalWorkingDir(initLogicalWorkingDir()),
-        baseTime(std::chrono::system_clock::now()), history(initHistory()) { }
+        baseTime(std::chrono::system_clock::now()), history(initHistory()),
+        sigVector() { }
 
 void DSState::expandLocalStack() {
     const unsigned int needSize = this->stackTopIndex;
@@ -87,6 +88,10 @@ void DSState::expandLocalStack() {
     this->callStack = newTable;
     this->callStackSize = newSize;
 }
+
+flag32_set_t DSState::eventDesc = 0;
+
+FixedQueue<int, 32> DSState::signalQueue;
 
 
 extern char **environ;
@@ -1194,6 +1199,47 @@ static void addCmdArg(DSState &state, bool skipEmptyStr) {
     }
 }
 
+
+// for signal handling
+
+static void signalHandler(int sigNum) {
+    blockSignal([&] {
+        DSState::signalQueue.push(sigNum);
+        setFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL);
+    });
+}
+
+static const FuncObject *getHandler(const DSState &st, const char *name) {
+    auto handle = st.symbolTable.lookupHandle(name);
+    assert(handle != nullptr);
+    assert(handle->attr().has(FieldAttribute::FUNC_HANDLE));
+    return typeAs<FuncObject>(st.getGlobal(handle->getFieldIndex()));
+}
+
+void installSignalHandler(DSState &st, int sigNum, const FuncObject *handler) {
+    auto *DFL_handler = getHandler(st, VAR_SIG_DFL);
+    auto *IGN_handler = getHandler(st, VAR_SIG_IGN);
+
+    // set posix signal handler
+    struct sigaction action;
+    action.sa_flags = 0;
+    sigemptyset(&action.sa_mask);
+    if(handler == DFL_handler) {
+        action.sa_handler = SIG_DFL;
+        handler = nullptr;
+    } else if(handler == IGN_handler) {
+        action.sa_handler = SIG_IGN;
+        handler = nullptr;
+    } else {
+        action.sa_handler = signalHandler;
+    }
+    sigaction(sigNum, &action, NULL);
+
+    // register handler
+    st.sigVector.insertOrUpdate(sigNum, handler);
+}
+
+
 // prototype of DBus related api
 void DBusInitSignal(DSState &st);
 
@@ -1204,6 +1250,30 @@ void DBusInitSignal(DSState &st);
  * last elements indicates resolved signal handler
  */
 std::vector<DSValue> DBusWaitSignal(DSState &st);
+
+static void checkVMEvent(DSState &state) {
+    if(hasFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL) &&
+            !hasFlag(DSState::eventDesc, DSState::VM_EVENT_MASK)) {
+        blockSignal([&]{
+            assert(!DSState::signalQueue.empty());
+            int sigNum = DSState::signalQueue.pop();
+            if(DSState::signalQueue.empty()) {
+                unsetFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL);
+            }
+
+            auto handler = state.sigVector.lookup(sigNum);
+            if(handler != nullptr) {
+                setFlag(DSState::eventDesc, DSState::VM_EVENT_MASK);
+            }   fatal("signal handler invocation need more work\n"); //FIXME: kick handler
+        });
+    }
+
+    if(state.hook != nullptr) {
+        assert(hasFlag(DSState::eventDesc, DSState::VM_EVENT_HOOK));
+        OpCode op = static_cast<OpCode>(GET_CODE(state)[state.pc() + 1]);
+        state.hook->vmFetchHook(state, op);
+    }
+}
 
 
 #define vmdispatch(V) switch(V)
@@ -1218,11 +1288,12 @@ std::vector<DSValue> DBusWaitSignal(DSState &st);
 
 static bool mainLoop(DSState &state) {
     while(true) {
+        if(DSState::eventDesc) {
+            checkVMEvent(state);
+        }
+
         // fetch next opcode
         const OpCode op = static_cast<OpCode>(GET_CODE(state)[++state.pc()]);
-        if(state.hook != nullptr) {
-            state.hook->vmFetchHook(state, op);
-        }
 
         // dispatch instruction
         vmdispatch(op) {

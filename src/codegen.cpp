@@ -361,6 +361,9 @@ void ByteCodeGenerator::visitNumberNode(NumberNode &node) {
     case NumberNode::Float:
         value = DSValue::create<Float_Object>(node.getType(), node.getFloatValue());
         break;
+    case NumberNode::Signal:
+        value = DSValue::create<Int_Object>(node.getType(), node.getIntValue());
+        break;
     }
     this->emitLdcIns(std::move(value));
 }

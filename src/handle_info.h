@@ -42,7 +42,9 @@ namespace ydsh {
     OP(Error) \
     OP(Proxy) \
     OP(StringIter) \
-    OP(Regex)
+    OP(Regex) \
+    OP(Signal) \
+    OP(Signals)
 
 // type template
 #define EACH_HANDLE_INFO_TYPE_TEMP(OP) \

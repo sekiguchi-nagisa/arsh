@@ -172,6 +172,9 @@ void NumberNode::dump(NodeDumper &dumper) const {
     case Float:
         DUMP_PRIM(floatValue);
         break;
+    case Signal:
+        DUMP_PRIM(intValue);
+        break;
     }
 }
 

@@ -427,6 +427,12 @@ static void initBuiltinVar(DSState *state) {
     bindVariable(state, "RANDOM", DSValue::create<Int_Object>(state->pool.getUint32Type(), 0),
                  FieldAttribute::READ_ONLY | FieldAttribute ::RANDOM);
     srand(static_cast<unsigned int>(time(nullptr)));    // init rand for $RANDOM
+
+    /**
+     * dummy object for signal handler setting
+     * must be DSObject
+     */
+    bindVariable(state, "SIG", DSValue::create<DSObject>(state->pool.getSignalsType()));
 }
 
 static void loadEmbeddedScript(DSState *state) {

@@ -31,6 +31,7 @@
 #include "core.h"
 #include "misc/buffer.hpp"
 #include "misc/noncopyable.h"
+#include "misc/queue.hpp"
 
 using namespace ydsh;
 
@@ -140,6 +141,16 @@ struct DSState {
     decltype(std::chrono::system_clock::now()) baseTime;
 
     DSHistory history;
+
+    SignalVector sigVector;
+
+    static constexpr flag32_t VM_EVENT_HOOK   = 1 << 0;
+    static constexpr flag32_t VM_EVENT_SIGNAL = 1 << 1;
+    static constexpr flag32_t VM_EVENT_MASK   = 1 << 2;
+
+    static flag32_set_t eventDesc;
+
+    static FixedQueue<int, 32> signalQueue;
 
     NON_COPYABLE(DSState);
 
@@ -336,6 +347,15 @@ struct DSState {
     bool isRootShell() const {
         int shellpid = typeAs<Int_Object>(this->getGlobal(toIndex(BuiltinVarOffset::SHELL_PID)))->getValue();
         return shellpid == getpid();
+    }
+
+    void setVMHook(VMHook *hook) {
+        this->hook = hook;
+        if(hook) {
+            setFlag(eventDesc, VM_EVENT_HOOK);
+        } else {
+            unsetFlag(eventDesc, VM_EVENT_HOOK);
+        }
     }
 };
 

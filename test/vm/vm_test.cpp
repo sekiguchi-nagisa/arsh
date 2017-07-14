@@ -51,7 +51,7 @@ public:
 
     virtual void SetUp() {
         this->state = DSState_create();
-        this->state->hook = &this->inspector;
+        this->state->setVMHook(&this->inspector);
     }
 
     virtual void TearDown() {
@@ -71,6 +71,14 @@ protected:
 
     void resetBreakPoint() {
         this->setBreakPoint(OpCode::HALT);
+    }
+
+    const FuncObject *getFuncObject(const char *name) const {
+        auto handle = this->state->symbolTable.lookupHandle(name);
+        if(handle == nullptr || !handle->attr().has(FieldAttribute::FUNC_HANDLE)) {
+            return nullptr;
+        }
+        return typeAs<FuncObject>(this->state->getGlobal(handle->getFieldIndex()));
     }
 
     void RefCount(const char *gvarName, unsigned int refCount) {
@@ -170,6 +178,53 @@ TEST_F(VMTest, deinit10) {
     this->eval("try { var a = $@; var b = $a; 34 / 0 } catch $e : Int { var b = $@; var c = $b; var d = $c; } finally {  $RANDOM; }");
     ASSERT_(RefCount("@", 1));
 }
+
+TEST_F(VMTest, sig1) {
+    this->eval("function f($s : Signal) {}");
+    auto *func = this->getFuncObject("f");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(func != nullptr));
+
+    SignalVector v;
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, v.getData().size()));
+
+    // not found
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(v.lookup(SIGQUIT) == nullptr));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(v.lookup(SIGINT) == nullptr));
+
+    // register
+    v.insertOrUpdate(3, func);
+    v.insertOrUpdate(1, func);
+    v.insertOrUpdate(4, func);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, v.getData().size()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, v.getData()[0].first));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3, v.getData()[1].first));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4, v.getData()[2].first));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(func, v.lookup(1)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(func, v.lookup(3)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(func, v.lookup(4)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(v.lookup(2) == nullptr));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(v.lookup(5) == nullptr));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(v.lookup(-3) == nullptr));
+
+    // update
+    auto *func1 = this->getFuncObject("SIG_DFL");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(func, v.lookup(3)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(func, func1));
+    v.insertOrUpdate(3, func1);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(func1, v.lookup(3)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, v.getData().size()));
+
+    // remove
+    v.insertOrUpdate(4, nullptr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, v.getData().size()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(nullptr, v.lookup(4)));
+
+    // do nothing
+    v.insertOrUpdate(5, nullptr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, v.getData().size()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(nullptr, v.lookup(5)));
+}
+
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

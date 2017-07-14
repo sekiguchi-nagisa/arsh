@@ -19,6 +19,7 @@
 
 #include <unistd.h>
 
+#include <csignal>
 #include <string>
 #include <vector>
 
@@ -158,6 +159,35 @@ struct VMHook {
     virtual void vmThrowHook(DSState &st) = 0;
 };
 
+class SignalVector {
+private:
+    std::vector<std::pair<int, const FuncObject *>> data;
+
+public:
+    SignalVector() = default;
+    ~SignalVector() = default;
+
+    /**
+     * if func is null, delete handler.
+     * @param sigNum
+     * @param func
+     * may be null
+     */
+    void insertOrUpdate(int sigNum, const FuncObject *func);
+
+    /**
+     *
+     * @param sigNum
+     * @return
+     * if not found, return null.
+     */
+    const FuncObject *lookup(int sigNum) const;
+
+    const std::vector<std::pair<int, const FuncObject *>> &getData() const {
+        return this->data;
+    };
+};
+
 // core api
 
 // getter api
@@ -206,6 +236,14 @@ bool changeWorkingDir(DSState &st, const char *dest, const bool useLogical);
 void exitShell(DSState &st, unsigned int status);
 
 /**
+ * before call it, should mask signal (use blockSignal())
+ * @param st
+ * @param sigNum
+ * @param handler
+ */
+void installSignalHandler(DSState &st, int sigNum, const FuncObject *handler);
+
+/**
  * after fork, reset signal setting in child process.
  */
 pid_t xfork(DSState &st, pid_t pgid, bool foreground);
@@ -230,6 +268,18 @@ void expandTilde(std::string &str);
  * line must be terminate newline.
  */
 CStrBuffer completeLine(const DSState &st, const std::string &line);
+
+template <typename Func>
+inline void blockSignal(Func func) {
+    sigset_t maskset;
+    sigfillset(&maskset);
+
+    sigprocmask(SIG_BLOCK, &maskset, nullptr);
+
+    func();
+
+    sigprocmask(SIG_UNBLOCK, &maskset, nullptr);
+}
 
 } // namespace ydsh
 

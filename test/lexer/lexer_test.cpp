@@ -784,6 +784,28 @@ TEST_F(LexerTest_Lv1, invalid_regex2) {
     ASSERT_NO_FATAL_FAILURE(EXPECT(INVALID, "$"));
 }
 
+TEST_F(LexerTest_Lv1, signal1) {
+    const char *text = "%'de1'";
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(SIGNAL_LITERAL, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
+}
+
+TEST_F(LexerTest_Lv1, signal2) {
+    const char *text = "%'INT'";
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(SIGNAL_LITERAL, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
+}
+
+TEST_F(LexerTest_Lv1, invalid_signal) {
+    const char *text = "%'000'";
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, "%", STRING_LITERAL, "'000'", LINE_END, "\n", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+}
+
+
 TEST_F(LexerTest_Lv1, subCmd1) {
     const char *text = "$(";
     ASSERT_NO_FATAL_FAILURE({

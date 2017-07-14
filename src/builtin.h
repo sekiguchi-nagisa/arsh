@@ -1350,6 +1350,27 @@ YDSH_METHOD regex_match(RuntimeContext &ctx) {
 }
 
 
+// #####################
+// ##     Signals     ##
+// #####################
+
+//!bind: function action($this : Signals, $s : Array<Signal>, $action : Func<Void,[Signal]>) : Void
+YDSH_METHOD signals_action(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(signals_action);
+    auto *arrayObj = typeAs<Array_Object>(LOCAL(1));
+    auto *handler = typeAs<FuncObject>(LOCAL(2));
+
+    blockSignal([&] {
+        for(auto &e : arrayObj->getValues()) {
+            int sigNum = typeAs<Int_Object>(e)->getValue();
+            installSignalHandler(ctx, sigNum, handler);
+        }
+    });
+
+    RET_VOID;
+}
+
+
 // ###################
 // ##     Array     ##
 // ###################

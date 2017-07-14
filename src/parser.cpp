@@ -55,6 +55,7 @@
     OP(STRING_LITERAL) \
     OP(PATH_LITERAL) \
     OP(REGEX_LITERAL) \
+    OP(SIGNAL_LITERAL) \
     OP(OPEN_DQUOTE) \
     OP(START_SUB_CMD) \
     OP(APPLIED_NAME) \
@@ -1094,6 +1095,14 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
             raiseTokenFormatError(REGEX_LITERAL, old, errorStr);
         }
         return uniquify<RegexNode>(old, std::move(str), std::move(re));
+    }
+    case SIGNAL_LITERAL: {
+        Token token = this->expect(SIGNAL_LITERAL);
+        int num = this->lexer->toSigNum(token);
+        if(!num) {
+            raiseTokenFormatError(SIGNAL_LITERAL, token, "unsupported signal");
+        }
+        return std::unique_ptr<Node>(NumberNode::newSignal(token, num));
     }
     case OPEN_DQUOTE: {
         return this->parse_stringExpression();

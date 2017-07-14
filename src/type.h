@@ -524,6 +524,8 @@ public:
         String,
         StringArray,    // for command argument
         Regex,
+        Signal,
+        Signals,
         Error,
         Task,
         Func,
@@ -672,6 +674,14 @@ public:
 
     DSType &getRegexType() const {
         return *this->typeTable[Regex];
+    }
+
+    DSType &getSignalType() const {
+        return *this->typeTable[Signal];
+    }
+
+    DSType &getSignalsType() const {
+        return *this->typeTable[Signals];
     }
 
     DSType &getObjectPathType() const {

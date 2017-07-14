@@ -44,6 +44,9 @@ constexpr const char *VAR_HISTFILESIZE = "HISTFILESIZE";
 
 constexpr const char *VAR_SCRIPT_DIR = "SCRIPT_DIR";
 
+constexpr const char *VAR_SIG_DFL = "SIG_DFL";
+constexpr const char *VAR_SIG_IGN = "SIG_IGN";
+
 // =====  magic method  =====
 
 // unary op definition
