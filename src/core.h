@@ -236,7 +236,7 @@ bool changeWorkingDir(DSState &st, const char *dest, const bool useLogical);
 void exitShell(DSState &st, unsigned int status);
 
 /**
- * before call it, should mask signal (use blockSignal())
+ *
  * @param st
  * @param sigNum
  * @param handler

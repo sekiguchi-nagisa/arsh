@@ -1217,26 +1217,28 @@ static const FuncObject *getHandler(const DSState &st, const char *name) {
 }
 
 void installSignalHandler(DSState &st, int sigNum, const FuncObject *handler) {
-    auto *DFL_handler = getHandler(st, VAR_SIG_DFL);
-    auto *IGN_handler = getHandler(st, VAR_SIG_IGN);
+    blockSignal([&] {
+        auto *DFL_handler = getHandler(st, VAR_SIG_DFL);
+        auto *IGN_handler = getHandler(st, VAR_SIG_IGN);
 
-    // set posix signal handler
-    struct sigaction action;
-    action.sa_flags = 0;
-    sigemptyset(&action.sa_mask);
-    if(handler == DFL_handler) {
-        action.sa_handler = SIG_DFL;
-        handler = nullptr;
-    } else if(handler == IGN_handler) {
-        action.sa_handler = SIG_IGN;
-        handler = nullptr;
-    } else {
-        action.sa_handler = signalHandler;
-    }
-    sigaction(sigNum, &action, NULL);
+        // set posix signal handler
+        struct sigaction action;
+        action.sa_flags = 0;
+        sigemptyset(&action.sa_mask);
+        if(handler == DFL_handler) {
+            action.sa_handler = SIG_DFL;
+            handler = nullptr;
+        } else if(handler == IGN_handler) {
+            action.sa_handler = SIG_IGN;
+            handler = nullptr;
+        } else {
+            action.sa_handler = signalHandler;
+        }
+        sigaction(sigNum, &action, NULL);
 
-    // register handler
-    st.sigVector.insertOrUpdate(sigNum, handler);
+        // register handler
+        st.sigVector.insertOrUpdate(sigNum, handler);
+    });
 }
 
 
