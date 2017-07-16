@@ -126,13 +126,13 @@ enum OptionKind {
 #undef GEN_ENUM
 };
 
-static const argv::Option<OptionKind> options[] = {
-#define GEN_OPT(E, S, F, D) {E, S, F, D},
-        EACH_OPT(GEN_OPT)
-#undef GEN_OPT
-};
+//static const argv::Option<OptionKind> options[] = {
+//#define GEN_OPT(E, S, F, D) {E, S, F, D},
+//        EACH_OPT(GEN_OPT)
+//#undef GEN_OPT
+//};
 
-#undef EACH_OPT
+//#undef EACH_OPT
 
 enum class InvocationKind {
     FROM_FILE,
@@ -147,13 +147,15 @@ static const char *version() {
 
 int main(int argc, char **argv) {
     argv::CmdLines<OptionKind> cmdLines;
-    int restIndex;
-    try {
-        restIndex = argv::parseArgv(argc, argv, options, cmdLines);
-    } catch(const argv::ParseError &e) {
-        fprintf(stderr, "%s\n", e.getMessage().c_str());
-        fprintf(stderr, "%s\n", version());
-        argv::printOption(stderr, options);
+    argv::ArgvParser<OptionKind> parser = {
+#define GEN_OPT(E, S, F, D) {E, S, F, D},
+            EACH_OPT(GEN_OPT)
+#undef GEN_OPT
+    };
+    int restIndex = parser(argc, argv, cmdLines);
+    if(parser.hasError()) {
+        fprintf(stderr, "%s\n%s", parser.getErrorMessage(), version());
+        parser.printOption(stderr);
         exit(1);
     }
 
@@ -198,7 +200,7 @@ int main(int argc, char **argv) {
             exit(0);
         case HELP:
             fprintf(stdout, "%s\n", version());
-            argv::printOption(stdout, options);
+            parser.printOption(stdout);
             exit(0);
         case COMMAND:
             invocationKind = InvocationKind::FROM_STRING;

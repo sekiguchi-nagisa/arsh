@@ -34,12 +34,6 @@ enum OptionKind {
 #undef GEN_ENUM
 };
 
-static const Option<OptionKind> options[] = {
-#define GEN_OPT(E, S, F, D) {E, S, F, D},
-        EACH_OPT(GEN_OPT)
-#undef GEN_OPT
-};
-
 static std::string escape(const std::string &line) {
     std::string out;
     unsigned int size = line.size();
@@ -75,13 +69,17 @@ static std::string escape(const std::string &line) {
 }
 
 int main(int argc, char **argv) {
+    ArgvParser<OptionKind> parser = {
+#define GEN_OPT(E, S, F, D) {E, S, F, D},
+            EACH_OPT(GEN_OPT)
+#undef GEN_OPT
+    };
+
     CmdLines<OptionKind> cmdLines;
-    try {
-        parseArgv(argc, argv, options, cmdLines);
-    } catch(const ParseError &e) {
-        std::cerr << e.getMessage() << std::endl;
-        std::cerr << options << std::endl;
-        return 1;
+    parser(argc, argv, cmdLines);
+    if(parser.hasError()) {
+        fprintf(stderr, "%s\n", parser.getErrorMessage());
+        parser.printOption(stderr);
     }
 
     const char *varName = nullptr;

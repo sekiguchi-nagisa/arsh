@@ -37,26 +37,28 @@ public:
     ArgTest() = default;
     virtual ~ArgTest() = default;
 
-    virtual void expectError(std::vector<const char *> &&args, const Opt (&options)[5], const char *expect) {
-        int argc = args.size();
-        char *argv[argc];
-        for(int i = 0; i < argc; i++) {
-            argv[i] = const_cast<char *>(args[i]);
-        }
+    virtual void expectError(std::vector<const char *> &&args, ArgvParser<Kind> &parser, const char *expect) {
+        if(!parser.hasError()) {
+            int argc = args.size();
+            char *argv[argc];
+            for(int i = 0; i < argc; i++) {
+                argv[i] = const_cast<char *>(args[i]);
+            }
 
-        SCOPED_TRACE("");
+            SCOPED_TRACE("");
 
-        ASSERT_TRUE(expect != nullptr);
-        try {
+            ASSERT_TRUE(expect != nullptr);
+
             CL cl;
-            parseArgv(argc, argv, options, cl);
-            ASSERT_TRUE(false);
-        } catch(const ParseError &e) {
-            ASSERT_STREQ(expect, e.getMessage().c_str());
+            int index = parser(argc, argv, cl);
+            ASSERT_EQ(-1, index);
         }
+
+        ASSERT_TRUE(parser.hasError());
+        ASSERT_STREQ(expect, parser.getErrorMessage());
     }
 
-    virtual void parse(std::vector<const char *> &&args, const Opt (&options)[5], CL &cl) {
+    virtual void parse(std::vector<const char *> &&args, ArgvParser<Kind> &parser, CL &cl) {
         int argc = args.size();
         char *argv[argc];
         for(int i = 0; i < argc; i++) {
@@ -65,20 +67,17 @@ public:
 
         SCOPED_TRACE("");
 
-        try {
-            int index = parseArgv(argc, argv, options, cl);
-            ASSERT_TRUE(index <= argc && index > 0);
-            for(; index < argc; index++) {
-                this->rest.push_back(argv[index]);
-            }
-        } catch(const ParseError &e) {
-            ASSERT_TRUE(false);
+        int index = parser(argc, argv, cl);
+        ASSERT_TRUE(index <= argc && index > 0);
+        ASSERT_FALSE(parser.hasError());
+        for(; index < argc; index++) {
+            this->rest.push_back(argv[index]);
         }
     }
 };
 
 TEST_F(ArgTest, fail1) {
-    static const Opt options[] = {
+    ArgvParser<Kind> parser = {
             {Kind::A, "-a", 0, "hogehjoge"},
             {Kind::B, "-b", 0, "hogehjoge"},
             {Kind::C, "-c", 0, "hogehjogef"},
@@ -86,23 +85,23 @@ TEST_F(ArgTest, fail1) {
             {Kind::E, "-a", 0, "hogehjogee"},
     };
 
-    ASSERT_NO_FATAL_FAILURE(this->expectError(make_args("-a", "-c"), options, "duplicated option: -a"));
+    ASSERT_NO_FATAL_FAILURE(this->expectError(make_args("-a", "-c"), parser, "duplicated option: -a"));
 }
 
 TEST_F(ArgTest, fail2) {
-    static const Opt options[] = {
+    ArgvParser<Kind> parser = {
             {Kind::A, "-a", 0, "hogehjoge"},
             {Kind::B, "-b", 0, "hogehjoge"},
             {Kind::C, "c", 0, "hogehjogef"},
             {Kind::D, "-d", 0, "hogehjoges"},
-            {Kind::E, "-a", 0, "hogehjogee"},
+//            {Kind::E, "-a", 0, "hogehjogee"},
     };
 
-    ASSERT_NO_FATAL_FAILURE(this->expectError(make_args("-a", "fre"), options, "illegal option name: c"));
+    ASSERT_NO_FATAL_FAILURE(this->expectError(make_args("-a", "fre"), parser, "illegal option name: c"));
 }
 
 TEST_F(ArgTest, fail3) {
-    static const Opt options[] = {
+    ArgvParser<Kind> parser = {
             {Kind::A, "-a", 0, "hogehjoge"},
             {Kind::B, "-b", 0, "hogehjoge"},
             {Kind::C, "-c", 0, "hogehjogef"},
@@ -110,11 +109,11 @@ TEST_F(ArgTest, fail3) {
             {Kind::E, "-e", 0, "hogehjogee"},
     };
 
-    ASSERT_NO_FATAL_FAILURE(this->expectError(make_args("-f", "fre"), options, "illegal option: -f"));
+    ASSERT_NO_FATAL_FAILURE(this->expectError(make_args("-f", "fre"), parser, "illegal option: -f"));
 }
 
 TEST_F(ArgTest, fail4) {
-    static const Opt options[] = {
+    ArgvParser<Kind> parser = {
             {Kind::A, "-a", 0, "hogehjoge"},
             {Kind::B, "-b", HAS_ARG, "hogehjoge"},
             {Kind::C, "-c", 0, "hogehjogef"},
@@ -122,11 +121,11 @@ TEST_F(ArgTest, fail4) {
             {Kind::E, "-e", 0, "hogehjogee"},
     };
 
-    ASSERT_NO_FATAL_FAILURE(this->expectError(make_args("-a", "-b"), options, "need argument: -b"));
+    ASSERT_NO_FATAL_FAILURE(this->expectError(make_args("-a", "-b"), parser, "need argument: -b"));
 }
 
 TEST_F(ArgTest, fail5) {
-    static const Opt options[] = {
+    ArgvParser<Kind> parser = {
             {Kind::A, "-a", 0, "hogehjoge"},
             {Kind::B, "-b", HAS_ARG, "hogehjoge"},
             {Kind::C, "-c", 0, "hogehjogef"},
@@ -134,11 +133,11 @@ TEST_F(ArgTest, fail5) {
             {Kind::E, "-e", 0, "hogehjogee"},
     };
 
-    ASSERT_NO_FATAL_FAILURE(this->expectError(make_args("-a", "-b", "-ae"), options, "need argument: -b"));
+    ASSERT_NO_FATAL_FAILURE(this->expectError(make_args("-a", "-b", "-ae"), parser, "need argument: -b"));
 }
 
 TEST_F(ArgTest, fail6) {
-    static const Opt options[] = {
+    ArgvParser<Kind> parser = {
             {Kind::A, "-a", 0, "hogehjoge"},
             {Kind::B, "-b", REQUIRE | HAS_ARG, "hogehjoge"},
             {Kind::C, "-c", REQUIRE | HAS_ARG, "hogehjogef"},
@@ -146,11 +145,11 @@ TEST_F(ArgTest, fail6) {
             {Kind::E, "-e", 0, "hogehjogee"},
     };
 
-    ASSERT_NO_FATAL_FAILURE(this->expectError(make_args("-a", "-b", "hoge", "-e", "huga"), options, "require option: -c"));
+    ASSERT_NO_FATAL_FAILURE(this->expectError(make_args("-a", "-b", "hoge", "-e", "huga"), parser, "require option: -c"));
 }
 
 TEST_F(ArgTest, success1) {
-    static const Opt options[] = {
+    ArgvParser<Kind> parser = {
             {Kind::A, "-a", 0, "hogehjoge"},
             {Kind::B, "-b", HAS_ARG, "hogehjoge"},
             {Kind::C, "-c", 0, "hogehjogef"},
@@ -159,7 +158,7 @@ TEST_F(ArgTest, success1) {
     };
 
     CL cl;
-    this->parse(make_args("-a", "-b", "ae"), options, cl);
+    this->parse(make_args("-a", "-b", "ae"), parser, cl);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, cl.size()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(Kind::A, cl[0].first));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(Kind::B, cl[1].first));
@@ -168,7 +167,7 @@ TEST_F(ArgTest, success1) {
 }
 
 TEST_F(ArgTest, success2) {
-    static const Opt options[] = {
+    ArgvParser<Kind> parser = {
             {Kind::A, "-a", 0, "hogehjoge"},
             {Kind::B, "-b", HAS_ARG, "hogehjoge"},
             {Kind::C, "-c", 0, "hogehjogef"},
@@ -176,20 +175,16 @@ TEST_F(ArgTest, success2) {
             {Kind::E, "-e", 0, "hogehjogee"},
     };
 
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
+    CL cl;
+    this->parse(make_args("-a"), parser, cl);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, cl.size()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(Kind::A, cl[0].first));
 
-        CL cl;
-        this->parse(make_args("-a"), options, cl);
-        ASSERT_EQ(1u, cl.size());
-        ASSERT_EQ(Kind::A, cl[0].first);
-
-        ASSERT_EQ(0u, this->rest.size());
-    });
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, this->rest.size()));
 }
 
 TEST_F(ArgTest, succes3) {
-    static const Opt options[] = {
+    ArgvParser<Kind> parser = {
             {Kind::A, "-a", 0, "hogehjoge"},
             {Kind::B, "-b", HAS_ARG, "hogehjoge"},
             {Kind::C, "-c", 0, "hogehjogef"},
@@ -197,19 +192,15 @@ TEST_F(ArgTest, succes3) {
             {Kind::E, "-e", 0, "hogehjogee"},
     };
 
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
+    CL cl;
+    this->parse(make_args(), parser, cl);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, cl.size()));
 
-        CL cl;
-        this->parse(make_args(), options, cl);
-        ASSERT_EQ(0u, cl.size());
-
-        ASSERT_EQ(0u, this->rest.size());
-    });
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, this->rest.size()));
 }
 
 TEST_F(ArgTest, success4) {
-    static const Opt options[] = {
+    ArgvParser<Kind> parser = {
             {Kind::A, "-a", 0, "hogehjoge"},
             {Kind::B, "-b", HAS_ARG, "hogehjoge"},
             {Kind::C, "-c", 0, "hogehjogef"},
@@ -217,20 +208,16 @@ TEST_F(ArgTest, success4) {
             {Kind::E, "-e", 0, "hogehjogee"},
     };
 
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
+    CL cl;
+    this->parse(make_args("ae"), parser, cl);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, cl.size()));
 
-        CL cl;
-        this->parse(make_args("ae"), options, cl);
-        ASSERT_EQ(0u, cl.size());
-
-        ASSERT_EQ(1u, this->rest.size());
-        ASSERT_STREQ("ae", this->rest[0]);
-    });
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, this->rest.size()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("ae", this->rest[0]));
 }
 
 TEST_F(ArgTest, success5) {
-    static const Opt options[] = {
+    ArgvParser<Kind> parser = {
             {Kind::A, "-a", 0, "hogehjoge"},
             {Kind::B, "-b", HAS_ARG, "hogehjoge"},
             {Kind::C, "-c", 0, "hogehjogef"},
@@ -238,22 +225,18 @@ TEST_F(ArgTest, success5) {
             {Kind::E, "-e", 0, "hogehjogee"},
     };
 
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
+    CL cl;
+    this->parse(make_args("ae", "he", "-a"), parser, cl);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, cl.size()));
 
-        CL cl;
-        this->parse(make_args("ae", "he", "-a"), options, cl);
-        ASSERT_EQ(0u, cl.size());
-
-        ASSERT_EQ(3u, this->rest.size());
-        ASSERT_STREQ("ae", this->rest[0]);
-        ASSERT_STREQ("he", this->rest[1]);
-        ASSERT_STREQ("-a", this->rest[2]);
-    });
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, this->rest.size()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("ae", this->rest[0]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("he", this->rest[1]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("-a", this->rest[2]));
 }
 
 TEST_F(ArgTest, success6) {
-    static const Opt options[] = {
+    ArgvParser<Kind> parser = {
             {Kind::A, "-a", 0, "hogehjoge"},
             {Kind::B, "-b", HAS_ARG, "hogehjoge"},
             {Kind::C, "-c", 0, "hogehjogef"},
@@ -261,25 +244,21 @@ TEST_F(ArgTest, success6) {
             {Kind::E, "-e", 0, "hogehjogee"},
     };
 
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
+    CL cl;
+    this->parse(make_args("-b", "he", "-a", "-d", "-e"), parser, cl);
+    ASSERT_EQ(3u, cl.size());
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(Kind::B, cl[0].first));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("he", cl[0].second));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(Kind::A, cl[1].first));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("", cl[1].second));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(Kind::D, cl[2].first));
 
-        CL cl;
-        this->parse(make_args("-b", "he", "-a", "-d", "-e"), options, cl);
-        ASSERT_EQ(3u, cl.size());
-        ASSERT_EQ(Kind::B, cl[0].first);
-        ASSERT_STREQ("he", cl[0].second);
-        ASSERT_EQ(Kind::A, cl[1].first);
-        ASSERT_STREQ("", cl[1].second);
-        ASSERT_EQ(Kind::D, cl[2].first);
-
-        ASSERT_EQ(1u, this->rest.size());
-        ASSERT_STREQ("-e", this->rest[0]);
-    });
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, this->rest.size()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("-e", this->rest[0]));
 }
 
 TEST_F(ArgTest, success7) {
-    static const Opt options[] = {
+    ArgvParser<Kind> parser = {
             {Kind::A, "-a", 0, "hogehjoge"},
             {Kind::B, "-b", HAS_ARG, "hogehjoge"},
             {Kind::C, "-c", 0, "hogehjogef"},
@@ -287,23 +266,19 @@ TEST_F(ArgTest, success7) {
             {Kind::E, "-e", 0, "hogehjogee"},
     };
 
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
+    CL cl;
+    this->parse(make_args("-b", "he", "-a", "-d", "e", "-f", "hu"), parser, cl);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, cl.size()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(Kind::B, cl[0].first));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("he", cl[0].second));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(Kind::A, cl[1].first));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("", cl[1].second));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(Kind::D, cl[2].first));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("e", cl[2].second));
 
-        CL cl;
-        this->parse(make_args("-b", "he", "-a", "-d", "e", "-f", "hu"), options, cl);
-        ASSERT_EQ(3u, cl.size());
-        ASSERT_EQ(Kind::B, cl[0].first);
-        ASSERT_STREQ("he", cl[0].second);
-        ASSERT_EQ(Kind::A, cl[1].first);
-        ASSERT_STREQ("", cl[1].second);
-        ASSERT_EQ(Kind::D, cl[2].first);
-        ASSERT_STREQ("e", cl[2].second);
-
-        ASSERT_EQ(2u, this->rest.size());
-        ASSERT_STREQ("-f", this->rest[0]);
-        ASSERT_STREQ("hu", this->rest[1]);
-     });
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, this->rest.size()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("-f", this->rest[0]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("hu", this->rest[1]));
 }
 
 template <typename T, std::size_t N>
@@ -312,7 +287,7 @@ static size_t arraySize(const T (&)[N]) {
 }
 
 TEST_F(ArgTest, success8) {
-    static const Opt options[] = {
+    ArgvParser<Kind> parser = {
             {Kind::A, "-a", 0, "hogehjoge"},
             {Kind::E, "-e", 0, "hogehjogee"},
     };
@@ -322,12 +297,12 @@ TEST_F(ArgTest, success8) {
             "<dummy>", "-a", "-", "hoge"
     };
 
-    int index = parseArgv(arraySize(argv), (char **)argv, options, cl);
+    int index = parser(arraySize(argv), (char **)argv, cl);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, index));
 }
 
 TEST_F(ArgTest, success9) {
-    static const Opt options[] = {
+    ArgvParser<Kind> parser = {
             {Kind::A, "-a", 0, "hogehjoge"},
             {Kind::E, "-e", 0, "hogehjogee"},
     };
@@ -337,7 +312,7 @@ TEST_F(ArgTest, success9) {
             "<dummy>", "--", "-a", "hoge"
     };
 
-    int index = parseArgv(arraySize(argv), (char **)argv, options, cl);
+    int index = parser(arraySize(argv), (char **)argv, cl);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, index));
 }
 

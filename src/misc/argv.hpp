@@ -21,30 +21,14 @@
 #include <type_traits>
 #include <vector>
 #include <algorithm>
+#include <initializer_list>
+#include <string>
 
 #include "hash.hpp"
 #include "flag_util.hpp"
 
 namespace ydsh {
 namespace argv {
-
-class ParseError {
-private:
-    std::string message;
-
-public:
-    ParseError(const char *message, const char *suffix) :
-            message(message) {
-        this->message += ": ";
-        this->message += suffix;
-    }
-
-    ~ParseError() = default;
-
-    const std::string &getMessage() const {
-        return this->message;
-    }
-};
 
 constexpr unsigned int HAS_ARG     = 1 << 0;
 constexpr unsigned int REQUIRE     = 1 << 1;
@@ -105,25 +89,70 @@ std::vector<std::string> Option<T>::getDetails() const {
 template<typename T>
 using CmdLines = std::vector<std::pair<T, const char *>>;
 
-/**
- * first element of argv is always ignored.
- * return start index of rest argument(< argc).
- * if not found rest argument, return argc.
- */
-template<typename T, size_t N>
-int parseArgv(int argc, char **argv, const Option<T> (&options)[N], CmdLines<T> &cmdLines) {
-    // register option
+template <typename T>
+class ArgvParser {
+private:
+    std::vector<Option<T>> options;
     CStringHashMap<unsigned int> indexMap;
-    bool requireOptionMap[N];
-    for(unsigned int i = 0; i < N; i++) {
-        const char *optionName = options[i].optionName;
+    std::string errorMessage;
+
+public:
+    ArgvParser(std::initializer_list<Option<T>> list);
+    ~ArgvParser() = default;
+
+    const char *getErrorMessage() const {
+        return this->errorMessage.c_str();
+    }
+
+    bool hasError() const {
+        return this->errorMessage.size() > 0;
+    }
+
+    int operator()(int argc, char **argv, CmdLines<T> &cmdLines);
+
+    void printOption(FILE *fp) const;
+
+private:
+    void newError(const char *message, const char *suffix);
+};
+
+// ########################
+// ##     ArgvParser     ##
+// ########################
+
+template <typename T>
+ArgvParser<T>::ArgvParser(std::initializer_list<Option<T>> list) :
+        options(list.size()), indexMap(), errorMessage() {
+    // init options
+    unsigned int count = 0;
+    for(auto &e : list) {
+        this->options[count++] = e;
+    }
+    std::sort(this->options.begin(), this->options.end(), [](const Option<T> &x, const Option<T> &y) {
+        return strcmp(x.optionName, y.optionName) < 0;
+    });
+
+    // register option
+    for(unsigned int i = 0; i < list.size(); i++) {
+        const char *optionName = this->options[i].optionName;
         if(optionName[0] != '-') {
-            throw ParseError("illegal option name", optionName);
+            this->newError("illegal option name", optionName);
+            return;
         }
         if(!indexMap.insert(std::make_pair(optionName, i)).second) {
-            throw ParseError("duplicated option", optionName);
+            this->newError("duplicated option", optionName);
+            return;
         }
-        requireOptionMap[i] = options[i].require();
+    }
+}
+
+template <typename T>
+int ArgvParser<T>::operator()(int argc, char **argv, CmdLines<T> &cmdLines) {
+    this->errorMessage.clear();
+    unsigned int size = this->options.size();
+    bool requireOptionMap[size];
+    for(unsigned int i = 0; i < size; i++) {
+        requireOptionMap[i] = this->options[i].require();
     }
 
     // parse
@@ -142,20 +171,22 @@ int parseArgv(int argc, char **argv, const Option<T> (&options)[N], CmdLines<T> 
             break;
         }
 
-        auto iter = indexMap.find(arg);
-        if(iter == indexMap.end()) {    // not found
-            throw ParseError("illegal option", arg);
+        auto iter = this->indexMap.find(arg);
+        if(iter == this->indexMap.end()) {    // not found
+            this->newError("illegal option", arg);
+            return -1;
         }
 
         const unsigned int optionIndex = iter->second;
-        const Option<T> &option = options[optionIndex];
+        const Option<T> &option = this->options[optionIndex];
         const char *optionArg = "";
 
         if(option.hasArg()) {
             if(index + 1 < argc && argv[++index][0] != '-') {
                 optionArg = argv[index];
             } else {
-                throw ParseError("need argument", arg);
+                this->newError("need argument", arg);
+                return -1;
             }
         }
         cmdLines.push_back(std::make_pair(option.kind, optionArg));
@@ -170,30 +201,22 @@ int parseArgv(int argc, char **argv, const Option<T> (&options)[N], CmdLines<T> 
     }
 
     // check require option
-    for(unsigned int i = 0; i < N; i++) {
+    for(unsigned int i = 0; i < size; i++) {
         if(requireOptionMap[i]) {
-            throw ParseError("require option", options[i].optionName);
+            this->newError("require option", options[i].optionName);
+            return -1;
         }
     }
     return index;
-};
+}
 
-template<typename T, size_t N>
-void printOption(FILE *fp, const Option<T> (&options)[N]) {
-    std::vector<const Option<T> *> sortedOptions;
-    for(unsigned int i = 0; i < N; i++) {
-        sortedOptions.push_back(&options[i]);
-    }
-
-    std::sort(sortedOptions.begin(), sortedOptions.end(), [](const Option<T> *x, const Option<T> *y) {
-        return strcmp(x->optionName, y->optionName) < 0;
-    });
-
+template <typename T>
+void ArgvParser<T>::printOption(FILE *fp) const {
     unsigned int maxSizeOfUsage = 0;
 
     // compute usage size
-    for(auto &option : sortedOptions) {
-        unsigned int size = option->getUsageSize();
+    for(auto &option : this->options) {
+        unsigned int size = option.getUsageSize();
         if(size > maxSizeOfUsage) {
             maxSizeOfUsage = size;
         }
@@ -206,15 +229,15 @@ void printOption(FILE *fp, const Option<T> (&options)[N]) {
 
     // print help message
     fputs("Options:", fp);
-    for(const Option<T> *option : sortedOptions) {
+    for(auto &option : this->options) {
         fputc('\n', fp);
-        unsigned int size = option->getUsageSize();
-        fprintf(fp, "    %s%s", option->optionName, (option->hasArg() ? usageSuffix : ""));
+        unsigned int size = option.getUsageSize();
+        fprintf(fp, "    %s%s", option.optionName, (option.hasArg() ? usageSuffix : ""));
         for(unsigned int i = 0; i < maxSizeOfUsage - size; i++) {
             fputc(' ', fp);
         }
 
-        std::vector<std::string> details(option->getDetails());
+        std::vector<std::string> details(option.getDetails());
         unsigned int detailSize = details.size();
         for(unsigned int i = 0; i < detailSize; i++) {
             if(i > 0) {
@@ -225,7 +248,14 @@ void printOption(FILE *fp, const Option<T> (&options)[N]) {
     }
     fputc('\n', fp);
     fflush(fp);
-};
+}
+
+template <typename T>
+void ArgvParser<T>::newError(const char *message, const char *suffix) {
+    this->errorMessage = message;
+    this->errorMessage += ": ";
+    this->errorMessage += suffix;
+}
 
 } // namespace argv
 } // namespace ydsh

@@ -670,20 +670,17 @@ enum class OptionSet : unsigned int {
 int main(int argc, char **argv) {
     using namespace ydsh::argv;
 
-    static const Option<OptionSet> options[] = {
+    ArgvParser<OptionSet> parser = {
 #define GEN_OPT(E, S, F, D) {OptionSet::E, S, (F), D},
             EACH_OPT(GEN_OPT)
 #undef GEN_OPT
     };
 
     std::vector<std::pair<OptionSet, const char *>> cmdLines;
-    int restIndex = argc;
-    try {
-        restIndex = ydsh::argv::parseArgv(argc, argv, options, cmdLines);
-    } catch(const ParseError &e) {
-        std::cerr << e.getMessage() << std::endl;
-        std::cerr << options << std::endl;
-        return 1;
+    int restIndex = parser(argc, argv, cmdLines);
+    if(parser.hasError()) {
+        fprintf(stderr, "%s\n", parser.getErrorMessage());
+        parser.printOption(stderr);
     }
 
     // set option
@@ -713,7 +710,7 @@ int main(int argc, char **argv) {
             config.setRecursive(true);
             break;
         case OptionSet::HELP:
-            std::cout << options << std::endl;
+            parser.printOption(stdout);
             return 0;
         case OptionSet::XML_FILE:
             config.setXmlFileName(cmdLine.second);
@@ -727,14 +724,14 @@ int main(int argc, char **argv) {
 
     if(!foundDest && !foundXml) {
         std::cerr << "require --dest [destination name]" << std::endl;
-        std::cout << options << std::endl;
+        parser.printOption(stdout);
         return 1;
     }
 
     const int size = argc - restIndex;
     if(size == 0 && !foundXml) {
         std::cerr << "require atleast one object path" << std::endl;
-        std::cout << options << std::endl;
+        parser.printOption(stdout);
         return 1;
     }
     
