@@ -217,6 +217,17 @@ add_custom_target(embed_script DEPENDS ${embed_src})
 add_dependencies(embed_script src_to_str)
 
 
+#========================================#
+#     generate supported signal list     #
+#========================================#
+
+set(signal_src ${CMAKE_CURRENT_BINARY_DIR}/src/supported_signal.h)
+add_custom_command(OUTPUT ${signal_src}
+        COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tools/gen_signal/gen_signal ${signal_src})
+add_custom_target(supported_signal DEPENDS ${signal_src})
+add_dependencies(supported_signal gen_signal)
+
+
 #=================#
 #     libydsh     #
 #=================#
@@ -257,6 +268,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/src_to_str)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_binding)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/directive)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_iface)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_signal)
 
 set(GTEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/gtest)
 add_subdirectory(${GTEST_DIR})
@@ -264,7 +276,7 @@ add_subdirectory(${GTEST_DIR})
 add_definitions(-D_GNU_SOURCE)
 set(YDSH_STATIC ydsh_static)
 add_library(${YDSH_STATIC} STATIC ${YDSH_SRC} ${lexer_src} ${bind_src})
-add_dependencies(${YDSH_STATIC} gen_lexer gen_binding gen_bind embed_script)
+add_dependencies(${YDSH_STATIC} gen_lexer gen_binding gen_bind embed_script supported_signal)
 target_link_libraries(${YDSH_STATIC} ${HAVE_LIBDBUS} ${HAVE_LIBPCRE})
 
 
