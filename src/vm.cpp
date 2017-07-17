@@ -641,7 +641,7 @@ static int doIOHere(const String_Object &value) {
 
     dup2(pipe[0][READ_PIPE], STDIN_FILENO);
 
-    if(value.size() <= PIPE_BUF) {
+    if(value.size() + 1 <= PIPE_BUF) {
         write(pipe[0][WRITE_PIPE], value.getValue(), sizeof(char) * value.size());
         write(pipe[0][WRITE_PIPE], "\n", 1);
         closeAllPipe(1, pipe);
