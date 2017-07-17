@@ -384,7 +384,9 @@ double Lexer::toDouble(Token token, int &status) const {
 
 static CStringHashMap<int> initSignalMap() {
     CStringHashMap<int> map = {
+#define SIGNAL_(S) {#S, SIG ## S},
 #include <supported_signal.h>
+#undef SIGNAL_
     };
     return map;
 }

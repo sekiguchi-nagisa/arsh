@@ -37,6 +37,10 @@ public:
     std::string operator()() const;
 };
 
+static bool isSpace(char ch) {
+    return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
+}
+
 std::string Command::operator()() const {
     std::string cmd = this->args[0];
     for(unsigned int i = 1; i < this->args.size(); i++) {
@@ -53,7 +57,7 @@ std::string Command::operator()() const {
     pclose(fp);
 
     // remove last newline
-    while(!out.empty() && out.back() == '\n') {
+    while(!out.empty() && isSpace(out.back())) {
         out.pop_back();
     }
     return out;
@@ -117,7 +121,7 @@ int main(int argc, char **argv) {
         if(startsWith(v.c_str(), "RT")) {
             continue;
         }
-        fprintf(fp, "{\"%s\", SIG%s},\n", v.c_str(), v.c_str());
+        fprintf(fp, "SIGNAL_(%s)\n", v.c_str());
     }
     fprintf(fp, "\n#endif // GEN_SIGNAL__SUPPORTED_SIGNAL_H\n");
     fclose(fp);
