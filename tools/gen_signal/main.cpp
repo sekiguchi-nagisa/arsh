@@ -81,18 +81,27 @@ static std::vector<std::string> split(const std::string &str) {
 }
 
 static void toUpperCase(std::string &str) {
-    std::string out;
     for(auto &ch : str) {
         if(ch >= 'a' && ch <= 'z') {
             ch -= static_cast<int>('a') - static_cast<int>('A');   // convert to upper character
         }
-        out += ch;
     }
-    str = std::move(out);
 }
 
 static bool startsWith(const char *s1, const char *s2) {
     return s1 != nullptr && s2 != nullptr && strstr(s1, s2) == s1;
+}
+
+static bool exclude(const std::string &str) {
+    const char *list[] = {
+            "RT", "UNUSED",
+    };
+    for(auto &e : list) {
+        if(startsWith(str.c_str(), e)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 int main(int argc, char **argv) {
@@ -118,7 +127,7 @@ int main(int argc, char **argv) {
                 "#define GEN_SIGNAL__SUPPORTED_SIGNAL_H\n\n");
 
     for(auto &v : values) {
-        if(startsWith(v.c_str(), "RT")) {
+        if(exclude(v)) {
             continue;
         }
         fprintf(fp, "SIGNAL_(%s)\n", v.c_str());
