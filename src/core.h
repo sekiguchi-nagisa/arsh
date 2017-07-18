@@ -159,35 +159,6 @@ struct VMHook {
     virtual void vmThrowHook(DSState &st) = 0;
 };
 
-class SignalVector {
-private:
-    std::vector<std::pair<int, const FuncObject *>> data;
-
-public:
-    SignalVector() = default;
-    ~SignalVector() = default;
-
-    /**
-     * if func is null, delete handler.
-     * @param sigNum
-     * @param func
-     * may be null
-     */
-    void insertOrUpdate(int sigNum, const FuncObject *func);
-
-    /**
-     *
-     * @param sigNum
-     * @return
-     * if not found, return null.
-     */
-    const FuncObject *lookup(int sigNum) const;
-
-    const std::vector<std::pair<int, const FuncObject *>> &getData() const {
-        return this->data;
-    };
-};
-
 // core api
 
 // getter api
@@ -240,8 +211,9 @@ void exitShell(DSState &st, unsigned int status);
  * @param st
  * @param sigNum
  * @param handler
+ * must be FuncObject
  */
-void installSignalHandler(DSState &st, int sigNum, const FuncObject *handler);
+void installSignalHandler(DSState &st, int sigNum, DSValue &&handler);
 
 /**
  * after fork, reset signal setting in child process.

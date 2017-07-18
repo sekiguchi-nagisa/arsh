@@ -181,44 +181,6 @@ int GetOptState::operator()(const Array_Object &obj, const char *optStr) {
     return -1;
 }
 
-// ##########################
-// ##     SignalVector     ##
-// ##########################
-
-struct SigEntryComp {
-    using Entry = std::pair<int, const FuncObject *>;
-
-    bool operator()(const Entry &x, int y) const {
-        return x.first < y;
-    }
-
-    bool operator()(int x, const Entry &y) const {
-        return x < y.first;
-    }
-};
-
-void SignalVector::insertOrUpdate(int sigNum, const FuncObject *func) {
-    auto iter = std::lower_bound(this->data.begin(), this->data.end(), sigNum, SigEntryComp());
-    if(iter != this->data.end() && iter->first == sigNum) {
-        if(func == nullptr) {
-            this->data.erase(iter); // remove
-        } else {
-            iter->second = func;    // update
-        }
-    } else if(func != nullptr) {
-        this->data.insert(iter, std::make_pair(sigNum, func));  // insert
-    }
-}
-
-const FuncObject* SignalVector::lookup(int sigNum) const {
-    auto iter = std::lower_bound(this->data.begin(), this->data.end(), sigNum, SigEntryComp());
-    if(iter != this->data.end() && iter->first == sigNum) {
-        return iter->second;
-    }
-    return nullptr;
-}
-
-
 // core api definition
 
 TypePool &getPool(DSState &st) {

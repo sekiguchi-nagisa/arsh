@@ -27,6 +27,42 @@
 #include "symbol.h"
 #include "misc/files.h"
 
+// ##########################
+// ##     SignalVector     ##
+// ##########################
+
+struct SigEntryComp {
+    using Entry = std::pair<int, DSValue>;
+
+    bool operator()(const Entry &x, int y) const {
+        return x.first < y;
+    }
+
+    bool operator()(int x, const Entry &y) const {
+        return x < y.first;
+    }
+};
+
+void SignalVector::insertOrUpdate(int sigNum, const DSValue &func) {
+    auto iter = std::lower_bound(this->data.begin(), this->data.end(), sigNum, SigEntryComp());
+    if(iter != this->data.end() && iter->first == sigNum) {
+        if(func) {
+            iter->second = func;    // update
+        } else {
+            this->data.erase(iter); // remove
+        }
+    } else if(func) {
+        this->data.insert(iter, std::make_pair(sigNum, func));  // insert
+    }
+}
+
+DSValue SignalVector::lookup(int sigNum) const {
+    auto iter = std::lower_bound(this->data.begin(), this->data.end(), sigNum, SigEntryComp());
+    if(iter != this->data.end() && iter->first == sigNum) {
+        return iter->second;
+    }
+    return nullptr;
+}
 
 // #####################
 // ##     DSState     ##
@@ -1216,7 +1252,7 @@ static const FuncObject *getHandler(const DSState &st, const char *name) {
     return typeAs<FuncObject>(st.getGlobal(handle->getFieldIndex()));
 }
 
-void installSignalHandler(DSState &st, int sigNum, const FuncObject *handler) {
+void installSignalHandler(DSState &st, int sigNum, DSValue &&handler) {
     blockSignal([&] {
         auto *DFL_handler = getHandler(st, VAR_SIG_DFL);
         auto *IGN_handler = getHandler(st, VAR_SIG_IGN);
@@ -1225,10 +1261,10 @@ void installSignalHandler(DSState &st, int sigNum, const FuncObject *handler) {
         struct sigaction action;
         action.sa_flags = 0;
         sigemptyset(&action.sa_mask);
-        if(handler == DFL_handler) {
+        if(handler.get() == DFL_handler) {
             action.sa_handler = SIG_DFL;
             handler = nullptr;
-        } else if(handler == IGN_handler) {
+        } else if(handler.get() == IGN_handler) {
             action.sa_handler = SIG_IGN;
             handler = nullptr;
         } else {
@@ -1237,7 +1273,7 @@ void installSignalHandler(DSState &st, int sigNum, const FuncObject *handler) {
         sigaction(sigNum, &action, NULL);
 
         // register handler
-        st.sigVector.insertOrUpdate(sigNum, handler);
+        st.sigVector.insertOrUpdate(sigNum, std::move(handler));
     });
 }
 

@@ -73,12 +73,12 @@ protected:
         this->setBreakPoint(OpCode::HALT);
     }
 
-    const FuncObject *getFuncObject(const char *name) const {
+    DSValue getValue(const char *name) const {
         auto handle = this->state->symbolTable.lookupHandle(name);
         if(handle == nullptr || !handle->attr().has(FieldAttribute::FUNC_HANDLE)) {
             return nullptr;
         }
-        return typeAs<FuncObject>(this->state->getGlobal(handle->getFieldIndex()));
+        return this->state->getGlobal(handle->getFieldIndex());
     }
 
     void RefCount(const char *gvarName, unsigned int refCount) {
@@ -181,7 +181,8 @@ TEST_F(VMTest, deinit10) {
 
 TEST_F(VMTest, sig1) {
     this->eval("function f($s : Signal) {}");
-    auto *func = this->getFuncObject("f");
+//    auto *func = this->getFuncObject("f");
+    auto func = this->getValue("f");
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(func != nullptr));
 
     SignalVector v;
@@ -207,7 +208,7 @@ TEST_F(VMTest, sig1) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(v.lookup(-3) == nullptr));
 
     // update
-    auto *func1 = this->getFuncObject("SIG_DFL");
+    auto func1 = this->getValue("SIG_DFL");
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(func, v.lookup(3)));
     ASSERT_NO_FATAL_FAILURE(ASSERT_NE(func, func1));
     v.insertOrUpdate(3, func1);
@@ -217,12 +218,12 @@ TEST_F(VMTest, sig1) {
     // remove
     v.insertOrUpdate(4, nullptr);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, v.getData().size()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(nullptr, v.lookup(4)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DSValue(), v.lookup(4)));
 
     // do nothing
     v.insertOrUpdate(5, nullptr);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, v.getData().size()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(nullptr, v.lookup(5)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DSValue(), v.lookup(5)));
 }
 
 

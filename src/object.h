@@ -218,6 +218,22 @@ public:
         return this->obj;
     }
 
+    bool operator==(std::nullptr_t) const noexcept {
+        return this->obj == nullptr;
+    }
+
+    bool operator!=(std::nullptr_t) const noexcept {
+        return this->obj != nullptr;
+    }
+
+    bool operator==(const DSValue &v) const noexcept {
+        return this->val == v.val;
+    }
+
+    bool operator!=(const DSValue &v) const noexcept {
+        return this->val != v.val;
+    }
+
     explicit operator bool() const noexcept {
         return this->obj != nullptr;
     }

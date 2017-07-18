@@ -1358,9 +1358,7 @@ YDSH_METHOD regex_match(RuntimeContext &ctx) {
 YDSH_METHOD signals_action(RuntimeContext &ctx) {
     SUPPRESS_WARNING(signals_action);
     auto *obj = typeAs<Int_Object>(LOCAL(1));
-    auto *handler = typeAs<FuncObject>(LOCAL(2));
-
-    installSignalHandler(ctx, obj->getValue(), handler);
+    installSignalHandler(ctx, obj->getValue(), EXTRACT_LOCAL(2));
 
     RET_VOID;
 }
