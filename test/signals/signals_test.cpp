@@ -81,30 +81,48 @@ static bool startsWith(const char *s1, const char *s2) {
     return s1 != nullptr && s2 != nullptr && strstr(s1, s2) == s1;
 }
 
-static bool exclude(const std::string &str) {
-    const char *list[] = {
-            "RT", "UNUSED",
-    };
-    for(auto &e : list) {
-        if(startsWith(str.c_str(), e)) {
-            return true;
-        }
-    }
-    return false;
+static bool excludeRT(const std::string &str) {
+    return startsWith(str.c_str(), "RT");
 }
+
+static void trim(std::string &str) {
+    if(startsWith(str.c_str(), "SIG")) {
+        str = str.c_str() + 3;
+    }
+}
+
+/**
+ * exclude other signal (non-standard signal) and real time signal
+ *
+ */
+struct SigFilter {
+    bool operator()(const std::string &str) const {
+        const char *v[] = {
+                "IOT", "EMT", "STKFLT", "IO","CLD", "PWR", "INFO", "LOST", "WINCH", "UNUSED"
+        };
+        for(auto &e : v) {
+            if(str == e) {
+                return true;
+            }
+        }
+        return false;
+    }
+};
 
 static std::vector<std::string> toSignalList(const std::string &str) {
     auto values = split(str);
     for(auto iter = values.begin(); iter != values.end();) {
         toUpperCase(*iter);
+        trim(*iter);
         auto &e = *iter;
-        if(e.empty() || !std::isalpha(e[0]) || exclude(e)) {
+        if(e.empty() || !std::isalpha(e[0]) || excludeRT(e)) {
             iter = values.erase(iter);
             continue;
         }
         ++iter;
     }
     std::sort(values.begin(), values.end());
+    values.erase(std::remove_if(values.begin(), values.end(), SigFilter()), values.end());
     return values;
 }
 
@@ -114,6 +132,7 @@ static std::vector<std::string> toList(const ydsh::SignalPair *pairs) {
         values.push_back(std::string(pairs->name));
     }
     std::sort(values.begin(), values.end());
+    values.erase(std::remove_if(values.begin(), values.end(), SigFilter()), values.end());
     return values;
 }
 
