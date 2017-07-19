@@ -1,0 +1,20 @@
+
+assert %'HUP' is Signal
+assert %'HuP' as Any is Signal
+assert %'Sighup'.name() == 'HUP'
+
+assert %'TRAP' is Signal
+assert %'tRAp'.name() == 'TRAP'
+
+var s = $SIG['hUp']
+assert $s as String == %'HUP' as String
+$s = $SIG['sigterm']
+assert $s as Any is Signal
+assert $s.name() == 'TERM'
+assert $SIG.get('sys')!.name() == 'SYS'
+
+var a = '' as Any
+try { $SIG['hogeud']; assert $false; } catch $e { $a = $e; }
+assert $a is KeyNotFoundError
+
+assert not $SIG.get('SIGCHILD')

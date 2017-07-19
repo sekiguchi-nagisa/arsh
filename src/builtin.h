@@ -23,6 +23,7 @@
 
 #include "core.h"
 #include "object.h"
+#include "signals.h"
 #include "misc/unicode.hpp"
 #include "misc/num.h"
 
@@ -1349,6 +1350,19 @@ YDSH_METHOD regex_match(RuntimeContext &ctx) {
     RET(ret);
 }
 
+// ####################
+// ##     Signal     ##
+// ####################
+
+//!bind: function name($this : Signal) : String
+YDSH_METHOD signal_name(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(signal_name);
+    auto *obj = typeAs<Int_Object>(LOCAL(0));
+    const char *name = getSignalName(obj->getValue());
+    assert(name != nullptr);
+    RET(DSValue::create<String_Object>(getPool(ctx).getStringType(), name));
+}
+
 
 // #####################
 // ##     Signals     ##
@@ -1361,6 +1375,30 @@ YDSH_METHOD signals_action(RuntimeContext &ctx) {
     installSignalHandler(ctx, obj->getValue(), EXTRACT_LOCAL(2));
 
     RET_VOID;
+}
+
+//!bind: function $OP_GET($this : Signals, $key : String) : Signal
+YDSH_METHOD signals_get(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(signals_get);
+    const char *key = typeAs<String_Object>(LOCAL(1))->getValue();
+    int sigNum = getSignalNum(key);
+    if(sigNum < 0) {
+        std::string msg = "unsupported signal: ";
+        msg += key;
+        throwError(ctx, getPool(ctx).getKeyNotFoundErrorType(), std::move(msg));
+    }
+    RET(DSValue::create<Int_Object>(getPool(ctx).getSignalType(), sigNum));
+}
+
+//!bind: function get($this : Signals, $key : String) : Option<Signal>
+YDSH_METHOD signals_get2(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(signals_get2);
+    const char *key = typeAs<String_Object>(LOCAL(1))->getValue();
+    int sigNum = getSignalNum(key);
+    if(sigNum < 0) {
+        RET(DSValue::createInvalid());
+    }
+    RET(DSValue::create<Int_Object>(getPool(ctx).getSignalType(), sigNum));
 }
 
 
