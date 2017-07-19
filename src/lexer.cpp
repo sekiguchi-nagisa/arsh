@@ -15,7 +15,6 @@
  */
 
 #include <cmath>
-#include <csignal>
 
 #include "misc/fatal.h"
 #include "misc/num.h"
@@ -380,34 +379,6 @@ double Lexer::toDouble(Token token, int &status) const {
     double value = convertToDouble(str, status);
     assert(status > -1);
     return value;
-}
-
-static CStringHashMap<int> initSignalMap() {
-    CStringHashMap<int> map = {
-#define SIGNAL_(S) {#S, SIG ## S},
-#include <supported_signal.h>
-#undef SIGNAL_
-    };
-    return map;
-}
-
-int Lexer::toSigNum(Token token) const {
-    static auto signalMap = initSignalMap();
-
-    token.pos++;    // skip prefix %
-    token.pos++;    // skip '
-    token.size -= 3;
-
-    std::string str;
-    for(unsigned int i = 0; i < token.size; i++) {
-        char ch = this->buf[token.pos + i];
-        if(ch >= 'a' && ch <= 'z') {
-            ch -= static_cast<int>('a') - static_cast<int>('A');   // convert to upper character
-        }
-        str += ch;
-    }
-    auto iter = signalMap.find(str.c_str());
-    return iter == signalMap.end() ? 0 : iter->second;
 }
 
 bool Lexer::isDecimal(Token token) const {

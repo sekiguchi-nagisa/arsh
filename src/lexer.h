@@ -249,14 +249,6 @@ public:
      */
     double toDouble(Token token, int &status) const;
 
-    /**
-     * real-time signal is not supported
-     * @param token
-     * @return
-     * if cannot convert to signal, return 0.
-     */
-    int toSigNum(Token token) const;
-
 private:
     bool isDecimal(Token token) const;
 

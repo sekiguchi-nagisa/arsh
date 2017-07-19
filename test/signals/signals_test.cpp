@@ -1,25 +1,14 @@
-/*
- * Copyright (C) 2017 Nagisa Sekiguchi
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+#include <gtest/gtest.h>
 
 #include <string>
 #include <vector>
 #include <cstdio>
 #include <cstring>
+#include <algorithm>
+#include <csignal>
 
 #include <misc/size.hpp>
+#include <signals.h>
 
 class Command {
 private:
@@ -104,36 +93,63 @@ static bool exclude(const std::string &str) {
     return false;
 }
 
-int main(int argc, char **argv) {
-    if(argc != 2) {
-        fprintf(stderr, "[usage] %s [output path]\n", argv[0]);
-        return 1;
-    }
-
-    const char *path = argv[1];
-
-    std::string killPath = Command("which").addArg("kill")();
-    std::string killOut = Command(killPath.c_str()).addArg("-l")();
-
-    auto values = split(killOut);
-    for(auto &e : values) {
-        toUpperCase(e);
-    }
-
-    // generate header
-    FILE *fp = fopen(path, "w");
-    fprintf(fp, "// this is a auto-generated file. not change it directly\n"
-                "#ifndef GEN_SIGNAL__SUPPORTED_SIGNAL_H\n"
-                "#define GEN_SIGNAL__SUPPORTED_SIGNAL_H\n\n");
-
-    for(auto &v : values) {
-        if(exclude(v)) {
+static std::vector<std::string> toSignalList(const std::string &str) {
+    auto values = split(str);
+    for(auto iter = values.begin(); iter != values.end();) {
+        toUpperCase(*iter);
+        auto &e = *iter;
+        if(e.empty() || !std::isalpha(e[0]) || exclude(e)) {
+            iter = values.erase(iter);
             continue;
         }
-        fprintf(fp, "SIGNAL_(%s)\n", v.c_str());
+        ++iter;
     }
-    fprintf(fp, "\n#endif // GEN_SIGNAL__SUPPORTED_SIGNAL_H\n");
-    fclose(fp);
+    std::sort(values.begin(), values.end());
+    return values;
+}
 
-    return 0;
+static std::vector<std::string> toList(const ydsh::SignalPair *pairs) {
+    std::vector<std::string> values;
+    for(; pairs->name; pairs++) {
+        values.push_back(std::string(pairs->name));
+    }
+    std::sort(values.begin(), values.end());
+    return values;
+}
+
+
+TEST(Signal, all) {
+    std::string killPath = Command("which").addArg("kill")();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(killPath.size() > 0));
+
+    std::string killOut = Command(killPath.c_str()).addArg("-l")();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(killOut.size() > 0));
+
+    auto expected = toSignalList(killOut);
+    auto actual = toList(ydsh::getSignalList());
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expected.size(), actual.size()));
+    unsigned int size = expected.size();
+    for(unsigned int i = 0; i < size; i++) {
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expected[i], actual[i]));
+    }
+}
+
+TEST(Signal, base) {
+    using namespace ydsh;
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(SIGQUIT, getSignalNum("quit")));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(SIGQUIT, getSignalNum("Sigquit")));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(SIGTSTP, getSignalNum("tStP")));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(SIGTSTP, getSignalNum("SigTStp")));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, getSignalNum("HOGED")));
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("USR1", getSignalName(SIGUSR1)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("SEGV", getSignalName(SIGSEGV)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(nullptr, getSignalName(-12)));
+}
+
+int main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

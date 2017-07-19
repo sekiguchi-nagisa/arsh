@@ -16,6 +16,7 @@
 
 #include "parser.h"
 #include "symbol.h"
+#include "signals.h"
 
 
 // helper macro
@@ -1098,8 +1099,10 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     }
     case SIGNAL_LITERAL: {
         Token token = this->expect(SIGNAL_LITERAL);
-        int num = this->lexer->toSigNum(token);
-        if(!num) {
+        auto str = this->lexer->toTokenText(token);
+        str.pop_back(); // skip suffix [']
+        int num = getSignalNum(str.c_str() + 2); // skip prefix [%']
+        if(num < 0) {
             raiseTokenFormatError(SIGNAL_LITERAL, token, "unsupported signal");
         }
         return std::unique_ptr<Node>(NumberNode::newSignal(token, num));
