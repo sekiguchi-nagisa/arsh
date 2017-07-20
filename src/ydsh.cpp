@@ -200,7 +200,7 @@ static int evalCode(DSState *state, CompiledCode &code, DSError *dsError) {
         unsigned int errorLineNum = 0;
         DSValue thrownObj = state->getThrownObject();
         if(dynamic_cast<Error_Object *>(thrownObj.get()) != nullptr) {
-            Error_Object *obj = typeAs<Error_Object>(thrownObj);
+            auto *obj = typeAs<Error_Object>(thrownObj);
             errorLineNum = getOccurredLineNum(obj->getStackTrace());
         }
 
@@ -476,7 +476,7 @@ static void initEnv() {
 DSState *DSState_create() {
     initEnv();
 
-    DSState *ctx = new DSState();
+    auto *ctx = new DSState();
 
     initBuiltinVar(ctx);
     loadEmbeddedScript(ctx);

@@ -41,20 +41,20 @@ struct NativeFuncInfo;
     OP(SECONDS    , (1 << 6))
 
 enum class FieldAttribute : unsigned int {
-#define GEN_ENUM(E, V) E = V,
+#define GEN_ENUM(E, V) E = (V),
     EACH_FIELD_ATTR(GEN_ENUM)
 #undef GEN_ENUM
 };
 
 class FieldAttributes {
 private:
-    unsigned int value_;
+    unsigned int value_{0};
 
 private:
     FieldAttributes(unsigned int value) : value_(value) {}
 
 public:
-    FieldAttributes() : value_(0) {}
+    FieldAttributes() = default;
     FieldAttributes(FieldAttribute attr) : value_(static_cast<unsigned int>(attr)) {}
     ~FieldAttributes() = default;
 
@@ -120,7 +120,7 @@ protected:
 
 public:
     FunctionHandle(DSType *returnType, const std::vector<DSType *> &paramTypes, unsigned int fieldIndex) :
-            FieldHandle(0, fieldIndex, FieldAttribute::READ_ONLY | FieldAttribute::FUNC_HANDLE | FieldAttribute::GLOBAL),
+            FieldHandle(nullptr, fieldIndex, FieldAttribute::READ_ONLY | FieldAttribute::FUNC_HANDLE | FieldAttribute::GLOBAL),
             returnType(returnType), paramTypes(paramTypes) { }
 
     ~FunctionHandle() = default;
@@ -158,7 +158,7 @@ public:
 
     explicit MethodHandle(unsigned int methodIndex) :
             methodIndex(methodIndex), attributeSet(),
-            returnType(), recvType(), paramTypes(), next() { }
+            returnType(), recvType(), next() { }
 
     ~MethodHandle();
 

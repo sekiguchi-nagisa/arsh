@@ -225,13 +225,13 @@ class CatchBuilder {
 private:
     IntrusivePtr<Label> begin;  // inclusive
     IntrusivePtr<Label> end;    // exclusive
-    const DSType *type;
-    unsigned int address;   // start index of catch block.
-    unsigned short localOffset;
-    unsigned short localSize;
+    const DSType *type{nullptr};
+    unsigned int address{0};   // start index of catch block.
+    unsigned short localOffset{0};
+    unsigned short localSize{0};
 
 public:
-    CatchBuilder() : begin(nullptr), end(nullptr), type(nullptr), address(0), localOffset(0), localSize(0) { }
+    CatchBuilder() : begin(nullptr), end(nullptr) { }
     CatchBuilder(IntrusivePtr<Label> begin, IntrusivePtr<Label> end, const DSType &type,
                  unsigned int address, unsigned short localOffset, unsigned short localSize) :
             begin(std::move(begin)), end(std::move(end)), type(&type), address(address), localOffset(localOffset), localSize(localSize) {}

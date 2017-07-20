@@ -865,9 +865,9 @@ static std::unique_ptr<Node> createBinaryNode(std::unique_ptr<Node> &&leftNode,
             return std::move(leftNode);
         }
         return uniquify<PipelineNode>(leftNode.release(), rightNode.release());
-    } else {
-        return uniquify<BinaryOpNode>(leftNode.release(), op, rightNode.release());
     }
+
+    return uniquify<BinaryOpNode>(leftNode.release(), op, rightNode.release());
 }
 
 std::unique_ptr<Node> Parser::parse_binaryExpression(std::unique_ptr<Node> &&leftNode,

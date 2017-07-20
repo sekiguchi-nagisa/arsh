@@ -1034,7 +1034,8 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
                 continue;
             }
             break;
-        } else if(ch == '\\' && !prevIsBackslash && backslash) {
+        }
+        if(ch == '\\' && !prevIsBackslash && backslash) {
             continue;
         }
 

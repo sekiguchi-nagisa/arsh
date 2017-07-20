@@ -135,7 +135,7 @@ private:
 
 public:
     explicit DBus_Object(TypePool &typePool) :
-            DSObject(typePool.getDBusType()), systemBus(), sessionBus(), builder(&typePool) { }
+            DSObject(typePool.getDBusType()), builder(&typePool) { }
 
     ~DBus_Object() = default;
 

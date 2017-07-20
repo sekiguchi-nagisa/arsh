@@ -275,11 +275,13 @@ public:
 
     virtual ~BuiltinType();
 
-    virtual MethodHandle *getConstructorHandle(TypePool &typePool) override;
+    MethodHandle *getConstructorHandle(TypePool &typePool) override;
     const DSCode *getConstructor() override;
     MethodHandle *lookupMethodHandle(TypePool &typePool, const std::string &methodName) override;
-    virtual FieldHandle *findHandle(const std::string &fieldName) override;
-    virtual void accept(TypeVisitor *visitor) override;
+
+    FieldHandle *findHandle(const std::string &fieldName) override;
+
+    void accept(TypeVisitor *visitor) override;
     unsigned int getMethodSize() override;
     const DSCode *getMethodRef(unsigned int methodIndex) override;
     void copyAllMethodRef(std::vector<const DSCode *> &methodTable) override;
@@ -312,7 +314,7 @@ public:
         return this->elementTypes;
     }
 
-    virtual void accept(TypeVisitor *visitor) override;
+    void accept(TypeVisitor *visitor) override;
 protected:
     bool initMethodHandle(MethodHandle *handle, TypePool &typePool, NativeFuncInfo &info) override;
 };

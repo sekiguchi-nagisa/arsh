@@ -440,7 +440,7 @@ private:
     std::vector<DSValue> values;
 
 public:
-    explicit Array_Object(DSType &type) : DSObject(type), curIndex(0), values() { }
+    explicit Array_Object(DSType &type) : DSObject(type), curIndex(0) { }
 
     Array_Object(DSType &type, std::vector<DSValue> &&values) :
             DSObject(type), curIndex(0), values(std::move(values)) { }
@@ -670,7 +670,7 @@ private:
     std::vector<StackTraceElement> stackTrace;
 
     Error_Object(DSType &type, DSValue &&message) :
-            DSObject(type), message(std::move(message)), name(), stackTrace() { }
+            DSObject(type), message(std::move(message)) { }
 
 public:
     ~Error_Object() = default;

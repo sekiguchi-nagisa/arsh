@@ -178,7 +178,7 @@ protected:
 public:
     virtual ~TypeNode() = default;
 
-    virtual void dump(NodeDumper &dumper) const override;
+    void dump(NodeDumper &dumper) const override;
 };
 
 class BaseTypeNode : public TypeNode {
@@ -640,7 +640,7 @@ public:
         return this->index;
     }
 
-    virtual void dump(NodeDumper &dumper) const override;
+    void dump(NodeDumper &dumper) const override;
 };
 
 class VarNode : public AssignableNode {
@@ -1963,15 +1963,15 @@ private:
     /**
      * max number of local variable.
      */
-    unsigned int maxVarNum;
+    unsigned int maxVarNum{0};
 
     /**
      * max number of global variable.
      */
-    unsigned int maxGVarNum;
+    unsigned int maxGVarNum{0};
 
 public:
-    RootNode() : CallableNode(NodeKind::Root), maxVarNum(0), maxGVarNum(0) { }
+    RootNode() : CallableNode(NodeKind::Root) { }
 
     ~RootNode();
 

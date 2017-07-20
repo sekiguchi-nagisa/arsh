@@ -53,7 +53,7 @@ private:
     std::string buf;
 
 public:
-    DescriptorBuilder(TypePool *pool, BaseTypeDescriptorMap *typeMap) : pool(pool), typeMap(typeMap), buf() { }
+    DescriptorBuilder(TypePool *pool, BaseTypeDescriptorMap *typeMap) : pool(pool), typeMap(typeMap) { }
     ~DescriptorBuilder() = default;
 
     const char *buildDescriptor(DSType &type);
@@ -84,7 +84,7 @@ private:
 
 public:
     explicit MessageBuilder(TypePool *pool) :
-            pool(pool), typeMap(0), descBuilder(0), objStack(), iter() { }
+            pool(pool), typeMap(nullptr), descBuilder(nullptr), iter() { }
 
     ~MessageBuilder() {
         delete this->typeMap;

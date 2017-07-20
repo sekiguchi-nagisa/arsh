@@ -22,7 +22,7 @@ namespace ydsh {
 // ##     BaseTypeDescriptorMap     ##
 // ###################################
 
-BaseTypeDescriptorMap::BaseTypeDescriptorMap(TypePool *pool) : map() {
+BaseTypeDescriptorMap::BaseTypeDescriptorMap(TypePool *pool) {
 #define ADD(type, desc) this->map.insert(std::make_pair((unsigned long) (&type), desc))
     ADD(pool->getInt64Type(), DBUS_TYPE_INT64);
     ADD(pool->getUint64Type(), DBUS_TYPE_UINT64);
@@ -136,7 +136,7 @@ void MessageBuilder::visitBuiltinType(BuiltinType *type) {
     int dbusType = this->typeMap->getDescriptor(*type);
     switch(dbusType) {
     case DBUS_TYPE_INT64: {
-        dbus_int64_t value = (dbus_int64_t) (static_cast<Long_Object *>(this->peek()))->getValue();
+        auto value = (dbus_int64_t) (static_cast<Long_Object *>(this->peek()))->getValue();
         dbus_message_iter_append_basic(this->iter, dbusType, &value);
         return;
     }
@@ -224,7 +224,7 @@ void MessageBuilder::visitReifiedType(ReifiedType *type) {
         DBusMessageIter *curIter = this->openContainerIter(DBUS_TYPE_ARRAY, desc, &subIter);
 
         // append element
-        Array_Object *arrayObj = static_cast<Array_Object *>(this->peek());
+        auto *arrayObj = static_cast<Array_Object *>(this->peek());
         for(auto &e : arrayObj->getValues()) {
             this->append(elementType, e.get());
         }
@@ -240,10 +240,10 @@ void MessageBuilder::visitReifiedType(ReifiedType *type) {
         DBusMessageIter *curIter = this->openContainerIter(DBUS_TYPE_ARRAY, desc, &subIter);
 
         // append entry
-        Map_Object *mapObj = static_cast<Map_Object *>(this->peek());
+        auto *mapObj = static_cast<Map_Object *>(this->peek());
         for(auto &pair : mapObj->getValueMap()) {
             DBusMessageIter entryIter;
-            DBusMessageIter *oldIter = this->openContainerIter(DBUS_TYPE_DICT_ENTRY, NULL, &entryIter);
+            DBusMessageIter *oldIter = this->openContainerIter(DBUS_TYPE_DICT_ENTRY, nullptr, &entryIter);
 
             // append key, value
             this->append(keyType, pair.first.get());
@@ -261,12 +261,12 @@ void MessageBuilder::visitReifiedType(ReifiedType *type) {
 void MessageBuilder::visitTupleType(TupleType *type) {
     DBusMessageIter *curIter = this->iter;
     DBusMessageIter subIter;
-    dbus_message_iter_open_container(this->iter, DBUS_TYPE_STRUCT, NULL, &subIter);
+    dbus_message_iter_open_container(this->iter, DBUS_TYPE_STRUCT, nullptr, &subIter);
 
     // append element
     this->iter = &subIter;
 
-    Tuple_Object *tupleObj = static_cast<Tuple_Object *>(this->peek());
+    auto *tupleObj = static_cast<Tuple_Object *>(this->peek());
     unsigned int size = tupleObj->getElementSize();
     for(unsigned int i = 0; i < size; i++) {
         this->append(type->getElementTypes()[i], tupleObj->get(i).get());
@@ -349,11 +349,11 @@ static DSType &decodeTypeDescriptorImpl(TypePool *pool, const char *&desc) {
             desc++; // consume end char
 
             return pool->createReifiedType(pool->getMapTemplate(), std::move(types));
-        } else {    // array
-            std::vector<DSType *> types(1);
-            types[0] = &decodeTypeDescriptorImpl(pool, desc);
-            return pool->createReifiedType(pool->getArrayTemplate(), std::move(types));
         }
+        // array
+        std::vector<DSType *> types(1);
+        types[0] = &decodeTypeDescriptorImpl(pool, desc);
+        return pool->createReifiedType(pool->getArrayTemplate(), std::move(types));
     }
     case DBUS_STRUCT_BEGIN_CHAR: {  // Tuple
         std::vector<DSType *> types;

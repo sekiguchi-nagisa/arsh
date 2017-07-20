@@ -1021,7 +1021,7 @@ void TypeChecker::visitVarDeclNode(DSType *, VarDeclNode &node) {
 }
 
 void TypeChecker::visitAssignNode(DSType *, AssignNode &node) {
-    AssignableNode *leftNode = dynamic_cast<AssignableNode *>(node.getLeftNode());
+    auto *leftNode = dynamic_cast<AssignableNode *>(node.getLeftNode());
     if(leftNode == nullptr) {
         RAISE_TC_ERROR(Assignable, *node.getLeftNode());
     }
@@ -1036,7 +1036,7 @@ void TypeChecker::visitAssignNode(DSType *, AssignNode &node) {
     }
     if(node.isSelfAssignment()) {
         assert(node.getRightNode()->is(NodeKind::BinaryOp));
-        BinaryOpNode *opNode = static_cast<BinaryOpNode *>(node.getRightNode());
+        auto *opNode = static_cast<BinaryOpNode *>(node.getRightNode());
         opNode->getLeftNode()->setType(leftType);
         if(leftNode->is(NodeKind::Access)) {
             static_cast<AccessNode *>(leftNode)->setAdditionalOp(AccessNode::DUP_RECV);

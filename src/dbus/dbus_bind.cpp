@@ -26,7 +26,7 @@ namespace ydsh {
 // helper util
 struct DBusErrorDeleter {
     void operator()(DBusError &e) const {
-        if(dbus_error_is_set(&e)) {
+        if(dbus_error_is_set(&e) != 0u) {
             dbus_error_free(&e);
         }
     }
@@ -119,14 +119,13 @@ static DSValue decodeMessageIter(DSState &ctx, DBusMessageIter *iter) {
     }
     case DBUS_TYPE_UNIX_FD: {
         fatal("unsupported dbus type: UNIX_FD");
-        return DSValue();
     }
     case DBUS_TYPE_ARRAY: {
         int elementType = dbus_message_iter_get_element_type(iter);
         DBusMessageIter subIter;
         dbus_message_iter_recurse(iter, &subIter);
         if(elementType == DBUS_TYPE_DICT_ENTRY) {   // map
-            if(!dbus_message_iter_has_next(&subIter)) { //empty map
+            if(dbus_message_iter_has_next(&subIter) == 0u) { //empty map
                 char *desc = dbus_message_iter_get_signature(&subIter);
                 std::string mapDesc("a");
                 mapDesc += desc;
@@ -147,8 +146,8 @@ static DSValue decodeMessageIter(DSState &ctx, DBusMessageIter *iter) {
                     firstElementType = dbus_message_iter_get_arg_type(&entryIter);
                 }
                 auto value(decodeMessageIter(ctx, &entryIter));
-                entries.push_back(std::make_pair(std::move(key), std::move(value)));
-            } while(dbus_message_iter_next(&subIter));
+                entries.emplace_back(std::move(key), std::move(value));
+            } while(dbus_message_iter_next(&subIter) != 0u);
             std::vector<DSType *> types(2);
             types[0] = entries.back().first->getType();
             types[1] = firstElementType == DBUS_TYPE_VARIANT ?
@@ -160,27 +159,26 @@ static DSValue decodeMessageIter(DSState &ctx, DBusMessageIter *iter) {
                 typeAs<Map_Object>(map)->add(std::move(e));
             }
             return map;
-        } else {    // array
-            if(!dbus_message_iter_has_next(&subIter)) { //empty array
-                char *desc = dbus_message_iter_get_signature(&subIter);
-                std::vector<DSType *> types(1);
-                types[0] = &decodeTypeDescriptor(&getPool(ctx), desc);
-                dbus_free(desc);
-                return DSValue::create<Array_Object>(
-                        getPool(ctx).createReifiedType(getPool(ctx).getArrayTemplate(), std::move(types)));
-            }
-
-            std::vector<DSValue> values;
-            do {
-                values.push_back(decodeMessageIter(ctx, &subIter));
-            } while(dbus_message_iter_next(&subIter));
+        }
+        // array
+        if(dbus_message_iter_has_next(&subIter) == 0u) { //empty array
+            char *desc = dbus_message_iter_get_signature(&subIter);
             std::vector<DSType *> types(1);
-            types[0] = elementType == DBUS_TYPE_VARIANT ? &getPool(ctx).getVariantType() : values[0]->getType();
-
+            types[0] = &decodeTypeDescriptor(&getPool(ctx), desc);
+            dbus_free(desc);
             return DSValue::create<Array_Object>(
-                    getPool(ctx).createReifiedType(getPool(ctx).getArrayTemplate(), std::move(types)), std::move(values));
+                    getPool(ctx).createReifiedType(getPool(ctx).getArrayTemplate(), std::move(types)));
         }
 
+        std::vector<DSValue> values;
+        do {
+            values.push_back(decodeMessageIter(ctx, &subIter));
+        } while(dbus_message_iter_next(&subIter) != 0u);
+        std::vector<DSType *> types(1);
+        types[0] = elementType == DBUS_TYPE_VARIANT ? &getPool(ctx).getVariantType() : values[0]->getType();
+
+        return DSValue::create<Array_Object>(
+                getPool(ctx).createReifiedType(getPool(ctx).getArrayTemplate(), std::move(types)), std::move(values));
     }
     case DBUS_TYPE_STRUCT: {
         DBusMessageIter subIter;
@@ -191,7 +189,7 @@ static DSValue decodeMessageIter(DSState &ctx, DBusMessageIter *iter) {
         do {
             values.push_back(decodeMessageIter(ctx, &subIter));
             types.push_back(values.back()->getType());
-        } while(dbus_message_iter_next(&subIter));
+        } while(dbus_message_iter_next(&subIter) != 0u);
         auto &tupleType = getPool(ctx).createTupleType(std::move(types));
         DSValue tuple(new Tuple_Object(tupleType));
         unsigned int size = values.size();
@@ -220,7 +218,7 @@ static std::vector<DSValue> decodeMessageRaw(DSState &ctx,
     // decode message
     do {
         values.push_back(decodeMessageIter(ctx, &iter));
-    } while(dbus_message_iter_next(&iter));
+    } while(dbus_message_iter_next(&iter) != 0u);
 
     // check type
     unsigned int size = values.size();
@@ -269,7 +267,7 @@ static DSValue decodeMessage(DSState &ctx, DSType &type, ScopedDBusMessage &&msg
 }
 
 static void appendArg(DSState &ctx, DBusMessageIter *iter, DSType &argType, const DSValue &arg) {
-    DBus_Object *dbus = typeAs<DBus_Object>(getGlobal(ctx, toIndex(BuiltinVarOffset::DBUS)));
+    auto *dbus = typeAs<DBus_Object>(getGlobal(ctx, toIndex(BuiltinVarOffset::DBUS)));
     dbus->getBuilder().appendArg(iter, argType, arg);
 }
 
@@ -283,7 +281,7 @@ static ScopedDBusMessage sendMessage(DSState &ctx, DBusConnection *conn, ScopedD
             dbus_connection_send_with_reply_and_block(
                     conn, sendMsg.get(), DBUS_TIMEOUT_USE_DEFAULT, &error));
 
-    if(dbus_error_is_set(&error)) {
+    if(dbus_error_is_set(&error) != 0u) {
         throwDBusError(ctx, error);
     }
     return retMsg;
@@ -299,7 +297,7 @@ void Bus_Object::initConnection(DSState &ctx, bool systemBus) {
     auto error = newDBusError();
 
     this->conn = dbus_bus_get(systemBus ? DBUS_BUS_SYSTEM : DBUS_BUS_SESSION, &error);
-    if(dbus_error_is_set(&error)) {
+    if(dbus_error_is_set(&error) != 0u) {
         throwDBusError(ctx, error);
     }
 
@@ -384,11 +382,10 @@ DSValue DBus_Object::getSessionBus(DSState &ctx) {
 }
 
 void DBus_Object::initSignalMatchRule(DSState &st) {
-    DBusProxy_Object *proxy = typeAs<DBusProxy_Object>(getLocal(st, 1));
+    auto *proxy = typeAs<DBusProxy_Object>(getLocal(st, 1));
 
     // add signal match rule
-    Bus_Object *busObj =
-            typeAs<Bus_Object>(proxy->isBelongToSystemBus() ? this->systemBus : this->sessionBus);
+    auto *busObj = typeAs<Bus_Object>(proxy->isBelongToSystemBus() ? this->systemBus : this->sessionBus);
     DBusConnection *conn = busObj->getConnection();
 
     std::vector<std::string> ruleList;
@@ -398,17 +395,16 @@ void DBus_Object::initSignalMatchRule(DSState &st) {
     for(auto &rule : ruleList) {
         LOG(TRACE_SIGNAL, "match rule: " << rule);
         dbus_bus_add_match(conn, rule.c_str(), &error);
-        if(dbus_error_is_set(&error)) {
+        if(dbus_error_is_set(&error) != 0u) {
             throwDBusError(st, error);
         }
     }
 }
 
 std::vector<DSValue> DBus_Object::waitSignal(DSState &ctx) {    //TODO: timeout
-    DBusProxy_Object *proxy = typeAs<DBusProxy_Object>(getLocal(ctx, 1));
+    auto *proxy = typeAs<DBusProxy_Object>(getLocal(ctx, 1));
 
-    Bus_Object *busObj =
-            typeAs<Bus_Object>(proxy->isBelongToSystemBus() ? this->systemBus : this->sessionBus);
+    auto *busObj = typeAs<Bus_Object>(proxy->isBelongToSystemBus() ? this->systemBus : this->sessionBus);
     DBusConnection *conn = busObj->getConnection();
 
     std::vector<DBusProxy_Object *> proxies = {proxy};
@@ -476,7 +472,7 @@ DSValue DBus_Object::getIfaceListFromProxy(DSState &ctx, const DSValue &proxy) {
 }
 
 DSValue DBus_Object::introspectProxy(DSState &ctx, const DSValue &proxy) {
-    DBusProxy_Object *obj = typeAs<DBusProxy_Object>(proxy);
+    auto *obj = typeAs<DBusProxy_Object>(proxy);
     auto msg = wrap(dbus_message_new_method_call(
             typeAs<Service_Object>(obj->getService())->getServiceName(),
             typeAs<String_Object>(obj->getObjectPath())->getValue(),
@@ -515,7 +511,7 @@ bool DBusProxy_Object::introspect(DSState &ctx, DSType *targetType) {
     return iter != this->ifaceSet.end();
 }
 
-static void extractInterfaceName(std::unordered_set<std::string> &ifaceSet, char *str) {
+static void extractInterfaceName(std::unordered_set<std::string> &ifaceSet, const char *str) {
     const char *prefix = "<interface name=";
 
     for(unsigned int i = 0; str[i] != '\0'; i++) {
@@ -746,7 +742,7 @@ DSValue dbus_introspect(DSState &ctx) {
 }
 
 DSValue bus_service(DSState &ctx) {
-    String_Object *strObj = typeAs<String_Object>(LOCAL(1));
+    auto *strObj = typeAs<String_Object>(LOCAL(1));
     return typeAs<Bus_Object>(LOCAL(0))->service(ctx, std::string(strObj->getValue()));
 }
 
