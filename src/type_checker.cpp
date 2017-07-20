@@ -238,7 +238,8 @@ bool TypeChecker::checkCoercion(const DSType &requiredType, const DSType &target
         int requiredPrecision = this->typePool.getIntPrecision(requiredType);
         if(requiredType == this->typePool.getFloatType() && targetPrecision < TypePool::INT64_PRECISION) {
             return true;    // check int (except for Int64, Uint64) to float cast
-        } else if(targetPrecision < requiredPrecision && requiredPrecision <= TypePool::INT64_PRECISION) {
+        }
+        if(targetPrecision < requiredPrecision && requiredPrecision <= TypePool::INT64_PRECISION) {
             return true;    // check int widening
         }
     }
@@ -359,7 +360,7 @@ void TypeChecker::resolveCastOp(TypeOpNode &node, bool allowVoidCast) {
 
 TypeOpNode *TypeChecker::newTypedCastNode(Node *targetNode, DSType &type) {
     assert(!targetNode->isUntyped());
-    TypeOpNode *castNode = new TypeOpNode(targetNode, nullptr, TypeOpNode::NO_CAST);
+    auto *castNode = new TypeOpNode(targetNode, nullptr, TypeOpNode::NO_CAST);
     castNode->setType(type);
     this->resolveCastOp(*castNode, true);
     return castNode;
@@ -465,7 +466,7 @@ void TypeChecker::visitStringExprNode(DSType *, StringExprNode &node) {
                 RAISE_TC_ERROR(UndefinedMethod, *exprNode, methodName.c_str());
             }
 
-            MethodCallNode *callNode = new MethodCallNode(exprNode, std::move(methodName));
+            auto *callNode = new MethodCallNode(exprNode, std::move(methodName));
 
             // check type argument
             this->checkTypeArgsNode(node, handle, callNode->refArgNodes());
@@ -1121,7 +1122,7 @@ void TypeChecker::visitFunctionNode(DSType *, FunctionNode &node) {
     // insert terminal node if not found
     BlockNode *blockNode = node.getBlockNode();
     if(returnType.isVoidType() && !blockNode->getType().isBottomType()) {
-        EmptyNode *emptyNode = new EmptyNode();
+        auto *emptyNode = new EmptyNode();
         emptyNode->setType(this->typePool.getVoidType());
         blockNode->addReturnNodeToLast(this->typePool, emptyNode);
     }

@@ -207,7 +207,7 @@ StringExprNode::~StringExprNode() {
 
 void StringExprNode::addExprNode(Node *node) {
     if(node->is(NodeKind::StringExpr)) {
-        StringExprNode *exprNode = static_cast<StringExprNode *>(node);
+        auto *exprNode = static_cast<StringExprNode *>(node);
         for(auto &e : exprNode->nodes) {
             this->nodes.push_back(e);
         }
@@ -346,7 +346,7 @@ TypeOpNode::TypeOpNode(Node *exprNode, TypeNode *type, OpKind init, bool dupType
     static const unsigned long tag = (unsigned long) 1L << 63;
 
     if(dupTypeToken) {
-        TypeNode *tok = reinterpret_cast<TypeNode *>(tag | (unsigned long) type);
+        auto *tok = reinterpret_cast<TypeNode *>(tag | (unsigned long) type);
         this->targetTypeNode = tok;
     } else {
         this->targetTypeNode = type;
@@ -368,7 +368,7 @@ TypeOpNode::~TypeOpNode() {
 TypeNode *TypeOpNode::getTargetTypeNode() const {
     static const unsigned long mask = ~(1L << 63);
     if((long) this->targetTypeNode < 0) {
-        TypeNode *tok = reinterpret_cast<TypeNode *>(mask & (unsigned long) this->targetTypeNode);
+        auto *tok = reinterpret_cast<TypeNode *>(mask & (unsigned long) this->targetTypeNode);
         return tok;
     }
     return this->targetTypeNode;
@@ -783,7 +783,7 @@ static void resolveIfIsStatement(Node *condNode, BlockNode *blockNode) {
     auto *varNode = static_cast<VarNode *>(isNode->getExprNode());
 
     VarNode *exprNode = new VarNode({isNode->getPos(), 1}, std::string(varNode->getVarName()));
-    TypeOpNode *castNode = new TypeOpNode(exprNode, isNode->getTargetTypeNode(), TypeOpNode::NO_CAST, true);
+    auto *castNode = new TypeOpNode(exprNode, isNode->getTargetTypeNode(), TypeOpNode::NO_CAST, true);
     VarDeclNode *declNode =
             new VarDeclNode(isNode->getPos(), std::string(varNode->getVarName()), castNode, VarDeclNode::CONST);
     blockNode->insertNodeToFirst(declNode);
@@ -1217,7 +1217,7 @@ LoopNode *createForInNode(unsigned int startPos, std::string &&varName, Node *ex
     // create forIn-init
     reset_var = new VarNode(dummy, std::string(reset_var_name));
     MethodCallNode *call_next = new MethodCallNode(reset_var, std::string(OP_NEXT));
-    VarDeclNode *init_var = new VarDeclNode(startPos, std::move(varName), call_next, VarDeclNode::VAR);
+    auto *init_var = new VarDeclNode(startPos, std::move(varName), call_next, VarDeclNode::VAR);
 
     // insert init to block
     blockNode->insertNodeToFirst(init_var);
@@ -1237,25 +1237,24 @@ Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode) {
             indexNode->setMethodName(std::string(OP_SET));
             indexNode->refArgNodes().push_back(rightNode);
             return indexNode;
-        } else {
-            // assign to variable or field
-            return new AssignNode(leftNode, rightNode);
         }
+        // assign to variable or field
+        return new AssignNode(leftNode, rightNode);
     }
 
     /**
      * self assignment
      */
     // assign to element
-    BinaryOpNode *opNode = new BinaryOpNode(new EmptyNode(), resolveAssignOp(op), rightNode);
+    auto *opNode = new BinaryOpNode(new EmptyNode(), resolveAssignOp(op), rightNode);
     if(leftNode->is(NodeKind::MethodCall) &&
             static_cast<MethodCallNode *>(leftNode)->hasAttribute(MethodCallNode::INDEX)) {
-        MethodCallNode *indexNode = static_cast<MethodCallNode *>(leftNode);
+        auto *indexNode = static_cast<MethodCallNode *>(leftNode);
         return new ElementSelfAssignNode(indexNode, opNode);
-    } else {
-        // assign to variable or field
-        return new AssignNode(leftNode, opNode, true);
     }
+    // assign to variable or field
+    return new AssignNode(leftNode, opNode, true);
+
 }
 
 Node *createIndexNode(Node *recvNode, Node *indexNode) {

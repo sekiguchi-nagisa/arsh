@@ -38,7 +38,7 @@ static void loadRC(DSState *state, const char *rcfile) {
     }
 
     FILE *fp = fopen(path.c_str(), "rb");
-    if(fp == NULL) {
+    if(fp == nullptr) {
         return; // not read
     }
     DSError e;
@@ -250,7 +250,7 @@ int main(int argc, char **argv) {
     case InvocationKind::FROM_FILE: {
         const char *scriptName = shellArgs[0];
         FILE *fp = fopen(scriptName, "rb");
-        if(fp == NULL) {
+        if(fp == nullptr) {
             fprintf(stderr, "ydsh: %s: %s\n", scriptName, strerror(errno));
             exit(1);
         }

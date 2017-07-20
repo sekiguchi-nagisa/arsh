@@ -353,7 +353,7 @@ public:
      * superType is always AnyType.
      */
     explicit InterfaceType(DSType *superType) :
-            DSType(superType, DSType::IFACE_TYPE), fieldHandleMap(), methodHandleMap() { }
+            DSType(superType, DSType::IFACE_TYPE) { }
 
     ~InterfaceType();
 

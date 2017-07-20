@@ -51,7 +51,7 @@ private:
 
 public:
     explicit SourceInfo(const char *sourceName) :
-            refcount(0), sourceName(sourceName), lineNumOffset(1), lineNumTable() { }
+            refcount(0), sourceName(sourceName), lineNumOffset(1) { }
     ~SourceInfo() = default;
 
     const std::string &getSourceName() const {
@@ -105,6 +105,8 @@ private:
     bool prevSpace;
 
     LexerMode prevMode;
+
+    NON_COPYABLE(Lexer);
 
 public:
     /**

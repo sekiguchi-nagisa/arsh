@@ -260,7 +260,7 @@ DSValue Array_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
             typeAs<Array_Object>(result)->values.push_back(std::move(temp));
         } else {
             assert(*tempType == getPool(ctx).getStringArrayType());
-            Array_Object *tempArray = typeAs<Array_Object>(temp);
+            auto *tempArray = typeAs<Array_Object>(temp);
             for(auto &tempValue : tempArray->values) {
                 typeAs<Array_Object>(result)->values.push_back(tempValue);
             }
@@ -379,7 +379,7 @@ DSValue Tuple_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
             typeAs<Array_Object>(result)->append(std::move(temp));
         } else {
             assert(*tempType == getPool(ctx).getStringArrayType());
-            Array_Object *tempArray = typeAs<Array_Object>(temp);
+            auto *tempArray = typeAs<Array_Object>(temp);
             for(auto &tempValue : tempArray->getValues()) {
                 typeAs<Array_Object>(result)->append(tempValue);
             }
@@ -458,7 +458,7 @@ static std::string toHexString(unsigned long v) {
 }
 
 std::string encodeMethodDescriptor(const char *methodName, const MethodHandle *handle) {
-    const unsigned long num = reinterpret_cast<unsigned long>(handle);
+    const auto num = reinterpret_cast<unsigned long>(handle);
     std::string str(toHexString(num));
     str += ';';
     str += methodName;
@@ -487,13 +487,13 @@ std::tuple<const DSType *, const char *, const DSType *> decodeFieldDescriptor(c
     const char *delim = strchr(desc, ';');
     std::string ptr(desc, delim - desc);
     int s = 0;
-    const DSType *fieldType = reinterpret_cast<const DSType *>(convertToUint64(ptr.c_str(), s));
+    const auto *fieldType = reinterpret_cast<const DSType *>(convertToUint64(ptr.c_str(), s));
     assert(s == 0);
 
     desc = delim + 1;
     delim = strchr(desc, ';');
     ptr = std::string(desc, delim - desc);
-    const DSType *recvType = reinterpret_cast<const DSType *>(convertToUint64(ptr.c_str(), s));
+    const auto *recvType = reinterpret_cast<const DSType *>(convertToUint64(ptr.c_str(), s));
     assert(s == 0);
     return std::make_tuple(recvType, delim + 1, fieldType);
 }

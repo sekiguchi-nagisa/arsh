@@ -92,16 +92,15 @@ const char *FilePathCache::searchPath(const char *cmdName, flag8_t option) {
             if(hasFlag(option, DIRECT_SEARCH)) {
                 this->prevPath = std::move(resolvedPath);
                 return this->prevPath.c_str();
-            } else {
-                // set to cache
-                if(this->map.size() == MAX_CACHE_SIZE) {
-                    free(const_cast<char *>(this->map.begin()->first));
-                    this->map.erase(this->map.begin());
-                }
-                auto pair = this->map.insert(std::make_pair(strdup(cmdName), std::move(resolvedPath)));
-                assert(pair.second);
-                return pair.first->second.c_str();
             }
+            // set to cache
+            if(this->map.size() == MAX_CACHE_SIZE) {
+                free(const_cast<char *>(this->map.begin()->first));
+                this->map.erase(this->map.begin());
+            }
+            auto pair = this->map.insert(std::make_pair(strdup(cmdName), std::move(resolvedPath)));
+            assert(pair.second);
+            return pair.first->second.c_str();
         }
         resolvedPath.clear();
 
@@ -245,10 +244,10 @@ void fillInStackTrace(const DSState &st, std::vector<StackTraceElement> &stackTr
     unsigned int curPC = st.pc_;
     unsigned int curBottomIndex = st.stackBottomIndex;
 
-    while(callableDepth) {
+    while(callableDepth != 0u) {
         auto &callable = st.codeStack[--callableDepth];
         if(!callable->is(CodeKind::NATIVE)) {
-            const CompiledCode *cc = static_cast<const CompiledCode *>(callable);
+            const auto *cc = static_cast<const CompiledCode *>(callable);
 
             // create stack trace element
             const char *sourceName = cc->getSrcInfo()->getSourceName().c_str();
@@ -271,12 +270,11 @@ void fillInStackTrace(const DSState &st, std::vector<StackTraceElement> &stackTr
                 break;
             }
 
-            stackTrace.push_back(StackTraceElement(
-                    sourceName, cc->getSrcInfo()->getLineNum(pos), std::move(callableName)));
+            stackTrace.emplace_back(sourceName, cc->getSrcInfo()->getLineNum(pos), std::move(callableName));
         }
 
         // unwind state
-        if(callableDepth) {
+        if(callableDepth != 0u) {
             const unsigned int offset = curBottomIndex;
             curPC = static_cast<unsigned int>(st.callStack[offset - 3].value());
             curBottomIndex = static_cast<unsigned int>(st.callStack[offset - 1].value());
@@ -389,12 +387,12 @@ pid_t xfork(DSState &st, pid_t pgid, bool foreground) {
             /**
              * reset signal behavior
              */
-            sigaction(SIGINT, &act, NULL);
-            sigaction(SIGQUIT, &act, NULL);
-            sigaction(SIGTSTP, &act, NULL);
-            sigaction(SIGTTIN, &act, NULL);
-            sigaction(SIGTTOU, &act, NULL);
-            sigaction(SIGCHLD, &act, NULL);
+            sigaction(SIGINT, &act, nullptr);
+            sigaction(SIGQUIT, &act, nullptr);
+            sigaction(SIGTSTP, &act, nullptr);
+            sigaction(SIGTTIN, &act, nullptr);
+            sigaction(SIGTTOU, &act, nullptr);
+            sigaction(SIGCHLD, &act, nullptr);
         }
 
         // update PID, PPID
@@ -605,7 +603,7 @@ std::string interpretPromptString(const DSState &st, const char *ps) {
 static std::vector<std::string> createPathStack(const char *path) {
     std::vector<std::string> stack;
     if(*path == '/') {
-        stack.push_back("/");
+        stack.emplace_back("/");
         path++;
     }
 
@@ -615,11 +613,11 @@ static std::vector<std::string> createPathStack(const char *path) {
             path++;
             continue;
         }
-        stack.push_back(std::string(path, size));
+        stack.emplace_back(path, size);
         path += size;
     }
     if(*path != '\0') {
-        stack.push_back(path);
+        stack.emplace_back(path);
     }
     return stack;
 }
@@ -665,7 +663,7 @@ std::string expandDots(const char *basePath, const char *path) {
     }
     for(unsigned int i = 1; i < size; i++) {
         str += '/';
-        str += std::move(resolvedPathStack[i]);
+        str += resolvedPathStack[i];
     }
     return str;
 }
@@ -832,7 +830,7 @@ static bool startsWith(const char *s1, const char *s2) {
  */
 static void completeCommandName(const DSState &ctx, const std::string &token, CStrBuffer &results) {
     // search user defined command
-    for(auto iter = ctx.symbolTable.curScope().cbegin(); iter != ctx.symbolTable.curScope().cend(); ++iter) {
+    for(auto iter = ctx.symbolTable.curScope().begin(); iter != ctx.symbolTable.curScope().end(); ++iter) {
         const char *name = iter->first.c_str();
         if(startsWith(name, SymbolTable::cmdSymbolPrefix)) {
             name += strlen(SymbolTable::cmdSymbolPrefix);
@@ -956,7 +954,7 @@ static void completeFileName(const DSState &st, const std::string &token,
 }
 
 static void completeGlobalVarName(const DSState &ctx, const std::string &token, CStrBuffer &results) {
-    for(auto iter = ctx.symbolTable.curScope().cbegin(); iter != ctx.symbolTable.curScope().cend(); ++iter) {
+    for(auto iter = ctx.symbolTable.curScope().begin(); iter != ctx.symbolTable.curScope().end(); ++iter) {
         const char *varName = iter->first.c_str();
         if(!token.empty() && !startsWith(varName, SymbolTable::cmdSymbolPrefix)
            && startsWith(varName, token.c_str() + 1)) {

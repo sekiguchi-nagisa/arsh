@@ -168,8 +168,8 @@ private:
 
 public:
     TypeChecker(TypePool &typePool, SymbolTable &symbolTable, bool toplevelPrinting) :
-            typePool(typePool), symbolTable(symbolTable), curReturnType(0),
-            visitingDepth(0), fctx(), toplevelPrinting(toplevelPrinting) { }
+            typePool(typePool), symbolTable(symbolTable), curReturnType(nullptr),
+            visitingDepth(0), toplevelPrinting(toplevelPrinting) { }
 
     ~TypeChecker() = default;
 

@@ -384,7 +384,7 @@ struct DSState {
 
     void setVMHook(VMHook *hook) {
         this->hook = hook;
-        if(hook) {
+        if(hook != nullptr) {
             setFlag(eventDesc, VM_EVENT_HOOK);
         } else {
             unsetFlag(eventDesc, VM_EVENT_HOOK);

@@ -29,7 +29,7 @@ private:
     std::string message;
 
 public:
-    TypeLookupError(const char *kind, const char *message) :
+    TypeLookupError(const char *kind, const char *message) noexcept :
             kind(kind), message(message) { }
 
     ~TypeLookupError() = default;
@@ -86,10 +86,10 @@ private:
     std::string message;
 
 public:
-    TypeCheckError(Token token, const char *kind, const char *message) :
+    TypeCheckError(Token token, const char *kind, const char *message) noexcept :
             token(token), kind(kind), message(message) { }
 
-    TypeCheckError(Token token, TypeLookupError &e) :
+    TypeCheckError(Token token, TypeLookupError &e) noexcept :
             token(token), kind(e.getKind()), message(extract(std::move(e))) { }
 
     ~TypeCheckError() = default;

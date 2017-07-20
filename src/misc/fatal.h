@@ -30,7 +30,7 @@
     do {\
         fprintf(stderr, "[fatal] %s:%d:%s(): " fmt, __FILE_NAME__, __LINE__, __func__, ## __VA_ARGS__);\
         abort();\
-    } while(0)
+    } while(false)
 
 
 #endif //YDSH_MISC_FATAL_H

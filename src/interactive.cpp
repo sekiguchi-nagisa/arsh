@@ -113,12 +113,12 @@ static void ignoreSignal() {
     ignore_act.sa_flags = 0;
     sigemptyset(&ignore_act.sa_mask);
 
-    sigaction(SIGINT, &ignore_act, NULL);
-    sigaction(SIGQUIT, &ignore_act, NULL);
-    sigaction(SIGTSTP, &ignore_act, NULL);  //FIXME: job control
-    sigaction(SIGTTIN, &ignore_act, NULL);
-    sigaction(SIGTTOU, &ignore_act, NULL);
-    sigaction(SIGCHLD, &ignore_act, NULL);
+    sigaction(SIGINT, &ignore_act, nullptr);
+    sigaction(SIGQUIT, &ignore_act, nullptr);
+    sigaction(SIGTSTP, &ignore_act, nullptr);  //FIXME: job control
+    sigaction(SIGTTIN, &ignore_act, nullptr);
+    sigaction(SIGTTOU, &ignore_act, nullptr);
+    sigaction(SIGCHLD, &ignore_act, nullptr);
 }
 
 
@@ -245,7 +245,8 @@ static const char *historyCallback(const char *buf, int *historyIndex, historyOp
             if(*historyIndex < 0) {
                 *historyIndex = 0;
                 return nullptr;
-            } else if(static_cast<unsigned int>(*historyIndex) >= size) {
+            }
+            if(static_cast<unsigned int>(*historyIndex) >= size) {
                 *historyIndex = size - 1;
                 return nullptr;
             }

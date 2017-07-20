@@ -155,7 +155,7 @@ int getSignalNum(const char *name) {
         name += 3;
     }
 
-    for(auto ptr = getSignalList(); ptr->name; ptr++) {
+    for(auto ptr = getSignalList(); ptr->name != nullptr; ptr++) {
         if(strcasecmp(name, ptr->name) == 0) {
             return ptr->sigNum;
         }
@@ -164,7 +164,7 @@ int getSignalNum(const char *name) {
 }
 
 const char *getSignalName(int sigNum) {
-    for(auto ptr = getSignalList(); ptr->name; ptr++) {
+    for(auto ptr = getSignalList(); ptr->name != nullptr; ptr++) {
         if(sigNum == ptr->sigNum) {
             return ptr->name;
         }

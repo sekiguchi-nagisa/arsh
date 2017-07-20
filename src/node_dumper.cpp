@@ -23,7 +23,7 @@ void NodeDumper::dump(const char *fieldName, const char *value) {
     this->writeName(fieldName);
 
     fputc('"', this->fp);
-    while(*value) {
+    while(*value != 0) {
         char ch = *(value++);
         bool escape = true;
         switch(ch) {

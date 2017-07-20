@@ -95,11 +95,11 @@ protected:
      */
     DSType *type;
 
-    NON_COPYABLE(Node);
-
     Node(NodeKind kind, Token token) : nodeKind(kind), token(token), type() { }
 
 public:
+    NON_COPYABLE(Node);
+
     virtual ~Node() = default;
 
     NodeKind getNodeKind() const {
@@ -209,7 +209,7 @@ private:
 public:
     explicit ReifiedTypeNode(BaseTypeNode *templateTypeNode) :
             TypeNode(TypeNode::Reified, templateTypeNode->getToken()),
-            templateTypeNode(templateTypeNode), elementTypeNodes() { }
+            templateTypeNode(templateTypeNode) { }
 
     ~ReifiedTypeNode();
 
@@ -238,7 +238,7 @@ private:
 public:
     FuncTypeNode(unsigned int startPos, TypeNode *returnTypeNode) :
             TypeNode(TypeNode::Func, {startPos, 0}),
-            returnTypeNode(returnTypeNode), paramTypeNodes() { }
+            returnTypeNode(returnTypeNode) { }
 
     ~FuncTypeNode();
 
@@ -285,7 +285,7 @@ private:
 
 public:
     explicit ReturnTypeNode(TypeNode *typeNode) :
-            TypeNode(TypeNode::Return, typeNode->getToken()), typeNodes() {
+            TypeNode(TypeNode::Return, typeNode->getToken()) {
         this->addTypeNode(typeNode);
     }
 
@@ -485,7 +485,7 @@ private:
 
 public:
     explicit StringExprNode(unsigned int startPos) :
-            Node(NodeKind::StringExpr, {startPos, 1}), nodes() { }
+            Node(NodeKind::StringExpr, {startPos, 1}) { }
 
     ~StringExprNode();
 
@@ -535,7 +535,7 @@ private:
 
 public:
     ArrayNode(unsigned int startPos, Node *node) :
-            Node(NodeKind::Array, {startPos, 0}), nodes() {
+            Node(NodeKind::Array, {startPos, 0}) {
         this->addExprNode(node);
     }
 
@@ -561,7 +561,7 @@ private:
 
 public:
     MapNode(unsigned int startPos, Node *keyNode, Node *valueNode) :
-            Node(NodeKind::Map, {startPos, 0}), keyNodes(), valueNodes() {
+            Node(NodeKind::Map, {startPos, 0}) {
         this->addEntry(keyNode, valueNode);
     }
 
@@ -597,7 +597,7 @@ private:
 
 public:
     TupleNode(unsigned int startPos, Node *node) :
-            Node(NodeKind::Tuple, {startPos, 0}), nodes() {
+            Node(NodeKind::Tuple, {startPos, 0}) {
         this->addNode(node);
     }
 
@@ -622,7 +622,7 @@ protected:
     FieldAttributes attribute;
 
     AssignableNode(NodeKind kind, Token token) :
-            Node(kind, token), index(0), attribute() { }
+            Node(kind, token), index(0) { }
 
 public:
     virtual ~AssignableNode() = default;
@@ -1010,7 +1010,7 @@ private:
 
 public:
     explicit CmdArgNode(Node *segmentNode) :
-            Node(NodeKind::CmdArg, segmentNode->getToken()), segmentNodes() {
+            Node(NodeKind::CmdArg, segmentNode->getToken()) {
         this->addSegmentNode(segmentNode);
     }
 
@@ -1078,7 +1078,7 @@ private:
 public:
     explicit CmdNode(StringNode *nameNode) :
             Node(NodeKind::Cmd, nameNode->getToken()),
-            nameNode(nameNode), argNodes(), redirCount(0), inPipe(false) { }
+            nameNode(nameNode), redirCount(0), inPipe(false) { }
 
     ~CmdNode();
 
@@ -1115,7 +1115,7 @@ private:
 
 public:
     PipelineNode(Node *leftNode, Node *rightNode) :
-            Node(NodeKind::Pipeline, leftNode->getToken()), nodes() {
+            Node(NodeKind::Pipeline, leftNode->getToken()) {
         this->addNode(leftNode);
         this->addNode(rightNode);
     }
@@ -1177,7 +1177,7 @@ private:
 
 public:
     WithNode(Node *exprNode, RedirNode *redirNode) :
-            Node(NodeKind::With, exprNode->getToken()), exprNode(exprNode), redirNodes(), baseIndex(0) {
+            Node(NodeKind::With, exprNode->getToken()), exprNode(exprNode), baseIndex(0) {
         this->addRedirNode(redirNode);
     }
 
@@ -1247,7 +1247,7 @@ private:
 
 public:
     explicit BlockNode(unsigned int startPos) :
-            Node(NodeKind::Block, {startPos, 1}), nodes(), baseIndex(0), varSize(0), maxVarSize(0) { }
+            Node(NodeKind::Block, {startPos, 1}), baseIndex(0), varSize(0), maxVarSize(0) { }
 
     ~BlockNode();
 
@@ -1544,7 +1544,7 @@ private:
 
 public:
     TryNode(unsigned int startPos, BlockNode *blockNode) :
-            Node(NodeKind::Try, {startPos, 0}), blockNode(blockNode), catchNodes(), finallyNode() {
+            Node(NodeKind::Try, {startPos, 0}), blockNode(blockNode), finallyNode() {
         this->updateToken(blockNode->getToken());
     }
 
@@ -1761,10 +1761,10 @@ protected:
     CallableNode(NodeKind kind, unsigned int startPos, const SourceInfoPtr &srcInfoPtr, std::string &&name) :
             Node(kind, {startPos, 0}), srcInfoPtr(srcInfoPtr), name(std::move(name)) { }
 
-    explicit CallableNode(NodeKind kind) : Node(kind, {0, 0}), srcInfoPtr(nullptr), name() { }
+    explicit CallableNode(NodeKind kind) : Node(kind, {0, 0}), srcInfoPtr(nullptr) { }
 
 public:
-    virtual ~CallableNode() = default;
+    ~CallableNode() override = default;
 
     const SourceInfoPtr &getSourceInfoPtr() const {
         return this->srcInfoPtr;
@@ -1813,8 +1813,7 @@ public:
     FunctionNode(unsigned int startPos, const SourceInfoPtr &srcInfoPtr,
                  std::string &&funcName) :
             CallableNode(NodeKind::Function, startPos, srcInfoPtr, std::move(funcName)),
-            paramNodes(), paramTypeNodes(), returnTypeNode(),
-            blockNode(), maxVarNum(0), varIndex(0) { }
+            returnTypeNode(), blockNode(), maxVarNum(0), varIndex(0) { }
 
     ~FunctionNode();
 
@@ -1878,8 +1877,7 @@ private:
 
 public:
     InterfaceNode(unsigned int startPos, std::string &&interfaceName) :
-            Node(NodeKind::Interface, {startPos, 0}), interfaceName(std::move(interfaceName)), methodDeclNodes(),
-            fieldDeclNodes(), fieldTypeNodes() { }
+            Node(NodeKind::Interface, {startPos, 0}), interfaceName(std::move(interfaceName)) { }
 
     ~InterfaceNode();
 
@@ -1973,7 +1971,7 @@ private:
     unsigned int maxGVarNum;
 
 public:
-    RootNode() : CallableNode(NodeKind::Root), nodes(), maxVarNum(0), maxGVarNum(0) { }
+    RootNode() : CallableNode(NodeKind::Root), maxVarNum(0), maxGVarNum(0) { }
 
     ~RootNode();
 
@@ -2075,46 +2073,46 @@ struct BaseVisitor : public NodeVisitor {
 
     virtual void visitDefault(Node &node) = 0;
 
-    virtual void visitTypeNode(TypeNode &node) override { this->visitDefault(node); }
-    virtual void visitNumberNode(NumberNode &node) override { this->visitDefault(node); }
-    virtual void visitStringNode(StringNode &node) override { this->visitDefault(node); }
-    virtual void visitStringExprNode(StringExprNode &node) override { this->visitDefault(node); }
-    virtual void visitRegexNode(RegexNode &node) override { this->visitDefault(node); }
-    virtual void visitArrayNode(ArrayNode &node) override { this->visitDefault(node); }
-    virtual void visitMapNode(MapNode &node) override { this->visitDefault(node); }
-    virtual void visitTupleNode(TupleNode &node) override { this->visitDefault(node); }
-    virtual void visitVarNode(VarNode &node) override { this->visitDefault(node); }
-    virtual void visitAccessNode(AccessNode &node) override { this->visitDefault(node); }
-    virtual void visitTypeOpNode(TypeOpNode &node) override { this->visitDefault(node); }
-    virtual void visitUnaryOpNode(UnaryOpNode &node) override { this->visitDefault(node); }
-    virtual void visitBinaryOpNode(BinaryOpNode &node) override { this->visitDefault(node); }
-    virtual void visitApplyNode(ApplyNode &node) override { this->visitDefault(node); }
-    virtual void visitMethodCallNode(MethodCallNode &node) override { this->visitDefault(node); }
-    virtual void visitNewNode(NewNode &node) override { this->visitDefault(node); }
-    virtual void visitCmdNode(CmdNode &node) override { this->visitDefault(node); }
-    virtual void visitCmdArgNode(CmdArgNode &node) override { this->visitDefault(node); }
-    virtual void visitRedirNode(RedirNode &node) override { this->visitDefault(node); }
-    virtual void visitPipelineNode(PipelineNode &node) override { this->visitDefault(node); }
-    virtual void visitSubstitutionNode(SubstitutionNode &node) override { this->visitDefault(node); }
-    virtual void visitWithNode(WithNode &node) override { this->visitDefault(node); }
-    virtual void visitAssertNode(AssertNode &node) override { this->visitDefault(node); }
-    virtual void visitBlockNode(BlockNode &node) override { this->visitDefault(node); }
-    virtual void visitJumpNode(JumpNode &node) override { this->visitDefault(node); }
-    virtual void visitTypeAliasNode(TypeAliasNode &node) override { this->visitDefault(node); }
-    virtual void visitLoopNode(LoopNode &node) override { this->visitDefault(node); }
-    virtual void visitIfNode(IfNode &node) override { this->visitDefault(node); }
-    virtual void visitReturnNode(ReturnNode &node) override { this->visitDefault(node); }
-    virtual void visitThrowNode(ThrowNode &node) override { this->visitDefault(node); }
-    virtual void visitCatchNode(CatchNode &node) override { this->visitDefault(node); }
-    virtual void visitTryNode(TryNode &node) override { this->visitDefault(node); }
-    virtual void visitVarDeclNode(VarDeclNode &node) override { this->visitDefault(node); }
-    virtual void visitAssignNode(AssignNode &node) override { this->visitDefault(node); }
-    virtual void visitElementSelfAssignNode(ElementSelfAssignNode &node) override { this->visitDefault(node); }
-    virtual void visitFunctionNode(FunctionNode &node) override { this->visitDefault(node); }
-    virtual void visitInterfaceNode(InterfaceNode &node) override { this->visitDefault(node); }
-    virtual void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override { this->visitDefault(node); }
-    virtual void visitEmptyNode(EmptyNode &node) override { this->visitDefault(node); }
-    virtual void visitRootNode(RootNode &node) override { this->visitDefault(node); }
+    void visitTypeNode(TypeNode &node) override { this->visitDefault(node); }
+    void visitNumberNode(NumberNode &node) override { this->visitDefault(node); }
+    void visitStringNode(StringNode &node) override { this->visitDefault(node); }
+    void visitStringExprNode(StringExprNode &node) override { this->visitDefault(node); }
+    void visitRegexNode(RegexNode &node) override { this->visitDefault(node); }
+    void visitArrayNode(ArrayNode &node) override { this->visitDefault(node); }
+    void visitMapNode(MapNode &node) override { this->visitDefault(node); }
+    void visitTupleNode(TupleNode &node) override { this->visitDefault(node); }
+    void visitVarNode(VarNode &node) override { this->visitDefault(node); }
+    void visitAccessNode(AccessNode &node) override { this->visitDefault(node); }
+    void visitTypeOpNode(TypeOpNode &node) override { this->visitDefault(node); }
+    void visitUnaryOpNode(UnaryOpNode &node) override { this->visitDefault(node); }
+    void visitBinaryOpNode(BinaryOpNode &node) override { this->visitDefault(node); }
+    void visitApplyNode(ApplyNode &node) override { this->visitDefault(node); }
+    void visitMethodCallNode(MethodCallNode &node) override { this->visitDefault(node); }
+    void visitNewNode(NewNode &node) override { this->visitDefault(node); }
+    void visitCmdNode(CmdNode &node) override { this->visitDefault(node); }
+    void visitCmdArgNode(CmdArgNode &node) override { this->visitDefault(node); }
+    void visitRedirNode(RedirNode &node) override { this->visitDefault(node); }
+    void visitPipelineNode(PipelineNode &node) override { this->visitDefault(node); }
+    void visitSubstitutionNode(SubstitutionNode &node) override { this->visitDefault(node); }
+    void visitWithNode(WithNode &node) override { this->visitDefault(node); }
+    void visitAssertNode(AssertNode &node) override { this->visitDefault(node); }
+    void visitBlockNode(BlockNode &node) override { this->visitDefault(node); }
+    void visitJumpNode(JumpNode &node) override { this->visitDefault(node); }
+    void visitTypeAliasNode(TypeAliasNode &node) override { this->visitDefault(node); }
+    void visitLoopNode(LoopNode &node) override { this->visitDefault(node); }
+    void visitIfNode(IfNode &node) override { this->visitDefault(node); }
+    void visitReturnNode(ReturnNode &node) override { this->visitDefault(node); }
+    void visitThrowNode(ThrowNode &node) override { this->visitDefault(node); }
+    void visitCatchNode(CatchNode &node) override { this->visitDefault(node); }
+    void visitTryNode(TryNode &node) override { this->visitDefault(node); }
+    void visitVarDeclNode(VarDeclNode &node) override { this->visitDefault(node); }
+    void visitAssignNode(AssignNode &node) override { this->visitDefault(node); }
+    void visitElementSelfAssignNode(ElementSelfAssignNode &node) override { this->visitDefault(node); }
+    void visitFunctionNode(FunctionNode &node) override { this->visitDefault(node); }
+    void visitInterfaceNode(InterfaceNode &node) override { this->visitDefault(node); }
+    void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override { this->visitDefault(node); }
+    void visitEmptyNode(EmptyNode &node) override { this->visitDefault(node); }
+    void visitRootNode(RootNode &node) override { this->visitDefault(node); }
 };
 
 } // namespace ydsh

@@ -1032,9 +1032,8 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
         if(ch == '\n') {
             if(prevIsBackslash) {
                 continue;
-            } else {
-                break;
             }
+            break;
         } else if(ch == '\\' && !prevIsBackslash && backslash) {
             continue;
         }
@@ -1230,10 +1229,10 @@ static int builtin_history(DSState &state, Array_Object &argvObj) {
                 if(i + 1 < argc) {
                     deleteTarget = str(argvObj.getValues()[++i]);
                     continue;
-                } else {
-                    ERROR(argvObj, "%s: option requires argument", arg);
-                    return 2;
                 }
+                ERROR(argvObj, "%s: option requires argument", arg);
+                return 2;
+
             }
             case 'r':
             case 'w': {

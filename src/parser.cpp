@@ -418,9 +418,9 @@ std::pair<std::unique_ptr<TypeNode>, Token> Parser::parse_typeNameImpl() {
             func->updateToken(token);
 
             return {std::move(func), token};
-        } else {
-            return {uniquify<BaseTypeNode>(token, this->lexer->toName(token)), token};
         }
+        return {uniquify<BaseTypeNode>(token, this->lexer->toName(token)), token};
+
     }
     case TYPE_PATH: {
         Token token = this->expect(TYPE_PATH);
@@ -652,15 +652,17 @@ std::unique_ptr<Node> Parser::parse_forStatement() {
 
         return uniquify<LoopNode>(startPos, initNode.release(), condNode.release(),
                                  iterNode.release(), blockNode.release());
-    } else {    // for-in
-        Token token = this->expect(APPLIED_NAME);
-        this->expect(IN);
-        auto exprNode = this->parse_expression();
-        auto blockNode = this->parse_block();
-
-        return std::unique_ptr<Node>(
-                createForInNode(startPos, this->lexer->toName(token), exprNode.release(), blockNode.release()));
     }
+
+    // for-in
+    Token token = this->expect(APPLIED_NAME);
+    this->expect(IN);
+    auto exprNode = this->parse_expression();
+    auto blockNode = this->parse_block();
+
+    return std::unique_ptr<Node>(
+            createForInNode(startPos, this->lexer->toName(token), exprNode.release(), blockNode.release()));
+
 }
 
 std::unique_ptr<Node> Parser::parse_forInit() {
@@ -861,9 +863,8 @@ static std::unique_ptr<Node> createBinaryNode(std::unique_ptr<Node> &&leftNode,
         if(leftNode->is(NodeKind::Pipeline)) {
             static_cast<PipelineNode *>(leftNode.get())->addNode(rightNode.release());
             return std::move(leftNode);
-        } else {
-            return uniquify<PipelineNode>(leftNode.release(), rightNode.release());
         }
+        return uniquify<PipelineNode>(leftNode.release(), rightNode.release());
     } else {
         return uniquify<BinaryOpNode>(leftNode.release(), op, rightNode.release());
     }
@@ -957,9 +958,10 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
             std::string name = this->lexer->toName(token);
             if(CUR_KIND() == LP && !HAS_NL()) {  // treat as method call
                 auto args = this->parse_arguments();
+                Token token = args.getToken();
                 node = uniquify<MethodCallNode>(node.release(), std::move(name),
                                                 ArgsWrapper::extract(std::move(args)));
-                node->updateToken(args.getToken());
+                node->updateToken(token);
             } else {    // treat as field access
                 node = uniquify<AccessNode>(node.release(), new VarNode(token, std::move(name)));
                 node->updateToken(token);
@@ -976,8 +978,9 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
         }
         case LP: {
             auto args = this->parse_arguments();
+            Token token = args.getToken();
             node = uniquify<ApplyNode>(node.release(), ArgsWrapper::extract(std::move(args)));
-            node->updateToken(args.getToken());
+            node->updateToken(token);
             break;
         }
         case INC:
@@ -1013,8 +1016,9 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         this->expect(NEW, false);
         auto type = this->parse_typeName();
         auto args = this->parse_arguments();
+        Token token = args.getToken();
         auto node = uniquify<NewNode>(startPos, type.release(), ArgsWrapper::extract(std::move(args)));
-        node->updateToken(args.getToken());
+        node->updateToken(token);
         return std::move(node);
     }
     case BYTE_LITERAL: {
@@ -1137,7 +1141,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
                 }
             }
 
-            node.reset(tuple.release());
+            node = std::move(tuple);
         } else {
             node->setPos(token.pos);
         }
@@ -1360,7 +1364,7 @@ std::unique_ptr<SubstitutionNode> Parser::parse_substitution() {
 
 bool parse(const char *sourceName, RootNode &rootNode) {
     FILE *fp = fopen(sourceName, "rb");
-    if(fp == NULL) {
+    if(fp == nullptr) {
         return false;
     }
 

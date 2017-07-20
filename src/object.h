@@ -284,15 +284,16 @@ inline T *typeAs(const DSValue &value) noexcept {
         if(r == nullptr) {
             DSObject &v = *value;
             int status;
-            char *target = abi::__cxa_demangle(typeid(T).name(), 0, 0, &status);
-            char *actual = abi::__cxa_demangle(typeid(v).name(), 0, 0, &status);
+            char *target = abi::__cxa_demangle(typeid(T).name(), nullptr, nullptr, &status);
+            char *actual = abi::__cxa_demangle(typeid(v).name(), nullptr, nullptr, &status);
 
             fatal("target type is: %s, but actual is: %s\n", target, actual);
         }
         return r;
-    } else {
-        return static_cast<T*>(value.get());
     }
+
+    return static_cast<T*>(value.get());
+
 }
 
 class Int_Object : public DSObject {
@@ -373,7 +374,7 @@ private:
 
 public:
     explicit String_Object(DSType &type) :
-            DSObject(type), value() { }
+            DSObject(type) { }
 
     String_Object(DSType &type, std::string &&value) :
             DSObject(type), value(std::move(value)) { }
@@ -516,7 +517,7 @@ private:
     HashMap::const_iterator iter;
 
 public:
-    explicit Map_Object(DSType &type) : DSObject(type), valueMap(), iter() { }
+    explicit Map_Object(DSType &type) : DSObject(type) { }
 
     ~Map_Object() = default;
 
@@ -541,10 +542,10 @@ public:
         if(pair.second) {
             this->iter = ++pair.first;
             return DSValue::createInvalid();
-        } else {
-            std::swap(pair.first->second, value);
-            return value;
         }
+        std::swap(pair.first->second, value);
+        return value;
+
     }
 
     DSValue setDefault(DSValue &&key, DSValue &&value) {
@@ -735,7 +736,7 @@ protected:
     unsigned char *code;
 
 public:
-    DSCode(unsigned char *code) : code(code) {}
+    explicit DSCode(unsigned char *code) : code(code) {}
 
 protected:
     ~DSCode() {
@@ -768,16 +769,16 @@ struct NativeCode : public DSCode {
     NativeCode() : DSCode(nullptr) {}
 
     NativeCode(native_func_t func, bool hasRet) :
-            DSCode(reinterpret_cast<unsigned char *>(malloc(sizeof(unsigned char) * 11))) {
+            DSCode(static_cast<unsigned char *>(malloc(sizeof(unsigned char) * 11))) {
         this->code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
         this->code[1] = static_cast<unsigned char>(OpCode::CALL_NATIVE);
         write64(this->code + 2, reinterpret_cast<unsigned long>(func));
         this->code[10] = static_cast<unsigned char>(hasRet ? OpCode::RETURN_V : OpCode::RETURN);
     }
 
-    NativeCode(unsigned char *code) : DSCode(code) {}
+    explicit NativeCode(unsigned char *code) : DSCode(code) {}
 
-    NativeCode(NativeCode &&o) : DSCode(o.code) {
+    NativeCode(NativeCode &&o) noexcept : DSCode(o.code) {
         o.code = nullptr;
     }
 
@@ -801,7 +802,7 @@ struct NativeCode : public DSCode {
  * @return
  */
 inline NativeCode createWaitSignalCode() {
-    unsigned char *code = reinterpret_cast<unsigned char *>(malloc(sizeof(unsigned char) * 9));
+    auto *code = static_cast<unsigned char *>(malloc(sizeof(unsigned char) * 9));
     code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
     code[1] = static_cast<unsigned char>(OpCode::DBUS_INIT_SIG);
     code[2] = static_cast<unsigned char>(OpCode::DBUS_WAIT_SIG);
@@ -847,22 +848,22 @@ private:
     /**
      * if CallableKind is toplevel, it is null
      */
-    char *name;
+    char *name{nullptr};
 
     /**
      * last element is sentinel (nullptr)
      */
-    DSValue *constPool;
+    DSValue *constPool{nullptr};
 
     /**
      * last element is sentinel ({0, 0})
      */
-    SourcePosEntry *sourcePosEntries;
+    SourcePosEntry *sourcePosEntries{nullptr};
 
     /**
      * lats element is sentinel.
      */
-    ExceptionEntry *exceptionEntries;
+    ExceptionEntry *exceptionEntries{nullptr};
 
 public:
     NON_COPYABLE(CompiledCode);
@@ -882,9 +883,7 @@ public:
         c.exceptionEntries = nullptr;
     }
 
-    CompiledCode() noexcept :
-            DSCode(nullptr), srcInfo(), name(nullptr),
-            constPool(nullptr), sourcePosEntries(nullptr), exceptionEntries(nullptr) {}
+    CompiledCode() noexcept : DSCode(nullptr) {}
 
     ~CompiledCode() {
         free(this->name);

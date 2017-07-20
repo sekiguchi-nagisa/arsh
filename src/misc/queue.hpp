@@ -30,7 +30,7 @@ private:
     static_assert(std::is_pod<T>::value, "forbidden type");
 
 public:
-    FixedQueue() : data_(), size_(0) {}
+    FixedQueue() noexcept : data_(), size_(0) {}
     ~FixedQueue() = default;
 
     unsigned int size() const {

@@ -34,7 +34,7 @@ private:
 public:
     NON_COPYABLE(ArgsWrapper);
 
-    explicit ArgsWrapper(unsigned int pos) : token({pos, 1}), nodes() {}
+    explicit ArgsWrapper(unsigned int pos) : token({pos, 1}) {}
     ArgsWrapper(ArgsWrapper &&a) = default;
     ~ArgsWrapper();
 
@@ -64,7 +64,7 @@ public:
     ~TokenTracker() = default;
 
     void operator()(TokenKind kind, Token token) {
-        this->tokenPairs.push_back(std::make_pair(kind, token));
+        this->tokenPairs.emplace_back(kind, token);
     }
 
     const std::vector<std::pair<TokenKind, Token>> &getTokenPairs() const {
@@ -74,7 +74,7 @@ public:
 
 class Parser : public ydsh::parser_base::ParserBase<TokenKind, Lexer, TokenTracker> {
 public:
-    Parser(Lexer &lexer) {
+    explicit Parser(Lexer &lexer) {
         this->lexer = &lexer;
         this->fetchNext();
     }

@@ -18,6 +18,7 @@
 #define YDSH_CODEGEN_H
 
 #include <cmath>
+#include <utility>
 
 #include "node.h"
 #include "object.h"
@@ -31,15 +32,12 @@ namespace ydsh {
 
 class Label {
 private:
-    unsigned int refCount;
+    unsigned int refCount{0};
 
     /**
      * indicate labeled address
      */
-    unsigned int index;
-
-public:
-    Label() : refCount(0), index(0) { }
+    unsigned int index{0};
 
 private:
     ~Label() = default;
@@ -234,9 +232,9 @@ private:
 
 public:
     CatchBuilder() : begin(nullptr), end(nullptr), type(nullptr), address(0), localOffset(0), localSize(0) { }
-    CatchBuilder(const IntrusivePtr<Label> &begin, const IntrusivePtr<Label> &end, const DSType &type,
+    CatchBuilder(IntrusivePtr<Label> begin, IntrusivePtr<Label> end, const DSType &type,
                  unsigned int address, unsigned short localOffset, unsigned short localSize) :
-            begin(begin), end(end), type(&type), address(address), localOffset(localOffset), localSize(localSize) {}
+            begin(std::move(begin)), end(std::move(end)), type(&type), address(address), localOffset(localOffset), localSize(localSize) {}
 
     ~CatchBuilder() = default;
 
@@ -273,7 +271,7 @@ private:
 
 public:
     ByteCodeGenerator(TypePool &pool, bool assertion) :
-            pool(pool), assertion(assertion), handle_STR(nullptr), builders() { }
+            pool(pool), assertion(assertion), handle_STR(nullptr) { }
 
     ~ByteCodeGenerator();
 
@@ -383,7 +381,7 @@ private:
         }
 
         if(node.getVarSize() == 0) {
-            return 0;
+            return false;
         }
 
         if((this->inFunc() || this->inUDC()) && this->curBuilder().localVars.size() == 1) {
@@ -394,7 +392,7 @@ private:
 
     template <typename Func>
     void generateBlock(unsigned short localOffset, unsigned short localSize, bool needReclaim, Func func) {
-        this->curBuilder().localVars.push_back({localOffset, localSize});
+        this->curBuilder().localVars.emplace_back(localOffset, localSize);
 
         func();
 

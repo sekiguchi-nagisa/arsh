@@ -39,7 +39,7 @@ public:
     Scope() : Scope(0) { }
 
     explicit Scope(unsigned int curVarIndex) :
-            curVarIndex(curVarIndex), shadowCount(0), handleMap() { }
+            curVarIndex(curVarIndex), shadowCount(0) { }
 
     ~Scope() {
         for(auto &pair : this->handleMap) {
@@ -77,11 +77,11 @@ public:
 
     using const_iterator = std::unordered_map<std::string, FieldHandle *>::const_iterator;
 
-    const_iterator cbegin() const {
+    const_iterator begin() const {
         return this->handleMap.begin();
     }
 
-    const_iterator cend() const {
+    const_iterator end() const {
         return this->handleMap.end();
     }
 };
@@ -109,7 +109,7 @@ private:
 public:
     NON_COPYABLE(SymbolTable);
 
-    SymbolTable() : handleCache(), scopes(1), maxVarIndexStack(1) {
+    SymbolTable() : scopes(1), maxVarIndexStack(1) {
         this->scopes[0] = new Scope();
         this->maxVarIndexStack[0] = 0;
     }

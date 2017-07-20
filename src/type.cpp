@@ -49,8 +49,6 @@ std::array<NativeCode, N> initNative(const NativeFuncInfo (&e)[N]) {
 
 namespace ydsh {
 
-extern NativeFuncInfo *const nativeFuncInfoTable;
-
 // ####################
 // ##     DSType     ##
 // ####################
@@ -94,7 +92,7 @@ bool DSType::isSameOrBaseTypeOf(const DSType &targetType) const {
 }
 
 const DSCode *DSType::getMethodRef(unsigned int methodIndex) {
-    return this->superType != nullptr ? this->superType->getMethodRef(methodIndex) : 0;
+    return this->superType != nullptr ? this->superType->getMethodRef(methodIndex) : nullptr;
 }
 
 void DSType::copyAllMethodRef(std::vector<const DSCode *> &) {
@@ -146,7 +144,7 @@ static const NativeCode *getCode(native_type_info_t info) {
 
 BuiltinType::BuiltinType(DSType *superType, native_type_info_t info, flag8_set_t attribute) :
         DSType(superType, attribute),
-        info(info), constructorHandle(), constructor(), methodHandleMap(),
+        info(info), constructorHandle(), constructor(),
         methodTable(superType != nullptr ? superType->getMethodSize() + info.methodSize : info.methodSize) {
 
     // copy super type methodRef to method table
@@ -193,7 +191,7 @@ const DSCode *BuiltinType::getConstructor() {
 MethodHandle *BuiltinType::lookupMethodHandle(TypePool &typePool, const std::string &methodName) {
     auto iter = this->methodHandleMap.find(methodName);
     if(iter == this->methodHandleMap.end()) {
-        return this->superType != nullptr ? this->superType->lookupMethodHandle(typePool, methodName) : 0;
+        return this->superType != nullptr ? this->superType->lookupMethodHandle(typePool, methodName) : nullptr;
     }
 
     MethodHandle *handle = iter->second;
@@ -260,7 +258,7 @@ void ReifiedType::accept(TypeVisitor *visitor) {
 // #######################
 
 TupleType::TupleType(native_type_info_t info, DSType *superType, std::vector<DSType *> &&types) :
-        ReifiedType(info, superType, std::move(types)), fieldHandleMap() {
+        ReifiedType(info, superType, std::move(types)) {
     const unsigned int size = this->elementTypes.size();
     const unsigned int baseIndex = this->superType->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {
@@ -321,18 +319,18 @@ FieldHandle *InterfaceType::newFieldHandle(const std::string &fieldName, DSType 
         attr.set(FieldAttribute::READ_ONLY);
     }
 
-    FieldHandle *handle = new FieldHandle(&fieldType, 0, attr);
+    auto *handle = new FieldHandle(&fieldType, 0, attr);
     auto pair = this->fieldHandleMap.insert(std::make_pair(fieldName, handle));
     if(pair.second) {
         return handle;
-    } else {
-        delete handle;
-        return nullptr;
     }
+    delete handle;
+    return nullptr;
+
 }
 
 MethodHandle *InterfaceType::newMethodHandle(const std::string &methodName) {
-    MethodHandle *handle = new MethodHandle(0);
+    auto *handle = new MethodHandle(0);
     handle->setAttribute(MethodHandle::INTERFACE);
     auto pair = this->methodHandleMap.insert(std::make_pair(methodName, handle));
     if(!pair.second) {
@@ -486,7 +484,7 @@ bool TypeMap::setAlias(std::string &&alias, DSType &targetType) {
     /**
      * use tagged pointer to prevent double free.
      */
-    DSType *taggedPtr = reinterpret_cast<DSType *>(tag | (unsigned long) &targetType);
+    auto *taggedPtr = reinterpret_cast<DSType *>(tag | (unsigned long) &targetType);
     auto pair = this->typeMapImpl.insert(std::make_pair(std::move(alias), taggedPtr));
 //    this->typeCache.push_back(&pair.first->first);
     return pair.second;
@@ -520,7 +518,7 @@ void TypeMap::removeType(const std::string &typeName) {
 // ######################
 
 TypePool::TypePool() :
-        typeMap(), typeTable(new DSType*[__SIZE_OF_DS_TYPE__]()),
+        typeTable(new DSType*[__SIZE_OF_DS_TYPE__]()),
         templateMap(8),
         arrayTemplate(), mapTemplate(), tupleTemplate() {
 
@@ -614,7 +612,7 @@ TypePool::~TypePool() {
 
 DSType &TypePool::getTypeAndThrowIfUndefined(const std::string &typeName) const {
     DSType *type = this->getType(typeName);
-    if(type == 0) {
+    if(type == nullptr) {
         RAISE_TL_ERROR(UndefinedType, typeName.c_str());
     }
     return *type;
@@ -637,7 +635,7 @@ DSType &TypePool::createReifiedType(const TypeTemplate &typeTemplate,
     flag8_set_t attr = this->optionTemplate->getName() == typeTemplate.getName() ? DSType::OPTION_TYPE : 0;
 
     // check each element type
-    if(attr) {
+    if(attr != 0u) {
         auto *type = elementTypes[0];
         if(type->isOptionType() || type->isVoidType()) {
             RAISE_TL_ERROR(InvalidElement, this->getTypeName(*type).c_str());
@@ -649,7 +647,7 @@ DSType &TypePool::createReifiedType(const TypeTemplate &typeTemplate,
     std::string typeName(this->toReifiedTypeName(typeTemplate, elementTypes));
     DSType *type = this->typeMap.getType(typeName);
     if(type == nullptr) {
-        DSType *superType = attr ? nullptr :
+        DSType *superType = attr != 0u ? nullptr :
                             this->asVariantType(elementTypes) ? &this->getVariantType() : &this->getAnyType();
         return *this->typeMap.addType(std::move(typeName),
                                       new ReifiedType(typeTemplate.getInfo(), superType, std::move(elementTypes), attr));
@@ -678,8 +676,7 @@ FunctionType &TypePool::createFuncType(DSType *returnType, std::vector<DSType *>
     std::string typeName(toFunctionTypeName(returnType, paramTypes));
     DSType *type = this->typeMap.getType(typeName);
     if(type == nullptr) {
-        FunctionType *funcType =
-                new FunctionType(&this->getBaseFuncType(), returnType, std::move(paramTypes));
+        auto *funcType = new FunctionType(&this->getBaseFuncType(), returnType, std::move(paramTypes));
         this->typeMap.addType(std::move(typeName), funcType);
         return *funcType;
     }
@@ -691,7 +688,7 @@ FunctionType &TypePool::createFuncType(DSType *returnType, std::vector<DSType *>
 InterfaceType &TypePool::createInterfaceType(const std::string &interfaceName) {
     DSType *type = this->typeMap.getType(interfaceName);
     if(type == nullptr) {
-        InterfaceType *ifaceType = new InterfaceType(&this->getDBusObjectType());
+        auto *ifaceType = new InterfaceType(&this->getDBusObjectType());
         this->typeMap.addType(std::string(interfaceName), ifaceType);
         return *ifaceType;
     }

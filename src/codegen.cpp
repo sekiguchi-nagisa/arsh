@@ -158,11 +158,11 @@ void ByteCodeGenerator::emitNumCastIns(const DSType &beforeType, const DSType &a
     const unsigned short v = table[beforeIndex][afterIndex];
     for(unsigned int i = 0; i < 2; i++) {
         const unsigned short mask = 0xFF << (i * 8);
-        OpCode op = static_cast<OpCode>((mask & v) >> (i * 8));
+        auto op = static_cast<OpCode>((mask & v) >> (i * 8));
         if(op != OpCode::HALT) {
             int size = getByteSize(op);
             assert(size == 0 || size == 1);
-            if(size) {
+            if(size != 0) {
                 this->emit1byteIns(op, afterIndex);
             } else {
                 this->emit0byteIns(op);
@@ -214,7 +214,7 @@ void ByteCodeGenerator::emitSourcePos(unsigned int pos) {
 void ByteCodeGenerator::catchException(const IntrusivePtr<Label> &begin, const IntrusivePtr<Label> &end,
                                        const DSType &type, unsigned short localOffset, unsigned short localSize) {
     const unsigned int index = this->curBuilder().codeBuffer.size();
-    this->curBuilder().catchBuilders.push_back(CatchBuilder(begin, end, type, index, localOffset, localSize));
+    this->curBuilder().catchBuilders.emplace_back(begin, end, type, index, localOffset, localSize);
 }
 
 void ByteCodeGenerator::enterFinally() {
@@ -372,8 +372,10 @@ void ByteCodeGenerator::visitStringNode(StringNode &node) {
     if(node.getValue().empty()) {
         this->emit0byteIns(OpCode::PUSH_ESTRING);
     } else {
-        this->emitLdcIns(DSValue::create<String_Object>(node.getType(), StringNode::extract(std::move(node))));
-        if(node.isTilde()) {
+        bool isTilde = node.isTilde();
+        auto &type = node.getType();
+        this->emitLdcIns(DSValue::create<String_Object>(type, StringNode::extract(std::move(node))));
+        if(isTilde) {
             this->emit0byteIns(OpCode::EXPAND_TILDE);
         }
     }
@@ -949,10 +951,10 @@ void ByteCodeGenerator::visitVarDeclNode(VarDeclNode &node) {
 }
 
 void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
-    AssignableNode *assignableNode = static_cast<AssignableNode *>(node.getLeftNode());
+    auto *assignableNode = static_cast<AssignableNode *>(node.getLeftNode());
     unsigned int index = assignableNode->getIndex();
     if(node.isFieldAssign()) {
-        AccessNode *accessNode = static_cast<AccessNode *>(node.getLeftNode());
+        auto *accessNode = static_cast<AccessNode *>(node.getLeftNode());
         if(node.isSelfAssignment()) {
             this->visit(*node.getLeftNode());
         } else {
@@ -972,7 +974,7 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
             this->visit(*node.getLeftNode());
         }
         this->visit(*node.getRightNode());
-        VarNode *varNode = static_cast<VarNode *>(node.getLeftNode());
+        auto *varNode = static_cast<VarNode *>(node.getLeftNode());
 
         if(varNode->attr().has(FieldAttribute::ENV)) {
             if(varNode->attr().has(FieldAttribute::GLOBAL)) {
@@ -1062,7 +1064,7 @@ CompiledCode ByteCodeGenerator::finalizeCodeBuilder(const CallableNode &node) {
 
     // create constant pool
     const unsigned int constSize = this->curBuilder().constBuffer.size();
-    DSValue *constPool = new DSValue[constSize + 1];
+    auto *constPool = new DSValue[constSize + 1];
     for(unsigned int i = 0; i < constSize; i++) {
         constPool[i] = std::move(this->curBuilder().constBuffer[i]);
     }
@@ -1074,7 +1076,7 @@ CompiledCode ByteCodeGenerator::finalizeCodeBuilder(const CallableNode &node) {
 
     // create exception entry
     const unsigned int exeptEntrySize = this->curBuilder().catchBuilders.size();
-    ExceptionEntry *except = new ExceptionEntry[exeptEntrySize + 1];
+    auto *except = new ExceptionEntry[exeptEntrySize + 1];
     for(unsigned int i = 0; i < exeptEntrySize; i++) {
         except[i] = this->curBuilder().catchBuilders[i].toEntry();
     }
@@ -1167,7 +1169,7 @@ static void dumpCodeImpl(FILE *fp, DSState &ctx, const CompiledCode &c,
         };
 
         for(unsigned int i = c.getCodeOffset(); i < codeSize; i++) {
-            OpCode code = static_cast<OpCode>(c.getCode()[i]);
+            auto code = static_cast<OpCode>(c.getCode()[i]);
             fprintf(fp, "  %s: %s", formatNum(digit(codeSize), i).c_str(), opName[static_cast<unsigned char>(code)]);
             if(isTypeOp(code)) {
                 unsigned long v = read64(c.getCode(), i + 1);
@@ -1192,7 +1194,7 @@ static void dumpCodeImpl(FILE *fp, DSState &ctx, const CompiledCode &c,
                         fprintf(fp, "  %d", read32(c.getCode(), i + 1));
                         break;
                     case -1: {
-                        unsigned int s = static_cast<unsigned int>(read8(c.getCode(), i + 1));
+                        auto s = static_cast<unsigned int>(read8(c.getCode(), i + 1));
                         fprintf(fp, " %d", s);
                         for(unsigned int index = 0; index < s; index++) {
                             fprintf(fp, "  %d", read16(c.getCode(), i + 2 + index * 2));
@@ -1230,8 +1232,8 @@ static void dumpCodeImpl(FILE *fp, DSState &ctx, const CompiledCode &c,
                     list->push_back(&static_cast<FuncObject *>(v.get())->getCode());
                 }
                 fprintf(fp, "%s %s",
-                        (v.get()->getType() != nullptr ? getPool(ctx).getTypeName(*v.get()->getType()).c_str() : "(null)"),
-                        v.get()->toString(ctx, nullptr).c_str());
+                        (v->getType() != nullptr ? getPool(ctx).getTypeName(*v->getType()).c_str() : "(null)"),
+                        v->toString(ctx, nullptr).c_str());
                 break;
             case DSValueKind::INVALID:
                 break;

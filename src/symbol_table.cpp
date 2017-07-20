@@ -85,7 +85,7 @@ std::pair<FieldHandle *, SymbolError> SymbolTable::registerHandle(const std::str
         attribute.set(FieldAttribute::GLOBAL);
     }
 
-    FieldHandle *handle = new FieldHandle(&type, this->scopes.back()->getCurVarIndex(), attribute);
+    auto *handle = new FieldHandle(&type, this->scopes.back()->getCurVarIndex(), attribute);
     auto e = this->tryToRegister(symbolName, handle);
     if(e != SymbolError::DUMMY) {
         return std::make_pair(nullptr, e);

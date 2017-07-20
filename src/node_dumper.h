@@ -121,10 +121,10 @@ private:
 #define DUMP_PRIM(field) dumper.dump(NAME(field), std::to_string(field))
 #define DUMP_PTR(field) \
     do {\
-        if(field == nullptr) {\
+        if((field) == nullptr) {\
             dumper.dumpNull(NAME(field));\
         } else {\
-            dumper.dump(NAME(field), *field);\
+            dumper.dump(NAME(field), *(field));\
         }\
     } while(false)
 
@@ -143,7 +143,7 @@ private:
 
 // not directly use it.
 #define GEN_FLAG_STR(FLAG) \
-        if((___set__ & FLAG)) { if(___count__++ > 0) { ___str__ += " | "; } ___str__ += #FLAG; }
+        if((___set__ & (FLAG))) { if(___count__++ > 0) { ___str__ += " | "; } ___str__ += #FLAG; }
 
 #define DUMP_BITSET(val, EACH_FLAG) \
     do {\

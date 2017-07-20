@@ -139,13 +139,13 @@ DSType* TypeDecoder::decode() {
                 elementTypes[i] = (*this->types)[i];
             }
             return &this->pool.createTupleType(std::move(elementTypes));
-        } else {
-            std::vector<DSType *> elementTypes(size);
-            for(unsigned int i = 0; i < size; i++) {
-                elementTypes[i] = this->decode();
-            }
-            return &this->pool.createTupleType(std::move(elementTypes));
         }
+
+        std::vector<DSType *> elementTypes(size);
+        for(unsigned int i = 0; i < size; i++) {
+            elementTypes[i] = this->decode();
+        }
+        return &this->pool.createTupleType(std::move(elementTypes));
     }
     case Option: {
         auto &t = this->pool.getOptionTemplate();
