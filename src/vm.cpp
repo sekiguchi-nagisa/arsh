@@ -1258,7 +1258,7 @@ void installSignalHandler(DSState &st, int sigNum, DSValue &&handler) {
 
         // set posix signal handler
         struct sigaction action;
-        action.sa_flags = 0;
+        action.sa_flags = SA_RESTART;
         sigemptyset(&action.sa_mask);
         if(handler.get() == DFL_handler) {
             action.sa_handler = SIG_DFL;
