@@ -127,6 +127,7 @@ flag32_set_t DSState::eventDesc = 0;
 
 FixedQueue<int, 32> DSState::signalQueue;
 
+extern char **environ;
 
 namespace ydsh {
 
