@@ -1401,6 +1401,19 @@ YDSH_METHOD signals_get2(RuntimeContext &ctx) {
     RET(DSValue::create<Int_Object>(getPool(ctx).getSignalType(), sigNum));
 }
 
+//!bind: function list($this : Signals) : Array<Signal>
+YDSH_METHOD signals_list(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(signals_list);
+
+    auto &type = getPool(ctx).createReifiedType(getPool(ctx).getArrayTemplate(), {&getPool(ctx).getSignalType()});
+    auto v = DSValue::create<Array_Object>(type);
+    auto *array = typeAs<Array_Object>(v);
+    for(auto &e : getUniqueSignalList()) {
+        array->append(DSValue::create<Int_Object>(getPool(ctx).getSignalType(), e));
+    }
+    RET(v);
+}
+
 
 // ###################
 // ##     Array     ##

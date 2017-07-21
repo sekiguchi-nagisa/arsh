@@ -18,3 +18,5 @@ try { $SIG['hogeud']; assert $false; } catch $e { $a = $e; }
 assert $a is KeyNotFoundError
 
 assert not $SIG.get('SIGCHILD')
+
+assert $SIG.list()[0] is Signal

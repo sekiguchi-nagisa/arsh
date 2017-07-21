@@ -16,6 +16,7 @@
 
 #include <cstring>
 #include <csignal>
+#include <algorithm>
 
 #include "signals.h"
 
@@ -170,6 +171,19 @@ const char *getSignalName(int sigNum) {
         }
     }
     return nullptr;
+}
+
+std::vector<int> getUniqueSignalList() {
+    std::vector<int> ret;
+    ret.reserve(40);
+    for(auto *ptr = getSignalList(); ptr->name != nullptr; ptr++) {
+        ret.push_back(ptr->sigNum);
+    }
+
+    std::sort(ret.begin(), ret.end());
+    ret.erase(std::unique(ret.begin(), ret.end()), ret.end());
+
+    return ret;
 }
 
 } // namespace ydsh

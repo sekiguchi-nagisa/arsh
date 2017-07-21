@@ -17,6 +17,8 @@
 #ifndef YDSH_SIGNAL_LIST_H
 #define YDSH_SIGNAL_LIST_H
 
+#include <vector>
+
 namespace ydsh {
 
 struct SignalPair {
@@ -34,6 +36,12 @@ const SignalPair *getSignalList();
 int getSignalNum(const char *name);
 
 const char *getSignalName(int sigNum);
+
+/**
+ * get sorted unique signal list
+ * @return
+ */
+std::vector<int> getUniqueSignalList();
 
 } // namespace ydsh
 
