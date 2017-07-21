@@ -44,14 +44,14 @@ private:
     /**
      * for command exit status
      */
-    unsigned int status;
+    unsigned int status{0};
 
-    unsigned int lineNum;
+    unsigned int lineNum{0};
 
     /**
      * default is IGNORE
      */
-    RunCondition ifHaveDBus;
+    RunCondition ifHaveDBus{RunCondition::IGNORE};
 
     /**
      * represent parse or type error name or raised exception type name.
@@ -60,9 +60,7 @@ private:
     std::string errorKind;
 
 public:
-    Directive() :
-            result(DS_ERROR_KIND_SUCCESS), params(), status(0), lineNum(0),
-            ifHaveDBus(RunCondition::IGNORE), errorKind() {}
+    Directive() : result(DS_ERROR_KIND_SUCCESS) {}
 
     ~Directive() = default;
 

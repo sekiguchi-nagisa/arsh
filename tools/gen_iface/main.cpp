@@ -36,13 +36,13 @@ private:
      * if false, use session bus.
      * default is false(session bus).
      */
-    bool systemBus;
+    bool systemBus{false};
 
     /**
      * if true, search child object.
      * default is false.
      */
-    bool recusive;
+    bool recusive{false};
 
     /**
      * destination service. must be well known name.
@@ -71,7 +71,7 @@ private:
      * if generated interface files have already existed, overwrite file.
      * default is false
      */
-    bool overwrite;
+    bool overwrite{false};
 
     /**
      * for currently processing object path.
@@ -81,12 +81,10 @@ private:
     /**
      * if true, generate standard interface.
      */
-    bool allowStd;
+    bool allowStd{false};
 
 public:
-    Config() : systemBus(false), recusive(false),
-               dest("org.freedekstop.DBus"), pathList(), xmlFileName(),
-               outputDir(), overwrite(false), currentPath(), allowStd(false) {}
+    Config() : dest("org.freedekstop.DBus") {}
 
     ~Config() = default;
 
@@ -115,7 +113,7 @@ public:
     }
 
     void addPath(const char *path) {
-        this->pathList.push_back(path);
+        this->pathList.emplace_back(path);
     }
 
     const std::vector<std::string> &getPathList() const {
@@ -172,11 +170,11 @@ public:
 /**
  * xmlChar is actually unsigned char(UTF8)
  */
-static std::string str(const xmlChar *str) {
+std::string str(const xmlChar *str) {
     return std::string((char *)str);
 }
 
-static bool existFile(const std::string &fileName) {
+bool existFile(const std::string &fileName) {
     struct stat st;
     int result = stat(fileName.c_str(), &st);
     return result == 0;
@@ -305,8 +303,7 @@ struct SAXHandlerContext {
     std::unordered_set<std::string> foundIfaceSet;
 
     SAXHandlerContext(const Config &config, std::list<std::string> &pathList) :
-            config(config), pathList(pathList), nodeCount(0), fp(nullptr),
-            mBuilder(), sBuilder(), foundIfaceSet() {
+            config(config), pathList(pathList), nodeCount(0), fp(nullptr) {
         if(!this->config.isAllowStd()) {
             this->generatedPreviously("org.freedesktop.DBus.Peer");
             this->generatedPreviously("org.freedesktop.DBus.Introspectable");
@@ -322,7 +319,7 @@ struct SAXHandlerContext {
     }
 };
 
-static void decodeImpl(const std::string &desc, unsigned int &index, std::string &out) {
+void decodeImpl(const std::string &desc, unsigned int &index, std::string &out) {
     assert(index < desc.size());
 
     char ch = desc[index++];
@@ -399,7 +396,7 @@ static void decodeImpl(const std::string &desc, unsigned int &index, std::string
     }
 }
 
-static std::string decode(const std::string &desc) {
+std::string decode(const std::string &desc) {
     std::string str;
     unsigned int index = 0;
     decodeImpl(desc, index, str);
@@ -412,10 +409,10 @@ private:
     ydsh::CStringHashMap<std::string> map;
 
 public:
-    AttributeMap(int nb_attributes, const xmlChar **attributes) : map() {
+    AttributeMap(int nb_attributes, const xmlChar **attributes) {
         for(int i = 0; i < nb_attributes; i++) {
             int index = i * 5;
-            const char *name = (const char *)attributes[index];
+            const auto *name = (const char *)attributes[index];
             std::string value(attributes[index + 3], attributes[index + 4]);
             if(!this->map.insert(std::make_pair(name, std::move(value))).second) {
                 fatal("duplicated attribute: %s\n", name);
@@ -439,11 +436,11 @@ public:
 /**
  * ctx is actually
  */
-static void handler_startElementNs(void *ctx, const xmlChar *localname,
+void handler_startElementNs(void *ctx, const xmlChar *localname,
                                    const xmlChar *, const xmlChar *,
                                    int, const xmlChar **,
                                    int nb_attributes, int, const xmlChar **attributes) {
-    SAXHandlerContext *hctx = reinterpret_cast<SAXHandlerContext *>(ctx);
+    auto *hctx = reinterpret_cast<SAXHandlerContext *>(ctx);
 
     std::string elementName(str(localname));
     AttributeMap attrMap(nb_attributes, attributes);
@@ -524,8 +521,8 @@ static void handler_startElementNs(void *ctx, const xmlChar *localname,
 /**
  * ctx is actually
  */
-static void handler_endElementNs(void *ctx, const xmlChar* localname, const xmlChar*, const xmlChar*) {
-    SAXHandlerContext *hctx = reinterpret_cast<SAXHandlerContext *>(ctx);
+void handler_endElementNs(void *ctx, const xmlChar* localname, const xmlChar*, const xmlChar*) {
+    auto *hctx = reinterpret_cast<SAXHandlerContext *>(ctx);
 
     std::string elementName(str(localname));
     if(elementName == "node") {
@@ -546,10 +543,10 @@ static void handler_endElementNs(void *ctx, const xmlChar* localname, const xmlC
 }
 
 
-static void handler_characters(void *, const xmlChar *, int) {  // do nothing
+void handler_characters(void *, const xmlChar *, int) {  // do nothing
 }
 
-static std::string introspect(const Config &config) {
+std::string introspect(const Config &config) {
     std::string cmd("dbus-send --print-reply=literal");
     cmd += (config.isSystemBus() ? " --system" : " --session");
     cmd += " --dest=";
@@ -579,7 +576,7 @@ static std::string introspect(const Config &config) {
     return msg;
 }
 
-static void parse(SAXHandlerContext &handlerCtx, xmlSAXHandler &saxHander, const std::string &xmlStr) {
+void parse(SAXHandlerContext &handlerCtx, xmlSAXHandler &saxHander, const std::string &xmlStr) {
     xmlParserCtxtPtr ctxt =
             xmlCreatePushParserCtxt(&saxHander, &handlerCtx, nullptr, 0, "source");
     int s = xmlParseChunk(ctxt, xmlStr.c_str(), xmlStr.size(), 1);
@@ -592,7 +589,7 @@ static void parse(SAXHandlerContext &handlerCtx, xmlSAXHandler &saxHander, const
     xmlCleanupParser();
 }
 
-static void generateIface(Config &config) {
+void generateIface(Config &config) {
     std::list<std::string> pathList;
     SAXHandlerContext handlerCtx(config, pathList);
 

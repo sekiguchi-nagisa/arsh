@@ -29,7 +29,7 @@ namespace directive {
 // ######################
 
 std::string TypeImpl::getRealName() {
-    if(this->childs.size() == 0) {
+    if(this->childs.empty()) {
         return this->name;
     }
 
@@ -81,7 +81,7 @@ std::shared_ptr<TypeImpl> TypeImpl::create(const char *name, const std::shared_p
 // ##     TypeEnv     ##
 // #####################
 
-TypeEnv::TypeEnv() : typeMap() {
+TypeEnv::TypeEnv() {
     this->addType(TypeImpl::create("Int"));
     this->addType(TypeImpl::create("String"));
     this->addType(TypeImpl::create("Boolean"));

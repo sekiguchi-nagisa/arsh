@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <stdarg.h>
+#include <cstdarg>
 
 #include <fstream>
 #include <iostream>
@@ -31,10 +31,10 @@ namespace {
 
 using namespace ydsh;
 
-static HandleInfo toNum(unsigned int num) {
+HandleInfo toNum(unsigned int num) {
     // check range
     if(num < 9) {
-        HandleInfo info = (HandleInfo) (num + P_N0);
+        auto info = (HandleInfo) (num + P_N0);
         switch(info) {
 #define GEN_CASE(ENUM) case ENUM:
         EACH_HANDLE_INFO_NUM(GEN_CASE)
@@ -48,7 +48,7 @@ static HandleInfo toNum(unsigned int num) {
     return P_N0;
 }
 
-static std::string toTypeInfoName(HandleInfo info) {
+std::string toTypeInfoName(HandleInfo info) {
     switch(info) {
 #define GEN_NAME(INFO) case INFO: return std::string(#INFO);
     EACH_HANDLE_INFO(GEN_NAME)
@@ -76,7 +76,7 @@ public:
 /**
  * for processing error reporting
  */
-static void error(const char *fmt, ...) {
+void error(const char *fmt, ...) {
     const unsigned int size = 128;
     char buf[size];  // error message must be under size.
 
@@ -109,8 +109,7 @@ private:
     void registerName(HandleInfo info, const char *name);
 };
 
-HandleInfoMap::HandleInfoMap() :
-        name2InfoMap(), info2NameMap() {
+HandleInfoMap::HandleInfoMap() {
 #define REGISTER(ENUM) this->registerName(ENUM, #ENUM);
     EACH_HANDLE_INFO_TYPE(REGISTER)
     EACH_HANDLE_INFO_PTYPE(REGISTER)
@@ -144,7 +143,7 @@ HandleInfo HandleInfoMap::getInfo(const std::string &name) {
 
 void HandleInfoMap::registerName(HandleInfo info, const char *name) {
     std::string actualName(name);
-    this->info2NameMap.push_back(std::make_pair(info, actualName));
+    this->info2NameMap.emplace_back(info, actualName);
     this->name2InfoMap.insert(std::make_pair(actualName, info));
 }
 
@@ -336,7 +335,7 @@ private:
     std::vector<std::unique_ptr<TypeToken>> elements;
 
     ReifiedTypeToken(std::unique_ptr<CommonTypeToken> &&type, unsigned int elementSize) :
-            typeTemp(type.release()), requiredSize(elementSize), elements() { }
+            typeTemp(type.release()), requiredSize(elementSize) { }
 
 public:
     ~ReifiedTypeToken() = default;
@@ -370,7 +369,7 @@ void ReifiedTypeToken::serialize(HandleInfoSerializer &s) {
     }
 }
 
-static std::unordered_map<std::string, std::pair<unsigned int, HandleInfo >> initTypeMap() {
+std::unordered_map<std::string, std::pair<unsigned int, HandleInfo >> initTypeMap() {
     std::unordered_map<std::string, std::pair<unsigned int, HandleInfo >> map;
     map.insert({TYPE_ARRAY,  {1, Array}});
     map.insert({TYPE_MAP,    {2, Map}});
@@ -399,8 +398,8 @@ private:
     std::vector<std::unique_ptr<TypeToken>> paramTypes;
 
 public:
-    FuncTypeToken(std::unique_ptr<TypeToken> &&returnType) :
-            typeTemp(CommonTypeToken::newTypeToken(TYPE_FUNC)), returnType(std::move(returnType)), paramTypes() {}
+    explicit FuncTypeToken(std::unique_ptr<TypeToken> &&returnType) :
+            typeTemp(CommonTypeToken::newTypeToken(TYPE_FUNC)), returnType(std::move(returnType)) {}
 
     ~FuncTypeToken() = default;
 
@@ -468,8 +467,7 @@ protected:
     std::string actualFuncName;
 
     Element(std::string &&funcName, bool func, bool op) :
-            func(func), funcName(std::move(funcName)), op(op), ownerType(), returnType(),
-            paramTypes(), paramNames(), actualFuncName() {
+            func(func), funcName(std::move(funcName)), op(op), ownerType(), returnType(){
     }
 
 public:
@@ -494,7 +492,7 @@ public:
             this->ownerType = std::move(type);
             return;
         }
-        this->paramNames.push_back(std::make_pair(std::move(name), hasDefault));
+        this->paramNames.emplace_back(std::move(name), hasDefault);
         this->paramTypes.push_back(std::move(type));
     }
 
@@ -537,12 +535,12 @@ public:
     std::string toFuncName() {
         if(this->op) {
             return this->funcName;
-        } else {
-            std::string str("\"");
-            str += this->funcName;
-            str += "\"";
-            return str;
         }
+
+        std::string str("\"");
+        str += this->funcName;
+        str += "\"";
+        return str;
     }
 
     const char *getActualFuncName() {
@@ -801,7 +799,7 @@ std::unique_ptr<Element> Parser::parse_params(std::unique_ptr<Element> &element)
     return nullptr;
 }
 
-static bool isFunc(const std::string &str) {
+bool isFunc(const std::string &str) {
     return str == TYPE_FUNC;
 }
 
@@ -834,7 +832,7 @@ std::unique_ptr<TypeToken> Parser::parse_type() {
 
         return std::move(funcType);
     } else {
-        auto type(ReifiedTypeToken::newReifiedTypeToken(std::move(str)));
+        auto type(ReifiedTypeToken::newReifiedTypeToken(str));
         TRY(this->expect(TYPE_OPEN));
 
         if(CUR_KIND() != TYPE_CLOSE) {
@@ -896,13 +894,12 @@ struct TypeBind {
     std::vector<Element *> funcElements;
 
     explicit TypeBind(HandleInfo info) :
-            info(info), name(HandleInfoMap::getInstance().getName(info)),
-            initElement(), funcElements() { }
+            info(info), name(HandleInfoMap::getInstance().getName(info)), initElement() { }
 
     ~TypeBind() = default;
 };
 
-static std::vector<TypeBind *> genTypeBinds(std::vector<std::unique_ptr<Element>> &elements) {
+std::vector<TypeBind *> genTypeBinds(std::vector<std::unique_ptr<Element>> &elements) {
     std::vector<TypeBind *> binds;
 #define GEN_BIND(ENUM) binds.push_back(new TypeBind(ENUM));
     EACH_HANDLE_INFO_TYPE(GEN_BIND)
@@ -929,9 +926,9 @@ static std::vector<TypeBind *> genTypeBinds(std::vector<std::unique_ptr<Element>
     return binds;
 }
 
-static void gencode(const char *outFileName, const std::vector<TypeBind *> &binds) {
+void gencode(const char *outFileName, const std::vector<TypeBind *> &binds) {
     FILE *fp = fopen(outFileName, "w");
-    if(fp == NULL) {
+    if(fp == nullptr) {
         fatal("cannot open output file: %s\n", outFileName);
     }
 
