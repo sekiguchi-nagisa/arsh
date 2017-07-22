@@ -671,13 +671,11 @@ enum class BinaryOp : unsigned int {
     GE,
 };
 
-static CStringHashMap<BinaryOp> initBinaryOpMap() {
-    CStringHashMap<BinaryOp> binaryOpMap;
-
+static int builtin_test(DSState &, Array_Object &argvObj) {
     const struct {
         const char *k;
         BinaryOp op;
-    } table[] = {
+    } binaryOpTable[] = {
             {"=", BinaryOp::STR_EQ},
             {"==", BinaryOp::STR_EQ},
             {"!=", BinaryOp::STR_NE},
@@ -690,15 +688,6 @@ static CStringHashMap<BinaryOp> initBinaryOpMap() {
             {"-le", BinaryOp::LE},
             {"-ge", BinaryOp::GE},
     };
-
-    for(const auto &e : table) {
-        binaryOpMap.insert(std::make_pair(e.k, e.op));
-    }
-    return binaryOpMap;
-}
-
-static int builtin_test(DSState &, Array_Object &argvObj) {
-    static auto binaryOpMap = initBinaryOpMap();
 
     bool result = false;
     unsigned int argc = argvObj.getValues().size();
@@ -826,9 +815,14 @@ static int builtin_test(DSState &, Array_Object &argvObj) {
         const char *left = str(argvObj.getValues()[1]);
         const char *op = str(argvObj.getValues()[2]);
         const char *right = str(argvObj.getValues()[3]);
+        BinaryOp opKind = BinaryOp::INVALID;
+        for(auto &e : binaryOpTable) {
+            if(strcmp(op, e.k) == 0) {
+                opKind = e.op;
+                break;
+            }
+        }
 
-        auto iter = binaryOpMap.find(op);
-        const BinaryOp opKind = iter != binaryOpMap.end() ? iter->second : BinaryOp::INVALID;
         switch(opKind) {
         case BinaryOp::STR_EQ: {
             result = strcmp(left, right) == 0;
