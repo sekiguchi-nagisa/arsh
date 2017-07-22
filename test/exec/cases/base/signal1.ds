@@ -20,3 +20,18 @@ assert $a is KeyNotFoundError
 assert not $SIG.get('SIGCHILD')
 
 assert $SIG.list()[0] is Signal
+
+# kill
+var e = 34 as Any
+try {
+    %'HUP'.kill(1);
+    assert $false;
+} catch $a {
+    $e = $a
+}
+
+if $e is SystemError {
+    assert $e.message() == 'HUP: Operation not permitted'
+} else {
+    assert $false
+}

@@ -1363,6 +1363,19 @@ YDSH_METHOD signal_name(RuntimeContext &ctx) {
     RET(DSValue::create<String_Object>(getPool(ctx).getStringType(), name));
 }
 
+//!bind: function kill($this : Signal, $pid : Int32) : Void
+YDSH_METHOD signal_kill(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(signal_kill);
+    int sigNum = typeAs<Int_Object>(LOCAL(0))->getValue();
+    int pid = typeAs<Int_Object>(LOCAL(1))->getValue();
+    if(kill(pid, sigNum) != 0) {
+        int num = errno;
+        std::string str = getSignalName(sigNum);
+        throwSystemError(ctx, num, std::move(str));
+    }
+    RET_VOID;
+}
+
 
 // #####################
 // ##     Signals     ##

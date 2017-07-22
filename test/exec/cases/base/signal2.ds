@@ -6,8 +6,7 @@ function f($s : Signal) {
 }
 
 function raise($s : String) {
-    eval "$(which kill)" -s $SIG[$s] $PID
-    #echo $?
+    $SIG[$s].kill($PID)
 }
 
 $SIG.action(%'HUP', $f)
