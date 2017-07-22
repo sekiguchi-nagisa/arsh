@@ -191,7 +191,7 @@ TEST(PID, case1) {
     DSState *state = DSState_create();
     std::string src("assert($$ == ");
     src += std::to_string(pid);
-    src += "u)";
+    src += ")";
 
     DSError e;
     int s = DSState_eval(state, nullptr, src.c_str(), &e);

@@ -4,7 +4,10 @@ assert($YDSH_VERSION == "$(ps_intrp '\V')")
 
 # $, PID, PPID
 assert $$ == $PID
+assert $$ is Int
 assert $PID != $PPID
+assert $PID is Int
+assert $PPID is Int
 
 child() {
     return $$ != $PPID && $$ == $PID ? 0 : 1
@@ -17,6 +20,8 @@ assert $HISTCMD == 1u    # HISTCMD is always 1 in scripting mode.
 # UID, EUID
 assert $UID == $EUID
 assert $UID as String == "$(id -u)"
+assert $UID is Uint
+assert $EUID is Uint
 
 # uname
 assert($OSTYPE == "$(uname -s)")

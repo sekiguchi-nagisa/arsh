@@ -323,13 +323,13 @@ static void initBuiltinVar(DSState *state) {
      * process id of current process.
      * must be Int_Object
      */
-    bindVariable(state, "PID", DSValue::create<Int_Object>(state->pool.getUint32Type(), getpid()));
+    bindVariable(state, "PID", DSValue::create<Int_Object>(state->pool.getInt32Type(), getpid()));
 
     /**
      * parent process id of current process.
      * must be Int_Object
      */
-    bindVariable(state, "PPID", DSValue::create<Int_Object>(state->pool.getUint32Type(), getppid()));
+    bindVariable(state, "PPID", DSValue::create<Int_Object>(state->pool.getInt32Type(), getppid()));
 
     /**
      * must be Long_Object.
@@ -358,7 +358,7 @@ static void initBuiltinVar(DSState *state) {
      * process id of root shell. ($$)
      * must be Int_Object
      */
-    bindVariable(state, "$", DSValue::create<Int_Object>(state->pool.getUint32Type(), getpid()));
+    bindVariable(state, "$", DSValue::create<Int_Object>(state->pool.getInt32Type(), getpid()));
 
     /**
      * contains script argument(exclude script name). ($@)
