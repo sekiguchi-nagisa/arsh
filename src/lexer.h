@@ -106,9 +106,9 @@ private:
 
     LexerMode prevMode;
 
+public:
     NON_COPYABLE(Lexer);
 
-public:
     /**
      *
      * @param sourceName
