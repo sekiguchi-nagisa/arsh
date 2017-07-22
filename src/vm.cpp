@@ -1288,6 +1288,30 @@ void DBusInitSignal(DSState &st);
  */
 std::vector<DSValue> DBusWaitSignal(DSState &st);
 
+static NativeCode initSignalTrampoline() {
+    unsigned char *code = static_cast<unsigned char *>(malloc(sizeof(unsigned char) * 9));
+    code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
+    code[1] = static_cast<unsigned char>(OpCode::LOAD_LOCAL);
+    code[2] = static_cast<unsigned char>(1);
+    code[3] = static_cast<unsigned char>(OpCode::LOAD_LOCAL);
+    code[4] = static_cast<unsigned char>(2);
+    code[5] = static_cast<unsigned char>(OpCode::CALL_FUNC);
+    code[6] = code[7] = 0;
+    write16(code + 6, 1);
+    code[8] = static_cast<unsigned char>(OpCode::RETURN_SIG);
+    return NativeCode(code);
+}
+
+static auto signalTrampoline = initSignalTrampoline();
+
+static void kickSignalHandler(DSState &st, int sigNum, DSValue &&func) {
+    st.push(st.getGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS)));
+    st.push(std::move(func));
+    st.push(DSValue::create<Int_Object>(st.pool.getSignalType(), sigNum));
+
+    windStackFrame(st, 3, 3, &signalTrampoline);
+}
+
 static void checkVMEvent(DSState &state) {
     if(hasFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL) &&
             !hasFlag(DSState::eventDesc, DSState::VM_EVENT_MASK)) {
@@ -1301,7 +1325,8 @@ static void checkVMEvent(DSState &state) {
             auto handler = state.sigVector.lookup(sigNum);
             if(handler != nullptr) {
                 setFlag(DSState::eventDesc, DSState::VM_EVENT_MASK);
-            }   fatal("signal handler invocation need more work\n"); //FIXME: kick handler
+                kickSignalHandler(state, sigNum, std::move(handler));
+            }
         });
     }
 
@@ -1606,11 +1631,17 @@ static bool mainLoop(DSState &state) {
         vmcase(RETURN_UDC) {
             auto v = state.pop();
             unwindStackFrame(state);
-            state.updateExitStatus(typeAs<Int_Object>(v)->getValue());
-            state.push(state.getExitStatus() == 0 ? state.trueObj : state.falseObj);
+            pushExitStatus(state, typeAs<Int_Object>(v)->getValue());
             if(state.codeStack.empty()) {
                 return true;
             }
+            vmnext;
+        }
+        vmcase(RETURN_SIG) {
+            auto v = state.getLocal(0);   // old exit status
+            unwindStackFrame(state);
+            unsetFlag(DSState::eventDesc, DSState::VM_EVENT_MASK);
+            state.updateExitStatus(typeAs<Int_Object>(v)->getValue());
             vmnext;
         }
         vmcase(BRANCH) {
@@ -1930,6 +1961,10 @@ static bool handleException(DSState &state) {
                     return true;
                 }
             }
+        } else if(CODE(state) == &signalTrampoline) {   // within signal trampoline
+            unsetFlag(DSState::eventDesc, DSState::VM_EVENT_MASK);
+            auto v = state.getLocal(0);
+            setGlobal(state, toIndex(BuiltinVarOffset::EXIT_STATUS), std::move(v));
         }
         if(state.codeStack.size() == 1) {
             break;  // when top level

@@ -1,0 +1,23 @@
+var raised = 0
+
+function f($s : Signal) {
+    false;
+    $raised++
+}
+
+function raise($s : String) {
+    eval "$(which kill)" -s $SIG[$s] $PID
+    #echo $?
+}
+
+$SIG.action(%'HUP', $f)
+$SIG.action(%'term', $f)
+
+true
+$raise('hup')
+assert $? == 0  # restore old exit status
+assert $raised == 1
+
+
+$raise("sigterm")
+assert $raised == 2

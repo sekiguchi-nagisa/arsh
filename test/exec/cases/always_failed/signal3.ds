@@ -1,0 +1,27 @@
+#$test($result = 'exit', $lineNum = 12, $status = 1)
+
+function raise($s : String) {
+    eval "$(which kill)" -s $SIG[$s] $PID
+}
+
+function f($s : Signal) {
+    throw $s
+}
+
+function g($s : Signal) {
+    exit $s
+}
+
+$SIG.action(%'int', $f)
+
+try {
+    $raise('int')
+} catch $e {
+    assert $e is Signal
+    assert ($e as Signal).name() == %'int'.name()
+}
+
+$SIG.action(%'hup', $g)
+$raise('hup')
+
+exit 0

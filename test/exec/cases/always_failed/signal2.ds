@@ -1,0 +1,13 @@
+#$test($result = 'exit', $lineNum = 5, $status = 1)
+
+
+function f($a : Signal) {
+    exit $a
+}
+
+
+$SIG.action(%'hup', $f)
+
+eval "$(which kill)" -s $SIG['hup'] $PID
+
+true

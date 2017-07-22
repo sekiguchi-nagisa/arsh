@@ -1,0 +1,13 @@
+#$test($result = 'throw', $lineNum = 5, $errorKind = 'Error', $status = 1)
+
+
+function f($a : Signal) {
+    throw new Error("signaled: ${$a.name()}")
+}
+
+
+$SIG.action(%'term', $f)
+
+eval "$(which kill)" -s $SIG['term'] $PID
+
+true

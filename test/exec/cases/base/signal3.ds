@@ -1,0 +1,31 @@
+
+function raise($s : String) {
+    eval "$(which kill)" -s $SIG[$s] $PID
+    #echo $?
+}
+
+var raised = 0
+var a = new [(Signal, Int)]()
+function g1($s : Signal) {
+    $raised++
+    $a.add(($s, $raised))
+    $raise('term')
+    $raised--
+}
+
+function g2($s : Signal) {
+    $raised++
+    $a.add(($s, $raised))
+    $raised--
+}
+
+$SIG.action(%'HUP', $g1)
+$SIG.action(%'term', $g2)
+
+# recursive signal handler invocation is not allowed
+$raise('hup')
+assert $a.size() == 2
+assert $a[0]._0.name() == 'HUP'
+assert $a[0]._1 == 1
+assert $a[1]._0.name() == 'TERM'
+assert $a[1]._1 == 1
