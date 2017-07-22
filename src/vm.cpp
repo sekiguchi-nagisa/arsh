@@ -838,8 +838,6 @@ private:
     flag8_set_t mask;
     flag8_set_t searchOp;
 
-    static CStringHashMap<NativeCode> map;
-
 public:
     static constexpr flag8_t MASK_UDC      = 1 << 0;
     static constexpr flag8_t MASK_EXTERNAL = 1 << 1;
@@ -859,19 +857,10 @@ static NativeCode initCode(OpCode op) {
     return NativeCode(code);
 }
 
-static CStringHashMap<NativeCode> initSBuiltinMap() noexcept {
-    CStringHashMap<NativeCode> map;
-    map.insert(std::make_pair("command", initCode(OpCode::BUILTIN_CMD)));
-    map.insert(std::make_pair("eval", initCode(OpCode::BUILTIN_EVAL)));
-    return map;
-}
-
 static const DSCode *lookupUserDefinedCommand(const DSState &st, const char *commandName) {
     auto handle = st.symbolTable.lookupUdc(commandName);
     return handle == nullptr ? nullptr : &typeAs<FuncObject>(st.getGlobal(handle->getFieldIndex()))->getCode();
 }
-
-CStringHashMap<NativeCode> CmdResolver::map = initSBuiltinMap();
 
 Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
     Command cmd;
@@ -895,11 +884,16 @@ Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
             return cmd;
         }
 
-        auto iter = map.find(cmdName);
-        if(iter != map.end()) {
-            cmd.kind = CmdKind::BUILTIN_S;
-            cmd.udc = &iter->second;
-            return cmd;
+        static std::pair<const char *, NativeCode> sb[] = {
+                {"command", initCode(OpCode::BUILTIN_CMD)},
+                {"eval", initCode(OpCode::BUILTIN_EVAL)},
+        };
+        for(auto &e : sb) {
+            if(strcmp(cmdName, e.first) == 0) {
+                cmd.kind = CmdKind::BUILTIN_S;
+                cmd.udc = &e.second;
+                return cmd;
+            }
         }
     }
 
