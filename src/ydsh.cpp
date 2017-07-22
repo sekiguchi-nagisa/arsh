@@ -217,33 +217,30 @@ static int evalCode(DSState *state, CompiledCode &code, DSError *dsError) {
 static int compileImpl(DSState *state, Lexer &lexer, DSError *dsError, CompiledCode &code) {
     setErrorInfo(dsError, DS_ERROR_KIND_SUCCESS, 0, nullptr);
     lexer.setLineNum(state->lineNum);
-    RootNode rootNode;
 
     // parse
-    try {
-        Parser parser(lexer);
-        parser(rootNode);
-        state->lineNum = lexer.getLineNum();
-
-        if(hasFlag(state->option, DS_OPTION_DUMP_UAST)) {
-            fputs("### dump untyped AST ###\n", stdout);
-            NodeDumper::dump(stdout, state->pool, rootNode);
-            fputc('\n', stdout);
-        }
-    } catch(const ParseError &e) {
-        handleParseError(lexer, e, dsError);
-        state->lineNum = lexer.getLineNum();
+    Parser parser(lexer);
+    auto rootNode = parser();
+    state->lineNum = lexer.getLineNum();
+    if(parser.hasError()) {
+        handleParseError(lexer, *parser.getError(), dsError);
         return 1;
+    }
+
+    if(hasFlag(state->option, DS_OPTION_DUMP_UAST)) {
+        fputs("### dump untyped AST ###\n", stdout);
+        NodeDumper::dump(stdout, state->pool, *rootNode);
+        fputc('\n', stdout);
     }
 
     // type check
     try {
         TypeChecker checker(state->pool, state->symbolTable, hasFlag(state->option, DS_OPTION_TOPLEVEL));
-        checker.checkTypeRootNode(rootNode);
+        checker.checkTypeRootNode(*rootNode);
 
         if(hasFlag(state->option, DS_OPTION_DUMP_AST)) {
             fputs("### dump typed AST ###\n", stdout);
-            NodeDumper::dump(stdout, state->pool, rootNode);
+            NodeDumper::dump(stdout, state->pool, *rootNode);
             fputc('\n', stdout);
         }
     } catch(const TypeCheckError &e) {
@@ -258,7 +255,7 @@ static int compileImpl(DSState *state, Lexer &lexer, DSError *dsError, CompiledC
 
     // code generation
     ByteCodeGenerator codegen(state->pool, hasFlag(state->option, DS_OPTION_ASSERT));
-    code = codegen.generateToplevel(rootNode);
+    code = codegen.generateToplevel(*rootNode);
     return 0;
 }
 

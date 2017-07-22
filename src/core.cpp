@@ -1068,14 +1068,11 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
     // parse input line
     Lexer lexer("<line>", line.c_str());
     TokenTracker tracker;
-    try {
-        {
-            Parser parser(lexer);
-            parser.setTracker(&tracker);
-            RootNode rootNode;
-            parser(rootNode);
-        }
+    Parser parser(lexer);
+    parser.setTracker(&tracker);
+    auto rootNode = parser();
 
+    if(!parser.hasError()) {
         const auto &tokenPairs = tracker.getTokenPairs();
         const unsigned int tokenSize = tokenPairs.size();
 
@@ -1116,7 +1113,8 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
         default:
             break;
         }
-    } catch(const ParseError &e) {
+    } else {
+        const auto &e = *parser.getError();
         LOG_L(DUMP_CONSOLE, [&](std::ostream &stream) {
             stream << "error kind: " << e.getErrorKind() << std::endl;
             stream << "kind: " << toString(e.getTokenKind())

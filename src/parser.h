@@ -26,6 +26,16 @@
 
 namespace ydsh {
 
+struct TypeWrapper {
+    std::unique_ptr<TypeNode> typeNode;
+    Token token;
+
+    TypeWrapper(std::unique_ptr<TypeNode> &&typeNode, Token token) :
+            typeNode(std::move(typeNode)), token(token) {}
+
+    TypeWrapper(std::nullptr_t) : typeNode(), token() {}
+};
+
 class ArgsWrapper {
 private:
     Token token;
@@ -36,6 +46,8 @@ public:
 
     explicit ArgsWrapper(unsigned int pos) : token({pos, 1}) {}
     ArgsWrapper(ArgsWrapper &&a) = default;
+    ArgsWrapper(std::nullptr_t) : ArgsWrapper(-1) {}
+
     ~ArgsWrapper();
 
     Token getToken() const {
@@ -72,7 +84,7 @@ public:
     };
 };
 
-class Parser : public ydsh::parser_base::ParserBase<TokenKind, Lexer, TokenTracker> {
+class Parser : public ydsh::parser_base::AbstractParser<TokenKind, Lexer, TokenTracker> {
 public:
     explicit Parser(Lexer &lexer) {
         this->lexer = &lexer;
@@ -85,7 +97,7 @@ public:
      * parse entry point.
      * write parsed nodes to rootNode.
      */
-    void operator()(RootNode &rootNode);
+    std::unique_ptr<RootNode> operator()();
 
 private:
     /**
@@ -103,33 +115,40 @@ private:
     /**
      * after matching token, change lexer mode and fetchNext.
      */
-    void expectAndChangeMode(TokenKind kind, LexerMode mode);
+    Token expectAndChangeMode(TokenKind kind, LexerMode mode);
 
     void raiseTokenFormatError(TokenKind kind, Token token, const char *msg);
 
     // parser rule definition.
-    void parse_toplevel(RootNode &rootNode);
-
     std::unique_ptr<FunctionNode> parse_funcDecl();
     std::unique_ptr<Node> parse_interface();
 
     /**
      * not call it directory
      */
-    std::pair<std::unique_ptr<TypeNode>, Token> parse_basicOrReifiedType(Token token);
+    TypeWrapper parse_basicOrReifiedType(Token token);
 
-    std::pair<std::unique_ptr<TypeNode>, Token> parse_typeNameImpl();
+    TypeWrapper parse_typeNameImpl();
 
     /**
      * not call NEXT_TOKEN, before call it.
      */
     std::unique_ptr<TypeNode> parse_typeName();
 
+    /**
+     * not call it directory
+     * @return
+     */
     std::unique_ptr<Node> parse_statementImp();
 
     std::unique_ptr<Node> parse_statement();
 
-    void parse_statementEnd();
+    /**
+     *
+     * @return
+     * always nullptr
+     */
+    std::unique_ptr<Node> parse_statementEnd();
 
     std::unique_ptr<BlockNode> parse_block();
 
@@ -196,11 +215,7 @@ private:
 };
 
 // for DBus interface loading
-
-/**
- * if parse error happened, return false.
- */
-bool parse(const char *sourceName, RootNode &rootNode);
+std::unique_ptr<RootNode> parse(const char *sourceName);
 
 } // namespace ydsh
 

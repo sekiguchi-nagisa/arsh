@@ -153,15 +153,11 @@ public:
 
         // parse
         Lexer lexer("(string)", input);
-        RootNode rootNode;
         Parser parser(lexer);
-        try {
-            parser(rootNode);
-        } catch(const ParseError &e) {
-            ASSERT_TRUE(false);
-        }
+        auto rootNode = parser();
+        ASSERT_FALSE(parser.hasError());
 
-        std::vector<std::string> actualTokens = PrettyPrinter()(rootNode);
+        std::vector<std::string> actualTokens = PrettyPrinter()(*rootNode);
         std::vector<std::string> expectedTokens = tokenize(expected);
 
         this->equalsTokens(expectedTokens, actualTokens);

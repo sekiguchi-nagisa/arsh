@@ -715,12 +715,12 @@ DSType &TypePool::getDBusInterfaceType(const std::string &typeName) {
         ifacePath += "/";
         ifacePath += typeName;
 
-        RootNode rootNode;
-        if(!parse(ifacePath.c_str(), rootNode)) {
+        auto rootNode = parse(ifacePath.c_str());
+        if(!rootNode) {
             RAISE_TL_ERROR(NoDBusInterface, typeName.c_str());
         }
 
-        auto *front = rootNode.getNodes().front();
+        auto *front = rootNode->getNodes().front();
         if(!front->is(NodeKind::Interface)) {
             RAISE_TL_ERROR(NoDBusInterface, typeName.c_str());
         }
