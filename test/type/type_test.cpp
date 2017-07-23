@@ -13,7 +13,7 @@ struct BaseType : Type {};
 
 #define DEFINE_TYPE(name) \
 namespace __detail_type {  \
-    static const char * name ## _v = #name; \
+    const char * name ## _v = #name; \
 } \
 using name ## _t = BaseType<__detail_type::name ## _v>
 
@@ -25,7 +25,7 @@ struct TypeTemp : Type {
 
 #define DEFINE_TYPE_TEMP(name, size) \
 namespace __detail_type { \
-    static const char * name ## _v = #name; \
+    const char * name ## _v = #name; \
 } \
 template<typename ...T> using name ## _t = TypeTemp<__detail_type::name ## _v, size, T...>
 
