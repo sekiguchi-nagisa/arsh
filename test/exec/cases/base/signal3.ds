@@ -1,6 +1,6 @@
 
 function raise($s : String) {
-    eval "$(which kill)" -s $SIG[$s] $PID
+    eval "$(which kill)" -s ${$SIG[$s].name()} $PID
     #echo $?
 }
 

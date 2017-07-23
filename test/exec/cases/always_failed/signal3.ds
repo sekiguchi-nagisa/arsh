@@ -1,7 +1,7 @@
 #$test($result = 'exit', $lineNum = 12, $status = 1)
 
 function raise($s : String) {
-    eval "$(which kill)" -s $SIG[$s] $PID
+    eval "$(which kill)" -s ${$SIG[$s].name()} $PID
 }
 
 function f($s : Signal) {
