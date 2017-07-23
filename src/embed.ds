@@ -32,6 +32,10 @@ let false = $False
 function SIG_DFL($s : Signal) {}
 function SIG_IGN($s : Signal) {}
 
+## normally meaningless code, but need to prevent segmentation fault
+## (due to lazy initialization of function type, see src/object.cpp)
+$SIG_DFL; $SIG_IGN
+
 
 # builtin D-Bus interface
 

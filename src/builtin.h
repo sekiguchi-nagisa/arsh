@@ -1427,6 +1427,14 @@ YDSH_METHOD signals_list(RuntimeContext &ctx) {
     RET(v);
 }
 
+//!bind: function action($this : Signals, $s : Signal) : Func<Void,[Signal]>
+YDSH_METHOD signals_action(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(signals_action);
+
+    int sigNum = typeAs<Int_Object>(LOCAL(1))->getValue();
+    RET(getSignalHandler(ctx, sigNum));
+}
+
 
 // ###################
 // ##     Array     ##

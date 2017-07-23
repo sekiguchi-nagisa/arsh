@@ -225,6 +225,15 @@ void exitShell(DSState &st, unsigned int status);
 void installSignalHandler(DSState &st, int sigNum, DSValue &&handler);
 
 /**
+ *
+ * @param st
+ * @param sigNum
+ * @return
+ * if sigNum is invalid (ex. pseudo-signal), return SIG_DFL object
+ */
+DSValue getSignalHandler(const DSState &st, int sigNum);
+
+/**
  * after fork, reset signal setting in child process.
  */
 pid_t xfork(DSState &st, pid_t pgid, bool foreground);

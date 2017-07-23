@@ -1,0 +1,15 @@
+
+# if not set custom signal handler, return SIG_DFL
+assert $SIG.action(%'QUIT') as String == $SIG_DFL as String
+
+# if signal is ignored, return SIG_IGN
+$SIG.trap(%'INT', $SIG_IGN) # ignore signal
+assert $SIG.action(%'INT') as String == $SIG_IGN as String
+
+function f($a : Signal) {}
+$SIG.trap(%'INT', $f)
+assert $SIG.action(%'INT') as String == $f as String
+
+
+$SIG.trap(%'INT', $SIG_DFL) # ignore signal
+assert $SIG.action(%'INT') as String == $SIG_DFL as String

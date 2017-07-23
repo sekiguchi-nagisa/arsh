@@ -110,7 +110,7 @@ static const char *readLine() {
 static void ignoreSignal() {
     struct sigaction ignore_act;
     ignore_act.sa_handler = SIG_IGN;
-    ignore_act.sa_flags = 0;
+    ignore_act.sa_flags = SA_RESTART;
     sigemptyset(&ignore_act.sa_mask);
 
     sigaction(SIGINT, &ignore_act, nullptr);

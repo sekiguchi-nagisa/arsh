@@ -1222,26 +1222,26 @@ static void signalHandler(int sigNum) {
     });
 }
 
-static const FuncObject *getHandler(const DSState &st, const char *name) {
+static const DSValue &getHandler(const DSState &st, const char *name) {
     auto handle = st.symbolTable.lookupHandle(name);
     assert(handle != nullptr);
     assert(handle->attr().has(FieldAttribute::FUNC_HANDLE));
-    return typeAs<FuncObject>(st.getGlobal(handle->getFieldIndex()));
+    return st.getGlobal(handle->getFieldIndex());
 }
 
 void installSignalHandler(DSState &st, int sigNum, DSValue &&handler) {
     blockSignal([&] {
-        auto *DFL_handler = getHandler(st, VAR_SIG_DFL);
-        auto *IGN_handler = getHandler(st, VAR_SIG_IGN);
+        auto &DFL_handler = getHandler(st, VAR_SIG_DFL);
+        auto &IGN_handler = getHandler(st, VAR_SIG_IGN);
 
         // set posix signal handler
         struct sigaction action;
         action.sa_flags = SA_RESTART;
         sigemptyset(&action.sa_mask);
-        if(handler.get() == DFL_handler) {
+        if(handler == DFL_handler) {
             action.sa_handler = SIG_DFL;
             handler = nullptr;
-        } else if(handler.get() == IGN_handler) {
+        } else if(handler == IGN_handler) {
             action.sa_handler = SIG_IGN;
             handler = nullptr;
         } else {
@@ -1252,6 +1252,24 @@ void installSignalHandler(DSState &st, int sigNum, DSValue &&handler) {
         // register handler
         st.sigVector.insertOrUpdate(sigNum, std::move(handler));
     });
+}
+
+DSValue getSignalHandler(const DSState &st, int sigNum) {
+    auto &DFL_handler = getHandler(st, VAR_SIG_DFL);
+    auto &IGN_handler = getHandler(st, VAR_SIG_IGN);
+
+    auto handler = st.sigVector.lookup(sigNum);
+
+    if(handler == nullptr) {
+        struct sigaction action;
+        if(sigaction(sigNum, nullptr, &action) == 0) {
+            if(action.sa_handler == SIG_IGN) {
+                return IGN_handler;
+            }
+        }
+        return DFL_handler;
+    }
+    return handler;
 }
 
 
