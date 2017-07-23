@@ -295,8 +295,8 @@ int exec_interactive(DSState *dsState) {
 
     atexit(saveHistory);
 
+    ignoreSignal();
     for(const char *line = nullptr; (line = readLine()) != nullptr; ) {
-        ignoreSignal();
         DSState_eval(dsState, nullptr, line, nullptr);
     }
     return 0;
