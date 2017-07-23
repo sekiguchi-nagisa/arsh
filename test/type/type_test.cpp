@@ -5,65 +5,109 @@
 
 using namespace ydsh;
 
-// helper method for type token generation
-std::unique_ptr<TypeNode> addRestElements(std::unique_ptr<ReifiedTypeNode> &&reified) {
-    return std::move(reified);
+
+struct Type {};
+
+template <const char *&value>
+struct BaseType : Type {};
+
+#define DEFINE_TYPE(name) \
+namespace __detail_type {  \
+    static const char * name ## _v = #name; \
+} \
+using name ## _t = BaseType<__detail_type::name ## _v>
+
+
+template <const char *&value, unsigned int N, typename ...P>
+struct TypeTemp : Type {
+    static_assert((N == 0 && sizeof...(P) > 0)|| (N > 0 && sizeof...(P) == N), "mismatched size");
+};
+
+#define DEFINE_TYPE_TEMP(name, size) \
+namespace __detail_type { \
+    static const char * name ## _v = #name; \
+} \
+template<typename ...T> using name ## _t = TypeTemp<__detail_type::name ## _v, size, T...>
+
+template <typename R, typename ... P>
+struct Func_t : Type {};
+
+DEFINE_TYPE(Int32);
+DEFINE_TYPE(Int);
+DEFINE_TYPE(String);
+DEFINE_TYPE(Error);
+DEFINE_TYPE(Byte);
+DEFINE_TYPE(ObjectPath);
+DEFINE_TYPE(Boolean);
+DEFINE_TYPE(Uint64);
+DEFINE_TYPE(Int64);
+DEFINE_TYPE(Uint32);
+DEFINE_TYPE(Int16);
+DEFINE_TYPE(Uint16);
+DEFINE_TYPE(Float);
+DEFINE_TYPE(Void);
+
+
+DEFINE_TYPE_TEMP(Array, 1);
+DEFINE_TYPE_TEMP(Map, 2);
+DEFINE_TYPE_TEMP(Tuple, 0);
+DEFINE_TYPE_TEMP(Option, 1);
+
+
+
+template <typename T>
+struct TypeFactory {
+    std::unique_ptr<TypeNode> operator()() const {
+        return nullptr;
+    }
+};
+
+template <const char *&Name>
+struct TypeFactory<BaseType<Name>> {
+    std::unique_ptr<TypeNode> operator()() const {
+        return std::unique_ptr<TypeNode>(new BaseTypeNode({0, 1}, std::string(Name)));
+    }
+};
+
+std::unique_ptr<ReifiedTypeNode> addElement(std::unique_ptr<ReifiedTypeNode> &&type) {
+    return std::move(type);
 }
 
-template <typename... T>
-std::unique_ptr<TypeNode> addRestElements(std::unique_ptr<ReifiedTypeNode> &&reified,
-                                          std::unique_ptr<TypeNode>&& type, T&&... rest) {
-    reified->addElementTypeNode(type.release());
-    return addRestElements(std::move(reified), std::forward<T>(rest)...);
+template <typename First, typename ... E>
+std::unique_ptr<ReifiedTypeNode> addElement(std::unique_ptr<ReifiedTypeNode> &&type, First &&, E&& ...rest) {
+    auto e = TypeFactory<First>{}();
+    type->addElementTypeNode(e.release());
+    return addElement(std::move(type), std::forward<E>(rest)...);
 }
 
+template <const char *&Name, unsigned int N, typename ...P>
+struct TypeFactory<TypeTemp<Name, N, P...>> {
+    std::unique_ptr<TypeNode> operator()() const {
+        std::unique_ptr<ReifiedTypeNode> reified(
+                new ReifiedTypeNode(new BaseTypeNode({0, 1}, std::string(Name))));
+        return addElement(std::move(reified), P()...);
+    }
+};
 
-template <typename... T>
-std::unique_ptr<TypeNode> reified(const char *name, std::unique_ptr<TypeNode> &&first, T&&... rest) {
-    std::unique_ptr<ReifiedTypeNode> reified(
-            new ReifiedTypeNode(new BaseTypeNode({0, 1}, std::string(name))));
-    reified->addElementTypeNode(first.release());
-    return addRestElements(std::move(reified), std::forward<T>(rest)...);
+std::unique_ptr<FuncTypeNode> addParam(std::unique_ptr<FuncTypeNode> &&type) {
+    return std::move(type);
 }
 
-
-std::unique_ptr<TypeNode> addParamType(std::unique_ptr<FuncTypeNode> &&func) {
-    return std::move(func);
+template <typename First, typename ... P>
+std::unique_ptr<FuncTypeNode> addParam(std::unique_ptr<FuncTypeNode> &&type, First &&, P && ...rest) {
+    auto e = TypeFactory<First>{}();
+    type->addParamTypeNode(e.release());
+    return addParam(std::move(type), std::forward<P>(rest)...);
 }
 
-template <typename... T>
-std::unique_ptr<TypeNode> addParamType(std::unique_ptr<FuncTypeNode> &&func,
-                                       std::unique_ptr<TypeNode>&& type, T&&... rest) {
-    func->addParamTypeNode(type.release());
-    return addParamType(std::move(func), std::forward<T>(rest)...);
-}
-
-template <typename... T>
-std::unique_ptr<TypeNode> func(std::unique_ptr<TypeNode> &&returnType, T&&... paramTypes) {
-    std::unique_ptr<FuncTypeNode> func(new FuncTypeNode(0, returnType.release()));
-    return addParamType(std::move(func), std::forward<T>(paramTypes)...);
-}
-
-inline std::unique_ptr<TypeNode> type(const char *name, unsigned int lineNum = 0) {
-    return std::unique_ptr<TypeNode>(new BaseTypeNode({lineNum, 1}, std::string(name)));
-}
-
-inline std::unique_ptr<TypeNode> array(std::unique_ptr<TypeNode> &&type) {
-    return reified("Array", std::move(type));
-}
-
-inline std::unique_ptr<TypeNode> map(std::unique_ptr<TypeNode> &&keyType, std::unique_ptr<TypeNode> &&valueType) {
-    return reified("Map", std::move(keyType), std::move(valueType));
-}
-
-template <typename... T>
-std::unique_ptr<TypeNode> tuple(std::unique_ptr<TypeNode> &&first, T&&... rest) {
-    return reified("Tuple", std::move(first), std::forward<T>(rest)...);
-}
-
-inline std::unique_ptr<TypeNode> opt(std::unique_ptr<TypeNode> &&type) {
-    return reified("Option", std::move(type));
-}
+template <typename R, typename ...P>
+struct TypeFactory<Func_t<R, P...>> {
+    std::unique_ptr<TypeNode> operator()() const {
+        auto ret = TypeFactory<R>{}();
+        std::unique_ptr<FuncTypeNode> func(new FuncTypeNode(0, ret.release()));
+        return addParam(std::move(func), P()...);
+    }
+};
 
 
 class TypeTest : public ::testing::Test {
@@ -133,9 +177,10 @@ public:
         ASSERT_TRUE((unsigned long)&this->pool.getTypeTemplate(name) == (unsigned long)&t);
     }
 
-    virtual DSType &toType(std::unique_ptr<TypeNode> &&tok) {
-        TypeNode *ptr = tok.get();
-        return TypeGenerator(this->pool).toType(*ptr);
+    template <typename T>
+    DSType &toType() {
+        auto t = TypeFactory<T>{}();
+        return TypeGenerator(this->pool).toType(*t);
     }
 };
 
@@ -179,7 +224,7 @@ TEST_F(TypeTest, superType) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->pool.getAnyType().getSuperType() == nullptr));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->pool.getVoidType().getSuperType() == nullptr));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->pool.getBottomType().getSuperType() == nullptr));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->toType(opt(type("String"))).getSuperType() == nullptr));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->toType<Option_t<String_t>>().getSuperType() == nullptr));
 
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getVariantType(), this->pool.getAnyType()));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getValueType(), this->pool.getVariantType()));
@@ -242,7 +287,7 @@ TEST_F(TypeTest, attribute) {
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getRegexType()));
 
     ASSERT_NO_FATAL_FAILURE(
-            this->assertAttribute(DSType::FUNC_TYPE, this->toType(func(type("Int32")))));
+            this->assertAttribute(DSType::FUNC_TYPE, this->toType<Func_t<Int32_t>>()));
 }
 
 TEST_F(TypeTest, alias) {
@@ -258,26 +303,24 @@ TEST_F(TypeTest, templateName) {
 }
 
 TEST_F(TypeTest, typeToken) {
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType(type("Int32")), this->pool.getValueType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Int32_t>(), this->pool.getValueType()));
     ASSERT_NO_FATAL_FAILURE(this->assertAlias("Int", this->pool.getInt32Type()));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType(type("Int")), this->pool.getValueType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Int_t>(), this->pool.getValueType()));
 
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType(array(type("String"))), this->pool.getVariantType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType(array(reified("Array", type("ObjectPath")))), this->pool.getVariantType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType(array(type("Error"))), this->pool.getAnyType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Array_t<String_t>>(), this->pool.getVariantType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Array_t<Array_t<ObjectPath_t>>>(), this->pool.getVariantType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Array_t<Error_t>>(), this->pool.getAnyType()));
 
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType(map(type("Byte"), type("Uint64"))), this->pool.getVariantType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType(
-            map(type("Boolean"), tuple(type("Uint32"), type("String")))), this->pool.getVariantType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType(tuple(type("Error"))), this->pool.getAnyType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Map_t<Byte_t, Uint64_t>>(), this->pool.getVariantType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Map_t<Boolean_t, Tuple_t<Uint32_t, String_t>>>(), this->pool.getVariantType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Tuple_t<Error_t>>(), this->pool.getAnyType()));
 
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType(func(type("Void"))), this->pool.getBaseFuncType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType(
-            func(type("Int16"), type("Uint16"), type("Int64"), type("Float"))), this->pool.getBaseFuncType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Func_t<Void_t>>(), this->pool.getBaseFuncType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Func_t<Int16_t, Uint16_t, Int64_t, Float_t>>(), this->pool.getBaseFuncType()));
 }
 
 TEST_F(TypeTest, pool) {
-    auto &t = this->toType(array(type("Int32")));
+    auto &t = this->toType<Array_t<Int32_t>>();
     std::string typeName = this->pool.getTypeName(t);
     std::string alias = "IArray";
     ASSERT_NO_FATAL_FAILURE(this->assertAlias(alias.c_str(), t));
@@ -299,13 +342,13 @@ TEST_F(TypeTest, api) {
     ASSERT_NO_FATAL_FAILURE(
             ASSERT_TRUE(this->pool.getVoidType().isSameOrBaseTypeOf(this->pool.getBottomType())));
     ASSERT_NO_FATAL_FAILURE(
-            ASSERT_TRUE(this->toType(opt(type("Int32"))).isSameOrBaseTypeOf(this->pool.getBottomType())));
+            ASSERT_TRUE(this->toType<Option_t<Int32_t>>().isSameOrBaseTypeOf(this->pool.getBottomType())));
     ASSERT_NO_FATAL_FAILURE(
-            ASSERT_FALSE(this->pool.getAnyType().isSameOrBaseTypeOf(this->toType(opt(type("Int32"))))));
+            ASSERT_FALSE(this->pool.getAnyType().isSameOrBaseTypeOf(this->toType<Option_t<Int32_t>>())));
     ASSERT_NO_FATAL_FAILURE(
-            ASSERT_TRUE(this->toType(opt(type("Int32"))).isSameOrBaseTypeOf(this->pool.getInt32Type())));
+            ASSERT_TRUE(this->toType<Option_t<Int32_t>>().isSameOrBaseTypeOf(this->pool.getInt32Type())));
     ASSERT_NO_FATAL_FAILURE(
-            ASSERT_TRUE(this->toType(opt(type("Error"))).isSameOrBaseTypeOf(this->pool.getArithmeticErrorType())));
+            ASSERT_TRUE(this->toType<Option_t<Error_t>>().isSameOrBaseTypeOf(this->pool.getArithmeticErrorType())));
 }
 
 int main(int argc, char **argv) {
