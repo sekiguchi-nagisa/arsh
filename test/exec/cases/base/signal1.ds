@@ -31,8 +31,8 @@ try {
 }
 
 if $e is SystemError {
-    assert $e.message() == if $OSTYPE != 'Cygwin' { 'HUP: Operation not permitted'; }
-                                             else { 'HUP: No such process'; }
+    assert $e.message() == if $OSTYPE !~ $/^cygwin/i { 'HUP: Operation not permitted'; }
+                                                else { 'HUP: No such process'; }
 } else {
     assert $false
 }
