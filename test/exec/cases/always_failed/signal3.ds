@@ -12,7 +12,7 @@ function g($s : Signal) {
     exit $s
 }
 
-$SIG.action(%'int', $f)
+$SIG.trap(%'int', $f)
 
 try {
     $raise('int')
@@ -21,7 +21,7 @@ try {
     assert ($e as Signal).name() == %'int'.name()
 }
 
-$SIG.action(%'hup', $g)
+$SIG.trap(%'hup', $g)
 $raise('hup')
 
 exit 0

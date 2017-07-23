@@ -6,7 +6,7 @@ function f($a : Signal) {
 }
 
 
-$SIG.action(%'term', $f)
+$SIG.trap(%'term', $f)
 
 eval "$(which kill)" -s $SIG['term'] $PID
 

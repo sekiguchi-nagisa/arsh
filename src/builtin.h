@@ -1381,9 +1381,9 @@ YDSH_METHOD signal_kill(RuntimeContext &ctx) {
 // ##     Signals     ##
 // #####################
 
-//!bind: function action($this : Signals, $s : Signal, $action : Func<Void,[Signal]>) : Void
-YDSH_METHOD signals_action(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(signals_action);
+//!bind: function trap($this : Signals, $s : Signal, $action : Func<Void,[Signal]>) : Void
+YDSH_METHOD signals_trap(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(signals_trap);
     auto *obj = typeAs<Int_Object>(LOCAL(1));
     installSignalHandler(ctx, obj->getValue(), EXTRACT_LOCAL(2));
 

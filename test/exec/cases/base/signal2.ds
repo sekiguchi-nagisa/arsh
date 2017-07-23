@@ -9,8 +9,8 @@ function raise($s : String) {
     $SIG[$s].kill($PID)
 }
 
-$SIG.action(%'HUP', $f)
-$SIG.action(%'term', $f)
+$SIG.trap(%'HUP', $f)
+$SIG.trap(%'term', $f)
 
 true
 $raise('hup')
