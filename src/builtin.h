@@ -1312,12 +1312,21 @@ YDSH_METHOD regex_init(RuntimeContext &ctx) {
     RET_VOID;
 }
 
-//!bind: function search($this : Regex, $target : String) : Boolean
+//!bind: function $OP_MATCH($this : Regex, $target : String) : Boolean
 YDSH_METHOD regex_search(RuntimeContext &ctx) {
     SUPPRESS_WARNING(regex_search);
     auto *re = typeAs<Regex_Object>(LOCAL(0));
     auto *str = typeAs<String_Object>(LOCAL(1));
     bool r = regexSearch(re, str);
+    RET_BOOL(r);
+}
+
+//!bind: function $OP_UNMATCH($this : Regex, $target : String) : Boolean
+YDSH_METHOD regex_unmatch(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(regex_unmatch);
+    auto *re = typeAs<Regex_Object>(LOCAL(0));
+    auto *str = typeAs<String_Object>(LOCAL(1));
+    bool r = !regexSearch(re, str);
     RET_BOOL(r);
 }
 

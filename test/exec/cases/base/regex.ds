@@ -1,9 +1,9 @@
 
-assert $/a/.search('bac')
+assert $/a/ =~ 'bac'
 
-assert not $/abc/.search('cdf')
+assert $/abc/ !~ 'cdf'
 
-assert $/^.$/.search("あ")
+assert $/^.$/ =~ "あ"
 
 assert '/hoge' =~ $/\//
 
@@ -22,7 +22,7 @@ assert $'abcd\n123' =~ $/^123/m # multi line
 assert $'AbCd\n123' =~ $/abcd$/mi # multi line + caseless
 assert $'AbCd\n123' =~ $/abcd$/im # multi line + caseless
 
-assert new Regex(".*").search("a")
+assert new Regex(".*") =~ "a"
 
 try {
     new Regex("**")
