@@ -1385,6 +1385,24 @@ YDSH_METHOD signal_kill(RuntimeContext &ctx) {
     RET_VOID;
 }
 
+//!bind: function $OP_EQ($this : Signal, $target : Signal) : Boolean
+YDSH_METHOD signal_eq(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(signal_eq);
+    int left = typeAs<Int_Object>(LOCAL(0))->getValue();
+    int right = typeAs<Int_Object>(LOCAL(1))->getValue();
+    bool ret = left == right;
+    RET_BOOL(ret);
+}
+
+//!bind: function $OP_NE($this : Signal, $target : Signal) : Boolean
+YDSH_METHOD signal_ne(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(signal_ne);
+    int left = typeAs<Int_Object>(LOCAL(0))->getValue();
+    int right = typeAs<Int_Object>(LOCAL(1))->getValue();
+    bool ret = left != right;
+    RET_BOOL(ret);
+}
+
 
 // #####################
 // ##     Signals     ##
