@@ -118,7 +118,6 @@ static void ignoreSignal() {
     sigaction(SIGTSTP, &ignore_act, nullptr);  //FIXME: job control
     sigaction(SIGTTIN, &ignore_act, nullptr);
     sigaction(SIGTTOU, &ignore_act, nullptr);
-    sigaction(SIGCHLD, &ignore_act, nullptr);
 }
 
 
