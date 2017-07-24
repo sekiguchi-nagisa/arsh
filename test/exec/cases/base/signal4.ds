@@ -13,3 +13,9 @@ assert $SIG.action(%'INT') as String == $f as String
 
 $SIG.trap(%'INT', $SIG_DFL) # ignore signal
 assert $SIG.action(%'INT') as String == $SIG_DFL as String
+
+
+# cannot ignore SIGCHLD (due ot prevent waitpid error, see man waitpid)
+# when specify SIG_IGN, set SIG_DFL instead
+$SIG.trap(%'CHLD', $SIG_IGN)
+assert $SIG.action(%'CHLD') as String == $SIG_DFL as String

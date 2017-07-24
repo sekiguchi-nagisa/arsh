@@ -1242,7 +1242,11 @@ void installSignalHandler(DSState &st, int sigNum, DSValue &&handler) {
             action.sa_handler = SIG_DFL;
             handler = nullptr;
         } else if(handler == IGN_handler) {
-            action.sa_handler = SIG_IGN;
+            if(sigNum == SIGCHLD) {
+                action.sa_handler = SIG_DFL;    // do not ignore SIGCHLD due to prevent waitpid error
+            } else {
+                action.sa_handler = SIG_IGN;
+            }
             handler = nullptr;
         } else {
             action.sa_handler = signalHandler;
