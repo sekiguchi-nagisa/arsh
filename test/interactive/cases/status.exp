@@ -1,0 +1,68 @@
+#!/usr/bin/env expect
+
+# skip empty line
+
+set bin_name [lindex $argv 0]
+spawn ${bin_name} --norc
+
+set CTRLD \004
+
+expect {
+    -re "\\$ $" {
+        send "eval \$(which true)\r"
+    }
+    default {
+        send_error "mismatch first prompt"
+        exit 1
+    }
+}
+
+expect {
+    -re "\\$ $" {
+        send "assert \$? == 0\r"
+    }
+    default {
+        send_error "mismatch first prompt"
+        exit 1
+    }
+}
+
+expect {
+    -re "\\$ $" {
+        send "eval \$(which false)\r"
+    }
+    default {
+        send_error "mismatch first prompt"
+        exit 1
+    }
+}
+
+expect {
+    -re "\\$ $" {
+        send "assert \$? == 1\r"
+    }
+    default {
+        send_error "mismatch first prompt"
+        exit 1
+    }
+}
+
+expect {
+    -re "\\$ $" {
+        send $CTRLD
+    }
+    default {
+        send_error "mismatch prompt"
+        exit 1
+    }
+}
+
+expect default
+catch wait result
+set os_error [ lindex $result 2 ]
+if { $os_error == -1 } {
+    send_error "execution failed"
+    exit 1
+}
+set status [ lindex $result 3]
+exit $status
