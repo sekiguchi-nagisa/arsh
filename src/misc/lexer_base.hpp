@@ -93,6 +93,11 @@ protected:
     unsigned char *marker;
 
     /**
+     * for trailing context
+     */
+    unsigned char *ctxMarker;
+
+    /**
      * if fp is null or fp reach EOF, it it true.
      */
     bool endOfFile;
@@ -108,7 +113,7 @@ protected:
 private:
     LexerBase() :
             fp(nullptr), bufSize(0), buf(nullptr), cursor(nullptr),
-            limit(nullptr), marker(nullptr), endOfFile(false), endOfString(false) { }
+            limit(nullptr), marker(nullptr), ctxMarker(nullptr), endOfFile(false), endOfString(false) { }
 
 public:
     NON_COPYABLE(LexerBase);
@@ -382,6 +387,7 @@ void LexerBase<T>::swapBuffer(unsigned char *&newBuf, unsigned int &newSize) {
     const unsigned int usedSize = this->getUsedSize();
     const unsigned int pos = this->getPos();
     const unsigned int markerPos = this->marker - this->buf;
+    const unsigned int ctxMarkerPos = this->ctxMarker - this->buf;
 
     // swap
     std::swap(this->buf, newBuf);
@@ -391,6 +397,7 @@ void LexerBase<T>::swapBuffer(unsigned char *&newBuf, unsigned int &newSize) {
     this->cursor = this->buf + pos;
     this->limit = this->buf + usedSize - 1;
     this->marker = this->buf + markerPos;
+    this->ctxMarker = this->buf + ctxMarkerPos;
 }
 
 template<bool T>

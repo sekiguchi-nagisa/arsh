@@ -1,3 +1,5 @@
-#$test($result = 'parse', $lineNum = 3, $errorKind = 'TokenMismatched', $status = 1)
+##$test($result = 'parse', $lineNum = 3, $errorKind = 'TokenMismatched', $status = 1)
 
-assert 23 as String != 23 as String # '!=' is recognized as '!' '=' due to type lexing
+# assert 23 as String != 23 as String # '!=' is recognized as '!' '=' due to type lexing
+
+# old test case, now correctly parse '!=' operator
