@@ -888,22 +888,6 @@ static int builtin_test(DSState &, Array_Object &argvObj) {
     return result ? 0 : 1;
 }
 
-/**
- * only allow ascii space
- */
-static bool isSpace(int ch) {
-    return ch == ' ' || ch == '\t' || ch == '\n';
-}
-
-static bool isFieldSep(const char *ifs, int ch) {
-    for(unsigned int i = 0; ifs[i] != '\0'; i++) {
-        if(ifs[i] == ch) {
-            return true;
-        }
-    }
-    return false;
-}
-
 static int xfgetc(int fd, int timeout) {
     char ch;
     do {

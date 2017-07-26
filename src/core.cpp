@@ -29,6 +29,7 @@
 #include "symbol.h"
 #include "parser.h"
 #include "logger.h"
+#include "cmd.h"
 #include "misc/num.h"
 #include "misc/time.h"
 #include "misc/files.h"

@@ -24,10 +24,8 @@
 
 #include <ydsh/ydsh.h>
 
-#include "node.h"
 #include "object.h"
 #include "symbol_table.h"
-#include "cmd.h"
 #include "core.h"
 #include "misc/buffer.hpp"
 #include "misc/noncopyable.h"

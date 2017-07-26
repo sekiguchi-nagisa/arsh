@@ -59,6 +59,29 @@ const char *getBuiltinCommandName(unsigned int index);
 
 builtin_command_t lookupBuiltinCommand(const char *commandName);
 
+// common function for field splitting
+inline bool isSpace(int ch) {
+    return ch == ' ' || ch == '\t' || ch == '\n';
+}
+
+inline bool hasSpace(const char *ifs) {
+    for(unsigned int i = 0; ifs[i] != '\0'; i++) {
+        if(isSpace(ifs[i])) {
+            return true;
+        }
+    }
+    return false;
+}
+
+inline bool isFieldSep(const char *ifs, int ch) {
+    for(unsigned int i = 0; ifs[i] != '\0'; i++) {
+        if(ifs[i] == ch) {
+            return true;
+        }
+    }
+    return false;
+}
+
 } // namespace ydsh
 
 #define PERROR(obj, fmt, ...) fprintf(stderr, "ydsh: %s: " fmt ": %s\n", str(obj.getValues()[0]), ## __VA_ARGS__, strerror(errno))

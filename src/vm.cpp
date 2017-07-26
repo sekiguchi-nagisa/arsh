@@ -23,6 +23,7 @@
 
 #include "opcode.h"
 #include "vm.h"
+#include "cmd.h"
 #include "logger.h"
 #include "symbol.h"
 #include "misc/files.h"
@@ -415,29 +416,6 @@ static void invokeSetter(DSState &st, unsigned short constPoolIndex) {
 
 
 /* for substitution */
-
-static bool isSpace(int ch) {
-    return ch == ' ' || ch == '\t' || ch == '\n';
-}
-
-static bool isFieldSep(const char *ifs, int ch) {
-    for(unsigned int i = 0; ifs[i] != '\0'; i++) {
-        if(ifs[i] == ch) {
-            return true;
-        }
-    }
-    return false;
-}
-
-static bool hasSpace(const char *ifs) {
-    for(unsigned int i = 0; ifs[i] != '\0'; i++) {
-        if(isSpace(ifs[i])) {
-            return true;
-        }
-    }
-    return false;
-}
-
 static constexpr unsigned int READ_PIPE = 0;
 static constexpr unsigned int WRITE_PIPE = 1;
 
