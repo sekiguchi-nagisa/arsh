@@ -911,7 +911,7 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
         }
         close(selfpipe[READ_PIPE]);
         if(readSize > 0 && errnum == ENOENT) {  // remove cached path
-            getPathCache(state).removePath(argv[0]);
+            state.pathCache.removePath(argv[0]);
         }
 
         int status;
@@ -1057,7 +1057,7 @@ static void callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redi
                 if(path != nullptr) {
                     if(showDesc == 1) {
                         printf("%s\n", path);
-                    } else if(getPathCache(state).isCached(commandName)) {
+                    } else if(state.pathCache.isCached(commandName)) {
                         printf("%s is hashed (%s)\n", commandName, path);
                     } else {
                         printf("%s is %s\n", commandName, path);
@@ -1471,8 +1471,8 @@ static bool mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(STORE_ENV) {
-            DSValue value(state.pop());
-            DSValue name(state.pop());
+            DSValue value = state.pop();
+            DSValue name = state.pop();
 
             setenv(typeAs<String_Object>(name)->getValue(),
                    typeAs<String_Object>(value)->getValue(), 1);//FIXME: check return value and throw
@@ -1499,7 +1499,7 @@ static bool mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(APPEND_STRING) {
-            DSValue v(state.pop());
+            DSValue v = state.pop();
             typeAs<String_Object>(state.peek())->append(std::move(v));
             vmnext;
         }
@@ -1510,7 +1510,7 @@ static bool mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(APPEND_ARRAY) {
-            DSValue v(state.pop());
+            DSValue v = state.pop();
             typeAs<Array_Object>(state.peek())->append(std::move(v));
             vmnext;
         }
@@ -1521,8 +1521,8 @@ static bool mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(APPEND_MAP) {
-            DSValue value(state.pop());
-            DSValue key(state.pop());
+            DSValue value = state.pop();
+            DSValue key = state.pop();
             typeAs<Map_Object>(state.peek())->add(std::make_pair(std::move(key), std::move(value)));
             vmnext;
         }
@@ -1600,7 +1600,7 @@ static bool mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(RETURN_V) {
-            DSValue v(state.pop());
+            DSValue v = state.pop();
             unwindStackFrame(state);
             state.push(std::move(v));
             if(state.codeStack.empty()) {
@@ -1621,7 +1621,7 @@ static bool mainLoop(DSState &state) {
             auto v = state.getLocal(0);   // old exit status
             unwindStackFrame(state);
             unsetFlag(DSState::eventDesc, DSState::VM_EVENT_MASK);
-            state.updateExitStatus(typeAs<Int_Object>(v)->getValue());
+            state.setGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS), std::move(v));
             vmnext;
         }
         vmcase(BRANCH) {
@@ -1944,7 +1944,7 @@ static bool handleException(DSState &state) {
         } else if(CODE(state) == &signalTrampoline) {   // within signal trampoline
             unsetFlag(DSState::eventDesc, DSState::VM_EVENT_MASK);
             auto v = state.getLocal(0);
-            setGlobal(state, toIndex(BuiltinVarOffset::EXIT_STATUS), std::move(v));
+            state.setGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS), std::move(v));
         }
         if(state.codeStack.size() == 1) {
             break;  // when top level

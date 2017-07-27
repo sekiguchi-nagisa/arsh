@@ -558,7 +558,7 @@ int DSState_setScriptDir(DSState *st, const char *scriptPath) {
 
     std::string str(real, real == ptr ? 1 : ptr - real);
     free(real);
-    setGlobal(*st, index, DSValue::create<String_Object>(st->pool.getStringType(), std::move(str)));
+    st->setGlobal(index, DSValue::create<String_Object>(st->pool.getStringType(), std::move(str)));
     return 0;
 }
 
