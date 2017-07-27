@@ -174,7 +174,6 @@ DSType* TypeDecoder::decode() {
     case P_N7:
     case P_N8:
         fatal("must be type\n");
-        break;
     case T0:
         return (*this->types)[0];
     case T1:
@@ -182,7 +181,6 @@ DSType* TypeDecoder::decode() {
     default:
         fatal("broken handle info\n");
     }
-    return nullptr;
 }
 
 bool MethodHandle::init(TypePool &typePool, NativeFuncInfo &info,

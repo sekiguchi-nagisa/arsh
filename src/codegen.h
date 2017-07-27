@@ -231,14 +231,32 @@ private:
     unsigned short localSize{0};
 
 public:
-    CatchBuilder() : begin(nullptr), end(nullptr) { }
+    CatchBuilder() = default;
     CatchBuilder(IntrusivePtr<Label> begin, IntrusivePtr<Label> end, const DSType &type,
                  unsigned int address, unsigned short localOffset, unsigned short localSize) :
-            begin(std::move(begin)), end(std::move(end)), type(&type), address(address), localOffset(localOffset), localSize(localSize) {}
+            begin(std::move(begin)), end(std::move(end)), type(&type),
+            address(address), localOffset(localOffset), localSize(localSize) {}
 
     ~CatchBuilder() = default;
 
-    ExceptionEntry toEntry() const;
+    ExceptionEntry toEntry() const {
+        assert(this->begin);
+        assert(this->end);
+
+        assert(this->begin->getIndex() > 0);
+        assert(this->end->getIndex() > 0);
+        assert(this->address > 0);
+        assert(this->type != nullptr);
+
+        return ExceptionEntry {
+                .type = this->type,
+                .begin = this->begin->getIndex(),
+                .end = this->end->getIndex(),
+                .dest = this->address,
+                .localOffset = this->localOffset,
+                .localSize = this->localSize,
+        };
+    }
 };
 
 class ByteCodeGenerator : protected NodeVisitor {
@@ -479,4 +497,4 @@ void dumpCode(FILE *fp, DSState &ctx, const CompiledCode &c);
 
 } // namespace ydsh
 
-#endif //YDSH__CODEGEN_H
+#endif //YDSH_CODEGEN_H

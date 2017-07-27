@@ -46,29 +46,6 @@ bool isTypeOp(OpCode code) {
     }
 }
 
-// ##########################
-// ##     CatchBuilder     ##
-// ##########################
-
-ExceptionEntry CatchBuilder::toEntry() const {
-    assert(this->begin);
-    assert(this->end);
-
-    assert(this->begin->getIndex() > 0);
-    assert(this->end->getIndex() > 0);
-    assert(this->address > 0);
-    assert(this->type != nullptr);
-
-    return ExceptionEntry {
-            .type = this->type,
-            .begin = this->begin->getIndex(),
-            .end = this->end->getIndex(),
-            .dest = this->address,
-            .localOffset = this->localOffset,
-            .localSize = this->localSize,
-    };
-}
-
 
 // ###############################
 // ##     ByteCodeGenerator     ##
