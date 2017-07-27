@@ -242,6 +242,21 @@ if [ $? != 0 ]; then
 fi
 
 
+# splitting
+# specify separator (null character)
+echo -e '   hello\x00worlda22!!' |
+  $YDSH_BIN -c \
+  "read -f \$'a\x00' a b c; assert(\$reply.size() == 3 &&
+                               \$reply['a'] == '   hello' &&
+                               \$reply['b'] == 'world' &&
+                               \$reply['c'] == '22!!')"
+
+if [ $? != 0 ]; then
+    echo $LINENO
+    exit 1
+fi
+
+
 # raw mode
 echo '   hello\ world  ' |
   $YDSH_BIN -c \

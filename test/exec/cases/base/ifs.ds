@@ -67,3 +67,11 @@ assert($a[0].empty())
 assert($a[1] == "hello")
 assert($a[2].empty())
 assert($a[3] == "world")
+
+# null character
+$IFS = $'\x00d'
+$a = $(echo -e 'hello\x00world !!')
+assert $a.size() == 3
+assert $a[0] == 'hello'
+assert $a[1] == 'worl'
+assert $a[2] == ' !!'

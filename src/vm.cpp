@@ -460,7 +460,9 @@ static void forkAndCapture(bool isStr, DSState &state) {
 
             obj = DSValue::create<String_Object>(state.pool.getStringType(), std::move(str));
         } else {    // capture stdout as String Array
-            const char *ifs = typeAs<String_Object>(getGlobal(state, toIndex(BuiltinVarOffset::IFS)))->getValue();
+            auto *ifsObj = typeAs<String_Object>(getGlobal(state, toIndex(BuiltinVarOffset::IFS)));
+            const char *ifs = ifsObj->getValue();
+            const unsigned ifsSize = ifsObj->size();
             unsigned int skipCount = 1;
 
             char buf[256];
@@ -479,7 +481,7 @@ static void forkAndCapture(bool isStr, DSState &state) {
 
                 for(int i = 0; i < readSize; i++) {
                     char ch = buf[i];
-                    bool fieldSep = isFieldSep(ifs, ch);
+                    bool fieldSep = isFieldSep(ifsSize, ifs, ch);
                     if(fieldSep && skipCount > 0) {
                         if(isSpace(ch)) {
                             continue;
@@ -505,7 +507,7 @@ static void forkAndCapture(bool isStr, DSState &state) {
             }
 
             // append remain
-            if(!str.empty() || !hasSpace(ifs)) {
+            if(!str.empty() || !hasSpace(ifsSize, ifs)) {
                 array->append(DSValue::create<String_Object>(state.pool.getStringType(), std::move(str)));
             }
         }

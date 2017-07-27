@@ -912,6 +912,7 @@ static int xfgetc(int fd, int timeout) {
 static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeout, UTF-8
     const char *prompt = "";
     const char *ifs = nullptr;
+    unsigned int ifsSize = 0;
     bool backslash = true;
     bool noecho = false;
     int fd = STDIN_FILENO;
@@ -925,6 +926,7 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
             break;
         case 'f':
             ifs = optState.optArg;
+            ifsSize = typeAs<String_Object>(argvObj.getValues()[optState.index - 1])->size();
             break;
         case 'r':
             backslash = false;
@@ -971,7 +973,9 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
 
     // check ifs
     if(ifs == nullptr) {
-        ifs = typeAs<String_Object>(getGlobal(state, toIndex(BuiltinVarOffset::IFS)))->getValue();
+        auto *strObj = typeAs<String_Object>(getGlobal(state, toIndex(BuiltinVarOffset::IFS)));
+        ifs = strObj->getValue();
+        ifsSize = strObj->size();
     }
 
     // clear old variable before read
@@ -1017,7 +1021,7 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
             continue;
         }
 
-        bool fieldSep = isFieldSep(ifs, ch) && !prevIsBackslash;
+        bool fieldSep = isFieldSep(ifsSize, ifs, ch) && !prevIsBackslash;
         if(fieldSep && skipCount > 0) {
             if(isSpace(ch)) {
                 continue;

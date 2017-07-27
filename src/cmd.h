@@ -64,8 +64,8 @@ inline bool isSpace(int ch) {
     return ch == ' ' || ch == '\t' || ch == '\n';
 }
 
-inline bool hasSpace(const char *ifs) {
-    for(unsigned int i = 0; ifs[i] != '\0'; i++) {
+inline bool hasSpace(unsigned int size, const char *ifs) {
+    for(unsigned int i = 0; i < size; i++) {
         if(isSpace(ifs[i])) {
             return true;
         }
@@ -73,8 +73,8 @@ inline bool hasSpace(const char *ifs) {
     return false;
 }
 
-inline bool isFieldSep(const char *ifs, int ch) {
-    for(unsigned int i = 0; ifs[i] != '\0'; i++) {
+inline bool isFieldSep(unsigned int size, const char *ifs, int ch) {
+    for(unsigned int i = 0; i < size; i++) {
         if(ifs[i] == ch) {
             return true;
         }
