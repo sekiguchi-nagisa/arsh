@@ -8,25 +8,14 @@ enum class Kind : unsigned int {
     A, B, C, D, E,
 };
 
-typedef Option<Kind> Opt;
-typedef CmdLines<Kind> CL;
+using Opt = Option<Kind>;
+using CL = CmdLines<Kind>;
 
-typedef std::vector<const char *> RestArgs;
+using RestArgs = std::vector<const char *>;
 
-void addArg(std::vector<const char *> &) {
-}
-
-template <typename... T>
-void addArg(std::vector<const char *> &args, const char *first, T && ...rest) {
-    args.push_back(first);
-    addArg(args, std::forward<T>(rest)...);
-}
-
-template <typename... T>
+template <typename ...T>
 std::vector<const char *> make_args(T && ...rest) {
-    std::vector<const char *> args;
-    addArg(args, "<dummy>", std::forward<T>(rest)...);
-    return args;
+    return {"<dummy>", std::forward<T>(rest)...};
 }
 
 
