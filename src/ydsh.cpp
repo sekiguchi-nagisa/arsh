@@ -28,7 +28,6 @@
 #include <config.h>
 #include <embed.h>
 
-#include "node_dumper.h"
 #include "lexer.h"
 #include "parser.h"
 #include "type_checker.h"

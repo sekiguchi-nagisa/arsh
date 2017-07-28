@@ -19,6 +19,8 @@
 
 #include <utility>
 #include <memory>
+#include <type_traits>
+#include <list>
 
 #include "misc/flag_util.hpp"
 #include "misc/noncopyable.h"
@@ -2113,6 +2115,87 @@ struct BaseVisitor : public NodeVisitor {
     void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override { this->visitDefault(node); }
     void visitEmptyNode(EmptyNode &node) override { this->visitDefault(node); }
     void visitRootNode(RootNode &node) override { this->visitDefault(node); }
+};
+
+class NodeDumper {
+private:
+    FILE *fp;
+    TypePool &pool;
+
+    unsigned int indentLevel;
+
+public:
+    NodeDumper(FILE *fp, TypePool &pool) : fp(fp), pool(pool), indentLevel(0) { }
+
+    ~NodeDumper() = default;
+
+    /**
+     * dump field
+     */
+    void dump(const char *fieldName, const char *value);
+
+    void dump(const char *fieldName, const std::string &value) {
+        this->dump(fieldName, value.c_str());
+    }
+
+    void dump(const char *fieldName, const std::vector<Node *> &nodes) {
+        this->dumpNodes(fieldName, nodes.data(), nodes.data() + nodes.size());
+    }
+
+    template <typename T>
+    using convertible_t = typename std::enable_if<std::is_convertible<T, Node *>::value, T>::type;
+
+    template <typename T, typename = convertible_t<T *>>
+    void dump(const char *fieldName, const std::vector<T *> &nodes) {
+        this->dumpNodes(fieldName, reinterpret_cast<Node *const*>(nodes.data()),
+                        reinterpret_cast<Node *const*>(nodes.data() + nodes.size()));
+    }
+
+    void dump(const char *fieldName, const std::list<Node *> &nodes);
+
+    /**
+     * dump node with indent
+     */
+    void dump(const char *fieldName, const Node &node);
+
+    void dump(const char *fieldName, const DSType &type);
+
+    void dump(const char *fieldName, TokenKind kind);
+
+    void dumpNull(const char *fieldName);
+
+    /**
+     * dump node without indent
+     */
+    void dump(const Node &node);
+
+    /**
+     * entry point
+     */
+    void operator()(const RootNode &rootNode);
+
+    static void dump(FILE *fp, TypePool &pool, const RootNode &rootNode);
+
+private:
+    void enterIndent() {
+        this->indentLevel++;
+    }
+
+    void leaveIndent() {
+        this->indentLevel--;
+    }
+
+    void indent();
+
+    void newline() {
+        fputc('\n', this->fp);
+    }
+
+    void dumpNodeHeader(const Node &node, bool inArray = false);
+
+    void dumpNodes(const char *fieldName, Node* const* begin, Node* const* end);
+
+    void writeName(const char *fieldName);
 };
 
 } // namespace ydsh

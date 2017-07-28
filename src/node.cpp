@@ -19,8 +19,48 @@
 #include "symbol.h"
 #include "object.h"
 #include "node.h"
-#include "node_dumper.h"
 #include "handle.h"
+
+// helper macro for node dumper
+#define NAME(f) #f
+
+#define DUMP(field) dumper.dump(NAME(field), field)
+#define DUMP_PRIM(field) dumper.dump(NAME(field), std::to_string(field))
+#define DUMP_PTR(field) \
+    do {\
+        if((field) == nullptr) {\
+            dumper.dumpNull(NAME(field));\
+        } else {\
+            dumper.dump(NAME(field), *(field));\
+        }\
+    } while(false)
+
+
+// not directly use it.
+#define GEN_ENUM_STR(ENUM) case ENUM: ___str__ = #ENUM; break;
+
+#define DUMP_ENUM(val, EACH_ENUM) \
+    do {\
+        const char *___str__ = nullptr;\
+        switch(val) {\
+        EACH_ENUM(GEN_ENUM_STR)\
+        }\
+        dumper.dump(NAME(val), ___str__);\
+    } while(false)
+
+// not directly use it.
+#define GEN_FLAG_STR(FLAG) \
+        if((___set__ & (FLAG))) { if(___count__++ > 0) { ___str__ += " | "; } ___str__ += #FLAG; }
+
+#define DUMP_BITSET(val, EACH_FLAG) \
+    do {\
+        unsigned int ___count__ = 0;\
+        std::string ___str__;\
+        auto ___set__ = val;\
+        EACH_FLAG(GEN_FLAG_STR)\
+        dumper.dump(NAME(val), ___str__);\
+    } while(false)
+
 
 
 namespace ydsh {
@@ -1263,5 +1303,158 @@ Node *createIndexNode(Node *recvNode, Node *indexNode) {
     methodCallNode->refArgNodes().push_back(indexNode);
     return methodCallNode;
 }
+
+// ########################
+// ##     NodeDumper     ##
+// ########################
+
+void NodeDumper::dump(const char *fieldName, const char *value) {
+    this->writeName(fieldName);
+
+    fputc('"', this->fp);
+    while(*value != 0) {
+        char ch = *(value++);
+        bool escape = true;
+        switch(ch) {
+        case '\t':
+            ch = 't';
+            break;
+        case '\r':
+            ch = 'r';
+            break;
+        case '\n':
+            ch = 'n';
+            break;
+        case '"':
+            ch = '"';
+            break;
+        case '\\':
+            ch = '\\';
+            break;
+        default:
+            escape = false;
+            break;
+        }
+        if(escape) {
+            fputc('\\', this->fp);
+        }
+        fputc(ch, this->fp);
+    }
+    fputs("\"\n", this->fp);
+}
+
+void NodeDumper::dump(const char *fieldName, const std::list<Node *> &nodes) {
+    this->writeName(fieldName);
+    this->newline();
+
+    this->enterIndent();
+    for(Node *node : nodes) {
+        this->indent();
+        fputs("- ", this->fp);
+        this->dumpNodeHeader(*node, true);
+        this->enterIndent();
+        node->dump(*this);
+        this->leaveIndent();
+    }
+    this->leaveIndent();
+}
+
+void NodeDumper::dump(const char *fieldName, const Node &node) {
+    // write field name
+    this->writeName(fieldName);
+
+    // write node body
+    this->newline();
+    this->enterIndent();
+    this->dump(node);
+    this->leaveIndent();
+}
+
+void NodeDumper::dump(const char *fieldName, const DSType &type) {
+    this->dump(fieldName, this->pool.getTypeName(type));
+}
+
+void NodeDumper::dump(const char *fieldName, TokenKind kind) {
+    this->dump(fieldName, toString(kind));
+}
+
+void NodeDumper::dumpNull(const char *fieldName) {
+    this->writeName(fieldName);
+    this->newline();
+}
+
+void NodeDumper::dump(const Node &node) {
+    this->indent();
+    this->dumpNodeHeader(node);
+    node.dump(*this);
+    fflush(this->fp);
+}
+
+void NodeDumper::indent() {
+    for(unsigned int i = 0; i < this->indentLevel; i++) {
+        fputs("  ", this->fp);
+    }
+}
+
+static const char *toString(NodeKind kind) {
+    const char *table[] = {
+#define GEN_STR(E) #E,
+            EACH_NODE_KIND(GEN_STR)
+#undef GEN_STR
+    };
+    return table[static_cast<unsigned char>(kind)];
+}
+
+void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
+    fprintf(this->fp, "nodeKind: %s\n", toString(node.getNodeKind()));
+
+    if(inArray) {
+        this->enterIndent();
+    }
+
+    this->indent(); fprintf(this->fp, "token: \n");
+    this->enterIndent();
+    this->indent(); fprintf(this->fp, "pos: %d\n", node.getPos());
+    this->indent(); fprintf(this->fp, "size: %d\n", node.getSize());
+    this->leaveIndent();
+    this->indent(); fprintf(this->fp, "type: %s\n",
+                            (!node.isUntyped() ? this->pool.getTypeName(node.getType()).c_str() : ""));
+
+    if(inArray) {
+        this->leaveIndent();
+    }
+}
+
+void NodeDumper::dumpNodes(const char *fieldName, Node * const * begin, Node *const * end) {
+    this->writeName(fieldName);
+    this->newline();
+
+    this->enterIndent();
+    for(; begin != end; ++begin) {
+        Node *node = *begin;
+
+        this->indent();
+        fputs("- ", this->fp);
+        this->dumpNodeHeader(*node, true);
+        this->enterIndent();
+        node->dump(*this);
+        this->leaveIndent();
+    }
+    this->leaveIndent();
+}
+
+void NodeDumper::writeName(const char *fieldName) {
+    this->indent(); fprintf(this->fp, "%s: ", fieldName);
+}
+
+void NodeDumper::operator()(const RootNode &rootNode) {
+    this->dump(rootNode);
+}
+
+void NodeDumper::dump(FILE *fp, TypePool &pool, const RootNode &rootNode) {
+    NodeDumper writer(fp, pool);
+    writer(rootNode);
+}
+
 
 } // namespace ydsh

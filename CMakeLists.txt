@@ -232,7 +232,6 @@ endif()
 
 set(YDSH_SRC
         src/ydsh.cpp
-        src/node_dumper.cpp
         src/node.cpp
         src/object.cpp
         src/type.cpp
