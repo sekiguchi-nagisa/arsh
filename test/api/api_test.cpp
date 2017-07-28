@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include <memory>
 #include <algorithm>
+#include <array>
 
 #include <ydsh/ydsh.h>
 #include <config.h>
@@ -9,34 +9,30 @@
 #include <sys/types.h>
 #include <pwd.h>
 
-void addArg(std::vector<char *> &) {
+template <std::size_t N>
+void addArg(std::array<char *, N> &) {}
+
+template <std::size_t N, typename ...T>
+void addArg(std::array<char *, N> &array, const char *first, T ...rest) {
+    array[N - 2 - sizeof...(T)] = const_cast<char *>(first);
+    addArg(array, std::forward<T>(rest)...);
 }
 
-template <typename... T>
-void addArg(std::vector<char *> &out, const char *first, T ...rest) {
-    out.push_back(const_cast<char *>(first));
-    addArg(out, rest...);
+template <typename ... T>
+std::array<char *, sizeof...(T) + 2> make_argv(const char *name, T ... args) {
+    std::array<char *, sizeof...(T) + 2> array;
+    addArg(array, name, std::forward<T>(args)...);
+    array[sizeof...(T) + 1] = nullptr;
+    return array;
 }
 
-template <typename... T>
-std::unique_ptr<char *[]> make_argv(const char *name, T ...args) {
-    std::vector<char *> out;
-    addArg(out, name, args...);
-    unsigned int size = out.size();
-    std::unique_ptr<char *[]> ptr(new char*[size + 1]);
-    for(unsigned int i = 0; i < size; i++) {
-        ptr[i] = out[i];
-    }
-    ptr[size] = nullptr;
-    return ptr;
-}
 
 TEST(BuiltinExecTest, case1) {
     SCOPED_TRACE("");
 
     DSState *state = DSState_create();
 
-    int ret = DSState_exec(state, make_argv("echo", "hello").get());
+    int ret = DSState_exec(state, make_argv("echo", "hello").data());
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ret));
 
     DSState_delete(&state);
@@ -47,7 +43,7 @@ TEST(BuiltinExecTest, case2) {
 
     DSState *state = DSState_create();
 
-    int ret = DSState_exec(state, make_argv("fheruifh", "hello").get());
+    int ret = DSState_exec(state, make_argv("fheruifh", "hello").data());
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, ret));
 
     DSState_delete(&state);
