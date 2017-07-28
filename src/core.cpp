@@ -413,8 +413,8 @@ pid_t xfork(DSState &st, pid_t pgid, bool foreground) {
         }
 
         // update PID, PPID
-        st.setGlobal(toIndex(BuiltinVarOffset::PID), DSValue::create<Int_Object>(st.pool.getUint32Type(), getpid()));
-        st.setGlobal(toIndex(BuiltinVarOffset::PPID), DSValue::create<Int_Object>(st.pool.getUint32Type(), getppid()));
+        st.setGlobal(toIndex(BuiltinVarOffset::PID), DSValue::create<Int_Object>(st.pool.getInt32Type(), getpid()));
+        st.setGlobal(toIndex(BuiltinVarOffset::PPID), DSValue::create<Int_Object>(st.pool.getInt32Type(), getppid()));
     } else if(pid > 0) {
         if(st.isInteractive()) {
             setpgid(pid, pgid);
