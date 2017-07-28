@@ -157,11 +157,11 @@ public:
         cmd += this->getTmpFileName();
 
         // set argument
-        std::unique_ptr<char *[]> argv = d.getAsArgv(scriptName);
-        for(unsigned int i = 0; argv[i] != nullptr; i++) {
+        auto argv = d.getAsArgv(scriptName);
+        for(auto &e : argv) {
             cmd += " ";
             cmd += '"';
-            cmd += argv[i];
+            cmd += e;
             cmd += '"';
         }
 

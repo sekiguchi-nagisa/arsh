@@ -118,9 +118,8 @@ public:
 
     /**
      * first element is sourceName.
-     * last element is null.
      */
-    std::unique_ptr<char *[]> getAsArgv(const char *sourceName) const;
+    std::vector<std::string> getAsArgv(const char *sourceName) const;
 
     static bool init(const char *fileName, Directive &d);
 

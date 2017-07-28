@@ -9,21 +9,9 @@
 #include <sys/types.h>
 #include <pwd.h>
 
-template <std::size_t N>
-void addArg(std::array<char *, N> &) {}
-
-template <std::size_t N, typename ...T>
-void addArg(std::array<char *, N> &array, const char *first, T ...rest) {
-    array[N - 2 - sizeof...(T)] = const_cast<char *>(first);
-    addArg(array, std::forward<T>(rest)...);
-}
-
-template <typename ... T>
-std::array<char *, sizeof...(T) + 2> make_argv(const char *name, T ... args) {
-    std::array<char *, sizeof...(T) + 2> array;
-    addArg(array, name, std::forward<T>(args)...);
-    array[sizeof...(T) + 1] = nullptr;
-    return array;
+template <typename ...T>
+std::array<char *, sizeof...(T) + 2> make_argv(const char *name, T ...args) {
+    return {{const_cast<char *>(name), const_cast<char *>(args)..., nullptr }};
 }
 
 
