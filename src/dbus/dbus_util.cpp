@@ -199,7 +199,7 @@ void MessageBuilder::visitBuiltinType(BuiltinType *type) {
             DSType *actualType = this->peek()->getType();
             const char *desc = this->getBuilder()->buildDescriptor(*actualType);
 
-            DBusMessageIter subIter;
+            DBusMessageIter subIter{};
             DBusMessageIter *curIter = this->openContainerIter(DBUS_TYPE_VARIANT, desc, &subIter);
 
             // append value
@@ -220,7 +220,7 @@ void MessageBuilder::visitReifiedType(ReifiedType *type) {
         DSType *elementType = type->getElementTypes()[0];
         const char *desc = this->getBuilder()->buildDescriptor(*elementType);
 
-        DBusMessageIter subIter;
+        DBusMessageIter subIter{};
         DBusMessageIter *curIter = this->openContainerIter(DBUS_TYPE_ARRAY, desc, &subIter);
 
         // append element
@@ -236,13 +236,13 @@ void MessageBuilder::visitReifiedType(ReifiedType *type) {
 
         const char *desc = (this->getBuilder()->buildDescriptor(*type) + 1);
 
-        DBusMessageIter subIter;
+        DBusMessageIter subIter{};
         DBusMessageIter *curIter = this->openContainerIter(DBUS_TYPE_ARRAY, desc, &subIter);
 
         // append entry
         auto *mapObj = static_cast<Map_Object *>(this->peek());
         for(auto &pair : mapObj->getValueMap()) {
-            DBusMessageIter entryIter;
+            DBusMessageIter entryIter{};
             DBusMessageIter *oldIter = this->openContainerIter(DBUS_TYPE_DICT_ENTRY, nullptr, &entryIter);
 
             // append key, value
@@ -260,7 +260,7 @@ void MessageBuilder::visitReifiedType(ReifiedType *type) {
 
 void MessageBuilder::visitTupleType(TupleType *type) {
     DBusMessageIter *curIter = this->iter;
-    DBusMessageIter subIter;
+    DBusMessageIter subIter{};
     dbus_message_iter_open_container(this->iter, DBUS_TYPE_STRUCT, nullptr, &subIter);
 
     // append element

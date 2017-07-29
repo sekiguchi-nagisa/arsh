@@ -261,7 +261,7 @@ CStrBuffer completeLine(const DSState &st, const std::string &line);
 
 template <typename Func>
 inline void blockSignal(Func func) {
-    sigset_t maskset;
+    sigset_t maskset{};
     sigfillset(&maskset);
 
     sigprocmask(SIG_BLOCK, &maskset, nullptr);

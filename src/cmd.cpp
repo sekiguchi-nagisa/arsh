@@ -748,7 +748,7 @@ static int builtin_test(DSState &, Array_Object &argvObj) {
         case 'h':
         case 'L': {
             mode_t mode = 0;
-            struct stat st;
+            struct stat st{};
             if(lstat(value, &st) == 0) {
                 mode = st.st_mode;
             }
@@ -768,7 +768,7 @@ static int builtin_test(DSState &, Array_Object &argvObj) {
             break;
         }
         case 's': {
-            struct stat st;
+            struct stat st{};
             result = stat(value, &st) == 0 && st.st_size != 0;  // check if file is not empty
             break;
         }
@@ -795,12 +795,12 @@ static int builtin_test(DSState &, Array_Object &argvObj) {
             break;
         }
         case 'O': {
-            struct stat st;
+            struct stat st{};
             result = stat(value, &st) == 0 && st.st_uid == geteuid();   // check if file is effectively owned
             break;
         }
         case 'G': {
-            struct stat st;
+            struct stat st{};
             result = stat(value, &st) == 0 && st.st_gid == getegid();   // check if file is effectively owned by group
             break;
         }

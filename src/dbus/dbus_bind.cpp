@@ -122,7 +122,7 @@ static DSValue decodeMessageIter(DSState &ctx, DBusMessageIter *iter) {
     }
     case DBUS_TYPE_ARRAY: {
         int elementType = dbus_message_iter_get_element_type(iter);
-        DBusMessageIter subIter;
+        DBusMessageIter subIter{};
         dbus_message_iter_recurse(iter, &subIter);
         if(elementType == DBUS_TYPE_DICT_ENTRY) {   // map
             if(dbus_message_iter_has_next(&subIter) == 0u) { //empty map
@@ -137,7 +137,7 @@ static DSValue decodeMessageIter(DSState &ctx, DBusMessageIter *iter) {
             int firstElementType = DBUS_TYPE_INVALID;
             std::vector<std::pair<DSValue, DSValue>> entries;
             do {
-                DBusMessageIter entryIter;
+                DBusMessageIter entryIter{};
                 dbus_message_iter_recurse(&subIter, &entryIter);
 
                 auto key(decodeMessageIter(ctx, &entryIter));
@@ -181,7 +181,7 @@ static DSValue decodeMessageIter(DSState &ctx, DBusMessageIter *iter) {
                 getPool(ctx).createReifiedType(getPool(ctx).getArrayTemplate(), std::move(types)), std::move(values));
     }
     case DBUS_TYPE_STRUCT: {
-        DBusMessageIter subIter;
+        DBusMessageIter subIter{};
         dbus_message_iter_recurse(iter, &subIter);
 
         std::vector<DSType *> types;
@@ -199,7 +199,7 @@ static DSValue decodeMessageIter(DSState &ctx, DBusMessageIter *iter) {
         return tuple;
     }
     case DBUS_TYPE_VARIANT: {
-        DBusMessageIter subIter;
+        DBusMessageIter subIter{};
         dbus_message_iter_recurse(iter, &subIter);
         return decodeMessageIter(ctx, &subIter);
     }
@@ -212,7 +212,7 @@ static DSValue decodeMessageIter(DSState &ctx, DBusMessageIter *iter) {
 static std::vector<DSValue> decodeMessageRaw(DSState &ctx,
                                              const std::vector<DSType *> &types, ScopedDBusMessage &&msg) {
     std::vector<DSValue> values;
-    DBusMessageIter iter;
+    DBusMessageIter iter{};
     dbus_message_iter_init(msg.get(), &iter);
 
     // decode message
@@ -312,7 +312,7 @@ DSValue Bus_Object::service(DSState &ctx, std::string &&serviceName) {
             "org.freedesktop.DBus", "GetNameOwner"));
 
     // append arg
-    DBusMessageIter iter;
+    DBusMessageIter iter{};
     dbus_message_iter_init_append(msg.get(), &iter);
     const char *value = serviceName.c_str();
     dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, &value);
@@ -321,7 +321,7 @@ DSValue Bus_Object::service(DSState &ctx, std::string &&serviceName) {
     auto reply = sendMessage(ctx, this->conn, std::move(msg));
 
     // get result
-    DBusMessageIter replyIter;
+    DBusMessageIter replyIter{};
     dbus_message_iter_init(reply.get(), &replyIter);
     assert(dbus_message_iter_get_arg_type(&replyIter) == DBUS_TYPE_STRING);
     dbus_message_iter_get_basic(&replyIter, &value);
@@ -556,7 +556,7 @@ void DBusProxy_Object::doIntrospection(DSState &ctx) {
         break;
     };
     case DBUS_MESSAGE_TYPE_METHOD_RETURN: {
-        DBusMessageIter iter;
+        DBusMessageIter iter{};
         dbus_message_iter_init(ret.get(), &iter);
 
         int argType = dbus_message_iter_get_arg_type(&iter);
@@ -589,7 +589,7 @@ DSValue DBusProxy_Object::invokeMethod(DSState &ctx, const char *methodName, con
     auto msg = this->newMethodCallMsg(getPool(ctx).getTypeName(*handle->getRecvType()).c_str(), methodName);
 
     // append arg
-    DBusMessageIter iter;
+    DBusMessageIter iter{};
     dbus_message_iter_init_append(msg.get(), &iter);
 
     unsigned int paramSize = handle->getParamTypes().size();
@@ -618,7 +618,7 @@ DSValue DBusProxy_Object::invokeGetter(DSState &ctx, const DSType *recvType,
     auto msg = this->newMethodCallMsg("org.freedesktop.DBus.Properties", "Get");
 
     // append arg
-    DBusMessageIter iter;
+    DBusMessageIter iter{};
     dbus_message_iter_init_append(msg.get(), &iter);
 
     const char *ifaceName = getPool(ctx).getTypeName(*recvType).c_str();
@@ -637,7 +637,7 @@ void DBusProxy_Object::invokeSetter(DSState &ctx, const DSType *recvType,
     auto msg = this->newMethodCallMsg("org.freedesktop.DBus.Properties", "Set");
 
     // append arg
-    DBusMessageIter iter;
+    DBusMessageIter iter{};
     dbus_message_iter_init_append(msg.get(), &iter);
 
     const char *ifaceName = getPool(ctx).getTypeName(*recvType).c_str();
