@@ -171,7 +171,7 @@ bool DirectiveParser::operator()(const char *sourceName, std::istream &input, Di
                 auto &e = *this->getError();
                 std::cerr << sourceName << ":" << lexer.getLineNum() << ": [syntax error] " << e.getMessage() << std::endl;
                 std::cerr << src << std::endl;
-                Token lineToken;
+                Token lineToken{};
                 lineToken.pos = 0;
                 lineToken.size = line.size();
                 std::cerr << this->lexer->formatLineMarker(lineToken, e.getErrorToken()) << std::endl;
@@ -185,7 +185,7 @@ bool DirectiveParser::operator()(const char *sourceName, std::istream &input, Di
             std::cerr << e.getMessage() << std::endl;
 
             std::cerr << src << std::endl;
-            Token lineToken;
+            Token lineToken{};
             lineToken.pos = 0;
             lineToken.size = line.size();
             std::cerr << this->lexer->formatLineMarker(lineToken, e.getErrorToken()) << std::endl;
@@ -276,7 +276,7 @@ std::unique_ptr<Node> DirectiveParser::parse_string() {
 }
 
 std::unique_ptr<Node> DirectiveParser::parse_boolean() {
-    Token token;
+    Token token{};
     bool value;
     if(CUR_KIND() == TRUE_LITERAL) {
         token = TRY(this->expect(TRUE_LITERAL));

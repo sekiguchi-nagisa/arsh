@@ -165,7 +165,7 @@ public:
 };
 
 #define STR(x) "`" #x "'"
-#define check(expr) do { if(!(expr)) { fatal("assertion fail => %s\n", STR(expr)); } } while(0)
+#define check(expr) do { if(!(expr)) { fatal("assertion fail => %s\n", STR(expr)); } } while(false)
 
 /**
  * xmlChar is actually unsigned char(UTF8)
@@ -175,7 +175,7 @@ std::string str(const xmlChar *str) {
 }
 
 bool existFile(const std::string &fileName) {
-    struct stat st;
+    struct stat st{};
     int result = stat(fileName.c_str(), &st);
     return result == 0;
 }
@@ -594,7 +594,7 @@ void generateIface(Config &config) {
     SAXHandlerContext handlerCtx(config, pathList);
 
     // init sax handler
-    xmlSAXHandler saxHander;
+    xmlSAXHandler saxHander{};
     memset(&saxHander, 0, sizeof(xmlSAXHandler));
 
     saxHander.initialized = XML_SAX2_MAGIC;
