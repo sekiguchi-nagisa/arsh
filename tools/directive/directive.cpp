@@ -531,12 +531,6 @@ const std::pair<Type, AttributeHandler *> *DirectiveInitializer::lookupHandler(c
 // ##     Directive     ##
 // #######################
 
-std::vector<std::string> Directive::getAsArgv(const char *sourceName) const {
-    auto argv = this->params;
-    argv.insert(argv.begin(), sourceName);
-    return argv;
-}
-
 bool Directive::init(const char *fileName, Directive &d) {
     std::ifstream input(fileName);
     if(!input) {

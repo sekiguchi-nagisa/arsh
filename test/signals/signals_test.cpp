@@ -1,7 +1,5 @@
 #include <gtest/gtest.h>
 
-#include <string>
-#include <vector>
 #include <cstdio>
 #include <cstring>
 #include <algorithm>
@@ -10,47 +8,7 @@
 #include <misc/size.hpp>
 #include <signals.h>
 
-class Command {
-private:
-    std::vector<std::string> args;
-
-public:
-    Command(const char *cmdName) : args{cmdName} {}
-    ~Command() = default;
-
-    Command &addArg(const char *arg) {
-        this->args.push_back(arg);
-        return *this;
-    }
-
-    std::string operator()() const;
-};
-
-static bool isSpace(char ch) {
-    return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
-}
-
-std::string Command::operator()() const {
-    std::string cmd = this->args[0];
-    for(unsigned int i = 1; i < this->args.size(); i++) {
-        cmd += " ";
-        cmd += this->args[i];
-    }
-
-    FILE *fp = popen(cmd.c_str(), "r");
-    std::string out;
-    char buf[256];
-    for(int readSize; (readSize = fread(buf, sizeof(char), ydsh::arraySize(buf), fp)) > 0;) {
-        out.append(buf, readSize);
-    }
-    pclose(fp);
-
-    // remove last newline
-    while(!out.empty() && isSpace(out.back())) {
-        out.pop_back();
-    }
-    return out;
-}
+#include "../test_common.hpp"
 
 static std::vector<std::string> split(const std::string &str) {
     std::vector<std::string> bufs;
@@ -138,10 +96,10 @@ static std::vector<std::string> toList(const ydsh::SignalPair *pairs) {
 
 
 TEST(Signal, all) {
-    std::string killPath = Command("which").addArg("kill")();
+    std::string killPath = CommandBuilder("which").addArg("kill").execAndGetOutput();
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(killPath.size() > 0));
 
-    std::string killOut = Command(killPath.c_str()).addArg("-l")();
+    std::string killOut = CommandBuilder(killPath.c_str()).addArg("-l").execAndGetOutput();
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(killOut.size() > 0));
 
     auto expected = toSignalList(killOut);

@@ -116,11 +116,6 @@ public:
         return this->errorKind;
     }
 
-    /**
-     * first element is sourceName.
-     */
-    std::vector<std::string> getAsArgv(const char *sourceName) const;
-
     static bool init(const char *fileName, Directive &d);
 
     static bool init(const char *sourceName, const char *src, Directive &d);

@@ -22,17 +22,6 @@ using namespace ydsh::directive;
 
 // parse config(key = value)
 
-bool isSpace(char ch) {
-    switch(ch) {
-    case ' ':
-    case '\t':
-    case '\r':
-    case '\n':
-        return true;
-    default:
-        return false;
-    }
-}
 
 void consumeSpace(const std::string &src, unsigned int &index) {
     for(; index < src.size(); index++) {
@@ -152,21 +141,15 @@ public:
         }
 
         const char *scriptName = this->getSourceName().c_str();
-        std::string cmd(BIN_PATH);
-        cmd += " --status-log ";
-        cmd += this->getTmpFileName();
+        CommandBuilder builder(BIN_PATH);
+        builder.addArg("--status-log").addArg(this->getTmpFileName());
 
         // set argument
-        auto argv = d.getAsArgv(scriptName);
-        for(auto &e : argv) {
-            cmd += " ";
-            cmd += '"';
-            cmd += e;
-            cmd += '"';
-        }
+        builder.addArg(scriptName);
+        builder.addArgs(d.getParams());
 
         // execute
-        int ret = system(cmd.c_str());
+        int ret = builder.exec();
         ret = WEXITSTATUS(ret);
 
         // get internal status
