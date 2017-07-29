@@ -219,8 +219,8 @@ public:
     /**
      * objectPath must be String_Object
      */
-    DBusProxy_Object(DSType &type, DSValue srcObj, DSValue objectPath) :
-            ProxyObject(type), srv(std::move(srcObj)), objectPath(std::move(objectPath)) { }
+    DBusProxy_Object(DSType &type, const DSValue &srcObj, const DSValue &objectPath) :
+            ProxyObject(type), srv(srcObj), objectPath(objectPath), ifaceSet(), handerMap() { }
 
     ~DBusProxy_Object() = default;
 

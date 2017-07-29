@@ -400,7 +400,7 @@ static void initBuiltinVar(DSState *state) {
      */
     bindVariable(state, "EUID", DSValue::create<Int_Object>(state->pool.getUint32Type(), geteuid()));
 
-    struct utsname name{};
+    struct utsname name;
     if(uname(&name) == -1) {
         perror("cannot get utsname");
         exit(1);

@@ -88,7 +88,7 @@ const char *FilePathCache::searchPath(const char *cmdName, flag8_t option) {
         resolvedPath += cmdName;
         expandTilde(resolvedPath);
 
-        struct stat st{};
+        struct stat st;
         if(stat(resolvedPath.c_str(), &st) == 0 && (st.st_mode & S_IXUSR) == S_IXUSR) {
             if(hasFlag(option, DIRECT_SEARCH)) {
                 this->prevPath = std::move(resolvedPath);
@@ -396,7 +396,7 @@ pid_t xfork(DSState &st, pid_t pgid, bool foreground) {
                 tcsetpgrp(STDIN_FILENO, getpgid(0));
             }
 
-            struct sigaction act{};
+            struct sigaction act;
             act.sa_handler = SIG_DFL;
             act.sa_flags = 0;
             sigemptyset(&act.sa_mask);

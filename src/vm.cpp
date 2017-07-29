@@ -827,7 +827,7 @@ static const DSCode *lookupUserDefinedCommand(const DSState &st, const char *com
 }
 
 Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
-    Command cmd{};
+    Command cmd;
 
     // first, check user-defined command
     if(!hasFlag(this->mask, MASK_UDC)) {
@@ -1215,7 +1215,7 @@ void installSignalHandler(DSState &st, int sigNum, DSValue &&handler) {
         auto &IGN_handler = getHandler(st, VAR_SIG_IGN);
 
         // set posix signal handler
-        struct sigaction action{};
+        struct sigaction action;
         action.sa_flags = SA_RESTART;
         sigemptyset(&action.sa_mask);
         if(handler == DFL_handler) {
@@ -1245,7 +1245,7 @@ DSValue getSignalHandler(const DSState &st, int sigNum) {
     auto handler = st.sigVector.lookup(sigNum);
 
     if(handler == nullptr) {
-        struct sigaction action{};
+        struct sigaction action;
         if(sigaction(sigNum, nullptr, &action) == 0) {
             if(action.sa_handler == SIG_IGN) {
                 return IGN_handler;
@@ -1268,8 +1268,8 @@ void DBusInitSignal(DSState &st);
  */
 std::vector<DSValue> DBusWaitSignal(DSState &st);
 
-static NativeCode initSignalTrampoline() noexcept {
-    auto *code = static_cast<unsigned char *>(malloc(sizeof(unsigned char) * 9));
+static NativeCode initSignalTrampoline() {
+    unsigned char *code = static_cast<unsigned char *>(malloc(sizeof(unsigned char) * 9));
     code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
     code[1] = static_cast<unsigned char>(OpCode::LOAD_LOCAL);
     code[2] = static_cast<unsigned char>(1);
