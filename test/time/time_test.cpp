@@ -55,7 +55,7 @@ TEST_F(BaseTest, case3) {
 
     unsetenv("TZ");
     setenv("TIME_SOURCE", "2012-1-12T23:45:", 1);   // bad format
-    ASSERT_NO_FATAL_FAILURE(ASSERT_THROW(getLocalTime(), std::invalid_argument));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EXIT(getLocalTime(), ::testing::KilledBySignal(SIGABRT), "broken time source\n"));
 }
 
 

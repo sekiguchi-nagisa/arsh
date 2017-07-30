@@ -22,6 +22,8 @@
 
 #include <config.h>
 
+#include "fatal.h"
+
 namespace ydsh {
 
 inline struct tm *getLocalTime() {
@@ -42,7 +44,7 @@ inline struct tm *getLocalTime() {
         struct tm tm;
         memset(&tm, 0, sizeof(struct tm));
         if(strptime(src, "%Y-%m-%dT%H:%M:%SZ", &tm) == nullptr) {   // ex. 2012-1-12T23:45:56Z
-            throw std::invalid_argument("broken time source");
+            fatal("broken time source\n");
         }
 
         // save current TZ
