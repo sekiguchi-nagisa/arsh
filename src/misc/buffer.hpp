@@ -19,9 +19,7 @@
 
 #include <cstring>
 #include <type_traits>
-#include <string>
 #include <cassert>
-#include <cmath>
 #include <initializer_list>
 
 #include "noncopyable.h"
@@ -280,11 +278,7 @@ constexpr typename FlexBuffer<T, SIZE_T>::size_type FlexBuffer<T, SIZE_T>::MAXIM
 template <typename T, typename SIZE_T>
 void FlexBuffer<T, SIZE_T>::checkRange(size_type index) const {
     if(index >= this->usedSize) {
-        std::string str("size is: ");
-        str += std::to_string(this->usedSize);
-        str += ", but index is: ";
-        str += std::to_string(index);
-        fatal("%s\n", str.c_str());
+        fatal("size is: %d, but index is: %d\n", this->usedSize, index);
     }
 }
 
