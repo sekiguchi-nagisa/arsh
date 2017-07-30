@@ -28,7 +28,7 @@ namespace directive {
 // ##     TypeImpl     ##
 // ######################
 
-std::string TypeImpl::getRealName() {
+std::string TypeImpl::getRealName() const {
     if(this->childs.empty()) {
         return this->name;
     }
@@ -87,7 +87,7 @@ TypeEnv::TypeEnv() {
     this->addType(TypeImpl::create("Boolean"));
 }
 
-const Type &TypeEnv::getType(const std::string &name) {
+const Type &TypeEnv::getType(const std::string &name) const {
     auto iter = this->typeMap.find(name);
     if(iter == this->typeMap.end()) {
         fatal("undefined type: %s\n", name.c_str());
@@ -119,7 +119,7 @@ const Type &TypeEnv::addType(std::string &&name, Type &&type) {
     return pair.first->second;
 }
 
-bool TypeEnv::hasType(const std::string &name) {
+bool TypeEnv::hasType(const std::string &name) const {
     auto iter = this->typeMap.find(name);
     return iter != this->typeMap.end();
 }
@@ -307,13 +307,12 @@ std::unique_ptr<Node> DirectiveParser::parse_array() {
 }
 
 template <typename T>
-T *cast(Node &node) {
+T &cast(Node &node) {
     static_assert(std::is_base_of<Node, T>::value, "not derived type");
-    auto t = dynamic_cast<T *>(&node);
-    if(t == nullptr) {
+    if(!T::classof(&node)) {
         fatal("illegal cast\n");
     }
-    return t;
+    return static_cast<T&>(node);
 }
 
 #undef TRY
@@ -337,36 +336,30 @@ void DirectiveInitializer::operator()(const std::unique_ptr<DirectiveNode> &node
     }
 
     this->addHandler("status", this->env.getIntType(), [](Node &node, Directive &d) {
-        d.setStatus(cast<NumberNode>(node)->getValue());
-        return true;
+        d.setStatus(cast<NumberNode>(node).getValue());
     });
 
     this->addHandler("result", this->env.getStringType(), [&](Node &node, Directive &d) {
-        d.setResult(this->resolveStatus(*cast<StringNode>(node)));
-        return !this->hasError();
+        d.setResult(this->resolveStatus(cast<StringNode>(node)));
     });
 
     this->addHandler("params", this->env.getArrayType(this->env.getStringType()), [](Node &node, Directive &d) {
-        auto value = cast<ArrayNode>(node);
-        for(auto &e : value->getValues()) {
-            d.appendParam(cast<StringNode>(*e)->getValue());
+        auto &value = cast<ArrayNode>(node);
+        for(auto &e : value.getValues()) {
+            d.appendParam(cast<StringNode>(*e).getValue());
         }
-        return true;
     });
 
     this->addHandler("lineNum", this->env.getIntType(), [](Node &node, Directive &d) {
-        d.setLineNum(cast<NumberNode>(node)->getValue());
-        return true;
+        d.setLineNum(cast<NumberNode>(node).getValue());
     });
 
     this->addHandler("ifHaveDBus", this->env.getBooleanType(), [](Node &node, Directive &d) {
-        d.setIfHaveDBus(cast<BooleanNode>(node)->getValue());
-        return true;
+        d.setIfHaveDBus(cast<BooleanNode>(node).getValue());
     });
 
     this->addHandler("errorKind", this->env.getStringType(), [](Node &node, Directive &d) {
-        d.setErrorKind(cast<StringNode>(node)->getValue());
-        return true;
+        d.setErrorKind(cast<StringNode>(node).getValue());
     });
 
     std::unordered_set<std::string> foundAttrSet;
@@ -394,7 +387,8 @@ void DirectiveInitializer::operator()(const std::unique_ptr<DirectiveNode> &node
         TRY(this->checkType(pair->first, *e->getAttrNode()));
 
         // invoke handler
-        if(!(pair->second)(*e->getAttrNode(), d)) {
+        (pair->second)(*e->getAttrNode(), d);
+        if(this->hasError()) {
             return;
         }
 

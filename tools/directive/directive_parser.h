@@ -64,7 +64,7 @@ public:
         return this->childs;
     }
 
-    std::string getRealName();
+    std::string getRealName() const;
 
     bool operator==(const TypeImpl &t) const;
 
@@ -76,7 +76,7 @@ public:
     static std::shared_ptr<TypeImpl> create(const char *name, const std::shared_ptr<TypeImpl> &child);
 };
 
-typedef std::shared_ptr<TypeImpl> Type;
+using Type = std::shared_ptr<TypeImpl>;
 
 class TypeEnv {
 private:
@@ -86,17 +86,17 @@ public:
     TypeEnv();
     ~TypeEnv() = default;
 
-    const Type &getType(const std::string &name);
+    const Type &getType(const std::string &name) const;
 
-    const Type &getIntType() {
+    const Type &getIntType() const {
         return this->getType(std::string("Int"));
     }
 
-    const Type &getStringType() {
+    const Type &getStringType() const {
         return this->getType(std::string("String"));
     }
 
-    const Type &getBooleanType() {
+    const Type &getBooleanType() const {
         return this->getType(std::string("Boolean"));
     }
 
@@ -105,17 +105,27 @@ public:
 private:
     const Type &addType(Type &&type);
     const Type &addType(std::string &&name, Type &&type);
-    bool hasType(const std::string &name);
+    bool hasType(const std::string &name) const;
 };
 
 
 class Node {
+public:
+    const enum NodeKind {
+        Directive,
+        Attribute,
+        Number,
+        String,
+        Boolean,
+        Array,
+    } kind;
+
 protected:
     Token token;
     Type type;
 
 public:
-    explicit Node(const Token &token) : token(token) {}
+    Node(NodeKind kind, const Token &token) : kind(kind), token(token) {}
     virtual ~Node() = default;
 
     const Token &getToken() const {
@@ -142,7 +152,7 @@ private:
     std::vector<std::unique_ptr<AttributeNode>> nodes;
 
 public:
-    DirectiveNode(const Token &token, std::string &&name) : Node(token), name(std::move(name)), nodes() {}
+    DirectiveNode(const Token &token, std::string &&name) : Node(Directive, token), name(std::move(name)), nodes() {}
     ~DirectiveNode() = default;
 
     const std::string &getName() const {
@@ -160,6 +170,10 @@ public:
     void accept(NodeVisitor &visitor) override {
         visitor.visitDirectiveNode(*this);
     }
+
+    static bool classof(Node *node) {
+        return node != nullptr && node->kind == Directive;
+    }
 };
 
 /**
@@ -173,7 +187,7 @@ private:
 
 public:
     AttributeNode(const Token &token, std::string &&name, std::unique_ptr<Node> &&attrNode) :
-            Node(token), name(std::move(name)), attrNode(std::move(attrNode)) {}
+            Node(Attribute, token), name(std::move(name)), attrNode(std::move(attrNode)) {}
     ~AttributeNode() = default;
 
     const std::string &getName() const {
@@ -187,6 +201,10 @@ public:
     void accept(NodeVisitor &visitor) override {
         visitor.visitAttributeNode(*this);
     }
+
+    static bool classof(Node *node) {
+        return node != nullptr && node->kind == Attribute;
+    }
 };
 
 class NumberNode : public Node {
@@ -194,7 +212,7 @@ private:
     unsigned int value;
 
 public:
-    NumberNode(const Token &token, unsigned int value) : Node(token), value(value) {}
+    NumberNode(const Token &token, unsigned int value) : Node(Number, token), value(value) {}
     ~NumberNode() = default;
 
     unsigned int getValue() const {
@@ -204,6 +222,10 @@ public:
     void accept(NodeVisitor &visitor) override {
         visitor.visitNumberNode(*this);
     }
+
+    static bool classof(Node *node) {
+        return node != nullptr && node->kind == Number;
+    }
 };
 
 class StringNode : public Node {
@@ -211,7 +233,7 @@ private:
     std::string value;
 
 public:
-    StringNode(const Token &token, std::string &&value) : Node(token), value(std::move(value)) {}
+    StringNode(const Token &token, std::string &&value) : Node(String, token), value(std::move(value)) {}
     ~StringNode() = default;
 
     const std::string &getValue() const {
@@ -221,6 +243,10 @@ public:
     void accept(NodeVisitor &visitor) override {
         visitor.visitStringNode(*this);
     }
+
+    static bool classof(Node *node) {
+        return node != nullptr && node->kind == String;
+    }
 };
 
 class BooleanNode : public Node {
@@ -228,7 +254,7 @@ private:
     bool value;
 
 public:
-    BooleanNode(const Token &token, bool value) : Node(token), value(value) {}
+    BooleanNode(const Token &token, bool value) : Node(Boolean, token), value(value) {}
     ~BooleanNode() = default;
 
     bool getValue() const {
@@ -238,6 +264,10 @@ public:
     void accept(NodeVisitor &visitor) override {
         visitor.visitBooleanNode(*this);
     }
+
+    static bool classof(Node *node) {
+        return node != nullptr && node->kind == Boolean;
+    }
 };
 
 class ArrayNode : public Node {
@@ -245,7 +275,7 @@ private:
     std::vector<std::unique_ptr<Node>> values;
 
 public:
-    explicit ArrayNode(const Token &token) : Node(token), values() {}
+    explicit ArrayNode(const Token &token) : Node(Array, token), values() {}
     ~ArrayNode() = default;
 
     void appendNode(std::unique_ptr<Node> &&node) {
@@ -258,6 +288,10 @@ public:
 
     void accept(NodeVisitor &visitor) override {
         visitor.visitArrayNode(*this);
+    }
+
+    static bool classof(Node *node) {
+        return node != nullptr && node->kind == Array;
     }
 };
 
@@ -307,7 +341,7 @@ private:
 };
 
 
-using AttributeHandler = std::function<bool(Node &, Directive &)>;
+using AttributeHandler = std::function<void(Node &, Directive &)>;
 
 class DirectiveInitializer : protected NodeVisitor {
 private:
