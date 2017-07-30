@@ -20,6 +20,7 @@
 #include <type_traits>
 #include <memory>
 #include <unordered_map>
+#include <functional>
 
 #include "directive.h"
 #include "directive_lexer.h"
@@ -305,15 +306,16 @@ private:
     std::unique_ptr<Node> parse_array();
 };
 
-struct AttributeHandler {
-    virtual void operator()(Node &node, Directive &d) = 0;
-};
 
-class DirectiveInitializer : public NodeVisitor {
+using AttributeHandler = std::function<bool(Node &, Directive &)>;
+
+class DirectiveInitializer : protected NodeVisitor {
 private:
     TypeEnv env;
-    typedef std::pair<Type, AttributeHandler *> Handler;
+    using Handler = std::pair<Type, AttributeHandler>;
     std::unordered_map<std::string, Handler> handlerMap;
+
+    std::unique_ptr<SemanticError> error;
 
 public:
     DirectiveInitializer() = default;
@@ -322,8 +324,17 @@ public:
     /**
      * entry point.
      */
-    bool operator()(const std::unique_ptr<DirectiveNode> &node, Directive &d);
+    void operator()(const std::unique_ptr<DirectiveNode> &node, Directive &d);
 
+    bool hasError() const {
+        return static_cast<bool>(this->error);
+    }
+
+    const SemanticError &getError() const {
+        return *this->error;
+    }
+
+private:
     void visitDirectiveNode(DirectiveNode &node) override;
     void visitAttributeNode(AttributeNode &node) override;
     void visitNumberNode(NumberNode &node) override;
@@ -331,15 +342,20 @@ public:
     void visitBooleanNode(BooleanNode &node) override;
     void visitArrayNode(ArrayNode &node) override;
 
-private:
     Type checkType(Node &node);
     Type checkType(const Type &requiredType, Node &node);
-    void addHandler(const char *attributeName, const Type &type, AttributeHandler &handler);
+    void addHandler(const char *attributeName, const Type &type, AttributeHandler &&handler);
+    unsigned int resolveStatus(const StringNode &node);
 
     /**
      * if not found corresponding handler, return null.
      */
-    const std::pair<Type, AttributeHandler *> *lookupHandler(const std::string &name);
+    const std::pair<Type, AttributeHandler> *lookupHandler(const std::string &name) const;
+
+    template <typename ...Arg>
+    void createError(Arg && ...arg) {
+        this->error.reset(new SemanticError(std::forward<Arg>(arg)...));
+    }
 };
 
 
