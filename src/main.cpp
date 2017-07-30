@@ -142,7 +142,7 @@ enum class InvocationKind {
 };
 
 static const char *version() {
-    return DSState_version(nullptr, 0);
+    return DSState_version(nullptr);
 }
 
 int main(int argc, char **argv) {

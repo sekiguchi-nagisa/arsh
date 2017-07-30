@@ -622,23 +622,12 @@ const char *DSState_prompt(DSState *st, unsigned int n) {
     return st->prompt.c_str();
 }
 
-static void storeVerInfo(unsigned int *vec, unsigned int size) {
-    if(vec == nullptr || size == 0) {
-        return;
+const char *DSState_version(DSVersion *version) {
+    if(version != nullptr) {
+        version->major = X_INFO_MAJOR_VERSION;
+        version->minor = X_INFO_MINOR_VERSION;
+        version->patch = X_INFO_PATCH_VERSION;
     }
-    if(size > 0) {
-        vec[0] = X_INFO_MAJOR_VERSION;
-    }
-    if(size > 1) {
-        vec[1] = X_INFO_MINOR_VERSION;
-    }
-    if(size > 2) {
-        vec[2] = X_INFO_PATCH_VERSION;
-    }
-}
-
-const char *DSState_version(unsigned int *vec, unsigned int size) {
-    storeVerInfo(vec, size);
     return "ydsh, version " X_INFO_VERSION ", build by " X_INFO_CPP " " X_INFO_CPP_V;
 }
 

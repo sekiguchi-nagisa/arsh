@@ -40,12 +40,12 @@ TEST(BuiltinExecTest, case2) {
 TEST(API, case1) {
     SCOPED_TRACE("");
 
-    unsigned int vec[3];
-    DSState_version(vec, 3);
+    DSVersion version;
+    DSState_version(&version);
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ((unsigned int)X_INFO_MAJOR_VERSION, vec[0]));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ((unsigned int)X_INFO_MINOR_VERSION, vec[1]));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ((unsigned int)X_INFO_PATCH_VERSION, vec[2]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ((unsigned int)X_INFO_MAJOR_VERSION, version.major));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ((unsigned int)X_INFO_MINOR_VERSION, version.minor));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ((unsigned int)X_INFO_PATCH_VERSION, version.patch));
 }
 
 TEST(API, case2) {

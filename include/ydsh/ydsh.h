@@ -181,16 +181,20 @@ int DSState_exec(DSState *st, char *const *argv);
  */
 const char *DSState_prompt(DSState *st, unsigned int n);
 
+typedef struct {
+    unsigned int major;
+    unsigned int minor;
+    unsigned int patch;
+} DSVersion;
+
 /**
  * get version information
- * @param vec
- * for storing version number
- * @param size
- * size of vec
+ * @param version
+ * may be null
  * @return
  * version string
  */
-const char *DSState_version(unsigned int *vec, unsigned int size);
+const char *DSState_version(DSVersion *version);
 
 const char *DSState_copyright();
 
