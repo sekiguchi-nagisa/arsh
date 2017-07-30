@@ -19,13 +19,13 @@
 
 #include <cstring>
 #include <type_traits>
-#include <stdexcept>
 #include <string>
 #include <cassert>
 #include <cmath>
 #include <initializer_list>
 
 #include "noncopyable.h"
+#include "fatal.h"
 
 namespace ydsh {
 
@@ -59,10 +59,10 @@ private:
      * expand memory of old.
      * if old is null, only allocate.
      */
-    static T *allocArray(T *old, SIZE_T size) {
+    static T *allocArray(T *old, SIZE_T size) noexcept {
         T *ptr = static_cast<T *>(realloc(old, sizeof(T) * size));
         if(ptr == nullptr) {
-            throw std::bad_alloc();
+            fatal("memory allocation failed\n");
         }
         return ptr;
     }
@@ -81,7 +81,7 @@ private:
     }
 
     /**
-     * if out of range, throw exception
+     * if out of range, abort
      */
     void checkRange(size_type index) const;
 
@@ -284,7 +284,7 @@ void FlexBuffer<T, SIZE_T>::checkRange(size_type index) const {
         str += std::to_string(this->usedSize);
         str += ", but index is: ";
         str += std::to_string(index);
-        throw std::out_of_range(str);
+        fatal("%s\n", str.c_str());
     }
 }
 
@@ -310,7 +310,7 @@ FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::operator+=(FlexBuffer<T, SIZE_T> &
 template <typename T, typename SIZE_T>
 FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::append(const T *value, size_type size) {
     if(this->data == value) {
-        throw std::invalid_argument("appending own buffer");
+        fatal("appending own buffer\n");
     }
     this->reserve(this->usedSize + size);
     memcpy(this->data + this->usedSize, value, sizeof(T) * size);
@@ -327,7 +327,7 @@ void FlexBuffer<T, SIZE_T>::reserve(size_type reservingSize) {
         }
 
         if(newSize > MAXIMUM_CAPACITY) {
-            throw std::length_error("reach maximum capacity");
+            fatal("reach maximum capacity\n");
         }
 
         this->maxSize = newSize;

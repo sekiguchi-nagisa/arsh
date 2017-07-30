@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <misc/buffer.hpp>
+#include <misc/size.hpp>
 
 using namespace ydsh;
 
@@ -43,18 +44,12 @@ TEST(BufferTest, case1) {
     });
 
     // out of range
-    bool raied = false;
-    try {
-        buffer.at(buffer.size() + 2) = 999;
-    } catch(const std::out_of_range &e) {
-        raied = true;
-        std::string msg("size is: ");
-        msg += std::to_string(buffer.size());
-        msg += ", but index is: ";
-        msg += std::to_string(buffer.size() + 2);
-        ASSERT_NO_FATAL_FAILURE({ASSERT_STREQ(msg.c_str(), e.what());});
-    }
-    ASSERT_NO_FATAL_FAILURE({ASSERT_TRUE(raied);});
+    std::string msg("size is: ");
+    msg += std::to_string(buffer.size());
+    msg += ", but index is: ";
+    msg += std::to_string(buffer.size() + 2);
+    ASSERT_NO_FATAL_FAILURE(
+            ASSERT_EXIT({ buffer.at(buffer.size() + 2) = 999; }, ::testing::KilledBySignal(SIGABRT), msg.c_str()));
 }
 
 TEST(BufferTest, case2) {
@@ -149,18 +144,9 @@ TEST(BufferTest, case4) {
             "FFF", "GGG", "HHH", "III", "JJJ",
     };
 
-    const unsigned int size = sizeof(v) / sizeof(const char *);
-
-    bool raised = false;
-    try {
-        for(unsigned int i = 0; i < 30; i++) {
-            buffer.append(v, size);
-        }
-    } catch(const std::length_error &e) {
-        ASSERT_NO_FATAL_FAILURE({ASSERT_STREQ("reach maximum capacity", e.what());});
-        raised = true;
-    }
-    ASSERT_NO_FATAL_FAILURE({ASSERT_TRUE(raised);});
+    ASSERT_NO_FATAL_FAILURE(
+            ASSERT_EXIT({ for(unsigned int i = 0; i < 30; i++) { buffer.append(v, arraySize(v)); } },
+            ::testing::KilledBySignal(SIGABRT), "reach maximum capacity\n"));
 }
 
 TEST(BufferTest, case5) {
@@ -224,7 +210,8 @@ TEST(BufferTest, case7) {   // test append own
     buffer += 23;
     buffer += 43;
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_THROW(buffer += buffer, std::invalid_argument));
+    ASSERT_NO_FATAL_FAILURE(
+            ASSERT_EXIT(buffer += buffer, ::testing::KilledBySignal(SIGABRT), "appending own buffer\n"));
 
     buffer += std::move(buffer);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, buffer.size()));
