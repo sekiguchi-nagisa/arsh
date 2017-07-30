@@ -1123,13 +1123,13 @@ static int builtin_hash(DSState &state, Array_Object &argvObj) {
         if(remove) {    // remove all cache
             getPathCache(state).clear();
         } else {    // show all cache
-            const auto cend = getPathCache(state).cend();
-            if(getPathCache(state).cbegin() == cend) {
+            const auto cend = getPathCache(state).end();
+            if(getPathCache(state).begin() == cend) {
                 fputs("hash: file path cache is empty\n", stdout);
                 return 0;
             }
-            for(auto iter = getPathCache(state).cbegin(); iter != cend; ++iter) {
-                printf("%s=%s\n", iter->first, iter->second.c_str());
+            for(auto &entry : getPathCache(state)) {
+                printf("%s=%s\n", entry.first, entry.second.c_str());
             }
         }
     }

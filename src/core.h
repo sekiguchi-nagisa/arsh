@@ -105,14 +105,14 @@ public:
     /**
      * get begin iterator of map
      */
-    CStringHashMap<std::string>::const_iterator cbegin() const {
+    CStringHashMap<std::string>::const_iterator begin() const {
         return this->map.cbegin();
     }
 
     /**
      * get end iterator of map
      */
-    CStringHashMap<std::string>::const_iterator cend() const {
+    CStringHashMap<std::string>::const_iterator end() const {
         return this->map.cend();
     }
 };
