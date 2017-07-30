@@ -639,8 +639,7 @@ static void storeVerInfo(unsigned int *vec, unsigned int size) {
 
 const char *DSState_version(unsigned int *vec, unsigned int size) {
     storeVerInfo(vec, size);
-    return "ydsh, version " X_INFO_VERSION
-            " (" X_INFO_SYSTEM "), build by " X_INFO_CPP " " X_INFO_CPP_V;
+    return "ydsh, version " X_INFO_VERSION ", build by " X_INFO_CPP " " X_INFO_CPP_V;
 }
 
 const char *DSState_copyright() {
