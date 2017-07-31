@@ -158,7 +158,7 @@ void ArgsWrapper::addArgNode(std::unique_ptr<Node> &&node) {
 template <typename T, typename ... A>
 static inline std::unique_ptr<T> uniquify(A &&... args) {
     return std::unique_ptr<T>(new T(std::forward<A>(args)...));
-};
+}
 
 
 // ####################

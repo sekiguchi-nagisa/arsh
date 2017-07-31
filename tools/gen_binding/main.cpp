@@ -59,35 +59,51 @@ std::string toTypeInfoName(HandleInfo info) {
     }
 }
 
-class ProcessingError {
+class ErrorReporter {
 private:
-    std::string message;
+    std::string fileName;
+
+    unsigned lineNum;
+
+    /**
+     * currently processing line
+     */
+    std::string curLine;
+
+    ErrorReporter() = default;
 
 public:
-    explicit ProcessingError(const char *message) : message(message) { }
+    ~ErrorReporter() = default;
 
-    ~ProcessingError() = default;
+    static ErrorReporter &instance() {
+        static ErrorReporter e;
+        return e;
+    }
 
-    const std::string &getMessage() const {
-        return this->message;
+    void appendLine(const char *fileName, unsigned int lineNum, const std::string &line) {
+        if(this->fileName.empty()) {
+            this->fileName = fileName;
+        }
+        this->lineNum = lineNum;
+        this->curLine = line;
+    }
+
+    [[noreturn]]
+    void operator()(const char *fmt, ...) const __attribute__ ((format(printf, 2, 3))) {
+        const unsigned int size = 512;
+        char buf[size];  // error message must be under size.
+
+        // format message
+        va_list args;
+        va_start(args, fmt);
+        vsnprintf(buf, size, fmt, args);
+        va_end(args);
+
+        std::cerr << this->fileName << ":" << this->lineNum << ": [error] " << buf << std::endl;
+        std::cerr << this->curLine << std::endl;
+        abort();
     }
 };
-
-/**
- * for processing error reporting
- */
-void error(const char *fmt, ...) {
-    const unsigned int size = 128;
-    char buf[size];  // error message must be under size.
-
-    // format message
-    va_list args;
-    va_start(args, fmt);
-    vsnprintf(buf, size, fmt, args);
-    va_end(args);
-
-    throw ProcessingError(buf);
-}
 
 class HandleInfoMap {
 private:
@@ -136,7 +152,7 @@ const char *HandleInfoMap::getName(HandleInfo info) const {
 HandleInfo HandleInfoMap::getInfo(const std::string &name) {
     auto iter = this->name2InfoMap.find(name);
     if(iter == this->name2InfoMap.end()) {
-        error("not found type name: %s", name.c_str());
+        ErrorReporter::instance()("not found type name: %s", name.c_str());
     }
     return iter->second;
 }
@@ -358,7 +374,7 @@ void ReifiedTypeToken::serialize(HandleInfoSerializer &s) {
     unsigned int elementSize = this->elements.size();
     if(this->requiredSize > 0) {
         if(this->requiredSize != elementSize) {
-            error("require %d, but is %d", this->requiredSize, this->elements.size());
+            ErrorReporter::instance()("require %d, but is %zu", this->requiredSize, this->elements.size());
         }
     }
 
@@ -382,7 +398,7 @@ std::unique_ptr<ReifiedTypeToken> ReifiedTypeToken::newReifiedTypeToken(const st
     static auto typeMap = initTypeMap();
     auto iter = typeMap.find(name);
     if(iter == typeMap.end()) {
-        error("unsupported type template: %s", name.c_str());
+        ErrorReporter::instance()("unsupported type template: %s", name.c_str());
     }
     auto tok = std::unique_ptr<CommonTypeToken>(new CommonTypeToken(iter->second.second));
     unsigned int size = iter->second.first;
@@ -645,40 +661,34 @@ std::vector<std::unique_ptr<Element>> Parser::operator()(const char *fileName) {
     std::unique_ptr<Element> element;
     while(std::getline(input, line)) {
         lineNum++;
+        ErrorReporter::instance().appendLine(fileName, lineNum, line);
 
-        try {
-            if(foundDesc) {
-                this->parse_funcDecl(line, element);
-                if(this->hasError()) {
-                    goto ERR;
-                }
-                elements.push_back(std::move(element));
-                foundDesc = false;
-                continue;
-            }
-            if(isDescriptor(line)) {
-                foundDesc = true;
-                element = this->parse_descriptor(line);
-                if(this->hasError()) {
-                    goto ERR;
-                }
-            }
-
-            ERR:
+        if(foundDesc) {
+            this->parse_funcDecl(line, element);
             if(this->hasError()) {
-                auto &e = *this->getError();
-                std::cerr << fileName << ":" << lineNum << ": [error] " << e.getMessage() << std::endl;
-                std::cerr << line << std::endl;
-                Token lineToken;
-                lineToken.pos = 0;
-                lineToken.size = line.size();
-                std::cerr << this->lexer->formatLineMarker(lineToken, e.getErrorToken()) << std::endl;
-                exit(EXIT_FAILURE);
+                goto ERR;
             }
-        } catch(const ProcessingError &e) {
-            std::cerr << fileName << ":" << lineNum
-                      << ": [error] " << e.getMessage() << std::endl;
+            elements.push_back(std::move(element));
+            foundDesc = false;
+            continue;
+        }
+        if(isDescriptor(line)) {
+            foundDesc = true;
+            element = this->parse_descriptor(line);
+            if(this->hasError()) {
+                goto ERR;
+            }
+        }
+
+        ERR:
+        if(this->hasError()) {
+            auto &e = *this->getError();
+            std::cerr << fileName << ":" << lineNum << ": [error] " << e.getMessage() << std::endl;
             std::cerr << line << std::endl;
+            Token lineToken;
+            lineToken.pos = 0;
+            lineToken.size = line.size();
+            std::cerr << this->lexer->formatLineMarker(lineToken, e.getErrorToken()) << std::endl;
             exit(EXIT_FAILURE);
         }
     }
