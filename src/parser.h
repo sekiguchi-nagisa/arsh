@@ -174,8 +174,6 @@ private:
 
     std::unique_ptr<Node> parse_cmdArgSeg(unsigned int pos);
 
-    std::unique_ptr<Node> parse_assignmentExpression();
-
     std::unique_ptr<Node> parse_expression();
 
     std::unique_ptr<Node> parse_binaryExpression(std::unique_ptr<Node> &&leftNode,

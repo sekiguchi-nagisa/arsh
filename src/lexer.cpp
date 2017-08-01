@@ -72,7 +72,21 @@ unsigned int getPrecedence(TokenKind kind) {
     case TERNARY:
         return 100;
     default:
-        return 0;
+        return isAssignOp(kind) ? 100 : 0;
+    }
+}
+
+bool isAssignOp(TokenKind kind) {
+    switch(kind) {
+    case ASSIGN:
+    case ADD_ASSIGN:
+    case SUB_ASSIGN:
+    case MUL_ASSIGN:
+    case DIV_ASSIGN:
+    case MOD_ASSIGN:
+        return true;
+    default:
+        return false;
     }
 }
 

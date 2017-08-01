@@ -182,6 +182,8 @@ const char *toString(TokenKind kind);
  */
 unsigned int getPrecedence(TokenKind kind);
 
+bool isAssignOp(TokenKind kind);
+
 } // namespace ydsh
 
 #endif //YDSH_TOKEN_KIND_H
