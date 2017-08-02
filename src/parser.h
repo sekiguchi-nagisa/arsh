@@ -99,7 +99,7 @@ public:
      */
     std::unique_ptr<RootNode> operator()();
 
-private:
+protected:
     /**
      * change lexer mode and refetch.
      */

@@ -1226,8 +1226,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
 }
 
 std::unique_ptr<Node> Parser::parse_appliedName(bool asSpecialName) {
-    assert(CUR_KIND() == SPECIAL_NAME || CUR_KIND() == APPLIED_NAME);
-    Token token = this->expect(asSpecialName ? SPECIAL_NAME : APPLIED_NAME);    // always success
+    Token token = TRY(this->expect(asSpecialName ? SPECIAL_NAME : APPLIED_NAME));
     return uniquify<VarNode>(token, this->lexer->toName(token));
 }
 

@@ -94,7 +94,7 @@ TEST_F(DirectiveTest, result1) {
 }
 
 TEST_F(DirectiveTest, result2) {
-    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($result = \"SUCCESS\")", true));
+    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($result = 'SUCcESS')", true));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, this->getDirective().getResult()));
 }
 
@@ -187,32 +187,32 @@ TEST_F(DirectiveTest, lineNum) {
 }
 
 TEST_F(DirectiveTest, ifHaveDBus1) {
-    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($ifHaveDBus = TRUE)", true));
+    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($ifHaveDBus = $TRUE)", true));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(RunCondition::TRUE, this->getDirective().getIfHaveDBus()));
 }
 
 TEST_F(DirectiveTest, ifHaveDBus2) {
-    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($ifHaveDBus = True)", true));
+    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($ifHaveDBus = $True)", true));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(RunCondition::TRUE, this->getDirective().getIfHaveDBus()));
 }
 
 TEST_F(DirectiveTest, ifHaveDBus3) {
-    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($ifHaveDBus = true)", true));
+    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($ifHaveDBus = $true)", true));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(RunCondition::TRUE, this->getDirective().getIfHaveDBus()));
 }
 
 TEST_F(DirectiveTest, ifHaveDBus4) {
-    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($ifHaveDBus = FALSE)", true));
+    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($ifHaveDBus = $FALSE)", true));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(RunCondition::FALSE, this->getDirective().getIfHaveDBus()));
 }
 
 TEST_F(DirectiveTest, ifHaveDBus5) {
-    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($ifHaveDBus = False)", true));
+    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($ifHaveDBus = $False)", true));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(RunCondition::FALSE, this->getDirective().getIfHaveDBus()));
 }
 
 TEST_F(DirectiveTest, ifHaveDBus6) {
-    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($ifHaveDBus = false)", true));
+    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($ifHaveDBus = $false)", true));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(RunCondition::FALSE, this->getDirective().getIfHaveDBus()));
 }
 

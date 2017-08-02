@@ -145,7 +145,7 @@ private:
 
 
 class TypeChecker {
-private:
+protected:
     friend class TypeGenerator;
 
     /**
@@ -180,7 +180,7 @@ public:
         this->visitRootNode(nullptr, rootNode);
     }
 
-private:
+protected:
     // base type check entry point
     DSType &toType(TypeNode *node) {
         return this->checkType(nullptr, node, nullptr);

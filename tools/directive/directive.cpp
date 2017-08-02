@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 Nagisa Sekiguchi
+ * Copyright (C) 2017 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,362 +16,163 @@
 
 #include <fstream>
 #include <sstream>
-#include <unordered_set>
+#include <functional>
 
-#include "directive_parser.h"
+#include "directive.h"
+
 #include <misc/fatal.h>
+#include <parser.h>
+#include <type_checker.h>
+
 
 namespace ydsh {
 namespace directive {
 
-// ######################
-// ##     TypeImpl     ##
-// ######################
-
-std::string TypeImpl::getRealName() const {
-    if(this->childs.empty()) {
-        return this->name;
-    }
-
-    std::string str(this->name);
-    str += "<";
-    unsigned int size = this->childs.size();
-    for(unsigned int i = 0; i < size; i++) {
-        if(i > 0) {
-            str += ",";
-        }
-        str += this->childs[i]->getRealName();
-    }
-    str += ">";
-    return str;
-}
-
-bool TypeImpl::operator==(const TypeImpl &t) const {
-    // check name
-    if(this->getName() != t.getName()) {
-        return false;
-    }
-
-    // check child size
-    unsigned int size = this->getChilds().size();
-    if(size != t.getChilds().size()) {
-        return false;
-    }
-
-    // check child
-    for(unsigned int i = 0; i < size; i++) {
-        if(*this->getChilds()[i] != *t.getChilds()[i]) {
-            return false;
-        }
-    }
-    return true;
-}
-
-std::shared_ptr<TypeImpl> TypeImpl::create(const char *name) {
-    return std::make_shared<TypeImpl>(name, 0);
-}
-
-std::shared_ptr<TypeImpl> TypeImpl::create(const char *name, const std::shared_ptr<TypeImpl> &child) {
-    auto value(std::make_shared<TypeImpl>(name, 1));
-    value->childs[0] = child;
-    return value;
-}
-
-// #####################
-// ##     TypeEnv     ##
-// #####################
-
-TypeEnv::TypeEnv() {
-    this->addType(TypeImpl::create("Int"));
-    this->addType(TypeImpl::create("String"));
-    this->addType(TypeImpl::create("Boolean"));
-}
-
-const Type &TypeEnv::getType(const std::string &name) const {
-    auto iter = this->typeMap.find(name);
-    if(iter == this->typeMap.end()) {
-        fatal("undefined type: %s\n", name.c_str());
-    }
-    return iter->second;
-}
-
-const Type &TypeEnv::getArrayType(const Type &elementType) {
-    std::string name("Array<");
-    name += elementType->getRealName();
-    name += ">";
-
-    if(this->hasType(name)) {
-        return this->getType(name);
-    }
-    return addType(std::move(name), TypeImpl::create("Array", elementType));
-}
-
-const Type &TypeEnv::addType(Type &&type) {
-    std::string name(type->getRealName());
-    return this->addType(std::move(name), std::move(type));
-}
-
-const Type &TypeEnv::addType(std::string &&name, Type &&type) {
-    auto pair = this->typeMap.insert(std::make_pair(std::move(name), std::move(type)));
-    if(!pair.second) {
-        fatal("found duplicated type: %s\n", pair.first->first.c_str());
-    }
-    return pair.first->second;
-}
-
-bool TypeEnv::hasType(const std::string &name) const {
-    auto iter = this->typeMap.find(name);
-    return iter != this->typeMap.end();
-}
-
-
-// #############################
-// ##     DirectiveParser     ##
-// #############################
-
-static bool isDirective(const std::string &line) {
-    std::string prefix("#$test");
-    if(line.size() < prefix.size()) {
-        return false;
-    }
-    unsigned int size = prefix.size();
-    for(unsigned int i = 0; i < size; i++) {
-        if(line[i] != prefix[i]) {
-            return false;
-        }
-    }
-    return true;
-}
-
 #define TRY(expr) \
 ({ auto v = expr; if(this->hasError()) { return nullptr; } std::forward<decltype(v)>(v); })
 
+struct DirectiveParser : public Parser {
+    DirectiveParser(Lexer &lexer) : Parser(lexer) {}
+    ~DirectiveParser() = default;
 
-bool DirectiveParser::operator()(const char *sourceName, std::istream &input, Directive &d) {
-    std::string line;
+    std::unique_ptr<ApplyNode> operator()() {
+        auto exprNode = TRY(this->parse_appliedName(false));
+        auto args = TRY(this->parse_arguments());
+        TRY(this->expect(EOS));
+        return std::unique_ptr<ApplyNode>(new ApplyNode(exprNode.release(), ArgsWrapper::extract(std::move(args))));
+    }
+};
+
+static bool isDirective(const std::string &line) {
+    auto *ptr = line.c_str();
+    return strstr(ptr, "#$test") == ptr;
+}
+
+static std::pair<std::string, unsigned int> extractDirective(std::istream &input) {
     unsigned int lineNum = 0;
 
-    while(std::getline(input, line)) {
+    for(std::string line; std::getline(input, line); ) {
         lineNum++;
-
-        if(!isDirective(line)) {
-            continue;
+        if(isDirective(line)) {
+            line.erase(line.begin());
+            return {line, lineNum};
         }
-
-        // prepare
-        const char *src = line.c_str() + 1;
-        Lexer lexer(src);
-        lexer.setLineNum(lineNum);
-        this->lexer = &lexer;
-        this->fetchNext();
-
-        auto node = this->parse_toplevel();
-        if(this->hasError()) {
-            auto &e = *this->getError();
-            std::cerr << sourceName << ":" << lexer.getLineNum() << ": [syntax error] " << e.getMessage() << std::endl;
-            std::cerr << src << std::endl;
-            Token lineToken;
-            lineToken.pos = 0;
-            lineToken.size = line.size();
-            std::cerr << this->lexer->formatLineMarker(lineToken, e.getErrorToken()) << std::endl;
-            return false;
-        }
-
-        DirectiveInitializer initializer;
-        initializer(node, d);
-        if(initializer.hasError()) {
-            auto &e = initializer.getError();
-            std::cerr << sourceName << ":" << lexer.getLineNum() << ": [semantic error] ";
-            std::cerr << e.getMessage() << std::endl;
-
-            std::cerr << src << std::endl;
-            Token lineToken;
-            lineToken.pos = 0;
-            lineToken.size = line.size();
-            std::cerr << this->lexer->formatLineMarker(lineToken, e.getErrorToken()) << std::endl;
-            return false;
-        }
-        return true;
     }
-    return true;
+    return {std::string(), 0};
 }
 
-#define CUR_KIND() this->curKind
 
-std::unique_ptr<DirectiveNode> DirectiveParser::parse_toplevel() {
-    Token token = TRY(this->expect(APPLIED_NAME));
-    std::unique_ptr<DirectiveNode> node(new DirectiveNode(token, this->lexer->toName(token)));
+using AttributeHandler = std::function<void(Node &, Directive &)>;
 
-    TRY(this->expect(LP));
+class DirectiveInitializer : public TypeChecker {
+private:
+    using AttributeHandler = std::function<void(Node &, Directive &)>;
+    using Handler = std::pair<DSType *, AttributeHandler>;
+    std::unordered_map<std::string, Handler> handlerMap;
 
-    bool first = true;
-    do {
-        if(!first) {
-            TRY(this->expect(COMMA));
-        } else {
-            first = false;
-        }
-        auto attr = TRY(this->parse_attribute());
-        node->append(std::move(attr));
-    } while(CUR_KIND() == COMMA);
+public:
+    DirectiveInitializer(TypePool &pool, SymbolTable &symbolTable);
+    ~DirectiveInitializer() = default;
 
-    TRY(this->expect(RP));
+    void operator()(ApplyNode &node, Directive &d);
 
-    return node;
-}
+private:
+    void addHandler(const char *attributeName, DSType &type, AttributeHandler &&handler);
+    unsigned int resolveStatus(const StringNode &node);
 
-std::unique_ptr<AttributeNode> DirectiveParser::parse_attribute() {
-    Token token = TRY(this->expect(APPLIED_NAME));
+    /**
+     * if not found corresponding handler, return null.
+     */
+    const std::pair<DSType *, AttributeHandler> *lookupHandler(const std::string &name) const;
 
-    TRY(this->expect(ASSIGN));
+    void checkNode(NodeKind kind, const Node &node);
 
-    auto value = TRY(this->parse_value());
-
-    return std::unique_ptr<AttributeNode>(new AttributeNode(token, this->lexer->toName(token), std::move(value)));
-}
-
-std::unique_ptr<Node> DirectiveParser::parse_value() {
-    switch(CUR_KIND()) {
-    case INT_LITERAL:
-        return this->parse_number();
-    case STRING_LITERAL:
-        return this->parse_string();
-    case TRUE_LITERAL:
-    case FALSE_LITERAL:
-        return this->parse_boolean();
-    case ARRAY_OPEN:
-        return this->parse_array();
-    default:
-        const TokenKind alters[] = {
-#define EACH_LA_value(OP) \
-    OP(INT_LITERAL) \
-    OP(STRING_LITERAL) \
-    OP(TRUE_LITERAL) \
-    OP(FALSE_LITERAL) \
-    OP(ARRAY_OPEN)
-#define GEN_LA_value(OP) OP,
-                EACH_LA_value(GEN_LA_value)
-#undef GEN_LA_value
-#undef EACH_LA_value
-        };
-        this->raiseNoViableAlterError(alters);
-        return nullptr;
+    void checkNode(NodeKind kind, const Node *node) {
+        this->checkNode(kind, *node);
     }
-}
 
-std::unique_ptr<Node> DirectiveParser::parse_number() {
-    Token token = TRY(this->expect(INT_LITERAL));
-    int status;
-    int value = this->lexer->toInt(token, status);
-    if(value < 0 || status != 0) {
-        std::string str("out of range number: ");
-        str += this->lexer->toTokenText(token);
-        this->createError(INT_LITERAL, token, "TokenFormat", std::move(str));
-        return nullptr;
-    }
-    return std::unique_ptr<Node>(new NumberNode(token, value));
-}
-
-std::unique_ptr<Node> DirectiveParser::parse_string() {
-    Token token = TRY(this->expect(STRING_LITERAL));
-    return std::unique_ptr<Node>(new StringNode(token, this->lexer->toString(token)));
-}
-
-std::unique_ptr<Node> DirectiveParser::parse_boolean() {
-    Token token;
-    bool value;
-    if(CUR_KIND() == TRUE_LITERAL) {
-        token = TRY(this->expect(TRUE_LITERAL));
-        value = true;
-    } else {
-        token = TRY(this->expect(FALSE_LITERAL));
-        value = false;
-    }
-    return std::unique_ptr<Node>(new BooleanNode(token, value));
-}
-
-std::unique_ptr<Node> DirectiveParser::parse_array() {
-    Token token = TRY(this->expect(ARRAY_OPEN));
-    std::unique_ptr<ArrayNode> arrayNode(new ArrayNode(token));
-    auto value = TRY(this->parse_value());
-    arrayNode->appendNode(std::move(value));
-
-    while(CUR_KIND() == COMMA) {
-        TRY(this->expect(COMMA));
-
-        value = TRY(this->parse_value());
-        arrayNode->appendNode(std::move(value));
-    }
-    TRY(this->expect(ARRAY_CLOSE));
-    return std::move(arrayNode);
-}
-
-template <typename T>
-T &cast(Node &node) {
-    static_assert(std::is_base_of<Node, T>::value, "not derived type");
-    if(!T::classof(&node)) {
-        fatal("illegal cast\n");
-    }
-    return static_cast<T&>(node);
-}
-
-#undef TRY
-#define TRY(expr) \
-({ auto v = expr; if(this->hasError()) { return; } std::forward<decltype(v)>(v); })
-
+    void setVarName(const char *name, DSType &type);
+};
 
 // ##################################
 // ##     DirectiveInitializer     ##
 // ##################################
 
-void DirectiveInitializer::operator()(const std::unique_ptr<DirectiveNode> &node, Directive &d) {
-    this->error.reset();
+static bool checkDirectiveName(ApplyNode &node) {
+    assert(node.getExprNode()->is(NodeKind::Var));
+    auto *exprNode = static_cast<VarNode *>(node.getExprNode());
+    return exprNode->getVarName() == "test";
+}
 
-    // check name
-    if(node->getName() != "test") {
+static bool toBool(const std::string &str) {
+    return strcasecmp(str.c_str(), "true") == 0;
+}
+
+DirectiveInitializer::DirectiveInitializer(TypePool &pool, SymbolTable &symbolTable) :
+        TypeChecker(pool, symbolTable, false) {
+    auto &boolType = this->typePool.getBooleanType();
+    const char *names[] = {
+            "TRUE", "True", "true", "FALSE", "False", "false",
+    };
+    for(auto &name : names) {
+        this->setVarName(name, boolType);
+    }
+}
+
+void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
+    if(!checkDirectiveName(node)) {
         std::string str("unsupported directive: ");
-        str += node->getName();
-        this->createError(node->getToken(), std::move(str));
-        return;
+        str += static_cast<VarNode *>(node.getExprNode())->getVarName();
+        throw TypeCheckError(node.getToken(), "", str.c_str());
     }
 
-    this->addHandler("status", this->env.getIntType(), [](Node &node, Directive &d) {
-        d.setStatus(cast<NumberNode>(node).getValue());
+    this->addHandler("status", this->typePool.getIntType(), [&](Node &node, Directive &d) {
+        this->checkNode(NodeKind::Number, node);
+        d.setStatus(static_cast<NumberNode &>(node).getIntValue());
     });
 
-    this->addHandler("result", this->env.getStringType(), [&](Node &node, Directive &d) {
-        d.setResult(this->resolveStatus(cast<StringNode>(node)));
+    this->addHandler("result", this->typePool.getStringType(), [&](Node &node, Directive &d) {
+        this->checkNode(NodeKind::String, node);
+        d.setResult(this->resolveStatus(static_cast<StringNode &>(node)));
     });
 
-    this->addHandler("params", this->env.getArrayType(this->env.getStringType()), [](Node &node, Directive &d) {
-        auto &value = cast<ArrayNode>(node);
-        for(auto &e : value.getValues()) {
-            d.appendParam(cast<StringNode>(*e).getValue());
+    this->addHandler("params", this->typePool.getStringArrayType(), [&](Node &node, Directive &d) {
+        this->checkNode(NodeKind::Array, node);
+        auto &value = static_cast<ArrayNode &>(node);
+        for(auto &e : value.getExprNodes()) {
+            this->checkNode(NodeKind::String, e);
+            d.appendParam(static_cast<StringNode &>(*e).getValue());
         }
     });
 
-    this->addHandler("lineNum", this->env.getIntType(), [](Node &node, Directive &d) {
-        d.setLineNum(cast<NumberNode>(node).getValue());
+    this->addHandler("lineNum", this->typePool.getInt32Type(), [&](Node &node, Directive &d) {
+        this->checkNode(NodeKind::Number, node);
+        d.setLineNum(static_cast<NumberNode &>(node).getIntValue());
     });
 
-    this->addHandler("ifHaveDBus", this->env.getBooleanType(), [](Node &node, Directive &d) {
-        d.setIfHaveDBus(cast<BooleanNode>(node).getValue());
+    this->addHandler("ifHaveDBus", this->typePool.getBooleanType(), [&](Node &node, Directive &d) {
+        this->checkNode(NodeKind::Var, node);
+        bool v = toBool(static_cast<VarNode &>(node).getVarName());
+        d.setIfHaveDBus(v);
     });
 
-    this->addHandler("errorKind", this->env.getStringType(), [](Node &node, Directive &d) {
-        d.setErrorKind(cast<StringNode>(node).getValue());
+    this->addHandler("errorKind", this->typePool.getStringType(), [&](Node &node, Directive &d) {
+        this->checkNode(NodeKind::String, node);
+        d.setErrorKind(static_cast<StringNode &>(node).getValue());
     });
 
     std::unordered_set<std::string> foundAttrSet;
+    for(auto &attrNode : node.getArgNodes()) {
+        this->checkNode(NodeKind::Assign, attrNode);
+        auto &assignNode = static_cast<AssignNode &>(*attrNode);
 
-    for(auto &e : node->getNodes()) {
-        const std::string &attrName = e->getName();
+        this->checkNode(NodeKind::Var, assignNode.getLeftNode());
+        auto &attrName = static_cast<VarNode &>(*assignNode.getLeftNode()).getVarName();
         auto *pair = this->lookupHandler(attrName);
         if(pair == nullptr) {
             std::string str("unsupported attribute: ");
             str += attrName;
-            this->createError(e->getToken(), std::move(str));
-            return;
+            throw TypeCheckError(assignNode.getLeftNode()->getToken(), "", str.c_str());
         }
 
         // check duplication
@@ -379,83 +180,21 @@ void DirectiveInitializer::operator()(const std::unique_ptr<DirectiveNode> &node
         if(iter != foundAttrSet.end()) {
             std::string str("duplicated attribute: ");
             str += attrName;
-            this->createError(e->getToken(), std::move(str));
-            return;
+            throw TypeCheckError(assignNode.getLeftNode()->getToken(), "", str.c_str());
         }
 
         // check type attribute
-        TRY(this->checkType(pair->first, *e->getAttrNode()));
+        this->checkType(*pair->first, assignNode.getRightNode());
 
         // invoke handler
-        (pair->second)(*e->getAttrNode(), d);
-        if(this->hasError()) {
-            return;
-        }
+        (pair->second)(*assignNode.getRightNode(), d);
 
         foundAttrSet.insert(attrName);
     }
 }
 
-void DirectiveInitializer::visitDirectiveNode(DirectiveNode &) {
-    fatal("unsupported: visitDirectiveNode\n");
-}
-
-void DirectiveInitializer::visitAttributeNode(AttributeNode &) {
-    fatal("unsupported: visitAttributeNode\n");
-}
-
-void DirectiveInitializer::visitNumberNode(NumberNode &node) {
-    node.setType(this->env.getIntType());
-}
-
-void DirectiveInitializer::visitStringNode(StringNode &node) {
-    node.setType(this->env.getStringType());
-}
-
-void DirectiveInitializer::visitBooleanNode(BooleanNode &node) {
-    node.setType(this->env.getBooleanType());
-}
-
-void DirectiveInitializer::visitArrayNode(ArrayNode &node) {
-    unsigned int size = node.getValues().size();
-    auto type = TRY(this->checkType(*node.getValues()[0]));
-    for(unsigned int i = 1; i < size; i++) {
-        TRY(this->checkType(type, *node.getValues()[i]));
-    }
-    node.setType(this->env.getArrayType(type));
-}
-
-
-Type DirectiveInitializer::checkType(Node &node) {
-    auto type = node.getType();
-    if(type) {
-        return type;
-    }
-
-    node.accept(*this);
-    type = node.getType();
-
-    if(!type) {
-        this->createError(node.getToken(), std::string("require type, but is null"));
-    }
-    return type;
-}
-
-Type DirectiveInitializer::checkType(const Type &requiredType, Node &node) {
-    Type type = this->checkType(node);
-    if(type && *type != *requiredType) {
-        std::string str("require: ");
-        str += requiredType->getRealName();
-        str += ", but is: ";
-        str += type->getRealName();
-        this->createError(node.getToken(), std::move(str));
-        return nullptr;
-    }
-    return type;
-}
-
-void DirectiveInitializer::addHandler(const char *attributeName, const Type &type, AttributeHandler &&handler) {
-    auto pair = this->handlerMap.insert(std::make_pair(attributeName, std::make_pair(type, std::move(handler))));
+void DirectiveInitializer::addHandler(const char *attributeName, DSType &type, AttributeHandler &&handler) {
+    auto pair = this->handlerMap.insert(std::make_pair(attributeName, std::make_pair(&type, std::move(handler))));
     if(!pair.second) {
         fatal("found duplicated handler: %s\n", attributeName);
     }
@@ -500,11 +239,11 @@ unsigned int DirectiveInitializer::resolveStatus(const StringNode &node) {
         }
         message += e;
     }
-    this->createError(node.getToken(), std::move(message));
-    return 0;
+    throw TypeCheckError(node.getToken(), "", message.c_str());
+//    return 0;
 }
 
-const std::pair<Type, AttributeHandler> *DirectiveInitializer::lookupHandler(const std::string &name) const {
+const std::pair<DSType *, AttributeHandler> *DirectiveInitializer::lookupHandler(const std::string &name) const {
     auto iter = this->handlerMap.find(name);
     if(iter == this->handlerMap.end()) {
         return nullptr;
@@ -512,22 +251,81 @@ const std::pair<Type, AttributeHandler> *DirectiveInitializer::lookupHandler(con
     return &iter->second;
 }
 
+void DirectiveInitializer::checkNode(NodeKind kind, const Node &node) {
+    const char *table[] = {
+#define GEN_STR(K) #K,
+            EACH_NODE_KIND(GEN_STR)
+#undef GEN_STR
+    };
+
+    if(!node.is(kind)) {
+        std::string str = "require: ";
+        str += table[static_cast<unsigned int>(kind)];
+        str += "Node, but is: ";
+        str += table[static_cast<unsigned int>(node.getNodeKind())];
+        str += "Node";
+        throw TypeCheckError(node.getToken(), "", str.c_str());
+    }
+}
+
+void DirectiveInitializer::setVarName(const char *name, DSType &type) {
+    this->symbolTable.registerHandle(name, type, FieldAttributes());
+}
+
 
 // #######################
 // ##     Directive     ##
 // #######################
+
+static void showError(const char *sourceName, Lexer &lexer, const std::string &line,
+                      Token errorToken, const std::string &message, const char *errorName) {
+    Token lineToken = {0, static_cast<unsigned int>(line.size())};
+    std::cerr << sourceName << ":" << lexer.getLineNum() << ": [" << errorName << " error] ";
+    std::cerr << message << std::endl;
+    std::cerr << line << std::endl;
+    std::cerr << lexer.formatLineMarker(lineToken, errorToken) << std::endl;
+}
+
+static bool initDirective(const char *fileName, std::istream &input, Directive &directive) {
+    auto ret = extractDirective(input);
+    if(ret.first.empty()) {
+        return true;
+    }
+
+    Lexer lexer(fileName, ret.first.c_str());
+    lexer.setLineNum(ret.second);
+
+    DirectiveParser parser(lexer);
+    auto node = parser();
+    if(parser.hasError()) {
+        auto &e = *parser.getError();
+        showError(fileName, lexer, ret.first, e.getErrorToken(), e.getMessage(), "syntax");
+        return false;
+    }
+
+    try {
+        TypePool pool;
+        SymbolTable symbolTable;
+        DirectiveInitializer initializer(pool, symbolTable);
+        initializer(*node, directive);
+    } catch(const TypeCheckError &e) {
+        showError(fileName, lexer, ret.first, e.getToken(), e.getMessage(), "semantic");
+        return false;
+    }
+    return true;
+}
 
 bool Directive::init(const char *fileName, Directive &d) {
     std::ifstream input(fileName);
     if(!input) {
         fatal("cannot open file: %s\n", fileName);
     }
-    return DirectiveParser()(fileName, input, d);
+    return initDirective(fileName, input, d);
 }
 
 bool Directive::init(const char *sourceName, const char *src, Directive &d) {
     std::istringstream input(src);
-    return DirectiveParser()(sourceName, input, d);
+    return initDirective(sourceName, input, d);
 }
 
 } // namespace directive
