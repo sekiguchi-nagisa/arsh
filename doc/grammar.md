@@ -9,7 +9,7 @@
 toplevel = statement* EOF
          ;
 
-function = funcDecl block statementEnd
+function = funcDecl block
          ;
 
 funcDecl = FUNCTION IDENTIFIER LP 
@@ -21,7 +21,7 @@ interface = INTERFACE TYPE_PATH LBC
             ( VAR IDENTIFIER COLON typeName statementEnd
             | LET IDENTIFIER COLON typeName statementEnd
             | funcDecl statementEnd
-            )+ RBC statementEnd
+            )+ RBC
           ;
 
 typeAlias = TYPE_ALIAS IDENTIFIER typeName statementEnd
@@ -44,27 +44,24 @@ typeNameImpl = basicOrReifiedType
 typeName = typeNameImpl ({!HAS_NL} TYPE_OPT)?
          ;
 
-statement = LINE_END
-          | function
-          | interface
-          | typeAlias
-          | ASSERT expression ({!HAS_NL} COLON expression)? statementEnd
-          | block statementEnd
-          | BREAK statementEnd
-          | CONTINUE statementEnd
-          | EXPORT_ENV IDENTIFIER ASSIGN epxression statementEnd
-          | forStatement
-          | ifStatement statementEnd
-          | IMPORT_ENV IDENTIFIER ({!HAS_NL} COLON expression)? statementEnd 
-          | RETURN ({!HAS_NL} expression)? statementEnd
-          | WHILE expression block statementEnd
-          | DO block WHILE expression statementEnd
-          | TRY block catchStatement* (FINALLY block)? statementEnd
-          | variableDeclaration statementEnd
-          | assignmentExpression statementEnd
+statementImpl = LINE_END
+              | function
+              | interface
+              | typeAlias
+              | ASSERT expression ({!HAS_NL} COLON expression)?
+              | BREAK
+              | CONTINUE
+              | EXPORT_ENV IDENTIFIER ASSIGN epxression
+              | IMPORT_ENV IDENTIFIER ({!HAS_NL} COLON expression)?
+              | RETURN ({!HAS_NL} expression)?
+              | variableDeclaration
+              | expression
+              ;
+
+statement = statementImpl statementEnd
           ;
 
-statementEnd = EOS | RBC | LINE_END | {!HAS_NL}
+statementEnd = EOS | RBC | LINE_END | {!HAS_NL}     # FIXME:
              ;
 
 block = LBC statement* RBC
@@ -73,31 +70,28 @@ block = LBC statement* RBC
 variableDeclaration = (VAR | LET) IDENTIFIER ASSIGN expression
                     ;
 
-ifStatement = IF expression block (ELIF expression block)* (ELSE block)?
-            ;
-
-forStatement = FOR LP forInit LINE_END forCond LINE_END forIter RP block statementEnd
-             | FOR APPLIED_NAME IN expression block statementEnd
+ifExpression = IF expression block (ELIF expression block)* (ELSE block)?
              ;
 
-forInit = (variableDeclaration | assignmentExpression)?
+forExpression = FOR LP forInit LINE_END forCond LINE_END forIter RP block
+              | FOR APPLIED_NAME IN expression block
+              ;
+
+forInit = (variableDeclaration | expression)?
         ;
 
 forCond = expression?
         ;
 
-forIter = assignmentExpression?
+forIter = expression?
         ;
 
 catchStatement = CATCH LP APPLIED_NAME (COLON typeName)? RP block
                | CATCH APPLIED_NAME (COLON typeName)? block
                ;
 
-pipedCommand = command (PIPE command)*
-             | COMMAND LP RP blocl
-             ;
-
 command = COMMAND ({HAS_SPACE} (cmdArg | redirOption))*
+        | COMMAND LR RP block
         ;
 
 redirOption = (REDIR_MERGE_ERR_2_OUT | REDIR_MERGE_OUT_2_ERR)
@@ -108,7 +102,7 @@ redirOption = (REDIR_MERGE_ERR_2_OUT | REDIR_MERGE_OUT_2_ERR)
                | REDIR_ERR_2_FILE_APPEND
                | REDIR_MERGE_ERR_2_OUT_2_FILE
                | REDIR_MERGE_ERR_2_OUT_2_FILE_APPEND
-               | REDIR_HERE_STR) cmdArg
+               | REDIR_HERE_STR) {HAS_SPACE} cmdArg
             ;
 
 cmdArg = cmdArgSeg ({!HAS_SPACE} cmdArgSeg)*
@@ -121,19 +115,118 @@ cmdArgSeg = CMD_ARG_PART
           | paramExpansion
           ;
 
-assignmentExpression = 
+expression = THROW expression
+           | binaryExpression
+           ;
 
+binaryExpression = unaryExpression {!HAS_NL} ? expression : expression
+                 | unaryExpression {!HAS_NL}
+                   (ASSIGN | ADD_ASSIGN | SUB_ASSIGN | MUL_ASSIGN | DIV_ASSIGN | MOD_ASSIGN) expression
+                 | condOrExpression
+                 ;
 
+condOrExpression = condAndExpression ({!HAS_NL} COND_OR condAndExpression)*
+                 ;
 
+condAndExpression = pipedExpression ({!HAS_NL} COND_AND pipedExpression)*
+                  ;
 
+pipedExpression = withExpression ({!HAS_NL} PIPE withExpression)*
+                ;
 
+withExpression = equalityExpression ({!HAS_NL} WITH ({HAS_SPACE} redirOption)*)?
+               :
 
+equalityExpression = nullCoalescingExpression
+                     ({!HAS_NL} (EQ | NE | LT | GT | LE | GE | MATCH | UNMATCH) nullCoalescingExpression)*
+                   ;
 
+nullCoalescingExpression = orExpression ({!HAS_NL} NULL_COALE orExpression)*
+                         ;
 
+orExpression = xorExpression ({!HAS_NL} OR xorExpression)*
+             ;
 
+xorExpression = andExpression ({!HAS_NL} XOR andExpression)*
+              ;
 
+andExpression = addExpression ({!HAS_NL} AND addExpression)*
+              ;
 
+addExpression = mulExpression ({!HAS_NL} (ADD | SUB) mulExpression)*
+              ;
 
+mulExpression = typeExpression ({!HAS_NL} (MUL | DIV | MOD) typeExpression)*
+              ;
+
+typeExpression = unaryExpression ({!HAS_NL} (AS | IS) typeName)*
+               ;
+
+unaryExpression = (PLUS | MINUS | NOT) unaryExpression
+                | suffixExpression
+                ;
+
+suffixExpression = suffixExpression {!HAS_NL} ACCESSOR IDENTIFIER
+                 | suffixExpression {!HAS_NL} ACCESSOR IDENTIFIER {!HAS_NL} arguments
+                 | suffixExpression {!HAS_NL} LB expression RB
+                 | suffixExpression {!HAS_NL} arguments
+                 | suffixExpression {!HAS_NL} (INC | DEC | UNWRAP)
+                 | primaryExpression
+                 ;
+
+primaryExpression = command
+                  | NEW typeName arguments
+                  | BYTE_LITERAL
+                  | INT16_LITERAL
+                  | UINT16_LITERAL
+                  | INT32_LITERAL
+                  | UINT32_LITERAL
+                  | INT64_LITERAL
+                  | UINT64_LITERAL
+                  | FLOAT_LITERAL
+                  | STRING_LITERAL
+                  | PATH_LITERAL
+                  | REGEX_LITERAL
+                  | stringLiteral
+                  | stringExpression
+                  | substitution
+                  | appliedName
+                  | LP expression RP
+                  | LP expression (COMMA expression)* RP
+                  | LB expression (COMMA expression)* RB
+                  | LB expression COLON expression (COMMA expression COLON expression)* RB
+                  | block
+                  | forExpression
+                  | ifExpression
+                  | WHILE expression block
+                  | DO block expression
+                  | TRY block (catchStatment)* (FINALLY block)?
+                  ;
+
+appliedName = SPECIAL_NAME | APPLIED_NAME
+            ;
+
+stringLiteral = STRING_LITERAL
+              ;
+
+arguments = LP RP
+          | LP expression (COMMA expression)* RP
+          ;
+
+stringExpression = OPEN_DQUOTE (STR_ELEMENT | interpolation | substitution)* CLOSE_DQUOTE
+                 ;
+
+interpolation = APPLIED_NAME
+              | SPECIAL_NAME
+              | START_INTERP expression RP
+              ;
+
+paramExpansion = (APPLIED_NAME_WITH_BRACKET | SPECIAL_NAME_WITH_BRACKET) expression RB
+               | interpolation
+               ;
+
+substitution = START_SUB_CMD expression RP
+             ;
 
 ```
 
