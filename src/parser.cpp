@@ -607,7 +607,7 @@ std::unique_ptr<Node> Parser::parse_variableDeclaration() {
     return uniquify<VarDeclNode>(startPos, std::move(name), TRY(this->parse_expression()).release(), readOnly);
 }
 
-std::unique_ptr<Node> Parser::parse_ifStatement(bool asElif) {
+std::unique_ptr<Node> Parser::parse_ifExpression(bool asElif) {
     unsigned int startPos = START_POS();
     TRY(this->expect(asElif ? ELIF : IF));
     auto condNode = TRY(this->parse_expression());
@@ -617,7 +617,7 @@ std::unique_ptr<Node> Parser::parse_ifStatement(bool asElif) {
     std::unique_ptr<Node> elseNode;
     switch(CUR_KIND()) {
     case ELIF:
-        elseNode = TRY(this->parse_ifStatement(true));
+        elseNode = TRY(this->parse_ifExpression(true));
         break;
     case ELSE:
         this->consume();    // ELSE
@@ -630,7 +630,7 @@ std::unique_ptr<Node> Parser::parse_ifStatement(bool asElif) {
     return uniquify<IfNode>(startPos, condNode.release(), thenNode.release(), elseNode.release());
 }
 
-std::unique_ptr<Node> Parser::parse_forStatement() {
+std::unique_ptr<Node> Parser::parse_forExpression() {
     assert(CUR_KIND() == FOR);
     unsigned int startPos = START_POS();
     this->consume();    // FOR
@@ -1181,10 +1181,10 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         return this->parse_block();
     }
     case FOR: {
-        return this->parse_forStatement();
+        return this->parse_forExpression();
     }
     case IF: {
-        return this->parse_ifStatement();
+        return this->parse_ifExpression();
     }
     case WHILE: {
         unsigned int startPos = START_POS();

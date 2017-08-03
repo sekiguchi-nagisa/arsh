@@ -154,9 +154,9 @@ protected:
 
     std::unique_ptr<Node> parse_variableDeclaration();
 
-    std::unique_ptr<Node> parse_ifStatement(bool asElif = false);
+    std::unique_ptr<Node> parse_ifExpression(bool asElif = false);
 
-    std::unique_ptr<Node> parse_forStatement();
+    std::unique_ptr<Node> parse_forExpression();
 
     std::unique_ptr<Node> parse_forInit();
 
