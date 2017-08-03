@@ -19,7 +19,7 @@
 #include "handle.h"
 #include "type.h"
 #include "misc/fatal.h"
-#include "misc/size.hpp"
+#include "misc/util.hpp"
 #include "diagnosis.h"
 
 namespace ydsh {

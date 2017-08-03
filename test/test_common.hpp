@@ -9,7 +9,7 @@
 #include <vector>
 #include <string>
 
-#include <misc/size.hpp>
+#include <misc/util.hpp>
 
 // common utility for test
 

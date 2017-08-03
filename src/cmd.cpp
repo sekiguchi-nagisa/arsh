@@ -31,7 +31,7 @@
 #include "object.h"
 #include "misc/num.h"
 #include "misc/files.h"
-#include "misc/size.hpp"
+#include "misc/util.hpp"
 
 namespace ydsh {
 

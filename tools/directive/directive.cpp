@@ -39,7 +39,7 @@ struct DirectiveParser : public Parser {
         auto exprNode = TRY(this->parse_appliedName(false));
         auto args = TRY(this->parse_arguments());
         TRY(this->expect(EOS));
-        return std::unique_ptr<ApplyNode>(new ApplyNode(exprNode.release(), ArgsWrapper::extract(std::move(args))));
+        return make_unique<ApplyNode>(exprNode.release(), ArgsWrapper::extract(std::move(args)));
     }
 };
 
@@ -61,12 +61,10 @@ static std::pair<std::string, unsigned int> extractDirective(std::istream &input
     return {std::string(), 0};
 }
 
-
 using AttributeHandler = std::function<void(Node &, Directive &)>;
 
 class DirectiveInitializer : public TypeChecker {
 private:
-    using AttributeHandler = std::function<void(Node &, Directive &)>;
     using Handler = std::pair<DSType *, AttributeHandler>;
     std::unordered_map<std::string, Handler> handlerMap;
 

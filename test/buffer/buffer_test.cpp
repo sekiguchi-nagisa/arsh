@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <misc/buffer.hpp>
-#include <misc/size.hpp>
+#include <misc/util.hpp>
 
 using namespace ydsh;
 

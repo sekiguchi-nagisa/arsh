@@ -19,6 +19,7 @@
 #define YDSH_MISC_SIZE_HPP
 
 #include <cstddef>
+#include <memory>
 
 namespace ydsh {
 
@@ -26,6 +27,12 @@ template <typename T, std::size_t N>
 constexpr std::size_t arraySize(const T (&)[N]) noexcept {
     return N;
 }
+
+template <typename T, typename ... A>
+inline std::unique_ptr<T> make_unique(A &&... args) {
+    return std::unique_ptr<T>(new T(std::forward<A>(args)...));
+}
+
 
 } // namespace ydsh
 

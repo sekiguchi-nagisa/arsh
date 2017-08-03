@@ -20,7 +20,7 @@
 #include <algorithm>
 #include <clocale>
 
-#include "size.hpp"
+#include "util.hpp"
 
 namespace ydsh {
 

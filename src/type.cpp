@@ -25,7 +25,7 @@
 #include "type_checker.h"
 #include "core.h"
 #include "symbol.h"
-#include "misc/size.hpp"
+#include "misc/util.hpp"
 
 namespace ydsh {
 

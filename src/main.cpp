@@ -22,7 +22,7 @@
 
 #include <ydsh/ydsh.h>
 #include "misc/argv.hpp"
-#include "misc/size.hpp"
+#include "misc/util.hpp"
 
 using namespace ydsh;
 

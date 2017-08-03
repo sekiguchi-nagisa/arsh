@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <csignal>
 
-#include <misc/size.hpp>
+#include <misc/util.hpp>
 #include <signals.h>
 
 #include "../test_common.hpp"
