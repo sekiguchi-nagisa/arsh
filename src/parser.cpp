@@ -1139,15 +1139,17 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
 
             auto valueNode = TRY(this->parse_expression());
             auto mapNode = make_unique<MapNode>(token.pos, keyNode.release(), valueNode.release());
-            for(bool next = true; next;) {
+            while(true) {
                 if(CUR_KIND() == COMMA) {
                     this->consume();    // COMMA
-                    keyNode = TRY(this->parse_expression());
-                    TRY(this->expectAndChangeMode(COLON, yycSTMT));
-                    valueNode = TRY(this->parse_expression());
-                    mapNode->addEntry(keyNode.release(), valueNode.release());
+                    if(CUR_KIND() != RB) {
+                        keyNode = TRY(this->parse_expression());
+                        TRY(this->expectAndChangeMode(COLON, yycSTMT));
+                        valueNode = TRY(this->parse_expression());
+                        mapNode->addEntry(keyNode.release(), valueNode.release());
+                    }
                 } else if(CUR_KIND() == RB) {
-                    next = false;
+                    break;
                 } else {
                     E_ALTER(COMMA, RB);
                 }
@@ -1155,12 +1157,14 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
             node = std::move(mapNode);
         } else {    // array
             auto arrayNode = make_unique<ArrayNode>(token.pos, keyNode.release());
-            for(bool next = true; next;) {
+            while(true) {
                 if(CUR_KIND() == COMMA) {
                     this->consume();    // COMMA
-                    arrayNode->addExprNode(TRY(this->parse_expression()).release());
+                    if(CUR_KIND() != RB) {
+                        arrayNode->addExprNode(TRY(this->parse_expression()).release());
+                    }
                 } else if(CUR_KIND() == RB) {
-                    next = false;
+                    break;
                 } else {
                     E_ALTER(COMMA, RB);
                 }
