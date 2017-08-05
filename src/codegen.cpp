@@ -791,6 +791,11 @@ void ByteCodeGenerator::visitLoopNode(LoopNode &node) {
     });
 }
 
+static bool isEmptyCode(Node &node) {
+    return node.is(NodeKind::Empty) ||
+            (node.is(NodeKind::Block) && static_cast<BlockNode &>(node).getNodes().empty());
+}
+
 void ByteCodeGenerator::visitIfNode(IfNode &node) {
     auto elseLabel = makeIntrusive<Label>();
     auto mergeLabel = makeIntrusive<Label>();
@@ -798,7 +803,9 @@ void ByteCodeGenerator::visitIfNode(IfNode &node) {
     this->visit(*node.getCondNode());
     this->emitBranchIns(elseLabel);
     this->visit(*node.getThenNode());
-    this->emitJumpIns(mergeLabel);
+    if(!isEmptyCode(*node.getElseNode()) && !node.getThenNode()->getType().isBottomType()) {
+        this->emitJumpIns(mergeLabel);
+    }
 
     this->markLabel(elseLabel);
     this->visit(*node.getElseNode());
