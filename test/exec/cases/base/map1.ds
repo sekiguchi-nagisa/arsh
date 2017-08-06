@@ -17,6 +17,9 @@ assert($a.get("b"))
 assert $a.get("b")! == -456
 assert(not $a.get("c"))
 
+assert $a.find("b")
+assert not $a.find("de")
+
 assert(not $a.put("c", -19))
 assert($a.put("c", 789)! == -19)
 

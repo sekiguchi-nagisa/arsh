@@ -1708,6 +1708,14 @@ YDSH_METHOD map_find(RuntimeContext &ctx) {
     RET(iter != obj->getValueMap().end() ? iter->second : DSValue::createInvalid());
 }
 
+//!bind: function find($this : Map<T0, T1>, $key : T0) : Boolean
+YDSH_METHOD map_find2(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(map_find2);
+    Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
+    auto iter = obj->getValueMap().find(LOCAL(1));
+    RET_BOOL(iter != obj->getValueMap().end());
+}
+
 //!bind: function remove($this : Map<T0, T1>, $key : T0) : Boolean
 YDSH_METHOD map_remove(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_remove);
