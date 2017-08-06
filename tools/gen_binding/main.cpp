@@ -63,7 +63,7 @@ class ErrorReporter {
 private:
     std::string fileName;
 
-    unsigned lineNum;
+    unsigned lineNum{};
 
     /**
      * currently processing line

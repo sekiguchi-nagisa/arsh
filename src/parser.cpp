@@ -214,7 +214,7 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
 
         node->addParamNode(nameNode.release(), type.release());
 
-        for(bool next = true; next;) {
+        while(true) {
             if(CUR_KIND() == COMMA) {
                 this->consume();    // COMMA
                 token = TRY(this->expect(APPLIED_NAME));
@@ -227,7 +227,7 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
 
                 node->addParamNode(nameNode.release(), type.release());
             } else if(CUR_KIND() == RP) {
-                next = false;
+                break;
             } else {
                 E_ALTER(COMMA, RP);
             }
@@ -417,7 +417,6 @@ TypeWrapper Parser::parse_typeNameImpl() {
             return {std::move(func), token};
         }
         return {make_unique<BaseTypeNode>(token, this->lexer->toName(token)), token};
-
     }
     case TYPE_PATH: {
         Token token = this->expect(TYPE_PATH);  // always success
@@ -545,9 +544,8 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
     EACH_LA_expression(GEN_LA_CASE) {
         return this->parse_expression();
     }
-    default: {
+    default:
         E_ALTER(EACH_LA_statement(GEN_LA_ALTER));
-    }
     }
 }
 
@@ -610,18 +608,12 @@ std::unique_ptr<Node> Parser::parse_ifExpression(bool asElif) {
 
     // parse else
     std::unique_ptr<Node> elseNode;
-    switch(CUR_KIND()) {
-    case ELIF:
+    if(CUR_KIND() == ELIF) {
         elseNode = TRY(this->parse_ifExpression(true));
-        break;
-    case ELSE:
+    } else if(CUR_KIND() == ELSE) {
         this->consume();    // ELSE
         elseNode = TRY(this->parse_block());
-        break;
-    default:
-        break;
     }
-
     return make_unique<IfNode>(startPos, condNode.release(), thenNode.release(), elseNode.release());
 }
 
@@ -784,10 +776,9 @@ std::unique_ptr<CmdArgNode> Parser::parse_cmdArg() {
             node->addSegmentNode(TRY(this->parse_cmdArgSeg(pos)).release());
             break;
         }
-        default: {
+        default:
             next = false;
             break;
-        }
         }
     }
     return node;
@@ -812,9 +803,8 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(unsigned int pos) {
     EACH_LA_paramExpansion(GEN_LA_CASE) {
         return this->parse_paramExpansion();
     }
-    default: {
+    default:
         E_ALTER(EACH_LA_cmdArg(GEN_LA_ALTER));
-    }
     }
 }
 
@@ -917,9 +907,8 @@ std::unique_ptr<Node> Parser::parse_unaryExpression() {
         TokenKind op = this->consume();
         return make_unique<UnaryOpNode>(startPos, op, TRY(this->parse_unaryExpression()).release());
     }
-    default: {
+    default:
         return this->parse_suffixExpression();
-    }
     }
 }
 
@@ -974,10 +963,9 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
             node->updateToken(token);
             break;
         }
-        default: {
+        default:
             next = false;
             break;
-        }
         }
     }
     return node;

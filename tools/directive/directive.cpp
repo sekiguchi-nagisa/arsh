@@ -32,7 +32,7 @@ namespace directive {
 ({ auto v = expr; if(this->hasError()) { return nullptr; } std::forward<decltype(v)>(v); })
 
 struct DirectiveParser : public Parser {
-    DirectiveParser(Lexer &lexer) : Parser(lexer) {}
+    explicit DirectiveParser(Lexer &lexer) : Parser(lexer) {}
     ~DirectiveParser() = default;
 
     std::unique_ptr<ApplyNode> operator()() {
