@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_MISC_TIME_H
-#define YDSH_MISC_TIME_H
+#ifndef YDSH_TIME_H
+#define YDSH_TIME_H
 
 #include <ctime>
 #include <cstring>
 
 #include <config.h>
 
-#include "fatal.h"
+#include "misc/fatal.h"
 
 namespace ydsh {
 
@@ -73,4 +73,4 @@ inline struct tm *getLocalTime() {
 
 } // namespace ydsh
 
-#endif //YDSH_MISC_TIME_H
+#endif //YDSH_TIME_H
