@@ -298,7 +298,7 @@ static bool initDirective(const char *fileName, std::istream &input, Directive &
     DirectiveParser parser(lexer);
     auto node = parser();
     if(parser.hasError()) {
-        auto &e = *parser.getError();
+        auto &e = parser.getError();
         showError(fileName, lexer, ret.first, e.getErrorToken(), e.getMessage(), "syntax");
         return false;
     }

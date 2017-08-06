@@ -682,7 +682,7 @@ std::vector<std::unique_ptr<Element>> Parser::operator()(const char *fileName) {
 
         ERR:
         if(this->hasError()) {
-            auto &e = *this->getError();
+            auto &e = this->getError();
             std::cerr << fileName << ":" << lineNum << ": [error] " << e.getMessage() << std::endl;
             std::cerr << line << std::endl;
             Token lineToken;

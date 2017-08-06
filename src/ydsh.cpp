@@ -124,41 +124,32 @@ static void formatErrorLine(bool isatty, const Lexer &lexer, Token errorToken) {
     fflush(stderr);
 }
 
-static void handleParseError(const Lexer &lexer, const ParseError &e, DSError *dsError) {
-    Token errorToken = lexer.shiftEOS(e.getErrorToken());
-
-    /**
-     * show parse error message
-     */
+static void handleError(const Lexer &lexer, unsigned type, const char *errorKind,
+                        Token errorToken, const std::string &message, DSError *dsError) {
     unsigned int errorLineNum = lexer.getSourceInfoPtr()->getLineNum(errorToken.pos);
-
     const bool isatty = isSupportedTerminal(STDERR_FILENO);
 
-    fprintf(stderr, "%s:%d:%s%s [syntax error] %s%s\n",
+    /**
+     * show error message
+     */
+    fprintf(stderr, "%s:%d:%s%s ",
             lexer.getSourceInfoPtr()->getSourceName().c_str(), errorLineNum,
-            color(TermColor::Magenta, isatty), color(TermColor::Bold, isatty),
-            color(TermColor::Reset, isatty), e.getMessage().c_str());
+            color(TermColor::Magenta, isatty), color(TermColor::Bold, isatty));
+    fprintf(stderr, "[%s error] %s%s\n",
+            type == DS_ERROR_KIND_PARSE_ERROR ? "syntax" : "semantic",
+            color(TermColor::Reset, isatty), message.c_str());
     formatErrorLine(isatty, lexer, errorToken);
 
-    setErrorInfo(dsError, DS_ERROR_KIND_PARSE_ERROR, errorLineNum, e.getErrorKind());
+    setErrorInfo(dsError, type, errorLineNum, errorKind);
+}
+
+static void handleParseError(const Lexer &lexer, const ParseError &e, DSError *dsError) {
+    Token errorToken = lexer.shiftEOS(e.getErrorToken());
+    handleError(lexer, DS_ERROR_KIND_PARSE_ERROR, e.getErrorKind(), errorToken, e.getMessage(), dsError);
 }
 
 static void handleTypeError(const Lexer &lexer, const TypeCheckError &e, DSError *dsError) {
-    unsigned int errorLineNum = lexer.getSourceInfoPtr()->getLineNum(e.getStartPos());
-
-    const bool isatty = isSupportedTerminal(STDERR_FILENO);
-
-    /**
-     * show type error message
-     */
-    fprintf(stderr, "%s:%d:%s%s [semantic error] %s%s\n",
-            lexer.getSourceInfoPtr()->getSourceName().c_str(), errorLineNum,
-            color(TermColor::Magenta, isatty), color(TermColor::Bold, isatty),
-            color(TermColor::Reset, isatty), e.getMessage().c_str());
-    formatErrorLine(isatty, lexer, e.getToken());
-
-    setErrorInfo(dsError, DS_ERROR_KIND_TYPE_ERROR,
-                 lexer.getSourceInfoPtr()->getLineNum(e.getStartPos()), e.getKind());
+    handleError(lexer, DS_ERROR_KIND_TYPE_ERROR, e.getKind(), e.getToken(), e.getMessage(), dsError);
 }
 
 /**
@@ -222,7 +213,7 @@ static int compileImpl(DSState *state, Lexer &lexer, DSError *dsError, CompiledC
     auto rootNode = parser();
     state->lineNum = lexer.getLineNum();
     if(parser.hasError()) {
-        handleParseError(lexer, *parser.getError(), dsError);
+        handleParseError(lexer, parser.getError(), dsError);
         return 1;
     }
 

@@ -1131,7 +1131,7 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
             break;
         }
     } else {
-        const auto &e = *parser.getError();
+        const auto &e = parser.getError();
         LOG_L(DUMP_CONSOLE, [&](std::ostream &stream) {
             stream << "error kind: " << e.getErrorKind() << std::endl;
             stream << "kind: " << toString(e.getTokenKind())

@@ -94,10 +94,6 @@ public:
 
     ~TypeCheckError() = default;
 
-    unsigned int getStartPos() const {
-        return this->token.pos;
-    }
-
     Token getToken() const {
         return this->token;
     }

@@ -105,8 +105,8 @@ public:
         return static_cast<bool>(this->error);
     }
 
-    const std::unique_ptr<ParseError<T>> &getError() const {
-        return this->error;
+    const ParseError<T> &getError() const {
+        return *this->error;
     }
 
     void clear() {
