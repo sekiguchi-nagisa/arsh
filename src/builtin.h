@@ -1618,7 +1618,7 @@ YDSH_METHOD array_sliceFrom(RuntimeContext &ctx) {
 
 //!bind: function to($this : Array<T0>, $to : Int32) : Array<T0>
 YDSH_METHOD array_sliceTo(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(array_sliceFrom);
+    SUPPRESS_WARNING(array_sliceTo);
     auto *obj = typeAs<Array_Object>(LOCAL(0));
     int stop = typeAs<Int_Object>(LOCAL(1))->getValue();
     return slice(ctx, obj, 0, stop);

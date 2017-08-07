@@ -126,13 +126,6 @@ enum OptionKind {
 #undef GEN_ENUM
 };
 
-//static const argv::Option<OptionKind> options[] = {
-//#define GEN_OPT(E, S, F, D) {E, S, F, D},
-//        EACH_OPT(GEN_OPT)
-//#undef GEN_OPT
-//};
-
-//#undef EACH_OPT
 
 enum class InvocationKind {
     FROM_FILE,

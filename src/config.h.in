@@ -26,6 +26,6 @@
 
 #cmakedefine USE_SAFE_CAST
 
-#cmakedefine USE_FIXED_TIME     // see misc/time.h
+#cmakedefine USE_FIXED_TIME     // time_util.h
 
 #endif //YDSH_CONFIG_H
