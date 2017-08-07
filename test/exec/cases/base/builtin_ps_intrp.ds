@@ -4,7 +4,7 @@ function dirname($s : String) : String {
     import-env HOME
     if $s.startsWith($HOME) {
         var d = '~'
-        $d += $s.sliceFrom($HOME.size())
+        $d += $s.from($HOME.size())
         return $d
     }
     return $s;

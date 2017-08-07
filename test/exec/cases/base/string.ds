@@ -56,15 +56,15 @@ try { assert("01234".slice(5, 5) == "A"); } catch($e) { assert($e is OutOfRangeE
 try { assert("01234".slice(-1, 2) == "A"); } catch($e) { assert($e is OutOfRangeError); }
 try { assert("01234".slice(-134, -5) == "A"); } catch($e) { assert($e is OutOfRangeError); }
 
-assert("012345".sliceFrom(3) == "345")
-assert("012345".sliceFrom(-4) == "2345")
-try { assert("012345".sliceFrom(-9) == "A"); } catch($e) { assert($e is OutOfRangeError); }
-try { assert("012345".sliceFrom(6) == "A"); } catch($e) { assert($e is OutOfRangeError); }
+assert("012345".from(3) == "345")
+assert("012345".from(-4) == "2345")
+try { assert("012345".from(-9) == "A"); } catch($e) { assert($e is OutOfRangeError); }
+try { assert("012345".from(6) == "A"); } catch($e) { assert($e is OutOfRangeError); }
 
-assert("012345".sliceTo(3) == "012")
-assert("012345".sliceTo(-4) == "01")
-try { assert("012345".sliceTo(-9) == "A"); } catch($e) { assert($e is OutOfRangeError); }
-try { assert("012345".sliceTo(9) == "A"); } catch($e) { assert($e is OutOfRangeError); }
+assert("012345".to(3) == "012")
+assert("012345".to(-4) == "01")
+try { assert("012345".to(-9) == "A"); } catch($e) { assert($e is OutOfRangeError); }
+try { assert("012345".to(9) == "A"); } catch($e) { assert($e is OutOfRangeError); }
 
 assert(not $a.startsWith("hoge"))
 assert("あ345".startsWith("あ"))

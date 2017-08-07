@@ -1001,14 +1001,14 @@ YDSH_METHOD string_slice(RuntimeContext &ctx) {
               typeAs<Int_Object>(LOCAL(2))->getValue()));
 }
 
-//!bind: function sliceFrom($this : String, $start : Int32) : String
+//!bind: function from($this : String, $start : Int32) : String
 YDSH_METHOD string_sliceFrom(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_sliceFrom);
     auto strObj = typeAs<String_Object>(LOCAL(0));
     RET(sliceImpl(ctx, strObj, typeAs<Int_Object>(LOCAL(1))->getValue(), strObj->size()));
 }
 
-//!bind: function sliceTo($this : String, $stop : Int32) : String
+//!bind: function to($this : String, $stop : Int32) : String
 YDSH_METHOD string_sliceTo(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_sliceTo);
     auto strObj = typeAs<String_Object>(LOCAL(0));
@@ -1569,6 +1569,61 @@ YDSH_METHOD array_swap(RuntimeContext &ctx) {
     RET(value);
 }
 
+/**
+ * startIndex is inclusive.
+ * stopIndex is exclusive.
+ */
+static DSValue slice(RuntimeContext &ctx, Array_Object *arrayObj, int startIndex, int stopIndex) {
+    const unsigned int size = arrayObj->getValues().size();
+
+    // resolve actual index
+    startIndex = (startIndex < 0 ? size : 0) + startIndex;
+    stopIndex = (stopIndex < 0 ? size : 0) + stopIndex;
+
+    // check range
+    if(startIndex > stopIndex || startIndex < 0 || startIndex >= static_cast<int>(size) ||
+       stopIndex < 0 || stopIndex > static_cast<int>(size)) {
+        std::string msg("size is ");
+        msg += std::to_string(size);
+        msg += ", but range is [";
+        msg += std::to_string(startIndex);
+        msg += ", ";
+        msg += std::to_string(stopIndex);
+        msg += ")";
+        throwOutOfRangeError(ctx, std::move(msg));
+    }
+
+    auto begin = arrayObj->getValues().begin() + startIndex;
+    auto end = arrayObj->getValues().begin() + stopIndex;
+    std::vector<DSValue> values(begin, end);
+    RET(DSValue::create<Array_Object>(*arrayObj->getType(), std::move(values)));
+}
+
+//!bind: function slice($this : Array<T0>, $from : Int32, $to : Int32) : Array<T0>
+YDSH_METHOD array_slice(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_slice);
+    auto *obj = typeAs<Array_Object>(LOCAL(0));
+    int start = typeAs<Int_Object>(LOCAL(1))->getValue();
+    int stop = typeAs<Int_Object>(LOCAL(2))->getValue();
+    return slice(ctx, obj, start, stop);
+}
+
+//!bind: function from($this : Array<T0>, $from : Int32) : Array<T0>
+YDSH_METHOD array_sliceFrom(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_sliceFrom);
+    auto *obj = typeAs<Array_Object>(LOCAL(0));
+    int start = typeAs<Int_Object>(LOCAL(1))->getValue();
+    return slice(ctx, obj, start, obj->getValues().size());
+}
+
+//!bind: function to($this : Array<T0>, $to : Int32) : Array<T0>
+YDSH_METHOD array_sliceTo(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_sliceFrom);
+    auto *obj = typeAs<Array_Object>(LOCAL(0));
+    int stop = typeAs<Int_Object>(LOCAL(1))->getValue();
+    return slice(ctx, obj, 0, stop);
+}
+
 //!bind: function size($this : Array<T0>) : Int32
 YDSH_METHOD array_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_size);
@@ -1590,19 +1645,6 @@ YDSH_METHOD array_clear(RuntimeContext &ctx) {
     obj->initIterator();
     obj->refValues().clear();
     RET_VOID;
-}
-
-//!bind: function copy($this : Array<T0>) : Array<T0>
-YDSH_METHOD array_copy(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(array_copy);
-    Array_Object *obj = typeAs<Array_Object>(LOCAL(0));
-
-    const unsigned int size = obj->refValues().size();
-    std::vector<DSValue> values(size);
-    for(unsigned int i = 0; i < size; i++) {
-        values[i] = obj->getValues()[i];
-    }
-    RET(DSValue::create<Array_Object>(*obj->getType(), std::move(values)));
 }
 
 //!bind: function $OP_ITER($this : Array<T0>) : Array<T0>

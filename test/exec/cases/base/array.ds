@@ -46,11 +46,26 @@ assert($b.empty())
 try { $b.pop(); assert($false) } catch($e) { assert($e is OutOfRangeError) }
 try { $b.peek(); assert($false) } catch($e) { assert($e is OutOfRangeError) }
 
-# copy
+# slice
 $b = [$true, $false, $false]
-var bb = $b.copy()
+var bb = $b.slice(0, $b.size())
 $b.clear()
 assert $bb.size() == 3 && $b.size() == 0
+
+var ee = 34 as Any
+try { $bb.slice(0, 4); assert $false; } catch $e { $ee = $e; }
+assert $ee is OutOfRangeError
+$ee = 1
+
+assert $bb.from(1) as String == [$false, $false] as String
+try { $bb.from(4); assert $false; } catch $e { $ee = $e; }
+assert $ee is OutOfRangeError
+$ee = 1
+
+assert [0, 1, 2, 3].to(2) as String == [0, 1] as String
+try { [0].to(-3); assert $false; } catch $e { $ee = $e; }
+assert $ee is OutOfRangeError
+$ee = 1
 
 # inheritance
 assert([34, 43] is Array<Int32>)
