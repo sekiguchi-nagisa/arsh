@@ -259,6 +259,24 @@ public:
     }
 };
 
+struct CodeBuilder : public CodeEmitter<true> {
+    std::vector<DSValue> constBuffer;
+    FlexBuffer<SourcePosEntry> sourcePosEntries;
+    std::vector<CatchBuilder> catchBuilders;
+
+    /**
+     * first is local offset, second is local size
+     */
+    std::vector<std::pair<unsigned short, unsigned short>> localVars;
+
+    /**
+     * first is break label, second is continue label
+     */
+    std::vector<std::pair<std::pair<IntrusivePtr<Label>, IntrusivePtr<Label>>, unsigned int>> loopLabels;
+
+    std::vector<IntrusivePtr<Label>> finallyLabels;
+};
+
 class ByteCodeGenerator : protected NodeVisitor {
 private:
     TypePool &pool;
@@ -266,24 +284,6 @@ private:
     bool assertion;
 
     MethodHandle *handle_STR;
-
-    struct CodeBuilder : public CodeEmitter<true> {
-        std::vector<DSValue> constBuffer;
-        FlexBuffer<SourcePosEntry> sourcePosEntries;
-        std::vector<CatchBuilder> catchBuilders;
-
-        /**
-         * first is local offset, second is local size
-         */
-        std::vector<std::pair<unsigned short, unsigned short>> localVars;
-
-        /**
-         * first is break label, second is continue label
-         */
-        std::vector<std::pair<std::pair<IntrusivePtr<Label>, IntrusivePtr<Label>>, unsigned int>> loopLabels;
-
-        std::vector<IntrusivePtr<Label>> finallyLabels;
-    };
 
     std::vector<CodeBuilder *> builders;
 
