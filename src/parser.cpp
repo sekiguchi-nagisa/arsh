@@ -179,11 +179,13 @@ void Parser::restoreLexerState(Token prevToken) {
     this->fetchNext();
 }
 
-Token Parser::expectAndChangeMode(TokenKind kind, LexerMode mode) {
+Token Parser::expectAndChangeMode(TokenKind kind, LexerMode mode, bool fetchNext) {
     Token token = this->expect(kind, false);
     if(!this->hasError()) {
         this->lexer->setLexerMode(mode);
-        this->fetchNext();
+        if(fetchNext) {
+            this->fetchNext();
+        }
     }
     return token;
 }
@@ -244,7 +246,7 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
         this->expect(COLON, false); // always success
         auto type = make_unique<ReturnTypeNode>(TRY(this->parse_typeName()).release());
         while(CUR_KIND() == COMMA) {
-            this->expect(COMMA, false); // always success
+            this->expectAndChangeMode(COMMA, yycEXPR, false); // always success
             type->addTypeNode(TRY(this->parse_typeName()).release());
         }
         retTypeNode = std::move(type);

@@ -115,7 +115,7 @@ protected:
     /**
      * after matching token, change lexer mode and fetchNext.
      */
-    Token expectAndChangeMode(TokenKind kind, LexerMode mode);
+    Token expectAndChangeMode(TokenKind kind, LexerMode mode, bool fetchNext = true);
 
     void raiseTokenFormatError(TokenKind kind, Token token, const char *msg);
 
