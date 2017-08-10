@@ -871,6 +871,7 @@ void TypeChecker::visitJumpNode(DSType *, JumpNode &node) {
         this->checkType(this->typePool.getAnyType(), node.getExprNode());
         this->breakGather.addJumpNode(&node);
     }
+    assert(!node.getExprNode()->isUntyped());
     node.setType(this->typePool.getBottomType());
 }
 
@@ -914,6 +915,7 @@ void TypeChecker::visitLoopNode(DSType *, LoopNode &node) {
     if(!node.getBlockNode()->getType().isBottomType()) {    // insert continue to block end
         auto *jumpNode = new JumpNode({0, 0}, false);
         jumpNode->setType(this->typePool.getBottomType());
+        jumpNode->getExprNode()->setType(this->typePool.getVoidType());
         node.getBlockNode()->addNode(jumpNode);
         node.getBlockNode()->setType(jumpNode->getType());
     }
