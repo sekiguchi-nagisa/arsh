@@ -496,7 +496,18 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
     }
     case BREAK: {
         Token token = this->expect(BREAK); // always success
-        return make_unique<JumpNode>(token, true);
+        std::unique_ptr<Node> exprNode;
+        if(!HAS_NL()) {
+            switch(CUR_KIND()) {
+            EACH_LA_expression(GEN_LA_CASE) {
+                exprNode = TRY(this->parse_expression());
+                break;
+            }
+            default:
+                break;
+            }
+        }
+        return make_unique<JumpNode>(token, true, exprNode.release());
     }
     case CONTINUE: {
         Token token = this->expect(CONTINUE);  // always success

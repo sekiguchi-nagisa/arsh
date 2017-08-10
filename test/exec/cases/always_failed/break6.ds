@@ -1,0 +1,6 @@
+
+#$test($result = 'type', $lineNum = 5, $errorKind = 'Required', $status = 1)
+
+for(;;) {
+    break "34".realpath()
+}

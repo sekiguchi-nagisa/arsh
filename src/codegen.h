@@ -259,6 +259,19 @@ public:
     }
 };
 
+struct LoopState {
+    IntrusivePtr<Label> breakLabel;
+
+    IntrusivePtr<Label> continueLabel;
+
+    IntrusivePtr<Label> breakWithValueLabel;
+
+    /**
+     * for local variable reclaim
+     */
+    unsigned int blockIndex;
+};
+
 struct CodeBuilder : public CodeEmitter<true> {
     std::vector<DSValue> constBuffer;
     FlexBuffer<SourcePosEntry> sourcePosEntries;
@@ -272,7 +285,7 @@ struct CodeBuilder : public CodeEmitter<true> {
     /**
      * first is break label, second is continue label
      */
-    std::vector<std::pair<std::pair<IntrusivePtr<Label>, IntrusivePtr<Label>>, unsigned int>> loopLabels;
+    std::vector<LoopState> loopLabels;
 
     std::vector<IntrusivePtr<Label>> finallyLabels;
 };
@@ -379,9 +392,10 @@ private:
     void emitJumpIns(const IntrusivePtr<Label> &label);
     void markLabel(IntrusivePtr<Label> &label);
 
-    void pushLoopLabels(const IntrusivePtr<Label> &breakLabel, const IntrusivePtr<Label> &continueLabel);
+    void pushLoopLabels(IntrusivePtr<Label> breakLabel, IntrusivePtr<Label> continueLabel,
+                        IntrusivePtr<Label> breakWithValueLabel);
     void popLoopLabels();
-    const std::pair<IntrusivePtr<Label>, IntrusivePtr<Label>> &peekLoopLabels();
+    const LoopState &peekLoopLabels();
 
     /**
      *

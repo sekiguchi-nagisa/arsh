@@ -22,6 +22,32 @@
 
 namespace ydsh {
 
+// #########################
+// ##     BreakGather     ##
+// #########################
+
+void BreakGather::clear() {
+    delete this->entry;
+}
+
+void BreakGather::enter() {
+    auto *e = new Entry(this->entry);
+    this->entry = e;
+}
+
+void BreakGather::leave() {
+    auto *old = this->entry->next;
+    this->entry->next = nullptr;
+    this->clear();
+    this->entry = old;
+}
+
+void BreakGather::addJumpNode(JumpNode *node) {
+    assert(this->entry != nullptr);
+    this->entry->jumpNodes.push_back(node);
+}
+
+
 // ###########################
 // ##     TypeGenerator     ##
 // ###########################
@@ -246,6 +272,23 @@ bool TypeChecker::checkCoercion(const DSType &requiredType, const DSType &target
     return false;
 }
 
+DSType& TypeChecker::resolveCoercionOfJumpValue() {
+    auto &jumpNodes = this->breakGather.getJumpNodes();
+    if(jumpNodes.empty()) {
+        return this->typePool.getVoidType();
+    }
+
+    auto &firstType = jumpNodes[0]->getExprNode()->getType();
+    assert(!firstType.isBottomType() && !firstType.isVoidType());
+
+    for(auto &jumpNode : jumpNodes) {
+        if(firstType != jumpNode->getExprNode()->getType()) {
+            this->checkTypeWithCoercion(firstType, jumpNode->refExprNode());
+        }
+    }
+    return this->typePool.createReifiedType(this->typePool.getOptionTemplate(), {&firstType});
+}
+
 FieldHandle *TypeChecker::addEntryAndThrowIfDefined(Node &node, const std::string &symbolName, DSType &type,
                                                     FieldAttributes attribute) {
     auto pair = this->symbolTable.registerHandle(symbolName, type, attribute);
@@ -403,7 +446,6 @@ void TypeChecker::convertToStringExpr(BinaryOpNode &node) {
 }
 
 void TypeChecker::dispatch(DSType *requiredType, Node &node) {
-
     switch(node.getNodeKind()) {
 #define GEN_CASE(OP) case NodeKind::OP: this->visit ## OP ## Node(requiredType, static_cast<OP ## Node &>(node)); break;
     EACH_NODE_KIND(GEN_CASE)
@@ -822,6 +864,13 @@ void TypeChecker::visitJumpNode(DSType *, JumpNode &node) {
     if(this->fctx.tryCatchLevel() > this->fctx.loopLevel()) {
         node.setLeavingBlock(true);
     }
+
+    if(node.getExprNode()->is(NodeKind::Empty)) {
+        this->checkType(this->typePool.getVoidType(), node.getExprNode());
+    } else if(node.isBreak()) {
+        this->checkType(this->typePool.getAnyType(), node.getExprNode());
+        this->breakGather.addJumpNode(&node);
+    }
     node.setType(this->typePool.getBottomType());
 }
 
@@ -856,6 +905,7 @@ void TypeChecker::visitLoopNode(DSType *, LoopNode &node) {
 
     this->enterLoop();
     this->checkTypeWithCurrentScope(node.getBlockNode());
+    auto &type = this->resolveCoercionOfJumpValue();
     this->exitLoop();
 
     this->symbolTable.exitScope();
@@ -867,7 +917,7 @@ void TypeChecker::visitLoopNode(DSType *, LoopNode &node) {
         node.getBlockNode()->addNode(jumpNode);
         node.getBlockNode()->setType(jumpNode->getType());
     }
-    node.setType(this->typePool.getVoidType());
+    node.setType(type);
 }
 
 void TypeChecker::visitIfNode(DSType *requiredType, IfNode &node) {
@@ -1193,6 +1243,7 @@ void TypeChecker::visitRootNode(DSType *, RootNode &node) {
     this->symbolTable.commit();
     this->typePool.commit();
     this->fctx.clear();
+    this->breakGather.clear();
 
     bool prevIsTerminal = false;
     for(auto &targetNode : node.refNodes()) {

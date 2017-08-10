@@ -169,16 +169,23 @@ void ByteCodeGenerator::markLabel(IntrusivePtr<Label> &label) {
     this->curBuilder().markLabel(index, label);
 }
 
-void ByteCodeGenerator::pushLoopLabels(const IntrusivePtr<Label> &breakLabel, const IntrusivePtr<Label> &continueLabel) {
-    this->curBuilder().loopLabels.push_back({{breakLabel, continueLabel}, this->curBuilder().localVars.size()});
+void ByteCodeGenerator::pushLoopLabels(IntrusivePtr<Label> breakLabel, IntrusivePtr<Label> continueLabel,
+                                       IntrusivePtr<Label> breakWithValueLabel) {
+    LoopState s = {
+            .breakLabel = std::move(breakLabel),
+            .continueLabel = std::move(continueLabel),
+            .breakWithValueLabel = std::move(breakWithValueLabel),
+            .blockIndex = static_cast<unsigned int>(this->curBuilder().localVars.size()),
+    };
+    this->curBuilder().loopLabels.push_back(std::move(s));
 }
 
 void ByteCodeGenerator::popLoopLabels() {
     this->curBuilder().loopLabels.pop_back();
 }
 
-const std::pair<IntrusivePtr<Label>, IntrusivePtr<Label>> &ByteCodeGenerator::peekLoopLabels() {
-    return this->curBuilder().loopLabels.back().first;
+const LoopState &ByteCodeGenerator::peekLoopLabels() {
+    return this->curBuilder().loopLabels.back();
 }
 
 void ByteCodeGenerator::emitSourcePos(unsigned int pos) {
@@ -724,8 +731,11 @@ void ByteCodeGenerator::visitBlockNode(BlockNode &node) {
 void ByteCodeGenerator::visitJumpNode(JumpNode &node) {
     assert(!this->curBuilder().loopLabels.empty());
 
+    // for break with value
+    this->visit(*node.getExprNode());
+
     // reclaim local before jump
-    unsigned int blockIndex = this->curBuilder().loopLabels.back().second;
+    unsigned int blockIndex = this->curBuilder().loopLabels.back().blockIndex;
     const unsigned int startOffset = this->curBuilder().localVars[blockIndex].first;
     unsigned int stopOffset = startOffset + this->curBuilder().localVars[blockIndex].second;
 
@@ -744,10 +754,24 @@ void ByteCodeGenerator::visitJumpNode(JumpNode &node) {
         this->enterFinally();
     }
 
-    this->emitJumpIns(node.isBreak() ? this->peekLoopLabels().first : this->peekLoopLabels().second);
+    if(node.isBreak()) {
+        if(node.getExprNode()->getType().isVoidType()) {
+            this->emitJumpIns(this->peekLoopLabels().breakLabel);
+        } else {
+            this->emitJumpIns(this->peekLoopLabels().breakWithValueLabel);
+        }
+    } else {
+        assert(node.getExprNode()->getType().isVoidType());
+        this->emitJumpIns(this->peekLoopLabels().continueLabel);
+    }
 }
 
 void ByteCodeGenerator::visitTypeAliasNode(TypeAliasNode &) { } // do nothing
+
+static bool isEmptyCode(Node &node) {
+    return node.is(NodeKind::Empty) ||
+           (node.is(NodeKind::Block) && static_cast<BlockNode &>(node).getNodes().empty());
+}
 
 void ByteCodeGenerator::visitLoopNode(LoopNode &node) {
     // generate code
@@ -764,10 +788,11 @@ void ByteCodeGenerator::visitLoopNode(LoopNode &node) {
         auto startLabel = makeIntrusive<Label>();
         auto breakLabel = makeIntrusive<Label>();
         auto continueLabel = makeIntrusive<Label>();
-        this->pushLoopLabels(breakLabel, continueLabel);
+        auto breakWithValueLabel = makeIntrusive<Label>();
+        this->pushLoopLabels(breakLabel, continueLabel, breakWithValueLabel);
 
         this->visit(*node.getInitNode());
-        if(!node.getIterNode()->is(NodeKind::Empty)) {
+        if(!isEmptyCode(*node.getIterNode())) {
             this->emitJumpIns(initLabel);
         }
 
@@ -785,15 +810,14 @@ void ByteCodeGenerator::visitLoopNode(LoopNode &node) {
         this->visit(*node.getBlockNode());
 
         this->markLabel(breakLabel);
+        if(!node.getType().isVoidType()) {
+            this->emit0byteIns(OpCode::NEW_INVALID);
+            this->markLabel(breakWithValueLabel);
+        }
 
         // pop loop label
         this->popLoopLabels();
     });
-}
-
-static bool isEmptyCode(Node &node) {
-    return node.is(NodeKind::Empty) ||
-            (node.is(NodeKind::Block) && static_cast<BlockNode &>(node).getNodes().empty());
 }
 
 void ByteCodeGenerator::visitIfNode(IfNode &node) {

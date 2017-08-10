@@ -125,6 +125,44 @@ public:
     }
 };
 
+/**
+ * gather returnable break node (JumpNode)
+ */
+class BreakGather {
+private:
+    struct Entry {
+        FlexBuffer<JumpNode *> jumpNodes;
+        Entry *next;
+
+        Entry(Entry *prev) : next(prev) {}
+        ~Entry() {
+            delete this->next;
+        }
+    } *entry;
+
+public:
+    BreakGather() : entry(nullptr) {}
+    ~BreakGather() {
+        this->clear();
+    }
+
+    void clear();
+
+    void enter();
+
+    void leave();
+
+    void addJumpNode(JumpNode *node);
+
+    /**
+     * call after enter()
+     * @return
+     */
+    FlexBuffer<JumpNode *> &getJumpNodes() {
+        return this->entry->jumpNodes;
+    }
+};
+
 class TypeChecker;
 
 class TypeGenerator {
@@ -163,6 +201,8 @@ protected:
     int visitingDepth;
 
     FlowContext fctx;
+
+    BreakGather breakGather;
 
     bool toplevelPrinting;
 
@@ -251,6 +291,8 @@ protected:
         targetNode = this->newTypedCastNode(targetNode, requiredType);
     }
 
+    DSType &resolveCoercionOfJumpValue();
+
     FieldHandle *addEntryAndThrowIfDefined(Node &node, const std::string &symbolName, DSType &type, FieldAttributes attribute);
 
     bool isTopLevel() const {
@@ -259,10 +301,12 @@ protected:
 
     void enterLoop() {
         this->fctx.enterLoop();
+        this->breakGather.enter();
     }
 
     void exitLoop() {
         this->fctx.leave();
+        this->breakGather.leave();
     }
 
     void pushReturnType(DSType &returnType) {

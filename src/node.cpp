@@ -752,9 +752,24 @@ void BlockNode::dump(NodeDumper &dumper) const {
 // ##     JumpNode     ##
 // ######################
 
+JumpNode::JumpNode(Token token, bool asBreak, Node *exprNode) :
+        Node(NodeKind::Jump, token), asBreak(asBreak), leavingBlock(false), exprNode(exprNode) {
+    if(exprNode != nullptr) {
+        this->updateToken(exprNode->getToken());
+    }
+    if(this->exprNode == nullptr) {
+        this->exprNode = new EmptyNode(token);
+    }
+}
+
+JumpNode::~JumpNode() {
+    delete this->exprNode;
+}
+
 void JumpNode::dump(NodeDumper &dumper) const {
     DUMP_PRIM(asBreak);
     DUMP_PRIM(leavingBlock);
+    DUMP_PTR(exprNode);
 }
 
 // ###########################

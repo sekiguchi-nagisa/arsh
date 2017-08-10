@@ -1307,11 +1307,15 @@ private:
 
     bool leavingBlock;
 
-public:
-    JumpNode(Token token, bool asBreak) :
-            Node(NodeKind::Jump, token), asBreak(asBreak), leavingBlock(false) { }
+    /**
+     * may be empoty node
+     */
+    Node *exprNode;
 
-    ~JumpNode() = default;
+public:
+    JumpNode(Token token, bool asBreak, Node *exprNode = nullptr);
+
+    ~JumpNode();
 
     bool isBreak() const {
         return this->asBreak;
@@ -1323,6 +1327,14 @@ public:
 
     bool isLeavingBlock() const {
         return this->leavingBlock;
+    }
+
+    Node *getExprNode() const {
+        return this->exprNode;
+    }
+
+    Node * &refExprNode() {
+        return this->exprNode;
     }
 
     void dump(NodeDumper &dumper) const override;

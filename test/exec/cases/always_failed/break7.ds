@@ -1,0 +1,10 @@
+
+#$test($result = 'type', $lineNum = 8, $errorKind = 'Required', $status = 1)
+
+for(;;) {
+    if $true {
+        break "34"
+    } else {
+        break 34
+    }
+}
