@@ -748,9 +748,11 @@ static void flushStdFD() {
  * +-----------+---------------+--------------+
  *             |     offset    |
  */
-static void callUserDefinedCommand(DSState &st, const DSCode *code, DSValue &&argvObj, DSValue &&restoreFD, bool setvar = true) {
-    // reset exit status
-    st.updateExitStatus(0);
+static void callUserDefinedCommand(DSState &st, const DSCode *code, DSValue &&argvObj, DSValue &&restoreFD, bool setvar) {
+    if(setvar) {
+        // reset exit status
+        st.updateExitStatus(0);
+    }
 
     // push parameter
     st.push(std::move(restoreFD));  // push %%redir
