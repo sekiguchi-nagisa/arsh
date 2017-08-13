@@ -117,7 +117,7 @@ const struct {
                 "        -a    specify set program name(default is FILE)"},
         {"exit", builtin_exit, "[n]",
                 "    Exit the shell with a status of N.  If N is omitted, the exit\n"
-                "    status is 0."},
+                "    status is $?."},
         {"false", builtin_false, "",
                 "    Always failure (exit status is 1)."},
         {"hash", builtin_hash, "[-r] [command ...]",
