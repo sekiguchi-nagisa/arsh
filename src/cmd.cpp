@@ -45,7 +45,6 @@ static int builtin_check_env(DSState &state, Array_Object &argvObj);
 static int builtin_complete(DSState &state, Array_Object &argvObj);
 static int builtin_echo(DSState &state, Array_Object &argvObj);
 static int builtin_exec(DSState &state, Array_Object &argvObj);
-static int builtin_exit(DSState &state, Array_Object &argvObj);
 static int builtin_false(DSState &state, Array_Object &argvObj);
 static int builtin_hash(DSState &state, Array_Object &argvObj);
 static int builtin_help(DSState &state, Array_Object &argvObj);
@@ -115,7 +114,7 @@ const struct {
                 "    Options:\n"
                 "        -c    cleaner environmental variable\n"
                 "        -a    specify set program name(default is FILE)"},
-        {"exit", builtin_exit, "[n]",
+        {"exit", nullptr, "[n]",
                 "    Exit the shell with a status of N.  If N is omitted, the exit\n"
                 "    status is $?."},
         {"false", builtin_false, "",
@@ -386,21 +385,6 @@ static int builtin_check_env(DSState &, Array_Object &argvObj) {
         }
     }
     return 0;
-}
-
-static int builtin_exit(DSState &state, Array_Object &argvObj) {
-    const unsigned int size = argvObj.getValues().size();
-
-    int ret = typeAs<Int_Object>(getGlobal(state, toIndex(BuiltinVarOffset::EXIT_STATUS)))->getValue();
-    if(size > 1) {
-        const char *num = str(argvObj.getValues()[1]);
-        int status;
-        long value = convertToInt64(num, status);
-        if(status == 0) {
-            ret = value;
-        }
-    }
-    exitShell(state, ret);
 }
 
 static int builtin_echo(DSState &, Array_Object &argvObj) {

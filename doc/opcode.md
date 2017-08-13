@@ -50,6 +50,7 @@
 | BRANCH        | 2: offset1 offset2             | value ->                                     | if value is false, branch to instruction at offset |
 | GOTO          | 4: byte1 ~ byte4               | [no change]                                  | go to instruction at a specified index             |
 | THROW         |                                | value -> [empty]                             | throw exception                                    |
+| EXIT_SHELL    |                                | value -> [terminate]                         | exit current shell                                 |
 | ENTER_FINALLY | 2: offset1 offset2             | -> value                                     | save current pc and go to instruction              |
 | EXIT_FINALLY  |                                | value ->                                     | pop stack top and go to instruction                |
 | COPY_INT      | 1: byte1                       | value -> value                               | convert number (see. int-cast.md)                  |

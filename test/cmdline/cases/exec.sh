@@ -48,6 +48,13 @@ if [ $? != 34 ]; then
     exit 1
 fi
 
+$YDSH_BIN -e exit 999
+
+if [ $? != 231 ]; then
+    exit 1
+fi
+
+
 # builtin-exec
 $YDSH_BIN -e exec # do nothing
 if [ $? != 0 ]; then

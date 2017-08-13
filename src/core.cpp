@@ -369,24 +369,6 @@ bool changeWorkingDir(DSState &st, const char *dest, const bool useLogical) {
     return true;
 }
 
-void exitShell(DSState &st, unsigned int status) {
-    std::string str("terminated by exit ");
-    str += std::to_string(status);
-    auto except = st.newError(st.pool.getShellExit(), std::move(str));
-
-    // invoke termination hook
-    if(st.terminationHook != nullptr) {
-        const unsigned int lineNum = getOccurredLineNum(typeAs<Error_Object>(except)->getStackTrace());
-        st.terminationHook(DS_ERROR_KIND_EXIT, lineNum);
-    }
-
-    // print stack trace
-    if(hasFlag(st.option, DS_OPTION_TRACE_EXIT)) {
-        typeAs<Error_Object>(except)->printStackTrace(st);
-    }
-    exit(status);
-}
-
 pid_t xfork(DSState &st, pid_t pgid, bool foreground) {
     pid_t pid = fork();
     if(pid == 0) {  // child process

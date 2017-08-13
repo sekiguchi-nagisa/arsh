@@ -212,9 +212,6 @@ const char *getLogicalWorkingDir(const DSState &st);
  */
 bool changeWorkingDir(DSState &st, const char *dest, bool useLogical);
 
-[[noreturn]]
-void exitShell(DSState &st, unsigned int status);
-
 /**
  *
  * @param st
