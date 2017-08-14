@@ -116,6 +116,13 @@ public:
 private:
     SymbolError tryToRegister(const std::string &name, FieldHandle *handle);
 
+    void forbitCmdRedefinition(const char *cmdName) {
+        assert(this->inGlobalScope());
+        std::string name = cmdSymbolPrefix;
+        name += cmdName;
+        this->scopes.back()->addFieldHandle(name, nullptr);
+    }
+
 public:
     /**
      * return null, if not found.

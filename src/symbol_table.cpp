@@ -62,9 +62,7 @@ SymbolTable::SymbolTable() : scopes(1), maxVarIndexStack(1) {
             "command",
     };
     for(auto &e : blacklist) {
-        std::string str = cmdSymbolPrefix;
-        str += e;
-        this->disallowShadowing(str);
+        this->forbitCmdRedefinition(e);
     }
 }
 
