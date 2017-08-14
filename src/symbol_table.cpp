@@ -52,6 +52,28 @@ void Scope::deleteHandle(const std::string &symbolName) {
 // ##     SymbolTable     ##
 // #########################
 
+SymbolTable::SymbolTable() : scopes(1), maxVarIndexStack(1) {
+    this->scopes[0] = new Scope();
+    this->maxVarIndexStack[0] = 0;
+
+    const char *blacklist[] = {
+            "eval",
+            "exit",
+            "command",
+    };
+    for(auto &e : blacklist) {
+        std::string str = cmdSymbolPrefix;
+        str += e;
+        this->disallowShadowing(str);
+    }
+}
+
+SymbolTable::~SymbolTable() {
+    for(Scope *scope : this->scopes) {
+        delete scope;
+    }
+}
+
 SymbolError SymbolTable::tryToRegister(const std::string &name, FieldHandle *handle) {
     if(!this->scopes.back()->addFieldHandle(name, handle)) {
         delete handle;

@@ -109,16 +109,9 @@ private:
 public:
     NON_COPYABLE(SymbolTable);
 
-    SymbolTable() : scopes(1), maxVarIndexStack(1) {
-        this->scopes[0] = new Scope();
-        this->maxVarIndexStack[0] = 0;
-    }
+    SymbolTable();
 
-    ~SymbolTable() {
-        for(Scope *scope : this->scopes) {
-            delete scope;
-        }
-    }
+    ~SymbolTable();
 
 private:
     SymbolError tryToRegister(const std::string &name, FieldHandle *handle);
