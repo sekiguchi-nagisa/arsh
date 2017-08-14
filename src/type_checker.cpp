@@ -750,7 +750,12 @@ void TypeChecker::visitCmdNode(DSType *, CmdNode &node) {
     for(auto *argNode : node.getArgNodes()) {
         this->checkType(argNode);
     }
-    node.setType(this->typePool.getBooleanType());
+    if(node.getNameNode()->is(NodeKind::String)
+       && static_cast<StringNode*>(node.getNameNode())->getValue() == "exit") {
+        node.setType(this->typePool.getBottomType());
+    } else {
+        node.setType(this->typePool.getBooleanType());
+    }
 }
 
 void TypeChecker::visitCmdArgNode(DSType *, CmdArgNode &node) {

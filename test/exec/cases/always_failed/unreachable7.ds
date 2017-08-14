@@ -1,0 +1,5 @@
+#$test($result = 'type', $status = 1, $errorKind = 'Unreachable', $lineNum = 4)
+
+exit 45     # treat as bottom type
+var a = 44
+echo $a
