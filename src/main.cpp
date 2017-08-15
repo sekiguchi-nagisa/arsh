@@ -147,7 +147,7 @@ int main(int argc, char **argv) {
     };
     int restIndex = parser(argc, argv, cmdLines);
     if(parser.hasError()) {
-        fprintf(stderr, "%s\n%s", parser.getErrorMessage(), version());
+        fprintf(stderr, "%s\n%s\n", parser.getErrorMessage(), version());
         parser.printOption(stderr);
         exit(1);
     }
