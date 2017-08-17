@@ -55,11 +55,13 @@ TEST(API, case2) {
 
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, DSState_lineNum(state)));
 
-    DSState_eval(state, nullptr, "12 + 32\n $true\n", nullptr);
+    const char *str = "12 + 32\n $true\n";
+    DSState_eval(state, nullptr, str, strlen(str), nullptr);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, DSState_lineNum(state)));
 
     DSState_setLineNum(state, 49);
-    DSState_eval(state, nullptr, "23", nullptr);
+    str = "23";
+    DSState_eval(state, nullptr, str, strlen(str), nullptr);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(50u, DSState_lineNum(state)));
 
     DSState_delete(&state);
@@ -69,7 +71,8 @@ TEST(API, case3) {
     SCOPED_TRACE("");
 
     DSState *state = DSState_create();
-    DSState_eval(state, nullptr, "$PS1 = 'hello>'; $PS2 = 'second>'", nullptr);
+    const char *str = "$PS1 = 'hello>'; $PS2 = 'second>'";
+    DSState_eval(state, nullptr, str, strlen(str), nullptr);
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("hello>", DSState_prompt(state, 1)));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("second>", DSState_prompt(state, 2)));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("", DSState_prompt(state, 5)));
@@ -178,7 +181,7 @@ TEST(PID, case1) {
     src += ")";
 
     DSError e;
-    int s = DSState_eval(state, nullptr, src.c_str(), &e);
+    int s = DSState_eval(state, nullptr, src.c_str(), src.size(), &e);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, s));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind));
 

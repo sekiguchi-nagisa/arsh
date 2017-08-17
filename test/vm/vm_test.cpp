@@ -61,7 +61,7 @@ public:
 protected:
     void eval(const char *code) {
         try {
-            DSState_eval(this->state, "(dummy)", code, nullptr);
+            DSState_eval(this->state, "(dummy)", code, strlen(code), nullptr);
         } catch(const VMBreakException &) {}
     }
 

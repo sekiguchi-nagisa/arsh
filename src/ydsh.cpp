@@ -204,7 +204,7 @@ static int evalCode(DSState *state, CompiledCode &code, DSError *dsError) {
     return state->getExitStatus();
 }
 
-static int compileImpl(DSState *state, Lexer &lexer, DSError *dsError, CompiledCode &code) {
+static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, CompiledCode &code) {
     setErrorInfo(dsError, DS_ERROR_KIND_SUCCESS, 0, nullptr);
     lexer.setLineNum(state->lineNum);
 
@@ -247,16 +247,6 @@ static int compileImpl(DSState *state, Lexer &lexer, DSError *dsError, CompiledC
     ByteCodeGenerator codegen(state->pool, hasFlag(state->option, DS_OPTION_ASSERT));
     code = codegen.generateToplevel(*rootNode);
     return 0;
-}
-
-static int compile(DSState *state, const char *sourceName, FILE *fp, DSError *dsError, CompiledCode &code) {
-    Lexer lexer(sourceName, fp);
-    return compileImpl(state, lexer, dsError, code);
-}
-
-static int compile(DSState *state, const char *sourceName, const char *source, DSError *dsError, CompiledCode &code) {
-    Lexer lexer(sourceName, source);
-    return compileImpl(state, lexer, dsError, code);
 }
 
 static void bindVariable(DSState *state, const char *varName, DSValue &&value, FieldAttributes attribute) {
@@ -423,7 +413,7 @@ static void initBuiltinVar(DSState *state) {
 }
 
 static void loadEmbeddedScript(DSState *state) {
-    int ret = DSState_eval(state, "(embed)", embed_script, nullptr);
+    int ret = DSState_eval(state, "(embed)", embed_script, strlen(embed_script), nullptr);
     if(ret != 0) {
         fatal("broken embedded script\n");
     }
@@ -564,9 +554,9 @@ void DSState_unsetOption(DSState *st, unsigned int optionSet) {
     unsetFlag(st->option, optionSet);
 }
 
-int DSState_eval(DSState *st, const char *sourceName, const char *source, DSError *e) {
+int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned int size, DSError *e) {
     CompiledCode code;
-    int ret = compile(st, sourceName == nullptr ? "(stdin)" : sourceName, source, e, code);
+    int ret = compileImpl(st, Lexer(sourceName == nullptr ? "(stdin)" : sourceName, data, size), e, code);
     if(!code) {
         return ret;
     }
@@ -575,7 +565,7 @@ int DSState_eval(DSState *st, const char *sourceName, const char *source, DSErro
 
 int DSState_loadAndEval(DSState *st, const char *sourceName, FILE *fp, DSError *e) {
     CompiledCode code;
-    int ret = compile(st, sourceName == nullptr ? "(stdin)" : sourceName, fp, e, code);
+    int ret = compileImpl(st, Lexer(sourceName == nullptr ? "(stdin)" : sourceName, fp), e, code);
     if(!code) {
         return ret;
     }

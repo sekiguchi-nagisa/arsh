@@ -297,7 +297,7 @@ int exec_interactive(DSState *dsState) {
 
     ignoreSignal();
     for(std::string line; readLine(line);) {
-        DSState_eval(dsState, nullptr, line.c_str(), nullptr);
+        DSState_eval(dsState, nullptr, line.c_str(), line.size(), nullptr);
     }
     return 0;
 }

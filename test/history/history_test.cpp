@@ -67,13 +67,13 @@ public:
             }
             )EOF";
             DSError e;
-            DSState_eval(this->state, "(builtin)", func, &e);
+            DSState_eval(this->state, "(builtin)", func, strlen(func), &e);
             ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
         }
         std::string c(code);
         c += "\n";
         c += "exit $?";
-        EXPECT_EXIT(DSState_eval(this->state, "(dummy)", c.c_str(), nullptr), ::testing::ExitedWithCode(0), "");
+        EXPECT_EXIT(DSState_eval(this->state, "(dummy)", c.c_str(), c.size(), nullptr), ::testing::ExitedWithCode(0), "");
     }
 
 private:
@@ -83,7 +83,7 @@ private:
         str += " = ";
         str += std::move(value);
 
-        auto r = DSState_eval(this->state, "(dummy)", str.c_str(), nullptr);
+        auto r = DSState_eval(this->state, "(dummy)", str.c_str(), str.size(), nullptr);
         SCOPED_TRACE("");
         ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(r == 0));
     }

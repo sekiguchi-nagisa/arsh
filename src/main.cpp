@@ -275,7 +275,7 @@ int main(int argc, char **argv) {
     case InvocationKind::FROM_STRING: {
         DSState_setShellName(state, shellArgs[0]);
         DSState_setArguments(state, size == 0 ? nullptr : shellArgs + 1);
-        exit(INVOKE(eval)(&state, "(string)", evalText));
+        exit(INVOKE(eval)(&state, "(string)", evalText, strlen(evalText)));
     }
     case InvocationKind::BUILTIN: {
         exit(DSState_exec(state, shellArgs));

@@ -127,18 +127,20 @@ typedef struct {
 /**
  * evaluate string. if e is not null, set error info.
  * @param st
- * not null.
+ * not null
  * @param sourceName
  * if null, source name is treated as standard input.
- * @param source
- * not null. must be null terminated.
+ * @param data
+ * not null
+ * @param size
+ * size of data
  * @param e
- * may be null.
+ * may be null
  * @return
  * exit status of most recently executed command(include exit).
  * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
  */
-int DSState_eval(DSState *st, const char *sourceName, const char *source, DSError *e);
+int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned int size, DSError *e);
 
 /**
  * evaluate file content. if e is not null, set error info.
