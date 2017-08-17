@@ -71,10 +71,11 @@ static bool checkLineContinuation(const StrWrapper &line) {
     return false;
 }
 
-static std::string lineBuf;
+static const std::string *lineBuf = nullptr;
 
-static const char *readLine() {
-    lineBuf.clear();
+static bool readLine(std::string &line) {
+    line.clear();
+    lineBuf = &line;
     DSState_syncHistorySize(state);
 
     bool continuation = false;
@@ -84,27 +85,27 @@ static const char *readLine() {
         if(str == nullptr) {
             if(errno == EAGAIN) {
                 continuation = false;
-                lineBuf.clear();
+                line.clear();
                 continue;
             }
-            return nullptr;
+            return false;
         }
 
         if(isSkipLine(str)) {
             continue;
         }
-        lineBuf += str.get();
+        line += str.get();
         continuation = checkLineContinuation(str);
         if(continuation) {
-            lineBuf.pop_back(); // remove '\\'
+            line.pop_back(); // remove '\\'
             continue;
         }
         break;
     }
 
-    DSState_addHistory(state, lineBuf.c_str());
-    lineBuf += '\n';    // terminate newline
-    return lineBuf.c_str();
+    DSState_addHistory(state, line.c_str());
+    line += '\n';    // terminate newline
+    return true;
 }
 
 static void ignoreSignal() {
@@ -220,7 +221,7 @@ static std::size_t encoding_strLen(const char *str) {
 }
 
 static void completeCallback(const char *buf, size_t cursor, linenoiseCompletions *lc) {
-    std::string actualBuf(lineBuf);
+    std::string actualBuf(*lineBuf);
     size_t actualCursor = actualBuf.size() + cursor;
     actualBuf += buf;
     actualBuf += '\n';
@@ -295,8 +296,8 @@ int exec_interactive(DSState *dsState) {
     atexit(saveHistory);
 
     ignoreSignal();
-    for(const char *line = nullptr; (line = readLine()) != nullptr; ) {
-        DSState_eval(dsState, nullptr, line, nullptr);
+    for(std::string line; readLine(line);) {
+        DSState_eval(dsState, nullptr, line.c_str(), nullptr);
     }
     return 0;
 }
