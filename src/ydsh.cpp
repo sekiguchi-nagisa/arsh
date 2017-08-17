@@ -451,9 +451,14 @@ static void initEnv() {
 // ###################################
 
 DSState *DSState_create() {
+    return DSState_createWithOption(0);
+}
+
+DSState *DSState_createWithOption(unsigned int optionSet) {
     initEnv();
 
     auto *ctx = new DSState();
+    DSState_setOption(ctx, optionSet);
 
     initBuiltinVar(ctx);
     loadEmbeddedScript(ctx);

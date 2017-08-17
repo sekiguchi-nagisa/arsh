@@ -38,6 +38,14 @@ typedef struct DSState DSState;
 DSState *DSState_create();
 
 /**
+ * create new DSState with DS_OPTION_*.
+ * you can call DSState_delete() to release object.
+ * @param optionSet
+ * @return
+ */
+DSState *DSState_createWithOption(unsigned int optionSet);
+
+/**
  * delete DSState. after release object, assign null to ctx.
  * @param st
  * may be null
