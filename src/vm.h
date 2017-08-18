@@ -21,6 +21,7 @@
 
 #include <vector>
 #include <chrono>
+#include <cstdio>
 
 #include <ydsh/ydsh.h>
 
@@ -67,6 +68,18 @@ public:
     const std::vector<std::pair<int, DSValue>> &getData() const {
         return this->data;
     };
+};
+
+struct DumpTarget {
+    FILE *fps[3]{nullptr};
+
+    ~DumpTarget() {
+        for(auto &fp : this->fps) {
+            if(fp != nullptr) {
+                fclose(fp);
+            }
+        }
+    }
 };
 
 struct DSState {
@@ -145,6 +158,8 @@ struct DSState {
      * see DS_OPTION_ * macro.
      */
     flag32_set_t option;
+
+    DumpTarget dumpTarget;
 
     /**
      * contains currently evaluating code.

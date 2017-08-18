@@ -164,13 +164,13 @@ int main(int argc, char **argv) {
     for(auto &cmdLine : cmdLines) {
         switch(cmdLine.first) {
         case DUMP_UAST:
-            DSState_setOption(state, DS_OPTION_DUMP_UAST);
+            DSState_setDumpTarget(state, DS_DUMP_KIND_UAST, stdout);
             break;
         case DUMP_AST:
-            DSState_setOption(state, DS_OPTION_DUMP_AST);
+            DSState_setDumpTarget(state, DS_DUMP_KIND_AST, stdout);
             break;
         case DUMP_CODE:
-            DSState_setOption(state, DS_OPTION_DUMP_CODE);
+            DSState_setDumpTarget(state, DS_DUMP_KIND_CODE, stdout);
             break;
         case PARSE_ONLY:
         case PARSE_ONLY2:

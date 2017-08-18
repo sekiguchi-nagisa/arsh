@@ -84,18 +84,30 @@ void DSState_setArguments(DSState *st, char *const *args);
  */
 int DSState_setScriptDir(DSState *st, const char *scriptPath);
 
+/* for internal data structure dump */
+typedef enum {
+    DS_DUMP_KIND_UAST = 0,  /* dump untyped abstract syntax tree */
+    DS_DUMP_KIND_AST = 1,   /* dump typed abstract syntax tree */
+    DS_DUMP_KIND_CODE = 2,  /* dump byte code */
+} DSDumpKind;
+
+/**
+ *
+ * @param kind
+ * @param fp
+ * after call it, close fp (duplicate fp).
+ */
+void DSState_setDumpTarget(DSState *st, DSDumpKind kind, FILE *fp);
+
 
 /* for option */
-#define DS_OPTION_DUMP_UAST    ((unsigned int) (1 << 0))
-#define DS_OPTION_DUMP_AST     ((unsigned int) (1 << 1))
-#define DS_OPTION_DUMP_CODE    ((unsigned int) (1 << 2))
-#define DS_OPTION_PARSE_ONLY   ((unsigned int) (1 << 3))
-#define DS_OPTION_ASSERT       ((unsigned int) (1 << 4))
-#define DS_OPTION_TOPLEVEL     ((unsigned int) (1 << 5))
-#define DS_OPTION_TRACE_EXIT   ((unsigned int) (1 << 6))
-#define DS_OPTION_HISTORY      ((unsigned int) (1 << 7))
-#define DS_OPTION_COMPILE_ONLY ((unsigned int) (1 << 8))
-#define DS_OPTION_INTERACTIVE  ((unsigned int) (1 << 9))
+#define DS_OPTION_PARSE_ONLY   ((unsigned int) (1 << 1))
+#define DS_OPTION_ASSERT       ((unsigned int) (1 << 2))
+#define DS_OPTION_TOPLEVEL     ((unsigned int) (1 << 3))
+#define DS_OPTION_TRACE_EXIT   ((unsigned int) (1 << 4))
+#define DS_OPTION_HISTORY      ((unsigned int) (1 << 5))
+#define DS_OPTION_COMPILE_ONLY ((unsigned int) (1 << 6))
+#define DS_OPTION_INTERACTIVE  ((unsigned int) (1 << 7))
 
 unsigned int DSState_option(const DSState *st);
 void DSState_setOption(DSState *st, unsigned int optionSet);

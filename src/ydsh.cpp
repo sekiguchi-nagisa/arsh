@@ -177,9 +177,10 @@ static void handleUncaughtException(DSState *st, DSValue &&except) {
 }
 
 static int evalCode(DSState *state, CompiledCode &code, DSError *dsError) {
-    if(hasFlag(state->option, DS_OPTION_DUMP_CODE)) {
-        fprintf(stdout, "### dump compiled code ###\n");
-        dumpCode(stdout, *state, code);
+    if(state->dumpTarget.fps[DS_DUMP_KIND_CODE] != nullptr) {
+        auto *fp = state->dumpTarget.fps[DS_DUMP_KIND_CODE];
+        fprintf(fp, "### dump compiled code ###\n");
+        dumpCode(fp, *state, code);
     }
 
     if(hasFlag(state->option, DS_OPTION_COMPILE_ONLY)) {
@@ -217,10 +218,11 @@ static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, Compiled
         return 1;
     }
 
-    if(hasFlag(state->option, DS_OPTION_DUMP_UAST)) {
-        fputs("### dump untyped AST ###\n", stdout);
-        NodeDumper::dump(stdout, state->pool, *rootNode);
-        fputc('\n', stdout);
+    if(state->dumpTarget.fps[DS_DUMP_KIND_UAST] != nullptr) {
+        auto *fp = state->dumpTarget.fps[DS_DUMP_KIND_UAST];
+        fputs("### dump untyped AST ###\n", fp);
+        NodeDumper::dump(fp, state->pool, *rootNode);
+        fputc('\n', fp);
     }
 
     // type check
@@ -228,10 +230,11 @@ static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, Compiled
         TypeChecker checker(state->pool, state->symbolTable, hasFlag(state->option, DS_OPTION_TOPLEVEL));
         checker.checkTypeRootNode(*rootNode);
 
-        if(hasFlag(state->option, DS_OPTION_DUMP_AST)) {
-            fputs("### dump typed AST ###\n", stdout);
-            NodeDumper::dump(stdout, state->pool, *rootNode);
-            fputc('\n', stdout);
+        if(state->dumpTarget.fps[DS_DUMP_KIND_AST] != nullptr) {
+            auto *fp = state->dumpTarget.fps[DS_DUMP_KIND_AST];
+            fputs("### dump typed AST ###\n", fp);
+            NodeDumper::dump(fp, state->pool, *rootNode);
+            fputc('\n', fp);
         }
     } catch(const TypeCheckError &e) {
         handleTypeError(lexer, e, dsError);
@@ -545,6 +548,15 @@ int DSState_setScriptDir(DSState *st, const char *scriptPath) {
     free(real);
     st->setGlobal(index, DSValue::create<String_Object>(st->pool.getStringType(), std::move(str)));
     return 0;
+}
+
+void DSState_setDumpTarget(DSState *st, DSDumpKind kind, FILE *fp) {
+    assert(fp != nullptr);
+
+    if(st->dumpTarget.fps[kind] != nullptr) {
+        fclose(st->dumpTarget.fps[kind]);
+    }
+    st->dumpTarget.fps[kind] = fdopen(dup(fileno(fp)), "w");
 }
 
 unsigned int DSState_option(const DSState *st) {

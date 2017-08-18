@@ -153,11 +153,11 @@ TEST(API, case5) {
     DSState *state = DSState_create();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_OPTION_ASSERT, DSState_option(state)));
 
-    DSState_setOption(state, DS_OPTION_DUMP_CODE);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_OPTION_ASSERT | DS_OPTION_DUMP_CODE, DSState_option(state)));
+    DSState_setOption(state, DS_OPTION_HISTORY);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_OPTION_HISTORY | DS_OPTION_ASSERT, DSState_option(state)));
 
     DSState_unsetOption(state, DS_OPTION_ASSERT);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_OPTION_DUMP_CODE, DSState_option(state)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_OPTION_HISTORY, DSState_option(state)));
 
     DSState_delete(&state);
 }
