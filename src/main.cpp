@@ -152,41 +152,51 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    DSState *state = DSState_create();
-    DSState_addTerminationHook(state, terminationHook);
     InvocationKind invocationKind = InvocationKind::FROM_FILE;
     const char *evalText = nullptr;
     bool userc = true;
     const char *rcfile = nullptr;
     bool quiet = false;
     bool forceInteractive = false;
+    DSExecMode mode = DS_EXEC_MODE_NORMAL;
+    unsigned short option = 0;
+    bool noAssert = false;
+    struct {
+        const DSDumpKind kind;
+        const char *path;
+    } dumpTarget[3] = {
+            {DS_DUMP_KIND_UAST, nullptr},
+            {DS_DUMP_KIND_AST, nullptr},
+            {DS_DUMP_KIND_CODE, nullptr},
+    };
+
 
     for(auto &cmdLine : cmdLines) {
         switch(cmdLine.first) {
         case DUMP_UAST:
-            DSState_setDumpTarget(state, DS_DUMP_KIND_UAST, stdout);
+            dumpTarget[0].path = "";
             break;
         case DUMP_AST:
-            DSState_setDumpTarget(state, DS_DUMP_KIND_AST, stdout);
+            dumpTarget[1].path = "";
             break;
         case DUMP_CODE:
-            DSState_setDumpTarget(state, DS_DUMP_KIND_CODE, stdout);
+            dumpTarget[2].path = "";
             break;
         case PARSE_ONLY:
         case PARSE_ONLY2:
-            DSState_setOption(state, DS_OPTION_PARSE_ONLY);
+            mode = DS_EXEC_MODE_PARSE_ONLY;
             break;
         case COMPILE_ONLY:
-            DSState_setOption(state, DS_OPTION_COMPILE_ONLY);
+            mode = DS_EXEC_MODE_COMPILE_ONLY;
             break;
         case DISABLE_ASSERT:
-            DSState_unsetOption(state, DS_OPTION_ASSERT);
+            noAssert = true;
             break;
         case PRINT_TOPLEVEL:
-            DSState_setOption(state, DS_OPTION_TOPLEVEL);
+            setFlag(option, DS_OPTION_TOPLEVEL);
             break;
         case TRACE_EXIT:
-            DSState_setOption(state, DS_OPTION_TRACE_EXIT);
+            setFlag(option, DS_OPTION_TRACE_EXIT);
             break;
         case VERSION:
             fprintf(stdout, "%s\n%s\n", version(), DSState_copyright());
@@ -227,6 +237,22 @@ int main(int argc, char **argv) {
             break;
         }
     }
+
+
+    // init state
+    DSState *state = DSState_createWithMode(mode);
+    DSState_addTerminationHook(state, terminationHook);
+    DSState_setOption(state, option);
+    for(auto &e : dumpTarget) {
+        if(e.path != nullptr) {
+            FILE *fp = strlen(e.path) == 0 ? fdopen(STDOUT_FILENO, "w") : fopen(e.path, "w");
+            DSState_setDumpTarget(state, e.kind, fp);
+        }
+    }
+    if(noAssert) {
+        DSState_unsetOption(state, DS_OPTION_ASSERT);
+    }
+
 
     // set rest argument
     const int size = argc - restIndex;

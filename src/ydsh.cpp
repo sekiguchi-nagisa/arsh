@@ -183,7 +183,7 @@ static int evalCode(DSState *state, CompiledCode &code, DSError *dsError) {
         dumpCode(fp, *state, code);
     }
 
-    if(hasFlag(state->option, DS_OPTION_COMPILE_ONLY)) {
+    if(state->option.getMode() == DS_EXEC_MODE_COMPILE_ONLY) {
         return 0;
     }
 
@@ -227,7 +227,7 @@ static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, Compiled
 
     // type check
     try {
-        TypeChecker checker(state->pool, state->symbolTable, hasFlag(state->option, DS_OPTION_TOPLEVEL));
+        TypeChecker checker(state->pool, state->symbolTable, hasFlag(state->option.flag, DS_OPTION_TOPLEVEL));
         checker.checkTypeRootNode(*rootNode);
 
         if(state->dumpTarget.fps[DS_DUMP_KIND_AST] != nullptr) {
@@ -242,12 +242,12 @@ static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, Compiled
         return 1;
     }
 
-    if(hasFlag(state->option, DS_OPTION_PARSE_ONLY)) {
+    if(state->option.getMode() == DS_EXEC_MODE_PARSE_ONLY) {
         return 0;
     }
 
     // code generation
-    ByteCodeGenerator codegen(state->pool, hasFlag(state->option, DS_OPTION_ASSERT));
+    ByteCodeGenerator codegen(state->pool, hasFlag(state->option.flag, DS_OPTION_ASSERT));
     code = codegen.generateToplevel(*rootNode);
     return 0;
 }
@@ -454,14 +454,14 @@ static void initEnv() {
 // ###################################
 
 DSState *DSState_create() {
-    return DSState_createWithOption(0);
+    return DSState_createWithMode(DS_EXEC_MODE_NORMAL);
 }
 
-DSState *DSState_createWithOption(unsigned int optionSet) {
+DSState *DSState_createWithMode(DSExecMode mode) {
     initEnv();
 
     auto *ctx = new DSState();
-    DSState_setOption(ctx, optionSet);
+    ctx->option.setMode(mode);
 
     initBuiltinVar(ctx);
     loadEmbeddedScript(ctx);
@@ -556,19 +556,19 @@ void DSState_setDumpTarget(DSState *st, DSDumpKind kind, FILE *fp) {
     if(st->dumpTarget.fps[kind] != nullptr) {
         fclose(st->dumpTarget.fps[kind]);
     }
-    st->dumpTarget.fps[kind] = fdopen(dup(fileno(fp)), "w");
+    st->dumpTarget.fps[kind] = fp;
 }
 
-unsigned int DSState_option(const DSState *st) {
-    return st->option;
+unsigned short DSState_option(const DSState *st) {
+    return st->option.flag;
 }
 
-void DSState_setOption(DSState *st, unsigned int optionSet) {
-    setFlag(st->option, optionSet);
+void DSState_setOption(DSState *st, unsigned short optionSet) {
+    setFlag(st->option.flag, optionSet);
 }
 
-void DSState_unsetOption(DSState *st, unsigned int optionSet) {
-    unsetFlag(st->option, optionSet);
+void DSState_unsetOption(DSState *st, unsigned short optionSet) {
+    unsetFlag(st->option.flag, optionSet);
 }
 
 int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned int size, DSError *e) {
@@ -721,7 +721,7 @@ static void resizeHistory(DSHistory &history, unsigned int cap) {
 }
 
 void DSState_syncHistorySize(DSState *st) {
-    if(hasFlag(st->option, DS_OPTION_HISTORY)) {
+    if(hasFlag(st->option.flag, DS_OPTION_HISTORY)) {
         unsigned int index = st->symbolTable.lookupHandle(VAR_HISTSIZE)->getFieldIndex();
         unsigned int cap = typeAs<Int_Object>(st->getGlobal(index))->getValue();
         if(cap > DS_HISTSIZE_LIMIT) {

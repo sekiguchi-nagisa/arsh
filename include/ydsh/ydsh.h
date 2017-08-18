@@ -30,20 +30,25 @@ typedef struct DSState DSState;
 /**     DSState     **/
 /*********************/
 
+typedef enum {
+    DS_EXEC_MODE_NORMAL = 0,
+    DS_EXEC_MODE_PARSE_ONLY = 1,
+    DS_EXEC_MODE_COMPILE_ONLY = 2,
+} DSExecMode;
+
 /**
- * create new DSState.
+ * create new DSState with DSExecMode
  * you can call DSState_delete() to release object.
+ * @param mode
+ * @return
+ */
+DSState *DSState_createWithMode(DSExecMode mode);
+
+/**
+ * equivalent to DSState_createWithMode(DS_EXEC_MODE_NORMAL)
  * @return
  */
 DSState *DSState_create();
-
-/**
- * create new DSState with DS_OPTION_*.
- * you can call DSState_delete() to release object.
- * @param optionSet
- * @return
- */
-DSState *DSState_createWithOption(unsigned int optionSet);
 
 /**
  * delete DSState. after release object, assign null to ctx.
@@ -95,23 +100,22 @@ typedef enum {
  *
  * @param kind
  * @param fp
- * after call it, close fp (duplicate fp).
+ * fp is not null.
+ * after call it, do not close fp.
  */
 void DSState_setDumpTarget(DSState *st, DSDumpKind kind, FILE *fp);
 
 
 /* for option */
-#define DS_OPTION_PARSE_ONLY   ((unsigned int) (1 << 1))
-#define DS_OPTION_ASSERT       ((unsigned int) (1 << 2))
-#define DS_OPTION_TOPLEVEL     ((unsigned int) (1 << 3))
-#define DS_OPTION_TRACE_EXIT   ((unsigned int) (1 << 4))
-#define DS_OPTION_HISTORY      ((unsigned int) (1 << 5))
-#define DS_OPTION_COMPILE_ONLY ((unsigned int) (1 << 6))
-#define DS_OPTION_INTERACTIVE  ((unsigned int) (1 << 7))
+#define DS_OPTION_ASSERT       ((unsigned short) (1 << 1))
+#define DS_OPTION_TOPLEVEL     ((unsigned short) (1 << 2))
+#define DS_OPTION_TRACE_EXIT   ((unsigned short) (1 << 3))
+#define DS_OPTION_HISTORY      ((unsigned short) (1 << 4))
+#define DS_OPTION_INTERACTIVE  ((unsigned short) (1 << 5))
 
-unsigned int DSState_option(const DSState *st);
-void DSState_setOption(DSState *st, unsigned int optionSet);
-void DSState_unsetOption(DSState *st, unsigned int optionSet);
+unsigned short DSState_option(const DSState *st);
+void DSState_setOption(DSState *st, unsigned short optionSet);
+void DSState_unsetOption(DSState *st, unsigned short optionSet);
 
 
 /* for indicating error kind. */
