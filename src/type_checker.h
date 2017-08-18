@@ -289,6 +289,7 @@ protected:
 
     void resolveCoercion(DSType &requiredType, Node * &targetNode) {
         targetNode = this->newTypedCastNode(targetNode, requiredType);
+        this->resolveCastOp(*static_cast<TypeOpNode *>(targetNode), true);
     }
 
     DSType &resolveCoercionOfJumpValue();

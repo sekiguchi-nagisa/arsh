@@ -405,7 +405,6 @@ TypeOpNode *TypeChecker::newTypedCastNode(Node *targetNode, DSType &type) {
     assert(!targetNode->isUntyped());
     auto *castNode = new TypeOpNode(targetNode, nullptr, TypeOpNode::NO_CAST);
     castNode->setType(type);
-    this->resolveCastOp(*castNode, true);
     return castNode;
 }
 
