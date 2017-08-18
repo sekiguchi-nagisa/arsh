@@ -429,9 +429,9 @@ void TypeChecker::convertToStringExpr(BinaryOpNode &node) {
 
     // perform string cast
     if(needCast == -1) {
-        node.refLeftNode() = this->newTypedCastNode(node.getLeftNode(), this->typePool.getStringType());
+        this->resolveCoercion(this->typePool.getStringType(), node.refLeftNode());
     } else if(needCast == 1) {
-        node.refRightNode() = this->newTypedCastNode(node.getRightNode(), this->typePool.getStringType());
+        this->resolveCoercion(this->typePool.getStringType(), node.refRightNode());
     }
 
     auto *exprNode = new StringExprNode(node.getLeftNode()->getPos());
@@ -619,7 +619,7 @@ void TypeChecker::visitUnaryOpNode(DSType *, UnaryOpNode &node) {
         node.setType(*static_cast<ReifiedType *>(&exprType)->getElementTypes()[0]);
     } else {
         if(exprType.isOptionType()) {
-            node.setExprNode(this->newTypedCastNode(node.getExprNode(), this->typePool.getBooleanType()));
+            this->resolveCoercion(this->typePool.getBooleanType(), node.refExprNode());
         }
         MethodCallNode *applyNode = node.createApplyNode();
         node.setType(this->checkType(applyNode));
@@ -1100,7 +1100,7 @@ void TypeChecker::visitAssignNode(DSType *, AssignNode &node) {
         }
         auto &rightType = this->checkType(node.getRightNode());
         if(leftType != rightType) { // convert right hand-side type to left type
-            node.refRightNode() = this->newTypedCastNode(node.refRightNode(), leftType);
+            this->resolveCoercion(leftType, node.refRightNode());
         }
     } else {
         this->checkTypeWithCoercion(leftType, node.refRightNode());
@@ -1122,7 +1122,7 @@ void TypeChecker::visitElementSelfAssignNode(DSType *, ElementSelfAssignNode &no
     // convert right hand-side type to element type
     auto &rightType = this->checkType(node.getRightNode());
     if(elementType != rightType) {
-        node.refRightNode() = this->newTypedCastNode(node.refRightNode(), elementType);
+        this->resolveCoercion(elementType, node.refRightNode());
     }
 
     node.getSetterNode()->getArgNodes()[1]->setType(elementType);

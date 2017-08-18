@@ -914,8 +914,8 @@ public:
         return this->exprNode;
     }
 
-    void setExprNode(Node *exprNode) {
-        this->exprNode = exprNode;
+    Node *&refExprNode() {
+        return this->exprNode;
     }
 
     bool isUnwrapOp() const {
