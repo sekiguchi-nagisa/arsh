@@ -1,0 +1,303 @@
+$opt(-3) ? $false : $true
+
+assert $opt(45) as Boolean
+assert not ($opt(-90) as Boolean)
+
+
+# unwrap
+assert $opt(45)! == "hello"
+assert (34 as Option<Int>)! == 34
+
+var in = $false
+try {
+    assert $opt(-43)! == "hello"
+} catch $e {
+    $in = $true
+    assert $e is UnwrappingError
+}
+assert $in
+
+
+# null coalescing
+assert $opt(6) ?? "de" == "hello"
+assert $opt(-1) ?? "de" == "de"
+assert new Float!() ?? 34 == 34.0
+
+
+# assign
+var o = $opt(45)
+$o = "world"
+assert{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{ $o! == "world"
+
+$o = nArrayew String!()
+$o = "34"
+assert $o && $o! == "34"
+
+
+# collection with option value
+(34 as Option<Int>)! == 34
+
+var in = $false
+try {
+    assert $opt(-43)! == "hello"
+} catch $e {
+    $in = $true
+    assert $e is UnwrappingError
+}
+assert $in
+
+
+# null coalescing
+assert $opt(6) ?? "de" == "hello"
+assert $opt(-1) ?? "de" == "de"
+assert new Float!() ?? 34 == 34.0
+
+
+# assign
+var o = $opt(45)
+$o = "world"
+assert{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{ $o! == "world"
+
+$o = nArrayew String!()
+$o = "34"
+assert $o && $o! == "34"
+
+
+# collection with option value
+assert [46 as Int!] as String == '[23]'
+try { [34 : new Int!()] as String } catch $e { assert $e is UnwrappingError }
+try { (34, new Boolean!()) as String } catch $e { asser var buf = ''
+    for $ch in $s {
+       == "hello"
+assert $opt(-1) ?? "de" == "de"
+assert new Float!() ?? 34 == 34.0
+
+
+# assign
+var o = $opt(45)
+$o = "world"
+assert{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{ $o! == "world"
+
+$o = new String!()
+$o = "34"
+assert $o && $o! == "34"
+
+
+# collection with option value
+assert [46 as Int!] as String == '[23]'
+try { [34 : new Int!()] as String } catch $e { assert $e is UnwrappingError }
+try { (34, new Boolean!()) as String } catch $e { asser var bu
+assert [46 as Int!] as String == '[23]'
+try { [34 : new Int!()] as String } catch $e { assert $e is UnwrappingError }
+try { (34, new Boolean!()) as String } catch $e { asser var buf = ''
+    for $ch in $s {
+       == "hello"
+assert $opt(-1) ?? "de" == "de"
+assert new Float!() ?? 34 == 34.0
+
+
+# assign
+var o = $opt(45)
+$o = "world"
+assert{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{ $o! == "world"
+
+$o = new String!()
+$o = "34"
+assert $o && $o! == "34"
+
+
+# collection with option value
+assert [46 as Int!] as String == '[23]'
+try { [34 : new Int!()] as String } catch $e { assert $e is UnwrappingError }
+try { (34, new Boolean!()) as String } catch $e { asser var buf = ''
+    for $ch in $s {
+         var name = $dir + '/' + $a
+     assert [46 as Int!] as String == '[23]'
+try { [34 : new Int!()] as String } catch $e { assert $e is UnwrappingError }
+try { (34, new Boolean!()) as String } catch $e { asser var buf = ''
+    for $ch in $s {
+       == "hello"
+assert $opt(-1) ?? "de" == "de"
+assert new Float!() ?? 34 == 34.0
+
+
+# assign
+var o = $opt(45)
+$o = "world"
+assert{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{ $o! == "world"
+
+$o = new String!()
+$o = "34"
+assert $o && $o! == "34"
+
+
+# collection with option value
+assert [46 as Int!] as String == '[23]'
+try { [34 : new Int!()] as String } catch $e { assert $e is UnwrappingError }
+try { (34, new Boolean!()) as String } catch $e { asser var bu
+assert [46 as Int!] as String == '[23]'
+try { [34 : new Int!()] as String } catch $e { assert $e is UnwrappingError }
+try { (34, new Boolean!()) as String } catch $e { asser var buf = ''
+    for $ch in $s {
+       == "hello"
+assert $opt(-1) ?? "de" == "de"
+assert new Float!() ?? 34 == 34.0
+
+
+# assign
+var o = $opt(45)
+$o = "world"
+assert{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{ $o! == "world"
+
+$o = new String!()
+$o = "34"
+assert $o && $o! == "34"
+
+
+# collection w{{{{{{{{{{{{{{{{{{{{{{{ $o! == "world"
+
+$o = nArrayew String!()
+$o = "34"
+assert $o && $o! == "34"
+
+
+# collection with option value
+assert [46 as Int!] as String == '[23]'
+try { [34 : new Int!()] as String } catch $e { assert $e is UnwrappingError }
+try { (34, new Boolean!()) as String } catch $e { asser var buf = ''
+    for $ch in $s {
+       == "hello"
+assert $opt(-1) ?? "de" == "de"
+assert new Float!() ?? 34 == 34.0
+
+
+# assign
+var o = $opt(45)
+$o = "world"
+assert{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{ $o! == "world"
+
+$o = new String!()
+$o = "34"
+assert $o && $o! == "34"
+
+
+# collection with option value
+assert [46 as Int!] as String == '[23]'
+try { [34 : new Int!()] as String } catch $e { assert $e is UnwrappingError }
+try { (34, new Boolean!()) as String } catch $e { asser var bu
+assert [46 as Int!] as String == '[23]'
+try { [34 : new Int!()] as String } catch $e { assert $e is UnwrappingError }
+try { (34, new Boolean!()) as String } catch $e { asser var buf = ''
+    for $ch in $s {
+       == "hello"
+assert $opt(-1) ?? "de" == "de"
+assert new Float!() ?? 34 == 34.0
+
+
+# assign
+var o = $opt(45)
+$o = "world"
+assert{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{ $o! == "world"
+
+$o = new String!()
+$o = "34"
+assert $o && $o! == "34"
+
+
+# collection with option value
+assert [46 as Int!] as String == '[23]'
+try { [34 : new Int!()] as String } catch $e { assert $e is UnwrappingError }
+try { (34, new Boolean!()) as String } catch $e { asser var buf = ''
+    for $ch in $s {
+         var name = $dir + '/' + $a
+     assert [46 as Int!] as String == '[23]'
+try { [34 : new Int!()] as String } catch $e { assert $e is UnwrappingError }
+try { (34, new Boolean!()) as String } catch $e { asser var buf = ''
+    for $ch in $s {
+       == "hello"
+assert $opt(-1) ?? "de" == "de"
+assert new Float!() ?? 34 == 34.0
+
+
+# assign
+var o = $opt(45)
+$o = "world"
+assert{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{ $o! == "world"
+
+$o = new String!()
+$o = "34"
+assert $o && $o! == "34"
+
+
+# collection with option value
+assert [46 as Int!] as String == '[23]'
+try { [34 : new Int!()] as String } catch $e { assert $e is UnwrappingError }
+try { (34, new Boolean!()) as String } catch $e { asser var bu
+assert [46 as Int!] as String == '[23]'
+try { [34 : new Int!()] as String } catch $e { assert $e is UnwrappingError }
+try { (34, new Boolean!()) as String } catch $e { asser var buf = ''
+    for $ch in $s {
+       == "hello"
+assert $opt(-1) ?? "de" == "de"
+assert new Float!() ?? 34 == 34.0
+
+
+# assign
+var o = $opt(45)
+$o = "world"
+assert{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{ $o! == "world"
+
+$o = new String!()
+$o = "34"
+assert $o && $o! == "34"
+
+
+# collection with option value
+assert [46 as Int!] as String == '[23]'
+try { [34 : new Int!()] as String } catch $e { assert $e is UnwrappingError }
+try { (34, new Boolean!()) as String } catch $e { asser var buf = ''
+    for $ch in $s {
+         var name = $dir + '/' + $a
+        if(test -d $name) {
+            echo ${$escape2($a)}/
+        } else {
+            if($# > 1) {
+            rld | grep 'hello2world'   # subscript
+subscript
+assert {
+            for(var j = 0;o $x[$j] $y[$j] 1>&2; }
+   ch) != -1 {
+       st -s $pipe
+asserf = ''
+    for $ch in $s {
+         var name = $dir + '/' + $a
+        if(ith option value
+assert [46 as Int!] as String == '[23]'
+try { [34 : new Int!()] as String } catch $e { assert $e is UnwrappingError }
+try { (34, new Boolean!()) as String } catch $e { asser var buf = ''
+    for $ch in $s {
+         var name = $dir + '/' + $a
+        if(test -d $name) {
+            echo ${$escape2($a)}/
+        } else {
+            if($# > 1) {
+            rld | grep 'hello2world'   # subscript
+subscript
+assert {
+            for(var j = 0;o $x[$j] $y[$j] 1>&2; }
+   ch) != -1 {
+       st -s $pipe
+asserf = ''
+    for $ch in $s {
+         var name = $dir + '/' + $a
+        if(test -d $name) {
+            echo ${$escape2($a)}/
+        } else {
+            if($# > 1) {
+            rld | grep 'hello2world'   # subscript
+subscript
+assert {
+            for(var j = 0;o $x[$j] $y[$j] 1>&2; }
+   ch) != -1 {
+       st -s $pipe
+assert($?br290
