@@ -63,7 +63,7 @@ static unsigned int originalShellLevel() {
 }
 
 
-static void setErrorInfo(DSError *error, unsigned int type, unsigned int lineNum, const char *errorName) {
+static void setErrorInfo(DSError *error, DSErrorKind type, unsigned int lineNum, const char *errorName) {
     if(error != nullptr) {
         error->kind = type;
         error->lineNum = lineNum;
@@ -124,7 +124,7 @@ static void formatErrorLine(bool isatty, const Lexer &lexer, Token errorToken) {
     fflush(stderr);
 }
 
-static void handleError(const Lexer &lexer, unsigned type, const char *errorKind,
+static void handleError(const Lexer &lexer, DSErrorKind type, const char *errorKind,
                         Token errorToken, const std::string &message, DSError *dsError) {
     unsigned int errorLineNum = lexer.getSourceInfoPtr()->getLineNum(errorToken.pos);
     const bool isatty = isSupportedTerminal(STDERR_FILENO);

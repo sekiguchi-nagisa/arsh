@@ -87,7 +87,7 @@ int DSState_setScriptDir(DSState *st, const char *scriptPath);
 /* for internal data structure dump */
 typedef enum {
     DS_DUMP_KIND_UAST = 0,  /* dump untyped abstract syntax tree */
-    DS_DUMP_KIND_AST = 1,   /* dump typed abstract syntax tree */
+    DS_DUMP_KIND_AST  = 1,  /* dump typed abstract syntax tree */
     DS_DUMP_KIND_CODE = 2,  /* dump byte code */
 } DSDumpKind;
 
@@ -115,19 +115,21 @@ void DSState_unsetOption(DSState *st, unsigned int optionSet);
 
 
 /* for indicating error kind. */
-#define DS_ERROR_KIND_SUCCESS         ((unsigned int) 0)
-#define DS_ERROR_KIND_PARSE_ERROR     ((unsigned int) 1)
-#define DS_ERROR_KIND_TYPE_ERROR      ((unsigned int) 2)
-#define DS_ERROR_KIND_RUNTIME_ERROR   ((unsigned int) 3)
-#define DS_ERROR_KIND_ASSERTION_ERROR ((unsigned int) 4)
-#define DS_ERROR_KIND_EXIT            ((unsigned int) 5)
+typedef enum {
+    DS_ERROR_KIND_SUCCESS        ,
+    DS_ERROR_KIND_PARSE_ERROR    ,
+    DS_ERROR_KIND_TYPE_ERROR     ,
+    DS_ERROR_KIND_RUNTIME_ERROR  ,
+    DS_ERROR_KIND_ASSERTION_ERROR,
+    DS_ERROR_KIND_EXIT           ,
+} DSErrorKind;
 
 typedef struct {
     /**
      * kind of error.
      * see DS_ERROR_KIND_ * macro
      */
-    unsigned int kind;
+    DSErrorKind kind;
 
     /**
      * indicate the line number of the error location.
