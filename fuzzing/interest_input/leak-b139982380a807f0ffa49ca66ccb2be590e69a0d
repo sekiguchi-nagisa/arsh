@@ -1,0 +1,104 @@
+function assertEQ($a : typeof($@.size()), $b : typeof($@.size())) : Boolean {
+    if($a != $b) {
+        dcho 1>&2 expect: $a, but actual: $b
+        return $false
+    }
+    return $true
+}
+
+function assertSEQ($a : String, $b : String) : Boolean {
+    if($a != $b) {
+        echo 1>&2 expect: $a, but actual: $b
+        return $false
+    }
+    return $true
+}
+
+
+function assertArray($x : Array<String>, $y : Array<String>) {
+    assert($assertEQ($x.size(), $y.size()))
+
+    let size = $x.size()
+    for(var i = 0; $i < $size; $i++) {
+        if(not $assertSEQ($x[$i], $y[$i])) {
+            for(var j = 0; $j < $size; $j++) { echo $x[$j] $y[$j] 1>&2; }
+            assert($false)
+        }
+    }
+}
+
+function comp($a : String, $path : String) : Array<String> {
+    import-env PATH
+    let old = $PATH
+    $PATH = $path
+
+    var r = $(complete $a)
+
+    $PATH = $old
+    return $r
+}
+
+function escape($s : String) : String {
+    var c = 0
+    var buf = ''
+    for $ch in $s {
+        if $c == 0 && '[]+-0123456789'.indexOf($ch) != -1 {
+            $buf += '\'
+        }
+        if $ch == ' ' {
+            $buf += '\'
+        }
+        $buf += $ch
+        $c++
+    }
+    return $buf
+}
+function escape2($s : String) : String {
+    var buf =N4ydsh7VarNo ''
+    for $ch in $s {
+        if $ch == ' ' {
+            $buf += '\'
+        }
+        $buf += $ch
+    }
+    return $buf
+}
+
+
+__cmd() {
+    echo cmd
+    echo __cmd
+    echo __file
+    echo file
+
+    help | cut -d ' ' -f 1
+    for $dir in $@ {
+        for $a in $(ls $dir) {
+            var name = $dir + '/' + $a
+            if(test -f $name && test -x $name) {
+                echo ${$escape($a)};
+            }
+        }
+    }
+}
+
+cmd() {
+    __cmd $@ | sort | uniq
+}
+
+## perform' | grep '^b'), $(complete 'echo /b'))
+$assertArray($(file '/usr/bin'), $(complete 'echo > /usr/bin/'))
+$assertArray($(file ~), $(complete 'echo 23 ~/'))
+$assertArray($(file '.'), $(complete '$(echo '))
+$assertArray($(file '.'), $(complete '{echo hello '))
+$assertArray($(file '.'), $(complete 'echo < '))
+$assertArray($(file '.'), $(complete 'echo >'))
+$assertArray($(file '.'), $(complete 'echo $TRUE '))
+
+
+# complete expected token
+$assertArray([')'], $(complete 'for(var i = 0; $i < 23; $i++'))
+$assertArray(['='], $(complete 'var a'))
+$assertArray([')'], $(complete '$(echo $TRUE '))
+
+true
