@@ -1301,7 +1301,7 @@ Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode) {
      * self assignment
      */
     // assign to element
-    auto *opNode = new BinaryOpNode(new EmptyNode(), resolveAssignOp(op), rightNode);
+    auto *opNode = new BinaryOpNode(new EmptyNode(rightNode->getToken()), resolveAssignOp(op), rightNode);
     if(leftNode->is(NodeKind::MethodCall) &&
             static_cast<MethodCallNode *>(leftNode)->hasAttribute(MethodCallNode::INDEX)) {
         auto *indexNode = static_cast<MethodCallNode *>(leftNode);
