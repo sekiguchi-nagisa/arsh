@@ -101,7 +101,7 @@ DSState::DSState() :
         callStack(new DSValue[DEFAULT_STACK_SIZE]),
         callStackSize(DEFAULT_STACK_SIZE), globalVarSize(0),
         stackTopIndex(0), stackBottomIndex(0), localVarOffset(0), pc_(0),
-        terminationHook(nullptr), lineNum(1),
+        option(DS_OPTION_ASSERT), execMode(DS_EXEC_MODE_NORMAL), terminationHook(nullptr), lineNum(1),
         hook(nullptr), logicalWorkingDir(initLogicalWorkingDir()),
         baseTime(std::chrono::system_clock::now()), history(initHistory()) { }
 
@@ -181,7 +181,7 @@ static void exitShell(DSState &st, unsigned int status) {
     }
 
     // print stack trace
-    if(hasFlag(st.option.flag, DS_OPTION_TRACE_EXIT)) {
+    if(hasFlag(st.option, DS_OPTION_TRACE_EXIT)) {
         typeAs<Error_Object>(except)->printStackTrace(st);
     }
     status %= 256;

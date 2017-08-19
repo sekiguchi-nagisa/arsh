@@ -70,26 +70,6 @@ public:
     };
 };
 
-struct DSOption {
-    /**
-     * indicate DSExecMode
-     */
-    unsigned short mode{DS_EXEC_MODE_NORMAL};
-
-    /**
-     * see DS_OPTION_ * macro.
-     */
-    unsigned short flag{DS_OPTION_ASSERT};
-
-    void setMode(DSExecMode mode) {
-        this->mode = mode;
-    }
-
-    DSExecMode getMode() const {
-        return static_cast<DSExecMode>(this->mode);
-    }
-};
-
 struct DumpTarget {
     FILE *fps[3]{nullptr};
 
@@ -174,7 +154,9 @@ struct DSState {
      */
     unsigned int pc_;
 
-    DSOption option;
+    unsigned short option;
+
+    DSExecMode execMode;
 
     DumpTarget dumpTarget;
 
@@ -404,7 +386,7 @@ struct DSState {
     }
 
     bool isInteractive() const {
-        return hasFlag(this->option.flag, DS_OPTION_INTERACTIVE);
+        return hasFlag(this->option, DS_OPTION_INTERACTIVE);
     }
 
     bool isRootShell() const {
