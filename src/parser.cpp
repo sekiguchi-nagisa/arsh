@@ -133,6 +133,23 @@ do { this->raiseNoViableAlterError((TokenKind[]) { __VA_ARGS__ }); return nullpt
 
 namespace ydsh {
 
+struct CallCounter {
+    unsigned int &count;
+
+    CallCounter(unsigned int &count) : count(count) {}
+
+    ~CallCounter() {
+        --this->count;
+    }
+};
+
+#define GUARD_DEEP_NESTING(name) \
+if(++this->callCount == MAX_NESTING_DEPTH) { this->raiseDeepNestingError(); return nullptr; } \
+CallCounter name(this->callCount); \
+(void) name
+//fprintf(stderr, "depth: %d\n", name.count)
+
+
 // #########################
 // ##     ArgsWrapper     ##
 // #########################
@@ -198,8 +215,16 @@ void Parser::raiseTokenFormatError(TokenKind kind, Token token, const char *msg)
     this->createError(kind, token, "TokenFormat", std::move(message));
 }
 
+void Parser::raiseDeepNestingError() {
+    std::string message = "parser recursion depth exceeded";
+    this->createError(this->curKind, this->curToken, "DeepNesting", std::move(message));
+}
+
+
 // parse rule definition
 std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
+    GUARD_DEEP_NESTING(guard);
+
     assert(CUR_KIND() == FUNCTION);
     unsigned int startPos = START_POS();
     this->consume();    // FUNCTION
@@ -260,6 +285,8 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
 }
 
 std::unique_ptr<Node> Parser::parse_interface() {
+    GUARD_DEEP_NESTING(guard);
+
     assert(CUR_KIND() == INTERFACE);
     unsigned int startPos = START_POS();
 
@@ -320,6 +347,8 @@ std::unique_ptr<Node> Parser::parse_interface() {
 }
 
 TypeWrapper Parser::parse_basicOrReifiedType(Token token) {
+    GUARD_DEEP_NESTING(guard);
+
     auto typeToken = make_unique<BaseTypeNode>(token, this->lexer->toName(token));
     if(!HAS_NL() && CUR_KIND() == TYPE_OPEN) {
         this->expect(TYPE_OPEN, false); // always success
@@ -437,6 +466,8 @@ TypeWrapper Parser::parse_typeNameImpl() {
 }
 
 std::unique_ptr<TypeNode> Parser::parse_typeName() {
+    GUARD_DEEP_NESTING(guard);
+
     auto result = TRY(this->parse_typeNameImpl());
     if(!HAS_NL() && CUR_KIND() == TYPE_OPT) {
         result.token = this->expect(TYPE_OPT); // always success
@@ -563,6 +594,8 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
 }
 
 std::unique_ptr<Node> Parser::parse_statement() {
+    GUARD_DEEP_NESTING(guard);
+
     auto node = TRY(this->parse_statementImp());
     TRY(this->parse_statementEnd());
     return node;
@@ -586,6 +619,8 @@ std::unique_ptr<Node> Parser::parse_statementEnd() {
 }
 
 std::unique_ptr<BlockNode> Parser::parse_block() {
+    GUARD_DEEP_NESTING(guard);
+
     Token token = TRY(this->expect(LBC));
     auto blockNode = make_unique<BlockNode>(token.pos);
     while(CUR_KIND() != RBC) {
@@ -597,6 +632,8 @@ std::unique_ptr<BlockNode> Parser::parse_block() {
 }
 
 std::unique_ptr<Node> Parser::parse_variableDeclaration() {
+    GUARD_DEEP_NESTING(guard);
+
     assert(CUR_KIND() == VAR || CUR_KIND() == LET);
     unsigned int startPos = START_POS();
     auto readOnly = VarDeclNode::VAR;
@@ -614,6 +651,8 @@ std::unique_ptr<Node> Parser::parse_variableDeclaration() {
 }
 
 std::unique_ptr<Node> Parser::parse_ifExpression(bool asElif) {
+    GUARD_DEEP_NESTING(guard);
+
     unsigned int startPos = START_POS();
     TRY(this->expect(asElif ? ELIF : IF));
     auto condNode = TRY(this->parse_expression());
@@ -631,6 +670,8 @@ std::unique_ptr<Node> Parser::parse_ifExpression(bool asElif) {
 }
 
 std::unique_ptr<Node> Parser::parse_forExpression() {
+    GUARD_DEEP_NESTING(guard);
+
     assert(CUR_KIND() == FOR);
     unsigned int startPos = START_POS();
     this->consume();    // FOR
@@ -663,6 +704,8 @@ std::unique_ptr<Node> Parser::parse_forExpression() {
 }
 
 std::unique_ptr<Node> Parser::parse_forInit() {
+    GUARD_DEEP_NESTING(guard);
+
     switch(CUR_KIND()) {
     EACH_LA_varDecl(GEN_LA_CASE) {
         return this->parse_variableDeclaration();
@@ -676,6 +719,8 @@ std::unique_ptr<Node> Parser::parse_forInit() {
 }
 
 std::unique_ptr<Node> Parser::parse_forCond() {
+    GUARD_DEEP_NESTING(guard);
+
     switch(CUR_KIND()) {
     EACH_LA_expression(GEN_LA_CASE) {
         return this->parse_expression();
@@ -687,6 +732,8 @@ std::unique_ptr<Node> Parser::parse_forCond() {
 }
 
 std::unique_ptr<Node> Parser::parse_forIter() {
+    GUARD_DEEP_NESTING(guard);
+
     switch(CUR_KIND()) {
     EACH_LA_expression(GEN_LA_CASE) {
         return this->parse_expression();
@@ -697,6 +744,8 @@ std::unique_ptr<Node> Parser::parse_forIter() {
 }
 
 std::unique_ptr<CatchNode> Parser::parse_catchStatement() {
+    GUARD_DEEP_NESTING(guard);
+
     assert(CUR_KIND() == CATCH);
     unsigned int startPos = START_POS();
     this->consume();    // CATCH
@@ -723,6 +772,8 @@ std::unique_ptr<CatchNode> Parser::parse_catchStatement() {
 
 // command
 std::unique_ptr<Node> Parser::parse_command() {
+    GUARD_DEEP_NESTING(guard);
+
     assert(CUR_KIND() == COMMAND);
     Token token = this->expect(COMMAND);   // always success
 
@@ -764,6 +815,8 @@ std::unique_ptr<Node> Parser::parse_command() {
 }
 
 std::unique_ptr<RedirNode> Parser::parse_redirOption() {
+    GUARD_DEEP_NESTING(guard);
+
     switch(CUR_KIND()) {
     EACH_LA_redirFile(GEN_LA_CASE) {
         TokenKind kind = this->consume();
@@ -780,6 +833,8 @@ std::unique_ptr<RedirNode> Parser::parse_redirOption() {
 }
 
 std::unique_ptr<CmdArgNode> Parser::parse_cmdArg() {
+    GUARD_DEEP_NESTING(guard);
+
     auto node = make_unique<CmdArgNode>(TRY(this->parse_cmdArgSeg(0)).release());
 
     unsigned int pos = 1;
@@ -798,6 +853,8 @@ std::unique_ptr<CmdArgNode> Parser::parse_cmdArg() {
 }
 
 std::unique_ptr<Node> Parser::parse_cmdArgSeg(unsigned int pos) {
+    GUARD_DEEP_NESTING(guard);
+
     switch(CUR_KIND()) {
     case CMD_ARG_PART: {
         Token token = this->expect(CMD_ARG_PART);   // always success
@@ -823,6 +880,8 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(unsigned int pos) {
 
 // expression
 std::unique_ptr<Node> Parser::parse_expression() {
+    GUARD_DEEP_NESTING(guard);
+
     if(CUR_KIND() == THROW) {
         unsigned int startPos = START_POS();
         this->consume();    // THROW
@@ -850,6 +909,8 @@ static std::unique_ptr<Node> createBinaryNode(std::unique_ptr<Node> &&leftNode,
 
 std::unique_ptr<Node> Parser::parse_binaryExpression(std::unique_ptr<Node> &&leftNode,
                                                      unsigned int basePrecedence) {
+    GUARD_DEEP_NESTING(guard);
+
     std::unique_ptr<Node> node(std::move(leftNode));
     for(unsigned int p = PRECEDENCE();
         !HAS_NL() && p >= basePrecedence; p = PRECEDENCE()) {
@@ -912,6 +973,8 @@ std::unique_ptr<Node> Parser::parse_binaryExpression(std::unique_ptr<Node> &&lef
 }
 
 std::unique_ptr<Node> Parser::parse_unaryExpression() {
+    GUARD_DEEP_NESTING(guard);
+
     switch(CUR_KIND()) {
     case PLUS:
     case MINUS:
@@ -926,6 +989,8 @@ std::unique_ptr<Node> Parser::parse_unaryExpression() {
 }
 
 std::unique_ptr<Node> Parser::parse_suffixExpression() {
+    GUARD_DEEP_NESTING(guard);
+
     auto node = TRY(this->parse_primaryExpression());
 
     for(bool next = true; !HAS_NL() && next;) {
@@ -985,6 +1050,8 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
 }
 
 std::unique_ptr<Node> Parser::parse_primaryExpression() {
+    GUARD_DEEP_NESTING(guard);
+
     switch(CUR_KIND()) {
     case COMMAND:
         return parse_command();
@@ -1243,6 +1310,8 @@ std::unique_ptr<Node> Parser::parse_stringLiteral() {
 }
 
 ArgsWrapper Parser::parse_arguments() {
+    GUARD_DEEP_NESTING(guard);
+
     Token token = TRY(this->expect(LP));
 
     ArgsWrapper args(token.pos);
@@ -1273,6 +1342,8 @@ ArgsWrapper Parser::parse_arguments() {
 }
 
 std::unique_ptr<Node> Parser::parse_stringExpression() {
+    GUARD_DEEP_NESTING(guard);
+
     assert(CUR_KIND() == OPEN_DQUOTE);
     Token token = this->expect(OPEN_DQUOTE);   // always success
     auto node = make_unique<StringExprNode>(token.pos);
@@ -1310,6 +1381,8 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
 }
 
 std::unique_ptr<Node> Parser::parse_interpolation() {
+    GUARD_DEEP_NESTING(guard);
+
     switch(CUR_KIND()) {
     case APPLIED_NAME:
     case SPECIAL_NAME:
@@ -1323,6 +1396,8 @@ std::unique_ptr<Node> Parser::parse_interpolation() {
 }
 
 std::unique_ptr<Node> Parser::parse_paramExpansion() {
+    GUARD_DEEP_NESTING(guard);
+
     switch(CUR_KIND()) {
     case APPLIED_NAME_WITH_BRACKET:
     case SPECIAL_NAME_WITH_BRACKET: {
@@ -1339,6 +1414,8 @@ std::unique_ptr<Node> Parser::parse_paramExpansion() {
 }
 
 std::unique_ptr<SubstitutionNode> Parser::parse_substitution() {
+    GUARD_DEEP_NESTING(guard);
+
     assert(CUR_KIND() == START_SUB_CMD);
     unsigned int pos = START_POS();
     this->consume();    // START_SUB_CMD

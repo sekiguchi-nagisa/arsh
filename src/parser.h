@@ -85,6 +85,11 @@ public:
 };
 
 class Parser : public ydsh::parser_base::AbstractParser<TokenKind, Lexer, TokenTracker> {
+private:
+    unsigned int callCount{0};
+
+    static constexpr unsigned int MAX_NESTING_DEPTH = 5000;
+
 public:
     explicit Parser(Lexer &lexer) {
         this->lexer = &lexer;
@@ -118,6 +123,8 @@ protected:
     Token expectAndChangeMode(TokenKind kind, LexerMode mode, bool fetchNext = true);
 
     void raiseTokenFormatError(TokenKind kind, Token token, const char *msg);
+
+    void raiseDeepNestingError();
 
     // parser rule definition.
     std::unique_ptr<FunctionNode> parse_funcDecl();
