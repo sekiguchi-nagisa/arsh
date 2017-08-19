@@ -470,7 +470,7 @@ DSState *DSState_createWithMode(DSExecMode mode) {
      * set execution mode before embedded script loading.
      * due to suppress fuzzer error
      */
-#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+#ifdef FUZZING_BUILD_MODE
     ctx->execMode = mode;
 #endif
 
