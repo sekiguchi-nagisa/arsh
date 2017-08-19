@@ -225,6 +225,10 @@ static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, Compiled
         fputc('\n', fp);
     }
 
+    if(state->execMode == DS_EXEC_MODE_PARSE_ONLY) {
+        return 0;
+    }
+
     // type check
     try {
         TypeChecker checker(state->pool, state->symbolTable, hasFlag(state->option, DS_OPTION_TOPLEVEL));
@@ -242,7 +246,7 @@ static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, Compiled
         return 1;
     }
 
-    if(state->execMode == DS_EXEC_MODE_PARSE_ONLY) {
+    if(state->execMode == DS_EXEC_MODE_CHECK_ONLY) {
         return 0;
     }
 

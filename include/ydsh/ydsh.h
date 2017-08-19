@@ -33,7 +33,8 @@ typedef struct DSState DSState;
 typedef enum {
     DS_EXEC_MODE_NORMAL = 0,
     DS_EXEC_MODE_PARSE_ONLY = 1,
-    DS_EXEC_MODE_COMPILE_ONLY = 2,
+    DS_EXEC_MODE_CHECK_ONLY = 2,
+    DS_EXEC_MODE_COMPILE_ONLY = 3,
 } DSExecMode;
 
 /**

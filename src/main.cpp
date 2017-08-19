@@ -103,6 +103,7 @@ static void showFeature(FILE *fp) {
     OP(DUMP_AST,       "--dump-ast",          0, "dump abstract syntax tree (after type checking)") \
     OP(DUMP_CODE,      "--dump-code",         0, "dump compiled code") \
     OP(PARSE_ONLY,     "--parse-only",        0, "not evaluate, parse only") \
+    OP(CHECK_ONLY,     "--check-only",        0, "not evaluate, type check only") \
     OP(COMPILE_ONLY,   "--compile-only",      0, "not evaluate, compile only") \
     OP(DISABLE_ASSERT, "--disable-assertion", 0, "disable assert statement") \
     OP(PRINT_TOPLEVEL, "--print-toplevel",    0, "print top level evaluated value") \
@@ -118,7 +119,7 @@ static void showFeature(FILE *fp) {
     OP(QUIET,          "--quiet",             0, "suppress startup message (only available interactive mode)") \
     OP(SET_ARGS,       "-s",                  argv::IGNORE_REST, "set arguments and read command from standard input") \
     OP(INTERACTIVE,    "-i",                  0, "run interactive mode") \
-    OP(PARSE_ONLY2,    "-n",                  0, "equivalent to `--parse-only' option")
+    OP(CHECK_ONLY2,    "-n",                  0, "equivalent to `--check-only' option")
 
 enum OptionKind {
 #define GEN_ENUM(E, S, F, D) E,
@@ -183,8 +184,11 @@ int main(int argc, char **argv) {
             dumpTarget[2].path = "";
             break;
         case PARSE_ONLY:
-        case PARSE_ONLY2:
             mode = DS_EXEC_MODE_PARSE_ONLY;
+            break;
+        case CHECK_ONLY:
+        case CHECK_ONLY2:
+            mode = DS_EXEC_MODE_CHECK_ONLY;
             break;
         case COMPILE_ONLY:
             mode = DS_EXEC_MODE_COMPILE_ONLY;
