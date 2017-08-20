@@ -61,14 +61,12 @@ static std::pair<std::string, unsigned int> extractDirective(std::istream &input
     return {std::string(), 0};
 }
 
-template <NodeKind kind>
-struct info2Type {};
+template <typename T>
+struct type2info {};
 
-#define GEN_TO_TYPE(T) template <> struct info2Type<NodeKind::T> { using type = T ## Node; };
+#define GEN_TO_INFO(T) template <> struct type2info<T ## Node> { static constexpr auto value = NodeKind::T; };
 
-EACH_NODE_KIND(GEN_TO_TYPE)
-
-#undef GEN_TO_TYPE
+EACH_NODE_KIND(GEN_TO_INFO)
 
 
 using AttributeHandler = std::function<void(Node &, Directive &)>;
@@ -97,10 +95,10 @@ private:
 
     void setVarName(const char *name, DSType &type);
 
-    template <NodeKind kind>
-    typename info2Type<kind>::type &checkedCast(Node &node) {
-        this->checkNode(kind, node);
-        return static_cast<typename info2Type<kind>::type &>(node);
+    template <typename T>
+    T &checkedCast(Node &node) {
+        this->checkNode(type2info<T>::value, node);
+        return static_cast<T &>(node);
     }
 };
 
@@ -137,37 +135,37 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
     }
 
     this->addHandler("status", this->typePool.getIntType(), [&](Node &node, Directive &d) {
-        d.setStatus(this->checkedCast<NodeKind::Number>(node).getIntValue());
+        d.setStatus(this->checkedCast<NumberNode>(node).getIntValue());
     });
 
     this->addHandler("result", this->typePool.getStringType(), [&](Node &node, Directive &d) {
-        d.setResult(this->resolveStatus(this->checkedCast<NodeKind::String>(node)));
+        d.setResult(this->resolveStatus(this->checkedCast<StringNode>(node)));
     });
 
     this->addHandler("params", this->typePool.getStringArrayType(), [&](Node &node, Directive &d) {
-        auto &value = this->checkedCast<NodeKind::Array>(node);
+        auto &value = this->checkedCast<ArrayNode>(node);
         for(auto &e : value.getExprNodes()) {
-            d.appendParam(this->checkedCast<NodeKind::String>(*e).getValue());
+            d.appendParam(this->checkedCast<StringNode>(*e).getValue());
         }
     });
 
     this->addHandler("lineNum", this->typePool.getInt32Type(), [&](Node &node, Directive &d) {
-        d.setLineNum(this->checkedCast<NodeKind::Number>(node).getIntValue());
+        d.setLineNum(this->checkedCast<NumberNode>(node).getIntValue());
     });
 
     this->addHandler("ifHaveDBus", this->typePool.getBooleanType(), [&](Node &node, Directive &d) {
-        bool v = toBool(this->checkedCast<NodeKind::Var>(node).getVarName());
+        bool v = toBool(this->checkedCast<VarNode>(node).getVarName());
         d.setIfHaveDBus(v);
     });
 
     this->addHandler("errorKind", this->typePool.getStringType(), [&](Node &node, Directive &d) {
-        d.setErrorKind(this->checkedCast<NodeKind::String>(node).getValue());
+        d.setErrorKind(this->checkedCast<StringNode>(node).getValue());
     });
 
     std::unordered_set<std::string> foundAttrSet;
     for(auto &attrNode : node.getArgNodes()) {
-        auto &assignNode = this->checkedCast<NodeKind::Assign>(*attrNode);
-        auto &attrName = this->checkedCast<NodeKind::Var>(*assignNode.getLeftNode()).getVarName();
+        auto &assignNode = this->checkedCast<AssignNode>(*attrNode);
+        auto &attrName = this->checkedCast<VarNode>(*assignNode.getLeftNode()).getVarName();
         auto *pair = this->lookupHandler(attrName);
         if(pair == nullptr) {
             std::string str("unsupported attribute: ");
