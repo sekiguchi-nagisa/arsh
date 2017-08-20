@@ -1,0 +1,19 @@
+#!/usr/bin/env ydsh
+
+if $# != 1 {
+    echo "[usage] $0 [corpus dir]" 1>&2
+    exit 1
+}
+
+let dir = $1
+mkdir $dir || { echo already exist directory 1>&2; exit 1; }
+
+let exec_test_dir = "$SCRIPT_DIR/../test/exec/cases".realpath()!
+
+for $d in $(ls $exec_test_dir) {
+    var case_dir = "$exec_test_dir/$d"
+    echo copying acripts at $case_dir
+    for $a in $(ls $case_dir) {
+        cp $case_dir/$a $dir/${d}_$a
+    }
+}
