@@ -457,10 +457,6 @@ static void initEnv() {
 // ##     public api of DSState     ##
 // ###################################
 
-DSState *DSState_create() {
-    return DSState_createWithMode(DS_EXEC_MODE_NORMAL);
-}
-
 DSState *DSState_createWithMode(DSExecMode mode) {
     initEnv();
 

@@ -45,11 +45,7 @@ typedef enum {
  */
 DSState *DSState_createWithMode(DSExecMode mode);
 
-/**
- * equivalent to DSState_createWithMode(DS_EXEC_MODE_NORMAL)
- * @return
- */
-DSState *DSState_create();
+#define DSState_create() DSState_createWithMode(DS_EXEC_MODE_NORMAL)
 
 /**
  * delete DSState. after release object, assign null to ctx.
