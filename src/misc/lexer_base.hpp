@@ -353,6 +353,10 @@ std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token) const {
             marker += "\t";
             continue;
         }
+        if(code == '\n') {
+            marker += "\n";
+            continue;
+        }
         int width = UnicodeUtil::localeAwareWidth(code);
         if(width == 1) {
             marker += (prev == token.pos ? "^" : "~");

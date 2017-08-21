@@ -109,17 +109,38 @@ static const char *color(TermColor color, bool isatty) {
     return "";
 }
 
+static std::vector<std::string> split(const std::string &str) {
+    std::vector<std::string> bufs;
+    bufs.emplace_back();
+    for(auto ch : str) {
+        if(ch == '\n') {
+            bufs.emplace_back();
+        } else {
+            bufs.back() += ch;
+        }
+    }
+    return bufs;
+}
+
 static void formatErrorLine(bool isatty, const Lexer &lexer, Token errorToken) {
     errorToken = lexer.shiftEOS(errorToken);
     Token lineToken = lexer.getLineToken(errorToken);
+    auto line = lexer.toTokenText(lineToken);
+    auto marker = lexer.formatLineMarker(lineToken, errorToken);
 
-    // print error line
-    fprintf(stderr, "%s%s%s\n", color(TermColor::Cyan, isatty),
-            lexer.toTokenText(lineToken).c_str(), color(TermColor::Reset, isatty));
+    auto lines = split(line);
+    auto markers = split(marker);
+    unsigned int size = lines.size();
+    assert(size == markers.size());
+    for(unsigned int i = 0; i < size; i++) {
+        // print error line
+        fprintf(stderr, "%s%s%s\n", color(TermColor::Cyan, isatty),
+                lines[i].c_str(), color(TermColor::Reset, isatty));
 
-    // print line marker
-    fprintf(stderr, "%s%s%s%s\n", color(TermColor::Green, isatty), color(TermColor::Bold, isatty),
-            lexer.formatLineMarker(lineToken, errorToken).c_str(), color(TermColor::Reset, isatty));
+        // print line marker
+        fprintf(stderr, "%s%s%s%s\n", color(TermColor::Green, isatty), color(TermColor::Bold, isatty),
+                markers[i].c_str(), color(TermColor::Reset, isatty));
+    }
 
     fflush(stderr);
 }
