@@ -30,4 +30,22 @@ EOF
 
 test "$($YDSH_BIN -c '[34, "hey"]' 2>&1)" = "$v"
 
+i="$(cat << EOF
+var a = 34
+\$a = 34 +
+     'de'
+EOF
+)"
+
+v="$(cat << EOF
+(string):2: [semantic error] require Int32, but is String
+\$a = 34 +
+     ^~~~
+     'de'
+~~~~~~~~~
+EOF
+)"
+
+test "$($YDSH_BIN -c "$i" 2>&1)" = "$v"
+
 exit 0
