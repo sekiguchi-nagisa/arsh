@@ -1,39 +1,31 @@
 #include <gtest/gtest.h>
 
+#include <functional>
+
 #include <vm.h>
 
 #include "../test_common.hpp"
 
-class VMBreakException {
-private:
-    const OpCode code;
-
-public:
-    VMBreakException(OpCode code) : code(code) {}
-
-    OpCode getOpcode() const {
-        return this->code;
-    }
-};
+using BreakPointHandler = std::function<void()>;
 
 class VMInspector : public VMHook {
 private:
     OpCode breakOp;
+    BreakPointHandler handler;
 
 public:
-    VMInspector() : breakOp(OpCode::HALT) {}
+    VMInspector() : breakOp(OpCode::HALT), handler() {}
 
-    void setBreakOp(OpCode breakOp) {
-        this->breakOp = breakOp;
-    }
-
-    OpCode getBreakOp() const {
-        return this->breakOp;
+    void setHandler(OpCode op, BreakPointHandler &&handler) {
+        this->breakOp = op;
+        this->handler = std::move(handler);
     }
 
     void vmFetchHook(DSState &, OpCode op) override {
         if(this->breakOp == op) {
-            throw VMBreakException(op);
+            if(this->handler) {
+                this->handler();
+            }
         }
     }
 
@@ -58,19 +50,19 @@ public:
         DSState_delete(&this->state);
     }
 
+private:
+    void setBreakPointHandler(OpCode breakOp, BreakPointHandler &&handler) {
+        this->inspector.setHandler(breakOp, std::move(handler));
+    }
+
 protected:
     void eval(const char *code) {
-        try {
-            DSState_eval(this->state, "(dummy)", code, strlen(code), nullptr);
-        } catch(const VMBreakException &) {}
+        DSState_eval(this->state, "(dummy)", code, strlen(code), nullptr);
     }
 
-    void setBreakPoint(OpCode op) {
-        this->inspector.setBreakOp(op);
-    }
-
-    void resetBreakPoint() {
-        this->setBreakPoint(OpCode::HALT);
+    void eval(const char *code, OpCode breakOp, BreakPointHandler &&handler) {
+        this->setBreakPointHandler(breakOp, std::move(handler));
+        this->eval(code);
     }
 
     DSValue getValue(const char *name) const {
@@ -95,9 +87,9 @@ protected:
 };
 
 TEST_F(VMTest, base) {
-    this->setBreakPoint(OpCode::POP);
-    this->eval("12");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(12, typeAs<Int_Object>(this->state->peek())->getValue()));
+    this->eval("12", OpCode::POP, [&]{
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(12, typeAs<Int_Object>(this->state->peek())->getValue()));
+    });
 }
 
 TEST_F(VMTest, deinit1) {
@@ -107,9 +99,9 @@ TEST_F(VMTest, deinit1) {
     this->eval("{ var b = $a}");
     ASSERT_(RefCount("a", 1));
 
-    this->setBreakPoint(OpCode::RAND);
-    this->eval("{ var b = $a; if $true { var c = $a }; $RANDOM; }");
-    ASSERT_(RefCount("a", 2));
+    this->eval("{ var b = $a; if $true { var c = $a }; $RANDOM; }", OpCode::RAND, [&]{
+        ASSERT_(RefCount("a", 2));
+    });
 }
 
 TEST_F(VMTest, deinit2) {
@@ -135,48 +127,50 @@ TEST_F(VMTest, deinit3) {
 }
 
 TEST_F(VMTest, deinit4) {
-    this->setBreakPoint(OpCode::RAND);
-    this->eval("function f($a : [String]) { $RANDOM; var b = $a; }; $f($@)");
-    ASSERT_(RefCount("@", 2));
+    this->eval("function f($a : [String]) { $RANDOM; var b = $a; }; $f($@)", OpCode::RAND, [&]{
+        ASSERT_(RefCount("@", 2));
+    });
 }
 
 TEST_F(VMTest, deinit5) {
-    this->setBreakPoint(OpCode::RAND);
-    this->eval("function f($a : [String]) { var b = $a; { var c = $b } var c = $b; }; $f($@)");
-    ASSERT_(RefCount("@", 1));
+    this->eval("function f($a : [String]) { var b = $a; { var c = $b } var c = $b; }; $f($@)", OpCode::RAND, [&]{
+        ASSERT_(RefCount("@", 1));
+    });
 }
 
 TEST_F(VMTest, deinit6) {
-    this->setBreakPoint(OpCode::RAND);
-    this->eval("function f($a : [String]) { var b = $a; { var c = $b } var c = $b; }; $f($@)");
-    ASSERT_(RefCount("@", 1));
+    this->eval("function f($a : [String]) { var b = $a; { var c = $b } var c = $b; }; $f($@)", OpCode::RAND, [&]{
+        ASSERT_(RefCount("@", 1));
+    });
 }
 
 TEST_F(VMTest, deinit7) {
     this->eval("try { var a = $@; 34 / 0; var b = $a; } catch($e) {}");
     ASSERT_(RefCount("@", 1));
 
-    this->setBreakPoint(OpCode::RAND);
-    this->eval("try { while $true { var a = $@; break; } } finally {  $RANDOM; }");
-    ASSERT_(RefCount("@", 1));
+    this->eval("try { while $true { var a = $@; break; } } finally {  $RANDOM; }", OpCode::RAND, [&]{
+        ASSERT_(RefCount("@", 1));
+    });
 }
 
 TEST_F(VMTest, deinit8) {
-    this->setBreakPoint(OpCode::RAND);
-    this->eval("try { var a = $@; 34 / 0 } catch $e { $RANDOM; }");
-    ASSERT_(RefCount("@", 1));
+    this->eval("try { var a = $@; 34 / 0 } catch $e { $RANDOM; }", OpCode::RAND, [&]{
+        ASSERT_(RefCount("@", 1));
+    });
 }
 
 TEST_F(VMTest, deinit9) {
-    this->setBreakPoint(OpCode::RAND);
-    this->eval("try { var a = $@; 34 / 0 } catch $e { var b = $@; throw 34; } finally {  $RANDOM; }");
-    ASSERT_(RefCount("@", 1));
+    this->eval("try { var a = $@; 34 / 0 } catch $e { var b = $@; throw 34; } finally {  $RANDOM; }",
+               OpCode::RAND, [&]{
+                ASSERT_(RefCount("@", 1));
+            });
 }
 
 TEST_F(VMTest, deinit10) {
-    this->setBreakPoint(OpCode::RAND);
-    this->eval("try { var a = $@; var b = $a; 34 / 0 } catch $e : Int { var b = $@; var c = $b; var d = $c; } finally {  $RANDOM; }");
-    ASSERT_(RefCount("@", 1));
+    this->eval("try { var a = $@; var b = $a; 34 / 0 } catch $e : Int { var b = $@; var c = $b; var d = $c; } finally {  $RANDOM; }",
+               OpCode::RAND, [&]{
+                ASSERT_(RefCount("@", 1));
+            });
 }
 
 TEST_F(VMTest, sig1) {
