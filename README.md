@@ -12,7 +12,7 @@ Language specification is subject to change without notice.
 ## Build Requirement
 * Linux x64
 * cmake 2.8 or later
-* autoconf (for building re2c)
+* autotools (for building re2c)
 * make
 * expect (for testing)
 * gcc/clang (need c++11 support, need GNU extension)
