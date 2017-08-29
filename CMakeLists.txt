@@ -162,21 +162,19 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}/src)
 #     build re2c    #
 #+++++++++++++++++++#
 
-set(RE2C_V "1.0.2")
-set(RE2C_URL "https://github.com/skvadrik/re2c/releases/download/${RE2C_V}/re2c-${RE2C_V}.tar.gz")
-set(RE2C_PATH ${CMAKE_CURRENT_BINARY_DIR}/re2c-${RE2C_V}.tar.gz)
-set(RE2C_DIR ${CMAKE_CURRENT_BINARY_DIR}/re2c-${RE2C_V})
+set(RE2C_SRC_DIR ${CMAKE_SOURCE_DIR}/ext/re2c/re2c)
+set(RE2C_DIR ${CMAKE_SOURCE_DIR}/build-re2c)
 
 if(NOT EXISTS "${RE2C_DIR}")
-    file(DOWNLOAD "${RE2C_URL}" "${RE2C_PATH}" SHOW_PROGRESS)
-    execute_process(COMMAND ${CMAKE_COMMAND} -E tar xvf ${RE2C_PATH})
+    file(MAKE_DIRECTORY ${RE2C_DIR})
 endif()
 
-if(NOT EXISTS "${RE2C_DIR}/re2c")
-    execute_process(COMMAND ./configure WORKING_DIRECTORY ${RE2C_DIR})
-    execute_process(COMMAND make WORKING_DIRECTORY ${RE2C_DIR})
-endif()
+ if(NOT EXISTS "${RE2C_SRC_DIR}/configure")
+    execute_process(COMMAND ./autogen.sh WORKING_DIRECTORY ${RE2C_SRC_DIR})
+ endif()
 
+execute_process(COMMAND ${RE2C_SRC_DIR}/configure WORKING_DIRECTORY ${RE2C_DIR})
+execute_process(COMMAND make WORKING_DIRECTORY ${RE2C_DIR})
 
 #========================#
 #     generate Lexer     #

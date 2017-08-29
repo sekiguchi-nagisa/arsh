@@ -4,6 +4,8 @@
 Debug/
 Release/
 .idea/
+build-re2c
+cmake-build-debug
 
 # Compiled Object files
 *.slo
