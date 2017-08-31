@@ -1,17 +1,8 @@
-#+++++++++++++++++++++++++++++#
-#     find expect command     #
-#+++++++++++++++++++++++++++++#
-
-execute_process(COMMAND which expect RESULT_VARIABLE status)
-if(NOT (${status} EQUAL 0))
-    message(FATAL_ERROR "not found expect command")
-endif()
-
-
 #==========================#
 #     interactive_test     #
 #==========================#
 
+check_program("expect")
 set(TEST_NAME interactive_test)
 
 add_definitions(-DBIN_PATH="${CMAKE_BINARY_DIR}/${BIN_NAME}")

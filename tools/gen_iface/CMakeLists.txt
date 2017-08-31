@@ -5,7 +5,7 @@
 set(CMAKE_INCLUDE_PATH "/usr/include/libxml2")
 
 check_header(HAVE_XML2_H "libxml/parser.h")
-find_library(HAVE_LIBXML2 NAMES xml2)
+check_library(HAVE_LIBXML2 xml2)
 include_directories(${HAVE_XML2_H})
 
 

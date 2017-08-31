@@ -16,6 +16,22 @@ macro(check_header VAR NAME)
     message(STATUS "found header file - ${NAME} in ${${VAR}}")
 endmacro()
 
+macro(check_library VAR NAME)
+    find_library(${VAR} NAMES ${NAME})
+    if(NOT ${VAR})
+        message(FATAL_ERROR "not found library - ${NAME}")
+    endif()
+    message(STATUS "found library - ${NAME} in ${${VAR}}")
+endmacro()
+
+macro(check_program NAME)
+    find_program(VAR_${NAME} NAMES ${NAME})
+    if(NOT VAR_${NAME})
+        message(FATAL_ERROR "not found command - ${NAME}")
+    endif()
+    message(STATUS "found command - ${NAME} in ${VAR_${NAME}}")
+endmacro()
+
 macro(show_option OPTION)
     message(STATUS "extra option - ${OPTION}=${${OPTION}}")
 endmacro()
@@ -117,13 +133,22 @@ assert_type_size(long 8 SIZEOF_LONG)
 assert_type_size("void *" 8 SIZEOF_PTR)
 
 
+#+++++++++++++++++++++++++++#
+#     find some command     #
+#+++++++++++++++++++++++++++#
+
+check_program(git)
+check_program(autoreconf)
+check_program(aclocal)
+
+
 #++++++++++++++++++++++#
 #     find libpcre     #
 #++++++++++++++++++++++#
 
 check_header(HAVE_PCRE_H "pcre.h")
 set(CMAKE_LIBRARY_PATH "/usr/lib/x86_64-linux-gnu")
-find_library(HAVE_LIBPCRE NAMES pcre)
+check_library(HAVE_LIBPCRE "pcre")
 
 
 #++++++++++++++++++++++#
@@ -139,7 +164,7 @@ if(USE_DBUS)
     )
     check_header(HAVE_DBUS_H "dbus/dbus.h")
     check_header(HAVE_DBUS_ARCH_DEPS_H "dbus/dbus-arch-deps.h")
-    find_library(HAVE_LIBDBUS NAMES dbus-1)
+    check_library(HAVE_LIBDBUS "dbus-1")
 endif()
 
 
