@@ -155,18 +155,21 @@ TEST_F(UnicodeTest, multi2) {
 
     // ja
     r = setlocale(LC_CTYPE, "ja_JP.UTF-8");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(r != nullptr));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, UnicodeUtil::localeAwareWidth(code)));
+    if(r != nullptr) {
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, UnicodeUtil::localeAwareWidth(code)));
+    }
 
     // zh
     r = setlocale(LC_CTYPE, "zh_CN.UTF-8");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(r != nullptr));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, UnicodeUtil::localeAwareWidth(code)));
+    if(r != nullptr) {
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, UnicodeUtil::localeAwareWidth(code)));
+    }
 
     // ko
     r = setlocale(LC_CTYPE, "ko_KR.UTF-8");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(r != nullptr));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, UnicodeUtil::localeAwareWidth(code)));
+    if(r != nullptr) {
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, UnicodeUtil::localeAwareWidth(code)));
+    }
 
 
     // reset locale
