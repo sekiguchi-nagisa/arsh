@@ -45,7 +45,7 @@ public:
     NON_COPYABLE(ArgsWrapper);
 
     explicit ArgsWrapper(unsigned int pos) : token({pos, 1}) {}
-    ArgsWrapper(ArgsWrapper &&a) = default;
+    ArgsWrapper(ArgsWrapper &&) = default;
     ArgsWrapper(std::nullptr_t) : ArgsWrapper(-1) {}
 
     ~ArgsWrapper();
