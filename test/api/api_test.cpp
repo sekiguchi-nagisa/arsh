@@ -114,14 +114,12 @@ TEST(API, case4) {
     SCOPED_TRACE("");
 
     // null arguments
-    int r = DSState_complete(nullptr, nullptr, 1, nullptr);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, r));
+    DSState_complete(nullptr, nullptr, 1, nullptr); // do nothing
 
     DSState *state = DSState_create();
 
     DSCandidates c;
-    r = DSState_complete(state, "echo ~", 6, &c);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, r));
+    DSState_complete(state, "echo ~", 6, &c);
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(c.values != nullptr));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(c.size > 0));
 
@@ -134,9 +132,7 @@ TEST(API, case4) {
     DSCandidates_release(&c);
 
 
-    r = DSState_complete(state, "echo ~r", 7, &c);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, r));
-
+    DSState_complete(state, "echo ~r", 7, &c);
     expect = filter(expect, "~r");
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect.size(), c.size));
     for(unsigned int i = 0; i < c.size; i++) {

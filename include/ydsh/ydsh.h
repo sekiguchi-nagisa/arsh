@@ -280,10 +280,8 @@ typedef struct {
  * @param cursor
  * @param c
  * may be null.
- * @return
- * if completion success, return 0. otherwise return -1.
  */
-int DSState_complete(const DSState *st, const char *buf, size_t cursor, DSCandidates *c);
+void DSState_complete(const DSState *st, const char *buf, size_t cursor, DSCandidates *c);
 
 /**
  * release buffer of candidates.

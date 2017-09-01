@@ -688,9 +688,9 @@ void DSState_addTerminationHook(DSState *st, TerminationHook hook) {
     st->terminationHook = hook;
 }
 
-int DSState_complete(const DSState *st, const char *buf, size_t cursor, DSCandidates *c) {
+void DSState_complete(const DSState *st, const char *buf, size_t cursor, DSCandidates *c) {
     if(c == nullptr) {
-        return -1;
+        return;
     }
 
     // init candidates
@@ -698,7 +698,7 @@ int DSState_complete(const DSState *st, const char *buf, size_t cursor, DSCandid
     c->values = nullptr;
 
     if(st == nullptr || buf == nullptr || cursor == 0) {
-        return -1;
+        return;
     }
 
     std::string line(buf, cursor);
@@ -710,7 +710,6 @@ int DSState_complete(const DSState *st, const char *buf, size_t cursor, DSCandid
     // write to DSCandidates
     c->size = sbuf.size();
     c->values = extract(std::move(sbuf));
-    return 0;
 }
 
 void DSCandidates_release(DSCandidates *c) {
