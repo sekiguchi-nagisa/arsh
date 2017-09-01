@@ -188,7 +188,7 @@ static void exitShell(DSState &st, unsigned int status) {
     exit(status);
 }
 
-static void importEnv(DSState &state, bool hasDefault) {
+static const char *loadEnv(DSState &state, bool hasDefault) {
     DSValue dValue;
     if(hasDefault) {
         dValue = state.pop();
@@ -197,16 +197,17 @@ static void importEnv(DSState &state, bool hasDefault) {
     const char *name = typeAs<String_Object>(nameObj)->getValue();
 
     const char *env = getenv(name);
-    if(hasDefault && env == nullptr) {
+    if(env == nullptr && hasDefault) {
         setenv(name, typeAs<String_Object>(dValue)->getValue(), 1);
+        env = getenv(name);
     }
 
-    env = getenv(name);
     if(env == nullptr) {
         std::string str = UNDEF_ENV_ERROR;
         str += name;
         throwSystemError(state, EINVAL, std::move(str));
     }
+    return env;
 }
 
 static void clearOperandStack(DSState &st) {
@@ -1493,13 +1494,11 @@ static bool mainLoop(DSState &state) {
         }
         vmcase(IMPORT_ENV) {
             unsigned char b = read8(GET_CODE(state), ++state.pc());
-            importEnv(state, b > 0);
+            loadEnv(state, b > 0);
             vmnext;
         }
         vmcase(LOAD_ENV) {
-            DSValue name = state.pop();
-            const char *value = getenv(typeAs<String_Object>(name)->getValue());
-            assert(value != nullptr);
+            const char *value = loadEnv(state, false);
             state.push(DSValue::create<String_Object>(state.pool.getStringType(), value));
             vmnext;
         }
