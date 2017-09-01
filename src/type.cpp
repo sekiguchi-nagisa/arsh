@@ -967,7 +967,7 @@ TypeLookupError createTLError(TLError, const char *kind, const char *fmt, ...) {
 
     va_start(arg, fmt);
     char *str = nullptr;
-    vasprintf(&str, fmt, arg);
+    if(vasprintf(&str, fmt, arg) == -1) { abort(); }
     va_end(arg);
 
     TypeLookupError error(kind, str);
@@ -980,7 +980,7 @@ TypeCheckError createTCError(TCError, const Node &node, const char *kind, const 
 
     va_start(arg, fmt);
     char *str = nullptr;
-    vasprintf(&str, fmt, arg);
+    if(vasprintf(&str, fmt, arg) == -1) { abort(); }
     va_end(arg);
 
     TypeCheckError error(node.getToken(), kind, str);
