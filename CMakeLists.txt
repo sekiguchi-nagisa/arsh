@@ -285,6 +285,10 @@ set(GTEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/gtest)
 add_subdirectory(${GTEST_DIR})
 
 add_definitions(-D_GNU_SOURCE)
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    add_definitions(-D_FORTIFY_SOURCE=2)
+endif()
+
 set(YDSH_STATIC ydsh_static)
 add_library(${YDSH_STATIC} STATIC ${YDSH_SRC} ${lexer_src} ${bind_src})
 add_dependencies(${YDSH_STATIC} gen_lexer gen_binding gen_bind embed_script)

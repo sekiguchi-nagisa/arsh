@@ -661,9 +661,15 @@ static int doIOHere(const String_Object &value) {
     dup2(pipe[0][READ_PIPE], STDIN_FILENO);
 
     if(value.size() + 1 <= PIPE_BUF) {
-        write(pipe[0][WRITE_PIPE], value.getValue(), sizeof(char) * value.size());
-        write(pipe[0][WRITE_PIPE], "\n", 1);
+        int errnum = 0;
+        if(write(pipe[0][WRITE_PIPE], value.getValue(), sizeof(char) * value.size()) < 0) {
+            errnum = errno;
+        }
+        if(errnum == 0 && write(pipe[0][WRITE_PIPE], "\n", 1) < 0) {
+            errnum = errno;
+        }
         closeAllPipe(1, pipe);
+        return errnum;
     } else {
         pid_t pid = fork();
         if(pid < 0) {
@@ -680,8 +686,8 @@ static int doIOHere(const String_Object &value) {
         }
         closeAllPipe(1, pipe);
         waitpid(pid, nullptr, 0);
+        return 0;
     }
-    return 0;
 }
 
 /**
@@ -932,7 +938,8 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
         xexecve(cmd.filePath, argv, nullptr);
 
         int errnum = errno;
-        write(selfpipe[WRITE_PIPE], &errnum, sizeof(int));
+        int r = write(selfpipe[WRITE_PIPE], &errnum, sizeof(int));
+        (void) r;   //FIXME:
         exit(-1);
     } else {    // parent process
         close(selfpipe[WRITE_PIPE]);
