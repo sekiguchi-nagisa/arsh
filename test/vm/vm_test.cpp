@@ -56,7 +56,7 @@ private:
     }
 
 protected:
-    void eval(const char *code, DSErrorKind kind) {
+    void eval(const char *code, DSErrorKind kind = DS_ERROR_KIND_SUCCESS) {
         DSError e;
         DSState_eval(this->state, "(dummy)", code, strlen(code), &e);
         ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(kind, e.kind));
@@ -95,10 +95,10 @@ TEST_F(VMTest, base) {
 }
 
 TEST_F(VMTest, deinit1) {
-    this->eval("var a = new [Int]()", DS_ERROR_KIND_SUCCESS);
+    this->eval("var a = new [Int]()");
     ASSERT_(RefCount("a", 1));
 
-    this->eval("{ var b = $a}", DS_ERROR_KIND_SUCCESS);
+    this->eval("{ var b = $a}");
     ASSERT_(RefCount("a", 1));
 
     this->eval("{ var b = $a; if $true { var c = $a }; $RANDOM; }", DS_ERROR_KIND_SUCCESS, OpCode::RAND, [&]{
@@ -115,16 +115,16 @@ TEST_F(VMTest, deinit2) {
 }
 
 TEST_F(VMTest, deinit3) {
-    this->eval("var i = 0; while $i < 2 { var b = $@; $i++ }", DS_ERROR_KIND_SUCCESS);
+    this->eval("var i = 0; while $i < 2 { var b = $@; $i++ }");
     ASSERT_(RefCount("@", 1));
 
-    this->eval("while $true { var b = $@; break; }", DS_ERROR_KIND_SUCCESS);
+    this->eval("while $true { var b = $@; break; }");
     ASSERT_(RefCount("@", 1));
 
-    this->eval("for(var i = $@; $true;) { var b = $i; break; }", DS_ERROR_KIND_SUCCESS);
+    this->eval("for(var i = $@; $true;) { var b = $i; break; }");
     ASSERT_(RefCount("@", 1));
 
-    this->eval("for(var i = 0; $i < 3; $i++) { var b = $@; continue; }", DS_ERROR_KIND_SUCCESS);
+    this->eval("for(var i = 0; $i < 3; $i++) { var b = $@; continue; }");
     ASSERT_(RefCount("@", 1));
 }
 
@@ -149,7 +149,7 @@ TEST_F(VMTest, deinit6) {
 }
 
 TEST_F(VMTest, deinit7) {
-    this->eval("try { var a = $@; 34 / 0; var b = $a; } catch($e) {}", DS_ERROR_KIND_SUCCESS);
+    this->eval("try { var a = $@; 34 / 0; var b = $a; } catch($e) {}");
     ASSERT_(RefCount("@", 1));
 
     this->eval("try { while $true { var a = $@; break; } } finally {  $RANDOM; }", DS_ERROR_KIND_SUCCESS, OpCode::RAND, [&]{
@@ -178,7 +178,7 @@ TEST_F(VMTest, deinit10) {
 }
 
 TEST_F(VMTest, sig1) {
-    this->eval("function f($s : Signal) {}", DS_ERROR_KIND_SUCCESS);
+    this->eval("function f($s : Signal) {}");
 //    auto *func = this->getFuncObject("f");
     auto func = this->getValue("f");
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(func != nullptr));
