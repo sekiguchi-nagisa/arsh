@@ -416,7 +416,8 @@ private:
             return false;
         }
 
-        if((this->inFunc() || this->inUDC()) && this->curBuilder().localVars.size() == 1) {
+        // when toplevel block of function or udc
+        if((this->inFunc() || this->inUDC()) && this->curBuilder().localVars.size() == 0) {
             return false;
         }
         return true;

@@ -141,12 +141,12 @@ TEST_F(VMTest, deinit5) {
             });
 }
 
-//TEST_F(VMTest, deinit6) {
-//    this->eval("function f($a : [String]) { var b = $a; { var c = $b }; $RANDOM; var c = $b; }; $f($@)",
-//               DS_ERROR_KIND_SUCCESS, OpCode::RAND, [&] {
-//                ASSERT_(RefCount("@", 3));
-//            });
-//}
+TEST_F(VMTest, deinit6) {
+    this->eval("function f($a : [String]) { var b = $a; { var c = $b }; $RANDOM; var c = $b; }; $f($@)",
+               DS_ERROR_KIND_SUCCESS, OpCode::RAND, [&] {
+                ASSERT_(RefCount("@", 3));
+            });
+}
 
 TEST_F(VMTest, deinit7) {
     this->eval("try { var a = $@; 34 / 0; var b = $a; } catch($e) {}", DS_ERROR_KIND_SUCCESS);
