@@ -1,0 +1,37 @@
+
+# set env
+assert set_env
+set_env AAA=aaa BBB=bbb
+assert $? == 0
+assert check_env AAA BBB
+
+set_env EEE= CCC DDD=ddd
+assert $? == 1
+assert not check_env CCC
+assert not check_env EEE
+assert { import-env EEE; $EEE; }.empty()
+assert not check_env DDD
+
+assert "$(set_env CCC 2>&1)" == "ydsh: set_env: CCC: Invalid argument"
+assert "$(set_env =CCC 2>&1)" == "ydsh: set_env: =CCC: Invalid argument"
+
+# unset env
+assert unset_env
+unset_env H=
+assert $? == 1
+assert "$(unset_env =CCC 2>&1)" == "ydsh: unset_env: =CCC: Invalid argument"
+
+import-env AAA
+import-env BBB
+assert $AAA == 'aaa'
+assert $BBB == 'bbb'
+
+assert unset_env AAA BBB
+
+var f = $false as Any
+try { $AAA; } catch $e { $f = $e; }
+assert $f is SystemError
+
+$f = 34
+try { $BBB; } catch $e { $f = $e; }
+assert $f is SystemError

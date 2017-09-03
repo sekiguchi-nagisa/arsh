@@ -52,8 +52,10 @@ static int builtin_history(DSState &state, Array_Object &argvObj);
 static int builtin_ps_intrp(DSState &state, Array_Object &argvObj);
 static int builtin_pwd(DSState &state, Array_Object &argvObj);
 static int builtin_read(DSState &state, Array_Object &argvObj);
+static int builtin_setenv(DSState &state, Array_Object &argObj);
 static int builtin_test(DSState &state, Array_Object &argvObj);
 static int builtin_true(DSState &state, Array_Object &argvObj);
+static int builtin_unsetenv(DSState &state, Array_Object &argvObj);
 
 const struct {
     const char *commandName;
@@ -172,6 +174,8 @@ const struct {
                 "        -s         disable echo back\n"
                 "        -u         specify file descriptor\n"
                 "        -t timeout set timeout second (only available if input fd is a tty)"},
+        {"set_env", builtin_setenv, "[name=env ...]",
+                "    set environmental variables."},
         {"test", builtin_test, "[expr]",
                 "    Unary or Binary expressions.\n"
                 "    If expression is true, return 0\n"
@@ -224,6 +228,8 @@ const struct {
                 "        -G FILE        check if file is effectively owned by group"},
         {"true", builtin_true, "",
                 "    Always success (exit status is 0)."},
+        {"unset_env", builtin_unsetenv, "[name ...]",
+                "    unset environmental variables."},
 };
 
 unsigned int getBuiltinCommandSize() {
@@ -1238,6 +1244,36 @@ static int builtin_history(DSState &state, Array_Object &argvObj) {
     case 'w':
         DSState_saveHistory(&state, fileName);
         break;
+    }
+    return 0;
+}
+
+static int builtin_setenv(DSState &, Array_Object &argvObj) {
+    auto end = argvObj.getValues().end();
+    for(auto iter = argvObj.getValues().begin() + 1; iter != end; ++iter) {
+        const char *kv = str(*iter);
+        auto *ptr = strchr(kv, '=');
+        errno = EINVAL;
+        if(ptr != nullptr && ptr != kv) {
+            std::string name(kv, ptr - kv);
+            if(setenv(name.c_str(), ptr + 1, 1) == 0) {
+                continue;
+            }
+        }
+        PERROR(argvObj, "%s", kv);
+        return 1;
+    }
+    return 0;
+}
+
+static int builtin_unsetenv(DSState &, Array_Object &argvObj) {
+    auto end = argvObj.getValues().end();
+    for(auto iter = argvObj.getValues().begin() + 1; iter != end; ++iter) {
+        const char *envName = str(*iter);
+        if(unsetenv(envName) != 0) {
+            PERROR(argvObj, "%s", envName);
+            return 1;
+        }
     }
     return 0;
 }
