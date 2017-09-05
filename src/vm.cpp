@@ -473,12 +473,7 @@ static void forkAndCapture(bool isStr, DSState &state) {
             }
 
             // remove last newlines
-            std::string::size_type pos = str.find_last_not_of('\n');
-            if(pos == std::string::npos) {
-                str.clear();
-            } else {
-                str.erase(pos + 1);
-            }
+            for(; !str.empty() && str.back() == '\n'; str.pop_back());
 
             obj = DSValue::create<String_Object>(state.pool.getStringType(), std::move(str));
         } else {    // capture stdout as String Array
@@ -524,9 +519,7 @@ static void forkAndCapture(bool isStr, DSState &state) {
             }
 
             // remove last newline
-            while(!str.empty() && str.back() == '\n') {
-                str.pop_back();
-            }
+            for(; !str.empty() && str.back() == '\n'; str.pop_back());
 
             // append remain
             if(!str.empty() || !hasSpace(ifsSize, ifs)) {
