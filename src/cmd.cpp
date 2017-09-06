@@ -52,7 +52,7 @@ static int builtin_history(DSState &state, Array_Object &argvObj);
 static int builtin_ps_intrp(DSState &state, Array_Object &argvObj);
 static int builtin_pwd(DSState &state, Array_Object &argvObj);
 static int builtin_read(DSState &state, Array_Object &argvObj);
-static int builtin_setenv(DSState &state, Array_Object &argObj);
+static int builtin_setenv(DSState &state, Array_Object &argvObj);
 static int builtin_test(DSState &state, Array_Object &argvObj);
 static int builtin_true(DSState &state, Array_Object &argvObj);
 static int builtin_unsetenv(DSState &state, Array_Object &argvObj);

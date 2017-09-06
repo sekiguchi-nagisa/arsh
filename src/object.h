@@ -303,7 +303,7 @@ private:
 public:
     Int_Object(DSType &type, int value) : DSObject(type), value(value) { }
 
-    ~Int_Object() = default;
+    ~Int_Object() override = default;
 
     int getValue() const {
         return this->value;
@@ -321,7 +321,7 @@ private:
 public:
     Long_Object(DSType &type, long value) : DSObject(type), value(value) { }
 
-    ~Long_Object() = default;
+    ~Long_Object() override = default;
 
     long getValue() const {
         return this->value;
@@ -339,7 +339,7 @@ private:
 public:
     Float_Object(DSType &type, double value) : DSObject(type), value(value) { }
 
-    ~Float_Object() = default;
+    ~Float_Object() override = default;
 
     double getValue() const {
         return this->value;
@@ -357,7 +357,7 @@ private:
 public:
     Boolean_Object(DSType &type, bool value) : DSObject(type), value(value) { }
 
-    ~Boolean_Object() = default;
+    ~Boolean_Object() override = default;
 
     bool getValue() const {
         return this->value;
@@ -382,7 +382,7 @@ public:
     String_Object(DSType &type, const std::string &value) :
             DSObject(type), value(value) { }
 
-    ~String_Object() = default;
+    ~String_Object() override = default;
 
     const char *getValue() const {
         return this->value.c_str();
@@ -427,7 +427,7 @@ private:
 public:
     Regex_Object(DSType &type, PCRE &&re) : DSObject(type), re(std::move(re)) {}
 
-    ~Regex_Object() = default;
+    ~Regex_Object() override = default;
 
     const PCRE &getRe() const {
         return this->re;
@@ -445,7 +445,7 @@ public:
     Array_Object(DSType &type, std::vector<DSValue> &&values) :
             DSObject(type), curIndex(0), values(std::move(values)) { }
 
-    ~Array_Object() = default;
+    ~Array_Object() override = default;
 
     const std::vector<DSValue> &getValues() const {
         return this->values;
@@ -519,7 +519,7 @@ private:
 public:
     explicit Map_Object(DSType &type) : DSObject(type) { }
 
-    ~Map_Object() = default;
+    ~Map_Object() override = default;
 
     const HashMap &getValueMap() const {
         return this->valueMap;
@@ -602,7 +602,7 @@ public:
     explicit BaseObject(DSType &type) :
             DSObject(type), fieldTable(new DSValue[type.getFieldSize()]) { }
 
-    virtual ~BaseObject();
+    ~BaseObject() override;
 
     DSValue *getFieldTable() override;
 };
@@ -610,7 +610,7 @@ public:
 struct Tuple_Object : public BaseObject {
     explicit Tuple_Object(DSType &type) : BaseObject(type) { }
 
-    ~Tuple_Object() = default;
+    ~Tuple_Object() override = default;
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
 
@@ -673,7 +673,7 @@ private:
             DSObject(type), message(std::move(message)) { }
 
 public:
-    ~Error_Object() = default;
+    ~Error_Object() override = default;
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
 
@@ -868,9 +868,9 @@ private:
 public:
     NON_COPYABLE(CompiledCode);
 
-    CompiledCode(const SourceInfoPtr &srcInfo, const char *name, unsigned char *code,
+    CompiledCode(SourceInfoPtr srcInfo, const char *name, unsigned char *code,
                  DSValue *constPool, SourcePosEntry *sourcePosEntries, ExceptionEntry *exceptionEntries) noexcept :
-            DSCode(code), srcInfo(srcInfo), name(name == nullptr ? nullptr : strdup(name)),
+            DSCode(code), srcInfo(std::move(srcInfo)), name(name == nullptr ? nullptr : strdup(name)),
             constPool(constPool), sourcePosEntries(sourcePosEntries), exceptionEntries(exceptionEntries) { }
 
     CompiledCode(CompiledCode &&c) noexcept :
@@ -952,7 +952,7 @@ public:
     explicit FuncObject(CompiledCode &&callable) :
             DSObject(nullptr), code(std::move(callable)) { }
 
-    ~FuncObject() = default;
+    ~FuncObject() override = default;
 
     const CompiledCode &getCode() const {
         return this->code;
@@ -972,7 +972,7 @@ std::tuple<const DSType *, const char *, const DSType *> decodeFieldDescriptor(c
 struct ProxyObject : public DSObject {
     explicit ProxyObject(DSType &type) : DSObject(type) { }
 
-    virtual ~ProxyObject() = default;
+    ~ProxyObject() override = default;
 
     /**
      * invoke method and return result.

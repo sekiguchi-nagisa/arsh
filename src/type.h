@@ -187,7 +187,7 @@ public:
             DSType(superType, DSType::FUNC_TYPE),
             returnType(returnType), paramTypes(std::move(paramTypes)) {}
 
-    ~FunctionType() = default;
+    ~FunctionType() override = default;
 
     DSType *getReturnType() const {
         return this->returnType;
@@ -273,7 +273,7 @@ protected:
 public:
     BuiltinType(DSType *superType, native_type_info_t info, flag8_set_t attribute);
 
-    virtual ~BuiltinType();
+    ~BuiltinType() override;
 
     MethodHandle *getConstructorHandle(TypePool &typePool) override;
     const DSCode *getConstructor() override;
@@ -308,7 +308,7 @@ public:
                 std::vector<DSType *> &&elementTypes, flag8_set_t attribute = 0) :
             BuiltinType(superType, info, attribute), elementTypes(std::move(elementTypes)) { }
 
-    virtual ~ReifiedType() = default;
+    ~ReifiedType() override = default;
 
     const std::vector<DSType *> &getElementTypes() const {
         return this->elementTypes;
@@ -329,7 +329,7 @@ public:
      * superType is AnyType ot VariantType
      */
     TupleType(native_type_info_t info, DSType *superType, std::vector<DSType *> &&types);
-    ~TupleType();
+    ~TupleType() override;
 
     /**
      * return types.size()
@@ -357,7 +357,7 @@ public:
     explicit InterfaceType(DSType *superType) :
             DSType(superType, DSType::IFACE_TYPE) { }
 
-    ~InterfaceType();
+    ~InterfaceType() override;
 
     /**
      * return null, if found duplicated field
@@ -386,7 +386,7 @@ public:
             DSType(superType, DSType::EXTENDIBLE),
             constructorHandle() { }
 
-    ~ErrorType();
+    ~ErrorType() override;
 
     MethodHandle *getConstructorHandle(TypePool &typePool) override;
     const DSCode *getConstructor() override;

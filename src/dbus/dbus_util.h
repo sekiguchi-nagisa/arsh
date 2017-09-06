@@ -54,7 +54,7 @@ private:
 
 public:
     DescriptorBuilder(TypePool *pool, BaseTypeDescriptorMap *typeMap) : pool(pool), typeMap(typeMap) { }
-    ~DescriptorBuilder() = default;
+    ~DescriptorBuilder() override = default;
 
     const char *buildDescriptor(DSType &type);
 
@@ -86,7 +86,7 @@ public:
     explicit MessageBuilder(TypePool *pool) :
             pool(pool), typeMap(nullptr), descBuilder(nullptr), iter() { }
 
-    ~MessageBuilder() {
+    ~MessageBuilder() override {
         delete this->typeMap;
         delete this->descBuilder;
     }

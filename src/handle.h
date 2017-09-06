@@ -18,6 +18,7 @@
 #define YDSH_HANDLE_H
 
 #include <string>
+#include <utility>
 #include <vector>
 #include <unordered_map>
 
@@ -119,11 +120,11 @@ protected:
     std::vector<DSType *> paramTypes;
 
 public:
-    FunctionHandle(DSType *returnType, const std::vector<DSType *> &paramTypes, unsigned int fieldIndex) :
+    FunctionHandle(DSType *returnType, std::vector<DSType *> paramTypes, unsigned int fieldIndex) :
             FieldHandle(nullptr, fieldIndex, FieldAttribute::READ_ONLY | FieldAttribute::FUNC_HANDLE | FieldAttribute::GLOBAL),
-            returnType(returnType), paramTypes(paramTypes) { }
+            returnType(returnType), paramTypes(std::move(paramTypes)) { }
 
-    ~FunctionHandle() = default;
+    ~FunctionHandle() override = default;
 
     DSType *getFieldType(TypePool &typePool) override;
 

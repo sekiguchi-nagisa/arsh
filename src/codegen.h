@@ -304,7 +304,7 @@ public:
     ByteCodeGenerator(TypePool &pool, bool assertion) :
             pool(pool), assertion(assertion), handle_STR(nullptr) { }
 
-    ~ByteCodeGenerator();
+    ~ByteCodeGenerator() override;
 
 private:
     CodeBuilder &curBuilder() noexcept {
@@ -417,7 +417,7 @@ private:
         }
 
         // when toplevel block of function or udc
-        if((this->inFunc() || this->inUDC()) && this->curBuilder().localVars.size() == 0) {
+        if((this->inFunc() || this->inUDC()) && this->curBuilder().localVars.empty()) {
             return false;
         }
         return true;

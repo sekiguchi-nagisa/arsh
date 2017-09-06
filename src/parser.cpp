@@ -136,7 +136,7 @@ namespace ydsh {
 struct CallCounter {
     unsigned int &count;
 
-    CallCounter(unsigned int &count) : count(count) {}
+    explicit CallCounter(unsigned int &count) : count(count) {}
 
     ~CallCounter() {
         --this->count;

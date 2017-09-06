@@ -178,7 +178,7 @@ protected:
     TypeNode(Kind typeKind, Token token) : Node(NodeKind::Type, token), typeKind(typeKind) { }
 
 public:
-    virtual ~TypeNode() = default;
+    ~TypeNode() override = default;
 
     void dump(NodeDumper &dumper) const override;
 };
@@ -191,7 +191,7 @@ public:
     BaseTypeNode(Token token, std::string &&typeName) :
             TypeNode(TypeNode::Base, token), typeName(std::move(typeName)) { }
 
-    ~BaseTypeNode() = default;
+    ~BaseTypeNode() override = default;
 
     const std::string &getTokenText() const {
         return this->typeName;
@@ -213,7 +213,7 @@ public:
             TypeNode(TypeNode::Reified, templateTypeNode->getToken()),
             templateTypeNode(templateTypeNode) { }
 
-    ~ReifiedTypeNode();
+    ~ReifiedTypeNode() override;
 
     void addElementTypeNode(TypeNode *typeNode);
 
@@ -242,7 +242,7 @@ public:
             TypeNode(TypeNode::Func, {startPos, 0}),
             returnTypeNode(returnTypeNode) { }
 
-    ~FuncTypeNode();
+    ~FuncTypeNode() override;
 
     void addParamTypeNode(TypeNode *typeNode);
 
@@ -269,7 +269,7 @@ public:
     DBusIfaceTypeNode(Token token, std::string &&name) :
             TypeNode(TypeNode::DBusIface, token), name(std::move(name)) { }
 
-    ~DBusIfaceTypeNode() = default;
+    ~DBusIfaceTypeNode() override = default;
 
     const std::string &getTokenText() const {
         return this->name;
@@ -291,7 +291,7 @@ public:
         this->addTypeNode(typeNode);
     }
 
-    ~ReturnTypeNode();
+    ~ReturnTypeNode() override;
 
     void addTypeNode(TypeNode *typeNode);
 
@@ -316,7 +316,7 @@ public:
         this->updateToken(exprNode->getToken());
     }
 
-    ~TypeOfNode();
+    ~TypeOfNode() override;
 
     Node *getExprNode() const {
         return this->exprNode;
@@ -417,7 +417,7 @@ public:
         return node;
     }
 
-    ~NumberNode() = default;
+    ~NumberNode() override = default;
 
     int getIntValue() const {
         return this->intValue;
@@ -456,7 +456,7 @@ public:
     StringNode(Token token, std::string &&value, StringKind kind = STRING) :
             Node(NodeKind::String, token), value(std::move(value)), kind(kind) { }
 
-    ~StringNode() = default;
+    ~StringNode() override = default;
 
     const std::string &getValue() const {
         return this->value;
@@ -489,7 +489,7 @@ public:
     explicit StringExprNode(unsigned int startPos) :
             Node(NodeKind::StringExpr, {startPos, 1}) { }
 
-    ~StringExprNode();
+    ~StringExprNode() override;
 
     void addExprNode(Node *node);
 
@@ -518,7 +518,7 @@ public:
     RegexNode(Token token, std::string &&str, PCRE &&re) :
             Node(NodeKind::Regex, token), reStr(std::move(str)), re(std::move(re)) { }
 
-    ~RegexNode() = default;
+    ~RegexNode() override = default;
 
     const std::string &getReStr() const {
         return this->reStr;
@@ -541,7 +541,7 @@ public:
         this->addExprNode(node);
     }
 
-    ~ArrayNode();
+    ~ArrayNode() override;
 
     void addExprNode(Node *node);
 
@@ -567,7 +567,7 @@ public:
         this->addEntry(keyNode, valueNode);
     }
 
-    ~MapNode();
+    ~MapNode() override;
 
     void addEntry(Node *keyNode, Node *valueNode);
 
@@ -603,7 +603,7 @@ public:
         this->addNode(node);
     }
 
-    ~TupleNode();
+    ~TupleNode() override;
 
     void addNode(Node *node);
 
@@ -627,7 +627,7 @@ protected:
             Node(kind, token), index(0) { }
 
 public:
-    virtual ~AssignableNode() = default;
+    ~AssignableNode() override = default;
 
     void setAttribute(FieldHandle *handle) {
         this->index = handle->getFieldIndex();
@@ -653,7 +653,7 @@ public:
     VarNode(Token token, std::string &&varName) :
             AssignableNode(NodeKind::Var, token), varName(std::move(varName)) { }
 
-    ~VarNode() = default;
+    ~VarNode() override = default;
 
     const std::string &getVarName() const {
         return this->varName;
@@ -679,7 +679,7 @@ public:
             AssignableNode(NodeKind::Access, recvNode->getToken()),
             recvNode(recvNode), nameNode(nameNode), additionalOp(NOP) { }
 
-    ~AccessNode();
+    ~AccessNode() override;
 
     Node *getRecvNode() const {
         return this->recvNode;
@@ -738,7 +738,7 @@ private:
 public:
      TypeOpNode(Node *exprNode, TypeNode *type, OpKind init, bool dupTypeToken = false);
 
-    ~TypeOpNode();
+    ~TypeOpNode() override;
 
     Node *getExprNode() const {
         return this->exprNode;
@@ -776,7 +776,7 @@ private:
 public:
     ApplyNode(Node *exprNode, std::vector<Node *> &&argNodes);
 
-    ~ApplyNode();
+    ~ApplyNode() override;
 
     Node *getExprNode() const {
         return this->exprNode;
@@ -809,7 +809,7 @@ public:
 
     MethodCallNode(Node *recvNode, std::string &&methodName, std::vector<Node *> &&argNodes);
 
-    ~MethodCallNode();
+    ~MethodCallNode() override;
 
     void setRecvNode(Node *node) {
         this->recvNode = node;
@@ -868,7 +868,7 @@ private:
 public:
     NewNode(unsigned int startPos, TypeNode *targetTypeNode, std::vector<Node *> &&argNodes);
 
-    ~NewNode();
+    ~NewNode() override;
 
     TypeNode *getTargetTypeNode() const {
         return this->targetTypeNode;
@@ -908,7 +908,7 @@ public:
         this->updateToken(exprNode->getToken());
     }
 
-    ~UnaryOpNode();
+    ~UnaryOpNode() override;
 
     Node *getExprNode() const {
         return this->exprNode;
@@ -967,7 +967,7 @@ public:
         this->updateToken(rightNode->getToken());
     }
 
-    ~BinaryOpNode();
+    ~BinaryOpNode() override;
 
     Node *getLeftNode() const {
         return this->leftNode;
@@ -1016,7 +1016,7 @@ public:
         this->addSegmentNode(segmentNode);
     }
 
-    ~CmdArgNode();
+    ~CmdArgNode() override;
 
     void addSegmentNode(Node *node);
 
@@ -1048,7 +1048,7 @@ public:
     RedirNode(TokenKind kind, Token token) :
             RedirNode(kind, new CmdArgNode(new StringNode(token, std::string("")))) {}
 
-    ~RedirNode();
+    ~RedirNode() override;
 
     TokenKind getRedirectOP() {
         return this->op;
@@ -1082,7 +1082,7 @@ public:
             Node(NodeKind::Cmd, nameNode->getToken()),
             nameNode(nameNode), redirCount(0), inPipe(false) { }
 
-    ~CmdNode();
+    ~CmdNode() override;
 
     Node *getNameNode() const {
         return this->nameNode;
@@ -1122,7 +1122,7 @@ public:
         this->addNode(rightNode);
     }
 
-    ~PipelineNode();
+    ~PipelineNode() override;
 
     void addNode(Node *node);
 
@@ -1152,7 +1152,7 @@ public:
     SubstitutionNode(unsigned int pos, Node *exprNode) :
             Node(NodeKind::Substitution, {pos, 1}), exprNode(exprNode), strExpr(false) { }
 
-    ~SubstitutionNode();
+    ~SubstitutionNode() override;
 
     Node *getExprNode() const {
         return this->exprNode;
@@ -1183,7 +1183,7 @@ public:
         this->addRedirNode(redirNode);
     }
 
-    ~WithNode();
+    ~WithNode() override;
 
     Node *getExprNode() const {
         return this->exprNode;
@@ -1223,7 +1223,7 @@ public:
         this->updateToken(messageNode->getToken());
     }
 
-    ~AssertNode();
+    ~AssertNode() override;
 
     Node *getCondNode() const {
         return this->condNode;
@@ -1251,7 +1251,7 @@ public:
     explicit BlockNode(unsigned int startPos) :
             Node(NodeKind::Block, {startPos, 1}), baseIndex(0), varSize(0), maxVarSize(0) { }
 
-    ~BlockNode();
+    ~BlockNode() override;
 
     void addNode(Node *node);
 
@@ -1315,7 +1315,7 @@ private:
 public:
     JumpNode(Token token, bool asBreak, Node *exprNode = nullptr);
 
-    ~JumpNode();
+    ~JumpNode() override;
 
     bool isBreak() const {
         return this->asBreak;
@@ -1351,7 +1351,7 @@ public:
         this->updateToken(targetTypeNode->getToken());
     }
 
-    ~TypeAliasNode();
+    ~TypeAliasNode() override;
 
     const std::string &getAlias() const {
         return this->alias;
@@ -1389,7 +1389,7 @@ public:
     LoopNode(unsigned int startPos, Node *condNode, BlockNode *blockNode, bool asDoWhile = false) :
             LoopNode(startPos, nullptr, condNode, nullptr, blockNode, asDoWhile) {}
 
-    ~LoopNode();
+    ~LoopNode() override;
 
     Node *getInitNode() const {
         return this->initNode;
@@ -1438,7 +1438,7 @@ public:
      */
     IfNode(unsigned int startPos, Node *condNode, Node *thenNode, Node *elseNode);
 
-    ~IfNode();
+    ~IfNode() override;
 
     Node *getCondNode() const {
         return this->condNode;
@@ -1474,7 +1474,7 @@ private:
 public:
     ReturnNode(Token token, Node *exprNode);
 
-    ~ReturnNode();
+    ~ReturnNode() override;
 
     Node *getExprNode() const {
         return this->exprNode;
@@ -1493,7 +1493,7 @@ public:
         this->updateToken(exprNode->getToken());
     }
 
-    ~ThrowNode();
+    ~ThrowNode() override;
 
     Node *getExprNode() const {
         return this->exprNode;
@@ -1519,7 +1519,7 @@ public:
         this->updateToken(blockNode->getToken());
     }
 
-    ~CatchNode();
+    ~CatchNode() override;
 
     const std::string &getExceptionName() const {
         return this->exceptionName;
@@ -1562,7 +1562,7 @@ public:
         this->updateToken(blockNode->getToken());
     }
 
-    ~TryNode();
+    ~TryNode() override;
 
     BlockNode *getBlockNode() const {
         return this->blockNode;
@@ -1609,7 +1609,7 @@ private:
 public:
     VarDeclNode(unsigned int startPos, std::string &&varName, Node *exprNode, Kind kind);
 
-    ~VarDeclNode();
+    ~VarDeclNode() override;
 
     const std::string &getVarName() const {
         return this->varName;
@@ -1668,7 +1668,7 @@ public:
         this->updateToken(rightNode->getToken());
     }
 
-    ~AssignNode();
+    ~AssignNode() override;
 
     Node *getLeftNode() const {
         return this->leftNode;
@@ -1721,7 +1721,7 @@ private:
 
 public:
     ElementSelfAssignNode(MethodCallNode *leftNode, BinaryOpNode *binaryNode);
-    ~ElementSelfAssignNode();
+    ~ElementSelfAssignNode() override;
 
     Node *getRecvNode() const {
         return this->recvNode;
@@ -1772,8 +1772,8 @@ protected:
      */
     std::string name;
 
-    CallableNode(NodeKind kind, unsigned int startPos, const SourceInfoPtr &srcInfoPtr, std::string &&name) :
-            Node(kind, {startPos, 0}), srcInfoPtr(srcInfoPtr), name(std::move(name)) { }
+    CallableNode(NodeKind kind, unsigned int startPos, SourceInfoPtr srcInfoPtr, std::string &&name) :
+            Node(kind, {startPos, 0}), srcInfoPtr(std::move(srcInfoPtr)), name(std::move(name)) { }
 
     explicit CallableNode(NodeKind kind) : Node(kind, {0, 0}), srcInfoPtr(nullptr) { }
 
@@ -1829,7 +1829,7 @@ public:
             CallableNode(NodeKind::Function, startPos, srcInfoPtr, std::move(funcName)),
             returnTypeNode(), blockNode(), maxVarNum(0), varIndex(0) { }
 
-    ~FunctionNode();
+    ~FunctionNode() override;
 
     void addParamNode(VarNode *node, TypeNode *paramType);
 
@@ -1893,7 +1893,7 @@ public:
     InterfaceNode(unsigned int startPos, std::string &&interfaceName) :
             Node(NodeKind::Interface, {startPos, 0}), interfaceName(std::move(interfaceName)) { }
 
-    ~InterfaceNode();
+    ~InterfaceNode() override;
 
     const std::string &getInterfaceName() const {
         return this->interfaceName;
@@ -1936,7 +1936,7 @@ public:
         this->updateToken(blockNode->getToken());
     }
 
-    ~UserDefinedCmdNode();
+    ~UserDefinedCmdNode() override;
 
     unsigned int getUdcIndex() const {
         return this->udcIndex;
@@ -1965,7 +1965,7 @@ class EmptyNode : public Node {
 public:
     EmptyNode() : EmptyNode({0, 0}) { }
     explicit EmptyNode(Token token) : Node(NodeKind::Empty, token) { }
-    ~EmptyNode() = default;
+    ~EmptyNode() override = default;
 
     void dump(NodeDumper &dumper) const override;
 };
@@ -1987,7 +1987,7 @@ private:
 public:
     RootNode() : CallableNode(NodeKind::Root) { }
 
-    ~RootNode();
+    ~RootNode() override;
 
     void addNode(Node *node);
 
@@ -2083,7 +2083,7 @@ struct NodeVisitor {
 };
 
 struct BaseVisitor : public NodeVisitor {
-    virtual ~BaseVisitor() = default;
+    ~BaseVisitor() override = default;
 
     virtual void visitDefault(Node &node) = 0;
 

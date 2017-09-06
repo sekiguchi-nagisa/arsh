@@ -614,7 +614,7 @@ private:
 
     std::vector<std::pair<RedirOP, DSValue>> ops;
 
-    int fds[3];
+    int fds[3]{};
 
 public:
     NON_COPYABLE(RedirConfig);
@@ -625,7 +625,7 @@ public:
         this->fds[2] = dup(STDERR_FILENO);
     }
 
-    ~RedirConfig() {
+    ~RedirConfig() override {
         if(this->restore) {
             dup2(this->fds[0], STDIN_FILENO);
             dup2(this->fds[1], STDOUT_FILENO);
@@ -1268,7 +1268,7 @@ void installSignalHandler(DSState &st, int sigNum, DSValue &&handler) {
         sigaction(sigNum, &action, nullptr);
 
         // register handler
-        st.sigVector.insertOrUpdate(sigNum, std::move(handler));
+        st.sigVector.insertOrUpdate(sigNum, handler);
     });
 }
 
@@ -1303,7 +1303,7 @@ void DBusInitSignal(DSState &st);
 std::vector<DSValue> DBusWaitSignal(DSState &st);
 
 static NativeCode initSignalTrampoline() {
-    unsigned char *code = static_cast<unsigned char *>(malloc(sizeof(unsigned char) * 9));
+    auto *code = static_cast<unsigned char *>(malloc(sizeof(unsigned char) * 9));
     code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
     code[1] = static_cast<unsigned char>(OpCode::LOAD_LOCAL);
     code[2] = static_cast<unsigned char>(1);
@@ -1676,7 +1676,7 @@ static bool mainLoop(DSState &state) {
         }
         vmcase(EXIT_SHELL) {
             auto obj = state.pop();
-            auto &type = *obj.get()->getType();
+            auto &type = *obj->getType();
 
             int ret = typeAs<Int_Object>(state.getGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS)))->getValue();
             if(type == state.pool.getInt32Type()) { // normally Int Object

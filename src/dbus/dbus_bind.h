@@ -18,6 +18,7 @@
 #define YDSH_DBUS_DBUS_BIND_IMPL_H
 
 #include <unordered_set>
+#include <utility>
 
 #include "object.h"
 #include "core.h"
@@ -49,7 +50,7 @@ private:
 public:
     Bus_Object(DSType &type, bool systemBus) : DSObject(type), conn(), systemBus(systemBus) { }
 
-    ~Bus_Object() {
+    ~Bus_Object() override {
         if(this->conn != nullptr) {
             dbus_connection_unref(this->conn);
         }
@@ -90,10 +91,10 @@ private:
     std::string uniqueName;
 
 public:
-    Service_Object(DSType &type, const DSValue &bus, std::string &&serviceName, std::string &&uniqueName) :
-            DSObject(type), bus(bus), serviceName(std::move(serviceName)), uniqueName(std::move(uniqueName)) { }
+    Service_Object(DSType &type, DSValue bus, std::string &&serviceName, std::string &&uniqueName) :
+            DSObject(type), bus(std::move(bus)), serviceName(std::move(serviceName)), uniqueName(std::move(uniqueName)) { }
 
-    ~Service_Object() = default;
+    ~Service_Object() override = default;
 
     const DSValue &getBus() const {
         return this->bus;
@@ -137,7 +138,7 @@ public:
     explicit DBus_Object(TypePool &typePool) :
             DSObject(typePool.getDBusType()), builder(&typePool) { }
 
-    ~DBus_Object() = default;
+    ~DBus_Object() override = default;
 
     MessageBuilder &getBuilder() {
         return this->builder;
@@ -219,10 +220,10 @@ public:
     /**
      * objectPath must be String_Object
      */
-    DBusProxy_Object(DSType &type, const DSValue &srcObj, const DSValue &objectPath) :
-            ProxyObject(type), srv(srcObj), objectPath(objectPath), ifaceSet(), handerMap() { }
+    DBusProxy_Object(DSType &type, DSValue srcObj, DSValue objectPath) :
+            ProxyObject(type), srv(std::move(srcObj)), objectPath(std::move(objectPath)), ifaceSet(), handerMap() { }
 
-    ~DBusProxy_Object() = default;
+    ~DBusProxy_Object() override = default;
 
     std::string toString(DSState &ctx, VisitedSet *set) override;
     bool introspect(DSState &ctx, DSType *targetType) override;

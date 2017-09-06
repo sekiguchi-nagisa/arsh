@@ -1150,7 +1150,7 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
                     goto END;
                 }
             } else if(strcmp(e.getErrorKind(), "TokenMismatched") == 0) {
-                assert(e.getExpectedTokens().size() > 0);
+                assert(!e.getExpectedTokens().empty());
                 TokenKind expected = e.getExpectedTokens().back();
                 LOG(DUMP_CONSOLE, "expected: " << toString(expected));
 

@@ -134,7 +134,7 @@ private:
         FlexBuffer<JumpNode *> jumpNodes;
         Entry *next;
 
-        Entry(Entry *prev) : next(prev) {}
+        explicit Entry(Entry *prev) : next(prev) {}
         ~Entry() {
             delete this->next;
         }
@@ -171,7 +171,7 @@ private:
     TypeChecker *checker;
 
 public:
-    TypeGenerator(TypePool &pool, TypeChecker *checker = nullptr) : pool(pool), checker(checker) {}
+    explicit TypeGenerator(TypePool &pool, TypeChecker *checker = nullptr) : pool(pool), checker(checker) {}
 
     DSType &toType(TypeNode &node);
 
