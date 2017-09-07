@@ -109,7 +109,7 @@ static bool readLine(std::string &line) {
 }
 
 static void ignoreSignal() {
-    struct sigaction ignore_act;
+    struct sigaction ignore_act{};
     ignore_act.sa_handler = SIG_IGN;
     ignore_act.sa_flags = SA_RESTART;
     sigemptyset(&ignore_act.sa_mask);
@@ -226,7 +226,7 @@ static void completeCallback(const char *buf, size_t cursor, linenoiseCompletion
     actualBuf += buf;
     actualBuf += '\n';
 
-    DSCandidates c;
+    DSCandidates c{};
     DSState_complete(state, actualBuf.c_str(), actualCursor, &c);
     lc->len = c.size;
     lc->cvec = c.values;

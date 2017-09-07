@@ -41,7 +41,7 @@ static void loadRC(DSState *state, const char *rcfile) {
     if(fp == nullptr) {
         return; // not read
     }
-    DSError e;
+    DSError e{};
     int ret = DSState_loadAndEval(state, path.c_str(), fp, &e);
     int kind = e.kind;
     fclose(fp);
@@ -57,7 +57,7 @@ static const char *statusLogPath = nullptr;
 
 template <typename F, F func, typename ...T>
 static int invoke(DSState **state, T&& ... args) {
-    DSError error;
+    DSError error{};
     int ret = func(*state, std::forward<T>(args)..., &error);
     if(statusLogPath != nullptr) {
         FILE *fp = fopen(statusLogPath, "w");
