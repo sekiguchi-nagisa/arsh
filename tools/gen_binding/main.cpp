@@ -319,7 +319,7 @@ public:
      */
     explicit CommonTypeToken(HandleInfo info) : info(info) { }
 
-    ~CommonTypeToken() = default;
+    ~CommonTypeToken() override = default;
 
     void serialize(HandleInfoSerializer &s) override {
         s.add(this->info);
@@ -354,7 +354,7 @@ private:
             typeTemp(type.release()), requiredSize(elementSize) { }
 
 public:
-    ~ReifiedTypeToken() = default;
+    ~ReifiedTypeToken() override = default;
 
     void addElement(std::unique_ptr<TypeToken> &&type) {
         this->elements.push_back(std::move(type));
@@ -417,7 +417,7 @@ public:
     explicit FuncTypeToken(std::unique_ptr<TypeToken> &&returnType) :
             typeTemp(CommonTypeToken::newTypeToken(TYPE_FUNC)), returnType(std::move(returnType)) {}
 
-    ~FuncTypeToken() = default;
+    ~FuncTypeToken() override = default;
 
     void addParamType(std::unique_ptr<TypeToken> &&type) {
         this->paramTypes.push_back(std::move(type));

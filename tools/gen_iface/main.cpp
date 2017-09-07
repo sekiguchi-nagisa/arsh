@@ -165,7 +165,7 @@ public:
 };
 
 #define STR(x) "`" #x "'"
-#define check(expr) do { if(!(expr)) { fatal("assertion fail => %s\n", STR(expr)); } } while(0)
+#define check(expr) do { if(!(expr)) { fatal("assertion fail => %s\n", STR(expr)); } } while(false)
 
 /**
  * xmlChar is actually unsigned char(UTF8)
