@@ -286,8 +286,10 @@ set(GTEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/gtest)
 add_subdirectory(${GTEST_DIR})
 
 add_definitions(-D_GNU_SOURCE)
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    add_definitions(-D_FORTIFY_SOURCE=2)
+if("${CMAKE_BUILD_TYPE}" STREQUAL "RELEASE" OR "${CMAKE_BUILD_TYPE}" STREQUAL "RELWITHDEBINFO")
+    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+        add_definitions(-D_FORTIFY_SOURCE=2)
+    endif()
 endif()
 
 set(YDSH_STATIC ydsh_static)
