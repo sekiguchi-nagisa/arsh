@@ -140,7 +140,7 @@ file() {
 
 
 $assertArray($(file '/bin'), $(complete '/bin/'))
-#assertArray($(file '/usr/bin/'), $(complete '/usr/bin/'))
+$assertArray($(file '/usr/bin/'), $(complete '/usr/bin/'))
 $assertArray($(file '.' 1), $(complete './'))
 $assertArray($(file '.'), $(complete 'echo '))
 $assertArray(['../', './'], $(complete 'echo .'))
