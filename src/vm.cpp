@@ -71,10 +71,19 @@ DSValue SignalVector::lookup(int sigNum) const {
 // #####################
 
 static std::string initLogicalWorkingDir() {
-    size_t size = PATH_MAX;
-    char buf[size];
-    const char *cwd = getcwd(buf, size);
-    return std::string(cwd != nullptr ? cwd : "");
+    const char *dir = getenv(ENV_PWD);
+    if(dir == nullptr || !S_ISDIR(getStMode(dir))) {
+        size_t size = PATH_MAX;
+        char buf[size];
+        const char *cwd = getcwd(buf, size);
+        return std::string(cwd != nullptr ? cwd : "");
+    }
+    if(dir[0] == '/') {
+        return std::string(dir);
+    }
+
+    return expandDots(nullptr, dir);
+
 }
 
 static DSHistory initHistory() {
