@@ -5,6 +5,7 @@ let SCRIPT_DIR = "$(pwd -P)"
 if not(check_env PATH) {
     export-env PATH = '/bin:/usr/bin:/usr/local/bin'
 }
+{ export-env PWD = "$(pwd)"; }
 
 type-alias Int Int32
 type-alias Uint Uint32
