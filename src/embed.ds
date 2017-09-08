@@ -1,8 +1,5 @@
 # builtin variable definition
 
-import-env OLDPWD : ""
-import-env PWD : "$(pwd)"
-
 let SCRIPT_DIR = "$(pwd -P)"
 
 if not(check_env PATH) {

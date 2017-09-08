@@ -242,6 +242,7 @@ assert $home == "$(echo ~)"
 $HOME = $home
 
 ## expand to PWD
+import-env PWD : "$(pwd)"
 assert($PWD == "$(echo ~+)")
 assert($PWD + "/" == "$(echo ~'+/')")
 assert($PWD + "/huge" == "$(echo ~+/huge)")
@@ -254,6 +255,7 @@ assert $pwd == "$(echo ~+)"
 $PWD = $pwd
 
 ## expand to OLDPWD
+import-env OLDPWD : "$(pwd)"
 assert($OLDPWD == "$(echo ~-)")
 assert($OLDPWD + "/" == "$(echo ~-/)")
 assert($OLDPWD + "/we" == "$(echo ~-/we)")

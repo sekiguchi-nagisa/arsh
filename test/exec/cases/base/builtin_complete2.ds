@@ -34,15 +34,15 @@ function assertArray($x : Array<String>, $y : Array<String>) {
         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
         '?', '@',
         'DBus', 'EUID', 'FALSE', 'False', 'HISTCMD', 'HISTFILE', 'HISTFILESIZE',
-        'HISTSIZE', 'IFS', 'MACHTYPE', 'OLDPWD', 'OSTYPE', 'PID', 'PPID',
-        'PS1', 'PS2', 'PWD', 'RANDOM', 'REPLY', 'SCRIPT_DIR', 'SECONDS', 'SIG', 'SIG_DFL', 'SIG_IGN',
+        'HISTSIZE', 'IFS', 'MACHTYPE', 'OSTYPE', 'PID', 'PPID',
+        'PS1', 'PS2', 'RANDOM', 'REPLY', 'SCRIPT_DIR', 'SECONDS', 'SIG', 'SIG_DFL', 'SIG_IGN',
         'TRUE', 'True', 'UID', 'YDSH_VERSION', 'assertArray', 'false', 'reply', 'true', 'z1', 'z2'
     ]
 
     $assertArray($gvars, $(complete '$'))
 
     var gvars2 = [
-        'PID', 'PPID', 'PS1', 'PS2', 'PWD'
+        'PID', 'PPID', 'PS1', 'PS2',
     ]
 
     $assertArray($gvars2, $(complete '$P'))

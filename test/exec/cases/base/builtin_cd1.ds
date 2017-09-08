@@ -1,7 +1,9 @@
 # builtin cd command
 
 cd ~
-assert($PWD == "$(pwd)")    # PWD is builtin environmental variable
+import-env PWD
+import-env OLDPWD
+assert($PWD == "$(pwd)")
 assert($PWD == "$(echo ~+)")
 
 import-env HOME
@@ -11,7 +13,7 @@ var OLD = $PWD
 
 cd ~
 assert($PWD == "$(pwd)")
-assert($OLDPWD == $OLD) # OLDPWD is builtin environmental variable
+assert($OLDPWD == $OLD)
 
 
 # error

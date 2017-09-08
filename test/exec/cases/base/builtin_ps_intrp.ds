@@ -29,6 +29,7 @@ $USER=""
 assert("$(ps_intrp '\u')" == "$(whoami)")
 $USER = $OLD_USER
 
+import-env PWD : "$(pwd)"
 assert("$(ps_intrp '\w')" == $dirname($PWD))
 
 $PWD = '/'

@@ -5,8 +5,8 @@ check_env HFUIR
 assert($? != 0)
 
 # empty env
-$OLDPWD = ''
-check_env OLDPWD
+export-env AAAA = ""
+check_env AAAA
 assert($? == 1)
 
 # multiple env
