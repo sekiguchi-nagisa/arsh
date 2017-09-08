@@ -521,7 +521,10 @@ std::string interpretPromptString(const DSState &st, const char *ps) {
             case 'w': {
                 size_t size = PATH_MAX;
                 char buf[size];
-                const char *cwd = getcwd(buf, size);
+                const char *cwd = getenv(ENV_PWD);
+                if(cwd == nullptr) {
+                    cwd = getcwd(buf, size);
+                }
                 if(cwd == nullptr) {
                     cwd = ".";
                 }
