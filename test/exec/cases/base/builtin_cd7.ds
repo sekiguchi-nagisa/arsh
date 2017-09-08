@@ -1,0 +1,6 @@
+
+unset_env OLDPWD
+cd -
+assert $? == 1
+
+assert test "$(cd - 2>&1)" = $'ydsh: cd: OLDPWD not set'

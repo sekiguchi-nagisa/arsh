@@ -236,6 +236,10 @@ assert($HOME + "/" == "$(echo ~/)")
 assert($HOME + "/hoge" == "$(echo ~/hoge)")
 assert("~g" == "$(echo ~'g')")
 assert($HOME + "/h" == "$(echo ~/'h')")
+var home = $HOME
+unset_env HOME
+assert $home == "$(echo ~)"
+$HOME = $home
 
 ## expand to PWD
 assert($PWD == "$(echo ~+)")
@@ -244,6 +248,10 @@ assert($PWD + "/huge" == "$(echo ~+/huge)")
 assert($PWD + "/huge" == "$(echo ~+/"huge")")
 assert("~+e" == "$(echo ~+e)")
 assert("~+e" == "$(echo ~+'e')")
+var pwd = $PWD
+unset_env PWD
+assert $pwd == "$(echo ~+)"
+$PWD = $pwd
 
 ## expand to OLDPWD
 assert($OLDPWD == "$(echo ~-)")
@@ -252,6 +260,10 @@ assert($OLDPWD + "/we" == "$(echo ~-/we)")
 assert($OLDPWD + "/false" == "$(echo ~-/$false)")
 assert("~-yfr" == "$(echo ~-yfr)")
 assert("~-true" == "$(echo ~-$true)")
+var oldpwd = $OLDPWD
+unset_env OLDPWD
+assert "~-" == "$(echo ~-)"
+$OLDPWD = $oldpwd
 
 ## expand to user home
 if not $OSTYPE.startsWith("CYGWIN") {

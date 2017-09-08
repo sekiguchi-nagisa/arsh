@@ -361,10 +361,18 @@ static int builtin_cd(DSState &state, Array_Object &argvObj) {
         dest = str(argvObj.getValues()[index]);
         if(strcmp(dest, "-") == 0) {
             dest = getenv(ENV_OLDPWD);
+            if(dest == nullptr) {
+                ERROR(argvObj, "OLDPWD not set");
+                return 1;
+            }
             useOldpwd = true;
         }
     } else {
         dest = getenv(ENV_HOME);
+        if(dest == nullptr) {
+            ERROR(argvObj, "HOME not set");
+            return 1;
+        }
     }
 
     if(useOldpwd && dest != nullptr) {

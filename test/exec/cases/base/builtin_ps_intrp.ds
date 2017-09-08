@@ -33,6 +33,9 @@ assert("$(ps_intrp '\w')" == $dirname($PWD))
 
 $PWD = '/'
 assert("$(ps_intrp '\W')" == "/")
+unset_env PWD
+cd ~
+assert("$(ps_intrp '\W')" == "~")
 cd ~
 assert("$(ps_intrp '\W')" == "~")
 

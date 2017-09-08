@@ -348,7 +348,9 @@ bool changeWorkingDir(DSState &st, const char *dest, const bool useLogical) {
 
     // update OLDPWD
     const char *oldpwd = getenv(ENV_PWD);
-    assert(oldpwd != nullptr);
+    if(oldpwd == nullptr) {
+        oldpwd = "";
+    }
     setenv(ENV_OLDPWD, oldpwd, 1);
 
     // update PWD
@@ -517,22 +519,33 @@ std::string interpretPromptString(const DSState &st, const char *ps) {
                 continue;
             }
             case 'w': {
-                const char *c = getenv(ENV_PWD);
-                if(c != nullptr) {
-                    const char *home = getenv(ENV_HOME);
-                    if(home != nullptr && strstr(c, home) == c) {
-                        output += '~';
-                        c += strlen(home);
-                    }
-                    output += c;
+                size_t size = PATH_MAX;
+                char buf[size];
+                const char *cwd = getcwd(buf, size);
+                if(cwd == nullptr) {
+                    cwd = ".";
                 }
+
+                const char *home = getenv(ENV_HOME);
+                if(home != nullptr && strstr(cwd, home) == cwd) {
+                    output += '~';
+                    cwd += strlen(home);
+                }
+                output += cwd;
                 continue;
             }
             case 'W':  {
+                size_t size = PATH_MAX;
+                char buf[size];
                 const char *cwd = getenv(ENV_PWD);
                 if(cwd == nullptr) {
+                    cwd = getcwd(buf, size);
+                }
+                if(cwd == nullptr) {
+                    output += ".";
                     continue;
                 }
+
                 if(strcmp(cwd, "/") == 0) {
                     output += cwd;
                 } else {
@@ -685,9 +698,17 @@ void expandTilde(std::string &str) {
             expanded = pw->pw_dir;
         }
     } else if(expanded == "~+") {
-        expanded = getenv(ENV_PWD);
+        size_t size = PATH_MAX;
+        char buf[size];
+        const char *cwd = getcwd(buf, size);
+        if(cwd != nullptr) {
+            expanded = cwd;
+        }
     } else if(expanded == "~-") {
-        expanded = getenv(ENV_OLDPWD);
+        const char *env = getenv(ENV_OLDPWD);
+        if(env != nullptr) {
+            expanded = env;
+        }
     } else {
         struct passwd *pw = getpwnam(expanded.c_str() + 1);
         if(pw != nullptr) {
