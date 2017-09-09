@@ -28,3 +28,10 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/signals)
 if(USE_DBUS)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dbus)
 endif()
+
+
+#=====================#
+#     test_common     #
+#=====================#
+
+add_library(test_common STATIC test_common.cpp)

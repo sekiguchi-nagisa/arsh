@@ -8,7 +8,7 @@
 #include <misc/util.hpp>
 #include <signals.h>
 
-#include "../test_common.hpp"
+#include "../test_common.h"
 
 static std::vector<std::string> split(const std::string &str) {
     std::vector<std::string> bufs;
@@ -96,10 +96,10 @@ static std::vector<std::string> toList(const ydsh::SignalPair *pairs) {
 
 
 TEST(Signal, all) {
-    std::string killPath = CommandBuilder("which").addArg("kill").execAndGetOutput();
+    std::string killPath = CommandBuilder{"which", "kill"}.execAndGetOutput();
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(killPath.size() > 0));
 
-    std::string killOut = CommandBuilder(killPath.c_str()).addArg("-l").execAndGetOutput();
+    std::string killOut = CommandBuilder{killPath.c_str(), "-l"}.execAndGetOutput();
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(killOut.size() > 0));
 
     auto expected = toSignalList(killOut);

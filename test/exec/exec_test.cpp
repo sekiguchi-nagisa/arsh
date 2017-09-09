@@ -6,7 +6,7 @@
 #include <misc/files.h>
 #include <directive.h>
 
-#include "../test_common.hpp"
+#include "../test_common.h"
 
 
 #ifndef EXEC_TEST_DIR
@@ -21,7 +21,6 @@ using namespace ydsh;
 using namespace ydsh::directive;
 
 // parse config(key = value)
-
 
 void consumeSpace(const std::string &src, unsigned int &index) {
     for(; index < src.size(); index++) {

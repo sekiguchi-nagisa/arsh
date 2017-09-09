@@ -6,7 +6,7 @@
 #include <symbol.h>
 #include <vm.h>
 
-#include "../test_common.hpp"
+#include "../test_common.h"
 
 
 class HistoryTest : public ::testing::Test, public TempFileFactory {

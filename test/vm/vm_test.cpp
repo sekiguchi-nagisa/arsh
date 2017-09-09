@@ -4,7 +4,7 @@
 
 #include <vm.h>
 
-#include "../test_common.hpp"
+#include "../test_common.h"
 
 using BreakPointHandler = std::function<void()>;
 
