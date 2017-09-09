@@ -135,7 +135,7 @@ __file() {
 }
 
 file() {
-    __file $@ | sort | uniq
+    __file $@ | sed -e 's/\$/\\$/g'| sort | uniq
 }
 
 
