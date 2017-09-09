@@ -289,7 +289,7 @@ protected:
 
     void resolveCoercion(DSType &requiredType, Node * &targetNode) {
         targetNode = this->newTypedCastNode(targetNode, requiredType);
-        this->resolveCastOp(*static_cast<TypeOpNode *>(targetNode), true);
+        this->resolveCastOp(*static_cast<TypeOpNode *>(targetNode));
     }
 
     DSType &resolveCoercionOfJumpValue();
@@ -350,9 +350,8 @@ protected:
      *
      * @param node
      * must be typed
-     * @param allowVoidCast
      */
-    void resolveCastOp(TypeOpNode &node, bool allowVoidCast);
+    void resolveCastOp(TypeOpNode &node);
 
     /**
      * for implicit cast.

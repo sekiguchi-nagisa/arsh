@@ -355,11 +355,11 @@ void TypeChecker::checkTypeArgsNode(Node &node, MethodHandle *handle, std::vecto
     } while(handle->getNext() != nullptr);  //FIXME: method overloading
 }
 
-void TypeChecker::resolveCastOp(TypeOpNode &node, bool allowVoidCast) {
+void TypeChecker::resolveCastOp(TypeOpNode &node) {
     auto &exprType = node.getExprNode()->getType();
     auto &targetType = node.getType();
 
-    if(allowVoidCast && node.getType().isVoidType()) {
+    if(node.getType().isVoidType()) {
         node.setOpKind(TypeOpNode::TO_VOID);
         return;
     }
@@ -596,7 +596,7 @@ void TypeChecker::visitTypeOpNode(DSType *, TypeOpNode &node) {
 
     if(node.isCastOp()) {
         node.setType(targetType);
-        this->resolveCastOp(node, false);
+        this->resolveCastOp(node);
     } else {
         if(targetType.isSameOrBaseTypeOf(exprType)) {
             node.setOpKind(TypeOpNode::ALWAYS_TRUE);
