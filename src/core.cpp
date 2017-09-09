@@ -410,17 +410,6 @@ pid_t xfork(DSState &st, pid_t pgid, bool foreground) {
     return pid;
 }
 
-/**
- * waitpid wrapper.
- */
-pid_t xwaitpid(DSState &, pid_t pid, int &status, int options) {
-    pid_t ret = waitpid(pid, &status, options);
-    if(WIFSIGNALED(status)) {
-//        fputc('\n', stdout);
-    }
-    return ret;
-}
-
 static const char *safeBasename(const char *str) {
     const char *ptr = strrchr(str, '/');
     return ptr == nullptr ? str : ptr + 1;

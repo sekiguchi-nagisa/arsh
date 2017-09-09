@@ -235,11 +235,6 @@ DSValue getSignalHandler(const DSState &st, int sigNum);
  */
 pid_t xfork(DSState &st, pid_t pgid, bool foreground);
 
-/**
- * waitpid wrapper.
- */
-pid_t xwaitpid(DSState &st, pid_t pid, int &status, int options);
-
 
 /**
  * n is 1 or 2

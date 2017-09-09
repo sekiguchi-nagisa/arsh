@@ -538,8 +538,8 @@ static void forkAndCapture(bool isStr, DSState &state) {
         close(pipefds[READ_PIPE]);
 
         // wait exit
-        int status;
-        xwaitpid(state, pid, status, 0);
+        int status = 0;
+        waitpid(pid, &status, 0);
         if(WIFEXITED(status)) {
             state.updateExitStatus(WEXITSTATUS(status));
         }
@@ -973,8 +973,8 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
             state.pathCache.removePath(argv[0]);
         }
 
-        int status;
-        xwaitpid(state, pid, status, 0);
+        int status = 0;
+        waitpid(pid, &status, 0);
         if(state.isInteractive() && rootShell) {
             tcsetpgrp(STDIN_FILENO, getpgid(0));
         }
@@ -1175,7 +1175,7 @@ static void callPipeline(DSState &state) {
         // wait for exit
         for(unsigned int i = 0; i < size; i++) {
             int status = 0;
-            xwaitpid(state, procs[i].pid, status, 0);
+            waitpid(procs[i].pid, &status, 0);
             if(WIFEXITED(status)) {
                 procs[i].kind = Process::EXIT;
                 procs[i].status = WEXITSTATUS(status);
