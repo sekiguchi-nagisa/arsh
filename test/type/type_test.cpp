@@ -242,7 +242,7 @@ TEST_F(TypeTest, superType) {
 
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getStringType(), this->pool.getValueType()));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getObjectPathType(), this->pool.getValueType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getUnixFDType(), this->pool.getUint32Type()));    //FIXME:
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getUnixFDType(), this->pool.getAnyType()));
 
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getStringArrayType(), this->pool.getVariantType()));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getErrorType(), this->pool.getAnyType()));

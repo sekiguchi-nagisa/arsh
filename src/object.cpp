@@ -83,6 +83,15 @@ size_t Int_Object::hash() const {
     return std::hash<int>()(this->value);
 }
 
+// ###########################
+// ##     UnixFD_Object     ##
+// ###########################
+
+UnixFD_Object::~UnixFD_Object() {
+    close(this->getValue());
+}
+
+
 // #########################
 // ##     Long_Object     ##
 // #########################

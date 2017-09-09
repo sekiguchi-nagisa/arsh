@@ -1851,6 +1851,32 @@ YDSH_METHOD error_name(RuntimeContext &ctx) {
     RET(typeAs<Error_Object>(LOCAL(0))->getName());
 }
 
+// ####################
+// ##     UnixFD     ##
+// ####################
+
+//!bind: function close($this : UnixFD) : Void
+YDSH_METHOD fd_close(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(fd_close);
+    int fd = typeAs<UnixFD_Object>(LOCAL(0))->getValue();
+    if(close(fd) < 0) {
+        throwSystemError(ctx, errno, std::to_string(fd));
+    }
+    RET_VOID;
+}
+
+//!bind: function dup($this : UnixFD) : UnixFD
+YDSH_METHOD fd_dup(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(fd_dup);
+    int fd = typeAs<UnixFD_Object>(LOCAL(0))->getValue();
+    int newfd = dup(fd);
+    if(newfd < 0) {
+        throwSystemError(ctx, errno, std::to_string(fd));
+    }
+    RET(DSValue::create<UnixFD_Object>(getPool(ctx), newfd));
+}
+
+
 // ##################
 // ##     DBus     ##
 // ##################

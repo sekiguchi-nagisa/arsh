@@ -438,6 +438,21 @@ static void initBuiltinVar(DSState *state) {
      * must be DSObject
      */
     bindVariable(state, "SIG", DSValue::create<DSObject>(state->pool.getSignalsType()));
+
+    /**
+     * must be UnixFD_Object
+     */
+    bindVariable(state, VAR_STDIN, DSValue::create<UnixFD_Object>(state->pool, STDIN_FILENO));
+
+    /**
+     * must be UnixFD_Object
+     */
+    bindVariable(state, VAR_STDOUT, DSValue::create<UnixFD_Object>(state->pool, STDOUT_FILENO));
+
+    /**
+     * must be UnixFD_Object
+     */
+    bindVariable(state, VAR_STDERR, DSValue::create<UnixFD_Object>(state->pool, STDERR_FILENO));
 }
 
 static void loadEmbeddedScript(DSState *state) {

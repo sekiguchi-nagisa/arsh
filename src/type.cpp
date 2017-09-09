@@ -546,7 +546,7 @@ TypePool::TypePool() :
     this->initBuiltinType(String, "String", false, this->getValueType(), info_StringType());
 
     this->initBuiltinType(ObjectPath, "ObjectPath", false, this->getValueType(), info_ObjectPathType());
-    this->initBuiltinType(UnixFD, "UnixFD", false, this->getUint32Type(), info_UnixFDType());
+    this->initBuiltinType(UnixFD, "UnixFD", false, this->getAnyType(), info_UnixFDType());
     this->initBuiltinType(Proxy, "Proxy", false, this->getAnyType(), info_ProxyType());
     this->initBuiltinType(DBus, "DBus", false, this->getAnyType(), info_DBusType());
     this->initBuiltinType(Bus, "Bus", false, this->getAnyType(), info_BusType());

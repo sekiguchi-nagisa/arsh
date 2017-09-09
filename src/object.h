@@ -314,6 +314,11 @@ public:
     size_t hash() const override;
 };
 
+struct UnixFD_Object : public Int_Object {
+    UnixFD_Object(const TypePool &pool, int fd) : Int_Object(pool.getUnixFDType(), fd) {}
+    ~UnixFD_Object() override;
+};
+
 class Long_Object : public DSObject {
 private:
     long value;

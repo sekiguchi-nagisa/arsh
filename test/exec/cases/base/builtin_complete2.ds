@@ -36,6 +36,7 @@ function assertArray($x : Array<String>, $y : Array<String>) {
         'DBus', 'EUID', 'FALSE', 'False', 'HISTCMD', 'HISTFILE', 'HISTFILESIZE',
         'HISTSIZE', 'IFS', 'MACHTYPE', 'OSTYPE', 'PID', 'PPID',
         'PS1', 'PS2', 'RANDOM', 'REPLY', 'SCRIPT_DIR', 'SECONDS', 'SIG', 'SIG_DFL', 'SIG_IGN',
+        'STDERR', 'STDIN', 'STDOUT',
         'TRUE', 'True', 'UID', 'YDSH_VERSION', 'assertArray', 'false', 'reply', 'true', 'z1', 'z2'
     ]
 
