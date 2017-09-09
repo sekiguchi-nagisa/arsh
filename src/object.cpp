@@ -88,7 +88,10 @@ size_t Int_Object::hash() const {
 // ###########################
 
 UnixFD_Object::~UnixFD_Object() {
-    close(this->getValue());
+    int fd = this->getValue();
+    if(fd > STDERR_FILENO) {
+        close(this->getValue());    // do not close standard io file descriptor
+    }
 }
 
 
