@@ -617,6 +617,25 @@ static void closeAllPipe(int size, pipe_t *pipefds) {
     }
 }
 
+class PipelineState : public DSObject {
+private:
+    DSState &state;
+    unsigned int id;
+
+public:
+    NON_COPYABLE(PipelineState);
+
+    PipelineState(DSState &state, unsigned int id) : DSObject(nullptr), state(state), id(id) {}
+
+    ~PipelineState() override {
+        (void) this->state;
+    }
+
+    unsigned int getId() const {
+        return this->id;
+    }
+};
+
 class RedirConfig : public DSObject {
 private:
     bool restore{true};
