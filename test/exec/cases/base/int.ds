@@ -149,11 +149,15 @@ assert(50 * 10 == 500)
 
 assert((99 / 33) is Int32)
 assert(99 / 33 == 3)
-try { 12/0 } catch($e) {assert($e is ArithmeticError)}
+var ex = 34 as Any
+try { 12/0 } catch($e) { $ex = $e}
+assert($ex is ArithmeticError)
 
 assert((99 % 33) is Int32)
 assert(99 % 33 == 0)
-try { 12%0 } catch($e) {assert($e is ArithmeticError)}
+$ex = 5
+try { 12%0 } catch($e) { $ex = $e}
+assert($ex is ArithmeticError)
 
 assert(12 == + 12)
 assert(-12 == - 12)
@@ -191,11 +195,15 @@ assert(50u32 * 10u32 == 500u32)
 
 assert((99u32 / 33u32) is Uint32)
 assert(99u32 / 33u32 == 3u32)
-try { 12u32/0u32 } catch($e) {assert($e is ArithmeticError)}
+$ex = 9
+try { 12u32/0u32 } catch($e) { $ex = $e}
+assert($ex is ArithmeticError)
 
 assert((99u32 % 33u32) is Uint32)
 assert(99u32 % 33u32 == 0u32)
-try { 12u32%0u32 } catch($e) {assert($e is ArithmeticError)}
+$ex = 3
+try { 12u32%0u32 } catch($e) { $ex = $e}
+assert($ex is ArithmeticError)
 
 assert(12u32 == + 12u32)
 assert((not 43u32) is Uint32)
@@ -229,11 +237,15 @@ assert(50i64 * 10i64 == 500i64)
 
 assert((99i64 / 33i64) is Int64)
 assert(99i64 / 33i64 == 3i64)
-try { 12i64/0i64 } catch($e) {assert($e is ArithmeticError)}
+$ex = 1
+try { 12i64/0i64 } catch($e) { $ex = $e}
+assert($ex is ArithmeticError)
 
 assert((99i64 % 33i64) is Int64)
 assert(99i64 % 33i64 == 0i64)
-try { 12i64%0i64 } catch($e) {assert($e is ArithmeticError)}
+$ex = 123
+try { 12i64%0i64 } catch($e) { $ex = $e}
+assert($ex is ArithmeticError)
 
 assert(12i64 == + 12i64)
 assert(-12i64 == - 12i64)
@@ -270,11 +282,15 @@ assert(50u64 * 10u64 == 500u64)
 
 assert((99u64 / 33u64) is Uint64)
 assert(99u64 / 33u64 == 3u64)
-try { 12u64/0u64 } catch($e) {assert($e is ArithmeticError)}
+$ex = 0
+try { 12u64/0u64 } catch($e) { $ex = $e}
+assert($ex is ArithmeticError)
 
 assert((99u64 % 33u64) is Uint64)
 assert(99u64 % 33u64 == 0u64)
-try { 12u64%0u64 } catch($e) {assert($e is ArithmeticError)}
+$ex = 0
+try { 12u64%0u64 } catch($e) { $ex = $e}
+assert($ex is ArithmeticError)
 
 assert(12u64 == + 12u64)
 assert((not 43u64) is Uint64)

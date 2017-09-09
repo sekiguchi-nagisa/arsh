@@ -1,7 +1,9 @@
 var a = ["a" : 1]
 assert($a["a"] is Int32)
 assert($a["a"] == 1)
-try { $a["b"]; assert($false) } catch($e) { assert($e is KeyNotFoundError) }
+var ex = 34 as Any
+try { $a["b"]; assert($false) } catch($e) { $ex = $e }
+assert($ex is KeyNotFoundError)
 
 $a["a"] = 54
 assert($a["a"] == 54)
@@ -42,7 +44,9 @@ assert($b[34] == 34.56)
 
 assert($b.swap(34, 100) == 34.56)
 assert($b[34] == 100)
-try { $b.swap(777, 23); assert($false) } catch($e) { assert($e is KeyNotFoundError) }
+$ex = 23
+try { $b.swap(777, 23); assert($false) } catch($e) { $ex = $e}
+assert($ex is KeyNotFoundError)
 
 $b.clear()
 assert($b.empty())

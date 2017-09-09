@@ -58,17 +58,28 @@ assert $o && $o! == "34"
 
 # collection with option value
 assert [23 as Int!] as String == '[23]'
-try { [34 : new Int!()] as String } catch $e { assert $e is UnwrappingError }
-try { (34, new Boolean!()) as String } catch $e { assert $e is UnwrappingError }
+var ex = 34 as Any
+try { [34 : new Int!()] as String } catch $e { $ex = $e }
+assert $ex is UnwrappingError
+$ex = 2
+try { (34, new Boolean!()) as String } catch $e { $ex = $e }
+assert $ex is UnwrappingError
 
 assert "${[3 as Int!]}" == '3'
-try { "${[1u : new String!()]}" }catch $e { assert $e is UnwrappingError }
-try { "${(2, $false, new Error!())}" }  catch $e { assert $e is UnwrappingError }
+$ex = 43
+try { "${[1u : new String!()]}" }catch $e { $ex = $e }
+assert $ex is UnwrappingError
+$ex = 0
+try { "${(2, $false, new Error!())}" }  catch $e { $ex = $e}
+assert $ex is UnwrappingError
 
 assert "$(echo ${[$false as Boolean!]})" == 'false'
-try { echo ${['s' : new Float!()]}; }  catch $e { assert $e is UnwrappingError }
-try { echo ${(new Byte!(),)}; } catch $e { assert $e is UnwrappingError }
-
+$ex = 34
+try { echo ${['s' : new Float!()]}; }  catch $e { $ex = $e }
+assert $ex is UnwrappingError
+$ex = 43
+try { echo ${(new Byte!(),)}; } catch $e { $ex = $e }
+assert $ex is UnwrappingError
 
 # type
 assert not (new Int!() is Int)

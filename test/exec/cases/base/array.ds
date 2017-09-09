@@ -6,11 +6,15 @@ assert($a[0] == "3")
 assert($a[1] == "43")
 assert($a[2] == "d")
 assert($a[3] == "hello")
-try { $a[5]; assert($false) } catch($e) { assert($e is OutOfRangeError) }
+var ex = 34 as Any
+try { $a[5]; assert($false) } catch($e) { $ex = $e }
+assert($ex is OutOfRangeError)
 
 $a[2] = "ho"
 assert($a[2] == "ho")
-try { $a[5] = "hoge"; assert($false) } catch($e) { assert($e is OutOfRangeError) }
+$ex = 34
+try { $a[5] = "hoge"; assert($false) } catch($e) { $ex = $e }
+assert($ex is OutOfRangeError)
 
 assert $a.get(2)
 assert not $a.get(5)
@@ -32,7 +36,9 @@ assert($b[0])
 
 assert($b.swap(0, $false))
 assert($b[0] != $true)
-try { $b.swap(3, $true); assert($false) } catch($e) { assert($e is OutOfRangeError) }
+$ex = 1
+try { $b.swap(3, $true); assert($false) } catch($e) { $ex = $e }
+assert($ex is OutOfRangeError)
 
 $b.clear()
 assert($b.empty())
@@ -43,8 +49,12 @@ assert($b.size() == 1)
 assert($b.peek())
 assert($b.pop())
 assert($b.empty())
-try { $b.pop(); assert($false) } catch($e) { assert($e is OutOfRangeError) }
-try { $b.peek(); assert($false) } catch($e) { assert($e is OutOfRangeError) }
+$ex = 34
+try { $b.pop(); assert($false) } catch($e) { $ex = $e }
+assert($ex is OutOfRangeError)
+$ex = 2
+try { $b.peek(); assert($false) } catch($e) { $ex = $e }
+assert($ex is OutOfRangeError)
 
 # slice
 $b = [$true, $false, $false]
