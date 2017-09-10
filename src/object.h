@@ -297,7 +297,7 @@ inline T *typeAs(const DSValue &value) noexcept {
 }
 
 class Int_Object : public DSObject {
-private:
+protected:
     int value;
 
 public:
@@ -317,6 +317,10 @@ public:
 struct UnixFD_Object : public Int_Object {
     UnixFD_Object(const TypePool &pool, int fd) : Int_Object(pool.getUnixFDType(), fd) {}
     ~UnixFD_Object() override;
+
+    void clear() {
+        this->value = -1;
+    }
 };
 
 class Long_Object : public DSObject {

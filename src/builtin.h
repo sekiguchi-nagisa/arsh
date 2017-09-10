@@ -1858,10 +1858,12 @@ YDSH_METHOD error_name(RuntimeContext &ctx) {
 //!bind: function close($this : UnixFD) : Void
 YDSH_METHOD fd_close(RuntimeContext &ctx) {
     SUPPRESS_WARNING(fd_close);
-    int fd = typeAs<UnixFD_Object>(LOCAL(0))->getValue();
+    auto *fdObj = typeAs<UnixFD_Object>(LOCAL(0));
+    int fd = fdObj->getValue();
     if(close(fd) < 0) {
         throwSystemError(ctx, errno, std::to_string(fd));
     }
+    fdObj->clear();
     RET_VOID;
 }
 
