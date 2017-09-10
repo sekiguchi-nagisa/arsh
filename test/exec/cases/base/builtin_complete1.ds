@@ -56,7 +56,7 @@ function escape($s : String) : String {
 function escape2($s : String) : String {
     var buf = ''
     for $ch in $s {
-        if $ch == ' ' {
+        if $ch == ' ' || $ch == '$' {
             $buf += '\'
         }
         $buf += $ch
@@ -135,7 +135,7 @@ __file() {
 }
 
 file() {
-    __file $@ | sed -e 's/\$/\\$/g'| sort | uniq
+    __file $@ | sort | uniq
 }
 
 
