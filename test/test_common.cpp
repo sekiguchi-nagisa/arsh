@@ -101,7 +101,7 @@ static void readPipes(Output &output, const pid_t (&outpipe)[2], const pid_t (&e
                     continue;
                 }
                 if(readSize <= 0) {
-                    break;
+                    breakCount++;
                 }
             } else {
                 breakCount++;
