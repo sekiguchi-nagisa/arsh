@@ -175,7 +175,7 @@ std::string str(const xmlChar *str) {
 }
 
 bool existFile(const std::string &fileName) {
-    struct stat st;
+    struct stat st{};
     int result = stat(fileName.c_str(), &st);
     return result == 0;
 }
@@ -594,8 +594,7 @@ void generateIface(Config &config) {
     SAXHandlerContext handlerCtx(config, pathList);
 
     // init sax handler
-    xmlSAXHandler saxHander;
-    memset(&saxHander, 0, sizeof(xmlSAXHandler));
+    xmlSAXHandler saxHander{};
 
     saxHander.initialized = XML_SAX2_MAGIC;
     saxHander.startElementNs = handler_startElementNs;
