@@ -685,7 +685,7 @@ std::vector<std::unique_ptr<Element>> Parser::operator()(const char *fileName) {
             auto &e = this->getError();
             std::cerr << fileName << ":" << lineNum << ": [error] " << e.getMessage() << std::endl;
             std::cerr << line << std::endl;
-            Token lineToken{.pos = 0, .size = line.size()};
+            Token lineToken{.pos = 0, .size = static_cast<unsigned int>(line.size())};
             std::cerr << this->lexer->formatLineMarker(lineToken, e.getErrorToken()) << std::endl;
             exit(EXIT_FAILURE);
         }
