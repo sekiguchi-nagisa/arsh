@@ -68,20 +68,16 @@ struct Option {
 template<typename T>
 std::vector<std::string> Option<T>::getDetails() const {
     std::vector<std::string> bufs;
-    std::string buf;
+    bufs.emplace_back();
     for(unsigned int i = 0; this->detail[i] != '\0'; i++) {
         char ch = this->detail[i];
         if(ch == '\n') {
-            if(!buf.empty()) {
-                bufs.push_back(std::move(buf));
-                buf = "";
+            if(!bufs.back().empty()) {
+                bufs.emplace_back();
             }
         } else {
-            buf += ch;
+            bufs.back() += ch;
         }
-    }
-    if(!buf.empty()) {
-        bufs.push_back(std::move(buf));
     }
     return bufs;
 }

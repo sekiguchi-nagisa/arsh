@@ -819,20 +819,16 @@ static void append(CStrBuffer &buf, const std::string &str, EscapeOp op) {
 
 static std::vector<std::string> computePathList(const char *pathVal) {
     std::vector<std::string> result;
-    std::string buf;
+    result.emplace_back();
     assert(pathVal != nullptr);
 
     for(unsigned int i = 0; pathVal[i] != '\0'; i++) {
         char ch = pathVal[i];
         if(ch == ':') {
-            result.push_back(std::move(buf));
-            buf = "";
+            result.emplace_back();
         } else {
-            buf += ch;
+            result.back() += ch;
         }
-    }
-    if(!buf.empty()) {
-        result.push_back(std::move(buf));
     }
 
     // expand tilde
