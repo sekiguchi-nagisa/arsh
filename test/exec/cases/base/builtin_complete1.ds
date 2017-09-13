@@ -139,7 +139,7 @@ file() {
 }
 
 
-$assertArray($(file '/bin'), $(complete '/bin/'))
+$assertArray($(file '/bin' 1), $(complete '/bin/'))
 $assertArray($(file '/usr/bin/' 1), $(complete '/usr/bin/'))
 $assertArray($(file '.' 1), $(complete './'))
 $assertArray($(file '.'), $(complete 'echo '))
