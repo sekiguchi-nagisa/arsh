@@ -21,7 +21,7 @@ function assertArray($x : Array<String>, $y : Array<String>) {
     let size = $x.size()
     for(var i = 0; $i < $size; $i++) {
         if(not $assertSEQ($x[$i], $y[$i])) {
-            for(var j = 0; $j < $size; $j++) { echo $x[$j] $y[$j] 1>&2; }
+            for(var j = 0; $j < $i; $j++) { echo $x[$j] $y[$j] 1>&2; }
             assert($false)
         }
     }
@@ -140,7 +140,7 @@ file() {
 
 
 $assertArray($(file '/bin'), $(complete '/bin/'))
-$assertArray($(file '/usr/bin/'), $(complete '/usr/bin/'))
+$assertArray($(file '/usr/bin/' 1), $(complete '/usr/bin/'))
 $assertArray($(file '.' 1), $(complete './'))
 $assertArray($(file '.'), $(complete 'echo '))
 $assertArray(['../', './'], $(complete 'echo .'))
