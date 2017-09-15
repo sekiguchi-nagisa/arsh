@@ -1,6 +1,100 @@
 # Grammar specification of ydsh
 ## Lexer specification
+```
+NUM = "0" | [1-9] [0-9]*;
+OCTAL = "0o" [0-7]+;
+HEX = "0x" [0-9a-fA-F]+;
+INTEGER = NUM | OCTAL | HEX;
+INTEGER_ = NUM | OCTAL "_" | HEX "_";
+DIGITS = [0-9]+;
+FLOAT_SUFFIX =  [eE] [+-]? NUM;
+FLOAT = NUM "." DIGITS FLOAT_SUFFIX?;
 
+
+
+ASSERT = 'assert'
+       ;
+
+BREAK = 'break'
+      ;
+
+CATCH = 'catch'
+      ;
+
+CLASS = 'class'
+      ;
+
+CONTINUE = 'continue'
+         ;
+
+DO = 'do'
+   ;
+
+ELIF = 'elif'
+     ;
+
+ELSE = 'else'
+     ;
+
+EXPORT_ENV = 'export-env'
+           ;
+
+FINALLY = 'finally'
+        ;
+
+FOR = 'for'
+    ;
+
+FUNCTION = 'function'
+         ;
+
+IF = 'if'
+   ;
+
+IMPORT_ENV = 'import-env'
+           ;
+
+INTERFACE = 'interface'
+          ;
+
+LET = 'let'
+    ;
+
+NEW = 'new'
+    ;
+
+NOT = 'not'
+    ;
+
+RETURN = 'return'
+       ;
+
+TRY = 'try'
+    ;
+
+THROW = 'throw'
+      ;
+
+TYPE_ALIAS = 'type-alias'
+           ;
+
+VAR = 'var'
+    ;
+
+WHILE = 'while'
+      ;
+
+PLUS = '+'
+     ;
+
+MINUS = '-'
+      ;
+
+
+
+
+
+```
 
 
 ## Parser specification
