@@ -1869,6 +1869,7 @@ static bool mainLoop(DSState &state) {
             auto redir = state.getLocal(0);
             auto argv = state.getLocal(1);
             callBuiltinCommand(state, std::move(argv), std::move(redir));
+            flushStdFD();
             vmnext;
         }
         vmcase(BUILTIN_EVAL) {
