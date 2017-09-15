@@ -441,8 +441,17 @@ static void invokeSetter(DSState &st, unsigned short constPoolIndex) {
 static constexpr unsigned int READ_PIPE = 0;
 static constexpr unsigned int WRITE_PIPE = 1;
 
+static void flushStdFD() {
+    fflush(stdin);
+    fflush(stdout);
+    fflush(stderr);
+}
+
 static void forkAndCapture(bool isStr, DSState &state) {
     const unsigned short offset = read16(GET_CODE(state), state.pc() + 1);
+
+    // flush standard stream due to prevent mixing io buffer
+    flushStdFD();
 
     // capture stdout
     pid_t pipefds[2];
@@ -753,12 +762,6 @@ void RedirConfig::redirect(DSState &st) const {
             throwSystemError(st, r, std::move(msg));
         }
     }
-}
-
-static void flushStdFD() {
-    fflush(stdin);
-    fflush(stdout);
-    fflush(stderr);
 }
 
 /**

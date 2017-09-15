@@ -115,6 +115,11 @@ static void readPipes(Output &output, const pid_t (&outpipe)[2], const pid_t (&e
 }
 
 int CommandBuilder::exec(Output *output) const {
+    // flush standard stream due to prevent mixing io buffer
+    fflush(stdout);
+    fflush(stderr);
+    fflush(stdin);
+
     // create pipe
     pid_t outpipe[2];
     pid_t errpipe[2];
