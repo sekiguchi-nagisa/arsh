@@ -38,16 +38,19 @@ try {
 # show command information
 hash -r
 assert("$(command -v ls)" == "$(which ls)") # external command
+assert command -v ls
 assert("$(command -v cd)" == "cd")          # builtin
+assert command -v cd
 assert("$(command -v hoge)" == "hoge")      # user-defined-command
+assert command -v hoge
 
 assert("$(command -v hfiureaf)" == "")      # invalid
 command -v hfueirf
-assert($? != 0)
+assert($? == 1)
 
 assert(command -v hferure cd hoge fjer)     # multiple
 command -v hferure fhaueirnv
-assert($? != 0)
+assert($? == 1)
 
 # show detailed information
 hash -r

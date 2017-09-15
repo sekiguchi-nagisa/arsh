@@ -1089,6 +1089,7 @@ static void callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redi
             case CmdKind::EXTERNAL: {
                 const char *path = cmd.filePath;
                 if(path != nullptr) {
+                    successCount++;
                     if(showDesc == 1) {
                         printf("%s\n", path);
                     } else if(state.pathCache.isCached(commandName)) {
