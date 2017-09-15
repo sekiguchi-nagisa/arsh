@@ -27,12 +27,14 @@ hoge() {
 }
 
 # execute invalid command
+var ex = 34 as Any
 try {
     command hoge
 } catch $e {
-    assert $e is SystemError
-    assert ($e as Error).message() == 'execution error: hoge: command not found'  
+    $ex = $e
 }
+assert $ex is SystemError
+assert ($ex as Error).message() == 'execution error: hoge: command not found'
 
 
 # show command information

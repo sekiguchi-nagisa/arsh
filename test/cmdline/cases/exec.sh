@@ -71,15 +71,38 @@ if [ $? != 0 ]; then
     exit 1
 fi
 
-$YDSH_BIN -e exec -c $YDSH_BIN -c 'assert(printenv SHLVL | grep 1)'
+$YDSH_BIN -e exec -c $YDSH_BIN -c 'assert $(printenv).size() == 7'
+
+$YDSH_BIN -e exec -c $YDSH_BIN -c 'assert("$(printenv SHLVL)" == "1")'
 if [ $? != 0 ]; then
     exit 1
 fi
 
-$YDSH_BIN -e exec -c $YDSH_BIN -c 'assert(printenv PATH | grep /bin:/usr/bin:/usr/local/bin)'
+$YDSH_BIN -e exec -c $YDSH_BIN -c 'assert("$(printenv PATH)" == "/bin:/usr/bin:/usr/local/bin")'
+if [ $? != 0 ]; then
+    exit 1
+fi
+
+$YDSH_BIN -e exec -c $YDSH_BIN -c 'assert("$(printenv LOGNAME)" == "$(ps_intrp \\u)")'
+if [ $? != 0 ]; then
+    exit 1
+fi
+
+$YDSH_BIN -e exec -c $YDSH_BIN -c 'assert("$(printenv HOME)" == "$(echo ~)")'
+if [ $? != 0 ]; then
+    exit 1
+fi
+
+$YDSH_BIN -e exec -c $YDSH_BIN -c 'assert("$(printenv _)" == "$(command -v printenv)")'
+if [ $? != 0 ]; then
+    exit 1
+fi
+
+$YDSH_BIN -e exec -c $YDSH_BIN -c 'assert("$(printenv PWD)" == "$(printenv OLDPWD)")'
 if [ $? != 0 ]; then
     exit 1
 fi
 
 $YDSH_BIN -e exec -u    # invalid option
 test $? != 0
+
