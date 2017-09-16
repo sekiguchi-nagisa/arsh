@@ -1861,7 +1861,7 @@ YDSH_METHOD error_name(RuntimeContext &ctx) {
 YDSH_METHOD fd_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(fd_init);
     const char *path = typeAs<String_Object>(LOCAL(1))->getValue();
-    int fd = open(path, O_CREAT | O_RDWR);
+    int fd = open(path, O_CREAT | O_RDWR, 0666);
     if(fd != -1) {
         int flag = fcntl(fd, F_GETFD);
         if(flag != -1) {
@@ -1873,6 +1873,7 @@ YDSH_METHOD fd_init(RuntimeContext &ctx) {
         }
     }
     int e = errno;
+    close(fd);
     std::string msg = "open failed: ";
     msg += path;
     throwSystemError(ctx, e, std::move(msg));
