@@ -17,6 +17,8 @@
 #ifndef YDSH_BUILTIN_H
 #define YDSH_BUILTIN_H
 
+#include <fcntl.h>
+
 #include <cmath>
 #include <cstring>
 #include <type_traits>
@@ -1854,6 +1856,27 @@ YDSH_METHOD error_name(RuntimeContext &ctx) {
 // ####################
 // ##     UnixFD     ##
 // ####################
+
+//!bind: constructor ($this : UnixFD, $path : String)
+YDSH_METHOD fd_init(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(fd_init);
+    const char *path = typeAs<String_Object>(LOCAL(1))->getValue();
+    int fd = open(path, O_CREAT | O_RDWR);
+    if(fd != -1) {
+        int flag = fcntl(fd, F_GETFD);
+        if(flag != -1) {
+            if(fcntl(fd, F_SETFD, flag | FD_CLOEXEC) != -1) {
+                auto obj = DSValue::create<UnixFD_Object>(getPool(ctx), fd);
+                setLocal(ctx, 0, std::move(obj));
+                RET_VOID;
+            }
+        }
+    }
+    int e = errno;
+    std::string msg = "open failed: ";
+    msg += path;
+    throwSystemError(ctx, e, std::move(msg));
+}
 
 //!bind: function close($this : UnixFD) : Void
 YDSH_METHOD fd_close(RuntimeContext &ctx) {
