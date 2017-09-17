@@ -2,7 +2,8 @@
 #     setup test in subdirectory     #
 #++++++++++++++++++++++++++++++++++++#
 
-include_directories(${GTEST_DIR}/include)
+include_directories(${GTEST_DIR}/googletest/include)
+include_directories(${GTEST_DIR}/googlemock/include)
 include_directories(${CMAKE_SOURCE_DIR}/tools/directive)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/api)
