@@ -60,16 +60,29 @@ CommandBuilder& CommandBuilder::addArgs(const std::vector<std::string> &values) 
     return *this;
 }
 
-std::string CommandBuilder::execAndGetOutput(bool removeLastSpace) const {
-    Output output;
-    this->exec(output);
-    std::string out(output.out.get(), output.out.size());
+static std::string toString(const ydsh::ByteBuffer &buf, bool removeLastSpace) {
+    std::string out(buf.get(), buf.size());
 
-    // remove last newline
     if(removeLastSpace) {
         for(; !out.empty() && isSpace(out.back()); out.pop_back());
     }
     return out;
+}
+
+CmdResult CommandBuilder::execAndGetResult(bool removeLastSpace) const {
+    Output output;
+    int status = this->exec(output);
+    if(WIFEXITED(status)) {
+        status = WEXITSTATUS(status);
+    } else if(WIFSIGNALED(status)) {
+        status = WTERMSIG(status) + 128;
+    } else {
+        fatal("invalid exit status\n");
+    }
+
+    return {.status = status,
+            .out = toString(output.out, removeLastSpace),
+            .err = toString(output.err, removeLastSpace)};
 }
 
 static constexpr unsigned int READ_PIPE = 0;

@@ -48,6 +48,12 @@ struct Output {
     ydsh::ByteBuffer err;
 };
 
+struct CmdResult {
+    int status;
+    std::string out;
+    std::string err;
+};
+
 class CommandBuilder {
 private:
     std::vector<std::string> args;
@@ -74,7 +80,11 @@ public:
 
     CommandBuilder &addArgs(const std::vector<std::string> &values);
 
-    std::string execAndGetOutput(bool removeLastSpace = true) const;
+    std::string execAndGetOutput(bool removeLastSpace = true) const {
+        return std::move(this->execAndGetResult(removeLastSpace).out);
+    }
+
+    CmdResult execAndGetResult(bool removeLastSpace = true) const;
 
     int exec(Output *output = nullptr) const;
 
