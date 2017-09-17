@@ -81,7 +81,8 @@ public:
     CommandBuilder &addArgs(const std::vector<std::string> &values);
 
     std::string execAndGetOutput(bool removeLastSpace = true) const {
-        return std::move(this->execAndGetResult(removeLastSpace).out);
+        auto r = this->execAndGetResult(removeLastSpace);
+        return std::move(r.out);
     }
 
     CmdResult execAndGetResult(bool removeLastSpace = true) const;
