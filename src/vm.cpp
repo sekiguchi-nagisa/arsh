@@ -544,7 +544,7 @@ static void forkAndCapture(bool isStr, DSState &state) {
             state.updateExitStatus(WEXITSTATUS(status));
         }
         if(WIFSIGNALED(status)) {
-            state.updateExitStatus(WTERMSIG(status));
+            state.updateExitStatus(WTERMSIG(status) + 128);
         }
 
         // push object
@@ -1006,7 +1006,7 @@ static void callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue 
                 r = WEXITSTATUS(status);
             }
             if(WIFSIGNALED(status)) {
-                r = WTERMSIG(status);
+                r = WTERMSIG(status) + 128;
             }
             pushExitStatus(state, r);
         } else {
@@ -1161,7 +1161,7 @@ static void callPipeline(DSState &state) {
             }
             if(WIFSIGNALED(status)) {
                 procs[i].kind = Process::SIGNAL;
-                procs[i].status = WTERMSIG(status);
+                procs[i].status = WTERMSIG(status) + 128;
             }
         }
         if(state.isInteractive() && rootShell) {

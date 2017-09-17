@@ -1,0 +1,40 @@
+
+# single command
+sh -c 'exit 23'
+assert $? == 23
+
+sh -c 'exit 0'
+assert $? == 0
+
+sh -c 'exit 255'
+assert $? == 255
+
+sh -c 'kill -s KILL $$'     # terminated by signal
+assert $? == 9 + 128
+
+
+# pipline
+sh -c true | sh -c 'exit 23'
+assert $? == 23
+
+sh -c true | sh -c 'exit 0'
+assert $? == 0
+
+sh -c true | sh -c 'exit 252'
+assert $? == 252
+
+sh -c false | sh -c 'kill -s KILL $$'   # terminated by signal
+assert $? == 9 + 128
+
+
+# substitution
+$(sh -c 'exit 123')
+assert $? == 123
+
+"$(sh -c 'exit 230')"
+assert $? == 230
+
+$(sh -c false | sh -c 'kill -s KILL $$')
+assert $? == 9 + 128
+
+true
