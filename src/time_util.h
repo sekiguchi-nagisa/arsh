@@ -41,8 +41,7 @@ inline struct tm *getLocalTime() {
 
     if(useFixedTime && getenv(timeSource) != nullptr) {
         const char *src = getenv(timeSource);
-        struct tm tm;
-        memset(&tm, 0, sizeof(struct tm));
+        struct tm tm{};
         if(strptime(src, "%Y-%m-%dT%H:%M:%SZ", &tm) == nullptr) {   // ex. 2012-1-12T23:45:56Z
             fatal("broken time source\n");
         }
