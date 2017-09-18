@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
+#include <config.h>
 #include <misc/files.h>
+#include <misc/util.hpp>
 #include "../test_common.h"
 
 #ifndef CMDLINE_TEST_DIR
@@ -94,7 +96,7 @@ INSTANTIATE_TEST_CASE_P(CmdlineTestOld, CmdlineTestOld, ::testing::ValuesIn(getF
 
 TEST_F(CmdlineTest, assert) {
     // no assert
-    this->expect(ds("--disable-assertion", "-c", "assert(12 / 0 == 12)"), 0, "");
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--disable-assertion", "-c", "assert(12 / 0 == 12)"), 0, ""));
 
     // assert with message
     const char *cmd = R"(assert
@@ -105,29 +107,32 @@ TEST_F(CmdlineTest, assert) {
     from (string):2 '<toplevel>()'
 )";
 
-    this->expect(ds("-c", cmd), 1, "", msg);
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", cmd), 1, "", msg));
 
     // assert without message
     msg = R"(Assertion Error: `34 == 43'
     from (string):1 '<toplevel>()'
 )";
 
-    this->expect(ds("-c", "assert 34 == 43"), 1, "", msg);
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "assert 34 == 43"), 1, "", msg));
 }
 
 TEST_F(CmdlineTest, ast) {
-    this->expectRegex(ds("--dump-ast", "-c", "[12, 32] is Array<Int>"), 0, "^### dump typed AST ###.*$");
+    ASSERT_NO_FATAL_FAILURE( this->expectRegex(
+            ds("--dump-ast", "-c", "[12, 32] is Array<Int>"), 0, "^### dump typed AST ###.*$"));
 }
 
 TEST_F(CmdlineTest, uast) {
-    this->expectRegex(ds("--dump-untyped-ast", "-c", "12"), 0, "^### dump untyped AST ###.*$");
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(
+            ds("--dump-untyped-ast", "-c", "12"), 0, "^### dump untyped AST ###.*$"));
 }
 
 TEST_F(CmdlineTest, cmd1) {
-    this->expect(ds("-c", "assert($0 == 'ydsh')"), 0);
-    this->expect(ds("-c", "assert($0 == \"A\"); assert($@.size() == 1); assert($@[0] == \"G\")", "A", "G"), 0);
-    this->expect(ds("-c", "assert $SCRIPT_DIR == \"$(pwd -L)\""), 0);
-    this->expect(ds("-c", "\\"), 0);    // do nothing
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "assert($0 == 'ydsh')"), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect(
+            ds("-c", "assert($0 == \"A\"); assert($@.size() == 1); assert($@[0] == \"G\")", "A", "G"), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "assert $SCRIPT_DIR == \"$(pwd -L)\""), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "\\"), 0));    // do nothing
 }
 
 TEST_F(CmdlineTest, cmd2) {
@@ -135,43 +140,43 @@ TEST_F(CmdlineTest, cmd2) {
     const char *msg = R"(Assertion Error: `(12 == 4)'
     from (string):1 '<toplevel>()'
 )";
-    this->expect(ds("-c", "assert(12 == 4)"), 1, "", msg);
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "assert(12 == 4)"), 1, "", msg));
 
     // exception
     msg = R"([runtime error]
 ArithmeticError: zero division
     from (string):1 '<toplevel>()'
 )";
-    this->expect(ds("-c", "34 / 0"), 1, "", msg);
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "34 / 0"), 1, "", msg));
 
     // normal
     msg = R"([runtime error]
 SystemError: execution error: lajfeoifreo: command not found
     from (string):1 '<toplevel>()'
 )";
-    this->expect(ds("-c", "lajfeoifreo"), 1, "", msg);
-    this->expect(ds("-c", "__puts -3"), 1);
-    this->expect(ds("-c", "echo hello"), 0, "hello\n");
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "lajfeoifreo"), 1, "", msg));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "__puts -3"), 1));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "echo hello"), 0, "hello\n"));
 
     // exit
-    this->expect(ds("-c", "exit 0"), 0);
-    this->expect(ds("-c", "exit 66"), 66);
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "exit 0"), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "exit 66"), 66));
 
     // exec
-    this->expect(ds("-c", "exec > /dev/null; echo hello"), 0);
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "exec > /dev/null; echo hello"), 0));
 
     // command error
     msg = R"([runtime error]
 SystemError: execution error: hoge: command not found
     from (string):1 '<toplevel>()'
 )";
-    this->expect(ds("-c", "hoge | :"), 0, "", msg);
-    this->expect(ds("-c", ": | hoge"), 1, "", msg);
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "hoge | :"), 0, "", msg));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", ": | hoge"), 1, "", msg));
 }
 
 TEST_F(CmdlineTest, help) {
-    this->expectRegex(ds("--help"), 0, "^.*\nOptions:\n.*$");
-    this->expectRegex(ds("--norc", "--help","--version"), 0, "^.*\nOptions:\n.*$");
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--help"), 0, "^.*\nOptions:\n.*$"));
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--norc", "--help","--version"), 0, "^.*\nOptions:\n.*$"));
 }
 
 TEST_F(CmdlineTest, illegal) {
@@ -180,12 +185,14 @@ ydsh, version .*, build by .*
 Options:
 .*$)";
 
-    this->expectRegex(ds("--ho"), 1, "", p);
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--ho"), 1, "", p));
 }
 
 TEST_F(CmdlineTest, exit) {
-    this->expectRegex(ds("--trace-exit", "-c", "exit 23"), 23, "", "^Shell Exit: terminated by exit 23\n.*$");
-    this->expectRegex(ds("--trace-exit", "-c", "exit 2300"), 2300 % 256, "", "^Shell Exit: terminated by exit 2300\n.*$");
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(
+            ds("--trace-exit", "-c", "exit 23"), 23, "", "^Shell Exit: terminated by exit 23\n.*$"));
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(
+            ds("--trace-exit", "-c", "exit 2300"), 2300 % 256, "", "^Shell Exit: terminated by exit 2300\n.*$"));
 }
 
 TEST_F(CmdlineTest, bytecode) {
@@ -209,7 +216,7 @@ Source Pos Entry:
   lineNum: 1, address: 15, pos: 12
 Exception Table:
 )";
-    this->expect(ds("--dump-code", "-c", "var a = 34; 34 as String"), 0, msg);
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--dump-code", "-c", "var a = 34; 34 as String"), 0, msg));
 
     msg = R"(### dump compiled code ###
 Source File: (string)
@@ -250,16 +257,163 @@ Constant Pool:
 Source Pos Entry:
 Exception Table:
 )";
-    this->expect(ds("--dump-code", "-c", "function f($a : Any) : Boolean { return $a is Array<Int>; }; try { $f(1) } finally {3}"), 0, msg);
+    const char *s = "function f($a : Any) : Boolean { return $a is Array<Int>; }; try { $f(1) } finally {3}";
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--dump-code", "-c", s), 0, msg));
 }
 
 TEST_F(CmdlineTest, parse_only) {
-    this->expect(ds("--parse-only", "-c", "var a = 34; $a = $a;"), 0);
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--parse-only", "-c", "var a = 34; $a = $a;"), 0));
 
     // when specified '--parse-only' option, only work '--dump-untyped-ast'
-    this->expectRegex(ds("--parse-only", "--dump-untyped-ast", "-c", "var a = 34; $a = $a;"), 0, ".*");
-    this->expect(ds("--parse-only", "--dump-ast", "-c", "var a = 34; $a = $a;"), 0);
-    this->expect(ds("--parse-only", "--dump-code", "-c", "var a = 34; $a = $a;"), 0);
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(
+            ds("--parse-only", "--dump-untyped-ast", "-c", "var a = 34; $a = $a;"), 0, ".*"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--parse-only", "--dump-ast", "-c", "var a = 34; $a = $a;"), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--parse-only", "--dump-code", "-c", "var a = 34; $a = $a;"), 0));
+}
+
+TEST_F(CmdlineTest, check_only) {
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--check-only", "-c", "exit 88"), 0));
+
+    // when specified '--check-only' option, only work '--dump-untyped-ast' and '--dump-ast'
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--check-only", "--dump-untyped-ast", "-c", "exit 88"), 0, ".*"));
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--check-only", "--dump-ast", "-c", "exit 88"), 0, ".*"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--check-only", "--dump-code", "-c", "exit 88"), 0));
+
+
+    // equivalent to '--check-only' option
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-n", "-c", "exit 88"), 0));
+
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("-n", "--dump-untyped-ast", "-c", "exit 88"), 0, ".*"));
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("-n", "--dump-ast", "-c", "exit 88"), 0, ".*"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-n", "--dump-code", "-c", "exit 88"), 0));
+}
+
+TEST_F(CmdlineTest, compile_only) {
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--compile-only", "-c", "exit 88"), 0));
+
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--compile-only", "--dump-untyped-ast", "-c", "exit 88"), 0, ".*"));
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--compile-only", "--dump-ast", "-c", "exit 88"), 0, ".*"));
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--compile-only", "--dump-code", "-c", "exit 88"), 0, ".*"));
+}
+
+TEST_F(CmdlineTest, exec) {
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "echo", "hello"), 0, "hello\n"));
+
+    // not found builtin command
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "fhurehfurei"), 1, "", "ydsh: fhurehfurei: not builtin command\n"));
+
+    // command
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "command", "hogehoge"), 1, "", "ydsh: hogehoge: command not found\n"));
+
+    // eval
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "eval", "hogehoge"), 1, "", "ydsh: hogehoge: command not found\n"));
+
+    // exit
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exit", "34"), 34));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exit", "999"), 231));
+
+    // exec
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec"), 0));  // do nothing
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "echo", "hello"), 0, "hello\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-a", "hoge", "echo", "hello"), 0, "hello\n"));
+
+    // default env
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert $(printenv).size() == 7"), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv SHLVL)\" == \"1\")"), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect(
+            ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv PATH)\" == \"/bin:/usr/bin:/usr/local/bin\")"), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect(
+            ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv LOGNAME)\" == \"$(ps_intrp \\\\u)\")"), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect(
+            ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv HOME)\" == \"$(echo ~)\")"), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect(
+            ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv _)\" == \"$(command -v printenv)\")"), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect(
+            ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv PWD)\" == \"$(printenv OLDPWD)\")"), 0));
+
+    // invalid option
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-u"), 1, "", "exec: exec [-c] [-a name] file [args ...]\n"));
+}
+
+TEST_F(CmdlineTest, marker) {
+    // line marker of syntax error
+    const char *msg = R"((string):1: [syntax error] mismatched token: <EOS>, expected: =
+var a
+      ^
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "var a   \n    \\\n   \t  \t  \n   "), 1, "", msg));
+
+    // line marker of semantic error
+    msg = R"((string):1: [semantic error] require Int32, but is String
+[34, "hey"]
+     ^~~~~
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "[34, \"hey\"]"), 1, "", msg));
+
+    // line marker containing newline
+    const char *s = R"(
+var a = 34
+$a = 34 +
+     'de'
+)";
+    msg = R"((string):3: [semantic error] require Int32, but is String
+$a = 34 +
+     ^~~~
+     'de'
+~~~~~~~~~
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", s), 1, "", msg));
+}
+
+TEST_F(CmdlineTest, version) {
+    std::string msg = "^ydsh, version ";
+    msg += X_INFO_VERSION;
+    msg += ", build by .+\n";
+    msg += "Copyright .+\n$";
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--version"), 0, msg.c_str()));
+}
+
+TEST_F(CmdlineTest, toplevel) {
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--print-toplevel", "-c", "23 as String"), 0, "(String) 23\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--print-toplevel", "-c", "$true"), 0, "(Boolean) true\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--print-toplevel", "-c", "true"), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--print-toplevel", "-c", "true | true"), 0));
+
+    // runtime error
+    const char *msg = R"([runtime error]
+StackOverflowError: caused by circular reference
+    from (string):1 '<toplevel>()'
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect(
+            ds("--print-toplevel", "-c", "var a = (9 as Any,); $a._0 = $a; $a"), 1, "", msg));
+
+    msg = R"([runtime error]
+cannot obtain string representation
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect(
+            ds("--print-toplevel", "-c", "var a = (9 as Any,); $a._0 = $a; throw $a"), 1, "", msg));
+
+    // option type
+    ASSERT_NO_FATAL_FAILURE(this->expect(
+            ds("--print-toplevel", "-c", "var a = $true as Option<Boolean>; $a"), 0, "(Option<Boolean>) true\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(
+            ds("--print-toplevel", "-c", "new Option<Boolean>()"), 0, "(Option<Boolean>) (invalid)\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(
+            ds("--print-toplevel", "-c", "var a = $true as String as Option<String>; $a"), 0, "(Option<String>) true\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(
+            ds("--print-toplevel", "-c", "new Option<String>()"), 0, "(Option<String>) (invalid)\n"));
+}
+
+TEST_F(CmdlineTest, toplevel_escape) {
+    auto builder = ds("--print-toplevel", "-c", "$'hello\\x00world'");
+    auto r = builder.execAndGetResult(false);
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, r.status));
+
+    const char msg[] = "(String) hello\0world\n";
+    std::string out(msg, arraySize(msg) - 1);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(out, r.out));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("", r.err.c_str()));
 }
 
 int main(int argc, char **argv) {
