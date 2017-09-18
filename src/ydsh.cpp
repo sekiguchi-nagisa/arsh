@@ -190,9 +190,9 @@ static void handleUncaughtException(DSState *st, DSValue &&except) {
     } catch(const DSException &) {
         fputs("cannot obtain string representation\n", stderr);
     }
+    fflush(stderr);
 
-    if(typeAs<Int_Object>(st->getGlobal(toIndex(BuiltinVarOffset::SHELL_PID)))->getValue() !=
-       typeAs<Int_Object>(st->getGlobal(toIndex(BuiltinVarOffset::PID)))->getValue()) {
+    if(!st->isRootShell()) {
         exit(1);    // in child process.
     }
 }
@@ -243,7 +243,6 @@ static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, Compiled
         auto *fp = state->dumpTarget.fps[DS_DUMP_KIND_UAST];
         fputs("### dump untyped AST ###\n", fp);
         NodeDumper::dump(fp, state->pool, *rootNode);
-        fputc('\n', fp);
     }
 
     if(state->execMode == DS_EXEC_MODE_PARSE_ONLY) {
@@ -259,7 +258,6 @@ static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, Compiled
             auto *fp = state->dumpTarget.fps[DS_DUMP_KIND_AST];
             fputs("### dump typed AST ###\n", fp);
             NodeDumper::dump(fp, state->pool, *rootNode);
-            fputc('\n', fp);
         }
     } catch(const TypeCheckError &e) {
         handleTypeError(lexer, e, dsError);

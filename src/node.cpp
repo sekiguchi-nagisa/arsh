@@ -1469,6 +1469,7 @@ void NodeDumper::operator()(const RootNode &rootNode) {
 void NodeDumper::dump(FILE *fp, TypePool &pool, const RootNode &rootNode) {
     NodeDumper writer(fp, pool);
     writer(rootNode);
+    fflush(fp);
 }
 
 
