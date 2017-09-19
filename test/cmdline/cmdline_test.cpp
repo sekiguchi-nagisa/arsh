@@ -318,7 +318,6 @@ TEST_F(CmdlineTest, exec) {
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-a", "hoge", "echo", "hello"), 0, "hello\n"));
 
     // default env
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert $(printenv).size() == 7"), 0));
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv SHLVL)\" == \"1\")"), 0));
     ASSERT_NO_FATAL_FAILURE(this->expect(
             ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv PATH)\" == \"/bin:/usr/bin:/usr/local/bin\")"), 0));
@@ -330,6 +329,15 @@ TEST_F(CmdlineTest, exec) {
             ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv _)\" == \"$(command -v printenv)\")"), 0));
     ASSERT_NO_FATAL_FAILURE(this->expect(
             ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv PWD)\" == \"$(printenv OLDPWD)\")"), 0));
+
+#if defined(__CYGWIN__)
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(check_env SYSTEMDRIVE)"), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(check_env SYSTEMROOT)"), 0));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert $(printenv).size() == 9"), 0));
+#else
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert $(printenv).size() == 7"), 0));
+#endif
 
     // invalid option
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-u"), 1, "", "exec: exec [-c] [-a name] file [args ...]\n"));
