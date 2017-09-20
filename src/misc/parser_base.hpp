@@ -131,7 +131,13 @@ protected:
 
     Token expect(T kind, bool fetchNext = true);
 
-    T consume();
+    void consume();
+
+    T consumeAndGet() {
+        T kind = this->curKind;
+        this->consume();
+        return kind;
+    }
 
     template <std::size_t N>
     void raiseNoViableAlterError(const T (&alters)[N]) {
@@ -169,11 +175,9 @@ Token AbstractParser<T, LexerImpl, Tracker>::expect(T kind, bool fetchNext) {
 }
 
 template<typename T, typename LexerImpl, typename Tracker>
-T AbstractParser<T, LexerImpl, Tracker>::consume() {
-    T kind = this->curKind;
+void AbstractParser<T, LexerImpl, Tracker>::consume() {
     this->trace();
     this->fetchNext();
-    return kind;
 }
 
 template<typename T, typename LexerImpl, typename Tracker>

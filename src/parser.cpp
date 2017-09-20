@@ -314,7 +314,7 @@ std::unique_ptr<Node> Parser::parse_interface() {
         case VAR:
         case LET: {
             startPos = START_POS();
-            auto readOnly = this->consume() == LET ? VarDeclNode::CONST : VarDeclNode::VAR;
+            auto readOnly = this->consumeAndGet() == LET ? VarDeclNode::CONST : VarDeclNode::VAR;
             token = TRY(this->expect(IDENTIFIER));
             TRY(this->expect(COLON, false));
             auto type = TRY(this->parse_typeName());
@@ -819,12 +819,12 @@ std::unique_ptr<RedirNode> Parser::parse_redirOption() {
 
     switch(CUR_KIND()) {
     EACH_LA_redirFile(GEN_LA_CASE) {
-        TokenKind kind = this->consume();
+        TokenKind kind = this->consumeAndGet();
         return make_unique<RedirNode>(kind, TRY(this->parse_cmdArg()).release());
     }
     EACH_LA_redirNoFile(GEN_LA_CASE) {
         Token token = this->curToken;
-        TokenKind kind = this->consume();
+        TokenKind kind = this->consumeAndGet();
         return make_unique<RedirNode>(kind, token);
     }
     default:
@@ -958,7 +958,7 @@ std::unique_ptr<Node> Parser::parse_binaryExpression(std::unique_ptr<Node> &&lef
             break;
         }
         default: {
-            TokenKind op = this->consume();
+            TokenKind op = this->consumeAndGet();
             auto rightNode = TRY(this->parse_unaryExpression());
             for(unsigned int nextP = PRECEDENCE();
                 !HAS_NL() && (nextP > p || (nextP == p && isAssignOp(op))); nextP = PRECEDENCE()) {
@@ -980,7 +980,7 @@ std::unique_ptr<Node> Parser::parse_unaryExpression() {
     case MINUS:
     case NOT: {
         unsigned int startPos = START_POS();
-        TokenKind op = this->consume();
+        TokenKind op = this->consumeAndGet();
         return make_unique<UnaryOpNode>(startPos, op, TRY(this->parse_unaryExpression()).release());
     }
     default:
@@ -1029,13 +1029,13 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
         case INC:
         case DEC: {
             Token token = this->curToken;
-            TokenKind op = this->consume();
+            TokenKind op = this->consumeAndGet();
             node.reset(createSuffixNode(node.release(), op, token));
             break;
         }
         case UNWRAP: {
             Token token = this->curToken;
-            TokenKind op = this->consume(); // UNWRAP
+            TokenKind op = this->consumeAndGet(); // UNWRAP
             unsigned int pos = node->getPos();
             node = make_unique<UnaryOpNode>(pos, op, node.release());
             node->updateToken(token);
