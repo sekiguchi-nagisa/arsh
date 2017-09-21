@@ -745,12 +745,12 @@ std::unique_ptr<Element> Parser::parse_funcDesc() {
     // parser function name
     switch(CUR_KIND()) {
     case IDENTIFIER: {
-        Token token = TRY(this->expect(IDENTIFIER));
+        Token token = TRY(this->expectAndGet(IDENTIFIER));
         element = Element::newFuncElement(this->lexer->toTokenText(token), false);
         break;
     }
     case VAR_NAME: {
-        Token token = TRY(this->expect(VAR_NAME));
+        Token token = TRY(this->expectAndGet(VAR_NAME));
         element = Element::newFuncElement(this->toName(token), true);
         break;
     }
@@ -792,7 +792,7 @@ std::unique_ptr<Element> Parser::parse_params(std::unique_ptr<Element> &element)
             TRY(this->expect(COMMA));
         }
 
-        Token token = TRY(this->expect(VAR_NAME));
+        Token token = TRY(this->expectAndGet(VAR_NAME));
         bool hasDefault = false;
         if(CUR_KIND() == OPT) {
             TRY(this->expect(OPT));
@@ -812,7 +812,7 @@ bool isFunc(const std::string &str) {
 }
 
 std::unique_ptr<TypeToken> Parser::parse_type() {
-    Token token = TRY(this->expect(IDENTIFIER));
+    Token token = TRY(this->expectAndGet(IDENTIFIER));
     if(CUR_KIND() != TYPE_OPEN) {
         return CommonTypeToken::newTypeToken(this->lexer->toTokenText(token));
     }
@@ -870,7 +870,7 @@ std::unique_ptr<Element> Parser::parse_funcDecl(const std::string &line, std::un
         TRY(this->expect(YDSH_METHOD));
     }
 
-    Token token = TRY(this->expect(IDENTIFIER));
+    Token token = TRY(this->expectAndGet(IDENTIFIER));
     std::string str(this->lexer->toTokenText(token));
     element->setActualFuncName(std::move(str));
 

@@ -129,7 +129,13 @@ protected:
         }
     }
 
-    Token expect(T kind, bool fetchNext = true);
+    bool expect(T kind, bool fetchNext = true);
+
+    Token expectAndGet(T kind, bool fetchNext = true) {
+        auto token = this->curToken;
+        this->expect(kind, fetchNext);
+        return token;
+    }
 
     void consume();
 
@@ -161,17 +167,16 @@ protected:
 // ############################
 
 template<typename T, typename LexerImpl, typename Tracker>
-Token AbstractParser<T, LexerImpl, Tracker>::expect(T kind, bool fetchNext) {
+bool AbstractParser<T, LexerImpl, Tracker>::expect(T kind, bool fetchNext) {
     if(this->curKind != kind) {
         this->raiseTokenMismatchedError(kind);
-        return this->curToken;
+        return false;
     }
     this->trace();
-    Token token = this->curToken;
     if(fetchNext) {
         this->fetchNext();
     }
-    return token;
+    return true;
 }
 
 template<typename T, typename LexerImpl, typename Tracker>

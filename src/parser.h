@@ -120,7 +120,7 @@ protected:
     /**
      * after matching token, change lexer mode and fetchNext.
      */
-    Token expectAndChangeMode(TokenKind kind, LexerMode mode, bool fetchNext = true);
+    bool expectAndChangeMode(TokenKind kind, LexerMode mode, bool fetchNext = true);
 
     void raiseTokenFormatError(TokenKind kind, Token token, const char *msg);
 
@@ -195,7 +195,7 @@ protected:
     template <typename Func>
     auto expectNum(TokenKind kind, Func func) ->
     std::pair<Token, decltype((this->lexer->*func)(std::declval<Token>(), std::declval<int &>()))> {
-        auto token = this->expect(kind);
+        auto token = this->expectAndGet(kind);
         int status;
         auto out = (this->lexer->*func)(token, status);
         if(status != 0) {
