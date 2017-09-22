@@ -22,6 +22,7 @@
     TOKEN(EOS                                , "<EOS>") \
     /* token kind definition. */\
     /* reserved key word. */\
+    TOKEN(ALIAS                              , "alias") \
     TOKEN(ASSERT                             , "assert") \
     TOKEN(BREAK                              , "break") \
     TOKEN(CATCH                              , "catch") \
@@ -43,7 +44,6 @@
     TOKEN(RETURN                             , "return") \
     TOKEN(TRY                                , "try") \
     TOKEN(THROW                              , "throw") \
-    TOKEN(TYPE_ALIAS                         , "type-alias") \
     TOKEN(VAR                                , "var") \
     TOKEN(WHILE                              , "while") \
     /* unary op */\

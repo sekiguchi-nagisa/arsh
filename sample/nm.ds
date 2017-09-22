@@ -29,7 +29,7 @@ assert($DBus.getObjectPath($a) == $path)
 
 echo ${$DBus.introspect($a)}
 
-type-alias NM org.freedesktop.NetworkManager
+alias NM = org.freedesktop.NetworkManager
 
 # get all properties
 var p = ($a as Properties).GetAll("org.freedesktop.NetworkManager")

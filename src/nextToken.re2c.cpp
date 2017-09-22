@@ -130,6 +130,7 @@ TokenKind Lexer::nextToken(Token &token) {
     unsigned int startPos = this->getPos();
     TokenKind kind = INVALID;
     /*!re2c
+      <STMT> "alias"           { MODE(NAME); RET(ALIAS); }
       <STMT> "assert"          { RET(ASSERT); }
       <STMT> "break"           { RET(BREAK); }
       <EXPR> "catch"           { MODE(STMT); RET(CATCH); }
@@ -151,7 +152,6 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT> "return"          { RET(RETURN); }
       <STMT> "try"             { RET(TRY); }
       <STMT> "throw"           { RET(THROW); }
-      <STMT> "type-alias"      { MODE(NAME); RET(TYPE_ALIAS); }
       <STMT> "var"             { MODE(NAME); RET(VAR); }
       <STMT,EXPR> "while"      { MODE(STMT); RET(WHILE); }
 

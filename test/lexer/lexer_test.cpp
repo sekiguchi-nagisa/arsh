@@ -323,12 +323,12 @@ TEST_F(LexerTest_Lv1, throw_tok) {
     });
 }
 
-TEST_F(LexerTest_Lv1, type_alias_tok) {
-    const char *text = "type-alias";
+TEST_F(LexerTest_Lv1, alias_tok) {
+    const char *text = "alias";
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(TYPE_ALIAS, text, EOS, "");
+        EXPECT(ALIAS, text, EOS, "");
         this->assertLexerMode(yycNAME);
     });
 }

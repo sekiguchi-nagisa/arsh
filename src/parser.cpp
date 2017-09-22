@@ -80,7 +80,7 @@
 #define EACH_LA_statement(OP) \
     OP(FUNCTION) \
     OP(INTERFACE) \
-    OP(TYPE_ALIAS) \
+    OP(ALIAS) \
     OP(ASSERT) \
     OP(BREAK) \
     OP(CONTINUE) \
@@ -501,10 +501,11 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
     case INTERFACE: {
         return this->parse_interface();
     }
-    case TYPE_ALIAS: {
+    case ALIAS: {
         unsigned int startPos = START_POS();
-        this->consume();    // TYPE_ALIAS
-        Token token = TRY(this->expectAndGet(IDENTIFIER, false));
+        this->consume();    // ALIAS
+        Token token = TRY(this->expectAndGet(IDENTIFIER));
+        TRY(this->expect(ASSIGN, false));
         auto typeToken = TRY(this->parse_typeName());
         return make_unique<TypeAliasNode>(startPos, this->lexer->toTokenText(token), typeToken.release());
     }

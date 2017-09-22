@@ -6,7 +6,7 @@ interface org.freedesktop.UDisks2.Filesystem {
     function Unmount($options : Map<String, Variant>)
     let MountPoints : Array<Array<Byte>>
 }
-type-alias FS org.freedesktop.UDisks2.Filesystem
+alias FS = org.freedesktop.UDisks2.Filesystem
 
 var srv = $DBus.systemBus().service("org.freedesktop.UDisks2")
 var a = $srv.object(p'/org/freedesktop/UDisks2')

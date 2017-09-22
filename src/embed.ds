@@ -8,8 +8,8 @@ if not(check_env PATH) {
 
 { import-env PWD : "$(pwd)"; import-env OLDPWD : "$(pwd)"; }
 
-type-alias Int Int32
-type-alias Uint Uint32
+alias Int = Int32
+alias Uint = Uint32
 
 var PS1 = '\s-\v\$ '
 var PS2 = '> '
@@ -42,12 +42,12 @@ interface org.freedesktop.DBus.Peer {
     function Ping()
     function GetMachineId() : String
 }
-type-alias Peer org.freedesktop.DBus.Peer
+alias Peer = org.freedesktop.DBus.Peer
 
 interface org.freedesktop.DBus.Introspectable {
     function Introspect() : String
 }
-type-alias Introspectable org.freedesktop.DBus.Introspectable
+alias Introspectable = org.freedesktop.DBus.Introspectable
 
 interface org.freedesktop.DBus.Properties {
     function Get($iface : String, $property : String) : Variant
@@ -55,12 +55,12 @@ interface org.freedesktop.DBus.Properties {
     function GetAll($iface : String) : Map<String, Variant>
     function PropertiesChanged($hd : Func<Void, [String, Map<String, Variant>, Array<String>]>)
 }
-type-alias Properties org.freedesktop.DBus.Properties
+alias Properties = org.freedesktop.DBus.Properties
 
-type-alias ObjectAttr Map<String, Map<String, Variant>>
+alias ObjectAttr = Map<String, Map<String, Variant>>
 interface org.freedesktop.DBus.ObjectManager {
     function GetManagedObjects() : Map<ObjectPath, ObjectAttr>
     function InterfacesAdded($hd : Func<Void, [ObjectPath, ObjectAttr]>)
     function InterfacesRemoved($hd : Func<Void, [ObjectPath, Array<String>]>)
 }
-type-alias ObjectManager org.freedesktop.DBus.ObjectManager
+alias ObjectManager = org.freedesktop.DBus.ObjectManager
