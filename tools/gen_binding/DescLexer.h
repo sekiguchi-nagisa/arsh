@@ -52,7 +52,7 @@ EACH_DESC_TOKEN(GEN_ENUM)
 #undef GEN_ENUM
 };
 
-typedef ydsh::parser_base::Token Token;
+using Token = ydsh::Token;
 
 class DescLexer : public ydsh::parser_base::LexerBase {
 public:

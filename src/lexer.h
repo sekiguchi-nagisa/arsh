@@ -30,8 +30,6 @@ namespace ydsh {
 
 const char *toModeName(LexerMode mode);
 
-typedef ydsh::parser_base::Token Token;
-
 
 class SourceInfo {
 private:

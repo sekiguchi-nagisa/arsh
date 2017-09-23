@@ -28,31 +28,11 @@
 
 #include "unicode.hpp"
 #include "noncopyable.h"
+#include "token.hpp"
 
 namespace ydsh {
 namespace parser_base {
 
-struct Token {
-    unsigned int pos;
-    unsigned int size;
-
-    bool operator==(const Token &token) const {
-        return this->pos == token.pos && this->size == token.size;
-    }
-
-    bool operator!=(const Token &token) const {
-        return !(*this == token);
-    }
-};
-
-inline std::string toString(Token token) {
-    std::string str = "(pos = ";
-    str += std::to_string(token.pos);
-    str += ", size = ";
-    str += std::to_string(token.size);
-    str += ")";
-    return str;
-}
 
 namespace __detail {
 
