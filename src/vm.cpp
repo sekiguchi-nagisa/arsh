@@ -695,55 +695,68 @@ static int doIOHere(const String_Object &value) {
 /**
  * if failed, return non-zero value(errno)
  */
-static int redirectToFile(const DSValue &fileName, const char *mode, int targetFD) {
-    FILE *fp = fopen(typeAs<String_Object>(fileName)->getValue(), mode);
-    if(fp == nullptr) {
-        return errno;
+static int redirectToFile(const TypePool &pool, const DSValue &fileName, const char *mode, int targetFD) {
+    auto &type = *fileName->getType();
+    if(type == pool.getStringType()) {
+        FILE *fp = fopen(typeAs<String_Object>(fileName)->getValue(), mode);
+        if(fp == nullptr) {
+            return errno;
+        }
+        int fd = fileno(fp);
+        if(dup2(fd, targetFD) < 0) {
+            int e = errno;
+            fclose(fp);
+            return e;
+        }
+        fclose(fp);
+    } else {
+        assert(type == pool.getUnixFDType());
+        int fd = typeAs<UnixFD_Object>(fileName)->getValue();
+        if(dup2(fd, targetFD) < 0) {
+            return errno;
+        }
     }
-    int fd = fileno(fp);
-    dup2(fd, targetFD);
-    fclose(fp);
     return 0;
 }
 
-static int redirectImpl(const std::pair<RedirOP, DSValue> &pair) {
+static int redirectImpl(const TypePool &pool, const std::pair<RedirOP, DSValue> &pair) {
     switch(pair.first) {
     case RedirOP::IN_2_FILE: {
-        return redirectToFile(pair.second, "rb", STDIN_FILENO);
+        return redirectToFile(pool, pair.second, "rb", STDIN_FILENO);
     }
     case RedirOP::OUT_2_FILE: {
-        return redirectToFile(pair.second, "wb", STDOUT_FILENO);
+        return redirectToFile(pool, pair.second, "wb", STDOUT_FILENO);
     }
     case RedirOP::OUT_2_FILE_APPEND: {
-        return redirectToFile(pair.second, "ab", STDOUT_FILENO);
+        return redirectToFile(pool, pair.second, "ab", STDOUT_FILENO);
     }
     case RedirOP::ERR_2_FILE: {
-        return redirectToFile(pair.second, "wb", STDERR_FILENO);
+        return redirectToFile(pool, pair.second, "wb", STDERR_FILENO);
     }
     case RedirOP::ERR_2_FILE_APPEND: {
-        return redirectToFile(pair.second, "ab", STDERR_FILENO);
+        return redirectToFile(pool, pair.second, "ab", STDERR_FILENO);
     }
     case RedirOP::MERGE_ERR_2_OUT_2_FILE: {
-        int r = redirectToFile(pair.second, "wb", STDOUT_FILENO);
+        int r = redirectToFile(pool, pair.second, "wb", STDOUT_FILENO);
         if(r != 0) {
             return r;
         }
-        dup2(STDOUT_FILENO, STDERR_FILENO); //FIXME: error check
+        if(dup2(STDOUT_FILENO, STDERR_FILENO) < 0) { return errno; }
         return 0;
     }
     case RedirOP::MERGE_ERR_2_OUT_2_FILE_APPEND: {
-        int r = redirectToFile(pair.second, "ab", STDOUT_FILENO);
+        int r = redirectToFile(pool, pair.second, "ab", STDOUT_FILENO);
         if(r != 0) {
             return r;
         }
-        dup2(STDOUT_FILENO, STDERR_FILENO);
+        if(dup2(STDOUT_FILENO, STDERR_FILENO) < 0) { return errno; }
         return 0;
     }
     case RedirOP::MERGE_ERR_2_OUT:
-        dup2(STDOUT_FILENO, STDERR_FILENO);
+        if(dup2(STDOUT_FILENO, STDERR_FILENO) < 0) { return errno; }
         return 0;
     case RedirOP::MERGE_OUT_2_ERR:
-        dup2(STDERR_FILENO, STDOUT_FILENO);
+        if(dup2(STDERR_FILENO, STDOUT_FILENO) < 0) { return errno; }
         return 0;
     case RedirOP::HERE_STR:
         return doIOHere(*typeAs<String_Object>(pair.second));
@@ -753,11 +766,20 @@ static int redirectImpl(const std::pair<RedirOP, DSValue> &pair) {
 
 void RedirConfig::redirect(DSState &st) const {
     for(auto &pair : this->ops) {
-        int r = redirectImpl(pair);
+        int r = redirectImpl(st.pool, pair);
         if(this->restore && r != 0) {
             std::string msg = REDIR_ERROR;
-            if(pair.second && !typeAs<String_Object>(pair.second)->empty()) {
-                msg += typeAs<String_Object>(pair.second)->getValue();
+            if(pair.second) {
+                auto *type = pair.second->getType();
+                if(*type == st.pool.getStringType()) {
+                    if(!typeAs<String_Object>(pair.second)->empty()) {
+                        msg += ": ";
+                        msg += typeAs<String_Object>(pair.second)->getValue();
+                    }
+                } else if(*type == st.pool.getUnixFDType()) {
+                    msg += ": ";
+                    msg += std::to_string(typeAs<UnixFD_Object>(pair.second)->getValue());
+                }
             }
             throwSystemError(st, r, std::move(msg));
         }

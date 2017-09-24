@@ -801,6 +801,17 @@ void TypeChecker::visitCmdArgNode(DSType *, CmdArgNode &node) {
 
 void TypeChecker::visitRedirNode(DSType *, RedirNode &node) {
     CmdArgNode *argNode = node.getTargetNode();
+
+    // check UnixFD
+    if(argNode->getSegmentNodes().size() == 1) {
+        auto &type = this->checkType(argNode->getSegmentNodes()[0]);
+        if(type == this->typePool.getUnixFDType()) {
+            argNode->setType(type);
+            node.setType(this->typePool.getAnyType());
+            return;
+        }
+    }
+
     this->checkType(argNode);
 
     // not allow String Array type
