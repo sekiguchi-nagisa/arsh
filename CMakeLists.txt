@@ -268,7 +268,8 @@ set(YDSH_SRC
         src/lexer.cpp
         src/parser.cpp
         src/type_checker.cpp
-        src/signals.cpp)
+        src/signals.cpp
+        src/job.cpp)
 
 if(USE_DBUS)
     set(YDSH_SRC ${YDSH_SRC}

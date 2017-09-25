@@ -1240,6 +1240,81 @@ static void callPipeline(DSState &state) {
     }
 }
 
+static void callPipeline2(DSState &state) {
+    const unsigned int size = read8(GET_CODE(state), state.pc() + 1);
+    assert(size > 1);
+
+    int pipefds[size][2];   //FIXME: pipe fd size
+    initPipe(size, pipefds);
+
+    // fork
+    Process procs[size - 1];
+    const bool rootShell = state.isRootShell();
+    pid_t pgid = rootShell ? 0 : getpgid(0);
+    pid_t pid;
+    unsigned int procIndex;
+    for(procIndex = 0; procIndex < size - 1 && (pid = xfork(state, pgid, rootShell)) > 0; procIndex++) {
+        procs[procIndex].pid = pid;
+        if(pgid == 0) {
+            pgid = pid;
+        }
+    }
+
+    /**
+     * code layout
+     *
+     * +----------+-------------+------------------+    +--------------------+
+     * | PIPELINE | size: 1byte | br1(child): 2yte | ~  | brN(parent): 2byte |
+     * +----------+-------------+------------------+    +--------------------+
+     */
+    if(pid == 0) {   // child
+        if(procIndex == 0) {    // first process
+            dup2(pipefds[procIndex][WRITE_PIPE], STDOUT_FILENO);
+        }
+        if(procIndex > 0 && procIndex < size - 1) {   // other process.
+            dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
+            dup2(pipefds[procIndex][WRITE_PIPE], STDOUT_FILENO);
+        }
+        closeAllPipe(size, pipefds);
+
+        // set pc to next instruction
+        state.pc() += read16(GET_CODE(state), state.pc() + 2 + procIndex * 2) - 1;
+    } else if(procIndex == size - 1) { // parent (last pipeline)
+        dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);  //FIXME: save current fd (use RedirConfig)
+        closeAllPipe(size, pipefds);
+
+        //FIXME: create PipelineState
+        // FIXME: move the following codes into JobTable
+        // wait for exit
+        for(unsigned int i = 0; i < size; i++) {
+            int status = 0;
+            waitpid(procs[i].pid, &status, 0);
+            if(WIFEXITED(status)) {
+                procs[i].kind = Process::EXIT;
+                procs[i].status = WEXITSTATUS(status);
+
+            }
+            if(WIFSIGNALED(status)) {
+                procs[i].kind = Process::SIGNAL;
+                procs[i].status = WTERMSIG(status) + 128;
+            }
+        }
+        if(state.isInteractive() && rootShell) {
+            tcsetpgrp(STDIN_FILENO, getpgid(0));
+        }
+        pushExitStatus(state, procs[size - 1].status);
+
+
+
+        // set pc to next instruction
+        state.pc() += read16(GET_CODE(state), state.pc() + 2 + procIndex * 2) - 1;
+    } else {
+        perror("child process error");
+        exit(1);
+    }
+}
+
+
 static void addCmdArg(DSState &state, bool skipEmptyStr) {
     /**
      * stack layout
@@ -1877,6 +1952,10 @@ static bool mainLoop(DSState &state) {
         }
         vmcase(PIPELINE) {
             callPipeline(state);
+            vmnext;
+        }
+        vmcase(PIPELINE2) {
+            callPipeline2(state);
             vmnext;
         }
         vmcase(EXPAND_TILDE) {

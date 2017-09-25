@@ -73,7 +73,8 @@
 | FAILURE_CHILD |                                | -> [terminate]                               | terminate current process                          |
 | CAPTURE_STR   | 2: offset1 offset2             | -> value                                     | capture stdout as string                           |
 | CAPTURE_ARRAY | 2: offset1 offset2             | -> value                                     | capture stdout as string array                     |
-| PIPELINE      | 1: len ...                     | -> value                                     | call pipeline                                      |
+| PIPELINE      | 1: len 2: offset1 offset2 ...  | -> value                                     | call pipeline                                      |
+| PIPELINE2     | 1: len 2: offset1 offset2 ...  | -> value                                     | call pipeline                                      |
 | EXPAND_TILDE  |                                | value -> value                               | perform tilde expansion                            |
 | NEW_CMD       |                                | value -> value                               | pop stack top and store it to new argv             |
 | ADD_CMD_ARG   | 1: byte1                       | value1 value2 value3 -> value1 value2        | add stack top value as command argument            |
