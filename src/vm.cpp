@@ -1251,7 +1251,7 @@ static void callPipeline2(DSState &state) {
     Process procs[size - 1];
     const bool rootShell = state.isRootShell();
     pid_t pgid = rootShell ? 0 : getpgid(0);
-    pid_t pid;
+    pid_t pid = -1;
     unsigned int procIndex;
     for(procIndex = 0; procIndex < size - 1 && (pid = xfork(state, pgid, rootShell)) > 0; procIndex++) {
         procs[procIndex].pid = pid;
