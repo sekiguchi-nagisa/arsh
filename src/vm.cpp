@@ -1241,6 +1241,7 @@ static void callPipeline(DSState &state) {
 }
 
 static void callPipeline2(DSState &state) {
+    fatal("unimplemented\n");
     const unsigned int size = read8(GET_CODE(state), state.pc() + 1);
     assert(size > 1);
 

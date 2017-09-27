@@ -658,6 +658,7 @@ void PipelineNode::addNode(Node *node) {
 
 void PipelineNode::dump(NodeDumper &dumper) const {
     DUMP(nodes);
+    DUMP_PRIM(baseIndex);
 }
 
 void PipelineNode::addNodeImpl(Node *node) {

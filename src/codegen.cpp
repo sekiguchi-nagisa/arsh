@@ -266,6 +266,21 @@ void ByteCodeGenerator::emitPipelineIns(const std::vector<IntrusivePtr<Label>> &
     }
 }
 
+void ByteCodeGenerator::emitPipelineIns2(const std::vector<IntrusivePtr<Label>> &labels) {
+    const unsigned int size = labels.size();
+    if(size > UINT8_MAX) {
+        fatal("reach limit\n");
+    }
+
+    const unsigned int offset = this->curBuilder().codeBuffer.size();
+    this->emitIns(OpCode::PIPELINE2);
+    this->curBuilder().append8(size);
+    for(unsigned int i = 0; i < size; i++) {
+        this->curBuilder().append16(0);
+        this->curBuilder().writeLabel(offset + 2 + i * 2, labels[i], offset, CodeEmitter<true>::LabelTarget::_16);
+    }
+}
+
 void ByteCodeGenerator::generateStringExpr(StringExprNode &node, bool fragment) {
     const unsigned int size = node.getExprNodes().size();
     if(size == 0) {
@@ -651,6 +666,40 @@ void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
 
 void ByteCodeGenerator::visitPipelineNode(PipelineNode &node) {
     const unsigned int size = node.getNodes().size();
+
+    if(getenv("X_PIPE2") != nullptr) {
+        // init label
+        std::vector<IntrusivePtr<Label>> labels(size);
+        for(unsigned int i = 0; i < size; i++) {
+            labels[i] = makeIntrusive<Label>();
+        }
+
+        // generate pipeline
+        this->emitSourcePos(node.getPos());
+        this->emitPipelineIns2(labels);
+
+        auto begin = makeIntrusive<Label>();
+        auto end = makeIntrusive<Label>();
+
+        // generate pipeline (child)
+        this->markLabel(begin);
+        for(unsigned int i = 0; i < size - 1; i++) {
+            this->markLabel(labels[i]);
+            this->visit(*node.getNodes()[i]);
+            this->emit0byteIns(OpCode::SUCCESS_CHILD);
+        }
+        this->markLabel(end);
+        this->catchException(begin, end, this->pool.getAnyType());
+        this->emit0byteIns(OpCode::FAILURE_CHILD);
+
+        // generate last pipe
+        this->markLabel(labels[size - 1]);
+        this->generateBlock(node.getBaseIndex(), 1, true, [&] {
+            this->visit(*node.getNodes()[size - 1]);
+        });
+        return;
+    }
+
 
     // init label
     std::vector<IntrusivePtr<Label>> labels(size + 1);

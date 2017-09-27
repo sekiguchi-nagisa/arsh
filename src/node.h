@@ -1115,6 +1115,8 @@ class PipelineNode : public Node {
 private:
     std::vector<Node *> nodes;
 
+    unsigned int baseIndex{0}; // for indicating internal pipeline state index
+
 public:
     PipelineNode(Node *leftNode, Node *rightNode) :
             Node(NodeKind::Pipeline, leftNode->getToken()) {
@@ -1128,6 +1130,14 @@ public:
 
     const std::vector<Node *> &getNodes() const {
         return this->nodes;
+    }
+
+    void setBaseIndex(unsigned int index) {
+        this->baseIndex = index;
+    }
+
+    unsigned int getBaseIndex() const {
+        return this->baseIndex;
     }
 
     void dump(NodeDumper &dumper) const override;
