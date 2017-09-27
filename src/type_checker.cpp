@@ -876,6 +876,10 @@ void TypeChecker::visitJumpNode(DSType *, JumpNode &node) {
         RAISE_TC_ERROR(InsideFinally, node);
     }
 
+    if(this->fctx.childLevel() > this->fctx.loopLevel()) {
+        RAISE_TC_ERROR(InsideChild, node);
+    }
+
     if(this->fctx.tryCatchLevel() > this->fctx.loopLevel()) {
         node.setLeavingBlock(true);
     }
@@ -964,6 +968,10 @@ void TypeChecker::visitIfNode(DSType *requiredType, IfNode &node) {
 void TypeChecker::visitReturnNode(DSType *, ReturnNode &node) {
     if(this->fctx.finallyLevel() > 0) {
         RAISE_TC_ERROR(InsideFinally, node);
+    }
+
+    if(this->fctx.childLevel() > 0) {
+        RAISE_TC_ERROR(InsideChild, node);
     }
 
     DSType *returnType = this->getCurrentReturnType();

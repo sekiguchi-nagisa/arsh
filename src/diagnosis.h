@@ -120,6 +120,7 @@ enum class TCError : unsigned int {
     E_Assignable,
     E_ReadOnly,
     E_InsideFinally,
+    E_InsideChild,
     E_OutsideToplevel,
     E_NotCallable,
     E_DisallowTypeof,
@@ -148,6 +149,7 @@ enum class TCError : unsigned int {
 #define Assignable        "require assignable expression"
 #define ReadOnly          "read only symbol"
 #define InsideFinally     "unavailable inside finally block"
+#define InsideChild       "unavailable inside child process"
 #define OutsideToplevel   "only available top level scope"
 #define NotCallable       "Func type object is not directly callable"
 #define DisallowTypeof    "not allow typeof operator"

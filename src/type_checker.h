@@ -67,6 +67,8 @@ private:
         unsigned int finallyLevel;
 
         unsigned int loopLevel;
+
+        unsigned int childLevel;
     };
 
     FlexBuffer<Context> stacks;
@@ -97,9 +99,18 @@ public:
         return this->stacks.back().loopLevel;
     }
 
+    /**
+     *
+     * @return
+     * child process depth. (if 0, parent)
+     */
+    unsigned int childLevel() const {
+        return this->stacks.back().childLevel;
+    }
+
     void clear() {
         this->stacks.clear();
-        this->stacks += {0, 0, 0};
+        this->stacks += {0, 0, 0, 0};
     }
 
     void leave() {
@@ -121,6 +132,12 @@ public:
     void enterLoop() {
         auto v = this->stacks.back();
         v.loopLevel = this->stacks.size();
+        this->stacks += v;
+    }
+
+    void enterChild() {
+        auto v = this->stacks.back();
+        v.childLevel = this->stacks.size();
         this->stacks += v;
     }
 };
