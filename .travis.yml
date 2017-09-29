@@ -4,7 +4,7 @@ matrix:
   include:
     # gcc 4.8
     - os: linux
-      sudo: required
+      sudo: false
       dist: trusty
       compiler: gcc
       addons:
@@ -22,7 +22,7 @@ matrix:
 
     # gcc 4.9
     - os: linux
-      sudo: required
+      sudo: false
       dist: trusty
       compiler: gcc
       addons:
@@ -40,7 +40,7 @@ matrix:
 
     # gcc 5
     - os: linux
-      sudo: required
+      sudo: false
       dist: trusty
       compiler: gcc
       addons:
@@ -58,7 +58,7 @@ matrix:
 
     # gcc 6
     - os: linux
-      sudo: required
+      sudo: false
       dist: trusty
       compiler: gcc
       addons:
@@ -76,7 +76,7 @@ matrix:
 
     # gcc 7
     - os: linux
-      sudo: required
+      sudo: false
       dist: trusty
       compiler: gcc
       addons:
@@ -94,7 +94,7 @@ matrix:
 
     # gcc 7 (Release build)
     - os: linux
-      sudo: required
+      sudo: false
       dist: trusty
       compiler: gcc
       addons:
@@ -117,7 +117,7 @@ matrix:
 
     # clang 3.5
     - os: linux
-      sudo: required
+      sudo: false
       dist: trusty
       compiler: clang
       addons:
@@ -134,7 +134,7 @@ matrix:
 
     # clang 3.6
     - os: linux
-      sudo: required
+      sudo: false
       dist: trusty
       compiler: clang
       addons:
@@ -151,7 +151,7 @@ matrix:
 
     # clang 3.7
     - os: linux
-      sudo: required
+      sudo: false
       dist: trusty
       compiler: clang
       addons:
@@ -169,7 +169,7 @@ matrix:
 
     # clang 3.8
     - os: linux
-      sudo: required
+      sudo: false
       dist: trusty
       compiler: clang
       addons:
@@ -186,7 +186,7 @@ matrix:
 
     # clang 3.9
     - os: linux
-      sudo: required
+      sudo: false
       dist: trusty
       compiler: clang
       addons:
@@ -204,7 +204,7 @@ matrix:
 
     # clang 4.0
     - os: linux
-      sudo: required
+      sudo: false
       dist: trusty
       compiler: clang
       addons:
@@ -222,7 +222,7 @@ matrix:
 
     # clang 5.0
     - os: linux
-      sudo: required
+      sudo: false
       dist: trusty
       compiler: clang
       addons:
@@ -240,7 +240,7 @@ matrix:
 
     # clang 4.0 (Release build)
     - os: linux
-      sudo: required
+      sudo: false
       dist: trusty
       compiler: clang
       addons:
@@ -262,7 +262,7 @@ matrix:
 
     # clang 4.0 with address sanitizer
     - os: linux
-      sudo: required
+      sudo: false
       dist: trusty
       compiler: clang
       addons:
@@ -284,7 +284,7 @@ matrix:
 
     # clang 4.0 with undefined behavior sanitizer
     - os: linux
-      sudo: required
+      sudo: false
       dist: trusty
       compiler: clang
       addons:
@@ -307,7 +307,7 @@ matrix:
 
     # clang 4.0 with USE_DBUS=OFF
     - os: linux
-      sudo: required
+      sudo: false
       dist: trusty
       compiler: clang
       addons:
@@ -330,7 +330,7 @@ matrix:
 
     # gcc6 with coverage
     - os: linux
-      sudo: required
+      sudo: false
       dist: trusty
       compiler: gcc
       addons:
