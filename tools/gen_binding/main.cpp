@@ -386,11 +386,12 @@ void ReifiedTypeToken::serialize(HandleInfoSerializer &s) {
 }
 
 std::unordered_map<std::string, std::pair<unsigned int, HandleInfo >> initTypeMap() {
-    std::unordered_map<std::string, std::pair<unsigned int, HandleInfo >> map;
-    map.insert({TYPE_ARRAY,  {1, Array}});
-    map.insert({TYPE_MAP,    {2, Map}});
-    map.insert({TYPE_TUPLE,  {0, Tuple}});
-    map.insert({TYPE_OPTION,  {1, Option}});
+    std::unordered_map<std::string, std::pair<unsigned int, HandleInfo >> map = {
+            {TYPE_ARRAY,  {1, Array}},
+            {TYPE_MAP,    {2, Map}},
+            {TYPE_TUPLE,  {0, Tuple}},
+            {TYPE_OPTION,  {1, Option}},
+    };
     return map;
 }
 
