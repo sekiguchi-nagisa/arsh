@@ -35,8 +35,6 @@
 
 namespace ydsh {
 
-void xexecve(const char *filePath, char **argv, char *const *envp);
-
 // builtin command definition
 static int builtin___gets(DSState &state, Array_Object &argvObj);
 static int builtin___puts(DSState &state, Array_Object &argvObj);
@@ -44,7 +42,6 @@ static int builtin_cd(DSState &state, Array_Object &argvObj);
 static int builtin_check_env(DSState &state, Array_Object &argvObj);
 static int builtin_complete(DSState &state, Array_Object &argvObj);
 static int builtin_echo(DSState &state, Array_Object &argvObj);
-static int builtin_exec(DSState &state, Array_Object &argvObj);
 static int builtin_false(DSState &state, Array_Object &argvObj);
 static int builtin_hash(DSState &state, Array_Object &argvObj);
 static int builtin_help(DSState &state, Array_Object &argvObj);
@@ -109,7 +106,7 @@ const struct {
                 "        -E    disable escape sequence interpretation"},
         {"eval", nullptr, "[args ...]",
                 "    evaluate ARGS as command."},
-        {"exec", builtin_exec, "[-c] [-a name] file [args ...]",
+        {"exec", nullptr, "[-c] [-a name] file [args ...]",
                 "    Execute FILE and replace this shell with specified program.\n"
                 "    If FILE is not specified, the redirections take effect in this shell.\n"
                 "    IF FILE execution fail, terminate this shell immediately\n"
@@ -574,47 +571,6 @@ static int builtin_ps_intrp(DSState &state, Array_Object &argvObj) {
     std::string v = interpretPromptString(state, str(argvObj.getValues()[1]));
     fputs(v.c_str(), stdout);
     fputc('\n', stdout);
-    return 0;
-}
-
-static int builtin_exec(DSState &state, Array_Object &argvObj) {
-    bool clearEnv = false;
-    const char *progName = nullptr;
-    GetOptState optState;
-
-    for(int opt; (opt = optState(argvObj, "ca:")) != -1;) {
-        switch(opt) {
-        case 'c':
-            clearEnv = true;
-            break;
-        case 'a':
-            progName = optState.optArg;
-            break;
-        default:
-            showUsage(argvObj);
-            return 1;
-        }
-    }
-
-    unsigned int index = optState.index;
-    const unsigned int argc = argvObj.getValues().size();
-    if(index < argc) { // exec
-        char *argv2[argc - index + 1];
-        for(unsigned int i = index; i < argc; i++) {
-            argv2[i - index] = const_cast<char *>(str(argvObj.getValues()[i]));
-        }
-        argv2[argc - index] = nullptr;
-
-        const char *filePath = getPathCache(state).searchPath(argv2[0], FilePathCache::DIRECT_SEARCH);
-        if(progName != nullptr) {
-            argv2[0] = const_cast<char *>(progName);
-        }
-
-        char *envp[] = {nullptr};
-        xexecve(filePath, argv2, clearEnv ? envp : nullptr);
-        PERROR(argvObj, "%s", str(argvObj.getValues()[index]));
-        exit(1);
-    }
     return 0;
 }
 

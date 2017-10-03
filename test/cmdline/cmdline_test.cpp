@@ -340,7 +340,8 @@ TEST_F(CmdlineTest, exec) {
 #endif
 
     // invalid option
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-u"), 1, "", "exec: exec [-c] [-a name] file [args ...]\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-u"), 2, "", "ydsh: exec: -u: invalid option\n"
+                                                                        "exec: exec [-c] [-a name] file [args ...]\n"));
 }
 
 TEST_F(CmdlineTest, marker) {

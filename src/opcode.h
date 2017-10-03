@@ -103,6 +103,7 @@ namespace ydsh {
     OP(CALL_CMD_P, 0) \
     OP(BUILTIN_CMD, 0) \
     OP(BUILTIN_EVAL, 0) \
+    OP(BUILTIN_EXEC, 0) \
     OP(NEW_REDIR, 0) \
     OP(ADD_REDIR_OP, 1) \
     OP(DO_REDIR, 0) \

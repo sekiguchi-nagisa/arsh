@@ -82,6 +82,7 @@
 | CALL_CMD_P    |                                | value1 value2 -> value                       | call command in child                              |
 | BUILTIN_CMD   |                                | -> value                                     | call builtin command command                       |
 | BUILTIN_EVAL  |                                | -> value                                     | call builtin eval command                          |
+| BUILTIN_EXEC  |                                | -> value / [terminate]                       | call builtin exec command                          |
 | NEW_REDIR     |                                | -> value                                     | create new RedireConfig                            |
 | ADD_REDIR_OP  | 1: byte1                       | value1 value2 -> value1                      | add stack top value as redirection target          |
 | DO_REDIR      |                                | value -> value                               | perform redirection                                |

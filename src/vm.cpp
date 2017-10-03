@@ -572,7 +572,7 @@ static void forkAndCapture(bool isStr, DSState &state) {
  * envp may be null.
  * if success, not return.
  */
-void xexecve(const char *filePath, char **argv, char *const *envp) {
+static void xexecve(const char *filePath, char **argv, char *const *envp) {
     if(filePath == nullptr) {
         errno = ENOENT;
         return;
@@ -927,6 +927,7 @@ Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
         static std::pair<const char *, NativeCode> sb[] = {
                 {"command", initCode(OpCode::BUILTIN_CMD)},
                 {"eval", initCode(OpCode::BUILTIN_EVAL)},
+                {"exec", initCode(OpCode::BUILTIN_EXEC)},
                 {"exit", initExit()},
         };
         for(auto &e : sb) {
@@ -1024,9 +1025,6 @@ static void callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue 
         return;
     }
     case CmdKind::BUILTIN: {
-        if(needFork && redirConfig && strcmp(cmdName, "exec") == 0) { // when call exec command as single command
-            typeAs<RedirConfig>(redirConfig)->setRestore(false);
-        }
         int status = cmd.builtinCmd(state, *array);
         pushExitStatus(state, status);
         flushStdFD();
@@ -1153,6 +1151,53 @@ static void callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redi
         }
         pushExitStatus(state, successCount > 0 ? 0 : 1);
         return;
+    }
+    pushExitStatus(state, 0);
+}
+
+static void callBuiltinExec(DSState &state, DSValue &&array, DSValue &&redir) {
+    auto &argvObj = *typeAs<Array_Object>(array);
+    bool clearEnv = false;
+    const char *progName = nullptr;
+    GetOptState optState;
+
+    if(redir) {
+        typeAs<RedirConfig>(redir)->setRestore(false);
+    }
+
+    for(int opt; (opt = optState(argvObj, "ca:")) != -1;) {
+        switch(opt) {
+        case 'c':
+            clearEnv = true;
+            break;
+        case 'a':
+            progName = optState.optArg;
+            break;
+        default:
+            int s = invalidOptionError(argvObj, optState);
+            pushExitStatus(state, s);
+            return;
+        }
+    }
+
+    unsigned int index = optState.index;
+    const unsigned int argc = argvObj.getValues().size();
+    if(index < argc) { // exec
+        char *argv2[argc - index + 1];
+        for(unsigned int i = index; i < argc; i++) {
+            argv2[i - index] = const_cast<char *>(str(argvObj.getValues()[i]));
+        }
+        argv2[argc - index] = nullptr;
+
+        const char *filePath = getPathCache(state).searchPath(argv2[0], FilePathCache::DIRECT_SEARCH);
+        if(progName != nullptr) {
+            argv2[0] = const_cast<char *>(progName);
+        }
+
+        char *envp[] = {nullptr};
+        xexecve(filePath, argv2, clearEnv ? envp : nullptr);
+        PERROR(argvObj, "%s", str(argvObj.getValues()[index]));
+        exit(1);
     }
     pushExitStatus(state, 0);
 }
@@ -2008,6 +2053,12 @@ static bool mainLoop(DSState &state) {
             } else {
                 pushExitStatus(state, 0);
             }
+            vmnext;
+        }
+        vmcase(BUILTIN_EXEC) {
+            auto redir = state.getLocal(0);
+            auto argv = state.getLocal(1);
+            callBuiltinExec(state, std::move(argv), std::move(redir));
             vmnext;
         }
         vmcase(NEW_REDIR) {
