@@ -101,8 +101,6 @@ inline bool isSpace(char ch) {
     return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
 }
 
-bool operator==(const ydsh::ByteBuffer &x, const ydsh::ByteBuffer &y);
-
 std::ostream &operator<<(std::ostream &stream, const ydsh::ByteBuffer &buffer);
 
 #define ASSERT_(F) do { SCOPED_TRACE(""); F; } while(false)

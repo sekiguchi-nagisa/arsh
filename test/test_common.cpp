@@ -204,19 +204,6 @@ void CommandBuilder::syncPWD() const {
     setenv(ydsh::ENV_PWD, cwd, 1);
 }
 
-bool operator==(const ydsh::ByteBuffer &x, const ydsh::ByteBuffer &y) {
-    if(x.size() != y.size()) {
-        return false;
-    }
-    unsigned int size = x.size();
-    for(unsigned int i = 0; i < size; i++) {
-        if(x[i] != y[i]) {
-            return false;
-        }
-    }
-    return true;
-}
-
 std::ostream &operator<<(std::ostream &stream, const ydsh::ByteBuffer &buffer) {
     for(auto &b : buffer) {
         if(b >= 32 && b <= 126) {

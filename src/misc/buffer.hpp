@@ -252,6 +252,14 @@ public:
 
     void assign(size_type n, const T &value);
 
+    bool operator==(const FlexBuffer &v) const {
+        return this->size() == v.size() && memcmp(this->data, v.data, sizeof(T) * this->size()) == 0;
+    }
+
+    bool operator!=(const FlexBuffer &v) const {
+        return !(*this == v);
+    }
+
     /**
      * extract data. after call it, maxSize and usedSize is 0, and data is null.
      * call free() to release returned pointer.

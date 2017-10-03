@@ -396,6 +396,21 @@ TEST(BufferTest, case15) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("hello", buffer[2].second));
 }
 
+TEST(BufferTest, case16) {
+    IBuffer b1 = {0, 1, 3};
+    IBuffer b2;
+    b2 += 0;
+    b2 += 1;
+    b2 += 3;
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(b1 == b2));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(b1 != b2));
+
+    b1[2] = 0;
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(b1 == b2));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(b1 != b2));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
