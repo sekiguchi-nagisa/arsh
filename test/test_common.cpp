@@ -35,9 +35,8 @@ void TempFileFactory::createTemp() {
     if(tmpdir == nullptr) {
         tmpdir = "/tmp";
     }
-    constexpr unsigned int size = 512;
-    char name[size];
-    snprintf(name, size, "%s/exec_test_tmpXXXXXX", tmpdir);
+    char name[512];
+    snprintf(name, ydsh::arraySize(name), "%s/exec_test_tmpXXXXXX", tmpdir);
 
     int fd = mkstemp(name);
     close(fd);

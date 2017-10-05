@@ -117,10 +117,6 @@ public:
         this->deleteTemp();
     }
 
-    virtual const std::string &getTmpFileName() {
-        return this->tmpFileName;
-    }
-
     virtual const std::string &getSourceName() {
         return this->targetName;
     }
