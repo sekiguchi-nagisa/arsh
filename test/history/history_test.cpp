@@ -508,7 +508,7 @@ TEST_F(HistoryTest, cmd_delete) {
 TEST_F(HistoryTest, cmd_load) {
     this->setHistSize(10);
 
-    FILE *fp = fopen(this->getTmpFileName().c_str(), "w");
+    FILE *fp = fopen(this->getTmpFileName(), "w");
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(fp != nullptr));
 
     const char *v[] = {

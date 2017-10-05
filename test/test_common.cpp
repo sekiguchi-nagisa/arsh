@@ -30,21 +30,52 @@
 // ##     TempFileFactory     ##
 // #############################
 
-void TempFileFactory::createTemp() {
+TempFileFactory::~TempFileFactory() {
+    this->freeName();
+}
+
+static char *makeTempDir() {
     const char *tmpdir = getenv("TMPDIR");
     if(tmpdir == nullptr) {
         tmpdir = "/tmp";
     }
-    char name[512];
-    snprintf(name, ydsh::arraySize(name), "%s/exec_test_tmpXXXXXX", tmpdir);
+    char *name;
+    if(asprintf(&name, "%s/test_tmp_dirXXXXXX", tmpdir) < 0) {
+        fatal("%s\n", strerror(errno));
+    }
+    char *dirName = mkdtemp(name);
+    assert(dirName != nullptr);
+    assert(dirName == name);
+    return dirName;
+}
 
+void TempFileFactory::createTemp() {
+    this->tmpDirName = makeTempDir();
+
+    char *name;
+    if(asprintf(&name, "%s/test_tmpXXXXXX", this->tmpDirName) < 0) {
+        fatal("%s\n", strerror(errno));
+    }
     int fd = mkstemp(name);
+    if(fd < 0) {
+        fatal("%s\n", strerror(errno));
+    }
     close(fd);
     this->tmpFileName = name;
 }
 
 void TempFileFactory::deleteTemp() {
-    remove(this->tmpFileName.c_str());
+    if(remove(this->tmpFileName) < 0 || rmdir(this->tmpDirName) < 0) {
+        fatal("%s\n", strerror(errno));
+    }
+    this->freeName();
+}
+
+void TempFileFactory::freeName() {
+    free(this->tmpFileName);
+    this->tmpFileName = nullptr;
+    free(this->tmpDirName);
+    this->tmpDirName = nullptr;
 }
 
 

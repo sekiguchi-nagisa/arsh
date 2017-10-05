@@ -28,19 +28,26 @@
 
 class TempFileFactory {
 protected:
-    std::string tmpFileName;
+    char *tmpDirName{nullptr};
+    char *tmpFileName{nullptr};
 
-    TempFileFactory() = default;
-    virtual ~TempFileFactory() = default;
+    virtual ~TempFileFactory();
 
     void createTemp();
 
     void deleteTemp();
 
 public:
-    const std::string &getTmpFileName() const {
+    const char *getTmpDirName() const {
+        return this->tmpDirName;
+    }
+
+    const char *getTmpFileName() const {
         return this->tmpFileName;
     }
+
+private:
+    void freeName();
 };
 
 struct Output {
