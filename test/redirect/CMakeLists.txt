@@ -9,6 +9,6 @@ add_definitions(-DREDIRECT_TEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}/cases")
 add_executable(${TEST_NAME}
     redirect_test.cpp
 )
-target_link_libraries(${TEST_NAME} gtest gtest_main)
+target_link_libraries(${TEST_NAME} gtest gtest_main test_common)
 add_dependencies(${TEST_NAME} ${BIN_NAME})
 add_test(${TEST_NAME} ${TEST_NAME})

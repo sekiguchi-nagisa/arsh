@@ -110,6 +110,8 @@ inline bool isSpace(char ch) {
 
 std::ostream &operator<<(std::ostream &stream, const ydsh::ByteBuffer &buffer);
 
+std::string format(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));
+
 #define ASSERT_(F) do { SCOPED_TRACE(""); F; } while(false)
 
 #endif //YDSH_TEST_COMMON_HPP

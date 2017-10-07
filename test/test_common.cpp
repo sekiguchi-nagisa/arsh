@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <stdarg.h>
 
 #include <cstdlib>
 
@@ -40,7 +41,7 @@ static char *makeTempDir() {
     if(tmpdir == nullptr) {
         tmpdir = "/tmp";
     }
-    char *name;
+    char *name = nullptr;
     if(asprintf(&name, "%s/test_tmp_dirXXXXXX", tmpdir) < 0) {
         fatal("%s\n", strerror(errno));
     }
@@ -267,4 +268,19 @@ std::ostream &operator<<(std::ostream &stream, const ydsh::ByteBuffer &buffer) {
         }
     }
     return stream;
+}
+
+std::string format(const char *fmt, ...) {
+    va_list arg;
+
+    va_start(arg, fmt);
+    char *str = nullptr;
+    if(vasprintf(&str, fmt, arg) == -1) {
+        fatal("%s\n", strerror(errno));
+    }
+    va_end(arg);
+
+    std::string v = str;
+    free(str);
+    return v;
 }

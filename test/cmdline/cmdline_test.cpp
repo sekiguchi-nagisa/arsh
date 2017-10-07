@@ -57,7 +57,7 @@ public:
 
     virtual void TearDown() { }
 
-    virtual void expect(ProcBuilder &&builder, int status, const char *out = "", const char *err = "") {
+    void expect(ProcBuilder &&builder, int status, const char *out = "", const char *err = "") {
         SCOPED_TRACE("");
 
         auto result = builder.execAndGetResult(false);
@@ -72,7 +72,7 @@ public:
         }
     }
 
-    virtual void expectRegex(ProcBuilder &&builder, int status, const char *out, const char *err = "") {
+    void expectRegex(ProcBuilder &&builder, int status, const char *out, const char *err = "") {
         SCOPED_TRACE("");
 
         auto result = builder.execAndGetResult(false);
