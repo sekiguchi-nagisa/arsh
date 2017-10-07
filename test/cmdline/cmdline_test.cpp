@@ -44,8 +44,8 @@ public:
 };
 
 template <typename ... T>
-static CommandBuilder ds(const char *arg, T && ...args) {
-    return CommandBuilder{BIN_PATH, arg, std::forward<T>(args)...};
+static ProcBuilder ds(const char *arg, T && ...args) {
+    return ProcBuilder{BIN_PATH, arg, std::forward<T>(args)...};
 }
 
 class CmdlineTest : public ::testing::Test {
@@ -57,7 +57,7 @@ public:
 
     virtual void TearDown() { }
 
-    virtual void expect(CommandBuilder &&builder, int status, const char *out = "", const char *err = "") {
+    virtual void expect(ProcBuilder &&builder, int status, const char *out = "", const char *err = "") {
         SCOPED_TRACE("");
 
         auto result = builder.execAndGetResult(false);
@@ -72,7 +72,7 @@ public:
         }
     }
 
-    virtual void expectRegex(CommandBuilder &&builder, int status, const char *out, const char *err = "") {
+    virtual void expectRegex(ProcBuilder &&builder, int status, const char *out, const char *err = "") {
         SCOPED_TRACE("");
 
         auto result = builder.execAndGetResult(false);

@@ -61,31 +61,31 @@ struct CmdResult {
     std::string err;
 };
 
-class CommandBuilder {
+class ProcBuilder {
 private:
     std::vector<std::string> args;
 
 public:
-    CommandBuilder(const char *cmdName) : args{cmdName} {}
+    ProcBuilder(const char *cmdName) : args{cmdName} {}
 
-    CommandBuilder(std::initializer_list<const char *> list) {
+    ProcBuilder(std::initializer_list<const char *> list) {
         for(auto &v : list) {
             this->args.emplace_back(v);
         }
     }
 
-    ~CommandBuilder() = default;
+    ~ProcBuilder() = default;
 
-    CommandBuilder &addArg(const char *arg) {
+    ProcBuilder &addArg(const char *arg) {
         this->args.emplace_back(arg);
         return *this;
     }
 
-    CommandBuilder &addArg(const std::string &str) {
+    ProcBuilder &addArg(const std::string &str) {
         return this->addArg(str.c_str());
     }
 
-    CommandBuilder &addArgs(const std::vector<std::string> &values);
+    ProcBuilder &addArgs(const std::vector<std::string> &values);
 
     std::string execAndGetOutput(bool removeLastSpace = true) const {
         auto r = this->execAndGetResult(removeLastSpace);

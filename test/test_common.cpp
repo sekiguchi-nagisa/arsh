@@ -24,6 +24,7 @@
 
 #include <symbol.h>
 #include <misc/util.hpp>
+#include <misc/files.h>
 #include "test_common.h"
 
 // #############################
@@ -65,7 +66,30 @@ void TempFileFactory::createTemp() {
 }
 
 void TempFileFactory::deleteTemp() {
-    if(remove(this->tmpFileName) < 0 || rmdir(this->tmpDirName) < 0) {
+    DIR *dir = opendir(this->tmpDirName);
+    if(dir == nullptr) {
+        fatal("%s\n", strerror(errno));
+    }
+
+    for(dirent *entry; (entry = readdir(dir)) != nullptr;) {
+        if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+        std::string fullpath = this->tmpDirName;
+        fullpath += '/';
+        fullpath += entry->d_name;
+        const char *name = fullpath.c_str();
+        if(S_ISREG(ydsh::getStMode(name))) {
+            if(remove(name) < 0) {
+                fatal("%s: %s\n", strerror(errno), name);
+            }
+        } else {
+            fatal("not a regular file: %s\n", name);    //FIXME: symbolic link, etc...
+        }
+    }
+    closedir(dir);
+
+    if(rmdir(this->tmpDirName) < 0) {
         fatal("%s\n", strerror(errno));
     }
     this->freeName();
@@ -83,7 +107,7 @@ void TempFileFactory::freeName() {
 // ##     CommandBuilder     ##
 // ############################
 
-CommandBuilder& CommandBuilder::addArgs(const std::vector<std::string> &values) {
+ProcBuilder& ProcBuilder::addArgs(const std::vector<std::string> &values) {
     for(auto &e : values) {
         this->args.push_back(e);
     }
@@ -99,7 +123,7 @@ static std::string toString(const ydsh::ByteBuffer &buf, bool removeLastSpace) {
     return out;
 }
 
-CmdResult CommandBuilder::execAndGetResult(bool removeLastSpace) const {
+CmdResult ProcBuilder::execAndGetResult(bool removeLastSpace) const {
     Output output;
     int status = this->exec(output);
     if(WIFEXITED(status)) {
@@ -157,7 +181,7 @@ static void readPipes(Output &output, const pid_t (&outpipe)[2], const pid_t (&e
     }
 }
 
-int CommandBuilder::exec(Output *output) const {
+int ProcBuilder::exec(Output *output) const {
     // flush standard stream due to prevent mixing io buffer
     fflush(stdout);
     fflush(stderr);
@@ -224,7 +248,7 @@ int CommandBuilder::exec(Output *output) const {
     }
 }
 
-void CommandBuilder::syncPWD() const {
+void ProcBuilder::syncPWD() const {
     size_t size = PATH_MAX;
     char buf[size];
     const char *cwd = getcwd(buf, size);

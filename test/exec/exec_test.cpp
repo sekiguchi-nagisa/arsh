@@ -136,7 +136,7 @@ public:
         }
 
         const char *scriptName = this->getSourceName().c_str();
-        CommandBuilder builder(BIN_PATH);
+        ProcBuilder builder(BIN_PATH);
         builder.addArg("--status-log").addArg(this->getTmpFileName());
 
         // set argument
