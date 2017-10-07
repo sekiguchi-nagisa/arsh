@@ -81,9 +81,9 @@ private:
     /**
      * if out of range, abort
      */
-    void checkRange(size_type index) const;
+    void checkRange(size_type index) const noexcept;
 
-    FlexBuffer &push_back_impl(const T &value);
+    FlexBuffer &push_back_impl(const T &value) noexcept;
 
 public:
     NON_COPYABLE(FlexBuffer);
@@ -120,30 +120,30 @@ public:
         return *this;
     }
 
-    FlexBuffer &operator+=(const T &value) {
+    FlexBuffer &operator+=(const T &value) noexcept {
         return this->push_back_impl(value);
     }
 
-    FlexBuffer &operator+=(T &&value) {
+    FlexBuffer &operator+=(T &&value) noexcept {
         return this->push_back_impl(value);
     }
 
     /**
      * buffer.data is not equivalent to this.data.
      */
-    FlexBuffer &operator+=(const FlexBuffer &buffer);
+    FlexBuffer &operator+=(const FlexBuffer &buffer) noexcept;
 
-    FlexBuffer &operator+=(FlexBuffer &&buffer);
+    FlexBuffer &operator+=(FlexBuffer &&buffer) noexcept;
 
     template <std::size_t N>
-    FlexBuffer &operator+=(const T (&value)[N]) {
+    FlexBuffer &operator+=(const T (&value)[N]) noexcept {
         return this->append(value, N);
     }
 
     /**
      * value is not equivalent to this.data.
      */
-    FlexBuffer &append(const T *value, size_type size);
+    FlexBuffer &append(const T *value, size_type size) noexcept;
 
     size_type capacity() const noexcept {
         return this->maxSize;
@@ -174,7 +174,7 @@ public:
     /**
      * capacity will be at least reservingSize.
      */
-    void reserve(size_type reservingSize);
+    void reserve(size_type reservingSize) noexcept;
 
     iterator begin() noexcept {
         return this->data;
@@ -208,11 +208,11 @@ public:
         return this->operator[](this->usedSize - 1);
     }
 
-    void push_back(const T &value) {
+    void push_back(const T &value) noexcept {
         this->push_back_impl(value);
     }
 
-    void push_back(T &&value) {
+    void push_back(T &&value) noexcept {
         this->push_back_impl(value);
     }
 
@@ -228,15 +228,15 @@ public:
         return this->data[index];
     }
 
-    reference at(size_type index);
+    reference at(size_type index) noexcept;
 
-    const_reference at(size_type index) const;
+    const_reference at(size_type index) const noexcept;
 
     /**
      * pos (begin() <= pos <= end()).
      * return position inserted element.
      */
-    iterator insert(const_iterator pos, const T &value);
+    iterator insert(const_iterator pos, const T &value) noexcept;
 
     /**
      * pos must not equivalent to this->end().
@@ -252,11 +252,11 @@ public:
 
     void assign(size_type n, const T &value);
 
-    bool operator==(const FlexBuffer &v) const {
+    bool operator==(const FlexBuffer &v) const noexcept {
         return this->size() == v.size() && memcmp(this->data, v.data, sizeof(T) * this->size()) == 0;
     }
 
-    bool operator!=(const FlexBuffer &v) const {
+    bool operator!=(const FlexBuffer &v) const noexcept {
         return !(*this == v);
     }
 
@@ -284,33 +284,33 @@ template <typename T, typename SIZE_T>
 constexpr typename FlexBuffer<T, SIZE_T>::size_type FlexBuffer<T, SIZE_T>::MAXIMUM_CAPACITY;
 
 template <typename T, typename SIZE_T>
-void FlexBuffer<T, SIZE_T>::checkRange(size_type index) const {
+void FlexBuffer<T, SIZE_T>::checkRange(size_type index) const noexcept {
     if(index >= this->usedSize) {
         fatal("size is: %d, but index is: %d\n", this->usedSize, index);
     }
 }
 
 template <typename T, typename SIZE_T>
-FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::push_back_impl(const T &value) {
+FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::push_back_impl(const T &value) noexcept {
     this->reserve(this->usedSize + 1);
     this->data[this->usedSize++] = value;
     return *this;
 }
 
 template <typename T, typename SIZE_T>
-FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::operator+=(const FlexBuffer<T, SIZE_T> &buffer) {
+FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::operator+=(const FlexBuffer<T, SIZE_T> &buffer) noexcept {
     return this->append(buffer.get(), buffer.size());
 }
 
 template <typename T, typename SIZE_T>
-FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::operator+=(FlexBuffer<T, SIZE_T> &&buffer) {
+FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::operator+=(FlexBuffer<T, SIZE_T> &&buffer) noexcept {
     FlexBuffer<T, SIZE_T> tmp(std::move(buffer));
     *this += tmp;
     return *this;
 }
 
 template <typename T, typename SIZE_T>
-FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::append(const T *value, size_type size) {
+FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::append(const T *value, size_type size) noexcept {
     if(this->data == value) {
         fatal("appending own buffer\n");
     }
@@ -321,7 +321,7 @@ FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::append(const T *value, size_type s
 }
 
 template <typename T, typename SIZE_T>
-void FlexBuffer<T, SIZE_T>::reserve(size_type reservingSize) {
+void FlexBuffer<T, SIZE_T>::reserve(size_type reservingSize) noexcept {
     if(reservingSize > this->maxSize) {
         std::size_t newSize = (this->maxSize == 0 ? MINIMUM_CAPACITY : this->maxSize);
         while(newSize < reservingSize) {
@@ -338,19 +338,19 @@ void FlexBuffer<T, SIZE_T>::reserve(size_type reservingSize) {
 }
 
 template <typename T, typename SIZE_T>
-typename FlexBuffer<T, SIZE_T>::reference FlexBuffer<T, SIZE_T>::at(size_type index) {
+typename FlexBuffer<T, SIZE_T>::reference FlexBuffer<T, SIZE_T>::at(size_type index) noexcept {
     this->checkRange(index);
     return this->data[index];
 }
 
 template <typename T, typename SIZE_T>
-typename FlexBuffer<T, SIZE_T>::const_reference FlexBuffer<T, SIZE_T>::at(size_type index) const {
+typename FlexBuffer<T, SIZE_T>::const_reference FlexBuffer<T, SIZE_T>::at(size_type index) const noexcept {
     this->checkRange(index);
     return this->data[index];
 }
 
 template <typename T, typename SIZE_T>
-typename FlexBuffer<T, SIZE_T>::iterator FlexBuffer<T, SIZE_T>::insert(const_iterator pos, const T &value) {
+typename FlexBuffer<T, SIZE_T>::iterator FlexBuffer<T, SIZE_T>::insert(const_iterator pos, const T &value) noexcept {
     assert(pos >= this->begin() && pos <= this->end());
 
     const size_type index = pos - this->begin();

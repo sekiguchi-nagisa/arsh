@@ -77,6 +77,14 @@ public:
     explicit operator bool() const noexcept {
         return this->ptr != nullptr;
     }
+
+    bool operator==(const IntrusivePtr &obj) const noexcept {
+        return this->get() == obj.get();
+    }
+
+    bool operator!=(const IntrusivePtr &obj) const noexcept {
+        return this->get() != obj.get();
+    }
 };
 
 template <typename T, typename ... A>
