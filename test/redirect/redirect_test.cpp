@@ -101,16 +101,14 @@ public:
         int fd = fileno(fp);
         while(true) {
             int readSize = read(fd, data, arraySize(data));
-            if(readSize) {
-                if(readSize > 0) {
-                    buffer.append(data, readSize);
-                }
-                if(readSize == -1 && (errno == EAGAIN || errno == EINTR)) {
-                    continue;
-                }
-                if(readSize <= 0) {
-                    break;
-                }
+            if(readSize > 0) {
+                buffer.append(data, readSize);
+            }
+            if(readSize == -1 && (errno == EAGAIN || errno == EINTR)) {
+                continue;
+            }
+            if(readSize <= 0) {
+                break;
             }
         }
         fclose(fp);
@@ -152,6 +150,192 @@ TEST_F(RedirectTest, stdin) {
     // command
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("command __gets < %s", this->getTargetName()), 0, "hello world\n"));
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("command grep < %s 'hello world'", this->getTargetName()), 0, "hello world\n"));
+}
+
+TEST_F(RedirectTest, stdout) {
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("__puts -1 AAA"), 0, "AAA\n"));
+
+    // builtin command
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("__puts -1 ABC > %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("ABC\n"));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("__puts -1 123 1> %s; echo world", this->getTargetName()), 0, "world\n"));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\n"));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("__puts -1 DEF >> %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nDEF\n"));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("__puts -1 GHI 1>> %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nDEF\nGHI\n"));
+
+    // external command
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("sh -c 'echo ABC' > %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("ABC\n"));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("sh -c 'echo 123' 1> %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\n"));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("sh -c 'echo DEF' >> %s; echo hello", this->getTargetName()), 0, "hello\n"));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nDEF\n"));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("sh -c 'echo GHI' 1>> %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nDEF\nGHI\n"));
+
+    // user-defined
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("echo2() { echo ABC; }; echo2 > %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("ABC\n"));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("echo2() { echo 123; }; echo2 1> %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\n"));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("echo2() { echo DEF; }; echo2 >> %s; echo hello", this->getTargetName()), 0, "hello\n"));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nDEF\n"));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("echo2() { echo GHI; }; echo2 1>> %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nDEF\nGHI\n"));
+
+    // eval builtin
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("eval __puts -1 ABC > %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("ABC\n"));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("eval __puts -1 123 1> %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\n"));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("eval __puts -1 DEF >> %s; echo 123", this->getTargetName()), 0, "123\n"));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nDEF\n"));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("eval __puts -1 GHI 1>> %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nDEF\nGHI\n"));
+
+    // eval external
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("eval sh -c 'echo ABC' > %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("ABC\n"));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("eval sh -c 'echo 123' 1> %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\n"));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("eval sh -c 'echo DEF' >> %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nDEF\n"));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("eval sh -c 'echo GHI' 1>> %s; echo test", this->getTargetName()), 0, "test\n"));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nDEF\nGHI\n"));
+
+    // eval user-defined
+    // user-defined
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("echo2() { echo ABC; }; eval echo2 > %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("ABC\n"));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("echo2() { echo 123; }; eval echo2 1> %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\n"));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("echo2() { echo DEF; }; eval echo2 >> %s; echo hello", this->getTargetName()), 0, "hello\n"));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nDEF\n"));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("echo2() { echo GHI; }; eval echo2 1>> %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nDEF\nGHI\n"));
+
+    // with
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("{ echo ABC; } with > %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("ABC\n"));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("{ 34; } with > %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq(""));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("{ __puts -2 hey; } with > %s", this->getTargetName()), 0, "", "hey\n"));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq(""));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("{ echo 123; } with 1> %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\n"));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("{ echo DEF; } with >> %s; echo hoge", this->getTargetName()), 0, "hoge\n"));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nDEF\n"));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("{ echo GHI; } with 1>> %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nDEF\nGHI\n"));
+
+    // command builtin
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("command __puts -1 ABC > %s; echo hello", this->getTargetName()), 0, "hello\n"));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("ABC\n"));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("command __puts -1 123 1> %s; echo hello", this->getTargetName()), 0, "hello\n"));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\n"));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("command __puts -1 DEF >> %s; echo hello", this->getTargetName()), 0, "hello\n"));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nDEF\n"));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("command __puts -1 GHI 1>> %s; echo hello", this->getTargetName()), 0, "hello\n"));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nDEF\nGHI\n"));
+
+    // command external
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("command sh -c 'echo ABC' > %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("ABC\n"));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("command sh -c 'echo 123' 1> %s; echo world", this->getTargetName()), 0, "world\n"));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\n"));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("command sh -c 'echo DEF' >> %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nDEF\n"));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("command sh -c 'echo GHI' 1>> %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nDEF\nGHI\n"));
+}
+
+TEST_F(RedirectTest, stderr) {
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("__puts -2 AAA"), 0, "", "AAA\n"));
+
+    // builtin
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("__puts -2 123 2> %s; __puts -2 hello", this->getTargetName()), 0, "", "hello\n"));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("__puts -2 ABC 2>> %s; __puts -2 hello", this->getTargetName()), 0, "", "hello\n"));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nABC\n"));
+
+    // external
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("sh -c 'echo 123 1>&2' 2> %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("sh -c 'echo ABC 1>&2' 2>> %s; sh -c 'echo ABCD 1>&2'", this->getTargetName()), 0, "", "ABCD\n"));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nABC\n"));
+
+    // user-defined
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("echo2() { sh -c 'echo 123 1>&2'; }; echo2 2> %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("echo2() { sh -c 'echo ABC 1>&2'; }; echo2 2>> %s; sh -c 'echo ABCD 1>&2'", this->getTargetName()), 0, "", "ABCD\n"));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nABC\n"));
+
+    // eval builtin
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("eval __puts -2 123 2> %s; __puts -2 hello", this->getTargetName()), 0, "", "hello\n"));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("eval __puts -2 ABC 2>> %s; __puts -2 hello", this->getTargetName()), 0, "", "hello\n"));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nABC\n"));
+
+    // eval external
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("eval sh -c 'echo 123 1>&2' 2> %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("eval sh -c 'echo ABC 1>&2' 2>> %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nABC\n"));
+
+    // eval user-defined
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("echo2() { sh -c 'echo 123 1>&2'; }; eval echo2 2> %s; echo hey", this->getTargetName()), 0, "hey\n"));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("echo2() { sh -c 'echo ABC 1>&2'; }; eval echo2 2>> %s; sh -c 'echo ABCD 1>&2'", this->getTargetName()), 0, "", "ABCD\n"));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nABC\n"));
+
+    // with
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("{ sh -c 'echo 123 1>&2'; } with 2> %s; __puts -1 AAA; __puts -2 BBB", this->getTargetName()), 0, "AAA\n", "BBB\n"));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("{ __puts -2 ABC; } with 2>> %s; __puts -2 AAA", this->getTargetName()), 0, "", "AAA\n"));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nABC\n"));
+
+    // command builtin
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("command __puts -2 123 2> %s; __puts -2 hello", this->getTargetName()), 0, "", "hello\n"));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("command __puts -2 ABC 2>> %s; __puts -2 hello", this->getTargetName()), 0, "", "hello\n"));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nABC\n"));
+
+    // command external
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("command sh -c 'echo 123 1>&2' 2> %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("command sh -c 'echo ABC 1>&2' 2>> %s", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nABC\n"));
 }
 
 int main(int argc, char **argv) {
