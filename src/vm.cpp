@@ -105,6 +105,14 @@ DSState::DSState() :
         hook(nullptr), logicalWorkingDir(initLogicalWorkingDir()),
         baseTime(std::chrono::system_clock::now()), history(initHistory()) { }
 
+// for exception handling
+struct DSException {};
+
+void DSState::throwException(DSValue &&except) {
+    this->thrownObject = std::move(except);
+    throw DSException();
+}
+
 void DSState::expandLocalStack() {
     const unsigned int needSize = this->stackTopIndex;
     if(needSize >= MAXIMUM_STACK_SIZE) {
@@ -2180,8 +2188,11 @@ static bool handleException(DSState &state) {
         }
         unwindStackFrame(state);
     }
-    unsigned int localSize = static_cast<const CompiledCode *>(CODE(state))->getLocalVarNum();
-    reclaimLocals(state, 0, localSize);
+
+    if(!CODE(state)->is(CodeKind::NATIVE)) {
+        unsigned int localSize = static_cast<const CompiledCode *>(CODE(state))->getLocalVarNum();
+        reclaimLocals(state, 0, localSize);
+    }
     return false;
 }
 
@@ -2263,6 +2274,21 @@ DSValue service_object(DSState &ctx) {
 } // namespace ydsh
 
 
+static bool runMainLoop(DSState &state) {
+    while(true) {
+        try {
+            bool ret = mainLoop(state);
+            state.codeStack.clear();
+            return ret;
+        } catch(const DSException &) {
+            if(handleException(state)) {
+                continue;
+            }
+            return false;
+        }
+    }
+}
+
 bool vmEval(DSState &state, CompiledCode &code) {
     state.resetState();
 
@@ -2281,18 +2307,7 @@ bool vmEval(DSState &state, CompiledCode &code) {
         reserveLocalVar(state, state.localVarOffset + varNum);
     }
 
-    while(true) {
-        try {
-            bool ret = mainLoop(state);
-            state.codeStack.clear();
-            return ret;
-        } catch(const DSException &) {
-            if(handleException(state)) {
-                continue;
-            }
-            return false;
-        }
-    }
+    return runMainLoop(state);
 }
 
 int execBuiltinCommand(DSState &st, char *const argv[]) {
@@ -2313,7 +2328,10 @@ int execBuiltinCommand(DSState &st, char *const argv[]) {
     st.resetState();
     callCommand(st, cmd, std::move(obj), DSValue(), false);
     if(!st.codeStack.empty()) {
-        mainLoop(st);
+        bool r = runMainLoop(st);
+        if(!r) {
+            pushExitStatus(st, 1);
+        }
     }
     st.popNoReturn();
     return st.getExitStatus();
@@ -2333,9 +2351,9 @@ DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, s
     }
 
     callMethod(state, handle->getMethodIndex(), args.size());
-    mainLoop(state);
+    bool s = runMainLoop(state);
     DSValue ret;
-    if(!handle->getReturnType()->isVoidType()) {
+    if(!handle->getReturnType()->isVoidType() && s) {
         ret = state.pop();
     }
     return ret;

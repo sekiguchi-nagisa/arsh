@@ -34,9 +34,6 @@
 
 using namespace ydsh;
 
-// for exception handling
-struct DSException {};
-
 class SignalVector {
 private:
     /**
@@ -244,10 +241,7 @@ struct DSState {
      * pop stack top and store to thrownObject.
      */
     [[noreturn]]
-    void throwException(DSValue &&except) {
-        this->thrownObject = std::move(except);
-        throw DSException();
-    }
+    void throwException(DSValue &&except);
 
     /**
      * get thrownObject and push to callStack
@@ -416,7 +410,8 @@ bool vmEval(DSState &state, CompiledCode &code);
  * first element of argv is command name.
  * last element of argv is null.
  * @return
- * exit status
+ * exit status.
+ * if throw exception, return always 1.
  */
 int execBuiltinCommand(DSState &st, char *const argv[]);
 

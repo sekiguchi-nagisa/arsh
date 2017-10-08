@@ -182,13 +182,11 @@ static void handleUncaughtException(DSState *st, DSValue &&except) {
     const bool bt = st->pool.getErrorType().isSameOrBaseTypeOf(*except->getType());
     auto *handle = except->getType()->lookupMethodHandle(st->pool, bt ? "backtrace" : OP_STR);
 
-    try {
-        DSValue ret = ::callMethod(*st, handle, std::move(except), std::vector<DSValue>());
-        if(!bt) {
-            fprintf(stderr, "%s\n", typeAs<String_Object>(ret)->getValue());
-        }
-    } catch(const DSException &) {
+    DSValue ret = callMethod(*st, handle, std::move(except), std::vector<DSValue>());
+    if(st->getThrownObject()) {
         fputs("cannot obtain string representation\n", stderr);
+    } else if(!bt) {
+        fprintf(stderr, "%s\n", typeAs<String_Object>(ret)->getValue());
     }
     fflush(stderr);
 
@@ -633,14 +631,13 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, FILE *fp, DSError *
 }
 
 int DSState_exec(DSState *st, char *const *argv) {
-    try {
-        return execBuiltinCommand(*st, argv);
-    } catch(const DSException &) {
+    int status = execBuiltinCommand(*st, argv);
+    if(st->getThrownObject()) {
         auto &obj = typeAs<Error_Object>(st->getThrownObject())->getMessage();
         const char *str = typeAs<String_Object>(obj)->getValue();
         fprintf(stderr, "ydsh: %s\n", str + strlen(EXEC_ERROR));
-        return 1;
     }
+    return status;
 }
 
 const char *DSState_prompt(DSState *st, unsigned int n) {
