@@ -113,7 +113,7 @@ public:
      */
     Lexer(const char *sourceName, const char *source, unsigned int size) :
             LexerBase(source, size),
-            srcInfoPtr(makeIntrusive<SourceInfo>(sourceName)),
+            srcInfoPtr(SourceInfoPtr::create(sourceName)),
             modeStack(1, yycSTMT), prevNewLine(false), prevSpace(false), prevMode(yycSTMT) {}
 
     /**
@@ -126,7 +126,7 @@ public:
      */
     Lexer(const char *sourceName, FILE *fp) :
             LexerBase(fp),
-            srcInfoPtr(makeIntrusive<SourceInfo>(sourceName)),
+            srcInfoPtr(SourceInfoPtr::create(sourceName)),
             modeStack(1, yycSTMT), prevNewLine(false), prevSpace(false), prevMode(yycSTMT) {}
 
     ~Lexer() = default;

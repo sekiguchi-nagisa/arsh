@@ -53,16 +53,12 @@ public:
     unsigned int getIndex() const {
         return this->index;
     }
-
-    void destroy() const {
-        delete this;
-    }
 };
 
 using Label = IntrusivePtr<LabelImpl>;
 
 inline Label makeLabel() {
-    return Label(new LabelImpl());
+    return Label::create();
 }
 
 using CodeBuffer = FlexBuffer<unsigned char>;

@@ -127,11 +127,6 @@ public:
     }
 };
 
-template <typename T, typename ... A>
-inline IntrusivePtr<T> makeIntrusive(A ... arg) {
-    return IntrusivePtr<T>::create(std::forward<A>(arg)...);
-}
-
 template <typename R, typename D>
 class ScopedResource {
 private:
