@@ -641,7 +641,10 @@ void ByteCodeGenerator::visitCmdNode(CmdNode &node) {
     if(node.hasRedir()) {
         this->emit0byteIns(OpCode::DO_REDIR);
     }
-    this->emit0byteIns(node.getInPipe() ? OpCode::CALL_CMD_P : OpCode::CALL_CMD);
+
+    OpCode ins = getenv("X_PIPE2") != nullptr && node.getInLastPipe() ? OpCode::CALL_CMD_LP :
+                 node.getInPipe() ? OpCode::CALL_CMD_P : OpCode::CALL_CMD;
+    this->emit0byteIns(ins);
 }
 
 void ByteCodeGenerator::visitCmdArgNode(CmdArgNode &node) {
@@ -695,6 +698,7 @@ void ByteCodeGenerator::visitPipelineNode(PipelineNode &node) {
         // generate last pipe
         this->markLabel(labels[size - 1]);
         this->generateBlock(node.getBaseIndex(), 1, true, [&] {
+            this->emit1byteIns(OpCode::STORE_LOCAL, node.getBaseIndex());
             this->visit(*node.getNodes()[size - 1]);
         });
         return;

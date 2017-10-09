@@ -371,45 +371,6 @@ bool changeWorkingDir(DSState &st, const char *dest, const bool useLogical) {
     return true;
 }
 
-pid_t xfork(DSState &st, pid_t pgid, bool foreground) {
-    pid_t pid = fork();
-    if(pid == 0) {  // child process
-        if(st.isInteractive()) {
-            setpgid(0, pgid);
-            if(foreground) {
-                tcsetpgrp(STDIN_FILENO, getpgid(0));
-            }
-
-            struct sigaction act{};
-            act.sa_handler = SIG_DFL;
-            act.sa_flags = 0;
-            sigemptyset(&act.sa_mask);
-
-            /**
-             * reset signal behavior
-             */
-            sigaction(SIGINT, &act, nullptr);
-            sigaction(SIGQUIT, &act, nullptr);
-            sigaction(SIGTSTP, &act, nullptr);
-            sigaction(SIGTTIN, &act, nullptr);
-            sigaction(SIGTTOU, &act, nullptr);
-            sigaction(SIGCHLD, &act, nullptr);
-        }
-
-        // update PID, PPID
-        st.setGlobal(toIndex(BuiltinVarOffset::PID), DSValue::create<Int_Object>(st.pool.getInt32Type(), getpid()));
-        st.setGlobal(toIndex(BuiltinVarOffset::PPID), DSValue::create<Int_Object>(st.pool.getInt32Type(), getppid()));
-    } else if(pid > 0) {
-        if(st.isInteractive()) {
-            setpgid(pid, pgid);
-            if(foreground) {
-                tcsetpgrp(STDIN_FILENO, getpgid(pid));
-            }
-        }
-    }
-    return pid;
-}
-
 static const char *safeBasename(const char *str) {
     const char *ptr = strrchr(str, '/');
     return ptr == nullptr ? str : ptr + 1;

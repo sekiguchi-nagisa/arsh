@@ -628,19 +628,18 @@ static void closeAllPipe(int size, pipe_t *pipefds) {
 class PipelineState : public DSObject {
 private:
     DSState &state;
-    unsigned int id;
+    JobEntry entry;
 
 public:
     NON_COPYABLE(PipelineState);
 
-    PipelineState(DSState &state, unsigned int id) : DSObject(nullptr), state(state), id(id) {}
+    PipelineState(DSState &state, JobEntry entry) :
+            DSObject(nullptr), state(state), entry(std::move(entry)) {}
 
     ~PipelineState() override {
-        (void) this->state;
-    }
-
-    unsigned int getId() const {
-        return this->id;
+        this->state.jobTable.wait(this->entry, 0, nullptr);
+        this->entry->restoreStdin();
+        tryToForeground(this->state);
     }
 };
 
@@ -963,7 +962,7 @@ static void throwCmdError(DSState &state, const char *cmdName, int errnum) {
     throwSystemError(state, errnum, std::move(str));
 }
 
-static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **const argv) {
+static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **const argv, bool lastPipe) {
     // setup self pipe
     int selfpipe[2];
     if(pipe(selfpipe) < 0) {
@@ -976,7 +975,12 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
     }
 
     bool rootShell = state.isRootShell();
-    pid_t pid = xfork(state, rootShell ? 0 : getpgid(0), rootShell);
+    pid_t pgid = rootShell ? 0 : getpgid(0);
+    if(pgid == 0 && lastPipe) {
+        pgid = state.jobTable.getLatestEntry()->getPid(0);
+    }
+
+    pid_t pid = xfork(state, pgid, rootShell);
     if(pid == -1) {
         perror("child process error");
         exit(1);
@@ -1001,11 +1005,17 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
             state.pathCache.removePath(argv[0]);
         }
 
+        if(lastPipe) {
+            auto &entry = state.jobTable.getLatestEntry();
+            state.jobTable.wait(entry, 0, nullptr);
+        }
+
         int status = 0;
         waitpid(pid, &status, 0);
-        if(state.isInteractive() && rootShell) {
-            tcsetpgrp(STDIN_FILENO, getpgid(0));
+        if(lastPipe) {
+            state.jobTable.getLatestEntry()->restoreStdin();
         }
+        tryToForeground(state);
         if(errnum != 0) {
             state.updateExitStatus(1);
             throwCmdError(state, cmdName, errnum);
@@ -1019,7 +1029,8 @@ static void pushExitStatus(DSState &state, int status) {
     state.push(status == 0 ? state.trueObj : state.falseObj);
 }
 
-static void callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue &&redirConfig, bool needFork) {
+static void callCommand(DSState &state, Command cmd, DSValue &&argvObj,
+                        DSValue &&redirConfig, bool needFork, bool lastPipe = false) {
     auto *array = typeAs<Array_Object>(argvObj);
     const unsigned int size = array->getValues().size();
     auto &first = array->getValues()[0];
@@ -1047,7 +1058,7 @@ static void callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue 
         argv[size] = nullptr;
 
         if(needFork) {
-            int status = forkAndExec(state, cmdName, cmd, argv);
+            int status = forkAndExec(state, cmdName, cmd, argv, lastPipe);
             int r = 0;
             if(WIFEXITED(status)) {
                 r = WEXITSTATUS(status);
@@ -1294,7 +1305,6 @@ static void callPipeline(DSState &state) {
 }
 
 static void callPipeline2(DSState &state) {
-    fatal("unimplemented\n");
     const unsigned int size = read8(GET_CODE(state), state.pc() + 1);
     assert(size > 1);
 
@@ -1302,13 +1312,13 @@ static void callPipeline2(DSState &state) {
     initPipe(size, pipefds);
 
     // fork
-    Process procs[size - 1];
+    auto jobEntry = state.jobTable.newEntry(size - 1);
     const bool rootShell = state.isRootShell();
     pid_t pgid = rootShell ? 0 : getpgid(0);
     pid_t pid = -1;
     unsigned int procIndex;
     for(procIndex = 0; procIndex < size - 1 && (pid = xfork(state, pgid, rootShell)) > 0; procIndex++) {
-        procs[procIndex].pid = pid;
+        jobEntry->setPid(procIndex, pid);
         if(pgid == 0) {
             pgid = pid;
         }
@@ -1334,31 +1344,10 @@ static void callPipeline2(DSState &state) {
         // set pc to next instruction
         state.pc() += read16(GET_CODE(state), state.pc() + 2 + procIndex * 2) - 1;
     } else if(procIndex == size - 1) { // parent (last pipeline)
-        dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);  //FIXME: save current fd (use RedirConfig)
+        state.push(DSValue::create<PipelineState>(state, jobEntry));
+
+        dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
         closeAllPipe(size, pipefds);
-
-        //FIXME: create PipelineState
-        // FIXME: move the following codes into JobTable
-        // wait for exit
-        for(unsigned int i = 0; i < size; i++) {
-            int status = 0;
-            waitpid(procs[i].pid, &status, 0);
-            if(WIFEXITED(status)) {
-                procs[i].kind = Process::EXIT;
-                procs[i].status = WEXITSTATUS(status);
-
-            }
-            if(WIFSIGNALED(status)) {
-                procs[i].kind = Process::SIGNAL;
-                procs[i].status = WTERMSIG(status) + 128;
-            }
-        }
-        if(state.isInteractive() && rootShell) {
-            tcsetpgrp(STDIN_FILENO, getpgid(0));
-        }
-        pushExitStatus(state, procs[size - 1].status);
-
-
 
         // set pc to next instruction
         state.pc() += read16(GET_CODE(state), state.pc() + 2 + procIndex * 2) - 1;
@@ -2032,14 +2021,16 @@ static bool mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(CALL_CMD)
-        vmcase(CALL_CMD_P) {
-            bool needFork = op == OpCode::CALL_CMD;
+        vmcase(CALL_CMD_P)
+        vmcase(CALL_CMD_LP) {
+            bool needFork = op != OpCode::CALL_CMD_P;
+            bool lastPipe = op == OpCode::CALL_CMD_LP;
 
             auto redir = state.pop();
             auto argv = state.pop();
 
             const char *cmdName = str(typeAs<Array_Object>(argv)->getValues()[0]);
-            callCommand(state, CmdResolver()(state, cmdName), std::move(argv), std::move(redir), needFork);
+            callCommand(state, CmdResolver()(state, cmdName), std::move(argv), std::move(redir), needFork, lastPipe);
             vmnext;
         }
         vmcase(BUILTIN_CMD) {

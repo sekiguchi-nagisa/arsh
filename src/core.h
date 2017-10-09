@@ -231,12 +231,6 @@ void installSignalHandler(DSState &st, int sigNum, DSValue &&handler);
 DSValue getSignalHandler(const DSState &st, int sigNum);
 
 /**
- * after fork, reset signal setting in child process.
- */
-pid_t xfork(DSState &st, pid_t pgid, bool foreground);
-
-
-/**
  * n is 1 or 2
  */
 std::string interpretPromptString(const DSState &st, const char *ps);

@@ -17,8 +17,6 @@
 #ifndef YDSH_VM_H
 #define YDSH_VM_H
 
-#include <unistd.h>
-
 #include <vector>
 #include <chrono>
 #include <cstdio>
@@ -28,6 +26,7 @@
 #include "object.h"
 #include "symbol_table.h"
 #include "core.h"
+#include "job.h"
 #include "misc/buffer.hpp"
 #include "misc/noncopyable.h"
 #include "misc/queue.hpp"
@@ -185,6 +184,8 @@ struct DSState {
     DSHistory history;
 
     SignalVector sigVector;
+
+    JobTable jobTable;
 
     static constexpr flag32_t VM_EVENT_HOOK   = 1 << 0;
     static constexpr flag32_t VM_EVENT_SIGNAL = 1 << 1;
@@ -386,6 +387,10 @@ struct DSState {
     bool isRootShell() const {
         int shellpid = typeAs<Int_Object>(this->getGlobal(toIndex(BuiltinVarOffset::SHELL_PID)))->getValue();
         return shellpid == getpid();
+    }
+
+    bool isForeground() const {
+        return this->isInteractive() && this->isRootShell();
     }
 
     void setVMHook(VMHook *hook) {

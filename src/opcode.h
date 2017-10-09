@@ -101,6 +101,7 @@ namespace ydsh {
     OP(ADD_CMD_ARG, 1) \
     OP(CALL_CMD, 0) \
     OP(CALL_CMD_P, 0) \
+    OP(CALL_CMD_LP, 0) \
     OP(BUILTIN_CMD, 0) \
     OP(BUILTIN_EVAL, 0) \
     OP(BUILTIN_EXEC, 0) \
