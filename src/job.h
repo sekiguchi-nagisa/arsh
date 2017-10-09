@@ -53,12 +53,12 @@ private:
      */
     unsigned int procSize;
 
-    pid_t pids[0];
-
     /**
      * if already closed, will be -1.
      */
     int oldStdin;
+
+    pid_t pids[0];
 
     friend class JobTable;
 
@@ -184,7 +184,7 @@ private:
      */
     std::pair<unsigned int, unsigned int> findEmptyEntry() const;   //FIXME: binary search
 
-    auto findEntryIter(unsigned int jobId) const -> decltype(this->entries.end());
+    std::vector<JobEntry>::iterator findEntryIter(unsigned int jobId);
 
     /**
      *
@@ -192,7 +192,7 @@ private:
      * @return
      * if not found, return nullptr
      */
-    JobEntry findEntry(unsigned int jobId) const;
+    JobEntry findEntry(unsigned int jobId);
 };
 
 } // namespace ydsh

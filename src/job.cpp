@@ -164,11 +164,11 @@ struct Comparator {
     }
 };
 
-auto JobTable::findEntryIter(unsigned int jobId) const -> decltype(this->entries.end()) {
+std::vector<JobEntry>::iterator JobTable::findEntryIter(unsigned int jobId) {
     return std::lower_bound(this->entries.begin(), this->entries.end(), jobId, Comparator());
 }
 
-JobEntry JobTable::findEntry(unsigned int jobId) const {
+JobEntry JobTable::findEntry(unsigned int jobId) {
     auto iter = this->findEntryIter(jobId);
     if(iter != this->entries.end() && (*iter)->jobId == jobId) {
         return *iter;
