@@ -148,29 +148,28 @@ void ByteCodeGenerator::emitNumCastIns(const DSType &beforeType, const DSType &a
     }
 }
 
-void ByteCodeGenerator::emitBranchIns(OpCode op, const IntrusivePtr<Label> &label) {
+void ByteCodeGenerator::emitBranchIns(OpCode op, const Label &label) {
     const unsigned int index = this->curBuilder().codeBuffer.size();    //FIXME: check index range
     this->emit2byteIns(op, 0);
     this->curBuilder().writeLabel(index + 1, label, index, CodeEmitter<true>::LabelTarget::_16);
 }
 
-void ByteCodeGenerator::emitBranchIns(const IntrusivePtr<Label> &label) {
+void ByteCodeGenerator::emitBranchIns(const Label &label) {
     this->emitBranchIns(OpCode::BRANCH, label);
 }
 
-void ByteCodeGenerator::emitJumpIns(const IntrusivePtr<Label> &label) {
+void ByteCodeGenerator::emitJumpIns(const Label &label) {
     const unsigned int index = this->curBuilder().codeBuffer.size();
     this->emit4byteIns(OpCode::GOTO, 0);
     this->curBuilder().writeLabel(index + 1, label, 0, CodeEmitter<true>::LabelTarget::_32);
 }
 
-void ByteCodeGenerator::markLabel(IntrusivePtr<Label> &label) {
+void ByteCodeGenerator::markLabel(Label &label) {
     const unsigned int index = this->curBuilder().codeBuffer.size();
     this->curBuilder().markLabel(index, label);
 }
 
-void ByteCodeGenerator::pushLoopLabels(IntrusivePtr<Label> breakLabel, IntrusivePtr<Label> continueLabel,
-                                       IntrusivePtr<Label> breakWithValueLabel) {
+void ByteCodeGenerator::pushLoopLabels(Label breakLabel, Label continueLabel, Label breakWithValueLabel) {
     LoopState s = {
             .breakLabel = std::move(breakLabel),
             .continueLabel = std::move(continueLabel),
@@ -195,7 +194,7 @@ void ByteCodeGenerator::emitSourcePos(unsigned int pos) {
     }
 }
 
-void ByteCodeGenerator::catchException(const IntrusivePtr<Label> &begin, const IntrusivePtr<Label> &end,
+void ByteCodeGenerator::catchException(const Label &begin, const Label &end,
                                        const DSType &type, unsigned short localOffset, unsigned short localSize) {
     const unsigned int index = this->curBuilder().codeBuffer.size();
     this->curBuilder().catchBuilders.emplace_back(begin, end, type, index, localOffset, localSize);
@@ -210,7 +209,7 @@ void ByteCodeGenerator::enterFinally() {
     }
 }
 
-void ByteCodeGenerator::emitCaptureIns(bool isStr, const IntrusivePtr<Label> &label) {
+void ByteCodeGenerator::emitCaptureIns(bool isStr, const Label &label) {
     this->emitBranchIns(isStr ? OpCode::CAPTURE_STR : OpCode::CAPTURE_ARRAY, label);
 }
 
@@ -251,7 +250,7 @@ void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
     }
 }
 
-void ByteCodeGenerator::emitPipelineIns(const std::vector<IntrusivePtr<Label>> &labels) {
+void ByteCodeGenerator::emitPipelineIns(const std::vector<Label> &labels) {
     const unsigned int size = labels.size();
     if(size > UINT8_MAX) {
         fatal("reach limit\n");
@@ -266,7 +265,7 @@ void ByteCodeGenerator::emitPipelineIns(const std::vector<IntrusivePtr<Label>> &
     }
 }
 
-void ByteCodeGenerator::emitPipelineIns2(const std::vector<IntrusivePtr<Label>> &labels) {
+void ByteCodeGenerator::emitPipelineIns2(const std::vector<Label> &labels) {
     const unsigned int size = labels.size();
     if(size > UINT8_MAX) {
         fatal("reach limit\n");
@@ -501,8 +500,8 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
         if(exprType.isOptionType()) {
             auto elementType = static_cast<ReifiedType &>(exprType).getElementTypes()[0];
 
-            auto thenLabel = makeIntrusive<Label>();
-            auto mergeLabel = makeIntrusive<Label>();
+            auto thenLabel = makeLabel();
+            auto mergeLabel = makeLabel();
             this->emitBranchIns(OpCode::TRY_UNWRAP, thenLabel);
             this->emitLdcIns(DSValue::create<String_Object>(this->pool.getStringType(), "(invalid)"));
             this->emitJumpIns(mergeLabel);
@@ -545,8 +544,8 @@ void ByteCodeGenerator::visitUnaryOpNode(UnaryOpNode &node) {
 void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
     auto kind = node.getOp();
     if(kind == COND_AND || kind == COND_OR) {
-        auto elseLabel = makeIntrusive<Label>();
-        auto mergeLabel = makeIntrusive<Label>();
+        auto elseLabel = makeLabel();
+        auto mergeLabel = makeLabel();
 
         this->visit(*node.getLeftNode());
         this->emitBranchIns(elseLabel);
@@ -567,7 +566,7 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
 
         this->markLabel(mergeLabel);
     } else if(kind == NULL_COALE) {
-        auto mergeLabel = makeIntrusive<Label>();
+        auto mergeLabel = makeLabel();
 
         this->visit(*node.getLeftNode());
         this->emitBranchIns(OpCode::TRY_UNWRAP, mergeLabel);
@@ -672,17 +671,17 @@ void ByteCodeGenerator::visitPipelineNode(PipelineNode &node) {
 
     if(getenv("X_PIPE2") != nullptr) {
         // init label
-        std::vector<IntrusivePtr<Label>> labels(size);
+        std::vector<Label> labels(size);
         for(unsigned int i = 0; i < size; i++) {
-            labels[i] = makeIntrusive<Label>();
+            labels[i] = makeLabel();
         }
 
         // generate pipeline
         this->emitSourcePos(node.getPos());
         this->emitPipelineIns2(labels);
 
-        auto begin = makeIntrusive<Label>();
-        auto end = makeIntrusive<Label>();
+        auto begin = makeLabel();
+        auto end = makeLabel();
 
         // generate pipeline (child)
         this->markLabel(begin);
@@ -706,18 +705,18 @@ void ByteCodeGenerator::visitPipelineNode(PipelineNode &node) {
 
 
     // init label
-    std::vector<IntrusivePtr<Label>> labels(size + 1);
+    std::vector<Label> labels(size + 1);
     for(unsigned int i = 0; i < size; i++) {
-        labels[i] = makeIntrusive<Label>();
+        labels[i] = makeLabel();
     }
-    labels[size] = makeIntrusive<Label>();
+    labels[size] = makeLabel();
 
     // generate pipeline
     this->emitSourcePos(node.getPos());
     this->emitPipelineIns(labels);
 
-    auto begin = makeIntrusive<Label>();
-    auto end = makeIntrusive<Label>();
+    auto begin = makeLabel();
+    auto end = makeLabel();
 
     this->markLabel(begin);
     for(unsigned int i = 0; i < size; i++) {
@@ -732,9 +731,9 @@ void ByteCodeGenerator::visitPipelineNode(PipelineNode &node) {
 }
 
 void ByteCodeGenerator::visitSubstitutionNode(SubstitutionNode &node) {
-    auto beginLabel = makeIntrusive<Label>();
-    auto endLabel = makeIntrusive<Label>();
-    auto mergeLabel = makeIntrusive<Label>();
+    auto beginLabel = makeLabel();
+    auto endLabel = makeLabel();
+    auto mergeLabel = makeLabel();
 
     this->markLabel(beginLabel);
     this->emitCaptureIns(node.isStrExpr(), mergeLabel);
@@ -837,11 +836,11 @@ void ByteCodeGenerator::visitLoopNode(LoopNode &node) {
 
     this->generateBlock(localOffset, localSize, localSize > 0, [&]{
         // push loop label
-        auto initLabel = makeIntrusive<Label>();
-        auto startLabel = makeIntrusive<Label>();
-        auto breakLabel = makeIntrusive<Label>();
-        auto continueLabel = makeIntrusive<Label>();
-        auto breakWithValueLabel = makeIntrusive<Label>();
+        auto initLabel = makeLabel();
+        auto startLabel = makeLabel();
+        auto breakLabel = makeLabel();
+        auto continueLabel = makeLabel();
+        auto breakWithValueLabel = makeLabel();
         this->pushLoopLabels(breakLabel, continueLabel, breakWithValueLabel);
 
         this->visit(*node.getInitNode());
@@ -874,8 +873,8 @@ void ByteCodeGenerator::visitLoopNode(LoopNode &node) {
 }
 
 void ByteCodeGenerator::visitIfNode(IfNode &node) {
-    auto elseLabel = makeIntrusive<Label>();
-    auto mergeLabel = makeIntrusive<Label>();
+    auto elseLabel = makeLabel();
+    auto mergeLabel = makeLabel();
 
     this->visit(*node.getCondNode());
     this->emitBranchIns(elseLabel);
@@ -921,16 +920,16 @@ void ByteCodeGenerator::visitCatchNode(CatchNode &node) {
 }
 
 void ByteCodeGenerator::visitTryNode(TryNode &node) {
-    auto finallyLabel = makeIntrusive<Label>();
+    auto finallyLabel = makeLabel();
 
     const bool hasFinally = node.getFinallyNode() != nullptr;
     if(hasFinally) {
         this->curBuilder().finallyLabels.push_back(finallyLabel);
     }
 
-    auto beginLabel = makeIntrusive<Label>();
-    auto endLabel = makeIntrusive<Label>();
-    auto mergeLabel = makeIntrusive<Label>();
+    auto beginLabel = makeLabel();
+    auto endLabel = makeLabel();
+    auto mergeLabel = makeLabel();
 
     auto &blockNode = *node.getBlockNode();
     auto maxLocalSize = blockNode.getMaxVarSize();

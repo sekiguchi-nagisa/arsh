@@ -23,7 +23,38 @@
 
 namespace ydsh {
 
+template <typename T> struct RefCountOp;
+
 template <typename T>
+class RefCount {
+private:
+    unsigned long count{0};
+    friend struct RefCountOp<T>;
+
+protected:
+    RefCount() = default;
+};
+
+template <typename T>
+struct RefCountOp {
+    static unsigned long useCount(const RefCount<T> *ptr) noexcept {
+        return ptr->count;
+    }
+
+    static void increase(RefCount<T> *ptr) noexcept {
+        if(ptr != nullptr) {
+            ptr->count++;
+        }
+    }
+
+    static void decrease(RefCount<T> *ptr) noexcept {
+        if(ptr != nullptr && --ptr->count == 0) {
+            delete static_cast<T *>(ptr);
+        }
+    }
+};
+
+template <typename T, typename P = RefCountOp<T>>
 class IntrusivePtr final {
 private:
     T *ptr;
@@ -33,13 +64,13 @@ public:
 
     constexpr IntrusivePtr(std::nullptr_t) noexcept : ptr(nullptr) { }
 
-    IntrusivePtr(T *ptr) noexcept : ptr(ptr) { intrusivePtr_addRef(this->ptr); }
+    IntrusivePtr(T *ptr) noexcept : ptr(ptr) { P::increase(this->ptr); }
 
     IntrusivePtr(const IntrusivePtr &v) noexcept : IntrusivePtr(v.ptr) { }
 
     IntrusivePtr(IntrusivePtr &&v) noexcept : ptr(v.ptr) { v.ptr = nullptr; }
 
-    ~IntrusivePtr() { intrusivePtr_release(this->ptr); }
+    ~IntrusivePtr() { P::decrease(this->ptr); }
 
     IntrusivePtr &operator=(const IntrusivePtr &v) noexcept {
         IntrusivePtr tmp(v);
@@ -60,6 +91,10 @@ public:
 
     void swap(IntrusivePtr &o) noexcept {
         std::swap(this->ptr, o.ptr);
+    }
+
+    unsigned long useCount() const noexcept {
+        return P::useCount(this->ptr);
     }
 
     T *get() const noexcept {
@@ -85,11 +120,16 @@ public:
     bool operator!=(const IntrusivePtr &obj) const noexcept {
         return this->get() != obj.get();
     }
+
+    template <typename ... A>
+    static IntrusivePtr create(A && ...arg) {
+        return IntrusivePtr(new T(std::forward<A>(arg)...));
+    }
 };
 
 template <typename T, typename ... A>
 inline IntrusivePtr<T> makeIntrusive(A ... arg) {
-    return IntrusivePtr<T>(new T(std::forward<A>(arg)...));
+    return IntrusivePtr<T>::create(std::forward<A>(arg)...);
 }
 
 template <typename R, typename D>

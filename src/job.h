@@ -36,9 +36,11 @@ void tryToForeground(const DSState &st);
 
 class JobTable;
 
+struct JobEntryTrait;
+
 class JobEntryImpl {
 private:
-    unsigned int refCount{0};
+    unsigned long refCount{0};
     const unsigned int jobId; //FIXME: tcsetgprp, STDIN_FD
 
     /**
@@ -59,6 +61,8 @@ private:
     int oldStdin;
 
     friend class JobTable;
+
+    friend struct JobEntryTrait;
 
     NON_COPYABLE(JobEntryImpl);
 
@@ -102,21 +106,27 @@ public:
      * if has no ownership. do nothing.
      */
     void restoreStdin();
+};
 
-    friend void intrusivePtr_addRef(JobEntryImpl *entry) noexcept {
-        if(entry != nullptr) {
-            entry->refCount++;
+struct JobEntryTrait {
+    static unsigned long useCount(const JobEntryImpl *ptr) noexcept {
+        return ptr->refCount;
+    }
+
+    static void increase(JobEntryImpl *ptr) noexcept {
+        if(ptr != nullptr) {
+            ptr->refCount++;
         }
     }
 
-    friend void intrusivePtr_release(JobEntryImpl *entry) noexcept {
-        if(entry != nullptr && --entry->refCount == 0) {
-            free(entry);
+    static void decrease(JobEntryImpl *ptr) noexcept {
+        if(ptr != nullptr && --ptr->refCount == 0) {
+            free(ptr);
         }
     }
 };
 
-using JobEntry = IntrusivePtr<JobEntryImpl>;
+using JobEntry = IntrusivePtr<JobEntryImpl, JobEntryTrait>;
 
 class JobTable {    //FIXME: send signal to managed jobs
 private:

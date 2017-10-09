@@ -30,20 +30,19 @@
 
 namespace ydsh {
 
-class Label {
+class LabelImpl : public RefCount<LabelImpl> {
 private:
-    unsigned int refCount{0};
-
     /**
      * indicate labeled address
      */
     unsigned int index{0};
 
-private:
-    ~Label() = default;
+    ~LabelImpl() = default;
+
+    friend struct RefCountOp<LabelImpl>;
 
 public:
-    bool operator==(const Label &l) const noexcept {
+    bool operator==(const LabelImpl &l) const noexcept {
         return reinterpret_cast<unsigned long>(this) == reinterpret_cast<unsigned long>(&l);
     }
 
@@ -58,19 +57,13 @@ public:
     void destroy() const {
         delete this;
     }
-
-    friend void intrusivePtr_addRef(Label *l) noexcept {
-        if(l != nullptr) {
-            l->refCount++;
-        }
-    }
-
-    friend void intrusivePtr_release(Label *l) noexcept {
-        if(l != nullptr && --l->refCount == 0) {
-            l->destroy();
-        }
-    }
 };
+
+using Label = IntrusivePtr<LabelImpl>;
+
+inline Label makeLabel() {
+    return Label(new LabelImpl());
+}
 
 using CodeBuffer = FlexBuffer<unsigned char>;
 
@@ -79,13 +72,13 @@ struct CodeEmitter {
     static_assert(true, "not allow instantiation");
 
     struct Compare {
-        bool operator()(const IntrusivePtr<Label> &x, const IntrusivePtr<Label> &y) const noexcept {
+        bool operator()(const Label &x, const Label &y) const noexcept {
             return *x == *y;
         }
     };
 
     struct GenHash {
-        std::size_t operator()(const IntrusivePtr<Label> &l) const noexcept {
+        std::size_t operator()(const Label &l) const noexcept {
             return std::hash<unsigned long>()(reinterpret_cast<unsigned long>(l.get()));
         }
     };
@@ -100,7 +93,7 @@ struct CodeEmitter {
         OffsetLen offsetLen;
     };
 
-    std::unordered_map<IntrusivePtr<Label>, std::vector<LabelTarget>, GenHash, Compare> labelMap;
+    std::unordered_map<Label, std::vector<LabelTarget>, GenHash, Compare> labelMap;
 
     CodeBuffer codeBuffer;
 
@@ -178,12 +171,12 @@ struct CodeEmitter {
         }
     }
 
-    void markLabel(unsigned int index,  IntrusivePtr<Label> &label) {
+    void markLabel(unsigned int index, Label &label) {
         label->setIndex(index);
         this->labelMap[label];
     }
 
-    void writeLabel(unsigned int index, const IntrusivePtr<Label> &label,
+    void writeLabel(unsigned int index, const Label &label,
                     unsigned int baseIndex, typename LabelTarget::OffsetLen len) {
         this->labelMap[label].push_back({index, baseIndex, len});
     }
@@ -223,8 +216,8 @@ struct CodeEmitter {
 
 class CatchBuilder {
 private:
-    IntrusivePtr<Label> begin;  // inclusive
-    IntrusivePtr<Label> end;    // exclusive
+    Label begin;  // inclusive
+    Label end;    // exclusive
     const DSType *type{nullptr};
     unsigned int address{0};   // start index of catch block.
     unsigned short localOffset{0};
@@ -232,7 +225,7 @@ private:
 
 public:
     CatchBuilder() = default;
-    CatchBuilder(IntrusivePtr<Label> begin, IntrusivePtr<Label> end, const DSType &type,
+    CatchBuilder(Label begin, Label end, const DSType &type,
                  unsigned int address, unsigned short localOffset, unsigned short localSize) :
             begin(std::move(begin)), end(std::move(end)), type(&type),
             address(address), localOffset(localOffset), localSize(localSize) {}
@@ -260,11 +253,11 @@ public:
 };
 
 struct LoopState {
-    IntrusivePtr<Label> breakLabel;
+    Label breakLabel;
 
-    IntrusivePtr<Label> continueLabel;
+    Label continueLabel;
 
-    IntrusivePtr<Label> breakWithValueLabel;
+    Label breakWithValueLabel;
 
     /**
      * for local variable reclaim
@@ -287,7 +280,7 @@ struct CodeBuilder : public CodeEmitter<true> {
      */
     std::vector<LoopState> loopLabels;
 
-    std::vector<IntrusivePtr<Label>> finallyLabels;
+    std::vector<Label> finallyLabels;
 };
 
 class ByteCodeGenerator : protected NodeVisitor {
@@ -387,13 +380,12 @@ private:
     void emitDescriptorIns(OpCode op, std::string &&desc);
     void generateToString();
     void emitNumCastIns(const DSType &beforeType, const DSType &afterType);
-    void emitBranchIns(OpCode op, const IntrusivePtr<Label> &label);
-    void emitBranchIns(const IntrusivePtr<Label> &label);
-    void emitJumpIns(const IntrusivePtr<Label> &label);
-    void markLabel(IntrusivePtr<Label> &label);
+    void emitBranchIns(OpCode op, const Label &label);
+    void emitBranchIns(const Label &label);
+    void emitJumpIns(const Label &label);
+    void markLabel(Label &label);
 
-    void pushLoopLabels(IntrusivePtr<Label> breakLabel, IntrusivePtr<Label> continueLabel,
-                        IntrusivePtr<Label> breakWithValueLabel);
+    void pushLoopLabels(Label breakLabel, Label continueLabel, Label breakWithValueLabel);
     void popLoopLabels();
     const LoopState &peekLoopLabels();
 
@@ -443,13 +435,13 @@ private:
     /**
      * begin and end have already been marked.
      */
-    void catchException(const IntrusivePtr<Label> &begin, const IntrusivePtr<Label> &end, const DSType &type,
+    void catchException(const Label &begin, const Label &end, const DSType &type,
                         unsigned short localOffset = 0, unsigned short localSize = 0);
     void enterFinally();
-    void emitCaptureIns(bool isStr, const IntrusivePtr<Label> &label);
+    void emitCaptureIns(bool isStr, const Label &label);
     void generateCmdArg(CmdArgNode &node);
-    void emitPipelineIns(const std::vector<IntrusivePtr<Label>> &labels);
-    void emitPipelineIns2(const std::vector<IntrusivePtr<Label>> &labels);
+    void emitPipelineIns(const std::vector<Label> &labels);
+    void emitPipelineIns2(const std::vector<Label> &labels);
     void generateStringExpr(StringExprNode &node, bool fragment);
 
     void initCodeBuilder(CodeKind kind, unsigned short localVarNum);

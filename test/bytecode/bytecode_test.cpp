@@ -2,7 +2,7 @@
 
 #include <codegen.h>
 
-using Label = ydsh::Label;
+using namespace ydsh;
 using ByteCodeWriter = ydsh::CodeEmitter<true>;
 
 TEST(writer, api1) {
@@ -229,7 +229,7 @@ TEST(writer, label1) {
     }
 
     // forward
-    auto label = ydsh::makeIntrusive<Label>();
+    auto label = makeLabel();
     writer.emit(0, 25u);
     writer.writeLabel(1, label, 0, ByteCodeWriter::LabelTarget::_8);
     writer.emit(2, 26u);
@@ -244,7 +244,7 @@ TEST(writer, label1) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(27u, writer.codeBuffer[3]));
 
     // backward
-    label = ydsh::makeIntrusive<Label>();
+    label = makeLabel();
     writer.emit(0, 77u);
     writer.emit(1, 78u);
     writer.markLabel(1, label);
@@ -261,7 +261,7 @@ TEST(writer, label1) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(80u, writer.codeBuffer[4]));
 
     // multiple
-    label = ydsh::makeIntrusive<Label>();
+    label = makeLabel();
     for(unsigned int i = 0; i < 10; i++) {
         writer.emit(i, 88u);
     }
@@ -288,7 +288,7 @@ TEST(writer, label2) {
 
     writer.codeBuffer.assign(8, 0);
 
-    auto label = ydsh::makeIntrusive<Label>();
+    auto label = makeLabel();
     writer.writeLabel(3, label, 1, ByteCodeWriter::LabelTarget::_8);
     writer.markLabel(6, label);
 

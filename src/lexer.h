@@ -31,10 +31,8 @@ namespace ydsh {
 const char *toModeName(LexerMode mode);
 
 
-class SourceInfo {
+class SourceInfo : public RefCount<SourceInfo> {
 private:
-    unsigned int refcount;
-
     std::string sourceName;
 
     /**
@@ -48,8 +46,7 @@ private:
     std::vector<unsigned int> lineNumTable;
 
 public:
-    explicit SourceInfo(const char *sourceName) :
-            refcount(0), sourceName(sourceName), lineNumOffset(1) { }
+    explicit SourceInfo(const char *sourceName) : sourceName(sourceName), lineNumOffset(1) { }
     ~SourceInfo() = default;
 
     const std::string &getSourceName() const {
@@ -70,18 +67,6 @@ public:
 
     void addNewlinePos(unsigned int pos);
     unsigned int getLineNum(unsigned int pos) const;
-
-    friend void intrusivePtr_addRef(SourceInfo *ptr) noexcept {
-        if(ptr != nullptr) {
-            ptr->refcount++;
-        }
-    }
-
-    friend void intrusivePtr_release(SourceInfo *ptr) noexcept {
-        if(ptr != nullptr && --ptr->refcount == 0) {
-            delete ptr;
-        }
-    }
 };
 
 using SourceInfoPtr = IntrusivePtr<SourceInfo>;
