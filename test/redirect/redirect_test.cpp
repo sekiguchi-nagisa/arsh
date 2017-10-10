@@ -121,7 +121,7 @@ public:
 
 #define CL(...) ProcBuilder {BIN_PATH, "-c", format(__VA_ARGS__).c_str()}
 
-TEST_F(RedirectTest, stdin) {
+TEST_F(RedirectTest, STDIN) {
     // create target file
     ProcBuilder builder = {
             "sh", "-c", format("echo hello world > %s", this->getTargetName()).c_str(),
@@ -152,7 +152,7 @@ TEST_F(RedirectTest, stdin) {
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("command grep < %s 'hello world'", this->getTargetName()), 0, "hello world\n"));
 }
 
-TEST_F(RedirectTest, stdout) {
+TEST_F(RedirectTest, STDOUT) {
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("__puts -1 AAA"), 0, "AAA\n"));
 
     // builtin command
@@ -280,7 +280,7 @@ TEST_F(RedirectTest, stdout) {
     ASSERT_NO_FATAL_FAILURE(this->contentEq("123\nDEF\nGHI\n"));
 }
 
-TEST_F(RedirectTest, stderr) {
+TEST_F(RedirectTest, STDERR) {
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("__puts -2 AAA"), 0, "", "AAA\n"));
 
     // builtin
