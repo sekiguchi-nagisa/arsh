@@ -20,6 +20,7 @@
 #include <ostream>
 #include <vector>
 #include <string>
+#include <unordered_map>
 #include <initializer_list>
 
 #include <misc/buffer.hpp>
@@ -64,6 +65,7 @@ struct CmdResult {
 class ProcBuilder {
 private:
     std::vector<std::string> args;
+    std::unordered_map<std::string, std::string> env;
 
 public:
     ProcBuilder(const char *cmdName) : args{cmdName} {}
@@ -87,6 +89,11 @@ public:
 
     ProcBuilder &addArgs(const std::vector<std::string> &values);
 
+    ProcBuilder &addEnv(const char *name, const char *value) {
+        this->env.insert({name, value});
+        return *this;
+    }
+
     std::string execAndGetOutput(bool removeLastSpace = true) const {
         auto r = this->execAndGetResult(removeLastSpace);
         return std::move(r.out);
@@ -102,6 +109,8 @@ public:
 
 private:
     void syncPWD() const;
+
+    void syncEnv() const;
 };
 
 inline bool isSpace(char ch) {

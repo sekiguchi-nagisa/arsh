@@ -239,6 +239,7 @@ int ProcBuilder::exec(Output *output) const {
         }
         argv[this->args.size()] = nullptr;
 
+        this->syncEnv();
         this->syncPWD();
         execvp(argv[0], argv);
         exit(-errno);
@@ -257,6 +258,12 @@ void ProcBuilder::syncPWD() const {
         fatal("current working directory is broken!!\n");
     }
     setenv(ydsh::ENV_PWD, cwd, 1);
+}
+
+void ProcBuilder::syncEnv() const {
+    for(auto &pair : this->env) {
+        setenv(pair.first.c_str(), pair.second.c_str(), 1);
+    }
 }
 
 std::ostream &operator<<(std::ostream &stream, const ydsh::ByteBuffer &buffer) {
