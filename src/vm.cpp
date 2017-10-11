@@ -628,12 +628,12 @@ static void closeAllPipe(int size, pipe_t *pipefds) {
 class PipelineState : public DSObject {
 private:
     DSState &state;
-    JobEntry entry;
+    Job entry;
 
 public:
     NON_COPYABLE(PipelineState);
 
-    PipelineState(DSState &state, JobEntry entry) :
+    PipelineState(DSState &state, Job entry) :
             DSObject(nullptr), state(state), entry(std::move(entry)) {}
 
     ~PipelineState() override {

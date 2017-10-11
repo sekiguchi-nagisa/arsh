@@ -36,9 +36,9 @@ void tryToForeground(const DSState &st);
 
 class JobTable;
 
-struct JobEntryTrait;
+struct JobTrait;
 
-class JobEntryImpl {
+class JobImpl {
 private:
     unsigned long refCount{0};
     const unsigned int jobId; //FIXME: tcsetgprp, STDIN_FD
@@ -62,18 +62,18 @@ private:
 
     friend class JobTable;
 
-    friend struct JobEntryTrait;
+    friend struct JobTrait;
 
-    NON_COPYABLE(JobEntryImpl);
+    NON_COPYABLE(JobImpl);
 
-    JobEntryImpl(unsigned int jobId, unsigned int size) : jobId(jobId), ownerPid(getpid()), procSize(size) {
+    JobImpl(unsigned int jobId, unsigned int size) : jobId(jobId), ownerPid(getpid()), procSize(size) {
         for(unsigned int i = 0; i < this->procSize; i++) {
             this->pids[i] = -1;
         }
         this->oldStdin = dup(STDIN_FILENO);
     }
 
-    ~JobEntryImpl() = default;
+    ~JobImpl() = default;
 
 public:
     unsigned int getProcSize() const {
@@ -108,40 +108,40 @@ public:
     void restoreStdin();
 };
 
-struct JobEntryTrait {
-    static unsigned long useCount(const JobEntryImpl *ptr) noexcept {
+struct JobTrait {
+    static unsigned long useCount(const JobImpl *ptr) noexcept {
         return ptr->refCount;
     }
 
-    static void increase(JobEntryImpl *ptr) noexcept {
+    static void increase(JobImpl *ptr) noexcept {
         if(ptr != nullptr) {
             ptr->refCount++;
         }
     }
 
-    static void decrease(JobEntryImpl *ptr) noexcept {
+    static void decrease(JobImpl *ptr) noexcept {
         if(ptr != nullptr && --ptr->refCount == 0) {
             free(ptr);
         }
     }
 };
 
-using JobEntry = IntrusivePtr<JobEntryImpl, JobEntryTrait>;
+using Job = IntrusivePtr<JobImpl, JobTrait>;
 
 class JobTable {    //FIXME: send signal to managed jobs
 private:
-    std::vector<JobEntry> entries;
+    std::vector<Job> entries;
 
     /**
      * cache latest JobEntry.
      */
-    JobEntry latestEntry;
+    Job latestEntry;
 
 public:
     JobTable() = default;
     ~JobTable() = default;
 
-    JobEntry newEntry(unsigned int size);
+    Job newEntry(unsigned int size);
 
 
     /**
@@ -151,7 +151,7 @@ public:
      * @param statuses
      * @return
      */
-    int wait(JobEntry &entry, unsigned int statusSize, int *statuses) {
+    int wait(Job &entry, unsigned int statusSize, int *statuses) {
         if(entry->hasOwnership()) {
             return this->forceWait(entry, statusSize, statuses);
         }
@@ -168,10 +168,10 @@ public:
      * if job is already terminated, return -1.
      * after waiting termination, remove entry.
      */
-    int forceWait(JobEntry &entry, unsigned int statusSize, int *statuses);
+    int forceWait(Job &entry, unsigned int statusSize, int *statuses);
 
 
-    JobEntry &getLatestEntry() {
+    Job &getLatestEntry() {
         return this->latestEntry;
     }
 
@@ -184,7 +184,7 @@ private:
      */
     std::pair<unsigned int, unsigned int> findEmptyEntry() const;   //FIXME: binary search
 
-    std::vector<JobEntry>::iterator findEntryIter(unsigned int jobId);
+    std::vector<Job>::iterator findEntryIter(unsigned int jobId);
 
     /**
      *
@@ -192,7 +192,7 @@ private:
      * @return
      * if not found, return nullptr
      */
-    JobEntry findEntry(unsigned int jobId);
+    Job findEntry(unsigned int jobId);
 };
 
 } // namespace ydsh

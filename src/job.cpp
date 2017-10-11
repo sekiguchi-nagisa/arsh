@@ -71,7 +71,7 @@ void tryToForeground(const DSState &st) {
 // ##     JobEntryImpl     ##
 // ##########################
 
-void JobEntryImpl::restoreStdin() {
+void JobImpl::restoreStdin() {
     if(this->oldStdin > -1 && this->hasOwnership()) {
         dup2(this->oldStdin, STDIN_FILENO);
         close(this->oldStdin);
@@ -82,19 +82,19 @@ void JobEntryImpl::restoreStdin() {
 // ##     JobTable     ##
 // ######################
 
-JobEntry JobTable::newEntry(unsigned int size) {
+Job JobTable::newEntry(unsigned int size) {
     assert(size > 0);
 
-    void *ptr = malloc(sizeof(JobEntryImpl) + sizeof(pid_t) * size);
+    void *ptr = malloc(sizeof(JobImpl) + sizeof(pid_t) * size);
     auto pair = this->findEmptyEntry();
-    auto *entry = new(ptr) JobEntryImpl(pair.second, size);
-    auto v = JobEntry(entry);
+    auto *entry = new(ptr) JobImpl(pair.second, size);
+    auto v = Job(entry);
     this->entries.insert(this->entries.begin() + pair.first, v);
     this->latestEntry = v;
     return v;
 }
 
-int JobTable::forceWait(JobEntry &entry, unsigned int statusSize, int *statuses) {
+int JobTable::forceWait(Job &entry, unsigned int statusSize, int *statuses) {
     if(entry->procSize == 0) {
         return -1;
     }
@@ -155,20 +155,20 @@ std::pair<unsigned int, unsigned int> JobTable::findEmptyEntry() const {
 }
 
 struct Comparator {
-    bool operator()(const JobEntry &x, unsigned int y) const {
+    bool operator()(const Job &x, unsigned int y) const {
         return x->getJobId() < y;
     }
 
-    bool operator()(unsigned int x, const JobEntry &y) const {
+    bool operator()(unsigned int x, const Job &y) const {
         return x < y->getJobId();
     }
 };
 
-std::vector<JobEntry>::iterator JobTable::findEntryIter(unsigned int jobId) {
+std::vector<Job>::iterator JobTable::findEntryIter(unsigned int jobId) {
     return std::lower_bound(this->entries.begin(), this->entries.end(), jobId, Comparator());
 }
 
-JobEntry JobTable::findEntry(unsigned int jobId) {
+Job JobTable::findEntry(unsigned int jobId) {
     auto iter = this->findEntryIter(jobId);
     if(iter != this->entries.end() && (*iter)->jobId == jobId) {
         return *iter;
