@@ -382,6 +382,25 @@ TEST_F(CmdlineTest, version) {
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--version"), 0, msg.c_str()));
 }
 
+TEST_F(CmdlineTest, feature) {
+#ifdef USE_DBUS
+    bool useDBus = true;
+#else
+    bool useDBus = false;
+#endif
+
+    if(useDBus) {
+        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "assert($DBus.available())"), 0));
+        ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--feature"), 0, "USE_DBUS\n"));
+    } else {
+        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "assert(not $DBus.available())"), 0));
+
+        std::string cmd = BIN_PATH;
+        cmd += " --feature | grep USE_DBUS";
+        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", cmd.c_str()), 1));
+    }
+}
+
 TEST_F(CmdlineTest, prompt) {
 #ifdef USE_FIXED_TIME
     bool useFixedTime = true;
@@ -399,6 +418,10 @@ TEST_F(CmdlineTest, prompt) {
         ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "ps_intrp '\\t'").addEnv(name, value), 0, "15:15:12\n"));
         ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "ps_intrp '\\T'").addEnv(name, value), 0, "03:15:12\n"));
         ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "ps_intrp '\\@'").addEnv(name, value), 0, "03:15 PM\n"));
+    } else {
+        std::string cmd = BIN_PATH;
+        cmd += " --feature | grep USE_FIXED_TIME";
+        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", cmd.c_str()), 1));
     }
 }
 
