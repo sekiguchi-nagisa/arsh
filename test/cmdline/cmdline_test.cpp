@@ -57,7 +57,7 @@ public:
 
     virtual void TearDown() { }
 
-    void expect(ProcBuilder &&builder, int status, const char *out = "", const char *err = "") {
+    void expect(const ProcBuilder &builder, int status, const char *out = "", const char *err = "") {
         SCOPED_TRACE("");
 
         auto result = builder.execAndGetResult(false);
@@ -72,7 +72,7 @@ public:
         }
     }
 
-    void expectRegex(ProcBuilder &&builder, int status, const char *out, const char *err = "") {
+    void expectRegex(const ProcBuilder &builder, int status, const char *out, const char *err = "") {
         SCOPED_TRACE("");
 
         auto result = builder.execAndGetResult(false);
@@ -380,6 +380,26 @@ TEST_F(CmdlineTest, version) {
     msg += ", build by .+\n";
     msg += "Copyright .+\n$";
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--version"), 0, msg.c_str()));
+}
+
+TEST_F(CmdlineTest, prompt) {
+#ifdef USE_FIXED_TIME
+    bool useFixedTime = true;
+#else
+    bool useFixedTime = false;
+#endif
+
+    if(useFixedTime) {
+        ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--feature"), 0, "USE_FIXED_TIME"));
+
+        const char *name = "TIME_SOURCE";
+        const char *value = "2016-1-13T15:15:12Z";
+
+        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "ps_intrp '\\d'").addEnv(name, value), 0, "Wed 01 13\n"));
+        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "ps_intrp '\\t'").addEnv(name, value), 0, "15:15:12\n"));
+        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "ps_intrp '\\T'").addEnv(name, value), 0, "03:15:12\n"));
+        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "ps_intrp '\\@'").addEnv(name, value), 0, "03:15 PM\n"));
+    }
 }
 
 TEST_F(CmdlineTest, toplevel) {
