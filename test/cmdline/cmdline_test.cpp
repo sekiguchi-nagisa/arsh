@@ -389,14 +389,13 @@ TEST_F(CmdlineTest, feature) {
     bool useDBus = false;
 #endif
 
+    std::string cmd = BIN_PATH;
+    cmd += " --feature | grep USE_DBUS";
     if(useDBus) {
         ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "assert($DBus.available())"), 0));
-        ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--feature"), 0, "USE_DBUS\n"));
+        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", cmd.c_str()), 0, "USE_DBUS\n"));
     } else {
         ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "assert(not $DBus.available())"), 0));
-
-        std::string cmd = BIN_PATH;
-        cmd += " --feature | grep USE_DBUS";
         ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", cmd.c_str()), 1));
     }
 }
@@ -408,19 +407,19 @@ TEST_F(CmdlineTest, prompt) {
     bool useFixedTime = false;
 #endif
 
+    std::string cmd = BIN_PATH;
+    cmd += " --feature | grep USE_FIXED_TIME";
     if(useFixedTime) {
-        ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--feature"), 0, "USE_FIXED_TIME"));
+        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", cmd.c_str()), 0, "USE_FIXED_TIME\n"));
 
         const char *name = "TIME_SOURCE";
         const char *value = "2016-1-13T15:15:12Z";
 
-        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "ps_intrp '\\d'").addEnv(name, value), 0, "Wed 01 13\n"));
-        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "ps_intrp '\\t'").addEnv(name, value), 0, "15:15:12\n"));
-        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "ps_intrp '\\T'").addEnv(name, value), 0, "03:15:12\n"));
-        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "ps_intrp '\\@'").addEnv(name, value), 0, "03:15 PM\n"));
+        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "ps_intrp '\\d'").addEnv(name, value), 0, "Wed 01 13\n"));
+        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "ps_intrp '\\t'").addEnv(name, value), 0, "15:15:12\n"));
+        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "ps_intrp '\\T'").addEnv(name, value), 0, "03:15:12\n"));
+        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "ps_intrp '\\@'").addEnv(name, value), 0, "03:15 PM\n"));
     } else {
-        std::string cmd = BIN_PATH;
-        cmd += " --feature | grep USE_FIXED_TIME";
         ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", cmd.c_str()), 1));
     }
 }
