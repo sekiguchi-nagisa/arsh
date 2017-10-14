@@ -2056,6 +2056,7 @@ static bool mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(BUILTIN_EVAL) {
+            auto attr = state.getLocal(UDC_PARAM_ATTR).value();
             auto redir = state.getLocal(UDC_PARAM_REDIR);
             auto argv = state.getLocal(UDC_PARAM_ARGV);
 
@@ -2063,7 +2064,7 @@ static bool mainLoop(DSState &state) {
             auto *array = typeAs<Array_Object>(argv);
             if(!array->getValues().empty()) {
                 const char *cmdName = str(typeAs<Array_Object>(argv)->getValues()[0]);
-                callCommand(state, CmdResolver()(state, cmdName), std::move(argv), std::move(redir), UDC_ATTR_NEED_FORK);
+                callCommand(state, CmdResolver()(state, cmdName), std::move(argv), std::move(redir), attr);
             } else {
                 pushExitStatus(state, 0);
             }
