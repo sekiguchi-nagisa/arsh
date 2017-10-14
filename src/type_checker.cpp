@@ -1244,6 +1244,9 @@ void TypeChecker::visitUserDefinedCmdNode(DSType *, UserDefinedCmdNode &node) {
     this->symbolTable.enterFunc();
     this->symbolTable.enterScope();
 
+    // register dummy parameter (for propagating command attr)
+    this->addEntryAndThrowIfDefined(node, "%%attr", this->typePool.getAnyType(), FieldAttribute::READ_ONLY);
+
     // register dummy parameter (for closing file descriptor)
     this->addEntryAndThrowIfDefined(node, "%%redir", this->typePool.getAnyType(), FieldAttribute::READ_ONLY);
 

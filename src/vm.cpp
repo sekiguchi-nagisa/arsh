@@ -812,6 +812,10 @@ void RedirConfig::redirect(DSState &st) const {
     }
 }
 
+static constexpr flag8_t UDC_ATTR_SETVAR    = 1 << 0;
+static constexpr flag8_t UDC_ATTR_NEED_FORK = 1 << 1;
+static constexpr flag8_t UDC_ATTR_LAST_PIPE = 1 << 2;
+
 /**
  * stack state in function apply    stack grow ===>
  *
@@ -820,25 +824,27 @@ void RedirConfig::redirect(DSState &st) const {
  * +-----------+---------------+--------------+
  *             |     offset    |
  */
-static void callUserDefinedCommand(DSState &st, const DSCode *code, DSValue &&argvObj, DSValue &&restoreFD, bool setvar) {
-    if(setvar) {
+static void callUserDefinedCommand(DSState &st, const DSCode *code,
+                                   DSValue &&argvObj, DSValue &&restoreFD, const flag8_set_t attr) {
+    if(hasFlag(attr, UDC_ATTR_SETVAR)) {
         // reset exit status
         st.updateExitStatus(0);
     }
 
     // push parameter
+    st.push(DSValue::createNum(attr));  // push %%attr
     st.push(std::move(restoreFD));  // push %%redir
     st.push(std::move(argvObj));    // push argv (@)
 
     // set stack stack
-    windStackFrame(st, 2, 2, code);
+    windStackFrame(st, 3, 3, code);
 
-    if(setvar) {    // set variable
-        auto argv = typeAs<Array_Object>(st.getLocal(1));
+    if(hasFlag(attr, UDC_ATTR_SETVAR)) {    // set variable
+        auto argv = typeAs<Array_Object>(st.getLocal(UDC_PARAM_ARGV));
         eraseFirst(*argv);
         const unsigned int argSize = argv->getValues().size();
-        st.setLocal(2, DSValue::create<Int_Object>(st.pool.getInt32Type(), argSize));   // #
-        st.setLocal(3, st.getGlobal(toIndex(BuiltinVarOffset::POS_0))); // 0
+        st.setLocal(UDC_PARAM_ARGV + 1, DSValue::create<Int_Object>(st.pool.getInt32Type(), argSize));   // #
+        st.setLocal(UDC_PARAM_ARGV + 2, st.getGlobal(toIndex(BuiltinVarOffset::POS_0))); // 0
         unsigned int limit = 9;
         if(argSize < limit) {
             limit = argSize;
@@ -846,11 +852,11 @@ static void callUserDefinedCommand(DSState &st, const DSCode *code, DSValue &&ar
 
         unsigned int index = 0;
         for(; index < limit; index++) {
-            st.setLocal(index + 4, argv->getValues()[index]);
+            st.setLocal(index + UDC_PARAM_ARGV + 3, argv->getValues()[index]);
         }
 
         for(; index < 9; index++) {
-            st.setLocal(index + 4, st.emptyStrObj);  // set remain
+            st.setLocal(index + UDC_PARAM_ARGV + 3, st.emptyStrObj);  // set remain
         }
     }
 }
@@ -899,7 +905,7 @@ static NativeCode initExit() {
     auto *code = static_cast<unsigned char *>(malloc(sizeof(unsigned char) * 4));
     code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
     code[1] = static_cast<unsigned char>(OpCode::LOAD_LOCAL);
-    code[2] = 1;
+    code[2] = UDC_PARAM_ARGV;
     code[3] = static_cast<unsigned char>(OpCode::EXIT_SHELL);
     return NativeCode(code);
 }
@@ -1029,8 +1035,7 @@ static void pushExitStatus(DSState &state, int status) {
     state.push(status == 0 ? state.trueObj : state.falseObj);
 }
 
-static void callCommand(DSState &state, Command cmd, DSValue &&argvObj,
-                        DSValue &&redirConfig, bool needFork, bool lastPipe = false) {
+static void callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue &&redirConfig, flag8_set_t attr = 0) {
     auto *array = typeAs<Array_Object>(argvObj);
     const unsigned int size = array->getValues().size();
     auto &first = array->getValues()[0];
@@ -1039,8 +1044,10 @@ static void callCommand(DSState &state, Command cmd, DSValue &&argvObj,
     switch(cmd.kind) {
     case CmdKind::USER_DEFINED:
     case CmdKind::BUILTIN_S: {
-        bool setvar = cmd.kind == CmdKind::USER_DEFINED;
-        callUserDefinedCommand(state, cmd.udc, std::move(argvObj), std::move(redirConfig), setvar);
+        if(cmd.kind == CmdKind::USER_DEFINED) {
+            setFlag(attr, UDC_ATTR_SETVAR);
+        }
+        callUserDefinedCommand(state, cmd.udc, std::move(argvObj), std::move(redirConfig), attr);
         return;
     }
     case CmdKind::BUILTIN: {
@@ -1057,8 +1064,8 @@ static void callCommand(DSState &state, Command cmd, DSValue &&argvObj,
         }
         argv[size] = nullptr;
 
-        if(needFork) {
-            int status = forkAndExec(state, cmdName, cmd, argv, lastPipe);
+        if(hasFlag(attr, UDC_ATTR_NEED_FORK)) {
+            int status = forkAndExec(state, cmdName, cmd, argv, hasFlag(attr, UDC_ATTR_LAST_PIPE));
             int r = 0;
             if(WIFEXITED(status)) {
                 r = WEXITSTATUS(status);
@@ -1078,7 +1085,7 @@ static void callCommand(DSState &state, Command cmd, DSValue &&argvObj,
 
 int invalidOptionError(const Array_Object &obj, const GetOptState &s);
 
-static void callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir) {
+static void callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, flag8_set_t attr) {
     auto &arrayObj = *typeAs<Array_Object>(argvObj);
 
     bool useDefaultPath = false;
@@ -1118,7 +1125,7 @@ static void callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redi
             values.erase(values.begin(), values.begin() + index);
 
             auto resolve = CmdResolver(CmdResolver::MASK_UDC, useDefaultPath ? FilePathCache::USE_DEFAULT_PATH : 0);
-            callCommand(state, resolve(state, cmdName), std::move(argvObj), std::move(redir), true);
+            callCommand(state, resolve(state, cmdName), std::move(argvObj), std::move(redir), attr);
             return;
         }
 
@@ -2025,38 +2032,46 @@ static bool mainLoop(DSState &state) {
         vmcase(CALL_CMD_LP) {
             bool needFork = op != OpCode::CALL_CMD_P;
             bool lastPipe = op == OpCode::CALL_CMD_LP;
+            flag8_set_t attr = 0;
+            if(needFork) {
+                setFlag(attr, UDC_ATTR_NEED_FORK);
+            }
+            if(lastPipe) {
+                setFlag(attr, UDC_ATTR_LAST_PIPE);
+            }
 
             auto redir = state.pop();
             auto argv = state.pop();
 
             const char *cmdName = str(typeAs<Array_Object>(argv)->getValues()[0]);
-            callCommand(state, CmdResolver()(state, cmdName), std::move(argv), std::move(redir), needFork, lastPipe);
+            callCommand(state, CmdResolver()(state, cmdName), std::move(argv), std::move(redir), attr);
             vmnext;
         }
         vmcase(BUILTIN_CMD) {
-            auto redir = state.getLocal(0);
-            auto argv = state.getLocal(1);
-            callBuiltinCommand(state, std::move(argv), std::move(redir));
+            auto attr = state.getLocal(UDC_PARAM_ATTR).value();
+            auto redir = state.getLocal(UDC_PARAM_REDIR);
+            auto argv = state.getLocal(UDC_PARAM_ARGV);
+            callBuiltinCommand(state, std::move(argv), std::move(redir), attr);
             flushStdFD();
             vmnext;
         }
         vmcase(BUILTIN_EVAL) {
-            auto redir = state.getLocal(0);
-            auto argv = state.getLocal(1);
+            auto redir = state.getLocal(UDC_PARAM_REDIR);
+            auto argv = state.getLocal(UDC_PARAM_ARGV);
 
             eraseFirst(*typeAs<Array_Object>(argv));
             auto *array = typeAs<Array_Object>(argv);
             if(!array->getValues().empty()) {
                 const char *cmdName = str(typeAs<Array_Object>(argv)->getValues()[0]);
-                callCommand(state, CmdResolver()(state, cmdName), std::move(argv), std::move(redir), true);
+                callCommand(state, CmdResolver()(state, cmdName), std::move(argv), std::move(redir), UDC_ATTR_NEED_FORK);
             } else {
                 pushExitStatus(state, 0);
             }
             vmnext;
         }
         vmcase(BUILTIN_EXEC) {
-            auto redir = state.getLocal(0);
-            auto argv = state.getLocal(1);
+            auto redir = state.getLocal(UDC_PARAM_REDIR);
+            auto argv = state.getLocal(UDC_PARAM_ARGV);
             callBuiltinExec(state, std::move(argv), std::move(redir));
             vmnext;
         }
@@ -2317,7 +2332,7 @@ int execBuiltinCommand(DSState &st, char *const argv[]) {
     auto obj = DSValue::create<Array_Object>(st.pool.getStringArrayType(), std::move(values));
 
     st.resetState();
-    callCommand(st, cmd, std::move(obj), DSValue(), false);
+    callCommand(st, cmd, std::move(obj), DSValue());
     if(!st.codeStack.empty()) {
         bool r = runMainLoop(st);
         if(!r) {
