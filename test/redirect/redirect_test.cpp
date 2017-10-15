@@ -13,7 +13,6 @@
 #define BIN_PATH "./ydsh"
 #endif
 
-
 using namespace ydsh;
 
 class RedirectTestOLD : public ::testing::TestWithParam<std::string> {

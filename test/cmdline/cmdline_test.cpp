@@ -14,6 +14,10 @@
 #define BIN_PATH "./ydsh"
 #endif
 
+#ifndef PID_CHECK_PATH
+#error "require PID_CHECK_PATH"
+#endif
+
 using namespace ydsh;
 
 class CmdlineTestOld : public ::testing::TestWithParam<std::string> {
@@ -422,6 +426,12 @@ TEST_F(CmdlineTest, prompt) {
     } else {
         ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", cmd.c_str()), 1));
     }
+}
+
+#define CL(...) ProcBuilder {BIN_PATH, "-c", format(__VA_ARGS__).c_str()}
+
+TEST_F(CmdlineTest, pid) {
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("%s --pid $PID --ppid $PPID | grep .", PID_CHECK_PATH), 0, "OK\n"));
 }
 
 TEST_F(CmdlineTest, toplevel) {
