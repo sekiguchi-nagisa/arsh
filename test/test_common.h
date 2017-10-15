@@ -17,6 +17,8 @@
 #ifndef YDSH_TEST_COMMON_HPP
 #define YDSH_TEST_COMMON_HPP
 
+#include <unistd.h>
+
 #include <ostream>
 #include <vector>
 #include <string>
@@ -54,6 +56,73 @@ private:
 struct Output {
     ydsh::ByteBuffer out;
     ydsh::ByteBuffer err;
+};
+
+class Proc {
+private:
+    /**
+     * after call wait, will be -1
+     */
+    pid_t pid_;
+
+    /**
+     * after call wait, will be -1
+     */
+    int fd_out_;
+
+    /**
+     * after call wait, will be -1
+     */
+    int fd_err_;
+
+public:
+    NON_COPYABLE(Proc);
+
+    Proc() : Proc(-1, -1, -1) {}
+
+    Proc(pid_t pid, int out, int err) noexcept : pid_(pid), fd_out_(out), fd_err_(err) {}
+
+    Proc(Proc &&proc) noexcept : pid_(proc.pid_), fd_out_(proc.fd_out_), fd_err_(proc.fd_err_) {
+        proc.pid_ = -1;
+        proc.fd_out_ = -1;
+        proc.fd_err_ = -1;
+    }
+
+    ~Proc() {
+        this->wait();
+    }
+
+    Proc &operator=(Proc &&proc) noexcept {
+        auto tmp(std::move(proc));
+        this->swap(tmp);
+        return *this;
+    }
+
+    void swap(Proc &proc) noexcept {
+        std::swap(this->pid_, proc.pid_);
+        std::swap(this->fd_out_, proc.fd_out_);
+        std::swap(this->fd_err_, proc.fd_err_);
+    }
+
+    pid_t pid() const {
+        return this->pid_;
+    }
+
+    int fd_out() const {
+        return this->fd_out_;
+    }
+
+    int fd_err() const {
+        return this->fd_err_;
+    }
+
+    operator bool() const {
+        return this->pid() > -1;
+    }
+
+    int wait();
+
+    Output readAll();
 };
 
 struct CmdResult {
@@ -94,6 +163,8 @@ public:
         return *this;
     }
 
+    Proc spawn(bool usePipe = false) const;
+
     std::string execAndGetOutput(bool removeLastSpace = true) const {
         auto r = this->execAndGetResult(removeLastSpace);
         return std::move(r.out);
@@ -107,7 +178,20 @@ public:
         return this->exec(&output);
     }
 
+    template <typename Func>
+    static Proc fork(bool usePipe, Func func) {
+        Proc proc = forkImpl(usePipe);
+        if(proc) {
+            return proc;
+        } else {
+            int ret = func();
+            exit(ret);
+        }
+    }
+
 private:
+    static Proc forkImpl(bool usePipe);
+
     void syncPWD() const;
 
     void syncEnv() const;

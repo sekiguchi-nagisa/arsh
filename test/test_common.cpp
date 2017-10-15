@@ -104,50 +104,34 @@ void TempFileFactory::freeName() {
 }
 
 
-// ############################
-// ##     CommandBuilder     ##
-// ############################
+// ##################
+// ##     Proc     ##
+// ##################
 
-ProcBuilder& ProcBuilder::addArgs(const std::vector<std::string> &values) {
-    for(auto &e : values) {
-        this->args.push_back(e);
+int Proc::wait() {
+    if(this->pid() > -1) {
+        close(this->fd_out());
+        close(this->fd_err());
+
+        // wait for exit
+        int status = 0;
+        waitpid(this->pid(), &status, 0);
+
+        this->pid_ = -1;
+        this->fd_out_ = -1;
+        this->fd_err_ = -1;
+        return status;
     }
-    return *this;
+    return 0;
 }
 
-static std::string toString(const ydsh::ByteBuffer &buf, bool removeLastSpace) {
-    std::string out(buf.get(), buf.size());
-
-    if(removeLastSpace) {
-        for(; !out.empty() && isSpace(out.back()); out.pop_back());
-    }
-    return out;
-}
-
-CmdResult ProcBuilder::execAndGetResult(bool removeLastSpace) const {
+Output Proc::readAll() {
     Output output;
-    int status = this->exec(output);
-    if(WIFEXITED(status)) {
-        status = WEXITSTATUS(status);
-    } else if(WIFSIGNALED(status)) {
-        status = WTERMSIG(status) + 128;
-    } else {
-        fatal("invalid exit status\n");
-    }
 
-    return {.status = status,
-            .out = toString(output.out, removeLastSpace),
-            .err = toString(output.err, removeLastSpace)};
-}
-
-static constexpr unsigned int READ_PIPE = 0;
-static constexpr unsigned int WRITE_PIPE = 1;
-
-static void readPipes(Output &output, const pid_t (&outpipe)[2], const pid_t (&errpipe)[2]) {
     struct pollfd pollfds[2]{};
-    pollfds[0].fd = outpipe[READ_PIPE];
+    pollfds[0].fd = this->fd_out();
     pollfds[0].events = POLLIN;
-    pollfds[1].fd = errpipe[READ_PIPE];
+    pollfds[1].fd = this->fd_err();
     pollfds[1].events = POLLIN;
 
     while(true) {
@@ -175,14 +159,76 @@ static void readPipes(Output &output, const pid_t (&outpipe)[2], const pid_t (&e
                 breakCount++;
             }
         }
-
         if(breakCount == 2) {
             break;
         }
     }
+    return output;
+}
+
+// #########################
+// ##     ProcBuilder     ##
+// #########################
+
+ProcBuilder& ProcBuilder::addArgs(const std::vector<std::string> &values) {
+    for(auto &e : values) {
+        this->args.push_back(e);
+    }
+    return *this;
+}
+
+static std::string toString(const ydsh::ByteBuffer &buf, bool removeLastSpace) {
+    std::string out(buf.get(), buf.size());
+
+    if(removeLastSpace) {
+        for(; !out.empty() && isSpace(out.back()); out.pop_back());
+    }
+    return out;
+}
+
+Proc ProcBuilder::spawn(bool usePipe) const {
+    return fork(usePipe, [&] {
+        char *argv[this->args.size() + 1];
+        for(unsigned int i = 0; i < this->args.size(); i++) {
+            argv[i] = const_cast<char *>(this->args[i].c_str());
+        }
+        argv[this->args.size()] = nullptr;
+
+        this->syncEnv();
+        this->syncPWD();
+        execvp(argv[0], argv);
+        return -errno;
+    });
+}
+
+CmdResult ProcBuilder::execAndGetResult(bool removeLastSpace) const {
+    Output output;
+    int status = this->exec(output);
+    if(WIFEXITED(status)) {
+        status = WEXITSTATUS(status);
+    } else if(WIFSIGNALED(status)) {
+        status = WTERMSIG(status) + 128;
+    } else {
+        fatal("invalid exit status\n");
+    }
+
+    return {.status = status,
+            .out = toString(output.out, removeLastSpace),
+            .err = toString(output.err, removeLastSpace)};
 }
 
 int ProcBuilder::exec(Output *output) const {
+    auto proc = this->spawn(output != nullptr);
+    if(output != nullptr) {
+        *output = proc.readAll();
+    }
+    return proc.wait();
+}
+
+static constexpr unsigned int READ_PIPE = 0;
+static constexpr unsigned int WRITE_PIPE = 1;
+
+Proc ProcBuilder::forkImpl(bool usePipe) {
     // flush standard stream due to prevent mixing io buffer
     fflush(stdout);
     fflush(stderr);
@@ -193,38 +239,25 @@ int ProcBuilder::exec(Output *output) const {
     pid_t errpipe[2];
 
     if(pipe(outpipe) < 0) {
-        int e = errno;
-        perror("pipe creation failed\n");
-        return -e;
+        fatal("pipe creation failed: %s\n", strerror(errno));
     }
 
     if(pipe(errpipe) < 0) {
-        int e = errno;
-        perror("pipe creation failed\n");
-        close(outpipe[0]);
-        close(outpipe[1]);
-        return -e;
+        fatal("pipe creation failed: %s\n", strerror(errno));
     }
 
-    // fork-and-exec
-    pid_t pid = fork();
-    if(pid > 0) {   // parent
+    pid_t pid = ::fork();
+    if(pid > 0) {
         close(outpipe[WRITE_PIPE]);
         close(errpipe[WRITE_PIPE]);
-
-        if(output != nullptr) {
-            readPipes(*output, outpipe, errpipe);
+        if(!usePipe) {
+            close(outpipe[READ_PIPE]);
+            close(errpipe[READ_PIPE]);
         }
 
-        close(outpipe[READ_PIPE]);
-        close(errpipe[READ_PIPE]);
-
-        // wait for exit
-        int status = 0;
-        waitpid(pid, &status, 0);
-        return status;
-    } else if(pid == 0) {   // child
-        if(output != nullptr) {
+        return Proc(pid, usePipe ? outpipe[READ_PIPE] : -1, usePipe ? errpipe[READ_PIPE] : -1);
+    } else if(pid == 0) {
+        if(usePipe) {
             dup2(outpipe[WRITE_PIPE], STDOUT_FILENO);
             dup2(errpipe[WRITE_PIPE], STDERR_FILENO);
         }
@@ -233,20 +266,9 @@ int ProcBuilder::exec(Output *output) const {
         close(errpipe[READ_PIPE]);
         close(errpipe[WRITE_PIPE]);
 
-        char *argv[this->args.size() + 1];
-        for(unsigned int i = 0; i < this->args.size(); i++) {
-            argv[i] = const_cast<char *>(this->args[i].c_str());
-        }
-        argv[this->args.size()] = nullptr;
-
-        this->syncEnv();
-        this->syncPWD();
-        execvp(argv[0], argv);
-        exit(-errno);
+        return Proc();
     } else {
-        int e = errno;
-        perror("fork failed\n");
-        return -e;
+        fatal("fork failed: %s\n", strerror(errno));
     }
 }
 
