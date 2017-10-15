@@ -166,6 +166,32 @@ Output Proc::readAll() {
     return output;
 }
 
+static std::string toString(const ydsh::ByteBuffer &buf, bool removeLastSpace) {
+    std::string out(buf.get(), buf.size());
+
+    if(removeLastSpace) {
+        for(; !out.empty() && isSpace(out.back()); out.pop_back());
+    }
+    return out;
+}
+
+ProcResult Proc::waitAndGetResult(bool removeLastSpace) {
+    auto output = this->readAll();
+    int status = this->wait();
+
+    if(WIFEXITED(status)) {
+        status = WEXITSTATUS(status);
+    } else if(WIFSIGNALED(status)) {
+        status = WTERMSIG(status) + 128;
+    } else {
+        fatal("invalid exit status\n");
+    }
+
+    return {.status = status,
+            .out = toString(output.out, removeLastSpace),
+            .err = toString(output.err, removeLastSpace)};
+}
+
 // #########################
 // ##     ProcBuilder     ##
 // #########################
@@ -175,15 +201,6 @@ ProcBuilder& ProcBuilder::addArgs(const std::vector<std::string> &values) {
         this->args.push_back(e);
     }
     return *this;
-}
-
-static std::string toString(const ydsh::ByteBuffer &buf, bool removeLastSpace) {
-    std::string out(buf.get(), buf.size());
-
-    if(removeLastSpace) {
-        for(; !out.empty() && isSpace(out.back()); out.pop_back());
-    }
-    return out;
 }
 
 Proc ProcBuilder::spawn(bool usePipe) const {
@@ -199,22 +216,6 @@ Proc ProcBuilder::spawn(bool usePipe) const {
         execvp(argv[0], argv);
         return -errno;
     });
-}
-
-CmdResult ProcBuilder::execAndGetResult(bool removeLastSpace) const {
-    Output output;
-    int status = this->exec(output);
-    if(WIFEXITED(status)) {
-        status = WEXITSTATUS(status);
-    } else if(WIFSIGNALED(status)) {
-        status = WTERMSIG(status) + 128;
-    } else {
-        fatal("invalid exit status\n");
-    }
-
-    return {.status = status,
-            .out = toString(output.out, removeLastSpace),
-            .err = toString(output.err, removeLastSpace)};
 }
 
 int ProcBuilder::exec(Output *output) const {

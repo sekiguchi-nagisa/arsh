@@ -58,6 +58,12 @@ struct Output {
     ydsh::ByteBuffer err;
 };
 
+struct ProcResult {
+    int status;
+    std::string out;
+    std::string err;
+};
+
 class Proc {
 private:
     /**
@@ -123,12 +129,8 @@ public:
     int wait();
 
     Output readAll();
-};
 
-struct CmdResult {
-    int status;
-    std::string out;
-    std::string err;
+    ProcResult waitAndGetResult(bool removeLastSpace = true);
 };
 
 class ProcBuilder {
@@ -170,7 +172,9 @@ public:
         return std::move(r.out);
     }
 
-    CmdResult execAndGetResult(bool removeLastSpace = true) const;
+    ProcResult execAndGetResult(bool removeLastSpace = true) const {
+        return this->spawn(true).waitAndGetResult(removeLastSpace);
+    }
 
     int exec(Output *output = nullptr) const;
 
