@@ -108,20 +108,6 @@ static bool readLine(std::string &line) {
     return true;
 }
 
-static void ignoreSignal() {
-    struct sigaction ignore_act{};
-    ignore_act.sa_handler = SIG_IGN;
-    ignore_act.sa_flags = SA_RESTART;
-    sigemptyset(&ignore_act.sa_mask);
-
-    sigaction(SIGINT, &ignore_act, nullptr);
-    sigaction(SIGQUIT, &ignore_act, nullptr);
-    sigaction(SIGTSTP, &ignore_act, nullptr);  //FIXME: job control
-    sigaction(SIGTTIN, &ignore_act, nullptr);
-    sigaction(SIGTTOU, &ignore_act, nullptr);
-}
-
-
 // for linenoise encoding function
 using namespace ydsh;
 
@@ -293,7 +279,6 @@ int exec_interactive(DSState *dsState) {
 
     atexit(saveHistory);
 
-    ignoreSignal();
     for(std::string line; readLine(line);) {
         DSState_eval(dsState, nullptr, line.c_str(), line.size(), nullptr);
     }
