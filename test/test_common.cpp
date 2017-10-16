@@ -110,16 +110,16 @@ void TempFileFactory::freeName() {
 
 int Proc::wait() {
     if(this->pid() > -1) {
-        close(this->fd_out());
-        close(this->fd_err());
+        close(this->out());
+        close(this->err());
 
         // wait for exit
         int status = 0;
         waitpid(this->pid(), &status, 0);
 
         this->pid_ = -1;
-        this->fd_out_ = -1;
-        this->fd_err_ = -1;
+        this->out_ = -1;
+        this->err_ = -1;
         return status;
     }
     return 0;
@@ -129,9 +129,9 @@ Output Proc::readAll() {
     Output output;
 
     struct pollfd pollfds[2]{};
-    pollfds[0].fd = this->fd_out();
+    pollfds[0].fd = this->out();
     pollfds[0].events = POLLIN;
-    pollfds[1].fd = this->fd_err();
+    pollfds[1].fd = this->err();
     pollfds[1].events = POLLIN;
 
     while(true) {

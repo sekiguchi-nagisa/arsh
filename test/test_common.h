@@ -74,24 +74,24 @@ private:
     /**
      * after call wait, will be -1
      */
-    int fd_out_;
+    int out_;
 
     /**
      * after call wait, will be -1
      */
-    int fd_err_;
+    int err_;
 
 public:
     NON_COPYABLE(Proc);
 
     Proc() : Proc(-1, -1, -1) {}
 
-    Proc(pid_t pid, int out, int err) noexcept : pid_(pid), fd_out_(out), fd_err_(err) {}
+    Proc(pid_t pid, int out, int err) noexcept : pid_(pid), out_(out), err_(err) {}
 
-    Proc(Proc &&proc) noexcept : pid_(proc.pid_), fd_out_(proc.fd_out_), fd_err_(proc.fd_err_) {
+    Proc(Proc &&proc) noexcept : pid_(proc.pid_), out_(proc.out_), err_(proc.err_) {
         proc.pid_ = -1;
-        proc.fd_out_ = -1;
-        proc.fd_err_ = -1;
+        proc.out_ = -1;
+        proc.err_ = -1;
     }
 
     ~Proc() {
@@ -106,20 +106,20 @@ public:
 
     void swap(Proc &proc) noexcept {
         std::swap(this->pid_, proc.pid_);
-        std::swap(this->fd_out_, proc.fd_out_);
-        std::swap(this->fd_err_, proc.fd_err_);
+        std::swap(this->out_, proc.out_);
+        std::swap(this->err_, proc.err_);
     }
 
     pid_t pid() const {
         return this->pid_;
     }
 
-    int fd_out() const {
-        return this->fd_out_;
+    int out() const {
+        return this->out_;
     }
 
-    int fd_err() const {
-        return this->fd_err_;
+    int err() const {
+        return this->err_;
     }
 
     operator bool() const {
