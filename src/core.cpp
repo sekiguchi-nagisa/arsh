@@ -235,6 +235,12 @@ const DSValue &getGlobal(const DSState &st, unsigned int index) {
     return st.getGlobal(index);
 }
 
+const DSValue &getGlobal(const DSState &st, const char *varName) {
+    auto *handle = st.symbolTable.lookupHandle(varName);
+    assert(handle != nullptr);
+    return st.getGlobal(handle->getFieldIndex());
+}
+
 void throwError(DSState &st, DSType &errorType, std::string &&message) {
     st.throwException(st.newError(errorType, std::move(message)));
 }

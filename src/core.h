@@ -184,6 +184,8 @@ void setGlobal(DSState &st, unsigned int index, DSValue &&obj);
 
 const DSValue &getGlobal(const DSState &st, unsigned int index);
 
+const DSValue &getGlobal(const DSState &st, const char *varName);
+
 [[noreturn]]
 void throwError(DSState &st, DSType &errorType, std::string &&message);
 

@@ -1406,17 +1406,10 @@ static void signalHandler(int sigNum) {
     });
 }
 
-static const DSValue &getHandler(const DSState &st, const char *name) {
-    auto handle = st.symbolTable.lookupHandle(name);
-    assert(handle != nullptr);
-    assert(handle->attr().has(FieldAttribute::FUNC_HANDLE));
-    return st.getGlobal(handle->getFieldIndex());
-}
-
 void installSignalHandler(DSState &st, int sigNum, DSValue &&handler) {
     blockSignal([&] {
-        auto &DFL_handler = getHandler(st, VAR_SIG_DFL);
-        auto &IGN_handler = getHandler(st, VAR_SIG_IGN);
+        auto &DFL_handler = getGlobal(st, VAR_SIG_DFL);
+        auto &IGN_handler = getGlobal(st, VAR_SIG_IGN);
 
         // set posix signal handler
         struct sigaction action{};
@@ -1443,8 +1436,8 @@ void installSignalHandler(DSState &st, int sigNum, DSValue &&handler) {
 }
 
 DSValue getSignalHandler(const DSState &st, int sigNum) {
-    auto &DFL_handler = getHandler(st, VAR_SIG_DFL);
-    auto &IGN_handler = getHandler(st, VAR_SIG_IGN);
+    auto &DFL_handler = getGlobal(st, VAR_SIG_DFL);
+    auto &IGN_handler = getGlobal(st, VAR_SIG_IGN);
 
     auto handler = st.sigVector.lookup(sigNum);
 

@@ -653,9 +653,7 @@ const char *DSState_prompt(DSState *st, unsigned int n) {
         return "";
     }
 
-    unsigned int index = st->symbolTable.lookupHandle(psName)->getFieldIndex();
-    const DSValue &obj = st->getGlobal(index);
-
+    const DSValue &obj = getGlobal(*st, psName);
     st->prompt = interpretPromptString(*st, typeAs<String_Object>(obj)->getValue());
     return st->prompt.c_str();
 }
@@ -761,8 +759,7 @@ static void resizeHistory(DSHistory &history, unsigned int cap) {
 
 void DSState_syncHistorySize(DSState *st) {
     if(hasFlag(st->option, DS_OPTION_HISTORY)) {
-        unsigned int index = st->symbolTable.lookupHandle(VAR_HISTSIZE)->getFieldIndex();
-        unsigned int cap = typeAs<Int_Object>(st->getGlobal(index))->getValue();
+        unsigned int cap = typeAs<Int_Object>(getGlobal(*st, VAR_HISTSIZE))->getValue();
         if(cap > DS_HISTSIZE_LIMIT) {
             cap = DS_HISTSIZE_LIMIT;
         }
@@ -824,8 +821,7 @@ void DSState_clearHistory(DSState *st) {
 }
 
 static std::string histFile(const DSState *st) {
-    unsigned int index = st->symbolTable.lookupHandle(VAR_HISTFILE)->getFieldIndex();
-    std::string path = typeAs<String_Object>(st->getGlobal(index))->getValue();
+    std::string path = typeAs<String_Object>(getGlobal(*st, VAR_HISTFILE))->getValue();
     expandTilde(path);
     return path;
 }
@@ -846,8 +842,7 @@ void DSState_loadHistory(DSState *st, const char *fileName) {
 }
 
 void DSState_saveHistory(const DSState *st, const char *fileName) {
-    auto handle = st->symbolTable.lookupHandle(VAR_HISTFILESIZE);
-    unsigned int histFileSize = typeAs<Int_Object>(st->getGlobal(handle->getFieldIndex()))->getValue();
+    unsigned int histFileSize = typeAs<Int_Object>(getGlobal(*st, VAR_HISTFILESIZE))->getValue();
     if(histFileSize > DS_HISTFILESIZE_LIMIT) {
         histFileSize = DS_HISTFILESIZE_LIMIT;
     }
