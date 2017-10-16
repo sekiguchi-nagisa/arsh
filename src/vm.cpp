@@ -1406,32 +1406,32 @@ static void signalHandler(int sigNum) {
     });
 }
 
-void installSignalHandler(DSState &st, int sigNum, DSValue &&handler) {
+void installSignalHandler(DSState &st, int sigNum, const DSValue &handler) {
     blockSignal([&] {
         auto &DFL_handler = getGlobal(st, VAR_SIG_DFL);
         auto &IGN_handler = getGlobal(st, VAR_SIG_IGN);
 
         // set posix signal handler
+        DSValue actualHandler;
         struct sigaction action{};
         action.sa_flags = SA_RESTART;
         sigemptyset(&action.sa_mask);
         if(handler == DFL_handler) {
             action.sa_handler = SIG_DFL;
-            handler = nullptr;
         } else if(handler == IGN_handler) {
             if(sigNum == SIGCHLD) {
                 action.sa_handler = SIG_DFL;    // do not ignore SIGCHLD due to prevent waitpid error
             } else {
                 action.sa_handler = SIG_IGN;
             }
-            handler = nullptr;
         } else {
             action.sa_handler = signalHandler;
+            actualHandler = handler;
         }
         sigaction(sigNum, &action, nullptr);
 
         // register handler
-        st.sigVector.insertOrUpdate(sigNum, handler);
+        st.sigVector.insertOrUpdate(sigNum, actualHandler);
     });
 }
 

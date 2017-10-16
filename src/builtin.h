@@ -1414,7 +1414,7 @@ YDSH_METHOD signal_ne(RuntimeContext &ctx) {
 YDSH_METHOD signals_trap(RuntimeContext &ctx) {
     SUPPRESS_WARNING(signals_trap);
     auto *obj = typeAs<Int_Object>(LOCAL(1));
-    installSignalHandler(ctx, obj->getValue(), EXTRACT_LOCAL(2));
+    installSignalHandler(ctx, obj->getValue(), LOCAL(2));
 
     RET_VOID;
 }

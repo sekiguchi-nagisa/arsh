@@ -221,7 +221,7 @@ bool changeWorkingDir(DSState &st, const char *dest, bool useLogical);
  * @param handler
  * must be FuncObject
  */
-void installSignalHandler(DSState &st, int sigNum, DSValue &&handler);
+void installSignalHandler(DSState &st, int sigNum, const DSValue &handler);
 
 /**
  *
