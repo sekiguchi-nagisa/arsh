@@ -377,6 +377,44 @@ bool changeWorkingDir(DSState &st, const char *dest, const bool useLogical) {
     return true;
 }
 
+void installSignalHandler(DSState &st, int sigNum, const DSValue &handler) {
+    blockSignal([&] {
+        auto &DFL_handler = getGlobal(st, VAR_SIG_DFL);
+        auto &IGN_handler = getGlobal(st, VAR_SIG_IGN);
+
+        DSValue actualHandler;
+        auto op = DSState::UnsafeSigOp::SET;
+        if(handler == DFL_handler) {
+            op = DSState::UnsafeSigOp::DFL;
+        } else if(handler == IGN_handler) {
+            op = DSState::UnsafeSigOp::IGN;
+        } else {
+            actualHandler = handler;
+        }
+
+        st.installSignalHandler(sigNum, op, actualHandler);
+    });
+}
+
+DSValue getSignalHandler(const DSState &st, int sigNum) {
+    auto &DFL_handler = getGlobal(st, VAR_SIG_DFL);
+    auto &IGN_handler = getGlobal(st, VAR_SIG_IGN);
+
+    auto handler = st.sigVector.lookup(sigNum);
+
+    if(handler == nullptr) {
+        struct sigaction action{};
+        if(sigaction(sigNum, nullptr, &action) == 0) {
+            if(action.sa_handler == SIG_IGN) {
+                return IGN_handler;
+            }
+        }
+        return DFL_handler;
+    }
+    return handler;
+}
+
+
 static const char *safeBasename(const char *str) {
     const char *ptr = strrchr(str, '/');
     return ptr == nullptr ? str : ptr + 1;

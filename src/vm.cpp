@@ -137,6 +137,41 @@ flag32_set_t DSState::eventDesc = 0;
 
 FixedQueue<int, 32> DSState::signalQueue;
 
+static void signalHandler(int sigNum) {
+    blockSignal([&] {
+        DSState::signalQueue.push(sigNum);
+        setFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL);
+    });
+}
+
+void DSState::installSignalHandler(int sigNum, UnsafeSigOp op, const DSValue &handler) {
+    // set posix signal handler
+    struct sigaction action{};
+    action.sa_flags = SA_RESTART;
+    sigemptyset(&action.sa_mask);
+
+    switch(op) {
+    case UnsafeSigOp::DFL:
+        action.sa_handler = SIG_DFL;
+        break;
+    case UnsafeSigOp::IGN:
+        if(sigNum == SIGCHLD) {
+            action.sa_handler = SIG_DFL;    // do not ignore SIGCHLD due to prevent waitpid error
+        } else {
+            action.sa_handler = SIG_IGN;
+        }
+        break;
+    case UnsafeSigOp::SET:
+        action.sa_handler = signalHandler;
+        break;
+    }
+    sigaction(sigNum, &action, nullptr);
+
+    // register handler
+    this->sigVector.insertOrUpdate(sigNum, handler);
+}
+
+
 extern char **environ;
 
 namespace ydsh {
@@ -1394,63 +1429,6 @@ static void addCmdArg(DSState &state, bool skipEmptyStr) {
         }
         argv->append(element);
     }
-}
-
-
-// for signal handling
-
-static void signalHandler(int sigNum) {
-    blockSignal([&] {
-        DSState::signalQueue.push(sigNum);
-        setFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL);
-    });
-}
-
-void installSignalHandler(DSState &st, int sigNum, const DSValue &handler) {
-    blockSignal([&] {
-        auto &DFL_handler = getGlobal(st, VAR_SIG_DFL);
-        auto &IGN_handler = getGlobal(st, VAR_SIG_IGN);
-
-        // set posix signal handler
-        DSValue actualHandler;
-        struct sigaction action{};
-        action.sa_flags = SA_RESTART;
-        sigemptyset(&action.sa_mask);
-        if(handler == DFL_handler) {
-            action.sa_handler = SIG_DFL;
-        } else if(handler == IGN_handler) {
-            if(sigNum == SIGCHLD) {
-                action.sa_handler = SIG_DFL;    // do not ignore SIGCHLD due to prevent waitpid error
-            } else {
-                action.sa_handler = SIG_IGN;
-            }
-        } else {
-            action.sa_handler = signalHandler;
-            actualHandler = handler;
-        }
-        sigaction(sigNum, &action, nullptr);
-
-        // register handler
-        st.sigVector.insertOrUpdate(sigNum, actualHandler);
-    });
-}
-
-DSValue getSignalHandler(const DSState &st, int sigNum) {
-    auto &DFL_handler = getGlobal(st, VAR_SIG_DFL);
-    auto &IGN_handler = getGlobal(st, VAR_SIG_IGN);
-
-    auto handler = st.sigVector.lookup(sigNum);
-
-    if(handler == nullptr) {
-        struct sigaction action{};
-        if(sigaction(sigNum, nullptr, &action) == 0) {
-            if(action.sa_handler == SIG_IGN) {
-                return IGN_handler;
-            }
-        }
-        return DFL_handler;
-    }
-    return handler;
 }
 
 

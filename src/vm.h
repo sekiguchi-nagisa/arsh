@@ -401,6 +401,21 @@ struct DSState {
             unsetFlag(eventDesc, VM_EVENT_HOOK);
         }
     }
+
+    enum class UnsafeSigOp {
+        DFL,
+        IGN,
+        SET,
+    };
+
+    /**
+     * unsafe op.
+     * @param sigNum
+     * @param op
+     * @param handler
+     * may be nullptr
+     */
+    void installSignalHandler(int sigNum, UnsafeSigOp op, const DSValue &handler);
 };
 
 /**
