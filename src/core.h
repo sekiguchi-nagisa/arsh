@@ -233,6 +233,13 @@ void installSignalHandler(DSState &st, int sigNum, const DSValue &handler);
 DSValue getSignalHandler(const DSState &st, int sigNum);
 
 /**
+ * if set is true, ignore some signals.
+ * if set is false, reset some signal setting.
+ * @param set
+ */
+void setJobControlSignalSetting(DSState &st, bool set);
+
+/**
  * n is 1 or 2
  */
 std::string interpretPromptString(const DSState &st, const char *ps);

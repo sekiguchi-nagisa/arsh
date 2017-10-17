@@ -608,12 +608,7 @@ void DSState_setOption(DSState *st, unsigned short optionSet) {
     setFlag(st->option, optionSet);
 
     if(hasFlag(optionSet, DS_OPTION_INTERACTIVE)) {
-        auto ign = getGlobal(*st, VAR_SIG_IGN);
-        installSignalHandler(*st, SIGINT, ign);
-        installSignalHandler(*st, SIGQUIT, ign);
-        installSignalHandler(*st, SIGTSTP, ign);
-        installSignalHandler(*st, SIGTTIN, ign);
-        installSignalHandler(*st, SIGTTOU, ign);
+        setJobControlSignalSetting(*st, true);
     }
 }
 
@@ -621,12 +616,7 @@ void DSState_unsetOption(DSState *st, unsigned short optionSet) {
     unsetFlag(st->option, optionSet);
 
     if(hasFlag(optionSet, DS_OPTION_INTERACTIVE)) {
-        auto dfl = getGlobal(*st, VAR_SIG_DFL);
-        installSignalHandler(*st, SIGINT, dfl);
-        installSignalHandler(*st, SIGQUIT, dfl);
-        installSignalHandler(*st, SIGTSTP, dfl);
-        installSignalHandler(*st, SIGTTIN, dfl);
-        installSignalHandler(*st, SIGTTOU, dfl);
+        setJobControlSignalSetting(*st, false);
     }
 }
 

@@ -414,6 +414,19 @@ DSValue getSignalHandler(const DSState &st, int sigNum) {
     return handler;
 }
 
+void setJobControlSignalSetting(DSState &st, bool set) {
+    auto op = set ? DSState::UnsafeSigOp::IGN : DSState::UnsafeSigOp::DFL;
+    DSValue handler;
+
+    blockSignal([&] {
+        st.installSignalHandler(SIGINT,  op, handler);
+        st.installSignalHandler(SIGQUIT, op, handler);
+        st.installSignalHandler(SIGTSTP, op, handler);
+        st.installSignalHandler(SIGTTIN, op, handler);
+        st.installSignalHandler(SIGTTOU, op, handler);
+    });
+}
+
 
 static const char *safeBasename(const char *str) {
     const char *ptr = strrchr(str, '/');
