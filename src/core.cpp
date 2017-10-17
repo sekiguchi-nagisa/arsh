@@ -424,6 +424,9 @@ void setJobControlSignalSetting(DSState &st, bool set) {
         st.installSignalHandler(SIGTSTP, op, handler);
         st.installSignalHandler(SIGTTIN, op, handler);
         st.installSignalHandler(SIGTTOU, op, handler);
+
+        // due to prevent waitpid error (always wait child process termination)
+        st.installSignalHandler(SIGCHLD, DSState::UnsafeSigOp::DFL, handler);
     });
 }
 

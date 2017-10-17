@@ -30,21 +30,7 @@ pid_t xfork(DSState &st, pid_t pgid, bool foreground) {
             if(foreground) {
                 tcsetpgrp(STDIN_FILENO, getpgid(0));
             }
-
-            struct sigaction act{};
-            act.sa_handler = SIG_DFL;
-            act.sa_flags = 0;
-            sigemptyset(&act.sa_mask);
-
-            /**
-             * reset signal behavior
-             */
-            sigaction(SIGINT, &act, nullptr);
-            sigaction(SIGQUIT, &act, nullptr);
-            sigaction(SIGTSTP, &act, nullptr);
-            sigaction(SIGTTIN, &act, nullptr);
-            sigaction(SIGTTOU, &act, nullptr);
-            sigaction(SIGCHLD, &act, nullptr);
+            setJobControlSignalSetting(st, false);
         }
 
         // update PID, PPID
