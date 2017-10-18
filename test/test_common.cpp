@@ -168,6 +168,10 @@ Output Proc::readAll() {
     return output;
 }
 
+static bool isSpace(char ch) {
+    return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
+}
+
 static std::string toString(const ydsh::ByteBuffer &buf, bool removeLastSpace) {
     std::string out(buf.get(), buf.size());
 
@@ -291,17 +295,6 @@ void ProcBuilder::syncEnv() const {
     }
 }
 
-std::ostream &operator<<(std::ostream &stream, const ydsh::ByteBuffer &buffer) {
-    for(auto &b : buffer) {
-        if(b >= 32 && b <= 126) {
-            stream << (char) b;
-        } else {
-            stream << std::showbase << std::hex << b;
-        }
-    }
-    return stream;
-}
-
 std::string format(const char *fmt, ...) {
     va_list arg;
 
@@ -315,4 +308,61 @@ std::string format(const char *fmt, ...) {
     std::string v = str;
     free(str);
     return v;
+}
+
+// #######################
+// ##     Extractor     ##
+// #######################
+
+void Extractor::consumeSpace() {
+    for(; *this->str != '\0'; this->str++) {
+        if(!isSpace(*this->str)) {
+            return;
+        }
+    }
+}
+
+int Extractor::extract(unsigned int &value) {
+    this->consumeSpace();
+
+    std::string buf;
+    for(; *this->str != '\0'; this->str++) {
+        char ch = *this->str;
+        if(!isdigit(ch)) {
+            break;
+        }
+        buf += ch;
+    }
+    long v = std::stol(buf);
+    if(v < 0 || v > UINT32_MAX) {
+        return 1;
+    }
+    value = static_cast<unsigned int>(v);
+    return 0;
+}
+
+int Extractor::extract(std::string &value) {
+    value.clear();
+
+    this->consumeSpace();
+
+    for(; *this->str != '\0'; this->str++) {
+        char ch = *this->str;
+        if(isSpace(ch)) {
+           break;
+        }
+        value += ch;
+    }
+    return 0;
+}
+
+int Extractor::extract(const char *value) {
+    this->consumeSpace();
+
+    auto size = strlen(value);
+    if(strncmp(this->str, value, size) != 0) {
+        return 1;
+    }
+    this->str += size;
+    return 0;
 }

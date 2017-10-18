@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TEST_COMMON_HPP
-#define YDSH_TEST_COMMON_HPP
+#ifndef YDSH_TEST_COMMON_H
+#define YDSH_TEST_COMMON_H
 
 #include <unistd.h>
 
@@ -28,6 +28,8 @@
 #include <misc/buffer.hpp>
 
 // common utility for test
+
+#define ASSERT_(F) do { SCOPED_TRACE(""); F; } while(false)
 
 class TempFileFactory {
 protected:
@@ -201,14 +203,39 @@ private:
     void syncEnv() const;
 };
 
-inline bool isSpace(char ch) {
-    return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
-}
-
-std::ostream &operator<<(std::ostream &stream, const ydsh::ByteBuffer &buffer);
-
 std::string format(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));
 
-#define ASSERT_(F) do { SCOPED_TRACE(""); F; } while(false)
+class Extractor {
+private:
+    const char *str;
 
-#endif //YDSH_TEST_COMMON_HPP
+public:
+    explicit Extractor(const char *str) : str(str) {}
+
+    template <typename ...Arg>
+    int operator()(Arg &&... arg) {
+        return this->delegate(std::forward<Arg>(arg)...);
+    }
+
+private:
+    void consumeSpace();
+
+    int extract(unsigned int &value);
+
+    int extract(std::string &value);
+
+    int extract(const char *value);
+
+    int delegate() {
+        this->consumeSpace();
+        return strlen(this->str);
+    }
+
+    template <typename F, typename ...T>
+    int delegate(F &&first, T &&...rest) {
+        int ret = this->extract(std::forward<F>(first));
+        return ret == 0 ? this->delegate(std::forward<T>(rest)...) : ret;
+    }
+};
+
+#endif //YDSH_TEST_COMMON_H

@@ -21,82 +21,14 @@ using namespace ydsh;
 using namespace ydsh::directive;
 
 // parse config(key = value)
-
-void consumeSpace(const std::string &src, unsigned int &index) {
-    for(; index < src.size(); index++) {
-        if(!isSpace(src[index])) {
-            return;
-        }
-    }
-}
-
-int extract(const std::string &src, unsigned int &index, unsigned int &first) {
-    consumeSpace(src, index);
-
-    std::string buf;
-    for(; index < src.size(); index++) {
-        char ch = src[index];
-        if(!isdigit(ch)) {
-            break;
-        }
-        buf += ch;
-    }
-    long value = std::stol(buf);
-    if(value < 0 || value > UINT32_MAX) {
-        return 1;
-    }
-    first = (unsigned int) value;
-    return 0;
-}
-
-int extract(const std::string &src, unsigned int &index, std::string &first) {
-    consumeSpace(src, index);
-
-    for(; index < src.size(); index++) {
-        char ch = src[index];
-        if(isSpace(ch)) {
-            break;
-        }
-        first += ch;
-    }
-    return 0;
-}
-
-int extract(const std::string &src, unsigned int &index, const char *first) {
-    consumeSpace(src, index);
-
-    for(unsigned int i = 0; first[i] != '\0'; i++) {
-        if(index >= src.size()) {
-            return 1;   // not match
-        }
-        if(src[index++] != first[i]) {
-            return 1;
-        }
-    }
-    return 0;
-}
-
-int parseImpl(const std::string &src, unsigned int &index) {
-    consumeSpace(src, index);
-    return index - src.size();
-}
-
-template <typename F, typename ...T>
-int parseImpl(const std::string &src, unsigned int &index, F &&first, T&& ...args) {
-    int ret = extract(src, index, std::forward<F>(first));
-    return ret == 0 ? parseImpl(src, index, std::forward<T>(args)...) : ret;
-}
-
 template <typename ...T>
 int parse(const std::string &src, T&& ...args) {
-    unsigned int index = 0;
-    return parseImpl(src, index, std::forward<T>(args)...);
+    return Extractor(src.c_str())(std::forward<T>(args)...);
 }
 
 template <typename ...T>
 int parse(const char *src, T&& ...args) {
-    std::string str(src);
-    return parse(str, std::forward<T>(args)...);
+    return Extractor(src)(std::forward<T>(args)...);
 }
 
 class ExecTest : public ::testing::TestWithParam<std::string>, public TempFileFactory {
