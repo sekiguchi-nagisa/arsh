@@ -28,6 +28,8 @@
 #include <misc/files.h>
 #include "test_common.h"
 
+#define error_at(fmt, ...) fatal(fmt ": %s\n", ## __VA_ARGS__, strerror(errno))
+
 // #############################
 // ##     TempFileFactory     ##
 // #############################
@@ -43,7 +45,7 @@ static char *makeTempDir() {
     }
     char *name = nullptr;
     if(asprintf(&name, "%s/test_tmp_dirXXXXXX", tmpdir) < 0) {
-        fatal("%s\n", strerror(errno));
+        error_at("");
     }
     char *dirName = mkdtemp(name);
     assert(dirName != nullptr);
@@ -56,11 +58,11 @@ void TempFileFactory::createTemp() {
 
     char *name;
     if(asprintf(&name, "%s/test_tmpXXXXXX", this->tmpDirName) < 0) {
-        fatal("%s\n", strerror(errno));
+        error_at("");
     }
     int fd = mkstemp(name);
     if(fd < 0) {
-        fatal("%s\n", strerror(errno));
+        error_at("");
     }
     close(fd);
     this->tmpFileName = name;
@@ -69,7 +71,7 @@ void TempFileFactory::createTemp() {
 void TempFileFactory::deleteTemp() {
     DIR *dir = opendir(this->tmpDirName);
     if(dir == nullptr) {
-        fatal("%s\n", strerror(errno));
+        error_at("");
     }
 
     for(dirent *entry; (entry = readdir(dir)) != nullptr;) {
@@ -82,7 +84,7 @@ void TempFileFactory::deleteTemp() {
         const char *name = fullpath.c_str();
         if(S_ISREG(ydsh::getStMode(name))) {
             if(remove(name) < 0) {
-                fatal("%s: %s\n", strerror(errno), name);
+                error_at("%s", name);
             }
         } else {
             fatal("not a regular file: %s\n", name);    //FIXME: symbolic link, etc...
@@ -91,7 +93,7 @@ void TempFileFactory::deleteTemp() {
     closedir(dir);
 
     if(rmdir(this->tmpDirName) < 0) {
-        fatal("%s\n", strerror(errno));
+        error_at("");
     }
     this->freeName();
 }
@@ -240,11 +242,11 @@ Proc ProcBuilder::forkImpl(bool usePipe) {
     pid_t errpipe[2];
 
     if(pipe(outpipe) < 0) {
-        fatal("pipe creation failed: %s\n", strerror(errno));
+        error_at("pipe creation failed");
     }
 
     if(pipe(errpipe) < 0) {
-        fatal("pipe creation failed: %s\n", strerror(errno));
+        error_at("pipe creation failed");
     }
 
     pid_t pid = ::fork();
@@ -269,7 +271,7 @@ Proc ProcBuilder::forkImpl(bool usePipe) {
 
         return Proc();
     } else {
-        fatal("fork failed: %s\n", strerror(errno));
+        error_at("fork failed");
     }
 }
 
@@ -278,7 +280,7 @@ void ProcBuilder::syncPWD() const {
     char buf[size];
     const char *cwd = getcwd(buf, size);
     if(cwd == nullptr) {
-        fatal("current working directory is broken!!\n");
+        error_at("current working directory is broken!!");
     }
     setenv(ydsh::ENV_PWD, cwd, 1);
 }
