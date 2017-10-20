@@ -1,0 +1,6 @@
+
+#$test($result = 'type', $lineNum = 5, $errorKind = 'InsideChild', $status = 1)
+
+for(;;) {
+    { continue; } | echo hello
+}

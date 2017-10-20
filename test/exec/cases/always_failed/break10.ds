@@ -1,0 +1,4 @@
+
+#$test($result = 'type', $lineNum = 4, $errorKind = 'InsideLoop', $status = 1)
+
+23 | { break; }

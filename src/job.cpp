@@ -25,7 +25,7 @@ namespace ydsh {
 pid_t xfork(DSState &st, pid_t pgid, bool foreground) {
     pid_t pid = fork();
     if(pid == 0) {  // child process
-        if(st.isInteractive()) {
+        if(st.isJobControl()) {
             setpgid(0, pgid);
             if(foreground) {
                 tcsetpgrp(STDIN_FILENO, getpgid(0));
@@ -37,7 +37,7 @@ pid_t xfork(DSState &st, pid_t pgid, bool foreground) {
         st.setGlobal(toIndex(BuiltinVarOffset::PID), DSValue::create<Int_Object>(st.pool.getInt32Type(), getpid()));
         st.setGlobal(toIndex(BuiltinVarOffset::PPID), DSValue::create<Int_Object>(st.pool.getInt32Type(), getppid()));
     } else if(pid > 0) {
-        if(st.isInteractive()) {
+        if(st.isJobControl()) {
             setpgid(pid, pgid);
             if(foreground) {
                 tcsetpgrp(STDIN_FILENO, getpgid(pid));
@@ -53,15 +53,17 @@ void tryToForeground(const DSState &st) {
     }
 }
 
-// ##########################
-// ##     JobEntryImpl     ##
-// ##########################
+// #####################
+// ##     JobImpl     ##
+// #####################
 
-void JobImpl::restoreStdin() {
+bool JobImpl::restoreStdin() {
     if(this->oldStdin > -1 && this->hasOwnership()) {
         dup2(this->oldStdin, STDIN_FILENO);
         close(this->oldStdin);
+        return true;
     }
+    return false;
 }
 
 // ######################
@@ -71,7 +73,7 @@ void JobImpl::restoreStdin() {
 Job JobTable::newEntry(unsigned int size) {
     assert(size > 0);
 
-    void *ptr = malloc(sizeof(JobImpl) + sizeof(pid_t) * size);
+    void *ptr = malloc(sizeof(JobImpl) + sizeof(pid_t) * (size + 1));
     auto pair = this->findEmptyEntry();
     auto *entry = new(ptr) JobImpl(pair.second, size);
     auto v = Job(entry);
@@ -108,7 +110,7 @@ int JobTable::forceWait(Job &entry, unsigned int statusSize, int *statuses) {
 
     // remove entry
     auto iter = this->findEntryIter(entry->getJobId());
-    if(iter != this->entries.end() && (*iter) == entry) {
+    if(iter != this->entries.end()) {
         this->entries.erase(iter);
     }
     return lastStatus;
@@ -151,12 +153,16 @@ struct Comparator {
 };
 
 std::vector<Job>::iterator JobTable::findEntryIter(unsigned int jobId) {
-    return std::lower_bound(this->entries.begin(), this->entries.end(), jobId, Comparator());
+    auto iter = std::lower_bound(this->entries.begin(), this->entries.end(), jobId, Comparator());
+    if(iter != this->entries.end() && (*iter)->jobId == jobId) {
+        return iter;
+    }
+    return this->entries.end();
 }
 
 Job JobTable::findEntry(unsigned int jobId) {
     auto iter = this->findEntryIter(jobId);
-    if(iter != this->entries.end() && (*iter)->jobId == jobId) {
+    if(iter != this->entries.end()) {
         return *iter;
     }
     return nullptr;

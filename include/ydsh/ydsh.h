@@ -108,10 +108,22 @@ void DSState_setDumpTarget(DSState *st, DSDumpKind kind, FILE *fp);
 #define DS_OPTION_TOPLEVEL     ((unsigned short) (1 << 1))
 #define DS_OPTION_TRACE_EXIT   ((unsigned short) (1 << 2))
 #define DS_OPTION_HISTORY      ((unsigned short) (1 << 3))
-#define DS_OPTION_INTERACTIVE  ((unsigned short) (1 << 4))
+#define DS_OPTION_JOB_CONTROL  ((unsigned short) (1 << 4))
 
 unsigned short DSState_option(const DSState *st);
+
+/**
+ * if specify DS_OPTION_JOB_CONTROL, ignore some signals
+ * @param st
+ * @param optionSet
+ */
 void DSState_setOption(DSState *st, unsigned short optionSet);
+
+/**
+ * if specify DS_OPTION_JOB_CONTROL, reset some signal setting
+ * @param st
+ * @param optionSet
+ */
 void DSState_unsetOption(DSState *st, unsigned short optionSet);
 
 

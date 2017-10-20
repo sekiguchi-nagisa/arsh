@@ -341,6 +341,25 @@ int Extractor::extract(unsigned int &value) {
     return 0;
 }
 
+int Extractor::extract(int &value) {
+    this->consumeSpace();
+
+    std::string buf;
+    for(; *this->str != '\0'; this->str++) {
+        char ch = *this->str;
+        if(!isdigit(ch)) {
+            break;
+        }
+        buf += ch;
+    }
+    long v = std::stol(buf);
+    if(v < INT32_MIN || v > INT32_MAX) {
+        return 1;
+    }
+    value = static_cast<int>(v);
+    return 0;
+}
+
 int Extractor::extract(std::string &value) {
     value.clear();
 

@@ -437,7 +437,6 @@ private:
     void emitCaptureIns(bool isStr, const Label &label);
     void generateCmdArg(CmdArgNode &node);
     void emitPipelineIns(const std::vector<Label> &labels);
-    void emitPipelineIns2(const std::vector<Label> &labels);
     void generateStringExpr(StringExprNode &node, bool fragment);
 
     void initCodeBuilder(CodeKind kind, unsigned short localVarNum);

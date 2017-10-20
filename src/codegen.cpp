@@ -265,21 +265,6 @@ void ByteCodeGenerator::emitPipelineIns(const std::vector<Label> &labels) {
     }
 }
 
-void ByteCodeGenerator::emitPipelineIns2(const std::vector<Label> &labels) {
-    const unsigned int size = labels.size();
-    if(size > UINT8_MAX) {
-        fatal("reach limit\n");
-    }
-
-    const unsigned int offset = this->curBuilder().codeBuffer.size();
-    this->emitIns(OpCode::PIPELINE2);
-    this->curBuilder().append8(size);
-    for(unsigned int i = 0; i < size; i++) {
-        this->curBuilder().append16(0);
-        this->curBuilder().writeLabel(offset + 2 + i * 2, labels[i], offset, CodeEmitter<true>::LabelTarget::_16);
-    }
-}
-
 void ByteCodeGenerator::generateStringExpr(StringExprNode &node, bool fragment) {
     const unsigned int size = node.getExprNodes().size();
     if(size == 0) {
@@ -641,7 +626,7 @@ void ByteCodeGenerator::visitCmdNode(CmdNode &node) {
         this->emit0byteIns(OpCode::DO_REDIR);
     }
 
-    OpCode ins = getenv("X_PIPE2") != nullptr && node.getInLastPipe() ? OpCode::CALL_CMD_LP :
+    OpCode ins = node.getInLastPipe() ? OpCode::CALL_CMD_LP :
                  node.getInPipe() ? OpCode::CALL_CMD_P : OpCode::CALL_CMD;
     this->emit0byteIns(ins);
 }
@@ -669,47 +654,11 @@ void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
 void ByteCodeGenerator::visitPipelineNode(PipelineNode &node) {
     const unsigned int size = node.getNodes().size();
 
-    if(getenv("X_PIPE2") != nullptr) {
-        // init label
-        std::vector<Label> labels(size);
-        for(unsigned int i = 0; i < size; i++) {
-            labels[i] = makeLabel();
-        }
-
-        // generate pipeline
-        this->emitSourcePos(node.getPos());
-        this->emitPipelineIns2(labels);
-
-        auto begin = makeLabel();
-        auto end = makeLabel();
-
-        // generate pipeline (child)
-        this->markLabel(begin);
-        for(unsigned int i = 0; i < size - 1; i++) {
-            this->markLabel(labels[i]);
-            this->visit(*node.getNodes()[i]);
-            this->emit0byteIns(OpCode::SUCCESS_CHILD);
-        }
-        this->markLabel(end);
-        this->catchException(begin, end, this->pool.getAnyType());
-        this->emit0byteIns(OpCode::FAILURE_CHILD);
-
-        // generate last pipe
-        this->markLabel(labels[size - 1]);
-        this->generateBlock(node.getBaseIndex(), 1, true, [&] {
-            this->emit1byteIns(OpCode::STORE_LOCAL, node.getBaseIndex());
-            this->visit(*node.getNodes()[size - 1]);
-        });
-        return;
-    }
-
-
     // init label
-    std::vector<Label> labels(size + 1);
+    std::vector<Label> labels(size);
     for(unsigned int i = 0; i < size; i++) {
         labels[i] = makeLabel();
     }
-    labels[size] = makeLabel();
 
     // generate pipeline
     this->emitSourcePos(node.getPos());
@@ -718,8 +667,9 @@ void ByteCodeGenerator::visitPipelineNode(PipelineNode &node) {
     auto begin = makeLabel();
     auto end = makeLabel();
 
+    // generate pipeline (child)
     this->markLabel(begin);
-    for(unsigned int i = 0; i < size; i++) {
+    for(unsigned int i = 0; i < size - 1; i++) {
         this->markLabel(labels[i]);
         this->visit(*node.getNodes()[i]);
         this->emit0byteIns(OpCode::SUCCESS_CHILD);
@@ -727,7 +677,13 @@ void ByteCodeGenerator::visitPipelineNode(PipelineNode &node) {
     this->markLabel(end);
     this->catchException(begin, end, this->pool.getAnyType());
     this->emit0byteIns(OpCode::FAILURE_CHILD);
-    this->markLabel(labels[size]);
+
+    // generate last pipe
+    this->markLabel(labels[size - 1]);
+    this->generateBlock(node.getBaseIndex(), 1, true, [&] {
+        this->emit1byteIns(OpCode::STORE_LOCAL, node.getBaseIndex());
+        this->visit(*node.getNodes()[size - 1]);
+    });
 }
 
 void ByteCodeGenerator::visitSubstitutionNode(SubstitutionNode &node) {

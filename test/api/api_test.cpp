@@ -9,6 +9,8 @@
 #include <sys/types.h>
 #include <pwd.h>
 
+#include "../test_common.h"
+
 template <typename ...T>
 std::array<char *, sizeof...(T) + 2> make_argv(const char *name, T ...args) {
     return {{const_cast<char *>(name), const_cast<char *>(args)..., nullptr }};
@@ -165,6 +167,104 @@ TEST(API, case6) {
     int r = DSState_setScriptDir(state, "hfarefoiaji vfd");
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, r));
     DSState_delete(&state);
+}
+
+static Proc exec(std::string &&str) {
+    return ProcBuilder::fork(true, [&] {
+        DSState *state = DSState_create();
+        DSState_setOption(state, DS_OPTION_JOB_CONTROL);
+        int ret = DSState_eval(state, nullptr, str.c_str(), str.size(), nullptr);
+        DSState_delete(&state);
+        return ret;
+    });
+}
+
+#define EXEC(...) exec(format(__VA_ARGS__)).waitAndGetResult(true)
+
+struct PIDs {
+    pid_t pid;
+    pid_t ppid;
+    pid_t pgid;
+};
+
+static std::vector<std::string> split(const std::string &str) {
+    std::vector<std::string> bufs;
+    bufs.emplace_back();
+
+    for(auto &ch : str) {
+        if(ch == ' ') {
+            bufs.emplace_back();
+        } else {
+            bufs.back() += ch;
+        }
+    }
+    return bufs;
+}
+
+static std::vector<PIDs> decompose(const std::string &str) {
+    auto ss = split(str);
+    std::vector<PIDs> ret(ss.size());
+
+    for(unsigned int i = 0; i < ret.size(); i++) {
+        int r = Extractor(ss[i].c_str())("[", ret[i].pid, ",", ret[i].ppid, ",", ret[i].pgid, "]");
+        if(r != 0) {
+            fatal("broken\n");
+        }
+    }
+    return ret;
+}
+
+TEST(API, case7) {
+    SCOPED_TRACE("");
+
+    // normal
+    auto result = EXEC("%s --first | %s | %s", PID_CHECK_PATH, PID_CHECK_PATH, PID_CHECK_PATH);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status));
+    auto pids = decompose(result.out);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, pids.size()));
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].ppid, pids[1].ppid));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[1].ppid, pids[2].ppid));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[2].ppid, pids[0].ppid));
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pid, pids[0].pgid));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pid, pids[1].pgid));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pid, pids[2].pgid));
+
+    // command, eval
+    result = EXEC("command eval %s --first | eval command %s", PID_CHECK_PATH, PID_CHECK_PATH);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status));
+    pids = decompose(result.out);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].ppid, pids[1].ppid));
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pid, pids[0].pgid));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pid, pids[1].pgid));
+
+    // udc1
+    result = EXEC("pidcheck() { command %s $@; }; %s --first | pidcheck", PID_CHECK_PATH, PID_CHECK_PATH);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status));
+    pids = decompose(result.out);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].ppid, pids[1].ppid));
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pid, pids[0].pgid));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pid, pids[1].pgid));
+
+    // udc2
+    result = EXEC("pidcheck() { command %s $@; }; pidcheck --first | %s", PID_CHECK_PATH, PID_CHECK_PATH);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status));
+    pids = decompose(result.out);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].ppid, pids[1].ppid));
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pid, pids[0].pgid));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pid, pids[1].pgid));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pgid, pids[1].pgid));
 }
 
 TEST(PID, case1) {

@@ -823,30 +823,22 @@ void TypeChecker::visitRedirNode(DSType *, RedirNode &node) {
 }
 
 void TypeChecker::visitPipelineNode(DSType *, PipelineNode &node) {
-    if(getenv("X_PIPE2") != nullptr) {
-        unsigned int size = node.getNodes().size();
-        this->fctx.enterChild();
-        for(unsigned int i = 0; i < size - 1; i++) {
-            this->checkType(nullptr, node.getNodes()[i], nullptr);
-        }
-        this->fctx.leave();
-
-        this->symbolTable.enterScope();
-
-        // register pipeline state
-        this->addEntryAndThrowIfDefined(node, "%%pipe", this->typePool.getAnyType(), FieldAttribute::READ_ONLY);
-        auto &type = this->checkType(nullptr, node.getNodes()[size - 1], nullptr);
-
-        node.setBaseIndex(this->symbolTable.curScope().getBaseIndex());
-        this->symbolTable.exitScope();
-        node.setType(type);
-        return;
+    unsigned int size = node.getNodes().size();
+    this->fctx.enterChild();
+    for(unsigned int i = 0; i < size - 1; i++) {
+        this->checkType(nullptr, node.getNodes()[i], nullptr);
     }
+    this->fctx.leave();
 
-    for(auto *cmdNode : node.getNodes()) {
-        this->checkType(cmdNode);
-    }
-    node.setType(this->typePool.getBooleanType());
+    this->symbolTable.enterScope();
+
+    // register pipeline state
+    this->addEntryAndThrowIfDefined(node, "%%pipe", this->typePool.getAnyType(), FieldAttribute::READ_ONLY);
+    auto &type = this->checkType(nullptr, node.getNodes()[size - 1], nullptr);
+
+    node.setBaseIndex(this->symbolTable.curScope().getBaseIndex());
+    this->symbolTable.exitScope();
+    node.setType(type);
 }
 
 void TypeChecker::visitSubstitutionNode(DSType *, SubstitutionNode &node) {

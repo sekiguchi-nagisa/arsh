@@ -222,6 +222,8 @@ private:
 
     int extract(unsigned int &value);
 
+    int extract(int &value);
+
     int extract(std::string &value);
 
     int extract(const char *value);

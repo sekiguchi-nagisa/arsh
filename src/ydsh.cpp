@@ -607,7 +607,7 @@ unsigned short DSState_option(const DSState *st) {
 void DSState_setOption(DSState *st, unsigned short optionSet) {
     setFlag(st->option, optionSet);
 
-    if(hasFlag(optionSet, DS_OPTION_INTERACTIVE)) {
+    if(hasFlag(optionSet, DS_OPTION_JOB_CONTROL)) {
         setJobControlSignalSetting(*st, true);
     }
 }
@@ -615,7 +615,7 @@ void DSState_setOption(DSState *st, unsigned short optionSet) {
 void DSState_unsetOption(DSState *st, unsigned short optionSet) {
     unsetFlag(st->option, optionSet);
 
-    if(hasFlag(optionSet, DS_OPTION_INTERACTIVE)) {
+    if(hasFlag(optionSet, DS_OPTION_JOB_CONTROL)) {
         setJobControlSignalSetting(*st, false);
     }
 }

@@ -4,8 +4,10 @@
 
 set(TEST_NAME api_test)
 
+add_definitions(-DPID_CHECK_PATH="${CMAKE_BINARY_DIR}/tools/pid_check/pid_check")
 add_executable(${TEST_NAME}
     api_test.cpp
 )
-target_link_libraries(${TEST_NAME} gtest gtest_main ${YDSH_STATIC})
+target_link_libraries(${TEST_NAME} gtest gtest_main ${YDSH_STATIC} test_common)
+add_dependencies(${TEST_NAME} pid_check)
 add_test(${TEST_NAME} ${TEST_NAME})

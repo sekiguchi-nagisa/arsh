@@ -41,7 +41,7 @@ struct JobTrait;
 class JobImpl {
 private:
     unsigned long refCount{0};
-    const unsigned int jobId; //FIXME: tcsetgprp, STDIN_FD
+    const unsigned int jobId;
 
     /**
      * pid of owner process (JobEntry creator)
@@ -58,7 +58,10 @@ private:
      */
     int oldStdin;
 
-    pid_t pids[0];
+    /**
+     * initial size is procSize + 1 (due to append process)
+     */
+    pid_t pids[];
 
     friend class JobTable;
 
@@ -101,11 +104,22 @@ public:
     }
 
     /**
-     * restore STDIN_FD.
-     * if already called, do nothing.
-     * if has no ownership. do nothing.
+     * call only once.
+     * @param pid
      */
-    void restoreStdin();
+    void appendPid(pid_t pid) {
+        assert(this->procSize > 0);
+        this->pids[this->procSize++] = pid;
+    }
+
+    /**
+     * restore STDIN_FD
+     * if has no ownership, do nothing.
+     * @return
+     * if restore fd, return true.
+     * if already called, return false
+     */
+    bool restoreStdin();
 };
 
 struct JobTrait {

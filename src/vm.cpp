@@ -673,8 +673,9 @@ public:
 
     ~PipelineState() override {
         this->state.jobTable.wait(this->entry, 0, nullptr);
-        this->entry->restoreStdin();
-        tryToForeground(this->state);
+        if(this->entry->restoreStdin()) {
+            tryToForeground(this->state);
+        }
     }
 };
 
@@ -1274,92 +1275,23 @@ struct Process {
 };
 
 static void callPipeline(DSState &state) {
-    const unsigned int branchSize = read8(GET_CODE(state), state.pc() + 1);
-    assert(branchSize > 1);
-    const unsigned int size = branchSize - 1;
+    /**
+     * exclude last pipe (ex. ls | grep . | grep . => pipeSize == 2)
+     */
+    const unsigned int pipeSize = read8(GET_CODE(state), state.pc() + 1) - 1;
 
-    int pipefds[size][2];
-    initPipe(size, pipefds);
+    assert(pipeSize > 0);
 
-    // fork
-    Process procs[size];
-    const bool rootShell = state.isRootShell();
-    pid_t pgid = rootShell ? 0 : getpgid(0);
-    pid_t pid;
-    unsigned int procIndex;
-    for(procIndex = 0; procIndex < size && (pid = xfork(state, pgid, rootShell)) > 0; procIndex++) {
-        procs[procIndex].pid = pid;
-        if(pgid == 0) {
-            pgid = pid;
-        }
-    }
-
-    if(procIndex == size) { // parent
-        closeAllPipe(size, pipefds);
-
-        // wait for exit
-        for(unsigned int i = 0; i < size; i++) {
-            int status = 0;
-            waitpid(procs[i].pid, &status, 0);
-            if(WIFEXITED(status)) {
-                procs[i].kind = Process::EXIT;
-                procs[i].status = WEXITSTATUS(status);
-
-            }
-            if(WIFSIGNALED(status)) {
-                procs[i].kind = Process::SIGNAL;
-                procs[i].status = WTERMSIG(status) + 128;
-            }
-        }
-        if(state.isInteractive() && rootShell) {
-            tcsetpgrp(STDIN_FILENO, getpgid(0));
-        }
-        pushExitStatus(state, procs[size - 1].status);
-
-        /**
-         * code layout
-         *
-         * +----------+-------------+-----------+    +------------+--------------+
-         * | PIPELINE | size: 1byte | br1: 2yte | ~  | brN: 2byte | merge: 2byte |
-         * +----------+-------------+-----------+    +------------+--------------+
-         */
-        // set pc to next instruction
-        state.pc() += read16(GET_CODE(state), state.pc() + 2 + size * 2) - 1;
-    } else if(pid == 0) {   // child
-        if(procIndex == 0) {    // first process
-            dup2(pipefds[procIndex][WRITE_PIPE], STDOUT_FILENO);
-        }
-        if(procIndex > 0 && procIndex < size - 1) {   // other process.
-            dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
-            dup2(pipefds[procIndex][WRITE_PIPE], STDOUT_FILENO);
-        }
-        if(procIndex == size - 1) { // last process
-            dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
-        }
-        closeAllPipe(size, pipefds);
-
-        // set pc to next instruction
-        state.pc() += read16(GET_CODE(state), state.pc() + 2 + procIndex * 2) - 1;
-    } else {
-        perror("child process error");
-        exit(1);
-    }
-}
-
-static void callPipeline2(DSState &state) {
-    const unsigned int size = read8(GET_CODE(state), state.pc() + 1);
-    assert(size > 1);
-
-    int pipefds[size][2];   //FIXME: pipe fd size
-    initPipe(size, pipefds);
+    int pipefds[pipeSize][2];
+    initPipe(pipeSize, pipefds);
 
     // fork
-    auto jobEntry = state.jobTable.newEntry(size - 1);
+    auto jobEntry = state.jobTable.newEntry(pipeSize);
     const bool rootShell = state.isRootShell();
     pid_t pgid = rootShell ? 0 : getpgid(0);
     pid_t pid = -1;
     unsigned int procIndex;
-    for(procIndex = 0; procIndex < size - 1 && (pid = xfork(state, pgid, rootShell)) > 0; procIndex++) {
+    for(procIndex = 0; procIndex < pipeSize && (pid = xfork(state, pgid, rootShell)) > 0; procIndex++) {
         jobEntry->setPid(procIndex, pid);
         if(pgid == 0) {
             pgid = pid;
@@ -1377,19 +1309,19 @@ static void callPipeline2(DSState &state) {
         if(procIndex == 0) {    // first process
             dup2(pipefds[procIndex][WRITE_PIPE], STDOUT_FILENO);
         }
-        if(procIndex > 0 && procIndex < size - 1) {   // other process.
+        if(procIndex > 0 && procIndex < pipeSize) {   // other process.
             dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
             dup2(pipefds[procIndex][WRITE_PIPE], STDOUT_FILENO);
         }
-        closeAllPipe(size, pipefds);
+        closeAllPipe(pipeSize, pipefds);
 
         // set pc to next instruction
         state.pc() += read16(GET_CODE(state), state.pc() + 2 + procIndex * 2) - 1;
-    } else if(procIndex == size - 1) { // parent (last pipeline)
+    } else if(procIndex == pipeSize) { // parent (last pipeline)
         state.push(DSValue::create<PipelineState>(state, jobEntry));
 
         dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
-        closeAllPipe(size, pipefds);
+        closeAllPipe(pipeSize, pipefds);
 
         // set pc to next instruction
         state.pc() += read16(GET_CODE(state), state.pc() + 2 + procIndex * 2) - 1;
@@ -1973,10 +1905,6 @@ static bool mainLoop(DSState &state) {
         }
         vmcase(PIPELINE) {
             callPipeline(state);
-            vmnext;
-        }
-        vmcase(PIPELINE2) {
-            callPipeline2(state);
             vmnext;
         }
         vmcase(EXPAND_TILDE) {

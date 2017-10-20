@@ -1,0 +1,22 @@
+
+assert (echo | echo) is Boolean
+assert (echo | 34) is Int
+
+var c = 0
+echo -e 'a\nb\nc\nd\ne' | while (read) {
+    if $REPLY == 'c' {
+        break
+    }
+    $c++
+}
+assert $c == 2  # executed in parent shell
+
+$c = 0
+{ $c = 10; } | 34
+assert $c == 0
+
+
+var t = echo | ($PID, $PPID)
+assert $t._0 == $PID
+assert $t._1 == $PPID
+

@@ -95,7 +95,6 @@ namespace ydsh {
     OP(CAPTURE_STR, 2) \
     OP(CAPTURE_ARRAY, 2) \
     OP(PIPELINE, -1) \
-    OP(PIPELINE2, -1) \
     OP(EXPAND_TILDE, 0) \
     OP(NEW_CMD, 0) \
     OP(ADD_CMD_ARG, 1) \
