@@ -4,7 +4,7 @@
 
 set(fuzzer_dir ${CMAKE_CURRENT_BINARY_DIR}/Fuzzer)
 add_custom_command(OUTPUT ${fuzzer_dir}
-        COMMAND git clone https://chromium.googlesource.com/chromium/llvm-project/llvm/lib/Fuzzer
+        COMMAND git clone https://chromium.googlesource.com/chromium/llvm-project/compiler-rt/lib/fuzzer
 )
 add_custom_target(fuzzer_dir DEPENDS ${fuzzer_dir})
 
