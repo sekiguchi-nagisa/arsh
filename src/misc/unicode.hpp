@@ -122,26 +122,35 @@ unsigned int UnicodeUtil<T>::utf8ToCodePoint(const char *const buf, std::size_t 
             return 1;
         case 2:
             if(bufSize >= 2) {
-                codePoint = (static_cast<unsigned long>(buf[0] & 0x1F) << 6) |
-                        (static_cast<unsigned long>(buf[1] & 0x3F));
-                return 2;
+                if((buf[1] & 0xC0) == 0x80) {
+                    codePoint = (static_cast<unsigned long>(buf[0] & 0x1F) << 6) |
+                                (static_cast<unsigned long>(buf[1] & 0x3F));
+                    return 2;
+                }
             }
             break;
         case 3:
             if(bufSize >= 3) {
-                codePoint = (static_cast<unsigned long>(buf[0] & 0x0F) << 12) |
-                        (static_cast<unsigned long>(buf[1] & 0x3F) << 6) |
-                        (static_cast<unsigned long>(buf[2] & 0x3F));
-                return 3;
+                if((buf[1] & 0xC0) == 0x80 &&
+                   (buf[2] & 0xC0) == 0x80) {
+                    codePoint = (static_cast<unsigned long>(buf[0] & 0x0F) << 12) |
+                                (static_cast<unsigned long>(buf[1] & 0x3F) << 6) |
+                                (static_cast<unsigned long>(buf[2] & 0x3F));
+                    return 3;
+                }
             }
             break;
         case 4:
             if(bufSize >= 4) {
-                codePoint = (static_cast<unsigned long>(buf[0] & 0x07) << 18) |
-                        (static_cast<unsigned long>(buf[1] & 0x3F) << 12) |
-                        (static_cast<unsigned long>(buf[2] & 0x3F) << 6) |
-                        (static_cast<unsigned long>(buf[3] & 0x3F));
-                return 4;
+                if((buf[1] & 0xC0) == 0x80 &&
+                   (buf[2] & 0xC0) == 0x80 &&
+                   (buf[3] & 0xC0) == 0x80) {
+                    codePoint = (static_cast<unsigned long>(buf[0] & 0x07) << 18) |
+                                (static_cast<unsigned long>(buf[1] & 0x3F) << 12) |
+                                (static_cast<unsigned long>(buf[2] & 0x3F) << 6) |
+                                (static_cast<unsigned long>(buf[3] & 0x3F));
+                    return 4;
+                }
             }
             break;
         default:
