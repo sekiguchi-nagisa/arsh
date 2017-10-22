@@ -271,12 +271,15 @@ Token LexerBase<T>::getLineToken(Token token) const {
     assert(this->withinRange(token));
 
     // find start index of line.
-    unsigned int startIndex = token.pos;
-    for(; startIndex > 0; startIndex--) {
+    long startIndex = token.pos;
+    for(; startIndex > -1; startIndex--) {
         if(this->buf[startIndex] == '\n') {
             startIndex += (startIndex == token.pos) ? 0 : 1;
             break;
         }
+    }
+    if(startIndex == -1) {
+        startIndex = 0;
     }
 
     // find stop index of line
@@ -290,9 +293,11 @@ Token LexerBase<T>::getLineToken(Token token) const {
     } else {
         stopIndex++;
     }
+
+    assert(startIndex > -1);
     Token lineToken;
-    lineToken.pos = startIndex;
-    lineToken.size = stopIndex - startIndex;
+    lineToken.pos = static_cast<unsigned int>(startIndex);
+    lineToken.size = stopIndex - static_cast<unsigned int>(startIndex);
     return lineToken;
 }
 
@@ -307,8 +312,8 @@ std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token) const {
         if(code < 0) {
             return marker;
         }
-        if(code == '\t') {
-            marker += "\t";
+        if(code == '\t' || code == '\n') {
+            marker += static_cast<char>(code);
             continue;
         }
         int width = UnicodeUtil::localeAwareWidth(code);
@@ -329,12 +334,8 @@ std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token) const {
         if(code < 0) {
             return marker;
         }
-        if(code == '\t') {
-            marker += "\t";
-            continue;
-        }
-        if(code == '\n') {
-            marker += "\n";
+        if(code == '\t' || code == '\n') {
+            marker += static_cast<char>(code);
             continue;
         }
         int width = UnicodeUtil::localeAwareWidth(code);

@@ -356,6 +356,12 @@ var a
 )";
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "var a   \n    \\\n   \t  \t  \n   "), 1, "", msg));
 
+    auto result = ds("-c", "\n);").execAndGetResult(false);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(");\n^\n", strchr(result.err.c_str(), '\n') + 1));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
+
+
     // line marker of semantic error
     msg = R"((string):1: [semantic error] require Int32, but is String
 [34, "hey"]
