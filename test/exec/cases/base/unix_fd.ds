@@ -1,0 +1,34 @@
+
+assert $STDIN as String == "0"
+assert $STDOUT as String == "1"
+assert $STDERR as String == '2'
+
+var fd = $STDIN.dup()
+assert $fd as String  != "0"
+
+$fd.close()
+assert $fd as String == -1 as String
+
+var ex = 34 as Any
+try {
+    $fd.dup()
+} catch $e {
+    $ex = $e
+}
+assert $ex is SystemError
+
+$ex = 34
+try {
+    $fd.close()
+} catch $e {
+    $ex = $e
+}
+assert $ex is SystemError
+
+$ex = 34
+try {
+    cat < $fd
+} catch $e {
+    $ex = $e
+}
+assert $ex is SystemError

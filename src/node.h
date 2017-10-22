@@ -1058,6 +1058,10 @@ public:
         return this->targetNode;
     }
 
+    bool isHereStr() const {
+        return this->op == REDIR_HERE_STR;
+    }
+
     void dump(NodeDumper &dumper) const override;
 };
 

@@ -774,6 +774,11 @@ static int redirectToFile(const TypePool &pool, const DSValue &fileName, const c
     } else {
         assert(type == pool.getUnixFDType());
         int fd = typeAs<UnixFD_Object>(fileName)->getValue();
+        if(strchr(mode, 'a') != nullptr) {
+            if(lseek(fd, 0, SEEK_END) == -1) {
+                return errno;
+            }
+        }
         if(dup2(fd, targetFD) < 0) {
             return errno;
         }

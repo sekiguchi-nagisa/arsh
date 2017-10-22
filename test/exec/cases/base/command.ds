@@ -271,24 +271,3 @@ $OLDPWD = $oldpwd
 if not $OSTYPE.startsWith("CYGWIN") {
     assert("$(cat /etc/passwd | grep ^root | cut -d : -f 6)" == "$(echo ~root)")
 }
-
-# redirection (append)
-let DIR = "$(mktemp -d 2> /dev/null || mktemp -d -t hferui4g)"
-assert(not $DIR.empty())
-
-## stdout append
-assert(echo "hello world!!" >> $DIR/out && echo "hello world!!" >> $DIR/out)
-assert("$(cat $DIR/out)" == "$(echo -e "hello world!!\nhello world!!" )")
-
-## stderr append
-var t = "gheru4g9"
-ls $t 2>> $DIR/err
-assert($? != 0)
-
-ls $t 2>> $DIR/err
-assert($? != 0)
-
-$t = "$(ls $t 2>&1)"
-assert("$(echo -e "$t\n$t")" == "$(cat $DIR/err)")
-
-rm -rf $DIR   # cleanup

@@ -805,7 +805,7 @@ void TypeChecker::visitRedirNode(DSType *, RedirNode &node) {
     // check UnixFD
     if(argNode->getSegmentNodes().size() == 1) {
         auto &type = this->checkType(argNode->getSegmentNodes()[0]);
-        if(type == this->typePool.getUnixFDType()) {
+        if(type == this->typePool.getUnixFDType() && !node.isHereStr()) {
             argNode->setType(type);
             node.setType(this->typePool.getAnyType());
             return;

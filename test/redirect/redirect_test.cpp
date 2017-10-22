@@ -397,6 +397,31 @@ TEST_F(RedirectTest, merge) {
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("__puts -1 AAA -2 123 2>&1 1> /dev/null | grep AAA"), 1));
 }
 
+TEST_F(RedirectTest, fd) {
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("var a = new UnixFD('%s'); echo -n 'hello ' > $a; echo world > $a", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("hello world\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("var a = new UnixFD('%s'); echo 12345 >> $a", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("hello world\n12345\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("var a = new UnixFD('%s'); __puts -2 AAA 2>> $a", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("hello world\n12345\nAAA\n"));
+
+    auto v = CL(R"(
+        var a = new UnixFD('%s')
+        var r = new [String]()
+        while(read -u $a) { $r.add($REPLY); }
+        true
+        assert $r.size() == 3
+        assert $r[0] == 'hello world'
+        assert $r[1] == '12345'
+        assert $r[2] == 'AAA'
+)", this->getTargetName());
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(v), 0));
+
+    // not recreation file if already exist
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("var a = new UnixFD('%s'); echo 12345 > $a; echo ZZZ >> $a", this->getTargetName()), 0));
+    ASSERT_NO_FATAL_FAILURE(this->contentEq("12345\nworld\n12345\nAAA\nZZZ\n"));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
