@@ -2,7 +2,7 @@
 #     clone libFuzzer     #
 #=========================#
 
-set(fuzzer_dir ${CMAKE_CURRENT_BINARY_DIR}/Fuzzer)
+set(fuzzer_dir ${CMAKE_CURRENT_BINARY_DIR}/fuzzer)
 add_custom_command(OUTPUT ${fuzzer_dir}
         COMMAND git clone https://chromium.googlesource.com/chromium/llvm-project/compiler-rt/lib/fuzzer
 )
@@ -15,7 +15,7 @@ add_custom_target(fuzzer_dir DEPENDS ${fuzzer_dir})
 
 set(fuzzer_static ${CMAKE_CURRENT_BINARY_DIR}/libFuzzer.a)
 add_custom_command(OUTPUT ${fuzzer_static}
-        COMMAND Fuzzer/build.sh
+        COMMAND fuzzer/build.sh
 )
 add_custom_target(libFuzzer DEPENDS ${fuzzer_static})
 add_dependencies(libFuzzer fuzzer_dir)
