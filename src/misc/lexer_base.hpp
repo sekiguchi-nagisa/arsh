@@ -206,6 +206,8 @@ private:
      */
     void swapBuffer(unsigned char *&newBuf, unsigned int &newSize);
 
+    unsigned int utf8ToCodePoint(unsigned int offset, int &codePoint) const;
+
 protected:
     /**
      * fill buffer. called from this->nextToken().
@@ -308,7 +310,7 @@ std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token) const {
     std::string marker;
     for(unsigned int i = lineToken.pos; i < token.pos;) {
         int code = 0;
-        i += UnicodeUtil::utf8ToCodePoint((char *)(this->buf + i), this->getUsedSize() - i, code);
+        i += this->utf8ToCodePoint(i, code);
         if(code < 0) {
             return marker;
         }
@@ -330,7 +332,7 @@ std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token) const {
     for(unsigned int i = token.pos; i < stopPos;) {
         unsigned int prev = i;
         int code = 0;
-        i += UnicodeUtil::utf8ToCodePoint((char *)(this->buf + i), this->getUsedSize() - i, code);
+        i += this->utf8ToCodePoint(i, code);
         if(code < 0) {
             return marker;
         }
@@ -383,6 +385,19 @@ void LexerBase<T>::swapBuffer(unsigned char *&newBuf, unsigned int &newSize) {
     this->limit = this->buf + usedSize - 1;
     this->marker = this->buf + markerPos;
     this->ctxMarker = this->buf + ctxMarkerPos;
+}
+
+template <bool T>
+unsigned int LexerBase<T>::utf8ToCodePoint(unsigned int offset, int &codePoint) const {
+    const char *const ptr = (char *) (this->buf + offset);
+    unsigned int size = this->getUsedSize() - offset;
+
+    unsigned int byteSize = UnicodeUtil::utf8ByteSize(*ptr);
+    if(size > 2 && byteSize > size - 2) {
+        codePoint = -1;
+        return 0;
+    }
+    return UnicodeUtil::utf8ToCodePoint(ptr, size, codePoint);
 }
 
 template<bool T>
