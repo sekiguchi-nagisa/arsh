@@ -304,6 +304,27 @@ matrix:
         - make -j2
         - ctest --output-on-failure
 
+    # clang 5.0 with fuzzing
+    - os: linux
+      sudo: required
+      dist: trusty
+      compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-5.0
+          packages:
+            - clang-5.0
+            - libxml2-dev
+            - libdbus-1-3
+            - libdbus-glib-1-dev
+            - expect
+      env: CC_BIN=clang-5.0 CXX_BIN=clang++-5.0 DUMMY=fuzzing
+      script:
+        - cmake . -DFUZZING_BUILD_MODE=on
+        - make -j2
+        - ctest --output-on-failure
 
     # clang 5.0 with USE_DBUS=OFF
     - os: linux
