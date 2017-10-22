@@ -110,7 +110,7 @@ matrix:
             - expect
       env: CC_BIN=gcc-7 CXX_BIN=g++-7 DUMMY=release
       script:
-        - cmake . -DCMAKE_BUILD_TYPE=Release
+        - cmake . -DCMAKE_C_COMPILER=$CC_BIN -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=Release
         - make -j2
         - ctest --output-on-failure
 
@@ -256,7 +256,7 @@ matrix:
             - expect
       env: CC_BIN=clang-5.0 CXX_BIN=clang++-5.0 DUMMY=release
       script:
-        - cmake . -DCMAKE_BUILD_TYPE=Release
+        - cmake . -DCMAKE_C_COMPILER=$CC_BIN -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=Release
         - make -j2
         - ctest --output-on-failure
 
@@ -278,7 +278,7 @@ matrix:
             - expect
       env: CC_BIN=clang-5.0 CXX_BIN=clang++-5.0 DUMMY=address-sanitizer
       script:
-        - cmake . -DCMAKE_BUILD_TYPE=debug -DSANITIZER=address
+        - cmake . -DCMAKE_C_COMPILER=$CC_BIN -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=debug -DSANITIZER=address
         - make -j2
         - ctest --output-on-failure
 
@@ -300,7 +300,7 @@ matrix:
             - expect
       env: CC_BIN=clang-5.0 CXX_BIN=clang++-5.0 DUMMY=undefined-behavior-sanitizer
       script:
-        - cmake . -DCMAKE_BUILD_TYPE=debug -DSANITIZER=undefined
+        - cmake . -DCMAKE_C_COMPILER=$CC_BIN -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=debug -DSANITIZER=undefined
         - make -j2
         - ctest --output-on-failure
 
@@ -322,7 +322,7 @@ matrix:
             - expect
       env: CC_BIN=clang-5.0 CXX_BIN=clang++-5.0 DUMMY=fuzzing
       script:
-        - cmake . -DFUZZING_BUILD_MODE=on
+        - cmake . -DCMAKE_C_COMPILER=$CC_BIN -DCMAKE_CXX_COMPILER=$CXX_BIN -DFUZZING_BUILD_MODE=on
         - make -j2
         - ctest --output-on-failure
 
@@ -344,7 +344,7 @@ matrix:
             - expect
       env: CC_BIN=clang-5.0 CXX_BIN=clang++-5.0 DUMMY=use-dbus-off
       script:
-        - cmake . -DCMAKE_BUILD_TYPE=debug -DUSE_DBUS=OFF
+        - cmake . -DCMAKE_C_COMPILER=$CC_BIN -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=debug -DUSE_DBUS=OFF
         - make -j2
         - ctest --output-on-failure
 
@@ -369,7 +369,7 @@ matrix:
       before_script:
         - pip install --user cpp-coveralls
       script:
-        - cmake . $OPTION
+        - cmake . -DCMAKE_C_COMPILER=$CC_BIN -DCMAKE_CXX_COMPILER=$CXX_BIN $OPTION
         - make -j2
         - ctest --output-on-failure
       after_success:
