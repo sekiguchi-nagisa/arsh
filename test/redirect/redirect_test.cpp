@@ -405,16 +405,15 @@ TEST_F(RedirectTest, fd) {
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("var a = new UnixFD('%s'); __puts -2 AAA 2>> $a", this->getTargetName()), 0));
     ASSERT_NO_FATAL_FAILURE(this->contentEq("hello world\n12345\nAAA\n"));
 
-    auto v = CL(R"(
-        var a = new UnixFD('%s')
-        var r = new [String]()
-        while(read -u $a) { $r.add($REPLY); }
-        true
-        assert $r.size() == 3
-        assert $r[0] == 'hello world'
-        assert $r[1] == '12345'
-        assert $r[2] == 'AAA'
-)", this->getTargetName());
+    auto v = CL(
+        "var a = new UnixFD('%s')\n"
+        "var r = new [String]()\n"
+        "while(read -u $a) { $r.add($REPLY); }\n"
+        "true\n"
+        "assert $r.size() == 3\n"
+        "assert $r[0] == 'hello world'\n"
+        "assert $r[1] == '12345'\n"
+        "assert $r[2] == 'AAA'\n", this->getTargetName());
     ASSERT_NO_FATAL_FAILURE(this->expect(std::move(v), 0));
 
     // not recreation file if already exist
