@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2016 Nagisa Sekiguchi
+ * Copyright (C) 2015-2017 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -206,6 +206,10 @@ private:
      */
     void swapBuffer(unsigned char *&newBuf, unsigned int &newSize);
 
+    unsigned int toCodePoint(unsigned int offset, int &code) const {
+        return UnicodeUtil::utf8ToCodePoint((char *)(this->buf + offset), this->getUsedSize() - offset, code);
+    }
+
 protected:
     /**
      * fill buffer. called from this->nextToken().
@@ -308,7 +312,7 @@ std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token) const {
     std::string marker;
     for(unsigned int i = lineToken.pos; i < token.pos;) {
         int code = 0;
-        i += UnicodeUtil::utf8ToCodePoint((char *)(this->buf + i), this->getUsedSize() - i, code);
+        i += this->toCodePoint(i, code);
         if(code < 0) {
             return marker;
         }
@@ -330,7 +334,7 @@ std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token) const {
     for(unsigned int i = token.pos; i < stopPos;) {
         unsigned int prev = i;
         int code = 0;
-        i += UnicodeUtil::utf8ToCodePoint((char *)(this->buf + i), this->getUsedSize() - i, code);
+        i += this->toCodePoint(i, code);
         if(code < 0) {
             return marker;
         }
