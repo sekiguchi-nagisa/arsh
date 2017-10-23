@@ -136,6 +136,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <EXPR> "catch"           { MODE(STMT); RET(CATCH); }
       <STMT> "class"           { MODE(NAME); RET(CLASS); }
       <STMT> "continue"        { RET(CONTINUE); }
+      <STMT> "coproc"          { RET(COPROC); }
       <STMT> "do"              { RET(DO); }
       <EXPR> "elif"            { MODE(STMT); RET(ELIF); }
       <EXPR> "else"            { RET(ELSE); }
@@ -277,6 +278,7 @@ TokenKind Lexer::nextToken(Token &token) {
 
       <CMD> "|"                { POP_MODE(); MODE(STMT); RET(PIPE); }
       <CMD> "&"                { RET(BACKGROUND); }
+      <CMD> ("&!" | "&|")      { RET(DISOWN_BG); }
       <CMD> "||"               { POP_MODE(); MODE(STMT); RET(COND_OR); }
       <CMD> "&&"               { POP_MODE(); MODE(STMT); RET(COND_AND); }
       <CMD> LINE_END           { POP_MODE(); MODE(STMT); RET(LINE_END); }

@@ -28,6 +28,7 @@
     TOKEN(CATCH                              , "catch") \
     TOKEN(CLASS                              , "class") \
     TOKEN(CONTINUE                           , "continue") \
+    TOKEN(COPROC                             , "coproc") \
     TOKEN(DO                                 , "do") \
     TOKEN(ELIF                               , "elif") \
     TOKEN(ELSE                               , "else") \
@@ -145,6 +146,7 @@
     TOKEN(REDIR_HERE_STR                     , "<<<") \
     TOKEN(PIPE                               , "|") \
     TOKEN(BACKGROUND                         , "&") \
+    TOKEN(DISOWN_BG                          , "&!") \
     /* type  */\
     TOKEN(TYPE_OPEN                          , "<") /* < */\
     TOKEN(TYPE_CLOSE                         , ">") /* > */\
