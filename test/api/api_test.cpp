@@ -169,10 +169,12 @@ TEST(API, case6) {
     DSState_delete(&state);
 }
 
-static ProcHandle exec(std::string &&str) {
+static ProcHandle exec(std::string &&str, bool jobControl = true) {
     return ProcBuilder::spawn(true, [&] {
         DSState *state = DSState_create();
-        DSState_setOption(state, DS_OPTION_JOB_CONTROL);
+        if(jobControl) {
+            DSState_setOption(state, DS_OPTION_JOB_CONTROL);
+        }
         int ret = DSState_eval(state, nullptr, str.c_str(), str.size(), nullptr);
         DSState_delete(&state);
         return ret;
@@ -180,6 +182,7 @@ static ProcHandle exec(std::string &&str) {
 }
 
 #define EXEC(...) exec(format(__VA_ARGS__)).waitAndGetResult(true)
+#define EXEC2(...) exec(format(__VA_ARGS__), false).waitAndGetResult(true)
 
 struct PIDs {
     pid_t pid;
@@ -264,6 +267,44 @@ TEST(API, case7) {
 
     ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pid, pids[0].pgid));
     ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pid, pids[1].pgid));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pgid, pids[1].pgid));
+}
+
+TEST(API, case8) {
+    SCOPED_TRACE("");
+
+    // normal
+    auto result = EXEC2("%s --first | %s", PID_CHECK_PATH, PID_CHECK_PATH);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status));
+    auto pids = decompose(result.out);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].ppid, pids[1].ppid));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pid, pids[0].pgid));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[1].pid, pids[1].pgid));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pgid, pids[1].pgid));
+
+    // udc1
+    result = EXEC2("pidcheck() { command %s $@; }; %s --first | pidcheck", PID_CHECK_PATH, PID_CHECK_PATH);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status));
+    pids = decompose(result.out);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].ppid, pids[1].ppid));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pid, pids[0].pgid));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[1].pid, pids[1].pgid));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pgid, pids[1].pgid));
+
+    // udc2
+    result = EXEC2("pidcheck() { command %s $@; }; pidcheck --first | %s", PID_CHECK_PATH, PID_CHECK_PATH);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status));
+    pids = decompose(result.out);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].ppid, pids[1].ppid));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pid, pids[0].pgid));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[1].pid, pids[1].pgid));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pgid, pids[1].pgid));
 }
 
