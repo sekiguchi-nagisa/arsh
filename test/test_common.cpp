@@ -106,11 +106,11 @@ void TempFileFactory::freeName() {
 }
 
 
-// ##################
-// ##     Proc     ##
-// ##################
+// ########################
+// ##     ProcHandle     ##
+// ########################
 
-int Proc::wait() {
+int ProcHandle::wait() {
     if(this->pid() > -1) {
         close(this->out());
         close(this->err());
@@ -127,7 +127,7 @@ int Proc::wait() {
     return 0;
 }
 
-Output Proc::readAll() {
+Output ProcHandle::readAll() {
     Output output;
 
     struct pollfd pollfds[2]{};
@@ -181,7 +181,7 @@ static std::string toString(const ydsh::ByteBuffer &buf, bool removeLastSpace) {
     return out;
 }
 
-ProcResult Proc::waitAndGetResult(bool removeLastSpace) {
+ProcResult ProcHandle::waitAndGetResult(bool removeLastSpace) {
     auto output = this->readAll();
     int status = this->wait();
 
@@ -209,8 +209,8 @@ ProcBuilder& ProcBuilder::addArgs(const std::vector<std::string> &values) {
     return *this;
 }
 
-Proc ProcBuilder::spawn(bool usePipe) const {
-    return fork(usePipe, [&] {
+ProcHandle ProcBuilder::operator()(bool usePipe) const {
+    return spawn(usePipe, [&] {
         char *argv[this->args.size() + 1];
         for(unsigned int i = 0; i < this->args.size(); i++) {
             argv[i] = const_cast<char *>(this->args[i].c_str());
@@ -225,7 +225,7 @@ Proc ProcBuilder::spawn(bool usePipe) const {
 }
 
 int ProcBuilder::exec(Output *output) const {
-    auto proc = this->spawn(output != nullptr);
+    auto proc = (*this)(output != nullptr);
     if(output != nullptr) {
         *output = proc.readAll();
     }
@@ -235,7 +235,7 @@ int ProcBuilder::exec(Output *output) const {
 static constexpr unsigned int READ_PIPE = 0;
 static constexpr unsigned int WRITE_PIPE = 1;
 
-Proc ProcBuilder::forkImpl(bool usePipe) {
+ProcHandle ProcBuilder::spawnImpl(bool usePipe) {
     // flush standard stream due to prevent mixing io buffer
     fflush(stdout);
     fflush(stderr);
@@ -262,7 +262,7 @@ Proc ProcBuilder::forkImpl(bool usePipe) {
             close(errpipe[READ_PIPE]);
         }
 
-        return Proc(pid, usePipe ? outpipe[READ_PIPE] : -1, usePipe ? errpipe[READ_PIPE] : -1);
+        return ProcHandle(pid, usePipe ? outpipe[READ_PIPE] : -1, usePipe ? errpipe[READ_PIPE] : -1);
     } else if(pid == 0) {
         if(usePipe) {
             dup2(outpipe[WRITE_PIPE], STDOUT_FILENO);
@@ -273,7 +273,7 @@ Proc ProcBuilder::forkImpl(bool usePipe) {
         close(errpipe[READ_PIPE]);
         close(errpipe[WRITE_PIPE]);
 
-        return Proc();
+        return ProcHandle();
     } else {
         error_at("fork failed");
     }

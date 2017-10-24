@@ -66,7 +66,7 @@ struct ProcResult {
     std::string err;
 };
 
-class Proc {
+class ProcHandle {
 private:
     /**
      * after call wait, will be -1
@@ -84,29 +84,29 @@ private:
     int err_;
 
 public:
-    NON_COPYABLE(Proc);
+    NON_COPYABLE(ProcHandle);
 
-    Proc() : Proc(-1, -1, -1) {}
+    ProcHandle() : ProcHandle(-1, -1, -1) {}
 
-    Proc(pid_t pid, int out, int err) noexcept : pid_(pid), out_(out), err_(err) {}
+    ProcHandle(pid_t pid, int out, int err) noexcept : pid_(pid), out_(out), err_(err) {}
 
-    Proc(Proc &&proc) noexcept : pid_(proc.pid_), out_(proc.out_), err_(proc.err_) {
+    ProcHandle(ProcHandle &&proc) noexcept : pid_(proc.pid_), out_(proc.out_), err_(proc.err_) {
         proc.pid_ = -1;
         proc.out_ = -1;
         proc.err_ = -1;
     }
 
-    ~Proc() {
+    ~ProcHandle() {
         this->wait();
     }
 
-    Proc &operator=(Proc &&proc) noexcept {
+    ProcHandle &operator=(ProcHandle &&proc) noexcept {
         auto tmp(std::move(proc));
         this->swap(tmp);
         return *this;
     }
 
-    void swap(Proc &proc) noexcept {
+    void swap(ProcHandle &proc) noexcept {
         std::swap(this->pid_, proc.pid_);
         std::swap(this->out_, proc.out_);
         std::swap(this->err_, proc.err_);
@@ -167,7 +167,7 @@ public:
         return *this;
     }
 
-    Proc spawn(bool usePipe = false) const;
+    ProcHandle operator()(bool usePipe = false) const;
 
     std::string execAndGetOutput(bool removeLastSpace = true) const {
         auto r = this->execAndGetResult(removeLastSpace);
@@ -175,7 +175,7 @@ public:
     }
 
     ProcResult execAndGetResult(bool removeLastSpace = true) const {
-        return this->spawn(true).waitAndGetResult(removeLastSpace);
+        return (*this)(true).waitAndGetResult(removeLastSpace);
     }
 
     int exec(Output *output = nullptr) const;
@@ -185,10 +185,10 @@ public:
     }
 
     template <typename Func>
-    static Proc fork(bool usePipe, Func func) {
-        Proc proc = forkImpl(usePipe);
-        if(proc) {
-            return proc;
+    static ProcHandle spawn(bool usePipe, Func func) {
+        ProcHandle handle = spawnImpl(usePipe);
+        if(handle) {
+            return handle;
         } else {
             int ret = func();
             exit(ret);
@@ -196,7 +196,7 @@ public:
     }
 
 private:
-    static Proc forkImpl(bool usePipe);
+    static ProcHandle spawnImpl(bool usePipe);
 
     void syncPWD() const;
 

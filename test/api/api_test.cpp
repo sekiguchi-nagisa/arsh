@@ -169,8 +169,8 @@ TEST(API, case6) {
     DSState_delete(&state);
 }
 
-static Proc exec(std::string &&str) {
-    return ProcBuilder::fork(true, [&] {
+static ProcHandle exec(std::string &&str) {
+    return ProcBuilder::spawn(true, [&] {
         DSState *state = DSState_create();
         DSState_setOption(state, DS_OPTION_JOB_CONTROL);
         int ret = DSState_eval(state, nullptr, str.c_str(), str.size(), nullptr);
