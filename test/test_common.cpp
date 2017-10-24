@@ -127,8 +127,8 @@ int ProcHandle::wait() {
     return 0;
 }
 
-Output ProcHandle::readAll() {
-    Output output;
+std::pair<std::string, std::string> ProcHandle::readAll() {
+    std::pair<std::string, std::string> output;
 
     struct pollfd pollfds[2]{};
     pollfds[0].fd = this->out();
@@ -149,7 +149,7 @@ Output ProcHandle::readAll() {
                 char buf[64];
                 int readSize = read(pollfds[i].fd, buf, ydsh::arraySize(buf));
                 if(readSize > 0) {
-                    (i == 0 ? output.out : output.err).append(buf, readSize);
+                    (i == 0 ? output.first : output.second).append(buf, readSize);
                 }
                 if(readSize == -1 && (errno == EAGAIN || errno == EINTR)) {
                     continue;
@@ -172,16 +172,11 @@ static bool isSpace(char ch) {
     return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
 }
 
-static std::string toString(const ydsh::ByteBuffer &buf, bool removeLastSpace) {
-    std::string out(buf.get(), buf.size());
-
-    if(removeLastSpace) {
-        for(; !out.empty() && isSpace(out.back()); out.pop_back());
-    }
-    return out;
+static void trimLastSpace(std::string &str) {
+    for(; !str.empty() && isSpace(str.back()); str.pop_back());
 }
 
-ProcResult ProcHandle::waitAndGetResult(bool removeLastSpace) {
+Output ProcHandle::waitAndGetResult(bool removeLastSpace) {
     auto output = this->readAll();
     int status = this->wait();
 
@@ -193,9 +188,14 @@ ProcResult ProcHandle::waitAndGetResult(bool removeLastSpace) {
         fatal("invalid exit status\n");
     }
 
+    if(removeLastSpace) {
+        trimLastSpace(output.first);
+        trimLastSpace(output.second);
+    }
+
     return {.status = status,
-            .out = toString(output.out, removeLastSpace),
-            .err = toString(output.err, removeLastSpace)};
+            .out = std::move(output.first),
+            .err = std::move(output.second)};
 }
 
 // #########################
@@ -222,14 +222,6 @@ ProcHandle ProcBuilder::operator()(bool usePipe) const {
         execvp(argv[0], argv);
         return -errno;
     });
-}
-
-int ProcBuilder::exec(Output *output) const {
-    auto proc = (*this)(output != nullptr);
-    if(output != nullptr) {
-        *output = proc.readAll();
-    }
-    return proc.wait();
 }
 
 static constexpr unsigned int READ_PIPE = 0;

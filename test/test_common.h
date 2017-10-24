@@ -56,11 +56,6 @@ private:
 };
 
 struct Output {
-    ydsh::ByteBuffer out;
-    ydsh::ByteBuffer err;
-};
-
-struct ProcResult {
     int status;
     std::string out;
     std::string err;
@@ -130,9 +125,9 @@ public:
 
     int wait();
 
-    Output readAll();
+    std::pair<std::string, std::string> readAll();
 
-    ProcResult waitAndGetResult(bool removeLastSpace = true);
+    Output waitAndGetResult(bool removeLastSpace = true);
 };
 
 class ProcBuilder {
@@ -169,19 +164,12 @@ public:
 
     ProcHandle operator()(bool usePipe = false) const;
 
-    std::string execAndGetOutput(bool removeLastSpace = true) const {
-        auto r = this->execAndGetResult(removeLastSpace);
-        return std::move(r.out);
-    }
-
-    ProcResult execAndGetResult(bool removeLastSpace = true) const {
+    Output execAndGetResult(bool removeLastSpace = true) const {
         return (*this)(true).waitAndGetResult(removeLastSpace);
     }
 
-    int exec(Output *output = nullptr) const;
-
-    int exec(Output &output) const {
-        return this->exec(&output);
+    int exec() const {
+        return (*this)(false).wait();
     }
 
     template <typename Func>

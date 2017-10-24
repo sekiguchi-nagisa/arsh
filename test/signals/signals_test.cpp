@@ -96,10 +96,10 @@ static std::vector<std::string> toList(const ydsh::SignalPair *pairs) {
 
 
 TEST(Signal, all) {
-    std::string killPath = ProcBuilder{"which", "kill"}.execAndGetOutput();
+    std::string killPath = ProcBuilder{"which", "kill"}.execAndGetResult().out;
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(killPath.size() > 0));
 
-    std::string killOut = ProcBuilder{killPath.c_str(), "-l"}.execAndGetOutput();
+    std::string killOut = ProcBuilder{killPath.c_str(), "-l"}.execAndGetResult().out;
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(killOut.size() > 0));
 
     auto expected = toSignalList(killOut);
