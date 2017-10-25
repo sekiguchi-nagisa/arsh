@@ -2175,7 +2175,7 @@ public:
     }
 
     void dump(const char *fieldName, const std::vector<Node *> &nodes) {
-        this->dumpNodes(fieldName, nodes.begin(), nodes.end());
+        this->dumpNodes(fieldName, nodes.data(), nodes.data() + nodes.size());
     }
 
     template <typename T>
@@ -2183,24 +2183,11 @@ public:
 
     template <typename T, typename = convertible_t<T *>>
     void dump(const char *fieldName, const std::vector<T *> &nodes) {
-        this->dumpNodes(fieldName, nodes.begin(), nodes.end());
+        this->dumpNodes(fieldName, reinterpret_cast<Node *const*>(nodes.data()),
+                        reinterpret_cast<Node *const*>(nodes.data() + nodes.size()));
     }
 
-    void dump(const char *fieldName, const std::list<Node *> &nodes) {
-        this->dumpNodes(fieldName, nodes.begin(), nodes.end());
-    }
-
-    template <typename Iter>
-    void dumpNodes(const char *fieldName, Iter begin, const Iter end) {
-        this->writeName(fieldName);
-        this->newline();
-
-        this->enterIndent();
-        for(; begin != end; ++begin) {
-            this->dumpNodeAt(*begin);
-        }
-        this->leaveIndent();
-    }
+    void dump(const char *fieldName, const std::list<Node *> &nodes);
 
     /**
      * dump node with indent
@@ -2242,7 +2229,7 @@ private:
 
     void dumpNodeHeader(const Node &node, bool inArray = false);
 
-    void dumpNodeAt(const Node *node);
+    void dumpNodes(const char *fieldName, Node* const* begin, Node* const* end);
 
     void writeName(const char *fieldName);
 };
