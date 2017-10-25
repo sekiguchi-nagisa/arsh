@@ -1364,22 +1364,6 @@ void NodeDumper::dump(const char *fieldName, const char *value) {
     fputs("\"\n", this->fp);
 }
 
-void NodeDumper::dump(const char *fieldName, const std::list<Node *> &nodes) {
-    this->writeName(fieldName);
-    this->newline();
-
-    this->enterIndent();
-    for(Node *node : nodes) {
-        this->indent();
-        fputs("- ", this->fp);
-        this->dumpNodeHeader(*node, true);
-        this->enterIndent();
-        node->dump(*this);
-        this->leaveIndent();
-    }
-    this->leaveIndent();
-}
-
 void NodeDumper::dump(const char *fieldName, const Node &node) {
     // write field name
     this->writeName(fieldName);
@@ -1446,21 +1430,12 @@ void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
     }
 }
 
-void NodeDumper::dumpNodes(const char *fieldName, Node * const * begin, Node *const * end) {
-    this->writeName(fieldName);
-    this->newline();
-
+void NodeDumper::dumpNodeAt(const Node *node) {
+    this->indent();
+    fputs("- ", this->fp);
+    this->dumpNodeHeader(*node, true);
     this->enterIndent();
-    for(; begin != end; ++begin) {
-        Node *node = *begin;
-
-        this->indent();
-        fputs("- ", this->fp);
-        this->dumpNodeHeader(*node, true);
-        this->enterIndent();
-        node->dump(*this);
-        this->leaveIndent();
-    }
+    node->dump(*this);
     this->leaveIndent();
 }
 
