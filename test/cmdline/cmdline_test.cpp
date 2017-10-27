@@ -61,7 +61,7 @@ public:
 
     virtual void TearDown() { }
 
-    void expect(const ProcBuilder &builder, int status, const char *out = "", const char *err = "") {
+    void expect(ProcBuilder &&builder, int status, const char *out = "", const char *err = "") {
         SCOPED_TRACE("");
 
         auto result = builder.execAndGetResult(false);
@@ -76,7 +76,7 @@ public:
         }
     }
 
-    void expectRegex(const ProcBuilder &builder, int status, const char *out, const char *err = "") {
+    void expectRegex(ProcBuilder &&builder, int status, const char *out, const char *err = "") {
         SCOPED_TRACE("");
 
         auto result = builder.execAndGetResult(false);
@@ -425,10 +425,10 @@ TEST_F(CmdlineTest, prompt) {
         const char *name = "TIME_SOURCE";
         const char *value = "2016-1-13T15:15:12Z";
 
-        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "ps_intrp '\\d'").addEnv(name, value), 0, "Wed 01 13\n"));
-        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "ps_intrp '\\t'").addEnv(name, value), 0, "15:15:12\n"));
-        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "ps_intrp '\\T'").addEnv(name, value), 0, "03:15:12\n"));
-        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "ps_intrp '\\@'").addEnv(name, value), 0, "03:15 PM\n"));
+        ASSERT_NO_FATAL_FAILURE(this->expect(std::move(ds("-c", "ps_intrp '\\d'").addEnv(name, value)), 0, "Wed 01 13\n"));
+        ASSERT_NO_FATAL_FAILURE(this->expect(std::move(ds("-c", "ps_intrp '\\t'").addEnv(name, value)), 0, "15:15:12\n"));
+        ASSERT_NO_FATAL_FAILURE(this->expect(std::move(ds("-c", "ps_intrp '\\T'").addEnv(name, value)), 0, "03:15:12\n"));
+        ASSERT_NO_FATAL_FAILURE(this->expect(std::move(ds("-c", "ps_intrp '\\@'").addEnv(name, value)), 0, "03:15 PM\n"));
     } else {
         ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", cmd.c_str()), 1));
     }

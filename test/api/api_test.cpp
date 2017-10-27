@@ -5,6 +5,7 @@
 
 #include <ydsh/ydsh.h>
 #include <config.h>
+#include <misc/fatal.h>
 
 #include <sys/types.h>
 #include <pwd.h>
@@ -170,7 +171,8 @@ TEST(API, case6) {
 }
 
 static ProcHandle exec(std::string &&str, bool jobControl = true) {
-    return ProcBuilder::spawn(true, [&] {
+    IOConfig config{IOConfig::INHERIT, IOConfig::PIPE, IOConfig::PIPE};
+    return ProcBuilder::spawn(config, [&] {
         DSState *state = DSState_create();
         if(jobControl) {
             DSState_setOption(state, DS_OPTION_JOB_CONTROL);

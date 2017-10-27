@@ -2,6 +2,7 @@
 
 #include <misc/files.h>
 #include <misc/util.hpp>
+#include <misc/buffer.hpp>
 #include "../test_common.h"
 
 

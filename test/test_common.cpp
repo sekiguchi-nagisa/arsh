@@ -22,10 +22,13 @@
 #include <stdarg.h>
 
 #include <cstdlib>
+#include <cassert>
 
 #include <symbol.h>
 #include <misc/util.hpp>
 #include <misc/files.h>
+#include <misc/flag_util.hpp>
+#include <misc/fatal.h>
 #include "test_common.h"
 
 #define error_at(fmt, ...) fatal(fmt ": %s\n", ## __VA_ARGS__, strerror(errno))
@@ -112,6 +115,7 @@ void TempFileFactory::freeName() {
 
 int ProcHandle::wait() {
     if(this->pid() > -1) {
+        close(this->in());
         close(this->out());
         close(this->err());
 
@@ -120,6 +124,7 @@ int ProcHandle::wait() {
         waitpid(this->pid(), &status, 0);
 
         this->pid_ = -1;
+        this->in_ = -1;
         this->out_ = -1;
         this->err_ = -1;
         return status;
@@ -209,8 +214,8 @@ ProcBuilder& ProcBuilder::addArgs(const std::vector<std::string> &values) {
     return *this;
 }
 
-ProcHandle ProcBuilder::operator()(bool usePipe) const {
-    return spawn(usePipe, [&] {
+ProcHandle ProcBuilder::operator()() {
+    return spawn(this->config, [&] {
         char *argv[this->args.size() + 1];
         for(unsigned int i = 0; i < this->args.size(); i++) {
             argv[i] = const_cast<char *>(this->args[i].c_str());
@@ -227,48 +232,96 @@ ProcHandle ProcBuilder::operator()(bool usePipe) const {
 static constexpr unsigned int READ_PIPE = 0;
 static constexpr unsigned int WRITE_PIPE = 1;
 
-ProcHandle ProcBuilder::spawnImpl(bool usePipe) {
-    // flush standard stream due to prevent mixing io buffer
-    fflush(stdout);
-    fflush(stderr);
-    fflush(stdin);
+using namespace ydsh;
 
-    // create pipe
-    pid_t outpipe[2];
-    pid_t errpipe[2];
+static constexpr flag8_t IO_ATTR_IN_INHERIT  = 1 << 0;
+static constexpr flag8_t IO_ATTR_OUT_INHERIT = 1 << 1;
+static constexpr flag8_t IO_ATTR_ERR_INHERIT = 1 << 2;
 
-    if(pipe(outpipe) < 0) {
-        error_at("pipe creation failed");
+static int tryToDup(int srcFD, int targetFD, bool inherit) {
+    if(inherit) {
+        return close(srcFD);
+    } else {
+        return dup2(srcFD, targetFD);
     }
+}
 
-    if(pipe(errpipe) < 0) {
-        error_at("pipe creation failed");
-    }
+static ProcHandle spawnImpl(const flag8_set_t attr, int (&inpipe)[2], int (&outpipe)[2], int (&errpipe)[2]) {
+    const bool inheritIn = hasFlag(attr, IO_ATTR_IN_INHERIT);
+    const bool inheritOut = hasFlag(attr, IO_ATTR_OUT_INHERIT);
+    const bool inheritErr = hasFlag(attr, IO_ATTR_ERR_INHERIT);
 
-    pid_t pid = ::fork();
+    pid_t pid = fork();
     if(pid > 0) {
+        close(inpipe[READ_PIPE]);
         close(outpipe[WRITE_PIPE]);
         close(errpipe[WRITE_PIPE]);
-        if(!usePipe) {
+        if(inheritIn) {
+            close(inpipe[WRITE_PIPE]);
+        }
+        if(inheritOut) {
             close(outpipe[READ_PIPE]);
+        }
+        if(inheritErr) {
             close(errpipe[READ_PIPE]);
         }
 
-        return ProcHandle(pid, usePipe ? outpipe[READ_PIPE] : -1, usePipe ? errpipe[READ_PIPE] : -1);
+        return ProcHandle(
+                pid,
+                inheritIn ? -1 : inpipe[WRITE_PIPE],
+                inheritOut ? -1 : outpipe[READ_PIPE],
+                inheritErr ? -1 : errpipe[READ_PIPE]);
     } else if(pid == 0) {
-        if(usePipe) {
-            dup2(outpipe[WRITE_PIPE], STDOUT_FILENO);
-            dup2(errpipe[WRITE_PIPE], STDERR_FILENO);
-        }
+        tryToDup(inpipe[READ_PIPE], STDIN_FILENO, inheritIn);
+        tryToDup(outpipe[WRITE_PIPE], STDOUT_FILENO, inheritOut);
+        tryToDup(errpipe[WRITE_PIPE], STDERR_FILENO, inheritErr);
+
+        close(inpipe[WRITE_PIPE]);
         close(outpipe[READ_PIPE]);
-        close(outpipe[WRITE_PIPE]);
         close(errpipe[READ_PIPE]);
-        close(errpipe[WRITE_PIPE]);
 
         return ProcHandle();
     } else {
         error_at("fork failed");
     }
+}
+
+static flag8_set_t toAttr(const IOConfig &config) {
+    flag8_t attr = 0;
+    if(config.in.fd == IOConfig::INHERIT) {
+        setFlag(attr, IO_ATTR_IN_INHERIT);
+    }
+    if(config.out.fd == IOConfig::INHERIT) {
+        setFlag(attr, IO_ATTR_OUT_INHERIT);
+    }
+    if(config.err.fd == IOConfig::INHERIT) {
+        setFlag(attr, IO_ATTR_ERR_INHERIT);
+    }
+    return attr;
+}
+
+ProcHandle ProcBuilder::spawnImpl(IOConfig config) {
+    // flush standard stream due to prevent mixing io buffer
+    fflush(stdin);
+    fflush(stdout);
+    fflush(stderr);
+
+    pid_t inpipe[] = {config.in.fd, -1};
+    pid_t outpipe[] = {-1, config.out.fd};
+    pid_t errpipe[] = {-1, config.err.fd};
+
+    // create pipe
+    if(config.in.fd == IOConfig::PIPE && pipe(inpipe) < 0) {
+        error_at("pipe creation failed");
+    }
+    if(config.out.fd == IOConfig::PIPE && pipe(outpipe) < 0) {
+        error_at("pipe creation failed");
+    }
+    if(config.err.fd == IOConfig::PIPE && pipe(errpipe) < 0) {
+        error_at("pipe creation failed");
+    }
+
+    return ::spawnImpl(toAttr(config), inpipe, outpipe, errpipe);
 }
 
 void ProcBuilder::syncPWD() const {

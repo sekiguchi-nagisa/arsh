@@ -25,7 +25,7 @@
 #include <unordered_map>
 #include <initializer_list>
 
-#include <misc/buffer.hpp>
+#include <misc/noncopyable.h>
 
 // common utility for test
 
@@ -71,6 +71,11 @@ private:
     /**
      * after call wait, will be -1
      */
+    int in_;
+
+    /**
+     * after call wait, will be -1
+     */
     int out_;
 
     /**
@@ -81,12 +86,13 @@ private:
 public:
     NON_COPYABLE(ProcHandle);
 
-    ProcHandle() : ProcHandle(-1, -1, -1) {}
+    ProcHandle() : ProcHandle(-1, -1, -1, -1) {}
 
-    ProcHandle(pid_t pid, int out, int err) noexcept : pid_(pid), out_(out), err_(err) {}
+    ProcHandle(pid_t pid, int in, int out, int err) noexcept : pid_(pid), in_(in), out_(out), err_(err) {}
 
-    ProcHandle(ProcHandle &&proc) noexcept : pid_(proc.pid_), out_(proc.out_), err_(proc.err_) {
+    ProcHandle(ProcHandle &&proc) noexcept : pid_(proc.pid_), in_(proc.in_), out_(proc.out_), err_(proc.err_) {
         proc.pid_ = -1;
+        proc.in_ = -1;
         proc.out_ = -1;
         proc.err_ = -1;
     }
@@ -103,12 +109,17 @@ public:
 
     void swap(ProcHandle &proc) noexcept {
         std::swap(this->pid_, proc.pid_);
+        std::swap(this->in_, proc.in_);
         std::swap(this->out_, proc.out_);
         std::swap(this->err_, proc.err_);
     }
 
     pid_t pid() const {
         return this->pid_;
+    }
+
+    int in() const {
+        return this->in_;
     }
 
     int out() const {
@@ -123,6 +134,11 @@ public:
         return this->pid() > -1;
     }
 
+    /**
+     * wait process termination
+     * @return
+     * raw exit status
+     */
     int wait();
 
     std::pair<std::string, std::string> readAll();
@@ -130,8 +146,46 @@ public:
     Output waitAndGetResult(bool removeLastSpace = true);
 };
 
+struct IOConfig {
+    enum FDType : int {
+        INHERIT = -1,   // inherit parent file descriptor
+        PIPE    = -2,   // create pipe
+        PTY     = -3,   // create pty
+    };
+
+    struct FDWrapper {
+        int fd;
+
+        FDWrapper(int fd) : fd(fd) {}
+        FDWrapper(FDType type) : fd(static_cast<int>(type)) {}
+
+        operator bool() const {
+            return this->fd > -1;
+        }
+
+        /**
+         * close old fd and set
+         * @param fd
+         */
+        void reset(int fd) {
+            if(this->fd > -1) {
+                close(this->fd);
+            }
+            this->fd = fd;
+        }
+    };
+
+    FDWrapper in;
+    FDWrapper out;
+    FDWrapper err;
+
+    IOConfig(FDWrapper in, FDWrapper out, FDWrapper err) : in(in), out(out), err(err) {}
+    IOConfig() : IOConfig(INHERIT, INHERIT, INHERIT) {}
+};
+
 class ProcBuilder {
 private:
+    IOConfig config{};
     std::vector<std::string> args;
     std::unordered_map<std::string, std::string> env;
 
@@ -162,19 +216,50 @@ public:
         return *this;
     }
 
-    ProcHandle operator()(bool usePipe = false) const;
-
-    Output execAndGetResult(bool removeLastSpace = true) const {
-        return (*this)(true).waitAndGetResult(removeLastSpace);
+    /**
+     * close old fd and set
+     * @param fd
+     * @return
+     */
+    ProcBuilder &setIn(int fd) {
+        this->config.in.reset(fd);
+        return *this;
     }
 
-    int exec() const {
-        return (*this)(false).wait();
+    ProcBuilder &setOut(int fd) {
+        this->config.out.reset(fd);
+        return *this;
+    }
+
+    ProcBuilder &setErr(int fd) {
+        this->config.err.reset(fd);
+        return *this;
+    }
+
+    ProcHandle operator()();
+
+    /**
+     * if old out/err is INHERIT, set PIPE.
+     * @param removeLastSpace
+     * @return
+     */
+    Output execAndGetResult(bool removeLastSpace = true) {
+        if(this->config.out.fd == IOConfig::INHERIT) {
+            this->config.out = IOConfig::PIPE;
+        }
+        if(this->config.err.fd == IOConfig::INHERIT) {
+            this->config.err = IOConfig::PIPE;
+        }
+        return (*this)().waitAndGetResult(removeLastSpace);
+    }
+
+    int exec() {
+        return (*this)().wait();
     }
 
     template <typename Func>
-    static ProcHandle spawn(bool usePipe, Func func) {
-        ProcHandle handle = spawnImpl(usePipe);
+    static ProcHandle spawn(IOConfig config, Func func) {
+        ProcHandle handle = spawnImpl(config);
         if(handle) {
             return handle;
         } else {
@@ -184,7 +269,7 @@ public:
     }
 
 private:
-    static ProcHandle spawnImpl(bool usePipe);
+    static ProcHandle spawnImpl(IOConfig config);
 
     void syncPWD() const;
 
