@@ -27,7 +27,6 @@
 #include <symbol.h>
 #include <misc/util.hpp>
 #include <misc/files.h>
-#include <misc/flag_util.hpp>
 #include <misc/fatal.h>
 #include "test_common.h"
 
@@ -232,49 +231,25 @@ ProcHandle ProcBuilder::operator()() {
 static constexpr unsigned int READ_PIPE = 0;
 static constexpr unsigned int WRITE_PIPE = 1;
 
-using namespace ydsh;
-
-static constexpr flag8_t IO_ATTR_IN_INHERIT  = 1 << 0;
-static constexpr flag8_t IO_ATTR_OUT_INHERIT = 1 << 1;
-static constexpr flag8_t IO_ATTR_ERR_INHERIT = 1 << 2;
-
-static int tryToDup(int srcFD, int targetFD, bool inherit) {
-    if(inherit) {
-        return close(srcFD);
-    } else {
+static int tryToDup(int srcFD, int targetFD) {
+    if(srcFD > -1) {
         return dup2(srcFD, targetFD);
     }
+    return 0;
 }
 
-static ProcHandle spawnImpl(const flag8_set_t attr, int (&inpipe)[2], int (&outpipe)[2], int (&errpipe)[2]) {
-    const bool inheritIn = hasFlag(attr, IO_ATTR_IN_INHERIT);
-    const bool inheritOut = hasFlag(attr, IO_ATTR_OUT_INHERIT);
-    const bool inheritErr = hasFlag(attr, IO_ATTR_ERR_INHERIT);
-
+static ProcHandle spawnImpl(int (&inpipe)[2], int (&outpipe)[2], int (&errpipe)[2]) {
     pid_t pid = fork();
     if(pid > 0) {
         close(inpipe[READ_PIPE]);
         close(outpipe[WRITE_PIPE]);
         close(errpipe[WRITE_PIPE]);
-        if(inheritIn) {
-            close(inpipe[WRITE_PIPE]);
-        }
-        if(inheritOut) {
-            close(outpipe[READ_PIPE]);
-        }
-        if(inheritErr) {
-            close(errpipe[READ_PIPE]);
-        }
 
-        return ProcHandle(
-                pid,
-                inheritIn ? -1 : inpipe[WRITE_PIPE],
-                inheritOut ? -1 : outpipe[READ_PIPE],
-                inheritErr ? -1 : errpipe[READ_PIPE]);
+        return ProcHandle(pid, inpipe[WRITE_PIPE], outpipe[READ_PIPE], errpipe[READ_PIPE]);
     } else if(pid == 0) {
-        tryToDup(inpipe[READ_PIPE], STDIN_FILENO, inheritIn);
-        tryToDup(outpipe[WRITE_PIPE], STDOUT_FILENO, inheritOut);
-        tryToDup(errpipe[WRITE_PIPE], STDERR_FILENO, inheritErr);
+        tryToDup(inpipe[READ_PIPE], STDIN_FILENO);
+        tryToDup(outpipe[WRITE_PIPE], STDOUT_FILENO);
+        tryToDup(errpipe[WRITE_PIPE], STDERR_FILENO);
 
         close(inpipe[WRITE_PIPE]);
         close(outpipe[READ_PIPE]);
@@ -284,20 +259,6 @@ static ProcHandle spawnImpl(const flag8_set_t attr, int (&inpipe)[2], int (&outp
     } else {
         error_at("fork failed");
     }
-}
-
-static flag8_set_t toAttr(const IOConfig &config) {
-    flag8_t attr = 0;
-    if(config.in.fd == IOConfig::INHERIT) {
-        setFlag(attr, IO_ATTR_IN_INHERIT);
-    }
-    if(config.out.fd == IOConfig::INHERIT) {
-        setFlag(attr, IO_ATTR_OUT_INHERIT);
-    }
-    if(config.err.fd == IOConfig::INHERIT) {
-        setFlag(attr, IO_ATTR_ERR_INHERIT);
-    }
-    return attr;
 }
 
 ProcHandle ProcBuilder::spawnImpl(IOConfig config) {
@@ -321,7 +282,7 @@ ProcHandle ProcBuilder::spawnImpl(IOConfig config) {
         error_at("pipe creation failed");
     }
 
-    return ::spawnImpl(toAttr(config), inpipe, outpipe, errpipe);
+    return ::spawnImpl(inpipe, outpipe, errpipe);
 }
 
 void ProcBuilder::syncPWD() const {
