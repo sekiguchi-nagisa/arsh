@@ -279,9 +279,9 @@ ProcHandle ProcBuilder::spawnImpl(IOConfig config) {
     fflush(stdout);
     fflush(stderr);
 
-    pid_t inpipe[] = {config.in.fd, -1};
-    pid_t outpipe[] = {-1, config.out.fd};
-    pid_t errpipe[] = {-1, config.err.fd};
+    pid_t inpipe[] = {dup(config.in.fd), -1};
+    pid_t outpipe[] = {-1, dup(config.out.fd)};
+    pid_t errpipe[] = {-1, dup(config.err.fd)};
 
     // create pipe
     if(config.in.fd == IOConfig::PIPE && pipe(inpipe) < 0) {
