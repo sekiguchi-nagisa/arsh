@@ -4,6 +4,7 @@
 #include <config.h>
 #include <misc/files.h>
 #include <misc/util.hpp>
+#include <misc/fatal.h>
 #include "../test_common.h"
 
 #ifndef CMDLINE_TEST_DIR
@@ -111,7 +112,9 @@ public:
                 .setIn(IOConfig::PIPE)
                 .setOut(IOConfig::PIPE)
                 .setErr(IOConfig::PIPE)();
-        write(handle.in(), wrapper.value.c_str(), wrapper.value.size());
+        if(write(handle.in(), wrapper.value.c_str(), wrapper.value.size()) < 0) {
+            fatal("%s\n", strerror(errno));
+        }
         close(handle.in());
         auto result = handle.waitAndGetResult(false);
 
