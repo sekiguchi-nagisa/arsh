@@ -167,11 +167,11 @@ struct IOConfig {
          * close old fd and set
          * @param fd
          */
-        void reset(int fd) {
+        void reset(FDWrapper v) {
             if(this->fd > -1) {
                 close(this->fd);
             }
-            this->fd = fd;
+            this->fd = v.fd;
         }
     };
 
@@ -221,17 +221,17 @@ public:
      * @param fd
      * @return
      */
-    ProcBuilder &setIn(int fd) {
+    ProcBuilder &setIn(IOConfig::FDWrapper fd) {
         this->config.in.reset(fd);
         return *this;
     }
 
-    ProcBuilder &setOut(int fd) {
+    ProcBuilder &setOut(IOConfig::FDWrapper fd) {
         this->config.out.reset(fd);
         return *this;
     }
 
-    ProcBuilder &setErr(int fd) {
+    ProcBuilder &setErr(IOConfig::FDWrapper fd) {
         this->config.err.reset(fd);
         return *this;
     }
