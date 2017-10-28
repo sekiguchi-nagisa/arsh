@@ -52,6 +52,19 @@ static ProcBuilder ds(const char *arg, T && ...args) {
     return ProcBuilder{BIN_PATH, arg, std::forward<T>(args)...};
 }
 
+struct InputWrapper {
+    std::string value;
+    ProcBuilder builder;
+};
+
+template <unsigned int N>
+InputWrapper operator|(const char (&value)[N], ProcBuilder &&builder) {
+    return InputWrapper{
+            .value = std::string(value, N - 1),
+            .builder = std::move(builder),
+    };
+}
+
 class CmdlineTest : public ::testing::Test {
 public:
     CmdlineTest() = default;
@@ -88,6 +101,27 @@ public:
         }
         if(err != nullptr) {
             ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(result.err, ::testing::MatchesRegex(err)));
+        }
+    }
+
+    void expect(InputWrapper &&wrapper, int status, const char *out = "", const char *err = "") {
+        SCOPED_TRACE("");
+
+        auto handle = wrapper.builder
+                .setIn(IOConfig::PIPE)
+                .setOut(IOConfig::PIPE)
+                .setErr(IOConfig::PIPE)();
+        write(handle.in(), wrapper.value.c_str(), wrapper.value.size());
+        close(handle.in());
+        auto result = handle.waitAndGetResult(false);
+
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(status, result.status));
+
+        if(out != nullptr) {
+            ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(out, result.out.c_str()));
+        }
+        if(err != nullptr) {
+            ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(err, result.err.c_str()));
         }
     }
 };
@@ -482,6 +516,19 @@ TEST_F(CmdlineTest, toplevel_escape) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(out, r.out));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("", r.err.c_str()));
 }
+
+TEST_F(CmdlineTest, pipeline) {
+    ASSERT_NO_FATAL_FAILURE(this->expect("assert($0 == 'ydsh')" | ProcBuilder(BIN_PATH), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect("\\" | ProcBuilder(BIN_PATH), 0));
+
+    // with argument
+    ASSERT_NO_FATAL_FAILURE(
+            this->expect("assert($0 == 'ydsh' && $1 == 'hoge' && $2 == '123')" | ds("-s", "hoge", "123"), 0));
+
+    // force interactive
+    ASSERT_NO_FATAL_FAILURE(this->expect("$true\n" | ds("-i", "--quiet", "--norc"), 0, "(Boolean) true\n"));
+}
+
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
