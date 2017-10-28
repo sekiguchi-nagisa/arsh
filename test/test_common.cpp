@@ -134,6 +134,18 @@ int ProcHandle::wait() {
 std::pair<std::string, std::string> ProcHandle::readAll() {
     std::pair<std::string, std::string> output;
 
+    unsigned int validFDCount = 0;
+    if(this->out() > -1) {
+        validFDCount++;
+    }
+    if(this->err() > -1) {
+        validFDCount++;
+    }
+
+    if(validFDCount == 0) {
+        return output;
+    }
+
     struct pollfd pollfds[2]{};
     pollfds[0].fd = this->out();
     pollfds[0].events = POLLIN;
@@ -165,7 +177,7 @@ std::pair<std::string, std::string> ProcHandle::readAll() {
                 breakCount++;
             }
         }
-        if(breakCount == 2) {
+        if(breakCount == validFDCount) {
             break;
         }
     }
