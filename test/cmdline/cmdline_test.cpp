@@ -49,8 +49,8 @@ public:
 };
 
 template <typename ... T>
-static ProcBuilder ds(const char *arg, T && ...args) {
-    return ProcBuilder{BIN_PATH, arg, std::forward<T>(args)...};
+static ProcBuilder ds(T && ...args) {
+    return ProcBuilder{BIN_PATH, std::forward<T>(args)...};
 }
 
 struct InputWrapper {
@@ -521,8 +521,8 @@ TEST_F(CmdlineTest, toplevel_escape) {
 }
 
 TEST_F(CmdlineTest, pipeline) {
-    ASSERT_NO_FATAL_FAILURE(this->expect("assert($0 == 'ydsh')" | ProcBuilder(BIN_PATH), 0));
-    ASSERT_NO_FATAL_FAILURE(this->expect("\\" | ProcBuilder(BIN_PATH), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect("assert($0 == 'ydsh')" | ds(), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect("\\" | ds(), 0));
 
     // with argument
     ASSERT_NO_FATAL_FAILURE(

@@ -162,17 +162,6 @@ struct IOConfig {
         operator bool() const {
             return this->fd > -1;
         }
-
-        /**
-         * close old fd and set
-         * @param fd
-         */
-        void reset(FDWrapper v) {
-            if(this->fd > -1) {
-                close(this->fd);
-            }
-            this->fd = v.fd;
-        }
     };
 
     FDWrapper in;
@@ -222,17 +211,17 @@ public:
      * @return
      */
     ProcBuilder &setIn(IOConfig::FDWrapper fd) {
-        this->config.in.reset(fd);
+        this->config.in = fd;
         return *this;
     }
 
     ProcBuilder &setOut(IOConfig::FDWrapper fd) {
-        this->config.out.reset(fd);
+        this->config.out = fd;
         return *this;
     }
 
     ProcBuilder &setErr(IOConfig::FDWrapper fd) {
-        this->config.err.reset(fd);
+        this->config.err = fd;
         return *this;
     }
 
