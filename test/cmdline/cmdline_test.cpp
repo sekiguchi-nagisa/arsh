@@ -471,6 +471,38 @@ TEST_F(CmdlineTest, prompt) {
     }
 }
 
+TEST_F(CmdlineTest, logger) {
+#ifdef USE_LOGGING
+    bool useLogging = true;
+#else
+    bool useLogging = false;
+#endif
+
+    std::string cmd = BIN_PATH;
+    cmd += " --feature | grep USE_LOGGING";
+    if(useLogging) {
+        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", cmd.c_str()), 0, "USE_LOGGING\n"));
+
+        auto builder = ds("-c", "sh -c true").addEnv("YDSH_DUMP_EXEC", "on");
+        const char *re = ".+ xexecve.+";
+        ASSERT_NO_FATAL_FAILURE(this->expectRegex(std::move(builder), 0, "", re));
+
+        // specify appender
+        builder = ds("-c", "var a = 0; exit $a")
+                .addEnv("YDSH_TRACE_TOKEN", "on")
+                .addEnv("YDSH_APPENDER", "/dev/stdout");
+        ASSERT_NO_FATAL_FAILURE(this->expectRegex(std::move(builder), 0, ".+"));
+
+        // specify appender (not found)
+        builder = ds("-c", "var a = 0; exit $a")
+                .addEnv("YDSH_TRACE_TOKEN", "on")
+                .addEnv("YDSH_APPENDER", "/dev/hogehogehuga");
+        ASSERT_NO_FATAL_FAILURE(this->expectRegex(std::move(builder), 0, "", ".+"));
+    } else {
+        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", cmd.c_str()), 1));
+    }
+}
+
 #define CL(...) ProcBuilder {BIN_PATH, "-c", format(__VA_ARGS__).c_str()}
 
 TEST_F(CmdlineTest, pid) {
@@ -531,6 +563,7 @@ TEST_F(CmdlineTest, pipeline) {
     // force interactive
     ASSERT_NO_FATAL_FAILURE(this->expect("$true\n" | ds("-i", "--quiet", "--norc"), 0, "(Boolean) true\n"));
 }
+
 
 
 int main(int argc, char **argv) {
