@@ -564,7 +564,37 @@ TEST_F(CmdlineTest, pipeline) {
     ASSERT_NO_FATAL_FAILURE(this->expect("$true\n" | ds("-i", "--quiet", "--norc"), 0, "(Boolean) true\n"));
 }
 
+struct CmdlineTest2 : public CmdlineTest, public TempFileFactory {
+    CmdlineTest2() = default;
+    virtual ~CmdlineTest2() = default;
 
+    virtual void SetUp() { this->createTemp(); }
+
+    virtual void TearDown() { this->deleteTemp(); }
+};
+
+TEST_F(CmdlineTest2, script) {
+    std::string fileName = this->getTmpDirName();
+    fileName += "/target.ds";
+    FILE *fp = fopen(fileName.c_str(), "w");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(fp != nullptr));
+    fprintf(fp, "assert($0 == \"%s\"); assert($@.size() == 1); assert($@[0] == 'A')", fileName.c_str());
+    fclose(fp);
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds(fileName.c_str(), "A"), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--", fileName.c_str(), "A"), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("hogehogehuga"), 1, "", "^ydsh: hogehogehuga: .+$"));
+
+    // script dir
+    fileName = this->getTmpDirName();
+    fileName += "/target2.ds";
+    fp = fopen(fileName.c_str(), "w");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(fp != nullptr));
+    fprintf(fp, "assert $SCRIPT_DIR == \"$(cd $(dirname $0) && pwd -P)\"");
+    fclose(fp);
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds(fileName.c_str()), 0));
+}
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
