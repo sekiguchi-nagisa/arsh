@@ -29,3 +29,6 @@ $YDSH_BIN -c "cd $DIR; assert "'$(complete ./link/../).size() == 2'
 $YDSH_BIN -c "cd $DIR; assert "'$(complete ./link/../)[0] == "link/"'
 
 $YDSH_BIN -c "cd $DIR; assert "'$(complete ./link/../)[1] == "work/"'
+
+
+cleanup_tmpdir
