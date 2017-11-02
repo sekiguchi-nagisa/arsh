@@ -27,11 +27,11 @@ Language specification is subject to change without notice.
 ## How to use
 
 ```
-$ ./setup.sh
-$ cd build
+$ cmake .
 $ make
+$ ./ydsh
 ```
 if not need D-Bus support,
 ```
-$ cmake .. -DUSE_DBUS=off
+$ cmake . -DUSE_DBUS=off
 ```
