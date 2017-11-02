@@ -78,35 +78,35 @@ public:
     void expect(ProcBuilder &&builder, int status, const char *out = "", const char *err = "") {
         SCOPED_TRACE("");
 
+        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(out != nullptr));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(err != nullptr));
+
         auto result = builder.execAndGetResult(false);
 
         ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(status, result.status));
-
-        if(out != nullptr) {
-            ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(out, result.out.c_str()));
-        }
-        if(err != nullptr) {
-            ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(err, result.err.c_str()));
-        }
+        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(out, result.out.c_str()));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(err, result.err.c_str()));
     }
 
     void expectRegex(ProcBuilder &&builder, int status, const char *out, const char *err = "") {
         SCOPED_TRACE("");
 
+        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(out != nullptr));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(err != nullptr));
+
         auto result = builder.execAndGetResult(false);
 
         ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(status, result.status));
 
-        if(out != nullptr) {
-            ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(result.out, ::testing::MatchesRegex(out)));
-        }
-        if(err != nullptr) {
-            ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(result.err, ::testing::MatchesRegex(err)));
-        }
+        ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(result.out, ::testing::MatchesRegex(out)));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(result.err, ::testing::MatchesRegex(err)));
     }
 
     void expect(InputWrapper &&wrapper, int status, const char *out = "", const char *err = "") {
         SCOPED_TRACE("");
+
+        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(out != nullptr));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(err != nullptr));
 
         auto handle = wrapper.builder
                 .setIn(IOConfig::PIPE)
@@ -119,13 +119,8 @@ public:
         auto result = handle.waitAndGetResult(false);
 
         ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(status, result.status));
-
-        if(out != nullptr) {
-            ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(out, result.out.c_str()));
-        }
-        if(err != nullptr) {
-            ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(err, result.err.c_str()));
-        }
+        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(out, result.out.c_str()));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(err, result.err.c_str()));
     }
 };
 

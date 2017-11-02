@@ -37,16 +37,14 @@ public:
     void expect(ProcBuilder &&builder, int status, const char *out = "", const char *err = "") {
         SCOPED_TRACE("");
 
+        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(out != nullptr));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(err != nullptr));
+
         auto result = builder.execAndGetResult(false);
 
         ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(status, result.status));
-
-        if(out != nullptr) {
-            ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(out, result.out.c_str()));
-        }
-        if(err != nullptr) {
-            ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(err, result.err.c_str()));
-        }
+        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(out, result.out.c_str()));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(err, result.err.c_str()));
     }
 
     void contentEq(const char *str) {
