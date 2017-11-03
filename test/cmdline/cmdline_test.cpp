@@ -559,6 +559,263 @@ TEST_F(CmdlineTest, pipeline) {
     ASSERT_NO_FATAL_FAILURE(this->expect("$true\n" | ds("-i", "--quiet", "--norc"), 0, "(Boolean) true\n"));
 }
 
+#undef CL
+#define CL(S) ds("-c", S)
+
+TEST_F(CmdlineTest, read) {
+    /**
+     * read command status
+     * if read success, return 0
+     * if read failed (error or end of file), return 1
+     */
+    const char *src = R"(
+        read; assert($? == 0);
+        read; assert($? == 1);
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect("hello\n" | CL(src), 1));
+
+    /**
+     * no splitting
+     * not terminate
+     */
+    src = R"(
+        read;
+        assert $REPLY == "hello"
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect("hello" | CL(src), 1));
+
+    /**
+     * no splitting
+     * terminate newline
+     */
+    src = R"(
+        read; assert($REPLY == "hello");
+        read; assert($REPLY == "world")
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect("   hello\n   world   \t   \n" | CL(src), 0));
+
+    /**
+     * no splitting
+     * if not specified separator, use IFS
+     */
+    src = R"(
+        read; assert($REPLY == "hello world");
+        assert($reply.empty())
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect(" \t  hello world \t \t  \n" | CL(src), 0));
+
+    /**
+     * no splitting
+     * specify separator
+     */
+    src = R"(
+        read -f 1; assert($REPLY == "1hello1world ")
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect("1hello1world \n" | CL(src), 0));
+
+    /**
+     * no splitting
+     * specify multiple separator
+     * if separator contains spaces, ignore first and last spaces
+     */
+    src = R"(
+        read -f " 1"; assert $REPLY == "1hello1world1"
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect("  1hello1world1 \n" | CL(src), 0));
+
+    /**
+     * splitting
+     * use IFS
+     * remove first and last space
+     */
+    src = R"(
+        read a b; assert($reply.size() == 2)
+        assert $reply["a"] == "hello"
+        assert $reply["b"] == "world"
+        assert($REPLY.empty())
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect("   \t hello   world    \n" | CL(src), 0));
+
+    /**
+     * splitting
+     * use IFS
+     * remove first and last spaces
+     * split variables are less than specified them, set empty string.
+     */
+    src = R"(
+        read a b c; assert($reply.size() == 3)
+        assert $reply["a"] == "hello"
+        assert $reply["b"] == "world"
+        assert $reply["c"].empty()
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect("   \t hello   world    \n" | CL(src), 0));
+
+    /*
+     * splitting
+     * use IFS
+     * remove fist and last spaces
+     */
+    src = R"(
+        read a b; assert($reply.size() == 2)
+        assert $reply["a"] == "hello"
+        assert $reply["b"] == "world  !!"
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect("   \t hello   world  !!  \n" | CL(src), 0));
+
+    /**
+     * splitting
+     * use IFS
+     * ignore the following string of newline
+     */
+    src = R"(
+        read a b; assert($reply.size() == 2)
+        assert $reply["a"] == "hello"
+        assert $reply["b"].empty()
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect("hello  \n world\n" | CL(src), 0));
+
+    /**
+     * splitting
+     * use IFS
+     * ignore newline
+     */
+    src = R"(
+        read a b; assert($reply.size() == 2)
+        assert $reply["a"] == "hello"
+        assert $reply["b"] == "world"
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect("hello  \\\n world\n" | CL(src), 0));
+
+    /**
+     * splitting
+     * specify separator
+     */
+    src = R"(
+        read -f 1 a b; assert($reply.size() == 2)
+        assert $reply["a"] == "hello"
+        assert $reply["b"] == "world"
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect("hello1world\n" | CL(src), 0));
+
+    /**
+     * splitting
+     * specify separator
+     */
+    src = R"(
+        read -f 1 a b; assert($reply.size() == 2)
+        assert $reply["a"] == "hello1world"
+        assert $reply["b"].empty()
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect("hello\\1world\n" | CL(src), 0));
+
+    /**
+     * splitting
+     * specify multiple separator
+     */
+    src = R"(
+        read -f 12 a b c; assert($reply.size() == 3)
+        assert $reply["a"] == "hello"
+        assert $reply["b"] == "world"
+        assert $reply["c"] == "!!"
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect("hello1world2!!\n" | CL(src), 0));
+
+    /**
+     * splitting
+     * specify multiple separator
+     */
+    src = R"(
+        read -f 1 a b; assert($reply.size() == 2)
+        assert $reply["a"] == "hello"
+        assert $reply["b"] == "world2!!"
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect("hello1world2!!\n" | CL(src), 0));
+
+    /**
+     * splitting
+     * specify multiple esparator
+     * if separator contains spaces, remove spaces
+     */
+    src = R"(
+        read -f " 21" a b c; assert($reply.size() == 3)
+        assert $reply["a"] == "hello"
+        assert $reply["b"] == "world"
+        assert $reply["c"] == "2!!"
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect("   hello  1  world22!!  \n" | CL(src), 0));
+
+    /**
+     * splitting
+     * specify multiple separator
+     * if separator contains spaces, remove spaces
+     */
+    src = R"(
+        read -f " 21" a b c; assert($reply.size() == 3)
+        assert $reply["a"] == "hello"
+        assert $reply["b"] == ""
+        assert $reply["c"] == "world22!!"
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect("   hello  21  world22!!  \n" | CL(src), 0));
+
+    /**
+     * splitting
+     * specify multiple separator
+     * if separator contains spaces, remove spaces
+     */
+    src = R"(
+        read -f " 21" a b c; assert($reply.size() == 3)
+        assert $reply["a"] == "hello"
+        assert $reply["b"] == "2"
+        assert $reply["c"] == "world22!!"
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect("   hello  \\21  world22!!  \n" | CL(src), 0));
+
+    /**
+     * splitting
+     * specify separator (null character)
+     */
+    src = R"(
+        read -f $'a\x00' a b c; assert($reply.size() == 3)
+        assert $reply['a'] == '   hello'
+        assert $reply['b'] == 'world'
+        assert $reply['c'] == '22!!'
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect("   hello\0worlda22!!\n" | CL(src), 0));
+
+    /**
+     * raw mode
+     */
+    src = R"(
+        read -r a b; assert($reply.size() == 2)
+        assert $reply["a"] == "hello\\"
+        assert $reply["b"] == "world"
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect("   hello\\ world  \n" | CL(src), 0));
+
+    /**
+     * raw mode
+     */
+    src = R"(
+        read -r; assert($REPLY == "hello\\")
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect("   hello\\\nworld  \n" | CL(src), 0));
+
+    /**
+     * raw mode
+     */
+    src = R"(
+        read -r -f " 1" a b; assert($reply.size() == 2)
+        assert $reply["a"] == "hello\\"
+        assert $reply["b"] == "world"
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect("   hello\\1world  \n" | CL(src), 0));
+
+    /**
+     * timeout
+     */
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("read -t 1"), 1));
+}
+
 struct CmdlineTest2 : public CmdlineTest, public TempFileFactory {
     CmdlineTest2() = default;
     virtual ~CmdlineTest2() = default;
