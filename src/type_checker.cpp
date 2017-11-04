@@ -640,6 +640,10 @@ void TypeChecker::visitBinaryOpNode(DSType *, BinaryOpNode &node) {
     if(node.getOp() == COND_AND || node.getOp() == COND_OR) {
         auto &booleanType = this->typePool.getBooleanType();
         this->checkTypeWithCoercion(booleanType, node.refLeftNode());
+        if(node.getLeftNode()->getType() == this->typePool.getBottomType()) {
+            RAISE_TC_ERROR(Unreachable, *node.getRightNode());
+        }
+
         this->checkTypeWithCoercion(booleanType, node.refRightNode());
         node.setType(booleanType);
         return;
