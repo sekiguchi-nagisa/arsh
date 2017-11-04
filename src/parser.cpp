@@ -68,7 +68,9 @@
     OP(FOR) \
     OP(IF) \
     OP(TRY) \
-    OP(WHILE)
+    OP(WHILE) \
+    OP(BREAK) \
+    OP(CONTINUE)
 
 #define EACH_LA_expression(OP) \
     OP(NOT) \
@@ -82,8 +84,6 @@
     OP(INTERFACE) \
     OP(ALIAS) \
     OP(ASSERT) \
-    OP(BREAK) \
-    OP(CONTINUE) \
     OP(EXPORT_ENV) \
     OP(IMPORT_ENV) \
     OP(LET) \
@@ -525,25 +525,6 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
         }
 
         return make_unique<AssertNode>(pos, condNode.release(), messageNode.release());
-    }
-    case BREAK: {
-        Token token = this->expectAndGet(BREAK); // always success
-        std::unique_ptr<Node> exprNode;
-        if(!HAS_NL()) {
-            switch(CUR_KIND()) {
-            EACH_LA_expression(GEN_LA_CASE) {
-                exprNode = TRY(this->parse_expression());
-                break;
-            }
-            default:
-                break;
-            }
-        }
-        return make_unique<JumpNode>(token, true, exprNode.release());
-    }
-    case CONTINUE: {
-        Token token = this->expectAndGet(CONTINUE);  // always success
-        return make_unique<JumpNode>(token, false);
     }
     case EXPORT_ENV: {
         unsigned int startPos = START_POS();
@@ -1287,6 +1268,25 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
             tryNode->addFinallyNode(blockNode.release());
         }
         return std::move(tryNode);
+    }
+    case BREAK: {
+        Token token = this->expectAndGet(BREAK); // always success
+        std::unique_ptr<Node> exprNode;
+        if(!HAS_NL()) {
+            switch(CUR_KIND()) {
+            EACH_LA_expression(GEN_LA_CASE) {
+                exprNode = TRY(this->parse_expression());
+                break;
+            }
+            default:
+                break;
+            }
+        }
+        return make_unique<JumpNode>(token, true, exprNode.release());
+    }
+    case CONTINUE: {
+        Token token = this->expectAndGet(CONTINUE);  // always success
+        return make_unique<JumpNode>(token, false);
     }
     default:
         E_ALTER(EACH_LA_primary(GEN_LA_ALTER));
