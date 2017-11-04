@@ -981,7 +981,7 @@ void TypeChecker::visitIfNode(DSType *requiredType, IfNode &node) {
     }
 }
 
-void TypeChecker::visitReturnNode(DSType *, ReturnNode &node) {
+void TypeChecker::checkTypeAsReturn(EscapeNode &node) {
     if(this->fctx.finallyLevel() > 0) {
         RAISE_TC_ERROR(InsideFinally, node);
     }
@@ -1000,15 +1000,22 @@ void TypeChecker::visitReturnNode(DSType *, ReturnNode &node) {
             RAISE_TC_ERROR(NotNeedExpr, node);
         }
     }
-    node.setType(this->typePool.getBottomType());
 }
 
-void TypeChecker::visitThrowNode(DSType *, ThrowNode &node) {
-    if(this->fctx.finallyLevel() > 0) {
-        RAISE_TC_ERROR(InsideFinally, node);
+void TypeChecker::visitEscapeNode(DSType *, EscapeNode &node) {
+    switch(node.getOpKind()) {
+    case EscapeNode::THROW: {
+        if(this->fctx.finallyLevel() > 0) {
+            RAISE_TC_ERROR(InsideFinally, node);
+        }
+        this->checkType(this->typePool.getAnyType(), node.getExprNode());
+        break;
     }
-
-    this->checkType(this->typePool.getAnyType(), node.getExprNode());
+    case EscapeNode::RETURN: {
+        this->checkTypeAsReturn(node);
+        break;
+    }
+    }
     node.setType(this->typePool.getBottomType());
 }
 

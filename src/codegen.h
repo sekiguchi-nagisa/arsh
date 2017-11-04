@@ -473,8 +473,7 @@ private:
     void visitTypeAliasNode(TypeAliasNode &node) override;
     void visitLoopNode(LoopNode &node) override;
     void visitIfNode(IfNode &node) override;
-    void visitReturnNode(ReturnNode &node) override;
-    void visitThrowNode(ThrowNode &node) override;
+    void visitEscapeNode(EscapeNode &node) override;
     void visitCatchNode(CatchNode &node) override;
     void visitTryNode(TryNode &node) override;
     void visitVarDeclNode(VarDeclNode &node) override;

@@ -562,7 +562,7 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
                 break;
             }
         }
-        return make_unique<ReturnNode>(token, exprNode.release());
+        return std::unique_ptr<Node>(EscapeNode::newReturn(token, exprNode.release()));
     }
     EACH_LA_varDecl(GEN_LA_CASE) {
         return this->parse_variableDeclaration();
@@ -865,9 +865,8 @@ std::unique_ptr<Node> Parser::parse_expression() {
     GUARD_DEEP_NESTING(guard);
 
     if(CUR_KIND() == THROW) {
-        unsigned int startPos = START_POS();
-        this->consume();    // THROW
-        return make_unique<ThrowNode>(startPos, TRY(this->parse_expression()).release());
+        auto token = this->expectAndGet(THROW);   // always success
+        return std::unique_ptr<Node>(EscapeNode::newThrow(token, TRY(this->parse_expression()).release()));
     }
     return this->parse_binaryExpression(
             TRY(this->parse_unaryExpression()), getPrecedence(ASSIGN));

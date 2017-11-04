@@ -845,25 +845,30 @@ void ByteCodeGenerator::visitIfNode(IfNode &node) {
     this->markLabel(mergeLabel);
 }
 
-void ByteCodeGenerator::visitReturnNode(ReturnNode &node) {
-    this->visit(*node.getExprNode());
-
-    // add finally before return
-    this->enterFinally();
-
-    if(this->inUDC()) {
-        assert(node.getExprNode()->getType() == this->pool.getInt32Type());
-        this->emit0byteIns(OpCode::RETURN_UDC);
-    } else if(node.getExprNode()->getType().isVoidType()) {
-        this->emit0byteIns(OpCode::RETURN);
-    } else {
-        this->emit0byteIns(OpCode::RETURN_V);
+void ByteCodeGenerator::visitEscapeNode(EscapeNode &node) {
+    switch(node.getOpKind()) {
+    case EscapeNode::THROW: {
+        this->visit(*node.getExprNode());
+        this->emit0byteIns(OpCode::THROW);
+        break;
     }
-}
+    case EscapeNode::RETURN: {
+        this->visit(*node.getExprNode());
 
-void ByteCodeGenerator::visitThrowNode(ThrowNode &node) {
-    this->visit(*node.getExprNode());
-    this->emit0byteIns(OpCode::THROW);
+        // add finally before return
+        this->enterFinally();
+
+        if(this->inUDC()) {
+            assert(node.getExprNode()->getType() == this->pool.getInt32Type());
+            this->emit0byteIns(OpCode::RETURN_UDC);
+        } else if(node.getExprNode()->getType().isVoidType()) {
+            this->emit0byteIns(OpCode::RETURN);
+        } else {
+            this->emit0byteIns(OpCode::RETURN_V);
+        }
+        break;
+    }
+    }
 }
 
 void ByteCodeGenerator::visitCatchNode(CatchNode &node) {

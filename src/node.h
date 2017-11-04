@@ -66,8 +66,7 @@ class NodeDumper;
     OP(TypeAlias) \
     OP(Loop) \
     OP(If) \
-    OP(Return) \
-    OP(Throw) \
+    OP(Escape) \
     OP(Catch) \
     OP(Try) \
     OP(VarDecl) \
@@ -1491,33 +1490,48 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class ReturnNode : public Node {
+class EscapeNode : public Node {
+public:
+    enum OpKind : unsigned int {
+        THROW,
+        RETURN,
+    };
+
 private:
+    OpKind opKind;
     Node *exprNode;
 
-public:
-    ReturnNode(Token token, Node *exprNode);
-
-    ~ReturnNode() override;
-
-    Node *getExprNode() const {
-        return this->exprNode;
-    }
-
-    void dump(NodeDumper &dumper) const override;
-};
-
-class ThrowNode : public Node {
-private:
-    Node *exprNode;
+    EscapeNode(Token token, OpKind kind, Node *exprNode);
 
 public:
-    ThrowNode(unsigned int startPos, Node *exprNode) :
-            Node(NodeKind::Throw, {startPos, 0}), exprNode(exprNode) {
-        this->updateToken(exprNode->getToken());
+    /**
+     *
+     * @param token
+     * @param exprNode
+     * not null
+     * @return
+     */
+    static EscapeNode *newThrow(Token token, Node *exprNode) {
+        return new EscapeNode(token, THROW, exprNode);
     }
 
-    ~ThrowNode() override;
+    /**
+     *
+     * @param token
+     * @param exprNode
+     * may be null
+     * @return
+     */
+    static EscapeNode *newReturn(Token token, Node *exprNode) {
+        return new EscapeNode(token, RETURN, exprNode);
+    }
+
+    ~EscapeNode() override;
+
+
+    OpKind getOpKind() const {
+        return this->opKind;
+    }
 
     Node *getExprNode() const {
         return this->exprNode;
@@ -2092,8 +2106,7 @@ struct NodeVisitor {
     virtual void visitTypeAliasNode(TypeAliasNode &node) = 0;
     virtual void visitLoopNode(LoopNode &node) = 0;
     virtual void visitIfNode(IfNode &node) = 0;
-    virtual void visitReturnNode(ReturnNode &node) = 0;
-    virtual void visitThrowNode(ThrowNode &node) = 0;
+    virtual void visitEscapeNode(EscapeNode &node) = 0;
     virtual void visitCatchNode(CatchNode &node) = 0;
     virtual void visitTryNode(TryNode &node) = 0;
     virtual void visitVarDeclNode(VarDeclNode &node) = 0;
@@ -2139,8 +2152,7 @@ struct BaseVisitor : public NodeVisitor {
     void visitTypeAliasNode(TypeAliasNode &node) override { this->visitDefault(node); }
     void visitLoopNode(LoopNode &node) override { this->visitDefault(node); }
     void visitIfNode(IfNode &node) override { this->visitDefault(node); }
-    void visitReturnNode(ReturnNode &node) override { this->visitDefault(node); }
-    void visitThrowNode(ThrowNode &node) override { this->visitDefault(node); }
+    void visitEscapeNode(EscapeNode &node) override { this->visitDefault(node); }
     void visitCatchNode(CatchNode &node) override { this->visitDefault(node); }
     void visitTryNode(TryNode &node) override { this->visitDefault(node); }
     void visitVarDeclNode(VarDeclNode &node) override { this->visitDefault(node); }

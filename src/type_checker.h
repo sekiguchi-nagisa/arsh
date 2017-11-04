@@ -390,6 +390,8 @@ protected:
 
     void convertToStringExpr(BinaryOpNode &node);
 
+    void checkTypeAsReturn(EscapeNode &node);
+
     void dispatch(DSType *requiredType, Node &node);
 
     // visitor api
@@ -421,8 +423,7 @@ protected:
     void visitTypeAliasNode(DSType *requiredType, TypeAliasNode &node);
     void visitLoopNode(DSType *requiredType, LoopNode &node);
     void visitIfNode(DSType *requiredType, IfNode &node);
-    void visitReturnNode(DSType *requiredType, ReturnNode &node);
-    void visitThrowNode(DSType *requiredType, ThrowNode &node);
+    void visitEscapeNode(DSType *requredType, EscapeNode &node);
     void visitCatchNode(DSType *requiredType, CatchNode &node);
     void visitTryNode(DSType *requiredType, TryNode &node);
     void visitVarDeclNode(DSType *requiredType, VarDeclNode &node);
