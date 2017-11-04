@@ -1,3 +1,0 @@
-#$test($result = 'type', $errorKind = 'DefinedCmd', $lineNum = 3, $status = 1)
-
-exit() { }

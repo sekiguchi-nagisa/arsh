@@ -345,8 +345,8 @@ TEST_F(CmdlineTest, exec) {
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "eval", "hogehoge"), 1, "", "ydsh: hogehoge: command not found\n"));
 
     // exit
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exit", "34"), 34));
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exit", "999"), 231));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exit", "34"), 1, "", "ydsh: exit: not builtin command\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exit", "999"), 1, "", "ydsh: exit: not builtin command\n"));
 
     // exec
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec"), 0));  // do nothing

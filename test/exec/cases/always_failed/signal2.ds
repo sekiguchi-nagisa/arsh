@@ -2,7 +2,7 @@
 
 
 function f($a : Signal) {
-    exit $a
+    exit $a.value()
 }
 
 

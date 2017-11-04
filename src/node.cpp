@@ -875,7 +875,8 @@ void EscapeNode::dump(NodeDumper &dumper) const {
     OP(BREAK) \
     OP(CONTINUE) \
     OP(THROW) \
-    OP(RETURN)
+    OP(RETURN) \
+    OP(EXIT)
 
     DUMP_ENUM(opKind, EACH_ENUM);
 #undef EACH_ENUM

@@ -872,6 +872,12 @@ void ByteCodeGenerator::visitEscapeNode(EscapeNode &node) {
         }
         break;
     }
+    case EscapeNode::EXIT: {
+        this->visit(*node.getExprNode());
+        this->emitSourcePos(node.getPos());
+        this->emit0byteIns(OpCode::EXIT_SHELL);
+        break;
+    }
     }
 }
 

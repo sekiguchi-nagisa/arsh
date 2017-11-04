@@ -942,15 +942,6 @@ static NativeCode initCode(OpCode op) {
     return NativeCode(code);
 }
 
-static NativeCode initExit() {
-    auto *code = static_cast<unsigned char *>(malloc(sizeof(unsigned char) * 4));
-    code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
-    code[1] = static_cast<unsigned char>(OpCode::LOAD_LOCAL);
-    code[2] = UDC_PARAM_ARGV;
-    code[3] = static_cast<unsigned char>(OpCode::EXIT_SHELL);
-    return NativeCode(code);
-}
-
 static const DSCode *lookupUserDefinedCommand(const DSState &st, const char *commandName) {
     auto handle = st.symbolTable.lookupUdc(commandName);
     return handle == nullptr ? nullptr : &typeAs<FuncObject>(st.getGlobal(handle->getFieldIndex()))->getCode();
@@ -982,7 +973,6 @@ Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
                 {"command", initCode(OpCode::BUILTIN_CMD)},
                 {"eval", initCode(OpCode::BUILTIN_EVAL)},
                 {"exec", initCode(OpCode::BUILTIN_EXEC)},
-                {"exit", initExit()},
         };
         for(auto &e : sb) {
             if(strcmp(cmdName, e.first) == 0) {
@@ -1754,22 +1744,7 @@ static bool mainLoop(DSState &state) {
         }
         vmcase(EXIT_SHELL) {
             auto obj = state.pop();
-            auto &type = *obj->getType();
-
-            int ret = typeAs<Int_Object>(state.getGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS)))->getValue();
-            if(type == state.pool.getInt32Type()) { // normally Int Object
-                ret = typeAs<Int_Object>(obj)->getValue();
-            } else if(type == state.pool.getStringArrayType()) {    // for builtin exit command
-                auto *arrayObj = typeAs<Array_Object>(obj);
-                if(arrayObj->getValues().size() > 1) {
-                    const char *num = str(arrayObj->getValues()[1]);
-                    int status;
-                    long value = convertToInt64(num, status);
-                    if(status == 0) {
-                        ret = value;
-                    }
-                }
-            }
+            int ret = typeAs<Int_Object>(obj)->getValue();
             exitShell(state, ret);
         }
         vmcase(ENTER_FINALLY) {

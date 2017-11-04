@@ -9,7 +9,7 @@ function f($s : Signal) {
 }
 
 function g($s : Signal) {
-    exit $s
+    exit $s.value()
 }
 
 $SIG.trap(%'int', $f)

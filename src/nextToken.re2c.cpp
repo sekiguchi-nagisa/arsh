@@ -140,6 +140,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT> "do"              { RET(DO); }
       <EXPR> "elif"            { MODE(STMT); RET(ELIF); }
       <EXPR> "else"            { RET(ELSE); }
+      <STMT> "exit"            { RET(EXIT); }
       <STMT> "export-env"      { MODE(NAME); RET(EXPORT_ENV); }
       <EXPR> "finally"         { RET(FINALLY); }
       <STMT> "for"             { RET(FOR); }

@@ -1454,6 +1454,7 @@ public:
         CONTINUE,
         THROW,
         RETURN,
+        EXIT,
     };
 
 private:
@@ -1464,6 +1465,13 @@ private:
     EscapeNode(Token token, OpKind kind, Node *exprNode);
 
 public:
+    /**
+     *
+     * @param token
+     * @param exprNode
+     * may be null
+     * @return
+     */
     static EscapeNode *newBreak(Token token, Node *exprNode) {
         return new EscapeNode(token, BREAK, exprNode);
     }
@@ -1492,6 +1500,20 @@ public:
      */
     static EscapeNode *newReturn(Token token, Node *exprNode) {
         return new EscapeNode(token, RETURN, exprNode);
+    }
+
+    /**
+     *
+     * @param token
+     * @param exprNode
+     * may be null
+     * @return
+     */
+    static EscapeNode *newExit(Token token, Node *exprNode) {
+        if(exprNode == nullptr) {
+            exprNode = new VarNode(token, std::string("?"));
+        }
+        return new EscapeNode(token, EXIT, exprNode);
     }
 
     ~EscapeNode() override;
