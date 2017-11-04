@@ -736,44 +736,6 @@ void ByteCodeGenerator::visitBlockNode(BlockNode &node) {
     });
 }
 
-void ByteCodeGenerator::visitJumpNode(JumpNode &node) {
-    assert(!this->curBuilder().loopLabels.empty());
-
-    // for break with value
-    this->visit(*node.getExprNode());
-
-    // reclaim local before jump
-    unsigned int blockIndex = this->curBuilder().loopLabels.back().blockIndex;
-    const unsigned int startOffset = this->curBuilder().localVars[blockIndex].first;
-    unsigned int stopOffset = startOffset + this->curBuilder().localVars[blockIndex].second;
-
-    const unsigned int size = this->curBuilder().localVars.size();
-    for(; blockIndex < size; blockIndex++) {
-        auto &pair = this->curBuilder().localVars[blockIndex];
-        stopOffset = pair.first + pair.second;
-    }
-
-    if(stopOffset - startOffset > 0) {
-        this->emit2byteIns(OpCode::RECLAIM_LOCAL, startOffset, stopOffset - startOffset);
-    }
-
-    // add finally before jump
-    if(node.isLeavingBlock()) {
-        this->enterFinally();
-    }
-
-    if(node.isBreak()) {
-        if(node.getExprNode()->getType().isVoidType()) {
-            this->emitJumpIns(this->peekLoopLabels().breakLabel);
-        } else {
-            this->emitJumpIns(this->peekLoopLabels().breakWithValueLabel);
-        }
-    } else {
-        assert(node.getExprNode()->getType().isVoidType());
-        this->emitJumpIns(this->peekLoopLabels().continueLabel);
-    }
-}
-
 void ByteCodeGenerator::visitTypeAliasNode(TypeAliasNode &) { } // do nothing
 
 static bool isEmptyCode(Node &node) {
@@ -845,8 +807,50 @@ void ByteCodeGenerator::visitIfNode(IfNode &node) {
     this->markLabel(mergeLabel);
 }
 
+void ByteCodeGenerator::generateBreakContinue(EscapeNode &node) {
+    assert(!this->curBuilder().loopLabels.empty());
+
+    // for break with value
+    this->visit(*node.getExprNode());
+
+    // reclaim local before jump
+    unsigned int blockIndex = this->curBuilder().loopLabels.back().blockIndex;
+    const unsigned int startOffset = this->curBuilder().localVars[blockIndex].first;
+    unsigned int stopOffset = startOffset + this->curBuilder().localVars[blockIndex].second;
+
+    const unsigned int size = this->curBuilder().localVars.size();
+    for(; blockIndex < size; blockIndex++) {
+        auto &pair = this->curBuilder().localVars[blockIndex];
+        stopOffset = pair.first + pair.second;
+    }
+
+    if(stopOffset - startOffset > 0) {
+        this->emit2byteIns(OpCode::RECLAIM_LOCAL, startOffset, stopOffset - startOffset);
+    }
+
+    // add finally before jump
+    if(node.isLeavingBlock()) {
+        this->enterFinally();
+    }
+
+    if(node.getOpKind() == EscapeNode::BREAK) {
+        if(node.getExprNode()->getType().isVoidType()) {
+            this->emitJumpIns(this->peekLoopLabels().breakLabel);
+        } else {
+            this->emitJumpIns(this->peekLoopLabels().breakWithValueLabel);
+        }
+    } else {
+        assert(node.getExprNode()->getType().isVoidType());
+        this->emitJumpIns(this->peekLoopLabels().continueLabel);
+    }
+}
+
 void ByteCodeGenerator::visitEscapeNode(EscapeNode &node) {
     switch(node.getOpKind()) {
+    case EscapeNode::BREAK:
+    case EscapeNode::CONTINUE:
+        this->generateBreakContinue(node);
+        break;
     case EscapeNode::THROW: {
         this->visit(*node.getExprNode());
         this->emit0byteIns(OpCode::THROW);

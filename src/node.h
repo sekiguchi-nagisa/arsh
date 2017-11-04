@@ -62,7 +62,6 @@ class NodeDumper;
     OP(With) \
     OP(Assert) \
     OP(Block) \
-    OP(Jump) \
     OP(TypeAlias) \
     OP(Loop) \
     OP(If) \
@@ -1321,48 +1320,6 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class JumpNode : public Node {
-private:
-    /**
-     * if true, treat as break, otherwise, treat as continue.
-     */
-    bool asBreak;
-
-    bool leavingBlock;
-
-    /**
-     * may be empoty node
-     */
-    Node *exprNode;
-
-public:
-    JumpNode(Token token, bool asBreak, Node *exprNode = nullptr);
-
-    ~JumpNode() override;
-
-    bool isBreak() const {
-        return this->asBreak;
-    }
-
-    void setLeavingBlock(bool leave) {
-        this->leavingBlock = leave;
-    }
-
-    bool isLeavingBlock() const {
-        return this->leavingBlock;
-    }
-
-    Node *getExprNode() const {
-        return this->exprNode;
-    }
-
-    Node * &refExprNode() {
-        return this->exprNode;
-    }
-
-    void dump(NodeDumper &dumper) const override;
-};
-
 class TypeAliasNode : public Node {
 private:
     std::string alias;
@@ -1493,6 +1450,8 @@ public:
 class EscapeNode : public Node {
 public:
     enum OpKind : unsigned int {
+        BREAK,
+        CONTINUE,
         THROW,
         RETURN,
     };
@@ -1500,10 +1459,19 @@ public:
 private:
     OpKind opKind;
     Node *exprNode;
+    bool leavingBlock{false};
 
     EscapeNode(Token token, OpKind kind, Node *exprNode);
 
 public:
+    static EscapeNode *newBreak(Token token, Node *exprNode) {
+        return new EscapeNode(token, BREAK, exprNode);
+    }
+
+    static EscapeNode *newContinue(Token token) {
+        return new EscapeNode(token, CONTINUE, nullptr);
+    }
+
     /**
      *
      * @param token
@@ -1535,6 +1503,18 @@ public:
 
     Node *getExprNode() const {
         return this->exprNode;
+    }
+
+    Node *&refExprNode() {
+        return this->exprNode;
+    }
+
+    void setLeavingBlock(bool leave) {
+        this->leavingBlock = leave;
+    }
+
+    bool isLeavingBlock() const {
+        return this->leavingBlock;
     }
 
     void dump(NodeDumper &dumper) const override;
@@ -2102,7 +2082,6 @@ struct NodeVisitor {
     virtual void visitWithNode(WithNode &node) = 0;
     virtual void visitAssertNode(AssertNode &node) = 0;
     virtual void visitBlockNode(BlockNode &node) = 0;
-    virtual void visitJumpNode(JumpNode &node) = 0;
     virtual void visitTypeAliasNode(TypeAliasNode &node) = 0;
     virtual void visitLoopNode(LoopNode &node) = 0;
     virtual void visitIfNode(IfNode &node) = 0;
@@ -2148,7 +2127,6 @@ struct BaseVisitor : public NodeVisitor {
     void visitWithNode(WithNode &node) override { this->visitDefault(node); }
     void visitAssertNode(AssertNode &node) override { this->visitDefault(node); }
     void visitBlockNode(BlockNode &node) override { this->visitDefault(node); }
-    void visitJumpNode(JumpNode &node) override { this->visitDefault(node); }
     void visitTypeAliasNode(TypeAliasNode &node) override { this->visitDefault(node); }
     void visitLoopNode(LoopNode &node) override { this->visitDefault(node); }
     void visitIfNode(IfNode &node) override { this->visitDefault(node); }

@@ -1281,11 +1281,11 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
                 break;
             }
         }
-        return make_unique<JumpNode>(token, true, exprNode.release());
+        return std::unique_ptr<Node>(EscapeNode::newBreak(token, exprNode.release()));
     }
     case CONTINUE: {
         Token token = this->expectAndGet(CONTINUE);  // always success
-        return make_unique<JumpNode>(token, false);
+        return std::unique_ptr<Node>(EscapeNode::newContinue(token));
     }
     default:
         E_ALTER(EACH_LA_primary(GEN_LA_ALTER));

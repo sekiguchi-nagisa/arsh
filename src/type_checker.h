@@ -143,12 +143,12 @@ public:
 };
 
 /**
- * gather returnable break node (JumpNode)
+ * gather returnable break node (EscapeNode)
  */
 class BreakGather {
 private:
     struct Entry {
-        FlexBuffer<JumpNode *> jumpNodes;
+        FlexBuffer<EscapeNode *> jumpNodes;
         Entry *next;
 
         explicit Entry(Entry *prev) : next(prev) {}
@@ -169,13 +169,13 @@ public:
 
     void leave();
 
-    void addJumpNode(JumpNode *node);
+    void addJumpNode(EscapeNode *node);
 
     /**
      * call after enter()
      * @return
      */
-    FlexBuffer<JumpNode *> &getJumpNodes() {
+    FlexBuffer<EscapeNode *> &getJumpNodes() {
         return this->entry->jumpNodes;
     }
 };
@@ -390,6 +390,7 @@ protected:
 
     void convertToStringExpr(BinaryOpNode &node);
 
+    void checkTypeAsBreakContinue(EscapeNode &node);
     void checkTypeAsReturn(EscapeNode &node);
 
     void dispatch(DSType *requiredType, Node &node);
@@ -419,7 +420,6 @@ protected:
     void visitWithNode(DSType *requiredType, WithNode &node);
     void visitAssertNode(DSType *requiredType, AssertNode &node);
     void visitBlockNode(DSType *requiredType, BlockNode &node);
-    void visitJumpNode(DSType *requiredType, JumpNode &node);
     void visitTypeAliasNode(DSType *requiredType, TypeAliasNode &node);
     void visitLoopNode(DSType *requiredType, LoopNode &node);
     void visitIfNode(DSType *requiredType, IfNode &node);

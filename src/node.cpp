@@ -754,30 +754,6 @@ void BlockNode::dump(NodeDumper &dumper) const {
     DUMP_PRIM(maxVarSize);
 }
 
-// ######################
-// ##     JumpNode     ##
-// ######################
-
-JumpNode::JumpNode(Token token, bool asBreak, Node *exprNode) :
-        Node(NodeKind::Jump, token), asBreak(asBreak), leavingBlock(false), exprNode(exprNode) {
-    if(exprNode != nullptr) {
-        this->updateToken(exprNode->getToken());
-    }
-    if(this->exprNode == nullptr) {
-        this->exprNode = new EmptyNode(token);
-    }
-}
-
-JumpNode::~JumpNode() {
-    delete this->exprNode;
-}
-
-void JumpNode::dump(NodeDumper &dumper) const {
-    DUMP_PRIM(asBreak);
-    DUMP_PRIM(leavingBlock);
-    DUMP_PTR(exprNode);
-}
-
 // ###########################
 // ##     TypeAliasNode     ##
 // ###########################
@@ -896,6 +872,8 @@ EscapeNode::~EscapeNode() {
 
 void EscapeNode::dump(NodeDumper &dumper) const {
 #define EACH_ENUM(OP) \
+    OP(BREAK) \
+    OP(CONTINUE) \
     OP(THROW) \
     OP(RETURN)
 
@@ -903,6 +881,7 @@ void EscapeNode::dump(NodeDumper &dumper) const {
 #undef EACH_ENUM
 
     DUMP_PTR(exprNode);
+    DUMP_PRIM(leavingBlock);
 }
 
 // #######################

@@ -42,7 +42,7 @@ void BreakGather::leave() {
     this->entry = old;
 }
 
-void BreakGather::addJumpNode(JumpNode *node) {
+void BreakGather::addJumpNode(EscapeNode *node) {
     assert(this->entry != nullptr);
     this->entry->jumpNodes.push_back(node);
 }
@@ -883,33 +883,6 @@ void TypeChecker::visitBlockNode(DSType *requiredType, BlockNode &node) {
     this->symbolTable.exitScope();
 }
 
-void TypeChecker::visitJumpNode(DSType *, JumpNode &node) {
-    if(this->fctx.loopLevel() == 0) {
-        RAISE_TC_ERROR(InsideLoop, node);
-    }
-
-    if(this->fctx.finallyLevel() > this->fctx.loopLevel()) {
-        RAISE_TC_ERROR(InsideFinally, node);
-    }
-
-    if(this->fctx.childLevel() > this->fctx.loopLevel()) {
-        RAISE_TC_ERROR(InsideChild, node);
-    }
-
-    if(this->fctx.tryCatchLevel() > this->fctx.loopLevel()) {
-        node.setLeavingBlock(true);
-    }
-
-    if(node.getExprNode()->is(NodeKind::Empty)) {
-        this->checkType(this->typePool.getVoidType(), node.getExprNode());
-    } else if(node.isBreak()) {
-        this->checkType(this->typePool.getAnyType(), node.getExprNode());
-        this->breakGather.addJumpNode(&node);
-    }
-    assert(!node.getExprNode()->isUntyped());
-    node.setType(this->typePool.getBottomType());
-}
-
 void TypeChecker::visitTypeAliasNode(DSType *, TypeAliasNode &node) {
     if(!this->isTopLevel()) {   // only available toplevel scope
         RAISE_TC_ERROR(OutsideToplevel, node);
@@ -948,7 +921,7 @@ void TypeChecker::visitLoopNode(DSType *, LoopNode &node) {
     this->symbolTable.exitScope();
 
     if(!node.getBlockNode()->getType().isBottomType()) {    // insert continue to block end
-        auto *jumpNode = new JumpNode({0, 0}, false);
+        auto *jumpNode = EscapeNode::newContinue({0, 0});
         jumpNode->setType(this->typePool.getBottomType());
         jumpNode->getExprNode()->setType(this->typePool.getVoidType());
         node.getBlockNode()->addNode(jumpNode);
@@ -981,6 +954,32 @@ void TypeChecker::visitIfNode(DSType *requiredType, IfNode &node) {
     }
 }
 
+void TypeChecker::checkTypeAsBreakContinue(EscapeNode &node) {
+    if(this->fctx.loopLevel() == 0) {
+        RAISE_TC_ERROR(InsideLoop, node);
+    }
+
+    if(this->fctx.finallyLevel() > this->fctx.loopLevel()) {
+        RAISE_TC_ERROR(InsideFinally, node);
+    }
+
+    if(this->fctx.childLevel() > this->fctx.loopLevel()) {
+        RAISE_TC_ERROR(InsideChild, node);
+    }
+
+    if(this->fctx.tryCatchLevel() > this->fctx.loopLevel()) {
+        node.setLeavingBlock(true);
+    }
+
+    if(node.getExprNode()->is(NodeKind::Empty)) {
+        this->checkType(this->typePool.getVoidType(), node.getExprNode());
+    } else if(node.getOpKind() == EscapeNode::BREAK) {
+        this->checkType(this->typePool.getAnyType(), node.getExprNode());
+        this->breakGather.addJumpNode(&node);
+    }
+    assert(!node.getExprNode()->isUntyped());
+}
+
 void TypeChecker::checkTypeAsReturn(EscapeNode &node) {
     if(this->fctx.finallyLevel() > 0) {
         RAISE_TC_ERROR(InsideFinally, node);
@@ -1004,6 +1003,10 @@ void TypeChecker::checkTypeAsReturn(EscapeNode &node) {
 
 void TypeChecker::visitEscapeNode(DSType *, EscapeNode &node) {
     switch(node.getOpKind()) {
+    case EscapeNode::BREAK:
+    case EscapeNode::CONTINUE:
+        this->checkTypeAsBreakContinue(node);
+        break;
     case EscapeNode::THROW: {
         if(this->fctx.finallyLevel() > 0) {
             RAISE_TC_ERROR(InsideFinally, node);
