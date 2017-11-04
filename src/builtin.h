@@ -1374,6 +1374,13 @@ YDSH_METHOD signal_name(RuntimeContext &ctx) {
     RET(DSValue::create<String_Object>(getPool(ctx).getStringType(), name));
 }
 
+//!bind: function value($this : Signal) : Int32
+YDSH_METHOD signal_value(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(signal_value);
+    auto *obj = typeAs<Int_Object>(LOCAL(0));
+    RET(DSValue::create<Int_Object>(getPool(ctx).getInt32Type(), obj->getValue()));
+}
+
 //!bind: function kill($this : Signal, $pid : Int32) : Void
 YDSH_METHOD signal_kill(RuntimeContext &ctx) {
     SUPPRESS_WARNING(signal_kill);
