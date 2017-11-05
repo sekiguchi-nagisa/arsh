@@ -119,16 +119,14 @@ int ProcHandle::wait() {
         close(this->err());
 
         // wait for exit
-        int status = 0;
-        waitpid(this->pid(), &status, 0);
+        waitpid(this->pid(), &this->status_, 0);
 
         this->pid_ = -1;
         this->in_ = -1;
         this->out_ = -1;
         this->err_ = -1;
-        return status;
     }
-    return 0;
+    return this->status_;
 }
 
 std::pair<std::string, std::string> ProcHandle::readAll() {

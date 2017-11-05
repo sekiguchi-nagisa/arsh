@@ -68,6 +68,8 @@ private:
      */
     pid_t pid_;
 
+    int status_{0};
+
     /**
      * after call wait, will be -1
      */
