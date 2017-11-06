@@ -198,8 +198,9 @@ void Parser::restoreLexerState(Token prevToken) {
 }
 
 bool Parser::expectAndChangeMode(TokenKind kind, LexerMode mode, bool fetchNext) {
-    bool r = this->expect(kind, false);
-    if(!this->hasError()) {
+    this->expect(kind, false);
+    bool r = !this->hasError();
+    if(r) {
         this->lexer->setLexerMode(mode);
         if(fetchNext) {
             this->fetchNext();
@@ -229,12 +230,12 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
     assert(CUR_KIND() == FUNCTION);
     unsigned int startPos = START_POS();
     this->consume();    // FUNCTION
-    Token token = TRY(this->expectAndGet(IDENTIFIER));
+    Token token = TRY(this->expect(IDENTIFIER));
     auto node = make_unique<FunctionNode>(startPos, this->lexer->getSourceInfoPtr(), this->lexer->toName(token));
     TRY(this->expect(LP));
 
     if(CUR_KIND() == APPLIED_NAME) {
-        token = this->expectAndGet(APPLIED_NAME); // always success
+        token = this->expect(APPLIED_NAME); // always success
         auto nameNode = make_unique<VarNode>(token, this->lexer->toName(token));
         TRY(this->expect(COLON, false));
 
@@ -245,7 +246,7 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
         while(true) {
             if(CUR_KIND() == COMMA) {
                 this->consume();    // COMMA
-                token = TRY(this->expectAndGet(APPLIED_NAME));
+                token = TRY(this->expect(APPLIED_NAME));
 
                 nameNode = make_unique<VarNode>(token, this->lexer->toName(token));
 
@@ -296,7 +297,7 @@ std::unique_ptr<Node> Parser::parse_interface() {
     // enter TYPE mode
     this->pushLexerMode(yycTYPE);
 
-    Token token = TRY(this->expectAndGet(TYPE_PATH));
+    Token token = TRY(this->expect(TYPE_PATH));
 
     // exit TYPE mode
     this->restoreLexerState(token);
@@ -315,8 +316,8 @@ std::unique_ptr<Node> Parser::parse_interface() {
         case VAR:
         case LET: {
             startPos = START_POS();
-            auto readOnly = this->consumeAndGet() == LET ? VarDeclNode::CONST : VarDeclNode::VAR;
-            token = TRY(this->expectAndGet(IDENTIFIER));
+            auto readOnly = this->consume() == LET ? VarDeclNode::CONST : VarDeclNode::VAR;
+            token = TRY(this->expect(IDENTIFIER));
             TRY(this->expect(COLON, false));
             auto type = TRY(this->parse_typeName());
             node->addFieldDecl(
@@ -341,7 +342,7 @@ std::unique_ptr<Node> Parser::parse_interface() {
         E_ALTER(FUNCTION, VAR, LET);
     }
 
-    token = TRY(this->expectAndGet(RBC));
+    token = TRY(this->expect(RBC));
     node->updateToken(token);
 
     return std::move(node);
@@ -361,7 +362,7 @@ TypeWrapper Parser::parse_basicOrReifiedType(Token token) {
             this->expect(TYPE_SEP, false);  // always success
             reified->addElementTypeNode(TRY(this->parse_typeName()).release());
         }
-        token = TRY(this->expectAndGet(TYPE_CLOSE));
+        token = TRY(this->expect(TYPE_CLOSE));
         reified->updateToken(token);
 
         return {std::move(reified), token};
@@ -376,23 +377,23 @@ TypeWrapper Parser::parse_typeNameImpl() {
 
     switch(CUR_KIND()) {
     case IDENTIFIER: {
-        Token token = this->expectAndGet(IDENTIFIER); // always success
+        Token token = this->expect(IDENTIFIER); // always success
         return this->parse_basicOrReifiedType(token);
     }
     case PTYPE_OPEN: {
-        Token token = this->expectAndGet(PTYPE_OPEN, false);  // always success
+        Token token = this->expect(PTYPE_OPEN, false);  // always success
         auto reified = make_unique<ReifiedTypeNode>(new BaseTypeNode(token, TYPE_TUPLE));
         reified->addElementTypeNode(TRY(this->parse_typeName()).release());
         while(CUR_KIND() == TYPE_SEP) {
             this->expect(TYPE_SEP, false);  // always success
             reified->addElementTypeNode(TRY(this->parse_typeName()).release());
         }
-        token = TRY(this->expectAndGet(PTYPE_CLOSE));
+        token = TRY(this->expect(PTYPE_CLOSE));
         reified->updateToken(token);
         return {std::move(reified), token};
     }
     case ATYPE_OPEN: {
-        Token token = this->expectAndGet(ATYPE_OPEN, false);  // always success
+        Token token = this->expect(ATYPE_OPEN, false);  // always success
         auto left = TRY(this->parse_typeName());
         bool isMap = CUR_KIND() == TYPE_MSEP;
         auto reified = make_unique<ReifiedTypeNode>(new BaseTypeNode(token, isMap ? TYPE_MAP : TYPE_ARRAY));
@@ -401,12 +402,12 @@ TypeWrapper Parser::parse_typeNameImpl() {
             this->expect(TYPE_MSEP, false); // always success
             reified->addElementTypeNode(TRY(this->parse_typeName()).release());
         }
-        token = TRY(this->expectAndGet(ATYPE_CLOSE));
+        token = TRY(this->expect(ATYPE_CLOSE));
         reified->updateToken(token);
         return {std::move(reified), token};
     }
     case TYPEOF: {
-        Token token = this->expectAndGet(TYPEOF); // always success
+        Token token = this->expect(TYPEOF); // always success
         if(CUR_KIND() == PTYPE_OPEN) {
             this->expect(PTYPE_OPEN, false);    // always success
             this->pushLexerMode(yycSTMT);
@@ -414,14 +415,14 @@ TypeWrapper Parser::parse_typeNameImpl() {
             unsigned int startPos = token.pos;
             auto exprNode(TRY(this->parse_expression()));
 
-            token = TRY(this->expectAndGet(RP, false));
+            token = TRY(this->expect(RP, false));
 
             return {make_unique<TypeOfNode>(startPos, std::move(exprNode).release()), token};
         }
         return this->parse_basicOrReifiedType(token);
     }
     case FUNC: {
-        Token token = this->expectAndGet(FUNC);   // always success
+        Token token = this->expect(FUNC);   // always success
         if(!HAS_NL() && CUR_KIND() == TYPE_OPEN) {
             this->expect(TYPE_OPEN, false); // always success
 
@@ -443,7 +444,7 @@ TypeWrapper Parser::parse_typeNameImpl() {
                 TRY(this->expect(ATYPE_CLOSE));
             }
 
-            token = TRY(this->expectAndGet(TYPE_CLOSE));
+            token = TRY(this->expect(TYPE_CLOSE));
             func->updateToken(token);
 
             return {std::move(func), token};
@@ -451,7 +452,7 @@ TypeWrapper Parser::parse_typeNameImpl() {
         return {make_unique<BaseTypeNode>(token, this->lexer->toName(token)), token};
     }
     case TYPE_PATH: {
-        Token token = this->expectAndGet(TYPE_PATH);  // always success
+        Token token = this->expect(TYPE_PATH);  // always success
         return {make_unique<DBusIfaceTypeNode>(token, this->lexer->toTokenText(token)), token};
     }
     default:
@@ -471,7 +472,7 @@ std::unique_ptr<TypeNode> Parser::parse_typeName() {
 
     auto result = TRY(this->parse_typeNameImpl());
     if(!HAS_NL() && CUR_KIND() == TYPE_OPT) {
-        result.token = this->expectAndGet(TYPE_OPT); // always success
+        result.token = this->expect(TYPE_OPT); // always success
         auto reified = make_unique<ReifiedTypeNode>(new BaseTypeNode(result.token, TYPE_OPTION));
         reified->setPos(result.typeNode->getPos());
         reified->addElementTypeNode(result.typeNode.release());
@@ -505,7 +506,7 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
     case ALIAS: {
         unsigned int startPos = START_POS();
         this->consume();    // ALIAS
-        Token token = TRY(this->expectAndGet(IDENTIFIER));
+        Token token = TRY(this->expect(IDENTIFIER));
         TRY(this->expect(ASSIGN, false));
         auto typeToken = TRY(this->parse_typeName());
         return make_unique<TypeAliasNode>(startPos, this->lexer->toTokenText(token), typeToken.release());
@@ -530,7 +531,7 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
     case EXPORT_ENV: {
         unsigned int startPos = START_POS();
         this->consume();    // EXPORT_ENV
-        Token token = TRY(this->expectAndGet(IDENTIFIER));
+        Token token = TRY(this->expect(IDENTIFIER));
         std::string name(this->lexer->toName(token));
         TRY(this->expect(ASSIGN));
         return make_unique<VarDeclNode>(startPos, std::move(name),
@@ -539,7 +540,7 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
     case IMPORT_ENV: {
         unsigned int startPos = START_POS();
         this->consume();    // IMPORT_ENV
-        Token token = TRY(this->expectAndGet(IDENTIFIER));
+        Token token = TRY(this->expect(IDENTIFIER));
         std::unique_ptr<Node> exprNode;
         if(!HAS_NL() && CUR_KIND() == COLON) {
             TRY(this->expectAndChangeMode(COLON, yycSTMT));
@@ -552,7 +553,7 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
         return std::move(node);
     }
     case RETURN: {
-        Token token = this->expectAndGet(RETURN); // always success
+        Token token = this->expect(RETURN); // always success
         std::unique_ptr<Node> exprNode;
         if(!HAS_NL()) {
             switch(CUR_KIND()) {
@@ -604,12 +605,12 @@ std::unique_ptr<Node> Parser::parse_statementEnd() {
 std::unique_ptr<BlockNode> Parser::parse_block() {
     GUARD_DEEP_NESTING(guard);
 
-    Token token = TRY(this->expectAndGet(LBC));
+    Token token = TRY(this->expect(LBC));
     auto blockNode = make_unique<BlockNode>(token.pos);
     while(CUR_KIND() != RBC) {
         blockNode->addNode(TRY(this->parse_statement()).release());
     }
-    token = TRY(this->expectAndGet(RBC));
+    token = TRY(this->expect(RBC));
     blockNode->updateToken(token);
     return blockNode;
 }
@@ -627,7 +628,7 @@ std::unique_ptr<Node> Parser::parse_variableDeclaration() {
         readOnly = VarDeclNode::CONST;
     }
 
-    Token token = TRY(this->expectAndGet(IDENTIFIER));
+    Token token = TRY(this->expect(IDENTIFIER));
     std::string name = this->lexer->toName(token);
     TRY(this->expect(ASSIGN));
     return make_unique<VarDeclNode>(startPos, std::move(name), TRY(this->parse_expression()).release(), readOnly);
@@ -677,7 +678,7 @@ std::unique_ptr<Node> Parser::parse_forExpression() {
                                      iterNode.release(), blockNode.release());
     }
     // for-in
-    Token token = TRY(this->expectAndGet(APPLIED_NAME));
+    Token token = TRY(this->expect(APPLIED_NAME));
     TRY(this->expect(IN));
     auto exprNode = TRY(this->parse_expression());
     auto blockNode = TRY(this->parse_block());
@@ -738,7 +739,7 @@ std::unique_ptr<CatchNode> Parser::parse_catchStatement() {
         TRY(this->expect(LP));
     }
 
-    Token token = TRY(this->expectAndGet(APPLIED_NAME));
+    Token token = TRY(this->expect(APPLIED_NAME));
     std::unique_ptr<TypeNode> typeToken;
     if(CUR_KIND() == COLON) {
         this->expect(COLON, false); // always success
@@ -758,7 +759,7 @@ std::unique_ptr<Node> Parser::parse_command() {
     GUARD_DEEP_NESTING(guard);
 
     assert(CUR_KIND() == COMMAND);
-    Token token = this->expectAndGet(COMMAND);   // always success
+    Token token = this->expect(COMMAND);   // always success
 
     if(CUR_KIND() == LP) {  // command definition
         this->consume();    // LP
@@ -802,12 +803,12 @@ std::unique_ptr<RedirNode> Parser::parse_redirOption() {
 
     switch(CUR_KIND()) {
     EACH_LA_redirFile(GEN_LA_CASE) {
-        TokenKind kind = this->consumeAndGet();
+        TokenKind kind = this->consume();
         return make_unique<RedirNode>(kind, TRY(this->parse_cmdArg()).release());
     }
     EACH_LA_redirNoFile(GEN_LA_CASE) {
         Token token = this->curToken;
-        TokenKind kind = this->consumeAndGet();
+        TokenKind kind = this->consume();
         return make_unique<RedirNode>(kind, token);
     }
     default:
@@ -840,7 +841,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(unsigned int pos) {
 
     switch(CUR_KIND()) {
     case CMD_ARG_PART: {
-        Token token = this->expectAndGet(CMD_ARG_PART);   // always success
+        Token token = this->expect(CMD_ARG_PART);   // always success
         auto kind = pos == 0 && this->lexer->startsWith(token, '~') ? StringNode::TILDE : StringNode::STRING;
         return make_unique<StringNode>(token, this->lexer->toCmdArg(token), kind);
     }
@@ -866,7 +867,7 @@ std::unique_ptr<Node> Parser::parse_expression() {
     GUARD_DEEP_NESTING(guard);
 
     if(CUR_KIND() == THROW) {
-        auto token = this->expectAndGet(THROW);   // always success
+        auto token = this->expect(THROW);   // always success
         return std::unique_ptr<Node>(EscapeNode::newThrow(token, TRY(this->parse_expression()).release()));
     }
     return this->parse_binaryExpression(
@@ -940,7 +941,7 @@ std::unique_ptr<Node> Parser::parse_binaryExpression(std::unique_ptr<Node> &&lef
             break;
         }
         default: {
-            TokenKind op = this->consumeAndGet();
+            TokenKind op = this->consume();
             auto rightNode = TRY(this->parse_unaryExpression());
             for(unsigned int nextP = PRECEDENCE();
                 !HAS_NL() && (nextP > p || (nextP == p && isAssignOp(op))); nextP = PRECEDENCE()) {
@@ -962,7 +963,7 @@ std::unique_ptr<Node> Parser::parse_unaryExpression() {
     case MINUS:
     case NOT: {
         unsigned int startPos = START_POS();
-        TokenKind op = this->consumeAndGet();
+        TokenKind op = this->consume();
         return make_unique<UnaryOpNode>(startPos, op, TRY(this->parse_unaryExpression()).release());
     }
     default:
@@ -979,7 +980,7 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
         switch(CUR_KIND()) {
         case ACCESSOR: {
             this->consume();    // ACCESSOR
-            Token token = TRY(this->expectAndGet(IDENTIFIER));
+            Token token = TRY(this->expect(IDENTIFIER));
             std::string name = this->lexer->toName(token);
             if(CUR_KIND() == LP && !HAS_NL()) {  // treat as method call
                 auto args = TRY(this->parse_arguments());
@@ -996,7 +997,7 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
         case LB: {
             this->consume();    // LB
             auto indexNode = TRY(this->parse_expression());
-            auto token = TRY(this->expectAndGet(RB));
+            auto token = TRY(this->expect(RB));
             node.reset(createIndexNode(node.release(), indexNode.release()));
             node->updateToken(token);
             break;
@@ -1011,13 +1012,13 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
         case INC:
         case DEC: {
             Token token = this->curToken;
-            TokenKind op = this->consumeAndGet();
+            TokenKind op = this->consume();
             node.reset(createSuffixNode(node.release(), op, token));
             break;
         }
         case UNWRAP: {
             Token token = this->curToken;
-            TokenKind op = this->consumeAndGet(); // UNWRAP
+            TokenKind op = this->consume(); // UNWRAP
             unsigned int pos = node->getPos();
             node = make_unique<UnaryOpNode>(pos, op, node.release());
             node->updateToken(token);
@@ -1083,7 +1084,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         return this->parse_stringLiteral();
     }
     case PATH_LITERAL: {
-        Token token = this->expectAndGet(PATH_LITERAL);   // always success
+        Token token = this->expect(PATH_LITERAL);   // always success
 
         /**
          * skip prefix 'p'
@@ -1095,7 +1096,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         return make_unique<StringNode>(token, std::move(str), StringNode::OBJECT_PATH);
     }
     case REGEX_LITERAL: {
-        Token token = this->expectAndGet(REGEX_LITERAL);  // always success
+        Token token = this->expect(REGEX_LITERAL);  // always success
         auto old = token;
 
         /**
@@ -1129,7 +1130,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         return make_unique<RegexNode>(old, std::move(str), std::move(re));
     }
     case SIGNAL_LITERAL: {
-        Token token = this->expectAndGet(SIGNAL_LITERAL); // always success
+        Token token = this->expect(SIGNAL_LITERAL); // always success
         auto str = this->lexer->toTokenText(token);
         str.pop_back(); // skip suffix [']
         int num = getSignalNum(str.c_str() + 2); // skip prefix [%']
@@ -1150,7 +1151,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         return this->parse_appliedName(CUR_KIND() == SPECIAL_NAME);
     }
     case LP: {  // group or tuple
-        Token token = this->expectAndGet(LP); // always success
+        Token token = this->expect(LP); // always success
         auto node = TRY(this->parse_expression());
         if(CUR_KIND() == COMMA) {   // tuple
             this->consume();    // COMMA
@@ -1174,12 +1175,12 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
             node->setPos(token.pos);
         }
 
-        token = TRY(this->expectAndGet(RP));
+        token = TRY(this->expect(RP));
         node->updateToken(token);
         return node;
     }
     case LB: {  // array or map
-        Token token = this->expectAndGet(LB); // always success
+        Token token = this->expect(LB); // always success
 
         auto keyNode = TRY(this->parse_expression());
 
@@ -1222,7 +1223,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
             node = std::move(arrayNode);
         }
 
-        token = TRY(this->expectAndGet(RB));
+        token = TRY(this->expect(RB));
         node->updateToken(token);
         return node;
     }
@@ -1270,7 +1271,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         return std::move(tryNode);
     }
     case BREAK: {
-        Token token = this->expectAndGet(BREAK); // always success
+        Token token = this->expect(BREAK); // always success
         std::unique_ptr<Node> exprNode;
         if(!HAS_NL()) {
             switch(CUR_KIND()) {
@@ -1285,11 +1286,11 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         return std::unique_ptr<Node>(EscapeNode::newBreak(token, exprNode.release()));
     }
     case CONTINUE: {
-        Token token = this->expectAndGet(CONTINUE);  // always success
+        Token token = this->expect(CONTINUE);  // always success
         return std::unique_ptr<Node>(EscapeNode::newContinue(token));
     }
     case EXIT: {
-        Token token = this->expectAndGet(EXIT); // always success
+        Token token = this->expect(EXIT); // always success
         std::unique_ptr<Node> exprNode;
         if(!HAS_NL()) {
             switch(CUR_KIND()) {
@@ -1309,13 +1310,13 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
 }
 
 std::unique_ptr<Node> Parser::parse_appliedName(bool asSpecialName) {
-    Token token = TRY(this->expectAndGet(asSpecialName ? SPECIAL_NAME : APPLIED_NAME));
+    Token token = TRY(this->expect(asSpecialName ? SPECIAL_NAME : APPLIED_NAME));
     return make_unique<VarNode>(token, this->lexer->toName(token));
 }
 
 std::unique_ptr<Node> Parser::parse_stringLiteral() {
     assert(CUR_KIND() == STRING_LITERAL);
-    Token token = this->expectAndGet(STRING_LITERAL); // always success
+    Token token = this->expect(STRING_LITERAL); // always success
     std::string str;
     bool s = this->lexer->singleToString(token, str);
     if(!s) {
@@ -1328,7 +1329,7 @@ std::unique_ptr<Node> Parser::parse_stringLiteral() {
 ArgsWrapper Parser::parse_arguments() {
     GUARD_DEEP_NESTING(guard);
 
-    Token token = TRY(this->expectAndGet(LP));
+    Token token = TRY(this->expect(LP));
 
     ArgsWrapper args(token.pos);
     switch(CUR_KIND()) {
@@ -1352,7 +1353,7 @@ ArgsWrapper Parser::parse_arguments() {
         E_ALTER(EACH_LA_expression(GEN_LA_ALTER) RP);
     }
 
-    token = TRY(this->expectAndGet(RP));
+    token = TRY(this->expect(RP));
     args.updateToken(token);
     return args;
 }
@@ -1361,13 +1362,13 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
     GUARD_DEEP_NESTING(guard);
 
     assert(CUR_KIND() == OPEN_DQUOTE);
-    Token token = this->expectAndGet(OPEN_DQUOTE);   // always success
+    Token token = this->expect(OPEN_DQUOTE);   // always success
     auto node = make_unique<StringExprNode>(token.pos);
 
     for(bool next = true; next;) {
         switch(CUR_KIND()) {
         case STR_ELEMENT: {
-            token = this->expectAndGet(STR_ELEMENT);  // always success
+            token = this->expect(STR_ELEMENT);  // always success
             node->addExprNode(
                     new StringNode(token, this->lexer->doubleElementToString(token)));
             break;
@@ -1391,7 +1392,7 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
         }
     }
 
-    token = TRY(this->expectAndGet(CLOSE_DQUOTE));
+    token = TRY(this->expect(CLOSE_DQUOTE));
     node->updateToken(token);
     return std::move(node);
 }
@@ -1436,7 +1437,7 @@ std::unique_ptr<SubstitutionNode> Parser::parse_substitution() {
     unsigned int pos = START_POS();
     this->consume();    // START_SUB_CMD
     auto exprNode = TRY(this->parse_expression());
-    Token token = TRY(this->expectAndGet(RP));
+    Token token = TRY(this->expect(RP));
     auto node = make_unique<SubstitutionNode>(pos, exprNode.release());
     node->updateToken(token);
     return node;

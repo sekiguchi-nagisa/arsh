@@ -129,21 +129,9 @@ protected:
         }
     }
 
-    bool expect(T kind, bool fetchNext = true);
+    Token expect(T kind, bool fetchNext = true);
 
-    Token expectAndGet(T kind, bool fetchNext = true) {
-        auto token = this->curToken;
-        this->expect(kind, fetchNext);
-        return token;
-    }
-
-    void consume();
-
-    T consumeAndGet() {
-        T kind = this->curKind;
-        this->consume();
-        return kind;
-    }
+    T consume();
 
     template <std::size_t N>
     void raiseNoViableAlterError(const T (&alters)[N]) {
@@ -167,22 +155,25 @@ protected:
 // ############################
 
 template<typename T, typename LexerImpl, typename Tracker>
-bool AbstractParser<T, LexerImpl, Tracker>::expect(T kind, bool fetchNext) {
+Token AbstractParser<T, LexerImpl, Tracker>::expect(T kind, bool fetchNext) {
+    auto token = this->curToken;
     if(this->curKind != kind) {
         this->raiseTokenMismatchedError(kind);
-        return false;
+        return token;
     }
     this->trace();
     if(fetchNext) {
         this->fetchNext();
     }
-    return true;
+    return token;
 }
 
 template<typename T, typename LexerImpl, typename Tracker>
-void AbstractParser<T, LexerImpl, Tracker>::consume() {
+T AbstractParser<T, LexerImpl, Tracker>::consume() {
+    auto kind = this->curKind;
     this->trace();
     this->fetchNext();
+    return kind;
 }
 
 template<typename T, typename LexerImpl, typename Tracker>

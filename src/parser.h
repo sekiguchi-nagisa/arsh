@@ -195,7 +195,7 @@ protected:
     template <typename Func>
     auto expectNum(TokenKind kind, Func func) ->
     std::pair<Token, decltype((this->lexer->*func)(std::declval<Token>(), std::declval<int &>()))> {
-        auto token = this->expectAndGet(kind);
+        auto token = this->expect(kind);
         int status;
         auto out = (this->lexer->*func)(token, status);
         if(status != 0) {
