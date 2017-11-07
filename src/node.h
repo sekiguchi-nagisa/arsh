@@ -643,6 +643,10 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
+inline bool isAssignable(const Node &node) {
+    return node.getNodeKind() == NodeKind::Var || node.getNodeKind() == NodeKind::Access;
+}
+
 class VarNode : public AssignableNode {
 private:
     std::string varName;
