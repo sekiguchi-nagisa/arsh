@@ -179,6 +179,7 @@ private:
     IOConfig config{};
     std::vector<std::string> args;
     std::unordered_map<std::string, std::string> env;
+    std::string cwd;
 
 public:
     ProcBuilder(const char *cmdName) : args{cmdName} {}
@@ -224,6 +225,11 @@ public:
 
     ProcBuilder &setErr(IOConfig::FDWrapper fd) {
         this->config.err = fd;
+        return *this;
+    }
+
+    ProcBuilder &setWorkingDir(const char *dir) {
+        this->cwd = dir;
         return *this;
     }
 

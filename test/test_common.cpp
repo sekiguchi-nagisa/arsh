@@ -296,6 +296,12 @@ ProcHandle ProcBuilder::spawnImpl(IOConfig config) {
 }
 
 void ProcBuilder::syncPWD() const {
+    // change working dir
+    if(!this->cwd.empty()) {
+        chdir(this->cwd.c_str());
+    }
+
+    // update PWD
     size_t size = PATH_MAX;
     char buf[size];
     const char *cwd = getcwd(buf, size);
