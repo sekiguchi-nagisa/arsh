@@ -67,8 +67,6 @@ private:
 
     friend struct JobTrait;
 
-    NON_COPYABLE(JobImpl);
-
     JobImpl(unsigned int jobId, unsigned int size) : jobId(jobId), ownerPid(getpid()), procSize(size) {
         for(unsigned int i = 0; i < this->procSize; i++) {
             this->pids[i] = -1;
@@ -79,6 +77,8 @@ private:
     ~JobImpl() = default;
 
 public:
+    NON_COPYABLE(JobImpl);
+
     unsigned int getProcSize() const {
         return this->procSize;
     }

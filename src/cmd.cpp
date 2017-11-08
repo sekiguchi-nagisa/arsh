@@ -1015,6 +1015,7 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
     if(varSize == 0) {
         setGlobal(state, varIndex,
                   DSValue::create<String_Object>(getPool(state).getStringType(), std::move(strBuf)));
+        strBuf = "";
     }
 
     // set rest variable
