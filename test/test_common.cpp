@@ -298,7 +298,9 @@ ProcHandle ProcBuilder::spawnImpl(IOConfig config) {
 void ProcBuilder::syncPWD() const {
     // change working dir
     if(!this->cwd.empty()) {
-        chdir(this->cwd.c_str());
+        if(chdir(this->cwd.c_str()) < 0) {
+            error_at("chdir failed");
+        }
     }
 
     // update PWD
