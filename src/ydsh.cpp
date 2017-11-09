@@ -209,7 +209,7 @@ static int evalCode(DSState *state, CompiledCode &code, DSError *dsError) {
     if(!vmEval(*state, code)) {
         unsigned int errorLineNum = 0;
         DSValue thrownObj = state->getThrownObject();
-        if(dynamic_cast<Error_Object *>(thrownObj.get()) != nullptr) {
+        if(state->pool.getErrorType().isSameOrBaseTypeOf(*thrownObj->getType())) {
             auto *obj = typeAs<Error_Object>(thrownObj);
             errorLineNum = getOccurredLineNum(obj->getStackTrace());
         }
