@@ -198,7 +198,7 @@ private:
      */
     std::pair<unsigned int, unsigned int> findEmptyEntry() const;   //FIXME: binary search
 
-    std::vector<Job>::const_iterator findEntryIter(unsigned int jobId) const;
+    std::vector<Job>::iterator findEntryIter(unsigned int jobId);
 
     /**
      *
@@ -206,7 +206,7 @@ private:
      * @return
      * if not found, return nullptr
      */
-    Job findEntry(unsigned int jobId) const;
+    Job findEntry(unsigned int jobId);
 };
 
 } // namespace ydsh
