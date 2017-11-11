@@ -70,33 +70,35 @@ void TempFileFactory::createTemp() {
     this->tmpFileName = name;
 }
 
-void TempFileFactory::deleteTemp() {
-    DIR *dir = opendir(this->tmpDirName);
+static void removeRecursive(const char *currentDir) {
+    DIR *dir = opendir(currentDir);
     if(dir == nullptr) {
-        error_at("");
+        error_at("cannot open dir: %s", currentDir);
     }
 
     for(dirent *entry; (entry = readdir(dir)) != nullptr;) {
         if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
             continue;
         }
-        std::string fullpath = this->tmpDirName;
+        std::string fullpath = currentDir;
         fullpath += '/';
         fullpath += entry->d_name;
         const char *name = fullpath.c_str();
-        if(S_ISREG(ydsh::getStMode(name))) {
-            if(remove(name) < 0) {
-                error_at("%s", name);
-            }
-        } else {
-            fatal("not a regular file: %s\n", name);    //FIXME: symbolic link, etc...
+        if(S_ISDIR(ydsh::getStMode(name))) {
+            removeRecursive(name);
+        } else if(remove(name) < 0) {
+            error_at("cannot remove: %s", name);
         }
     }
     closedir(dir);
 
-    if(rmdir(this->tmpDirName) < 0) {
-        error_at("");
+    if(remove(currentDir) < 0) {
+        error_at("cannot remove: %s", currentDir);
     }
+}
+
+void TempFileFactory::deleteTemp() {
+    removeRecursive(this->tmpDirName);
     this->freeName();
 }
 

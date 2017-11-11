@@ -559,8 +559,7 @@ TEST_F(CmdlineTest, pipeline) {
     ASSERT_NO_FATAL_FAILURE(this->expect("$true\n" | ds("-i", "--quiet", "--norc"), 0, "(Boolean) true\n"));
 }
 
-#undef CL
-#define CL(S) ds("-c", S)
+#define DS(S) ds("-c", S)
 
 TEST_F(CmdlineTest, read) {
     /**
@@ -572,7 +571,7 @@ TEST_F(CmdlineTest, read) {
         read; assert($? == 0);
         read; assert($? == 1);
 )";
-    ASSERT_NO_FATAL_FAILURE(this->expect("hello\n" | CL(src), 1));
+    ASSERT_NO_FATAL_FAILURE(this->expect("hello\n" | DS(src), 1));
 
     /**
      * no splitting
@@ -582,7 +581,7 @@ TEST_F(CmdlineTest, read) {
         read;
         assert $REPLY == "hello"
 )";
-    ASSERT_NO_FATAL_FAILURE(this->expect("hello" | CL(src), 1));
+    ASSERT_NO_FATAL_FAILURE(this->expect("hello" | DS(src), 1));
 
     /**
      * no splitting
@@ -592,7 +591,7 @@ TEST_F(CmdlineTest, read) {
         read; assert($REPLY == "hello");
         read; assert($REPLY == "world")
 )";
-    ASSERT_NO_FATAL_FAILURE(this->expect("   hello\n   world   \t   \n" | CL(src), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect("   hello\n   world   \t   \n" | DS(src), 0));
 
     /**
      * no splitting
@@ -602,7 +601,7 @@ TEST_F(CmdlineTest, read) {
         read; assert($REPLY == "hello world");
         assert($reply.empty())
 )";
-    ASSERT_NO_FATAL_FAILURE(this->expect(" \t  hello world \t \t  \n" | CL(src), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect(" \t  hello world \t \t  \n" | DS(src), 0));
 
     /**
      * no splitting
@@ -611,7 +610,7 @@ TEST_F(CmdlineTest, read) {
     src = R"(
         read -f 1; assert($REPLY == "1hello1world ")
 )";
-    ASSERT_NO_FATAL_FAILURE(this->expect("1hello1world \n" | CL(src), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect("1hello1world \n" | DS(src), 0));
 
     /**
      * no splitting
@@ -621,7 +620,7 @@ TEST_F(CmdlineTest, read) {
     src = R"(
         read -f " 1"; assert $REPLY == "1hello1world1"
 )";
-    ASSERT_NO_FATAL_FAILURE(this->expect("  1hello1world1 \n" | CL(src), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect("  1hello1world1 \n" | DS(src), 0));
 
     /**
      * splitting
@@ -634,7 +633,7 @@ TEST_F(CmdlineTest, read) {
         assert $reply["b"] == "world"
         assert($REPLY.empty())
 )";
-    ASSERT_NO_FATAL_FAILURE(this->expect("   \t hello   world    \n" | CL(src), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect("   \t hello   world    \n" | DS(src), 0));
 
     /**
      * splitting
@@ -648,7 +647,7 @@ TEST_F(CmdlineTest, read) {
         assert $reply["b"] == "world"
         assert $reply["c"].empty()
 )";
-    ASSERT_NO_FATAL_FAILURE(this->expect("   \t hello   world    \n" | CL(src), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect("   \t hello   world    \n" | DS(src), 0));
 
     /*
      * splitting
@@ -660,7 +659,7 @@ TEST_F(CmdlineTest, read) {
         assert $reply["a"] == "hello"
         assert $reply["b"] == "world  !!"
 )";
-    ASSERT_NO_FATAL_FAILURE(this->expect("   \t hello   world  !!  \n" | CL(src), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect("   \t hello   world  !!  \n" | DS(src), 0));
 
     /**
      * splitting
@@ -672,7 +671,7 @@ TEST_F(CmdlineTest, read) {
         assert $reply["a"] == "hello"
         assert $reply["b"].empty()
 )";
-    ASSERT_NO_FATAL_FAILURE(this->expect("hello  \n world\n" | CL(src), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect("hello  \n world\n" | DS(src), 0));
 
     /**
      * splitting
@@ -684,7 +683,7 @@ TEST_F(CmdlineTest, read) {
         assert $reply["a"] == "hello"
         assert $reply["b"] == "world"
 )";
-    ASSERT_NO_FATAL_FAILURE(this->expect("hello  \\\n world\n" | CL(src), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect("hello  \\\n world\n" | DS(src), 0));
 
     /**
      * splitting
@@ -695,7 +694,7 @@ TEST_F(CmdlineTest, read) {
         assert $reply["a"] == "hello"
         assert $reply["b"] == "world"
 )";
-    ASSERT_NO_FATAL_FAILURE(this->expect("hello1world\n" | CL(src), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect("hello1world\n" | DS(src), 0));
 
     /**
      * splitting
@@ -706,7 +705,7 @@ TEST_F(CmdlineTest, read) {
         assert $reply["a"] == "hello1world"
         assert $reply["b"].empty()
 )";
-    ASSERT_NO_FATAL_FAILURE(this->expect("hello\\1world\n" | CL(src), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect("hello\\1world\n" | DS(src), 0));
 
     /**
      * splitting
@@ -718,7 +717,7 @@ TEST_F(CmdlineTest, read) {
         assert $reply["b"] == "world"
         assert $reply["c"] == "!!"
 )";
-    ASSERT_NO_FATAL_FAILURE(this->expect("hello1world2!!\n" | CL(src), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect("hello1world2!!\n" | DS(src), 0));
 
     /**
      * splitting
@@ -729,7 +728,7 @@ TEST_F(CmdlineTest, read) {
         assert $reply["a"] == "hello"
         assert $reply["b"] == "world2!!"
 )";
-    ASSERT_NO_FATAL_FAILURE(this->expect("hello1world2!!\n" | CL(src), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect("hello1world2!!\n" | DS(src), 0));
 
     /**
      * splitting
@@ -742,7 +741,7 @@ TEST_F(CmdlineTest, read) {
         assert $reply["b"] == "world"
         assert $reply["c"] == "2!!"
 )";
-    ASSERT_NO_FATAL_FAILURE(this->expect("   hello  1  world22!!  \n" | CL(src), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect("   hello  1  world22!!  \n" | DS(src), 0));
 
     /**
      * splitting
@@ -755,7 +754,7 @@ TEST_F(CmdlineTest, read) {
         assert $reply["b"] == ""
         assert $reply["c"] == "world22!!"
 )";
-    ASSERT_NO_FATAL_FAILURE(this->expect("   hello  21  world22!!  \n" | CL(src), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect("   hello  21  world22!!  \n" | DS(src), 0));
 
     /**
      * splitting
@@ -768,7 +767,7 @@ TEST_F(CmdlineTest, read) {
         assert $reply["b"] == "2"
         assert $reply["c"] == "world22!!"
 )";
-    ASSERT_NO_FATAL_FAILURE(this->expect("   hello  \\21  world22!!  \n" | CL(src), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect("   hello  \\21  world22!!  \n" | DS(src), 0));
 
     /**
      * splitting
@@ -780,7 +779,7 @@ TEST_F(CmdlineTest, read) {
         assert $reply['b'] == 'world'
         assert $reply['c'] == '22!!'
 )";
-    ASSERT_NO_FATAL_FAILURE(this->expect("   hello\0worlda22!!\n" | CL(src), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect("   hello\0worlda22!!\n" | DS(src), 0));
 
     /**
      * raw mode
@@ -790,7 +789,7 @@ TEST_F(CmdlineTest, read) {
         assert $reply["a"] == "hello\\"
         assert $reply["b"] == "world"
 )";
-    ASSERT_NO_FATAL_FAILURE(this->expect("   hello\\ world  \n" | CL(src), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect("   hello\\ world  \n" | DS(src), 0));
 
     /**
      * raw mode
@@ -798,7 +797,7 @@ TEST_F(CmdlineTest, read) {
     src = R"(
         read -r; assert($REPLY == "hello\\")
 )";
-    ASSERT_NO_FATAL_FAILURE(this->expect("   hello\\\nworld  \n" | CL(src), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect("   hello\\\nworld  \n" | DS(src), 0));
 
     /**
      * raw mode
@@ -808,7 +807,7 @@ TEST_F(CmdlineTest, read) {
         assert $reply["a"] == "hello\\"
         assert $reply["b"] == "world"
 )";
-    ASSERT_NO_FATAL_FAILURE(this->expect("   hello\\1world  \n" | CL(src), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect("   hello\\1world  \n" | DS(src), 0));
 
     /**
      * timeout
@@ -846,6 +845,28 @@ TEST_F(CmdlineTest2, script) {
     fclose(fp);
 
     ASSERT_NO_FATAL_FAILURE(this->expect(ds(fileName.c_str()), 0));
+}
+
+TEST_F(CmdlineTest2, complete) {
+    std::string target = this->getTmpDirName();
+    target += "/work/actual";
+
+    // create working dir
+    auto builder = CL("mkdir -p %s; ln -s %s ./link && cd ./link && touch hogehuga && chmod +x hogehuga",
+                      target.c_str(), target.c_str())
+            .setWorkingDir(this->getTmpDirName());
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 0));
+
+    // follow symbolic link
+    ASSERT_NO_FATAL_FAILURE(
+            this->expect(CL("cd %s; assert \"$(complete ./link/)\" == 'hogehuga'", this->getTmpDirName()), 0));
+
+    builder = CL("cd %s; var ret = $(complete ./link/../);\n"
+                 "assert $ret.size() == 2\n"
+                 "assert $ret[0] == 'link/'\n"
+                 "assert $ret[1] == 'work/'", this->getTmpDirName());
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 0));
 }
 
 int main(int argc, char **argv) {
