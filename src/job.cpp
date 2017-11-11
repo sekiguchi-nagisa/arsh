@@ -152,15 +152,15 @@ struct Comparator {
     }
 };
 
-std::vector<Job>::iterator JobTable::findEntryIter(unsigned int jobId) {
-    auto iter = std::lower_bound(this->entries.begin(), this->entries.end(), jobId, Comparator());
+std::vector<Job>::const_iterator JobTable::findEntryIter(unsigned int jobId) const {
+    auto iter = std::lower_bound(this->entries.cbegin(), this->entries.cend(), jobId, Comparator());
     if(iter != this->entries.end() && (*iter)->jobId == jobId) {
         return iter;
     }
     return this->entries.end();
 }
 
-Job JobTable::findEntry(unsigned int jobId) {
+Job JobTable::findEntry(unsigned int jobId) const {
     auto iter = this->findEntryIter(jobId);
     if(iter != this->entries.end()) {
         return *iter;
