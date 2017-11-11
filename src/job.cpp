@@ -111,7 +111,16 @@ int JobTable::forceWait(Job &entry, unsigned int statusSize, int *statuses) {
     // remove entry
     auto iter = this->findEntryIter(entry->getJobId());
     if(iter != this->entries.end()) {
-        this->entries.erase(iter);
+        /**
+         * convert const_iterator -> iterator
+         */
+        auto actual = this->entries.begin() + (iter - this->entries.cbegin());
+
+        /**
+         * in C++11, vector::erase accepts const_iterator.
+         * but in libstdc++ 4.8, vector::erase(const_iterator) is not implemented.
+         */
+        this->entries.erase(actual);
     }
     return lastStatus;
 }
@@ -152,15 +161,15 @@ struct Comparator {
     }
 };
 
-std::vector<Job>::iterator JobTable::findEntryIter(unsigned int jobId) {
-    auto iter = std::lower_bound(this->entries.begin(), this->entries.end(), jobId, Comparator());
+std::vector<Job>::const_iterator JobTable::findEntryIter(unsigned int jobId) const {
+    auto iter = std::lower_bound(this->entries.cbegin(), this->entries.cend(), jobId, Comparator());
     if(iter != this->entries.end() && (*iter)->jobId == jobId) {
         return iter;
     }
     return this->entries.end();
 }
 
-Job JobTable::findEntry(unsigned int jobId) {
+Job JobTable::findEntry(unsigned int jobId) const {
     auto iter = this->findEntryIter(jobId);
     if(iter != this->entries.end()) {
         return *iter;
