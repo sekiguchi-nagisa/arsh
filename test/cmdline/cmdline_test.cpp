@@ -7,9 +7,6 @@
 #include <misc/fatal.h>
 #include "../test_common.h"
 
-#ifndef CMDLINE_TEST_DIR
-#define CMDLINE_TEST_DIR "."
-#endif
 
 #ifndef BIN_PATH
 #define BIN_PATH "./ydsh"
@@ -20,33 +17,6 @@
 #endif
 
 using namespace ydsh;
-
-class CmdlineTestOld : public ::testing::TestWithParam<std::string> {
-private:
-    std::string targetName;
-
-public:
-    CmdlineTestOld() = default;
-    virtual ~CmdlineTestOld() = default;
-
-    virtual void SetUp() {
-        this->targetName = this->GetParam();
-    }
-
-    virtual void TearDown() { }
-
-    virtual void doTest() {
-        SCOPED_TRACE("");
-
-        std::string cmd("bash ");
-        cmd += this->targetName;
-        cmd += " ";
-        cmd += BIN_PATH;
-
-        int status = system(cmd.c_str());
-        ASSERT_EQ(0, status);
-    }
-};
 
 template <typename ... T>
 static ProcBuilder ds(T && ...args) {
@@ -123,12 +93,6 @@ public:
         ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(err, result.err.c_str()));
     }
 };
-
-TEST_P(CmdlineTestOld, base) {
-    ASSERT_NO_FATAL_FAILURE(this->doTest());
-}
-
-INSTANTIATE_TEST_CASE_P(CmdlineTestOld, CmdlineTestOld, ::testing::ValuesIn(getFileList(CMDLINE_TEST_DIR, true)));
 
 TEST_F(CmdlineTest, assert) {
     // no assert
@@ -867,6 +831,57 @@ TEST_F(CmdlineTest2, complete) {
                  "assert $ret[1] == 'work/'", this->getTmpDirName());
 
     ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 0));
+}
+
+TEST_F(CmdlineTest2, cwd) {
+    std::string target = this->getTmpDirName();
+    target += "/work/actual";
+
+    // create working dir
+    auto builder = CL("mkdir -p %s; ln -s %s ./link", target.c_str(), target.c_str())
+            .setWorkingDir(this->getTmpDirName());
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 0));
+
+    // follow symbolic link
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("cd %s/link; import-env PWD; assert $PWD == '%s/link'",
+                                            this->getTmpDirName(), this->getTmpDirName()), 0));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("cd %s/link; assert \"$(pwd)\" == '%s/link'",
+                                            this->getTmpDirName(), this->getTmpDirName()), 0));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("cd -L %s/link; assert \"$(pwd -L)\" == '%s/link'",
+                                            this->getTmpDirName(), this->getTmpDirName()), 0));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("assert(cd %s/link); assert \"$(pwd -P)\" == '%s'",
+                                            this->getTmpDirName(), target.c_str()), 0));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("assert(cd %s/link); assert cd ../; assert \"$(pwd -P)\" == '%s'",
+                                            this->getTmpDirName(), this->getTmpDirName()), 0));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("assert(cd %s/link); assert cd ../; assert \"$(pwd -L)\" == '%s'",
+                                            this->getTmpDirName(), this->getTmpDirName()), 0));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("assert(cd %s/link); assert cd ../; import-env OLDPWD; assert $OLDPWD == '%s/link'",
+                                            this->getTmpDirName(), this->getTmpDirName()), 0));
+
+    // without symbolic link
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("assert(cd -P %s/link); import-env PWD; assert $PWD == '%s'",
+                                            this->getTmpDirName(), target.c_str()), 0));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("assert(cd -P %s/link); assert \"$(pwd)\" == '%s'",
+                                            this->getTmpDirName(), target.c_str()), 0));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("assert(cd -P %s/link); assert \"$(pwd -P)\" == '%s'",
+                                            this->getTmpDirName(), target.c_str()), 0));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("assert(cd -P %s/link); assert \"$(pwd -L)\" == '%s'",
+                                            this->getTmpDirName(), target.c_str()), 0));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("assert(cd -P %s/link); assert cd ../; assert \"$(pwd -L)\" == '%s/work'",
+                                            this->getTmpDirName(), this->getTmpDirName()), 0));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("assert(cd -P %s/link); assert cd ../; import-env OLDPWD; assert $OLDPWD == '%s'",
+                                            this->getTmpDirName(), target.c_str()), 0));
 }
 
 int main(int argc, char **argv) {

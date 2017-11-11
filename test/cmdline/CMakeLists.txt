@@ -5,7 +5,6 @@
 set(TEST_NAME cmdline_test)
 
 add_definitions(-DBIN_PATH="${CMAKE_BINARY_DIR}/${BIN_NAME}")
-add_definitions(-DCMDLINE_TEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}/cases")
 add_definitions(-DPID_CHECK_PATH="${CMAKE_BINARY_DIR}/tools/pid_check/pid_check")
 add_executable(${TEST_NAME}
         cmdline_test.cpp
