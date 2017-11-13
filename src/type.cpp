@@ -889,9 +889,15 @@ void TypePool::checkElementTypes(const TypeTemplate &t, const std::vector<DSType
     }
 
     for(unsigned int i = 0; i < size; i++) {
-        if(!t.getAcceptableTypes()[i]->isSameOrBaseTypeOf(*elementTypes[i]) && !elementTypes[i]->isOptionType()) {
-            RAISE_TL_ERROR(InvalidElement, this->getTypeName(*elementTypes[i]).c_str());
+        auto *acceptType = t.getAcceptableTypes()[i];
+        auto *elementType = elementTypes[i];
+        if(acceptType->isSameOrBaseTypeOf(*elementType)) {
+            continue;
         }
+        if(*acceptType == this->getAnyType() && elementType->isOptionType()) {
+            continue;
+        }
+        RAISE_TL_ERROR(InvalidElement, this->getTypeName(*elementType).c_str());
     }
 }
 
