@@ -40,15 +40,21 @@ TempFileFactory::~TempFileFactory() {
     this->freeName();
 }
 
-static char *makeTempDir() {
+static char *getTempRoot() {
     const char *tmpdir = getenv("TMPDIR");
     if(tmpdir == nullptr) {
         tmpdir = "/tmp";
     }
+    return realpath(tmpdir, nullptr);
+}
+
+static char *makeTempDir() {
+    char *tmpdir = getTempRoot();
     char *name = nullptr;
     if(asprintf(&name, "%s/test_tmp_dirXXXXXX", tmpdir) < 0) {
         error_at("");
     }
+    free(tmpdir);
     char *dirName = mkdtemp(name);
     assert(dirName != nullptr);
     assert(dirName == name);
