@@ -1027,8 +1027,7 @@ void TypeChecker::visitEscapeNode(DSType *, EscapeNode &node) {
 void TypeChecker::visitCatchNode(DSType *, CatchNode &node) {
     auto &exceptionType = this->toType(node.getTypeNode());
     if(!this->typePool.getAnyType().isSameOrBaseTypeOf(exceptionType)) {
-        RAISE_TC_ERROR(Required, *node.getTypeNode(), this->typePool.getTypeName(this->typePool.getAnyType()).c_str(),
-                       this->typePool.getTypeName(exceptionType).c_str());
+        RAISE_TC_ERROR(Unacceptable, *node.getTypeNode(), this->typePool.getTypeName(exceptionType).c_str());
     }
 
     /**
