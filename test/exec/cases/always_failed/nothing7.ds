@@ -1,0 +1,11 @@
+#$test($result = 'type', $lineNum = 9, $errorKind = 'InsideFinally', $status = 1)
+
+function f() : Nothing {
+    throw 34
+}
+
+try {
+   34
+} finally {
+    $f()
+}

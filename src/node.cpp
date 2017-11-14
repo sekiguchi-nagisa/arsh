@@ -738,11 +738,11 @@ void BlockNode::insertNodeToFirst(Node *node) {
 }
 
 void BlockNode::addReturnNodeToLast(TypePool &pool, Node *exprNode) {
-    assert(!this->isUntyped() && !this->getType().isBottomType());
+    assert(!this->isUntyped() && !this->getType().isNothingType());
     assert(!exprNode->isUntyped());
 
     auto *returnNode = EscapeNode::newReturn(exprNode->getToken(), exprNode);
-    returnNode->setType(pool.getBottomType());
+    returnNode->setType(pool.getNothingType());
     this->addNode(returnNode);
     this->setType(returnNode->getType());
 }

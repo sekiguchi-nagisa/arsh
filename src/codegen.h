@@ -396,7 +396,7 @@ private:
             return false;
         }
 
-        if((*node.getNodes().rbegin())->getType().isBottomType()) {
+        if((*node.getNodes().rbegin())->getType().isNothingType()) {
             return false;
         }
 

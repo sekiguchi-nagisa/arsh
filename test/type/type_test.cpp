@@ -188,7 +188,7 @@ public:
 TEST_F(TypeTest, builtinName) {
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Any", this->pool.getAnyType()));
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Void", this->pool.getVoidType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Bottom%%", this->pool.getBottomType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Nothing", this->pool.getNothingType()));
 
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Byte", this->pool.getByteType()));
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Int16", this->pool.getInt16Type()));
@@ -223,7 +223,7 @@ TEST_F(TypeTest, builtinName) {
 TEST_F(TypeTest, superType) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->pool.getAnyType().getSuperType() == nullptr));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->pool.getVoidType().getSuperType() == nullptr));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->pool.getBottomType().getSuperType() == nullptr));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->pool.getNothingType().getSuperType() == nullptr));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->toType<Option_t<String_t>>().getSuperType() == nullptr));
 
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getVariantType(), this->pool.getAnyType()));
@@ -259,7 +259,7 @@ TEST_F(TypeTest, superType) {
 TEST_F(TypeTest, attribute) {
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.getAnyType()));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::VOID_TYPE, this->pool.getVoidType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::BOTTOM_TYPE, this->pool.getBottomType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::NOTHING_TYPE, this->pool.getNothingType()));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getVariantType()));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.getValueType()));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getByteType()));
@@ -336,13 +336,13 @@ TEST_F(TypeTest, api) {
     ASSERT_NO_FATAL_FAILURE(
             ASSERT_FALSE(this->pool.getAnyType().isSameOrBaseTypeOf(this->pool.getVoidType())));
     ASSERT_NO_FATAL_FAILURE(
-            ASSERT_TRUE(this->pool.getBooleanType().isSameOrBaseTypeOf(this->pool.getBottomType())));
+            ASSERT_TRUE(this->pool.getBooleanType().isSameOrBaseTypeOf(this->pool.getNothingType())));
     ASSERT_NO_FATAL_FAILURE(
-            ASSERT_FALSE(this->pool.getBottomType().isSameOrBaseTypeOf(this->pool.getBooleanType())));
+            ASSERT_FALSE(this->pool.getNothingType().isSameOrBaseTypeOf(this->pool.getBooleanType())));
     ASSERT_NO_FATAL_FAILURE(
-            ASSERT_TRUE(this->pool.getVoidType().isSameOrBaseTypeOf(this->pool.getBottomType())));
+            ASSERT_TRUE(this->pool.getVoidType().isSameOrBaseTypeOf(this->pool.getNothingType())));
     ASSERT_NO_FATAL_FAILURE(
-            ASSERT_TRUE(this->toType<Option_t<Int32_t>>().isSameOrBaseTypeOf(this->pool.getBottomType())));
+            ASSERT_TRUE(this->toType<Option_t<Int32_t>>().isSameOrBaseTypeOf(this->pool.getNothingType())));
     ASSERT_NO_FATAL_FAILURE(
             ASSERT_FALSE(this->pool.getAnyType().isSameOrBaseTypeOf(this->toType<Option_t<Int32_t>>())));
     ASSERT_NO_FATAL_FAILURE(

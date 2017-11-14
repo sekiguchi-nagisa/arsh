@@ -81,7 +81,7 @@ bool DSType::isSameOrBaseTypeOf(const DSType &targetType) const {
     if(*this == targetType) {
         return true;
     }
-    if(targetType.isBottomType()) {
+    if(targetType.isNothingType()) {
         return true;
     }
     if(this->isOptionType()) {
@@ -525,7 +525,7 @@ TypePool::TypePool() :
     // initialize type
     this->initBuiltinType(Any, "Any", true, info_AnyType());
     this->initBuiltinType(Void, "Void", false, info_Dummy());
-    this->initBuiltinType(Bottom__, "Bottom%%", false, info_Dummy());
+    this->initBuiltinType(Nothing, "Nothing", false, info_Dummy());
     this->initBuiltinType(Variant, "Variant", false, this->getAnyType(), info_Dummy());
 
     /**
@@ -637,7 +637,7 @@ DSType &TypePool::createReifiedType(const TypeTemplate &typeTemplate,
     // check each element type
     if(attr != 0u) {
         auto *type = elementTypes[0];
-        if(type->isOptionType() || type->isVoidType()) {
+        if(type->isOptionType() || type->isVoidType() || type->isNothingType()) {
             RAISE_TL_ERROR(InvalidElement, this->getTypeName(*type).c_str());
         }
     } else {
@@ -839,8 +839,8 @@ void TypePool::initBuiltinType(DS_TYPE TYPE, const char *typeName, bool extendab
     if(TYPE == Void) {
         attribute |= DSType::VOID_TYPE;
     }
-    if(TYPE == Bottom__) {
-        attribute |= DSType::BOTTOM_TYPE;
+    if(TYPE == Nothing) {
+        attribute |= DSType::NOTHING_TYPE;
     }
 
     DSType *type = this->typeMap.addType(
@@ -874,7 +874,7 @@ void TypePool::initErrorType(DS_TYPE TYPE, const char *typeName, DSType &superTy
 
 void TypePool::checkElementTypes(const std::vector<DSType *> &elementTypes) const {
     for(DSType *type : elementTypes) {
-        if(*type == this->getVoidType()) {
+        if(type->isVoidType() || type->isNothingType()) {
             RAISE_TL_ERROR(InvalidElement, this->getTypeName(*type).c_str());
         }
     }
@@ -891,7 +891,7 @@ void TypePool::checkElementTypes(const TypeTemplate &t, const std::vector<DSType
     for(unsigned int i = 0; i < size; i++) {
         auto *acceptType = t.getAcceptableTypes()[i];
         auto *elementType = elementTypes[i];
-        if(acceptType->isSameOrBaseTypeOf(*elementType)) {
+        if(acceptType->isSameOrBaseTypeOf(*elementType) && !elementType->isNothingType()) {
             continue;
         }
         if(*acceptType == this->getAnyType() && elementType->isOptionType()) {

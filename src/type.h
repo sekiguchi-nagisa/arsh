@@ -50,13 +50,13 @@ protected:
     flag8_set_t attributeSet;
 
 public:
-    static constexpr flag8_t EXTENDIBLE  = 1 << 0;
-    static constexpr flag8_t VOID_TYPE   = 1 << 1;  // Void
-    static constexpr flag8_t FUNC_TYPE   = 1 << 2;  // function type
-    static constexpr flag8_t IFACE_TYPE  = 1 << 3;  // interface
-    static constexpr flag8_t RECORD_TYPE = 1 << 4;  // indicate user defined type
-    static constexpr flag8_t BOTTOM_TYPE = 1 << 5;  // Bottom
-    static constexpr flag8_t OPTION_TYPE = 1 << 6;  // Option<T>
+    static constexpr flag8_t EXTENDIBLE   = 1 << 0;
+    static constexpr flag8_t VOID_TYPE    = 1 << 1;  // Void
+    static constexpr flag8_t FUNC_TYPE    = 1 << 2;  // function type
+    static constexpr flag8_t IFACE_TYPE   = 1 << 3;  // interface
+    static constexpr flag8_t RECORD_TYPE  = 1 << 4;  // indicate user defined type
+    static constexpr flag8_t NOTHING_TYPE = 1 << 5;  // Nothing (a.k.a. Bottom type)
+    static constexpr flag8_t OPTION_TYPE  = 1 << 6;  // Option<T>
 
     NON_COPYABLE(DSType);
 
@@ -100,8 +100,8 @@ public:
         return hasFlag(this->attributeSet, RECORD_TYPE);
     }
 
-    bool isBottomType() const {
-        return hasFlag(this->attributeSet, BOTTOM_TYPE);
+    bool isNothingType() const {
+        return hasFlag(this->attributeSet, NOTHING_TYPE);
     }
 
     bool isOptionType() const {
@@ -511,7 +511,7 @@ public:
     enum DS_TYPE : unsigned int {
         Any,
         Void,
-        Bottom__,
+        Nothing,
         Variant,    // for base type of all of D-Bus related type.
         Value__,    // super type of value type(int, float, bool, string). not directly used it.
         Byte,       // unsigned int 8
@@ -596,8 +596,8 @@ public:
         return *this->typeTable[Void];
     }
 
-    DSType &getBottomType() const {
-        return *this->typeTable[Bottom__];
+    DSType &getNothingType() const {
+        return *this->typeTable[Nothing];
     }
 
     DSType &getVariantType() const {

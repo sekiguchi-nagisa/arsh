@@ -797,7 +797,7 @@ void ByteCodeGenerator::visitIfNode(IfNode &node) {
     this->visit(*node.getCondNode());
     this->emitBranchIns(elseLabel);
     this->visit(*node.getThenNode());
-    if(!isEmptyCode(*node.getElseNode()) && !node.getThenNode()->getType().isBottomType()) {
+    if(!isEmptyCode(*node.getElseNode()) && !node.getThenNode()->getType().isNothingType()) {
         this->emitJumpIns(mergeLabel);
     }
 
@@ -909,7 +909,7 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
     this->markLabel(beginLabel);
     this->visit(blockNode);
     this->markLabel(endLabel);
-    if(!blockNode.getType().isBottomType()) {
+    if(!blockNode.getType().isNothingType()) {
         if(hasFinally) {
             this->enterFinally();
         }
@@ -925,7 +925,7 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
         this->catchException(beginLabel, endLabel, c->getTypeNode()->getType(),
                              blockNode.getBaseIndex(), blockNode.getVarSize());
         this->visit(*c);
-        if(!c->getType().isBottomType()) {
+        if(!c->getType().isNothingType()) {
             if(hasFinally) {
                 this->enterFinally();
             }

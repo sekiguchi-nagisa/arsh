@@ -1,0 +1,15 @@
+#$test($result = 'EXIT', $lineNum = 5, $status = 1)
+
+function fatal($s : String) : Nothing {
+    echo $s
+    exit 1
+}
+
+function abort() : Nothing {
+    throw 34
+}
+
+assert $abort is Func<Nothing>
+assert $fatal is Func<Nothing, [String]>
+
+$true && $fatal("failed")

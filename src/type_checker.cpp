@@ -99,7 +99,7 @@ DSType *TypeGenerator::toTypeImpl(TypeNode &node) {
         } else {
             auto &typeNode = static_cast<TypeOfNode&>(node);
             auto &type = this->checker->checkType(typeNode.getExprNode());
-            if(type.isBottomType()) {
+            if(type.isNothingType()) {
                 RAISE_TC_ERROR(Unacceptable, *typeNode.getExprNode(), this->pool.getTypeName(type).c_str());
             }
             return &type;
@@ -181,7 +181,7 @@ DSType &TypeChecker::checkType(DSType *requiredType, Node *targetNode,
      * do not try type matching.
      */
     if(requiredType == nullptr) {
-        if(!type.isBottomType() && unacceptableType != nullptr &&
+        if(!type.isNothingType() && unacceptableType != nullptr &&
                 unacceptableType->isSameOrBaseTypeOf(type)) {
             RAISE_TC_ERROR(Unacceptable, *targetNode, this->typePool.getTypeName(type).c_str());
         }
@@ -211,7 +211,7 @@ void TypeChecker::checkTypeWithCurrentScope(DSType *requiredType, BlockNode *blo
     DSType *blockType = &this->typePool.getVoidType();
     for(auto iter = blockNode->refNodes().begin(); iter != blockNode->refNodes().end(); ++iter) {
         auto &targetNode = *iter;
-        if(blockType->isBottomType()) {
+        if(blockType->isNothingType()) {
             RAISE_TC_ERROR(Unreachable, *targetNode);
         }
         if(iter == blockNode->refNodes().end() - 1) {
@@ -279,7 +279,7 @@ DSType& TypeChecker::resolveCoercionOfJumpValue() {
     }
 
     auto &firstType = jumpNodes[0]->getExprNode()->getType();
-    assert(!firstType.isBottomType() && !firstType.isVoidType());
+    assert(!firstType.isNothingType() && !firstType.isVoidType());
 
     for(auto &jumpNode : jumpNodes) {
         if(firstType != jumpNode->getExprNode()->getType()) {
@@ -392,7 +392,7 @@ void TypeChecker::resolveCastOp(TypeOpNode &node) {
             node.setOpKind(TypeOpNode::TO_STRING);
             return;
         }
-        if(!targetType.isBottomType() && exprType.isSameOrBaseTypeOf(targetType)) {
+        if(!targetType.isNothingType() && exprType.isSameOrBaseTypeOf(targetType)) {
             node.setOpKind(TypeOpNode::CHECK_CAST);
             return;
         }
@@ -409,7 +409,7 @@ TypeOpNode *TypeChecker::newTypedCastNode(Node *targetNode, DSType &type) {
 }
 
 Node* TypeChecker::newPrintOpNode(Node *node) {
-    if(!node->getType().isVoidType() && !node->getType().isBottomType()) {
+    if(!node->getType().isVoidType() && !node->getType().isNothingType()) {
         auto *castNode = newTypedCastNode(node, this->typePool.getVoidType());
         castNode->setOpKind(TypeOpNode::PRINT);
         node = castNode;
@@ -640,7 +640,7 @@ void TypeChecker::visitBinaryOpNode(DSType *, BinaryOpNode &node) {
     if(node.getOp() == COND_AND || node.getOp() == COND_OR) {
         auto &booleanType = this->typePool.getBooleanType();
         this->checkTypeWithCoercion(booleanType, node.refLeftNode());
-        if(node.getLeftNode()->getType() == this->typePool.getBottomType()) {
+        if(node.getLeftNode()->getType() == this->typePool.getNothingType()) {
             RAISE_TC_ERROR(Unreachable, *node.getRightNode());
         }
 
@@ -915,9 +915,9 @@ void TypeChecker::visitLoopNode(DSType *, LoopNode &node) {
     this->symbolTable.exitScope();
     this->symbolTable.exitScope();
 
-    if(!node.getBlockNode()->getType().isBottomType()) {    // insert continue to block end
+    if(!node.getBlockNode()->getType().isNothingType()) {    // insert continue to block end
         auto *jumpNode = EscapeNode::newContinue({0, 0});
-        jumpNode->setType(this->typePool.getBottomType());
+        jumpNode->setType(this->typePool.getNothingType());
         jumpNode->getExprNode()->setType(this->typePool.getVoidType());
         node.getBlockNode()->addNode(jumpNode);
         node.getBlockNode()->setType(jumpNode->getType());
@@ -930,7 +930,7 @@ void TypeChecker::visitIfNode(DSType *requiredType, IfNode &node) {
     auto &thenType = this->checkType(nullptr, node.getThenNode(), nullptr);
     auto &elseType = this->checkType(nullptr, node.getElseNode(), nullptr);
 
-    if(thenType.isBottomType() && elseType.isBottomType()) {
+    if(thenType.isNothingType() && elseType.isNothingType()) {
         node.setType(thenType);
     } else if(requiredType != nullptr && requiredType->isVoidType()) {
         this->checkTypeWithCoercion(this->typePool.getVoidType(), node.refThenNode());
@@ -1021,12 +1021,12 @@ void TypeChecker::visitEscapeNode(DSType *, EscapeNode &node) {
         break;
     }
     }
-    node.setType(this->typePool.getBottomType());
+    node.setType(this->typePool.getNothingType());
 }
 
 void TypeChecker::visitCatchNode(DSType *, CatchNode &node) {
     auto &exceptionType = this->toType(node.getTypeNode());
-    if(!this->typePool.getAnyType().isSameOrBaseTypeOf(exceptionType)) {
+    if(!this->typePool.getAnyType().isSameOrBaseTypeOf(exceptionType) || exceptionType.isNothingType()) {
         RAISE_TC_ERROR(Unacceptable, *node.getTypeNode(), this->typePool.getTypeName(exceptionType).c_str());
     }
 
@@ -1064,11 +1064,14 @@ void TypeChecker::visitTryNode(DSType *, TryNode &node) {
     // check type finally block, may be empty node
     if(node.getFinallyNode() != nullptr) {
         this->fctx.enterFinally();
-        this->checkType(this->typePool.getVoidType(), node.getFinallyNode());
+        auto &type = this->checkType(this->typePool.getVoidType(), node.getFinallyNode());
         this->fctx.leave();
 
         if(node.getFinallyNode()->getNodes().empty()) {
             RAISE_TC_ERROR(UselessBlock, *node.getFinallyNode());
+        }
+        if(type.isNothingType()) {
+            RAISE_TC_ERROR(InsideFinally, *node.getFinallyNode());
         }
     }
 
@@ -1086,11 +1089,11 @@ void TypeChecker::visitTryNode(DSType *, TryNode &node) {
     }
 
     // check if terminal node
-    bool terminal = node.getBlockNode()->getType().isBottomType();
+    bool terminal = node.getBlockNode()->getType().isNothingType();
     for(int i = 0; i < size && terminal; i++) {
-        terminal = node.getCatchNodes()[i]->getType().isBottomType();
+        terminal = node.getCatchNodes()[i]->getType().isNothingType();
     }
-    node.setType(terminal ? this->typePool.getBottomType() : this->typePool.getVoidType());
+    node.setType(terminal ? this->typePool.getNothingType() : this->typePool.getVoidType());
 }
 
 void TypeChecker::visitVarDeclNode(DSType *, VarDeclNode &node) {
@@ -1103,7 +1106,7 @@ void TypeChecker::visitVarDeclNode(DSType *, VarDeclNode &node) {
             attr.set(FieldAttribute::READ_ONLY);
         }
         exprType = &this->checkType(node.getExprNode());
-        if(exprType->isBottomType()) {
+        if(exprType->isNothingType()) {
             RAISE_TC_ERROR(Unacceptable, *node.getExprNode(), this->typePool.getTypeName(*exprType).c_str());
         }
         break;
@@ -1186,7 +1189,7 @@ void TypeChecker::visitFunctionNode(DSType *, FunctionNode &node) {
     std::vector<DSType *> paramTypes(paramSize);
     for(unsigned int i = 0; i < paramSize; i++) {
         auto *type = &this->toType(node.getParamTypeNodes()[i]);
-        if(type->isVoidType()) {
+        if(type->isVoidType() || type->isNothingType()) {
             RAISE_TC_ERROR(Unacceptable, *node.getParamTypeNodes()[i], this->typePool.getTypeName(*type).c_str());
         }
         paramTypes[i] = type;
@@ -1222,12 +1225,12 @@ void TypeChecker::visitFunctionNode(DSType *, FunctionNode &node) {
 
     // insert terminal node if not found
     BlockNode *blockNode = node.getBlockNode();
-    if(returnType.isVoidType() && !blockNode->getType().isBottomType()) {
+    if(returnType.isVoidType() && !blockNode->getType().isNothingType()) {
         auto *emptyNode = new EmptyNode();
         emptyNode->setType(this->typePool.getVoidType());
         blockNode->addReturnNodeToLast(this->typePool, emptyNode);
     }
-    if(!blockNode->getType().isBottomType()) {
+    if(!blockNode->getType().isNothingType()) {
         RAISE_TC_ERROR(UnfoundReturn, *blockNode);
     }
 
@@ -1273,7 +1276,7 @@ void TypeChecker::visitUserDefinedCmdNode(DSType *, UserDefinedCmdNode &node) {
 
     // insert return node if not found
     if(node.getBlockNode()->getNodes().empty() ||
-            !node.getBlockNode()->getNodes().back()->getType().isBottomType()) {
+            !node.getBlockNode()->getNodes().back()->getType().isNothingType()) {
         VarNode *varNode = new VarNode({0, 1}, "?");
         this->checkType(varNode);
         node.getBlockNode()->addReturnNodeToLast(this->typePool, varNode);
@@ -1313,7 +1316,7 @@ void TypeChecker::visitRootNode(DSType *, RootNode &node) {
         } else {
             this->checkTypeWithCoercion(this->typePool.getVoidType(), targetNode);
         }
-        prevIsTerminal = targetNode->getType().isBottomType();
+        prevIsTerminal = targetNode->getType().isNothingType();
 
         // check empty block
         if(targetNode->is(NodeKind::Block) && static_cast<BlockNode *>(targetNode)->getNodes().empty()) {
