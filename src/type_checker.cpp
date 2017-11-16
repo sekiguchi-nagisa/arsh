@@ -640,7 +640,7 @@ void TypeChecker::visitBinaryOpNode(DSType *, BinaryOpNode &node) {
     if(node.getOp() == COND_AND || node.getOp() == COND_OR) {
         auto &booleanType = this->typePool.getBooleanType();
         this->checkTypeWithCoercion(booleanType, node.refLeftNode());
-        if(node.getLeftNode()->getType() == this->typePool.getNothingType()) {
+        if(node.getLeftNode()->getType().isNothingType()) {
             RAISE_TC_ERROR(Unreachable, *node.getRightNode());
         }
 
@@ -989,7 +989,7 @@ void TypeChecker::checkTypeAsReturn(EscapeNode &node) {
         RAISE_TC_ERROR(InsideFunc, node);
     }
     auto &exprType = this->checkType(*returnType, node.getExprNode());
-    if(exprType == this->typePool.getVoidType()) {
+    if(exprType.isVoidType()) {
         if(!node.getExprNode()->is(NodeKind::Empty)) {
             RAISE_TC_ERROR(NotNeedExpr, node);
         }
