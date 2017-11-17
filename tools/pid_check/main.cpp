@@ -21,7 +21,6 @@
 #include <vector>
 
 #include <misc/argv.hpp>
-#include <misc/num.h>
 #include <misc/fatal.h>
 
 using namespace ydsh;
@@ -39,12 +38,8 @@ enum class OptionSet : unsigned int {
 };
 
 static int toInt32(const char *str) {
-    int status = 0;
-    long value = convertToInt64(str, status);
+    long value = std::stol(str);
     if(value > INT32_MAX || value < INT32_MIN) {
-        status = 1;
-    }
-    if(status != 0) {
         fatal("broken number: %s\n", str);
     }
     return static_cast<int>(value);
