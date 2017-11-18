@@ -137,7 +137,7 @@ int ProcHandle::wait() {
     return this->status_;
 }
 
-std::pair<std::string, std::string> ProcHandle::readAll() {
+std::pair<std::string, std::string> ProcHandle::readAll() const {
     std::pair<std::string, std::string> output;
 
     unsigned int validFDCount = 0;

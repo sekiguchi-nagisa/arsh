@@ -143,7 +143,7 @@ public:
      */
     int wait();
 
-    std::pair<std::string, std::string> readAll();
+    std::pair<std::string, std::string> readAll() const;
 
     Output waitAndGetResult(bool removeLastSpace = true);
 };
@@ -176,7 +176,7 @@ struct IOConfig {
 
 class ProcBuilder {
 private:
-    IOConfig config{};
+    IOConfig config;
     std::vector<std::string> args;
     std::unordered_map<std::string, std::string> env;
     std::string cwd;
