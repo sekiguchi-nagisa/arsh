@@ -883,7 +883,7 @@ public:
             constPool(constPool), sourcePosEntries(sourcePosEntries), exceptionEntries(exceptionEntries) { }
 
     CompiledCode(CompiledCode &&c) noexcept :
-            DSCode(c.code), srcInfo(c.srcInfo), name(c.name),
+            DSCode(c.code), srcInfo(std::move(c.srcInfo)), name(c.name),
             constPool(c.constPool), sourcePosEntries(c.sourcePosEntries), exceptionEntries(c.exceptionEntries) {
         c.name = nullptr;
         c.code = nullptr;
