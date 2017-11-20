@@ -26,6 +26,8 @@
 #include <list>
 #include <string>
 
+#include "fatal.h"
+
 namespace ydsh {
 
 inline void getFileList(const char *dirPath, bool recursive, std::vector<std::string> &results) {
@@ -37,7 +39,7 @@ inline void getFileList(const char *dirPath, bool recursive, std::vector<std::st
         dirList.pop_front();
         DIR *dir = opendir(path.c_str());
         if(dir == nullptr) {
-            return;
+            fatal("%s: %s\n", path.c_str(), strerror(errno));
         }
 
         for(dirent *entry; (entry = readdir(dir)) != nullptr;) {
