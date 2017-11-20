@@ -64,6 +64,7 @@ inline void getFileList(const char *dirPath, bool recursive, std::vector<std::st
 inline std::vector<std::string> getFileList(const char *dirPath, bool recursive = false) {
     std::vector<std::string> fileList;
     getFileList(dirPath, recursive, fileList);
+    assert(!fileList.empty());
     return fileList;
 }
 
