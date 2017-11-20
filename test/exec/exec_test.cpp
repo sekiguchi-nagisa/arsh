@@ -10,11 +10,11 @@
 
 
 #ifndef EXEC_TEST_DIR
-#define EXEC_TEST_DIR "."
+#error require EXEC_TEST_DIR
 #endif
 
 #ifndef BIN_PATH
-#define BIN_PATH "./ydsh"
+#error require BIN_PATH
 #endif
 
 using namespace ydsh;

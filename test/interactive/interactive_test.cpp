@@ -3,16 +3,16 @@
 #include <misc/files.h>
 
 #ifndef INTERACTIVE_TEST_DIR
-#define INTERACTIVE_TEST_DIR "."
+#error require INTERACTIVE_TEST_DIR
 #endif
 
 #ifndef INTERACTIVE_TEST_WORK_DIR
-#define INTERACTIVE_TEST_WORK_DIR "."
+#error require INTERACTIVE_TEST_WORK_DIR
 #endif
 
 
 #ifndef BIN_PATH
-#define BIN_PATH "./ydsh"
+#error require BIN_PATH
 #endif
 
 using namespace ydsh;
