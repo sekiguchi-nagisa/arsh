@@ -32,7 +32,12 @@ namespace ydsh {
 
 inline void getFileList(const char *dirPath, bool recursive, std::vector<std::string> &results) {
     std::list<std::string> dirList;
-    dirList.push_back(dirPath);
+    char *real = realpath(dirPath);
+    if(real == nullptr) {
+        fatal("%s: %s\n", dirPath, strerror(errno));
+    }
+    dirList.emplace_back(real);
+    free(real);
 
     while(!dirList.empty()) {
         std::string path = std::move(dirList.front());
