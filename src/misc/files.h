@@ -32,15 +32,7 @@
 namespace ydsh {
 
 inline void getFileList(const char *dirPath, bool recursive, std::vector<std::string> &results) {
-    std::list<std::string> dirList;
-    char *real = realpath(dirPath, nullptr);
-    if(real == nullptr) {
-        fatal("%s: %s\n", dirPath, strerror(errno));
-    }
-    dirList.emplace_back(real);
-    free(real);
-
-    while(!dirList.empty()) {
+    for(std::list<std::string> dirList = {dirPath}; !dirList.empty();) {
         std::string path = std::move(dirList.front());
         dirList.pop_front();
         DIR *dir = opendir(path.c_str());
@@ -49,17 +41,16 @@ inline void getFileList(const char *dirPath, bool recursive, std::vector<std::st
         }
 
         for(dirent *entry; (entry = readdir(dir)) != nullptr;) {
-            if(entry->d_type == DT_REG) {
-                std::string name(path);
-                name += "/";
-                name += entry->d_name;
-                results.push_back(std::move(name));
-            } else if(recursive && entry->d_type == DT_DIR &&
-                    strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
-                std::string name(path);
-                name += "/";
-                name += entry->d_name;
+            if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+                continue;
+            }
+            std::string name = path;
+            name += "/";
+            name += entry->d_name;
+            if(recursive && entry->d_type == DT_DIR) {
                 dirList.push_back(std::move(name));
+            } else {
+                results.push_back(std::move(name));
             }
         }
         closedir(dir);
@@ -72,7 +63,9 @@ inline void getFileList(const char *dirPath, bool recursive, std::vector<std::st
 inline std::vector<std::string> getFileList(const char *dirPath, bool recursive = false) {
     std::vector<std::string> fileList;
     getFileList(dirPath, recursive, fileList);
-    assert(!fileList.empty());
+    if(fileList.empty()) {
+        fatal("broken dir: %s\n", dirPath);
+    }
     return fileList;
 }
 
