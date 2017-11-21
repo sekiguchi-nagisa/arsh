@@ -25,6 +25,7 @@
 #include <vector>
 #include <list>
 #include <string>
+#include <cerrno>
 
 #include "fatal.h"
 
