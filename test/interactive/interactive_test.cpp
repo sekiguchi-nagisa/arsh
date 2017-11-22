@@ -17,6 +17,14 @@
 
 using namespace ydsh;
 
+static std::vector<std::string> getSortedFileList(const char *dir) {
+    auto ret = getFileList(dir, true);
+    assert(!ret.empty());
+    std::sort(ret.begin(), ret.end());
+    ret.erase(std::unique(ret.begin(), ret.end()), ret.end());
+    return ret;
+}
+
 class InteractiveTest : public ::testing::TestWithParam<std::string> {
 private:
     std::string targetName;
@@ -54,7 +62,7 @@ TEST_P(InteractiveTest, base) {
     });
 }
 
-INSTANTIATE_TEST_CASE_P(InteractiveTest, InteractiveTest, ::testing::ValuesIn(getFileList(INTERACTIVE_TEST_DIR, true)));
+INSTANTIATE_TEST_CASE_P(InteractiveTest, InteractiveTest, ::testing::ValuesIn(getSortedFileList(INTERACTIVE_TEST_DIR)));
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

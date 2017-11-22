@@ -31,44 +31,6 @@
 
 namespace ydsh {
 
-inline void getFileList(const char *dirPath, bool recursive, std::vector<std::string> &results) {
-    for(std::list<std::string> dirList = {dirPath}; !dirList.empty();) {
-        std::string path = std::move(dirList.front());
-        dirList.pop_front();
-        DIR *dir = opendir(path.c_str());
-        if(dir == nullptr) {
-            fatal("%s: %s\n", path.c_str(), strerror(errno));
-        }
-
-        for(dirent *entry; (entry = readdir(dir)) != nullptr;) {
-            if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
-                continue;
-            }
-            std::string name = path;
-            name += "/";
-            name += entry->d_name;
-            if(recursive && entry->d_type == DT_DIR) {
-                dirList.push_back(std::move(name));
-            } else {
-                results.push_back(std::move(name));
-            }
-        }
-        closedir(dir);
-    }
-}
-
-/**
- * get full file path in specific directory
- */
-inline std::vector<std::string> getFileList(const char *dirPath, bool recursive = false) {
-    std::vector<std::string> fileList;
-    getFileList(dirPath, recursive, fileList);
-    if(fileList.empty()) {
-        fatal("broken dir: %s\n", dirPath);
-    }
-    return fileList;
-}
-
 /**
  * if cannot open file, return always 0.
  */
@@ -81,6 +43,42 @@ inline mode_t getStMode(const char *fileName) {
 }
 
 #define S_IS_PERM_(mode, flag) (((mode) & (flag)) == (flag))
+
+inline int getFileList(const char *dirPath, bool recursive, std::vector<std::string> &results) {
+    for(std::list<std::string> dirList = {dirPath}; !dirList.empty();) {
+        std::string path = std::move(dirList.front());
+        dirList.pop_front();
+        DIR *dir = opendir(path.c_str());
+        if(dir == nullptr) {
+            return errno;
+        }
+
+        for(dirent *entry; (entry = readdir(dir)) != nullptr;) {
+            if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+                continue;
+            }
+            std::string name = path;
+            name += "/";
+            name += entry->d_name;
+            if(S_ISDIR(getStMode(name.c_str())) && recursive) {
+                dirList.push_back(std::move(name));
+            } else {
+                results.push_back(std::move(name));
+            }
+        }
+        closedir(dir);
+    }
+    return 0;
+}
+
+/**
+ * get full file path in specific directory
+ */
+inline std::vector<std::string> getFileList(const char *dirPath, bool recursive = false) {
+    std::vector<std::string> fileList;
+    getFileList(dirPath, recursive, fileList);
+    return fileList;
+}
 
 } // namespace ydsh
 

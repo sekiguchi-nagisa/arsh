@@ -31,6 +31,14 @@ int parse(const char *src, T&& ...args) {
     return Extractor(src)(std::forward<T>(args)...);
 }
 
+static std::vector<std::string> getSortedFileList(const char *dir) {
+    auto ret = getFileList(dir, true);
+    assert(!ret.empty());
+    std::sort(ret.begin(), ret.end());
+    ret.erase(std::unique(ret.begin(), ret.end()), ret.end());
+    return ret;
+}
+
 class ExecTest : public ::testing::TestWithParam<std::string>, public TempFileFactory {
 private:
     std::string targetName;
@@ -107,7 +115,7 @@ TEST_P(ExecTest, baseTest) {
     ASSERT_NO_FATAL_FAILURE(this->doTest());
 }
 
-INSTANTIATE_TEST_CASE_P(ExecTest, ExecTest, ::testing::ValuesIn(getFileList(EXEC_TEST_DIR, true)));
+INSTANTIATE_TEST_CASE_P(ExecTest, ExecTest, ::testing::ValuesIn(getSortedFileList(EXEC_TEST_DIR)));
 
 
 TEST(Base, case1) {
