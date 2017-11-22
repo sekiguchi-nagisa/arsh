@@ -1420,10 +1420,12 @@ std::unique_ptr<Node> Parser::parse_paramExpansion() {
     case SPECIAL_NAME_WITH_BRACKET: {
         Token token = this->curToken;
         this->consume();    // always success
-        auto node = make_unique<VarNode>(token, this->lexer->toName(token));
+        auto varNode = make_unique<VarNode>(token, this->lexer->toName(token));
         auto indexNode = TRY(this->parse_expression());
-        TRY(this->expect(RB));
-        return std::unique_ptr<Node>(createIndexNode(node.release(), indexNode.release()));
+        token = TRY(this->expect(RB));
+        auto node = std::unique_ptr<Node>(createIndexNode(varNode.release(), indexNode.release()));
+        node->updateToken(token);
+        return node;
     }
     default:
         return this->parse_interpolation();
