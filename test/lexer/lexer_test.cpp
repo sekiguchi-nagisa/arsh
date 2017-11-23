@@ -592,7 +592,7 @@ TEST_F(LexerTest_Lv1, string_litearl4) {
         SCOPED_TRACE("");
         this->initLexer(text);
         this->lexer->pushLexerMode(yycCMD);
-        EXPECT(STRING_LITERAL, text, LINE_END, "\n", EOS, "");
+        EXPECT(STRING_LITERAL, text, EOS, "");
         this->assertLexerMode(yycSTMT);
     });
 }
@@ -633,7 +633,7 @@ TEST_F(LexerTest_Lv1, estring_literal4) {
         SCOPED_TRACE("");
         this->initLexer(text);
         this->lexer->pushLexerMode(yycCMD);
-        EXPECT(STRING_LITERAL, "$'\\\\'", LINE_END, "\n", EOS, "");
+        EXPECT(STRING_LITERAL, "$'\\\\'", EOS, "");
         this->assertLexerMode(yycSTMT);
     });
 }
@@ -674,7 +674,7 @@ TEST_F(LexerTest_Lv1, invalid_path_iteral1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, "p", STRING_LITERAL, "'hoge'", LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, "p", STRING_LITERAL, "'hoge'", EOS, "");
     });
 }
 
@@ -742,7 +742,7 @@ TEST_F(LexerTest_Lv1, string_expr6) {
         this->lexer->pushLexerMode(yycCMD);
         EXPECT(OPEN_DQUOTE, "\"", STR_ELEMENT, "\n\t\\$\\\\",
                START_SUB_CMD, "$(", COMMAND, "ls", RP, ")", STR_ELEMENT, "hoge",
-               CLOSE_DQUOTE, "\"", LINE_END, "\n", EOS, "");
+               CLOSE_DQUOTE, "\"", EOS, "");
         this->assertLexerMode(yycSTMT);
     });
 }
@@ -801,7 +801,7 @@ TEST_F(LexerTest_Lv1, signal2) {
 TEST_F(LexerTest_Lv1, invalid_signal) {
     const char *text = "%'000'";
     this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, "%", STRING_LITERAL, "'000'", LINE_END, "\n", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, "%", STRING_LITERAL, "'000'", EOS, ""));
     ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
 }
 
@@ -903,7 +903,7 @@ TEST_F(LexerTest_Lv1, appliedName6) {
         SCOPED_TRACE("");
         this->initLexer(text);
         this->lexer->pushLexerMode(yycCMD);
-        EXPECT(APPLIED_NAME, text, LINE_END, "\n", EOS, "");
+        EXPECT(APPLIED_NAME, text, EOS, "");
         this->assertLexerMode(yycSTMT);
     });
 }
@@ -914,7 +914,7 @@ TEST_F(LexerTest_Lv1, appliedName7) {
         SCOPED_TRACE("");
         this->initLexer(text);
         this->lexer->pushLexerMode(yycCMD);
-        EXPECT(APPLIED_NAME, text, LINE_END, "\n", EOS, "");
+        EXPECT(APPLIED_NAME, text, EOS, "");
         this->assertLexerMode(yycSTMT);
     });
 }
@@ -989,7 +989,7 @@ TEST_F(LexerTest_Lv1, specialName6) {
         SCOPED_TRACE("");
         this->initLexer(text);
         this->lexer->pushLexerMode(yycCMD);
-        EXPECT(SPECIAL_NAME, text, LINE_END, "\n", EOS, "");
+        EXPECT(SPECIAL_NAME, text, EOS, "");
         this->assertLexerMode(yycSTMT);
     });
 }
@@ -1000,7 +1000,7 @@ TEST_F(LexerTest_Lv1, specialName7) {
         SCOPED_TRACE("");
         this->initLexer(text);
         this->lexer->pushLexerMode(yycCMD);
-        EXPECT(SPECIAL_NAME, text, LINE_END, "\n", EOS, "");
+        EXPECT(SPECIAL_NAME, text, EOS, "");
         this->assertLexerMode(yycSTMT);
     });
 }
@@ -1031,7 +1031,7 @@ TEST_F(LexerTest_Lv1, specialName10) {
         SCOPED_TRACE("");
         this->initLexer(text);
         this->lexer->pushLexerMode(yycCMD);
-        EXPECT(SPECIAL_NAME, text, LINE_END, "\n", EOS, "");
+        EXPECT(SPECIAL_NAME, text, EOS, "");
         this->assertLexerMode(yycSTMT);
     });
 }
@@ -1232,7 +1232,7 @@ TEST_F(LexerTest_Lv1, CMD1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, "\\assert", LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, "\\assert", EOS, "");
     });
 }
 
@@ -1241,7 +1241,7 @@ TEST_F(LexerTest_Lv1, CMD2) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, text, LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, text, EOS, "");
     });
 }
 
@@ -1250,7 +1250,7 @@ TEST_F(LexerTest_Lv1, CMD3) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, text, LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, text, EOS, "");
     });
 }
 
@@ -1277,7 +1277,7 @@ TEST_F(LexerTest_Lv1, CMD6) {
     SCOPED_TRACE("");
 
     this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, LINE_END, "\n", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD7) {
@@ -1285,7 +1285,7 @@ TEST_F(LexerTest_Lv1, CMD7) {
     SCOPED_TRACE("");
 
     this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, LINE_END, "\n", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD8) {
@@ -1293,7 +1293,7 @@ TEST_F(LexerTest_Lv1, CMD8) {
     SCOPED_TRACE("");
 
     this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, LINE_END, "\n", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD9) {
@@ -1301,7 +1301,7 @@ TEST_F(LexerTest_Lv1, CMD9) {
     SCOPED_TRACE("");
 
     this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, LINE_END, "\n", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD10) {
@@ -1309,7 +1309,7 @@ TEST_F(LexerTest_Lv1, CMD10) {
     SCOPED_TRACE("");
 
     this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, LINE_END, "\n", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD11) {
@@ -1317,7 +1317,7 @@ TEST_F(LexerTest_Lv1, CMD11) {
     SCOPED_TRACE("");
 
     this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, LINE_END, "\n", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD12) {
@@ -1325,7 +1325,7 @@ TEST_F(LexerTest_Lv1, CMD12) {
     SCOPED_TRACE("");
 
     this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, LINE_END, "\n", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD13) {
@@ -1333,7 +1333,7 @@ TEST_F(LexerTest_Lv1, CMD13) {
     SCOPED_TRACE("");
 
     this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, LINE_END, "\n", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD_ARG1) {   // allow  '[' and ']'
@@ -1342,7 +1342,7 @@ TEST_F(LexerTest_Lv1, CMD_ARG1) {   // allow  '[' and ']'
         SCOPED_TRACE("");
         this->initLexer(text);
         this->lexer->pushLexerMode(yycCMD);
-        EXPECT(CMD_ARG_PART, text, LINE_END, "\n", EOS, "");
+        EXPECT(CMD_ARG_PART, text, EOS, "");
     });
 }
 
@@ -1352,7 +1352,7 @@ TEST_F(LexerTest_Lv1, CMD_ARG2) {
 
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, LINE_END, "\n", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD_ARG3) {
@@ -1361,7 +1361,7 @@ TEST_F(LexerTest_Lv1, CMD_ARG3) {
 
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, LINE_END, "\n", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD_ARG4) {
@@ -1370,7 +1370,7 @@ TEST_F(LexerTest_Lv1, CMD_ARG4) {
 
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, LINE_END, "\n", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD_ARG5) {
@@ -1388,7 +1388,7 @@ TEST_F(LexerTest_Lv1, CMD_ARG6) {
 
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, LINE_END, "\n", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD_ARG7) {
@@ -1397,7 +1397,7 @@ TEST_F(LexerTest_Lv1, CMD_ARG7) {
 
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, LINE_END, "\n", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD_ARG8) {
@@ -1406,7 +1406,7 @@ TEST_F(LexerTest_Lv1, CMD_ARG8) {
 
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, LINE_END, "\n", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD_ARG9) {
@@ -1415,7 +1415,7 @@ TEST_F(LexerTest_Lv1, CMD_ARG9) {
 
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, LINE_END, "\n", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD_ARG10) {
@@ -1424,7 +1424,7 @@ TEST_F(LexerTest_Lv1, CMD_ARG10) {
 
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, LINE_END, "\n", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD_ARG11) {
@@ -1433,7 +1433,7 @@ TEST_F(LexerTest_Lv1, CMD_ARG11) {
 
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, LINE_END, "\n", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD_ARG12) {
@@ -1442,7 +1442,7 @@ TEST_F(LexerTest_Lv1, CMD_ARG12) {
 
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, LINE_END, "\n", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, EOS, ""));
 }
 
 /**
@@ -1453,7 +1453,7 @@ TEST_F(LexerTest_Lv1, COLON1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, text, LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, text, EOS, "");
     });
 }
 
@@ -1471,7 +1471,7 @@ TEST_F(LexerTest_Lv1, COMMA1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, text, LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, text, EOS, "");
     });
 }
 
@@ -1490,7 +1490,7 @@ TEST_F(LexerTest_Lv1, MUL1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, text, LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, text, EOS, "");
     });
 }
 
@@ -1509,7 +1509,7 @@ TEST_F(LexerTest_Lv1, DIV1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, text, LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, text, EOS, "");
     });
 }
 
@@ -1528,7 +1528,7 @@ TEST_F(LexerTest_Lv1, MOD1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, text, LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, text, EOS, "");
     });
 }
 
@@ -1623,7 +1623,7 @@ TEST_F(LexerTest_Lv1, EQ1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, text, LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, text, EOS, "");
     });
 }
 
@@ -1642,7 +1642,7 @@ TEST_F(LexerTest_Lv1, NE1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, text, LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, text, EOS, "");
     });
 }
 
@@ -1661,7 +1661,7 @@ TEST_F(LexerTest_Lv1, AND1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, "and", LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, "and", EOS, "");
     });
 }
 
@@ -1690,7 +1690,7 @@ TEST_F(LexerTest_Lv1, BG) {
         SCOPED_TRACE("");
         this->initLexer(text);
         this->lexer->pushLexerMode(yycCMD);
-        EXPECT(BACKGROUND, text, LINE_END, "\n", EOS, "");
+        EXPECT(BACKGROUND, text, EOS, "");
     });
 }
 
@@ -1699,7 +1699,7 @@ TEST_F(LexerTest_Lv1, OR1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, "or", LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, "or", EOS, "");
     });
 }
 
@@ -1736,7 +1736,7 @@ TEST_F(LexerTest_Lv1, XOR1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, "xor", LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, "xor", EOS, "");
     });
 }
 
@@ -1824,7 +1824,7 @@ TEST_F(LexerTest_Lv1, MATCH1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, text, LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, text, EOS, "");
     });
 }
 
@@ -1843,7 +1843,7 @@ TEST_F(LexerTest_Lv1, UNMATCH1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, text, LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, text, EOS, "");
     });
 }
 
@@ -1898,7 +1898,7 @@ TEST_F(LexerTest_Lv1, ASSIGN1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, text, LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, text, EOS, "");
     });
 }
 
@@ -1917,7 +1917,7 @@ TEST_F(LexerTest_Lv1, ADD_ASSIGN1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(PLUS, "+", COMMAND, "=", LINE_END, "\n", EOS, "");
+        EXPECT(PLUS, "+", COMMAND, "=", EOS, "");
     });
 }
 
@@ -1936,7 +1936,7 @@ TEST_F(LexerTest_Lv1, SUB_ASSIGN1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(MINUS, "-", COMMAND, "=", LINE_END, "\n", EOS, "");
+        EXPECT(MINUS, "-", COMMAND, "=", EOS, "");
     });
 }
 
@@ -1955,7 +1955,7 @@ TEST_F(LexerTest_Lv1, MUL_ASSIGN1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, text, LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, text, EOS, "");
     });
 }
 
@@ -1974,7 +1974,7 @@ TEST_F(LexerTest_Lv1, DIV_ASSIGN1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, text, LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, text, EOS, "");
     });
 }
 
@@ -1993,7 +1993,7 @@ TEST_F(LexerTest_Lv1, MOD_ASSIGN1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, text, LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, text, EOS, "");
     });
 }
 
@@ -2012,7 +2012,7 @@ TEST_F(LexerTest_Lv1, AS1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, text, LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, text, EOS, "");
     });
 }
 
@@ -2040,7 +2040,7 @@ TEST_F(LexerTest_Lv1, FUNC1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, text, LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, text, EOS, "");
     });
 }
 
@@ -2068,7 +2068,7 @@ TEST_F(LexerTest_Lv1, IN1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, text, LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, text, EOS, "");
     });
 }
 
@@ -2097,7 +2097,7 @@ TEST_F(LexerTest_Lv1, IS1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, text, LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, text, EOS, "");
     });
 }
 
@@ -2134,7 +2134,7 @@ TEST_F(LexerTest_Lv1, TYPEOF2) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, text, LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, text, EOS, "");
     });
 }
 
@@ -2171,7 +2171,7 @@ TEST_F(LexerTest_Lv1, ACCESS1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, text, LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, text, EOS, "");
     });
 }
 
@@ -2257,7 +2257,7 @@ TEST_F(LexerTest_Lv1, COMMENT5) {
 
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(LINE_END, "\n", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, EMPTY) {
@@ -2301,7 +2301,7 @@ TEST_F(LexerTest_Lv1, SPACE4) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, "echo", LINE_END, "\n", EOS, "");
+        EXPECT(COMMAND, "echo", EOS, "");
     });
 }
 

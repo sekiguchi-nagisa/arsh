@@ -283,7 +283,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <CMD> "||"               { POP_MODE(); MODE(STMT); RET(COND_OR); }
       <CMD> "&&"               { POP_MODE(); MODE(STMT); RET(COND_AND); }
       <CMD> LINE_END           { POP_MODE(); MODE(STMT); RET(LINE_END); }
-      <CMD> NEW_LINE           { POP_MODE(); MODE(STMT); UPDATE_LN(); RET(LINE_END); }
+      <CMD> NEW_LINE           { POP_MODE(); MODE(STMT); UPDATE_LN(); FIND_NEW_LINE(); }
 
       <TYPE> VAR_NAME ("." VAR_NAME)+
                                { RET(TYPE_PATH); }

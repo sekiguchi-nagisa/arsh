@@ -104,7 +104,6 @@ assert($(complete '     ').empty())
 # complete command name
 $assertArray($(cmd /bin /usr/bin | grep '^l'), $comp('l', '/bin:/usr/bin'))
 $assertArray($(cmd | grep '^p'), $comp('p', ''))
-$assertArray($(cmd /bin /usr/bin), $comp('{}', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin), $comp('echo; ', '/bin:/usr/bin'))
 if(test -d ~/bin) {
     $assertArray($(cmd /bin /usr/bin ~/bin), $comp('echo; ', '/bin:/usr/bin:~/bin'))
@@ -152,6 +151,7 @@ $assertArray($(file '.'), $(complete '{echo hello '))
 $assertArray($(file '.'), $(complete 'echo < '))
 $assertArray($(file '.'), $(complete 'echo >'))
 $assertArray($(file '.'), $(complete 'echo $TRUE '))
+$assertArray($(file '.'), $(complete 'echo ${34} '))
 
 
 # complete expected token

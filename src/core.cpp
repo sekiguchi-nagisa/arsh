@@ -1089,6 +1089,22 @@ static bool findKind(const std::vector<TokenKind> &values, TokenKind kind) {
     return false;
 }
 
+static bool inCmdMode(const RootNode &node) {
+    unsigned int size = node.getNodes().size();
+    if(size == 0) {
+        return false;
+    }
+    auto *lastNode = node.getNodes()[size - 1];
+    if(lastNode->is(NodeKind::Cmd)) {
+        return true;
+    } else if(lastNode->is(NodeKind::Pipeline)) {
+        if(static_cast<PipelineNode *>(lastNode)->getNodes().back()->is(NodeKind::Cmd)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static CompletorKind selectCompletor(const std::string &line, std::string &tokenStr) {
     CompletorKind kind = CompletorKind::NONE;
 
@@ -1116,9 +1132,6 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
         lastIndex--; // skip EOS
 
         switch(tokenPairs[lastIndex].first) {
-        case RBC:
-            kind = CompletorKind::CMD;
-            goto END;
         case APPLIED_NAME:
         case SPECIAL_NAME: {
             Token token = tokenPairs[lastIndex].second;
@@ -1126,20 +1139,21 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
                 tokenStr = lexer.toTokenText(token);
                 kind = CompletorKind::VAR;
                 goto END;
+            } else if(token.pos + token.size < cursor && inCmdMode(*rootNode)) {
+                kind = CompletorKind::FILE;
+                goto END;
             }
             break;
         }
         case LINE_END: {
-            if(!isNewline(lexer, tokenPairs[lastIndex])) {  // terminate with ';'
-                kind = CompletorKind::CMD;
-                goto END;
-            }
-
-            lastIndex--; // skip LINE_END
-            kind = selectWithCmd(lexer, tokenPairs, cursor, lastIndex, tokenStr);
+            kind = CompletorKind::CMD;
             goto END;
         }
         default:
+            if(inCmdMode(*rootNode)) {
+                kind = selectWithCmd(lexer, tokenPairs, cursor, lastIndex, tokenStr);
+                goto END;
+            }
             break;
         }
     } else {

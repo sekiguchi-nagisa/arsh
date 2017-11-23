@@ -822,7 +822,7 @@ std::unique_ptr<CmdArgNode> Parser::parse_cmdArg() {
     auto node = make_unique<CmdArgNode>(TRY(this->parse_cmdArgSeg(0)).release());
 
     unsigned int pos = 1;
-    for(bool next = true; !HAS_SPACE() && next; pos++) {
+    for(bool next = true; !HAS_SPACE() && !HAS_NL() && next; pos++) {
         switch(CUR_KIND()) {
         EACH_LA_cmdArg(GEN_LA_CASE) {
             node->addSegmentNode(TRY(this->parse_cmdArgSeg(pos)).release());
