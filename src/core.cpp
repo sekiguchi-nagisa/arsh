@@ -1028,21 +1028,11 @@ static bool isRedirOp(TokenKind kind) {
     }
 }
 
-static bool isNewline(const Lexer &lexer, const std::pair<TokenKind, Token> &pair) {
-    return pair.first == LINE_END && lexer.toTokenText(pair.second) != ";";
-}
-
 static CompletorKind selectWithCmd(const Lexer &lexer, const std::vector<std::pair<TokenKind, Token>> &tokenPairs,
                                    unsigned int cursor, unsigned int lastIndex,
                                    std::string &tokenStr, bool exactly = false) {
     TokenKind kind = tokenPairs[lastIndex].first;
     Token token = tokenPairs[lastIndex].second;
-
-    if(exactly && isNewline(lexer, tokenPairs[lastIndex]) && lastIndex > 0) {
-        lastIndex--;
-        kind = tokenPairs[lastIndex].first;
-        token = tokenPairs[lastIndex].second;
-    }
 
     switch(kind) {
     case COMMAND:
