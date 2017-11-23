@@ -575,16 +575,11 @@ TEST_F(HistoryTest, cmd_save) {
         DSState_addHistory(this->state, e);
     }
 
-    // save to invalid file
-    ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval("history -w hfurehfiurhfcz24")));
-    auto hist = readFile(this->getTmpFileName());
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(hist.empty()));
-
     // save to specified file
     std::string code = "history -w ";
     code += this->getTmpFileName();
     ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(code.c_str())));
-    hist = readFile(this->getTmpFileName());
+    auto hist = readFile(this->getTmpFileName());
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(arraySize(v), hist.size()));
     for(unsigned int i = 0; i < hist.size(); i++) {
         ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(v[i], hist[i].c_str()));
