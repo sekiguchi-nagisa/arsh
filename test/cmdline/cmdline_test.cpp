@@ -511,6 +511,10 @@ TEST_F(CmdlineTest, toplevel_escape) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("", r.err.c_str()));
 }
 
+TEST_F(CmdlineTest, syntax) {
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "echo  \n$true"), 0, "\n"));
+}
+
 TEST_F(CmdlineTest, pipeline) {
     ASSERT_NO_FATAL_FAILURE(this->expect("assert($0 == 'ydsh')" | ds(), 0));
     ASSERT_NO_FATAL_FAILURE(this->expect("\\" | ds(), 0));

@@ -772,7 +772,7 @@ std::unique_ptr<Node> Parser::parse_command() {
     auto kind = this->lexer->startsWith(token, '~') ? StringNode::TILDE : StringNode::STRING;
     auto node = make_unique<CmdNode>(new StringNode(token, this->lexer->toCmdArg(token), kind));
 
-    for(bool next = true; next && HAS_SPACE();) {
+    for(bool next = true; next && HAS_SPACE() && !HAS_NL();) {
         switch(CUR_KIND()) {
         EACH_LA_cmdArg(GEN_LA_CASE) {
             node->addArgNode(TRY(this->parse_cmdArg()).release());
