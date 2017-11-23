@@ -1172,19 +1172,14 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
         }
 
         switch(e.getTokenKind()) {
-        case EOS:
-        case LINE_END: {
-            if(lexer.toTokenText(token) == ";") {
-                goto END;
-            }
-
+        case EOS: {
             if(strcmp(e.getErrorKind(), "NoViableAlter") == 0) {
                 kind = selectWithCmd(lexer, tokenPairs, cursor, tokenPairs.size() - 1, tokenStr, true);
                 if(kind != CompletorKind::NONE) {
                     goto END;
                 }
 
-                if(!isNewline(lexer, tokenPairs.back()) && findKind(e.getExpectedTokens(), COMMAND)) {
+                if(findKind(e.getExpectedTokens(), COMMAND)) {
                     kind = CompletorKind::CMD;
                     goto END;
                 }
