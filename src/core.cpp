@@ -1029,10 +1029,10 @@ static bool isRedirOp(TokenKind kind) {
 }
 
 static CompletorKind selectWithCmd(const Lexer &lexer, const std::vector<std::pair<TokenKind, Token>> &tokenPairs,
-                                   unsigned int cursor, unsigned int lastIndex,
-                                   std::string &tokenStr, bool exactly = false) {
-    TokenKind kind = tokenPairs[lastIndex].first;
-    Token token = tokenPairs[lastIndex].second;
+                                   unsigned int cursor, std::string &tokenStr, bool exactly = false) {
+    assert(!tokenPairs.empty());
+    TokenKind kind = tokenPairs.back().first;
+    Token token = tokenPairs.back().second;
 
     switch(kind) {
     case COMMAND:
@@ -1042,9 +1042,10 @@ static CompletorKind selectWithCmd(const Lexer &lexer, const std::vector<std::pa
         }
         return CompletorKind::FILE;
     case CMD_ARG_PART:
-        if(token.pos + token.size == cursor && lastIndex > 0) {
-            auto prevKind = tokenPairs[lastIndex - 1].first;
-            auto prevToken = tokenPairs[lastIndex - 1].second;
+        if(token.pos + token.size == cursor && tokenPairs.size() > 1) {
+            unsigned int prevIndex = tokenPairs.size() - 2;
+            auto prevKind = tokenPairs[prevIndex].first;
+            auto prevToken = tokenPairs[prevIndex].second;
 
             /**
              * if previous token is redir op,
@@ -1104,12 +1105,10 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
         if(tokenPairs.empty()) {
             goto END;
         }
-        unsigned int lastIndex = tokenPairs.size() - 1;
-
-        switch(tokenPairs[lastIndex].first) {
+        switch(tokenPairs.back().first) {
         case APPLIED_NAME:
         case SPECIAL_NAME: {
-            Token token = tokenPairs[lastIndex].second;
+            Token token = tokenPairs.back().second;
             if(token.pos + token.size == cursor) {
                 tokenStr = lexer.toTokenText(token);
                 kind = CompletorKind::VAR;
@@ -1126,7 +1125,7 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
         }
         default:
             if(inCmdMode(*rootNode)) {
-                kind = selectWithCmd(lexer, tokenPairs, cursor, lastIndex, tokenStr);
+                kind = selectWithCmd(lexer, tokenPairs, cursor, tokenStr);
                 goto END;
             }
             break;
@@ -1149,7 +1148,7 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
         switch(e.getTokenKind()) {
         case EOS: {
             if(strcmp(e.getErrorKind(), "NoViableAlter") == 0) {
-                kind = selectWithCmd(lexer, tokenPairs, cursor, tokenPairs.size() - 1, tokenStr, true);
+                kind = selectWithCmd(lexer, tokenPairs, cursor, tokenStr, true);
                 if(kind != CompletorKind::NONE) {
                     goto END;
                 }
@@ -1168,7 +1167,7 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
                 TokenKind expected = e.getExpectedTokens().back();
                 LOG(DUMP_CONSOLE, "expected: " << toString(expected));
 
-                kind = selectWithCmd(lexer, tokenPairs, cursor, tokenPairs.size() - 1, tokenStr, true);
+                kind = selectWithCmd(lexer, tokenPairs, cursor, tokenStr, true);
                 if(kind != CompletorKind::NONE) {
                     goto END;
                 }
