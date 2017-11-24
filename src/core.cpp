@@ -1075,11 +1075,8 @@ static bool findKind(const std::vector<TokenKind> &values, TokenKind kind) {
 }
 
 static bool inCmdMode(const RootNode &node) {
-    unsigned int size = node.getNodes().size();
-    if(size == 0) {
-        return false;
-    }
-    auto *lastNode = node.getNodes()[size - 1];
+    assert(!node.getNodes().empty());
+    auto *lastNode = node.getNodes().back();
     if(lastNode->is(NodeKind::Cmd)) {
         return true;
     } else if(lastNode->is(NodeKind::Pipeline)) {
@@ -1104,17 +1101,10 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
 
     if(!parser.hasError()) {
         const auto &tokenPairs = tracker.getTokenPairs();
-        const unsigned int tokenSize = tokenPairs.size();
-
-        assert(tokenSize > 0);
-
-        unsigned int lastIndex = tokenSize - 1;
-
-        if(lastIndex == 0) {
+        if(tokenPairs.empty()) {
             goto END;
         }
-
-        lastIndex--; // skip EOS
+        unsigned int lastIndex = tokenPairs.size() - 1;
 
         switch(tokenPairs[lastIndex].first) {
         case APPLIED_NAME:

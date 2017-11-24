@@ -175,11 +175,10 @@ std::unique_ptr<RootNode> Parser::operator()() {
     rootNode->setSourceInfoPtr(this->lexer->getSourceInfoPtr());
 
     // start parsing
-    while(CUR_KIND() != EOS) {
+    while((*this)) {
         auto node = TRY(this->parse_statement());
         rootNode->addNode(node.release());
     }
-    TRY(this->expect(EOS));
 
     return rootNode;
 }

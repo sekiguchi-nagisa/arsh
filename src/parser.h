@@ -104,6 +104,10 @@ public:
      */
     std::unique_ptr<RootNode> operator()();
 
+    operator bool() const {
+        return this->curKind != EOS;
+    }
+
 protected:
     /**
      * change lexer mode and refetch.
