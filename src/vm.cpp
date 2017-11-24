@@ -81,9 +81,7 @@ static std::string initLogicalWorkingDir() {
     if(dir[0] == '/') {
         return std::string(dir);
     }
-
     return expandDots(nullptr, dir);
-
 }
 
 static DSHistory initHistory() {
@@ -1258,16 +1256,6 @@ static void callBuiltinExec(DSState &state, DSValue &&array, DSValue &&redir) {
     }
     pushExitStatus(state, 0);
 }
-
-struct Process {
-    pid_t pid;
-    int status;
-
-    enum Kind {
-        EXIT,
-        SIGNAL,
-    } kind;
-};
 
 static void callPipeline(DSState &state) {
     /**
