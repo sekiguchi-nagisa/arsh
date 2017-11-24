@@ -148,15 +148,15 @@ $assertArray($(file '/usr/bin'), $(complete 'echo > /usr/bin/'))
 $assertArray($(file ~), $(complete 'echo 23 ~/'))
 $assertArray($(file '.'), $(complete '$(echo '))
 $assertArray($(file '.'), $(complete '{echo hello '))
-$assertArray($(file '.'), $(complete 'echo < '))
+$assertArray($(file '.'), $(complete 'echo | echo < '))
 $assertArray($(file '.'), $(complete 'echo >'))
-$assertArray($(file '.'), $(complete 'echo $TRUE '))
+$assertArray($(file '.'), $(complete 'echo | echo $TRUE '))
 $assertArray($(file '.'), $(complete 'echo ${34} '))
 
 
 # complete expected token
 $assertArray([')'], $(complete 'for(var i = 0; $i < 23; $i++'))
-$assertArray(['='], $(complete 'var a'))
+$assertArray(['='], $(complete '34; var a'))
 $assertArray([')'], $(complete '$(echo $TRUE '))
 
 true

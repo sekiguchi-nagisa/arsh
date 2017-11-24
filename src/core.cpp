@@ -1058,11 +1058,6 @@ static CompletorKind selectWithCmd(const Lexer &lexer, const std::vector<std::pa
         }
         return CompletorKind::FILE;
     default:
-        if(token.pos + token.size == cursor && (kind == APPLIED_NAME || kind == SPECIAL_NAME)) {
-            tokenStr = lexer.toTokenText(token);
-            return CompletorKind::VAR;
-        }
-
         if(!exactly && token.pos + token.size < cursor) {
             return CompletorKind::FILE;
         }
