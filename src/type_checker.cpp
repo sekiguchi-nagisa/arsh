@@ -755,7 +755,7 @@ void TypeChecker::visitCmdNode(DSType *, CmdNode &node) {
     }
     if(node.getNameNode()->is(NodeKind::String)
        && static_cast<StringNode*>(node.getNameNode())->getValue() == "exit") {
-        node.setType(this->typePool.getBottomType());
+        node.setType(this->typePool.getNothingType());
     } else {
         node.setType(this->typePool.getBooleanType());
     }
