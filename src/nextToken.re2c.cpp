@@ -124,10 +124,10 @@ TokenKind Lexer::nextToken(Token &token) {
 
     bool foundNewLine = false;
     bool foundSpace = false;
-    LexerMode prevMode = this->modeStack.back();
 
     INIT:
     unsigned int startPos = this->getPos();
+    LexerMode prevMode = this->modeStack.back();
     TokenKind kind = INVALID;
     /*!re2c
       <STMT> "alias"           { MODE(NAME); RET(ALIAS); }

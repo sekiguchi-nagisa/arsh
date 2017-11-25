@@ -1,0 +1,8 @@
+#$test($result = 'throw', $lineNum = 4, $errorKind = 'Error', $status = 1)
+
+with() {
+    throw new Error("failed")
+}
+
+34
+with > /dev/null    # not allow newline

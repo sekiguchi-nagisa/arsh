@@ -177,6 +177,10 @@ public:
         return this->modeStack.back();
     }
 
+    unsigned int lexerModeSize() const {
+        return this->modeStack.size();
+    }
+
     static bool isInvalidToken(TokenKind kind) {
         return kind == INVALID;
     }

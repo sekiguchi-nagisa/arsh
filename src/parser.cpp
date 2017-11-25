@@ -179,7 +179,7 @@ std::unique_ptr<RootNode> Parser::operator()() {
         auto node = TRY(this->parse_statement());
         rootNode->addNode(node.release());
     }
-
+    assert(this->lexer->lexerModeSize() == 1);
     return rootNode;
 }
 
@@ -485,7 +485,13 @@ std::unique_ptr<TypeNode> Parser::parse_typeName() {
 
 std::unique_ptr<Node> Parser::parse_statementImp() {
     if(this->lexer->getPrevMode() != yycSTMT) {
-        this->refetch(yycSTMT);
+        assert(this->lexer->getPrevMode() == yycEXPR);
+        if(CUR_KIND() != LP && CUR_KIND() != LB && CUR_KIND() != LBC) {
+            if(CUR_KIND() == WITH) {
+                this->lexer->popLexerMode();
+            }
+            this->refetch(yycSTMT);
+        }
     }
 
     switch(CUR_KIND()) {
