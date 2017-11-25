@@ -1,0 +1,8 @@
+#$test($result = 'type', $lineNum = 6, $errorKind = 'InsideFinally', $status = 1)
+
+
+try {
+   34
+} finally {
+    exit 45
+}
