@@ -70,8 +70,7 @@
     OP(TRY) \
     OP(WHILE) \
     OP(BREAK) \
-    OP(CONTINUE) \
-    OP(EXIT)
+    OP(CONTINUE)
 
 #define EACH_LA_expression(OP) \
     OP(NOT) \
@@ -1293,21 +1292,6 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     case CONTINUE: {
         Token token = this->expect(CONTINUE);  // always success
         return std::unique_ptr<Node>(EscapeNode::newContinue(token));
-    }
-    case EXIT: {
-        Token token = this->expect(EXIT); // always success
-        std::unique_ptr<Node> exprNode;
-        if(!HAS_NL()) {
-            switch(CUR_KIND()) {
-            EACH_LA_expression(GEN_LA_CASE) {
-                exprNode = TRY(this->parse_expression());
-                break;
-            }
-            default:
-                break;
-            }
-        }
-        return std::unique_ptr<Node>(EscapeNode::newExit(token, exprNode.release()));
     }
     default:
         E_ALTER(EACH_LA_primary(GEN_LA_ALTER));

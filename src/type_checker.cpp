@@ -753,7 +753,12 @@ void TypeChecker::visitCmdNode(DSType *, CmdNode &node) {
     for(auto *argNode : node.getArgNodes()) {
         this->checkType(argNode);
     }
-    node.setType(this->typePool.getBooleanType());
+    if(node.getNameNode()->is(NodeKind::String)
+       && static_cast<StringNode*>(node.getNameNode())->getValue() == "exit") {
+        node.setType(this->typePool.getBottomType());
+    } else {
+        node.setType(this->typePool.getBooleanType());
+    }
 }
 
 void TypeChecker::visitCmdArgNode(DSType *, CmdArgNode &node) {
@@ -1011,13 +1016,6 @@ void TypeChecker::visitEscapeNode(DSType *, EscapeNode &node) {
     }
     case EscapeNode::RETURN: {
         this->checkTypeAsReturn(node);
-        break;
-    }
-    case EscapeNode::EXIT: {
-        if(this->fctx.finallyLevel() > 0) {
-            RAISE_TC_ERROR(InsideFinally, node);
-        }
-        this->checkType(this->typePool.getInt32Type(), node.getExprNode());
         break;
     }
     }

@@ -113,6 +113,9 @@ const struct {
                 "    Options:\n"
                 "        -c    cleaner environmental variable\n"
                 "        -a    specify set program name(default is FILE)"},
+        {"exit", nullptr, "[n]",
+                "    Exit the shell with a status of N.  If N is omitted, the exit\n"
+                "    status is $?."},
         {"false", builtin_false, "",
                 "    Always failure (exit status is 1)."},
         {"hash", builtin_hash, "[-r] [command ...]",

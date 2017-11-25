@@ -58,6 +58,7 @@ SymbolTable::SymbolTable() : scopes(1), maxVarIndexStack(1) {
 
     const char *blacklist[] = {
             "eval",
+            "exit",
             "exec",
             "command",
     };

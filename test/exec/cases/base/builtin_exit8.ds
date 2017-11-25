@@ -1,0 +1,6 @@
+
+#$test($result = 'exit', $status = 1, $lineNum = 6)
+
+false
+
+eval exit

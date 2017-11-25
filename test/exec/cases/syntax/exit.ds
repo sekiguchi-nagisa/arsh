@@ -1,8 +1,0 @@
-#$test($result = 'type', $lineNum = 3, $errorKind = 'Required', $status = 1)
-
-exit 34 && echo hey
-
-# in previous version (~ v0.8), the above code is interpreted as the following due to 'exit' is a command'.
-#    (exit 34) && echo hey
-# but, now 'exit' is expression, so the code is interpreted as the following
-#    exit (34 && echo hey)
