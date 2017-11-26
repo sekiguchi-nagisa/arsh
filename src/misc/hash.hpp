@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2016 Nagisa Sekiguchi
+ * Copyright (C) 2015-2017 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +30,9 @@ struct CStringComparator {
 
 struct CStringHash {
     std::size_t operator()(const char *key) const {
-        std::size_t hash = 1;
-        for(std::size_t i = 0; key[i] != '\0'; i++) {
-            hash = hash * 61 + key[i];
+        std::size_t hash = 0;
+        while(*key != '\0') {
+            hash = hash * 31 + *(key++);
         }
         return hash;
     }
