@@ -148,7 +148,7 @@ public:
 class BreakGather {
 private:
     struct Entry {
-        FlexBuffer<EscapeNode *> jumpNodes;
+        FlexBuffer<JumpNode *> jumpNodes;
         Entry *next;
 
         explicit Entry(Entry *prev) : next(prev) {}
@@ -169,13 +169,13 @@ public:
 
     void leave();
 
-    void addJumpNode(EscapeNode *node);
+    void addJumpNode(JumpNode *node);
 
     /**
      * call after enter()
      * @return
      */
-    FlexBuffer<EscapeNode *> &getJumpNodes() {
+    FlexBuffer<JumpNode *> &getJumpNodes() {
         return this->entry->jumpNodes;
     }
 };
@@ -390,8 +390,8 @@ protected:
 
     void convertToStringExpr(BinaryOpNode &node);
 
-    void checkTypeAsBreakContinue(EscapeNode &node);
-    void checkTypeAsReturn(EscapeNode &node);
+    void checkTypeAsBreakContinue(JumpNode &node);
+    void checkTypeAsReturn(JumpNode &node);
 
     void dispatch(DSType *requiredType, Node &node);
 
@@ -423,7 +423,7 @@ protected:
     void visitTypeAliasNode(DSType *requiredType, TypeAliasNode &node);
     void visitLoopNode(DSType *requiredType, LoopNode &node);
     void visitIfNode(DSType *requiredType, IfNode &node);
-    void visitEscapeNode(DSType *requredType, EscapeNode &node);
+    void visitJumpNode(DSType *requredType, JumpNode &node);
     void visitCatchNode(DSType *requiredType, CatchNode &node);
     void visitTryNode(DSType *requiredType, TryNode &node);
     void visitVarDeclNode(DSType *requiredType, VarDeclNode &node);

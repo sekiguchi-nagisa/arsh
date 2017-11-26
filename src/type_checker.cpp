@@ -42,7 +42,7 @@ void BreakGather::leave() {
     this->entry = old;
 }
 
-void BreakGather::addJumpNode(EscapeNode *node) {
+void BreakGather::addJumpNode(JumpNode *node) {
     assert(this->entry != nullptr);
     this->entry->jumpNodes.push_back(node);
 }
@@ -921,7 +921,7 @@ void TypeChecker::visitLoopNode(DSType *, LoopNode &node) {
     this->symbolTable.exitScope();
 
     if(!node.getBlockNode()->getType().isNothingType()) {    // insert continue to block end
-        auto *jumpNode = EscapeNode::newContinue({0, 0});
+        auto *jumpNode = JumpNode::newContinue({0, 0});
         jumpNode->setType(this->typePool.getNothingType());
         jumpNode->getExprNode()->setType(this->typePool.getVoidType());
         node.getBlockNode()->addNode(jumpNode);
@@ -954,7 +954,7 @@ void TypeChecker::visitIfNode(DSType *requiredType, IfNode &node) {
     }
 }
 
-void TypeChecker::checkTypeAsBreakContinue(EscapeNode &node) {
+void TypeChecker::checkTypeAsBreakContinue(JumpNode &node) {
     if(this->fctx.loopLevel() == 0) {
         RAISE_TC_ERROR(InsideLoop, node);
     }
@@ -973,14 +973,14 @@ void TypeChecker::checkTypeAsBreakContinue(EscapeNode &node) {
 
     if(node.getExprNode()->is(NodeKind::Empty)) {
         this->checkType(this->typePool.getVoidType(), node.getExprNode());
-    } else if(node.getOpKind() == EscapeNode::BREAK) {
+    } else if(node.getOpKind() == JumpNode::BREAK) {
         this->checkType(this->typePool.getAnyType(), node.getExprNode());
         this->breakGather.addJumpNode(&node);
     }
     assert(!node.getExprNode()->isUntyped());
 }
 
-void TypeChecker::checkTypeAsReturn(EscapeNode &node) {
+void TypeChecker::checkTypeAsReturn(JumpNode &node) {
     if(this->fctx.finallyLevel() > 0) {
         RAISE_TC_ERROR(InsideFinally, node);
     }
@@ -1001,20 +1001,20 @@ void TypeChecker::checkTypeAsReturn(EscapeNode &node) {
     }
 }
 
-void TypeChecker::visitEscapeNode(DSType *, EscapeNode &node) {
+void TypeChecker::visitJumpNode(DSType *, JumpNode &node) {
     switch(node.getOpKind()) {
-    case EscapeNode::BREAK:
-    case EscapeNode::CONTINUE:
+    case JumpNode::BREAK:
+    case JumpNode::CONTINUE:
         this->checkTypeAsBreakContinue(node);
         break;
-    case EscapeNode::THROW: {
+    case JumpNode::THROW: {
         if(this->fctx.finallyLevel() > 0) {
             RAISE_TC_ERROR(InsideFinally, node);
         }
         this->checkType(this->typePool.getAnyType(), node.getExprNode());
         break;
     }
-    case EscapeNode::RETURN: {
+    case JumpNode::RETURN: {
         this->checkTypeAsReturn(node);
         break;
     }

@@ -545,11 +545,11 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
                 break;
             }
         }
-        return std::unique_ptr<Node>(EscapeNode::newBreak(token, exprNode.release()));
+        return std::unique_ptr<Node>(JumpNode::newBreak(token, exprNode.release()));
     }
     case CONTINUE: {
         Token token = this->expect(CONTINUE);  // always success
-        return std::unique_ptr<Node>(EscapeNode::newContinue(token));
+        return std::unique_ptr<Node>(JumpNode::newContinue(token));
     }
     case EXPORT_ENV: {
         unsigned int startPos = START_POS();
@@ -587,7 +587,7 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
                 break;
             }
         }
-        return std::unique_ptr<Node>(EscapeNode::newReturn(token, exprNode.release()));
+        return std::unique_ptr<Node>(JumpNode::newReturn(token, exprNode.release()));
     }
     EACH_LA_varDecl(GEN_LA_CASE) {
         return this->parse_variableDeclaration();
@@ -891,7 +891,7 @@ std::unique_ptr<Node> Parser::parse_expression() {
 
     if(CUR_KIND() == THROW) {
         auto token = this->expect(THROW);   // always success
-        return std::unique_ptr<Node>(EscapeNode::newThrow(token, TRY(this->parse_expression()).release()));
+        return std::unique_ptr<Node>(JumpNode::newThrow(token, TRY(this->parse_expression()).release()));
     }
     return this->parse_binaryExpression(
             TRY(this->parse_unaryExpression()), getPrecedence(ASSIGN));

@@ -438,7 +438,7 @@ private:
     void generateCmdArg(CmdArgNode &node);
     void emitPipelineIns(const std::vector<Label> &labels);
     void generateStringExpr(StringExprNode &node, bool fragment);
-    void generateBreakContinue(EscapeNode &node);
+    void generateBreakContinue(JumpNode &node);
 
     void initCodeBuilder(CodeKind kind, unsigned short localVarNum);
     void initToplevelCodeBuilder(const RootNode &node);
@@ -473,7 +473,7 @@ private:
     void visitTypeAliasNode(TypeAliasNode &node) override;
     void visitLoopNode(LoopNode &node) override;
     void visitIfNode(IfNode &node) override;
-    void visitEscapeNode(EscapeNode &node) override;
+    void visitJumpNode(JumpNode &node) override;
     void visitCatchNode(CatchNode &node) override;
     void visitTryNode(TryNode &node) override;
     void visitVarDeclNode(VarDeclNode &node) override;

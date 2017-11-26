@@ -741,7 +741,7 @@ void BlockNode::addReturnNodeToLast(TypePool &pool, Node *exprNode) {
     assert(!this->isUntyped() && !this->getType().isNothingType());
     assert(!exprNode->isUntyped());
 
-    auto *returnNode = EscapeNode::newReturn(exprNode->getToken(), exprNode);
+    auto *returnNode = JumpNode::newReturn(exprNode->getToken(), exprNode);
     returnNode->setType(pool.getNothingType());
     this->addNode(returnNode);
     this->setType(returnNode->getType());
@@ -853,12 +853,12 @@ void IfNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(elseNode);
 }
 
-// ########################
-// ##     EscapeNode     ##
-// ########################
+// ######################
+// ##     JumpNode     ##
+// ######################
 
-EscapeNode::EscapeNode(Token token, OpKind kind, Node *exprNode) :
-        Node(NodeKind::Escape, token), opKind(kind), exprNode(exprNode) {
+JumpNode::JumpNode(Token token, OpKind kind, Node *exprNode) :
+        Node(NodeKind::Jump, token), opKind(kind), exprNode(exprNode) {
     if(this->exprNode == nullptr) {
         this->exprNode = new EmptyNode(token);
     } else {
@@ -866,11 +866,11 @@ EscapeNode::EscapeNode(Token token, OpKind kind, Node *exprNode) :
     }
 }
 
-EscapeNode::~EscapeNode() {
+JumpNode::~JumpNode() {
     delete this->exprNode;
 }
 
-void EscapeNode::dump(NodeDumper &dumper) const {
+void JumpNode::dump(NodeDumper &dumper) const {
 #define EACH_ENUM(OP) \
     OP(BREAK) \
     OP(CONTINUE) \
