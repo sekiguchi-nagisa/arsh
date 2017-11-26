@@ -121,6 +121,14 @@
     OP(START_SUB_CMD) \
     EACH_LA_paramExpansion(OP)
 
+#define EACH_LA_typeName(OP) \
+    OP(IDENTIFIER) \
+    OP(PTYPE_OPEN) \
+    OP(ATYPE_OPEN) \
+    OP(FUNC) \
+    OP(TYPEOF) \
+    OP(TYPE_PATH)
+
 
 #define E_ALTER(...) \
 do { this->raiseNoViableAlterError((TokenKind[]) { __VA_ARGS__ }); return nullptr; } while(false)
@@ -454,14 +462,7 @@ TypeWrapper Parser::parse_typeNameImpl() {
         return {make_unique<DBusIfaceTypeNode>(token, this->lexer->toTokenText(token)), token};
     }
     default:
-        E_ALTER(
-                IDENTIFIER,
-                PTYPE_OPEN,
-                ATYPE_OPEN,
-                FUNC,
-                TYPEOF,
-                TYPE_PATH
-        );
+        E_ALTER(EACH_LA_typeName(GEN_LA_ALTER));
     }
 }
 
@@ -805,14 +806,13 @@ std::unique_ptr<Node> Parser::parse_command() {
             node->addRedirNode(TRY(this->parse_redirOption()).release());
             break;
         }
-        case INVALID: {
+        case INVALID:
 #define EACH_LA_cmdArgs(E) \
             EACH_LA_cmdArg(E) \
             EACH_LA_redir(E)
 
             E_ALTER(EACH_LA_cmdArgs(GEN_LA_ALTER));
 #undef EACH_LA_cmdArgs
-        }
         default:
             next = false;
             break;
@@ -943,9 +943,8 @@ std::unique_ptr<Node> Parser::parse_binaryExpression(std::unique_ptr<Node> &&lef
                     withNode->addRedirNode(TRY(this->parse_redirOption()).release());
                     break;
                 }
-                case INVALID: {
+                case INVALID:
                     E_ALTER(EACH_LA_redir(GEN_LA_ALTER));
-                }
                 default:
                     next = false;
                     break;
