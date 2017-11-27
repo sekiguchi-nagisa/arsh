@@ -1078,9 +1078,9 @@ void TypeChecker::visitTryNode(DSType *, TryNode &node) {
      */
     const int size = node.getCatchNodes().size();
     for(int i = 0; i < size - 1; i++) {
-        DSType &curType = node.getCatchNodes()[i]->getTypeNode()->getType();
+        auto &curType = node.getCatchNodes()[i]->getTypeNode()->getType();
         CatchNode *nextNode = node.getCatchNodes()[i + 1];
-        DSType &nextType = nextNode->getTypeNode()->getType();
+        auto &nextType = nextNode->getTypeNode()->getType();
         if(curType.isSameOrBaseTypeOf(nextType)) {
             RAISE_TC_ERROR(Unreachable, *nextNode);
         }

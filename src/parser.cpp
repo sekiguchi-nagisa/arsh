@@ -496,7 +496,6 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
 
     switch(CUR_KIND()) {
     case LINE_END: {
-//        Token token = this->expect(LINE_END);
         Token token = this->curToken;   // not consume LINE_END token
         return make_unique<EmptyNode>(token);
     }
