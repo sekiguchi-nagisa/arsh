@@ -575,7 +575,7 @@ public:
         return flag;
     }
 
-    std::string toString() {
+    std::string emit() {
         std::string str("{");
         str += this->toFuncName();
         str += ", ";
@@ -956,10 +956,10 @@ void gencode(const char *outFileName, const std::vector<TypeBind *> &binds) {
     OUT("    {nullptr, {0}, nullptr},\n");
     for(TypeBind *bind : binds) {
         if(bind->initElement != nullptr) {
-            OUT("    %s,\n", bind->initElement->toString().c_str());
+            OUT("    %s,\n", bind->initElement->emit().c_str());
         }
         for(Element *e : bind->funcElements) {
-            OUT("    %s,\n", e->toString().c_str());
+            OUT("    %s,\n", e->emit().c_str());
         }
     }
     OUT("};\n");
