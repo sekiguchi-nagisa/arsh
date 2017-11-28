@@ -25,6 +25,7 @@
 #include <symbol.h>
 #include <misc/parser_base.hpp>
 #include <misc/fatal.h>
+#include <misc/argv.hpp>
 #include <DescLexer.h>
 
 namespace {
@@ -306,6 +307,14 @@ struct TypeToken {
     virtual void serialize(HandleInfoSerializer &s) = 0;
 
     virtual bool isType(HandleInfo info) = 0;
+
+    std::string toString() {
+        std::string str;
+        this->toString(str);
+        return str;
+    }
+
+    virtual void toString(std::string &str) = 0;
 };
 
 
@@ -330,6 +339,10 @@ public:
     }
 
     static std::unique_ptr<CommonTypeToken> newTypeToken(const std::string &name);
+
+    void toString(std::string &str) override {
+        str += HandleInfoMap::getInstance().getName(this->info);
+    }
 };
 
 std::unique_ptr<CommonTypeToken> CommonTypeToken::newTypeToken(const std::string &name) {
@@ -367,6 +380,18 @@ public:
     }
 
     static std::unique_ptr<ReifiedTypeToken> newReifiedTypeToken(const std::string &name);
+
+    void toString(std::string &str) override {
+        this->typeTemp->toString(str);
+        str += '<';
+        for(unsigned int i = 0; i < this->elements.size(); i++) {
+            if(i > 0) {
+                str += ',';
+            }
+            this->elements[i]->toString(str);
+        }
+        str += '>';
+    }
 };
 
 void ReifiedTypeToken::serialize(HandleInfoSerializer &s) {
@@ -428,6 +453,23 @@ public:
 
     bool isType(HandleInfo info) override {
         return this->typeTemp->isType(info);
+    }
+
+    void toString(std::string &str) override {
+        this->typeTemp->toString(str);
+        str += '<';
+        this->returnType->toString(str);
+        if(!this->paramTypes.empty()) {
+            str += ",[";
+            for(unsigned int i = 0; i < this->paramTypes.size(); i++) {
+                if(i > 0) {
+                    str += ',';
+                }
+                this->paramTypes[i]->toString(str);
+            }
+            str += "]";
+        }
+        str += '>';
     }
 };
 
@@ -587,6 +629,32 @@ public:
 //        str += ", ";
 //        str += std::to_string((int) this->toDefaultFlag());
         str += "}";
+        return str;
+    }
+
+    std::string toString() {
+        std::string str;
+        if(this->isFunc()) {
+            str += "function ";
+            if(this->op) {
+                str += "%";
+            }
+            str += this->funcName;
+        } else {
+            str += "constructor";
+        }
+
+        str += "(";
+        str += "$this : ";
+        this->ownerType->toString(str);
+        for(unsigned int i = 0; i < this->paramNames.size(); i++) {
+            str += ", $";
+            str += this->paramNames[i].first;
+            str += " : ";
+            str += this->paramTypes[i]->toString();
+        }
+        str += ") : ";
+        str += this->returnType->toString();
         return str;
     }
 };
@@ -1007,21 +1075,95 @@ void gencode(const char *outFileName, const std::vector<TypeBind *> &binds) {
     fclose(fp);
 }
 
+void gendoc(const char *outFileName, const std::vector<TypeBind *> &binds) {
+    FILE *fp = fopen(outFileName, "w");
+    if(fp == nullptr) {
+        fatal("cannot open output file: %s\n", outFileName);
+    }
+
+    OUT("# Standard Library Interface Definition\n");
+    for(auto &bind : binds) {
+        OUT("## %s type\n", bind->name.c_str());
+        OUT("```\n");
+        if(bind->initElement != nullptr) {
+            OUT("%s\n\n", bind->initElement->toString().c_str());
+        }
+        for(auto &e : bind->funcElements) {
+            OUT("%s\n\n", e->toString().c_str());
+        }
+        OUT("```\n\n");
+    }
+
+    fclose(fp);
+}
+
+#define EACH_OPT(OP) \
+    OP(DOC,  "--doc",  0, "generate interface documentation") \
+    OP(BIND, "--bind", 0, "generate function binding") \
+    OP(HELP, "--help", 0, "show help message")
+
+enum class OptionSet : unsigned int {
+#define GEN_ENUM(E, S, F, D) E,
+    EACH_OPT(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+void usage(FILE *fp, char **argv) {
+    fprintf(fp, "usage: %s ([option..]) [target source] [generated code]\n", argv[0]);
+}
+
 } // namespace
 
 int main(int argc, char **argv) {
-    if(argc != 3) {
-        fprintf(stderr, "usage: %s [target source] [generated code]\n", argv[0]);
-        exit(EXIT_FAILURE);
+    using namespace ydsh::argv;
+
+    ArgvParser<OptionSet> parser = {
+#define GEN_OPT(E, S, F, D) {OptionSet::E, S, (F), D},
+            EACH_OPT(GEN_OPT)
+#undef GEN_OPT
+    };
+    CmdLines<OptionSet> cmdLines;
+    int index = parser(argc, argv, cmdLines);
+    if(parser.hasError()) {
+        usage(stderr, argv);
+        fprintf(stderr, "%s\n", parser.getErrorMessage());
+        parser.printOption(stderr);
+        exit(1);
     }
 
-    const char *inputFileName = argv[1];
-    const char *outputFileName = argv[2];
+    bool doc = false;
+    for(auto &cmdline : cmdLines) {
+        switch(cmdline.first) {
+        case OptionSet::DOC:
+            doc = true;
+            break;
+        case OptionSet::BIND:
+            doc = false;
+            break;
+        case OptionSet::HELP:
+            usage(stdout, argv);
+            parser.printOption(stdout);
+            exit(0);
+        }
+    }
+
+    if(index + 1 >= argc) {
+        usage(stderr, argv);
+        exit(1);
+    }
+
+    const char *inputFileName = argv[index];
+    const char *outputFileName = argv[index + 1];
 
     auto elements = Parser()(inputFileName);
     std::vector<TypeBind *> binds(genTypeBinds(elements));
-    gencode(outputFileName, binds);
 
-    exit(EXIT_SUCCESS);
+    if(doc) {
+        gendoc(outputFileName, binds);
+    } else {
+        gencode(outputFileName, binds);
+    }
+
+    exit(0);
 }
 
