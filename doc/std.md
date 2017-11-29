@@ -1,14 +1,9 @@
 # Standard Library Interface Definition
-## Void type
-```
-```
-
 ## Any type
 ```
 function %OP_STR($this : Any) : String
 
 function %OP_INTERP($this : Any) : String
-
 ```
 
 ## Byte type
@@ -18,7 +13,6 @@ function %OP_PLUS($this : Byte) : Byte
 function %OP_MINUS($this : Byte) : Byte
 
 function %OP_NOT($this : Byte) : Byte
-
 ```
 
 ## Int16 type
@@ -28,7 +22,6 @@ function %OP_PLUS($this : Int16) : Int16
 function %OP_MINUS($this : Int16) : Int16
 
 function %OP_NOT($this : Int16) : Int16
-
 ```
 
 ## Uint16 type
@@ -38,7 +31,6 @@ function %OP_PLUS($this : Uint16) : Uint16
 function %OP_MINUS($this : Uint16) : Uint16
 
 function %OP_NOT($this : Uint16) : Uint16
-
 ```
 
 ## Int32 type
@@ -76,7 +68,6 @@ function %OP_AND($this : Int32, $target : Int32) : Int32
 function %OP_OR($this : Int32, $target : Int32) : Int32
 
 function %OP_XOR($this : Int32, $target : Int32) : Int32
-
 ```
 
 ## Uint32 type
@@ -114,7 +105,6 @@ function %OP_AND($this : Uint32, $target : Uint32) : Uint32
 function %OP_OR($this : Uint32, $target : Uint32) : Uint32
 
 function %OP_XOR($this : Uint32, $target : Uint32) : Uint32
-
 ```
 
 ## Int64 type
@@ -152,7 +142,6 @@ function %OP_AND($this : Int64, $target : Int64) : Int64
 function %OP_OR($this : Int64, $target : Int64) : Int64
 
 function %OP_XOR($this : Int64, $target : Int64) : Int64
-
 ```
 
 ## Uint64 type
@@ -190,7 +179,6 @@ function %OP_AND($this : Uint64, $target : Uint64) : Uint64
 function %OP_OR($this : Uint64, $target : Uint64) : Uint64
 
 function %OP_XOR($this : Uint64, $target : Uint64) : Uint64
-
 ```
 
 ## Float type
@@ -224,7 +212,6 @@ function isNan($this : Float) : Boolean
 function isInf($this : Float) : Boolean
 
 function isFinite($this : Float) : Boolean
-
 ```
 
 ## Boolean type
@@ -234,7 +221,6 @@ function %OP_NOT($this : Boolean) : Boolean
 function %OP_EQ($this : Boolean, $target : Boolean) : Boolean
 
 function %OP_NE($this : Boolean, $target : Boolean) : Boolean
-
 ```
 
 ## String type
@@ -292,7 +278,6 @@ function %OP_MATCH($this : String, $re : Regex) : Boolean
 function %OP_UNMATCH($this : String, $re : Regex) : Boolean
 
 function realpath($this : String) : Option<String>
-
 ```
 
 ## ObjectPath type
@@ -302,7 +287,6 @@ function %OP_EQ($this : ObjectPath, $target : ObjectPath) : Boolean
 function %OP_NE($this : ObjectPath, $target : ObjectPath) : Boolean
 
 function size($this : ObjectPath) : Int32
-
 ```
 
 ## UnixFD type
@@ -312,7 +296,6 @@ constructor($this : UnixFD, $path : String) : Void
 function close($this : UnixFD) : Void
 
 function dup($this : UnixFD) : UnixFD
-
 ```
 
 ## DBus type
@@ -332,7 +315,6 @@ function getObjectPath($this : DBus, $proxy : DBusObject) : ObjectPath
 function getIfaces($this : DBus, $proxy : DBusObject) : Array<String>
 
 function introspect($this : DBus, $proxy : DBusObject) : String
-
 ```
 
 ## Bus type
@@ -342,17 +324,11 @@ function service($this : Bus, $dest : String) : Service
 function listNames($this : Bus) : Array<String>
 
 function listActiveNames($this : Bus) : Array<String>
-
 ```
 
 ## Service type
 ```
 function object($this : Service, $path : ObjectPath) : DBusObject
-
-```
-
-## DBusObject type
-```
 ```
 
 ## Error type
@@ -364,11 +340,6 @@ function message($this : Error) : String
 function backtrace($this : Error) : Void
 
 function name($this : Error) : String
-
-```
-
-## Proxy type
-```
 ```
 
 ## StringIter type
@@ -376,7 +347,6 @@ function name($this : Error) : String
 function %OP_NEXT($this : StringIter) : String
 
 function %OP_HAS_NEXT($this : StringIter) : Boolean
-
 ```
 
 ## Regex type
@@ -388,7 +358,6 @@ function %OP_MATCH($this : Regex, $target : String) : Boolean
 function %OP_UNMATCH($this : Regex, $target : String) : Boolean
 
 function match($this : Regex, $target : String) : Array<String>
-
 ```
 
 ## Signal type
@@ -402,7 +371,6 @@ function kill($this : Signal, $pid : Int32) : Void
 function %OP_EQ($this : Signal, $target : Signal) : Boolean
 
 function %OP_NE($this : Signal, $target : Signal) : Boolean
-
 ```
 
 ## Signals type
@@ -416,7 +384,6 @@ function get($this : Signals, $key : String) : Option<Signal>
 function list($this : Signals) : Array<Signal>
 
 function action($this : Signals, $s : Signal) : Func<Void,[Signal]>
-
 ```
 
 ## Array type
@@ -458,7 +425,6 @@ function %OP_NEXT($this : Array<T0>) : T0
 function %OP_HAS_NEXT($this : Array<T0>) : Boolean
 
 function %OP_CMD_ARG($this : Array<T0>) : Array<String>
-
 ```
 
 ## Map type
@@ -492,16 +458,10 @@ function %OP_ITER($this : Map<T0,T1>) : Map<T0,T1>
 function %OP_NEXT($this : Map<T0,T1>) : Tuple<T0,T1>
 
 function %OP_HAS_NEXT($this : Map<T0,T1>) : Boolean
-
 ```
 
 ## Tuple type
 ```
 function %OP_CMD_ARG($this : Tuple<>) : Array<String>
-
-```
-
-## Option type
-```
 ```
 

@@ -1083,13 +1083,20 @@ void gendoc(const char *outFileName, const std::vector<TypeBind *> &binds) {
 
     OUT("# Standard Library Interface Definition\n");
     for(auto &bind : binds) {
-        OUT("## %s type\n", bind->name.c_str());
-        OUT("```\n");
-        if(bind->initElement != nullptr) {
-            OUT("%s\n\n", bind->initElement->toString().c_str());
+        if(bind->initElement == nullptr && bind->funcElements.empty()) {
+            continue;
         }
+
+        OUT("## %s type\n", bind->name.c_str());
+        OUT("```");
+        if(bind->initElement != nullptr) {
+            OUT("\n");
+            OUT("%s\n", bind->initElement->toString().c_str());
+        }
+
         for(auto &e : bind->funcElements) {
-            OUT("%s\n\n", e->toString().c_str());
+            OUT("\n");
+            OUT("%s\n", e->toString().c_str());
         }
         OUT("```\n\n");
     }
