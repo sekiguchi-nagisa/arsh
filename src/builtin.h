@@ -1909,6 +1909,13 @@ YDSH_METHOD fd_dup(RuntimeContext &ctx) {
     RET(DSValue::create<UnixFD_Object>(getPool(ctx), newfd));
 }
 
+//!bind: function $OP_NOT($this : UnixFD) : Boolean
+YDSH_METHOD fd_not(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(fd_not);
+    int fd = typeAs<UnixFD_Object>(LOCAL(0))->getValue();
+    RET_BOOL(fd == -1);
+}
+
 
 // ##################
 // ##     DBus     ##

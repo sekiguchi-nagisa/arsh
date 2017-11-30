@@ -296,6 +296,8 @@ constructor($this : UnixFD, $path : String) : Void
 function close($this : UnixFD) : Void
 
 function dup($this : UnixFD) : UnixFD
+
+function %OP_NOT($this : UnixFD) : Boolean
 ```
 
 ## DBus type

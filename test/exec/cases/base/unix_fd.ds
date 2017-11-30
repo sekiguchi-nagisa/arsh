@@ -8,6 +8,7 @@ assert $fd as String  != "0"
 
 $fd.close()
 assert $fd as String == -1 as String
+assert not $fd
 
 var ex = 34 as Any
 try {
