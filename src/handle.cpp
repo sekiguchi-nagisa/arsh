@@ -103,16 +103,16 @@ public:
     DSType *decode();
 
     unsigned int decodeNum() {
-        return static_cast<unsigned int>(*(this->pos++) - P_N0);
+        return static_cast<unsigned int>(*(this->pos++) - static_cast<int>(HandleInfo::P_N0));
     }
 };
 
 DSType* TypeDecoder::decode() {
-    switch(*(this->pos++)) {
-#define GEN_CASE(ENUM) case ENUM: return &this->pool.get##ENUM##Type();
+    switch(static_cast<HandleInfo>(*(this->pos++))) {
+#define GEN_CASE(ENUM) case HandleInfo::ENUM: return &this->pool.get##ENUM##Type();
     EACH_HANDLE_INFO_TYPE(GEN_CASE)
 #undef GEN_CASE
-    case Array: {
+    case HandleInfo::Array: {
         auto &t = this->pool.getArrayTemplate();
         unsigned int size = this->decodeNum();
         assert(size == 1);
@@ -120,7 +120,7 @@ DSType* TypeDecoder::decode() {
         elementTypes[0] = decode();
         return &this->pool.createReifiedType(t, std::move(elementTypes));
     }
-    case Map: {
+    case HandleInfo::Map: {
         auto &t = this->pool.getMapTemplate();
         unsigned int size = this->decodeNum();
         assert(size == 2);
@@ -130,7 +130,7 @@ DSType* TypeDecoder::decode() {
         }
         return &this->pool.createReifiedType(t, std::move(elementTypes));
     }
-    case Tuple: {
+    case HandleInfo::Tuple: {
         unsigned int size = this->decodeNum();
         if(size == 0) { // variable length type
             size = this->types->size();
@@ -147,7 +147,7 @@ DSType* TypeDecoder::decode() {
         }
         return &this->pool.createTupleType(std::move(elementTypes));
     }
-    case Option: {
+    case HandleInfo::Option: {
         auto &t = this->pool.getOptionTemplate();
         unsigned int size = this->decodeNum();
         assert(size == 1);
@@ -155,7 +155,7 @@ DSType* TypeDecoder::decode() {
         elementTypes[0] = this->decode();
         return &this->pool.createReifiedType(t, std::move(elementTypes));
     }
-    case Func: {
+    case HandleInfo::Func: {
         auto *retType = this->decode();
         unsigned int size = this->decodeNum();
         std::vector<DSType *> paramTypes(size);
@@ -164,19 +164,19 @@ DSType* TypeDecoder::decode() {
         }
         return &this->pool.createFuncType(retType, std::move(paramTypes));
     }
-    case P_N0:
-    case P_N1:
-    case P_N2:
-    case P_N3:
-    case P_N4:
-    case P_N5:
-    case P_N6:
-    case P_N7:
-    case P_N8:
+    case HandleInfo::P_N0:
+    case HandleInfo::P_N1:
+    case HandleInfo::P_N2:
+    case HandleInfo::P_N3:
+    case HandleInfo::P_N4:
+    case HandleInfo::P_N5:
+    case HandleInfo::P_N6:
+    case HandleInfo::P_N7:
+    case HandleInfo::P_N8:
         fatal("must be type\n");
-    case T0:
+    case HandleInfo::T0:
         return (*this->types)[0];
-    case T1:
+    case HandleInfo::T1:
         return (*this->types)[1];
     default:
         fatal("broken handle info\n");

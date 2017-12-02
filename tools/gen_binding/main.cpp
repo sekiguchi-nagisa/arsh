@@ -35,9 +35,9 @@ using namespace ydsh;
 HandleInfo toNum(unsigned int num) {
     // check range
     if(num < 9) {
-        auto info = (HandleInfo) (num + P_N0);
+        auto info = (HandleInfo) (num + static_cast<int>(HandleInfo::P_N0));
         switch(info) {
-#define GEN_CASE(ENUM) case ENUM:
+#define GEN_CASE(ENUM) case HandleInfo::ENUM:
         EACH_HANDLE_INFO_NUM(GEN_CASE)
 #undef GEN_CASE
             return info;
@@ -46,18 +46,15 @@ HandleInfo toNum(unsigned int num) {
         }
     }
     fatal("out of range, must be 0~8\n");
-    return P_N0;
 }
 
-std::string toTypeInfoName(HandleInfo info) {
+const char *toTypeInfoName(HandleInfo info) {
     switch(info) {
-#define GEN_NAME(INFO) case INFO: return std::string(#INFO);
+#define GEN_NAME(INFO) case HandleInfo::INFO: return #INFO;
     EACH_HANDLE_INFO(GEN_NAME)
 #undef GEN_NAME
-    default:
-        fatal("illegal type info: %d\n", info);
-        return std::string();
     }
+    return nullptr; //   normally unreachable
 }
 
 class ErrorReporter {
@@ -127,7 +124,7 @@ private:
 };
 
 HandleInfoMap::HandleInfoMap() {
-#define REGISTER(ENUM) this->registerName(ENUM, #ENUM);
+#define REGISTER(ENUM) this->registerName(HandleInfo::ENUM, #ENUM);
     EACH_HANDLE_INFO_TYPE(REGISTER)
     EACH_HANDLE_INFO_PTYPE(REGISTER)
     EACH_HANDLE_INFO_TYPE_TEMP(REGISTER)
@@ -146,7 +143,7 @@ const char *HandleInfoMap::getName(HandleInfo info) const {
             return pair.second.c_str();
         }
     }
-    fatal("not found handle info: %s\n", toTypeInfoName(info).c_str());
+    fatal("not found handle info: %s\n", toTypeInfoName(info));
     return nullptr;
 }
 
@@ -185,7 +182,9 @@ public:
             if(i > 0) {
                 str += ", ";
             }
+            str += "static_cast<char>(HandleInfo::";
             str += toTypeInfoName(this->infos[i]);
+            str += ")";
         }
         str += "}";
 
@@ -202,18 +201,16 @@ private:
 };
 
 bool HandleInfoSerializer::isType(const std::vector<HandleInfo> &infos, unsigned int &index) {
-#define GEN_CASE(ENUM) case ENUM:
+#define GEN_CASE(ENUM) case HandleInfo::ENUM:
     if(index < infos.size()) {
         switch(infos[index++]) {
         EACH_HANDLE_INFO_TYPE(GEN_CASE)
             return true;
-        case Array: {
+        case HandleInfo::Array:
             return getNum(infos, index) == 1 && isType(infos, index);
-        }
-        case Map: {
+        case HandleInfo::Map:
             return getNum(infos, index) == 2 && isType(infos, index) && isType(infos, index);
-        }
-        case Tuple: {
+        case HandleInfo::Tuple: {
             int num = getNum(infos, index);
             if(num < 0 || num > 8) {
                 return false;
@@ -225,10 +222,9 @@ bool HandleInfoSerializer::isType(const std::vector<HandleInfo> &infos, unsigned
             }
             return true;
         }
-        case Option: {
+        case HandleInfo::Option:
             return getNum(infos, index) == 1 && isType(infos, index);
-        }
-        case Func: {
+        case HandleInfo::Func: {
             if(!isType(infos, index)) {
                 return false;
             }
@@ -251,7 +247,7 @@ bool HandleInfoSerializer::isType(const std::vector<HandleInfo> &infos, unsigned
 }
 
 int HandleInfoSerializer::getNum(const std::vector<HandleInfo> &infos, unsigned int &index) {
-#define GEN_CASE(ENUM) case ENUM:
+#define GEN_CASE(ENUM) case HandleInfo::ENUM:
     if(index < infos.size()) {
         auto ch = infos[index++];
         switch(ch) {
@@ -262,7 +258,7 @@ int HandleInfoSerializer::getNum(const std::vector<HandleInfo> &infos, unsigned 
         EACH_HANDLE_INFO_FUNC_TYPE(GEN_CASE)
             return -1;
         EACH_HANDLE_INFO_NUM(GEN_CASE)
-            return (int) (ch - P_N0);
+            return static_cast<int>(ch) - static_cast<int>(HandleInfo::P_N0);
         EACH_HANDLE_INFO_PTYPE(GEN_CASE)
             return -1;
         }
@@ -412,10 +408,10 @@ void ReifiedTypeToken::serialize(HandleInfoSerializer &s) {
 
 std::unordered_map<std::string, std::pair<unsigned int, HandleInfo >> initTypeMap() {
     std::unordered_map<std::string, std::pair<unsigned int, HandleInfo >> map = {
-            {TYPE_ARRAY,  {1, Array}},
-            {TYPE_MAP,    {2, Map}},
-            {TYPE_TUPLE,  {0, Tuple}},
-            {TYPE_OPTION,  {1, Option}},
+            {TYPE_ARRAY,  {1, HandleInfo::Array}},
+            {TYPE_MAP,    {2, HandleInfo::Map}},
+            {TYPE_TUPLE,  {0, HandleInfo::Tuple}},
+            {TYPE_OPTION,  {1, HandleInfo::Option}},
     };
     return map;
 }
@@ -536,7 +532,7 @@ public:
 
     static std::unique_ptr<Element> newInitElement() {
         std::unique_ptr<Element> element(new Element(std::string(""), false, false));
-        element->setReturnType(std::unique_ptr<TypeToken>(new CommonTypeToken(Void)));
+        element->setReturnType(std::unique_ptr<TypeToken>(new CommonTypeToken(HandleInfo::Void)));
         return element;
     }
 
@@ -978,7 +974,7 @@ struct TypeBind {
 
 std::vector<TypeBind *> genTypeBinds(std::vector<std::unique_ptr<Element>> &elements) {
     std::vector<TypeBind *> binds;
-#define GEN_BIND(ENUM) binds.push_back(new TypeBind(ENUM));
+#define GEN_BIND(ENUM) binds.push_back(new TypeBind(HandleInfo::ENUM));
     EACH_HANDLE_INFO_TYPE(GEN_BIND)
     EACH_HANDLE_INFO_TYPE_TEMP(GEN_BIND)
 #undef GEN_BIND
