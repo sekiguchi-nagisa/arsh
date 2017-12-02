@@ -1,0 +1,2 @@
+
+assert $DBus.available() == not not $DBus

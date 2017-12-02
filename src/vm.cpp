@@ -2123,10 +2123,6 @@ DSValue dbus_sessionBus(DSState &ctx) {
     return DSValue();
 }
 
-DSValue dbus_available(DSState &ctx) {
-    return ctx.falseObj;
-}
-
 DSValue dbus_getSrv(DSState &ctx) {
     throwError(ctx, ctx.pool.getErrorType(), "not support method");
     return DSValue();

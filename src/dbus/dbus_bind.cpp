@@ -721,10 +721,6 @@ DSValue dbus_sessionBus(DSState &ctx) {
     return typeAs<DBus_Object>(LOCAL(0))->getSessionBus(ctx);
 }
 
-DSValue dbus_available(DSState &ctx) {
-    return getTrueObj(ctx);
-}
-
 DSValue dbus_getSrv(DSState &ctx) {
     return typeAs<DBus_Object>(LOCAL(0))->getServiceFromProxy(ctx, LOCAL(1));
 }

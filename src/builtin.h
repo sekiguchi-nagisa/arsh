@@ -1935,7 +1935,16 @@ YDSH_METHOD dbus_waitSignal(RuntimeContext &ctx) {
 }
 
 //!bind: function available($this : DBus) : Boolean
-YDSH_METHOD_DECL dbus_available(RuntimeContext &ctx);
+YDSH_METHOD dbus_available(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(dbus_available);
+    RET_BOOL(dbusAvailable());
+}
+
+//!bind: function $OP_NOT($this : DBus) : Boolean
+YDSH_METHOD dbus_not(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(dbus_not);
+    RET_BOOL(!dbusAvailable());
+}
 
 //!bind: function getService($this : DBus, $proxy : DBusObject) : Service
 YDSH_METHOD_DECL dbus_getSrv(RuntimeContext &ctx);

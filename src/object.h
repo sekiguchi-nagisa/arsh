@@ -1003,6 +1003,14 @@ struct ProxyObject : public DSObject {
 
 DSValue newDBusObject(TypePool &pool);
 
+inline bool dbusAvailable() {
+#ifdef USE_DBUS
+    return true;
+#else
+    return false;
+#endif
+}
+
 } // namespace ydsh
 
 #endif //YDSH_OBJECT_H
