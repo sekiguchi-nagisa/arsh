@@ -1567,6 +1567,23 @@ YDSH_METHOD array_add(RuntimeContext &ctx) {
     RET(LOCAL(0));
 }
 
+//!bind: function extend($this : Array<T0>, $value : Array<T0>) : Array<T0>
+YDSH_METHOD array_extend(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_extend);
+    auto *obj = typeAs<Array_Object>(LOCAL(0));
+    auto *value = typeAs<Array_Object>(LOCAL(1));
+    if(obj != value) {
+        unsigned int valueSize = value->getValues().size();
+        for(unsigned int i = 0; i < valueSize; i++) {
+            if(obj->getValues().size() == INT32_MAX) {
+                throwOutOfRangeError(ctx, std::string("reach Array size limit"));
+            }
+            obj->append(value->getValues()[i]);
+        }
+    }
+    RET(LOCAL(0));
+}
+
 //!bind: function swap($this : Array<T0>, $index : Int32, $value : T0) : T0
 YDSH_METHOD array_swap(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_swap);

@@ -310,6 +310,8 @@ function waitSignal($this : DBus, $obj : DBusObject) : Void
 
 function available($this : DBus) : Boolean
 
+function %OP_NOT($this : DBus) : Boolean
+
 function getService($this : DBus, $proxy : DBusObject) : Service
 
 function getObjectPath($this : DBus, $proxy : DBusObject) : ObjectPath
@@ -405,6 +407,8 @@ function push($this : Array<T0>, $value : T0) : Void
 function pop($this : Array<T0>) : T0
 
 function add($this : Array<T0>, $value : T0) : Array<T0>
+
+function extend($this : Array<T0>, $value : Array<T0>) : Array<T0>
 
 function swap($this : Array<T0>, $index : Int32, $value : T0) : T0
 
