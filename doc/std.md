@@ -297,6 +297,8 @@ function close($this : UnixFD) : Void
 
 function dup($this : UnixFD) : UnixFD
 
+function %OP_BOOL($this : UnixFD) : Boolean
+
 function %OP_NOT($this : UnixFD) : Boolean
 ```
 
@@ -309,6 +311,8 @@ function sessionBus($this : DBus) : Bus
 function waitSignal($this : DBus, $obj : DBusObject) : Void
 
 function available($this : DBus) : Boolean
+
+function %OP_BOOL($this : DBus) : Boolean
 
 function %OP_NOT($this : DBus) : Boolean
 
