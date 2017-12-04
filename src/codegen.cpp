@@ -471,6 +471,13 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
         this->emitSourcePos(node.getPos());
         this->generateToString();
         break;
+    case TypeOpNode::TO_BOOL: {
+        this->emitSourcePos(node.getPos());
+        auto *handle = node.getExprNode()->getType().lookupMethodHandle(this->pool, OP_BOOL);
+        assert(handle != nullptr);
+        this->emit4byteIns(OpCode::CALL_METHOD, handle->getMethodIndex(), 0);
+        break;
+    }
     case TypeOpNode::CHECK_CAST:
         this->emitSourcePos(node.getPos());
         this->emitTypeIns(OpCode::CHECK_CAST, node.getType());

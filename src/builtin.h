@@ -1926,6 +1926,13 @@ YDSH_METHOD fd_dup(RuntimeContext &ctx) {
     RET(DSValue::create<UnixFD_Object>(getPool(ctx), newfd));
 }
 
+//!bind: function $OP_BOOL($this : UnixFD) : Boolean
+YDSH_METHOD fd_bool(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(fd_bool);
+    int fd = typeAs<UnixFD_Object>(LOCAL(0))->getValue();
+    RET_BOOL(fd != -1);
+}
+
 //!bind: function $OP_NOT($this : UnixFD) : Boolean
 YDSH_METHOD fd_not(RuntimeContext &ctx) {
     SUPPRESS_WARNING(fd_not);
@@ -1954,6 +1961,12 @@ YDSH_METHOD dbus_waitSignal(RuntimeContext &ctx) {
 //!bind: function available($this : DBus) : Boolean
 YDSH_METHOD dbus_available(RuntimeContext &ctx) {
     SUPPRESS_WARNING(dbus_available);
+    RET_BOOL(dbusAvailable());
+}
+
+//!bind: function $OP_BOOL($this : DBus) : Boolean
+YDSH_METHOD dbus_bool(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(dbus_bool);
     RET_BOOL(dbusAvailable());
 }
 

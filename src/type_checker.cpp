@@ -248,14 +248,19 @@ void TypeChecker::checkTypeWithCoercion(DSType &requiredType, Node * &targetNode
     }
 }
 
-bool TypeChecker::checkCoercion(const DSType &requiredType, const DSType &targetType) {
+bool TypeChecker::checkCoercion(const DSType &requiredType, DSType &targetType) {
     if(requiredType.isVoidType()) {  // pop stack top
         return true;
     }
 
-    // option type checking
-    if(targetType.isOptionType() && requiredType == this->typePool.getBooleanType()) {
-        return true;
+    if(requiredType == this->typePool.getBooleanType()) {
+        if(targetType.isOptionType()) {
+            return true;
+        }
+        auto *handle = targetType.lookupMethodHandle(this->typePool, OP_BOOL);
+        if(handle != nullptr) {
+            return true;
+        }
     }
 
     // int widening or float cast
@@ -390,6 +395,11 @@ void TypeChecker::resolveCastOp(TypeOpNode &node) {
     } else  {
         if(targetType == this->typePool.getStringType()) {
             node.setOpKind(TypeOpNode::TO_STRING);
+            return;
+        }
+        if(targetType == this->typePool.getBooleanType() &&
+                exprType.lookupMethodHandle(this->typePool, OP_BOOL) != nullptr) {
+            node.setOpKind(TypeOpNode::TO_BOOL);
             return;
         }
         if(!targetType.isNothingType() && exprType.isSameOrBaseTypeOf(targetType)) {

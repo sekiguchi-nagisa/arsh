@@ -1,14 +1,17 @@
-
+assert $STDIN && $STDOUT && $STDERR
 assert $STDIN as String == "0"
 assert $STDOUT as String == "1"
 assert $STDERR as String == '2'
 
 var fd = $STDIN.dup()
 assert $fd as String  != "0"
+assert $fd
+assert $fd as Boolean
 
 $fd.close()
 assert $fd as String == -1 as String
 assert not $fd
+assert $false == $fd
 
 var ex = 34 as Any
 try {

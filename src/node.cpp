@@ -424,6 +424,7 @@ void TypeOpNode::dump(NodeDumper &dumper) const {
     OP(TO_VOID) \
     OP(NUM_CAST) \
     OP(TO_STRING) \
+    OP(TO_BOOL) \
     OP(CHECK_CAST) \
     OP(CHECK_UNWRAP) \
     OP(PRINT) \

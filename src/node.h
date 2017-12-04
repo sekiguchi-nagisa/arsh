@@ -717,6 +717,7 @@ public:
         TO_VOID,
         NUM_CAST,
         TO_STRING,
+        TO_BOOL,
         CHECK_CAST,
         CHECK_UNWRAP,
         PRINT,

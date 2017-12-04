@@ -302,7 +302,7 @@ protected:
      * for int type conversion.
      * return true if allow target type to required type implicit cast.
      */
-    bool checkCoercion(const DSType &requiredType, const DSType &targetType);
+    bool checkCoercion(const DSType &requiredType, DSType &targetType);
 
     void resolveCoercion(DSType &requiredType, Node * &targetNode) {
         targetNode = this->newTypedCastNode(targetNode, requiredType);
