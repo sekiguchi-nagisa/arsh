@@ -485,7 +485,6 @@ std::unique_ptr<TypeNode> Parser::parse_typeName() {
 
 std::unique_ptr<Node> Parser::parse_statementImp() {
     if(this->lexer->getPrevMode() != yycSTMT) {
-        assert(this->lexer->getPrevMode() == yycEXPR);
         if(CUR_KIND() != LP && CUR_KIND() != LB && CUR_KIND() != LBC) {
             if(CUR_KIND() == WITH) {
                 this->lexer->popLexerMode();
