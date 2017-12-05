@@ -2,7 +2,7 @@
 
 function f($i : Int) {
     var a = [1, 2]
-    throw $a[$i] / $i
+    throw ($a[$i] / $i)
 }
 
 function raise($f : Func<Void, [Int]>, $i : Int) {

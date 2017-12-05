@@ -887,10 +887,6 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(unsigned int pos) {
 std::unique_ptr<Node> Parser::parse_expression() {
     GUARD_DEEP_NESTING(guard);
 
-    if(CUR_KIND() == THROW) {
-        auto token = this->expect(THROW);   // always success
-        return std::unique_ptr<Node>(JumpNode::newThrow(token, TRY(this->parse_expression()).release()));
-    }
     return this->parse_binaryExpression(
             TRY(this->parse_unaryExpression()), getPrecedence(ASSIGN));
 }
@@ -985,6 +981,10 @@ std::unique_ptr<Node> Parser::parse_unaryExpression() {
         unsigned int startPos = START_POS();
         TokenKind op = this->consume();
         return make_unique<UnaryOpNode>(startPos, op, TRY(this->parse_unaryExpression()).release());
+    }
+    case THROW: {
+        auto token = this->expect(THROW);   // always success
+        return std::unique_ptr<Node>(JumpNode::newThrow(token, TRY(this->parse_unaryExpression()).release()));
     }
     default:
         return this->parse_suffixExpression();
