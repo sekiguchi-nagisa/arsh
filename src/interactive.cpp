@@ -122,8 +122,9 @@ static std::size_t prevUtf8CharLen(const char *buf, int pos) {
 static std::size_t encoding_nextCharLen(const char *buf, std::size_t bufSize,
                                         std::size_t pos, std::size_t *columSize) {
     std::size_t startPos = pos;
+    const char *limit = buf + bufSize;
     int codePoint = 0;
-    unsigned int byteSize = UnicodeUtil::utf8ToCodePoint(buf + pos, bufSize - pos, codePoint);
+    unsigned int byteSize = UnicodeUtil::utf8ToCodePoint(buf + pos, limit, codePoint);
     int width = UnicodeUtil::localeAwareWidth(codePoint);
     if(width < 1) {
         return 0;
@@ -136,7 +137,7 @@ static std::size_t encoding_nextCharLen(const char *buf, std::size_t bufSize,
 
     // skip next combining character
     while(pos < bufSize) {
-        byteSize = UnicodeUtil::utf8ToCodePoint(buf + pos, bufSize - pos, codePoint);
+        byteSize = UnicodeUtil::utf8ToCodePoint(buf + pos, limit, codePoint);
         if(UnicodeUtil::localeAwareWidth(codePoint) > 0) {
             break;
         }
@@ -193,17 +194,16 @@ static std::size_t encoding_readCode(int fd, char *buf, std::size_t bufSize, int
 
 static std::size_t encoding_strLen(const char *str) {
     unsigned int size = 0;
-    unsigned int byteSize = strlen(str);
-    for(const char *ptr = str; *ptr != '\0';) {
-        unsigned int b = UnicodeUtil::utf8ValidateChar(ptr, byteSize);
-        int codePoint = UnicodeUtil::utf8ToCodePoint(ptr, b);
+    const char *end = str + strlen(str);
+    for(const char *ptr = str; ptr != end;) {
+        int codePoint = 0;
+        unsigned int b = UnicodeUtil::utf8ToCodePoint(ptr, end, codePoint);
         if(codePoint < 0) {
             return strlen(str);
         }
         int codeSize = UnicodeUtil::localeAwareWidth(codePoint);
         size += codeSize < 0 ? 0 : codeSize;
         ptr += b;
-        byteSize -= b;
     }
     return size;
 }

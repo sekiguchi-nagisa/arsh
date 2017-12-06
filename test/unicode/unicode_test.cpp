@@ -35,7 +35,7 @@ public:
     template <unsigned int N>
     void assertByteSize(const unsigned int size, const char (&str)[N]) {
         SCOPED_TRACE("");
-        ASSERT_EQ(size, UnicodeUtil::utf8ValidateChar(str, N));
+        ASSERT_EQ(size, UnicodeUtil::utf8ValidateChar(str, str + N));
     }
 
     void assertCodePoint(const int expect, const char *str) {

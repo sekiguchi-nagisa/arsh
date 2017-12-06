@@ -45,21 +45,26 @@ struct UnicodeUtil {
 
     /**
      *
-     * @param buf
-     * @param bufSize
+     * @param begin
+     * @param end
+     * exclusive
      * @return
-     * if first character is invalid UTF-8, return 0
-     * Otherwise, return byte size
+     * if first character is invalid UTF-8, return 0.
+     * Otherwise, return byte size.
      */
-    static unsigned int utf8ValidateChar(const char *buf, std::size_t bufSize);
+    static unsigned int utf8ValidateChar(const char *begin, const char *end);
 
     /**
      * if illegal UTF-8 code, return -1.
      * otherwise, return converted code.
      */
-    static int utf8ToCodePoint(const char *const buf, std::size_t bufSize) {
+    static int utf8ToCodePoint(const char *buf, std::size_t bufSize) {
+        return utf8ToCodePoint(buf, buf + bufSize);
+    }
+
+    static int utf8ToCodePoint(const char *begin, const char *end) {
         int codePoint = 0;
-        utf8ToCodePoint(buf, bufSize, codePoint);
+        utf8ToCodePoint(begin, end, codePoint);
         return codePoint;
     }
 
@@ -68,7 +73,11 @@ struct UnicodeUtil {
      * if illegal UTF-8 code, write -1 and return 0.
      * otherwise, return byte size of UTF-8.
      */
-    static unsigned int utf8ToCodePoint(const char *const buf, std::size_t bufSize, int &codePoint);
+    static unsigned int utf8ToCodePoint(const char *buf, std::size_t bufSize, int &codePoint) {
+        return utf8ToCodePoint(buf, buf + bufSize, codePoint);
+    }
+
+    static unsigned int utf8ToCodePoint(const char *begin, const char *end, int &codePoint);
 
     enum AmbiguousCharWidth {
         ONE_WIDTH,
@@ -124,9 +133,9 @@ unsigned int UnicodeUtil<T>::utf8ByteSize(unsigned char b) {
 }
 
 template <bool T>
-unsigned int UnicodeUtil<T>::utf8ValidateChar(const char *buf, std::size_t bufSize) {
-    auto begin = reinterpret_cast<const unsigned char *>(buf);
-    auto end = begin + bufSize;
+unsigned int UnicodeUtil<T>::utf8ValidateChar(const char *begin0, const char *end0) {
+    auto begin = reinterpret_cast<const unsigned char *>(begin0);
+    auto end = reinterpret_cast<const unsigned char *>(end0);
 
     if(begin == end) {
         return 0;
@@ -172,26 +181,26 @@ unsigned int UnicodeUtil<T>::utf8ValidateChar(const char *buf, std::size_t bufSi
 }
 
 template <bool T>
-unsigned int UnicodeUtil<T>::utf8ToCodePoint(const char *const buf, std::size_t bufSize, int &codePoint) {
-    const unsigned int size = utf8ValidateChar(buf, bufSize);
+unsigned int UnicodeUtil<T>::utf8ToCodePoint(const char *begin, const char *end, int &codePoint) {
+    const unsigned int size = utf8ValidateChar(begin, end);
     switch(size) {
     case 1:
-        codePoint = buf[0];
+        codePoint = begin[0];
         break;
     case 2:
-        codePoint = (static_cast<unsigned long>(buf[0] & 0x1F) << 6) |
-                    (static_cast<unsigned long>(buf[1] & 0x3F));
+        codePoint = (static_cast<unsigned long>(begin[0] & 0x1F) << 6) |
+                    (static_cast<unsigned long>(begin[1] & 0x3F));
         break;
     case 3:
-        codePoint = (static_cast<unsigned long>(buf[0] & 0x0F) << 12) |
-                    (static_cast<unsigned long>(buf[1] & 0x3F) << 6) |
-                    (static_cast<unsigned long>(buf[2] & 0x3F));
+        codePoint = (static_cast<unsigned long>(begin[0] & 0x0F) << 12) |
+                    (static_cast<unsigned long>(begin[1] & 0x3F) << 6) |
+                    (static_cast<unsigned long>(begin[2] & 0x3F));
         break;
     case 4:
-        codePoint = (static_cast<unsigned long>(buf[0] & 0x07) << 18) |
-                    (static_cast<unsigned long>(buf[1] & 0x3F) << 12) |
-                    (static_cast<unsigned long>(buf[2] & 0x3F) << 6) |
-                    (static_cast<unsigned long>(buf[3] & 0x3F));
+        codePoint = (static_cast<unsigned long>(begin[0] & 0x07) << 18) |
+                    (static_cast<unsigned long>(begin[1] & 0x3F) << 12) |
+                    (static_cast<unsigned long>(begin[2] & 0x3F) << 6) |
+                    (static_cast<unsigned long>(begin[3] & 0x3F));
         break;
     default:
         codePoint = -1;
