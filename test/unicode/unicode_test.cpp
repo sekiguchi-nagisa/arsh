@@ -32,15 +32,10 @@ public:
         codePoint = code;
     }
 
-    void assertByteSize(const unsigned int size, const char *str) {
+    template <unsigned int N>
+    void assertByteSize(const unsigned int size, const char (&str)[N]) {
         SCOPED_TRACE("");
-
-        ASSERT_TRUE(str != nullptr);
-
-        unsigned int s = strlen(str);
-        ASSERT_EQ(size, s == 0 ? 1 : s);
-
-        ASSERT_EQ(size, UnicodeUtil::utf8ByteSize(str[0]));
+        ASSERT_EQ(size, UnicodeUtil::utf8ValidateChar(str, N));
     }
 
     void assertCodePoint(const int expect, const char *str) {

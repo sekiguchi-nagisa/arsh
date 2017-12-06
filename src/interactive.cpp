@@ -193,8 +193,9 @@ static std::size_t encoding_readCode(int fd, char *buf, std::size_t bufSize, int
 
 static std::size_t encoding_strLen(const char *str) {
     unsigned int size = 0;
+    unsigned int byteSize = strlen(str);
     for(const char *ptr = str; *ptr != '\0';) {
-        unsigned int b = UnicodeUtil::utf8ByteSize(*ptr);
+        unsigned int b = UnicodeUtil::utf8ValidateChar(ptr, byteSize);
         int codePoint = UnicodeUtil::utf8ToCodePoint(ptr, b);
         if(codePoint < 0) {
             return strlen(str);
@@ -202,6 +203,7 @@ static std::size_t encoding_strLen(const char *str) {
         int codeSize = UnicodeUtil::localeAwareWidth(codePoint);
         size += codeSize < 0 ? 0 : codeSize;
         ptr += b;
+        byteSize -= b;
     }
     return size;
 }

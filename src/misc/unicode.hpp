@@ -44,6 +44,16 @@ struct UnicodeUtil {
     static unsigned int utf8ByteSize(unsigned char b);
 
     /**
+     *
+     * @param buf
+     * @param bufSize
+     * @return
+     * if first character is invalid UTF-8, return 0
+     * Otherwise, return byte size
+     */
+    static unsigned int utf8ValidateChar(const char *buf, std::size_t bufSize);
+
+    /**
      * if illegal UTF-8 code, return -1.
      * otherwise, return converted code.
      */
@@ -114,51 +124,80 @@ unsigned int UnicodeUtil<T>::utf8ByteSize(unsigned char b) {
 }
 
 template <bool T>
-unsigned int UnicodeUtil<T>::utf8ToCodePoint(const char *const buf, std::size_t bufSize, int &codePoint) {
-    if(bufSize > 0) {
-        switch(utf8ByteSize(buf[0])) {
-        case 1:
-            codePoint = buf[0];
-            return 1;
-        case 2:
-            if(bufSize >= 2) {
-                if((buf[1] & 0xC0) == 0x80) {
-                    codePoint = (static_cast<unsigned long>(buf[0] & 0x1F) << 6) |
-                                (static_cast<unsigned long>(buf[1] & 0x3F));
-                    return 2;
-                }
-            }
-            break;
-        case 3:
-            if(bufSize >= 3) {
-                if((buf[1] & 0xC0) == 0x80 &&
-                   (buf[2] & 0xC0) == 0x80) {
-                    codePoint = (static_cast<unsigned long>(buf[0] & 0x0F) << 12) |
-                                (static_cast<unsigned long>(buf[1] & 0x3F) << 6) |
-                                (static_cast<unsigned long>(buf[2] & 0x3F));
-                    return 3;
-                }
-            }
-            break;
-        case 4:
-            if(bufSize >= 4) {
-                if((buf[1] & 0xC0) == 0x80 &&
-                   (buf[2] & 0xC0) == 0x80 &&
-                   (buf[3] & 0xC0) == 0x80) {
-                    codePoint = (static_cast<unsigned long>(buf[0] & 0x07) << 18) |
-                                (static_cast<unsigned long>(buf[1] & 0x3F) << 12) |
-                                (static_cast<unsigned long>(buf[2] & 0x3F) << 6) |
-                                (static_cast<unsigned long>(buf[3] & 0x3F));
-                    return 4;
-                }
-            }
-            break;
-        default:
-            break;
-        }
+unsigned int UnicodeUtil<T>::utf8ValidateChar(const char *buf, std::size_t bufSize) {
+    auto begin = reinterpret_cast<const unsigned char *>(buf);
+    auto end = begin + bufSize;
+
+    if(begin == end) {
+        return 0;
     }
-    codePoint = -1;
+
+    /**
+     * This code has been taken from utf8_check.c which was developed by
+     * arkus Kuhn <http://www.cl.cam.ac.uk/~mgk25/>.
+     *
+     * For original code / licensing please refer to
+     * https://www.cl.cam.ac.uk/%7Emgk25/ucs/utf8_check.c
+     */
+    if(*begin < 0x80) { // 0xxxxxxx
+        return 1;
+    } else if((begin[0] & 0xE0) == 0xC0) {  // 110xxxxx 10xxxxxx
+        if(begin + 1 == end ||
+                (begin[1] & 0xC0) != 0x80 ||
+                (begin[0] & 0xFE) == 0xC0) {    // overlong
+            return 0;
+        }
+        return 2;
+    } else if((begin[0] & 0xF0) == 0xE0) {  // 1110xxxx 10xxxxxx 10xxxxxx
+        if(begin + 2 >= end ||
+                (begin[1] & 0xC0) != 0x80 ||
+                (begin[2] & 0xC0) != 0x80 ||
+                (begin[0] == 0xE0 && (begin[1] & 0xE0) == 0x80) ||
+                (begin[0] == 0xED && (begin[1] & 0xE0) == 0xA0)) {
+            return 0;
+        }
+        return 3;
+    } else if((begin[0] & 0xF8) == 0xF0) {  // 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+        if(begin + 3 >= end ||
+                (begin[1] & 0xC0) != 0x80 ||
+                (begin[2] & 0xC0) != 0x80 ||
+                (begin[3] & 0xC0) != 0x80 ||
+                (begin[0] == 0xF0 && (begin[1] & 0xF0) == 0x80) ||  // overlong
+                (begin[0] == 0xF4 && begin[1] > 0x8F) || begin[0] > 0xF4) {    // > U+10FFFF
+            return 0;
+        }
+        return 4;
+    }
     return 0;
+}
+
+template <bool T>
+unsigned int UnicodeUtil<T>::utf8ToCodePoint(const char *const buf, std::size_t bufSize, int &codePoint) {
+    const unsigned int size = utf8ValidateChar(buf, bufSize);
+    switch(size) {
+    case 1:
+        codePoint = buf[0];
+        break;
+    case 2:
+        codePoint = (static_cast<unsigned long>(buf[0] & 0x1F) << 6) |
+                    (static_cast<unsigned long>(buf[1] & 0x3F));
+        break;
+    case 3:
+        codePoint = (static_cast<unsigned long>(buf[0] & 0x0F) << 12) |
+                    (static_cast<unsigned long>(buf[1] & 0x3F) << 6) |
+                    (static_cast<unsigned long>(buf[2] & 0x3F));
+        break;
+    case 4:
+        codePoint = (static_cast<unsigned long>(buf[0] & 0x07) << 18) |
+                    (static_cast<unsigned long>(buf[1] & 0x3F) << 12) |
+                    (static_cast<unsigned long>(buf[2] & 0x3F) << 6) |
+                    (static_cast<unsigned long>(buf[3] & 0x3F));
+        break;
+    default:
+        codePoint = -1;
+        break;
+    }
+    return size;
 }
 
 template <bool T>
