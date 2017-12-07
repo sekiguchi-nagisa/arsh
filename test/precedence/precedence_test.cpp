@@ -113,6 +113,46 @@ public:
         this->close();
     }
 
+    void visitJumpNode(JumpNode &node) override {
+        this->open();
+        assert(node.getOpKind() == JumpNode::THROW);
+        this->append("throw");
+        this->visit(*node.getExprNode());
+        this->close();
+    }
+
+    void visitWithNode(WithNode &node) override {
+        this->open();
+        this->visit(*node.getExprNode());
+        this->append("with");
+        this->visit(*node.getRedirNodes().back());
+        this->close();
+    }
+
+    void visitRedirNode(RedirNode &node) override {
+        this->append(TO_NAME(node.getRedirectOP()));
+        this->visit(*node.getTargetNode());
+    }
+
+    void visitCmdArgNode(CmdArgNode &node) override {
+        this->visit(*node.getSegmentNodes().back());
+    }
+
+    void visitStringNode(StringNode &node) override {
+        this->append(node.getValue());
+    }
+
+    void visitPipelineNode(PipelineNode &node) override {
+        this->open();
+        for(unsigned int i = 0; i < node.getNodes().size(); i++) {
+            if(i > 0) {
+                this->append("|");
+            }
+            this->visit(*node.getNodes()[i]);
+        }
+        this->close();
+    }
+
     void visitRootNode(RootNode &node) override {
         if(node.getNodes().size() != 1) {
             fatal("must be 1\n");
@@ -214,6 +254,22 @@ TEST_F(PrecedenceTest, case9) {
     ASSERT_NO_FATAL_FAILURE(
             this->equals("((1 == 2) ? ((3 > 4) ? (5 + 6) : (7 xor 8)) : (9 && 10))",
                          "1 == 2 ? 3 > 4 ? 5 + 6 : 7 xor 8 : 9 && 10"));
+}
+
+TEST_F(PrecedenceTest, case10) {
+    ASSERT_NO_FATAL_FAILURE(this->equals("(55 < ((65 or 75) ?? 78))", "55 < 65 or 75 ?? 78"));
+}
+
+TEST_F(PrecedenceTest, case11) {
+    ASSERT_NO_FATAL_FAILURE(this->equals("(((throw 45) + 45) && 54)", "throw 45 + 45 && 54"));
+}
+
+TEST_F(PrecedenceTest, case12) {
+    ASSERT_NO_FATAL_FAILURE(this->equals("(34 || ((45 | (56 and 67)) && 78))", "34 || 45 | 56 and 67 && 78"));
+}
+
+TEST_F(PrecedenceTest, case13) {
+    ASSERT_NO_FATAL_FAILURE(this->equals("(45 | ((56 as Int) with 2> 67))", "45 | 56 as Int with 2> 67"));
 }
 
 int main(int argc, char **argv) {
