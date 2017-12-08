@@ -29,6 +29,7 @@
 #include "lexer.h"
 #include "opcode.h"
 #include "regex_wrapper.h"
+#include "job.h"
 
 namespace ydsh {
 
@@ -599,6 +600,48 @@ public:
     bool hasNext() {
         return this->iter != this->valueMap.cend();
     }
+
+    std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
+};
+
+class Job_Object : public DSObject {
+private:
+    Job entry;
+
+    /**
+     * writable file descriptor (connected to STDIN of Job). must be UnixFD_Object
+     */
+    DSValue inObj;
+
+    /**
+     * readable file descriptor (connected to STDOUT of Job). must be UnixFD_Object
+     */
+    DSValue outObj;
+
+    /**
+     * exit status of job. initial value is null. must be Int_Object.
+     */
+    DSValue status;
+
+public:
+    Job_Object(DSType &type, Job entry, DSValue inObj, DSValue outObj) :
+            DSObject(type), entry(std::move(entry)), inObj(std::move(inObj)), outObj(std::move(outObj)) {}
+
+    ~Job_Object() = default;
+
+    DSValue getInObj() const {
+        return this->inObj;
+    }
+
+    DSValue getOutObj() const {
+        return this->outObj;
+    }
+
+    bool available() const {
+        return this->entry->getProcSize() != 0;
+    }
+
+    DSValue wait(const TypePool &pool, JobTable &jobTable);
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
 };

@@ -468,6 +468,7 @@ private:
     void visitPipelineNode(PipelineNode &node) override;
     void visitSubstitutionNode(SubstitutionNode &node) override;
     void visitWithNode(WithNode &node) override;
+    void visitAsyncNode(AsyncNode &node) override;
     void visitAssertNode(AssertNode &node) override;
     void visitBlockNode(BlockNode &node) override;
     void visitTypeAliasNode(TypeAliasNode &node) override;

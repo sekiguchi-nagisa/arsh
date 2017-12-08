@@ -191,6 +191,10 @@ const TypePool &getPool(const DSState &st) {
     return st.pool;
 }
 
+JobTable &getJobTable(DSState &st) {
+    return st.jobTable;
+}
+
 FilePathCache &getPathCache(DSState &st) {
     return st.pathCache;
 }

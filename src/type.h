@@ -529,7 +529,7 @@ public:
         Signal,
         Signals,
         Error,
-        Task,
+        Job,
         Func,
         StringIter__,
         ObjectPath, // for D-Bus object path
@@ -662,8 +662,8 @@ public:
         return *this->typeTable[Error];
     }
 
-    DSType &getTaskType() const {
-        return *this->typeTable[Task];
+    DSType &getJobType() const {
+        return *this->typeTable[Job];
     }
 
     DSType &getBaseFuncType() const {

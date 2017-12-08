@@ -1940,6 +1940,45 @@ YDSH_METHOD fd_not(RuntimeContext &ctx) {
     RET_BOOL(fd == -1);
 }
 
+// #################
+// ##     Job     ##
+// #################
+
+//!bind: function in($this : Job) : UnixFD
+YDSH_METHOD job_in(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(job_in);
+    auto *obj = typeAs<Job_Object>(LOCAL(0));
+    RET(obj->getInObj());
+}
+
+//!bind: function out($this : Job) : UnixFD
+YDSH_METHOD job_out(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(job_out);
+    auto *obj = typeAs<Job_Object>(LOCAL(0));
+    RET(obj->getOutObj());
+}
+
+//!bind: function $OP_BOOL($this : Job) : Boolean
+YDSH_METHOD job_bool(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(job_bool);
+    auto *obj = typeAs<Job_Object>(LOCAL(0));
+    RET_BOOL(obj->available());
+}
+
+//!bind: function $OP_NOT($this : Job) : Boolean
+YDSH_METHOD job_not(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(job_not);
+    auto *obj = typeAs<Job_Object>(LOCAL(0));
+    RET_BOOL(!obj->available());
+}
+
+//!bind: function wait($this : Job) : Int32
+YDSH_METHOD job_wait(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(job_wait);
+    auto *obj = typeAs<Job_Object>(LOCAL(0));
+    RET(obj->wait(getPool(ctx), getJobTable(ctx)));
+}
+
 
 // ##################
 // ##     DBus     ##

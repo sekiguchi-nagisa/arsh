@@ -97,6 +97,8 @@ struct DSState {
      */
     const DSValue emptyStrObj;
 
+    const DSValue emptyFDObj;
+
     /**
      * if not null ptr, thrown exception.
      */

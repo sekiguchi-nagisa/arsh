@@ -706,6 +706,18 @@ void WithNode::dump(NodeDumper &dumper) const {
     DUMP_PRIM(baseIndex);
 }
 
+// #######################
+// ##     AsyncNode     ##
+// #######################
+
+AsyncNode::~AsyncNode() {
+    delete this->exprNode;
+}
+
+void AsyncNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(exprNode);
+}
+
 // ########################
 // ##     AssertNode     ##
 // ########################

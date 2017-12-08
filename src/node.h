@@ -60,6 +60,7 @@ class NodeDumper;
     OP(Pipeline) \
     OP(Substitution) \
     OP(With) \
+    OP(Async) \
     OP(Assert) \
     OP(Block) \
     OP(TypeAlias) \
@@ -1236,6 +1237,42 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
+class AsyncNode : public Node {
+public:
+    enum OpKind : unsigned char {
+        BG,
+        DISOWN,
+        COPROC,
+    };
+
+private:
+    OpKind opKind;
+    Node *exprNode;
+
+    AsyncNode(Token token, OpKind kind, Node *exprNode) :
+            Node(NodeKind::Async, token), opKind(kind), exprNode(exprNode) { }
+
+public:
+    AsyncNode(unsigned int pos, Node *exprNode) : AsyncNode({pos, 0}, COPROC, exprNode) {
+        this->updateToken(exprNode->getToken());
+    }
+
+    AsyncNode(Node *exprNode, TokenKind kind) :
+            AsyncNode(exprNode->getToken(), kind == BACKGROUND ? BG : DISOWN, exprNode) {}
+
+    ~AsyncNode();
+
+    OpKind getOpKind() const {
+        return this->opKind;
+    }
+
+    Node *getExprNode() const {
+        return this->exprNode;
+    }
+
+    void dump(NodeDumper &dumper) const override;
+};
+
 // statement definition
 
 class AssertNode : public Node {
@@ -2079,6 +2116,7 @@ struct NodeVisitor {
     virtual void visitApplyNode(ApplyNode &node) = 0;
     virtual void visitMethodCallNode(MethodCallNode &node) = 0;
     virtual void visitNewNode(NewNode &node) = 0;
+    virtual void visitAsyncNode(AsyncNode &node) = 0;
     virtual void visitCmdNode(CmdNode &node) = 0;
     virtual void visitCmdArgNode(CmdArgNode &node) = 0;
     virtual void visitRedirNode(RedirNode &node) = 0;
@@ -2130,6 +2168,7 @@ struct BaseVisitor : public NodeVisitor {
     void visitPipelineNode(PipelineNode &node) override { this->visitDefault(node); }
     void visitSubstitutionNode(SubstitutionNode &node) override { this->visitDefault(node); }
     void visitWithNode(WithNode &node) override { this->visitDefault(node); }
+    void visitAsyncNode(AsyncNode &node) override { this->visitDefault(node); }
     void visitAssertNode(AssertNode &node) override { this->visitDefault(node); }
     void visitBlockNode(BlockNode &node) override { this->visitDefault(node); }
     void visitTypeAliasNode(TypeAliasNode &node) override { this->visitDefault(node); }

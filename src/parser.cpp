@@ -75,6 +75,7 @@
     OP(PLUS) \
     OP(MINUS) \
     OP(THROW) \
+    OP(COPROC) \
     EACH_LA_primary(OP)
 
 #define EACH_LA_statement(OP) \
@@ -985,6 +986,11 @@ std::unique_ptr<Node> Parser::parse_unaryExpression() {
     case THROW: {
         auto token = this->expect(THROW);   // always success
         return std::unique_ptr<Node>(JumpNode::newThrow(token, TRY(this->parse_unaryExpression()).release()));
+    }
+    case COPROC: {
+        unsigned int startPos = START_POS();
+        this->consume();    // COPROC
+        return make_unique<AsyncNode>(startPos, TRY(this->parse_unaryExpression()).release());
     }
     default:
         return this->parse_suffixExpression();

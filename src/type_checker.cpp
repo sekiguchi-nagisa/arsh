@@ -881,6 +881,15 @@ void TypeChecker::visitWithNode(DSType *requiredType, WithNode &node) {
     node.setType(type);
 }
 
+void TypeChecker::visitAsyncNode(DSType *, AsyncNode &node) {
+    this->checkType(nullptr, node.getExprNode(), nullptr);
+    if(node.getOpKind() == AsyncNode::DISOWN) {
+        node.setType(this->typePool.getVoidType());
+    } else {
+        node.setType(this->typePool.getJobType());
+    }
+}
+
 void TypeChecker::visitAssertNode(DSType *, AssertNode &node) {
     this->checkTypeWithCoercion(this->typePool.getBooleanType(), node.refCondNode());
     this->checkType(this->typePool.getStringType(), node.getMessageNode());

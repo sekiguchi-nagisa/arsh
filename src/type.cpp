@@ -554,7 +554,7 @@ TypePool::TypePool() :
     this->initBuiltinType(DBusObject, "DBusObject", false, this->getProxyType(), info_DBusObjectType());
 
     this->initBuiltinType(Error, "Error", true, this->getAnyType(), info_ErrorType());
-    this->initBuiltinType(Task, "Task", false, this->getAnyType(), info_Dummy());
+    this->initBuiltinType(Job, "Job", false, this->getAnyType(), info_JobType());
     this->initBuiltinType(Func, "Func", false, this->getAnyType(), info_Dummy());
     this->initBuiltinType(StringIter__, "StringIter%%", false, this->getAnyType(), info_StringIterType());
     this->initBuiltinType(Regex, "Regex", false, this->getAnyType(), info_RegexType());

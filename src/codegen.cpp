@@ -722,6 +722,10 @@ void ByteCodeGenerator::visitWithNode(WithNode &node) {
     });
 }
 
+void ByteCodeGenerator::visitAsyncNode(AsyncNode &) {
+    fatal("unimplemented\n");
+}
+
 void ByteCodeGenerator::visitAssertNode(AssertNode &node) {
     if(this->assertion) {
         this->visit(*node.getCondNode());

@@ -40,6 +40,7 @@ namespace ydsh {
     OP(Service) \
     OP(DBusObject) \
     OP(Error) \
+    OP(Job) \
     OP(Proxy) \
     OP(StringIter) \
     OP(Regex) \

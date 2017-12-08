@@ -39,6 +39,7 @@ class StackTraceElement;
 class FuncObject;
 class SymbolTable;
 class DSCode;
+class JobTable;
 
 using CStrBuffer = FlexBuffer<char *>;
 
@@ -163,6 +164,8 @@ struct VMHook {
 
 TypePool &getPool(DSState &st);
 const TypePool &getPool(const DSState &st);
+
+JobTable &getJobTable(DSState &st);
 
 FilePathCache &getPathCache(DSState &st);
 

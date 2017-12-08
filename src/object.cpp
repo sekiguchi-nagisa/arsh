@@ -321,6 +321,36 @@ std::string Map_Object::toString(DSState &ctx, VisitedSet *visitedSet) {
 }
 
 // ########################
+// ##     Job_Object     ##
+// ########################
+
+static void closeFD(DSValue &value) {
+    auto *ptr = typeAs<UnixFD_Object>(value);
+    int fd = ptr->getValue();
+    close(fd);
+    ptr->clear();
+}
+
+DSValue Job_Object::wait(const TypePool &pool, JobTable &jobTable) {
+    if(!this->status) {
+        int ret = jobTable.wait(this->entry, 0, nullptr);
+        if(WIFEXITED(ret)) {
+            ret = WEXITSTATUS(ret);
+        } else if(WIFSIGNALED(ret)) {
+            ret = WTERMSIG(ret) + 128;
+        }
+        this->status = DSValue::create<Int_Object>(pool.getInt32Type(), ret);
+        closeFD(this->inObj);
+        closeFD(this->outObj);
+    }
+    return this->status;
+}
+
+std::string Job_Object::toString(DSState &, VisitedSet *) {
+    return std::to_string(this->entry->getJobId());
+}
+
+// ########################
 // ##     BaseObject     ##
 // ########################
 

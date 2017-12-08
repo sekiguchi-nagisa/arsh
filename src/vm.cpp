@@ -93,9 +93,10 @@ static DSHistory initHistory() {
 }
 
 DSState::DSState() :
-        trueObj(new Boolean_Object(this->pool.getBooleanType(), true)),
-        falseObj(new Boolean_Object(this->pool.getBooleanType(), false)),
-        emptyStrObj(new String_Object(this->pool.getStringType(), std::string())),
+        trueObj(DSValue::create<Boolean_Object>(this->pool.getBooleanType(), true)),
+        falseObj(DSValue::create<Boolean_Object>(this->pool.getBooleanType(), false)),
+        emptyStrObj(DSValue::create<String_Object>(this->pool.getStringType(), std::string())),
+        emptyFDObj(DSValue::create<UnixFD_Object>(this->pool, -1)),
         callStack(new DSValue[DEFAULT_STACK_SIZE]),
         callStackSize(DEFAULT_STACK_SIZE), globalVarSize(0),
         stackTopIndex(0), stackBottomIndex(0), localVarOffset(0), pc_(0),

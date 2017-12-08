@@ -418,6 +418,7 @@ protected:
     void visitPipelineNode(DSType *requiredType, PipelineNode &node);
     void visitSubstitutionNode(DSType *requiredType, SubstitutionNode &node);
     void visitWithNode(DSType *requiredType, WithNode &node);
+    void visitAsyncNode(DSType *requiredType, AsyncNode &node);
     void visitAssertNode(DSType *requiredType, AssertNode &node);
     void visitBlockNode(DSType *requiredType, BlockNode &node);
     void visitTypeAliasNode(DSType *requiredType, TypeAliasNode &node);
