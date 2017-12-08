@@ -10,10 +10,18 @@ mkdir $dir || { echo already exist directory 1>&2; exit 1; }
 
 let exec_test_dir = "$SCRIPT_DIR/../test/exec/cases".realpath()!
 
+# copy from exec_test
 for $d in $(ls $exec_test_dir) {
     var case_dir = "$exec_test_dir/$d"
-    echo copying acripts at $case_dir
+    echo copying scripts at $case_dir
     for $a in $(ls $case_dir) {
         cp $case_dir/$a $dir/${d}_$a
     }
+}
+
+# copy from interest input
+let interest = "$SCRIPT_DIR/../fuzzing/interest_input".realpath()!
+echo copying scripts at $interest
+for $d in $(ls $interest) {
+    cp $interest/$d $dir/interest_$d 
 }
