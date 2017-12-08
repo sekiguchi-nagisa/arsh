@@ -350,6 +350,19 @@ function backtrace($this : Error) : Void
 function name($this : Error) : String
 ```
 
+## Job type
+```
+function in($this : Job) : UnixFD
+
+function out($this : Job) : UnixFD
+
+function %OP_BOOL($this : Job) : Boolean
+
+function %OP_NOT($this : Job) : Boolean
+
+function wait($this : Job) : Int32
+```
+
 ## StringIter type
 ```
 function %OP_NEXT($this : StringIter) : String
