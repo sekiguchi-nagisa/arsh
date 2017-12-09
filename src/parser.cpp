@@ -504,9 +504,8 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
         node->setBlockNode(TRY(this->parse_block()).release());
         return std::move(node);
     }
-    case INTERFACE: {
+    case INTERFACE:
         return this->parse_interface();
-    }
     case ALIAS: {
         unsigned int startPos = START_POS();
         this->consume();    // ALIAS
@@ -589,12 +588,10 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
         }
         return std::unique_ptr<Node>(JumpNode::newReturn(token, exprNode.release()));
     }
-    EACH_LA_varDecl(GEN_LA_CASE) {
+    EACH_LA_varDecl(GEN_LA_CASE)
         return this->parse_variableDeclaration();
-    }
-    EACH_LA_expression(GEN_LA_CASE) {
+    EACH_LA_expression(GEN_LA_CASE)
         return this->parse_expression();
-    }
     default:
         E_ALTER(EACH_LA_statement(GEN_LA_ALTER));
     }
@@ -714,12 +711,10 @@ std::unique_ptr<Node> Parser::parse_forInit() {
     GUARD_DEEP_NESTING(guard);
 
     switch(CUR_KIND()) {
-    EACH_LA_varDecl(GEN_LA_CASE) {
+    EACH_LA_varDecl(GEN_LA_CASE)
         return this->parse_variableDeclaration();
-    }
-    EACH_LA_expression(GEN_LA_CASE) {
+    EACH_LA_expression(GEN_LA_CASE)
         return this->parse_expression();
-    }
     default:
         return make_unique<EmptyNode>();
     }
@@ -729,9 +724,8 @@ std::unique_ptr<Node> Parser::parse_forCond() {
     GUARD_DEEP_NESTING(guard);
 
     switch(CUR_KIND()) {
-    EACH_LA_expression(GEN_LA_CASE) {
+    EACH_LA_expression(GEN_LA_CASE)
         return this->parse_expression();
-    }
     default:
         Token token{0, 0};
         return make_unique<VarNode>(token, std::string(VAR_TRUE));
@@ -742,9 +736,8 @@ std::unique_ptr<Node> Parser::parse_forIter() {
     GUARD_DEEP_NESTING(guard);
 
     switch(CUR_KIND()) {
-    EACH_LA_expression(GEN_LA_CASE) {
+    EACH_LA_expression(GEN_LA_CASE)
         return this->parse_expression();
-    }
     default:
         return make_unique<EmptyNode>();
     }
@@ -797,14 +790,12 @@ std::unique_ptr<Node> Parser::parse_command() {
 
     for(bool next = true; next && HAS_SPACE() && !HAS_NL();) {
         switch(CUR_KIND()) {
-        EACH_LA_cmdArg(GEN_LA_CASE) {
+        EACH_LA_cmdArg(GEN_LA_CASE)
             node->addArgNode(TRY(this->parse_cmdArg()).release());
             break;
-        }
-        EACH_LA_redir(GEN_LA_CASE) {
+        EACH_LA_redir(GEN_LA_CASE)
             node->addRedirNode(TRY(this->parse_redirOption()).release());
             break;
-        }
         case INVALID:
 #define EACH_LA_cmdArgs(E) \
             EACH_LA_cmdArg(E) \
@@ -846,10 +837,9 @@ std::unique_ptr<CmdArgNode> Parser::parse_cmdArg() {
     unsigned int pos = 1;
     for(bool next = true; !HAS_SPACE() && !HAS_NL() && next; pos++) {
         switch(CUR_KIND()) {
-        EACH_LA_cmdArg(GEN_LA_CASE) {
+        EACH_LA_cmdArg(GEN_LA_CASE)
             node->addSegmentNode(TRY(this->parse_cmdArgSeg(pos)).release());
             break;
-        }
         default:
             next = false;
             break;
@@ -867,18 +857,14 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(unsigned int pos) {
         auto kind = pos == 0 && this->lexer->startsWith(token, '~') ? StringNode::TILDE : StringNode::STRING;
         return make_unique<StringNode>(token, this->lexer->toCmdArg(token), kind);
     }
-    case STRING_LITERAL: {
+    case STRING_LITERAL:
         return this->parse_stringLiteral();
-    }
-    case OPEN_DQUOTE: {
+    case OPEN_DQUOTE:
         return this->parse_stringExpression();
-    }
-    case START_SUB_CMD: {
+    case START_SUB_CMD:
         return this->parse_substitution();
-    }
-    EACH_LA_paramExpansion(GEN_LA_CASE) {
+    EACH_LA_paramExpansion(GEN_LA_CASE)
         return this->parse_paramExpansion();
-    }
     default:
         E_ALTER(EACH_LA_cmdArg(GEN_LA_ALTER));
     }
@@ -1106,9 +1092,8 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         auto pair = TRY(this->expectNum(FLOAT_LITERAL, &Lexer::toDouble));
         return std::unique_ptr<Node>(NumberNode::newFloat(pair.first, pair.second));
     }
-    case STRING_LITERAL: {
+    case STRING_LITERAL:
         return this->parse_stringLiteral();
-    }
     case PATH_LITERAL: {
         Token token = this->expect(PATH_LITERAL);   // always success
 
@@ -1166,16 +1151,13 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         }
         return std::unique_ptr<Node>(NumberNode::newSignal(token, num));
     }
-    case OPEN_DQUOTE: {
+    case OPEN_DQUOTE:
         return this->parse_stringExpression();
-    }
-    case START_SUB_CMD: {
+    case START_SUB_CMD:
         return this->parse_substitution();
-    }
     case APPLIED_NAME:
-    case SPECIAL_NAME: {
+    case SPECIAL_NAME:
         return this->parse_appliedName(CUR_KIND() == SPECIAL_NAME);
-    }
     case LP: {  // group or tuple
         Token token = this->expect(LP); // always success
         auto node = TRY(this->parse_expression());
@@ -1253,15 +1235,12 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         node->updateToken(token);
         return node;
     }
-    case LBC: {
+    case LBC:
         return this->parse_block();
-    }
-    case FOR: {
+    case FOR:
         return this->parse_forExpression();
-    }
-    case IF: {
+    case IF:
         return this->parse_ifExpression();
-    }
     case WHILE: {
         unsigned int startPos = START_POS();
         this->consume();    // WHILE
