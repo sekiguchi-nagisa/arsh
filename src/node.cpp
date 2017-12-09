@@ -716,6 +716,14 @@ AsyncNode::~AsyncNode() {
 
 void AsyncNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
+
+#define EACH_ENUM(OP) \
+    OP(BG) \
+    OP(DISOWN) \
+    OP(COPROC)
+
+    DUMP_ENUM(opKind, EACH_ENUM);
+#undef EACH_ENUM
 }
 
 // ########################
