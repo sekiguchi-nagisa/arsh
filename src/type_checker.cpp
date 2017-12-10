@@ -100,7 +100,7 @@ DSType *TypeGenerator::toTypeImpl(TypeNode &node) {
             auto &typeNode = static_cast<TypeOfNode&>(node);
             auto &type = this->checker->checkType(typeNode.getExprNode());
             if(type.isNothingType()) {
-                RAISE_TC_ERROR(Unacceptable, *typeNode.getExprNode(), this->pool.getTypeName(type).c_str());
+                RAISE_TC_ERROR(Unacceptable, *typeNode.getExprNode(), this->pool.getTypeName(type));
             }
             return &type;
         }
@@ -183,7 +183,7 @@ DSType &TypeChecker::checkType(DSType *requiredType, Node *targetNode,
     if(requiredType == nullptr) {
         if(!type.isNothingType() && unacceptableType != nullptr &&
                 unacceptableType->isSameOrBaseTypeOf(type)) {
-            RAISE_TC_ERROR(Unacceptable, *targetNode, this->typePool.getTypeName(type).c_str());
+            RAISE_TC_ERROR(Unacceptable, *targetNode, this->typePool.getTypeName(type));
         }
         return type;
     }
@@ -203,8 +203,8 @@ DSType &TypeChecker::checkType(DSType *requiredType, Node *targetNode,
         return type;
     }
 
-    RAISE_TC_ERROR(Required, *targetNode, this->typePool.getTypeName(*requiredType).c_str(),
-               this->typePool.getTypeName(type).c_str());
+    RAISE_TC_ERROR(Required, *targetNode, this->typePool.getTypeName(*requiredType),
+                   this->typePool.getTypeName(type));
 }
 
 void TypeChecker::checkTypeWithCurrentScope(DSType *requiredType, BlockNode *blockNode) {
@@ -337,8 +337,8 @@ HandleOrFuncType TypeChecker::resolveCallee(VarNode &recvNode) {
         if(this->typePool.getBaseFuncType() == *type) {
             RAISE_TC_ERROR(NotCallable, recvNode);
         } else {
-            RAISE_TC_ERROR(Required, recvNode, this->typePool.getTypeName(this->typePool.getBaseFuncType()).c_str(),
-                           this->typePool.getTypeName(*type).c_str());
+            RAISE_TC_ERROR(Required, recvNode, this->typePool.getTypeName(this->typePool.getBaseFuncType()),
+                           this->typePool.getTypeName(*type));
         }
     }
     return HandleOrFuncType(static_cast<FunctionType *>(type));
@@ -408,7 +408,7 @@ void TypeChecker::resolveCastOp(TypeOpNode &node) {
         }
     }
 
-    RAISE_TC_ERROR(CastOp, node, this->typePool.getTypeName(exprType).c_str(), this->typePool.getTypeName(targetType).c_str());
+    RAISE_TC_ERROR(CastOp, node, this->typePool.getTypeName(exprType), this->typePool.getTypeName(targetType));
 }
 
 TypeOpNode *TypeChecker::newTypedCastNode(Node *targetNode, DSType &type) {
@@ -623,7 +623,7 @@ void TypeChecker::visitUnaryOpNode(DSType *, UnaryOpNode &node) {
     auto &exprType = this->checkType(node.getExprNode());
     if(node.isUnwrapOp()) {
         if(!exprType.isOptionType()) {
-            RAISE_TC_ERROR(Required, *node.getExprNode(), "Option type", this->typePool.getTypeName(exprType).c_str());
+            RAISE_TC_ERROR(Required, *node.getExprNode(), "Option type", this->typePool.getTypeName(exprType));
         }
         node.setType(*static_cast<ReifiedType *>(&exprType)->getElementTypes()[0]);
     } else {
@@ -662,7 +662,7 @@ void TypeChecker::visitBinaryOpNode(DSType *, BinaryOpNode &node) {
     if(node.getOp() == NULL_COALE) {
         auto &leftType = this->checkType(node.getLeftNode());
         if(!leftType.isOptionType()) {
-            RAISE_TC_ERROR(Required, *node.getLeftNode(), "Option type", this->typePool.getTypeName(leftType).c_str());
+            RAISE_TC_ERROR(Required, *node.getLeftNode(), "Option type", this->typePool.getTypeName(leftType));
         }
         auto &elementType = static_cast<ReifiedType &>(leftType).getElementTypes()[0];
         this->checkTypeWithCoercion(*elementType, node.refRightNode());
@@ -749,7 +749,7 @@ void TypeChecker::visitNewNode(DSType *, NewNode &node) {
     } else {
         MethodHandle *handle = type.getConstructorHandle(this->typePool);
         if(handle == nullptr) {
-            RAISE_TC_ERROR(UndefinedInit, node, this->typePool.getTypeName(type).c_str());
+            RAISE_TC_ERROR(UndefinedInit, node, this->typePool.getTypeName(type));
         }
 
         this->checkTypeArgsNode(node, handle, node.refArgNodes());
@@ -1044,7 +1044,7 @@ void TypeChecker::visitJumpNode(DSType *, JumpNode &node) {
 void TypeChecker::visitCatchNode(DSType *, CatchNode &node) {
     auto &exceptionType = this->toType(node.getTypeNode());
     if(!this->typePool.getAnyType().isSameOrBaseTypeOf(exceptionType) || exceptionType.isNothingType()) {
-        RAISE_TC_ERROR(Unacceptable, *node.getTypeNode(), this->typePool.getTypeName(exceptionType).c_str());
+        RAISE_TC_ERROR(Unacceptable, *node.getTypeNode(), this->typePool.getTypeName(exceptionType));
     }
 
     /**
@@ -1124,7 +1124,7 @@ void TypeChecker::visitVarDeclNode(DSType *, VarDeclNode &node) {
         }
         exprType = &this->checkType(node.getExprNode());
         if(exprType->isNothingType()) {
-            RAISE_TC_ERROR(Unacceptable, *node.getExprNode(), this->typePool.getTypeName(*exprType).c_str());
+            RAISE_TC_ERROR(Unacceptable, *node.getExprNode(), this->typePool.getTypeName(*exprType));
         }
         break;
     case VarDeclNode::IMPORT_ENV:
@@ -1207,7 +1207,7 @@ void TypeChecker::visitFunctionNode(DSType *, FunctionNode &node) {
     for(unsigned int i = 0; i < paramSize; i++) {
         auto *type = &this->toType(node.getParamTypeNodes()[i]);
         if(type->isVoidType() || type->isNothingType()) {
-            RAISE_TC_ERROR(Unacceptable, *node.getParamTypeNodes()[i], this->typePool.getTypeName(*type).c_str());
+            RAISE_TC_ERROR(Unacceptable, *node.getParamTypeNodes()[i], this->typePool.getTypeName(*type));
         }
         paramTypes[i] = type;
     }

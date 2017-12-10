@@ -1454,7 +1454,7 @@ static bool mainLoop(DSState &state) {
             auto stackTopType = reinterpret_cast<DSType *>(v);
             assert(!stackTopType->isVoidType());
             auto *strObj = typeAs<String_Object>(state.peek());
-            printf("(%s) ", state.pool.getTypeName(*stackTopType).c_str());
+            printf("(%s) ", state.pool.getTypeName(*stackTopType));
             fwrite(strObj->getValue(), sizeof(char), strObj->size(), stdout);
             fputc('\n', stdout);
             fflush(stdout);

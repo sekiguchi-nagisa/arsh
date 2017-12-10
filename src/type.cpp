@@ -638,7 +638,7 @@ DSType &TypePool::createReifiedType(const TypeTemplate &typeTemplate,
     if(attr != 0u) {
         auto *type = elementTypes[0];
         if(type->isOptionType() || type->isVoidType() || type->isNothingType()) {
-            RAISE_TL_ERROR(InvalidElement, this->getTypeName(*type).c_str());
+            RAISE_TL_ERROR(InvalidElement, this->getTypeName(*type));
         }
     } else {
         this->checkElementTypes(typeTemplate, elementTypes);
@@ -875,7 +875,7 @@ void TypePool::initErrorType(DS_TYPE TYPE, const char *typeName, DSType &superTy
 void TypePool::checkElementTypes(const std::vector<DSType *> &elementTypes) const {
     for(DSType *type : elementTypes) {
         if(type->isVoidType() || type->isNothingType()) {
-            RAISE_TL_ERROR(InvalidElement, this->getTypeName(*type).c_str());
+            RAISE_TL_ERROR(InvalidElement, this->getTypeName(*type));
         }
     }
 }
@@ -897,7 +897,7 @@ void TypePool::checkElementTypes(const TypeTemplate &t, const std::vector<DSType
         if(*acceptType == this->getAnyType() && elementType->isOptionType()) {
             continue;
         }
-        RAISE_TL_ERROR(InvalidElement, this->getTypeName(*elementType).c_str());
+        RAISE_TL_ERROR(InvalidElement, this->getTypeName(*elementType));
     }
 }
 

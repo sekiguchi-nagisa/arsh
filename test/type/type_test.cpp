@@ -141,7 +141,7 @@ public:
 
         DSType *actualSuperType = type.getSuperType();
         ASSERT_TRUE(actualSuperType != nullptr);
-        ASSERT_EQ(this->pool.getTypeName(*actualSuperType), this->pool.getTypeName(superType));
+        ASSERT_STREQ(this->pool.getTypeName(*actualSuperType), this->pool.getTypeName(superType));
         ASSERT_TRUE(*actualSuperType == superType);
     }
 

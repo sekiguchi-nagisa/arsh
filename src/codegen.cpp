@@ -1210,7 +1210,7 @@ static void dumpCodeImpl(FILE *fp, DSState &ctx, const CompiledCode &c,
             if(isTypeOp(code)) {
                 unsigned long v = read64(c.getCode(), i + 1);
                 i += 8;
-                fprintf(fp, "  %s", getPool(ctx).getTypeName(*reinterpret_cast<DSType *>(v)).c_str());
+                fprintf(fp, "  %s", getPool(ctx).getTypeName(*reinterpret_cast<DSType *>(v)));
             } else {
                 const int byteSize = getByteSize(code);
                 if(code == OpCode::CALL_METHOD) {
@@ -1269,7 +1269,7 @@ static void dumpCodeImpl(FILE *fp, DSState &ctx, const CompiledCode &c,
                     list->push_back(&static_cast<FuncObject *>(v.get())->getCode());
                 }
                 fprintf(fp, "%s %s",
-                        (v->getType() != nullptr ? getPool(ctx).getTypeName(*v->getType()).c_str() : "(null)"),
+                        (v->getType() != nullptr ? getPool(ctx).getTypeName(*v->getType()) : "(null)"),
                         v->toString(ctx, nullptr).c_str());
                 break;
             case DSValueKind::INVALID:
@@ -1296,7 +1296,7 @@ static void dumpCodeImpl(FILE *fp, DSState &ctx, const CompiledCode &c,
     for(unsigned int i = 0; c.getExceptionEntries()[i].type != nullptr; i++) {
         const auto &e = c.getExceptionEntries()[i];
         fprintf(fp, "  begin: %d, end: %d, type: %s, dest: %d, offset: %d, size: %d\n",
-                e.begin, e.end, getPool(ctx).getTypeName(*e.type).c_str(), e.dest, e.localOffset, e.localSize);
+                e.begin, e.end, getPool(ctx).getTypeName(*e.type), e.dest, e.localOffset, e.localSize);
     }
 
     fflush(fp);

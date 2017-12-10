@@ -833,8 +833,8 @@ public:
 
     void setAlias(const char *alias, DSType &targetType);
 
-    const std::string &getTypeName(const DSType &type) const {
-        return this->typeMap.getTypeName(type);
+    const char *getTypeName(const DSType &type) const {
+        return this->typeMap.getTypeName(type).c_str();
     }
 
     /**

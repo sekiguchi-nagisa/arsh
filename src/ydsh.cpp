@@ -218,7 +218,7 @@ static int evalCode(DSState *state, CompiledCode &code, DSError *dsError) {
         handleUncaughtException(state, state->pop());
         state->recover(false);
         setErrorInfo(dsError, DS_ERROR_KIND_RUNTIME_ERROR, errorLineNum,
-                     state->pool.getTypeName(*thrownObj->getType()).c_str());
+                     state->pool.getTypeName(*thrownObj->getType()));
         return 1;
     }
     return state->getExitStatus();

@@ -1435,7 +1435,7 @@ void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
     this->indent(); fprintf(this->fp, "size: %d\n", node.getSize());
     this->leaveIndent();
     this->indent(); fprintf(this->fp, "type: %s\n",
-                            (!node.isUntyped() ? this->pool.getTypeName(node.getType()).c_str() : ""));
+                            (!node.isUntyped() ? this->pool.getTypeName(node.getType()) : ""));
 
     if(inArray) {
         this->leaveIndent();
