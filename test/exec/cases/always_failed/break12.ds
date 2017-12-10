@@ -1,0 +1,8 @@
+
+#$test($result = 'type', $lineNum = 7, $errorKind = 'InsideChild', $status = 1)
+
+eval exit 4
+
+for(;;) {
+    $({echo helli; break; }); break;
+}

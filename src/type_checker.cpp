@@ -856,7 +856,10 @@ void TypeChecker::visitPipelineNode(DSType *, PipelineNode &node) {
 }
 
 void TypeChecker::visitSubstitutionNode(DSType *, SubstitutionNode &node) {
+    this->fctx.enterChild();
     this->checkType(nullptr, node.getExprNode(), nullptr);
+    this->fctx.leave();
+
     if(node.isStrExpr()) {
         node.setType(this->typePool.getStringType());
     } else {
@@ -882,7 +885,10 @@ void TypeChecker::visitWithNode(DSType *requiredType, WithNode &node) {
 }
 
 void TypeChecker::visitAsyncNode(DSType *, AsyncNode &node) {
+    this->fctx.enterChild();
     this->checkType(nullptr, node.getExprNode(), nullptr);
+    this->fctx.leave();
+
     if(node.getOpKind() == AsyncNode::DISOWN) {
         node.setType(this->typePool.getVoidType());
     } else {
