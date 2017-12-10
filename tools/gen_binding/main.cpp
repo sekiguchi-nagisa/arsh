@@ -144,7 +144,6 @@ const char *HandleInfoMap::getName(HandleInfo info) const {
         }
     }
     fatal("not found handle info: %s\n", toTypeInfoName(info));
-    return nullptr;
 }
 
 HandleInfo HandleInfoMap::getInfo(const std::string &name) {

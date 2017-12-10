@@ -1193,7 +1193,6 @@ const char *resolveUnaryOpName(TokenKind op) {
         return OP_NOT;
     default:
         fatal("unsupported unary op: %s\n", TO_NAME(op));
-        return nullptr;
     }
 }
 
@@ -1233,7 +1232,6 @@ const char *resolveBinaryOpName(TokenKind op) {
         return OP_UNMATCH;
     default:
         fatal("unsupported binary op: %s\n", TO_NAME(op));
-        return nullptr;
     }
 }
 
@@ -1255,7 +1253,6 @@ TokenKind resolveAssignOp(TokenKind op) {
         return MOD;
     default:
         fatal("unsupported assign op: %s\n", TO_NAME(op));
-        return INVALID;
     }
 }
 

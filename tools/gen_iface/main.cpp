@@ -392,7 +392,6 @@ void decodeImpl(const std::string &desc, unsigned int &index, std::string &out) 
         // currently not supported
     default:
         fatal("unsupported type signature: %c, %s\n", ch, desc.c_str());
-        break;
     }
 }
 
