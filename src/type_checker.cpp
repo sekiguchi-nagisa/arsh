@@ -928,7 +928,10 @@ void TypeChecker::visitLoopNode(DSType *, LoopNode &node) {
         (void) b;
         assert(b);
     }
-    this->checkTypeWithCoercion(this->typePool.getBooleanType(), node.refCondNode());
+
+    if(node.getCondNode() != nullptr) {
+        this->checkTypeWithCoercion(this->typePool.getBooleanType(), node.refCondNode());
+    }
     this->checkTypeWithCoercion(this->typePool.getVoidType(), node.refIterNode());
 
     this->enterLoop();

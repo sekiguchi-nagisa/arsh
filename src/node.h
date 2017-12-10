@@ -1393,6 +1393,9 @@ class LoopNode : public Node {
 private:
     Node *initNode;
 
+    /**
+     * may be null
+     */
     Node *condNode;
 
     Node *iterNode;
@@ -1404,6 +1407,7 @@ private:
 public:
     /**
      * initNode may be null.
+     * condNide may be null.
      * iterNode may be null.
      */
     LoopNode(unsigned int startPos, Node *initNode, Node *condNode, Node *iterNode, BlockNode *blockNode, bool asDoWhile = false);

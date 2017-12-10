@@ -727,8 +727,7 @@ std::unique_ptr<Node> Parser::parse_forCond() {
     EACH_LA_expression(GEN_LA_CASE)
         return this->parse_expression();
     default:
-        Token token{0, 0};
-        return make_unique<VarNode>(token, std::string(VAR_TRUE));
+        return nullptr;
     }
 }
 

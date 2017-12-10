@@ -23,3 +23,11 @@ for(;;) {
 	}
 	$c = $c + 1
 }
+
+# up to v0.8.0, the following code is not compiled due to loop node implementation
+{
+    var TRUE = 45
+    for(;;) {
+        break
+    }
+}
