@@ -466,7 +466,6 @@ private:
     void visitCmdArgNode(CmdArgNode &node) override;
     void visitRedirNode(RedirNode &node) override;
     void visitPipelineNode(PipelineNode &node) override;
-    void visitSubstitutionNode(SubstitutionNode &node) override;
     void visitWithNode(WithNode &node) override;
     void visitAsyncNode(AsyncNode &node) override;
     void visitAssertNode(AssertNode &node) override;

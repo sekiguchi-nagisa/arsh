@@ -855,18 +855,6 @@ void TypeChecker::visitPipelineNode(DSType *, PipelineNode &node) {
     node.setType(type);
 }
 
-void TypeChecker::visitSubstitutionNode(DSType *, SubstitutionNode &node) {
-    this->fctx.enterChild();
-    this->checkType(nullptr, node.getExprNode(), nullptr);
-    this->fctx.leave();
-
-    if(node.isStrExpr()) {
-        node.setType(this->typePool.getStringType());
-    } else {
-        node.setType(this->typePool.getStringArrayType());
-    }
-}
-
 void TypeChecker::visitWithNode(DSType *requiredType, WithNode &node) {
     this->symbolTable.enterScope();
 
@@ -889,11 +877,23 @@ void TypeChecker::visitAsyncNode(DSType *, AsyncNode &node) {
     this->checkType(nullptr, node.getExprNode(), nullptr);
     this->fctx.leave();
 
-    if(node.getOpKind() == AsyncNode::DISOWN) {
-        node.setType(this->typePool.getVoidType());
-    } else {
-        node.setType(this->typePool.getJobType());
+    DSType *type = nullptr;
+    switch(node.getOpKind()) {
+    case AsyncNode::SUB_STR:
+        type = &this->typePool.getStringType();
+        break;
+    case AsyncNode::SUB_ARRAY:
+        type = &this->typePool.getStringArrayType();
+        break;
+    case AsyncNode::BG:
+    case AsyncNode::COPROC:
+        type = &this->typePool.getJobType();
+        break;
+    case AsyncNode::DISOWN:
+        type = &this->typePool.getVoidType();
+        break;
     }
+    node.setType(*type);
 }
 
 void TypeChecker::visitAssertNode(DSType *, AssertNode &node) {

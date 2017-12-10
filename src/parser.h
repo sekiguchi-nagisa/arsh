@@ -220,7 +220,7 @@ protected:
 
     std::unique_ptr<Node> parse_paramExpansion();
 
-    std::unique_ptr<SubstitutionNode> parse_substitution();
+    std::unique_ptr<Node> parse_substitution(bool strExpr = false);
 };
 
 // for DBus interface loading

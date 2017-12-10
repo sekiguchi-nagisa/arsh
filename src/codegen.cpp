@@ -693,22 +693,6 @@ void ByteCodeGenerator::visitPipelineNode(PipelineNode &node) {
     });
 }
 
-void ByteCodeGenerator::visitSubstitutionNode(SubstitutionNode &node) {
-    auto beginLabel = makeLabel();
-    auto endLabel = makeLabel();
-    auto mergeLabel = makeLabel();
-
-    this->markLabel(beginLabel);
-    this->emitCaptureIns(node.isStrExpr(), mergeLabel);
-    this->visit(*node.getExprNode());
-    this->markLabel(endLabel);
-
-    this->emit0byteIns(OpCode::SUCCESS_CHILD);
-    this->catchException(beginLabel, endLabel, this->pool.getAnyType());
-    this->emit0byteIns(OpCode::FAILURE_CHILD);
-    this->markLabel(mergeLabel);
-}
-
 void ByteCodeGenerator::visitWithNode(WithNode &node) {
     this->generateBlock(node.getBaseIndex(), 1, true, [&] {
         this->emit0byteIns(OpCode::NEW_REDIR);
@@ -722,8 +706,28 @@ void ByteCodeGenerator::visitWithNode(WithNode &node) {
     });
 }
 
-void ByteCodeGenerator::visitAsyncNode(AsyncNode &) {
-    fatal("unimplemented\n");
+void ByteCodeGenerator::visitAsyncNode(AsyncNode &node) {
+    auto beginLabel = makeLabel();
+    auto endLabel = makeLabel();
+    auto mergeLabel = makeLabel();
+
+    this->markLabel(beginLabel);
+    switch(node.getOpKind()) {
+    case AsyncNode::SUB_STR:
+    case AsyncNode::SUB_ARRAY:
+        this->emitCaptureIns(node.getOpKind() == AsyncNode::SUB_STR, mergeLabel);
+        break;
+    default:
+        fatal("unimplemented\n");
+    }
+
+    this->visit(*node.getExprNode());
+    this->markLabel(endLabel);
+
+    this->emit0byteIns(OpCode::SUCCESS_CHILD);
+    this->catchException(beginLabel, endLabel, this->pool.getAnyType());
+    this->emit0byteIns(OpCode::FAILURE_CHILD);
+    this->markLabel(mergeLabel);
 }
 
 void ByteCodeGenerator::visitAssertNode(AssertNode &node) {

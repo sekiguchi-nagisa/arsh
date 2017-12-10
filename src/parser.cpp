@@ -973,9 +973,8 @@ std::unique_ptr<Node> Parser::parse_unaryExpression() {
         return std::unique_ptr<Node>(JumpNode::newThrow(token, TRY(this->parse_unaryExpression()).release()));
     }
     case COPROC: {
-        unsigned int startPos = START_POS();
-        this->consume();    // COPROC
-        return make_unique<AsyncNode>(startPos, TRY(this->parse_unaryExpression()).release());
+        auto token = this->expect(COPROC);  // always success
+        return std::unique_ptr<Node>(AsyncNode::newCoproc(token, TRY(this->parse_unaryExpression()).release()));
     }
     default:
         return this->parse_suffixExpression();
@@ -1349,8 +1348,7 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
             break;
         }
         case START_SUB_CMD: {
-            auto subNode = TRY(this->parse_substitution());
-            subNode->setStrExpr(true);
+            auto subNode = TRY(this->parse_substitution(true));
             node->addExprNode(subNode.release());
             break;
         }
@@ -1402,7 +1400,7 @@ std::unique_ptr<Node> Parser::parse_paramExpansion() {
     }
 }
 
-std::unique_ptr<SubstitutionNode> Parser::parse_substitution() {
+std::unique_ptr<Node> Parser::parse_substitution(bool strExpr) {
     GUARD_DEEP_NESTING(guard);
 
     assert(CUR_KIND() == START_SUB_CMD);
@@ -1410,9 +1408,7 @@ std::unique_ptr<SubstitutionNode> Parser::parse_substitution() {
     this->consume();    // START_SUB_CMD
     auto exprNode = TRY(this->parse_expression());
     Token token = TRY(this->expect(RP));
-    auto node = make_unique<SubstitutionNode>(pos, exprNode.release());
-    node->updateToken(token);
-    return node;
+    return std::unique_ptr<Node>(AsyncNode::newSubsitution(pos, exprNode.release(), token, strExpr));
 }
 
 std::unique_ptr<RootNode> parse(const char *sourceName) {

@@ -675,19 +675,6 @@ void PipelineNode::addNodeImpl(Node *node) {
     this->updateToken(node->getToken());
 }
 
-// ##############################
-// ##     SubstitutionNode     ##
-// ##############################
-
-SubstitutionNode::~SubstitutionNode() {
-    delete this->exprNode;
-}
-
-void SubstitutionNode::dump(NodeDumper &dumper) const {
-    DUMP_PTR(exprNode);
-    DUMP_PRIM(strExpr);
-}
-
 // ######################
 // ##     WithNode     ##
 // ######################
@@ -718,6 +705,8 @@ void AsyncNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
 
 #define EACH_ENUM(OP) \
+    OP(SUB_STR) \
+    OP(SUB_ARRAY) \
     OP(BG) \
     OP(DISOWN) \
     OP(COPROC)

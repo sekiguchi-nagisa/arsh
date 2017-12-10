@@ -58,7 +58,6 @@ class NodeDumper;
     OP(CmdArg) \
     OP(Redir) \
     OP(Pipeline) \
-    OP(Substitution) \
     OP(With) \
     OP(Async) \
     OP(Assert) \
@@ -1164,39 +1163,6 @@ private:
     void addNodeImpl(Node *node);
 };
 
-/**
- * for command substitution (ex. "$(echo)", $(echo) )
- */
-class SubstitutionNode : public Node {
-private:
-    Node *exprNode;
-
-    /**
-     * if true, this node is within string expr node
-     */
-    bool strExpr;
-
-public:
-    SubstitutionNode(unsigned int pos, Node *exprNode) :
-            Node(NodeKind::Substitution, {pos, 1}), exprNode(exprNode), strExpr(false) { }
-
-    ~SubstitutionNode() override;
-
-    Node *getExprNode() const {
-        return this->exprNode;
-    }
-
-    void setStrExpr(bool strExpr) {
-        this->strExpr = strExpr;
-    }
-
-    bool isStrExpr() const {
-        return this->strExpr;
-    }
-
-    void dump(NodeDumper &dumper) const override;
-};
-
 class WithNode : public Node {
 private:
     Node *exprNode;
@@ -1240,9 +1206,11 @@ public:
 class AsyncNode : public Node {
 public:
     enum OpKind : unsigned char {
-        BG,
-        DISOWN,
-        COPROC,
+        SUB_STR,    // "$(echo)"
+        SUB_ARRAY,  // $(echo)
+        BG,         // echo &
+        DISOWN,     // echo &!
+        COPROC,     // coproc echo
     };
 
 private:
@@ -1253,12 +1221,27 @@ private:
             Node(NodeKind::Async, token), opKind(kind), exprNode(exprNode) { }
 
 public:
-    AsyncNode(unsigned int pos, Node *exprNode) : AsyncNode({pos, 0}, COPROC, exprNode) {
-        this->updateToken(exprNode->getToken());
+    static AsyncNode *newSubsitution(unsigned int pos, Node *exprNode, Token token, bool strExpr) {
+        auto *node = new AsyncNode({pos, 1}, strExpr ? SUB_STR : SUB_ARRAY, exprNode);
+        node->updateToken(token);
+        return node;
     }
 
-    AsyncNode(Node *exprNode, TokenKind kind) :
-            AsyncNode(exprNode->getToken(), kind == BACKGROUND ? BG : DISOWN, exprNode) {}
+    static AsyncNode *newBackground(Node *exprNode, Token token) {
+        auto *node = new AsyncNode(exprNode->getToken(), BG, exprNode);
+        node->updateToken(token);
+        return node;
+    }
+
+    static AsyncNode *newDisown(Node *exprNode, Token token) {
+        auto *node = new AsyncNode(exprNode->getToken(), DISOWN, exprNode);
+        node->updateToken(token);
+        return node;
+    }
+
+    static AsyncNode *newCoproc(Token token, Node *exprNode) {
+        return new AsyncNode(token, COPROC, exprNode);
+    }
 
     ~AsyncNode();
 
@@ -2125,7 +2108,6 @@ struct NodeVisitor {
     virtual void visitCmdArgNode(CmdArgNode &node) = 0;
     virtual void visitRedirNode(RedirNode &node) = 0;
     virtual void visitPipelineNode(PipelineNode &node) = 0;
-    virtual void visitSubstitutionNode(SubstitutionNode &node) = 0;
     virtual void visitWithNode(WithNode &node) = 0;
     virtual void visitAssertNode(AssertNode &node) = 0;
     virtual void visitBlockNode(BlockNode &node) = 0;
@@ -2170,7 +2152,6 @@ struct BaseVisitor : public NodeVisitor {
     void visitCmdArgNode(CmdArgNode &node) override { this->visitDefault(node); }
     void visitRedirNode(RedirNode &node) override { this->visitDefault(node); }
     void visitPipelineNode(PipelineNode &node) override { this->visitDefault(node); }
-    void visitSubstitutionNode(SubstitutionNode &node) override { this->visitDefault(node); }
     void visitWithNode(WithNode &node) override { this->visitDefault(node); }
     void visitAsyncNode(AsyncNode &node) override { this->visitDefault(node); }
     void visitAssertNode(AssertNode &node) override { this->visitDefault(node); }
