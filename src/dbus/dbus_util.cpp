@@ -65,7 +65,7 @@ const char *DescriptorBuilder::buildDescriptor(DSType &type) {
 }
 
 void DescriptorBuilder::visitFunctionType(FunctionType *type) {
-    fatal("unsupported type: %s\n", this->pool->getTypeName(*type).c_str());
+    fatal("unsupported type: %s\n", this->pool->getTypeName(*type));
 }
 
 void DescriptorBuilder::visitBuiltinType(BuiltinType *type) {
@@ -75,7 +75,7 @@ void DescriptorBuilder::visitBuiltinType(BuiltinType *type) {
             this->append(DBUS_TYPE_VARIANT);
             return;
         }
-        fatal("unsupported type: %s\n", this->pool->getTypeName(*type).c_str());
+        fatal("unsupported type: %s\n", this->pool->getTypeName(*type));
     }
     this->append(dbusType);
 }
@@ -92,7 +92,7 @@ void DescriptorBuilder::visitReifiedType(ReifiedType *type) {
         type->getElementTypes()[1]->accept(this);
         this->append(DBUS_DICT_ENTRY_END_CHAR);
     } else {
-        fatal("unsupported type: %s\n", this->pool->getTypeName(*type).c_str());
+        fatal("unsupported type: %s\n", this->pool->getTypeName(*type));
     }
 }
 
@@ -105,11 +105,11 @@ void DescriptorBuilder::visitTupleType(TupleType *type) {
 }
 
 void DescriptorBuilder::visitInterfaceType(InterfaceType *type) {
-    fatal("unsupported type: %s\n", this->pool->getTypeName(*type).c_str());
+    fatal("unsupported type: %s\n", this->pool->getTypeName(*type));
 }
 
 void DescriptorBuilder::visitErrorType(ErrorType *type) {
-    fatal("unsupported type: %s\n", this->pool->getTypeName(*type).c_str());
+    fatal("unsupported type: %s\n", this->pool->getTypeName(*type));
 }
 
 
@@ -129,7 +129,7 @@ void MessageBuilder::appendArg(DBusMessageIter *iter, DSType &argType, const DSV
 }
 
 void MessageBuilder::visitFunctionType(FunctionType *type) {
-    fatal("unsupported type: %s\n", this->pool->getTypeName(*type).c_str());
+    fatal("unsupported type: %s\n", this->pool->getTypeName(*type));
 }
 
 void MessageBuilder::visitBuiltinType(BuiltinType *type) {
@@ -209,8 +209,7 @@ void MessageBuilder::visitBuiltinType(BuiltinType *type) {
             return;
         }
 
-        fatal("unsupported type: %s\n", this->pool->getTypeName(*type).c_str());
-        break;
+        fatal("unsupported type: %s\n", this->pool->getTypeName(*type));
     }
 }
 
@@ -254,7 +253,7 @@ void MessageBuilder::visitReifiedType(ReifiedType *type) {
 
         this->closeContainerIter(curIter, &subIter);
     } else {
-        fatal("unsupported type: %s\n", this->pool->getTypeName(*type).c_str());
+        fatal("unsupported type: %s\n", this->pool->getTypeName(*type));
     }
 }
 
@@ -277,11 +276,11 @@ void MessageBuilder::visitTupleType(TupleType *type) {
 }
 
 void MessageBuilder::visitInterfaceType(InterfaceType *type) {
-    fatal("unsupported type: %s\n", this->pool->getTypeName(*type).c_str());
+    fatal("unsupported type: %s\n", this->pool->getTypeName(*type));
 }
 
 void MessageBuilder::visitErrorType(ErrorType *type) {
-    fatal("unsupported type: %s\n", this->pool->getTypeName(*type).c_str());
+    fatal("unsupported type: %s\n", this->pool->getTypeName(*type));
 }
 
 void MessageBuilder::append(DSType *type, DSObject *value) {

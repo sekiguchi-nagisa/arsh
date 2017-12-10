@@ -506,7 +506,7 @@ std::string DBusProxy_Object::toString(DSState &, VisitedSet *) {
 }
 
 bool DBusProxy_Object::introspect(DSState &ctx, DSType *targetType) {
-    const std::string &typeName = getPool(ctx).getTypeName(*targetType);
+    const char *typeName = getPool(ctx).getTypeName(*targetType);
     auto iter = this->ifaceSet.find(typeName);
     return iter != this->ifaceSet.end();
 }
@@ -582,11 +582,11 @@ void DBusProxy_Object::doIntrospection(DSState &ctx) {
 DSValue DBusProxy_Object::invokeMethod(DSState &ctx, const char *methodName, const MethodHandle *handle) {
     // check signal
     if(handle->isSignal()) {
-        this->addHandler(getPool(ctx).getTypeName(*handle->getRecvType()).c_str(), methodName, getLocal(ctx, 1));
+        this->addHandler(getPool(ctx).getTypeName(*handle->getRecvType()), methodName, getLocal(ctx, 1));
         return DSValue();
     }
 
-    auto msg = this->newMethodCallMsg(getPool(ctx).getTypeName(*handle->getRecvType()).c_str(), methodName);
+    auto msg = this->newMethodCallMsg(getPool(ctx).getTypeName(*handle->getRecvType()), methodName);
 
     // append arg
     DBusMessageIter iter{};
@@ -621,7 +621,7 @@ DSValue DBusProxy_Object::invokeGetter(DSState &ctx, const DSType *recvType,
     DBusMessageIter iter{};
     dbus_message_iter_init_append(msg.get(), &iter);
 
-    const char *ifaceName = getPool(ctx).getTypeName(*recvType).c_str();
+    const char *ifaceName = getPool(ctx).getTypeName(*recvType);
     dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, &ifaceName);
     dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, &fieldName);
 
@@ -640,7 +640,7 @@ void DBusProxy_Object::invokeSetter(DSState &ctx, const DSType *recvType,
     DBusMessageIter iter{};
     dbus_message_iter_init_append(msg.get(), &iter);
 
-    const char *ifaceName = getPool(ctx).getTypeName(*recvType).c_str();
+    const char *ifaceName = getPool(ctx).getTypeName(*recvType);
     dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, &ifaceName);
     dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, &fieldName);
 
