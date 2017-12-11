@@ -209,10 +209,6 @@ void ByteCodeGenerator::enterFinally() {
     }
 }
 
-void ByteCodeGenerator::emitCaptureIns(bool isStr, const Label &label) {
-    this->emitBranchIns(isStr ? OpCode::CAPTURE_STR : OpCode::CAPTURE_ARRAY, label);
-}
-
 static bool isTildeExpansion(const Node *node) {
     return node->is(NodeKind::String) && static_cast<const StringNode *>(node)->isTilde();
 }
@@ -706,20 +702,25 @@ void ByteCodeGenerator::visitWithNode(WithNode &node) {
     });
 }
 
+static OpCode resolveAsyncOp(AsyncNode::OpKind kind) {
+    switch(kind) {
+    case AsyncNode::SUB_STR:
+        return OpCode::CAPTURE_STR;
+    case AsyncNode::SUB_ARRAY:
+        return OpCode::CAPTURE_ARRAY;
+    default:
+        fatal("unimplemented\n");
+    }
+    return OpCode::HALT;    // normally unreachable, due to suppress gcc warning
+}
+
 void ByteCodeGenerator::visitAsyncNode(AsyncNode &node) {
     auto beginLabel = makeLabel();
     auto endLabel = makeLabel();
     auto mergeLabel = makeLabel();
 
     this->markLabel(beginLabel);
-    switch(node.getOpKind()) {
-    case AsyncNode::SUB_STR:
-    case AsyncNode::SUB_ARRAY:
-        this->emitCaptureIns(node.getOpKind() == AsyncNode::SUB_STR, mergeLabel);
-        break;
-    default:
-        fatal("unimplemented\n");
-    }
+    this->emitBranchIns(resolveAsyncOp(node.getOpKind()), mergeLabel);
 
     this->visit(*node.getExprNode());
     this->markLabel(endLabel);

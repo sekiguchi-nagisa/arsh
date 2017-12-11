@@ -434,7 +434,6 @@ private:
     void catchException(const Label &begin, const Label &end, const DSType &type,
                         unsigned short localOffset = 0, unsigned short localSize = 0);
     void enterFinally();
-    void emitCaptureIns(bool isStr, const Label &label);
     void generateCmdArg(CmdArgNode &node);
     void emitPipelineIns(const std::vector<Label> &labels);
     void generateStringExpr(StringExprNode &node, bool fragment);
