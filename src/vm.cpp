@@ -489,6 +489,79 @@ static void flushStdFD() {
     fflush(stderr);
 }
 
+static DSValue readAsStr(DSState &state, int fd) {
+    char buf[256];
+    std::string str;
+    while(true) {
+        int readSize = read(fd, buf, arraySize(buf));
+        if(readSize == -1 && (errno == EAGAIN || errno == EINTR)) {
+            continue;
+        }
+        if(readSize <= 0) {
+            break;
+        }
+        str.append(buf, readSize);
+    }
+
+    // remove last newlines
+    for(; !str.empty() && str.back() == '\n'; str.pop_back());
+
+    return DSValue::create<String_Object>(state.pool.getStringType(), std::move(str));
+}
+
+static DSValue readAsStrArray(DSState &state, int fd) {
+    auto *ifsObj = typeAs<String_Object>(getGlobal(state, toIndex(BuiltinVarOffset::IFS)));
+    const char *ifs = ifsObj->getValue();
+    const unsigned ifsSize = ifsObj->size();
+    unsigned int skipCount = 1;
+
+    char buf[256];
+    std::string str;
+    auto obj = DSValue::create<Array_Object>(state.pool.getStringArrayType());
+    auto *array = typeAs<Array_Object>(obj);
+
+    while(true) {
+        int readSize = read(fd, buf, arraySize(buf));
+        if(readSize == -1 && (errno == EINTR || errno == EAGAIN)) {
+            continue;
+        }
+        if(readSize <= 0) {
+            break;
+        }
+
+        for(int i = 0; i < readSize; i++) {
+            char ch = buf[i];
+            bool fieldSep = isFieldSep(ifsSize, ifs, ch);
+            if(fieldSep && skipCount > 0) {
+                if(isSpace(ch)) {
+                    continue;
+                }
+                if(--skipCount == 1) {
+                    continue;
+                }
+            }
+            skipCount = 0;
+            if(fieldSep) {
+                array->append(DSValue::create<String_Object>(state.pool.getStringType(), std::move(str)));
+                str = "";
+                skipCount = isSpace(ch) ? 2 : 1;
+                continue;
+            }
+            str += ch;
+        }
+    }
+
+    // remove last newline
+    for(; !str.empty() && str.back() == '\n'; str.pop_back());
+
+    // append remain
+    if(!str.empty() || !hasSpace(ifsSize, ifs)) {
+        array->append(DSValue::create<String_Object>(state.pool.getStringType(), std::move(str)));
+    }
+
+    return obj;
+}
+
 static void forkAndCapture(bool isStr, DSState &state) {
     const unsigned short offset = read16(GET_CODE(state), state.pc() + 1);
 
@@ -506,77 +579,7 @@ static void forkAndCapture(bool isStr, DSState &state) {
     pid_t pid = xfork(state, getpgid(0), false);
     if(pid > 0) {   // parent process
         close(pipefds[WRITE_PIPE]);
-
-        DSValue obj;
-
-        if(isStr) {  // capture stdout as String
-            char buf[256];
-            std::string str;
-            while(true) {
-                int readSize = read(pipefds[READ_PIPE], buf, arraySize(buf));
-                if(readSize == -1 && (errno == EAGAIN || errno == EINTR)) {
-                    continue;
-                }
-                if(readSize <= 0) {
-                    break;
-                }
-                str.append(buf, readSize);
-            }
-
-            // remove last newlines
-            for(; !str.empty() && str.back() == '\n'; str.pop_back());
-
-            obj = DSValue::create<String_Object>(state.pool.getStringType(), std::move(str));
-        } else {    // capture stdout as String Array
-            auto *ifsObj = typeAs<String_Object>(getGlobal(state, toIndex(BuiltinVarOffset::IFS)));
-            const char *ifs = ifsObj->getValue();
-            const unsigned ifsSize = ifsObj->size();
-            unsigned int skipCount = 1;
-
-            char buf[256];
-            std::string str;
-            obj = DSValue::create<Array_Object>(state.pool.getStringArrayType());
-            auto *array = typeAs<Array_Object>(obj);
-
-            while(true) {
-                int readSize = read(pipefds[READ_PIPE], buf, arraySize(buf));
-                if(readSize == -1 && (errno == EINTR || errno == EAGAIN)) {
-                    continue;
-                }
-                if(readSize <= 0) {
-                    break;
-                }
-
-                for(int i = 0; i < readSize; i++) {
-                    char ch = buf[i];
-                    bool fieldSep = isFieldSep(ifsSize, ifs, ch);
-                    if(fieldSep && skipCount > 0) {
-                        if(isSpace(ch)) {
-                            continue;
-                        }
-                        if(--skipCount == 1) {
-                            continue;
-                        }
-                    }
-                    skipCount = 0;
-                    if(fieldSep) {
-                        array->append(DSValue::create<String_Object>(state.pool.getStringType(), std::move(str)));
-                        str = "";
-                        skipCount = isSpace(ch) ? 2 : 1;
-                        continue;
-                    }
-                    str += ch;
-                }
-            }
-
-            // remove last newline
-            for(; !str.empty() && str.back() == '\n'; str.pop_back());
-
-            // append remain
-            if(!str.empty() || !hasSpace(ifsSize, ifs)) {
-                array->append(DSValue::create<String_Object>(state.pool.getStringType(), std::move(str)));
-            }
-        }
+        auto obj = isStr ? readAsStr(state, pipefds[READ_PIPE]) : readAsStrArray(state, pipefds[READ_PIPE]);
         close(pipefds[READ_PIPE]);
 
         // wait exit
