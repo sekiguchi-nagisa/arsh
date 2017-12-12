@@ -492,6 +492,11 @@ static void initEnv() {
 DSState *DSState_createWithMode(DSExecMode mode) {
     initEnv();
 
+    // ignore SIGPIPE by default
+    struct sigaction action{};
+    action.sa_handler = SIG_IGN;
+    sigaction(SIGPIPE, &action, nullptr);
+
     auto *ctx = new DSState();
 
     /**
