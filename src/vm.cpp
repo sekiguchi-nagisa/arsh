@@ -136,18 +136,16 @@ flag32_set_t DSState::eventDesc = 0;
 
 FixedQueue<int, 32> DSState::signalQueue;
 
-static void signalHandler(int sigNum) {
-    blockSignal([&] {
-        DSState::signalQueue.push(sigNum);
-        setFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL);
-    });
+static void signalHandler(int sigNum) { // when called this handler, all signals are blocked due to signal mask
+    DSState::signalQueue.push(sigNum);
+    setFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL);
 }
 
 void DSState::installSignalHandler(int sigNum, UnsafeSigOp op, const DSValue &handler) {
     // set posix signal handler
     struct sigaction action{};
     action.sa_flags = SA_RESTART;
-    sigemptyset(&action.sa_mask);
+    sigfillset(&action.sa_mask);
 
     switch(op) {
     case UnsafeSigOp::DFL:
