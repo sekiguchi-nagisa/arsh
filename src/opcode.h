@@ -92,8 +92,7 @@ namespace ydsh {
     OP(D_TO_I64, 0) \
     OP(SUCCESS_CHILD, 0) \
     OP(FAILURE_CHILD, 0) \
-    OP(CAPTURE_STR, 2) \
-    OP(CAPTURE_ARRAY, 2) \
+    OP(FORK, 3) \
     OP(PIPELINE, -1) \
     OP(EXPAND_TILDE, 0) \
     OP(NEW_CMD, 0) \
@@ -127,6 +126,14 @@ enum class OpCode : unsigned char {
 int getByteSize(OpCode code);
 
 bool isTypeOp(OpCode code);
+
+enum class ForkKind : unsigned char {
+    STR,    // capture stdout as string
+    ARRAY,  // capture stdout as string array
+    COPROC, // launch as co-process
+    JOB,    // launch as background job
+    DISOWN, // launch as disowned background job
+};
 
 } // namespace ydsh
 

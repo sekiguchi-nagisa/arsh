@@ -71,8 +71,7 @@
 | D_TO_I64      |                                | value -> value                               | convert number (see. int-cast.md)                  |
 | SUCCESS_CHILD |                                | -> [terminate]                               | terminate current process                          |
 | FAILURE_CHILD |                                | -> [terminate]                               | terminate current process                          |
-| CAPTURE_STR   | 2: offset1 offset2             | -> value                                     | capture stdout as string                           |
-| CAPTURE_ARRAY | 2: offset1 offset2             | -> value                                     | capture stdout as string array                     |
+| FORK          | 1: byte1 2: offset1 offset2    | -> value                                     | evaluate code in child shell                       |
 | PIPELINE      | 1: len 2: offset1 offset2 ...  | -> value                                     | call pipeline                                      |
 | EXPAND_TILDE  |                                | value -> value                               | perform tilde expansion                            |
 | NEW_CMD       |                                | value -> value                               | pop stack top and store it to new argv             |

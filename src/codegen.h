@@ -377,7 +377,13 @@ private:
     void generateToString();
     void emitNumCastIns(const DSType &beforeType, const DSType &afterType);
     void emitBranchIns(OpCode op, const Label &label);
-    void emitBranchIns(const Label &label);
+
+    void emitBranchIns(const Label &label) {
+        this->emitBranchIns(OpCode::BRANCH, label);
+    }
+
+    void emitForkIns(ForkKind kind, const Label &label);
+
     void emitJumpIns(const Label &label);
     void markLabel(Label &label);
 

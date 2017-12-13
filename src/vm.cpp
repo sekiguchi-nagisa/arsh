@@ -560,8 +560,20 @@ static DSValue readAsStrArray(DSState &state, int fd) {
     return obj;
 }
 
-static void forkAndCapture(bool isStr, DSState &state) {
+static void forkAndEval(DSState &state) {
+    const auto forkKind = static_cast<ForkKind >(read8(GET_CODE(state), ++state.pc()));
     const unsigned short offset = read16(GET_CODE(state), state.pc() + 1);
+
+    bool isStr = true;
+    switch(forkKind) {
+    case ForkKind::STR:
+        break;
+    case ForkKind::ARRAY:
+        isStr = false;
+        break;
+    default:
+        fatal("unimplemented\n");
+    }
 
     // flush standard stream due to prevent mixing io buffer
     flushStdFD();
@@ -1893,9 +1905,8 @@ static bool mainLoop(DSState &state) {
             state.storeThrowObject();
             return false;
         }
-        vmcase(CAPTURE_STR)
-        vmcase(CAPTURE_ARRAY) {
-            forkAndCapture(op == OpCode::CAPTURE_STR, state);
+        vmcase(FORK) {
+            forkAndEval(state);
             vmnext;
         }
         vmcase(PIPELINE) {

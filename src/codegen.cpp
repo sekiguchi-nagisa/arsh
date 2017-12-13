@@ -154,8 +154,12 @@ void ByteCodeGenerator::emitBranchIns(OpCode op, const Label &label) {
     this->curBuilder().writeLabel(index + 1, label, index, CodeEmitter<true>::LabelTarget::_16);
 }
 
-void ByteCodeGenerator::emitBranchIns(const Label &label) {
-    this->emitBranchIns(OpCode::BRANCH, label);
+void ByteCodeGenerator::emitForkIns(ForkKind kind, const Label &label) {
+    const unsigned int offset = this->curBuilder().codeBuffer.size();
+    this->emitIns(OpCode::FORK);
+    this->curBuilder().append8(static_cast<unsigned char>(kind));
+    this->curBuilder().append16(0);
+    this->curBuilder().writeLabel(offset + 2, label, offset + 1, CodeEmitter<true>::LabelTarget::_16);
 }
 
 void ByteCodeGenerator::emitJumpIns(const Label &label) {
@@ -702,16 +706,20 @@ void ByteCodeGenerator::visitWithNode(WithNode &node) {
     });
 }
 
-static OpCode resolveAsyncOp(AsyncNode::OpKind kind) {
+static ForkKind resolveForkKind(AsyncNode::OpKind kind) {
     switch(kind) {
     case AsyncNode::SUB_STR:
-        return OpCode::CAPTURE_STR;
+        return ForkKind::STR;
     case AsyncNode::SUB_ARRAY:
-        return OpCode::CAPTURE_ARRAY;
-    default:
-        fatal("unimplemented\n");
+        return ForkKind::ARRAY;
+    case AsyncNode::COPROC:
+        return ForkKind::COPROC;
+    case AsyncNode::BG:
+        return ForkKind::JOB;
+    case AsyncNode::DISOWN:
+        return ForkKind::DISOWN;
     }
-    return OpCode::HALT;    // normally unreachable, due to suppress gcc warning
+    return ForkKind::DISOWN;    // normally unreachable, due to suppress gcc warning
 }
 
 void ByteCodeGenerator::visitAsyncNode(AsyncNode &node) {
@@ -720,8 +728,7 @@ void ByteCodeGenerator::visitAsyncNode(AsyncNode &node) {
     auto mergeLabel = makeLabel();
 
     this->markLabel(beginLabel);
-    this->emitBranchIns(resolveAsyncOp(node.getOpKind()), mergeLabel);
-
+    this->emitForkIns(resolveForkKind(node.getOpKind()), mergeLabel);
     this->visit(*node.getExprNode());
     this->markLabel(endLabel);
 
