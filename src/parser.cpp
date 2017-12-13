@@ -974,7 +974,7 @@ std::unique_ptr<Node> Parser::parse_unaryExpression() {
     }
     case COPROC: {
         auto token = this->expect(COPROC);  // always success
-        return std::unique_ptr<Node>(AsyncNode::newCoproc(token, TRY(this->parse_unaryExpression()).release()));
+        return std::unique_ptr<Node>(ForkNode::newCoproc(token, TRY(this->parse_unaryExpression()).release()));
     }
     default:
         return this->parse_suffixExpression();
@@ -1408,7 +1408,7 @@ std::unique_ptr<Node> Parser::parse_substitution(bool strExpr) {
     this->consume();    // START_SUB_CMD
     auto exprNode = TRY(this->parse_expression());
     Token token = TRY(this->expect(RP));
-    return std::unique_ptr<Node>(AsyncNode::newSubsitution(pos, exprNode.release(), token, strExpr));
+    return std::unique_ptr<Node>(ForkNode::newSubsitution(pos, exprNode.release(), token, strExpr));
 }
 
 std::unique_ptr<RootNode> parse(const char *sourceName) {

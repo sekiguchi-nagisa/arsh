@@ -417,7 +417,7 @@ protected:
     void visitRedirNode(DSType *requiredType, RedirNode &node);
     void visitPipelineNode(DSType *requiredType, PipelineNode &node);
     void visitWithNode(DSType *requiredType, WithNode &node);
-    void visitAsyncNode(DSType *requiredType, AsyncNode &node);
+    void visitForkNode(DSType *requiredType, ForkNode &node);
     void visitAssertNode(DSType *requiredType, AssertNode &node);
     void visitBlockNode(DSType *requiredType, BlockNode &node);
     void visitTypeAliasNode(DSType *requiredType, TypeAliasNode &node);

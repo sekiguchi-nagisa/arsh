@@ -706,23 +706,23 @@ void ByteCodeGenerator::visitWithNode(WithNode &node) {
     });
 }
 
-static ForkKind resolveForkKind(AsyncNode::OpKind kind) {
+static ForkKind resolveForkKind(ForkNode::OpKind kind) {
     switch(kind) {
-    case AsyncNode::SUB_STR:
+    case ForkNode::SUB_STR:
         return ForkKind::STR;
-    case AsyncNode::SUB_ARRAY:
+    case ForkNode::SUB_ARRAY:
         return ForkKind::ARRAY;
-    case AsyncNode::COPROC:
+    case ForkNode::COPROC:
         return ForkKind::COPROC;
-    case AsyncNode::BG:
+    case ForkNode::BG:
         return ForkKind::JOB;
-    case AsyncNode::DISOWN:
+    case ForkNode::DISOWN:
         return ForkKind::DISOWN;
     }
     return ForkKind::DISOWN;    // normally unreachable, due to suppress gcc warning
 }
 
-void ByteCodeGenerator::visitAsyncNode(AsyncNode &node) {
+void ByteCodeGenerator::visitForkNode(ForkNode &node) {
     auto beginLabel = makeLabel();
     auto endLabel = makeLabel();
     auto mergeLabel = makeLabel();

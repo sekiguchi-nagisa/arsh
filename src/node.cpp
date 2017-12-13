@@ -693,15 +693,15 @@ void WithNode::dump(NodeDumper &dumper) const {
     DUMP_PRIM(baseIndex);
 }
 
-// #######################
-// ##     AsyncNode     ##
-// #######################
+// ######################
+// ##     ForkNode     ##
+// ######################
 
-AsyncNode::~AsyncNode() {
+ForkNode::~ForkNode() {
     delete this->exprNode;
 }
 
-void AsyncNode::dump(NodeDumper &dumper) const {
+void ForkNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
 
 #define EACH_ENUM(OP) \

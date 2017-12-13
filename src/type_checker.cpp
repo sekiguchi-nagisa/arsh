@@ -872,24 +872,24 @@ void TypeChecker::visitWithNode(DSType *requiredType, WithNode &node) {
     node.setType(type);
 }
 
-void TypeChecker::visitAsyncNode(DSType *, AsyncNode &node) {
+void TypeChecker::visitForkNode(DSType *, ForkNode &node) {
     this->fctx.enterChild();
     this->checkType(nullptr, node.getExprNode(), nullptr);
     this->fctx.leave();
 
     DSType *type = nullptr;
     switch(node.getOpKind()) {
-    case AsyncNode::SUB_STR:
+    case ForkNode::SUB_STR:
         type = &this->typePool.getStringType();
         break;
-    case AsyncNode::SUB_ARRAY:
+    case ForkNode::SUB_ARRAY:
         type = &this->typePool.getStringArrayType();
         break;
-    case AsyncNode::BG:
-    case AsyncNode::COPROC:
+    case ForkNode::BG:
+    case ForkNode::COPROC:
         type = &this->typePool.getJobType();
         break;
-    case AsyncNode::DISOWN:
+    case ForkNode::DISOWN:
         type = &this->typePool.getVoidType();
         break;
     }

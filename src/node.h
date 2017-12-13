@@ -59,7 +59,7 @@ class NodeDumper;
     OP(Redir) \
     OP(Pipeline) \
     OP(With) \
-    OP(Async) \
+    OP(Fork) \
     OP(Assert) \
     OP(Block) \
     OP(TypeAlias) \
@@ -1203,7 +1203,7 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class AsyncNode : public Node {
+class ForkNode : public Node {
 public:
     enum OpKind : unsigned char {
         SUB_STR,    // "$(echo)"
@@ -1217,33 +1217,33 @@ private:
     OpKind opKind;
     Node *exprNode;
 
-    AsyncNode(Token token, OpKind kind, Node *exprNode) :
-            Node(NodeKind::Async, token), opKind(kind), exprNode(exprNode) { }
+    ForkNode(Token token, OpKind kind, Node *exprNode) :
+            Node(NodeKind::Fork, token), opKind(kind), exprNode(exprNode) { }
 
 public:
-    static AsyncNode *newSubsitution(unsigned int pos, Node *exprNode, Token token, bool strExpr) {
-        auto *node = new AsyncNode({pos, 1}, strExpr ? SUB_STR : SUB_ARRAY, exprNode);
+    static ForkNode *newSubsitution(unsigned int pos, Node *exprNode, Token token, bool strExpr) {
+        auto *node = new ForkNode({pos, 1}, strExpr ? SUB_STR : SUB_ARRAY, exprNode);
         node->updateToken(token);
         return node;
     }
 
-    static AsyncNode *newBackground(Node *exprNode, Token token) {
-        auto *node = new AsyncNode(exprNode->getToken(), BG, exprNode);
+    static ForkNode *newBackground(Node *exprNode, Token token) {
+        auto *node = new ForkNode(exprNode->getToken(), BG, exprNode);
         node->updateToken(token);
         return node;
     }
 
-    static AsyncNode *newDisown(Node *exprNode, Token token) {
-        auto *node = new AsyncNode(exprNode->getToken(), DISOWN, exprNode);
+    static ForkNode *newDisown(Node *exprNode, Token token) {
+        auto *node = new ForkNode(exprNode->getToken(), DISOWN, exprNode);
         node->updateToken(token);
         return node;
     }
 
-    static AsyncNode *newCoproc(Token token, Node *exprNode) {
-        return new AsyncNode(token, COPROC, exprNode);
+    static ForkNode *newCoproc(Token token, Node *exprNode) {
+        return new ForkNode(token, COPROC, exprNode);
     }
 
-    ~AsyncNode();
+    ~ForkNode();
 
     OpKind getOpKind() const {
         return this->opKind;
@@ -2103,7 +2103,7 @@ struct NodeVisitor {
     virtual void visitApplyNode(ApplyNode &node) = 0;
     virtual void visitMethodCallNode(MethodCallNode &node) = 0;
     virtual void visitNewNode(NewNode &node) = 0;
-    virtual void visitAsyncNode(AsyncNode &node) = 0;
+    virtual void visitForkNode(ForkNode &node) = 0;
     virtual void visitCmdNode(CmdNode &node) = 0;
     virtual void visitCmdArgNode(CmdArgNode &node) = 0;
     virtual void visitRedirNode(RedirNode &node) = 0;
@@ -2153,7 +2153,7 @@ struct BaseVisitor : public NodeVisitor {
     void visitRedirNode(RedirNode &node) override { this->visitDefault(node); }
     void visitPipelineNode(PipelineNode &node) override { this->visitDefault(node); }
     void visitWithNode(WithNode &node) override { this->visitDefault(node); }
-    void visitAsyncNode(AsyncNode &node) override { this->visitDefault(node); }
+    void visitForkNode(ForkNode &node) override { this->visitDefault(node); }
     void visitAssertNode(AssertNode &node) override { this->visitDefault(node); }
     void visitBlockNode(BlockNode &node) override { this->visitDefault(node); }
     void visitTypeAliasNode(TypeAliasNode &node) override { this->visitDefault(node); }
