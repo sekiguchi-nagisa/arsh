@@ -250,10 +250,6 @@ static const char *historyCallback(const char *buf, int *historyIndex, historyOp
     return nullptr;
 }
 
-static void saveHistory() {
-    DSState_saveHistory(state, nullptr);
-}
-
 /**
  * after execution, delete ctx
  */
@@ -277,11 +273,10 @@ int exec_interactive(DSState *dsState) {
     DSState_loadHistory(dsState, nullptr);
     state = dsState;
 
-    atexit(saveHistory);
-
     for(std::string line; readLine(line);) {
         DSState_eval(dsState, nullptr, line.c_str(), line.size(), nullptr);
     }
+    DSState_saveHistory(dsState, nullptr);
     return 0;
 }
 
