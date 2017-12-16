@@ -83,6 +83,11 @@ protected:
     Token curToken;
 
     /**
+     * kind of latest consumed token
+     */
+    T consumedKind;
+
+    /**
      * need 'void operator()(T, Token)'
      */
     Tracker *tracker;
@@ -91,7 +96,7 @@ private:
     std::unique_ptr<ParseError<T>> error;
 
 public:
-    AbstractParser() : lexer(nullptr), curKind(), curToken(), tracker(nullptr), error() { }
+    AbstractParser() : lexer(nullptr), curKind(), curToken(), consumedKind(), tracker(nullptr), error() { }
 
     void setTracker(Tracker *tracker) {
         this->tracker = tracker;
@@ -124,6 +129,7 @@ protected:
     }
 
     void trace() {
+        this->consumedKind = this->curKind;
         if(this->tracker != nullptr) {
             (*this->tracker)(this->curKind, this->curToken);
         }
