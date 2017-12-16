@@ -1227,14 +1227,8 @@ public:
         return node;
     }
 
-    static ForkNode *newBackground(Node *exprNode, Token token) {
-        auto *node = new ForkNode(exprNode->getToken(), BG, exprNode);
-        node->updateToken(token);
-        return node;
-    }
-
-    static ForkNode *newDisown(Node *exprNode, Token token) {
-        auto *node = new ForkNode(exprNode->getToken(), DISOWN, exprNode);
+    static ForkNode *newBackground(Node *exprNode, Token token, bool disown) {
+        auto *node = new ForkNode(exprNode->getToken(), disown ? DISOWN : BG, exprNode);
         node->updateToken(token);
         return node;
     }

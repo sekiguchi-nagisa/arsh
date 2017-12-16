@@ -614,6 +614,9 @@ std::unique_ptr<Node> Parser::parse_statementEnd() {
         this->consume();
         break;
     default:
+        if(this->consumedKind == BACKGROUND || this->consumedKind == DISOWN_BG) {
+            break;
+        }
         if(!HAS_NL()) {
             this->raiseTokenMismatchedError(NEW_LINE);
         }
@@ -940,6 +943,13 @@ std::unique_ptr<Node> Parser::parse_binaryExpression(std::unique_ptr<Node> &&lef
             auto trightNode = TRY(this->parse_expression());
             unsigned int pos = node->getPos();
             node = make_unique<IfNode>(pos, node.release(), tleftNode.release(), trightNode.release());
+            break;
+        }
+        case BACKGROUND:
+        case DISOWN_BG: {
+            Token token = this->curToken;
+            bool disown = this->consume() == DISOWN_BG;
+            node = std::unique_ptr<Node>(ForkNode::newBackground(node.release(), token, disown));
             break;
         }
         default: {

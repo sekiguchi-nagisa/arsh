@@ -230,6 +230,8 @@ TokenKind Lexer::nextToken(Token &token) {
       <EXPR> "is"              { RET(IS); }
       <EXPR> "in"              { MODE(STMT); RET(IN); }
       <EXPR> "with"            { PUSH_MODE(CMD); RET(WITH); }
+      <EXPR> "&"               { MODE(STMT); RET(BACKGROUND); }
+      <EXPR> ("&!" | "&|")     { MODE(STMT); RET(DISOWN_BG); }
 
       <NAME> VAR_NAME          { MODE(EXPR); RET(IDENTIFIER); }
       <EXPR> "."               { MODE(NAME); RET(ACCESSOR); }

@@ -153,6 +153,14 @@ public:
         this->close();
     }
 
+    void visitForkNode(ForkNode &node) override {
+        this->open();
+        assert(node.getOpKind() == ForkNode::BG);
+        this->visit(*node.getExprNode());
+        this->append("&");
+        this->close();
+    }
+
     void visitRootNode(RootNode &node) override {
         if(node.getNodes().size() != 1) {
             fatal("must be 1\n");
@@ -270,6 +278,10 @@ TEST_F(PrecedenceTest, case12) {
 
 TEST_F(PrecedenceTest, case13) {
     ASSERT_NO_FATAL_FAILURE(this->equals("(45 | ((56 as Int) with 2> 67))", "45 | 56 as Int with 2> 67"));
+}
+
+TEST_F(PrecedenceTest, case14) {
+    ASSERT_NO_FATAL_FAILURE(this->equals("(23 = (((45 | 56) && 78) &))", "23 = 45 | 56 && 78 &"));
 }
 
 int main(int argc, char **argv) {

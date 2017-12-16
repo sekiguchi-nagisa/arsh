@@ -69,6 +69,9 @@ unsigned int getPrecedence(TokenKind kind) {
         return 130;
     case COND_OR:
         return 120;
+    case BACKGROUND:
+    case DISOWN_BG:
+        return 110;
     case TERNARY:
         return 100;
     default:
