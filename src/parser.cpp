@@ -949,8 +949,7 @@ std::unique_ptr<Node> Parser::parse_binaryExpression(std::unique_ptr<Node> &&lef
         case DISOWN_BG: {
             Token token = this->curToken;
             bool disown = this->consume() == DISOWN_BG;
-            node = std::unique_ptr<Node>(ForkNode::newBackground(node.release(), token, disown));
-            break;
+            return std::unique_ptr<Node>(ForkNode::newBackground(node.release(), token, disown));
         }
         default: {
             TokenKind op = this->consume();
