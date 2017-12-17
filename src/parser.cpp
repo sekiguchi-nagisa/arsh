@@ -250,7 +250,7 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
 
         node->addParamNode(nameNode.release(), type.release());
 
-        while(true) {
+        while(CUR_KIND() != RP) {
             if(CUR_KIND() == COMMA) {
                 this->consume();    // COMMA
                 token = TRY(this->expect(APPLIED_NAME));
@@ -262,8 +262,6 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
                 type = TRY(this->parse_typeName());
 
                 node->addParamNode(nameNode.release(), type.release());
-            } else if(CUR_KIND() == RP) {
-                break;
             } else {
                 E_ALTER(COMMA, RP);
             }
@@ -1173,18 +1171,15 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
             auto tuple = make_unique<TupleNode>(token.pos, node.release());
             if(CUR_KIND() != RP) {
                 tuple->addNode(TRY(this->parse_expression()).release());
-                while(true) {
+                while(CUR_KIND() != RP) {
                     if(CUR_KIND() == COMMA) {
                         this->consume();    // COMMA
                         tuple->addNode(TRY(this->parse_expression()).release());
-                    } else if(CUR_KIND() == RP) {
-                        break;
                     } else {
                         E_ALTER(COMMA, RP);
                     }
                 }
             }
-
             node = std::move(tuple);
         } else {
             node->setPos(token.pos);
@@ -1205,7 +1200,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
 
             auto valueNode = TRY(this->parse_expression());
             auto mapNode = make_unique<MapNode>(token.pos, keyNode.release(), valueNode.release());
-            while(true) {
+            while(CUR_KIND() != RB) {
                 if(CUR_KIND() == COMMA) {
                     this->consume();    // COMMA
                     if(CUR_KIND() != RB) {
@@ -1214,8 +1209,6 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
                         valueNode = TRY(this->parse_expression());
                         mapNode->addEntry(keyNode.release(), valueNode.release());
                     }
-                } else if(CUR_KIND() == RB) {
-                    break;
                 } else {
                     E_ALTER(COMMA, RB);
                 }
@@ -1223,14 +1216,12 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
             node = std::move(mapNode);
         } else {    // array
             auto arrayNode = make_unique<ArrayNode>(token.pos, keyNode.release());
-            while(true) {
+            while(CUR_KIND() != RB) {
                 if(CUR_KIND() == COMMA) {
                     this->consume();    // COMMA
                     if(CUR_KIND() != RB) {
                         arrayNode->addExprNode(TRY(this->parse_expression()).release());
                     }
-                } else if(CUR_KIND() == RB) {
-                    break;
                 } else {
                     E_ALTER(COMMA, RB);
                 }
@@ -1313,12 +1304,10 @@ ArgsWrapper Parser::parse_arguments() {
     switch(CUR_KIND()) {
     EACH_LA_expression(GEN_LA_CASE) {
         args.addArgNode(TRY(this->parse_expression()));
-        for(bool next = true; next;) {
+        while(CUR_KIND() != RP) {
             if(CUR_KIND() == COMMA) {
                 this->consume();    // COMMA
                 args.addArgNode(TRY(this->parse_expression()));
-            } else if(CUR_KIND() == RP) {
-                next = false;
             } else {
                 E_ALTER(COMMA, RP);
             }
