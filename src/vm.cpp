@@ -560,56 +560,122 @@ static DSValue readAsStrArray(DSState &state, int fd) {
     return obj;
 }
 
+static void tryToDup(int srcFd, int targetFd) {
+    if(srcFd > -1) {
+        dup2(srcFd, targetFd);
+    }
+}
+
+static void tryToClose(int fd) {
+    if(fd > -1) {
+        close(fd);
+    }
+}
+
+static void tryToClose(int (&pipefds)[2]) {
+    tryToClose(pipefds[0]);
+    tryToClose(pipefds[1]);
+}
+
+static void tryToPipe(int (&pipefds)[2], bool openPipe) {
+    if(openPipe) {
+        if(pipe(pipefds) < 0) {
+            perror("pipe creation failed\n");
+            exit(1);    //FIXME: throw exception
+        }
+    } else {
+        pipefds[0] = -1;
+        pipefds[1] = -1;
+    }
+}
+
+struct PipeSet {
+    int in[2];
+    int out[2];
+};
+
+// FIXME: error reporting
+static PipeSet initPipeSet(ForkKind kind) {
+    bool useInPipe = false;
+    bool useOutPipe = false;
+
+    switch(kind) {
+    case ForkKind::STR:
+    case ForkKind::ARRAY:
+        useOutPipe = true;
+        break;
+    case ForkKind::COPROC:
+        useInPipe = true;
+        useOutPipe = true;
+        break;
+    case ForkKind::JOB:
+    case ForkKind::DISOWN:
+        break;
+    }
+
+    PipeSet set;
+    tryToPipe(set.in, useInPipe);
+    tryToPipe(set.out, useOutPipe);
+    return set;
+}
+
 static void forkAndEval(DSState &state) {
     const auto forkKind = static_cast<ForkKind >(read8(GET_CODE(state), ++state.pc()));
     const unsigned short offset = read16(GET_CODE(state), state.pc() + 1);
 
-    bool isStr = true;
-    switch(forkKind) {
-    case ForkKind::STR:
-        break;
-    case ForkKind::ARRAY:
-        isStr = false;
-        break;
-    default:
-        fatal("unimplemented\n");
-    }
-
     // flush standard stream due to prevent mixing io buffer
     flushStdFD();
 
-    // capture stdout
-    pid_t pipefds[2];
-
-    if(pipe(pipefds) < 0) {
-        perror("pipe creation failed\n");
-        exit(1);    //FIXME: throw exception
-    }
+    // set in/out pipe
+    auto pipeset = initPipeSet(forkKind);
 
     pid_t pid = xfork(state, getpgid(0), false);
     if(pid > 0) {   // parent process
-        close(pipefds[WRITE_PIPE]);
-        auto obj = isStr ? readAsStr(state, pipefds[READ_PIPE]) : readAsStrArray(state, pipefds[READ_PIPE]);
-        close(pipefds[READ_PIPE]);
+        tryToClose(pipeset.in[READ_PIPE]);
+        tryToClose(pipeset.out[WRITE_PIPE]);
 
-        // wait exit
-        int status = 0;
-        waitpid(pid, &status, 0);
-        if(WIFEXITED(status)) {
-            state.updateExitStatus(WEXITSTATUS(status));
+        DSValue obj;
+
+        switch(forkKind) {
+        case ForkKind::STR:
+        case ForkKind::ARRAY: {
+            tryToClose(pipeset.in[WRITE_PIPE]);
+            const bool isStr = forkKind == ForkKind::STR;
+            obj = isStr ? readAsStr(state, pipeset.out[READ_PIPE]) : readAsStrArray(state, pipeset.out[READ_PIPE]);
+            tryToClose(pipeset.out[READ_PIPE]);
+
+            // wait exit
+            int status = 0;
+            waitpid(pid, &status, 0);
+            if(WIFEXITED(status)) {
+                state.updateExitStatus(WEXITSTATUS(status));
+            }
+            if(WIFSIGNALED(status)) {
+                state.updateExitStatus(WTERMSIG(status) + 128);
+            }
+            break;
         }
-        if(WIFSIGNALED(status)) {
-            state.updateExitStatus(WTERMSIG(status) + 128);
+//        case ForkKind::COPROC:
+//        case ForkKind::JOB: {
+//            break;
+//        }
+//        case ForkKind::DISOWN:
+//            break;
+        default:
+            fatal("unimplemented\n");
         }
 
         // push object
-        state.push(std::move(obj));
+        if(obj) {
+            state.push(std::move(obj));
+        }
 
         state.pc() += offset - 1;
     } else if(pid == 0) {   // child process
-        dup2(pipefds[WRITE_PIPE], STDOUT_FILENO);
-        close(pipefds[READ_PIPE]);
-        close(pipefds[WRITE_PIPE]);
+        tryToDup(pipeset.in[READ_PIPE], STDIN_FILENO);
+        tryToClose(pipeset.in);
+        tryToDup(pipeset.out[WRITE_PIPE], STDOUT_FILENO);
+        tryToClose(pipeset.out);
 
         state.pc() += 2;
     } else {
