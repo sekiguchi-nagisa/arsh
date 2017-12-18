@@ -487,7 +487,7 @@ static void flushStdFD() {
     fflush(stderr);
 }
 
-static DSValue readAsStr(DSState &state, int fd) {
+static DSValue readAsStr(const DSState &state, int fd) {
     char buf[256];
     std::string str;
     while(true) {
@@ -507,7 +507,7 @@ static DSValue readAsStr(DSState &state, int fd) {
     return DSValue::create<String_Object>(state.pool.getStringType(), std::move(str));
 }
 
-static DSValue readAsStrArray(DSState &state, int fd) {
+static DSValue readAsStrArray(const DSState &state, int fd) {
     auto *ifsObj = typeAs<String_Object>(getGlobal(state, toIndex(BuiltinVarOffset::IFS)));
     const char *ifs = ifsObj->getValue();
     const unsigned ifsSize = ifsObj->size();
