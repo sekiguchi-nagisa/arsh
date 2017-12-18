@@ -619,6 +619,12 @@ static PipeSet initPipeSet(ForkKind kind) {
     return set;
 }
 
+static void redirInToNull() {
+    int fd = open("/dev/null", O_WRONLY);
+    dup2(fd, STDIN_FILENO);
+    close(fd);
+}
+
 static void forkAndEval(DSState &state) {
     const auto forkKind = static_cast<ForkKind >(read8(GET_CODE(state), ++state.pc()));
     const unsigned short offset = read16(GET_CODE(state), state.pc() + 1);
@@ -659,8 +665,8 @@ static void forkAndEval(DSState &state) {
 //        case ForkKind::JOB: {
 //            break;
 //        }
-//        case ForkKind::DISOWN:
-//            break;
+        case ForkKind::DISOWN:
+            break;
         default:
             fatal("unimplemented\n");
         }
@@ -676,6 +682,10 @@ static void forkAndEval(DSState &state) {
         tryToClose(pipeset.in);
         tryToDup(pipeset.out[WRITE_PIPE], STDOUT_FILENO);
         tryToClose(pipeset.out);
+
+        if(forkKind == ForkKind::DISOWN || (forkKind == ForkKind::JOB && !state.isJobControl())) {
+            redirInToNull();
+        }
 
         state.pc() += 2;
     } else {
