@@ -67,11 +67,14 @@ private:
 
     friend struct JobTrait;
 
-    JobImpl(unsigned int jobId, unsigned int size) : jobId(jobId), ownerPid(getpid()), procSize(size) {
+    JobImpl(unsigned int jobId, unsigned int size, bool saveStdin) :
+            jobId(jobId), ownerPid(getpid()), procSize(size), oldStdin(-1) {
         for(unsigned int i = 0; i < this->procSize; i++) {
             this->pids[i] = -1;
         }
-        this->oldStdin = dup(STDIN_FILENO);
+        if(saveStdin) {
+            this->oldStdin = dup(STDIN_FILENO);
+        }
     }
 
     ~JobImpl() = default;
@@ -155,7 +158,7 @@ public:
     JobTable() = default;
     ~JobTable() = default;
 
-    Job newEntry(unsigned int size);
+    Job newEntry(unsigned int size, bool saveStdin = true);
 
 
     /**
