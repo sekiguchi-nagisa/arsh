@@ -166,7 +166,7 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-3.7
+            - llvm-toolchain-trusty
           packages:
             - clang-3.7
             - libxml2-dev
