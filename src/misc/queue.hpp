@@ -53,6 +53,10 @@ public:
         return false;
     }
 
+    void clear() {
+        this->size_ = 0;
+    }
+
     /**
      * call when !empty()
      * @return
