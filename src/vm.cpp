@@ -1485,19 +1485,19 @@ static void kickSignalHandler(DSState &st, int sigNum, DSValue &&func) {
 static void checkVMEvent(DSState &state) {
     if(hasFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL) &&
             !hasFlag(DSState::eventDesc, DSState::VM_EVENT_MASK)) {
-        blockSignal([&]{
-            assert(!DSState::signalQueue.empty());
-            int sigNum = DSState::signalQueue.pop();
-            if(DSState::signalQueue.empty()) {
-                unsetFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL);
-            }
+        SignalGuard guard;
 
-            auto handler = state.sigVector.lookup(sigNum);
-            if(handler != nullptr) {
-                setFlag(DSState::eventDesc, DSState::VM_EVENT_MASK);
-                kickSignalHandler(state, sigNum, std::move(handler));
-            }
-        });
+        assert(!DSState::signalQueue.empty());
+        int sigNum = DSState::signalQueue.pop();
+        if(DSState::signalQueue.empty()) {
+            unsetFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL);
+        }
+
+        auto handler = state.sigVector.lookup(sigNum);
+        if(handler != nullptr) {
+            setFlag(DSState::eventDesc, DSState::VM_EVENT_MASK);
+            kickSignalHandler(state, sigNum, std::move(handler));
+        }
     }
 
     if(state.hook != nullptr) {

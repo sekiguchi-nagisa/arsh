@@ -257,31 +257,20 @@ void expandTilde(std::string &str);
  */
 CStrBuffer completeLine(const DSState &st, const std::string &line);
 
-template <typename Func>
-inline void blockSignal(Func func) {
-    sigset_t maskset{};
-    sigfillset(&maskset);
+class SignalGuard {
+private:
+    sigset_t maskset;
 
-    sigprocmask(SIG_BLOCK, &maskset, nullptr);
+public:
+    SignalGuard() {
+        sigfillset(&this->maskset);
+        sigprocmask(SIG_BLOCK, &this->maskset, nullptr);
+    }
 
-    func();
-
-    sigprocmask(SIG_UNBLOCK, &maskset, nullptr);
-}
-
-template <typename Func>
-inline auto blockSignal2(Func func) -> decltype(std::declval<Func>()()) {
-    sigset_t maskset{};
-    sigfillset(&maskset);
-
-    sigprocmask(SIG_BLOCK, &maskset, nullptr);
-
-    auto v = func();
-
-    sigprocmask(SIG_UNBLOCK, &maskset, nullptr);
-
-    return v;
-}
+    ~SignalGuard() {
+        sigprocmask(SIG_UNBLOCK, &this->maskset, nullptr);
+    }
+};
 
 } // namespace ydsh
 

@@ -382,22 +382,22 @@ bool changeWorkingDir(DSState &st, const char *dest, const bool useLogical) {
 }
 
 void installSignalHandler(DSState &st, int sigNum, const DSValue &handler) {
-    blockSignal([&] {
-        auto &DFL_handler = getGlobal(st, VAR_SIG_DFL);
-        auto &IGN_handler = getGlobal(st, VAR_SIG_IGN);
+    SignalGuard guard;
 
-        DSValue actualHandler;
-        auto op = DSState::UnsafeSigOp::SET;
-        if(handler == DFL_handler) {
-            op = DSState::UnsafeSigOp::DFL;
-        } else if(handler == IGN_handler) {
-            op = DSState::UnsafeSigOp::IGN;
-        } else {
-            actualHandler = handler;
-        }
+    auto &DFL_handler = getGlobal(st, VAR_SIG_DFL);
+    auto &IGN_handler = getGlobal(st, VAR_SIG_IGN);
 
-        st.installSignalHandler(sigNum, op, actualHandler);
-    });
+    DSValue actualHandler;
+    auto op = DSState::UnsafeSigOp::SET;
+    if(handler == DFL_handler) {
+        op = DSState::UnsafeSigOp::DFL;
+    } else if(handler == IGN_handler) {
+        op = DSState::UnsafeSigOp::IGN;
+    } else {
+        actualHandler = handler;
+    }
+
+    st.installSignalHandler(sigNum, op, actualHandler);
 }
 
 DSValue getSignalHandler(const DSState &st, int sigNum) {
@@ -419,19 +419,19 @@ DSValue getSignalHandler(const DSState &st, int sigNum) {
 }
 
 void setJobControlSignalSetting(DSState &st, bool set) {
+    SignalGuard guard;
+
     auto op = set ? DSState::UnsafeSigOp::IGN : DSState::UnsafeSigOp::DFL;
     DSValue handler;
 
-    blockSignal([&] {
-        st.installSignalHandler(SIGINT,  op, handler);
-        st.installSignalHandler(SIGQUIT, op, handler);
-        st.installSignalHandler(SIGTSTP, op, handler);
-        st.installSignalHandler(SIGTTIN, op, handler);
-        st.installSignalHandler(SIGTTOU, op, handler);
+    st.installSignalHandler(SIGINT,  op, handler);
+    st.installSignalHandler(SIGQUIT, op, handler);
+    st.installSignalHandler(SIGTSTP, op, handler);
+    st.installSignalHandler(SIGTTIN, op, handler);
+    st.installSignalHandler(SIGTTOU, op, handler);
 
-        // due to prevent waitpid error (always wait child process termination)
-        st.installSignalHandler(SIGCHLD, DSState::UnsafeSigOp::DFL, handler);
-    });
+    // due to prevent waitpid error (always wait child process termination)
+    st.installSignalHandler(SIGCHLD, DSState::UnsafeSigOp::DFL, handler);
 }
 
 

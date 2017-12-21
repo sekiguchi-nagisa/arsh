@@ -23,34 +23,34 @@
 namespace ydsh {
 
 pid_t xfork(DSState &st, pid_t pgid, bool foreground) {
-    return blockSignal2([&] {
-        pid_t pid = fork();
-        if(pid == 0) {  // child process
-            if(st.isJobControl()) {
-                setpgid(0, pgid);
-                if(foreground) {
-                    tcsetpgrp(STDIN_FILENO, getpgid(0));
-                }
-                setJobControlSignalSetting(st, false);
+    SignalGuard guard;
+
+    pid_t pid = fork();
+    if(pid == 0) {  // child process
+        if(st.isJobControl()) {
+            setpgid(0, pgid);
+            if(foreground) {
+                tcsetpgrp(STDIN_FILENO, getpgid(0));
             }
+            setJobControlSignalSetting(st, false);
+        }
 
-            // clear queued signal
-            DSState::signalQueue.clear();
-            unsetFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL | DSState::VM_EVENT_MASK);
+        // clear queued signal
+        DSState::signalQueue.clear();
+        unsetFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL | DSState::VM_EVENT_MASK);
 
-            // update PID, PPID
-            st.setGlobal(toIndex(BuiltinVarOffset::PID), DSValue::create<Int_Object>(st.pool.getInt32Type(), getpid()));
-            st.setGlobal(toIndex(BuiltinVarOffset::PPID), DSValue::create<Int_Object>(st.pool.getInt32Type(), getppid()));
-        } else if(pid > 0) {
-            if(st.isJobControl()) {
-                setpgid(pid, pgid);
-                if(foreground) {
-                    tcsetpgrp(STDIN_FILENO, getpgid(pid));
-                }
+        // update PID, PPID
+        st.setGlobal(toIndex(BuiltinVarOffset::PID), DSValue::create<Int_Object>(st.pool.getInt32Type(), getpid()));
+        st.setGlobal(toIndex(BuiltinVarOffset::PPID), DSValue::create<Int_Object>(st.pool.getInt32Type(), getppid()));
+    } else if(pid > 0) {
+        if(st.isJobControl()) {
+            setpgid(pid, pgid);
+            if(foreground) {
+                tcsetpgrp(STDIN_FILENO, getpgid(pid));
             }
         }
-        return pid;
-    });
+    }
+    return pid;
 }
 
 void tryToForeground(const DSState &st) {
