@@ -269,6 +269,20 @@ inline void blockSignal(Func func) {
     sigprocmask(SIG_UNBLOCK, &maskset, nullptr);
 }
 
+template <typename Func>
+inline auto blockSignal2(Func func) -> decltype(std::declval<Func>()()) {
+    sigset_t maskset{};
+    sigfillset(&maskset);
+
+    sigprocmask(SIG_BLOCK, &maskset, nullptr);
+
+    auto v = func();
+
+    sigprocmask(SIG_UNBLOCK, &maskset, nullptr);
+
+    return v;
+}
+
 } // namespace ydsh
 
 #endif //YDSH_CORE_H
