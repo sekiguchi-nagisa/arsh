@@ -359,7 +359,7 @@ var a
 
 
     // line marker of semantic error
-    msg = R"((string):1: [semantic error] require Int32, but is String
+    msg = R"((string):1: [semantic error] require `Int32' type, but is `String' type
 [34, "hey"]
      ^~~~~
 )";
@@ -371,7 +371,7 @@ var a = 34
 $a = 34 +
      'de'
 )";
-    msg = R"((string):3: [semantic error] require Int32, but is String
+    msg = R"((string):3: [semantic error] require `Int32' type, but is `String' type
 $a = 34 +
      ^~~~
      'de'

@@ -60,12 +60,12 @@ enum class TLError : unsigned int {
     E_UnmatchElement,
 };
 
-#define UndefinedType   "undefined type: %s"
+#define UndefinedType   "undefined type: `%s'"
 #define NotTemplate     "illegal type template: %s"
-#define DefinedType     "already defined type: %s"
-#define InvalidElement  "invalid type element: %s"
+#define DefinedType     "already defined type: `%s'"
+#define InvalidElement  "invalid type element: `%s'"
 #define NoDBusInterface "not found D-Bus interface: %s"
-#define UnmatchElement  "not match type element, %s requires %d type element, but is %d"
+#define UnmatchElement  "not match type element, `%s' requires %d type element, but is %d"
 
 
 TypeLookupError createTLError(TLError e, const char *kind, const char *fmt, ...) __attribute__ ((format(printf, 3, 4)));
@@ -163,10 +163,10 @@ enum class TCError : unsigned int {
 #define UndefinedField    "undefined field: %s"
 #define UndefinedMethod   "undefined method: %s"
 #define UndefinedInit     "undefined constructor: %s"
-#define Unacceptable      "unacceptable type: %s"
+#define Unacceptable      "unacceptable type: `%s'"
 #define DefinedCmd        "already defined command: %s"
-#define Required          "require %s, but is %s"
-#define CastOp            "unsupported cast op: %s -> %s"
+#define Required          "require `%s' type, but is `%s' type"
+#define CastOp            "unsupported cast op: `%s' type -> `%s' type"
 #define UnmatchParam      "not match parameter, require size is %d, but is %d"
 
 
