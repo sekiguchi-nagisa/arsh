@@ -13,7 +13,7 @@ Language specification is subject to change without notice.
 * Linux x64
 * cmake 2.8 or later
 * autotools (for building re2c)
-* make or ninja
+* make/ninja
 * expect (for testing)
 * gcc/clang (need c++11 support, need GNU extension)
 * libdbus 1.6.x or later
