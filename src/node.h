@@ -1234,7 +1234,9 @@ public:
     }
 
     static ForkNode *newCoproc(Token token, Node *exprNode) {
-        return new ForkNode(token, COPROC, exprNode);
+        auto *node = new ForkNode(token, COPROC, exprNode);
+        node->updateToken(exprNode->getToken());
+        return node;
     }
 
     ~ForkNode();
