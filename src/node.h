@@ -1247,6 +1247,17 @@ public:
         return this->exprNode;
     }
 
+    bool isJob() const {
+        switch(this->opKind) {
+        case BG:
+        case COPROC:
+        case DISOWN:
+            return true;
+        default:
+            return false;
+        }
+    }
+
     void dump(NodeDumper &dumper) const override;
 };
 

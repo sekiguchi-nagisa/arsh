@@ -874,7 +874,7 @@ void TypeChecker::visitWithNode(DSType *requiredType, WithNode &node) {
 
 void TypeChecker::visitForkNode(DSType *, ForkNode &node) {
     this->fctx.enterChild();
-    this->checkType(nullptr, node.getExprNode(), nullptr);
+    this->checkType(nullptr, node.getExprNode(), node.isJob() ? &this->typePool.getJobType() : nullptr);
     this->fctx.leave();
 
     DSType *type = nullptr;

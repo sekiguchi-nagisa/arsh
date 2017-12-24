@@ -1,0 +1,4 @@
+#$test($result = 'type', $lineNum = 3, $errorKind = 'Unacceptable', $status = 1)
+
+var a = coproc ls &
+$a.wait()
