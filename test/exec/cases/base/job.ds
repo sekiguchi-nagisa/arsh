@@ -10,6 +10,7 @@ var ex = 34 as Any
 try { $j[2]; } catch $e { $ex = $e; }
 assert $ex is OutOfRangeError
 
+assert $j as String == "%1"
 assert $j
 assert $j.wait() == 0
 assert not $j

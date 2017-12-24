@@ -342,7 +342,9 @@ DSValue Job_Object::wait(const TypePool &pool, JobTable &jobTable) {
 }
 
 std::string Job_Object::toString(DSState &, VisitedSet *) {
-    return std::to_string(this->entry->getJobId());
+    std::string str = "%";
+    str += std::to_string(this->entry->getJobId());
+    return str;
 }
 
 // ########################
