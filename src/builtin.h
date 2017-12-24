@@ -1958,6 +1958,22 @@ YDSH_METHOD job_out(RuntimeContext &ctx) {
     RET(obj->getOutObj());
 }
 
+//!bind: function $OP_GET($this : Job, $index : Int32) : UnixFD
+YDSH_METHOD job_get(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(job_get);
+    auto *obj = typeAs<Job_Object>(LOCAL(0));
+    int index = typeAs<Int_Object>(LOCAL(1))->getValue();
+    if(index == 0) {
+        RET(obj->getInObj());
+    }
+    if(index == 1) {
+        RET(obj->getOutObj());
+    }
+    std::string msg = "invalid fd number";
+    throwOutOfRangeError(ctx, std::move(msg));
+    RET_VOID;
+}
+
 //!bind: function $OP_BOOL($this : Job) : Boolean
 YDSH_METHOD job_bool(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_bool);

@@ -625,6 +625,15 @@ static void redirInToNull() {
     close(fd);
 }
 
+static DSValue newFD(const DSState &st, int &fd) {
+    if(fd < 0) {
+        return st.emptyFDObj;
+    }
+    int v = fd;
+    fd = -1;
+    return DSValue::create<UnixFD_Object>(st.pool, v);
+}
+
 static void forkAndEval(DSState &state) {
     const auto forkKind = static_cast<ForkKind >(read8(GET_CODE(state), ++state.pc()));
     const unsigned short offset = read16(GET_CODE(state), state.pc() + 1);
@@ -661,14 +670,20 @@ static void forkAndEval(DSState &state) {
             }
             break;
         }
-//        case ForkKind::COPROC:
-//        case ForkKind::JOB: {
-//            break;
-//        }
+        case ForkKind::COPROC:
+        case ForkKind::JOB: {
+            auto entry = state.jobTable.newEntry(1, false);
+            entry->setPid(0, pid);
+            obj = DSValue::create<Job_Object>(
+                    state.pool.getJobType(),
+                    entry,
+                    newFD(state, pipeset.in[WRITE_PIPE]),
+                    newFD(state, pipeset.out[READ_PIPE])
+            );
+            break;
+        }
         case ForkKind::DISOWN:
             break;
-        default:
-            fatal("unimplemented\n");
         }
 
         // push object
