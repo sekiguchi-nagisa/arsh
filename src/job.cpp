@@ -91,8 +91,8 @@ Job JobTable::newEntry(unsigned int size, bool saveStdin) {
     return v;
 }
 
-int JobTable::forceWait(Job &entry, unsigned int statusSize, int *statuses) {
-    if(entry->procSize == 0) {
+int JobTable::wait(Job &entry, unsigned int statusSize, int *statuses) {
+    if(!entry->hasOwnership() || entry->procSize == 0) {
         return -1;
     }
 

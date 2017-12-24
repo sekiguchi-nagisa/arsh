@@ -166,25 +166,11 @@ public:
      * @param statusSize
      * @param statuses
      * @return
-     */
-    int wait(Job &entry, unsigned int statusSize, int *statuses) {
-        if(entry->hasOwnership()) {
-            return this->forceWait(entry, statusSize, statuses);
-        }
-        return -1;
-    }
-
-    /**
-     * force wait job termination.
-     * @param entry
-     * @param statusSize
-     * @param statuses
-     * @return
      * exit status of last process.
      * if job is already terminated, return -1.
      * after waiting termination, remove entry.
      */
-    int forceWait(Job &entry, unsigned int statusSize, int *statuses);
+    int wait(Job &entry, unsigned int statusSize, int *statuses);
 
     void detachAll() {
         this->entries.clear();
@@ -193,6 +179,14 @@ public:
 
     Job &getLatestEntry() {
         return this->latestEntry;
+    }
+
+    std::vector<Job>::iterator begin() {
+        return this->entries.begin();
+    }
+
+    std::vector<Job>::iterator end() {
+        return this->entries.end();
     }
 
 private:
