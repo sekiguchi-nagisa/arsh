@@ -39,6 +39,9 @@ pid_t xfork(DSState &st, pid_t pgid, bool foreground) {
         DSState::signalQueue.clear();
         unsetFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL | DSState::VM_EVENT_MASK);
 
+        // clear JobTable entreis
+        st.jobTable.detachAll();
+
         // update PID, PPID
         st.setGlobal(toIndex(BuiltinVarOffset::PID), DSValue::create<Int_Object>(st.pool.getInt32Type(), getpid()));
         st.setGlobal(toIndex(BuiltinVarOffset::PPID), DSValue::create<Int_Object>(st.pool.getInt32Type(), getppid()));

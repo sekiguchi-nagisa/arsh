@@ -160,7 +160,6 @@ public:
 
     Job newEntry(unsigned int size, bool saveStdin = true);
 
-
     /**
      * if has ownership, wait termination.
      * @param entry
@@ -187,6 +186,10 @@ public:
      */
     int forceWait(Job &entry, unsigned int statusSize, int *statuses);
 
+    void detachAll() {
+        this->entries.clear();
+        this->latestEntry.reset();
+    }
 
     Job &getLatestEntry() {
         return this->latestEntry;
