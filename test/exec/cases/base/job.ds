@@ -1,0 +1,32 @@
+
+# background job
+var j = ls &
+assert not $j[0]
+assert not $j[1]
+assert not $j.in()
+assert not $j.out()
+
+var ex = 34 as Any
+try { $j[2]; } catch $e { $ex = $e; }
+assert $ex is OutOfRangeError
+
+assert $j
+assert $j.wait() == 0
+assert not $j
+
+
+# co-process
+$j = coproc { read; echo reply: $REPLY; }
+assert $j[0]
+assert $j[1]
+assert $j.in()
+assert $j.out()
+
+echo hello > $j[0]
+assert { read -u $j[1]; $REPLY; } == "reply: hello"
+
+assert $j
+assert $j.wait() == 0
+assert not $j
+assert not $j.in()
+assert not $j.out()
