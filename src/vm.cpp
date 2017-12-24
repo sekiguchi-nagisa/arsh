@@ -661,7 +661,7 @@ static void forkAndEval(DSState &state) {
 
             // wait exit
             int status = 0;
-            waitpid(pid, &status, 0);
+            waitpid(pid, &status, WUNTRACED);
             if(WIFEXITED(status)) {
                 state.updateExitStatus(WEXITSTATUS(status));
             }
@@ -1161,7 +1161,7 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
         }
 
         int status = 0;
-        waitpid(pid, &status, 0);
+        waitpid(pid, &status, WUNTRACED);
         if(lastPipe) {
             state.jobTable.getLatestEntry()->restoreStdin();
         }

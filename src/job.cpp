@@ -100,7 +100,7 @@ int JobTable::forceWait(Job &entry, unsigned int statusSize, int *statuses) {
         entry->pids[i] = -1;
         int status = -1;
         if(pid > -1) {
-            waitpid(pid, &status, 0);
+            waitpid(pid, &status, WUNTRACED);
             if(WIFEXITED(status)) {
                 status = WEXITSTATUS(status);
             } else if(WIFSIGNALED(status)) {
