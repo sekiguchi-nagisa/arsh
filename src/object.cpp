@@ -334,11 +334,6 @@ static void closeFD(DSValue &value) {
 DSValue Job_Object::wait(const TypePool &pool, JobTable &jobTable) {
     if(!this->status) {
         int ret = jobTable.wait(this->entry, 0, nullptr);
-        if(WIFEXITED(ret)) {
-            ret = WEXITSTATUS(ret);
-        } else if(WIFSIGNALED(ret)) {
-            ret = WTERMSIG(ret) + 128;
-        }
         this->status = DSValue::create<Int_Object>(pool.getInt32Type(), ret);
         closeFD(this->inObj);
         closeFD(this->outObj);
