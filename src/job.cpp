@@ -79,12 +79,12 @@ bool JobImpl::restoreStdin() {
 // ##     JobTable     ##
 // ######################
 
-Job JobTable::newEntry(unsigned int size, bool saveStdin) {
+Job JobTable::newEntry(unsigned int size, pid_t *pids, bool saveStdin) {
     assert(size > 0);
 
     void *ptr = malloc(sizeof(JobImpl) + sizeof(pid_t) * (size + 1));
     auto pair = this->findEmptyEntry();
-    auto *entry = new(ptr) JobImpl(pair.second, size, saveStdin);
+    auto *entry = new(ptr) JobImpl(pair.second, size, pids, saveStdin);
     auto v = Job(entry);
     this->entries.insert(this->entries.begin() + pair.first, v);
     this->latestEntry = v;

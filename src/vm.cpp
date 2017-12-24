@@ -672,8 +672,7 @@ static void forkAndEval(DSState &state) {
         }
         case ForkKind::COPROC:
         case ForkKind::JOB: {
-            auto entry = state.jobTable.newEntry(1, false);
-            entry->setPid(0, pid);
+            auto entry = state.jobTable.newEntry(pid);
             obj = DSValue::create<Job_Object>(
                     state.pool.getJobType(),
                     entry,
@@ -771,7 +770,7 @@ private:
 public:
     NON_COPYABLE(PipelineState);
 
-    PipelineState(DSState &state, Job entry) :
+    PipelineState(DSState &state, Job &&entry) :
             DSObject(nullptr), state(state), entry(std::move(entry)) {}
 
     ~PipelineState() override {
@@ -1384,13 +1383,13 @@ static void callPipeline(DSState &state) {
     initPipe(pipeSize, pipefds);
 
     // fork
-    auto jobEntry = state.jobTable.newEntry(pipeSize);
+    pid_t childPids[pipeSize];
     const bool rootShell = state.isRootShell();
     pid_t pgid = rootShell ? 0 : getpgid(0);
     pid_t pid = -1;
     unsigned int procIndex;
     for(procIndex = 0; procIndex < pipeSize && (pid = xfork(state, pgid, rootShell)) > 0; procIndex++) {
-        jobEntry->setPid(procIndex, pid);
+        childPids[procIndex] = pid;
         if(pgid == 0) {
             pgid = pid;
         }
@@ -1416,7 +1415,8 @@ static void callPipeline(DSState &state) {
         // set pc to next instruction
         state.pc() += read16(GET_CODE(state), state.pc() + 2 + procIndex * 2) - 1;
     } else if(procIndex == pipeSize) { // parent (last pipeline)
-        state.push(DSValue::create<PipelineState>(state, jobEntry));
+        auto jobEntry = state.jobTable.newEntry(pipeSize, childPids);
+        state.push(DSValue::create<PipelineState>(state, std::move(jobEntry)));
 
         dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
         closeAllPipe(pipeSize, pipefds);

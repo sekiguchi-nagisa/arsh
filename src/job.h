@@ -67,10 +67,10 @@ private:
 
     friend struct JobTrait;
 
-    JobImpl(unsigned int jobId, unsigned int size, bool saveStdin) :
+    JobImpl(unsigned int jobId, unsigned int size, pid_t *pids, bool saveStdin) :
             jobId(jobId), ownerPid(getpid()), procSize(size), oldStdin(-1) {
         for(unsigned int i = 0; i < this->procSize; i++) {
-            this->pids[i] = -1;
+            this->pids[i] = pids[i];
         }
         if(saveStdin) {
             this->oldStdin = dup(STDIN_FILENO);
@@ -84,10 +84,6 @@ public:
 
     unsigned int getProcSize() const {
         return this->procSize;
-    }
-
-    void setPid(unsigned int index, pid_t pid) {
-        this->pids[index] = pid;
     }
 
     pid_t getPid(unsigned int index) const {
@@ -158,7 +154,12 @@ public:
     JobTable() = default;
     ~JobTable() = default;
 
-    Job newEntry(unsigned int size, bool saveStdin = true);
+    Job newEntry(unsigned int size, pid_t *pids, bool saveStdin = true);
+
+    Job newEntry(pid_t pid) {
+        pid_t pids[1] = {pid};
+        return newEntry(1, pids, false);
+    }
 
     /**
      * if has ownership, wait termination.
