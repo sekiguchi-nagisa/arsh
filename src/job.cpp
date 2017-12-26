@@ -39,7 +39,7 @@ pid_t xfork(DSState &st, pid_t pgid, bool foreground) {
         DSState::signalQueue.clear();
         unsetFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL | DSState::VM_EVENT_MASK);
 
-        // clear JobTable entreis
+        // clear JobTable entries
         st.jobTable.detachAll();
 
         // update PID, PPID
