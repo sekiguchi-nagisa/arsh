@@ -363,6 +363,10 @@ function %OP_BOOL($this : Job) : Boolean
 function %OP_NOT($this : Job) : Boolean
 
 function wait($this : Job) : Int32
+
+function size($this : Job) : Int32
+
+function pid($this : Job, $index : Int32) : Int32
 ```
 
 ## StringIter type

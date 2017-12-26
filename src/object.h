@@ -637,8 +637,12 @@ public:
         return this->outObj;
     }
 
+    const Job &getEntry() const {
+        return this->entry;
+    }
+
     bool available() const {
-        return this->entry->getProcSize() != 0;
+        return this->getEntry()->getProcSize() != 0;
     }
 
     DSValue wait(const TypePool &pool, JobTable &jobTable);

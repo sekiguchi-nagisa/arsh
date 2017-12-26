@@ -5,6 +5,7 @@ assert not $j[0]
 assert not $j[1]
 assert not $j.in()
 assert not $j.out()
+assert $j.size() == 1
 
 var ex = 34 as Any
 try { $j[2]; } catch $e { $ex = $e; }
@@ -14,6 +15,7 @@ assert $j as String == "%1"
 assert $j
 assert $j.wait() == 0
 assert not $j
+assert $j.size() == 0   # after termination, size will be 0
 
 
 # co-process
@@ -22,6 +24,7 @@ assert $j[0]
 assert $j[1]
 assert $j.in()
 assert $j.out()
+assert $j.size() == 1
 
 echo hello > $j[0]
 assert { read -u $j[1]; $REPLY; } == "reply: hello"
@@ -31,6 +34,7 @@ assert $j.wait() == 0
 assert not $j
 assert not $j.in()
 assert not $j.out()
+assert $j.size() == 0
 
 
 # jobs in child

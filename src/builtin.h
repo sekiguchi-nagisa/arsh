@@ -1995,6 +1995,31 @@ YDSH_METHOD job_wait(RuntimeContext &ctx) {
     RET(obj->wait(getPool(ctx), getJobTable(ctx)));
 }
 
+//!bind: function size($this : Job) : Int32
+YDSH_METHOD job_size(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(job_size);
+    auto *obj = typeAs<Job_Object>(LOCAL(0));
+    RET(DSValue::create<Int_Object>(getPool(ctx).getInt32Type(), obj->getEntry()->getProcSize()));
+}
+
+//!bind: function pid($this : Job, $index : Int32) : Int32
+YDSH_METHOD job_pid(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(job_pid);
+    auto &entry = typeAs<Job_Object>(LOCAL(0))->getEntry();
+    int index = typeAs<Int_Object>(LOCAL(1))->getValue();
+
+    if(index > -1 && static_cast<unsigned int>(index) < entry->getProcSize()) {
+        int pid = entry->getPid(index);
+        RET(DSValue::create<Int_Object>(getPool(ctx).getInt32Type(), pid));
+    }
+    std::string msg = "number of processes is: ";
+    msg += std::to_string(entry->getProcSize());
+    msg += ", but index is: ";
+    msg += std::to_string(index);
+    throwOutOfRangeError(ctx, std::move(msg));
+    RET_VOID;
+}
+
 
 // ##################
 // ##     DBus     ##
