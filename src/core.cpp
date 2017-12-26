@@ -1079,15 +1079,35 @@ static bool findKind(const std::vector<TokenKind> &values, TokenKind kind) {
     return false;
 }
 
-static bool inCmdMode(const RootNode &node) {
-    assert(!node.getNodes().empty());
-    auto *lastNode = node.getNodes().back();
-    if(lastNode->is(NodeKind::Cmd)) {
+static bool inCmdMode(const Node &node) {
+    switch(node.getNodeKind()) {
+    case NodeKind::UnaryOp:
+        return inCmdMode(*static_cast<const UnaryOpNode &>(node).getExprNode());
+    case NodeKind::BinaryOp:
+        return inCmdMode(*static_cast<const BinaryOpNode &>(node).getRightNode());
+    case NodeKind::Cmd:
         return true;
-    } else if(lastNode->is(NodeKind::Pipeline)) {
-        if(static_cast<PipelineNode *>(lastNode)->getNodes().back()->is(NodeKind::Cmd)) {
-            return true;
-        }
+    case NodeKind::Pipeline:
+        return inCmdMode(*static_cast<const PipelineNode &>(node).getNodes().back());
+    case NodeKind::Fork: {
+        auto &forkNode = static_cast<const ForkNode &>(node);
+        return forkNode.getOpKind() == ForkNode::COPROC ? inCmdMode(*forkNode.getExprNode()) : false;
+    }
+    case NodeKind::Assert:
+        return inCmdMode(*static_cast<const AssertNode &>(node).getCondNode());
+    case NodeKind::Jump: {
+        auto &jumpNode = static_cast<const JumpNode &>(node);
+        return (jumpNode.getOpKind() == JumpNode::THROW || jumpNode.getOpKind() == JumpNode::RETURN) ?
+               inCmdMode(*jumpNode.getExprNode()) : false;
+    }
+    case NodeKind::VarDecl:
+        return inCmdMode(*static_cast<const VarDeclNode &>(node).getExprNode());
+    case NodeKind::Assign:
+        return inCmdMode(*static_cast<const AssignNode &>(node).getRightNode());
+    case NodeKind::Root:
+        return inCmdMode(*static_cast<const RootNode &>(node).getNodes().back());
+    default:
+        break;
     }
     return false;
 }
