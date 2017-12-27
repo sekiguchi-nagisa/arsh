@@ -64,7 +64,7 @@ const struct {
                 "    Null command.  Always success (exit status is 0)."},
         {"__gets", builtin___gets, "",
                 "    Read standard input and write to standard output."},
-        {"__puts", builtin___puts, "[-1] [arg1] [-2] [arg2]",
+        {"__puts", builtin___puts, "[-1 arg1] [-2 arg2]",
                 "    Print specified argument to standard output/error and print new line.\n"
                 "    Options:\n"
                 "        -1    print to standard output\n"
@@ -75,7 +75,7 @@ const struct {
                 "    the current directory. If -L is specified, use logical directory \n"
                 "    (with symbolic link). If -P is specified, use physical directory \n"
                 "    (without symbolic link). Default is -L."},
-        {"check_env", builtin_check_env, "[variable ...]",
+        {"check_env", builtin_check_env, "variable ...",
                 "    Check existence of specified environmental variables.\n"
                 "    If all of variables are exist and not empty string, exit with 0."},
         {"command", nullptr, "[-pVv] command [arg ...]",
@@ -83,7 +83,7 @@ const struct {
                         "    If -p option is specified, search command from default PATH.\n"
                         "    If -V or -v option are specified, print description of COMMAND.\n"
                         "    -V option shows more detailed information."},
-        {"complete", builtin_complete, "[line]",
+        {"complete", builtin_complete, "line",
                 "    Show completion candidates."},
         {"echo", builtin_echo, "[-neE] [arg ...]",
                 "    Print argument to standard output and print new line.\n"
@@ -132,7 +132,7 @@ const struct {
                 "\n"
                 "        -r        read the history list from history file\n"
                 "        -w        write the history list to history file"},
-        {"ps_intrp", builtin_ps_intrp, "[prompt string]",
+        {"ps_intrp", builtin_ps_intrp, "prompt",
                 "    Interpret prompt string.\n"
                 "    Escape Sequence:\n"
                 "        \\a    bell\n"

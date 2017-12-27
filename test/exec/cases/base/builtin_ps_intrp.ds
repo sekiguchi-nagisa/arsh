@@ -14,7 +14,7 @@ function dirname($s : String) : String {
 # invalid
 ps_intrp
 assert($? == 2)
-assert("$(ps_intrp 2>&1)" == 'ps_intrp: ps_intrp [prompt string]')
+assert("$(ps_intrp 2>&1)" == 'ps_intrp: ps_intrp prompt')
 
 # interpret
 assert("$(ps_intrp '\H')" == "$(hostname)")
