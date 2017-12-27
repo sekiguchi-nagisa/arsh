@@ -13,7 +13,7 @@ function dirname($s : String) : String {
 
 # invalid
 ps_intrp
-assert($? != 0)
+assert($? == 2)
 assert("$(ps_intrp 2>&1)" == 'ps_intrp: ps_intrp [prompt string]')
 
 # interpret

@@ -93,7 +93,7 @@ $IFS = $'\n'
 
 # error
 complete
-assert($? == 1)
+assert($? == 2)
 
 
 # empty string

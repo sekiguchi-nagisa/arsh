@@ -319,20 +319,19 @@ static int builtin_help(DSState &, Array_Object &argvObj) {
     return 0;
 }
 
-static void showUsage(const Array_Object &obj) {
+static int showUsage(const Array_Object &obj) {
     printUsage(stderr, str(obj.getValues()[0]));
+    return 2;
 }
 
 int invalidOptionError(const Array_Object &obj, const GetOptState &s) {
     ERROR(obj, "-%c: invalid option", s.optOpt);
-    showUsage(obj);
-    return 2;
+    return showUsage(obj);
 }
 
 static int invalidOptionError(const Array_Object &obj, const char *opt) {
     ERROR(obj, "%s: invalid option", opt);
-    showUsage(obj);
-    return 2;
+    return showUsage(obj);
 }
 
 static int builtin_cd(DSState &state, Array_Object &argvObj) {
@@ -386,8 +385,7 @@ static int builtin_cd(DSState &state, Array_Object &argvObj) {
 static int builtin_check_env(DSState &, Array_Object &argvObj) {
     const unsigned int size = argvObj.getValues().size();
     if(size == 1) {
-        showUsage(argvObj);
-        return 1;
+        return showUsage(argvObj);
     }
     for(unsigned int i = 1; i < size; i++) {
         const char *env = getenv(str(argvObj.getValues()[i]));
@@ -565,8 +563,7 @@ static int builtin___puts(DSState &, Array_Object &argvObj) {
  */
 static int builtin_ps_intrp(DSState &state, Array_Object &argvObj) {
     if(argvObj.getValues().size() != 2) {
-        showUsage(argvObj);
-        return 1;
+        return showUsage(argvObj);
     }
     std::string v = interpretPromptString(state, str(argvObj.getValues()[1]));
     fputs(v.c_str(), stdout);
@@ -1095,8 +1092,7 @@ static int builtin_hash(DSState &state, Array_Object &argvObj) {
 static int builtin_complete(DSState &state, Array_Object &argvObj) {
     const unsigned int argc = argvObj.getValues().size();
     if(argc != 2) {
-        showUsage(argvObj);
-        return 1;
+        return showUsage(argvObj);
     }
 
     std::string line = str(argvObj.getValues()[1]);

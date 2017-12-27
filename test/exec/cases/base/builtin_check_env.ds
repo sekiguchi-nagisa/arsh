@@ -17,4 +17,6 @@ check_env HOME PATH HDUWEGDFE
 assert($? == 1)
 
 assert(help check_env | grep '^check_env: check_env \[variable ...]$')
+check_env
+assert $? == 2
 assert(check_env 2>&1 | grep '^check_env: check_env \[variable ...]$')
