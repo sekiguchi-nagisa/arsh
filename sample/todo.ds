@@ -3,12 +3,12 @@
 # not return 
 function open_todo_today() : Boolean {
     let name = "$(date +'%Y%m%d').md"
-    if not(test -e $name) {
-        echo "# $(date +'%Y-%m-%d')" > $name
-        echo "## TODO" >> $name
-        echo -e "\n" >> $name
-        echo "## MEMO" >> $name
-    }
+    not test -e $name && {
+        echo "# $(date +'%Y-%m-%d')"
+        echo "## TODO"
+        echo -e "\n"
+        echo "## MEMO"
+    } with > $name
     assert test -f $name
     return exec vim $name
 }
