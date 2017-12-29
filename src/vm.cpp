@@ -141,7 +141,11 @@ static void signalHandler(int sigNum) { // when called this handler, all signals
     setFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL);
 }
 
-void DSState::installSignalHandler(int sigNum, UnsafeSigOp op, const DSValue &handler) {
+void DSState::installSignalHandler(int sigNum, UnsafeSigOp op, const DSValue &handler, bool setSIGCHLD) {
+    if(sigNum == SIGCHLD && !setSIGCHLD) {
+        return;
+    }
+
     // set posix signal handler
     struct sigaction action{};
     action.sa_flags = SA_RESTART;
@@ -152,11 +156,7 @@ void DSState::installSignalHandler(int sigNum, UnsafeSigOp op, const DSValue &ha
         action.sa_handler = SIG_DFL;
         break;
     case UnsafeSigOp::IGN:
-        if(sigNum == SIGCHLD) {
-            action.sa_handler = SIG_DFL;    // do not ignore SIGCHLD due to prevent waitpid error
-        } else {
-            action.sa_handler = SIG_IGN;
-        }
+        action.sa_handler = SIG_IGN;
         break;
     case UnsafeSigOp::SET:
         action.sa_handler = signalHandler;
@@ -165,7 +165,9 @@ void DSState::installSignalHandler(int sigNum, UnsafeSigOp op, const DSValue &ha
     sigaction(sigNum, &action, nullptr);
 
     // register handler
-    this->sigVector.insertOrUpdate(sigNum, handler);
+    if(sigNum != SIGCHLD) {
+        this->sigVector.insertOrUpdate(sigNum, handler);
+    }
 }
 
 

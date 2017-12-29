@@ -416,8 +416,10 @@ struct DSState {
      * @param op
      * @param handler
      * may be nullptr
+     * @param setSIGCHLD
+     * if true, set signal handler of SIGCHLD
      */
-    void installSignalHandler(int sigNum, UnsafeSigOp op, const DSValue &handler);
+    void installSignalHandler(int sigNum, UnsafeSigOp op, const DSValue &handler, bool setSIGCHLD = false);
 };
 
 /**
