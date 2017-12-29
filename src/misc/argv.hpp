@@ -253,6 +253,95 @@ void ArgvParser<T>::newError(const char *message, const char *suffix) {
     this->errorMessage += suffix;
 }
 
+// getopt like command line option parser
+struct GetOptState {
+    /**
+     * currently processed argument.
+     */
+    const char *nextChar{nullptr};
+
+    /**
+     * may be null, if has no optional argument.
+     */
+    const char *optionalArg{nullptr};
+
+    /**
+     * unrecognized option.
+     */
+    int unrecogOpt{0};
+
+    void reset() {
+        this->nextChar = nullptr;
+        this->optionalArg = nullptr;
+        this->unrecogOpt = 0;
+    }
+
+    /**
+     *
+     * @tparam Iter
+     * @param begin
+     * after succeed, may indicate next option.
+     * @param end
+     * @param optStr
+     * @return
+     * recognized option.
+     * if reach `end' or not match any option (not starts with '-'), return -1.
+     * if match '--', increment `begin' and return -1.
+     * if not match additional argument, return ':' and `begin' may indicates next option.
+     * if match unrecognized option, return '?' and `begin' indicate current option (no increment).
+     */
+    template <typename Iter>
+    int operator()(Iter &begin, Iter end, const char *optStr);
+};
+
+template <typename Iter>
+int GetOptState::operator()(Iter &begin, Iter end, const char *optStr) {
+    // reset previous state
+    this->optionalArg = nullptr;
+    this->unrecogOpt = 0;
+
+    if(begin == end) {
+        this->nextChar = nullptr;
+        return -1;
+    }
+
+    const char *arg = *begin;
+    if(*arg != '-' || strcmp(arg, "-") == 0) {
+        this->nextChar = nullptr;
+        return -1;
+    }
+
+    if(strcmp(arg, "--") == 0) {
+        this->nextChar = nullptr;
+        ++begin;
+        return -1;
+    }
+
+    if(this->nextChar == nullptr || *this->nextChar == '\0') {
+        this->nextChar = arg + 1;
+    }
+
+    const char *ptr = strchr(optStr, *this->nextChar);
+    if(ptr != nullptr) {
+        if(*(ptr + 1) == ':') {
+            if(++begin == end) {
+                this->unrecogOpt = *ptr;
+                return ':';
+            }
+            this->optionalArg = *begin;
+            this->nextChar = nullptr;
+        }
+
+        if(this->nextChar == nullptr || *(++this->nextChar) == '\0') {
+            ++begin;
+        }
+        return *ptr;
+    }
+    this->unrecogOpt = *this->nextChar;
+    return '?';
+}
+
+
 } // namespace argv
 } // namespace ydsh
 

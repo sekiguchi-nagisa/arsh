@@ -305,6 +305,92 @@ TEST_F(ArgTest, success9) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, index));
 }
 
+TEST(GetOptTest, base) {
+    const char *argv[] = {
+            "-a", "2", "hello", "-bcd", "-", "--", "hoge", "-f", "-e",
+    };
+    const char *optstr = "de:ba:c";
+    GetOptState optState;
+
+    auto begin = std::begin(argv);
+    auto end = std::end(argv);
+
+    int opt = optState(begin, end, optstr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ('a', opt));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, optState.nextChar));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("2", optState.optionalArg));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, optState.unrecogOpt));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(begin, end));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(*begin, "hello"));
+
+    opt = optState(begin, end, optstr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, opt));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, optState.nextChar));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, optState.optionalArg));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, optState.unrecogOpt));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(begin, end));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(*begin, "hello"));
+
+    ++begin;
+    opt = optState(begin, end, optstr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ('b', opt));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("cd", optState.nextChar));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, optState.optionalArg));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, optState.unrecogOpt));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(begin, end));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(*begin, "-bcd"));
+
+    opt = optState(begin, end, optstr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ('c', opt));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("d", optState.nextChar));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, optState.optionalArg));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, optState.unrecogOpt));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(begin, end));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(*begin, "-bcd"));
+
+    opt = optState(begin, end, optstr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ('d', opt));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("", optState.nextChar));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, optState.optionalArg));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, optState.unrecogOpt));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(begin, end));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(*begin, "-"));
+
+    opt = optState(begin, end, optstr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, opt));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, optState.nextChar));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, optState.optionalArg));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, optState.unrecogOpt));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(begin, end));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(*begin, "-"));
+
+    ++begin;
+    opt = optState(begin, end, optstr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, opt));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, optState.nextChar));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, optState.optionalArg));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, optState.unrecogOpt));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(begin, end));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(*begin, "hoge"));
+
+    ++begin;
+    opt = optState(begin, end, optstr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ('?', opt));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("f", optState.nextChar));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, optState.optionalArg));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ('f', optState.unrecogOpt));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(begin, end));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(*begin, "-f"));
+
+    ++begin;
+    optState.reset();
+    opt = optState(begin, end, optstr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(':', opt));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("e", optState.nextChar));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, optState.optionalArg));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ('e', optState.unrecogOpt));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(begin, end));
+}
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
