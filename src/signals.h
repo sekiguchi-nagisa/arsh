@@ -33,8 +33,20 @@ struct SignalPair {
  */
 const SignalPair *getSignalList();
 
+/**
+ *
+ * @param name
+ * @return
+ * if invalid signal name, return -1
+ */
 int getSignalNum(const char *name);
 
+/**
+ *
+ * @param sigNum
+ * @return
+ * if invalid signal number, return null
+ */
 const char *getSignalName(int sigNum);
 
 /**

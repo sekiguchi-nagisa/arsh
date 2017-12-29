@@ -29,6 +29,7 @@
 #include "core.h"
 #include "symbol.h"
 #include "object.h"
+#include "signals.h"
 #include "misc/num.h"
 #include "misc/files.h"
 #include "misc/util.hpp"
@@ -46,6 +47,7 @@ static int builtin_false(DSState &state, Array_Object &argvObj);
 static int builtin_hash(DSState &state, Array_Object &argvObj);
 static int builtin_help(DSState &state, Array_Object &argvObj);
 static int builtin_history(DSState &state, Array_Object &argvObj);
+static int builtin_kill(DSState &state, Array_Object &argvObj);
 static int builtin_ps_intrp(DSState &state, Array_Object &argvObj);
 static int builtin_pwd(DSState &state, Array_Object &argvObj);
 static int builtin_read(DSState &state, Array_Object &argvObj);
@@ -132,6 +134,12 @@ const struct {
                 "\n"
                 "        -r        read the history list from history file\n"
                 "        -w        write the history list to history file"},
+        {"kill", builtin_kill, "[-s signal] pid | jobspec ... or kill -l [signal...]",
+                "    Send a signal to a process or job.\n"
+                "    If signal is not specified, then SIGTERM is assumed.\n"
+                "    Options:\n"
+                "        -s sig    send a signal. SIG is a signal name or signal number\n"
+                "        -l        list the signal names"},
         {"ps_intrp", builtin_ps_intrp, "prompt",
                 "    Interpret prompt string.\n"
                 "    Escape Sequence:\n"
@@ -1235,6 +1243,132 @@ static int builtin_unsetenv(DSState &, Array_Object &argvObj) {
             PERROR(argvObj, "%s", envName);
             return 1;
         }
+    }
+    return 0;
+}
+
+static std::pair<int, bool> toInt32(const char *str) {
+    int s = 0;
+    long v = convertToInt64(str, s);
+    if(s != 0 || v < INT32_MIN || v > INT32_MAX) {
+        return {0, false};
+    }
+    return {static_cast<int>(v), true};
+};
+
+static int toSigNum(const char *str) {
+    if(isDecimal(*str)) {
+        auto pair = toInt32(str);
+        if(!pair.second) {
+            return -1;
+        }
+        auto sigList = getUniqueSignalList();
+        return std::binary_search(sigList.begin(), sigList.end(), pair.first) ? pair.first : -1;
+    }
+    return getSignalNum(str);
+}
+
+static bool printNumOrName(const char *str) {
+    if(isDecimal(*str)) {
+        auto pair = toInt32(str);
+        if(!pair.second) {
+            return false;
+        }
+        const char *name = getSignalName(pair.first);
+        if(name == nullptr) {
+            return false;
+        }
+        printf("%s\n", name);
+    } else {
+        int sigNum = getSignalNum(str);
+        if(sigNum < 0) {
+            return false;
+        }
+        printf("%d\n", sigNum);
+    }
+    fflush(stdout);
+    return true;
+}
+
+// -s sig (pid | jobspec ...)
+// -l
+static int builtin_kill(DSState &, Array_Object &argvObj) {
+    int sigNum = SIGTERM;
+    bool listing = false;
+
+    if(argvObj.getValues().size() == 1) {
+        return showUsage(argvObj);
+    }
+
+    GetOptState optState;
+    const int opt = optState(argvObj, "ls:");
+    switch(opt) {
+    case 'l':
+        listing = true;
+        break;
+    case 's':
+    case '?': {
+        const char *sigStr = optState.optArg;
+        if(opt == '?') {
+            sigStr = str(argvObj.getValues()[optState.index++]) + 1;
+        }
+        sigNum = toSigNum(sigStr);
+        if(sigNum == -1) {
+            ERROR(argvObj, "%s: invalid signal specification", sigStr);
+            return 1;
+        }
+        break;
+    }
+    case ':':
+        ERROR(argvObj, "-%c: option requires argument", optState.optOpt);
+        return 1;
+    }
+
+    auto begin = argvObj.getValues().begin() + optState.index;
+    const auto end = argvObj.getValues().end();
+
+    if(begin == end) {
+        if(listing) {
+            auto sigList = getUniqueSignalList();
+            unsigned int size = sigList.size();
+            for(unsigned int i = 0; i < size; i++) {
+                printf("%2d) SIG%s", sigList[i], getSignalName(sigList[i]));
+                if(i % 5 == 4 || i == size - 1) {
+                    fputc('\n', stdout);
+                } else {
+                    fputc('\t', stdout);
+                }
+            }
+            return 0;
+        }
+        return showUsage(argvObj);
+    }
+
+    unsigned int count = 0;
+    for(; begin != end; ++begin) {
+        const char *arg = str(*begin);
+        if(listing) {
+            if(!printNumOrName(arg)) {
+                count++;
+                ERROR(argvObj, "%s: invalid signal specification", arg);
+            }
+        } else {
+            auto pair = toInt32(arg);   //FIXME: support Job ID
+            if(!pair.second) {
+                ERROR(argvObj, "%s: arguments must be process or job IDs", arg);
+            } else if(kill(pair.first, sigNum) < 0) {
+                PERROR(argvObj, "%s", arg);
+            } else {
+                count++;
+            }
+        }
+    }
+
+    if(listing && count > 0) {
+        return 1;
+    }
+    if(!listing && count == 0) {
+        return 1;
     }
     return 0;
 }

@@ -1,0 +1,69 @@
+
+assert "$(command -V kill)" =~ $/builtin/
+
+# invalid option
+## not arg
+assert "$(kill 2>&1)" == "$(help -s kill 2>&1)"
+assert { kill; $?; } == 2
+
+## invalid sig
+assert "$(kill -1234 2>&1)" == "ydsh: kill: 1234: invalid signal specification"
+assert {kill -999; $? } == 1
+
+assert "$(kill -s 1234 2>&1)" == "ydsh: kill: 1234: invalid signal specification"
+assert {kill -s -999; $? } == 1
+
+## '-s' has no arg
+assert "$(kill -s 2>&1)" == "ydsh: kill: -s: option requires argument"
+assert {kill -s; $?; } == 1
+
+## '-s' require pids
+assert "$(kill -s 2 2>&1)" == "$(help -s kill 2>&1)"
+assert {kill -s 2; $?; } == 2
+
+
+# list all signal
+let OLD_IFS = $IFS
+$IFS = $'\t\n'
+
+var expect = $SIG.list()
+var actual = $(kill -l)
+$IFS = $OLD_IFS
+
+assert $expect.size() == $actual.size()
+for(var i = 0; $i < $expect.size(); $i++) {
+    var e_str = "${$expect[$i].value() < 10 ? " " + $expect[$i] : $expect[$i] as String}) SIG${$expect[$i].name()}"
+    assert $e_str == $actual[$i] : "`$e_str', `${$actual[$i]}'"
+}
+
+
+# list specified signal
+assert "$(kill -l hoge 999 2>&1)" == $'ydsh: kill: hoge: invalid signal specification\nydsh: kill: 999: invalid signal specification'
+assert {kill -l hoge 999; $?; } == 1
+
+assert "$(kill -l hup hoge 2>&1)" == $'1\nydsh: kill: hoge: invalid signal specification'
+assert { kill -l hup hoge; $?; } == 1
+
+assert "$(kill -l 1 hup)" == $'HUP\n1'
+assert { kill -l 1 hup; $?; } == 0
+
+
+# kill specified proc
+assert "$(kill hoge 2>&1)" == "ydsh: kill: hoge: arguments must be process or job IDs"
+assert { kill hoge; $?; } == 1
+
+var j = for(;;) { true; } &
+kill ${$j.pid(0)}
+assert $? == 0
+assert $j.wait() == 128 + %'term'.value()
+
+$j = for(;;) { true; } &
+kill -9 ${$j.pid(0)}
+assert $? == 0
+assert $j.wait() == 128 + %'kill'.value()
+assert "$(kill -9 999999999 2>&1)" == "ydsh: kill: 999999999: No such process"
+assert { kill -9 999999999; $?; } == 1
+
+$j = for(;;) { true; } &
+assert { kill -9 999999999 ${$j.pid(0)}; $?; } == 0
+assert $j.wait() == 128 + %'kill'.value()
