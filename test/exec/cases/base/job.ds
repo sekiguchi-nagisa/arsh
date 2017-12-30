@@ -13,7 +13,7 @@ assert $ex is OutOfRangeError
 
 assert $j as String == "%1"
 assert $j
-assert $j.wait() == 0
+assert $j.wait()! == 0
 assert not $j
 
 
@@ -29,7 +29,7 @@ echo hello > $j[0]
 assert { read -u $j[1]; $REPLY; } == "reply: hello"
 
 assert $j
-assert $j.wait() == 0
+assert $j.wait()! == 0
 assert not $j
 assert not $j.in()
 assert not $j.out()
@@ -39,15 +39,15 @@ assert $j.size() == 1
 # jobs in child
 $j = {
     var j = exit 3 &
-    exit ${$j.wait()}
+    exit ${$j.wait()!}
 } &
-assert $j.wait() == 3
+assert $j.wait()! == 3
 
 
 var j2 = true &
 $j = {
- var s = $j2.wait();
+ var s = $j2.wait() ?? 255;
  exit $s;
 } &
-assert $j.wait() == 255
-assert $j2.wait() == 0
+assert $j.wait()! == 255
+assert $j2.wait()! == 0

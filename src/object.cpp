@@ -324,25 +324,6 @@ std::string Map_Object::toString(DSState &ctx, VisitedSet *visitedSet) {
 // ##     Job_Object     ##
 // ########################
 
-static void closeFD(DSValue &value) {
-    auto *ptr = typeAs<UnixFD_Object>(value);
-    int fd = ptr->getValue();
-    if(fd > -1) {
-        close(fd);
-        ptr->clear();
-    }
-}
-
-DSValue Job_Object::wait(const TypePool &pool, JobTable &jobTable) {
-    if(!this->status) {
-        int s = jobTable.waitAndDetach(this->entry);
-        this->status = DSValue::create<Int_Object>(pool.getInt32Type(), s);
-        closeFD(this->inObj);
-        closeFD(this->outObj);
-    }
-    return this->status;
-}
-
 std::string Job_Object::toString(DSState &, VisitedSet *) {
     std::string str = "%";
     str += std::to_string(this->entry->getJobId());

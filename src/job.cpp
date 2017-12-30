@@ -129,6 +129,10 @@ Job JobTable::newEntry(unsigned int size, pid_t *pids, bool saveStdin) {
 }
 
 Job JobTable::detach(unsigned int jobId) {
+    if(jobId == 0) {
+        return nullptr;
+    }
+
     // remove entry
     auto iter = this->findEntryIter(jobId);
     if(iter != this->entries.end()) {

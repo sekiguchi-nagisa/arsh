@@ -319,10 +319,6 @@ struct UnixFD_Object : public Int_Object {
     UnixFD_Object(const TypePool &pool, int fd) : Int_Object(pool.getUnixFDType(), fd) {}
     ~UnixFD_Object() override;
 
-    void clear() {
-        this->value = -1;
-    }
-
     int tryToClose(bool forceClose) {
         if(!forceClose && this->value < 0) {
             return 0;
@@ -627,11 +623,6 @@ private:
      */
     DSValue outObj;
 
-    /**
-     * exit status of job. initial value is null. must be Int_Object.
-     */
-    DSValue status;
-
 public:
     Job_Object(DSType &type, Job entry, DSValue inObj, DSValue outObj) :
             DSObject(type), entry(std::move(entry)), inObj(std::move(inObj)), outObj(std::move(outObj)) {}
@@ -650,7 +641,12 @@ public:
         return this->entry;
     }
 
-    DSValue wait(const TypePool &pool, JobTable &jobTable);
+    int wait(JobTable &jobTable) {
+        int s = jobTable.waitAndDetach(this->entry);
+        typeAs<UnixFD_Object>(this->inObj)->tryToClose(false);
+        typeAs<UnixFD_Object>(this->outObj)->tryToClose(false);
+        return s;
+    }
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
 };

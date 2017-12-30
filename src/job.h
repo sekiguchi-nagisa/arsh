@@ -229,6 +229,7 @@ public:
     /**
      * remove job from JobTable
      * @param jobId
+     * if 0, do nothing.
      * @return
      * detached job.
      * if specified job is not found, return null

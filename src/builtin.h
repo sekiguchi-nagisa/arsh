@@ -1987,11 +1987,13 @@ YDSH_METHOD job_not(RuntimeContext &ctx) {
     RET_BOOL(!obj->getEntry()->available());
 }
 
-//!bind: function wait($this : Job) : Int32
+//!bind: function wait($this : Job) : Option<Int32>
 YDSH_METHOD job_wait(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_wait);
     auto *obj = typeAs<Job_Object>(LOCAL(0));
-    RET(obj->wait(getPool(ctx), getJobTable(ctx)));
+    int s = obj->wait(getJobTable(ctx));
+    RET(obj->getEntry()->available() ? DSValue::createInvalid() :
+        DSValue::create<Int_Object>(getPool(ctx).getInt32Type(), s));
 }
 
 //!bind: function size($this : Job) : Int32
