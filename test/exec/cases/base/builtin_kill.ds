@@ -67,3 +67,14 @@ assert { kill -9 999999999; $?; } == 1
 $j = for(;;) { true; } &
 assert { kill -9 999999999 ${$j.pid(0)}; $?; } == 0
 assert $j.wait() == 128 + %'kill'.value()
+
+# kill specified job
+assert "$(kill %-456 2>&1)" == 'ydsh: kill: %-456: no such job'
+assert { kill %-234; $?; } == 1
+
+assert "$(kill %hoge 2>&1)" == 'ydsh: kill: %hoge: arguments must be process or job IDs'
+assert { kill %hoge; $?; } == 1
+
+$j = for(;;) { true; } &
+assert { kill -9 $j; $?; } == 0
+assert $j.wait() == 128 + %'kill'.value()

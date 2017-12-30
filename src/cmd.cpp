@@ -1290,9 +1290,36 @@ static bool printNumOrName(const char *str) {
     return true;
 }
 
+static bool killProcOrJob(DSState &state, Array_Object &argvObj, const char *arg, int sigNum) {
+    bool isJob = *arg == '%';
+    auto pair = toInt32(isJob ? arg + 1 : arg);
+    if(!pair.second) {
+        ERROR(argvObj, "%s: arguments must be process or job IDs", arg);
+        return false;
+    }
+
+    if(isJob) {
+        if(pair.first > 0) {
+            auto job = getJobTable(state).findEntry(static_cast<unsigned int>(pair.first));
+            if(job) {
+                job->raise(sigNum);
+                return true;
+            }
+        }
+        ERROR(argvObj, "%s: no such job", arg);
+        return false;
+    }
+
+    if(kill(pair.first, sigNum) < 0) {
+        PERROR(argvObj, "%s", arg);
+        return false;
+    }
+    return true;
+}
+
 // -s sig (pid | jobspec ...)
 // -l
-static int builtin_kill(DSState &, Array_Object &argvObj) {
+static int builtin_kill(DSState &state, Array_Object &argvObj) {
     int sigNum = SIGTERM;
     bool listing = false;
 
@@ -1353,12 +1380,7 @@ static int builtin_kill(DSState &, Array_Object &argvObj) {
                 ERROR(argvObj, "%s: invalid signal specification", arg);
             }
         } else {
-            auto pair = toInt32(arg);   //FIXME: support Job ID
-            if(!pair.second) {
-                ERROR(argvObj, "%s: arguments must be process or job IDs", arg);
-            } else if(kill(pair.first, sigNum) < 0) {
-                PERROR(argvObj, "%s", arg);
-            } else {
+            if(killProcOrJob(state, argvObj, arg, sigNum)) {
                 count++;
             }
         }

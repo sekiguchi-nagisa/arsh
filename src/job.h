@@ -18,6 +18,7 @@
 #define YDSH_JOB_H
 
 #include <unistd.h>
+#include <signal.h>
 
 #include <vector>
 
@@ -119,6 +120,16 @@ public:
      * if already called, return false
      */
     bool restoreStdin();
+
+    /**
+     * send signal to all processes.
+     * @param sigNum
+     */
+    void raise(int sigNum) {
+        for(unsigned int i = 0; i < this->procSize; i++) {
+            kill(this->getPid(i), sigNum);
+        }
+    }
 };
 
 struct JobTrait {
@@ -190,6 +201,14 @@ public:
         return this->entries.end();
     }
 
+    /**
+     *
+     * @param jobId
+     * @return
+     * if not found, return nullptr
+     */
+    Job findEntry(unsigned int jobId) const;
+
 private:
     /**
      *
@@ -200,14 +219,6 @@ private:
     std::pair<unsigned int, unsigned int> findEmptyEntry() const;   //FIXME: binary search
 
     std::vector<Job>::const_iterator findEntryIter(unsigned int jobId) const;
-
-    /**
-     *
-     * @param jobId
-     * @return
-     * if not found, return nullptr
-     */
-    Job findEntry(unsigned int jobId) const;
 };
 
 } // namespace ydsh
