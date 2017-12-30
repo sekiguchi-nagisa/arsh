@@ -641,10 +641,6 @@ public:
         return this->entry;
     }
 
-    bool available() const {
-        return this->getEntry()->getProcSize() != 0;
-    }
-
     DSValue wait(const TypePool &pool, JobTable &jobTable);
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;

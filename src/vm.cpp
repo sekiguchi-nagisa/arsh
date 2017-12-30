@@ -776,7 +776,7 @@ public:
             DSObject(nullptr), state(state), entry(std::move(entry)) {}
 
     ~PipelineState() override {
-        this->state.jobTable.wait(this->entry, 0, nullptr);
+        this->state.jobTable.waitAndDetach(this->entry);
         if(this->entry->restoreStdin()) {
             tryToForeground(this->state);
         }
@@ -1158,7 +1158,7 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
 
         if(lastPipe) {
             auto &entry = state.jobTable.getLatestEntry();
-            state.jobTable.wait(entry, 0, nullptr);
+            state.jobTable.waitAndDetach(entry);
         }
 
         int status = 0;

@@ -1978,14 +1978,14 @@ YDSH_METHOD job_get(RuntimeContext &ctx) {
 YDSH_METHOD job_bool(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_bool);
     auto *obj = typeAs<Job_Object>(LOCAL(0));
-    RET_BOOL(obj->available());
+    RET_BOOL(obj->getEntry()->available());
 }
 
 //!bind: function $OP_NOT($this : Job) : Boolean
 YDSH_METHOD job_not(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_not);
     auto *obj = typeAs<Job_Object>(LOCAL(0));
-    RET_BOOL(!obj->available());
+    RET_BOOL(!obj->getEntry()->available());
 }
 
 //!bind: function wait($this : Job) : Int32

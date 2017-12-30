@@ -39,39 +39,65 @@ class JobTable;
 
 struct JobTrait;
 
+enum class ProcState : unsigned char {
+    RUNNING,
+    STOPPED,    // stopped by SIGSTOP or SIGTSTP
+    TERMINATED, // already called waitpid
+};
+
+struct Proc {
+    pid_t pid;
+    ProcState state;
+
+    /**
+     * enabled when `state' is TERMINATED.
+     */
+    unsigned char exitStatus;
+};
+
 class JobImpl {
 private:
     unsigned long refCount{0};
-    const unsigned int jobId;
+
+    /**
+     * after detach, will be 0
+     */
+    unsigned int jobId;
 
     /**
      * pid of owner process (JobEntry creator)
      */
     const pid_t ownerPid;
 
+    unsigned short procSize;
+
     /**
-     * after termination, procSize will be 0.
+     * if all process are terminated. will be TERMINATED
      */
-    unsigned int procSize;
+    ProcState state{ProcState::RUNNING};
 
     /**
      * if already closed, will be -1.
      */
-    int oldStdin;
+    int oldStdin{-1};
 
     /**
      * initial size is procSize + 1 (due to append process)
      */
-    pid_t pids[];
+    Proc procs[];
 
     friend class JobTable;
 
     friend struct JobTrait;
 
     JobImpl(unsigned int jobId, unsigned int size, pid_t *pids, bool saveStdin) :
-            jobId(jobId), ownerPid(getpid()), procSize(size), oldStdin(-1) {
+            jobId(jobId), ownerPid(getpid()), procSize(size) {
         for(unsigned int i = 0; i < this->procSize; i++) {
-            this->pids[i] = pids[i];
+            this->procs[i] = {
+                    .pid = pids[i],
+                    .state = ProcState::RUNNING,
+                    .exitStatus = 0,
+            };
         }
         if(saveStdin) {
             this->oldStdin = dup(STDIN_FILENO);
@@ -83,14 +109,29 @@ private:
 public:
     NON_COPYABLE(JobImpl);
 
-    unsigned int getProcSize() const {
+    unsigned short getProcSize() const {
         return this->procSize;
     }
 
-    pid_t getPid(unsigned int index) const {
-        return this->pids[index];
+    bool available() const {
+        return this->state != ProcState::TERMINATED;
     }
 
+    /**
+     *
+     * @param index
+     * @return
+     * after termiantion, return -1.
+     */
+    pid_t getPid(unsigned int index) const {
+        return this->procs[index].pid;
+    }
+
+    /**
+     *
+     * @return
+     * after detached, return 0.
+     */
     unsigned int getJobId() const {
         return this->jobId;
     }
@@ -109,7 +150,11 @@ public:
      */
     void appendPid(pid_t pid) {
         assert(this->procSize > 0);
-        this->pids[this->procSize++] = pid;
+        this->procs[this->procSize++] = {
+                .pid = pid,
+                .state = ProcState::RUNNING,
+                .exitStatus = 0,
+        };
     }
 
     /**
@@ -130,6 +175,15 @@ public:
             kill(this->getPid(i), sigNum);
         }
     }
+
+    /**
+     * wait for termination.
+     * after termination, `state' will be TERMINATED.
+     * @return
+     * exit status of last process.
+     * if cannot terminate (has no-wnership or stopped), return -1.
+     */
+    int wait();
 };
 
 struct JobTrait {
@@ -173,18 +227,33 @@ public:
     }
 
     /**
+     * remove job from JobTable
+     * @param jobId
+     * @return
+     * detached job.
+     * if specified job is not found, return null
+     */
+    Job detach(unsigned int jobId);
+
+    /**
      * if has ownership, wait termination.
      * @param entry
-     * @param statusSize
-     * @param statuses
      * @return
      * exit status of last process.
-     * if job is already terminated, return -1.
      * after waiting termination, remove entry.
      */
-    int wait(Job &entry, unsigned int statusSize, int *statuses);
+    int waitAndDetach(Job &entry) {
+        int ret = entry->wait();
+        if(!entry->available()) {
+            this->detach(entry->getJobId());
+        }
+        return ret;
+    }
 
     void detachAll() {
+        for(auto &e : this->entries) {
+            e->jobId = 0;
+        }
         this->entries.clear();
         this->latestEntry.reset();
     }

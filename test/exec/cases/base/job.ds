@@ -15,7 +15,6 @@ assert $j as String == "%1"
 assert $j
 assert $j.wait() == 0
 assert not $j
-assert $j.size() == 0   # after termination, size will be 0
 
 
 # co-process
@@ -34,7 +33,7 @@ assert $j.wait() == 0
 assert not $j
 assert not $j.in()
 assert not $j.out()
-assert $j.size() == 0
+assert $j.size() == 1
 
 
 # jobs in child

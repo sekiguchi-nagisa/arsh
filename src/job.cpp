@@ -75,6 +75,43 @@ bool JobImpl::restoreStdin() {
     return false;
 }
 
+int JobImpl::wait() {
+    if(!hasOwnership()) {
+        return -1;
+    }
+    if(!this->available()) {
+        return this->procs[this->procSize - 1].exitStatus;
+    }
+
+    bool terminated = true;
+    int lastStatus = 0;
+    for(unsigned int i = 0; i < this->procSize; i++) {
+        int status = 0;
+        auto &proc = this->procs[i];
+        if(proc.state == ProcState::RUNNING) {
+            waitpid(proc.pid, &status, WUNTRACED);
+            if(WIFEXITED(status)) {
+                proc.exitStatus = WEXITSTATUS(status);
+                proc.state = ProcState::TERMINATED;
+            } else if(WIFSIGNALED(status)) {
+                proc.exitStatus = WTERMSIG(status) + 128;
+                proc.state = ProcState::TERMINATED;
+            } else if(WIFSTOPPED(status)) {
+                proc.state = ProcState::STOPPED;
+                terminated = false;
+            }
+        }
+        if(proc.state == ProcState::TERMINATED) {
+            proc.pid = -1;
+            lastStatus = proc.exitStatus;
+        }
+    }
+    if(terminated) {
+        this->state = ProcState::TERMINATED;
+    }
+    return lastStatus;
+}
+
 // ######################
 // ##     JobTable     ##
 // ######################
@@ -82,7 +119,7 @@ bool JobImpl::restoreStdin() {
 Job JobTable::newEntry(unsigned int size, pid_t *pids, bool saveStdin) {
     assert(size > 0);
 
-    void *ptr = malloc(sizeof(JobImpl) + sizeof(pid_t) * (size + 1));
+    void *ptr = malloc(sizeof(JobImpl) + sizeof(Proc) * (size + 1));
     auto pair = this->findEmptyEntry();
     auto *entry = new(ptr) JobImpl(pair.second, size, pids, saveStdin);
     auto v = Job(entry);
@@ -91,47 +128,26 @@ Job JobTable::newEntry(unsigned int size, pid_t *pids, bool saveStdin) {
     return v;
 }
 
-int JobTable::wait(Job &entry, unsigned int statusSize, int *statuses) {
-    if(!entry->hasOwnership() || entry->procSize == 0) {
-        return -1;
-    }
-
-    // wait termination
-    int lastStatus = 0;
-    for(unsigned int i = 0; i < entry->procSize; i++) {
-        pid_t pid = entry->pids[i];
-        entry->pids[i] = -1;
-        int status = -1;
-        if(pid > -1) {
-            waitpid(pid, &status, WUNTRACED);
-            if(WIFEXITED(status)) {
-                status = WEXITSTATUS(status);
-            } else if(WIFSIGNALED(status)) {
-                status = WTERMSIG(status) + 128;
-            }
-        }
-        if(i < statusSize) {
-            statuses[i] = status;
-        }
-        lastStatus = status;
-    }
-    entry->procSize = 0;
-
+Job JobTable::detach(unsigned int jobId) {
     // remove entry
-    auto iter = this->findEntryIter(entry->getJobId());
+    auto iter = this->findEntryIter(jobId);
     if(iter != this->entries.end()) {
         /**
          * convert const_iterator -> iterator
          */
         auto actual = this->entries.begin() + (iter - this->entries.cbegin());
+        Job job = *actual;
+        job->jobId = 0;
 
         /**
          * in C++11, vector::erase accepts const_iterator.
          * but in libstdc++ 4.8, vector::erase(const_iterator) is not implemented.
          */
         this->entries.erase(actual);
+
+        return job;
     }
-    return lastStatus;
+    return nullptr;
 }
 
 std::pair<unsigned int, unsigned int> JobTable::findEmptyEntry() const {
