@@ -75,6 +75,21 @@ bool JobImpl::restoreStdin() {
     return false;
 }
 
+void JobImpl::send(int sigNum) {
+    for(unsigned int i = 0; i < this->procSize; i++) {
+        int pid = this->getPid(i);
+        if(pid > -1) {
+            if(kill(pid, sigNum) == 0) {
+                if(sigNum == SIGSTOP) {
+                    this->procs[i].state = ProcState::STOPPED;
+                } else if(sigNum == SIGCONT) {
+                    this->procs[i].state = ProcState::RUNNING;
+                }
+            }
+        }
+    }
+}
+
 int JobImpl::wait() {
     if(!hasOwnership()) {
         return -1;
@@ -83,30 +98,31 @@ int JobImpl::wait() {
         return this->procs[this->procSize - 1].exitStatus;
     }
 
-    bool terminated = true;
+    unsigned int terminateCount = 0;
     int lastStatus = 0;
     for(unsigned int i = 0; i < this->procSize; i++) {
-        int status = 0;
         auto &proc = this->procs[i];
         if(proc.state == ProcState::RUNNING) {
+            int status = 0;
             waitpid(proc.pid, &status, WUNTRACED);
-            if(WIFEXITED(status)) {
-                proc.exitStatus = WEXITSTATUS(status);
-                proc.state = ProcState::TERMINATED;
-            } else if(WIFSIGNALED(status)) {
-                proc.exitStatus = WTERMSIG(status) + 128;
-                proc.state = ProcState::TERMINATED;
-            } else if(WIFSTOPPED(status)) {
+            if(WIFSTOPPED(status)) {
                 proc.state = ProcState::STOPPED;
-                terminated = false;
+            } else {
+                proc.state = ProcState::TERMINATED;
+                if(WIFEXITED(status)) {
+                    proc.exitStatus = WEXITSTATUS(status);
+                } else if(WIFSIGNALED(status)) {
+                    proc.exitStatus = WTERMSIG(status) + 128;
+                }
             }
         }
         if(proc.state == ProcState::TERMINATED) {
+            terminateCount++;
             proc.pid = -1;
             lastStatus = proc.exitStatus;
         }
     }
-    if(terminated) {
+    if(terminateCount == this->procSize) {
         this->state = ProcState::TERMINATED;
     }
     return lastStatus;

@@ -51,3 +51,37 @@ $j = {
 } &
 assert $j.wait()! == 255
 assert $j2.wait()! == 0
+
+
+# signal
+$j = for(;;) { true; } &
+$j.suspend()
+assert $j
+assert not $j.wait()
+assert $j
+
+$j.resume()
+assert $j
+$j.kill(%'term')
+assert $j.wait()! == %'term'.value() + 128
+
+
+# handle SIGCONT
+function handle($s : Signal) {
+    echo ${$s.name()}
+    exit $s
+}
+$SIG.trap(%'cont', $handle)
+$j = for(;;) { true; } &
+$j.suspend()
+$j.resume()
+assert $j.wait()! == %'cont'.value()
+
+
+# detach
+$j = coproc false
+assert $j as String == '%1'
+$j.detach()
+assert $j as String == '%0'
+assert $j
+assert $j.wait()! == 1

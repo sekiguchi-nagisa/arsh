@@ -1302,7 +1302,7 @@ static bool killProcOrJob(DSState &state, Array_Object &argvObj, const char *arg
         if(pair.first > 0) {
             auto job = getJobTable(state).findEntry(static_cast<unsigned int>(pair.first));
             if(job) {
-                job->raise(sigNum);
+                job->send(sigNum);
                 return true;
             }
         }

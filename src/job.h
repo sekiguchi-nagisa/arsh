@@ -170,11 +170,7 @@ public:
      * send signal to all processes.
      * @param sigNum
      */
-    void raise(int sigNum) {
-        for(unsigned int i = 0; i < this->procSize; i++) {
-            kill(this->getPid(i), sigNum);
-        }
-    }
+    void send(int sigNum);
 
     /**
      * wait for termination.

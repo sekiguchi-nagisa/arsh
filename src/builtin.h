@@ -1996,6 +1996,39 @@ YDSH_METHOD job_wait(RuntimeContext &ctx) {
         DSValue::create<Int_Object>(getPool(ctx).getInt32Type(), s));
 }
 
+//!bind: function kill($this : Job, $s : Signal) : Void
+YDSH_METHOD job_kill(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(job_kill);
+    auto *obj = typeAs<Job_Object>(LOCAL(0));
+    auto *sig = typeAs<Int_Object>(LOCAL(1));
+    obj->getEntry()->send(sig->getValue());
+    RET_VOID;
+}
+
+//!bind: function suspend($this : Job) : Void
+YDSH_METHOD job_suspend(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(job_suspend);
+    auto *obj = typeAs<Job_Object>(LOCAL(0));
+    obj->getEntry()->send(SIGSTOP);
+    RET_VOID;
+}
+
+//!bind: function resume($this : Job) : Void
+YDSH_METHOD job_resume(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(job_resume);
+    auto *obj = typeAs<Job_Object>(LOCAL(0));
+    obj->getEntry()->send(SIGCONT);
+    RET_VOID;
+}
+
+//!bind: function detach($this : Job) : Void
+YDSH_METHOD job_detach(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(job_detach);
+    auto *obj = typeAs<Job_Object>(LOCAL(0));
+    getJobTable(ctx).detach(obj->getEntry()->getJobId());
+    RET_VOID;
+}
+
 //!bind: function size($this : Job) : Int32
 YDSH_METHOD job_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_size);
