@@ -1908,10 +1908,9 @@ YDSH_METHOD fd_close(RuntimeContext &ctx) {
     SUPPRESS_WARNING(fd_close);
     auto *fdObj = typeAs<UnixFD_Object>(LOCAL(0));
     int fd = fdObj->getValue();
-    if(close(fd) < 0) {
+    if(fdObj->tryToClose(true) < 0) {
         throwSystemError(ctx, errno, std::to_string(fd));
     }
-    fdObj->clear();
     RET_VOID;
 }
 

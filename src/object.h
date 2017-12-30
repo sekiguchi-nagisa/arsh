@@ -322,6 +322,15 @@ struct UnixFD_Object : public Int_Object {
     void clear() {
         this->value = -1;
     }
+
+    int tryToClose(bool forceClose) {
+        if(!forceClose && this->value < 0) {
+            return 0;
+        }
+        int s = close(this->value);
+        this->value = -1;
+        return s;
+    }
 };
 
 class Long_Object : public DSObject {
