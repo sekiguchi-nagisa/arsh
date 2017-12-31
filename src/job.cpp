@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Nagisa Sekiguchi
+ * Copyright (C) 2017-2018 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,9 +93,7 @@ void Proc::send(int sigNum) {
         return;
     }
     if(kill(this->pid_, sigNum) == 0) {
-        if(sigNum == SIGSTOP) {
-            this->state_ = STOPPED;
-        } else if(sigNum == SIGCONT) {
+        if(sigNum == SIGCONT) {
             this->state_ = RUNNING;
         }
     }
