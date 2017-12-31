@@ -1166,11 +1166,6 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
     }
 }
 
-static void pushExitStatus(DSState &state, int status) {
-    state.updateExitStatus(status);
-    state.push(status == 0 ? state.trueObj : state.falseObj);
-}
-
 static void callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue &&redirConfig, flag8_set_t attr = 0) {
     auto *array = typeAs<Array_Object>(argvObj);
     const unsigned int size = array->getValues().size();
@@ -1188,7 +1183,7 @@ static void callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue 
     }
     case CmdKind::BUILTIN: {
         int status = cmd.builtinCmd(state, *array);
-        pushExitStatus(state, status);
+        state.pushExitStatus(status);
         flushStdFD();
         return;
     }
@@ -1209,7 +1204,7 @@ static void callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue 
             if(WIFSIGNALED(status)) {
                 r = WTERMSIG(status) + 128;
             }
-            pushExitStatus(state, r);
+            state.pushExitStatus(r);
         } else {
             xexecve(cmd.filePath, argv, nullptr);
             throwCmdError(state, cmdName, errno);
@@ -1247,7 +1242,7 @@ static void callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redi
             break;
         default:
             int s = invalidOptionError(arrayObj, optState);
-            pushExitStatus(state, s);
+            state.pushExitStatus(s);
             return;
         }
     }
@@ -1311,10 +1306,10 @@ static void callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redi
                 PERROR(arrayObj, "%s", commandName);
             }
         }
-        pushExitStatus(state, successCount > 0 ? 0 : 1);
+        state.pushExitStatus(successCount > 0 ? 0 : 1);
         return;
     }
-    pushExitStatus(state, 0);
+    state.pushExitStatus(0);
 }
 
 static void callBuiltinExec(DSState &state, DSValue &&array, DSValue &&redir) {
@@ -1337,7 +1332,7 @@ static void callBuiltinExec(DSState &state, DSValue &&array, DSValue &&redir) {
             break;
         default:
             int s = invalidOptionError(argvObj, optState);
-            pushExitStatus(state, s);
+            state.pushExitStatus(s);
             return;
         }
     }
@@ -1361,7 +1356,7 @@ static void callBuiltinExec(DSState &state, DSValue &&array, DSValue &&redir) {
         PERROR(argvObj, "%s", str(argvObj.getValues()[index]));
         exit(1);
     }
-    pushExitStatus(state, 0);
+    state.pushExitStatus(0);
 }
 
 static void callPipeline(DSState &state) {
@@ -1809,7 +1804,7 @@ static bool mainLoop(DSState &state) {
         vmcase(RETURN_UDC) {
             auto v = state.pop();
             unwindStackFrame(state);
-            pushExitStatus(state, typeAs<Int_Object>(v)->getValue());
+            state.pushExitStatus(typeAs<Int_Object>(v)->getValue());
             if(state.codeStack.empty()) {
                 return true;
             }
@@ -2057,7 +2052,7 @@ static bool mainLoop(DSState &state) {
                 const char *cmdName = str(typeAs<Array_Object>(argv)->getValues()[0]);
                 callCommand(state, CmdResolver()(state, cmdName), std::move(argv), std::move(redir), attr);
             } else {
-                pushExitStatus(state, 0);
+                state.pushExitStatus(0);
             }
             vmnext;
         }
@@ -2324,7 +2319,7 @@ int execBuiltinCommand(DSState &st, char *const argv[]) {
     if(!st.codeStack.empty()) {
         bool r = runMainLoop(st);
         if(!r) {
-            pushExitStatus(st, 1);
+            st.pushExitStatus(1);
         }
     }
     st.popNoReturn();

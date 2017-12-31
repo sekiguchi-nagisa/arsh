@@ -384,6 +384,11 @@ struct DSState {
         this->setGlobal(index, DSValue::create<Int_Object>(this->pool.getInt32Type(), status));
     }
 
+    void pushExitStatus(int status) {
+        this->updateExitStatus(status);
+        this->push(status == 0 ? this->trueObj : this->falseObj);
+    }
+
     bool isJobControl() const {
         return hasFlag(this->option, DS_OPTION_JOB_CONTROL);
     }
