@@ -189,6 +189,8 @@ struct DSState {
 
     JobTable jobTable;
 
+    Job foreground;
+
     static constexpr flag32_t VM_EVENT_HOOK   = 1 << 0;
     static constexpr flag32_t VM_EVENT_SIGNAL = 1 << 1;
     static constexpr flag32_t VM_EVENT_MASK   = 1 << 2;

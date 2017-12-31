@@ -136,12 +136,19 @@ Job JobTable::newEntry(unsigned int size, pid_t *pids, bool saveStdin) {
     assert(size > 0);
 
     void *ptr = malloc(sizeof(JobImpl) + sizeof(Proc) * (size + 1));
+    auto *entry = new(ptr) JobImpl(size, pids, saveStdin);
+    return Job(entry);
+}
+
+void JobTable::attach(Job job) {
+    if(job->getJobId() != 0) {
+        return;
+    }
+
     auto pair = this->findEmptyEntry();
-    auto *entry = new(ptr) JobImpl(pair.second, size, pids, saveStdin);
-    auto v = Job(entry);
-    this->entries.insert(this->entries.begin() + pair.first, v);
-    this->latestEntry = v;
-    return v;
+    this->entries.insert(this->entries.begin() + pair.first, job);
+    job->jobId = pair.second;
+    this->latestEntry = std::move(job);
 }
 
 Job JobTable::detach(unsigned int jobId) {

@@ -62,7 +62,7 @@ private:
     /**
      * after detach, will be 0
      */
-    unsigned int jobId;
+    unsigned int jobId{0};
 
     /**
      * pid of owner process (JobEntry creator)
@@ -90,8 +90,7 @@ private:
 
     friend struct JobTrait;
 
-    JobImpl(unsigned int jobId, unsigned int size, pid_t *pids, bool saveStdin) :
-            jobId(jobId), ownerPid(getpid()), procSize(size) {
+    JobImpl(unsigned int size, pid_t *pids, bool saveStdin) : ownerPid(getpid()), procSize(size) {
         for(unsigned int i = 0; i < this->procSize; i++) {
             this->procs[i] = {
                     .pid = pids[i],
@@ -207,7 +206,7 @@ private:
     std::vector<Job> entries;
 
     /**
-     * cache latest JobEntry.
+     * latest attached entry.
      */
     Job latestEntry;
 
@@ -215,12 +214,14 @@ public:
     JobTable() = default;
     ~JobTable() = default;
 
-    Job newEntry(unsigned int size, pid_t *pids, bool saveStdin = true);
+    static Job newEntry(unsigned int size, pid_t *pids, bool saveStdin = true);
 
-    Job newEntry(pid_t pid) {
+    static Job newEntry(pid_t pid) {
         pid_t pids[1] = {pid};
         return newEntry(1, pids, false);
     }
+
+    void attach(Job job);
 
     /**
      * remove job from JobTable
