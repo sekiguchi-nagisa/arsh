@@ -97,11 +97,7 @@ DSState::DSState() :
         falseObj(DSValue::create<Boolean_Object>(this->pool.getBooleanType(), false)),
         emptyStrObj(DSValue::create<String_Object>(this->pool.getStringType(), std::string())),
         emptyFDObj(DSValue::create<UnixFD_Object>(this->pool, -1)),
-        callStack(new DSValue[DEFAULT_STACK_SIZE]),
-        callStackSize(DEFAULT_STACK_SIZE), globalVarSize(0),
-        stackTopIndex(0), stackBottomIndex(0), localVarOffset(0), pc_(0),
-        option(DS_OPTION_ASSERT), execMode(DS_EXEC_MODE_NORMAL), terminationHook(nullptr), lineNum(1),
-        hook(nullptr), logicalWorkingDir(initLogicalWorkingDir()),
+        callStack(new DSValue[DEFAULT_STACK_SIZE]), logicalWorkingDir(initLogicalWorkingDir()),
         baseTime(std::chrono::system_clock::now()), history(initHistory()) { }
 
 // for exception handling

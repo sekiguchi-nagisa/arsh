@@ -124,37 +124,37 @@ struct DSState {
      */
     DSValue *callStack;
 
-    unsigned int callStackSize;
+    unsigned int callStackSize{DEFAULT_STACK_SIZE};
 
     static constexpr unsigned int DEFAULT_STACK_SIZE = 256;
     static constexpr unsigned int MAXIMUM_STACK_SIZE = 2 * 1024 * 1024;
 
-    unsigned int globalVarSize;
+    unsigned int globalVarSize{0};
 
     /**
      * initial value is 0. increment index before push
      */
-    unsigned int stackTopIndex;
+    unsigned int stackTopIndex{0};
 
     /**
      * indicate lower limit of stack top index (bottom <= top)
      */
-    unsigned int stackBottomIndex;
+    unsigned int stackBottomIndex{0};
 
     /**
      * offset of current local variable index.
      * initial value is equivalent to globalVarSize.
      */
-    unsigned int localVarOffset;
+    unsigned int localVarOffset{0};
 
     /**
      * indicate the index of currently evaluating op code.
      */
-    unsigned int pc_;
+    unsigned int pc_{0};
 
-    unsigned short option;
+    unsigned short option{DS_OPTION_ASSERT};
 
-    DSExecMode execMode;
+    DSExecMode execMode{DS_EXEC_MODE_NORMAL};
 
     DumpTarget dumpTarget;
 
@@ -168,16 +168,16 @@ struct DSState {
      */
     FilePathCache pathCache;
 
-    TerminationHook terminationHook;
+    TerminationHook terminationHook{nullptr};
 
-    unsigned int lineNum;
+    unsigned int lineNum{1};
 
     /**
      * previously computed prompt (DSState_prompt() )
      */
     std::string prompt;
 
-    VMHook *hook;
+    VMHook *hook{nullptr};
 
     std::string logicalWorkingDir;
 
