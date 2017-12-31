@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2017 Nagisa Sekiguchi
+ * Copyright (C) 2016-2018 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1148,14 +1148,20 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
             state.pathCache.removePath(argv[0]);
         }
 
+        // wait process or job termination
+        int status;
         if(lastPipe) {
-            state.jobTable.waitAndDetach(state.foreground);
-        }
-
-        int status = 0;
-        waitpid(proc.pid(), &status, WUNTRACED);
-        if(lastPipe) {
+            state.foreground->append(proc);
+            status = state.foreground->wait();
             state.foreground->restoreStdin();
+            if(state.foreground->available()) {
+                state.jobTable.attach(state.foreground);
+            }
+        } else {
+            status = proc.wait();
+            if(proc.state() != Proc::TERMINATED) {
+                state.jobTable.attach(JobTable::newEntry(proc));
+            }
         }
         tryToForeground(state);
         if(errnum != 0) {
@@ -1197,14 +1203,7 @@ static void callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue 
 
         if(hasFlag(attr, UDC_ATTR_NEED_FORK)) {
             int status = forkAndExec(state, cmdName, cmd, argv, hasFlag(attr, UDC_ATTR_LAST_PIPE));
-            int r = 0;
-            if(WIFEXITED(status)) {
-                r = WEXITSTATUS(status);
-            }
-            if(WIFSIGNALED(status)) {
-                r = WTERMSIG(status) + 128;
-            }
-            state.pushExitStatus(r);
+            state.pushExitStatus(status);
         } else {
             xexecve(cmd.filePath, argv, nullptr);
             throwCmdError(state, cmdName, errno);
