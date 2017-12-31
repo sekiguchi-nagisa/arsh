@@ -18,9 +18,9 @@
 #define YDSH_JOB_H
 
 #include <unistd.h>
-#include <signal.h>
 
 #include <vector>
+#include <type_traits>
 
 #include "misc/resource.hpp"
 
@@ -28,35 +28,60 @@ struct DSState;
 
 namespace ydsh {
 
-/**
- * after fork, reset signal setting in child process.
- */
-pid_t xfork(DSState &st, pid_t pgid, bool foreground);
-
 void tryToForeground(const DSState &st);
 
 class JobTable;
 
 struct JobTrait;
 
-enum class ProcState : unsigned char {
-    RUNNING,
-    STOPPED,    // stopped by SIGSTOP or SIGTSTP
-    TERMINATED, // already called waitpid
-};
+class Proc {
+public:
+    enum State : unsigned char {
+        RUNNING,
+        STOPPED,    // stopped by SIGSTOP or SIGTSTP
+        TERMINATED, // already called waitpid
+    };
 
-struct Proc {
-    pid_t pid;
-    ProcState state;
+private:
+    pid_t pid_;
+    State state_;
 
     /**
      * enabled when `state' is TERMINATED.
      */
-    unsigned char exitStatus;
+    unsigned char exitStatus_;
+
+public:
+    Proc() = default;
+
+    explicit Proc(pid_t pid) : pid_(pid), state_(RUNNING), exitStatus_(0) {}
+
+    pid_t pid() const {
+        return this->pid_;
+    }
+
+    State state() const {
+        return this->state_;
+    }
+
+    unsigned char exitStatus() const {
+        return this->exitStatus_;
+    }
+
+    int wait();
+
+    void send(int sigNum);
 };
+
+/**
+ * after fork, reset signal setting in child process.
+ */
+Proc xfork(DSState &st, pid_t pgid, bool foreground);
 
 class JobImpl {
 private:
+    static_assert(std::is_pod<Proc>::value, "failed");
+
     unsigned long refCount{0};
 
     /**
@@ -74,7 +99,7 @@ private:
     /**
      * if all process are terminated. will be TERMINATED
      */
-    ProcState state{ProcState::RUNNING};
+    Proc::State state{Proc::RUNNING};
 
     /**
      * if already closed, will be -1.
@@ -90,13 +115,9 @@ private:
 
     friend struct JobTrait;
 
-    JobImpl(unsigned int size, pid_t *pids, bool saveStdin) : ownerPid(getpid()), procSize(size) {
+    JobImpl(unsigned int size, const Proc *procs, bool saveStdin) : ownerPid(getpid()), procSize(size) {
         for(unsigned int i = 0; i < this->procSize; i++) {
-            this->procs[i] = {
-                    .pid = pids[i],
-                    .state = ProcState::RUNNING,
-                    .exitStatus = 0,
-            };
+            this->procs[i] = procs[i];
         }
         if(saveStdin) {
             this->oldStdin = dup(STDIN_FILENO);
@@ -113,7 +134,7 @@ public:
     }
 
     bool available() const {
-        return this->state != ProcState::TERMINATED;
+        return this->state != Proc::TERMINATED;
     }
 
     /**
@@ -123,7 +144,7 @@ public:
      * after termiantion, return -1.
      */
     pid_t getPid(unsigned int index) const {
-        return this->procs[index].pid;
+        return this->procs[index].pid();
     }
 
     /**
@@ -144,16 +165,11 @@ public:
     }
 
     /**
-     * call only once.
-     * @param pid
+     * call only once
+     * @param proc
      */
-    void appendPid(pid_t pid) {
-        assert(this->procSize > 0);
-        this->procs[this->procSize++] = {
-                .pid = pid,
-                .state = ProcState::RUNNING,
-                .exitStatus = 0,
-        };
+    void append(Proc proc) {
+        this->procs[this->procSize++] = proc;
     }
 
     /**
@@ -169,7 +185,11 @@ public:
      * send signal to all processes.
      * @param sigNum
      */
-    void send(int sigNum);
+    void send(int sigNum) {
+        for(unsigned int i = 0; i < this->procSize; i++) {
+            this->procs[i].send(sigNum);
+        }
+    }
 
     /**
      * wait for termination.
@@ -214,11 +234,11 @@ public:
     JobTable() = default;
     ~JobTable() = default;
 
-    static Job newEntry(unsigned int size, pid_t *pids, bool saveStdin = true);
+    static Job newEntry(unsigned int size, const Proc *procs, bool saveStdin = true);
 
-    static Job newEntry(pid_t pid) {
-        pid_t pids[1] = {pid};
-        return newEntry(1, pids, false);
+    static Job newEntry(Proc proc) {
+        Proc procs[1] = {proc};
+        return newEntry(1, procs, false);
     }
 
     void attach(Job job);

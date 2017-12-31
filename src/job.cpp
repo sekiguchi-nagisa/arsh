@@ -22,7 +22,7 @@
 
 namespace ydsh {
 
-pid_t xfork(DSState &st, pid_t pgid, bool foreground) {
+Proc xfork(DSState &st, pid_t pgid, bool foreground) {
     SignalGuard guard;
 
     pid_t pid = fork();
@@ -53,7 +53,7 @@ pid_t xfork(DSState &st, pid_t pgid, bool foreground) {
             }
         }
     }
-    return pid;
+    return Proc(pid);
 }
 
 void tryToForeground(const DSState &st) {
@@ -61,6 +61,46 @@ void tryToForeground(const DSState &st) {
         tcsetpgrp(STDIN_FILENO, getpgid(0));
     }
 }
+
+// ##################
+// ##     Proc     ##
+// ##################
+
+int Proc::wait() {
+    if(this->state_ == RUNNING) {
+        int status = 0;
+        waitpid(this->pid_, &status, WUNTRACED);
+        if(WIFSTOPPED(status)) {
+            this->state_ = STOPPED;
+            this->exitStatus_ = WSTOPSIG(status) + 128;
+        } else {
+            this->state_ = TERMINATED;
+            if(WIFEXITED(status)) {
+                this->exitStatus_ = WEXITSTATUS(status);
+            } else if(WIFSIGNALED(status)) {
+                this->exitStatus_ = WTERMSIG(status) + 128;
+            }
+        }
+    }
+    if(this->state_ == TERMINATED) {
+        this->pid_ = -1;
+    }
+    return this->exitStatus_;
+}
+
+void Proc::send(int sigNum) {
+    if(this->pid_ < 0) {
+        return;
+    }
+    if(kill(this->pid_, sigNum) == 0) {
+        if(sigNum == SIGSTOP) {
+            this->state_ = STOPPED;
+        } else if(sigNum == SIGCONT) {
+            this->state_ = RUNNING;
+        }
+    }
+}
+
 
 // #####################
 // ##     JobImpl     ##
@@ -75,55 +115,26 @@ bool JobImpl::restoreStdin() {
     return false;
 }
 
-void JobImpl::send(int sigNum) {
-    for(unsigned int i = 0; i < this->procSize; i++) {
-        int pid = this->getPid(i);
-        if(pid > -1) {
-            if(kill(pid, sigNum) == 0) {
-                if(sigNum == SIGSTOP) {
-                    this->procs[i].state = ProcState::STOPPED;
-                } else if(sigNum == SIGCONT) {
-                    this->procs[i].state = ProcState::RUNNING;
-                }
-            }
-        }
-    }
-}
-
 int JobImpl::wait() {
     if(!hasOwnership()) {
         return -1;
     }
     if(!this->available()) {
-        return this->procs[this->procSize - 1].exitStatus;
+        return this->procs[this->procSize - 1].exitStatus();
     }
 
     unsigned int terminateCount = 0;
-    int lastStatus = 0;
+    unsigned int lastStatus = 0;
     for(unsigned int i = 0; i < this->procSize; i++) {
         auto &proc = this->procs[i];
-        if(proc.state == ProcState::RUNNING) {
-            int status = 0;
-            waitpid(proc.pid, &status, WUNTRACED);
-            if(WIFSTOPPED(status)) {
-                proc.state = ProcState::STOPPED;
-            } else {
-                proc.state = ProcState::TERMINATED;
-                if(WIFEXITED(status)) {
-                    proc.exitStatus = WEXITSTATUS(status);
-                } else if(WIFSIGNALED(status)) {
-                    proc.exitStatus = WTERMSIG(status) + 128;
-                }
-            }
-        }
-        if(proc.state == ProcState::TERMINATED) {
+        int s =proc.wait();
+        if(proc.state() == Proc::TERMINATED) {
             terminateCount++;
-            proc.pid = -1;
-            lastStatus = proc.exitStatus;
+            lastStatus = s;
         }
     }
     if(terminateCount == this->procSize) {
-        this->state = ProcState::TERMINATED;
+        this->state = Proc::TERMINATED;
     }
     return lastStatus;
 }
@@ -132,11 +143,11 @@ int JobImpl::wait() {
 // ##     JobTable     ##
 // ######################
 
-Job JobTable::newEntry(unsigned int size, pid_t *pids, bool saveStdin) {
+Job JobTable::newEntry(unsigned int size, const Proc *procs, bool saveStdin) {
     assert(size > 0);
 
     void *ptr = malloc(sizeof(JobImpl) + sizeof(Proc) * (size + 1));
-    auto *entry = new(ptr) JobImpl(size, pids, saveStdin);
+    auto *entry = new(ptr) JobImpl(size, procs, saveStdin);
     return Job(entry);
 }
 

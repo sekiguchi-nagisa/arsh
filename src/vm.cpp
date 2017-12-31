@@ -642,8 +642,8 @@ static void forkAndEval(DSState &state) {
     // set in/out pipe
     auto pipeset = initPipeSet(forkKind);
 
-    pid_t pid = xfork(state, getpgid(0), false);
-    if(pid > 0) {   // parent process
+    Proc proc = xfork(state, getpgid(0), false);
+    if(proc.pid() > 0) {   // parent process
         tryToClose(pipeset.in[READ_PIPE]);
         tryToClose(pipeset.out[WRITE_PIPE]);
 
@@ -656,21 +656,12 @@ static void forkAndEval(DSState &state) {
             const bool isStr = forkKind == ForkKind::STR;
             obj = isStr ? readAsStr(state, pipeset.out[READ_PIPE]) : readAsStrArray(state, pipeset.out[READ_PIPE]);
             tryToClose(pipeset.out[READ_PIPE]);
-
-            // wait exit
-            int status = 0;
-            waitpid(pid, &status, WUNTRACED);
-            if(WIFEXITED(status)) {
-                state.updateExitStatus(WEXITSTATUS(status));
-            }
-            if(WIFSIGNALED(status)) {
-                state.updateExitStatus(WTERMSIG(status) + 128);
-            }
+            state.updateExitStatus(proc.wait());    // wait exit
             break;
         }
         case ForkKind::COPROC:
         case ForkKind::JOB: {
-            auto entry = JobTable::newEntry(pid);
+            auto entry = JobTable::newEntry(proc);
             state.jobTable.attach(entry);
             obj = DSValue::create<Job_Object>(
                     state.pool.getJobType(),
@@ -690,7 +681,7 @@ static void forkAndEval(DSState &state) {
         }
 
         state.pc() += offset - 1;
-    } else if(pid == 0) {   // child process
+    } else if(proc.pid() == 0) {   // child process
         tryToDup(pipeset.in[READ_PIPE], STDIN_FILENO);
         tryToClose(pipeset.in);
         tryToDup(pipeset.out[WRITE_PIPE], STDOUT_FILENO);
@@ -1132,11 +1123,11 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
         pgid = state.foreground->getPid(0);
     }
 
-    pid_t pid = xfork(state, pgid, rootShell);
-    if(pid == -1) {
+    Proc proc = xfork(state, pgid, rootShell);
+    if(proc.pid() == -1) {
         perror("child process error");
         exit(1);
-    } else if(pid == 0) {   // child
+    } else if(proc.pid() == 0) {   // child
         xexecve(cmd.filePath, argv, nullptr);
 
         int errnum = errno;
@@ -1162,7 +1153,7 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
         }
 
         int status = 0;
-        waitpid(pid, &status, WUNTRACED);
+        waitpid(proc.pid(), &status, WUNTRACED);
         if(lastPipe) {
             state.foreground->restoreStdin();
         }
@@ -1385,15 +1376,16 @@ static void callPipeline(DSState &state) {
     initPipe(pipeSize, pipefds);
 
     // fork
-    pid_t childPids[pipeSize];
+    Proc childs[pipeSize];
     const bool rootShell = state.isRootShell();
     pid_t pgid = rootShell ? 0 : getpgid(0);
-    pid_t pid = -1;
+    Proc proc;
+
     unsigned int procIndex;
-    for(procIndex = 0; procIndex < pipeSize && (pid = xfork(state, pgid, rootShell)) > 0; procIndex++) {
-        childPids[procIndex] = pid;
+    for(procIndex = 0; procIndex < pipeSize && (proc = xfork(state, pgid, rootShell)).pid() > 0; procIndex++) {
+        childs[procIndex] = proc;
         if(pgid == 0) {
-            pgid = pid;
+            pgid = proc.pid();
         }
     }
 
@@ -1404,7 +1396,7 @@ static void callPipeline(DSState &state) {
      * | PIPELINE | size: 1byte | br1(child): 2yte | ~  | brN(parent): 2byte |
      * +----------+-------------+------------------+    +--------------------+
      */
-    if(pid == 0) {   // child
+    if(proc.pid() == 0) {   // child
         if(procIndex == 0) {    // first process
             dup2(pipefds[procIndex][WRITE_PIPE], STDOUT_FILENO);
         }
@@ -1417,7 +1409,7 @@ static void callPipeline(DSState &state) {
         // set pc to next instruction
         state.pc() += read16(GET_CODE(state), state.pc() + 2 + procIndex * 2) - 1;
     } else if(procIndex == pipeSize) { // parent (last pipeline)
-        auto jobEntry = JobTable::newEntry(pipeSize, childPids);
+        auto jobEntry = JobTable::newEntry(pipeSize, childs);
         state.foreground = jobEntry;
         state.push(DSValue::create<PipelineState>(state, std::move(jobEntry)));
 
