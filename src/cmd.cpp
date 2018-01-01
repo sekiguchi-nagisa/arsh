@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 Nagisa Sekiguchi
+ * Copyright (C) 2015-2018 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,11 +39,13 @@ namespace ydsh {
 // builtin command definition
 static int builtin___gets(DSState &state, Array_Object &argvObj);
 static int builtin___puts(DSState &state, Array_Object &argvObj);
+static int builtin_bg(DSState &state, Array_Object &argvObj);
 static int builtin_cd(DSState &state, Array_Object &argvObj);
 static int builtin_check_env(DSState &state, Array_Object &argvObj);
 static int builtin_complete(DSState &state, Array_Object &argvObj);
 static int builtin_echo(DSState &state, Array_Object &argvObj);
 static int builtin_false(DSState &state, Array_Object &argvObj);
+static int builtin_fg(DSState &state, Array_Object &argvObj);
 static int builtin_hash(DSState &state, Array_Object &argvObj);
 static int builtin_help(DSState &state, Array_Object &argvObj);
 static int builtin_history(DSState &state, Array_Object &argvObj);
@@ -71,6 +73,9 @@ const struct {
                 "    Options:\n"
                 "        -1    print to standard output\n"
                 "        -2    print to standard error"},
+        {"bg", builtin_bg, "[job_spec ...]",
+                "    Move jobs to the background.\n"
+                "    If JOB_SPEC is not present, latest job is used."},
         {"cd", builtin_cd, "[-LP] [dir]",
                 "    Changing the current directory to DIR.  The Environment variable\n"
                 "    HOME is the default DIR.  A null directory name is the same as\n"
@@ -120,6 +125,9 @@ const struct {
                 "    status is $?."},
         {"false", builtin_false, "",
                 "    Always failure (exit status is 1)."},
+        {"fg", builtin_fg, "[job_spec]",
+                "    Move job to the foreground.\n"
+                "    If JOB_SPEC is not present, latest job is used."},
         {"hash", builtin_hash, "[-r] [command ...]",
                 "    Cache file path of specified commands.  If -r option is supplied,\n"
                 "    removes specified command path (if not specified, remove all cache).\n"
@@ -1393,6 +1401,67 @@ static int builtin_kill(DSState &state, Array_Object &argvObj) {
         return 1;
     }
     return 0;
+}
+
+static Job tryToGetJob(const JobTable &table, const char *name) {
+    if(*name == '%') {
+        name++;
+    }
+    Job job;
+    auto pair = toInt32(name);
+    if(pair.second && pair.first > -1) {
+        job = table.findEntry(pair.first);
+    }
+    return job;
+}
+
+static int builtin_fg(DSState &state, Array_Object &argvObj) {
+    unsigned int size = argvObj.getValues().size();
+    assert(size > 0);
+    Job job;
+    const char *arg = "current";
+    if(size == 1) {
+        job = getJobTable(state).getLatestEntry();
+    } else {
+        arg = str(argvObj.getValues()[1]);
+        job = tryToGetJob(getJobTable(state), arg);
+    }
+    if(!job) {
+        ERROR(argvObj, "%s: no such job", arg);
+        return 1;
+    }
+
+    tcsetpgrp(STDIN_FILENO, getpgid(job->getPid(0)));
+    job->send(SIGCONT);
+    int s = getJobTable(state).waitAndDetach(job);
+    tryToForeground(state);
+    return s;
+}
+
+static int builtin_bg(DSState &state, Array_Object &argvObj) {
+    if(argvObj.getValues().size() == 1) {
+        Job job = getJobTable(state).getLatestEntry();
+        if(job) {
+            job->send(SIGCONT);
+            return 0;
+        }
+        ERROR(argvObj, "current: no such job");
+        return 1;
+    }
+
+    int ret = 0;
+    const auto end = argvObj.getValues().end();
+    for(auto begin = argvObj.getValues().begin() + 1; begin != end; ++begin) {
+        const char *arg = str(*begin);
+        Job job = tryToGetJob(getJobTable(state), arg);
+        if(job) {
+            job->send(SIGCONT);
+        } else {
+            ERROR(argvObj, "%s: no such job", arg);
+            ret = 1;
+        }
+    }
+    return ret;
 }
 
 
