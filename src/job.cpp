@@ -181,6 +181,13 @@ Job JobTable::detach(unsigned int jobId) {
          */
         this->entries.erase(actual);
 
+        // change latest entry
+        if(this->latestEntry == job) {
+            this->latestEntry = nullptr;
+            if(!this->entries.empty()) {
+                this->latestEntry = this->entries.back();
+            }
+        }
         return job;
     }
     return nullptr;
