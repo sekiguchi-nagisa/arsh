@@ -17,8 +17,8 @@ assert { fg; $?; } == 180
 assert { fg; $?; } == 1
 assert "$(fg 2>&1)" == 'ydsh: fg: current: no such job'
 
-sh -c 'kill -s TSTP $$; exit 18'
-assert $? == 128 + %'tstp'.value()
+sh -c 'kill -s STOP $$; exit 18'
+assert $? == 128 + %'stop'.value()
 assert { fg; $?; } == 18
 
 true
