@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 Nagisa Sekiguchi
+ * Copyright (C) 2015-2018 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -268,7 +268,7 @@ int exec_interactive(DSState *dsState) {
 
     linenoiseSetHistoryCallback(historyCallback);
 
-    DSState_setOption(dsState, DS_OPTION_TOPLEVEL | DS_OPTION_HISTORY | DS_OPTION_JOB_CONTROL);
+    DSState_setOption(dsState, DS_OPTION_TOPLEVEL | DS_OPTION_HISTORY | DS_OPTION_JOB_CONTROL | DS_OPTION_INTERACTIVE);
     DSState_syncHistorySize(dsState);
     DSState_loadHistory(dsState, nullptr);
     state = dsState;

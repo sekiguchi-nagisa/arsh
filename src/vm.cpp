@@ -222,6 +222,12 @@ static void exitShell(DSState &st, unsigned int status) {
     if(hasFlag(st.option, DS_OPTION_TRACE_EXIT)) {
         typeAs<Error_Object>(except)->printStackTrace(st);
     }
+
+    // send signal to managed jobs
+    for(auto &job : st.jobTable) {
+        job->send(hasFlag(st.option, DS_OPTION_INTERACTIVE) ? SIGHUP : SIGTERM);
+    }
+
     status %= 256;
     exit(status);
 }
